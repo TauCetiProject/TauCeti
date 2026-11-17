@@ -302,12 +302,12 @@ theorem pluckerLift_of_not_injective (R : Type*) [CommRing R] {r : Fin d → Fin
 @[simp]
 theorem pluckerEval_pluckerLift (R : Type*) [CommRing R] (r : Fin d → Fin n) :
     pluckerEval R n d (pluckerLift R r) = Matrix.mvPolynomialMinor R r id := by
-  rw [pluckerLift]
-  split_ifs with hr
+  rw [pluckerLift]; split_ifs with hr
   · let I := OrderEmbedding.ofStrictMono (r ∘ Tuple.sort r) (Tuple.strictMono_comp_sort hr)
-    conv_rhs => rw [show r = ⇑I ∘ ⇑(Tuple.sort r)⁻¹ from funext fun c ↦ by simp [I]]
-    rw [Matrix.mvPolynomialMinor_comp_perm_left, Perm.sign_inv, Units.smul_def, Units.smul_def,
-      map_zsmul, pluckerEval_X_pluckerVar, maximalMinor_def]
+    have hrI : ⇑I ∘ ⇑(Tuple.sort r)⁻¹ = r := funext fun _ ↦ by
+      simp [I, OrderEmbedding.coe_ofStrictMono]
+    rw [Units.smul_def, map_zsmul, pluckerEval_X_pluckerVar, maximalMinor_def, ← Units.smul_def,
+      ← Perm.sign_inv (Tuple.sort r), ← Matrix.mvPolynomialMinor_comp_perm_left R I id _, hrI]
   · rw [map_zero, Matrix.mvPolynomialMinor_eq_zero_of_not_injective_left hr]
 
 @[simp]
@@ -333,13 +333,17 @@ theorem pluckerLift_comp_perm (R : Type*) [CommRing R] (r : Fin d → Fin n) (σ
       fun h ↦ hr (by simpa [Function.comp_def] using h.comp σ.symm.injective)
     rw [pluckerLift_of_not_injective R hrσ, pluckerLift_of_not_injective R hr, smul_zero]
 
+/-- Swapping the two entries of a `Fin 2` row tuple negates `pluckerLift`. -/
+theorem pluckerLift_pair_swap (R : Type*) [CommRing R] (x y : Fin n) :
+    pluckerLift R ![x, y] = -pluckerLift R ![y, x] := by
+  have h : ![x, y] = ![y, x] ∘ Equiv.swap (0 : Fin 2) 1 := funext <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩
+  rw [h, pluckerLift_comp_perm, Perm.sign_swap (by decide)]; simp [Units.smul_def]
+
 theorem isHomogeneous_pluckerLift (R : Type*) [CommRing R] (r : Fin d → Fin n) :
     (pluckerLift R r).IsHomogeneous 1 := by
-  rw [pluckerLift]
-  split_ifs with hr
-  · rw [Units.smul_def]
-    exact (mem_homogeneousSubmodule 1 _).1
-      (zsmul_mem ((mem_homogeneousSubmodule 1 _).2 (isHomogeneous_X R _)) _)
+  rw [pluckerLift]; split_ifs
+  · rw [Units.smul_def, ← mem_homogeneousSubmodule]
+    exact zsmul_mem ((mem_homogeneousSubmodule 1 _).2 (isHomogeneous_X R _)) _
   · exact isHomogeneous_zero _ R 1
 
 @[simp]
@@ -504,10 +508,9 @@ theorem pluckerQuadric_mem_pluckerIdeal (R : Type*) [CommRing R] {I J : Fin d �
 theorem isHomogeneous_pluckerQuadric (R : Type*) [CommRing R] {I J : Fin d ↪o Fin n}
     (hIJ : ¬ I ≤ J) : (pluckerQuadric R hIJ).IsHomogeneous 2 := by
   rw [pluckerQuadric_def, ← mem_homogeneousSubmodule]
-  exact sum_mem fun σ _ ↦ by
-    rw [Units.smul_def]
-    exact zsmul_mem ((mem_homogeneousSubmodule _ _).2
-      ((isHomogeneous_pluckerLift R _).mul (isHomogeneous_pluckerLift R _))) _
+  refine sum_mem fun σ _ ↦ ?_; rw [Units.smul_def]
+  exact zsmul_mem ((mem_homogeneousSubmodule _ _).2
+    ((isHomogeneous_pluckerLift R _).mul (isHomogeneous_pluckerLift R _))) _
 
 @[simp]
 theorem map_pluckerQuadric {R S : Type*} [CommRing R] [CommRing S] (φ : R →+* S)
@@ -605,6 +608,73 @@ private theorem degree_sum_erase_pluckerShuffleFinset_lt (R : Type*) [CommRing R
     · simpa [pluckerLift, hr] using hzero
   · simpa [pluckerLift, hl] using hzero
 
+private theorem pluckerPivot_fin_two {I J : Fin 2 ↪o Fin n} (hIJ : ¬ I ≤ J)
+    (hlt : toLex I < toLex J) : pluckerPivot hIJ = 1 := by
+  obtain ⟨c, hceq, hclt⟩ := OrderEmbedding.toLex_lt_iff.1 hlt
+  have h0 : I 0 ≤ J 0 := if hc : c = 0 then (hc ▸ hclt).le else (hceq 0 (Fin.pos_of_ne_zero hc)).le
+  have : pluckerPivot hIJ ≠ 0 := fun h ↦ (h ▸ apply_pluckerPivot_lt hIJ).not_ge h0
+  exact Fin.ext (by omega)
+
+private noncomputable def pluckerFinThreeEquiv {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
+    (hpiv : pluckerPivot hIJ = 1) : Fin 3 ≃ PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ where
+  toFun := ![Sum.inl ⟨1, by simp [hpiv]⟩, Sum.inr ⟨0, by simp [hpiv]⟩, Sum.inr ⟨1, by simp [hpiv]⟩]
+  invFun := Sum.elim (fun _ ↦ 0) (fun b ↦ if b.1 = 0 then 1 else 2)
+  left_inv i := by fin_cases i <;> rfl
+  right_inv := by
+    rintro (⟨a, ha⟩ | ⟨b, hb⟩)
+    · obtain rfl : a = 1 := Fin.ext (by simp [hpiv, Fin.lt_def] at ha; omega); rfl
+    · fin_cases b <;> rfl
+
+private theorem sumElim_pluckerFinThreeEquiv {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
+    (hpiv : pluckerPivot hIJ = 1) (i : Fin 3) :
+    Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1)
+      (pluckerFinThreeEquiv hpiv i) = ![I 1, J 0, J 1] i := by fin_cases i <;> rfl
+
+private theorem pluckerShuffleFinset_fin_two {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
+    (hpiv : pluckerPivot hIJ = 1) :
+    pluckerShuffleFinset hIJ =
+      ({1, Equiv.swap 0 1, Equiv.swap 0 1 * Equiv.swap 0 2} : Finset (Perm (Fin 3))).map
+        (pluckerFinThreeEquiv hpiv).permCongr.toEmbedding := by
+  have hmono : StrictMono (toLex ∘ pluckerFinThreeEquiv hpiv) :=
+    Fin.strictMono_iff_lt_succ.2 <| Fin.forall_fin_two.2
+      ⟨Sum.Lex.sep _ _, Sum.Lex.inr_lt_inr_iff.2 (Subtype.mk_lt_mk.2 (by decide))⟩
+  have hfilter : univ.filter (fun τ : Perm (Fin 3) ↦ τ 1 < τ 2) =
+      {1, Equiv.swap 0 1, Equiv.swap 0 1 * Equiv.swap 0 2} := by decide
+  rw [← hfilter]; ext σ; simp only [mem_pluckerShuffleFinset, mem_map, mem_filter, mem_univ,
+    true_and, Equiv.coe_toEmbedding]
+  refine ⟨fun ⟨_, hσr⟩ ↦ ⟨(pluckerFinThreeEquiv hpiv).permCongr.symm σ,
+      hmono.lt_iff_lt.1 (by
+        simp only [Function.comp_apply, Equiv.permCongr_symm, Equiv.permCongr_apply,
+          Equiv.symm_symm, Equiv.apply_symm_apply]
+        exact hσr (a := ⟨0, by simp [hpiv]⟩) (b := ⟨1, by simp [hpiv]⟩)
+          (Subtype.mk_lt_mk.2 (by decide))),
+      (pluckerFinThreeEquiv hpiv).permCongr.apply_symm_apply σ⟩, ?_⟩
+  rintro ⟨τ, hτ, rfl⟩
+  refine ⟨fun ⟨a, ha⟩ ⟨b, hb⟩ hab ↦ by
+      have := Subtype.mk_lt_mk.1 hab; simp [hpiv, Fin.lt_def] at ha hb; omega,
+    fun ⟨a, ha⟩ ⟨b, hb⟩ hab ↦ ?_⟩
+  have := Subtype.mk_lt_mk.1 hab
+  obtain rfl : a = 0 := Fin.ext (by omega); obtain rfl : b = 1 := Fin.ext (by omega)
+  simpa [pluckerFinThreeEquiv, Equiv.permCongr_apply] using hmono hτ
+
+private theorem pluckerLeftRow_permCongr_finThree {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
+    (hpiv : pluckerPivot hIJ = 1) (τ : Perm (Fin 3)) :
+    pluckerLeftRow hIJ ((pluckerFinThreeEquiv hpiv).permCongr τ) =
+      ![I 0, ![I 1, J 0, J 1] (τ 0)] :=
+  funext <| Fin.forall_fin_two.2 ⟨pluckerLeftRow_apply_of_lt hIJ _ (by simp [hpiv]), by
+    rw [pluckerLeftRow_apply_of_le hIJ _ (by simp [hpiv]), Matrix.cons_val_one,
+      ← sumElim_pluckerFinThreeEquiv hpiv]; congr 1⟩
+
+private theorem pluckerRightRow_permCongr_finThree {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
+    (hpiv : pluckerPivot hIJ = 1) (τ : Perm (Fin 3)) :
+    pluckerRightRow hIJ ((pluckerFinThreeEquiv hpiv).permCongr τ) =
+      ![![I 1, J 0, J 1] (τ 1), ![I 1, J 0, J 1] (τ 2)] :=
+  funext <| Fin.forall_fin_two.2 ⟨by
+    rw [pluckerRightRow_apply_of_le hIJ _ (by simp [hpiv]), Matrix.cons_val_zero,
+      ← sumElim_pluckerFinThreeEquiv hpiv]; congr 1, by
+    rw [pluckerRightRow_apply_of_le hIJ _ (by simp [hpiv]), Matrix.cons_val_one,
+      ← sumElim_pluckerFinThreeEquiv hpiv]; congr 1⟩
+
 /-- **Three-term Plücker relation for `2 × 2` maximal minors.** For incomparable
 `I, J : Fin 2 ↪o Fin n` with `toLex I < toLex J` (equivalently `I 0 < J 0 < J 1 < I 1`),
 `pluckerQuadric R hIJ` equals
@@ -614,72 +684,22 @@ theorem pluckerQuadric_fin_two (R : Type*) [CommRing R] {I J : Fin 2 ↪o Fin n}
     pluckerQuadric R hIJ =
       X (pluckerVar I) * X (pluckerVar J) -
         pluckerLift R ![I 0, J 1] * pluckerLift R ![J 0, I 1] +
-        pluckerLift R ![I 0, J 0] * pluckerLift R ![J 1, I 1] := by
-  classical
-  have h0 : I 0 ≤ J 0 := by
-    obtain ⟨c, hceq, hclt⟩ := OrderEmbedding.toLex_lt_iff.1 hlt
-    exact if hc : c = 0 then (hc ▸ hclt).le else (hceq 0 (Fin.pos_of_ne_zero hc)).le
-  have hpiv : pluckerPivot hIJ = 1 := Fin.ext <| by
-    have : pluckerPivot hIJ ≠ 0 := fun h ↦ (h ▸ apply_pluckerPivot_lt hIJ).not_ge h0; omega
-  let e : Fin 3 ≃ PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ :=
-    { toFun := ![Sum.inl ⟨1, by simp [hpiv]⟩, Sum.inr ⟨0, by simp [hpiv]⟩,
-        Sum.inr ⟨1, by simp [hpiv]⟩]
-      invFun := Sum.elim (fun _ ↦ 0) (fun b ↦ if b.1 = 0 then 1 else 2)
-      left_inv := fun i ↦ by fin_cases i <;> rfl
-      right_inv := by
-        rintro (⟨a, ha⟩ | ⟨b, hb⟩)
-        · obtain rfl : a = 1 := Fin.ext (by simp [hpiv, Fin.lt_def] at ha; omega); rfl
-        · fin_cases b <;> rfl }
-  have hmono : StrictMono (toLex ∘ e) := Fin.strictMono_iff_lt_succ.2 <| Fin.forall_fin_two.2
-    ⟨Sum.Lex.sep _ _, Sum.Lex.inr_lt_inr_iff.2 (Subtype.mk_lt_mk.2 (by decide))⟩
-  let τ₁ : Perm (Fin 3) := Equiv.swap 0 1
-  let τ₂ : Perm (Fin 3) := Equiv.swap 0 1 * Equiv.swap 0 2
-  have hfinset : pluckerShuffleFinset hIJ =
-      ({1, τ₁, τ₂} : Finset (Perm (Fin 3))).map e.permCongr.toEmbedding := by
-    rw [← show univ.filter (fun τ : Perm (Fin 3) ↦ τ 1 < τ 2) = {1, τ₁, τ₂} by decide]
-    ext σ
-    simp only [mem_pluckerShuffleFinset, mem_map, mem_filter, mem_univ, true_and,
-      Equiv.coe_toEmbedding]
-    refine ⟨fun ⟨_, hσr⟩ ↦ ⟨e.permCongr.symm σ, hmono.lt_iff_lt.1 (by
-        have he1 : e 1 = Sum.inr ⟨0, by simp [hpiv]⟩ := rfl
-        have he2 : e 2 = Sum.inr ⟨1, by simp [hpiv]⟩ := rfl
-        simpa only [Function.comp_apply, Equiv.permCongr_symm, Equiv.permCongr_apply,
-          Equiv.symm_symm, Equiv.apply_symm_apply, he1, he2] using
-            hσr (a := ⟨0, by simp [hpiv]⟩) (b := ⟨1, by simp [hpiv]⟩)
-              (Subtype.mk_lt_mk.2 (by decide))), e.permCongr.apply_symm_apply σ⟩, ?_⟩
-    rintro ⟨τ, hτ, rfl⟩
-    refine ⟨fun ⟨a, ha⟩ ⟨b, hb⟩ hab ↦ by
-        have := Subtype.mk_lt_mk.1 hab; simp [hpiv, Fin.lt_def] at ha hb; omega,
-      fun ⟨a, ha⟩ ⟨b, hb⟩ hab ↦ by
-        have := Subtype.mk_lt_mk.1 hab
-        obtain rfl : a = 0 := Fin.ext (by omega); obtain rfl : b = 1 := Fin.ext (by omega)
-        simpa [e, Equiv.permCongr_apply] using hmono hτ⟩
-  let val : Fin 3 → Fin n := ![I 1, J 0, J 1]
-  have hval (i : Fin 3) :
-      Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1) (e i) =
-        val i := by fin_cases i <;> rfl
-  have hl (τ : Perm (Fin 3)) : pluckerLeftRow hIJ (e.permCongr τ) = ![I 0, val (τ 0)] :=
-    funext <| Fin.forall_fin_two.2 ⟨pluckerLeftRow_apply_of_lt hIJ _ (by simp [hpiv]), by
-      rw [pluckerLeftRow_apply_of_le hIJ _ (by simp [hpiv]), ← hval (τ 0)]; congr 1⟩
-  have hr (τ : Perm (Fin 3)) : pluckerRightRow hIJ (e.permCongr τ) = ![val (τ 1), val (τ 2)] :=
-    funext <| Fin.forall_fin_two.2
-      ⟨by rw [pluckerRightRow_apply_of_le hIJ _ (by simp [hpiv]), ← hval (τ 1)]; congr 1,
-       by rw [pluckerRightRow_apply_of_le hIJ _ (by simp [hpiv]), ← hval (τ 2)]; congr 1⟩
-  have hv : val 0 = I 1 ∧ val 1 = J 0 ∧ val 2 = J 1 := ⟨rfl, rfl, rfl⟩
-  have hτ : (τ₁ 0 = 1 ∧ τ₁ 1 = 0 ∧ τ₁ 2 = 2) ∧ (τ₂ 0 = 2 ∧ τ₂ 1 = 0 ∧ τ₂ 2 = 1) := by decide
-  have hswap (x y : Fin n) : pluckerLift R ![x, y] = -pluckerLift R ![y, x] := by
-    have h : ![x, y] = ![y, x] ∘ Equiv.swap (0 : Fin 2) 1 :=
-      funext <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩
-    rw [h, pluckerLift_comp_perm, Perm.sign_swap (by decide)]; simp [Units.smul_def]
+        pluckerLift R ![I 0, J 0] * pluckerLift R ![J 1, I 1] := open Classical in by
+  have hpiv := pluckerPivot_fin_two hIJ hlt
+  have hs1 : Perm.sign (Equiv.swap 0 1 : Perm (Fin 3)) = -1 := Perm.sign_swap (by decide)
+  have hs2 : Perm.sign (Equiv.swap 0 1 * Equiv.swap 0 2 : Perm (Fin 3)) = 1 := by
+    rw [map_mul, hs1, Perm.sign_swap (by decide)]; decide
   have hvec (K : Fin 2 ↪o Fin n) : ![K 0, K 1] = ⇑K := funext <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩
-  have hs1 : Perm.sign τ₁ = -1 := Perm.sign_swap (by decide)
-  have hs2 : Perm.sign τ₂ = 1 := by rw [map_mul, hs1, Perm.sign_swap (by decide)]; decide
-  rw [pluckerQuadric_def, hfinset, sum_map]
-  simp only [Equiv.coe_toEmbedding, Perm.sign_permCongr, hl, hr]
+  rw [pluckerQuadric_def, pluckerShuffleFinset_fin_two hpiv, sum_map]
+  simp only [Equiv.coe_toEmbedding, Perm.sign_permCongr,
+    pluckerLeftRow_permCongr_finThree hpiv, pluckerRightRow_permCongr_finThree hpiv]
   rw [sum_insert (by decide), sum_pair (by decide)]
-  simp only [map_one, one_smul, Perm.coe_one, id_eq, hτ.1.1, hτ.1.2.1, hτ.1.2.2, hτ.2.1, hτ.2.2.1,
-    hτ.2.2.2, hv.1, hv.2.1, hv.2.2, hvec, pluckerLift_coe, hs1, hs2, Units.smul_def, Units.val_neg,
-    Units.val_one, neg_smul, hswap (I 1) (J 1), hswap (I 1) (J 0)]
+  simp only [map_one, one_smul, Perm.coe_one, id_eq, Perm.mul_apply, Equiv.swap_apply_def,
+    Fin.reduceEq, ite_true, ite_false, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, hs1, hs2, Units.smul_def,
+    Units.val_neg, Units.val_one, neg_smul]
+  rw [hvec I, hvec J, pluckerLift_coe, pluckerLift_coe,
+    pluckerLift_pair_swap R (I 1) (J 1), pluckerLift_pair_swap R (I 1) (J 0)]
   ring
 
 /-- **Explicit three-term Grassmann–Plücker relation** on `a < b < c < e` in `Fin n`: for

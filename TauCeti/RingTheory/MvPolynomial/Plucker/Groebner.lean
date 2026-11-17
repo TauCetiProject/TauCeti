@@ -199,11 +199,9 @@ theorem pluckerDiagonalWeight_single_pluckerVar (I : Fin d ↪o Fin n) (k : ℕ)
 theorem degree_pluckerDiagonalWeight (e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ) :
     (pluckerDiagonalWeight n d e).degree = e.degree * d := by
   induction e using Finsupp.induction_linear with
-  | zero => simp
+  | zero | single => simp
   | add e₁ e₂ ih₁ ih₂ =>
-    rw [map_add, Finsupp.degree_eq_weight_one, map_add, map_add, ← Finsupp.degree_eq_weight_one,
-      ih₁, ih₂, add_mul]
-  | single v k => simp
+    simp only [Finsupp.degree_eq_weight_one] at ih₁ ih₂ ⊢; simp [ih₁, ih₂, add_mul]
 
 @[simp]
 theorem pluckerDiagonalWeight_pluckerChainExponent {m : ℕ} (C : Fin m →o (Fin d ↪o Fin n)) :
@@ -229,8 +227,11 @@ theorem injOn_pluckerDiagonalWeight_isPluckerChainExponent [NeZero d] :
   intro e₁ he₁ e₂ he₂ h
   obtain ⟨⟨m₁, C₁⟩, h₁⟩ := (pluckerChainExponentEquiv n d).surjective ⟨e₁, he₁⟩
   obtain ⟨⟨m₂, C₂⟩, h₂⟩ := (pluckerChainExponentEquiv n d).surjective ⟨e₂, he₂⟩
-  rw [← show pluckerChainExponent C₁ = e₁ from congrArg Subtype.val h₁,
-    ← show pluckerChainExponent C₂ = e₂ from congrArg Subtype.val h₂] at h ⊢
+  have he₁' : pluckerChainExponent C₁ = e₁ :=
+    (coe_pluckerChainExponentEquiv_apply C₁).symm.trans (congrArg Subtype.val h₁)
+  have he₂' : pluckerChainExponent C₂ = e₂ :=
+    (coe_pluckerChainExponentEquiv_apply C₂).symm.trans (congrArg Subtype.val h₂)
+  rw [← he₁', ← he₂'] at h ⊢
   obtain rfl : m₁ = m₂ := Nat.eq_of_mul_eq_mul_right (NeZero.pos d) <| by
     simpa only [degree_pluckerDiagonalWeight_pluckerChainExponent] using congrArg Finsupp.degree h
   classical
@@ -293,23 +294,16 @@ theorem eq_zero_of_mem_restrictSupport_isPluckerChainExponent_of_mem_pluckerIdea
 private theorem mem_restrictSupport_of_isRemainder_pluckerQuadrics
     {f r : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R}
     (hr : MonomialOrder.degRevLex.IsRemainder f (pluckerQuadrics R n d) r) :
-    r ∈ restrictSupport R {e | IsPluckerChainExponent e} := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Subsingleton.elim r 0 ▸ zero_mem _
-  · exact (mem_restrictSupport_iff R).2 fun e he ↦
-      (isPluckerChainExponent_iff_forall_not_le e).2 fun I J hIJ hlt ↦
+    r ∈ restrictSupport R {e | IsPluckerChainExponent e} :=
+  (subsingleton_or_nontrivial R).elim (fun _ ↦ Subsingleton.elim r 0 ▸ zero_mem _) fun _ ↦
+    (mem_restrictSupport_iff R).2 fun e he ↦
+      (isPluckerChainExponent_iff_forall_not_le e).2 fun _ _ hIJ hlt ↦
         degree_pluckerQuadric R hIJ hlt ▸ hr.not_degree_le he
-          (mem_pluckerQuadrics_iff.2 ⟨I, J, hIJ, hlt, rfl⟩) (monic_pluckerQuadric R hIJ hlt).ne_zero
+          (mem_pluckerQuadrics_iff.2 ⟨_, _, hIJ, hlt, rfl⟩) (monic_pluckerQuadric R hIJ hlt).ne_zero
 
-private theorem exists_isRemainder_pluckerQuadrics
-    (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) :
-    ∃ r ∈ restrictSupport R {e | IsPluckerChainExponent e},
-      MonomialOrder.degRevLex.IsRemainder f (pluckerQuadrics R n d) r ∧
-        f - r ∈ pluckerIdeal R n d := by
-  obtain ⟨r, hr⟩ := _root_.MonomialOrder.exists_isRemainder
-    (fun _ hg _ ↦ (monic_of_mem_pluckerQuadrics hg).leadingCoeff_eq_one ▸ isUnit_one) f
-  exact ⟨r, mem_restrictSupport_of_isRemainder_pluckerQuadrics R n d hr, hr,
-    Ideal.span_le.2 (pluckerQuadrics_subset_pluckerIdeal R n d) hr.sub_mem_span⟩
+private theorem pluckerQuadrics_isUnit_leadingCoeff :
+    ∀ g ∈ pluckerQuadrics R n d, g ≠ 0 → IsUnit (MonomialOrder.degRevLex.leadingCoeff g) :=
+  fun _ hg _ ↦ (monic_of_mem_pluckerQuadrics hg).leadingCoeff_eq_one ▸ isUnit_one
 
 /-- **Certified Gröbner basis of the Plücker ideal.** Over any commutative ring `R`, when `d ≠ 0`,
 `pluckerQuadrics R n d` is a Gröbner basis of `pluckerIdeal R n d` for
@@ -318,9 +312,12 @@ theorem isGroebnerBasis_pluckerQuadrics [NeZero d] :
     MonomialOrder.degRevLex.IsGroebnerBasis (pluckerQuadrics R n d) (pluckerIdeal R n d) := by
   refine _root_.MonomialOrder.isGroebnerBasis_iff_isRemainder_zero.2
     ⟨pluckerQuadrics_subset_pluckerIdeal R n d, fun f hf ↦ ?_⟩
-  obtain ⟨r, hrsupp, hr, hsub⟩ := exists_isRemainder_pluckerQuadrics R n d f
-  exact eq_zero_of_mem_restrictSupport_isPluckerChainExponent_of_mem_pluckerIdeal R n d hrsupp
-    (by simpa only [sub_sub_cancel] using (pluckerIdeal R n d).sub_mem hf hsub) ▸ hr
+  obtain ⟨r, hr⟩ := _root_.MonomialOrder.exists_isRemainder
+    (pluckerQuadrics_isUnit_leadingCoeff R n d) f
+  exact eq_zero_of_mem_restrictSupport_isPluckerChainExponent_of_mem_pluckerIdeal R n d
+    (mem_restrictSupport_of_isRemainder_pluckerQuadrics R n d hr)
+    (by simpa only [sub_sub_cancel] using ((pluckerIdeal R n d).sub_mem hf
+      (Ideal.span_le.2 (pluckerQuadrics_subset_pluckerIdeal R n d) hr.sub_mem_span))) ▸ hr
 
 /-- **Polynomial presentation of the Plücker ideal.** For `d ≠ 0`, `pluckerIdeal R n d` is generated
 by `pluckerQuadrics R n d` over every commutative ring `R`. -/
@@ -341,9 +338,8 @@ theorem map_pluckerIdeal {R S : Type*} [CommRing R] [CommRing S] (φ : R →+* S
 attribute [local instance] MvPolynomial.gradedAlgebra in
 /-- For `d ≠ 0`, `pluckerIdeal R n d` is homogeneous for the standard total-degree grading. -/
 theorem isHomogeneous_pluckerIdeal [NeZero d] :
-    (pluckerIdeal R n d).IsHomogeneous (homogeneousSubmodule (Lex (Fin d ↪o Fin n))ᵒᵈ R) := by
-  rw [pluckerIdeal_eq_span_pluckerQuadrics]
-  exact Ideal.homogeneous_span _ _ fun _ hg ↦ by
+    (pluckerIdeal R n d).IsHomogeneous (homogeneousSubmodule (Lex (Fin d ↪o Fin n))ᵒᵈ R) :=
+  pluckerIdeal_eq_span_pluckerQuadrics R n d ▸ Ideal.homogeneous_span _ _ fun _ hg ↦ by
     obtain ⟨_, _, hIJ, -, rfl⟩ := mem_pluckerQuadrics_iff.1 hg
     exact ⟨2, isHomogeneous_pluckerQuadric R hIJ⟩
 
@@ -384,11 +380,11 @@ theorem standardMonomials_pluckerIdeal [Nontrivial R] [NeZero d] :
   ext e
   rw [(isGroebnerBasis_pluckerQuadrics R n d).mem_standardMonomials_iff, Set.mem_ofPred_eq,
     isPluckerChainExponent_iff_forall_not_le]
-  refine ⟨fun h I J hIJ hlt ↦ degree_pluckerQuadric R hIJ hlt ▸
-      h _ (mem_pluckerQuadrics_iff.2 ⟨I, J, hIJ, hlt, rfl⟩)
+  exact ⟨fun h _ _ hIJ hlt ↦ degree_pluckerQuadric R hIJ hlt ▸
+      h _ (mem_pluckerQuadrics_iff.2 ⟨_, _, hIJ, hlt, rfl⟩)
         (monic_pluckerQuadric R hIJ hlt).ne_zero,
     fun h _ hg _ ↦ by
-      obtain ⟨I, J, hIJ, hlt, rfl⟩ := mem_pluckerQuadrics_iff.1 hg
+      obtain ⟨_, _, hIJ, hlt, rfl⟩ := mem_pluckerQuadrics_iff.1 hg
       exact degree_pluckerQuadric R hIJ hlt ▸ h hIJ hlt⟩
 
 end Groebner
@@ -397,59 +393,60 @@ section StandardMonomialBasis
 
 variable (R : Type*) [CommRing R] (n d : ℕ) [NeZero d]
 
+private theorem restrictSupport_standardMonomials_pluckerIdeal :
+    restrictSupport R (MonomialOrder.degRevLex.standardMonomials (pluckerIdeal R n d)) =
+      restrictSupport R {e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ | IsPluckerChainExponent e} :=
+  (subsingleton_or_nontrivial R).elim
+    (fun _ ↦ Submodule.ext fun p ↦ by simp [Subsingleton.elim p 0])
+    fun _ ↦ by rw [standardMonomials_pluckerIdeal]
+
 /-- For `d ≠ 0`, the quotient map restricts to an `R`-linear isomorphism from polynomials supported
 on `{e | IsPluckerChainExponent e}` onto the quotient modulo `pluckerIdeal R n d`. -/
 noncomputable def restrictSupportEquivQuotientPluckerIdeal :
     restrictSupport R {e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ | IsPluckerChainExponent e} ≃ₗ[R]
       MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R ⧸ pluckerIdeal R n d :=
-  LinearEquiv.ofBijective
-    ((Ideal.Quotient.mkₐ R (pluckerIdeal R n d)).toLinearMap ∘ₗ Submodule.subtype _)
-    ⟨fun r₁ r₂ hr ↦ Subtype.ext <| sub_eq_zero.1 <|
-        eq_zero_of_mem_restrictSupport_isPluckerChainExponent_of_mem_pluckerIdeal R n d
-          (Submodule.sub_mem _ r₁.2 r₂.2) (Ideal.Quotient.eq.1 hr),
-     fun x ↦ by
-       obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-       obtain ⟨r, hrsupp, -, hsub⟩ := exists_isRemainder_pluckerQuadrics R n d f
-       exact ⟨⟨r, hrsupp⟩, (Ideal.Quotient.eq.2 hsub).symm⟩⟩
+  (LinearEquiv.ofEq _ _ (restrictSupport_standardMonomials_pluckerIdeal R n d).symm).trans
+    ((isGroebnerBasis_pluckerQuadrics R n d).restrictSupportEquivQuotient
+      (pluckerQuadrics_isUnit_leadingCoeff R n d))
 
 @[simp]
 theorem restrictSupportEquivQuotientPluckerIdeal_apply
     (r : restrictSupport R {e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ | IsPluckerChainExponent e}) :
     restrictSupportEquivQuotientPluckerIdeal R n d r =
-      Ideal.Quotient.mk (pluckerIdeal R n d) (r : MvPolynomial _ R) := (rfl)
+      Ideal.Quotient.mk (pluckerIdeal R n d) (r : MvPolynomial _ R) := by
+  simp [restrictSupportEquivQuotientPluckerIdeal]
 
 /-- **Straightening normal form** modulo `pluckerIdeal R n d` (`d ≠ 0`): the `R`-linear map sending
 `f` to the unique polynomial supported on `{e | IsPluckerChainExponent e}` congruent to `f` modulo
 `pluckerIdeal R n d`. -/
 noncomputable def pluckerNormalForm :
     MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R →ₗ[R] MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R :=
-  (restrictSupport R {e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ | IsPluckerChainExponent e}).subtype ∘ₗ
-    (restrictSupportEquivQuotientPluckerIdeal R n d).symm.toLinearMap ∘ₗ
-    (Ideal.Quotient.mkₐ R (pluckerIdeal R n d)).toLinearMap
+  (isGroebnerBasis_pluckerQuadrics R n d).normalForm (pluckerQuadrics_isUnit_leadingCoeff R n d)
 
 @[simp]
 theorem coe_restrictSupportEquivQuotientPluckerIdeal_symm_mk
     (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) :
     ((restrictSupportEquivQuotientPluckerIdeal R n d).symm
         (Ideal.Quotient.mk (pluckerIdeal R n d) f) : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) =
-      pluckerNormalForm R n d f := (rfl)
+      pluckerNormalForm R n d f := by
+  simp [restrictSupportEquivQuotientPluckerIdeal, pluckerNormalForm]
 
 @[simp]
 theorem pluckerNormalForm_mem_restrictSupport (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) :
     pluckerNormalForm R n d f ∈
       restrictSupport R {e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ | IsPluckerChainExponent e} :=
-  ((restrictSupportEquivQuotientPluckerIdeal R n d).symm
-    (Ideal.Quotient.mk (pluckerIdeal R n d) f)).2
+  restrictSupport_standardMonomials_pluckerIdeal R n d ▸
+    (isGroebnerBasis_pluckerQuadrics R n d).normalForm_mem_restrictSupport _ f
 
 @[simp]
 theorem mk_pluckerNormalForm (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) :
     Ideal.Quotient.mk (pluckerIdeal R n d) (pluckerNormalForm R n d f) =
       Ideal.Quotient.mk (pluckerIdeal R n d) f :=
-  (restrictSupportEquivQuotientPluckerIdeal R n d).apply_symm_apply _
+  (isGroebnerBasis_pluckerQuadrics R n d).mk_normalForm _ f
 
 theorem sub_pluckerNormalForm_mem (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) :
     f - pluckerNormalForm R n d f ∈ pluckerIdeal R n d :=
-  Ideal.Quotient.eq.1 (mk_pluckerNormalForm R n d f).symm
+  (isGroebnerBasis_pluckerQuadrics R n d).sub_normalForm_mem _ f
 
 @[simp]
 theorem pluckerEval_pluckerNormalForm (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R) :
@@ -462,37 +459,29 @@ theorem pluckerEval_pluckerNormalForm (f : MvPolynomial (Lex (Fin d ↪o Fin n))
 theorem pluckerNormalForm_eq_iff {f r : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R} :
     pluckerNormalForm R n d f = r ↔
       r ∈ restrictSupport R {e | IsPluckerChainExponent e} ∧ f - r ∈ pluckerIdeal R n d :=
-  ⟨fun hr ↦ hr ▸ ⟨pluckerNormalForm_mem_restrictSupport R n d f, sub_pluckerNormalForm_mem R n d f⟩,
-   fun ⟨hr, hfr⟩ ↦ sub_eq_zero.1 <|
-     eq_zero_of_mem_restrictSupport_isPluckerChainExponent_of_mem_pluckerIdeal R n d
-       (Submodule.sub_mem _ (pluckerNormalForm_mem_restrictSupport R n d f) hr) <| by
-         simpa only [sub_sub_sub_cancel_left] using
-           (pluckerIdeal R n d).sub_mem hfr (sub_pluckerNormalForm_mem R n d f)⟩
+  restrictSupport_standardMonomials_pluckerIdeal R n d ▸
+    (isGroebnerBasis_pluckerQuadrics R n d).normalForm_eq_iff _
 
 @[simp]
 theorem pluckerNormalForm_of_mem_restrictSupport {r : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R}
     (hr : r ∈ restrictSupport R {e | IsPluckerChainExponent e}) :
-    pluckerNormalForm R n d r = r := (pluckerNormalForm_eq_iff R n d).2 ⟨hr, by simp⟩
+    pluckerNormalForm R n d r = r :=
+  (isGroebnerBasis_pluckerQuadrics R n d).normalForm_of_mem_restrictSupport _
+    (restrictSupport_standardMonomials_pluckerIdeal R n d ▸ hr)
 
 /-- **Plücker ideal membership.** `pluckerNormalForm R n d f = 0` iff `f ∈ pluckerIdeal R n d`. -/
 @[simp]
 theorem pluckerNormalForm_eq_zero_iff {f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R} :
-    pluckerNormalForm R n d f = 0 ↔ f ∈ pluckerIdeal R n d := by simp [pluckerNormalForm_eq_iff]
+    pluckerNormalForm R n d f = 0 ↔ f ∈ pluckerIdeal R n d :=
+  (isGroebnerBasis_pluckerQuadrics R n d).normalForm_eq_zero_iff _
 
 /-- For `d ≠ 0`, remainders of `f` modulo `pluckerQuadrics R n d` equal
 `pluckerNormalForm R n d f`. -/
 theorem isRemainder_pluckerQuadrics_iff_eq_pluckerNormalForm
     {f r : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R} :
     MonomialOrder.degRevLex.IsRemainder f (pluckerQuadrics R n d) r ↔
-      r = pluckerNormalForm R n d f := by
-  have key {r : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R}
-      (hr : MonomialOrder.degRevLex.IsRemainder f (pluckerQuadrics R n d) r) :
       r = pluckerNormalForm R n d f :=
-    ((pluckerNormalForm_eq_iff R n d).2
-      ⟨mem_restrictSupport_of_isRemainder_pluckerQuadrics R n d hr,
-        Ideal.span_le.2 (pluckerQuadrics_subset_pluckerIdeal R n d) hr.sub_mem_span⟩).symm
-  exact ⟨key, fun h ↦ h ▸ by
-    obtain ⟨r', -, hr', -⟩ := exists_isRemainder_pluckerQuadrics R n d f; rwa [← key hr']⟩
+  (isGroebnerBasis_pluckerQuadrics R n d).isRemainder_iff_eq_normalForm _
 
 /-- **Standard-monomial basis of the Plücker quotient.** For `d ≠ 0`,
 `(m : ℕ) × BoundedSSYT n (YoungDiagram.rect d m)` indexes an `R`-basis of
@@ -500,26 +489,28 @@ theorem isRemainder_pluckerQuadrics_iff_eq_pluckerNormalForm
 noncomputable def pluckerBasisQuotient :
     Module.Basis ((m : ℕ) × BoundedSSYT n (YoungDiagram.rect d m)) R
       (MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R ⧸ pluckerIdeal R n d) :=
-  ((basisRestrictSupport R
-      {e : (Lex (Fin d ↪o Fin n))ᵒᵈ →₀ ℕ | IsPluckerChainExponent e}).reindex
-    (pluckerTableauExponentEquiv n d).symm).map (restrictSupportEquivQuotientPluckerIdeal R n d)
+  open Classical in if hR : Nontrivial R then
+    ((isGroebnerBasis_pluckerQuadrics R n d).basisQuotient
+        (pluckerQuadrics_isUnit_leadingCoeff R n d)).reindex
+      ((Set.equivOfEq (standardMonomials_pluckerIdeal R n d)).trans
+        (pluckerTableauExponentEquiv n d).symm)
+  else letI : Subsingleton R := not_nontrivial_iff_subsingleton.1 hR; default
 
 @[simp]
 theorem pluckerBasisQuotient_apply (p : (m : ℕ) × BoundedSSYT n (YoungDiagram.rect d m)) :
     pluckerBasisQuotient R n d p =
       Ideal.Quotient.mk (pluckerIdeal R n d)
         (∏ c : Fin p.1, X (pluckerVar ((BoundedSSYT.rectColsEquiv n d p.1).symm p.2 c))) := by
-  rcases p with ⟨m, T⟩
-  simp only [pluckerBasisQuotient, Module.Basis.map_apply, Module.Basis.reindex_apply,
-    Equiv.symm_symm, restrictSupportEquivQuotientPluckerIdeal_apply, basisRestrictSupport_apply_coe,
-    coe_pluckerTableauExponentEquiv_apply, pluckerChainExponent_def, monomial_sum_one, X]
+  nontriviality R; rcases p with ⟨m, T⟩
+  simp [pluckerBasisQuotient, dite_eq_left ‹Nontrivial R›, pluckerChainExponent_def,
+    monomial_sum_one, X]
 
 @[simp]
 theorem pluckerBasisQuotient_repr_mk (f : MvPolynomial (Lex (Fin d ↪o Fin n))ᵒᵈ R)
     (p : (m : ℕ) × BoundedSSYT n (YoungDiagram.rect d m)) :
     (pluckerBasisQuotient R n d).repr (Ideal.Quotient.mk (pluckerIdeal R n d) f) p =
       (pluckerNormalForm R n d f).coeff (pluckerTableauExponentEquiv n d p) := by
-  simp [pluckerBasisQuotient]
+  nontriviality R; simp [pluckerBasisQuotient, pluckerNormalForm, dite_eq_left ‹Nontrivial R›]
 
 /-- **Standard-monomial basis of the maximal-minor subalgebra.** For `d ≠ 0`,
 `(m : ℕ) × BoundedSSYT n (YoungDiagram.rect d m)` indexes an `R`-basis of
@@ -545,11 +536,10 @@ theorem pluckerBasisSubalgebra_repr_pluckerEval (f : MvPolynomial (Lex (Fin d �
     (p : (m : ℕ) × BoundedSSYT n (YoungDiagram.rect d m)) :
     (pluckerBasisSubalgebra R n d).repr ⟨pluckerEval R n d f, hf⟩ p =
       (pluckerNormalForm R n d f).coeff (pluckerTableauExponentEquiv n d p) := by
-  have hmk : (quotientPluckerIdealAlgEquiv R n d).symm ⟨pluckerEval R n d f, hf⟩ =
-      Ideal.Quotient.mk (pluckerIdeal R n d) f :=
-    (quotientPluckerIdealAlgEquiv R n d).symm_apply_eq.2
-      (Subtype.ext (coe_quotientPluckerIdealAlgEquiv_mk R n d f)).symm
-  simp [pluckerBasisSubalgebra, hmk]
+  have h : ⟨pluckerEval R n d f, hf⟩ =
+      quotientPluckerIdealAlgEquiv R n d (Ideal.Quotient.mk _ f) :=
+    Subtype.ext (coe_quotientPluckerIdealAlgEquiv_mk R n d f).symm
+  simp [pluckerBasisSubalgebra, h]
 
 end StandardMonomialBasis
 
@@ -585,9 +575,9 @@ private theorem exists_chain_degree_eq_of_mem_map_maximalMinorSubalgebra
         (fun h0 ↦ hp0 (by simp [← hrq, h0]))
     obtain ⟨⟨m, C⟩, hC⟩ := (pluckerChainExponentEquiv n d).surjective
       ⟨e₀, (mem_restrictSupport_iff R).1 hrsupp he₀⟩
-    exact ⟨m, C, by
-      rw [← hrq, hdeg, ← show pluckerChainExponent C = e₀ from congrArg Subtype.val hC,
-        pluckerDiagonalWeight_pluckerChainExponent]⟩
+    have he₀' : pluckerChainExponent C = e₀ :=
+      (coe_pluckerChainExponentEquiv_apply C).symm.trans (congrArg Subtype.val hC)
+    exact ⟨m, C, by rw [← hrq, hdeg, ← he₀', pluckerDiagonalWeight_pluckerChainExponent]⟩
 
 /-- **Diagonal SAGBI basis of maximal minors.** Over any commutative ring `R` and for all `n` and
 `d`, the `toLex`-renamed maximal minors form a SAGBI basis for row-major `MonomialOrder.lex`. -/

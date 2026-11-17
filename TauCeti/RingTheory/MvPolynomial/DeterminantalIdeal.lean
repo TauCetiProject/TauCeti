@@ -79,12 +79,12 @@ theorem exists_orderEmbedding_mvPolynomialMinor_eq_units_smul [LinearOrder t] [L
       mvPolynomialMinor R r c = ε • mvPolynomialMinor R r' c' := by
   obtain ⟨σ, hσ, -⟩ := Perm.existsUnique_strictMono_comp hr
   obtain ⟨τ, hτ, -⟩ := Perm.existsUnique_strictMono_comp hc
-  refine ⟨OrderEmbedding.ofStrictMono (r ∘ σ) hσ, OrderEmbedding.ofStrictMono (c ∘ τ) hτ,
-    Perm.sign σ⁻¹ * Perm.sign τ⁻¹, ?_⟩
-  conv_lhs =>
-    rw [show r = ⇑(OrderEmbedding.ofStrictMono (r ∘ σ) hσ) ∘ ⇑σ⁻¹ from funext fun _ ↦ by simp,
-      show c = ⇑(OrderEmbedding.ofStrictMono (c ∘ τ) hτ) ∘ ⇑τ⁻¹ from funext fun _ ↦ by simp]
-  rw [mvPolynomialMinor_comp_perm_left, mvPolynomialMinor_comp_perm_right, mul_smul]
+  let r' := OrderEmbedding.ofStrictMono (r ∘ σ) hσ
+  let c' := OrderEmbedding.ofStrictMono (c ∘ τ) hτ
+  have hr' : ⇑r' ∘ ⇑σ⁻¹ = r := funext fun _ ↦ by simp [r', OrderEmbedding.coe_ofStrictMono]
+  have hc' : ⇑c' ∘ ⇑τ⁻¹ = c := funext fun _ ↦ by simp [c', OrderEmbedding.coe_ofStrictMono]
+  refine ⟨r', c', Perm.sign σ⁻¹ * Perm.sign τ⁻¹, ?_⟩
+  rw [← hr', ← hc', mvPolynomialMinor_comp_perm_left, mvPolynomialMinor_comp_perm_right, mul_smul]
 
 end Alternating
 
