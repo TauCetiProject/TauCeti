@@ -411,6 +411,13 @@ section Curve
 
 variable {J : V → AlmostComplexStructure V} {u : ℂ → V} {z : ℂ}
 
+/-- A curve that is `J`-holomorphic at `z` for the standard complex structure of `ℂ` satisfies
+the Cauchy--Riemann equation in the form `∂ₜu = J(u) ∂ₛu`. -/
+theorem IsJHolomorphicAt.fderiv_I_eq
+    (h : IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z) :
+    fderiv ℝ u z Complex.I = J (u z) (fderiv ℝ u z 1) := by
+  simpa [AlmostComplexStructure.ofComplexModule_apply] using h.fderiv_apply_commute (v := 1)
+
 /-- A curve `u : ℂ → V` differentiable at `z` is `J`-holomorphic there for the standard structure
 of `ℂ = {s + i t}` exactly when it solves the Cauchy--Riemann equation `∂ₛu + J(u) ∂ₜu = 0`
 at `z`. -/
@@ -420,12 +427,8 @@ theorem isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero
       fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z Complex.I) = 0 := by
   constructor
   · intro h
-    obtain ⟨f', hf', hc⟩ := (isJHolomorphicAt_iff _ _ u z).mp h
-    -- Complex-linearity on `1` gives `∂ₜu = J(u) ∂ₛu`, and `J(u)² = -1`.
-    have h1 := LinearMap.congr_fun hc 1
-    simp only [LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
-      AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul, mul_one] at h1
-    rw [hf'.fderiv, h1, AlmostComplexStructure.apply_apply, add_neg_cancel]
+    -- `∂ₜu = J(u) ∂ₛu`, and `J(u)² = -1`.
+    rw [h.fderiv_I_eq, AlmostComplexStructure.apply_apply, add_neg_cancel]
   · intro h
     refine isJHolomorphicAt_of_hasFDerivAt hu.hasFDerivAt
       ((isComplexLinearMap_iff_apply _ _ _).mpr fun v ↦ ?_)
@@ -445,18 +448,6 @@ theorem isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero
     rw [AlmostComplexStructure.apply_add, AlmostComplexStructure.apply_smul,
       AlmostComplexStructure.apply_smul, hJ1, hJI, smul_neg, neg_smul]
     abel
-
-/-- A curve that is `J`-holomorphic at `z` for the standard complex structure of `ℂ` satisfies
-the Cauchy--Riemann equation in the form `∂ₜu = J(u) ∂ₛu`. -/
-theorem IsJHolomorphicAt.fderiv_I_eq
-    (h : IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z) :
-    fderiv ℝ u z Complex.I = J (u z) (fderiv ℝ u z 1) := by
-  have h0 := (isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero h.differentiableAt).mp h
-  -- Apply `J(u)` to `∂ₛu + J(u) ∂ₜu = 0` and use `J(u)² = -1`.
-  have h1 := congrArg (J (u z)) h0
-  rw [AlmostComplexStructure.apply_add, AlmostComplexStructure.apply_apply,
-    AlmostComplexStructure.apply_zero] at h1
-  exact (add_neg_eq_zero.mp h1).symm
 
 end Curve
 
