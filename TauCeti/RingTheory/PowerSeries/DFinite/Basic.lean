@@ -662,8 +662,9 @@ theorem IsDFinite.rescale (c : k) {f : K⟦X⟧} (hf : IsDFinite k f) :
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     have hi := i.isLt
+    have hexp : r - (i : ℕ) + (n + i) = n + r := by omega
     rw [coeff_rescale, Polynomial.eval_mul, Polynomial.eval_C, ← map_pow, ← Algebra.smul_def,
-      smul_smul, smul_smul, mul_right_comm, ← pow_add, show r - (i : ℕ) + (n + i) = n + r by omega]
+      smul_smul, smul_smul, mul_right_comm, ← pow_add, hexp]
   rw [hsum, h n, smul_zero]
 
 end PowerSeries

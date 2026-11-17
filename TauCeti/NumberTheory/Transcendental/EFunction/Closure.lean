@@ -5,59 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Chebyshev
-public import TauCeti.NumberTheory.Height.Denominator
-public import TauCeti.NumberTheory.LcmUpto
 public import TauCeti.NumberTheory.Transcendental.EFunction.Basic
+
+import Mathlib.NumberTheory.Chebyshev
+import Mathlib.Order.Filter.AtTopBot.Floor
+import TauCeti.NumberTheory.Height.Denominator
+import TauCeti.NumberTheory.LcmUpto
+import TauCeti.RingTheory.Algebraic.Denominator
+import TauCeti.RingTheory.PowerSeries.Mk
 
 /-!
 # Closure properties and examples of Siegel's E-functions and G-functions
 
 Siegel's E-functions and G-functions each form a differential subalgebra of formal power series
-stable under algebraic rescaling and Galois conjugation:
-
-* **Linear and ring closure**: zero, single-term sequences, finitely supported algebraic sequences,
-  polynomials with `ℚ`-algebraic coefficients, constant sequences (`e^z` as an E-function and
-  `(1 - z)⁻¹` as a G-function), addition, finite sums, negation, subtraction, algebraic scalar
-  multiplication, Hurwitz convolution `hurwitzMul` (pointwise multiplication of `eFun`), and Cauchy
-  convolution (ordinary multiplication of `PowerSeries.mk`).
-* **Analytic and arithmetic symmetries**: index shifts `n ↦ a (n + k)` (differentiation of `eFun`),
-  prepending a constant `0 ↦ c, n + 1 ↦ a n` (termwise integration `c + ∫₀ᶻ f(t) dt` of `eFun` or
-  multiplication of `PowerSeries.mk` by `X`), rescaling `n ↦ c ^ n * a n` (`z ↦ c z`) for algebraic
-  `c`, and Galois conjugation under ring endomorphisms of `ℂ` or automorphisms in
-  `Gal(algebraicClosure ℚ ℂ/ℚ)`.
-* **Canonical examples and sharpness counterexamples**:
-  * `(z - 1) e^z` (`aₙ = n - 1`) is an E-function;
-  * `-log(1 - z) = ∑_{n ≥ 1} zⁿ / n` (`a₀ = 0`, `aₙ = 1 / n`) is a G-function, with common
-    denominators `Nat.lcmUpto n` bounded geometrically via Chebyshev's `ψ`-estimate;
-  * `aₙ = n!` is not an E-function (its `ePowerSeries` is `(1 - X)⁻¹`, which is not entire);
-  * `e^(z²)` (`a_{2k} = (2k)! / k!`, `a_{2k+1} = 0`) is entire and D-finite with integer
-    coefficients, yet is **not** an E-function because `a_{2k} ≥ k ^ k` grows super-geometrically;
-  * `∑ zⁿ / n! = e^z` (`aₙ = 1 / n!`) is **not** a G-function because any common denominator `dₙ`
-    must be divisible by `n!`, violating the geometric denominator bound.
+stable under algebraic rescaling and Galois conjugation: zero, `Pi.single`, finitely supported
+algebraic sequences, polynomial coefficients, constants, addition, finite sums, negation,
+subtraction, algebraic scalar multiplication, Hurwitz and Cauchy convolution, index shifts
+(differentiation), prepending a constant (integration), algebraic rescaling, and Galois
+conjugation. We also include canonical examples (`z e^z`, `(z - 1) e^z`, `-log(1 - z)`) and
+sharpness counterexamples (`n!`, `e^(z²)`, `1 / n!`).
 
 ## Main results
 
 * `TauCeti.IsGFunction.zero`, `TauCeti.IsGFunction.one`, `TauCeti.IsGFunction.single`,
   `TauCeti.IsGFunction.of_eventually_eq_zero`, `TauCeti.IsGFunction.add`, `TauCeti.IsGFunction.neg`,
   `TauCeti.IsGFunction.sub`, `TauCeti.IsGFunction.smul`, `TauCeti.IsGFunction.mul`,
-  `TauCeti.IsGFunction.hurwitzMul`, `TauCeti.IsGFunction.shift`, `TauCeti.IsGFunction.cons_zero`,
+  `TauCeti.IsGFunction.hurwitzMul`, `TauCeti.IsGFunction.shift`, `TauCeti.IsGFunction.cons`,
   `TauCeti.IsGFunction.rescale`, `TauCeti.IsGFunction.comp_ringHom`,
   `TauCeti.IsGFunction.galoisConj`, together with the corresponding `TauCeti.IsEFunction.*` API.
-* `TauCeti.isEFunction_natCast`, `TauCeti.isEFunction_natCast_sub_one`: `z e^z` and `(z - 1) e^z`
-  are E-functions.
+* `TauCeti.isEFunction_natCast`, `TauCeti.isEFunction_natCast_sub_one`: `z e^z` and `(z - 1) e^z`.
 * `TauCeti.isGFunction_inv_natCast`: `-log(1 - z) = ∑_{n ≥ 1} zⁿ / n` is a G-function.
 * `TauCeti.not_isEFunction_factorial`, `TauCeti.not_isEFunction_exp_sq`,
-  `TauCeti.not_isGFunction_inv_factorial`: sharpness of the geometric growth conditions on
-  coefficients and common denominators.
+  `TauCeti.not_isGFunction_inv_factorial`: sharpness of the geometric growth bounds.
 
 ## References
 
 * C. L. Siegel, *Über einige Anwendungen diophantischer Approximationen*, Abh. Preuß. Akad. Wiss.
   Phys.-Math. Kl. **1929**, no. 1.
-* F. Beukers, *E-functions and G-functions*, lecture notes, Arizona Winter School, 2008, §3.1, §4.1.
-* A. B. Shidlovskii, *Transcendental Numbers*, de Gruyter Studies in Mathematics **12**, 1989,
-  Chapter 3, §1.
+* F. Beukers, *E-functions and G-functions*, Arizona Winter School, 2008, §3.1, §4.1.
+* A. B. Shidlovskii, *Transcendental Numbers*, de Gruyter, 1989, Chapter 3, §1.
 -/
 
 public section
@@ -70,18 +56,10 @@ namespace TauCeti
 
 section Closure
 
-/-- Arithmetic denominator helper for a single `ℚ`-algebraic complex number `c`: its natural
-denominator `b = Algebra.natDenominator c` satisfies `1 ≤ b` and clears `c` into an algebraic
-integer `(b : ℂ) * c`. -/
-private theorem one_le_and_isIntegral_natDenominator {c : ℂ} (hc : IsAlgebraic ℚ c) :
-    1 ≤ Algebra.natDenominator c ∧ IsIntegral ℤ ((Algebra.natDenominator c : ℂ) * c) :=
-  ⟨Nat.pos_of_ne_zero (Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hc),
-    by simpa only [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul c⟩
-
 /-- The zero sequence is a G-function. -/
 theorem IsGFunction.zero : IsGFunction 0 :=
   IsGFunction.of_house_le (fun _ ↦ isAlgebraic_zero)
-    (by rw [show PowerSeries.mk (0 : ℕ → ℂ) = 0 by ext; simp]; exact PowerSeries.isDFinite_zero)
+    (by rw [PowerSeries.mk_zero]; exact PowerSeries.isDFinite_zero)
     ⟨1, zero_lt_one, fun n ↦ by simp⟩
     ⟨1, zero_lt_one, fun _ ↦ 1, fun n ↦ ⟨le_rfl, by simp, fun _ _ ↦ by simp [isIntegral_zero]⟩⟩
 
@@ -91,19 +69,19 @@ theorem IsEFunction.zero : IsEFunction 0 := isGFunction_iff_isEFunction.mp .zero
 /-- A sequence supported at a single index `k` with `ℚ`-algebraic value `c` is a G-function. -/
 theorem IsGFunction.single (k : ℕ) {c : ℂ} (hc : IsAlgebraic ℚ c) :
     IsGFunction (Pi.single k c) := by
-  obtain ⟨hb1, hbc⟩ := one_le_and_isIntegral_natDenominator hc
   set b := Algebra.natDenominator c
+  have hb1 : 1 ≤ b := Algebra.natDenominator_pos_of_isAlgebraic_rat hc
+  have hbc : IsIntegral ℤ ((b : ℂ) * c) := Algebra.isIntegral_natDenominator_mul c
   refine IsGFunction.of_house_le
     (fun n ↦ by
       rcases eq_or_ne n k with rfl | hnk
       · simpa using hc
       · simp [Pi.single_eq_of_ne hnk, isAlgebraic_zero])
-    (?_)
+    (by
+      rw [PowerSeries.mk_single, ← Polynomial.coe_monomial]
+      exact PowerSeries.isDFinite_polynomial (algebraicClosure ℚ ℂ) _)
     ⟨max 1 (house c), by positivity, fun n ↦ ?_⟩
     ⟨b, Nat.cast_pos.mpr hb1, fun _ ↦ b, fun n ↦ ⟨hb1, ?_, fun m _ ↦ ?_⟩⟩
-  · rw [show PowerSeries.mk (Pi.single k c) = ((Polynomial.monomial k c : ℂ[X]) : ℂ⟦X⟧) by
-      ext n; simp [Pi.single_apply, PowerSeries.coeff_monomial]]
-    exact PowerSeries.isDFinite_polynomial (algebraicClosure ℚ ℂ) _
   · rcases eq_or_ne n k with rfl | hnk
     · simp only [Pi.single_eq_same]
       exact (le_max_right 1 (house c)).trans
@@ -138,8 +116,7 @@ theorem IsGFunction.add {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFuncti
   obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
   refine IsGFunction.of_house_le
     (fun n ↦ ((ha.isAlgebraic n).isIntegral.add (hb.isAlgebraic n).isIntegral).isAlgebraic)
-    (by rw [show PowerSeries.mk (a + b) = PowerSeries.mk a + PowerSeries.mk b by ext; simp]
-        exact ha.isDFinite.add hb.isDFinite)
+    (by rw [PowerSeries.mk_add]; exact ha.isDFinite.add hb.isDFinite)
     ⟨2 * max C₁ C₂, by positivity, fun n ↦ ?_⟩
     ⟨D₁ * D₂, mul_pos hD₁ hD₂, fun n ↦ d₁ n * d₂ n, fun n ↦ ?_⟩
   · calc house (a n + b n) ≤ house (a n) + house (b n) :=
@@ -156,10 +133,11 @@ theorem IsGFunction.add {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFuncti
     · rw [Nat.cast_mul, mul_pow]
       exact mul_le_mul (hd₁ n).2.1 (hd₂ n).2.1 (Nat.cast_nonneg _) (by positivity)
     · simp only [Pi.add_apply, Nat.cast_mul, mul_add]
-      rw [show ((d₁ n : ℂ) * d₂ n) * a m = (d₂ n : ℂ) * ((d₁ n : ℂ) * a m) by ring,
-        show ((d₁ n : ℂ) * d₂ n) * b m = (d₁ n : ℂ) * ((d₂ n : ℂ) * b m) by ring]
-      exact ((isIntegral_natCast (d₂ n)).mul ((hd₁ n).2.2 m hm)).add
-        ((isIntegral_natCast (d₁ n)).mul ((hd₂ n).2.2 m hm))
+      refine IsIntegral.add ?_ ?_
+      · rw [mul_comm (d₁ n : ℂ), mul_assoc]
+        exact (isIntegral_natCast (d₂ n)).mul ((hd₁ n).2.2 m hm)
+      · rw [mul_assoc]
+        exact (isIntegral_natCast (d₁ n)).mul ((hd₂ n).2.2 m hm)
 
 /-- E-functions are closed under addition. -/
 theorem IsEFunction.add {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) :
@@ -223,7 +201,7 @@ theorem IsGFunction.neg {a : ℕ → ℂ} (ha : IsGFunction a) : IsGFunction (-a
   obtain ⟨D, hD, d, hd⟩ := ha.den_le
   refine IsGFunction.of_house_le
     (fun n ↦ (ha.isAlgebraic n).isIntegral.neg.isAlgebraic)
-    (by rw [show PowerSeries.mk (-a) = -PowerSeries.mk a by ext; simp]; exact ha.isDFinite.neg)
+    (by rw [PowerSeries.mk_neg]; exact ha.isDFinite.neg)
     ⟨C, hC, fun n ↦ by simpa only [Pi.neg_apply, house_neg] using hh n⟩
     ⟨D, hD, d, fun n ↦ ⟨(hd n).1, (hd n).2.1, fun m hm ↦ ?_⟩⟩
   simpa only [Pi.neg_apply, mul_neg] using ((hd n).2.2 m hm).neg
@@ -245,12 +223,12 @@ theorem IsGFunction.smul {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (h
     IsGFunction (c • a) := by
   obtain ⟨C, hC, hh⟩ := ha.exists_house_le
   obtain ⟨D, hD, d, hd⟩ := ha.den_le
-  obtain ⟨hb1, hbc⟩ := one_le_and_isIntegral_natDenominator hc
   set b := Algebra.natDenominator c
+  have hb1 : 1 ≤ b := Algebra.natDenominator_pos_of_isAlgebraic_rat hc
+  have hbc : IsIntegral ℤ ((b : ℂ) * c) := Algebra.isIntegral_natDenominator_mul c
   refine IsGFunction.of_house_le
     (fun n ↦ (hc.isIntegral.mul (ha.isAlgebraic n).isIntegral).isAlgebraic)
-    (by rw [show PowerSeries.mk (c • a) = ((Polynomial.C c : ℂ[X]) : ℂ⟦X⟧) * PowerSeries.mk a by
-          ext n; simp]
+    (by rw [PowerSeries.mk_smul, PowerSeries.smul_eq_C_mul, ← Polynomial.coe_C]
         exact (PowerSeries.isDFinite_polynomial (algebraicClosure ℚ ℂ) _).mul ha.isDFinite)
     ⟨max 1 (house c) * C, by positivity, fun n ↦ ?_⟩
     ⟨b * D, by positivity, fun n ↦ b * d n, fun n ↦ ?_⟩
@@ -296,25 +274,23 @@ private theorem house_mul_conv_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ} (hC₁ :
     (hh₂ (n - k)).trans (pow_le_pow_left₀ hC₂.le ((le_max_right C₁ C₂).trans (le_max_right _ _)) _)
   calc house (a k) * house (b (n - k)) ≤ C ^ (k + 1) * C ^ (n - k + 1) :=
         mul_le_mul h1 h2 (house_nonneg _) (by positivity)
-    _ = C ^ (n + 2) := by rw [← pow_add, show (k + 1) + (n - k + 1) = n + 2 by omega]
+    _ = C ^ (n + 2) := by
+        have hexp : (k + 1) + (n - k + 1) = n + 2 := by omega
+        rw [← pow_add, hexp]
 
 /-- **Hurwitz product of E-functions.** If `a` and `b` are E-functions, then `hurwitzMul a b` is an
 E-function (corresponding to the pointwise product `eFun a * eFun b`). -/
 theorem IsEFunction.hurwitzMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) :
     IsEFunction (TauCeti.hurwitzMul a b) := by
-  obtain ⟨C₁, hC₁, hh₁⟩ := ha.exists_house_le
-  obtain ⟨C₂, hC₂, hh₂⟩ := hb.exists_house_le
-  obtain ⟨D₁, hD₁, d₁, hd₁⟩ := ha.den_le
-  obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
+  obtain ⟨C₁, hC₁, hh₁⟩ := ha.exists_house_le; obtain ⟨C₂, hC₂, hh₂⟩ := hb.exists_house_le
+  obtain ⟨D₁, hD₁, d₁, hd₁⟩ := ha.den_le; obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
   set C := max 1 (max C₁ C₂)
   have hterm_alg : ∀ n k, IsAlgebraic ℚ ((n.choose k : ℂ) * a k * b (n - k)) := fun n k ↦
     (((isAlgebraic_natCast _).isIntegral.mul (ha.isAlgebraic k).isIntegral).mul
       (hb.isAlgebraic (n - k)).isIntegral).isAlgebraic
   refine IsEFunction.of_house_le
-    (fun n ↦ by
-      rw [hurwitzMul_apply]
-      exact (Subalgebra.sum_mem (integralClosure ℚ ℂ) fun k _ ↦
-        (hterm_alg n k).isIntegral).isAlgebraic)
+    (fun n ↦ by rw [hurwitzMul_apply]; exact (Subalgebra.sum_mem (integralClosure ℚ ℂ)
+      fun k _ ↦ (hterm_alg n k).isIntegral).isAlgebraic)
     (by rw [ePowerSeries_hurwitzMul]; exact ha.isDFinite.mul hb.isDFinite)
     ⟨2 * C ^ 2, by positivity, fun n ↦ ?_⟩
     ⟨D₁ * D₂, mul_pos hD₁ hD₂, fun n ↦ d₁ n * d₂ n, fun n ↦ ?_⟩
@@ -323,15 +299,12 @@ theorem IsEFunction.hurwitzMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : Is
     calc ∑ k ∈ range (n + 1), house ((n.choose k : ℂ) * a k * b (n - k))
         ≤ ∑ k ∈ range (n + 1), (n.choose k : ℝ) * C ^ (n + 2) := by
           refine sum_le_sum fun k hk ↦ ?_
-          have hkn : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
           rw [mul_assoc]
-          refine (house_mul_le (isAlgebraic_natCast _)
-            (((ha.isAlgebraic k).isIntegral.mul
-              (hb.isAlgebraic (n - k)).isIntegral).isAlgebraic)).trans ?_
-          rw [house_natCast]
-          gcongr
+          refine (house_mul_le (isAlgebraic_natCast _) (((ha.isAlgebraic k).isIntegral.mul
+            (hb.isAlgebraic (n - k)).isIntegral).isAlgebraic)).trans ?_
+          rw [house_natCast]; gcongr
           exact (house_mul_le (ha.isAlgebraic k) (hb.isAlgebraic (n - k))).trans
-            (house_mul_conv_le hC₁ hC₂ hh₁ hh₂ hkn)
+            (house_mul_conv_le hC₁ hC₂ hh₁ hh₂ (Nat.lt_succ_iff.mp (mem_range.mp hk)))
       _ = 2 ^ n * C ^ (n + 2) := by
           rw [← sum_mul, ← Nat.cast_sum, Nat.sum_range_choose, Nat.cast_pow, Nat.cast_ofNat]
       _ ≤ 2 ^ (n + 1) * (C ^ 2) ^ (n + 1) := by
@@ -346,8 +319,7 @@ theorem IsEFunction.hurwitzMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : Is
       refine Subalgebra.sum_mem (integralClosure ℤ ℂ) fun k hk ↦ ?_
       have hkm : k ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hk)
       have hrew : ((d₁ n * d₂ n : ℕ) : ℂ) * ((m.choose k : ℂ) * a k * b (m - k)) =
-          (m.choose k : ℂ) * ((d₁ n : ℂ) * a k) * ((d₂ n : ℂ) * b (m - k)) := by
-        push_cast; ring
+          (m.choose k : ℂ) * ((d₁ n : ℂ) * a k) * ((d₂ n : ℂ) * b (m - k)) := by push_cast; ring
       rw [hrew]
       exact ((isIntegral_natCast (m.choose k)).mul ((hd₁ n).2.2 k (hkm.trans hm))).mul
         ((hd₂ n).2.2 (m - k) ((Nat.sub_le m k).trans hm))
@@ -359,30 +331,20 @@ theorem IsGFunction.hurwitzMul {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : Is
     ((isGFunction_iff_isEFunction.mp ha).hurwitzMul (isGFunction_iff_isEFunction.mp hb))
 
 /-- **Cauchy product of G-functions.** If `a` and `b` are G-functions, then their Cauchy
-convolution `n ↦ ∑ k ∈ range (n + 1), a k * b (n - k)` (the coefficient sequence of
-`PowerSeries.mk a * PowerSeries.mk b`) is a G-function. -/
+convolution `n ↦ ∑ k ∈ range (n + 1), a k * b (n - k)` is a G-function. -/
 theorem IsGFunction.mul {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
     IsGFunction fun n ↦ ∑ k ∈ range (n + 1), a k * b (n - k) := by
-  obtain ⟨C₁, hC₁, hh₁⟩ := ha.exists_house_le
-  obtain ⟨C₂, hC₂, hh₂⟩ := hb.exists_house_le
-  obtain ⟨D₁, hD₁, d₁, hd₁⟩ := ha.den_le
-  obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
+  obtain ⟨C₁, hC₁, hh₁⟩ := ha.exists_house_le; obtain ⟨C₂, hC₂, hh₂⟩ := hb.exists_house_le
+  obtain ⟨D₁, hD₁, d₁, hd₁⟩ := ha.den_le; obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
   set C := max 1 (max C₁ C₂)
   have hterm_alg : ∀ n k, IsAlgebraic ℚ (a k * b (n - k)) := fun n k ↦
     ((ha.isAlgebraic k).isIntegral.mul (hb.isAlgebraic (n - k)).isIntegral).isAlgebraic
   refine IsGFunction.of_house_le
     (fun n ↦ (Subalgebra.sum_mem (integralClosure ℚ ℂ) fun k _ ↦
       (hterm_alg n k).isIntegral).isAlgebraic)
-    (?_)
+    (by rw [← PowerSeries.mk_mul_mk]; exact ha.isDFinite.mul hb.isDFinite)
     ⟨2 * C ^ 2, by positivity, fun n ↦ ?_⟩
     ⟨D₁ * D₂, mul_pos hD₁ hD₂, fun n ↦ d₁ n * d₂ n, fun n ↦ ?_⟩
-  · have hmk : (PowerSeries.mk fun n ↦ ∑ k ∈ range (n + 1), a k * b (n - k)) =
-        PowerSeries.mk a * PowerSeries.mk b := by
-      ext n
-      simp only [coeff_mk, PowerSeries.coeff_mul]
-      exact (Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ a i * b j) n).symm
-    rw [hmk]
-    exact ha.isDFinite.mul hb.isDFinite
   · refine (house_sum_le_sum_house (range (n + 1)) fun k _ ↦ hterm_alg n k).trans ?_
     calc ∑ k ∈ range (n + 1), house (a k * b (n - k))
         ≤ ∑ _ ∈ range (n + 1), C ^ (n + 2) :=
@@ -416,29 +378,24 @@ theorem IsEFunction.cauchyMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsE
 `IsEFunction` (and corresponds to the `k`-th derivative `iteratedDeriv k (eFun a)`). -/
 theorem IsEFunction.shift {a : ℕ → ℂ} (ha : IsEFunction a) (k : ℕ) :
     IsEFunction fun n ↦ a (n + k) := by
-  obtain ⟨C, hC, hh⟩ := ha.exists_house_le
-  obtain ⟨D, hD, d, hd⟩ := ha.den_le
-  refine IsEFunction.of_house_le
-    (fun n ↦ ha.isAlgebraic (n + k))
+  obtain ⟨C, hC, hh⟩ := ha.exists_house_le; obtain ⟨D, hD, d, hd⟩ := ha.den_le
+  refine IsEFunction.of_house_le (fun n ↦ ha.isAlgebraic (n + k))
     (by rw [← iterate_derivative_ePowerSeries]; exact ha.isDFinite.iterate_derivative k)
     ⟨max 1 C ^ (k + 1), by positivity, fun n ↦ ?_⟩
     ⟨max 1 D ^ (k + 1), by positivity, fun n ↦ d (n + k), fun n ↦ ?_⟩
   · calc house (a (n + k)) ≤ C ^ (n + k + 1) := hh (n + k)
       _ ≤ max 1 C ^ (n + k + 1) := pow_le_pow_left₀ hC.le (le_max_right _ _) _
-      _ ≤ max 1 C ^ ((k + 1) * (n + 1)) :=
-          pow_le_pow_right₀ (le_max_left _ _) (by nlinarith)
+      _ ≤ max 1 C ^ ((k + 1) * (n + 1)) := pow_le_pow_right₀ (le_max_left _ _) (by nlinarith)
       _ = (max 1 C ^ (k + 1)) ^ (n + 1) := pow_mul _ _ _
   · refine ⟨(hd (n + k)).1, ?_, fun m hm ↦ (hd (n + k)).2.2 (m + k) (Nat.add_le_add_right hm k)⟩
     calc (d (n + k) : ℝ) ≤ D ^ (n + k + 1) := (hd (n + k)).2.1
       _ ≤ max 1 D ^ (n + k + 1) := pow_le_pow_left₀ hD.le (le_max_right _ _) _
-      _ ≤ max 1 D ^ ((k + 1) * (n + 1)) :=
-          pow_le_pow_right₀ (le_max_left _ _) (by nlinarith)
+      _ ≤ max 1 D ^ ((k + 1) * (n + 1)) := pow_le_pow_right₀ (le_max_left _ _) (by nlinarith)
       _ = (max 1 D ^ (k + 1)) ^ (n + 1) := pow_mul _ _ _
 
 /-- Single-step shift `n ↦ a (n + 1)` of an E-function (corresponding to `deriv (eFun a)`). -/
 theorem IsEFunction.shift_one {a : ℕ → ℂ} (ha : IsEFunction a) :
-    IsEFunction fun n ↦ a (n + 1) :=
-  ha.shift 1
+    IsEFunction fun n ↦ a (n + 1) := ha.shift 1
 
 /-- Shifting `a` by `k` steps preserves `IsGFunction`. -/
 theorem IsGFunction.shift {a : ℕ → ℂ} (ha : IsGFunction a) (k : ℕ) :
@@ -447,12 +404,11 @@ theorem IsGFunction.shift {a : ℕ → ℂ} (ha : IsGFunction a) (k : ℕ) :
 
 /-- Single-step shift `n ↦ a (n + 1)` of a G-function. -/
 theorem IsGFunction.shift_one {a : ℕ → ℂ} (ha : IsGFunction a) :
-    IsGFunction fun n ↦ a (n + 1) :=
-  ha.shift 1
+    IsGFunction fun n ↦ a (n + 1) := ha.shift 1
 
 /-- Prepending an algebraic constant `c` at `n = 0` (`n + 1 ↦ a n`) preserves `IsGFunction`,
 corresponding to `C c + X * PowerSeries.mk a`. -/
-theorem IsGFunction.cons_zero {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsGFunction a) :
+theorem IsGFunction.cons {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsGFunction a) :
     IsGFunction fun n ↦ if n = 0 then c else a (n - 1) := by
   have hdecomp : (fun n ↦ if n = 0 then c else a (n - 1)) =
       Pi.single 0 c +
@@ -461,12 +417,8 @@ theorem IsGFunction.cons_zero {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → �
     · simp
     · simp only [Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte, Nat.add_sub_cancel,
         Pi.add_apply, Pi.single_eq_of_ne (Nat.succ_ne_zero n), zero_add]
-      rw [Finset.sum_eq_single 1]
-      · simp
-      · intro k _ hk1
-        simp [Pi.single_eq_of_ne hk1]
-      · intro hmem
-        exact absurd (mem_range.mpr (by omega)) hmem
+      rw [Finset.sum_eq_single 1 (fun k _ hk1 ↦ by simp [Pi.single_eq_of_ne hk1])
+        (fun hmem ↦ absurd (mem_range.mpr (by omega)) hmem)]; simp
   rw [hdecomp]
   exact (IsGFunction.single 0 hc).add ((IsGFunction.single 1 isAlgebraic_one).mul ha)
 
@@ -475,7 +427,7 @@ preserves `IsEFunction`; its formal series `ePowerSeries` has constant term `c` 
 `ePowerSeries a`. -/
 theorem IsEFunction.integrate {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsEFunction a) :
     IsEFunction fun n ↦ if n = 0 then c else a (n - 1) :=
-  isGFunction_iff_isEFunction.mp ((isGFunction_iff_isEFunction.mpr ha).cons_zero hc)
+  isGFunction_iff_isEFunction.mp ((isGFunction_iff_isEFunction.mpr ha).cons hc)
 
 /-- **Algebraic rescaling of G-functions.** Multiplying `a n` by `c ^ n` for `ℚ`-algebraic `c`
 (substituting `X ↦ c X`) preserves `IsGFunction`. -/
@@ -483,17 +435,14 @@ theorem IsGFunction.rescale {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ}
     IsGFunction fun n ↦ c ^ n * a n := by
   obtain ⟨C, hC, hh⟩ := ha.exists_house_le
   obtain ⟨D, hD, d, hd⟩ := ha.den_le
-  obtain ⟨hb1, hbc⟩ := one_le_and_isIntegral_natDenominator hc
   set b := Algebra.natDenominator c
+  have hb1 : 1 ≤ b := Algebra.natDenominator_pos_of_isAlgebraic_rat hc
+  have hbc : IsIntegral ℤ ((b : ℂ) * c) := Algebra.isIntegral_natDenominator_mul c
   refine IsGFunction.of_house_le
     (fun n ↦ ((hc.isIntegral.pow n).mul (ha.isAlgebraic n).isIntegral).isAlgebraic)
     (by
       let c₀ : algebraicClosure ℚ ℂ := ⟨c, mem_algebraicClosure_iff.mpr hc⟩
-      have hmk : (PowerSeries.mk fun n ↦ c ^ n * a n) =
-          PowerSeries.rescale (algebraMap (algebraicClosure ℚ ℂ) ℂ c₀) (PowerSeries.mk a) := by
-        ext n
-        simp [coeff_rescale, c₀]
-      rw [hmk]
+      rw [← PowerSeries.rescale_mk a c]
       exact ha.isDFinite.rescale c₀)
     ⟨max 1 (house c) * C, by positivity, fun n ↦ ?_⟩
     ⟨b * D, by positivity, fun n ↦ b ^ n * d n, fun n ↦ ?_⟩
@@ -549,10 +498,7 @@ theorem IsGFunction.comp_ringHom (σ : ℂ →+* ℂ) {a : ℕ → ℂ} (ha : Is
     (?_)
     ⟨C, hC, fun n ↦ by simpa only [Function.comp_apply, house_map] using hh n⟩
     ⟨D, hD, d, fun n ↦ ⟨(hd n).1, (hd n).2.1, fun m hm ↦ ?_⟩⟩
-  · have hmk : PowerSeries.mk (σ ∘ a) = PowerSeries.map σ (PowerSeries.mk a) := by
-      ext n
-      simp
-    rw [hmk]
+  · rw [← PowerSeries.map_mk]
     exact ha.isDFinite.map σ₀ σ fun _ ↦ rfl
   · have hmap : (d n : ℂ) * σ (a m) = σ ((d n : ℂ) * a m) := by simp
     rw [Function.comp_apply, hmap]
@@ -586,11 +532,8 @@ theorem IsGFunction.galoisConj (τ : Gal(algebraicClosure ℚ ℂ/ℚ)) {a : ℕ
     (?_)
     ⟨C, hC, fun n ↦ ?_⟩
     ⟨D, hD, d, fun n ↦ ⟨(hd n).1, (hd n).2.1, fun m hm ↦ ?_⟩⟩
-  · have hmk : (PowerSeries.mk fun n ↦ (τ (a₀ n) : ℂ)) =
-        PowerSeries.map (ι.comp τ.toRingHom) (PowerSeries.mk a₀) := by
-      ext n
-      simp [ι]
-    rw [hmk]
+  · have hcomp : (fun n ↦ (τ (a₀ n) : ℂ)) = (ι.comp τ.toRingHom) ∘ a₀ := funext fun _ ↦ rfl
+    rw [hcomp, ← PowerSeries.map_mk]
     exact hdf₀.map τ.toRingHom (ι.comp τ.toRingHom) fun _ ↦ rfl
   · have hhouse : house (τ (a₀ n) : ℂ) = house (a n) := by
       calc house (ι (τ (a₀ n))) = house (τ.toRingHom (a₀ n)) := house_map ι _
@@ -621,30 +564,18 @@ end Closure
 
 section PositiveExamples
 
-/-- The sequence `n ↦ (n : ℂ)` is the Hurwitz product of `Pi.single 1 1` and `fun _ ↦ 1`. -/
-private theorem hurwitzMul_single_one_const_one :
-    TauCeti.hurwitzMul (Pi.single 1 (1 : ℂ)) (fun _ ↦ 1) = fun (n : ℕ) ↦ (n : ℂ) := by
-  ext (_ | n)
-  · simp
-  · rw [hurwitzMul_apply, Finset.sum_eq_single 1]
-    · simp
-    · intro k _ hk1
-      simp [Pi.single_eq_of_ne hk1]
-    · intro hmem
-      exact absurd (mem_range.mpr (by omega)) hmem
-
 /-- The sequence `n ↦ (n : ℂ)` defines an E-function. -/
 theorem isEFunction_natCast : IsEFunction fun (n : ℕ) ↦ (n : ℂ) := by
-  rw [← hurwitzMul_single_one_const_one]
-  exact (IsEFunction.single 1 isAlgebraic_one).hurwitzMul .one
+  have h : TauCeti.hurwitzMul (Pi.single 1 (1 : ℂ)) (fun _ ↦ 1) = fun n : ℕ ↦ (n : ℂ) := by
+    ext n; simp
+  rw [← h]; exact (IsEFunction.single 1 isAlgebraic_one).hurwitzMul .one
 
 /-- Analytic evaluation of the E-function `n ↦ (n : ℂ)` gives `z ↦ z * Complex.exp z`. -/
-@[simp]
-theorem eFun_natCast (z : ℂ) : eFun (fun (n : ℕ) ↦ (n : ℂ)) z = z * Complex.exp z := by
-  rw [← hurwitzMul_single_one_const_one,
-    eFun_hurwitzMul (IsEFunction.single 1 isAlgebraic_one).isEntire_ePowerSeries
-      IsEFunction.one.isEntire_ePowerSeries]
-  simp
+@[simp] theorem eFun_natCast (z : ℂ) : eFun (fun (n : ℕ) ↦ (n : ℂ)) z = z * Complex.exp z := by
+  have h : TauCeti.hurwitzMul (Pi.single 1 (1 : ℂ)) (fun _ ↦ 1) = fun n : ℕ ↦ (n : ℂ) := by
+    ext n; simp
+  rw [← h, eFun_hurwitzMul (IsEFunction.single 1 isAlgebraic_one).isEntire_ePowerSeries
+    IsEFunction.one.isEntire_ePowerSeries]; simp
 
 /-- The sequence `n ↦ (n : ℂ) - 1` defines an E-function. -/
 theorem isEFunction_natCast_sub_one : IsEFunction fun (n : ℕ) ↦ (n : ℂ) - 1 :=
@@ -653,24 +584,16 @@ theorem isEFunction_natCast_sub_one : IsEFunction fun (n : ℕ) ↦ (n : ℂ) - 
 /-- Analytic evaluation of `n ↦ (n : ℂ) - 1` gives `(z - 1) * Complex.exp z`. -/
 theorem eFun_natCast_sub_one (z : ℂ) :
     eFun (fun (n : ℕ) ↦ (n : ℂ) - 1) z = (z - 1) * Complex.exp z := by
-  have hsub : (fun (n : ℕ) ↦ (n : ℂ) - 1) = (fun (n : ℕ) ↦ (n : ℂ)) + -(fun _ ↦ (1 : ℂ)) := by
-    ext n; simp [sub_eq_add_neg]
-  have hneg : eFun (-(fun _ : ℕ ↦ (1 : ℂ))) z = -Complex.exp z := by
-    have h0 := eFun_add IsEFunction.one.isEntire_ePowerSeries
-      IsEFunction.one.neg.isEntire_ePowerSeries z
-    rw [add_neg_cancel, eFun_zero, eFun_one_complex] at h0
-    exact eq_neg_of_add_eq_zero_right h0.symm
-  rw [hsub, eFun_add isEFunction_natCast.isEntire_ePowerSeries
-    IsEFunction.one.neg.isEntire_ePowerSeries, eFun_natCast, hneg]
-  ring
+  have hsub : (fun (n : ℕ) ↦ (n : ℂ) - 1) = (fun (n : ℕ) ↦ (n : ℂ)) - (fun _ ↦ (1 : ℂ)) := rfl
+  rw [hsub, eFun_sub isEFunction_natCast.isEntire_ePowerSeries
+    IsEFunction.one.isEntire_ePowerSeries, eFun_natCast, eFun_one_complex, sub_mul, one_mul]
 
 /-- **The logarithmic series `-log(1 - z) = ∑_{n ≥ 1} zⁿ / n` is a G-function.** Here
 `(0 : ℂ)⁻¹ = 0` gives the vanishing constant term, and the common denominators `Nat.lcmUpto n` are
 bounded geometrically by `exp(log 4 + 4) ^ (n + 1)` via Chebyshev's `ψ`-estimate. -/
 theorem isGFunction_inv_natCast : IsGFunction fun (n : ℕ) ↦ (n : ℂ)⁻¹ := by
   refine IsGFunction.of_house_le
-    (fun n ↦ by simpa using isAlgebraic_ratCast ℚ (n : ℚ)⁻¹)
-    (?_)
+    (fun n ↦ by simpa using isAlgebraic_ratCast ℚ (n : ℚ)⁻¹) (?_)
     ⟨1, zero_lt_one, fun n ↦ ?_⟩
     ⟨Real.exp (Real.log 4 + 4), Real.exp_pos _, Nat.lcmUpto, fun n ↦ ?_⟩
   · -- P-recurrence `0 * aₙ + (n + 1) aₙ₊₁ - (n + 2) aₙ₊₂ = 0` for all `n ≥ 0`.
@@ -697,19 +620,16 @@ theorem isGFunction_inv_natCast : IsGFunction fun (n : ℕ) ↦ (n : ℂ)⁻¹ :
     · have hpos : (0 : ℝ) < Nat.lcmUpto n :=
         Nat.cast_pos.mpr (Nat.pos_of_ne_zero (Nat.lcmUpto_ne_zero n))
       rw [← Real.exp_log hpos, ← Chebyshev.psi_eq_log_lcmUpto, ← Real.exp_nat_mul]
-      refine Real.exp_le_exp.mpr
-        ((Chebyshev.psi_le_const_mul_self (Nat.cast_nonneg n)).trans ?_)
+      refine Real.exp_le_exp.mpr ((Chebyshev.psi_le_const_mul_self (Nat.cast_nonneg n)).trans ?_)
       have h4 : 0 ≤ Real.log 4 + 4 := by positivity
-      push_cast
-      nlinarith
+      push_cast; nlinarith
     · rcases eq_or_ne m 0 with rfl | hm0
       · simp [isIntegral_zero]
       · obtain ⟨k, hk⟩ := Nat.dvd_lcmUpto (Nat.pos_of_ne_zero hm0) hm
         have hm_ne : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hm0
         have heq : (Nat.lcmUpto n : ℂ) * (m : ℂ)⁻¹ = (k : ℂ) := by
           rw [hk, Nat.cast_mul, mul_right_comm, mul_inv_cancel₀ hm_ne, one_mul]
-        rw [heq]
-        exact isIntegral_natCast k
+        rw [heq]; exact isIntegral_natCast k
 
 end PositiveExamples
 
@@ -717,45 +637,13 @@ end PositiveExamples
 
 section Counterexamples
 
-/-- No positive constant `C` bounds `(2k)! / k! = (k + 1).ascFactorial k` geometrically as
-`C ^ (2k + 1)` for every `k`. -/
-private theorem not_forall_ascFactorial_le_pow {C : ℝ} :
-    ¬∀ k : ℕ, ((k + 1).ascFactorial k : ℝ) ≤ C ^ (2 * k + 1) := by
-  intro h
-  set M : ℝ := max 1 C
-  have hM1 : 1 ≤ M := le_max_left _ _
-  have hCM : C ≤ M := le_max_right _ _
-  set k : ℕ := ⌊M ^ 3⌋₊ + 1
-  have hk_pos : 0 < k := Nat.succ_pos _
-  have hMk : M ^ 3 < (k : ℝ) := by simpa [k] using Nat.lt_floor_add_one (M ^ 3)
-  have hpow_lt : C ^ (2 * k + 1) < (k : ℝ) ^ k :=
-    calc C ^ (2 * k + 1) ≤ M ^ (2 * k + 1) := (odd_two_mul_add_one k).pow_le_pow.mpr hCM
-      _ ≤ M ^ (3 * k) := pow_le_pow_right₀ hM1 (by omega)
-      _ = (M ^ 3) ^ k := pow_mul M 3 k
-      _ < (k : ℝ) ^ k := pow_lt_pow_left₀ hMk (by positivity) hk_pos.ne'
-  have hk_le_asc : k ^ k ≤ (k + 1).ascFactorial k :=
-    (Nat.pow_le_pow_left (Nat.le_succ k) k).trans (Nat.pow_succ_le_ascFactorial (k + 1) k)
-  have hk_le_real : (k : ℝ) ^ k ≤ ((k + 1).ascFactorial k : ℝ) := by exact_mod_cast hk_le_asc
-  exact (hpow_lt.trans_le hk_le_real).not_ge (h k)
-
-/-- No real `C` satisfies `∀ n, (n.factorial : ℝ) ≤ C ^ (n + 1)`. -/
-private theorem not_forall_factorial_le_pow {C : ℝ} :
-    ¬∀ n : ℕ, (n.factorial : ℝ) ≤ C ^ (n + 1) := by
-  intro h
-  refine not_forall_ascFactorial_le_pow (C := C) fun k ↦ ?_
-  have hle : (k + 1).ascFactorial k ≤ (2 * k).factorial := by
-    rw [two_mul, ← Nat.factorial_mul_ascFactorial]
-    exact Nat.le_mul_of_pos_left _ (Nat.factorial_pos k)
-  exact (Nat.cast_le.mpr hle).trans (h (2 * k))
-
 /-- For `aₙ = n!`, `ePowerSeries a = ∑ Xⁿ` is not entire. -/
 theorem not_isEntire_ePowerSeries_factorial :
     ¬(ePowerSeries fun n ↦ (n.factorial : ℂ)).IsEntire := by
   intro hent
   have hsum := summable_eFun hent 1
   have hconst : (fun n : ℕ ↦ (n.factorial : ℂ) * (1 : ℂ) ^ n / n.factorial) = fun _ ↦ (1 : ℂ) := by
-    ext n
-    have hne : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
+    ext n; have hne : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
     simp [div_self hne]
   rw [hconst] at hsum
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds hsum.tendsto_atTop_zero)
@@ -764,59 +652,55 @@ theorem not_isEntire_ePowerSeries_factorial :
 theorem not_isEFunction_factorial : ¬IsEFunction fun n ↦ (n.factorial : ℂ) :=
   fun ha ↦ not_isEntire_ePowerSeries_factorial ha.isEntire_ePowerSeries
 
-/-- The exponential Taylor coefficient sequence of `e^(z²) = ∑_{k ≥ 0} ((2k)! / k!) z^{2k} / (2k)!`:
-`expSqCoeff (2k) = (2k)! / k!` and `expSqCoeff (2k + 1) = 0`. -/
+/-- The exponential Taylor coefficient sequence of `e^(z²)`: `expSqCoeff (2k) = (2k)! / k!` and
+`expSqCoeff (2k + 1) = 0`. -/
 def expSqCoeff (n : ℕ) : ℂ :=
   if Even n then (((n.factorial / (n / 2).factorial : ℕ)) : ℂ) else 0
 
 /-- At `2k`, `expSqCoeff (2k) = (k + 1).ascFactorial k = (2k)! / k!`. -/
-@[simp]
-theorem expSqCoeff_two_mul (k : ℕ) :
+@[simp] theorem expSqCoeff_two_mul (k : ℕ) :
     expSqCoeff (2 * k) = ((k + 1).ascFactorial k : ℂ) := by
-  have heven : Even (2 * k) := even_two_mul k
   have hdiv : (2 * k).factorial / k.factorial = (k + 1).ascFactorial k := by
     rw [two_mul, ← Nat.factorial_mul_ascFactorial, Nat.mul_div_right _ (Nat.factorial_pos k)]
-  simp [expSqCoeff, heven, hdiv]
+  simp [expSqCoeff, even_two_mul k, hdiv]
 
 /-- At odd indices `2k + 1`, `expSqCoeff (2k + 1) = 0`. -/
-@[simp]
-theorem expSqCoeff_two_mul_add_one (k : ℕ) : expSqCoeff (2 * k + 1) = 0 := by
+@[simp] theorem expSqCoeff_two_mul_add_one (k : ℕ) : expSqCoeff (2 * k + 1) = 0 := by
   simp [expSqCoeff]
 
 /-- `eFun expSqCoeff z = Complex.exp (z ^ 2)` for every `z : ℂ`. -/
 theorem eFun_exp_sq (z : ℂ) : eFun expSqCoeff z = Complex.exp (z ^ 2) := by
   have hterm_even : ∀ k : ℕ,
       expSqCoeff (2 * k) * z ^ (2 * k) / (2 * k).factorial = (z ^ 2) ^ k / k.factorial := by
-    intro k
-    rw [expSqCoeff_two_mul, pow_mul]
-    have hfact : ((2 * k).factorial : ℂ) =
-        (k.factorial : ℂ) * ((k + 1).ascFactorial k : ℂ) := by
+    intro k; rw [expSqCoeff_two_mul, pow_mul]
+    have hfact : ((2 * k).factorial : ℂ) = (k.factorial : ℂ) * ((k + 1).ascFactorial k : ℂ) := by
       exact_mod_cast (two_mul k ▸ (Nat.factorial_mul_ascFactorial k k).symm)
     have hasc_ne : (((k + 1).ascFactorial k : ℕ) : ℂ) ≠ 0 :=
       Nat.cast_ne_zero.mpr (Nat.ascFactorial_pos k k).ne'
     have hk_ne : (k.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
-    rw [hfact]
-    field_simp
+    rw [hfact]; field_simp
   have hsum_sq : HasSum (fun k : ℕ ↦ (z ^ 2) ^ k / k.factorial) (Complex.exp (z ^ 2)) := by
     simpa only [one_mul, eFun_one_complex] using IsEFunction.one.hasSum_eFun (z ^ 2)
   have heven : Summable fun k : ℕ ↦ expSqCoeff (2 * k) * z ^ (2 * k) / (2 * k).factorial := by
     simpa only [hterm_even] using hsum_sq.summable
   have hodd : Summable fun k : ℕ ↦
-      expSqCoeff (2 * k + 1) * z ^ (2 * k + 1) / (2 * k + 1).factorial := by
-    simp
+      expSqCoeff (2 * k + 1) * z ^ (2 * k + 1) / (2 * k + 1).factorial := by simp
   rw [eFun_def, ← tsum_even_add_odd heven hodd]
   simp only [hterm_even, expSqCoeff_two_mul_add_one, zero_mul, zero_div, tsum_zero, add_zero,
     hsum_sq.tsum_eq]
 
 /-- **`e^(z²)` is not an E-function.** Although `eFun expSqCoeff = fun z ↦ exp (z²)` is entire and
-satisfies the linear differential equation `f' - 2 z f = 0` with rational integer coefficients
-`expSqCoeff n`, its even coefficients `(2k)! / k! = (k + 1).ascFactorial k ≥ k ^ k` violate the
-geometric conjugate bound. -/
+satisfies `f' - 2 z f = 0` with integer coefficients, its even coefficients
+`(2k)! / k! = (k + 1).ascFactorial k ≥ k!` violate the geometric conjugate bound. -/
 theorem not_isEFunction_exp_sq : ¬IsEFunction expSqCoeff := by
   intro ha
   obtain ⟨C, _, hnorm⟩ := ha.exists_norm_le
-  refine not_forall_ascFactorial_le_pow (C := C) fun k ↦ ?_
-  simpa only [expSqCoeff_two_mul, Complex.norm_natCast] using hnorm (2 * k)
+  obtain ⟨k, hk⟩ := (FloorSemiring.eventually_mul_pow_lt_factorial_sub C (C ^ 2) 0).exists
+  have hbound : ((k + 1).ascFactorial k : ℝ) ≤ C ^ (2 * k + 1) := by
+    simpa only [expSqCoeff_two_mul, Complex.norm_natCast] using hnorm (2 * k)
+  have hfact : k.factorial ≤ (k + 1).ascFactorial k := by
+    rw [← Nat.one_ascFactorial]; exact Nat.ascFactorial_le k (Nat.succ_pos k)
+  exact hk.not_ge ((Nat.cast_le.mpr hfact).trans (hbound.trans_eq (by rw [pow_succ', pow_mul])))
 
 /-- **`∑ zⁿ / n! = e^z` is not a G-function.** Although `aₙ = (n!)⁻¹` is rational, bounded by `1`,
 and D-finite, any common denominator `dₙ` clearing `aₙ` into an algebraic integer must be divisible
@@ -824,10 +708,9 @@ by `n!`, violating the geometric denominator bound. -/
 theorem not_isGFunction_inv_factorial : ¬IsGFunction fun n ↦ (n.factorial : ℂ)⁻¹ := by
   intro ha
   obtain ⟨D, _, d, hd⟩ := ha.den_le
-  refine not_forall_factorial_le_pow (C := D) fun n ↦ ?_
+  obtain ⟨n, hn⟩ := (FloorSemiring.eventually_mul_pow_lt_factorial_sub D D 0).exists
   have hfact_pos : 0 < n.factorial := Nat.factorial_pos n
-  have hz_ne : ((n.factorial : ℂ)⁻¹) ≠ 0 :=
-    inv_ne_zero (Nat.cast_ne_zero.mpr hfact_pos.ne')
+  have hz_ne : ((n.factorial : ℂ)⁻¹) ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.mpr hfact_pos.ne')
   have hq : ((n.factorial : ℂ)⁻¹) = algebraMap ℚ ℂ ((n.factorial : ℚ)⁻¹) := by simp
   have hdeg : (minpoly ℚ ((n.factorial : ℂ)⁻¹)).natDegree = 1 := by
     rw [hq, minpoly.eq_X_sub_C, Polynomial.natDegree_X_sub_C]
@@ -837,11 +720,11 @@ theorem not_isGFunction_inv_factorial : ¬IsGFunction fun n ↦ (n.factorial : �
     have hmul := mul_le_mul_of_nonneg_right hevertse (Nat.cast_nonneg n.factorial)
     rwa [one_mul, inv_mul_cancel_right₀ (Nat.cast_ne_zero.mpr hfact_pos.ne')] at hmul
   have hdvd : Algebra.natDenominator ((n.factorial : ℂ)⁻¹) ∣ d n := by
-    rw [Algebra.natDenominator_dvd_iff, nsmul_eq_mul]
-    exact (hd n).2.2 n le_rfl
-  have hden_le_d : Algebra.natDenominator ((n.factorial : ℂ)⁻¹) ≤ d n :=
-    Nat.le_of_dvd (hd n).1 hdvd
-  exact (hfact_le_den.trans (Nat.cast_le.mpr hden_le_d)).trans (hd n).2.1
+    rw [Algebra.natDenominator_dvd_iff, nsmul_eq_mul]; exact (hd n).2.2 n le_rfl
+  have hbound : (n.factorial : ℝ) ≤ D * D ^ n := by
+    rw [← pow_succ']
+    exact (hfact_le_den.trans (Nat.cast_le.mpr (Nat.le_of_dvd (hd n).1 hdvd))).trans (hd n).2.1
+  exact hn.not_ge hbound
 
 end Counterexamples
 
