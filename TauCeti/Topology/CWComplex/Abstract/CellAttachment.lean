@@ -17,8 +17,9 @@ pushout universal property, and an `AttachCells` witness.
 
 The inclusion of the old space is a closed embedding, and the attachment is Hausdorff when the
 old space is.  Each attaching map becomes null-homotopic after inclusion, since it extends over
-its characteristic disk.  These facts are the point-set input for killing chosen homotopy
-classes by cell attachment.
+its characteristic disk, and conversely a map out of the old space extends over the attached cells
+exactly when it makes every attaching map null-homotopic.  These facts are the point-set input for
+killing chosen homotopy classes by cell attachment.
 
 ## Main definitions
 
@@ -27,6 +28,11 @@ classes by cell attachment.
 * `TauCeti.cellAttachmentCell`: the characteristic map of an attached cell.
 * `TauCeti.cellAttachmentAttachCells`: the categorical cell-attachment witness.
 * `TauCeti.cellAttachmentLift`: the map induced by compatible maps from the old space and disks.
+
+## Main results
+
+* `TauCeti.exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic`: a map extends over the attached
+  cells exactly when it makes every attaching map null-homotopic.
 
 ## References
 
@@ -149,5 +155,20 @@ theorem cellAttachment_attachingMap_nullhomotopic
   rw [← TopCat.hom_comp]
   exact (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).2
     ⟨_, (cellAttachment_boundary φ i).symm⟩
+
+/-- **A map extends over attached cells exactly when it kills their attaching maps.** A map
+`f : X ⟶ Y` extends over the space obtained by attaching cells along the maps `φ i` if and only if
+every attaching map `φ i` followed by `f` is null-homotopic. -/
+theorem exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic
+    (φ : ι → (TopCat.diskBoundary n ⟶ X)) (f : X ⟶ Y) :
+    (∃ F : cellAttachment φ ⟶ Y, cellAttachmentIncl φ ≫ F = f) ↔
+      ∀ i, (φ i ≫ f).hom.Nullhomotopic := by
+  constructor
+  · rintro ⟨F, rfl⟩ i
+    simpa using (cellAttachment_attachingMap_nullhomotopic φ i).comp_right F.hom
+  · intro h
+    choose F hF using fun i ↦
+      (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1 (h i)
+    exact ⟨cellAttachmentLift φ f F fun i ↦ (hF i).symm, cellAttachmentIncl_lift ..⟩
 
 end TauCeti
