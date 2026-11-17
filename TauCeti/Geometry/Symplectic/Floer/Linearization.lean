@@ -19,7 +19,9 @@ independent parameter variations of `K` and `J`. Domain dependence of the coeffi
 allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of endomorphism fields
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
-`floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
+`floerLinearization` is the map-direction operator with coefficients fixed. For a constant almost
+complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
+(`floerLinearization_const_eq`). Conjugated by an
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
 and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
 (`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
@@ -120,6 +122,18 @@ theorem floerLinearization_def (ω : SymplecticForm V)
         J z (u z) (fderiv ℝ ξ z stdComplexLineImag -
           fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) (ξ z)) :=
   (rfl)
+
+/-- **The linearized Floer operator for a constant structure and `K = H dt`.** For a constant
+almost complex structure `J` and an autonomous Hamiltonian `H`, the linearized Floer operator
+along `u` is `D ξ = ∂s ξ + J (∂t ξ - dX_H(u) ξ)`. -/
+theorem floerLinearization_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u ξ z =
+      fderiv ℝ ξ z (1, 0) +
+        J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+  simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
+    stdComplexLineImag_eq]
 
 /-- The linearization is additive on directions differentiable at the domain point. -/
 @[simp]
