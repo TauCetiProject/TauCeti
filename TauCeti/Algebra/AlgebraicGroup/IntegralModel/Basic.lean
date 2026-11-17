@@ -60,42 +60,49 @@ namespace TauCeti.IntegralModel
 
 universe u
 
-variable (O K : Type u) [CommRing O] [CommRing K] [Algebra O K]
+section IntegralPoints
+
+variable (O K A : Type*) [CommSemiring O] [CommSemiring K] [Algebra O K] [Semiring A]
+  [_root_.HopfAlgebra O A]
 
 /-- The integral points of a Hopf `O`-algebra `A`, as a subgroup of the points
 `Hom_K(K ⊗[O] A, K)` of its generic fiber: the image of `Hom_O(A, O)` under base change of points
 along `O → K` (`AlgHom.pointsBaseChange`). -/
-noncomputable def integralPoints (A : FiniteTypeCommHopfAlgCat.{u, u} O) :
-    Subgroup (WithConv (K ⊗[O] A →ₐ[K] K)) :=
+noncomputable def integralPoints : Subgroup (WithConv (K ⊗[O] A →ₐ[K] K)) :=
   (AlgHom.pointsBaseChange (k := O) (A := A) K).range
 
 /-- Unfolding lemma for `IntegralModel.integralPoints`. -/
-theorem integralPoints_def (A : FiniteTypeCommHopfAlgCat.{u, u} O) :
+theorem integralPoints_def :
     integralPoints O K A = (AlgHom.pointsBaseChange (k := O) (A := A) K).range :=
   (rfl)
 
-variable {O K}
+variable {O K A}
+
+/-- Integral points are contravariant in the Hopf algebra: a Hopf map `φ : A → A'` sends the
+integral points of `A'` to integral points of `A` by precomposition with its scalar extension. -/
+theorem integralPoints_le_comap {A' : Type*} [Semiring A'] [_root_.HopfAlgebra O A']
+    (φ : A →ₐc[O] A') :
+    integralPoints O K A' ≤ (integralPoints O K A).comap
+      (BialgHom.mapDomain (A := K)
+        (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)) := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨BialgHom.mapDomain φ x, (BialgHom.mapDomain_pointsBaseChange K φ x).symm⟩
+
+end IntegralPoints
 
 /-- When `O → K` is injective, a point of the generic fiber is integral exactly when its values on
 `1 ⊗ a` lie in the image of `O` for every `a ∈ A`. -/
-theorem mem_integralPoints_iff [FaithfulSMul O K] (A : FiniteTypeCommHopfAlgCat.{u, u} O)
+theorem mem_integralPoints_iff {O K : Type*} [CommRing O] [CommRing K] [Algebra O K]
+    [FaithfulSMul O K] (A : Type*) [Semiring A] [_root_.HopfAlgebra O A]
     (g : WithConv (K ⊗[O] A →ₐ[K] K)) :
     g ∈ integralPoints O K A ↔ ∀ a : A, g (1 ⊗ₜ[O] a) ∈ (algebraMap O K).range := by
-  rw [integralPoints, AlgHom.pointsBaseChange_def, MonoidHom.range_comp, Subgroup.mem_map_equiv,
+  rw [integralPoints_def, AlgHom.pointsBaseChange_def, MonoidHom.range_comp, Subgroup.mem_map_equiv,
     MonoidHom.mem_range, ← MonoidHom.mem_mrange,
     AlgHom.mem_mrange_mapValue_iff (FaithfulSMul.algebraMap_injective O K)]
   simp only [AlgHom.baseChangePointsMulEquiv_symm_apply, AlgHom.mem_range, RingHom.mem_range,
     Algebra.ofId_apply]
 
-/-- Integral points are contravariant in the Hopf algebra: a Hopf map `φ : A ⟶ A'` sends the
-integral points of `A'` to integral points of `A` by precomposition with its scalar extension. -/
-theorem integralPoints_le_comap {A A' : FiniteTypeCommHopfAlgCat.{u, u} O} (φ : A ⟶ A') :
-    integralPoints O K A' ≤ (integralPoints O K A).comap
-      (BialgHom.mapDomain (A := K) (FiniteTypeCommHopfAlgCat.toBialgHom
-        (FiniteTypeCommHopfAlgCat.baseChangeMap (K := K) φ))) := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom φ) x,
-    (BialgHom.mapDomain_pointsBaseChange K _ x).symm⟩
+variable {O K : Type u} [CommRing O] [CommRing K] [Algebra O K]
 
 /-- A smooth affine `O`-model of the affine `K`-group with coordinate Hopf algebra `H`: a smooth
 commutative Hopf `O`-algebra of finite type with a Hopf isomorphism from its generic fiber to
@@ -140,7 +147,9 @@ theorem mem_integralPoints_iff_mapDomain (g : WithConv (H →ₐ[K] K)) :
     ((finiteTypeCommHopfAlgProperty K).ι.mapIso 𝒢.genericFiberIso))
   have he : e.symm.toMonoidHom =
       BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv) :=
-    MonoidHom.ext (BialgEquiv.mapDomainMulEquiv_symm_apply _)
+    MonoidHom.ext fun g ↦ by
+      rw [MulEquiv.coe_toMonoidHom, BialgEquiv.mapDomainMulEquiv_symm_apply,
+        CommHopfAlgCat.coe_ofIso_symm, CategoryTheory.Functor.mapIso_inv, ObjectProperty.ι_map]
   rw [integralPoints_def, ← he, Subgroup.mem_map_equiv, MulEquiv.symm_symm,
     BialgEquiv.mapDomainMulEquiv_apply, CommHopfAlgCat.coe_ofIso,
     CategoryTheory.Functor.mapIso_hom, ObjectProperty.ι_map]
@@ -219,22 +228,23 @@ theorem integralPoints_le (f : Hom 𝒢 𝒢') :
     𝒢'.integralPoints ≤ 𝒢.integralPoints := by
   intro g hg
   rw [mem_integralPoints_iff_mapDomain] at hg ⊢
-  have := integralPoints_le_comap (K := K) f.hom hg
-  rwa [Subgroup.mem_comap, ← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
+  have := integralPoints_le_comap (K := K) (FiniteTypeCommHopfAlgCat.toBialgHom f.hom) hg
+  rwa [← FiniteTypeCommHopfAlgCat.toBialgHom_baseChangeMap, Subgroup.mem_comap,
+    ← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
     ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, f.comm] at this
 
 end Hom
+
+/-- The special fiber `κ ⊗[O] O[𝒢]` of a smooth model over a local ring `O` with residue
+field `κ`. -/
+noncomputable abbrev specialFiber [IsLocalRing O] :
+    FiniteTypeCommHopfAlgCat.{u, u} (IsLocalRing.ResidueField O) :=
+  FiniteTypeCommHopfAlgCat.baseChange (K := IsLocalRing.ResidueField O) 𝒢.coord
 
 section Fibers
 
 variable {K : Type u} [Field K] [Algebra O K] [IsLocalRing O]
   {H : FiniteTypeCommHopfAlgCat.{u, u} K} (𝒢 : SmoothModel O K H)
-
-/-- The special fiber `κ ⊗[O] O[𝒢]` of a smooth model over a local ring `O` with residue
-field `κ`. -/
-noncomputable abbrev specialFiber :
-    FiniteTypeCommHopfAlgCat.{u, u} (IsLocalRing.ResidueField O) :=
-  FiniteTypeCommHopfAlgCat.baseChange (K := IsLocalRing.ResidueField O) 𝒢.coord
 
 /-- A smooth model has connected fibers when both its generic fiber `G` and its special fiber are
 geometrically connected. -/

@@ -37,8 +37,9 @@ by pre-composition.
   a represented group-object map.
 * `CommHopfAlgCat.Hom.grpObjMap_injective`: represented group-object maps determine their coordinate
   Hopf-algebra morphisms.
-* `CommHopfAlgCat.coe_ofIso`: the bialgebra equivalence of an isomorphism has the forward
-  morphism as its underlying bialgebra morphism.
+* `CommHopfAlgCat.coe_ofIso`, `CommHopfAlgCat.coe_ofIso_symm`: the bialgebra equivalence of an
+  isomorphism has the forward morphism as its underlying bialgebra morphism, and the inverse
+  morphism as that of its inverse.
 
 ## See also
 
@@ -124,6 +125,12 @@ forward morphism of the isomorphism as its underlying bialgebra morphism. -/
 theorem coe_ofIso {H K : _root_.CommHopfAlgCat.{u} R} (e : H ≅ K) :
     ((_root_.CommHopfAlgCat.ofIso e : H ≃ₐc[R] K) : H →ₐc[R] K) = e.hom.hom :=
   (rfl)
+
+/-- The inverse of the bialgebra equivalence underlying an isomorphism of commutative Hopf algebras
+has the inverse morphism of the isomorphism as its underlying bialgebra morphism. -/
+theorem coe_ofIso_symm {H K : _root_.CommHopfAlgCat.{u} R} (e : H ≅ K) :
+    (((_root_.CommHopfAlgCat.ofIso e).symm : K ≃ₐc[R] H) : K →ₐc[R] H) = e.inv.hom :=
+  BialgHom.ext (_root_.CommHopfAlgCat.ofIso_symm_apply e)
 
 /-- A morphism represented by a commutative Hopf-algebra morphism preserves the group-object
 multiplication. -/
