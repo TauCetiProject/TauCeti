@@ -186,6 +186,12 @@ theorem chern_ofSingularHomology (A) :
     PeriodGroup.chern _ _ (ofSingularHomology ω c h A) = c A := by
   simp [ofSingularHomology]
 
+/-- The class of the Hurewicz class of a sphere is the class of the sphere. -/
+@[simp]
+theorem ofSingularHomology_hurewiczIntHom (x : X) (a : Additive (HomotopyGroup (Fin 2) X x)) :
+    ofSingularHomology ω c h (hurewiczIntHom X x 1 a) = ofHomotopyGroup ω c x a :=
+  PeriodGroup.ext (by simp) (by simp)
+
 /-- Every class of the period group is the class of a class of `H₂(X; ℤ)`. -/
 theorem ofSingularHomology_surjective : Function.Surjective (ofSingularHomology ω c h) := by
   intro γ
@@ -209,6 +215,21 @@ theorem mk_eq_zsmul_ofHomotopyGroup {s : sphericalClasses X 1} {k : ℤ}
     (hs : k • hurewiczIntHom X x 1 a = s) :
     (s : SphericalPeriodGroup ω c) = k • ofHomotopyGroup ω c x a :=
   PeriodGroup.ext (by simp [← hs]) (by simp [← hs])
+
+/-- The class of a sphere is nonzero when one of its periods is. -/
+theorem ofHomotopyGroup_ne_zero
+    (hσ : PeriodGroup.area _ _ (ofHomotopyGroup ω c x a) ≠ 0 ∨
+      PeriodGroup.chern _ _ (ofHomotopyGroup ω c x a) ≠ 0) :
+    ofHomotopyGroup ω c x a ≠ 0 :=
+  fun h0 => by simp [h0] at hσ
+
+/-- **The multiples of the class of a sphere are distinct** when one of its periods is nonzero,
+since the period group is torsion-free. -/
+theorem zsmul_ofHomotopyGroup_injective
+    (hσ : PeriodGroup.area _ _ (ofHomotopyGroup ω c x a) ≠ 0 ∨
+      PeriodGroup.chern _ _ (ofHomotopyGroup ω c x a) ≠ 0) :
+    Function.Injective fun k : ℤ => k • ofHomotopyGroup ω c x a :=
+  IsAddTorsionFree.zsmul_left_injective (ofHomotopyGroup_ne_zero hσ)
 
 variable (ha : AddSubgroup.zmultiples (hurewiczIntHom X x 1 a) = ⊤)
 include ha
@@ -254,15 +275,11 @@ theorem ofSingularHomology_injective_of_zmultiples_eq_top (h : sphericalClasses 
     (hσ : PeriodGroup.area _ _ (ofHomotopyGroup ω c x a) ≠ 0 ∨
       PeriodGroup.chern _ _ (ofHomotopyGroup ω c x a) ≠ 0) :
     Function.Injective (ofSingularHomology ω c h) := by
-  have hinj : Function.Injective fun k : ℤ => k • ofHomotopyGroup ω c x a :=
-    IsAddTorsionFree.zsmul_left_injective fun h0 => by simp [h0] at hσ
   intro A B hAB
   obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 ((AddSubgroup.eq_top_iff' _).1 ha A)
   obtain ⟨l, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 ((AddSubgroup.eq_top_iff' _).1 ha B)
-  have hclass : ofSingularHomology ω c h (hurewiczIntHom X x 1 a) = ofHomotopyGroup ω c x a :=
-    PeriodGroup.ext (by simp) (by simp)
-  rw [map_zsmul, map_zsmul, hclass] at hAB
-  rw [hinj hAB]
+  rw [map_zsmul, map_zsmul, ofSingularHomology_hurewiczIntHom] at hAB
+  rw [zsmul_ofHomotopyGroup_injective hσ hAB]
 
 /-- **If the Hurewicz class of a sphere `a` with nonzero area generates `H₂(X; ℤ)`, area is
 injective on the period group**, so a cap class is determined by its action alone

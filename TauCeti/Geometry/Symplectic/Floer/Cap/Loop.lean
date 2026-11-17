@@ -512,9 +512,11 @@ theorem lift_vadd (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
 /-- **Recapping in a cyclic period group.** If a nonzero class `σ` generates the period group, as
 the class of the generating sphere does on the two-sphere and on complex projective space, any two
 cap classes of a contractible loop differ by recapping with a unique multiple of `σ`. -/
-theorem existsUnique_zsmul_vadd_eq [Nonempty (RawCap γ)] {σ : SphericalPeriodGroup ω c}
+theorem existsUnique_zsmul_vadd_eq {σ : SphericalPeriodGroup ω c}
     (hσ : AddSubgroup.zmultiples σ = ⊤) (hσ0 : σ ≠ 0) (D D' : SphericalCapClass ω c γ) :
     ∃! k : ℤ, k • σ +ᵥ D = D' := by
+  have : Nonempty (RawCap γ) := by
+    induction D using induction_on with | h D₀ => exact ⟨D₀⟩
   obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 ((AddSubgroup.eq_top_iff' _).1 hσ (D' -ᵥ D))
   refine ⟨k, ?_, fun l hl => IsAddTorsionFree.zsmul_left_injective hσ0 ?_⟩
   · dsimp only

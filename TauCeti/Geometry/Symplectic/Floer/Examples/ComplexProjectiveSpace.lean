@@ -45,7 +45,9 @@ and `n + 1`, up to the orientation of the generator.
   (`TauCeti.Floer.coefficientComparison_ofSingularHomology_projectiveSpace_bijective`), and in
   Laurent coordinates it sends `q^(k [ℓ])` to `X^k`
   (`TauCeti.Floer.NovikovRing.toLaurentSeries_coefficientComparison_projectiveSpace_single`). In
-  particular the class `q^[line]` of the quantum relation is the Laurent variable `X`.
+  particular `q^ℓ` is the Laurent variable `X`. This is the class `q^[line]` of the quantum
+  relation once `ℓ` is identified with the class of an oriented line, for instance when `c` is
+  the first Chern class, so that `c ℓ = n + 1 > 0`; that identification is not made here.
 * **Recapping.** On every loop of `CPⁿ` the cap classes form a `Γ`-torsor, and unless both periods
   of `ℓ` vanish any two caps differ by recapping with a unique multiple `k • ℓ`
   (`SphericalCapClass.existsUnique_zsmul_projectiveSpaceGenerator_vadd_eq`), which raises the
@@ -179,8 +181,9 @@ theorem chernEquivInt_projectiveSpaceGenerator :
 /-- On `CPⁿ` with positive Chern number of the generator, the Laurent exponent of the generator
 is `-1`: the Laurent variable is `e^(-ℓ)`. -/
 theorem laurentExponent_projectiveSpaceGenerator :
-    laurentExponent hker hc (projectiveSpaceGenerator ω c v hn) = -1 := by
-  rw [laurentExponent_apply, chernEquivInt_projectiveSpaceGenerator v hn hker hc h]
+    laurentExponent hker hc (projectiveSpaceGenerator ω c v hn) = -1 :=
+  laurentExponent_eq_neg_one_of_zmultiples_eq_top hker hc (zmultiples_projectiveSpaceGenerator v hn)
+    h
 
 end Laurent
 
@@ -199,10 +202,9 @@ theorem NovikovRing.toLaurentSeries_single_neg_zsmul_projectiveSpaceGenerator {R
     (hc : c.comp (sphericalClasses _ 1).subtype ≠ 0) (hτ : 0 < τ)
     (h : 0 < PeriodGroup.chern _ _ (projectiveSpaceGenerator ω c v hn)) (k : ℤ) (r : R) :
     NovikovRing.toLaurentSeries hτ' hc hτ (single (-(k • projectiveSpaceGenerator ω c v hn)) r) =
-      HahnSeries.single k r := by
-  rw [NovikovRing.toLaurentSeries_single, laurentExponent_apply, map_neg, map_zsmul,
-    chernEquivInt_projectiveSpaceGenerator v hn _ _ h]
-  simp
+      HahnSeries.single k r :=
+  NovikovRing.toLaurentSeries_single_neg_zsmul hτ' hc hτ (zmultiples_projectiveSpaceGenerator v hn)
+    h k r
 
 /-- **The coefficient comparison on `CPⁿ` is bijective.** Unless both periods of the generator
 vanish, the comparison `q^A ↦ e^(-[A])` from the Novikov ring indexed by the class group
@@ -220,8 +222,8 @@ theorem coefficientComparison_ofSingularHomology_projectiveSpace_bijective {R : 
 
 /-- **The comparison `q^A ↦ e^(-A)` in Laurent coordinates on `CPⁿ`.** With positive area and
 Chern number of the generator, the comparison out of the Novikov ring indexed by `H₂(CPⁿ; ℤ)` sends
-the monomial `q^(k [ℓ])` to the Laurent monomial `X^k`; for `k = 1` this is the class `q^[line]`
-of the quantum relation of `CPⁿ`. -/
+the monomial `q^(k [ℓ])` to the Laurent monomial `X^k`. For `k = 1` this is `q^ℓ ↦ X`, the
+class `q^[line]` of the quantum relation of `CPⁿ` once `ℓ` is identified with an oriented line. -/
 theorem NovikovRing.toLaurentSeries_coefficientComparison_projectiveSpace_single {R : Type*}
     [Semiring R] {τ : ℝ} (hτ' : ∀ s, ω.comp (sphericalClasses _ 1).subtype s =
       τ * c.comp (sphericalClasses _ 1).subtype s)
@@ -234,12 +236,7 @@ theorem NovikovRing.toLaurentSeries_coefficientComparison_projectiveSpace_single
           (single (k • hurewiczIntHom _ (mk n v) 1
             (Additive.ofMul ((pi2MulEquivInt v hn).symm (Multiplicative.ofAdd 1)))) r)) =
       HahnSeries.single k r := by
-  have hclass : ofSingularHomology ω c (sphericalClasses_complexProjectiveSpace_eq_top n)
-      (hurewiczIntHom _ (mk n v) 1
-        (Additive.ofMul ((pi2MulEquivInt v hn).symm (Multiplicative.ofAdd 1)))) =
-      projectiveSpaceGenerator ω c v hn :=
-    PeriodGroup.ext (by simp) (by simp)
-  rw [coefficientComparison_single, map_zsmul, hclass]
+  rw [coefficientComparison_single, map_zsmul, ofSingularHomology_hurewiczIntHom]
   exact NovikovRing.toLaurentSeries_single_neg_zsmul_projectiveSpaceGenerator v hn hτ' hc hτ h k r
 
 namespace SphericalCapClass
@@ -253,8 +250,8 @@ theorem existsUnique_zsmul_projectiveSpaceGenerator_vadd_eq
       PeriodGroup.chern _ _ (projectiveSpaceGenerator ω c v hn) ≠ 0)
     (D D' : SphericalCapClass ω c γ) :
     ∃! k : ℤ, k • projectiveSpaceGenerator ω c v hn +ᵥ D = D' :=
-  existsUnique_zsmul_vadd_eq (zmultiples_projectiveSpaceGenerator v hn)
-    (fun h0 => by simp [h0] at h) D D'
+  existsUnique_zsmul_vadd_eq (zmultiples_projectiveSpaceGenerator v hn) (ofHomotopyGroup_ne_zero h)
+    D D'
 
 end SphericalCapClass
 
