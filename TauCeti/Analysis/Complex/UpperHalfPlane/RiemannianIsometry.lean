@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PoincareMetric
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
@@ -34,8 +34,6 @@ Poincaré metric, and so does every element of the quotients `PGL(2, ℝ)` and `
   `(Im(g • z)/Im z)²`.
 * `UpperHalfPlane.inner_mfderiv_smul`: the differential of `z ↦ g • z` preserves the Poincaré
   metric.
-* `TauCeti.UpperHalfPlane.instContMDiffConstSMulGLReal`: each element of `GL(2, ℝ)` acts smoothly
-  on `ℍ` as a real manifold.
 * `TauCeti.UpperHalfPlane.glToIsom`: the action of `GL(2, ℝ)` as a homomorphism to the Riemannian
   isometry group `TauCeti.Isom 𝓘(ℝ, ℂ) ℍ`.
 * `TauCeti.UpperHalfPlane.pglToIsom` and `TauCeti.UpperHalfPlane.pslToIsom`: the injective
@@ -56,30 +54,6 @@ open scoped ContDiff Manifold MatrixGroups Topology
 noncomputable section
 
 namespace TauCeti.UpperHalfPlane
-
-/-- Every element of `GL(2, ℝ)` acts smoothly on the upper half-plane, viewed as a real
-manifold; the elements of negative determinant act antiholomorphically. -/
-instance instContMDiffConstSMulGLReal : ContMDiffConstSMul 𝓘(ℝ, ℂ) ∞ (GL (Fin 2) ℝ) ℍ where
-  contMDiff_const_smul g := by
-    apply ContMDiff.of_comp_isOpenEmbedding isOpenEmbedding_coe
-    have hcomp : ((↑) ∘ (g • ·) : ℍ → ℂ) =
-        (fun w : ℂ ↦ σ g (num g w / denom g w)) ∘ (↑) :=
-      funext fun z ↦ coe_smul g z
-    rw [hcomp]
-    intro z
-    have hnum : ContDiff ℂ ∞ (num g) := by unfold num; fun_prop
-    have hden : ContDiff ℂ ∞ (denom g) := by unfold denom; fun_prop
-    have hF : ContDiffAt ℝ ∞ (fun w : ℂ ↦ σ g (num g w / denom g w)) z :=
-      (σ g).toContinuousLinearEquiv.contDiff.contDiffAt.comp _
-        ((hnum.contDiffAt.div hden.contDiffAt (denom_ne_zero g z)).restrict_scalars ℝ)
-    exact hF.contMDiffAt.comp z contMDiffAt_extChartAt
-
-/-- Every element of `PGL(2, ℝ)` acts smoothly on the upper half-plane, viewed as a real
-manifold. -/
-instance instContMDiffConstSMulPGLReal : ContMDiffConstSMul 𝓘(ℝ, ℂ) ∞ PGL(2, ℝ) ℍ where
-  contMDiff_const_smul q := by
-    induction q using Matrix.ProjGenLinGroup.induction_on with | mk g =>
-    simpa only [pglMk_smul] using contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := ∞) g
 
 /-- In the inclusion chart, the differential of `z ↦ g • z` is Mathlib's real derivative
 `UpperHalfPlane.smulFDeriv g z`. -/
