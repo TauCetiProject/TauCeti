@@ -25,3 +25,6 @@ web/examples/lean-toolchain
 .tauceti-tools/
 .tauceti-project/
 .tauceti-rubrics/
+
+*2.lean
+*2.py
