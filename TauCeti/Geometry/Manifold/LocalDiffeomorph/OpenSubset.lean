@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
@@ -40,6 +41,10 @@ subset can be carried, near any point of its source, to the ambient manifold.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
+* `TopologicalSpace.Opens.partialDiffeomorphSubtypeCoe`: the inclusion of a nonempty open subset as
+  a `C^n` partial diffeomorphism.
+* `Diffeomorph.toPartialDiffeomorphOpens`: a `C^n` diffeomorphism between nonempty open subsets as
+  a `C^n` partial diffeomorphism between the ambient manifolds.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
@@ -235,6 +240,166 @@ end Subtype
 
 end Diffeomorph
 
+namespace TopologicalSpace.Opens
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The inclusion of a nonempty open subset `U` of `M`, charted by the restrictions of the charts
+of `M`, as a `C^n` partial diffeomorphism from `U` to `M`. -/
+noncomputable def partialDiffeomorphSubtypeCoe (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    PartialDiffeomorph I I U M n :=
+  let e := U.openPartialHomeomorphSubtypeCoe hU
+  { e.toPartialEquiv with
+    open_source := e.open_source
+    open_target := e.open_target
+    contMDiffOn_toFun := contMDiff_subtype_val.contMDiffOn
+    contMDiffOn_invFun := fun _ hy ↦
+      (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 <|
+        contMDiffWithinAt_id.congr (fun _ hz ↦ e.right_inv hz) (e.right_inv hy) }
+
+/-- As a function, `Opens.partialDiffeomorphSubtypeCoe` is `Subtype.val`. -/
+@[simp]
+theorem coe_partialDiffeomorphSubtypeCoe (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU : U → M) = Subtype.val :=
+  (rfl)
+
+/-- The source of `Opens.partialDiffeomorphSubtypeCoe` is `Set.univ`. -/
+@[simp]
+theorem partialDiffeomorphSubtypeCoe_source (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).source = univ :=
+  (rfl)
+
+/-- The target of `Opens.partialDiffeomorphSubtypeCoe` is `U`. -/
+@[simp]
+theorem partialDiffeomorphSubtypeCoe_target (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).target = U :=
+  U.openPartialHomeomorphSubtypeCoe_target hU
+
+/-- The underlying partial equivalence of `Opens.partialDiffeomorphSubtypeCoe`. -/
+theorem partialDiffeomorphSubtypeCoe_toPartialEquiv (U : TopologicalSpace.Opens M)
+    (hU : Nonempty U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).toPartialEquiv =
+      (U.openPartialHomeomorphSubtypeCoe hU).toPartialEquiv :=
+  (rfl)
+
+/-- On `U`, the inverse partial equivalence of `Opens.partialDiffeomorphSubtypeCoe` sends `x : U`
+to `x`. -/
+@[simp]
+theorem partialDiffeomorphSubtypeCoe_toPartialEquiv_symm_apply_coe
+    (U : TopologicalSpace.Opens M) (hU : Nonempty U) (x : U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).toPartialEquiv.symm x = x :=
+  (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).left_inv (mem_univ x)
+
+/-- On `U`, the inverse of `Opens.partialDiffeomorphSubtypeCoe` sends `x : U` to `x`. -/
+theorem partialDiffeomorphSubtypeCoe_symm_apply_coe (U : TopologicalSpace.Opens M) (hU : Nonempty U)
+    (x : U) : (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).symm x = x :=
+  U.partialDiffeomorphSubtypeCoe_toPartialEquiv_symm_apply_coe hU x
+
+/-- At a point `x ∈ U`, the inverse of `Opens.partialDiffeomorphSubtypeCoe` evaluates to
+`⟨x, hx⟩`. -/
+theorem partialDiffeomorphSubtypeCoe_symm_apply (U : TopologicalSpace.Opens M) (hU : Nonempty U)
+    {x : M} (hx : x ∈ U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).symm x = ⟨x, hx⟩ :=
+  U.partialDiffeomorphSubtypeCoe_symm_apply_coe hU ⟨x, hx⟩
+
+end TopologicalSpace.Opens
+
+namespace Diffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
+
+/-- A `C^n` diffeomorphism between nonempty open subsets `U ⊆ M` and `V ⊆ N` as a `C^n` partial
+diffeomorphism between `M` and `N` with source `U` and target `V`. This is inverse to
+`PartialDiffeomorph.toDiffeomorphSourceTarget`. -/
+noncomputable def toPartialDiffeomorphOpens (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) :
+    PartialDiffeomorph I J M N n :=
+  ((U.partialDiffeomorphSubtypeCoe hU).symm.trans d.toPartialDiffeomorph).trans
+    (V.partialDiffeomorphSubtypeCoe (hU.map d))
+
+/-- The underlying partial equivalence of `Diffeomorph.toPartialDiffeomorphOpens`. -/
+theorem toPartialDiffeomorphOpens_toPartialEquiv (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) :
+    (d.toPartialDiffeomorphOpens hU).toPartialEquiv =
+      ((U.openPartialHomeomorphSubtypeCoe hU).toPartialEquiv.symm.trans
+        d.toEquiv.toPartialEquiv).trans
+        (V.openPartialHomeomorphSubtypeCoe (hU.map d)).toPartialEquiv := by
+  simp [toPartialDiffeomorphOpens, PartialDiffeomorph.trans_toPartialEquiv,
+    PartialDiffeomorph.symm_toPartialEquiv,
+    TopologicalSpace.Opens.partialDiffeomorphSubtypeCoe_toPartialEquiv]
+
+/-- The source of `Diffeomorph.toPartialDiffeomorphOpens` is `U`. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_source (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) :
+    (d.toPartialDiffeomorphOpens hU).source = U := by
+  simp [toPartialDiffeomorphOpens_toPartialEquiv]
+
+/-- The target of `Diffeomorph.toPartialDiffeomorphOpens` is `V`. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_target (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) :
+    (d.toPartialDiffeomorphOpens hU).target = V := by
+  simp [toPartialDiffeomorphOpens_toPartialEquiv]
+
+/-- On `U`, `Diffeomorph.toPartialDiffeomorphOpens` evaluates as `d`. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_apply_coe (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) (x : U) :
+    d.toPartialDiffeomorphOpens hU x = d x := by
+  simp only [toPartialDiffeomorphOpens_toPartialEquiv, PartialEquiv.trans_apply,
+    Equiv.toPartialEquiv_apply]
+  have hx : (U.openPartialHomeomorphSubtypeCoe hU).symm x = x :=
+    (U.openPartialHomeomorphSubtypeCoe hU).left_inv (mem_univ x)
+  exact congrArg (Subtype.val ∘ d) hx
+
+/-- At a point `x ∈ U`, `Diffeomorph.toPartialDiffeomorphOpens` evaluates as `d ⟨x, hx⟩`. -/
+theorem toPartialDiffeomorphOpens_apply (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U)
+    {x : M} (hx : x ∈ U) : d.toPartialDiffeomorphOpens hU x = d ⟨x, hx⟩ :=
+  d.toPartialDiffeomorphOpens_apply_coe hU ⟨x, hx⟩
+
+/-- On `V`, the inverse partial equivalence of `Diffeomorph.toPartialDiffeomorphOpens` evaluates as
+`d.symm`. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_toPartialEquiv_symm_apply_coe
+    (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) (y : V) :
+    (d.toPartialDiffeomorphOpens hU).toPartialEquiv.symm y = d.symm y := by
+  simp only [toPartialDiffeomorphOpens_toPartialEquiv, PartialEquiv.trans_symm_eq_symm_trans_symm,
+    PartialEquiv.symm_symm, PartialEquiv.trans_apply, Equiv.toPartialEquiv_symm_apply]
+  have hy : (V.openPartialHomeomorphSubtypeCoe (hU.map d)).symm y = y :=
+    (V.openPartialHomeomorphSubtypeCoe (hU.map d)).left_inv (mem_univ y)
+  exact congrArg (Subtype.val ∘ d.symm) hy
+
+/-- On `V`, the inverse of `Diffeomorph.toPartialDiffeomorphOpens` evaluates as `d.symm`. -/
+theorem toPartialDiffeomorphOpens_symm_apply_coe (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) (y : V) :
+    (d.toPartialDiffeomorphOpens hU).symm y = d.symm y :=
+  d.toPartialDiffeomorphOpens_toPartialEquiv_symm_apply_coe hU y
+
+/-- At a point `y ∈ V`, the inverse of `Diffeomorph.toPartialDiffeomorphOpens` evaluates as
+`d.symm ⟨y, hy⟩`. -/
+theorem toPartialDiffeomorphOpens_symm_apply (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U)
+    {y : N} (hy : y ∈ V) : (d.toPartialDiffeomorphOpens hU).symm y = d.symm ⟨y, hy⟩ :=
+  d.toPartialDiffeomorphOpens_symm_apply_coe hU ⟨y, hy⟩
+
+/-- The inverse of `Diffeomorph.toPartialDiffeomorphOpens` is `toPartialDiffeomorphOpens` of the
+inverse diffeomorphism. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_symm (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) :
+    (d.toPartialDiffeomorphOpens hU).symm = d.symm.toPartialDiffeomorphOpens (hU.map d) :=
+  PartialDiffeomorph.ext
+    (fun y ↦ by simp [PartialDiffeomorph.symm_toPartialEquiv,
+      toPartialDiffeomorphOpens_toPartialEquiv])
+    (fun x ↦ by simp [PartialDiffeomorph.symm_toPartialEquiv,
+      toPartialDiffeomorphOpens_toPartialEquiv])
+    (by simp)
+
+end Diffeomorph
+
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -245,17 +410,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- The inclusion of an open subset `U` of `M`, charted by the restrictions of the charts of `M`,
 is a `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
-    IsLocalDiffeomorph I I n (Subtype.val : U → M) := fun x ↦ by
-  let e := U.openPartialHomeomorphSubtypeCoe ⟨x⟩
-  let Φ : PartialDiffeomorph I I U M n :=
-    { e.toPartialEquiv with
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun := contMDiff_subtype_val.contMDiffOn
-      contMDiffOn_invFun := fun y hy ↦ by
-        refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 ?_
-        exact contMDiffWithinAt_id.congr (fun z hz ↦ e.right_inv hz) (e.right_inv hy) }
-  exact Φ.isLocalDiffeomorphAt I I n (mem_univ x)
+    IsLocalDiffeomorph I I n (Subtype.val : U → M) := fun x ↦
+  (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) ⟨x⟩).isLocalDiffeomorphAt I I n (mem_univ x)
 
 end TauCeti
 

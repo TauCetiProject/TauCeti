@@ -5,37 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Integrability
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 import TauCeti.Analysis.ODE.Frobenius
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.RadialContraction
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.ConformalCurvature
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Logic.Function.Extend
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Local solutions of the conformal flattening equation
 
-Let `g` be a smooth Riemannian metric on a finite-dimensional real normed space `E`. In dimension
-at least `3`, the metric `e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the
-*conformal flattening equation*
+Let `g` be a smooth Riemannian metric on a smooth manifold `M`. In dimension at least `3`, the
+metric `e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the *conformal flattening
+equation*
 
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g`,
 
 with `P` the Schouten tensor of `g`
 (`Bundle.ContMDiffRiemannianMetric.schoutenTensor_leviCivitaConnection_rescale_eq_zero_iff`).
-This file proves that the equation is locally solvable with arbitrary initial data wherever the
-Weyl and Cotton tensors of `g` vanish: if `W = 0` and `C = 0` near `x₀`, then for every number `c`
-and tangent vector `ξ` at `x₀` there is a smooth `φ` solving the equation near `x₀` with
-`φ x₀ = c` and `grad φ x₀ = ξ`. This is a converse of
+This file proves that at every interior point `x₀` around which the Weyl and Cotton tensors of `g`
+vanish, the equation is locally solvable in smooth families with arbitrary initial data: if `W = 0`
+and `C = 0` near `x₀`, then for every number `c` and tangent vector `ξ` at `x₀` there is a globally
+smooth `φ` solving the equation near `x₀` with `φ x₀ = c` and `grad φ x₀ = ξ` (and depending
+smoothly on `(c, ξ)` with compact support in `M`). This is a converse of
 `TauCeti.Manifold.weylTensor_eq_zero_of_forall_exists_eventually_hessian_eq` and
 `TauCeti.Manifold.cottonTensor_eq_zero_of_eventually_hessian_eq`, and the analytic step in the
 proof that a metric with vanishing Weyl tensor (dimension at least `4`) or vanishing Cotton tensor
 (dimension `3`) is locally conformally flat.
 
-In linear coordinates, writing `α = dφ`, the equation is the first-order total differential
+On a model vector space `E`, writing `α = dφ`, the equation is the first-order total differential
 equation `D(φ, α)(u) = (α u, v ↦ α(Γ(u, v)) + Φ_α(u, v))` on `E × (ℝ × E*)`, where `Γ` are the
 Christoffel symbols of `g` (`TauCeti.Manifold.christoffelSecondKind`) and `Φ_α` is the right side
 of the equation. Its Frobenius integrability condition is checked without computing curvature in
@@ -45,13 +53,30 @@ antisymmetrized derivative of the defect of the equation is
 `-(C(X, Y, Z) + W(Z, Y, X, grad φ))`
 (`TauCeti.Manifold.mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap`), which vanishes. The
 local Frobenius theorem `TauCeti.exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt`
-then produces the solution, and a cutoff makes it globally smooth.
+then produces the solution family on `E`, and cutoffs make it globally smooth and compactly
+supported in the first variable.
+
+At an interior point `x₀` of a general Hausdorff manifold `M`, radial contraction
+(`TauCeti.exists_diffeomorph_modelSpace_of_isInteriorPoint`) produces an open neighbourhood `W` of
+`x₀` diffeomorphic to the whole model space `E` on which `W = 0` and `C = 0`. Pushing `g|_W`
+forward to `E` makes the diffeomorphism `Φ : W → E` and the inclusion `W → M` local Riemannian
+isometries, so naturality of the Weyl and Cotton tensors transfers the vanishing hypotheses to `E`,
+and pulling the compactly supported model-space solution family back along `Φ` and extending by zero
+outside `W` produces the smooth solution family on `M`.
 
 ## Main results
 
-* `TauCeti.Manifold.exists_eventually_hessian_eq_model_space`: on a normed space with a smooth
-  Riemannian metric whose Weyl and Cotton tensors vanish near `x₀`, the conformal flattening
-  equation has a smooth solution near `x₀` with any prescribed value and gradient at `x₀`.
+* `TauCeti.Manifold.exists_contMDiff_hessian_eq_family_model_space`: on a normed space with a
+  smooth Riemannian metric whose Weyl and Cotton tensors vanish near `x₀`, nearby initial data
+  `(c, ξ)` around `(c₀, ξ₀)` admit a jointly smooth family of solutions of the conformal flattening
+  equation on a common open neighbourhood of `x₀`, vanishing outside a compact subset of `E`.
+* `TauCeti.Manifold.exists_contMDiff_hessian_eq_family_of_isInteriorPoint` and
+  `TauCeti.Manifold.exists_contMDiff_hessian_eq_family`: local smooth-family solvability of the
+  conformal flattening equation on a manifold with arbitrary initial value and gradient where
+  `W = 0` and `C = 0` nearby.
+* `TauCeti.Manifold.exists_eventually_hessian_eq_of_isInteriorPoint` and
+  `TauCeti.Manifold.exists_eventually_hessian_eq`: pointwise local solvability on a manifold with
+  prescribed value and gradient at `x₀`.
 
 ## References
 
@@ -275,88 +300,348 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
   simp only [neg_apply, neg_inj]
   exact sub_eq_zero.1 h
 
-/-- **A smooth solution of the flattening system through a prescribed jet.** Where the Weyl and
-Cotton tensors vanish near `x₀`, the coordinate conformal flattening system has, for every initial
-value `q₀`, a solution `σ` which is smooth on an open neighbourhood `V` of `x₀` and takes the value
-`q₀` at `x₀`. -/
-private theorem exists_contDiffOn_hasFDerivAt_flatteningField {x₀ : E}
-    (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
-    (q₀ : ℝ × (E →L[ℝ] ℝ)) :
-    ∃ (σ : E → ℝ × (E →L[ℝ] ℝ)) (V : Set E), IsOpen V ∧ x₀ ∈ V ∧ ContDiffOn ℝ ∞ σ V ∧
-      σ x₀ = q₀ ∧ ∀ x ∈ V, HasFDerivAt σ (flatteningField E (x, σ x)) x := by
-  -- The Frobenius condition holds near `(x₀, q₀)`, so the system has a smooth solution family.
-  have hint : ∀ᶠ p in 𝓝 (x₀, q₀), IsFrobeniusIntegrableAt (flatteningField E) p :=
-    ((continuous_fst.tendsto (x₀, q₀)).eventually (hW.and hC)).mono fun p hp ↦
-      isFrobeniusIntegrableAt_flatteningField hp.1 hp.2 p.2
-  obtain ⟨s, U, hU, hx₀U, hs, hs₀, -, hsol⟩ :=
-    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt (n := ⊤)
-      (contDiff_flatteningField.contDiffOn (s := univ) |>.of_le (by simp)) univ_mem hint
-  -- The slice through `q₀` is smooth on the open set `V` and solves the system there.
-  exact ⟨fun x ↦ s (x, q₀), (fun x ↦ (x, q₀)) ⁻¹' U,
-    hU.preimage (continuous_id.prodMk continuous_const), hx₀U,
-    (hs.comp (contDiffOn_id.prodMk contDiffOn_const) fun _ hx ↦ hx).of_le (by simp), hs₀,
-    fun x hx ↦ hsol (x, q₀) hx⟩
-
-/-- **Local solutions of the conformal flattening equation.** Let `g` be a smooth Riemannian
-metric on a finite-dimensional real normed space `E` whose Weyl and Cotton tensors vanish near
-`x₀`. Then for every `c : ℝ` and every tangent vector `ξ` at `x₀` there is a smooth function `φ`
-with `φ x₀ = c` and `grad φ x₀ = ξ` solving the conformal flattening equation
-`Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`, where `P` is the Schouten tensor. When `E` has
-dimension at least `3`, this says equivalently that `e^(2φ) g` has vanishing Schouten tensor near
-`x₀`. -/
-theorem exists_eventually_hessian_eq_model_space {x₀ : E}
-    (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
-    (c : ℝ) (ξ : TangentSpace 𝓘(ℝ, E) x₀) :
-    ∃ φ : E → ℝ, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient 𝓘(ℝ, E) φ x₀ = ξ ∧
-      ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace 𝓘(ℝ, E) y, hessian 𝓘(ℝ, E) φ y u v =
-        (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) φ y) u v := by
-  set q₀ : ℝ × (E →L[ℝ] ℝ) := (c, metricCoeff E x₀ (tangentSpaceCastModel 𝓘(ℝ, E) x₀ ξ))
-  obtain ⟨σ, V, hV, hx₀V, hσ, hσ₀, hσsol⟩ :=
-    exists_contDiffOn_hasFDerivAt_flatteningField hW hC q₀
-  -- Its first component `φ₀` has differential the second component and second derivative `f`.
-  set φ₀ : E → ℝ := fun x ↦ (σ x).1
-  have hDφ₀ (x : E) (hx : x ∈ V) : fderiv ℝ φ₀ x = (σ x).2 := by
-    have heq : (ContinuousLinearMap.fst ℝ ℝ (E →L[ℝ] ℝ)).comp (flatteningField E (x, σ x)) =
-        (σ x).2 :=
-      ContinuousLinearMap.ext fun u ↦ flatteningField_apply_fst (x, σ x) u
-    have h := (hσsol x hx).fst
+/-- If `σ` solves the coordinate flattening total differential equation on an open set `V₀` and a
+`C²` function `φp` locally agrees with `(σ ·).1` around every point of `V ⊆ V₀`, then `φp` inherits
+the initial value and gradient encoded by `σ x₀` and solves the conformal flattening equation at
+every point of `V`. -/
+private theorem hessian_eq_of_hasFDerivAt_flatteningField
+    {V₀ V : Set E} (hV₀ : IsOpen V₀) (hVV₀ : V ⊆ V₀) {x₀ : E} (hx₀V : x₀ ∈ V)
+    {σ : E → ℝ × (E →L[ℝ] ℝ)}
+    (hσsol : ∀ z ∈ V₀, HasFDerivAt σ (flatteningField E (z, σ z)) z)
+    {c : ℝ} {ξ : TangentSpace 𝓘(ℝ, E) x₀}
+    (hσx₀ : σ x₀ = (c, (metricCoeff E x₀).comp
+      (tangentSpaceCastModel 𝓘(ℝ, E) x₀).toContinuousLinearMap ξ))
+    {φp : E → ℝ} (hφp : ContDiff ℝ 2 φp)
+    (hφp_eq : ∀ {y}, y ∈ V → φp =ᶠ[𝓝 y] fun z ↦ (σ z).1) :
+    φp x₀ = c ∧ mgradient 𝓘(ℝ, E) φp x₀ = ξ ∧
+      ∀ y ∈ V, ∀ u v : TangentSpace 𝓘(ℝ, E) y,
+        hessian 𝓘(ℝ, E) φp y u v =
+          (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) φp y) u v := by
+  have hDσ₁ (z : E) (hz : z ∈ V₀) : fderiv ℝ (fun w ↦ (σ w).1) z = (σ z).2 := by
+    have heq : (ContinuousLinearMap.fst ℝ ℝ (E →L[ℝ] ℝ)).comp (flatteningField E (z, σ z)) =
+        (σ z).2 :=
+      ContinuousLinearMap.ext fun u ↦ flatteningField_apply_fst (z, σ z) u
+    have h := (hσsol z hz).fst
     rw [heq] at h
     exact h.fderiv
-  have hD2φ₀ (x : E) (hx : x ∈ V) (u v : E) :
-      fderiv ℝ (fderiv ℝ φ₀) x u v = (flatteningField E (x, σ x) u).2 v := by
-    have hEq : fderiv ℝ φ₀ =ᶠ[𝓝 x] fun x ↦ (σ x).2 :=
-      eventually_of_mem (hV.mem_nhds hx) hDφ₀
-    rw [hEq.fderiv_eq, (hσsol x hx).snd.fderiv]
+  have hD2σ₁ (z : E) (hz : z ∈ V₀) (u v : E) :
+      fderiv ℝ (fderiv ℝ fun w ↦ (σ w).1) z u v = (flatteningField E (z, σ z) u).2 v := by
+    have hEq : (fderiv ℝ fun w ↦ (σ w).1) =ᶠ[𝓝 z] fun w ↦ (σ w).2 :=
+      eventually_of_mem (hV₀.mem_nhds hz) hDσ₁
+    rw [hEq.fderiv_eq, (hσsol z hz).snd.fderiv]
     simp
-  -- Cut `φ₀` off to a globally smooth function, equal to it near `x₀`.
-  obtain ⟨χ, hχ, -, hχ₁, -, hχV⟩ :=
-    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff_eventuallyEq_one hV
-      (singleton_subset_iff.2 hx₀V)
-  set φ : E → ℝ := fun x ↦ χ x • φ₀ x
-  have hφ : ContDiff ℝ ∞ φ :=
-    (contDiffOn_fst.comp hσ (mapsTo_univ _ _)).contDiff_smul_of_tsupport_subset hV
-      hχ.contDiffOn hχV
-  have hφφ₀ : ∀ᶠ y in 𝓝 x₀, φ =ᶠ[𝓝 y] φ₀ := by
-    filter_upwards [(hχ₁ x₀ rfl).eventually_nhds] with y hy
-    filter_upwards [hy] with z hz
-    simp [φ, hz]
-  have hVx₀ : ∀ᶠ y in 𝓝 x₀, y ∈ V := hV.mem_nhds hx₀V
-  have hDφx₀ : fderiv ℝ φ x₀ = (σ x₀).2 := by
-    rw [hφφ₀.self_of_nhds.fderiv_eq, hDφ₀ x₀ hx₀V]
-  refine ⟨φ, contMDiff_iff_contDiff.2 hφ, ?_, ?_, ?_⟩
-  · rw [hφφ₀.self_of_nhds.eq_of_nhds]
-    simp [φ₀, hσ₀, q₀]
-  · refine (eq_mgradient_iff.2 fun v ↦ ?_).symm
-    rw [mvfderiv_eq_fderiv, hDφx₀]
-    simp [hσ₀, q₀, inner_eq_metricCoeff, NormedSpace.fromTangentSpace]
-  · filter_upwards [hφφ₀, hVx₀] with y hy hyV u v
-    have h := hessian_sub_conformalFlatteningForm_model_space (hφ.contDiffAt.of_le (by simp) :
-      ContDiffAt ℝ 2 φ y) (tangentSpaceCastModel 𝓘(ℝ, E) y u) (tangentSpaceCastModel 𝓘(ℝ, E) y v)
-    have hjet : (y, φ y, fderiv ℝ φ y) = (y, σ y) := by
-      rw [hy.eq_of_nhds, hy.fderiv_eq, hDφ₀ y hyV]
-    rw [hy.fderiv.fderiv_eq, hD2φ₀ y hyV, hjet, sub_self] at h
+  refine ⟨(hφp_eq hx₀V).eq_of_nhds.trans (by simp [hσx₀]),
+    (eq_mgradient_iff.2 fun v ↦ ?_).symm, fun y hy u v ↦ ?_⟩
+  · rw [mvfderiv_eq_fderiv, (hφp_eq hx₀V).fderiv_eq, hDσ₁ x₀ (hVV₀ hx₀V), hσx₀,
+      inner_eq_metricCoeff]
+    simp [NormedSpace.fromTangentSpace]
+  · have hyEq := hφp_eq hy
+    have h := hessian_sub_conformalFlatteningForm_model_space (hφp.contDiffAt (x := y))
+      (tangentSpaceCastModel 𝓘(ℝ, E) y u) (tangentSpaceCastModel 𝓘(ℝ, E) y v)
+    have hjet : (y, φp y, fderiv ℝ φp y) = (y, σ y) := by
+      rw [hyEq.eq_of_nhds, hyEq.fderiv_eq, hDσ₁ y (hVV₀ hy)]
+    rw [hyEq.fderiv.fderiv_eq, hD2σ₁ y (hVV₀ hy), hjet, sub_self] at h
     simpa only [ContinuousLinearEquiv.symm_apply_apply, sub_eq_zero] using h
 
+/-- **Smooth family of local solutions of the conformal flattening equation.** Let `g` be a smooth
+Riemannian metric on a finite-dimensional real normed space `E` whose Weyl and Cotton tensors
+vanish near `x₀`. Around any initial data `(c₀, ξ₀) : ℝ × TangentSpace 𝓘(ℝ, E) x₀`, there exist a
+jointly smooth function `φ : E × (ℝ × TangentSpace 𝓘(ℝ, E) x₀) → ℝ`, open neighbourhoods `V` of
+`x₀` and `Q` of `(c₀, ξ₀)`, and a compact set `K ⊆ E` outside which `φ` vanishes, such that for
+every `(c, ξ) ∈ Q` the slice `x ↦ φ (x, (c, ξ))` satisfies `φ (x₀, (c, ξ)) = c`,
+`grad (φ (·, (c, ξ))) x₀ = ξ`, and solves the conformal flattening equation on all of `V`. -/
+theorem exists_contMDiff_hessian_eq_family_model_space {x₀ : E}
+    (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
+    (c₀ : ℝ) (ξ₀ : TangentSpace 𝓘(ℝ, E) x₀) :
+    ∃ (φ : E × (ℝ × TangentSpace 𝓘(ℝ, E) x₀) → ℝ)
+      (V : Set E) (Q : Set (ℝ × TangentSpace 𝓘(ℝ, E) x₀)) (K : Set E),
+      IsOpen V ∧ IsOpen Q ∧ IsCompact K ∧ x₀ ∈ V ∧ (c₀, ξ₀) ∈ Q ∧
+      ContMDiff (𝓘(ℝ, E).prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace 𝓘(ℝ, E) x₀))) 𝓘(ℝ) ∞ φ ∧
+      (∀ x ∉ K, ∀ p, φ (x, p) = 0) ∧
+      ∀ p ∈ Q, φ (x₀, p) = p.1 ∧
+        mgradient 𝓘(ℝ, E) (fun x ↦ φ (x, p)) x₀ = p.2 ∧
+        ∀ y ∈ V, ∀ u v : TangentSpace 𝓘(ℝ, E) y,
+          hessian 𝓘(ℝ, E) (fun x ↦ φ (x, p)) y u v =
+            (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) (fun x ↦ φ (x, p)) y) u v := by
+  have : FiniteDimensional ℝ (TangentSpace 𝓘(ℝ, E) x₀) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace 𝓘(ℝ, E)) x₀
+  let G := ℝ × TangentSpace 𝓘(ℝ, E) x₀
+  let L : TangentSpace 𝓘(ℝ, E) x₀ →L[ℝ] E →L[ℝ] ℝ :=
+    (metricCoeff E x₀).comp (tangentSpaceCastModel 𝓘(ℝ, E) x₀).toContinuousLinearMap
+  let ι : G →L[ℝ] ℝ × (E →L[ℝ] ℝ) := ContinuousLinearMap.prodMap (ContinuousLinearMap.id ℝ ℝ) L
+  let κ : E × G →L[ℝ] E × (ℝ × (E →L[ℝ] ℝ)) :=
+    ContinuousLinearMap.prodMap (ContinuousLinearMap.id ℝ E) ι
+  set p₀ : G := (c₀, ξ₀)
+  set q₀ : ℝ × (E →L[ℝ] ℝ) := ι p₀
+  -- The Frobenius condition holds near `(x₀, q₀)`, giving a smooth local solution family `s`.
+  have hint : ∀ᶠ r in 𝓝 (x₀, q₀), IsFrobeniusIntegrableAt (flatteningField E) r :=
+    ((continuous_fst.tendsto (x₀, q₀)).eventually (hW.and hC)).mono fun r hr ↦
+      isFrobeniusIntegrableAt_flatteningField hr.1 hr.2 r.2
+  obtain ⟨s, U, hU, hx₀q₀U, hs, -, hs_init, hsol⟩ :=
+    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt (n := ⊤)
+      (contDiff_flatteningField.contDiffOn (s := univ) |>.of_le (by simp)) univ_mem hint
+  obtain ⟨V₀, Q₀, hV₀, hQ₀, hx₀V₀, hp₀Q₀, hVQ⟩ :=
+    isOpen_prod_iff.1 (hU.preimage κ.continuous) x₀ p₀ hx₀q₀U
+  -- Cut off smoothly in both base point and initial data so the family is globally smooth on
+  -- `E × G` and vanishes outside the compact set `tsupport χ ⊆ E`.
+  obtain ⟨χ, hχ, -, hx₀χ, hχ_cpt, hχV₀⟩ :=
+    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff hV₀ (singleton_subset_iff.2 hx₀V₀)
+  obtain ⟨η, hη, -, hp₀η, -, hηQ₀⟩ :=
+    (isCompact_singleton (x := p₀)).exists_contDiff_cutoff hQ₀ (singleton_subset_iff.2 hp₀Q₀)
+  set ψ : E × G → ℝ := fun r ↦ χ r.1 * η r.2
+  set φ₀ : E × G → ℝ := fun r ↦ (s (κ r)).1
+  set φ : E × G → ℝ := fun r ↦ ψ r • φ₀ r
+  have htsupp : tsupport ψ ⊆ V₀ ×ˢ Q₀ := by
+    refine (closure_minimal (t := tsupport χ ×ˢ tsupport η) ?_
+      ((isClosed_tsupport χ).prod (isClosed_tsupport η))).trans (prod_mono hχV₀ hηQ₀)
+    exact fun r hr ↦ ⟨subset_tsupport χ (left_ne_zero_of_mul hr),
+      subset_tsupport η (right_ne_zero_of_mul hr)⟩
+  have hφ₀ : ContDiffOn ℝ ∞ φ₀ (V₀ ×ˢ Q₀) :=
+    contDiffOn_fst.comp ((hs.of_le (by simp)).comp κ.contDiff.contDiffOn hVQ) (mapsTo_univ _ _)
+  have hφ_diff : ContDiff ℝ ∞ φ :=
+    hφ₀.contDiff_smul_of_tsupport_subset (hV₀.prod hQ₀)
+      ((hχ.comp contDiff_fst).mul (hη.comp contDiff_snd)).contDiffOn htsupp
+  have hφ : ContMDiff (𝓘(ℝ, E).prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace 𝓘(ℝ, E) x₀))) 𝓘(ℝ) ∞ φ :=
+    hφ_diff.comp_contMDiff (contMDiff_fst.prodMk_space
+      ((contMDiff_fst.comp contMDiff_snd).prodMk_space (contMDiff_snd.comp contMDiff_snd)))
+  set V : Set E := interior (χ ⁻¹' {1}) ∩ V₀
+  set Q : Set G := interior (η ⁻¹' {1}) ∩ Q₀
+  have hV : IsOpen V := isOpen_interior.inter hV₀
+  have hQ : IsOpen Q := isOpen_interior.inter hQ₀
+  have hx₀V : x₀ ∈ V := ⟨hx₀χ rfl, hx₀V₀⟩
+  have hp₀Q : p₀ ∈ Q := ⟨hp₀η rfl, hp₀Q₀⟩
+  refine ⟨φ, V, Q, tsupport χ, hV, hQ, hχ_cpt, hx₀V, hp₀Q, hφ, fun x hx p ↦ ?_, fun p hp ↦ ?_⟩
+  · simp [φ, ψ, image_eq_zero_of_notMem_tsupport hx]
+  · -- On `V`, `χ` and `η p` equal `1`, so `φ (·, p)` agrees with `(s (·, ι p)).1`.
+    set σ : E → ℝ × (E →L[ℝ] ℝ) := fun z ↦ s (z, ι p)
+    have hηp : η p = 1 := interior_subset hp.1
+    have hσU (z : E) (hz : z ∈ V₀) : (z, ι p) ∈ U := by simpa [κ] using hVQ (mk_mem_prod hz hp.2)
+    have hφp_diff : ContDiff ℝ 2 (fun x ↦ φ (x, p)) :=
+      (hφ_diff.comp (contDiff_id.prodMk contDiff_const)).of_le (by simp)
+    exact hessian_eq_of_hasFDerivAt_flatteningField (σ := σ) hV₀ inter_subset_right hx₀V
+      (fun z hz ↦ hsol (z, ι p) (hσU z hz)) (hs_init (ι p) (hσU x₀ hx₀V₀)) hφp_diff
+      fun {y} hy ↦ eventually_of_mem (hV.mem_nhds hy) fun z hz ↦ by
+        have hχz : χ z = 1 := interior_subset hz.1
+        simp [φ, ψ, φ₀, σ, κ, hχz, hηp]
+
 end ModelSpace
+
+/-! ### The conformal flattening system on a smooth Riemannian manifold -/
+
+section Manifold
+
+open Function TopologicalSpace
+open scoped TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+local notation "lc" => CovariantDerivative.leviCivitaConnection
+
+/-- Transport a compactly supported smooth family of solutions of the conformal flattening equation
+from the model space `E` along a local-isometry diffeomorphism `Φ : W ≃ₘ^∞⟮I, 𝓘(ℝ, E)⟯ E` on an open
+subset `W : Opens M` to all of `M` by zero extension. -/
+private theorem exists_contMDiff_hessian_eq_family_of_diffeomorph_open
+    [RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z)]
+    [IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z)]
+    {W : Opens M} {x₀ : M} (hx₀W : x₀ ∈ W) (Φ : W ≃ₘ^∞⟮I, 𝓘(ℝ, E)⟯ E)
+    (hΦ : TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, E) Φ)
+    (c₀ : ℝ) (ξ₀ : TangentSpace I x₀)
+    (hsolE : ∀ ξE : TangentSpace 𝓘(ℝ, E) (Φ ⟨x₀, hx₀W⟩),
+      ∃ (φE : E × (ℝ × TangentSpace 𝓘(ℝ, E) (Φ ⟨x₀, hx₀W⟩)) → ℝ)
+        (VE : Set E) (QE : Set (ℝ × TangentSpace 𝓘(ℝ, E) (Φ ⟨x₀, hx₀W⟩))) (KE : Set E),
+        IsOpen VE ∧ IsOpen QE ∧ IsCompact KE ∧ Φ ⟨x₀, hx₀W⟩ ∈ VE ∧ (c₀, ξE) ∈ QE ∧
+        ContMDiff (𝓘(ℝ, E).prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace 𝓘(ℝ, E) (Φ ⟨x₀, hx₀W⟩)))) 𝓘(ℝ) ∞ φE ∧
+        (∀ z ∉ KE, ∀ p, φE (z, p) = 0) ∧
+        ∀ p ∈ QE, φE (Φ ⟨x₀, hx₀W⟩, p) = p.1 ∧
+          mgradient 𝓘(ℝ, E) (fun z ↦ φE (z, p)) (Φ ⟨x₀, hx₀W⟩) = p.2 ∧
+          ∀ z ∈ VE, ∀ u v : TangentSpace 𝓘(ℝ, E) z,
+            hessian 𝓘(ℝ, E) (fun w ↦ φE (w, p)) z u v =
+              (lc 𝓘(ℝ, E) E).conformalFlatteningForm z
+                (mgradient 𝓘(ℝ, E) (fun w ↦ φE (w, p)) z) u v) :
+    ∃ (φ : M × (ℝ × TangentSpace I x₀) → ℝ)
+      (V : Set M) (Q : Set (ℝ × TangentSpace I x₀)) (K : Set M),
+      IsOpen V ∧ IsOpen Q ∧ IsCompact K ∧ x₀ ∈ V ∧ (c₀, ξ₀) ∈ Q ∧
+      ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ φ ∧
+      (∀ x ∉ K, ∀ p, φ (x, p) = 0) ∧
+      ∀ p ∈ Q, φ (x₀, p) = p.1 ∧
+        mgradient I (fun x ↦ φ (x, p)) x₀ = p.2 ∧
+        ∀ y ∈ V, ∀ u v : TangentSpace I y,
+          hessian I (fun x ↦ φ (x, p)) y u v =
+            (lc I M).conformalFlatteningForm y (mgradient I (fun x ↦ φ (x, p)) y) u v := by
+  let x₀W : W := ⟨x₀, hx₀W⟩
+  have hι : TauCeti.IsLocalRiemannianIsometry I I (Subtype.val : W → M) :=
+    TauCeti.IsLocalRiemannianIsometry.subtype_val W
+  let L : TangentSpace I x₀ →L[ℝ] TangentSpace 𝓘(ℝ, E) (Φ x₀W) :=
+    (mfderiv I 𝓘(ℝ, E) Φ x₀W).comp
+      (tangentSpaceOpenEquiv (I := I) x₀W).symm.toContinuousLinearMap
+  have hL_inj : Injective L :=
+    (hΦ.mfderiv_injective x₀W).comp (tangentSpaceOpenEquiv (I := I) x₀W).symm.injective
+  obtain ⟨φE, VE, QE, KE, hVE, hQE, hKE, hz₀VE, hp₀QE, hφE, hφE_supp, hφE_sol⟩ :=
+    hsolE (L ξ₀)
+  let KM : Set M := (Subtype.val ∘ Φ.symm) '' KE
+  have hKM_cpt : IsCompact KM := hKE.image (continuous_subtype_val.comp Φ.symm.continuous)
+  have hKMW : KM ⊆ (W : Set M) := by
+    rintro _ ⟨z, -, rfl⟩
+    exact (Φ.symm z).2
+  let g : W × (ℝ × TangentSpace I x₀) → ℝ := fun q ↦ φE (Φ q.1, (q.2.1, L q.2.2))
+  have hg_supp (w : W) (hw : (w : M) ∉ KM) (p : ℝ × TangentSpace I x₀) : g (w, p) = 0 :=
+    hφE_supp (Φ w) (fun hz ↦ hw ⟨Φ w, hz, congrArg Subtype.val (Φ.symm_apply_apply w)⟩)
+      (p.1, L p.2)
+  have hg : ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ g :=
+    hφE.comp ((Φ.contMDiff.comp contMDiff_fst).prodMk
+      ((contMDiff_fst.comp contMDiff_snd).prodMk
+        (L.contDiff.contMDiff.comp (contMDiff_snd.comp contMDiff_snd))))
+  let φ : M × (ℝ × TangentSpace I x₀) → ℝ := (Prod.map (Subtype.val : W → M) id).extend g 0
+  have hφ : ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ φ :=
+    ContMDiff.extend_prodMap_subtypeVal_zero hKM_cpt.isClosed hKMW hg hg_supp
+  have hφ_supp (x : M) (hxK : x ∉ KM) (p : ℝ × TangentSpace I x₀) : φ (x, p) = 0 :=
+    Function.extend_prodMap_subtypeVal_eq g 0 p fun hxW ↦ hg_supp ⟨x, hxW⟩ hxK p
+  let VM : Set M := Subtype.val '' (Φ.symm '' VE)
+  have hVM : IsOpen VM :=
+    W.isOpen.isOpenMap_subtype_val _ (Φ.symm.toHomeomorph.isOpenMap VE hVE)
+  have hx₀VM : x₀ ∈ VM := ⟨x₀W, ⟨Φ x₀W, hz₀VE, Φ.symm_apply_apply x₀W⟩, rfl⟩
+  let Q : Set (ℝ × TangentSpace I x₀) := Prod.map id L ⁻¹' QE
+  have hQ : IsOpen Q := hQE.preimage (continuous_id.prodMap L.continuous)
+  refine ⟨φ, VM, Q, KM, hVM, hQ, hKM_cpt, hx₀VM, hp₀QE, hφ, hφ_supp, fun p hp ↦ ?_⟩
+  obtain ⟨hvalE, hgradE, hsolE⟩ := hφE_sol (p.1, L p.2) hp
+  set φp : M → ℝ := fun x ↦ φ (x, p)
+  set φEp : E → ℝ := fun z ↦ φE (z, (p.1, L p.2))
+  have hφp : ContMDiff I 𝓘(ℝ) ∞ φp := hφ.comp (contMDiff_id.prodMk contMDiff_const)
+  have hφEp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φEp := hφE.comp (contMDiff_id.prodMk contMDiff_const)
+  have hcompW : φp ∘ (Subtype.val : W → M) = φEp ∘ Φ :=
+    funext fun w ↦ (Subtype.val_injective.prodMap injective_id).extend_apply g 0 (w, p)
+  refine ⟨((Subtype.val_injective.prodMap injective_id).extend_apply g 0 (x₀W, p)).trans hvalE,
+    ?_, ?_⟩
+  · apply hL_inj
+    have hgradι : mfderiv I I (Subtype.val : W → M) x₀W (mgradient I (φp ∘ Subtype.val) x₀W) =
+        mgradient I φp x₀ :=
+      hι.mfderiv_mgradient_comp (x := x₀W) (hφp.contMDiffAt.mdifferentiableAt (by simp))
+    have hgradW : (tangentSpaceOpenEquiv (I := I) x₀W).symm (mgradient I φp x₀) =
+        mgradient I (φp ∘ Subtype.val) x₀W := by
+      rw [← hgradι, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+        ContinuousLinearEquiv.symm_apply_apply]
+    conv_lhs =>
+      simp only [L, ContinuousLinearMap.coe_comp, Function.comp_apply,
+        ContinuousLinearEquiv.coe_coe]
+    rw [hgradW, hcompW,
+      hΦ.mfderiv_mgradient_comp (x := x₀W) (hφEp.contMDiffAt.mdifferentiableAt (by simp))]
+    exact hgradE
+  · rintro _ ⟨_, ⟨z, hzVE, rfl⟩, rfl⟩
+    refine (hι.hessian_comp_eq_conformalFlatteningForm_iff (x := Φ.symm z)
+      (hφp.contMDiffAt.of_le (by simp))).1 ?_
+    rw [hcompW]
+    refine (hΦ.hessian_comp_eq_conformalFlatteningForm_iff (x := Φ.symm z)
+      (hφEp.contMDiffAt.of_le (by simp))).2 ?_
+    exact hsolE (Φ (Φ.symm z)) (by simpa using hzVE)
+
+/-- **Local smooth-family solvability of the conformal flattening equation at an interior point.**
+If the Weyl and Cotton tensors vanish near an interior point `x₀ : M`, then around any initial
+value `c₀ : ℝ` and initial gradient `ξ₀ : TangentSpace I x₀` there exist open neighbourhoods `V` of
+`x₀` and `Q` of `(c₀, ξ₀)`, a compact set `K ⊆ M`, and a jointly smooth function
+`φ : M × (ℝ × TangentSpace I x₀) → ℝ` vanishing outside `K` in the first variable such that for
+every `p ∈ Q`, `φ (x₀, p) = p.1`, `mgradient I (fun x ↦ φ (x, p)) x₀ = p.2`, and `φ (·, p)` solves
+`Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` at every point of `V`. -/
+theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ : I.IsInteriorPoint x₀)
+    (hW : ∀ᶠ y in 𝓝 x₀, (lc I M).weylTensor y = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (lc I M).cottonTensor y = 0)
+    (c₀ : ℝ) (ξ₀ : TangentSpace I x₀) :
+    ∃ (φ : M × (ℝ × TangentSpace I x₀) → ℝ)
+      (V : Set M) (Q : Set (ℝ × TangentSpace I x₀)) (K : Set M),
+      IsOpen V ∧ IsOpen Q ∧ IsCompact K ∧ x₀ ∈ V ∧ (c₀, ξ₀) ∈ Q ∧
+      ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ φ ∧
+      (∀ x ∉ K, ∀ p, φ (x, p) = 0) ∧
+      ∀ p ∈ Q, φ (x₀, p) = p.1 ∧
+        mgradient I (fun x ↦ φ (x, p)) x₀ = p.2 ∧
+        ∀ y ∈ V, ∀ u v : TangentSpace I y,
+          hessian I (fun x ↦ φ (x, p)) y u v =
+            (lc I M).conformalFlatteningForm y (mgradient I (fun x ↦ φ (x, p)) y) u v := by
+  obtain ⟨U₀, hU₀WC, hU₀open, hx₀U₀⟩ := mem_nhds_iff.1 (hW.and hC)
+  obtain ⟨W, hx₀W, Φ, hWU₀, -⟩ :=
+    TauCeti.exists_diffeomorph_modelSpace_of_isInteriorPoint (le_rfl : ∞ ≤ ∞) hx₀
+      (hU₀open.mem_nhds hx₀U₀)
+  -- Transport the restricted metric of `W` to `E` along `Φ.symm` so both `Φ` and `Subtype.val`
+  -- are local Riemannian isometries.
+  let gW := contMDiffRiemannianMetricOpen (I := I) (n := ∞) W
+  let gE := gW.pullback Φ.symm (Φ.symm.contMDiff.of_le (by simp))
+    fun z ↦ (Φ.symm.isInvertible_mfderiv (by simp) (x := z)).injective
+  let _ : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
+  have : IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) :=
+    ⟨gE.inner, gE.contMDiff, fun _ _ _ ↦ rfl⟩
+  -- `W` carries the scoped `instRiemannianBundleOpen W` instance rather than
+  -- `⟨gW.toRiemannianMetric⟩`, so build `Ψsymm` directly from `inner_tangentSpace_open`.
+  let Ψsymm : TauCeti.RiemannianIsometry 𝓘(ℝ, E) I E W :=
+    { toDiffeomorph := Φ.symm
+      inner_mfderiv' := fun z u v ↦ by
+        rw [inner_tangentSpace_open W, ← contMDiffRiemannianMetricOpen_inner (n := ∞) W,
+          gE.inner_riemannianBundle, gW.pullback_inner] }
+  have hΨ : TauCeti.IsLocalRiemannianIsometry 𝓘(ℝ, E) I Φ.symm := Ψsymm.isLocalRiemannianIsometry
+  have hcoe : (Ψsymm.symm : W → E) = Φ := by
+    rw [TauCeti.RiemannianIsometry.coe_symm, ← Diffeomorph.coe_toEquiv]
+    simp [Ψsymm]
+  have hΦ : TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, E) Φ :=
+    hcoe ▸ Ψsymm.symm.isLocalRiemannianIsometry
+  have hι : TauCeti.IsLocalRiemannianIsometry I I (Subtype.val : W → M) :=
+    TauCeti.IsLocalRiemannianIsometry.subtype_val W
+  have hWE (z : E) : (lc 𝓘(ℝ, E) E).weylTensor z = 0 :=
+    (hΨ.weylTensor_eq_zero_iff z).1
+      ((hι.weylTensor_eq_zero_iff (Φ.symm z)).1 (hU₀WC (hWU₀ (Φ.symm z).2)).1)
+  have hCE (z : E) : (lc 𝓘(ℝ, E) E).cottonTensor z = 0 :=
+    (hΨ.cottonTensor_eq_zero_iff z).1
+      ((hι.cottonTensor_eq_zero_iff (Φ.symm z)).1 (hU₀WC (hWU₀ (Φ.symm z).2)).2)
+  exact exists_contMDiff_hessian_eq_family_of_diffeomorph_open hx₀W Φ hΦ c₀ ξ₀
+    (exists_contMDiff_hessian_eq_family_model_space
+      (Eventually.of_forall hWE) (Eventually.of_forall hCE) c₀)
+
+/-- **Local smooth-family solvability of the conformal flattening equation on a boundaryless
+manifold.** -/
+theorem exists_contMDiff_hessian_eq_family [BoundarylessManifold I M] {x₀ : M}
+    (hW : ∀ᶠ y in 𝓝 x₀, (lc I M).weylTensor y = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (lc I M).cottonTensor y = 0)
+    (c₀ : ℝ) (ξ₀ : TangentSpace I x₀) :
+    ∃ (φ : M × (ℝ × TangentSpace I x₀) → ℝ)
+      (V : Set M) (Q : Set (ℝ × TangentSpace I x₀)) (K : Set M),
+      IsOpen V ∧ IsOpen Q ∧ IsCompact K ∧ x₀ ∈ V ∧ (c₀, ξ₀) ∈ Q ∧
+      ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ φ ∧
+      (∀ x ∉ K, ∀ p, φ (x, p) = 0) ∧
+      ∀ p ∈ Q, φ (x₀, p) = p.1 ∧
+        mgradient I (fun x ↦ φ (x, p)) x₀ = p.2 ∧
+        ∀ y ∈ V, ∀ u v : TangentSpace I y,
+          hessian I (fun x ↦ φ (x, p)) y u v =
+            (lc I M).conformalFlatteningForm y (mgradient I (fun x ↦ φ (x, p)) y) u v :=
+  exists_contMDiff_hessian_eq_family_of_isInteriorPoint BoundarylessManifold.isInteriorPoint
+    hW hC c₀ ξ₀
+
+/-- **Local solvability of the conformal flattening equation at an interior point.** Where the Weyl
+and Cotton tensors vanish near an interior point `x₀`, there is a globally smooth function `φ` on
+`M` with prescribed value `c` and gradient `ξ` at `x₀` solving the conformal flattening equation
+near `x₀`. -/
+theorem exists_eventually_hessian_eq_of_isInteriorPoint {x₀ : M} (hx₀ : I.IsInteriorPoint x₀)
+    (hW : ∀ᶠ y in 𝓝 x₀, (lc I M).weylTensor y = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (lc I M).cottonTensor y = 0)
+    (c : ℝ) (ξ : TangentSpace I x₀) :
+    ∃ φ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient I φ x₀ = ξ ∧
+      ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace I y,
+        hessian I φ y u v = (lc I M).conformalFlatteningForm y (mgradient I φ y) u v := by
+  obtain ⟨φ, V, Q, -, hV, -, -, hx₀V, hcξQ, hφ, -, hsol⟩ :=
+    exists_contMDiff_hessian_eq_family_of_isInteriorPoint hx₀ hW hC c ξ
+  obtain ⟨hval, hgrad, hhess⟩ := hsol (c, ξ) hcξQ
+  exact ⟨fun x ↦ φ (x, (c, ξ)), hφ.comp (contMDiff_id.prodMk contMDiff_const), hval, hgrad,
+    eventually_of_mem (hV.mem_nhds hx₀V) hhess⟩
+
+/-- **Local solvability of the conformal flattening equation on a boundaryless manifold.** -/
+theorem exists_eventually_hessian_eq [BoundarylessManifold I M] {x₀ : M}
+    (hW : ∀ᶠ y in 𝓝 x₀, (lc I M).weylTensor y = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (lc I M).cottonTensor y = 0)
+    (c : ℝ) (ξ : TangentSpace I x₀) :
+    ∃ φ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient I φ x₀ = ξ ∧
+      ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace I y,
+        hessian I φ y u v = (lc I M).conformalFlatteningForm y (mgradient I φ y) u v :=
+  exists_eventually_hessian_eq_of_isInteriorPoint BoundarylessManifold.isInteriorPoint hW hC c ξ
+
+end Manifold
 
 end TauCeti.Manifold
