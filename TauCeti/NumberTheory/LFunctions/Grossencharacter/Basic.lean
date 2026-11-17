@@ -140,6 +140,13 @@ theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOne
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
 
+/-- Two presentations of the same Hecke character, even at different moduli, have the same
+algebraic infinity type. -/
+theorem infinityType_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.infinityType = ψ.infinityType :=
+  AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
+    (χ.agreesOnIdentityComponent.symm.trans (h ▸ ψ.agreesOnIdentityComponent))
+
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
 the weight is determined at every prime: at the primes of `𝔪` it vanishes, and at the others it is
@@ -147,9 +154,7 @@ a local component of the unitary part. -/
 @[ext]
 theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) :
     χ = ψ := by
-  have hn : χ.infinityType = ψ.infinityType :=
-    AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
-      (χ.agreesOnIdentityComponent.symm.trans (h ▸ ψ.agreesOnIdentityComponent))
+  have hn : χ.infinityType = ψ.infinityType := infinityType_congr h
   have hw : χ.unitaryWeight = ψ.unitaryWeight := by
     refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
     by_cases hv : v.asIdeal ∣ 𝔪.finitePart
@@ -205,6 +210,11 @@ def idealShift (χ : Grossencharacter K 𝔪) : ℝ :=
 theorem idealShift_def (χ : Grossencharacter K 𝔪) :
     χ.idealShift = -χ.toHeckeCharacter.shift :=
   (rfl)
+
+/-- Two presentations of the same Hecke character have the same ideal-side shift. -/
+theorem idealShift_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.idealShift = ψ.idealShift := by
+  rw [idealShift_def, idealShift_def, h]
 
 /-- **The value at a prime idele.** At a uniformizer `π_v` of `K_v`, `v ∤ 𝔪`, the presented Hecke
 character is the unitary weight times the norm to the ideal-side shift:
@@ -308,6 +318,10 @@ theorem lFunctionC_def (χ : Grossencharacter K 𝔪) :
 theorem meromorphicNFOn_lFunctionC (χ : Grossencharacter K 𝔪) :
     MeromorphicNFOn χ.lFunctionC univ :=
   meromorphicNFOn_meromorphicContinuation _ _
+
+/-- The presented L-function is meromorphic on the whole complex plane. -/
+theorem meromorphic_lFunctionC (χ : Grossencharacter K 𝔪) : Meromorphic χ.lFunctionC :=
+  meromorphicOn_univ.mp χ.meromorphicNFOn_lFunctionC.meromorphicOn
 
 /-- The shifted Dirichlet series of `χ` is holomorphic on `Re s > 1 + idealShift`. -/
 theorem analyticOnNhd_LSeries_sub_idealShift (χ : Grossencharacter K 𝔪) :

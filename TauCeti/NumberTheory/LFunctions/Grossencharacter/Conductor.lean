@@ -110,11 +110,7 @@ namespace Grossencharacter
 
 variable {𝔪 𝔫 : Modulus K}
 
-/-! ### Meromorphy and the unitary weight of a presentation -/
-
-/-- The presented L-function is meromorphic on the whole complex plane. -/
-theorem meromorphic_lFunctionC (χ : Grossencharacter K 𝔪) : Meromorphic χ.lFunctionC :=
-  meromorphicOn_univ.mp χ.meromorphicNFOn_lFunctionC.meromorphicOn
+/-! ### The unitary weight of a presentation -/
 
 /-- **The unitary weight of any presentation at `𝔪` is the primitive unitary ideal weight of its
 Hecke character restricted away from `𝔪.support`.** -/
@@ -139,18 +135,6 @@ theorem unitaryWeight_eq_restrictAway (χ : Grossencharacter K 𝔪) :
       MultiplicativeIdealWeight.restrictAway_apply,
       ite_eq_left_iff.mpr fun h ↦ (h hgood).elim,
       HeckeCharacter.unitaryIdealWeight_apply_prime _ v hndvd u hu]
-
-/-- Two presentations of the same Hecke character, even at different moduli, have the same
-algebraic infinity type. -/
-theorem infinityType_congr {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
-    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.infinityType = ψ.infinityType :=
-  AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
-    (χ.agreesOnIdentityComponent.symm.trans (h ▸ ψ.agreesOnIdentityComponent))
-
-/-- Two presentations of the same Hecke character have the same ideal-side shift. -/
-theorem idealShift_congr {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
-    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.idealShift = ψ.idealShift := by
-  rw [idealShift_def, idealShift_def, h]
 
 /-! ### The presentation conductor and primitive reduction -/
 
@@ -528,11 +512,12 @@ theorem lFunctionC_eventuallyEq_of_dvd {χ : Grossencharacter K 𝔪} {ψ : Gros
     (h : 𝔪 ∣ 𝔫) (hψ : ψ.toHeckeCharacter = χ.toHeckeCharacter) (s : ℂ) :
     ψ.lFunctionC =ᶠ[𝓝[≠] s] fun z ↦ χ.lFunctionC z * χ.eulerCorrection 𝔫 z := by
   rw [lFunctionC_eq_meromorphicContinuation_smul h hψ]
+  have hne : ∀ z : ℂ, 1 + χ.idealShift < z.re → χ.eulerCorrection 𝔫 z ≠ 0 :=
+    fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (by linarith)
   filter_upwards [meromorphicContinuation_smul_eventuallyEq
     (fun z ↦ ((χ.differentiable_eulerCorrection 𝔫).analyticAt z).meromorphicAt)
     (fun z _ ↦ (χ.differentiable_eulerCorrection 𝔫).analyticAt z)
-    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (by linarith [show 1 + χ.idealShift < z.re from hz]))
-    χ.analyticOnNhd_LSeries_sub_idealShift s] with z hz
+    hne χ.analyticOnNhd_LSeries_sub_idealShift s] with z hz
   rw [hz, Pi.smul_apply', smul_eq_mul, mul_comm, χ.lFunctionC_def]
 
 /-- **Passing to a larger modulus multiplies `lFunctionC` by the deleted Euler factors on

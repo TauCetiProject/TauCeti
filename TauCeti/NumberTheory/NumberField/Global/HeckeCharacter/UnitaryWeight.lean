@@ -131,107 +131,19 @@ private def unitaryOnIntegralIdeals (χ : HeckeCharacter K) :
       →* ℂˣ :=
   χ.unitaryPart.idealCharacter.comp (NumberFieldArithmetic.integralIdealsAwayHom K _)
 
-open Classical in
-/-- The underlying `MonoidWithZeroHom` of `χ.unitaryIdealWeight`, extending
-`χ.unitaryOnIntegralIdeals` by zero on ideals meeting `χ.finiteConductor`. -/
-private def toIdealWeightHom (χ : HeckeCharacter K) : Ideal (𝓞 K) →*₀ ℂ :=
-  let 𝔣 : Modulus K := ⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩
-  { toFun I :=
-      if h : Ideal.IsPrimeTo I 𝔣.support then
-        (χ.unitaryOnIntegralIdeals
-          ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-            (Ideal.isPrimeTo_iff.mp h)⟩ : ℂ)
-      else 0
-    map_zero' := by simp
-    map_one' := by
-      simp only [Ideal.one_eq_top, Ideal.isPrimeTo_top, dite_true]
-      have htop : (⟨⊤, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-          (Ideal.isPrimeTo_iff.mp Ideal.isPrimeTo_top)⟩ : integralIdealsPrimeTo 𝔣) = 1 :=
-        Subtype.ext (by simp [Ideal.one_eq_top])
-      rw [htop, map_one, Units.val_one]
-    map_mul' I J := by
-      by_cases hI : Ideal.IsPrimeTo I 𝔣.support <;>
-        by_cases hJ : Ideal.IsPrimeTo J 𝔣.support
-      · have hIJ : Ideal.IsPrimeTo (I * J) 𝔣.support :=
-          Ideal.isPrimeTo_mul_iff.mpr ⟨hI, hJ⟩
-        simp only [hI, hJ, hIJ, dite_true]
-        exact_mod_cast map_mul χ.unitaryOnIntegralIdeals
-          ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-            (Ideal.isPrimeTo_iff.mp hI)⟩
-          ⟨J, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-            (Ideal.isPrimeTo_iff.mp hJ)⟩
-      · have hIJ : ¬ Ideal.IsPrimeTo (I * J) 𝔣.support :=
-          fun h ↦ hJ (Ideal.isPrimeTo_mul_iff.mp h).2
-        simp [hIJ, hJ]
-      · have hIJ : ¬ Ideal.IsPrimeTo (I * J) 𝔣.support :=
-          fun h ↦ hI (Ideal.isPrimeTo_mul_iff.mp h).1
-        simp [hIJ, hI]
-      · have hIJ : ¬ Ideal.IsPrimeTo (I * J) 𝔣.support :=
-          fun h ↦ hI (Ideal.isPrimeTo_mul_iff.mp h).1
-        simp [hIJ, hI] }
-
-open Classical in
-private theorem toIdealWeightHom_apply (χ : HeckeCharacter K) (I : Ideal (𝓞 K)) :
-    χ.toIdealWeightHom I =
-      if h : Ideal.IsPrimeTo I
-          (⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩ :
-            Modulus K).support then
-        (χ.unitaryOnIntegralIdeals
-          ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-            (Ideal.isPrimeTo_iff.mp h)⟩ : ℂ)
-      else 0 :=
-  rfl
-
-/-- The underlying completely multiplicative ideal weight of `χ.unitaryPart`, extended by zero at
-the ideals not prime to `χ.finiteConductor`. -/
-private def toMultiplicativeIdealWeight (χ : HeckeCharacter K) : MultiplicativeIdealWeight K where
-  toMonoidWithZeroHom := χ.toIdealWeightHom
-  finite_setOf_apply_eq_zero := by
-    let 𝔣 : Modulus K := ⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩
-    convert 𝔣.support.finite_toSet using 1
-    ext 𝔭
-    simp [Set.mem_ofPred_eq, χ.toIdealWeightHom_apply, 𝔣]
-
-open Classical in
-private theorem toMultiplicativeIdealWeight_apply (χ : HeckeCharacter K) (I : Ideal (𝓞 K)) :
-    χ.toMultiplicativeIdealWeight I =
-      if h : Ideal.IsPrimeTo I
-          (⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩ :
-            Modulus K).support then
-        (χ.unitaryOnIntegralIdeals
-          ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-            (Ideal.isPrimeTo_iff.mp h)⟩ : ℂ)
-      else 0 :=
-  rfl
-
-private theorem toMultiplicativeIdealWeight_apply_of_dvd (χ : HeckeCharacter K)
-    {v : HeightOneSpectrum (𝓞 K)} (hv : v.asIdeal ∣ χ.finiteConductor) :
-    χ.toMultiplicativeIdealWeight v.asIdeal = 0 := by
-  simp [toMultiplicativeIdealWeight_apply, hv]
-
-private theorem toMultiplicativeIdealWeight_apply_prime (χ : HeckeCharacter K)
-    (v : HeightOneSpectrum (𝓞 K)) (hv : ¬ v.asIdeal ∣ χ.finiteConductor)
-    (u : (v.adicCompletion K)ˣ)
-    (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
-    χ.toMultiplicativeIdealWeight v.asIdeal = χ.unitaryPart.finiteComponent v u := by
-  let 𝔣 : Modulus K := ⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩
-  have hv' : v ∉ 𝔣.support := (𝔣.mem_support_iff v).not.mpr (by simpa [𝔣] using hv)
-  have hgood : Ideal.IsPrimeTo v.asIdeal 𝔣.support := Ideal.isPrimeTo_asIdeal_iff.mpr hv'
-  rw [χ.toMultiplicativeIdealWeight_apply, dite_eq_left hgood, unitaryOnIntegralIdeals,
-    MonoidHom.comp_apply, χ.unitaryPart.idealCharacter_apply_prime _ v
-      (NumberFieldArithmetic.coe_integralIdealsAwayHom _ _) u hu]
-
 /-- **The primitive unitary ideal weight of a Hecke character** `χ`: the completely multiplicative
 unitary weight of `χ.unitaryPart`, extended by zero at the ideals not prime to `χ.finiteConductor`.
 At every prime `v ∤ χ.finiteConductor`, its value is the local component of `χ.unitaryPart` at any
 uniformizer of `K_v` (`unitaryIdealWeight_apply_prime`). -/
 def unitaryIdealWeight (χ : HeckeCharacter K) : TauCeti.UnitaryIdealWeight K :=
-  ⟨χ.toMultiplicativeIdealWeight, fun 𝔭 h𝔭 ↦ by
-    have hv : ¬ 𝔭.asIdeal ∣ χ.finiteConductor := fun hdvd ↦ h𝔭 <| by
-      rw [MultiplicativeIdealWeight.mem_badPrimes]
-      exact toMultiplicativeIdealWeight_apply_of_dvd χ hdvd
+  ⟨MultiplicativeIdealWeight.ofIntegralIdealsAway _ χ.unitaryOnIntegralIdeals, fun 𝔭 h𝔭 ↦ by
+    rw [MultiplicativeIdealWeight.badPrimes_ofIntegralIdealsAway, Finset.mem_coe] at h𝔭
+    have hgood : Ideal.IsPrimeTo 𝔭.asIdeal _ := Ideal.isPrimeTo_asIdeal_iff.mpr h𝔭
+    rw [MultiplicativeIdealWeight.ofIntegralIdealsAway_apply_of_isPrimeTo _ hgood,
+      unitaryOnIntegralIdeals, MonoidHom.comp_apply]
     obtain ⟨u, hu⟩ := 𝔭.exists_unit_valued_eq_exp K (-1)
-    rw [toMultiplicativeIdealWeight_apply_prime χ 𝔭 hv u hu, finiteComponent_apply]
+    rw [χ.unitaryPart.idealCharacter_apply_prime _ 𝔭
+      (NumberFieldArithmetic.coe_integralIdealsAwayHom _ _) u hu, finiteComponent_apply]
     exact χ.norm_unitaryPart _⟩
 
 /-- **At a prime outside the finite conductor, the unitary ideal weight evaluates the local
@@ -239,26 +151,27 @@ component of `χ.unitaryPart` on any uniformizer.** -/
 theorem unitaryIdealWeight_apply_prime (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞 K))
     (hv : ¬ v.asIdeal ∣ χ.finiteConductor) (u : (v.adicCompletion K)ˣ)
     (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
-    χ.unitaryIdealWeight.1 v.asIdeal = χ.unitaryPart.finiteComponent v u :=
-  toMultiplicativeIdealWeight_apply_prime χ v hv u hu
+    χ.unitaryIdealWeight.1 v.asIdeal = χ.unitaryPart.finiteComponent v u := by
+  let 𝔣 : Modulus K := ⟨χ.unitaryPart.finiteConductor, χ.unitaryPart.finiteConductor_ne_bot, ∅⟩
+  have hv' : v ∉ 𝔣.support := (𝔣.mem_support_iff v).not.mpr (by simpa [𝔣] using hv)
+  have hgood : Ideal.IsPrimeTo v.asIdeal 𝔣.support := Ideal.isPrimeTo_asIdeal_iff.mpr hv'
+  rw [unitaryIdealWeight,
+    MultiplicativeIdealWeight.ofIntegralIdealsAway_apply_of_isPrimeTo _ hgood,
+    unitaryOnIntegralIdeals, MonoidHom.comp_apply,
+    χ.unitaryPart.idealCharacter_apply_prime _ v
+      (NumberFieldArithmetic.coe_integralIdealsAwayHom _ _) u hu]
 
 /-- **A prime is bad for `χ.unitaryIdealWeight` exactly when it divides `χ.finiteConductor`.** -/
 theorem mem_badPrimes_unitaryIdealWeight_iff (χ : HeckeCharacter K)
     (v : HeightOneSpectrum (𝓞 K)) :
     v ∈ χ.unitaryIdealWeight.1.badPrimes ↔ v.asIdeal ∣ χ.finiteConductor := by
-  refine ⟨fun h ↦ ?_, fun hv ↦ ?_⟩
-  · by_contra hv
-    obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
-    rw [MultiplicativeIdealWeight.mem_badPrimes, unitaryIdealWeight_apply_prime χ v hv u hu] at h
-    exact (χ.unitaryPart.finiteComponent v u).ne_zero h
-  · rw [MultiplicativeIdealWeight.mem_badPrimes]
-    exact toMultiplicativeIdealWeight_apply_of_dvd χ hv
+  simp [unitaryIdealWeight]
 
 /-- The unitary ideal weight vanishes at every prime dividing `χ.finiteConductor`. -/
 theorem unitaryIdealWeight_apply_of_dvd (χ : HeckeCharacter K) {v : HeightOneSpectrum (𝓞 K)}
     (hv : v.asIdeal ∣ χ.finiteConductor) :
     χ.unitaryIdealWeight.1 v.asIdeal = 0 :=
-  toMultiplicativeIdealWeight_apply_of_dvd χ hv
+  MultiplicativeIdealWeight.mem_badPrimes.mp ((χ.mem_badPrimes_unitaryIdealWeight_iff v).mpr hv)
 
 /-- The unitary ideal weight vanishes on every ideal not prime to the prime divisors of
 `χ.finiteConductor`. -/
@@ -292,12 +205,6 @@ theorem unitaryIdealWeight_unitaryPart (χ : HeckeCharacter K) :
   · obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
     rw [unitaryIdealWeight_apply_prime _ v (by rwa [finiteConductor_unitaryPart]) u hu,
       unitaryIdealWeight_apply_prime _ v hv u hu, unitaryPart_unitaryPart]
-
-/-- Every real norm-power Hecke character `‖·‖ ^ σ` has trivial unitary part. -/
-@[simp]
-theorem unitaryPart_normPow_ofReal (σ : ℝ) : (normPow K σ).unitaryPart = 1 := by
-  have h := unitaryPart_mul_normPow (K := K) (ψ := 1) shift_one σ
-  rwa [one_mul (normPow K σ)] at h
 
 /-- Every real norm-power Hecke character `‖·‖ ^ σ` has unitary ideal weight `1`, as its unitary
 part is `1`. -/
