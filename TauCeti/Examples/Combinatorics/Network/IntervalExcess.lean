@@ -88,7 +88,7 @@ private theorem assignment_mem_Icc {q : ℤ} (hq₀ : 0 ≤ q) (hq₃ : q ≤ 3)
   · simpa [lower, assignment] using hq₀
   · simpa [upper, assignment] using hq₃
 
-/-- Between one and three units must move from `false` to `true`. -/
+/-- Lower excess bounds: supply at most three at `false`, demand at least one at `true`. -/
 def flexibleLower : Bool → ℤ
   | false => -3
   | true => 1
@@ -99,7 +99,7 @@ theorem flexibleLower_false : flexibleLower false = -3 := (rfl)
 @[simp]
 theorem flexibleLower_true : flexibleLower true = 1 := (rfl)
 
-/-- Between one and three units may move from `false` to `true`. -/
+/-- Upper excess bounds: supply at least one at `false`, demand at most three at `true`. -/
 def flexibleUpper : Bool → ℤ
   | false => -1
   | true => 3
