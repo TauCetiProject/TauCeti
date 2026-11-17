@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Sesquilinear forms on inner product spaces
@@ -15,7 +17,9 @@ A linear map `T : E →ₗ[𝕜] F` defines the sesquilinear form `(x, y) ↦ �
 finite-dimensional every sesquilinear form arises from exactly one `T`. This is the linear
 equivalence `LinearMap.toSesqForm`, the algebraic counterpart of Mathlib's
 `ContinuousLinearMap.toSesqForm`. A sesquilinear form on `E` is Hermitian (`LinearMap.IsSymm`)
-exactly when its operator is symmetric (`LinearMap.isSymm_toSesqForm_iff`).
+exactly when its operator is symmetric (`LinearMap.isSymm_toSesqForm_iff`). In a basis with Gram
+matrix `g`, the matrix of the operator `A_a` of a form `a` is `g⁻¹[a]`
+(`LinearMap.gram_mul_toMatrix_toSesqForm_symm`).
 
 ## Sesquilinear forms with prescribed adjoints
 
@@ -94,6 +98,17 @@ theorem IsSymm.isSymmetric_toSesqForm_symm {a : E →ₗ⋆[𝕜] E →ₗ[𝕜]
     ((toSesqForm 𝕜 E E).symm a).IsSymmetric := by
   rw [← isSymm_toSesqForm_iff, LinearEquiv.apply_symm_apply]
   exact ha
+
+/-- In a basis `b` with Gram matrix `g`, the matrix of the operator `A_a` of a sesquilinear form
+`a` satisfies `g·[A_a] = [a]`, so `[A_a] = g⁻¹[a]`. -/
+theorem gram_mul_toMatrix_toSesqForm_symm {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) (a : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) :
+    Matrix.gram 𝕜 b * LinearMap.toMatrix b b ((toSesqForm 𝕜 E E).symm a) =
+      LinearMap.toMatrix₂ b b a := by
+  ext i j
+  rw [Matrix.mul_apply, LinearMap.toMatrix₂_apply, ← LinearMap.inner_toSesqForm_symm_apply,
+    ← b.sum_repr ((toSesqForm 𝕜 E E).symm a (b j)), inner_sum]
+  simp [Matrix.gram, LinearMap.toMatrix_apply, inner_smul_right, mul_comm]
 
 end ToSesqForm
 

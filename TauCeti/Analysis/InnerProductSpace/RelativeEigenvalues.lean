@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.Trace
-public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
+public import TauCeti.Analysis.InnerProductSpace.Spectrum
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Eigenvalues of a Hermitian form relative to an inner product
@@ -42,9 +41,10 @@ orthonormal basis that diagonalizes it. In a basis with Gram matrix `g` and coef
   `det(Id + t·A_a) = Σ_k σ_k(λ[a])·t^k`.
 * `LinearMap.IsSymm.relEigenvalues_compl₂`: invariance under linear isometries,
   `λ[a(U·, U·)] = λ[a]`.
-* `LinearMap.IsSymm.gram_mul_toMatrix` and `LinearMap.IsSymm.det_toMatrix₂_sub_smul_gram`: in a
-  basis with Gram matrix `g`, `g·[A_a] = [a]` and `det([a] − μ·g) = det g · ∏_i (λ_i[a] − μ)`, so
-  `λ[a]` lists the roots of `det([a] − μ·g) = 0`.
+* `LinearMap.IsSymm.det_toMatrix₂_sub_smul_gram`: in a basis with Gram matrix `g`,
+  `det([a] − μ·g) = det g · ∏_i (λ_i[a] − μ)`, so `λ[a]` lists the roots of
+  `det([a] − μ·g) = 0`. It rests on `g·[A_a] = [a]`
+  (`LinearMap.gram_mul_toMatrix_toSesqForm_symm`).
 * `LinearMap.IsSymm.relEigenvalues_mono` and
   `LinearMap.IsSymm.abs_relEigenvalues_sub_le_opNorm`: monotonicity in the order of Hermitian
   forms and the Lipschitz bound `|λ_i[a] − λ_i[b]| ≤ ‖A_a − A_b‖`, from the Courant–Fischer
@@ -63,30 +63,6 @@ public section
 open Module (finrank)
 open scoped InnerProductSpace
 open LinearMap (toSesqForm)
-
-/-- The determinant of `c·Id + d·T` for a symmetric `T` is `∏_i (c + d·λ_i(T))`. -/
-private theorem LinearMap.IsSymmetric.det_smul_id_add_smul {𝕜 E : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] {n : ℕ}
-    {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (c d : 𝕜) :
-    LinearMap.det (c • LinearMap.id + d • T) = ∏ i, (c + d * (hT.eigenvalues hn i : 𝕜)) := by
-  let b := (hT.eigenvectorBasis hn).toBasis
-  rw [← LinearMap.det_toMatrix b, map_add, map_smul, map_smul, LinearMap.toMatrix_id,
-    hT.toMatrix_eigenvectorBasis hn, Matrix.smul_one_eq_diagonal, ← Matrix.diagonal_smul,
-    Matrix.diagonal_add, Matrix.det_diagonal]
-  simp [smul_eq_mul]
-
-/-- `∏_i (1 + t·μ_i) = Σ_k σ_k(μ)·t^k`. -/
-private theorem prod_one_add_mul_eq_sum_esymm {n : ℕ} (μ : Fin n → ℝ) (t : ℝ) :
-    ∏ i, (1 + t * μ i) =
-      ∑ k ∈ Finset.range (n + 1), MvPolynomial.eval μ (MvPolynomial.esymm (Fin n) ℝ k) * t ^ k := by
-  rw [Finset.prod_one_add, ← Finset.sum_fiberwise_of_maps_to (g := Finset.card)
-    (t := Finset.range (n + 1)) fun s _ ↦ by
-      simpa [Nat.lt_succ_iff] using Finset.card_le_univ s]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [← Finset.powersetCard_eq_filter]
-  simp only [MvPolynomial.esymm, map_sum, map_prod, MvPolynomial.eval_X, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun s hs ↦ ?_
-  rw [Finset.prod_mul_distrib, Finset.prod_const, (Finset.mem_powersetCard.mp hs).2, mul_comm]
 
 namespace LinearMap.IsSymm
 
@@ -181,14 +157,16 @@ theorem prod_relEigenvalues (ha : a.IsSymm) (hn : finrank 𝕜 E = n) :
 
 /-- `det(Id + t·A_a) = Σ_k σ_k(λ[a])·t^k`, where `σ_k` is the `k`-th elementary symmetric
 polynomial. -/
-theorem det_id_add_smul (ha : a.IsSymm) (hn : finrank 𝕜 E = n) (t : ℝ) :
-    LinearMap.det (LinearMap.id + (t : 𝕜) • (toSesqForm 𝕜 E E).symm a) =
-      ((∑ k ∈ Finset.range (n + 1),
-        MvPolynomial.eval (ha.relEigenvalues hn) (MvPolynomial.esymm (Fin n) ℝ k) * t ^ k : ℝ) :
-          𝕜) := by
-  rw [← prod_one_add_mul_eq_sum_esymm, ← one_smul 𝕜 LinearMap.id,
-    ha.isSymmetric_toSesqForm_symm.det_smul_id_add_smul hn]
-  simp [relEigenvalues_def]
+theorem det_id_add_smul (ha : a.IsSymm) (hn : finrank 𝕜 E = n) (t : 𝕜) :
+    LinearMap.det (LinearMap.id + t • (toSesqForm 𝕜 E E).symm a) =
+      ∑ k ∈ Finset.range (n + 1),
+        (MvPolynomial.eval (ha.relEigenvalues hn) (MvPolynomial.esymm (Fin n) ℝ k) : 𝕜) *
+          t ^ k := by
+  rw [← one_smul 𝕜 LinearMap.id, ha.isSymmetric_toSesqForm_symm.det_smul_id_add_smul hn]
+  have h := TauCeti.prod_one_add_mul_eq_sum_esymm (fun i ↦ (ha.relEigenvalues hn i : 𝕜)) t
+  rw [Fintype.card_fin] at h
+  refine h.trans (Finset.sum_congr rfl fun k _ ↦ ?_)
+  simp [MvPolynomial.esymm, map_sum, map_prod]
 
 /-- **Invariance under linear isometries.** For a linear isometry equivalence `U`, the form
 `a(U·, U·)` has the same relative eigenvalues as `a`; in particular `λ[a(U·, U·)] = λ[a]` for every
@@ -200,17 +178,6 @@ theorem relEigenvalues_compl₂ {E' : Type*} [NormedAddCommGroup E'] [InnerProdu
   refine h.relEigenvalues_eq_of_orthonormalBasis hn' ((ha.relEigenvectorBasis hn).map U.symm)
     (ha.relEigenvalues_antitone hn) fun i j ↦ ?_
   simp [ha.apply_relEigenvectorBasis]
-
-/-- In a basis `b` with Gram matrix `g`, the matrix of the operator `A_a` of a sesquilinear form
-`a` satisfies `g·[A_a] = [a]`, so `[A_a] = g⁻¹[a]`. -/
-theorem _root_.LinearMap.gram_mul_toMatrix_toSesqForm_symm {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (b : Module.Basis ι 𝕜 E) (a : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) :
-    Matrix.gram 𝕜 b * LinearMap.toMatrix b b ((toSesqForm 𝕜 E E).symm a) =
-      LinearMap.toMatrix₂ b b a := by
-  ext i j
-  rw [Matrix.mul_apply, LinearMap.toMatrix₂_apply, ← LinearMap.inner_toSesqForm_symm_apply,
-    ← b.sum_repr ((toSesqForm 𝕜 E E).symm a (b j)), inner_sum]
-  simp [Matrix.gram, LinearMap.toMatrix_apply, inner_smul_right, mul_comm]
 
 /-- **The relative eigenvalues in a basis.** In a basis `b` with Gram matrix `g` and coefficient
 matrix `[a]`, `det([a] − μ·g) = det g · ∏_i (λ_i[a] − μ)`. Since `det g ≠ 0`, the relative
