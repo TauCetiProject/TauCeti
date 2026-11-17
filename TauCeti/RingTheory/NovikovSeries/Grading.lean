@@ -321,14 +321,11 @@ degrees. -/
 theorem finite_image_support_of_mem_iSup_nonnegGradeBy {f : H → ι} {a : nonnegSubring R N}
     (ha : a ∈ ⨆ i, nonnegGradeBy S R N f i) :
     (f '' (a : NovikovSeries R H N).support).Finite :=
-  Submodule.iSup_induction (motive := fun b => (f '' (b : NovikovSeries R H N).support).Finite)
-    (nonnegGradeBy S R N f) ha
-    (fun i _ hb => (finite_singleton i).subset
-      ((image_mono (mem_nonnegGradeBy_iff.1 hb)).trans (image_preimage_subset f {i})))
-    (by simp)
-    fun b c hb hc => (hb.union hc).subset
-      ((image_mono (support_add_subset (b : NovikovSeries R H N) (c : NovikovSeries R H N))).trans
-        (image_union f _ _).le)
+  finite_image_support_of_mem_iSup_gradeBy <|
+    Submodule.iSup_induction
+      (motive := fun b => (b : NovikovSeries R H N) ∈ ⨆ i, gradeBy R N f i)
+      (nonnegGradeBy S R N f) ha (fun i _ hb => Submodule.mem_iSup_of_mem i hb) (by simp)
+      fun _ _ hb hc => by simpa using add_mem hb hc
 
 /-- For an additive degree homomorphism, the homogeneous pieces of the nonnegative subring form a
 graded monoid, equipping `⨁ i, nonnegGradeBy S R N f i` with a `DirectSum.GAlgebra S` structure. -/
@@ -337,10 +334,10 @@ instance nonnegGradeBy.gradedMonoid [AddMonoid ι] (f : H →+ ι) :
   one_mem := SetLike.GradedOne.one_mem (A := gradeBy R N f)
   mul_mem i j _ _ ha hb := SetLike.GradedMul.mul_mem (A := gradeBy R N f) (i := i) (j := j) ha hb
 
-/-- A finitely supported series supported in nonnegative periods lies in the nonnegative subring
-and is a finite sum of nonnegative homogeneous series. -/
+/-- A finitely supported series in `nonnegSubring R N` is a finite sum of nonnegative homogeneous
+series. -/
 theorem ofFinsupp_mem_iSup_nonnegGradeBy (f : H → ι) {x : H →₀ R}
-    (hx : ∀ h ∈ x.support, 0 ≤ N h) (hx0 : ofFinsupp x ∈ nonnegSubring R N) :
+    (hx0 : ofFinsupp x ∈ nonnegSubring R N) :
     (⟨ofFinsupp x, hx0⟩ : nonnegSubring R N) ∈ ⨆ i, nonnegGradeBy S R N f i := by
   classical
   induction x using Finsupp.induction with
@@ -349,44 +346,28 @@ theorem ofFinsupp_mem_iSup_nonnegGradeBy (f : H → ι) {x : H →₀ R}
     ext1
     simp
   | single_add h r y hhy hr ih =>
-    have hh0 : 0 ≤ N h := hx h (Finsupp.mem_support_iff.2 <| by
-      rw [Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.notMem_support_iff.1 hhy, add_zero]
-      exact hr)
-    have hy_supp : ∀ g ∈ y.support, 0 ≤ N g := fun g hg =>
-      hx g (by
-        have hgh : g ≠ h := fun e => hhy (e ▸ hg)
-        rw [Finsupp.mem_support_iff, Finsupp.add_apply, Finsupp.single_eq_of_ne hgh, zero_add]
-        exact Finsupp.mem_support_iff.1 hg)
-    have hy0 : ofFinsupp (N := N) y ∈ nonnegSubring R N :=
-      mem_nonnegSubring.2 fun g hg => by
-        rw [coeff_ofFinsupp]
-        by_contra hne
-        exact not_lt_of_ge (hy_supp g (Finsupp.mem_support_iff.2 hne)) hg
+    have hh0 : 0 ≤ N h := not_lt.1 fun hlt => by
+      have h0 := mem_nonnegSubring.1 hx0 h hlt
+      rw [coeff_ofFinsupp, Finsupp.add_apply, Finsupp.single_eq_same,
+        Finsupp.notMem_support_iff.1 hhy, add_zero] at h0
+      exact hr h0
+    have hy0 : ofFinsupp (N := N) y ∈ nonnegSubring R N := by
+      have hsub := sub_mem hx0 (single_mem_nonnegSubring hh0 r)
+      rwa [map_add, ofFinsupp_single, add_sub_cancel_left] at hsub
     have heq : (⟨ofFinsupp (Finsupp.single h r + y), hx0⟩ : nonnegSubring R N) =
         ⟨single h r, single_mem_nonnegSubring hh0 r⟩ + ⟨ofFinsupp y, hy0⟩ := by
       ext1
       simp
     rw [heq]
-    exact add_mem (Submodule.mem_iSup_of_mem (f h) (single_mem_nonnegGradeBy f hh0 r))
-      (ih hy_supp hy0)
-
-/-- Every truncation of a series in the nonnegative subring lies in the nonnegative subring. -/
-theorem ofFinsupp_trunc_mem_nonnegSubring (C : ℝ) (a : nonnegSubring R N) :
-    ofFinsupp (trunc C (a : NovikovSeries R H N)) ∈ nonnegSubring R N :=
-  mem_nonnegSubring.2 <| mem_periodFiltration.1 <|
-    ofFinsupp_trunc_mem_periodFiltration C (mem_periodFiltration.2 (mem_nonnegSubring.1 a.2))
+    exact add_mem (Submodule.mem_iSup_of_mem (f h) (single_mem_nonnegGradeBy f hh0 r)) (ih hy0)
 
 /-- Every truncation of a series in the nonnegative subring is a finite sum of nonnegative
 homogeneous series. -/
 theorem ofFinsupp_trunc_mem_iSup_nonnegGradeBy (f : H → ι) (C : ℝ) (a : nonnegSubring R N) :
     (⟨ofFinsupp (trunc C (a : NovikovSeries R H N)),
       ofFinsupp_trunc_mem_nonnegSubring C a⟩ : nonnegSubring R N) ∈
-      ⨆ i, nonnegGradeBy S R N f i := by
-  refine ofFinsupp_mem_iSup_nonnegGradeBy f (fun h hh => ?_) _
-  have hne : (a : NovikovSeries R H N).coeff h ≠ 0 := by
-    intro hz
-    exact Finsupp.mem_support_iff.1 hh (by simp [hz])
-  exact not_lt.1 fun hlt => hne (mem_nonnegSubring.1 a.2 h hlt)
+      ⨆ i, nonnegGradeBy S R N f i :=
+  ofFinsupp_mem_iSup_nonnegGradeBy f (ofFinsupp_trunc_mem_nonnegSubring C a)
 
 /-- The algebraic sum of the nonnegative homogeneous pieces is dense in `nonnegSubring R N`. -/
 theorem dense_iSup_nonnegGradeBy (f : H → ι) :
@@ -405,40 +386,29 @@ theorem dense_iSup_nonnegGradeBy (f : H → ι) :
 `⨁ i, nonnegGradeBy S R N f i →ₐ[S] nonnegSubring R N` is injective. -/
 theorem coeAlgHom_nonnegGradeBy_injective [DecidableEq ι] [AddMonoid ι] (f : H →+ ι) :
     Injective (DirectSum.coeAlgHom (nonnegGradeBy S R N f)) := by
-  intro x y hxy
+  -- `iSupIndep.dfinsupp_lsum_injective` requires a `Ring` of scalars, so we transport through the
+  -- same homogeneous pieces viewed as `ℤ`-submodules.
   let e : (DirectSum ι fun i => nonnegGradeBy S R N f i) →+
       DirectSum ι fun i => nonnegGradeBy ℤ R N f i :=
-    DirectSum.toAddMonoid fun i =>
-      (DirectSum.of (fun j => nonnegGradeBy ℤ R N f j) i).comp
-        { toFun := fun a => ⟨a.1, a.2⟩
-          map_zero' := rfl
-          map_add' := fun _ _ => rfl }
-  have he_coe : ∀ z,
-      DirectSum.coeLinearMap (nonnegGradeBy ℤ R N f) (e z) =
-        DirectSum.coeAlgHom (nonnegGradeBy S R N f) z := fun z =>
-    DirectSum.induction_on z (by simp)
-      (fun i a => by simp [e])
-      (fun u v hu hv => by simp [map_add, hu, hv])
-  have he_inj : Injective e := by
-    intro u v huv
-    ext i : 1
-    apply Subtype.ext
-    have hi := congr_arg
-      (fun z : DirectSum ι fun j => nonnegGradeBy ℤ R N f j => (z i : nonnegSubring R N)) huv
-    have hval : ∀ z : DirectSum ι fun j => nonnegGradeBy S R N f j,
-        ((e z i : nonnegGradeBy ℤ R N f i) : nonnegSubring R N) = z i := fun z =>
-      DirectSum.induction_on z (by simp)
-        (fun j a => by
-          simp only [e, DirectSum.toAddMonoid_of, AddMonoidHom.comp_apply, AddMonoidHom.coe_mk,
-            ZeroHom.coe_mk]
-          by_cases hij : j = i
-          · subst hij; simp
-          · simp [DirectSum.of_eq_of_ne j i _ (Ne.symm hij)])
-        (fun p q hp hq => by simp [map_add, hp, hq])
-    simpa [hval] using hi
+    DirectSum.map fun _ =>
+      { toFun := fun a => ⟨a.1, a.2⟩
+        map_zero' := rfl
+        map_add' := fun _ _ => rfl }
+  have he_inj : Injective e :=
+    (DirectSum.map_injective _).2 fun _ _ _ h => Subtype.ext (congrArg Subtype.val h)
+  have he_coe :
+      (DirectSum.coeLinearMap (nonnegGradeBy ℤ R N f)).toAddMonoidHom.comp e =
+        (DirectSum.coeAlgHom (nonnegGradeBy S R N f)).toAddMonoidHom := by
+    refine DirectSum.addHom_ext' fun i => AddMonoidHom.ext fun a => ?_
+    simp [e]
   have hcoe_inj : Injective (DirectSum.coeLinearMap (nonnegGradeBy ℤ R N f)) :=
     (iSupIndep_nonnegGradeBy (S := ℤ) (R := R) (N := N) f).dfinsupp_lsum_injective
-  exact he_inj <| hcoe_inj <| by rw [he_coe, he_coe, hxy]
+  intro x y hxy
+  exact he_inj <| hcoe_inj <| by
+    have hx := DFunLike.congr_fun he_coe x
+    have hy := DFunLike.congr_fun he_coe y
+    simpa only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+      AlgHom.coe_toAddMonoidHom] using hx.trans (hxy.trans hy.symm)
 
 /-- The canonical graded algebra homomorphism from the direct sum of the nonnegative homogeneous
 pieces into `nonnegSubring R N` has dense range. -/

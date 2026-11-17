@@ -13,29 +13,33 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 /-!
 # The energy-zero residue of the nonnegative Novikov subring
 
-Let `H` be an additive group, `N : H →+ ℝ` a period homomorphism, and `R` a ring. A series `a` in
-`TauCeti.NovikovSeries.nonnegSubring R N` vanishes on negative periods and has only finitely many
-nonzero coefficients at period `0`. Restricting its coefficients to the period kernel `N.ker`
-therefore produces an element of the group ring `AddMonoidAlgebra R N.ker`.
+Let `H` be an additive monoid (or additive group), `N : H →+ ℝ` a period homomorphism, and `R` a
+ring. A series `a` in `TauCeti.NovikovSeries.nonnegSubring R N` vanishes on negative periods and
+has only finitely many nonzero coefficients at period `0`.
 
-Because two nonnegative real periods sum to `0` only when both vanish, restriction to `N.ker` is a
-unital ring homomorphism (`TauCeti.NovikovSeries.residueRingHom`) with right inverse given by the
-inclusion of `AddMonoidAlgebra R N.ker` (`TauCeti.NovikovSeries.ofKerAddMonoidAlgebra`) and kernel
-equal to the strictly positive ideal `TauCeti.NovikovSeries.posIdeal R N`. Thus the energy-zero
-residue ring `(nonnegSubring R N) ⧸ (posIdeal R N)` is canonically isomorphic to
-`AddMonoidAlgebra R N.ker` (`TauCeti.NovikovSeries.quotientPosIdealEquiv`), compatibly with scalar
-algebras and exponent gradings.
-
-Completeness of the nonnegative subring makes the residue map a local homomorphism
-(`IsLocalHom (residueRingHom R N)` and `TauCeti.NovikovSeries.isUnit_residueRingHom_iff`): if the
-energy-zero part of `a` is invertible in `AddMonoidAlgebra R N.ker` with inverse `v`, lifting `v`
-via `ofKerAddMonoidAlgebra` reduces `a * b` and `b * a` to `1` modulo `posIdeal R N`, where
-geometric series invert them. In particular, over a nontrivial coefficient ring no element of
-`posIdeal R N` is a unit of `nonnegSubring R N`, and when `N` is injective a series in
+Completeness of the nonnegative subring makes the quotient map
+`Ideal.Quotient.mk (posIdeal R N)` a local ring homomorphism: if the class of `a` modulo
+`posIdeal R N` is a unit, lifting an inverse reduces `a * b` and `b * a` to `1` modulo
+`posIdeal R N`, where geometric series invert them. When `N` is injective, the quotient
+`(nonnegSubring R N) ⧸ (posIdeal R N)` is canonically isomorphic to `R` via the constant
+coefficient at `0` (`TauCeti.NovikovSeries.quotientPosIdealEquivOfInjective`), and a series in
 `nonnegSubring R N` is a unit if and only if its constant coefficient at `0` is a unit of `R`.
+
+When `H` is an additive group, restricting the coefficients of `a ∈ nonnegSubring R N` to the
+period kernel `N.ker` produces an element of the group ring `AddMonoidAlgebra R N.ker`. Because
+two nonnegative real periods sum to `0` only when both vanish, this restriction is a unital ring
+homomorphism (`TauCeti.NovikovSeries.residueRingHom`) with right inverse given by the inclusion of
+`AddMonoidAlgebra R N.ker` (`TauCeti.NovikovSeries.ofKerAddMonoidAlgebra`) and kernel equal to
+`TauCeti.NovikovSeries.posIdeal R N`. Thus `(nonnegSubring R N) ⧸ (posIdeal R N)` is canonically
+isomorphic to `AddMonoidAlgebra R N.ker` (`TauCeti.NovikovSeries.quotientPosIdealEquiv`),
+compatibly with scalar algebras, unit reflection (`IsLocalHom (residueRingHom R N)`), and exponent
+gradings.
 
 ## Main definitions
 
+* `TauCeti.NovikovSeries.quotientPosIdealEquivOfInjective` and
+  `TauCeti.NovikovSeries.quotientPosIdealAlgEquivOfInjective`: when `N` is injective, the canonical
+  isomorphism `(nonnegSubring R N ⧸ posIdeal R N) ≃+* R` (and `S`-algebra variant).
 * `TauCeti.NovikovSeries.ofKerAddMonoidAlgebra R N`: the ring embedding of
   `AddMonoidAlgebra R N.ker` into `nonnegSubring R N`.
 * `TauCeti.NovikovSeries.residueRingHom R N` and `TauCeti.NovikovSeries.residueAlgHom S R N`:
@@ -43,20 +47,20 @@ geometric series invert them. In particular, over a nontrivial coefficient ring 
 * `TauCeti.NovikovSeries.quotientPosIdealEquiv R N` and
   `TauCeti.NovikovSeries.quotientPosIdealAlgEquiv S R N`: the canonical isomorphism
   `(nonnegSubring R N ⧸ posIdeal R N) ≃+* AddMonoidAlgebra R N.ker` (and `S`-algebra variant).
-* `TauCeti.NovikovSeries.quotientPosIdealEquivOfInjective`: when `N` is injective, the canonical
-  isomorphism `(nonnegSubring R N ⧸ posIdeal R N) ≃+* R`.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.isClosed_posIdeal`: `posIdeal R N` is closed in `nonnegSubring R N`.
+* `IsLocalHom (Ideal.Quotient.mk (posIdeal R N))` and
+  `TauCeti.NovikovSeries.isUnit_nonnegSubring_iff_coeff_zero`: unit reflection modulo
+  `posIdeal R N`, and its constant-coefficient characterization for injective periods.
 * `TauCeti.NovikovSeries.ker_residueRingHom`: the kernel of `residueRingHom R N` is
   `posIdeal R N`.
-* `TauCeti.NovikovSeries.residueRingHom_mem_gradeBy`: the residue map preserves exponent degrees.
 * `IsLocalHom (residueRingHom R N)` and `TauCeti.NovikovSeries.isUnit_residueRingHom_iff`: an
   element of `nonnegSubring R N` is a unit if and only if its energy-zero residue in
   `AddMonoidAlgebra R N.ker` is a unit.
-* `TauCeti.NovikovSeries.not_isUnit_of_mem_posIdeal`: over a nontrivial ring, no element of
-  `posIdeal R N` is a unit of `nonnegSubring R N`.
+* `TauCeti.NovikovSeries.residueRingHom_mem_gradeBy` and
+  `TauCeti.NovikovSeries.ofKerAddMonoidAlgebra_mem_nonnegGradeBy_iff`: grading compatibility of
+  the energy-zero residue map and its section.
 
 ## References
 
@@ -76,21 +80,163 @@ namespace TauCeti.NovikovSeries
 
 variable {S R H ι : Type*}
 
-section Ring
+section AddMonoid
+
+variable [Ring R] [AddMonoid H] {N : H →+ ℝ}
+
+/-- **Zero-energy unit reflection.** Completeness of `nonnegSubring R N` makes the quotient map
+modulo `posIdeal R N` a local ring homomorphism: if the residue class of `a` modulo `posIdeal R N`
+is a unit, then `a` is already a unit of `nonnegSubring R N`. -/
+instance : IsLocalHom (Ideal.Quotient.mk (posIdeal R N)) where
+  map_nonunit a hu := by
+    obtain ⟨v, hrv, hlv⟩ := isUnit_iff_exists.1 hu
+    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective v
+    have hright : 1 - a * b ∈ posIdeal R N := by
+      rw [← Ideal.Quotient.eq_zero_iff_mem, RingHom.map_sub, RingHom.map_one, RingHom.map_mul,
+        hrv, sub_self]
+    have hleft : 1 - b * a ∈ posIdeal R N := by
+      rw [← Ideal.Quotient.eq_zero_iff_mem, RingHom.map_sub, RingHom.map_one, RingHom.map_mul,
+        hlv, sub_self]
+    have hu_ab : IsUnit (a * b) := by
+      simpa only [sub_sub_cancel] using isUnit_one_sub_of_mem_posIdeal hright
+    have hu_ba : IsUnit (b * a) := by
+      simpa only [sub_sub_cancel] using isUnit_one_sub_of_mem_posIdeal hleft
+    obtain ⟨r, hr, _⟩ := isUnit_iff_exists.1 hu_ab
+    obtain ⟨l, _, hl⟩ := isUnit_iff_exists.1 hu_ba
+    exact isUnit_iff_exists_and_exists.2
+      ⟨⟨b * r, by rwa [← mul_assoc]⟩, ⟨l * b, by rwa [mul_assoc]⟩⟩
+
+section InjectivePeriod
+
+private def coeffZeroNonnegRingHom (hN : Injective N) : nonnegSubring R N →+* R where
+  toFun a := (a : NovikovSeries R H N).coeff 0
+  map_one' := by rw [OneMemClass.coe_one, one_def, coeff_single_same]
+  map_zero' := by rw [ZeroMemClass.coe_zero, coeff_zero]
+  map_add' a b := by rw [AddMemClass.coe_add, coeff_add]
+  map_mul' a b := by
+    rw [MulMemClass.coe_mul,
+      coeff_mul_eq_sum (s := {(0, 0)})
+        (fun p hp => by rw [Finset.mem_singleton.1 hp, add_zero])
+        (fun u v huv hu hv => ?_), Finset.sum_singleton]
+    have hu0 : 0 ≤ N u := not_lt.1 fun hlt => hu (mem_nonnegSubring.1 a.2 u hlt)
+    have hv0 : 0 ≤ N v := not_lt.1 fun hlt => hv (mem_nonnegSubring.1 b.2 v hlt)
+    have huv0 : N u + N v = 0 := by rw [← map_add, huv, map_zero]
+    have hu_eq : u = 0 := hN (by rw [map_zero]; linarith)
+    have hv_eq : v = 0 := hN (by rw [map_zero]; linarith)
+    rw [Finset.mem_singleton, hu_eq, hv_eq]
+
+private def ofConstNonnegRingHom : R →+* nonnegSubring R N where
+  toFun r := ⟨single 0 r, single_mem_nonnegSubring (map_zero N).ge r⟩
+  map_one' := Subtype.ext single_zero_one
+  map_mul' r s := Subtype.ext <| by simp [single_mul_single]
+  map_zero' := Subtype.ext (single_zero 0)
+  map_add' r s := Subtype.ext <| by simp [single_add]
+
+private theorem coeffZeroNonnegRingHom_ofConst (hN : Injective N) (r : R) :
+    coeffZeroNonnegRingHom hN (ofConstNonnegRingHom r) = r :=
+  coeff_single_same 0 r
+
+private theorem ker_coeffZeroNonnegRingHom (hN : Injective N) :
+    RingHom.ker (coeffZeroNonnegRingHom (R := R) hN) = posIdeal R N := by
+  ext a
+  rw [RingHom.mem_ker, mem_posIdeal]
+  refine ⟨fun ha h hh => ?_, fun ha => ha 0 (map_zero N).le⟩
+  rcases hh.lt_or_eq with hlt | heq
+  · exact mem_nonnegSubring.1 a.2 h hlt
+  · have h0 : h = 0 := hN (heq.trans (map_zero N).symm)
+    subst h0
+    exact ha
+
+variable (R) in
+/-- When the period homomorphism `N` is injective, the energy-zero residue quotient
+`(nonnegSubring R N) ⧸ (posIdeal R N)` is canonically isomorphic to `R` via the coefficient at
+`0`. -/
+def quotientPosIdealEquivOfInjective (hN : Injective N) :
+    (nonnegSubring R N ⧸ posIdeal R N) ≃+* R :=
+  (Ideal.quotientEquivAlgOfEq ℕ (ker_coeffZeroNonnegRingHom (R := R) hN).symm).toRingEquiv.trans
+    (RingHom.quotientKerEquivOfRightInverse (coeffZeroNonnegRingHom_ofConst (R := R) hN))
+
+@[simp]
+theorem quotientPosIdealEquivOfInjective_mk (hN : Injective N) (a : nonnegSubring R N) :
+    quotientPosIdealEquivOfInjective R hN (Ideal.Quotient.mk (posIdeal R N) a) =
+      (a : NovikovSeries R H N).coeff 0 :=
+  (rfl)
+
+@[simp]
+theorem quotientPosIdealEquivOfInjective_symm_apply (hN : Injective N) (r : R) :
+    (quotientPosIdealEquivOfInjective R hN).symm r =
+      Ideal.Quotient.mk (posIdeal R N) ⟨single 0 r, single_mem_nonnegSubring (map_zero N).ge r⟩ :=
+  (rfl)
+
+/-- When the period homomorphism `N` is injective, a series in `nonnegSubring R N` is a unit if
+and only if its coefficient at `0` is a unit of `R`. -/
+theorem isUnit_nonnegSubring_iff_coeff_zero (hN : Injective N) {a : nonnegSubring R N} :
+    IsUnit a ↔ IsUnit ((a : NovikovSeries R H N).coeff 0) := by
+  rw [← quotientPosIdealEquivOfInjective_mk hN a, MulEquiv.isUnit_map,
+    isUnit_map_iff (Ideal.Quotient.mk (posIdeal R N)) a]
+
+section Algebra
+
+variable [CommSemiring S] [Algebra S R]
+
+private def coeffZeroNonnegAlgHom (hN : Injective N) : nonnegSubring R N →ₐ[S] R where
+  __ := coeffZeroNonnegRingHom hN
+  commutes' s := by
+    rw [RingHom.toFun_eq_coe]
+    exact coeff_single_same 0 (algebraMap S R s)
+
+private def ofConstNonnegAlgHom : R →ₐ[S] nonnegSubring R N where
+  __ := ofConstNonnegRingHom (R := R) (N := N)
+  commutes' s := by
+    ext1
+    simp [ofConstNonnegRingHom, algebraMap_apply]
+
+variable (S R) in
+/-- When the period homomorphism `N` is injective, the energy-zero residue quotient is canonically
+isomorphic to `R` as an `S`-algebra. -/
+def quotientPosIdealAlgEquivOfInjective (hN : Injective N) :
+    (nonnegSubring R N ⧸ posIdeal R N) ≃ₐ[S] R :=
+  (Ideal.quotientEquivAlgOfEq S (ker_coeffZeroNonnegRingHom (R := R) hN).symm).trans
+    (Ideal.quotientKerAlgEquivOfRightInverse
+      (f := coeffZeroNonnegAlgHom (S := S) hN)
+      (g := ofConstNonnegAlgHom (S := S) (R := R) (N := N))
+      (coeffZeroNonnegRingHom_ofConst (R := R) hN))
+
+@[simp]
+theorem toRingEquiv_quotientPosIdealAlgEquivOfInjective (hN : Injective N) :
+    (quotientPosIdealAlgEquivOfInjective S R hN).toRingEquiv =
+      quotientPosIdealEquivOfInjective R hN := by
+  ext q
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  rfl
+
+@[simp]
+theorem quotientPosIdealAlgEquivOfInjective_apply (hN : Injective N)
+    (q : nonnegSubring R N ⧸ posIdeal R N) :
+    quotientPosIdealAlgEquivOfInjective S R hN q = quotientPosIdealEquivOfInjective R hN q := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  rfl
+
+theorem quotientPosIdealAlgEquivOfInjective_mk (hN : Injective N) (a : nonnegSubring R N) :
+    quotientPosIdealAlgEquivOfInjective S R hN (Ideal.Quotient.mk (posIdeal R N) a) =
+      (a : NovikovSeries R H N).coeff 0 :=
+  (rfl)
+
+@[simp]
+theorem quotientPosIdealAlgEquivOfInjective_symm_apply (hN : Injective N) (r : R) :
+    (quotientPosIdealAlgEquivOfInjective S R hN).symm r =
+      Ideal.Quotient.mk (posIdeal R N) ⟨single 0 r, single_mem_nonnegSubring (map_zero N).ge r⟩ :=
+  (rfl)
+
+end Algebra
+
+end InjectivePeriod
+
+end AddMonoid
+
+section AddGroup
 
 variable [Ring R] [AddGroup H] {N : H →+ ℝ}
-
-/-- The strictly positive ideal is closed in the subspace topology on `nonnegSubring R N`. -/
-theorem isClosed_posIdeal : IsClosed (posIdeal R N : Set (nonnegSubring R N)) := by
-  have hset : (posIdeal R N : Set (nonnegSubring R N)) =
-      ⋂ h ∈ {h : H | N h ≤ 0},
-        Subtype.val ⁻¹' {a : NovikovSeries R H N | a.coeff h = 0} := by
-    ext a
-    simp [mem_posIdeal]
-  rw [hset]
-  exact isClosed_biInter fun h _ =>
-    ((isLocallyConstant_coeff (R := R) (N := N) h).isClosed_fiber (0 : R)).preimage
-      continuous_subtype_val
 
 /-- Restricting a series in `nonnegSubring R N` to the period kernel `N.ker` yields a finitely
 supported function. -/
@@ -178,8 +324,8 @@ variable (R N) in
 `AddMonoidAlgebra R N.ker` of the period kernel, reading off the coefficients of period `0`. -/
 def residueRingHom : nonnegSubring R N →+* AddMonoidAlgebra R N.ker where
   __ := residueAddHom (R := R) (N := N)
-  map_one' := show residueAddHom 1 = 1 by
-    rw [← map_one (ofKerAddMonoidAlgebra R N), residueAddHom_ofKer]
+  map_one' := by
+    rw [AddMonoidHom.toFun_eq_coe, ← map_one (ofKerAddMonoidAlgebra R N), residueAddHom_ofKer]
   map_mul' a b := by
     set u := ofKerAddMonoidAlgebra R N (residueAddHom a)
     set v := ofKerAddMonoidAlgebra R N (residueAddHom b)
@@ -192,13 +338,12 @@ def residueRingHom : nonnegSubring R N →+* AddMonoidAlgebra R N.ker where
       exact add_mem (Ideal.mul_mem_right b _ hu) (Ideal.mul_mem_left _ u hv)
     have hz : residueAddHom (a * b - u * v) = 0 := residueAddHom_eq_zero_iff.2 hdiff
     rw [map_sub, sub_eq_zero] at hz
-    change residueAddHom (a * b) = residueAddHom a * residueAddHom b
-    rw [hz, ← map_mul, residueAddHom_ofKer]
+    rw [AddMonoidHom.toFun_eq_coe, hz, ← map_mul, residueAddHom_ofKer]
 
 @[simp]
 theorem coeff_residueRingHom (a : nonnegSubring R N) (k : N.ker) :
     (residueRingHom R N a).coeff k = (a : NovikovSeries R H N).coeff k :=
-    coeff_residueAddHom a k
+  coeff_residueAddHom a k
 
 @[simp]
 theorem residueRingHom_ofKerAddMonoidAlgebra (x : AddMonoidAlgebra R N.ker) :
@@ -260,25 +405,14 @@ theorem residueRingHom_eq_zero_iff {a : nonnegSubring R N} :
     residueRingHom R N a = 0 ↔ a ∈ posIdeal R N :=
   residueAddHom_eq_zero_iff
 
-/-- **Zero-energy unit reflection.** Completeness of `nonnegSubring R N` makes the energy-zero
-residue map a local ring homomorphism: if `residueRingHom R N a` is a unit of
-`AddMonoidAlgebra R N.ker`, then `a` is already a unit of `nonnegSubring R N`. -/
+/-- Completeness of `nonnegSubring R N` makes the energy-zero residue map a local ring
+homomorphism: if `residueRingHom R N a` is a unit of `AddMonoidAlgebra R N.ker`, then `a` is
+already a unit of `nonnegSubring R N`. -/
 instance : IsLocalHom (residueRingHom R N) where
   map_nonunit a hu := by
-    obtain ⟨v, hrv, hlv⟩ := isUnit_iff_exists.1 hu
-    obtain ⟨b, hb⟩ := residueRingHom_surjective (R := R) (N := N) v
-    have hright : 1 - a * b ∈ posIdeal R N := by
-      rw [← residueRingHom_eq_zero_iff, map_sub, map_one, map_mul, hb, hrv, sub_self]
-    have hleft : 1 - b * a ∈ posIdeal R N := by
-      rw [← residueRingHom_eq_zero_iff, map_sub, map_one, map_mul, hb, hlv, sub_self]
-    have hu_ab : IsUnit (a * b) := by
-      simpa only [sub_sub_cancel] using isUnit_one_sub_of_mem_posIdeal hright
-    have hu_ba : IsUnit (b * a) := by
-      simpa only [sub_sub_cancel] using isUnit_one_sub_of_mem_posIdeal hleft
-    obtain ⟨r, hr, _⟩ := isUnit_iff_exists.1 hu_ab
-    obtain ⟨l, _, hl⟩ := isUnit_iff_exists.1 hu_ba
-    exact isUnit_iff_exists_and_exists.2
-      ⟨⟨b * r, by rwa [← mul_assoc]⟩, ⟨l * b, by rwa [mul_assoc]⟩⟩
+    rw [← quotientPosIdealEquiv_mk, MulEquiv.isUnit_map,
+      isUnit_map_iff (Ideal.Quotient.mk (posIdeal R N)) a] at hu
+    exact hu
 
 /-- An element of `nonnegSubring R N` is a unit if and only if its energy-zero residue in
 `AddMonoidAlgebra R N.ker` is a unit. -/
@@ -286,55 +420,9 @@ theorem isUnit_residueRingHom_iff {a : nonnegSubring R N} :
     IsUnit (residueRingHom R N a) ↔ IsUnit a :=
   isUnit_map_iff (residueRingHom R N) a
 
-/-- The quotient map modulo `posIdeal R N` reflects units. -/
-instance : IsLocalHom (Ideal.Quotient.mk (posIdeal R N)) where
-  map_nonunit a hu :=
-    isUnit_residueRingHom_iff.1 <|
-      quotientPosIdealEquiv_mk a ▸ hu.map (quotientPosIdealEquiv R N)
-
-/-- Over a nontrivial coefficient ring, no element of `posIdeal R N` is a unit of
-`nonnegSubring R N`. -/
-theorem not_isUnit_of_mem_posIdeal [Nontrivial R] {a : nonnegSubring R N}
-    (ha : a ∈ posIdeal R N) : ¬ IsUnit a := by
-  rw [← isUnit_residueRingHom_iff, residueRingHom_eq_zero_iff.2 ha]
-  exact not_isUnit_zero
-
-/-- Over a nontrivial coefficient ring, a monomial of strictly positive period is not a unit of
-`nonnegSubring R N`. -/
-theorem not_isUnit_single_nonnegSubring_of_pos [Nontrivial R] {h : H} (hh : 0 < N h) (r : R) :
-    ¬ IsUnit (⟨single h r, single_mem_nonnegSubring hh.le r⟩ : nonnegSubring R N) :=
-  not_isUnit_of_mem_posIdeal (single_mem_posIdeal hh r)
-
-section InjectivePeriod
-
-/-- When the period homomorphism `N` is injective, `N.ker` is trivial and the energy-zero residue
-quotient `(nonnegSubring R N) ⧸ (posIdeal R N)` is canonically isomorphic to `R`. -/
-def quotientPosIdealEquivOfInjective (hN : Injective N) :
-    (nonnegSubring R N ⧸ posIdeal R N) ≃+* R :=
-  haveI : Subsingleton N.ker :=
-    ⟨fun x y => Subtype.ext <| hN <| x.2.trans y.2.symm⟩
-  (quotientPosIdealEquiv R N).trans (AddMonoidAlgebra.uniqueRingEquiv N.ker)
-
-@[simp]
-theorem quotientPosIdealEquivOfInjective_mk (hN : Injective N) (a : nonnegSubring R N) :
-    quotientPosIdealEquivOfInjective hN (Ideal.Quotient.mk (posIdeal R N) a) =
-      (a : NovikovSeries R H N).coeff 0 := by
-  simp [quotientPosIdealEquivOfInjective]
-
-/-- When the period homomorphism `N` is injective, a series in `nonnegSubring R N` is a unit if
-and only if its coefficient at `0` is a unit of `R`. -/
-theorem isUnit_nonnegSubring_iff_coeff_zero (hN : Injective N) {a : nonnegSubring R N} :
-    IsUnit a ↔ IsUnit ((a : NovikovSeries R H N).coeff 0) := by
-  rw [← quotientPosIdealEquivOfInjective_mk hN a, MulEquiv.isUnit_map,
-    isUnit_map_iff (Ideal.Quotient.mk (posIdeal R N)) a]
-
-end InjectivePeriod
-
-end Ring
-
 section Algebra
 
-variable [CommSemiring S] [Ring R] [Algebra S R] [AddGroup H] {N : H →+ ℝ}
+variable [CommSemiring S] [Algebra S R]
 
 variable (S R N) in
 /-- The `S`-algebra embedding of `AddMonoidAlgebra R N.ker` into `nonnegSubring R N`. -/
@@ -350,18 +438,29 @@ theorem coe_ofKerAddMonoidAlgebraAlgHom :
       ofKerAddMonoidAlgebra R N :=
   (rfl)
 
+@[simp]
+theorem ofKerAddMonoidAlgebraAlgHom_apply (x : AddMonoidAlgebra R N.ker) :
+    ofKerAddMonoidAlgebraAlgHom S R N x = ofKerAddMonoidAlgebra R N x :=
+  (rfl)
+
 variable (S R N) in
 /-- The energy-zero residue map as an `S`-algebra homomorphism. -/
 def residueAlgHom : nonnegSubring R N →ₐ[S] AddMonoidAlgebra R N.ker where
   __ := residueRingHom R N
   commutes' s := by
-    rw [← (ofKerAddMonoidAlgebraAlgHom S R N).commutes s]
+    rw [RingHom.toFun_eq_coe, ← (ofKerAddMonoidAlgebraAlgHom S R N).commutes s,
+      ofKerAddMonoidAlgebraAlgHom_apply]
     exact residueRingHom_ofKerAddMonoidAlgebra _
 
 @[simp]
 theorem coe_residueAlgHom :
     (residueAlgHom S R N : nonnegSubring R N →+* AddMonoidAlgebra R N.ker) =
       residueRingHom R N :=
+  (rfl)
+
+@[simp]
+theorem residueAlgHom_apply (a : nonnegSubring R N) :
+    residueAlgHom S R N a = residueRingHom R N a :=
   (rfl)
 
 variable (S R N) in
@@ -374,36 +473,41 @@ def quotientPosIdealAlgEquiv :
       (residueRingHom_ofKerAddMonoidAlgebra (R := R) (N := N)))
 
 @[simp]
+theorem toRingEquiv_quotientPosIdealAlgEquiv :
+    (quotientPosIdealAlgEquiv S R N).toRingEquiv = quotientPosIdealEquiv R N := by
+  ext q
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  rfl
+
+@[simp]
+theorem quotientPosIdealAlgEquiv_apply (q : nonnegSubring R N ⧸ posIdeal R N) :
+    quotientPosIdealAlgEquiv S R N q = quotientPosIdealEquiv R N q := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  rfl
+
 theorem quotientPosIdealAlgEquiv_mk (a : nonnegSubring R N) :
     quotientPosIdealAlgEquiv S R N (Ideal.Quotient.mk (posIdeal R N) a) =
       residueRingHom R N a :=
   (rfl)
 
-variable (S) in
-/-- When the period homomorphism `N` is injective, the energy-zero residue quotient is canonically
-isomorphic to `R` as an `S`-algebra. -/
-def quotientPosIdealAlgEquivOfInjective (hN : Injective N) :
-    (nonnegSubring R N ⧸ posIdeal R N) ≃ₐ[S] R :=
-  haveI : Subsingleton N.ker :=
-    ⟨fun x y => Subtype.ext <| hN <| x.2.trans y.2.symm⟩
-  (quotientPosIdealAlgEquiv S R N).trans (AddMonoidAlgebra.uniqueAlgEquiv S N.ker)
-
 @[simp]
-theorem quotientPosIdealAlgEquivOfInjective_mk (hN : Injective N) (a : nonnegSubring R N) :
-    quotientPosIdealAlgEquivOfInjective S hN (Ideal.Quotient.mk (posIdeal R N) a) =
-      (a : NovikovSeries R H N).coeff 0 := by
-  simp [quotientPosIdealAlgEquivOfInjective, AddMonoidAlgebra.uniqueAlgEquiv]
+theorem quotientPosIdealAlgEquiv_symm_apply (x : AddMonoidAlgebra R N.ker) :
+    (quotientPosIdealAlgEquiv S R N).symm x =
+      Ideal.Quotient.mk (posIdeal R N) (ofKerAddMonoidAlgebra R N x) :=
+  (rfl)
 
 end Algebra
 
+end AddGroup
+
 section Grading
 
-variable [CommRing R] [AddGroup H] {N : H →+ ℝ}
+variable [CommSemiring S] [CommRing R] [Algebra S R] [AddGroup H] {N : H →+ ℝ}
 
 /-- The energy-zero residue map sends a homogeneous series of degree `i` in `nonnegSubring R N`
 into the homogeneous piece of degree `i` of `AddMonoidAlgebra R N.ker`. -/
 theorem residueRingHom_mem_gradeBy {f : H → ι} {i : ι} {a : nonnegSubring R N}
-    (ha : a ∈ nonnegGradeBy R R N f i) :
+    (ha : a ∈ nonnegGradeBy S R N f i) :
     residueRingHom R N a ∈ AddMonoidAlgebra.gradeBy R (f ∘ N.ker.subtype) i := by
   rw [AddMonoidAlgebra.mem_gradeBy_iff]
   intro k hk
@@ -413,17 +517,17 @@ theorem residueRingHom_mem_gradeBy {f : H → ι} {i : ι} {a : nonnegSubring R 
 /-- The lift `ofKerAddMonoidAlgebra` preserves and reflects homogeneity. -/
 theorem ofKerAddMonoidAlgebra_mem_nonnegGradeBy_iff {f : H → ι} {i : ι}
     {x : AddMonoidAlgebra R N.ker} :
-    ofKerAddMonoidAlgebra R N x ∈ nonnegGradeBy R R N f i ↔
+    ofKerAddMonoidAlgebra R N x ∈ nonnegGradeBy S R N f i ↔
       x ∈ AddMonoidAlgebra.gradeBy R (f ∘ N.ker.subtype) i := by
   rw [mem_nonnegGradeBy_iff, AddMonoidAlgebra.mem_gradeBy_iff]
   refine ⟨fun hx k hk => ?_, fun hx h hh => ?_⟩
   · rw [Finset.mem_coe, Finsupp.mem_support_iff, ← coeff_ofKerAddMonoidAlgebra_ker] at hk
     exact hx (mem_support.2 hk)
   · by_cases hN : N h = 0
-    · change f (N.ker.subtype ⟨h, hN⟩) = i
-      refine hx ?_
-      rw [Finset.mem_coe, Finsupp.mem_support_iff, ← coeff_ofKerAddMonoidAlgebra_ker]
-      exact mem_support.1 hh
+    · have hk : (⟨h, hN⟩ : N.ker) ∈ (x.coeff.support : Set N.ker) := by
+        rw [Finset.mem_coe, Finsupp.mem_support_iff, ← coeff_ofKerAddMonoidAlgebra_ker]
+        exact mem_support.1 hh
+      simpa [Function.comp_apply, AddSubgroup.coe_subtype] using hx hk
     · exact absurd (coeff_ofKerAddMonoidAlgebra_of_period_ne_zero x hN) (mem_support.1 hh)
 
 end Grading
