@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
+public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
@@ -27,7 +28,9 @@ The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuous
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
-continuous surjections onto it from compact spaces are quotient maps.
+continuous surjections onto it from compact spaces are quotient maps. Over a finite vertex type, a
+standard simplex over a (pseudo)metrizable ring is (pseudo)metrizable
+(`Convexity.StdSimplex.pseudoMetrizableSpace`).
 -/
 
 public section
@@ -122,5 +125,11 @@ lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
 instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=
   .of_injective_continuous (f := fun t : StdSimplex R N ↦ ⇑t.weights)
     (fun _ _ h ↦ ext (DFunLike.coe_injective h)) (continuous_pi (continuous_weights_apply R))
+
+/-- A standard simplex on a finite type over a pseudometrizable ring is pseudometrizable (and hence
+metrizable via `t2Space` whenever `R` is metrizable). -/
+instance pseudoMetrizableSpace [Finite M] [TopologicalSpace.PseudoMetrizableSpace R] :
+    TopologicalSpace.PseudoMetrizableSpace (StdSimplex R M) :=
+  (isEmbedding_toFun_comp_weights R M).isInducing.pseudoMetrizableSpace
 
 end Convexity.StdSimplex

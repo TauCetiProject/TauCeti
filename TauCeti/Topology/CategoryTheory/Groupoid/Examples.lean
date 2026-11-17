@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Codiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
+public import Mathlib.Topology.Metrizable.Basic
 
 import TauCeti.Topology.IsLocalHomeomorph
 
@@ -366,6 +367,23 @@ instance instSecondCountableTopologyArrows [SecondCountableTopology G] :
 
 instance instCompactSpaceArrows [CompactSpace G] : CompactSpace (Quiver.Total (SingleObj G)) :=
   (arrowHomeomorph G).symm.compactSpace
+
+instance instT0SpaceArrows [T0Space G] : T0Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t0Space
+
+instance instT1SpaceArrows [T1Space G] : T1Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t1Space
+
+instance instRegularSpaceArrows [RegularSpace G] : RegularSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.regularSpace
+
+instance instFirstCountableTopologyArrows [FirstCountableTopology G] :
+    FirstCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.firstCountableTopology
+
+instance instMetrizableSpaceArrows [TopologicalSpace.MetrizableSpace G] :
+    TopologicalSpace.MetrizableSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.metrizableSpace
 
 /-- For a discrete label space, the source map of `SingleObj G` is a local homeomorphism. -/
 theorem isLocalHomeomorph_source [DiscreteTopology G] :
