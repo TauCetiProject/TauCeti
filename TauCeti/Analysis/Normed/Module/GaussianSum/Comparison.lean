@@ -22,7 +22,10 @@ Contractions of the finite Euclidean coefficient space decrease the second momen
 of a normed-space-valued Gaussian sum. Consequently, domination of all scalar square
 functions implies domination of the Gaussian second moments. The target need not be
 complete: integration of vector-valued functions is performed only in the finite-dimensional
-coefficient space.
+coefficient space. As immediate consequences, padding a finite family with zeros preserves
+its Gaussian second moment (`gaussianSecondMoment_sumElim_zero`,
+`gaussianSecondMoment_zero_sumElim`) and the Gaussian second moment of a disjoint union
+`Sum.elim x y` is at most `G₂(x) + G₂(y)` (`gaussianSecondMoment_sumElim_le`).
 
 ## References
 
@@ -108,5 +111,38 @@ theorem gaussianSecondMoment_le_of_weakTwo_le (x : ι → Y) (y : κ → Y)
   simpa only [U, sum_apply, ContinuousLinearMap.smulRight_apply,
     EuclideanSpace.coe_proj, ← hxy] using
     U.integral_norm_sq_comp_le_stdGaussian D.adjoint (ContinuousLinearMap.adjoint.norm_map D ▸ hD)
+
+/-- Padding a finite family on the right with zeros preserves its Gaussian second moment. -/
+@[simp]
+theorem gaussianSecondMoment_sumElim_zero (x : ι → Y) :
+    gaussianSecondMoment (Sum.elim x (0 : κ → Y)) = gaussianSecondMoment x := by
+  have heq (f : StrongDual ℝ Y) :
+      ∑ k : ι ⊕ κ, |f (Sum.elim x (0 : κ → Y) k)| ^ 2 = ∑ i : ι, |f (x i)| ^ 2 := by
+    simp [Fintype.sum_sum_type]
+  exact le_antisymm
+    (gaussianSecondMoment_le_of_weakTwo_le _ _ fun f ↦ (heq f).le)
+    (gaussianSecondMoment_le_of_weakTwo_le _ _ fun f ↦ (heq f).ge)
+
+/-- Padding a finite family on the left with zeros preserves its Gaussian second moment. -/
+@[simp]
+theorem gaussianSecondMoment_zero_sumElim (y : κ → Y) :
+    gaussianSecondMoment (Sum.elim (0 : ι → Y) y) = gaussianSecondMoment y := by
+  have heq (f : StrongDual ℝ Y) :
+      ∑ k : ι ⊕ κ, |f (Sum.elim (0 : ι → Y) y k)| ^ 2 = ∑ j : κ, |f (y j)| ^ 2 := by
+    simp [Fintype.sum_sum_type]
+  exact le_antisymm
+    (gaussianSecondMoment_le_of_weakTwo_le _ _ fun f ↦ (heq f).le)
+    (gaussianSecondMoment_le_of_weakTwo_le _ _ fun f ↦ (heq f).ge)
+
+/-- The Gaussian second moment of the disjoint union of two finite families is at most the sum
+of their Gaussian second moments. -/
+theorem gaussianSecondMoment_sumElim_le (x : ι → Y) (y : κ → Y) :
+    gaussianSecondMoment (Sum.elim x y) ≤ gaussianSecondMoment x + gaussianSecondMoment y := by
+  have hsplit : Sum.elim x y = Sum.elim x (0 : κ → Y) + Sum.elim (0 : ι → Y) y := by
+    ext k
+    cases k <;> simp
+  rw [hsplit]
+  exact (gaussianSecondMoment_add_le _ _).trans_eq <| by
+    rw [gaussianSecondMoment_sumElim_zero, gaussianSecondMoment_zero_sumElim]
 
 end TauCeti

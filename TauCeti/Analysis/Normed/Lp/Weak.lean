@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Lp.lpSpace
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 import Mathlib.Analysis.Normed.Operator.Bilinear
 
@@ -31,7 +32,8 @@ bound, invariance under reindexing, the
 bounded-operator estimate, the exact value on scalar multiples of one vector, its agreement
 with the strong norm at exponent `∞`, and Hölder's inequality for scalar weights:
 the weak `p`-norm of `(cᵢ xᵢ)ᵢ` is at most `‖c‖ₛ` times the weak `q`-norm of `x` when
-`1 / p = 1 / s + 1 / q`.
+`1 / p = 1 / s + 1 / q`, as well as the scalar-restriction comparison
+`weakLpNorm_real_le` and `weakLpNorm_le_two_mul_real` between real and `RCLike` weak norms.
 These are the finite-family estimates used for absolutely summing operators.
 
 The weak norm is continuous, being dominated by the strong norm. At exponent `1` it is the least
@@ -290,6 +292,58 @@ theorem weakLpNorm_one_le_iff (x : ι → E) {C : ℝ} :
     _ ≤ ‖f (∑ i, c i • x i)‖ := RCLike.re_le_norm _
     _ ≤ ‖f‖ * ‖∑ i, c i • x i‖ := f.le_opNorm _
     _ ≤ C := (mul_le_of_le_one_left (norm_nonneg _) hf).trans (h c fun i ↦ (hc i).le)
+
+/-- The real weak `Lᵖ` norm of a finite family is at most its `𝕜`-weak `Lᵖ` norm, by extending each
+real functional via `StrongDual.extendRCLike`. -/
+theorem weakLpNorm_real_le [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] (x : ι → E) :
+    weakLpNorm (𝕜 := ℝ) p x ≤ weakLpNorm (𝕜 := 𝕜) p x := by
+  rw [weakLpNorm_le_iff p x (apply_nonneg _ _)]
+  intro fr
+  let f : StrongDual 𝕜 E := fr.extendRCLike
+  calc
+    ‖WithLp.toLp p (fun i ↦ fr (x i))‖ ≤ ‖WithLp.toLp p (fun i ↦ f (x i))‖ := by
+      refine PiLp.norm_mono fun i ↦ ?_
+      simpa only [f, WithLp.ofLp_toLp, Real.norm_eq_abs, StrongDual.re_extendRCLike_apply] using
+        RCLike.abs_re_le_norm (fr.extendRCLike (𝕜 := 𝕜) (x i))
+    _ ≤ weakLpNorm (𝕜 := 𝕜) p x * ‖f‖ := norm_eval_le_weakLpNorm p x f
+    _ = weakLpNorm (𝕜 := 𝕜) p x * ‖fr‖ := by rw [StrongDual.norm_extendRCLike]
+
+/-- The `𝕜`-weak `Lᵖ` norm of a finite family is at most twice its real weak `Lᵖ` norm, splitting
+each `𝕜`-linear functional into its real and imaginary parts. -/
+theorem weakLpNorm_le_two_mul_real [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] (x : ι → E) :
+    weakLpNorm (𝕜 := 𝕜) p x ≤ 2 * weakLpNorm (𝕜 := ℝ) p x := by
+  rw [weakLpNorm_le_iff p x (by positivity)]
+  intro f
+  let fr : StrongDual ℝ E := RCLike.reCLM.comp (f.restrictScalars ℝ)
+  let fi : StrongDual ℝ E := RCLike.imCLM.comp (f.restrictScalars ℝ)
+  have hfr : ‖fr‖ ≤ ‖f‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun v ↦ ?_
+    simpa [fr, Real.norm_eq_abs] using (RCLike.abs_re_le_norm (f v)).trans (f.le_opNorm v)
+  have hfi : ‖fi‖ ≤ ‖f‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun v ↦ ?_
+    simpa [fi, Real.norm_eq_abs] using (RCLike.abs_im_le_norm (f v)).trans (f.le_opNorm v)
+  have hnorm_le (z : 𝕜) : ‖z‖ ≤ |RCLike.re z| + |RCLike.im z| := by
+    refine (sq_le_sq₀ (norm_nonneg z) (by positivity)).1 ?_
+    rw [RCLike.norm_sq_eq_def]
+    nlinarith [sq_abs (RCLike.re z), sq_abs (RCLike.im z),
+      abs_nonneg (RCLike.re z), abs_nonneg (RCLike.im z)]
+  calc
+    ‖WithLp.toLp p (fun i ↦ f (x i))‖
+      ≤ ‖WithLp.toLp p (fun i ↦ |fr (x i)|) + WithLp.toLp p (fun i ↦ |fi (x i)|)‖ := by
+        refine PiLp.norm_mono fun i ↦ ?_
+        rw [WithLp.ofLp_add, Pi.add_apply, Real.norm_eq_abs,
+          abs_of_nonneg (add_nonneg (abs_nonneg _) (abs_nonneg _))]
+        exact hnorm_le (f (x i))
+    _ ≤ ‖WithLp.toLp p (fun i ↦ |fr (x i)|)‖ + ‖WithLp.toLp p (fun i ↦ |fi (x i)|)‖ :=
+        norm_add_le _ _
+    _ = ‖WithLp.toLp p (fun i ↦ fr (x i))‖ + ‖WithLp.toLp p (fun i ↦ fi (x i))‖ := by
+        congr 1
+        · simpa only [Real.norm_eq_abs] using PiLp.norm_norm (WithLp.toLp p fun i ↦ fr (x i))
+        · simpa only [Real.norm_eq_abs] using PiLp.norm_norm (WithLp.toLp p fun i ↦ fi (x i))
+    _ ≤ weakLpNorm (𝕜 := ℝ) p x * ‖fr‖ + weakLpNorm (𝕜 := ℝ) p x * ‖fi‖ :=
+        add_le_add (norm_eval_le_weakLpNorm p x fr) (norm_eval_le_weakLpNorm p x fi)
+    _ ≤ weakLpNorm (𝕜 := ℝ) p x * ‖f‖ + weakLpNorm (𝕜 := ℝ) p x * ‖f‖ := by gcongr
+    _ = 2 * weakLpNorm (𝕜 := ℝ) p x * ‖f‖ := by ring
 
 end RCLike
 

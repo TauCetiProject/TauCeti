@@ -59,6 +59,9 @@ norm at most `‖A‖`, `‖B‖` and `1`.
 * `ContinuousLinearMap.summingENorm_top`: `π_∞(T) = ‖T‖`.
 * `ContinuousLinearMap.summingENorm_le_summingENorm_of_exponent_le`: `π_q(T) ≤ π_p(T)` for
   `p ≤ q`.
+* `ContinuousLinearMap.summingENorm_le_restrictScalars` and
+  `ContinuousLinearMap.summingENorm_restrictScalars_le`: comparing `πₚ(T)` with
+  `πₚ(T.restrictScalars ℝ)`.
 * `TauCeti.absolutelySummingOperators`: the submodule of absolutely `p`-summing operators.
 * `TauCeti.absolutelySummingOperators_le_of_exponent_le`: the inclusion of these submodules.
 * `TauCeti.mem_absolutelySummingOperators_one_iff`: absolutely `1`-summing operators are those
@@ -406,6 +409,42 @@ theorem summingENorm_le_summingENorm_of_exponent_le {q : ℝ≥0∞} [Fact (1 �
     (mul_le_mul_of_nonneg_left (weakLpNorm_smul_le p hs c x) ENNReal.toReal_nonneg)
   rw [hTc, hcs, hs.one_div_eq, Real.rpow_add hS, mul_left_comm] at key
   exact le_of_mul_le_mul_left key (Real.rpow_pos_of_pos hS _)
+
+/-- Restricting scalars to `ℝ` does not decrease the `p`-summing gauge:
+`πₚ(T) ≤ πₚ(T.restrictScalars ℝ)`. -/
+theorem summingENorm_le_restrictScalars [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+    [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F] (T : E →L[𝕜] F) :
+    T.summingENorm p ≤ (T.restrictScalars ℝ).summingENorm p := by
+  refine iSup₂_le fun n x ↦ ?_
+  have hw : ENNReal.ofReal (weakLpNorm (𝕜 := ℝ) p x) ≤
+      ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x) :=
+    ENNReal.ofReal_le_ofReal (weakLpNorm_real_le p x)
+  exact (ENNReal.div_le_div_left hw _).trans
+    ((T.restrictScalars ℝ).enorm_toLp_div_le_summingENorm x)
+
+/-- Restricting scalars to `ℝ` at most doubles the `p`-summing gauge:
+`πₚ(T.restrictScalars ℝ) ≤ 2 * πₚ(T)`. -/
+theorem summingENorm_restrictScalars_le [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+    [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F] (T : E →L[𝕜] F) :
+    (T.restrictScalars ℝ).summingENorm p ≤ 2 * T.summingENorm p := by
+  refine iSup₂_le fun n x ↦ ?_
+  have hw : ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x) ≤
+      2 * ENNReal.ofReal (weakLpNorm (𝕜 := ℝ) p x) := by
+    rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (by positivity)]
+    exact ENNReal.ofReal_le_ofReal (weakLpNorm_le_two_mul_real p x)
+  calc
+    ‖WithLp.toLp p (fun i ↦ (T.restrictScalars ℝ) (x i))‖ₑ /
+        ENNReal.ofReal (weakLpNorm (𝕜 := ℝ) p x)
+      = 2 * (‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ /
+          (2 * ENNReal.ofReal (weakLpNorm (𝕜 := ℝ) p x))) := by
+        rw [← ENNReal.mul_div_mul_left _ _ two_ne_zero ENNReal.ofNat_ne_top, mul_div_assoc]
+        rfl
+    _ ≤ 2 * (‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ /
+          ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x)) := by
+        gcongr
+    _ ≤ 2 * T.summingENorm p := by
+        gcongr
+        exact T.enorm_toLp_div_le_summingENorm x
 
 end RCLike
 

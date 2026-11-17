@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 import Mathlib.Analysis.InnerProductSpace.Completion
 import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.Topology.Algebra.LinearMapCompletion
 
 /-!
@@ -29,6 +30,8 @@ Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
   bookkeeping and can be reordered freely against other unconditional sums.
 * `OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq` — the squared values of a continuous linear
   functional on a finite orthonormal basis sum to the square of its operator norm.
+* `OrthonormalBasis.sum_sq_apply_add_sum_sq_apply_I_smul` — Parseval's identity for a real
+  continuous linear functional on a finite `RCLike` orthonormal basis `(bᵢ, I • bᵢ)`.
 * `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
   of a continuous linear functional on an orthonormal family are summable.
 -/
@@ -79,6 +82,25 @@ theorem _root_.OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq [Fintype ι]
   have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   rw [← (InnerProductSpace.toDual 𝕜 E).symm.norm_map A, ← b.sum_sq_norm_inner_left]
   simp_rw [InnerProductSpace.toDual_symm_apply]
+
+/-- **Parseval's identity for a real functional on an `RCLike` orthonormal basis.**
+Applying `StrongDual.extendRCLike` turns `g : StrongDual ℝ E` into a `𝕜`-linear functional of the
+same norm whose real and imaginary parts at `b i` are `g (b i)` and `-g (I • b i)`. -/
+theorem _root_.OrthonormalBasis.sum_sq_apply_add_sum_sq_apply_I_smul [Fintype ι]
+    [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+    (b : OrthonormalBasis ι 𝕜 E) (g : StrongDual ℝ E) :
+    ∑ i, g (b i) ^ 2 + ∑ i, g ((RCLike.I : 𝕜) • b i) ^ 2 = ‖g‖ ^ 2 := by
+  let f : StrongDual 𝕜 E := g.extendRCLike
+  calc
+    ∑ i, g (b i) ^ 2 + ∑ i, g ((RCLike.I : 𝕜) • b i) ^ 2
+      = ∑ i, (RCLike.re (f (b i)) ^ 2 + RCLike.im (f (b i)) ^ 2) := by
+          rw [← Finset.sum_add_distrib]
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          simp [f]
+    _ = ∑ i, ‖f (b i)‖ ^ 2 :=
+          Finset.sum_congr rfl fun i _ ↦ by rw [RCLike.norm_sq_eq_def, sq, sq]
+    _ = ‖f‖ ^ 2 := b.sum_sq_norm_apply_eq_norm_sq f
+    _ = ‖g‖ ^ 2 := by rw [StrongDual.norm_extendRCLike]
 
 end Normed
 
