@@ -12,14 +12,17 @@ public import TauCeti.Topology.Algebra.Group.Baire
 /-!
 # Borel unitary representations and automatic strong continuity
 
-For a unitary group representation `π : ContRepresentation 𝕜 G H` on a separable Hilbert space `H`,
-`StrongUnitary 𝕜 H` is a Polish topological group whose Borel σ-algebra is generated both by matrix
-coefficients `g ↦ ⟪d i, π g (d j)⟫_𝕜` and by orbits `g ↦ π g (d i)` along any countable dense family
-`d : ι → H`.
+On a separable Hilbert space `H`, `TauCeti.StrongUnitary 𝕜 H` is a Polish topological group whose
+Borel σ-algebra is generated both by the matrix-coefficient maps `u ↦ ⟪d i, u (d j)⟫_𝕜` and by the
+evaluation maps `u ↦ u (d i)` along any countable dense family `d : ι → H` (when `𝕜`, respectively
+`H`, carries its Borel σ-algebra). For a unitary group representation `π : ContRepresentation 𝕜 G H`
+with `hπ : π.IsUnitary`, the matrix coefficients `g ↦ ⟪d i, π g (d j)⟫_𝕜` and orbits
+`g ↦ π g (d i)` are the pullbacks of these coordinate maps along
+`hπ.toStrongUnitaryHom : G →* TauCeti.StrongUnitary 𝕜 H`.
 
-Combining these four measurability equivalences (`StrongUnitary/Borel.lean`) with Pettis automatic
-continuity (`TauCeti.continuous_of_measurable_monoidHom`) along
-`ContRepresentation.IsUnitary.toStrongUnitaryHom` yields **automatic strong continuity of Borel
+Combining the resulting four measurability equivalences (specializing `StrongUnitary/Borel.lean`
+along `ContRepresentation.IsUnitary.toStrongUnitaryHom`) with Pettis automatic continuity
+(`TauCeti.continuous_of_measurable_monoidHom`) yields **automatic strong continuity of Borel
 unitary representations**: on any Baire Borel topological group `G` (in particular any Polish group
 or any locally compact Hausdorff group), a unitary representation on a separable Hilbert space is
 strongly continuous as soon as either its matrix coefficients or its orbits along a countable dense
