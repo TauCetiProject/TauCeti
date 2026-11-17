@@ -33,16 +33,18 @@ public section
 open Complex MeasureTheory Metric Set
 open scoped Real RealInnerProductSpace
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti
 
 section Angular
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {u : ℂ → V} {J : V → V →L[ℝ] V} {z₀ : ℂ} {M : ℝ}
 
-/-- The angular square energy is bounded by the radial boundary density, using the
-Cauchy--Riemann equation and an operator-norm bound on the target structure. -/
-private theorem angular_energy_le {r : ℝ} (hr : 0 < r)
+/-- The angular energy of the loop `θ ↦ u (z₀ + r e^{iθ})` is at most `(1 + M)² r²` times the
+circle integral of `‖∂ₛu‖²`, for a solution of `∂ₜu = J(u) ∂ₛu` along the circle with
+`‖J(u)‖ ≤ M`. This converts the boundary-loop energies of the isoperimetric estimates into the
+boundary densities of radial energy integrals. -/
+theorem integral_norm_deriv_comp_circleMap_sq_le {r : ℝ} (hr : 0 ≤ r)
     (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ))
     (hCR : ∀ θ, fderiv ℝ u (circleMap z₀ r θ) I =
       J (u (circleMap z₀ r θ)) (fderiv ℝ u (circleMap z₀ r θ) 1))
@@ -73,7 +75,7 @@ private theorem angular_energy_le {r : ℝ} (hr : 0 < r)
     calc _ ≤ ‖fderiv ℝ u (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ :=
           (fderiv ℝ u (circleMap z₀ r θ)).le_opNorm _
       _ ≤ ((1 + M) * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) * r := by
-          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_pos hr]
+          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hr]
           gcongr
           exact (fderiv ℝ u (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ) (hJ θ) le_rfl
       _ = _ := by ring
@@ -83,6 +85,8 @@ private theorem angular_energy_le {r : ℝ} (hr : 0 < r)
     _ = _ := by ring
 
 end Angular
+
+namespace SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
@@ -125,8 +129,9 @@ theorem mul_integral_norm_fderiv_one_sq_ball_le_mul_deriv
   have hmem (θ : ℝ) : circleMap z₀ r θ ∈ D := by
     simpa only [D, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
       abs_of_pos hr.1] using And.intro hr.1 (le_refl r)
-  have ha := angular_energy_le hr.1 (fun θ ↦ (hsmooth _ (hmem θ)).of_le one_le_two)
-    (fun θ ↦ hCR _ (hsub (hmem θ))) (fun θ ↦ hJ _ (hsub (hmem θ)))
+  have ha := integral_norm_deriv_comp_circleMap_sq_le hr.1.le
+    (fun θ ↦ (hsmooth _ (hmem θ)).of_le one_le_two) (fun θ ↦ hCR _ (hsub (hmem θ)))
+    (fun θ ↦ hJ _ (hsub (hmem θ)))
   rw [(hasDerivAt_integral_norm_fderiv_one_sq_ball (hu.of_le one_le_two) henergy hr).deriv]
   nlinarith
 
@@ -172,6 +177,8 @@ theorem integral_norm_fderiv_one_sq_ball_le_rpow
   simpa only [Real.div_rpow hr.le (hr.trans_le hrb).le, ← mul_div_assoc] using
     (le_div_iff₀ (Real.rpow_pos_of_pos (hr.trans_le hrb) _)).mpr h
 
-end TauCeti.SymplecticForm
+end SymplecticForm
+
+end TauCeti
 
 end
