@@ -118,10 +118,8 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq {ι : Type*
   have hval := value_compL_ae hΨ hp v
   have hgrad : ∀ᵐ y ∂mu.restrict V, iteratedGradient 0 (lowerOrder 1 (compL hΨ hp v)) y =
       (fderiv ℝ Ψ y).adjoint (iteratedGradient 0 (lowerOrder 1 v) (Ψ y)) := by
-    rw [← gradient_firstOrder_one, firstOrder_compL hΨ hp v]
-    filter_upwards [W1p.gradient_compL_ae Ψ hp hΨ.differentiableOn hΨ.injOn hΨ.mapsTo
-      hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det (firstOrder 1 v)] with y hy
-    rw [hy, gradient_firstOrder_one]
+    filter_upwards [gradient_firstOrder_compL_ae hΨ hp v] with y hy
+    rw [← gradient_firstOrder_one, hy, gradient_firstOrder_one]
   rw [hvu] at hH hval hgrad
   -- The equation for `u` at `y`, rewritten in terms of `v` at `Ψ y`.
   have hkey : ∀ᵐ y ∂mu.restrict V,

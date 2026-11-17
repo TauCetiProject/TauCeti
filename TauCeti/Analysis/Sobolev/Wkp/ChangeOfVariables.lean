@@ -24,11 +24,22 @@ import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
-# Linear changes of variables in `W^{2,p}`
+# Changes of variables in `W^{k,p}`
 
-Let `e` be a continuous linear automorphism of a finite-dimensional real inner product space `E`,
-and let `U = e⁻¹(W)` for open sets `U, W ⊆ E`. For `1 ≤ p < ∞`, this file proves that
-precomposition with `e` maps `W^{2,p}(W)` to `W^{2,p}(U)`, with the chain rule for the weak Hessian
+Let `Φ` be a change of variables of order `k` from an open set `U` into an open set `V`
+(`TauCeti.Wkp.IsChangeOfVariables`): a `Cᵏ` injective map with bounded derivatives of orders `1`
+through `k` and Jacobian determinant bounded away from zero. For `1 ≤ p < ∞`, this file
+constructs precomposition with `Φ` as a bounded linear operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`
+(`TauCeti.Wkp.compL`). At order two, its weak Hessian is given by the chain rule
+
+`D²(u ∘ Φ)(x) = DΦ(x)† ∘ D²u(Φ x) ∘ DΦ(x) + ⟪∇u(Φ x), D²Φ(x)⟫`
+
+almost everywhere on `U` (`TauCeti.Wkp.inner_iteratedGradient_compL_ae`).
+
+For linear changes of variables, let `e` be a continuous linear automorphism of a
+finite-dimensional real inner product space `E`, and let `U = e⁻¹(W)` for open sets `U, W ⊆ E`.
+For `1 ≤ p < ∞`, this file proves that precomposition with `e` maps `W^{2,p}(W)` to
+`W^{2,p}(U)`, with the chain rule for the weak Hessian
 
 `D²(u ∘ e)(x) = e† ∘ D²u(e x) ∘ e`
 
@@ -44,7 +55,7 @@ Poisson's equation vanishing on the boundary hyperplane to constant-coefficient 
 
 ## The argument
 
-The first-order part of `u ∘ e` is given by the change of variables in `W^{1,p}`
+In the linear case, the first-order part of `u ∘ e` is given by the change of variables in `W^{1,p}`
 (`TauCeti.W1p.compL`), with weak gradient `e† (∇u ∘ e)`, so its component along a direction `c`
 is `⟪∇u, e c⟫ ∘ e`. The component `⟪∇u, e c⟫` is itself a function in `W^{1,p}(W)` whose weak
 gradient has components `⟪D²u f, e c⟫`, so its composition with `e` lies in `W^{1,p}(U)`. Thus
@@ -54,17 +65,26 @@ of weak derivatives identifies the entries `⟪D²(u ∘ e) f, c⟫ = ⟪D²u(e 
 boundary values are preserved because `e` is a homeomorphism
 (`TauCeti.W1p.compL_mem_w1p0Submodule`).
 
+For a nonlinear change of variables `Φ`, precomposition is first defined on functions with `Cᵏ`
+representatives and extended by density. The weak gradient of `u ∘ Φ` is `DΦ† (∇u ∘ Φ)`, so in an
+orthonormal basis `(bᵢ)` each of its components is
+`⟪∇(u ∘ Φ), c⟫ = ∑ᵢ ⟪DΦ c, bᵢ⟫ ⟪∇u(Φ ·), bᵢ⟫`, a sum of products of the `C¹` coefficients
+`⟪DΦ c, bᵢ⟫` with functions `⟪∇u(Φ ·), bᵢ⟫` in `W^{1,p}(U)`. Differentiating with the product
+rule (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`) and using uniqueness of weak
+derivatives gives the chain rule for the weak Hessian.
+
 ## Main declarations
 
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
 * `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
   estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
+* `TauCeti.Wkp.compL`: precomposition with a change of variables of order `k` in `W^{k,p}`.
+* `TauCeti.Wkp.gradient_firstOrder_compL_ae`: the chain rule `∇(u ∘ Φ) = DΦ† ∇u(Φ ·)` for the
+  weak gradient.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
   `D²(u ∘ Φ) = DΦ† ∘ D²u(Φ ·) ∘ DΦ + ⟪∇u(Φ ·), D²Φ⟫` for the weak Hessian along a change of
-  variables `Φ` of order two, `TauCeti.Wkp.compL`. It is proved by differentiating
-  `⟪∇(u ∘ Φ), c⟫ = ∑ᵢ ⟪DΦ c, bᵢ⟫ ⟪∇u(Φ ·), bᵢ⟫` in an orthonormal basis `(bᵢ)` with the product
-  rule for `C¹` factors (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`).
+  variables `Φ` of order two.
 
 ## References
 
@@ -814,7 +834,7 @@ theorem lowerOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p �
 
 /-- **The chain rule.** The first-order part of `compL h hp u` is the first-order change of
 variables `TauCeti.W1p.compL` of the first-order part of `u`. In particular its weak gradient is
-`DΦ(x)* (∇u)(Φ x)` (`TauCeti.W1p.gradient_compL_ae`).
+`DΦ(x)* (∇u)(Φ x)` (`TauCeti.Wkp.gradient_firstOrder_compL_ae`).
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p (k + 1)) :
@@ -825,6 +845,16 @@ theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p �
   filter_upwards [value_compL_ae h hp u, W1p.value_compL_ae Φ hp h.differentiableOn h.injOn
     h.mapsTo h.norm_fderiv_le h.pos h.le_abs_det (firstOrder k u)] with x h1 h2
   rw [h2, value_firstOrder, value_firstOrder, h1]
+
+/-- **The chain rule for the weak gradient.** The weak gradient of the first-order part of
+`compL h hp u` is `DΦ(x)† (∇u)(Φ x)` almost everywhere on `U`. -/
+theorem gradient_firstOrder_compL_ae (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
+    (u : Wkp mu V p (k + 1)) :
+    ∀ᵐ x ∂mu.restrict U, W1p.gradient (firstOrder k (compL h hp u)) x =
+      (fderiv ℝ Φ x).adjoint (W1p.gradient (firstOrder k u) (Φ x)) := by
+  rw [firstOrder_compL h hp u]
+  exact W1p.gradient_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos
+    h.le_abs_det (firstOrder k u)
 
 /-- At almost every point, the weak gradient of `d ∈ W^{1,p}(V)` pairs with every direction `f`
 as `⟪D²u f, c⟫` once it does so with the vectors of an orthonormal basis. -/
@@ -872,9 +902,7 @@ private theorem hasWeakLineDerivOn_inner_gradient_firstOrder_compL
   -- The weak gradient of `u ∘ Φ` is `DΦ(x)† ∇u(Φ x)`.
   have hgrad : ∀ᵐ x ∂mu.restrict U,
       W1p.gradient (firstOrder 1 (compL h hp u)) x = (fderiv ℝ Φ x).adjoint (G (Φ x)) := by
-    rw [firstOrder_compL h hp u]
-    filter_upwards [W1p.gradient_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo
-      h.norm_fderiv_le h.pos h.le_abs_det (firstOrder 1 u)] with x hx
+    filter_upwards [gradient_firstOrder_compL_ae h hp u] with x hx
     rw [hx, gradient_firstOrder_one]
   -- In the basis `(bᵢ)`, `⟪∇(u ∘ Φ), c₀⟫ = ∑ᵢ ⟪bᵢ, DΦ c₀⟫ wᵢ` with `wᵢ = ⟪∇u(Φ ·), bᵢ⟫` in
   -- `W^{1,p}(U)`, and the coefficients `⟪bᵢ, DΦ c₀⟫` are `C¹` on `U`.
