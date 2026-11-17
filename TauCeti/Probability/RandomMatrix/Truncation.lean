@@ -39,7 +39,7 @@ open scoped Topology NNReal Matrix.Norms.Frobenius
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-  {ξ ξ' : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
+  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 /-- Truncating and centering upper coordinates preserves their joint independence with the
 unchanged diagonal coordinates. -/
@@ -61,36 +61,6 @@ theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
   funext k ω
   cases k <;> simp only [g, Function.comp_def, Sum.elim_inl, Sum.elim_inr,
     centeredTruncation_def, Set.indicator_apply, Set.mem_ofPred_eq, id_eq]
-
-/-- Keeping the same diagonal, a common second absolute moment `s` of the upper-coordinate
-differences gives expected squared Frobenius error `n * s` at size `n + 1`. -/
-theorem integral_norm_wignerMatrix_sub_sq (hξ : ∀ ij, MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P)
-    {s : ℝ} (hs : ∀ ij, ∫ ω, ‖ξ ij ω - ξ' ij ω‖ ^ 2 ∂P = s) (n : ℕ) :
-    ∫ ω, ‖wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω‖ ^ 2 ∂P = n * s := by
-  let d (ij : StrictUpper) (ω : Ω) := ξ ij ω - ξ' ij ω
-  have heq (ω : Ω) : wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω =
-      wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω := by
-    simp only [wignerMatrix_sub, sub_self, d]
-  have hn (ω : Ω) :
-      (((n + 1 : ℂ)⁻¹ *
-        (wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω *
-          wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω).trace).re) =
-        (n + 1 : ℝ)⁻¹ * ‖wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω‖ ^ 2 := by
-    rw [(wignerMatrix_isHermitian d (fun _ _ ↦ 0) ω _).trace_mul_self_eq_sum_norm_sq,
-      Matrix.frobenius_norm_sq_eq_sum_normSq]
-    simp only [Complex.normSq_eq_norm_sq,
-      ← Complex.ofReal_natCast, ← Complex.ofReal_one, ← Complex.ofReal_add,
-      ← Complex.ofReal_inv, ← Complex.ofReal_mul, Complex.ofReal_re]
-  have h := integral_re_trace_wignerMatrix_mul_self (ξ := d) (η := fun _ _ ↦ 0) (σ2 := 0)
-    (fun ij ↦ (memLp_two_iff_integrable_sq_norm (hξ ij).aestronglyMeasurable).mp (hξ ij))
-    hs (fun _ ↦ by simp) (fun _ ↦ by simp) (n + 1)
-  simp only [Nat.cast_add, Nat.cast_one] at h
-  simp only [hn, integral_const_mul] at h
-  simp_rw [heq]
-  have hN : (n + 1 : ℝ) ≠ 0 := by positivity
-  simp only [add_sub_cancel_right, zero_add] at h
-  field_simp at h
-  exact h
 
 variable [IsProbabilityMeasure P] {X : Ω → ℂ} (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0)
   (hd : ∀ ij, IdentDistrib (ξ ij) X P P)
