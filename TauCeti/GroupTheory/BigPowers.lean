@@ -48,6 +48,7 @@ amalgamated products and HNN extensions along centralizers.
   commuting, stays nontrivial after multiplying by a fixed element, for all large `k`.
 * `Group.isBP_iff_isMulTorsionFree`: a commutative group is a BP group exactly when it is
   torsion-free.
+* `Group.not_isBP_of_finite`: a nontrivial finite group, such as `ℤ/2`, is not a BP group.
 * `Group.IsBP.exists_forall_mul_prod_ne_one`: in a CSA group with the big powers property,
   alternating products of big powers of `u ≠ 1` are nontrivial.
 
@@ -252,6 +253,13 @@ end IsBP
 /-- A trivial group is a BP group: it has no nonidentity elements. -/
 theorem isBP_of_subsingleton [Subsingleton G] : IsBP G :=
   fun _ _ hu _ => ((hu 0) (Subsingleton.elim _ _)).elim
+
+/-- A nontrivial finite group, such as `ℤ/2`, is not a BP group: a nonidentity element has finite
+order, so its powers are trivial for arbitrarily large exponents. -/
+theorem not_isBP_of_finite [Finite G] [Nontrivial G] : ¬IsBP G := fun h => by
+  have := h.isMulTorsionFree
+  obtain ⟨g, hg⟩ := exists_ne (1 : G)
+  exact not_isOfFinOrder_of_isMulTorsionFree hg (isOfFinOrder_of_finite g)
 
 /-- A commutative group is a BP group exactly when it is torsion-free: consecutive entries always
 commute, so only singleton tuples need to be checked. -/

@@ -58,7 +58,7 @@ public section
 
 open CategoryTheory Limits Opposite AlgebraicGeometry Scheme.Modules
 
-universe u
+universe w w' u
 
 noncomputable section
 
@@ -314,18 +314,32 @@ private lemma isColimitOn_of_isCompact_of_isQuasiSeparated {U : X.Opens}
         inj_sup hι (hV (n + 1)).inj (hW (n + 1)).inj
           (inj_ker_succ hι (hV n).surj (hW n).surj (hVW n).inj)⟩
 
+end Main
+
+section EssentiallySmall
+
+variable {J : Type w} [Category.{w'} J] [EssentiallySmall.{u} J] [IsFiltered J]
+  {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj j).IsQuasicoherent)
+  {c : Cocone K} (hc : IsColimit c)
+
 /-- **Cohomology commutes with filtered colimits of quasi-coherent sheaves.** For a filtered
-diagram `K` of quasi-coherent sheaves of modules on a scheme `X` with colimit cocone `c`, and a
-quasi-compact quasi-separated open `U`, the cohomology `Hⁿ(U, -)` sends `c` to a colimit cocone:
+essentially small diagram `K` of quasi-coherent sheaves of modules on a scheme `X` with colimit
+cocone `c`, and a quasi-compact quasi-separated open `U`, the cohomology `Hⁿ(U, -)` sends `c` to a
+colimit cocone:
 `Hⁿ(U, colim_j K_j)` is the colimit of the `Hⁿ(U, K_j)`. -/
 def isColimitMapCoconeCohomologyOnFunctor {U : X.Opens} (hU : IsCompact (U : Set X))
     (hU' : IsQuasiSeparated (U : Set X)) (n : ℕ) :
-    IsColimit ((cohomologyOnFunctor X n U).mapCocone c) :=
-  (isColimitOn_of_isCompact_of_isQuasiSeparated hK hc hU hU' n).isColimit
+    IsColimit ((cohomologyOnFunctor X n U).mapCocone c) := by
+  let e := (equivSmallModel.{u} J).symm
+  have : IsFiltered (SmallModel.{u} J) := IsFiltered.of_equivalence e.symm
+  exact IsColimit.ofWhiskerEquivalence e
+    (isColimitOn_of_isCompact_of_isQuasiSeparated
+      (fun j ↦ hK (e.functor.obj j)) (hc.whiskerEquivalence e) hU hU' n).isColimit
 
 /-- **Cohomology commutes with filtered colimits of quasi-coherent sheaves.** For a filtered
-diagram `K` of quasi-coherent sheaves of modules on a quasi-compact quasi-separated scheme `X`
-with colimit cocone `c`, the cohomology `Hⁿ(X, -)` sends `c` to a colimit cocone:
+essentially small diagram `K` of quasi-coherent sheaves of modules on a quasi-compact
+quasi-separated scheme `X` with colimit cocone `c`, the cohomology `Hⁿ(X, -)` sends `c` to a
+colimit cocone:
 `Hⁿ(X, colim_j K_j)` is the colimit of the `Hⁿ(X, K_j)`. -/
 def isColimitMapCoconeCohomologyFunctor [CompactSpace X] [QuasiSeparatedSpace X] (n : ℕ) :
     IsColimit ((cohomologyFunctor X n).mapCocone c) :=
@@ -333,6 +347,6 @@ def isColimitMapCoconeCohomologyFunctor [CompactSpace X] [QuasiSeparatedSpace X]
       (Sheaf.cohomologyPresheafEvaluationIsoFunctorH _ n isTerminalTop))
     (isColimitMapCoconeCohomologyOnFunctor hK hc (U := ⊤) isCompact_univ isQuasiSeparated_univ n)
 
-end Main
+end EssentiallySmall
 
 end TauCeti.AlgebraicGeometry.Scheme.Modules
