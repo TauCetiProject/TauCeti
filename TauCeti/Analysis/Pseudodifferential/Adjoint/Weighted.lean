@@ -91,16 +91,10 @@ variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductS
 open ContinuousLinearMap (adjointRealCLM adjointRealCLM_apply)
 
 omit [CompleteSpace V] in
-/-- The pointwise adjoint `x ↦ k(x)†` of a smooth weight is smooth. -/
-private theorem contDiff_adjoint_weight (hk : ContDiff ℝ ∞ k) :
-    ContDiff ℝ ∞ fun x ↦ ContinuousLinearMap.adjoint (k x) := by
-  simpa only [Function.comp_def, adjointRealCLM_apply] using adjointRealCLM.contDiff.comp hk
-
-omit [CompleteSpace V] in
 /-- The symbol `(x, ξ) ↦ k(x)† a(x, ξ)`, the composition of `a` with the pointwise adjoint of the
 weight `k`, of order `m`. -/
 private def weightComp (hk : ContDiff ℝ ∞ k) (a : Symbol n V W m) : Symbol n V W (0 + m) :=
-  (ofSpatial _ (contDiff_adjoint_weight hk)).comp a
+  (ofSpatial _ hk.clm_adjoint).comp a
 
 omit [CompleteSpace V] in
 private theorem coefficient_weightComp (hk : ContDiff ℝ ∞ k) (a : Symbol n V W m) :
@@ -319,7 +313,7 @@ of order `m` (`TauCeti.ClassicalSymbol.toSymbol_weightedAdjoint`), with principa
 `g(x)⁻¹ a_m(x, ξ)† k(x)` (`TauCeti.ClassicalSymbol.coefficient_principal_weightedAdjoint`). -/
 def weightedAdjoint : ClassicalSymbol n W V m :=
   inclusion 0 (by simp) ((ofSpatial _ (hg.clm_inverse hgi)).comp
-    (adjoint ((ofSpatial _ (Symbol.contDiff_adjoint_weight hk)).comp a)
+    (adjoint ((ofSpatial _ hk.clm_adjoint).comp a)
       (by rw [toSymbol_comp]; exact ha.comp_left _)))
 
 @[simp]
@@ -327,11 +321,7 @@ theorem toSymbol_weightedAdjoint :
     (a.weightedAdjoint ha hg hgi hk).toSymbol = a.toSymbol.weightedAdjoint ha hg hgi hk := by
   ext1
   funext ⟨y, ξ⟩
-  rw [Symbol.coefficient_weightedAdjoint, weightedAdjoint, toSymbol_inclusion,
-    Symbol.coefficient_inclusion, toSymbol_comp, Symbol.coefficient_comp, toSymbol_ofSpatial,
-    Symbol.coefficient_ofSpatial, toSymbol_adjoint, Symbol.coefficient_adjoint, toSymbol_comp,
-    toSymbol_ofSpatial]
-  simp
+  simp [weightedAdjoint, Symbol.coefficient_weightedAdjoint, Symbol.coefficient_adjoint]
 
 /-- **The principal symbol of the weighted adjoint** is the adjoint of the principal symbol for
 the two weights: `σ(a^♯)(x, ξ) = g(x)⁻¹ σ(a)(x, ξ)† k(x)`. -/
@@ -342,12 +332,9 @@ theorem coefficient_principal_weightedAdjoint (p : CoordinateSpace n × Coordina
   obtain ⟨x, ξ⟩ := p
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp [HomogeneousSymbol.zero_covector]
-  rw [weightedAdjoint, principal_def, term_inclusion_zero, HomogeneousSymbol.coefficient_castDegree,
-    HomogeneousSymbol.coefficient_castDegree, ← coefficient_principal, principal_comp,
-    HomogeneousSymbol.coefficient_comp, coefficient_principal_ofSpatial _ _ hξ, principal_adjoint,
-    HomogeneousSymbol.coefficient_adjoint, principal_comp, HomogeneousSymbol.coefficient_comp,
-    coefficient_principal_ofSpatial _ _ hξ, ContinuousLinearMap.adjoint_comp,
-    ContinuousLinearMap.adjoint_adjoint]
+  rw [weightedAdjoint, principal_def, term_inclusion_zero]
+  simp [← coefficient_principal, coefficient_principal_ofSpatial _ _ hξ,
+    ContinuousLinearMap.adjoint_comp]
 
 /-- **The weighted adjoint of an elliptic symbol is elliptic**, and conversely, when the weight
 `k(x)` is invertible for every `x`. -/
