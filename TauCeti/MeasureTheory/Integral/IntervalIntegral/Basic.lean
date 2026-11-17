@@ -40,6 +40,8 @@ not belong to any particular application.
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
   integrable function is bounded in norm by the integral of its norm over the whole space.
+* `MeasureTheory.setIntegral_Ioc_comp_add_left`: translating a set integral over `(a, b]` to one
+  over `(d + a, d + b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
@@ -247,6 +249,18 @@ theorem MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm {E : Typ
     (a b : ℝ) : ‖∫ x in a..b, f x ∂μ‖ ≤ ∫ x, ‖f x‖ ∂μ :=
   intervalIntegral.norm_integral_le_integral_norm_uIoc.trans
     (setIntegral_le_integral hf.norm (.of_forall fun _ ↦ norm_nonneg _))
+
+/-- Translating a set integral over `(a, b]` to one over `(d + a, d + b]`; the set-integral form
+of `intervalIntegral.integral_comp_add_left`, with no order assumption on `a` and `b`. -/
+theorem MeasureTheory.setIntegral_Ioc_comp_add_left {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℝ → E) (d a b : ℝ) :
+    ∫ x in Ioc a b, f (d + x) = ∫ x in Ioc (d + a) (d + b), f x := by
+  rcases le_total a b with hab | hab
+  · rw [← intervalIntegral.integral_of_le hab,
+      ← intervalIntegral.integral_of_le (add_le_add_right hab d),
+      intervalIntegral.integral_comp_add_left]
+  · rw [Ioc_eq_empty_of_le hab, Ioc_eq_empty_of_le (add_le_add_right hab d), setIntegral_empty,
+      setIntegral_empty]
 
 namespace TauCeti.intervalIntegral
 
