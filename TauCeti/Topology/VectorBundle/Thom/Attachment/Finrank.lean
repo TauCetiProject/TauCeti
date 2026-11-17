@@ -60,7 +60,7 @@ section Helpers
 private def biproductSubtypeIsoOfIsZero {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
     [HasFiniteBiproducts C] {ι : Type*} [Finite ι] (M : ι → C) (P : ι → Prop)
     [DecidablePred P] (hzero : ∀ i, ¬ P i → IsZero (M i)) :
-    (⨁ fun x : {i : ι // P i} ↦ M x.1) ≅ ⨁ M where
+    (⨁ Subtype.restrict P M) ≅ ⨁ M where
   hom := biproduct.fromSubtype M P
   inv := biproduct.toSubtype M P
   hom_inv_id := biproduct.fromSubtype_toSubtype M P
@@ -71,15 +71,6 @@ private def biproductSubtypeIsoOfIsZero {C : Type u} [Category.{v} C] [HasZeroMo
     split_ifs with hi
     · exact Category.id_comp _
     · exact (hzero i hi).eq_of_src _ _
-
-@[reassoc (attr := simp)]
-private lemma ι_biproductSubtypeIsoOfIsZero_hom {C : Type u} [Category.{v} C]
-    [HasZeroMorphisms C] [HasFiniteBiproducts C] {ι : Type*} [Finite ι] (M : ι → C)
-    (P : ι → Prop) [DecidablePred P] (hzero : ∀ i, ¬ P i → IsZero (M i))
-    (x : {i : ι // P i}) :
-    biproduct.ι (fun y : {i : ι // P i} ↦ M y.1) x ≫
-      (biproductSubtypeIsoOfIsZero M P hzero).hom = biproduct.ι M x.1 :=
-  biproduct.ι_desc _ _
 
 private def singularHomologyCongrDegreeIso {C : Type u} [Category.{v} C] [Abelian C]
     [HasCoproducts.{w} C] (P : TopPair.{w}) (R : C) {m n : ℕ} (h : m = n) :
@@ -255,9 +246,7 @@ theorem ι_singularHomologyAttachDiscBundlesOfRadiusIsoH0OfLeFinrank_inv
           hnorm hr hrpos hf hX hfX hdisj hfcover (ModuleCat.of K K) d).hom := by
   simp only [singularHomologyAttachDiscBundlesOfRadiusIsoH0OfLeFinrank, Iso.trans_inv,
     Iso.symm_inv, biproduct.mapIso_inv, singularHomologyCongrDegreeIso_inv, Category.assoc,
-    biproduct.ι_map_assoc]
-  rw [ι_biproductSubtypeIsoOfIsZero_hom_assoc
-    (M := fun i ↦ (thomPair (F i) (E i)).singularHomology (ModuleCat.of K K) d)]
+    biproduct.ι_map_assoc, biproductSubtypeIsoOfIsZero, biproduct.ι_fromSubtype_assoc]
 
 end RankBounds
 
@@ -393,9 +382,7 @@ theorem ι_singularHomologyIsoOfAttachDiscBundlesOfRadiusOfUniqueBase_inv
           hnorm hr hrpos hf hX hfX hdisj hfcover R n).hom := by
   simp only [singularHomologyIsoOfAttachDiscBundlesOfRadiusOfUniqueBase, Iso.trans_inv,
     Iso.symm_inv, biproduct.mapIso_inv, singularHomologyCongrDegreeIso_inv, Category.assoc,
-    biproduct.ι_map_assoc]
-  rw [ι_biproductSubtypeIsoOfIsZero_hom_assoc
-    (M := fun i ↦ (thomPair (F i) (E i)).singularHomology R n)]
+    biproduct.ι_map_assoc, biproductSubtypeIsoOfIsZero, biproduct.ι_fromSubtype_assoc]
 
 include hnorm hr hrpos hf hX hfX hdisj hfcover in
 /-- **Dimension count in the point-base specialization**: over a division ring `k` with a
