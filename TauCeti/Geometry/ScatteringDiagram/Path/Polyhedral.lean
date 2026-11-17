@@ -420,6 +420,18 @@ theorem toContinuousPath_mapPath {C C' : FinitePolyhedralComplex h} (hsub : C'.I
   | nil => simp
   | cons p a ih => simp only [mapPath_cons, Quiver.Path.toContinuousPath_cons, ih]
 
+/-- Every crossing of a wall `w` of `C` along a segment between vertices of a subdivision `C'`
+arises from a crossing at the same parameter of a wall `w'` of `C'` contained in `w`. -/
+theorem exists_mem_crossings_subset {C C' : FinitePolyhedralComplex h}
+    (hsub : C'.IsSubdivision C) {x y : C'.wallComplement} {w : C.walls} {t : ℝ}
+    (hwt : (w, t) ∈ WallComplement.crossings (hsub.wallComplement x) (hsub.wallComplement y)) :
+    ∃ w' : C'.walls,
+      (w' : Set V) ⊆ (w : Set V) ∧ (w', t) ∈ WallComplement.crossings x y := by
+  obtain ⟨htI, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
+  obtain ⟨w', hw', hsubw, -, hzw'⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
+  exact ⟨⟨w', hw'⟩, hsubw,
+    (WallComplement.mem_crossings x y ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
+
 private theorem neg_ite_sign_of_neg {c v : ℝ} (hc : c < 0) (hv : v ≠ 0) :
     -(if 0 < c * v then -1 else 1 : ℤ) = if 0 < v then -1 else 1 := by
   split_ifs with h1 h2 h2
@@ -442,11 +454,11 @@ theorem lift_crossingEventWord {C C' : FinitePolyhedralComplex h} (hsub : C'.IsS
         C.pairwise_disjoint_intrinsicInterior_walls e₀ t := by
   by_cases hcr' : ∃ w' : C'.walls, (w', t) ∈ WallComplement.crossings x y
   · obtain ⟨w', hw't⟩ := hcr'
-    obtain ⟨htI, hzw'⟩ := (WallComplement.mem_crossings x y w' t).mp hw't
     rw [WallComplement.crossingEventWord_of_mem_crossings ν' _ e hw't,
       map_zpow, FreeGroup.lift_apply_of]
     by_cases hex : ∃ w : C.walls, (w' : Set V) ⊆ (w : Set V)
     · obtain ⟨w, hww⟩ := hex
+      obtain ⟨htI, hzw'⟩ := (WallComplement.mem_crossings x y w' t).mp hw't
       have hwt : (w, t) ∈ WallComplement.crossings
           (hsub.wallComplement x) (hsub.wallComplement y) :=
         (WallComplement.mem_crossings _ _ w t).mpr ⟨htI, hww hzw'⟩
@@ -465,20 +477,15 @@ theorem lift_crossingEventWord {C C' : FinitePolyhedralComplex h} (hsub : C'.IsS
       rw [wallWordMap_of_forall_not_subset ν' ν hex', one_zpow]
       refine (WallComplement.crossingEventWord_eq_one_of_forall_notMem ν _ e₀ t
         fun w hwt => ?_).symm
-      obtain ⟨_, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
-      obtain ⟨w'', hw'', hsub'', -, hzw''⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
-      have hw''t : (⟨w'', hw''⟩, t) ∈ WallComplement.crossings x y :=
-        (WallComplement.mem_crossings x y ⟨w'', hw''⟩ t).mpr ⟨htI, hzw''⟩
+      obtain ⟨w'', hsub'', hw''t⟩ := hsub.exists_mem_crossings_subset hwt
       exact hex' w (e.down.eq_of_mem_crossings C'.pairwise_disjoint_intrinsicInterior_walls
         hw't hw''t ▸ hsub'')
   · rw [WallComplement.crossingEventWord_eq_one_of_forall_notMem ν' _ e t
         fun w' hw' => hcr' ⟨w', hw'⟩, map_one]
     refine (WallComplement.crossingEventWord_eq_one_of_forall_notMem ν _ e₀ t
       fun w hwt => ?_).symm
-    obtain ⟨htI, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
-    obtain ⟨w', hw', -, -, hzw'⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
-    exact hcr' ⟨⟨w', hw'⟩,
-      (WallComplement.mem_crossings x y ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
+    obtain ⟨w', -, hw't⟩ := hsub.exists_mem_crossings_subset hwt
+    exact hcr' ⟨w', hw't⟩
 
 /-- Subdividing a finite polyhedral complex `C` into `C'` maps the crossing word of any admissible
 path for `C'` to its crossing word on `C` via `FreeGroup.lift (C'.wallWordMap C ν' ν)`. -/
@@ -498,10 +505,8 @@ theorem crossingWord_mapPath {C C' : FinitePolyhedralComplex h}
         t ∈ WallComplement.orderedCrossingTimes a := by
       intro t ht
       obtain ⟨w, hwt⟩ := (WallComplement.mem_orderedCrossingTimes a₀ t).mp ht
-      obtain ⟨htI, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
-      obtain ⟨w', hw', -, -, hzw'⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
-      exact (WallComplement.mem_orderedCrossingTimes a t).mpr
-        ⟨⟨w', hw'⟩, (WallComplement.mem_crossings u v ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
+      obtain ⟨w', -, hw't⟩ := hsub.exists_mem_crossings_subset hwt
+      exact (WallComplement.mem_orderedCrossingTimes a t).mpr ⟨w', hw't⟩
     rw [WallComplement.segmentCrossingWord_eq_prod_of_crossingTimes ν _ a₀
       (WallComplement.orderedCrossingTimes a)
       (WallComplement.pairwise_orderedCrossingTimes a) hcover,
