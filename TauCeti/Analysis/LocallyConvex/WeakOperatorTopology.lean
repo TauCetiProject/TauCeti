@@ -14,7 +14,10 @@ public import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 # Comparing the strong and weak operator topologies
 
 The identity from the pointwise-convergence copy of continuous linear maps to the weak
-operator copy is continuous. Centralizers of sets of operators are weak-operator closed.
+operator copy is continuous, so a set of operators closed in the weak operator topology is closed
+in the strong one
+(`ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM`).
+Centralizers of sets of operators are weak-operator closed.
 These facts allow strong approximation results to identify weak operator closures without
 changing the norm topology on the original operator space.
 
@@ -51,6 +54,22 @@ theorem continuous_ofPointwiseConvergenceCLM :
   apply continuous_of_dual_apply_continuous
   intro x y
   exact y.continuous.comp (continuous_eval_const x)
+
+/-- A set of operators which is closed in the weak operator topology is closed in the topology of
+pointwise convergence (the strong operator topology). -/
+theorem isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM [ContinuousSMul 𝕜₁ E]
+    {s : Set (E →SL[σ] F)} (hs : IsClosed (ofCLM '' s)) :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) := by
+  -- The pointwise copy has the same underlying maps; the preimage is along the continuous
+  -- identity to the weak operator copy.
+  convert hs.preimage continuous_ofPointwiseConvergenceCLM using 1
+  ext T
+  simp only [Set.mem_image, Set.mem_preimage, ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
+  constructor
+  · rintro ⟨a, ha, h⟩
+    exact ⟨a, ha, congrArg ofCLM h⟩
+  · rintro ⟨a, ha, h⟩
+    exact ⟨a, ha, ofCLM_injective h⟩
 
 end ContinuousLinearMapWOT
 

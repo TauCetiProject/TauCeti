@@ -59,19 +59,9 @@ theorem closure_image_toPointwiseConvergenceCLM
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
         (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
   let q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
-  have hclosed : IsClosed (q '' (S : Set (H →L[𝕜] H)).centralizer.centralizer) := by
-    -- The pointwise copy has the same underlying maps; the preimage is along the
-    -- continuous identity to the WOT copy, not along a norm-continuous inverse.
-    convert ((S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer).preimage
-      ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM using 1
-    ext T
-    simp only [q, Set.mem_image, Set.mem_preimage,
-      ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
-    constructor
-    · rintro ⟨a, ha, h⟩
-      exact ⟨a, ha, congrArg ContinuousLinearMapWOT.ofCLM h⟩
-    · rintro ⟨a, ha, h⟩
-      exact ⟨a, ha, ContinuousLinearMapWOT.ofCLM_injective h⟩
+  have hclosed : IsClosed (q '' (S : Set (H →L[𝕜] H)).centralizer.centralizer) :=
+    ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM
+      ((S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer)
   refine subset_antisymm
     (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer) hclosed) ?_
   rintro _ ⟨x, hx, rfl⟩
