@@ -49,8 +49,9 @@ Chern half of the symplectic asphericity of cotangent bundles used in Floer theo
 ## References
 
 * J. W. Milnor and J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
-  Princeton (1974), §14 (the first Chern class of the conjugate bundle is the negative one, and
-  `c₁` of a complexified real bundle is of order at most two).
+  Princeton (1974), §14, Lemma 14.9 (the first Chern class of the conjugate bundle is the negative
+  one), and §15 (a complexified real bundle is isomorphic to its own conjugate, so its odd Chern
+  classes, in particular `c₁`, are of order at most two).
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §4.2 (the canonical grading of the Floer
   homology of `T*Q`).
