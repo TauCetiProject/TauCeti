@@ -188,14 +188,14 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+          tools-ref: 208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1332,7 +1332,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1696,14 +1696,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+          tools-ref: 208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@208e797102bfd4a66e816cb1ce5079f8cb1ee3d1
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
