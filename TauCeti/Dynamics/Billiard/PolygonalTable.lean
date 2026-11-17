@@ -90,7 +90,7 @@ namespace PolygonalTable
 variable (T : PolygonalTable)
 
 /-- The **vertices** of a polygonal table: the vertices of its boundary polygons. -/
-@[expose] def vertexSet : Set ℂ :=
+def vertexSet : Set ℂ :=
   ⋃ i, range (T.component i).toPolygon.vertices
 
 /-- The index type of the **sides** of a polygonal table: a side is an edge `j` of the boundary
@@ -111,12 +111,17 @@ variable (T)
 
 /-- The **side** `s` of a polygonal table, as a set of points: the segment between its endpoints,
 an edge of one of the boundary polygons. -/
-@[expose] noncomputable def side (s : T.Side) : Set ℂ :=
+noncomputable def side (s : T.Side) : Set ℂ :=
   (T.component s.1).toPolygon.edgeSet ℝ s.2
 
 /-- The **relative interior** of the side `s`: the open segment between its endpoints. -/
-@[expose] noncomputable def sideInterior (s : T.Side) : Set ℂ :=
+noncomputable def sideInterior (s : T.Side) : Set ℂ :=
   openSegment ℝ s.start s.finish
+
+/-- The relative interior of a side is the open segment between its endpoints. -/
+theorem sideInterior_eq_openSegment (s : T.Side) :
+    T.sideInterior s = openSegment ℝ s.start s.finish :=
+  (rfl)
 
 /-- A side is the segment between its endpoints. -/
 theorem side_eq_segment (s : T.Side) : T.side s = segment ℝ s.start s.finish :=
@@ -165,16 +170,16 @@ theorem Side.start_mem_vertexSet (s : T.Side) : s.start ∈ T.vertexSet :=
 theorem Side.finish_mem_vertexSet (s : T.Side) : s.finish ∈ T.vertexSet :=
   mem_iUnion.2 ⟨s.1, mem_range_self _⟩
 
-/-- Every vertex is the start of a side. -/
-theorem exists_start_eq_of_mem_vertexSet {x : ℂ} (hx : x ∈ T.vertexSet) :
-    ∃ s : T.Side, s.start = x := by
+/-- The vertices of a table are the starts of its sides. -/
+theorem mem_vertexSet_iff {x : ℂ} : x ∈ T.vertexSet ↔ ∃ s : T.Side, s.start = x := by
+  refine ⟨fun hx => ?_, fun ⟨s, hs⟩ => hs ▸ s.start_mem_vertexSet⟩
   obtain ⟨i, j, rfl⟩ := mem_iUnion.1 hx
   exact ⟨⟨i, j⟩, rfl⟩
 
 /-- Every vertex lies in the frontier of the table. -/
 theorem vertexSet_subset_frontier : T.vertexSet ⊆ frontier T.carrier := by
   intro x hx
-  obtain ⟨s, rfl⟩ := T.exists_start_eq_of_mem_vertexSet hx
+  obtain ⟨s, rfl⟩ := T.mem_vertexSet_iff.1 hx
   exact T.side_subset_frontier s (T.side_eq_segment s ▸ left_mem_segment ℝ _ _)
 
 /-- A polygonal table has finitely many vertices. -/
@@ -190,6 +195,7 @@ theorem disjoint_sideInterior {s t : T.Side} (hst : s ≠ t) :
   intro x hxs hxt
   have hs := T.sideInterior_subset_side _ hxs
   have ht := T.sideInterior_subset_side _ hxt
+  rw [sideInterior_eq_openSegment] at hxs hxt
   by_cases hii : i = i'
   · subst hii
     have hjj : j ≠ j' := fun h => hst (h ▸ rfl)
@@ -197,12 +203,8 @@ theorem disjoint_sideInterior {s t : T.Side} (hst : s ≠ t) :
     -- lie in the relative interior of that side.
     rcases (T.component i).isSimple.eq_vertex_of_mem_edgeSet hjj hs ht with
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · exact Side.start_ne_finish (T := T) ⟨i, j⟩ (right_mem_openSegment_iff.1
-        (show Side.finish (T := T) ⟨i, j⟩ ∈ openSegment ℝ (Side.start (T := T) ⟨i, j⟩)
-          (Side.finish (T := T) ⟨i, j⟩) from hxs))
-    · exact Side.start_ne_finish (T := T) ⟨i, j'⟩ (right_mem_openSegment_iff.1
-        (show Side.finish (T := T) ⟨i, j'⟩ ∈ openSegment ℝ (Side.start (T := T) ⟨i, j'⟩)
-          (Side.finish (T := T) ⟨i, j'⟩) from hxt))
+    · exact Side.start_ne_finish (T := T) ⟨i, j⟩ (right_mem_openSegment_iff.1 hxs)
+    · exact Side.start_ne_finish (T := T) ⟨i, j'⟩ (right_mem_openSegment_iff.1 hxt)
   · exact Set.disjoint_left.1 (T.pairwise_disjoint_boundary hii)
       (mem_iUnion.2 ⟨j, hs⟩) (mem_iUnion.2 ⟨j', ht⟩)
 
@@ -222,7 +224,7 @@ theorem existsUnique_mem_sideInterior {x : ℂ} (hx : x ∈ frontier T.carrier)
 
 /-- **A simple polygon bounds a table without holes**: the filled region of its boundary, which is a
 Jordan curve. -/
-@[expose] noncomputable def ofSimplePolygon (p : SimplePolygon ℝ ℂ) : PolygonalTable where
+noncomputable def ofSimplePolygon (p : SimplePolygon ℝ ℂ) : PolygonalTable where
   numHoles := 0
   component _ := p
   pairwise_disjoint_boundary i j hij := (hij (Subsingleton.elim (α := Fin 1) i j)).elim
@@ -244,20 +246,20 @@ Jordan curve. -/
 /-- The table bounded by a simple polygon has no holes. -/
 @[simp]
 theorem ofSimplePolygon_numHoles (p : SimplePolygon ℝ ℂ) : (ofSimplePolygon p).numHoles = 0 :=
-  rfl
+  (rfl)
 
 /-- The boundary polygon of `ofSimplePolygon p` is `p`. -/
 @[simp]
 theorem ofSimplePolygon_component (p : SimplePolygon ℝ ℂ)
     (i : Fin ((ofSimplePolygon p).numHoles + 1)) :
     (ofSimplePolygon p).component i = p :=
-  rfl
+  (rfl)
 
 /-- The table bounded by a simple polygon is the filled hull of its boundary. -/
 @[simp]
 theorem ofSimplePolygon_carrier (p : SimplePolygon ℝ ℂ) :
     (ofSimplePolygon p).carrier = filledHull (p.toPolygon.boundary ℝ) :=
-  rfl
+  (rfl)
 
 /-- The vertices of `ofSimplePolygon p` are the vertices of `p`. -/
 @[simp]
