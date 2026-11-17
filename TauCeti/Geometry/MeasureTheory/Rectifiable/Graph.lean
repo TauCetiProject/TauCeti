@@ -25,12 +25,14 @@ the classical tangent cone over a neighborhood of the parameter. This is a compa
 conditions, not a density-one theorem or a uniqueness theorem for approximate tangent planes.
 The cone condition also holds for differentiability within an arbitrary parameter set.
 
-A function Lipschitz on a Lipschitz normal graph is almost everywhere differentiable within
-that graph. Its derivative on the tangent plane is unique and is explicitly identified with
-the derivative of its pullback composed with the second projection. Derivative existence
-holds over arbitrary parameter sets; the uniqueness and coordinate identities use unique
-differentiability at the parameter point. No measurability of the parameter set or ambient
-Lipschitz regularity of the function is required.
+Over a finite-dimensional real normed parameter space, a Lipschitz function into a
+finite-dimensional real normed space on a Lipschitz normal graph is almost everywhere
+differentiable within that graph. Derivative existence holds over arbitrary parameter sets.
+The uniqueness and coordinate identities require only finite-dimensionality of the parameter
+space and unique differentiability at the parameter point, not Lipschitz regularity of the
+function on the graph or finite-dimensionality of its codomain. They identify its tangent-plane
+derivative with the derivative of its pullback composed with the second projection.
+No measurability of the parameter set or ambient Lipschitz regularity is required.
 
 All surface measures here use the normalized convention `μHE[k]`.
 
@@ -107,8 +109,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {φ : E → ℝ} {f : WithLp 2 (ℝ × E) → F} {K L : ℝ≥0}
 
-/-- The pullback derivative provides a within-derivative almost everywhere on a Lipschitz
-normal graph over an arbitrary parameter set, without a unique-differentiability hypothesis. -/
+/-- For a Lipschitz function into a finite-dimensional real normed space on a Lipschitz
+normal graph over a finite-dimensional parameter space, the pullback derivative provides a
+within-derivative almost everywhere. The parameter set is arbitrary, with no
+unique-differentiability hypothesis. -/
 theorem ae_hasFDerivWithinAt_normalGraphEmbedding_image [FiniteDimensional ℝ F] {s : Set E}
     (hf : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' s))
     (hφ : LipschitzOnWith K φ s) :
@@ -199,7 +203,9 @@ theorem ae_fderivWithin_normalGraphEmbedding_image_comp_subtypeL {s : Set E}
     with y hy hys hs
   exact (ContinuousLinearMap.comp_subtypeL_range_normalGraphL_eq_iff _ _ _).mpr (hy hys hs)
 
-/-- The pullback derivative provides a within-derivative almost everywhere on the full graph. -/
+/-- For a Lipschitz function into a finite-dimensional real normed space on the full graph of
+a Lipschitz function over a finite-dimensional parameter space, the pullback derivative composed
+with the second projection provides a within-derivative almost everywhere. -/
 theorem ae_hasFDerivWithinAt_range_normalGraphEmbedding [FiniteDimensional ℝ F]
     (hf : LipschitzOnWith L f (range (TauCeti.normalGraphEmbedding φ)))
     (hφ : LipschitzWith K φ) :

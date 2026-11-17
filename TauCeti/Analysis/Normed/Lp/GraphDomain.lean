@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.ContinuousMap.Algebra
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Range
 
 /-!
 # Half-spaces, epigraphs, and graphs in an ℓ² product
@@ -242,22 +243,17 @@ theorem _root_.ContinuousLinearMap.normalGraphL_comp_sndL_comp_subtypeL (A : E �
   simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← hw]
   simp [ContinuousLinearMap.normalGraphL_apply]
 
-/-- An operator has a prescribed pullback to a linear graph exactly when its restriction
-there is the prescribed operator composed with the second projection. -/
+/-- An operator has a prescribed pullback along the linear graph map to the parameter space
+exactly when its restriction to the linear graph is the prescribed operator composed with
+the second projection. -/
 theorem _root_.ContinuousLinearMap.comp_subtypeL_range_normalGraphL_eq_iff
     {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module ℝ F]
     (M : WithLp 2 (ℝ × E) →L[ℝ] F) (A : E →L[ℝ] ℝ) (B : E →L[ℝ] F) :
     M.comp A.normalGraphL.range.subtypeL =
       (B.comp (WithLp.sndL 2 ℝ ℝ E)).comp A.normalGraphL.range.subtypeL ↔
         M.comp A.normalGraphL = B := by
-  constructor
-  · intro h
-    ext x
-    have hx := congrArg (fun D => D ⟨A.normalGraphL x, LinearMap.mem_range_self _ x⟩) h
-    simpa [ContinuousLinearMap.normalGraphL_apply] using hx
-  · intro h
-    rw [← h, ContinuousLinearMap.comp_assoc, ContinuousLinearMap.comp_assoc,
-      A.normalGraphL_comp_sndL_comp_subtypeL]
+  rw [ContinuousLinearMap.comp_subtypeL_range_eq_iff, ContinuousLinearMap.comp_assoc,
+    A.sndL_comp_normalGraphL, ContinuousLinearMap.comp_id]
 
 end Linear
 

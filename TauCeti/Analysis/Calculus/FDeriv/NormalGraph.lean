@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import Mathlib.Analysis.Calculus.FDeriv.Comp
+public import TauCeti.Analysis.Calculus.FDeriv.Parametrization
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 
 /-!
@@ -40,22 +40,11 @@ theorem of_comp_normalGraphEmbedding
     (h : HasFDerivWithinAt (f ∘ TauCeti.normalGraphEmbedding φ) B s x) :
     HasFDerivWithinAt f (B.comp (WithLp.sndL 2 ℝ ℝ E))
       (TauCeti.normalGraphEmbedding φ '' s) (TauCeti.normalGraphEmbedding φ x) := by
-  have hπ := (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt.hasFDerivWithinAt
-    (s := TauCeti.normalGraphEmbedding φ '' s) (x := TauCeti.normalGraphEmbedding φ x)
-  have hm : MapsTo (WithLp.sndL 2 ℝ ℝ E) (TauCeti.normalGraphEmbedding φ '' s) s := by
-    rintro _ ⟨y, hy, rfl⟩
-    simpa using hy
-  have h' : HasFDerivWithinAt (f ∘ TauCeti.normalGraphEmbedding φ) B s
-      ((WithLp.sndL 2 ℝ ℝ E) (TauCeti.normalGraphEmbedding φ x)) := by
-    simpa only [WithLp.sndL_apply, TauCeti.normalGraphEmbedding_snd] using h
-  have hc := h'.comp (TauCeti.normalGraphEmbedding φ x) hπ hm
-  apply hc.congr
-  · rintro _ ⟨y, _, rfl⟩
-    simp
-  · simp
+  exact h.of_comp_of_leftInvOn (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt.hasFDerivWithinAt
+    (fun y _ => TauCeti.normalGraphEmbedding_snd φ y)
 
-/-- Pulling a within-derivative back to a differentiable graph recovers the parameter
-derivative, provided derivatives on the parameter set are unique. -/
+/-- Pulling a graph within-derivative back along the linear graph of `A` recovers the
+parameter derivative, provided derivatives on the parameter set are unique. -/
 theorem comp_normalGraphL_eq
     (hM : HasFDerivWithinAt f M (TauCeti.normalGraphEmbedding φ '' s)
       (TauCeti.normalGraphEmbedding φ x))
@@ -64,7 +53,8 @@ theorem comp_normalGraphL_eq
     (hs : UniqueDiffWithinAt ℝ s x) : M.comp A.normalGraphL = B :=
   hs.eq (hM.comp x hφ.normalGraphEmbedding (mapsTo_image _ _)) hB
 
-/-- Two within-derivatives on a differentiable graph agree on its tangent plane. -/
+/-- Two within-derivatives on a differentiable graph agree on its tangent plane when the
+parameter set has unique derivatives at the parameter point. -/
 theorem comp_subtypeL_range_normalGraphL_eq
     (h₁ : HasFDerivWithinAt f M₁ (TauCeti.normalGraphEmbedding φ '' s)
       (TauCeti.normalGraphEmbedding φ x))
@@ -72,14 +62,11 @@ theorem comp_subtypeL_range_normalGraphL_eq
       (TauCeti.normalGraphEmbedding φ x))
     (hφ : HasFDerivWithinAt φ A s x) (hs : UniqueDiffWithinAt ℝ s x) :
     M₁.comp A.normalGraphL.range.subtypeL = M₂.comp A.normalGraphL.range.subtypeL := by
-  have heq := h₁.comp_normalGraphL_eq hφ
-    (h₂.comp x hφ.normalGraphEmbedding (mapsTo_image _ _)) hs
-  have h₁ := (M₁.comp_subtypeL_range_normalGraphL_eq_iff A _).mpr heq
-  have h₂ := (M₂.comp_subtypeL_range_normalGraphL_eq_iff A _).mpr rfl
-  exact h₁.trans h₂.symm
+  exact h₁.comp_subtypeL_range_eq h₂ hφ.normalGraphEmbedding hs
 
-/-- The tangential derivative in graph coordinates is the pullback derivative composed
-with the second projection and restricted to the tangent plane. -/
+/-- When `φ` is differentiable within `s` and `s` has unique derivatives at the parameter
+point, the tangential derivative is the pullback derivative composed with the second projection
+and restricted to the tangent plane. -/
 theorem comp_subtypeL_range_normalGraphL_eq_of_comp_normalGraphEmbedding
     (hM : HasFDerivWithinAt f M (TauCeti.normalGraphEmbedding φ '' s)
       (TauCeti.normalGraphEmbedding φ x))
@@ -105,12 +92,9 @@ theorem normalGraphEmbedding_image_iff
     DifferentiableWithinAt ℝ f (TauCeti.normalGraphEmbedding φ '' s)
       (TauCeti.normalGraphEmbedding φ x) ↔
       DifferentiableWithinAt ℝ (f ∘ TauCeti.normalGraphEmbedding φ) s x := by
-  constructor
-  · intro hf
-    exact hf.comp x hφ.hasFDerivWithinAt.normalGraphEmbedding.differentiableWithinAt
-      (mapsTo_image _ _)
-  · intro hf
-    exact hf.hasFDerivWithinAt.of_comp_normalGraphEmbedding.differentiableWithinAt
+  exact hφ.hasFDerivWithinAt.normalGraphEmbedding.differentiableWithinAt.image_iff_of_leftInvOn
+    (WithLp.sndL 2 ℝ ℝ E).differentiableAt.differentiableWithinAt
+    (fun y _ => TauCeti.normalGraphEmbedding_snd φ y)
 
 /-- A function differentiable within a differentiable graph has a unique derivative
 restricted to the tangent plane when the parameter set has unique derivatives. -/
@@ -123,28 +107,24 @@ theorem existsUnique_hasFDerivWithinAt_normalGraphEmbedding_image_comp_subtypeL
         HasFDerivWithinAt f M (TauCeti.normalGraphEmbedding φ '' s)
           (TauCeti.normalGraphEmbedding φ x) ∧
         M.comp A.normalGraphL.range.subtypeL = D := by
-  obtain ⟨M, hM⟩ := hf
-  refine ⟨M.comp A.normalGraphL.range.subtypeL, ⟨M, hM, rfl⟩, ?_⟩
-  rintro D ⟨N, hN, rfl⟩
-  exact hN.comp_subtypeL_range_normalGraphL_eq hM hφ hs
+  exact hf.existsUnique_hasFDerivWithinAt_image_comp_subtypeL hφ.normalGraphEmbedding hs
 
-/-- The chosen within-derivative on a graph pulls back to the chosen parameter derivative.
+/-- On a graph with `φ` differentiable within `s` and unique parameter derivatives at `x`,
+the chosen graph within-derivative pulls back to the chosen parameter derivative.
 This also holds when the function is not differentiable, as both sides then vanish. -/
 theorem fderivWithin_normalGraphEmbedding_image_comp_normalGraphL
     (hφ : DifferentiableWithinAt ℝ φ s x) (hs : UniqueDiffWithinAt ℝ s x) :
     (fderivWithin ℝ f (TauCeti.normalGraphEmbedding φ '' s)
       (TauCeti.normalGraphEmbedding φ x)).comp (fderivWithin ℝ φ s x).normalGraphL =
       fderivWithin ℝ (f ∘ TauCeti.normalGraphEmbedding φ) s x := by
-  by_cases hf : DifferentiableWithinAt ℝ f (TauCeti.normalGraphEmbedding φ '' s)
-      (TauCeti.normalGraphEmbedding φ x)
-  · exact hf.hasFDerivWithinAt.comp_normalGraphL_eq hφ.hasFDerivWithinAt
-      ((hφ.normalGraphEmbedding_image_iff.mp hf).hasFDerivWithinAt) hs
-  · rw [fderivWithin_zero_of_not_differentiableWithinAt hf,
-      fderivWithin_zero_of_not_differentiableWithinAt
-        (mt hφ.normalGraphEmbedding_image_iff.mpr hf)]
-    simp
+  simpa only [hφ.hasFDerivWithinAt.normalGraphEmbedding.fderivWithin hs] using
+    DifferentiableWithinAt.fderivWithin_image_comp_of_leftInvOn (f := f)
+      hφ.hasFDerivWithinAt.normalGraphEmbedding.differentiableWithinAt
+      (WithLp.sndL 2 ℝ ℝ E).differentiableAt.differentiableWithinAt
+      (fun y _ => TauCeti.normalGraphEmbedding_snd φ y) hs
 
-/-- Restricting the chosen graph derivative to the tangent plane gives the pullback
+/-- When `φ` is differentiable within `s` and `s` has unique derivatives at the parameter
+point, restricting the chosen graph derivative to the tangent plane gives the pullback
 parameter derivative composed with the second projection on that plane. -/
 theorem fderivWithin_normalGraphEmbedding_image_comp_subtypeL
     (hφ : DifferentiableWithinAt ℝ φ s x) (hs : UniqueDiffWithinAt ℝ s x) :
@@ -223,7 +203,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {φ : E → ℝ} {f : WithLp 2 (ℝ × E) → F} {x : E}
 
 /-- On the full differentiable graph, within-differentiability is equivalent to
-ambient differentiability of the pullback. -/
+differentiability of the pullback on the parameter space. -/
 theorem differentiableWithinAt_range_normalGraphEmbedding_iff (hφ : DifferentiableAt ℝ φ x) :
     DifferentiableWithinAt ℝ f (range (TauCeti.normalGraphEmbedding φ))
       (TauCeti.normalGraphEmbedding φ x) ↔
