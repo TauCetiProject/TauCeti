@@ -147,6 +147,7 @@ namespace ContinuousLinearMap
 variable (S : H →L[𝕜] H) {Ω : Set ℝ} {x : H}
 
 /-- The spectral projection `E` of `S` for `Ω`, applied twice, is `E`. -/
+@[simp]
 theorem cfc_indicator_cfc_indicator_apply (Ω : Set ℝ) (y : H) :
     cfc (Ω.indicator (1 : ℝ → ℝ)) S (cfc (Ω.indicator (1 : ℝ → ℝ)) S y) =
       cfc (Ω.indicator (1 : ℝ → ℝ)) S y := by
