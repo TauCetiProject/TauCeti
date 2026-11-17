@@ -19,7 +19,8 @@ For a complete real normed space `F`, continuous linear functionals `ℓ : Stron
 points by Hahn–Banach. Consequently:
 
 1. Applying any `ℓ : StrongDual ℝ F` (or any coordinate evaluation `lp.evalCLM` on `lp G r`)
-   carries `MemLpLoc` and `MemWkpLoc` into the corresponding scalar or coordinate class.
+   carries `MemLpLoc` and `MemWkpLoc` into the corresponding scalar or coordinate class directly
+   via `TauCeti.MemLpLoc.clm_comp` and `TauCeti.MemWkpLoc.clm_comp`.
 2. Conversely, once a map `u : E → F` and a candidate derivative field `D : E → E →L[ℝ] F` are
    already known to lie in `MemLpLoc p U` (for `1 ≤ p`), scalar weak differentiability of `ℓ ∘ u`
    with derivative `x ↦ ℓ ∘L D x` for every `ℓ : StrongDual ℝ F` suffices to place `u` in
@@ -36,13 +37,9 @@ points by Hahn–Banach. Consequently:
 
 ## Main declarations
 
-* `TauCeti.MemLpLoc.comp_strongDual`, `TauCeti.MemWkpLoc.comp_strongDual`: composition with a
-  continuous linear functional preserves `MemLpLoc` and `MemWkpLoc`.
 * `TauCeti.memWkpLoc_one_of_forall_strongDual`,
   `TauCeti.memWkpLoc_one_opens_of_forall_strongDual`: sufficiency of dual testing for
   `MemWkpLoc p U 1` once `u` and `D` lie in `MemLpLoc p U` (`1 ≤ p`).
-* `TauCeti.MemLpLoc.lp_eval`, `TauCeti.MemWkpLoc.lp_eval`, `TauCeti.MemLpLoc.lp_single`,
-  `TauCeti.MemWkpLoc.lp_single`: coordinate projection and single-coordinate inclusion on `lp G r`.
 * `TauCeti.strongDual_comp_lp_single_ae_eq_zero`: every continuous linear functional on
   `lp (fun _ : E => ℝ) 2` vanishes almost everywhere along `x ↦ lp.single 2 x 1` under any
   atomless measure.
@@ -71,20 +68,6 @@ namespace TauCeti
 /-! ### Dual testing and Bochner integrability -/
 
 section StrongDual
-
-/-- Applying a continuous linear functional preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.comp_strongDual {E F : Type*} [TopologicalSpace E] [MeasureSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {U : Set E} {u : E → F}
-    (hu : MemLpLoc p U u) (ℓ : StrongDual ℝ F) :
-    MemLpLoc p U (fun x => ℓ (u x)) :=
-  hu.clm_comp ℓ
-
-/-- Applying a continuous linear functional preserves local Sobolev membership of every order. -/
-theorem MemWkpLoc.comp_strongDual {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasureSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {p : ℝ≥0∞} {U : Set E} {k : ℕ} {u : E → F} (hu : MemWkpLoc p U k u) (ℓ : StrongDual ℝ F) :
-    MemWkpLoc p U k (fun x => ℓ (u x)) :=
-  hu.clm_comp ℓ
 
 /-- **Sufficiency of dual scalar testing for `MemWkpLoc` of order `1`.** Once `u : E → F` and a
 candidate derivative field `D : E → E →L[ℝ] F` into a complete space `F` already belong to
@@ -121,43 +104,6 @@ theorem memWkpLoc_one_opens_of_forall_strongDual {E F : Type*} [NormedAddCommGro
   exact h ℓ
 
 end StrongDual
-
-/-! ### Sequence-space (`lp`) coordinate projections and single-coordinate embeddings -/
-
-section lpSpace
-
-variable {E ι : Type*} {G : ι → Type*} [∀ i, NormedAddCommGroup (G i)]
-  [∀ i, NormedSpace ℝ (G i)] {r : ℝ≥0∞} [Fact (1 ≤ r)]
-
-/-- Evaluating an `lp`-valued locally `Lᵖ` map at any coordinate `i` gives a locally `Lᵖ` map. -/
-theorem MemLpLoc.lp_eval [TopologicalSpace E] [MeasureSpace E] {p : ℝ≥0∞} {U : Set E}
-    {u : E → lp G r} (hu : MemLpLoc p U u) (i : ι) :
-    MemLpLoc p U (fun x => u x i) :=
-  hu.clm_comp (lp.evalCLM ℝ G r i)
-
-/-- Evaluating an `lp`-valued `MemWkpLoc` map at any coordinate `i` preserves `MemWkpLoc` of every
-order. -/
-theorem MemWkpLoc.lp_eval [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
-    [OpensMeasurableSpace E] {p : ℝ≥0∞} {U : Set E} {k : ℕ} {u : E → lp G r}
-    (hu : MemWkpLoc p U k u) (i : ι) [CompleteSpace (G i)] :
-    MemWkpLoc p U k (fun x => u x i) :=
-  hu.clm_comp (lp.evalCLM ℝ G r i)
-
-/-- Embedding a locally `Lᵖ` map into a single coordinate of `lp G r` preserves `MemLpLoc`. -/
-theorem MemLpLoc.lp_single [DecidableEq ι] [TopologicalSpace E] [MeasureSpace E] {p : ℝ≥0∞}
-    {U : Set E} {i : ι} {a : E → G i} (ha : MemLpLoc p U a) :
-    MemLpLoc p U (fun x => lp.single r i (a x)) :=
-  ha.clm_comp (lp.singleContinuousLinearMap ℝ G r i)
-
-/-- Embedding a `MemWkpLoc` map into a single coordinate of `lp G r` preserves `MemWkpLoc` of every
-order. -/
-theorem MemWkpLoc.lp_single [DecidableEq ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasureSpace E] [OpensMeasurableSpace E] [∀ j, CompleteSpace (G j)] {p : ℝ≥0∞} {U : Set E}
-    {k : ℕ} {i : ι} {a : E → G i} (ha : MemWkpLoc p U k a) :
-    MemWkpLoc p U k (fun x => lp.single r i (a x)) :=
-  ha.clm_comp (lp.singleContinuousLinearMap ℝ G r i)
-
-end lpSpace
 
 /-! ### Non-sufficiency of scalar testing without Bochner measurability -/
 
@@ -249,18 +195,9 @@ composed with `x ↦ lp.single 2 x 1` belongs to `MemWkpLoc p U k` for every exp
 and order `k`. -/
 theorem memWkpLoc_strongDual_comp_lp_single (p : ℝ≥0∞) (U : Set E) (k : ℕ)
     (ℓ : StrongDual ℝ (lp (fun _ : E => ℝ) 2)) :
-    MemWkpLoc p U k (fun x : E => ℓ (lp.single (E := fun _ : E => ℝ) 2 x 1)) := by
-  have hae : (0 : E → ℝ) =ᵐ[volume] fun x : E => ℓ (lp.single (E := fun _ : E => ℝ) 2 x 1) :=
-    (strongDual_comp_lp_single_ae_eq_zero (μ := volume) ℓ).symm
-  have hlp : MemLpLoc p U (fun x : E => ℓ (lp.single (E := fun _ : E => ℝ) 2 x 1)) :=
-    memLpLoc_iff.2 fun _ _ _ => MemLp.zero.ae_eq (ae_restrict_of_ae hae)
-  cases k with
-  | zero => exact memWkpLoc_zero_iff.2 hlp
-  | succ k =>
-    refine memWkpLoc_succ_iff.mpr ⟨hlp, 0, ?_, memWkpLoc_zero_fun⟩
-    have h0 : HasWeakFDerivOn volume (Opens.interior U) (fun _ : E => (0 : ℝ)) 0 :=
-      hasWeakFDerivOn_iff.mpr fun _ => hasWeakLineDerivOn_const (0 : ℝ)
-    exact h0.congr_ae (ae_restrict_of_ae hae)
+    MemWkpLoc p U k (fun x : E => ℓ (lp.single (E := fun _ : E => ℝ) 2 x 1)) :=
+  memWkpLoc_zero_fun.congr_ae <|
+    ae_restrict_of_ae (strongDual_comp_lp_single_ae_eq_zero (μ := volume) ℓ).symm
 
 /-- On any set `U` with nonempty interior in a nontrivial finite-dimensional real normed space,
 `x ↦ lp.single 2 x 1` fails `MemLpLoc p U` for every exponent `p : ℝ≥0∞` (including `0` and `∞`),

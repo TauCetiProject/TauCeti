@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Local.Sharpness
 public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Affine.ContinuousAffineMap
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
@@ -91,31 +92,18 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-omit [FiniteDimensional ℝ E] [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
-  [CompleteSpace F] in
-/-- Every continuous affine map between real normed spaces is `C^n` for every smoothness order. -/
-private theorem contDiff_continuousAffineMap (T : E →ᴬ[ℝ] F) (n : WithTop ℕ∞) :
-    ContDiff ℝ n T := by
-  have heq : (T : E → F) = fun x => T.contLinear x + T 0 := by
-    ext x
-    simpa [vadd_eq_add] using T.map_vadd 0 x
-  rw [heq]
-  exact T.contLinear.contDiff.add contDiff_const
-
 /-- Every continuous affine map into a complete space has its linear part as weak Fréchet
 derivative on every open set. -/
 theorem _root_.ContinuousAffineMap.hasWeakFDerivOn (T : E →ᴬ[ℝ] F) (Ω : Opens E) :
     HasWeakFDerivOn volume Ω T (fun _ => T.contLinear) := by
   have hf : fderiv ℝ (T : E → F) = fun _ => T.contLinear := funext fun _ => T.fderiv
-  have hcd := (contDiff_continuousAffineMap T 1).contDiffOn (s := (Ω : Set E))
-  exact hf ▸ hcd.hasWeakFDerivOn_fderiv (μ := volume)
+  exact hf ▸ (T.contDiff.contDiffOn (s := (Ω : Set E))).hasWeakFDerivOn_fderiv (μ := volume)
 
 /-- Every continuous affine map into a complete space belongs to `MemWkpLoc p U k` for every
 exponent `p`, subset `U`, and order `k`. -/
 theorem _root_.ContinuousAffineMap.memWkpLoc (T : E →ᴬ[ℝ] F) (p : ℝ≥0∞) (U : Set E) (k : ℕ) :
     MemWkpLoc p U k T :=
-  ((contDiff_continuousAffineMap T k).contDiffOn (s := ((⊤ : Opens E) : Set E))).memWkpLoc
-    (subset_univ U)
+  (T.contDiff.contDiffOn (s := ((⊤ : Opens E) : Set E))).memWkpLoc (subset_univ U)
 
 /-- On a nontrivial finite-dimensional real normed space with additive Haar `volume`, the identity
 map fails global `MemLp` for every nonzero exponent `p ≤ ∞`. -/
