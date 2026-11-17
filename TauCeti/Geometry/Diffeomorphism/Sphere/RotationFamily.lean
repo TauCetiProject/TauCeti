@@ -265,18 +265,15 @@ theorem isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow
   let oF : Orientation ℝ F (Fin (m + 1 + 1)) :=
     (finBasisOfFinrankEq ℝ F (Fact.out : finrank ℝ F = m + 1 + 1)).orientation
   let o₀ := oF.sphereOrientation.toHomologicalOrientation finrank_euclideanSpace_fin
-  have ho₀ : o₀.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ (1 + (-1) ^ m) := by
-    have hdim : finrank ℝ (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin 1)) = m + 1 := by
-      rw [finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin]
-    refine .of_mapFundamentalClass
-      (((oF.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere x₀)).sphereOrientation.prod
-        Complex.orientation.sphereOrientation).toHomologicalOrientation hdim)
-      hdim (sphereRotationDiff (n := m + 1) x₀ k) ?_
-    rw [evalAt_comp_sphereRotationDiff, o₀.mapFundamentalClass_id]
-    exact oF.mapFundamentalClass_sphereRotationFamily x₀ hdim
-  rcases o₀.eq_or_eq_neg finrank_euclideanSpace_fin o with rfl | rfl
-  · exact ho₀
-  · exact isCoveredByDiffeomorphisms_neg.2 ho₀
+  refine (isCoveredByDiffeomorphisms_iff_of_preconnectedSpace o₀ o).1 ?_
+  have hdim : finrank ℝ (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin 1)) = m + 1 := by
+    rw [finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin]
+  refine .of_mapFundamentalClass
+    (((oF.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere x₀)).sphereOrientation.prod
+      Complex.orientation.sphereOrientation).toHomologicalOrientation hdim)
+    hdim (sphereRotationDiff (n := m + 1) x₀ k) ?_
+  rw [evalAt_comp_sphereRotationDiff, o₀.mapFundamentalClass_id]
+  exact oF.mapFundamentalClass_sphereRotationFamily x₀ hdim
 
 /-- **Odd spheres are `2`-covered by diffeomorphisms** (the second proof of Proposition 6.34 of
 Barraud–Damian–Humilière–Oancea). For even `m`, the odd-dimensional sphere `Sᵐ⁺¹` is `2`-covered by
