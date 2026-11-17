@@ -9,8 +9,6 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.Peetre.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompletelyMetrizable
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
 import Mathlib.Analysis.LocallyConvex.Barrelled
-import TauCeti.Geometry.Manifold.Boundary.Basic
-import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -68,47 +66,11 @@ open scoped ContDiff Manifold Topology
 
 noncomputable section
 
-namespace Bundle.Trivialization
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [BoundarylessManifold I M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
-
-/-- At the centre of a chart of an open subset `U` of the base set of a trivialization `e`, the
-chart derivatives of the frame coefficients of a section, which define the frame topology, are
-the ordinary derivatives of the frame coefficients read in the ambient chart. -/
-theorem chartIteratedFDeriv_frameCoordinates_self (e : Trivialization F (π F V))
-    [MemTrivializationAtlas e] {U : Opens M} (hU : (U : Set M) ⊆ e.baseSet)
-    (s : Cₛ^∞⟮I; F, V⟯) (x : U) (k : ℕ) (hk : (k : ℕ∞ω) ≤ ∞) :
-    ContMDiffMap.chartIteratedFDeriv (e.frameCoordinates hU s) x k hk
-        ⟨extChartAt I x x, mem_extChartAt_target x⟩ =
-      iteratedFDeriv ℝ k ((fun y ↦ (e ⟨y, s y⟩).2) ∘ (extChartAt I (x : M)).symm)
-        (extChartAt I (x : M) x) := by
-  have hpt : (extChartAt I x x : E) = extChartAt I (x : M) x := rfl
-  have hf : ⇑(e.frameCoordinates hU s) = (fun y ↦ (e ⟨y, s y⟩).2) ∘ Subtype.val :=
-    funext (e.frameCoordinates_apply hU s)
-  have h := congrFun (ContMDiffMap.ftaylorSeriesWithin_restrict_extChartAt (I := I)
-    (fun y ↦ (e ⟨y, s y⟩).2) U x (mem_extChartAt_target x)) k
-  simp only [ftaylorSeriesWithin] at h
-  rw [ContMDiffMap.chartIteratedFDeriv_self_target_apply, hf, h, hpt,
-    iteratedFDerivWithin_congr_set (Filter.eventuallyEqSet_univ.2
-      (TauCeti.ModelWithCorners.extChartAt_target_mem_nhds_of_isInteriorPoint (k := ∞)
-        (by simp) (x : M) (mem_extChartAt_source (x : M)) BoundarylessManifold.isInteriorPoint)),
-    iteratedFDerivWithin_univ]
-
-end Bundle.Trivialization
-
 namespace LinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-  [BoundarylessManifold I M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
@@ -118,12 +80,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- **Functionals of finite order are continuous.** A linear map `Λ : Γ(V) → G` which vanishes on
-`I_x ^ (r + 1) Γ(V)`, for some `r`, is continuous for the frame topology of any frame system whose
-domains contain `x`. Such a `Λ` only sees the `r`-jet of a section at `x`; Peetre's theorem
-(`LinearMap.exists_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top`) provides the order
-`r` for the values at `x` of a local operator. -/
+`I_x ^ (r + 1) Γ(V)`, for some `r` and an interior point `x`, is continuous for the frame topology
+of any frame system whose domains contain `x`. Such a `Λ` only sees the `r`-jet of a section at
+`x`; Peetre's theorem (`LinearMap.exists_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top`)
+provides the order `r` for the values at `x` of a local operator. -/
 theorem continuous_of_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top
-    (Λ : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] G) {x : M} (hx : ∃ i, x ∈ U i) {r : ℕ}
+    (Λ : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] G) {x : M} (hx : ∃ i, x ∈ U i) (hxI : I.IsInteriorPoint x)
+    {r : ℕ}
     (hI : ∀ s ∈ TauCeti.smoothVanishingIdeal I x ^ (r + 1) •
       (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯), Λ s = 0) :
     let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
@@ -153,20 +116,11 @@ theorem continuous_of_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top
       have h : ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x' k
           (hk ⟨k, Nat.lt_succ_of_le hkr⟩) z₀ = 0 :=
         (hJk s ⟨k, Nat.lt_succ_of_le hkr⟩).symm.trans (congrFun hs ⟨k, Nat.lt_succ_of_le hkr⟩)
-      rwa [(e i).chartIteratedFDeriv_frameCoordinates_self (hU i) s x' k] at h
+      rwa [(e i).chartIteratedFDeriv_frameCoordinates_self (hU i) s x' k _ hxI] at h
     exact hI s (TauCeti.mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero
-      (e i) (hU i hi) hjet)
+      (e i) (hU i hi) hxI hjet)
   -- Hence `Λ` factors through the finite-dimensional range of `J`.
-  let L : LinearMap.range J →ₗ[ℝ] G :=
-    (LinearMap.ker J).liftQ Λ hker ∘ₗ J.quotKerEquivRange.symm.toLinearMap
-  have hΛ : ⇑Λ = L ∘ J.rangeRestrict := by
-    ext s
-    have h : J.quotKerEquivRange.symm (J.rangeRestrict s) = Submodule.Quotient.mk s := by
-      rw [LinearEquiv.symm_apply_eq]
-      exact Subtype.ext (J.quotKerEquivRange_apply_mk s).symm
-    simp [L, h]
-  rw [hΛ]
-  exact L.continuous_of_finiteDimensional.comp (hJ.subtype_mk _)
+  exact continuous_of_ker_le_ker hJ hker
 
 section Target
 
@@ -175,7 +129,7 @@ variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [FiberBundle F' W] [VectorBundle ℝ F' W] [ContMDiffVectorBundle ∞ F' W I]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M] in
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
 /-- The coordinates in the chart at `x'` of an open subset `O`, as a function on `M` that is
 continuous on the points of `O` in the chart source. -/
 private theorem exists_continuousOn_extChartAt {O : Opens M} (x' : O)
@@ -205,7 +159,7 @@ private theorem exists_continuousOn_extChartAt {O : Opens M} (x' : O)
   rw [hrestr]
   exact ((continuousOn_extChartAt x').comp_continuous hψ fun p ↦ (hmem p).2).subtype_mk _
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [FiniteDimensional ℝ F]
+omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F V I] in
 /-- The chart derivatives of the frame coefficients of `P s`, for a local operator `P`, vanish at
 the coordinates of a point near which `s` vanishes. -/
@@ -228,7 +182,7 @@ private theorem chartIteratedFDeriv_frameCoordinates_eq_zero
 coordinate point depends continuously on `s`: it is a local operator in `s`, continuous on the
 chart domain, so Peetre's theorem gives it finite order. -/
 private theorem continuous_chartIteratedFDeriv_frameCoordinates_apply
-    (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯)
+    [BoundarylessManifold I M] (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯)
     (hloc : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (hcover : ∀ x, ∃ i, x ∈ U i) (e' : Trivialization F' (π F' W)) [MemTrivializationAtlas e']
     {O : Opens M} (hO : (O : Set M) ⊆ e'.baseSet) (x' : O) (m : ℕ) (hm : (m : ℕ∞ω) ≤ ∞)
@@ -271,14 +225,14 @@ private theorem continuous_chartIteratedFDeriv_frameCoordinates_apply
   let Λ : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] G := (ContinuousMap.evalCLM ℝ z).toLinearMap ∘ₗ Φ
   have hΛ (s : Cₛ^∞⟮I; F, V⟯) : Λ s = P' s q := by
     rw [hP', hptq]
-    rfl
+    simp only [Λ, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContinuousMap.evalCLM_apply]
   have hfun : (fun s ↦ ContMDiffMap.chartIteratedFDeriv (e'.frameCoordinates hO (P s)) x' m hm z) =
       ⇑Λ := funext fun s ↦ (congrArg (· z) (hΦ s)).symm
   rw [hfun]
   exact continuous_of_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top e U hU Λ
-    (hcover q) (r := r) fun s hs ↦ (hΛ s).trans (hr q rfl s hs)
+    (hcover q) BoundarylessManifold.isInteriorPoint (r := r) fun s hs ↦
+      (hΛ s).trans (hr q rfl s hs)
 
-omit [BoundarylessManifold I M] in
 /-- **Local operators between sections are continuous.** Let `V` and `W` be smooth real vector
 bundles over a finite-dimensional Hausdorff boundaryless Lindelöf manifold, `V` of finite rank. A
 linear map `P : Γ(V) → Γ(W)` between smooth sections which is local, that is `(P s) x = 0`
@@ -324,7 +278,7 @@ theorem continuous_of_apply_eq_zero_of_eventuallyEq [I.Boundaryless] [LindelofSp
       ⟨‖(ContMDiffMap.chartIteratedFDeriv ((e' j).frameCoordinates (hU' j) (P s)) x' m
         hm).restrict K‖, ?_⟩
     rintro _ ⟨z, rfl⟩
-    change p z s ≤ _
+    dsimp only
     rw [hp z s]
     exact ((ContMDiffMap.chartIteratedFDeriv ((e' j).frameCoordinates (hU' j) (P s)) x' m
       hm).restrict (K : Set (extChartAt I x').target)).norm_coe_le_norm z

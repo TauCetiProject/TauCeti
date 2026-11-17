@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 
 /-!
 # Compact chart seminorms for bundle sections
@@ -18,7 +20,10 @@ Composing this linear coordinate map with `ContMDiffMap.chartDerivativeSeminorm`
 `ContMDiffMap.chartCkSeminorm` gives the compact chart/frame seminorms of sections.
 These measure the actual coordinate derivatives, including order zero, without requiring
 an ambient norm on the fibres or choosing a connection. They supply the local controls
-used in smooth-section and compactly supported test-section topologies.
+used in smooth-section and compactly supported test-section topologies. At the centre of a chart
+on an open subset, an interior point, these chart jets are the ordinary derivatives of the
+coefficients read in the ambient chart
+(`Bundle.Trivialization.chartIteratedFDeriv_frameCoordinates_self`).
 
 The construction allows finite and infinite regularity, manifolds with corners, and
 arbitrary normed model fibres. No topology on the section space is installed here.
@@ -99,6 +104,28 @@ theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))
 
 
 variable [IsManifold I n M]
+
+/-- At the centre of a chart of an open subset `U` of the base set of a trivialization `e`, if the
+centre is an interior point, the chart derivatives of the frame coefficients of a section are the
+ordinary derivatives of the frame coefficients read in the ambient chart. -/
+theorem chartIteratedFDeriv_frameCoordinates_self (s : Cₛ^n⟮I; F, V⟯) (x : U) (k : ℕ)
+    (hk : k ≤ n) (hx : I.IsInteriorPoint (x : M)) :
+    ContMDiffMap.chartIteratedFDeriv (frameCoordinates e hU s) x k hk
+        ⟨extChartAt I x x, mem_extChartAt_target x⟩ =
+      iteratedFDeriv 𝕜 k ((fun y ↦ (e ⟨y, s y⟩).2) ∘ (extChartAt I (x : M)).symm)
+        (extChartAt I (x : M) x) := by
+  -- The chart of `U` at `x` is the subtype restriction of the ambient chart at `x`, so both send
+  -- `x` to the same coordinates by definition.
+  have hpt : (extChartAt I x x : E) = extChartAt I (x : M) x := rfl
+  have hf : ⇑(frameCoordinates e hU s) = (fun y ↦ (e ⟨y, s y⟩).2) ∘ Subtype.val :=
+    funext (frameCoordinates_apply e hU s)
+  have h := congrFun (ContMDiffMap.ftaylorSeriesWithin_restrict_extChartAt (I := I)
+    (fun y ↦ (e ⟨y, s y⟩).2) U x (mem_extChartAt_target x)) k
+  simp only [ftaylorSeriesWithin] at h
+  rw [ContMDiffMap.chartIteratedFDeriv_self_target_apply, hf, h, hpt,
+    iteratedFDerivWithin_congr_set (Filter.eventuallyEqSet_univ.2
+      (mem_interior_iff_mem_nhds.mp (I.isInteriorPoint_iff.mp hx))),
+    iteratedFDerivWithin_univ]
 
 /-- The supremum seminorm of the derivative of order `m` in a source chart and bundle frame,
 restricted to a compact coordinate set. -/

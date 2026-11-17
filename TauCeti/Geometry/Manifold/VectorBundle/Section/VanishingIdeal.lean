@@ -36,8 +36,8 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 
 * `TauCeti.mem_smoothVanishingIdeal_smul_top_iff`: a smooth section lies in `I_x Γ(V)` if and
   only if it vanishes at `x`.
-* `TauCeti.mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero`: on a boundaryless
-  manifold, a smooth section whose frame coefficients have vanishing `r`-jet at `x` lies in
+* `TauCeti.mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero`: at an interior
+  point `x`, a smooth section whose frame coefficients have vanishing `r`-jet at `x` lies in
   `I_x ^ (r + 1) Γ(V)`.
 * `ContMDiffSection.ker_evalLinearMap`: the kernel of evaluation at `x` is `I_x Γ(V)`.
 * `TauCeti.smoothSectionFiberEquiv`: the real-linear equivalence `Γ(V) / I_x Γ(V) ≃ V_x` sending
@@ -150,13 +150,13 @@ theorem mem_smoothVanishingIdeal_smul_top_iff {x : M} {s : Cₛ^∞⟮I; F, V⟯
   ⟨apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top,
     mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero⟩
 
-/-- **Sections with vanishing `r`-jet.** On a boundaryless manifold, if the chart expression of
-the coefficients of a smooth section `s` in a trivialization `e` has vanishing derivatives of
-every order at most `r` at `x`, then `s` lies in `I_x ^ (r + 1) Γ(V)`: it is a finite sum of
+/-- **Sections with vanishing `r`-jet.** At an interior point `x`, if the chart expression of the
+coefficients of a smooth section `s` in a trivialization `e` has vanishing derivatives of every
+order at most `r` at `x`, then `s` lies in `I_x ^ (r + 1) Γ(V)`: it is a finite sum of
 sections times products of `r + 1` smooth functions vanishing at `x`. -/
 theorem mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero
-    [BoundarylessManifold I M] (e : Trivialization F (π F V)) [MemTrivializationAtlas e] {x : M}
-    (hx : x ∈ e.baseSet) {r : ℕ} {s : Cₛ^∞⟮I; F, V⟯}
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] {x : M} (hx : x ∈ e.baseSet)
+    (hxI : I.IsInteriorPoint x) {r : ℕ} {s : Cₛ^∞⟮I; F, V⟯}
     (hs : ∀ k ≤ r, iteratedFDeriv ℝ k ((fun y ↦ (e ⟨y, s y⟩).2) ∘ (extChartAt I x).symm)
       (extChartAt I x x) = 0) :
     s ∈ smoothVanishingIdeal I x ^ (r + 1) •
@@ -178,13 +178,12 @@ theorem mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero
     simp [c, h, Bundle.Trivialization.basisAt]
   -- Each cut-off coefficient has vanishing `r`-jet at `x`, so it lies in `I_x ^ (r + 1)`.
   have hc (i : Fin (Module.finrank ℝ F)) : c i s ∈ smoothVanishingIdeal I x ^ (r + 1) := by
-    rw [mem_smoothVanishingIdeal_pow_succ_iff]
+    rw [mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hxI]
     intro k hk
     have hg : ContDiffAt ℝ ∞ ((fun y ↦ (e ⟨y, s y⟩).2) ∘ (extChartAt I x).symm)
         (extChartAt I x x) :=
       ((e.contMDiffAt_section_iff hx).mp
-        (s.contMDiff x)).contDiffAt_comp_extChartAt_symm_of_isInteriorPoint
-          BoundarylessManifold.isInteriorPoint
+        (s.contMDiff x)).contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hxI
     have hc : ((c i s : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
         (b.coord i).toContinuousLinearMap ∘
           ((fun y ↦ (e ⟨y, s y⟩).2) ∘ (extChartAt I x).symm) := by
