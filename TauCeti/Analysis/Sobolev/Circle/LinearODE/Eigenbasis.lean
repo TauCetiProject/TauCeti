@@ -104,7 +104,7 @@ theorem real_inner_I_smul_loopOperator_comm
 
 omit hT [FiniteDimensional ℂ F] in
 /-- Real multiples of an infinitesimally symplectic loop are infinitesimally symplectic. -/
-theorem smul_isInfinitesimallySymplectic
+theorem inner_smul_apply_im_add_inner_smul_apply_im_eq_zero
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (τ : ℝ) :
     ∀ t v w, (inner ℂ ((τ • S) t v) w).im + (inner ℂ v ((τ • S) t w)).im = 0 := by
   intro t v w

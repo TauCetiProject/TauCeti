@@ -41,7 +41,8 @@ the `L²` space of mode sequences in `H⁰(F)²`. Both carry the complex structu
 acts on the mode `k` by `(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ aₖ)`
 (`TauCeti.antiperiodicTorusOperator`, `TauCeti.antiperiodicTorusOperator_apply_apply_eq`). It
 depends continuously on `S` (`TauCeti.continuous_antiperiodicTorusOperator`), and for `S = 0` it
-is complex linear (`TauCeti.antiperiodicTorusOperator_zero_apply_smul`).
+is complex linear (`TauCeti.antiperiodicTorusOperator_zero_apply_smul`,
+`TauCeti.exists_restrictScalars_eq_antiperiodicTorusOperator_zero`).
 
 **The estimate.** By the symmetry of `A` the cross terms cancel and each mode satisfies
 `‖A a + ω b‖² + ‖A b - ω a‖² = ‖A a‖² + ‖A b‖² + ω² (‖a‖² + ‖b‖²)`, the operator counterpart of
@@ -72,8 +73,9 @@ different loop. Finite covers of the torus are not treated either.
 
 * `TauCeti.exists_forall_norm_le_mul_norm_antiperiodicTorusOperator`: the a priori estimate.
 * `TauCeti.surjective_antiperiodicTorusOperator_zero`,
-  `TauCeti.antiperiodicTorusOperator_zero_apply_smul`: the reference operator `∂s + J₀ ∂t` is onto
-  and complex linear.
+  `TauCeti.antiperiodicTorusOperator_zero_apply_smul`,
+  `TauCeti.exists_restrictScalars_eq_antiperiodicTorusOperator_zero`: the reference operator
+  `∂s + J₀ ∂t` is onto and complex linear.
 * `TauCeti.continuous_antiperiodicTorusOperator`: continuity in the loop.
 * `TauCeti.isInvertible_antiperiodicTorusOperator`: invertibility for every infinitesimally
   symplectic loop.
@@ -226,6 +228,17 @@ theorem antiperiodicTorusOperator_zero_apply_smul (ℓ : ℝ) (c : ℂ) (x : ant
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
     simp [smul_comm c I, smul_add, smul_sub]
 
+/-- **The reference operator as a complex-linear map.** For `S = 0` the operator `∂s + J₀ ∂t` is
+the restriction of scalars of a bounded complex-linear map, for the complex structures of `H¹` and
+`L²` given by `J₀`. -/
+theorem exists_restrictScalars_eq_antiperiodicTorusOperator_zero (ℓ : ℝ) :
+    ∃ L : antiperiodicSobolev F ℓ →L[ℂ] 𝕐[F],
+      L.restrictScalars ℝ = antiperiodicTorusOperator T ℓ 0 :=
+  ⟨{ toFun := antiperiodicTorusOperator T ℓ 0
+     map_add' := map_add _
+     map_smul' := antiperiodicTorusOperator_zero_apply_smul T ℓ
+     cont := (antiperiodicTorusOperator T ℓ 0).continuous }, rfl⟩
+
 /-- **Continuous dependence on the loop.** The operator `∂s + A` on maps antiperiodic in `s`
 depends continuously, in operator norm, on the loop `S` with its uniform norm. -/
 theorem continuous_antiperiodicTorusOperator (ℓ : ℝ) :
@@ -340,6 +353,7 @@ private theorem norm_le_mode {ℓ : ℝ} (hℓ : ℓ ≠ 0) (S : C(AddCircle T, 
   constructor
   · refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
     rw [mul_pow, Real.sq_sqrt hK, hz, WithLp.prod_norm_sq_eq_of_L2]
+    unfold modeConstant
     exact norm_sq_add_norm_sq_le_mode T S hS hM (div_pos Real.pi_pos (abs_pos.2 hℓ)) hω _ _
   · refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
     rw [hz, norm_sq_add_norm_sq_mode T S hS, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
@@ -441,14 +455,13 @@ invertible from the Sobolev space `H¹` of maps antiperiodic in `s` onto the cor
 space. Since `τ • S` is again infinitesimally symplectic, every operator of the path
 `τ ↦ ∂s + J₀ (∂t - τ S)`, `τ ∈ [0, 1]`, is invertible; the path is continuous
 (`TauCeti.continuous_antiperiodicTorusOperator`) and starts at the complex-linear operator
-`∂s + J₀ ∂t` (`TauCeti.antiperiodicTorusOperator_zero_apply_smul`). The proof is the method of
-continuity along this path, from the a priori estimate
-(`TauCeti.exists_forall_norm_le_mul_norm_antiperiodicTorusOperator`) and surjectivity at `τ = 0`
-(`TauCeti.surjective_antiperiodicTorusOperator_zero`). -/
+`∂s + J₀ ∂t` (`TauCeti.antiperiodicTorusOperator_zero_apply_smul`). -/
 theorem isInvertible_antiperiodicTorusOperator {ℓ : ℝ} (hℓ : ℓ ≠ 0)
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (antiperiodicTorusOperator T ℓ S).IsInvertible := by
+  -- The method of continuity along `τ ↦ τ • S`, from the a priori estimate, uniform along the
+  -- path, and surjectivity at `τ = 0`.
   obtain ⟨C, hC⟩ := exists_forall_norm_le_mul_norm_antiperiodicTorusOperator (F := F) T hℓ ‖S‖
   have hL : ContinuousOn (fun τ : ℝ ↦ antiperiodicTorusOperator T ℓ (τ • S)) (Set.Icc 0 1) :=
     ((continuous_antiperiodicTorusOperator T ℓ).comp
@@ -461,7 +474,8 @@ theorem isInvertible_antiperiodicTorusOperator {ℓ : ℝ} (hℓ : ℓ ≠ 0)
     rw [zero_smul ℝ S]
     exact surjective_antiperiodicTorusOperator_zero T hℓ
   have h := isPreconnected_Icc.isInvertible_of_forall_norm_le hL
-    (fun τ hτ' x ↦ hC (τ • S) (smul_isInfinitesimallySymplectic T S hS τ) (hτ τ hτ') x)
+    (fun τ hτ' x ↦ hC (τ • S) (inner_smul_apply_im_add_inner_smul_apply_im_eq_zero T S hS τ)
+      (hτ τ hτ') x)
     (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one) h0
   rwa [one_smul ℝ S] at h
 
