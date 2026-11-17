@@ -59,7 +59,9 @@ invariant `z ∈ B ⊗[A] M` is
 ## Main definitions
 
 * `TauCeti.MulSemiringAction.baseChangeInvariantsEquiv`: `B ⊗[A] Nᴳ ≃ₗ[B] N`.
-* `TauCeti.MulSemiringAction.invariantsBaseChangeEquiv`: `M ≃ₗ[A] (B ⊗[A] M)ᴳ`.
+* `TauCeti.MulSemiringAction.invariantsBaseChangeEquiv` and
+  `TauCeti.MulSemiringAction.invariantsBaseChangeEquivOfIsUnitCard`: `M ≃ₗ[A] (B ⊗[A] M)ᴳ` from an
+  element of trace `1` or when `Nat.card G` is invertible in `A`.
 
 ## References
 
@@ -208,6 +210,37 @@ noncomputable def invariantsBaseChangeEquiv [Fintype G] [FaithfulSMul A B]
 theorem coe_invariantsBaseChangeEquiv_apply [Fintype G] [FaithfulSMul A B]
     [Algebra.IsInvariant A B G] (hc : ∃ c : B, ∑ g : G, g • c = 1) (m : M) :
     (invariantsBaseChangeEquiv A B G M hc m : B ⊗[A] M) = 1 ⊗ₜ m := (rfl)
+
+@[simp]
+theorem one_tmul_invariantsBaseChangeEquiv_symm [Fintype G] [FaithfulSMul A B]
+    [Algebra.IsInvariant A B G] (hc : ∃ c : B, ∑ g : G, g • c = 1)
+    (z : (Representation.ofDistribMulAction A G (B ⊗[A] M)).invariants) :
+    (1 : B) ⊗ₜ[A] (invariantsBaseChangeEquiv A B G M hc).symm z = (z : B ⊗[A] M) := by
+  rw [← coe_invariantsBaseChangeEquiv_apply hc, LinearEquiv.apply_symm_apply]
+
+variable (A B G M) in
+/-- **Reynolds descent of base-changed invariants.** When `G` is a finite group whose order is a
+unit in `A` acting on `B` with ring of invariants `A ⊆ B`, every `A`-module `M` is recovered as
+the invariants of its base change: `M ≃ₗ[A] (B ⊗[A] M)ᴳ`, `m ↦ 1 ⊗ m`. -/
+noncomputable def invariantsBaseChangeEquivOfIsUnitCard [Finite G] [FaithfulSMul A B]
+    [Algebra.IsInvariant A B G] (hG : IsUnit (Nat.card G : A)) :
+    M ≃ₗ[A] (Representation.ofDistribMulAction A G (B ⊗[A] M)).invariants :=
+  let _ := Fintype.ofFinite G
+  invariantsBaseChangeEquiv A B G M (exists_sum_smul_eq_one_of_isUnit_card hG)
+
+@[simp]
+theorem coe_invariantsBaseChangeEquivOfIsUnitCard_apply [Finite G] [FaithfulSMul A B]
+    [Algebra.IsInvariant A B G] (hG : IsUnit (Nat.card G : A)) (m : M) :
+    (invariantsBaseChangeEquivOfIsUnitCard A B G M hG m : B ⊗[A] M) = 1 ⊗ₜ m :=
+  (rfl)
+
+@[simp]
+theorem one_tmul_invariantsBaseChangeEquivOfIsUnitCard_symm [Finite G] [FaithfulSMul A B]
+    [Algebra.IsInvariant A B G] (hG : IsUnit (Nat.card G : A))
+    (z : (Representation.ofDistribMulAction A G (B ⊗[A] M)).invariants) :
+    (1 : B) ⊗ₜ[A] (invariantsBaseChangeEquivOfIsUnitCard A B G M hG).symm z =
+      (z : B ⊗[A] M) := by
+  rw [← coe_invariantsBaseChangeEquivOfIsUnitCard_apply hG, LinearEquiv.apply_symm_apply]
 
 end InvariantsBaseChange
 
