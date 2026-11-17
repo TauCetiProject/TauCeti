@@ -66,10 +66,6 @@ theorem ofCoprodNe_inr (x : CoprodI fun j : {j // j ≠ i} ↦ M j) :
     ofCoprodNe M i (Coprod.inr x) = lift (fun j ↦ of (i := j.1)) x :=
   Coprod.lift_apply_inr _ _ x
 
-theorem ofCoprodNe_inr_of (j : {j // j ≠ i}) (m : M j) :
-    ofCoprodNe M i (Coprod.inr (of m)) = of (i := j.1) m := by
-  simp
-
 section DecidableEq
 
 variable [DecidableEq ι]
@@ -116,6 +112,19 @@ theorem ofCoprodNe_equivCoprodNe (x : CoprodI M) : ofCoprodNe M i (equivCoprodNe
   (equivCoprodNe M i).symm_apply_apply x
 
 @[simp]
+theorem equivCoprodNe_lift_of (x : CoprodI fun j : {j // j ≠ i} ↦ M j) :
+    equivCoprodNe M i (lift (fun j ↦ of (i := j.1)) x) = Coprod.inr x := by
+  rw [← ofCoprodNe_inr, equivCoprodNe_ofCoprodNe]
+
+@[simp]
+theorem coe_equivCoprodNe_comp_coe_ofCoprodNe : ⇑(equivCoprodNe M i) ∘ ofCoprodNe M i = id :=
+  (equivCoprodNe M i).self_comp_symm
+
+@[simp]
+theorem coe_ofCoprodNe_comp_coe_equivCoprodNe : ⇑(ofCoprodNe M i) ∘ equivCoprodNe M i = id :=
+  (equivCoprodNe M i).symm_comp_self
+
+@[simp]
 theorem toMonoidHom_equivCoprodNe_comp_ofCoprodNe :
     (equivCoprodNe M i : CoprodI M →* M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j)).comp
       (ofCoprodNe M i) = .id _ :=
@@ -134,5 +143,15 @@ product of the others. -/
 theorem ofCoprodNe_bijective : Bijective (ofCoprodNe M i) := by
   classical
   simpa using (equivCoprodNe M i).symm.bijective
+
+@[simp]
+theorem ofCoprodNe_inj {x y : M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j)} :
+    ofCoprodNe M i x = ofCoprodNe M i y ↔ x = y :=
+  (ofCoprodNe_bijective M i).1.eq_iff
+
+@[simp]
+theorem ofCoprodNe_eq_one {x : M i ∗ (CoprodI fun j : {j // j ≠ i} ↦ M j)} :
+    ofCoprodNe M i x = 1 ↔ x = 1 :=
+  map_eq_one_iff _ (ofCoprodNe_bijective M i).1
 
 end Monoid.CoprodI

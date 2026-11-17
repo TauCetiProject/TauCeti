@@ -12,7 +12,8 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 /-!
 # Trivial factors and quotients of free products of two monoids
 
-If one factor of a free product `M ∗ N` is trivial, the inclusion of the other factor is onto.
+If one factor of a free product `M ∗ N` is trivial, the inclusion of the other factor is onto;
+when `M` and `N` are monoids, it is bijective.
 
 Killing relators that lie in one free factor of a free product `G ∗ H` of groups only affects that
 factor: for a set `R` of elements of `H`, the quotient of `G ∗ H` by the normal closure of `R` is
@@ -27,6 +28,8 @@ the free product of `G` and the quotient of `H` by the normal closure of `R`.
 
 * `Monoid.Coprod.inl_surjective`, `Monoid.Coprod.inr_surjective`: if one factor of a free product
   `M ∗ N` is trivial, the inclusion of the other one is onto.
+* `Monoid.Coprod.inl_bijective`, `Monoid.Coprod.inr_bijective`: if one factor of a free product
+  `M ∗ N` of monoids is trivial, the inclusion of the other one is bijective.
 -/
 
 public section
@@ -35,7 +38,11 @@ namespace Monoid.Coprod
 
 section TrivialFactor
 
-variable {M N : Type*} [MulOneClass M] [MulOneClass N]
+variable {M N : Type*}
+
+section MulOneClass
+
+variable [MulOneClass M] [MulOneClass N]
 
 /-- If `N` is trivial, every element of the free product `M ∗ N` comes from `M`. -/
 theorem inl_surjective [Subsingleton N] : Function.Surjective (inl : M →* Coprod M N) := fun x ↦ by
@@ -51,6 +58,18 @@ theorem inl_surjective [Subsingleton N] : Function.Surjective (inl : M →* Copr
 theorem inr_surjective [Subsingleton M] : Function.Surjective (inr : N →* Coprod M N) := by
   rw [← swap_comp_inl, MonoidHom.coe_comp]
   exact swap_surjective.comp inl_surjective
+
+end MulOneClass
+
+variable [Monoid M] [Monoid N]
+
+/-- If `N` is trivial, the inclusion of `M` into the free product `M ∗ N` is bijective. -/
+theorem inl_bijective [Subsingleton N] : Function.Bijective (inl : M →* Coprod M N) :=
+  ⟨inl_injective, inl_surjective⟩
+
+/-- If `M` is trivial, the inclusion of `N` into the free product `M ∗ N` is bijective. -/
+theorem inr_bijective [Subsingleton M] : Function.Bijective (inr : N →* Coprod M N) :=
+  ⟨inr_injective, inr_surjective⟩
 
 end TrivialFactor
 

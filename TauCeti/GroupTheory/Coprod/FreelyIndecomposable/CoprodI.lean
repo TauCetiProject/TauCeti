@@ -118,8 +118,7 @@ theorem subsingleton_of_coprod_of_isFreeGroup {P F : Type*} [Group P] [Group F] 
     {f : P ∗ F →* G} (hf : Bijective f) : Subsingleton F := by
   obtain _ | hF := hG.subsingleton_or_subsingleton (.ofBijective f hf)
   · -- `P` is trivial, so `G` is isomorphic to the free group `F`
-    let e : F ≃* G := .ofBijective (f.comp Coprod.inr)
-      (hf.comp ⟨Coprod.inr_injective, Coprod.inr_surjective⟩)
+    let e : F ≃* G := .ofBijective (f.comp Coprod.inr) (hf.comp Coprod.inr_bijective)
     have := IsFreeGroup.ofMulEquiv e
     have := hG.subsingleton_of_isFreeGroup hZ
     exact e.toEquiv.subsingleton
@@ -140,7 +139,7 @@ theorem exists_surjective_of_coprodI_coprod_of_isFreeGroup [Nonempty ι] {F : Ty
     {f : CoprodI M ∗ F →* G} (hf : Bijective f) :
     ∃ i, Surjective ((f.comp Coprod.inl).comp (CoprodI.of (i := i))) :=
   have := hG.subsingleton_of_coprod_of_isFreeGroup hZ hf
-  hG.exists_surjective_of_coprodI ⟨hf.1.comp Coprod.inl_injective, hf.2.comp Coprod.inl_surjective⟩
+  hG.exists_surjective_of_coprodI (hf.comp Coprod.inl_bijective)
 
 /-- A nontrivial freely indecomposable group, not infinite cyclic, which is the free product of a
 family of groups and of a free group is the image of one of the groups of the family. -/
@@ -149,8 +148,7 @@ theorem exists_surjective_of_coprodI_coprod_of_isFreeGroup_of_nontrivial [Nontri
     (hZ : IsEmpty (G ≃* Multiplicative ℤ)) {f : CoprodI M ∗ F →* G} (hf : Bijective f) :
     ∃ i, Surjective ((f.comp Coprod.inl).comp (CoprodI.of (i := i))) :=
   have := hG.subsingleton_of_coprod_of_isFreeGroup hZ hf
-  hG.exists_surjective_of_coprodI_of_nontrivial
-    ⟨hf.1.comp Coprod.inl_injective, hf.2.comp Coprod.inl_surjective⟩
+  hG.exists_surjective_of_coprodI_of_nontrivial (hf.comp Coprod.inl_bijective)
 
 end IsFreelyIndecomposable
 
