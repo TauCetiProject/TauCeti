@@ -30,11 +30,11 @@ rational representations.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory
 
 namespace TauCeti.ComoduleCat
 
-universe u v w x y z
+universe u v w x
 
 attribute [local instance] Comodule.cofree
 
@@ -44,9 +44,10 @@ variable {R : Type u} [CommRing R]
   (f : C →ₗc[R] D) [Module.Flat R C]
 
 /-- Cotensor induction along a coalgebra map, on the existing induced comodules. -/
--- Keep the cotensor carrier reducible for the subtype coercions used by induction.
-noncomputable abbrev inducedFunctor :
-    ComoduleCat.{u, w, max v x} R D ⥤ ComoduleCat.{u, v, max v x} R C where
+-- Expose the cotensor carrier for the subtype coercions used by induction.
+@[expose, implicit_reducible]
+noncomputable def inducedFunctor :
+    ComoduleCat.{u, w, x} R D ⥤ ComoduleCat.{u, v, max v x} R C where
   obj M := of R C (Comodule.induced f M)
   map g := Comodule.inducedMap f g
   map_id _ := Comodule.inducedMap_id f
@@ -54,8 +55,14 @@ noncomputable abbrev inducedFunctor :
 
 /-- The objects of the induction functor are the existing cotensor equalizers. -/
 @[simp]
-theorem inducedFunctor_obj (M : ComoduleCat.{u, w, max v x} R D) :
+theorem inducedFunctor_obj (M : ComoduleCat.{u, w, x} R D) :
     (inducedFunctor f).obj M = of R C (Comodule.induced f M) :=
+  (rfl)
+
+/-- The induction functor acts by the existing induced comodule morphism. -/
+@[simp]
+theorem inducedFunctor_map {M N : ComoduleCat.{u, w, x} R D} (g : M ⟶ N) :
+    (inducedFunctor f).map g = Comodule.inducedMap f g :=
   (rfl)
 
 /-- Cotensor induction is additive on comodule morphisms. -/
@@ -69,7 +76,7 @@ instance : (inducedFunctor f).Additive where
     simp [LinearMap.rTensor_add]
 
 /-- Corestriction is left adjoint to cotensor induction. -/
-noncomputable def inducedAdjunction : corestrict f ⊣ inducedFunctor.{u, v, w, x} f :=
+noncomputable def inducedAdjunction : corestrict f ⊣ inducedFunctor.{u, v, w, max v x} f :=
   Adjunction.mkOfHomEquiv
     { homEquiv := fun M N ↦ (Comodule.inducedEquiv (N := M) (M := N) f).toEquiv.symm
       homEquiv_naturality_left_symm := by
@@ -94,6 +101,14 @@ theorem inducedAdjunction_homEquiv
       (Comodule.inducedEquiv (N := M) (M := N) f).toEquiv.symm := by
   rw [inducedAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
 
+/-- The unit of induction is the lift of the identity on the corestricted comodule. -/
+@[simp]
+theorem inducedAdjunction_unit_app (M : ComoduleCat.{u, v, max v x} R C) :
+    letI := Comodule.Corestrict (M := M) f
+    (inducedAdjunction f).unit.app M = Comodule.inducedLift f (𝟙 (of R D M)) := by
+  rw [← (inducedAdjunction f).homEquiv_id M, inducedAdjunction_homEquiv]
+  exact Comodule.inducedEquiv_symm_apply f _
+
 /-- The counit of induction is the existing evaluation morphism. -/
 @[simp]
 theorem inducedAdjunction_counit_app
@@ -105,8 +120,12 @@ theorem inducedAdjunction_counit_app
   change Comodule.inducedEquiv f (Comodule.Hom.id R C _) = _
   rw [Comodule.inducedEquiv_apply, Comodule.corestrictHom_id, Comodule.Hom.comp_id]
 
-/-- Cotensor induction preserves all existing limits, with no flatness assumption on `D`. -/
-instance : PreservesLimitsOfSize.{y, z} (inducedFunctor.{u, v, w, x} f) :=
-  (inducedAdjunction f).rightAdjoint_preservesLimits
+/-- Cotensor induction is a right adjoint and therefore preserves all existing limits. -/
+instance : (inducedFunctor.{u, v, w, max v x} f).IsRightAdjoint :=
+  (inducedAdjunction f).isRightAdjoint
+
+/-- Corestriction is a left adjoint to cotensor induction. -/
+instance : (corestrict.{u, v, w, max v x} f).IsLeftAdjoint :=
+  (inducedAdjunction f).isLeftAdjoint
 
 end TauCeti.ComoduleCat
