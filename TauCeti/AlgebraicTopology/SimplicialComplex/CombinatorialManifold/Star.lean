@@ -54,4 +54,11 @@ theorem IsCombinatorialManifold.isCombinatorialBall_map_closedStar
           (hs.join_ball hpoint).map Sum.swap (Equiv.sumComm ι ι).injective
       · simpa only [Nat.zero_add] using hpoint.join hb
 
+/-- Every closed vertex star in a combinatorial `n`-manifold is a combinatorial `n`-ball. -/
+theorem IsCombinatorialManifold.isCombinatorialBall_closedStar
+    (h : IsCombinatorialManifold K n) {v : ι} (hv : ({v} : Finset ι) ∈ K) :
+    IsCombinatorialBall (closedStar K {v}) n :=
+  (isCombinatorialBall_map_iff (TauCeti.partitionEmbedding (· ∈ ({v} : Finset ι))).injective).mp
+    (h.isCombinatorialBall_map_closedStar hv)
+
 end PreAbstractSimplicialComplex
