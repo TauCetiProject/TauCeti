@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import Mathlib.FieldTheory.SeparableClosure
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Scalar extension of a simple algebraic field extension
 
 For fields `K ⊆ L ⊆ Ω`, the inclusion `K(α) → L(α)` makes `L(α)` a field quotient of
 `K(α) ⊗[K] L` when `α` is algebraic over `L`. This is the compositum description used to
-base-change an extension while adjoining the same root to both fields.
+base-change an extension while adjoining the same root to both fields. Regardless of whether `α` is
+algebraic over `L`, finiteness and separability of `L / K` pass to `L(α) / K(α)`.
 -/
 
 public section
@@ -80,5 +83,41 @@ theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsIntegral L 
   have hx : x ∈ S := htop ▸ Algebra.mem_top
   -- `S` retains the carrier of `φ.range`; only its coefficient algebra was changed.
   exact (AlgHom.mem_range φ).mp hx
+
+/-- If `L / K` is finite, then `L(α) / K(α)` is finite for any `α` in an overfield `Ω` of `L`. -/
+theorem finiteDimensional_adjoinBaseChange [FiniteDimensional K L] (α : Ω) :
+    letI := (adjoinBaseChange K L α).toAlgebra
+    FiniteDimensional K⟮α⟯ L⟮α⟯ := by
+  let := (adjoinBaseChange K L α).toAlgebra
+  let φ := adjoinBaseChangeTensorLift K L α
+  have : Module.Finite K⟮α⟯ φ.range :=
+    Module.Finite.of_surjective φ.rangeRestrict.toLinearMap φ.rangeRestrict_surjective
+  let E : IntermediateField L L⟮α⟯ :=
+    { (φ.range.toIntermediateField'
+        (isField_of_isIntegral_of_isField' (Field.toIsField K⟮α⟯))).toSubfield with
+      algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [φ]⟩ }
+  have hgen : AdjoinSimple.gen L α ∈ E := ⟨AdjoinSimple.gen K α ⊗ₜ[K] 1, by simp [φ]⟩
+  have htop : E = ⊤ :=
+    top_unique ((adjoin_adjoinSimple_gen_eq_top (F := L) α) ▸ adjoin_simple_le_iff.mpr hgen)
+  exact Module.Finite.of_surjective φ.toLinearMap fun x ↦ show x ∈ E from htop ▸ mem_top
+
+/-- If `L / K` is separable, then `L(α) / K(α)` is separable for any `α` in an overfield `Ω` of
+`L`. -/
+theorem isSeparable_adjoinBaseChange [Algebra.IsSeparable K L] (α : Ω) :
+    letI := (adjoinBaseChange K L α).toAlgebra
+    Algebra.IsSeparable K⟮α⟯ L⟮α⟯ := by
+  let := (adjoinBaseChange K L α).toAlgebra
+  let E : IntermediateField L L⟮α⟯ :=
+    { (separableClosure K⟮α⟯ L⟮α⟯).toSubfield with
+      algebraMap_mem' := fun l ↦
+        ((Algebra.IsSeparable.isSeparable K l).map (IsScalarTower.toAlgHom K L L⟮α⟯)
+          (algebraMap L L⟮α⟯).injective).tower_top K⟮α⟯ }
+  have hgen : AdjoinSimple.gen L α ∈ E := by
+    change _ ∈ separableClosure K⟮α⟯ L⟮α⟯
+    rw [← adjoinBaseChange_gen K L α]
+    exact IntermediateField.algebraMap_mem _ (AdjoinSimple.gen K α)
+  have htop : E = ⊤ :=
+    top_unique ((adjoin_adjoinSimple_gen_eq_top (F := L) α) ▸ adjoin_simple_le_iff.mpr hgen)
+  exact ⟨fun x ↦ show x ∈ E from htop ▸ mem_top⟩
 
 end TauCeti.IntermediateField

@@ -57,6 +57,10 @@ valuation ring are carried by the statements that use them, not by the definitio
 * `AlgebraicGeometry.Scheme.Hom.isUnramifiedInCodimOne_of_isOpenImmersion`: if the codimension
   one points outside `U` have regular local rings, every open subscheme of `U`, for instance the
   trivial cover `𝟙 U`, is unramified over `X` in codimension one.
+* `AlgebraicGeometry.Scheme.Hom.baseChange_inCodimOne_of_stalk_baseChange`: any predicate on a
+  local ring and an overfield that is stable under base change of discrete valuation rings along
+  surjective maps `K' ⊗[K] L → L'` is preserved in codimension one under base change along
+  `g : X' ⟶ X`.
 * `AlgebraicGeometry.Scheme.Hom.IsUnramifiedInCodimOne.baseChange`: being unramified in
   codimension one is stable under base change along `g : X' ⟶ X`, if `g` maps the
   codimension-one points of `X'` outside `g⁻¹ U` to codimension-one points of `X`, and the local
@@ -191,10 +195,12 @@ private lemma residueFieldMap_fst_comp_eq {X' : Scheme.{u}} {g : X' ⟶ X}
   -- The two sides differ only by associativity of composition, which holds definitionally.
   rfl
 
-/-- Shared reduction of codimension-one base change to base change of DVR extensions: any predicate
-`P` on a local ring and an overfield that is stable under base change of discrete valuation rings
-along surjective maps `K' ⊗[K] L → L'` is stable under base change along `g : X' ⟶ X`. -/
-private theorem baseChange_of_stalk_baseChange
+/-- Any predicate `P` on a local ring and an overfield that is stable under base change of discrete
+valuation rings along surjective maps `K' ⊗[K] L → L'` is preserved in codimension one under base
+change of `f : Y ⟶ U` along `g : X' ⟶ X`, provided `f` is formally unramified and locally of finite
+type, `g` maps the codimension-one points of `X'` outside `g⁻¹ U` to codimension-one points of `X`,
+and the local rings at these points are regular (hence discrete valuation rings). -/
+theorem baseChange_inCodimOne_of_stalk_baseChange
     (P : ∀ (A L : Type u) [CommRing A] [IsLocalRing A] [Field L] [Algebra A L], Prop)
     (hP : ∀ {A K L A' K' L' : Type u}
       [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] [Field K] [Algebra A K]
@@ -309,7 +315,7 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
     (hX' : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
       IsRegularLocalRing (X'.presheaf.stalk ξ')) :
     (pullback.snd f (g ∣_ U)).IsUnramifiedInCodimOne :=
-  baseChange_of_stalk_baseChange g (fun A L ↦ TauCeti.Algebra.IsUnramifiedWRT A L)
+  baseChange_inCodimOne_of_stalk_baseChange g (fun A L ↦ TauCeti.Algebra.IsUnramifiedWRT A L)
     (fun h φ hφ ↦ h.baseChange φ hφ) hf hg hX hX'
 
 /-- **Base change of covers tamely ramified in codimension one.** Let `f : Y ⟶ U` be tamely
@@ -328,7 +334,7 @@ theorem IsTamelyRamifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfF
     (hX' : ∀ ξ' : CodimensionOnePoint X', (ξ' : X') ∉ g ⁻¹ᵁ U →
       IsRegularLocalRing (X'.presheaf.stalk ξ')) :
     (pullback.snd f (g ∣_ U)).IsTamelyRamifiedInCodimOne :=
-  baseChange_of_stalk_baseChange g (fun A L ↦ TauCeti.Algebra.IsTamelyRamifiedWRT A L)
+  baseChange_inCodimOne_of_stalk_baseChange g (fun A L ↦ TauCeti.Algebra.IsTamelyRamifiedWRT A L)
     (fun h φ hφ ↦ h.baseChange φ hφ) hf hg hX hX'
 
 end AlgebraicGeometry.Scheme.Hom

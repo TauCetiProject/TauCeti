@@ -69,6 +69,8 @@ extensions of nonarchimedean local fields, the valuation-theoretic counterparts 
 * `TauCeti.Algebra.isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank`: `L` is totally
   ramified with respect to `A` iff some maximal ideal of the integral closure has ramification
   index `[L : K]`.
+* `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_isUnit_ramificationIdx_dvd`: a tamely ramified
+  extension admits an integer invertible in `κ_A` divisible by every ramification index.
 
 ## References
 
@@ -350,6 +352,29 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
       have := hf ⟨Q, hliesOver Q⟩
       nlinarith
     exact ⟨⟨P, hP, fun Q _ ↦ huniq Q⟩, fun Q _ ↦ huniq Q ▸ hPf⟩
+
+variable {A L} in
+/-- For a tamely ramified extension `L / K` over a discrete valuation ring `A`, there exists a
+natural number `e₀`, invertible in the residue field `κ_A`, that is divisible by the ramification
+index of every maximal ideal of `integralClosure A L` over `maximalIdeal A`. -/
+theorem IsTamelyRamifiedWRT.exists_isUnit_ramificationIdx_dvd (h : IsTamelyRamifiedWRT A L) :
+    ∃ e₀ : ℕ, IsUnit (e₀ : A ⧸ maximalIdeal A) ∧
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        P.ramificationIdx A ∣ e₀ := by
+  have : IsDedekindDomain (integralClosure A L) := integralClosure.isDedekindDomain A K L
+  have : FaithfulSMul A L := .trans A K L
+  have : FaithfulSMul A (integralClosure A L) := .tower_bot A _ L
+  have : Module.IsTorsionFree A (integralClosure A L) := FaithfulSMul.to_isTorsionFree ..
+  refine ⟨∏ P : (maximalIdeal A).primesOver (integralClosure A L), P.1.ramificationIdx A, ?_,
+    fun P _ _ ↦ Finset.dvd_prod_of_mem _
+      (Finset.mem_univ (⟨P, ⟨inferInstance, inferInstance⟩⟩ :
+        (maximalIdeal A).primesOver (integralClosure A L)))⟩
+  rw [Nat.cast_prod, IsUnit.prod_univ_iff]
+  intro P
+  have := P.2.1
+  have := P.2.2
+  have : P.1.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal P.1 (maximalIdeal A)
+  exact (isTamelyRamifiedWRT_def.mp h P.1).2
 
 end DiscreteValuationRing
 

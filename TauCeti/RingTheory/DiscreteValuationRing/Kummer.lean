@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.Algebra.Hom
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
@@ -50,8 +49,9 @@ tame ramification.
   `TauCeti.IsDiscreteValuationRing.finrank_adjoin_of_pow_eq_of_irreducible`: `[K(α) : K] = n`.
 * `TauCeti.IsDiscreteValuationRing.minpoly_eq_of_pow_eq_of_irreducible`: the minimal polynomial of
   `α` over `A` is `X ^ n - π`.
-* `TauCeti.IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible`: the
-  integral closure of `A` in `L` is `A[α]`.
+* `TauCeti.IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible` and
+  `TauCeti.IsDiscreteValuationRing.isFractionRing_integralClosure_of_pow_eq_of_irreducible`: the
+  integral closure of `A` in `L` is `A[α]` and has fraction field `L`.
 * `TauCeti.IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible`
   and `TauCeti.IsDiscreteValuationRing.irreducible_mk_of_pow_eq_of_irreducible`: it is a discrete
   valuation ring with uniformizer `α`.
@@ -179,6 +179,14 @@ theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π
   refine le_antisymm (fun z hz ↦ ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr hint))
   obtain ⟨y, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := B)).mp hz
   exact y.2
+
+/-- The integral closure of a discrete valuation ring `A` in a Kummer extension `L` of its
+fraction field has `L` as its fraction field. -/
+theorem isFractionRing_integralClosure_of_pow_eq_of_irreducible (hπ : Irreducible π)
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
+    IsFractionRing (integralClosure A L) L := by
+  rw [integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hα hgen]
+  exact TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top hgen
 
 /-- If `L` is generated over the fraction field of a discrete valuation ring `A` by an `n`-th root
 `α` of a uniformizer of `A`, the results of `TauCeti.RingTheory.DiscreteValuationRing.Eisenstein`
@@ -368,40 +376,28 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (IntermediateField.adjoin_simple_le_iff.mpr hmem) hd).symm
 
 /-- **Tame ramification from an unramified extension of a Kummer extension.** Let `L` be a finite
-separable extension of the fraction field `K` of a discrete valuation ring `A`, and let `E` be an
-extension of `L` containing an `n`-th root `β` of a uniformizer `π` of `A`, with `n` invertible in
-the residue field of `A`. If `E` is unramified with respect to the integral closure
-`A[β]` of `A` in `K(β)`, then `L` is tamely ramified with respect to `A`.
+separable extension of the fraction field `K` of a discrete valuation ring `A`, let `K₁` be
+generated over `K` by an `n`-th root `β` of a uniformizer `π` of `A` with `n` invertible in the
+residue field of `A`, and let `E` be a common overfield of `L` and `K₁` (compatibly over `A`). If
+`E` is unramified with respect to the integral closure of `A` in `K₁`, then `L` is tamely ramified
+with respect to `A`.
 
 This is the implication (2) ⇒ (1) of Stacks, Lemma 15.116.7. The integral closure of `A` in
-`K(β)` is a discrete valuation ring by
+`K₁` is a discrete valuation ring by
 `TauCeti.IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible`,
 so the local ring hypothesis, needed to state unramifiedness with respect to it, always holds. -/
 @[stacks 0EXW "(2) ⇒ (1)"]
 theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteDimensional K L]
-    [Algebra.IsSeparable K L] {E : Type*} [Field E] [Algebra K E] [Algebra A E]
-    [IsScalarTower A K E] [Algebra L E] [IsScalarTower K L E] {β : E}
-    [IsLocalRing (integralClosure A K⟮β⟯)] (hπ : Irreducible π)
-    (hn : IsUnit (n : A ⧸ maximalIdeal A)) (hβ : β ^ n = algebraMap A E π)
-    (h : Algebra.IsUnramifiedWRT (integralClosure A K⟮β⟯) E) :
+    [Algebra.IsSeparable K L] {K₁ E : Type*} [Field K₁] [Algebra K K₁] [Algebra A K₁]
+    [IsScalarTower A K K₁] [Field E] [Algebra A E] [Algebra L E] [IsScalarTower A L E]
+    [Algebra K₁ E] [IsScalarTower A K₁ E] [IsLocalRing (integralClosure A K₁)]
+    {β : K₁} (hπ : Irreducible π) (hn : IsUnit (n : A ⧸ maximalIdeal A))
+    (hβ : β ^ n = algebraMap A K₁ π) (hgen : K⟮β⟯ = ⊤)
+    (h : Algebra.IsUnramifiedWRT (integralClosure A K₁) E) :
     Algebra.IsTamelyRamifiedWRT A L := by
-  have _ : n ≠ 0 := by
-    rintro rfl
-    simp at hn
-  have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A K L, ← IsScalarTower.algebraMap_apply K L E,
-      ← IsScalarTower.algebraMap_apply A K E]
-  have : IsScalarTower A K⟮β⟯ E := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A K K⟮β⟯, ← IsScalarTower.algebraMap_apply K K⟮β⟯ E,
-      ← IsScalarTower.algebraMap_apply A K E]
-  -- Inside `K(β)`, the generator is an `n`-th root of `π` generating everything, so `09EV` applies.
-  have hβ' : AdjoinSimple.gen K β ^ n = algebraMap A K⟮β⟯ π := (algebraMap K⟮β⟯ E).injective (by
-    rw [map_pow, AdjoinSimple.algebraMap_gen, hβ, ← IsScalarTower.algebraMap_apply])
-  have hgen : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
-  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hβ' hgen
-  -- `K(β)` is a Kummer extension of degree `n`, invertible in the residue field: it is tame.
-  have hK₁ : Algebra.IsTamelyRamifiedWRT A K⟮β⟯ :=
-    (isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hβ' hgen).mpr hn
+  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hβ hgen
+  have hK₁ : Algebra.IsTamelyRamifiedWRT A K₁ :=
+    (isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hβ hgen).mpr hn
   exact (hK₁.trans h.isTamelyRamifiedWRT).tower_bot K
 
 end TauCeti.IsDiscreteValuationRing

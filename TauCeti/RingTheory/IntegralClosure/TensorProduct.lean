@@ -21,6 +21,8 @@ in `L`.
 * `TauCeti.span_integralClosure_eq_top`: the integral closure of `A` in `L` spans `L` over `K`.
 * `TauCeti.span_one_tmul_integralClosure_eq_top`: the elements `1 ⊗ b`, for `b` in the integral
   closure of `A` in `L`, span `K' ⊗[K] L` over `K'`.
+* `TauCeti.span_map_one_tmul_integralClosure_eq_top`: their images under any surjective
+  `K'`-linear map span the codomain over `K'`.
 -/
 
 public section
@@ -60,5 +62,16 @@ theorem span_one_tmul_integralClosure_eq_top :
   congr 1
   ext x
   simp
+
+/-- For any surjective `K'`-linear map `φ : K' ⊗[K] L →ₗ[K'] M`, the images of `1 ⊗ b`, for `b`
+in the integral closure of `A` in `L`, span `M` over `K'`. -/
+theorem span_map_one_tmul_integralClosure_eq_top {M : Type*} [AddCommMonoid M] [Module K' M]
+    (φ : K' ⊗[K] L →ₗ[K'] M) (hφ : Function.Surjective φ) :
+    Submodule.span K' (Set.range fun b : integralClosure A L => φ ((1 : K') ⊗ₜ[K] (b : L))) =
+      ⊤ := by
+  have h := congrArg (Submodule.map φ)
+    (span_one_tmul_integralClosure_eq_top (A := A) (K := K) (L := L) (K' := K'))
+  rw [Submodule.map_span, Submodule.map_top, LinearMap.range_eq_top.mpr hφ] at h
+  rwa [← Set.range_comp] at h
 
 end TauCeti
