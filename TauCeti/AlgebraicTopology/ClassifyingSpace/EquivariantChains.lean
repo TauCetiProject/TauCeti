@@ -213,11 +213,6 @@ instance (n : ℕ) : Projective ((universalGSpaceCellularComplex k G).X n) :=
 
 /-- Geometric cellular chains with their translation action resolve the trivial module.
 The augmentation is the cellular augmentation, expressed via ordered chains. -/
--- The body is exposed, as for `universalGSpaceResolution` and Mathlib's
--- `Rep.standardResolution`, so that the complex of the resolution is the cellular chain complex
--- by definition: stating `universalGSpaceCellularResolution_π` and passing
--- `MonoidHom.universalGSpaceCellularComplexMap` directly as a morphism of resolutions need this.
-@[expose]
 def universalGSpaceCellularResolution : ProjectiveResolution (Rep.trivial k G k) where
   complex := universalGSpaceCellularComplex k G
   π := (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G
@@ -231,19 +226,26 @@ theorem universalGSpaceCellularResolution_complex :
 @[simp]
 theorem universalGSpaceCellularResolution_π :
     (universalGSpaceCellularResolution k G).π =
-      (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G :=
-  (rfl)
+      eqToHom (universalGSpaceCellularResolution_complex k G) ≫
+        (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G :=
+  -- The reflexive transport reduces to the identity inside this defining module; clients
+  -- need it in the statement because the projective resolution's body is hidden.
+  (Category.id_comp _).symm
 
 /-- In degree zero the augmentation is the geometric cellular augmentation, not just
 an abstract map to the trivial representation. -/
 theorem universalGSpaceCellularResolution_π_f_zero_hom_apply
     (x : (cellularChainGroup (univ : Set (universalGSpace G))
       (ModuleCat.of k k) 0 : ModuleCat k)) :
-    ((universalGSpaceCellularResolution k G).π.f 0).hom
+    ((eqToHom (universalGSpaceCellularResolution_complex k G).symm ≫
+        (universalGSpaceCellularResolution k G).π).f 0).hom
       ((eqToHom (universalGSpaceCellularComplex_X k G 0).symm) x) =
       cellularAugmentation (univ : Set (universalGSpace G)) (ModuleCat.of k k) x := by
-  simp only [universalGSpaceCellularResolution_π, HomologicalComplex.comp_f,
-    universalGSpaceCellularComplexIso_hom_f, universalGSpaceAugmentation_f_zero]
+  -- Evaluation cancels the transports identifying the resolution's degree-zero term with
+  -- its geometric cellular chain group.
+  simp only [universalGSpaceCellularResolution_π, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, HomologicalComplex.comp_f, universalGSpaceCellularComplexIso_hom_f,
+    universalGSpaceAugmentation_f_zero]
   dsimp only [universalGSpaceChainComplex]
   erw [← ConcreteCategory.comp_apply, ← Category.assoc, ← Category.assoc,
     eqToHom_trans, eqToHom_refl, Category.id_comp]
@@ -325,13 +327,16 @@ theorem universalGSpaceCellularRepStandardHomotopyEquiv_comp_π :
 /-- The explicit geometric cellular-to-standard map agrees up to equivariant chain homotopy
 with Mathlib's abstract comparison of the two projective resolutions. -/
 def universalGSpaceCellularStandardComparisonHomotopy :
-    Homotopy (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom
+    Homotopy (eqToHom (universalGSpaceCellularResolution_complex k G) ≫
+        (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom)
       (ProjectiveResolution.homotopyEquiv (universalGSpaceCellularResolution k G)
         (Rep.standardResolution k G)).hom :=
   ProjectiveResolution.homotopyOfComm (universalGSpaceCellularResolution k G)
-    (Rep.standardResolution k G) (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom
-    ((universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G).trans
-      (universalGSpaceCellularResolution_π k G).symm)
+    (Rep.standardResolution k G) _ (by
+      exact (Category.assoc _ _ _).trans
+        ((congrArg (eqToHom (universalGSpaceCellularResolution_complex k G) ≫ ·)
+          (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G)).trans
+          (universalGSpaceCellularResolution_π k G).symm))
 
 /-- **Equivariant chain homotopy equivalence between geometric cellular chains of Milnor's join
 and Mathlib's inhomogeneous bar resolution.** -/
@@ -400,13 +405,16 @@ theorem universalGSpaceCellularBarHomotopyEquiv_comp_π :
 /-- The explicit geometric cellular-to-inhomogeneous-bar map agrees up to equivariant chain
 homotopy with Mathlib's abstract comparison of the two projective resolutions. -/
 def universalGSpaceCellularBarComparisonHomotopy :
-    Homotopy (universalGSpaceCellularBarHomotopyEquiv k G).hom
+    Homotopy (eqToHom (universalGSpaceCellularResolution_complex k G) ≫
+        (universalGSpaceCellularBarHomotopyEquiv k G).hom)
       (ProjectiveResolution.homotopyEquiv (universalGSpaceCellularResolution k G)
         (Rep.barResolution k G)).hom :=
   ProjectiveResolution.homotopyOfComm (universalGSpaceCellularResolution k G)
-    (Rep.barResolution k G) (universalGSpaceCellularBarHomotopyEquiv k G).hom
-    ((universalGSpaceCellularBarHomotopyEquiv_comp_π k G).trans
-      (universalGSpaceCellularResolution_π k G).symm)
+    (Rep.barResolution k G) _
+    ((Category.assoc _ _ _).trans
+      ((congrArg (eqToHom (universalGSpaceCellularResolution_complex k G) ≫ ·)
+        (universalGSpaceCellularBarHomotopyEquiv_comp_π k G)).trans
+        (universalGSpaceCellularResolution_π k G).symm))
 
 end Resolution
 
@@ -619,20 +627,27 @@ hypothesis on restriction preserving projective objects is needed. -/
 @[reassoc]
 theorem universalGSpaceCellularComplexMap_f_zero_comp_π (φ : G →* H) :
     (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-        (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
-      (universalGSpaceCellularResolution k G).π.f 0 := by
+        (Rep.resFunctor φ).map
+          ((eqToHom (universalGSpaceCellularResolution_complex k H).symm ≫
+            (universalGSpaceCellularResolution k H).π).f 0) =
+      (eqToHom (universalGSpaceCellularResolution_complex k G).symm ≫
+        (universalGSpaceCellularResolution k G).π).f 0 := by
   apply (cancel_epi (eqToHom (universalGSpaceCellularComplex_X k G 0).symm)).mp
   have hL :
       eqToHom (universalGSpaceCellularComplex_X k G 0).symm ≫
           ((φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-            (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0)) =
+            (Rep.resFunctor φ).map
+              ((eqToHom (universalGSpaceCellularResolution_complex k H).symm ≫
+                (universalGSpaceCellularResolution k H).π).f 0)) =
         φ.universalGSpaceCellularRepMap 0 ≫
           (Rep.resFunctor φ).map
             (eqToHom (universalGSpaceCellularComplex_X k H 0).symm ≫
-              (universalGSpaceCellularResolution k H).π.f 0) := by
+              (eqToHom (universalGSpaceCellularResolution_complex k H).symm ≫
+                (universalGSpaceCellularResolution k H).π).f 0) := by
     -- `-proj` keeps the `abbrev` `(Rep.resFunctor φ).map` unreduced so `Functor.map_comp` and
     -- `eqToHom_map` merge the cellular-term transport into the restricted augmentation map.
-    simp -proj [eqToHom_map]
+    simp -proj only [universalGSpaceCellularComplexMap_f, Category.assoc, eqToHom_trans_assoc,
+      eqToHom_refl, Category.id_comp, Functor.map_comp, eqToHom_map]
   rw [hL]
   refine Rep.hom_ext <| DFunLike.ext _ _ fun x ↦ ?_
   have hy : (φ.universalGSpaceCellularRepMap (k := k) 0).hom x =
@@ -640,9 +655,9 @@ theorem universalGSpaceCellularComplexMap_f_zero_comp_π (φ : G →* H) :
         (ModuleCat.of k k) 0) x := by
     rw [← Representation.IntertwiningMap.toLinearMap_apply,
       universalGSpaceCellularRepMap_hom_toLinearMap]
-  -- `(universalGSpaceCellularResolution k _).complex` reduces to `universalGSpaceCellularComplex`
-  -- at default transparency, while `Rep.hom_comp` and `Rep.resMap_hom_apply` hold by reflexivity,
-  -- so assembling the elementwise chain in term mode avoids `rw`'s implicit-transparency check.
+  -- `Rep.res φ (Rep.trivial k H k)` agrees with `Rep.trivial k G k` at default transparency, while
+  -- `Rep.hom_comp` and `Rep.resMap_hom_apply` hold by reflexivity, so assembling the elementwise
+  -- chain in term mode avoids `rw`'s implicit-transparency check.
   exact (universalGSpaceCellularResolution_π_f_zero_hom_apply k H
       ((φ.universalGSpaceCellularRepMap (k := k) 0).hom x)).trans <|
     (congrArg
