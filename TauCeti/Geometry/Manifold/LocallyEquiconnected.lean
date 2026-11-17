@@ -18,8 +18,9 @@ neighbourhood theorem). So `M` is a neighbourhood retract of `ℝⁿ`, and nearb
 are joined by the projection `t ↦ r ((1 - t) x + t y)` of the straight segment between them:
 `M` is locally equiconnected (`Manifold.locallyEquiconnectedSpace`).
 
-Consequently every mapping space `C(K, M)` out of a compact space, for instance the free loop
-space of a closed manifold and its subspace of contractible loops, is locally equiconnected,
+Consequently every mapping space `C(K, M)` out of a compact, locally compact space `K` (which
+supplies the `LocallyCompactPair K M` hypothesis), for instance the free loop space of a closed
+manifold (`K = S¹`) and its subspace of contractible loops, is locally equiconnected,
 hence locally path-connected and semilocally simply connected
 (`TauCeti.Topology.Homotopy.LocallyEquiconnected.MappingSpace`).
 

@@ -11,8 +11,9 @@ public import TauCeti.Topology.MappingSpace.FreeLoop
 /-!
 # Mapping spaces into locally equiconnected spaces
 
-Let `K` be a compact space and `X` a locally equiconnected space, with an equiconnecting map `l`
-on a neighbourhood `W` of the diagonal. Two maps `f, g : K → X` that are pointwise `W`-close are
+Let `K` be a compact space and `X` a locally equiconnected space with `LocallyCompactPair K X`
+(for instance `K` locally compact, such as `S¹`), with an equiconnecting map `l` on a
+neighbourhood `W` of the diagonal. Two maps `f, g : K → X` that are pointwise `W`-close are
 joined by the pointwise path `t ↦ (k ↦ l (f k, g k) t)`. By compactness of `K` the pointwise
 `W`-close pairs form a neighbourhood of the diagonal of the compact-open mapping space `C(K, X)`,
 and the pointwise path depends continuously on `(f, g, t)`. So `C(K, X)` is locally
@@ -29,7 +30,7 @@ whose fibres are the classes of caps of a loop.
 ## Main results
 
 * `TauCeti.instLocallyEquiconnectedSpaceContinuousMap`: `C(K, X)` is locally equiconnected for
-  compact `K` and locally equiconnected `X`.
+  compact `K` and locally equiconnected `X` with `LocallyCompactPair K X`.
 * `TauCeti.locallyEquiconnectedSpace_contractibleLoops`: the contractible free loops of a
   locally equiconnected space form a locally equiconnected space.
 
@@ -46,7 +47,8 @@ namespace TauCeti
 
 variable {K X : Type*} [TopologicalSpace K] [TopologicalSpace X]
 
-/-- Mapping spaces out of a compact space into a locally equiconnected space are locally
+/-- Mapping spaces `C(K, X)` out of a compact space `K` into a locally equiconnected space `X`
+with `LocallyCompactPair K X` (for instance `K` locally compact, such as `S¹`) are locally
 equiconnected, through pointwise connecting paths. -/
 instance instLocallyEquiconnectedSpaceContinuousMap [CompactSpace K] [LocallyCompactPair K X]
     [LocallyEquiconnectedSpace X] : LocallyEquiconnectedSpace C(K, X) := by

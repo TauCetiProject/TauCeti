@@ -21,7 +21,7 @@ and a map `l : X × X → I → X`, continuous on `W × I`, such that for `(x, y
 the structure behind the local contractibility of absolute neighbourhood retracts.
 
 Unlike local contractibility, local equiconnectedness is a single uniform piece of data, and so
-it passes to mapping spaces out of a compact space
+it passes to mapping spaces out of a compact, locally compact space
 (`TauCeti.Topology.Homotopy.LocallyEquiconnected.MappingSpace`). In particular the free loop
 space of a closed manifold is locally path-connected and semilocally simply connected, which are
 the hypotheses of covering space theory.
