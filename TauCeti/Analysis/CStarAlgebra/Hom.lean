@@ -15,7 +15,8 @@ A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically cont
 two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for any morphism
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
-bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
+bundles as a linear isometric equivalence `StarAlgEquiv.toLinearIsometryEquiv` and as a continuous
+linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
 -/
 
 public section
@@ -36,6 +37,25 @@ end NonUnitalStarAlgHom
 namespace StarAlgEquiv
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- A star-algebra equivalence of C⋆-algebras as a linear isometric equivalence. -/
+def toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) : A ≃ₗᵢ[ℂ] B where
+  toFun := e
+  invFun := e.symm
+  left_inv := e.symm_apply_apply
+  right_inv := e.apply_symm_apply
+  map_add' := map_add e
+  map_smul' := map_smul e
+  norm_map' := StarAlgEquiv.norm_map e
+
+@[simp]
+theorem coe_toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) : ⇑e.toLinearIsometryEquiv = e :=
+  (rfl)
+
+@[simp]
+theorem toLinearIsometryEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
+    e.toLinearIsometryEquiv.symm = e.symm.toLinearIsometryEquiv :=
+  (rfl)
 
 /-- A star-algebra equivalence of C⋆-algebras as a continuous linear equivalence. Both directions
 are continuous because star-algebra equivalences of C⋆-algebras are isometric. -/
