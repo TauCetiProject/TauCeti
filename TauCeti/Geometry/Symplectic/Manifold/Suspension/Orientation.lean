@@ -353,11 +353,9 @@ theorem integralTopForm_mpullback_suspensionForm_eq_degree_mul
     integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
       degree o ((AddCircle.orientation 1).prod (AddCircle.orientation (d : ℝ))) v * d := by
   subst hτv
-  rw [← SmoothForm.mpullback_mpullback _ _ hv (contMDiff_orbitTorus h), SmoothForm.coe_mpullback,
-    integralTopForm_mpullback_eq_degree_mul o _ hv hv.continuous.isProperMap
-      (SmoothForm.isSmoothForm _)
-      (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)),
-    mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
+  rw [← SmoothForm.mpullback_mpullback _ _ hv (contMDiff_orbitTorus h),
+    mpullback_orbitTorus_suspensionForm, integralTopForm_mpullback_wedge_timeForm_eq_degree_mul hv,
+    one_mul]
 
 /-- **Nonconstant pseudoholomorphic horizontal curves cover their orbit torus with positive
 degree.** Let `u` be a smooth pseudoholomorphic map from a compact connected boundaryless surface
