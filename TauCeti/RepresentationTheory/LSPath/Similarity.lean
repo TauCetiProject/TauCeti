@@ -97,14 +97,19 @@ theorem raiseWord_flatMap_replicate_map_smul (hx : ∀ i, F i (x i) = 2) {a : �
   funext ρ
   exact (map_reverse ρ (a • LinearMap.id)).symm
 
+private theorem flatMap_replicate_one {α : Type*} (w : List α) :
+    w.flatMap (List.replicate 1) = w := by
+  induction w with
+  | nil => rfl
+  | cons _ _ ih => simp [ih]
+
 /-- Lowering along the `n`-fold letter-replicated word on an `n`-dilated path equals the
 `n`-dilation of lowering along the original word. -/
 theorem lowerWord_flatMap_replicate_map_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ}
     (hn : 0 < n) (w : List ι) (π : PLPath 𝕜 V) :
     lowerWord F x (w.flatMap (List.replicate n)) (π.map ((n : 𝕜) • LinearMap.id)) =
       (lowerWord F x w π).map (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
-  simpa [show (List.replicate 1 : ι → List ι) = fun i ↦ [i] from
-      funext fun _ ↦ List.replicate_one] using
+  simpa only [flatMap_replicate_one] using
     lowerWord_flatMap_replicate_map_smul hx (Nat.cast_pos.mpr hn) (m := n) (n := 1) (by simp) w π
 
 /-- Raising along the `n`-fold letter-replicated word on an `n`-dilated path equals the
@@ -113,8 +118,7 @@ theorem raiseWord_flatMap_replicate_map_natCast_smul (hx : ∀ i, F i (x i) = 2)
     (hn : 0 < n) (w : List ι) (π : PLPath 𝕜 V) :
     raiseWord F x (w.flatMap (List.replicate n)) (π.map ((n : 𝕜) • LinearMap.id)) =
       (raiseWord F x w π).map (fun ρ ↦ ρ.map ((n : 𝕜) • LinearMap.id)) := by
-  simpa [show (List.replicate 1 : ι → List ι) = fun i ↦ [i] from
-      funext fun _ ↦ List.replicate_one] using
+  simpa only [flatMap_replicate_one] using
     raiseWord_flatMap_replicate_map_smul hx (Nat.cast_pos.mpr hn) (m := n) (n := 1) (by simp) w π
 
 /-- Lowering along `w` on the contracted path `(n : 𝕜)⁻¹ • π` equals contracting lowering along the
@@ -125,8 +129,7 @@ theorem lowerWord_map_inv_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn
       (lowerWord F x (w.flatMap (List.replicate n)) π).map
         (fun ρ ↦ ρ.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
   have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  simpa [show (List.replicate 1 : ι → List ι) = fun i ↦ [i] from
-      funext fun _ ↦ List.replicate_one] using
+  simpa only [flatMap_replicate_one] using
     lowerWord_flatMap_replicate_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
       (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) w π
 
@@ -138,8 +141,7 @@ theorem raiseWord_map_inv_natCast_smul (hx : ∀ i, F i (x i) = 2) {n : ℕ} (hn
       (raiseWord F x (w.flatMap (List.replicate n)) π).map
         (fun ρ ↦ ρ.map ((n : 𝕜)⁻¹ • LinearMap.id)) := by
   have hn0 : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  simpa [show (List.replicate 1 : ι → List ι) = fun i ↦ [i] from
-      funext fun _ ↦ List.replicate_one] using
+  simpa only [flatMap_replicate_one] using
     raiseWord_flatMap_replicate_map_smul hx (inv_pos.mpr (Nat.cast_pos.mpr hn))
       (m := 1) (n := n) (Nat.cast_one.trans (inv_mul_cancel₀ hn0).symm) w π
 

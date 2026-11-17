@@ -640,8 +640,10 @@ theorem not_isIntegralPath_straight_neg_mul_straight (i : b.support) {v : V}
   intro hπ
   obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
   rw [minHeight_straight_neg_mul_straight, min_eq_right (by linarith)] at hz
-  have hlt0 : z < 0 := by exact_mod_cast (show (z : 𝕜) < (0 : ℤ) by push_cast; linarith)
-  have hgt : (-1 : ℤ) < z := by exact_mod_cast (show ((-1 : ℤ) : 𝕜) < z by push_cast; linarith)
+  have hz0 : (z : 𝕜) < 0 := by linarith
+  have hz1 : (-1 : 𝕜) < z := by linarith
+  have hlt0 : z < 0 := by exact_mod_cast hz0
+  have hgt : (-1 : ℤ) < z := by exact_mod_cast hz1
   omega
 
 /-- **Not every path with lattice endpoint is integral**: as soon as `b.support` is nonempty, the

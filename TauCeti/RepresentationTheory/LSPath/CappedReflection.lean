@@ -192,29 +192,6 @@ theorem cappedReflection_map_smul {a : 𝕜} (ha : 0 < a) (c : 𝕜) (p : PLPath
 
 /-! ## Composition of capped reflections -/
 
-/-- Any cap at or above the final height reflects the same records as the final height itself. -/
-theorem reflectRecords_of_apply_sum_le {c : 𝕜} {l : List V} (hc : f l.sum ≤ c) :
-    reflectRecords f x c l = reflectRecords f x (f l.sum) l := by
-  induction l generalizing c with
-  | nil => simp
-  | cons v l ih =>
-    have hle : f v + listMinHeight f l ≤ f (v :: l).sum := by
-      rw [List.sum_cons, map_add]
-      exact add_le_add_right (listMinHeight_le_apply_sum l) (f v)
-    have hmin : min (f v + listMinHeight f l) c =
-        min (f v + listMinHeight f l) (f (v :: l).sum) := by
-      rw [min_eq_left (hle.trans hc), min_eq_left hle]
-    have htail : f l.sum ≤ c - f v := by
-      rw [List.sum_cons, map_add] at hc
-      exact le_sub_iff_add_le'.mpr hc
-    have hsum : f (v :: l).sum - f v = f l.sum := by
-      rw [List.sum_cons, map_add, add_sub_cancel_left]
-    by_cases h : 0 < min (f v + listMinHeight f l) c
-    · rw [reflectRecords_cons_of_pos h, reflectRecords_cons_of_pos (hmin ▸ h), hmin, ih htail,
-        hsum]
-    · rw [reflectRecords_cons_of_nonpos (not_lt.mp h),
-        reflectRecords_cons_of_nonpos (hmin ▸ not_lt.mp h), ih htail, hsum]
-
 /-- Any cap at or above the endpoint height gives the same capped reflection as capping at the
 endpoint height. -/
 theorem cappedReflection_eq_of_apply_endpoint_le {c : 𝕜} (p : PLPath 𝕜 V)
@@ -222,15 +199,6 @@ theorem cappedReflection_eq_of_apply_endpoint_le {c : 𝕜} (p : PLPath 𝕜 V)
     cappedReflection f x c p = cappedReflection f x (f p.endpoint) p := by
   rw [endpoint_def] at hc
   rw [cappedReflection, cappedReflection, endpoint_def, reflectRecords_of_apply_sum_le hc]
-
-/-- When the minimal height equals the final height, no record strictly increases, so record
-reflection leaves the segment list unchanged for every cap. -/
-theorem reflectRecords_of_listMinHeight_eq_apply_sum (c : 𝕜) {l : List V}
-    (hl : listMinHeight f l = f l.sum) :
-    reflectRecords f x c l = l := by
-  rcases le_total c (f l.sum) with hc | hc
-  · exact reflectRecords_of_le_listMinHeight (hc.trans_eq hl.symm)
-  · rw [reflectRecords_of_apply_sum_le hc, ← hl, reflectRecords_of_le_listMinHeight le_rfl]
 
 /-- When the minimal height equals the endpoint height, capped reflection fixes the path for every
 cap. -/
