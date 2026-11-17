@@ -187,6 +187,14 @@ theorem polarFactor_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSp
     rw [T.polarFactor_apply_of_mem_ker (LinearMap.mem_ker.2 ((e₁ : F →L[𝕜] F').map_eq_zero_iff
       e₁.injective |>.1 hx)), map_zero]
 
+/-- Precomposing with a linear isometric equivalence precomposes the polar factor: the polar
+factor of `T e` is `U e`. -/
+@[simp]
+theorem polarFactor_comp_linearIsometryEquiv {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace 𝕜 E'] [CompleteSpace E'] (e : E' ≃ₗᵢ[𝕜] E) :
+    (T ∘L (e : E' →L[𝕜] E)).polarFactor = T.polarFactor ∘L (e : E' →L[𝕜] E) := by
+  simpa using polarFactor_conj (LinearIsometryEquiv.refl 𝕜 F) e.symm T
+
 /-- The polar factor of the zero operator is zero. -/
 @[simp]
 theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=
