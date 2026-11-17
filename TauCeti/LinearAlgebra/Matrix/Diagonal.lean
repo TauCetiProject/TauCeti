@@ -141,13 +141,12 @@ theorem submatrix_mul_of_commute_diagonal {t : ι → k} {c : k} [DecidablePred 
         N.submatrix (Subtype.val : {i : ι // t i = c} → ι) f := by
   ext a b
   simp only [submatrix_apply, Matrix.mul_apply]
-  rw [← Finset.sum_subtype (Finset.univ.filter fun i : ι => t i = c) (by simp)
-    (fun i => M a.1 i * N i (f b))]
-  symm
-  refine Fintype.sum_subset fun i hi => ?_
-  simp only [Finset.mem_univ, Finset.mem_filter, true_and]
-  by_contra hne
-  exact hi (by rw [apply_eq_zero_of_commute_diagonal hM (a.2.trans_ne (Ne.symm hne)), zero_mul])
+  -- `Matrix.toBlock_mul_eq_add` requires `[CommRing]` and subtype columns; split the sum directly.
+  rw [← Fintype.sum_subtype_add_sum_subtype (fun i => t i = c)]
+  have hzero : ∑ i : {i : ι // ¬t i = c}, M a.1 i.1 * N i.1 (f b) = 0 :=
+    Finset.sum_eq_zero fun i _ => by
+      rw [apply_eq_zero_of_commute_diagonal hM (a.2.trans_ne (Ne.symm i.2)), zero_mul]
+  rw [hzero, add_zero]
 
 end Commute
 
@@ -195,22 +194,29 @@ theorem det_submatrix_commutatorElement_of_commute_diagonal {ι k : Type*} [Fint
     ((((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix
       (Subtype.val : {i : ι // t i = c} → ι)
       (Subtype.val : {i : ι // t i = c} → ι))).det = 1 := by
-  have hdet_inv : ∀ {G : (Matrix ι ι k)ˣ}, Commute (Matrix.diagonal t) (G : Matrix ι ι k) →
-      ((G : Matrix ι ι k).submatrix (Subtype.val : {i : ι // t i = c} → ι)
-          (Subtype.val : {i : ι // t i = c} → ι)).det *
-        (((G⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix
-          (Subtype.val : {i : ι // t i = c} → ι)
-          (Subtype.val : {i : ι // t i = c} → ι)).det = 1 := fun {G} hG => by
-    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hG, ← Units.val_mul, mul_inv_cancel,
-      Units.val_one, submatrix_one _ Subtype.val_injective, det_one]
-  rw [commutatorElement_def, Units.val_mul, Units.val_mul, Units.val_mul,
-    Matrix.mul_assoc, Matrix.mul_assoc,
-    submatrix_mul_of_commute_diagonal hA,
-    submatrix_mul_of_commute_diagonal hB,
-    submatrix_mul_of_commute_diagonal hA.units_inv_right,
-    det_mul, det_mul, det_mul,
-    mul_left_comm _ _ (((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix _ _).det,
-    ← mul_assoc, hdet_inv hA, hdet_inv hB, mul_one]
+  let block (M : Matrix ι ι k) :=
+    M.submatrix (Subtype.val : {i : ι // t i = c} → ι) (Subtype.val : {i : ι // t i = c} → ι)
+  have hdet_mul {M N : Matrix ι ι k} (hM : Commute (Matrix.diagonal t) M) :
+      (block (M * N)).det = (block M).det * (block N).det := by
+    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hM]
+  have hdet_inv {G : (Matrix ι ι k)ˣ} (hG : Commute (Matrix.diagonal t) (G : Matrix ι ι k)) :
+      (block G).det * (block ((G⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det = 1 := by
+    rw [← hdet_mul hG, ← Units.val_mul, mul_inv_cancel, Units.val_one]
+    simp [block, submatrix_one _ Subtype.val_injective]
+  have hval : ((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k) =
+      (A : Matrix ι ι k) * ((B : Matrix ι ι k) *
+        (((A⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k) *
+          ((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k))) := by
+    simp [commutatorElement_def, Matrix.mul_assoc]
+  calc (block ((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det
+      = (block A).det * ((block B).det *
+          ((block ((A⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det *
+            (block ((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det)) := by
+        rw [hval, hdet_mul hA, hdet_mul hB, hdet_mul hA.units_inv_right]
+    _ = ((block A).det * (block ((A⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det) *
+          ((block B).det * (block ((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k)).det) := by
+        ac_rfl
+    _ = 1 := by rw [hdet_inv hA, hdet_inv hB, mul_one]
 
 end TauCeti
 

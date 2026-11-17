@@ -335,8 +335,10 @@ theorem prod_Iic_mul_inv_finRotate_symm {G : Type*} [CommGroup G] {n : ℕ} {η 
   | succ m =>
     cases k using Fin.cases with
     | zero =>
-      rw [Fin.finRotate_symm_zero, ← bot_eq_zero, Finset.Iic_bot, ← Fin.top_eq_last,
-        Finset.Iic_top, Finset.prod_singleton, bot_eq_zero, hη, inv_one, mul_one]
+      rw [Fin.finRotate_symm_zero]
+      have h0 : Finset.Iic (0 : Fin (m + 1)) = {0} := by ext j; simp
+      have hlast : Finset.Iic (Fin.last m) = Finset.univ := by ext j; simp [Fin.le_last]
+      simp [h0, hlast, hη]
     | succ k =>
       have hIic : Finset.Iic k.succ = insert k.succ (Finset.Iic k.castSucc) := by
         ext j

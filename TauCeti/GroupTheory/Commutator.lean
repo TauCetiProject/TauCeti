@@ -171,17 +171,7 @@ multiplies `a` on the left by `⁅b, a⁆ ^ m`, for instance when `⁅b, a⁆` i
 theorem _root_.Commute.pow_mul_mul_inv_pow_eq_commutatorElement_pow_mul {a b : G}
     (hb : Commute b ⁅b, a⁆) (m : ℕ) :
     b ^ m * a * (b ^ m)⁻¹ = ⁅b, a⁆ ^ m * a := by
-  have hstep : b * a * b⁻¹ = ⁅b, a⁆ * a := by
-    rw [commutatorElement_def]; group
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    calc b ^ (m + 1) * a * (b ^ (m + 1))⁻¹
-        = b * (b ^ m * a * (b ^ m)⁻¹) * b⁻¹ := by rw [pow_succ', mul_inv_rev]; group
-      _ = b * (⁅b, a⁆ ^ m * a) * b⁻¹ := by rw [ih]
-      _ = ⁅b, a⁆ ^ m * (b * a * b⁻¹) := by
-          rw [← mul_assoc b, (hb.pow_right m).eq, mul_assoc, mul_assoc, ← mul_assoc b]
-      _ = ⁅b, a⁆ ^ (m + 1) * a := by rw [hstep, ← mul_assoc, ← pow_succ]
+  rw [hb.commutatorElement_pow_left m, commutatorElement_def, inv_mul_cancel_right]
 
 /-- **Conjugating a power in nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central, conjugating `b ^ n` by `a ^ k` multiplies it

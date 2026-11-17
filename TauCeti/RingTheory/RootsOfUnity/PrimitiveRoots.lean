@@ -60,6 +60,8 @@ when quantum binomial coefficients are evaluated at such a `q`.
   unity, a nonzero element with one `n`-th root has exactly `n` of them.
 * `IsPrimitiveRoot.ncard_setOf_pow_eq_one`: in the presence of a primitive `n`-th root of unity,
   `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
+* `IsPrimitiveRoot.injective_fin_pow_mul`: for a primitive `n`-th root of unity `ζ` and `μ ≠ 0`,
+  `k ↦ ζ ^ (k : ℕ) * μ` is injective on `Fin n`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
 
@@ -135,6 +137,15 @@ theorem _root_.IsPrimitiveRoot.ncard_setOf_pow_eq_one {n : ℕ} {ζ : R} (hζ : 
     ext x
     simp [mem_nthRootsFinset (Nat.pos_of_ne_zero hn)]
   rw [h, Set.ncard_coe_finset, hζ.card_nthRootsFinset]
+
+/-- For a primitive `n`-th root of unity `ζ` in a cancellative commutative monoid with zero and a
+nonzero `μ`, the map `k ↦ ζ ^ (k : ℕ) * μ` on `Fin n` is injective. -/
+theorem _root_.IsPrimitiveRoot.injective_fin_pow_mul {M₀ : Type*} [CommMonoidWithZero M₀]
+    [IsCancelMulZero M₀] {n : ℕ} {ζ : M₀} (hζ : IsPrimitiveRoot ζ n) {μ : M₀} (hμ : μ ≠ 0) :
+    Function.Injective fun k : Fin n => ζ ^ (k : ℕ) * μ := fun k₁ k₂ hk =>
+  Fin.ext (hζ.injOn_pow_mul hμ
+    (Finset.mem_coe.mpr (Finset.mem_range.mpr k₁.isLt))
+    (Finset.mem_coe.mpr (Finset.mem_range.mpr k₂.isLt)) hk)
 
 /-- If `q²` is a primitive `l`-th root of unity with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`: for
 even `l`, `q^l = (q²)^(l/2) = -1`, while for odd `l` the exponent `l(l+1)` is a multiple of

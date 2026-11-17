@@ -189,11 +189,8 @@ relation `⁅A, B⁆ = ζ • 1`. -/
 theorem commutator_conj_eq_smul_one {ζ : α} {A B : specialUnitaryGroup n α}
     (hAB : (↑⁅A, B⁆ : Matrix n n α) = ζ • 1) (u : specialUnitaryGroup n α) :
     (↑⁅u * A * u⁻¹, u * B * u⁻¹⁆ : Matrix n n α) = ζ • 1 := by
-  have h : ⁅u * A * u⁻¹, u * B * u⁻¹⁆ = u * ⁅A, B⁆ * u⁻¹ := by
-    rw [← MulAut.conj_apply u A, ← MulAut.conj_apply u B, ← MulAut.conj_apply u ⁅A, B⁆,
-      ← map_commutatorElement]
-  rw [h, Submonoid.coe_mul, Submonoid.coe_mul, hAB, Matrix.mul_smul, Matrix.smul_mul,
-    Matrix.mul_one, coe_mul_coe_inv]
+  rw [← conjugate_commutatorElement, Submonoid.coe_mul, Submonoid.coe_mul, hAB,
+    Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, coe_mul_coe_inv]
 
 open scoped commutatorElement in
 /-- If `B₀` and `B` both satisfy `⁅A₀, -⁆ = ζ • 1` in `specialUnitaryGroup n α`, then `A₀`

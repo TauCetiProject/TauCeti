@@ -133,16 +133,7 @@ theorem center_le_range_toSL :
   intro A hA
   rw [mem_range_toSL_iff]
   obtain ⟨r, hr, hrA⟩ := SpecialLinearGroup.mem_center_iff.mp hA
-  rw [← hrA]
-  rcases isEmpty_or_nonempty n with hn | hn
-  · exact mem_unitaryGroup_iff'.mpr (Subsingleton.elim _ _)
-  have hnorm : ‖r‖ = 1 := by
-    rw [← pow_eq_one_iff_of_nonneg (norm_nonneg r) (Fintype.card_ne_zero (α := n)), ← norm_pow,
-      hr, norm_one]
-  rw [scalar_apply, diagonal_mem_unitary, Pi.mem_unitary_iff]
-  exact fun _ => Unitary.mem_iff_star_mul_self.mpr <| by
-    rw [RCLike.star_def, RCLike.conj_mul, hnorm]
-    simp
+  exact hrA ▸ (mem_specialUnitaryGroup_iff.mp (scalar_mem hr)).1
 
 /-- **The projective special unitary group.** Over `ℝ` or `ℂ`, the class in `PSL(n, 𝕜)` of a
 matrix of `SL(n, 𝕜)` lies in the range `PSU(n)` of `SU(n)` exactly when the matrix is unitary. -/

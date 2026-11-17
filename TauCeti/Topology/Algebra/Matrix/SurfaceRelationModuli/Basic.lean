@@ -358,6 +358,58 @@ private theorem eq_const_of_pow_card_subtype_eq_one {r : ℕ} {ζ : ℂ} (hζ : 
     huniv.symm ▸ Finset.mem_univ i
   simpa using hi
 
+/-- If `w * u * w⁻¹` has underlying matrix `diagonal d`, then any `y ∈ SU(r)` commuting with `u`
+conjugates to a matrix commuting with `diagonal d`. -/
+private theorem commute_diagonal_conj_of_commute {r : ℕ} {d : Fin r → ℂ}
+    {u w y : Matrix.specialUnitaryGroup (Fin r) ℂ}
+    (hw : ((w * u * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
+      diagonal d)
+    (hy : Commute u y) :
+    Commute (diagonal d)
+      ((w * y * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
+  have hc : Commute (w * u * w⁻¹) (w * y * w⁻¹) := by
+    simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+      hy.map (MulAut.conj w).toMonoidHom
+  dsimp only [Commute, SemiconjBy]
+  rw [← hw, ← Submonoid.coe_mul, ← Submonoid.coe_mul]
+  exact congrArg Subtype.val hc.eq
+
+/-- If every entry of a tuple `x : Fin g → SU(r) × SU(r)` commutes with `diagonal d`, then the
+ordered commutator product of `x` has determinant `1` on the eigenblock `{i // d i = d i₀}`. -/
+private theorem det_submatrix_commutatorProd_eq_one {r g : ℕ} {d : Fin r → ℂ} (i₀ : Fin r)
+    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
+    (hcomm : ∀ j, Commute (diagonal d) ((x j).1 : Matrix (Fin r) (Fin r) ℂ) ∧
+      Commute (diagonal d) ((x j).2 : Matrix (Fin r) (Fin r) ℂ)) :
+    ((((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod :
+        Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ).submatrix
+      (Subtype.val : {i : Fin r // d i = d i₀} → Fin r)
+      (Subtype.val : {i : Fin r // d i = d i₀} → Fin r)).det = 1 := by
+  let toMat : Matrix.specialUnitaryGroup (Fin r) ℂ →* Matrix (Fin r) (Fin r) ℂ :=
+    (Matrix.specialUnitaryGroup (Fin r) ℂ).subtype
+  have hunit : ∀ a b : Matrix.specialUnitaryGroup (Fin r) ℂ,
+      toMat ⁅a, b⁆ = ((⁅toMat.toHomUnits a, toMat.toHomUnits b⁆ :
+        (Matrix (Fin r) (Fin r) ℂ)ˣ) : Matrix (Fin r) (Fin r) ℂ) := fun a b => by
+    rw [← map_commutatorElement, MonoidHom.coe_toHomUnits]
+  have hcomm_list : ∀ M ∈ (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).map toMat,
+      Commute (diagonal d) M := by
+    rintro M hM
+    obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hM
+    obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+    have h1 : Commute (diagonal d) ((toMat.toHomUnits (x j).1 : (Matrix (Fin r) (Fin r) ℂ)ˣ) :
+        Matrix (Fin r) (Fin r) ℂ) := (hcomm j).1
+    have h2 : Commute (diagonal d) ((toMat.toHomUnits (x j).2 : (Matrix (Fin r) (Fin r) ℂ)ˣ) :
+        Matrix (Fin r) (Fin r) ℂ) := (hcomm j).2
+    rw [hunit, commutatorElement_def, Units.val_mul, Units.val_mul, Units.val_mul]
+    exact ((h1.mul_right h2).mul_right h1.units_inv_right).mul_right h2.units_inv_right
+  rw [← Submonoid.coe_subtype (Matrix.specialUnitaryGroup (Fin r) ℂ), map_list_prod,
+    det_submatrix_list_prod_of_commute_diagonal _ hcomm_list]
+  refine List.prod_eq_one fun a ha => ?_
+  obtain ⟨M, hM, rfl⟩ := List.mem_map.mp ha
+  obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hM
+  obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+  rw [hunit]
+  exact det_submatrix_commutatorElement_of_commute_diagonal (hcomm j).1 (hcomm j).2
+
 /-- **Centrality of stabilizers on `relationSet`.** When `ζ` is a primitive `r`-th root of unity,
 every `u ∈ SU(r)` commuting with all entries of a solution `x ∈ relationSet r ζ g` lies in the
 center of `SU(r)`. No positivity assumption on `r` or `g` is needed: for `r = 0`, `SU(0)` is
@@ -369,75 +421,40 @@ theorem relationSet_stabilizer_central {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
     u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
   rcases Nat.eq_zero_or_pos r with rfl | hr
   · exact Subsingleton.elim u 1 ▸ Subgroup.one_mem _
+  -- Diagonalize `u` inside `SU(r)` and transport `x` by the same conjugation.
   obtain ⟨w, z, hw⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_diagonal u
   let u' : Matrix.specialUnitaryGroup (Fin r) ℂ := w * u * w⁻¹
   let x' := ConjAct.toConjAct w • x
   let d : Fin r → ℂ := fun i => (z i : ℂ)
-  have hcomm_d : ∀ {y : Matrix.specialUnitaryGroup (Fin r) ℂ}, Commute u y →
-      Commute (diagonal d) ((w * y * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ) := by
-    intro y hy
-    have hc : Commute u' (w * y * w⁻¹) := by
-      simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
-        hy.map (MulAut.conj w).toMonoidHom
-    dsimp only [Commute, SemiconjBy]
-    rw [← hw, ← Submonoid.coe_mul, ← Submonoid.coe_mul]
-    exact congrArg Subtype.val hc.eq
+  have hcomm_x' : ∀ j, Commute (diagonal d) ((x' j).1 : Matrix (Fin r) (Fin r) ℂ) ∧
+      Commute (diagonal d) ((x' j).2 : Matrix (Fin r) (Fin r) ℂ) := fun j =>
+    ⟨by simpa only [x', Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul] using
+        commute_diagonal_conj_of_commute hw (hu j).1,
+     by simpa only [x', Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul] using
+        commute_diagonal_conj_of_commute hw (hu j).2⟩
+  -- Restrict the commutator relation for `x'` to the eigenblock `{i // d i = d i₀}`.
   let i₀ : Fin r := ⟨0, hr⟩
-  have hdet1 : ((((List.ofFn fun j => ⁅(x' j).1, (x' j).2⁆).prod :
-        Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ).submatrix
-      (Subtype.val : {i : Fin r // d i = d i₀} → Fin r)
-      (Subtype.val : {i : Fin r // d i = d i₀} → Fin r)).det = 1 := by
-    let toMat : Matrix.specialUnitaryGroup (Fin r) ℂ →* Matrix (Fin r) (Fin r) ℂ :=
-      (Matrix.specialUnitaryGroup (Fin r) ℂ).subtype
-    have hx'1 : ∀ j, (x' j).1 = w * (x j).1 * w⁻¹ := fun j => by
-      simp only [x', Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul]
-    have hx'2 : ∀ j, (x' j).2 = w * (x j).2 * w⁻¹ := fun j => by
-      simp only [x', Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul]
-    have hcomm_list : ∀ M ∈ (List.ofFn fun j => ⁅(x' j).1, (x' j).2⁆).map toMat,
-        Commute (diagonal d) M := by
-      rintro M hM
-      obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hM
-      obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
-      have hc : Commute u ⁅(x j).1, (x j).2⁆ := by
-        rw [commutatorElement_def]
-        exact (((hu j).1.mul_right (hu j).2).mul_right (hu j).1.inv_right).mul_right
-          (hu j).2.inv_right
-      have hcj : (w * ⁅(x j).1, (x j).2⁆ * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) =
-          ⁅(x' j).1, (x' j).2⁆ := by
-        rw [hx'1, hx'2, ← MulAut.conj_apply w (x j).1, ← MulAut.conj_apply w (x j).2,
-          ← MulAut.conj_apply w ⁅(x j).1, (x j).2⁆, map_commutatorElement]
-      exact hcj ▸ hcomm_d hc
-    rw [← Submonoid.coe_subtype (Matrix.specialUnitaryGroup (Fin r) ℂ), map_list_prod,
-      det_submatrix_list_prod_of_commute_diagonal _ hcomm_list]
-    refine List.prod_eq_one fun a ha => ?_
-    obtain ⟨M, hM, rfl⟩ := List.mem_map.mp ha
-    obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hM
-    obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
-    have h1 : Commute (diagonal d) ((toMat.toHomUnits (x' j).1 : (Matrix (Fin r) (Fin r) ℂ)ˣ) :
-        Matrix (Fin r) (Fin r) ℂ) := by
-      rw [MonoidHom.coe_toHomUnits, Submonoid.coe_subtype, hx'1]
-      exact hcomm_d (hu j).1
-    have h2 : Commute (diagonal d) ((toMat.toHomUnits (x' j).2 : (Matrix (Fin r) (Fin r) ℂ)ˣ) :
-        Matrix (Fin r) (Fin r) ℂ) := by
-      rw [MonoidHom.coe_toHomUnits, Submonoid.coe_subtype, hx'2]
-      exact hcomm_d (hu j).2
-    have hmap : toMat ⁅(x' j).1, (x' j).2⁆ =
-        ((⁅toMat.toHomUnits (x' j).1, toMat.toHomUnits (x' j).2⁆ :
-          (Matrix (Fin r) (Fin r) ℂ)ˣ) : Matrix (Fin r) (Fin r) ℂ) := by
-      rw [← map_commutatorElement, MonoidHom.coe_toHomUnits]
-    rw [hmap]
-    exact det_submatrix_commutatorElement_of_commute_diagonal h1 h2
+  have hdet1 := det_submatrix_commutatorProd_eq_one i₀ hcomm_x'
   have hx' : x' ∈ relationSet r ζ g := conjAct_smul_mem_relationSet (ConjAct.toConjAct w) hx
   rw [mem_relationSet_iff.mp hx', submatrix_smul, Pi.smul_apply, Pi.smul_apply,
     submatrix_one _ Subtype.val_injective, det_smul, det_one, mul_one] at hdet1
+  -- Primitivity of `ζ` forces the eigenblock to be all of `Fin r`, so `u'` is scalar (central).
   have hu'_center : u' ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) :=
     Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar
       (by rw [hw, scalar_apply]; exact congrArg diagonal (funext
         (eq_const_of_pow_card_subtype_eq_one hζ i₀ hdet1)))
+  -- Conjugate back from `u' = w * u * w⁻¹` to `u`.
   have hu_eq : u = w⁻¹ * u' * w := by simp [u', mul_assoc]
   rw [hu_eq, Subgroup.mem_center_iff.mp hu'_center w⁻¹, inv_mul_cancel_right]
   exact hu'_center
+
+/-- Simultaneous conjugation of a family of pairs by a central element is trivial. -/
+private theorem toConjAct_smul_eq_self_of_mem_center {G ι : Type*} [Group G] {u : G}
+    (hu : u ∈ Subgroup.center G) (x : ι → G × G) :
+    ConjAct.toConjAct u • x = x :=
+  funext fun j => Prod.ext
+    (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+    (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
 
 /-- **Exact conjugation stabilizers on `relationSet`.** When `IsPrimitiveRoot ζ r`, an element of
 `SU(r)` fixes `x ∈ relationSet r ζ g` under simultaneous conjugation if and only if it lies in the
@@ -448,10 +465,8 @@ theorem conjAct_toConjAct_smul_eq_self_iff_mem_center {r : ℕ} {ζ : ℂ}
     (hx : x ∈ relationSet r ζ g) (u : Matrix.specialUnitaryGroup (Fin r) ℂ) :
     ConjAct.toConjAct u • x = x ↔
       u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
-  refine ⟨fun h => relationSet_stabilizer_central hζ hx fun j => ?_, fun hu => funext fun j =>
-    Prod.ext
-      (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
-      (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])⟩
+  refine ⟨fun h => relationSet_stabilizer_central hζ hx fun j => ?_,
+    fun hu => toConjAct_smul_eq_self_of_mem_center hu x⟩
   have hj1 := congrArg Prod.fst (congrFun h j)
   have hj2 := congrArg Prod.snd (congrFun h j)
   simp only [Pi.smul_apply, Prod.smul_fst, Prod.smul_snd, ConjAct.toConjAct_smul,
@@ -471,9 +486,7 @@ noncomputable instance instMulActionQuotientCenterRelationSet (r : ℕ) (ζ : �
       ext x : 2
       simp only [φ, MonoidHom.comp_apply, MulAction.toPermHom_apply, MulAction.toPerm_apply,
         MulEquiv.coe_toMonoidHom, Equiv.Perm.coe_one, id_eq, conjAct_smul_relationSet_coe]
-      exact funext fun j => Prod.ext
-        (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
-        (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+      exact toConjAct_smul_eq_self_of_mem_center hu x.1
 
 /-- A coset `QuotientGroup.mk u` in `SU(r) ⧸ center(SU(r))` acts on `relationSet r ζ g` by
 simultaneous conjugation by `u`. -/

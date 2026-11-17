@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 public import TauCeti.Topology.Algebra.Matrix.SurfaceRelationModuli.Basic
-import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.Algebra.Star.Unitary
 import TauCeti.GroupTheory.GroupAction.ConjAct
-import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Genus-one twisted `SU(r)` surface commutator relation moduli
@@ -18,8 +14,9 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 This file studies the genus-one (`g = 1`) twisted `SU(r)` commutator relation moduli
 `TauCeti.SpecialUnitary.relationModuli r ζ 1`, proving nonemptiness whenever `ζ ^ r = 1` via the
 clock-and-shift pair `(Matrix.specialUnitaryGroup.clock hζ, Matrix.specialUnitaryGroup.shift r)` in
-`SU(r)`, uniqueness up to `SU(r)`-conjugation in the coprime case `IsPrimitiveRoot ζ r`, and
-genus-one consequences and non-coprime counterexamples.
+`SU(r)`, uniqueness up to `SU(r)`-conjugation in the coprime case `IsPrimitiveRoot ζ r` via
+`Matrix.specialUnitaryGroup.exists_conj_eq_clock_shift`, and genus-one consequences and
+non-coprime counterexamples.
 
 ## Main results
 
@@ -69,269 +66,19 @@ theorem nonempty_relationModuli_one {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
     Nonempty (relationModuli r ζ 1) :=
   (nonempty_relationSet_one hζ).map relationModuliMk
 
-/-- If `diagonal z * B₁ = ζ • (B₁ * diagonal z)` with `B₁ ∈ SU(r)`, `1 ≤ r`, and
-`IsPrimitiveRoot ζ r`, the diagonal entries `z` are a permutation of `ζ ^ k * μ` (`μ ≠ 0`). -/
-private theorem exists_perm_pow_eq_of_mul_eq_smul_mul {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ}
-    (hζ : IsPrimitiveRoot ζ r) (z : Fin r → Circle) (B₁ : Matrix.specialUnitaryGroup (Fin r) ℂ)
-    (hrel : diagonal (fun i => (z i : ℂ)) * (B₁ : Matrix (Fin r) (Fin r) ℂ) =
-      ζ • ((B₁ : Matrix (Fin r) (Fin r) ℂ) * diagonal (fun i => (z i : ℂ)))) :
-    ∃ (σ : Equiv.Perm (Fin r)) (μ : ℂ), μ ≠ 0 ∧ ∀ k : Fin r, (z (σ k) : ℂ) = ζ ^ (k : ℕ) * μ := by
-  have hstep : ∀ j : Fin r, ∃ i : Fin r, (z i : ℂ) = ζ * (z j : ℂ) := fun j => by
-    have hcol : ∃ i : Fin r, (B₁ : Matrix (Fin r) (Fin r) ℂ) i j ≠ 0 := by
-      by_contra! hall
-      have hB₁U : (B₁ : Matrix (Fin r) (Fin r) ℂ) ∈ unitary (Matrix (Fin r) (Fin r) ℂ) :=
-        (mem_specialUnitaryGroup_iff.mp B₁.2).1
-      have hunit := congrArg (fun M : Matrix (Fin r) (Fin r) ℂ => M j j)
-        (Unitary.mem_iff.mp hB₁U).1
-      simp [Matrix.mul_apply, hall] at hunit
-    obtain ⟨i, hij⟩ := hcol
-    have hent := congrArg (fun M : Matrix (Fin r) (Fin r) ℂ => M i j) hrel
-    rw [diagonal_mul, Matrix.smul_apply, mul_diagonal, smul_eq_mul] at hent
-    refine ⟨i, sub_eq_zero.mp ((mul_eq_zero.mp ?_).resolve_right hij)⟩
-    linear_combination hent
-  let i₀ : Fin r := ⟨0, hr⟩
-  let μ : ℂ := (z i₀ : ℂ)
-  have hμ : μ ≠ 0 := Circle.coe_ne_zero (z i₀)
-  have hpow : ∀ m : ℕ, ∃ i : Fin r, (z i : ℂ) = ζ ^ m * μ := fun m => by
-    induction m with
-    | zero => exact ⟨i₀, by simp [μ]⟩
-    | succ m ih =>
-      obtain ⟨j, hj⟩ := ih
-      obtain ⟨i, hi⟩ := hstep j
-      exact ⟨i, by rw [hi, hj, pow_succ', mul_assoc]⟩
-  choose g hg using fun k : Fin r => hpow (k : ℕ)
-  have hg_inj : Function.Injective g := fun k₁ k₂ hk => by
-    have hgk : ζ ^ (k₁ : ℕ) * μ = ζ ^ (k₂ : ℕ) * μ := by rw [← hg k₁, hk, hg k₂]
-    exact Fin.ext (hζ.injOn_pow_mul hμ
-      (Finset.mem_coe.mpr (Finset.mem_range.mpr k₁.isLt))
-      (Finset.mem_coe.mpr (Finset.mem_range.mpr k₂.isLt)) hgk)
-  exact ⟨Equiv.ofBijective g (Finite.injective_iff_bijective.mp hg_inj), μ, hμ, hg⟩
-
-/-- Any pair `(A, B)` in `SU(r)` with `⁅A, B⁆ = ζ • 1` (`1 ≤ r`, `IsPrimitiveRoot ζ r`) can be
-conjugated in `SU(r)` so that `A = diagonal (fun k => ζ ^ (k : ℕ) * μ)` for some `μ ≠ 0`. -/
-private theorem exists_conj_first_eq_clock {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
-    (A B : Matrix.specialUnitaryGroup (Fin r) ℂ)
-    (hAB : (↑⁅A, B⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1) :
-    ∃ (u : Matrix.specialUnitaryGroup (Fin r) ℂ) (μ : ℂ), μ ≠ 0 ∧
-      ((u * A * u⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-        diagonal (fun k : Fin r => ζ ^ (k : ℕ) * μ) := by
-  obtain ⟨u₁, z, hu₁⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_diagonal A
-  let A₁ := u₁ * A * u₁⁻¹
-  let B₁ := u₁ * B * u₁⁻¹
-  have hrel₁ : diagonal (fun i => (z i : ℂ)) * (B₁ : Matrix (Fin r) (Fin r) ℂ) =
-      ζ • ((B₁ : Matrix (Fin r) (Fin r) ℂ) * diagonal (fun i => (z i : ℂ))) := by
-    rw [← hu₁]
-    exact Matrix.specialUnitaryGroup.coe_commutatorElement_eq_smul_one_iff.mp
-      (Matrix.specialUnitaryGroup.commutator_conj_eq_smul_one hAB u₁)
-  obtain ⟨σ, μ, hμ, hσ⟩ := exists_perm_pow_eq_of_mul_eq_smul_mul hr hζ z B₁ hrel₁
-  let PU : unitaryGroup (Fin r) ℂ := permutationUnitary σ⁻¹
-  obtain ⟨c, hc⟩ := exists_circle_smul_mem_specialUnitaryGroup PU
-  let u₂ : Matrix.specialUnitaryGroup (Fin r) ℂ := ⟨(c : ℂ) • (PU : Matrix (Fin r) (Fin r) ℂ), hc⟩
-  refine ⟨u₂ * u₁, μ, hμ, ?_⟩
-  have hconjU : (PU * unitaryTorusHom (Fin r) z * PU⁻¹ : unitaryGroup (Fin r) ℂ) =
-      unitaryTorusHom (Fin r) (fun k => z (σ k)) := by
-    have h := unitaryTorusNormalizer_mul_unitaryTorusHom_mul_inv
-      ⟨permutationUnitary σ⁻¹, permutationUnitary_mem_normalizer σ⁻¹⟩ z
-    rw [unitaryTorusNormalizerPerm_permutationUnitary] at h
-    exact h.trans (congrArg (unitaryTorusHom (Fin r))
-      (funext fun i => by rw [Equiv.Perm.inv_def, Equiv.symm_symm]))
-  calc (((u₂ * u₁) * A * (u₂ * u₁)⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ)
-      = (u₂ : Matrix (Fin r) (Fin r) ℂ) * A₁ * star (u₂ : Matrix (Fin r) (Fin r) ℂ) := by
-        simp only [A₁, _root_.mul_inv_rev, Submonoid.coe_mul, Matrix.specialUnitaryGroup.coe_inv,
-          Matrix.mul_assoc]
-    _ = (PU : Matrix (Fin r) (Fin r) ℂ) * diagonal (fun i => (z i : ℂ)) *
-          star (PU : Matrix (Fin r) (Fin r) ℂ) := by
-        rw [hu₁]
-        exact Unitary.smul_mul_mul_star_smul c.coe_mem_unitary
-          (PU : Matrix (Fin r) (Fin r) ℂ) _
-    _ = diagonal (fun k : Fin r => ζ ^ (k : ℕ) * μ) := by
-        rw [← coe_unitaryTorusHom, ← Unitary.coe_star, Unitary.star_eq_inv, ← Submonoid.coe_mul,
-          ← Submonoid.coe_mul, hconjU, coe_unitaryTorusHom]
-        exact congrArg diagonal (funext hσ)
-
-/-- If `A₀` has distinct diagonal entries `ζ ^ k * c₁` and both `B₀` and `B` satisfy
-`⁅A₀, -⁆ = ζ • 1`, then `(B * B₀⁻¹)⁻¹` is diagonal of determinant `1`. -/
-private theorem exists_torus_of_commutator_eq {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
-    {A₀ B₀ B : Matrix.specialUnitaryGroup (Fin r) ℂ} {c₁ : Circle}
-    (hA₀ : (A₀ : Matrix (Fin r) (Fin r) ℂ) = diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)))
-    (hrel₀ : (↑⁅A₀, B₀⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1)
-    (hrel : (↑⁅A₀, B⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1) :
-    ∃ η : Fin r → Circle, (∏ j : Fin r, η j = 1) ∧
-      (((B * B₀⁻¹)⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-        diagonal (fun j => (η j : ℂ)) := by
-  let C : Matrix.specialUnitaryGroup (Fin r) ℂ := B * B₀⁻¹
-  have hcommC : Commute (diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)))
-      (C : Matrix (Fin r) (Fin r) ℂ) := by
-    rw [← hA₀]
-    exact (Matrix.specialUnitaryGroup.commute_mul_inv_of_commutator_eq_smul_one hrel₀ hrel).map
-      (Matrix.specialUnitaryGroup (Fin r) ℂ).subtype
-  have hinj : Function.Injective (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)) := fun k₁ k₂ hk =>
-    Fin.ext (hζ.injOn_pow_mul (Circle.coe_ne_zero c₁)
-      (Finset.mem_coe.mpr (Finset.mem_range.mpr k₁.isLt))
-      (Finset.mem_coe.mpr (Finset.mem_range.mpr k₂.isLt)) hk)
-  have hCdiag : (⟨(C⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ),
-      specialUnitaryGroup_le_unitaryGroup (C⁻¹).2⟩ : unitaryGroup (Fin r) ℂ) ∈
-      unitaryTorus (Fin r) := by
-    rw [mem_unitaryTorus_iff, Matrix.specialUnitaryGroup.coe_inv]
-    exact (isDiag_of_commute_diagonal hinj hcommC).conjTranspose
-  obtain ⟨η, hη⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hCdiag
-  have hη_mat : ((C⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-      diagonal (fun j => (η j : ℂ)) := by
-    simpa [coe_unitaryTorusHom] using (congrArg Subtype.val hη).symm
-  have hprod_coe : Circle.coeHom (∏ j : Fin r, η j) = 1 := by
-    rw [map_prod]
-    simpa only [Circle.coeHom_apply] using
-      det_diagonal.symm.trans (hη_mat ▸ (mem_specialUnitaryGroup_iff.mp (C⁻¹).2).2)
-  exact ⟨η, (map_eq_one_iff Circle.coeHom Circle.coe_injective).mp hprod_coe, hη_mat⟩
-
-/-- Conjugating the rescaled cyclic shift `B₀ = c₂ • permutationUnitary (finRotate r)` by a
-rescaled diagonal matrix `D = α • unitaryTorusHom δ` multiplies `B₀` on the left by
-`diagonal (fun k => δ k * (δ ((finRotate r).symm k))⁻¹)`. -/
-private theorem conj_shift_eq_torus_mul {r : ℕ} {B₀ C : Matrix.specialUnitaryGroup (Fin r) ℂ}
-    {c₂ α : Circle} {δ η : Fin r → Circle}
-    (hB₀ : (B₀ : Matrix (Fin r) (Fin r) ℂ) =
-      (c₂ : ℂ) • ((permutationUnitary (finRotate r) : unitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ))
-    (hδ : ∀ k : Fin r, δ k * (δ ((finRotate r).symm k))⁻¹ = η k)
-    (hη_mat : ((C⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-      diagonal (fun j => (η j : ℂ)))
-    (hα : (α : ℂ) • (unitaryTorusHom (Fin r) δ : Matrix (Fin r) (Fin r) ℂ) ∈
-      Matrix.specialUnitaryGroup (Fin r) ℂ) :
-    (⟨(α : ℂ) • (unitaryTorusHom (Fin r) δ : Matrix (Fin r) (Fin r) ℂ), hα⟩ :
-        Matrix.specialUnitaryGroup (Fin r) ℂ) * B₀ *
-      (⟨(α : ℂ) • (unitaryTorusHom (Fin r) δ : Matrix (Fin r) (Fin r) ℂ), hα⟩)⁻¹ =
-      C⁻¹ * B₀ := by
-  let DU : unitaryGroup (Fin r) ℂ := unitaryTorusHom (Fin r) δ
-  let QU : unitaryGroup (Fin r) ℂ := permutationUnitary (finRotate r)
-  let D : Matrix.specialUnitaryGroup (Fin r) ℂ := ⟨(α : ℂ) • (DU : Matrix _ _ ℂ), hα⟩
-  have hconjQ : (QU * DU⁻¹ * QU⁻¹ : unitaryGroup (Fin r) ℂ) =
-      unitaryTorusHom (Fin r) (fun k => (δ ((finRotate r).symm k))⁻¹) := by
-    have hinv : DU⁻¹ = unitaryTorusHom (Fin r) (fun k => (δ k)⁻¹) := (map_inv _ _).symm
-    have h := unitaryTorusNormalizer_mul_unitaryTorusHom_mul_inv
-      ⟨permutationUnitary (finRotate r), permutationUnitary_mem_normalizer (finRotate r)⟩
-      (fun k => (δ k)⁻¹)
-    rw [unitaryTorusNormalizerPerm_permutationUnitary, ← hinv] at h
-    exact h
-  have hcomm_mat : (↑⁅D, B₀⁆ : Matrix (Fin r) (Fin r) ℂ) =
-      ((C⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
-    rw [Matrix.specialUnitaryGroup.coe_commutatorElement_of_eq_smul α.coe_mem_unitary
-        c₂.coe_mem_unitary (U := (DU : Matrix _ _ ℂ)) (V := (QU : Matrix _ _ ℂ)) rfl hB₀,
-      hη_mat, ← coe_unitaryTorusHom, ← funext hδ, ← Pi.mul_def, map_mul, ← hconjQ,
-      Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul, ← Unitary.star_eq_inv,
-      Unitary.coe_star, ← Unitary.star_eq_inv, Unitary.coe_star]
-    dsimp only [DU]
-    simp only [Matrix.mul_assoc]
-  have hcomm : ⁅D, B₀⁆ = C⁻¹ := Subtype.ext hcomm_mat
-  calc D * B₀ * D⁻¹ = ⁅D, B₀⁆ * B₀ := by group
-    _ = C⁻¹ * B₀ := by rw [hcomm]
-
-/-- If `(A₀, B)` and `(A₀, B₀)` both solve `⁅A₀, -⁆ = ζ • 1` with the standard clock matrix `A₀`
-and shift matrix `B₀`, some diagonal element of `SU(r)` conjugates `(A₀, B)` to `(A₀, B₀)`. -/
-private theorem exists_diag_conj_second_eq {r : ℕ} {ζ : ℂ}
-    (hζ : IsPrimitiveRoot ζ r) {A₀ B₀ B : Matrix.specialUnitaryGroup (Fin r) ℂ} {c₁ c₂ : Circle}
-    (hA₀ : (A₀ : Matrix (Fin r) (Fin r) ℂ) = diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)))
-    (hB₀ : (B₀ : Matrix (Fin r) (Fin r) ℂ) =
-      (c₂ : ℂ) • ((permutationUnitary (finRotate r) : unitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ))
-    (hrel₀ : (↑⁅A₀, B₀⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1)
-    (hrel : (↑⁅A₀, B⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1) :
-    ∃ D : Matrix.specialUnitaryGroup (Fin r) ℂ,
-      D * A₀ * D⁻¹ = A₀ ∧ D * B * D⁻¹ = B₀ := by
-  let C : Matrix.specialUnitaryGroup (Fin r) ℂ := B * B₀⁻¹
-  obtain ⟨η, hη_prod, hη_mat⟩ := exists_torus_of_commutator_eq hζ hA₀ hrel₀ hrel
-  obtain ⟨δ, hδ⟩ := exists_mul_inv_finRotate_symm_eq_iff.mpr hη_prod
-  obtain ⟨α, hα⟩ := exists_circle_smul_mem_specialUnitaryGroup (unitaryTorusHom (Fin r) δ)
-  let D : Matrix.specialUnitaryGroup (Fin r) ℂ :=
-    ⟨(α : ℂ) • (unitaryTorusHom (Fin r) δ : Matrix (Fin r) (Fin r) ℂ), hα⟩
-  have hdiag_comm : ∀ {X : Matrix.specialUnitaryGroup (Fin r) ℂ} (f : Fin r → ℂ),
-      (X : Matrix (Fin r) (Fin r) ℂ) = diagonal f → D * X = X * D := fun f hX => Subtype.ext <| by
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, hX]
-    dsimp only [D]
-    rw [coe_unitaryTorusHom, smul_mul_assoc, mul_smul_comm, diagonal_mul_diagonal,
-      diagonal_mul_diagonal]
-    exact congrArg (α.1 • ·) (congrArg diagonal (funext fun _ => mul_comm _ _))
-  have hDA : D * A₀ * D⁻¹ = A₀ := mul_inv_eq_iff_eq_mul.mpr (hdiag_comm _ hA₀)
-  have hDC : D * C = C * D := Commute.inv_right_iff.mp (hdiag_comm _ hη_mat)
-  have hDB₀ : D * B₀ * D⁻¹ = C⁻¹ * B₀ := conj_shift_eq_torus_mul hB₀ hδ hη_mat hα
-  refine ⟨D, hDA, ?_⟩
-  calc D * B * D⁻¹ = D * (C * B₀) * D⁻¹ := by simp [C]
-    _ = C * (D * B₀ * D⁻¹) := by simp only [← mul_assoc, hDC]
-    _ = B₀ := by rw [hDB₀, mul_inv_cancel_left]
-
-/-- For `1 ≤ r` and `IsPrimitiveRoot ζ r`, any solution `(A, B)` of `⁅A, B⁆ = ζ • 1` in `SU(r)` is
-simultaneously conjugate in `SU(r)` to the standard clock-and-shift pair `(A₀, B₀)`. -/
-private theorem exists_conj_eq_clock_shift_pair {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ}
-    (hζ : IsPrimitiveRoot ζ r) {A₀ B₀ : Matrix.specialUnitaryGroup (Fin r) ℂ} {c₁ c₂ : Circle}
-    (hA₀ : (A₀ : Matrix (Fin r) (Fin r) ℂ) = diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)))
-    (hB₀ : (B₀ : Matrix (Fin r) (Fin r) ℂ) =
-      (c₂ : ℂ) • ((permutationUnitary (finRotate r) : unitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ))
-    (hrel₀ : (↑⁅A₀, B₀⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1)
-    (A B : Matrix.specialUnitaryGroup (Fin r) ℂ)
-    (hAB : (↑⁅A, B⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1) :
-    ∃ w : Matrix.specialUnitaryGroup (Fin r) ℂ,
-      w * A * w⁻¹ = A₀ ∧ w * B * w⁻¹ = B₀ := by
-  have : NeZero r := ⟨by omega⟩
-  have hζ0 : ζ ≠ 0 := hζ.ne_zero (by omega)
-  obtain ⟨u₁, μ, _, hu₁⟩ := exists_conj_first_eq_clock hr hζ A B hAB
-  let A₁ := u₁ * A * u₁⁻¹
-  let B₁ := u₁ * B * u₁⁻¹
-  have hrel₁ : (↑⁅A₁, B₁⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 :=
-    Matrix.specialUnitaryGroup.commutator_conj_eq_smul_one hAB u₁
-  have hratio : (μ / (c₁ : ℂ)) ^ r = 1 := by
-    have hdetA₁ := (mem_specialUnitaryGroup_iff.mp A₁.2).2
-    have hdetA₀ := (mem_specialUnitaryGroup_iff.mp A₀.2).2
-    rw [hu₁, det_diagonal, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
-      Fintype.card_fin] at hdetA₁
-    rw [hA₀, det_diagonal, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
-      Fintype.card_fin] at hdetA₀
-    have hprod_ne : (∏ k : Fin r, ζ ^ (k : ℕ)) ≠ 0 :=
-      Finset.prod_ne_zero_iff.mpr fun _ _ => pow_ne_zero _ hζ0
-    rw [div_pow, mul_left_cancel₀ hprod_ne (hdetA₁.trans hdetA₀.symm),
-      div_self (pow_ne_zero _ (Circle.coe_ne_zero c₁))]
-  obtain ⟨m, _, hm⟩ := hζ.eq_pow_of_pow_eq_one hratio
-  have hA₂ : B₁ ^ m * A₁ * (B₁ ^ m)⁻¹ = A₀ := Subtype.ext <| by
-    rw [Matrix.specialUnitaryGroup.conj_pow_eq_inv_pow_smul hrel₁ m, hu₁, hA₀, ← diagonal_smul]
-    refine congrArg diagonal (funext fun k => ?_)
-    have hμ_eq : μ = ζ ^ m * (c₁ : ℂ) := by rw [hm, div_mul_cancel₀ _ (Circle.coe_ne_zero c₁)]
-    rw [Pi.smul_apply, smul_eq_mul, hμ_eq, inv_pow]
-    linear_combination (ζ ^ (k : ℕ) * (c₁ : ℂ)) * inv_mul_cancel₀ (pow_ne_zero m hζ0)
-  have hB₁_self : B₁ ^ m * B₁ * (B₁ ^ m)⁻¹ = B₁ := by group
-  have hrel₂ : (↑⁅A₀, B₁⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
-    simpa only [hA₂, hB₁_self] using
-      Matrix.specialUnitaryGroup.commutator_conj_eq_smul_one hrel₁ (B₁ ^ m)
-  obtain ⟨D, hDA₀, hDB₁⟩ := exists_diag_conj_second_eq hζ hA₀ hB₀ hrel₀ hrel₂
-  refine ⟨D * B₁ ^ m * u₁, ?_, ?_⟩
-  · calc (D * B₁ ^ m * u₁) * A * (D * B₁ ^ m * u₁)⁻¹
-        = D * (B₁ ^ m * A₁ * (B₁ ^ m)⁻¹) * D⁻¹ := by simp only [A₁, _root_.mul_inv_rev, mul_assoc]
-      _ = A₀ := by rw [hA₂, hDA₀]
-  · calc (D * B₁ ^ m * u₁) * B * (D * B₁ ^ m * u₁)⁻¹
-        = D * (B₁ ^ m * B₁ * (B₁ ^ m)⁻¹) * D⁻¹ := by simp only [B₁, _root_.mul_inv_rev, mul_assoc]
-      _ = B₀ := by rw [hB₁_self, hDB₁]
-
 /-- **Genus-one twisted `SU(r)` moduli is a single point.** When `ζ` is a primitive `r`-th root of
 unity, `relationModuli r ζ 1` is nonempty and a subsingleton. No positivity assumption on `r` is
 needed: for `r = 0`, `SU(0)` is trivial and `Matrix (Fin 0) (Fin 0) ℂ` is a subsingleton. -/
 theorem relationModuli_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
     Nonempty (relationModuli r ζ 1) ∧ Subsingleton (relationModuli r ζ 1) := by
   refine ⟨nonempty_relationModuli_one hζ.pow_eq_one, ?_⟩
-  rcases Nat.eq_zero_or_pos r with rfl | hr
-  · exact subsingleton_relationModuli_of_le_one (Nat.zero_le _) ζ 1
-  let A₀ := Matrix.specialUnitaryGroup.clock hζ.pow_eq_one
-  let B₀ := Matrix.specialUnitaryGroup.shift r
-  obtain ⟨c₁, hA₀'⟩ := Matrix.specialUnitaryGroup.exists_coe_clock hζ.pow_eq_one
-  obtain ⟨c₂, hB₀⟩ := Matrix.specialUnitaryGroup.exists_coe_shift r
-  have hA₀ : (A₀ : Matrix (Fin r) (Fin r) ℂ) =
-      diagonal (fun k : Fin r => ζ ^ (k : ℕ) * (c₁ : ℂ)) := by
-    rw [hA₀', ← diagonal_smul]
-    exact congrArg diagonal (funext fun _ => mul_comm _ _)
-  have hrel₀ : (↑⁅A₀, B₀⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 :=
-    Matrix.specialUnitaryGroup.commutator_clock_shift hζ.pow_eq_one
-  let x₀ : relationSet r ζ 1 := ⟨fun _ => (A₀, B₀), mem_relationSet_one_iff.mpr hrel₀⟩
+  let x₀ : relationSet r ζ 1 :=
+    ⟨fun _ => (Matrix.specialUnitaryGroup.clock hζ.pow_eq_one, Matrix.specialUnitaryGroup.shift r),
+      mem_relationSet_one_iff.mpr
+        (Matrix.specialUnitaryGroup.commutator_clock_shift hζ.pow_eq_one)⟩
   have heq : ∀ x : relationSet r ζ 1, relationModuliMk x = relationModuliMk x₀ := fun x => by
-    obtain ⟨w, hwA, hwB⟩ := exists_conj_eq_clock_shift_pair hr hζ hA₀ hB₀ hrel₀
-      (x.1 0).1 (x.1 0).2 (mem_relationSet_one_iff.mp x.2)
+    obtain ⟨w, hwA, hwB⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_clock_shift hζ
+      (mem_relationSet_one_iff.mp x.2)
     have hconj : ConjAct.toConjAct w • x = x₀ := Subtype.ext <| funext fun j => by
       rw [Fin.eq_zero j]
       exact Prod.ext
