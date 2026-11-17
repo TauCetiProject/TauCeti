@@ -189,13 +189,21 @@ theorem toLinearEquiv_evalEquiv [Module.IsReflexive R M] :
     (evalEquiv R L M).toLinearEquiv = Module.evalEquiv R M :=
   (rfl)
 
+@[simp]
+theorem toLieModuleHom_evalEquiv [Module.IsReflexive R M] :
+    (evalEquiv R L M : M →ₗ⁅R,L⁆ Dual R (Dual R M)) = dualEval R L M :=
+  (rfl)
+
 /-- A functional applied to the inverse of evaluation is evaluation at that functional. -/
 @[simp]
 theorem apply_evalEquiv_symm_apply [Module.IsReflexive R M] (Φ : Dual R (Dual R M))
     (φ : Dual R M) : φ ((evalEquiv R L M).symm Φ) = Φ φ := by
   rw [← evalEquiv_apply R L M, (evalEquiv R L M).apply_symm_apply]
 
-variable (N) in
+section DualMapEquiv
+
+variable (N)
+
 /-- **Transposition identifies the morphisms `M → N` with the morphisms `N* → M*`** when `N` is
 reflexive. The inverse sends `g : N* → M*` to the morphism `M → N` corresponding to
 `m ↦ (φ ↦ g φ m)` under `N ≃ N**`. -/
@@ -234,5 +242,7 @@ theorem dualMapEquiv_symm_dualMap [Module.IsReflexive R N] (f : M →ₗ⁅R,L�
 theorem dualMap_dualMapEquiv_symm [Module.IsReflexive R N] (g : Dual R N →ₗ⁅R,L⁆ Dual R M) :
     ((dualMapEquiv R L M N).symm g).dualMap = g :=
   (dualMapEquiv R L M N).apply_symm_apply g
+
+end DualMapEquiv
 
 end TauCeti.LieModule
