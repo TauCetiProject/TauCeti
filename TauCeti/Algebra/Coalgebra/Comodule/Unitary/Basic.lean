@@ -158,9 +158,8 @@ theorem Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet {A M ι : Type*
     simp [b', coefficientMatrix_apply, hcoord]
   have hb' : coefficientMatrix (C := A) b' ∈
       unitary (Matrix (Fin (Fintype.card ι)) (Fin (Fintype.card ι)) A) := by
-    rw [hmat, Unitary.mem_iff, ← map_star, ← map_mul, ← map_mul, (Unitary.mem_iff.mp hb).1,
-      (Unitary.mem_iff.mp hb).2, map_one]
-    exact ⟨rfl, rfl⟩
+    rw [hmat]
+    exact Unitary.map_mem (Matrix.reindexStarAlgEquiv ℂ A e) hb
   exact ⟨Fintype.card ι, Transport b'.equivFun,
     by rwa [b'.coefficientMatrix_basisFun_transport_equivFun], e i, e j,
     by simp [b'.coefficientMatrix_basisFun_transport_equivFun, hmat]⟩
