@@ -26,8 +26,7 @@ class QueueControlRouting(unittest.TestCase):
         setup = next(i for i,s in enumerate(steps) if s.get('name') == 'Prepare pinned shared tools')
         run = next(i for i,s in enumerate(steps) if s.get('run') == 'python3 scripts/finalize_batch.py')
         self.assertLess(setup, run)
-        pin = steps[setup]['with']['tools-ref']
-        self.assertRegex(pin, r'^[0-9a-f]{40}$')
+        self.assertEqual(steps[setup]['with']['tools-ref'], 'main')
         self.assertNotIn('queue-finalization-tools', str(steps))
 
     def test_smoke_dispatch_cannot_disable_reusable_manual_pr_selection(self):

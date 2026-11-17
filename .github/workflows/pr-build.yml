@@ -188,14 +188,14 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+          tools-ref: main
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1332,7 +1332,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1696,14 +1696,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+          tools-ref: main
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

@@ -25,10 +25,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          tools-ref: main
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -57,35 +57,9 @@ jobs:
       - name: Infrastructure policy unit tests
         run: bash scripts/run-infrastructure-tests.sh
 
-      - name: Prepare isolated staging contract fixture
+      - name: Lint scope and stack-policy regression tests
         run: |
-          mkdir staging-contracts
-          cp -a .github staging-contracts/.github
-          cp -a scripts staging-contracts/scripts
-          cp tauceti.toml staging-contracts/tauceti.toml
-
-      - name: Prepare the deployed staging tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
-        with:
-          tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
-          project-directory: staging-contracts
-
-      - name: Check staging lint scope with the deployed implementation
-        run: |
-          git show HEAD:scripts/test_lint_scope.py > staging-contracts/scripts/test_lint_scope.py
-          python3 staging-contracts/scripts/test_lint_scope.py
-
-      # The no-stack bot intentionally uses a different Tools release.
-      # Test that exact implementation after the general suite, without another runner.
-      - name: Prepare stack-policy tools at the production pin
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@70275ec56d5b1cead0acd03c785bb145353e2fc6
-        with:
-          tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 70275ec56d5b1cead0acd03c785bb145353e2fc6
-          project-directory: .
-      - name: Stack-policy regression tests
-        run: |
+          python3 scripts/test_lint_scope.py
           python3 scripts/test_stack_policy.py
           python3 scripts/test_stack_checkpoint_restore.py
 
@@ -97,10 +71,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          tools-ref: main
           project-directory: .
       - name: Install the native checkout fixture sandbox
         run: |
@@ -151,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiTools
-          ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          ref: main
           path: staging-cache-tools
           sparse-checkout: |
             tauceti_tools/assets/scripts/bulk-unpack-cache.py
@@ -172,10 +146,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          tools-ref: main
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:

@@ -7,8 +7,10 @@ Other policy readers go through that action; every explicit reference must agree
 Run with: python3 scripts/test_workflow_pins.py
 """
 
+import json
 import pathlib
 import re
+import tomllib
 import unittest
 
 import yaml
@@ -71,20 +73,23 @@ def covers(sparse_entry, path):
 
 
 class WorkflowPins(unittest.TestCase):
-    def test_stack_policy_regressions_use_production_tools(self):
-        pins = []
-        for workflow, job, name in (
-            ("stack-policy.yml", "enforce", "Prepare pinned shared tools"),
-            ("infrastructure-tests.yml", "python-tests", "Prepare stack-policy tools at the production pin"),
-        ):
-            with self.subTest(workflow=workflow):
-                step = next(s for s in workflow_jobs(workflow)[job]["steps"] if s.get("name") == name)
-                self.assertEqual(step["with"]["tools-repository"], "TauCetiProject/TauCetiTools")
-                match = re.fullmatch(
-                    r"TauCetiProject/TauCetiTools/\.github/actions/setup@([0-9a-f]{40})", step["uses"])
-                self.assertIsNotNone(match)
-                pins.extend((match[1], step["with"]["tools-ref"]))
-        self.assertEqual(len(set(pins)), 1, "production and regression tests select different stack-policy tools")
+    def test_every_tools_reference_is_main(self):
+        # TauCeti runs TauCetiTools main everywhere: no pinned revision anywhere.
+        texts = {path: path.read_text() for path in sorted(
+            [*WORKFLOW_DIR.glob("*.y*ml"), *ROOT.glob(".github/actions/*/action.y*ml"), *ROOT.glob("scripts/*.sh")])}
+        found = 0
+        for path, text in texts.items():
+            refs = re.findall(r"TauCetiProject/TauCetiTools(?:/\.github/(?:actions|workflows)/[^@\s'\"]+)?@([^\s'\"#]+)", text)
+            refs += re.findall(r"(?m)^\s*tools[-_]ref:\s*['\"]?([^\s'\"#]+)", text)
+            refs += re.findall(r"(?m)^\s*repository:\s*TauCetiProject/TauCetiTools\n\s*ref:\s*([^\s#]+)", text)
+            found += len(refs)
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertEqual(set(refs) - {"main"}, set())
+        self.assertGreater(found, 0)
+        for name in ("tauceti.toml", ".tauceti/ci-source.toml"):
+            with self.subTest(path=name):
+                self.assertEqual(tomllib.loads((ROOT / name).read_text())["tools"]["tools"]["ref"], "main")
+        self.assertNotIn("harness_revision", json.loads((ROOT / ".tauceti/ci-source.json").read_text()))
 
     def test_reusable_calls_and_action_share_one_sha(self):
         pin = action_pin()
