@@ -217,25 +217,20 @@ theorem mem_range_unitaryTorusDualInclusion_iff {ν : Dual ℝ (unitaryLieAlgebr
   · intro h
     obtain ⟨H, rfl⟩ := (unitaryTracePairingEquiv ι).surjective ν
     rw [unitaryTracePairingEquiv_apply] at h ⊢
-    have hH : (H : Matrix ι ι ℂ)ᴴ = H := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian.eq
+    have hH : (H : Matrix ι ι ℂ).IsHermitian := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian
     -- A matrix commuting with every diagonal unitary matrix is diagonal.
     have hdiag : (H : Matrix ι ι ℂ).IsDiag := fun i j hij => by
-      let z : ι → Circle := Pi.mulSingle i (Circle.exp Real.pi)
       have hc := mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff.mp
-        (Representation.mem_stabilizer.mpr (h _ (unitaryTorusHom_mem_unitaryTorus z)))
+        (Representation.mem_stabilizer.mpr
+          (h _ (unitaryTorusHom_mem_unitaryTorus (Pi.mulSingle i (Circle.exp Real.pi)))))
       rw [coe_unitaryTorusHom] at hc
-      exact apply_eq_zero_of_commute_diagonal hc fun h => Circle.exp_pi_ne_one <| by
-        simpa [z, Pi.mulSingle_eq_of_ne hij.symm] using Circle.coe_inj.mp h
-    -- The diagonal entries of a Hermitian matrix are real.
-    have hre (k : ι) : (((H : Matrix ι ι ℂ) k k).re : ℂ) = (H : Matrix ι ι ℂ) k k := by
-      have h := congrFun₂ hH k k
-      rw [conjTranspose_apply, star_def] at h
-      exact conj_eq_iff_re.mp h
+      refine apply_eq_zero_of_commute_diagonal hc fun h => Circle.exp_pi_ne_one ?_
+      rwa [Circle.coe_inj, Pi.mulSingle_eq_same, Pi.mulSingle_eq_of_ne hij.symm] at h
     refine ⟨fun k => ((H : Matrix ι ι ℂ) k k).re, ?_⟩
     rw [unitaryTorusDualInclusion_apply]
     congr 1
-    refine Subtype.ext ?_
-    exact (congrArg diagonal (funext hre)).trans hdiag.diagonal_diag
+    -- The diagonal entries of a Hermitian matrix are real.
+    exact Subtype.ext <| (congrArg diagonal (funext hH.coe_re_apply_self)).trans hdiag.diagonal_diag
 
 /-- **The torus moment map on a coadjoint orbit through `𝔱*`**: the restriction to the torus of
 `Ad*_U ⟨diag(s), ·⟩` is the tuple of averages `∑ᵢ |Uₖᵢ|² sᵢ` of `s`, with the doubly stochastic
@@ -274,9 +269,18 @@ theorem range_unitaryTorusRestriction_unitaryCoadjointRepresentation_unitaryToru
       convexHull ℝ (Set.range fun σ : Equiv.Perm ι => s ∘ σ) := by
   rw [← range_re_diag_unitary_mul_diagonal_mul_star (𝕜 := ℂ)]
   simp_rw [unitaryTorusDualInclusion_apply, unitaryCoadjointRepresentation_unitaryTracePairing,
-    unitaryTorusRestriction_unitaryTracePairing, RCLike.re_to_complex, Unitary.coe_star]
-  -- The coercion `ℝ → ℂ` of `RCLike` is `Complex.ofReal` by definition.
-  rfl
+    unitaryTorusRestriction_unitaryTracePairing, RCLike.re_to_complex, Unitary.coe_star,
+    RCLike.ofReal_eq_complex_ofReal]
+
+/-- The entries of `diag(z) P`, for `P` the permutation matrix of `σ⁻¹`: row `k` has the single
+nonzero entry `z k`, in column `σ⁻¹ k`. -/
+theorem coe_unitaryTorusHom_mul_permutationUnitary_apply (z : ι → Circle) (σ : Equiv.Perm ι)
+    (k i : ι) :
+    ((unitaryTorusHom ι z * permutationUnitary σ : unitaryGroup ι ℂ) : Matrix ι ι ℂ) k i =
+      if i = σ⁻¹ k then (z k : ℂ) else 0 := by
+  rw [Submonoid.coe_mul, coe_unitaryTorusHom, coe_permutationUnitary, diagonal_mul,
+    Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_apply, Pi.single_apply, mul_ite, mul_one,
+    mul_zero]
 
 section Weyl
 
@@ -297,8 +301,7 @@ theorem unitaryTorusRestriction_image_normalizer_unitaryTorus (s : Fin n → ℝ
         s ∘ ⇑σ⁻¹ := by
     rw [unitaryTorusRestriction_unitaryCoadjointRepresentation_unitaryTorusDualInclusion]
     ext k
-    simp [diagonal_mul, Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, apply_ite,
-      Equiv.Perm.inv_def]
+    simp [coe_unitaryTorusHom_mul_permutationUnitary_apply, apply_ite]
   ext d
   constructor
   · rintro ⟨g, hg, rfl⟩
@@ -306,7 +309,8 @@ theorem unitaryTorusRestriction_image_normalizer_unitaryTorus (s : Fin n → ℝ
     exact ⟨σ⁻¹, (key z σ).symm⟩
   · rintro ⟨σ, rfl⟩
     refine ⟨permutationUnitary σ⁻¹, permutationUnitary_mem_normalizer σ⁻¹, ?_⟩
-    simpa using key 1 σ⁻¹
+    have h := key 1 σ⁻¹
+    rwa [map_one, one_mul, inv_inv] at h
 
 /-- **Kostant's convexity theorem for `U(n)`.** For `ν = ⟨diag(s), ·⟩ ∈ 𝔱*`, the image of the
 coadjoint orbit `K · ν` under the restriction to the Lie algebra of the diagonal torus is the convex

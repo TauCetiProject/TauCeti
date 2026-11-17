@@ -14,20 +14,27 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Coadjoint
+public import TauCeti.Algebra.Lie.SkewAdjoint.Star
+public import TauCeti.Algebra.Star.SelfAdjoint
+public import TauCeti.LinearAlgebra.Complex.Module
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # The unitary Lie algebra and the coadjoint orbits of `U(n)`
 
 The Lie algebra of the unitary group `U(n) = Matrix.unitaryGroup ι ℂ` is the real Lie algebra
-`𝔲(n)` of skew-Hermitian matrices, `Xᴴ = -X` (`TauCeti.unitaryLieAlgebra ι`). It is a real Lie
-subalgebra of `Matrix ι ι ℂ`, not a complex one, and multiplication by `-i` identifies it, as a real
-vector space, with the Hermitian matrices (`TauCeti.unitaryLieAlgebraEquivSelfAdjoint`). The group
-acts on it by conjugation, `Ad_U X = U X Uᴴ` (`TauCeti.unitaryAdjointRepresentation`), and on its
-dual by the dual action `(Ad*_U ν)(X) = ν (Ad_(U⁻¹) X)`
-(`TauCeti.unitaryCoadjointRepresentation`), as for the coadjoint representation of a Lie group.
-This is the matrix model of the Lie-group data: in the algebra coordinates of the general linear
-group, the Lie algebra of the unitary subgroup is the skew-Hermitian matrices
+`𝔲(n)` of skew-Hermitian matrices, `Xᴴ = -X` (`TauCeti.unitaryLieAlgebra ι`), the instance for
+matrices of the Lie subalgebra of skew-adjoint elements of a star algebra
+(`TauCeti.skewAdjoint.lieSubalgebra`). It is a real Lie subalgebra of `Matrix ι ι ℂ`, not a
+complex one, and multiplication by `-i` identifies it, as a real vector space, with the Hermitian
+matrices (`TauCeti.unitaryLieAlgebraEquivSelfAdjoint`, an instance of
+`TauCeti.skewAdjoint.negISMulEquiv`). The group acts on it by conjugation, `Ad_U X = U X Uᴴ`
+(`TauCeti.unitaryAdjointRepresentation`), and on its dual by the dual action
+`(Ad*_U ν)(X) = ν (Ad_(U⁻¹) X)` (`TauCeti.unitaryCoadjointRepresentation`), as for the coadjoint
+representation of a Lie group. This is the matrix model of the Lie-group data: in the algebra
+coordinates of the general linear group, the Lie algebra of the unitary subgroup is the
+skew-Hermitian matrices
 (`TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg`),
 and the tangent adjoint action of a unit is conjugation (`TauCeti.Lie.unitsLieAlgebraEquiv_Ad`).
 
@@ -91,55 +98,35 @@ variable (ι : Type*) [Fintype ι] [DecidableEq ι]
 skew-Hermitian matrices, `Xᴴ = -X`. It is the Lie algebra of the unitary group
 `Matrix.unitaryGroup ι ℂ`. -/
 def unitaryLieAlgebra : LieSubalgebra ℝ (Matrix ι ι ℂ) :=
-  { skewAdjoint.submodule ℝ (Matrix ι ι ℂ) with
-    lie_mem' := fun {X Y} hX hY => by
-      -- Membership in `skewAdjoint.submodule` unfolds to `star X = -X`.
-      change star X = -X at hX
-      change star Y = -Y at hY
-      change star (⁅X, Y⁆) = -⁅X, Y⁆
-      rw [Ring.lie_def, star_sub, star_mul, star_mul, hX, hY]
-      noncomm_ring }
+  skewAdjoint.lieSubalgebra ℝ (Matrix ι ι ℂ)
 
 variable {ι}
 
 theorem mem_unitaryLieAlgebra_iff {X : Matrix ι ι ℂ} : X ∈ unitaryLieAlgebra ι ↔ Xᴴ = -X :=
-  skewAdjoint.mem_iff
+  skewAdjoint.mem_lieSubalgebra.trans skewAdjoint.mem_iff
 
 @[simp]
 theorem conjTranspose_coe_unitaryLieAlgebra (X : unitaryLieAlgebra ι) :
     (X : Matrix ι ι ℂ)ᴴ = -X :=
   mem_unitaryLieAlgebra_iff.mp X.2
 
-/-- Multiplication by `i` maps a Hermitian matrix into `𝔲(n)`. -/
-theorem I_smul_mem_unitaryLieAlgebra {H : Matrix ι ι ℂ} (hH : IsSelfAdjoint H) :
-    I • H ∈ unitaryLieAlgebra ι := by
-  rw [mem_unitaryLieAlgebra_iff, conjTranspose_smul, hH.isHermitian.eq, star_def, conj_I, neg_smul]
-
 variable (ι) in
 /-- **`𝔲(n)` is `-i` times the Hermitian matrices**: `X ↦ -i X` is a real linear equivalence from
 the skew-Hermitian onto the Hermitian matrices, with inverse `K ↦ i K`. -/
 def unitaryLieAlgebraEquivSelfAdjoint :
-    unitaryLieAlgebra ι ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι ℂ) where
-  toFun X := ⟨-I • (X : Matrix ι ι ℂ), by
-    change star (-I • (X : Matrix ι ι ℂ)) = -I • (X : Matrix ι ι ℂ)
-    rw [star_eq_conjTranspose, conjTranspose_smul, conjTranspose_coe_unitaryLieAlgebra, star_def,
-      map_neg, conj_I, neg_neg, smul_neg, neg_smul]⟩
-  invFun K := ⟨I • (K : Matrix ι ι ℂ), I_smul_mem_unitaryLieAlgebra K.2⟩
-  map_add' X Y := Subtype.ext (smul_add _ _ _)
-  map_smul' c X := Subtype.ext (smul_comm _ c _)
-  left_inv X := Subtype.ext (by simp [smul_smul])
-  right_inv K := Subtype.ext (by simp [smul_smul])
+    unitaryLieAlgebra ι ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι ℂ) :=
+  skewAdjoint.negISMulEquiv
 
 @[simp]
 theorem coe_unitaryLieAlgebraEquivSelfAdjoint_apply (X : unitaryLieAlgebra ι) :
     (unitaryLieAlgebraEquivSelfAdjoint ι X : Matrix ι ι ℂ) = -I • (X : Matrix ι ι ℂ) :=
-  (rfl)
+  skewAdjoint.coe_negISMulEquiv_apply (A := Matrix ι ι ℂ) X
 
 @[simp]
 theorem coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply
     (K : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
     ((unitaryLieAlgebraEquivSelfAdjoint ι).symm K : Matrix ι ι ℂ) = I • (K : Matrix ι ι ℂ) :=
-  (rfl)
+  skewAdjoint.coe_negISMulEquiv_symm_apply (A := Matrix ι ι ℂ) K
 
 instance : FiniteDimensional ℝ (unitaryLieAlgebra ι) :=
   (unitaryLieAlgebraEquivSelfAdjoint ι).symm.finiteDimensional
@@ -189,17 +176,6 @@ theorem unitaryCoadjointRepresentation_apply_apply (U : unitaryGroup ι ℂ)
 
 /-! ### The trace pairing -/
 
-omit [DecidableEq ι] in
-/-- `tr(H X)` is purely imaginary for a Hermitian `H` and a skew-Hermitian `X`. -/
-private theorem re_trace_mul_eq_zero {H X : Matrix ι ι ℂ} (hH : Hᴴ = H) (hX : Xᴴ = -X) :
-    (H * X).trace.re = 0 := by
-  have h : star (H * X).trace = -(H * X).trace := by
-    rw [← trace_conjTranspose, conjTranspose_mul, hH, hX, Matrix.neg_mul, trace_neg,
-      trace_mul_comm]
-  have := congrArg re h
-  rw [star_def, conj_re, neg_re] at this
-  linarith
-
 variable (ι) in
 /-- The **trace pairing** `⟨H, X⟩ = -i tr(H X)` of a Hermitian matrix `H` with an element `X` of
 `𝔲(n)`. Its values are real (`TauCeti.ofReal_unitaryTracePairing_apply`), and it identifies the
@@ -222,20 +198,20 @@ skew-Hermitian `X`, namely `⟨H, X⟩`. -/
 theorem ofReal_unitaryTracePairing_apply (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ))
     (X : unitaryLieAlgebra ι) :
     (unitaryTracePairing ι H X : ℂ) = -I * ((H : Matrix ι ι ℂ) * X).trace := by
-  have h := re_trace_mul_eq_zero (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian.eq
-    (conjTranspose_coe_unitaryLieAlgebra X)
+  have h := IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg
+    (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian (conjTranspose_coe_unitaryLieAlgebra X)
+  rw [RCLike.re_to_complex] at h
   apply Complex.ext <;> simp [unitaryTracePairing_apply, h]
 
 /-- The trace pairing is nondegenerate: `⟨H, i H⟩ = tr(Hᴴ H)` vanishes only for `H = 0`. -/
 theorem unitaryTracePairing_injective : Function.Injective (unitaryTracePairing ι) := by
   refine (injective_iff_map_eq_zero _).mpr fun H hH => ?_
   have hHh : (H : Matrix ι ι ℂ)ᴴ = H := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian.eq
-  have h := ofReal_unitaryTracePairing_apply H ⟨I • (H : Matrix ι ι ℂ),
-    I_smul_mem_unitaryLieAlgebra (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ))⟩
-  rw [hH, LinearMap.zero_apply, ofReal_zero, Matrix.mul_smul, trace_smul, smul_eq_mul,
-    ← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul] at h
-  refine Subtype.ext (trace_conjTranspose_mul_self_eq_zero_iff.mp ?_)
-  rw [hHh, ← h]
+  have h := ofReal_unitaryTracePairing_apply H ((unitaryLieAlgebraEquivSelfAdjoint ι).symm H)
+  rw [hH, LinearMap.zero_apply, ofReal_zero, coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply] at h
+  -- `tr(Hᴴ H) = -i tr(H (i H)) = ⟨H, i H⟩ = 0`.
+  refine Subtype.ext (trace_conjTranspose_mul_self_eq_zero_iff.mp (Eq.trans ?_ h.symm))
+  simp [hHh, ← mul_assoc]
 
 variable (ι) in
 /-- **The trace pairing identifies the Hermitian matrices with `𝔲(n)*`**: `H ↦ ⟨H, ·⟩` is a real
@@ -269,9 +245,9 @@ theorem unitaryCoadjointRepresentation_unitaryTracePairing (U : unitaryGroup ι 
     ofReal_unitaryTracePairing_apply, coe_unitaryAdjointRepresentation_apply,
     ← Unitary.star_eq_inv, Unitary.coe_star, star_star]
   -- `tr(H Uᴴ X U) = tr(U H Uᴴ X)` by cyclicity of the trace.
-  congr 1
-  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, trace_mul_comm, ← Matrix.mul_assoc,
-    ← Matrix.mul_assoc]
+  simp only [← Matrix.mul_assoc]
+  rw [trace_mul_comm _ (U : Matrix ι ι ℂ)]
+  simp only [Matrix.mul_assoc]
 
 /-- **The coadjoint orbit of `⟨H, ·⟩` is the unitary conjugacy class of `H`**, read through the
 trace pairing. -/
@@ -303,28 +279,21 @@ theorem mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff
 
 /-! ### The infinitesimal coadjoint action and the Kirillov–Kostant–Souriau form -/
 
-/-- The commutator `ξ H - H ξ` of an element `ξ` of `𝔲(n)` with a Hermitian matrix `H` is
-Hermitian. -/
-theorem isSelfAdjoint_mul_sub_mul (ξ : unitaryLieAlgebra ι) {H : Matrix ι ι ℂ}
-    (hH : IsSelfAdjoint H) : IsSelfAdjoint ((ξ : Matrix ι ι ℂ) * H - H * ξ) := by
-  rw [IsSelfAdjoint, star_sub, star_mul, star_mul, hH.star_eq, star_eq_conjTranspose,
-    conjTranspose_coe_unitaryLieAlgebra]
-  noncomm_ring
-
 /-- **The infinitesimal coadjoint action is the commutator**: `⁅ξ, ⟨H, ·⟩⁆ = ⟨ξ H - H ξ, ·⟩` for
 `ξ ∈ 𝔲(n)`, where `ξ H - H ξ` is again Hermitian. -/
 theorem lie_unitaryTracePairing (ξ : unitaryLieAlgebra ι)
     (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
     ⁅ξ, unitaryTracePairing ι H⁆ = unitaryTracePairing ι
-      ⟨ξ * H - H * ξ, isSelfAdjoint_mul_sub_mul ξ H.2⟩ := by
+      ⟨ξ * H - H * ξ,
+        IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint H.2 (mem_unitaryLieAlgebra_iff.mp ξ.2)⟩ := by
   ext X
   apply Complex.ofReal_injective
   rw [Dual.lie_apply, ofReal_neg, ofReal_unitaryTracePairing_apply,
     ofReal_unitaryTracePairing_apply, LieSubalgebra.coe_bracket, Ring.lie_def]
   -- `tr(H X ξ) = tr(ξ H X)` by cyclicity of the trace.
-  rw [Matrix.mul_sub, Matrix.sub_mul, trace_sub, trace_sub, ← Matrix.mul_assoc,
-    ← Matrix.mul_assoc, trace_mul_comm (_ * (X : Matrix ι ι ℂ)) (ξ : Matrix ι ι ℂ),
-    ← Matrix.mul_assoc]
+  rw [Matrix.mul_sub, Matrix.sub_mul, trace_sub, trace_sub]
+  simp only [Matrix.mul_assoc]
+  rw [trace_mul_cycle' (H : Matrix ι ι ℂ) (X : Matrix ι ι ℂ) (ξ : Matrix ι ι ℂ)]
   ring
 
 /-- **The stabilizer of `⟨H, ·⟩` in `𝔲(n)` is the commutant of `H`**: `⁅ξ, ⟨H, ·⟩⁆ = 0` exactly
