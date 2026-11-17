@@ -135,14 +135,6 @@ theorem integral_uniformOn_finset [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
   exact fun _ hx ↦
     (integrable_dirac (by simp)).smul_measure (by simp [s.ne_empty_of_mem hx])
 
-variable [MeasurableSpace β]
-
-/-- Every function is almost everywhere measurable against a uniform law on a finite set. -/
-theorem aemeasurable_uniformOn_finset (s : Finset α) (f : α → β) :
-    AEMeasurable f (uniformOn (s : Set α)) := by
-  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset, ← Measure.sum_coe_finset]
-  exact aemeasurable_sum_measure_iff.2 fun _ ↦ aemeasurable_dirac.smul_measure _
-
 end Finset
 
 namespace Set
@@ -160,10 +152,13 @@ theorem integrable_uniformOn [SeminormedAddGroup E] (s : Set α) (f : α → E) 
 
 /-- Every function is almost everywhere measurable against `uniformOn`, including on infinite
 sets, where the measure is zero. -/
+@[simp, fun_prop]
 theorem aemeasurable_uniformOn [MeasurableSpace β] (s : Set α) (f : α → β) :
     AEMeasurable f (uniformOn s) := by
   by_cases hs : s.Finite
-  · simpa using hs.toFinset.aemeasurable_uniformOn_finset f
+  · rw [← hs.coe_toFinset, Finset.uniformOn_coe_finset_eq_uniformOfFinset,
+      Measure.uniformOfFinset, ← Measure.sum_coe_finset]
+    exact aemeasurable_sum_measure_iff.2 fun _ ↦ aemeasurable_dirac.smul_measure _
   · simp [(uniformOn_eq_zero).2 (Or.inl hs)]
 
 end Set
@@ -190,8 +185,7 @@ theorem map_uniformOn {f : α → β} {s : Set α} {t : Set β}
     (h : Set.BijOn f s t) : (uniformOn s).map f = uniformOn t := by
   by_cases hs : s.Finite
   · have ht : t.Finite := h.finite_iff_finite.mp hs
-    have hf : AEMeasurable f (uniformOn s) := by
-      simpa using Finset.aemeasurable_uniformOn_finset hs.toFinset f
+    have hf := s.aemeasurable_uniformOn f
     ext t' ht'
     have hinter : Set.BijOn f (s ∩ f ⁻¹' t') (t ∩ t') :=
       h.inter_mapsTo (fun _ hx ↦ hx) Set.inter_subset_right
@@ -294,7 +288,8 @@ theorem measureReal_map_uniformOn_finset_apply (s : Finset α) (f : α → β)
     ((uniformOn (s : Set α)).map f).real t =
       ((s.filter fun i ↦ f i ∈ t).card : ℝ) / s.card := by
   rw [← integral_indicator_one ht,
-    integral_map (s.aemeasurable_uniformOn_finset f) (by fun_prop), integral_uniformOn_finset]
+    integral_map (Set.aemeasurable_uniformOn (s : Set α) f) (by fun_prop),
+    integral_uniformOn_finset]
   simp [Set.indicator, sum_boole, div_eq_mul_inv, mul_comm]
 
 open Classical in
@@ -312,7 +307,8 @@ The labeling function need not be globally measurable. -/
 theorem ae_mem_image_map_uniformOn_finset [MeasurableSingletonClass β] (s : Finset α) (f : α → β) :
     ∀ᵐ x ∂(uniformOn (s : Set α)).map f, x ∈ s.image f := by
   classical
-  apply (ae_map_iff (s.aemeasurable_uniformOn_finset f) (s.image f).measurableSet).2
+  apply (ae_map_iff (Set.aemeasurable_uniformOn (s : Set α) f)
+    (s.image f).measurableSet).2
   rw [s.uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset,
     ae_finsetSum_measure_iff]
   intro i hi
@@ -353,7 +349,7 @@ theorem integral_map_uniformOn_finset [MeasurableSingletonClass β]
     (s : Finset α) (f : α → β) (g : β → E) :
     ∫ x, g x ∂(uniformOn (s : Set α)).map f =
       (s.card : ℝ)⁻¹ • ∑ i ∈ s, g (f i) := by
-  rw [integral_map (s.aemeasurable_uniformOn_finset f)
+  rw [integral_map (Set.aemeasurable_uniformOn (s : Set α) f)
     (Set.integrable_map_uniformOn (s : Set α) f g).aestronglyMeasurable,
     integral_uniformOn_finset]
 
@@ -368,7 +364,7 @@ theorem map_uniformOn_finset_singleton_ne_zero (s : Finset α) (f : α → β)
     0 < uniformOn (s : Set α) {i} := by simp [hi]
     _ ≤ uniformOn (s : Set α) (f ⁻¹' {f i}) := measure_mono (by simp)
     _ ≤ (uniformOn (s : Set α)).map f {f i} :=
-      Measure.le_map_apply (s.aemeasurable_uniformOn_finset f) _
+      Measure.le_map_apply (Set.aemeasurable_uniformOn (s : Set α) f) _
 
 end Finset
 

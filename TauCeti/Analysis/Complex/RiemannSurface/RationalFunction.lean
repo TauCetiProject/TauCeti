@@ -7,8 +7,7 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import Mathlib.Analysis.Meromorphic.FactorizedRational
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
 /-!
@@ -73,8 +72,6 @@ public noncomputable section
 
 open Filter Function OnePoint Polynomial Set Topology
 
-open scoped Manifold nonZeroDivisors
-
 namespace TauCeti.RiemannSurface.MeromorphicFunction
 
 /-! ### The coordinate and polynomials -/
@@ -87,8 +84,8 @@ def coordinate : MeromorphicFunction (OnePoint ℂ) where
   ne_infty' h := OnePoint.coe_ne_infty (0 : ℂ) (congrFun h ((0 : ℂ) : OnePoint ℂ))
 
 @[simp]
-theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x := by
-  simp [coordinate]
+theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x :=
+  (rfl)
 
 /-- The sphere coordinate is not the zero meromorphic function. -/
 @[simp]
@@ -177,19 +174,22 @@ private theorem meromorphicOrderAt_finitePartCoe_ne_top {f : MeromorphicFunction
     (meromorphicOrderAt_eq_top_iff.1 h)).exists
   exact hy.1 hy.2
 
-/-- The value at `y` of the finitely supported product `∏ᶠ u, (· - u) ^ d u`, as a finite
-product. -/
-private theorem finprod_sub_zpow_apply {d : ℂ → ℤ} (hd : d.support.Finite) (y : ℂ) :
-    (∏ᶠ u, (· - u) ^ d u) y = ∏ u ∈ hd.toFinset, (y - u) ^ d u :=
-  (congrFun (Function.FactorizedRational.finprod_eq_fun hd) y).trans <|
-    finprod_eq_prod_of_mulSupport_subset _ fun u hu ↦
-      hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
-
 /-- At a point `y` outside a finite set `s`, the product of the `(y - u) ^ n u` over `u ∈ s` does
 not vanish. -/
 private theorem prod_sub_zpow_ne_zero {s : Finset ℂ} (n : ℂ → ℤ) {y : ℂ} (hy : y ∉ s) :
     ∏ u ∈ s, (y - u) ^ n u ≠ 0 :=
   Finset.prod_ne_zero_iff.2 fun _ hu ↦ zpow_ne_zero _ (sub_ne_zero.2 fun h ↦ hy (h ▸ hu))
+
+/-- The product of the `(z - u) ^ n u` over a finite set of `u` is a nonzero meromorphic
+function. -/
+private theorem prod_coordinate_sub_zpow_ne_zero (s : Finset ℂ) (n : ℂ → ℤ) :
+    ∏ u ∈ s, (coordinate - algebraMap ℂ (MeromorphicFunction (OnePoint ℂ)) u) ^ n u ≠ 0 := by
+  -- It takes a nonzero value at a finite point outside the finite set.
+  obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
+  intro h
+  have := prod_coordinate_sub_zpow_apply s n hy
+  rw [h, coe_zero] at this
+  exact prod_sub_zpow_ne_zero n hy (coe_injective this).symm
 
 /-- If on `ℂ` the finite part of `f` is `∏ (z - u) ^ d(u)` times an analytic function `g`, away
 from a codiscrete set, then the quotient of `f` by the rational function `∏ (z - u) ^ d(u)` agrees
@@ -212,7 +212,7 @@ private theorem mul_inv_prod_coordinate_sub_zpow_apply {f : MeromorphicFunction 
       (inv_apply_of_eq_coe hφy (prod_sub_zpow_ne_zero d hy))]
     congr 1
     simp only [finitePartCoe] at hFy
-    rw [hFy, Pi.smul_apply', smul_eq_mul, finprod_sub_zpow_apply hd, ← hs]
+    rw [hFy, Pi.smul_apply', smul_eq_mul, FactorizedRational.finprod_apply_eq_prod hd, ← hs]
     field_simp [prod_sub_zpow_ne_zero d hy]
   refine apply_eq_of_tendsto (φ := fun y ↦ ↑(g (affineChart y))) ?_ ?_
   · rw [OnePoint.nhdsNE_coe_eq, tendsto_map'_iff]
@@ -242,12 +242,7 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   have hcoord : coordinate ∈ S :=
     AlgHom.mem_fieldRange.2 ⟨RatFunc.X, by simpa using ofRatFunc_algebraMap Polynomial.X⟩
   have hφS : φ ∈ S := prod_mem fun u _ ↦ zpow_mem (sub_mem hcoord (algebraMap_mem S u)) _
-  have hφne : φ ≠ 0 := by
-    obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
-    intro h
-    have : φ y = _ := prod_coordinate_sub_zpow_apply s d hy
-    rw [h, coe_zero] at this
-    exact prod_sub_zpow_ne_zero d hy (coe_injective this).symm
+  have hφne : φ ≠ 0 := prod_coordinate_sub_zpow_ne_zero s d
   -- The quotient `G = f / φ` agrees on `ℂ` with the analytic function `g` without zeros, so it is
   -- constant, and `f = G * φ` is rational.
   set G := f * φ⁻¹

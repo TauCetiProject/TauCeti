@@ -10,13 +10,14 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Polynomial.FieldDivision
+import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
 # Polynomial derivatives
 
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
-iterated derivatives after a linear change of variables, and controlling degrees of derivatives
-under coefficient maps.
+iterated derivatives and their values after a linear change of variables, and controlling degrees
+of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
@@ -45,6 +46,9 @@ Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a
 
 Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 `leadingCoeff p · leadingCoeff q · deg q`.
+
+In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
+vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
 -/
 
 public section
@@ -102,6 +106,21 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
     (k : ℕ) :
     derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
   simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
+
+/-- The `k`-th derivative of `p (a X + b)` at `x` is `a ^ k` times the `k`-th derivative of `p`
+at `a x + b`. -/
+theorem _root_.Polynomial.eval_iterate_derivative_comp_C_mul_X_add_C [CommSemiring R]
+    (p : R[X]) (a b x : R) (k : ℕ) :
+    (derivative^[k] (p.comp (C a * X + C b))).eval x =
+      a ^ k * (derivative^[k] p).eval (a * x + b) := by
+  simp only [iterate_derivative_comp_C_mul_X_add_C, eval_mul, eval_C, eval_comp, eval_add, eval_X]
+
+/-- The `k`-th derivative of `p (a X)` at `x` is `a ^ k` times the `k`-th derivative of `p` at
+`a x`. -/
+theorem _root_.Polynomial.eval_iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X])
+    (a x : R) (k : ℕ) :
+    (derivative^[k] (p.comp (C a * X))).eval x = a ^ k * (derivative^[k] p).eval (a * x) := by
+  simpa using p.eval_iterate_derivative_comp_C_mul_X_add_C a 0 x k
 
 /-- The derivative of the cubic `a (X - e₁)(X - e₂)(X - e₃)` at its root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`. -/
@@ -240,5 +259,13 @@ theorem coeff_mul_derivative_natDegree_add_natDegree_sub_one {R : Type*} [Semiri
   · rw [Nat.add_succ_sub_one, coeff_mul_add_eq_of_natDegree_le le_rfl
       ((natDegree_derivative_le q).trans_eq (by omega)), coeff_derivative, leadingCoeff,
       leadingCoeff, hq, Nat.cast_add_one, mul_assoc]
+
+/-- In positive characteristic `p`, every iterated ordinary derivative of order `k ≥ p` vanishes
+identically, since `p` divides `k !`. -/
+theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [CharP R p]
+    (hp : 0 < p) {k : ℕ} (hk : p ≤ k) (f : R[X]) :
+    derivative^[k] f = 0 := by
+  rw [iterate_derivative_eq_factorial_smul_sum, ← Nat.cast_smul_eq_nsmul R,
+    Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
 
 end Polynomial

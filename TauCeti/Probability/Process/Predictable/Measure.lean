@@ -22,6 +22,8 @@ space is the expected-square-energy space for Brownian integrands.
 The measure agrees with the ambient product measure on predictable sets. In particular,
 `(s,t] × A`, with `A` known at `s` and `t ≤ T`, has mass `(t-s) P(A)`. The initial-time
 slice has mass zero, and restricting to a shorter horizon commutes with trimming.
+Filtered measure-preserving sample maps preserve these predictable measures, even with
+different ambient measurable spaces.
 Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
 integrands' energies and norms with their ambient time-product counterparts; the dictionary
 lemmas below retain the predictable measurability hypothesis, since trimming does not preserve
@@ -58,6 +60,40 @@ theorem predictableMeasure_apply (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) (
     {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
     ℱ.predictableMeasure P T A = (timeMeasure T).prod P A := by
   rw [predictableMeasure_def, trim_measurableSet_eq _ hA]
+
+/-- A filtered measure-preserving sample map preserves finite-horizon predictable
+measures. The ambient spaces and the filtrations on its two sides may differ. -/
+theorem measurePreserving_prodMap_predictableMeasure {Ω' : Type*} {m' : MeasurableSpace Ω'}
+    (ℱ : Filtration ℝ≥0 m) (𝒢 : Filtration ℝ≥0 m')
+    {P : Measure Ω} {Q : Measure Ω'} [SFinite P] {f : Ω → Ω'}
+    (hf : MeasurePreserving f P Q) (hℱ : ∀ t, Measurable[ℱ t, 𝒢 t] f) (T : ℝ≥0) :
+    @MeasurePreserving (ℝ≥0 × Ω) (ℝ≥0 × Ω') ℱ.predictable 𝒢.predictable
+      (Prod.map id f) (ℱ.predictableMeasure P T) (𝒢.predictableMeasure Q T) := by
+  have hm := ℱ.measurable_prodMap_predictable 𝒢 hℱ
+  refine @MeasurePreserving.mk _ _ ℱ.predictable 𝒢.predictable _ _ _ hm ?_
+  apply @Measure.ext _ 𝒢.predictable
+  intro A hA
+  rw [Measure.map_apply hm hA, ℱ.predictableMeasure_apply P T (hm hA),
+    𝒢.predictableMeasure_apply Q T hA]
+  exact ((MeasurePreserving.id (timeMeasure T)).prod hf).measure_preimage
+    (𝒢.predictable_le_prod A hA).nullMeasurableSet
+
+/-- Under a probability measure, the time projection of the predictable measure is
+the finite-horizon time measure. Its native `Lp` pullback embeds deterministic integrands
+isometrically into predictable integrands. -/
+theorem measurePreserving_fst_predictableMeasure (ℱ : Filtration ℝ≥0 m)
+    (P : Measure Ω) [IsProbabilityMeasure P] (T : ℝ≥0) :
+    @MeasurePreserving _ _ ℱ.predictable _ Prod.fst
+      (ℱ.predictableMeasure P T) (timeMeasure T) := by
+  have hprod (A : Set ℝ≥0) (hA : MeasurableSet A) :
+      (timeMeasure T).prod P (Prod.fst ⁻¹' A) = timeMeasure T A :=
+    (measurePreserving_fst (μ := timeMeasure T) (ν := P)).measure_preimage hA.nullMeasurableSet
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  refine ⟨ℱ.measurable_fst_predictable, ?_⟩
+  ext A hA
+  rw [Measure.map_apply ℱ.measurable_fst_predictable hA,
+    predictableMeasure_apply _ _ _ (hA.preimage ℱ.measurable_fst_predictable)]
+  exact hprod A hA
 
 /-- Predictable rectangles have time length times event probability, clipped at the horizon. -/
 @[simp]
@@ -113,6 +149,22 @@ theorem predictableMeasure_restrict (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
     measurableSet_predictable_Ioc_prod _ _ MeasurableSet.univ
   rw [predictableMeasure_def, restrict_trim ℱ.predictable_le_prod _ hS,
     ← Measure.restrict_prod_eq_prod_univ, timeMeasure_restrict, predictableMeasure_def]
+
+/-- The identity from a larger predictable sigma-algebra to a smaller one preserves
+finite-horizon time-product measure. Its native Lᵖ pullback embeds the smaller integrand space
+isometrically into the larger one. No finiteness assumption on the sample measure is needed. -/
+theorem measurePreserving_id_predictableMeasure {ℱ 𝒢 : Filtration ℝ≥0 m}
+    (h : ℱ ≤ 𝒢) (P : Measure Ω) (T : ℝ≥0) :
+    @MeasurePreserving (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable
+      id (𝒢.predictableMeasure P T) (ℱ.predictableMeasure P T) := by
+  have hm : @Measurable (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable id :=
+    measurable_id'' (predictable_mono h)
+  refine @MeasurePreserving.mk _ _ 𝒢.predictable ℱ.predictable _ _ _ hm ?_
+  apply @Measure.ext _ ℱ.predictable
+  intro A hA
+  rw [Measure.map_apply hm hA, Set.preimage_id,
+    𝒢.predictableMeasure_apply P T (predictable_mono h _ hA),
+    ℱ.predictableMeasure_apply P T hA]
 
 section Dictionary
 

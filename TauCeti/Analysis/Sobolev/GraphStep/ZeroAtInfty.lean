@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Paths in `W^{1,p}(ℝ, F)` are continuous and vanish at infinity
@@ -56,6 +57,8 @@ length one the `L¹` norm is at most the `Lᵖ` norm. These local `Lᵖ` norms t
   bounds the norm of the embedding by `√2`.
 * `TauCeti.WeakDerivStep.integral_weakFDeriv_apply_one_eq_sub`: the fundamental theorem of
   calculus `∫ r in s..t, u' r = u t - u s`.
+* `TauCeti.WeakDerivStep.forall_hasDerivAt_toZeroAtInfty_iff`: the continuous representative has
+  a continuous derivative `g` exactly when the weak derivative is `g` almost everywhere.
 
 ## References
 
@@ -78,15 +81,10 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 
 /-! ### The weak derivative of the value -/
 
-/-- On the line, the restricted measure `volume.restrict ⊤` of the graph space is `volume`. -/
-private theorem volume_restrict_top :
-    (volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ) = volume := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-
 /-- Almost-everywhere statements for `volume.restrict ⊤` hold for `volume`. -/
 private theorem ae_le_ae_restrict_top :
     ae (volume : Measure ℝ) ≤ ae ((volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  ae_mono volume_restrict_top.ge
+  ae_mono (Measure.restrict_coe_opens_top _).ge
 
 /-- The value of a path has weak derivative `s ↦ u' s 1` on the whole line. -/
 private theorem hasWeakLineDerivOn_prev
@@ -102,17 +100,17 @@ private theorem memLp_weakFDeriv_apply_one
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     MemLp (fun s ↦ weakFDeriv _ u s 1) p volume := by
   simpa using ((Lp.memLp (weakFDeriv _ u)).continuousLinearMap_comp
-    (ContinuousLinearMap.apply ℝ F (1 : ℝ))).mono_measure volume_restrict_top.ge
+    (ContinuousLinearMap.apply ℝ F (1 : ℝ))).mono_measure (Measure.restrict_coe_opens_top _).ge
 
 /-- The `Lᵖ` norm of `s ↦ u' s 1` is at most that of the weak Fréchet derivative. -/
 private theorem eLpNorm_weakFDeriv_apply_one_le
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     eLpNorm (fun s ↦ weakFDeriv _ u s 1) p volume ≤ ‖weakFDeriv _ u‖ₑ := by
-  rw [Lp.enorm_def]
-  refine (eLpNorm_mono_measure _ volume_restrict_top.ge).trans (eLpNorm_mono
-    ((memLp_weakFDeriv_apply_one u).aestronglyMeasurable.mono_measure volume_restrict_top.le)
-    fun s ↦ ?_)
+  rw [Lp.eNorm_def]
+  refine (eLpNorm_mono_measure _ (Measure.restrict_coe_opens_top _).ge).trans (eLpNorm_mono
+    ((memLp_weakFDeriv_apply_one u).aestronglyMeasurable.mono_measure
+      (Measure.restrict_coe_opens_top _).le) fun s ↦ ?_)
   simpa using (weakFDeriv _ u s).le_opNorm 1
 
 /-! ### The local bound -/
@@ -127,7 +125,7 @@ private theorem norm_le_eLpNorm_Ioo_of_ae_eq (hv : Continuous v)
     ‖v t‖ ≤ (eLpNorm ⇑(prev _ u) p (volume.restrict (Ioo t (t + 1)))).toReal +
       (eLpNorm (fun s ↦ weakFDeriv _ u s 1) p (volume.restrict (Ioo t (t + 1)))).toReal := by
   have hx : MemLp ⇑(prev _ u) p volume :=
-    (Lp.memLp (prev _ u)).mono_measure volume_restrict_top.ge
+    (Lp.memLp (prev _ u)).mono_measure (Measure.restrict_coe_opens_top _).ge
   have hd := memLp_weakFDeriv_apply_one u
   have hI : volume (Ioo t (t + 1)) ≤ 1 := by
     rw [Real.volume_Ioo, add_sub_cancel_left, ENNReal.ofReal_one]
@@ -152,9 +150,9 @@ private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[v
   · rw [Lp.norm_def]
     exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-        (eLpNorm_mono_measure _ volume_restrict_top.ge)
-  · rw [← toReal_enorm]
-    exact ENNReal.toReal_mono enorm_ne_top <|
+        (eLpNorm_mono_measure _ (Measure.restrict_coe_opens_top _).ge)
+  · rw [← toReal_eNorm]
+    exact ENNReal.toReal_mono eNorm_ne_top <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
         (eLpNorm_weakFDeriv_apply_one_le u)
 
@@ -162,7 +160,7 @@ private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[v
 private theorem tendsto_cocompact_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)
     (hae : ⇑(prev _ u) =ᵐ[volume] v) : Tendsto v (cocompact ℝ) (𝓝 0) := by
   have hx : MemLp ⇑(prev _ u) p volume :=
-    (Lp.memLp (prev _ u)).mono_measure volume_restrict_top.ge
+    (Lp.memLp (prev _ u)).mono_measure (Measure.restrict_coe_opens_top _).ge
   have hd := memLp_weakFDeriv_apply_one u
   rw [tendsto_zero_iff_norm_tendsto_zero]
   refine squeeze_zero (fun t ↦ norm_nonneg _) (norm_le_eLpNorm_Ioo_of_ae_eq hv hae) ?_
@@ -257,7 +255,8 @@ theorem toZeroAtInfty_injective (hp : p ≠ ∞) :
   intro u w huw
   apply ext
   apply Lp.ext
-  refine ((prev_ae_eq_toZeroAtInfty hp u).trans ?_).filter_mono (ae_mono volume_restrict_top.le)
+  refine ((prev_ae_eq_toZeroAtInfty hp u).trans ?_).filter_mono
+    (ae_mono (Measure.restrict_coe_opens_top _).le)
   rw [huw]
   exact (prev_ae_eq_toZeroAtInfty hp w).symm
 
@@ -309,5 +308,40 @@ theorem integral_weakFDeriv_apply_one_eq_sub (hp : p ≠ ∞)
   exact (((hasWeakLineDerivOn_prev u).mono (Ω' := ⟨Ioo a b, isOpen_Ioo⟩) le_top).integral_eq_sub
     hdI (toZeroAtInfty hp u).continuous.continuousOn
     (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty hp u)) hs ht)
+
+/-- **The derivative of the continuous representative is the weak derivative.** For a continuous
+`g`, the continuous representative of a path `u` has derivative `g t` at every `t` exactly when the
+weak derivative of `u` agrees with `g` almost everywhere. -/
+theorem forall_hasDerivAt_toZeroAtInfty_iff (hp : p ≠ ∞)
+    (u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
+    {g : ℝ → F} (hg : Continuous g) :
+    (∀ t, HasDerivAt (toZeroAtInfty hp u) (g t) t) ↔
+      (fun s ↦ weakFDeriv _ u s 1) =ᵐ[volume] g := by
+  constructor
+  · intro hu
+    have hweak : HasWeakFDerivOn volume ⊤ (toZeroAtInfty hp u) (weakFDeriv _ u) := by
+      have h := hasWeakFDerivOn_base_prev _ u
+      simp only [ContinuousLinearMap.id_apply] at h
+      exact h.congr_ae (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty hp u))
+    have hfd : fderiv ℝ (toZeroAtInfty hp u) =
+        fun t ↦ ContinuousLinearMap.toSpanSingleton ℝ (g t) :=
+      funext fun t ↦ (hu t).hasFDerivAt.fderiv
+    have hloc : LocallyIntegrableOn (fderiv ℝ (toZeroAtInfty hp u))
+        ((⊤ : Opens ℝ) : Set ℝ) volume := by
+      rw [hfd]
+      exact ((ContinuousLinearMap.toSpanSingletonCLE (𝕜 := ℝ) (E := F)).continuous.comp
+        hg).locallyIntegrable.locallyIntegrableOn _
+    have h := hweak.ae_eq_fderiv hloc fun t _ ↦ (hu t).differentiableAt
+    filter_upwards [(ae_restrict_iff' MeasurableSet.univ).1 h] with s hs
+    rw [hs (mem_univ s), hfd, ContinuousLinearMap.toSpanSingleton_apply, one_smul]
+  · intro hu t
+    have heq : (toZeroAtInfty hp u : ℝ → F) =
+        fun r ↦ toZeroAtInfty hp u 0 + ∫ x in (0 : ℝ)..r, g x :=
+      funext fun r ↦ by
+        rw [← intervalIntegral.integral_congr_ae (hu.mono fun x hx _ ↦ hx),
+          integral_weakFDeriv_apply_one_eq_sub, add_sub_cancel]
+    rw [heq]
+    exact ((hg.integral_hasStrictDerivAt 0 t).hasDerivAt).const_add _
 
 end TauCeti.WeakDerivStep

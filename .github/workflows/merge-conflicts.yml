@@ -63,7 +63,7 @@ jobs:
   label:
     if: github.repository == 'TauCetiProject/TauCeti'
     # This control job must keep labelling conflicts when ordinary hosted jobs queue.
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       # Pinned to a full SHA, not a floating major tag: this step receives the App

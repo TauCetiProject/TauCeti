@@ -272,7 +272,7 @@ private theorem map_withDensity_noncentralChiSquaredPDF (hs : 0 < s) :
       fun hy ↦ ⟨s * √y, mul_pos hs (sqrt_pos.mpr hy), ?_⟩⟩
     simp [φ, hs.ne', sq_sqrt (mem_Ioi.mp hy).le]
   have hinj : InjOn φ (Ioi 0) := fun a ha b hb hab ↦
-    (div_left_inj' hs.ne').1 ((sq_eq_sq₀ (div_pos ha hs).le (div_pos hb hs).le).1 hab)
+    (div_left_inj₀ hs.ne').1 ((sq_eq_sq₀ (div_pos ha hs).le (div_pos hb hs).le).1 hab)
   have hderiv (t : ℝ) : HasDerivAt φ (2 * t / s ^ 2) t := by
     refine (((hasDerivAt_id t).div_const s).fun_pow 2).congr_deriv ?_
     simp only [id, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]

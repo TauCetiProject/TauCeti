@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Norm-controlled polar deformation
@@ -86,7 +87,7 @@ theorem norm_polarDeformation_apply (T : E →L[ℝ] E) (hT : Function.Injective
 @[simp]
 theorem isUnit_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) (t : ℝ) :
     IsUnit (T.polarDeformation t) := by
-  have hP := (T.isStrictlyPositive_modulus_of_isUnit hT).isUnit
+  have hP := (isStrictlyPositive_modulus_of_isInvertible (isInvertible_iff_isUnit.mpr hT)).isUnit
   rw [polarDeformation_def, ← mul_def]
   exact (T.isUnit_polarFactor hT).mul (hP.cfcRpow _ T.modulus_nonneg)
 

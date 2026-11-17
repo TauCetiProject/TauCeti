@@ -26,13 +26,18 @@ estimate on a set covered by finitely many pieces
 No measurability of the sets is needed. The same bound holds on any set covered by finitely many
 pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function in `Lᵖ` on each
 piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
+For a function in `Lᵖ` on each piece, the same subadditivity holds for the real-valued norm
+`lpNorm` (`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
-`lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
+`lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`). In particular, if `ψ = 1` on `t`,
+the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
+(`MeasureTheory.lpNorm_restrict_le_lpNorm_smul`).
 
 ## Main declarations
 
 * `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
+* `MeasureTheory.lpNorm_restrict_le_lpNorm_smul`: comparing `lpNorm` across a cutoff.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
 * `MeasureTheory.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm is
   subadditive in the measure, at every `p : ℝ≥0∞` (a pseudometrizable codomain with an extended
@@ -41,6 +46,8 @@ For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
 * `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
   `Lᵖ` on the covered set.
+* `MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`: subadditivity of `lpNorm` over a
+  finite cover.
 -/
 
 public section
@@ -64,7 +71,7 @@ theorem eLpNorm_add_measure_rpow_le {α ε : Type*} [MeasurableSpace α] [Topolo
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hpow {m : Measure α} (h : AEStronglyMeasurable f m) :
       eLpNorm f p m ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
       inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
   by_cases hm : AEStronglyMeasurable f μ ∧ AEStronglyMeasurable f ν
   · rw [hpow (hm.1.add_measure hm.2), lintegral_add_measure, hpow hm.1, hpow hm.2]
@@ -82,6 +89,18 @@ theorem lpNorm_mono_measure {E : Type*} [NormedAddCommGroup E] {f : α → E} (h
     lpNorm f p ν ≤ lpNorm f p μ :=
   ENNReal.toReal_mono hf.eLpNorm_ne_top (eLpNorm_mono_measure f hνμ)
 
+/-- **Comparing `lpNorm` across a cutoff.** If `ψ = 1` on a measurable set `t` and
+`ψ • f ∈ Lᵖ(μ)`, then the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`. -/
+theorem lpNorm_restrict_le_lpNorm_smul {R E : Type*} [Monoid R] [NormedAddCommGroup E]
+    [MulAction R E] {t : Set α} (ht : MeasurableSet t) {ψ : α → R} (hψ : ∀ x ∈ t, ψ x = 1)
+    {f : α → E} (hf : MemLp (fun x => ψ x • f x) p μ) :
+    lpNorm f p (μ.restrict t) ≤ lpNorm (fun x => ψ x • f x) p μ := by
+  have h : f =ᵐ[μ.restrict t] fun x => ψ x • f x := by
+    filter_upwards [ae_restrict_mem ht] with x hx
+    rw [hψ x hx, one_smul]
+  exact ENNReal.toReal_mono hf.eLpNorm_ne_top ((eLpNorm_congr_ae h).trans_le
+    (eLpNorm_mono_measure _ Measure.restrict_le_self))
+
 /-- **Subadditivity of `eLpNorm` in the measure.** For `1 ≤ p`,
 `eLpNorm f p (μ + ν) ≤ eLpNorm f p μ + eLpNorm f p ν`. -/
 theorem eLpNorm_add_measure_le (f : α → ε) (hp : 1 ≤ p) :
@@ -95,9 +114,9 @@ theorem eLpNorm_add_measure_le (f : α → ε) (hp : 1 ≤ p) :
         eLpNormEssSup_add_measure]
       exact max_le_add_of_nonneg (by simp) (by simp)
     · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hadd,
-        eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfμ,
-        eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfν, lintegral_add_measure]
+      rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hadd,
+        eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hfμ,
+        eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hfν, lintegral_add_measure]
       exact ENNReal.rpow_add_le_add_rpow _ _ (by positivity)
         (sub_nonneg.1 (ENNReal.one_sub_one_div_toReal_nonneg hp))
   · by_cases hfμ : AEStronglyMeasurable f μ
@@ -132,6 +151,20 @@ theorem eLpNorm_restrict_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] (f : 
   simpa only [Finset.mem_univ, Set.iUnion_true] using
     eLpNorm_restrict_biUnion_finset_le (μ := μ) f hp Finset.univ t
 
+/-- **Subadditivity of `lpNorm` over a finite cover.** For `1 ≤ p`, the `Lᵖ` norm of `f` on a set
+covered by the sets `s i`, `i ∈ t`, is at most the sum of its `Lᵖ` norms on the pieces, provided
+`f` is in `Lᵖ` on each piece. -/
+theorem lpNorm_restrict_le_sum_of_subset_biUnion {E ι : Type*} [NormedAddCommGroup E]
+    {f : α → E} (hp : 1 ≤ p) {u : Set α} {t : Finset ι} {s : ι → Set α}
+    (hu : u ⊆ ⋃ i ∈ t, s i) (hf : ∀ i ∈ t, MemLp f p (μ.restrict (s i))) :
+    lpNorm f p (μ.restrict u) ≤ ∑ i ∈ t, lpNorm f p (μ.restrict (s i)) := by
+  have hfin : ∀ i ∈ t, eLpNorm f p (μ.restrict (s i)) ≠ ∞ := fun i hi => (hf i hi).eLpNorm_ne_top
+  calc lpNorm f p (μ.restrict u) ≤ (∑ i ∈ t, eLpNorm f p (μ.restrict (s i))).toReal :=
+        ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin)
+          ((eLpNorm_mono_measure f (Measure.restrict_mono_set μ hu)).trans
+            (eLpNorm_restrict_biUnion_finset_le f hp t s))
+    _ = ∑ i ∈ t, lpNorm f p (μ.restrict (s i)) := ENNReal.toReal_sum hfin
+
 /-- A function in `Lᵖ` on each of finitely many sets is in `Lᵖ` on every set they cover. -/
 theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε} {s : Set α}
     {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) (hf : ∀ i, MemLp f p (μ.restrict (t i))) :
@@ -147,7 +180,7 @@ theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε}
   rcases eq_or_ne p 0 with rfl | hp0
   · exact memLp_zero_iff_aestronglyMeasurable.2 hm
   have hint := fun {ν : Measure α} (hν : AEStronglyMeasurable f ν) =>
-    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp.ne_top hν
+    eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp.ne_top hν
   refine (hint hm).2 ((lintegral_iUnion_le t _).trans_lt ?_)
   rw [tsum_fintype]
   exact ENNReal.sum_lt_top.2 fun i _ =>

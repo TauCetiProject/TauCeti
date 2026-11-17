@@ -24,6 +24,10 @@ of the original function, or a Sobolev exponent, are assumed.
 
 ## Main results
 
+* `HasWeakConjWirtingerDerivOn.integral_laplacian_smul_eq`: since `Δ = 4 ∂ \bar∂`, a solution of
+  `\bar∂u = g` has distributional Laplacian `4 ∂g`.
+* `HasWeakConjWirtingerDerivOn.integral_laplacian_mul_re_eq`: the real part of a solution of
+  `\bar∂u = k` solves `Δ (Re u) = 2 (∂ₛ (Re k) + ∂ₜ (Im k))` weakly.
 * `HasWeakConjWirtingerDerivOn.weaklyHarmonicOn`: the distributional first-order equation
   implies weak harmonicity, with arbitrary complex Banach coefficients.
 * `HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq`: Weyl's lemma for finite-dimensional
@@ -46,17 +50,19 @@ open scoped ContDiff Distributions ComplexConjugate
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {μ : Measure ℂ} {Ω : Opens ℂ} {u : ℂ → F}
+  {μ : Measure ℂ} {Ω : Opens ℂ} {u g : ℂ → F}
 
-/-- A distributional solution of `\bar∂u=0` is weakly harmonic, with arbitrary complex Banach
-coefficients. -/
-theorem HasWeakConjWirtingerDerivOn.weaklyHarmonicOn
-    (h : HasWeakConjWirtingerDerivOn μ Ω u 0) : WeaklyHarmonicOn μ Ω u := by
-  rw [weaklyHarmonicOn_iff]
-  refine ⟨h.locallyIntegrableOn, fun φ ↦ ?_⟩
+/-- **The distributional Laplacian of a solution of `\bar∂u = g`.** Since `Δ = 4 ∂ \bar∂`, the
+distributional Laplacian of `u` is `4 ∂g`, where `∂ = (∂ₛ - I ∂ₜ)/2`. Against a real test
+function this reads `∫ Δφ • u = -2 • (∫ ∂ₛφ • g - I • ∫ ∂ₜφ • g)`. -/
+theorem HasWeakConjWirtingerDerivOn.integral_laplacian_smul_eq
+    (h : HasWeakConjWirtingerDerivOn μ Ω u g) (φ : 𝓓(Ω, ℝ)) :
+    ∫ z, Δ (φ : ℂ → ℝ) z • u z ∂μ =
+      -(2 : ℂ) • ((∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • g z ∂μ) -
+        I • ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z I • g z ∂μ) := by
   have hs := h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul (∂_{(1 : ℂ)} φ)
   have ht := h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul (∂_{I} φ)
-  simp only [← TestFunction.lineDerivOp_apply, Pi.zero_apply, smul_zero, integral_zero] at hs ht
+  simp only [← TestFunction.lineDerivOp_apply] at hs ht ⊢
   rw [TestFunction.lineDerivOp_comm φ I 1] at hs
   have hΔ (z : ℂ) : Δ (φ : ℂ → ℝ) z =
       (∂_{(1 : ℂ)} (∂_{(1 : ℂ)} φ)) z + (∂_{I} (∂_{I} φ)) z := by
@@ -73,7 +79,48 @@ theorem HasWeakConjWirtingerDerivOn.weaklyHarmonicOn
           I • (∫ z, (∂_{I} (∂_{I} φ)) z • u z ∂μ)) := by
       simp only [smul_add, smul_smul, I_mul_I, neg_one_smul]
       abel
-    _ = 0 := by rw [hs, ht]; simp
+    _ = _ := by rw [hs, ht, smul_sub, smul_comm I]
+
+/-- **The real part of a solution of `\bar∂u = k` solves a divergence-form Laplace equation.**
+Since `Δ = 4 ∂ \bar∂` and `2 Re ∂k = ∂ₛ (Re k) + ∂ₜ (Im k)`, the distributional Laplacian of `Re u`
+is `2 (∂ₛ (Re k) + ∂ₜ (Im k))`:
+`∫ Δφ * Re u = -2 ∫ (∂ₛφ * Re k + ∂ₜφ * Im k)` for every real test function `φ`. -/
+theorem HasWeakConjWirtingerDerivOn.integral_laplacian_mul_re_eq {u k : ℂ → ℂ}
+    (h : HasWeakConjWirtingerDerivOn μ Ω u k) (φ : 𝓓(Ω, ℝ)) :
+    ∫ z, Δ (φ : ℂ → ℝ) z * (u z).re ∂μ =
+      -2 * ∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 * (k z).re +
+        fderiv ℝ (φ : ℂ → ℝ) z I * (k z).im) ∂μ := by
+  have hk := h.locallyIntegrableOn_deriv
+  have hderiv (z v : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) z v := by
+    rw [← TestFunction.lineDerivOp_apply, TestFunction.lineDerivOp_apply_eq_fderiv]
+  have e := congrArg re (h.integral_laplacian_smul_eq φ)
+  simp only [hderiv] at e
+  have hre (v : ℂ) : (∫ z, fderiv ℝ (φ : ℂ → ℝ) z v • k z ∂μ).re =
+      ∫ z, fderiv ℝ (φ : ℂ → ℝ) z v * (k z).re ∂μ := by
+    rw [← reCLM_apply,
+      ← reCLM.integral_comp_comm (integrable_fderiv_smul_of_locallyIntegrableOn hk φ v)]
+    simp
+  have him (v : ℂ) : (∫ z, fderiv ℝ (φ : ℂ → ℝ) z v • k z ∂μ).im =
+      ∫ z, fderiv ℝ (φ : ℂ → ℝ) z v * (k z).im ∂μ := by
+    rw [← imCLM_apply,
+      ← imCLM.integral_comp_comm (integrable_fderiv_smul_of_locallyIntegrableOn hk φ v)]
+    simp
+  rw [← reCLM_apply, ← reCLM.integral_comp_comm (by
+    simpa only [TestFunction.laplacianCLM_apply] using
+      (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) φ).integrable_smul h.locallyIntegrableOn)] at e
+  rw [integral_add (by simpa using (integrable_fderiv_smul_of_locallyIntegrableOn hk φ 1).re)
+    (by simpa using (integrable_fderiv_smul_of_locallyIntegrableOn hk φ I).im)]
+  simp only [reCLM_apply, smul_re, smul_eq_mul, sub_re, mul_re, re_ofNat, im_ofNat, I_re, I_im,
+    neg_re, neg_im] at e
+  rw [e, ← hre, ← him]
+  ring
+
+/-- A distributional solution of `\bar∂u=0` is weakly harmonic, with arbitrary complex Banach
+coefficients. -/
+theorem HasWeakConjWirtingerDerivOn.weaklyHarmonicOn
+    (h : HasWeakConjWirtingerDerivOn μ Ω u 0) : WeaklyHarmonicOn μ Ω u :=
+  weaklyHarmonicOn_iff.2 ⟨h.locallyIntegrableOn, fun φ ↦ by
+    simpa using h.integral_laplacian_smul_eq φ⟩
 
 private theorem exists_differentiableOn_ae_eq_scalar {u : ℂ → ℂ} [μ.IsAddHaarMeasure]
     (h : HasWeakConjWirtingerDerivOn μ Ω u 0) :
@@ -132,7 +179,7 @@ theorem hasWeakConjWirtingerDerivOn_zero_iff_exists_differentiableOn_ae_eq
     [FiniteDimensional ℂ F] [μ.IsAddHaarMeasure] :
     HasWeakConjWirtingerDerivOn μ Ω u 0 ↔
       ∃ v : ℂ → F, DifferentiableOn ℂ v Ω ∧ u =ᵐ[μ.restrict Ω] v := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   refine ⟨HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq, ?_⟩
   rintro ⟨v, hv, huv⟩
   exact hv.hasWeakConjWirtingerDerivOn_zero.congr_ae huv.symm
@@ -142,7 +189,7 @@ precisely holomorphy. -/
 theorem hasWeakConjWirtingerDerivOn_zero_iff_of_continuousOn
     [FiniteDimensional ℂ F] [μ.IsAddHaarMeasure] (hu : ContinuousOn u Ω) :
     HasWeakConjWirtingerDerivOn μ Ω u 0 ↔ DifferentiableOn ℂ u Ω := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   exact ⟨fun h ↦ h.differentiableOn hu, DifferentiableOn.hasWeakConjWirtingerDerivOn_zero⟩
 
 

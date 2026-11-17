@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.HasLaw
-public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Distributions.Uniform.Finite.Moments

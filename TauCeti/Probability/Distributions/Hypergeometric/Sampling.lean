@@ -54,7 +54,7 @@ theorem map_card_inter_uniformOn_powersetCard (s t : Finset α) (n : ℕ) :
   have hmarked : #(s ∩ t) ≤ #s := card_le_card inter_subset_left
   apply Measure.ext_of_singleton
   intro k
-  rw [Measure.map_apply_of_aemeasurable (aemeasurable_uniformOn_finset _ _)
+  rw [Measure.map_apply_of_aemeasurable (Set.aemeasurable_uniformOn _ _)
     (measurableSet_singleton k),
     TauCeti.Probability.hypergeometricMeasure_singleton hmarked]
   have hfiber : (s.powersetCard n : Set (Finset α)) ∩
@@ -95,7 +95,7 @@ theorem card_inter_hypergeometricMeasure
   have hcount : HasLaw (fun u : Finset α ↦ #(u ∩ t))
       (TauCeti.Probability.hypergeometricMeasure #s #(s ∩ t) n)
       (uniformOn (s.powersetCard n : Set (Finset α))) :=
-    ⟨Finset.aemeasurable_uniformOn_finset _ _,
+    ⟨Set.aemeasurable_uniformOn _ _,
       Finset.map_card_inter_uniformOn_powersetCard s t n⟩
   exact hcount.fun_comp hS
 

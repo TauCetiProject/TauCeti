@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -13,15 +13,18 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 /-!
 # Moments and transforms of finite uniform laws
 
-Assigning real labels to a uniform sample from a finite set gives a finitely supported law,
-with repeated labels counted with their multiplicities. Its moments and transforms are averages
-over the sampling set, and every real exponential moment exists. The variance is the average
-squared label minus the square of the average label.
+Assigning labels to a uniform sample from a finite set gives a finitely supported law,
+with repeated labels counted with their multiplicities. For real labels, natural moments,
+means, mgfs and characteristic functions are finite averages; the cgf is the logarithm of the
+average exponential, and variance is the average square minus the square of the average.
+For natural-valued labels, the pgf is the average monomial at every real argument.
 
+The formulas cover both mapped and native laws on finite sets, with finite-type specializations.
 The integration results in `Uniform.Finite.Basic` apply even to labels and observables that are
-not globally measurable. All formulas, including variance, hold for the empty sampling set:
-all integrals and transforms of that zero measure vanish, while its exponential-integrability
-domain is still all of `ℝ`. The `HasLaw` corollaries allow any source measure with the stated law.
+not globally measurable. All formulas hold for the empty sampling set, where the law is zero.
+Real observables have full exponential-integrability domain even on arbitrary sampling sets:
+on infinite sets `uniformOn` is zero. The `HasLaw` corollaries allow any source measure with the
+stated law.
 -/
 
 public section
@@ -59,7 +62,7 @@ variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 /-- Every natural raw moment of a finitely labelled uniform law is the average label power.
 Its integrability follows from `Set.integrable_map_uniformOn`. -/
-theorem integral_pow_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (n : ℕ) :
+theorem integral_pow_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (n : ℕ) :
     ∫ x : ℝ, x ^ n ∂(uniformOn (s : Set α)).map f =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ n := by
   simpa only [smul_eq_mul] using s.integral_map_uniformOn_finset f (fun x : ℝ ↦ x ^ n)
@@ -83,7 +86,7 @@ theorem variance_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) :
       (Set.integrable_map_uniformOn (s : Set α) f (fun x : ℝ ↦ x ^ 2))
   rw [variance_eq_sub hL]
   simpa only [Pi.pow_apply, id_eq] using congrArg₂ (fun x y : ℝ ↦ x - y ^ 2)
-    (s.integral_pow_map_uniformOn_finset f 2) (s.integral_id_map_uniformOn_finset f)
+    (s.integral_pow_id_map_uniformOn_finset f 2) (s.integral_id_map_uniformOn_finset f)
 
 /-- The mgf of a finitely labelled uniform law is the average exponential label. -/
 theorem mgf_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) :
@@ -103,9 +106,10 @@ theorem cgf_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) :
 exponential label. -/
 theorem charFun_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) :
     charFun ((uniformOn (s : Set α)).map f) t =
-      (s.card : ℝ)⁻¹ • ∑ i ∈ s, Complex.exp (↑(t * f i) * Complex.I) := by
-  rw [charFun_apply_real, s.integral_map_uniformOn_finset]
-  simp only [Complex.ofReal_mul]
+      (s.card : ℂ)⁻¹ * ∑ i ∈ s, Complex.exp (t * f i * Complex.I) := by
+  rw [charFun_apply_real, integral_map_uniformOn_finset, Complex.real_smul]
+  push_cast
+  ring
 
 /-- For natural labels, the pgf of a finite uniform sample is the average monomial. This
 polynomial formula holds at every real argument. -/
@@ -120,7 +124,7 @@ square of its average, including for the empty sampling set. -/
 theorem variance_uniformOn_finset (s : Finset α) (f : α → ℝ) :
     variance f (uniformOn (s : Set α)) =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ 2 - ((s.card : ℝ)⁻¹ * ∑ i ∈ s, f i) ^ 2 := by
-  rw [← variance_id_map (s.aemeasurable_uniformOn_finset f),
+  rw [← variance_id_map (Set.aemeasurable_uniformOn (s : Set α) f),
     s.variance_id_map_uniformOn_finset]
 
 /-- The mgf of an observable of a finite uniform sample is the average exponential. -/
@@ -171,7 +175,7 @@ variable {α : Type*} [Fintype α] [MeasurableSpace α] [MeasurableSingletonClas
 theorem integral_pow_map_uniformOn_univ (f : α → ℝ) (n : ℕ) :
     ∫ x : ℝ, x ^ n ∂(uniformOn (Set.univ : Set α)).map f =
       (Fintype.card α : ℝ)⁻¹ * ∑ i, f i ^ n := by
-  simpa using (Finset.univ : Finset α).integral_pow_map_uniformOn_finset f n
+  simpa using (Finset.univ : Finset α).integral_pow_id_map_uniformOn_finset f n
 
 /-- The mean of a labelled uniform sample from a finite type is the average label. -/
 theorem integral_id_map_uniformOn_univ (f : α → ℝ) :
@@ -204,10 +208,11 @@ theorem cgf_id_map_uniformOn_univ (f : α → ℝ) (t : ℝ) :
 complex exponential label. -/
 theorem charFun_map_uniformOn_univ (f : α → ℝ) (t : ℝ) :
     charFun ((uniformOn (Set.univ : Set α)).map f) t =
-      (Fintype.card α : ℝ)⁻¹ • ∑ i, Complex.exp (↑(t * f i) * Complex.I) := by
+      (Fintype.card α : ℂ)⁻¹ * ∑ i, Complex.exp (t * f i * Complex.I) := by
   simpa using (Finset.univ : Finset α).charFun_map_uniformOn_finset f t
 
-/-- The pgf of a naturally labelled uniform sample from a finite type is the average monomial. -/
+/-- The pgf of a natural-valued labelled uniform sample from a finite type is the average
+monomial. -/
 theorem pgf_map_uniformOn_univ (f : α → ℕ) (z : ℝ) :
     pgf id ((uniformOn (Set.univ : Set α)).map f) z =
       (Fintype.card α : ℝ)⁻¹ * ∑ i, z ^ f i := by
@@ -271,5 +276,48 @@ theorem variance_map_uniformOn_finset
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ 2 - ((s.card : ℝ)⁻¹ * ∑ i ∈ s, f i) ^ 2 := by
   rw [hX.variance_eq]
   exact s.variance_id_map_uniformOn_finset f
+
+variable {Y : Ω → α}
+
+/-- The variance of a labelled uniform random element is the empirical variance of its labels. -/
+theorem variance_comp_uniformOn_finset
+    (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) :
+    variance (fun ω ↦ label (Y ω)) P =
+      (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ 2 -
+        ((s.card : ℝ)⁻¹ * ∑ i ∈ s, label i) ^ 2 := by
+  rw [(hY.map_uniformOn label).variance_eq, s.variance_id_map_uniformOn_finset]
+
+/-- Every exponential moment of a labelled uniform random element is finite, including when
+an infinite sampling set makes its law zero. -/
+theorem integrableExpSet_comp_uniformOn {s : Set α}
+    (hY : HasLaw Y (uniformOn s) P) (label : α → ℝ) :
+    integrableExpSet (fun ω ↦ label (Y ω)) P = Set.univ := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+  exact hY.integrable_comp_uniformOn (fun i ↦ Real.exp (t * label i))
+
+/-- The mgf of a labelled uniform random element is its normalized exponential sum. -/
+theorem mgf_comp_uniformOn_finset
+    (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) (t : ℝ) :
+    mgf (fun ω ↦ label (Y ω)) P t =
+      (s.card : ℝ)⁻¹ * ∑ i ∈ s, Real.exp (t * label i) := by
+  simpa only [mgf, smul_eq_mul] using hY.integral_comp_uniformOn_finset
+    (fun i ↦ Real.exp (t * label i))
+
+/-- The cgf of a labelled uniform random element is the logarithm of its normalized exponential
+sum. -/
+theorem cgf_comp_uniformOn_finset
+    (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) (t : ℝ) :
+    cgf (fun ω ↦ label (Y ω)) P t =
+      Real.log ((s.card : ℝ)⁻¹ * ∑ i ∈ s, Real.exp (t * label i)) := by
+  rw [cgf, hY.mgf_comp_uniformOn_finset]
+
+/-- The characteristic function of a labelled uniform random element is the normalized sum of
+its character values. -/
+theorem charFun_map_comp_uniformOn_finset
+    (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) (t : ℝ) :
+    charFun (P.map fun ω ↦ label (Y ω)) t =
+      (s.card : ℂ)⁻¹ * ∑ i ∈ s, Complex.exp (t * label i * Complex.I) := by
+  rw [(hY.map_uniformOn label).map_eq, s.charFun_map_uniformOn_finset]
 
 end ProbabilityTheory.HasLaw

@@ -15,7 +15,10 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 A labelled graph is folded when the label and initial vertex determine a dart. This makes
 the word and endpoints determine a path and ensures that a reduced path has a freely reduced
 label. Consequently a freely reduced word is accepted at a vertex exactly when it labels a
-closed path there (`StallingsGraph.mem_subgroup_iff_folded`).
+closed path there (`StallingsGraph.mem_subgroup_iff_folded`), and a preconnected folded graph
+accepts only the trivial subgroup exactly when it is acyclic
+(`StallingsGraph.IsFolded.subgroup_eq_bot_iff_isAcyclic`). Over a finite alphabet, a folded graph
+with finitely many vertices has finitely many darts.
 
 ## References
 
@@ -59,6 +62,12 @@ theorem IsFolded.labels_not_inverse (hS : S.IsFolded) {e f : S.graph.E}
   have hfr : f = S.graph.rev e := hS f (S.graph.rev e)
     (hsrc.trans (S.graph.src_rev e).symm) (by simpa only [S.label_rev] using h)
   exact hne hfr
+
+/-- Over a finite alphabet, a folded graph with finitely many vertices has finitely many
+darts. -/
+theorem IsFolded.finite_E [Finite α] [Finite S.graph.V] (hS : S.IsFolded) : Finite S.graph.E :=
+  Finite.of_injective (fun e => (S.graph.src e, S.label e)) fun e f h =>
+    hS e f (congrArg Prod.fst h) (congrArg Prod.snd h)
 
 /-- A reduced path in a folded graph reads a freely reduced word. -/
 theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}
@@ -197,6 +206,20 @@ theorem IsFolded.eq_tgt_iff_read_mul_inv_mem (hS : S.IsFolded) {a b c : S.graph.
     obtain ⟨l, hl⟩ := S.mem_subgroup_iff.mp h
     apply hS.eq_tgt_of_read_eq S p (l.comp q)
     simp [hl]
+
+/-- A folded preconnected labelled graph accepts the trivial subgroup at a vertex exactly when
+it is acyclic: a nonempty reduced closed path anywhere reads a nontrivial element, a conjugate of
+which is accepted at the vertex. -/
+theorem IsFolded.subgroup_eq_bot_iff_isAcyclic (hS : S.IsFolded) (hc : S.graph.Preconnected)
+    (a : S.graph.V) : S.subgroup a = ⊥ ↔ S.graph.IsAcyclic := by
+  refine ⟨fun h => S.graph.isAcyclic_iff.mpr fun u r hr => ?_,
+    fun h => S.subgroup_eq_bot_of_isAcyclic h a⟩
+  obtain ⟨q⟩ := S.graph.preconnected_iff.mp hc a u
+  have h0 : S.read ((q.comp r).comp q.reverse) = 1 :=
+    Subgroup.mem_bot.mp (h ▸ S.read_mem_subgroup _)
+  have h1 : S.read r = S.read (.nil : S.graph.Path u u) := by
+    simpa [← mul_assoc, mul_inv_eq_one] using h0
+  exact hS.path_eq_of_read_eq S r .nil hr (SerreGraph.Path.isReduced_nil _ _) h1
 
 end StallingsGraph
 end TauCeti

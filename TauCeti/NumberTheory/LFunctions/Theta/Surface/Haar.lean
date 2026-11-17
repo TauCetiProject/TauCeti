@@ -22,7 +22,8 @@ the measures of that decomposition:
   `TauCeti.multHaar = dt / t` of `(0, ∞)`; it is Lebesgue measure on the positive orthant with
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
-  (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
+  (`map_archHaar_mul_left`), coordinatewise inversion (`map_archHaar_inv`) and the action of the
+  units (`map_archHaar_unitScale`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
   and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and a bounded set of parameters
@@ -128,6 +129,15 @@ theorem map_archHaar_inv : (archHaar K).map Inv.inv = archHaar K := by
     exact Pi.inv_apply y w
   rw [hinv, archHaar, pi_map_pi fun _ ↦ measurable_inv.aemeasurable]
   simp_rw [map_multHaar_inv]
+
+/-- The action `y_w ↦ |u|_w² y_w` of a unit on the parameters is an independent positive
+dilation at each place, so it preserves `dy / y`. -/
+theorem map_archHaar_unitScale (u : (𝓞 K)ˣ) : (archHaar K).map (unitScale u) = archHaar K := by
+  have hscale : unitScale u = ((fun w : InfinitePlace K ↦ w (u : K) ^ 2) * ·) := by
+    ext y w
+    simp [unitScale_apply]
+  rw [hscale]
+  exact map_archHaar_mul_left fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
 
 /-! ### The Haar measure of the norm-one hypersurface -/
 
@@ -262,7 +272,7 @@ private theorem toSurface_smul {c : ℝ} (hc : 0 < c) (y : realSpace K) :
     forall_congr' fun w ↦ (mul_pos_iff_of_pos_left hc)
   by_cases hy : ∀ w, 0 < y w
   · exact Subtype.ext <| by rw [toSurface_of_pos (hpos.mpr hy), toSurface_of_pos hy,
-      surfacePart_smul hc (archNorm_pos hy).le]
+      surfacePart_smul hc]
   · have hcy : ¬∀ w, 0 < c * y w := hpos.not.mpr hy
     simp [toSurface, hy, hcy]
 
@@ -309,7 +319,7 @@ private theorem map_normImage_mul_left {A : Set (normOneSurface K)} (hA : Measur
 private theorem normImage_Icc_one_exp_one {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
     normImage K A (Icc 1 (Real.exp 1)) = surfaceHaar K A := by
   rw [normImage_apply A measurableSet_Icc, surfaceHaar_apply hA]
-  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEq.refl _ _))
+  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEqSet.refl _ _))
 
 /-- For a measurable `A ⊆ S` of finite `d*x`-mass and a measurable set of norms `B`, the
 `dy / y`-mass of the parameters with surface part in `A` and norm in `B` is
@@ -348,7 +358,7 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
     archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' B) =
       surfaceHaar K A * multHaar B := by
   rw [← archHaar_toSurface_preimage_inter hA hB]
-  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEq.refl _ _))
+  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEqSet.refl _ _))
 
 /-- Radial scaling is measurable in the surface point and the radial parameter. -/
 theorem measurable_surfaceScale_prod :
