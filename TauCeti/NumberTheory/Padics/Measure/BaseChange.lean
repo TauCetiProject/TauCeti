@@ -56,11 +56,12 @@ Every hypothesis on `O` is necessary:
   discrete `O = 𝔽_p`, and `X = ℤ_[p]`, `z = Σ_{n ≥ 1} x_n (δ_{p^n} - δ_0)` satisfies `1 ⊗ₜ z ≠ 0`
   in `O ⊗[R] D(X, R)` while mapping to `0` in `D(X, O)`.
 
-On a compact group `Γ`, `baseChangeAlgEquiv` intertwines `toCompletedGroupAlgebra` with
-`completedGroupAlgebra.scalarTensorEquiv`, transferring injectivity, surjectivity, bijectivity, and
-the weak-topology homeomorphism from `R` to `O`. On a profinite space `X`, `baseChange` also
-commutes with `extendCoefficients` into the unit ball of a complete ultrametric field
-(`extendCoefficients_baseChange_tmul`).
+On a compact, locally compact group `Γ` with continuous multiplication, `baseChangeAlgEquiv`
+intertwines `toCompletedGroupAlgebra` with `completedGroupAlgebra.scalarTensorEquiv`, transferring
+injectivity, surjectivity, and bijectivity from `R` to `O`. When `R` and `O` are normed commutative
+rings (`NormedCommRing`), the weak-topology homeomorphism also transfers from `R` to `O`. On a
+profinite space `X`, `baseChange` also commutes with `extendCoefficients` into the unit ball of a
+complete ultrametric field (`extendCoefficients_baseChange_tmul`).
 
 ## Main definitions
 
@@ -88,9 +89,11 @@ commutes with `extendCoefficients` into the unit ball of a complete ultrametric 
 * `AbstractMeasure.exists_baseChange_algEquiv`: existence of the convolution `O`-algebra base
   change isomorphism over a compact base ring `R` for Hausdorff `O` with `ContinuousSMul R O`.
 * `AbstractMeasure.toCompletedGroupAlgebra_injective_of_injective`,
-  `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_surjective`,
-  `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph`: transfer of
-  injectivity, surjectivity, and weak-topology homeomorphism for `toCompletedGroupAlgebra`.
+  `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_surjective`: transfer of injectivity and
+  surjectivity for `toCompletedGroupAlgebra`.
+* `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph`: transfer of the
+  weak-topology homeomorphism for `toCompletedGroupAlgebra`, for normed commutative rings `R` and
+  `O` (`NormedCommRing`).
 * `AbstractMeasure.extendCoefficients_extendScalars`,
   `AbstractMeasure.extendCoefficients_baseChange_tmul`,
   `AbstractMeasure.extendCoefficients_eq_sum_of_basis`: compatibility with `extendCoefficients` on
@@ -710,10 +713,10 @@ end ModuleTopology
 
 section Normed
 
-/-- If `toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] R[[Γ]]` is a homeomorphism from the weak topology to
-the inverse-limit topology, then so is `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` for any
-normed `R`-algebra `O` carrying the `R`-module topology that is finitely generated and projective
-over `R`. -/
+/-- For normed commutative rings `R` and `O` where `O` is a finitely generated projective
+`R`-algebra carrying the `R`-module topology, if `toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] R[[Γ]]`
+is a homeomorphism from the weak topology to the inverse-limit topology, then so is
+`toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]`. -/
 theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph
     {R O : Type*} [NormedCommRing R] [NormedCommRing O] [Algebra R O]
     [IsModuleTopology R O] [Module.Projective R O] [Module.Finite R O]
