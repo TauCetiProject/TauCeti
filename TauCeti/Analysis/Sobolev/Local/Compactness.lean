@@ -215,18 +215,6 @@ theorem exists_subseq_memWkpLoc_tendsto_wkp {u : ℕ → ℂ → ℝ}
     (u := fun _ => u) fun W hWc hWΩ _ => hu W hWc hWΩ
   exact ⟨φ, hφ, v (), hv (), fun W hWc hWΩ => hlim W hWc hWΩ ()⟩
 
-omit [Fact (1 ≤ p)] in
-/-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
-are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
-private theorem exists_memWkpLoc_repr_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {ι : Type*} [Finite ι] (b : Module.Basis ι ℝ F) {U : Set ℂ} {v : ι → ℂ → ℝ}
-    (hv : ∀ i, MemWkpLoc p U k (v i)) :
-    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
-  have := Fintype.ofFinite ι
-  have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
-    funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
-  exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
-
 /-- **Local Rellich compactness for vector-valued functions.** Let `F` be a finite-dimensional
 real vector space with basis `b`, let `1 ≤ p ≤ ∞`, and let `u m : ℂ → F` have coordinates bounded
 in `W^{k+1,p}` on every relatively compact open subset `W` of `Ω`. Then a subsequence `u (φ j)`
@@ -246,7 +234,7 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_tendsto_wkp {F : Type*}
           Tendsto y atTop (𝓝 w) := by
   obtain ⟨φ, hφ, v, hv, hlim⟩ := exists_subseq_memWkpLoc_tendsto_wkp_family (Ω := Ω)
     (u := fun i m z => b.repr (u m z) i) hu
-  obtain ⟨V, hV, hVv⟩ := exists_memWkpLoc_repr_eq b hv
+  obtain ⟨V, hV, hVv⟩ := b.exists_memWkpLoc_repr_eq hv
   exact ⟨φ, hφ, V, hV, fun W hWc hWΩ i y w hy hw => hlim W hWc hWΩ i y w hy (hVv i ▸ hw)⟩
 
 /-! ### Local Rellich compactness up to the real axis -/
@@ -400,7 +388,7 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendst
   obtain ⟨φ, hφ, v, hv, hlim⟩ :=
     exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp_family (Ω := Ω)
       (u := fun i m z => b.repr (u m z) i) hu
-  obtain ⟨V, hV, hVv⟩ := exists_memWkpLoc_repr_eq b hv
+  obtain ⟨V, hV, hVv⟩ := b.exists_memWkpLoc_repr_eq hv
   exact ⟨φ, hφ, V, hV, fun W hWc hWΩ i y w hy hw => hlim W hWc hWΩ i y w hy (hVv i ▸ hw)⟩
 
 end TauCeti
