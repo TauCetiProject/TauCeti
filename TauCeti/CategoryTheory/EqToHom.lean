@@ -32,6 +32,9 @@ and avoid exposing the definitional equality of the objects being transported.
   identifications `Y i ≅ F.obj (X i)`, to the image under a functor `F` of the transport.
 * `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
   endpoints to morphisms which agree in the same way.
+* `CategoryTheory.Functor.eqToHom_conjugate_map_conjugate`: transporting a morphism along object
+  equalities, applying a functor, and transporting along equalities of the images agrees with
+  applying the functor and transporting directly along the composed equalities.
 * `CategoryTheory.Functor.map_comp_eqToHom_of_isThin`: on a thin category, the images under a
   functor of two morphisms between equal endpoints agree up to the transports along those
   equalities.
@@ -138,6 +141,18 @@ theorem map_heq {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D) {X Y X' 
     F.map f ≍ F.map f' := by
   subst hX hY
   rw [eq_of_heq h]
+
+/-- Transporting a morphism along object equalities, applying a functor `F`, and transporting along
+equalities of the images agrees with applying `F` and transporting directly along the composed
+equalities. -/
+theorem eqToHom_conjugate_map_conjugate {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D)
+    {X X' Y Y' : C} {A B : D} (hX : X = X') (hY : Y = Y')
+    (hA : A = F.obj X) (hB : B = F.obj Y) (f : X' ⟶ Y') :
+    eqToHom hA ≫ F.map (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hB.symm =
+      eqToHom (hA.trans (congrArg F.obj hX)) ≫ F.map f ≫
+        eqToHom (hB.trans (congrArg F.obj hY)).symm := by
+  subst hX hY hA hB
+  simp
 
 /-- On a thin category, such as a preorder, the images under a functor `F` of two morphisms
 `f : X ⟶ Y` and `g : X' ⟶ Y'` between equal endpoints agree up to the transports along those
