@@ -38,7 +38,9 @@ compatibility with composition characterizes the transport
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, the map of
   the long exact sequence of the pair `(M, M ∖ {x})`
-  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`).
+  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`). For `x ∈ S` it factors
+  through the local homology along `S`
+  (`TauCeti.singularHomologyToLocalHomology_eq_localHomologyRestriction`).
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
@@ -189,6 +191,21 @@ theorem singularHomologyToLocalHomology_eq_singularHomologyπ (x : M) {k : ℕ}
   exact congrArg (fun φ ↦ ModuleCat.Hom.hom φ μ)
     (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id N
       (fun _ h ↦ absurd h (by simp)) k)
+
+/-- The local class of `μ` at a point `x` of a set `S` is the restriction to `x` of the image of
+`μ` in the local homology `Hₖ(M, M ∖ S; N)` along `S`. -/
+theorem singularHomologyToLocalHomology_eq_localHomologyRestriction {S : Set M} {x : M}
+    (hx : x ∈ S) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N x k μ =
+      localHomologyRestriction N (singleton_subset_iff.2 hx) k
+        (((TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ
+          (C := ModuleCat.{w} Λ) N k).hom μ) := by
+  rw [singularHomologyToLocalHomology_eq_singularHomologyπ, localHomologyRestriction_def]
+  exact congrArg (fun φ ↦ ModuleCat.Hom.hom φ μ)
+    (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (X := TopCat.of M)
+      (S := {x}ᶜ) (S' := Sᶜ) N
+      (fun y hy hyx ↦ hy ((mem_singleton_iff.1 hyx : y = x) ▸ hx)) k).symm
 
 end SingularHomology
 
