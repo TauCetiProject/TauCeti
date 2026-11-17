@@ -683,23 +683,52 @@ private theorem ofBraidedGenLift_obj_eq (X : (braidedGenSignature S).FreeMonoida
     (ofBraidedGenLift S).obj X = (ofBraidedGen S).obj X :=
   ofBraidedGenLift_obj S X
 
+private theorem ofBraidedGen_map {X Y : (braidedGenSignature S).FreeMonoidal} (f : X ⟶ Y) :
+    (ofBraidedGen S).map f =
+      eqToHom (ofBraidedGenLift_obj_eq S X).symm ≫ (ofBraidedGenLift S).map f ≫
+        eqToHom (ofBraidedGenLift_obj_eq S Y) := rfl
+
+private theorem ofBraidedGenLift_map_coupon (c : (braidedGenSignature S).Coupon) :
+    (ofBraidedGenLift S).map (FreeMonoidal.coupon (S := braidedGenSignature S) c) =
+      eqToHom (ofBraidedGenLift_obj S ⟨(braidedGenSignature S).src c⟩) ≫
+        braidedGenCoupon S c ≫
+        eqToHom (ofBraidedGenLift_obj S ⟨(braidedGenSignature S).tgt c⟩).symm :=
+  -- `(ofBraidedGenLift S).obj ⟨W⟩` is definitionally `projectObj (fun a ↦ of a) W` by
+  -- `FreeMonoidal.lift`, so `ofBraidedGenLift_obj S ⟨W⟩` and `projectObj_of S W` agree by proof
+  -- irrelevance.
+  FreeMonoidal.lift_map_coupon _ _ c
+
 private def ofBraidedGenIso :
     ofBraidedGenLift S ≅ ofBraidedGen S :=
   NatIso.ofComponents (fun X ↦ eqToIso (ofBraidedGenLift_obj_eq S X)) fun f ↦ by
-    change (ofBraidedGenLift S).map f ≫ eqToHom (ofBraidedGenLift_obj S _) =
-      eqToHom (ofBraidedGenLift_obj S _) ≫ eqToHom (ofBraidedGenLift_obj S _).symm ≫
-        (ofBraidedGenLift S).map f ≫ eqToHom (ofBraidedGenLift_obj S _)
-    simp
+    rw [eqToIso.hom, eqToIso.hom, ofBraidedGen_map, eqToHom_trans_assoc, eqToHom_refl,
+      Category.id_comp]
+
+private theorem ofBraidedGenIso_hom_app (X : (braidedGenSignature S).FreeMonoidal) :
+    (ofBraidedGenIso S).hom.app X = eqToHom (ofBraidedGenLift_obj_eq S X) := by
+  simp only [ofBraidedGenIso, NatIso.ofComponents_hom_app, eqToIso.hom]
+
+private theorem ofBraidedGenIso_inv_app (X : (braidedGenSignature S).FreeMonoidal) :
+    (ofBraidedGenIso S).inv.app X = eqToHom (ofBraidedGenLift_obj_eq S X).symm := by
+  simp only [ofBraidedGenIso, NatIso.ofComponents_inv_app, eqToIso.inv]
+
+-- `FreeMonoidal.lift_obj_tensorUnit` and `lift_obj_tensor` are definitional (`rfl`), so `𝟙 _`
+-- agrees with the corresponding `eqToHom` morphism by proof irrelevance.
+private theorem ofBraidedGenLift_ε :
+    ε (ofBraidedGenLift S) = eqToHom (FreeMonoidal.lift_obj_tensorUnit _ _).symm :=
+  (FreeMonoidal.lift_ε _ _).trans (eqToHom_refl _ rfl).symm
+
+private theorem ofBraidedGenLift_μ (X Y : (braidedGenSignature S).FreeMonoidal) :
+    μ (ofBraidedGenLift S) X Y = eqToHom (FreeMonoidal.lift_obj_tensor _ _ X Y).symm :=
+  (FreeMonoidal.lift_μ _ _ X Y).trans (eqToHom_refl _ rfl).symm
 
 private instance : (ofBraidedGen S).Monoidal :=
   Functor.Monoidal.transport (ofBraidedGenIso S)
 
 private theorem ofBraidedGen_ε :
     ε (ofBraidedGen S) = eqToHom (ofBraidedGen_obj_tensorUnit S).symm := by
-  rw [Functor.Monoidal.transport_ε (ofBraidedGenIso S)]
-  have h₁ : ε (ofBraidedGenLift S) = eqToHom (FreeMonoidal.lift_obj_tensorUnit _ _).symm := rfl
-  have h₂ : (ofBraidedGenIso S).hom.app (𝟙_ _) = eqToHom (ofBraidedGenLift_obj_eq S (𝟙_ _)) := rfl
-  rw [h₁, h₂, eqToHom_trans]
+  rw [Functor.Monoidal.transport_ε (ofBraidedGenIso S), ofBraidedGenLift_ε,
+    ofBraidedGenIso_hom_app, eqToHom_trans]
 
 private theorem ofBraidedGen_η :
     η (ofBraidedGen S) = eqToHom (ofBraidedGen_obj_tensorUnit S) := by
@@ -708,18 +737,10 @@ private theorem ofBraidedGen_η :
 
 private theorem ofBraidedGen_μ (X Y : (braidedGenSignature S).FreeMonoidal) :
     μ (ofBraidedGen S) X Y = eqToHom (ofBraidedGen_obj_tensor S X Y).symm := by
-  rw [Functor.Monoidal.transport_μ (ofBraidedGenIso S)]
-  have h₁ : μ (ofBraidedGenLift S) X Y =
-      eqToHom (rfl : (ofBraidedGenLift S).obj X ⊗ (ofBraidedGenLift S).obj Y =
-        (ofBraidedGenLift S).obj (X ⊗ Y)) := rfl
-  have hX : (ofBraidedGenIso S).inv.app X = eqToHom (ofBraidedGenLift_obj_eq S X).symm := rfl
-  have hY : (ofBraidedGenIso S).inv.app Y = eqToHom (ofBraidedGenLift_obj_eq S Y).symm := rfl
-  have hXY : (ofBraidedGenIso S).hom.app (X ⊗ Y) =
-      eqToHom (ofBraidedGenLift_obj_eq S (X ⊗ Y)) := rfl
-  rw [h₁, hX, hY, hXY, MonoidalCategory.tensorHom_def]
-  simp only [eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans,
-    FreeMonoidal.lift_obj_tensor, eqToHom_refl, Category.id_comp]
-  exact eqToHom_trans _ _
+  rw [Functor.Monoidal.transport_μ (ofBraidedGenIso S), ofBraidedGenLift_μ,
+    ofBraidedGenIso_inv_app, ofBraidedGenIso_inv_app, ofBraidedGenIso_hom_app,
+    MonoidalCategory.tensorHom_def]
+  simp only [eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans]
 
 private theorem ofBraidedGen_δ (X Y : (braidedGenSignature S).FreeMonoidal) :
     δ (ofBraidedGen S) X Y = eqToHom (ofBraidedGen_obj_tensor S X Y) := by
@@ -729,12 +750,17 @@ private theorem ofBraidedGen_δ (X Y : (braidedGenSignature S).FreeMonoidal) :
 private theorem ofBraidedGen_map_coupon (c : (braidedGenSignature S).Coupon) :
     (ofBraidedGen S).map (FreeMonoidal.coupon (S := braidedGenSignature S) c) =
       braidedGenCoupon S c := by
-  dsimp only [ofBraidedGen]
-  rw [FreeMonoidal.lift_map_coupon]
-  change eqToHom (projectObj_of S _).symm ≫
-      (eqToHom (projectObj_of S _) ≫ braidedGenCoupon S c ≫ eqToHom (projectObj_of S _).symm) ≫
-      eqToHom (projectObj_of S _) = braidedGenCoupon S c
-  simp
+  -- State the cancellation with explicit `⟨src c⟩`/`⟨tgt c⟩` endpoints matching `braidedGenCoupon`:
+  -- `(ofBraidedGen S).obj X` is definitionally `⟨X.as⟩`, so `rw` cannot unify them at implicit
+  -- transparency, while `Eq.trans` aligns `ofBraidedGenLift_obj_eq` with `ofBraidedGenLift_obj`
+  -- by proof irrelevance.
+  have h : eqToHom (ofBraidedGenLift_obj S ⟨(braidedGenSignature S).src c⟩).symm ≫
+      (ofBraidedGenLift S).map (FreeMonoidal.coupon (S := braidedGenSignature S) c) ≫
+      eqToHom (ofBraidedGenLift_obj S ⟨(braidedGenSignature S).tgt c⟩) =
+      braidedGenCoupon S c := by
+    rw [ofBraidedGenLift_map_coupon, Category.assoc, Category.assoc, eqToHom_trans_assoc,
+      eqToHom_refl, Category.id_comp, eqToHom_trans, eqToHom_refl, Category.comp_id]
+  exact (ofBraidedGen_map S _).trans h
 
 end OfBraidedGen
 
