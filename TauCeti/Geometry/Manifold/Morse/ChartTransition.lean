@@ -291,10 +291,9 @@ theorem det_polarFactor_fst_fderiv_transition_inl_eq_mul [FiniteDimensional ℝ 
     have h := ψ₀.fderiv_comp_symm_eq_comp ψ₁ ψ₂ (zero_lt_one.trans_le hn).ne' hx₀ hx₁ hx₂
     rwa [hψ₁, hψ₂] at h
   -- `A₀₁` preserves `‖u‖² - ‖v‖²`, so it maps the negative cone into itself.
-  have hcone (z : E × F) (hz : ‖z.2‖ < ‖z.1‖) : ‖(A₀₁ z).2‖ < ‖(A₀₁ z).1‖ := by
-    have hQ := ψ₀.norm_sq_sub_fderiv_transition ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ z
-    have hz2 : ‖z.2‖ ^ 2 < ‖z.1‖ ^ 2 := pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
-    exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by linarith)
+  have hcone (z : E × F) (hz : ‖z.2‖ < ‖z.1‖) : ‖(A₀₁ z).2‖ < ‖(A₀₁ z).1‖ :=
+    A₀₁.norm_snd_apply_lt_norm_fst_apply_of_norm_sq_sub
+      (ψ₀.norm_sq_sub_fderiv_transition ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁) hz
   have hneg (u : E) (hu : u ≠ 0) :
       ‖(A₁₂.comp (ContinuousLinearMap.inl ℝ E F) u).2‖ <
         ‖(A₁₂.comp (ContinuousLinearMap.inl ℝ E F) u).1‖ := by

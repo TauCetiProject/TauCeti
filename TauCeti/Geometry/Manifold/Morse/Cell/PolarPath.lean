@@ -99,10 +99,7 @@ theorem exists_path_polarFactor_family_of_charts (ψ₀ ψ₁ ψ₂ : P → Open
   -- `D₀₁ p` preserves `Q`, hence the negative cone, and `D₁₂ p ∘ inl` is an isometric negative
   -- column; the derivative of the composite transition is `D₀₁ p ∘ D₁₂ p`.
   obtain ⟨γ, hγc, hγ0, hγ1⟩ := exists_path_polarFactor_fst_comp_comp hD₀₁
-    (fun p z hz ↦ by
-      have := hQ₀₁ p z
-      nlinarith [pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero, norm_nonneg (D₀₁ p z).1,
-        norm_nonneg (D₀₁ p z).2])
+    (fun p _ ↦ (D₀₁ p).norm_snd_apply_lt_norm_fst_apply_of_norm_sq_sub (hQ₀₁ p))
     (C := fun p ↦ D₁₂ p ∘L inl ℝ E F) (hD₁₂.clm_comp continuous_const)
     (fun p u ↦ by simpa using hQ₁₂ p (u, 0))
   refine ⟨γ, hγc, hγ0, fun p ↦ ?_⟩
