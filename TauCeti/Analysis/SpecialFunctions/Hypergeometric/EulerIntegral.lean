@@ -171,8 +171,7 @@ theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re
     add_sub_cancel]
   have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
   have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
-  have hb_ne : ∀ m : ℕ, b ≠ -m := fun m hm => by simp [hm] at hb; linarith [m.cast_nonneg (α := ℝ)]
-  rw [← Gamma_add_nat_div_Gamma_eq (n := k) b hb_ne]
+  rw [← Gamma_add_nat_div_Gamma_eq (n := k) b (ne_neg_natCast_of_re_pos hb)]
   field
 
 end Complex

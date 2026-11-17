@@ -283,18 +283,14 @@ theorem analyticAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ <
   rw [funext (regularizedGaussHGFun_eq_regularizedHGFun a b c)]
   exact analyticAt_regularizedHGFun_of_card_eq_add_one rfl hz
 
-private theorem regularizedHGFunCoeff_pair_singleton (a b c : ℂ) (k : ℕ) :
-    regularizedHGFunCoeff {a, b} {c} k =
-      (ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k)) := by
-  simp [regularizedHGFunCoeff]
-
 /-- On the open unit disk, the defining power series of `regularizedGaussHGFun a b c z` converges
 to it for all complex parameters `a`, `b`, `c`. -/
 theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ => (ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
         (k ! * Gamma (c + k)) * z ^ k)
       (regularizedGaussHGFun a b c z) := by
-  simpa only [regularizedGaussHGFun_eq_regularizedHGFun, regularizedHGFunCoeff_pair_singleton] using
+  simpa only [regularizedGaussHGFun_eq_regularizedHGFun, ← coeff_regularizedGaussHGFunSeries,
+    regularizedGaussHGFunSeries, regularizedHGFunSeries_coeff] using
     hasSum_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c}) rfl hz
 
 /-- On the open unit disk, the defining power series of `regularizedGaussHGFun a b c z` converges
@@ -302,7 +298,8 @@ absolutely for all complex parameters `a`, `b`, `c`. -/
 theorem summable_norm_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     Summable fun k : ℕ => ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
         (k ! * Gamma (c + k)) * z ^ k‖ := by
-  simpa only [regularizedHGFunCoeff_pair_singleton] using
+  simpa only [← coeff_regularizedGaussHGFunSeries, regularizedGaussHGFunSeries,
+    regularizedHGFunSeries_coeff] using
     summable_norm_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c}) rfl hz
 
 /-- When the first upper parameter is a nonpositive integer `-n`, the regularized Gauss
@@ -312,7 +309,8 @@ theorem regularizedGaussHGFun_neg_natCast_eq_sum (b c z : ℂ) (n : ℕ) :
       ∑ k ∈ Finset.range (n + 1),
         (ascPochhammer ℂ k).eval (-(n : ℂ)) * (ascPochhammer ℂ k).eval b /
           (k ! * Gamma (c + k)) * z ^ k := by
-  simpa only [regularizedGaussHGFun_eq_regularizedHGFun, regularizedHGFunCoeff_pair_singleton] using
+  simpa only [regularizedGaussHGFun_eq_regularizedHGFun, ← coeff_regularizedGaussHGFunSeries,
+    regularizedGaussHGFunSeries, regularizedHGFunSeries_coeff] using
     regularizedHGFun_eq_sum_of_neg_natCast_mem {c} z (a := {-(n : ℂ), b}) (by simp)
 
 /-- Binomial-coefficient form of the terminating regularized Gauss hypergeometric polynomial
@@ -380,17 +378,19 @@ theorem regularizedGaussHGFun_eq_sub_mul_add_mul (a b c : ℂ) {z : ℂ}
       (c - a) * regularizedGaussHGFun a b (c + 1) z +
         a * regularizedGaussHGFun (a + 1) b (c + 1) z := by
   rcases eq_or_ne a 0 with rfl | ha
-  · simpa [regularizedHGFunCoeff] using
+  · simpa using
       (mul_regularizedHGFunCoeff_of_mem_right 0 0 (Multiset.mem_singleton_self (c + 1))).symm
   · refine (hasSum_regularizedGaussHGFun_of_or b c hz).unique
       ((((hasSum_regularizedGaussHGFun_of_or b (c + 1) hz).mul_left (c - a)).add
         ((hasSum_regularizedGaussHGFun_of_or b (c + 1) (shift_add_one_or ha hz)).mul_left a))
           |>.congr_fun fun k => ?_)
-    have hc := mul_regularizedHGFunCoeff_of_mem_right {a, b} k
-      (Multiset.mem_singleton_self (c + 1))
-    simp only [Multiset.erase_singleton, Multiset.cons_zero, add_sub_cancel_right,
-      Multiset.insert_eq_cons, regularizedHGFunCoeff, Multiset.map_cons, Multiset.map_singleton,
-      Multiset.prod_cons, Multiset.prod_singleton] at hc
+    have hc : (c + k) * ((ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
+          (k ! * Gamma (c + 1 + k))) =
+        (ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k)) := by
+      simpa only [Multiset.erase_singleton, Multiset.cons_zero, add_sub_cancel_right,
+        ← coeff_regularizedGaussHGFunSeries, regularizedGaussHGFunSeries,
+        regularizedHGFunSeries_coeff] using
+        mul_regularizedHGFunCoeff_of_mem_right {a, b} k (Multiset.mem_singleton_self (c + 1))
     have hpoch := ascPochhammer_eval_succ k a
     symm
     calc (c - a) * ((ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
