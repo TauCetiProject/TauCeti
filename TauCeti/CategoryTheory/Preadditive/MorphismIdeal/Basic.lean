@@ -244,6 +244,10 @@ abbrev Quotient : Type u :=
 abbrev quotientFunctor : C ⥤ I.Quotient :=
   CategoryTheory.Quotient.functor I.rel
 
+/-- Every object of the quotient category is the class of its representative. -/
+theorem quotientFunctor_obj_as (X : I.Quotient) : I.quotientFunctor.obj X.as = X :=
+  (rfl)
+
 noncomputable instance : Preadditive I.Quotient :=
   CategoryTheory.Quotient.preadditive I.rel fun _ _ _ _ _ _ hf hg ↦ I.rel_add hf hg
 
