@@ -208,6 +208,7 @@ theorem norm_poincareHomotopy_le {x₀ x : E} {ω : E → E [⋀^Fin (n + 1)]→
 /-- **The Poincaré homotopy operator is radial.** Contracting the form `K ω` at `x` with the
 radial vector `x - x₀` gives zero, since the integrand already contains `x - x₀` in its first
 slot. -/
+@[simp]
 theorem curryLeft_poincareHomotopy_sub_eq_zero [CompleteSpace F] (x₀ : E)
     (ω : E → E [⋀^Fin (n + 2)]→L[ℝ] F) (x : E) :
     (poincareHomotopy x₀ ω x).curryLeft (x - x₀) = 0 := by
@@ -216,7 +217,7 @@ theorem curryLeft_poincareHomotopy_sub_eq_zero [CompleteSpace F] (x₀ : E)
       (fun t : ℝ ↦ t ^ (n + 1) • (ω (lineMap x₀ x t)).curryLeft (x - x₀)) volume 0 1
   · let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
       (n := n)).toContinuousLinearMap.flip (x - x₀)
-    have hL (f : E [⋀^Fin (n + 1)]→L[ℝ] F) : L f = f.curryLeft (x - x₀) := rfl
+    have hL (f : E [⋀^Fin (n + 1)]→L[ℝ] F) : L f = f.curryLeft (x - x₀) := by simp [L]
     rw [← hL, ← L.intervalIntegral_comp_comm h]
     refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
     rw [hL, ContinuousAlternatingMap.curryLeft_smul, smul_apply,
@@ -593,15 +594,6 @@ theorem norm_poincareHomotopy_sub_le (hs : StarConvex ℝ x₀ s) {B : ℝ} {L :
   field_simp
   ring
 
-/-- The cone `convexJoin ℝ {x₀} K` over a subset `K` of a set `s` star-convex with respect to `x₀`
-lies in `s`. -/
-private theorem convexJoin_singleton_subset (hs : StarConvex ℝ x₀ s) {K : Set E} (hKs : K ⊆ s) :
-    convexJoin ℝ {x₀} K ⊆ s := by
-  intro z hz
-  obtain ⟨a, ha, w, hw, hz⟩ := mem_convexJoin.1 hz
-  rw [mem_singleton_iff.1 ha] at hz
-  exact hs.segment_subset (hKs hw) hz
-
 /-- **Local bounds for the Poincaré homotopy operator.** If a family of forms is bounded on each
 compact subset of a set `s` star-convex with respect to `x₀`, uniformly in the index, then so is
 the family of their Poincaré homotopies with centre `x₀`. -/
@@ -609,7 +601,7 @@ theorem isLocallyBoundedOn_poincareHomotopy (hs : StarConvex ℝ x₀ s) {ι : T
     {f : ι → E → E [⋀^Fin (n + 1)]→L[ℝ] F} (hf : IsLocallyBoundedOn f s) :
     IsLocallyBoundedOn (fun i ↦ poincareHomotopy x₀ (f i)) s := by
   refine isLocallyBoundedOn_def.2 fun K hKs hK ↦ ?_
-  obtain ⟨B, hB⟩ := isLocallyBoundedOn_def.1 hf _ (convexJoin_singleton_subset hs hKs)
+  obtain ⟨B, hB⟩ := isLocallyBoundedOn_def.1 hf _ (hs.convexJoin_singleton_subset hKs)
     (isCompact_singleton.convexJoin hK)
   obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn
     (continuous_id.sub continuous_const).norm.continuousOn
@@ -633,7 +625,7 @@ theorem isLocallyBoundedOn_fderiv_poincareHomotopy [ProperSpace E] (hs : StarCon
   refine isLocallyBoundedOn_def.2 fun K hKs hK ↦ ?_
   obtain ⟨δ, hδ, hδs⟩ := hK.exists_cthickening_subset_open hso hKs
   set K' := convexJoin ℝ {x₀} (cthickening δ K)
-  have hK's : K' ⊆ s := convexJoin_singleton_subset hs hδs
+  have hK's : K' ⊆ s := hs.convexJoin_singleton_subset hδs
   have hK' : IsCompact K' := isCompact_singleton.convexJoin hK.cthickening
   obtain ⟨B₁, hB₁⟩ := isLocallyBoundedOn_def.1 hfb K' hK's hK'
   obtain ⟨B₂, hB₂⟩ := isLocallyBoundedOn_def.1 hDf K' hK's hK'
