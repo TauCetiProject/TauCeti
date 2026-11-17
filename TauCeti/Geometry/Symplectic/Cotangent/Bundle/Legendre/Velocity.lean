@@ -102,6 +102,8 @@ theorem range_legendreMap_comp_snd :
   · rintro ⟨v, rfl⟩
     exact ⟨v.2, by rw [legendreMap_comp_snd]⟩
   · rw [legendreMap_comp_snd]
+    -- `hw` applies to `u : TangentSpace 𝓘(𝕜, E) z.proj` because the fibre types
+    -- `TangentSpace 𝓘(𝕜, E) z.proj` and its dual are `E` and `E →L[𝕜] 𝕜` by definition.
     exact CotangentBundle.ext rfl fun u ↦ DFunLike.congr_fun hw u
 
 /-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity is injective exactly
@@ -117,6 +119,9 @@ theorem injective_legendreMap_comp_snd_iff :
     obtain ⟨x, w⟩ := v
     obtain ⟨x', w'⟩ := v'
     obtain rfl : x = x' := congrArg TotalSpace.proj hvv'
+    -- The empty ascription retypes the fibre equality, stated in
+    -- `TangentSpace 𝓘(𝕜, E) x →L[𝕜] 𝕜`, as one in `E →L[𝕜] 𝕜`, which is the same type by
+    -- definition, so that `h` applies to it.
     obtain rfl : w = w' := h (TotalSpace.mk_inj.1 hvv' :)
     rfl
 
