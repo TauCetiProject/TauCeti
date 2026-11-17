@@ -182,10 +182,11 @@ def addBasepoint : TopCat.{u} ⥤ BasedTopologicalSpace.{u} where
   map_comp _ _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
 
 /-- The inclusion `X ⟶ X₊` of a space into the space with a disjoint basepoint added. -/
-def addBasepointInr (X : TopCat.{u}) : X ⟶ TopCat.of (addBasepoint.obj X).carrier :=
+def addBasepointInr (X : TopCat.{u}) : X ⟶ TopCat.of (PUnit.{u + 1} ⊕ X) :=
   TopCat.ofHom ⟨Sum.inr, continuous_inr⟩
 
 /-- The inclusion `X ⟶ X₊` sends a point `x` to `Sum.inr x`. -/
+@[simp]
 lemma addBasepointInr_apply (X : TopCat.{u}) (x : X) : addBasepointInr X x = Sum.inr x :=
   (rfl)
 
