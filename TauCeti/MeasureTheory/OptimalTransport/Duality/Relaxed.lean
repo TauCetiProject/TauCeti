@@ -79,6 +79,8 @@ open scoped ENNReal NNReal unitInterval
 
 namespace TauCeti
 
+section
+
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
   {c : X × Y → ℝ≥0∞} {φ : X → ℝ} {ψ : Y → ℝ}
 
@@ -298,6 +300,8 @@ theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_integrable_of_measurab
     hc ha hb haint hbint hsplit).sSup_eq.symm
 
 end Polish
+
+end
 
 /-! ### Explicit `{0, 1, ∞}` Borel cost with an unrelaxed Kantorovich duality gap -/
 

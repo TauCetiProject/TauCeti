@@ -47,6 +47,8 @@ open _root_.Finsupp
 
 namespace TauCeti
 
+section
+
 variable (𝕜 : Type*) [Field 𝕜] (k : ℕ)
 
 /-- The infinite Grassmannian of `k`-dimensional subspaces of the countable coordinate space
@@ -132,11 +134,15 @@ theorem mem_range_toInfinite_iff (W : infiniteGrassmannian 𝕜 k) :
 
 end finiteGrassmannian
 
+end
+
 namespace infiniteGrassmannian
 
 open finiteGrassmannian
 
-variable {𝕜 k}
+section
+
+variable {𝕜 : Type*} [Field 𝕜] {k : ℕ}
 
 /-- Every point of the infinite Grassmannian comes from some finite stage. -/
 theorem exists_toInfinite_eq (W : infiniteGrassmannian 𝕜 k) :
@@ -212,6 +218,8 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : infiniteGrassmannia
   exact ⟨fun h n U hU ↦ h U hU n, fun h U hU n ↦ h n U hU⟩
 
 end Topology
+
+end
 
 section Colimit
 
