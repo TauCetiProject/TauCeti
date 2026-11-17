@@ -114,19 +114,18 @@ theorem mk_eq_one_of_inner_eq_zero (hE : finrank ℝ E = n + 3) (hn : Even n)
   -- The Hurewicz class of `a` is its own negative.
   have hneg : HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a =
       -HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a := by
-    conv_lhs => rw [HomotopyGroup.hurewicz_mk, GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp,
-      singularHomologyFunctor_map_eq_neg_of_inner_eq_zero (ModuleCat.of ℤ ℤ) hE hn.add_one hv h0
-        ht, Preadditive.comp_neg, ← GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp,
-      ← HomotopyGroup.hurewicz_mk]
+    have key := singularHomologyFunctor_map_eq_neg_of_inner_eq_zero (ModuleCat.of ℤ ℤ) hE
+      hn.add_one hv h0 ht
+    rw [HomotopyGroup.hurewicz_mk, GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp,
+      ← Preadditive.comp_neg, ← key]
   -- So `a ^ 2` has the Hurewicz class of `1`, and the Hurewicz map is injective.
   have hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
     fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := n + 2) hE (by simpa using hk) x
   have h2' : (HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1) (a ^ 2)).hom 1 =
       (HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1)
         (1 : π_ (n + 2) (sphere (0 : E) 1) x)).hom 1 := by
-    rw [HomotopyGroup.hurewicz_pow, HomotopyGroup.hurewicz_one, two_nsmul]
-    nth_rw 2 [hneg]
-    rw [add_neg_cancel]
+    rw [HomotopyGroup.hurewicz_pow, HomotopyGroup.hurewicz_one, two_nsmul,
+      add_eq_zero_iff_eq_neg.2 hneg]
   have h2 : a ^ 2 = 1 := (HomotopyGroup.bijective_hurewicz hX).1 h2'
   -- `πₙ₊₂(S, x) ≅ ℤ` has no torsion.
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
