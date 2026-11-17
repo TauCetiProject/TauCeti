@@ -11,15 +11,16 @@ public import TauCeti.CategoryTheory.DG.ShiftClosure.SingleObj
 public import TauCeti.CategoryTheory.DG.Twisted.OneSided
 
 /-!
-# Twisting cocycles are one-sided twisted complexes
+# Twisting cocycles give one-sided twisted complexes
 
 Let `(A, d)` be a differential graded algebra and `⋆` the unique object of its one-object
 differential graded category `TauCeti.DGSingleObj h`.  In Mathlib's enriched factor order its
 composition is the graded opposite product, `dgComp a b = (-1)^(|a| |b|) • (b * a)`
 (`TauCeti.DGSingleObj.dgHomEquiv_dgComp`).  This file shows that a twisting cocycle `m` on a finite
 set `P` of generators graded by `ind`, the data of the twisted complex `K_m` of
-`TauCeti.Algebra.Homology.DG.Twisted.Complex`, is the same thing as a one-sided twisted complex of
-Bondal and Kapranov over this category, and compares the two complexes.
+`TauCeti.Algebra.Homology.DG.Twisted.Complex`, gives a one-sided twisted complex of Bondal and
+Kapranov over this category, that twisting cocycles correspond exactly to the Maurer–Cartan twists
+of `⊕_x ⋆[-ind x]` that are strictly triangular for `ind`, and compares the two complexes.
 
 The twisted complex is `T_m = (⊕_{x ∈ P} ⋆[-ind x], δ)`, an object of the additive closure of the
 shift closure of the one-object category (`TauCeti.TwistingCocycle.shiftedGenerators`), with the
@@ -39,12 +40,13 @@ a noncommutative algebra is a different equation (compare the right-free reading
   `z`, the sign `(-1)^(ind x - ind z)` of the differential of the shift closure and the signs of
   composition in the shift closure and in the one-object category combine to the twisting-equation
   sign `(-1)^(ind z - ind y)` times the common factor `-(-1)^(ind x - ind z)`.
-* **One-sidedness.**  Since `m y x` vanishes unless `ind x < ind y`, the twisted object
-  `TauCeti.TwistingCocycle.toDGTwistedObject` is one-sided for the levels `N - ind x`
-  (`TauCeti.TwistingCocycle.isOneSided_toDGTwistedObject`), so it lies in the pretriangulated
-  envelope of the one-object category.  Conversely every degree-one Maurer–Cartan endomorphism of
-  `⊕_x ⋆[-ind x]` whose entry from `x` to `y` vanishes when `ind y ≤ ind x` comes from exactly one
-  twisting cocycle (`TauCeti.TwistingCocycle.twistMatrixEquiv`).
+* **One-sidedness and strict triangularity.**  Since `m y x` vanishes unless `ind x < ind y`, the
+  twisted object `TauCeti.TwistingCocycle.toDGTwistedObject` is one-sided for the levels
+  `N - ind x` (`TauCeti.TwistingCocycle.isOneSided_toDGTwistedObject`), so it lies in the
+  pretriangulated envelope of the one-object category.  Conversely every degree-one Maurer–Cartan
+  endomorphism of `⊕_x ⋆[-ind x]` that is strictly triangular for `ind`, that is whose entry from
+  `x` to `y` vanishes when `ind y ≤ ind x`, comes from exactly one twisting cocycle
+  (`TauCeti.TwistingCocycle.twistMatrixEquiv`).
 * **The twisted complex `K_m` is a Hom complex.**  The Hom complex from `T_m` to `⋆[0]` is
   isomorphic, as a cochain complex, to the twisted complex `K_m` of the free rank-one module `A`, in
   which `x` sits in degree `-ind x` and `d x = Σ_y m x y · y`
@@ -60,8 +62,8 @@ share a universe and the generators form a type `P : Type`.
 * `TauCeti.TwistingCocycle.shiftedGenerators`: the object `⊕_{x ∈ P} ⋆[-ind x]`.
 * `TauCeti.TwistingCocycle.twistMatrix`: the degree-one endomorphism `-mᵀ` of it.
 * `TauCeti.TwistingCocycle.toDGTwistedObject`: the twisted object `T_m` of a twisting cocycle.
-* `TauCeti.TwistingCocycle.twistMatrixEquiv`: twisting cocycles are the one-sided Maurer–Cartan
-  endomorphisms of `⊕_x ⋆[-ind x]`.
+* `TauCeti.TwistingCocycle.twistMatrixEquiv`: twisting cocycles are the Maurer–Cartan
+  endomorphisms of `⊕_x ⋆[-ind x]` that are strictly triangular for `ind`.
 * `TauCeti.TwistingCocycle.starTwistedObject`: the object `⋆[0]` of twisted objects.
 * `TauCeti.TwistingCocycle.dgHomComplexIso`: the Hom complex from `T_m` to `⋆[0]` is `K_m`.
 
@@ -114,10 +116,9 @@ degree `ind x - ind y + 1`. -/
 noncomputable def twistMatrix (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1)) :
     DGHom R 1 (shiftedGenerators h ind) (shiftedGenerators h ind) :=
   (DGAdditiveClosure.dgHomEquiv R _ _ 1).symm fun x y ↦
-    (DGShiftClosure.dgHomEquiv R _ _ 1).symm <| (DGSingleObj.dgHomEquiv _ _ _).symm
-      ⟨-m y x, by
-        rw [show 1 + (-ind y - -ind x) = ind x - ind y + 1 by ring]
-        exact neg_mem (hm y x)⟩
+    ofShiftCoeff (-m y x) <| by
+      rw [show 1 + (-ind y - -ind x) = ind x - ind y + 1 by ring]
+      exact neg_mem (hm y x)
 
 /-- The entry from `x` to `y` of `TauCeti.TwistingCocycle.twistMatrix m` is `-m y x`. -/
 @[simp]
@@ -125,7 +126,7 @@ theorem shiftCoeff_twistMatrix (m : P → P → A) (hm : ∀ x y, m x y ∈ 𝒜
     (x y : P) :
     shiftCoeff (DGAdditiveClosure.dgHomEquiv R _ _ 1 (twistMatrix (h := h) m hm) x y) =
       -m y x := by
-  simp [twistMatrix, shiftCoeff_apply]
+  simp [twistMatrix]
 
 /-- The entries of the differential of `TauCeti.TwistingCocycle.twistMatrix m`, up to the common
 sign `-(-1)^(ind x - ind z)`, are the differentials `d (m z x)`. -/
@@ -195,6 +196,13 @@ theorem twistMatrix_neg_shiftCoeff
   DGAdditiveClosure.dgHom_ext R fun x y ↦ shiftCoeff_injective <| by
     rw [shiftCoeff_twistMatrix, neg_neg]
 
+/-- The entry from `x` to `y` of the twisting matrix of a twisting cocycle vanishes when
+`ind y ≤ ind x`. -/
+theorem dgHomEquiv_twistMatrix_eq_zero (m : TwistingCocycle 𝒜 d P ind) {x y : P}
+    (hyx : ind y ≤ ind x) :
+    DGAdditiveClosure.dgHomEquiv R _ _ 1 (twistMatrix (h := h) m.m m.mem_graded) x y = 0 :=
+  shiftCoeff_injective <| by rw [shiftCoeff_twistMatrix, m.one_sided y x hyx, neg_zero, map_zero]
+
 variable (h) in
 /-- **A twisting cocycle is a one-sided twisted complex.** The twisting cocycle `m` on `P` makes
 `⊕_{x ∈ P} ⋆[-ind x]` a twisted object of the additive closure of the shift closure of the
@@ -219,16 +227,15 @@ theorem isOneSided_toDGTwistedObject (m : TwistingCocycle 𝒜 d P ind) :
     (Int.self_le_toNat (ind x)).trans
       (Nat.cast_le.2 (Finset.le_sup (f := fun x ↦ (ind x).toNat) (Finset.mem_univ x)))
   refine (DGTwistedObject.isOneSided_iff _).2
-    ⟨fun x ↦ (N - ind x).toNat, fun x y hxy ↦ shiftCoeff_injective ?_⟩
-  have hyx : ind y ≤ ind x := by
-    dsimp only at hxy
-    have := hN x
-    have := hN y
-    omega
-  rw [shiftCoeff_twistMatrix, m.one_sided y x hyx, neg_zero, map_zero]
+    ⟨fun x ↦ (N - ind x).toNat, fun x y hxy ↦ dgHomEquiv_twistMatrix_eq_zero m ?_⟩
+  dsimp only at hxy
+  have := hN x
+  have := hN y
+  omega
 
 variable (h ind) in
-/-- **Twisting cocycles are the one-sided Maurer–Cartan twists of `⊕_x ⋆[-ind x]`.** A twisting
+/-- **Twisting cocycles are the Maurer–Cartan twists of `⊕_x ⋆[-ind x]` that are strictly
+triangular for `ind`.** A twisting
 cocycle `m` on `P` corresponds to its twisting matrix `-mᵀ`, a degree-one endomorphism of
 `⊕_x ⋆[-ind x]` which satisfies the Maurer–Cartan equation and whose entry from `x` to `y`
 vanishes whenever `ind y ≤ ind x`; every such endomorphism arises from exactly one twisting
@@ -239,8 +246,7 @@ noncomputable def twistMatrixEquiv : TwistingCocycle 𝒜 d P ind ≃
         ∀ x y, ind y ≤ ind x → DGAdditiveClosure.dgHomEquiv R _ _ 1 δ x y = 0} where
   toFun m := ⟨twistMatrix m.m m.mem_graded,
     (dgDifferential_twistMatrix_eq_dgComp_iff _ _).2 m.twisting,
-    fun x y hyx ↦ shiftCoeff_injective <| by
-      rw [shiftCoeff_twistMatrix, m.one_sided y x hyx, neg_zero, map_zero]⟩
+    fun _ _ ↦ dgHomEquiv_twistMatrix_eq_zero m⟩
   invFun δ :=
     { m := fun x y ↦ -shiftCoeff (DGAdditiveClosure.dgHomEquiv R _ _ 1 δ.1 y x)
       mem_graded := neg_shiftCoeff_mem δ.1
@@ -305,17 +311,16 @@ private noncomputable def homEquiv (n : ℤ) :
       exact Submodule.smul_of_tower_mem _ _ hmem⟩
   invFun g := (DGTwistedObject.dgHomEquiv R _ _ n).symm <|
     (DGAdditiveClosure.dgHomEquiv R _ _ n).symm fun x _ ↦
-      (DGShiftClosure.dgHomEquiv R _ _ n).symm <| (DGSingleObj.dgHomEquiv _ _ _).symm
-        ⟨((n + 1) * ind x).negOnePow • (g : P → A) x, by
-          rw [show n + ((0 : ℤ) - -ind x) = n + ind x by ring]
-          exact Submodule.smul_of_tower_mem _ _ (mem_twistedTotalGrading_iff.1 g.2 x)⟩
+      ofShiftCoeff (((n + 1) * ind x).negOnePow • (g : P → A) x) <| by
+        rw [show n + ((0 : ℤ) - -ind x) = n + ind x by ring]
+        exact Submodule.smul_of_tower_mem _ _ (mem_twistedTotalGrading_iff.1 g.2 x)
   map_add' f g := Subtype.ext <| funext fun x ↦ by simp [smul_add]
   map_smul' r f := Subtype.ext <| funext fun x ↦ by simp [smul_comm r]
   left_inv f := (DGTwistedObject.dgHomEquiv R _ _ n).injective <|
     DGAdditiveClosure.dgHom_ext R fun x u ↦ shiftCoeff_injective <| by
-      simp [shiftCoeff_apply, smul_smul]
+      simp [smul_smul]
   right_inv g := Subtype.ext <| funext fun x ↦ by
-    simp [shiftCoeff_apply, smul_smul]
+    simp [smul_smul]
 
 private theorem homEquiv_apply (n : ℤ)
     (f : DGHom R n (m.toDGTwistedObject h) (starTwistedObject h)) (x : P) :
@@ -351,8 +356,7 @@ private theorem homEquiv_dgDifferential (n : ℤ)
     rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
     exact ⟨ind x, by ring⟩
   · refine Finset.sum_congr rfl fun y _ ↦ ?_
-    rw [op_smul_eq_mul, smul_mul_assoc, smul_mul_assoc, mul_neg, smul_neg, smul_neg,
-      smul_neg, neg_neg, smul_smul, smul_smul, smul_smul]
+    simp only [op_smul_eq_mul, smul_mul_assoc, mul_neg, smul_neg, neg_neg, smul_smul]
     congr 1
     rw [← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
     exact ⟨n * ind x + ind x + ind x * ind y - ind y * n - ind y * ind y, by ring⟩
