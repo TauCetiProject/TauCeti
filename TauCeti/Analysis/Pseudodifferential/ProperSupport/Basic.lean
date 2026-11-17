@@ -405,11 +405,13 @@ end KernelCutoff
 /-! ### Kernels supported near the diagonal -/
 
 /-- **The kernel of `Op(a)` is supported within distance `R` of the diagonal**: `Op(a) u (x) = 0`
-whenever the Schwartz function `u` vanishes on the open ball of radius `R` about `x`. Equivalently,
-the distribution kernel `K_a(x, y)` is supported in `{‖x - y‖ ≤ R}`, that is, vanishes for
-`‖x - y‖ > R`. Such an operator is properly supported: it sends a function supported in a closed
-set `K` to one supported in the closed `R`-neighbourhood of `K`, and its formal adjoint does the
-same. -/
+whenever the Schwartz function `u` vanishes on the open ball of radius `R` about `x`. For `R > 0`
+this says equivalently that the distribution kernel `K_a(x, y)` is supported in `{‖x - y‖ ≤ R}`,
+that is, vanishes for `‖x - y‖ > R`. For `R ≤ 0` the ball is empty, so the predicate forces
+`Op(a) = 0`: a differential operator, whose kernel lives on the diagonal, satisfies it for every
+`R > 0` but not for `R = 0` unless it is zero. Such an operator is properly supported: it sends a
+function supported in a closed set `K` to one supported in the closed `R`-neighbourhood of `K`, and
+its formal adjoint does the same. -/
 def HasNearDiagonalKernel (a : Symbol n V W m) (R : ℝ) : Prop :=
   ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n), (∀ y ∈ Metric.ball x R, u y = 0) →
     quantizeSchwartzValue a.coefficient u x = 0
