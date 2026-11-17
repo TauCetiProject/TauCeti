@@ -52,6 +52,10 @@ completeness.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
   whole space to an open set, also of operator norm at most one.
+* `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_le`: on a convex open set and for
+  `α ≤ 1`, every derivative field through order `k` is `α`-Hölder on `Ω`, with constant `3 ‖f‖`.
+  Products and multiplication by coefficients are built on it in
+  `TauCeti.Analysis.Holder.Product`.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccL`: on a convex open set and for `α ≤ 1`, the inclusion
   `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, of operator norm at most `3`. On non-convex open sets the
   inclusion can fail: across a slit, the global Hölder seminorm of the `k`-th derivative is not
@@ -408,6 +412,35 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpaceOn k α Ω F) :
     (nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) : ℝ) ≤ ‖f‖ := by
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
+
+/-- Each iterated derivative through order `k` of a function agreeing with an element of
+`C^{k,α}(Ω)` on `Ω` is controlled at points of `Ω` by the `C^{k,α}(Ω)` norm. -/
+theorem norm_iteratedFDeriv_apply_le (f : CkHolderSpaceOn k α Ω F) {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) {i : ℕ} (hi : i ≤ k) (x : Ω) :
+    ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ ‖f‖ := by
+  rw [f.iteratedFDeriv_eq hg ⟨i, Nat.lt_succ_of_le hi⟩]
+  exact ((f.iteratedFDeriv _).norm_coe_le_norm x).trans (norm_iteratedFDeriv_le f _)
+
+/-- On a convex open set and for `α ≤ 1`, every iterated derivative through order `k` of a
+function agreeing with an element of `C^{k,α}(Ω)` on `Ω` is `α`-Hölder on `Ω`, with constant
+`3 ‖f‖`. Below the top order some geometric condition on `Ω` is needed: on the slit annulus
+described at `TauCeti.CkHolderSpaceOn.inclusionSuccL` the angle function lies in `C^{1,α}(Ω)` but
+is not `α`-Hölder on `Ω`. -/
+theorem holderOnWith_iteratedFDeriv_of_le (f : CkHolderSpaceOn k α Ω F) {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) {j : ℕ}
+    (hj : j ≤ k) :
+    HolderOnWith (3 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j g) Ω := by
+  rcases hj.eq_or_lt with rfl | hj
+  · refine (f.holderOnWith_iteratedFDeriv hg).mono_const ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    nlinarith [f.nnHolderNorm_iteratedFDeriv_le, norm_nonneg f]
+  · have h := (f.contDiffOn hg).holderOnWith_iteratedFDeriv_of_lt Ω.isOpen hconv
+      (M := ‖f‖₊) (L := ‖f‖₊) hj hα
+      (fun x hx ↦ f.norm_iteratedFDeriv_apply_le hg hj.le ⟨x, hx⟩)
+      (fun x hx ↦ f.norm_iteratedFDeriv_apply_le hg hj ⟨x, hx⟩)
+    convert h using 1
+    ring
 
 /-- The `C^{k,α}(Ω)` norm is at most `∑ᵢ Mᵢ + K` when the `i`-th derivative field is bounded by
 `Mᵢ ≥ 0` on `Ω` and the `k`-th field is `α`-Hölder with constant `K`. -/
