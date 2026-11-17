@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -50,6 +51,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.curveVelocityWithin_apply` and `TauCeti.Manifold.curveVelocity_apply` and
   related by `TauCeti.Manifold.curveVelocityWithin_univ`; for a curve in a normed space they are
   its derivatives (`TauCeti.Manifold.curveVelocityWithin_eq_derivWithin`).
+* `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
+  subset of a real normed space is the within derivative of its coordinate curve.
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
   By `Filter.EventuallyEq.curveVelocityLiftWithin_eq`, the velocity lift within `s` at `t`
@@ -1049,5 +1052,24 @@ theorem isMIntegralCurve_iff_curveVelocity_eq {γ : ℝ → M} {v : (x : M) → 
         uniqueDiffWithinAt_univ
   · rw [← (h t).2]
     exact hasMFDerivAt_curveVelocity (h t).1
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {U : TopologicalSpace.Opens E}
+
+/-- The native velocity of a curve in an open subset, read in ambient tangent coordinates,
+is the ordinary within derivative of its coordinate curve. -/
+theorem fromTangentSpace_curveVelocityWithin {γ : ℝ → U} {s : Set ℝ} {t : ℝ}
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ) 𝓘(ℝ, E) γ s t) (hs : UniqueDiffWithinAt ℝ s t) :
+    NormedSpace.fromTangentSpace (γ t).val
+      (tangentSpaceOpenEquiv (I := 𝓘(ℝ, E)) (γ t) (curveVelocityWithin 𝓘(ℝ, E) γ s t)) =
+        derivWithin (fun r ↦ (γ r).val) s t := by
+  have h := curveVelocityWithin_map (f := (Subtype.val : U → E))
+    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hs hγ
+  rw [curveVelocityWithin_eq_derivWithin, mfderiv_subtype_val] at h
+  exact congrArg (NormedSpace.fromTangentSpace (γ t).val) h.symm
 
 end TauCeti.Manifold

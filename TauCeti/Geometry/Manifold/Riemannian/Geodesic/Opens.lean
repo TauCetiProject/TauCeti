@@ -13,8 +13,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 
 For a `C¹` Riemannian metric on an open subset of a finite-dimensional real normed space,
 this file expresses the native geodesic equation using the second-kind Christoffel map of a
-coordinate bilinear-form field. It also identifies native velocity and squared speed with
-their coordinate expressions. The time domain need only have unique derivatives.
+coordinate bilinear-form field. It also identifies squared native speed with its coordinate
+expression. The time domain need only have unique derivatives.
 
 Adapted from the open-domain connection bridge in Yangyang Li's formalization in
 [ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/tree/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Revolution).
@@ -30,18 +30,6 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Opens E}
 
 local notation "IP" => 𝓘(ℝ, E)
-
-/-- The native velocity of a curve in an open subset, read in ambient tangent coordinates,
-is the ordinary within derivative of its coordinate curve. -/
-theorem fromTangentSpace_curveVelocityWithin {γ : ℝ → U} {s : Set ℝ} {t : ℝ}
-    (hγ : MDifferentiableWithinAt 𝓘(ℝ) IP γ s t) (hs : UniqueDiffWithinAt ℝ s t) :
-    NormedSpace.fromTangentSpace (γ t).val
-      (tangentSpaceOpenEquiv (I := IP) (γ t) (curveVelocityWithin IP γ s t)) =
-        derivWithin (fun r ↦ (γ r).val) s t := by
-  have h := curveVelocityWithin_map (f := (Subtype.val : U → E))
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hs hγ
-  rw [curveVelocityWithin_eq_derivWithin, mfderiv_subtype_val] at h
-  exact congrArg (NormedSpace.fromTangentSpace (γ t).val) h.symm
 
 variable [FiniteDimensional ℝ E]
   [RiemannianBundle (fun p : U ↦ TangentSpace 𝓘(ℝ, E) p)]
