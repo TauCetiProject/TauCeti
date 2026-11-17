@@ -123,6 +123,14 @@ theorem cosupport_anti {P Q : MarkedIdeal R} (hI : P.ideal ≤ Q.ideal) (hd : P.
     Q.cosupport ⊆ P.cosupport := fun p hp ↦
   le_trans (by exact_mod_cast hd) (hp.trans (Ideal.orderAt_anti hI p))
 
+/-- If the ideal of `S` is the sum of the ideals of `A` and `B`, and all three carry the same
+mark, then the cosupport of `S` is the intersection of the cosupports of `A` and `B`. -/
+theorem cosupport_eq_inter_of_ideal_eq_sup {S A B : MarkedIdeal R}
+    (hI : S.ideal = A.ideal ⊔ B.ideal) (hA : A.mark = S.mark) (hB : B.mark = S.mark) :
+    S.cosupport = A.cosupport ∩ B.cosupport := by
+  ext p
+  simp [hI, hA, hB, Ideal.orderAt_sup]
+
 section Pow
 
 /-- Rescaling a marked ideal `(I, d)` by a positive integer `k` gives `(Iᵏ, k d)`. -/
@@ -155,6 +163,7 @@ theorem mem_cosupport_pow_iff (p : PrimeSpectrum R)
 
 /-- **Rescaling invariance of the cosupport.** Over a regular ring, `(I, d)` and `(Iᵏ, k d)`
 have the same cosupport. -/
+@[simp]
 theorem cosupport_pow [IsRegularRing R] : (P.pow k).cosupport = P.cosupport := by
   ext p
   exact P.mem_cosupport_pow_iff k p
@@ -188,13 +197,13 @@ theorem sum_comm : P.sum Q = Q.sum P := by
 
 /-- The cosupport of a marked sum contains the intersection of the cosupports. -/
 theorem cosupport_inter_subset_cosupport_sum :
-    P.cosupport ∩ Q.cosupport ⊆ (P.sum Q).cosupport := fun p ⟨hP, hQ⟩ ↦ by
-  rw [mem_cosupport_iff, sum_ideal, sum_mark, Ideal.orderAt_sup, le_min_iff]
-  constructor
-  · rw [mul_comm, Nat.cast_mul, ← nsmul_eq_mul]
-    exact (nsmul_le_nsmul_right hP _).trans (Ideal.nsmul_orderAt_le_orderAt_pow _ _ p)
-  · rw [Nat.cast_mul, ← nsmul_eq_mul]
-    exact (nsmul_le_nsmul_right hQ _).trans (Ideal.nsmul_orderAt_le_orderAt_pow _ _ p)
+    P.cosupport ∩ Q.cosupport ⊆ (P.sum Q).cosupport := by
+  have : NeZero P.mark := ⟨P.mark_pos.ne'⟩
+  have : NeZero Q.mark := ⟨Q.mark_pos.ne'⟩
+  rw [cosupport_eq_inter_of_ideal_eq_sup (S := P.sum Q) (A := P.pow Q.mark)
+    (B := Q.pow P.mark) rfl (mul_comm _ _) rfl]
+  exact Set.inter_subset_inter (P.cosupport_subset_cosupport_pow _)
+    (Q.cosupport_subset_cosupport_pow _)
 
 /-- At a prime whose local ring has an associated graded ring without zero divisors, for instance a
 prime with regular localization, the prime lies in the cosupport of a marked sum exactly when it
@@ -202,16 +211,15 @@ lies in both cosupports. -/
 theorem mem_cosupport_sum_iff (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     p ∈ (P.sum Q).cosupport ↔ p ∈ P.cosupport ∧ p ∈ Q.cosupport := by
-  have key (k d : ℕ) (x : ℕ∞) (hk : k ≠ 0) : (k : ℕ∞) * d ≤ k * x ↔ (d : ℕ∞) ≤ x :=
-    ENat.mul_le_mul_left_iff (by exact_mod_cast hk) (ENat.natCast_ne_top k)
-  simp only [mem_cosupport_iff, sum_ideal, sum_mark, Ideal.orderAt_sup, le_min_iff,
-    Ideal.orderAt_pow, nsmul_eq_mul, Nat.cast_mul]
-  refine and_congr ?_ (key _ _ _ P.mark_pos.ne')
-  rw [mul_comm (P.mark : ℕ∞)]
-  exact key _ _ _ Q.mark_pos.ne'
+  have : NeZero P.mark := ⟨P.mark_pos.ne'⟩
+  have : NeZero Q.mark := ⟨Q.mark_pos.ne'⟩
+  rw [cosupport_eq_inter_of_ideal_eq_sup (S := P.sum Q) (A := P.pow Q.mark)
+    (B := Q.pow P.mark) rfl (mul_comm _ _) rfl, Set.mem_inter_iff, mem_cosupport_pow_iff,
+    mem_cosupport_pow_iff]
 
 /-- **The cosupport of a marked sum.** Over a regular ring, the cosupport of `(Iᵇ + Jᵃ, a b)` is
 the intersection of the cosupports of `(I, a)` and `(J, b)`. -/
+@[simp]
 theorem cosupport_sum [IsRegularRing R] : (P.sum Q).cosupport = P.cosupport ∩ Q.cosupport := by
   ext p
   exact P.mem_cosupport_sum_iff Q p
