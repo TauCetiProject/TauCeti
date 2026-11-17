@@ -29,6 +29,8 @@ Module.finrank R M * (Module.finrank R M + 1) / 2` in arbitrary characteristic.
 
 ## Main results
 
+* `LinearMap.BilinForm.isSymm_add_flip` and `LinearMap.BilinForm.isAlt_sub_flip`: adding or
+  subtracting the flip of a bilinear form yields a symmetric or alternating bilinear form.
 * `LinearMap.BilinForm.finrank_symmSubmodule`: `Module.finrank R (symmSubmodule R M) =
   Module.finrank R M * (Module.finrank R M + 1) / 2` on a finite free module.
 -/
@@ -55,18 +57,25 @@ variable {R M}
 /-- Membership in `symmSubmodule R M` is `LinearMap.BilinForm.IsSymm`. -/
 @[simp] theorem mem_symmSubmodule {B : BilinForm R M} : B ∈ symmSubmodule R M ↔ B.IsSymm := Iff.rfl
 
+/-- Adding a bilinear form to its flip produces a symmetric bilinear form. -/
+theorem isSymm_add_flip (B : BilinForm R M) : (B + B.flip).IsSymm :=
+  ⟨fun _ _ ↦ by simp only [LinearMap.add_apply, flip_apply, add_comm]⟩
+
 end CommSemiring
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- Subtracting the flip of a bilinear form produces an alternating bilinear form. -/
+theorem isAlt_sub_flip (B : BilinForm R M) : (B - B.flip).IsAlt := fun _ ↦ by
+  simp only [LinearMap.sub_apply, flip_apply, sub_self]
+
+end CommRing
 
 section InvertibleTwo
 
 variable (R M : Type*) [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
-
-private theorem isSymm_half_add_flip (B : BilinForm R M) : (⅟(2 : R) • (B + B.flip)).IsSymm :=
-  ⟨fun _ _ ↦ by simp only [LinearMap.smul_apply, LinearMap.add_apply, flip_apply, add_comm]⟩
-
-private theorem isAlt_half_sub_flip (B : BilinForm R M) :
-    LinearMap.IsAlt (⅟(2 : R) • (B - B.flip)) := fun _ ↦ by
-  simp only [LinearMap.smul_apply, LinearMap.sub_apply, flip_apply, sub_self, smul_zero]
 
 private theorem symm_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
     (ψ : Module.Dual R (⋀[R]^2 M)) :
@@ -80,15 +89,16 @@ private theorem symm_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
 private theorem alt_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
     (ψ : Module.Dual R (⋀[R]^2 M)) :
     exteriorPower.alternatingMapLinearEquiv (LinearMap.IsAlt.toAlternatingMap
-      (isAlt_half_sub_flip R M (B + TauCeti.BilinForm.ofExteriorSquareDual ψ))) = ψ := by
+      ((isAlt_sub_flip (B + TauCeti.BilinForm.ofExteriorSquareDual ψ)).smul (⅟(2 : R)))) = ψ := by
   refine TauCeti.BilinForm.ofExteriorSquareDual_injective (LinearMap.ext₂ fun x y ↦ ?_)
   simp only [TauCeti.BilinForm.ofExteriorSquareDual_apply,
-    exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.smul_apply, LinearMap.sub_apply,
+    exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+  rw [LinearMap.IsAlt.toAlternatingMap_apply
+    ((isAlt_sub_flip (B + TauCeti.BilinForm.ofExteriorSquareDual ψ)).smul (⅟(2 : R))) ![x, y]]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.smul_apply, LinearMap.sub_apply,
     LinearMap.add_apply, flip_apply, smul_eq_mul]
-  have hneg := (TauCeti.BilinForm.isAlt_ofExteriorSquareDual ψ).neg_eq x y
-  simp only [TauCeti.BilinForm.ofExteriorSquareDual_apply] at hneg
-  rw [hB.eq y x, ← hneg]
+  rw [hB.eq y x, ← (TauCeti.BilinForm.isAlt_ofExteriorSquareDual ψ).neg_eq x y,
+    TauCeti.BilinForm.ofExteriorSquareDual_apply]
   grind [invOf_mul_self]
 
 /-- When `2` is invertible in `R`, decomposing a bilinear form into its symmetric and alternating
@@ -96,9 +106,9 @@ parts identifies `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinFo
 noncomputable def symmProdExteriorDualEquiv :
     (symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) ≃ₗ[R] BilinForm R M where
   toFun p := p.1.1 + TauCeti.BilinForm.ofExteriorSquareDual p.2
-  invFun B := (⟨⅟(2 : R) • (B + B.flip), isSymm_half_add_flip R M B⟩,
+  invFun B := (⟨⅟(2 : R) • (B + B.flip), (isSymm_add_flip B).smul _⟩,
     exteriorPower.alternatingMapLinearEquiv
-      (LinearMap.IsAlt.toAlternatingMap (isAlt_half_sub_flip R M B)))
+      (LinearMap.IsAlt.toAlternatingMap ((isAlt_sub_flip B).smul _)))
   map_add' _ _ := LinearMap.ext₂ fun _ _ ↦ by
     simp only [Prod.fst_add, Submodule.coe_add, Prod.snd_add, map_add, LinearMap.add_apply]; ring
   map_smul' _ _ := LinearMap.ext₂ fun _ _ ↦ by
@@ -107,10 +117,11 @@ noncomputable def symmProdExteriorDualEquiv :
   left_inv p := Prod.ext (Subtype.ext (symm_part_add_exterior_eq R M p.1.2 p.2))
     (alt_part_add_exterior_eq R M p.1.2 p.2)
   right_inv B := LinearMap.ext₂ fun x y ↦ by
-    simp only [LinearMap.add_apply, LinearMap.smul_apply, flip_apply, LinearMap.sub_apply,
-      TauCeti.BilinForm.ofExteriorSquareDual_apply, LinearMap.IsAlt.toAlternatingMap_apply,
-      exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, Matrix.cons_val_zero,
-      Matrix.cons_val_one, smul_eq_mul]
+    simp only [LinearMap.add_apply, TauCeti.BilinForm.ofExteriorSquareDual_apply,
+      exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+    rw [LinearMap.IsAlt.toAlternatingMap_apply ((isAlt_sub_flip B).smul (⅟(2 : R))) ![x, y]]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.smul_apply,
+      LinearMap.add_apply, LinearMap.sub_apply, flip_apply, smul_eq_mul]
     grind [invOf_mul_self]
 
 variable {R M}
@@ -128,7 +139,11 @@ variable {R M}
 @[simp] theorem symmProdExteriorDualEquiv_symm_snd_apply_ιMulti (B : BilinForm R M) (x y : M) :
     ((symmProdExteriorDualEquiv R M).symm B).2 (exteriorPower.ιMulti R 2 ![x, y]) =
       ⅟(2 : R) * (B x y - B y x) := by
-  simp [symmProdExteriorDualEquiv, LinearMap.sub_apply]
+  simp only [symmProdExteriorDualEquiv, LinearEquiv.coe_symm_mk,
+    exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+  rw [LinearMap.IsAlt.toAlternatingMap_apply ((isAlt_sub_flip B).smul (⅟(2 : R))) ![x, y]]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.smul_apply, LinearMap.sub_apply,
+    flip_apply, smul_eq_mul]
 
 end InvertibleTwo
 

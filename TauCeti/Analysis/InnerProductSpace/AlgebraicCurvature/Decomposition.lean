@@ -130,16 +130,16 @@ theorem ricciEndomorphism_apply (r : FourTensor V) :
 
 /-- Pairing `ricciEndomorphism r u` with `v` recovers `ricci r u v`. -/
 @[simp] theorem inner_ricciEndomorphism_left (r : FourTensor V) (u v : V) :
-    ⟪ricciEndomorphism r u, v⟫ = ricci r u v := inner_bilinFormToEnd_left (ricci r) u v
+    ⟪ricciEndomorphism r u, v⟫ = ricci r u v := (ricci r).inner_bilinFormToEnd_left u v
 
 /-- Lowering `ricciEndomorphism r` with `innerₗ V` recovers `ricci r`. -/
 @[simp] theorem innerₗ_comp_ricciEndomorphism (r : FourTensor V) :
-    (innerₗ V).comp (ricciEndomorphism r) = ricci r := innerₗ_comp_bilinFormToEnd (ricci r)
+    (innerₗ V).comp (ricciEndomorphism r) = ricci r := (ricci r).innerₗ_comp_bilinFormToEnd
 
 /-- The operator trace of `ricciEndomorphism r` equals `scalar r`. -/
 @[simp] theorem trace_ricciEndomorphism (r : FourTensor V) :
     LinearMap.trace ℝ V (ricciEndomorphism r) = scalar r :=
-  (trace_bilinFormToEnd (ricci r)).trans (scalar_apply r).symm
+  (ricci r).trace_bilinFormToEnd.trans (scalar_apply r).symm
 
 /-- `ricciEndomorphism r` is symmetric iff `ricci r` is symmetric. -/
 @[simp] theorem isSymmetric_ricciEndomorphism_iff {r : FourTensor V} :
@@ -166,12 +166,12 @@ theorem tracelessRicciEndomorphism_apply (r : FourTensor V) :
 /-- Pairing `tracelessRicciEndomorphism r u` with `v` recovers `tracelessRicci r u v`. -/
 @[simp] theorem inner_tracelessRicciEndomorphism_left (r : FourTensor V) (u v : V) :
     ⟪tracelessRicciEndomorphism r u, v⟫ = tracelessRicci r u v :=
-  inner_bilinFormToEnd_left (tracelessRicci r) u v
+  (tracelessRicci r).inner_bilinFormToEnd_left u v
 
 /-- Lowering `tracelessRicciEndomorphism r` with `innerₗ V` recovers `tracelessRicci r`. -/
 @[simp] theorem innerₗ_comp_tracelessRicciEndomorphism (r : FourTensor V) :
     (innerₗ V).comp (tracelessRicciEndomorphism r) = tracelessRicci r :=
-  innerₗ_comp_bilinFormToEnd (tracelessRicci r)
+  (tracelessRicci r).innerₗ_comp_bilinFormToEnd
 
 /-- `tracelessRicciEndomorphism r = ricciEndomorphism r - (scalar r / n) • LinearMap.id`. -/
 theorem tracelessRicciEndomorphism_eq (r : FourTensor V) :
@@ -199,7 +199,7 @@ theorem IsAlgebraicCurvature.isSymmetric_tracelessRicciEndomorphism {r : FourTen
 /-- The trace of `tracelessRicciEndomorphism r` vanishes in every dimension. -/
 @[simp] theorem trace_tracelessRicciEndomorphism (r : FourTensor V) :
     LinearMap.trace ℝ V (tracelessRicciEndomorphism r) = 0 :=
-  (trace_bilinFormToEnd (tracelessRicci r)).trans (bilinFormTrace_tracelessRicci r)
+  (tracelessRicci r).trace_bilinFormToEnd.trans (bilinFormTrace_tracelessRicci r)
 
 /-! ### Scalar, trace-free Ricci, and Weyl curvature parts -/
 
@@ -611,13 +611,17 @@ theorem IsAlgebraicCurvature.eq_tracelessRicciPart_add_scalarPart_of_finrank_le_
   eq_tracelessRicciPart_add_scalarPart_of_finrank_le_three_of_antisymm hdim hr.antisymm_first
     hr.antisymm_last
 
-section Equivariance
+end TauCeti.FourTensor
 
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+namespace LinearIsometryEquiv
+
+open TauCeti TauCeti.FourTensor
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
 
 /-- `tracelessRicci` is equivariant under linear isometric equivalences. -/
-theorem tracelessRicci_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V)
-    (r : FourTensor V) (u v : W) :
+theorem tracelessRicci_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) (u v : W) :
     tracelessRicci (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap)
         u v = tracelessRicci r (e u) (e v) := by
   have hdim : Module.finrank ℝ W = Module.finrank ℝ V := e.toLinearEquiv.finrank_eq
@@ -626,60 +630,54 @@ theorem tracelessRicci_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗ
     scalar_compContinuousLinearMap_linearIsometryEquiv, hdim, e.inner_map_map]
 
 /-- `ricciEndomorphism` is equivariant under linear isometric equivalences. -/
-theorem linearIsometryEquiv_comp_ricciEndomorphism_compContinuousLinearMap
-    (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
+theorem comp_ricciEndomorphism_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
     e.toLinearIsometry.toLinearMap ∘ₗ ricciEndomorphism
         (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       ricciEndomorphism r ∘ₗ e.toLinearIsometry.toLinearMap := by
   rw [ricciEndomorphism_apply, ricciEndomorphism_apply]
-  exact linearIsometryEquiv_comp_bilinFormToEnd_of_eq e
-    (ricci_compContinuousLinearMap_linearIsometryEquiv e r)
+  exact e.comp_bilinFormToEnd_of_eq (ricci_compContinuousLinearMap_linearIsometryEquiv e r)
 
 /-- `tracelessRicciEndomorphism` is equivariant under linear isometric equivalences. -/
-theorem linearIsometryEquiv_comp_tracelessRicciEndomorphism_compContinuousLinearMap
-    (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
+theorem comp_tracelessRicciEndomorphism_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V)
+    (r : FourTensor V) :
     e.toLinearIsometry.toLinearMap ∘ₗ tracelessRicciEndomorphism
         (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       tracelessRicciEndomorphism r ∘ₗ e.toLinearIsometry.toLinearMap := by
   rw [tracelessRicciEndomorphism_apply, tracelessRicciEndomorphism_apply]
-  exact linearIsometryEquiv_comp_bilinFormToEnd_of_eq e
-    (tracelessRicci_compContinuousLinearMap_linearIsometryEquiv e r)
+  exact e.comp_bilinFormToEnd_of_eq (e.tracelessRicci_compContinuousLinearMap r)
 
 /-- `scalarPart` is equivariant under linear isometric equivalences. -/
-theorem scalarPart_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V)
-    (r : FourTensor V) :
+theorem scalarPart_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
     scalarPart (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       (scalarPart r).compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap :=
   toLinearMap₄_injective <| by
     have hdim : Module.finrank ℝ W = Module.finrank ℝ V := e.toLinearEquiv.finrank_eq
-    ext u v z w; simp only [toLinearMap₄_apply, scalarPart_apply, smul_apply,
-      compContinuousLinearMap_apply_vec, scalar_compContinuousLinearMap_linearIsometryEquiv,
-      constantCurvature_apply, LinearIsometry.coe_toContinuousLinearMap,
-      LinearIsometryEquiv.coe_toLinearIsometry, hdim, e.inner_map_map]
+    ext u v z w; simp only [toLinearMap₄_apply, scalarPart_apply,
+      _root_.smul_apply, compContinuousLinearMap_apply_vec,
+      scalar_compContinuousLinearMap_linearIsometryEquiv, constantCurvature_apply,
+      LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry, hdim,
+      e.inner_map_map]
 
 /-- `tracelessRicciPart` is equivariant under linear isometric equivalences. -/
-theorem tracelessRicciPart_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V)
-    (r : FourTensor V) :
+theorem tracelessRicciPart_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
     tracelessRicciPart (r.compContinuousLinearMap fun _ ↦
         e.toLinearIsometry.toContinuousLinearMap) =
       (tracelessRicciPart r).compContinuousLinearMap fun _ ↦
         e.toLinearIsometry.toContinuousLinearMap :=
   toLinearMap₄_injective <| by
     have hdim : Module.finrank ℝ W = Module.finrank ℝ V := e.toLinearEquiv.finrank_eq
-    ext u v z w; simp only [toLinearMap₄_apply, tracelessRicciPart_apply, smul_apply,
-      compContinuousLinearMap_apply_vec, kulkarniNomizu_apply, innerₗ_apply_apply,
-      tracelessRicci_compContinuousLinearMap_linearIsometryEquiv,
+    ext u v z w; simp only [toLinearMap₄_apply, tracelessRicciPart_apply,
+      _root_.smul_apply, compContinuousLinearMap_apply_vec,
+      kulkarniNomizu_apply, innerₗ_apply_apply, e.tracelessRicci_compContinuousLinearMap,
       LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry, hdim,
       e.inner_map_map]
 
 /-- `weyl` is equivariant under linear isometric equivalences. -/
-theorem weyl_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
+theorem weyl_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
     weyl (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       (weyl r).compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap := by
   ext m
-  simp [weyl_apply, scalarPart_compContinuousLinearMap_linearIsometryEquiv,
-    tracelessRicciPart_compContinuousLinearMap_linearIsometryEquiv]
+  simp [weyl_apply, e.scalarPart_compContinuousLinearMap,
+    e.tracelessRicciPart_compContinuousLinearMap]
 
-end Equivariance
-
-end TauCeti.FourTensor
+end LinearIsometryEquiv
