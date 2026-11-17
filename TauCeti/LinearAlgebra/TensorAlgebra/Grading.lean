@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Grading
+import TauCeti.Algebra.DirectSum.HomogeneousExtend
 
 /-!
 # The input-degree grading of a tensor algebra
@@ -146,17 +147,16 @@ instance (G : InternalGrading R M ι) : SetLike.GradedMonoid (tensorAlgebraPiece
 
 private noncomputable def gradedι (G : InternalGrading R M ι) :
     M →ₗ[R] ⨁ p, tensorAlgebraPiece G p :=
-  DirectSum.lmap
-    (fun p ↦ LinearMap.codRestrict (tensorAlgebraPiece G p)
-      ((TensorAlgebra.ι R).comp (G.piece p).subtype) fun x ↦ ι_mem_tensorAlgebraPiece G x.2) ∘ₗ
-    (DirectSum.decomposeLinearEquiv G.piece).toLinearMap
+  DirectSum.homogeneousExtend G.piece fun p ↦
+    (DirectSum.lof R ι (fun q ↦ ↥(tensorAlgebraPiece G q)) p).comp <|
+      LinearMap.codRestrict (tensorAlgebraPiece G p)
+        ((TensorAlgebra.ι R).comp (G.piece p).subtype) fun x ↦ ι_mem_tensorAlgebraPiece G x.2
 
 private theorem gradedι_of_mem (G : InternalGrading R M ι) {p : ι} {x : M} (hx : x ∈ G.piece p) :
     gradedι G x =
       DirectSum.of (fun q ↦ ↥(tensorAlgebraPiece G q)) p
         ⟨TensorAlgebra.ι R x, ι_mem_tensorAlgebraPiece G hx⟩ := by
-  simp only [gradedι, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
-  rw [DirectSum.decomposeLinearEquiv_apply_coe G.piece p ⟨x, hx⟩, DirectSum.lmap_lof,
+  rw [gradedι, DirectSum.homogeneousExtend_of_mem G.piece _ hx, LinearMap.comp_apply,
     DirectSum.lof_eq_of]
   refine congrArg _ (Subtype.ext ?_)
   simp [LinearMap.codRestrict_apply]
