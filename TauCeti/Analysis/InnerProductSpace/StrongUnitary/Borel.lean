@@ -81,14 +81,9 @@ theorem measurableSpace_eq_iSup_comap_inner_of_dense {ι : Type*} [Countable ι]
     (α := StrongUnitary 𝕜 H) (ι := ι × ι) (β := fun _ => 𝕜)
     (f := fun p u => ⟪d p.1, u (d p.2)⟫_𝕜)
     (fun p => (continuous_const.inner (continuous_eval_const (d p.2))).measurable)
-    fun u v huv => by
-      have hd_eq : ∀ j, u (d j) = v (d j) := fun j =>
-        ext_inner_left 𝕜 fun ξ => by
-          have heq : (fun z : H => ⟪z, u (d j)⟫_𝕜) = fun z => ⟪z, v (d j)⟫_𝕜 :=
-            hd.equalizer (continuous_id.inner continuous_const)
-              (continuous_id.inner continuous_const) (funext fun i => huv (i, j))
-          exact congrFun heq ξ
-      exact ext (congrFun <| hd.equalizer (map_continuous u) (map_continuous v) (funext hd_eq))
+    fun u v huv =>
+      ext (congrFun <| hd.equalizer (map_continuous u) (map_continuous v) <|
+        funext fun j => hd.eq_of_inner_right 𝕜 fun i => huv (i, j))
   exact hgen.trans iSup_prod
 
 /-- **Coefficient comparison (countable dense subset)** (Williams, Lemma D.43): for a countable

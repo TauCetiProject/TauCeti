@@ -11,7 +11,9 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import Mathlib.Topology.MetricSpace.Polish
 public import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.InnerProductSpace.Continuous
+import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # The unitary group in the strong operator topology
@@ -567,65 +569,25 @@ section Polish
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
-/-- Auxiliary continuous extension of a sequence `x : ℕ → H` having the same Gram matrix as a dense
-sequence `d : ℕ → H`. -/
-private def extendOfInnerEq {d x : ℕ → H} (hd : DenseRange d)
-    (hx : ∀ m n, ⟪x m, x n⟫_𝕜 = ⟪d m, d n⟫_𝕜) :
-    { U : H → H // Continuous U ∧ (∀ n, U (d n) = x n) ∧ ∀ ξ η, ⟪U ξ, U η⟫_𝕜 = ⟪ξ, η⟫_𝕜 } := by
-  have hdist : ∀ m n, dist (x m) (x n) = dist (d m) (d n) := fun m n => by
-    have hsq : ‖x m - x n‖ ^ 2 = ‖d m - d n‖ ^ 2 := by
-      simp only [_root_.norm_sub_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜), hx]
-    simpa only [dist_eq_norm] using (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 hsq
-  let f : Set.range d → H := fun z => x z.2.choose
-  have hf_eq : ∀ n, f ⟨d n, ⟨n, rfl⟩⟩ = x n := fun n => by
-    let z : Set.range d := ⟨d n, ⟨n, rfl⟩⟩
-    exact dist_eq_zero.1 <| (hdist z.2.choose n).trans (by rw [z.2.choose_spec]; simp [z])
-  have hf_iso : Isometry f := Isometry.of_dist_eq fun z₁ z₂ =>
-    (hdist z₁.2.choose z₂.2.choose).trans <| by
-      rw [z₁.2.choose_spec, z₂.2.choose_spec, ← Subtype.dist_eq]
-  have hd_set : Dense (Set.range d) := hd
-  let U : H → H := hd_set.extend f
-  have hUc : Continuous U := (hd_set.uniformContinuous_extend hf_iso.uniformContinuous).continuous
-  have hUd : ∀ n, U (d n) = x n := fun n =>
-    (hd_set.extend_of_ind hf_iso.uniformContinuous ⟨d n, ⟨n, rfl⟩⟩).trans (hf_eq n)
-  have hU_inner : ∀ ξ η, ⟪U ξ, U η⟫_𝕜 = ⟪ξ, η⟫_𝕜 := fun ξ η => by
-    have heq : (fun p : H × H => ⟪U p.1, U p.2⟫_𝕜) = fun p => ⟪p.1, p.2⟫_𝕜 :=
-      (hd.prodMap hd).equalizer ((hUc.comp continuous_fst).inner (hUc.comp continuous_snd))
-        (continuous_fst.inner continuous_snd) <| funext fun ⟨m, n⟩ => by
-          simp only [Function.comp_apply, Prod.map_apply, hUd m, hUd n, hx m n]
-    exact congrFun heq (ξ, η)
-  exact ⟨U, hUc, hUd, hU_inner⟩
-
-/-- Auxiliary construction of an element of `StrongUnitary 𝕜 H` from two inner-product-preserving
-maps `U, V : H → H` satisfying the adjoint identity `⟪U ξ, η⟫_𝕜 = ⟪ξ, V η⟫_𝕜`. -/
-private def ofAdjointPair (U V : H → H)
-    (hU : ∀ ξ η, ⟪U ξ, U η⟫_𝕜 = ⟪ξ, η⟫_𝕜) (hV : ∀ ξ η, ⟪V ξ, V η⟫_𝕜 = ⟪ξ, η⟫_𝕜)
-    (hadj : ∀ ξ η, ⟪U ξ, η⟫_𝕜 = ⟪ξ, V η⟫_𝕜) :
+/-- Auxiliary construction of an element of `StrongUnitary 𝕜 H` from two linear isometries
+`U, V : H →ₗᵢ[𝕜] H` satisfying the adjoint identity `⟪U ξ, η⟫_𝕜 = ⟪ξ, V η⟫_𝕜`. -/
+private def ofAdjointPair (U V : H →ₗᵢ[𝕜] H) (hadj : ∀ ξ η, ⟪U ξ, η⟫_𝕜 = ⟪ξ, V η⟫_𝕜) :
     { u : StrongUnitary 𝕜 H // (∀ ξ, u ξ = U ξ) ∧ ∀ ξ, u⁻¹ ξ = V ξ } := by
-  let eL : H ≃ₗ[𝕜] H :=
+  let e : H ≃ₗᵢ[𝕜] H :=
     { toFun := U
+      map_add' := U.map_add
+      map_smul' := U.map_smul
       invFun := V
-      map_add' := fun ξ₁ ξ₂ => ext_inner_right 𝕜 fun η => by
-        rw [hadj, inner_add_left, ← hadj, ← hadj, ← inner_add_left]
-      map_smul' := fun c ξ => ext_inner_right 𝕜 fun η => by
-        rw [RingHom.id_apply, hadj, inner_smul_left, ← hadj, ← inner_smul_left]
       left_inv := fun ξ => ext_inner_right 𝕜 fun η => by
-        rw [← inner_conj_symm, ← hadj, hU, inner_conj_symm]
+        rw [← inner_conj_symm, ← hadj, U.inner_map_map, inner_conj_symm]
       right_inv := fun η => ext_inner_left 𝕜 fun ξ => by
-        rw [← inner_conj_symm, hadj, hV, inner_conj_symm] }
-  let e : H ≃ₗᵢ[𝕜] H := eL.isometryOfInner hU
+        rw [← inner_conj_symm, hadj, V.inner_map_map, inner_conj_symm]
+      norm_map' := U.norm_map }
   refine ⟨linearIsometryEquiv.symm e, fun ξ => ?_, fun ξ => ?_⟩
-  · simp [e, eL]
+  · simp [e]
   · rw [← map_inv, LinearIsometryEquiv.inv_def, linearIsometryEquiv_symm_apply,
       ← LinearIsometryEquiv.coe_symm_toLinearEquiv]
-    simp [e, eL]
-
-private theorem isClosed_forall₂_eq {X α : Type*} [TopologicalSpace X] [TopologicalSpace α]
-    [T2Space α] {f g : ℕ → ℕ → X → α} (hf : ∀ m n, Continuous (f m n))
-    (hg : ∀ m n, Continuous (g m n)) :
-    IsClosed { p : X | ∀ m n, f m n p = g m n p } := by
-  simp_rw [Set.ofPred_forall]
-  exact isClosed_iInter fun m => isClosed_iInter fun n => isClosed_eq (hf m n) (hg m n)
+    simp [e]
 
 /-- Strong* evaluation `u ↦ (fun n => u (d n), fun n => u⁻¹ (d n))` along a dense sequence
 `d : ℕ → H` is a topological embedding into `(ℕ → H) × (ℕ → H)`. -/
@@ -674,13 +636,17 @@ private theorem isClosedEmbedding_strongStarEval_of_dense {d : ℕ → H} (hd : 
       fun m n => u.inner_map_left (d m) (d n)⟩
   · rintro ⟨x, y⟩ ⟨hx, hy, hxy⟩
     dsimp only at hx hy hxy
-    obtain ⟨U, hUc, hUd, hU_inner⟩ := extendOfInnerEq hd hx
-    obtain ⟨V, hVc, hVd, hV_inner⟩ := extendOfInnerEq hd hy
+    have hspan : (Submodule.span 𝕜 (Set.range d)).topologicalClosure = ⊤ :=
+      Submodule.dense_iff_topologicalClosure_eq_top.1 (hd.mono Submodule.subset_span)
+    let U : H →ₗᵢ[𝕜] H := linearIsometryOfInnerEq hspan fun m n => (hx m n).symm
+    let V : H →ₗᵢ[𝕜] H := linearIsometryOfInnerEq hspan fun m n => (hy m n).symm
+    have hUd : ∀ n, U (d n) = x n := linearIsometryOfInnerEq_apply hspan _
+    have hVd : ∀ n, V (d n) = y n := linearIsometryOfInnerEq_apply hspan _
     have hadj : ∀ ξ η, ⟪U ξ, η⟫_𝕜 = ⟪ξ, V η⟫_𝕜 := fun ξ η =>
-      congrFun ((hd.prodMap hd).equalizer ((hUc.comp continuous_fst).inner continuous_snd)
-        (continuous_fst.inner (hVc.comp continuous_snd)) <| funext fun ⟨m, n⟩ => by
+      congrFun ((hd.prodMap hd).equalizer ((U.continuous.comp continuous_fst).inner continuous_snd)
+        (continuous_fst.inner (V.continuous.comp continuous_snd)) <| funext fun ⟨m, n⟩ => by
           simp only [Function.comp_apply, Prod.map_apply, hUd m, hVd n, hxy m n]) (ξ, η)
-    obtain ⟨u, hu, hu_inv⟩ := ofAdjointPair U V hU_inner hV_inner hadj
+    obtain ⟨u, hu, hu_inv⟩ := ofAdjointPair U V hadj
     exact ⟨u, Prod.ext (funext fun n => (hu (d n)).trans (hUd n))
       (funext fun n => (hu_inv (d n)).trans (hVd n))⟩
 
