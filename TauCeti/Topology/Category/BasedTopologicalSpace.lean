@@ -154,32 +154,45 @@ theorem comp_eq_hom_comp {X Y Z : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : 
 
 /-- The topological pair `(X, *)` of a based space: the one-point space, embedded at the
 basepoint, as a subspace of `X`. A based map is a map of pairs which is the identity on the
-point.
-
-This is a reducible definition built from the structure constructors, so that the ambient space
-of `(X, *)` is `X` and its subspace is the point up to reducible unfolding. -/
-abbrev toTopPair : BasedTopologicalSpace.{u} ⥤ TopPair.{u} where
+point. -/
+@[expose, implicit_reducible, simps obj_left obj_right obj_hom map_left map_right]
+def toTopPair : BasedTopologicalSpace.{u} ⥤ TopPair.{u} where
   obj X :=
     { left := TopCat.of PUnit.{u + 1}
       right := TopCat.of X.carrier
       hom := TopCat.ofHom (ContinuousMap.const _ X.basepoint)
       prop := Topology.IsEmbedding.of_subsingleton (X := PUnit.{u + 1}) _ }
   map f :=
-    { left := 𝟙 _
+    { left := 𝟙 (TopCat.of PUnit.{u + 1})
       right := TopCat.ofHom f.toContinuousMap
       w := by ext; exact f.map_basepoint.symm
       prop_hom_left := trivial
       prop_hom_right := trivial }
 
-/-- The space `X₊ = * ⊔ X` obtained by adding a disjoint basepoint to a space `X`. Like
-`toTopPair`, it is reducible, so that the carrier of `X₊` is `PUnit ⊕ X` up to reducible
-unfolding. -/
-@[simps]
-abbrev addBasepoint : TopCat.{u} ⥤ BasedTopologicalSpace.{u} where
+/-- A based map `X ⟶ Y` followed by the map `Y ⟶ *` is the map `X ⟶ *`. -/
+@[simp]
+lemma ofHom_comp_const_punit {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) :
+    TopCat.ofHom f.toContinuousMap ≫ TopCat.ofHom (ContinuousMap.const Y.carrier PUnit.unit) =
+      TopCat.ofHom (ContinuousMap.const X.carrier PUnit.unit) := by
+  ext
+
+/-- The space `X₊ = * ⊔ X` obtained by adding a disjoint basepoint to a space `X`. -/
+@[expose, implicit_reducible, simps]
+def addBasepoint : TopCat.{u} ⥤ BasedTopologicalSpace.{u} where
   obj X := ⟨PUnit.{u + 1} ⊕ X, Sum.inl PUnit.unit⟩
   map f := ⟨⟨Sum.map id f, by fun_prop⟩, rfl⟩
   map_id _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
   map_comp _ _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
+
+/-- The inclusion `X ⟶ X₊` is natural in `X`. -/
+@[reassoc]
+lemma inr_comp_addBasepoint_map {X Y : TopCat.{u}} (f : X ⟶ Y) :
+    TopCat.ofHom (Y := (addBasepoint.obj X).carrier) ⟨Sum.inr, continuous_inr⟩ ≫
+        TopCat.ofHom (addBasepoint.map f).toContinuousMap =
+      f ≫ TopCat.ofHom (Y := (addBasepoint.obj Y).carrier) ⟨Sum.inr, continuous_inr⟩ := by
+  ext
+  -- `Sum.map id f (Sum.inr x) = Sum.inr (f x)` holds by the definition of `Sum.map`.
+  rfl
 
 end BasedTopologicalSpace
 

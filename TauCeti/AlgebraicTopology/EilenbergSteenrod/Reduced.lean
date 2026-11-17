@@ -228,12 +228,6 @@ private abbrev toPoint (X : BasedTopologicalSpace.{u}) :
     TopCat.of X.carrier ⟶ TopCat.of PUnit.{u + 1} :=
   TopCat.ofHom (ContinuousMap.const _ PUnit.unit)
 
-/-- A based map `X ⟶ Y` followed by the map `Y ⟶ *` is the map `X ⟶ *`. -/
-private lemma ofHom_comp_const_punit {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) :
-    TopCat.ofHom f.toContinuousMap ≫ TopCat.ofHom (ContinuousMap.const Y.carrier PUnit.unit) =
-      TopCat.ofHom (ContinuousMap.const X.carrier PUnit.unit) :=
-  TopCat.isTerminalPUnit.hom_ext _ _
-
 /-- The split augmentation `Hᵢ(X) ≅ Hᵢ(*) ⊞ H~ᵢ(X)` of a based space `X`. Its first component is
 induced by the map `X ⟶ *`, and its second is the map to the relative homology of `(X, *)`. -/
 def augmentationIso (i : ι) (X : BasedTopologicalSpace.{u}) :
@@ -241,7 +235,7 @@ def augmentationIso (i : ι) (X : BasedTopologicalSpace.{u}) :
       (HP.H i).obj (TopCat.of PUnit.{u + 1}) ⊞
         (HP.Hₚ i).obj (BasedTopologicalSpace.toTopPair.obj X) :=
   HP.isoBiprodOfRetraction (X := BasedTopologicalSpace.toTopPair.obj X) (toPoint X)
-    (by ext) i
+    (TopCat.isTerminalPUnit.hom_ext _ _) i
 
 @[reassoc (attr := simp)]
 lemma augmentationIso_hom_fst (i : ι) (X : BasedTopologicalSpace.{u}) :
@@ -260,7 +254,7 @@ lemma inl_augmentationIso_inv (i : ι) (X : BasedTopologicalSpace.{u}) :
     biprod.inl ≫ (HP.augmentationIso i X).inv =
       (HP.H i).map (TopCat.ofHom (ContinuousMap.const _ X.basepoint)) :=
   HP.inl_isoBiprodOfRetraction_inv (X := BasedTopologicalSpace.toTopPair.obj X) (toPoint X)
-    (by ext) i
+    (TopCat.isTerminalPUnit.hom_ext _ _) i
 
 /-- The split augmentation is natural in based maps. -/
 @[reassoc]
@@ -269,12 +263,8 @@ lemma augmentationIso_hom_naturality (i : ι) {X Y : BasedTopologicalSpace.{u}} 
       (HP.augmentationIso i X).hom ≫
         biprod.map (𝟙 _) ((HP.Hₚ i).map (BasedTopologicalSpace.toTopPair.map f)) := by
   ext
-  · rw [Category.assoc, Category.assoc, biprod.map_fst, Category.comp_id,
-      augmentationIso_hom_fst, augmentationIso_hom_fst, ← Functor.map_comp,
-      ofHom_comp_const_punit]
-  · rw [Category.assoc, Category.assoc, biprod.map_snd, augmentationIso_hom_snd,
-      ← Category.assoc (HP.augmentationIso i X).hom, augmentationIso_hom_snd]
-    exact (HP.hFstToHₚ_naturality (BasedTopologicalSpace.toTopPair.map f) i).symm
+  · simp [← Functor.map_comp]
+  · simpa using (HP.hFstToHₚ_naturality (BasedTopologicalSpace.toTopPair.map f) i).symm
 
 end Augmentation
 
@@ -305,15 +295,6 @@ lemma addBasepointIso_hom (i : ι) (X : TopCat.{u}) :
         (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) :=
   (rfl)
 
-/-- The inclusion `X ⟶ X₊` is natural in `X`. -/
-private lemma inr_comp_addBasepoint_map {X Y : TopCat.{u}} (f : X ⟶ Y) :
-    TopCat.ofHom ⟨Sum.inr, continuous_inr⟩ ≫
-        Hom.fst (BasedTopologicalSpace.toTopPair.map (BasedTopologicalSpace.addBasepoint.map f)) =
-      f ≫ TopCat.ofHom ⟨Sum.inr, continuous_inr⟩ := by
-  ext
-  -- `Sum.map id f (Sum.inr x) = Sum.inr (f x)` holds by the definition of `Sum.map`.
-  rfl
-
 /-- The isomorphism `Hᵢ(X) ≅ H~ᵢ(X₊)` is natural in `X`. -/
 @[reassoc]
 lemma addBasepointIso_hom_naturality (i : ι) {X Y : TopCat.{u}} (f : X ⟶ Y) :
@@ -321,8 +302,9 @@ lemma addBasepointIso_hom_naturality (i : ι) {X Y : TopCat.{u}} (f : X ⟶ Y) :
       (HP.addBasepointIso i X).hom ≫
         (HP.Hₚ i).map
           (BasedTopologicalSpace.toTopPair.map (BasedTopologicalSpace.addBasepoint.map f)) := by
-  rw [addBasepointIso_hom, addBasepointIso_hom, Category.assoc, HP.hFstToHₚ_naturality,
-    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, inr_comp_addBasepoint_map]
+  rw [addBasepointIso_hom, addBasepointIso_hom, Category.assoc, hFstToHₚ_naturality]
+  simp only [← Functor.map_comp_assoc, BasedTopologicalSpace.toTopPair_map_right]
+  rw [BasedTopologicalSpace.inr_comp_addBasepoint_map]
 
 end AddBasepoint
 
@@ -354,16 +336,18 @@ lemma inl_cohomologyAugmentationIso_inv (i : ι) (X : BasedTopologicalSpace.{u})
     biprod.inl ≫ (E.cohomologyAugmentationIso i X).inv =
       ((E.H i).map (TopCat.ofHom (ContinuousMap.const X.carrier PUnit.unit))).unop := by
   apply Quiver.Hom.op_inj
-  rw [cohomologyAugmentationIso_inv, op_comp, op_comp, Quiver.Hom.op_unop, Quiver.Hom.op_unop,
-    Quiver.Hom.op_unop, Category.assoc, biprod.opIso_inv_inl_op, augmentationIso_hom_fst]
+  simp only [cohomologyAugmentationIso_inv, op_comp, Quiver.Hom.op_unop, Category.assoc,
+    biprod.opIso_inv_inl_op]
+  exact E.augmentationIso_hom_fst i X
 
 @[reassoc (attr := simp)]
 lemma inr_cohomologyAugmentationIso_inv (i : ι) (X : BasedTopologicalSpace.{u}) :
     biprod.inr ≫ (E.cohomologyAugmentationIso i X).inv =
       (E.hFstToHₚ i (BasedTopologicalSpace.toTopPair.obj X)).unop := by
   apply Quiver.Hom.op_inj
-  rw [cohomologyAugmentationIso_inv, op_comp, op_comp, Quiver.Hom.op_unop, Quiver.Hom.op_unop,
-    Quiver.Hom.op_unop, Category.assoc, biprod.opIso_inv_inr_op, augmentationIso_hom_snd]
+  simp only [cohomologyAugmentationIso_inv, op_comp, Quiver.Hom.op_unop, Category.assoc,
+    biprod.opIso_inv_inr_op]
+  exact E.augmentationIso_hom_snd i X
 
 /-- The split augmentation in cohomology, read off from the homological one. -/
 lemma cohomologyAugmentationIso_hom (i : ι) (X : BasedTopologicalSpace.{u}) :
@@ -376,8 +360,9 @@ lemma cohomologyAugmentationIso_hom_fst (i : ι) (X : BasedTopologicalSpace.{u})
     (E.cohomologyAugmentationIso i X).hom ≫ biprod.fst =
       ((E.H i).map (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} X.basepoint))).unop := by
   apply Quiver.Hom.op_inj
-  rw [cohomologyAugmentationIso_hom, op_comp, op_comp, Quiver.Hom.op_unop, Quiver.Hom.op_unop,
-    Quiver.Hom.op_unop, biprod.fst_op_opIso_hom_assoc, inl_augmentationIso_inv]
+  simp only [cohomologyAugmentationIso_hom, op_comp, Quiver.Hom.op_unop,
+    biprod.fst_op_opIso_hom_assoc]
+  exact E.inl_augmentationIso_inv i X
 
 /-- The split augmentation in cohomology is natural in based maps: a based map `f : X ⟶ Y`
 acts on `Eⁱ(*) ⊞ E~ⁱ(Y)` by the identity on `Eⁱ(*)` and by `f` on the reduced groups. -/
@@ -389,11 +374,9 @@ lemma cohomologyAugmentationIso_inv_naturality (i : ι) {X Y : BasedTopologicalS
       (E.cohomologyAugmentationIso i Y).inv ≫
         ((E.H i).map (TopCat.ofHom f.toContinuousMap)).unop := by
   apply biprod.hom_ext'
-  · rw [biprod.inl_map_assoc, Category.id_comp, inl_cohomologyAugmentationIso_inv,
-      inl_cohomologyAugmentationIso_inv_assoc, ← unop_comp, ← Functor.map_comp,
-      ofHom_comp_const_punit]
-  · rw [biprod.inr_map_assoc, inr_cohomologyAugmentationIso_inv,
-      inr_cohomologyAugmentationIso_inv_assoc, ← unop_comp, ← unop_comp, hFstToHₚ_naturality]
+  · simp [← unop_comp, ← Functor.map_comp]
+  · simpa [← unop_comp] using
+      congrArg Quiver.Hom.unop (E.hFstToHₚ_naturality (BasedTopologicalSpace.toTopPair.map f) i)
 
 end Cohomology
 
