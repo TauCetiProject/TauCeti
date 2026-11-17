@@ -308,28 +308,25 @@ theorem IsAmenable.exists_eq_dualAction_sub_dualAction_of_small (h : IsAmenable 
     { toLinearEquiv := Shrink.linearEquiv 𝕜 E
       norm_map' := fun _ ↦ rfl }
   have : CompleteSpace (Shrink.{u} E) := e.toIsometryEquiv.completeSpace
-  let eCLM : Shrink.{u} E →L[𝕜] E := e.toLinearIsometry.toContinuousLinearMap
-  let eSymmCLM : E →L[𝕜] Shrink.{u} E := e.symm.toLinearIsometry.toContinuousLinearMap
   let conj : (E →L[𝕜] E) →L[𝕜] Shrink.{u} E →L[𝕜] Shrink.{u} E :=
-    (compL 𝕜 (Shrink.{u} E) E (Shrink.{u} E) eSymmCLM).comp
-      ((compL 𝕜 (Shrink.{u} E) E E).flip eCLM)
+    (e.symm.toContinuousLinearEquiv.arrowCongr e.symm.toContinuousLinearEquiv).toContinuousLinearMap
   let L' := conj.comp L
   let R' := conj.comp R
   let D' : A →L[𝕜] StrongDual 𝕜 (Shrink.{u} E) :=
-    (precomp 𝕜 eCLM : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 (Shrink.{u} E)).comp D
+    (precomp 𝕜 (e : Shrink.{u} E →L[𝕜] E) : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 (Shrink.{u} E)).comp D
   have hL' (a b : A) (x : Shrink.{u} E) : L' (a * b) x = L' a (L' b x) := by
-    simp [L', conj, eCLM, eSymmCLM, hL]
+    simp [L', conj, hL]
   have hR' (a b : A) (x : Shrink.{u} E) : R' (a * b) x = R' b (R' a x) := by
-    simp [R', conj, eCLM, eSymmCLM, hR]
+    simp [R', conj, hR]
   have hLR' (a b : A) (x : Shrink.{u} E) : L' a (R' b x) = R' b (L' a x) := by
-    simp [L', R', conj, eCLM, eSymmCLM, hLR]
+    simp [L', R', conj, hLR]
   have hD' (a b : A) : D' (a * b) = dualAction R' a (D' b) + dualAction L' b (D' a) := by
     ext x
-    simpa [D', L', R', conj, eCLM, eSymmCLM] using congr($(hD a b) (e x))
+    simpa [D', L', R', conj] using congr($(hD a b) (e x))
   obtain ⟨φ', hφ'⟩ := h.exists_eq_dualAction_sub_dualAction hL' hR' hLR' D' hD'
-  refine ⟨φ'.comp eSymmCLM, fun a ↦ ?_⟩
+  refine ⟨φ'.comp (e.symm : E →L[𝕜] Shrink.{u} E), fun a ↦ ?_⟩
   ext y
-  simpa [D', L', R', conj, eCLM, eSymmCLM] using congr($(hφ' a) (e.symm y))
+  simpa [D', L', R', conj] using congr($(hφ' a) (e.symm y))
 
 /-- A Banach algebra over a complete field with a virtual diagonal is amenable. -/
 theorem IsVirtualDiagonal.isAmenable [CompleteSpace 𝕜] [CompleteSpace A]
