@@ -110,4 +110,12 @@ theorem coe_expNeg_tsum {ι : Type*} (a : ι → ℝ≥0∞) :
 /-- Measurability of the extended negative exponential. -/
 @[fun_prop] theorem measurable_expNeg : Measurable expNeg := continuous_expNeg.measurable
 
+/-- Taking the negative exponential of `(-ENNReal.log p).toENNReal` recovers any `p ≤ 1`,
+including `p = 0` (where `-log 0 = ∞` and `expNeg ∞ = 0`). -/
+theorem coe_expNeg_toENNReal_neg_log {p : ℝ≥0∞} (hp : p ≤ 1) :
+    (expNeg (-ENNReal.log p).toENNReal : ℝ≥0∞) = p := by
+  have hnonneg : 0 ≤ -ENNReal.log p :=
+    EReal.neg_nonneg.mpr (by simpa only [ENNReal.log_one] using ENNReal.log_le_log_iff.mpr hp)
+  rw [coe_expNeg, EReal.coe_toENNReal hnonneg, neg_neg, ENNReal.exp_log]
+
 end ENNReal

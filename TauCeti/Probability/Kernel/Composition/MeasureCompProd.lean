@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Operations on the base of a composition-product
@@ -18,19 +19,23 @@ information carried by the points of the source. It can when `κ` itself factors
 that case is the main content of this file. It is the base-side counterpart of Mathlib's
 `MeasureTheory.Measure.compProd_map`, which pushes the kernel side forward instead.
 
-Restricting the base, by contrast, always commutes with the composition-product, and projecting
+Restricting the base, by contrast, always commutes with the composition-product, projecting
 a measurable restriction of `μ ⊗ₘ κ` onto the base weights `μ` by the kernel masses of its
-vertical sections.
+vertical sections, and finite kernels bound rectangle masses in terms of the base measure.
 
 ## Main statements
 
 * `MeasureTheory.Measure.map_prodMap_compProd_comap` — for `f : W → Y` measurable and
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
+* `MeasureTheory.Measure.map_prod_compProd_comap` — Markov-kernel form expressing the right-hand
+  side in terms of the pushed-forward first marginal `(μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
   composition-product to `s ×ˢ univ`.
 * `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — projecting
   `(μ ⊗ₘ κ).restrict A` onto the first coordinate gives
   `μ.withDensity fun x => κ x (Prod.mk x ⁻¹' A)`.
+* `MeasureTheory.Measure.compProd_prod_le_bound_mul` and
+  `MeasureTheory.Measure.compProd_Ioc_prod_lt_top` — rectangle mass bounds for finite kernels.
 -/
 
 public section
@@ -38,6 +43,7 @@ public section
 noncomputable section
 
 open ProbabilityTheory
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
@@ -57,6 +63,17 @@ theorem map_prodMap_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y 
   rw [map_apply hmap hs, compProd_apply (hs.preimage hmap), compProd_apply hs,
     lintegral_map (Kernel.measurable_kernel_prodMk_left hs) hf]
   simp [Set.preimage_preimage]
+
+/-- Under `μ ⊗ₘ κ.comap f hf` for a Markov kernel `κ`, the pair `(f q.1, q.2)` has joint law
+`((μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)) ⊗ₘ κ`. -/
+theorem map_prod_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y Z)
+    [IsMarkovKernel κ] {f : W → Y} (hf : Measurable f) :
+    (μ ⊗ₘ κ.comap f hf).map (fun q => (f q.1, q.2)) =
+      ((μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)) ⊗ₘ κ := by
+  have hfst : (μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst) = μ.map f := by
+    rw [← Measure.map_map hf measurable_fst, ← Measure.fst, Measure.fst_compProd]
+  rw [hfst]
+  exact μ.map_prodMap_compProd_comap κ hf
 
 /-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
 This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/
@@ -81,5 +98,33 @@ theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
     ← lintegral_indicator hs]
   refine lintegral_congr fun x => ?_
   by_cases hx : x ∈ s <;> simp [Set.preimage, hx]
+
+/-- The mass of a rectangle under a composition-product with a finite kernel is bounded by the
+kernel's uniform bound times the base mass, without measurability or s-finiteness assumptions on
+the base measure. -/
+theorem compProd_prod_le_bound_mul (μ : Measure W) (κ : Kernel W Z) [IsFiniteKernel κ]
+    (s : Set W) (t : Set Z) :
+    (μ ⊗ₘ κ) (s ×ˢ t) ≤ κ.bound * μ s := by
+  by_cases hμ : SFinite μ
+  · let := hμ
+    calc
+      (μ ⊗ₘ κ) (s ×ˢ t) ≤ (μ ⊗ₘ κ) (toMeasurable μ s ×ˢ Set.univ) :=
+        measure_mono (Set.prod_mono (subset_toMeasurable μ s) (Set.subset_univ t))
+      _ = ∫⁻ x in toMeasurable μ s, κ x Set.univ ∂μ :=
+        compProd_apply_prod (measurableSet_toMeasurable μ s) MeasurableSet.univ
+      _ ≤ ∫⁻ _ in toMeasurable μ s, κ.bound ∂μ :=
+        setLIntegral_mono' (measurableSet_toMeasurable μ s) fun x _ => Kernel.measure_le_bound κ x _
+      _ = κ.bound * μ (toMeasurable μ s) := by rw [setLIntegral_const]
+      _ = κ.bound * μ s := by rw [measure_toMeasurable]
+  · simp [compProd_of_not_sfinite _ _ hμ]
+
+/-- A bounded right-closed interval paired with any set in the second space has finite mass under
+`μ ⊗ₘ κ` when `μ` is locally finite and `κ` is a finite kernel (in particular, a Markov kernel).
+Neither set needs to be measurable. -/
+theorem compProd_Ioc_prod_lt_top [Preorder W] [TopologicalSpace W] [CompactIccSpace W]
+    (μ : Measure W) [IsLocallyFiniteMeasure μ] (κ : Kernel W Z) [IsFiniteKernel κ]
+    (A : Set Z) (a b : W) : (μ ⊗ₘ κ) (Set.Ioc a b ×ˢ A) < ∞ :=
+  (compProd_prod_le_bound_mul μ κ _ _).trans_lt
+    (ENNReal.mul_lt_top κ.bound_lt_top measure_Ioc_lt_top)
 
 end MeasureTheory.Measure

@@ -101,21 +101,20 @@ theorem measurableSet_isIntegerValued_and_forall_ne_top
   classical
   obtain ⟨C, hcount, hpi, huniv, hgen⟩ :=
     MeasurableSpace.exists_countable_isPiSystem_generateFrom (α := X)
-  have hCmeas : ∀ A ∈ C, MeasurableSet A := fun A hA => by
-    rw [hgen]
-    exact MeasurableSpace.measurableSet_generateFrom hA
   have heq : {μ : Measure X | μ.IsIntegerValued ∧ ∀ n, μ (s n) ≠ ∞} =
       ⋂ n : ℕ, ⋂ A ∈ C, ⋃ k : ℕ, {μ : Measure X | μ (A ∩ s n) = k} := by
     ext μ
     simp only [mem_ofPred_eq, mem_iInter, mem_iUnion]
     constructor
     · rintro ⟨hint, hfin⟩ n A hA
-      exact hint.exists_eq_natCast ((hCmeas A hA).inter (hs n))
+      exact hint.exists_eq_natCast
+        ((MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA).inter (hs n))
         ((measure_mono inter_subset_right).trans_lt (lt_top_iff_ne_top.mpr (hfin n)))
     · intro h
       refine ⟨isIntegerValued_of_restrict hcover fun n => ?_, fun n => ?_⟩
       · refine isIntegerValued_of_isPiSystem hgen hpi (fun A hA => ?_) ?_
-        · simpa only [Measure.restrict_apply (hCmeas A hA)] using h n A hA
+        · simpa only [Measure.restrict_apply
+            (MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA)] using h n A hA
         · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using h n univ huniv
       · obtain ⟨k, hk⟩ := h n univ huniv
         rw [univ_inter] at hk
@@ -123,7 +122,10 @@ theorem measurableSet_isIntegerValued_and_forall_ne_top
   rw [heq]
   refine MeasurableSet.iInter fun n => MeasurableSet.biInter hcount fun A hA =>
     MeasurableSet.iUnion fun k => ?_
-  exact measurableSet_eq_fun (Measure.measurable_coe ((hCmeas A hA).inter (hs n))) measurable_const
+  exact measurableSet_eq_fun
+    (Measure.measurable_coe
+      ((MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA).inter (hs n)))
+    measurable_const
 
 /-- On a standard Borel space, every countable measurable cover admits a total measurable
 occurrence enumeration of `Measure X` that reconstructs every integer-valued measure finite on
