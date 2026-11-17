@@ -204,10 +204,14 @@ theorem SmoothAlmostComplexStructure.exists_isIsothermalChart (x : M) :
   refine isPseudoholomorphicAt_of_hasMFDerivAt
     (u' := (fderiv ℝ e (q y)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y))
     (hed.hasMFDerivAt.comp y (hqd y hy.1).hasMFDerivAt) fun w ↦ ?_
-  have h := (congrArg (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y) (toContMDiff_apply j ⊤ y w).symm).trans
-    (DFunLike.congr_fun hcomm w)
-  exact (congrArg (fderiv ℝ e (q y)) h).trans
-    ((hlin _ hy.2 _).trans (ofComplexManifold_apply (E := ℂ) (M := ℂ) _ _).symm)
+  -- The last step is elaborated late, so that its tangent-space type is read as `ℂ`.
+  calc _ = fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y (j.toContMDiff ⊤ y w)) := by
+        rw [toContMDiff_apply]
+        exact ContinuousLinearMap.comp_apply _ _ _
+    _ = fderiv ℝ e (q y) (j.chartPushforward q (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y w)) :=
+        congrArg _ (DFunLike.congr_fun hcomm w)
+    _ = Complex.I * fderiv ℝ e (q y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y w) := hlin _ hy.2 _
+    _ = _ := by exact (ofComplexManifold_apply (E := ℂ) (M := ℂ) _ _).symm
 
 /-- The surface `M` with the complex charted space structure given by the isothermal charts of
 `j`, a copy of `M` through `IsothermalSurface.homeomorph`. It is a complex analytic curve. -/

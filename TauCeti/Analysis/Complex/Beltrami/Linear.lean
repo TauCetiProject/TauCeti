@@ -329,7 +329,7 @@ theorem linearMap_apply_eq_I_mul {K : ℂ →L[ℝ] ℂ} (hK : ∀ v, K (K v) = 
     linear_combination hμ
   have h2 : linearMap μ (K (K 1)) = I * linearMap μ (K 1) := by
     simp only [hK 1, linearMap_apply, map_neg, map_one]
-    linear_combination (norm := (ring_nf; simp only [I_sq]; ring_nf)) (-I) * hμ
+    linear_combination (-I) * hμ - (1 + μ) * I_sq
   rw [hv]
   simp only [map_add, map_smul]
   rw [h2, h1]
