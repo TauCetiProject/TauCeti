@@ -409,7 +409,7 @@ theorem finrank_le_two_mul_of_forall_sectionValue_eq_mul_eq_zero {k : ℕ∞} (h
   calc Module.finrank ℝ V ≤ Module.finrank ℝ (ι → ℂ) :=
         LinearMap.finrank_le_finrank_of_injective hΦ
     _ = 2 * m := by
-      simp [Module.finrank_pi_fintype, Complex.finrank_real_complex, hcard, mul_comm]
+      simp [finrank_real_of_complex, hcard]
 
 /-! ### The kernel of the gauge-fixed operator -/
 

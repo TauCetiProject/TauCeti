@@ -179,7 +179,8 @@ theorem coe_gaugeFixedKernelEquivWeak (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (y : gaugeFixedKernel x) :
     (gaugeFixedKernelEquivWeak hx hbound y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) =
-      gaugeFixedKernelToLp x y := (rfl)
+      gaugeFixedKernelToLp x y := by
+  simp [gaugeFixedKernelEquivWeak]
 
 /-- The `L²` class of `(gaugeFixedKernelEquivWeak hx hbound).symm u` is `u`. -/
 @[simp]

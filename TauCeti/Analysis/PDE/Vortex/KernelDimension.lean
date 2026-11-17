@@ -12,6 +12,7 @@ import Mathlib.Analysis.Analytic.Order
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.ContDiff.Submodule
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.PDE.Vortex.KernelExistence
 
@@ -166,12 +167,6 @@ theorem finiteDimensional_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
   let ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
   FiniteDimensional.of_injective Φ hΦ
 
-/-- The real dimension of the space of principal-part data at an effective divisor `D` is
-`2 |D|`. -/
-private theorem finrank_toType_fun_complex (D : Multiset ℂ) :
-    Module.finrank ℝ (Multiset.ToType D → ℂ) = 2 * Multiset.card D := by
-  simp [Module.finrank_pi_fintype, Complex.finrank_real_complex, mul_comm]
-
 /-- **The kernel of the gauge-fixed operator at a vortex has dimension at most `2 |D|`.** Let `x`
 be a `C²` field with vanishing holomorphicity rows and `|α|² → 1` at infinity, whose section has
 zero divisor `D`. Then every real vector space of `C²` square-integrable solutions of `L_x y = 0`
@@ -183,7 +178,7 @@ theorem finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ
     (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
     Module.finrank ℝ V ≤ 2 * Multiset.card D := by
   obtain ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
-  exact (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq (finrank_toType_fun_complex D)
+  exact (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq (by simp [finrank_real_of_complex])
 
 /-- **Kernel elements at a framed vortex form a finite-dimensional space.** At a `C²` field with
 vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, every real
@@ -652,23 +647,20 @@ theorem contDiff_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
     (contDiff_connectionCoeff ((hxi 0).of_le (by simp)) ((hxi 1).of_le (by simp)))
   -- The subspace `W` of smooth `L²` kernel elements surjects onto `D → ℂ` while `gaugeFixedKernel`
   -- injects into `D → ℂ`, forcing `y ∈ W`.
-  let S : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) :=
-    { carrier := {u | ContDiff ℝ ∞ u}
-      add_mem' := fun hu₁ hu₂ ↦ (hu₁.add hu₂ : ContDiff ℝ ∞ _)
-      zero_mem' := (contDiff_zero_fun : ContDiff ℝ ∞ _)
-      smul_mem' := fun t _ hu ↦ (hu.const_smul t : ContDiff ℝ ∞ _) }
-  let W : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) := gaugeFixedKernel x ⊓ S
+  let W : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) :=
+    gaugeFixedKernel x ⊓ contDiffSubmodule ℝ ℂ (EuclideanSpace ℝ (Fin 4)) ∞
   obtain ⟨u, hu_eq⟩ := principalPartMap_surjective (V := W) hx hhol hlim hmult
     (hν.differentiable (by norm_num)) hνeq
     (fun _ hu ↦ gaugeFixedKernel_exists_decomposition hx hhol hν hνeq hu.1)
-    (fun _ hu hu₂ huk ↦ ⟨mem_gaugeFixedKernel.2 ⟨hu.of_le (by simp), hu₂, huk⟩, hu⟩)
+    (fun _ hu hu₂ huk ↦ ⟨mem_gaugeFixedKernel.2 ⟨hu.of_le (by simp), hu₂, huk⟩,
+      mem_contDiffSubmodule.2 hu⟩)
     (gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hmult hν hνeq ⟨y, hy⟩)
   have h_inj : (⟨u.1, u.2.1⟩ : gaugeFixedKernel x) = ⟨y, hy⟩ := by
     apply (gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hmult hν hνeq).injective
     ext i
     simpa using congrFun hu_eq i
   have hy_eq : u.1 = y := congrArg Subtype.val h_inj
-  exact hy_eq ▸ u.2.2
+  exact hy_eq ▸ mem_contDiffSubmodule.1 u.2.2
 
 /-- **The kernel of `L_x` has real dimension `2 |D|`.** Let `x` be a smooth field with vanishing
 holomorphicity rows `∂bar_a α = 0` and `|α|² → 1` at infinity, whose section has zero divisor
@@ -684,8 +676,8 @@ theorem finrank_gaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
     (contDiff_euclidean.1 hx i).of_le (by simp)
   obtain ⟨ν, hν, hνeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq (n := 2) (by norm_num)
     (contDiff_connectionCoeff (hi 0) (hi 1))
-  rw [(gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hD hν hνeq).finrank_eq,
-    finrank_toType_fun_complex]
+  rw [(gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hD hν hνeq).finrank_eq]
+  simp [finrank_real_of_complex]
 
 /-- **The kernel of `L_x` at a framed vortex has real dimension `2m`.** At a smooth field with
 vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, in
