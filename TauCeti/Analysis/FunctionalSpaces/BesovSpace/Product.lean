@@ -165,13 +165,6 @@ private theorem tendsto_lowPass_smul_lowPass_of_hasSum (hαβ : 0 < α + β)
 end Truncation
 
 variable (φ) in
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A gap `N` for which the paraproduct terms are spectrally localized in dyadic annuli. -/
-private theorem exists_rOut_lt_two_pow_mul_rIn : ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
-  exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
-
-variable (φ) in
 /-- **The product of a distribution of negative regularity and a smoother one**, a consequence of
 Bahouri–Chemin–Danchin, Theorems 2.82 and 2.85. Let `α < 0 < α + β`. There is `C ≥ 0`,
 depending only on `φ`, `α` and `β`, with the following property for all exponents
@@ -188,7 +181,7 @@ theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_left (hα : α < 
           𝓢'(E, F))) atTop (𝓝 w.toDistr) ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   have hβ : 0 < β := by linarith
   have hlt : α < α + β := by linarith
-  obtain ⟨N, hN⟩ := exists_rOut_lt_two_pow_mul_rIn φ
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   obtain ⟨C₁, hC₁, h₁⟩ := exists_hasSum_lowPass_smul_block_and_norm_le_of_neg (F := F) φ hα β hN
   obtain ⟨C₂, hC₂, h₂⟩ :=
     exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN
@@ -234,7 +227,7 @@ theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_right (hβ : β <
           𝓢'(E, F))) atTop (𝓝 w.toDistr) ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   have hα : 0 < α := by linarith
   have hlt : β < α + β := by linarith
-  obtain ⟨N, hN⟩ := exists_rOut_lt_two_pow_mul_rIn φ
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   obtain ⟨C₁, hC₁, h₁⟩ :=
     exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN
   obtain ⟨C₂, hC₂, h₂⟩ := exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (F := F) φ α hβ hN
