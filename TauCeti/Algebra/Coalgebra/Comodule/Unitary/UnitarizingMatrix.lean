@@ -26,7 +26,7 @@ positive. Rescaling `G` by `√(re (Tr G⁻¹) / re (Tr G))` produces the normal
 * when `h` commutes with `star`, `Ft` is Hermitian (`isHermitian_unitarizingMatrix`) and satisfies
   `Tr Ft = Tr Ft⁻¹` (`trace_unitarizingMatrix_eq_trace_inv`);
 * when `h` is strictly positive, `Ft` is positive definite (`posDef_unitarizingMatrix`);
-* when `h` is right invariant, `wᴴ Ft w = Ft` (`conjTranspose_map_star_mul_unitarizingMatrix_mul`)
+* when `h` is right invariant, `wᴴ Ft w = Ft` (`conjTranspose_dualBasis_mul_unitarizingMatrix_mul`)
   and `w Ft⁻¹ wᴴ = Ft⁻¹` (`dualBasis_mul_unitarizingMatrix_inv_mul_conjTranspose`);
 * when `M` is simple and `h` is strictly positive and right invariant, `Ft` is uniquely determined
   among positive definite matrices by `Tr F = Tr F⁻¹` and `wᴴ F w = F`
@@ -41,7 +41,7 @@ positive. Rescaling `G` by `√(re (Tr G⁻¹) / re (Tr G))` produces the normal
   and positive definiteness.
 * `TauCeti.Comodule.conjTranspose_dualBasis_mul_unitarizingMatrix_mul` and
   `TauCeti.Comodule.conjTranspose_map_star_mul_unitarizingMatrix_mul`: Haar invariance
-  `wᴴ Ft w = Ft`.
+  `wᴴ Ft w = Ft` (and `(u.map star)ᴴ Ft (u.map star) = Ft` when `u` is unitary).
 * `TauCeti.Comodule.eq_unitarizingMatrix_of_posDef`: uniqueness of `Ft` on a simple comodule.
 * `TauCeti.AlgebraicHaar.posDef_unitarizingMatrix`,
   `TauCeti.AlgebraicHaar.trace_unitarizingMatrix_eq_trace_inv`, and

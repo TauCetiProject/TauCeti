@@ -29,8 +29,9 @@ Let `A` be a star bialgebra or Hopf star algebra equipped with invariant integra
 
 2. **Weighted Schur orthogonality on a simple comodule (Hopf star algebras over `ℂ`).** When `M` is
    simple, `u` is unitary, and `h` is a positive one-sided invariant integral, the normalized
-   unitarizing matrix `Ft = unitarizingMatrix h b` (`PosDef Ft`, `Tr Ft = Tr Ft⁻¹`) governs each
-   pairing of matrix coefficients:
+   unitarizing matrix `Ft = unitarizingMatrix h b` satisfies `Tr Ft = Tr Ft⁻¹`, is positive
+   definite (`PosDef Ft`) whenever `h ≠ 0` (whereas `Ft = 0` for `h = 0`), and governs each
+   pairing of matrix coefficients (including at `h = 0`, where both sides vanish):
    * `h (star (u i j) * u k l) = δ_{jl} * h 1 * (Ft⁻¹ i k / Tr Ft⁻¹)` (requiring only right
      invariance);
    * `h (u i j * star (u k l)) = δ_{ik} * h 1 * (Ft j l / Tr Ft)` (requiring only left invariance).
