@@ -66,15 +66,15 @@ No ellipticity assumption on `W` is required. -/
 theorem formalSeries_relativeFrobeniusIsogeny (p : ℕ) [ExpChar K p]
     (W : WeierstrassCurve K) :
     (relativeFrobeniusIsogeny p W.toAffine).formalSeries = PowerSeries.X ^ p := by
-  have h := formalSeries_iterateRelativeFrobeniusIsogeny p W 1
-  rw [pow_one] at h
-  have e := iterateFrobenius_one (R := K) p
-  rw [iterateRelativeFrobeniusIsogeny_one] at h
-  change (congrArg W.toAffine.map e.symm ▸ relativeFrobeniusIsogeny p W.toAffine).formalSeries
-    (W₂ := W.map (iterateFrobenius K p 1)) = PowerSeries.X ^ p at h
-  generalize iterateFrobenius K p 1 = f at e h
-  cases e
-  exact h
+  -- Transport along an equality of target curves preserves `formalSeries`.
+  have key : ∀ {V : WeierstrassCurve.Affine K} (e : W.toAffine.map (frobenius K p) = V)
+      (ψ : Isogeny W.toAffine V),
+      ψ = (e ▸ relativeFrobeniusIsogeny p W.toAffine) →
+      (relativeFrobeniusIsogeny p W.toAffine).formalSeries = ψ.formalSeries := by
+    rintro V rfl _ rfl
+    rfl
+  rw [key _ _ (iterateRelativeFrobeniusIsogeny_one p W.toAffine),
+    formalSeries_iterateRelativeFrobeniusIsogeny, pow_one]
 
 section Elliptic
 
