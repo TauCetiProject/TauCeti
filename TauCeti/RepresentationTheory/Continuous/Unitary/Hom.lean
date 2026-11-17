@@ -6,36 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.RepresentationTheory.Continuous.Hom
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-public import TauCeti.Topology.Algebra.Group.NoSmallSubgroups
 public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
-# Group homomorphisms induced by continuous and unitary representations
+# Group homomorphisms induced by unitary continuous representations
 
-A group representation `π : ContRepresentation 𝕜 G V` maps every group element to an invertible
-bounded operator, giving a homomorphism `π.toMonoidHom.toHomUnits : G →* (V →L[𝕜] V)ˣ`. When `𝕜` is
-a normed `ℝ`-algebra, the integer homogeneity of the operator norm implies that any group admitting
-an injective representation continuous at `1` has no small subgroups
-(`ContRepresentation.hasNoSmallSubgroups_of_injective`), without assuming continuity of group
-multiplication or inversion.
+When `V` is a Hilbert space over `𝕜` (`ℝ` or `ℂ`) and `π : ContRepresentation 𝕜 G V` is unitary,
+its operators land in `unitary (V →L[𝕜] V)` and in the closed subgroup
+`unitarySubgroup (V →L[𝕜] V)ˣ`. Because inversion on unitary operators is the isometric adjoint,
+continuity of `π : G → (V →L[𝕜] V)` alone upgrades all of these homomorphisms to
+`ContinuousMonoidHom`s (and makes `π.toMonoidHom.toHomUnits` continuous without assuming
+continuity of inversion on `G`), and on `EuclideanSpace 𝕜 ι` transports them to
+`Matrix.unitaryGroup ι 𝕜`.
 
-When `V` is a Hilbert space over `𝕜` (`ℝ` or `ℂ`) and `π` is unitary, the operators land in
-`unitary (V →L[𝕜] V)` and in the closed subgroup `unitarySubgroup (V →L[𝕜] V)ˣ`. Because inversion
-on unitary operators is the isometric adjoint, continuity of `π : G → (V →L[𝕜] V)` alone upgrades
-all of these homomorphisms to `ContinuousMonoidHom`s, and on `EuclideanSpace 𝕜 ι` transports them
-to `Matrix.unitaryGroup ι 𝕜`.
+For the general (nonunitary) homomorphism into `(V →L[𝕜] V)ˣ` and the no-small-subgroups criterion
+for injective representations, see `TauCeti.RepresentationTheory.Continuous.Hom`.
 
 ## Main definitions and results
 
-* `ContRepresentation.continuous_toHomUnits`,
-  `ContRepresentation.toUnitsContinuousMonoidHom`: continuity of `π.toMonoidHom.toHomUnits` and its
-  bundled continuous homomorphism into `(V →L[𝕜] V)ˣ`.
-* `ContRepresentation.hasNoSmallSubgroups_of_injective`: a group with an injective representation
-  continuous at `1` over a normed `ℝ`-algebra has no small subgroups.
 * `ContRepresentation.IsUnitary.toUnitaryMonoidHom`,
   `ContRepresentation.IsUnitary.toUnitaryContinuousMonoidHom`: homomorphism into
   `unitary (V →L[𝕜] V)`.
+* `ContRepresentation.IsUnitary.continuous_toHomUnits`: continuity of `π.toMonoidHom.toHomUnits`
+  for a unitary representation without assuming continuity of inversion on `G`.
 * `ContRepresentation.IsUnitary.toUnitarySubgroupHom`: continuous homomorphism into
   `unitarySubgroup (V →L[𝕜] V)ˣ`.
 * `ContRepresentation.IsUnitary.toMatrixUnitaryGroupHom`: continuous homomorphism from a unitary
@@ -47,54 +42,6 @@ public section
 noncomputable section
 
 namespace ContRepresentation
-
-section NormedSpace
-
-variable {𝕜 G V : Type*} [NormedField 𝕜] [Group G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-/-- When inversion on `G` is continuous, continuity of `π` implies continuity of
-`π.toMonoidHom.toHomUnits`. -/
-theorem continuous_toHomUnits [TopologicalSpace G] [ContinuousInv G]
-    {π : ContRepresentation 𝕜 G V} (hπ : Continuous π) :
-    Continuous π.toMonoidHom.toHomUnits :=
-  Units.continuous_iff.mpr ⟨hπ, hπ.comp continuous_inv⟩
-
-/-- A continuous group representation on a normed space, bundled as a continuous group homomorphism
-into `(V →L[𝕜] V)ˣ`. -/
-def toUnitsContinuousMonoidHom [TopologicalSpace G] [ContinuousInv G]
-    (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) : G →ₜ* (V →L[𝕜] V)ˣ :=
-  ⟨π.toMonoidHom.toHomUnits, π.continuous_toHomUnits hπ⟩
-
-/-- Evaluation of `ContRepresentation.toUnitsContinuousMonoidHom`. -/
-@[simp]
-theorem coe_toUnitsContinuousMonoidHom [TopologicalSpace G] [ContinuousInv G]
-    (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    ⇑(π.toUnitsContinuousMonoidHom hπ) = π.toMonoidHom.toHomUnits :=
-  (rfl)
-
-/-- **Any group admitting an injective representation continuous at `1` over a normed `ℝ`-algebra
-has no small subgroups.** Neither continuity of multiplication nor continuity of inversion on `G`
-is needed. -/
-theorem hasNoSmallSubgroups_of_injective {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 V] [TopologicalSpace G]
-    (π : ContRepresentation 𝕜 G V) (hπ_cont : ContinuousAt π 1) (hπ_inj : Function.Injective π) :
-    TauCeti.HasNoSmallSubgroups G := by
-  let _ : NormedSpace ℝ (V →L[𝕜] V) := NormedSpace.restrictScalars ℝ 𝕜 (V →L[𝕜] V)
-  have : NormSMulClass ℤ (V →L[𝕜] V) :=
-    ⟨fun n a ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n a⟩
-  refine TauCeti.HasNoSmallSubgroups.of_forall_pow_mem
-    ⟨(fun g ↦ ‖π g - 1‖) ⁻¹' Set.Iio (1 / 2), ?_, fun g hg ↦ ?_⟩
-  · have hcont : ContinuousAt (fun g ↦ ‖π g - 1‖) 1 :=
-      continuous_norm.continuousAt.comp (hπ_cont.sub continuousAt_const)
-    exact hcont.preimage_mem_nhds (by simpa using Iio_mem_nhds (by positivity : (0 : ℝ) < 1 / 2))
-  · refine hπ_inj ?_
-    rw [map_one]
-    refine TauCeti.eq_one_of_forall_norm_pow_sub_one_le one_half_lt_one fun n ↦ ?_
-    have hn : ‖π (g ^ n) - 1‖ < 1 / 2 := hg n
-    rw [map_pow] at hn
-    exact hn.le
-
-end NormedSpace
 
 namespace IsUnitary
 

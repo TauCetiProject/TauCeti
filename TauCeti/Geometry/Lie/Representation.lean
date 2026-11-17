@@ -10,7 +10,7 @@ public import Mathlib.RepresentationTheory.Continuous.Basic
 
 import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Geometry.Lie.AutomaticSmoothness
-import TauCeti.RepresentationTheory.Continuous.Unitary.Hom
+import TauCeti.RepresentationTheory.Continuous.Hom
 
 /-!
 # Automatic smoothness of continuous representations of Lie groups
