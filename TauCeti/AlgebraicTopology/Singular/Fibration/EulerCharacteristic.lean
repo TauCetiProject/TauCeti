@@ -118,6 +118,25 @@ private lemma serreFirstPagePos_injective :
   dsimp [serreFirstPagePos] at h1 h2
   ext <;> lia
 
+/-- The position `(-n - b, b)` on a page of `serreSpectralSequence` corresponding to total degree
+`-n` and filtration level `b`. -/
+private def serrePagePos (n : ℕ) (b : ℤ) : ℤ × ℤ :=
+  (-(n : ℤ) - b, b)
+
+private lemma serrePagePos_snd (n : ℕ) (b : ℤ) : (serrePagePos n b).2 = b := rfl
+
+private lemma serrePagePos_add (n : ℕ) (b : ℤ) :
+    (serrePagePos n b).1 + (serrePagePos n b).2 = -(n : ℤ) :=
+  sub_add_cancel (-(n : ℤ)) b
+
+private lemma serrePagePos_injective :
+    Function.Injective (fun nb : ℕ × ℤ ↦ serrePagePos nb.1 nb.2) := by
+  rintro ⟨n, b⟩ ⟨n', b'⟩ h
+  have h1 := congrArg Prod.fst h
+  have h2 := congrArg Prod.snd h
+  dsimp [serrePagePos] at h1 h2
+  ext <;> lia
+
 variable {E B B' : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
   [T2Space B'] (C : Set B') [CWComplex C] (g : B' ⟶ B) (R : Type u) [Ring R]
 include hp
@@ -260,17 +279,21 @@ private lemma eulerChar_serreSpectralSequence_page_two [RelCWComplex.Finite C]
   rw [Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card]
   ring
 
-/-- On a sufficiently late page `r`, position `(-n - b, b)` of the pullback Serre spectral sequence
-is isomorphic to the `b`-th graded piece of the abutment filtration in degree `-n`. -/
+/-- On a sufficiently late page `r`, position `serrePagePos n b = (-n - b, b)` of the pullback
+Serre spectral sequence is isomorphic to the `b`-th graded piece of the abutment filtration in
+degree `-n`. -/
 private def serreSpectralSequencePageXIsoCokernel
     (hC : range (_root_.TopCat.pullbackFst g p) ⊆ C) (r : ℤ) (hr : 2 ≤ r) (n : ℕ) (b : ℤ)
     (hb₁ : b + 3 ≤ r) (hb₂ : 2 + (n : ℤ) - b ≤ r) :
-    ((serreSpectralSequence C (_root_.TopCat.pullbackFst g p) R).page r hr).X (-(n : ℤ) - b, b) ≅
+    ((serreSpectralSequence C (_root_.TopCat.pullbackFst g p) R).page r hr).X (serrePagePos n b) ≅
       cokernel ((serreSpectralObject C (_root_.TopCat.pullbackFst g p) R).abutmentFiltrationMap
         b (-n)) :=
   (serreSpectralSequencePageXIsoGraded (mem_serreFibrations_pullbackFst hp g) R hC r hr
-    (-(n : ℤ) - b, b) hb₁ (by lia)).trans
-    (eqToIso (by dsimp only; rw [show -(n : ℤ) - b + b = -(n : ℤ) by lia]))
+    (serrePagePos n b) hb₁ (by dsimp [serrePagePos]; lia)).trans
+    (eqToIso (congrArg₂
+      (fun q m ↦ cokernel
+        ((serreSpectralObject C (_root_.TopCat.pullbackFst g p) R).abutmentFiltrationMap q m))
+      (serrePagePos_snd n b) (serrePagePos_add n b)))
 
 /-- Over an exhaustive CW complex `C` with cells in dimensions `< K` and fibre homology vanishing in
 degrees `≥ Q`, if `g : B' ⟶ B` is a weak homotopy equivalence, then `H_n(E; R)` vanishes for all
@@ -296,7 +319,7 @@ private lemma isZero_singularHomology_of_cell_and_fiber_bounds {K Q : ℕ}
     (isZero_serreSpectralObject_abutmentFiltration p' R C (by lia : (-1 : ℤ) < 0) (-n))
     fun b hb ↦ ?_).of_iso (serreSpectralObjectPullbackAbutmentIso hp R C hg n).symm
   have hb' := Finset.mem_Ico.1 hb
-  have hzero2 : IsZero ((S.page 2).X (-(n : ℤ) - b, b)) :=
+  have hzero2 : IsZero ((S.page 2).X (serrePagePos n b)) :=
     isZero_serreSpectralSequence_page_two_X_of_notMem hp C g R hK hQ fun hmem ↦ by
       rcases Finset.mem_image.1 hmem with ⟨⟨m, q⟩, hmq, heq⟩
       rcases Finset.mem_product.1 hmq with ⟨hm, hq⟩
@@ -304,7 +327,7 @@ private lemma isZero_singularHomology_of_cell_and_fiber_bounds {K Q : ℕ}
       have hq' : q < Q := Finset.mem_range.1 hq
       have h1 := congrArg Prod.fst heq
       have h2 := congrArg Prod.snd heq
-      dsimp [serreFirstPagePos] at h1 h2
+      dsimp [serreFirstPagePos, serrePagePos] at h1 h2
       lia
   exact (S.isZero_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) hzero2 r hr).of_iso
     (serreSpectralSequencePageXIsoCokernel hp C g R hC r hr n b (by lia) (by lia)).symm
@@ -332,10 +355,8 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
   let p' := _root_.TopCat.pullbackFst g p
   let S := serreSpectralSequence C p' R
   let O := serreSpectralObject C p' R
-  let φ : ℕ × ℤ → ℤ × ℤ := fun nb ↦ (-(nb.1 : ℤ) - nb.2, nb.2)
-  have hφ_inj : Function.Injective φ := fun ⟨_, _⟩ ⟨_, _⟩ h ↦ by
-    have h1 := congrArg Prod.fst h; have h2 := congrArg Prod.snd h; dsimp [φ] at h1 h2; ext <;> lia
-  let s_rect := (Finset.range N ×ˢ Finset.Ico (-1 : ℤ) (N : ℤ)).image φ
+  let s_rect := (Finset.range N ×ˢ Finset.Ico (-1 : ℤ) (N : ℤ)).image
+    (fun nb : ℕ × ℤ ↦ serrePagePos nb.1 nb.2)
   have hzero_out (pq : ℤ × ℤ) (hpq : pq ∉ s_rect) : IsZero ((S.page r hr).X pq) := by
     refine S.isZero_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2)
       (isZero_serreSpectralSequence_page_two_X_of_notMem hp C g R hK hQ fun hmem ↦ hpq ?_) r hr
@@ -344,7 +365,7 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
     have hm' := Finset.mem_range.1 hm; have hq' := Finset.mem_range.1 hq
     exact Finset.mem_image.2 ⟨(q + m, (m : ℤ) - 1),
       Finset.mem_product.2 ⟨Finset.mem_range.2 (by lia), Finset.mem_Ico.2 ⟨by lia, by lia⟩⟩,
-      by dsimp [φ, serreFirstPagePos]; ext <;> lia⟩
+      by dsimp [serrePagePos, serreFirstPagePos]; ext <;> lia⟩
   have (pq : ℤ × ℤ) : Module.Finite R ((S.page 2).X pq) :=
     finite_serreSpectralSequence_page_two_X hp C g R pq fun _ q _ b ↦ hfin b q
   have (pq : ℤ × ℤ) : Module.Finite R ((S.page r hr).X pq) :=
@@ -352,7 +373,7 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
   rw [(S.page r hr).eulerChar_eq_sum_finSet_of_finrankSupport_subset s_rect
       ((GradedObject.finrankSupport_subset_iff _ _).2 fun pq hpq ↦
         ModuleCat.finrank_eq_zero_of_isZero (hzero_out pq hpq)),
-    Finset.sum_image hφ_inj.injOn, Finset.sum_product,
+    Finset.sum_image serrePagePos_injective.injOn, Finset.sum_product,
     ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range fun n hn ↦
       isZero_singularHomology_of_cell_and_fiber_bounds hp C g R hg hC hK hQ hn]
   refine Finset.sum_congr rfl fun n hn ↦ ?_
@@ -369,7 +390,7 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
       (fun b hb ↦ Module.Finite.equiv (hcok_iso b hb).toLinearEquiv),
     Nat.cast_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun b hb ↦ ?_
-  rw [ComplexShape.χ_up'_sub, show (φ (n, b)).1 + (φ (n, b)).2 = -(n : ℤ) by dsimp [φ]; ring,
+  rw [ComplexShape.χ_up'_sub, serrePagePos_add,
     Int.negOnePow_neg, Int.coe_negOnePow_natCast, (hcok_iso b hb).toLinearEquiv.finrank_eq]
 
 end PageTwo
@@ -421,14 +442,14 @@ theorem finite_singularHomology_of_mem_serreFibrations_of_forall
   have hcok (b : ℤ) (hb : b ∈ Finset.Ico (-1 : ℤ) (n : ℤ)) :
       Module.Finite R ↑(cokernel (O.abutmentFiltrationMap b (-n))) := by
     have hb' := Finset.mem_Ico.1 hb
-    have : Module.Finite R ((S.page 2).X (-(n : ℤ) - b, b)) :=
+    have : Module.Finite R ((S.page 2).X (serrePagePos n b)) :=
       finite_serreSpectralSequence_page_two_X hp univ g R _ fun k q hpq b' ↦
         hfin b' q (by
           have h1 := congrArg Prod.fst hpq
           have h2 := congrArg Prod.snd hpq
-          dsimp [serreFirstPagePos] at h1 h2
+          dsimp [serreFirstPagePos, serrePagePos] at h1 h2
           lia)
-    have : Module.Finite R ((S.page r hr).X (-(n : ℤ) - b, b)) :=
+    have : Module.Finite R ((S.page r hr).X (serrePagePos n b)) :=
       S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
     exact Module.Finite.equiv
       (serreSpectralSequencePageXIsoCokernel hp univ g R (subset_univ _) r hr n b

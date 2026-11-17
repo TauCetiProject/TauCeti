@@ -147,19 +147,23 @@ theorem fiberIsoOfPath_hom_comp_map_fiberι {b₀ b₁ : B} (γ : Path b₀ b₁
   let t₀ : _root_.TopCat.of (ULift.{u} unitInterval) := ULift.up (0 : unitInterval)
   let t₁ : _root_.TopCat.of (ULift.{u} unitInterval) := ULift.up (1 : unitInterval)
   have := isIso_map_fiberι_of_contractibleSpace hF hp' t₁
-  have ht₁ : ((p.fiberPullbackFstIso g t₁).hom ≫
-      eqToHom (congrArg p.fiber (pathToTopCatHom_one γ))) ≫ p.fiberι b₁ =
-        p'.fiberι t₁ ≫ _root_.TopCat.pullbackSnd g p := by
-    rw [Category.assoc, p.eqToHom_fiber_comp_fiberι (pathToTopCatHom_one γ)]
-    exact p.fiberPullbackFstIso_hom_comp_fiberι g t₁
-  have ht₀ : (eqToHom (congrArg p.fiber (pathToTopCatHom_zero γ).symm) ≫
-      (p.fiberPullbackFstIso g t₀).inv) ≫ p'.fiberι t₀ ≫ _root_.TopCat.pullbackSnd g p =
-        p.fiberι b₀ := by
-    rw [Category.assoc, ← p.fiberPullbackFstIso_hom_comp_fiberι g t₀,
+  have h1 : F.map ((p.fiberPullbackFstIso g t₁).hom ≫
+      eqToHom (congrArg p.fiber (pathToTopCatHom_one γ))) ≫ F.map (p.fiberι b₁) =
+        F.map (p'.fiberι t₁) ≫ F.map (_root_.TopCat.pullbackSnd g p) := by
+    rw [← F.map_comp, ← F.map_comp]
+    congr 1
+    simp only [Category.assoc, p.eqToHom_fiber_comp_fiberι (pathToTopCatHom_one γ), g, p', t₁,
+      p.fiberPullbackFstIso_hom_comp_fiberι]
+  have h0 : F.map (eqToHom (congrArg p.fiber (pathToTopCatHom_zero γ).symm) ≫
+      (p.fiberPullbackFstIso g t₀).inv) ≫ F.map (p'.fiberι t₀) ≫
+        F.map (_root_.TopCat.pullbackSnd g p) = F.map (p.fiberι b₀) := by
+    rw [← F.map_comp, ← F.map_comp]
+    congr 1
+    simp only [Category.assoc, g, p', t₀, ← p.fiberPullbackFstIso_hom_comp_fiberι,
       Iso.inv_hom_id_assoc, p.eqToHom_fiber_comp_fiberι (pathToTopCatHom_zero γ).symm]
-  rw [fiberIsoOfPath_hom, Category.assoc, Category.assoc, Category.assoc,
-    ← F.map_comp, ht₁, F.map_comp (f := p'.fiberι t₁), IsIso.inv_hom_id_assoc,
-    ← F.map_comp, ← F.map_comp, ht₀]
+  rw [fiberIsoOfPath_hom]
+  dsimp only [g, p', t₀, t₁] at h1 h0
+  simp only [Category.assoc, h1, IsIso.inv_hom_id_assoc, h0]
 
 /-- The inverse of `fiberIsoOfPath` commutes with the maps induced by the fibre inclusions
 `p.fiber b₁ ⟶ E` and `p.fiber b₀ ⟶ E`. -/
@@ -183,6 +187,25 @@ theorem fiberIsoOfPath_eq_of_contractibleSpace [ContractibleSpace B] {b₀ b₁ 
   rw [fiberIsoOfPath_hom_comp_map_fiberι]
   simp
 
+omit hp in
+/-- Naturality of the fibre-inclusion zig-zag `F.map (p₁.fiberι t₀) ≫ inv (F.map (p₁.fiberι t₁))`
+along a commutative square between Serre fibrations over contractible bases. -/
+private lemma fiberι_zigzag_naturality {E₁ B₁ E₂ B₂ : _root_.TopCat.{u}}
+    {p₁ : E₁ ⟶ B₁} {p₂ : E₂ ⟶ B₂} (hp₁ : serreFibrations p₁) (hp₂ : serreFibrations p₂)
+    [ContractibleSpace B₁] [ContractibleSpace B₂]
+    {f : E₁ ⟶ E₂} {g : B₁ ⟶ B₂} (sq : CommSq f p₁ p₂ g) (t₀ t₁ : B₁) :
+    have := isIso_map_fiberι_of_contractibleSpace hF hp₁ t₁
+    have := isIso_map_fiberι_of_contractibleSpace hF hp₂ (g t₁)
+    F.map (p₁.fiberι t₀) ≫ inv (F.map (p₁.fiberι t₁)) ≫ F.map (sq.fiberMap t₁) =
+      F.map (sq.fiberMap t₀) ≫ F.map (p₂.fiberι (g t₀)) ≫ inv (F.map (p₂.fiberι (g t₁))) := by
+  have := isIso_map_fiberι_of_contractibleSpace hF hp₁ t₁
+  have := isIso_map_fiberι_of_contractibleSpace hF hp₂ (g t₁)
+  have hfib (t : B₁) : F.map (sq.fiberMap t) ≫ F.map (p₂.fiberι (g t)) =
+      F.map (p₁.fiberι t) ≫ F.map f := by
+    rw [← F.map_comp, ← F.map_comp, sq.fiberMap_comp_fiberι]
+  refine (cancel_mono (F.map (p₂.fiberι (g t₁)))).1 ?_
+  simp [hfib t₀, hfib t₁]
+
 /-- General naturality of `fiberIsoOfPath` along a morphism of Serre fibrations
 `sq : CommSq f p p' g` and paths `γ` in `B`, `γ'` in `B'` satisfying `g (γ t) = γ' t`. -/
 private lemma fiberIsoOfPath_naturality_of_forall {E' B' : _root_.TopCat.{u}} {p' : E' ⟶ B'}
@@ -205,7 +228,7 @@ private lemma fiberIsoOfPath_naturality_of_forall {E' B' : _root_.TopCat.{u}} {p
   have hp_γ_cond : p_γ ≫ ι = _root_.TopCat.pullbackSnd ι p ≫ p :=
     (_root_.TopCat.pullbackCone ι p).condition
   have hcond : p_γ ≫ ι' = (_root_.TopCat.pullbackSnd ι p ≫ f) ≫ p' := by
-    rw [← hι, ← Category.assoc, hp_γ_cond, Category.assoc, Category.assoc, sq.w]
+    simp only [← hι, reassoc_of% hp_γ_cond, Category.assoc, sq.w]
   let Φ : _root_.TopCat.of { q : I × E // ι q.1 = p q.2 } ⟶
       _root_.TopCat.of { q : I × E' // ι' q.1 = p' q.2 } :=
     (_root_.TopCat.pullbackConeIsLimit ι' p').lift
@@ -224,46 +247,45 @@ private lemma fiberIsoOfPath_naturality_of_forall {E' B' : _root_.TopCat.{u}} {p
           sq.fiberMap b ≫ eqToHom (congrArg p'.fiber hb) =
         Φ_fiber t ≫ (p'.fiberPullbackFstIso ι' t).hom ≫ eqToHom (congrArg p'.fiber ht') := by
     refine (cancel_mono (p'.fiberι b')).1 ?_
-    simp only [Category.assoc]
-    rw [p'.eqToHom_fiber_comp_fiberι hb, p'.eqToHom_fiber_comp_fiberι ht',
+    simp only [Category.assoc, p'.eqToHom_fiber_comp_fiberι hb, p'.eqToHom_fiber_comp_fiberι ht',
       sq.fiberMap_comp_fiberι, p.eqToHom_fiber_comp_fiberι_assoc ht,
       p.fiberPullbackFstIso_hom_comp_fiberι_assoc ι t,
-      p'.fiberPullbackFstIso_hom_comp_fiberι ι' t, reassoc_of% hΦ_fiber, hΦ_snd]
+      p'.fiberPullbackFstIso_hom_comp_fiberι ι' t, p_γ, p'_γ', reassoc_of% hΦ_fiber, hΦ_snd]
   let t₀ : I := ULift.up (0 : unitInterval)
   let t₁ : I := ULift.up (1 : unitInterval)
-  have := isIso_map_fiberι_of_contractibleSpace hF hp_γ t₁
-  have := isIso_map_fiberι_of_contractibleSpace hF hp'_γ' t₁
-  have h0 :
-      (eqToHom (congrArg p.fiber (pathToTopCatHom_zero γ).symm) ≫
-          (p.fiberPullbackFstIso ι t₀).inv) ≫ Φ_fiber t₀ =
-        (sq.fiberMap b₀ ≫ eqToHom (congrArg p'.fiber hb₀)) ≫
-          (eqToHom (congrArg p'.fiber (pathToTopCatHom_zero γ').symm) ≫
+  have h0F :
+      F.map (eqToHom (congrArg p.fiber (pathToTopCatHom_zero γ).symm) ≫
+          (p.fiberPullbackFstIso ι t₀).inv) ≫ F.map (Φ_fiber t₀) =
+        F.map (sq.fiberMap b₀ ≫ eqToHom (congrArg p'.fiber hb₀)) ≫
+          F.map (eqToHom (congrArg p'.fiber (pathToTopCatHom_zero γ').symm) ≫
             (p'.fiberPullbackFstIso ι' t₀).inv) := by
+    rw [← F.map_comp, ← F.map_comp]
+    congr 1
     refine (cancel_mono ((p'.fiberPullbackFstIso ι' t₀).hom ≫
       eqToHom (congrArg p'.fiber (pathToTopCatHom_zero γ')))).1 ?_
-    simp only [Category.assoc, Iso.inv_hom_id_assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
-    rw [← hcohere (pathToTopCatHom_zero γ) (pathToTopCatHom_zero γ') hb₀,
-      Iso.inv_hom_id_assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  have h1 :
-      ((p.fiberPullbackFstIso ι t₁).hom ≫ eqToHom (congrArg p.fiber (pathToTopCatHom_one γ))) ≫
-          (sq.fiberMap b₁ ≫ eqToHom (congrArg p'.fiber hb₁)) =
-        Φ_fiber t₁ ≫
-          ((p'.fiberPullbackFstIso ι' t₁).hom ≫
+    have hc := hcohere (pathToTopCatHom_zero γ) (pathToTopCatHom_zero γ') hb₀
+    simp only [Category.assoc, t₀, ι, ι', ← hc, Iso.inv_hom_id_assoc, eqToHom_trans,
+      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  have h1F :
+      F.map ((p.fiberPullbackFstIso ι t₁).hom ≫
+          eqToHom (congrArg p.fiber (pathToTopCatHom_one γ))) ≫
+          F.map (sq.fiberMap b₁ ≫ eqToHom (congrArg p'.fiber hb₁)) =
+        F.map (Φ_fiber t₁) ≫
+          F.map ((p'.fiberPullbackFstIso ι' t₁).hom ≫
             eqToHom (congrArg p'.fiber (pathToTopCatHom_one γ'))) := by
+    rw [← F.map_comp, ← F.map_comp]
+    congr 1
     simpa only [Category.assoc] using
       hcohere (pathToTopCatHom_one γ) (pathToTopCatHom_one γ') hb₁
-  -- The zig-zag of fibre inclusions over `I` commutes with `F.map (Φ_fiber _)`.
+  have := isIso_map_fiberι_of_contractibleSpace hF hp_γ t₁
+  have := isIso_map_fiberι_of_contractibleSpace hF hp'_γ' t₁
   have hmid :
       F.map (p_γ.fiberι t₀) ≫ inv (F.map (p_γ.fiberι t₁)) ≫ F.map (Φ_fiber t₁) =
-        F.map (Φ_fiber t₀) ≫ F.map (p'_γ'.fiberι t₀) ≫ inv (F.map (p'_γ'.fiberι t₁)) := by
-    refine (cancel_mono (F.map (p'_γ'.fiberι t₁))).1 ?_
-    simp only [Category.assoc, IsIso.inv_hom_id, Category.comp_id]
-    rw [← F.map_comp, ← F.map_comp, hΦ_fiber t₁, hΦ_fiber t₀,
-      F.map_comp, F.map_comp, IsIso.inv_hom_id_assoc]
+        F.map (Φ_fiber t₀) ≫ F.map (p'_γ'.fiberι t₀) ≫ inv (F.map (p'_γ'.fiberι t₁)) :=
+    fiberι_zigzag_naturality hF hp_γ hp'_γ' sqΦ t₀ t₁
   rw [fiberIsoOfPath_hom, fiberIsoOfPath_hom]
-  simp only [Category.assoc]
-  rw [← F.map_comp, h1, F.map_comp (f := Φ_fiber t₁), reassoc_of% hmid, ← F.map_comp_assoc, h0,
-    F.map_comp_assoc]
+  dsimp only [ι, ι', p_γ, p'_γ', t₀, t₁] at h0F h1F hmid
+  simp only [Category.assoc, h1F, reassoc_of% hmid, reassoc_of% h0F]
 
 /-- Naturality of `fiberIsoOfPath` in maps of Serre fibrations: a commutative square
 `sq : CommSq f p p' g` intertwines path transport along `γ` for `p` with path transport along
@@ -316,13 +338,11 @@ theorem fiberIsoOfPath_hom_comp_app {G : _root_.TopCat.{u} ⥤ C}
   have hinv :
       inv (F.map (p'.fiberι t₁)) ≫ α.app (p'.fiber t₁) =
         α.app _ ≫ inv (G.map (p'.fiberι t₁)) := by
-    rw [IsIso.inv_comp_eq, ← Category.assoc, α.naturality, Category.assoc,
-      IsIso.hom_inv_id, Category.comp_id]
+    rw [IsIso.inv_comp_eq]
+    simp [α.naturality_assoc]
   rw [fiberIsoOfPath_hom, fiberIsoOfPath_hom]
-  simp only [Category.assoc, α.naturality]
-  rw [reassoc_of% hinv]
-  simp only [← α.naturality_assoc]
-  rfl
+  dsimp only [g, p', t₁] at hinv
+  simp only [Category.assoc, α.naturality, α.naturality_assoc, reassoc_of% hinv]
 
 /-- If `γ` lifts along `f : B' ⟶ B` from a contractible space `B'` to a path `γ'` from `x₀` to
 `x₁`, then path transport along `γ` factors through the endpoint fibre inclusions of the pullback
