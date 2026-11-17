@@ -97,10 +97,14 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.IsOrtho.sub_add_starProjection_mem_orthogonal`: subtracting the orthogonal projections
+  onto two orthogonal subspaces `U` and `V` leaves a vector orthogonal to `U ⊔ V`.
 * `Submodule.IsOrtho.hasOrthogonalProjection_sup`, `Submodule.IsOrtho.starProjection_sup`,
   `Submodule.IsOrtho.isClosed_sup`: the sum of two orthogonal subspaces admitting orthogonal
   projections is closed and admits an orthogonal projection equal to the sum of the two
   projections.
+* `Submodule.closure_image_starProjection_of_dense`: the orthogonal projection onto `U` sends a
+  dense set to a set with closure `U`.
 * `LinearMap.apply_sub_starProjection_ker`,
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
 -/
@@ -362,7 +366,9 @@ theorem span_range_starProjection_orthogonal_basis_succ
   rw [hw']
   exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
 
-private theorem IsOrtho.sub_add_starProjection_mem_orthogonal {U V : Submodule 𝕜 E}
+/-- For orthogonal subspaces `U` and `V` admitting orthogonal projections, subtracting the sum of
+their orthogonal projections of `x` from `x` leaves a vector orthogonal to `U ⊔ V`. -/
+theorem IsOrtho.sub_add_starProjection_mem_orthogonal {U V : Submodule 𝕜 E}
     [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] (hUV : U.IsOrtho V) (x : E) :
     x - (U.starProjection x + V.starProjection x) ∈ (U ⊔ V)ᗮ := by
   rw [← Submodule.inf_orthogonal, Submodule.mem_inf]
@@ -400,6 +406,19 @@ theorem IsOrtho.isClosed_sup {U V : Submodule 𝕜 E}
     IsClosed ((U ⊔ V : Submodule 𝕜 E) : Set E) := by
   have := hUV.hasOrthogonalProjection_sup
   exact (U ⊔ V).isClosed_of_hasOrthogonalProjection
+
+/-- If `S` is dense in `E`, then the closure of the image of `S` under the orthogonal projection
+onto `U` equals `U`. -/
+theorem closure_image_starProjection_of_dense {S : Set E} (hS : Dense S) :
+    closure (U.starProjection '' S) = (U : Set E) := by
+  refine Set.Subset.antisymm (closure_minimal ?_ U.isClosed_of_hasOrthogonalProjection) ?_
+  · rintro _ ⟨x, -, rfl⟩
+    exact U.starProjection_apply_mem x
+  · have hrange : Set.range U.starProjection = (U : Set E) := by
+      simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
+        congrArg SetLike.coe U.range_starProjection
+    rw [← hrange]
+    exact U.starProjection.continuous.range_subset_closure_image_dense hS
 
 section Real
 

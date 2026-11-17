@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # The orthogonal projection onto the range of an operator
@@ -122,11 +123,9 @@ theorem isClosed_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
 /-- The range of an operator whose Gram operator `B† B` is invertible admits an orthogonal
 projection. -/
 theorem hasOrthogonalProjection_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
-    (hB : IsUnit (adjoint B ∘L B)) : B.range.HasOrthogonalProjection := by
-  have hclosed : IsClosed (B.range : Set V) := by
-    simpa only [LinearMap.coe_range, coe_coe] using isClosed_range_of_isUnit_adjoint_comp hB
-  have := hclosed.isComplete.completeSpace_coe
-  exact .ofCompleteSpace _
+    (hB : IsUnit (adjoint B ∘L B)) : B.range.HasOrthogonalProjection :=
+  Submodule.hasOrthogonalProjection_iff_isClosed.mpr
+    (by simpa only [LinearMap.coe_range, coe_coe] using isClosed_range_of_isUnit_adjoint_comp hB)
 
 /-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, when the Gram operator
 `B† B` is invertible. -/

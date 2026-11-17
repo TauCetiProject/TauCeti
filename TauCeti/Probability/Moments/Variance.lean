@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The mean squared distance between two independent copies and nonzero-variance bounds
@@ -92,7 +93,7 @@ theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace
     simpa only [Lp.edist_toLp_toLp] using ht
   have hmean_eq (u : α → ℝ) (hu : MemLp u 2 μ) :
       inner ℝ (Lp.const 2 μ (1 : ℝ)) (hu.toLp u) = ∫ x, u x ∂μ := by
-    rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_one, setIntegral_univ]
+    rw [L2.inner_const_one]
     exact integral_congr_ae hu.coeFn_toLp
   have hmeanLp : Tendsto (fun i ↦ inner ℝ (Lp.const 2 μ (1 : ℝ)) ((hg i).toLp (g i))) l
       (𝓝 (inner ℝ (Lp.const 2 μ (1 : ℝ)) (hf.toLp f))) :=
