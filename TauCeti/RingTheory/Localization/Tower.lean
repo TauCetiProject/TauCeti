@@ -25,11 +25,15 @@ inverting `a`.
   `B` at the image of `M`.
 * `IsLocalization.Away.bijective_awayMap_of_injective`: for `S` a localization away from `a`,
   the map `Localization.awayMap (algebraMap A B) a : A_a → B_a` is bijective.
+* `IsLocalization.isScalarTower_of_isScalarTower`: compatibility of a localization `Rₘ` of `C`
+  with a scalar tower `C → S → E` yields `IsScalarTower Rₘ S E`.
 -/
 
 public section
 
 namespace IsLocalization
+
+section Intermediate
 
 variable {A B S : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring S] [Algebra A B]
   [Algebra B S] [Algebra A S] [IsScalarTower A B S]
@@ -66,5 +70,22 @@ theorem Away.bijective_awayMap_of_injective (a : A) [IsLocalization.Away a S]
     (RingHom.ext fun r ↦ by
       simp [Localization.awayMap, Away.map, map_eq, IsScalarTower.algebraMap_apply A B S])
   exact (Function.Bijective.of_comp_iff' e₂.bijective _).mp hbij
+
+end Intermediate
+
+/-- If `Rₘ` is a localization of `C` at `M` and the maps `Rₘ → S`, `Rₘ → E`, and `S → E` are
+compatible with `C → S → E`, then `Rₘ → S → E` is a scalar tower. -/
+theorem isScalarTower_of_isScalarTower {C : Type*} [CommSemiring C] (M : Submonoid C)
+    (Rₘ S E : Type*) [CommSemiring Rₘ] [CommSemiring S] [CommSemiring E]
+    [Algebra C Rₘ] [IsLocalization M Rₘ] [Algebra C S] [Algebra C E]
+    [Algebra Rₘ S] [IsScalarTower C Rₘ S]
+    [Algebra Rₘ E] [IsScalarTower C Rₘ E]
+    [Algebra S E] [IsScalarTower C S E] :
+    IsScalarTower Rₘ S E := by
+  refine .of_algebraMap_eq' <| IsLocalization.ringHom_ext M <| RingHom.ext fun c ↦ ?_
+  simp only [RingHom.comp_apply,
+    ← IsScalarTower.algebraMap_apply C Rₘ S,
+    ← IsScalarTower.algebraMap_apply C Rₘ E,
+    ← IsScalarTower.algebraMap_apply C S E]
 
 end IsLocalization
