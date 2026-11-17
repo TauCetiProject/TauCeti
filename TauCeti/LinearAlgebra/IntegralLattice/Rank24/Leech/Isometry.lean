@@ -48,13 +48,6 @@ open IntegralLattice
 private def pair (i : Fin 24) (t : ℤˣ) : Fin 24 → ℚ :=
   fun k ↦ (leechPairVector 0 i 1 t k : ℚ) / 2
 
-private theorem pair_minimal {i : Fin 24} (hi : i ≠ 0) (t : ℤˣ) :
-    ∃ x ∈ leechLattice.vectorsOfNorm 4, (x : Fin 24 → ℚ) = pair i t := by
-  obtain ⟨hmem, hnorm⟩ := leechPairVector_mem hi.symm 1 t
-  refine ⟨⟨_, hmem⟩, ?_, rfl⟩
-  rw [mem_vectorsOfNorm, leechLattice_norm_intCast_div_two, hnorm]
-  norm_num
-
 private def spanningPairs : Set (Fin 24 → ℚ) :=
   {v | (∃ i ≠ 0, v = pair i 1) ∨ v = pair 1 (-1)}
 
@@ -104,7 +97,8 @@ theorem mem_ker_antipodalPairsHom_leechLattice_iff
   · intro he
     have hsign {i : Fin 24} (hi : i ≠ 0) (t : ℤˣ) :
         e (pair i t) = pair i t ∨ e (pair i t) = -pair i t := by
-      obtain ⟨x, hx, hxe⟩ := pair_minimal hi t
+      obtain ⟨x, hx, hxe⟩ : ∃ x ∈ leechLattice.vectorsOfNorm 4,
+          (x : Fin 24 → ℚ) = pair i t := leechPairVector_mem_image_vectorsOfNorm hi.symm 1 t
       simpa only [hxe] using (Isometry.mem_ker_antipodalPairsHom_iff e 4).mp he x hx
     apply e.eq_one_or_neg_of_span_of_form_ne_zero span_spanningPairs
       (hsign (by decide : (2 : Fin 24) ≠ 0) 1)
