@@ -571,6 +571,7 @@ theorem entropicTransportCost_dirac_left_eq_transportCost [IsProbabilityMeasure 
 
 /-- For a measurable cost, the regularised transport cost from a Dirac mass to a probability
 measure is the marginal integral of the cost. -/
+@[simp]
 theorem entropicTransportCost_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c) (ε : ℝ≥0)
     (x : X) : entropicTransportCost c ε (Measure.dirac x) ν = ∫⁻ y, c (x, y) ∂ν := by
   rw [entropicTransportCost_dirac_left_eq_transportCost, transportCost_dirac_left hc]
@@ -587,12 +588,15 @@ theorem entropicTransportCost_dirac_right_eq_transportCost [IsProbabilityMeasure
 
 /-- For a measurable cost, the regularised transport cost from a probability measure to a Dirac
 mass is the marginal integral of the cost. -/
+@[simp]
 theorem entropicTransportCost_dirac_right [IsProbabilityMeasure μ] (hc : Measurable c) (ε : ℝ≥0)
     (y : Y) : entropicTransportCost c ε μ (Measure.dirac y) = ∫⁻ x, c (x, y) ∂μ := by
   rw [entropicTransportCost_dirac_right_eq_transportCost, transportCost_dirac_right hc]
 
 /-- For a measurable cost, the regularised transport cost between two Dirac masses is the value of
 the cost at the pair. -/
+-- High priority, so `simp` fires this before the one-sided Dirac lemmas reduce to a `lintegral`.
+@[simp high]
 theorem entropicTransportCost_dirac_dirac (hc : Measurable c) (ε : ℝ≥0) (x : X) (y : Y) :
     entropicTransportCost c ε (Measure.dirac x) (Measure.dirac y) = c (x, y) := by
   rw [entropicTransportCost_dirac_left_eq_transportCost, transportCost_dirac_dirac hc]

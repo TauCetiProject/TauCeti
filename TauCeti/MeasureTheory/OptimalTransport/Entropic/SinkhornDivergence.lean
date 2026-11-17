@@ -175,6 +175,7 @@ theorem sinkhornDivergence_comm [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hcs :
 
 /-- On a Dirac mass, the Sinkhorn negentropy of a measurable cost `c` is `-(c (x, x)).toReal / 2`,
 independently of the regularisation parameter `ε`. -/
+@[simp]
 theorem sinkhornNegentropy_dirac (hc : Measurable c) (ε : ℝ≥0) (x : X) :
     sinkhornNegentropy c ε (Measure.dirac x) = -(c (x, x)).toReal / 2 := by
   rw [sinkhornNegentropy_def, entropicTransportCost_dirac_dirac hc]
@@ -182,6 +183,7 @@ theorem sinkhornNegentropy_dirac (hc : Measurable c) (ε : ℝ≥0) (x : X) :
 /-- Between two Dirac masses, the Sinkhorn divergence of a measurable cost `c` is the debiased
 ground cost `(c (x, y)).toReal - (c (x, x)).toReal / 2 - (c (y, y)).toReal / 2`, independently of
 `ε`; in particular it equals `(c (x, y)).toReal` whenever `c` vanishes on the diagonal. -/
+@[simp]
 theorem sinkhornDivergence_dirac_dirac (hc : Measurable c) (ε : ℝ≥0) (x y : X) :
     sinkhornDivergence c ε (Measure.dirac x) (Measure.dirac y) =
       (c (x, y)).toReal - (c (x, x)).toReal / 2 - (c (y, y)).toReal / 2 := by
