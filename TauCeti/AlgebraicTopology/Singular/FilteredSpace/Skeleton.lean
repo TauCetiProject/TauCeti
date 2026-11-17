@@ -27,10 +27,10 @@ If `f` is continuous with values in `C`, the filtration absorbs every compact su
 (`TauCeti.exists_subset_preimageSkeleton_of_isCompact`), since the image of a compact set lies in a
 finite skeleton; no finiteness or dimension bound is imposed on `C`. So every singular chain of
 `E` is a chain of some `E_q`
-(`TauCeti.exists_mem_range_singularChainFiltration_preimageSkeleton_arrow`), and the convergence
-theorems for exhaustive filtrations of spaces apply. If the relative homology `Hₙ(E_{i+1}, E_i)`,
-which lives over the `(i + 1)`-cells, vanishes whenever `n ≤ i`, then on every late enough page the
-object at `(p, q)` is the graded piece `F_{q+1} H / F_q H` of `H_{-(p+q)}(E)`
+(`TauCeti.exists_mem_range_chainFiltration_singularChainComplexFunctor_preimageSkeleton_arrow`),
+and the convergence theorems for exhaustive filtrations of spaces apply. If the relative homology
+`Hₙ(E_{i+1}, E_i)`, which lives over the `(i + 1)`-cells, vanishes whenever `n ≤ i`, then on every
+late enough page the object at `(p, q)` is the graded piece `F_{q+1} H / F_q H` of `H_{-(p+q)}(E)`
 (`TauCeti.preimageSkeletonSpectralSequencePageXIsoGraded`). For a Serre fibration this vanishing
 says that the first page is concentrated in nonnegative fibre degrees.
 
@@ -79,8 +79,7 @@ def preimageSkeletonSpectralSequencePageXIsoGraded {f : E → B} (hf : Continuou
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 + 3 ≤ r) (hrb : 2 - pq.1 - 2 * pq.2 ≤ r) :
     ((filteredSpaceSpectralSequence M (monotone_preimageSkeleton (C := C) f)).page r).X pq ≅
       cokernel (Abelian.SpectralObject.abutmentFiltrationMap
-        (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-          (monotone_singularChainFiltration M (monotone_preimageSkeleton (C := C) f))))
+        (filteredSpaceSpectralObject M (monotone_preimageSkeleton (C := C) f))
         pq.2 (pq.1 + pq.2)) :=
   filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive M _
     (fun _ hK ↦ exists_subset_preimageSkeleton_of_isCompact hf hfC hK)
@@ -94,11 +93,13 @@ variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
 /-- **Singular chains are exhausted by the skeletal filtration.** For a continuous map `f` from
 `E` into a relative CW complex `C`, every singular chain of `E` is a chain of the preimage of some
 skeleton. The complex `C` may have infinitely many cells and be infinite-dimensional. -/
-theorem exists_mem_range_singularChainFiltration_preimageSkeleton_arrow {C D : Set B}
-    [RelCWComplex C D] {f : E → B} (hf : Continuous f) (hfC : Set.range f ⊆ C) (m : ℤ)
+theorem exists_mem_range_chainFiltration_singularChainComplexFunctor_preimageSkeleton_arrow
+    {C D : Set B} [RelCWComplex C D] {f : E → B} (hf : Continuous f) (hfC : Set.range f ⊆ C) (m : ℤ)
     (x : (((TopCat.toSSet.obj E).chainComplex M).extend ComplexShape.embeddingDownNat).X m) :
-    ∃ q, x ∈ LinearMap.range ((singularChainFiltration M (preimageSkeleton C f) q).arrow.f m).hom :=
-  exists_mem_range_singularChainFiltration_arrow M (monotone_preimageSkeleton f)
+    ∃ q, x ∈ LinearMap.range ((chainFiltration
+      ((AlgebraicTopology.singularChainComplexFunctor _).obj M) (preimageSkeleton C f) q).arrow.f
+        m).hom :=
+  exists_mem_range_chainFiltration_singularChainComplexFunctor_arrow M (monotone_preimageSkeleton f)
     (fun _ hK ↦ exists_subset_preimageSkeleton_of_isCompact hf hfC hK) m x
 
 /-- The filtration of a CW complex by its own skeleta satisfies the vanishing hypothesis of

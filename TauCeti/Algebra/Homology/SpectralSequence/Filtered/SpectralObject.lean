@@ -330,12 +330,15 @@ lemma filtrationFunctor_map_comp_objIso_hom {a b : EInt} (f : a ⟶ b) :
   simp only [Category.comp_id, Category.id_comp]
   rfl
 
-/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
-lemma filtrationFunctor_map_bot (a : EInt) :
-    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 := by
-  refine IsZero.eq_of_src ?_ _ _
+/-- The stage `F_⊥` of the functor of a filtration is zero. -/
+lemma isZero_filtrationFunctor_obj_bot : IsZero ((filtrationFunctor F hF).obj ⊥) := by
   rw [filtrationFunctor_obj, filtrationEInt_bot]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
+
+/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
+lemma filtrationFunctor_map_bot (a : EInt) :
+    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 :=
+  (isZero_filtrationFunctor_obj_bot F hF).eq_of_src _ _
 
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))

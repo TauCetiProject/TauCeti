@@ -81,8 +81,7 @@ chains of `E` by the singular chains of the preimages of the skeleta. Its spectr
 the skeleta. -/
 abbrev serreSpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :=
-  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-    (monotone_singularChainFiltration (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p)))
+  filteredSpaceSpectralObject (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p)
 
 end Defs
 
@@ -155,7 +154,8 @@ since the preimage of the `b`-skeleton is empty. -/
 theorem isZero_serreSpectralObject_abutmentFiltration {b : ℤ} (hb : b < 0) (n : ℤ) :
     IsZero ((serreSpectralObject K p R).abutmentFiltration b n) :=
   CochainComplex.isZero_filtrationAbutmentFiltration _ _
-    (singularChainFiltration_eq_bot (ModuleCat.of R R) (preimageSkeleton_eq_empty p hb)) n
+    (chainFiltration_singularChainComplexFunctor_eq_bot (ModuleCat.of R R)
+      (preimageSkeleton_eq_empty p hb)) n
 
 /-- **Strong convergence of the Serre spectral sequence over a CW complex.** Let `p : E ⟶ B` be a
 Serre fibration with values in a CW complex `K ⊆ B`, with no finiteness or dimension bound on `K`.
