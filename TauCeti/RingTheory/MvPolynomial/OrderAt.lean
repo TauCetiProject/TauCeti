@@ -328,6 +328,10 @@ variable [CommRing R]
 theorem taylor_neg_taylor (a : σ → R) (p : MvPolynomial σ R) : taylor (-a) (taylor a p) = p := by
   rw [taylor_taylor, neg_add_cancel, taylor_zero]
 
+@[simp]
+theorem taylor_taylor_neg (a : σ → R) (p : MvPolynomial σ R) : taylor a (taylor (-a) p) = p := by
+  rw [taylor_taylor, add_neg_cancel, taylor_zero]
+
 /-- The Taylor shift preserves the total degree. -/
 @[simp]
 theorem totalDegree_taylor (a : σ → R) (p : MvPolynomial σ R) :
@@ -336,6 +340,20 @@ theorem totalDegree_taylor (a : σ → R) (p : MvPolynomial σ R) :
 
 theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
   Function.LeftInverse.injective (taylor_neg_taylor a)
+
+theorem taylor_surjective (a : σ → R) : Function.Surjective (taylor a) :=
+  Function.RightInverse.surjective (taylor_taylor_neg a)
+
+theorem taylor_bijective (a : σ → R) : Function.Bijective (taylor a) :=
+  ⟨taylor_injective a, taylor_surjective a⟩
+
+/-- Pushing an ideal forward along the Taylor shift `taylor a` is the same as pulling it back
+along the inverse shift `taylor (-a)`. -/
+theorem map_taylor_eq_comap_taylor_neg (a : σ → R) (I : Ideal (MvPolynomial σ R)) :
+    I.map (taylor a) = I.comap (taylor (-a)) :=
+  le_antisymm
+    (Ideal.map_le_comap_of_inverse (taylor a) (taylor (-a)) I (taylor_neg_taylor a))
+    (Ideal.comap_le_map_of_inverse (taylor (-a)) (taylor a) I (taylor_taylor_neg a))
 
 /-- The Taylor shift preserves the degree in each variable. -/
 @[simp]

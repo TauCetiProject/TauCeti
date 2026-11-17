@@ -40,11 +40,12 @@ surjective on polynomials of total degree at most `1`.
 For a family of points `P : ι → σ → R`, the double-point ideal `MvPolynomial.doublePointIdeal P`
 is `(⨅ i, RingHom.ker (eval (P i))) ^ 2`. When `ι` is finite and distinct points have a unit
 coordinate difference (in particular, when `P` is injective over a field), the point ideals and
-their squares are pairwise comaximal, so `doublePointIdeal P = ⨅ i, RingHom.ker (eval (P i)) ^ 2`,
-the product jet map `MvPolynomial.piFirstJet P` is surjective with kernel `doublePointIdeal P`,
-and the quotient `MvPolynomial σ R ⧸ doublePointIdeal P` is canonically isomorphic as an
-`R`-algebra to `ι → TrivSqZeroExt R (σ → R)` (`MvPolynomial.doublePointQuotientEquiv`), of rank
-`card ι * (card σ + 1)`.
+their squares are pairwise comaximal, so `doublePointIdeal P = ⨅ i, RingHom.ker (eval (P i)) ^ 2`
+and `MvPolynomial.piFirstJet P` has kernel `doublePointIdeal P`. When `σ` is also finite,
+`piFirstJet P` is surjective and the quotient `MvPolynomial σ R ⧸ doublePointIdeal P` is
+canonically isomorphic as an `R`-algebra to `ι → TrivSqZeroExt R (σ → R)`
+(`MvPolynomial.doublePointQuotientEquiv`); over a ring with the strong rank condition, this
+quotient has rank `card ι * (card σ + 1)`.
 
 ## Main definitions
 
@@ -56,7 +57,7 @@ and the quotient `MvPolynomial σ R ⧸ doublePointIdeal P` is canonically isomo
   `MvPolynomial σ R →ₐ[R] (ι → TrivSqZeroExt R (σ → R))`.
 * `MvPolynomial.doublePointQuotientEquiv`: the `R`-algebra equivalence
   `(MvPolynomial σ R ⧸ doublePointIdeal P) ≃ₐ[R] (ι → TrivSqZeroExt R (σ → R))` for a finite
-  family of points with pairwise unit coordinate differences.
+  family of points in finitely many variables with pairwise unit coordinate differences.
 
 ## Main results
 
@@ -70,9 +71,11 @@ and the quotient `MvPolynomial σ R ⧸ doublePointIdeal P` is canonically isomo
   comaximal evaluation ideals.
 * `MvPolynomial.doublePointIdeal_eq_iInf_sq`: for finitely many points with pairwise unit
   coordinate differences, `doublePointIdeal P = ⨅ i, RingHom.ker (eval (P i)) ^ 2`.
-* `MvPolynomial.ker_piFirstJet`, `MvPolynomial.piFirstJet_surjective`: kernel and surjectivity of
-  `piFirstJet P`.
-* `MvPolynomial.finrank_quotient_doublePointIdeal`: the quotient by `doublePointIdeal P` has rank
+* `MvPolynomial.ker_piFirstJet`, `MvPolynomial.piFirstJet_surjective`: kernel and (in finitely
+  many variables) surjectivity of `piFirstJet P`.
+* `MvPolynomial.finrank_quotient_doublePointIdeal`: over a commutative ring with the strong rank
+  condition, for finitely many points in finitely many variables with pairwise unit coordinate
+  differences, the quotient by `doublePointIdeal P` has rank
   `Fintype.card ι * (Fintype.card σ + 1)`.
 
 ## References
@@ -226,23 +229,16 @@ theorem firstJet_surjective [Finite σ] (P : σ → R) :
 `taylor (-P)`. -/
 theorem ker_eval_eq_map_taylor_neg (P : σ → R) :
     RingHom.ker (eval P) = (idealOfVars σ R).map (taylor (-P)) := by
-  have hsurj : Function.Surjective (taylor (-P) : MvPolynomial σ R →ₐ[R] MvPolynomial σ R) :=
-    fun g ↦ ⟨taylor P g, taylor_neg_taylor P g⟩
+  rw [map_taylor_eq_comap_taylor_neg, neg_neg]
   ext f
-  rw [Ideal.mem_map_iff_of_surjective _ hsurj, RingHom.mem_ker, ← constantCoeff_taylor P,
-    ← RingHom.mem_ker, ker_constantCoeff]
-  exact ⟨fun hf ↦ ⟨taylor P f, hf, taylor_neg_taylor P f⟩,
-    fun ⟨g, hg, hgf⟩ ↦ by rw [← hgf, taylor_taylor, add_neg_cancel, taylor_zero]; exact hg⟩
+  simp [← ker_constantCoeff, RingHom.mem_ker]
 
 /-- A polynomial lies in `(RingHom.ker (eval P)) ^ k` if and only if its Taylor shift at `P` lies
 in `(idealOfVars σ R) ^ k`. -/
 theorem mem_pow_ker_eval_iff (P : σ → R) (k : ℕ) (f : MvPolynomial σ R) :
     f ∈ RingHom.ker (eval P) ^ k ↔ taylor P f ∈ idealOfVars σ R ^ k := by
-  have hsurj : Function.Surjective (taylor (-P) : MvPolynomial σ R →ₐ[R] MvPolynomial σ R) :=
-    fun g ↦ ⟨taylor P g, taylor_neg_taylor P g⟩
-  rw [ker_eval_eq_map_taylor_neg, ← Ideal.map_pow, Ideal.mem_map_iff_of_surjective _ hsurj]
-  exact ⟨fun ⟨g, hg, hgf⟩ ↦ by rw [← hgf, taylor_taylor, add_neg_cancel, taylor_zero]; exact hg,
-    fun hf ↦ ⟨taylor P f, hf, taylor_neg_taylor P f⟩⟩
+  rw [ker_eval_eq_map_taylor_neg, ← Ideal.map_pow, map_taylor_eq_comap_taylor_neg, neg_neg,
+    Ideal.mem_comap]
 
 /-- **Kernel of the local first-jet algebra homomorphism.** Over any commutative ring and in every
 characteristic, the kernel of `firstJet P` is `(RingHom.ker (eval P)) ^ 2`. -/
@@ -277,7 +273,8 @@ theorem isCoprime_ker_eval {P Q : σ → R} (h : ∃ j, IsUnit (P j - Q j)) :
     simp [RingHom.mem_ker]
   have h1 : (1 : MvPolynomial σ R) =
       C (↑u⁻¹ : R) * (X j - C (Q j)) - C (↑u⁻¹ : R) * (X j - C (P j)) := by
-    rw [← mul_sub, sub_sub_sub_cancel_left, ← map_sub, ← hu, ← map_mul, Units.inv_mul, map_one]
+    rw [← mul_sub]
+    simp [← map_sub, ← hu, ← map_mul]
   rw [h1]
   exact Submodule.sub_mem _ (Ideal.mem_sup_right hQ) (Ideal.mem_sup_left hP)
 

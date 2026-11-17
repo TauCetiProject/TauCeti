@@ -38,6 +38,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
 * `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
   the degree in `Xⱼ` by `P.degreeOf j.succ`.
+* `MvPolynomial.uniqueAlgEquiv_pderiv`: in one variable, `uniqueAlgEquiv` takes the partial
+  derivative to the univariate polynomial derivative.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
   commutes with mapping the coefficients along a ring homomorphism.
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
@@ -154,6 +156,14 @@ theorem finSuccEquiv'_pderiv (f : MvPolynomial (Fin (n + 1)) R) (p : Fin (n + 1)
     obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;>
       simp [Derivation.leibniz, smul_eq_mul, pderiv_X, hf, Polynomial.derivative_mul,
         mul_comm]
+
+/-- In one variable, `uniqueAlgEquiv` takes the partial derivative to the univariate polynomial
+derivative. -/
+theorem uniqueAlgEquiv_pderiv {σ : Type*} [Unique σ] (i : σ) (f : MvPolynomial σ R) :
+    uniqueAlgEquiv R σ (pderiv i f) = (uniqueAlgEquiv R σ f).derivative := by
+  ext n
+  simp only [Polynomial.coeff_derivative, coeff_uniqueAlgEquiv, Unique.eq_default i, coeff_pderiv,
+    Finsupp.single_eq_same, ← Finsupp.single_add]
 
 section Map
 
