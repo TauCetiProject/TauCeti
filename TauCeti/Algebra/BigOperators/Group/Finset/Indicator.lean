@@ -17,6 +17,8 @@ sets `t j` reduces to its `i`-th factor `f i x`, since every other factor is `1`
 (`Finset.prod_mulIndicator_apply_of_mem`). Additively, a sum of indicators of pairwise disjoint
 sets takes at `x ∈ t i` the value of its `i`-th summand (`Finset.sum_indicator_apply_of_mem`).
 This is how step functions `∑ i, 1_{t i} • c i` on a finite partition are evaluated.
+For pairwise disjoint sets, a product of multiplicative indicators is one plus the sum of
+the corresponding indicators of `f i - 1` (`Finset.prod_mulIndicator_eq_one_add_sum_indicator`).
 
 If `g` is injective on `s`, the function `s.mulIndicator (f ∘ g)` reads `f` along `g` on `s` and
 is `1` off `s`, so it takes each value of `f` at most once. Hence a finite product over `t` of
@@ -42,6 +44,23 @@ theorem prod_mulIndicator_apply_of_mem {s : Finset ι} {t : ι → Set κ}
     (f : ι → κ → β) : ∏ j ∈ s, (t j).mulIndicator (f j) x = f i x := by
   rw [prod_eq_single_of_mem i hi fun j hj hji ↦ mulIndicator_of_notMem
     (Set.disjoint_left.1 (hs hi hj hji.symm) hx) _, mulIndicator_of_mem hx]
+
+/-- A product of multiplicative indicators of pairwise disjoint sets is one plus the sum
+of the indicators of each factor minus one. -/
+theorem prod_mulIndicator_eq_one_add_sum_indicator [AddCommGroup β]
+    (s : Finset ι) {t : ι → Set κ} (hs : (s : Set ι).PairwiseDisjoint t)
+    (f : ι → κ → β) (x : κ) :
+    ∏ i ∈ s, (t i).mulIndicator (f i) x =
+      1 + ∑ i ∈ s, (t i).indicator (fun x ↦ f i x - 1) x := by
+  classical
+  by_cases hx : ∃ i ∈ s, x ∈ t i
+  · obtain ⟨i, hi, hx⟩ := hx
+    rw [prod_mulIndicator_apply_of_mem hs hi hx,
+      sum_indicator_apply_of_mem hs hi hx]
+    simp
+  · have hn : ∀ i ∈ s, x ∉ t i := by simpa using hx
+    rw [prod_eq_one (fun i hi ↦ mulIndicator_of_notMem (hn i hi) _),
+      sum_eq_zero (fun i hi ↦ indicator_of_notMem (hn i hi) _), add_zero]
 
 /-- If `g` is injective on `s` and `h 1 = 1`, a product over `t` of `h` applied to the function
 reading `f` along `g` on `s` and equal to `1` off `s` is the product of `h ∘ f` over the image
