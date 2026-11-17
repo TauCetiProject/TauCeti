@@ -232,7 +232,7 @@ variable {𝕜 y K} in
 `y`. -/
 theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (hK : (K : Set E) ⊆ s) :
     (K.starHull 𝕜 y : Set E) ⊆ s := by
-  rw [coe_starHull, convexJoin_singleton_left]
-  exact iUnion₂_subset fun z hz ↦ hs.segment_subset (insert_subset hy hK hz)
+  rw [coe_starHull]
+  exact hs.convexJoin_singleton_subset (insert_subset hy hK)
 
 end TopologicalSpace.Compacts
