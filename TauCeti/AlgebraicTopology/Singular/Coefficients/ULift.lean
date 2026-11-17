@@ -153,6 +153,7 @@ theorem singularHomologyUliftAddEquiv_symm_apply (R : Type v) [Ring R] (X : TopC
 
 /-- `TopCat.singularHomologyUliftAddEquiv` intertwines the `R`-action with the lifted
 `ULift.{u} R`-action. -/
+@[simp]
 theorem singularHomologyUliftAddEquiv_smul (R : Type v) [Ring R] (X : TopCat.{max v u}) (n : ℕ)
     (r : R)
     (c : ((singularHomologyFunctor (ModuleCat.{max v u} R) n).obj
@@ -163,6 +164,7 @@ theorem singularHomologyUliftAddEquiv_smul (R : Type v) [Ring R] (X : TopCat.{ma
 
 /-- The inverse of `TopCat.singularHomologyUliftAddEquiv` intertwines the `ULift.{u} R`-action with
 the `R`-action. -/
+@[simp]
 theorem singularHomologyUliftAddEquiv_symm_smul (R : Type v) [Ring R] (X : TopCat.{max v u})
     (n : ℕ) (r : R) (c : ((TauCeti.singularChains (ULift.{u} R)).obj X).homology n) :
     (X.singularHomologyUliftAddEquiv R n).symm ((ULift.up r : ULift.{u} R) • c) =

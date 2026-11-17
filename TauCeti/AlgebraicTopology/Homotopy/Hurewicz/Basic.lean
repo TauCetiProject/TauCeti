@@ -743,6 +743,16 @@ lemma hurewiczUliftIntHom_apply (X : Type w) [TopologicalSpace X] (x : X) (n : �
     hurewiczUliftIntHom X x n a = (hurewicz (ModuleCat.of ℤ (ULift.{w} ℤ)) n a.toMul).hom 1 :=
   congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
 
+/-- The universe-polymorphic integral Hurewicz class of the class of a generalized loop `p` is
+`p_*[Iⁿ⁺¹]`, the value at `1 : ULift.{w} ℤ` of `GenLoop.hurewicz`. -/
+@[simp]
+lemma hurewiczUliftIntHom_mk {X : Type w} [TopologicalSpace X] {x : X} {n : ℕ}
+    (p : Ω^ (Fin (n + 1)) X x) :
+    hurewiczUliftIntHom X x n (Additive.ofMul (⟦p⟧ : HomotopyGroup (Fin (n + 1)) X x)) =
+      (GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{w} ℤ)) p).hom 1 :=
+  (hurewiczUliftIntHom_apply X x n _).trans
+    (congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk (ModuleCat.of ℤ (ULift.{w} ℤ)) n p))
+
 /-- **Naturality of the universe-polymorphic integral Hurewicz homomorphism**: for a based map
 `f : (X, x) → (Y, y)` in universe `w`, the Hurewicz class of `f_* a` is the image of the Hurewicz
 class of `a` under `f_* : Hₙ₊₁(X; ULift.{w} ℤ) → Hₙ₊₁(Y; ULift.{w} ℤ)`. -/
