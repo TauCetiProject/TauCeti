@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
 
 /-!
 # Change of variables in non-divergence-form equations
@@ -66,28 +66,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {U V : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {Φ : E → E} {L c : ℝ}
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Conjugating by a right inverse `N` of `M`: `tr ((N A N†) ∘ M† D M) = tr (A D)`. -/
-private theorem traceCLM_comp_adjoint_comp_comp {M N A D : E →L[ℝ] E}
-    (hMN : M ∘L N = ContinuousLinearMap.id ℝ E) :
-    traceCLM ℝ E ((N ∘L A ∘L N.adjoint) ∘L (M.adjoint ∘L D ∘L M)) = traceCLM ℝ E (A ∘L D) := by
-  have hNM : N.adjoint ∘L M.adjoint = ContinuousLinearMap.id ℝ E := by
-    rw [← ContinuousLinearMap.adjoint_comp, hMN, ContinuousLinearMap.adjoint_id]
-  rw [← ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id hMN (A ∘L D)]
-  congr 1
-  ext z
-  have h2 : ∀ y, N.adjoint (M.adjoint y) = y := fun y => by
-    simpa using congrArg (fun T => T y) hNM
-  simp [h2]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The trace of `A' ∘ H` for `H f = (T f)† g` is the first-order term `⟪∑ᵢ T eᵢ (A'† eᵢ), g⟫`. -/
-private theorem sum_inner_apply_adjoint_apply {ι : Type*} [Fintype ι]
-    (e : OrthonormalBasis ι ℝ E) (A' : E →L[ℝ] E) (T : E →L[ℝ] E →L[ℝ] E) (g : E) :
-    ∑ i, ⟪e i, A' ((T (e i)).adjoint g)⟫_ℝ = ⟪∑ i, T (e i) (A'.adjoint (e i)), g⟫_ℝ := by
-  simp only [sum_inner, ← ContinuousLinearMap.adjoint_inner_left A',
-    ContinuousLinearMap.adjoint_inner_right]
-
 /-- **Change of variables in a non-divergence-form equation.** Let `Φ` be a change of variables
 of order two from `U` into `V`, let `N(x)` be a right inverse of `DΦ(x)` for `x ∈ U`, and let
 `1 ≤ p < ∞`. If `u ∈ W^{2,p}(V)` is a strong solution of
@@ -116,7 +94,7 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq
   filter_upwards [h.ae_comp hu, Wkp.iteratedGradient_compL_ae h hp u,
     Wkp.iteratedGradient_lowerOrder_compL_ae h hp u, Wkp.value_compL_ae h hp u,
     ae_restrict_mem U.isOpen.measurableSet] with x hux hD hg hv hx
-  set M := fderiv ℝ Φ x with hM
+  set M := fderiv ℝ Φ x
   set g := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) (Φ x)
   set A' := N x ∘L A (Φ x) ∘L (N x).adjoint with hA'def
   have hMN := hN x hx
@@ -126,12 +104,15 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq
   have htr : traceCLM ℝ E (A' ∘L Wkp.iteratedGradient 1 (Wkp.compL h hp u) x) =
       traceCLM ℝ E (A (Φ x) ∘L Wkp.iteratedGradient 1 u (Φ x)) +
         ⟪∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i) (A'.adjoint (e i)), g⟫_ℝ := by
-    rw [← sum_inner_apply_adjoint_apply, ← traceCLM_comp_adjoint_comp_comp (A := A (Φ x))
-      (D := Wkp.iteratedGradient 1 u (Φ x)) hMN, traceCLM_apply, traceCLM_apply,
-      LinearMap.trace_eq_sum_inner _ e, LinearMap.trace_eq_sum_inner _ e, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    simp only [hA'def, hM, ContinuousLinearMap.coe_comp, Function.comp_apply,
-      ContinuousLinearMap.coe_coe, hD, map_add, inner_add_right]
+    have hH (f : E) : (Wkp.iteratedGradient 1 (Wkp.compL h hp u) x -
+        M.adjoint ∘L Wkp.iteratedGradient 1 u (Φ x) ∘L M) f =
+          (fderiv ℝ (fderiv ℝ Φ) x f).adjoint g := by
+      rw [sub_apply, hD f, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.comp_apply, add_sub_cancel_left]
+    rw [← sub_add_cancel (Wkp.iteratedGradient 1 (Wkp.compL h hp u) x)
+        (M.adjoint ∘L Wkp.iteratedGradient 1 u (Φ x) ∘L M), ContinuousLinearMap.comp_add,
+      map_add, hA'def, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id hMN,
+      ContinuousLinearMap.traceCLM_comp_eq_inner_sum _ e _ g hH, add_comm]
   -- The drift: `⟪N z, M† g⟫ = ⟪z, g⟫` since `M N = 1`.
   have hdrift (z : E) : ⟪N x z, M.adjoint g⟫_ℝ = ⟪z, g⟫_ℝ := by
     rw [ContinuousLinearMap.adjoint_inner_right]
