@@ -275,6 +275,17 @@ theorem π_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') :
       (normalizedCubicalChainComplex k).map (Hom.fst f) ≫ cokernel.π _ := by
   simp [cubicalChainComplexMap]
 
+/-- Element-wise form of `TopPair.π_cubicalChainComplexMap`: a map of pairs sends the class of a
+chain of the ambient space to the class of its push-forward along the map of ambient spaces. -/
+@[simp]
+theorem π_cubicalChainComplexMap_f_apply {P P' : TopPair.{u}} (f : P ⟶ P') (n : ℕ)
+    (x : ((normalizedCubicalChainComplex k).obj P.fst).X n) :
+    (cubicalChainComplexMap k f).f n
+        ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n x) =
+      (cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f n
+        (NormalizedCubicalChain.map k (Hom.fst f).hom n x) :=
+  ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f n) (π_cubicalChainComplexMap k f)) x
+
 @[simp]
 theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
     cubicalChainComplexMap k (𝟙 P) = 𝟙 (P.cubicalChainComplex k) :=
@@ -284,6 +295,13 @@ theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
 theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g : P' ⟶ P'') :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
+
+/-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
+instance isIso_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') [IsIso f] :
+    IsIso (cubicalChainComplexMap k f) :=
+  ⟨cubicalChainComplexMap k (inv f), by
+    rw [← cubicalChainComplexMap_comp, IsIso.hom_inv_id, cubicalChainComplexMap_id], by
+    rw [← cubicalChainComplexMap_comp, IsIso.inv_hom_id, cubicalChainComplexMap_id]⟩
 
 /-! ### Singular cubes as relative chains -/
 
