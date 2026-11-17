@@ -30,8 +30,6 @@ whose fibres are the classes of caps of a loop.
 
 * `TauCeti.instLocallyEquiconnectedSpaceContinuousMap`: `C(K, X)` is locally equiconnected for
   compact `K` and locally equiconnected `X`.
-* `TauCeti.isOpen_contractibleLoops`: the contractible free loops are open in a locally
-  path-connected free loop space.
 * `TauCeti.locallyEquiconnectedSpace_contractibleLoops`: the contractible free loops of a
   locally equiconnected space form a locally equiconnected space.
 
@@ -61,10 +59,7 @@ instance instLocallyEquiconnectedSpaceContinuousMap [CompactSpace K] [LocallyCom
   -- The pointwise connecting path, as a continuous map on `W' × I`.
   have hG : Continuous fun q : (W' × I) × K => l ((q.1.1 : C(K, X) × C(K, X)).1 q.2,
       (q.1.1 : C(K, X) × C(K, X)).2 q.2) q.1.2 :=
-    h.continuousOn.comp_continuous
-      (f := fun q : (W' × I) × K => (((q.1.1 : C(K, X) × C(K, X)).1 q.2,
-        (q.1.1 : C(K, X) × C(K, X)).2 q.2), q.1.2)) (by fun_prop)
-      fun q => ⟨q.1.1.2 q.2, trivial⟩
+    h.continuous_comp (by fun_prop) (by fun_prop) (by fun_prop) fun q => q.1.1.2 q.2
   let L : C(W' × I, C(K, X)) := ContinuousMap.curry ⟨_, hG⟩
   refine ⟨W', fun p t => if hp : p ∈ W' then L (⟨p, hp⟩, t) else p.1,
     { isOpen := hW'
@@ -86,18 +81,6 @@ instance instLocallyEquiconnectedSpaceContinuousMap [CompactSpace K] [LocallyCom
   · have hf : (f, f) ∈ W' := fun k => h.mk_self_mem (f k)
     ext k
     simp [hf, L, h.apply_self]
-
-variable (X) in
-/-- In a locally path-connected free loop space, the contractible free loops form an open set:
-they are the union of the path components of the constant loops, and path components are open. -/
-theorem isOpen_contractibleLoops [LocallyPathConnectedSpace C(Circle, X)] :
-    IsOpen (contractibleLoops X) := by
-  have : contractibleLoops X = ⋃ x, pathComponent (ContinuousMap.const Circle x) := by
-    ext γ
-    simp only [mem_contractibleLoops_iff, mem_iUnion]
-    exact exists_congr fun _ => ⟨Joined.symm, Joined.symm⟩
-  rw [this]
-  exact isOpen_iUnion fun x => IsOpen.pathComponent _
 
 /-- The contractible free loops `𝓛₀X` of a locally equiconnected space form a locally
 equiconnected space; in particular `𝓛₀X` is locally path-connected and semilocally simply

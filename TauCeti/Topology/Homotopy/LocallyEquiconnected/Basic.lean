@@ -93,6 +93,23 @@ variable {W : Set (X × X)} {l : X × X → I → X}
 theorem mk_self_mem (h : IsEquiconnecting W l) (x : X) : (x, x) ∈ W :=
   h.diagonal_subset (mem_diagonal x)
 
+/-- Connecting paths between `W`-close endpoints varying continuously on `s`, at times varying
+continuously on `s`, vary continuously on `s`. -/
+theorem continuousOn_comp (h : IsEquiconnecting W l) {Z : Type*} [TopologicalSpace Z]
+    {f g : Z → X} {τ : Z → I} {s : Set Z} (hf : ContinuousOn f s) (hg : ContinuousOn g s)
+    (hτ : ContinuousOn τ s) (hW : ∀ z ∈ s, (f z, g z) ∈ W) :
+    ContinuousOn (fun z => l (f z, g z) (τ z)) s :=
+  h.continuousOn.comp (f := fun z => ((f z, g z), τ z)) ((hf.prodMk hg).prodMk hτ)
+    fun z hz => ⟨hW z hz, trivial⟩
+
+/-- Connecting paths between continuously varying `W`-close endpoints, at a continuously varying
+time, vary continuously. -/
+theorem continuous_comp (h : IsEquiconnecting W l) {Z : Type*} [TopologicalSpace Z]
+    {f g : Z → X} {τ : Z → I} (hf : Continuous f) (hg : Continuous g) (hτ : Continuous τ)
+    (hW : ∀ z, (f z, g z) ∈ W) : Continuous fun z => l (f z, g z) (τ z) :=
+  continuousOn_univ.mp <| h.continuousOn_comp hf.continuousOn hg.continuousOn hτ.continuousOn
+    fun z _ => hW z
+
 /-- The pairs in `W` whose connecting path stays in an open set `U` form an open set. -/
 theorem isOpen_inter_setOf_forall_mem (h : IsEquiconnecting W l) {U : Set X} (hU : IsOpen U) :
     IsOpen (W ∩ {p | ∀ t, l p t ∈ U}) := by
@@ -114,8 +131,7 @@ theorem locallyContractibleSpace (h : IsEquiconnecting W l) : LocallyContractibl
   refine ⟨V, hVU, hV.mem_nhds hxV, ⟨x, hU'U hxU'⟩, ⟨?_⟩⟩
   -- Run the connecting path from `x` to `y` backwards, from `y` to `x`.
   have hc : Continuous fun p : I × V => l (x, (p.2 : X)) (σ p.1) :=
-    h.continuousOn.comp_continuous (f := fun p : I × V => ((x, (p.2 : X)), σ p.1))
-      (by fun_prop) fun p => ⟨p.2.2.1, trivial⟩
+    h.continuous_comp continuous_const (by fun_prop) (by fun_prop) fun p => p.2.2.1
   exact
     { toFun := fun p => ⟨l (x, p.2) (σ p.1), hU'U (p.2.2.2 _)⟩
       continuous_toFun := hc.subtype_mk _
@@ -132,9 +148,9 @@ theorem retract (h : IsEquiconnecting W l) {e : Y → X} (he : Continuous e) {r 
   diagonal_subset := by
     rintro ⟨y, y'⟩ (rfl : y = y')
     exact ⟨h.mk_self_mem _, fun t => (h.apply_self _ t).symm ▸ heU (mem_range_self y)⟩
-  continuousOn := hr.comp (h.continuousOn.comp
-    (f := fun q : (Y × Y) × I => ((e q.1.1, e q.1.2), q.2))
-      (Continuous.continuousOn (by fun_prop)) fun q hq => ⟨hq.1.1, trivial⟩) fun q hq => hq.1.2 q.2
+  continuousOn := hr.comp (h.continuousOn_comp (f := fun q : (Y × Y) × I => e q.1.1)
+    (g := fun q => e q.1.2) (τ := Prod.snd) (by fun_prop) (by fun_prop) (by fun_prop)
+      fun q hq => hq.1.1) fun q hq => hq.1.2 q.2
   apply_zero p hp := by simp only [h.apply_zero _ hp.1, hre]
   apply_one p hp := by simp only [h.apply_one _ hp.1, hre]
   apply_self y t := by simp only [h.apply_self, hre]
