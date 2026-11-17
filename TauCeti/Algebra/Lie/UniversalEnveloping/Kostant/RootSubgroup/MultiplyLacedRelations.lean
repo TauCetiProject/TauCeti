@@ -93,21 +93,16 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq
         kostantRootSubgroupPoints e h ρ M hM j hj g⁆ =
       kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
-  refine (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).injective ?_
-  have hval {r : I} (hr) (x : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
-      LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
-          (kostantRootSubgroupPoints e h ρ M hM r hr x) =
-        baseChangeExpHom (ρ (ι ℚ (e r))) M
-          (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM r n hv) hr
-          (gaPointsMulEquiv x) :=
-    LinearEquiv.toLinearMap_inj.mp <| by
-      rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
-        kostantRootSubgroupPoints_val, baseChangeExpHom_toLinearMap]
-  simp only [map_commutatorElement, map_mul, hval]
-  rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv p), hp,
-    ← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv q), hq]
-  exact commutatorElement_baseChangeExpHom_of_lie_lie_eq ρ M hij hiij hil hjk
-    _ _ _ _ hi hj hk hl _ _
+  refine Units.ext ?_
+  simpa only [commutatorElement_def, ← map_inv, Units.val_mul, kostantRootSubgroupPoints_val,
+    LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_ofAdd, hp, hq] using
+    congrArg LinearEquiv.toLinearMap
+      (commutatorElement_baseChangeExpHom_of_lie_lie_eq ρ M hij hiij hil hjk
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hv)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv)
+        hi hj hk hl (gaPointsMulEquiv f) (gaPointsMulEquiv g))
 
 /-- The multiply-laced Chevalley commutator relation with the two output points written out at
 parameters `c t u` and `d t² u`. -/
@@ -156,20 +151,16 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_lie_rev_eq {i j k l :
     ⁅kostantRootSubgroupPoints e h ρ M hM i hi f, kostantRootSubgroupPoints e h ρ M hM j hj g⁆ =
       kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
-  refine (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).injective ?_
-  have hval {r : I} (hr) (x : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
-      LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
-          (kostantRootSubgroupPoints e h ρ M hM r hr x) =
-        baseChangeExpHom (ρ (ι ℚ (e r))) M
-          (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM r n hv) hr
-          (gaPointsMulEquiv x) :=
-    LinearEquiv.toLinearMap_inj.mp <| by
-      rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
-        kostantRootSubgroupPoints_val, baseChangeExpHom_toLinearMap]
-  simp only [map_commutatorElement, map_mul, hval]
-  rw [← ofAdd_toAdd (gaPointsMulEquiv p), hp, ← ofAdd_toAdd (gaPointsMulEquiv q), hq]
-  exact commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq ρ M hij hjji hjl hik
-    _ _ _ _ hi hj hk hl _ _
+  refine Units.ext ?_
+  simpa only [commutatorElement_def, ← map_inv, Units.val_mul, kostantRootSubgroupPoints_val,
+    LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_ofAdd, hp, hq] using
+    congrArg LinearEquiv.toLinearMap
+      (commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq ρ M hij hjji hjl hik
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hv)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv)
+        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv)
+        hi hj hk hl (gaPointsMulEquiv f) (gaPointsMulEquiv g))
 
 /-- The reversed multiply-laced Chevalley commutator relation with both output points written out
 at parameters `c t u` and `-d t u²`. -/
