@@ -157,12 +157,14 @@ private theorem existsUnique_frozen
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
     ∃! u : W1p volume Omega 2, u - g ∈ w1p0Submodule volume Omega 2 ∧
-      ∀ φ : W1p0 volume Omega 2, energyFormH1 (fun x => A x (v x)) 0 0 u φ = ℓ φ :=
-  UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
+      ∀ φ : W1p0 volume Omega 2, energyFormH1 (fun x => A x (v x)) 0 0 u φ = ℓ φ := by
+  have hR := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
+  obtain ⟨R, hball⟩ := hR
+  exact UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
     (UniformlyEllipticOn.apply_of_forall hA v) (aestronglyMeasurable_comp hAm hAc hv)
     (b := 0) (c := 0) aestronglyMeasurable_const aestronglyMeasurable_const (beta := 0)
     (gamma := 0) (fun _ _ => by simp) (fun _ _ => by simp) (fun _ _ => by simp) hball
@@ -173,13 +175,13 @@ private theorem frozenSolution_spec
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
     frozenSolution A g ℓ v - g ∈ w1p0Submodule volume Omega 2 ∧
       ∀ φ : W1p0 volume Omega 2,
         energyFormH1 (fun x => A x (v x)) 0 0 (frozenSolution A g ℓ v) φ = ℓ φ :=
-  Classical.epsilon_spec (existsUnique_frozen hA hAm hAc hball g ℓ hv).exists
+  Classical.epsilon_spec (existsUnique_frozen hA hAm hAc hΩ g ℓ hv).exists
 
 /-- The frozen solution has the boundary values `g`: `S v - g ∈ H¹₀(Ω)`. -/
 theorem frozenSolution_sub_mem_w1p0Submodule
@@ -187,11 +189,11 @@ theorem frozenSolution_sub_mem_w1p0Submodule
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
     frozenSolution A g ℓ v - g ∈ w1p0Submodule volume Omega 2 :=
-  (frozenSolution_spec hA hAm hAc hball g ℓ hv).1
+  (frozenSolution_spec hA hAm hAc hΩ g ℓ hv).1
 
 /-- The frozen solution solves `-div (A(x, v) ∇u) = ℓ` weakly. -/
 theorem forall_energyFormH1_frozenSolution_eq
@@ -199,12 +201,12 @@ theorem forall_energyFormH1_frozenSolution_eq
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega))
     (φ : W1p0 volume Omega 2) :
     energyFormH1 (fun x => A x (v x)) 0 0 (frozenSolution A g ℓ v) φ = ℓ φ :=
-  (frozenSolution_spec hA hAm hAc hball g ℓ hv).2 φ
+  (frozenSolution_spec hA hAm hAc hΩ g ℓ hv).2 φ
 
 /-- Uniqueness for the frozen problem: every `u` with `u - g ∈ H¹₀(Ω)` solving
 `-div (A(x, v) ∇u) = ℓ` weakly is the frozen solution `S v`. -/
@@ -213,14 +215,14 @@ theorem eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     {g u : W1p volume Omega 2} {ℓ : StrongDual ℝ (W1p0 volume Omega 2)}
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega))
     (hug : u - g ∈ w1p0Submodule volume Omega 2)
     (hu : ∀ φ : W1p0 volume Omega 2, energyFormH1 (fun x => A x (v x)) 0 0 u φ = ℓ φ) :
     u = frozenSolution A g ℓ v :=
-  (existsUnique_frozen hA hAm hAc hball g ℓ hv).unique ⟨hug, hu⟩
-    (frozenSolution_spec hA hAm hAc hball g ℓ hv)
+  (existsUnique_frozen hA hAm hAc hΩ g ℓ hv).unique ⟨hug, hu⟩
+    (frozenSolution_spec hA hAm hAc hΩ g ℓ hv)
 
 /-- The energy bound for the linear problem with a frozen coefficient: if `u - g ∈ H¹₀(Ω)` and
 `-div (A(x, v) ∇u) = ℓ` weakly, then `‖u - g‖ ≤ 2 ((2R)² + 1) (‖ℓ‖ + Λ ‖g‖) / λ`, whatever `v`. -/
@@ -259,8 +261,8 @@ theorem norm_frozenSolution_sub_le
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
     ‖frozenSolution A g ℓ v - g‖ ≤ 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam :=
-  norm_sub_le_of_forall_energyFormH1_comp_eq hA hAm hAc hball hv
-    (frozenSolution_spec hA hAm hAc hball g ℓ hv).1 (frozenSolution_spec hA hAm hAc hball g ℓ hv).2
+  have hspec := frozenSolution_spec hA hAm hAc (isBounded_ball.subset hball) g ℓ hv
+  norm_sub_le_of_forall_energyFormH1_comp_eq hA hAm hAc hball hv hspec.1 hspec.2
 
 /-- Two frozen coefficients differ by at most `2Λ` as bilinear forms. -/
 private theorem abs_dotProduct_sub_mulVec_le
@@ -279,12 +281,14 @@ theorem continuous_value_frozenSolution
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2)) :
     Continuous fun v : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) =>
       W1p.value (frozenSolution A g ℓ v) := by
   have hspec (v : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :=
-    frozenSolution_spec hA hAm hAc hball g ℓ (Lp.aestronglyMeasurable v)
+    frozenSolution_spec hA hAm hAc hΩ g ℓ (Lp.aestronglyMeasurable v)
+  have hR := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
+  obtain ⟨R, hball⟩ := hR
   rw [continuous_iff_seqContinuous]
   intro vs v hv
   -- Along a further subsequence of any subsequence, `vₖ → v` almost everywhere.
@@ -316,11 +320,13 @@ theorem isCompact_closure_range_value_frozenSolution
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
-    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2)) :
     IsCompact (closure (range fun v : Lp ℝ 2
       (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) =>
         W1p.value (frozenSolution A g ℓ v))) := by
+  have hR := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
+  obtain ⟨R, hball⟩ := hR
   have hK : 0 ≤ 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam := by
     have := (hA 0).pos
     have := (hA 0).upper_nonneg
@@ -330,11 +336,11 @@ theorem isCompact_closure_range_value_frozenSolution
   have hcpt := (isCompactOperator_iff_isCompact_closure_image_ball
     (W1p0.valueL (mu := volume) (Omega := Omega) (p := 2)).toLinearMap
       (r := 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam + 1) (by linarith)).1
-    (W1p0.isCompactOperator_valueL ENNReal.ofNat_ne_top (isBounded_ball.subset hball))
+    (W1p0.isCompactOperator_valueL ENNReal.ofNat_ne_top hΩ)
   have hS := hcpt.image (continuous_const_add (W1p.value g))
   refine hS.of_isClosed_subset isClosed_closure (closure_minimal ?_ hS.isClosed)
   rintro _ ⟨v, rfl⟩
-  have hspec := frozenSolution_spec hA hAm hAc hball g ℓ (Lp.aestronglyMeasurable v)
+  have hspec := frozenSolution_spec hA hAm hAc hΩ g ℓ (Lp.aestronglyMeasurable v)
   let w : W1p0 volume Omega 2 :=
     ⟨frozenSolution A g ℓ v - g, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec.1⟩
   have hw : ‖w‖ < 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam + 1 := by
@@ -366,18 +372,16 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq
     ∃ u : W1p volume Omega 2, u - g ∈ w1p0Submodule volume Omega 2 ∧
       ∀ φ : W1p0 volume Omega 2,
         energyFormH1 (fun x => A x (W1p.value u x)) 0 0 u φ = ℓ φ := by
-  have hR := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
-  obtain ⟨R, hball⟩ := hR
-  have hK := isCompact_closure_range_value_frozenSolution hA hAm hAc hball g ℓ
+  have hK := isCompact_closure_range_value_frozenSolution hA hAm hAc hΩ g ℓ
   rw [← image_univ] at hK
   have hfix := schauderFixedPoint_closedConvex_continuousOn
     (E := Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
     (f := fun v => W1p.value (frozenSolution A g ℓ v)) isClosed_univ convex_univ univ_nonempty
-    (continuous_value_frozenSolution hA hAm hAc hball g ℓ).continuousOn (mapsTo_univ _ _) hK
+    (continuous_value_frozenSolution hA hAm hAc hΩ g ℓ).continuousOn (mapsTo_univ _ _) hK
   obtain ⟨v, -, hv⟩ := hfix
   -- At the fixed point `v`, the value of `u = S v` is `v` itself.
   have hv' : W1p.value (frozenSolution A g ℓ v) = v := hv
-  have hspec := frozenSolution_spec hA hAm hAc hball g ℓ (Lp.aestronglyMeasurable v)
+  have hspec := frozenSolution_spec hA hAm hAc hΩ g ℓ (Lp.aestronglyMeasurable v)
   refine ⟨frozenSolution A g ℓ v, hspec.1, fun φ => ?_⟩
   rw [hv']
   exact hspec.2 φ
