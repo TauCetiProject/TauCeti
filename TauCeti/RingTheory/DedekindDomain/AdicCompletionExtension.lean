@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
+import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
 # Extension of adic completions along an extension of Dedekind domains
@@ -472,33 +473,14 @@ theorem adicCompletionExtension_eq_adicCompletionCongr {e : K ≃+* L}
     rw [hK, hL, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
       adicCompletionCongr_algebraMap, halg]).symm
 
-/-- If `algebraMap K L` is surjective (hence bijective), the ramification index of any lying-over
-prime `w` over `v` is `1` and `adicCompletionExtension K L v w` is bijective. -/
+/-- If `algebraMap K L` is surjective (hence bijective), `adicCompletionExtension K L v w` is
+bijective. -/
 theorem adicCompletionExtension_bijective_of_surjective
     (h : Function.Surjective (algebraMap K L)) :
     Function.Bijective (adicCompletionExtension K L v w) := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  obtain ⟨π, hπ⟩ := w.valuation_exists_uniformizer L
-  obtain ⟨x, hx⟩ := h π
-  have hpow : v.valuation K x ^ w.asIdeal.ramificationIdx R = exp (-1 : ℤ) := by
-    rw [valuation_liesOver (K := K) L v w x, hx, hπ]
-  have hx_ne : v.valuation K x ≠ 0 := by
-    intro h0
-    rw [h0] at hpow
-    rcases eq_or_ne (w.asIdeal.ramificationIdx R) 0 with hr | hr
-    · rw [hr, pow_zero] at hpow
-      have h01 : (0 : ℤ) = -1 := exp_injective (exp_zero.trans hpow)
-      omega
-    · rw [zero_pow hr] at hpow
-      exact exp_ne_zero hpow.symm
-  have hmul : (w.asIdeal.ramificationIdx R : ℤ) * WithZero.log (v.valuation K x) = -1 := by
-    rw [← WithZero.exp_log hx_ne, ← exp_nsmul] at hpow
-    simpa only [nsmul_eq_mul] using exp_injective hpow
-  have hram : w.asIdeal.ramificationIdx R = 1 := by
-    have habs : w.asIdeal.ramificationIdx R * (WithZero.log (v.valuation K x)).natAbs = 1 := by
-      simpa only [Int.natAbs_mul, Int.natAbs_natCast, Int.natAbs_neg, Int.natAbs_one] using
-        congrArg Int.natAbs hmul
-    exact Nat.eq_one_of_mul_eq_one_right habs
+  have hram : w.asIdeal.ramificationIdx R = 1 :=
+    w.asIdeal.ramificationIdx_eq_one_of_surjective_fractionRing R h
   let e : K ≃+* L := RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩
   have halg (a : K) : algebraMap K L a = e a := (RingEquiv.ofBijective_apply _ _ a).symm
   have he (a : K) : w.valuation L (e a) = v.valuation K a := by

@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.Analysis.Normed.Field.WithAbs
+import TauCeti.NumberTheory.QuadraticForm.CompletionTransport
 
 /-!
 # Transporting local quadratic invariants along field isomorphisms
@@ -23,12 +24,12 @@ A ring isomorphism `e : K ≃+* L` of number fields identifies the finite places
 real places of `K` with those of `L` by `NumberField.InfinitePlace.equivOfRingEquiv e` and
 `NumberField.InfinitePlace.realEquivOfRingEquiv e`. At each pair of corresponding finite places `v`
 and `w`, `adicCompletionCongr` extends `e` to a ring isomorphism `K_v ≃+* L_w` that intertwines
-`unitAtFinitePlace`, `RingHom.squareClassMap`, and `RegularFormClass.baseChange`, preserves local
-squares, preserves the norm-equation Hilbert symbol and the local and finite Hasse invariants, and
-preserves solvability of the quadratic norm equation `a = x² - d y²`. At each pair of corresponding
-infinite places `w` and `w'`, `AbsoluteValue.Completion.congr` extends `e` to `K_w ≃+* L_{w'}` and
-likewise preserves solvability of `a = x² - d y²`; at real places `realEquivOfRingEquiv e`
-intertwines `unitAtRealPlace` on the nose in `ℝˣ`.
+`unitAtFinitePlace`, preserves local squares, preserves the norm-equation Hilbert symbol and the
+local and finite Hasse invariants, and preserves solvability of the quadratic norm equation
+`a = x² - d y²`. At each pair of corresponding infinite places `w` and `w'`,
+`AbsoluteValue.Completion.congr` extends `e` to `K_w ≃+* L_{w'}` and likewise preserves
+solvability of `a = x² - d y²`; at real places `realEquivOfRingEquiv e` intertwines
+`unitAtRealPlace` on the nose in `ℝˣ`.
 
 Reindexing along the place bijections shows that the product of the finite-place Hilbert symbols
 `(a_v, b_v)_v`, the product of the real-place Hilbert symbols `(a_w, b_w)_w`, and everywhere-local
@@ -39,14 +40,6 @@ to number fields in any universe.
 
 ## Main results
 
-* `TauCeti.squareClassMap_adicCompletionCongr_algebraMap`: `adicCompletionCongr` commutes with
-  pushing square classes forward along `algebraMap`.
-* `TauCeti.RegularFormClass.mapRingEquiv_adicCompletionCongr_baseChange`: `adicCompletionCongr`
-  commutes with extending regular-form classes to adic completions.
-* `TauCeti.RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv_of_valuation_eq`,
-  `TauCeti.RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv`: transporting a
-  global regular-form class along a field isomorphism preserves its local Hasse invariant at
-  corresponding finite places.
 * `TauCeti.units_map_adicCompletionCongr_unitAtFinitePlace`: `adicCompletionCongr` intertwines
   `unitAtFinitePlace` with `Units.map e`.
 * `TauCeti.isSquare_unitAtFinitePlace_iff_of_ringEquiv`,
@@ -57,6 +50,9 @@ to number fields in any universe.
   finite place is preserved along `e`.
 * `TauCeti.finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv`: the product of the finite-place
   Hilbert symbols is preserved along `e`.
+* `TauCeti.RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv`: transporting a
+  global regular-form class along a field isomorphism of number fields preserves its local Hasse
+  invariant at corresponding finite places.
 * `QuadraticForm.finiteHasse_eq_of_semilinearEquiv_of_valuation_eq`,
   `QuadraticForm.finiteHasse_eq_of_semilinearEquiv`,
   `QuadraticForm.finiteHasse_equivOfRingEquiv_of_semilinearEquiv`: regular quadratic forms
@@ -83,68 +79,6 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-
-section DedekindDomain
-
-variable {R R' K K' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
-  [Field K] [Field K'] [Algebra R K] [IsFractionRing R K] [Algebra R' K'] [IsFractionRing R' K']
-
-namespace TauCeti
-
-/-- Extending a valuation-preserving isomorphism `e : K ≃+* K'` to the adic completions commutes
-with pushing square classes forward along `algebraMap`. -/
-@[simp]
-theorem squareClassMap_adicCompletionCongr_algebraMap
-    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
-    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
-    (d : SquareClassGroup K) :
-    (adicCompletionCongr v w e he :
-        v.adicCompletion K →+* w.adicCompletion K').squareClassMap
-        ((algebraMap K (v.adicCompletion K)).squareClassMap d) =
-      (algebraMap K' (w.adicCompletion K')).squareClassMap
-        ((e : K →+* K').squareClassMap d) := by
-  have hcomp : (adicCompletionCongr v w e he :
-        v.adicCompletion K →+* w.adicCompletion K').comp (algebraMap K (v.adicCompletion K)) =
-      (algebraMap K' (w.adicCompletion K')).comp (e : K →+* K') :=
-    RingHom.ext fun a ↦ by
-      simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, adicCompletionCongr_algebraMap]
-  rw [← LinearMap.comp_apply, ← RingHom.squareClassMap_comp, hcomp,
-    RingHom.squareClassMap_comp, LinearMap.comp_apply]
-
-namespace RegularFormClass
-
-/-- Transporting the `K_v`-scalar extension of a regular-form class along `adicCompletionCongr`
-agrees with extending scalars of the `e`-transported class to `K'_w`. -/
-@[simp]
-theorem mapRingEquiv_adicCompletionCongr_baseChange
-    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
-    [Invertible (2 : K)] [Invertible (2 : K')]
-    [Invertible (2 : v.adicCompletion K)] [Invertible (2 : w.adicCompletion K')]
-    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
-    (x : RegularFormClass K) :
-    mapRingEquiv (adicCompletionCongr v w e he) (baseChange (v.adicCompletion K) x) =
-      baseChange (w.adicCompletion K') (mapRingEquiv e x) :=
-  mapRingEquiv_baseChange e (adicCompletionCongr v w e he) (adicCompletionCongr_algebraMap he) x
-
-/-- Along a valuation-preserving isomorphism `e : K ≃+* K'` of fraction fields of Dedekind domains
-with finite residue fields at `v` and `w`, the local Hasse invariant at `w` of a transported
-regular-form class equals the local Hasse invariant at `v` of the original class. -/
-theorem localHasse_baseChange_adicCompletion_mapRingEquiv_of_valuation_eq
-    {v : HeightOneSpectrum R} {w : HeightOneSpectrum R'}
-    [Finite (R ⧸ v.asIdeal)] [Finite (R' ⧸ w.asIdeal)]
-    [Invertible (2 : K)] [Invertible (2 : K')]
-    [Invertible (2 : v.adicCompletion K)] [Invertible (2 : w.adicCompletion K')]
-    {e : K ≃+* K'} (he : ∀ x, w.valuation K' (e x) = v.valuation K x)
-    (x : RegularFormClass K) :
-    localHasse (baseChange (w.adicCompletion K') (mapRingEquiv e x)) =
-      localHasse (baseChange (v.adicCompletion K) x) := by
-  rw [← mapRingEquiv_adicCompletionCongr_baseChange he, localHasse_mapRingEquiv]
-
-end RegularFormClass
-
-end TauCeti
-
-end DedekindDomain
 
 section FinitePlace
 
