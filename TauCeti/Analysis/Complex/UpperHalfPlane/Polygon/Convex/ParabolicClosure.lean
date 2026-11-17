@@ -49,8 +49,9 @@ private theorem exists_smul_infty_mem_boundaryLeftHalfPlane_mul_pslS (P : Convex
   refine ⟨a₀ * (P.sideGeodesic 0 * pslS)⁻¹, ?_⟩
   set h₀ := a₀ * (P.sideGeodesic 0 * pslS)⁻¹
   have hg₁ := isGeodesicFromTo_mul_pslS_iff.2 ((h₀ • P).isGeodesicFromTo_sideGeodesic 0)
+  have ha₀_eq : a₀ = h₀ * P.sideGeodesic 0 * pslS := by simp [h₀, mul_assoc]
   have hg₂ : IsGeodesicFromTo a₀ ((h₀ • P).vertex (0 + 1)) ((h₀ • P).vertex 0) := by
-    rw [show a₀ = h₀ * P.sideGeodesic 0 * pslS by simp [h₀, mul_assoc]]
+    rw [ha₀_eq]
     simpa only [vertex_smul] using
       isGeodesicFromTo_mul_pslS_iff.2 ((P.isGeodesicFromTo_sideGeodesic 0).smul h₀)
   rw [hg₂.boundaryLeftHalfPlane_eq hg₁, ← mul_one a₀, ← smul_boundaryLeftHalfPlane, ← ha₀]
@@ -114,8 +115,8 @@ private theorem parabolaLift_parabolaMap (z : ℍ) : parabolaLift (parabolaMap z
   apply Complex.ext
   · simp [parabolaLift]
   · simp only [parabolaLift, parabolaMap_re, parabolaMap_im, Complex.normSq_apply, coe_re, coe_im]
-    rw [show z.re * z.re + z.im * z.im - z.re ^ 2 = z.im ^ 2 by ring,
-      max_eq_right (sq_nonneg z.im), Real.sqrt_sq z.im_pos.le]
+    have hsub : z.re * z.re + z.im * z.im - z.re ^ 2 = z.im ^ 2 := by ring
+    rw [hsub, max_eq_right (sq_nonneg z.im), Real.sqrt_sq z.im_pos.le]
 
 private theorem eventually_parabolaMap_horodisc {Q : ConvexPolygon n}
     (hne : ∀ i, Q.vertex i ≠ .inr ∞) {g : Fin n → PSL(2, ℝ)}

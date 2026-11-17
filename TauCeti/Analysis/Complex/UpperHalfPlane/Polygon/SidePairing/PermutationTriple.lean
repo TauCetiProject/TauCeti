@@ -89,6 +89,20 @@ def pairOrbitEquivSideRepresentative :
     · exact Or.inr (by simp [min_eq_right h])
   right_inv i := Subtype.ext (min_eq_left i.2)
 
+/-- `pairOrbitEquivSideRepresentative` sends the orbit of `i` to the minimum representative
+`min i (σ.pair i)`. -/
+@[simp]
+theorem coe_pairOrbitEquivSideRepresentative_mk (i : Fin n) :
+    (σ.pairOrbitEquivSideRepresentative (Quotient.mk'' i) : Fin n) = min i (σ.pair i) :=
+  (rfl)
+
+/-- The inverse of `pairOrbitEquivSideRepresentative` sends a side representative to its
+`σ.pair`-orbit. -/
+@[simp]
+theorem pairOrbitEquivSideRepresentative_symm_apply (i : σ.SideRepresentative) :
+    σ.pairOrbitEquivSideRepresentative.symm i = Quotient.mk'' i.1 :=
+  (rfl)
+
 /-- **The number of orbits of `σ.pair` is the number of side pairs.** -/
 theorem orbitCount_pair : orbitCount σ.pair = Nat.card σ.SideRepresentative := by
   rw [orbitCount_def]; exact Nat.card_congr σ.pairOrbitEquivSideRepresentative
@@ -114,6 +128,34 @@ def nextOrbitEquivSum :
     rintro (c | c) <;> refine Quotient.inductionOn c fun i ↦ ?_
     · simp [i.2]
     · simp [Sum.not_isLeft.2 i.2]
+
+/-- On a finite vertex `i`, `nextOrbitEquivSum` sends its `σ.next`-orbit to its finite vertex
+cycle. -/
+@[simp]
+theorem nextOrbitEquivSum_mk_of_isLeft {i : Fin n} (hi : (P.vertex i).isLeft) :
+    σ.nextOrbitEquivSum (Quotient.mk'' i) = .inl (Quotient.mk'' ⟨i, hi⟩) := by
+  simp [nextOrbitEquivSum, hi]
+
+/-- On an ideal vertex `i`, `nextOrbitEquivSum` sends its `σ.next`-orbit to its ideal vertex
+cycle. -/
+@[simp]
+theorem nextOrbitEquivSum_mk_of_isRight {i : Fin n} (hi : (P.vertex i).isRight) :
+    σ.nextOrbitEquivSum (Quotient.mk'' i) = .inr (Quotient.mk'' ⟨i, hi⟩) := by
+  simp [nextOrbitEquivSum, Sum.not_isLeft.2 hi]
+
+/-- The inverse of `nextOrbitEquivSum` sends a finite vertex cycle to its underlying
+`σ.next`-orbit. -/
+@[simp]
+theorem nextOrbitEquivSum_symm_inl_mk (i : {i : Fin n // (P.vertex i).isLeft}) :
+    σ.nextOrbitEquivSum.symm (.inl (Quotient.mk'' i)) = Quotient.mk'' i.1 :=
+  (rfl)
+
+/-- The inverse of `nextOrbitEquivSum` sends an ideal vertex cycle to its underlying
+`σ.next`-orbit. -/
+@[simp]
+theorem nextOrbitEquivSum_symm_inr_mk (i : {i : Fin n // (P.vertex i).isRight}) :
+    σ.nextOrbitEquivSum.symm (.inr (Quotient.mk'' i)) = Quotient.mk'' i.1 :=
+  (rfl)
 
 /-- **The number of orbits of `σ.next` is the sum of the finite and ideal vertex cycle counts.** -/
 theorem orbitCount_next :

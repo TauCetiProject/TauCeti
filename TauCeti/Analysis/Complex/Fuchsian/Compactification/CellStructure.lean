@@ -63,66 +63,6 @@ variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing) {Γ : S
 
 local notation "π" => (Quotient.mk'' : ℍ → orbitRel.Quotient Γ ℍ)
 
-/-! ### Orbit identifications on `P` -/
-
-include hmap hdisj in
-private theorem eq_or_eq_map_smul_of_mk_eq {i : Fin n} {u : ℝ} (hu : u ∈ Ioo (-1) 1) {w : ℍ}
-    (hw : w ∈ P.carrier) (h : π w = π (σ.edgeArc i u)) :
-    w = σ.edgeArc i u ∨ w = σ.map i • σ.edgeArc i u := by
-  have hside := σ.edgeArc_mem_side i hu; have hne := σ.vertex_ne_inl_edgeArc i hu
-  rw [Quotient.eq'', orbitRel_apply] at h
-  rcases (σ.mem_orbit_iff_of_mem_carrier hmap hdisj (P.side_subset_carrier i hside) hw).1 h with
-    h | ⟨j, hj, rfl⟩ | ⟨j, -, hj, -, -⟩
-  · exact Or.inl h
-  · obtain rfl := P.eq_of_mem_side_of_mem_side hside (hne i) (hne (i + 1)) hj
-    exact Or.inr rfl
-  · exact (hne j hj).elim
-
-include hmap hdisj in
-private theorem edgeArc_eq_or_of_mk_eq {i j : Fin n} {u v : ℝ}
-    (hu : u ∈ Ioo (-1) 1) (hv : v ∈ Ioo (-1) 1)
-    (h : π (σ.edgeArc j v) = π (σ.edgeArc i u)) :
-    (j = i ∧ v = u) ∨ (j = σ.pair i ∧ σ.edgeArc j v = σ.map i • σ.edgeArc i u) := by
-  have hsi := σ.edgeArc_mem_side i hu; have hsj := σ.edgeArc_mem_side j hv
-  have hnej := σ.vertex_ne_inl_edgeArc j hv
-  rcases σ.eq_or_eq_map_smul_of_mk_eq hmap hdisj hu (P.side_subset_carrier j hsj) h with heq | heq
-  · obtain rfl := P.eq_of_mem_side_of_mem_side hsj (hnej j) (hnej (j + 1)) (heq ▸ hsi)
-    exact Or.inl ⟨rfl, σ.injOn_edgeArc j hv hu heq⟩
-  · exact Or.inr ⟨P.eq_of_mem_side_of_mem_side hsj (hnej j) (hnej (j + 1))
-      (heq ▸ σ.map_smul_mem_side hsi), heq⟩
-
-include hmap hdisj in
-private theorem exists_vertex_eq_of_mk_eq {j : Fin n} {v w : ℍ}
-    (hv : P.vertex j = .inl v) (hw : w ∈ P.carrier) (h : π w = π v) :
-    ∃ k, P.vertex k = .inl w := by
-  rw [Quotient.eq'', orbitRel_apply] at h
-  rcases (σ.mem_orbit_iff_of_mem_carrier hmap hdisj
-      (P.side_subset_carrier j (P.mem_side_of_vertex_eq_inl hv)) hw).1 h with
-    rfl | ⟨k, hk, rfl⟩ | ⟨-, k, -, hk, -⟩
-  · exact ⟨j, hv⟩
-  · rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hv hk with rfl | rfl
-    · exact ⟨σ.pair j + 1, by simpa [hv] using (σ.map_smul_vertex j).symm⟩
-    · exact ⟨σ.pair k, by simpa [hv] using (σ.map_smul_vertex_add_one k).symm⟩
-  · exact ⟨k, hk⟩
-
-include hdisj in
-private theorem eq_of_mk_eq_of_mem_interior {z w : ℍ}
-    (hz : z ∈ interior P.carrier) (hw : w ∈ P.carrier) (h : π w = π z) : w = z := by
-  rw [Quotient.eq'', orbitRel_apply, mem_orbit_iff] at h
-  obtain ⟨γ, rfl⟩ := h
-  by_contra hne
-  have hd := (hdisj γ fun h1 ↦ hne (by simp [h1])).closure_right
-    ((Homeomorph.smul (γ : PSL(2, ℝ))).isOpenMap _ isOpen_interior)
-  rw [P.closure_interior_carrier] at hd
-  exact disjoint_left.1 hd (smul_mem_smul_set hz) hw
-
-include hdisj in
-private theorem mk_notMem_image_interior {j : Fin n} {z : ℍ} (hz : z ∈ P.side j) :
-    π z ∉ π '' interior P.carrier := by
-  rintro ⟨w, hw, h⟩
-  obtain rfl := eq_of_mk_eq_of_mem_interior hdisj hw (P.side_subset_carrier j hz) h.symm
-  exact disjoint_left.1 disjoint_interior_frontier hw (P.side_subset_frontier_carrier j hz)
-
 /-! ### The `0`-cells -/
 
 variable (P Γ) in
@@ -159,10 +99,10 @@ private theorem natCard_zeroCells :
     ncard_union_eq hd₁ (finite_range _) (finite_range _),
     ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
   have hV : Nat.card (finiteVertexOrbits P Γ) = Nat.card σ.FiniteVertexCycle := by
-    rw [show finiteVertexOrbits P Γ = ofQuotient '' range
-        (fun j : {i : Fin n // (P.vertex i).isLeft} ↦ π ((P.vertex j).getLeft j.2)) by
-          ext; simp [finiteVertexOrbits],
-      Nat.card_image_of_injective ofQuotient_injective,
+    have hfv : finiteVertexOrbits P Γ = ofQuotient '' range
+        (fun j : {i : Fin n // (P.vertex i).isLeft} ↦ π ((P.vertex j).getLeft j.2)) := by
+      ext; simp [finiteVertexOrbits]
+    rw [hfv, Nat.card_image_of_injective ofQuotient_injective,
       Nat.card_congr (σ.finiteVertexCycleEquiv hmap hdisj)]
   have hM : Nat.card (σ.midpointOrbits Γ) = Nat.card {i : Fin n // σ.pair i = i} :=
     Nat.card_range_of_injective
@@ -175,10 +115,12 @@ include hmap hdisj in
 private theorem ofQuotient_mk_edgeArc_notMem_zeroCells {i : Fin n} {u : ℝ} (hu : u ∈ Ioo (-1) 1) :
     ofQuotient (π (σ.edgeArc i u)) ∉ σ.zeroCells Γ := by
   rintro ((⟨j, hj⟩ | ⟨j, hj⟩) | ⟨C, hC⟩)
-  · obtain ⟨k, hk⟩ := σ.exists_vertex_eq_of_mk_eq hmap hdisj (Sum.inl_getLeft _ j.2).symm
-      (P.side_subset_carrier i (σ.edgeArc_mem_side i hu)) (ofQuotient_injective hj.symm)
+  · obtain ⟨k, hk⟩ := σ.exists_vertex_eq_inl_of_quotientMk_eq hmap hdisj
+      (Sum.inl_getLeft _ j.2).symm (P.side_subset_carrier i (σ.edgeArc_mem_side i hu))
+      (ofQuotient_injective hj.symm)
     exact σ.vertex_ne_inl_edgeArc i hu k hk
-  · rcases σ.eq_or_eq_map_smul_of_mk_eq hmap hdisj hu
+  · rcases σ.eq_or_eq_map_smul_of_quotientMk_eq (hmap i) hdisj (σ.edgeArc_mem_side i hu)
+        (σ.vertex_ne_inl_edgeArc i hu i) (σ.vertex_ne_inl_edgeArc i hu (i + 1))
         (P.side_subset_carrier j.1 (σ.selfPairedSideFixedPoint_spec j).1)
         (ofQuotient_injective hj) with heq | heq
     exacts [σ.edgeArc_ne_selfPairedSideFixedPoint i hu j heq.symm,
@@ -253,9 +195,12 @@ private theorem injOn_edgeMap (i : Fin n) : InjOn (σ.edgeMap hmap hlf i) (ball 
   rw [σ.edgeMap_of_mem_ball hmap hlf i hx, σ.edgeMap_of_mem_ball hmap hlf i hy] at h
   rw [Pi.mem_ball_unique, Fin.default_eq_zero, Pi.zero_apply, Real.ball_eq_Ioo, zero_sub, zero_add]
     at hx hy
-  rcases σ.edgeArc_eq_or_of_mk_eq hmap hdisj hx hy (ofQuotient_injective h).symm with
-    ⟨-, heq⟩ | ⟨-, heq⟩
-  · ext k; rw [Subsingleton.elim k 0, heq]
+  rcases σ.eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq (hmap i) hdisj
+      (σ.edgeArc_mem_side i hx) (σ.vertex_ne_inl_edgeArc i hx i)
+      (σ.vertex_ne_inl_edgeArc i hx (i + 1)) (σ.edgeArc_mem_side i hy)
+      (σ.vertex_ne_inl_edgeArc i hy i) (σ.vertex_ne_inl_edgeArc i hy (i + 1))
+      (ofQuotient_injective h).symm with ⟨-, heq⟩ | ⟨-, heq⟩
+  · ext k; rw [Subsingleton.elim k 0, σ.injOn_edgeArc i hy hx heq]
   · exact (σ.map_smul_edgeArc_ne_edgeArc i hx hy heq.symm).elim
 
 include hdisj in
@@ -263,8 +208,11 @@ private theorem disjoint_image_edgeMap_ball {i j : σ.SideRepresentative} (hij :
     Disjoint (σ.edgeMap hmap hlf i '' ball 0 1) (σ.edgeMap hmap hlf j '' ball 0 1) := by
   rw [σ.image_edgeMap_ball, σ.image_edgeMap_ball, disjoint_left]
   rintro _ ⟨u, hu, rfl⟩ ⟨v, hv, h⟩
-  rcases σ.edgeArc_eq_or_of_mk_eq hmap hdisj hu hv (ofQuotient_injective h) with
-    ⟨heq, -⟩ | ⟨heq, -⟩
+  rcases σ.eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq (hmap i) hdisj
+      (σ.edgeArc_mem_side i hu) (σ.vertex_ne_inl_edgeArc i hu i)
+      (σ.vertex_ne_inl_edgeArc i hu (i + 1)) (σ.edgeArc_mem_side j hv)
+      (σ.vertex_ne_inl_edgeArc j hv j) (σ.vertex_ne_inl_edgeArc j hv (j + 1))
+      (ofQuotient_injective h) with ⟨heq, -⟩ | ⟨heq, -⟩
   · exact hij (Subtype.ext heq.symm)
   · have hj := j.2; rw [heq, σ.pair_pair] at hj
     exact hij (Subtype.ext (heq.trans (le_antisymm hj i.2)).symm)
@@ -408,7 +356,8 @@ private theorem injOn_faceMap : InjOn (σ.faceMap hmap hlf) (ball 0 1) := by
   obtain ⟨zy, hzy, -⟩ := exists_faceEquiv_eq_inl_of_mem_ball (P := P) hy
   rw [σ.faceMap_of_mem hmap hlf ⟨x, ball_subset_closedBall hx⟩,
     σ.faceMap_of_mem hmap hlf ⟨y, ball_subset_closedBall hy⟩, hzx, hzy, facePoint, facePoint] at h
-  have hz_eq := eq_of_mk_eq_of_mem_interior hdisj hzx_int zy.2 (ofQuotient_injective h).symm
+  have hz_eq := P.eq_of_quotientMk_eq_of_mem_interior hdisj hzx_int zy.2
+    (ofQuotient_injective h).symm
   have hfe : faceEquiv P ⟨x, ball_subset_closedBall hx⟩ =
       faceEquiv P ⟨y, ball_subset_closedBall hy⟩ := by rw [hzx, hzy, Subtype.ext hz_eq.symm]
   exact congrArg Subtype.val ((faceEquiv P).injective hfe)
@@ -430,11 +379,10 @@ private theorem faceMap_mem_zeroCells_or_edgeMap_of_mem_sphere {x : Fin 2 → �
 private theorem continuousOn_faceMap [DiscreteTopology Γ] :
     ContinuousOn (σ.faceMap hmap hlf) (closedBall 0 1) := by
   obtain ⟨hopen, -, -, -, hhoro⟩ := P.exists_equiv_closedBall.choose_spec
-  rw [continuousOn_iff_continuous_domRestrict,
-    show (closedBall (0 : Fin 2 → ℝ) 1).domRestrict (σ.faceMap hmap hlf) =
-      fun x : closedBall (0 : Fin 2 → ℝ) 1 ↦ σ.facePoint hmap hlf (faceEquiv P x) from
-        funext fun x ↦ σ.faceMap_of_mem hmap hlf x,
-    continuous_iff_continuousAt]
+  have hdom : (closedBall (0 : Fin 2 → ℝ) 1).domRestrict (σ.faceMap hmap hlf) =
+      fun x : closedBall (0 : Fin 2 → ℝ) 1 ↦ σ.facePoint hmap hlf (faceEquiv P x) :=
+    funext fun x ↦ σ.faceMap_of_mem hmap hlf x
+  rw [continuousOn_iff_continuous_domRestrict, hdom, continuous_iff_continuousAt]
   intro x₀
   rcases hx₀ : faceEquiv P x₀ with z₀ | i
   · let emb : P.carrier → closedBall (0 : Fin 2 → ℝ) 1 :=
@@ -497,10 +445,12 @@ private theorem zeroCell_notMem_image_faceMap_ball {q : Γ.CompactifiedQuotient}
   rw [σ.image_faceMap_ball hmap hlf]
   rcases hq with (⟨j, rfl⟩ | ⟨i, rfl⟩) | ⟨C, rfl⟩
   · rintro ⟨_, hmem, heq⟩
-    exact mk_notMem_image_interior hdisj
-      (P.mem_side_of_vertex_eq_inl (Sum.inl_getLeft _ j.2).symm) (ofQuotient_injective heq ▸ hmem)
+    exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+      (P.side_subset_frontier_carrier j (P.mem_side_of_vertex_eq_inl (Sum.inl_getLeft _ j.2).symm))
+      (ofQuotient_injective heq ▸ hmem)
   · rintro ⟨_, hmem, heq⟩
-    exact mk_notMem_image_interior hdisj (σ.selfPairedSideFixedPoint_spec i).1
+    exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+      (P.side_subset_frontier_carrier i (σ.selfPairedSideFixedPoint_spec i).1)
       (ofQuotient_injective heq ▸ hmem)
   · rintro ⟨_, -, heq⟩; cases heq
 
@@ -521,7 +471,8 @@ private theorem pairwiseDisjoint_cellMap :
       (σ.cellMap hmap hlf hdisj 1 i '' ball 0 1) (σ.cellMap hmap hlf hdisj 2 k '' ball 0 1) := by
     rw [coe_cellMap_one, coe_cellMap_two, σ.image_edgeMap_ball, σ.image_faceMap_ball, disjoint_left]
     rintro _ ⟨u, hu, rfl⟩ ⟨_, hmem, heq⟩
-    exact mk_notMem_image_interior hdisj (σ.edgeArc_mem_side i.1 hu)
+    exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+      (P.side_subset_frontier_carrier i.1 (σ.edgeArc_mem_side i.1 hu))
       (ofQuotient_injective heq ▸ hmem)
   rintro ⟨m, c⟩ - ⟨m', c'⟩ - hne
   match m, c, m', c' with
@@ -595,7 +546,8 @@ private theorem continuousOn_cellMap_symm :
     · exact σ.zeroCell_notMem_image_faceMap_ball hmap hlf hdisj hz0 hmem
     · rw [σ.image_edgeMap_ball] at hi; obtain ⟨u, hu, hu_eq⟩ := hi
       rw [← hu_eq, σ.image_faceMap_ball] at hmem; obtain ⟨_, hint, heq⟩ := hmem
-      exact mk_notMem_image_interior hdisj (σ.edgeArc_mem_side i.1 hu)
+      exact P.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+        (P.side_subset_frontier_carrier i.1 (σ.edgeArc_mem_side i.1 hu))
         (ofQuotient_injective heq ▸ hint)
   | _ + 3, i => PEmpty.elim i
 
@@ -623,14 +575,24 @@ private def cwComplex : CWComplex (univ : Set Γ.CompactifiedQuotient) :=
     (σ.mapsTo_cellMap hmap hlf hdisj)
     (σ.iUnion_image_cellMap hmap hlf hdisj)
 
+-- `CWComplex.mkFinite` stores `σ.Cell Γ` as its `cell` family definitionally.
+private theorem cell_cwComplex (m : ℕ) :
+    letI := σ.cwComplex hmap hlf hdisj
+    cell (univ : Set Γ.CompactifiedQuotient) m = σ.Cell Γ m :=
+  (rfl)
+
+private theorem finite_cwComplex :
+    letI := σ.cwComplex hmap hlf hdisj
+    RelCWComplex.Finite (univ : Set Γ.CompactifiedQuotient) :=
+  CWComplex.finite_mkFinite _ _ _ _ _ _ _ _ _ _ _
+
 /-! ### Finite CW type, Euler characteristic, genus, and signature area formula -/
 
 include hmap hlf hdisj in
 /-- **The compactified quotient by a fundamental polygon has finite CW type.** -/
 theorem finiteCWType_compactifiedQuotient : FiniteCWType Γ.CompactifiedQuotient := by
   let := σ.cwComplex hmap hlf hdisj
-  have : RelCWComplex.Finite (univ : Set Γ.CompactifiedQuotient) :=
-    CWComplex.finite_mkFinite _ _ _ _ _ _ _ _ _ _ _
+  have := σ.finite_cwComplex hmap hlf hdisj
   exact (Homeomorph.Set.univ _).symm.finiteCWType
 
 /-- **The Euler characteristic of the compactified quotient by a fundamental polygon** is
@@ -642,13 +604,13 @@ theorem eulerChar_compactifiedQuotient :
         Nat.card {i : Fin n // σ.pair i = i} - Nat.card σ.SideRepresentative + 1 := by
   have := σ.finiteCWType_compactifiedQuotient hmap hlf hdisj
   let := σ.cwComplex hmap hlf hdisj
-  have : RelCWComplex.Finite (univ : Set Γ.CompactifiedQuotient) :=
-    CWComplex.finite_mkFinite _ _ _ _ _ _ _ _ _ _ _
+  have := σ.finite_cwComplex hmap hlf hdisj
+  have hcell (m : ℕ) := σ.cell_cwComplex hmap hlf hdisj m
   rw [eulerChar_eq_cwEulerChar (Homeomorph.Set.univ _).symm.toHomotopyEquiv,
     cwEulerChar_eq_sum_range (C := (univ : Set Γ.CompactifiedQuotient)) (N := 3) fun m hm ↦ by
+      rw [hcell m]
       obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm; exact inferInstanceAs (IsEmpty PEmpty)]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero,
-    show ∀ m, cell (univ : Set Γ.CompactifiedQuotient) m = σ.Cell Γ m from fun _ ↦ rfl,
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, hcell,
     Cell, Nat.card_unique, σ.natCard_zeroCells hmap hlf hdisj]
   push_cast; ring
 

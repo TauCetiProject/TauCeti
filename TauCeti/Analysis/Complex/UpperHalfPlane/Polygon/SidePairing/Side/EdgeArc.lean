@@ -128,6 +128,28 @@ private def sideEndAngle (P : ConvexPolygon n) (i : Fin n) : ℝ :=
 private def edgeEndAngle (i : Fin n) : ℝ :=
   if hi : σ.pair i = i then Real.arctan (σ.midParam hi) else sideEndAngle P i
 
+private theorem startAngle_of_eq_inl {i : Fin n} {v : ℍ} (hv : P.vertex i = .inl v) :
+    startAngle P i = Real.arctan (startParam P i) := by
+  simp [startAngle, hv]
+
+private theorem startAngle_of_eq_inr {i : Fin n} {ξ : OnePoint ℝ} (hξ : P.vertex i = .inr ξ) :
+    startAngle P i = -(π / 2) := by
+  simp [startAngle, hξ]
+
+private theorem edgeEndAngle_of_pair_eq {i : Fin n} (hi : σ.pair i = i) :
+    σ.edgeEndAngle i = Real.arctan (σ.midParam hi) := by
+  simp [edgeEndAngle, hi]
+
+private theorem edgeEndAngle_of_eq_inl {i : Fin n} {w : ℍ} (hi : σ.pair i ≠ i)
+    (hw : P.vertex (i + 1) = .inl w) :
+    σ.edgeEndAngle i = Real.arctan (endParam P i) := by
+  simp [edgeEndAngle, sideEndAngle, hi, hw]
+
+private theorem edgeEndAngle_of_eq_inr {i : Fin n} {η : OnePoint ℝ} (hi : σ.pair i ≠ i)
+    (hη : P.vertex (i + 1) = .inr η) :
+    σ.edgeEndAngle i = π / 2 := by
+  simp [edgeEndAngle, sideEndAngle, hi, hη]
+
 private theorem neg_pi_div_two_le_startAngle (i : Fin n) : -(π / 2) ≤ startAngle P i := by
   unfold startAngle; split_ifs; exacts [(Real.neg_pi_div_two_lt_arctan _).le, le_rfl]
 
@@ -205,6 +227,12 @@ private theorem mem_side_and_ne_endpoints_iff {i : Fin n} {z : ℍ} :
 private def edgeAngle (i : Fin n) (u : ℝ) : ℝ :=
   (startAngle P i + σ.edgeEndAngle i) / 2 + (σ.edgeEndAngle i - startAngle P i) / 2 * u
 
+private theorem edgeAngle_neg_one (i : Fin n) : σ.edgeAngle i (-1) = startAngle P i := by
+  unfold edgeAngle; ring
+
+private theorem edgeAngle_one (i : Fin n) : σ.edgeAngle i 1 = σ.edgeEndAngle i := by
+  unfold edgeAngle; ring
+
 /-- The open `1`-cell arc carried by side `i` of `(P, σ)`, parametrized on `Ioo (-1 : ℝ) 1` along
 `P.sideGeodesic i`. When `σ.pair i ≠ i`, its image on `Ioo (-1) 1` is `P.side i` minus any finite
 endpoints; when `σ.pair i = i`, its image is the open half-side between `P.vertex i` and
@@ -226,18 +254,22 @@ private theorem geodesicLine_mem_image_edgeArc {i : Fin n} {t : ℝ}
     (ht : Real.arctan t ∈ Ioo (startAngle P i) (σ.edgeEndAngle i)) :
     geodesicLine (P.sideGeodesic i) t ∈ σ.edgeArc i '' Ioo (-1) 1 := by
   have hpos : 0 < σ.edgeEndAngle i - startAngle P i := sub_pos.2 (σ.startAngle_lt_edgeEndAngle i)
-  refine ⟨(2 * Real.arctan t - (startAngle P i + σ.edgeEndAngle i)) /
-      (σ.edgeEndAngle i - startAngle P i),
-    ⟨(lt_div_iff₀ hpos).2 (by linarith [ht.1]), (div_lt_iff₀ hpos).2 (by linarith [ht.2])⟩, ?_⟩
-  have hne : σ.edgeEndAngle i - startAngle P i ≠ 0 := hpos.ne'
-  rw [edgeArc, show σ.edgeAngle i _ = Real.arctan t by unfold edgeAngle; field_simp; ring,
-    Real.tan_arctan]
+  set u := (2 * Real.arctan t - (startAngle P i + σ.edgeEndAngle i)) /
+    (σ.edgeEndAngle i - startAngle P i)
+  refine ⟨u, ⟨(lt_div_iff₀ hpos).2 (by linarith [ht.1]), (div_lt_iff₀ hpos).2 (by linarith [ht.2])⟩,
+    ?_⟩
+  have hang : σ.edgeAngle i u = Real.arctan t := by
+    have hne : σ.edgeEndAngle i - startAngle P i ≠ 0 := hpos.ne'
+    simp only [edgeAngle, u]; field_simp; ring
+  rw [edgeArc, hang, Real.tan_arctan]
+
+private theorem continuous_edgeAngle (i : Fin n) : Continuous (σ.edgeAngle i) := by
+  unfold edgeAngle; fun_prop
 
 /-- `σ.edgeArc i` is continuous on `Ioo (-1) 1`. -/
 theorem continuousOn_edgeArc (i : Fin n) : ContinuousOn (σ.edgeArc i) (Ioo (-1) 1) :=
   (isometry_geodesicLine _).continuous.comp_continuousOn <|
-    Real.continuousOn_tan_Ioo.comp
-      (by unfold edgeAngle; fun_prop : Continuous (σ.edgeAngle i)).continuousOn
+    Real.continuousOn_tan_Ioo.comp (σ.continuous_edgeAngle i).continuousOn
       fun _ hu ↦ σ.edgeAngle_mem_tan_domain i hu
 
 /-- `σ.edgeArc i` is injective on `Ioo (-1) 1`. -/
@@ -295,7 +327,8 @@ theorem map_smul_edgeArc_ne_selfPairedSideFixedPoint (i : Fin n) {u : ℝ} (hu :
     P.eq_of_mem_side_of_mem_side hs_j hp_j hq_j (h ▸ σ.map_smul_mem_side hside)
   have hij : j.1 = i := by have h1 := congrArg σ.pair hj_eq; rwa [j.2, σ.pair_pair] at h1
   have hii : σ.pair i = i := hj_eq.symm.trans hij
-  rw [show j = ⟨i, hii⟩ from Subtype.ext hij, ← σ.geodesicLine_midParam hii, edgeArc,
+  have hj : j = ⟨i, hii⟩ := Subtype.ext hij
+  rw [hj, ← σ.geodesicLine_midParam hii, edgeArc,
     σ.map_smul_geodesicLine_of_pair_eq hii] at h
   linarith [geodesicLine_injective _ h, hmid hii]
 
@@ -345,17 +378,13 @@ theorem mem_image_edgeArc_or_selfPaired_of_mem_side {j : Fin n} {z : ℍ}
 private theorem tendsto_edgeAngle_neg_one (i : Fin n) :
     Filter.Tendsto (σ.edgeAngle i) (𝓝[Ioo (-1) 1] (-1)) (𝓝[>] (startAngle P i)) :=
   tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (((show σ.edgeAngle i (-1) = startAngle P i by unfold edgeAngle; ring) ▸
-      (by unfold edgeAngle; fun_prop : Continuous (σ.edgeAngle i)).tendsto (-1)).mono_left
-      nhdsWithin_le_nhds)
+    ((σ.edgeAngle_neg_one i ▸ (σ.continuous_edgeAngle i).tendsto (-1)).mono_left nhdsWithin_le_nhds)
     (Filter.mem_of_superset self_mem_nhdsWithin fun _ hu ↦ (σ.edgeAngle_mem_Ioo i hu).1)
 
 private theorem tendsto_edgeAngle_one (i : Fin n) :
     Filter.Tendsto (σ.edgeAngle i) (𝓝[Ioo (-1) 1] 1) (𝓝[<] (σ.edgeEndAngle i)) :=
   tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (((show σ.edgeAngle i 1 = σ.edgeEndAngle i by unfold edgeAngle; ring) ▸
-      (by unfold edgeAngle; fun_prop : Continuous (σ.edgeAngle i)).tendsto 1).mono_left
-      nhdsWithin_le_nhds)
+    ((σ.edgeAngle_one i ▸ (σ.continuous_edgeAngle i).tendsto 1).mono_left nhdsWithin_le_nhds)
     (Filter.mem_of_superset self_mem_nhdsWithin fun _ hu ↦ (σ.edgeAngle_mem_Ioo i hu).2)
 
 private theorem tendsto_edgeArc_of_tendsto_arctan {i : Fin n} {c t : ℝ}
@@ -371,8 +400,7 @@ private theorem tendsto_edgeArc_of_tendsto_arctan {i : Fin n} {c t : ℝ}
 theorem tendsto_edgeArc_neg_one_of_eq_inl {i : Fin n} {v : ℍ} (hv : P.vertex i = .inl v) :
     Filter.Tendsto (σ.edgeArc i) (𝓝[Ioo (-1) 1] (-1)) (𝓝 v) :=
   geodesicLine_startParam hv ▸ σ.tendsto_edgeArc_of_tendsto_arctan
-    (((show startAngle P i = Real.arctan (startParam P i) by simp [startAngle, hv]) ▸
-      σ.tendsto_edgeAngle_neg_one i).mono_right nhdsWithin_le_nhds)
+    ((startAngle_of_eq_inl hv ▸ σ.tendsto_edgeAngle_neg_one i).mono_right nhdsWithin_le_nhds)
 
 /-- At an ideal starting vertex `P.vertex i = .inr ξ` sent to `∞` by `g : PSL(2, ℝ)`, the horodisc
 height `(g • σ.edgeArc i u).im` tends to `∞` as `u → -1` within `Ioo (-1) 1`. -/
@@ -389,7 +417,7 @@ theorem tendsto_edgeArc_neg_one_atImInfty_of_eq_inr {i : Fin n} {ξ : OnePoint �
       (Filter.tendsto_comap_iff.1 (tendsto_geodesicLine_atBot_atImInfty hg0)).congr
         fun t ↦ by rw [Function.comp_apply, Function.comp_apply, smul_geodesicLine]
   exact him.comp <| Real.tendsto_tan_neg_pi_div_two.comp
-    ((show startAngle P i = -(π / 2) by simp [startAngle, hξ]) ▸ σ.tendsto_edgeAngle_neg_one i)
+    (startAngle_of_eq_inr hξ ▸ σ.tendsto_edgeAngle_neg_one i)
 
 /-- On a self-paired side `i`, `σ.edgeArc i u → σ.selfPairedSideFixedPoint ⟨i, hi⟩` as `u → 1`
 within `Ioo (-1) 1`. -/
@@ -397,8 +425,7 @@ theorem tendsto_edgeArc_one_of_pair_eq {i : Fin n} (hi : σ.pair i = i) :
     Filter.Tendsto (σ.edgeArc i) (𝓝[Ioo (-1) 1] 1)
       (𝓝 (σ.selfPairedSideFixedPoint ⟨i, hi⟩)) :=
   σ.geodesicLine_midParam hi ▸ σ.tendsto_edgeArc_of_tendsto_arctan
-    (((show σ.edgeEndAngle i = Real.arctan (σ.midParam hi) by simp [edgeEndAngle, hi]) ▸
-      σ.tendsto_edgeAngle_one i).mono_right nhdsWithin_le_nhds)
+    ((σ.edgeEndAngle_of_pair_eq hi ▸ σ.tendsto_edgeAngle_one i).mono_right nhdsWithin_le_nhds)
 
 /-- On a non-self-paired side `i` with finite end vertex `P.vertex (i + 1) = .inl w`,
 `σ.edgeArc i u → w` as `u → 1` within `Ioo (-1) 1`. -/
@@ -406,9 +433,7 @@ theorem tendsto_edgeArc_one_of_eq_inl {i : Fin n} {w : ℍ} (hi : σ.pair i ≠ 
     (hw : P.vertex (i + 1) = .inl w) :
     Filter.Tendsto (σ.edgeArc i) (𝓝[Ioo (-1) 1] 1) (𝓝 w) :=
   geodesicLine_endParam hw ▸ σ.tendsto_edgeArc_of_tendsto_arctan
-    (((show σ.edgeEndAngle i = Real.arctan (endParam P i) by
-        simp [edgeEndAngle, sideEndAngle, hi, hw]) ▸
-      σ.tendsto_edgeAngle_one i).mono_right nhdsWithin_le_nhds)
+    ((σ.edgeEndAngle_of_eq_inl hi hw ▸ σ.tendsto_edgeAngle_one i).mono_right nhdsWithin_le_nhds)
 
 /-- On a non-self-paired side `i` with ideal end vertex `P.vertex (i + 1) = .inr η` sent to `∞`
 by `g : PSL(2, ℝ)`, `(g • σ.edgeArc i u).im → ∞` as `u → 1` within `Ioo (-1) 1`. -/
@@ -425,8 +450,7 @@ theorem tendsto_edgeArc_one_atImInfty_of_eq_inr {i : Fin n} {η : OnePoint ℝ} 
       (Filter.tendsto_comap_iff.1 (tendsto_geodesicLine_atTop_atImInfty hginf)).congr
         fun t ↦ by rw [Function.comp_apply, Function.comp_apply, smul_geodesicLine]
   exact him.comp <| Real.tendsto_tan_pi_div_two.comp
-    ((show σ.edgeEndAngle i = π / 2 by simp [edgeEndAngle, sideEndAngle, hi, hη]) ▸
-      σ.tendsto_edgeAngle_one i)
+    (σ.edgeEndAngle_of_eq_inr hi hη ▸ σ.tendsto_edgeAngle_one i)
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
