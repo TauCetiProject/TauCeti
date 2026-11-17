@@ -13,11 +13,11 @@ public import TauCeti.Topology.CategoryTheory.IsomorphismClasses
 /-!
 # Coarse topological support of differential forms on presentations
 
-When an orbifold is presented by an étale Lie groupoid `C`, measuring support on the object
-manifold `C` fails to reflect the geometry of the orbifold: an invariant form on a presentation
-with infinite orbits or infinitely many overlapping charts cannot have compact object-level support
-unless it vanishes, and object-level compact support is not preserved by étale atlas refinements.
-Instead, we measure compactness in the coarse space `Quotient (isIsomorphicSetoid C)`.
+When an orbifold is presented by an étale Lie groupoid `C`, requiring compact support on the
+object manifold `C` fails to reflect the geometry of the orbifold: object-level compact support
+can exclude relevant invariant forms (even those supported over compact regions of the coarse
+space) and is not invariant under étale atlas refinements. Instead, we measure compactness in the
+coarse space `Quotient (isIsomorphicSetoid C)`.
 
 For a rough or smooth differential form `φ` on the object manifold of a category `C`, its *coarse
 topological support* `TauCeti.RoughForm.coarseTSupport φ` (`TauCeti.SmoothForm.coarseTSupport φ`)
