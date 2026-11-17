@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Ideal
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Partial derivatives of multivariate power series: order and the chain rule
@@ -49,6 +52,8 @@ zero, such as series with coefficients in an ideal of square zero, substitution 
 * `MvPowerSeries.pderiv_subst`: the chain rule for substitution into a multivariate power series.
 * `MvPowerSeries.subst_add_of_mul_eq_zero`, `MvPowerSeries.subst_X_add_of_mul_eq_zero`: the
   first-order Taylor formula for perturbations whose entries pairwise multiply to zero.
+* `MvPowerSeries.sum_mul_pderiv_subst_eq_zero`: the first-order Taylor correction vanishes when the
+  perturbation and series coefficients lie in ideals whose product is zero.
 * `PowerSeries.pderiv_subst`: the chain rule for substitution of a multivariate power series into
   a one-variable power series.
 -/
@@ -185,12 +190,6 @@ theorem pderiv_subst [CommRing R] [Fintype σ] {a : σ → MvPowerSeries τ R} (
     simp [hp, pderiv_X, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum,
       Pi.single_apply, apply_ite (subst a), h0, h1]
 
-/-- A family of power series whose entries satisfy `h i ^ 2 = 0` can be substituted, since each
-constant coefficient squares to zero. -/
-theorem HasSubst.of_sq_eq_zero {S : Type*} [CommRing S] [Finite σ] {h : σ → MvPowerSeries τ S}
-    (hh : ∀ i, h i ^ 2 = 0) : HasSubst h :=
-  hasSubst_of_constantCoeff_nilpotent fun i ↦ ⟨2, by rw [← map_pow, hh, map_zero]⟩
-
 open WithPiTopology in
 /-- **The first-order Taylor formula** for multivariate power series: if `a` can be substituted
 and the perturbations `h i` pairwise multiply to zero, then
@@ -235,6 +234,15 @@ theorem subst_X_add_of_mul_eq_zero [CommRing R] [Fintype σ] {h : σ → MvPower
     (hh : ∀ i j, h i * h j = 0) (f : MvPowerSeries σ R) :
     subst (X + h) f = f + ∑ i, h i * pderiv i f := by
   rw [subst_add_of_mul_eq_zero HasSubst.X hh, subst_self]; simp
+
+/-- If `I * J = ⊥`, every perturbation `δ i` has coefficients in `I`, and `Δ` has coefficients in
+`J`, then the first-order Taylor correction `∑ i, δ i * (pderiv i Δ).subst a` vanishes. -/
+theorem sum_mul_pderiv_subst_eq_zero [CommRing R] [Fintype σ] {I J : Ideal R} (hIJ : I * J = ⊥)
+    {a δ : σ → MvPowerSeries τ R} (ha : HasSubst a) (hδI : ∀ i d, coeff d (δ i) ∈ I)
+    {Δ : MvPowerSeries σ R} (hΔJ : ∀ d, coeff d Δ ∈ J) :
+    ∑ i, δ i * (pderiv i Δ).subst a = 0 :=
+  Finset.sum_eq_zero fun i _ ↦ mul_eq_zero_of_coeff_mem hIJ (hδI i) fun d ↦
+    coeff_subst_mem_of_coeff_mem ha (coeff_pderiv_mem hΔJ i) d
 
 end MvPowerSeries
 

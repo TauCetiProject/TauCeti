@@ -15,10 +15,8 @@ import Mathlib.RingTheory.PowerSeries.CoeffMulMem
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
 import TauCeti.RingTheory.MvPowerSeries.Derivative
-import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Substitution
-import TauCeti.RingTheory.PowerSeries.Derivative
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Linearised square-zero deformation cocycles and Lubin–Tate cocycles
@@ -32,10 +30,10 @@ invariant differential `ω = P(T) dT` (`P(T) = F_X(0, T)⁻¹`), and let `I ⊆ 
 ## Main definitions and results
 
 * `FormalGroup.deformationCocycle`, `FormalGroup.deformByCocycle`,
-  `FormalGroup.deformationCocycleEquiv`: Lubin–Tate Lemma 1.2, identifying commutative formal group
-  laws congruent to `F` modulo `I` with symmetric 2-cocycles of `F` without constant term with
-  coefficients in `I`, together with `FormalGroup.isSymmetricCocycle_deformationCocycle` and
-  `FormalGroup.deformationCocycle_trans`.
+  `FormalGroup.map_deformByCocycle_eq`, `FormalGroup.deformationCocycleEquiv`: Lubin–Tate
+  Lemma 1.2, identifying commutative formal group laws congruent to `F` modulo `I` with symmetric
+  2-cocycles of `F` without constant term with coefficients in `I`, together with
+  `FormalGroup.isSymmetricCocycle_deformationCocycle` and `FormalGroup.deformationCocycle_trans`.
 * `FormalGroup.deformationCocycle_smul_eq_homDefect_𝔾ₐ`,
   `FormalGroup.exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ`: Lubin–Tate Lemma 1.1,
   characterising `I`-congruent coordinate equivalence via coboundaries `F.homDefect 𝔾ₐ g`.
@@ -56,43 +54,6 @@ public section
 noncomputable section
 
 open MvPowerSeries TauCeti
-
-section IdealHelpers
-
-variable {A : Type*} [CommRing A] {I : Ideal A}
-
-private theorem mvPowerSeries_mul_eq_zero_of_coeff_mem {σ : Type*} (hI : I * I = ⊥)
-    {f g : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) (hg : ∀ d, coeff d g ∈ I) : f * g = 0 := by
-  classical
-  ext d; rw [coeff_mul, map_zero]
-  exact Finset.sum_eq_zero fun pq _ ↦ by
-    rw [← Ideal.mem_bot, ← hI]; exact Ideal.mul_mem_mul (hf pq.1) (hg pq.2)
-
-private theorem coeff_mul_mem_of_right {σ : Type*} (P : MvPowerSeries σ A)
-    {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) (d : σ →₀ ℕ) : coeff d (P * f) ∈ I := by
-  classical
-  rw [coeff_mul]; exact Ideal.sum_mem I fun pq _ ↦ I.mul_mem_left _ (hf pq.2)
-
-private theorem coeff_subst_mem_of_coeff_mem {σ τ : Type*} {a : σ → MvPowerSeries τ A}
-    (ha : HasSubst a) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) (d : τ →₀ ℕ) :
-    coeff d (f.subst a) ∈ I :=
-  Ideal.span_le.mpr (Set.range_subset_iff.mpr hf) (coeff_subst_mem_span ha d)
-
-private theorem coeff_powerSeries_subst_mem_of_coeff_mem {τ : Type*} {a : MvPowerSeries τ A}
-    (ha : PowerSeries.HasSubst a) {f : PowerSeries A} (hf : ∀ n, PowerSeries.coeff n f ∈ I)
-    (d : τ →₀ ℕ) : coeff d (PowerSeries.subst a f) ∈ I :=
-  Ideal.span_le.mpr (Set.range_subset_iff.mpr fun e ↦ by
-    rw [← PowerSeries.coeff_def rfl]; exact hf (e ())) (coeff_subst_mem_span ha.const d)
-
-private theorem sum_mul_pderiv_subst_eq_zero {σ τ : Type*} [Fintype σ] (hI : I * I = ⊥)
-    {a δ : σ → MvPowerSeries τ A} (ha : HasSubst a) (hδI : ∀ i d, coeff d (δ i) ∈ I)
-    {Δ : MvPowerSeries σ A} (hΔI : ∀ d, coeff d Δ ∈ I) :
-    ∑ i, δ i * (pderiv i Δ).subst a = 0 :=
-  Finset.sum_eq_zero fun i _ ↦ mvPowerSeries_mul_eq_zero_of_coeff_mem hI (hδI i) fun d ↦
-    coeff_subst_mem_of_coeff_mem ha
-      (fun e ↦ by rw [coeff_pderiv]; exact I.mul_mem_right _ (hΔI _)) d
-
-end IdealHelpers
 
 namespace FormalGroup
 
@@ -177,8 +138,8 @@ if `G - F` has coefficients in `I`. -/
 theorem coeff_deformationCocycle_mem_iff {F G : FormalGroup A} {I : Ideal A} :
     (∀ d, coeff d (F.deformationCocycle G) ∈ I) ↔
       ∀ d, coeff d (G.toPowerSeries - F.toPowerSeries) ∈ I :=
-  ⟨fun h d ↦ F.sub_toPowerSeries_eq_mul_deformationCocycle G ▸ coeff_mul_mem_of_right _ h d,
-    fun h d ↦ coeff_mul_mem_of_right _ h d⟩
+  ⟨fun h d ↦ F.sub_toPowerSeries_eq_mul_deformationCocycle G ▸ coeff_mul_mem_of_right h d,
+    fun h d ↦ coeff_mul_mem_of_right h d⟩
 
 /-- The deformation cocycle vanishes below total degree `2`. -/
 theorem two_le_order_deformationCocycle (F G : FormalGroup A) :
@@ -205,7 +166,7 @@ theorem deformationCocycle_trans {F G H : FormalGroup A} {I : Ideal A} (hI : I *
   have hzero : (PowerSeries.subst G.toPowerSeries G.invariantDifferential -
       PowerSeries.subst F.toPowerSeries F.invariantDifferential) *
       (H.toPowerSeries - G.toPowerSeries) = 0 :=
-    mvPowerSeries_mul_eq_zero_of_coeff_mem hI (fun d ↦ by
+    mul_eq_zero_of_coeff_mem hI (fun d ↦ by
       rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, map_sub,
         PowerSeries.map_subst (.of_constantCoeff_zero G.zero_constantCoeff),
         PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
@@ -248,8 +209,8 @@ private theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalG
   have hδRI : ∀ s d, coeff d (δR s) ∈ I
     | 0, _ => by simp [δR]
     | 1, d => coeff_subst_mem_of_coeff_mem h12 hΔI d
-  have hhL i j := mvPowerSeries_mul_eq_zero_of_coeff_mem hI (hδLI i) (hδLI j)
-  have hhR i j := mvPowerSeries_mul_eq_zero_of_coeff_mem hI (hδRI i) (hδRI j)
+  have hhL i j := mul_eq_zero_of_coeff_mem hI (hδLI i) (hδLI j)
+  have hhR i j := mul_eq_zero_of_coeff_mem hI (hδRI i) (hδRI j)
   have heqL : (![S.subst ![X 0, X 1], X 2] : Fin 2 → MvPowerSeries (Fin 3) A) = ![F₀₁, X 2] + δL :=
     by funext s; fin_cases s <;> simp [S, F₀₁, δL, subst_add h01]
   have heqR : (![X 0, S.subst ![X 1, X 2]] : Fin 2 → MvPowerSeries (Fin 3) A) = ![X 0, F₁₂] + δR :=
@@ -292,7 +253,7 @@ private theorem mul_assocDefect_add_eq_cocycle {I : Ideal A} (hI : I * I = ⊥)
   have inv1 := congrArg (subst ![X 0, F₁₂]) F.subst_invariantDifferential_mul_pderiv_one
   rw [subst_mul haR, subst_powerSeriesSubst haR hF, subst_powerSeriesSubst haR (.X 1),
     subst_X haR, Matrix.cons_val_one, Matrix.cons_val_fin_one, ← F.assoc] at inv1
-  have had := assocDefect_add_eq hI F Δ (coeff_mul_mem_of_right _ hΦI)
+  have had := assocDefect_add_eq hI F Δ (coeff_mul_mem_of_right hΦI)
   dsimp only at had
   rw [had, ← hPΔ_sub h01, ← hPΔ_sub haL, ← hPΔ_sub haR, ← hPΔ_sub h12, ← inv0, ← inv1, ← F.assoc]
   ring
@@ -385,6 +346,17 @@ theorem deformByCocycle_deformationCocycle (F G : FormalGroup A) [F.IsComm] [G.I
   rw [toPowerSeries_deformByCocycle, ← invInvariantDifferential,
     ← F.sub_toPowerSeries_eq_mul_deformationCocycle G, add_sub_cancel]
 
+/-- Base change along a homomorphism `f` vanishing on `I` sends `F.deformByCocycle hI hΦ hΦ₀ hΦI`
+to `F.map f`. -/
+theorem map_deformByCocycle_eq (F : FormalGroup A) [F.IsComm] {I : Ideal A} (hI : I * I = ⊥)
+    (f : A →+* B) (hIf : I ≤ RingHom.ker f) {Φ : MvPowerSeries (Fin 2) A}
+    (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) (hΦI : ∀ d, coeff d Φ ∈ I) :
+    (F.deformByCocycle hI hΦ hΦ₀ hΦI).map f = F.map f := by
+  ext d
+  rw [FormalGroup.map_toPowerSeries, FormalGroup.map_toPowerSeries, coeff_map, coeff_map,
+    toPowerSeries_deformByCocycle, map_add, map_add,
+    RingHom.mem_ker.mp (hIf (coeff_mul_mem_of_right hΦI d)), _root_.add_zero]
+
 /-- **Lubin–Tate, Lemma 1.2.** Over a ring `A` with a square-zero ideal `I` (`I * I = ⊥`),
 commutative formal group laws `G` congruent to `F` modulo `I` correspond bijectively to symmetric
 2-cocycles `Φ` of `F` without constant term whose coefficients lie in `I`. -/
@@ -398,7 +370,7 @@ noncomputable def deformationCocycleEquiv (F : FormalGroup A) [F.IsComm] {I : Id
     coeff_deformationCocycle_mem_iff.mpr G.2.2⟩
   invFun Φ := ⟨F.deformByCocycle hI Φ.2.1 Φ.2.2.1 Φ.2.2.2, inferInstance, fun d ↦ by
     rw [toPowerSeries_deformByCocycle, add_sub_cancel_left]
-    exact coeff_mul_mem_of_right _ Φ.2.2.2 d⟩
+    exact coeff_mul_mem_of_right Φ.2.2.2 d⟩
   left_inv G := have := G.2.1; Subtype.ext (F.deformByCocycle_deformationCocycle G.1 hI G.2.2)
   right_inv Φ := Subtype.ext (F.deformationCocycle_deformByCocycle hI Φ.2.1 Φ.2.2.1 Φ.2.2.2)
 
@@ -473,8 +445,8 @@ theorem deformationCocycle_smul_eq_homDefect_𝔾ₐ (F : FormalGroup A) [F.IsCo
   set δv : Fin 2 → MvPowerSeries (Fin 2) A :=
     ![PowerSeries.subst (X 0) δ, PowerSeries.subst (X 1) δ]
   have hδvI (i : Fin 2) d : coeff d (δv i) ∈ I := by
-    fin_cases i <;> exact coeff_powerSeries_subst_mem_of_coeff_mem (hX _) hφ d
-  have hh i j := mvPowerSeries_mul_eq_zero_of_coeff_mem hI (hδvI i) (hδvI j)
+    fin_cases i <;> exact PowerSeries.coeff_subst_mem_of_coeff_mem (hX _) hφ d
+  have hh i j := mul_eq_zero_of_coeff_mem hI (hδvI i) (hδvI j)
   have harg : (![PowerSeries.subst (X 0) φ.toPowerSeries,
       PowerSeries.subst (X 1) φ.toPowerSeries] : Fin 2 → MvPowerSeries (Fin 2) A) = X + δv := by
     funext i; fin_cases i <;>
@@ -614,11 +586,18 @@ private theorem snd_shiftGeneratorHom_mem_augmentationIdeal_of_mem_sq (n : ℕ+)
 private noncomputable def universalShiftSeries (n : ℕ+) : MvPowerSeries (Fin 2) LazardRing :=
   fun d ↦ (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd
 
+@[simp]
+private theorem coeff_universalShiftSeries (n : ℕ+) (d : Fin 2 →₀ ℕ) :
+    coeff d (universalShiftSeries n) =
+      (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd := (rfl)
+
 private theorem le_order_universalShiftSeries (n : ℕ+) :
     (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (universalShiftSeries n).order :=
-  le_order fun d hd ↦ snd_shiftGeneratorHom_eq_zero_of_mem_grading_lt
-    (by have hlt : d.degree < (n : ℕ) + 1 := Nat.cast_lt.mp hd; have := n.pos; omega)
-    (coeff_formalGroup_mem_grading d)
+  le_order fun d hd ↦ by
+    rw [coeff_universalShiftSeries]
+    exact snd_shiftGeneratorHom_eq_zero_of_mem_grading_lt
+      (by have hlt : d.degree < (n : ℕ) + 1 := Nat.cast_lt.mp hd; have := n.pos; omega)
+      (coeff_formalGroup_mem_grading d)
 
 private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2 ≤ d.degree)
     (haxis : d 0 = 0 ∨ d 1 = 0) : coeff d formalGroup.toPowerSeries = 0 := by
@@ -639,8 +618,7 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
   by_cases hd : d.degree = (n : ℕ) + 1
   · rw [ite_eq_left hd]
     by_cases haxis : d 0 = 0 ∨ d 1 = 0
-    · change (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd = _
-      rw [coeff_formalGroup_eq_zero_of_axis (by omega) haxis, map_zero,
+    · rw [coeff_universalShiftSeries, coeff_formalGroup_eq_zero_of_axis (by omega) haxis, map_zero,
         TrivSqZeroExt.snd_zero, TauCeti.coeff_lazardCocycle, ite_eq_right (by omega)]
     · push Not at haxis
       have hi0 : 0 < d 0 := Nat.pos_of_ne_zero haxis.1
@@ -665,8 +643,8 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
       rw [← Nat.cast_smul_eq_nsmul ℤ, map_sub, map_zsmul, TrivSqZeroExt.snd_sub,
         TrivSqZeroExt.snd_smul, hgen, zsmul_eq_mul, mul_one, Int.cast_natCast, sub_eq_zero,
         ← hd_eq] at hz0
-      change (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd = _
-      rw [hz0, hd_eq, TauCeti.coeff_single_add_single_lazardCocycle hi0 (by omega)]; simp
+      rw [coeff_universalShiftSeries, hz0, hd_eq,
+        TauCeti.coeff_single_add_single_lazardCocycle hi0 (by omega)]; simp
   · rw [ite_eq_right hd, TauCeti.coeff_lazardCocycle, ite_eq_right (by omega)]
 
 private noncomputable def universalLubinTateCocycle (n : ℕ+) :
@@ -687,7 +665,7 @@ private theorem deformationCocycle_universal_shiftGeneratorHom (n : ℕ+) :
     MvPowerSeries.ext fun d ↦ TrivSqZeroExt.ext
       (by simp [inlR, FormalGroup.map_toPowerSeries, fst_shiftGeneratorHom,
         TrivSqZeroExt.algebraMap_eq_inl])
-      (by simp [inlR, FormalGroup.map_toPowerSeries, TrivSqZeroExt.algebraMap_eq_inl]; rfl)
+      (by simp [inlR, FormalGroup.map_toPowerSeries, TrivSqZeroExt.algebraMap_eq_inl])
   rw [deformationCocycle, hsub, universalLubinTateCocycle, map_mul,
     PowerSeries.map_subst (.of_constantCoeff_zero formalGroup.zero_constantCoeff),
     formalGroup.map_invariantDifferential, ← FormalGroup.map_toPowerSeries, mul_smul_comm]
@@ -699,8 +677,7 @@ private theorem isSymmetricCocycle_universalLubinTateCocycle (n : ℕ+) :
     (formalGroup.map (shiftGeneratorHom n))
     ((pow_two (TrivSqZeroExt.kerIdeal LazardRing LazardRing)).symm.trans
       (TrivSqZeroExt.kerIdeal_sq LazardRing LazardRing)) fun d ↦ by
-      change (coeff d ((formalGroup.map (shiftGeneratorHom n)).toPowerSeries -
-        (formalGroup.map inlR).toPowerSeries)).fst = 0
+      simp only [TrivSqZeroExt.kerIdeal, RingHom.mem_ker, TrivSqZeroExt.fstHom_apply]
       simp [inlR, FormalGroup.map_toPowerSeries, fst_shiftGeneratorHom,
         TrivSqZeroExt.algebraMap_eq_inl]
   rw [deformationCocycle_universal_shiftGeneratorHom] at hcoc
