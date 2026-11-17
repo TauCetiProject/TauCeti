@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.Analysis.InnerProductSpace.Positive
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
-public import TauCeti.CategoryTheory.CStar.Basic
-
-import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-import Mathlib.Analysis.InnerProductSpace.StarOrder
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 
 /-!
 # The C*-category and dagger category of Hilbert spaces
@@ -23,10 +19,10 @@ structures. Composition and addition give the native linear category structure, 
 Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
 Unitary arrows are precisely the maps underlying linear isometric equivalences.
-The operator norm satisfies the C*-identity in categorical composition order, and over `ℂ`
-this equips `TauCeti.HilbertCat ℂ` with a `TauCeti.CStarCategory` structure compatible with its
-existing Banach Hom spaces, identifying `CategoryTheory.End X` as a C*-algebra with `X →L[ℂ] X`
-and its spectral order with `ContinuousLinearMap.IsPositive`.
+The operator norm satisfies the C*-identity in categorical composition order, and complex
+Hilbert spaces form a `TauCeti.CStarCategory`, identifying `CategoryTheory.End X` as a
+star-algebra with `X →L[𝕜] X` (`HilbertCat.endStarAlgEquiv`) and, over `ℂ`, its spectral
+order with `ContinuousLinearMap.IsPositive` (`HilbertCat.end_nonneg_iff_isPositive`).
 -/
 
 public section
@@ -343,20 +339,45 @@ def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L
 @[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
     (endStarAlgEquiv X).symm f = End.of f := (rfl)
 
-section Complex
+/-- The operator norms of a Hom space satisfy the normed space axioms. -/
+theorem normedSpaceCore (X Y : HilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) where
+  norm_nonneg := norm_nonneg
+  norm_smul := norm_smul
+  norm_triangle := norm_add_le
+  norm_eq_zero_iff _ := norm_eq_zero
 
-/-- Complex Hilbert spaces with continuous linear maps form a C*-category whose Banach Hom space
-structures agree definitionally with the continuous-linear-map structures. -/
+/-- The normed group structure induced by the operator norm is the one of continuous linear
+maps, so the completeness of the Hom space carries over. -/
+private theorem completeSpace_ofCore (X Y : HilbertCat.{u, v} 𝕜) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCore X Y)
+    CompleteSpace (X ⟶ Y) := by
+  have h : (NormedAddCommGroup.ofCore (normedSpaceCore X Y)).toPseudoMetricSpace =
+      (inferInstance : NormedAddCommGroup (X ⟶ Y)).toPseudoMetricSpace := by
+    ext f g
+    rw [@dist_eq_norm_neg_add _ (NormedAddCommGroup.ofCore
+      (normedSpaceCore X Y)).toSeminormedAddCommGroup.toSeminormedAddGroup, norm_neg_add,
+      dist_eq_norm]
+  have hc : CompleteSpace (X ⟶ Y) := inferInstance
+  -- The goal and `hc` are completeness for two metric structures, which `h` identifies.
+  convert hc using 2
+
+/-- For a morphism `f` of complex Hilbert spaces, the positive operator `f†f` is `g†g` for its
+square root `g`. -/
+theorem exists_self_comp_dagger_eq {X Y : HilbertCat.{0, v} ℂ} (f : X ⟶ Y) :
+    ∃ g : X ⟶ X, f ≫ dagger f = g ≫ dagger g := by
+  have hf : 0 ≤ (ContinuousLinearMap.adjoint f).comp f :=
+    ContinuousLinearMap.nonneg_iff_isPositive.2 (ContinuousLinearMap.isPositive_adjoint_comp_self f)
+  obtain ⟨g, hg⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 hf
+  exact ⟨g, by simpa [comp_eq_comp, dagger_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    ContinuousLinearMap.mul_def] using hg⟩
+
+/-- Complex Hilbert spaces with operator norms and adjoints form a C*-category. -/
 instance : CStarCategory (HilbertCat.{0, v} ℂ) where
-  norm_comp_le' f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
-  norm_sq_le_self_comp_dagger' f := (norm_self_comp_dagger f).ge
-  exists_self_comp_dagger_eq {X Y} f := by
-    obtain ⟨g, hg⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp
-      (ContinuousLinearMap.nonneg_iff_isPositive.mpr
-        (ContinuousLinearMap.isPositive_adjoint_comp_self f))
-    refine ⟨g, ?_⟩
-    rw [comp_eq_comp, dagger_eq_adjoint, hg, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.star_eq_adjoint, ← dagger_eq_adjoint, ← comp_eq_comp]
+  normedSpaceCore := normedSpaceCore
+  completeSpace := completeSpace_ofCore
+  norm_comp_le f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
+  norm_mul_self_le f := by rw [norm_self_comp_dagger, pow_two]
+  exists_self_comp_dagger_eq := exists_self_comp_dagger_eq
 
 /-- Positivity of an endomorphism in `HilbertCat ℂ` coincides with operator positivity
 `ContinuousLinearMap.IsPositive`. -/
@@ -364,8 +385,6 @@ theorem end_nonneg_iff_isPositive {X : HilbertCat.{0, v} ℂ} {a : End X} :
     0 ≤ a ↔ a.asHom.IsPositive := by
   rw [← map_le_map_iff (endStarAlgEquiv X), map_zero, endStarAlgEquiv_apply,
     ContinuousLinearMap.nonneg_iff_isPositive]
-
-end Complex
 
 end HilbertCat
 
