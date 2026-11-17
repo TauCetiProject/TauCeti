@@ -37,6 +37,8 @@ Bosch–Lütkebohmert. Both facts are proved in `TauCeti.RingTheory.Valuation.Ad
 
 ## Main results
 
+* `TauCeti.Huber.IsCompleteRankOneBase.nonarchimedeanRing`: the base is a nonarchimedean
+  topological ring.
 * `TauCeti.Huber.IsCompleteRankOneBase.isAdicRing`: the base is an adic ring of finite ideal type,
   with ideal of definition `(ϖ)`.
 
@@ -77,6 +79,11 @@ variable {O : Type*} [CommRing O] [TopologicalSpace O] (ϖ : O) [IsCompleteRankO
 attribute [instance] IsCompleteRankOneBase.isAdicComplete
 
 include ϖ
+
+/-- A complete rank-one valuation base is a nonarchimedean topological ring, since its topology is
+the `ϖ`-adic one. -/
+theorem nonarchimedeanRing : NonarchimedeanRing O :=
+  (isAdic (O := O) (ϖ := ϖ)) ▸ (Ideal.span {ϖ}).nonarchimedean
 
 /-- A complete rank-one valuation base is an adic ring of finite ideal type, with ideal of
 definition `(ϖ)`. -/
