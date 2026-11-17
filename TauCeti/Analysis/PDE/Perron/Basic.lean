@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Subharmonic
 import Mathlib.Order.PartialSups
+import Mathlib.Topology.ExtendFrom
 import Mathlib.Topology.Order.IsLUB
 import TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple
 import TauCeti.Analysis.PDE.Harnack.Convergence
@@ -59,6 +60,10 @@ principle `W' = W` on `B`, contradicting `W' z ≥ v z > W z`. Hence `u = W` is 
 * `TauCeti.perronSolution_mono`, `TauCeti.perronSolution_le_perronSolution_add` and
   `TauCeti.abs_perronSolution_sub_perronSolution_le`: the Perron solution is monotone in the
   boundary data and depends on it `1`-Lipschitz continuously in the supremum norm.
+* `TauCeti.eqOn_closure_perronSolution_of_continuousOn` and
+  `TauCeti.eqOn_perronSolution_of_tendsto`: for `E` nontrivial, a function harmonic in `Ω` that
+  attains the data as boundary limits is the Perron solution, in particular the Perron solution is
+  the only solution of the Dirichlet problem continuous on `closure Ω`.
 * `TauCeti.harmonicOnNhd_perronSolution`: **Perron's theorem**, the Perron solution of a
   nonempty Perron family is harmonic in `Ω`.
 
@@ -257,6 +262,46 @@ theorem abs_perronSolution_sub_perronSolution_le (hΩ : IsOpen Ω) (hb : Bornolo
   have h₁ := perronSolution_le_perronSolution_add hΩ hb hne hg' hle hx
   have h₂ := perronSolution_le_perronSolution_add hΩ hb hne' hg hge hx
   exact abs_le.2 ⟨by linarith, by linarith⟩
+
+/-- **Uniqueness for the Dirichlet problem.** A function harmonic in the bounded open set `Ω`,
+continuous on `closure Ω` and equal to `g` on `frontier Ω` is the Perron solution of `g` on
+`closure Ω`: it is a member of the Perron family, and lies above every other member by the
+comparison principle. -/
+theorem eqOn_closure_perronSolution_of_continuousOn (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    {u : E → ℝ} (hu : HarmonicOnNhd u Ω) (huc : ContinuousOn u (closure Ω))
+    (hug : EqOn u g (frontier Ω)) : EqOn u (perronSolution Ω g) (closure Ω) := by
+  have hmem : u ∈ perronFamily Ω g := ⟨hu.subharmonicOn, huc, fun x hx ↦ (hug hx).le⟩
+  have hg : BddAbove (g '' frontier Ω) := by
+    rw [← hug.image_eq]
+    exact ((hb.isCompact_closure.image_of_continuousOn huc).isBounded.subset
+      (image_mono frontier_subset_closure)).bddAbove
+  intro x hx
+  refine le_antisymm (le_perronSolution hΩ hb hg hmem hx)
+    (perronSolution_le_of_forall_le ⟨u, hmem⟩ fun v hv ↦ ?_)
+  exact hv.1.le_of_le_frontier hΩ hb hv.2.1 hu huc
+    (fun y hy ↦ (hv.2.2 y hy).trans (hug hy).ge) x hx
+
+/-- **Uniqueness for the Dirichlet problem with boundary limits.** Let `Ω` be a bounded open set,
+and let `u` be harmonic in `Ω` with `u x → g ξ` as `x → ξ` within `Ω`, for every
+`ξ ∈ frontier Ω`. Then `u` is the Perron solution of `g` on `Ω`. Neither the continuity of `g` on
+`frontier Ω` nor the boundedness of `u` is assumed: both follow from the boundary limits. -/
+theorem eqOn_perronSolution_of_tendsto (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω) {u : E → ℝ}
+    (hu : HarmonicOnNhd u Ω) (hlim : ∀ ξ ∈ frontier Ω, Tendsto u (𝓝[Ω] ξ) (𝓝 (g ξ))) :
+    EqOn u (perronSolution Ω g) Ω := by
+  -- Extend `u` to `closure Ω` by its boundary limits; the extension is continuous there, harmonic
+  -- in `Ω` and equal to `g` on `frontier Ω`.
+  set ū := extendFrom Ω u
+  have hū : ContinuousOn ū (closure Ω) := continuousOn_extendFrom subset_rfl fun x hx ↦ by
+    by_cases hxΩ : x ∈ Ω
+    · exact ⟨u x, (hu x hxΩ).1.continuousAt.continuousWithinAt⟩
+    · exact ⟨g x, hlim x (hΩ.frontier_eq ▸ ⟨hx, hxΩ⟩)⟩
+  have hūΩ : EqOn ū u Ω := extendFrom_extends hu.continuousOn
+  have hūh : HarmonicOnNhd ū Ω := fun x hx ↦
+    (harmonicAt_congr_nhds (eventually_of_mem (hΩ.mem_nhds hx) hūΩ)).2 (hu x hx)
+  intro x hx
+  rw [← hūΩ hx]
+  exact eqOn_closure_perronSolution_of_continuousOn hΩ hb hūh hū
+    (fun ξ hξ ↦ extendFrom_eq (frontier_subset_closure hξ) (hlim ξ hξ)) (subset_closure hx)
 
 end Nontrivial
 
