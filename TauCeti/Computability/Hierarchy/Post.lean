@@ -178,10 +178,10 @@ theorem isDelta_succ_succ_iff_jump : IsDelta Z (n + 2) p ↔ IsDelta Z.jump (n +
 theorem isSigma_add_succ_iff_iterate_jump (k : ℕ) :
     IsSigma Z (n + k + 1) p ↔ IsSigma (Set.jump^[k] Z) (n + 1) p := by
   induction k generalizing Z with
-  | zero => rfl
+  | zero => simp
   | succ k ih =>
-    rw [show n + (k + 1) + 1 = n + k + 2 from rfl, isSigma_succ_succ_iff_jump, ih,
-      Function.iterate_succ_apply]
+    have hidx : n + (k + 1) + 1 = n + k + 2 := by omega
+    rw [hidx, isSigma_succ_succ_iff_jump, ih, Function.iterate_succ_apply]
 
 /-- Shifting `k` quantifier levels into `k` iterations of the Turing jump on `Π⁰` levels. -/
 theorem isPi_add_succ_iff_iterate_jump (k : ℕ) :
