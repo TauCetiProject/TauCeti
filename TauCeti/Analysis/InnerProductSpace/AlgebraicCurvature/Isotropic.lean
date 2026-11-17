@@ -25,9 +25,9 @@ dimensions, `interior {q | IsPIC2FourFrame q.1}` is characterized by strict posi
 
 ## Main definitions & statements
 
-* `complexify`, `pic2Expression`, `isotropicExpression`, `pic2Min`, `IsPICFourFrame`,
-  `IsPIC2FourFrame`, `complexify_apply_four`, `IsAlgebraicCurvature.complexify_apply_conj`,
-  `lipschitzWith_pic2Min`, `mem_interior_isPIC2FourFrame_iff_forall_pos`,
+* `complexify`, `eq_complexify_iff`, `complexify_apply_four`, `pic2Expression`,
+  `isotropicExpression`, `pic2Min`, `IsPICFourFrame`, `IsPIC2FourFrame`, `lipschitzWith_pic2Min`,
+  `IsAlgebraicCurvature.complexify_apply_conj`, `mem_interior_isPIC2FourFrame_iff_forall_pos`,
   `mem_interior_isPIC2FourFrame_iff_exists_pos_le`, `mem_interior_isPIC2FourFrame_iff_pic2Min_pos`.
 
 ## References
@@ -85,8 +85,7 @@ def complexify (r : FourTensor V) :
       simp only [↓reduceIte, Bool.false_eq_true, one_mul, Complexification.smul_re,
         Complexification.smul_im, sub_eq_add_neg, ← neg_smul, r.map_update_add, r.map_update_smul,
         smul_eq_mul, Complex.ofReal_add, Complex.ofReal_mul, Complex.ofReal_neg]
-      have hc : (c.re : ℂ) + Complex.I * c.im = c := by rw [mul_comm]; exact Complex.re_add_im c
-      conv_rhs => rw [← hc]
+      conv_rhs => rw [← Complex.re_add_im c]
       linear_combination -P * c.im * r (Function.update v i x.im) * Complex.I_sq)
   ).mkContinuous (16 * ‖r‖) fun m ↦ by
     simp only [MultilinearMap.mk'_apply]
@@ -99,10 +98,8 @@ def complexify (r : FourTensor V) :
 
 /-- Expansion of `r.complexify m` into the `16`-term sum over real and imaginary parts. -/
 theorem complexify_apply (r : FourTensor V) (m : Fin 4 → Complexification V) :
-    r.complexify m =
-      ∑ b : Fin 4 → Bool,
-        (∏ j : Fin 4, if b j then (Complex.I : ℂ) else 1) *
-          (r (fun j ↦ if b j then (m j).im else (m j).re) : ℂ) := (rfl)
+    r.complexify m = ∑ b : Fin 4 → Bool, (∏ j : Fin 4, if b j then (Complex.I : ℂ) else 1) *
+      (r (fun j ↦ if b j then (m j).im else (m j).re) : ℂ) := (rfl)
 
 /-- Four-variable real/imaginary expansion of `r.complexify ![z₀, z₁, z₂, z₃]`. -/
 theorem complexify_apply_four (r : FourTensor V) (z₀ z₁ z₂ z₃ : Complexification V) :
@@ -113,30 +110,12 @@ theorem complexify_apply_four (r : FourTensor V) (z₀ z₁ z₂ z₃ : Complexi
           (toLinearMap₄ r (if b₀ then z₀.im else z₀.re) (if b₁ then z₁.im else z₁.re)
             (if b₂ then z₂.im else z₂.re) (if b₃ then z₃.im else z₃.re) : ℂ) := by
   let e : (Bool × Bool × Bool × Bool) ≃ (Fin 4 → Bool) :=
-    ⟨fun ⟨a, b, c, d⟩ ↦ ![a, b, c, d], fun b ↦ (b 0, b 1, b 2, b 3), fun ⟨_, _, _, _⟩ ↦ rfl,
+    ⟨fun ⟨a, b, c, d⟩ ↦ ![a, b, c, d], fun b ↦ (b 0, b 1, b 2, b 3), fun _ ↦ rfl,
       fun b ↦ by ext j; fin_cases j <;> rfl⟩
-  rw [complexify_apply, ← e.sum_comp]; simp_rw [Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦
-    Finset.sum_congr rfl fun c _ ↦ Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [toLinearMap₄_apply]; dsimp [e]; rw [Fin.prod_univ_four]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
+  rw [complexify_apply, ← e.sum_comp]; simp_rw [Fintype.sum_prod_type, toLinearMap₄_apply]
+  congr! 4 with a _ b _ c _ d _
+  rw [Fin.prod_univ_four]; dsimp [e]
   exact congrArg (_ * ·) <| congrArg (Complex.ofReal ∘ r) <| by ext j; fin_cases j <;> rfl
-
-/-- Complexifying the zero four-tensor gives `0`. -/
-@[simp]
-theorem complexify_zero : (0 : FourTensor V).complexify = 0 := by ext m; simp [complexify_apply]
-
-/-- Complexification of four-tensors is additive. -/
-@[simp]
-theorem complexify_add (r q : FourTensor V) :
-    (r + q).complexify = r.complexify + q.complexify := by
-  ext m; simp [complexify_apply, mul_add, Finset.sum_add_distrib]
-
-/-- Complexification of four-tensors is `ℝ`-homogeneous. -/
-@[simp]
-theorem complexify_smul (c : ℝ) (r : FourTensor V) :
-    (c • r).complexify = (c : ℂ) • r.complexify := by
-  ext m; simp [complexify_apply, Finset.mul_sum, mul_left_comm]
 
 /-- On real vectors embedded into `Complexification V`, `r.complexify` agrees with `r`. -/
 @[simp]
@@ -146,6 +125,39 @@ theorem complexify_ofReal (r : FourTensor V) (u v z w : V) :
   rw [complexify_apply_four]
   simp only [Fintype.sum_bool, ↓reduceIte, Bool.false_eq_true, Complexification.ofReal_re,
     Complexification.ofReal_im, map_zero, LinearMap.zero_apply, Complex.ofReal_zero]; simp
+
+/-- `r.complexify` is the unique complex-multilinear form agreeing with `r` on embedded real
+four-tuples. -/
+theorem eq_complexify_iff (r : FourTensor V)
+    (S : ContinuousMultilinearMap ℂ (fun _ : Fin 4 ↦ Complexification V) ℂ) :
+    S = r.complexify ↔ ∀ u v z w : V, S ![Complexification.ofReal u, Complexification.ofReal v,
+      Complexification.ofReal z, Complexification.ofReal w] = (r ![u, v, z, w] : ℂ) := by
+  refine ⟨fun h u v z w ↦ h ▸ complexify_ofReal r u v z w, fun h ↦ ?_⟩
+  ext m; let f : V → Complexification V := Complexification.ofReal
+  have hm : m = (fun j ↦ f (m j).re) + (fun j ↦ Complex.I • f (m j).im) :=
+    funext fun j ↦ (Complexification.re_add_I_smul_im (m j)).symm
+  rw [hm, S.map_add_univ, r.complexify.map_add_univ]; refine Finset.sum_congr rfl fun s _ ↦ ?_
+  set v : Fin 4 → V := fun j ↦ if j ∈ s then (m j).re else (m j).im
+  have hp : s.piecewise (fun j ↦ f (m j).re) (fun j ↦ Complex.I • f (m j).im) =
+      fun j ↦ (if j ∈ s then (1 : ℂ) else Complex.I) • f (v j) := by
+    funext j; by_cases hj : j ∈ s <;> simp [v, hj]
+  have hv : (fun j ↦ f (v j)) = ![f (v 0), f (v 1), f (v 2), f (v 3)] := by
+    funext j; fin_cases j <;> rfl
+  rw [hp, S.map_smul_univ, r.complexify.map_smul_univ, hv, h, complexify_ofReal]
+
+/-- Complexifying the zero four-tensor gives `0`. -/
+@[simp] theorem complexify_zero : (0 : FourTensor V).complexify = 0 :=
+  ((eq_complexify_iff 0 0).2 fun _ _ _ _ ↦ by simp).symm
+
+/-- Complexification of four-tensors is additive. -/
+@[simp]
+theorem complexify_add (r q : FourTensor V) : (r + q).complexify = r.complexify + q.complexify :=
+  ((eq_complexify_iff _ _).2 fun _ _ _ _ ↦ by simp).symm
+
+/-- Complexification of four-tensors is `ℝ`-homogeneous. -/
+@[simp]
+theorem complexify_smul (c : ℝ) (r : FourTensor V) : (c • r).complexify = (c : ℂ) • r.complexify :=
+  ((eq_complexify_iff _ _).2 fun _ _ _ _ ↦ by simp).symm
 
 /-- Two-parameter isotropic-curvature expression
 `r₀₂₀₂ + l² r₀₃₀₃ + m² r₁₂₁₂ + l² m² r₁₃₁₃ - 2 l m r₀₁₂₃`. -/
@@ -173,31 +185,26 @@ theorem isotropicExpression_apply (r : FourTensor V) (f : Fin 4 → V) :
   simp only [isotropicExpression_def, pic2Expression_def]; ring
 
 /-- The zero four-tensor has zero `pic2Expression`. -/
-@[simp]
-theorem pic2Expression_zero (f : Fin 4 → V) (l m : ℝ) :
+@[simp] theorem pic2Expression_zero (f : Fin 4 → V) (l m : ℝ) :
     pic2Expression (0 : FourTensor V) f l m = 0 := by simp [pic2Expression_def]
 
 /-- `pic2Expression` is additive in the four-tensor. -/
-@[simp]
-theorem pic2Expression_add (r q : FourTensor V) (f : Fin 4 → V) (l m : ℝ) :
+@[simp] theorem pic2Expression_add (r q : FourTensor V) (f : Fin 4 → V) (l m : ℝ) :
     pic2Expression (r + q) f l m = pic2Expression r f l m + pic2Expression q f l m := by
   simp only [pic2Expression_def, add_apply]; ring
 
 /-- `pic2Expression` preserves subtraction in the four-tensor. -/
-@[simp]
-theorem pic2Expression_sub (r q : FourTensor V) (f : Fin 4 → V) (l m : ℝ) :
+@[simp] theorem pic2Expression_sub (r q : FourTensor V) (f : Fin 4 → V) (l m : ℝ) :
     pic2Expression (r - q) f l m = pic2Expression r f l m - pic2Expression q f l m := by
   simp only [pic2Expression_def, sub_apply]; ring
 
 /-- `pic2Expression` is homogeneous in the four-tensor. -/
-@[simp]
-theorem pic2Expression_smul (c : ℝ) (r : FourTensor V) (f : Fin 4 → V) (l m : ℝ) :
+@[simp] theorem pic2Expression_smul (c : ℝ) (r : FourTensor V) (f : Fin 4 → V) (l m : ℝ) :
     pic2Expression (c • r) f l m = c * pic2Expression r f l m := by
   simp only [pic2Expression_def, smul_apply, smul_eq_mul]; ring
 
 /-- At `l = 0` and `m = 0`, `pic2Expression r f 0 0` reduces to `r ![f 0, f 2, f 0, f 2]`. -/
-@[simp]
-theorem pic2Expression_zero_zero (r : FourTensor V) (f : Fin 4 → V) :
+@[simp] theorem pic2Expression_zero_zero (r : FourTensor V) (f : Fin 4 → V) :
     pic2Expression r f 0 0 = r ![f 0, f 2, f 0, f 2] := by simp [pic2Expression_def]
 
 /-- Pulling `r` back along a continuous linear map `L` evaluates `pic2Expression` on `L ∘ f`. -/
@@ -221,12 +228,10 @@ theorem IsAlgebraicCurvature.complexify_apply_conj {r : FourTensor V} (hr : IsAl
     Complex.ofReal_sub, Complex.ofReal_add, Complex.ofReal_pow, Complex.ofReal_ofNat]
   have hbianchi : (r ![f 0, f 3, f 1, f 2] : ℂ) - r ![f 0, f 2, f 1, f 3] =
       -r ![f 0, f 1, f 2, f 3] := by
-    exact_mod_cast (by
-      linarith [hr.cyclic_eq_zero (f 0) (f 1) (f 2) (f 3),
-        hr.antisymm_first (f 2) (f 0) (f 1) (f 3), hr.swap_pairs (f 1) (f 2) (f 0) (f 3)] :
-      r ![f 0, f 3, f 1, f 2] - r ![f 0, f 2, f 1, f 3] = -r ![f 0, f 1, f 2, f 3])
-  have hsw (a b c d : V) : (r ![a, b, c, d] : ℂ) = r ![c, d, a, b] := by
-    exact_mod_cast hr.swap_pairs a b c d
+    norm_cast; linarith [hr.cyclic_eq_zero (f 0) (f 1) (f 2) (f 3),
+      hr.antisymm_first (f 2) (f 0) (f 1) (f 3), hr.swap_pairs (f 1) (f 2) (f 0) (f 3)]
+  have hsw (a b c d : V) : (r ![a, b, c, d] : ℂ) = r ![c, d, a, b] :=
+    congrArg Complex.ofReal (hr.swap_pairs a b c d)
   linear_combination Complex.I * l * hsw (f 0) (f 3) (f 0) (f 2) +
     Complex.I * m * hsw (f 1) (f 2) (f 0) (f 2) -
     Complex.I ^ 3 * l ^ 2 * m * hsw (f 1) (f 3) (f 0) (f 3) -
@@ -279,8 +284,7 @@ theorem IsPIC2FourFrame.isPICFourFrame {r : FourTensor V} (hr : IsPIC2FourFrame 
     IsPICFourFrame r := fun f hf ↦ hr f hf 1 (by norm_num) 1 (by norm_num)
 
 /-- The zero four-tensor satisfies `IsPICFourFrame`. -/
-@[simp]
-theorem isPICFourFrame_zero : IsPICFourFrame (0 : FourTensor V) :=
+@[simp] theorem isPICFourFrame_zero : IsPICFourFrame (0 : FourTensor V) :=
   fun _ _ ↦ by simp [isotropicExpression_def]
 
 /-- The zero four-tensor satisfies `IsPIC2FourFrame`. -/
@@ -396,18 +400,16 @@ theorem algebraicCurvatureLinearIsometryEquiv_mem_interior_isPIC2FourFrame_iff (
 theorem abs_pic2Expression_le_six_mul_norm (r : FourTensor V) {f : Fin 4 → V}
     (hf : Orthonormal ℝ f) {l m : ℝ} (hl : l ∈ Icc (-1 : ℝ) 1) (hm : m ∈ Icc (-1 : ℝ) 1) :
     |pic2Expression r f l m| ≤ 6 * ‖r‖ := by
-  have he (i₀ i₁ i₂ i₃ : Fin 4) : |r ![f i₀, f i₁, f i₂, f i₃]| ≤ ‖r‖ :=
+  have he (i₀ i₁ i₂ i₃ : Fin 4) :=
     abs_apply_le_norm_of_norm_eq_one r (hf.1 i₀) (hf.1 i₁) (hf.1 i₂) (hf.1 i₃)
-  have hl1 : |l| ≤ 1 := abs_le.2 hl; have hm1 : |m| ≤ 1 := abs_le.2 hm
-  have hsc {a b : ℝ} (ha : |a| ≤ 1) (hb : |b| ≤ ‖r‖) : -‖r‖ ≤ a * b ∧ a * b ≤ ‖r‖ :=
-    abs_le.1 <| by rw [abs_mul]; nlinarith [abs_nonneg a, abs_nonneg b]
-  have hmul {x y : ℝ} (hx : |x| ≤ 1) (hy : |y| ≤ 1) : |x * y| ≤ 1 := by
-    rw [abs_mul]; nlinarith [abs_nonneg x, abs_nonneg y]
-  have hl2 : |l ^ 2| ≤ 1 := by rw [sq]; exact hmul hl1 hl1
-  have hm2 : |m ^ 2| ≤ 1 := by rw [sq]; exact hmul hm1 hm1
-  have h1 := abs_le.1 (he 0 2 0 2); have h2 := hsc hl2 (he 0 3 0 3)
-  have h3 := hsc hm2 (he 1 2 1 2); have h4 := hsc (hmul hl2 hm2) (he 1 3 1 3)
-  have h5 := hsc (hmul hl1 hm1) (he 0 1 2 3)
+  have hb {a b c : ℝ} (ha : |a| ≤ 1) (hb : |b| ≤ c) : |a * b| ≤ c := by
+    rw [abs_mul]; nlinarith [abs_nonneg a, abs_nonneg b]
+  have hl1 := abs_le.2 hl; have hm1 := abs_le.2 hm
+  have hl2 : |l ^ 2| ≤ 1 := sq l ▸ hb hl1 hl1
+  have hm2 : |m ^ 2| ≤ 1 := sq m ▸ hb hm1 hm1
+  have h1 := abs_le.1 (he 0 2 0 2); have h2 := abs_le.1 (hb hl2 (he 0 3 0 3))
+  have h3 := abs_le.1 (hb hm2 (he 1 2 1 2)); have h4 := abs_le.1 (hb (hb hl2 hm2) (he 1 3 1 3))
+  have h5 := abs_le.1 (hb (hb hl1 hm1) (he 0 1 2 3))
   rw [pic2Expression_def, abs_le]; exact ⟨by linarith, by linarith⟩
 
 /-- Infimum of `pic2Expression r f l m` over orthonormal four-frames `f` and `l, m ∈ [-1, 1]`. -/
