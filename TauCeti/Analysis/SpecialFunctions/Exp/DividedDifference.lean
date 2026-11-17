@@ -11,12 +11,17 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
-# Positive divided differences of the real exponential
+# Divided differences of the real and complex exponential
 
-The divided difference of the exponential is the integral of the exponential along the segment
+The divided difference of the real exponential is the integral of the exponential along the segment
 between its arguments. In particular it is strictly positive, including when the arguments
-coincide. It is jointly real analytic, including on the diagonal. These divided differences
-are the scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+coincide, and jointly real analytic, including on the diagonal. These divided differences are the
+scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+
+Over `ℂ`, `dslope Complex.exp a b = Complex.exp a * dslope Complex.exp 0 (b - a)` satisfies
+`z * dslope Complex.exp 0 z = Complex.exp z - 1` and vanishes if and only if `b - a` is a nonzero
+integer multiple of `2 * π * I`. In particular, it does not vanish on the horizontal strip
+`|(b - a).im| < 2 * π` or on `Metric.ball a (2 * π)`.
 -/
 
 public section
@@ -70,3 +75,64 @@ theorem contDiff_dslope_exp (m : ℕ∞ω) :
   exact dslope_exp_eq_exp_mul_dslope_zero p.1 p.2
 
 end Real
+
+namespace Complex
+
+/-- Translating the complex exponential divided difference to zero extracts the factor `exp a`. -/
+theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :
+    dslope exp a b = exp a * dslope exp 0 (b - a) := by
+  by_cases hab : b = a
+  · simp [hab]
+  · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
+    rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
+    simp only [sub_zero, exp_zero]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add, add_sub_cancel]
+
+/-- Multiplying `dslope Complex.exp 0 z` by `z` recovers `exp z - 1`. -/
+theorem mul_dslope_exp_zero (z : ℂ) : z * dslope exp 0 z = exp z - 1 := by
+  simpa using sub_smul_dslope exp 0 z
+
+/-- The divided difference `dslope Complex.exp a b` vanishes if and only if `b - a` is a nonzero
+integer multiple of `2 * π * I`. -/
+theorem dslope_exp_eq_zero_iff {a b : ℂ} :
+    dslope exp a b = 0 ↔ ∃ k : ℤ, k ≠ 0 ∧ b - a = k * (2 * Real.pi * I) := by
+  rw [dslope_exp_eq_exp_mul_dslope_zero, mul_eq_zero, or_iff_right (exp_ne_zero a)]
+  set z := b - a
+  constructor
+  · intro h0
+    rcases eq_or_ne z 0 with hz0 | hzne
+    · simp [hz0] at h0
+    · have hexp : exp z = 1 := by
+        have h := mul_dslope_exp_zero z
+        rw [h0, mul_zero] at h
+        exact eq_of_sub_eq_zero h.symm
+      obtain ⟨k, hk⟩ := exp_eq_one_iff.mp hexp
+      exact ⟨k, fun h => hzne (by simpa [h] using hk), hk⟩
+  · rintro ⟨k, hkne, hk⟩
+    have hzne : z ≠ 0 := by
+      rw [hk]
+      exact mul_ne_zero (Int.cast_ne_zero.mpr hkne) (by simp [Real.pi_ne_zero, I_ne_zero])
+    have hexp : exp z = 1 := exp_eq_one_iff.mpr ⟨k, hk⟩
+    have h := mul_dslope_exp_zero z
+    rw [hexp, sub_self] at h
+    exact (mul_eq_zero.mp h).resolve_left hzne
+
+/-- On the horizontal strip `|(b - a).im| < 2 * π`, `dslope Complex.exp a b` does not vanish. -/
+theorem dslope_exp_ne_zero_of_abs_im_sub_lt {a b : ℂ} (h : |(b - a).im| < 2 * Real.pi) :
+    dslope exp a b ≠ 0 := by
+  intro h0
+  obtain ⟨k, hkne, hk⟩ := dslope_exp_eq_zero_iff.mp h0
+  have him : (b - a).im = k * (2 * Real.pi) := by
+    simpa [mul_assoc] using congrArg Complex.im hk
+  have hk1 : (1 : ℝ) ≤ |(k : ℝ)| := by exact_mod_cast Int.one_le_abs hkne
+  have habs : |(b - a).im| = |(k : ℝ)| * (2 * Real.pi) := by
+    rw [him, abs_mul, abs_of_pos Real.two_pi_pos]
+  nlinarith [Real.pi_pos]
+
+/-- On `Metric.ball a (2 * π)`, the divided difference `dslope Complex.exp a b` does not vanish. -/
+theorem dslope_exp_ne_zero_of_mem_ball {a b : ℂ} (h : b ∈ Metric.ball a (2 * Real.pi)) :
+    dslope exp a b ≠ 0 :=
+  dslope_exp_ne_zero_of_abs_im_sub_lt <|
+    (abs_im_le_norm (b - a)).trans_lt (by simpa [dist_eq_norm] using h)
+
+end Complex

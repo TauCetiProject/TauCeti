@@ -29,6 +29,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_abs_sub_rpow_of_le`: for `r > -1` and `a ≤ c ≤ b`,
   `∫ x in a..b, |x - c|^r = ((c - a)^(r + 1) + (b - c)^(r + 1)) / (r + 1)`.
+* `TauCeti.integral_Ioc_zero_cpow`:
+  `∫ t in Set.Ioc (0 : ℝ) b, (t : ℂ) ^ r = (b : ℂ) ^ (r + 1) / (r + 1)` for `-1 < r.re` and
+  `0 ≤ b`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
 * `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
@@ -121,6 +124,17 @@ theorem integral_abs_sub_rpow_of_le {r c a b : ℝ}
     intervalIntegral.integral_congr hl,
     intervalIntegral.integral_congr hh,
     TauCeti.integral_sub_rpow hr a c, TauCeti.integral_sub_const_rpow hr c b, add_div]
+
+/-- For `-1 < r.re` and `0 ≤ b`, the set integral of `(t : ℂ) ^ r` over `(0, b]` is
+`(b : ℂ) ^ (r + 1) / (r + 1)`. -/
+theorem integral_Ioc_zero_cpow {r : ℂ} (hr : -1 < r.re) {b : ℝ} (hb : 0 ≤ b) :
+    (∫ t in Set.Ioc (0 : ℝ) b, (t : ℂ) ^ r) = (b : ℂ) ^ (r + 1) / (r + 1) := by
+  have hr1 : r + 1 ≠ 0 := fun h => by
+    have hre := congrArg Complex.re h
+    simp at hre
+    linarith
+  rw [← intervalIntegral.integral_of_le hb, integral_cpow (Or.inl hr)]
+  simp [Complex.zero_cpow hr1]
 
 open MeasureTheory Set in
 /-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
