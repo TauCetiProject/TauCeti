@@ -83,7 +83,10 @@ constants depend only on the bump function, the gap and the regularities.
   radius `2^m φ.rOut`.
 * `TauCeti.BesovSpace.exists_littlewoodPaleyBlock_lowPass_eq_zero`: the blocks of `S_m u` vanish
   from index `m + L` on, for an `L` depending only on the bump function.
-* `TauCeti.BesovSpace.memBesov_lowPass`: `S_m u` lies in every `B^{s'}_{p,q'}`.
+* `TauCeti.BesovSpace.memBesov_lowPass`: `S_m u` lies in every `B^{s'}_{p,q'}`; as an element
+  of that space it is `TauCeti.BesovSpace.exists_toDistr_eq_lowPass`.
+* `TauCeti.BesovSpace.lowPass_mem_closure_range_toLp`: if the blocks of `u` are `Lᵖ` limits of
+  Schwartz functions, so is `S_m u`.
 * `TauCeti.BesovSpace.exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass`: the blocks of
   `u - S_{N+1} u` vanish below index `N + 1 - L` and are at most `(1 + ‖𝓕⁻ φ‖₁)` times those of `u`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_smul_block` and
@@ -226,6 +229,22 @@ theorem memBesov_lowPass (u : BesovSpace F φ s p q) (m : ℕ) (s' : ℝ) (q' : 
   have h0 : x.block k = 0 := Lp.toTemperedDistribution_injective <| by
     simp only [coe_block, hx, hL u m k hkL, Lp.toTemperedDistribution_zero]
   simp [h0] at hk
+
+/-- The low-frequency cut-off `S_m u` as an element of `B^{s'}_{p,q'}`, for every smoothness `s'`
+and every fine index `q'` (`TauCeti.BesovSpace.memBesov_lowPass`). -/
+theorem exists_toDistr_eq_lowPass (u : BesovSpace F φ s p q) (m : ℕ) (s' : ℝ) (q' : ℝ≥0∞) :
+    ∃ x : BesovSpace F φ s' p q', x.toDistr = u.lowPass m :=
+  ⟨_, (memBesov_lowPass u m s' q').toDistr_toBesovSpace⟩
+
+/-- If every block `Δⱼ u` is a limit of Schwartz functions in `Lᵖ`, then so is every
+low-frequency cut-off `S_m u = ∑_{k < m} Δₖ u`. -/
+theorem lowPass_mem_closure_range_toLp {u : BesovSpace F φ s p q}
+    (hblock : ∀ j, u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p)) (m : ℕ) :
+    u.lowPass m ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p) := by
+  -- The `Lᵖ` closure of the Schwartz functions is a subspace.
+  have hS := SchwartzMap.closure_range_toLp_eq (F := F) (μ := (volume : Measure E)) p
+  rw [hS, lowPass_eq_sum]
+  exact Submodule.sum_mem _ fun j _ ↦ by rw [← SetLike.mem_coe, ← hS]; exact hblock j
 
 /-- **The blocks of `u - S_{N+1} u`.** There is `L`, depending only on `φ`, such that for every
 `v` with tempered distribution `S_{N+1} u` the block `Δₖ (u - v) = Δₖ u - S_{N+1} Δₖ u` vanishes

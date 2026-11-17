@@ -37,15 +37,17 @@ times the Besov norm, and both hold for Schwartz functions. For a Schwartz funct
 holds because it also lies in `B^s_{p,1}`, where the weighted blocks are summable; the second
 because `Δⱼ f` is again a Schwartz function.
 
-Conversely, let `u` satisfy both conditions. Its low-pass truncation `S_N u = ∑_{j ≤ N} Δⱼ u` is an
-`Lᵖ` function. Since `Δₖ S_N u = S_N Δₖ u`, the block `Δₖ (u - S_N u)` vanishes when `k + L ≤ N`,
-where `L` is the almost-orthogonality range of the blocks, and in general has norm at most
-`(1 + K) ‖Δₖ u‖_p`, where `K` bounds the low-pass truncations on `Lᵖ` uniformly in `N`. So
-`‖u - S_N u‖_{B^s_{p,∞}} ≤ (1 + K) sup_{k > N - L} 2^{ks} ‖Δₖ u‖_p`, which tends to zero.
-Next, `S_N u` lies in the `Lᵖ` closure of the Schwartz functions; let `g` be a Schwartz function
-close to it in `Lᵖ`. The truncation `S_{N+L}` fixes `S_N u` and maps `g` to a Schwartz function,
-and `S_{N+L} (S_N u - g)` has only finitely many nonzero blocks, so its Besov norm is at most a
-constant, depending on `N`, times `‖S_N u - g‖_p`.
+Conversely, let `u` satisfy both conditions. Its low-frequency cut-off
+`S_{N+1} u = ∑_{j ≤ N} Δⱼ u` (`TauCeti.BesovSpace.lowPass`) is an `Lᵖ` function. Since
+`Δₖ S_{N+1} u = S_{N+1} Δₖ u`, the block `Δₖ (u - S_{N+1} u)` vanishes when `k + L ≤ N`, where `L`
+is the almost-orthogonality range of the blocks, and in general has norm at most
+`(1 + K) ‖Δₖ u‖_p`, where `K` bounds the low-frequency cut-offs on `Lᵖ` uniformly in `N`. So
+`‖u - S_{N+1} u‖_{B^s_{p,∞}} ≤ (1 + K) sup_{k > N - L} 2^{ks} ‖Δₖ u‖_p`, which tends to zero.
+Next, `S_{N+1} u` lies in the `Lᵖ` closure of the Schwartz functions; let `g` be a Schwartz
+function close to it in `Lᵖ`. The blocks of `S_{N+1} u` vanish from some index `M` on, so the
+cut-off `S_{M+1}` fixes `S_{N+1} u` and maps `g` to a Schwartz function, and
+`S_{M+1} (S_{N+1} u - g)` has only finitely many nonzero blocks, so its Besov norm is at most a
+constant, depending on `M`, times `‖S_{N+1} u - g‖_p`.
 
 ## Main declarations
 
@@ -175,14 +177,12 @@ private theorem exists_toDistr_eq_lowPass_and_norm_sub_le {u : BesovSpace F φ s
     (hdecay : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
     ∃ N : ℕ, ∃ v : BesovSpace F φ s p ∞, v.toDistr = u.lowPass (N + 1) ∧ ‖u - v‖ ≤ ε := by
   obtain ⟨L, hL⟩ := exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass (F := F) (φ := φ)
-  obtain ⟨L', hL'⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hK0 : 0 ≤ K := integral_nonneg fun _ ↦ norm_nonneg _
-  obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   -- Past `N₀` the weighted blocks are at most `ε / (1 + K)`.
   obtain ⟨N₀, hN₀⟩ := Metric.tendsto_atTop.1 hdecay (ε / (1 + K)) (by positivity)
   set N := N₀ + L
-  obtain ⟨v, hvw, -⟩ := hC s (N + 1 + L') (u.lowPass (N + 1)) fun k hk ↦ hL' u (N + 1) k hk
+  obtain ⟨v, hvw⟩ := exists_toDistr_eq_lowPass u (N + 1) s ∞
   refine ⟨N, v, hvw, (norm_eq_ciSup _).trans_le (ciSup_le fun k ↦ ?_)⟩
   obtain ⟨h0, hle⟩ := hL u v N k hvw
   rcases le_or_gt (k + L) N with hkN | hkN
@@ -197,10 +197,9 @@ private theorem exists_toDistr_eq_lowPass_and_norm_sub_le {u : BesovSpace F φ s
       _ ≤ (1 + K) * (ε / (1 + K)) := by gcongr
       _ = ε := by field_simp
 
-/-- **Band-limited limits of Schwartz functions.** An `Lᵖ` function `w` whose blocks vanish from
-some index `M` on, and which is an `Lᵖ` limit of Schwartz functions `g`, lies in `b^s_{p,∞}`: the
-truncations `S_M g` are Schwartz functions, `S_M w = w`, and `S_M (w - g)` has finitely many
-blocks, so its Besov norm is controlled by `‖w - g‖_p`. -/
+/-- **Band-limited limits of Schwartz functions.** Let `v ∈ B^s_{p,∞}` have as tempered
+distribution an `Lᵖ` function `w`. If `w` is an `Lᵖ` limit of Schwartz functions and its blocks
+`Δₖ w` vanish for `k ≥ M`, then `v` lies in the little Besov space `b^s_{p,∞}`. -/
 theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
     {w : Lp F p (volume : Measure E)} (hvw : v.toDistr = w)
     (hw : w ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p)) {M : ℕ}
@@ -210,7 +209,10 @@ theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hK := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (p := p)
   obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
-  -- `S_M` fixes `w`.
+  -- For a Schwartz function `g` close to `w` in `Lᵖ`, the cut-off `S_{M+1} g` is a Schwartz
+  -- function, `S_{M+1} w = w`, and `S_{M+1} (w - g)` has finitely many nonzero blocks, so its
+  -- Besov norm is controlled by `‖w - g‖_p`.
+  -- `S_{M+1}` fixes `w`.
   have hSw : ∑ j ∈ Finset.range (M + 1), littlewoodPaleyBlock F φ j (w : 𝓢'(E, F)) = w :=
     sum_littlewoodPaleyBlock_eq_self φ _ fun j hj ↦ hM j (Nat.le_of_lt (by simpa using hj))
   rw [← SetLike.mem_coe, coe_littleBesov]
@@ -218,7 +220,7 @@ theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
   set A := 2 ^ (|s| * ((M + L : ℕ) : ℝ)) * C * K
   obtain ⟨_, ⟨g, rfl⟩, hg⟩ := Metric.mem_closure_iff.1 hw (ε / (A + 1)) (by positivity)
   rw [dist_eq_norm] at hg
-  -- The truncation `h = S_M g` is a Schwartz function, and `w - h = S_M (w - g)`.
+  -- The cut-off `h = S_{M+1} g` is a Schwartz function, and `w - h = S_{M+1} (w - g)`.
   set h : 𝓢(E, F) := ∑ j ∈ Finset.range (M + 1),
     SchwartzMap.fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g
   obtain ⟨r, hr, hrw⟩ := hK M (w - g.toLp p (volume : Measure E))
@@ -249,17 +251,13 @@ theorem mem_littleBesov_of_tendsto {u : BesovSpace F φ s p ∞}
     (hblock : ∀ j, u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p)) :
     u ∈ littleBesov F φ s p := by
   obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
-  -- The `Lᵖ` closure of the Schwartz functions is a subspace.
-  have hS := SchwartzMap.closure_range_toLp_eq (F := F) (μ := (volume : Measure E)) p
   rw [← SetLike.mem_coe, ← isClosed_littleBesov.closure_eq]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   obtain ⟨N, v, hvw, huv⟩ := exists_toDistr_eq_lowPass_and_norm_sub_le hdecay (half_pos hε)
-  refine ⟨v, mem_littleBesov_of_toDistr_eq hvw ?_ (M := N + 1 + L) fun k hk ↦ hL u (N + 1) k hk,
-    ?_⟩
-  · rw [hS, lowPass_eq_sum]
-    exact Submodule.sum_mem _ fun j _ ↦ by rw [← SetLike.mem_coe, ← hS]; exact hblock j
-  · rw [dist_eq_norm]
-    linarith
+  refine ⟨v, mem_littleBesov_of_toDistr_eq hvw (lowPass_mem_closure_range_toLp hblock (N + 1))
+    (M := N + 1 + L) fun k hk ↦ hL u (N + 1) k hk, ?_⟩
+  rw [dist_eq_norm]
+  linarith
 
 /-- **The little Besov space `b^s_{p,∞}` is cut out by its blocks:** `u` lies in the closure of
 the Schwartz functions in `B^s_{p,∞}` exactly when `2^{js} ‖Δⱼ u‖_p → 0` and every block `Δⱼ u` is

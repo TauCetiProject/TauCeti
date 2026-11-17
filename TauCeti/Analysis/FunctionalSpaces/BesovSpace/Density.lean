@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # Density of the Schwartz functions in the Besov spaces `B^s_{p,q}`, `q < ∞`
@@ -154,18 +153,13 @@ theorem mem_closure_range_toBesovSpaceCLM_iff (hq : q ≠ ∞) {u : BesovSpace F
     rintro _ ⟨f, rfl⟩
     exact ⟨_, (block_toBesovSpaceCLM f j).symm⟩
   obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
-  obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
-  -- The `Lᵖ` closure of the Schwartz functions is a subspace.
-  have hS := SchwartzMap.closure_range_toLp_eq (F := F) (μ := (volume : Measure E)) p
   -- Each low-frequency cut-off is a limit of Schwartz functions in `B^s_{p,q}`.
   have hmem (m : ℕ) : ∃ v ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q)),
       v.toDistr = u.lowPass m := by
-    have hw : u.lowPass m ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p) := by
-      rw [hS, lowPass_eq_sum]
-      exact Submodule.sum_mem _ fun j _ ↦ by rw [← SetLike.mem_coe, ← hS]; exact hblock j
     -- As a band-limited `Lᵖ` limit of Schwartz functions, `S_m u` lies in `b^{s+1}_{p,∞}`.
-    obtain ⟨x, hx, -⟩ := hC (s + 1) (m + L) (u.lowPass m) fun k hk ↦ hL u m k hk
-    have hxl := mem_littleBesov_of_toDistr_eq hx hw fun k hk ↦ hL u m k hk
+    obtain ⟨x, hx⟩ := exists_toDistr_eq_lowPass u m (s + 1) ∞
+    have hxl := mem_littleBesov_of_toDistr_eq hx (lowPass_mem_closure_range_toLp hblock m)
+      fun k hk ↦ hL u m k hk
     rw [← SetLike.mem_coe, coe_littleBesov] at hxl
     refine ⟨inclusionOfLT F φ p ∞ q (lt_add_one s) x,
       map_mem_closure (inclusionOfLT F φ p ∞ q (lt_add_one s)).continuous hxl ?_,
