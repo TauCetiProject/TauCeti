@@ -44,6 +44,9 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.smoothSingularSubcomplex_le_preimage`: smooth maps preserve smooth simplices.
 * `TauCeti.smoothSingularSubcomplex_preimage_inclusion`: a simplex of an open subset is smooth
   exactly when it is smooth in a larger open subset.
+* `TauCeti.range_smoothSingularSubcomplex_ι_comp_toSSet_map_inclusion`: the smooth simplices of an
+  open subset, read in a larger open subset, are the smooth simplices there lying in the smaller
+  one.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
 * `TauCeti.coe_smoothSingularSubcomplexMap_app`: it acts on underlying singular simplices as the
   map of singular simplicial sets.
@@ -410,6 +413,24 @@ theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Open
   convert contMDiff_subtype_val.comp_contMDiffOnSubset hσ using 1
   ext x
   simp
+
+/-- For open sets `U ≤ W` of `M`, the smooth singular simplices of `U`, read in `W`, are exactly
+the smooth singular simplices of `W` which lie in `U`. -/
+theorem range_smoothSingularSubcomplex_ι_comp_toSSet_map_inclusion
+    {U W : TopologicalSpace.Opens M} (h : U ≤ W) :
+    SSet.Subcomplex.range ((smoothSingularSubcomplex I U).ι ≫ TopCat.toSSet.map
+        (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion h, continuous_inclusion h⟩)) =
+      smoothSingularSubcomplex I W ⊓ SSet.Subcomplex.range (TopCat.toSSet.map
+        (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion h, continuous_inclusion h⟩)) := by
+  ext k σ
+  constructor
+  · rintro ⟨τ, rfl⟩
+    exact ⟨smoothSingularSubcomplex_le_preimage (contMDiff_inclusion h) k τ.2, τ.1, rfl⟩
+  · rintro ⟨hσ, τ, rfl⟩
+    have hτ : τ ∈ (smoothSingularSubcomplex I U).obj k := by
+      rw [← smoothSingularSubcomplex_preimage_inclusion h]
+      exact hσ
+    exact ⟨⟨τ, hτ⟩, rfl⟩
 
 /-- The identity of `M` induces the identity of its smooth singular subcomplex. -/
 @[simp]
