@@ -19,7 +19,7 @@ continuous argument `θ` on `[0, 4]` along the boundary curve `Complex.rectBound
 the corners `z` and `w`.
 
 Now let `z` be the lower-left corner (`z.re ≤ w.re` and `z.im ≤ w.im`), so that
-`rectBoundary z w` runs counterclockwise, and let `f` be meromorphic on an open set containing the
+`rectBoundary z w` runs counterclockwise, and let `f` be meromorphic on a set containing the
 closed rectangle, with its chosen representative analytic and nonzero at every point of the
 frontier. Then for every such continuous argument `θ`, its total change around the boundary is
 `2π` times the signed divisor count of `f` in the rectangle
@@ -60,12 +60,12 @@ theorem exists_continuousOn_eq_norm_mul_exp_rectBoundary
 
 /-- **The argument principle on a rectangle, as a variation of the argument.** Let `z` be the
 lower-left corner of the rectangle `Rectangle z w` (`z.re ≤ w.re`, `z.im ≤ w.im`), so that the
-boundary curve `rectBoundary z w` runs counterclockwise. For `f` meromorphic on an open
-neighbourhood `U` of the closed rectangle, analytic and nonzero on its frontier, any
+boundary curve `rectBoundary z w` runs counterclockwise. For `f` meromorphic on a set `U`
+containing the closed rectangle, analytic and nonzero on its frontier, any
 continuous argument `θ` of `f` along the boundary curve on `[0, 4]` changes by `2π` times the signed
 divisor count of `f` in the rectangle. -/
 theorem sub_eq_two_pi_mul_divisorCount_of_rectBoundary (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
-    (hU : IsOpen U) (hRU : Rectangle z w ⊆ U) (hf : MeromorphicOn f U)
+    (hRU : Rectangle z w ⊆ U) (hf : MeromorphicOn f U)
     (hreg : ∀ x ∈ frontier (Rectangle z w), AnalyticAt ℂ f x)
     (hne : ∀ x ∈ frontier (Rectangle z w), f x ≠ 0)
     (hθ : ContinuousOn θ (Icc 0 4))
@@ -76,7 +76,7 @@ theorem sub_eq_two_pi_mul_divisorCount_of_rectBoundary (hre : z.re ≤ w.re) (hi
   have hint := integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
     (isPiecewiseC1On_rectBoundary z w) (fun t _ ↦ hreg _ (rectBoundary_mem_frontier t))
     (fun t _ ↦ hne _ (rectBoundary_mem_frontier t)) (hu ▸ hθ) (hu ▸ hlift)
-  rw [argumentPrinciple_rectBoundary_divisor hre him hU hRU hf hreg
+  rw [argumentPrinciple_rectBoundary_divisor hre him hRU hf
     fun x hx ↦ (hreg x hx).meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr (hne x hx),
     rectBoundary_four, rectBoundary_zero, sub_self, ofReal_zero, zero_add] at hint
   -- `hint` now reads `2πi · divisorCount = i (θ 4 - θ 0)`; cancel the factor `i`.
@@ -89,13 +89,13 @@ theorem sub_eq_two_pi_mul_divisorCount_of_rectBoundary (hre : z.re ≤ w.re) (hi
 
 /-- **The argument principle on a rectangle without poles, as a variation of the argument.** Let `z`
 be the lower-left corner of the rectangle `Rectangle z w` (`z.re ≤ w.re`, `z.im ≤ w.im`), so that
-the boundary curve `rectBoundary z w` runs counterclockwise. For `f` meromorphic on an open
-neighbourhood `U` of the closed rectangle, without poles in the rectangle, and analytic and
+the boundary curve `rectBoundary z w` runs counterclockwise. For `f` meromorphic on a set `U`
+containing the closed rectangle, without poles in the rectangle, and analytic and
 nonzero on its frontier, any continuous argument `θ` of `f` along the boundary curve on
 `[0, 4]` changes by `2π` times the number of zeros of `f` in the rectangle, counted with
 multiplicity. -/
 theorem sub_eq_two_pi_mul_zeroCount_of_rectBoundary (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
-    (hU : IsOpen U) (hRU : Rectangle z w ⊆ U) (hf : MeromorphicOn f U)
+    (hRU : Rectangle z w ⊆ U) (hf : MeromorphicOn f U)
     (hreg : ∀ x ∈ frontier (Rectangle z w), AnalyticAt ℂ f x)
     (hne : ∀ x ∈ frontier (Rectangle z w), f x ≠ 0)
     (hnonneg : ∀ x ∈ Rectangle z w, 0 ≤ MeromorphicOn.divisor f U x)
@@ -103,7 +103,7 @@ theorem sub_eq_two_pi_mul_zeroCount_of_rectBoundary (hre : z.re ≤ w.re) (him :
     (hlift : ∀ t ∈ Icc (0 : ℝ) 4,
       f (rectBoundary z w t) = ‖f (rectBoundary z w t)‖ * exp (I * θ t)) :
     θ 4 - θ 0 = 2 * π * zeroCount f U (Rectangle z w) := by
-  rw [sub_eq_two_pi_mul_divisorCount_of_rectBoundary hre him hU hRU hf hreg hne hθ hlift,
+  rw [sub_eq_two_pi_mul_divisorCount_of_rectBoundary hre him hRU hf hreg hne hθ hlift,
     divisorCount_eq_zeroCount hnonneg, Int.cast_natCast]
 
 end TauCeti.Contour
