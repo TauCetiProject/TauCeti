@@ -298,10 +298,9 @@ theorem coe_map_cwComplexOfIsColimitStageCellMap {k n : ℕ} (i : cell (univ : S
     ⇑(@map c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n
       (cwComplexOfIsColimitStageCellMap hF hι hc k n i)) = c.ι.app k ∘ map n i := by
   let := fun k ↦ stageCWComplex hF hc k
-  let := towerCWComplex hF hι hc
-  rw [cwComplexOfIsColimitStageCellMap, coe_map_cwComplexOfIsColimit, Equiv.apply_symm_apply,
-    Function.id_comp, map_cwSubcomplexTowerUnionCellEquiv_symm,
-    coe_map_towerOrigin (coe_map_stageCellMap hF hι hc), coe_map_stage, Equiv.apply_symm_apply]
+  simpa [cwComplexOfIsColimitStageCellMap] using
+    coe_map_towerOrigin (W := fun k ↦ (range (c.ι.app k) : Set c.pt))
+      (coe_map_stageCellMap hF hι hc) k ((stageCellEquiv hF hc k n).symm i)
 
 /-- Reading a stage cell after pushing it along `ι k` gives the same cell in the colimit. -/
 @[simp]
@@ -319,14 +318,12 @@ theorem cwComplexOfIsColimitStageCellMap_ι {k n : ℕ} (i : cell (univ : Set (F
 /-- Distinct `n`-cells of a stage `F k` map to distinct `n`-cells of the colimit. -/
 theorem cwComplexOfIsColimitStageCellMap_injective {k n : ℕ} :
     Function.Injective (cwComplexOfIsColimitStageCellMap hF hι hc k n) := by
-  let := fun k ↦ stageCWComplex hF hc k
-  let := towerCWComplex hF hι hc
   intro a b hab
-  rw [cwComplexOfIsColimitStageCellMap, cwComplexOfIsColimitStageCellMap, Equiv.apply_eq_iff_eq,
-    Equiv.apply_eq_iff_eq, ← coe_towerStageCellEquiv_apply (coe_map_stageCellMap hF hι hc),
-    ← coe_towerStageCellEquiv_apply (coe_map_stageCellMap hF hι hc), Subtype.coe_inj,
-    EmbeddingLike.apply_eq_iff_eq, EmbeddingLike.apply_eq_iff_eq] at hab
-  exact hab
+  have hmap : c.ι.app k ∘ map n a = c.ι.app k ∘ map n b := by
+    simp only [← coe_map_cwComplexOfIsColimitStageCellMap hF hι hc, hab]
+  have hfun : ⇑(map n a) = ⇑(map n b) :=
+    (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).injective.comp_left hmap
+  exact RelCWComplex.openCell_congr n (by simp only [openCell, hfun])
 
 /-- Under `TauCeti.cwComplexOfIsColimitCellEquiv`, every cell of the initial stage `F 0` maps to
 `.inl i`. -/
