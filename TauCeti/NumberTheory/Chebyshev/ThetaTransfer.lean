@@ -34,8 +34,8 @@ on the pieces of a partition turn it into increments of `x ↦ Li x - x / log x`
 
 ## Main results
 
-* `Chebyshev.primeCounting_eq_theta_div_log_add_integral_of_one_lt`: Mathlib's Abel-summation
-  formula for `π`, extended from `x ≥ 2` to `x > 1`.
+* `Chebyshev.primeCounting_eq_theta_div_log_add_integral'`: Mathlib's Abel-summation formula for
+  `π`, extended from `x ≥ 2` to every real `x`.
 * `Chebyshev.primeCounting_sub_logIntegral_eq`: the exact remainder identity above.
 * `Chebyshev.primeCounting_sub_logIntegral_sub_primeCounting_sub_logIntegral_eq`: its difference
   form between two points `x₀, x > 1`.
@@ -76,20 +76,20 @@ theorem intervalIntegrable_theta_sub_id (a b : ℝ) :
   theta_mono.intervalIntegrable.sub (continuous_id.intervalIntegrable a b)
 
 /-- Mathlib's Abel-summation formula `Chebyshev.primeCounting_eq_theta_div_log_add_integral`,
-`π(x) = θ(x) / log x + ∫ t in 2..x, θ(t) / (t log² t)`, holds for every `x > 1`: on `(1, 2)` both
+`π(x) = θ(x) / log x + ∫ t in 2..x, θ(t) / (t log² t)`, holds for every real `x`: for `x < 2` both
 `π(x)` and `θ(x)` vanish, and so does `θ` on `(x, 2)`. -/
-theorem primeCounting_eq_theta_div_log_add_integral_of_one_lt {x : ℝ} (hx : 1 < x) :
+theorem primeCounting_eq_theta_div_log_add_integral' (x : ℝ) :
     (π ⌊x⌋₊ : ℝ) = θ x / Real.log x + ∫ t in (2 : ℝ)..x, θ t / (t * Real.log t ^ 2) := by
   rcases le_or_gt 2 x with h2 | h2
   · exact primeCounting_eq_theta_div_log_add_integral h2
-  have hfloor : ⌊x⌋₊ = 1 := Nat.floor_eq_iff (by linarith) |>.mpr ⟨by simpa using hx.le, by
-    norm_num [h2]⟩
+  have hπ : π ⌊x⌋₊ = 0 := Nat.primeCounting_eq_zero_iff.mpr <|
+    Nat.lt_succ_iff.mp <| (Nat.floor_lt' two_ne_zero).mpr (by exact_mod_cast h2)
   have hint : ∫ t in (2 : ℝ)..x, θ t / (t * Real.log t ^ 2) = 0 := by
     rw [intervalIntegral.integral_congr_ae (g := fun _ ↦ (0 : ℝ)), intervalIntegral.integral_zero]
     filter_upwards [volume.ae_ne 2] with t ht htI
     rw [uIoc_of_ge h2.le] at htI
     rw [theta_eq_zero_of_lt_two (lt_of_le_of_ne htI.2 ht), zero_div]
-  simp [hfloor, Nat.primeCounting_one, theta_eq_zero_of_lt_two h2, hint]
+  simp [hπ, theta_eq_zero_of_lt_two h2, hint]
 
 /-- **The exact remainder between `π` and `Li`.**  For `x > 1`,
 `π(x) - Li x = (θ(x) - x) / log x + ∫ t in 2..x, (θ(t) - t) / (t log² t) + 2 / log 2`.
@@ -103,7 +103,7 @@ theorem primeCounting_sub_logIntegral_eq {x : ℝ} (hx : 1 < x) :
   simp only [one_mul] at hsplit
   have hLi := integral_inv_log_sq_eq_logIntegral_sub_div_log_sub one_lt_two hx
   rw [TauCeti.Real.logIntegral_two] at hLi
-  rw [primeCounting_eq_theta_div_log_add_integral_of_one_lt hx, hsplit, hLi, sub_div]
+  rw [primeCounting_eq_theta_div_log_add_integral' x, hsplit, hLi, sub_div]
   ring
 
 /-- **The difference form of the remainder identity.**  For `x₀, x > 1`,
