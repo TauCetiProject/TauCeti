@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Scheme
 import Mathlib.Algebra.Category.Ring.Constructions
+import Mathlib.AlgebraicGeometry.Limits
 import Mathlib.Topology.Sheaves.SheafCondition.PairwiseIntersections
 
 /-!
@@ -34,14 +35,13 @@ theorem connectedSpace_of_isLocalRing_Γ (X : Scheme.{u}) [IsLocalRing Γ(X, ⊤
     ConnectedSpace X := by
   have : Nonempty X := by
     by_contra! h
-    exact not_subsingleton Γ(X, ⊤) (CommRingCat.subsingleton_of_isTerminal
-      (X.sheaf.isTerminalOfEqEmpty (TopologicalSpace.Opens.ext (Set.univ_eq_empty_iff.mpr h))))
+    exact not_subsingleton Γ(X, ⊤) inferInstance
   refine connectedSpace_iff_clopen.mpr ⟨inferInstance, fun s hs ↦ ?_⟩
   by_contra! hne
   let V : X.Opens := ⟨s, hs.isOpen⟩
   let W : X.Opens := ⟨sᶜ, hs.isClosed.isOpen_compl⟩
-  have : Nonempty V := hne.1.to_subtype
-  have : Nonempty W := (Set.nonempty_compl.mpr hne.2).to_subtype
+  have : Nonempty ↥V := hne.1.to_subtype
+  have : Nonempty ↥W := (Set.nonempty_compl.mpr hne.2).to_subtype
   have hVW : V ⊓ W = ⊥ := by ext; simp [V, W]
   have hsup : V ⊔ W = ⊤ := by ext; simp [V, W]
   -- `Γ(X, 𝒪)` is the product of the nonzero rings `Γ(V, 𝒪)` and `Γ(W, 𝒪)`.
