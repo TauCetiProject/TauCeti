@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegralDeriv
+public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Deriv
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative
 
@@ -22,8 +22,10 @@ On a compact manifold it is `Vol(g') - Vol(g)`. The integrand vanishes wherever 
 with `g`, so the relative volume also makes sense for variations with compact support on
 a noncompact manifold, where the total volumes may be infinite.
 
-For a family of metrics `g_t` whose inner products depend `C^k` jointly on `(t, x)`, the
-relative density `(t, x) ↦ J(g, g_t)(x)` is `C^k`. On a compact manifold, the relative volume
+For a family of metrics `g_t` whose inner products depend `C^k` jointly on `(t, x)`, and a
+reference metric `g` whose inner products are `C^k`, the relative density
+`(t, x) ↦ J(g, g_t)(x)` is `C^k`; this applies in particular to `g = g_{t₀}`. On a compact
+manifold, the relative volume
 `V(t) = V(g₀, g_t)` with respect to any fixed metric `g₀` is then `C^k` in `t`. For `k = 1` and
 `k = 2` its first two derivatives at `t₀` are computed by differentiation under the integral
 sign, with the density and the volume taken relative to `g_{t₀}`:
@@ -54,8 +56,6 @@ family is not required to fix the boundary.
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume` and
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume`: regularity and the first
   two derivatives of the relative volume of a family of metrics on a compact manifold.
-* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the metrics induced by a
-  jointly `C^(n+1)` family of immersions form a jointly `C^n` family.
 * `Bundle.ContMDiffRiemannianMetric.contDiff_relativeVolume_pullback`,
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback` and
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume_pullback`: the same for a
@@ -230,7 +230,7 @@ theorem hasDerivAt_deriv_relativeVolume [IsManifold I 3 M]
     HasDerivAt (deriv fun t ↦ relativeVolume g₀ (g t))
       (∫ x, deriv (fun s ↦ deriv (fun r ↦ relativeVolumeDensity (g t₀) (g r) x.ofWithMetric) s)
         t₀ ∂riemannianVolume I (WithMetric (g t₀))) t₀ := by
-  have : IsManifold I (2 + 1) M := by rw [show (2 : ℕ∞ω) + 1 = 3 by norm_num]; infer_instance
+  have : IsManifold I (2 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
   have : IsManifold I 2 M := IsManifold.of_le (n := 3) (by norm_num)
   rw [relativeVolume_eq_add_const (t₀ := t₀)]
   simpa only [relativeVolume_def, deriv_sub_const, deriv_add_const'] using
@@ -248,31 +248,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
   (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
 
-/-- **Joint regularity of induced metrics.** The metrics `F_t^* h` induced by a jointly
-`C^(n+1)` family of immersions `F_t` from a `C^n` metric `h` have inner products that are `C^n`
-jointly in `(t, x)`. -/
-theorem contMDiffAt_uncurry_pullback (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (uncurry Φ))
-    (hinj : ∀ t x, Injective (mfderiv I J (Φ t) x)) (p₀ : ℝ × M) :
-    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
-        ((h.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ := by
-  have hb := (h.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.contMDiffAt.of_le le_self_add)
-  have hL := ContMDiffAt.mfderiv (fun (p : ℝ × M) (x : M) ↦ Φ p.1 x) Prod.snd
-    ((hΦ (p₀.1, p₀.2)).comp (p₀, p₀.2)
-      ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)) contMDiffAt_snd le_rfl
-  refine contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd, ?_⟩
-  refine (contMDiffAt_trivializationAt_bilinearForm_pullback continuousAt_snd hb hL
-    ).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ ?_)
-  have hp : (h.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2 =
-      (ContinuousLinearMap.precomp ℝ (mfderiv I J (Φ p.1) p.2)).comp
-        ((h.inner (Φ p.1 p.2)).comp (mfderiv I J (Φ p.1) p.2)) := by
-    ext v w
-    simp only [pullback_inner, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
-  dsimp only
-  rw [hp]
-  rfl
-
 variable [CompactSpace M]
 
 /-- **Regularity of the relative volume of a family of immersions.** For a jointly `C^(n+1)`
@@ -285,7 +260,7 @@ theorem contDiff_relativeVolume_pullback [T2Space M] {k : ℕ∞} [IsManifold I 
     ContDiff ℝ k fun t ↦ relativeVolume (h.pullback (Φ 0) (hΦ.curry_right (x := 0)) (hinj 0))
       (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_relativeVolume fun _ ↦
-    (contMDiffAt_uncurry_pullback h hΦ hinj _).of_le hk
+    (h.contMDiffAt_uncurry_pullback hΦ hinj _).of_le hk
 
 /-- **The first variation of the relative volume of a family of immersions.** For a jointly
 `C^(n+1)` family of immersions `F_t` of a compact manifold into a manifold with a `C^n` metric `h`,
@@ -302,7 +277,7 @@ theorem hasDerivAt_relativeVolume_pullback [IsManifold I 2 M] (hn : 1 ≤ n)
           (h.pullback (Φ s) (hΦ.curry_right (x := s)) (hinj s)) x.ofWithMetric) t₀
         ∂riemannianVolume I (WithMetric (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))))
       t₀ :=
-  hasDerivAt_relativeVolume fun _ ↦ (contMDiffAt_uncurry_pullback h hΦ hinj _).of_le hn
+  hasDerivAt_relativeVolume fun _ ↦ (h.contMDiffAt_uncurry_pullback hΦ hinj _).of_le hn
 
 /-- **The second variation of the relative volume of a family of immersions.** For a jointly
 `C^(n+1)` family of immersions `F_t` of a compact manifold into a manifold with a `C^n` metric `h`,
@@ -319,7 +294,7 @@ theorem hasDerivAt_deriv_relativeVolume_pullback [IsManifold I 3 M] (hn : 2 ≤ 
           (h.pullback (Φ r) (hΦ.curry_right (x := r)) (hinj r)) x.ofWithMetric) s) t₀
         ∂riemannianVolume I (WithMetric (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))))
       t₀ :=
-  hasDerivAt_deriv_relativeVolume fun _ ↦ (contMDiffAt_uncurry_pullback h hΦ hinj _).of_le hn
+  hasDerivAt_deriv_relativeVolume fun _ ↦ (h.contMDiffAt_uncurry_pullback hΦ hinj _).of_le hn
 
 end Immersion
 
