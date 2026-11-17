@@ -501,7 +501,8 @@ private theorem map_stableComparison_eq_neg {q : M} {φ : MorseChart E f q}
     exact div_neg_of_neg_of_pos this (mul_self_pos.2 ha₁0)
   rw [hΨ, Orientation.map_trans, Orientation.map_eq_neg_iff_det_neg _ _ ?_]
   · exact hdet
-  · rw [Fintype.card_fin, finrank_prod, finrank_self, φ.finrank_negativeWeight_fun, add_comm, hq]
+  · rw [Fintype.card_fin, φ.finrank_prod_negativeWeight_fun]
+    omega
 
 /-- **The stable comparison map along a trajectory from a critical point of top index.** At a
 point `z` of a trajectory from a critical point `p` of index `n` to a critical point `q` of index
@@ -574,7 +575,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
     ← map_unstableFrame_eq_orientationAt_iff hf (𝔬.coord_mfderiv_chart p)
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) oM op hz.1 hF, if_congr hτ rfl rfl]
   refine Orientation.ite_map_mul_ite_map_trans 𝓕 𝒜 op (Fintype.card_fin _) ?_
-  rw [Fintype.card_fin, finrank_prod, finrank_self, (𝔬.chart q).finrank_negativeWeight_fun]
+  rw [Fintype.card_fin, (𝔬.chart q).finrank_prod_negativeWeight_fun]
   omega
 
 /-! ### The fundamental chain is a cycle -/
@@ -642,7 +643,7 @@ private theorem fundamentalSign_mul_trajectorySign_eq_neg {q : criticalPoints �
     fundamentalSign_mul_trajectorySign h hf 𝔬 oM (ha 0) (hpq 0) (hz 0) (hA 0)]
   rw [hflip]
   refine Orientation.ite_neg_eq_eq_neg_ite ?_
-  rw [Fintype.card_fin, finrank_prod, finrank_self, φ.finrank_negativeWeight_fun]
+  rw [Fintype.card_fin, φ.finrank_prod_negativeWeight_fun]
   omega
 
 

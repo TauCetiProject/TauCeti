@@ -186,9 +186,8 @@ theorem mem_linearBackwardTimes_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 
     T ∈ hX.linearBackwardTimes φ x := by
   refine (mem_linearBackwardTimes hX φ).2
     ⟨by rw [hX.flow_apply_of_mfderiv_eq_zero hx]; exact φ.mem_source, fun t _ ↦ ?_⟩
-  rw [hX.flow_apply_of_mfderiv_eq_zero hx, φ.apply_self, map_zero,
-    show φ.linearFlow t 0 = 0 from by simpa using φ.linearFlow_smul t 0 0, map_zero,
-    ← φ.apply_self]
+  rw [hX.flow_apply_of_mfderiv_eq_zero hx, φ.apply_self, map_zero, φ.linearFlow_zero_right,
+    map_zero, ← φ.apply_self]
   exact φ.toChart.map_source φ.mem_source
 
 /-- The chain rule for the chart `φ` composed with the time-`s` map of the flow, after the
@@ -483,6 +482,7 @@ theorem bijective_unstableFrame (hx : manifoldMorseIndex 𝓘(ℝ, E) f x = Modu
   have hdim : Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) =
       Module.finrank ℝ (TangentSpace 𝓘(ℝ, E) y) := by
     rw [φ.finrank_negativeWeight_fun, hx]
+    -- `TangentSpace 𝓘(ℝ, E) y` is definitionally `E`.
     rfl
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (f := (hX.unstableFrame φ y).toLinearMap) hdim).1 hinj⟩

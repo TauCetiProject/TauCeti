@@ -98,6 +98,12 @@ theorem linearFlow_smul (t a : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
   simp only [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
+/-- The linear flow fixes the origin. -/
+@[simp]
+theorem linearFlow_zero_right (t : ℝ) : φ.linearFlow t 0 = 0 := by
+  funext i
+  simp [linearFlow_apply]
+
 /-- The linear flow of the negated Morse chart runs the linear flow backwards. -/
 theorem neg_linearFlow (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (t : ℝ)
     (z : Fin (Module.finrank ℝ E) → ℝ) : (φ.neg h).linearFlow t z = φ.linearFlow (-t) z := by

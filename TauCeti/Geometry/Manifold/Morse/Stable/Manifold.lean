@@ -103,6 +103,12 @@ theorem finrank_negativeWeight_fun :
   rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card',
     Fintype.card_subtype, Set.toFinset_ofPred]
 
+/-- The product of `ℝ` with the coordinates of negative weight has dimension one more than the
+Morse index. -/
+theorem finrank_prod_negativeWeight_fun :
+    Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) = 1 + manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+
 /-- A Morse chart at a critical point of index `n - 1` has exactly one coordinate of positive
 weight. -/
 theorem exists_weight_eq_one_of_add_one_eq_finrank
