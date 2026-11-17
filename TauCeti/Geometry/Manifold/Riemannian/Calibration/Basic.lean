@@ -47,7 +47,9 @@ This file develops the foundational API for smooth calibrations:
   (`TauCeti.IsCalibration.mpullback`), and open inclusions
   (`TauCeti.IsCalibration.restrictOpenTangentSpace`). On a flat real inner product space `V`, the
   constant form `SmoothForm.const A` is a calibration if and only if `‖A‖ ≤ 1`
-  (`TauCeti.isCalibration_const_iff`).
+  (`TauCeti.isCalibration_const_iff`); in particular, every orthonormal `k`-frame `u` induces a
+  simple constant calibration `SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k u))`
+  (`Orthonormal.isCalibration_const_alternatingFormEquiv_ιMulti`).
 
 ## References
 
@@ -139,7 +141,9 @@ theorem isCalibration_iff_norm_le_one :
   rw [isCalibration_def]
   refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   rw [(φ x).opNorm_le_iff_le_orthonormal zero_le_one]
-  exact forall_congr' fun v ↦ by rw [orthonormal_iff_ite, Real.norm_eq_abs]; rfl
+  exact forall_congr' fun v ↦ by
+    simp_rw [orthonormal_iff_ite, Real.norm_eq_abs,
+      ContMDiffRiemannianMetric.inner_riemannianBundle]
 
 /-- At every point `x`, a calibration has comass `‖φ x‖ ≤ 1` for the inner product `g_x`. -/
 theorem IsCalibration.norm_le_one (hφ : IsCalibration g φ) (x : M) :
@@ -158,7 +162,8 @@ theorem isCalibration_iff_apply_le_one (hk : 1 ≤ k) :
   rw [isCalibration_iff_norm_le_one]
   refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   rw [(φ x).opNorm_le_iff_apply_le_orthonormal hk zero_le_one]
-  exact forall_congr' fun v ↦ by rw [orthonormal_iff_ite]; rfl
+  exact forall_congr' fun v ↦ by
+    simp_rw [orthonormal_iff_ite, ContMDiffRiemannianMetric.inner_riemannianBundle]
 
 /-- The zero `k`-form is a calibration on every smooth Riemannian manifold. -/
 @[simp]
@@ -235,12 +240,11 @@ section Pullback
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
+  {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
 
 /-- Pulling a calibration `φ` on `(M, g)` back along a smooth map `f : N → M` that intertwines `g'`
 and `g` (`g'_{y}(v, w) = g_{f y}(df_y v, df_y w)`) gives a calibration on `(N, g')`. -/
-theorem IsCalibration.mpullback_of_inner_eq
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
-    (hφ : IsCalibration g φ)
+theorem IsCalibration.mpullback_of_inner_eq (hφ : IsCalibration g φ)
     (g' : ContMDiffRiemannianMetric I' ∞ E' (fun y : N ↦ TangentSpace I' y))
     {f : N → M} (hf : ContMDiff I' I ∞ f)
     (hg : ∀ y v w, g'.inner y v w = g.inner (f y) (mfderiv I' I f y v) (mfderiv I' I f y w)) :
@@ -255,19 +259,16 @@ theorem IsCalibration.mpullback_of_inner_eq
 
 /-- Pulling a calibration `φ` on `(M, g)` back along a smooth immersion `f : N → M` gives a
 calibration for the pullback metric `f*g` on `N`. -/
-theorem IsCalibration.mpullback [FiniteDimensional ℝ E']
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
-    (hφ : IsCalibration g φ) (f : N → M) (hf : ContMDiff I' I ∞ f)
-    (hinj : ∀ y, Function.Injective (mfderiv I' I f y)) :
+theorem IsCalibration.mpullback [FiniteDimensional ℝ E'] (hφ : IsCalibration g φ) (f : N → M)
+    (hf : ContMDiff I' I ∞ f) (hinj : ∀ y, Function.Injective (mfderiv I' I f y)) :
     IsCalibration (g.pullback f (by simpa using hf) hinj) (TauCeti.mpullback I' I f φ) :=
   hφ.mpullback_of_inner_eq _ hf fun y v w ↦
     ContMDiffRiemannianMetric.pullback_inner g f (by simpa using hf) hinj y v w
 
 /-- Restricting a calibration `φ` on `(M, g)` to an open subset `U : Opens M` gives a calibration
 for the restricted metric `g.restrictOpenTangentSpace U`. -/
-theorem IsCalibration.restrictOpenTangentSpace
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {φ : RoughForm I M ℝ k}
-    (hφ : IsCalibration g φ) (U : TopologicalSpace.Opens M) :
+theorem IsCalibration.restrictOpenTangentSpace (hφ : IsCalibration g φ)
+    (U : TopologicalSpace.Opens M) :
     IsCalibration (g.restrictOpenTangentSpace U)
       (TauCeti.mpullback I I (Subtype.val : U → M) φ) :=
   hφ.mpullback_of_inner_eq (g.restrictOpenTangentSpace U) contMDiff_subtype_val fun y v w ↦ by
@@ -341,6 +342,15 @@ theorem isCalibration_const_iff (A : V [⋀^Fin k]→L[ℝ] ℝ) :
   · rw [SmoothForm.const_apply, ← Real.norm_eq_abs]
     refine h (fun i ↦ NormedSpace.fromTangentSpace x (v i)) (orthonormal_iff_ite.2 fun i j ↦ ?_)
     rw [← hinner x (v i) (v j), ← hv i j, ContMDiffRiemannianMetric.ofLE_inner]
+
+/-- For any orthonormal frame `u : Fin k → V` in a finite-dimensional real inner product space `V`,
+the constant smooth `k`-form `SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k u))` is a
+calibration on `(V, (riemannianMetricVectorSpace V).ofLE le_top)`. -/
+theorem _root_.Orthonormal.isCalibration_const_alternatingFormEquiv_ιMulti [FiniteDimensional ℝ V]
+    {u : Fin k → V} (hu : Orthonormal ℝ u) :
+    IsCalibration ((riemannianMetricVectorSpace V).ofLE le_top)
+      (SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k u))).1 := by
+  rw [isCalibration_const_iff, hu.norm_alternatingFormEquiv_ιMulti]
 
 end VectorSpace
 

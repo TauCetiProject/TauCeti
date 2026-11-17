@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Stokes
+import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.SmoothPartition
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 
@@ -15,7 +17,14 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 Compactly supported exact top forms have zero canonical oriented integral when the primitive
 is supported away from the boundary. The manifold may use any model with corners.
 Extension by zero reduces a chart-supported form to flat compact Stokes, and an actual finite
-smooth partition gives the global result.
+smooth partition gives the global result (`TauCeti.integralTopForm_mextDeriv_eq_zero`).
+
+Combining `integralTopForm_mextDeriv_eq_zero` with the cylinder homotopy operator
+(`TauCeti.homotopyOperator`) in positive degree and local constancy in degree zero yields
+homotopy invariance of top-form periods on compact boundaryless Hausdorff oriented smooth
+manifolds (`TauCeti.integralTopForm_mpullback_eq_of_homotopy`), for any closed `C¹` form on a
+`C²` target manifold (which need not be finite-dimensional, compact, Hausdorff, or boundaryless)
+and any `C²` homotopy.
 -/
 
 public section
@@ -127,5 +136,65 @@ theorem integralTopForm_mextDeriv_eq_zero [BoundarylessManifold I M]
     integralTopForm o (TauCeti.mextDeriv φ) = 0 :=
   integralTopForm_mextDeriv_eq_zero_of_disjoint_boundary o hφ hc
     (by simp only [ModelWithCorners.Boundaryless.boundary_eq_empty, disjoint_empty])
+
+section Homotopy
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- **Homotopy invariance of top-form periods.** On a compact boundaryless Hausdorff oriented
+smooth `k`-manifold `(M, o)`, `C²`-homotopic maps `f, f' : M → M'` into a `C²` manifold `M'`
+(which need not be finite-dimensional, compact, Hausdorff, or boundaryless) have equal periods on
+every closed `C¹` `k`-form `η` on `M'`. -/
+theorem integralTopForm_mpullback_eq_of_homotopy [IsManifold I ∞ M] [BoundarylessManifold I M]
+    [T2Space M] [CompactSpace M] [IsManifold I' 2 M'] {k : ℕ}
+    (o : Manifold.Orientation I M (Fin k))
+    {f f' : M → M'} {F : M × Icc (0 : ℝ) 1 → M'} (hF : ContMDiff (I.prod (𝓡∂ 1)) I' 2 F)
+    (h₀ : ∀ x, F (x, 0) = f x) (h₁ : ∀ x, F (x, 1) = f' x)
+    {η : RoughForm I' M' ℝ k} (hη : IsSmoothForm I' 1 η) (hclosed : mextDeriv η = 0) :
+    integralTopForm o (mpullback I I' f η) = integralTopForm o (mpullback I I' f' η) := by
+  cases k with
+  | zero =>
+    have hηeq : η = RoughForm.ofFunction I' (fun y ↦ η y ![]) :=
+      (RoughForm.eq_ofFunction η).trans
+        (by congr with y; exact congrArg (η y) (Subsingleton.elim 0 ![]))
+    have hfn : ContMDiff I' 𝓘(ℝ) 1 (fun y ↦ η y ![]) := by
+      rw [← isSmoothForm_ofFunction_iff, ← hηeq]; exact hη
+    have hlc := (mextDeriv_ofFunction_eq_zero_iff (hfn.mdifferentiable one_ne_zero)).1
+      (hηeq ▸ hclosed)
+    congr 1; funext x; ext v
+    have hxt := hlc.comp_continuous (hF.continuous.comp (Continuous.prodMk_right x))
+    have h01 := (congrArg (fun y ↦ η y ![]) (h₀ x)).symm.trans
+      ((hxt.apply_eq_of_preconnectedSpace 0 1).trans (congrArg (fun y ↦ η y ![]) (h₁ x)))
+    rw [mpullback_apply, mpullback_apply, congrArg (η (f x)) (Subsingleton.elim _ ![]),
+      congrArg (η (f' x)) (Subsingleton.elim _ ![]), h01]
+  | succ m =>
+    have hι (t : Icc (0 : ℝ) 1) : ContMDiff I (I.prod (𝓡∂ 1)) 2 (fun x : M ↦ (x, t)) :=
+      (contMDiff_id.prodMk contMDiff_const).of_le le_top
+    obtain rfl : F ∘ (fun x ↦ (x, (0 : Icc (0 : ℝ) 1))) = f := funext h₀
+    obtain rfl : F ∘ (fun x ↦ (x, (1 : Icc (0 : ℝ) 1))) = f' := funext h₁
+    let ψ := mpullback (I.prod (𝓡∂ 1)) I' F η
+    have hψ : IsSmoothForm (I.prod (𝓡∂ 1)) 1 ψ := hη.mpullback (by rwa [one_add_one_eq_two])
+    have hψc : mextDeriv ψ = 0 := hη.mextDeriv_mpullback_eq_zero hclosed hF
+    have : IsManifold I ((1 : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
+    have hderiv : mextDeriv (homotopyOperator ψ) =
+        mpullback I I' (F ∘ fun x ↦ (x, 1)) η +
+          (-1 : ℝ) • mpullback I I' (F ∘ fun x ↦ (x, 0)) η := by
+      funext x
+      rw [mextDeriv_homotopyOperator hψ hψc x,
+        ← congrFun (mpullback_comp ((hι 1).mdifferentiable (by simp))
+          (hF.mdifferentiable (by simp)) η) x,
+        ← congrFun (mpullback_comp ((hι 0).mdifferentiable (by simp))
+          (hF.mdifferentiable (by simp)) η) x]
+      ext v; simp [sub_eq_add_neg]
+    have hzero := integralTopForm_mextDeriv_eq_zero o hψ.homotopyOperator
+      (isClosed_tsupport _).isCompact
+    rw [hderiv, integralTopForm_add_of_compactSpace o
+      ((hη.of_le (by simp)).mpullback ((hF.comp (hι 1)).of_le (by simp)))
+      (((hη.of_le (by simp)).mpullback ((hF.comp (hι 0)).of_le (by simp))).smul (-1)),
+      integralTopForm_smul, neg_one_mul, add_neg_eq_zero] at hzero
+    exact hzero.symm
+
+end Homotopy
 
 end TauCeti
