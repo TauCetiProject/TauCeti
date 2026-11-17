@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.PiLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Symmetry
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Boas–Kosaki–McCarthy–Clarkson inequalities via complex interpolation
@@ -83,16 +84,16 @@ private theorem norm_clarksonPairCLM_two_two_le {X : Type*}
 private theorem inv_ofReal_two_div_two_sub {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     (ENNReal.ofReal (2 / (2 - θ)))⁻¹ =
       ENNReal.ofReal (1 - θ) * (1 : ℝ≥0∞)⁻¹ + ENNReal.ofReal θ * (2 : ℝ≥0∞)⁻¹ := by
-  have h : (2 / (2 - θ))⁻¹ = 1 - θ + θ * 2⁻¹ := by rw [inv_div]; ring
-  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two (by linarith [hθ.2])), h,
+  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two (by linarith [hθ.2])),
+    show (2 / (2 - θ))⁻¹ = 1 - θ + θ * 2⁻¹ by rw [inv_div]; ring,
     ENNReal.ofReal_add (sub_nonneg.2 hθ.2.le) (by linarith [hθ.1]), ENNReal.ofReal_mul hθ.1.le]
   simp [ENNReal.ofReal_inv_of_pos]
 
 private theorem inv_ofReal_two_div {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     (ENNReal.ofReal (2 / θ))⁻¹ =
       ENNReal.ofReal (1 - θ) * (∞ : ℝ≥0∞)⁻¹ + ENNReal.ofReal θ * (2 : ℝ≥0∞)⁻¹ := by
-  have h : (2 / θ)⁻¹ = θ * 2⁻¹ := by field_simp
-  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two hθ.1), h, ENNReal.ofReal_mul hθ.1.le]
+  rw [← ENNReal.ofReal_inv_of_pos (div_pos zero_lt_two hθ.1),
+    show (2 / θ)⁻¹ = θ * 2⁻¹ by field_simp, ENNReal.ofReal_mul hθ.1.le]
   simp [ENNReal.ofReal_inv_of_pos]
 
 section Couple
@@ -111,10 +112,9 @@ private theorem clarksonPair_compat (C : CompatibleCouple ℂ X₀ X₁ V)
         (clarksonPairCLM 1 ∞ X₀ ((piLp 1 2 fun _ : Fin 2 ↦ C).interFst x)) =
       (piLp ∞ 2 fun _ : Fin 2 ↦ C).sndToSum
         (clarksonPairCLM 2 2 X₁ ((piLp 1 2 fun _ : Fin 2 ↦ C).interSnd x)) := by
-  apply (piLp ∞ 2 fun _ : Fin 2 ↦ C).sumSpace_ext
   have h (j : Fin 2) : C.embed₀ (x.1.1 j) = C.embed₁ (x.1.2 j) := by
     simpa using congr_fun ((piLp 1 2 fun _ : Fin 2 ↦ C).embed₀_interFst x) j
-  ext i
+  refine (piLp ∞ 2 fun _ : Fin 2 ↦ C).sumSpace_ext (funext fun i ↦ ?_)
   simp only [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, piLp_embed₀_apply, piLp_embed₁_apply,
     clarksonPairCLM_apply]
   split_ifs <;> simp [h 0, h 1]
@@ -131,7 +131,7 @@ private theorem piLpCoord_map_clarksonPair {θ : ℝ} {C : CompatibleCouple ℂ 
     rw [← hu, sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) 0]; simp [← hx]
   have hv' : C.sumSpaceEmbed (toSum v) = C.embed₀ (x₀ 1) + C.embed₁ (x₁ 1) := by
     rw [← hv, sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) 1]; simp [← hx]
-  apply ComplexMethodSpace.ext; apply C.sumSpaceEmbed_injective
+  refine ComplexMethodSpace.ext <| C.sumSpaceEmbed_injective ?_
   rw [sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) i, toSum_map_of_eq_add _ _ _ hx]
   split_ifs with hi <;> simp [hi, clarksonPairCLM_apply, hu', hv'] <;> abel
 
@@ -169,24 +169,19 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_right [InnerProductSpaceable X₁]
       (piLpCoord_piLpComplexMethodEquiv_symm hθ (inv_ofReal_two_div_two_sub hθ) _ pair 0)
       (piLpCoord_piLpComplexMethodEquiv_symm hθ (inv_ofReal_two_div_two_sub hθ) _ pair 1) i
   have hlhs : ‖u + v‖ ^ q + ‖u - v‖ ^ q = ‖eCod Tw‖ ^ q := by
-    have hsum := congrArg (· ^ q) (PiLp.norm_eq_sum
-      (p := ENNReal.ofReal q) (by rwa [ENNReal.toReal_ofReal hq_pos.le]) (eCod Tw))
-    rw [ENNReal.toReal_ofReal hq_pos.le, one_div, Real.rpow_inv_rpow
-      (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) hq_pos.ne',
-      Fin.sum_univ_two, hcoord 0, hcoord 1] at hsum
-    simpa using hsum.symm
-  have hexp₁ : 1 / p * q = (2 - θ) / θ := by dsimp [p, q]; field_simp
-  have hexp₂ : θ / 2 * q = 1 := by dsimp [q]; field_simp [hθ.1.ne']
+    simpa [ENNReal.toReal_ofReal hq_pos.le, Fin.sum_univ_two, hcoord 0, hcoord 1] using
+      (PiLp.norm_rpow_eq_sum (by rwa [ENNReal.toReal_ofReal hq_pos.le]) (eCod Tw)).symm
   have hpair : ‖pair‖ ^ q = (‖u‖ ^ p + ‖v‖ ^ p) ^ ((2 - θ) / θ) := by
-    rw [PiLp.norm_eq_sum (p := ENNReal.ofReal p) (by rwa [ENNReal.toReal_ofReal hp_pos.le]),
-      ENNReal.toReal_ofReal hp_pos.le, Fin.sum_univ_two]
-    simp only [pair, Fin.isValue, ↓reduceIte, one_ne_zero]
-    rw [← Real.rpow_mul (add_nonneg (Real.rpow_nonneg (norm_nonneg u) p)
-      (Real.rpow_nonneg (norm_nonneg v) p)), hexp₁]
+    rw [show q = p * ((2 - θ) / θ) from (div_mul_div_cancel₀ (by linarith [hθ.2])).symm,
+      Real.rpow_mul (norm_nonneg pair)]
+    simpa [ENNReal.toReal_ofReal hp_pos.le, Fin.sum_univ_two, pair] using
+      congrArg (· ^ ((2 - θ) / θ))
+        (PiLp.norm_rpow_eq_sum (by rwa [ENNReal.toReal_ofReal hp_pos.le]) pair)
   rw [hlhs]
   refine (Real.rpow_le_rpow (norm_nonneg _) hTw hq_pos.le).trans_eq ?_
   rw [Real.mul_rpow (Real.rpow_nonneg zero_le_two _) (norm_nonneg pair),
-    ← Real.rpow_mul zero_le_two, hpair, hexp₂, Real.rpow_one]
+    ← Real.rpow_mul zero_le_two, hpair, show θ / 2 * q = 1 by dsimp [q]; field_simp [hθ.1.ne'],
+    Real.rpow_one]
 
 /-- **Boas–Kosaki–McCarthy–Clarkson inequality (left Hilbertian endpoint).** -/
 theorem norm_add_rpow_add_norm_sub_rpow_le_left [InnerProductSpaceable X₀]
@@ -202,14 +197,12 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_left [InnerProductSpaceable X₀]
 theorem norm_add_rpow_add_norm_sub_rpow_le_two_pow_right [InnerProductSpaceable X₁]
     {C : CompatibleCouple ℂ X₀ X₁ V} {q : ℝ} (hq : 2 < q) (u v : C.ComplexMethodSpace (2 / q)) :
     ‖u + v‖ ^ q + ‖u - v‖ ^ q ≤ 2 ^ (q - 1) * (‖u‖ ^ q + ‖v‖ ^ q) := by
-  have hq0 : 0 < q := by linarith
   have hb := norm_add_rpow_add_norm_sub_rpow_le_right
-    ⟨div_pos zero_lt_two hq0, (div_lt_one hq0).2 hq⟩ u v
+    ⟨div_pos zero_lt_two (by linarith), (div_lt_one (by linarith)).2 hq⟩ u v
   rw [(by field_simp : 2 / (2 / q) = q), (by field_simp : 2 / (2 - 2 / q) = q / (q - 1)),
     (by field_simp : (2 - 2 / q) / (2 / q) = q - 1)] at hb
   have hrpow : (‖u‖ ^ (q / (q - 1)) + ‖v‖ ^ (q / (q - 1))) ^ (q - 1) ≤
-      2 ^ (q - 1 - 1) * ((‖u‖ ^ (q / (q - 1))) ^ (q - 1) +
-        (‖v‖ ^ (q / (q - 1))) ^ (q - 1)) := by
+      2 ^ (q - 1 - 1) * ((‖u‖ ^ (q / (q - 1))) ^ (q - 1) + (‖v‖ ^ (q / (q - 1))) ^ (q - 1)) := by
     exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow
       ⟨‖u‖ ^ (q / (q - 1)), by positivity⟩ ⟨‖v‖ ^ (q / (q - 1)), by positivity⟩ (by linarith)
   refine hb.trans ((mul_le_mul_of_nonneg_left hrpow zero_le_two).trans_eq ?_)
@@ -234,7 +227,6 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_two_mul_right [InnerProductSpaceable 
   set r := (p - 1)⁻¹
   have hr_pos : 0 < r := inv_pos.2 hp_sub
   have huv : 0 ≤ ‖u + v‖ ^ p + ‖u - v‖ ^ p := by positivity
-  have huv' : 0 ≤ 2 * (‖u‖ ^ p + ‖v‖ ^ p) := by positivity
   have hb := norm_add_rpow_add_norm_sub_rpow_le_right
     ⟨by rw [sub_pos, div_lt_iff₀ hp0]; linarith, by linarith [(one_lt_div hp0).2 hp₂]⟩ u v
   rw [(by dsimp [r]; field_simp : 2 / (2 - 2 / p) = p * r),
@@ -242,18 +234,15 @@ theorem norm_add_rpow_add_norm_sub_rpow_le_two_mul_right [InnerProductSpaceable 
     (by dsimp [r]; field_simp; ring : (2 - (2 - 2 / p)) / (2 - 2 / p) = r)] at hb
   have hrpow : (‖u + v‖ ^ p + ‖u - v‖ ^ p) ^ r ≤
       2 ^ (r - 1) * ((‖u + v‖ ^ p) ^ r + (‖u - v‖ ^ p) ^ r) := by
-    exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow
-      ⟨‖u + v‖ ^ p, by positivity⟩ ⟨‖u - v‖ ^ p, by positivity⟩
-      ((one_le_inv₀ hp_sub).2 (by linarith))
+    exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨‖u + v‖ ^ p, by positivity⟩
+      ⟨‖u - v‖ ^ p, by positivity⟩ ((one_le_inv₀ hp_sub).2 (by linarith))
   have hpow : (‖u + v‖ ^ p + ‖u - v‖ ^ p) ^ r ≤ (2 * (‖u‖ ^ p + ‖v‖ ^ p)) ^ r := by
     refine hrpow.trans ?_
     rw [← Real.rpow_mul (norm_nonneg _), ← Real.rpow_mul (norm_nonneg _)]
     refine (mul_le_mul_of_nonneg_left hb (Real.rpow_nonneg zero_le_two _)).trans_eq ?_
-    rw [Real.mul_rpow zero_le_two
-      (add_nonneg (Real.rpow_nonneg (norm_nonneg u) p) (Real.rpow_nonneg (norm_nonneg v) p)),
-      Real.rpow_sub_one two_ne_zero]; ring
+    rw [Real.mul_rpow zero_le_two (by positivity), Real.rpow_sub_one two_ne_zero]; ring
   have hinv := Real.rpow_le_rpow (Real.rpow_nonneg huv r) hpow (inv_nonneg.2 hr_pos.le)
-  rwa [Real.rpow_rpow_inv huv hr_pos.ne', Real.rpow_rpow_inv huv' hr_pos.ne'] at hinv
+  rwa [Real.rpow_rpow_inv huv hr_pos.ne', Real.rpow_rpow_inv (by positivity) hr_pos.ne'] at hinv
 
 /-- **Clarkson's inequality on `[X₀, X₁]_{2/p - 1}` for `1 < p < 2` (left endpoint).** -/
 theorem norm_add_rpow_add_norm_sub_rpow_le_two_mul_left [InnerProductSpaceable X₀]

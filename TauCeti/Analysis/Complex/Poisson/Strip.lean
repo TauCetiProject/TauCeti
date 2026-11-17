@@ -69,19 +69,16 @@ private theorem sin_pi_mul_pos {θ : ℝ} (hθ : θ ∈ Ioo 0 1) : 0 < Real.sin 
 
 private theorem im_exp_I_mul_pi_mul (z : ℂ) :
     (exp (I * π * z)).im = Real.exp (-π * z.im) * Real.sin (π * z.re) := by
-  have hre : (I * π * z).re = -π * z.im := by simp [mul_assoc]
-  have him : (I * π * z).im = π * z.re := by simp [mul_assoc]
-  rw [Complex.exp_im, hre, him]
+  rw [Complex.exp_im]; simp [mul_assoc]
 
 private theorem star_exp_I_mul_pi (θ : ℝ) : star (exp (I * π * θ)) = exp (-I * π * θ) := by
   rw [RCLike.star_def, ← exp_conj]; congr 1; simp
 
 private theorem im_exp_nonneg_of_mem {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    0 ≤ (exp (I * π * z)).im := by
-  have hz' := mem_verticalClosedStrip_iff.1 hz
-  rw [im_exp_I_mul_pi_mul]
-  exact mul_nonneg (Real.exp_nonneg _)
-    (Real.sin_nonneg_of_mem_Icc ⟨by nlinarith [pi_pos, hz'.1], by nlinarith [pi_pos, hz'.2]⟩)
+    0 ≤ (exp (I * π * z)).im :=
+  let ⟨h0, h1⟩ := mem_verticalClosedStrip_iff.1 hz
+  im_exp_I_mul_pi_mul z ▸ mul_nonneg (Real.exp_nonneg _)
+    (Real.sin_nonneg_of_mem_Icc ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩)
 
 private theorem sub_exp_neg_I_pi_ne_zero {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ} (hw : 0 ≤ w.im) :
     w - exp (-I * π * θ) ≠ 0 := fun h ↦ by
@@ -93,9 +90,8 @@ private theorem sub_exp_neg_I_pi_ne_zero {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : 
 /-- For `0 < θ < 1`, `stripToUnitDisc θ` is complex-differentiable at every point of the closed
 strip. -/
 theorem differentiableAt_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
-    (hz : z ∈ verticalClosedStrip 0 1) : DifferentiableAt ℂ (stripToUnitDisc θ) z := by
-  unfold stripToUnitDisc
-  exact DifferentiableAt.div (by fun_prop) (by fun_prop)
+    (hz : z ∈ verticalClosedStrip 0 1) : DifferentiableAt ℂ (stripToUnitDisc θ) z :=
+  DifferentiableAt.div (by fun_prop) (by fun_prop)
     (sub_exp_neg_I_pi_ne_zero hθ (im_exp_nonneg_of_mem hz))
 
 /-- `stripToUnitDisc θ` is complex-differentiable on the closed strip `0 ≤ re z ≤ 1`. -/
@@ -119,11 +115,9 @@ private theorem normSq_exp_sub_neg_sub_normSq (θ : ℝ) (z : ℂ) :
 /-- On the open strip `0 < re z < 1`, `stripToUnitDisc θ` takes values in the open unit disc. -/
 theorem stripToUnitDisc_mem_ball {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
     (hz : z ∈ verticalStrip 0 1) : stripToUnitDisc θ z ∈ ball 0 1 := by
-  have hz' := mem_verticalStrip_iff.1 hz
-  have hwim : 0 < (exp (I * π * z)).im := by
-    rw [im_exp_I_mul_pi_mul]
-    exact mul_pos (Real.exp_pos _)
-      (Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hz'.1) (by nlinarith [pi_pos, hz'.2]))
+  have ⟨h0, h1⟩ := mem_verticalStrip_iff.1 hz
+  have hwim : 0 < (exp (I * π * z)).im := im_exp_I_mul_pi_mul z ▸ mul_pos (Real.exp_pos _)
+    (Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos h0) (by nlinarith [pi_pos]))
   rw [mem_ball_zero_iff, ← sq_lt_one_iff₀ (norm_nonneg _), ← normSq_eq_norm_sq, stripToUnitDisc,
     map_div₀, div_lt_one (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ hwim.le))]
   nlinarith [normSq_exp_sub_neg_sub_normSq θ z, sin_pi_mul_pos hθ]
@@ -137,28 +131,26 @@ theorem norm_stripToUnitDisc_le_one {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
   nlinarith [normSq_exp_sub_neg_sub_normSq θ z, sin_pi_mul_pos hθ]
 
 private theorem exp_I_mul_pi_mul_I (t : ℝ) : exp (I * π * (t * I)) = Real.exp (-π * t) := by
-  have h : I * ↑π * (↑t * I) = ((-π * t : ℝ) : ℂ) := by
-    push_cast; linear_combination (π * t : ℂ) * I_mul_I
-  rw [h, ofReal_exp]
+  rw [show I * ↑π * (↑t * I) = ((-π * t : ℝ) : ℂ) by
+    push_cast; linear_combination (π * t : ℂ) * I_mul_I, ofReal_exp]
 
 private theorem exp_I_mul_pi_one_add_mul_I (t : ℝ) :
     exp (I * π * (1 + t * I)) = -(Real.exp (-π * t) : ℂ) := by
-  have h : I * ↑π * (1 + ↑t * I) = ((-π * t : ℝ) : ℂ) + ↑π * I := by
-    push_cast; linear_combination (π * t : ℂ) * I_mul_I
-  rw [h, Complex.exp_add, exp_pi_mul_I, ofReal_exp, mul_neg_one]
+  rw [show I * ↑π * (1 + ↑t * I) = ((-π * t : ℝ) : ℂ) + ↑π * I by
+    push_cast; linear_combination (π * t : ℂ) * I_mul_I, Complex.exp_add, exp_pi_mul_I,
+    ofReal_exp, mul_neg_one]
 
 /-- Conjugation exchanges the two boundary lines of `stripToUnitDisc` under `θ ↔ 1 - θ`. -/
 theorem star_stripToUnitDisc_one_sub_one_add_mul_I (θ t : ℝ) :
     star (stripToUnitDisc (1 - θ) (1 + t * I)) = stripToUnitDisc θ (t * I) := by
   have he : (starRingEnd ℂ) (exp (I * ↑π * ↑(1 - θ))) = -exp (I * ↑π * ↑θ) := by
-    have : I * ↑π * ↑(1 - θ) = -I * ↑π * ↑θ + ↑π * I := by push_cast; ring
-    rw [this, Complex.exp_add, exp_pi_mul_I, mul_neg_one, map_neg, ← exp_conj]
+    rw [show I * ↑π * ↑(1 - θ) = -I * ↑π * ↑θ + ↑π * I by push_cast; ring,
+      Complex.exp_add, exp_pi_mul_I, mul_neg_one, map_neg, ← exp_conj]
     congr 2; simp
   rw [stripToUnitDisc, stripToUnitDisc, exp_I_mul_pi_one_add_mul_I, exp_I_mul_pi_mul_I]
   simp only [RCLike.star_def, neg_mul, Complex.exp_neg, map_div₀, map_sub, map_neg, map_inv₀,
     conj_ofReal, he, inv_neg]
-  rw [← neg_div_neg_eq]
-  congr 1 <;> ring
+  rw [← neg_div_neg_eq]; congr 1 <;> ring
 
 /-- The right boundary line `re z = 1` maps into the unit circle. -/
 theorem stripToUnitDisc_one_add_mul_I_mem_sphere {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
@@ -166,10 +158,9 @@ theorem stripToUnitDisc_one_add_mul_I_mem_sphere {θ : ℝ} (hθ : θ ∈ Ioo 0 
   have him : (exp (I * π * (1 + t * I))).im = 0 := by
     rw [exp_I_mul_pi_one_add_mul_I, neg_im, ofReal_im, neg_zero]
   have hsq := normSq_exp_sub_neg_sub_normSq θ (1 + t * I)
-  rw [him, mul_zero, zero_mul] at hsq
   rw [mem_sphere_zero_iff_norm, Complex.norm_def, Real.sqrt_eq_one, stripToUnitDisc, map_div₀,
     div_eq_one_iff_eq (normSq_pos.2 (sub_exp_neg_I_pi_ne_zero hθ him.ge)).ne']
-  linarith
+  rw [him, mul_zero, zero_mul] at hsq; linarith
 
 /-- The left boundary line `re z = 0` maps into the unit circle. -/
 theorem stripToUnitDisc_mul_I_mem_sphere {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
@@ -199,8 +190,8 @@ theorem stripPoissonKernel₁_def (θ t : ℝ) : stripPoissonKernel₁ θ t =
 /-- Replacing `θ` by `1 - θ` exchanges the two strip Poisson kernels. -/
 theorem stripPoissonKernel₀_eq_stripPoissonKernel₁_one_sub (θ t : ℝ) :
     stripPoissonKernel₀ θ t = stripPoissonKernel₁ (1 - θ) t := by
-  have h : π * (1 - θ) = π - π * θ := by ring
-  rw [stripPoissonKernel₀, stripPoissonKernel₁, h, Real.sin_pi_sub, Real.cos_pi_sub]; ring
+  rw [stripPoissonKernel₀, stripPoissonKernel₁, mul_sub π 1 θ, mul_one,
+    Real.sin_pi_sub, Real.cos_pi_sub]; ring
 
 /-- Replacing `θ` by `1 - θ` exchanges the two strip Poisson kernels. -/
 theorem stripPoissonKernel₁_eq_stripPoissonKernel₀_one_sub (θ t : ℝ) :
@@ -218,12 +209,11 @@ theorem stripPoissonKernel₁_neg (θ t : ℝ) : stripPoissonKernel₁ θ (-t) =
   by simp [stripPoissonKernel₁, mul_neg, Real.cosh_neg]
 
 private theorem cosh_add_cos_pos {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
-    0 < Real.cosh (π * t) + Real.cos (π * θ) := by
-  have hcos : -1 < Real.cos (π * θ) := by
-    rw [← Real.cos_pi]
-    exact Real.strictAntiOn_cos ⟨by nlinarith [pi_pos, hθ.1], by nlinarith [pi_pos, hθ.2]⟩
-      ⟨pi_pos.le, le_rfl⟩ (by nlinarith [pi_pos, hθ.2])
-  linarith [Real.one_le_cosh (π * t)]
+    0 < Real.cosh (π * t) + Real.cos (π * θ) :=
+  have hcos : -1 < Real.cos (π * θ) := Real.cos_pi ▸ Real.strictAntiOn_cos
+    ⟨by nlinarith [pi_pos, hθ.1], by nlinarith [pi_pos, hθ.2]⟩ ⟨pi_pos.le, le_rfl⟩
+    (by nlinarith [pi_pos, hθ.2])
+  by linarith [Real.one_le_cosh (π * t)]
 
 /-- For `0 < θ < 1`, `stripPoissonKernel₁ θ` is strictly positive everywhere. -/
 theorem stripPoissonKernel₁_pos {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) : 0 < stripPoissonKernel₁ θ t :=
@@ -257,18 +247,15 @@ private def leftBoundaryAngle (θ t : ℝ) : ℝ := 2 * π - rightBoundaryAngle 
 private theorem circleMap_pi_sub_two_arctan {a b : ℝ} (hb : b ≠ 0) :
     circleMap 0 1 (π - 2 * Real.arctan (a / b)) = ((a : ℂ) + b * I) / ((a : ℂ) - b * I) := by
   set β := Real.arctan (a / b)
-  have hsin : b * Real.sin β = a * Real.cos β := by
-    have htan := Real.tan_arctan (a / b)
-    rw [Real.tan_eq_sin_div_cos, div_eq_div_iff (Real.cos_arctan_pos (a / b)).ne' hb] at htan
-    linarith
-  have hsin' : (b : ℂ) * Real.sin β = a * Real.cos β := by exact_mod_cast hsin
+  have htan := Real.tan_arctan (a / b)
+  rw [Real.tan_eq_sin_div_cos, div_eq_div_iff (Real.cos_arctan_pos _).ne' hb] at htan
+  have hsin' : (b : ℂ) * Real.sin β = a * Real.cos β := by exact_mod_cast (by linarith : b * _ = _)
   have hden₂ : (a : ℂ) - b * I ≠ 0 := fun h ↦ hb <| by
     simpa using (congrArg Complex.im (sub_eq_zero.1 h)).symm
   have hexp : circleMap 0 1 (π - 2 * β) = -exp (((-β : ℝ) : ℂ) * I) / exp ((β : ℂ) * I) := by
     simp only [circleMap, zero_add, ofReal_one, one_mul]
-    have harg : ((π - 2 * β : ℝ) : ℂ) * I = ↑π * I + (((-β : ℝ) : ℂ) * I - (β : ℂ) * I) := by
-      push_cast; ring
-    rw [harg, Complex.exp_add, exp_pi_mul_I, Complex.exp_sub]; ring
+    rw [show ((π - 2 * β : ℝ) : ℂ) * I = ↑π * I + (((-β : ℝ) : ℂ) * I - (β : ℂ) * I) by
+      push_cast; ring, Complex.exp_add, exp_pi_mul_I, Complex.exp_sub]; ring
   rw [hexp, div_eq_div_iff (Complex.exp_ne_zero _) hden₂, exp_ofReal_mul_I, exp_ofReal_mul_I,
     Real.cos_neg, Real.sin_neg, ofReal_neg]
   linear_combination 2 * hsin' - (2 * b * Real.sin β : ℂ) * I_mul_I
@@ -276,58 +263,51 @@ private theorem circleMap_pi_sub_two_arctan {a b : ℝ} (hb : b ≠ 0) :
 private theorem circleMap_rightBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
     circleMap 0 1 (rightBoundaryAngle θ t) = stripToUnitDisc θ (1 + t * I) := by
   rw [rightBoundaryAngle, circleMap_pi_sub_two_arctan (sin_pi_mul_pos hθ).ne', stripToUnitDisc,
-    exp_I_mul_pi_one_add_mul_I]
-  have he₁ : exp (I * ↑π * ↑θ) = (Real.cos (π * θ) : ℂ) + Real.sin (π * θ) * I := by
-    have : I * ↑π * ↑θ = ((π * θ : ℝ) : ℂ) * I := by push_cast; ring
-    rw [this, exp_ofReal_mul_I]
-  have he₂ : exp (-I * ↑π * ↑θ) = (Real.cos (π * θ) : ℂ) - Real.sin (π * θ) * I := by
-    have : -I * ↑π * ↑θ = ((-(π * θ) : ℝ) : ℂ) * I := by push_cast; ring
-    rw [this, exp_ofReal_mul_I, Real.cos_neg, Real.sin_neg, ofReal_neg]; ring
-  rw [he₁, he₂, ofReal_add, ← neg_div_neg_eq]
+    exp_I_mul_pi_one_add_mul_I,
+    show exp (I * ↑π * ↑θ) = (Real.cos (π * θ) : ℂ) + Real.sin (π * θ) * I by
+      rw [show I * ↑π * ↑θ = ((π * θ : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I],
+    show exp (-I * ↑π * ↑θ) = (Real.cos (π * θ) : ℂ) - Real.sin (π * θ) * I by
+      rw [show -I * ↑π * ↑θ = ((-(π * θ) : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
+        Real.cos_neg, Real.sin_neg, ofReal_neg]; ring,
+    ofReal_add, ← neg_div_neg_eq]
   congr 1 <;> ring
 
 private theorem circleMap_leftBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
     circleMap 0 1 (leftBoundaryAngle θ t) = stripToUnitDisc θ (t * I) := by
-  have hstar : circleMap 0 1 (leftBoundaryAngle θ t) =
-      star (circleMap 0 1 (rightBoundaryAngle (1 - θ) t)) := by
-    simp only [leftBoundaryAngle, circleMap, zero_add, ofReal_one, one_mul]
-    have h : ((2 * π - rightBoundaryAngle (1 - θ) t : ℝ) : ℂ) * I =
-        2 * ↑π * I + (-(rightBoundaryAngle (1 - θ) t) : ℝ) * I := by push_cast; ring
-    rw [h, Complex.exp_add, exp_two_pi_mul_I, one_mul, RCLike.star_def, ← exp_conj]
-    congr 1; simp
-  rw [hstar, circleMap_rightBoundaryAngle (sub_mem_Ioo_zero_iff_right.2 hθ),
-    star_stripToUnitDisc_one_sub_one_add_mul_I]
+  rw [← star_stripToUnitDisc_one_sub_one_add_mul_I,
+    ← circleMap_rightBoundaryAngle (sub_mem_Ioo_zero_iff_right.2 hθ)]
+  simp only [leftBoundaryAngle, circleMap, zero_add, ofReal_one, one_mul]
+  rw [show ((2 * π - rightBoundaryAngle (1 - θ) t : ℝ) : ℂ) * I =
+      2 * ↑π * I + (-(rightBoundaryAngle (1 - θ) t) : ℝ) * I by push_cast; ring,
+    Complex.exp_add, exp_two_pi_mul_I, one_mul, RCLike.star_def, ← exp_conj]
+  congr 1; simp
 
 private theorem hasDerivAt_rightBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
     HasDerivAt (rightBoundaryAngle θ) (2 * π * stripPoissonKernel₁ θ t) t := by
   set s := Real.sin (π * θ); set c := Real.cos (π * θ)
-  have hs : s ≠ 0 := (sin_pi_mul_pos hθ).ne'
   have hu : HasDerivAt (fun x ↦ (Real.exp (-(π * x)) + c) / s)
       (-(Real.exp (-(π * t)) * π) / s) t := by
     simpa [neg_mul] using (((Real.hasDerivAt_exp _).comp t
       ((hasDerivAt_id t).const_mul (-π))).add_const c).div_const s
-  have hφ := ((Real.hasDerivAt_arctan' _).comp t hu).const_mul (-2) |>.const_add π
-  refine (hφ.congr_of_eventuallyEq (Eventually.of_forall fun x ↦ ?_)).congr_deriv ?_
-  · simp [rightBoundaryAngle, s, c, sub_eq_add_neg, neg_mul]
-  · have hden : 0 < Real.cosh (π * t) + c := cosh_add_cos_pos hθ t
-    have h1 : 1 + ((Real.exp (-(π * t)) + c) / s) ^ 2 ≠ 0 := by positivity
-    rw [stripPoissonKernel₁]; dsimp only [s, c] at *
-    field_simp [hs, hden.ne', h1]
-    rw [Real.cosh_eq, Real.exp_neg, Real.sin_sq]
-    field_simp [Real.exp_ne_zero (π * t)]; ring
+  refine ((((Real.hasDerivAt_arctan' _).comp t hu).const_mul (-2)
+    |>.const_add π).congr_of_eventuallyEq (.of_forall fun x ↦ by
+      simp [rightBoundaryAngle, s, c, sub_eq_add_neg, neg_mul])).congr_deriv ?_
+  have hs : s ≠ 0 := (sin_pi_mul_pos hθ).ne'
+  have hden : 0 < Real.cosh (π * t) + c := cosh_add_cos_pos hθ t
+  have h1 : 1 + ((Real.exp (-(π * t)) + c) / s) ^ 2 ≠ 0 := by positivity
+  rw [stripPoissonKernel₁]; dsimp only [s, c] at *
+  field_simp [hs, hden.ne', h1]
+  rw [Real.cosh_eq, Real.exp_neg, Real.sin_sq]; field_simp [Real.exp_ne_zero (π * t)]; ring
 
 private theorem hasDerivAt_leftBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) :
     HasDerivAt (leftBoundaryAngle θ) (-(2 * π * stripPoissonKernel₀ θ t)) t := by
-  have h := (hasDerivAt_const t (2 * π)).sub
-    (hasDerivAt_rightBoundaryAngle (sub_mem_Ioo_zero_iff_right.2 hθ) t)
-  rw [zero_sub, ← stripPoissonKernel₀_eq_stripPoissonKernel₁_one_sub] at h
-  exact h.congr_of_eventuallyEq (Eventually.of_forall fun _ ↦ rfl)
+  rw [stripPoissonKernel₀_eq_stripPoissonKernel₁_one_sub]
+  exact (hasDerivAt_rightBoundaryAngle (sub_mem_Ioo_zero_iff_right.2 hθ) t).const_sub (2 * π)
 
 private theorem strictMono_rightBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     StrictMono (rightBoundaryAngle θ) :=
-  strictMono_of_deriv_pos fun t ↦ by
-    rw [(hasDerivAt_rightBoundaryAngle hθ t).deriv]
-    exact mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)
+  strictMono_of_deriv_pos fun t ↦ (hasDerivAt_rightBoundaryAngle hθ t).deriv.symm ▸
+    mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)
 
 private theorem strictAnti_leftBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     StrictAnti (leftBoundaryAngle θ) := fun _ _ hab ↦
@@ -335,53 +315,46 @@ private theorem strictAnti_leftBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
 
 private theorem tendsto_rightBoundaryAngle_atBot {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     Tendsto (rightBoundaryAngle θ) atBot (𝓝 0) := by
-  have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-π * t)) atBot atTop :=
-    Real.tendsto_exp_atTop.comp
-      ((tendsto_neg_atBot_atTop.const_mul_atTop pi_pos).congr fun _ ↦ by ring)
-  have hlim := (tendsto_const_nhds (x := π)).sub
+  have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-π * t)) atBot atTop := Real.tendsto_exp_atTop.comp
+    ((tendsto_neg_atBot_atTop.const_mul_atTop pi_pos).congr fun _ ↦ by ring)
+  exact ((by ring : π - 2 * (π / 2) = 0) ▸ (tendsto_const_nhds (x := π)).sub
     (((tendsto_nhdsWithin_iff.1 Real.tendsto_arctan_atTop).1.comp
       ((hexp.atTop_add (tendsto_const_nhds (x := Real.cos (π * θ)))).atTop_div_const
-        (sin_pi_mul_pos hθ))).const_mul 2)
-  exact ((by ring : π - 2 * (π / 2) = 0) ▸ hlim).congr fun _ ↦ rfl
+        (sin_pi_mul_pos hθ))).const_mul 2)).congr fun _ ↦ rfl
 
 private theorem tendsto_rightBoundaryAngle_atTop {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     Tendsto (rightBoundaryAngle θ) atTop (𝓝 (2 * π * θ)) := by
-  have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-π * t)) atTop (𝓝 0) :=
-    Real.tendsto_exp_atBot.comp
-      ((tendsto_neg_atTop_atBot.const_mul_atBot pi_pos).congr fun _ ↦ by ring)
-  have hcont : Continuous (fun x : ℝ ↦
-      π - 2 * Real.arctan ((x + Real.cos (π * θ)) / Real.sin (π * θ))) := by fun_prop
+  have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-π * t)) atTop (𝓝 0) := Real.tendsto_exp_atBot.comp
+    ((tendsto_neg_atTop_atBot.const_mul_atBot pi_pos).congr fun _ ↦ by ring)
   have hval : π - 2 * Real.arctan ((0 + Real.cos (π * θ)) / Real.sin (π * θ)) = 2 * π * θ := by
     rw [zero_add, ← Real.sin_pi_div_two_sub (π * θ), ← Real.cos_pi_div_two_sub (π * θ),
       ← Real.tan_eq_sin_div_cos, Real.arctan_tan (by nlinarith [pi_pos, hθ.2])
-        (by nlinarith [pi_pos, hθ.1])]
-    ring
-  exact (hval ▸ (hcont.tendsto 0).comp hexp).congr fun _ ↦ rfl
+        (by nlinarith [pi_pos, hθ.1])]; ring
+  exact (hval ▸ ((by fun_prop : Continuous fun x : ℝ ↦
+    π - 2 * Real.arctan ((x + Real.cos (π * θ)) / Real.sin (π * θ))).tendsto 0).comp hexp).congr
+    fun _ ↦ rfl
 
 private theorem range_rightBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     range (rightBoundaryAngle θ) = Ioo 0 (2 * π * θ) := by
   have hmono := strictMono_rightBoundaryAngle hθ
   have hbot := tendsto_rightBoundaryAngle_atBot hθ
   have htop := tendsto_rightBoundaryAngle_atTop hθ
-  have hcont : Continuous (rightBoundaryAngle θ) := by unfold rightBoundaryAngle; fun_prop
-  refine Subset.antisymm ?_ fun y hy ↦ intermediate_value_univ₂_eventually₂ hcont continuous_const
+  refine Subset.antisymm ?_ fun y hy ↦ intermediate_value_univ₂_eventually₂
+    (by unfold rightBoundaryAngle; fun_prop) continuous_const
     (hbot.eventually_le_const hy.1) (htop.eventually_const_le hy.2)
   rintro _ ⟨t, rfl⟩
-  exact ⟨lt_of_le_of_lt (le_of_tendsto hbot
-      ((eventually_le_atBot (t - 1)).mono fun _ hx ↦ hmono.monotone hx)) (hmono (sub_one_lt t)),
-    lt_of_lt_of_le (hmono (lt_add_one t)) (ge_of_tendsto htop
-      ((eventually_ge_atTop (t + 1)).mono fun _ hx ↦ hmono.monotone hx))⟩
+  exact ⟨lt_of_le_of_lt (le_of_tendsto hbot ((eventually_le_atBot (t - 1)).mono fun _ hx ↦
+      hmono.monotone hx)) (hmono (sub_one_lt t)),
+    lt_of_lt_of_le (hmono (lt_add_one t)) (ge_of_tendsto htop ((eventually_ge_atTop (t + 1)).mono
+      fun _ hx ↦ hmono.monotone hx))⟩
 
 private theorem range_leftBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     range (leftBoundaryAngle θ) = Ioo (2 * π * θ) (2 * π) := by
-  have hr := range_rightBoundaryAngle (θ := 1 - θ) (sub_mem_Ioo_zero_iff_right.2 hθ)
-  ext y; simp only [leftBoundaryAngle, mem_range, mem_Ioo]
-  refine ⟨fun ⟨t, ht⟩ ↦ ?_, fun hy ↦ ?_⟩
-  · have h : rightBoundaryAngle (1 - θ) t ∈ Ioo 0 (2 * π * (1 - θ)) := hr ▸ ⟨t, rfl⟩
-    exact ⟨by linarith [h.2], by linarith [h.1]⟩
-  · obtain ⟨t, ht⟩ : 2 * π - y ∈ range (rightBoundaryAngle (1 - θ)) :=
-      hr.symm ▸ ⟨by linarith [hy.2], by linarith [hy.1]⟩
-    exact ⟨t, by linarith⟩
+  ext y
+  have h : y ∈ range (leftBoundaryAngle θ) ↔ 2 * π - y ∈ range (rightBoundaryAngle (1 - θ)) :=
+    exists_congr fun _ ↦ by simp only [leftBoundaryAngle]; constructor <;> intro h <;> linarith
+  rw [h, range_rightBoundaryAngle (sub_mem_Ioo_zero_iff_right.2 hθ), sub_mem_Ioo_iff_right,
+    sub_zero, show 2 * π - 2 * π * (1 - θ) = 2 * π * θ by ring]
 
 private theorem boundaryAngle_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {g d k : ℝ → ℝ} {b : ℝ → ℂ} {s : Set ℝ} {ψ : ℂ → E}
@@ -389,15 +362,15 @@ private theorem boundaryAngle_pullback {E : Type*} [NormedAddCommGroup E] [Norme
     (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap 0 1 (g t) = b t) :
     (IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) s ↔ Integrable (fun t ↦ k t • ψ (b t))) ∧
       (∫ φ in s, ψ (circleMap 0 1 φ)) = (2 * π) • ∫ t, k t • ψ (b t) := by
-  have hfun : (fun t ↦ |d t| • ψ (circleMap 0 1 (g t))) = fun t ↦ (2 * π) • (k t • ψ (b t)) := by
-    ext t; rw [habs, hb, mul_smul]
-  constructor
+  have hfun : (fun t ↦ |d t| • ψ (circleMap 0 1 (g t))) = fun t ↦ (2 * π) • (k t • ψ (b t)) :=
+    funext fun t ↦ by rw [habs, hb, mul_smul]
+  refine ⟨?_, ?_⟩
   · rw [← hrange, ← image_univ, integrableOn_image_iff_integrableOn_abs_deriv_smul .univ
       (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, integrableOn_univ, hfun]
     exact integrable_smul_iff two_pi_pos.ne' _
   · rw [← hrange, ← image_univ, integral_image_eq_integral_abs_deriv_smul .univ
       (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, setIntegral_univ, ← integral_smul]
-    exact integral_congr_ae (Eventually.of_forall (congr_fun hfun))
+    exact integral_congr_ae (.of_forall (congr_fun hfun))
 
 private theorem rightBoundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (ψ : ℂ → E) :
@@ -438,9 +411,8 @@ theorem integrable_stripPoissonKernel₀ {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
 theorem integral_stripPoissonKernel₁ {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     ∫ t, stripPoissonKernel₁ θ t = θ := by
   have h := (rightBoundary_pullback hθ (fun _ ↦ (1 : ℝ))).2
-  rw [setIntegral_const, Real.volume_real_Ioo, sub_zero,
+  simp only [setIntegral_const, Real.volume_real_Ioo, sub_zero,
     max_eq_left (mul_nonneg two_pi_pos.le hθ.1.le), smul_eq_mul, mul_one] at h
-  simp only [smul_eq_mul, mul_one] at h
   exact mul_left_cancel₀ two_pi_pos.ne' h.symm
 
 /-- The left-boundary strip Poisson kernel has total integral `1 - θ` on `ℝ`. -/
@@ -472,10 +444,9 @@ theorem stripPoissonMeasure₁_eq_stripPoissonMeasure₀_one_sub (θ : ℝ) :
 /-- For `0 < θ < 1`, `stripPoissonMeasure₁ θ` is a probability measure on `ℝ`. -/
 theorem isProbabilityMeasure_stripPoissonMeasure₁ {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     IsProbabilityMeasure (stripPoissonMeasure₁ θ) := ⟨by
-  have hint := (integrable_stripPoissonKernel₁ hθ).const_mul θ⁻¹
-  have hnn : 0 ≤ᵐ[volume] fun t ↦ θ⁻¹ * stripPoissonKernel₁ θ t :=
-    Eventually.of_forall fun t ↦ mul_nonneg (inv_nonneg.2 hθ.1.le) (stripPoissonKernel₁_pos hθ t).le
-  simp [stripPoissonMeasure₁, ← ofReal_integral_eq_lintegral_ofReal hint hnn,
+  simp [stripPoissonMeasure₁, ← ofReal_integral_eq_lintegral_ofReal
+    ((integrable_stripPoissonKernel₁ hθ).const_mul θ⁻¹) (.of_forall fun t ↦
+      mul_nonneg (inv_nonneg.2 hθ.1.le) (stripPoissonKernel₁_pos hθ t).le),
     integral_const_mul, hθ, hθ.1.ne']⟩
 
 /-- For `0 < θ < 1`, `stripPoissonMeasure₀ θ` is a probability measure on `ℝ`. -/
@@ -489,10 +460,9 @@ theorem isProbabilityMeasure_stripPoissonMeasure₀ {θ : ℝ} (hθ : θ ∈ Ioo
 theorem integral_stripPoissonMeasure₁ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (f : ℝ → E) :
     ∫ t, f t ∂stripPoissonMeasure₁ θ = θ⁻¹ • ∫ t, stripPoissonKernel₁ θ t • f t := by
-  have hm : Measurable fun t ↦ ENNReal.ofReal (θ⁻¹ * stripPoissonKernel₁ θ t) :=
+  rw [stripPoissonMeasure₁, integral_withDensity_eq_integral_toReal_smul
     ((continuous_stripPoissonKernel₁ hθ).const_mul _).measurable.ennreal_ofReal
-  rw [stripPoissonMeasure₁, integral_withDensity_eq_integral_toReal_smul hm
-    (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+    (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
   simp_rw [ENNReal.toReal_ofReal (mul_nonneg (inv_nonneg.2 hθ.1.le)
     (stripPoissonKernel₁_pos hθ _).le), mul_smul, integral_smul]
 
@@ -532,11 +502,9 @@ theorem circleAverage_eq_stripPoissonKernel {E : Type*} [NormedAddCommGroup E] [
   have h0 : 0 ≤ 2 * π * θ := mul_nonneg two_pi_pos.le hθ.1.le
   have h1 : 2 * π * θ ≤ 2 * π := mul_le_of_le_one_right two_pi_pos.le hθ.2.le
   have hψ' := (intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1 hψ
-  have hi₀ : IntervalIntegrable (fun φ ↦ ψ (circleMap 0 1 φ)) volume 0 (2 * π * θ) :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le h0).2 (hψ'.mono_set (Ioc_subset_Ioc_right h1))
-  have hi₁ : IntervalIntegrable (fun φ ↦ ψ (circleMap 0 1 φ)) volume (2 * π * θ) (2 * π) :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le h1).2 (hψ'.mono_set (Ioc_subset_Ioc_left h0))
-  rw [circleAverage_def, ← intervalIntegral.integral_add_adjacent_intervals hi₀ hi₁,
+  rw [circleAverage_def, ← intervalIntegral.integral_add_adjacent_intervals
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le h0).2 (hψ'.mono_set (Ioc_subset_Ioc_right h1)))
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le h1).2 (hψ'.mono_set (Ioc_subset_Ioc_left h0))),
     intervalIntegral.integral_of_le h0, intervalIntegral.integral_of_le h1,
     integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo,
     (rightBoundary_pullback hθ ψ).2, (leftBoundary_pullback hθ ψ).2,
@@ -560,25 +528,23 @@ private theorem cayley_ofReal {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (r : ℝ) :
     rw [ne_eq, div_eq_one_iff_eq hden, sub_right_inj]
     exact fun h ↦ exp_I_pi_sub_exp_neg_I_pi_ne_zero hθ (sub_eq_zero.2 h)
   refine ⟨hne1, ?_⟩
-  have heq : unitDiscToExpStrip θ (((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ))) =
-      (r : ℂ) := by
-    rw [unitDiscToExpStrip]; set ζ := exp (I * π * θ); set ζ' := exp (-I * π * θ)
-    rw [div_eq_iff (sub_ne_zero.2 hne1.symm)]; field_simp [hden]; ring
-  rw [heq, ofReal_re]
+  rw [show unitDiscToExpStrip θ (((r : ℂ) - exp (I * π * θ)) / ((r : ℂ) - exp (-I * π * θ))) = r by
+    rw [unitDiscToExpStrip, div_eq_iff (sub_ne_zero.2 hne1.symm)]
+    apply mul_right_cancel₀ hden
+    rw [sub_mul, mul_right_comm (_ / _), div_mul_cancel₀ _ hden, mul_assoc (r : ℂ), sub_mul 1,
+      one_mul, div_mul_cancel₀ _ hden]; ring, ofReal_re]
 
 private theorem abs_re_unitDiscToExpStrip_of_mem_sphere (θ : ℝ) {w : ℂ}
     (hw : w ∈ sphere 0 1) (hw1 : w ≠ 1) :
     |(unitDiscToExpStrip θ w).re| = ‖unitDiscToExpStrip θ w‖ := by
   have hww : w * star w = 1 := by
-    rw [RCLike.star_def, mul_conj, normSq_eq_norm_sq, mem_sphere_zero_iff_norm.1 hw,
-      one_pow, ofReal_one]
+    rw [RCLike.star_def, mul_conj, normSq_eq_norm_sq, mem_sphere_zero_iff_norm.1 hw, one_pow,
+      ofReal_one]
   have h1w : 1 - w ≠ 0 := sub_ne_zero.2 hw1.symm
-  have h1sw : 1 - star w ≠ 0 := fun h ↦ h1w (by simpa using congrArg star h)
-  have hζ' : star (exp (-I * π * θ)) = exp (I * π * θ) := by
-    rw [← star_exp_I_mul_pi, star_involutive]
   have hself : star (unitDiscToExpStrip θ w) = unitDiscToExpStrip θ w := by
-    rw [unitDiscToExpStrip, star_div₀, star_sub, star_mul, star_sub, star_one,
-      star_exp_I_mul_pi, hζ', div_eq_div_iff h1sw h1w]
+    rw [unitDiscToExpStrip, star_div₀, star_sub, star_mul, star_sub, star_one, star_exp_I_mul_pi,
+      show star (exp (-I * π * θ)) = exp (I * π * θ) by rw [← star_exp_I_mul_pi, star_involutive],
+      div_eq_div_iff (fun h ↦ h1w (by simpa using congrArg star h)) h1w]
     linear_combination (exp (I * ↑π * ↑θ) - exp (-I * ↑π * ↑θ)) * hww
   have him : (unitDiscToExpStrip θ w).im = 0 := by
     have := congrArg Complex.im hself; simp only [RCLike.star_def, conj_im] at this; linarith
@@ -586,18 +552,15 @@ private theorem abs_re_unitDiscToExpStrip_of_mem_sphere (θ : ℝ) {w : ℂ}
 
 private def glueBoundary {α : Type*} (θ : ℝ) (cBot cTop : α) (u₀ u₁ : ℝ → α) (w : ℂ) : α :=
   let x := (unitDiscToExpStrip θ w).re
-  if w = 1 then cBot
-  else if x = 0 then cTop
-  else if 0 < x then u₀ (-Real.log x / π)
-  else u₁ (-Real.log (-x) / π)
+  if w = 1 then cBot else if x = 0 then cTop
+  else if 0 < x then u₀ (-Real.log x / π) else u₁ (-Real.log (-x) / π)
 
 private theorem glueBoundary_stripToUnitDisc_mul_I {α : Type*} {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
     (cBot cTop : α) (u₀ u₁ : ℝ → α) (t : ℝ) :
     glueBoundary θ cBot cTop u₀ u₁ (stripToUnitDisc θ (t * I)) = u₀ t := by
   obtain ⟨hne1, hx⟩ := cayley_ofReal hθ (Real.exp (-π * t))
-  have hpos : 0 < Real.exp (-π * t) := Real.exp_pos _
   rw [stripToUnitDisc_def, exp_I_mul_pi_mul_I]
-  simp only [glueBoundary, hx, hne1, hpos.ne', ↓reduceIte, hpos, Real.log_exp]
+  simp only [glueBoundary, hx, hne1, (Real.exp_pos _).ne', ↓reduceIte, Real.exp_pos, Real.log_exp]
   congr 1; field_simp [pi_pos.ne']
 
 private theorem glueBoundary_stripToUnitDisc_one_add_mul_I {α : Type*} {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
@@ -631,25 +594,24 @@ private theorem continuousWithinAt_glueBoundary_one {α : Type*} [TopologicalSpa
   have hB : 0 < B := zero_lt_one.trans_le (le_max_left _ _)
   have hpos : 0 < ‖exp (I * π * θ) - (1 : ℂ) * exp (-I * π * θ)‖ := by
     simpa using norm_pos_iff.2 (exp_I_pi_sub_exp_neg_I_pi_ne_zero hθ)
-  have hfn : Continuous fun w : ℂ ↦ ‖exp (I * π * θ) - w * exp (-I * π * θ)‖ := by fun_prop
-  have hfd : Continuous fun w : ℂ ↦ ‖(1 : ℂ) - w‖ := by fun_prop
-  have hnum_ev := (hfn.tendsto 1).eventually_const_lt (half_lt_self hpos)
-  have hden_ev := (hfd.tendsto 1).eventually_lt_const
-    (by simp only [sub_self, norm_zero]; exact div_pos (half_pos hpos) hB)
-  filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds hnum_ev,
-    eventually_nhdsWithin_of_eventually_nhds hden_ev] with w hw hnum hden
+  filter_upwards [self_mem_nhdsWithin,
+    eventually_nhdsWithin_of_eventually_nhds
+      (((by fun_prop : Continuous fun w : ℂ ↦ ‖exp (I * π * θ) - w * exp (-I * π * θ)‖).tendsto
+        1).eventually_const_lt (half_lt_self hpos)),
+    eventually_nhdsWithin_of_eventually_nhds
+      (((by fun_prop : Continuous fun w : ℂ ↦ ‖(1 : ℂ) - w‖).tendsto 1).eventually_lt_const
+        (by simp only [sub_self, norm_zero]; exact div_pos (half_pos hpos) hB))] with w hw hnum hden
   by_cases hw1 : w = 1
   · simpa [hw1] using mem_of_mem_nhds hs
   have hgt : B < |(unitDiscToExpStrip θ w).re| := by
     rw [abs_re_unitDiscToExpStrip_of_mem_sphere θ hw hw1, unitDiscToExpStrip, norm_div,
       lt_div_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hw1)))]
     linarith [(lt_div_iff₀ hB).1 hden]
-  have hx : (unitDiscToExpStrip θ w).re ≠ 0 := abs_pos.1 (hB.trans hgt)
   have hlog : -Real.log |(unitDiscToExpStrip θ w).re| / π ≤ T := by
     have hle := Real.log_exp (-π * T) ▸ Real.log_le_log (Real.exp_pos _)
       ((le_max_right 1 _).trans hgt.le)
     rw [div_le_iff₀ pi_pos]; linarith
-  exact glueBoundary_mem_of_ne hw1 hx (hT _ hlog).1 (hT _ hlog).2
+  exact glueBoundary_mem_of_ne hw1 (abs_pos.1 (hB.trans hgt)) (hT _ hlog).1 (hT _ hlog).2
 
 private theorem continuousOn_glueBoundary {α : Type*} [TopologicalSpace α]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {cBot cTop : α} {u₀ u₁ : ℝ → α}
@@ -660,16 +622,15 @@ private theorem continuousOn_glueBoundary {α : Type*} [TopologicalSpace α]
   intro w₀ _
   by_cases hw₀1 : w₀ = 1
   · exact hw₀1 ▸ continuousWithinAt_glueBoundary_one hθ hu₀_bot hu₁_bot
-  have hcx : ContinuousAt (fun w ↦ (unitDiscToExpStrip θ w).re) w₀ := by
-    unfold unitDiscToExpStrip
-    exact Complex.continuous_re.continuousAt.comp
+  have hcx : ContinuousAt (fun w ↦ (unitDiscToExpStrip θ w).re) w₀ :=
+    Complex.continuous_re.continuousAt.comp
       ((continuousAt_const.sub (continuousAt_id.mul continuousAt_const)).div
         (continuousAt_const.sub continuousAt_id) (sub_ne_zero.2 (Ne.symm hw₀1)))
   rcases lt_trichotomy ((unitDiscToExpStrip θ w₀).re) 0 with hneg | hzero | hpos
-  · have hlx := (Real.continuousAt_log (neg_pos.2 hneg).ne').comp
-      (f := fun w ↦ -(unitDiscToExpStrip θ w).re) hcx.neg
-    refine ((hu₁c.continuousAt.comp (f := fun w ↦ -Real.log (-(unitDiscToExpStrip θ w).re) / π)
-      (hlx.neg.div_const π)).congr_of_eventuallyEq ?_).continuousWithinAt
+  · refine ((hu₁c.continuousAt.comp (f := fun w ↦ -Real.log (-(unitDiscToExpStrip θ w).re) / π)
+      (((Real.continuousAt_log (neg_pos.2 hneg).ne').comp
+        (f := fun w ↦ -(unitDiscToExpStrip θ w).re) hcx.neg).neg.div_const π)).congr_of_eventuallyEq
+      ?_).continuousWithinAt
     filter_upwards [eventually_ne_nhds hw₀1, hcx.eventually_lt_const hneg] with w hw1 hlt
     simp [glueBoundary, hw1, hlt.ne, not_lt.2 hlt.le]
   · refine ContinuousAt.continuousWithinAt ?_
@@ -677,19 +638,19 @@ private theorem continuousOn_glueBoundary {α : Type*} [TopologicalSpace α]
     simp only [glueBoundary, hw₀1, hzero, ↓reduceIte]
     intro s hs
     obtain ⟨T, hT⟩ := Filter.mem_atTop_sets.1 ((hu₀_top.eventually hs).and (hu₁_top.eventually hs))
-    have hev : ∀ᶠ w in 𝓝 w₀, |(unitDiscToExpStrip θ w).re| < Real.exp (-π * T) :=
-      (continuous_abs.continuousAt.comp hcx).eventually_lt_const (by simp [hzero, Real.exp_pos])
-    filter_upwards [eventually_ne_nhds hw₀1, hev] with w hw1 hw
+    filter_upwards [eventually_ne_nhds hw₀1,
+      (continuous_abs.continuousAt.comp hcx).eventually_lt_const
+        (by simp [hzero, Real.exp_pos] : |(unitDiscToExpStrip θ w₀).re| < Real.exp (-π * T))]
+      with w hw1 hw
     by_cases hx : (unitDiscToExpStrip θ w).re = 0
     · simpa [hw1, hx] using mem_of_mem_nhds hs
     have hlog : T ≤ -Real.log |(unitDiscToExpStrip θ w).re| / π := by
       have hle := Real.log_exp (-π * T) ▸ Real.log_le_log (abs_pos.2 hx) hw.le
       rw [le_div_iff₀ pi_pos]; linarith
     exact glueBoundary_mem_of_ne hw1 hx (hT _ hlog).1 (hT _ hlog).2
-  · have hlx := (Real.continuousAt_log hpos.ne').comp
-      (f := fun w ↦ (unitDiscToExpStrip θ w).re) hcx
-    refine ((hu₀c.continuousAt.comp (f := fun w ↦ -Real.log ((unitDiscToExpStrip θ w).re) / π)
-      (hlx.neg.div_const π)).congr_of_eventuallyEq ?_).continuousWithinAt
+  · refine ((hu₀c.continuousAt.comp (f := fun w ↦ -Real.log ((unitDiscToExpStrip θ w).re) / π)
+      (((Real.continuousAt_log hpos.ne').comp (f := fun w ↦ (unitDiscToExpStrip θ w).re)
+        hcx).neg.div_const π)).congr_of_eventuallyEq ?_).continuousWithinAt
     filter_upwards [eventually_ne_nhds hw₀1, hcx.eventually_const_lt hpos] with w hw1 hgt
     simp [glueBoundary, hw1, hgt.ne', hgt]
 
