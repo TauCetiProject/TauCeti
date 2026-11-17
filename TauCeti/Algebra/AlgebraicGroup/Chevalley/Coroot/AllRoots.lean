@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Coroot
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -20,9 +18,11 @@ are multiplicative in `s`, as required in Steinberg's presentation. The construc
 arbitrary admissible lattices and arbitrary commutative value rings; it does not require that
 the full-weight parametrization reach every actual torus point.
 
-The all-root rank-one identity is transported from
-`DynkinType.chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul`. The torus coordinates
-are restrictions of the native coroot functionals, not another enumeration of coroots.
+The coroot and its root-word relations are supplied by
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl`, using
+`DynkinType.chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul`. This file identifies
+its torus coordinates as restrictions of the native coroot functionals, not another enumeration
+of coroots, and proves character evaluation, root conjugation and coefficient-ring naturality.
 
 ## References
 
@@ -63,8 +63,7 @@ theorem corootParameter_eq_fullWeightTorusRestriction (s : Aˣ) :
       (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) := by
   ext j
   simp only [corootParameter_apply, fullWeightTorusRestriction_apply,
-    torusCharacter_def, ← zpow_mul, Finset.prod_zpow_eq_zpow_sum,
-    t.coroot'_simplyConnectedRootDatum_apply ht, dotProduct, mul_comm]
+    torusCharacter_zpow, t.coroot'_simplyConnectedRootDatum_apply ht, dotProduct, mul_comm]
 
 /-- Evaluating an actual lattice character on the coroot gives `s` raised to its native
 pairing with that coroot. -/
@@ -74,8 +73,8 @@ theorem torusCharacter_corootParameter (s : Aˣ) (μ : D.weightLattice) :
       s ^ (t.simplyConnectedRootDatum ht).coroot' α μ := by
   rw [D.corootParameter_eq_fullWeightTorusRestriction,
     D.torusCharacter_fullWeightTorusRestriction]
-  simp only [torusCharacter_def, ← zpow_mul, Finset.prod_zpow_eq_zpow_sum,
-    t.coroot'_simplyConnectedRootDatum_apply ht, dotProduct, mul_comm]
+  simp only [torusCharacter_zpow, t.coroot'_simplyConnectedRootDatum_apply ht,
+    dotProduct, mul_comm]
 
 /-- A weight-basis character on the coroot gives `s` raised to its native coroot pairing. -/
 @[simp]
@@ -108,14 +107,10 @@ theorem corootParameter_simpleIndex (i : Fin t.rank) :
   simp only [corootParameter_apply, simpleCorootParameter_apply,
     t.coroot'_simpleIndex_apply ht]
 
-/-- The coroot cocharacter of any numbered root, valued in the datum's point group. -/
-def corootPoints : Aˣ →* D.points A :=
-  (D.torusPoints A).comp (D.corootParameter α A)
-
 /-- A coroot point is its specified value in the actual torus. -/
-theorem corootPoints_apply (s : Aˣ) :
-    D.corootPoints α A s = D.torusPoints A (D.corootParameter α A s) :=
-  (rfl)
+theorem corootPoints_eq_torusPoints (s : Aˣ) :
+    D.corootPoints α A s = D.torusPoints A (D.corootParameter α A s) := by
+  rw [corootPoints_apply, corootParameter_eq_fullWeightTorusRestriction]
 
 /-- In the weight basis the coroot is diagonal, with `j`-th entry `s` raised to the native
 pairing of `D.weight j` with the coroot. -/
@@ -123,55 +118,16 @@ pairing of `D.weight j` with the coroot. -/
 theorem coe_corootPoints (s : Aˣ) :
     (D.corootPoints α A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       diagGL (fun j => s ^ (t.simplyConnectedRootDatum ht).coroot' α (D.weight j)) := by
-  rw [corootPoints_apply, coe_torusPoints, kostantTorusMatrix_apply]
-  simp only [coordinateWeight_def, torusCharacter_corootParameter]
-
-/-- The all-root coroot cocharacter specializes to the existing simple coroot. -/
-@[simp]
-theorem corootPoints_simpleIndex (i : Fin t.rank) :
-    D.corootPoints (t.simpleIndex ht i) A = D.simpleCorootPoints i A := by
-  ext s
-  rw [corootPoints_apply, corootParameter_simpleIndex, simpleCorootPoints_eq_torusPoints]
+  rw [corootPoints_eq_torusPoints, coe_torusPoints, kostantTorusMatrix_apply]
+  simp only [torusCharacter_corootParameter_coordinateWeight]
 
 /-- The value of the opposite coroot is the inverse coroot value. -/
 @[simp]
 theorem corootPoints_reflectionPerm_self (s : Aˣ) :
     D.corootPoints ((t.simplyConnectedRootDatum ht).reflectionPerm α α) A s =
       (D.corootPoints α A s)⁻¹ := by
-  simp only [corootPoints_apply, corootParameter_reflectionPerm_self,
+  simp only [corootPoints_eq_torusPoints, corootParameter_reflectionPerm_self,
     MonoidHom.inv_apply, map_inv]
-
-attribute [local instance high] Algebra.toModule
-
-/-- At every root, the coroot is Steinberg's root word `n_α(s) n_α(1)⁻¹`.
-This holds over arbitrary commutative rings, including nonreduced rings. -/
-theorem corootPoints_eq_weylElement_mul_inv (s : Aˣ) :
-    D.corootPoints α A s = D.weylElement α A s * (D.weylElement α A 1)⁻¹ := by
-  apply (eq_mul_inv_iff_mul_eq).mpr
-  apply Subtype.ext
-  rw [Subgroup.coe_mul, corootPoints_apply, coe_torusPoints,
-    corootParameter_eq_fullWeightTorusRestriction, ← kostantTorusMatrix_weight,
-    ← basisMatrix_kostantTorusPoints, weylElement_def, weylElement_def]
-  simp only [Subgroup.coe_mul, coe_rootSubgroupPoints, ← map_mul, inv_one, Units.val_one]
-  exact congrArg (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom)
-    (t.chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator D.basis D.weight
-      D.isCartanWeightVector_basis α (CommAlgCat.of ℤ A) s).symm
-
-/-- The torus-valued quotient of two Weyl words has the quotient of their unit parameters. -/
-theorem weylElement_mul_inv_weylElement (s u : Aˣ) :
-    D.weylElement α A s * (D.weylElement α A u)⁻¹ = D.corootPoints α A (s / u) := by
-  have hs := D.corootPoints_eq_weylElement_mul_inv α A s
-  have hu := D.corootPoints_eq_weylElement_mul_inv α A u
-  rw [map_div, hs, hu, div_eq_mul_inv]
-  group
-
-/-- Steinberg's toral root words satisfy the multiplicativity relation at every root. -/
-theorem weylElement_mul_mul_inv_weylElement_one (s u : Aˣ) :
-    D.weylElement α A (s * u) * (D.weylElement α A 1)⁻¹ =
-      (D.weylElement α A s * (D.weylElement α A 1)⁻¹) *
-        (D.weylElement α A u * (D.weylElement α A 1)⁻¹) := by
-  simp only [← corootPoints_eq_weylElement_mul_inv, map_mul]
 
 /-- Conjugating by a coroot value rescales each root parameter by `s` raised to the
 corresponding Cartan integer. -/
@@ -180,8 +136,8 @@ theorem corootPoints_conj_rootSubgroupPoints (β : Fin t.numRoots) (s : Aˣ) (u 
         (D.corootPoints α A s)⁻¹ =
       D.rootSubgroupPoints β A (Multiplicative.ofAdd
         (((s ^ (t.simplyConnectedRootDatum ht).pairing β α : Aˣ) : A) * u)) := by
-  rw [corootPoints_apply, D.torusPoints_conj_rootSubgroupPoints, coordinateRoot_def,
-    D.torusCharacter_corootParameter, RootPairing.root_coroot'_eq_pairing]
+  rw [corootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroupPoints,
+    D.torusCharacter_corootParameter_coordinateRoot]
 
 /-- Coroot values commute with arbitrary changes of the value ring. -/
 @[simp↓]
