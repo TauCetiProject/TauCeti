@@ -11,7 +11,9 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable
 # Adjointable isometries and unitaries on Hilbert C⋆-modules
 
 This file develops adjointable isometries (`V* ∘ V = id_E`) and unitary equivalences between
-Hilbert C⋆-modules over a (possibly non-unital) C⋆-algebra `A`.
+Hilbert C⋆-modules. As for the algebraic API of `TauCeti.AdjointableMap`, the coefficient ring `A`
+only needs to be a non-unital star ring with a compatible complex module structure, partial order,
+and norm; in particular every (possibly non-unital) C⋆-algebra is allowed.
 
 An adjointable operator `V : TauCeti.AdjointableMap A E F` satisfies `V* ∘ V = id_E` if and only if
 it preserves all `A`-valued inner products (`adjoint_comp_self_eq_id_iff_inner_map_map`),
@@ -21,8 +23,11 @@ range is norm-closed because `V ∘ V*` is an adjointable star projection with r
 For invertible equivalences, `TauCeti.CStarModuleUnitary.ofSurjective` shows that any plain
 surjective function `f : E → F` preserving the `A`-valued inner product is automatically
 complex-linear, `A`-linear, norm-preserving, and adjointable with inverse equal to its adjoint,
-with no continuity or completeness hypotheses (the inner-product-preserving direction of the
-unitary characterization in Lance, Chapter 3).
+with no continuity or completeness hypotheses. Together with
+`TauCeti.AdjointableMap.adjoint_comp_self_and_self_comp_adjoint_iff`, this gives Lance's unitary
+characterization (Theorem 3.5): a plain function is an invertible adjointable operator whose inverse
+is its adjoint if and only if it is surjective and preserves the `A`-valued inner product
+(`TauCeti.AdjointableMap.exists_adjoint_comp_eq_id_iff`).
 
 ## Main definitions
 
@@ -45,12 +50,16 @@ unitary characterization in Lance, Chapter 3).
 * `TauCeti.AdjointableMap.adjoint_comp_self_eq_id_iff_inner_map_map` and
   `TauCeti.AdjointableMap.isClosed_range_of_adjoint_comp_self_eq_id`: inner-product
   characterizations and closed-range property of adjointable isometries.
+* `TauCeti.AdjointableMap.adjoint_comp_self_and_self_comp_adjoint_iff` and
+  `TauCeti.AdjointableMap.exists_adjoint_comp_eq_id_iff`: Lance's unitary characterization
+  (Theorem 3.5) for adjointable operators and for plain functions.
 * `TauCeti.AdjointableMap.mem_unitary_iff`: `U ∈ unitary (AdjointableMap A E E)` iff `U` is
   surjective and preserves the `A`-valued inner product.
 
 ## References
 
-* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 3.
+* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 3
+  (Theorem 3.5).
 * Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*,
   Chapter 2.
 -/
@@ -67,7 +76,8 @@ namespace AdjointableMap
 
 section Isometries
 
-variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [Norm A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
 
@@ -134,6 +144,14 @@ theorem self_comp_adjoint_eq_id_iff_surjective_of_adjoint_comp_self_eq_id
   calc (V.comp V.adjoint) (V x) = V ((V.adjoint.comp V) x) := by simp
     _ = AdjointableMap.id A F (V x) := by rw [hV, id_apply, id_apply]
 
+/-- Lance's unitary characterization (Theorem 3.5) for adjointable operators: `T` is invertible
+with inverse `T*` if and only if `T` is surjective and preserves the `A`-valued inner product. -/
+theorem adjoint_comp_self_and_self_comp_adjoint_iff {T : AdjointableMap A E F} :
+    T.adjoint.comp T = .id A E ∧ T.comp T.adjoint = .id A F ↔
+      Function.Surjective T ∧ ∀ x y : E, inner A (T x) (T y) = inner A x y := by
+  rw [and_comm (a := Function.Surjective T), ← adjoint_comp_self_eq_id_iff_inner_map_map]
+  exact and_congr_right self_comp_adjoint_eq_id_iff_surjective_of_adjoint_comp_self_eq_id
+
 /-- An operator `U : AdjointableMap A E E` belongs to `unitary (AdjointableMap A E E)` if and only
 if `U* ∘ U = id_E` and `U ∘ U* = id_E`. -/
 theorem mem_unitary_iff_adjoint_comp {U : AdjointableMap A E E} :
@@ -146,8 +164,8 @@ if `U` is surjective and preserves the `A`-valued inner product. -/
 theorem mem_unitary_iff {U : AdjointableMap A E E} :
     U ∈ unitary (AdjointableMap A E E) ↔
       Function.Surjective U ∧ ∀ x y : E, inner A (U x) (U y) = inner A x y := by
-  rw [mem_unitary_iff_adjoint_comp, and_comm, ← adjoint_comp_self_eq_id_iff_inner_map_map]
-  exact and_congr_left self_comp_adjoint_eq_id_iff_surjective_of_adjoint_comp_self_eq_id
+  rw [mem_unitary_iff_adjoint_comp]
+  exact adjoint_comp_self_and_self_comp_adjoint_iff
 
 end Isometries
 
@@ -164,7 +182,8 @@ inverse equal to the adjoint (`CStarModuleUnitary.equivSubtypeAdjointableMap`) f
 moreover `CStarModuleUnitary.ofSurjective` upgrades any plain surjective inner-product-preserving
 function `E → F` to a `CStarModuleUnitary A E F` with no linearity, continuity, or completeness
 assumptions. -/
-structure CStarModuleUnitary (A E F : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A]
+structure CStarModuleUnitary (A E F : Type*) [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [StarModule ℂ A] [PartialOrder A] [Norm A]
     [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
     [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
     extends E ≃ₗᵢ[ℂ] F where
@@ -174,7 +193,8 @@ structure CStarModuleUnitary (A E F : Type*) [NonUnitalCStarAlgebra A] [PartialO
 
 namespace CStarModuleUnitary
 
-variable {A E F G : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+variable {A E F G : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [Norm A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
   [NormedAddCommGroup G] [NormedSpace ℂ G] [SMul A G] [CStarModule A G]
@@ -230,9 +250,9 @@ theorem inner_map_map (U : CStarModuleUnitary A E F) (x y : E) :
   U.inner_map_map' x y
 
 /-- The identity unitary on a Hilbert C⋆-module. -/
-protected def refl (A E : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E] :
-    CStarModuleUnitary A E E where
+protected def refl (A E : Type*) [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [StarModule ℂ A] [PartialOrder A] [Norm A] [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [SMul A E] [CStarModule A E] : CStarModuleUnitary A E E where
   toLinearIsometryEquiv := LinearIsometryEquiv.refl ℂ E
   inner_map_map' _ _ := rfl
 
@@ -414,6 +434,14 @@ theorem toAdjointableMap_comp_symm_toAdjointableMap (U : CStarModuleUnitary A E 
     U.toAdjointableMap.comp U.symm.toAdjointableMap = .id A F :=
   AdjointableMap.ext fun _ ↦ by simp
 
+theorem adjoint_toAdjointableMap_comp_self (U : CStarModuleUnitary A E F) :
+    U.toAdjointableMap.adjoint.comp U.toAdjointableMap = .id A E := by
+  simp
+
+theorem toAdjointableMap_comp_adjoint (U : CStarModuleUnitary A E F) :
+    U.toAdjointableMap.comp U.toAdjointableMap.adjoint = .id A F := by
+  simp
+
 /-- Every Hilbert C⋆-module unitary automatically commutes with the coefficient `A`-action. -/
 @[simp]
 theorem map_smul_coeff (U : CStarModuleUnitary A E F) (a : A) (x : E) :
@@ -539,6 +567,12 @@ theorem toAdjointableMap_ofAdjointableMap (T : AdjointableMap A E F)
     (ofAdjointableMap T h₁ h₂).toAdjointableMap = T :=
   AdjointableMap.ext fun _ ↦ rfl
 
+@[simp]
+theorem ofAdjointableMap_toAdjointableMap (U : CStarModuleUnitary A E F) :
+    ofAdjointableMap U.toAdjointableMap U.adjoint_toAdjointableMap_comp_self
+      U.toAdjointableMap_comp_adjoint = U :=
+  ext fun _ ↦ rfl
+
 /-- Equivalence between Hilbert C⋆-module unitaries `CStarModuleUnitary A E F` and adjointable
 operators `T : AdjointableMap A E F` whose inverse is their adjoint
 (`T* ∘ T = id_E` and `T ∘ T* = id_F`). -/
@@ -658,5 +692,29 @@ theorem toAdjointableMap_mulEquivUnitary_symm (U : unitary (AdjointableMap A E E
 end End
 
 end CStarModuleUnitary
+
+namespace AdjointableMap
+
+variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [Norm A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+
+/-- Lance's unitary characterization (Theorem 3.5) starting from a plain function `f : E → F`:
+`f` is the underlying map of an invertible adjointable operator whose inverse is its adjoint if
+and only if `f` is surjective and preserves the `A`-valued inner product. No linearity, continuity,
+or completeness hypotheses are needed. -/
+theorem exists_adjoint_comp_eq_id_iff {f : E → F} :
+    (∃ T : AdjointableMap A E F,
+      ⇑T = f ∧ T.adjoint.comp T = .id A E ∧ T.comp T.adjoint = .id A F) ↔
+      Function.Surjective f ∧ ∀ x y : E, inner A (f x) (f y) = inner A x y := by
+  refine ⟨?_, fun ⟨hsurj, hinner⟩ ↦ ?_⟩
+  · rintro ⟨T, rfl, h⟩
+    exact adjoint_comp_self_and_self_comp_adjoint_iff.mp h
+  · let U := CStarModuleUnitary.ofSurjective f hsurj hinner
+    exact ⟨U.toAdjointableMap, by simp [U], U.adjoint_toAdjointableMap_comp_self,
+      U.toAdjointableMap_comp_adjoint⟩
+
+end AdjointableMap
 
 end TauCeti
