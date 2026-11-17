@@ -171,7 +171,7 @@ def punctured : Opens (CotangentBundle I M) :=
 
 @[simp]
 theorem mem_punctured {z : CotangentBundle I M} : z ∈ punctured I M ↔ z.2 ≠ 0 :=
-  Iff.rfl
+  mem_zeroSectionCompl
 
 end Punctured
 
@@ -206,7 +206,7 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 private theorem radial_mem_punctured (p : ℝ × cosphereBundle I M) :
     radial p ∈ punctured I M :=
-  (norm_ne_zero_iff (a := (radial p).2)).1
+  mem_punctured.2 <| (norm_ne_zero_iff (a := (radial p).2)).1
     (by rw [norm_snd_radial]; exact (Real.exp_pos p.1).ne')
 
 /-- The inverse of the radial map: a nonzero covector `q` goes to `(log ‖q‖, q / ‖q‖)`. -/
