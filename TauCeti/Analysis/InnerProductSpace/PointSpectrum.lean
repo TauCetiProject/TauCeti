@@ -80,6 +80,10 @@ spectrum from that of its orthogonal complement.
 * `Module.End.finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace`: in finite dimension, the
   dimension of `A.pointSpectralSubspace Ω` is the sum of the dimensions of `A.eigenspace μ` over
   `μ ∈ Ω`.
+* `Module.End.finrank_pointSpectralSubspace_union`: for disjoint `Ω` and `Ω'` the dimensions of
+  the point-spectral subspaces add.
+* `Module.End.pointSpectralSubspace_sub_smul_id`: shifting `A` by a scalar `c` shifts the selected
+  eigenvalues by `c`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
   `(A.pointSpectralSubspace Ω)ᗮ = A.pointSpectralSubspace Ωᶜ`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace_Iio_zero` and
@@ -269,6 +273,24 @@ theorem pointSpectralSubspace_mono (h : Ω ⊆ Ω') :
 theorem pointSpectralSubspace_empty : A.pointSpectralSubspace ∅ = ⊥ := by
   simp [pointSpectralSubspace]
 
+/-- The point-spectral subspace selected by `Ω` is zero exactly when no element of `Ω` is an
+eigenvalue. -/
+theorem pointSpectralSubspace_eq_bot_iff :
+    A.pointSpectralSubspace Ω = ⊥ ↔ ∀ μ ∈ Ω, ¬A.HasEigenvalue (μ : 𝕜) := by
+  simp only [← le_bot_iff, pointSpectralSubspace_le_iff, hasEigenvalue_iff, not_not]
+
+/-- If `μ ∈ Ω` is the only eigenvalue in `Ω`, the point-spectral subspace selected by `Ω` is the
+eigenspace at `μ`. -/
+theorem pointSpectralSubspace_eq_eigenspace (hμ : μ ∈ Ω)
+    (h : ∀ ν ∈ Ω, A.HasEigenvalue (ν : 𝕜) → ν = μ) :
+    A.pointSpectralSubspace Ω = A.eigenspace (μ : 𝕜) := by
+  refine le_antisymm (iSup₂_le fun ν hν ↦ ?_) (eigenspace_le_pointSpectralSubspace hμ)
+  by_cases hνμ : ν = μ
+  · rw [hνμ]
+  · rw [show A.eigenspace (ν : 𝕜) = ⊥ from
+      not_not.mp fun hne ↦ hνμ (h ν hν (hasEigenvalue_iff.2 hne))]
+    exact bot_le
+
 /-- The point-spectral subspace of a union is the sum of the two point-spectral subspaces. -/
 @[simp]
 theorem pointSpectralSubspace_union :
@@ -341,6 +363,25 @@ theorem pointSpectralSubspace_neg :
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
 
+/-- Shifting an endomorphism by a scalar shifts its point spectrum: the point-spectral subspace of
+`A - c • id` selected by `Ω` is the point-spectral subspace of `A` selected by the values `μ` with
+`μ - c ∈ Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_sub_smul_id (c : ℝ) :
+    (A - (c : 𝕜) • LinearMap.id).pointSpectralSubspace Ω =
+      A.pointSpectralSubspace ((fun μ ↦ μ - c) ⁻¹' Ω) := by
+  have h (μ : ℝ) :
+      (A - (c : 𝕜) • LinearMap.id).eigenspace (μ : 𝕜) = A.eigenspace ((μ + c : ℝ) : 𝕜) := by
+    ext x
+    simp only [mem_eigenspace_iff, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_coe,
+      id_eq, RCLike.ofReal_add, add_smul, sub_eq_iff_eq_add]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [h]
+    exact eigenspace_le_pointSpectralSubspace (by simpa using hμ)
+  · have h' := eigenspace_le_pointSpectralSubspace (A := A - (c : 𝕜) • LinearMap.id) (Ω := Ω)
+      (μ := μ - c) hμ
+    rwa [h, sub_add_cancel] at h'
+
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
 `A`. -/
@@ -392,6 +433,17 @@ theorem finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace [FiniteDimens
     exact hμ0 (by simp [hbot])
   · rw [Set.Finite.coe_toFinset]
     exact Set.inter_subset_left
+
+/-- **Additivity of spectral dimensions.** For disjoint sets `Ω` and `Ω'`, the point-spectral
+subspace selected by `Ω ∪ Ω'` has the sum of the dimensions of those selected by `Ω` and `Ω'`. -/
+theorem finrank_pointSpectralSubspace_union [FiniteDimensional 𝕜 E] (h : Disjoint Ω Ω') :
+    Module.finrank 𝕜 (A.pointSpectralSubspace (Ω ∪ Ω')) =
+      Module.finrank 𝕜 (A.pointSpectralSubspace Ω) +
+        Module.finrank 𝕜 (A.pointSpectralSubspace Ω') := by
+  have h' := Submodule.finrank_sup_add_finrank_inf_eq (A.pointSpectralSubspace Ω)
+    (A.pointSpectralSubspace Ω')
+  rw [(disjoint_pointSpectralSubspace h).eq_bot, finrank_bot, add_zero] at h'
+  rw [pointSpectralSubspace_union, h']
 
 end Module.End
 
