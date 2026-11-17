@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Approximation
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Stability
 public import TauCeti.Combinatorics.Hypergraph.Triadic.StrongTopRegularization
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Strong top regularization over a regular lower skeleton
@@ -106,6 +107,11 @@ theorem lt_strongTriadicRegularityStep (F : ℕ → ℝ) (g : ℝ) (η μ : ℕ 
     ((le_max_right _ _).trans
       (max_pairApproximationBound_le_strongTriadicRegularityStep (Nat.zero_le B) le_rfl))
 
+/-- The iterates of `strongTriadicRegularityStep` dominate their starting point. -/
+theorem le_iterate_strongTriadicRegularityStep (F : ℕ → ℝ) (g : ℝ) (η μ : ℕ → ℝ) (r : ℕ → ℕ)
+    (j B : ℕ) : B ≤ (strongTriadicRegularityStep F g η μ r)^[j] B :=
+  Function.id_le_iterate_of_id_le (fun B ↦ (lt_strongTriadicRegularityStep F g η μ r B).le) j B
+
 /-- The bound in strong top regularization over a regular lower skeleton, starting from an
 equipartition with `l₀` parts: it bounds the numbers of vertex cells and pair colors of the coarse
 complex and is the size of host required. At most `⌊2 / g⌋₊ + 1` rounds precede an energy gap of
@@ -122,16 +128,6 @@ theorem strongTriadicRegularityBound_def (F : ℕ → ℝ) (g : ℝ) (η μ : �
       (strongTriadicRegularityStep F g η μ r)^[⌊2 / g⌋₊ + 1]
         (max (pairApproximationBound 1 (g / 24) F l₀) 6) :=
   (rfl)
-
-/-- From six vertices on, the cube of the number of vertices is at most twice the number of
-injective triples. -/
-private theorem cube_le_two_mul_descFactorial {n : ℕ} (hn : 6 ≤ n) :
-    n ^ 3 ≤ 2 * n.descFactorial 3 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  simp only [Nat.descFactorial_succ, Nat.descFactorial_zero, show 6 + k - 0 = k + 6 by omega,
-    show 6 + k - 1 = k + 5 by omega, show 6 + k - 2 = k + 4 by omega]
-  ring_nf
-  nlinarith
 
 namespace Colored3Graph
 
@@ -180,7 +176,7 @@ private theorem exists_regularization (P : Finpartition (univ : Finset V))
   set n := Fintype.card V
   have hN : (0 : ℝ) < n.descFactorial 3 := Nat.cast_pos.2 (Nat.descFactorial_pos.2 (by omega))
   have hcube : (n : ℝ) ^ 3 ≤ 2 * n.descFactorial 3 := by
-    exact_mod_cast cube_le_two_mul_descFactorial h6
+    exact_mod_cast Nat.pow_three_le_two_mul_descFactorial_three h6
   have hloss : 6 * (#{p | T.color p ≠ some (X.color p)} : ℝ) * n /
       n.descFactorial 3 ≤ g / 2 := by
     rw [div_le_iff₀ hN]
@@ -285,8 +281,8 @@ private theorem exists_iterate (P₀ : Finpartition (univ : Finset V)) (hP₀ : 
       ⟨hCP, hCeq, hCreg, hCpol⟩, by simpa using H.polyadEnergy_nonneg _⟩
   | succ j ih =>
     have h6 : 6 ≤ Fintype.card V :=
-      (le_max_right _ _).trans ((Function.monotone_iterate_of_id_le
-        (fun B ↦ (lt_strongTriadicRegularityStep F g η μ r B).le) (Nat.zero_le _) B₀).trans hj)
+      (le_max_right _ _).trans
+        ((le_iterate_strongTriadicRegularityStep F g η μ r (j + 1) B₀).trans hj)
     rw [Function.iterate_succ_apply'] at hj ⊢
     have hle := (lt_strongTriadicRegularityStep F g η μ r (step^[j] B₀)).le
     obtain ⟨C, hCt, hCm, hC, hgood⟩ | ⟨C, hCt, hCm, hC, hE⟩ := ih (hle.trans hj)
@@ -331,9 +327,8 @@ theorem exists_strong_topRegularOverMostPolyads_lowerSkeletonRegular
   rw [strongTriadicRegularityBound_def, Function.iterate_succ_apply'] at hV ⊢
   have hle : step^[⌊2 / g⌋₊] B₀ ≤ step (step^[⌊2 / g⌋₊] B₀) :=
     (lt_strongTriadicRegularityStep F g η μ r _).le
-  have h6 : 6 ≤ Fintype.card V := (le_max_right _ _).trans ((Function.monotone_iterate_of_id_le
-    (fun B ↦ (lt_strongTriadicRegularityStep F g η μ r B).le) (Nat.zero_le _) B₀).trans
-      (hle.trans hV))
+  have h6 : 6 ≤ Fintype.card V := (le_max_right _ _).trans
+    ((le_iterate_strongTriadicRegularityStep F g η μ r _ B₀).trans (hle.trans hV))
   have hK : 1 < (⌊2 / g⌋₊ + 1 : ℕ) * (g / 2) := by
     rw [← div_lt_iff₀ (by positivity), one_div_div, Nat.cast_add, Nat.cast_one]
     exact Nat.lt_floor_add_one _

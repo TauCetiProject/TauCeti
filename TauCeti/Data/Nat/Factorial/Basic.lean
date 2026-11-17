@@ -20,7 +20,9 @@ square into falling factorials, which converts second factorial moments into sec
 and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
 termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
-termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
+termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`, and
+`Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
+number of triples of `n` elements with the number of injective ones.
 -/
 
 public section
@@ -74,5 +76,24 @@ theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
     exact le_of_dvd (factorial_pos _) (factorial_mul_factorial_dvd_factorial_add n n)
   rw [factorial_succ, Nat.mul_pow, Nat.pow_two n !]
   exact Nat.mul_le_mul hn hc
+
+/-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
+`n ^ 3 ≤ 2 * (n)₃`. -/
+theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
+    n ^ 3 ≤ 2 * n.descFactorial 3 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  -- `(k + 6) ^ 2 = (k + 6) * (k + 4) + 2 * (k + 6) ≤ (k + 6) * (k + 4) + (k + 4) * (k + 4)`.
+  have h : (k + 6) * (k + 6) ≤ 2 * ((k + 5) * (k + 4)) := by
+    have h2 : 2 * (k + 6) ≤ (k + 4) * (k + 4) :=
+      Nat.le_trans (by omega) (Nat.mul_le_mul_right (k + 4) (show 4 ≤ k + 4 by omega))
+    calc (k + 6) * (k + 6) = (k + 6) * (k + 4) + 2 * (k + 6) := by grind
+      _ ≤ (k + 6) * (k + 4) + (k + 4) * (k + 4) := Nat.add_le_add_left h2 _
+      _ = 2 * ((k + 5) * (k + 4)) := by grind
+  rw [show k + 6 = k + 5 + 1 from rfl, succ_descFactorial_succ, show k + 5 = k + 4 + 1 from rfl,
+    succ_descFactorial_succ, show k + 4 = k + 3 + 1 from rfl, succ_descFactorial_succ,
+    descFactorial_zero]
+  calc (k + 6) ^ 3 = (k + 6) * ((k + 6) * (k + 6)) := by grind
+    _ ≤ (k + 6) * (2 * ((k + 5) * (k + 4))) := Nat.mul_le_mul_left _ h
+    _ = _ := by grind
 
 end Nat
