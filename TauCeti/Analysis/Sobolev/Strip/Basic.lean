@@ -39,6 +39,11 @@ Floer theory act: on the cylinder `ℝ × S¹`, whose sections are the maps of p
   parts against test functions supported in the open strip `ℝ × (0, 1)` shows that `ξ_s` and `ξ_t`
   are the weak derivatives of `ξ` (`TauCeti.HasWeakLineDerivOn`), which vanish where `ξ` does
   (`TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`).
+* **Pairing identities.** Pairing an `L²` jet with `L²` coefficients through a continuous bilinear
+  map is a continuous linear functional of the jet, so an integral identity for this pairing that
+  holds on the jets of the test maps in `S` holds on all of `H1 S`
+  (`TauCeti.StripSobolev.integral_add_eq_zero_of_mem_H1`). This gives both the weak derivatives
+  above and the weak boundary conditions of `TauCeti.Analysis.Sobolev.Strip.BoundaryCondition`.
 * **Translation invariance.** The translation `(s, t) ↦ (s + a, t)` preserves the measure of the
   strip (`TauCeti.StripSobolev.measurePreserving_add_fst`) and commutes with taking jets
   (`TauCeti.StripSobolev.jet_comp_add`). If `S` is invariant under it, it acts on `H1 S` by a
@@ -199,8 +204,8 @@ theorem H1_def : H1 S = ((S.comap (testMap V).subtype).map (jetₗ V)).topologic
 /-- `H1 S` is the closure of the set of jets of the test maps in `S`. -/
 theorem coe_H1 : (H1 S : Set (Lp (V × V × V) 2 stripMeasure)) =
     closure (jetₗ V '' {ξ | (ξ : ℝ × ℝ → V) ∈ S}) := by
-  rw [H1_def, Submodule.topologicalClosure_coe, Submodule.map_coe]
-  rfl
+  simp only [H1_def, Submodule.topologicalClosure_coe, Submodule.map_coe, Submodule.comap_coe,
+    Submodule.coe_subtype, Set.preimage, SetLike.mem_coe]
 
 /-- A closed set containing the jets of all test maps in `S` contains `H1 S`. -/
 theorem H1_subset_of_isClosed {C : Set (Lp (V × V × V) 2 stripMeasure)} (hC : IsClosed C)
@@ -235,6 +240,67 @@ def valueL : H1 S →L[ℝ] Lp V 2 stripMeasure :=
 theorem coeFn_valueL (x : H1 S) :
     valueL S x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).1 :=
   (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL _
+
+/-! ### Pairing `L²` jets with `L²` coefficients -/
+
+section Pairing
+
+variable {A F : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] (B : A →L[ℝ] V →L[ℝ] F) (P : V × V × V →L[ℝ] V) {g₁ g₂ : ℝ × ℝ → A}
+
+/-- Pairing the `L²` jet of a test map `ξ` with coefficients `g₁` and `g₂` in `L²`, through a
+continuous bilinear map `B`, on a component `P` of the jet and on the value, gives the integral of
+the same pairing with the jet of `ξ`. -/
+theorem integral_jetₗ_add_eq_integral (hg₁ : MemLp g₁ 2 stripMeasure)
+    (hg₂ : MemLp g₂ 2 stripMeasure) (ξ : testMap V) :
+    ∫ z, B (g₁ z) (P (jetₗ V ξ z)) ∂stripMeasure + ∫ z, B (g₂ z) (jetₗ V ξ z).1 ∂stripMeasure =
+      ∫ z, (B (g₁ z) (P (jet (ξ : ℝ × ℝ → V) z)) + B (g₂ z) ((ξ : ℝ × ℝ → V) z))
+        ∂stripMeasure := by
+  have hj := memLp_jet ξ.2
+  have hint₁ : Integrable (fun z ↦ B (g₁ z) (P (jet (ξ : ℝ × ℝ → V) z))) stripMeasure :=
+    memLp_one_iff_integrable.1 (B.memLp_of_bilin 1 hg₁ (P.comp_memLp' hj))
+  have hint₂ : Integrable (fun z ↦ B (g₂ z) ((ξ : ℝ × ℝ → V) z)) stripMeasure :=
+    memLp_one_iff_integrable.1
+      (B.memLp_of_bilin 1 hg₂ ((ContinuousLinearMap.fst ℝ V (V × V)).comp_memLp' hj))
+  rw [integral_add hint₁ hint₂]
+  congr 1 <;> exact integral_congr_ae ((coeFn_jetₗ ξ).mono fun z hz ↦ by simp [hz, jet_apply])
+
+variable [CompleteSpace F]
+
+/-- **Pairing identities pass from the test maps in `S` to `H1 S`.** Let `B` be a continuous
+bilinear map, `g₁` and `g₂` coefficients in `L²` and `P` a component of the jet. If
+`∫ B g₁ (P (jet ξ)) + B g₂ ξ` vanishes for every test map `ξ` in `S`, then
+`∫ B g₁ (P x) + ∫ B g₂ x₁ = 0` for every `L²` jet `x = (x₁, x_s, x_t)` in `H1 S`: the left side is
+a continuous linear functional of `x`, vanishing on the jets of the test maps in `S`. -/
+theorem integral_add_eq_zero_of_mem_H1 (hg₁ : MemLp g₁ 2 stripMeasure)
+    (hg₂ : MemLp g₂ 2 stripMeasure)
+    (h : ∀ ξ : testMap V, (ξ : ℝ × ℝ → V) ∈ S →
+      ∫ z, (B (g₁ z) (P (jet (ξ : ℝ × ℝ → V) z)) + B (g₂ z) ((ξ : ℝ × ℝ → V) z))
+        ∂stripMeasure = 0)
+    {x : Lp (V × V × V) 2 stripMeasure} (hx : x ∈ H1 S) :
+    ∫ z, B (g₁ z) (P (x z)) ∂stripMeasure + ∫ z, B (g₂ z) (x z).1 ∂stripMeasure = 0 := by
+  set L : Lp (V × V × V) 2 stripMeasure →L[ℝ] F :=
+    (B.lpPairing stripMeasure 2 2 (hg₁.toLp g₁)).comp (P.compLpL 2 stripMeasure) +
+      (B.lpPairing stripMeasure 2 2 (hg₂.toLp g₂)).comp
+        ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
+  have hL : ∀ f : Lp (V × V × V) 2 stripMeasure, L f =
+      ∫ z, B (g₁ z) (P (f z)) ∂stripMeasure + ∫ z, B (g₂ z) (f z).1 ∂stripMeasure := by
+    intro f
+    simp only [L, add_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.lpPairing_eq_integral]
+    congr 1 <;> refine integral_congr_ae ?_
+    · filter_upwards [hg₁.coeFn_toLp, P.coeFn_compLpL f] with z h₁ h₂
+      simp [h₁, h₂]
+    · filter_upwards [hg₂.coeFn_toLp,
+        (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f] with z h₁ h₂
+      simp [h₁, h₂]
+  have hker : (H1 S : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ {f | L f = 0} :=
+    H1_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun ξ hξ ↦ by
+      rw [mem_ofPred_eq, hL, integral_jetₗ_add_eq_integral B P hg₁ hg₂, h ξ hξ]
+  rw [← hL]
+  exact hker hx
+
+end Pairing
 
 /-! ### Elements of `H1 S` are determined by their values -/
 
@@ -306,44 +372,11 @@ private theorem integral_smul_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stri
   have hφe : MemLp (fun z ↦ fderiv ℝ φ z e) 2 stripMeasure :=
     ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
       (hφs.fderiv_apply (𝕜 := ℝ) e)
-  set B : ℝ →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.lsmul ℝ ℝ
-  set Λ : Lp (V × V × V) 2 stripMeasure →L[ℝ] V :=
-    (B.lpPairing stripMeasure 2 2 (hφ₂.toLp φ)).comp (P.compLpL 2 stripMeasure) +
-      (B.lpPairing stripMeasure 2 2 (hφe.toLp _)).comp
-        ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
-  have hΛ : ∀ f : Lp (V × V × V) 2 stripMeasure, Λ f =
-      ∫ z, φ z • P (f z) ∂stripMeasure + ∫ z, fderiv ℝ φ z e • (f z).1 ∂stripMeasure := by
-    intro f
-    simp only [Λ, add_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.lpPairing_eq_integral]
-    congr 1 <;> refine integral_congr_ae ?_
-    · filter_upwards [hφ₂.coeFn_toLp, P.coeFn_compLpL f] with z h₁ h₂
-      simp [B, h₁, h₂]
-    · filter_upwards [hφe.coeFn_toLp,
-        (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f] with z h₁ h₂
-      simp [B, h₁, h₂]
-  -- `Λ` vanishes on the jets of test maps, hence on their closure `H1 S`.
-  have hker : (H1 S : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ {f | Λ f = 0} := by
-    refine H1_subset_of_isClosed (isClosed_eq Λ.continuous continuous_const) fun ξ _ ↦ ?_
-    rw [mem_ofPred_eq, hΛ]
-    have hξ := coeFn_jetₗ ξ
-    have hξ2 := (mem_testMap_iff.1 ξ.2).1
-    have hint₁ : Integrable (fun z ↦ φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e) stripMeasure :=
-      (hφ.continuous.smul ((hξ2.continuous_fderiv (by norm_num)).clm_apply
-        continuous_const)).integrable_of_hasCompactSupport (hφs.smul_right)
-    have hint₂ : Integrable (fun z ↦ fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z) stripMeasure :=
-      (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).smul
-        hξ2.continuous).integrable_of_hasCompactSupport ((hφs.fderiv_apply (𝕜 := ℝ) e).smul_right)
-    have e₁ : ∫ z, φ z • P (jetₗ V ξ z) ∂stripMeasure =
-        ∫ z, φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e ∂stripMeasure :=
-      integral_congr_ae (hξ.mono fun z hz ↦ by simp only [hz, hP])
-    have e₂ : ∫ z, fderiv ℝ φ z e • (jetₗ V ξ z).1 ∂stripMeasure =
-        ∫ z, fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z ∂stripMeasure :=
-      integral_congr_ae (hξ.mono fun z hz ↦ by simp only [hz, jet_apply])
-    rw [e₁, e₂, ← integral_add hint₁ hint₂]
-    exact integral_smul_fderiv_add_eq_zero hφ hφU ξ.2 he
-  rw [← hΛ]
-  exact hker hx
+  have h := integral_add_eq_zero_of_mem_H1 (ContinuousLinearMap.lsmul ℝ ℝ) P hφ₂ hφe
+    (fun ξ _ ↦ by
+      simpa only [ContinuousLinearMap.lsmul_apply, hP] using
+        integral_smul_fderiv_add_eq_zero hφ hφU ξ.2 he) hx
+  simpa only [ContinuousLinearMap.lsmul_apply] using h
 
 /-- On the open strip `ℝ × (0, 1)`, the derivative component `P x` of an `L²` jet `x ∈ H1 S` in
 the coordinate direction `e` is the weak derivative of its value `x₁` in the direction `e`. -/

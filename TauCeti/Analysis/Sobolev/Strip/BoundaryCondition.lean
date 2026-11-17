@@ -158,24 +158,14 @@ private theorem integral_jetₗ_add_eq_integral_sub (hψ : ContDiff ℝ 1 ψ)
     ∫ z, ψ z (jetₗ V ξ z).2.2 ∂stripMeasure +
         ∫ z, fderiv ℝ ψ z (0, 1) (jetₗ V ξ z).1 ∂stripMeasure =
       ∫ s, (ψ (s, 1) ((ξ : ℝ × ℝ → V) (s, 1)) - ψ (s, 0) ((ξ : ℝ × ℝ → V) (s, 0))) := by
-  have hj := coeFn_jetₗ ξ
-  have hξ1 : ContDiff ℝ 1 (ξ : ℝ × ℝ → V) := (mem_testMap_iff.1 ξ.2).1.of_le (by norm_num)
-  have hψe : HasCompactSupport fun z ↦ fderiv ℝ ψ z (0, 1) := hψs.fderiv_apply (𝕜 := ℝ) _
-  have hint₁ : Integrable (fun z ↦ ψ z (fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1))) stripMeasure :=
-    (hψ.continuous.clm_apply ((hξ1.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const)).integrable_of_hasCompactSupport
-        (hψs.mono fun z hz h0 ↦ hz (by simp [h0]))
-  have hint₂ : Integrable (fun z ↦ fderiv ℝ ψ z (0, 1) ((ξ : ℝ × ℝ → V) z)) stripMeasure :=
-    (((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).clm_apply
-      hξ1.continuous).integrable_of_hasCompactSupport
-        (hψe.mono fun z hz h0 ↦ hz (by simp [h0]))
-  have e₁ : ∫ z, ψ z (jetₗ V ξ z).2.2 ∂stripMeasure =
-      ∫ z, ψ z (fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)) ∂stripMeasure :=
-    integral_congr_ae (hj.mono fun z hz ↦ by simp only [hz, jet_apply])
-  have e₂ : ∫ z, fderiv ℝ ψ z (0, 1) (jetₗ V ξ z).1 ∂stripMeasure =
-      ∫ z, fderiv ℝ ψ z (0, 1) ((ξ : ℝ × ℝ → V) z) ∂stripMeasure :=
-    integral_congr_ae (hj.mono fun z hz ↦ by simp only [hz, jet_apply])
-  rw [e₁, e₂, ← integral_add hint₁ hint₂, integral_apply_fderiv_add_eq_integral_sub hψ ξ.2]
+  have h := integral_jetₗ_add_eq_integral (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ))
+    ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)))
+    (hψ.continuous.memLp_of_hasCompactSupport hψs)
+    (((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
+      (hψs.fderiv_apply (𝕜 := ℝ) (0, 1))) ξ
+  simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_snd', jet_apply] at h
+  rw [h, integral_apply_fderiv_add_eq_integral_sub hψ ξ.2]
 
 variable {Λ₀ Λ₁ : Submodule ℝ V}
 
@@ -187,39 +177,20 @@ theorem integral_apply_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stripMeasur
     (hx : x ∈ H1 (boundaryCondition Λ₀ Λ₁)) (hψ : ContDiff ℝ 1 ψ) (hψs : HasCompactSupport ψ)
     (hψ₀ : ∀ s, ∀ v ∈ Λ₀, ψ (s, 0) v = 0) (hψ₁ : ∀ s, ∀ v ∈ Λ₁, ψ (s, 1) v = 0) :
     ∫ z, ψ z (x z).2.2 ∂stripMeasure + ∫ z, fderiv ℝ ψ z (0, 1) (x z).1 ∂stripMeasure = 0 := by
-  have hψ₂ : MemLp ψ 2 stripMeasure := hψ.continuous.memLp_of_hasCompactSupport hψs
-  have hψe : MemLp (fun z ↦ fderiv ℝ ψ z (0, 1)) 2 stripMeasure :=
-    ((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
-      (hψs.fderiv_apply (𝕜 := ℝ) _)
-  set B : (V →L[ℝ] ℝ) →L[ℝ] V →L[ℝ] ℝ := ContinuousLinearMap.id ℝ _
-  set P : V × V × V →L[ℝ] V :=
-    (ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V))
-  set L : Lp (V × V × V) 2 stripMeasure →L[ℝ] ℝ :=
-    (B.lpPairing stripMeasure 2 2 (hψ₂.toLp ψ)).comp (P.compLpL 2 stripMeasure) +
-      (B.lpPairing stripMeasure 2 2 (hψe.toLp _)).comp
-        ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
-  have hL : ∀ f : Lp (V × V × V) 2 stripMeasure, L f =
-      ∫ z, ψ z (f z).2.2 ∂stripMeasure + ∫ z, fderiv ℝ ψ z (0, 1) (f z).1 ∂stripMeasure := by
-    intro f
-    simp only [L, add_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.lpPairing_eq_integral]
-    congr 1 <;> refine integral_congr_ae ?_
-    · filter_upwards [hψ₂.coeFn_toLp, P.coeFn_compLpL f] with z h₁ h₂
-      simp [B, P, h₁, h₂]
-    · filter_upwards [hψe.coeFn_toLp,
-        (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f] with z h₁ h₂
-      simp [B, h₁, h₂]
-  -- `L` vanishes on the jets of the test maps satisfying the boundary conditions, by Green's
-  -- formula, hence on their closure.
-  have hker : (H1 (boundaryCondition Λ₀ Λ₁) : Set (Lp (V × V × V) 2 stripMeasure)) ⊆
-      {f | L f = 0} := by
-    refine H1_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun ξ hbc ↦ ?_
-    rw [mem_ofPred_eq, hL, integral_jetₗ_add_eq_integral_sub hψ hψs ξ]
-    have h0 : ∀ s, ψ (s, 1) ((ξ : ℝ × ℝ → V) (s, 1)) - ψ (s, 0) ((ξ : ℝ × ℝ → V) (s, 0)) = 0 :=
-      fun s ↦ by rw [hψ₁ s _ (hbc s).2, hψ₀ s _ (hbc s).1, sub_zero]
-    simp [h0]
-  rw [← hL]
-  exact hker hx
+  have h := integral_add_eq_zero_of_mem_H1 (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ))
+    ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)))
+    (hψ.continuous.memLp_of_hasCompactSupport hψs)
+    (((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
+      (hψs.fderiv_apply (𝕜 := ℝ) (0, 1))) (fun ξ hbc ↦ ?_) hx
+  · simpa only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_snd'] using h
+  -- The boundary terms of Green's formula vanish on the maps satisfying the boundary conditions.
+  simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_snd', jet_apply]
+  rw [integral_apply_fderiv_add_eq_integral_sub hψ ξ.2]
+  have h0 : ∀ s, ψ (s, 1) ((ξ : ℝ × ℝ → V) (s, 1)) - ψ (s, 0) ((ξ : ℝ × ℝ → V) (s, 0)) = 0 :=
+    fun s ↦ by rw [hψ₁ s _ (hbc s).2, hψ₀ s _ (hbc s).1, sub_zero]
+  simp [h0]
 
 /-- Testing the weak boundary conditions against `ψ(s, t) = β(s) γ(t) ℓ`: for a test map whose
 jet lies in `H1 (boundaryCondition Λ₀ Λ₁)`, a smooth compactly supported `γ` and a functional `ℓ`
