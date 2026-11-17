@@ -24,10 +24,10 @@ Neither projectivity nor semisimplicity is needed for the generation criterion. 
 is essential; no finite-generation hypothesis is required when a lower bound is supplied.
 
 The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
-scalars and preserved by `A`-linear maps (`Submodule.map_mem_smul_top`): its degree-`p` components
-are sums of products `a • y` with `a` of positive degree `i` and `y` of degree `p - i`. Over a
-nonnegatively graded scalar semiring, every finitely generated graded `A`-module is automatically
-bounded below (`exists_piece_eq_bot_of_lt_of_moduleFinite`), giving the generating-degree criterion
+scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
+and `y` of degree `p - i`. Over a nonnegatively graded scalar semiring, every finitely generated
+graded `A`-module is automatically bounded below (`exists_piece_eq_bot_of_lt_of_moduleFinite`),
+giving the generating-degree criterion
 `isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite` without an explicit bound.
 
 ## References
@@ -38,22 +38,6 @@ bounded below (`exists_piece_eq_bot_of_lt_of_moduleFinite`), giving the generati
 -/
 
 public section
-
-namespace Submodule
-
-/-- Every `A`-linear map sends `I • ⊤` into `I • ⊤` for any `k`-submodule `I` of `A`. -/
-theorem map_mem_smul_top {k : Type*} {A : Type*} [Semiring k] [Semiring A] [Module k A]
-    {M : Type*} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
-    {N : Type*} [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
-    (I : Submodule k A) (g : M →ₗ[A] N) {x : M} (hx : x ∈ I • (⊤ : Submodule k M)) :
-    g x ∈ I • (⊤ : Submodule k N) := by
-  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_) (fun _ _ hx hy ↦ ?_)
-  · rw [g.map_smul]
-    exact Submodule.smul_mem_smul ha Submodule.mem_top
-  · rw [map_add]
-    exact add_mem hx hy
-
-end Submodule
 
 namespace TauCeti.InternalGrading
 

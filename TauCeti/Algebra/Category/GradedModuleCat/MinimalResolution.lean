@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 public import TauCeti.Algebra.Module.GradedModule.Nakayama
+import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # Ext and uniqueness of minimal graded resolutions
@@ -27,11 +28,12 @@ resolutions.
 any supply of minimal projective surjections that is stable under passing to kernels.
 
 When the terms of a minimal resolution have gradings bounded below, any chain endomorphism
-homotopic to the identity is an isomorphism: graded Nakayama shows each component is surjective,
-projectivity splits it, and graded Nakayama on the kernel shows it is injective. Consequently, any
-two minimal graded projective resolutions with bounded-below terms — in particular, with finitely
-generated terms over a nonnegatively graded algebra — are isomorphic as chain complexes and
-term-by-term in `GradedModuleCat` (`GradedProjectiveResolution.IsMinimal.isoOfMinimal`,
+homotopic to the identity is an isomorphism by
+`GradedModuleCat.isIso_of_sub_id_mem_positive_smul_top` (each component is congruent to the identity
+modulo `A₊`). Consequently, any two minimal graded projective resolutions with bounded-below terms
+— in particular, with finitely generated terms over a nonnegatively graded algebra — are isomorphic
+as chain complexes and term-by-term in `GradedModuleCat`
+(`GradedProjectiveResolution.IsMinimal.isoOfMinimal`,
 `GradedProjectiveResolution.IsMinimal.termObjIso`).
 
 ## References
@@ -64,48 +66,6 @@ universe w v uk uA
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} {M N N' : GradedModuleCat.{v} 𝒜}
-
-namespace GradedModuleCat
-
-/-- On a projective graded module with grading bounded below, any homogeneous endomorphism that
-agrees with the identity modulo `A₊ P` is an isomorphism in `GradedModuleCat 𝒜`. -/
-theorem isIso_of_sub_id_mem_positive_smul_top
-    {P : GradedModuleCat.{v} 𝒜} [Projective P] {b : ℤ} (hb : ∀ p < b, P.grading.piece p = ⊥)
-    {f : P ⟶ P}
-    (hf : ∀ x : P, f.hom x - x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P)) :
-    IsIso f := by
-  have hrange : LinearMap.range f.hom = ⊤ :=
-    InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝒜 (LinearMap.range f.hom)
-      f.isHomogeneous.isHomogeneous_range b hb fun p x _ ↦
-        Submodule.mem_sup.2 ⟨f.hom x, LinearMap.mem_range_self f.hom x, -(f.hom x - x),
-          neg_mem (hf x), by abel⟩
-  have hsurj : Function.Surjective f.hom := LinearMap.range_eq_top.1 hrange
-  have : Epi f := (epi_iff_surjective f).2 hsurj
-  let σ : P ⟶ P := Projective.factorThru (𝟙 P) f
-  have hσ : σ ≫ f = 𝟙 P := Projective.factorThru_comp (𝟙 P) f
-  let π : P →ₗ[A] kernelObj f :=
-    LinearMap.codRestrict (LinearMap.ker f.hom) (LinearMap.id - σ.hom.comp f.hom) fun y ↦ by
-      have hy : (σ ≫ f).hom (f.hom y) = f.hom y := by simp [hσ]
-      simpa [LinearMap.mem_ker, sub_eq_zero] using hy.symm
-  have hker_top :
-      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (kernelObj f)) = ⊤ := by
-    refine top_unique fun z _ ↦ ?_
-    have hz : z.1 ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P) := by
-      have hz0 : f.hom z.1 = 0 := z.2
-      simpa [hz0] using neg_mem (hf z.1)
-    have hπz : π z.1 = z := Subtype.ext (by simp [π])
-    exact hπz ▸ Submodule.map_mem_smul_top _ π hz
-  have hker_below : ∀ p < b, (kernelObj f).grading.piece p = ⊥ := fun p hp ↦
-    (Submodule.eq_bot_iff _).2 fun z hz ↦ Subtype.ext <|
-      (Submodule.eq_bot_iff _).1 (hb p hp) z.1 ((InternalGrading.mem_ker_piece _ _).1 hz)
-  let _ := (kernelObj f).gradedSMul
-  have : Subsingleton (kernelObj f) :=
-    InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hker_below hker_top
-  have hinj : Function.Injective f.hom :=
-    LinearMap.ker_eq_bot.1 Submodule.eq_bot_of_subsingleton
-  exact (isIso_iff_bijective f).2 ⟨hinj, hsurj⟩
-
-end GradedModuleCat
 
 namespace GradedProjectiveResolution
 

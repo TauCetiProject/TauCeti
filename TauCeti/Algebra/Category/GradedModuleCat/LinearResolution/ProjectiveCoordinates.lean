@@ -77,8 +77,9 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
     (S i).obj.smulGradedDimension (e i) *
         bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i =
       C (Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) : ℤ) * T n := by
-  have hgen : (r.finiteProjectiveTerm n).obj.grading.IsGeneratedInDegree A (n : ℤ) :=
-    (isLinear_iff.mp hr) n
+  have hgen : (r.finiteProjectiveTerm n).obj.grading.IsGeneratedInDegree A (n : ℤ) := by
+    rw [finiteProjectiveTerm_obj]
+    exact (isLinear_iff.mp hr) n
   rw [smulGradedDimension_mul_repr_of_isGeneratedInDegree S he he₀ hI hne bP hbP
     (r.finiteProjectiveTerm n) hgen i hconc]
   rw [finiteProjectiveTerm_obj]

@@ -157,7 +157,8 @@ theorem coeff_bettiPoincarePowerSeries_of_iso_shiftObj [DecidableEq I] {n : ℕ}
       if i = j then T d else 0 := by
   have hiso : r.finiteProjectiveTerm n ≅
       ⟨P.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj P.property d⟩ :=
-    (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso e
+    (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso
+      (eqToIso (r.finiteProjectiveTerm_obj n) ≪≫ e)
   rw [coeff_bettiPoincarePowerSeries, LaurentK0.of_congr.{uA} _ hiso,
     laurentK0_projective_of_shiftObj P d, ← hbP, map_smul, bP.repr_self,
     Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
@@ -241,10 +242,13 @@ def IsMinimal.finiteProjectiveTermIso
     (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
     [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
     r₁.finiteProjectiveTerm n ≅ r₂.finiteProjectiveTerm n :=
-  (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso
-    (hr₁.termObjIso hr₂ hb₁ hb₂ n)
+  (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso <|
+    eqToIso (r₁.finiteProjectiveTerm_obj n) ≪≫
+      hr₁.termObjIso hr₂ hb₁ hb₂ n ≪≫
+      eqToIso (r₂.finiteProjectiveTerm_obj n).symm
 
-/-- The underlying morphism of `(finiteProjectiveTermIso ...).hom` is `(termObjIso ...).hom`. -/
+/-- The underlying morphism of `(finiteProjectiveTermIso ...).hom` is `(termObjIso ...).hom`
+conjugated by `eqToHom` along `finiteProjectiveTerm_obj`. -/
 @[simp]
 theorem IsMinimal.finiteProjectiveTermIso_hom_hom
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
@@ -252,11 +256,15 @@ theorem IsMinimal.finiteProjectiveTermIso_hom_hom
     (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
     [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
     (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n).hom.hom =
-      (hr₁.termObjIso hr₂ hb₁ hb₂ n).hom := by
+      eqToHom (r₁.finiteProjectiveTerm_obj n) ≫
+        (hr₁.termObjIso hr₂ hb₁ hb₂ n).hom ≫
+        eqToHom (r₂.finiteProjectiveTerm_obj n).symm := by
   rw [← ObjectProperty.ι_map]
-  exact (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.map_preimage _
+  exact ((gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.map_preimage _).trans
+    (by simp only [Iso.trans_hom, eqToIso.hom])
 
-/-- Including `finiteProjectiveTermIso` into `GradedModuleCat 𝒜` recovers `termObjIso`. -/
+/-- Including `finiteProjectiveTermIso` into `GradedModuleCat 𝒜` recovers `termObjIso`
+conjugated by `eqToIso` along `finiteProjectiveTerm_obj`. -/
 @[simp]
 theorem IsMinimal.mapIso_finiteProjectiveTermIso
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
@@ -265,10 +273,15 @@ theorem IsMinimal.mapIso_finiteProjectiveTermIso
     [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
     (gradedFiniteProjectiveModules 𝒜).ι.mapIso
         (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n) =
-      hr₁.termObjIso hr₂ hb₁ hb₂ n :=
-  Iso.ext <| by rw [Functor.mapIso_hom, ObjectProperty.ι_map, finiteProjectiveTermIso_hom_hom]
+      eqToIso (r₁.finiteProjectiveTerm_obj n) ≪≫
+        hr₁.termObjIso hr₂ hb₁ hb₂ n ≪≫
+        eqToIso (r₂.finiteProjectiveTerm_obj n).symm :=
+  Iso.ext <| by
+    rw [Functor.mapIso_hom, ObjectProperty.ι_map, finiteProjectiveTermIso_hom_hom]
+    simp only [Iso.trans_hom, eqToIso.hom]
 
-/-- The underlying morphism of `(finiteProjectiveTermIso ...).inv` is `(termObjIso ...).inv`. -/
+/-- The underlying morphism of `(finiteProjectiveTermIso ...).inv` is `(termObjIso ...).inv`
+conjugated by `eqToHom` along `finiteProjectiveTerm_obj`. -/
 @[simp]
 theorem IsMinimal.finiteProjectiveTermIso_inv_hom
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
@@ -276,9 +289,12 @@ theorem IsMinimal.finiteProjectiveTermIso_inv_hom
     (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
     [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
     (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n).inv.hom =
-      (hr₁.termObjIso hr₂ hb₁ hb₂ n).inv := by
+      eqToHom (r₂.finiteProjectiveTerm_obj n) ≫
+        (hr₁.termObjIso hr₂ hb₁ hb₂ n).inv ≫
+        eqToHom (r₁.finiteProjectiveTerm_obj n).symm := by
   rw [← ObjectProperty.ι_map]
-  exact congrArg Iso.inv (hr₁.mapIso_finiteProjectiveTermIso hr₂ hb₁ hb₂ n)
+  exact (congrArg Iso.inv (hr₁.mapIso_finiteProjectiveTermIso hr₂ hb₁ hb₂ n)).trans
+    (by simp only [Iso.trans_inv, eqToIso.inv, Category.assoc])
 
 /-- Any two minimal graded projective resolutions of `M` with bounded-below terms have equal term
 classes in `K₀^gr(proj A)` in any homological degree `n` where both `n`th terms are finitely

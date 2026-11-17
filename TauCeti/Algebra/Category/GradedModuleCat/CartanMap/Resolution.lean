@@ -396,7 +396,6 @@ variable {M : GradedModuleCat.{uA} 𝒜}
 
 /-- A finitely generated term of a concrete graded projective resolution, bundled in the full
 subcategory of finite graded projectives. -/
-@[expose]
 def finiteProjectiveTerm (n : ℕ) [Module.Finite A (r.X n)] :
     (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
   ⟨r.termObj n, gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective n⟩⟩
@@ -404,8 +403,8 @@ def finiteProjectiveTerm (n : ℕ) [Module.Finite A (r.X n)] :
 /-- The underlying graded module of `r.finiteProjectiveTerm n` is `r.termObj n`. -/
 @[simp]
 theorem finiteProjectiveTerm_obj (n : ℕ) [Module.Finite A (r.X n)] :
-    (r.finiteProjectiveTerm n).obj = r.termObj n := by
-  rfl
+    (r.finiteProjectiveTerm n).obj = r.termObj n :=
+  (rfl)
 
 /-- A subsingleton resolution term vanishes in `K₀^gr(proj A)`. -/
 theorem of_finiteProjectiveTerm_eq_zero_of_subsingleton (n : ℕ)
