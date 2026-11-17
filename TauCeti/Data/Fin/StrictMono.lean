@@ -28,8 +28,8 @@ is deduced from its decreasing counterpart `StrictAnti.add_sub_le_nat` by revers
 Consequently, for a strictly increasing `p : Fin r → Fin n`, the complementary gaps
 `n - r + i - p i` are antitone in `i`, and summed together with the gaps `p i - i` they give
 `r (n - r)`. Moreover, the complement of the image of `p` has cardinality `k` whenever `r + k = n`,
-and any strictly increasing `p' ≤ p` with `p' ≠ p` can be incremented by `1` at its rightmost entry
-where `p' i < p i` while remaining strictly increasing and below `p`.
+and any strictly increasing `p' ≤ p` with `p' ≠ p` can be strictly increased at some index
+while remaining strictly increasing and below `p`.
 
 ## Main results
 
@@ -42,8 +42,8 @@ where `p' i < p i` while remaining strictly increasing and below `p`.
   strictly increasing, `n - r + i - p i` is antitone in `i` and
   `∑ i, (p i - i) + ∑ i, (n - r + i - p i) = r (n - r)`.
 * `StrictMono.card_compl_image_eq_of_add_eq`: when `r + k = n`, `#(univ.image p)ᶜ = k`.
-* `StrictMono.exists_update_succ_strictMono`: incrementing the rightmost index where `p' i < p i`
-  preserves strict monotonicity and reduces `∑ i, (p i - p' i)`.
+* `StrictMono.exists_update_strictMono`: strictly increasing `p'` at some index preserves
+  strict monotonicity, stays below `p`, and reduces `∑ i, (p i - p' i)`.
 
 The extension is adapted from `cameronfreer/exchangeability`, pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`.
@@ -137,10 +137,10 @@ theorem card_compl_image_eq_of_add_eq (hp : StrictMono p) {k : ℕ} (hnk : r + k
   omega
 
 /-- Given strictly increasing `p, p' : Fin r → Fin n` with `p' ≤ p` coordinatewise and `p' ≠ p`,
-incrementing the rightmost index `i₀` where `p' i₀ < p i₀` by `1` yields a strictly increasing
-tuple `Function.update p' i₀ v` bounded above by `p`, with `v < p' l` for all `i₀ < l` and
-strictly smaller gap sum `∑ i, (p i - p' i)`. -/
-theorem exists_update_succ_strictMono {p' : Fin r → Fin n} (hp : StrictMono p)
+there exist an index `i₀ : Fin r` and a value `v : Fin n` with `p' i₀ < v` such that
+`Function.update p' i₀ v` is strictly increasing, bounded above by `p`, satisfies `v < p' l`
+for all `i₀ < l`, and has strictly smaller gap sum `∑ i, (p i - p' i)`. -/
+theorem exists_update_strictMono {p' : Fin r → Fin n} (hp : StrictMono p)
     (hp' : StrictMono p') (hle : ∀ i, p' i ≤ p i) (hne : p' ≠ p) :
     ∃ (i₀ : Fin r) (v : Fin n), p' i₀ < v ∧ StrictMono (Function.update p' i₀ v) ∧
       (∀ i, Function.update p' i₀ v i ≤ p i) ∧ (∀ l : Fin r, i₀ < l → v < p' l) ∧

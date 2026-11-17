@@ -250,7 +250,7 @@ private theorem chartBasisEquiv_apply_mem_rankLocus
     Matrix.of fun u v ↦ φ v (N.1.toSubmodule.mkQ (1 ⊗ₜ m u))
   have hB_tri : B.IsLowerTriangular := fun u v (huv : u < v) ↦ by
     obtain ⟨u₀, rfl⟩ := Fin.exists_castSucc_eq.mpr (huv.trans_le (Fin.le_last v)).ne
-    dsimp only [B]; rw [Matrix.of_apply, hφ, show m u₀.castSucc = b (q (e u₀).1) by simp [m], hψq]
+    dsimp only [B, m]; rw [Matrix.of_apply, hφ, Fin.snoc_castSucc, hψq]
     revert huv
     refine v.lastCases (fun _ ↦ Pi.single_eq_of_ne (fun h ↦ ?_) 1) fun v₀ hv ↦
       Pi.single_eq_of_ne (fun h ↦ ?_) 1
@@ -293,16 +293,15 @@ private theorem rankLocus_schubertChartBasis_eq_bot_of_eq_zero (Φ : Matrix (Fin
     Set.image_image, Set.image_image, Submodule.span_le]
   rintro _ ⟨t, ht, rfl⟩
   dsimp only; rw [TensorProduct.mk_apply]
-  set v := (chartEquiv A _ N).1 (1 ⊗ₜ b t)
+  set v := (chartEquiv A _ N).1 (1 ⊗ₜ b t) with hv
   rw [← Finset.univ_sum_single v]
   refine sum_mem fun j _ ↦ ?_
   by_cases hj : j ∈ T
-  · rw [show Pi.single j (v j) = v j • Pi.single j (1 : A) from
-      funext fun _ ↦ by simp [Pi.single_apply]]
+  · rw [← mul_one (v j), ← smul_eq_mul, Pi.single_smul]
     exact Submodule.smul_mem _ (v j) (Submodule.subset_span ⟨⟨j, hj⟩, rfl⟩)
   · have hpj : p i < q j := lt_of_le_of_ne (not_lt.mp (by simpa [T] using hj))
       (schubertComplEmb_ne hp hnk i j).symm
-    rw [show v j = 0 from hzero (Fin.castSucc_lt_succ_iff.mp ht) hpj, Pi.single_zero]
+    rw [hv, hzero (Fin.castSucc_lt_succ_iff.mp ht) hpj, Pi.single_zero]
     exact zero_mem _
 
 /-- **The Schubert rank ideal in the adapted chart.** For a point `N` of the standard chart at the
@@ -321,9 +320,9 @@ theorem iSup_rankLocus_schubertChartBasis
   refine le_antisymm (iSup_le fun i ↦ ?_) (Ideal.span_le.mpr ?_)
   · let π : A →ₐ[R] A ⧸ J := Ideal.Quotient.mkₐ R J
     have hker : RingHom.ker π = J := Ideal.Quotient.mkₐ_ker R J
-    rw [← hker, ← Ideal.map_eq_bot_iff_le_ker, ← rankLocus_map,
-      show N.1 = ((chartBasisEquiv (schubertChartBasis b hp hnk) A).symm Φ).1 by simp [Φ],
-      map_chartBasisEquiv_symm]
+    have hN : (chartBasisEquiv (schubertChartBasis b hp hnk) A).symm Φ = N :=
+      Equiv.symm_apply_apply _ N
+    rw [← hker, ← Ideal.map_eq_bot_iff_le_ker, ← rankLocus_map, ← hN, map_chartBasisEquiv_symm]
     refine rankLocus_schubertChartBasis_eq_bot_of_eq_zero b hp hnk (Φ.map π) (fun i' j hij ↦ ?_) i
     rw [Matrix.map_apply, ← RingHom.mem_ker, hker]
     exact Ideal.subset_span ⟨i', j, hij, rfl⟩
@@ -623,10 +622,10 @@ theorem schubertChartAlgHom_universalLinearMap (i : Fin r) (j : Fin k) :
   have h1 := congrFun (chartBasisEquiv_apply (schubertChartBasis b hp hnk)
     (chartHomEquiv R _ _ (schubertChartAlgHom b hp hnk)) i) j
   rw [schubertChartBasis_inl, chartEquiv_chartHomEquiv_apply_tmul] at h1
+  have haeval : (MvPolynomial.aevalEquiv (univ.image p).echelonFreeEntries R _).symm
+      (AlgHom.id R _) = MvPolynomial.X := funext fun _ ↦ by simp
   rw [← h1, chartHomEquiv_schubertChartAlgHom, schubertCellHomEquiv, Equiv.trans_apply,
-    show (MvPolynomial.aevalEquiv (univ.image p).echelonFreeEntries R _).symm (AlgHom.id R _) =
-      MvPolynomial.X from funext fun _ ↦ by simp,
-    chartBasisEquiv_schubertCellEquiv_symm]
+    haeval, chartBasisEquiv_schubertCellEquiv_symm]
 
 /-- Composing an `R`-algebra map `g` out of the Schubert cell coordinate ring with
 `schubertChartAlgHom` classifies the adapted-chart point `(schubertCellHomEquiv b hp hnk A g).1`. -/
@@ -674,8 +673,9 @@ theorem ker_schubertChartAlgHom :
     let mk : ChartAlgebra R x →ₐ[R] ChartAlgebra R x ⧸ I := Ideal.Quotient.mkₐ R I
     have hN : ∀ i : Fin r,
         (chartHomEquiv R x _ mk).1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥ := by
-      rw [← iSup_eq_bot, show (chartHomEquiv R x _ mk).1 = map mk N₀.1 by
-        simpa [N₀] using chartHomEquiv_comp x mk (AlgHom.id R _)]
+      have hmap : (chartHomEquiv R x _ mk).1 = map mk N₀.1 := by
+        dsimp only [N₀]; rw [← chartHomEquiv_comp x mk (AlgHom.id R _), AlgHom.comp_id]
+      rw [← iSup_eq_bot, hmap]
       simp_rw [rankLocus_map, ← Ideal.map_iSup]
       exact (Ideal.map_eq_bot_iff_le_ker _).mpr (Ideal.Quotient.mkₐ_ker R I).ge
     let g := (schubertCellHomEquiv b hp hnk _).symm ⟨chartHomEquiv R x _ mk, hN⟩

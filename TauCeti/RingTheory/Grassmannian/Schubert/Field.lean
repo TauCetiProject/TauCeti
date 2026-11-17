@@ -81,8 +81,8 @@ theorem mem_chart_and_rankLocus_eq_bot_iff_flagPivots
   constructor
   · rintro ⟨hchart, hrank⟩
     let a := schubertCellEquiv b hp hnk K ⟨⟨N, hchart⟩, hrank⟩
-    rw [show N.toSubmodule = ((schubertCellEquiv b hp hnk K).symm a).1.1.toSubmodule by simp [a],
-      toSubmodule_schubertCellEquiv_symm]
+    have hN : N = ((schubertCellEquiv b hp hnk K).symm a).1.1 := by simp [a]
+    rw [hN, toSubmodule_schubertCellEquiv_symm]
     exact Basis.flagPivots_span_echelonRow (univ.image p) a
   · intro hpiv
     let a := (b.baseChange K).flagCellEquiv (univ.image p) ⟨N.toSubmodule, hpiv⟩
@@ -245,10 +245,13 @@ private theorem toSubmodule_grassmannianCongr_shearEquiv_eq_span {p' : Fin r →
   · rintro _ ⟨l, rfl⟩
     by_cases hl : l = i₀
     · subst l
-      rw [show y i₀ = t • y' i₀ by simp [y', shearEchelonVec, y, smul_smul, mul_inv_cancel₀ ht]]
+      have hy : y i₀ = t • y' i₀ := by
+        simp [y', shearEchelonVec, y, smul_smul, mul_inv_cancel₀ ht]
+      rw [hy]
       exact Submodule.smul_mem _ t (Submodule.subset_span ⟨i₀, rfl⟩)
-    · rw [show y l = y' l + ((b.baseChange L).repr (y l) v) • y' i₀ by
-        simp [y', shearEchelonVec, y, ite_eq_right hl, smul_smul]]
+    · have hy : y l = y' l + ((b.baseChange L).repr (y l) v) • y' i₀ := by
+        simp [y', shearEchelonVec, y, ite_eq_right hl, smul_smul]
+      rw [hy]
       exact add_mem (Submodule.subset_span ⟨l, rfl⟩)
         (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i₀, rfl⟩))
   · rintro _ ⟨l, rfl⟩
@@ -331,13 +334,13 @@ private theorem flagPivots_grassmannianCongr_shearEquiv {p' : Fin r → Fin n} (
         fun ⟨_, hs⟩ ↦ by obtain ⟨l, -, rfl⟩ := mem_image.mp hs; exact ⟨l, rfl⟩⟩
   have heS (l : Fin r) : (eS l : Fin n) = p'' l := rfl
   rw [toSubmodule_grassmannianCongr_shearEquiv_eq_span b jKL huv ht N hpiv,
-    show Set.range y' = Set.range (fun s : univ.image p'' ↦ y' (eS.symm s)) from
-      (eS.symm.surjective.range_comp y').symm]
+    ← eS.symm.surjective.range_comp y']
   refine Basis.flagPivots_span_eq (fun s ↦ ?_) (fun s q hq ↦ ?_)
-  · obtain ⟨l, rfl⟩ := eS.surjective s; rw [Equiv.symm_apply_apply, heS l]
+  · obtain ⟨l, rfl⟩ := eS.surjective s
+    rw [Function.comp_apply, Equiv.symm_apply_apply, heS l]
     exact shearEchelonVec_mem_flag b jKL hp' huv hgt t N hpiv l
   · obtain ⟨l, rfl⟩ := eS.surjective s; obtain ⟨m, -, rfl⟩ := mem_image.mp hq
-    rw [Equiv.symm_apply_apply, heS l]
+    rw [Function.comp_apply, Equiv.symm_apply_apply, heS l]
     exact repr_shearEchelonVec_update b jKL hp' huv hgt ht N hpiv l m
 
 end Shear
@@ -358,16 +361,16 @@ theorem exists_sum_sub_lt_and_map_aeval_zero_eq_of_flagPivots_eq
       (b.baseChange (FractionRing (Polynomial K))).flagPivots
         (map (IsScalarTower.toAlgHom R (Polynomial K) (FractionRing (Polynomial K)))
           N_poly).toSubmodule = univ.image p'' := by
-  obtain ⟨i₀, v, huv, hp'', hp''_le, hgt, hsum⟩ := hp.exists_update_succ_strictMono hp' hle hne
+  obtain ⟨i₀, v, huv, hp'', hp''_le, hgt, hsum⟩ := hp.exists_update_strictMono hp' hle hne
   let jKP : K →ₐ[R] Polynomial K := IsScalarTower.toAlgHom R K _
   let ι : Polynomial K →ₐ[R] FractionRing (Polynomial K) := IsScalarTower.toAlgHom R _ _
   refine ⟨(shearEquiv b huv.ne Polynomial.X).grassmannianCongr (map jKP N),
     Function.update p' i₀ v, hp'',
     fun i ↦ by by_cases hi : i = i₀ <;> simp [hi, huv.le], hp''_le, hsum, ?_, ?_⟩
   · let ev₀ : Polynomial K →ₐ[R] K := (Polynomial.aeval (0 : K)).restrictScalars R
-    rw [map_grassmannianCongr_shearEquiv, show ev₀ Polynomial.X = 0 from Polynomial.aeval_X 0,
-      shearEquiv_zero, ← map_comp,
-      show ev₀.comp jKP = AlgHom.id R K from AlgHom.ext fun _ ↦ by simp [ev₀, jKP],
+    have hev₀_X : ev₀ Polynomial.X = 0 := by simp [ev₀]
+    have hev₀_comp : ev₀.comp jKP = AlgHom.id R K := AlgHom.ext fun _ ↦ by simp [ev₀, jKP]
+    rw [map_grassmannianCongr_shearEquiv, hev₀_X, shearEquiv_zero, ← map_comp, hev₀_comp,
       map_id k (.of R K)]
     ext : 1; simp
   · have ht : ι Polynomial.X ≠ 0 :=

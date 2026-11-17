@@ -82,11 +82,12 @@ theorem minorsIdeal_sup_span_singleton_succ_le (N : Submodule R F) (x : F) (p : 
 theorem minorsIdeal_span_range_eq_bot_of_lt {ι : Type*} [Finite ι] {p : ℕ}
     (h : Nat.card ι < p) (v : ι → F) :
     (Submodule.span R (Set.range v)).minorsIdeal p = ⊥ := by
-  obtain ⟨q, hq⟩ := Nat.exists_eq_succ_of_ne_zero (show p - Nat.card ι ≠ 0 by omega)
+  obtain ⟨q, hq⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.sub_ne_zero_of_lt h)
+  have hp : (q + 1) + Nat.card ι = p := by omega
   refine le_bot_iff.mp ?_
   calc (Submodule.span R (Set.range v)).minorsIdeal p
       = (⊥ ⊔ Submodule.span R (Set.range v)).minorsIdeal ((q + 1) + Nat.card ι) := by
-          rw [bot_sup_eq, show (q + 1) + Nat.card ι = p by omega]
+          rw [bot_sup_eq, hp]
     _ ≤ (⊥ : Submodule R F).minorsIdeal (q + 1) := minorsIdeal_sup_span_range_add_le ⊥ v (q + 1)
     _ = ⊥ := minorsIdeal_bot q
 
