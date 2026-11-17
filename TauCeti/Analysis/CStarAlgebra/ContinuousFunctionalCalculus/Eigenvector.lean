@@ -18,9 +18,7 @@ of `a`:
 `cfc f a - f(μ) = cfc g a * (a - μ)`.
 
 The hypothesis holds for every `f` when the spectrum of `a` is finite (`Set.Finite.continuousOn`),
-and for every `f` continuous on the spectrum when `μ` lies outside it or is an isolated point of
-it (`ContinuousOn.sub_div_sub_of_eventually_imp_eq`), such as a nonzero spectral value of a compact
-operator.
+and for every `f` continuous on the spectrum when `μ` lies outside it.
 
 Consequently `cfc f a` acts as multiplication by `f μ` on every eigenvector of `a` for the
 eigenvalue `μ`, in any module over the algebra. This is the description of the functional
@@ -36,13 +34,9 @@ functional calculus with any spectral construction acting by `f μ` on the eigen
   quotient `g` of `f` at `μ`, whenever `g` is continuous on the spectrum of `a`.
 * `TauCeti.cfc_smul_of_smul_eq_algebraMap_smul`: if `a • m = μ • m` and the difference quotient
   of `f` at `μ` is continuous on the spectrum of `a`, then `cfc f a • m = f(μ) • m`.
-* `ContinuousOn.sub_div_sub_of_eventually_imp_eq`: the difference quotient of a function continuous
-  on a set `S` at a point `μ` that is not an accumulation point of `S` is continuous on `S`.
 -/
 
 public section
-
-open Filter Topology
 
 namespace TauCeti
 
@@ -82,20 +76,3 @@ theorem cfc_smul_of_smul_eq_algebraMap_smul {M : Type*} [AddCommGroup M] [Module
     hm, sub_self, smul_zero]
 
 end TauCeti
-
-/-- The difference quotient `(f x - f μ) / (x - μ)` of a function `f` continuous on a set `S` is
-continuous on `S` as soon as no point of `S` other than `μ` lies near `μ`, that is, when `μ` is an
-isolated point of `S` or does not lie in its closure. -/
-theorem ContinuousOn.sub_div_sub_of_eventually_imp_eq {R : Type*} [Field R] [TopologicalSpace R]
-    [ContinuousMul R] [ContinuousSub R] [ContinuousInv₀ R] {f : R → R} {S : Set R} {μ : R}
-    (hf : ContinuousOn f S) (hμ : ∀ᶠ x in 𝓝 μ, x ∈ S → x = μ) :
-    ContinuousOn (fun x ↦ (f x - f μ) / (x - μ)) S := by
-  intro x hx
-  rcases eq_or_ne x μ with rfl | hxμ
-  · -- Near `x = μ` the set `S` is the single point `μ`.
-    have hpure : 𝓝[S] x ≤ pure x := by
-      rw [le_pure_iff, mem_nhdsWithin_iff_eventually]
-      exact hμ
-    exact (tendsto_pure_nhds _ x).mono_left hpure
-  · exact ((hf x hx).sub continuousWithinAt_const).div
-      (continuousWithinAt_id.sub continuousWithinAt_const) (sub_ne_zero.2 hxμ)

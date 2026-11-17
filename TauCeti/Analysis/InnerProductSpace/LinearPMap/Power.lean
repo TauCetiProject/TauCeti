@@ -50,7 +50,9 @@ the mode `exp(i k x)` by `(1 + k²)^{-1/2}`, which is `1` at `k = 0`.
   (`LinearPMap.isSelfAdjoint_posPow`) inverse to `A^{-s}`
   (`LinearPMap.posPow_negPow`, `LinearPMap.negPow_posPow`), with `A^1 = A`
   (`LinearPMap.posPow_one`) and `A^s u = λ^s u` on eigenvectors
-  (`LinearPMap.posPow_apply_of_apply_eq_smul`).
+  (`LinearPMap.posPow_apply_of_apply_eq_smul`). Its domains decrease in `s`
+  (`LinearPMap.posPow_domain_antitone`), and `A^s A^t = A^{s + t}` on the domain of `A^{s + t}`
+  (`LinearPMap.posPow_posPow`).
 * `LinearPMap.commute_negPow` and `LinearPMap.posPow_apply_of_commute`: a bounded operator
   commuting with `A`, such as the unitary action of a symmetry group, commutes with every power
   and preserves its domain.
@@ -224,6 +226,17 @@ theorem negPow_mem_posPow_domain (s : ℝ≥0) (f : H) :
     A.negPow hA h s f ∈ (A.posPow hA h s).domain :=
   ContinuousLinearMap.apply_mem_domain_inverse_toPMap_top _ f
 
+/-- **Nesting of domains.** The domains of the positive powers decrease: for `s ≤ t`, the domain of
+`A^t` is contained in that of `A^s`. -/
+theorem posPow_domain_antitone (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ)
+    {s t : ℝ≥0} (hst : s ≤ t) : (A.posPow hA h t).domain ≤ (A.posPow hA h s).domain := by
+  rw [posPow_domain, posPow_domain]
+  rintro _ ⟨f, rfl⟩
+  -- `A^{-t} f = A^{-s} (A^{-(t - s)} f)`.
+  refine ⟨A.negPow hA h (t - s) f, ?_⟩
+  simp only [ContinuousLinearMap.coe_coe]
+  rw [← mul_apply_eq_comp, ← negPow_add hpos, add_tsub_cancel_of_le hst]
+
 variable (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) (hker : A.ker = ⊥)
 include hpos hker
 
@@ -252,6 +265,20 @@ theorem posPow_apply_eq_iff (s : ℝ≥0) (u : (A.posPow hA h s).domain) (f : H)
   · intro hu
     rw [show u = ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ from Subtype.ext hu,
       posPow_negPow hpos hker]
+
+/-- **The semigroup law for positive powers.** On the domain of `A^{s + t}`, the power `A^t` takes
+values in the domain of `A^s`, and `A^s A^t = A^{s + t}`. -/
+theorem posPow_posPow (s t : ℝ≥0) (u : (A.posPow hA h (s + t)).domain) :
+    ∃ hu : (u : H) ∈ (A.posPow hA h t).domain,
+      ∃ hu' : A.posPow hA h t ⟨u, hu⟩ ∈ (A.posPow hA h s).domain,
+        A.posPow hA h s ⟨A.posPow hA h t ⟨u, hu⟩, hu'⟩ = A.posPow hA h (s + t) u := by
+  -- `u = A^{-t} (A^{-s} f)` for `f = A^{s + t} u`.
+  have hneg : A.negPow hA h t (A.negPow hA h s (A.posPow hA h (s + t) u)) = u := by
+    rw [← mul_apply_eq_comp, ← negPow_add hpos, add_comm, negPow_posPow hpos hker]
+  obtain ⟨hu, htu⟩ := posPow_apply_of_negPow_apply_eq hpos hker hneg
+  refine ⟨hu, ?_⟩
+  simp_rw [htu]
+  exact ⟨negPow_mem_posPow_domain s _, posPow_negPow hpos hker s _⟩
 
 /-- The positive powers are self-adjoint. -/
 theorem isSelfAdjoint_posPow (s : ℝ≥0) : IsSelfAdjoint (A.posPow hA h s) :=

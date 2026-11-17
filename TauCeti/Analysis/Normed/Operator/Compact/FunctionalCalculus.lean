@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 import TauCeti.Analysis.Normed.Operator.Compact.Spectrum
+import TauCeti.Topology.Algebra.GroupWithZero.DifferenceQuotient
 
 /-!
 # The functional calculus of a compact self-adjoint operator on eigenvectors
