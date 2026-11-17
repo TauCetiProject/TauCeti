@@ -21,7 +21,6 @@ public section
 namespace Polynomial.Chebyshev
 
 section CommRing
-
 variable {R : Type*} [CommRing R]
 
 /-- **Parity of `Sₙ`.** Evaluating `Sₙ` at `-x` multiplies its value at `x` by `(-1)ⁿ`. -/
@@ -44,11 +43,9 @@ theorem S_eval_neg (n : ℤ) (x : R) :
       Polynomial.eval_X, ih1, ih2, Int.negOnePow_add, Int.negOnePow_neg, Int.negOnePow_one,
       Units.val_mul, Units.val_neg, Units.val_one, Int.cast_mul, Int.cast_neg, Int.cast_one]
     ring
-
 end CommRing
 
 section Ordered
-
 variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
 
 private theorem natCast_le_and_one_le_S_eval_sub {x : R} (hx : 2 ≤ x) (n : ℕ) :
@@ -70,22 +67,16 @@ private theorem natCast_le_and_one_le_S_eval_sub {x : R} (hx : 2 ≤ x) (n : ℕ
 
 /-- For `2 ≤ x`, successive natural-indexed Chebyshev `S`-values grow by at least `1`. -/
 theorem one_le_S_eval_sub_S_eval {x : R} (hx : 2 ≤ x) (n : ℕ) :
-    1 ≤ (S R n).eval x - (S R ((n : ℤ) - 1)).eval x :=
-  (natCast_le_and_one_le_S_eval_sub hx n).2
-
+    1 ≤ (S R n).eval x - (S R ((n : ℤ) - 1)).eval x := (natCast_le_and_one_le_S_eval_sub hx n).2
 /-- **Linear lower bound on `[2, ∞)`.** For `2 ≤ x` and `n : ℕ`, `n + 1 ≤ Sₙ(x)`. -/
 theorem natCast_add_one_le_S_eval {x : R} (hx : 2 ≤ x) (n : ℕ) :
-    (n : R) + 1 ≤ (S R n).eval x := by
-  simpa using (natCast_le_and_one_le_S_eval_sub hx (n + 1)).1
-
+    (n : R) + 1 ≤ (S R n).eval x := by simpa using (natCast_le_and_one_le_S_eval_sub hx (n + 1)).1
 /-- For `2 ≤ x` and `n : ℕ`, `Sₙ(x)` is nonnegative. -/
 theorem S_eval_nonneg {x : R} (hx : 2 ≤ x) (n : ℕ) : 0 ≤ (S R n).eval x :=
   (add_nonneg (Nat.cast_nonneg n) zero_le_one).trans (natCast_add_one_le_S_eval hx n)
-
 end Ordered
 
 section LinearOrder
-
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsOrderedRing R]
 
 /-- **Linear lower bound outside `(-2, 2)`.** For `2 ≤ |x|` and `n : ℕ`, `n + 1 ≤ |Sₙ(x)|`. -/
@@ -98,7 +89,6 @@ theorem natCast_add_one_le_abs_S_eval {x : R} (hx : 2 ≤ |x|) (n : ℕ) :
     rcases Int.units_eq_one_or (n : ℤ).negOnePow with hp | hp <;> simp [hp] at hneg
     · exact hneg.trans (le_abs_self _)
     · exact hneg.trans (neg_le_abs _)
-
 end LinearOrder
 
 end Polynomial.Chebyshev

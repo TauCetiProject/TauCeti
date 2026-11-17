@@ -11,17 +11,19 @@ public import TauCeti.GroupTheory.Coxeter.LowRank
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Reflection
 public import TauCeti.RingTheory.Polynomial.Chebyshev.Bounds
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Coxeter presentation and faithfulness of the Weyl group of a Cartan realization
 
 For a `TauCeti.CartanRealization` `R` of a generalized Cartan matrix `A` over a characteristic-zero
-field `K`, we prove central-enlargement invariance (`restrictRootLatticeEquiv`,
-`restrictWeylGroupEquiv`), exact pairwise reflection orders `orderOf_simpleReflectionMem_mul`,
-Kac's Lemma 3.11 and Proposition 3.13 (`coxeterHom`, `coxeterEquiv`, `weylCoxeterSystem`,
-`weylCoxeterSystem_length`, `isRightDescent_weylCoxeterSystem_iff`,
-`length_mul_simpleReflectionMem_lt_iff`), faithfulness on `Q` (`rootLatticeAut_injective`), and
-low-rank/affine checks (`IsEmpty I`, `A₁`, `Fin 2`, `B₂`, `G₂`, and affine `A₁⁽¹⁾`).
+field `K`, we prove central-enlargement invariance (`restrictWeylGroupEquiv`,
+`restrictRootLatticeEquiv_rootLatticeAut`), exact pairwise reflection orders
+`orderOf_simpleReflectionMem_mul`, Kac's Lemma 3.11 and Proposition 3.13 (`coxeterHom`,
+`coxeterHom_injective`, `coxeterEquiv`, `weylCoxeterSystem`, `weylCoxeterSystem_length`,
+`isRightDescent_weylCoxeterSystem_iff`, `length_mul_simpleReflectionMem_lt_iff`), faithfulness on
+`Q` (`rootLatticeAut_injective`), and low-rank/affine checks (`IsEmpty I`, `A₁`, `Fin 2`, `B₂`,
+`G₂`, and affine `A₁⁽¹⁾`).
 -/
 
 public section
@@ -31,106 +33,34 @@ open Module Polynomial.Chebyshev
 namespace TauCeti.CartanRealization
 
 section Restriction
-
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
   (R : CartanRealization A H)
 
-theorem apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter {φ : Dual K H}
-    (hφ : φ ∈ R.rootLattice) {z : H} (hz : z ∈ R.cartanCenter) : φ z = 0 := by
-  rw [R.rootLattice_def] at hφ
-  induction hφ using Submodule.span_induction with
-  | mem _ hx => obtain ⟨i, rfl⟩ := hx; exact (R.mem_cartanCenter_iff z).mp hz i
-  | zero => rfl
-  | add _ _ _ _ ihx ihy => simp [ihx, ihy]
-  | smul _ _ _ ih => simp [ih]
-
-private theorem injOn_dualMap_subtype_rootLattice (M : Submodule K H)
-    (hs : M ⊔ R.cartanCenter = ⊤) : Set.InjOn M.subtype.dualMap R.rootLattice := by
-  intro φ₁ hφ₁ φ₂ hφ₂ h; rw [← sub_eq_zero]; ext x
-  obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
-  have hm0 : (φ₁ - φ₂) m = 0 := by
-    simpa [sub_eq_zero] using congrArg (fun f : Dual K M ↦ f ⟨m, hm⟩) h
-  rw [map_add, hm0, R.apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter (sub_mem hφ₁ hφ₂) hz,
-    add_zero]; rfl
-
-theorem corootAut_mem_of_corootSpan_le (hdiag : ∀ i, A i i = 2) {M : Submodule K H}
-    (hc : R.corootSpan ≤ M) (w : R.weylGroup hdiag) {m : H} (hm : m ∈ M) :
-    R.corootAut hdiag w m ∈ M := by
-  obtain ⟨l, rfl⟩ := R.exists_wordProd_eq hdiag w
-  induction l generalizing m with
-  | nil => simpa using hm
-  | cons i l ih =>
-    rw [wordProd_cons, map_mul, mul_apply_eq_comp, corootAut_simpleReflectionMem,
-      corootReflection_apply]
-    exact sub_mem (ih hm) (M.smul_mem _ (hc (R.coroot_mem_corootSpan i)))
-
 private noncomputable def restrictCorootAut (hdiag : ∀ i, A i i = 2) (M : Submodule K H)
-    (hc : R.corootSpan ≤ M) : R.weylGroup hdiag →* (M ≃ₗ[K] M) where
-  toFun w :=
-    { toFun m := ⟨R.corootAut hdiag w m, R.corootAut_mem_of_corootSpan_le hdiag hc w m.2⟩
-      map_add' x y := Subtype.ext (map_add (R.corootAut hdiag w) x.1 y.1)
-      map_smul' c x := Subtype.ext (map_smul (R.corootAut hdiag w) c x.1)
-      invFun m := ⟨R.corootAut hdiag w⁻¹ m, R.corootAut_mem_of_corootSpan_le hdiag hc w⁻¹ m.2⟩
-      left_inv m := Subtype.ext <| (mul_apply_eq_comp _ _ _).symm.trans (by simp)
-      right_inv m := Subtype.ext <| (mul_apply_eq_comp _ _ _).symm.trans (by simp) }
-  map_one' := by ext; simp
-  map_mul' _ _ := by ext; simp [mul_apply_eq_comp]
+    (hc : R.corootSpan ≤ M) : R.weylGroup hdiag →* (M ≃ₗ[K] M) :=
+  (R.corootAut hdiag).restrictSubmoduleAut M (R.corootAut_mem_of_corootSpan_le hdiag hc)
 
 section SubRealization
-
 variable (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
+  (hdiag : ∀ i, A i i = 2)
 
-@[simp] theorem dualMap_subtype_root (i : I) :
-    M.subtype.dualMap (R.root i) = (R.restrict M hc hs).root i := by ext; simp
-
-private theorem map_dualMap_subtype_rootLattice :
-    R.rootLattice.map (M.subtype.dualMap.restrictScalars ℤ) = (R.restrict M hc hs).rootLattice := by
-  rw [rootLattice_def, rootLattice_def, Submodule.map_span, ← Set.range_comp]
-  exact congrArg (Submodule.span ℤ) (congrArg Set.range (funext (R.dualMap_subtype_root M hc hs)))
-
-/-- **Restriction to a sub-realization identifies root lattices.** -/
-noncomputable def restrictRootLatticeEquiv :
-    R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
-  LinearEquiv.ofBijective
-    ((M.subtype.dualMap.restrictScalars ℤ ∘ₗ R.rootLattice.subtype).codRestrict
-      (R.restrict M hc hs).rootLattice fun α ↦
-        R.map_dualMap_subtype_rootLattice M hc hs ▸ Submodule.mem_map_of_mem α.2)
-    ⟨fun α β h ↦ Subtype.ext <|
-        R.injOn_dualMap_subtype_rootLattice M hs α.2 β.2 (congrArg Subtype.val h),
-      fun β ↦ by
-        have hβ : (β : Dual K M) ∈ R.rootLattice.map (M.subtype.dualMap.restrictScalars ℤ) :=
-          (R.map_dualMap_subtype_rootLattice M hc hs).symm ▸ β.2
-        obtain ⟨φ, hφ, hφβ⟩ := Submodule.mem_map.mp hβ
-        exact ⟨⟨φ, hφ⟩, Subtype.ext hφβ⟩⟩
-
-@[simp] theorem coe_restrictRootLatticeEquiv_apply (α : R.rootLattice) :
-    (R.restrictRootLatticeEquiv M hc hs α : Dual K M) = M.subtype.dualMap (α : Dual K H) := (rfl)
-@[simp] theorem restrictRootLatticeEquiv_root (i : I) :
-    R.restrictRootLatticeEquiv M hc hs ⟨R.root i, R.root_mem_rootLattice i⟩ =
-      ⟨(R.restrict M hc hs).root i, (R.restrict M hc hs).root_mem_rootLattice i⟩ :=
-  Subtype.ext (R.dualMap_subtype_root M hc hs i)
-
-private theorem restrictCorootAut_simpleReflectionMem (hdiag : ∀ i, A i i = 2) (i : I) :
+private theorem restrictCorootAut_simpleReflectionMem (i : I) :
     R.restrictCorootAut hdiag M hc (R.simpleReflectionMem hdiag i) =
       (R.restrict M hc hs).corootReflection hdiag i :=
   LinearEquiv.ext fun m ↦ Subtype.ext <| by
-    simpa [restrictCorootAut] using (R.coe_restrict_corootReflection hdiag M hc hs i m).symm
-
-private theorem restrictCorootAut_mem (hdiag : ∀ i, A i i = 2) (w : R.weylGroup hdiag) :
+    simp [restrictCorootAut, R.coe_restrict_corootReflection hdiag M hc hs i m]
+private theorem restrictCorootAut_mem (w : R.weylGroup hdiag) :
     R.restrictCorootAut hdiag M hc w ∈ (R.restrict M hc hs).corootWeylGroup hdiag := by
-  obtain ⟨l, rfl⟩ := R.exists_wordProd_eq hdiag w
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-    rw [wordProd_cons, map_mul, R.restrictCorootAut_simpleReflectionMem M hc hs hdiag i]
+  induction w using R.weylGroup_induction hdiag with
+  | one => simp
+  | mul_simple i w ih =>
+    rw [map_mul, R.restrictCorootAut_simpleReflectionMem M hc hs hdiag i]
     exact mul_mem (by simpa using ((R.restrict M hc hs).corootReflectionMem hdiag i).2) ih
-
-private noncomputable def restrictWeylGroupHom (hdiag : ∀ i, A i i = 2) :
+private noncomputable def restrictWeylGroupHom :
     R.weylGroup hdiag →* (R.restrict M hc hs).weylGroup hdiag :=
   ((R.restrict M hc hs).corootWeylEquiv hdiag).toMonoidHom.comp <|
     (R.restrictCorootAut hdiag M hc).codRestrict _ (R.restrictCorootAut_mem M hc hs hdiag)
-
-private theorem restrictWeylGroupHom_simpleReflectionMem (hdiag : ∀ i, A i i = 2) (i : I) :
+private theorem restrictWeylGroupHom_simpleReflectionMem (i : I) :
     R.restrictWeylGroupHom M hc hs hdiag (R.simpleReflectionMem hdiag i) =
       (R.restrict M hc hs).simpleReflectionMem hdiag i := by
   have hmem : (R.restrictCorootAut hdiag M hc).codRestrict _
@@ -140,44 +70,42 @@ private theorem restrictWeylGroupHom_simpleReflectionMem (hdiag : ∀ i, A i i =
   simp [restrictWeylGroupHom, hmem]
 
 /-- **The Weyl group of a realization is canonically isomorphic to that of any sub-realization.** -/
-noncomputable def restrictWeylGroupEquiv (hdiag : ∀ i, A i i = 2) :
+noncomputable def restrictWeylGroupEquiv :
     R.weylGroup hdiag ≃* (R.restrict M hc hs).weylGroup hdiag :=
   MulEquiv.ofBijective (R.restrictWeylGroupHom M hc hs hdiag)
     ⟨(injective_iff_map_eq_one _).mpr fun w hw ↦ R.corootAut_injective hdiag <| by
       have hM : R.restrictCorootAut hdiag M hc w = 1 := congrArg Subtype.val <|
         ((R.restrict M hc hs).corootWeylEquiv hdiag).injective (hw.trans (map_one _).symm)
       ext x; obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
-      have hm' : R.corootAut hdiag w m = m :=
-        congrArg Subtype.val (congrArg (fun f : M ≃ₗ[K] M ↦ f ⟨m, hm⟩) hM)
+      have hm' : R.corootAut hdiag w m = m := by
+        simpa [restrictCorootAut] using congrArg (fun f : M ≃ₗ[K] M ↦ (f ⟨m, hm⟩ : H)) hM
       simp [hm', R.corootAut_eq_self_of_mem_cartanCenter hdiag w hz],
     fun w' ↦ by
-      obtain ⟨l, rfl⟩ := (R.restrict M hc hs).exists_wordProd_eq hdiag w'
-      refine ⟨R.wordProd hdiag l, ?_⟩
-      induction l with
-      | nil => simp
-      | cons i l ih =>
-        rw [wordProd_cons, wordProd_cons, map_mul, ih,
-          R.restrictWeylGroupHom_simpleReflectionMem M hc hs hdiag i]⟩
+      induction w' using (R.restrict M hc hs).weylGroup_induction hdiag with
+      | one => exact ⟨1, map_one _⟩
+      | mul_simple i w ih =>
+        obtain ⟨u, rfl⟩ := ih
+        exact ⟨R.simpleReflectionMem hdiag i * u, by
+          rw [map_mul, R.restrictWeylGroupHom_simpleReflectionMem M hc hs hdiag i]⟩⟩
 
-@[simp] theorem restrictWeylGroupEquiv_simpleReflectionMem (hdiag : ∀ i, A i i = 2) (i : I) :
+@[simp] theorem restrictWeylGroupEquiv_simpleReflectionMem (i : I) :
     R.restrictWeylGroupEquiv M hc hs hdiag (R.simpleReflectionMem hdiag i) =
       (R.restrict M hc hs).simpleReflectionMem hdiag i :=
   R.restrictWeylGroupHom_simpleReflectionMem M hc hs hdiag i
-
-theorem dualMap_subtype_smul (hdiag : ∀ i, A i i = 2) (w : R.weylGroup hdiag) (φ : Dual K H) :
+/-- Restriction of dual functionals to `M` is equivariant along `R.restrictWeylGroupEquiv`. -/
+theorem dualMap_subtype_smul (w : R.weylGroup hdiag) (φ : Dual K H) :
     M.subtype.dualMap (w • φ) =
       R.restrictWeylGroupEquiv M hc hs hdiag w • M.subtype.dualMap φ := by
-  obtain ⟨l, rfl⟩ := R.exists_wordProd_eq hdiag w
-  induction l generalizing φ with
-  | nil => simp
-  | cons i l ih =>
-    rw [wordProd_cons, map_mul, restrictWeylGroupEquiv_simpleReflectionMem, mul_smul, mul_smul,
-      ← ih]
-    simpa [Subgroup.smul_def, LinearEquiv.smul_def] using
-      R.dualMap_subtype_simpleReflection hdiag M hc hs i (R.wordProd hdiag l • φ)
-
+  induction w using R.weylGroup_induction hdiag with
+  | one => simp
+  | mul_simple i w ih =>
+    rw [map_mul, restrictWeylGroupEquiv_simpleReflectionMem, mul_smul, mul_smul,
+      simpleReflectionMem_smul, simpleReflectionMem_smul, ← ih]
+    exact R.dualMap_subtype_simpleReflection hdiag M hc hs i (w • φ)
 end SubRealization
 
+/-- `R.restrictRootLatticeEquiv` intertwines the root-lattice Weyl-group actions of `R` and
+`R.restrict M hc hs`. -/
 @[simp] theorem restrictRootLatticeEquiv_rootLatticeAut {I K H : Type*} [Field K] [AddCommGroup H]
     [Module K H] {A : Matrix I I ℤ} (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
     (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
@@ -187,11 +115,9 @@ end SubRealization
       (R.restrict M hc hs).rootLatticeAut hdiag (R.restrictWeylGroupEquiv M hc hs hdiag w)
         (R.restrictRootLatticeEquiv M hc hs α) :=
   Subtype.ext (by simpa using R.dualMap_subtype_smul M hc hs hdiag w α.1)
-
 end Restriction
 
 section BraidRelations
-
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
   (hdiag : ∀ i, A.map (Int.cast : ℤ → K) i i = 2)
@@ -200,6 +126,7 @@ private theorem eval_coroot_root_sub_two (i j : I) :
     Dual.eval K H (R.coroot i) (R.root j) * Dual.eval K H (R.coroot j) (R.root i) - 2 =
       algebraMap ℤ K (A i j * A j i - 2) := by simp [R.root_coroot]
 
+/-- Chebyshev formula for `(sᵢ sⱼ)^m (αᵢ)` in terms of `αᵢ` and `αⱼ`. -/
 theorem simpleReflection_mul_pow_root (i j : I) (m : ℕ) :
     ((R.simpleReflection hdiag i * R.simpleReflection hdiag j) ^ m) (R.root i) =
       ((S ℤ m).eval (A i j * A j i - 2) +
@@ -210,6 +137,7 @@ theorem simpleReflection_mul_pow_root (i j : I) (m : ℕ) :
     ← algebraMap_eval_S, ← algebraMap_eval_S]
   simp [R.root_coroot, ← Int.cast_add, ← Int.cast_mul, Int.cast_smul_eq_zsmul]
 
+/-- Chebyshev formula for `(sⱼ (sᵢ sⱼ)^m) (αᵢ)` in terms of `αᵢ` and `αⱼ`. -/
 theorem simpleReflection_mul_simpleReflection_mul_pow_root (i j : I) (m : ℕ) :
     (R.simpleReflection hdiag j *
         (R.simpleReflection hdiag i * R.simpleReflection hdiag j) ^ m) (R.root i) =
@@ -246,6 +174,8 @@ private theorem simpleReflection_mul_pow_eq_one_of_mem {i j : I}
   · have hp : (A i j : K) * (A j i : K) = 3 := by rw [← Int.cast_mul, hc]; norm_num
     rw [hc, TauCeti.coxeterOrder_three]; simp [R.root_coroot, hp, S_two]; ring
 
+/-- The simple reflections satisfy the braid relation `(sᵢ sⱼ) ^ mᵢⱼ = 1` for the Cartan–Coxeter
+matrix `A.cartanCoxeterMatrix`, assuming only symmetric zero pattern `hzero`. -/
 theorem simpleReflection_mul_pow_cartanCoxeterMatrix
     (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (i j : I) :
     (R.simpleReflection hdiag i * R.simpleReflection hdiag j) ^ A.cartanCoxeterMatrix i j = 1 := by
@@ -253,8 +183,7 @@ theorem simpleReflection_mul_pow_cartanCoxeterMatrix
   · simp
   by_cases hmem : A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)
   · have hle : A i j * A j i ≤ 3 := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
-      rcases hmem with h | h | h | h <;> omega
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem; omega
     rw [A.cartanCoxeterMatrix_of_ne_of_le hij hle]
     rcases Set.mem_insert_iff.mp hmem with h0 | h123
     · rw [h0, TauCeti.coxeterOrder_zero]
@@ -267,13 +196,11 @@ theorem simpleReflection_mul_pow_cartanCoxeterMatrix
   · have hm0 : A.cartanCoxeterMatrix i j = 0 := by
       rw [A.cartanCoxeterMatrix_of_ne hij]; split_ifs with hle
       · exact TauCeti.coxeterOrder_eq_zero_iff.mpr fun h' ↦ by
-          simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem h'
-          rcases h' with h | h | h | h | h <;> [exact hmem (Or.inl h);
-            exact hmem (Or.inr (Or.inl h)); exact hmem (Or.inr (Or.inr (Or.inl h)));
-            exact hmem (Or.inr (Or.inr (Or.inr h))); omega]
+          simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem h'; omega
       · rfl
     rw [hm0, pow_zero]
 
+/-- Subgroup form of `simpleReflection_mul_pow_cartanCoxeterMatrix`. -/
 theorem simpleReflectionMem_mul_pow_cartanCoxeterMatrix
     (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (i j : I) :
     (R.simpleReflectionMem hdiag i * R.simpleReflectionMem hdiag j) ^
@@ -290,7 +217,10 @@ private theorem false_of_chebyshev_dihedral_lt {a b : ℤ} {k : ℕ}
     (hmem : a * b ∈ ({0, 1, 2, 3} : Set ℤ)) (hlt : k + 1 < TauCeti.coxeterOrder (a * b))
     (hsum : (S ℤ ((k + 1 : ℕ) : ℤ)).eval (a * b - 2) + (S ℤ k).eval (a * b - 2) = 1)
     (hprod : (S ℤ k).eval (a * b - 2) * -b = 0) : False := by
-  have hS3 := S_add_two ℤ 1; have hS4 := S_add_two ℤ 2; norm_num at hS3 hS4
+  have hS3 : S ℤ 3 = Polynomial.X ^ 3 - 2 * Polynomial.X := by
+    have h := S_add_two ℤ 1; norm_num [S_one, S_two] at h; rw [h]; ring
+  have hS4 : S ℤ 4 = Polynomial.X ^ 4 - 3 * Polynomial.X ^ 2 + 1 := by
+    have h := S_add_two ℤ 2; norm_num [S_two, hS3] at h; rw [h]; ring
   rcases Set.mem_insert_iff.mp hmem with hc | hc123
   · rw [hc, TauCeti.coxeterOrder_zero] at hlt
     obtain rfl : k = 0 := by omega
@@ -298,12 +228,16 @@ private theorem false_of_chebyshev_dihedral_lt {a b : ℤ} {k : ℕ}
   · have hb0 : -b ≠ 0 := neg_ne_zero.mpr fun h0 ↦ by simp [h0] at hc123
     have hSk := (mul_eq_zero.mp hprod).resolve_right hb0
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hc123
-    rcases hc123 with hc | hc | hc <;> rw [hc] at hlt hsum hSk <;>
-      simp only [TauCeti.coxeterOrder_one, TauCeti.coxeterOrder_two,
-        TauCeti.coxeterOrder_three] at hlt <;>
-      (have hk_lt : k < 5 := by omega) <;> interval_cases k <;>
-      first | omega | (norm_num [S_zero, S_one, S_two, hS3, hS4] at hsum; done) |
-        norm_num [S_zero, S_one, S_two, hS3, hS4] at hSk
+    rcases hc123 with hc | hc | hc
+    · rw [hc, TauCeti.coxeterOrder_one] at hlt; rw [hc] at hSk
+      have : k < 2 := by omega
+      interval_cases k <;> norm_num [S_zero, S_one] at hSk
+    · rw [hc, TauCeti.coxeterOrder_two] at hlt; rw [hc] at hsum hSk
+      have : k < 3 := by omega
+      interval_cases k <;> norm_num [S_zero, S_one, S_two] at *
+    · rw [hc, TauCeti.coxeterOrder_three] at hlt; rw [hc] at hsum hSk
+      have : k < 5 := by omega
+      interval_cases k <;> norm_num [S_zero, S_one, S_two, hS3, hS4] at *
 
 private theorem simpleReflection_mul_pow_ne_one_of_lt [CharZero K] {i j : I} (hij : i ≠ j)
     {k : ℕ} (hk : A.cartanCoxeterMatrix i j = 0 ∨ k + 1 < A.cartanCoxeterMatrix i j) :
@@ -315,19 +249,19 @@ private theorem simpleReflection_mul_pow_ne_one_of_lt [CharZero K] {i j : I} (hi
   obtain ⟨hsum, hprod⟩ := (R.linearIndependent_int_root_pair hij).eq_of_pair hroot
   by_cases hmem : A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)
   · have hle : A i j * A j i ≤ 3 := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
-      rcases hmem with h | h | h | h <;> omega
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem; omega
     have hm := A.cartanCoxeterMatrix_of_ne_of_le hij hle
     have h2 : 2 ≤ A.cartanCoxeterMatrix i j := hm ▸ TauCeti.two_le_coxeterOrder hmem
     exact false_of_chebyshev_dihedral_lt hmem (hm ▸ hk.resolve_left (by omega)) hsum hprod
   · simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or] at hmem
-    have habs : (2 : ℤ) ≤ |A i j * A j i - 2| := by
-      rcases lt_or_gt_of_ne hmem.1 with _ | _ <;> [rw [abs_of_neg (by omega)];
-        rw [abs_of_nonneg (by omega)]] <;> omega
+    have habs : (2 : ℤ) ≤ |A i j * A j i - 2| := by rw [le_abs]; omega
     have hbound := natCast_add_one_le_abs_S_eval habs k
     exact mul_ne_zero (fun h0 ↦ by rw [h0, abs_zero] at hbound; omega)
       (neg_ne_zero.mpr fun h0 ↦ hmem.1 (by simp [h0])) hprod
 
+/-- Exact pairwise order of simple reflections: `orderOf (sᵢ * sⱼ) = A.cartanCoxeterMatrix i j`
+(`0` when `sᵢ * sⱼ` has infinite order). Requires only symmetric zero pattern `hzero` and
+`[CharZero K]`, without assuming `A.IsGeneralizedCartan`. -/
 @[simp] theorem orderOf_simpleReflectionMem_mul [CharZero K]
     (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (i j : I) :
     orderOf (R.simpleReflectionMem hdiag i * R.simpleReflectionMem hdiag j) =
@@ -350,7 +284,6 @@ noncomputable def coxeterHom (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) :
     A.cartanCoxeterMatrix.Group →* R.weylGroup hdiag :=
   A.cartanCoxeterMatrix.toCoxeterSystem.lift
     ⟨R.simpleReflectionMem hdiag, R.simpleReflectionMem_mul_pow_cartanCoxeterMatrix hdiag hzero⟩
-
 @[simp] theorem coxeterHom_simple (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (i : I) :
     R.coxeterHom hdiag hzero (A.cartanCoxeterMatrix.simple i) = R.simpleReflectionMem hdiag i :=
   A.cartanCoxeterMatrix.toCoxeterSystem.lift_apply_simple _ i
@@ -362,15 +295,14 @@ noncomputable def coxeterHom (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) :
   | cons i l ih =>
     rw [CoxeterSystem.wordProd_cons, map_mul, ih, wordProd_cons]
     exact congrArg (· * R.wordProd hdiag l) (R.coxeterHom_simple hdiag hzero i)
+/-- The canonical homomorphism `R.coxeterHom` onto `R.weylGroup hdiag` is surjective. -/
 theorem coxeterHom_surjective (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) :
     Function.Surjective (R.coxeterHom hdiag hzero) := fun w ↦ by
   obtain ⟨l, rfl⟩ := R.exists_wordProd_eq hdiag w
   exact ⟨A.cartanCoxeterMatrix.toCoxeterSystem.wordProd l, R.coxeterHom_wordProd hdiag hzero l⟩
-
 end BraidRelations
 
 section GeneralizedCartan
-
 universe u
 
 private theorem alternatingWord_chebyshev_nonneg {c : ℤ} (hc0 : 0 ≤ c) {k : ℕ}
@@ -392,7 +324,6 @@ private theorem alternatingWord_chebyshev_nonneg {c : ℤ} (hc0 : 0 ≤ c) {k : 
       simp at hlt <;> interval_cases k <;> norm_num [Nat.even_iff, S_neg_one, S_zero, S_one, S_two]
 
 section
-
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) (hA : A.IsGeneralizedCartan)
 
@@ -419,8 +350,8 @@ private theorem exists_nsmul_alternatingWord_root {i j : I} (hij : i ≠ j) {k :
     CoxeterSystem.prod_alternatingWord_eq_mul_pow]
   by_cases hev : Even k <;>
     simp only [hev, ↓reduceIte, one_mul, map_pow, map_mul, CoxeterMatrix.toCoxeterSystem_simple,
-      coxeterHom_simple, Subgroup.smul_def, Subgroup.coe_pow, Subgroup.coe_mul,
-      coe_simpleReflectionMem, LinearEquiv.smul_def]
+      coxeterHom_simple, weylGroup_smul_def, Subgroup.coe_pow, Subgroup.coe_mul,
+      coe_simpleReflectionMem]
   · exact R.simpleReflection_mul_pow_root (hA.diag_map K) i j (k / 2)
   · exact R.simpleReflection_mul_simpleReflection_mul_pow_root (hA.diag_map K) i j (k / 2)
 
@@ -464,13 +395,14 @@ private theorem isRightDescent_coxeterHom_iff (w : A.cartanCoxeterMatrix.Group) 
   have hnot_both : ¬ (R.coxeterHom (hA.diag_map K) hA.zero_comm w • R.root i ∈ R.posRootCone ∧
       -(R.coxeterHom (hA.diag_map K) hA.zero_comm w • R.root i) ∈ R.posRootCone) := fun ⟨hp, hn⟩ ↦
     R.root_linearIndependent.ne_zero i <| by
-      simpa [Subgroup.smul_def, LinearEquiv.smul_def] using R.isPointed_posRootCone _ hp hn
+      simpa using congrArg ((R.coxeterHom (hA.diag_map K) hA.zero_comm w)⁻¹ • ·)
+        (R.isPointed_posRootCone _ hp hn)
   refine ⟨fun hd ↦ ?_, fun hneg ↦ by_contra fun hnd ↦
     hnot_both ⟨R.coxeterHom_smul_root_mem_posRootCone_of_not_isRightDescent hA _ _ rfl i hnd, hneg⟩⟩
   have hpos := R.coxeterHom_smul_root_mem_posRootCone_of_not_isRightDescent hA _ _ rfl i
     (cs.isRightDescent_iff_not_isRightDescent_mul.mp hd)
   have h1 : R.coxeterHom (hA.diag_map K) hA.zero_comm (cs.simple i) • R.root i = -R.root i := by
-    simp [cs, Subgroup.smul_def, LinearEquiv.smul_def]
+    simp [cs]
   rwa [map_mul, mul_smul, h1, smul_neg] at hpos
 
 private theorem eq_one_of_forall_coxeterHom_smul_root_eq {w : A.cartanCoxeterMatrix.Group}
@@ -481,34 +413,32 @@ private theorem eq_one_of_forall_coxeterHom_smul_root_eq {w : A.cartanCoxeterMat
     (R.isPointed_posRootCone _ (R.root_mem_posRootCone i)
       (hw i ▸ (R.isRightDescent_coxeterHom_iff hA w i).mp hi))
 
+/-- **Kac, Proposition 3.13 (injectivity).** The canonical homomorphism `R.coxeterHom` from
+`A.cartanCoxeterMatrix.Group` to `R.weylGroup (hA.diag_map K)` is injective. -/
 theorem coxeterHom_injective :
     Function.Injective (R.coxeterHom (hA.diag_map K) hA.zero_comm) :=
   (injective_iff_map_eq_one _).mpr fun _ hw ↦
     R.eq_one_of_forall_coxeterHom_smul_root_eq hA fun i ↦ by rw [hw, one_smul]
-
 /-- **Kac, Proposition 3.13.** Canonical isomorphism from `A.cartanCoxeterMatrix.Group` onto
 `R.weylGroup (hA.diag_map K)`. -/
 noncomputable def coxeterEquiv :
     A.cartanCoxeterMatrix.Group ≃* R.weylGroup (hA.diag_map K) :=
   MulEquiv.ofBijective (R.coxeterHom (hA.diag_map K) hA.zero_comm)
     ⟨R.coxeterHom_injective hA, R.coxeterHom_surjective (hA.diag_map K) hA.zero_comm⟩
-
 @[simp] theorem coxeterEquiv_simple (i : I) :
     R.coxeterEquiv hA (A.cartanCoxeterMatrix.simple i) =
       R.simpleReflectionMem (hA.diag_map K) i := R.coxeterHom_simple (hA.diag_map K) hA.zero_comm i
-
 /-- **The Weyl group as a Coxeter system** with Coxeter matrix `A.cartanCoxeterMatrix`. -/
 noncomputable def weylCoxeterSystem :
     CoxeterSystem A.cartanCoxeterMatrix (R.weylGroup (hA.diag_map K)) :=
   A.cartanCoxeterMatrix.toCoxeterSystem.map (R.coxeterEquiv hA)
-
 @[simp] theorem weylCoxeterSystem_simple (i : I) :
     (R.weylCoxeterSystem hA).simple i = R.simpleReflectionMem (hA.diag_map K) i :=
   R.coxeterEquiv_simple hA i
 @[simp] theorem weylCoxeterSystem_wordProd (l : List I) :
     (R.weylCoxeterSystem hA).wordProd l = R.wordProd (hA.diag_map K) l :=
   (CoxeterSystem.wordProd_map _ _ l).trans (R.coxeterHom_wordProd (hA.diag_map K) hA.zero_comm l)
-
+/-- The Coxeter length of `R.weylCoxeterSystem hA` agrees with `R.length`. -/
 @[simp] theorem weylCoxeterSystem_length (w : R.weylGroup (hA.diag_map K)) :
     (R.weylCoxeterSystem hA).length w = R.length (hA.diag_map K) w := by
   refine le_antisymm ?_ ?_
@@ -532,6 +462,7 @@ theorem isRightDescent_weylCoxeterSystem_iff (w : R.weylGroup (hA.diag_map K)) (
   exact hdesc.trans ((R.isRightDescent_coxeterHom_iff hA w₀ i).trans (by rw [show
     R.coxeterHom (hA.diag_map K) hA.zero_comm w₀ = w from hw]))
 
+/-- **Kac, Lemma 3.11 (non-descent form).** `i` is not a right descent of `w` iff `w • αᵢ ∈ Q₊`. -/
 theorem not_isRightDescent_weylCoxeterSystem_iff (w : R.weylGroup (hA.diag_map K)) (i : I) :
     ¬ (R.weylCoxeterSystem hA).IsRightDescent w i ↔ w • R.root i ∈ R.posRootCone := by
   let w₀ := (R.coxeterEquiv hA).symm w
@@ -539,11 +470,13 @@ theorem not_isRightDescent_weylCoxeterSystem_iff (w : R.weylGroup (hA.diag_map K
     (R.coxeterEquiv hA).apply_symm_apply w
   rw [R.isRightDescent_weylCoxeterSystem_iff hA]
   refine ⟨fun hnot ↦ ?_, fun hpos hneg ↦ R.root_linearIndependent.ne_zero i
-    (by simpa [Subgroup.smul_def, LinearEquiv.smul_def] using R.isPointed_posRootCone _ hpos hneg)⟩
+    (by simpa using congrArg (w⁻¹ • ·) (R.isPointed_posRootCone _ hpos hneg))⟩
   have hnd : ¬ A.cartanCoxeterMatrix.toCoxeterSystem.IsRightDescent w₀ i := by
     rwa [R.isRightDescent_coxeterHom_iff hA, hcox]
   exact hcox ▸ R.coxeterHom_smul_root_mem_posRootCone_of_not_isRightDescent hA _ _ rfl i hnd
 
+/-- **Kac, Lemma 3.11 (length form).** Multiplying `w` on the right by `sᵢ` decreases the Weyl
+length iff `-(w • αᵢ) ∈ Q₊`. -/
 theorem length_mul_simpleReflectionMem_lt_iff (w : R.weylGroup (hA.diag_map K)) (i : I) :
     R.length (hA.diag_map K) (w * R.simpleReflectionMem (hA.diag_map K) i) <
         R.length (hA.diag_map K) w ↔ -(w • R.root i) ∈ R.posRootCone := by
@@ -551,30 +484,32 @@ theorem length_mul_simpleReflectionMem_lt_iff (w : R.weylGroup (hA.diag_map K)) 
     ← R.weylCoxeterSystem_simple hA]
   exact R.isRightDescent_weylCoxeterSystem_iff hA w i
 
+/-- A Weyl-group element that fixes every simple root is the identity. -/
 theorem eq_one_of_forall_smul_root_eq {w : R.weylGroup (hA.diag_map K)}
     (hw : ∀ i, w • R.root i = R.root i) : w = 1 := by
   refine (R.coxeterEquiv hA).symm.injective
     ((R.eq_one_of_forall_coxeterHom_smul_root_eq hA fun i ↦ ?_).trans (map_one _).symm)
   exact (congrArg (· • R.root i) ((R.coxeterEquiv hA).apply_symm_apply w)).trans (hw i)
 
+/-- The Weyl group acts faithfully on the root lattice `Q`. -/
 theorem rootLatticeAut_injective : Function.Injective (R.rootLatticeAut (hA.diag_map K)) :=
   (injective_iff_map_eq_one _).mpr fun _ hw ↦ R.eq_one_of_forall_smul_root_eq hA fun i ↦ by
     simpa using congrArg (fun f : R.rootLattice ≃ₗ[ℤ] R.rootLattice ↦
       (f ⟨R.root i, R.root_mem_rootLattice i⟩ : Dual K H)) hw
-
 end
 
+/-- The Weyl group of a Cartan realization of a generalized Cartan matrix over a characteristic-zero
+field is a Coxeter group. -/
 theorem isCoxeterGroup_weylGroup {I' K' H' : Type u} [Field K'] [CharZero K'] [AddCommGroup H']
     [Module K' H'] {A' : Matrix I' I' ℤ} (R' : CartanRealization (A'.map (Int.cast : ℤ → K')) H')
     (hA' : A'.IsGeneralizedCartan) : IsCoxeterGroup (R'.weylGroup (hA'.diag_map K')) :=
   ⟨⟨I', A'.cartanCoxeterMatrix, ⟨R'.weylCoxeterSystem hA'⟩⟩⟩
-
 end GeneralizedCartan
 
 section Checks
-
 variable {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
 
+/-- For an empty index type, the Weyl group is trivial (`⊥`). -/
 @[simp] theorem weylGroup_eq_bot_of_isEmpty {I : Type*} [IsEmpty I] {A : Matrix I I K}
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) : R.weylGroup hdiag = ⊥ := by
   simp [weylGroup_def, Set.range_eq_empty]
@@ -582,6 +517,8 @@ instance subsingleton_weylGroup_of_isEmpty {I : Type*} [IsEmpty I] {A : Matrix I
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) : Subsingleton (R.weylGroup hdiag) := by
   rw [R.weylGroup_eq_bot_of_isEmpty hdiag]; infer_instance
 
+/-- On a rank-one realization with `R.corootSpan = ⊤`, the simple reflection acts as negation on
+`Dual K H`. -/
 theorem simpleReflection_eq_neg_of_corootSpan_eq_top_fin_one {A : Matrix (Fin 1) (Fin 1) K}
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) (hmin : R.corootSpan = ⊤)
     (ω : Dual K H) : R.simpleReflection hdiag 0 ω = -ω := by
@@ -595,6 +532,7 @@ theorem simpleReflection_eq_neg_of_corootSpan_eq_top_fin_one {A : Matrix (Fin 1)
   | add _ _ _ _ ihx ihy => simp [ihx, ihy, add_comm]
   | smul _ _ _ ih => simp [ih]
 
+/-- Explicit action of `s₀ s₁` on `α₁` for the affine `A₁⁽¹⁾` matrix `!![2, -2; -2, 2]`. -/
 theorem simpleReflection_mul_root_two_neg_two
     (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map
       (Int.cast : ℤ → K)) H)
@@ -602,69 +540,97 @@ theorem simpleReflection_mul_root_two_neg_two
     (R.simpleReflection hdiag 0 * R.simpleReflection hdiag 1) (R.root 1) =
       -R.root 1 - (2 : ℤ) • R.root 0 := by
   rw [mul_apply_eq_comp, simpleReflection_root_self, map_neg, simpleReflection_root_int]
-  have h01 : (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ) 0 1 = -2 := rfl
+  have h01 : (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ) 0 1 = -2 := by decide
   rw [h01, neg_zsmul, sub_neg_eq_add, neg_add, sub_eq_add_neg]
-
-@[simp] theorem cartanCoxeterMatrix_B_two_zero_one :
-    (CartanMatrix.B 2).cartanCoxeterMatrix 0 1 = 4 := by
-  have hprod : CartanMatrix.B 2 0 1 * CartanMatrix.B 2 1 0 = 2 := by decide
-  rw [Matrix.cartanCoxeterMatrix_of_ne_of_le _ (by decide) (by omega), hprod,
-    TauCeti.coxeterOrder_two]
-theorem isGeneralizedCartan_two_neg_two :
-    (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).IsGeneralizedCartan :=
-  ⟨fun i ↦ by fin_cases i <;> decide, fun i j _ ↦ by fin_cases i <;> fin_cases j <;> simp_all,
-    fun i j ↦ by fin_cases i <;> fin_cases j <;> decide⟩
-@[simp] theorem cartanCoxeterMatrix_two_neg_two_zero_one :
-    (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).cartanCoxeterMatrix 0 1 = 0 :=
-  Matrix.cartanCoxeterMatrix_of_ne_of_lt _ (by decide) (by decide)
 
 variable [CharZero K]
 
+section AOne
+variable (R : CartanRealization ((CartanMatrix.A 1).map (Int.cast : ℤ → K)) H)
 /-- **Type `A₁`**: the Weyl group is isomorphic to `Multiplicative (ZMod 2)` via length parity. -/
-noncomputable def weylGroupAOneEquivZModTwo
-    (R : CartanRealization ((CartanMatrix.A 1).map (Int.cast : ℤ → K)) H) :
+noncomputable def weylGroupAOneEquivZModTwo :
     R.weylGroup ((CartanMatrix.isGeneralizedCartan_A 1).diag_map K) ≃* Multiplicative (ZMod 2) :=
   (R.weylCoxeterSystem (CartanMatrix.isGeneralizedCartan_A 1)).uniqueEquivZModTwo
-@[simp] theorem natCard_weylGroup_A_one
-    (R : CartanRealization ((CartanMatrix.A 1).map (Int.cast : ℤ → K)) H) :
+@[simp] theorem weylGroupAOneEquivZModTwo_simpleReflectionMem (i : Fin 1) :
+    R.weylGroupAOneEquivZModTwo
+        (R.simpleReflectionMem ((CartanMatrix.isGeneralizedCartan_A 1).diag_map K) i) =
+      Multiplicative.ofAdd 1 := by
+  rw [← R.weylCoxeterSystem_simple (CartanMatrix.isGeneralizedCartan_A 1)]
+  exact (R.weylCoxeterSystem (CartanMatrix.isGeneralizedCartan_A 1)).uniqueEquivZModTwo_simple i
+/-- The Weyl group of type `A₁` has cardinality `2`. -/
+@[simp] theorem natCard_weylGroup_A_one :
     Nat.card (R.weylGroup ((CartanMatrix.isGeneralizedCartan_A 1).diag_map K)) = 2 :=
-  (R.weylCoxeterSystem (CartanMatrix.isGeneralizedCartan_A 1)).natCard_of_unique
+  (R.weylCoxeterSystem (CartanMatrix.isGeneralizedCartan_A 1)).natCard_eq_two
+end AOne
 
+section FinTwo
+variable {A : Matrix (Fin 2) (Fin 2) ℤ} (hA : A.IsGeneralizedCartan)
+  (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
 /-- **Rank-two generalized Cartan matrices**: `R.weylGroup` is isomorphic to `DihedralGroup`. -/
-noncomputable def weylGroupFinTwoEquivDihedralGroup {A : Matrix (Fin 2) (Fin 2) ℤ}
-    (hA : A.IsGeneralizedCartan) (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) :
+noncomputable def weylGroupFinTwoEquivDihedralGroup :
     R.weylGroup (hA.diag_map K) ≃* DihedralGroup (A.cartanCoxeterMatrix 0 1) :=
   (R.weylCoxeterSystem hA).finTwoEquivDihedralGroup
-@[simp] theorem natCard_weylGroup_fin_two {A : Matrix (Fin 2) (Fin 2) ℤ}
-    (hA : A.IsGeneralizedCartan) (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) :
+@[simp] theorem weylGroupFinTwoEquivDihedralGroup_simpleReflectionMem_zero :
+    R.weylGroupFinTwoEquivDihedralGroup hA (R.simpleReflectionMem (hA.diag_map K) 0) =
+      DihedralGroup.sr 0 := by
+  rw [← R.weylCoxeterSystem_simple hA]
+  exact (R.weylCoxeterSystem hA).finTwoEquivDihedralGroup_simple_zero
+@[simp] theorem weylGroupFinTwoEquivDihedralGroup_simpleReflectionMem_one :
+    R.weylGroupFinTwoEquivDihedralGroup hA (R.simpleReflectionMem (hA.diag_map K) 1) =
+      DihedralGroup.sr 1 := by
+  rw [← R.weylCoxeterSystem_simple hA]
+  exact (R.weylCoxeterSystem hA).finTwoEquivDihedralGroup_simple_one
+/-- For any rank-two generalized Cartan matrix `A`, `Nat.card (R.weylGroup _) = 2 * m₀₁`.
+In the affine or hyperbolic case `A.cartanCoxeterMatrix 0 1 = 0`, the Weyl group is infinite and
+`Nat.card` is `0`. -/
+@[simp] theorem natCard_weylGroup_fin_two :
     Nat.card (R.weylGroup (hA.diag_map K)) = 2 * A.cartanCoxeterMatrix 0 1 :=
-  (R.weylCoxeterSystem hA).natCard_of_fin_two
+  (R.weylCoxeterSystem hA).natCard_eq_two_mul
+end FinTwo
 
+/-- The Weyl group of type `B₂` has cardinality `8`. -/
 @[simp] theorem natCard_weylGroup_B_two
     (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H) :
     Nat.card (R.weylGroup ((CartanMatrix.isGeneralizedCartan_B 2).diag_map K)) = 8 := by
   rw [R.natCard_weylGroup_fin_two (CartanMatrix.isGeneralizedCartan_B 2),
-    cartanCoxeterMatrix_B_two_zero_one]
+    CartanMatrix.cartanCoxeterMatrix_B_two_zero_one]
+/-- The Weyl group of type `G₂` has cardinality `12`. -/
 @[simp] theorem natCard_weylGroup_G₂
     (R : CartanRealization (CartanMatrix.G₂.map (Int.cast : ℤ → K)) H) :
     Nat.card (R.weylGroup (CartanMatrix.isGeneralizedCartan_G₂.diag_map K)) = 12 := by
   have hm : CartanMatrix.G₂.cartanCoxeterMatrix 0 1 = 6 := by
-    rw [CartanMatrix.cartanCoxeterMatrix_G₂]; rfl
+    simp [CartanMatrix.cartanCoxeterMatrix_G₂, CoxeterMatrix.G₂]
   rw [R.natCard_weylGroup_fin_two CartanMatrix.isGeneralizedCartan_G₂, hm]
 
+section AffineAOne
+variable (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map
+    (Int.cast : ℤ → K)) H)
 /-- **Affine `A₁⁽¹⁾`**: its Weyl group is isomorphic to `DihedralGroup 0`. -/
-noncomputable def weylGroupTwoNegTwoEquivDihedralGroup
-    (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map
-      (Int.cast : ℤ → K)) H) :
-    R.weylGroup (isGeneralizedCartan_two_neg_two.diag_map K) ≃* DihedralGroup 0 := by
-  have h := R.weylGroupFinTwoEquivDihedralGroup isGeneralizedCartan_two_neg_two
-  rwa [cartanCoxeterMatrix_two_neg_two_zero_one] at h
-theorem orderOf_simpleReflectionMem_mul_two_neg_two
-    (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map
-      (Int.cast : ℤ → K)) H) :
-    orderOf (R.simpleReflectionMem (isGeneralizedCartan_two_neg_two.diag_map K) 0 *
-      R.simpleReflectionMem (isGeneralizedCartan_two_neg_two.diag_map K) 1) = 0 := by simp
-
+noncomputable def weylGroupTwoNegTwoEquivDihedralGroup :
+    R.weylGroup (Matrix.isGeneralizedCartan_two_neg_two.diag_map K) ≃* DihedralGroup 0 :=
+  (R.weylGroupFinTwoEquivDihedralGroup Matrix.isGeneralizedCartan_two_neg_two).trans
+    (MulEquiv.cast (M := DihedralGroup) Matrix.cartanCoxeterMatrix_two_neg_two_zero_one)
+@[simp] theorem weylGroupTwoNegTwoEquivDihedralGroup_simpleReflectionMem_zero :
+    R.weylGroupTwoNegTwoEquivDihedralGroup
+        (R.simpleReflectionMem (Matrix.isGeneralizedCartan_two_neg_two.diag_map K) 0) =
+      DihedralGroup.sr 0 := by
+  rw [weylGroupTwoNegTwoEquivDihedralGroup, MulEquiv.trans_apply,
+    weylGroupFinTwoEquivDihedralGroup_simpleReflectionMem_zero]
+  exact (show ∀ {m n} (h : m = n), MulEquiv.cast (M := DihedralGroup) h (.sr 0) = .sr 0 from by
+    rintro _ _ rfl; rfl) _
+@[simp] theorem weylGroupTwoNegTwoEquivDihedralGroup_simpleReflectionMem_one :
+    R.weylGroupTwoNegTwoEquivDihedralGroup
+        (R.simpleReflectionMem (Matrix.isGeneralizedCartan_two_neg_two.diag_map K) 1) =
+      DihedralGroup.sr 1 := by
+  rw [weylGroupTwoNegTwoEquivDihedralGroup, MulEquiv.trans_apply,
+    weylGroupFinTwoEquivDihedralGroup_simpleReflectionMem_one]
+  exact (show ∀ {m n} (h : m = n), MulEquiv.cast (M := DihedralGroup) h (.sr 1) = .sr 1 from by
+    rintro _ _ rfl; rfl) _
+/-- For affine `A₁⁽¹⁾`, `s₀ * s₁` has infinite order (`orderOf = 0`). -/
+theorem orderOf_simpleReflectionMem_mul_two_neg_two :
+    orderOf (R.simpleReflectionMem (Matrix.isGeneralizedCartan_two_neg_two.diag_map K) 0 *
+      R.simpleReflectionMem (Matrix.isGeneralizedCartan_two_neg_two.diag_map K) 1) = 0 := by simp
+end AffineAOne
 end Checks
 
 end TauCeti.CartanRealization

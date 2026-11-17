@@ -68,13 +68,13 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
   standard parabolic subgroup is spelled by an alternating word of its own length.**
 * `CoxeterSystem.wordProd_alternatingWord_eq_comm_iff`: the two alternating words of length `m`
   have the same product exactly when `(s i * s i') ^ m = 1`.
-* `CoxeterSystem.wordProd_alternatingWord_eq_and_length_lt_of_mem_parabolic_pair`: an element of
-  `cs.parabolic {i, i'}` without `i` as a right descent is spelled by `alternatingWord i i' (ℓ w)`
-  and has length strictly below `M i i'` whenever `M i i' ≠ 0`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_mul_pow`: more precisely, they differ by the factor
   `(s i * s i') ^ m`.
 * `CoxeterSystem.wordProd_alternatingWord_add_two_mul`: the products of the alternating words
   repeat with period twice the order of `s i * s i'`.
+* `CoxeterSystem.wordProd_alternatingWord_eq_and_length_lt_of_mem_parabolic_pair`: an element of
+  `cs.parabolic {i, i'}` without `i` as a right descent is spelled by `alternatingWord i i' (ℓ w)`
+  and has length strictly below `M i i'` whenever `M i i' ≠ 0`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_of_isLeftDescent_pair`: **an element of a rank-two
   standard parabolic subgroup with two left descents is spelled by both alternating words
   of its length**, hence `CoxeterSystem.pow_length_eq_one_of_isLeftDescent_pair` and
