@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Probability.BrownianMotion.WeightedQuadraticVariation.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.RiemannSums
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Adapted weighted quadratic sums converge to time integrals
@@ -62,25 +63,22 @@ theorem integral_sq_sum_mul_sq_sub_sub_le (hB : IsFilteredPreBrownianReal ℱ B 
   have hM0 : 0 ≤ M :=
     (integral_nonneg fun ω ↦ sq_nonneg (H 0 ω)).trans (hM 0 (Nat.pos_of_ne_zero hn))
   rw [hB.integral_sq_sum_mul_sq_sub_sub ht hH hHi]
-  have hsum : (∑ i ∈ range n, (∫ ω, H i ω ^ 2 ∂P) *
-      ((t (i + 1) : ℝ) - t i) ^ 2) ≤
-      M * δ * ∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) := by
-    rw [mul_sum]
-    refine sum_le_sum fun i hi ↦ ?_
-    have hi := mem_range.mp hi
-    have hstep : 0 ≤ (t (i + 1) : ℝ) - t i :=
-      sub_nonneg.mpr (NNReal.coe_le_coe.mpr (ht hi.le hi (Nat.le_succ i)))
-    calc
-      _ ≤ (M : ℝ) * ((t (i + 1) : ℝ) - t i) ^ 2 :=
-        mul_le_mul_of_nonneg_right (hM i hi) (sq_nonneg _)
-      _ ≤ (M : ℝ) * (((t (i + 1) : ℝ) - t i) * δ) :=
-        mul_le_mul_of_nonneg_left (by nlinarith [hmesh i hi]) hM0
-      _ = _ := by ring
-  rw [sum_range_sub (fun i ↦ (t i : ℝ))] at hsum
-  nlinarith
+  calc
+    _ ≤ 2 * ∑ i ∈ range n, M * ((t (i + 1) : ℝ) - t i) ^ 2 := by
+      gcongr with i hi
+      exact hM i (mem_range.mp hi)
+    _ = 2 * M * ∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) ^ 2 := by
+      rw [← mul_sum, ← mul_assoc]
+    _ ≤ 2 * M * (((t n : ℝ) - t 0) * δ) :=
+      mul_le_mul_of_nonneg_left
+        (sum_range_sq_sub_le (fun i ↦ (t i : ℝ)) n
+          (fun _ hi _ hj hij ↦ NNReal.coe_le_coe.mpr (ht hi hj hij)) hmesh)
+        (by positivity)
+    _ = _ := by ring
 
-/-- Centered quadratic sums converge to zero in mean square when the predictable heights
-have uniformly bounded second moments and the deterministic mesh vanishes. -/
+/-- Centered quadratic sums on a bounded time horizon converge to zero in mean square when
+the predictable heights have uniformly bounded second moments and the deterministic mesh
+vanishes. -/
 theorem tendsto_integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {ι : Type*} {l : Filter ι} {n : ι → ℕ} {t : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (t k) (Iic (n k))) {H : ι → ℕ → Ω → ℝ}
@@ -106,8 +104,9 @@ theorem tendsto_integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal �
   dsimp only
   gcongr
 
-/-- Centered predictable quadratic errors vanish in probability under a uniform second-moment
-bound on the heights. No sample-path regularity of the heights is required. -/
+/-- Centered predictable quadratic errors vanish in probability along vanishing-mesh deterministic
+grids on a bounded time horizon, under a uniform second-moment bound on the heights.
+No sample-path regularity of the heights is required. -/
 theorem tendstoInMeasure_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {ι : Type*} {l : Filter ι} {n : ι → ℕ} {t : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (t k) (Iic (n k))) {H : ι → ℕ → Ω → ℝ}
@@ -120,25 +119,21 @@ theorem tendstoInMeasure_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ 
     TendstoInMeasure P (fun k ω ↦ ∑ i ∈ range (n k), H k i ω *
       ((B (t k (i + 1)) ω - B (t k i) ω) ^ 2 - ((t k (i + 1) : ℝ) - t k i)))
       l (fun _ ↦ 0) := by
-  apply tendstoInMeasure_of_tendsto_eLpNorm (p := 2) two_ne_zero
-  have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-    (hB.tendsto_integral_sq_sum_mul_sq_sub_sub ht hH hHi hM hT hmesh hlim).sqrt
-  simp only [Real.sqrt_zero, ENNReal.ofReal_zero] at hlim
-  convert hlim using 1
-  ext k
-  simp only [Pi.sub_def, sub_zero]
-  have hZ : MemLp (fun ω ↦ ∑ i ∈ range (n k), H k i ω *
-      ((B (t k (i + 1)) ω - B (t k i) ω) ^ 2 - ((t k (i + 1) : ℝ) - t k i))) 2 P :=
-    memLp_finsetSum _ fun i hi ↦ hB.memLp_mul_sq_sub_sub
-      (ht k (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i))
-      (hH k i (mem_range.mp hi)) (hHi k i (mem_range.mp hi))
-  rw [hZ.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
-  simp [Real.sqrt_eq_rpow, Real.norm_eq_abs]
+  apply tendstoInMeasure_of_tendsto_integral_norm_sq
+  · filter_upwards [] with k
+    have hZ : MemLp (fun ω ↦ ∑ i ∈ range (n k), H k i ω *
+        ((B (t k (i + 1)) ω - B (t k i) ω) ^ 2 - ((t k (i + 1) : ℝ) - t k i))) 2 P :=
+      memLp_finsetSum _ fun i hi ↦ hB.memLp_mul_sq_sub_sub
+        (ht k (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i))
+        (hH k i (mem_range.mp hi)) (hHi k i (mem_range.mp hi))
+    simpa only [sub_zero] using hZ.norm.integrable_sq
+  · simpa only [sub_zero, Real.norm_eq_abs, sq_abs] using
+      hB.tendsto_integral_sq_sum_mul_sq_sub_sub ht hH hHi hM hT hmesh hlim
 
 /-- Left-weighted Brownian quadratic sums converge in probability to the samplewise time
 integral of an adapted almost surely continuous process with uniformly bounded second moments.
 The integral uses real time via `Real.toNNReal`; no value outside the interval is used. -/
-theorem tendstoInMeasure_sum_eval_mul_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem tendstoInMeasure_sum_mul_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {H : ℝ≥0 → Ω → ℝ} {a b : ℝ≥0} {M : ℝ}
     (hH : ∀ u ∈ Icc a b, Measurable[ℱ u] (H u))
     (hcont : ∀ᵐ ω ∂P, ContinuousOn (H · ω) (Icc a b))
@@ -183,24 +178,12 @@ theorem tendstoInMeasure_sum_eval_mul_sq_sub (hB : IsFilteredPreBrownianReal ℱ
     obtain ⟨ms, hms, hc⟩ := ((hcenter.comp hks).comp hns.tendsto_atTop).exists_seq_tendsto_ae
     refine ⟨ms, hms, ?_⟩
     filter_upwards [hcont, hc] with ω hω hcω
-    have hreal : ContinuousOn (fun u : ℝ ↦ H u.toNNReal ω) (Icc (a : ℝ) b) :=
-      hω.comp continuous_real_toNNReal.continuousOn (fun u hu ↦ by
-        have hu0 : 0 ≤ u := a.coe_nonneg.trans hu.1
-        constructor
-        · rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ hu0]
-          exact hu.1
-        · rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ hu0]
-          exact hu.2)
-    have hr := hreal.tendsto_sum_tagged_sub_smul
-      (τ := fun k i ↦ (t k i : ℝ)) (ξ := fun k i ↦ (t k i : ℝ))
-      (fun k i hi j hj hij ↦ by exact_mod_cast ht k hi hj hij)
-      (fun k ↦ by exact_mod_cast ha k) (fun k ↦ by exact_mod_cast hb k)
-      (fun k i hi ↦ ⟨le_rfl, by exact_mod_cast ht k hi.le hi (Nat.le_succ i)⟩) hmesh hlim
-    simp only [Real.toNNReal_coe, smul_eq_mul] at hr
+    have hr := hω.tendsto_sum_tagged_sub_smul_toNNReal (ξ := t) ht ha hb
+      (fun k i hi ↦ ⟨le_rfl, ht k hi.le hi (Nat.le_succ i)⟩) hmesh hlim
+    simp only [smul_eq_mul] at hr
     have h := hcω.add (((hr.comp hks).comp hns.tendsto_atTop).comp hms.tendsto_atTop)
     simp only [zero_add] at h
-    convert h using 1
-    ext k
+    refine h.congr fun k ↦ ?_
     simp only [Function.comp_apply]
     rw [← sum_add_distrib]
     apply sum_congr rfl
