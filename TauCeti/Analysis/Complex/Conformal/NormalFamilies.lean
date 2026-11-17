@@ -49,6 +49,8 @@ the family, which is exactly equicontinuity.
 * `TauCeti.dist_le_of_forall_mem_closedBall_two_mul_norm_le` and
   `TauCeti.lipschitzOnWith_of_forall_mem_closedBall_two_mul_norm_le`: a sup bound `M` on
   `closedBall c (2 * r)` makes a holomorphic function `M / r`-Lipschitz on `ball c r`.
+* `TauCeti.norm_inv_smul_sub_inv_smul_le`: the same bound makes `z ↦ (w - z)⁻¹ • f z` Lipschitz
+  near `y`, uniformly in poles `w` at a fixed positive distance.
 * `TauCeti.IsLocallyBoundedOn.equicontinuousOn`: a locally bounded family of holomorphic
   functions is equicontinuous.  With `TauCeti.IsLocallyBoundedOn.exists_forall_norm_le`, this
   supplies the hypotheses of the compact-open Arzelà–Ascoli theorem when the target is proper.
@@ -143,6 +145,41 @@ theorem lipschitzOnWith_of_forall_mem_closedBall_two_mul_norm_le (hU : IsOpen U)
   refine LipschitzOnWith.of_dist_le_mul fun z hz w hw => ?_
   refine (dist_le_of_forall_mem_closedBall_two_mul_norm_le hU hf hr hsub hM hz hw).trans ?_
   exact mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) dist_nonneg
+
+/-- **A Lipschitz bound for the Cauchy kernel against a holomorphic function.** If `f` is
+holomorphic on an open `U ⊇ closedBall y (2 * r)` and `‖f‖ ≤ M` there, and `w` is at distance at
+least `d > 0` from `x ∈ ball y r` and from `y`, then the values of `z ↦ (w - z)⁻¹ • f z` at `x` and
+`y` differ by at most `M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y`.
+
+The constant depends only on `M`, `r` and `d`, so the bound is uniform over a bounded family of
+holomorphic functions and over poles `w` kept at distance `d`. -/
+theorem norm_inv_smul_sub_inv_smul_le (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) {y : ℂ}
+    {r M : ℝ} (hr : 0 < r) (hsub : closedBall y (2 * r) ⊆ U)
+    (hM : ∀ z ∈ closedBall y (2 * r), ‖f z‖ ≤ M) {d : ℝ} (hd : 0 < d) {w x : ℂ}
+    (hxy : dist x y < r) (hwx : d ≤ ‖w - x‖) (hwy : d ≤ ‖w - y‖) :
+    ‖(w - x)⁻¹ • f x - (w - y)⁻¹ • f y‖ ≤ M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by
+  have hx0 : w - x ≠ 0 := norm_pos_iff.1 (hd.trans_le hwx)
+  have hy0 : w - y ≠ 0 := norm_pos_iff.1 (hd.trans_le hwy)
+  have hfy : ‖f y‖ ≤ M := hM y (mem_closedBall_self (by positivity))
+  -- Cauchy's estimate makes `f` `M / r`-Lipschitz on `ball y r`.
+  have hlip : dist (f x) (f y) ≤ M / r * dist x y :=
+    dist_le_of_forall_mem_closedBall_two_mul_norm_le hU hf hr hsub hM (mem_ball.2 hxy)
+      (mem_ball_self hr)
+  have hsplit : (w - x)⁻¹ • f x - (w - y)⁻¹ • f y =
+      (w - x)⁻¹ • (f x - f y) + ((x - y) * ((w - x)⁻¹ * (w - y)⁻¹)) • f y := by
+    have hinv : (w - x)⁻¹ - (w - y)⁻¹ = (x - y) * ((w - x)⁻¹ * (w - y)⁻¹) := by
+      field_simp
+      ring
+    rw [← hinv, smul_sub, sub_smul]
+    abel
+  have hxi : ‖(w - x)⁻¹‖ ≤ d⁻¹ := by rw [norm_inv]; exact inv_anti₀ hd hwx
+  have hyi : ‖(w - y)⁻¹‖ ≤ d⁻¹ := by rw [norm_inv]; exact inv_anti₀ hd hwy
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  simp only [norm_smul, norm_mul, ← dist_eq_norm]
+  calc _ ≤ d⁻¹ * (M / r * dist x y) + dist x y * (d⁻¹ * d⁻¹) * M := by
+        gcongr
+    _ = M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by ring
 
 /-- **The equicontinuity half of Montel's theorem.** A locally bounded family of holomorphic
 functions on an open set `U ⊆ ℂ` is equicontinuous on `U`.
