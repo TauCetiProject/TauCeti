@@ -189,8 +189,10 @@ theorem mem_incidentBlockEquivDeletedComponent
     simpa only [incidentBlockComponent] using ConnectedComponent.sound hreach
   exact (ConnectedComponent.mem_supp_iff _ _).mpr hcomponent
 
-/-- The neighbours of a cut vertex in the block--cut graph are counted by the components into
-which deleting it splits its original connected component. -/
+/-- The neighbours of a cut vertex in the block--cut graph are in bijection with the components
+into which deleting it splits its original connected component, so the two cardinalities agree.
+Both sides are `0` when these sets are infinite, by the convention of `Set.ncard` and
+`Nat.card`. -/
 theorem ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent :
     (G.blockCutGraph.neighborSet (.inr c)).ncard = Nat.card c.DeletedComponent := by
   rw [← Nat.card_coe_set_eq]

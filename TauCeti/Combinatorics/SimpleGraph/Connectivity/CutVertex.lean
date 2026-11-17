@@ -65,6 +65,27 @@ theorem isCutVertex_iff_exists_forall_walk_mem_support {G : SimpleGraph V} {v : 
     simpa using hz
   · exact ⟨v, by simpa using h p.toSimpleGraph, rfl⟩
 
+/-- Graph isomorphisms preserve cut vertices. -/
+theorem IsCutVertex.map {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W} {v : V}
+    (h : G.IsCutVertex v) (e : G ≃g H) : H.IsCutVertex (e v) := by
+  obtain ⟨a, b, hav, hbv, hab, hall⟩ :=
+    isCutVertex_iff_exists_forall_walk_mem_support.mp h
+  refine isCutVertex_iff_exists_forall_walk_mem_support.mpr
+    ⟨e a, e b, e.injective.ne hav, e.injective.ne hbv, hab.map e.toHom, fun p ↦ ?_⟩
+  have hv := hall ((p.map e.symm.toHom).copy (e.symm_apply_apply a) (e.symm_apply_apply b))
+  simp only [Walk.support_copy, Walk.support_map, List.mem_map] at hv
+  obtain ⟨w, hw, hwv⟩ := hv
+  simpa [← hwv] using hw
+
+/-- A vertex is a cut vertex if and only if its image under a graph isomorphism is. -/
+@[simp]
+theorem Iso.isCutVertex_iff {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    (e : G ≃g H) {v : V} : H.IsCutVertex (e v) ↔ G.IsCutVertex v := by
+  constructor
+  · intro h
+    simpa using h.map e.symm
+  · exact fun h ↦ h.map e
+
 /-- A cut vertex is not isolated. -/
 theorem IsCutVertex.not_isIsolated {G : SimpleGraph V} {v : V} (h : G.IsCutVertex v) :
     ¬G.IsIsolated v := by
@@ -154,20 +175,23 @@ theorem not_isCutVertex_induce_of_exists_walk
   rw [Walk.support_induce, List.mem_attachWith] at hx
   exact (hp x hx).2 rfl
 
-/-- A directed union of vertex sets inducing graphs without cut vertices has no cut vertex.
-No connectedness or finiteness of the family or of the vertex sets is needed. -/
+/-- A vertex is not a cut vertex of a directed union if it is not a cut vertex of any member
+containing it. No connectedness or finiteness of the family or of the vertex sets is needed. -/
 theorem not_isCutVertex_induce_sUnion_of_directedOn {S : Set (Set V)}
-    (hS : DirectedOn (· ⊆ ·) S)
-    (hcut : ∀ B ∈ S, ∀ v, ¬(G.induce B).IsCutVertex v) (x : ↑(⋃₀ S)) :
+    (hS : DirectedOn (· ⊆ ·) S) {x : ↑(⋃₀ S)}
+    (hcut : ∀ B ∈ S, ∀ hx : (x : V) ∈ B, ¬(G.induce B).IsCutVertex ⟨(x : V), hx⟩) :
     ¬(G.induce (⋃₀ S)).IsCutVertex x := by
   rw [isCutVertex_iff_exists_forall_walk_mem_support]
   rintro ⟨a, b, hax, hbx, ⟨p⟩, hall⟩
-  let q := p.map (Embedding.induce (⋃₀ S)).toHom
+  have ha : (Embedding.induce (⋃₀ S) (G := G)).toHom a = (a : V) := by simp
+  have hb : (Embedding.induce (⋃₀ S) (G := G)).toHom b = (b : V) := by simp
+  let q : G.Walk a b := (p.map (Embedding.induce (⋃₀ S)).toHom).copy ha hb
   have hq : ∀ y ∈ q.support, y ∈ ⋃₀ S := by
     intro y hy
-    rw [Walk.support_map] at hy
+    change y ∈ ((p.map (Embedding.induce (⋃₀ S)).toHom).copy ha hb).support at hy
+    rw [Walk.support_copy, Walk.support_map] at hy
     obtain ⟨z, -, rfl⟩ := List.mem_map.mp hy
-    exact z.property
+    simp
   obtain ⟨B, hB, -⟩ := Set.mem_sUnion.mp x.property
   -- A single member contains the finite witness walk and the proposed cut vertex.
   obtain ⟨D, hD, hsub⟩ := hS.exists_mem_subset_of_finite_of_subset_sUnion ⟨B, hB⟩
@@ -178,15 +202,20 @@ theorem not_isCutVertex_induce_sUnion_of_directedOn {S : Set (Set V)}
       · exact hq y hy)
   let xD : D := ⟨x, hsub (Set.mem_insert _ _)⟩
   have hqD := (q.induce D fun y hy ↦ hsub (Set.mem_insert_of_mem _ hy)).reachable
-  obtain ⟨r, hr⟩ := hqD.exists_walk_notMem_support_of_not_isCutVertex (hcut D hD xD)
+  obtain ⟨r, hr⟩ := hqD.exists_walk_notMem_support_of_not_isCutVertex (hcut D hD xD.property)
     (fun h ↦ hax (Subtype.ext (congrArg (Subtype.val : D → V) h)))
     (fun h ↦ hbx (Subtype.ext (congrArg (Subtype.val : D → V) h)))
-  have hx := hall (r.map (G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom)
-  -- Transport membership explicitly since the walk endpoints depend on support-membership proofs.
-  have hx' : x ∈ r.support.map (G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom :=
-    (congrArg (fun l ↦ x ∈ l) (Walk.support_map _ _)).mp hx
-  obtain ⟨y, hy, hyx⟩ := List.mem_map.mp hx'
-  have hyD : y = xD := Subtype.ext (congrArg (Subtype.val : (⋃₀ S) → V) hyx)
+  have hx := hall ((r.map (G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom).copy
+    (Subtype.ext (by simp only [Embedding.coe_toHom, induceHomOfLE_apply,
+      Set.inclusion_mk]))
+    (Subtype.ext (by simp only [Embedding.coe_toHom, induceHomOfLE_apply,
+      Set.inclusion_mk])))
+  simp only [Walk.support_copy, Walk.support_map, List.mem_map] at hx
+  obtain ⟨y, hy, hyx⟩ := hx
+  have hyD : y = xD := Subtype.ext (by
+    simpa only [Embedding.coe_toHom, induceHomOfLE_apply, Set.coe_inclusion] using
+      congrArg Subtype.val hyx)
+  change xD ∉ r.support at hr
   exact hr (hyD ▸ hy)
 
 /-- **Adding an ear.** If a vertex set induces a connected graph without cut vertices, then adding

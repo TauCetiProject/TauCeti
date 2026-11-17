@@ -78,8 +78,8 @@ theorem explicitRes2_evensGraphCocycle (U : OpenSubgroup G) (hU : U.toSubgroup.i
   funext ⟨γ, η⟩
   have hconj : s⁻¹ * (η : G) * s ∈ U.toSubgroup :=
     (Subgroup.normal_of_index_eq_two hU).conj_mem' η η.2 s
-  simp only [cocyclesMap2_coe, cochainsMap2_apply, ContinuousMonoidHom.coe_subgroupSubtype,
-    Subgroup.subtype_apply, AddMonoidHom.id_apply, coe_evensGraphCocycle, cocyclesMap1_coe,
+  simp only [coe_cocyclesMap2, cochainsMap2_apply, ContinuousMonoidHom.coe_subgroupSubtype,
+    Subgroup.subtype_apply, AddMonoidHom.id_apply, coe_evensGraphCocycle, coe_cocyclesMap1,
     cochainsMap1_apply, coe_evensHomCocycleAmbient, DistribSMul.toAddMonoidHom_apply,
     MonoidHom.coe_ofClass, Subgroup.inverseConjugationHom_apply, trivialF2Pairing_apply,
     Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,

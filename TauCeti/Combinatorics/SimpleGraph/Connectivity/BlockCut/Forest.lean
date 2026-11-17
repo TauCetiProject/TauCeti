@@ -15,21 +15,19 @@ public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 This file proves that the block--cut incidence graph `G.blockCutGraph` of a simple graph is a
 forest, and that its connected components correspond to those of `G`.
 
-* `SimpleGraph.blockCutGraph_isAcyclic`: the block--cut graph is acyclic.  This needs no
-  finiteness: an edge between a block `B` and a cut vertex `c` is a bridge, because a walk of the
-  block--cut graph from `c` back to `B` avoiding that edge would give a walk of `G` from another
-  block through `c` to `B` avoiding `c`, which `SimpleGraph.IsBlock.mem_support_of_ne` forbids.
+* `SimpleGraph.blockCutGraph_isAcyclic`: the block--cut graph is acyclic.
 * `SimpleGraph.blockCutVertexComponent`: each vertex of the block--cut graph determines a
   connected component of `G`, namely the component containing the block or the cut vertex.
-* `SimpleGraph.blockCutGraph_reachable_iff`: two vertices of the block--cut graph are reachable
-  from each other exactly when they determine the same component of `G`.
+* `SimpleGraph.blockCutGraph_reachable_iff`: two vertices of the
+  block--cut graph are reachable from each other exactly when they determine the same component
+  of `G`.
 * `SimpleGraph.Walk.reachableAvoiding_blockCutGraph`: a walk in `G` avoiding a set of cut vertices
   lifts to reachability in the block--cut graph avoiding the corresponding cut-vertex nodes.
 * `SimpleGraph.Walk.exists_walk_notMem_support_of_blockCutGraph`: a block--cut walk avoiding a
   cut-vertex node projects to a walk in `G` avoiding that cut vertex.
 * `SimpleGraph.blockCutComponentEquiv`: hence the components of the block--cut graph and of `G`
   are in canonical bijection.
-* `SimpleGraph.blockCutGraph_isTree_iff`: the block--cut graph of a graph is a tree
+* `SimpleGraph.blockCutGraph_isTree_iff`: the block--cut graph is a tree
   exactly when the graph is connected.
 
 The results follow R. Diestel, *Graph Theory*, 5th ed., Graduate Texts in Mathematics 173,
@@ -124,7 +122,7 @@ theorem Walk.exists_walk_notMem_support_of_blockCutGraph {B C : G.BlockVertex}
   · exact hac
   · exact hbc
 
-/-- **The block--cut graph is a forest.** No finiteness is needed. -/
+/-- **The block--cut graph is a forest.** -/
 theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
   classical
   -- Every edge joins a block `B` to a cut vertex `c ∈ B`; it suffices that it is a bridge.
@@ -313,7 +311,8 @@ theorem blockCutGraph_connected_iff : G.blockCutGraph.Connected ↔ G.Connected 
   rw [← card_connectedComponent_eq_one_iff, ← card_connectedComponent_eq_one_iff,
     Nat.card_congr G.blockCutComponentEquiv]
 
-/-- **The block--cut tree.** The block--cut graph is a tree exactly when the graph is connected. -/
+/-- **The block--cut tree.** The block--cut graph is a tree exactly when the
+graph is connected. -/
 theorem blockCutGraph_isTree_iff : G.blockCutGraph.IsTree ↔ G.Connected := by
   rw [isTree_iff, blockCutGraph_connected_iff, and_iff_left blockCutGraph_isAcyclic]
 

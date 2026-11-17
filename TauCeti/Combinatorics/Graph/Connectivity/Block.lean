@@ -32,7 +32,8 @@ universe u v
 
 namespace Graph
 
-variable {α : Type u} {β : Type v} {G : Graph α β}
+variable {α : Type u} {β : Type v}
+variable {G : Graph α β}
 
 /-! ### Vertex blocks -/
 
@@ -41,14 +42,16 @@ vertices. Thus loops and parallel edges do not change the collection of vertex b
 abbrev IsBlock (G : Graph α β) (B : Set V(G)) : Prop :=
   G.toSimpleGraph.IsBlock B
 
-/-- A native cut vertex is exactly an actual vertex lying in two distinct vertex blocks. -/
+/-- A native cut vertex is exactly an actual vertex lying in two
+distinct vertex blocks. -/
 theorem isCutVertex_iff_exists_isBlock_ne {v : V(G)} :
     G.IsCutVertex v ↔
       ∃ B C : Set V(G), G.IsBlock B ∧ G.IsBlock C ∧ B ≠ C ∧ v ∈ B ∧ v ∈ C := by
   rw [isCutVertex_iff_toSimpleGraph_isCutVertex v.property,
     SimpleGraph.isCutVertex_iff_exists_isBlock_ne]
 
-/-- An actual vertex is not a cut vertex exactly when it lies in a unique vertex block. -/
+/-- An actual vertex is not a cut vertex exactly when it lies in a
+unique vertex block. -/
 theorem not_isCutVertex_iff_existsUnique_isBlock_mem {v : V(G)} :
     ¬G.IsCutVertex v ↔ ∃! B : Set V(G), G.IsBlock B ∧ v ∈ B := by
   rw [isCutVertex_iff_toSimpleGraph_isCutVertex v.property,

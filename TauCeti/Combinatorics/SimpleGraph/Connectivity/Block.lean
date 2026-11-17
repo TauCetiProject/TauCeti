@@ -10,7 +10,6 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
 
-import Mathlib.Order.Zorn
 import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 
 /-!
@@ -22,8 +21,8 @@ this convention makes blocks cover every vertex and every edge, and is the one u
 block--cut incidence graph.
 
 This file introduces the block predicate and its basic maximality API. It proves that every
-vertex, and both ends of every edge, lie in some block, without finiteness assumptions. Distinct
-blocks meet in at most one vertex, so the block containing the endpoints of an edge is unique.
+vertex, and both ends of every edge, lie in some block. Distinct blocks meet in at most one vertex,
+so the block containing the endpoints of an edge is unique.
 
 Combining maximality of blocks with the ear lemma
 `SimpleGraph.Walk.IsPath.not_isCutVertex_induce_union_support` shows that a common vertex of two
@@ -103,6 +102,32 @@ theorem IsBlock.exists_adj_of_mem_of_ne (hB : G.IsBlock B) (huB : u ∈ B) (hvB 
   have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ huv (congrArg Subtype.val h)
   exact ⟨p.snd, p.snd.property, induce_adj.mp (p.adj_snd hp)⟩
 
+/-- Graph isomorphisms send blocks to blocks by taking the image of their vertex sets. -/
+theorem IsBlock.image {W : Type*} {H : SimpleGraph W} (hB : G.IsBlock B) (e : G ≃g H) :
+    H.IsBlock (e '' B) := by
+  have transport {C : Set V} {D : Set W} (i : G.induce C ≃g H.induce D) :
+      ((H.induce D).Connected ∧ ∀ w, ¬(H.induce D).IsCutVertex w) ↔
+        ((G.induce C).Connected ∧ ∀ v, ¬(G.induce C).IsCutVertex v) := by
+    rw [← i.connected_iff, i.surjective.forall]
+    simp only [i.isCutVertex_iff]
+  have hBC := (transport (e.induce (e.injective.bijOn_image (s := B)))).mpr
+    ⟨hB.connected, hB.not_isCutVertex⟩
+  refine isBlock_iff.mpr ⟨hBC.1, hBC.2, ?_⟩
+  intro C hconn hcut hsub
+  obtain ⟨hc, hn⟩ := (transport
+    (e.symm.induce (e.symm.injective.bijOn_image (s := C))).symm).mp ⟨hconn, hcut⟩
+  have hEq := hB.eq_of_subset hc hn ((e.toEquiv.subset_symm_image B C).mpr hsub)
+  exact hEq ▸ e.toEquiv.image_symm_image C
+
+/-- A vertex set is a block if and only if its image under a graph isomorphism is. -/
+@[simp]
+theorem Iso.isBlock_image_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.IsBlock (e '' B) ↔ G.IsBlock B := by
+  constructor
+  · intro h
+    exact e.toEquiv.symm_image_image B ▸ h.image e.symm
+  · exact fun h ↦ h.image e
+
 /-! ### Existence -/
 
 /-- Every connected induced subgraph without cut vertices is contained in a block. -/
@@ -112,20 +137,25 @@ theorem exists_isBlock_superset (hconn : (G.induce B).Connected)
   let P : Set (Set V) :=
     {C | (G.induce C).Connected ∧ ∀ v, ¬(G.induce C).IsCutVertex v}
   have hBP : B ∈ P := ⟨hconn, hcut⟩
-  have hchain : ∀ S ⊆ P, IsChain (· ⊆ ·) S → S.Nonempty →
-      ∃ U ∈ P, ∀ C ∈ S, C ⊆ U := by
-    intro S hSP hS hSne
-    -- A nonempty chain has a connected union; directed unions have no cut vertices.
-    refine ⟨⋃₀ S, ⟨G.induce_sUnion_connected_of_pairwise_not_disjoint hSne ?_
-      (fun h ↦ (hSP h).1), fun x ↦ not_isCutVertex_induce_sUnion_of_directedOn hS.directedOn
-        (fun C hC ↦ (hSP hC).2) x⟩,
-      fun C hC ↦ Set.subset_sUnion_of_mem hC⟩
-    intro C D hC hD
-    rcases hS.total hC hD with hCD | hDC
-    · obtain ⟨x⟩ := (hSP hC).1.nonempty
-      exact ⟨x, x.property, hCD x.property⟩
-    · obtain ⟨x⟩ := (hSP hD).1.nonempty
-      exact ⟨x, hDC x.property, x.property⟩
+  have hchain : ∀ c ⊆ P, IsChain (· ⊆ ·) c → c.Nonempty →
+      ∃ C ∈ P, ∀ D ∈ c, D ⊆ C := by
+    intro c hc hchain hne
+    refine ⟨⋃₀ c, ⟨?_, ?_⟩, fun D hD ↦ Set.subset_sUnion_of_mem hD⟩
+    · apply G.induce_sUnion_connected_of_pairwise_not_disjoint hne
+      · intro C D hC hD
+        by_cases hCD : C = D
+        · subst D
+          obtain ⟨v, hv⟩ := (hc hC).1.nonempty
+          exact ⟨v, hv, hv⟩
+        · rcases hchain hC hD hCD with hCD' | hDC
+          · obtain ⟨v, hv⟩ := (hc hC).1.nonempty
+            exact ⟨v, hv, hCD' hv⟩
+          · obtain ⟨v, hv⟩ := (hc hD).1.nonempty
+            exact ⟨v, hDC hv, hv⟩
+      · exact fun hC ↦ (hc hC).1
+    · intro x
+      exact not_isCutVertex_induce_sUnion_of_directedOn hchain.directedOn
+        (fun C hC hx ↦ (hc hC).2 ⟨x, hx⟩)
   obtain ⟨C, hBC, hC⟩ := zorn_subset_nonempty P hchain B hBP
   exact ⟨C, by simpa only [IsBlock, P, Set.mem_ofPred_eq] using hC, hBC⟩
 
@@ -415,8 +445,8 @@ theorem IsBlock.exists_adj_of_not_isIsolated_mem (hB : G.IsBlock B)
   have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
   exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
 
-/-- **Cut vertices and blocks.** A vertex is a cut vertex exactly when it lies in two distinct
-blocks. -/
+/-- **Cut vertices and blocks.** A vertex is a cut vertex exactly when it lies
+in two distinct blocks. -/
 theorem isCutVertex_iff_exists_isBlock_ne :
     G.IsCutVertex v ↔ ∃ B C, G.IsBlock B ∧ G.IsBlock C ∧ B ≠ C ∧ v ∈ B ∧ v ∈ C :=
   ⟨IsCutVertex.exists_isBlock_ne, fun ⟨_, _, hB, hC, hBC, hvB, hvC⟩ ↦

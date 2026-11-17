@@ -11,7 +11,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Paths
 /-!
 # Paths through the block--cut forest
 
-For a simple graph, the block--cut forest records exactly how its cut vertices separate
+The block--cut forest records exactly how a simple graph's cut vertices separate
 its blocks. Given vertices `a` and `b` in blocks `B` and `C`, respectively, and a cut vertex `c`
 different from both endpoints, there is a walk from `a` to `b` avoiding `c` precisely when there
 is a walk in the block--cut forest from `B` to `C` avoiding the block--cut vertex represented by

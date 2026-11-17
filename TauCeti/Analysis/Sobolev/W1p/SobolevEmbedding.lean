@@ -57,6 +57,11 @@ the native Morrey embedding also gives a bounded interior inclusion into `L^∞`
 
 * `TauCeti.W1p.exists_sobolevEmbeddingL_of_subcritical_gain`: the bounded interior inclusion
   for finite source exponent `q` and target exponent `s` with `q ≤ s` and `1/q - 1/s < 1/n`.
+* `TauCeti.W1p.exists_eLpNorm_value_le_of_inv_sub_inv_le`: the interior estimate
+  `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(Ω)}` whenever `q ≤ s < ∞` and `1/q - 1/s ≤ 1/n`, including the
+  critical exponent.
+* `TauCeti.W1p.exists_sobolevEmbeddingL_of_inv_sub_inv_le`: the corresponding bounded interior
+  inclusion.
 * `TauCeti.W1p.exists_lpInftyEmbeddingL_of_isCompact_closure`: the supercritical interior
   inclusion into `L^∞`.
 * `TauCeti.W1p.memLp_value_of_isCompact_closure_of_finrank_le`: for `n ≤ p ≤ ∞`, interior
@@ -309,10 +314,44 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
         (by simp) hgap (T u).2
     _ ≤ A * ‖T u‖ₑ := by
       gcongr
-      rw [← ofReal_norm, ← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (W1p.norm_gradient_le (T u).1)
+      exact W1p.enorm_gradient_le (T u).1
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
+
+omit [Nontrivial E] in
+/-- **The interior Sobolev inequality for every admissible gain.** If `V` has compact closure
+contained in the open set `Ω`, `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/n`, there is a constant `C` with
+`‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(Ω)}` for all `u ∈ W^{1,q}(Ω)`. This joins the strict gain of
+`TauCeti.W1p.exists_eLpNorm_value_le_of_subcritical_gain` and the critical exponent
+`1/s = 1/q - 1/n` of `TauCeti.W1p.exists_eLpNorm_value_le_of_isCompact_closure`. -/
+theorem W1p.exists_eLpNorm_value_le_of_inv_sub_inv_le
+    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ (finrank ℝ E : ℝ)⁻¹)
+    {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
+      eLpNorm (W1p.value u) s (μ.restrict V) ≤ C * ‖u‖ₑ := by
+  rcases hqs.eq_or_lt with rfl | hqs'
+  · refine ⟨1, fun u ↦ ?_⟩
+    rw [ENNReal.coe_one, one_mul]
+    calc eLpNorm (W1p.value u) q (μ.restrict V)
+        ≤ ‖W1p.value u‖ₑ := (eLpNorm_mono_measure _
+          (Measure.restrict_mono_set μ (subset_closure.trans hVΩ))).trans_eq (Lp.eNorm_def _).symm
+      _ ≤ ‖u‖ₑ := W1p.enorm_value_le u
+  rcases hgap.lt_or_eq with hlt | heq
+  · exact W1p.exists_eLpNorm_value_le_of_subcritical_gain hqs hlt hVc hVΩ
+  have hq : (1 : ℝ≥0) ≤ q := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ q)
+  have hq0 : q ≠ 0 := (zero_lt_one.trans_le hq).ne'
+  have hs0 : s ≠ 0 := (hq0.bot_lt.trans hqs').ne'
+  have hn : (finrank ℝ E : ℝ≥0) ≠ 0 := by
+    intro h
+    have : (s : ℝ)⁻¹ < (q : ℝ)⁻¹ :=
+      inv_strictAnti₀ (NNReal.coe_pos.2 hq0.bot_lt) (by exact_mod_cast hqs')
+    rw [← NNReal.coe_natCast, h, NNReal.coe_zero, inv_zero] at heq
+    linarith
+  have h : s⁻¹ + (finrank ℝ E : ℝ≥0)⁻¹ = q⁻¹ := NNReal.coe_injective (by push_cast; linarith)
+  have hexp : (s : ℝ≥0∞)⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = (q : ℝ≥0∞)⁻¹ := by
+    rw [← ENNReal.coe_natCast, ← ENNReal.coe_inv hs0, ← ENNReal.coe_inv hn,
+      ← ENNReal.coe_inv hq0, ← h, ENNReal.coe_add]
+  exact W1p.exists_eLpNorm_value_le_of_isCompact_closure ENNReal.coe_ne_top hexp hVc hVΩ le_rfl
 
 omit [Nontrivial E] in
 /-- A bounded linear interior Sobolev inclusion for every finite subcritical gain. -/
@@ -323,6 +362,17 @@ theorem W1p.exists_sobolevEmbeddingL_of_subcritical_gain [Fact (1 ≤ (s : ℝ�
       ∀ u, S u =ᵐ[μ.restrict V] W1p.value u :=
   W1p.exists_lpEmbeddingL_of_eLpNorm_value_le (subset_closure.trans hVΩ)
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain hqs hgap hVc hVΩ)
+
+omit [Nontrivial E] in
+/-- A bounded linear interior Sobolev inclusion whenever `q ≤ s < ∞` and `1/q - 1/s ≤ 1/n`,
+including the critical exponent. -/
+theorem W1p.exists_sobolevEmbeddingL_of_inv_sub_inv_le [Fact (1 ≤ (s : ℝ≥0∞))]
+    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ (finrank ℝ E : ℝ)⁻¹)
+    {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
+    ∃ S : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] Lp ℝ (s : ℝ≥0∞) (μ.restrict V),
+      ∀ u, S u =ᵐ[μ.restrict V] W1p.value u :=
+  W1p.exists_lpEmbeddingL_of_eLpNorm_value_le (subset_closure.trans hVΩ)
+    (W1p.exists_eLpNorm_value_le_of_inv_sub_inv_le hqs hgap hVc hVΩ)
 
 omit [Nontrivial E] in
 /-- The supercritical interior inclusion into `L^∞` is bounded and preserves the Sobolev value. -/
