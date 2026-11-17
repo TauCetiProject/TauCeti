@@ -156,23 +156,39 @@ theorem geodesicJacobiPropagator_zero (z : TangentBundle I M) (ξ : TangentSpace
   exact (TotalSpace.ext_iff.mp h).2
 
 /-- The initial covariant derivative of Jacobi propagation agrees with the covariant velocity
-of any smooth curve representing its infinitesimal initial state. -/
+of any curve differentiable at `0` representing its infinitesimal initial state. -/
 @[simp]
 theorem alongCurveWithin_geodesicJacobiPropagator_zero
-    {σ : ℝ → TangentBundle I M} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 σ 0) :
+    {σ : ℝ → TangentBundle I M} (hσ : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ 0) :
     CovariantDerivative.alongCurveWithin (CovariantDerivative.leviCivitaConnection I M)
       (maximalGeodesic I M (σ 0).proj (σ 0).2)
       (fun t ↦ geodesicJacobiPropagator (σ 0) t (curveVelocity I.tangent σ 0))
       (geodesicInterval I M (σ 0).proj (σ 0).2) 0 =
         CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
           (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) 0 := by
-  rw [← alongCurveWithin_variationField_maximalGeodesic_zero hσ]
-  apply CovariantDerivative.alongCurveWithin_congr
-  · filter_upwards [self_mem_nhdsWithin] with t ht
-    exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator
-      (hσ.mdifferentiableAt (by norm_num)) ht).symm
-  · exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator
-      (hσ.mdifferentiableAt (by norm_num)) zero_mem_geodesicInterval).symm
+  obtain ⟨τ, hτ0, hτ, hvel⟩ := exists_contMDiffAt_curveVelocity_eq (I := I.tangent)
+    (n := 2) (by norm_num) (σ 0) (curveVelocity I.tangent σ 0) 0
+  have hτd : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent τ 0 := hτ.mdifferentiableAt (by norm_num)
+  have hcongr :
+      CovariantDerivative.alongCurveWithin (CovariantDerivative.leviCivitaConnection I M)
+          (maximalGeodesic I M (τ 0).proj (τ 0).2)
+          (fun t ↦ geodesicJacobiPropagator (τ 0) t (curveVelocity I.tangent τ 0))
+          (geodesicInterval I M (τ 0).proj (τ 0).2) 0 =
+        CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
+          (fun q ↦ (τ q).proj) (fun q ↦ (τ q).2) 0 := by
+    rw [← alongCurveWithin_variationField_maximalGeodesic_zero hτ]
+    apply CovariantDerivative.alongCurveWithin_congr
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator hτd ht).symm
+    · exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator
+        hτd zero_mem_geodesicInterval).symm
+  -- Every `TangentSpace I _` reduces to `E`, so rewriting along `hτ0` and `hvel` preserves typing.
+  rw [hvel, hτ0] at hcongr
+  have hlift : curveVelocityLift I.tangent τ 0 = curveVelocityLift I.tangent σ 0 := by
+    rw [curveVelocityLift_apply, curveVelocityLift_apply]
+    exact TotalSpace.ext hτ0 (heq_of_eq hvel)
+  exact hcongr.trans (eq_of_heq (CovariantDerivative.alongCurve_heq_of_curveVelocityLift_eq
+    (CovariantDerivative.leviCivitaConnection I M) hτd hσ hlift))
 
 /-- A compact portion of a maximal geodesic has a common open time domain for all nearby
 initial states, on which Jacobi propagation is smooth for every infinitesimal initial state.
