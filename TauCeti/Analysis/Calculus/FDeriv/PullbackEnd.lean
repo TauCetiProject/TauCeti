@@ -49,6 +49,11 @@ derivative of `e.symm`, so no inversion of operators is involved. -/
 def pullbackEnd (e : OpenPartialHomeomorph E F) (J : F → F →L[𝕜] F) (p : E) : E →L[𝕜] E :=
   (fderiv 𝕜 e.symm (e p)).comp ((J (e p)).comp (fderiv 𝕜 e p))
 
+/-- The pulled-back endomorphism field as a composite of continuous linear maps. -/
+theorem pullbackEnd_def (J : F → F →L[𝕜] F) (p : E) :
+    e.pullbackEnd J p = (fderiv 𝕜 e.symm (e p)).comp ((J (e p)).comp (fderiv 𝕜 e p)) :=
+  (rfl)
+
 /-- Evaluate a pulled-back endomorphism field. -/
 @[simp]
 theorem pullbackEnd_apply (J : F → F →L[𝕜] F) (p v : E) :

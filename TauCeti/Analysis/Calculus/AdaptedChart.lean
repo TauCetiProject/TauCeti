@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
-public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-public import TauCeti.Analysis.Calculus.NormalExtension
+public import TauCeti.Analysis.Calculus.NormalExtension.Chart
 public import TauCeti.LinearAlgebra.TotallyReal.Frame
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -42,12 +40,16 @@ consumer may shrink the chart freely, and over an arbitrary nontrivially normed 
   `C^(ℓ+1)` parametrization it is `C^(ℓ-1)`. It equals the standard structure on the zero
   section.
 
+The inverse function step and the inversion of the parametrization are the cases for the adapted
+extension of the general normal-extension chart results in
+`TauCeti.Analysis.Calculus.NormalExtension.Chart`.
+
 ## Main declarations
 
 * `TauCeti.isInvertible_fderiv_adaptedNormalExtension_zero_iff`: the derivative of the adapted
   extension on the zero section is invertible exactly for maximal totally real tangent spaces.
 * `TauCeti.exists_adaptedChart`: the inverse function theorem for the adapted extension, with a
-  `C^ℓ` inverse on the whole target.
+  `C^ℓ` inverse on the whole target; a case of `TauCeti.exists_normalExtensionChart`.
 * `TauCeti.exists_adaptedChart_of_isInducing`: for an embedded submanifold, an adapted chart
   that flattens all of `γ (U)` inside its target.
 * `OpenPartialHomeomorph.isImage_of_coe_eq_adaptedNormalExtension`,
@@ -117,23 +119,14 @@ theorem exists_adaptedChart [CompleteSpace V] [CompleteSpace W] {U : Set V} {Ω 
     ∃ e : OpenPartialHomeomorph (V × V) W, ⇑e = adaptedNormalExtension γ J ∧
       (x₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
       ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target := by
-  have hΦ : ContDiffOn 𝕜 ℓ (adaptedNormalExtension γ J) (U ×ˢ univ) :=
-    contDiffOn_adaptedNormalExtension hU hγ hJ hγΩ
-  have hs : IsOpen ((U ×ˢ univ) ∩ adaptedNormalExtension γ J ⁻¹' Ω) :=
-    hΦ.continuousOn.isOpen_inter_preimage (hU.prod isOpen_univ) hΩ
-  have hmem : (x₀, (0 : V)) ∈ (U ×ˢ univ) ∩ adaptedNormalExtension γ J ⁻¹' Ω :=
-    ⟨⟨hx₀, mem_univ _⟩, by simpa only [mem_preimage, adaptedNormalExtension_zero] using hγΩ hx₀⟩
-  have hγ₁ : ContDiffAt 𝕜 1 γ x₀ :=
-    (hγ.contDiffAt (hU.mem_nhds hx₀)).of_le (hℓ.trans le_self_add)
+  have hγℓ : ContDiffOn 𝕜 ℓ γ U := hγ.of_le le_self_add
+  have hγ₁ : ContDiffAt 𝕜 1 γ x₀ := (hγℓ.contDiffAt (hU.mem_nhds hx₀)).of_le hℓ
   have hJc : ContinuousAt J (γ x₀) := hJ.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hx₀))
-  obtain ⟨E, hE⟩ := (isInvertible_fderiv_adaptedNormalExtension_zero_iff hγ₁ hJc hsq hinj).2 htr
-  obtain ⟨e, he, hx, hsub, hsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph (hΦ.mono inter_subset_left) hs hmem hℓ hE
-  refine ⟨e, he, hx, fun p hp ↦ (hsub hp).1, fun y hy ↦ ?_, ?_, hsymm⟩
-  · rw [← e.right_inv hy, he]
-    exact (hsub (e.map_target hy)).2
-  · rw [he]
-    exact hΦ.mono fun p hp ↦ (hsub hp).1
+  have hframe := (isInvertible_fderiv_adaptedNormalExtension_zero_iff hγ₁ hJc hsq hinj).2 htr
+  rw [fderiv_adaptedNormalExtension_zero hγ₁ hJc] at hframe
+  rw [adaptedNormalExtension_eq_normalExtension]
+  exact exists_normalExtensionChart hU hΩ hx₀ hℓ hγℓ
+    ((hJ.comp hγℓ hγΩ).clm_comp (hγ.fderiv_of_isOpen hU le_rfl)) hγΩ hframe
 
 end Chart
 
@@ -147,8 +140,9 @@ variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V
 
 /-- An adapted chart inverts the parametrization on the zero section of its source. -/
 theorem symm_apply_of_coe_eq_adaptedNormalExtension (he : ⇑e = TauCeti.adaptedNormalExtension γ J)
-    {x : V} (hx : (x, 0) ∈ e.source) : e.symm (γ x) = (x, 0) := by
-  rw [← TauCeti.adaptedNormalExtension_zero γ J x, ← he, e.left_inv hx]
+    {x : V} (hx : (x, 0) ∈ e.source) : e.symm (γ x) = (x, 0) :=
+  e.symm_apply_of_coe_eq_normalExtension
+    (he.trans (TauCeti.adaptedNormalExtension_eq_normalExtension γ J)) hx
 
 /-- An adapted chart sends the zero section of its source into its target along `γ`. -/
 theorem mem_target_of_coe_eq_adaptedNormalExtension
