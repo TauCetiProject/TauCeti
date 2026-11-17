@@ -124,10 +124,10 @@ theorem coeFn_floerSobolevOperator (ω : SymplecticForm V) {J : ℝ × ℝ → V
 theorem floerSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (ξ : testSection V) :
-    ω.floerSobolevOperator J Ks Kt u ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
+    ω.floerSobolevOperator J Ks Kt u ⟨jetₗ V ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       ω.floerLinearization J Ks Kt u ξ := by
-  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩, coeFn_jetₗ ξ]
-    with z h₁ h₂
+  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetₗ V ξ, jetLp_mem_jetClosure ξ⟩,
+    coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
 
 /-- The norm of the coefficient field on jets is at most `1 + ‖J(z, u z)‖ + ‖A(z)‖`. -/
