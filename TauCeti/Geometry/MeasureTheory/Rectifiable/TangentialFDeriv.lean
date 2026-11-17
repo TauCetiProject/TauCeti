@@ -717,7 +717,7 @@ private theorem ae_chart_good_of_extend {U V W : Type*} [NormedAddCommGroup U]
         Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' s) ∩ closedBall (f x) r) /
           volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) r)) (𝓝[>] 0) (𝓝 0) := by
   have hcomp : EqOn (g ∘ f) (g₀ ∘ f) s := fun x hx => hgg₀ (hfs (mem_image_of_mem f hx))
-  filter_upwards [hf.ae_image_of_ae_volume hs hi hEm
+  filter_upwards [hf.ae_image_of_ae_volume hs (injOn_iff_injective.2 hi.injective) hEm
     ((hg₀.comp hf).ae_differentiableAt.mono fun _ h _ => h)] with y hy hyfs
   obtain ⟨x, hxs, rfl, hdg, hdf, hdens, hz⟩ := hy hyfs
   exact ⟨x, hxs, rfl, hdf, (hdg.hasFDerivAt.hasFDerivWithinAt (s := s)).congr hcomp (hcomp hxs),
@@ -773,7 +773,8 @@ theorem CountablyRectifiable.ae_norm_tangentialFDeriv_le
   suffices ∀ (m : ℕ), finrank ℝ (EuclideanSpace ℝ (Fin k)) = m →
       ∀ᵐ y ∂μHE[m], y ∈ f '' A → ‖tangentialFDeriv m g E y‖ ≤ K from this k hk
   rintro _ rfl
-  filter_upwards [hLip.ae_image_of_ae_volume hAm hAnti (by simpa only [hk] using hEm)
+  filter_upwards [hLip.ae_image_of_ae_volume hAm (injOn_iff_injective.2 hAnti.injective)
+    (by simpa only [hk] using hEm)
     (Eventually.of_forall fun _ _ => True.intro)] with y hy hyfs
   obtain ⟨x, hxs, rfl, -, hdf, hdens, -⟩ := hy hyfs
   by_cases hex : ∃! L : approxTangentPlane (finrank ℝ (EuclideanSpace ℝ (Fin k))) E (f x) →L[ℝ] W,

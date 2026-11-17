@@ -23,12 +23,16 @@ outer measures and measures without requiring a measurable space or metric struc
   quotients.
 * `TauCeti.tendsto_measure_inter_div_of_measure_eq_zero`: subsets of null sets have vanishing
   density quotients against arbitrary test sets.
+* `TauCeti.tendsto_measure_inter_div_of_eventually_notMem`: sets eventually avoided along a filter
+  have vanishing density quotients against any family shrinking into that filter.
+* `TauCeti.tendsto_measure_symmDiff_inter_div_of_eventuallyEq`: symmetric differences of sets that
+  agree eventually along a filter have vanishing density quotients against any shrinking family.
 -/
 
 public section
 
 open Filter MeasureTheory Set
-open scoped ENNReal Topology
+open scoped ENNReal symmDiff Topology
 
 namespace TauCeti
 
@@ -61,5 +65,26 @@ theorem tendsto_measure_inter_div_of_measure_eq_zero {S T : Set X} (hTS : T ⊆ 
     Tendsto (fun r => μ (T ∩ t r) / d r) l (𝓝 0) := by
   refine tendsto_const_nhds.congr fun r => ?_
   rw [measure_mono_null (inter_subset_left.trans hTS) hS, ENNReal.zero_div]
+
+/-- A set `S` that is eventually avoided along a filter `f` (`∀ᶠ z in f, z ∉ S`) has vanishing
+density quotients against any family `t` shrinking into `f` (`Tendsto t l f.smallSets`). -/
+theorem tendsto_measure_inter_div_of_eventually_notMem {S : Set X} {f : Filter X}
+    (hS : ∀ᶠ z in f, z ∉ S) {t : α → Set X} {l : Filter α} (ht : Tendsto t l f.smallSets)
+    (d : α → ℝ≥0∞) :
+    Tendsto (fun r => μ (S ∩ t r) / d r) l (𝓝 0) := by
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [tendsto_smallSets_iff.1 ht _ hS] with r hr
+  rw [(disjoint_left.2 fun _ hz hzt => hr hzt hz).inter_eq, measure_empty, ENNReal.zero_div]
+
+/-- If two sets agree eventually along a filter `f` (`E₁ =ᶠ[f] E₂`), then their symmetric
+difference `E₁ ∆ E₂` has vanishing density quotients against any family `t` shrinking into `f`
+(`Tendsto t l f.smallSets`). -/
+theorem tendsto_measure_symmDiff_inter_div_of_eventuallyEq {E₁ E₂ : Set X} {f : Filter X}
+    (h : E₁ =ᶠ[f] E₂) {t : α → Set X} {l : Filter α} (ht : Tendsto t l f.smallSets)
+    (d : α → ℝ≥0∞) :
+    Tendsto (fun r => μ ((E₁ ∆ E₂) ∩ t r) / d r) l (𝓝 0) :=
+  tendsto_measure_inter_div_of_eventually_notMem (S := E₁ ∆ E₂)
+    (h.mono fun _ hz hmem => hmem.elim (fun ⟨h1, h2⟩ => h2 (hz.mp h1))
+      (fun ⟨h1, h2⟩ => h2 (hz.mpr h1))) ht d
 
 end TauCeti

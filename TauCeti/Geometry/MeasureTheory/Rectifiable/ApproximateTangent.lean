@@ -7,12 +7,9 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Density
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.MeasurableTangent
-import Mathlib.Analysis.Calculus.Rademacher
-import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.Calculus.TangentCone.Haar
 import TauCeti.Geometry.Euclidean.Volume.Density
-import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 
 /-!
@@ -107,12 +104,11 @@ theorem isClosed {k : ℕ} {E : Set V} {P : Submodule ℝ V} {x : V}
 theorem mem_closure {k : ℕ} {E : Set V} {P : Submodule ℝ V} {x : V}
     (h : IsApproxTangentPlane k E P x) : x ∈ closure E := by
   by_contra hx
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1 isClosed_closure.isOpen_compl x hx
-  refine h.limsup_pos.ne' (Tendsto.limsup_eq (tendsto_const_nhds.congr' ?_))
-  filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
-  have hemp : E ∩ closedBall x r = ∅ := eq_empty_of_forall_notMem fun z ⟨hzE, hzr⟩ =>
-    hball (mem_ball.2 ((mem_closedBall.1 hzr).trans_lt hr)) (subset_closure hzE)
-  simp [hemp]
+  have h0 : ∀ᶠ z in 𝓝 x, z ∉ E :=
+    Filter.mem_of_superset (isClosed_closure.isOpen_compl.mem_nhds hx)
+      fun _ hz hE => hz (subset_closure hE)
+  exact h.limsup_pos.ne' (tendsto_measure_inter_div_of_eventually_notMem h0
+    ((tendsto_closedBall_smallSets x).mono_left nhdsWithin_le_nhds) _).limsup_eq
 
 /-- A `0`-dimensional approximate tangent plane is necessarily `⊥`. -/
 theorem eq_bot_of_zero {E : Set V} {P : Submodule ℝ V} {x : V}
@@ -238,24 +234,12 @@ theorem approxTangentPlane_congr_ae {k : ℕ} {E₁ E₂ : Set V} (h : E₁ =ᵐ
     approxTangentPlane k E₁ x = approxTangentPlane k E₂ x :=
   approxTangentPlane_congr_of_iff fun P => isApproxTangentPlane_congr_ae h P x
 
-omit [NormedSpace ℝ V] in
-private lemma tendsto_symmDiff_div_of_eventuallyEq_nhds {k : ℕ} {E₁ E₂ : Set V} {x : V}
-    (h : E₁ =ᶠ[𝓝 x] E₂) :
-    Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ closedBall x r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
-  obtain ⟨U, hU, hUU⟩ := eventually_iff_exists_mem.1 h
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 hU
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
-  have hemp : (E₁ ∆ E₂) ∩ closedBall x r = ∅ := eq_empty_of_forall_notMem fun z ⟨hz, hzr⟩ => by
-    have heq : z ∈ E₁ ↔ z ∈ E₂ := hUU z (hball (mem_ball.2 ((mem_closedBall.1 hzr).trans_lt hr)))
-    exact hz.elim (fun ⟨h1, h2⟩ => h2 (heq.1 h1)) (fun ⟨h1, h2⟩ => h2 (heq.2 h1))
-  simp [hemp]
-
 /-- Approximate tangency at `x` is local: if `E₁ =ᶠ[𝓝 x] E₂`, they share approximate tangents. -/
 theorem isApproxTangentPlane_congr_nhds {k : ℕ} {E₁ E₂ : Set V} {P : Submodule ℝ V} {x : V}
     (h : E₁ =ᶠ[𝓝 x] E₂) : IsApproxTangentPlane k E₁ P x ↔ IsApproxTangentPlane k E₂ P x :=
-  isApproxTangentPlane_congr_of_tendsto_symmDiff_div (tendsto_symmDiff_div_of_eventuallyEq_nhds h)
+  isApproxTangentPlane_congr_of_tendsto_symmDiff_div
+    (tendsto_measure_symmDiff_inter_div_of_eventuallyEq h
+      ((tendsto_closedBall_smallSets x).mono_left nhdsWithin_le_nhds) _)
 
 /-- `approxTangentPlane k E x` depends only on the germ of `E` at `x`. -/
 theorem approxTangentPlane_congr_nhds {k : ℕ} {E₁ E₂ : Set V} {x : V} (h : E₁ =ᶠ[𝓝 x] E₂) :
@@ -407,47 +391,6 @@ theorem approxTangentPlane_image
 
 end HasFDerivWithinAt
 
-/-- Pushing volume-a.e. parameter conditions on `s` forward along a bi-Lipschitz patch `f '' s`. -/
-theorem LipschitzWith.ae_image_of_ae_volume
-    {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
-    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [NormedSpace ℝ V]
-    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
-    {f : U → V} {s : Set U} {E : Set V} {K L : ℝ≥0} {p : U → Prop}
-    (hf : LipschitzWith K f) (hs : MeasurableSet s) (hi : AntilipschitzWith L (s.domRestrict f))
-    (hEm : NullMeasurableSet E μHE[finrank ℝ U])
-    [IsLocallyFiniteMeasure (μHE[finrank ℝ U].restrict E)]
-    (hp : ∀ᵐ x ∂(volume : Measure U), x ∈ s → p x) :
-    ∀ᵐ y ∂μHE[finrank ℝ U], y ∈ f '' s →
-      ∃ x ∈ s, f x = y ∧ p x ∧ DifferentiableAt ℝ f x ∧
-        Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) ∧
-        Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' s) ∩ closedBall (f x) r) /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) r)) (𝓝[>] 0) (𝓝 0) := by
-  set k := finrank ℝ U
-  have hparam : ∀ᵐ x ∂(volume : Measure U), x ∈ s → p x ∧ DifferentiableAt ℝ f x ∧
-      Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) := by
-    filter_upwards [hp, hf.ae_differentiableAt,
-      (ae_restrict_iff' hs).1 (Besicovitch.ae_tendsto_measure_inter_div volume s)]
-      with x hpx hdiff hdens hxs using ⟨hpx hxs, hdiff, hdens hxs⟩
-  set N : Set U := {x ∈ s | ¬ (p x ∧ DifferentiableAt ℝ f x ∧
-    Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1))}
-  have hN_haus : μHE[k] N = 0 := by
-    rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume, measure_eq_zero_iff_ae_notMem]
-    exact hparam.mono fun x hx hN => hN.2 (hx hN.1)
-  have hN_img : μHE[k] (f '' N) = 0 := nonpos_iff_eq_zero.1 <|
-    (hf.lipschitzOnWith.euclideanHausdorffMeasure_image_le k).trans_eq (by rw [hN_haus, mul_zero])
-  have hf_meas : MeasurableSet (f '' s) :=
-    hs.image_of_continuousOn_injOn hf.continuous.continuousOn (injOn_iff_injective.2 hi.injective)
-  have : IsLocallyFiniteMeasure (μHE[k].restrict (E \ f '' s)) := by
-    rw [Set.sdiff_eq, inter_comm, ← Measure.restrict_restrict hf_meas.compl]; infer_instance
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 hN_img,
-    TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure k
-      (hEm.diff hf_meas.nullMeasurableSet)] with y hyN hzero
-  rintro ⟨x, hxs, rfl⟩
-  obtain ⟨hpx, hdf, hdens⟩ : p x ∧ DifferentiableAt ℝ f x ∧
-      Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) :=
-    by_contra fun hbad => hyN ⟨x, ⟨hxs, hbad⟩, rfl⟩
-  exact ⟨x, hxs, rfl, hpx, hdf, hdens, hzero fun h => h.2 (mem_image_of_mem f hxs)⟩
-
 /-- **Chart identification of approximate tangent planes** along a bi-Lipschitz Borel patch. -/
 theorem LipschitzWith.ae_existsUnique_isApproxTangentPlane_image
     {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
@@ -461,7 +404,7 @@ theorem LipschitzWith.ae_existsUnique_isApproxTangentPlane_image
       ∃ x ∈ s, f x = y ∧ DifferentiableAt ℝ f x ∧ Injective (fderiv ℝ f x) ∧
         (∃! P : Submodule ℝ V, TauCeti.IsApproxTangentPlane (finrank ℝ U) E P y) ∧
         TauCeti.approxTangentPlane (finrank ℝ U) E y = (fderiv ℝ f x).range := by
-  filter_upwards [hf.ae_image_of_ae_volume hs hi hEm
+  filter_upwards [hf.ae_image_of_ae_volume hs (injOn_iff_injective.2 hi.injective) hEm
     (Eventually.of_forall fun _ _ => True.intro)] with y hy hyfs
   obtain ⟨x, hxs, rfl, -, hdf, hdens, hz⟩ := hy hyfs
   have hfdw := hdf.hasFDerivAt.hasFDerivWithinAt (s := s)

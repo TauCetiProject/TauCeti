@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Order.LiminfLimsup
+import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Geometry.Euclidean.Volume.Measure
@@ -34,7 +35,11 @@ involves rectifiability:
 * at a Lebesgue density-one point of a parameter set, an inverse-Lipschitz differentiable
   parametrization has positive directional lower Hausdorff density in every direction of its
   derivative range, forcing the derivative range into every closed subspace outside whose cones
-  the target set has density zero.
+  the target set has density zero;
+* pushing a volume-almost-everywhere parameter condition forward along an injective Lipschitz
+  parametrization yields almost-everywhere points on the image where the parameter is a
+  differentiability and Lebesgue density-one point and the complement inside a locally finite
+  null-measurable ambient set has Hausdorff density zero.
 
 Together with the zero-density theorem
 `TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`, these are the ingredients of
@@ -56,6 +61,9 @@ rectifiable sets.
   `HasFDerivWithinAt.range_le_of_tendsto_euclideanHausdorffMeasure_outside_cone_div`: directional
   lower Hausdorff density and cone containment of the derivative range at parameter density-one
   points.
+* `LipschitzWith.ae_image_of_ae_volume`: pushing volume-a.e. parameter conditions forward along an
+  injective Lipschitz patch, together with Rademacher differentiability, parameter density one, and
+  zero ambient complementary density.
 
 ## References
 
@@ -484,3 +492,51 @@ theorem range_le_of_tendsto_euclideanHausdorffMeasure_outside_cone_div
 end DirectionalDensity
 
 end HasFDerivWithinAt
+
+namespace LipschitzWith
+
+/-- Pushing volume-a.e. parameter conditions on `s` forward along an injective Lipschitz patch
+`f '' s`: at `μHE[finrank ℝ U]`-almost every `y ∈ f '' s`, `y = f x` for `x ∈ s` satisfying `p x`,
+where `f` is differentiable, `s` has Lebesgue density one, and `E \ f '' s` has
+`(finrank ℝ U)`-dimensional Hausdorff density zero. -/
+theorem ae_image_of_ae_volume
+    {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
+    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
+    {f : U → V} {s : Set U} {E : Set V} {K : ℝ≥0} {p : U → Prop}
+    (hf : LipschitzWith K f) (hs : MeasurableSet s) (hinj : InjOn f s)
+    (hEm : NullMeasurableSet E μHE[finrank ℝ U])
+    [IsLocallyFiniteMeasure (μHE[finrank ℝ U].restrict E)]
+    (hp : ∀ᵐ x ∂(volume : Measure U), x ∈ s → p x) :
+    ∀ᵐ y ∂μHE[finrank ℝ U], y ∈ f '' s →
+      ∃ x ∈ s, f x = y ∧ p x ∧ DifferentiableAt ℝ f x ∧
+        Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) ∧
+        Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' s) ∩ closedBall (f x) r) /
+          volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) r)) (𝓝[>] 0) (𝓝 0) := by
+  set k := finrank ℝ U
+  have hparam : ∀ᵐ x ∂(volume : Measure U), x ∈ s → p x ∧ DifferentiableAt ℝ f x ∧
+      Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) := by
+    filter_upwards [hp, hf.ae_differentiableAt,
+      (ae_restrict_iff' hs).1 (Besicovitch.ae_tendsto_measure_inter_div volume s)]
+      with x hpx hdiff hdens hxs using ⟨hpx hxs, hdiff, hdens hxs⟩
+  set N : Set U := {x ∈ s | ¬ (p x ∧ DifferentiableAt ℝ f x ∧
+    Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1))}
+  have hN_haus : μHE[k] N = 0 := by
+    rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume, measure_eq_zero_iff_ae_notMem]
+    exact hparam.mono fun x hx hN => hN.2 (hx hN.1)
+  have hN_img : μHE[k] (f '' N) = 0 := nonpos_iff_eq_zero.1 <|
+    (hf.lipschitzOnWith.euclideanHausdorffMeasure_image_le k).trans_eq (by rw [hN_haus, mul_zero])
+  have hf_meas : MeasurableSet (f '' s) :=
+    hs.image_of_continuousOn_injOn hf.continuous.continuousOn hinj
+  have : IsLocallyFiniteMeasure (μHE[k].restrict (E \ f '' s)) := by
+    rw [Set.sdiff_eq, inter_comm, ← Measure.restrict_restrict hf_meas.compl]; infer_instance
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 hN_img,
+    TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure k
+      (hEm.diff hf_meas.nullMeasurableSet)] with y hyN hzero
+  rintro ⟨x, hxs, rfl⟩
+  obtain ⟨hpx, hdf, hdens⟩ : p x ∧ DifferentiableAt ℝ f x ∧
+      Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) :=
+    by_contra fun hbad => hyN ⟨x, ⟨hxs, hbad⟩, rfl⟩
+  exact ⟨x, hxs, rfl, hpx, hdf, hdens, hzero fun h => h.2 (mem_image_of_mem f hxs)⟩
+
+end LipschitzWith
