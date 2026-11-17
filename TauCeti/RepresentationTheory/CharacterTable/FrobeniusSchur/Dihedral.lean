@@ -115,7 +115,7 @@ degree-weighted sum is `#{g : g² = 1} = 6`. -/
 theorem sum_frobeniusSchurIndicatorRow_dihedralGroupFour :
     ∑ i : Fin (Nat.card (ConjClasses (DihedralGroup 4))), frobeniusSchurIndicatorRow ℂ i = 5 := by
   simp only [frobeniusSchurIndicatorRow_dihedralGroupFour_eq_one, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, card_conjClasses_dihedralGroupFour, nsmul_eq_mul, mul_one]
+    Finset.card_univ, Fintype.card_fin, card_conjClasses_dihedralGroup_four, nsmul_eq_mul, mul_one]
   norm_num
 
 /-- **The categorical second Frobenius-Schur indicator of the two-dimensional irreducible
