@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Galerkin
 public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The second energy estimate for symmetric parabolic equations
@@ -190,20 +191,41 @@ theorem apply_self_add_integral_norm_sq_le
     (fun s _ ↦ hasDerivWithinAt_const s (Icc a b) B) continuousOn_const
     hu hu' hf (fun _ _ ↦ hsym) heq ht
 
-end TauCeti.PDE
-
 section TrialMap
 
 variable {V H F : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
   [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {ι : V →L[ℝ] H} {B : V →L[ℝ] StrongDual ℝ V}
-  {c c' : ℝ → F} {f : ℝ → H} {a b : ℝ}
+  {e : F →L[ℝ] V} {c c' : ℝ → F} {f : ℝ → H} {a b : ℝ}
+
+/-- The unabsorbed second energy inequality on a trial space. The derivative of the ambient
+form contributes its exact diagonal integral, without any coercivity or trial-map norm bound. -/
+theorem apply_apply_self_add_integral_norm_sq_le_add_integral
+    {A A' : ℝ → V →L[ℝ] StrongDual ℝ V}
+    (hA : ∀ s ∈ Icc a b, HasDerivWithinAt A (A' s) (Icc a b) s)
+    (hA' : ContinuousOn A' (Icc a b))
+    (hc : ∀ s ∈ Icc a b, HasDerivWithinAt c (c' s) (Icc a b) s)
+    (hc' : ContinuousOn c' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (hsym : ∀ s ∈ Icc a b, ∀ x y, A s x y = A s y x)
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (e (c' s))‖ ^ 2 + A s (e (c s)) (e (c' s)) ≤ ⟪f s, ι (e (c' s))⟫_ℝ)
+    {t : ℝ} (ht : t ∈ Icc a b) :
+    A t (e (c t)) (e (c t)) + (∫ s in a..t, ‖ι (e (c' s))‖ ^ 2) ≤
+      A a (e (c a)) (e (c a)) + (∫ s in a..t, ‖f s‖ ^ 2) +
+        ∫ s in a..t, A' s (e (c s)) (e (c s)) := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.bilinearComp_apply] using
+    apply_self_add_integral_norm_sq_le_add_integral
+      (ι := ι.comp e) (A := fun s ↦ (A s).bilinearComp e e)
+      (A' := fun s ↦ (A' s).bilinearComp e e)
+      (fun s hs ↦ (hA s hs).bilinearComp e e) (hA'.bilinearComp e e) hc hc' hf
+      (fun s hs v w ↦ hsym s hs (e v) (e w)) heq ht
 
 /-- The autonomous second energy estimate for an already constructed trial curve. Only
 testing the projected equation against its coordinate velocity is required. The trial map
 need not be injective or isometric, and the ambient energy space may be seminormed. -/
-theorem ContinuousLinearMap.apply_self_add_integral_norm_sq_le (e : F →L[ℝ] V)
+theorem apply_apply_self_add_integral_norm_sq_le
     (hsym : ∀ x y, B x y = B y x)
     (hc : ∀ s ∈ Icc a b, HasDerivWithinAt c (c' s) (Icc a b) s)
     (hc' : ContinuousOn c' (Icc a b))
@@ -221,7 +243,7 @@ theorem ContinuousLinearMap.apply_self_add_integral_norm_sq_le (e : F →L[ℝ] 
 /-- The time-dependent second energy estimate on a trial space, with a form-relative bound
 in the ambient space. No coordinate norm, injectivity, or isometry of the trial map enters
 the estimate, so the rate `K` is unchanged by restriction to a Galerkin space. -/
-theorem ContinuousLinearMap.apply_self_add_integral_norm_sq_le_mul_exp (e : F →L[ℝ] V)
+theorem apply_apply_self_add_integral_norm_sq_le_mul_exp
     {A A' : ℝ → V →L[ℝ] StrongDual ℝ V} {K : ℝ}
     (hA : ∀ s ∈ Icc a b, HasDerivWithinAt A (A' s) (Icc a b) s)
     (hA' : ContinuousOn A' (Icc a b))
@@ -244,8 +266,6 @@ theorem ContinuousLinearMap.apply_self_add_integral_norm_sq_le_mul_exp (e : F �
 
 end TrialMap
 
-namespace TauCeti.PDE
-
 /-- **Galerkin approximations with the second energy estimate.** For a fixed symmetric
 energy form and continuous pivot-space forcing, a finite-dimensional trial map injective
 into the pivot space admits a unique global classical Galerkin solution. Its terminal energy
@@ -258,20 +278,23 @@ theorem existsUnique_galerkinSolution_apply_self_add_integral_norm_deriv_sq_le
     {ι : V →L[ℝ] H} {f : ℝ → H}
     {B : V →L[ℝ] StrongDual ℝ V} (hsym : ∀ x y, B x y = B y x)
     (e : F →L[ℝ] V) (he : Function.Injective (ι.comp e)) (hf : Continuous f) (x : F) (a : ℝ) :
-    ∃! c : ℝ → F, c a = x ∧ ContDiff ℝ 1 c ∧
+    ∃ c : ℝ → F, c a = x ∧ ContDiff ℝ 1 c ∧
       (∀ t v, ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + B (e (c t)) (e v) =
         ⟪f t, ι (e v)⟫_ℝ) ∧
-      ∀ t ∈ Ici a, B (e (c t)) (e (c t)) +
+      (∀ t ∈ Ici a, B (e (c t)) (e (c t)) +
           (∫ s in a..t, ‖ι (e (deriv c s))‖ ^ 2) ≤
-        B (e x) (e x) + ∫ s in a..t, ‖f s‖ ^ 2 := by
+        B (e x) (e x) + ∫ s in a..t, ‖f s‖ ^ 2) ∧
+      ∀ d : ℝ → F, d a = x ∧ ContDiff ℝ 1 d ∧
+        (∀ t v, ⟪ι (e (deriv d t)), ι (e v)⟫_ℝ + B (e (d t)) (e v) =
+          ⟪f t, ι (e v)⟫_ℝ) → d = c := by
   obtain ⟨c, hc, huniq⟩ := existsUnique_galerkinSolution ι B e he
     (ι.gelfandDual.continuous.comp hf) x a
   have hceq (t : ℝ) (v : F) :
       ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + B (e (c t)) (e v) = ⟪f t, ι (e v)⟫_ℝ := by
     simpa only [Function.comp_apply, ContinuousLinearMap.gelfandDual_apply] using hc.2.2 t v
-  refine ⟨c, ⟨hc.1, hc.2.1, hceq, fun t ht ↦ ?_⟩, ?_⟩
-  · have henergy := ContinuousLinearMap.apply_self_add_integral_norm_sq_le
-      (ι := ι) (B := B) e hsym
+  refine ⟨c, hc.1, hc.2.1, hceq, (fun t ht ↦ ?_), ?_⟩
+  · have henergy := apply_apply_self_add_integral_norm_sq_le
+      (ι := ι) (B := B) (e := e) hsym
       (fun s _ ↦ (hc.2.1.differentiable one_ne_zero s).hasDerivAt.hasDerivWithinAt)
       hc.2.1.continuous_deriv_one.continuousOn (hf.norm.pow 2 |>.intervalIntegrable a t)
       (fun s _ ↦ by simpa only [real_inner_self_eq_norm_sq] using (hceq s (deriv c s)).le)
@@ -280,6 +303,6 @@ theorem existsUnique_galerkinSolution_apply_self_add_integral_norm_deriv_sq_le
   · intro d hd
     apply huniq d
     refine ⟨hd.1, hd.2.1, fun t v ↦ ?_⟩
-    simpa only [Function.comp_apply, ContinuousLinearMap.gelfandDual_apply] using hd.2.2.1 t v
+    simpa only [Function.comp_apply, ContinuousLinearMap.gelfandDual_apply] using hd.2.2 t v
 
 end TauCeti.PDE

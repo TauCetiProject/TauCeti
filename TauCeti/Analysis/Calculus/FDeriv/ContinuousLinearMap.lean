@@ -62,9 +62,9 @@ the corresponding affine expression vanish.
   pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
 * `HasDerivAt.const_clm_comp`: composing a family of continuous linear maps on the left with a
   fixed continuous linear map composes its derivative with that map.
-* `ContinuousOn.bilinearComp`, `HasDerivWithinAt.bilinearComp`: pulling back a family of
-  bilinear forms along fixed trial maps preserves continuity and pulls back its derivative,
-  including when the ambient spaces are only seminormed.
+* `HasDerivAtFilter.bilinearComp`, `HasDerivWithinAt.bilinearComp`, `HasDerivAt.bilinearComp`:
+  pulling back a family of bilinear forms along fixed trial maps pulls back its derivative,
+  including when the spaces are only seminormed.
 * `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero`: recover a zero
   derivative through an injective operator when its parameter derivative vanishes.
 * `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_eq_zero`: the unshifted case.
@@ -356,32 +356,21 @@ end Real
 
 end TauCeti
 
-/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
-continuity. The ambient spaces need only seminorms. -/
-theorem ContinuousOn.bilinearComp
-    {X V W : Type*} [TopologicalSpace X]
-    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
-    {c : X → V →L[𝕜] W →L[𝕜] F'} {s : Set X} (hc : ContinuousOn c s)
-    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
-    ContinuousOn (fun r ↦ (c r).bilinearComp e f) s := by
-  let L := (ContinuousLinearMap.compL 𝕜 F V (W →L[𝕜] F')).flip e
-  let R := (ContinuousLinearMap.compL 𝕜 G W F').flip f
-  let P := ContinuousLinearMap.compL 𝕜 F (W →L[𝕜] F') (G →L[𝕜] F') R
-  have hP (d : V →L[𝕜] W →L[𝕜] F') : (P.comp L) d = d.bilinearComp e f := by
-    ext v w
-    rfl
-  simpa only [Function.comp_def, hP] using (P.comp L).continuous.comp_continuousOn hc
+section BilinearComp
+
+variable {V W F G F' : Type*}
+  [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {c : 𝕜 → V →L[𝕜] W →L[𝕜] F'} {c' : V →L[𝕜] W →L[𝕜] F'}
 
 /-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
-its derivative. The ambient spaces need only seminorms. -/
-theorem HasDerivWithinAt.bilinearComp
-    {V W : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
-    {c : 𝕜 → V →L[𝕜] W →L[𝕜] F'} {c' : V →L[𝕜] W →L[𝕜] F'}
-    {s : Set 𝕜} {t : 𝕜} (hc : HasDerivWithinAt c c' s t)
+its derivative along any filter. All spaces need only seminorms. -/
+theorem HasDerivAtFilter.bilinearComp {l : Filter (𝕜 × 𝕜)} (hc : HasDerivAtFilter c c' l)
     (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
-    HasDerivWithinAt (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) s t := by
+    HasDerivAtFilter (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) l := by
   let L := (ContinuousLinearMap.compL 𝕜 F V (W →L[𝕜] F')).flip e
   let R := (ContinuousLinearMap.compL 𝕜 G W F').flip f
   let P := ContinuousLinearMap.compL 𝕜 F (W →L[𝕜] F') (G →L[𝕜] F') R
@@ -389,10 +378,26 @@ theorem HasDerivWithinAt.bilinearComp
     ext v w
     rfl
   -- The form space need not be normed, so apply the pullback directly to the remainder.
-  refine HasFDerivWithinAt.of_isLittleOTVS ?_
-  have h := (P.comp L).isBigOTVS_comp.trans_isLittleOTVS hc.hasFDerivWithinAt.isLittleOTVS
+  refine HasFDerivAtFilter.of_isLittleOTVS ?_
+  have h := (P.comp L).isBigOTVS_comp.trans_isLittleOTVS hc.hasFDerivAtFilter.isLittleOTVS
   simp only [Function.comp_def, map_sub, ContinuousLinearMap.toSpanSingleton_apply,
     map_smul] at h
   simpa only [hP, ContinuousLinearMap.toSpanSingleton_apply, sub_smul] using h
+
+/-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
+its derivative within a set. All spaces need only seminorms. -/
+theorem HasDerivWithinAt.bilinearComp {s : Set 𝕜} {t : 𝕜}
+    (hc : HasDerivWithinAt c c' s t) (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    HasDerivWithinAt (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) s t :=
+  HasDerivAtFilter.bilinearComp hc e f
+
+/-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
+its derivative at a point. All spaces need only seminorms. -/
+theorem HasDerivAt.bilinearComp {t : 𝕜}
+    (hc : HasDerivAt c c' t) (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    HasDerivAt (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) t :=
+  HasDerivAtFilter.bilinearComp hc e f
+
+end BilinearComp
 
 end
