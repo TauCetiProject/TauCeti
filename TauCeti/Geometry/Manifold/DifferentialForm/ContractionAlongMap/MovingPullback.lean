@@ -101,13 +101,6 @@ private theorem contMDiffAt_retractOpensAt {r : WithTop ℕ∞} {J : Opens ℝ} 
     ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) r (retractOpensAt t) (t : ℝ) :=
   contMDiffAt_id.extend_subtypeVal _
 
-private theorem toSpanSingleton_comp_id_eq_smulRight {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] (v : V) :
-    (ContinuousLinearMap.toSpanSingleton ℝ v).comp (ContinuousLinearMap.id ℝ ℝ) =
-      (1 : ℝ →L[ℝ] ℝ).smulRight v := by
-  apply ContinuousLinearMap.ext_ring
-  simp [ContinuousLinearMap.toSpanSingleton_apply]
-
 /-! ### Differentiation of pullbacks along moving maps -/
 
 /-- **Differentiation of moving pullbacks in degree zero over a general parameter manifold `T`.**
@@ -432,7 +425,7 @@ theorem hasMFDerivAt_mpullback_family_opens [IsManifold I 2 M] [IsManifold I' 2 
         mfamilyContraction I I' P t (mextDeriv ω) x₀ := by
     simp only [← mfamilyContraction_comp_prodMap_subtype_val J P' t ω,
       ← mfamilyContraction_comp_prodMap_subtype_val J P' t (mextDeriv ω), hP'_eq]
-  have hder := (toSpanSingleton_comp_id_eq_smulRight _).trans
+  have hder := (ContinuousLinearMap.toSpanSingleton_comp (ContinuousLinearMap.id ℝ ℝ) _).trans
     (congrArg ((1 : ℝ →L[ℝ] ℝ).smulRight (M₂ := E [⋀^Fin (k + 1)]→L[ℝ] F)) hval)
   have hfun : (fun u : ℝ ↦ (mpullback I I' (fun y ↦ P' (y, u)) ω x₀ : E [⋀^Fin (k + 1)]→L[ℝ] F)) ∘
         (Subtype.val : J → ℝ) =
@@ -866,7 +859,7 @@ theorem hasMFDerivAt_mpullback_family_form_opens [IsManifold I 2 M] [IsManifold 
     simp only [hω'_apply t, hdt, hpt_slice,
       ← mfamilyContraction_comp_prodMap_subtype_val J P' t (ω t),
       ← mfamilyContraction_comp_prodMap_subtype_val J P' t (mextDeriv (ω t)), hP'_eq]
-  have hder := (toSpanSingleton_comp_id_eq_smulRight _).trans
+  have hder := (ContinuousLinearMap.toSpanSingleton_comp (ContinuousLinearMap.id ℝ ℝ) _).trans
     (congrArg ((1 : ℝ →L[ℝ] ℝ).smulRight (M₂ := E [⋀^Fin (k + 1)]→L[ℝ] F)) hval)
   have hfun : (fun u : ℝ ↦ (mpullback I I' (fun y ↦ P' (y, u)) (ω' u) x₀ :
           E [⋀^Fin (k + 1)]→L[ℝ] F)) ∘ (Subtype.val : J → ℝ) =
