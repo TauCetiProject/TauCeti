@@ -18,7 +18,7 @@ for its distribution function and `Φ⁻¹ = (gaussianReal 0 1).quantile` for it
 defines the **Gaussian isoperimetric function** `I(u) = φ(Φ⁻¹(u))` for `0 < u < 1`, with
 `I(u) = 0` otherwise, and proves its basic properties: `I(Φ(x)) = φ(x)`, the symmetry
 `I(1 - u) = I(u)`, continuity, positivity on `(0, 1)`, the unique maximum `φ(0)` at `1 / 2`,
-smoothness on `(0, 1)` with `I′ = -Φ⁻¹` and `I″ = -1 / I`, and strict concavity on `[0, 1]`.
+smoothness on `(0, 1)` with `I' = -Φ⁻¹` and `I'' = -1 / I`, and strict concavity on `[0, 1]`.
 
 `I(u)` is the Gaussian perimeter of a half-space of Gaussian measure `u`, and the right-hand side
 of the Gaussian isoperimetric inequality. The endpoints are set apart because the quantile takes
@@ -45,7 +45,7 @@ two-sided inverse of the distribution function there.
   and the unique maximum `φ(0)` at `1 / 2`;
 * `TauCeti.Probability.hasDerivAt_gaussianIsoperimetricProfile`,
   `TauCeti.Probability.hasDerivAt_deriv_gaussianIsoperimetricProfile`,
-  `TauCeti.Probability.contDiffOn_gaussianIsoperimetricProfile` — `I′ = -Φ⁻¹`, `I″ = -1 / I`, and
+  `TauCeti.Probability.contDiffOn_gaussianIsoperimetricProfile` — `I' = -Φ⁻¹`, `I'' = -1 / I`, and
   smoothness on `(0, 1)`;
 * `TauCeti.Probability.strictConcaveOn_gaussianIsoperimetricProfile`,
   `TauCeti.Probability.locallyLipschitzOn_gaussianIsoperimetricProfile` — strict concavity on
