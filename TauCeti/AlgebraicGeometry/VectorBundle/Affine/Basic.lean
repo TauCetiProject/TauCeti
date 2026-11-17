@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Dual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 import TauCeti.AlgebraicGeometry.Modules.Localization
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
 /-!
@@ -55,7 +55,9 @@ the spectrum of a local ring is free, on as many generators as its rank.
 * `AlgebraicGeometry.Scheme.Modules.finite_projective_sections`: sections of a finite locally
   free sheaf over any affine open form a finite projective module.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_of_finite_projective_sections`:
-  a quasicoherent sheaf with finite projective sections on affine opens is finite locally free.
+  a quasicoherent sheaf with finite projective sections on an affine open cover is finite locally
+  free, and `isFiniteLocallyFree_iff_finite_projective_sections` gives the criterion on all affine
+  opens.
 
 ## References
 
@@ -66,7 +68,7 @@ the spectrum of a local ring is free, on as many generators as its rank.
 
 public section
 
-open CategoryTheory
+open CategoryTheory TopologicalSpace
 
 namespace TauCeti
 
@@ -255,42 +257,54 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_projective_sections
       ((Scheme.Modules.restrictFunctorIsoPullback hU.fromSpec).app M).symm
       ⟨Scheme.Modules.isLocallyFree_pullback _ M,
         Scheme.Modules.isFinitePresentation_pullback _ M⟩
-  have hproj :=
-    (FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ ⟨M.restrict hU.fromSpec, hN⟩).2
-  have : Module.Projective Γ(X, U) Γ(M.restrict hU.fromSpec, ⊤) := by convert! hproj
-  exact ⟨M.finite_sections_of_isAffineOpen U hU,
-    Module.Projective.of_equiv (M.fromSpecSectionsEquiv hU).symm⟩
+  obtain ⟨hfin, hproj⟩ :=
+    FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ ⟨M.restrict hU.fromSpec, hN⟩
+  have : Module.Finite Γ(X, U) (moduleSpecΓFunctor.obj (M.restrict hU.fromSpec)) := hfin
+  have : Module.Projective Γ(X, U) (moduleSpecΓFunctor.obj (M.restrict hU.fromSpec)) := hproj
+  let e : moduleSpecΓFunctor.obj (M.restrict hU.fromSpec) ≃ₗ[Γ(X, U)] Γ(M, U) :=
+    (hU.restrictFromSpecCompModuleSpecΓFunctorIso.app M).toLinearEquiv
+  exact ⟨Module.Finite.equiv e, Module.Projective.of_equiv e⟩
 
-/-- A quasicoherent sheaf is finite locally free if its sections over each affine open form a
-finite projective module. The criterion uses arbitrary affine opens rather than a chosen cover. -/
+/-- A quasicoherent sheaf is finite locally free if its sections over an affine open cover form
+finite projective modules. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_of_finite_projective_sections
-    (M : X.Modules) [M.IsQuasicoherent]
-    (hM : ∀ U : X.Opens, IsAffineOpen U →
-      Module.Finite Γ(X, U) Γ(M, U) ∧ Module.Projective Γ(X, U) Γ(M, U)) :
+    (M : X.Modules) [M.IsQuasicoherent] {ι : Sort*} (U : ι → X.Opens)
+    (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
+    (hM : ∀ i, Module.Finite Γ(X, U i) Γ(M, U i) ∧
+      Module.Projective Γ(X, U i) Γ(M, U i)) :
     Scheme.Modules.isFiniteLocallyFree X M := by
-  let 𝒰 : X.OpenCover := Scheme.Cover.mkOfCovers X.affineOpens
-    (fun U : X.affineOpens ↦ Spec Γ(X, U)) (fun U ↦ U.property.fromSpec)
-    (fun x ↦ by
-      obtain ⟨U, hx⟩ := TopologicalSpace.Opens.mem_iSup.mp
-        ((iSup_affineOpens_eq_top X).symm ▸ TopologicalSpace.Opens.mem_top x)
-      rw [← U.property.opensRange_fromSpec] at hx
-      obtain ⟨p, hp⟩ := hx
-      exact ⟨U, p, hp⟩)
-    (fun U ↦ U.property.isOpenImmersion_fromSpec)
+  let 𝒰 := (Scheme.AffineOpenCover.ofIsOpenCover (fun i : PLift ι ↦ U i.down)
+    (by simpa only [IsOpenCover, iSup_plift_down] using hcov) (fun i ↦ hU i.down)).openCover
   refine (Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback 𝒰 M).mpr
-    fun (U : X.affineOpens) ↦ ?_
-  have : IsOpenImmersion U.property.fromSpec := U.property.isOpenImmersion_fromSpec
-  let N := M.restrict U.property.fromSpec
-  obtain ⟨hfin, hproj⟩ := hM U U.property
-  have : Module.Finite Γ(X, U) (moduleSpecΓFunctor.obj N) := by
-    convert! Module.Finite.equiv (M.fromSpecSectionsEquiv U.property)
-  have : Module.Projective Γ(X, U) (moduleSpecΓFunctor.obj N) := by
-    convert! Module.Projective.of_equiv (M.fromSpecSectionsEquiv U.property)
-  have hN : Scheme.Modules.isFiniteLocallyFree (Spec Γ(X, U)) N :=
+    fun i ↦ ?_
+  have hi : IsOpenImmersion (hU i.down).fromSpec := (hU i.down).isOpenImmersion_fromSpec
+  let N := M.restrict (hU i.down).fromSpec
+  obtain ⟨hfin, hproj⟩ := hM i.down
+  let e : moduleSpecΓFunctor.obj N ≃ₗ[Γ(X, U i.down)] Γ(M, U i.down) :=
+    ((hU i.down).restrictFromSpecCompModuleSpecΓFunctorIso.app M).toLinearEquiv
+  have : Module.Finite Γ(X, U i.down) Γ(M, U i.down) := hfin
+  have : Module.Projective Γ(X, U i.down) Γ(M, U i.down) := hproj
+  have : Module.Finite Γ(X, U i.down) (moduleSpecΓFunctor.obj N) :=
+    Module.Finite.equiv e.symm
+  have : Module.Projective Γ(X, U i.down) (moduleSpecΓFunctor.obj N) :=
+    Module.Projective.of_equiv e.symm
+  have hN : Scheme.Modules.isFiniteLocallyFree (Spec Γ(X, U i.down)) N :=
     (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso (asIso N.fromTildeΓ)
       (isFiniteLocallyFree_tilde (moduleSpecΓFunctor.obj N))
   exact (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso
-    ((Scheme.Modules.restrictFunctorIsoPullback U.property.fromSpec).app M) hN
+    ((Scheme.Modules.restrictFunctorIsoPullback (hU i.down).fromSpec).app M) hN
+
+/-- A quasicoherent sheaf is finite locally free if and only if its sections over every affine open
+form a finite projective module. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_finite_projective_sections
+    (M : X.Modules) [M.IsQuasicoherent] :
+    Scheme.Modules.isFiniteLocallyFree X M ↔
+      ∀ U : X.Opens, IsAffineOpen U →
+        Module.Finite Γ(X, U) Γ(M, U) ∧ Module.Projective Γ(X, U) Γ(M, U) := by
+  refine ⟨fun hM U hU ↦ M.finite_projective_sections hM hU, fun hM ↦ ?_⟩
+  exact M.isFiniteLocallyFree_of_finite_projective_sections
+    (fun U : X.affineOpens ↦ U) (fun U ↦ U.property) (iSup_affineOpens_eq_top X)
+    (fun U ↦ hM U U.property)
 
 end
 
