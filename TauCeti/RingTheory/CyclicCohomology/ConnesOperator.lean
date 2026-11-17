@@ -301,6 +301,12 @@ def barCoboundary (n : ℕ) :
       MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M :=
   ∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i.castSucc
 
+/-- Defining formula for `barCoboundary` as an alternating sum of Hochschild cofaces. -/
+theorem barCoboundary_def (n : ℕ) :
+    barCoboundary R A M n =
+      ∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i.castSucc :=
+  (rfl)
+
 variable {R A M} {n : ℕ}
 
 /-- The bar coboundary evaluates as the alternating sum of `φ` on the contractions of adjacent
