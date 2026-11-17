@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import TauCeti.Analysis.Matrix.Exponential.FixedPoints
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
+import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # The normalization of the Conley–Zehnder index
@@ -111,12 +112,6 @@ private theorem diagonalStraightening_mul_graphFrame_eq (Ψ : Matrix (n ⊕ n) (
 of `Ψ`, when `Ψ` is symplectic and `Ψ + 1` is invertible. -/
 private noncomputable def graphSymm (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
   ((Ψ + 1)⁻¹)ᵀ * (Ψᵀ * J n ℝ - J n ℝ * Ψ) * (Ψ + 1)⁻¹
-
-private theorem transpose_transpose_mul_J_sub_J_mul (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    (Ψᵀ * J n ℝ - J n ℝ * Ψ)ᵀ = Ψᵀ * J n ℝ - J n ℝ * Ψ := by
-  simp only [transpose_sub, transpose_mul, transpose_transpose, J_transpose, Matrix.neg_mul,
-    Matrix.mul_neg]
-  abel
 
 private theorem isHermitian_graphSymm (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     (graphSymm Ψ).IsHermitian := by
@@ -231,15 +226,6 @@ private theorem isUnit_det_transpose_mul_J_sub_J_mul_exp {S : Matrix (n ⊕ n) (
   exact hv0 ((mulVec_injective_iff_isUnit.2 ((isUnit_iff_isUnit_det S).2 hS))
     (hSv.trans (mulVec_zero S).symm))
 
-/-- For a symmetric `S`, the derivative `Kᵀ J - J K` at `u = 0` of `Ψ_uᵀ J - J Ψ_u`,
-`Ψ_u = exp (u K)`, `K = J S`, is `2 S`. -/
-private theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (hS : S.IsHermitian) : (J n ℝ * S)ᵀ * J n ℝ - J n ℝ * (J n ℝ * S) = (2 : ℝ) • S := by
-  have hST : Sᵀ = S := (conjTranspose_eq_transpose_of_trivial S).symm.trans hS.eq
-  rw [transpose_mul, J_transpose, hST, ← Matrix.mul_assoc, Matrix.mul_assoc, Matrix.neg_mul,
-    J_squared]
-  simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
-
 open scoped Matrix.Norms.L2Operator in
 /-- If `S` is symmetric and nondegenerate, and `2 ‖u J S‖ < log 2` and `exp (u J S)` is symplectic
 for `u ∈ [0, 1]`, then for `Ψ = exp (J S)` the symmetric matrix `Ψᵀ J - J Ψ` has the signature of
@@ -260,7 +246,7 @@ private theorem signature_exp_transpose_mul_J_sub_J_mul_exp {S : Matrix (n ⊕ n
       J n ℝ * (NormedSpace.exp (t • K) * K)) t :=
     ((hasDerivAt_exp_smul_const Kᵀ t).mul_const _).sub
       ((hasDerivAt_exp_smul_const K t).const_mul _)
-  have hK0 : Kᵀ * J n ℝ - J n ℝ * K = (2 : ℝ) • S := transpose_J_mul_mul_J_sub_J_mul_J_mul hS
+  have hK0 : Kᵀ * J n ℝ - J n ℝ * K = (2 : ℝ) • S := transpose_J_mul_mul_J_sub_J_mul_J_mul hS.isSymm
   have hf0 : f 0 = 0 := by simp [f]
   -- The slope of `f` at `0`, extended by the derivative `2 S`.
   set g := dslope f 0 with hgdef

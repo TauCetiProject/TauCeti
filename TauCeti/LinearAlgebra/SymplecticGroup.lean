@@ -62,6 +62,9 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   antisymmetric with zero diagonal, in every characteristic;
   `Matrix.transpose_mul_J_mul_transpose_sub_J` and `Matrix.mul_J_mul_transpose_sub_J_apply_self`
   say the same of the defect `M * J * Mᵀ - J` of a square matrix `M`.
+* `Matrix.transpose_transpose_mul_J_sub_J_mul`: the matrix `Ψᵀ * J - J * Ψ` is symmetric, and
+  `Matrix.transpose_J_mul_mul_J_sub_J_mul_J_mul` evaluates it on `J * S` for symmetric `S` as
+  `2 • S`.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
@@ -211,6 +214,22 @@ theorem mul_J_mul_transpose_apply_self {m : Type*} (C : Matrix m (l ⊕ l) R) (i
 theorem transpose_mul_J_mul_transpose_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
     (M * J l R * Mᵀ - J l R)ᵀ = -(M * J l R * Mᵀ - J l R) := by
   rw [transpose_sub, transpose_mul_J_mul_transpose, J_transpose, neg_sub_neg, neg_sub]
+
+/-- For any square matrix `Ψ`, the matrix `Ψᵀ * J - J * Ψ` is symmetric. When `Ψ` is symplectic
+it is `(Ψ + 1)ᵀ * (-J * (Ψ - 1))`, the numerator of the Cayley transform of `Ψ`. -/
+theorem transpose_transpose_mul_J_sub_J_mul (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (Ψᵀ * J l R - J l R * Ψ)ᵀ = Ψᵀ * J l R - J l R * Ψ := by
+  simp only [transpose_sub, transpose_mul, transpose_transpose, J_transpose, Matrix.neg_mul,
+    Matrix.mul_neg]
+  abel
+
+/-- For a symmetric `S` and `K = J * S`, the matrix `Kᵀ * J - J * K` is `2 • S`. This is the
+linearization at `Ψ = 1` of `Ψᵀ * J - J * Ψ` along `Ψ = 1 + K`. -/
+theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) :
+    (J l R * S)ᵀ * J l R - J l R * (J l R * S) = (2 : R) • S := by
+  rw [transpose_mul, J_transpose, hS.eq, ← Matrix.mul_assoc, Matrix.mul_assoc, Matrix.neg_mul,
+    J_squared]
+  simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
 
 /-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
 theorem mul_J_mul_transpose_sub_J_apply_self (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
