@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import Mathlib.Analysis.Normed.Ring.Lemmas
+import Mathlib.Algebra.MvPolynomial.CommRing
 
 /-!
 # The coefficient l¹-norm of a multivariate polynomial
@@ -28,8 +29,11 @@ values. The one-variable counterpart is `Polynomial.l1Norm`.
 
 ## Main results
 
-* `MvPolynomial.l1Norm_add_le`, `MvPolynomial.l1Norm_sum_le` and `MvPolynomial.l1Norm_smul_le`:
-  the length is a seminorm.
+* `MvPolynomial.l1Norm_add_le`, `MvPolynomial.l1Norm_sub_le`, `MvPolynomial.l1Norm_sum_le` and
+  `MvPolynomial.l1Norm_smul_le`: the length is subadditive, and scaling by `c` multiplies it by at
+  most `‖c‖`.
+* `MvPolynomial.l1Norm_neg`, `MvPolynomial.l1Norm_eq_zero_iff` and `MvPolynomial.l1Norm_map`:
+  invariance under negation and norm-preserving coefficient maps, and vanishing exactly at `0`.
 * `MvPolynomial.l1Norm_mul_le`, `MvPolynomial.l1Norm_prod_le` and `MvPolynomial.l1Norm_pow_le`:
   the length is submultiplicative.
 * `MvPolynomial.l1Norm_eq_sum_abs_coeff`: over `ℤ`, the length is `∑ₘ |cₘ|`.
@@ -82,6 +86,24 @@ theorem norm_coeff_le_l1Norm (p : MvPolynomial σ R) (m : σ →₀ ℕ) : ‖p.
 theorem l1Norm_zero : (0 : MvPolynomial σ R).l1Norm = 0 := by
   simp [l1Norm_def]
 
+/-- Over a normed ring, the length vanishes exactly for the zero polynomial. -/
+@[simp]
+theorem l1Norm_eq_zero_iff {A : Type*} [NormedCommRing A] (p : MvPolynomial σ A) :
+    p.l1Norm = 0 ↔ p = 0 := by
+  refine ⟨fun hp ↦ ext _ _ fun m ↦ ?_, fun hp ↦ hp ▸ l1Norm_zero⟩
+  exact norm_eq_zero.1 (le_antisymm (hp ▸ p.norm_coeff_le_l1Norm m) (norm_nonneg _))
+
+/-- Negating a polynomial does not change its length. -/
+@[simp]
+theorem l1Norm_neg (p : MvPolynomial σ R) : (-p).l1Norm = p.l1Norm := by
+  simp only [l1Norm_def, support_neg, coeff_neg, norm_neg]
+
+/-- A norm-preserving ring homomorphism preserves the length. -/
+theorem l1Norm_map (p : MvPolynomial σ R) {S : Type*} [SeminormedCommRing S] (f : R →+* S)
+    (hf : ∀ x, ‖f x‖ = ‖x‖) : (p.map f).l1Norm = p.l1Norm := by
+  rw [l1Norm_eq_sum_of_support_subset _ (support_map_subset f p), l1Norm_def]
+  simp only [coeff_map, hf]
+
 /-- The monomial `c X^m` has length `‖c‖`. -/
 @[simp]
 theorem l1Norm_monomial (m : σ →₀ ℕ) (c : R) : (monomial m c).l1Norm = ‖c‖ := by
@@ -111,6 +133,10 @@ theorem l1Norm_add_le (p q : MvPolynomial σ R) : (p + q).l1Norm ≤ p.l1Norm + 
     l1Norm_eq_sum_of_support_subset p subset_union_left,
     l1Norm_eq_sum_of_support_subset q subset_union_right, ← sum_add_distrib]
   exact sum_le_sum fun m _ ↦ by simpa using norm_add_le (p.coeff m) (q.coeff m)
+
+/-- The length of a difference is at most the sum of the lengths. -/
+theorem l1Norm_sub_le (p q : MvPolynomial σ R) : (p - q).l1Norm ≤ p.l1Norm + q.l1Norm := by
+  simpa only [sub_eq_add_neg, l1Norm_neg] using l1Norm_add_le p (-q)
 
 /-- The length of a finite sum is at most the sum of the lengths. -/
 theorem l1Norm_sum_le {ι : Type*} (s : Finset ι) (f : ι → MvPolynomial σ R) :

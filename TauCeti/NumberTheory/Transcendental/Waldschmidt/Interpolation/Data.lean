@@ -403,11 +403,6 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
       fun w ↦ eval (update x 0 w) (F.map ι) * cexp (t * w + t * c) := by
     funext w
     simp [waldschmidtFunction_def, c, mul_add]
-  -- Partial derivatives commute with the coefficient map `ι`.
-  have hpderiv (k : ℕ) : (pderiv 0)^[k] (F.map ι) = ((pderiv 0)^[k] F).map ι := by
-    induction k with
-    | zero => rfl
-    | succ k ih => rw [iterate_succ_apply', ih, pderiv_map, iterate_succ_apply']
   -- The exponential factor on the grid.
   have hexp : cexp (t * x 0 + t * c) =
       ι (∏ j, α j ^ (t * s j)) * cexp (t * s (Fin.last n) * waldschmidtLinearForm l
@@ -424,8 +419,8 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
   beta_reduce
   rw [update_eq_self, hexp, waldschmidtEntry_def, map_mul, ← mul_assoc]
   congr 1
-  simp only [hpderiv, eval_map, x, waldschmidtPoint_map, eval₂_comp, comp_def, map_sum, map_mul,
-    map_natCast, map_pow, map_intCast]
+  simp only [iterate_pderiv_map, eval_map, x, waldschmidtPoint_map, eval₂_comp, comp_def, map_sum,
+    map_mul, map_natCast, map_pow, map_intCast]
 
 /-- The coefficient-field factor `γ_P` of the differential operator `P(∂/∂z₀)` applied to
 Waldschmidt's auxiliary function `F(z) exp(t (z₀ + λ₁ z₁ + ⋯))` at the grid point `s · y`

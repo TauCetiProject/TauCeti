@@ -138,26 +138,21 @@ theorem waldschmidtOperatorEntry_map_algebraMap {K : Type*} [Field K] [Algebra R
     (P : Polynomial R) :
     waldschmidtOperatorEntry α b t s (F.map (algebraMap R K)) (P.map (algebraMap R K)) =
       aeval b (waldschmidtEntryPolynomial t s P F) * ∏ j, α j ^ (t * s j) := by
-  set φ := algebraMap R K
   -- The grid point with indeterminate coefficients specializes to the grid point at `b`.
   have hpt : (fun i ↦ aeval b (waldschmidtPoint
       (X : Fin (n + 1) → MvPolynomial (Fin (n + 1)) R) s i)) = waldschmidtPoint b s := by
     simpa using (waldschmidtPoint_map (X : Fin (n + 1) → MvPolynomial (Fin (n + 1)) R)
       (aeval b).toRingHom s).symm
-  have hpderiv (k : ℕ) : (pderiv 0)^[k] (F.map φ) = ((pderiv 0)^[k] F).map φ := by
-    induction k with
-    | zero => rfl
-    | succ k ih => rw [Function.iterate_succ_apply', ih, pderiv_map, Function.iterate_succ_apply']
   rw [waldschmidtOperatorEntry_eq_sum_hasseDeriv, waldschmidtEntryPolynomial_apply, map_sum]
   congr 1
-  -- The sum over the degree of `P.map φ` extends to the degree of `P`.
+  -- The sum over the degree of the mapped operator extends to the degree of `P`.
   refine (sum_subset (range_subset_range.2 (Nat.succ_le_succ (Polynomial.natDegree_map_le)))
     fun k _ hk ↦ ?_).trans (sum_congr rfl fun k _ ↦ ?_)
   · rw [Polynomial.hasseDeriv_eq_zero_of_lt_natDegree _ _ (by simpa using hk),
       Polynomial.eval_zero, zero_mul]
-  · rw [map_smul, aeval_bind₁, hpt, Algebra.smul_def, Polynomial.hasseDeriv_map,
-      Polynomial.eval_map_algebraMap, hpderiv, eval_map, ← aeval_def]
-    simp [Polynomial.aeval_def, Polynomial.eval₂_at_intCast]
+  · rw [map_smul, aeval_bind₁, hpt]
+    simp [Algebra.smul_def, Polynomial.hasseDeriv_map, aeval_def, Polynomial.aeval_def,
+      Polynomial.eval₂_at_intCast]
 
 /-- The entry of the operator `P(∂/∂z₀)` on the row of `F` with exponent `t`, at the grid point
 `s · y` built from `b = (β₀, …, β_{m-1})`, is the value at `b` of the entry polynomial of `F`
@@ -210,13 +205,16 @@ private theorem l1Norm_waldschmidtEntryPolynomial_monomial_le {t : ℤ} {P : Pol
     have hν (i : Fin n) : Finsupp.single (0 : Fin (n + 1)) k i.succ = 0 :=
       Finsupp.single_eq_of_ne (Fin.succ_ne_zero i)
     simp only [Finsupp.tsub_apply, Finsupp.single_eq_same, hν, tsub_zero]
-    refine mul_le_mul (by simpa using Nat.norm_cast_le (α := R) ((μ 0).descFactorial k))
-      (mul_le_mul (pow_le_pow_left₀ (l1Norm_nonneg _) hg0 _)
-        (prod_le_prod₀ (fun i _ ↦ pow_nonneg (l1Norm_nonneg _) _)
-          fun i _ ↦ pow_le_pow_left₀ (l1Norm_nonneg _) (hgs i) _)
-        (prod_nonneg fun i _ ↦ pow_nonneg (l1Norm_nonneg _) _) (by positivity))
-      (mul_nonneg (pow_nonneg (l1Norm_nonneg _) _)
-        (prod_nonneg fun i _ ↦ pow_nonneg (l1Norm_nonneg _) _)) (Nat.cast_nonneg _)
+    have hd : ‖((μ 0).descFactorial k : R)‖ ≤ (μ 0).descFactorial k := by
+      simpa using Nat.norm_cast_le (α := R) ((μ 0).descFactorial k)
+    -- With these bounds and nonnegativity facts in context, `gcongr` combines the factors.
+    have hg0' : 0 ≤ (g 0).l1Norm := l1Norm_nonneg _
+    have hprod : ∏ i : Fin n, (g i.succ).l1Norm ^ μ i.succ ≤ B :=
+      prod_le_prod₀ (fun i _ ↦ pow_nonneg (l1Norm_nonneg _) _)
+        fun i _ ↦ pow_le_pow_left₀ (l1Norm_nonneg _) (hgs i) _
+    have hprod' : 0 ≤ ∏ i : Fin n, (g i.succ).l1Norm ^ μ i.succ :=
+      prod_nonneg fun i _ ↦ pow_nonneg (l1Norm_nonneg _) _
+    gcongr
   rw [waldschmidtEntryPolynomial_apply]
   refine (l1Norm_sum_le _ _).trans ((sum_le_sum fun k _ ↦ hterm k).trans ?_)
   rw [← mul_sum]
