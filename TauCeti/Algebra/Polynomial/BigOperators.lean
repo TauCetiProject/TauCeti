@@ -25,6 +25,8 @@ that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and 
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
 A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`.
+A product `∏ i, (X - C (a i))` of linear factors over a nonempty finite type
+has positive degree (`Polynomial.natDegree_prod_X_sub_C_pos`).
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -151,6 +153,17 @@ theorem natDegree_geom_sum₂ {S : Type*} [Semiring S] [CharZero S]
       · simp
     rw [hc]
     exact_mod_cast hn.ne'
+
+section CommRing
+
+variable {ι R : Type*} [Fintype ι] [Nonempty ι] [CommRing R] [Nontrivial R]
+
+/-- A product `∏ i, (X - C (a i))` of linear factors over a nonempty finite type has positive
+degree. -/
+theorem natDegree_prod_X_sub_C_pos (a : ι → R) : 0 < (∏ i, (X - C (a i))).natDegree := by
+  simpa using Fintype.card_pos
+
+end CommRing
 
 end Polynomial
 
