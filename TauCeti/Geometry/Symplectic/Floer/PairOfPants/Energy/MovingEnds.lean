@@ -240,6 +240,18 @@ private theorem lt_norm_of_notMem_movingEndPiece (ha : ∀ i, a i ≠ 0) {z : �
     simp only [endChart_apply, ContinuousLinearEquiv.symm_apply_apply, hζ,
       ContinuousLinearEquiv.apply_symm_apply]
 
+/-- For nonzero scales, if the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the
+disc `‖w‖ ≤ 2 exp (2π)`, then so do the smaller discs `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` containing
+the parts `s ≥ 1` of the input ends. -/
+private theorem separation_norm_mul_exp_neg_two_pi_div_two (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) :
+    (Pairwise fun i j =>
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖) ∧
+      ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π) := by
+  have hr (i : ι) := (norm_mul_exp_neg_two_pi_div_two_lt (ha i)).le
+  exact ⟨fun i j hij ↦ by linarith [hr i, hr j, hsep hij], fun i ↦ by linarith [hr i, hout i]⟩
+
 end Pieces
 
 end TauCeti.Floer
@@ -506,8 +518,7 @@ sphere minus its punctures: the points of the plane other than the centers of th
 private theorem iUnion_preimage_puncturedSphereTruncation [Finite ι] (ha : ∀ i, a i ≠ 0) :
     ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R =
       {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
-  rw [← preimage_iUnion, iUnion_puncturedSphereTruncation ha]
-  rfl
+  rw [← preimage_iUnion, iUnion_puncturedSphereTruncation ha, preimage_ofPred_eq]
 
 omit [Fintype ι] in
 /-- The sphere minus its punctures, the points of the plane other than the finitely many centers of
@@ -804,10 +815,9 @@ theorem
   rw [hω.integral_floerEnergyDensity_puncturedSpherePerturbation_truncation hH hHs hHout hHouts ha
     hsep hout hVo hTV hu hR, hsub, abs_neg]
   -- The supports of the input end data lie in the discs `‖w - c i‖ < ‖a i‖ / 2`.
-  have hr (i : ι) := (norm_mul_exp_neg_two_pi_div_two_lt (ha i)).le
+  obtain ⟨hsep', hout'⟩ := separation_norm_mul_exp_neg_two_pi_div_two ha hsep hout
   exact ω.abs_setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout hHouts ha
-    (fun i j hij ↦ by linarith [hr i, hr j, hsep hij]) (fun i ↦ by linarith [hr i, hout i]) hB hBout
-    u _
+    hsep' hout' hB hBout u _
 
 
 /-- **The topological energy of a solution on a sphere with moving input ends is bounded below,
@@ -884,11 +894,10 @@ theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation (ω : Smoo
     (ω.integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_truncation hH hHs hHout
       hHouts ha hsep hout (hu.mono fun _ hz i ↦
         ne_of_mem_puncturedSphereTruncation (ha i) hz)).aestronglyMeasurable, ?_⟩
-  have hr (i : ι) := (norm_mul_exp_neg_two_pi_div_two_lt (ha i)).le
+  obtain ⟨hsep', hout'⟩ := separation_norm_mul_exp_neg_two_pi_div_two ha hsep hout
   refine ((setLIntegral_le_lintegral _ _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout hHouts ha
-      (fun i j hij ↦ by linarith [hr i, hr j, hsep hij]) (fun i ↦ by linarith [hr i, hout i])
-      hB hBout u)).trans_lt ?_
+      hsep' hout' hB hBout u)).trans_lt ?_
   simp [ENNReal.sum_lt_top]
 
 omit [IsManifold I ⊤ M] [FiniteDimensional ℝ E] in
@@ -1062,10 +1071,9 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_puncturedSpherePerturbat
   have hsub (x y z : ℝ) : x + y - z - x - y = -z := by ring
   rw [hω.integral_floerEnergyDensity_puncturedSpherePerturbation hH hHs hHout hHouts ha hsep hout
     hB hBout hu hx hxout hE hA, hsub, abs_neg]
-  have hr (i : ι) := (norm_mul_exp_neg_two_pi_div_two_lt (ha i)).le
+  obtain ⟨hsep', hout'⟩ := separation_norm_mul_exp_neg_two_pi_div_two ha hsep hout
   exact ω.abs_setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout hHouts ha
-    (fun i j hij ↦ by linarith [hr i, hr j, hsep hij]) (fun i ↦ by linarith [hr i, hout i]) hB hBout
-    u _
+    hsep' hout' hB hBout u _
 
 /-- **The topological energy of a solution on the whole sphere with moving input ends is bounded
 below, for a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on the
