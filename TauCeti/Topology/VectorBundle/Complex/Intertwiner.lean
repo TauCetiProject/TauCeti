@@ -172,7 +172,7 @@ theorem clutchingNumberHom_eq_of_isUnit_intertwiner (h : ∀ b, IsUnit (J.intert
 
 /-- The clutching number homomorphism of a complex structure does not depend on the model fibre.
 -/
-theorem clutchingNumberHom_indep_model (x : B) :
+theorem clutchingNumberHom_eq_of_model (x : B) :
     clutchingNumberHom G' J.Fiber x = clutchingNumberHom G J.Fiber x :=
   J.clutchingNumberHom_eq_of_isUnit_intertwiner J G G' (fun b ↦ by simp) x
 
