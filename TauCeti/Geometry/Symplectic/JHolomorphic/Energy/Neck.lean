@@ -46,14 +46,15 @@ annulus `r₁ ≤ |z - z₀| ≤ r₂`, and `κ = 2c / (1 + M)²`.
   there is a threshold `δ > 0` such that every such solution with `E(a, b) < δ` satisfies
   `π |z - z₀|² ‖∂ₛu(z)‖² ≤ 32 max (2a / |z - z₀|) (3 |z - z₀| / (2b)) ^ κ E(a, b)` for
   `2a ≤ |z - z₀|` and `3 |z - z₀| ≤ 2b`
-  (`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le`): apply the
-  mean-value inequality on the disc of radius `|z - z₀| / 2` about `z`, which lies in the
-  annulus `|z - z₀| / 2 ≤ |w - z₀| ≤ 3 |z - z₀| / 2`, and the exponential decay to that annulus.
+  (`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_annulus`):
+  apply the mean-value inequality on the disc of radius `|z - z₀| / 2` about `z`, which lies in
+  the annulus `|z - z₀| / 2 ≤ |w - z₀| ≤ 3 |z - z₀| / 2`, and the exponential decay to that
+  annulus.
   In the cylinder coordinate this is exponential decay of `|du|` towards the middle of the neck.
 * **Small image.** Integrating this bound along an arc and a ray, the image of the middle annulus
   `r₁ ≤ |w - z₀| ≤ r₂`, for `2a ≤ r₁` and `3 r₂ ≤ 2b`, has diameter at most
   `(1 + M) (2π + 1 / γ) √(32 E(a, b) / π) ((2a / r₁) ^ γ + (3 r₂ / (2b)) ^ γ)` with `γ = κ / 2`
-  (`TauCeti.SymplecticForm.exists_pos_forall_norm_sub_le`). So the middle of a neck of small
+  (`TauCeti.SymplecticForm.exists_pos_forall_norm_sub_le_annulus`). So the middle of a neck of small
   energy is mapped into a small ball, which is how the two ends of a neck are shown to converge to
   the same node point.
 
@@ -297,7 +298,7 @@ annulus `a ≤ |z - z₀| ≤ b` with image in `K`, uniformly tamed by `ω` with
 `3 |z - z₀| ≤ 2b` satisfies
 `π |z - z₀|² ‖∂ₛu(z)‖² ≤ 32 max (2a / |z - z₀|) (3 |z - z₀| / (2b)) ^ κ E`, where
 `κ = 2c / (1 + M)²`. -/
-theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_annulus
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
     (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
     ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃a b c M : ℝ⦄, 0 < a → 0 < c →
@@ -399,8 +400,8 @@ private theorem norm_sub_le_of_norm_deriv_le {φ φ' : ℝ → V} {K x y γ s t 
 
 omit [FiniteDimensional ℝ V] in
 /-- The squared pointwise bound of
-`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le` in linear form,
-for the whole derivative: with `γ = c / (1 + M)²`, `E ≥ 0` and `ρ = |z - z₀| > 0`,
+`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_annulus` in linear
+form, for the whole derivative: with `γ = c / (1 + M)²`, `E ≥ 0` and `ρ = |z - z₀| > 0`,
 `‖du(z)‖ ≤ (1 + M) √(32 E / π) ((2a / ρ) ^ γ + (ρ (3 / (2b))) ^ γ) / ρ`. -/
 private theorem norm_fderiv_le_of_pi_mul_sq_mul_norm_fderiv_one_sq_le {z : ℂ} {E : ℝ}
     (ha : 0 ≤ a) (hb : 0 ≤ b) (hE : 0 ≤ E) (hρ : 0 < ‖z - z₀‖)
@@ -531,7 +532,7 @@ points `w₁`, `w₂` of the annulus `r₁ ≤ |w - z₀| ≤ r₂` satisfy
 `‖u w₁ - u w₂‖ ≤ (1 + M) (2π + 1 / γ) √(32 E / π) ((2a / r₁) ^ γ + (3 r₂ / (2b)) ^ γ)`,
 where `γ = c / (1 + M)²`. So the image of the middle of a neck has diameter bounded by the square
 root of its energy, and it shrinks as the collars `[a, r₁]` and `[r₂, b]` grow. -/
-theorem exists_pos_forall_norm_sub_le
+theorem exists_pos_forall_norm_sub_le_annulus
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
     (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
     ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃a b c M : ℝ⦄, 0 < a → 0 < c →
@@ -549,7 +550,8 @@ theorem exists_pos_forall_norm_sub_le
         ‖u w₁ - u w₂‖ ≤ (1 + M) * (2 * π + (1 + M) ^ 2 / c) *
           √(32 * (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2) / π) *
           ((2 * a / r₁) ^ (c / (1 + M) ^ 2) + (3 * r₂ / (2 * b)) ^ (c / (1 + M) ^ 2)) := by
-  obtain ⟨δ, hδ, hpt⟩ := exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le hg hW hJ hK hKW hJsq
+  obtain ⟨δ, hδ, hpt⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_annulus hg hW hJ hK hKW hJsq
   refine ⟨δ, hδ, fun u z₀ a b c M ha hc hu hCR htame hJM huK hE r₁ r₂ h₁ h₂ w₁ hw₁ w₂ hw₂ ↦ ?_⟩
   have hb : 0 ≤ b := by linarith [hw₁.1, hw₁.2]
   have hM : 0 ≤ M := (norm_nonneg _).trans
