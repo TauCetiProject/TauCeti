@@ -29,9 +29,9 @@ product `∏ j ∈ s, p j` of pairwise non-associated prime polynomials with
 
 ## Main results
 
-* `TauCeti.MvPolynomial.isUnit_away_prime_iff` and
-  `TauCeti.MvPolynomial.isUnit_away_prod_primes_iff`: characterizations of units in a localization
-  of `MvPolynomial σ R` away from a prime or finite product of primes.
+* `Prime.isUnit_away_mvPolynomial_iff` and `Finset.isUnit_away_prod_mvPolynomial_primes_iff`:
+  characterizations of units in a localization of `MvPolynomial σ R` away from a prime or finite
+  product of primes.
 -/
 
 public section
@@ -86,22 +86,6 @@ theorem awayPrimeUnitsMulEquiv_symm_awayUnit (S : Type*) [CommSemiring S]
     (awayPrimeUnitsMulEquiv S hprime).symm (awayUnit S f) = (1, Multiplicative.ofAdd 1) := by
   rw [MulEquiv.symm_apply_eq]
   simp
-
-/-- Every unit of a localization `S` of `MvPolynomial σ R` away from a prime `f` has the form
-`C c * f ^ m` with `c : Rˣ` and `m : ℤ`. -/
-theorem isUnit_away_prime_iff {S : Type*} [CommSemiring S] [Algebra (_root_.MvPolynomial σ R) S]
-    {f : _root_.MvPolynomial σ R} (hprime : Prime f) [IsLocalization.Away f S] {y : S} :
-    IsUnit y ↔
-      ∃ (c : Rˣ) (m : ℤ),
-        algebraMap (_root_.MvPolynomial σ R) S (C (c : R)) *
-            ((awayUnit S f ^ m : Sˣ) : S) = y := by
-  rw [hprime.isUnit_away_iff (S := S)]
-  refine ⟨fun ⟨u, m, hy⟩ ↦ ?_,
-    fun ⟨c, m, hy⟩ ↦ ⟨unitsMulEquiv σ R c, m, by simpa using hy⟩⟩
-  let c : Rˣ := (unitsMulEquiv σ R).symm u
-  have hc := congrArg Units.val ((unitsMulEquiv σ R).apply_symm_apply u)
-  rw [coe_unitsMulEquiv σ R c] at hc
-  exact ⟨c, m, by rwa [hc]⟩
 
 /-- Over a domain `R`, the units of a localization `S` of `MvPolynomial σ R` away from a product
 `∏ j ∈ s, p j` of pairwise non-associated prime polynomials are canonically
@@ -168,23 +152,56 @@ theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} [DecidableEq 
   · intro hj
     exact absurd (Finset.mem_univ j) hj
 
+end TauCeti.MvPolynomial
+
+namespace Prime
+
+open MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsDomain R]
+
+/-- Every unit of a localization `S` of `MvPolynomial σ R` away from a prime `f` has the form
+`C c * f ^ m` with `c : Rˣ` and `m : ℤ`. -/
+theorem isUnit_away_mvPolynomial_iff {S : Type*} [CommSemiring S]
+    [Algebra (MvPolynomial σ R) S] {f : MvPolynomial σ R} (hprime : Prime f)
+    [IsLocalization.Away f S] {y : S} :
+    IsUnit y ↔
+      ∃ (c : Rˣ) (m : ℤ),
+        algebraMap (MvPolynomial σ R) S (C (c : R)) *
+            ((TauCeti.Localization.awayUnit S f ^ m : Sˣ) : S) = y := by
+  rw [hprime.isUnit_away_iff (S := S)]
+  refine ⟨fun ⟨u, m, hy⟩ ↦ ?_,
+    fun ⟨c, m, hy⟩ ↦ ⟨TauCeti.MvPolynomial.unitsMulEquiv σ R c, m, by simpa using hy⟩⟩
+  let c : Rˣ := (TauCeti.MvPolynomial.unitsMulEquiv σ R).symm u
+  have hc := congrArg Units.val ((TauCeti.MvPolynomial.unitsMulEquiv σ R).apply_symm_apply u)
+  rw [TauCeti.MvPolynomial.coe_unitsMulEquiv σ R c] at hc
+  exact ⟨c, m, by rwa [hc]⟩
+
+end Prime
+
+namespace Finset
+
+open MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsDomain R]
+
 /-- Every unit of a localization `S` of `MvPolynomial σ R` away from a product `∏ j ∈ s, p j` of
 primes has the form `C c * ∏ j : s, p j ^ m j` with `c : Rˣ` and `m : s → ℤ`. -/
-theorem isUnit_away_prod_primes_iff {J : Type*} {S : Type*} [CommSemiring S]
-    [Algebra (_root_.MvPolynomial σ R) S] (s : Finset J) {p : J → _root_.MvPolynomial σ R}
+theorem isUnit_away_prod_mvPolynomial_primes_iff {J : Type*} {S : Type*} [CommSemiring S]
+    [Algebra (MvPolynomial σ R) S] (s : Finset J) {p : J → MvPolynomial σ R}
     (hp : ∀ j ∈ s, Prime (p j)) [IsLocalization.Away (∏ j ∈ s, p j) S] {y : S} :
     IsUnit y ↔
       ∃ (c : Rˣ) (m : s → ℤ),
-        algebraMap (_root_.MvPolynomial σ R) S (C (c : R)) *
+        algebraMap (MvPolynomial σ R) S (C (c : R)) *
             ((∏ j : s,
-              awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.2) ^ m j : Sˣ) : S) =
+              TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p j.2) ^ m j : Sˣ) : S) =
           y := by
   rw [s.isUnit_away_prod_primes_iff (S := S) hp]
   refine ⟨fun ⟨u, m, hy⟩ ↦ ?_,
-    fun ⟨c, m, hy⟩ ↦ ⟨unitsMulEquiv σ R c, m, by simpa using hy⟩⟩
-  let c : Rˣ := (unitsMulEquiv σ R).symm u
-  have hc := congrArg Units.val ((unitsMulEquiv σ R).apply_symm_apply u)
-  rw [coe_unitsMulEquiv σ R c] at hc
+    fun ⟨c, m, hy⟩ ↦ ⟨TauCeti.MvPolynomial.unitsMulEquiv σ R c, m, by simpa using hy⟩⟩
+  let c : Rˣ := (TauCeti.MvPolynomial.unitsMulEquiv σ R).symm u
+  have hc := congrArg Units.val ((TauCeti.MvPolynomial.unitsMulEquiv σ R).apply_symm_apply u)
+  rw [TauCeti.MvPolynomial.coe_unitsMulEquiv σ R c] at hc
   exact ⟨c, m, by rwa [hc]⟩
 
-end TauCeti.MvPolynomial
+end Finset
