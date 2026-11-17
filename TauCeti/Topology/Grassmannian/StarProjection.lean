@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Grassmannian.Orthonormal
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Topology.Grassmannian.Tautological
 
 /-!
@@ -109,21 +109,12 @@ open TauCeti
 
 variable {N : ℕ}
 
-/-- Conjugating the orthogonal projection onto `V` by a linear isometry `e` gives the orthogonal
-projection onto the image of `V` under `e⁻¹`. -/
-private theorem conj_starProjection (e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N))
-    (V : Submodule ℝ (EuclideanSpace ℝ (Fin N))) [V.HasOrthogonalProjection] :
-    e.symm.conjStarAlgEquiv V.starProjection =
-      (V.map (e.symm.toLinearEquiv : EuclideanSpace ℝ (Fin N) →ₗ[ℝ] E)).starProjection := by
-  ext x
-  simpa using (Submodule.starProjection_map_apply e.symm V x).symm
-
 /-- For `S` in the finite Grassmannian, `e⁻¹ P_S e` lies in `G(E, k)`, where `P_S` is the
 orthogonal projection onto `S.toEuclidean`. -/
 private theorem conj_starProjection_toEuclidean_mem (e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N))
     (S : finiteGrassmannian ℝ k N) :
     e.symm.conjStarAlgEquiv S.toEuclidean.starProjection ∈ grassmannian E k := by
-  rw [conj_starProjection]
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_starProjection]
   exact starProjection_mem <| (e.symm.toLinearEquiv.finrank_map_eq _).trans S.finrank_toEuclidean
 
 /-- The map `S ↦ e⁻¹ P_S e` is a bijection from the finite Grassmannian onto `G(E, k)`. -/
@@ -133,7 +124,8 @@ private theorem bijective_conj_starProjection_toEuclidean
       (⟨_, conj_starProjection_toEuclidean_mem e S⟩ : grassmannian E k) := by
   refine ⟨fun S T h ↦ finiteGrassmannian.toEuclidean_injective ?_, fun P ↦ ?_⟩
   · have h := congrArg (fun P : grassmannian E k ↦ P.1.range) h
-    simp only [conj_starProjection, Submodule.range_starProjection] at h
+    simp only [LinearIsometryEquiv.conjStarAlgEquiv_starProjection,
+      Submodule.range_starProjection] at h
     exact Submodule.map_injective_of_injective e.symm.injective h
   · let W := P.1.range.map (e.toLinearEquiv : E →ₗ[ℝ] EuclideanSpace ℝ (Fin N))
     let L := (WithLp.linearEquiv 2 ℝ (Fin N → ℝ)).symm
@@ -147,9 +139,8 @@ private theorem bijective_conj_starProjection_toEuclidean
     refine ⟨S, Subtype.ext <| ContinuousLinearMap.IsStarProjection.ext
       (conj_starProjection_toEuclidean_mem e S).1 P.2.1 ?_⟩
     dsimp only
-    rw [conj_starProjection, Submodule.range_starProjection, hSW, ← Submodule.map_comp,
-      show (e.symm.toLinearEquiv : EuclideanSpace ℝ (Fin N) →ₗ[ℝ] E) ∘ₗ e.toLinearEquiv =
-        LinearMap.id from LinearMap.ext e.symm_apply_apply, Submodule.map_id]
+    rw [LinearIsometryEquiv.conjStarAlgEquiv_starProjection, Submodule.range_starProjection, hSW,
+      LinearIsometryEquiv.toLinearEquiv_symm, Submodule.map_symm_eq_iff]
 
 variable (k) in
 /-- A linear isometry `e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N)` induces the homeomorphism
@@ -181,11 +172,10 @@ theorem toEuclidean_finiteGrassmannianHomeomorph_symm (e : E ≃ₗᵢ[ℝ] Eucl
   set S := (finiteGrassmannianHomeomorph k e).symm P
   have h : (finiteGrassmannianHomeomorph k e S : E →L[ℝ] E).range = P.1.range := by
     rw [Homeomorph.apply_symm_apply]
-  rw [coe_finiteGrassmannianHomeomorph_apply, conj_starProjection,
-    Submodule.range_starProjection] at h
-  rw [← h, ← Submodule.map_comp,
-    show (e.toLinearEquiv : E →ₗ[ℝ] EuclideanSpace ℝ (Fin N)) ∘ₗ e.symm.toLinearEquiv =
-      LinearMap.id from LinearMap.ext e.apply_symm_apply, Submodule.map_id]
+  rw [coe_finiteGrassmannianHomeomorph_apply, LinearIsometryEquiv.conjStarAlgEquiv_starProjection,
+    Submodule.range_starProjection, LinearIsometryEquiv.toLinearEquiv_symm,
+    Submodule.map_symm_eq_iff] at h
+  exact h.symm
 
 end FiniteGrassmannian
 
@@ -229,7 +219,7 @@ theorem isCompact_grassmannian [FiniteDimensional ℝ E] : IsCompact (grassmanni
     isCompact_range (continuous_subtype_val.comp h.continuous)
 
 /-- The Grassmannian of a finite-dimensional real inner product space is a compact space. -/
-instance [FiniteDimensional ℝ E] : CompactSpace (grassmannian E k) :=
+instance grassmannian.instCompactSpace [FiniteDimensional ℝ E] : CompactSpace (grassmannian E k) :=
   isCompact_iff_compactSpace.1 isCompact_grassmannian
 
 end Euclidean
