@@ -120,28 +120,8 @@ theorem coe_wreathTwoSylowFourEquiv (w :
 /-- The Sylow image of the two-by-two wreath product has the transitive-group label `4T3`. -/
 theorem transitiveGroupLabel_wreathTwoToPermFour :
     TransitiveGroupLabel (⟨2, by simp⟩ : TransitiveGroupIndex 4)
-      wreathTwoToPermFour.range := by
-  have hindex : (referenceSubgroup 4 ⟨2, by simp⟩).index = 3 := by
-    have h := (referenceSubgroup 4 ⟨2, by simp⟩).index_mul_card
-    rw [natCard_referenceSubgroup_four_two, Nat.card_perm, Nat.card_fin] at h
-    have h' : (referenceSubgroup 4 ⟨2, by simp⟩).index * 8 = 24 := by
-      simpa [Nat.factorial] using h
-    omega
-  let Q : Sylow 2 (Perm (Fin 4)) :=
-    (IsPGroup.of_card (n := 3) natCard_referenceSubgroup_four_two).toSylow
-      (by rw [hindex]; decide)
-  obtain ⟨τ, hτ⟩ := MulAction.exists_smul_eq (Perm (Fin 4)) wreathTwoSylowFour Q
-  have h := congrArg Sylow.toSubgroup hτ
-  rw [Sylow.coe_subgroup_smul, Subgroup.pointwise_smul_def,
-    wreathTwoSylowFour_toSubgroup] at h
-  refine (transitiveGroupLabel_iff _ _).2 ⟨τ, ?_⟩
-  have hmap :
-      (MulAut.conj τ).toMonoidHom =
-        MulDistribMulAction.toMonoidEnd (MulAut (Perm (Fin 4))) (Perm (Fin 4))
-          (MulAut.conj τ) := by
-    ext σ
-    rfl
-  rw [← hmap] at h
-  simpa only [Q, IsPGroup.toSylow_coe, referenceSubgroup_four_two] using h
+      wreathTwoToPermFour.range :=
+  wreathTwoToPermFour.range.transitiveGroupLabel_four_of_two_le_of_natCard_eq le_rfl
+    (natCard_range_wreathTwoToPermFour.trans natCard_referenceSubgroup_four_two.symm)
 
 end TauCeti

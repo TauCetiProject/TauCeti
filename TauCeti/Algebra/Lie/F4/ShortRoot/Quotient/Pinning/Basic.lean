@@ -33,6 +33,12 @@ namespace TauCeti.F4ShortRoot
 @[expose] def isogenyExponent : Fin 4 ⊕ Fin 4 → ℕ :=
   Sum.elim ![1, 1, 2, 2] ![1, 1, 2, 2]
 
+/-- A negative simple root has the same special-isogeny parameter exponent as its positive
+counterpart. -/
+theorem isogenyExponent_inr (j : Fin 4) :
+    isogenyExponent (.inr j) = isogenyExponent (.inl j) :=
+  rfl
+
 /-- Each special-isogeny parameter exponent is one or two. -/
 theorem isogenyExponent_eq_one_or_two (k : Fin 4 ⊕ Fin 4) :
     isogenyExponent k = 1 ∨ isogenyExponent k = 2 := by

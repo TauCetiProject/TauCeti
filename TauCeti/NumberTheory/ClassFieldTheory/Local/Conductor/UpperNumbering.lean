@@ -13,6 +13,7 @@ import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.NumberTheory.LocalField.Norm.Conductor
 import TauCeti.NumberTheory.LocalField.Norm.Herbrand
+import TauCeti.RingTheory.Norm.Equiv
 
 /-!
 # The conductor and the upper numbering
@@ -53,15 +54,10 @@ open IntermediateField TauCeti.LocalFieldsRamification
 
 namespace TauCeti.ClassFieldTheory
 
-variable (K M : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field M] [ValuativeRel M] [TopologicalSpace M]
-  [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
-  [IsAbelianGalois K M]
-
-/-- **The conductor in the upper numbering.** For a finite abelian extension `M/K` of
-nonarchimedean local fields and a natural number `v`, every element of `U(K,v)` is a norm from
-`M` exactly when the upper ramification group `G^v` of `M/K` is trivial. -/
-theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot (v : ℕ) :
+private theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_aux
+    (K M : Type) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+    [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+    [Algebra K M] [ValuativeExtension K M] [Module.Finite K M] [IsAbelianGalois K M] (v : ℕ) :
     unitFiltration K v ≤ normGroup K M ↔
       upperRamificationGroup K M ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥ := by
   -- If `G^v = 1`, the norm maps `U(M, ψ(v))` onto `U(K,v)`. Conversely, suppose that `U(K,v)`
@@ -114,6 +110,30 @@ theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot (v : ℕ) 
     hdeg _).1 ?_)
   rw [← comap_normUnits_normGroup (K := K) F M]
   exact fun x hx ↦ h (map_normUnits_unitFiltration_psiNat_le K F v ⟨x, hx, rfl⟩)
+
+variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
+  [IsAbelianGalois K M]
+
+/-- **The conductor in the upper numbering.** For a finite abelian extension `M/K` of
+nonarchimedean local fields and a natural number `v`, every element of `U(K,v)` is a norm from
+`M` exactly when the upper ramification group `G^v` of `M/K` is trivial. -/
+theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot (v : ℕ) :
+    unitFiltration K v ≤ normGroup K M ↔
+      upperRamificationGroup K M ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥ := by
+  let ι : M →ₐ[K] AlgebraicClosure K := IsAlgClosed.lift
+  let M₀ : IntermediateField K (AlgebraicClosure K) := ι.fieldRange
+  let eM : M ≃ₐ[K] M₀ := ι.equivFieldRange
+  have : Module.Finite K M₀ := Module.Finite.equiv eM.toLinearEquiv
+  have : IsAbelianGalois K M₀ := .of_algHom eM.symm.toAlgHom
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) M₀
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) M₀
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) M₀
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) M₀
+  rw [eM.normGroup_eq, unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_aux K M₀ v,
+    ← map_autCongr_upperRamificationGroup eM ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩,
+    Subgroup.map_eq_bot_iff_of_injective _ (AlgEquiv.autCongr eM).injective]
 
 /-- **The conductor exponent of an abelian extension in the upper numbering**: `c(M/K) ≤ n`
 exactly when the upper ramification group `G^n` of `M/K` is trivial. Thus `c(M/K)` is the least

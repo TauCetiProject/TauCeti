@@ -149,10 +149,7 @@ theorem energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn {f g : Lp ℝ 2 (mu.re
     (hf : HasWeakLineDerivOn mu Omega f g e) (v : W1p0 mu Omega 2) :
     energyFormH1 (fun _ => A) 0 0 d (v : W1p mu Omega 2) =
       ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => A) x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
-      (mu.restrict Omega) := by
-    simpa using memLp_top_const (μ := mu.restrict Omega) (energyIntegrand A 0 0)
+  have hcoeff := memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) A
   have hu' := (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff f u).1 hu
   refine (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff g d).2 (fun φ => ?_) v
   rw [energyFormH1_ofTestFunctionₗ_eq_neg_of_hasWeakLineDerivOn hd, hu' (∂_{e} φ)]

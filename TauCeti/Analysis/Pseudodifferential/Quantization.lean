@@ -76,6 +76,8 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
   then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: multiplying a symbol by a real
+  function `f` of the position multiplies its quantization by `f`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -900,6 +902,16 @@ theorem quantizeSchwartzValue_sum_right {ι : Type*} (a : Symbol n V W m) (s : F
     rw [Finset.sum_insert hi, Finset.sum_insert hi, quantizeSchwartzValue_add_right
       (a.continuous_coefficient_slice x).aestronglyMeasurable hC, ih]
 
+/-- The quantization is additive in the symbol, also for symbols of different orders. -/
+theorem quantizeSchwartzValue_coefficient_add {m' : ℝ} (b : Symbol n V W m) (c : Symbol n V W m')
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (b.coefficient + c.coefficient) u x =
+      quantizeSchwartzValue b.coefficient u x + quantizeSchwartzValue c.coefficient u x := by
+  obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice x
+  obtain ⟨C', -, hC'⟩ := c.exists_bound_coefficient_slice x
+  exact quantizeSchwartzValue_add_left (b.continuous_coefficient_slice x).aestronglyMeasurable hC
+    (c.continuous_coefficient_slice x).aestronglyMeasurable hC' u
+
 /-- The quantization is additive over finite sums of symbols. -/
 theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
@@ -909,11 +921,21 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih =>
-    obtain ⟨C, -, hC⟩ := (a i).exists_bound_coefficient_slice x
-    obtain ⟨C', -, hC'⟩ := (∑ i ∈ s, a i).exists_bound_coefficient_slice x
     rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
-      quantizeSchwartzValue_add_left ((a i).continuous_coefficient_slice x).aestronglyMeasurable
-        hC ((∑ i ∈ s, a i).continuous_coefficient_slice x).aestronglyMeasurable hC', ih]
+      quantizeSchwartzValue_coefficient_add, ih]
+
+open scoped ContDiff in
+/-- Multiplying a symbol by a real function `f` of the position before quantizing multiplies the
+quantization by `f`. -/
+theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
+    {f : CoordinateSpace n → ℝ} (hf : ContDiff ℝ ∞ fun x ↦ f x • ContinuousLinearMap.id ℂ W)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((ofSpatial (fun x ↦ f x • ContinuousLinearMap.id ℂ W) hf).comp
+      a).coefficient u x = (f x : ℂ) • quantizeSchwartzValue a.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := (f x : ℂ) • a.coefficient) (fun ξ ↦ by
+      rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
+        ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
+    quantizeSchwartzValue_smul_left]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
