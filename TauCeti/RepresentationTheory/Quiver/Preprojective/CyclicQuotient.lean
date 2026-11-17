@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
+import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 
 /-!
 # Cyclic quotients of preprojective algebras from their paths
@@ -18,9 +20,10 @@ which do not depend on the graph: once every path of positive length is known to
 commutators, the same holds for the graded pieces of positive degree, the commutator submodule is
 the kernel of the augmentation, so that the cyclic quotient is the module of vertex coefficients,
 and, for a two-coloured graph, the vanishing transfers to the additive preprojective algebra of
-every orientation. The only paths which need a graph-specific
-argument are the closed ones: a path between distinct vertices is a commutator with its target
-idempotent.
+every orientation. Moreover, degree-`d` vanishing descends along induced-subgraph embeddings and is
+invariant under graph isomorphisms and bipartite orientation changes. The only paths which need a
+graph-specific argument are the closed ones: a path between distinct vertices is a commutator with
+its target idempotent.
 
 ## Main results
 
@@ -35,9 +38,16 @@ idempotent.
   `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra`: in that case the augmentation
   identifies the cyclic quotient with the module of vertex coefficients, of dimension the number of
   vertices over a nontrivial ring.
-* `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
-  the vanishing for paths of positive length transfers from the signless algebra to the additive
-  preprojective algebra of every orientation.
+* `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding`,
+  `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_embedding` and
+  `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso`: degree-`d` signless
+  cyclic quotient vanishing descends to induced subgraphs and is invariant under graph
+  isomorphisms.
+* `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`,
+  `SimpleGraph.Coloring.preprojectiveGrade_le_commutatorSubmodule_iff` and
+  `SimpleGraph.IsBipartite.preprojectiveGrade_le_commutatorSubmodule_iff`: for a two-coloured or
+  bipartite graph, degree-`d` cyclic quotient vanishing agrees between the signless algebra and the
+  additive preprojective algebra of every orientation.
 
 ## References
 
@@ -154,6 +164,65 @@ theorem preprojectiveGrade_le_commutatorSubmodule
 
 end Preprojective
 
+section GraphTransport
+
+open DoubledQuiver
+
+variable (k : Type w) [CommRing k] {V : Type u} {W : Type v} [Finite V] [Finite W]
+  {G : SimpleGraph V} {H : SimpleGraph W}
+
+/-- **Degree-`d` signless cyclic quotient vanishing descends along induced-subgraph embeddings.** -/
+theorem signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding
+    [instG : ∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
+    (f : H ↪g G) {d : ℕ}
+    (hG : signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) :
+    signlessPreprojectiveGrade k (DoubledQuiver H) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) := by
+  have hinstG : instG = SimpleGraph.neighborSetFintypeOfFinite G := Subsingleton.elim _ _
+  subst hinstG
+  let _ := SimpleGraph.neighborSetFintypeOfFinite (G.induce (Set.range f))
+  intro x hx
+  let E := signlessPreprojectiveAlgebraEquiv k f.isoInduceRange
+  have hEx : E x ∈ signlessPreprojectiveGrade k (DoubledQuiver (G.induce (Set.range f))) d :=
+    signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade k f.isoInduceRange hx
+  rw [← signlessPreprojectiveGrade_map_signlessPreprojectiveInducedSubgraphHom k
+    G (Set.range f) d] at hEx
+  obtain ⟨z, hz, hzx⟩ := Submodule.mem_map.mp hEx
+  rw [AlgHom.toLinearMap_apply] at hzx
+  have hcomm : E x ∈ commutatorSubmodule k _ :=
+    hzx ▸ map_mem_commutatorSubmodule
+      (signlessPreprojectiveInducedSubgraphHom k G (Set.range f)) (hG hz)
+  simpa only [E, AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm hcomm
+
+/-- **A degree-`d` signless cyclic class outside the commutator submodule lifts along any
+induced-subgraph embedding.** -/
+theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_embedding
+    [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
+    (f : H ↪g G) {d : ℕ}
+    (hH : ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver H),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d ∧
+        z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H))) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver G),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d ∧
+        z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  by_contra! hall
+  obtain ⟨z, hz, hz0⟩ := hH
+  exact hz0 (signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding k f hall hz)
+
+/-- **Degree-`d` signless cyclic quotient vanishing is invariant under graph isomorphisms.** -/
+theorem signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso
+    [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
+    (e : G ≃g H) (d : ℕ) :
+    signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) ↔
+    signlessPreprojectiveGrade k (DoubledQuiver H) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) :=
+  ⟨signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding k e.symm.toEmbedding,
+   signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding k e.toEmbedding⟩
+
+end GraphTransport
+
 end TauCeti
 
 namespace SimpleGraph.Coloring
@@ -186,4 +255,38 @@ theorem preprojectiveMk_ofPath_mem_commutatorSubmodule (C : G.Coloring Bool) (o 
   have hmap := map_mem_commutatorSubmodule e hsymm
   rwa [AlgEquiv.apply_symm_apply] at hmap
 
+/-- **For a two-coloured finite simple graph, degree-`d` cyclic quotient vanishing agrees between
+every orientation and the signless presentation.** -/
+theorem preprojectiveGrade_le_commutatorSubmodule_iff (C : G.Coloring Bool)
+    [inst : ∀ i, Fintype (G.neighborSet i)] (o : Orientation G) (d : ℕ) :
+    preprojectiveGrade k (OrientedQuiver G o) d ≤
+      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔
+    signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  have hinst : inst = fun _ => Fintype.ofFinite _ := Subsingleton.elim _ _
+  subst hinst
+  let E := C.signlessPreprojectiveAlgebraEquiv k o
+  refine ⟨fun h x hx => ?_, fun h x hx => ?_⟩
+  · have hEx := h (C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx)
+    simpa only [E, AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm hEx
+  · have hEx := h (C.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o hx)
+    simpa only [E, AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule E hEx
+
 end SimpleGraph.Coloring
+
+namespace SimpleGraph.IsBipartite
+
+open TauCeti TauCeti.DoubledQuiver
+
+/-- **For a bipartite finite simple graph, degree-`d` cyclic quotient vanishing is independent of
+orientation and agrees with the signless presentation.** -/
+theorem preprojectiveGrade_le_commutatorSubmodule_iff {V : Type*} [Finite V] {G : SimpleGraph V}
+    (hb : G.IsBipartite) (k : Type*) [CommRing k] [∀ i, Fintype (G.neighborSet i)]
+    (o : Orientation G) (d : ℕ) :
+    preprojectiveGrade k (OrientedQuiver G o) d ≤
+      commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔
+    signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
+  hb.coloringBool.preprojectiveGrade_le_commutatorSubmodule_iff k o d
+
+end SimpleGraph.IsBipartite
