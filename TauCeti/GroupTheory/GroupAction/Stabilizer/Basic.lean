@@ -90,7 +90,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
-  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma, and
+  `TauCeti.cardStabilizerOnOrbit_dvd_card`, `TauCeti.cardStabilizerOnOrbit_le_card`: it divides,
+  and so for a finite group is at most, the order of the group.
 * `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
   into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
 * `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
@@ -336,6 +338,18 @@ theorem cardStabilizerOnOrbit_mk (a : α) :
       Nat.card (MulAction.stabilizer G a) := by
   unfold cardStabilizerOnOrbit
   rfl
+
+/-- The stabiliser order of an orbit divides the order of the group. -/
+theorem cardStabilizerOnOrbit_dvd_card (q : MulAction.orbitRel.Quotient G α) :
+    cardStabilizerOnOrbit q ∣ Nat.card G := by
+  induction q using Quotient.inductionOn' with | h a => ?_
+  rw [cardStabilizerOnOrbit_mk]
+  exact Subgroup.card_subgroup_dvd_card _
+
+/-- For a finite group, the stabiliser order of an orbit is at most the order of the group. -/
+theorem cardStabilizerOnOrbit_le_card [Finite G] (q : MulAction.orbitRel.Quotient G α) :
+    cardStabilizerOnOrbit q ≤ Nat.card G :=
+  Nat.le_of_dvd Nat.card_pos (cardStabilizerOnOrbit_dvd_card q)
 
 section Congr
 
