@@ -215,22 +215,22 @@ theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (
 /-- A dart with trivial edge group has trivial `α`-image. -/
 @[simp] theorem range_α_eq_bot_of_subsingleton (e : Γ.E)
     [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e))] : (𝔸.α e).range = ⊥ :=
-  eq_bot_iff.mpr fun _ ⟨c, hc⟩ => hc ▸ Subsingleton.elim c 1 ▸ map_one _
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
 
 /-- A dart with trivial edge group has trivial `ω`-image. -/
 @[simp] theorem range_ω_eq_bot_of_subsingleton (e : Γ.E)
     [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e))] : (𝔸.ω e).range = ⊥ :=
-  eq_bot_iff.mpr fun _ ⟨c, hc⟩ => hc ▸ Subsingleton.elim c 1 ▸ map_one _
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
 
 /-- An arrow with trivial edge group has trivial `αArrow`-image. -/
 @[simp] theorem range_αArrow_eq_bot_of_subsingleton (e : a ⟶ b)
     [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.1))] : (𝔸.αArrow e).range = ⊥ :=
-  eq_bot_iff.mpr fun _ ⟨c, hc⟩ => hc ▸ Subsingleton.elim c 1 ▸ map_one _
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
 
 /-- An arrow with trivial edge group has trivial `ωArrow`-image. -/
 @[simp] theorem range_ωArrow_eq_bot_of_subsingleton (e : a ⟶ b)
     [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.1))] : (𝔸.ωArrow e).range = ⊥ :=
-  eq_bot_iff.mpr fun _ ⟨c, hc⟩ => hc ▸ Subsingleton.elim c 1 ▸ map_one _
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
 
 end Arrow
 

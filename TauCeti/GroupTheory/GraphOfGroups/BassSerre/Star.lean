@@ -94,10 +94,9 @@ theorem bassSerreDartOfSrcEq_cons_eq_iff (e : Γ.E) {v : Γ.V} (he : Γ.src e = 
   rw [bassSerreDartOfSrcEq_rfl, bassSerreDartOfSrcEq_rfl, bassSerreDart_eq_iff, QuotientGroup.eq,
     MonoidHom.mem_range, αArrow_mk]
   refine ⟨fun ⟨c, hc⟩ => ⟨c⁻¹, ?_⟩, fun ⟨c, hc⟩ => ⟨c⁻¹, ?_⟩⟩
-  · have ha : a₁ = a₂ * 𝔸.α e c := π₁.vertexHom_injective p <| by
-      rw [π₁.vertexHom_apply, π₁.vertexHom_apply, π₁.mk_eq_mk_iff]
-      simpa only [Path.comp_ofVertex] using
-        (hc.trans (Path.Homotopic.mul p a₂ (𝔸.α e c))).comp_right p.reverse
+  · have ha := hc.trans (Path.Homotopic.mul p a₂ (𝔸.α e c))
+    rw [← Path.comp_ofVertex, ← Path.comp_ofVertex, Path.Homotopic.comp_left_iff,
+      Path.ofVertex_homotopic_ofVertex_iff] at ha
     simp [ha]
   · have ha : a₁ = a₂ * 𝔸.α e c⁻¹ := by simp [hc]
     rw [ha]
