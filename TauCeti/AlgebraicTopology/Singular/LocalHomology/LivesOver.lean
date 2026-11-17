@@ -317,7 +317,7 @@ theorem fiberLocalization_singularHomologyCross_tmul (p : E → M) (b : M) {i j 
   ConcreteCategory.congr_hom (singularHomologyCross_comp_fiberLocalization R S p b i j n h) (α ⊗ₜ β)
 
 /-- Naturality of the relative cross product in the pair, read in local homology: for a map
-`f : X → X'` with `f⁻¹(T) ⊆ S`, the relative cross product of `f_* a` with `b` is the image under
+`f : X → X'` with `f⁻¹(T) ⊆ S'`, the relative cross product of `f_* a` with `b` is the image under
 `f × id` of the relative cross product of `a` with `b`. -/
 theorem singularHomologyCrossRel_localHomologyMap_tmul {X X' : Type w} [TopologicalSpace X]
     [TopologicalSpace X'] (f : C(X, X')) {S' : Set X} {T : Set X'} (h : f ⁻¹' T ⊆ S') {i j n : ℕ}

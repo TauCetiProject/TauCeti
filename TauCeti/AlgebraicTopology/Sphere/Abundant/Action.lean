@@ -33,8 +33,10 @@ classes of diffeomorphisms coming from a group action. There the group is the id
 of `Diff(M)`, and the source uses that its stabilizer acts trivially on the homology of `Ω²M`.
 This can fail when `π₁(M)` acts nontrivially on `π₂(M)`: an isotopy from the identity to a
 diffeomorphism fixing `x₀` moves `x₀` around a loop, and the diffeomorphism acts on
-`π₀(Ω²M) = π₂(M)` through that loop. Here the path-connected stabilizer acts on the based mapping
-space through maps homotopic to the identity, which is what the computation needs.
+`π₀(Ω²M) = π₂(M)` through that loop. Here the proof uses the path-connected stabilizer only as the
+fibre `π⁻¹(x₀)` of the orbit map, which makes the local homology `H_d(G, G ∖ π⁻¹(x₀))` infinite
+cyclic (see below). For comparison with the source: a path-connected stabilizer also acts on the
+based mapping space through maps homotopic to the identity, but the proof does not use this.
 
 ## The computation
 
