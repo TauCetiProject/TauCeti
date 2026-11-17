@@ -110,27 +110,6 @@ private lemma homologyMap_zmodFourToTwo_eq_zero (X : TopCat.{0})
   revert y
   decide
 
-/-- The values of the coboundary of an integral `0`-cochain with values in `M` on a `1`-simplex. -/
-private lemma integralValues_d_zero_one (X : TopCat.{0}) (M : ModuleCat.{0} ℤ)
-    (η : (X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).X 0) (τ : (toSSet.obj X) _⦋1⦌) :
-    cochainValuesEquiv ℤ M (toSSet.obj X) 1
-        ((X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).d 0 1 η) τ =
-      cochainValuesEquiv ℤ M (toSSet.obj X) 0 η ((toSSet.obj X).δ 0 τ) -
-        cochainValuesEquiv ℤ M (toSSet.obj X) 0 η ((toSSet.obj X).δ 1 τ) := by
-  refine (cochainValuesEquiv_linearYonedaObj_d ℤ M (toSSet.obj X) 0 η τ).trans ?_
-  simp [Fin.sum_univ_two, sub_eq_add_neg]
-
-/-- The values of the coboundary of an integral `1`-cochain with values in `M` on a `2`-simplex. -/
-private lemma integralValues_d_one_two (X : TopCat.{0}) (M : ModuleCat.{0} ℤ)
-    (θ : (X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).X 1) (σ : (toSSet.obj X) _⦋2⦌) :
-    cochainValuesEquiv ℤ M (toSSet.obj X) 2
-        ((X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).d 1 2 θ) σ =
-      cochainValuesEquiv ℤ M (toSSet.obj X) 1 θ ((toSSet.obj X).δ 0 σ) -
-        cochainValuesEquiv ℤ M (toSSet.obj X) 1 θ ((toSSet.obj X).δ 1 σ) +
-        cochainValuesEquiv ℤ M (toSSet.obj X) 1 θ ((toSSet.obj X).δ 2 σ) := by
-  refine (cochainValuesEquiv_linearYonedaObj_d ℤ M (toSSet.obj X) 1 θ σ).trans ?_
-  simp [Fin.sum_univ_three, sub_eq_add_neg]
-
 /-- The mod `2` cochain complex of `X`, with chain and cochain coefficients
 `𝟙_ (ModuleCat (ZMod 2))`. -/
 private abbrev modTwoCochains (X : TopCat.{0}) : CochainComplex (ModuleCat (ZMod 2)) ℕ :=
@@ -140,35 +119,14 @@ private abbrev modTwoCochains (X : TopCat.{0}) : CochainComplex (ModuleCat (ZMod
 private abbrev modTwoValues (X : TopCat.{0}) (n : ℕ) :=
   cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X) n
 
-/-- The values of the coboundary of a mod `2` `0`-cochain on a `1`-simplex. The complex
-`modTwoCochains X` is the complex of cochains with values in `ModuleCat.of (ZMod 2) (ZMod 2)` up to
-unfolding `𝟙_ (ModuleCat (ZMod 2))`, so `cochainValuesEquiv_linearYonedaObj_d` applies to it. -/
-private lemma modTwoValues_d_zero_one (X : TopCat.{0}) (η : (modTwoCochains X).X 0)
-    (τ : (toSSet.obj X) _⦋1⦌) :
-    modTwoValues X 1 ((modTwoCochains X).d 0 1 η) τ =
-      modTwoValues X 0 η ((toSSet.obj X).δ 0 τ) - modTwoValues X 0 η ((toSSet.obj X).δ 1 τ) := by
-  refine (cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
-    (toSSet.obj X) 0 η τ).trans ?_
-  simp [Fin.sum_univ_two, sub_eq_add_neg]
-
-/-- The values of the coboundary of a mod `2` `1`-cochain on a `2`-simplex, as in
-`modTwoValues_d_zero_one`. -/
-private lemma modTwoValues_d_one_two (X : TopCat.{0}) (θ : (modTwoCochains X).X 1)
-    (σ : (toSSet.obj X) _⦋2⦌) :
-    modTwoValues X 2 ((modTwoCochains X).d 1 2 θ) σ =
-      modTwoValues X 1 θ ((toSSet.obj X).δ 0 σ) - modTwoValues X 1 θ ((toSSet.obj X).δ 1 σ) +
-        modTwoValues X 1 θ ((toSSet.obj X).δ 2 σ) := by
-  refine (cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
-    (toSSet.obj X) 1 θ σ).trans ?_
-  simp [Fin.sum_univ_three, sub_eq_add_neg]
-
 /-- A mod `2` cocycle has values summing to `0` over the faces of every `2`-simplex. -/
 private lemma modTwoValues_cocycle (X : TopCat.{0}) (φ : (modTwoCochains X).cycles 1)
     (σ : (toSSet.obj X) _⦋2⦌) :
     modTwoValues X 1 ((modTwoCochains X).iCycles 1 φ) ((toSSet.obj X).δ 0 σ) +
         modTwoValues X 1 ((modTwoCochains X).iCycles 1 φ) ((toSSet.obj X).δ 1 σ) +
       modTwoValues X 1 ((modTwoCochains X).iCycles 1 φ) ((toSSet.obj X).δ 2 σ) = 0 := by
-  have h := modTwoValues_d_one_two X ((modTwoCochains X).iCycles 1 φ) σ
+  have h : modTwoValues X 2 ((modTwoCochains X).d 1 2 ((modTwoCochains X).iCycles 1 φ)) σ = _ :=
+    cochainValuesEquiv_linearYonedaObj_d_one_two (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) _ _ σ
   rw [(modTwoCochains X).moduleCat_d_iCycles_apply, CharTwo.sub_eq_add] at h
   rw [← h]
   exact congrFun (map_zero (modTwoValues X 2)) σ
@@ -191,7 +149,8 @@ private lemma modTwoValues_cup_self (X : TopCat.{0}) (φ : (modTwoCochains X).cy
   calc _ = modTwoValues X 2 ((modTwoCochains X).d 1 2 ψ) σ := by
         rw [h]
         exact (cochainValuesEquiv_cupCochain_one_one X _ _ σ).symm
-    _ = _ := by rw [modTwoValues_d_one_two, CharTwo.sub_eq_add]
+    _ = _ := (cochainValuesEquiv_linearYonedaObj_d_one_two (ZMod 2)
+          (ModuleCat.of (ZMod 2) (ZMod 2)) _ ψ σ).trans (by rw [CharTwo.sub_eq_add])
 
 /-- **The `ℤ/4` lift.** If every class of `H₁(X; ℤ)` is killed by `2`, and the values `f` of a mod
 `2` cocycle satisfy `f ⌣ f = δg` on every `2`-simplex, then `f` is the coboundary of a function `e`
@@ -214,7 +173,7 @@ private lemma exists_sub_eq_of_mul_eq (X : TopCat.{0})
   have hΘ : Z.d 1 2 Θ = 0 := by
     refine (cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) K 2).map_eq_zero_iff.1
       (funext fun σ ↦ ?_)
-    rw [integralValues_d_one_two]
+    rw [cochainValuesEquiv_linearYonedaObj_d_one_two]
     simp only [Θ, K, LinearEquiv.apply_symm_apply, Pi.zero_apply]
     exact zmod_four_cocycle _ _ _ _ _ _ (hf σ) (hg σ)
   -- The reduction of `Θ` modulo `2` is the coboundary of a `0`-cochain `η`.
@@ -233,7 +192,8 @@ private lemma exists_sub_eq_of_mul_eq (X : TopCat.{0})
     rw [cochainValuesEquiv_apply, ModuleCat.comp_apply, ← cochainValuesEquiv_apply,
       LinearEquiv.apply_symm_apply]
     exact ZMod.cast_cast_add_two_mul_cast _ _
-  rw [← integralValues_d_zero_one, hη', ChainComplex.linearYonedaObjMap_f_hom_apply, hv]
+  rw [← cochainValuesEquiv_linearYonedaObj_d_zero_one, hη',
+    ChainComplex.linearYonedaObjMap_f_hom_apply, hv]
 
 /-- A mod `2` cocycle whose values are the coboundary of a function `e` on the vertices has zero
 class. -/
@@ -248,7 +208,8 @@ private lemma homologyπ_eq_zero_of_sub_eq (X : TopCat.{0}) (φ : (modTwoCochain
     rw [(modTwoCochains X).moduleCat_iCycles_toCycles_apply]
     apply (modTwoValues X 1).injective
     funext τ
-    rw [modTwoValues_d_zero_one]
+    refine (cochainValuesEquiv_linearYonedaObj_d_zero_one (ZMod 2)
+      (ModuleCat.of (ZMod 2) (ZMod 2)) _ η τ).trans ?_
     simp only [η, LinearEquiv.apply_symm_apply]
     exact he τ
   rw [← hφ, ← ModuleCat.comp_apply, HomologicalComplex.toCycles_comp_homologyπ]

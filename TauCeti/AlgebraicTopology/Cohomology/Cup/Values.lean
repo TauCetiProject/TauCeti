@@ -57,10 +57,11 @@ lemma cochainValuesEquiv_cupCochain (p q n : ℕ) (h : p + q = n)
           ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) := by
   rw [cochainValuesEquiv_apply, ← ModuleCat.comp_apply,
     ιChainComplex_cupCochain_alexanderWhitneyDiagonal]
+  -- `simp` does not unfold this composite through the unit object `𝟙_ (ModuleCat k)`, so the
+  -- composite and the unitors are rewritten explicitly first.
   rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
-    ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
-    ModuleCat.comp_apply, ModuleCat.comp_apply, smul_eq_mul, cochainValuesEquiv_apply,
-    cochainValuesEquiv_apply]
+    ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply]
+  simp
 
 /-- The cup product of two `1`-cochains with values in a commutative ring takes a `2`-simplex `σ`
 to the product of the values on its edges `δ₂ σ` (from vertex `0` to `1`) and `δ₀ σ` (from `1`
