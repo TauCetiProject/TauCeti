@@ -555,13 +555,6 @@ theorem murrayVonNeumannEquiv_of_path [NonUnitalCStarAlgebra A]
       (γ.map (Unitization.continuous_inr (𝕜 := ℂ))) fun t ↦ (hγ t).inr
   exact murrayVonNeumannEquiv_of_unitization_unitary_conj hp u hconj
 
-omit [Fintype n] in
-private theorem smul_mul_smul_cStarMatrix {l : Type*} [NonUnitalCStarAlgebra A]
-    (r s : ℝ) (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (r • M) * (s • N) = (r * s) • (M * N) := by
-  apply ofMatrix.symm.injective
-  simp [Matrix.mul_smul, smul_smul]
-
 /-- **Explicit `2 × 2` rotation path for Murray–von Neumann equivalent projections.** Given matrices
 `p : CStarMatrix m m A`, `q : CStarMatrix n n A`, and `v : CStarMatrix n m A` over a (possibly
 non-unital) C⋆-algebra `A`, this is the continuous path
@@ -630,17 +623,13 @@ theorem isStarProjection_stabilizedRotationPath [NonUnitalCStarAlgebra A]
   rw [stabilizedRotationPath_apply]
   refine ⟨?_, ?_⟩
   · rw [IsIdempotentElem, fromBlocks_multiply]
-    simp only [smul_mul_smul_cStarMatrix, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq,
-      hv₁, hv₂, hvp, hpv, hqv, hvq, ← add_smul, fromBlocks_inj]
+    simp only [CStarMatrix.smul_mul, CStarMatrix.mul_smul, smul_smul, hp.isIdempotentElem.eq,
+      hq.isIdempotentElem.eq, hv₁, hv₂, hvp, hpv, hqv, hvq, ← add_smul, fromBlocks_inj]
     refine ⟨?_, ?_, ?_, ?_⟩
-    · have : c ^ 2 * c ^ 2 + c * s * (c * s) = c ^ 2 := by linear_combination c ^ 2 * hcs
-      rw [this]
-    · have : c ^ 2 * (c * s) + c * s * s ^ 2 = c * s := by linear_combination c * s * hcs
-      rw [this]
-    · have : c * s * c ^ 2 + s ^ 2 * (c * s) = c * s := by linear_combination c * s * hcs
-      rw [this]
-    · have : c * s * (c * s) + s ^ 2 * s ^ 2 = s ^ 2 := by linear_combination s ^ 2 * hcs
-      rw [this]
+    · congr 1; linear_combination c ^ 2 * hcs
+    · congr 1; linear_combination c * s * hcs
+    · congr 1; linear_combination c * s * hcs
+    · congr 1; linear_combination s ^ 2 * hcs
   · rw [IsSelfAdjoint, fromBlocks_star]
     simp [hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
 

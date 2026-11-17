@@ -438,32 +438,25 @@ theorem mapₐ_comp [Fintype n] [DecidableEq n] [CommSemiring R]
   ext M i j
   simp
 
-theorem reindexₗ_apply' [Semiring R] [AddCommMonoid A] [Module R A]
-    (eₘ : m ≃ o) (eₙ : n ≃ p) (M : CStarMatrix m n A) (i : o) (j : p) :
-    reindexₗ R A eₘ eₙ M i j = M (eₘ.symm i) (eₙ.symm j) := (rfl)
-
 @[simp]
 theorem reindexₗ_refl [Semiring R] [AddCommMonoid A] [Module R A] :
-    reindexₗ R A (Equiv.refl m) (Equiv.refl n) = LinearEquiv.refl R (CStarMatrix m n A) := by
-  ext M i j
-  rw [reindexₗ_apply']
-  simp
+    reindexₗ R A (Equiv.refl m) (Equiv.refl n) = LinearEquiv.refl R (CStarMatrix m n A) :=
+  LinearEquiv.ext fun M => ofMatrix.symm.injective <| by simp
 
 @[simp]
 theorem reindexₗ_conjTranspose [Semiring R] [AddCommMonoid A] [Module R A] [Star A]
     (eₘ : m ≃ l) (eₙ : n ≃ o) (M : CStarMatrix m n A) :
-    (reindexₗ R A eₘ eₙ M).conjTranspose = reindexₗ R A eₙ eₘ M.conjTranspose := by
-  ext i j
-  simp only [conjTranspose_apply, reindexₗ_apply']
+    (reindexₗ R A eₘ eₙ M).conjTranspose = reindexₗ R A eₙ eₘ M.conjTranspose :=
+  ofMatrix.symm.injective <| by simp
 
 theorem reindexₗ_mul [Fintype m] [Fintype o] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A]
+    [AddCommMonoid A] [Mul A] [Module R A]
     (eₗ : l ≃ p) (eₘ : m ≃ o) (eₙ : n ≃ q)
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    reindexₗ R A eₗ eₙ (M * N) = reindexₗ R A eₗ eₘ M * reindexₗ R A eₘ eₙ N := by
-  ext i k
-  simp only [reindexₗ_apply', mul_apply]
-  exact Fintype.sum_equiv eₘ _ _ fun _ => by simp
+    reindexₗ R A eₗ eₙ (M * N) = reindexₗ R A eₗ eₘ M * reindexₗ R A eₘ eₙ N :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_reindexₗ, ofMatrix_symm_mul, Matrix.reindex_apply]
+    exact (Matrix.submatrix_mul_equiv _ _ _ eₘ.symm _).symm
 
 theorem reindexₐ_eq_reindexₗ [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
     [Module R A] [Star A] (e : m ≃ n) (M : CStarMatrix m m A) :
@@ -471,17 +464,16 @@ theorem reindexₐ_eq_reindexₗ [Fintype m] [Fintype n] [Semiring R] [AddCommMo
 
 @[simp]
 theorem reindexₐ_refl [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A] [Module R A] [Star A] :
-    reindexₐ R A (Equiv.refl n) = StarAlgEquiv.refl R (CStarMatrix n n A) := by
-  ext M i j
-  rw [reindexₐ_eq_reindexₗ, reindexₗ_apply']
-  simp
+    reindexₐ R A (Equiv.refl n) = StarAlgEquiv.refl R (CStarMatrix n n A) :=
+  StarAlgEquiv.ext fun M => ofMatrix.symm.injective <| by
+    rw [reindexₐ_eq_reindexₗ]
+    simp
 
 theorem reindexₐ_trans [Fintype l] [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
     [Module R A] [Star A] (e₁ : l ≃ m) (e₂ : m ≃ n) :
-    reindexₐ R A (e₁.trans e₂) = (reindexₐ R A e₁).trans (reindexₐ R A e₂) := by
-  ext M i j
-  simp only [StarAlgEquiv.trans_apply, reindexₐ_eq_reindexₗ, reindexₗ_apply',
-    Equiv.symm_trans_apply]
+    reindexₐ R A (e₁.trans e₂) = (reindexₐ R A e₁).trans (reindexₐ R A e₂) :=
+  StarAlgEquiv.ext fun M => ofMatrix.symm.injective <| by
+    simp [reindexₐ_eq_reindexₗ, Matrix.submatrix_submatrix]
 
 end AmplificationAndReindex
 
@@ -627,8 +619,8 @@ theorem reindexₗᵢ_symm [Fintype l] [Fintype m] [Fintype n] [Fintype o]
     (eₘ : m ≃ l) (eₙ : n ≃ o) :
     (reindexₗᵢ A eₘ eₙ).symm = reindexₗᵢ A eₘ.symm eₙ.symm :=
   LinearIsometryEquiv.ext fun M =>
-    (reindexₗᵢ A eₘ eₙ).symm_apply_eq.mpr <| ext fun i j => by
-      simp only [coe_reindexₗᵢ, reindexₗ_apply', Equiv.apply_symm_apply, Equiv.symm_symm]
+    (reindexₗᵢ A eₘ eₙ).symm_apply_eq.mpr <| ofMatrix.symm.injective <| by
+      simp [Matrix.submatrix_submatrix]
 
 end RectangularNorm
 

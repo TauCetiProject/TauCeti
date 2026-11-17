@@ -200,8 +200,10 @@ theorem reindexₗ_sumComm_fromBlocks [Semiring R] [AddCommMonoid A] [Module R A
     (M₁₁ : CStarMatrix m₁ n₁ A) (M₁₂ : CStarMatrix m₁ n₂ A)
     (M₂₁ : CStarMatrix m₂ n₁ A) (M₂₂ : CStarMatrix m₂ n₂ A) :
     reindexₗ R A (Equiv.sumComm m₁ m₂) (Equiv.sumComm n₁ n₂) (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
-      fromBlocks M₂₂ M₂₁ M₁₂ M₁₁ := by
-  ext (i | i) (j | j) <;> (rw [reindexₗ_apply']; simp)
+      fromBlocks M₂₂ M₂₁ M₁₂ M₁₁ :=
+  ofMatrix.symm.injective <| by
+    rw [ofMatrix_symm_reindexₗ]
+    ext (i | i) (j | j) <;> simp
 
 /-- Reindexing a square `2 × 2` block matrix by `Equiv.sumComm` via `reindexₐ` swaps both diagonal
 and off-diagonal blocks. -/
@@ -221,8 +223,10 @@ theorem reindexₗ_sumAssoc_fromBlocks_zero
     (L : CStarMatrix m₁ n₁ A) (M : CStarMatrix m₂ n₂ A) (N : CStarMatrix m₃ n₃ A) :
     reindexₗ R A (Equiv.sumAssoc m₁ m₂ m₃) (Equiv.sumAssoc n₁ n₂ n₃)
         (fromBlocks (fromBlocks L 0 0 M) 0 0 N) =
-      fromBlocks L 0 0 (fromBlocks M 0 0 N) := by
-  ext (i | (i | i)) (j | (j | j)) <;> (rw [reindexₗ_apply']; simp)
+      fromBlocks L 0 0 (fromBlocks M 0 0 N) :=
+  ofMatrix.symm.injective <| by
+    rw [ofMatrix_symm_reindexₗ]
+    ext (i | (i | i)) (j | (j | j)) <;> simp
 
 /-- Reindexing nested square block-diagonal sums by `Equiv.sumAssoc` via `reindexₐ` reassociates
 the blocks. -/

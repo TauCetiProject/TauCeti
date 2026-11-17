@@ -135,9 +135,8 @@ theorem conjTranspose_reindexMatrix_mul_mul [Fintype m] [Fintype n] [DecidableEq
     (reindexMatrix A e).conjTranspose * M * reindexMatrix A e = reindexₐ R A e M := by
   classical
   rw [conjTranspose_reindexMatrix, reindexMatrix_mul (R := R), mul_reindexMatrix (R := R)]
-  ext i j
-  rw [reindexₐ_eq_reindexₗ, reindexₗ_apply', reindexₗ_apply', reindexₗ_apply']
-  simp
+  apply ofMatrix.symm.injective
+  simp [reindexₐ_eq_reindexₗ, Matrix.submatrix_submatrix]
 
 variable (A) in
 /-- A permutation as a unitary in `CStarMatrix n n A`: `permutationUnitary A σ` has underlying
