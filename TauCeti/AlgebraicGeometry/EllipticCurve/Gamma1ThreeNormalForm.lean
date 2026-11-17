@@ -11,15 +11,19 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 /-!
 # The `Γ₁(3)` normal form `Y² + a₁XY + a₃Y = X³`
 
-For `a₁, a₃ : R`, the Weierstrass curve in **`Γ₁(3)` normal form** (the Tate normal form at an
-inflection point) is
+For `a₁, a₃ : R`, the Weierstrass curve in **`Γ₁(3)` normal form** is
 
 `Y² + a₁XY + a₃Y = X³`,
 
-that is, `a₂ = a₄ = a₆ = 0` (`WeierstrassCurve.gamma1ThreeNormalForm`). The origin `(0, 0)` lies on
-it with horizontal tangent `Y = 0` meeting the curve to order three; both the Deuring normal form
-(`a₃ = 1`) and the full level-three normal form (`a₁ = 3μ`, `a₃ = μ³ - 1`) specialize it. Its
-invariants are
+that is, `a₂ = a₄ = a₆ = 0` (`WeierstrassCurve.gamma1ThreeNormalForm`, requiring only `[Zero R]`).
+Over a commutative ring `R`, the origin `(0, 0)` always lies on it
+(`equation_gamma1ThreeNormalForm_zero`). When `a₃` is a unit (in particular, `a₃ ≠ 0` over a
+field), the defining polynomial `Y² + a₁XY + a₃Y - X³` has partial derivatives `(0, a₃)` at
+`(0, 0)`, so `(0, 0)` is a smooth inflection point with horizontal tangent `Y = 0` meeting the
+curve to order three (when `Δ` is a unit, the curve is elliptic and `(0, 0)` is a `3`-torsion
+point); without assuming `a₃` is a unit, `(0, 0)` may be singular (for example when `a₃ = 0`). Both
+the Deuring normal form (`a₃ = 1`) and the full level-three normal form
+(`a₁ = 3μ`, `a₃ = μ³ - 1`) specialize it. Its invariants are
 
 `c₄ = a₁⁴ - 24a₁a₃`,  `c₆ = -a₁⁶ + 36a₁³a₃ - 216a₃²`,  `Δ = a₁³a₃³ - 27a₃⁴`.
 
@@ -170,7 +174,7 @@ theorem equation_gamma1ThreeNormalForm_zero :
   simp
 
 /-- A pure scaling `⟨u, 0, 0, 0⟩` carries `gamma1ThreeNormalForm a₁ a₃` to
-`gamma1ThreeNormalForm (u⁻¹ * a₁) (u⁻¹³ * a₃)`. -/
+`gamma1ThreeNormalForm (u⁻¹ * a₁) ((u⁻¹) ^ 3 * a₃)`. -/
 @[simp]
 theorem smul_gamma1ThreeNormalForm (u : Rˣ) :
     (⟨u, 0, 0, 0⟩ : VariableChange R) • gamma1ThreeNormalForm a₁ a₃ =

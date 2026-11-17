@@ -46,6 +46,8 @@ particular `c₄`, `c₆` and `Δ` of `universalCurve R` are `Γ'`-invariant.
 
 ## Main results
 
+* `rightUnit_a₁`, `rightUnit_a₃`, `rightUnit_three_mul_a₃`: explicit right-unit coordinate
+  formulas on `a₁`, `a₃`, and `3a₃`.
 * `counit_comp_algebraMap`, `counit_comp_rightUnit`: unit–counit identities.
 * `coproduct_comp_algebraMap`, `coproduct_comp_rightUnit`, `coproduct_r`, `coproduct_s`,
   `coproduct_t`, `coproduct_eq_shearEquiv_comp_map`: left/right unit compatibility, explicit
@@ -320,17 +322,32 @@ theorem rightUnit_comp_algebraMap :
     (rightUnit R).comp (algebraMap R (BaseRing R)) = algebraMap R (ArrowRing R) :=
   RingHom.ext (rightUnit_algebraMap R)
 
+/-- Explicit right-unit formula on `a₁`: `η_R(a₁) = η_L(a₁) + 2s`. -/
 @[simp]
 theorem rightUnit_a₁ :
     rightUnit R (a₁ R) = algebraMap (BaseRing R) (ArrowRing R) (a₁ R) + 2 * s R := by
   simp [rightUnit, rightUnitAlgHom, a₁]
 
+/-- Explicit right-unit formula on `a₃`: `η_R(a₃) = η_L(a₃) + η_L(a₁) r + 2t`. -/
 @[simp]
 theorem rightUnit_a₃ :
     rightUnit R (a₃ R) =
       algebraMap (BaseRing R) (ArrowRing R) (a₃ R) +
         algebraMap (BaseRing R) (ArrowRing R) (a₁ R) * r R + 2 * t R := by
   simp [rightUnit, rightUnitAlgHom, a₃]
+
+/-- Denominator-free expansion of `rightUnit R (3 * a₃ R)` onto `{1, s, s², t}` over any
+commutative ring `R`. -/
+theorem rightUnit_three_mul_a₃ :
+    rightUnit R (3 * a₃ R) =
+      algebraMap (BaseRing R) (ArrowRing R) (3 * a₃ R) +
+        algebraMap (BaseRing R) (ArrowRing R) (a₁ R ^ 2) * s R +
+        algebraMap (BaseRing R) (ArrowRing R) (a₁ R) * s R ^ 2 +
+        6 * t R := by
+  rw [map_mul, map_ofNat, rightUnit_a₃, map_mul, map_ofNat, map_pow]
+  linear_combination
+    algebraMap (BaseRing R) (ArrowRing R) (a₁ R) *
+      ArrowRingOf.three_mul_r_sub_s_sq_sub_a₁_mul_s_eq_zero (BaseRing R) (a₁ R) (a₃ R)
 
 /-- Pushing `universalCurve R` along `rightUnit R` gives `universalChange R • universalCurve R`. -/
 @[simp]

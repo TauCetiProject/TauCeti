@@ -278,15 +278,23 @@ private theorem mul_s_mem_span {y : ArrowRingOf B a₁ a₃}
   fin_cases i
   · simpa using hmem 1
   · simpa [sq] using hmem 2
-  · simpa [show s B a₁ a₃ * s B a₁ a₃ ^ 2 = s B a₁ a₃ ^ 3 by ring] using hmem 3
-  · simpa [show s B a₁ a₃ * s B a₁ a₃ ^ 3 = s B a₁ a₃ ^ 4 by ring] using s_pow_four_mem_span B a₁ a₃
+  · simpa [pow_succ'] using hmem 3
+  · simpa [pow_succ'] using s_pow_four_mem_span B a₁ a₃
   · simpa using hmem 5
-  · simpa [show s B a₁ a₃ * (s B a₁ a₃ * t B a₁ a₃) = s B a₁ a₃ ^ 2 * t B a₁ a₃ by ring] using
-      hmem 6
-  · simpa [show s B a₁ a₃ * (s B a₁ a₃ ^ 2 * t B a₁ a₃) = s B a₁ a₃ ^ 3 * t B a₁ a₃ by ring] using
-      hmem 7
-  · simpa [show s B a₁ a₃ * (s B a₁ a₃ ^ 3 * t B a₁ a₃) = s B a₁ a₃ ^ 4 * t B a₁ a₃ by ring] using
-      s_pow_four_mul_t_mem_span B a₁ a₃
+  · simpa [sq, mul_assoc] using hmem 6
+  · simpa [pow_succ', mul_assoc] using hmem 7
+  · simpa [pow_succ', mul_assoc] using s_pow_four_mul_t_mem_span B a₁ a₃
+
+omit [Invertible (3 : B)] in
+private theorem s_pow_mul_mem_span {y : ArrowRingOf B a₁ a₃}
+    (hy : y ∈ Submodule.span B (Set.range (basisFamily B a₁ a₃))) :
+    ∀ n : ℕ, s B a₁ a₃ ^ n * y ∈ Submodule.span B (Set.range (basisFamily B a₁ a₃))
+  | 0 => by
+    rw [pow_zero, one_mul]
+    exact hy
+  | n + 1 => by
+    rw [pow_succ', mul_assoc]
+    exact mul_s_mem_span B a₁ a₃ (s_pow_mul_mem_span hy n)
 
 private theorem mul_r_mem_span {y : ArrowRingOf B a₁ a₃}
     (hy : y ∈ Submodule.span B (Set.range (basisFamily B a₁ a₃))) :
@@ -332,21 +340,15 @@ private theorem mul_t_mem_span {y : ArrowRingOf B a₁ a₃}
   subst hi
   have hmem := basisFamily_mem_span B a₁ a₃
   have ht2 := t_sq_mem_span B a₁ a₃
-  have hst2 := mul_s_mem_span B a₁ a₃ ht2
-  have hs2t2 := mul_s_mem_span B a₁ a₃ hst2
-  have hs3t2 := mul_s_mem_span B a₁ a₃ hs2t2
   fin_cases i
   · simpa using hmem 4
   · simpa [mul_comm] using hmem 5
   · simpa [mul_comm] using hmem 6
   · simpa [mul_comm] using hmem 7
   · simpa [sq] using ht2
-  · simpa [show t B a₁ a₃ * (s B a₁ a₃ * t B a₁ a₃) = s B a₁ a₃ * t B a₁ a₃ ^ 2 by ring] using
-      hst2
-  · simpa [show t B a₁ a₃ * (s B a₁ a₃ ^ 2 * t B a₁ a₃) =
-      s B a₁ a₃ * (s B a₁ a₃ * t B a₁ a₃ ^ 2) by ring] using hs2t2
-  · simpa [show t B a₁ a₃ * (s B a₁ a₃ ^ 3 * t B a₁ a₃) =
-      s B a₁ a₃ * (s B a₁ a₃ * (s B a₁ a₃ * t B a₁ a₃ ^ 2)) by ring] using hs3t2
+  · simpa [mul_left_comm, sq] using mul_s_mem_span B a₁ a₃ ht2
+  · simpa [mul_left_comm, sq] using s_pow_mul_mem_span B a₁ a₃ ht2 2
+  · simpa [mul_left_comm, sq] using s_pow_mul_mem_span B a₁ a₃ ht2 3
 
 private theorem top_le_span_basisFamily :
     (⊤ : Submodule B (ArrowRingOf B a₁ a₃)) ≤
@@ -540,9 +542,8 @@ private theorem coe_elR3 : (elR3 B a₁ a₃ : Module.End B (Fin 8 → B)) = opR
 
 @[simp]
 private theorem coe_elT9 : (elT9 B a₁ a₃ : Module.End B (Fin 8 → B)) = opT9 B a₁ a₃ := by
-  have h9 := invOf_three_sq_mul_nine B
-  rw [elT9, Subalgebra.coe_smul, coe_elT, opT, smul_smul,
-    show (9 : B) * ⅟(3 : B) ^ 2 = 1 by linear_combination h9, one_smul]
+  rw [elT9, Subalgebra.coe_smul, coe_elT, opT, smul_smul, mul_comm, invOf_three_sq_mul_nine,
+    one_smul]
 
 private theorem elR_eq_invOf_three_mul_elR3 :
     elR B a₁ a₃ = algebraMap B (OpSubalg B a₁ a₃) ⅟(3 : B) * elR3 B a₁ a₃ := by

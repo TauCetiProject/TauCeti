@@ -128,19 +128,6 @@ theorem transfer_toBaseRing_mul_of_isIntegralModularForm {k : ℕ} {g : MvPolyno
     transfer R (toBaseRing R g * x) = toBaseRing R g * transfer R x :=
   transfer_mul_of_rightUnit_eq R (rightUnit_toBaseRing_of_isIntegralModularForm R hg) x
 
-/-- Denominator-free expansion of `rightUnit R (3 * a₃ R)` onto `{1, s, s², t}` over any
-commutative ring `R`. -/
-theorem rightUnit_three_mul_a₃ :
-    rightUnit R (3 * a₃ R) =
-      algebraMap (BaseRing R) (ArrowRing R) (3 * a₃ R) +
-        algebraMap (BaseRing R) (ArrowRing R) (a₁ R ^ 2) * s R +
-        algebraMap (BaseRing R) (ArrowRing R) (a₁ R) * s R ^ 2 +
-        6 * t R := by
-  rw [map_mul, map_ofNat, rightUnit_a₃, map_mul, map_ofNat, map_pow]
-  linear_combination
-    algebraMap (BaseRing R) (ArrowRing R) (a₁ R) *
-      ArrowRingOf.three_mul_r_sub_s_sq_sub_a₁_mul_s_eq_zero (BaseRing R) (a₁ R) (a₃ R)
-
 /-- `(8 : BaseRing R)` belongs to `invariantSubalgebra R`. -/
 theorem eight_mem_invariantSubalgebra : (8 : BaseRing R) ∈ invariantSubalgebra R :=
   ofNat_mem _ 8
@@ -246,7 +233,7 @@ theorem transfer_three_mul_a₁_mul_a₃ :
         (a₁ R ^ 3 + 6 * a₃ R) • s R + (3 * a₁ R ^ 2) • s R ^ 2 + (2 * a₁ R) • s R ^ 3 +
         (6 * a₁ R) • t R + (12 : BaseRing R) • (s R * t R) +
         (0 : BaseRing R) • (s R ^ 2 * t R) + (0 : BaseRing R) • (s R ^ 3 * t R) := by
-    rw [show 3 * a₁ R * a₃ R = a₁ R * (3 * a₃ R) by ring, map_mul, rightUnit_a₁,
+    rw [mul_comm (3 : BaseRing R) (a₁ R), mul_assoc, map_mul, rightUnit_a₁,
       rightUnit_three_mul_a₃]
     simp only [ArrowRingOf.smul_eq_algebraMap_mul, map_add, map_mul, map_pow, map_ofNat, map_zero]
     ring
@@ -262,8 +249,8 @@ theorem transfer_twentySeven_mul_a₃_sq :
         (3 * a₁ R ^ 3 + 12 * a₃ R) • s R ^ 3 + (21 * a₁ R ^ 3) • t R +
         (66 * a₁ R ^ 2) • (s R * t R) + (60 * a₁ R) • (s R ^ 2 * t R) +
         (24 : BaseRing R) • (s R ^ 3 * t R) := by
-    rw [show 27 * a₃ R ^ 2 = 3 * (3 * a₃ R) ^ 2 by ring, map_mul, map_ofNat, map_pow,
-      rightUnit_three_mul_a₃]
+    have h27 : 27 * a₃ R ^ 2 = 3 * (3 * a₃ R) ^ 2 := by ring
+    rw [h27, map_mul, map_ofNat, map_pow, rightUnit_three_mul_a₃]
     simp only [ArrowRingOf.smul_eq_algebraMap_mul, map_add, map_mul, map_pow, map_ofNat]
     linear_combination
       3 * algebraMap (BaseRing R) (ArrowRing R) (a₁ R) ^ 2 *
@@ -314,7 +301,7 @@ theorem transfer_a₁_cube_mul_a₃ :
           (6 * a₁ R ^ 3 + 24 * a₃ R) • s R ^ 3 + (42 * a₁ R ^ 3) • t R +
           (132 * a₁ R ^ 2) • (s R * t R) + (120 * a₁ R) • (s R ^ 2 * t R) +
           (48 : BaseRing R) • (s R ^ 3 * t R) := by
-      rw [show 3 * a₁ R ^ 3 * a₃ R = a₁ R ^ 3 * (3 * a₃ R) by ring, map_mul, map_pow, rightUnit_a₁,
+      rw [mul_comm (3 : BaseRing R) (a₁ R ^ 3), mul_assoc, map_mul, map_pow, rightUnit_a₁,
         rightUnit_three_mul_a₃]
       simp only [ArrowRingOf.smul_eq_algebraMap_mul, map_add, map_mul, map_pow, map_ofNat]
       linear_combination
