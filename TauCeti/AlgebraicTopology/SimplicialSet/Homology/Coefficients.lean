@@ -27,8 +27,9 @@ Extension of scalars along a ring map `f : R →+* S` with exact extension of sc
 flat one, commutes with homology: `SSet.homologyExtendScalarsIso` identifies the extension of
 scalars of the homology with coefficients in `R` with the homology with coefficients in `S`,
 naturally in the simplicial set (`SSet.homologyExtendScalarsIso_hom_naturality`). The instance
-`ModuleCat.preservesFiniteLimits_extendScalars_intCastRat` supplies the exactness for the flat map
-`ℤ → ℚ`, which compares integral and rational homology.
+`ModuleCat.preservesFiniteLimits_extendScalars_intCastRat`, the `ℤ → ℚ` case of
+`ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`, supplies the exactness for the flat
+map `ℤ → ℚ`, which compares integral and rational homology.
 
 ## References
 
@@ -60,17 +61,14 @@ end CategoryTheory.ShortComplex.ShortExact
 
 namespace ModuleCat
 
-/-- Rational extension of scalars is exact, since `ℚ` is a localization of `ℤ`. -/
+/-- Rational extension of scalars is exact, since `ℚ` is a localization of `ℤ`. This is the
+`ℤ → ℚ` case of `ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`, stated for
+`Int.castRingHom ℚ`, which instance search does not match against `algebraMap ℤ ℚ`. -/
 instance preservesFiniteLimits_extendScalars_intCastRat :
     Limits.PreservesFiniteLimits
-      (ModuleCat.extendScalars (Int.castRingHom ℚ) : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ) := by
-  have hflat : (Int.castRingHom ℚ).Flat := by
-    -- RingHom.Flat uses the algebra induced by Int.castRingHom, whereas localization
-    -- flatness uses the canonical integer action. These actions are definitionally equal;
-    -- change aligns the instance arguments, which rewriting the proposition alone cannot do.
-    change Module.Flat ℤ ℚ
-    exact IsLocalization.flat ℚ (nonZeroDivisors ℤ)
-  exact ModuleCat.preservesFiniteLimits_extendScalars_of_flat hflat
+      (ModuleCat.extendScalars (Int.castRingHom ℚ) : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ) :=
+  haveI : Module.Flat ℤ ℚ := IsLocalization.flat ℚ (nonZeroDivisors ℤ)
+  preservesFiniteLimits_extendScalars_algebraMap (R := ℤ) (S := ℚ)
 
 end ModuleCat
 
