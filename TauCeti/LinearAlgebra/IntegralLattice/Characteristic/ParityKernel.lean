@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 import Mathlib.Algebra.CharP.Reduced
@@ -22,7 +23,9 @@ import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 For an odd unimodular lattice `L` with characteristic vector `w`, `L.evenSublattice` has index two,
 `(L_even)ᵛ = L + ℤ · (w / 2)`, `w² ≡ finrank ℤ L [ZMOD 2]`, and `A_(L_even)` is `ℤ/4` (odd rank) or
 `ℤ/2 × ℤ/2` (even rank). When `8 ∣ w²`, gluing along `⟨[w / 2]⟩` and `⟨[e + w / 2]⟩` gives the two
-even unimodular Kneser two-neighbors of `L`, exhausting all even two-neighbors of `L`.
+even unimodular Kneser two-neighbors of `L`, exhausting all even two-neighbors of `L`. We also
+record that `evenSublattice` commutes with transport and orthogonal sums with even lattices, and
+that Kneser `p`-neighbors are preserved by orthogonal sums.
 
 ## References
 
@@ -37,7 +40,7 @@ open Module
 
 namespace TauCeti.IntegralLattice
 
-universe u
+universe u v
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
 /-- Integral lattices on the same ambient space with equal rational form share a signature. -/
@@ -49,7 +52,82 @@ theorem signature_eq_of_form_eq {L M : IntegralLattice V} (h : L.form = M.form) 
 theorem IsNeighbor.signature_eq {L M : IntegralLattice V} {p : ℕ} (h : L.IsNeighbor M p) :
     L.signature = M.signature := signature_eq_of_form_eq h.form_eq
 
+private theorem orthogonalSum_transport_prodComm {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (A : IntegralLattice V) (B : IntegralLattice W) :
+    (B.orthogonalSum A).transport (LinearEquiv.prodComm ℚ W V) = A.orthogonalSum B := by
+  have heq : LinearEquiv.prodComm ℚ W V = (Isometry.orthogonalSumComm B A).toLinearEquiv :=
+    LinearEquiv.ext fun p ↦ (Isometry.orthogonalSumComm_apply B A p).symm
+  exact heq ▸ (Isometry.orthogonalSumComm B A).transport_eq
+
+/-- **Kneser `p`-neighbors are preserved by left orthogonal direct sums.** -/
+theorem IsNeighbor.orthogonalSum_left {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (Y : IntegralLattice V) {M N : IntegralLattice W} {p : ℕ}
+    (h : M.IsNeighbor N p) : (Y.orthogonalSum M).IsNeighbor (Y.orthogonalSum N) p := by
+  have hrel (B : Submodule ℤ W) : (Y.carrier.prod (M.carrier ⊓ N.carrier)).toAddSubgroup.relIndex
+      (Y.carrier.prod B).toAddSubgroup =
+      (M.carrier ⊓ N.carrier).toAddSubgroup.relIndex B.toAddSubgroup := by
+    let proj : (Y.carrier.prod B).toAddSubgroup →+ B.toAddSubgroup :=
+      ⟨⟨fun q ↦ ⟨q.1.2, q.2.2⟩, rfl⟩, fun _ _ ↦ rfl⟩
+    have hcomap : ((M.carrier ⊓ N.carrier).toAddSubgroup.addSubgroupOf B.toAddSubgroup).comap proj =
+        (Y.carrier.prod (M.carrier ⊓ N.carrier)).toAddSubgroup.addSubgroupOf
+          (Y.carrier.prod B).toAddSubgroup :=
+      AddSubgroup.ext fun q ↦ ⟨fun hq ↦ ⟨q.2.1, hq⟩, fun hq ↦ hq.2⟩
+    rw [AddSubgroup.relIndex, ← hcomap, AddSubgroup.index_comap_of_surjective _
+      (fun b ↦ ⟨⟨(0, b.1), ⟨Y.carrier.zero_mem, b.2⟩⟩, rfl⟩), ← AddSubgroup.relIndex]
+  have hinf : (Y.orthogonalSum M).carrier ⊓ (Y.orthogonalSum N).carrier =
+      Y.carrier.prod (M.carrier ⊓ N.carrier) := Submodule.ext fun x ↦ by
+    simp only [Submodule.mem_inf, orthogonalSum_carrier, Submodule.mem_prod]; tauto
+  exact ⟨by simp [h.form_eq], by rw [hinf, orthogonalSum_carrier, hrel]; exact h.relIndex_inf_left,
+    by rw [hinf, orthogonalSum_carrier, hrel]; exact h.relIndex_inf_right⟩
+
+/-- **Kneser `p`-neighbors are preserved by right orthogonal direct sums.** -/
+theorem IsNeighbor.orthogonalSum_right {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {M N : IntegralLattice V} {p : ℕ} (h : M.IsNeighbor N p) (Y : IntegralLattice W) :
+    (M.orthogonalSum Y).IsNeighbor (N.orthogonalSum Y) p := by
+  have hswap := (h.orthogonalSum_left Y).transport (LinearEquiv.prodComm ℚ W V)
+  rwa [orthogonalSum_transport_prodComm, orthogonalSum_transport_prodComm] at hswap
+
 variable (L : IntegralLattice V)
+
+/-- Membership in `L.evenSublattice` is membership in `L` with an even integer norm. -/
+theorem mem_evenSublattice_carrier_iff_exists_norm (x : V) :
+    x ∈ L.evenSublattice.carrier ↔ x ∈ L.carrier ∧ ∃ k : ℤ, L.norm x = 2 * k :=
+  ⟨fun h ↦ ⟨L.evenSublattice_carrier_le h,
+    (L.even_integralNorm_iff ⟨x, L.evenSublattice_carrier_le h⟩).mp
+      ((L.mem_evenSublattice_carrier_iff ⟨x, L.evenSublattice_carrier_le h⟩).mp h)⟩,
+   fun ⟨hx, hk⟩ ↦ (L.mem_evenSublattice_carrier_iff ⟨x, hx⟩).mpr
+    ((L.even_integralNorm_iff ⟨x, hx⟩).mpr hk)⟩
+
+/-- `evenSublattice` commutes with transporting an integral lattice along a linear equivalence. -/
+@[simp] theorem evenSublattice_transport {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (e : V ≃ₗ[ℚ] W) : (L.transport e).evenSublattice = L.evenSublattice.transport e :=
+  IntegralLattice.ext (Submodule.ext fun y ↦ by
+    rw [mem_evenSublattice_carrier_iff_exists_norm, transport_carrier, Submodule.mem_map_equiv,
+      transport_carrier, Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
+      mem_evenSublattice_carrier_iff_exists_norm]
+    simp [norm_apply, transport_form]) (by simp)
+
+omit L in
+/-- **Orthogonal sum with an even lattice commutes with `evenSublattice`.** -/
+theorem evenSublattice_orthogonalSum_of_isEven_left {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {Y : IntegralLattice V} (hY : Y.IsEven) (M : IntegralLattice W) :
+    (Y.orthogonalSum M).evenSublattice = Y.orthogonalSum M.evenSublattice := by
+  refine IntegralLattice.ext (Submodule.ext fun p ↦ ?_) (by simp)
+  rw [mem_evenSublattice_carrier_iff_exists_norm, orthogonalSum_carrier, Submodule.mem_prod,
+    orthogonalSum_carrier, Submodule.mem_prod, mem_evenSublattice_carrier_iff_exists_norm,
+    norm_apply, orthogonalSum_form, LinearMap.BilinForm.prod_apply, ← Y.norm_apply, ← M.norm_apply]
+  refine ⟨fun ⟨⟨hp1, hp2⟩, k, hk⟩ ↦ ?_, fun ⟨hp1, hp2, k, hk⟩ ↦ ?_⟩ <;>
+    obtain ⟨m, hm⟩ := Y.isEven_iff_forall_norm.mp hY ⟨p.1, hp1⟩
+  · exact ⟨hp1, hp2, k - m, by push_cast; linarith⟩
+  · exact ⟨⟨hp1, hp2⟩, m + k, by push_cast; linarith⟩
+
+omit L in
+/-- Right-hand companion to `evenSublattice_orthogonalSum_of_isEven_left`. -/
+theorem evenSublattice_orthogonalSum_of_isEven_right {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (M : IntegralLattice V) {Y : IntegralLattice W} (hY : Y.IsEven) :
+    (M.orthogonalSum Y).evenSublattice = M.evenSublattice.orthogonalSum Y := by
+  rw [← orthogonalSum_transport_prodComm M Y, evenSublattice_transport,
+    evenSublattice_orthogonalSum_of_isEven_left hY M, orthogonalSum_transport_prodComm]
 
 /-- The even sublattice coincides with the lattice itself precisely when the lattice is even. -/
 @[simp] theorem evenSublattice_eq_self_iff : L.evenSublattice = L ↔ L.IsEven :=
@@ -69,12 +147,7 @@ theorem relIndex_evenSublattice_eq_one_iff :
 /-- **The even sublattice has index two in every odd integral lattice.** -/
 theorem relIndex_evenSublattice_of_not_isEven (hL : ¬ L.IsEven) :
     L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 2 := by
-  have htop : (⊤ : AddSubgroup L).map (L.carrier.subtype : L →+ V) = L.carrier.toAddSubgroup :=
-    (AddSubgroup.map_top _).trans (AddSubgroup.range_subtype L.carrier.toAddSubgroup)
-  rw [evenSublattice_carrier, Submodule.map_toAddSubgroup, ← htop,
-    AddSubgroup.relIndex_map_map_of_injective _ _ L.carrier.injective_subtype,
-    AddSubgroup.relIndex_top_right, AddSubgroup.index_eq_card]
-  exact L.natCard_quotient_evenSubmodule hL
+  rw [L.relIndex_evenSublattice_eq_natCard_quotient, L.natCard_quotient_evenSubmodule hL]
 
 /-- For an odd lattice, `det(L_even) = 4 * det(L)`. -/
 theorem determinant_evenSublattice_of_not_isEven (hL : ¬ L.IsEven) :

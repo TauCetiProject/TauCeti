@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.IndefiniteUnitPlane
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.ParityKernel
+public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
+public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 import TauCeti.Data.Int.MulPred
 
@@ -16,6 +19,9 @@ import TauCeti.Data.Int.MulPred
 with Gram matrix `diag(+1^r, -1^s)`, isometric to `I_r ⊕ (-I_s)`. The all-ones vector is
 characteristic of norm `(r : ℤ) - s`; when `0 < r + s`, an even two-neighbor exists iff
 `8 ∣ (r : ℤ) - s`, and coordinate sign-flip makes the even two-neighbor unique up to isometry.
+In signature `(1, 0, 1)`, `signedUnitLattice 1 1` is isometric to `⟨1⟩ ⊕ ⟨-1⟩`, its canonical even
+two-neighbor `evenSignedUnitNeighbor 1 1` is isometric to `hyperbolicPlane`, and for any even
+lattice `Y`, `Y ⊕ hyperbolicPlane` is isometric to an even two-neighbor of `Y ⊕ I_{1, 1}`.
 
 ## References
 
@@ -112,23 +118,62 @@ theorem isUnimodular_signedUnitLattice (r s : ℕ) : (signedUnitLattice r s).IsU
   have hs := unitLattice_signature (Fin s); rw [Fintype.card_fin] at hp hs
   simp only [signature, Prod.mk.injEq] at hp hs hn ⊢; omega
 
-/-- The canonical isometry `I_{1, 1} ≅ indefiniteUnitPlane`. -/
-noncomputable def signedUnitLatticeOneOneIsometryIndefiniteUnitPlane :
-    Isometry (signedUnitLattice 1 1) indefiniteUnitPlane where
+/-- The canonical isometry `(rankOne 1).orthogonalSum (rankOne (-1)) ≅ signedUnitLattice 1 1`. -/
+noncomputable def rankOneOrthogonalSumIsometrySignedUnitLattice :
+    Isometry ((rankOne 1).orthogonalSum (rankOne (-1))) (signedUnitLattice 1 1) where
   toLinearEquiv :=
-    { toFun := fun x ↦ ![x (.inl 0), x (.inr 0)]
-      invFun := fun y ↦ Sum.elim (fun _ ↦ y 0) (fun _ ↦ y 1)
-      map_add' := fun _ _ ↦ funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-      map_smul' := fun _ _ ↦ funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-      left_inv := fun x ↦ by
-        ext (i | j) <;> [rw [Subsingleton.elim i 0]; rw [Subsingleton.elim j 0]] <;> rfl
-      right_inv := fun _ ↦ funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩) }
-  map_app' x y := by simp
-  map_carrier := Submodule.ext fun y ↦ by
-    rw [Submodule.mem_map_equiv, mem_signedUnitLattice_carrier_iff,
-      mem_indefiniteUnitPlane_carrier_iff, Fin.forall_fin_two]
-    exact ⟨fun h ↦ ⟨h (.inl 0), h (.inr 0)⟩, fun ⟨h0, h1⟩ k ↦ by
-      rcases k with i | j; exacts [Subsingleton.elim i 0 ▸ h0, Subsingleton.elim j 0 ▸ h1]⟩
+    ((LinearEquiv.funUnique (Fin 1) ℚ ℚ).symm.prodCongr
+      (LinearEquiv.funUnique (Fin 1) ℚ ℚ).symm).trans
+      (LinearEquiv.sumArrowLequivProdArrow (Fin 1) (Fin 1) ℚ ℚ).symm
+  map_app' p q := by
+    change (signedUnitLattice 1 1).form (Sum.elim (fun _ ↦ p.1) (fun _ ↦ p.2))
+      (Sum.elim (fun _ ↦ q.1) (fun _ ↦ q.2)) = _
+    simp [signedUnitLattice_form_apply, orthogonalSum_form, LinearMap.BilinForm.prod_apply]; ring
+  map_carrier := Submodule.ext fun x ↦ by
+    rw [Submodule.mem_map_equiv, orthogonalSum_carrier, Submodule.mem_prod,
+      mem_rankOne_carrier_iff, mem_rankOne_carrier_iff, mem_signedUnitLattice_carrier_iff]
+    refine ⟨fun ⟨h0, h1⟩ k ↦ ?_, fun h ↦ ⟨h (.inl 0), h (.inr 0)⟩⟩
+    rcases k with i | j
+    exacts [Subsingleton.elim i 0 ▸ h0, Subsingleton.elim j 0 ▸ h1]
+
+/-- `rankOneOrthogonalSumIsometrySignedUnitLattice` sends `(a, b)` to
+`Sum.elim (fun _ ↦ a) (fun _ ↦ b)`. -/
+@[simp] theorem rankOneOrthogonalSumIsometrySignedUnitLattice_apply (p : ℚ × ℚ) :
+    rankOneOrthogonalSumIsometrySignedUnitLattice p = Sum.elim (fun _ ↦ p.1) (fun _ ↦ p.2) :=
+  (rfl)
+
+/-- Membership in `(signedUnitLattice r s).evenSublattice` means integral coordinates with
+even coordinate sum. -/
+theorem mem_evenSublattice_signedUnitLattice_carrier_iff (r s : ℕ) (x : Fin r ⊕ Fin s → ℚ) :
+    x ∈ (signedUnitLattice r s).evenSublattice.carrier ↔
+      (∀ k, ∃ z : ℤ, (z : ℚ) = x k) ∧
+        ∃ m : ℤ, (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) = 2 * m := by
+  have hev (a : ℤ) : (∃ k : ℤ, (a : ℚ) = 2 * k) ↔ Even a :=
+    ⟨fun ⟨k, hk⟩ ↦ ⟨k, Int.cast_injective (α := ℚ) (by push_cast; linarith)⟩,
+      fun ⟨k, hk⟩ ↦ ⟨k, by exact_mod_cast (by omega : a = 2 * k)⟩⟩
+  rw [(signedUnitLattice r s).mem_evenSublattice_carrier_iff_exists_norm,
+    mem_signedUnitLattice_carrier_iff]
+  refine and_congr_right fun hxZ ↦ ?_
+  choose z hz using hxZ
+  have hnorm : (signedUnitLattice r s).norm x =
+      (((∑ i : Fin r, z (.inl i) ^ 2) - ∑ j : Fin s, z (.inr j) ^ 2 : ℤ) : ℚ) := by
+    simp [signedUnitLattice_norm_apply, ← hz]
+  have hsum : (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) =
+      (((∑ i : Fin r, z (.inl i)) + ∑ j : Fin s, z (.inr j) : ℤ) : ℚ) := by
+    simp [← hz]
+  rw [hnorm, hsum, hev, hev]
+  have hdiff : Even (((∑ i : Fin r, z (.inl i) ^ 2) - ∑ j : Fin s, z (.inr j) ^ 2) -
+      ((∑ i : Fin r, z (.inl i)) + ∑ j : Fin s, z (.inr j))) := by
+    have heq : ((∑ i : Fin r, z (.inl i) ^ 2) - ∑ j : Fin s, z (.inr j) ^ 2) -
+        ((∑ i : Fin r, z (.inl i)) + ∑ j : Fin s, z (.inr j)) =
+        (∑ i : Fin r, (z (.inl i) ^ 2 - z (.inl i))) -
+          ∑ j : Fin s, (z (.inr j) ^ 2 - z (.inr j) + 2 * z (.inr j)) := by
+      simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, ← Finset.mul_sum]; ring
+    rw [heq]
+    exact (even_iff_two_dvd.mpr (Finset.dvd_sum fun _ _ ↦ Int.two_dvd_sq_sub_self _)).sub
+      (even_iff_two_dvd.mpr (Finset.dvd_sum fun _ _ ↦ dvd_add (Int.two_dvd_sq_sub_self _)
+        (dvd_mul_right 2 _)))
+  exact ⟨fun h ↦ by simpa using h.sub hdiff, fun h ↦ by simpa using h.add hdiff⟩
 
 /-- The `k`-th standard coordinate vector in `signedUnitLattice r s`. -/
 def signedUnitBasisVector (r s : ℕ) (k : Fin r ⊕ Fin s) : signedUnitLattice r s :=
@@ -343,6 +388,71 @@ theorem nonempty_isometry_evenSignedUnitNeighbor_of_isNeighbor_signedUnitLattice
   rcases hEq with rfl | rfl; exacts [⟨h8, ⟨Isometry.ofEq rfl⟩⟩,
     ⟨h8, ⟨signedUnitHalfCharacteristicIsometryShifted r s h8 k⟩⟩]
 
+/-- Explicit integral isometry from `hyperbolicPlane` to `evenSignedUnitNeighbor 1 1`. -/
+noncomputable def hyperbolicPlaneIsometryEvenSignedUnitNeighborOneOne :
+    Isometry hyperbolicPlane (evenSignedUnitNeighbor 1 1 (by decide)) where
+  toLinearEquiv :=
+    { toFun := fun u ↦ Sum.elim (fun _ ↦ u 0 / 2 + u 1) (fun _ ↦ u 0 / 2 - u 1)
+      invFun := fun x ↦ ![x (.inl 0) + x (.inr 0), (x (.inl 0) - x (.inr 0)) / 2]
+      map_add' := fun u v ↦ by ext (i | j) <;> simp <;> ring
+      map_smul' := fun c u ↦ by ext (i | j) <;> simp <;> ring
+      left_inv := fun u ↦ by ext i; fin_cases i <;> simp
+      right_inv := fun x ↦ by
+        ext (i | j)
+        · fin_cases i; simp; ring
+        · fin_cases j; simp; ring }
+  map_app' u v := by
+    simp only [evenSignedUnitNeighbor_form, signedUnitLattice_form_apply,
+      hyperbolicPlane_form_apply, Fin.sum_univ_one, Sum.elim_inl, Sum.elim_inr]
+    ring
+  map_carrier := Submodule.ext fun x ↦ by
+    rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply]
+    change ![x (.inl 0) + x (.inr 0), (x (.inl 0) - x (.inr 0)) / 2] ∈ hyperbolicPlane.carrier ↔
+      x ∈ (evenSignedUnitNeighbor 1 1 (by decide)).carrier
+    rw [mem_hyperbolicPlane_carrier_iff, evenSignedUnitNeighbor,
+      (signedUnitLattice 1 1).mem_halfCharacteristicOverlattice_carrier_iff,
+      mem_evenSublattice_signedUnitLattice_carrier_iff,
+      mem_evenSublattice_signedUnitLattice_carrier_iff]
+    constructor
+    · intro hx
+      obtain ⟨p, hp⟩ := hx 0; obtain ⟨q, hq⟩ := hx 1
+      have hp' : (p : ℚ) = x (.inl 0) + x (.inr 0) := by simpa using hp
+      have hq' : (q : ℚ) = (x (.inl 0) - x (.inr 0)) / 2 := by simpa using hq
+      rcases Int.even_or_odd p with ⟨m, rfl⟩ | ⟨m, rfl⟩
+      · left; refine ⟨fun k ↦ ?_, m, by simp only [Fin.sum_univ_one]; push_cast at hp' ⊢; linarith⟩
+        rcases k with i | j
+        · fin_cases i; exact ⟨m + q, by push_cast at hp' hq' ⊢; linarith⟩
+        · fin_cases j; exact ⟨m - q, by push_cast at hp' hq' ⊢; linarith⟩
+      · right; refine ⟨fun k ↦ ?_, m, by simp only [Fin.sum_univ_one, Pi.sub_apply, Pi.smul_apply,
+          coe_signedUnitCharacteristicVector, smul_eq_mul, mul_one]; push_cast at hp' ⊢; linarith⟩
+        rcases k with i | j <;> simp only [Pi.sub_apply, Pi.smul_apply,
+          coe_signedUnitCharacteristicVector, smul_eq_mul, mul_one]
+        · fin_cases i; exact ⟨m + q, by push_cast at hp' hq' ⊢; linarith⟩
+        · fin_cases j; exact ⟨m - q, by push_cast at hp' hq' ⊢; linarith⟩
+    · rintro (⟨hZ, m, hm⟩ | ⟨hZ, m, hm⟩)
+      · obtain ⟨za, hza⟩ := hZ (.inl 0); simp only [Fin.sum_univ_one] at hm
+        intro i; fin_cases i
+        · exact ⟨2 * m, by simpa using (by push_cast; linarith : ((2 * m : ℤ) : ℚ) = _)⟩
+        · exact ⟨za - m, by simpa using (by push_cast; linarith : ((za - m : ℤ) : ℚ) = _)⟩
+      · obtain ⟨za, hza⟩ := hZ (.inl 0)
+        simp only [Fin.sum_univ_one, Pi.sub_apply, Pi.smul_apply,
+          coe_signedUnitCharacteristicVector, smul_eq_mul, mul_one] at hza hm
+        intro i; fin_cases i
+        · exact ⟨2 * m + 1, by simpa using (by push_cast; linarith : ((2 * m + 1 : ℤ) : ℚ) = _)⟩
+        · exact ⟨za - m, by simpa using (by push_cast; linarith : ((za - m : ℤ) : ℚ) = _)⟩
+
+/-- Explicit coordinate formula for `hyperbolicPlaneIsometryEvenSignedUnitNeighborOneOne`. -/
+@[simp] theorem hyperbolicPlaneIsometryEvenSignedUnitNeighborOneOne_apply (u : Fin 2 → ℚ) :
+    hyperbolicPlaneIsometryEvenSignedUnitNeighborOneOne u =
+      Sum.elim (fun _ ↦ u 0 / 2 + u 1) (fun _ ↦ u 0 / 2 - u 1) := (rfl)
+
+/-- Every even Kneser two-neighbor of `signedUnitLattice 1 1` is isometric to `hyperbolicPlane`. -/
+theorem nonempty_isometry_hyperbolicPlane_of_isNeighbor_signedUnitLattice_one_one
+    {M : IntegralLattice (Fin 1 ⊕ Fin 1 → ℚ)} (hM : (signedUnitLattice 1 1).IsNeighbor M 2)
+    (hMe : M.IsEven) : Nonempty (Isometry hyperbolicPlane M) := by
+  obtain ⟨_, ⟨f⟩⟩ := nonempty_isometry_evenSignedUnitNeighbor_of_isNeighbor_signedUnitLattice hM hMe
+  exact ⟨hyperbolicPlaneIsometryEvenSignedUnitNeighborOneOne.trans f⟩
+
 universe u v
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
@@ -387,12 +497,16 @@ theorem nonempty_isometry_of_isNeighbor_of_isometry_signedUnitLattice
       e₂ hK₂ hK₂e h8
   exact ⟨f₁.symm.trans f₂⟩
 
-/-- `evenSignedUnitNeighbor 1 1` (`I_{1, 1}^+`) is integrally isometric to `hyperbolicPlane`. -/
-theorem nonempty_isometry_evenSignedUnitNeighbor_one_one_hyperbolicPlane :
-    Nonempty (Isometry (evenSignedUnitNeighbor 1 1 (by decide)) hyperbolicPlane) := by
-  obtain ⟨f⟩ := nonempty_isometry_evenSignedUnitNeighbor_of_isNeighbor_of_isometry_signedUnitLattice
-    signedUnitLatticeOneOneIsometryIndefiniteUnitPlane isNeighbor_indefiniteUnitPlaneFirstNeighbor
-    isEven_indefiniteUnitPlaneFirstNeighbor (by decide)
-  exact ⟨f.trans hyperbolicPlaneIsometryIndefiniteUnitPlaneFirstNeighbor.symm⟩
+/-- For any even lattice `Y`, `Y ⊕ hyperbolicPlane` is isometric to an even Kneser two-neighbor
+of `Y ⊕ signedUnitLattice 1 1`. -/
+theorem exists_isNeighbor_orthogonalSum_signedUnitLattice_one_one {Y : IntegralLattice V}
+    (hY : Y.IsEven) :
+    ∃ K : IntegralLattice (V × (Fin 1 ⊕ Fin 1 → ℚ)),
+      (Y.orthogonalSum (signedUnitLattice 1 1)).IsNeighbor K 2 ∧ K.IsEven ∧
+        Nonempty (Isometry (Y.orthogonalSum hyperbolicPlane) K) :=
+  ⟨Y.orthogonalSum (evenSignedUnitNeighbor 1 1 (by decide)),
+    (isNeighbor_evenSignedUnitNeighbor (by decide) (by decide)).orthogonalSum_left Y,
+    (isEven_orthogonalSum_iff _ _).mpr ⟨hY, isEven_evenSignedUnitNeighbor 1 1 (by decide)⟩,
+    ⟨(Isometry.refl Y).orthogonalSum hyperbolicPlaneIsometryEvenSignedUnitNeighborOneOne⟩⟩
 
 end TauCeti.IntegralLattice
