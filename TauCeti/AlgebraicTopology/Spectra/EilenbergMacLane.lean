@@ -388,21 +388,9 @@ on every sphere level. -/
 def eilenbergMacLaneModuleSemilinearMap (φ : R →+* S) (g : M →ₛₗ[φ] Q) :
     eilenbergMacLaneModule R M ⟶
       (Mod.comap (eilenbergMacLaneMap φ)).obj (eilenbergMacLaneModule S Q) :=
-  Mod.dayHomMk (.mk (Functor.whiskerLeft _ (PointedSSet.reducedFreeTensorMap g)))
-    fun p q ↦ by
-      let K := PointedSSet.smashPowFunctor PointedSSet.circle
-      rw [Mod.dayStructureMap_dayMk, Mod.dayStructureMap_comap, Mod.dayStructureMap_dayMk]
-      change (PointedSSet.reducedFreeTensorCompAct R M K).app (p, q) ≫
-          (PointedSSet.reducedFreeTensorMap g).app (K.obj (p ⊗ q)) =
-        (PointedSSet.reducedFree R).obj (K.obj p) ◁
-          (PointedSSet.reducedFreeTensorMap g).app (K.obj q) ≫
-          (PointedSSet.reducedFreeRingMap φ).app (K.obj p) ▷
-            (PointedSSet.reducedFreeTensor S Q).obj (K.obj q) ≫
-          (PointedSSet.reducedFreeTensorCompAct S Q K).app (p, q)
-      rw [PointedSSet.reducedFreeTensorCompAct_app, Category.assoc,
-        (PointedSSet.reducedFreeTensorMap g).naturality,
-        PointedSSet.reducedFreeTensorAct_comp_reducedFreeTensorMap_app_assoc,
-        tensorHom_def', Category.assoc, PointedSSet.reducedFreeTensorCompAct_app]
+  Mod.dayHomMk (.mk (Functor.whiskerLeft _ (PointedSSet.reducedFreeTensorMap g))) fun p q ↦ by
+    rw [Mod.dayStructureMap_dayMk, Mod.dayStructureMap_comap, Mod.dayStructureMap_dayMk]
+    simp [Mod.comap, (PointedSSet.reducedFreeTensorMap g).naturality, tensorHom_def']
 
 @[simp]
 lemma eilenbergMacLaneModuleSemilinearMap_hom_natTrans_app

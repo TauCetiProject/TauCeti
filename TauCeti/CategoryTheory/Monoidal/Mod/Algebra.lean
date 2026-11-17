@@ -184,42 +184,38 @@ lemma tensorπ_comapRegularSmul_hom (M : Mod C B) :
 
 /-- A commutative monoid `B` under a commutative monoid `A` is a monoid object of `A`-modules, with
 multiplication that of `B` on representatives and unit `f : A ⟶ B`. -/
-noncomputable instance monObjComapRegular : MonObj (comapRegular f) where
-  one := Hom.mk' (M := 𝟙_ (Mod C A)) f (by
+noncomputable instance monObjComapRegular : MonObj (comapRegular f) :=
+  -- Bind `one` and `mul` at their `MonObj (comapRegular f)` morphism types so `simp` sees
+  -- well-typed `comapRegular f` morphisms in the monoid laws rather than `A ⟶ B` or
+  -- `(comap f).obj (regular B)`.
+  let one : 𝟙_ (Mod C A) ⟶ comapRegular f := Hom.mk' (M := 𝟙_ (Mod C A)) f (by
     rw [comapRegular_smul]
     exact (IsMonHom.mul_hom f).trans (by
       rw [tensorHom_def', Category.assoc]
       exact (selfLeftAction_actionHomRight C A _ _ f =≫ _).symm))
-  mul := comapRegularSmul f (regular B)
-  one_mul := by
-    let m : comapRegular f ⊗ comapRegular f ⟶ comapRegular f := comapRegularSmul f (regular B)
-    have hm : tensorπ (comapRegular f) (comapRegular f) ≫ m.hom = (μ : B ⊗ B ⟶ B) :=
-      tensorπ_comapRegularSmul_hom f (regular B)
-    change (_ : 𝟙_ (Mod C A) ⟶ comapRegular f) ▷ comapRegular f ≫ m = (λ_ (comapRegular f)).hom
-    ext
-    simp -zeta only [comp_hom', tensorπ_whiskerRight_hom_assoc, hm, tensorπ_leftUnitor_hom_hom]
-    exact (comapRegular_smul f).symm
-  mul_one := by
-    let m : comapRegular f ⊗ comapRegular f ⟶ comapRegular f := comapRegularSmul f (regular B)
-    have hm : tensorπ (comapRegular f) (comapRegular f) ≫ m.hom = (μ : B ⊗ B ⟶ B) :=
-      tensorπ_comapRegularSmul_hom f (regular B)
-    change comapRegular f ◁ (_ : 𝟙_ (Mod C A) ⟶ comapRegular f) ≫ m = (ρ_ (comapRegular f)).hom
-    ext
-    simp -zeta only [comp_hom', tensorπ_whiskerLeft_hom_assoc, hm, tensorπ_rightUnitor_hom_hom,
-      comapRegular_smul]
-    exact (braiding_inv_whiskerRight_mul f).symm
-  mul_assoc := by
-    let m : comapRegular f ⊗ comapRegular f ⟶ comapRegular f := comapRegularSmul f (regular B)
-    have hm : tensorπ (comapRegular f) (comapRegular f) ≫ m.hom = (μ : B ⊗ B ⟶ B) :=
-      tensorπ_comapRegularSmul_hom f (regular B)
-    change m ▷ comapRegular f ≫ m =
-      (α_ (comapRegular f) (comapRegular f) (comapRegular f)).hom ≫ comapRegular f ◁ m ≫ m
-    apply hom_ext
-    rw [← cancel_epi (tensorπ _ _ ▷ _ ≫ tensorπ _ _)]
-    simp -zeta only [comp_hom', Category.assoc, tensorπ_whiskerRight_hom_assoc,
-      ← comp_whiskerRight_assoc, hm, tensorπ_associator_hom_hom_assoc,
-      tensorπ_whiskerLeft_hom_assoc, ← whiskerLeft_comp_assoc]
-    exact MonObj.mul_assoc B
+  let mul : comapRegular f ⊗ comapRegular f ⟶ comapRegular f := comapRegularSmul f (regular B)
+  have hone : one.hom = f := rfl
+  have hmul : tensorπ (comapRegular f) (comapRegular f) ≫ mul.hom = (μ : B ⊗ B ⟶ B) :=
+    (tensorπ_comapRegularSmul_hom f (regular B)).trans (ModObj.smul_eq_mul B)
+  { one := one
+    mul := mul
+    one_mul := by
+      ext
+      simp -zeta only [comp_hom', tensorπ_whiskerRight_hom_assoc, hone, hmul,
+        tensorπ_leftUnitor_hom_hom]
+      exact (comapRegular_smul f).symm
+    mul_one := by
+      ext
+      simp -zeta only [comp_hom', tensorπ_whiskerLeft_hom_assoc, hone, hmul,
+        tensorπ_rightUnitor_hom_hom, comapRegular_smul]
+      exact (braiding_inv_whiskerRight_mul f).symm
+    mul_assoc := by
+      apply hom_ext
+      rw [← cancel_epi (tensorπ _ _ ▷ _ ≫ tensorπ _ _)]
+      simp -zeta only [comp_hom', Category.assoc, tensorπ_whiskerRight_hom_assoc,
+        ← comp_whiskerRight_assoc, hmul, tensorπ_associator_hom_hom_assoc,
+        tensorπ_whiskerLeft_hom_assoc, ← whiskerLeft_comp_assoc]
+      exact MonObj.mul_assoc B }
 
 /-- On representatives, the multiplication `B ⊗_A B ⟶ B` is the multiplication of `B`. -/
 @[reassoc (attr := simp)]
