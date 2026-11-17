@@ -140,6 +140,20 @@ theorem singularHomologyCrossRelEquiv_apply (q : ℕ)
 
 variable {X Q : Type} [TopologicalSpace X]
 
+omit [T2Space M] in
+/-- `(M ∖ {b'}) × X` lies in the complement of the fibre `{b'} × p⁻¹(b)` of `id × p`. -/
+private theorem mapsTo_preimage_fst_compl_fiber (p : X → Q) (b' : M) (b : Q) :
+    Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
+      ((Prod.map id p) ⁻¹' {(b', b)})ᶜ :=
+  fun _ hz hz' ↦ hz (congrArg Prod.fst hz')
+
+omit [T2Space M] in
+/-- `(M ∖ {b'}) × X` lies in its union with `M × (X ∖ p⁻¹(b))`. -/
+private theorem mapsTo_preimage_fst_union (p : X → Q) (b' : M) (b : Q) :
+    Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
+      (Prod.fst ⁻¹' ({b'}ᶜ : Set M) ∪ Prod.snd ⁻¹' (p ⁻¹' {b})ᶜ) :=
+  fun _ hz ↦ Or.inl hz
+
 include hd in
 /-- Localizing the cross product `[M] × α` at the fibre over `(b', b)` of `id × p : M × X → M × Q`
 is the relative cross product `o b' × α ∈ H(M × X, (M ∖ {b'}) × X)` followed by the map to the
@@ -147,14 +161,13 @@ homology of `M × X` relative to the complement of that fibre. -/
 private theorem fiberLocalization_prodMap_singularHomologyCross [CompactSpace M] (p : X → Q)
     (b' : M) (b : Q) {k : ℕ}
     (α : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) k :
-      ModuleCat.{0} ℤ))
-    (hAC : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      ((Prod.map id p) ⁻¹' {(b', b)})ᶜ) :
+      ModuleCat.{0} ℤ)) :
     (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ))
         (Prod.map id p) (b', b) (d + k)).hom
         ((TopCat.singularHomologyCross (TopCat.of M) (TopCat.of X) (ModuleCat.of ℤ (ULift.{0} ℤ))
           (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (o.fundamentalClass hd ⊗ₜ α)) =
-      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of (M × X))) hAC)
+      (TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (𝟙 (TopCat.of (M × X))) (mapsTo_preimage_fst_compl_fiber p b' b))
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
         ((TopCat.singularHomologyCrossRel (TopCat.of M) (TopCat.of X) ({b'}ᶜ)
           (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
@@ -164,7 +177,8 @@ private theorem fiberLocalization_prodMap_singularHomologyCross [CompactSpace M]
   rw [o.fiberLocalization_id_fundamentalClass hd] at h₁
   have h₂ := ConcreteCategory.congr_hom
     (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id
-      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) hAC (d + k))
+      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mapsTo_preimage_fst_compl_fiber p b' b) (d + k))
     ((TopCat.singularHomologyCross (TopCat.of M) (TopCat.of X) (ModuleCat.of ℤ (ULift.{0} ℤ))
       (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (o.fundamentalClass hd ⊗ₜ α))
   -- The subspaces `(id ∘ fst)⁻¹' {b'}ᶜ` and `fst⁻¹' {b'}ᶜ` of `M × X` agree definitionally.
@@ -214,16 +228,13 @@ omit [T2Space M] in
 /-- A class of `H(M × X, (M ∖ {b'}) × X)` vanishing modulo the complement of `{b'} × p⁻¹(b)`
 vanishes modulo `(M ∖ {b'}) × X ∪ M × (X ∖ p⁻¹(b))`, which is that complement. -/
 private theorem singularHomologyMap_union_eq_zero (p : X → Q) (b' : M) (b : Q) {j : ℕ}
-    (hAC : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      ((Prod.map id p) ⁻¹' {(b', b)})ᶜ)
-    (hUV : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      (Prod.fst ⁻¹' ({b'}ᶜ : Set M) ∪ Prod.snd ⁻¹' (p ⁻¹' {b})ᶜ))
     {y : ((TopPair.ofSubset (Prod.fst ⁻¹' ({b'}ᶜ : Set M) :
       Set (TopCat.of (M × X)))).singularHomology
       (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j : ModuleCat.{0} ℤ)}
-    (hy : (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hAC)
+    (hy : (TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b))
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j).hom y = 0) :
-    (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hUV)
+    (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_union p b' b))
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j).hom y = 0 := by
   have hCUV : Set.MapsTo (𝟙 (TopCat.of (M × X))) ((Prod.map id p) ⁻¹' {(b', b)})ᶜ
       (Prod.fst ⁻¹' ({b'}ᶜ : Set M) ∪ Prod.snd ⁻¹' (p ⁻¹' {b})ᶜ) := fun z hz ↦ by
@@ -231,14 +242,17 @@ private theorem singularHomologyMap_union_eq_zero (p : X → Q) (b' : M) (b : Q)
     simp only [Set.mem_union, Set.mem_preimage, Set.mem_compl_iff, Set.mem_singleton_iff,
       not_or, not_not] at hz'
     exact hz (Prod.ext hz'.1 hz'.2)
-  have hcomp : TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hUV)
+  have hcomp : TopPair.singularHomologyMap
+      (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_union p b' b))
       (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j =
-      TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hAC)
+      TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b))
           (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j ≫
         TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hCUV)
             (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j := by
     rw [← TopPair.singularHomologyMap_comp,
-      TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ hUV (Category.comp_id _)]
+      TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_preimage_fst_union p b' b)
+        (Category.comp_id _)]
   exact (ConcreteCategory.congr_hom hcomp _).trans ((congrArg (TopPair.singularHomologyMap
     (TopPair.ofSubsetMap _ hCUV)
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) j).hom hy).trans (map_zero _))
@@ -251,12 +265,11 @@ the long exact sequence of a triple write `y` as the image of a class of
 `(M × (X ∖ F), (M ∖ {b'}) × (X ∖ F))`, which is `o b' × w` by the suspension isomorphism. -/
 private theorem exists_singularHomologyCrossRel_eq (p : X → Q) (b' : M) (b : Q)
     (hF : IsClosed (p ⁻¹' {b})) {k : ℕ}
-    (hAC : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      ((Prod.map id p) ⁻¹' {(b', b)})ᶜ)
     {y : ((TopPair.ofSubset (Prod.fst ⁻¹' ({b'}ᶜ : Set M) :
       Set (TopCat.of (M × X)))).singularHomology
       (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k) : ModuleCat.{0} ℤ)}
-    (hy : (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hAC)
+    (hy : (TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b))
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom y = 0) :
     ∃ w : ((TopCat.toSSet.obj (TopCat.of ↥((p ⁻¹' {b})ᶜ))).homology
         (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ),
@@ -265,12 +278,10 @@ private theorem exists_singularHomologyCrossRel_eq (p : X → Q) (b' : M) (b : Q
           ((o b').val ⊗ₜ (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset
             ((p ⁻¹' {b})ᶜ : Set (TopCat.of X))).map) (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom w) =
         y := by
-  have hUV : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      (Prod.fst ⁻¹' ({b'}ᶜ : Set M) ∪ Prod.snd ⁻¹' (p ⁻¹' {b})ᶜ) := fun z hz ↦ Or.inl hz
   obtain ⟨z, hz⟩ := TopPair.exists_singularHomologyMap_excisionMap_eq
       (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ))
-    (isOpen_compl_singleton.preimage continuous_fst) (hF.isOpen_compl.preimage continuous_snd) hUV
-    (d + k) (singularHomologyMap_union_eq_zero p b' b hAC hUV hy)
+    (isOpen_compl_singleton.preimage continuous_fst) (hF.isOpen_compl.preimage continuous_snd)
+    (mapsTo_preimage_fst_union p b' b) (d + k) (singularHomologyMap_union_eq_zero p b' b hy)
   -- Carry `z` to `(M × (X ∖ F), (M ∖ {b'}) × (X ∖ F))` and write it as `o b' × w`.
   let φ := TopPair.ofSubsetMap (Y := TopCat.of (M × ↥((p ⁻¹' {b})ᶜ)))
     (B := (Subtype.val ⁻¹' (Prod.fst ⁻¹' ({b'}ᶜ : Set M)) :
@@ -305,11 +316,9 @@ of `o b' × ι_* w`, for a class `w` of `X ∖ F` with inclusion `ι`, modulo th
 `{b'} × F` vanishes, since `M × (X ∖ F)` lies in that complement. -/
 private theorem singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero (p : X → Q)
     (b' : M) (b : Q) {k : ℕ}
-    (hAC : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      ((Prod.map id p) ⁻¹' {(b', b)})ᶜ)
     (w : ((TopCat.toSSet.obj (TopCat.of ↥((p ⁻¹' {b})ᶜ))).homology
         (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hAC)
+    (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b))
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
       ((TopCat.singularHomologyCrossRel (TopCat.of M) (TopCat.of X) ({b'}ᶜ)
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
@@ -318,10 +327,12 @@ private theorem singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero
       0 := by
   have hzero : TopPair.singularHomologyMap (prodComplPairMap p b' b)
       (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k) ≫
-      TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hAC) _ (d + k) = 0 :=
-    (TopPair.singularHomologyMap_comp _ _ (TopPair.ofSubsetMap _ hAC) (d + k)).symm.trans
+      TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) _ (d + k) = 0 :=
+    (TopPair.singularHomologyMap_comp _ _
+      (TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) (d + k)).symm.trans
       (TopPair.singularHomologyMap_eq_zero_of_fac (prodComplPairMap p b' b ≫
-        TopPair.ofSubsetMap _ hAC) _
+        TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) _
         (TopCat.ofHom ⟨fun z : M × ↥((p ⁻¹' {b})ᶜ) ↦
           (⟨(z.1, z.2.1), fun hz ↦ z.2.2 (congrArg Prod.snd hz)⟩ :
             ↥(((Prod.map id p) ⁻¹' {(b', b)})ᶜ : Set (M × X))), by fun_prop⟩)
@@ -350,16 +361,14 @@ theorem livesOverFundamentalClass_prodMap_singularHomologyCross_fundamentalClass
           (ModuleCat.of ℤ (ULift.{0} ℤ)) d k m h).hom (o.fundamentalClass hd ⊗ₜ α)) ↔
       LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) p b α := by
   subst h
-  have hAC : Set.MapsTo (𝟙 (TopCat.of (M × X))) (Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-      ((Prod.map id p) ⁻¹' {(b', b)})ᶜ := fun z hz hz' ↦ hz (congrArg Prod.fst hz')
-  have hloc := o.fiberLocalization_prodMap_singularHomologyCross hd p b' b α hAC
+  have hloc := o.fiberLocalization_prodMap_singularHomologyCross hd p b' b α
   refine (livesOverFundamentalClass_iff _ _ _ _).trans
     ((not_congr ?_).trans (livesOverFundamentalClass_iff _ _ _ _).symm)
   constructor
   · -- If the localization vanishes, `o b' × α = o b' × ι_* w` for a class `w` of `X ∖ F`, so
     -- `α = ι_* w` comes from `X ∖ F`.
     intro hx
-    obtain ⟨w, hw⟩ := o.exists_singularHomologyCrossRel_eq hd p b' b hF hAC (hloc.symm.trans hx)
+    obtain ⟨w, hw⟩ := o.exists_singularHomologyCrossRel_eq hd p b' b hF (hloc.symm.trans hx)
     have hαw : α = (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset
         ((p ⁻¹' {b})ᶜ : Set (TopCat.of X))).map) (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom w :=
       (o.singularHomologyCrossRelEquiv hd b' X k).injective
@@ -377,7 +386,7 @@ theorem livesOverFundamentalClass_prodMap_singularHomologyCross_fundamentalClass
       ((TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of X))).singularHomology_exact_space
         (ModuleCat.of ℤ (ULift.{0} ℤ)) k) α hα
     exact hloc.trans
-      (o.singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero p b' b hAC w)
+      (o.singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero p b' b w)
 
 end HomologicalOrientation
 

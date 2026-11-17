@@ -57,8 +57,9 @@ def uliftTensorSelfIso :
 @[simp]
 theorem uliftTensorSelfIso_hom_tmul (a b : ULift.{u} R) :
     (uliftTensorSelfIso R).hom (a ⊗ₜ b) = ULift.up (a.down * b.down) := by
-  simp only [uliftTensorSelfIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom]
-  exact congrArg ULift.up (MonoidalCategory.leftUnitor_hom_apply (M := 𝟙_ (ModuleCat.{u} R))
-    a.down b.down)
+  rw [uliftTensorSelfIso, Iso.trans_hom, Iso.trans_hom, comp_apply, comp_apply, tensorIso_hom,
+    MonoidalCategory.tensorHom_tmul, MonoidalCategory.leftUnitor_hom_apply, Iso.symm_hom]
+  simp only [LinearEquiv.toModuleIso_hom, LinearEquiv.toModuleIso_inv, hom_ofHom,
+    LinearEquiv.coe_coe, ULift.moduleEquiv_apply, ULift.moduleEquiv_symm_apply, smul_eq_mul]
 
 end ModuleCat
