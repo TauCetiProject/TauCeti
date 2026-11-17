@@ -214,12 +214,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V : MulAction.orbitRel.Quotient G M → Type*} [∀ q, Nonempty (V q)]
   [∀ q, TopologicalSpace (V q)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
   {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
-  {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x}
 
 /-- Along a `C^m` equivariant map `ψ : M' →ₑ[σ] M` (`m ≤ n`), the `G'`-descent of
 `ψ.pullbackOrbitSection t` is a `C^m` section of the pulled-back bundle over `M' ⧸ G'` if and only
 if the composite `x' ↦ (⟦ψ x'⟧, t (ψ x'))` into `TotalSpace F V` is `C^m`. -/
-theorem contMDiff_section_pullbackOrbitSection_iff (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
+theorem contMDiff_section_pullbackOrbitSection_iff {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x}
+    (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
     ContMDiff I' (I'.prod 𝓘(𝕜, F)) m
         (fun q' ↦ TotalSpace.mk' F
           (E := ⇑(⟨ψ.orbitRelQuotientMap,
@@ -240,10 +240,10 @@ theorem contMDiff_section_pullbackOrbitSection_iff (hm : m ≤ n) (hψ : ContMDi
 /-- Pulling back a `G`-invariant `C^m` section `t` along a `C^m` equivariant map `ψ : M' →ₑ[σ] M`
 (`m ≤ n`) produces a `G'`-invariant section whose descent to `M' ⧸ G'` is a `C^m` section of the
 pulled-back bundle. -/
-theorem ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec (hm : m ≤ n)
-    (hψ : ContMDiff I' I m ψ)
+theorem _root_.ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec
     (ht_smooth : ContMDiff I (I.prod 𝓘(𝕜, F)) m
-      (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x))) :
+      (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x)))
+    (hψ : ContMDiff I' I m ψ) (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (hm : m ≤ n) :
     ContMDiff I' (I'.prod 𝓘(𝕜, F)) m
       (fun q' ↦ TotalSpace.mk' F
         (E := ⇑(⟨ψ.orbitRelQuotientMap,

@@ -20,12 +20,12 @@ fundamental dual-bundle operations:
   `MulAction.orbitRelQuotientRec t ht` agrees with the scalar descent
   `MulAction.orbitRelQuotientLift` of the upstairs pairing `x ↦ α x (t x)`
   (`TauCeti.orbitRelQuotientRec_dual_apply`), and is `C^m` for `m ≤ n` whenever both sections are
-  `C^m` upstairs (`TauCeti.ContMDiff.orbitRelQuotientLift_dual_apply`).
+  `C^m` upstairs (`ContMDiff.orbitRelQuotientLift_dual_apply`).
 * **Fibrewise precomposition and dual (transpose) bundle maps:** precomposing into a third bundle,
   and in particular taking the fibrewise dual `ContinuousLinearMap.precomp 𝕜`, commutes with
   `MulAction.orbitRelQuotientRec` (`TauCeti.precomp_orbitRelQuotientRec`,
   `TauCeti.dualMap_orbitRelQuotientRec`) and preserves `C^m` Hom-section regularity without finite
-  rank (`TauCeti.ContMDiff.section_dualMap_orbitRelQuotientRec`). When `𝕜` is complete and both
+  rank (`ContMDiff.section_dualMap_orbitRelQuotientRec`). When `𝕜` is complete and both
   model fibres are finite-dimensional, `C^m` regularity and `C^m` bundle-diffeomorphism
   realizability of the descended dual total-space map are equivalent to the corresponding upstairs
   criteria on the primal linear family
@@ -120,20 +120,20 @@ variable {G M 𝕜 : Type*} [Group G] [MulAction G M] [TopologicalSpace M]
 
 /-- If an invariant dual-bundle section `α` and an invariant vector-bundle section `t` are `C^m`
 upstairs (`m ≤ n`), the scalar descent of their pairing `x ↦ α x (t x)` is `C^m` on `M ⧸ G`. -/
-theorem ContMDiff.orbitRelQuotientLift_dual_apply {F : Type*} [NormedAddCommGroup F]
+theorem _root_.ContMDiff.orbitRelQuotientLift_dual_apply {F : Type*} [NormedAddCommGroup F]
     [NormedSpace 𝕜 F] {V : MulAction.orbitRel.Quotient G M → Type*}
     [∀ q, AddCommGroup (V q)] [∀ q, Module 𝕜 (V q)] [∀ q, TopologicalSpace (V q)]
     [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
     {α : ∀ x : M, StrongDual 𝕜 (V (Quotient.mk (MulAction.orbitRel G M) x))}
     {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x)
-    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x)
-    (hm : m ≤ n)
     (hα_smooth : ContMDiff I (I.prod 𝓘(𝕜, StrongDual 𝕜 F)) m
       (fun x ↦ TotalSpace.mk' (StrongDual 𝕜 F) (E := fun q ↦ StrongDual 𝕜 (V q))
         (Quotient.mk (MulAction.orbitRel G M) x) (α x)))
     (ht_smooth : ContMDiff I (I.prod 𝓘(𝕜, F)) m
-      (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x))) :
+      (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x)))
+    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x)
+    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x)
+    (hm : m ≤ n) :
     ContMDiff I 𝓘(𝕜) m
       (MulAction.orbitRelQuotientLift (fun x ↦ α x (t x))
         (MulAction.apply₂_eq_of_heq (fun _ (f : StrongDual 𝕜 _) v ↦ f v) hα ht)) :=
@@ -142,7 +142,7 @@ theorem ContMDiff.orbitRelQuotientLift_dual_apply {F : Type*} [NormedAddCommGrou
 /-- If an invariant Hom-bundle family `φ` is `C^m` upstairs (`m ≤ n`), the descent of its fibrewise
 dual (transpose) family is a `C^m` section of the dual Hom bundle on `M ⧸ G`. Neither finite rank
 nor completeness of `𝕜` is required. -/
-theorem ContMDiff.section_dualMap_orbitRelQuotientRec {F₁ F₂ : Type*}
+theorem _root_.ContMDiff.section_dualMap_orbitRelQuotientRec {F₁ F₂ : Type*}
     [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
     [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
     {V₁ V₂ : MulAction.orbitRel.Quotient G M → Type*}
@@ -153,11 +153,11 @@ theorem ContMDiff.section_dualMap_orbitRelQuotientRec {F₁ F₂ : Type*}
     [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
     {φ : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x)
-    (hm : m ≤ n)
     (hφ_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun q ↦ V₁ q →L[𝕜] V₂ q)
-        (Quotient.mk (MulAction.orbitRel G M) x) (φ x))) :
+        (Quotient.mk (MulAction.orbitRel G M) x) (φ x)))
+    (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x)
+    (hm : m ≤ n) :
     ContMDiff I (I.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) m
       (fun q ↦ TotalSpace.mk' (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)
         (E := fun q ↦ StrongDual 𝕜 (V₂ q) →L[𝕜] StrongDual 𝕜 (V₁ q)) q

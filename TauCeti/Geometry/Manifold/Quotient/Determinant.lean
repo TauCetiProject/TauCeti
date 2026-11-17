@@ -19,14 +19,14 @@ endomorphism determinants and alternating-form pullbacks:
   descended endomorphism section `MulAction.orbitRelQuotientRec φ hφ` equals the scalar descent
   `MulAction.orbitRelQuotientLift` of `x ↦ (φ x).det` (`TauCeti.det_orbitRelQuotientRec`), and is
   `C^m` for `m ≤ n` whenever `φ` is `C^m` upstairs over a complete field
-  (`TauCeti.ContMDiff.orbitRelQuotientLift_det`). In finite rank, the descended endomorphism family
+  (`ContMDiff.orbitRelQuotientLift_det`). In finite rank, the descended endomorphism family
   underlies a `C^m` bundle automorphism of `TotalSpace F V` if and only if `φ` is a `C^m` section
   of the pulled-back endomorphism bundle and `(φ x).det ≠ 0` everywhere upstairs
   (`TauCeti.exists_bundleDiffeomorph_orbitRelQuotientRec_iff_det_ne_zero`).
 * **Alternating-form pullback and determinant line action:** fibrewise domain pullback
   `ContinuousAlternatingMap.compContinuousLinearMap` commutes with `MulAction.orbitRelQuotientRec`
   (`TauCeti.compContinuousLinearMap_orbitRelQuotientRec`) and preserves `C^m` regularity for
-  `m ≤ n` (`TauCeti.ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec`). On the
+  `m ≤ n` (`ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec`). On the
   top-degree alternating line bundle (`Fintype.card ι = Module.finrank 𝕜 F`), pulling back a
   descended top form along a descended endomorphism equals scalar multiplication by the descended
   determinant (`TauCeti.bundleTopForm_compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul`).
@@ -113,14 +113,14 @@ variable [CompleteSpace 𝕜]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
   {φ : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
     V (Quotient.mk (MulAction.orbitRel G M) x)}
-  {hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x}
 
 /-- Over a complete field, if an invariant endomorphism family `φ` is `C^m` upstairs (`m ≤ n`), the
 scalar descent of `x ↦ (φ x).det` is a `C^m` function on `M ⧸ G`. -/
-theorem ContMDiff.orbitRelQuotientLift_det (hm : m ≤ n)
+theorem _root_.ContMDiff.orbitRelQuotientLift_det
     (hφ_smooth : ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] F)) m
       (fun x ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun q ↦ V q →L[𝕜] V q)
-        (Quotient.mk (MulAction.orbitRel G M) x) (φ x))) :
+        (Quotient.mk (MulAction.orbitRel G M) x) (φ x)))
+    (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x) (hm : m ≤ n) :
     ContMDiff I 𝓘(𝕜) m
       (MulAction.orbitRelQuotientLift (fun x ↦ (φ x).det)
         (MulAction.apply_eq_of_heq (fun _ (A : _ →L[𝕜] _) ↦ A.det) hφ)) :=
@@ -131,7 +131,7 @@ theorem ContMDiff.orbitRelQuotientLift_det (hm : m ≤ n)
 if and only if `φ` is a `C^m` section of the pulled-back endomorphism bundle and `(φ x).det ≠ 0`
 for every `x : M`. -/
 theorem exists_bundleDiffeomorph_orbitRelQuotientRec_iff_det_ne_zero [FiniteDimensional 𝕜 F]
-    (hm : m ≤ n) :
+    {hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x} (hm : m ≤ n) :
     (∃ Φ : TotalSpace F V ≃ₘ^m⟮I.prod 𝓘(𝕜, F), I.prod 𝓘(𝕜, F)⟯ TotalSpace F V,
         ⇑Φ = fun p ↦ TotalSpace.mk' F p.proj
           (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] V q) φ hφ p.proj p.2)) ↔
@@ -166,19 +166,19 @@ variable {ι : Type*} [Fintype ι] {F₁ F₂ F₃ : Type*}
 /-- If an invariant alternating-map family `α` and an invariant linear family `A` are `C^m`
 upstairs (`m ≤ n`), the descent of `x ↦ (α x).compContinuousLinearMap (A x)` is a `C^m` section of
 the alternating-map bundle over `M ⧸ G`. -/
-theorem ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec
+theorem _root_.ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec
     {α : ∀ x : M, V₂ (Quotient.mk (MulAction.orbitRel G M) x) [⋀^ι]→L[𝕜]
       V₃ (Quotient.mk (MulAction.orbitRel G M) x)}
     {A : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x) (hA : ∀ (g : G) (x : M), A (g • x) ≍ A x)
-    (hm : m ≤ n)
     (hα_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) m
       (fun x ↦ TotalSpace.mk' (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun q ↦ V₂ q [⋀^ι]→L[𝕜] V₃ q)
         (Quotient.mk (MulAction.orbitRel G M) x) (α x)))
     (hA_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun q ↦ V₁ q →L[𝕜] V₂ q)
         (Quotient.mk (MulAction.orbitRel G M) x) (A x)))
+    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x) (hA : ∀ (g : G) (x : M), A (g • x) ≍ A x)
+    (hm : m ≤ n)
     (hfact : m = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h; first | exact NeZero.ne _ | cases h) :
     ContMDiff I (I.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) m

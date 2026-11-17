@@ -130,41 +130,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {b : M → B} {s : Set M} {x : M} {n : ℕ∞ω}
   {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
-omit [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)] in
-/-- In preferred frames at `x₀`, fibrewise precomposition with `A : V₁ y →L[𝕜] V₂ y` into `V₃`
-reads as precomposition with the coordinate expression of `A`. -/
-theorem ContinuousLinearMap.inCoordinates_precomp (V₃ : B → Type*)
-    [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
-    [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
-    [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
-    {x₀ y : B} (A : V₁ y →L[𝕜] V₂ y)
-    (hy₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet)
-    (hy₂ : y ∈ (trivializationAt F₂ V₂ x₀).baseSet)
-    (hy₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
-    ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
-      (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) x₀ y x₀ y
-      (ContinuousLinearMap.precomp (V₃ y) A) =
-      ContinuousLinearMap.precomp F₃
-        (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x₀ y x₀ y A) := by
-  have hy₁₃ : y ∈ (trivializationAt (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) x₀).baseSet := by
-    rw [hom_trivializationAt_baseSet]; exact ⟨hy₁, hy₃⟩
-  have hy₂₃ : y ∈ (trivializationAt (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).baseSet := by
-    rw [hom_trivializationAt_baseSet]; exact ⟨hy₂, hy₃⟩
-  ext g v
-  let f := (trivializationAt F₃ V₃ x₀).symmL 𝕜 y ∘L g ∘L
-    (trivializationAt F₂ V₂ x₀).continuousLinearMapAt 𝕜 y
-  have hsymm : (trivializationAt (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).symmL 𝕜 y g = f := by
-    have hg : (trivializationAt (F₂ →L[𝕜] F₃)
-        (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).continuousLinearMapAt 𝕜 y f = g := by
-      rw [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₂₃, hom_trivializationAt_apply]
-      ext u
-      simp [f, ContinuousLinearMap.inCoordinates, Trivialization.continuousLinearMapAt_symmL _ hy₃,
-        Trivialization.continuousLinearMapAt_symmL _ hy₂]
-    conv_lhs => rw [← hg, Trivialization.symmL_continuousLinearMapAt _ hy₂₃]
-  simp [ContinuousLinearMap.inCoordinates,
-    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₁₃, hom_trivializationAt_apply, hsymm,
-    f, Trivialization.continuousLinearMapAt_symmL _ hy₃]
-
 /-- Fibrewise precomposition with a `C^n` Hom-bundle section into any vector bundle `V₃` is `C^n`
 within `s` at `x`. Neither finite rank nor completeness of `𝕜` is required. -/
 theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*)
@@ -242,30 +207,6 @@ theorem ContMDiff.clm_bundle_dualMap
 end Precomp
 
 namespace TauCeti
-
-section DualEquiv
-
-variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] {V₁ V₂ : B → Type*}
-  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
-  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
-
-/-- Fibrewise dual continuous linear equivalence `StrongDual 𝕜 (V₂ x) ≃L[𝕜] StrongDual 𝕜 (V₁ x)`
-induced by a family of fibrewise continuous linear equivalences `e : ∀ x, V₁ x ≃L[𝕜] V₂ x`. -/
-def bundleDualEquiv (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
-    StrongDual 𝕜 (V₂ x) ≃L[𝕜] StrongDual 𝕜 (V₁ x) :=
-  (e x).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
-
-@[simp]
-theorem bundleDualEquiv_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) (α : StrongDual 𝕜 (V₂ x)) :
-    bundleDualEquiv e x α = ContinuousLinearMap.precomp 𝕜 (e x).toContinuousLinearMap α := by
-  ext v; simp [bundleDualEquiv, ContinuousLinearEquiv.arrowCongr_apply]
-
-@[simp]
-theorem bundleDualEquiv_symm (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
-    (bundleDualEquiv e x).symm = bundleDualEquiv (fun y ↦ (e y).symm) x := by
-  ext β w; simp [bundleDualEquiv, ContinuousLinearEquiv.arrowCongr_apply]
-
-end DualEquiv
 
 section FiniteRankDual
 
@@ -377,36 +318,6 @@ theorem bundleDualDiffeomorph_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
     bundleDualDiffeomorph e he p =
       ⟨p.proj, ContinuousLinearMap.precomp 𝕜 (e p.proj).toContinuousLinearMap p.2⟩ := by
   simp [bundleDualDiffeomorph]
-
-omit [ChartedSpace HB B] [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)] in
-include F₁ F₂ in
-/-- In finite dimensions over a complete field, the fibrewise dual `ContinuousLinearMap.precomp 𝕜 A`
-between continuous dual fibres is bijective if and only if `A` is bijective. -/
-theorem bijective_precomp_dual_iff {x : B} (A : V₁ x →L[𝕜] V₂ x) :
-    Function.Bijective
-        (ContinuousLinearMap.precomp 𝕜 A : StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) ↔
-      Function.Bijective A := by
-  let e₁ := (trivializationAt F₁ V₁ x).continuousLinearEquivAt 𝕜 x
-    (mem_baseSet_trivializationAt F₁ V₁ x)
-  let e₂ := (trivializationAt F₂ V₂ x).continuousLinearEquivAt 𝕜 x
-    (mem_baseSet_trivializationAt F₂ V₂ x)
-  let d₁ := (e₁.arrowCongr (.refl 𝕜 𝕜)).toLinearEquiv.trans
-    (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 F₁ ≃ₗ[𝕜] StrongDual 𝕜 F₁).symm
-  let d₂ := (e₂.arrowCongr (.refl 𝕜 𝕜)).toLinearEquiv.trans
-    (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 F₂ ≃ₗ[𝕜] StrongDual 𝕜 F₂).symm
-  let T : F₁ →ₗ[𝕜] F₂ := (e₂.toLinearEquiv : V₂ x →ₗ[𝕜] F₂) ∘ₗ (A : V₁ x →ₗ[𝕜] V₂ x) ∘ₗ
-    (e₁.symm.toLinearEquiv : F₁ →ₗ[𝕜] V₁ x)
-  have hT : (d₁ : StrongDual 𝕜 (V₁ x) → Module.Dual 𝕜 F₁) ∘
-      (ContinuousLinearMap.precomp 𝕜 A : StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) ∘
-        d₂.symm = T.dualMap := by
-    ext α v; simp [d₁, d₂, T, ContinuousLinearEquiv.arrowCongr_apply]
-  have hA : (e₂ : V₂ x → F₂) ∘ A ∘ e₁.symm = T := rfl
-  have h1 : Function.Bijective T.dualMap ↔ Function.Bijective
-      (ContinuousLinearMap.precomp 𝕜 A : StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) := by
-    rw [← hT, EquivLike.comp_bijective, EquivLike.bijective_comp]
-  have h2 : Function.Bijective T ↔ Function.Bijective A := by
-    rw [← hA, EquivLike.comp_bijective, EquivLike.bijective_comp]
-  exact h1.symm.trans (LinearMap.dualMap_bijective_iff.trans h2)
 
 /-- In finite dimensions over a complete field, the fibrewise dual of `ψ : ∀ x, V₁ x →L[𝕜] V₂ x`
 underlies a `C^n` diffeomorphism of dual total spaces if and only if `ψ` underlies a `C^n`

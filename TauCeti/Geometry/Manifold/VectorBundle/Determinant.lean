@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
-public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -29,10 +28,7 @@ endomorphism family induces a `C^n` bundle automorphism of `TotalSpace F V` if a
 For bundles of continuous alternating maps, fibrewise domain pullback
 `ContinuousAlternatingMap.compContinuousLinearMap` along a `C^n` Hom-bundle section preserves `C^n`
 regularity of alternating-map sections (`ContMDiffWithinAt.continuousAlternatingMap_comp_clm`), with
-the arity-factorial condition required only at the analytic order `ω`. In top degree
-(`Fintype.card ι = Module.finrank 𝕜 F`), pulling back any scalar-valued top-degree form along an
-endomorphism multiplies it by the endomorphism's determinant
-(`TauCeti.bundleTopForm_compContinuousLinearMap_eq_det_smul`).
+the arity-factorial condition required only at the analytic order `ω`.
 
 ## References
 
@@ -249,28 +245,3 @@ theorem ContMDiff.continuousAlternatingMap_comp_clm
   fun y ↦ (hα y).continuousAlternatingMap_comp_clm (hA y) hn
 
 end AlternatingPullback
-
-namespace TauCeti
-
-section TopFormBundle
-
-variable {𝕜 ι B F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [TopologicalSpace B]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-/-- On a finite-rank vector bundle `V` of model rank `Fintype.card ι`, pulling back any scalar
-top-degree alternating form in the fibre `V x [⋀^ι]→L[𝕜] 𝕜` along a continuous linear endomorphism
-`A : V x →L[𝕜] V x` multiplies the form by `A.det`. -/
-theorem bundleTopForm_compContinuousLinearMap_eq_det_smul
-    (h : Fintype.card ι = Module.finrank 𝕜 F) {x : B}
-    (α : V x [⋀^ι]→L[𝕜] 𝕜) (A : V x →L[𝕜] V x) :
-    α.compContinuousLinearMap A = A.det • α := by
-  let _ : FiniteDimensional 𝕜 (V x) := VectorBundle.finiteDimensional 𝕜 F V x
-  let e := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x (mem_baseSet_trivializationAt F V x)
-  exact α.compContinuousLinearMap_eq_det_smul (h.trans e.toLinearEquiv.symm.finrank_eq) A
-
-end TopFormBundle
-
-end TauCeti

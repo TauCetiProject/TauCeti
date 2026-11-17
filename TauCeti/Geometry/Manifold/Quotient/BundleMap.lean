@@ -31,7 +31,7 @@ The proofs combine the section descent in `TauCeti.Geometry.Manifold.Quotient.Se
 invariant linear family along an equivariant `C^m` map commutes with descent along
 `Pullback.lift`, inducing `C^m` maps and diffeomorphisms of the pulled-back total spaces over the
 source orbit space (`TauCeti.lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`,
-`TauCeti.ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`,
+`ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`,
 `TauCeti.exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec`).
 
 ## References
@@ -167,13 +167,13 @@ variable {G' M' E' H' : Type*} [Group G'] [MulAction G' M'] [TopologicalSpace M'
 /-- Pulling back a `G`-invariant `C^m` linear bundle-map family along a `C^m` equivariant map
 `ψ : M' →ₑ[σ] M` (`m ≤ n`) yields a `G'`-invariant family whose descent induces a `C^m` map of
 pulled-back total spaces over `M' ⧸ G'`. -/
-theorem ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec {ψ : M' →ₑ[σ] M}
-    (hm : m ≤ n) (hψ : ContMDiff I' I m ψ)
+theorem _root_.ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec {ψ : M' →ₑ[σ] M}
     (hφ_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
       (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
         TotalSpace (F₁ →L[𝕜] F₂)
           (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
-            C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V q →L[𝕜] W q))))) :
+            C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V q →L[𝕜] W q)))))
+    (hψ : ContMDiff I' I m ψ) (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x) (hm : m ≤ n) :
     let f : C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M) :=
       ⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩
     ContMDiff (I'.prod 𝓘(𝕜, F₁)) (I'.prod 𝓘(𝕜, F₂)) m
@@ -214,8 +214,7 @@ theorem exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec {ψ : 
     (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
     (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
     (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q')]
-  refine ⟨ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec
-    (hφ := hφ) hm hψ hφ_smooth, fun q' ↦ ?_⟩
+  refine ⟨hφ_smooth.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec hψ hφ hm, fun q' ↦ ?_⟩
   have hbij_q : ∀ q, Function.Bijective
       (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q) :=
     Quotient.mk_surjective.forall.2 fun x ↦ by

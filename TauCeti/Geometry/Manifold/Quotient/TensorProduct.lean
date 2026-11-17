@@ -17,7 +17,7 @@ carry the `𝕜`-module topology, quotient descent commutes with tensor-product 
 
 * **Pure tensors:** the fibrewise pure tensor of two descended sections is the descent of the
   upstairs pure tensor (`TauCeti.tmul_orbitRelQuotientRec`) and preserves `C^m` section regularity
-  for `m ≤ n` (`TauCeti.ContMDiff.section_tmul_orbitRelQuotientRec`).
+  for `m ≤ n` (`ContMDiff.section_tmul_orbitRelQuotientRec`).
 * **Universal property (`bundleTensorLift`):** lifting an invariant bilinear family `Φ` into any
   normed-fibre target bundle `V₃` (not necessarily of finite rank) commutes with
   `MulAction.orbitRelQuotientRec` (`TauCeti.bundleTensorLift_orbitRelQuotientRec`), and the
@@ -28,7 +28,7 @@ carry the `𝕜`-module topology, quotient descent commutes with tensor-product 
   `MulAction.orbitRelQuotientRec` (`TauCeti.bundleTensorMap_orbitRelQuotientRec`,
   `TauCeti.bundleDualTensorHom_orbitRelQuotientRec`), inducing `C^m` total-space maps and
   diffeomorphisms on `M ⧸ G` from invariant `C^m` data upstairs
-  (`TauCeti.ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec`,
+  (`ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec`,
   `TauCeti.exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec`,
   `TauCeti.contMDiff_section_bundleDualTensorHom_orbitRelQuotientRec_iff`).
 
@@ -221,18 +221,18 @@ variable {G M 𝕜 : Type*} [Group G] [MulAction G M] [TopologicalSpace M]
 
 /-- If two invariant sections `t₁` and `t₂` upstairs are `C^m` (`m ≤ n`), the descent of their
 pointwise pure tensor `x ↦ t₁ x ⊗ₜ[𝕜] t₂ x` is a `C^m` section of `V₁ ⊗ V₂` over `M ⧸ G`. -/
-theorem ContMDiff.section_tmul_orbitRelQuotientRec
+theorem _root_.ContMDiff.section_tmul_orbitRelQuotientRec
     [∀ q, IsTopologicalAddGroup (V₁ q)] [∀ q, ContinuousSMul 𝕜 (V₁ q)]
     [∀ q, IsTopologicalAddGroup (V₂ q)] [∀ q, ContinuousSMul 𝕜 (V₂ q)]
     [∀ q, TopologicalSpace (V₁ q ⊗[𝕜] V₂ q)] [∀ q, IsModuleTopology 𝕜 (V₁ q ⊗[𝕜] V₂ q)]
     {t₁ : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x)}
     {t₂ : ∀ x : M, V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (ht₁ : ∀ (g : G) (x : M), t₁ (g • x) ≍ t₁ x)
-    (ht₂ : ∀ (g : G) (x : M), t₂ (g • x) ≍ t₂ x) (hm : m ≤ n)
     (ht₁_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁)) m
       (fun x ↦ TotalSpace.mk' F₁ (Quotient.mk (MulAction.orbitRel G M) x) (t₁ x)))
     (ht₂_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₂)) m
-      (fun x ↦ TotalSpace.mk' F₂ (Quotient.mk (MulAction.orbitRel G M) x) (t₂ x))) :
+      (fun x ↦ TotalSpace.mk' F₂ (Quotient.mk (MulAction.orbitRel G M) x) (t₂ x)))
+    (ht₁ : ∀ (g : G) (x : M), t₁ (g • x) ≍ t₁ x)
+    (ht₂ : ∀ (g : G) (x : M), t₂ (g • x) ≍ t₂ x) (hm : m ≤ n) :
     ContMDiff I (I.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ F₂)) m
       (fun q ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 F₁ F₂) (E := fun q ↦ V₁ q ⊗[𝕜] V₂ q) q
         (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q) (fun x ↦ t₁ x ⊗ₜ[𝕜] t₂ x)
@@ -286,19 +286,19 @@ variable {F₁' F₂' : Type*}
 
 /-- If two invariant linear families `φ₁` and `φ₂` are `C^m` upstairs (`m ≤ n`), the descent of
 `bundleTensorMap φ₁ φ₂` induces a `C^m` map of tensor-product total spaces over `M ⧸ G`. -/
-theorem ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
+theorem _root_.ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
     {φ₁ : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₁' (Quotient.mk (MulAction.orbitRel G M) x)}
     {φ₂ : ∀ x : M, V₂ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂' (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hφ₁ : ∀ (g : G) (x : M), φ₁ (g • x) ≍ φ₁ x)
-    (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x) (hm : m ≤ n)
     (hφ₁_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₁')) m
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁') (E := fun q ↦ V₁ q →L[𝕜] V₁' q)
         (Quotient.mk (MulAction.orbitRel G M) x) (φ₁ x)))
     (hφ₂_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₂ →L[𝕜] F₂')) m
       (fun x ↦ TotalSpace.mk' (F₂ →L[𝕜] F₂') (E := fun q ↦ V₂ q →L[𝕜] V₂' q)
-        (Quotient.mk (MulAction.orbitRel G M) x) (φ₂ x))) :
+        (Quotient.mk (MulAction.orbitRel G M) x) (φ₂ x)))
+    (hφ₁ : ∀ (g : G) (x : M), φ₁ (g • x) ≍ φ₁ x)
+    (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x) (hm : m ≤ n) :
     ContMDiff (I.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ F₂))
       (I.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁' F₂')) m
       (fun p : TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun q ↦ V₁ q ⊗[𝕜] V₂ q) ↦
@@ -342,8 +342,8 @@ theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
           (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₁' q ⊗[𝕜] V₂' q)
           (bundleTensorMap φ₁ φ₂) (bundleTensorMap_smul_heq hφ₁ hφ₂) p.proj p.2) := by
   rw [exists_bundleDiffeomorph_iff]
-  refine ⟨ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
-    hφ₁ hφ₂ hm hφ₁_smooth hφ₂_smooth, fun q ↦ ?_⟩
+  refine ⟨hφ₁_smooth.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
+    hφ₂_smooth hφ₁ hφ₂ hm, fun q ↦ ?_⟩
   induction q using Quotient.inductionOn with | h x =>
   rw [MulAction.orbitRelQuotientRec_mk]
   let e₁ := LinearEquiv.ofBijective (φ₁ x).toLinearMap (hbij₁ x)
