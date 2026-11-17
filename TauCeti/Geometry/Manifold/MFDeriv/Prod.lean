@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -58,6 +59,8 @@ fields on a product manifold.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
+* `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
+  chart acts on each component through the derivative of the inverse chart of that factor.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
@@ -386,6 +389,35 @@ theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M}
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
 
 end ProdMap
+
+section ExtChartAt
+
+open Set
+
+/-- **The derivative of the inverse of a product chart.** On the target of the preferred chart of
+`M × N` at `p`, the derivative of its inverse sends `(v, w)` to the pair of the derivatives of the
+inverse charts of `M` at `p.1` and of `N` at `p.2`, applied to `v` and to `w`. -/
+theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold J 1 N]
+    {p : M × N} {z : E × E'} (hz : z ∈ (extChartAt (I.prod J) p).target) (v : E × E') :
+    mfderivWithin 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm (range (I.prod J)) z v =
+      (mfderivWithin 𝓘(𝕜, E) I (extChartAt I p.1).symm (range I) z.1 v.1,
+        mfderivWithin 𝓘(𝕜, E') J (extChartAt J p.2).symm (range J) z.2 v.2) := by
+  have hz' : z.1 ∈ (extChartAt I p.1).target ∧ z.2 ∈ (extChartAt J p.2).target := by
+    rwa [extChartAt_prod_target, mem_prod] at hz
+  have hsymm : (extChartAt (I.prod J) p).symm =
+      Prod.map (extChartAt I p.1).symm (extChartAt J p.2).symm :=
+    funext (extChartAt_prod_symm_apply p)
+  rw [hsymm, ModelWithCorners.range_prod, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
+    mfderivWithin_prodMap (mdifferentiableWithinAt_extChartAt_symm hz'.1)
+      (mdifferentiableWithinAt_extChartAt_symm hz'.2)
+      (I.uniqueDiffOn _ (extChartAt_target_subset_range _ hz'.1)).uniqueMDiffWithinAt
+      (J.uniqueDiffOn _ (extChartAt_target_subset_range _ hz'.2)).uniqueMDiffWithinAt]
+  -- `ContinuousLinearMap.prodMap` acts componentwise by definition; rewriting with
+  -- `ContinuousLinearMap.coe_prodMap'` fails, because the product of the model tangent spaces is
+  -- the tangent space of the product only up to definitional unfolding.
+  rfl
+
+end ExtChartAt
 
 end TauCeti
 
