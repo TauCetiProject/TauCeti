@@ -21,6 +21,11 @@ subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRan
 `IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
 norms.
 
+For `r > 0`, `IsUltrametricDist.coe_closedBall_openSubgroup` (additively
+`IsUltrametricDist.coe_closedBall_openAddSubgroup`) characterizes the carrier of Mathlib's
+`IsUltrametricDist.closedBall_openSubgroup` as `Metric.closedBall 1 r` (resp.
+`Metric.closedBall 0 r`).
+
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
 `‖cₙ‖` with empty intersection (`IsUltrametricDist.exists_antitone_closedBall_iInter_eq_empty`).
@@ -83,6 +88,14 @@ theorem exists_norm_eq_of_denseRange' {α : Type*} {f : α → S} (hf : DenseRan
   rw [dist_eq_norm_inv_mul] at ha
   refine ⟨a, ?_⟩
   rw [← mul_inv_cancel_left y (f a), norm_mul_eq_max_of_norm_ne_norm ha.ne', max_eq_left ha.le]
+
+/-- The underlying set of `closedBall_openSubgroup S hr` is the closed ball of radius `r` around
+`1`. -/
+@[to_additive (attr := simp) /-- The underlying set of `closedBall_openAddSubgroup S hr` is the
+closed ball of radius `r` around `0`. -/]
+theorem coe_closedBall_openSubgroup {r : ℝ} (hr : 0 < r) :
+    (closedBall_openSubgroup S hr : Set S) = Metric.closedBall 1 r :=
+  rfl
 
 section SphericalCompleteness
 

@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import TauCeti.Analysis.Normed.Group.Ultra
+public import TauCeti.Topology.Algebra.MulAction.Stabilizer
 public import TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite
 
 /-!
 # Examples of locally profinite groups and translation stabilizers
 
-Concrete checks exercising `TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite` and
-`TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic`:
+Concrete checks exercising `TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite`,
+`TauCeti.Topology.Algebra.MulAction.Stabilizer`,
+`TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic`, and `TauCeti.Analysis.Normed.Group.Ultra`:
 
 * every compact open subgroup of a Hausdorff totally disconnected topological group inherits
   `CompactSpace`, `TotallyDisconnectedSpace`, `T2Space`, and `IsTopologicalGroup`;
@@ -63,12 +65,6 @@ section PadicTwo
 
 private instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
 
-@[to_additive (attr := simp)]
-private theorem coe_closedBall_openSubgroup {S : Type*} [SeminormedGroup S] [IsUltrametricDist S]
-    {r : ℝ} (hr : 0 < r) :
-    (IsUltrametricDist.closedBall_openSubgroup S hr : Set S) = Metric.closedBall 1 r :=
-  rfl
-
 example :
     let z2 : OpenAddSubgroup ℚ_[2] := IsUltrametricDist.closedBall_openAddSubgroup ℚ_[2] zero_lt_one
     let twoZ2 : OpenAddSubgroup ℚ_[2] :=
@@ -79,20 +75,20 @@ example :
       (𝓝 (0 : ℚ_[2])).HasBasis (fun _ : ℤ ↦ True)
         (fun m : ℤ ↦ (IsUltrametricDist.closedBall_openAddSubgroup ℚ_[2]
           (zpow_pos (by norm_num : (0 : ℝ) < 2) (-m)) : Set ℚ_[2])) := by
-  refine ⟨by rw [coe_closedBall_openAddSubgroup]; exact isCompact_closedBall (0 : ℚ_[2]) 1,
-    by rw [coe_closedBall_openAddSubgroup]; exact isCompact_closedBall (0 : ℚ_[2]) 2⁻¹,
+  refine ⟨by rw [IsUltrametricDist.coe_closedBall_openAddSubgroup]; exact isCompact_closedBall 0 1,
+    by rw [IsUltrametricDist.coe_closedBall_openAddSubgroup]; exact isCompact_closedBall 0 2⁻¹,
     by rw [← OpenAddSubgroup.coe_toAddSubgroup]; exact AddAction.stabilizer_addSubgroup _,
     by rw [← OpenAddSubgroup.coe_toAddSubgroup]; exact AddAction.stabilizer_addSubgroup _,
     ⟨fun U ↦ ⟨fun hU ↦ ?_, fun ⟨m, _, hmU⟩ ↦ ?_⟩⟩⟩
   · obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.mp hU
     obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hr (by norm_num : (2⁻¹ : ℝ) < 1)
     refine ⟨(n : ℤ) + 1, trivial, fun x hx ↦ hrU (Metric.mem_ball.mpr ?_)⟩
-    rw [coe_closedBall_openAddSubgroup] at hx
+    rw [IsUltrametricDist.coe_closedBall_openAddSubgroup] at hx
     have hlt : (2 : ℝ) ^ (-((n : ℤ) + 1)) < (2⁻¹ : ℝ) ^ n := by
       rw [inv_pow, ← zpow_natCast, ← zpow_neg]
       exact zpow_lt_zpow_right₀ (by norm_num : (1 : ℝ) < 2) (by omega)
     exact (Metric.mem_closedBall.mp hx).trans_lt (hlt.trans hn)
-  · rw [coe_closedBall_openAddSubgroup] at hmU
+  · rw [IsUltrametricDist.coe_closedBall_openAddSubgroup] at hmU
     exact mem_of_superset (Metric.closedBall_mem_nhds 0 (zpow_pos (by norm_num : (0 : ℝ) < 2) (-m)))
       hmU
 

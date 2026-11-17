@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.Data.List.TFAE
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import Mathlib.Topology.Separation.Connected
 public import Mathlib.Topology.Separation.Regular
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
+import TauCeti.Topology.Algebra.MulAction.Stabilizer
 
 /-!
 # Van Dantzig's theorem and locally profinite groups
@@ -25,14 +25,12 @@ profinite groups among Hausdorff topological groups by three equivalent conditio
 3. every neighbourhood of `1` contains a compact open subgroup.
 
 Mathlib's `IsTopologicalGroup.exist_openSubgroup_sub_clopen_nhds_of_one` constructs open subgroups
-inside clopen neighbourhoods of `1` only when the ambient group `G` is compact. For a general
-continuous action of a topological group `G` on a space `α`, the setwise stabilizer
-`{g : G | g • C = C}` (`MulAction.stabilizer G C`) of any compact open subset `C ⊆ α` is an open
-subgroup (`IsCompact.stabilizerOpenSubgroup`), and for left translation on `G` itself with `1 ∈ C`
-it is contained in `C` and therefore compact, since open subgroups are closed. In any weakly locally
-compact zero-dimensional topological group (and hence in every locally profinite group), the clopen
-basis at `1` inside a compact neighbourhood supplies such a `C` inside any given neighbourhood of
-`1`.
+inside clopen neighbourhoods of `1` only when the ambient group `G` is compact. In any weakly
+locally compact zero-dimensional topological group (and hence in every locally profinite group),
+the clopen basis at `1` inside a compact neighbourhood supplies a compact clopen neighbourhood `C`
+of `1` inside any given neighbourhood of `1`, whose left translation stabilizer
+(`IsCompact.stabilizerOpenSubgroup` from `TauCeti.Topology.Algebra.MulAction.Stabilizer`) is a
+compact open subgroup contained in `C`.
 
 Consequences recorded here include:
 * `NonarchimedeanGroup G` synthesizes automatically for weakly locally compact zero-dimensional
@@ -40,31 +38,21 @@ Consequences recorded here include:
   locally compact totally disconnected topological groups;
 * the compact open subgroups form a filter basis of `𝓝 1`
   (`TauCeti.nhds_one_hasBasis_isCompact_openSubgroup`), and those contained in a given open
-  subgroup `U₀` form a cofinal downward-directed family
-  (`OpenSubgroup.nhds_one_hasBasis_isCompact_le`, `OpenSubgroup.directedOn_isCompact_le`).
+  subgroup `U₀` form a cofinal filter basis (`OpenSubgroup.nhds_one_hasBasis_isCompact_le`,
+  `OpenSubgroup.exists_isCompact_le`), complementing downward directedness in
+  `TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic`.
 
 Every result carries `@[to_additive]` so additive groups such as `ℚ_[p]` and local fields inherit
 the corresponding compact open additive subgroup basis.
 
-## Main definitions
-
-* `IsCompact.stabilizerOpenSubgroup`: the setwise stabilizer in `G` of a compact open subset `C`
-  of a `G`-space, bundled as an `OpenSubgroup G` (with additive counterpart
-  `IsCompact.stabilizerOpenAddSubgroup`).
-
 ## Main results
 
-* `IsCompact.isOpen_mulAction_stabilizer`: the setwise stabilizer of a compact open subset under a
-  continuous group action is open.
-* `IsCompact.stabilizerOpenSubgroup_subset` and `IsCompact.isCompact_stabilizerOpenSubgroup`: when
-  `1 ∈ C`, the left translation stabilizer lies in `C` and is compact.
 * `TauCeti.exists_isCompact_openSubgroup_subset`,
   `TauCeti.nonarchimedeanGroup_of_locallyCompactSpace`, and
   `TauCeti.nhds_one_hasBasis_isCompact_openSubgroup`: compact open subgroups form a basis of `𝓝 1`
   in any weakly locally compact zero-dimensional topological group.
-* `OpenSubgroup.directedOn_isCompact_le`, `OpenSubgroup.nhds_one_hasBasis_isCompact_le`, and
-  `OpenSubgroup.exists_isCompact_le`: downward directedness and cofinality of compact open subgroups
-  inside a given open subgroup.
+* `OpenSubgroup.nhds_one_hasBasis_isCompact_le` and `OpenSubgroup.exists_isCompact_le`:
+  cofinality of compact open subgroups inside a given open subgroup.
 * `TauCeti.locallyCompactSpace_and_nonarchimedeanGroup_iff_exists_isCompact_openSubgroup_subset`,
   `TauCeti.locallyCompactSpace_and_nonarchimedeanGroup_tfae`, and
   `TauCeti.totallyDisconnectedSpace_iff_nonarchimedeanGroup` (with
@@ -83,139 +71,12 @@ the corresponding compact open additive subgroup basis.
 public section
 
 open Filter Set Topology
-open scoped Pointwise
-
-section TranslationStabilizer
-
-section Action
-
-variable {G α : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [TopologicalSpace α] [MulAction G α] [ContinuousSMul G α]
-
-/-- **Kramer's stabilizer openness lemma.** For a continuous action of a topological group `G` on a
-topological space `α`, the setwise stabilizer `{g : G | g • C = C}` of any compact open subset
-`C ⊆ α` is open in `G`. Neither Hausdorffness of `G` nor Hausdorffness of `α` is required. -/
-@[to_additive
-/-- For a continuous additive action of a topological additive group `G` on a topological space `α`,
-the setwise stabilizer `{g : G | g +ᵥ C = C}` of any compact open subset `C ⊆ α` is open in `G`.
-Neither Hausdorffness of `G` nor Hausdorffness of `α` is required. -/]
-theorem IsCompact.isOpen_mulAction_stabilizer {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
-    IsOpen (MulAction.stabilizer G C : Set G) := by
-  obtain ⟨V, W, hV_open, _, h1V, hCW, hVW⟩ := generalized_tube_lemma
-    (isCompact_singleton (x := (1 : G))) hC (hC_open.preimage continuous_smul)
-    (fun p hp ↦ by
-      rw [Set.mem_preimage, mem_singleton_iff.mp hp.1, one_smul]
-      exact hp.2)
-  have h1 : (1 : G) ∈ V := h1V (mem_singleton 1)
-  have hU_mem : V ∩ V⁻¹ ∈ 𝓝 (1 : G) :=
-    (hV_open.inter hV_open.inv).mem_nhds ⟨h1, by simpa using h1⟩
-  refine Subgroup.isOpen_of_mem_nhds _ (mem_of_superset hU_mem ?_)
-  rintro g ⟨hgV, hgVinv⟩
-  rw [SetLike.mem_coe, MulAction.mem_stabilizer_set]
-  refine fun x ↦ ⟨fun hx ↦ ?_, fun hx ↦ Set.mem_preimage.mp (hVW (mk_mem_prod hgV (hCW hx)))⟩
-  simpa using Set.mem_preimage.mp (hVW (mk_mem_prod (Set.mem_inv.mp hgVinv) (hCW hx)))
-
-variable (G) in
-/-- The setwise stabilizer `{g : G | g • C = C}` of a compact open subset `C` under a continuous
-action of a topological group `G`, bundled as an `OpenSubgroup G`. -/
-@[to_additive
-/-- The setwise stabilizer `{g : G | g +ᵥ C = C}` of a compact open subset `C` under a continuous
-additive action of a topological additive group `G`, bundled as an `OpenAddSubgroup G`. -/]
-def IsCompact.stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
-    OpenSubgroup G :=
-  ⟨MulAction.stabilizer G C, hC.isOpen_mulAction_stabilizer hC_open⟩
-
-/-- The underlying set of `hC.stabilizerOpenSubgroup G hC_open` is the setwise stabilizer of
-`C`. -/
-@[to_additive (attr := simp)
-/-- The underlying set of `hC.stabilizerOpenAddSubgroup G hC_open` is the setwise additive
-stabilizer of `C`. -/]
-theorem IsCompact.coe_stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
-    ((hC.stabilizerOpenSubgroup G hC_open : OpenSubgroup G) : Set G) =
-      (MulAction.stabilizer G C : Set G) :=
-  (rfl)
-
-/-- The underlying subgroup of `hC.stabilizerOpenSubgroup G hC_open` is
-`MulAction.stabilizer G C`. -/
-@[to_additive (attr := simp)
-/-- The underlying additive subgroup of `hC.stabilizerOpenAddSubgroup G hC_open` is
-`AddAction.stabilizer G C`. -/]
-theorem IsCompact.toSubgroup_stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C)
-    (hC_open : IsOpen C) :
-    (hC.stabilizerOpenSubgroup G hC_open).toSubgroup = MulAction.stabilizer G C :=
-  (rfl)
-
-/-- An element belongs to `hC.stabilizerOpenSubgroup G hC_open` precisely when its action preserves
-`C`. -/
-@[to_additive (attr := simp, grind =)
-/-- An element belongs to `hC.stabilizerOpenAddSubgroup G hC_open` precisely when its additive
-action preserves `C`. -/]
-theorem IsCompact.mem_stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C)
-    {g : G} : g ∈ hC.stabilizerOpenSubgroup G hC_open ↔ g • C = C :=
-  MulAction.mem_stabilizer_iff
-
-end Action
-
-section LeftTranslation
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- When `1 ∈ C`, the open left translation stabilizer `hC.stabilizerOpenSubgroup G hC_open` is
-contained in `C`. -/
-@[to_additive
-/-- When `0 ∈ C`, the open translation stabilizer `hC.stabilizerOpenAddSubgroup G hC_open` is
-contained in `C`. -/]
-theorem IsCompact.stabilizerOpenSubgroup_subset {C : Set G} (hC : IsCompact C) (hC_open : IsOpen C)
-    (h1 : (1 : G) ∈ C) : (hC.stabilizerOpenSubgroup G hC_open : Set G) ⊆ C := by
-  simpa using MulAction.stabilizer_subset_div_right h1
-
-/-- When `1 ∈ C`, the open left translation stabilizer `hC.stabilizerOpenSubgroup G hC_open` is
-compact. -/
-@[to_additive
-/-- When `0 ∈ C`, the open translation stabilizer `hC.stabilizerOpenAddSubgroup G hC_open` is
-compact. -/]
-theorem IsCompact.isCompact_stabilizerOpenSubgroup {C : Set G} (hC : IsCompact C)
-    (hC_open : IsOpen C) (h1 : (1 : G) ∈ C) :
-    IsCompact (hC.stabilizerOpenSubgroup G hC_open : Set G) :=
-  hC.of_isClosed_subset (hC.stabilizerOpenSubgroup G hC_open).isClosed
-    (hC.stabilizerOpenSubgroup_subset hC_open h1)
-
-end LeftTranslation
-
-end TranslationStabilizer
-
-namespace OpenSubgroup
-
-variable {G : Type*} [Group G] [TopologicalSpace G]
-
-/-- In a group with separately continuous multiplication, the compact open subgroups of `G`
-contained in a given open subgroup `U₀` form a downward-directed family (directed under reverse
-inclusion). -/
-@[to_additive
-/-- In an additive group with separately continuous addition, the compact open additive subgroups of
-`G` contained in a given open additive subgroup `U₀` form a downward-directed family (directed under
-reverse inclusion). -/]
-theorem directedOn_isCompact_le [SeparatelyContinuousMul G] (U₀ : OpenSubgroup G) :
-    DirectedOn (· ≥ ·) {H : OpenSubgroup G | IsCompact (H : Set G) ∧ H ≤ U₀} :=
-  fun H₁ ⟨hH₁, h₁⟩ _ ⟨_, _⟩ ↦
-    ⟨H₁ ⊓ _, ⟨H₁.isCompact_inf_left hH₁ _, inf_le_of_left_le h₁⟩, inf_le_left, inf_le_right⟩
-
-end OpenSubgroup
 
 namespace TauCeti
 
 section LocallyProfinite
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
-
-/-- In a group with separately continuous multiplication, the compact open subgroups of `G` form a
-downward-directed family under reverse inclusion. -/
-@[to_additive
-/-- In an additive group with separately continuous addition, the compact open additive subgroups of
-`G` form a downward-directed family under reverse inclusion. -/]
-theorem directedOn_isCompact_openSubgroup [SeparatelyContinuousMul G] :
-    DirectedOn (· ≥ ·) {H : OpenSubgroup G | IsCompact (H : Set G)} :=
-  fun H₁ hH₁ H₂ _ ↦ ⟨H₁ ⊓ H₂, H₁.isCompact_inf_left hH₁ H₂, inf_le_left, inf_le_right⟩
 
 section ZeroDimensional
 
