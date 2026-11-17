@@ -90,10 +90,7 @@ section RingEquiv
 
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [CommRing B] [TopologicalSpace B]
   {Aplus : Subring A} {Bplus : Subring B}
-
-section Homeomorph
-
-variable (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
+  (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
   (hplus : Aplus.map (e : A →+* B) = Bplus)
 
 /-- **Homeomorphism of adic spectra induced by a topological ring equivalence.** Given a ring
@@ -143,22 +140,6 @@ theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily :
     fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U,
       spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus _ hopen hU, ?_⟩⟩
   ext x; simp
-
-end Homeomorph
-
-/-- Two rational subsets are equal in `Spv A` as soon as their traces on `spa A⁺` agree. -/
-theorem rationalSubset_eq_of_val_preimage_eq {T₁ T₂ : Finset A} {s₁ s₂ : A}
-    (h : (Subtype.val ⁻¹' rationalSubset Aplus T₁ s₁ : Set (spa Aplus)) =
-      Subtype.val ⁻¹' rationalSubset Aplus T₂ s₂) :
-    rationalSubset Aplus T₁ s₁ = rationalSubset Aplus T₂ s₂ := by
-  ext v
-  refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
-  · have hx : (⟨v, rationalSubset_subset_spa Aplus T₁ s₁ hv⟩ : spa Aplus) ∈
-        Subtype.val ⁻¹' rationalSubset Aplus T₁ s₁ := hv
-    rwa [h] at hx
-  · have hx : (⟨v, rationalSubset_subset_spa Aplus T₂ s₂ hv⟩ : spa Aplus) ∈
-        Subtype.val ⁻¹' rationalSubset Aplus T₂ s₂ := hv
-    rwa [← h] at hx
 
 end RingEquiv
 

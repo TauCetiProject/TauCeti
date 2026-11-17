@@ -416,9 +416,10 @@ noncomputable def completedTensor.rationalRingEquiv :
     (presentationRingEquivOfEq PD (UB.completedTensor A UC).plus
       (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
       num₀ den₀ _ hden₀ d.num d.den _ d.hasDenominatorPower
-      (rationalSubset_eq_of_val_preimage_eq <|
-        (completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC b.num b.den
-          c.num c.den).symm.trans hd.symm))
+      (rationalSubset_eq_of_spaBasicOpen_eq <| SetLike.ext fun v ↦ by
+        simpa only [mem_spaBasicOpen, Set.mem_preimage] using Set.ext_iff.mp
+          ((completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC b.num b.den
+            c.num c.den).symm.trans hd.symm) v))
 
 /-- `completedTensor.rationalRingEquiv` is continuous. -/
 theorem completedTensor.continuous_rationalRingEquiv :
