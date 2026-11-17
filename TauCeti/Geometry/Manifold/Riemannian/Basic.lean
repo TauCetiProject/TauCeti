@@ -64,6 +64,14 @@ open scoped Bundle ContDiff Manifold
 
 noncomputable section
 
+/-- The native tangent-space metric on a real inner product space has the same inner products
+as its standard bundled Riemannian metric. -/
+theorem TauCeti.riemannianBundle_g_inner_vectorSpace
+    (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℝ F] :
+    (RiemannianBundle.g (E := fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)).inner =
+      (riemannianMetricVectorSpace F).inner :=
+  (rfl)
+
 namespace Bundle.ContMDiffRiemannianMetric
 
 variable
