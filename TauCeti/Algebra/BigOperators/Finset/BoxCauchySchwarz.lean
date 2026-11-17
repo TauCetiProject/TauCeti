@@ -35,6 +35,7 @@ of triples cut out by three pair relations.
 
 * `Finset.sum_sum_pow_four_le`: the fourth power of a rectangle sum is at most
   `(#s * #t) ^ 2` times the box sum.
+* `Finset.sq_sum_sum_mul_le`: Cauchy–Schwarz on a double sum with weights of square at most one.
 * `Finset.sum_sum_sum_mul_pow_eight_le`: the eighth power of a weighted box sum of three
   variables is at most `(#s * #t * #r) ^ 6` times the octahedral sum.
 
@@ -88,8 +89,10 @@ theorem sum_sum_pow_four_le {s s' : Finset α} {t t' : Finset β} (hs : s' ⊆ s
     _ ≤ #s ^ 2 * (#t ^ 2 * ∑ y ∈ t, ∑ y' ∈ t, (∑ x ∈ s, g x y * g x y') ^ 2) := by gcongr
     _ = _ := by ring
 
-/-- Weighted Cauchy–Schwarz on a double sum with weights of square at most one. -/
-private theorem sq_sum_sum_mul_le {s : Finset α} {t : Finset β} (a g : α → β → R)
+/-- **Cauchy–Schwarz with bounded weights.** For weights `a` of square at most one on `s ×ˢ t`,
+the square of `∑ x ∈ s, ∑ y ∈ t, a x y * g x y` is at most `#s * #t` times the sum of the
+squares of `g`. -/
+theorem sq_sum_sum_mul_le {s : Finset α} {t : Finset β} (a g : α → β → R)
     (ha : ∀ x ∈ s, ∀ y ∈ t, a x y ^ 2 ≤ 1) :
     (∑ x ∈ s, ∑ y ∈ t, a x y * g x y) ^ 2 ≤ #s * #t * ∑ x ∈ s, ∑ y ∈ t, g x y ^ 2 := by
   rw [← sum_product' (f := fun x y ↦ a x y * g x y), ← sum_product' (f := fun x y ↦ g x y ^ 2)]
@@ -151,9 +154,12 @@ private theorem sq_sum_sum_sq_le_octahedral {s : Finset α} {t : Finset β} {r :
         congr 1
         simp_rw [sq, sum_mul_sum, mul_sum]
         rw [sum_product]
+        -- Bring both sides to the summation order `p, y, y', x`: the left side from
+        -- `x, p, y, y'` via `p, x, y, y'` and `p, y, x, y'`, the right side from `y, y', p, x`
+        -- via `y, p, y', x`.
         conv_lhs => rw [sum_comm]; enter [2, p]; rw [sum_comm]; enter [2, y]; rw [sum_comm]
         conv_rhs => enter [2, y]; rw [sum_comm]
-        rw [sum_comm]
+        conv_rhs => rw [sum_comm]
         refine sum_congr rfl fun p _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun y' _ ↦
           sum_congr rfl fun x _ ↦ ?_
         ring
