@@ -244,6 +244,17 @@ theorem map_col_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
     simp
   simpa [hcov] using h
 
+omit [Fintype ι'] [Fintype κ'] [DecidableEq ι'] [DecidableEq κ'] in
+/-- Vectorization turns `X ↦ A * X * B + C` into the affine map with linear part `Bᵀ ⊗ₖ A`. -/
+private theorem matrixVecMeasurableEquiv_mul_mul_add (A : Matrix ι' ι ℝ) (B : Matrix κ κ' ℝ)
+    (C : Matrix ι' κ' ℝ) (X : Matrix ι κ ℝ) :
+    matrixVecMeasurableEquiv 2 (A * X * B + C) =
+      (Bᵀ ⊗ₖ A).toEuclideanLin (matrixVecMeasurableEquiv 2 X) + matrixVecMeasurableEquiv 2 C := by
+  -- Mathlib's `kronecker_mulVec_vec` produces `A * X * Bᵀ`, so it is applied at `Bᵀ`.
+  have hK : (Bᵀ ⊗ₖ A) *ᵥ X.vec = (A * X * B).vec := by
+    simpa using Matrix.kronecker_mulVec_vec A X Bᵀ
+  simp [hK]
+
 /-- **Affine transport of matrix normal laws.** For positive semidefinite covariances `U` and
 `V`, the image of a matrix normal matrix `X` under `X ↦ A * X * B + C` is matrix normal with mean
 `A * M * B + C`, row covariance `A * U * Aᵀ` and column covariance `Bᵀ * V * B`. The matrices `A`
@@ -259,13 +270,7 @@ theorem map_mul_mul_add_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix �
   have hBVB : (Bᵀ * V * B).PosSemidef := by
     simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
       hV.conjTranspose_mul_mul_same B
-  -- Mathlib's `kronecker_mulVec_vec` produces `A * X * Bᵀ`, so it is applied at `Bᵀ`.
-  have hK (X : Matrix ι κ ℝ) : (Bᵀ ⊗ₖ A) *ᵥ X.vec = (A * X * B).vec := by
-    simpa using Matrix.kronecker_mulVec_vec A X Bᵀ
-  have hL (X : Matrix ι κ ℝ) :
-      matrixVecMeasurableEquiv 2 (A * X * B + C) =
-        (Bᵀ ⊗ₖ A).toEuclideanLin (matrixVecMeasurableEquiv 2 X) + matrixVecMeasurableEquiv 2 C := by
-    simp [hK]
+  have hL := matrixVecMeasurableEquiv_mul_mul_add A B C
   have hcov : (Bᵀ ⊗ₖ A) * (V ⊗ₖ U) * (Bᵀ ⊗ₖ A)ᵀ = (Bᵀ * V * B) ⊗ₖ (A * U * Aᵀ) := by
     rw [← Matrix.kroneckerMap_transpose, Matrix.transpose_transpose, ← Matrix.mul_kronecker_mul,
       ← Matrix.mul_kronecker_mul]
@@ -282,8 +287,7 @@ theorem map_mul_mul_add_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix �
     rw [Function.comp_apply, Function.comp_apply, hL, MeasurableEquiv.apply_symm_apply,
       MeasurableEquiv.apply_symm_apply]
   have hmeas : Measurable fun X : Matrix ι κ ℝ => A * X * B + C :=
-    (((continuous_const.matrix_mul continuous_id).matrix_mul continuous_const).add
-      continuous_const).measurable
+    (by fun_prop : Continuous fun X : Matrix ι κ ℝ => A * X * B + C).measurable
   rw [matrixNormalMeasure_of_posSemidef _ hAUA hBVB, matrixNormalMeasure_of_posSemidef M hU hV,
     Measure.map_map hmeas (MeasurableEquiv.measurable _), hcomm,
     ← Measure.map_map (MeasurableEquiv.measurable _) (by fun_prop)]
