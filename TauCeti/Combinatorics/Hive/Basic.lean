@@ -245,6 +245,9 @@ def ofRhombusConcave (f : Vertex n → R) (hf : IsRhombusConcave f) : Hive n R w
       _ ≤ (f a + f c) - (f (Vertex.cornerA n) + f (Vertex.cornerA n)) := sub_le_sub_right (hf hr) _
       _ = (f a - f (Vertex.cornerA n)) + (f c - f (Vertex.cornerA n)) := by abel
 
+theorem coe_ofRhombusConcave (f : Vertex n → R) (hf : IsRhombusConcave f) :
+    ⇑(ofRhombusConcave f hf) = f - fun _ => f (Vertex.cornerA n) := funext fun _ => rfl
+
 @[simp] theorem ofRhombusConcave_apply (f : Vertex n → R) (hf : IsRhombusConcave f) (p : Vertex n) :
     ofRhombusConcave f hf p = f p - f (Vertex.cornerA n) := (rfl)
 
@@ -453,6 +456,9 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
 
 @[simp] theorem affine_apply (β γ : R) (p : Vertex n) : affine n β γ p = p.y • β + p.z • γ := (rfl)
 
+theorem coe_affine (β γ : R) : ⇑(affine n β γ) = barycentricLinear 0 0 β γ :=
+  funext fun _ => by simp
+
 @[simp] theorem rhombusSlack_affine (β γ : R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     rhombusSlack (affine n β γ) a b c d = 0 := by
   simpa [barycentricLinear, rhombusSlack, affine_apply] using
@@ -462,6 +468,10 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
 normalizing at `p.add (cornerA k)`. -/
 def subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) : Hive k R :=
   ofRhombusConcave (fun q => h (p.add q)) fun _ _ _ _ hr => h.le_of_isRhombus (hr.add p)
+
+theorem coe_subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
+    ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k)) :=
+  funext fun _ => rfl
 
 @[simp] theorem subtriangle_apply {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) (q : Vertex k) :
     h.subtriangle p q = h (p.add q) - h (p.add (Vertex.cornerA k)) := (rfl)
@@ -818,6 +828,10 @@ variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
 def rotate [IsOrderedAddMonoid R] (h : Hive n R) : Hive n R :=
   ofRhombusConcave (fun p => h p.rotate) fun _ _ _ _ hr => h.le_of_isRhombus hr.rotate
 
+theorem coe_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
+    ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate :=
+  funext fun _ => rfl
+
 @[simp] theorem rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
     h.rotate p = h p.rotate - h (Vertex.cornerA n).rotate := (rfl)
 
@@ -841,6 +855,8 @@ theorem rotate_injective [IsOrderedAddMonoid R] :
 /-- Reflection of a normalized hive across `A`: pull back along `Vertex.reflect`. -/
 def reflect (h : Hive n R) : Hive n R :=
   ⟨fun p => h p.reflect, by simp, fun hr => h.le_of_isRhombus hr.reflect⟩
+
+theorem coe_reflect (h : Hive n R) : ⇑h.reflect = fun p => h p.reflect := (rfl)
 
 @[simp] theorem reflect_apply (h : Hive n R) (p : Vertex n) : h.reflect p = h p.reflect := (rfl)
 @[simp] theorem reflect_reflect (h : Hive n R) : h.reflect.reflect = h := by ext p; simp
