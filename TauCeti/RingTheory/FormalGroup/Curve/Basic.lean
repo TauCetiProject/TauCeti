@@ -367,6 +367,30 @@ theorem coeff_add_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
     ite_eq_right (Nat.ne_of_lt (Nat.lt_succ_self k)), _root_.add_zero, ← hu₂, hstep₂,
     ite_eq_right (Nat.ne_of_lt (Nat.lt_succ_self k)), _root_.add_zero]
 
+/-- Degree-`k` coefficients of formal-group negatives depend only on coefficients up to degree
+`k`. -/
+theorem coeff_neg_congr {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (-γ₁).toPowerSeries = PowerSeries.coeff k (-γ₂).toPowerSeries := by
+  have hcongr : PowerSeries.X ^ (k + 1) ∣ γ₁.toPowerSeries - γ₂.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by
+      rw [map_sub, h i (Nat.lt_succ_iff.mp hi), sub_self]
+  have hdvd := PowerSeries.X_pow_dvd_subst_sub_subst
+    γ₁.constantCoeff_toPowerSeries hcongr F.addInvX
+  have hcoeff := PowerSeries.X_pow_dvd_iff.mp hdvd k (Nat.lt_succ_self k)
+  rw [toPowerSeries_neg, toPowerSeries_neg]
+  rwa [map_sub, sub_eq_zero] at hcoeff
+
+/-- Degree-`k` coefficients of formal-group differences depend only on coefficients up to degree
+`k`. -/
+theorem coeff_sub_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
+    (h₁ : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₁'.toPowerSeries)
+    (h₂ : ∀ i ≤ k, PowerSeries.coeff i γ₂.toPowerSeries = PowerSeries.coeff i γ₂'.toPowerSeries) :
+    PowerSeries.coeff k (γ₁ - γ₂).toPowerSeries =
+      PowerSeries.coeff k (γ₁' - γ₂').toPowerSeries := by
+  rw [sub_eq_add_neg, sub_eq_add_neg]
+  exact coeff_add_congr h₁ fun i hi ↦ coeff_neg_congr fun j hj ↦ h₂ j (hj.trans hi)
+
 /-- Extracting the linear coefficient `coeff 1` is an additive homomorphism `F.Curve →+ R`. -/
 noncomputable def coeffOneHom (F : FormalGroup R) : F.Curve →+ R where
   toFun γ := PowerSeries.coeff 1 γ.toPowerSeries
@@ -481,6 +505,21 @@ theorem map_mapCurve (f : FormalGroupHom F G) (φ : R →+* S) (γ : F.Curve) :
   rw [toPowerSeries_mapCurve, FormalGroup.Curve.toPowerSeries_map,
     FormalGroup.Curve.toPowerSeries_map, toPowerSeries_mapCurve, map_toPowerSeries]
   exact (PowerSeries.map_subst γ.hasSubst f.toPowerSeries).symm
+
+/-- The degree-`k` coefficient of `f.mapCurve γ` depends only on the coefficients of `γ` in
+degrees `≤ k`. -/
+theorem coeff_mapCurve_congr (f : FormalGroupHom F G) {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (f.mapCurve γ₁).toPowerSeries =
+      PowerSeries.coeff k (f.mapCurve γ₂).toPowerSeries := by
+  have hcongr : PowerSeries.X ^ (k + 1) ∣ γ₁.toPowerSeries - γ₂.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by
+      rw [map_sub, h i (Nat.lt_succ_iff.mp hi), sub_self]
+  have hdvd := PowerSeries.X_pow_dvd_subst_sub_subst
+    γ₁.constantCoeff_toPowerSeries hcongr f.toPowerSeries
+  have hcoeff := PowerSeries.X_pow_dvd_iff.mp hdvd k (Nat.lt_succ_self k)
+  rw [toPowerSeries_mapCurve, toPowerSeries_mapCurve]
+  rwa [map_sub, sub_eq_zero] at hcoeff
 
 @[simp]
 theorem nsmulHom_mapCurve [F.IsComm] (n : ℕ) (γ : F.Curve) :
