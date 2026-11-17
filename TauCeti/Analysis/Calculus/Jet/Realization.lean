@@ -26,7 +26,8 @@ is its finite Taylor sum about the chosen center. The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
 * `taylorMonomial`, `iteratedFDeriv_taylorMonomial_self`: the one-term case
-  `y ↦ A (y - x, …, y - x) / k!`, whose only nonzero derivative at `x` is `A`;
+  `y ↦ A (y - x, …, y - x) / k!`, whose only nonzero derivative at `x` is `A` when `A` is
+  symmetric;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
   neighborhood of the center-value pair `(x, A 0 0)`;
 * `exists_contDiff_hasCompactSupport_iteratedFDeriv_eq`: on a finite-dimensional real base,
