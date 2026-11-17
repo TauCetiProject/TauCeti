@@ -30,15 +30,16 @@ yields a single common full-measure event on which this limit holds simultaneous
 ## Proof outline
 
 * **Deterministic comparison (`HolderOnWith`, `LipschitzOnWith`)**: Any Hölder path of exponent
-  `r > 1 / 2` (in particular any Lipschitz or affine path) has Lévy-normalized modulus ratio
+  `r > 1 / 2` (in particular any Lipschitz path) has Lévy-normalized modulus ratio
   tending to `0` as `h → 0⁺`.
 * **Unit-horizon upper bound**: For `q ≥ 2` and `ε = 1 / q`, at dyadic level `n` we bound all
   increments `|B ((i + k) / 2 ^ n) - B (i / 2 ^ n)|` over step counts `1 ≤ k ≤ 2 ^ (n / (3 * q))`
   using the sub-Gaussian Chernoff tail of centered Gaussian increments. The union over at most
   `2 * 2 ^ (n + n / (3 * q))` pairs has probability `O(2 ^ (-ε * n))`, which is summable in `n`.
-  Outside the Borel–Cantelli exceptional event, `TauCeti.modulusOfContinuityOn_Iic_one_le_of_dyadic`
-  applied at level `n = m + m / (3 * q)` for `h ∈ (2 ^ (-(m + 1)), 2 ^ (-m)]` bounds the coarse
-  dyadic jump by `(1 + ε) ^ 2 * √(2 * h * log (1 / h))` and the binary-refinement tail by
+  Outside the Borel–Cantelli exceptional event,
+  `ContinuousOn.modulusOfContinuityOn_Iic_one_le_of_dyadic` applied at level `n = m + m / (3 * q)`
+  for `h ∈ (2 ^ (-(m + 1)), 2 ^ (-m)]` bounds the coarse dyadic jump by
+  `(1 + ε) ^ 2 * √(2 * h * log (1 / h))` and the binary-refinement tail by
   `o(√(2 * h * log (1 / h)))`.
 * **Unit-horizon lower bound**: For `q ≥ 2`, `ε = 1 / q`, and `b = 1 + 1 / q > 1`, at mesh
   `δ_n = (b ^ (n + 1))⁻¹` the `⌊b ^ (n + 1)⌋₊` standardized increments in `[0, 1]` are independent
@@ -108,23 +109,6 @@ theorem LipschitzOnWith.tendsto_modulusOfContinuityOn_div_sqrt_mul_log_zero
     Tendsto (fun h : ℝ ↦ TauCeti.modulusOfContinuityOn f S h / √(2 * h * Real.log (1 / h)))
       (𝓝[>] 0) (𝓝 0) :=
   hf.holderOnWith.tendsto_modulusOfContinuityOn_div_sqrt_mul_log_zero (by norm_num)
-
-namespace TauCeti
-
-/-- A deterministic affine path `t ↦ a * t + b` on `S : Set ℝ≥0` has Lévy-normalized uniform
-modulus ratio tending to `0` as `h → 0⁺`. -/
-theorem tendsto_modulusOfContinuityOn_affine_div_sqrt_mul_log_zero
-    (a b : ℝ) (S : Set ℝ≥0) :
-    Tendsto (fun h : ℝ ↦
-      modulusOfContinuityOn (fun t : ℝ≥0 ↦ a * (t : ℝ) + b) S h / √(2 * h * Real.log (1 / h)))
-      (𝓝[>] 0) (𝓝 0) := by
-  have hlip : LipschitzOnWith ‖a‖₊ (fun t : ℝ≥0 ↦ a * (t : ℝ) + b) S :=
-    LipschitzOnWith.of_dist_le_mul fun s _ t _ ↦ by
-      simp only [Real.dist_eq, NNReal.dist_eq, coe_nnNorm, Real.norm_eq_abs]
-      exact le_of_eq (by rw [← abs_mul]; congr 1; ring)
-  exact hlip.tendsto_modulusOfContinuityOn_div_sqrt_mul_log_zero
-
-end TauCeti
 
 end DeterministicChecks
 
@@ -525,7 +509,7 @@ private lemma ae_eventually_modulus_div_sqrt_le {Ω : Type*} [MeasurableSpace Ω
   have hpow_lt : (1 / 2 : ℝ) ^ (m / p) < ε / 2 :=
     (pow_le_pow_of_le_one (by positivity) (by norm_num)
       ((Nat.le_div_iff_mul_le hp_pos).2 (by nlinarith [hm_all]))).trans_lt hM_pow
-  have hchaining := TauCeti.modulusOfContinuityOn_Iic_one_le_of_dyadic hcont.continuousOn
+  have hchaining := hcont.continuousOn.modulusOfContinuityOn_Iic_one_le_of_dyadic
     (m + m / p) (by positivity) (fun i j hij hj hlen ↦
       coarse_dyadic_dist_le hε_pos hh.1 hh_le_2m hh_gt_2m1 h1εh hpow_lt
         (hN₀ (m + m / p) (by omega)) hij hj hlen)

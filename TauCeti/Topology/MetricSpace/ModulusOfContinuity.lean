@@ -41,8 +41,8 @@ all pairs `x, y ∈ S` with `dist x y ≤ h`, taking the value `0` when no such 
   `HolderOnWith.modulusOfContinuityOn_le`, `HolderOnWith.bddAbove_modulusOfContinuityOn_set`:
   invariance, scaling, subadditivity, and Lipschitz/Hölder bounds.
 * `TauCeti.modulusOfContinuityOn_Iic_nnreal_mul`: rescaling `[0, 1]` to `[0, T]` on `ℝ≥0`.
-* `TauCeti.modulusOfContinuityOn_Iic_one_le_of_dyadic`: deterministic binary-expansion chaining
-  bound for `modulusOfContinuityOn f (Set.Iic 1) h` from dyadic grid increments.
+* `ContinuousOn.modulusOfContinuityOn_Iic_one_le_of_dyadic`: deterministic binary-expansion
+  chaining bound for `modulusOfContinuityOn f (Set.Iic 1) h` from dyadic grid increments.
 
 ## Implementation notes
 
@@ -560,31 +560,31 @@ private lemma dist_le_of_dyadic {f : ℝ≥0 → Y} (hf : ContinuousOn f (Iic 1)
           dist (f (dyadicApprox n t)) (f t) := by rw [dist_comm (f s)]
     _ ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by linarith
 
+end NNRealInterval
+
+end TauCeti
+
 /-- **Deterministic dyadic chaining bound on `[0, 1]`**: if `f : ℝ≥0 → Y` is continuous on `[0, 1]`,
 `C ≥ 0` bounds every level-`n` dyadic increment of length `< h + 2 ^ (-n)`, and a summable sequence
 `M` bounds single-step dyadic increments at all finer levels `r ≥ n + 1`, then
 `modulusOfContinuityOn f (Set.Iic 1) h ≤ C + 2 * ∑' k, M (n + 1 + k)`. -/
-theorem modulusOfContinuityOn_Iic_one_le_of_dyadic {f : ℝ≥0 → Y}
-    (hf : ContinuousOn f (Iic 1)) (n : ℕ) {h C : ℝ} (hC0 : 0 ≤ C)
+theorem ContinuousOn.modulusOfContinuityOn_Iic_one_le_of_dyadic {Y : Type*} [PseudoMetricSpace Y]
+    {f : ℝ≥0 → Y} (hf : ContinuousOn f (Iic 1)) (n : ℕ) {h C : ℝ} (hC0 : 0 ≤ C)
     (hcoarse : ∀ i j : ℕ, i < j → j ≤ 2 ^ n →
       ((j - i : ℕ) : ℝ) / (2 : ℝ) ^ n < h + 1 / (2 : ℝ) ^ n →
       dist (f ((j : ℝ≥0) / 2 ^ n)) (f ((i : ℝ≥0) / 2 ^ n)) ≤ C)
     {M : ℕ → ℝ} (hM_sum : Summable M)
     (hM : ∀ r ≥ n + 1, ∀ i < 2 ^ r,
       dist (f (((i + 1 : ℕ) : ℝ≥0) / 2 ^ r)) (f ((i : ℝ≥0) / 2 ^ r)) ≤ M r) :
-    modulusOfContinuityOn f (Iic 1) h ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by
+    TauCeti.modulusOfContinuityOn f (Iic 1) h ≤ C + 2 * ∑' k : ℕ, M (n + 1 + k) := by
   have htsum_nonneg : 0 ≤ ∑' k : ℕ, M (n + 1 + k) :=
-    (dist_nonneg (x := f (dyadicApprox n 0)) (y := f 0)).trans
-      (dist_dyadicApprox_le_tsum hf zero_le_one n hM_sum hM)
-  -- Reduce to ordered pairs `x ≤ y` in `[0, 1]` and apply `dist_le_of_dyadic`.
-  refine modulusOfContinuityOn_le (by positivity) fun x hx y hy hxy ↦ ?_
+    (dist_nonneg (x := f (TauCeti.dyadicApprox n 0)) (y := f 0)).trans
+      (TauCeti.dist_dyadicApprox_le_tsum hf zero_le_one n hM_sum hM)
+  -- Reduce to ordered pairs `x ≤ y` in `[0, 1]` and apply `TauCeti.dist_le_of_dyadic`.
+  refine TauCeti.modulusOfContinuityOn_le (by positivity) fun x hx y hy hxy ↦ ?_
   rcases le_total x y with hle | hle
-  · refine dist_le_of_dyadic hf n hC0 hcoarse hM_sum hM hle hy ?_
+  · refine TauCeti.dist_le_of_dyadic hf n hC0 hcoarse hM_sum hM hle hy ?_
     rwa [NNReal.dist_eq, abs_of_nonpos (sub_nonpos.2 (NNReal.coe_le_coe.2 hle)), neg_sub] at hxy
   · rw [dist_comm]
-    refine dist_le_of_dyadic hf n hC0 hcoarse hM_sum hM hle hx ?_
+    refine TauCeti.dist_le_of_dyadic hf n hC0 hcoarse hM_sum hM hle hx ?_
     rwa [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 hle))] at hxy
-
-end NNRealInterval
-
-end TauCeti
