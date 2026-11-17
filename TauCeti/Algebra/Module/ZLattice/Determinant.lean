@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Rank
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.Integral
 public import TauCeti.Algebra.Module.ZLattice.Quotient
+import TauCeti.Algebra.Module.Submodule.Quotient
 import TauCeti.GroupTheory.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
 
@@ -50,6 +51,8 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
 * `ZLattice.DiscriminantGroup L`: the discriminant group `L^∨ ⧸ (L ∩ L^∨)`.
 * `ZLattice.discriminantGroupComapEquiv L e`: the `ℤ`-linear equivalence of discriminant groups
   induced by a linear isometry equivalence `e`.
+* `ZLattice.discriminantGroupEquivSupQuotient L`: the second-isomorphism `ℤ`-linear equivalence
+  `DiscriminantGroup L ≃ₗ[ℤ] (L ⊔ dual L) ⧸ L`.
 
 ## Main statements
 
@@ -59,6 +62,10 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
   linear isometry equivalences.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
 * `ZLattice.IsIntegral.finite_discriminantGroup`: for integral `L`, `L^∨ ⧸ L` is finite.
+* `ZLattice.card_nsmul_mem_of_mem_dual`,
+  `ZLattice.discreteTopology_dual_of_finite_discriminantGroup`,
+  `ZLattice.discreteTopology_sup_dual_of_finite_discriminantGroup`: `|A_L| • x ∈ L` for `x ∈ L^∨`,
+  so whenever `A_L` is finite, `L^∨` is discrete (and `L ⊔ L^∨` is discrete when `L` is).
 * `ZLattice.IsIntegral.one_le_det`: for integral `L`, `1 ≤ det L`.
 * `ZLattice.IsIntegral.det_toMatrix_integralForm`: for integral `L`, the integer Gram matrix of
   any `ℤ`-basis has determinant `|L^∨ ⧸ L|`.
@@ -73,6 +80,10 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
 * `ZLattice.IsUnimodular.subsingleton_discriminantGroup`,
   `ZLattice.IsUnimodular.card_discriminantGroup_eq_one`: a unimodular lattice has trivial
   discriminant group of order `1`.
+* `ZLattice.subsingleton_discriminantGroup_span_singleton_iff`,
+  `ZLattice.subsingleton_discriminantGroup_span_inv_natCast`: `c ℤ ⊆ ℝ` has trivial discriminant
+  group iff `m c² = 1` for some `m : ℕ`; in particular `n⁻¹ ℤ ⊆ ℝ` (`n ≠ 0`) has trivial
+  discriminant group even when `n > 1` and the lattice is not integral.
 * `ZLattice.IsIntegral.isUnimodular_iff_covolume_eq_one`,
   `ZLattice.IsIntegral.isUnimodular_iff_det_eq_one`,
   `ZLattice.IsIntegral.isUnimodular_iff_subsingleton_discriminantGroup`: the forms of
@@ -146,6 +157,110 @@ theorem IsUnimodular.subsingleton_discriminantGroup (h : IsUnimodular L) :
 theorem IsUnimodular.card_discriminantGroup_eq_one (h : IsUnimodular L) :
     Nat.card (DiscriminantGroup L) = 1 :=
   have := h.subsingleton_discriminantGroup
+  Nat.card_unique
+
+variable (L) in
+/-- By the second isomorphism theorem, the inclusion of `L^∨` into `L ⊔ L^∨` identifies the
+discriminant group `L^∨ ⧸ (L ∩ L^∨)` with `(L ⊔ L^∨) ⧸ L`. -/
+noncomputable def discriminantGroupEquivSupQuotient :
+    DiscriminantGroup L ≃ₗ[ℤ] (L ⊔ dual L : Submodule ℤ E) ⧸ L.submoduleOf (L ⊔ dual L) :=
+  (Submodule.quotEquivOfEq (L.submoduleOf (dual L)) _ (by ext; simp [submoduleOf])).trans <|
+    (LinearMap.quotientInfEquivSupQuotient (dual L) L).trans <|
+      (Submodule.subquotientEquivOfEq L (dual L ⊔ L) L (L ⊔ dual L) rfl (sup_comm (dual L) L)).trans
+        (Submodule.quotEquivOfEq (comap (L ⊔ dual L).subtype L) (L.submoduleOf (L ⊔ dual L))
+          (by ext; simp [submoduleOf]))
+
+variable (L) in
+/-- `discriminantGroupEquivSupQuotient L` sends the class of `x ∈ L^∨` to the class of `x` in
+`(L ⊔ L^∨) ⧸ L`. -/
+@[simp]
+theorem discriminantGroupEquivSupQuotient_mk (x : dual L) :
+    discriminantGroupEquivSupQuotient L (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk ⟨(x : E), Submodule.mem_sup_right x.2⟩ := by
+  rw [discriminantGroupEquivSupQuotient, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotientInfEquivSupQuotient_apply_mk, Submodule.subquotientEquivOfEq_mk,
+    Submodule.quotEquivOfEq_mk]
+  rfl
+
+/-- For every dual vector `x ∈ L^∨`, multiplying by the order of `DiscriminantGroup L` lands in `L`
+(trivially `0 ∈ L` when `DiscriminantGroup L` is infinite, since `Nat.card` is then `0`). -/
+theorem card_nsmul_mem_of_mem_dual {x : E} (hx : x ∈ dual L) :
+    Nat.card (DiscriminantGroup L) • x ∈ L := by
+  have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
+    (x := Submodule.Quotient.mk (⟨x, hx⟩ : dual L))
+  rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
+
+/-- Whenever the discriminant group `L^∨ ⧸ (L ∩ L^∨)` is finite (even if `L` itself is not
+discrete), the dual lattice `L^∨` is discrete: if `d = |A_L|`, every `x ∈ L^∨` has `d • x ∈ L`,
+so `‖x‖² ∈ d⁻¹ ℤ`. -/
+theorem discreteTopology_dual_of_finite_discriminantGroup [Finite (DiscriminantGroup L)] :
+    DiscreteTopology (dual L) := by
+  have hd0 : (0 : ℝ) < Nat.card (DiscriminantGroup L) := by exact_mod_cast Nat.card_pos
+  refine discreteTopology_of_norm_sq_mem_int_mul (inv_pos.mpr hd0) fun x hx ↦ ?_
+  obtain ⟨m, hm⟩ := mem_dual.mp hx _ (card_nsmul_mem_of_mem_dual hx)
+  rw [← Nat.cast_smul_eq_nsmul ℝ, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
+  exact ⟨m, (eq_inv_mul_iff_mul_eq₀ hd0.ne').mpr hm⟩
+
+/-- When `L` is discrete and `DiscriminantGroup L` is finite, `L` has finite index in `L ⊔ L^∨`, so
+`L ⊔ L^∨` is also discrete. -/
+theorem discreteTopology_sup_dual_of_finite_discriminantGroup [DiscreteTopology L]
+    [Finite (DiscriminantGroup L)] : DiscreteTopology (L ⊔ dual L : Submodule ℤ E) := by
+  let f := (L.submoduleOf (L ⊔ dual L)).mkQ.toAddMonoidHom
+  have : Finite ((L ⊔ dual L : Submodule ℤ E) ⧸ L.submoduleOf (L ⊔ dual L)) :=
+    Finite.of_equiv _ (discriminantGroupEquivSupQuotient L).toEquiv
+  have hker : f.ker = L.toAddSubgroup.addSubgroupOf (L ⊔ dual L).toAddSubgroup := by
+    ext x
+    rw [AddMonoidHom.mem_ker, AddSubgroup.mem_addSubgroupOf]
+    dsimp only [f]
+    rw [LinearMap.toAddMonoidHom_coe, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    simp [Submodule.submoduleOf]
+  have : L.toAddSubgroup.IsFiniteRelIndex (L ⊔ dual L).toAddSubgroup :=
+    AddSubgroup.isFiniteRelIndex_iff_finiteIndex.mpr (hker ▸ inferInstance)
+  exact (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
+    (Submodule.toAddSubgroup_mono (le_sup_left : L ≤ L ⊔ dual L))).mp inferInstance
+
+/-- The discriminant group of the rank-one lattice `c ℤ ⊆ ℝ` is trivial if and only if `m c² = 1`
+for some natural number `m` (equivalently `c⁻¹ ∈ c ℤ` with `c ≠ 0`). -/
+theorem subsingleton_discriminantGroup_span_singleton_iff {c : ℝ} :
+    Subsingleton (DiscriminantGroup (span ℤ {c} : Submodule ℤ ℝ)) ↔
+      ∃ m : ℕ, (m : ℝ) * c ^ 2 = 1 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · rw [subsingleton_discriminantGroup_iff] at h
+    have hc0 : c ≠ 0 := by rintro rfl; simp at h
+    rw [dual_span_singleton hc0, span_singleton_le_iff_mem, mem_span_singleton] at h
+    obtain ⟨k, hk⟩ := h
+    have hk' : (k : ℝ) * c ^ 2 = 1 := by
+      calc (k : ℝ) * c ^ 2 = (k • c) * c := by rw [zsmul_eq_mul, mul_assoc, sq]
+        _ = c⁻¹ * c := by rw [hk]
+        _ = 1 := inv_mul_cancel₀ hc0
+    have hk0 : 0 ≤ k := by
+      have hpos : (0 : ℝ) < k := by nlinarith [sq_pos_of_ne_zero hc0]
+      exact le_of_lt (by exact_mod_cast hpos)
+    lift k to ℕ using hk0
+    exact ⟨k, by exact_mod_cast hk'⟩
+  · rintro ⟨m, hm⟩
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      norm_num at hm
+    rw [subsingleton_discriminantGroup_iff, dual_span_singleton hc0, span_singleton_le_iff_mem,
+      mem_span_singleton]
+    refine ⟨m, mul_right_cancel₀ hc0 ?_⟩
+    rw [zsmul_eq_mul, Int.cast_natCast, mul_assoc, ← sq, hm, inv_mul_cancel₀ hc0]
+
+/-- For a nonzero natural number `n`, the lattice `n⁻¹ ℤ ⊆ ℝ` has trivial discriminant group: its
+dual `n ℤ` is contained in `n⁻¹ ℤ`. -/
+theorem subsingleton_discriminantGroup_span_inv_natCast {n : ℕ} (hn : n ≠ 0) :
+    Subsingleton (DiscriminantGroup (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ)) :=
+  subsingleton_discriminantGroup_span_singleton_iff.mpr ⟨n ^ 2, by
+    have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+    push_cast
+    field_simp⟩
+
+/-- For a nonzero natural number `n`, the discriminant group of `n⁻¹ ℤ ⊆ ℝ` has order `1`. -/
+theorem card_discriminantGroup_span_inv_natCast {n : ℕ} (hn : n ≠ 0) :
+    Nat.card (DiscriminantGroup (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ)) = 1 :=
+  have := subsingleton_discriminantGroup_span_inv_natCast hn
   Nat.card_unique
 
 /-- A linear isometry equivalence `e : F ≃ₗᵢ[ℝ] E` identifies the discriminant group of the

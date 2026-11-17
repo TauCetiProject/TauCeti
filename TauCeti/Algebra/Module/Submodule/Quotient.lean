@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.Module.Submodule.Map
+import Mathlib.GroupTheory.Coset.Basic
 
 /-!
 # Submodule intervals and quotients
@@ -21,6 +22,8 @@ induces when it is injective or surjective.  The submodule-map facts behind thes
 
 ## Main declarations
 
+* `Submodule.quotientFiberEquivOfLe`: for `p ≤ q`, the fiber of `q → q ⧸ p` over a class `y` is
+  identified with `p` by `v ↦ Quotient.out y + v`.
 * `Submodule.iccOrderIsoQuotientOfMapEq`: the interval/quotient correspondence for a
   specified copy of the lower endpoint inside the upper endpoint.
 * `LinearMap.mapSubquotientEquivOfInjective`: an injective linear map identifies the subquotient of
@@ -77,6 +80,38 @@ noncomputable def subquotientEquivOfEq
       Submodule.Quotient.mk (⟨x, hB ▸ x.property⟩ : B) := by
   subst hA hB
   rfl
+
+/-- For `p ≤ q` and a class `y : q ⧸ p.submoduleOf q`, the fiber of `Submodule.Quotient.mk` over
+`y` is identified with `p` by `v ↦ Quotient.out y + v`. -/
+noncomputable def quotientFiberEquivOfLe {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (p : Submodule R M) {q : Submodule R M} (h : p ≤ q) (y : q ⧸ p.submoduleOf q) :
+    p ≃ (Submodule.Quotient.mk ⁻¹' {y} : Set q) :=
+  let f := (p.submoduleOf q).mkQ.toAddMonoidHom
+  ((Submodule.submoduleOfEquivOfLe h).toEquiv.symm.trans
+    (Equiv.subtypeEquivRight fun x : q ↦ by simp [f])).trans
+    ((f.fiberEquivKer (Quotient.out y)).symm.trans
+      (Equiv.subtypeEquivRight fun x : q ↦ by simp [f]))
+
+/-- `Submodule.quotientFiberEquivOfLe` sends `v : p` to `Quotient.out y + v` in `q`. -/
+@[simp]
+theorem coe_quotientFiberEquivOfLe_apply {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (p : Submodule R M) {q : Submodule R M} (h : p ≤ q) (y : q ⧸ p.submoduleOf q) (v : p) :
+    ((p.quotientFiberEquivOfLe h y v : (Submodule.Quotient.mk ⁻¹' {y} : Set q)) : q) =
+      Quotient.out y + Submodule.inclusion h v :=
+  AddMonoidHom.fiberEquivKer_symm_apply _ _ _
+
+/-- The inverse of `Submodule.quotientFiberEquivOfLe` subtracts `Quotient.out y`. -/
+@[simp]
+theorem coe_quotientFiberEquivOfLe_symm_apply {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (p : Submodule R M) {q : Submodule R M} (h : p ≤ q) (y : q ⧸ p.submoduleOf q)
+    (b : (Submodule.Quotient.mk ⁻¹' {y} : Set q)) :
+    ((p.quotientFiberEquivOfLe h y).symm b : M) = ((b : q) : M) - (Quotient.out y : q) := by
+  have hb := (p.quotientFiberEquivOfLe h y).apply_symm_apply b
+  have hval : (((p.quotientFiberEquivOfLe h y ((p.quotientFiberEquivOfLe h y).symm b) :
+      (Submodule.Quotient.mk ⁻¹' {y} : Set q)) : q) : M) = ((b : q) : M) := by
+    rw [hb]
+  rw [coe_quotientFiberEquivOfLe_apply, AddMemClass.coe_add, Submodule.coe_inclusion] at hval
+  exact eq_sub_of_add_eq' hval
 
 section QuotientInterval
 

@@ -297,11 +297,7 @@ theorem exists_ratModelMap_eq_of_mem_dual (hL : IsIntegral L) {y : E} (hy : y �
   have := hL.finite_discriminantGroup
   set d := Nat.card (DiscriminantGroup L)
   have hd : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hdy : d • y ∈ L := by
-    have h0 : (Submodule.Quotient.mk (d • (⟨y, hy⟩ : dual L)) : DiscriminantGroup L) = 0 := by
-      rw [Submodule.Quotient.mk_smul, card_nsmul_eq_zero']
-    simpa using (discriminantGroup_mk_eq_zero_iff _).mp h0
-  refine ⟨(d : ℚ)⁻¹ ⊗ₜ[ℤ] ⟨d • y, hdy⟩, ?_⟩
+  refine ⟨(d : ℚ)⁻¹ ⊗ₜ[ℤ] ⟨d • y, card_nsmul_mem_of_mem_dual hy⟩, ?_⟩
   rw [ratModelMap_tmul, Rat.cast_inv, Rat.cast_natCast, Submodule.coe_mk,
     ← Nat.cast_smul_eq_nsmul ℝ, inv_smul_smul₀ hd]
 

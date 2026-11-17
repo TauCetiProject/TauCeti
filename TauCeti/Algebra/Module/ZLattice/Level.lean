@@ -226,11 +226,7 @@ theorem level_dvd_two_mul_card_discriminantGroup :
   refine level_dvd_iff.mpr fun x hx ↦ ?_
   -- The order `d` of the discriminant group kills the class of `x`, so `d • x ∈ L` and
   -- `d ‖x‖² = ⟪x, d • x⟫` is an integer.
-  have hd : Nat.card (DiscriminantGroup L) • x ∈ L := by
-    have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
-      (x := Submodule.Quotient.mk (⟨x, hx⟩ : dual L))
-    rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
-  obtain ⟨m, hm⟩ := mem_dual.mp hx _ hd
+  obtain ⟨m, hm⟩ := mem_dual.mp hx _ (card_nsmul_mem_of_mem_dual hx)
   refine ⟨m, ?_⟩
   rw [← Nat.cast_smul_eq_nsmul ℝ, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
   push_cast
@@ -661,10 +657,7 @@ theorem level_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] [Nonempt
     rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, mul_zero]
     by_contra hne
     have hpos : (0 : ℝ) < level (⊥ : Submodule ℤ E) := by exact_mod_cast Nat.pos_of_ne_zero hne
-    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) :=
-      mem_dual.2 fun y hy ↦ by
-        rw [Submodule.mem_bot] at hy
-        exact ⟨0, by simp [hy]⟩
+    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) := by simp
     obtain ⟨k, hk⟩ := exists_level_mul_norm_sq_eq hx
     rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_pow,
       Real.sq_sqrt hpos.le, b.orthonormal.1 i, one_pow, mul_one, mul_inv_cancel₀ hpos.ne'] at hk
