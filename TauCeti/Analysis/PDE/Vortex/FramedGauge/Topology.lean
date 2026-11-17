@@ -53,6 +53,9 @@ everywhere by the Sobolev embedding, so the continuous representative of `h` sat
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup hs`: the group `G_s`, `s > 1`, with its Sobolev
   topology.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne`: the element `u - 1` of `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.reSubOne`,
+  `TauCeti.Vortex.SobolevTopologicalGaugeGroup.imPart`: the elements `Re u - 1` and `Im u` of
+  `H^s(ℂ)`, which depend continuously on `u`.
 
 ## Main results
 
@@ -82,8 +85,8 @@ everywhere by the Sobolev embedding, so the continuous representative of `h` sat
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.exists_tendsto_of_cauchySeq`: `G_s` is complete for
   the distance `‖u - v‖_{H^s}`.
 
-The Banach charts of `G_s` and the continuity of its action on the field space `A_m^k` are not
-treated here.
+The Banach charts of `G_s` are not treated here; the continuity of its action on the field space
+`A_m^k` is in `TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient`.
 
 ## References
 
@@ -307,6 +310,64 @@ theorem continuous_subOne_inv :
     Continuous (fun u : SobolevTopologicalGaugeGroup hs ↦ subOne u⁻¹) :=
   continuous_iff_continuousAt.2 fun u ↦
     tendsto_subOne_inv (f := id) (continuous_subOne.tendsto u)
+
+/-- **The element `Re u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`, namely
+`((u - 1) + (u⁻¹ - 1)) / 2`: its `L²` function is `Re u - 1`
+(`SobolevTopologicalGaugeGroup.coeFn_inclusionLp_reSubOne`). -/
+def reSubOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
+  (2 : ℂ)⁻¹ • (subOne u + subOne u⁻¹)
+
+/-- **The element `Im u` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`, namely
+`-i ((u - 1) - (u⁻¹ - 1)) / 2`: its `L²` function is `Im u`
+(`SobolevTopologicalGaugeGroup.coeFn_inclusionLp_imPart`). -/
+def imPart (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
+  (-(Complex.I / 2)) • (subOne u - subOne u⁻¹)
+
+/-- `u ↦ Re u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
+@[fun_prop, continuity]
+theorem continuous_reSubOne :
+    Continuous (reSubOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  unfold reSubOne
+  fun_prop
+
+/-- `u ↦ Im u` is continuous from `G_s` to `H^s(ℂ)`. -/
+@[fun_prop, continuity]
+theorem continuous_imPart :
+    Continuous (imPart : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  unfold imPart
+  fun_prop
+
+/-- The `L²` function of `reSubOne u` is `Re u - 1`. -/
+theorem coeFn_inclusionLp_reSubOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
+    ⇑(inclusionLp h (reSubOne u)) =ᵐ[volume]
+      fun z ↦ ((((toSubgroup hs u : ℂ → Circle) z : ℂ).re - 1 : ℝ) : ℂ) := by
+  simp only [reSubOne, map_smul, map_add]
+  filter_upwards
+    [Lp.coeFn_smul (2 : ℂ)⁻¹ (inclusionLp h (subOne u) + inclusionLp h (subOne u⁻¹)),
+    Lp.coeFn_add (inclusionLp h (subOne u)) (inclusionLp h (subOne u⁻¹)),
+    coeFn_toLp_inclusion_subOne h u, coeFn_toLp_inclusion_subOne_inv h u] with z h₁ h₂ h₃ h₄
+  rw [toLp_inclusion] at h₃ h₄
+  simp only [h₁, h₂, h₃, h₄, Pi.smul_apply, Pi.add_apply]
+  apply Complex.ext
+  · simp
+    ring
+  · simp
+
+/-- The `L²` function of `imPart u` is `Im u`. -/
+theorem coeFn_inclusionLp_imPart (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
+    ⇑(inclusionLp h (imPart u)) =ᵐ[volume]
+      fun z ↦ ((((toSubgroup hs u : ℂ → Circle) z : ℂ).im : ℝ) : ℂ) := by
+  simp only [imPart, map_smul, map_sub]
+  filter_upwards
+    [Lp.coeFn_smul (-(Complex.I / 2)) (inclusionLp h (subOne u) - inclusionLp h (subOne u⁻¹)),
+    Lp.coeFn_sub (inclusionLp h (subOne u)) (inclusionLp h (subOne u⁻¹)),
+    coeFn_toLp_inclusion_subOne h u, coeFn_toLp_inclusion_subOne_inv h u] with z h₁ h₂ h₃ h₄
+  rw [toLp_inclusion] at h₃ h₄
+  simp only [h₁, h₂, h₃, h₄, Pi.smul_apply, Pi.sub_apply]
+  apply Complex.ext
+  · simp
+    ring
+  · simp
 
 /-- **`G_s` is a topological group** for its Sobolev topology: by `subOne_mul`, multiplication
 acts on `u - 1` by a continuous polynomial map of `H^s(ℂ)`, and inversion is continuous by
