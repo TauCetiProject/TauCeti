@@ -338,33 +338,15 @@ private theorem single_one_lt_single_zero_lex :
   refine ⟨0, fun j hj ↦ (Fin.not_lt_zero j hj).elim, ?_⟩
   simp
 
-private theorem coeff_X_zero_add_X_one_single_zero {R : Type*} [CommSemiring R] :
-    (X 0 + X 1 : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 1) = 1 := by
-  classical
-  have hne : Finsupp.single (1 : Fin 2) 1 ≠ Finsupp.single 0 1 :=
-    ne_of_apply_ne (fun f ↦ f 0) (by simp)
-  rw [X, X]
-  simp [hne]
-
 private theorem degree_X_zero_add_X_one {R : Type*} [CommSemiring R] [Nontrivial R] :
     lex.degree (X 0 + X 1 : MvPolynomial (Fin 2) R) = Finsupp.single 0 1 := by
-  classical
-  have hcoeff : (X 0 + X 1 : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 1) = 1 :=
-    coeff_X_zero_add_X_one_single_zero
-  refine lex.toSyn.injective (le_antisymm (lex.degree_le_iff.2 fun u hu ↦ ?_)
-    (lex.le_degree (mem_support_iff.2 (hcoeff.symm ▸ one_ne_zero))))
-  rcases Finset.mem_union.1 (support_add hu) with hu | hu
-  · rw [X] at hu
-    rw [Finset.mem_singleton.1 (support_monomial_subset hu)]
-  · rw [X] at hu
-    rw [Finset.mem_singleton.1 (support_monomial_subset hu)]
-    exact single_one_lt_single_zero_lex.le
+  rw [lex.degree_add_of_lt (by simpa [lex.degree_X] using single_one_lt_single_zero_lex),
+    lex.degree_X]
 
 private theorem monic_X_zero_add_X_one {R : Type*} [CommSemiring R] :
     lex.Monic (X 0 + X 1 : MvPolynomial (Fin 2) R) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Monic.of_subsingleton
-  · rw [Monic, leadingCoeff, degree_X_zero_add_X_one, coeff_X_zero_add_X_one_single_zero]
+  nontriviality R
+  exact lex.monic_X.add_of_lt (by simpa [lex.degree_X] using single_one_lt_single_zero_lex)
 
 private theorem X_zero_mul_X_one_pow_eq_monomial {R : Type*} [CommSemiring R] (m : ℕ) :
     (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) =
