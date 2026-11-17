@@ -284,6 +284,15 @@ theorem exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le {ι : Type*}
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
     _ = _ := by rw [hξ, hη]
 
+/-- The Fourier bound `HasCompactSpatialSupport.exists_norm_fourier_slice_le`, stated for the
+constant family `fun _ : ι ↦ b`, as in the hypotheses of the family bounds such as
+`exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le`. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le_const {ι : Type*}
+    (hb : b.HasCompactSpatialSupport) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ (_ : ι) (η ξ : CoordinateSpace n), ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) :=
+  (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩
+
 /-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
 frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
 `η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
@@ -298,8 +307,7 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
       ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) :=
   (exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le (b := fun _ : Unit ↦ b)
-    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩) ha r
-    hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
+    hb.exists_norm_fourier_slice_le_const ha r hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
 
 /-- **Decay of the shifted composition integrand, uniformly in a family.** For a family `bᵢ` whose
 position slices have Fourier transforms decaying faster than every power uniformly in `i`, and
@@ -333,8 +341,7 @@ theorem HasCompactSpatialSupport.exists_norm_sharpIntegrand_le (hb : b.HasCompac
     ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ η, ‖sharpIntegrand a b s (x, ξ) η‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) :=
   (exists_norm_sharpIntegrand_le_of_forall_norm_fourier_le (b := fun _ : Unit ↦ b)
-    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩) ha r
-    hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
+    hb.exists_norm_fourier_slice_le_const ha r hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
 
 /-- The shifted composition integrand is jointly continuous in the position, the frequency and the
 integration variable. -/
@@ -397,8 +404,7 @@ theorem HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le
     ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ,
       ‖∫ η, sharpIntegrand a b s (x, ξ) η‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
   (exists_norm_integral_sharpIntegrand_le_of_forall_norm_fourier_le (b := fun _ : Unit ↦ b)
-    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩) ha
-    hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
+    hb.exists_norm_fourier_slice_le_const ha hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
 
 /-- The integrand of the composition symbol decays in `η` faster than every power, with the
 weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a compact set. -/
@@ -1125,16 +1131,21 @@ private theorem hasFDerivAt_coordSub (z : CoordinateSpace n) (j : Fin n) (y : Co
   funext y'
   simp [sub_smul]
 
+/-- The coordinate derivative `∂ₗ` of `y ↦ (y - z)ⱼ` is the constant `δⱼₗ`. -/
+theorem coordinateDeriv_coordSub (z : CoordinateSpace n) (j l : Fin n) :
+    coordinateDeriv [l] (fun y : CoordinateSpace n ↦ (y - z) j • ContinuousLinearMap.id ℂ W) =
+      fun _ ↦ (EuclideanSpace.single l (1 : ℝ)) j • ContinuousLinearMap.id ℂ W := by
+  funext y
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, (hasFDerivAt_coordSub z j y).fderiv]
+  simp
+
 /-- The position derivative `∂_{xₗ}` of the symbol of multiplication by `(y - z)ⱼ` is the constant
 `δⱼₗ`. -/
 theorem coefficient_spatialDeriv_coordSubSymbol (z : CoordinateSpace n) (j l : Fin n)
     (x ξ : CoordinateSpace n) :
     (spatialDeriv l (coordSubSymbol (W := W) z j)).coefficient (x, ξ) =
       (EuclideanSpace.single l (1 : ℝ)) j • ContinuousLinearMap.id ℂ W := by
-  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
-  simp only [coefficient_coordSubSymbol]
-  rw [(hasFDerivAt_coordSub z j x).fderiv]
-  simp
+  simp only [coefficient_spatialDeriv, coefficient_coordSubSymbol, coordinateDeriv_coordSub]
 
 /-- Multiplying a symbol by `(y - z)ⱼ` before quantizing multiplies the quantization by
 `(x - z)ⱼ`. -/

@@ -548,22 +548,13 @@ private theorem exists_quantizeUniformCLM_comp_eq_id_add_of_isUniformAsymptoticS
   have hs := (hpa.isUniformAsymptoticSum_iff_isUniformlySmoothing_sub hm').1
     (hp.isUniformAsymptoticSum_sharpTerm_of_quantizeUniformCLM_comp_eq ha hc hpac)
   refine ⟨_, hs.inclusion (by simp [hm] : m' + m - ((0 : ℕ) : ℝ) ≤ 0), ?_⟩
-  have hid : ∀ (u : SchwartzMap (CoordinateSpace n) V) (x : CoordinateSpace n),
-      quantizeSchwartzValue (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).coefficient u x =
-        u x := fun u x ↦ by
-    simpa only [quantizeUniformCLM_apply, SchwartzMap.postcompCLM_apply,
-      ContinuousLinearMap.id_apply] using DFunLike.congr_fun (DFunLike.congr_fun
-      (quantizeUniformCLM_const (n := n) (ContinuousLinearMap.id ℂ V)) u) x
-  rw [hpac]
-  ext u x
-  have hcr : c.coefficient = (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).coefficient +
-      (inclusion (by simp [hm] : m' + m - ((0 : ℕ) : ℝ) ≤ 0) (inclusion (by simp) c -
-        inclusion (by simp [hm]) (const (ContinuousLinearMap.id ℂ V)))).coefficient := by
-    funext q
-    simp
-  rw [quantizeUniformCLM_apply, add_apply, ContinuousLinearMap.id_apply, add_apply,
-    quantizeUniformCLM_apply, hcr, quantizeSchwartzValue_coefficient_add,
-    hid]
+  have hid := isUniform_const (n := n) (ContinuousLinearMap.id ℂ V)
+  have hid' := hid.inclusion (by simp [hm] : (0 : ℝ) ≤ m' + m - ((0 : ℕ) : ℝ))
+  rw [hpac, quantizeUniformCLM_inclusion hs.isUniform,
+    quantizeUniformCLM_congr hc (hid'.add hs.isUniform) (by funext q; simp),
+    quantizeUniformCLM_add hid' hs.isUniform, quantizeUniformCLM_inclusion hid,
+    quantizeUniformCLM_const]
+  congr 1
 
 /-- **The uniform parametrix as an operator.** Let `a` be a symbol of order `m` whose estimates are
 uniform in the position and which is uniformly elliptic above some radius. Then there is a uniform

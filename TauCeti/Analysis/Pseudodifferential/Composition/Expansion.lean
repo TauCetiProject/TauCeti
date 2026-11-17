@@ -820,8 +820,7 @@ private theorem exists_norm_coefficient_remainderSymbol_le [CompleteSpace W] [Co
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖(remainderSymbol a hb N).coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N) / 2) := by
   obtain ⟨C, hC0, hC⟩ := exists_norm_remainderAt_le P hPfrequency hP (ι := Unit) N ha
-    (c := fun _ ↦ b) (fun _ ↦ hb)
-    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩)
+    (c := fun _ ↦ b) (fun _ ↦ hb) hb.exists_norm_fourier_slice_le_const
   refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
   simpa [coefficient_remainderSymbol] using hC () 1 ⟨zero_le_one, le_rfl⟩ x hx ξ
 
