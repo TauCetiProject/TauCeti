@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import Mathlib.Topology.Instances.AddCircle.Defs
+import TauCeti.Algebra.Order.ToIntervalMod
 
 /-!
 # Time reversal and the inverse of the billiard map
@@ -34,7 +35,10 @@ bijection of the strip with inverse `τ⁻¹ ∘ ι ∘ B ∘ ι`
 Both `B` and its inverse commute with `τ`, so they descend to mutually inverse maps of the space of
 collision states `AddCircle L × (-1, 1)`. This is the billiard map `β`
 (`TauCeti.StrictConvexBilliardTable.billiardMap`), a bijection whose inverse is `ι ∘ β ∘ ι`
-(`TauCeti.StrictConvexBilliardTable.billiardMap_symm_coe`).
+(`TauCeti.StrictConvexBilliardTable.billiardMap_symm_coe`). Boundary parameters give the same
+boundary point exactly when they agree in `AddCircle L`
+(`TauCeti.StrictConvexBilliardTable.apply_eq_apply_iff`), so a collision state and its image under
+`β` have distinct base points (`TauCeti.StrictConvexBilliardTable.fst_billiardMap_ne`).
 
 The continuity and smoothness of `B` and of its inverse are not treated here.
 
@@ -210,6 +214,19 @@ theorem billiardMap_coe (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
       ((χ.nextParam s v : AddCircle χ.period),
         ⟨χ.nextTangential s v, χ.nextTangential_mem_Ioo v.2⟩) := by
   simp [billiardMap]
+
+/-- Two boundary parameters give the same boundary point exactly when they agree modulo the
+period `L`. -/
+theorem apply_eq_apply_iff {s t : ℝ} : χ s = χ t ↔ (s : AddCircle χ.period) = t :=
+  (χ.periodic.lift_injective χ.period_pos χ.injOn).eq_iff (a := s) (b := t)
+
+/-- A collision state and its image under the billiard map have distinct base points. -/
+theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
+    (χ.billiardMap x).1 ≠ x.1 := by
+  obtain ⟨θ, v⟩ := x
+  induction θ using QuotientAddGroup.induction_on with | H s => ?_
+  rw [billiardMap_coe]
+  exact fun h ↦ χ.apply_nextParam_ne (s := s) v.2 (χ.apply_eq_apply_iff.2 h)
 
 /-- The inverse of the billiard map is `ι ∘ β ∘ ι`, where `ι([s], v) = ([s], -v)` reverses the
 tangential component. -/

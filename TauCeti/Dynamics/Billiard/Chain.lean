@@ -113,24 +113,12 @@ circle `AddCircle L` of boundary parameters its manifold structure. -/
 instance fact_period_pos : Fact (0 < χ.period) :=
   ⟨χ.period_pos⟩
 
-/-! ### Boundary points on the circle of parameters -/
-
-/-- Two boundary parameters give the same boundary point exactly when they agree modulo the
-period `L`. -/
-theorem apply_eq_apply_iff {s t : ℝ} : χ s = χ t ↔ (s : AddCircle χ.period) = t := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · -- Lift `[t]` into the window `[s, s + L)`, where `χ` is injective.
-    set t' := AddCircle.equivIco χ.period s (t : AddCircle χ.period)
-    have hχ : χ t' = χ t := by
-      simpa only [Periodic.lift_coe] using
-        congrArg χ.periodic.lift (AddCircle.coe_equivIco (a := s) (y := (t : AddCircle χ.period)))
-    have hst : (t' : ℝ) = s :=
-      χ.injOn_Ico s t'.2 ⟨le_rfl, by linarith [χ.period_pos]⟩ (hχ.trans h.symm)
-    rw [← hst]
-    exact AddCircle.coe_equivIco
-  · simpa only [Periodic.lift_coe] using congrArg χ.periodic.lift h
-
 /-! ### The generating function on the circle -/
+
+/-- The covectors `-((-a) ds)` and `b ds` on the real line agree exactly when `a = b`. -/
+private theorem neg_smulRight_neg_eq_smulRight_iff (a b : ℝ) :
+    -(1 : ℝ →L[ℝ] ℝ).smulRight (-a) = (1 : ℝ →L[ℝ] ℝ).smulRight b ↔ a = b := by
+  simp [ContinuousLinearMap.ext_ring_iff]
 
 /-- The generating function `S([s], [t]) = -‖χ(t) - χ(s)‖` of the billiard map on pairs of points
 of the circle `AddCircle L` of boundary parameters: minus the length of the chord from `χ(s)` to
@@ -139,11 +127,15 @@ strip, which is `L`-periodic in each argument. -/
 def circleGeneratingFunction (x : AddCircle χ.period × AddCircle χ.period) : ℝ :=
   -‖χ.periodic.lift x.2 - χ.periodic.lift x.1‖
 
+theorem circleGeneratingFunction_def (x : AddCircle χ.period × AddCircle χ.period) :
+    χ.circleGeneratingFunction x = -‖χ.periodic.lift x.2 - χ.periodic.lift x.1‖ :=
+  (rfl)
+
 @[simp]
 theorem circleGeneratingFunction_coe (s t : ℝ) :
     χ.circleGeneratingFunction ((s : AddCircle χ.period), (t : AddCircle χ.period)) =
       χ.generatingFunction s t := by
-  simp [circleGeneratingFunction, generatingFunction_def]
+  simp [circleGeneratingFunction_def, generatingFunction_def]
 
 /-- The generating function on the circle is differentiable off the diagonal. -/
 theorem mdifferentiableAt_circleGeneratingFunction
@@ -169,11 +161,7 @@ theorem mvfderiv_circleGeneratingFunction_left {s t : ℝ} (h : χ t ≠ χ s) :
       ((↑) : ℝ → AddCircle χ.period)) ⟪deriv χ s, χ.chordDir s t⟫ s :=
     (χ.hasDerivAt_generatingFunction_left h).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun s' ↦ χ.circleGeneratingFunction_coe s' t)
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [mvfderiv_apply_eq_mfderiv_apply, ← AddCircle.mfderiv_comp_coe,
-    hd.hasFDerivAt.hasMFDerivAt.mfderiv]
-  -- The tangent lines of `ℝ` and of the circle are `ℝ` by definition, so both sides are `v • c`.
-  rfl
+  exact AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt hd
 
 /-- The differential of `S` in its second argument at `([s], [t])`, read in the charts of the
 circle, is `-⟪χ'(t), u⟫` for the unit vector `u` along the chord from `χ(s)` to `χ(t)`. -/
@@ -185,11 +173,7 @@ theorem mvfderiv_circleGeneratingFunction_right {s t : ℝ} (h : χ t ≠ χ s) 
       ((↑) : ℝ → AddCircle χ.period)) (-⟪deriv χ t, χ.chordDir s t⟫) t :=
     (χ.hasDerivAt_generatingFunction_right h).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun t' ↦ χ.circleGeneratingFunction_coe s t')
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [mvfderiv_apply_eq_mfderiv_apply, ← AddCircle.mfderiv_comp_coe,
-    hd.hasFDerivAt.hasMFDerivAt.mfderiv]
-  -- The tangent lines of `ℝ` and of the circle are `ℝ` by definition, so both sides are `v • c`.
-  rfl
+  exact AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt hd
 
 /-! ### Collision states as covectors -/
 
@@ -206,27 +190,22 @@ theorem proj_stateCovector (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
     (χ.stateCovector x).proj = x.1 :=
   (rfl)
 
-/-- The covector of a collision state takes the value `v` on the unit tangent vector. -/
-theorem stateCovector_snd_apply_one (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
-    (χ.stateCovector x).2 (1 : ℝ) = x.2 :=
-  -- The fibre `TangentSpace 𝓘(ℝ) [s] →L[ℝ] ℝ` is `ℝ →L[ℝ] ℝ` by definition; the value is `1 • v`.
-  one_smul ℝ (x.2 : ℝ)
+/-- The covector `v ds` of a collision state `([s], v)` takes the value `u * v` on the tangent
+vector `u`. -/
+@[simp]
+theorem stateCovector_snd_apply (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) (u : ℝ) :
+    (χ.stateCovector x).2 u = u * x.2 :=
+  -- The fibre `TangentSpace 𝓘(ℝ) [s] →L[ℝ] ℝ` is `ℝ →L[ℝ] ℝ` by definition; the value is `u • v`.
+  (rfl)
 
 theorem stateCovector_injective : Injective χ.stateCovector := fun x y h ↦ by
   have h₁ : x.1 = y.1 := congrArg TotalSpace.proj h
   have h₂ : (x.2 : ℝ) = y.2 := by
-    rw [← χ.stateCovector_snd_apply_one x, ← χ.stateCovector_snd_apply_one y, h]
+    rw [← one_mul (x.2 : ℝ), ← one_mul (y.2 : ℝ), ← χ.stateCovector_snd_apply x,
+      ← χ.stateCovector_snd_apply y, h]
   exact Prod.ext h₁ (Subtype.ext h₂)
 
 /-! ### The billiard map is generated by the chord length -/
-
-/-- A collision state and its image under the billiard map have distinct base points. -/
-theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
-    (χ.billiardMap x).1 ≠ x.1 := by
-  obtain ⟨θ, v⟩ := x
-  induction θ using QuotientAddGroup.induction_on with | H s => ?_
-  rw [billiardMap_coe]
-  exact fun h ↦ χ.apply_nextParam_ne (s := s) v.2 (χ.apply_eq_apply_iff.2 h)
 
 /-- Every pair of distinct points of the circle of boundary parameters is the base pair of a
 collision state and its image under the billiard map. -/
@@ -257,19 +236,17 @@ theorem generatingCorrespondence_billiardMap (x : AddCircle χ.period × Ioo (-1
     rw [CotangentBundle.generatingSource_snd]
     simp only
     rw [χ.mvfderiv_circleGeneratingFunction_left hne, χ.inner_deriv_chordDir_nextParam v.2]
-    -- Both sides are the value on `u` of the covector `v ds`, read in the same chart.
+    refine Eq.trans ?_ (χ.stateCovector_snd_apply _ u).symm
+    -- The tangent line is `ℝ` by definition, and `(1.smulRight v) u = u • v`.
     rfl
   · -- The second covector is `-∂_t S(s, t) = w`.
     rw [CotangentBundle.generatingTarget_snd]
     simp only
     rw [χ.mvfderiv_circleGeneratingFunction_right hne, χ.chordDir_nextParam v.2]
-    simp only [stateCovector, nextTangential_def, real_inner_comm]
-    -- Both sides are the value on `u` of the covector `w dt`, the tangent line being `ℝ` by
-    -- definition.
-    have hneg (c : ℝ) : -(1 : ℝ →L[ℝ] ℝ).smulRight (-c) = (1 : ℝ →L[ℝ] ℝ).smulRight c := by
-      ext
-      simp
-    exact congrArg (fun f : ℝ →L[ℝ] ℝ ↦ f u) (hneg _)
+    refine Eq.trans ?_ (χ.stateCovector_snd_apply _ u).symm
+    simp only [nextTangential_def, real_inner_comm]
+    -- The tangent line is `ℝ` by definition, and `(1.smulRight w) u = u • w`.
+    exact congrArg (fun f : ℝ →L[ℝ] ℝ ↦ f u) ((neg_smulRight_neg_eq_smulRight_iff _ _).2 rfl)
 
 /-! ### Periodic trajectories and critical inscribed polygons -/
 
@@ -278,7 +255,7 @@ the inscribed polygon with vertices `χ(q_i)`. -/
 theorem cyclicAction_circleGeneratingFunction {N : ℕ} [NeZero N] (q : ZMod N → AddCircle χ.period) :
     cyclicAction (fun _ ↦ χ.circleGeneratingFunction) q =
       -inscribedPerimeter χ.periodic.lift q := by
-  simp [cyclicAction_apply, inscribedPerimeter_def, circleGeneratingFunction]
+  simp [cyclicAction_apply, inscribedPerimeter_def, circleGeneratingFunction_def]
 
 /-- **Periodic billiard trajectories are critical inscribed polygons.** For `N ≥ 1`, taking base
 points is a bijection from the marked `N`-periodic billiard trajectories, the sequences of collision
@@ -353,17 +330,13 @@ theorem mvfderiv_cyclicAction_circleGeneratingFunction_eq_zero_iff {N : ℕ} [Ne
   rw [CotangentBundle.generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq,
     χ.mvfderiv_circleGeneratingFunction_right hk, χ.mvfderiv_circleGeneratingFunction_left (hs k),
     real_inner_comm (χ.chordDir _ _), real_inner_comm (χ.chordDir _ _)]
-  -- Both covectors are multiples of the unit covector; compare their values on `1`.
-  have key (a b : ℝ) :
-      -(1 : ℝ →L[ℝ] ℝ).smulRight (-a) = (1 : ℝ →L[ℝ] ℝ).smulRight b ↔ a = b := by
-    refine ⟨fun h ↦ by simpa using congrArg (fun f : ℝ →L[ℝ] ℝ ↦ f 1) h, fun h ↦ ?_⟩
-    ext
-    simp [h]
-  exact key _ _
+  -- Both covectors are multiples of the unit covector `ds`.
+  exact neg_smulRight_neg_eq_smulRight_iff _ _
 
 /-- **Periodic billiard trajectories exist.** For every `N ≥ 2` the billiard map of a strictly
-convex table has a point of period `N`, whose least period divides `N`. It is the state at a vertex
-of an inscribed `N`-gon of maximal perimeter, which is a critical inscribed polygon. -/
+convex table has a point of period `N`, whose least period divides `N`. The proof takes a vertex
+of an inscribed `N`-gon of maximal perimeter (`TauCeti.exists_billiard_periodic_reflection`), which
+is critical. -/
 theorem exists_isPeriodicPt_billiardMap {N : ℕ} (hN : 2 ≤ N) :
     ∃ x, IsPeriodicPt χ.billiardMap N x := by
   have : NeZero N := ⟨by omega⟩
