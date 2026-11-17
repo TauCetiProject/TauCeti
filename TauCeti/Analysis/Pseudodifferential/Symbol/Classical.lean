@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
@@ -90,7 +91,9 @@ and proves:
   Ellipticity does not see terms of order `m - 1`
   (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
   unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
-  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`).
+  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`). If the full symbol outside a
+  compact set repeats its values on that set, the radius is uniform in the position
+  (`TauCeti.ClassicalSymbol.IsElliptic.exists_isEllipticAbove`).
 
 ## References
 
@@ -1136,6 +1139,21 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
   exact isInvertible_and_norm_inverse_le_of_norm_sub_le
     (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
     hM (hC₁ x hx ξ h2)
+
+/-- **Elliptic symbols with coefficients constant off a compact set.** An elliptic classical
+symbol whose full symbol at every position outside a compact set `K` is its full symbol at some
+position of `K` is elliptic above a radius independent of the position. -/
+theorem IsElliptic.exists_isEllipticAbove {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (hKa : ∀ x ∉ K, ∃ y ∈ K, ∀ ξ, a.toSymbol.coefficient (x, ξ) = a.toSymbol.coefficient (y, ξ)) :
+    ∃ R, a.toSymbol.IsEllipticAbove R := by
+  obtain ⟨R, C, hRC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
+  refine ⟨R, Symbol.isEllipticAbove_iff.2 fun _ _ ↦ ⟨C, fun x _ ξ hξ ↦ ?_⟩⟩
+  by_cases hx : x ∈ K
+  · exact hRC x hx ξ hξ
+  · obtain ⟨y, hy, hxy⟩ := hKa x hx
+    rw [hxy ξ]
+    exact hRC y hy ξ hξ
 
 /-- **Ellipticity from invertibility at large frequencies.** If at every position `x` the full
 symbol `a(x, ξ)` is invertible at all frequencies of norm at least some `R`, with

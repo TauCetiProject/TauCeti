@@ -3,6 +3,8 @@
 import json
 import pathlib
 import subprocess
+import os
+import tempfile
 import unittest
 
 import yaml
@@ -17,6 +19,42 @@ def workflow(name):
 
 
 class ControlBatches(unittest.TestCase):
+    def test_shared_mode_reuses_the_retained_loop_and_keeps_the_canary_separate(self):
+        status = workflow('pr-status.yml')
+        self.assertIn({'cron': '*/5 * * * *'}, status.get('on', status.get(True))['schedule'])
+        self.assertIn("vars.PR_STATUS_SHARED_EVIDENCE == 'true'", status['jobs']['reconcile']['if'])
+        labels = workflow('pr-labels.yml')
+        dispatch = labels.get('on', labels.get(True))['workflow_dispatch']['inputs']
+        self.assertFalse(dispatch['shared_evidence']['default'])
+        self.assertIn("vars.PR_STATUS_SHARED_EVIDENCE != 'true'", labels['jobs']['sweep']['if'])
+        wake = labels['jobs']['wake-shared-backstop']
+        self.assertIn("vars.PR_STATUS_SHARED_EVIDENCE == 'true'", wake['if'])
+        self.assertEqual(wake['steps'][0]['run'], 'gh workflow run pr-status.yml --ref main')
+        self.assertEqual(wake['steps'][0]['env']['GH_TOKEN'], '${{ github.token }}')
+        self.assertNotIn('APP_PRIVATE_KEY', str(wake))
+
+    def test_status_workflows_distinguish_deferral_from_failure(self):
+        steps = workflow('pr-status.yml')['jobs']['reconcile']['steps']
+        batch = next(s for s in steps if s.get('name') == 'Reconcile PR status labels')
+        label_steps = workflow('pr-labels.yml')['jobs']
+        single = next(s for s in label_steps['label-resolved']['steps'] if s.get('name') == 'Reconcile status label')
+        sweep = next(s for s in label_steps['sweep']['steps'] if s.get('name') == 'Reconcile open PRs')
+        with tempfile.TemporaryDirectory() as directory:
+            stub = pathlib.Path(directory) / 'python3'
+            stub.write_text('#!/bin/sh\nexit "$FAKE_RESULT"\n')
+            stub.chmod(0o755)
+            for step in [batch, single, sweep]:
+                for result in [0, 75, 1]:
+                    with self.subTest(step=step['name'], result=result):
+                        env = dict(os.environ, PATH=directory+os.pathsep+os.environ['PATH'],
+                                   RUNNER_TEMP=directory, GITHUB_STEP_SUMMARY=directory+'/summary',
+                                   SINCE='2026-11-16T00:00:00Z', PR='', FULL_PASS='1', FAKE_RESULT=str(result))
+                        out = subprocess.run(['bash', '-e', '-c', step['run']], env=env,
+                                             capture_output=True, text=True)
+                        self.assertEqual(out.returncode, 1 if result == 1 else 0, out.stderr)
+                        if result == 75:
+                            self.assertIn('deferred', out.stdout)
+
     def test_label_batch_filters_before_one_runner_free_debounce_group(self):
         doc = workflow(LABELS)
         self.assertEqual(len(doc["jobs"]), 1)
@@ -67,7 +105,8 @@ class ControlBatches(unittest.TestCase):
         self.assertLess(int(step["env"]["BUDGET_SECONDS"]), job["timeout-minutes"] * 60)
         self.assertIn("gh api graphql --paginate", step["run"])
         self.assertIn("labels.py reconcile \"$pr\"", step["run"])
-        self.assertIn("exec python3 scripts/pr_status/batch.py", step["run"])
+        self.assertIn("python3 scripts/pr_status/batch.py", step["run"])
+        self.assertIn('"$result" -eq 75', step["run"])
         self.assertIn("--all-open", step["run"])
         self.assertIn("--state-out", step["run"])
         self.assertEqual(step["env"]["FULL_PASS"], "${{ github.event_name == 'workflow_dispatch' && '1' || '' }}")

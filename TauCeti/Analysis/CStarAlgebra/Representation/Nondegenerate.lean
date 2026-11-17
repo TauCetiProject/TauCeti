@@ -32,6 +32,8 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`:
+  a representation of a unital C⋆-algebra is nondegenerate exactly when it sends `1` to `1`.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
@@ -89,6 +91,12 @@ nondegenerate. -/
 theorem isNondegenerate_of_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ 1 = 1) : ρ.IsNondegenerate := fun ξ =>
   subset_closure <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨1, ξ, by simp [hρ]⟩
+
+/-- A nondegenerate representation of a unital C⋆-algebra sends the identity to the identity
+operator. -/
+theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
+  hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
 
 /-- The Banach-module extension, before recording preservation of star. -/
 private def extensionAlgHom (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →ₐ[ℂ] (H →L[ℂ] H) := by
