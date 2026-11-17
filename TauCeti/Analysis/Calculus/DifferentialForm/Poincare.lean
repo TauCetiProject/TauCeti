@@ -641,6 +641,7 @@ private theorem integral_add_poincareHomotopy_extDerivWithin_eq (hs : StarConvex
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   have key := ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft
     (fderivWithin ℝ ω s (lineMap x₀ x t)) y
+  rw [ContinuousAlternatingMap.curryLeftFlipL_def] at key
   simp only [extDerivWithin, L]
   rw [← Nat.cast_smul_eq_nsmul ℝ]
   linear_combination (norm := module) t ^ (n + 1) • key

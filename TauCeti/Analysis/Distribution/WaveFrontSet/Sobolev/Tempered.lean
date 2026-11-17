@@ -12,6 +12,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.MeasureTheory.Measure.Comap
 
 /-!
 # Local Sobolev regularity on Bessel-potential spaces
@@ -89,9 +90,6 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
   let Y := tsupport (ψ : E → ℂ)
   have hY : MeasurableSet Y := (isClosed_tsupport _).measurableSet
   have : CompactSpace Y := isCompact_iff_compactSpace.1 hψ
-  have : IsFiniteMeasure (volume.comap ((↑) : Y → E)) := ⟨by
-    rw [comap_subtype_coe_apply hY, image_univ, Subtype.range_coe]
-    exact hψ.measure_lt_top⟩
   -- The modulated cutoffs `ψ η • φ e_η`, and `φ 𝓕ψ` as their integral.
   let f : Y → 𝓓(Ω, ℂ) := fun η ↦
     ψ η • bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom (η : E)) φ

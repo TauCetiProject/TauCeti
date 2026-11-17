@@ -442,7 +442,8 @@ theorem extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin (hs 
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   have key := congrArg (ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ))
     (ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft (A t) (0, 1))
-  rw [map_add, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
+  rw [ContinuousAlternatingMap.curryLeftFlipL_def, map_add,
+    ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap] at key

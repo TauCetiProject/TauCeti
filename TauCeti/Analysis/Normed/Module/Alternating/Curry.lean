@@ -107,6 +107,13 @@ a fixed vector `x`, as a continuous linear map depending linearly on `x`: the fl
 noncomputable def curryLeftFlipL : E →L[𝕜] (E [⋀^Fin (n + 1)]→L[𝕜] F) →L[𝕜] E [⋀^Fin n]→L[𝕜] F :=
   (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.flip
 
+/-- `curryLeftFlipL` unfolded, for rewriting results stated with the bundled flip of
+`curryLeftLI`. -/
+theorem curryLeftFlipL_def :
+    curryLeftFlipL (𝕜 := 𝕜) (E := E) (F := F) (n := n) =
+      (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.flip :=
+  (rfl)
+
 @[simp]
 theorem curryLeftFlipL_apply_apply (x : E) (f : E [⋀^Fin (n + 1)]→L[𝕜] F) :
     curryLeftFlipL x f = f.curryLeft x :=
