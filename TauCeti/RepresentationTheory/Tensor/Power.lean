@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.LinearAlgebra.PiTensorProduct.Fin
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorPower.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
@@ -96,27 +97,37 @@ theorem toLinearEquiv_tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ
     (ρ.tensorPowerAddEquiv d e).toLinearEquiv = TensorPower.mulEquiv :=
   (rfl)
 
-/-- Reindexing the exponent along `h : d = e` gives an equivalence of tensor-power
-representations via `TensorPower.cast`. -/
-noncomputable def tensorPowerCastEquiv (ρ : Representation R G M) {d e : ℕ} (h : d = e) :
-    (ρ.tensorPower d).Equiv (ρ.tensorPower e) :=
-  .mk (TensorPower.cast R M h) fun g => by
-    subst h
-    ext x
-    simp
-
-@[simp]
-theorem toLinearEquiv_tensorPowerCastEquiv (ρ : Representation R G M) {d e : ℕ} (h : d = e) :
-    (ρ.tensorPowerCastEquiv h).toLinearEquiv = TensorPower.cast R M h :=
-  (rfl)
-
 /-- Splitting off the first factor identifies the `(n + 1)`-fold tensor-power representation with
 `ρ.tprod (ρ.tensorPower n)`. -/
 noncomputable def tensorPowerSuccEquiv (ρ : Representation R G M) (n : ℕ) :
     (ρ.tensorPower (n + 1)).Equiv (ρ.tprod (ρ.tensorPower n)) :=
-  (ρ.tensorPowerCastEquiv (Nat.add_comm n 1)).trans
-    ((ρ.tensorPowerAddEquiv 1 n).symm.trans
-      (ρ.oneEquivTensorPower.symm.tprod (Equiv.refl (ρ.tensorPower n))))
+  .mk (PiTensorProduct.finConsEquiv R fun _ : Fin (n + 1) => M).symm fun g => by
+    refine PiTensorProduct.ext <| MultilinearMap.ext fun f => ?_
+    simp [tensorPower_apply, tprod_apply, Fin.tail_def]
+
+/-- The underlying linear equivalence of `tensorPowerSuccEquiv` is the inverse of
+`PiTensorProduct.finConsEquiv`. -/
+@[simp]
+theorem toLinearEquiv_tensorPowerSuccEquiv (ρ : Representation R G M) (n : ℕ) :
+    (ρ.tensorPowerSuccEquiv n).toLinearEquiv =
+      (PiTensorProduct.finConsEquiv R fun _ : Fin (n + 1) => M).symm :=
+  (rfl)
+
+/-- Splitting off the first factor of a pure tensor via `tensorPowerSuccEquiv`. -/
+@[simp]
+theorem tensorPowerSuccEquiv_tprod (ρ : Representation R G M) (n : ℕ) (f : Fin (n + 1) → M) :
+    ρ.tensorPowerSuccEquiv n (PiTensorProduct.tprod R f) =
+      f 0 ⊗ₜ[R] PiTensorProduct.tprod R (Fin.tail f) := by
+  rw [tensorPowerSuccEquiv, Equiv.mk_apply, PiTensorProduct.finConsEquiv_symm_tprod]
+
+/-- Prepending a factor to a pure tensor via `(tensorPowerSuccEquiv n).symm`. -/
+@[simp]
+theorem tensorPowerSuccEquiv_symm_tmul (ρ : Representation R G M) (n : ℕ)
+    (v : M) (f : Fin n → M) :
+    (ρ.tensorPowerSuccEquiv n).symm (v ⊗ₜ[R] PiTensorProduct.tprod R f) =
+      PiTensorProduct.tprod R (Fin.cons v f) := by
+  rw [← Equiv.coe_symm, toLinearEquiv_tensorPowerSuccEquiv, LinearEquiv.symm_symm,
+    PiTensorProduct.finConsEquiv_tmul]
 
 end CommSemiring
 
