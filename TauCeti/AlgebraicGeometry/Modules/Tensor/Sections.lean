@@ -37,6 +37,13 @@ locus of a section of an invertible sheaf.
   when `e` is a basis of `L` over `U`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_smul_tensorPowSection`: if `e` is a basis of `L`
   over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`.
+* `AlgebraicGeometry.Scheme.Modules.leftUnitor_hom_app_tmulRight`,
+  `AlgebraicGeometry.Scheme.Modules.associator_hom_app_tmulRight`,
+  `AlgebraicGeometry.Scheme.Modules.eqToHom_app_tensorPowSection`,
+  `AlgebraicGeometry.Scheme.Modules.tensorPowAddIso_hom_app_tensorPowSection`, and
+  `AlgebraicGeometry.Scheme.Modules.associator_whiskerLeft_tensorPowAddIso_app_tmulRight`:
+  compatibility of `tmulRight` and `tensorPowSection` with the monoidal structure and the
+  exponent-addition isomorphism `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ`.
 -/
 
 public section
@@ -104,6 +111,14 @@ theorem whiskerLeft_app_tmulRight {L' : X.Modules} (g : L ⟶ L') {U : X.Opens} 
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
   exact h.symm
 
+/-- The left unitor `𝒪_X ⊗ L ≅ L` sends `r ⊗ e` to `r • e`. -/
+theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (r : Γ(X, U)) :
+    (λ_ L).hom.app U (tmulRight (𝟙_ X.Modules) e r) = r • e := by
+  have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ e))
+    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) L)
+  simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  exact h.symm
+
 /-- The right unitor `F ⊗ 𝒪_X ≅ F` sends `t ⊗ r` to `r • t`. -/
 theorem rightUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)) :
     (ρ_ F).hom.app U (tmulRight F (L := 𝟙_ X.Modules) r t) = r • t := by
@@ -111,6 +126,16 @@ theorem rightUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)
     (Functor.LaxMonoidal.right_unitality (sectionsFunctor U) F)
   simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
   exact h.symm
+
+/-- The associator `(F ⊗ G) ⊗ H ≅ F ⊗ (G ⊗ H)` sends `(f ⊗ g) ⊗ h` to `f ⊗ (g ⊗ h)`. -/
+theorem associator_hom_app_tmulRight {G H : X.Modules} {U : X.Opens}
+    (h : Γ(H, U)) (g : Γ(G, U)) (f : Γ(F, U)) :
+    (α_ F G H).hom.app U (tmulRight (F ⊗ G) h (tmulRight F g f)) =
+      tmulRight F (tmulRight G h g) f := by
+  have hassoc := congrArg (fun φ ↦ φ.hom ((f ⊗ₜ g) ⊗ₜ h))
+    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F G H)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hassoc
+  exact hassoc
 
 /-- The inverse right unitor `F ≅ F ⊗ 𝒪_X` sends `t` to `t ⊗ 1`. -/
 theorem rightUnitor_inv_app_eq_tmulRight {U : X.Opens} (t : Γ(F, U)) :
@@ -293,6 +318,42 @@ theorem bijective_tmulRight_tensorPowSection {U : X.Opens} (e : Γ(L, U))
       Function.Bijective fun r : Γ(X, W) ↦ r • L.presheaf.map i.op e) (n : ℕ) :
     Function.Bijective (tmulRight F (tensorPowSection e n)) :=
   bijective_tmulRight F _ (bijective_smul_tensorPowSection e he n)
+
+/-- Transporting `tensorPowSection e m` along `eqToHom` for an equality `m = n` gives
+`tensorPowSection e n`. -/
+@[simp]
+theorem eqToHom_app_tensorPowSection {U : X.Opens} (e : Γ(L, U)) {m n : ℕ} (h : m = n) :
+    (eqToHom (congrArg (tensorPow L) h)).app U (tensorPowSection e m) =
+      tensorPowSection e n := by
+  subst h
+  simp only [eqToHom_refl, Hom.id_app]
+  rfl
+
+/-- The block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ` sends `eᵐ ⊗ eⁿ` to `eⁿ⁺ᵐ`. -/
+theorem tensorPowAddIso_hom_app_tensorPowSection {U : X.Opens} (e : Γ(L, U)) (m n : ℕ) :
+    (tensorPowAddIso L m n).hom.app U
+        (tmulRight (tensorPow L m) (tensorPowSection e n) (tensorPowSection e m)) =
+      tensorPowSection e (n + m) := by
+  induction m with
+  | zero =>
+    rw [tensorPowAddIso_zero, tensorPowSection_zero]
+    exact (leftUnitor_hom_app_tmulRight (tensorPowSection e n) (1 : Γ(X, U))).trans (one_smul _ _)
+  | succ m ih =>
+    -- `n + (m + 1)` is definitionally `n + m + 1`, so `tensorPowSection_succ` matches directly.
+    rw [tensorPowAddIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply, tensorPowSection_succ,
+      associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
+    rfl
+
+/-- Associating `(F ⊗ Lᵐ) ⊗ Lⁿ` and collapsing `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ` sends `(t ⊗ eᵐ) ⊗ eⁿ` to
+`t ⊗ eⁿ⁺ᵐ`. -/
+theorem associator_whiskerLeft_tensorPowAddIso_app_tmulRight {U : X.Opens}
+    (e : Γ(L, U)) (m n : ℕ) (t : Γ(F, U)) :
+    ((α_ F (tensorPow L m) (tensorPow L n)).hom ≫ F ◁ (tensorPowAddIso L m n).hom).app U
+        (tmulRight (F ⊗ tensorPow L m) (tensorPowSection e n)
+          (tmulRight F (tensorPowSection e m) t)) =
+      tmulRight F (tensorPowSection e (n + m)) t := by
+  rw [Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
+    whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tensorPowSection]
 
 end
 

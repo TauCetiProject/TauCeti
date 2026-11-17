@@ -29,9 +29,13 @@ sheafified tensor product follows the Cartier divisor construction in
   morphism from the sectionwise tensor product of `𝒪(m)` and `𝒪(n)` to `𝒪(m + n)`.
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso`: the isomorphism
   `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` when the degree-one standard opens cover `Proj A`, with
-  `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors.
+  `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors,
+  and `AlgebraicGeometry.Proj.twistingSheaf.tensorObjIso` for the monoidal tensor product in
+  `(Proj 𝒜).Modules`.
 * `AlgebraicGeometry.Proj.lineBundleClass_twistingSheaf_eq_zpow`: `[𝒪(n)] = [𝒪(1)] ^ n` in the
   group of line-bundle classes.
+* `TauCeti.SymmetricAlgebra.twistingSheafTensorObjIso`: specialization of `tensorObjIso` to
+  `Proj (Sym M)`.
 
 ## References
 
@@ -204,7 +208,6 @@ private theorem tensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `U`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
     (t : Γ(twistingSheaf 𝒜 n, U)) :
     Scheme.Modules.Hom.app
@@ -244,6 +247,26 @@ theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 
       ((adj.unit.app P).app (op U) (s ⊗ₜ t)) = mul 𝒜 U m n s t at hU
   exact hU
 
+open MonoidalCategory in
+/-- **Monoidal tensor product of twisting sheaves.** When the standard opens of degree-one elements
+cover `Proj A`, the monoidal tensor product `𝒪(m) ⊗ 𝒪(n)` in `(Proj 𝒜).Modules` is isomorphic to
+`𝒪(m + n)`. -/
+def tensorObjIso :
+    twistingSheaf 𝒜 m ⊗ twistingSheaf 𝒜 n ≅ twistingSheaf 𝒜 (m + n) :=
+  (twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n) ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).symm ≪≫
+    tensorProductIso f hf hcover m n
+
+open MonoidalCategory in
+/-- The forward map of `tensorObjIso` agrees with `tensorProductIso` through the comparison between
+the monoidal tensor product and `TauCeti.SheafOfModules.tensorProduct`. -/
+lemma tensorObjIso_hom :
+    (tensorObjIso f hf hcover m n).hom =
+      ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n)).hom ≫
+        (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).inv ≫
+        (tensorProductIso f hf hcover m n).hom :=
+  (rfl)
+
 end Cover
 
 end twistingSheaf
@@ -271,3 +294,20 @@ theorem lineBundleClass_twistingSheaf_eq_zpow (n : ℤ) :
   rwa [← ofAdd_zsmul, zsmul_one] at this
 
 end AlgebraicGeometry.Proj
+
+namespace TauCeti.SymmetricAlgebra
+
+open MonoidalCategory _root_.AlgebraicGeometry
+
+variable (R M : Type u) [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- Multiplication identifies `𝒪(m) ⊗ 𝒪(n)` with `𝒪(m + n)` in the monoidal category of modules on
+`Proj (Sym M)`. -/
+def twistingSheafTensorObjIso (m n : ℤ) :
+    Proj.twistingSheaf (homogeneousSubmodule R M) m ⊗
+        Proj.twistingSheaf (homogeneousSubmodule R M) n ≅
+      Proj.twistingSheaf (homogeneousSubmodule R M) (m + n) :=
+  Proj.twistingSheaf.tensorObjIso (_root_.SymmetricAlgebra.ι R M)
+    (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) m n
+
+end TauCeti.SymmetricAlgebra
