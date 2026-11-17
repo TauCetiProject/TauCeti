@@ -239,11 +239,12 @@ theorem complexGenerator_sq_mul (D : ℤ) (f : ℕ) :
     complexGenerator ((f : ℤ) ^ 2 * D) =
       (((((f : ℤ) ^ 2 - f) * D) / 2 : ℤ) : ℂ) + (f : ℂ) * complexGenerator D := by
   obtain ⟨q, hq⟩ : (2 : ℤ) ∣ ((f : ℤ) ^ 2 - f) * D := by
-    rw [show (f : ℤ) ^ 2 - f = f * (f - 1) by ring]
+    have hfac : (f : ℤ) ^ 2 - f = f * (f - 1) := by ring
+    rw [hfac]
     exact dvd_mul_of_dvd_left (even_iff_two_dvd.mp (Int.even_mul_pred_self f)) D
   have hsqrt : √(-((((f : ℤ) ^ 2 * D : ℤ) : ℝ))) = (f : ℝ) * √(-(D : ℝ)) := by
-    rw [show -((((f : ℤ) ^ 2 * D : ℤ) : ℝ)) = (f : ℝ) ^ 2 * -(D : ℝ) by push_cast; ring,
-      Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (Nat.cast_nonneg f)]
+    have harg : -((((f : ℤ) ^ 2 * D : ℤ) : ℝ)) = (f : ℝ) ^ 2 * -(D : ℝ) := by push_cast; ring
+    rw [harg, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (Nat.cast_nonneg f)]
   rw [hq, Int.mul_ediv_cancel_left _ two_ne_zero, complexGenerator_def, complexGenerator_def, hsqrt]
   have hqC : (((f : ℤ) ^ 2 - f) * D : ℂ) = 2 * (q : ℂ) := by exact_mod_cast hq
   push_cast at hqC ⊢; linear_combination hqC / 2

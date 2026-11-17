@@ -659,7 +659,8 @@ section Examples
 /-- At discriminant `-4`, `cmPoint (-4)` is `i` (`Complex.I`). -/
 theorem coe_cmPoint_neg_four : (cmPoint (-4) (by decide) : ℂ) = I := by
   rw [coe_cmPoint_of_emod_four_eq_zero (by decide) (by decide)]
-  rw [show -((-4 : ℤ) : ℝ) = (2 : ℝ) ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+  have h4 : -((-4 : ℤ) : ℝ) = (2 : ℝ) ^ 2 := by norm_num
+  rw [h4, Real.sqrt_sq (by norm_num)]
   push_cast; ring
 
 /-- At discriminant `-3`, `cmPoint (-3)` is `(3 + i √3) / 2`. -/

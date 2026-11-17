@@ -46,6 +46,8 @@ the lattice of `γ τ` is `(c τ + d)⁻¹ (ℤ τ + ℤ)`.
 * `PeriodPair.weierstrassCurve_j_eq_iff`,
   `PeriodPair.exists_variableChange_smul_weierstrassCurve_eq_iff`: `E_Λ` and `E_{Λ'}` have the same
   `j`-invariant, or are related by a change of variables, exactly when `Λ'` is homothetic to `Λ`.
+* `PeriodPair.leftOrder_lattice_eq_of_weierstrassCurve_j_eq`: period pairs with the same
+  Weierstrass `j`-invariant have the same complex scalar multiplier order `leftOrder`.
 * `WeierstrassCurve.exists_variableChange_smul_weierstrassCurve_periodPair_eq`: every elliptic curve
   over `ℂ` is a change of variables of the curve of some `ℤ τ + ℤ`.
 * `WeierstrassCurve.exists_periodPair_nonempty_addEquiv`: every elliptic curve `E` over `ℂ` has
@@ -108,6 +110,12 @@ theorem exists_variableChange_smul_weierstrassCurve_eq_iff :
   rw [← weierstrassCurve_j_eq_iff]
   refine ⟨fun ⟨C, hC⟩ ↦ ?_, exists_variableChange_of_j_eq _ _⟩
   simp only [← hC, variableChange_j]
+
+/-- Period pairs with the same Weierstrass `j`-invariant have the same complex multiplier order. -/
+theorem leftOrder_lattice_eq_of_weierstrassCurve_j_eq
+    (h : L.weierstrassCurve.j = L'.weierstrassCurve.j) :
+    L.lattice.leftOrder = L'.lattice.leftOrder :=
+  (weierstrassCurve_j_eq_iff.mp h).leftOrder_lattice_eq
 
 /-- **A lattice with `g₃ = 0` has complex multiplication by `i`**: it is preserved by every fourth
 root of unity. Indeed `j = 1728`, so the lattice is homothetic to `ℤ i + ℤ`. -/

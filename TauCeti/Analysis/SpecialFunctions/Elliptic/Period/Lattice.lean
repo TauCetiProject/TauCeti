@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Topology
-public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import Mathlib.AlgebraicGeometry.EllipticCurve.IsomOfJ
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -54,8 +53,7 @@ is isomorphic as a topological group to `ℂ / E.periodLattice`.
   `E_Λ` under a change of variables with `u = 1`.
 * `WeierstrassCurve.variableChange_periodLattice`: rescaling naturality of the period
   lattice.
-* `PeriodPair.leftOrder_lattice_eq_of_weierstrassCurve_j_eq`,
-  `WeierstrassCurve.leftOrder_variableChange_periodLattice`,
+* `WeierstrassCurve.leftOrder_variableChange_periodLattice`,
   `WeierstrassCurve.leftOrder_periodLattice_eq_of_j_eq`: coordinate-change and `j`-invariance of
   the complex scalar multiplier order `leftOrder` of a period lattice.
 * `WeierstrassCurve.nonempty_continuousAddEquiv_periodLattice`: `E(ℂ) ≃ₜ+ ℂ / E.periodLattice`.
@@ -161,13 +159,3 @@ theorem leftOrder_periodLattice_eq_of_j_eq {E E' : WeierstrassCurve ℂ} [E.IsEl
   exact (leftOrder_variableChange_periodLattice E C).symm
 
 end WeierstrassCurve
-
-namespace PeriodPair
-
-/-- Period pairs with the same Weierstrass `j`-invariant have the same complex multiplier order. -/
-theorem leftOrder_lattice_eq_of_weierstrassCurve_j_eq {L L' : PeriodPair}
-    (h : L.weierstrassCurve.j = L'.weierstrassCurve.j) :
-    L.lattice.leftOrder = L'.lattice.leftOrder := by
-  simpa using WeierstrassCurve.leftOrder_periodLattice_eq_of_j_eq h
-
-end PeriodPair

@@ -212,7 +212,8 @@ variable {n : ℕ} [NeZero n]
 theorem complexEmbedding_idealGenerator_posDef (f : posDef n) (ha : ((-(n : ℤ) : ℤ) : ℚ) ≤ 0) :
     complexEmbedding ha (f.1.idealGenerator (-n)) = (f.1.a : ℂ) * (root f : ℂ) := by
   have hfa : (f.1.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
-  rw [complexEmbedding_idealGenerator, coe_root, show √(-((-(n : ℤ) : ℤ) : ℝ)) = √(n : ℝ) by simp]
+  rw [complexEmbedding_idealGenerator, coe_root]
+  simp only [Int.cast_neg, Int.cast_natCast, neg_neg]
   field_simp
 
 /-- For `f ∈ posDef n`, `f.a · root f` belongs to `f.1.complexOrderIdeal (-n)`. -/
@@ -319,23 +320,24 @@ theorem leftOrder_complexOrderIdeal_eq_complexOrder_discrim_primPart (f : Binary
         f.primPart.discrim_emod_four_eq_zero_or_one := by
   obtain ⟨n, hn0, rfl⟩ : ∃ n : ℕ, 0 < n ∧ D = -(n : ℤ) := ⟨(-D).toNat, by omega, by omega⟩
   have : NeZero n := ⟨hn0.ne'⟩
+  have hpos_case {g : BinaryQuadraticForm ℤ} (hg : g.discrim = -n) (hga : 0 < g.a) :
+      (g.complexOrderIdeal (-n) hD0.le hg).leftOrder =
+        QuadraticOrder.complexOrder g.primPart.discrim
+          ((discrim_primPart_lt_zero_iff g).mpr (hg ▸ hD0)).le
+          g.primPart.discrim_emod_four_eq_zero_or_one :=
+    let gp : posDef n := ⟨g, mem_posDef.mpr ⟨hg, hga⟩⟩
+    (leftOrder_complexOrderIdeal_posDef gp).trans
+      (leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart gp)
   rcases lt_trichotomy f.a 0 with hneg | ha0 | hpos
   · have hfg : (-f).reflected.discrim = -n := by
       rw [discrim_reflected, ← neg_one_smul ℤ f, discrim_smul']; simpa using hf
-    let fp : posDef n := ⟨(-f).reflected, mem_posDef.mpr ⟨hfg, by simpa using neg_pos.mpr hneg⟩⟩
     rw [← complexOrderIdeal_reflected_neg f (-n) hD0.le hf hfg,
-      show (-f).reflected.complexOrderIdeal (-n) hD0.le hfg =
-        fp.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-          (mem_posDef.mp fp.2).1 from rfl,
-      leftOrder_complexOrderIdeal_posDef fp,
-      leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart fp]
+      hpos_case hfg (by simpa using neg_pos.mpr hneg)]
     refine QuadraticOrder.complexOrder_eq_iff.mpr ?_
-    simp only [fp, primPart_reflected, primPart_neg, discrim_reflected]
+    simp only [primPart_reflected, primPart_neg, discrim_reflected]
     rw [← neg_one_smul ℤ f.primPart, discrim_smul']; simp
   · exfalso; rw [discrim_def, discrim, ha0] at hf; nlinarith [sq_nonneg f.b]
-  · let fp : posDef n := ⟨f, mem_posDef.mpr ⟨hf, hpos⟩⟩
-    exact (leftOrder_complexOrderIdeal_posDef fp).trans
-      (leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart fp)
+  · exact hpos_case hf hpos
 
 /-- For any integral form `f` of negative discriminant `D < 0` (regardless of the sign of `f.a`),
 the left order of `f.complexOrderIdeal D` equals `complexOrder D` iff `f` is primitive. -/
@@ -349,8 +351,8 @@ theorem leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive (f : BinaryQ
   refine ⟨fun hd ↦ ?_, fun hp ↦ by rw [hp.primPart_eq, hf]⟩
   have hsq := f.discrim_eq_content_sq_mul
   rw [hf, hd] at hsq
-  have hc2z : (f.content : ℤ) ^ 2 = 1 := mul_right_cancel₀ hD0.ne
-    (show (f.content : ℤ) ^ 2 * D = 1 * D by linear_combination -hsq)
+  have hmul : (f.content : ℤ) ^ 2 * D = 1 * D := by linear_combination -hsq
+  have hc2z : (f.content : ℤ) ^ 2 = 1 := mul_right_cancel₀ hD0.ne hmul
   have : f.content ^ 2 = 1 := by exact_mod_cast hc2z
   exact f.isPrimitive_iff.mpr (by nlinarith)
 

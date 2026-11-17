@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
+public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
@@ -55,7 +56,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `PeriodPair.latticeSMulEquiv`: multiplication by `c` from the lattice of `L` to that of `c • L`.
 * `PeriodPair.Homothetic`: homothety `∃ c : ℂˣ, L'.lattice = (c • L).lattice` between period pairs.
 * `TauCeti.PeriodPairHomothetyClass`: the quotient of `PeriodPair` by homothety, with universal map
-  `TauCeti.PeriodPairHomothetyClass.lift`.
+  `TauCeti.PeriodPairHomothetyClass.lift` and multiplier order
+  `TauCeti.PeriodPairHomothetyClass.leftOrder`.
 
 ## Main results
 
@@ -99,6 +101,10 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 * `UpperHalfPlane.homothetic_periodPair_iff`: `ℤ τ + ℤ` and `ℤ τ' + ℤ` are homothetic iff `τ'` lies
   in the `SL(2, ℤ)`-orbit of `τ`.
+* `PeriodPair.leftOrder_lattice_smul`, `PeriodPair.Homothetic.leftOrder_lattice_eq`,
+  `UpperHalfPlane.leftOrder_lattice_periodPair_smul`,
+  `UpperHalfPlane.mem_leftOrder_lattice_periodPair_iff`: rescaling, homothety, and `SL(2, ℤ)`
+  invariance and generator characterization of the complex scalar multiplier order `leftOrder`.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
 * `UpperHalfPlane.lattice_I_smul_periodPair_I`, `UpperHalfPlane.lattice_ρ_smul_periodPair_ρ`: the
@@ -910,6 +916,19 @@ theorem Homothetic.of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice
 @[simp] theorem homothetic_smul_left (c : ℂˣ) (L : PeriodPair) : (c • L).Homothetic L :=
   (L.homothetic_smul_right c).symm
 
+open scoped Pointwise in
+/-- Rescaling a period pair by `c ∈ ℂˣ` does not change the left order of its lattice. -/
+@[simp]
+theorem leftOrder_lattice_smul (c : ℂˣ) (L : PeriodPair) :
+    (c • L).lattice.leftOrder = L.lattice.leftOrder := by
+  rw [lattice_smul]
+  exact L.lattice.leftOrder_smul c.isUnit.isRegular.left (by simp)
+
+/-- Homothetic period pairs have the same complex multiplier order. -/
+theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L') :
+    L.lattice.leftOrder = L'.lattice.leftOrder := by
+  obtain ⟨c, hc⟩ := homothetic_def.mp h; rw [hc, leftOrder_lattice_smul]
+
 end PeriodPair
 
 namespace UpperHalfPlane
@@ -922,6 +941,26 @@ theorem homothetic_periodPair_iff {τ τ' : ℍ} :
     lattice_periodPair_smul γ τ⟩⟩
   obtain ⟨γ, hγ, -⟩ := exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq hc
   exact ⟨γ⁻¹, by rw [← hγ, inv_smul_smul]⟩
+
+-- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
+/-- The complex multiplier order of `ℤ τ + ℤ` is invariant under the Möbius action of `SL(2, ℤ)`. -/
+theorem leftOrder_lattice_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) :
+    (γ • τ).periodPair.lattice.leftOrder = τ.periodPair.lattice.leftOrder := by
+  rw [lattice_periodPair_smul, PeriodPair.leftOrder_lattice_smul]
+
+/-- A complex number `x` preserves `ℤ τ + ℤ` under multiplication if and only if `x` and `x τ` both
+lie in `ℤ τ + ℤ`. -/
+theorem mem_leftOrder_lattice_periodPair_iff {τ : ℍ} {x : ℂ} :
+    x ∈ τ.periodPair.lattice.leftOrder ↔
+      x ∈ τ.periodPair.lattice ∧ x * (τ : ℂ) ∈ τ.periodPair.lattice := by
+  rw [Submodule.mem_leftOrder_iff]
+  refine ⟨fun h ↦ ⟨by simpa using h 1 (periodPair_ω₂ τ ▸ τ.periodPair.ω₂_mem_lattice),
+    h (τ : ℂ) (periodPair_ω₁ τ ▸ τ.periodPair.ω₁_mem_lattice)⟩, fun ⟨hx₁, hxτ⟩ m hm ↦ ?_⟩
+  obtain ⟨r, s, rfl⟩ := PeriodPair.mem_lattice.mp hm
+  simp only [periodPair_ω₁, periodPair_ω₂, mul_one]
+  convert add_mem (τ.periodPair.lattice.smul_mem r hxτ) (τ.periodPair.lattice.smul_mem s hx₁)
+    using 1
+  simp only [zsmul_eq_mul]; ring
 
 end UpperHalfPlane
 
@@ -985,6 +1024,14 @@ theorem mk_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) : mk (γ • τ).periodP
 theorem mk_periodPair_eq_mk_periodPair_iff {τ τ' : ℍ} :
     mk τ.periodPair = mk τ'.periodPair ↔ ∃ γ : SL(2, ℤ), γ • τ = τ' :=
   mk_eq_mk_iff.trans UpperHalfPlane.homothetic_periodPair_iff
+
+/-- The complex multiplier order (`Submodule.leftOrder`) of a homothety class of period lattices. -/
+def leftOrder : PeriodPairHomothetyClass → Subalgebra ℤ ℂ :=
+  lift (fun L ↦ L.lattice.leftOrder) fun _ _ h ↦ h.leftOrder_lattice_eq
+
+/-- On the homothety class of `L`, `leftOrder` is the left order of `L.lattice`. -/
+@[simp] theorem leftOrder_mk (L : PeriodPair) : (mk L).leftOrder = L.lattice.leftOrder :=
+  lift_mk _ _ L
 
 end PeriodPairHomothetyClass
 

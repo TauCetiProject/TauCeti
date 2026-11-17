@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.Algebra.QuadraticAlgebra.PeriodMatrix
-public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 
 /-!
 # Multipliers of a principal quadratic period lattice
@@ -15,12 +14,10 @@ public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 If `τ ∈ ℍ` satisfies `τ² + Bτ + C = 0` with integral coefficients, the lattice
 `ℤ τ + ℤ` is a subalgebra of `ℂ`. It is exactly the ring of complex scalars preserving that
 lattice, and evaluation at `τ` identifies it with `QuadraticAlgebra ℤ (-C) (-B)`.
-More generally, rescaling a period pair preserves `Submodule.leftOrder`
-(`PeriodPair.leftOrder_lattice_smul`), so `leftOrder` descends to homothety classes
-(`TauCeti.PeriodPairHomothetyClass.leftOrder`), and for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is
-strictly larger than `ℤ` (`⊥`) if and only if `τ` satisfies an integral quadratic equation
-`a τ² + b τ + c = 0` with `a > 0` (`UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff`); when
-`(a, b, c)` generate the unit ideal of `ℤ`, the left order is `ℤ + ℤ(a τ) = ℤ[a τ]`.
+More generally, for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is strictly larger than `ℤ` (`⊥`) if
+and only if `τ` satisfies an integral quadratic equation `a τ² + b τ + c = 0` with `a > 0`
+(`UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff`); when `(a, b, c)` generate the unit
+ideal of `ℤ`, the left order is `ℤ + ℤ(a τ) = ℤ[a τ]`.
 These are scalar endomorphisms of the lattice; no algebraic elliptic-curve comparison is asserted.
 
 The multiplication matrix uses row coordinates in the ordered periods `(τ, 1)`, as for division
@@ -43,35 +40,6 @@ public section
 noncomputable section
 
 open Complex Matrix
-open scoped MatrixGroups Pointwise
-
-namespace PeriodPair
-
-/-- Rescaling a period pair by `c ∈ ℂˣ` does not change the left order of its lattice. -/
-@[simp]
-theorem leftOrder_lattice_smul (c : ℂˣ) (L : PeriodPair) :
-    (c • L).lattice.leftOrder = L.lattice.leftOrder := by
-  rw [lattice_smul]
-  exact L.lattice.leftOrder_smul c.isUnit.isRegular.left (by simp)
-
-/-- Homothetic period pairs have the same complex multiplier order. -/
-theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L') :
-    L.lattice.leftOrder = L'.lattice.leftOrder := by
-  obtain ⟨c, hc⟩ := homothetic_def.mp h; rw [hc, leftOrder_lattice_smul]
-
-end PeriodPair
-
-namespace TauCeti.PeriodPairHomothetyClass
-
-/-- The complex multiplier order (`Submodule.leftOrder`) of a homothety class of period lattices. -/
-def leftOrder : PeriodPairHomothetyClass → Subalgebra ℤ ℂ :=
-  lift (fun L ↦ L.lattice.leftOrder) fun _ _ h ↦ h.leftOrder_lattice_eq
-
-/-- On the homothety class of `L`, `leftOrder` is the left order of `L.lattice`. -/
-@[simp] theorem leftOrder_mk (L : PeriodPair) : (mk L).leftOrder = L.lattice.leftOrder :=
-  lift_mk _ _ L
-
-end TauCeti.PeriodPairHomothetyClass
 
 namespace UpperHalfPlane
 
@@ -158,26 +126,6 @@ theorem quadraticOrderEquiv_mul_divisionPoint
 
 section LeftOrder
 
--- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
-/-- The complex multiplier order of `ℤ τ + ℤ` is invariant under the Möbius action of `SL(2, ℤ)`. -/
-theorem leftOrder_lattice_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) :
-    (γ • τ).periodPair.lattice.leftOrder = τ.periodPair.lattice.leftOrder := by
-  rw [lattice_periodPair_smul, PeriodPair.leftOrder_lattice_smul]
-
-/-- A complex number `x` preserves `ℤ τ + ℤ` under multiplication if and only if `x` and `x τ` both
-lie in `ℤ τ + ℤ`. -/
-theorem mem_leftOrder_lattice_periodPair_iff {τ : ℍ} {x : ℂ} :
-    x ∈ τ.periodPair.lattice.leftOrder ↔
-      x ∈ τ.periodPair.lattice ∧ x * (τ : ℂ) ∈ τ.periodPair.lattice := by
-  rw [Submodule.mem_leftOrder_iff]
-  refine ⟨fun h ↦ ⟨by simpa using h 1 (periodPair_ω₂ τ ▸ τ.periodPair.ω₂_mem_lattice),
-    h (τ : ℂ) (periodPair_ω₁ τ ▸ τ.periodPair.ω₁_mem_lattice)⟩, fun ⟨hx₁, hxτ⟩ m hm ↦ ?_⟩
-  obtain ⟨r, s, rfl⟩ := PeriodPair.mem_lattice.mp hm
-  simp only [periodPair_ω₁, periodPair_ω₂, mul_one]
-  convert add_mem (τ.periodPair.lattice.smul_mem r hxτ) (τ.periodPair.lattice.smul_mem s hx₁)
-    using 1
-  simp only [zsmul_eq_mul]; ring
-
 /-- If `(a : ℂ) * τ² + b * τ + c = 0` for integers `a, b, c`, then `(a : ℂ) * τ` preserves the
 lattice `ℤ τ + ℤ`. -/
 theorem intCast_mul_mem_leftOrder_lattice_periodPair_of_quadratic {τ : ℍ} {a b c : ℤ}
@@ -240,11 +188,11 @@ theorem mem_leftOrder_lattice_periodPair_iff_of_quadratic_of_linearCombination_e
     have hlin : ((a * p - a * t + s * b : ℤ) : ℂ) * (τ : ℂ) + ((a * q + s * c : ℤ) : ℂ) = 0 := by
       push_cast; linear_combination (a : ℂ) * hpq + s * hrel
     obtain ⟨h₁, h₂⟩ := intCast_mul_add_intCast_eq_zero_iff.mp hlin
-    have hs : s = (u * s + v * (t - p) - w * q) * a := by
-      linear_combination -s * huvw + v * h₁ + w * h₂
-    refine ⟨t, u * s + v * (t - p) - w * q, ?_⟩
-    rw [show (s : ℂ) = ((u * s + v * (t - p) - w * q : ℤ) : ℂ) * a by exact_mod_cast hs]
-    push_cast; ring
+    set k : ℤ := u * s + v * (t - p) - w * q
+    have hs : (s : ℂ) = (k : ℂ) * a := by
+      have hsz : s = k * a := by linear_combination -s * huvw + v * h₁ + w * h₂
+      exact_mod_cast hsz
+    exact ⟨t, k, by rw [hs]; ring⟩
   · rintro ⟨m, k, rfl⟩
     have hθ := intCast_mul_mem_leftOrder_lattice_periodPair_of_quadratic hrel
     simpa [zsmul_eq_mul] using add_mem (τ.periodPair.lattice.leftOrder.algebraMap_mem m)
