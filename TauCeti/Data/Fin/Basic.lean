@@ -62,6 +62,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
+  with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -297,6 +299,22 @@ theorem partialProd_contractNth_castSucc {M : Type*} [Monoid M] {n : ℕ} (j : F
     partialProd (contractNth j.castSucc (· * ·) y) (last n) = partialProd y (last (n + 1)) := by
   rw [partialProd_contractNth, Function.comp_apply, succAbove_of_le_castSucc, succ_last]
   simp [le_def]
+
+/-- Applying a monoid homomorphism to a partial product applies it to each entry. -/
+@[to_additive /-- Applying an additive monoid homomorphism to a partial sum applies it to each
+entry. -/]
+theorem map_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) (i : Fin (n + 1)) :
+    φ (partialProd x i) = partialProd (φ ∘ x) i := by
+  simp [partialProd, map_list_prod, List.map_take, List.map_ofFn]
+
+/-- Composing a monoid homomorphism with `Fin.partialProd` applies it entrywise. -/
+@[to_additive /-- Composing an additive monoid homomorphism with `Fin.partialSum` applies it
+entrywise. -/]
+theorem comp_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) :
+    φ ∘ partialProd x = partialProd (φ ∘ x) :=
+  funext (map_partialProd φ x)
 
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
