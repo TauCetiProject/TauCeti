@@ -92,6 +92,8 @@ theorem restrictedEval₂OfBound_eq_restrictedEval₂ (hφ' : ∀ r, ‖φ r‖ 
   ext f
   rw [restrictedEval₂OfBound_apply, restrictedEval₂_apply]
 
+section PositivePolyradii
+
 variable [∀ i, Fact (0 < c i)]
 
 /-- Evaluation has the same bound as the coefficient homomorphism. No multiplicativity of
@@ -138,11 +140,12 @@ theorem existsUnique_continuous_ringHom_of_bound :
       restrictedEval₂OfBound_algebraMap φ a hφ ha, restrictedEval₂OfBound_X φ a hφ ha⟩,
     fun ψ ⟨hψ, hC, hX⟩ ↦ eq_restrictedEval₂OfBound φ a hφ ha ψ hψ hC hX⟩
 
+end PositivePolyradii
+
 section Naturality
 
 variable {T : Type*} [NormedCommRing T] [IsUltrametricDist T]
 
-omit [∀ i, Fact (0 < c i)] in
 /-- Bounded evaluation commutes with a bounded map of source coefficients. The bound on the
 composite may be chosen independently of the bounds used to construct either map. -/
 theorem restrictedEval₂OfBound_restrictedMap (θ : T →+* R) {D E : ℝ}
@@ -153,13 +156,10 @@ theorem restrictedEval₂OfBound_restrictedMap (θ : T →+* R) {D E : ℝ}
   simp only [restrictedEval₂OfBound_apply, coe_restrictedMap, weightedEval_def,
     weightedEvalTerm_def, coeff_map, RingHom.comp_apply]
 
-variable [CompleteSpace T]
-
-omit [∀ i, Fact (0 < c i)] in
 /-- Applying a continuous target homomorphism to an evaluated series agrees with evaluating
 its images, whenever the composite coefficient map is bounded and the image arguments still
 lie in the prescribed polydisc. -/
-theorem map_restrictedEval₂OfBound (θ : S →+* T) (hθ : Continuous θ) {D : ℝ}
+theorem map_restrictedEval₂OfBound [CompleteSpace T] (θ : S →+* T) (hθ : Continuous θ) {D : ℝ}
     (hθφ : ∀ r, ‖(θ.comp φ) r‖ ≤ D * ‖r‖) (hθa : ∀ i, ‖θ (a i)‖ ≤ c i)
     (f : IsRestricted.subring (R := R) c) :
     θ (restrictedEval₂OfBound φ a hφ ha f) =
