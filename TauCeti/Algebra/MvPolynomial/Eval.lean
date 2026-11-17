@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.Algebra.MvPolynomial.Variables
 
+import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Tactic.Ring
 
 /-!
@@ -22,7 +23,9 @@ algebraic-integer coefficients evaluated at algebraic numbers with denominator `
 denominator dividing `c ^ T`.
 
 Over a commutative ring, evaluation also respects congruences: if `d ∣ xᵢ - tᵢ` for every `i`, then
-`d ∣ p(x) - p(t)`.
+`d ∣ p(x) - p(t)`. Over an infinite integral domain, a polynomial with a nonzero coefficient at an
+exponent supported in a coordinate subset `s` does not vanish identically on the coordinate subspace
+where coordinates outside `s` are zero.
 
 We also define `MvPolynomial.evalZeroAt v`, the `R`-algebra endomorphism setting a single variable
 `X v` to `0`, together with its evaluation, coefficient-map, monomial, coefficient, support, and
@@ -33,6 +36,8 @@ variable-set lemmas.
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.exists_eval_ne_zero_of_support_subset`: over an infinite integral domain, a
+  nonzero coefficient supported in `s` yields a nonvanishing evaluation supported in `s`.
 * `MvPolynomial.evalZeroAt`: the algebra endomorphism specializing a single variable `X v` to `0`.
 -/
 
@@ -73,6 +78,38 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
       using 1
     simp only [map_mul, eval_X]
     ring
+
+/-- Over an infinite integral domain, if a polynomial `f` has a nonzero coefficient at an exponent
+`u` whose support is contained in `s`, then `f` does not vanish identically on the coordinate
+subspace `{z | ∀ p ∉ s, z p = 0}`. -/
+theorem exists_eval_ne_zero_of_support_subset {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+    {s : Set σ} {f : MvPolynomial σ R} {u : σ →₀ ℕ} (hu : (u.support : Set σ) ⊆ s)
+    (hf : f.coeff u ≠ 0) :
+    ∃ z : σ → R, (∀ p ∉ s, z p = 0) ∧ eval z f ≠ 0 := by
+  classical
+  have hinc : Function.Injective (Subtype.val : s → σ) := Subtype.val_injective
+  have hne : f.killCompl hinc ≠ 0 := by
+    intro h0
+    have hcoeff : (f.killCompl hinc).coeff (u.comapDomain Subtype.val hinc.injOn) = 0 := by
+      simp [h0]
+    rw [coeff_killCompl, u.mapDomain_comapDomain Subtype.val hinc (by simpa using hu)] at hcoeff
+    exact hf hcoeff
+  have hex : ∃ z' : s → R, eval z' (f.killCompl hinc) ≠ 0 := by
+    by_contra! hall
+    exact hne (MvPolynomial.funext fun z' ↦ by simpa using hall z')
+  obtain ⟨z', hz'⟩ := hex
+  refine ⟨fun p ↦ if hp : p ∈ s then z' ⟨p, hp⟩ else 0, fun p hp ↦ by simp [hp], ?_⟩
+  have hcomp : (eval z').comp (killCompl (R := R) hinc).toRingHom =
+      eval fun p ↦ if hp : p ∈ s then z' ⟨p, hp⟩ else 0 := by
+    refine ringHom_ext (fun _ ↦ by simp) fun p ↦ ?_
+    rw [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    by_cases hp : p ∈ s
+    · have hX : (X p : MvPolynomial σ R) = rename Subtype.val (X ⟨p, hp⟩) := by simp
+      rw [hX, killCompl_rename_app]
+      simp [hp]
+    · simp [killCompl, hp]
+  rw [← hcomp, RingHom.comp_apply]
+  exact hz'
 
 end Eval
 

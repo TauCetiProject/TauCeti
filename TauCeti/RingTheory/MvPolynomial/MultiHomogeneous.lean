@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.Algebra.MvPolynomial.Eval
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
 
+import Mathlib.Algebra.MvPolynomial.Division
 import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
@@ -33,7 +35,9 @@ conditions of the construction be imposed on derivatives.
 
 For two-variable blocks (`ι = Fin 2`), `MvPolynomial.blockDehomogenize` sets `X (h, 0) ↦ 1` and
 `X (h, 1) ↦ X h`, recovering an affine polynomial in `MvPolynomial κ R` without losing
-coefficients or nonvanishing when `P` is multihomogeneous.
+coefficients or nonvanishing when `P` is multihomogeneous. Dividing a nonzero multihomogeneous
+polynomial by the lowest power of a variable `X v` and specializing `X v ↦ 0` eliminates `v` while
+preserving multihomogeneity and keeping a shifted subset of coefficients.
 
 ## Main definitions
 
@@ -65,6 +69,9 @@ coefficients or nonvanishing when `P` is multihomogeneous.
   `MvPolynomial.blockDehomogenize_ne_zero_of_isMultiHomogeneous`, and
   `MvPolynomial.degreeOf_blockDehomogenize_le`: coefficient preservation, support projection,
   nonvanishing, and partial-degree bounds under `blockDehomogenize`.
+* `MvPolynomial.exists_evalZeroAt_divMonomial_of_isMultiHomogeneous`: dividing out the lowest power
+  of `X v` and specializing `X v ↦ 0` eliminates `v` from a nonzero multihomogeneous polynomial
+  while lowering the block degree and preserving shifted coefficients.
 
 ## References
 
@@ -518,5 +525,81 @@ theorem degreeOf_blockDehomogenize_le [DecidableEq κ] {e : κ → ℕ}
   exact mem_support_iff.mp hm (coeff_blockDehomogenize_eq_zero_of_lt hP hlt)
 
 end BlockDehomogenize
+
+section EvalZeroAt
+
+variable {R κ ι : Type*} [CommSemiring R] [DecidableEq κ] [DecidableEq ι]
+
+/-- Dividing a nonzero multihomogeneous polynomial `P` by the lowest power `X v ^ r` of `X v`
+occurring in `P` and specializing `X v ↦ 0` produces a nonzero multihomogeneous polynomial
+`evalZeroAt v P'` with degree `e v.1 - r` in block `v.1`, not involving `v` (nor any variable
+absent from `P`), and whose nonzero coefficients are `r`-shifted coefficients of `P`. -/
+theorem exists_evalZeroAt_divMonomial_of_isMultiHomogeneous
+    {e : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : P ≠ 0)
+    (hPe : IsMultiHomogeneous e P) (v : κ × ι) :
+    ∃ (P' : MvPolynomial (κ × ι) R) (r : ℕ),
+      P = X v ^ r * P' ∧
+      evalZeroAt v P' ≠ 0 ∧
+      r ≤ e v.1 ∧
+      IsMultiHomogeneous (fun h ↦ if h = v.1 then e v.1 - r else e h) (evalZeroAt v P') ∧
+      v ∉ (evalZeroAt v P').vars ∧
+      (∀ w, w ∉ P.vars → w ∉ (evalZeroAt v P').vars) ∧
+      (∀ n ∈ (evalZeroAt v P').support,
+        (evalZeroAt v P').coeff n = P.coeff (n + Finsupp.single v r)) := by
+  let r : ℕ := P.support.inf' (support_nonempty.mpr hP) fun n ↦ n v
+  let P' : MvPolynomial (κ × ι) R := P.divMonomial (Finsupp.single v r)
+  let Q : MvPolynomial (κ × ι) R := evalZeroAt v P'
+  have hr_le : ∀ n ∈ P.support, r ≤ n v := fun n hn ↦ Finset.inf'_le _ hn
+  obtain ⟨n₀, hn₀, hnv₀⟩ := Finset.exists_mem_eq_inf' (support_nonempty.mpr hP) fun n ↦ n v
+  have hrv : r = n₀ v := hnv₀
+  have hmod : P.modMonomial (Finsupp.single v r) = 0 := by
+    ext n
+    simp only [AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+    by_cases hle : Finsupp.single v r ≤ n
+    · exact coeff_modMonomial_of_le P hle
+    · rw [coeff_modMonomial_of_not_le P hle]
+      rw [Finsupp.single_le_iff, not_le] at hle
+      by_contra hcoeff
+      exact absurd (hr_le n (mem_support_iff.mpr hcoeff)) hle.not_ge
+  have hPeq : P = X v ^ r * P' := by
+    have hdiv := divMonomial_add_modMonomial P (Finsupp.single v r)
+    rw [hmod, add_zero, ← X_pow_eq_monomial] at hdiv
+    exact hdiv.symm
+  have hcoeff_Q (n : κ × ι →₀ ℕ) :
+      Q.coeff n = if n v = 0 then P.coeff (n + Finsupp.single v r) else 0 := by
+    simp [Q, P', add_comm]
+  have hn₀_sub : n₀ - Finsupp.single v r ∈ Q.support := by
+    have h0 : (n₀ - Finsupp.single v r) v = 0 := by simp [hrv]
+    rw [mem_support_iff, hcoeff_Q]
+    simp only [h0, ↓reduceIte, tsub_add_cancel_of_le (Finsupp.single_le_iff.mpr hrv.le)]
+    exact mem_support_iff.mp hn₀
+  have hQ0 : Q ≠ 0 := support_nonempty.mp ⟨_, hn₀_sub⟩
+  have hre : r ≤ e v.1 := hrv ▸ (monomial_le_degreeOf v hn₀).trans (hPe.degreeOf_le v.1 v.2)
+  have hQe : IsMultiHomogeneous (fun h ↦ if h = v.1 then e v.1 - r else e h) Q := by
+    intro h n hn
+    have hn' := (mem_support_evalZeroAt_iff v P' n).mp (mem_support_iff.mpr hn)
+    have hPne : P.coeff (n + Finsupp.single v r) ≠ 0 := by
+      rw [add_comm, ← coeff_divMonomial]
+      exact mem_support_iff.mp hn'.2
+    have hwt : Finsupp.weight (fun p : κ × ι ↦ if p.1 = h then 1 else 0) (n + Finsupp.single v r) =
+        e h := hPe h hPne
+    rw [map_add, Finsupp.weight_single] at hwt
+    by_cases hh : h = v.1
+    · subst hh
+      simp only [↓reduceIte, smul_eq_mul, mul_one] at hwt ⊢
+      omega
+    · simp only [hh, Ne.symm hh, ↓reduceIte, smul_zero, add_zero] at hwt ⊢
+      exact hwt
+  have hvars_mono : ∀ w, w ∉ P.vars → w ∉ Q.vars := fun w hw ↦ by
+    refine notMem_vars_evalZeroAt_of_notMem fun hwP' ↦ hw ?_
+    obtain ⟨n, hn, hnw⟩ := (mem_vars_iff_mem_support w).mp hwP'
+    refine (mem_vars_iff_mem_support w).mpr ⟨Finsupp.single v r + n, ?_, ?_⟩
+    · simpa [P', mem_support_iff] using hn
+    · exact Finsupp.mem_support_iff.mpr (by simp [Finsupp.mem_support_iff.mp hnw])
+  exact ⟨P', r, hPeq, hQ0, hre, hQe, notMem_vars_evalZeroAt_self v P', hvars_mono, fun n hn ↦ by
+    have hnv : n v = 0 := ((mem_support_evalZeroAt_iff v P' n).mp hn).1
+    simp [P', hnv, add_comm]⟩
+
+end EvalZeroAt
 
 end MvPolynomial

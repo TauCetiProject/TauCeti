@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.Algebra.MvPolynomial.Eval
@@ -17,8 +16,6 @@ public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.MvPolynomial.WeightedIndex
-
-import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
 # The index of a polynomial along linear forms
@@ -587,23 +584,6 @@ private theorem mem_support_sumAlgEquiv_rename_formVarEquiv_iff [CommSemiring R]
     rw [mem_support_iff, hcoeff_rename, hsum, hmap]
     exact mem_support_iff.mp hn
 
-omit [DecidableEq ι] in
-private theorem iInf_support_sum_div_eq_iInf_weight [Fintype κ] {σ : Type*}
-    (d : κ → ℕ) (S : Finset (σ →₀ ℕ)) (T : Finset (κ →₀ ℕ)) (π : (σ →₀ ℕ) → κ → ℕ)
-    (hT : ∀ m, m ∈ T ↔ ∃ n ∈ S, ∀ h, π n h = m h) :
-    (⨅ n ∈ S, ∑ h, (π n h : ℝ≥0∞) / d h) =
-      ⨅ m ∈ T, Finsupp.weight (fun h ↦ (d h : ℝ≥0∞)⁻¹) m := by
-  refine le_antisymm (le_iInf₂ fun m hm ↦ ?_) (le_iInf₂ fun n hn ↦ ?_)
-  · obtain ⟨n, hn, hmn⟩ := (hT m).mp hm
-    refine (iInf₂_le n hn).trans_eq ?_
-    rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp)]
-    exact Finset.sum_congr rfl fun h _ ↦ by simp [nsmul_eq_mul, div_eq_mul_inv, hmn h]
-  · let m : κ →₀ ℕ := Finsupp.equivFunOnFinite.symm (π n)
-    have hm : m ∈ T := (hT m).mpr ⟨n, hn, fun h ↦ by simp [m]⟩
-    refine (iInf₂_le m hm).trans_eq ?_
-    rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp)]
-    exact Finset.sum_congr rfl fun h _ ↦ by simp [m, nsmul_eq_mul, div_eq_mul_inv]
-
 /-- When `M h (i₀ h) ≠ 0` for every block `h`, `formIndex d M P` equals `weightedIndex d 0` of
 `substFormInv M i₀ P` viewed as a polynomial in the distinguished coordinates `(h, i₀ h)` over the
 remaining coordinate variables. -/
@@ -615,7 +595,7 @@ theorem formIndex_eq_weightedIndex_substFormInv [Field K] [Fintype κ] [Fintype 
         (rename (formVarEquiv i₀).symm (substFormInv M i₀ P))) := by
   classical
   rw [formIndex_eq_iInf hM, weightedIndex_eq_iInf_support, taylor_zero]
-  exact iInf_support_sum_div_eq_iInf_weight d _ _ (fun n h ↦ n (h, i₀ h))
+  exact Finsupp.iInf_sum_div_eq_iInf_weight d
     (mem_support_sumAlgEquiv_rename_formVarEquiv_iff i₀ _)
 
 end WeightedIndexReduction
@@ -660,7 +640,7 @@ theorem formIndex_eq_weightedIndex_dehomogenize [Fintype κ] [DecidableEq κ] {d
   rw [formIndex_eq_iInf hM, weightedIndex_eq_iInf_support, ← blockDehomogenize_substFormInv α P]
   have hQ : IsMultiHomogeneous e (substFormInv (fun h ↦ ![-α h, 1]) (fun _ ↦ 1) P) :=
     hP.substFormInv
-  exact iInf_support_sum_div_eq_iInf_weight d _ _ (fun n h ↦ n (h, 1))
+  exact Finsupp.iInf_sum_div_eq_iInf_weight d
     fun _ ↦ mem_support_blockDehomogenize_iff_of_isMultiHomogeneous hQ
 
 /-- **Form index via dehomogenization**: for a multihomogeneous polynomial `P` in two-variable
@@ -721,94 +701,6 @@ example :
 end BlockDehomogenize
 
 section Elimination
-
-section CommSemiring
-
-variable [CommSemiring R] [DecidableEq κ] [Finite ι] [DecidableEq ι]
-
-/-- Dividing a nonzero multihomogeneous polynomial `P` by the lowest power `X v ^ r` of `X v`
-occurring in `P` and specializing `X v ↦ 0` produces a nonzero multihomogeneous polynomial
-`evalZeroAt v P'` with degree `e v.1 - r` in block `v.1`, not involving `v` (nor any variable
-absent from `P`), and whose nonzero coefficients are `r`-shifted coefficients of `P`. -/
-theorem exists_evalZeroAt_divMonomial_of_isMultiHomogeneous
-    {e : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : P ≠ 0)
-    (hPe : IsMultiHomogeneous e P) (v : κ × ι) :
-    ∃ (P' : MvPolynomial (κ × ι) R) (r : ℕ),
-      P = X v ^ r * P' ∧
-      evalZeroAt v P' ≠ 0 ∧
-      r ≤ e v.1 ∧
-      IsMultiHomogeneous (fun h ↦ if h = v.1 then e v.1 - r else e h) (evalZeroAt v P') ∧
-      v ∉ (evalZeroAt v P').vars ∧
-      (∀ w, w ∉ P.vars → w ∉ (evalZeroAt v P').vars) ∧
-      (∀ n ∈ (evalZeroAt v P').support,
-        (evalZeroAt v P').coeff n = P.coeff (n + Finsupp.single v r)) := by
-  cases nonempty_fintype ι
-  let r : ℕ := P.support.inf' (support_nonempty.mpr hP) fun n ↦ n v
-  let P' : MvPolynomial (κ × ι) R := P.divMonomial (Finsupp.single v r)
-  let Q : MvPolynomial (κ × ι) R := evalZeroAt v P'
-  have hr_le : ∀ n ∈ P.support, r ≤ n v := fun n hn ↦ Finset.inf'_le _ hn
-  obtain ⟨n₀, hn₀, hnv₀⟩ := Finset.exists_mem_eq_inf' (support_nonempty.mpr hP) fun n ↦ n v
-  have hrv : r = n₀ v := hnv₀
-  have hmod : P.modMonomial (Finsupp.single v r) = 0 := by
-    ext n
-    simp only [AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
-    by_cases hle : Finsupp.single v r ≤ n
-    · exact coeff_modMonomial_of_le P hle
-    · rw [coeff_modMonomial_of_not_le P hle]
-      rw [Finsupp.single_le_iff, not_le] at hle
-      by_contra hcoeff
-      exact absurd (hr_le n (mem_support_iff.mpr hcoeff)) hle.not_ge
-  have hPeq : P = X v ^ r * P' := by
-    have hdiv := divMonomial_add_modMonomial P (Finsupp.single v r)
-    rw [hmod, add_zero, ← X_pow_eq_monomial] at hdiv
-    exact hdiv.symm
-  have hcoeff_Q (n : κ × ι →₀ ℕ) :
-      Q.coeff n = if n v = 0 then P.coeff (n + Finsupp.single v r) else 0 := by
-    simp [Q, P', add_comm]
-  have hn₀_sub : n₀ - Finsupp.single v r ∈ Q.support := by
-    have h0 : (n₀ - Finsupp.single v r) v = 0 := by simp [hrv]
-    rw [mem_support_iff, hcoeff_Q]
-    simp only [h0, ↓reduceIte, tsub_add_cancel_of_le (Finsupp.single_le_iff.mpr hrv.le)]
-    exact mem_support_iff.mp hn₀
-  have hQ0 : Q ≠ 0 := support_nonempty.mp ⟨_, hn₀_sub⟩
-  have hre : r ≤ e v.1 := by
-    have hsum : ∑ i, n₀ (v.1, i) = e v.1 :=
-      isMultiHomogeneous_iff.mp hPe n₀ (mem_support_iff.mp hn₀) v.1
-    rw [hrv]
-    exact hsum ▸ Finset.single_le_sum (f := fun i ↦ n₀ (v.1, i)) (fun _ _ ↦ Nat.zero_le _)
-      (Finset.mem_univ v.2)
-  have hQe : IsMultiHomogeneous (fun h ↦ if h = v.1 then e v.1 - r else e h) Q := by
-    refine isMultiHomogeneous_iff.mpr fun n hn h ↦ ?_
-    have hn' := (mem_support_evalZeroAt_iff v P' n).mp (mem_support_iff.mpr hn)
-    have hPsup : n + Finsupp.single v r ∈ P.support := by
-      rw [mem_support_iff, ← add_comm (Finsupp.single v r), ← coeff_divMonomial]
-      exact mem_support_iff.mp hn'.2
-    have hsum : ∑ i, (n + Finsupp.single v r) (h, i) = e h :=
-      isMultiHomogeneous_iff.mp hPe _ (mem_support_iff.mp hPsup) h
-    by_cases hh : h = v.1
-    · subst hh
-      have hsingle : ∑ i, (Finsupp.single v r) (v.1, i) = r := by
-        rw [Finset.sum_eq_single v.2 (fun i _ hi ↦ by
-            simp [Prod.ext_iff, hi.symm]) (by simp)]
-        simp
-      simp only [Finsupp.coe_add, Pi.add_apply, Finset.sum_add_distrib, hsingle] at hsum
-      simp [← hsum]
-    · have hsingle : ∀ i, (Finsupp.single v r) (h, i) = 0 := fun i ↦ by
-        simp [Prod.ext_iff, Ne.symm hh]
-      simp [hh, ← hsum, hsingle]
-  have hvars_mono : ∀ w, w ∉ P.vars → w ∉ Q.vars := fun w hw ↦ by
-    refine notMem_vars_evalZeroAt_of_notMem fun hwP' ↦ hw ?_
-    obtain ⟨n, hn, hnw⟩ := (mem_vars_iff_mem_support w).mp hwP'
-    refine (mem_vars_iff_mem_support w).mpr ⟨Finsupp.single v r + n, ?_, ?_⟩
-    · simpa [P', mem_support_iff] using hn
-    · exact Finsupp.mem_support_iff.mpr (by simp [Finsupp.mem_support_iff.mp hnw])
-  exact ⟨P', r, hPeq, hQ0, hre, hQe, notMem_vars_evalZeroAt_self v P', hvars_mono, fun n hn ↦ by
-    have hnv : n v = 0 := ((mem_support_evalZeroAt_iff v P' n).mp hn).1
-    simp [P', hnv, add_comm]⟩
-
-end CommSemiring
-
-section EliminationField
 
 variable [Field K] [Fintype κ] [Fintype ι]
 
@@ -986,7 +878,7 @@ theorem exists_le_weightedIndex_of_isMultiHomogeneous [DecidableEq κ]
     rw [hm_eq, coeff_blockDehomogenize_of_isMultiHomogeneous hQ₂_e' hnsum, ← hmap_coeff,
       hcoeff _ hmap_mem]
     exact ⟨n.mapDomain F + sh, rfl⟩
-  · let M' : κ → ι → K := fun h i ↦ if (h, i) ∈ s then 0 else M h i
+  · set M' : κ → ι → K := fun h i ↦ if (h, i) ∈ s then 0 else M h i
     have hM'_zero (h : κ) (k : ι) (hk : k ∉ Set.range (f h)) : M' h k = 0 := by
       have hk0 : k ≠ i₀ h := fun heq ↦ hk ⟨0, by simp [f, heq]⟩
       have hk1 : k ≠ i₁ h := fun heq ↦ hk ⟨1, by simp [f, heq]⟩
@@ -996,13 +888,10 @@ theorem exists_le_weightedIndex_of_isMultiHomogeneous [DecidableEq κ]
       ext h j
       fin_cases j <;> simp [M', s, f]
     have hM_pair₁ : ∀ h, M h (f h 1) ≠ 0 := fun h ↦ by simpa [f] using hM₁ h
-    refine hind.trans ?_
-    change formIndex d M' Q ≤ _
+    refine hind.trans_eq ?_
     rw [← hQ₂, formIndex_rename hf hM'_zero Q₂, hM'_pair,
       formIndex_eq_weightedIndex_dehomogenize_of_ne_zero hQ₂_e' hM_pair₁]
     simp [f]
-
-end EliminationField
 
 end Elimination
 
@@ -1104,22 +993,13 @@ theorem substFormInv_eq_linearSubst [Fintype κ] [DecidableEq κ] (M : κ → ι
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp [formInvMatrix]
 
-omit [DecidableEq ι] in
-private theorem eq_of_linearSubst_eq [Fintype κ]
-    {A B : Matrix (κ × ι) (κ × ι) K} (h : linearSubst A = linearSubst B) : A = B := by
-  classical
-  ext p q
-  have hp := AlgHom.congr_fun h (X p)
-  simpa [eval_linearSubst, mulVec, dotProduct, Pi.single_apply] using
-    congrArg (eval (Pi.single q (1 : K))) hp
-
 /-- `formInvMatrix M i₀` is a right inverse to `formMatrix M i₀` when `M h (i₀ h) ≠ 0` for every
 block `h`. -/
 @[simp]
 theorem formMatrix_mul_formInvMatrix [Fintype κ] [DecidableEq κ]
     {M : κ → ι → K} {i₀ : κ → ι} (hM : ∀ h, M h (i₀ h) ≠ 0) :
     formMatrix M i₀ * formInvMatrix M i₀ = 1 := by
-  refine eq_of_linearSubst_eq (algHom_ext fun p ↦ ?_)
+  refine linearSubst_injective (algHom_ext fun p ↦ ?_)
   rw [linearSubst_mul_apply, ← substForm_eq_linearSubst, ← substFormInv_eq_linearSubst,
     substFormInv_substForm hM, linearSubst_one, AlgHom.id_apply]
 
@@ -1129,41 +1009,11 @@ block `h`. -/
 theorem formInvMatrix_mul_formMatrix [Fintype κ] [DecidableEq κ]
     {M : κ → ι → K} {i₀ : κ → ι} (hM : ∀ h, M h (i₀ h) ≠ 0) :
     formInvMatrix M i₀ * formMatrix M i₀ = 1 := by
-  refine eq_of_linearSubst_eq (algHom_ext fun p ↦ ?_)
+  refine linearSubst_injective (algHom_ext fun p ↦ ?_)
   rw [linearSubst_mul_apply, ← substFormInv_eq_linearSubst, ← substForm_eq_linearSubst,
     substForm_substFormInv hM, linearSubst_one, AlgHom.id_apply]
 
 end Decidable
-
-omit [Field K] [Fintype ι] in
-private theorem exists_eval_ne_zero_of_support_subset {σ : Type*} {s : Set σ}
-    {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
-    {f : MvPolynomial σ R} {u : σ →₀ ℕ} (hu : (u.support : Set σ) ⊆ s) (hf : f.coeff u ≠ 0) :
-    ∃ z : σ → R, (∀ p ∉ s, z p = 0) ∧ eval z f ≠ 0 := by
-  classical
-  have hinc : Function.Injective (Subtype.val : s → σ) := Subtype.val_injective
-  have hne : f.killCompl hinc ≠ 0 := by
-    intro h0
-    have hcoeff : (f.killCompl hinc).coeff (u.comapDomain Subtype.val hinc.injOn) = 0 := by
-      simp [h0]
-    rw [coeff_killCompl, u.mapDomain_comapDomain Subtype.val hinc (by simpa using hu)] at hcoeff
-    exact hf hcoeff
-  have hex : ∃ z' : s → R, eval z' (f.killCompl hinc) ≠ 0 := by
-    by_contra! hall
-    exact hne (MvPolynomial.funext fun z' ↦ by simpa using hall z')
-  obtain ⟨z', hz'⟩ := hex
-  refine ⟨fun p ↦ if hp : p ∈ s then z' ⟨p, hp⟩ else 0, fun p hp ↦ by simp [hp], ?_⟩
-  have hcomp : (eval z').comp (killCompl (R := R) hinc).toRingHom =
-      eval fun p ↦ if hp : p ∈ s then z' ⟨p, hp⟩ else 0 := by
-    refine ringHom_ext (fun _ ↦ by simp) fun p ↦ ?_
-    by_cases hp : p ∈ s
-    · have hX : (X p : MvPolynomial σ R) = rename Subtype.val (X ⟨p, hp⟩) := by simp
-      change eval z' (killCompl hinc (X p)) = _
-      rw [hX, killCompl_rename_app]
-      simp [hp]
-    · simp [killCompl, hp]
-  rw [← hcomp, RingHom.comp_apply]
-  exact hz'
 
 /-- **From form index to a nonvanishing Hasse derivative on `∏ h, ker (M h)`.**
 Over an infinite field, for nonzero linear forms `M h ≠ 0` and any nonzero polynomial `P ≠ 0`,
