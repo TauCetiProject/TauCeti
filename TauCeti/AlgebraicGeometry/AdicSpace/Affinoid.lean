@@ -454,17 +454,15 @@ theorem locallyOfWeaklyFiniteType_comapOfPair {B : Type u} [CommRing B] [Uniform
 
 /-- **`AdicSpace.ofPair S hS` is analytic if and only if `spaAnalytic S.plus = spa S.plus`.** -/
 theorem isAnalytic_ofPair_iff (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) :
-    (ofPair S hS).IsAnalytic ↔ spaAnalytic S.plus = spa S.plus := by
-  unfold ofPair ofPresentation
-  exact isAnalytic_spa_iff _ S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem _
+    (ofPair S hS).IsAnalytic ↔ spaAnalytic S.plus = spa S.plus :=
+  isAnalytic_spa_iff _ S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem _
     hS.exists_compatible_isSheaf.choose_spec.2
 
 /-- **`AdicSpace.ofPair S hS` is analytic whenever `A` is a Tate ring.** -/
 theorem IsAnalytic.ofPair {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
     [IsTateRing A] (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) :
-    (ofPair S hS).IsAnalytic := by
-  unfold AdicSpace.ofPair ofPresentation
-  exact IsAnalytic.spa _ S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem _
+    (ofPair S hS).IsAnalytic :=
+  IsAnalytic.spa _ S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem _
     hS.exists_compatible_isSheaf.choose_spec.2
 
 /-- **Quotienting a Huber pair by an ideal of nilpotent elements induces a homeomorphism on
@@ -496,26 +494,6 @@ theorem isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent (S : Pair A)
   isHomeomorph_comapOfPair_quotientHom_base S hS J hSJ fun _ ha ↦
     let ⟨n, hn⟩ := hJ
     ⟨n, by have h := Ideal.pow_mem_pow ha n; rwa [hn, Ideal.zero_eq_bot, Ideal.mem_bot] at h⟩
-
-/-- Rational localization preserves `IsSheafyForEveryPresentation`. -/
-theorem isSheafyForEveryPresentation_rationalLocalizationPair (P : PairOfDefinition A)
-    (S : Pair A) (hP : P.ringOfDefinition ≤ S.plus) (F : Finset A) (s : A) (L : Type u)
-    [CommRing L] [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower F s L)
-    (hF : IsOpen (Ideal.span (F : Set A) : Set A)) (hS : IsSheafyForEveryPresentation S.plus) :
-    letI := P.locUniformSpace F s L hden
-    haveI := P.isUniformAddGroup_locUniformSpace F s L hden
-    haveI := P.isTopologicalRing_locUniformSpace F s L hden
-    haveI := P.isHuberRing_completion_locTopology F s L hden
-    IsSheafyForEveryPresentation (P.rationalLocalizationPair S hP F s L hden).plus := by
-  let _ := P.locUniformSpace F s L hden
-  have _ := P.isUniformAddGroup_locUniformSpace F s L hden
-  have _ := P.isTopologicalRing_locUniformSpace F s L hden
-  have _ := P.isHuberRing_completion_locTopology F s L hden
-  exact (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf
-    (P.completionLocalization F s L hden)).mpr
-    ⟨(P.rationalLocalizationPair S hP F s L hden).isRingOfIntegralElements,
-      isSheaf_presentationLimitPresheaf_rationalLocalizationPair P S hP F s L hden hF
-        (hS.isSheaf P hP)⟩
 
 private theorem comapOfPair_toCompletionLocHom_spec (P : PairOfDefinition A) (S : Pair A)
     (hP : P.ringOfDefinition ≤ S.plus) (F : Finset A) (s : A) (L : Type u) [CommRing L]
@@ -599,9 +577,8 @@ private theorem quotientKer_of_isQuotientMapping
   have hplus : (S₁.quotient K).plus.map (e : _ →+* _) = S₂.plus := Subring.ext fun b ↦
     ⟨by rintro ⟨x, hx, rfl⟩; exact φ.map_mem_plus x hx,
       fun hb ↦ ⟨ψ.toRingHom b, ψ.map_mem_plus b hb, hφψ b⟩⟩
-  have hSK : IsSheafyForEveryPresentation (S₁.quotient K).plus :=
-    (isSheafyForEveryPresentation_iff_of_ringEquiv e φ.continuous_toRingHom
-      ψ.continuous_toRingHom hplus).mpr hS₂
+  have hSK := (isSheafyForEveryPresentation_iff_of_ringEquiv e φ.continuous_toRingHom
+    ψ.continuous_toRingHom hplus).mpr hS₂
   refine ⟨hSK,
     { hom := comapOfPair hS₂ hSK ψ, inv := comapOfPair hSK hS₂ φ
       hom_inv_id := by
@@ -676,9 +653,8 @@ theorem exists_ofPair_quotient_rational_square (S : Pair A)
   have hq := P.isQuotientMapping_completionLocQuotientPairHom J F s L hF' L' S hP hden
   let K := RingHom.ker π.toRingHom
   obtain ⟨hSK, eSK, hT2K, hcompK, heSK⟩ := quotientKer_of_isQuotientMapping hq hS₂
-  have hker_pow : ∀ {n : ℕ}, J ^ n = ⊥ → K ^ n = ⊥ := fun {n} hJn ↦ by
-    rw [show K = RingHom.ker π.toRingHom from rfl,
-      PairOfDefinition.toRingHom_completionLocQuotientPairHom,
+  have hker_pow : ∀ {n : ℕ}, J ^ n = ⊥ → K ^ n = ⊥ := fun hJn ↦ by
+    dsimp only [K]; rw [PairOfDefinition.toRingHom_completionLocQuotientPairHom,
       P.ker_completionLocQuotientHom J F s L hF' L' hden]
     exact Ideal.closure_pow_eq_bot (by rw [← Ideal.map_pow, hJn, Ideal.map_bot])
   -- Compare the open immersions and verify the commutative pullback square
@@ -711,8 +687,7 @@ theorem exists_ofPair_quotient_rational_square (S : Pair A)
   have hsq : comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫
       comapOfPair hS hS₁ (P.toCompletionLocHom S hP F s L hden) =
       (eSK.hom ≫ u₀) ≫ comapOfPair hS hSJ (Pair.quotientHom S J) := by
-    rw [← hψπ, comapOfPair_comp hS₁ hS₂ hSK, heSK, Category.assoc, Category.assoc]
-    congr 1
+    rw [← hψπ, comapOfPair_comp hS₁ hS₂ hSK, heSK, Category.assoc, Category.assoc]; congr 1
     rw [← comapOfPair_comp, ← comapOfPair_comp,
       P.completionLocQuotientPairHom_comp_toCompletionLocHom J F s L hF' L' S hP hden]
   exact ⟨O, hzR₀, hOW, UniformSpace.Completion L, inferInstance, inferInstance, inferInstance,

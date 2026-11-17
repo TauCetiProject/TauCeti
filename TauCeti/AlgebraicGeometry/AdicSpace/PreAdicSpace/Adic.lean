@@ -69,6 +69,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `Spa(A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_rationalLocalizationPair`: the same,
   for the rational localisation as a pair.
+* `TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair`: rational localisation
+  preserves `TauCeti.Huber.IsSheafyForEveryPresentation`.
 
 ## References
 
@@ -392,6 +394,26 @@ theorem isSheaf_presentationLimitPresheaf_rationalLocalizationPair {A : Type u}
   rw [rationalLocalizationPair_plus]
   exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
     U.isRingOfIntegralElements.isPowerBounded_of_mem hP T s L hden hT hsheaf
+
+/-- Rational localisation preserves `TauCeti.Huber.IsSheafyForEveryPresentation`. -/
+theorem _root_.TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair {A : Type u}
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] (P : PairOfDefinition A)
+    (S : Pair A) (hP : P.ringOfDefinition ≤ S.plus) (T : Finset A) (s : A) (L : Type u)
+    [CommRing L] [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower T s L)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (hS : IsSheafyForEveryPresentation S.plus) :
+    letI := P.locUniformSpace T s L hden
+    haveI := P.isUniformAddGroup_locUniformSpace T s L hden
+    haveI := P.isTopologicalRing_locUniformSpace T s L hden
+    haveI := P.isHuberRing_completion_locTopology T s L hden
+    IsSheafyForEveryPresentation (P.rationalLocalizationPair S hP T s L hden).plus :=
+  letI := P.locUniformSpace T s L hden
+  haveI := P.isUniformAddGroup_locUniformSpace T s L hden
+  haveI := P.isTopologicalRing_locUniformSpace T s L hden
+  haveI := P.isHuberRing_completion_locTopology T s L hden
+  (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf _).mpr
+    ⟨(P.rationalLocalizationPair S hP T s L hden).isRingOfIntegralElements,
+      isSheaf_presentationLimitPresheaf_rationalLocalizationPair P S hP T s L hden hT
+        (hS.isSheaf P hP)⟩
 
 /-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
 complete, Hausdorff, or Tate. -/

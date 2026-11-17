@@ -63,17 +63,6 @@ theorem isSheafy_basePair : IsSheafyForEveryPresentation (basePair p).plus :=
 theorem isSheafy_discPair : IsSheafyForEveryPresentation (discPair p).plus :=
   isSheafyForEveryPresentation_of_isStronglyNoetherian (discPair p).isRingOfIntegralElements
 
-private theorem isSheafy_quotient {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
-    [IsTopologicalRing R] [CompleteSpace R] [T0Space R] [IsTateRing R] [IsStronglyNoetherian R]
-    (S : Pair R) (I : Ideal R) (hI : IsClosed (I : Set R)) :
-    IsSheafyForEveryPresentation (S.quotient I).plus := by
-  let _ : UniformSpace (R ⧸ I) := IsTopologicalAddGroup.rightUniformSpace (R ⧸ I)
-  have _ : IsUniformAddGroup (R ⧸ I) := isUniformAddGroup_of_addCommGroup
-  have _ : CompleteSpace (R ⧸ I) := QuotientAddGroup.completeSpace_right _ I.toAddSubgroup
-  have _ : IsTateRing (R ⧸ I) := .of_continuous (QuotientRing.isOpenQuotientMap_mk I).continuous
-  have _ : IsStronglyNoetherian (R ⧸ I) := IsStronglyNoetherian.quotient I hI
-  exact isSheafyForEveryPresentation_of_isStronglyNoetherian (S.quotient I).isRingOfIntegralElements
-
 /-- The identities on `Spa(ℚ_[p], ℤ_[p])` and `Spa(ℚ_[p]⟨T⟩, ℤ_[p]⟨T⟩)` are finite étale and
 étale. -/
 example :
@@ -195,7 +184,7 @@ example :
   have _ : IsTateRing D := .of_continuous (QuotientRing.isOpenQuotientMap_mk I₀).continuous
   have _ : IsStronglyNoetherian D := IsStronglyNoetherian.quotient I₀ hI₀
   let dualPair : Pair D := (discPair p).quotient I₀
-  have hD := isSheafy_quotient (discPair p) I₀ hI₀
+  have hD := isSheafyForEveryPresentation_of_isStronglyNoetherian dualPair.isRingOfIntegralElements
   let ε : D := Ideal.Quotient.mk I₀ X
   have hε_plus : ε ∈ dualPair.plus := by
     simpa only [ε, Pair.Hom.toRingHom_quotientHom] using
@@ -216,7 +205,8 @@ example :
   have hJ_sq : J ^ 2 = ⊥ := by rw [Ideal.span_singleton_pow, hε_sq, Ideal.span_singleton_eq_bot]
   have hεJ : Ideal.Quotient.mk J ε = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
   have hJ := IsNoetherianType.isClosed_ideal J
-  have hQ := isSheafy_quotient dualPair J hJ
+  have hQ := isSheafyForEveryPresentation_quotient_of_isStronglyNoetherian J hJ
+    (dualPair.quotient J).isRingOfIntegralElements
   -- Obstruct `sq` via `eq_of_sqZero_quotient` on the two lifts `0` and `ε`
   let baseHom := ((discPair p).quotientHom I₀).comp
     ((basePair p).weightedCompletionHom isWeightFamily_one_weight)
@@ -255,9 +245,8 @@ example :
       · simp [originPair, σ_ε, X, hεJ]
     obtain ⟨g, _, hgf⟩ := horig.exists_of_sqZero_quotient dualPair hD J hJ_sq hQ g₀ h hcomm
     have hpair := congrArg (AdicSpace.ofPairHomEquiv (isSheafy_discPair p) hD) hgf
-    rw [AdicSpace.ofPairHomEquiv_comp, AdicSpace.ofPairHomEquiv_comapOfPair,
-      AdicSpace.ofPairHomEquiv_comapOfPair] at hpair
-    exact hε_ne (by simpa [originPair, σ_ε, X] using congrArg (Pair.Hom.toRingHom · X) hpair.symm)
+    exact hε_ne <| by
+      simpa [origin, h, originPair, σ_ε, X] using congrArg (Pair.Hom.toRingHom · X) hpair.symm
   exact ⟨⟨hnot_sq, mt .of_isFiniteEtale hnot_sq⟩, ⟨hnot_orig, mt .of_isFiniteEtale hnot_orig⟩⟩
 
 end TauCeti.AdicSpace.Examples
