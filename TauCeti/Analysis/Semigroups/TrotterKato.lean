@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
-public import TauCeti.Analysis.Semigroups.Generator.Uniqueness
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Topology.UniformSpace.Ascoli
 
