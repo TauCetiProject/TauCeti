@@ -255,11 +255,9 @@ theorem norm_mollifyCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : ℝ} (hC :
 /-- Mollification enlarges supports by at most `r = ρ.rOut`. -/
 theorem tsupport_mollifyCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :
     tsupport (mollifyCLM μ ρ φ) ⊆ tsupport φ + closedBall (0 : E) ρ.rOut := by
-  refine (tsupport_translateAverageCLM_subset φ).trans ?_
-  rintro _ ⟨⟨x, y⟩, ⟨hx, -⟩, rfl⟩
-  refine ⟨x, hx, -(y : E), ?_, (sub_eq_add_neg _ _).symm⟩
-  rw [mem_closedBall_zero_iff, norm_neg]
-  exact mem_closedBall_zero_iff.1 y.2
+  rw [show ⇑(mollifyCLM μ ρ φ) = ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ⇑φ from
+    funext (mollifyCLM_apply μ ρ φ), add_comm]
+  exact ρ.tsupport_normed_convolution_subset
 
 /-- As the bumps shrink, the mollifications of a test function converge to it in the LF
 topology. -/
