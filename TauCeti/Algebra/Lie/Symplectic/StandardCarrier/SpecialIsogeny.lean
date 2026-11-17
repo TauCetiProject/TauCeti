@@ -19,11 +19,11 @@ isogeny, the endomorphism exchanging the two root lengths whose odd powers cut o
 groups. This file transports that endomorphism from the symplectic group to the carrier.
 
 The transport is possible because the two point groups coincide:
-`TauCeti.SpStd.points_eq_GLSymplecticFin_of_commRing` identifies the carrier's points with the
-symplectic matrices over every commutative ring, so the special isogeny of `Sp₄` restricts to an
-endomorphism of the carrier rather than merely mapping it into a larger group. The four pinning
-equations, naturality in the value ring, and the square relation below are the symplectic-group
-statements read through `TauCeti.SpStd.pointsMulEquivGLSymplecticFinOfCommRing`.
+`TauCeti.SpStd.points_eq_GLSymplecticFin` identifies the carrier's points with the symplectic
+matrices over every commutative ring, so the special isogeny of `Sp₄` restricts to an endomorphism
+of the carrier rather than merely mapping it into a larger group. The four pinning equations,
+naturality in the value ring, and the square relation below are the symplectic-group statements
+read through `TauCeti.SpStd.pointsMulEquivGLSymplecticFin`.
 
 ## Main definitions
 
@@ -32,9 +32,8 @@ statements read through `TauCeti.SpStd.pointsMulEquivGLSymplecticFinOfCommRing`.
 
 ## Main results
 
-* `TauCeti.SpStd.pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny`,
-  `TauCeti.SpStd.pointsMulEquivGLSymplecticFinOfCommRing_symm_specialIsogeny`, and
-  `TauCeti.SpStd.pointsMulEquivGLSymplecticFin_specialIsogeny`: intertwining with
+* `TauCeti.SpStd.pointsMulEquivGLSymplecticFin_specialIsogeny` and
+  `TauCeti.SpStd.pointsMulEquivGLSymplecticFin_symm_specialIsogeny`: intertwining with
   `TauCeti.specialIsogeny`.
 * `TauCeti.SpStd.map_specialIsogeny` and `TauCeti.SpStd.specialIsogeny_frobenius`: naturality
   along homomorphisms of characteristic-two commutative rings and commutation with Frobenius.
@@ -70,9 +69,9 @@ variable (A : Type v) [CommRing A] [CharP A 2]
 
 /-- **The special isogeny of the rank-two type-`C` carrier in characteristic two.** -/
 noncomputable def specialIsogeny : points 1 A →* points 1 A :=
-  (pointsMulEquivGLSymplecticFinOfCommRing 1 A).symm.toMonoidHom.comp
+  (pointsMulEquivGLSymplecticFin 1 A).symm.toMonoidHom.comp
     ((TauCeti.specialIsogeny (R := A)).comp
-      (pointsMulEquivGLSymplecticFinOfCommRing 1 A).toMonoidHom)
+      (pointsMulEquivGLSymplecticFin 1 A).toMonoidHom)
 
 /-- The matrix of the carrier's special isogeny is the matrix of `2 × 2` minors. -/
 @[simp]
@@ -83,48 +82,34 @@ theorem coe_specialIsogeny (g : points 1 A) :
         Matrix (Fin (1 + 1 + (1 + 1))) (Fin (1 + 1 + (1 + 1))) A) := by
   rw [specialIsogeny, MonoidHom.comp_apply, MonoidHom.comp_apply]
   simp only [MulEquiv.coe_toMonoidHom]
-  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_symm_apply, TauCeti.coe_specialIsogeny,
-    coe_pointsMulEquivGLSymplecticFinOfCommRing_apply]
+  rw [coe_pointsMulEquivGLSymplecticFin_symm_apply, TauCeti.coe_specialIsogeny,
+    coe_pointsMulEquivGLSymplecticFin_apply]
 
 /-- The special isogeny of the carrier, read in the symplectic group. -/
 theorem coe_specialIsogeny_gl (g : points 1 A) :
     ((specialIsogeny A g : points 1 A) : GL (Fin (1 + 1 + (1 + 1))) A) =
-      ((TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFinOfCommRing 1 A g) :
+      ((TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin 1 A g) :
         GLSymplecticFin 2 A) : GL (Fin (2 + 2)) A) := by
   rw [specialIsogeny, MonoidHom.comp_apply, MonoidHom.comp_apply]
   simp only [MulEquiv.coe_toMonoidHom]
-  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_symm_apply]
+  rw [coe_pointsMulEquivGLSymplecticFin_symm_apply]
 
-/-- `pointsMulEquivGLSymplecticFinOfCommRing` intertwines the two special isogenies. -/
+/-- `pointsMulEquivGLSymplecticFin` intertwines the two special isogenies. -/
 @[simp]
-theorem pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny (g : points 1 A) :
-    pointsMulEquivGLSymplecticFinOfCommRing 1 A (specialIsogeny A g) =
-      TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFinOfCommRing 1 A g) := by
+theorem pointsMulEquivGLSymplecticFin_specialIsogeny (g : points 1 A) :
+    pointsMulEquivGLSymplecticFin 1 A (specialIsogeny A g) =
+      TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin 1 A g) := by
   rw [specialIsogeny]
   simp
 
-/-- The inverse of `pointsMulEquivGLSymplecticFinOfCommRing` intertwines `TauCeti.specialIsogeny`
+/-- The inverse of `pointsMulEquivGLSymplecticFin` intertwines `TauCeti.specialIsogeny`
 with `specialIsogeny`. -/
 @[simp]
-theorem pointsMulEquivGLSymplecticFinOfCommRing_symm_specialIsogeny (g : GLSymplecticFin 2 A) :
-    (pointsMulEquivGLSymplecticFinOfCommRing 1 A).symm (TauCeti.specialIsogeny g) =
-      specialIsogeny A ((pointsMulEquivGLSymplecticFinOfCommRing 1 A).symm g) := by
-  rw [MulEquiv.symm_apply_eq, pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny,
+theorem pointsMulEquivGLSymplecticFin_symm_specialIsogeny (g : GLSymplecticFin 2 A) :
+    (pointsMulEquivGLSymplecticFin 1 A).symm (TauCeti.specialIsogeny g) =
+      specialIsogeny A ((pointsMulEquivGLSymplecticFin 1 A).symm g) := by
+  rw [MulEquiv.symm_apply_eq, pointsMulEquivGLSymplecticFin_specialIsogeny,
     MulEquiv.apply_symm_apply]
-
-omit [CommRing A] [CharP A 2] in
-/-- Over a field of characteristic two, `pointsMulEquivGLSymplecticFin` intertwines the two special
-isogenies. -/
-@[simp]
-theorem pointsMulEquivGLSymplecticFin_specialIsogeny (K : Type v) [Field K] [CharP K 2]
-    (g : points 1 K) :
-    pointsMulEquivGLSymplecticFin 1 K (specialIsogeny K g) =
-      TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin 1 K g) := by
-  have hg (x : points 1 K) :
-      pointsMulEquivGLSymplecticFin 1 K x = pointsMulEquivGLSymplecticFinOfCommRing 1 K x :=
-    Subtype.ext ((coe_pointsMulEquivGLSymplecticFin_apply 1 x).trans
-      (coe_pointsMulEquivGLSymplecticFinOfCommRing_apply 1 x).symm)
-  rw [hg, hg, pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny]
 
 omit [CommRing A] [CharP A 2] in
 /-- `specialIsogeny` is natural with respect to ring homomorphisms `f : A →+* B` between
@@ -134,11 +119,11 @@ theorem map_specialIsogeny {A : Type v} {B : Type v'} [CommRing A] [CharP A 2]
     [CommRing B] [CharP B 2] (f : A →+* B) (g : points 1 A) :
     (pointsPresentation 1 A).map (pointsPresentation 1 B) f (specialIsogeny A g) =
       specialIsogeny B ((pointsPresentation 1 A).map (pointsPresentation 1 B) f g) := by
-  apply (pointsMulEquivGLSymplecticFinOfCommRing 1 B).injective
-  rw [pointsMulEquivGLSymplecticFinOfCommRing_map,
-    pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny,
-    pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny,
-    pointsMulEquivGLSymplecticFinOfCommRing_map, TauCeti.map_specialIsogeny]
+  apply (pointsMulEquivGLSymplecticFin 1 B).injective
+  rw [pointsMulEquivGLSymplecticFin_map,
+    pointsMulEquivGLSymplecticFin_specialIsogeny,
+    pointsMulEquivGLSymplecticFin_specialIsogeny,
+    pointsMulEquivGLSymplecticFin_map, TauCeti.map_specialIsogeny]
 
 /-- `specialIsogeny` commutes with the `2 ^ k`-power Frobenius endomorphism. -/
 theorem specialIsogeny_frobenius (k : ℕ) (g : points 1 A) :
@@ -152,9 +137,9 @@ theorem specialIsogeny_specialIsogeny (g : points 1 A) :
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   apply Subtype.ext
   apply Units.ext
-  rw [coe_specialIsogeny_gl, pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny,
+  rw [coe_specialIsogeny_gl, pointsMulEquivGLSymplecticFin_specialIsogeny,
     TauCeti.specialIsogeny_specialIsogeny, GLSymplecticFin.coe_map,
-    coe_pointsMulEquivGLSymplecticFinOfCommRing_apply]
+    coe_pointsMulEquivGLSymplecticFin_apply]
   ext i j
   rw [coe_frobenius_apply]
   simp [frobenius_def]
@@ -174,90 +159,70 @@ private theorem last_one : Fin.last 1 = (1 : Fin (1 + 1)) := rfl
 -- other, so they need the index pair of a difference short-root element to be all that matters.
 omit [CharP A 2] in
 private theorem shortRootUnit_eq (t : A) :
-    pointsMulEquivGLSymplecticFinOfCommRing 1 A
+    pointsMulEquivGLSymplecticFin 1 A
         (rootSubgroupPoints 1 (.inl 0) A (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin (1 + 1)) ≠ 1 by decide) t := by
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply,
-    rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last,
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last,
     toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _ rfl
       (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin (1 + 1)) = 1)]
 
 omit [CharP A 2] in
 private theorem longRootUnit_eq (t : A) :
-    pointsMulEquivGLSymplecticFinOfCommRing 1 A
+    pointsMulEquivGLSymplecticFin 1 A
         (rootSubgroupPoints 1 (.inl (Fin.last 1)) A (Multiplicative.ofAdd t)) =
       GLSymplecticFin.positiveLongRootTransvectionUnit 1 t := by
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply,
-    rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit, toAdd_ofAdd, last_one]
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last, toAdd_ofAdd, last_one]
 
 /-- The isogeny carries the short simple root subgroup to the long one, squaring the parameter. -/
 @[simp]
 theorem specialIsogeny_rootSubgroupPoints_inl_zero (t : A) :
     specialIsogeny A (rootSubgroupPoints 1 (.inl 0) A (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inl (Fin.last 1)) A (Multiplicative.ofAdd (t ^ 2)) := by
-  apply Subtype.ext
-  rw [coe_specialIsogeny_gl, shortRootUnit_eq,
-    TauCeti.specialIsogeny_differenceShortRootUnit]
-  simpa only [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply] using
-    congrArg (fun x : GLSymplecticFin 2 A => (x : GL (Fin (2 + 2)) A))
-      (longRootUnit_eq A (t ^ 2)).symm
+  apply (pointsMulEquivGLSymplecticFin 1 A).injective
+  rw [pointsMulEquivGLSymplecticFin_specialIsogeny, shortRootUnit_eq,
+    TauCeti.specialIsogeny_differenceShortRootUnit, longRootUnit_eq]
 
 /-- The isogeny carries the long simple root subgroup to the short one, keeping the parameter. -/
 @[simp]
 theorem specialIsogeny_rootSubgroupPoints_inl_last (t : A) :
     specialIsogeny A (rootSubgroupPoints 1 (.inl (Fin.last 1)) A (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inl 0) A (Multiplicative.ofAdd t) := by
-  apply Subtype.ext
-  rw [coe_specialIsogeny_gl, longRootUnit_eq,
-    TauCeti.specialIsogeny_positiveLongRootTransvectionUnit]
-  simpa only [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply] using
-    congrArg (fun x : GLSymplecticFin 2 A => (x : GL (Fin (2 + 2)) A))
-      (shortRootUnit_eq A t).symm
+  apply (pointsMulEquivGLSymplecticFin 1 A).injective
+  rw [pointsMulEquivGLSymplecticFin_specialIsogeny, longRootUnit_eq,
+    TauCeti.specialIsogeny_positiveLongRootTransvectionUnit, shortRootUnit_eq]
 
 omit [CharP A 2] in
 private theorem negShortRootUnit_eq (t : A) :
-    pointsMulEquivGLSymplecticFinOfCommRing 1 A
+    pointsMulEquivGLSymplecticFin 1 A
         (rootSubgroupPoints 1 (.inr 0) A (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin (1 + 1)) ≠ 0 by decide) t := by
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply,
-    rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last,
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_of_ne_last 1 0 zero_ne_last,
     toAdd_ofAdd, GLSymplecticFin.differenceShortRootUnit_congr _ _
       (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin (1 + 1)) = 1) rfl]
 
 omit [CharP A 2] in
 private theorem negLongRootUnit_eq (t : A) :
-    pointsMulEquivGLSymplecticFinOfCommRing 1 A
+    pointsMulEquivGLSymplecticFin 1 A
         (rootSubgroupPoints 1 (.inr (Fin.last 1)) A (Multiplicative.ofAdd t)) =
       GLSymplecticFin.negativeLongRootTransvectionUnit 1 t := by
-  apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply,
-    rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit, toAdd_ofAdd, last_one]
+  rw [pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inr_last, toAdd_ofAdd, last_one]
 
 /-- The isogeny on the negative short simple root subgroup. -/
 @[simp]
 theorem specialIsogeny_rootSubgroupPoints_inr_zero (t : A) :
     specialIsogeny A (rootSubgroupPoints 1 (.inr 0) A (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inr (Fin.last 1)) A (Multiplicative.ofAdd (t ^ 2)) := by
-  apply Subtype.ext
-  rw [coe_specialIsogeny_gl, negShortRootUnit_eq,
-    TauCeti.specialIsogeny_differenceShortRootUnit_one_zero]
-  simpa only [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply] using
-    congrArg (fun x : GLSymplecticFin 2 A => (x : GL (Fin (2 + 2)) A))
-      (negLongRootUnit_eq A (t ^ 2)).symm
+  apply (pointsMulEquivGLSymplecticFin 1 A).injective
+  rw [pointsMulEquivGLSymplecticFin_specialIsogeny, negShortRootUnit_eq,
+    TauCeti.specialIsogeny_differenceShortRootUnit_one_zero, negLongRootUnit_eq]
 
 /-- The isogeny on the negative long simple root subgroup. -/
 @[simp]
 theorem specialIsogeny_rootSubgroupPoints_inr_last (t : A) :
     specialIsogeny A (rootSubgroupPoints 1 (.inr (Fin.last 1)) A (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inr 0) A (Multiplicative.ofAdd t) := by
-  apply Subtype.ext
-  rw [coe_specialIsogeny_gl, negLongRootUnit_eq,
-    TauCeti.specialIsogeny_negativeLongRootTransvectionUnit]
-  simpa only [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply] using
-    congrArg (fun x : GLSymplecticFin 2 A => (x : GL (Fin (2 + 2)) A))
-      (negShortRootUnit_eq A t).symm
+  apply (pointsMulEquivGLSymplecticFin 1 A).injective
+  rw [pointsMulEquivGLSymplecticFin_specialIsogeny, negLongRootUnit_eq,
+    TauCeti.specialIsogeny_negativeLongRootTransvectionUnit, negShortRootUnit_eq]
 
 end TauCeti.SpStd

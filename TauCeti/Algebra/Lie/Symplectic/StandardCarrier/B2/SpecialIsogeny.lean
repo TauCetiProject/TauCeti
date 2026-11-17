@@ -14,7 +14,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.CharacterMap
 # The special isogeny of the rank-two symplectic B₂ Chevalley datum
 
 Over any commutative ring `A`, combining `TauCeti.SpStd.b2ChevalleyDatum_points` with
-`TauCeti.SpStd.points_eq_GLSymplecticFin_of_commRing` identifies the point group
+`TauCeti.SpStd.points_eq_GLSymplecticFin` identifies the point group
 `b2ChevalleyDatum.points A` of the full-weight `B₂` Chevalley datum `TauCeti.SpStd.b2ChevalleyDatum`
 with `TauCeti.GLSymplecticFin 2 A` (`TauCeti.SpStd.b2ChevalleyDatumPointsMulEquivGLSymplecticFin`).
 When `A` has characteristic two, conjugating `TauCeti.SpStd.specialIsogeny A` across
@@ -127,13 +127,13 @@ theorem b2ChevalleyDatumPointsEquiv_symm_b2WeightTorusPoints
 `GLSymplecticFin 2 A`.** -/
 theorem b2ChevalleyDatum_points_eq_GLSymplecticFin (A : Type v) [CommRing A] :
     b2ChevalleyDatum.points A = GLSymplecticFin 2 A :=
-  (b2ChevalleyDatum_points A).trans (points_eq_GLSymplecticFin_of_commRing 1 A)
+  (b2ChevalleyDatum_points A).trans (points_eq_GLSymplecticFin 1 A)
 
 /-- **Over any commutative ring `A`, the point group of `b2ChevalleyDatum` is canonically
 isomorphic as a matrix subgroup to `GLSymplecticFin 2 A`.** -/
 def b2ChevalleyDatumPointsMulEquivGLSymplecticFin (A : Type v) [CommRing A] :
     b2ChevalleyDatum.points A ≃* GLSymplecticFin 2 A :=
-  (b2ChevalleyDatumPointsEquiv A).trans (pointsMulEquivGLSymplecticFinOfCommRing 1 A)
+  (b2ChevalleyDatumPointsEquiv A).trans (pointsMulEquivGLSymplecticFin 1 A)
 
 /-- `b2ChevalleyDatumPointsMulEquivGLSymplecticFin` preserves the underlying invertible `4 × 4`
 matrix. -/
@@ -144,7 +144,7 @@ theorem coe_b2ChevalleyDatumPointsMulEquivGLSymplecticFin_apply (A : Type v) [Co
         GL (Fin (2 + 2)) A) =
       (g : GL (Fin b2ChevalleyDatum.dim) A) := by
   rw [b2ChevalleyDatumPointsMulEquivGLSymplecticFin, MulEquiv.trans_apply,
-    coe_pointsMulEquivGLSymplecticFinOfCommRing_apply, coe_b2ChevalleyDatumPointsEquiv]
+    coe_pointsMulEquivGLSymplecticFin_apply, coe_b2ChevalleyDatumPointsEquiv]
 
 /-- The inverse of `b2ChevalleyDatumPointsMulEquivGLSymplecticFin` preserves the underlying
 invertible `4 × 4` matrix. -/
@@ -155,7 +155,7 @@ theorem coe_b2ChevalleyDatumPointsMulEquivGLSymplecticFin_symm_apply (A : Type v
         GL (Fin b2ChevalleyDatum.dim) A) =
       (g : GL (Fin (2 + 2)) A) := by
   rw [b2ChevalleyDatumPointsMulEquivGLSymplecticFin, MulEquiv.symm_trans_apply,
-    coe_b2ChevalleyDatumPointsEquiv_symm, coe_pointsMulEquivGLSymplecticFinOfCommRing_symm_apply]
+    coe_b2ChevalleyDatumPointsEquiv_symm, coe_pointsMulEquivGLSymplecticFin_symm_apply]
 
 /-- `b2ChevalleyDatumPointsMulEquivGLSymplecticFin` is natural with respect to ring homomorphisms
 `f : A →+* B` across universes. -/
@@ -166,7 +166,7 @@ theorem b2ChevalleyDatumPointsMulEquivGLSymplecticFin_map {A : Type v} {B : Type
           (b2ChevalleyDatum.pointsPresentation B) f g) =
       GLSymplecticFin.map 2 A f (b2ChevalleyDatumPointsMulEquivGLSymplecticFin A g) := by
   rw [b2ChevalleyDatumPointsMulEquivGLSymplecticFin, MulEquiv.trans_apply,
-    b2ChevalleyDatumPointsEquiv_map, pointsMulEquivGLSymplecticFinOfCommRing_map,
+    b2ChevalleyDatumPointsEquiv_map, pointsMulEquivGLSymplecticFin_map,
     b2ChevalleyDatumPointsMulEquivGLSymplecticFin, MulEquiv.trans_apply]
 
 /-! ## The special isogeny in characteristic two -/
@@ -217,7 +217,7 @@ theorem b2ChevalleyDatumPointsMulEquivGLSymplecticFin_b2ChevalleyDatumSpecialIso
       TauCeti.specialIsogeny (b2ChevalleyDatumPointsMulEquivGLSymplecticFin A g) := by
   rw [b2ChevalleyDatumPointsMulEquivGLSymplecticFin, MulEquiv.trans_apply, MulEquiv.trans_apply,
     b2ChevalleyDatumPointsEquiv_b2ChevalleyDatumSpecialIsogeny,
-    pointsMulEquivGLSymplecticFinOfCommRing_specialIsogeny]
+    pointsMulEquivGLSymplecticFin_specialIsogeny]
 
 /-- The inverse of `b2ChevalleyDatumPointsMulEquivGLSymplecticFin` intertwines
 `TauCeti.specialIsogeny` with `b2ChevalleyDatumSpecialIsogeny`. -/
