@@ -11,7 +11,6 @@ import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.SimplyLaced
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
 /-!
 # Simple orbits of based automorphisms of irreducible root pairings
@@ -49,24 +48,6 @@ public section
 namespace RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
-/-! ### Support invariance of based automorphisms and simple orbits -/
-
-/-- An automorphism carrying `b.support` into itself maps a root index into `b.support` if and only
-if the index already lies in `b.support`, because `b.support` is finite. -/
-theorem Base.mem_support_indexEquiv_iff {P : RootPairing ι R M N} (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : ι) :
-    σ.indexEquiv i ∈ b.support ↔ i ∈ b.support := by
-  conv_lhs =>
-    rw [← Base.map_eq_of_forall_mem_support hσ, b.mem_support_map_iff, Equiv.symm_apply_apply]
-
-/-- For an automorphism permuting the simple roots of `b`, a `σ`-orbit either consists entirely of
-simple roots or contains none. -/
-theorem mem_support_iff_of_mem_orbitIndices {P : RootPairing ι R M N} [Finite ι] {b : P.Base}
-    {σ : P.Aut} (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support) {i j : ι}
-    (h : j ∈ P.orbitIndices σ i) : j ∈ b.support ↔ i ∈ b.support :=
-  Iff.of_eq ((mem_orbitIndices.mp h).apply_eq_of_apply_eq (f := (· ∈ b.support)) fun z ↦
-    propext (b.mem_support_indexEquiv_iff hσ z)).symm
 
 /-! ### Transport to the standard diagram symmetry group -/
 

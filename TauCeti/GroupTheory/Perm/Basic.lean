@@ -60,8 +60,10 @@ with `σ` off the pair (`Function.Involutive.swap_mul`,
 (`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
 infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
 finite type sends as many points into a set as out of it
-(`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a natural-number valued
-function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
+(`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and a
+permutation fixing every point except possibly one is the identity
+(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`).
 -/
 
 public section
@@ -357,6 +359,18 @@ theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
+
+variable {σ} in
+/-- A permutation that fixes every point other than `x` also fixes `x`, and is therefore the
+identity. -/
+theorem eq_one_of_forall_ne_apply_eq_self (x : α) (h : ∀ y ≠ x, σ y = y) : σ = 1 := by
+  ext y
+  rw [one_apply]
+  by_cases hy : y = x
+  · subst hy
+    by_contra hne
+    exact hne (σ.injective (h (σ y) hne))
+  · exact h y hy
 
 end Equiv.Perm
 

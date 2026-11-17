@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.Fin
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Classification and cycle orthogonality of simply-laced diagram symmetries
@@ -84,32 +86,33 @@ private theorem cartanMatrix_A_eq_neg_one_iff {n : ℕ} (i j : Fin n) :
 /-- A diagram symmetry of `Aₙ` fixing node `0` fixes every node along the chain. -/
 private theorem eq_one_of_mem_diagramSymmetry_A_of_apply_zero {n : ℕ} {σ : Equiv.Perm (Fin n)}
     (hσ : σ ∈ (A n).diagramSymmetry) (h0 : ∀ h : 0 < n, (σ ⟨0, h⟩ : ℕ) = 0) : σ = 1 := by
-  have hmat (i j : Fin n) : CartanMatrix.A n (σ i) (σ j) = CartanMatrix.A n i j :=
-    congrFun₂ (cartanMatrix_A n ▸ mem_diagramSymmetry_iff_submatrix.mp hσ) i j
-  have hstep : ∀ k (hk : k < n), (σ ⟨k, hk⟩ : ℕ) = k := by
-    intro k
-    induction k using Nat.twoStepInduction with
-    | zero => exact h0
-    | one =>
-      intro hk
-      have h01 : CartanMatrix.A n (σ ⟨0, by omega⟩) (σ ⟨1, hk⟩) = -1 := by
-        rw [hmat, cartanMatrix_A_eq_neg_one_iff]; left; rfl
-      rw [cartanMatrix_A_eq_neg_one_iff, h0 (by omega)] at h01
-      omega
-    | more k ih0 ih1 =>
-      intro hk
-      have hadj : CartanMatrix.A n (σ ⟨k + 1, by omega⟩) (σ ⟨k + 2, hk⟩) = -1 := by
-        rw [hmat, cartanMatrix_A_eq_neg_one_iff]; left; rfl
-      rw [cartanMatrix_A_eq_neg_one_iff, ih1 (by omega)] at hadj
-      rcases hadj with hnext | hprev
-      · omega
-      · exfalso
-        have heq : σ ⟨k + 2, hk⟩ = σ ⟨k, by omega⟩ := Fin.ext (by rw [ih0 (by omega)]; omega)
-        have := congrArg Fin.val (σ.injective heq)
-        simp only at this
-        omega
-  ext i
-  exact hstep i i.isLt
+  cases n with
+  | zero => exact Subsingleton.elim σ 1
+  | succ m =>
+    let r := graphPermA (m + 1)
+    let τ := r * σ * r
+    have hτ : τ ∈ (A (m + 1)).diagramSymmetry :=
+      (A (m + 1)).diagramSymmetry.mul_mem
+        ((A (m + 1)).diagramSymmetry.mul_mem (graphPermA_mem_diagramSymmetry _) hσ)
+        (graphPermA_mem_diagramSymmetry _)
+    have hmat (i j : Fin (m + 1)) :
+        CartanMatrix.A (m + 1) (τ i) (τ j) = CartanMatrix.A (m + 1) i j :=
+      congrFun₂ (cartanMatrix_A (m + 1) ▸ mem_diagramSymmetry_iff_submatrix.mp hτ) i j
+    have hadj (i j : Fin (m + 1)) (hij : i.val + 1 = j.val) :
+        (τ i).val + 1 = (τ j).val ∨ (τ j).val + 1 = (τ i).val :=
+      (cartanMatrix_A_eq_neg_one_iff (τ i) (τ j)).mp
+        ((hmat i j).trans ((cartanMatrix_A_eq_neg_one_iff i j).mpr (Or.inl hij)))
+    have hlast : τ (Fin.last m) = Fin.last m := by
+      have hr_last : r (Fin.last m) = ⟨0, Nat.succ_pos m⟩ := by
+        ext; simp [r, graphPermA_apply]
+      have hσ0 : σ ⟨0, Nat.succ_pos m⟩ = ⟨0, Nat.succ_pos m⟩ := Fin.ext (h0 (Nat.succ_pos m))
+      have hr0 : r ⟨0, Nat.succ_pos m⟩ = Fin.last m := by
+        ext; simp [r, graphPermA_apply]
+      simp only [τ, Equiv.Perm.mul_apply, hr_last, hσ0, hr0]
+    have hτ1 : τ = 1 := Equiv.Perm.eq_one_of_adjacent_of_apply_last_eq_self hadj hlast
+    refine Equiv.ext fun i ↦ ?_
+    have hi := congrArg (fun ρ : Equiv.Perm (Fin (m + 1)) ↦ r (ρ (r i))) hτ1
+    simpa [τ, r, Equiv.Perm.mul_apply] using hi
 
 /-- A diagram symmetry of `Aₙ` (`2 ≤ n`) sends node `0` to one of the two endpoints `0` or
 `n - 1`, since interior nodes have two neighbours of entry `-1` while node `0` has only one. -/
@@ -297,25 +300,13 @@ private theorem apply_stem_eq_of_mem_diagramSymmetry_D {n : ℕ} (hn : 5 ≤ n)
 /-- A permutation of `Fin n` (`4 ≤ n`) fixing `0, …, n - 3` and `n - 2` also fixes `n - 1`. -/
 private theorem eq_one_of_apply_le_sub_three_and_sub_two {n : ℕ} (hn : 4 ≤ n)
     {τ : Equiv.Perm (Fin n)} (hstem : ∀ i : Fin n, (i : ℕ) ≤ n - 3 → τ i = i)
-    (h2 : τ ⟨n - 2, by omega⟩ = ⟨n - 2, by omega⟩) : τ = 1 := by
-  have h2_val : (τ ⟨n - 2, by omega⟩ : ℕ) = n - 2 := by simpa only using congrArg Fin.val h2
-  ext i
-  rcases le_or_gt (i : ℕ) (n - 3) with hi | hi
-  · exact congrArg Fin.val (hstem i hi)
-  · rcases (by have := i.isLt; omega : (i : ℕ) = n - 2 ∨ (i : ℕ) = n - 1) with hi2 | hi1
-    · have hi_eq : i = ⟨n - 2, by omega⟩ := Fin.ext (by simp only [hi2])
-      rw [hi_eq, Equiv.Perm.one_apply, h2_val]
-    · have hi_eq : i = ⟨n - 1, by omega⟩ := Fin.ext (by simp only [hi1])
-      rw [hi_eq, Equiv.Perm.one_apply]
-      simp only
-      by_contra hne
-      have hlt := (τ ⟨n - 1, by omega⟩).isLt
-      rcases (by omega : (τ ⟨n - 1, by omega⟩ : ℕ) ≤ n - 3 ∨
-          (τ ⟨n - 1, by omega⟩ : ℕ) = n - 2) with hle | heq2
-      · have := congrArg Fin.val (τ.injective (hstem (τ ⟨n - 1, by omega⟩) hle))
-        simp only at this; omega
-      · have := congrArg Fin.val (τ.injective (Fin.ext (heq2.trans h2_val.symm)))
-        simp only at this; omega
+    (h2 : τ ⟨n - 2, by omega⟩ = ⟨n - 2, by omega⟩) : τ = 1 :=
+  τ.eq_one_of_forall_ne_apply_eq_self ⟨n - 1, by omega⟩ fun i hi ↦ by
+    rcases le_or_gt (i : ℕ) (n - 3) with hle | hgt
+    · exact hstem i hle
+    · have hi_eq : i = ⟨n - 2, by omega⟩ :=
+        Fin.ext (by have := i.isLt; have := Fin.val_ne_of_ne hi; simp only at this ⊢; omega)
+      simpa only [hi_eq] using h2
 
 /-- **Classification of diagram symmetries of `Dₙ` for `5 ≤ n`**: a node permutation preserves the
 type-`Dₙ` Cartan matrix if and only if it is the identity or the fork swap
@@ -354,15 +345,6 @@ theorem mem_diagramSymmetry_D_iff_of_five_le {n : ℕ} (hn : 5 ≤ n) {σ : Equi
     · exact graphPermD_mem_diagramSymmetry (by omega)
 
 /-! ### Exceptional types `E₆` and `E₇` -/
-
-open _root_.Matrix in
-/-- Multiplying a `σ`-invariant vector by a `σ`-invariant square matrix yields a `σ`-invariant
-vector. -/
-private theorem mulVec_comp_of_submatrix_eq {m : ℕ} {M : Matrix (Fin m) (Fin m) ℤ}
-    {σ : Equiv.Perm (Fin m)} (hσ : M.submatrix σ σ = M) {v : Fin m → ℤ} (hv : v ∘ σ = v) :
-    (M *ᵥ v) ∘ σ = M *ᵥ v := by
-  conv_rhs => rw [← hσ, ← hv]
-  rw [Matrix.submatrix_mulVec_equiv, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
 
 open _root_.Matrix in
 /-- **The Dynkin diagram of `E₇` has no nontrivial symmetry.** Three multiplications of the
