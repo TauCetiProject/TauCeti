@@ -238,9 +238,7 @@ private theorem singularHomologyCrossRel_localOrientation_ne_zero {U : Set M} (h
   intro hX0
   let incl : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
   have h₁ : incl ⁻¹' {(x₀ : M)} ⊆ {x₀} := fun _ hz ↦ Subtype.ext hz
-  have h₂ : incl.prodMap (ContinuousMap.id N) ⁻¹' (Prod.fst ⁻¹' {(x₀ : M)}) ⊆
-      Prod.fst ⁻¹' {x₀} := fun _ hz ↦ Subtype.ext hz
-  have hincl := singularHomologyCrossRel_localHomologyMap_tmul _ _ incl h₁ h₂ rfl
+  have hincl := singularHomologyCrossRel_localHomologyMap_tmul _ _ incl h₁ rfl
     ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
       hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom (o x₀).val) β
   have hoU := ConcreteCategory.congr_hom
@@ -326,7 +324,7 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
       _ = (localHomologyMap (R ⊗ R : ModuleCat ℤ) Φ hΦS (d + k)).hom
           ((localHomologyMap (R ⊗ R : ModuleCat ℤ) (sU.prodMap (ContinuousMap.id F)) hsF
             (d + k)).hom X) :=
-          congrArg _ (singularHomologyCrossRel_localHomologyMap_tmul R R sU hsU' hsF rfl oU (ℓ • α))
+          congrArg _ (singularHomologyCrossRel_localHomologyMap_tmul R R sU hsU' rfl oU (ℓ • α))
       _ = _ := ConcreteCategory.congr_hom (localHomologyMap_comp (R ⊗ R : ModuleCat ℤ)
           (sU.prodMap (ContinuousMap.id F)) Φ hsF hΦS (d + k)) X
   have hΘinj : Function.Injective (localHomologyMap (R ⊗ R : ModuleCat ℤ) Θ hΘF (d + k)).hom :=

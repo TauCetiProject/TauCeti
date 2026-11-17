@@ -76,8 +76,6 @@ No compactness or separation assumption is made on `B`.
   of the stabilizer on the fibre.
 * `TauCeti.exists_trivialization_mappingSpaceEval`: evaluation is locally trivial when the orbit
   map has local sections.
-* `TauCeti.orbitMap_mem_serreFibrations`: the orbit map is then itself a Serre fibration, with
-  fibre the stabilizer.
 * `TauCeti.mappingSpaceEval_mem_serreFibrations`,
   `TauCeti.isHurewiczFibration_mappingSpaceEval`: evaluation is then a Serre fibration, and a
   Hurewicz fibration over a normal paracompact space.
@@ -325,26 +323,6 @@ end Trivialization
 end ContinuousAction
 
 end General
-
-section OrbitMap
-
-variable {G X : Type u} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
-  [ContinuousMul G] [ContinuousInv G] [ContinuousSMul G X]
-
-/-- If the orbit map `g ↦ g • x` has a continuous local section around every point, it is a Serre
-fibration, with fibre the stabilizer of `x`; the charts are `TauCeti.orbitMapTrivialization`. -/
-theorem orbitMap_mem_serreFibrations (x : X)
-    (h : ∀ y : X, ∃ U : Set X, IsOpen U ∧ y ∈ U ∧ ∃ s : X → G, ContinuousOn s U ∧
-      ∀ z ∈ U, s z • x = z) :
-    TopCat.serreFibrations
-      (_root_.TopCat.ofHom ⟨fun g : G ↦ g • x, by fun_prop⟩ :
-        _root_.TopCat.of G ⟶ _root_.TopCat.of X) := by
-  refine TopCat.mem_serreFibrations_of_exists_trivialization (F := stabilizer G x) fun y ↦ ?_
-  obtain ⟨U, hU, hy, s, hs, hsec⟩ := h y
-  exact ⟨orbitMapTrivialization x (by fun_prop) U hU s hs hsec, by
-    rwa [orbitMapTrivialization_baseSet]⟩
-
-end OrbitMap
 
 section Serre
 

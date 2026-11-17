@@ -291,6 +291,17 @@ def singularHomologyComplFiberIsoOfPathConnectedSpace [PathConnectedSpace (p ⁻
   singularHomologyComplFiberIso R e hb hε hε₀ hp 0 _ (zero_add _) ≪≫
     asIso ((_root_.TopCat.of (p ⁻¹' {b})).singularHomology₀ε (ModuleCat.of R R))
 
+/-- `TauCeti.TopCat.singularHomologyComplFiberIsoOfPathConnectedSpace` is
+`TauCeti.TopCat.singularHomologyComplFiberIso` onto the zeroth homology of the fibre, followed by
+the augmentation. -/
+@[reassoc]
+lemma singularHomologyComplFiberIsoOfPathConnectedSpace_hom [PathConnectedSpace (p ⁻¹' {b})]
+    (hε₀ : 0 < ε) (hp : serreFibrations p) :
+    (singularHomologyComplFiberIsoOfPathConnectedSpace R e hb hε hε₀ hp).hom =
+      (singularHomologyComplFiberIso R e hb hε hε₀ hp 0 _ (zero_add _)).hom ≫
+        (_root_.TopCat.of (p ⁻¹' {b})).singularHomology₀ε (ModuleCat.of R R) := by
+  simp [singularHomologyComplFiberIsoOfPathConnectedSpace]
+
 end Chart
 
 end TopCat

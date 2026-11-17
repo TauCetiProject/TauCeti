@@ -320,15 +320,17 @@ theorem fiberLocalization_singularHomologyCross_tmul (p : E → M) (b : M) {i j 
 `f : X → X'` with `f⁻¹(T) ⊆ S`, the relative cross product of `f_* a` with `b` is the image under
 `f × id` of the relative cross product of `a` with `b`. -/
 theorem singularHomologyCrossRel_localHomologyMap_tmul {X X' : Type w} [TopologicalSpace X]
-    [TopologicalSpace X'] (f : C(X, X')) {S' : Set X} {T : Set X'} (h : f ⁻¹' T ⊆ S')
-    (h' : f.prodMap (ContinuousMap.id Y) ⁻¹' (Prod.fst ⁻¹' T) ⊆ Prod.fst ⁻¹' S') {i j n : ℕ}
+    [TopologicalSpace X'] (f : C(X, X')) {S' : Set X} {T : Set X'} (h : f ⁻¹' T ⊆ S') {i j n : ℕ}
     (hn : i + j = n) (a : localHomology (A := ModuleCat.{w} k) R S' i)
     (b : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
     (TopCat.singularHomologyCrossRel (TopCat.of X') (TopCat.of Y) Tᶜ R S i j n hn).hom
         ((localHomologyMap R f h i).hom a ⊗ₜ b) =
-      (localHomologyMap (R ⊗ S) (f.prodMap (ContinuousMap.id Y)) h' n).hom
+      (localHomologyMap (R ⊗ S) (f.prodMap (ContinuousMap.id Y)) (S := Prod.fst ⁻¹' S')
+        (T := Prod.fst ⁻¹' T) (fun _ hz ↦ h hz) n).hom
         ((TopCat.singularHomologyCrossRel (TopCat.of X) (TopCat.of Y) S'ᶜ R S i j n hn).hom
           (a ⊗ₜ b)) := by
+  have h' : f.prodMap (ContinuousMap.id Y) ⁻¹' (Prod.fst ⁻¹' T) ⊆ Prod.fst ⁻¹' S' :=
+    fun _ hz ↦ h hz
   have hf : Set.MapsTo (TopCat.ofHom f) S'ᶜ Tᶜ := fun _ hx hfx ↦ hx (h hfx)
   -- Naturality for `f` and the identity of `Y`, with the product map read as `f × id`.
   have hnat := TopCat.singularHomologyCrossRel_naturality (TopCat.of X) (TopCat.of Y) S'ᶜ R S i j
