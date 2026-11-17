@@ -36,6 +36,7 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
+* `MvPolynomial.linearSubst_injective`: distinct matrices induce distinct linear substitutions.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
@@ -165,6 +166,20 @@ theorem aeval_linearSubst {S : Type*} [CommSemiring S] [Algebra R S] (M : Matrix
 theorem eval_linearSubst (M : Matrix σ σ R) (x : σ → R) (p : MvPolynomial σ R) :
     eval x (linearSubst M p) = eval (M *ᵥ x) p := by
   simpa using aeval_linearSubst M x p
+
+/-- `MvPolynomial.linearSubst` is injective: two matrices inducing the same linear change of
+variables are equal. -/
+theorem linearSubst_injective : Function.Injective (linearSubst (σ := σ) (R := R)) := by
+  classical
+  intro A B h
+  ext p q
+  have hp := AlgHom.congr_fun h (X p)
+  simpa [eval_linearSubst, mulVec, dotProduct, Pi.single_apply] using
+    congrArg (eval (Pi.single q (1 : R))) hp
+
+@[simp]
+theorem linearSubst_inj {A B : Matrix σ σ R} : linearSubst A = linearSubst B ↔ A = B :=
+  linearSubst_injective.eq_iff
 
 /-- **The chain rule for a linear change of variables**:
 `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`. -/

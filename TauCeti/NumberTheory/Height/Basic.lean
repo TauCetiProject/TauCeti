@@ -229,4 +229,66 @@ lemma mulHeight_pow_range (α : K) (d : ℕ) :
   rw [mulHeight_eq_of_forall_iSup_eq key, ← mulHeight₁_pow, mulHeight₁_eq_mulHeight,
     mulHeight_swap]
 
+/-- **Product-table bound on coordinate ratios.** For a nonzero tuple `a : ι → K` on a nontrivial
+finite index type, there exist distinct coordinates `i ≠ j` with `a j ≠ 0` such that
+`mulHeight a ≤ mulHeight₁ (a i / a j) ^ (Nat.card ι - 1)`. -/
+lemma exists_mulHeight_le_mulHeight₁_div_pow [Nontrivial ι] {a : ι → K} (ha : a ≠ 0) :
+    ∃ i j : ι, i ≠ j ∧ a j ≠ 0 ∧
+      mulHeight a ≤ mulHeight₁ (a i / a j) ^ (Nat.card ι - 1) := by
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨j, hj⟩ := Function.ne_iff.mp ha
+  let b : ι → K := fun k ↦ a k / a j
+  have hb : mulHeight b = mulHeight a := by
+    simpa only [b, div_eq_inv_mul, Pi.smul_def, smul_eq_mul] using
+      mulHeight_smul_eq_mulHeight a (inv_ne_zero hj)
+  let s : Finset ι := Finset.univ.erase j
+  have hs_ne : (Finset.univ : Finset s).Nonempty := by
+    obtain ⟨i₀, hi₀⟩ := exists_ne j
+    exact ⟨⟨i₀, Finset.mem_erase.mpr ⟨hi₀, Finset.mem_univ i₀⟩⟩,
+      Finset.mem_univ _⟩
+  let x : (k : s) → Fin 2 → K := fun k ↦ ![b k.1, 1]
+  have hx : ∀ k, x k ≠ 0 := fun k ↦ Function.ne_iff.mpr ⟨1, by simp [x]⟩
+  let idx : ι → ((k : s) → Fin 2) := fun i k ↦ if k.1 = i then 0 else 1
+  have hcomp : b = (fun f : (k : s) → Fin 2 ↦ ∏ k, x k (f k)) ∘ idx := by
+    ext i
+    simp only [Function.comp_apply]
+    by_cases hi : i = j
+    · have h1 : ∀ k : s, x k (idx i k) = 1 := fun k ↦ by
+        simp [idx, hi, Finset.ne_of_mem_erase k.2, x]
+      rw [hi] at h1 ⊢
+      simp [b, div_self hj, Finset.prod_eq_one fun k _ ↦ h1 k]
+    · have his : i ∈ s := Finset.mem_erase.mpr ⟨hi, Finset.mem_univ i⟩
+      rw [Finset.prod_eq_single ⟨i, his⟩ (fun k _ hk ↦ by
+          have hne : k.1 ≠ i := fun h ↦ hk (Subtype.ext h)
+          simp [idx, hne, x]) (by simp)]
+      simp [idx, x]
+  have hmul : mulHeight a ≤ ∏ k : s, mulHeight₁ (b k.1) := by
+    rw [← hb]
+    nth_rw 1 [hcomp]
+    refine (mulHeight_comp_le idx _).trans_eq ?_
+    rw [mulHeight_fun_prod_eq hx]
+    refine Finset.prod_congr rfl fun k _ ↦ ?_
+    rw [mulHeight₁_eq_mulHeight]
+  obtain ⟨kmax, _, hkmax⟩ := Finset.exists_max_image (Finset.univ : Finset s)
+    (fun k ↦ mulHeight₁ (b k.1)) hs_ne
+  refine ⟨kmax.1, j, Finset.ne_of_mem_erase kmax.2, hj, hmul.trans ?_⟩
+  calc ∏ k : s, mulHeight₁ (b k.1)
+      ≤ ∏ _k : s, mulHeight₁ (b kmax.1) :=
+        Finset.prod_le_prod₀ (fun k _ ↦ mulHeight₁_nonneg _)
+          fun k _ ↦ hkmax k (Finset.mem_univ k)
+    _ = mulHeight₁ (a kmax.1 / a j) ^ (Nat.card ι - 1) := by
+        simp [b, s, Finset.card_erase_of_mem, Nat.card_eq_fintype_card]
+
+/-- Logarithmic form of `Height.exists_mulHeight_le_mulHeight₁_div_pow`: for a nonzero tuple
+`a : ι → K` on a nontrivial finite index type, there exist distinct coordinates `i ≠ j` with
+`a j ≠ 0` such that `logHeight a ≤ (Nat.card ι - 1 : ℕ) * logHeight₁ (a i / a j)`. -/
+lemma exists_logHeight_le_mul_logHeight₁_div [Nontrivial ι] {a : ι → K} (ha : a ≠ 0) :
+    ∃ i j : ι, i ≠ j ∧ a j ≠ 0 ∧
+      logHeight a ≤ (Nat.card ι - 1 : ℕ) * logHeight₁ (a i / a j) := by
+  obtain ⟨i, j, hij, hj, h⟩ := exists_mulHeight_le_mulHeight₁_div_pow ha
+  refine ⟨i, j, hij, hj, ?_⟩
+  rw [logHeight_eq_log_mulHeight, logHeight₁_eq_log_mulHeight₁, ← Real.log_pow]
+  exact Real.log_le_log (mulHeight_pos a) h
+
 end Height
