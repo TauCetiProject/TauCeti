@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.Rat
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import Mathlib.RingTheory.MvPowerSeries.Derivative
+import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # The Poincaré lemma for polynomial vector fields
@@ -30,8 +30,7 @@ the proof of the Poincaré lemma for closed differential forms (Bott and Tu, §4
 homogeneous of degree `d` and `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, Euler's identity shows that
 `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`. The proof therefore takes as potential the sum over `d` of
 `(d + 1)⁻¹ ∑ᵢ Xᵢ Pᵢᵈ`, where `Pᵢᵈ` is the degree-`d` homogeneous component of `Pᵢ`. Uniqueness
-up to constants holds over any commutative ring with `HasUniqueDiv` (`MvPolynomial.pderiv.ext`),
-inherited from `MvPowerSeries.pderiv.ext`.
+up to constants follows from `MvPolynomial.pderiv.ext` (in `TauCeti.Algebra.MvPolynomial.PDeriv`).
 
 ## Main results
 
@@ -39,9 +38,6 @@ inherited from `MvPowerSeries.pderiv.ext`.
   components by one degree.
 * `MvPolynomial.pderiv_sum_X_mul_of_isHomogeneous`: if `Pⱼ` is homogeneous of degree `d` and
   `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, then `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`.
-* `MvPolynomial.pderiv.ext`, `MvPolynomial.forall_pderiv_eq_zero_iff`: over a commutative ring with
-  `HasUniqueDiv`, a polynomial is determined by its formal partial derivatives and its constant
-  coefficient, and has vanishing formal gradient if and only if it is constant.
 * `MvPolynomial.exists_isHomogeneous_pderiv_eq`: homogeneous polynomial Poincaré lemma over a
   commutative `ℚ`-algebra semiring.
 * `MvPolynomial.exists_pderiv_eq`: a symmetric family of polynomials in finitely many variables
@@ -87,45 +83,6 @@ theorem pderiv_sum_X_mul_of_isHomogeneous [Fintype σ] {d : ℕ} {P : σ → MvP
     pderiv_X_self, one_mul, add_smul, one_smul, add_comm]
 
 end CommSemiring
-
-section UniqueDiv
-
-variable {R σ : Type*} [CommRing R] [HasUniqueDiv R]
-
-/-- Over a commutative ring with `HasUniqueDiv`, a multivariate polynomial is uniquely determined
-by its formal partial derivatives and its constant coefficient. -/
-theorem pderiv.ext {φ ψ : MvPolynomial σ R}
-    (hD : ∀ i, pderiv i φ = pderiv i ψ) (hc : constantCoeff φ = constantCoeff ψ) :
-    φ = ψ := by
-  apply coe_injective σ R
-  apply MvPowerSeries.pderiv.ext
-  · intro i
-    rw [MvPowerSeries.pderiv_coe, MvPowerSeries.pderiv_coe, hD i]
-  · simpa only [← MvPowerSeries.coeff_zero_eq_constantCoeff, coeff_coe,
-      ← constantCoeff_eq] using hc
-
-/-- If all formal partial derivatives of `φ` vanish, then `φ` equals its constant term. -/
-theorem eq_C_constantCoeff_of_forall_pderiv_eq_zero {φ : MvPolynomial σ R}
-    (hφ : ∀ i, pderiv i φ = 0) :
-    φ = C (constantCoeff φ) :=
-  pderiv.ext (fun i ↦ by rw [hφ i, pderiv_C]) (by simp)
-
-/-- Over a commutative ring with `HasUniqueDiv`, all formal partial derivatives of `φ` vanish if
-and only if `φ` is constant. -/
-theorem forall_pderiv_eq_zero_iff {φ : MvPolynomial σ R} :
-    (∀ i, pderiv i φ = 0) ↔ ∃ c : R, φ = C c :=
-  ⟨fun h ↦ ⟨constantCoeff φ, eq_C_constantCoeff_of_forall_pderiv_eq_zero h⟩,
-    fun ⟨_, hc⟩ _ ↦ hc ▸ pderiv_C⟩
-
-/-- Two polynomials with the same formal partial derivatives differ by the constant given by the
-difference of their constant coefficients. -/
-theorem sub_eq_C_of_forall_pderiv_eq {φ ψ : MvPolynomial σ R}
-    (hD : ∀ i, pderiv i φ = pderiv i ψ) :
-    φ - ψ = C (constantCoeff φ - constantCoeff ψ) := by
-  simpa only [map_sub] using
-    eq_C_constantCoeff_of_forall_pderiv_eq_zero (φ := φ - ψ) fun i ↦ by simp [hD i]
-
-end UniqueDiv
 
 section AlgebraRatSemiring
 
