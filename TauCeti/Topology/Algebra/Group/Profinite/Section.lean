@@ -40,6 +40,9 @@ intersection of a chain of such `C`'s still meets every coset.
   a closed left transversal, in Mathlib's sense `Subgroup.IsComplement`.
 * `TauCeti.exists_continuous_section`: the normalized continuous section `G ⧸ H → G`.
 * `TauCeti.exists_continuous_section_of_le`: the continuous section of `G ⧸ K → G ⧸ H` for `K ≤ H`.
+* `MonoidHom.exists_continuous_section_of_surjective` and its additive form
+  `AddMonoidHom.exists_continuous_section_of_surjective`: a continuous surjective homomorphism
+  from a profinite group onto a Hausdorff group has a normalized continuous section.
 * `TauCeti.exists_continuous_rightCosetFactorization`: the right-coset form, `g = w g * r g` with
   `w g ∈ H` and `r g` depending only on the right coset `H * g`, both continuous, and normalized
   by `w 1 = 1`.
@@ -271,5 +274,41 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
       (∀ (h : H) (g : G), r ((h : G) * g) = r g) ∧ w 1 = 1 := by
   obtain ⟨s, hs_cont, hs_sec, -⟩ := exists_continuous_section H hH
   exact H.exists_continuous_rightCosetFactorization_of_section s hs_cont hs_sec
+
+/-- **Continuous sections of surjections of profinite groups.** A continuous surjective
+homomorphism `f` from a profinite group onto a Hausdorff topological group has a continuous
+set-theoretic section `s` with `s 1 = 1`. The section is in general not a homomorphism: the
+reduction `ℤ/4 → ℤ/2` has no additive section. -/
+theorem _root_.MonoidHom.exists_continuous_section_of_surjective [CompactSpace G]
+    [TotallyDisconnectedSpace G] {H : Type*} [Group H] [TopologicalSpace H] [T2Space H]
+    (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
+    ∃ s : H → G, Continuous s ∧ (∀ h, f (s h) = h) ∧ s 1 = 1 := by
+  -- The kernel is closed; the continuous bijection `G ⧸ ker f → H` from a compact space to a
+  -- Hausdorff space is a homeomorphism, and the section of `G → G ⧸ ker f` is transported along it.
+  obtain ⟨t, ht, hts, ht1⟩ := exists_continuous_section f.ker (isClosed_singleton.preimage hf)
+  let e : G ⧸ f.ker ≃ₜ H := Continuous.homeoOfEquivCompactToT2
+    (f := (QuotientGroup.quotientKerEquivOfSurjective f hsurj).toEquiv)
+    ((QuotientGroup.isQuotientMap_mk f.ker).continuous_iff.mpr hf)
+  have he (q : G ⧸ f.ker) : f (t q) = e q := by
+    conv_rhs => rw [← hts q]
+    exact (QuotientGroup.kerLift_mk f (t q)).symm
+  have he1 : e.symm 1 = QuotientGroup.mk 1 :=
+    e.symm_apply_eq.mpr ((QuotientGroup.kerLift_mk f 1).trans f.map_one).symm
+  exact ⟨t ∘ e.symm, ht.comp e.symm.continuous, fun h => (he _).trans (e.apply_symm_apply h),
+    by simp only [Function.comp_apply, he1, ht1]⟩
+
+/-- **Continuous sections of surjections of profinite additive groups.** A continuous surjective
+additive homomorphism `f` from a profinite additive group onto a Hausdorff topological additive
+group has a continuous set-theoretic section `s` with `s 0 = 0`. This is the form in which
+coefficient surjections of compact modules are split continuously, for example `ℤ_p → ℤ/pⁿ`. -/
+theorem _root_.AddMonoidHom.exists_continuous_section_of_surjective {A B : Type*} [AddGroup A]
+    [TopologicalSpace A] [IsTopologicalAddGroup A] [CompactSpace A] [TotallyDisconnectedSpace A]
+    [AddGroup B] [TopologicalSpace B] [T2Space B] (f : A →+ B) (hf : Continuous f)
+    (hsurj : Function.Surjective f) :
+    ∃ s : B → A, Continuous s ∧ (∀ b, f (s b) = b) ∧ s 0 = 0 :=
+  -- `Multiplicative A` carries the topology of `A`, so the profinite hypotheses transfer as is.
+  have : TotallyDisconnectedSpace (Multiplicative A) := ‹TotallyDisconnectedSpace A›
+  have : T2Space (Multiplicative B) := ‹T2Space B›
+  MonoidHom.exists_continuous_section_of_surjective (AddMonoidHom.toMultiplicative f) hf hsurj
 
 end TauCeti

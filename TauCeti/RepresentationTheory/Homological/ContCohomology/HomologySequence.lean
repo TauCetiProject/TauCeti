@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Zero
-public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TopHomologySequence
 
 /-!
 # The long exact sequence of continuous cohomology in every degree
@@ -42,8 +40,11 @@ preserves homology, and `CategoryTheory.ShortComplex.mapHomologyIso` identifies 
 forgotten complexes with the underlying modules of continuous cohomology. This produces `δ` as a
 linear map. It is continuous because continuous cohomology of a discrete representation of a
 compact group is discrete (`TauCeti.discreteTopology_continuousCohomology`), so `δ` is a morphism
-in `TopModuleCat ℤ`. The same identification transports the exactness statements and the
-naturality squares from `ModuleCat ℤ`.
+in `TopModuleCat ℤ`. After forgetting topologies it is the connecting map
+`CategoryTheory.ShortComplex.TopShortExact.delta` of the long exact sequence for topological
+coefficients (`forget₂_map_delta_eq_topShortExact_delta`), from which the computation on
+representatives and the exactness statements are transported. The naturality squares are
+transported from `ModuleCat ℤ` in the same way.
 
 The coefficient maps are the named `TauCeti.ContinuousCohomology.coeffMap` of the canonical
 coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer meets them.
@@ -57,6 +58,8 @@ coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer mee
 
 * `TauCeti.ContCohomology.DiscreteShortExact.forget₂_map_delta`: `δ` is the snake-lemma
   connecting map of the forgotten cochain sequence, read through `mapHomologyIso`.
+* `TauCeti.ContCohomology.DiscreteShortExact.forget₂_map_delta_eq_topShortExact_delta`: `δ` is
+  the connecting map of the long exact sequence for topological coefficients.
 * `TauCeti.ContCohomology.DiscreteShortExact.delta_apply`: `δ` on representatives: lift a
   cocycle on `C` to a cochain on `B`, differentiate, and read the result as a cocycle on `A`.
 * `TauCeti.ContCohomology.DiscreteShortExact.isIso_delta`: `δ` is an isomorphism when `Hⁿ(G, B)`
@@ -134,6 +137,15 @@ theorem forget₂_map_delta (n : ℕ) :
   -- once while propagating the expected type and once more against it (0.3 s).
   rfl
 
+/-- **`δ` is the connecting map for topological coefficients.** After forgetting topologies, the
+connecting map of a short exact sequence of discrete modules is the connecting map
+`CategoryTheory.ShortComplex.TopShortExact.delta` of the topologically short exact sequence
+`S.toShortComplex`. -/
+theorem forget₂_map_delta_eq_topShortExact_delta (n : ℕ) :
+    (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map (S.delta n) = S.topShortExact.delta n :=
+  -- Both sides are the snake-lemma connecting map of the same short exact sequence of cochains.
+  (S.forget₂_map_delta n).trans (S.topShortExact.delta_def n).symm
+
 /-- **The connecting map on representatives.** Let `z₃` be a homogeneous `n`-cocycle with values in
 `C`, `x₂` a homogeneous `n`-cochain with values in `B` lifting it, and `z₁` a homogeneous
 `(n + 1)`-cocycle with values in `A` whose image in `B` is the differential of `x₂`. Then `δ` sends
@@ -149,48 +161,9 @@ theorem delta_apply (n : ℕ) (z₃ : cocycles (ofDiscreteModule ℤ G C) n)
         ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (n + 1) z₁) =
       (S.continuousCochainsShortExact.X₂.d n (n + 1)).hom x₂) :
     (S.delta n).hom (π (ofDiscreteModule ℤ G C) n z₃) =
-      π (ofDiscreteModule ℤ G A) (n + 1) z₁ := by
-  let F := forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)
-  let hS := S.continuousCochainsShortExact_shortExact_moduleCat
-  -- `δ` is computed on the forgotten complexes `F K`. A cycle `z` of a complex `K` of topological
-  -- modules becomes the cycle `(mapCyclesIso F).inv z` of `F K`: it is the cycle built from the
-  -- same cochain, and its class is the class of `z` under `mapHomologyIso`.
-  have hcycles (K : CochainComplex (TopModuleCat.{u} ℤ) ℕ) (i j : ℕ) (z : K.cycles i) hj hz :
-      ((F.mapHomologicalComplex _).obj K).cyclesMk (K.iCycles i z) j hj hz =
-        ((K.sc i).mapCyclesIso F).inv z :=
-    (ModuleCat.mono_iff_injective (((F.mapHomologicalComplex _).obj K).iCycles i)).1
-      inferInstance <| (((F.mapHomologicalComplex _).obj K).i_cyclesMk _ j hj hz).trans
-        (ConcreteCategory.congr_hom
-          ((K.sc i).mapCyclesIso_inv_comp_iCycles F) z).symm
-  have hclass (K : CochainComplex (TopModuleCat.{u} ℤ) ℕ) (i : ℕ) (z : K.cycles i) :
-      ((K.sc i).mapHomologyIso F).hom (((K.sc i).map F).homologyπ
-        (((K.sc i).mapCyclesIso F).inv z)) = K.homologyπ i z :=
-    (ConcreteCategory.congr_hom ((K.sc i).homologyπ_comp_mapHomologyIso_hom F)
-      (((K.sc i).mapCyclesIso F).inv z)).trans
-      (congrArg (F.map (K.sc i).homologyπ).hom (Iso.inv_hom_id_apply ((K.sc i).mapCyclesIso F) z))
-  -- The snake lemma in `ModuleCat ℤ`, on the cycles built from `z₃` and `z₁`.
-  let S' := S.continuousCochainsShortExact.map (F.mapHomologicalComplex (ComplexShape.up ℕ))
-  have hx₃ : (forget₂ (ModuleCat ℤ) Ab).map (S'.X₃.d n (n + 1))
-      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles n z₃) = 0 :=
-    ConcreteCategory.congr_hom (S.continuousCochainsShortExact.X₃.iCycles_d n (n + 1)) z₃
-  have hδ := hS.δ_apply n (n + 1) rfl _ hx₃ x₂ hx₂ _ hx₁ (n + 2) (by simp)
-  have hc₃ : S'.X₃.cyclesMk ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles n z₃)
-      (n + 1) (by simp) hx₃ =
-      ((S.continuousCochainsShortExact.X₃.sc n).mapCyclesIso F).inv z₃ :=
-    hcycles _ _ _ _ _ _
-  have hc₁ : S'.X₁.cyclesMk
-      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (n + 1) z₁) (n + 2)
-      (by simp) (hS.d_eq_zero_of_f_eq_d_apply n (n + 1) _ _ hx₁ _) =
-      ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapCyclesIso F).inv z₁ :=
-    hcycles _ _ _ _ _ _
-  rw [hc₃, hc₁] at hδ
-  -- Transport through `mapHomologyIso` on both sides.
-  refine (congrArg (fun f ↦ f.hom (π (ofDiscreteModule ℤ G C) n z₃))
-    (S.forget₂_map_delta n)).trans ?_
-  refine (congrArg (fun y ↦ ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso F).hom
-    (hS.δ n (n + 1) rfl y)) ?_).trans ((congrArg _ hδ).trans (hclass _ (n + 1) z₁))
-  exact (congrArg _ (hclass _ n z₃).symm).trans
-    (Iso.hom_inv_id_apply ((S.continuousCochainsShortExact.X₃.sc n).mapHomologyIso F) _)
+      π (ofDiscreteModule ℤ G A) (n + 1) z₁ :=
+  (ConcreteCategory.congr_hom (S.forget₂_map_delta_eq_topShortExact_delta n) _).trans
+    (S.topShortExact.delta_apply n z₃ x₂ hx₂ z₁ hx₁)
 
 omit [CompactSpace G] in
 /-- The data `TauCeti.ContCohomology.DiscreteShortExact.delta_apply` computes the connecting map
@@ -258,10 +231,10 @@ theorem isIso_delta (n : ℕ) [Subsingleton (continuousCohomology n (ofDiscreteM
 the kernel of the coefficient map induced by `A → B`. -/
 theorem longExact_exact₁ (n : ℕ) :
     Function.Exact (S.delta n)
-      (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)) :=
-  TopModuleCat.exact_of_forget₂_map_eq (S.forget₂_map_delta n) (forget₂_map_coeffMap _ _)
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (S.continuousCochainsShortExact_shortExact_moduleCat.homology_exact₁ n (n + 1) rfl))
+      (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)) := by
+  -- The underlying maps are those of the general sequence for topological coefficients.
+  have h := S.topShortExact.longExact_exact₁ n
+  rwa [← S.forget₂_map_delta_eq_topShortExact_delta] at h
 
 omit [CompactSpace G] in
 /-- **Exactness at `Hⁿ(G, B)`**: the image of the coefficient map induced by `A → B` is the
@@ -270,18 +243,16 @@ compactness of `G` suffices. -/
 theorem longExact_exact₂ [LocallyCompactSpace G] (n : ℕ) :
     Function.Exact (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) n)
       (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) :=
-  TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (forget₂_map_coeffMap _ _)
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (S.continuousCochainsShortExact_shortExact_moduleCat.homology_exact₂ n))
+  S.topShortExact.longExact_exact₂ n
 
 /-- **Exactness at `Hⁿ(G, C)`**: the image of the coefficient map induced by `B → C` is the
 kernel of the connecting map `Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)`. -/
 theorem longExact_exact₃ (n : ℕ) :
     Function.Exact (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n)
-      (S.delta n) :=
-  TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (S.forget₂_map_delta n)
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (S.continuousCochainsShortExact_shortExact_moduleCat.homology_exact₃ n (n + 1) rfl))
+      (S.delta n) := by
+  -- The underlying maps are those of the general sequence for topological coefficients.
+  have h := S.topShortExact.longExact_exact₃ n
+  rwa [← S.forget₂_map_delta_eq_topShortExact_delta] at h
 
 /-- The connecting map kills the image of `Hⁿ(G, B) → Hⁿ(G, C)`. -/
 @[reassoc (attr := simp)]
