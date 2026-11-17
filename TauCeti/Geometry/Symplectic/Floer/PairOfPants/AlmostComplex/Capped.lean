@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndShift
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions

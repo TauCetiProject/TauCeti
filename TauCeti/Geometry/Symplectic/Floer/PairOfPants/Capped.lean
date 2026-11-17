@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndShift
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul

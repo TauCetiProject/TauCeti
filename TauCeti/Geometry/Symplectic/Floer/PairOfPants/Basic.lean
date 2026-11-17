@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
