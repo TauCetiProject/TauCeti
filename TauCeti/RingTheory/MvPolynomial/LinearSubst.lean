@@ -11,6 +11,8 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
+import Mathlib.Algebra.MvPolynomial.Coeff
+import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -58,8 +60,6 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
   diagonal entries.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
   the product of its diagonal entries raised to the corresponding exponents.
-* `MvPolynomial.C_mul_X_add_C_mul_X_pow`: the binomial theorem for a linear form `x Xᵢ + y Xⱼ`,
-  as a sum of monomials.
 * `MvPolynomial.coeff_linearSubst_X_pow_mul_X_pow`: the coefficients of a linear change of
   variables of a monomial in two variables.
 * `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
@@ -127,18 +127,6 @@ theorem linearSubst_diagonal_monomial [DecidableEq σ] (v : σ → R) (s : σ �
       (s.prod fun i k => v i ^ k) • monomial s 1 := by
   rw [linearSubst_diagonal, rescale_monomial, smul_eq_C_mul, C_mul_monomial]
 
-omit [Fintype σ] in
-/-- The binomial theorem for a linear form in two variables, as a sum of monomials:
-`(x Xᵢ + y Xⱼ)ⁿ = ∑ₗ C(n, l) xˡ yⁿ⁻ˡ Xᵢˡ Xⱼⁿ⁻ˡ`. -/
-theorem C_mul_X_add_C_mul_X_pow (x y : R) (i j : σ) (n : ℕ) :
-    (C x * X i + C y * X j) ^ n = ∑ l ∈ Finset.range (n + 1),
-      monomial (Finsupp.single i l + Finsupp.single j (n - l))
-        (x ^ l * y ^ (n - l) * n.choose l) := by
-  rw [add_pow]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  rw [mul_pow, mul_pow, ← map_pow, ← map_pow, C_mul_X_pow_eq_monomial, C_mul_X_pow_eq_monomial,
-    monomial_mul_monomial, ← map_natCast C, mul_comm, C_mul_monomial, mul_comm]
-
 /-- The coefficients of a linear change of variables of a monomial in two variables: the
 coefficient of `X₀ʲ X₁ⁱ⁺ᵏ⁻ʲ` in `(A₀₀ X₀ + A₀₁ X₁)ⁱ (A₁₀ X₀ + A₁₁ X₁)ᵏ` is
 `∑ₗ C(i, l) C(k, j - l) A₀₀ˡ A₀₁ⁱ⁻ˡ A₁₀ʲ⁻ˡ A₁₁ᵏ⁻⁽ʲ⁻ˡ⁾`, the sum over `l ≤ i` with `l ≤ j` and
@@ -170,14 +158,14 @@ theorem coeff_linearSubst_upperTriangular_monomial (a b d : R) (s : Fin 2 →₀
     ext i
     fin_cases i <;> simp
   have hm : monomial s (1 : R) = X 0 ^ s 0 * X 1 ^ s 1 := by
-    rw [X_pow_eq_monomial, X_pow_eq_monomial, monomial_mul_monomial, one_mul, ← hs]
-    simp
+    simpa using monomial_fin_two s (1 : R)
   have h := coeff_linearSubst_X_pow_mul_X_pow !![a, b; 0, d] (s 0) (s 1) (s 0)
   rw [hs] at h
   rw [hm, h, Finset.sum_eq_single (s 0) (fun l _ hne ↦ ?_) (by simp)]
   · simp
   · split_ifs with hl'
-    · simp [show s 0 - l ≠ 0 by grind]
+    · have hsub : s 0 - l ≠ 0 := by grind
+      simp [hsub]
     · rfl
 
 /-- Evaluating `linearSubst M p` at `x` is evaluating `p` at `M *ᵥ x`. -/
