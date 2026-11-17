@@ -9,6 +9,7 @@ public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.PontryaginThom.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Framed tubes around framed submanifolds
@@ -80,9 +81,6 @@ private theorem exists_isFramedTube_diffeomorph (f : SmoothEmbedding I J ∞ M N
   let := f.normalSpaceFiberBundle hn hdim
   obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
   have hbase (x : M) : x ∈ φ.baseSet := hφ ▸ mem_univ x
-  -- With base set `univ`, the framing is a homeomorphism of the whole total space onto `M × P`.
-  let ψ := φ.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
-    (by rw [φ.source_eq, hφ, preimage_univ]) (by rw [φ.target_eq, hφ, univ_prod_univ])
   have hψ (x : M) :
       φ.toOpenPartialHomeomorph.symm (x, 0) = zeroSection P (fun x ↦ f.NormalSpace x hn) x := by
     have h0 : φ.symm x 0 = 0 := by
@@ -90,8 +88,10 @@ private theorem exists_isFramedTube_diffeomorph (f : SmoothEmbedding I J ∞ M N
       exact map_zero _
     rw [← φ.mk_symm (hbase x), h0, zeroSection]
   refine ⟨W, hWO, Φ, ⟨?_, fun x ↦ ?_⟩⟩
-  · exact W.isOpen.isOpenEmbedding_subtypeVal.comp
-      (Φ.toHomeomorph.isOpenEmbedding.comp ψ.symm.isOpenEmbedding)
+  · -- With base set `univ`, the framing is a homeomorphism of the whole total space onto `M × P`.
+    rw [← φ.coe_toHomeomorphOfBaseSetEqUniv_symm hφ]
+    exact W.isOpen.isOpenEmbedding_subtypeVal.comp
+      (Φ.toHomeomorph.isOpenEmbedding.comp (φ.toHomeomorphOfBaseSetEqUniv hφ).symm.isOpenEmbedding)
   · simp only [hψ]
     exact hΦ x
 
@@ -127,17 +127,11 @@ theorem exists_isFramedTube_isLocalDiffeomorph (f : SmoothEmbedding I J ∞ M N)
       range τ ⊆ O := by
   let := f.normalSpaceFiberBundle hn hdim
   obtain ⟨W, hWO, Φ, hτ⟩ := f.exists_isFramedTube_diffeomorph hn hdim φ hφ hO hfO
-  -- With base set `univ`, the smooth framing is a diffeomorphism of the total space onto `M × P`.
-  let ψ := φ.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
-    (by rw [φ.source_eq, hφ, preimage_univ]) (by rw [φ.target_eq, hφ, univ_prod_univ])
-  let D : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), I.prod 𝓘(ℝ, P)⟯
-      M × P :=
-    { toEquiv := ψ.toEquiv
-      contMDiff_toFun := hφs
-      contMDiff_invFun := hφs' }
   refine ⟨_, hτ, fun p ↦ ?_, ?_⟩
-  · exact ((D.symm.isLocalDiffeomorph p).comp (hg := Φ.isLocalDiffeomorph _)).comp
-      (hg := isLocalDiffeomorph_subtype_val _)
+  · -- With base set `univ`, the smooth framing is a diffeomorphism of the total space onto `M × P`.
+    rw [← φ.coe_toDiffeomorphOfBaseSetEqUniv_symm hφ hφs hφs']
+    exact (((φ.toDiffeomorphOfBaseSetEqUniv hφ hφs hφs').symm.isLocalDiffeomorph p).comp
+      (hg := Φ.isLocalDiffeomorph _)).comp (hg := isLocalDiffeomorph_subtype_val _)
   · rintro _ ⟨p, rfl⟩
     exact hWO (Φ _).2
 
