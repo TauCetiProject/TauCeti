@@ -55,6 +55,8 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `φ ↦ (φ - φ ∘ ρ)|_{U ∩ H}` from `W^{1,p}_0(U)` to `W^{1,p}_0(U ∩ H)`, and
   `TauCeti.W1p.value_restrictL_sub_compHyperplaneReflectionL_ae`: the value of
   `(u - u ∘ ρ)|_{U ∩ H}` is `u - u ∘ ρ`.
+* `TauCeti.W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae`: on a reflection-invariant
+  open `V ⊆ U`, the odd reflection of `u|_V` has the gradient of the odd reflection of `u`.
 * `TauCeti.W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL`: integrating a
   function `f` against `(φ - φ ∘ ρ)|_{U ∩ H}` is integrating its odd reflection against `φ`.
 -/
@@ -175,6 +177,37 @@ theorem W1p.value_restrictL_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤)
       (u - W1p.compHyperplaneReflectionL hp ν c hU u),
     ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) hU'] with x h1 h2
   rw [h1, h2]
+
+/-- The gradient of the odd reflection of `u|_V`, for a reflection-invariant open `V ⊆ U`, is
+the gradient of the odd reflection of `u` on `V`. -/
+theorem W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤) {V : Opens E}
+    (hU : MapsTo (hyperplaneReflection ν c) U U) (hV : MapsTo (hyperplaneReflection ν c) V V)
+    (hVU : V ≤ U) (u : W1p mu U p) :
+    W1p.gradient (W1p.restrictL hVU u -
+        W1p.compHyperplaneReflectionL hp ν c hV (W1p.restrictL hVU u))
+      =ᵐ[mu.restrict V] W1p.gradient (u - W1p.compHyperplaneReflectionL hp ν c hU u) := by
+  have hVU' : (V : Set E) ⊆ U := SetLike.coe_subset_coe.mpr hVU
+  have hsub : ∀ {W : Opens E} (f g : W1p mu W p),
+      ⇑(W1p.gradient (f - g)) =ᵐ[mu.restrict W] ⇑(W1p.gradient f) - ⇑(W1p.gradient g) :=
+    fun f g => by
+      simpa only [← W1p.gradientL_apply, map_sub] using
+        Lp.coeFn_sub (W1p.gradient f) (W1p.gradient g)
+  have hres := W1p.gradient_restrictL_ae hVU u
+  -- The same agreement at the reflected point, since the reflection preserves `V` and `mu`.
+  have hresρ : ∀ᵐ x ∂mu.restrict V,
+      W1p.gradient (W1p.restrictL hVU u) (hyperplaneReflection ν c x) =
+        W1p.gradient u (hyperplaneReflection ν c x) :=
+    (measurePreserving_restrict_hyperplaneReflection hV
+      V.isOpen.measurableSet).quasiMeasurePreserving.ae hres
+  filter_upwards [hsub (W1p.restrictL hVU u)
+      (W1p.compHyperplaneReflectionL hp ν c hV (W1p.restrictL hVU u)),
+    ae_restrict_of_ae_restrict_of_subset hVU'
+      (hsub u (W1p.compHyperplaneReflectionL hp ν c hU u)),
+    W1p.gradient_compHyperplaneReflectionL_ae hp hV (W1p.restrictL hVU u),
+    ae_restrict_of_ae_restrict_of_subset hVU'
+      (W1p.gradient_compHyperplaneReflectionL_ae hp hU u), hres, hresρ]
+    with x h1 h2 h3 h4 h5 h6
+  simp only [h1, h2, Pi.sub_apply, h3, h4, h5, h6]
 
 /-- For a test function `φ`, the restriction of `φ - φ ∘ ρ` to `U ∩ H` has value `φ - φ ∘ ρ`. -/
 private theorem value_restrictL_sub_compHyperplaneReflectionL_ofTestFunction_ae (hp : p ≠ ⊤)

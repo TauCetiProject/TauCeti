@@ -220,12 +220,13 @@ theorem reflectDensity_zero : reflectDensity ν c₀ (0 : EuclideanSpace ℝ ι 
 
 /-- **The Laplacian is its own reflection.** The reflected coefficients of the Laplacian
 `-Δ` (`a = 1`, no lower-order terms) have the energy integrand of the identity matrix: below the
-hyperplane the principal part is `R R = 1`, where `R` is the linear part of the reflection. -/
+hyperplane the principal part is `R R = 1`, where `R` is the linear part of the reflection. The
+reflected lower-order coefficients vanish (`TauCeti.PDE.reflectDrift_zero` and
+`TauCeti.PDE.reflectDensity_zero`). -/
+@[simp]
 theorem energyIntegrand_reflectPrincipal_one :
-    energyIntegrand (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ)) x)
-        (reflectDrift ν c₀ 0 x) (reflectDensity ν c₀ 0 x) =
+    energyIntegrand (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ)) x) 0 0 =
       energyIntegrand (1 : Matrix ι ι ℝ) 0 0 := by
-  rw [reflectDrift_zero, reflectDensity_zero, Pi.zero_apply, Pi.zero_apply]
   by_cases hx : ⟪x, ν⟫_ℝ < c₀
   · refine ContinuousLinearMap.ext fun W => ContinuousLinearMap.ext fun W' => ?_
     have h := energyIntegrand_pullback_hyperplaneReflection (a := fun _ => (1 : Matrix ι ι ℝ))
@@ -444,9 +445,9 @@ private theorem ae_jetField_eq_zero_of_ae_value_eq_zero (hν : ν ≠ 0)
 
 /-- **The reflected Laplacian is the Laplacian.** The energy form of the reflected coefficients of
 `-Δ` is the Dirichlet form. -/
+@[simp]
 theorem energyFormH1_reflectPrincipal_one (u v : W1p mu U 2) :
-    energyFormH1 (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ))) (reflectDrift ν c₀ 0)
-        (reflectDensity ν c₀ 0) u v =
+    energyFormH1 (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ))) 0 0 u v =
       energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v := by
   rw [energyFormH1_def, energyFormH1_def]
   simp only [energyIntegrand_reflectPrincipal_one, Pi.zero_apply]
@@ -533,9 +534,10 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegr
     W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf]
 
 /-- **The energy functional of the odd reflection.** Let `V` be open with `ρ V ⊆ V`, let
-`u ∈ H¹(V)` vanish on `V ∖ H`, and let `u|_{V ∩ H}` solve `-Δu = -div (G - c)` weakly, tested
-against `H¹₀(V ∩ H)`, with `G - c ∈ L²(V ∩ H)`. Then the odd reflection `w = u - u ∘ ρ` satisfies
-`|∫_V ⟨∇w, ∇φ⟩| ≤ 2 ‖G - c‖_{L²(V ∩ H)} ‖∇φ‖_{L²(V)}` for every `φ ∈ H¹₀(V)`. -/
+`u ∈ H¹(V)` vanish on `V ∖ H`, and let `u|_{V ∩ H}` solve `-Δu = -div F` weakly, tested against
+`H¹₀(V ∩ H)`, with `F ∈ L²(V ∩ H)`, that is `∫_{V ∩ H} ⟨∇u, ∇v⟩ = ⟪F, ∇v⟫` for every
+`v ∈ H¹₀(V ∩ H)`. Then the odd reflection `w = u - u ∘ ρ` satisfies
+`|∫_V ⟨∇w, ∇φ⟩| ≤ 2 ‖F‖_{L²(V ∩ H)} ‖∇φ‖_{L²(V)}` for every `φ ∈ H¹₀(V)`. -/
 theorem abs_energyFormH1_sub_compHyperplaneReflectionL_le (hν : ν ≠ 0)
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {V : Opens (EuclideanSpace ℝ ι)}
     (hV : MapsTo (hyperplaneReflection ν c₀) V V) {u : W1p mu V 2}
@@ -558,11 +560,12 @@ theorem abs_energyFormH1_sub_compHyperplaneReflectionL_le (hν : ν ≠ 0)
   have hcoeff : MemLp (fun x => energyIntegrand
       (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ)) x)
       (reflectDrift ν c₀ 0 x) (reflectDensity ν c₀ 0 x)) ⊤ (mu.restrict V) := by
-    simp only [energyIntegrand_reflectPrincipal_one]
+    simp only [reflectDrift_zero, reflectDensity_zero, Pi.zero_apply,
+      energyIntegrand_reflectPrincipal_one]
     exact memLp_top_const (energyIntegrand (1 : Matrix ι ι ℝ) 0 0)
-  have h := (energyFormH1_reflectPrincipal_one _ _).symm.trans
-    ((energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL hν hH hV hcoeff hu0
-      (fun v => (hu v).trans (hℓ v).symm) φ).trans (hℓ _))
+  have h := (energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL hν hH hV hcoeff hu0
+    (fun v => (hu v).trans (hℓ v).symm) φ).trans (hℓ _)
+  rw [reflectDrift_zero, reflectDensity_zero, energyFormH1_reflectPrincipal_one] at h
   -- The reflected test function `(φ - φ ∘ ρ)|_{V ∩ H}` has at most twice the gradient norm.
   have hψ : ‖W1p.gradient (W1p0.restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hV φ :
       W1p mu (V ⊓ H) 2)‖ ≤ 2 * ‖W1p.gradient (φ : W1p mu V 2)‖ := by

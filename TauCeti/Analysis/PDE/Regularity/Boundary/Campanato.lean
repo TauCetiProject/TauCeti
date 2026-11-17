@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
+import TauCeti.Analysis.Sobolev.W1p.GradientMeanOscillation
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecificLimits.DecayIteration
+import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -99,39 +101,6 @@ section Reflection
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {U H V : Opens (EuclideanSpace ℝ ι)} {ν : EuclideanSpace ℝ ι} {c₀ : ℝ}
 
-omit [DecidableEq ι] in
-/-- The gradient of the odd reflection of `u|_V`, for a reflection-invariant open `V ⊆ U`, is
-the gradient of the odd reflection of `u` on `V`. -/
-private theorem gradient_restrictL_sub_compHyperplaneReflectionL_ae
-    (hU : MapsTo (hyperplaneReflection ν c₀) U U) (hV : MapsTo (hyperplaneReflection ν c₀) V V)
-    (hVU : V ≤ U) (u : W1p mu U 2) :
-    W1p.gradient (W1p.restrictL hVU u -
-        W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hV (W1p.restrictL hVU u))
-      =ᵐ[mu.restrict V]
-        W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) := by
-  have hVU' : (V : Set (EuclideanSpace ℝ ι)) ⊆ U := SetLike.coe_subset_coe.mpr hVU
-  have hsub : ∀ {W : Opens (EuclideanSpace ℝ ι)} (f g : W1p mu W 2),
-      ⇑(W1p.gradient (f - g)) =ᵐ[mu.restrict W] ⇑(W1p.gradient f) - ⇑(W1p.gradient g) :=
-    fun f g => by
-      simpa only [← W1p.gradientL_apply, map_sub] using
-        Lp.coeFn_sub (W1p.gradient f) (W1p.gradient g)
-  have hres := W1p.gradient_restrictL_ae hVU u
-  -- The same agreement at the reflected point, since the reflection preserves `V` and `mu`.
-  have hresρ : ∀ᵐ x ∂mu.restrict V,
-      W1p.gradient (W1p.restrictL hVU u) (hyperplaneReflection ν c₀ x) =
-        W1p.gradient u (hyperplaneReflection ν c₀ x) :=
-    (measurePreserving_restrict_hyperplaneReflection hV
-      V.isOpen.measurableSet).quasiMeasurePreserving.ae hres
-  filter_upwards [hsub (W1p.restrictL hVU u)
-      (W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hV (W1p.restrictL hVU u)),
-    ae_restrict_of_ae_restrict_of_subset hVU'
-      (hsub u (W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u)),
-    W1p.gradient_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top hV (W1p.restrictL hVU u),
-    ae_restrict_of_ae_restrict_of_subset hVU'
-      (W1p.gradient_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top hU u), hres, hresρ]
-    with x h1 h2 h3 h4 h5 h6
-  simp only [h1, h2, Pi.sub_apply, h3, h4, h5, h6]
-
 /-- The weak equation `-Δu = -div G` on `U ∩ H`, tested against test functions, holds for the
 restriction of `u` to `V ∩ H` against all of `H¹₀(V ∩ H)`, with `G` replaced by `G - c`. -/
 private theorem forall_energyFormH1_restrictL_restrictL_eq_inner (hVU : V ≤ U)
@@ -181,8 +150,9 @@ private theorem norm_gradient_restrictL_sub_compHyperplaneReflectionL_sub_le (h�
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u)) (v : W1p mu B 2)| ≤
         2 * ‖F‖ * ‖W1p.gradient (v : W1p mu B 2)‖ := fun v =>
     (congrArg abs ((energyFormH1_one_zero_zero_restrictL_eq_restrictL hBU hBV
-      ((gradient_restrictL_sub_compHyperplaneReflectionL_ae hU hV hVU u).filter_mono
-        (ae_mono (Measure.restrict_mono_set _ (SetLike.coe_subset_coe.mpr hBV)))).symm
+      ((W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top hU hV hVU
+        u).filter_mono
+          (ae_mono (Measure.restrict_mono_set _ (SetLike.coe_subset_coe.mpr hBV)))).symm
           v).trans (energyFormH1_restrictL _ _ _ hBV _ v))).trans_le
       ((abs_energyFormH1_sub_compHyperplaneReflectionL_le hν hH hV hu0 hu _).trans_eq
         (by rw [W1p0.norm_gradient_extendByZeroL]))
@@ -453,13 +423,12 @@ private theorem exists_memLp_setIntegral_norm_sub_sq_le {α K : ℝ≥0} (hα : 
 /-- One step of the decay at a centre in the closed half-space, with the data term
 `A K² 4^α ω r^γ`, `γ = n + 1 + 2α`, from the Hölder continuity of `G` on `ball z R ∩ H`, where
 `ω` is the volume of the unit ball: `ψ(ρ) ≤ A (ρ / r)^(n + 3) ψ(r) + A K² 4^α ω r^γ` for
-`0 < ρ ≤ r ≤ R`, if `A` dominates the constants `4 D` and `4 (4 D + 2)` of
+`0 < ρ ≤ r ≤ R`, if `A` dominates the constant `4 (4 D + 2)`, and so also `4 D`, of
 `setIntegral_ball_norm_gradient_sub_compHyperplaneReflectionL_sub_setAverage_sq_le`. -/
 private theorem le_mul_rpow_mul_add_mul_rpow_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
     {γ ω D A : ℝ} (hγ : γ = (n : ℝ) + 1 + 2 * α)
     (hω : ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hA0 : 0 ≤ A) (hAD : 4 * (4 * D + 2) ≤ A)
-    (hAD' : 4 * D ≤ A)
+    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hAD : 4 * (4 * D + 2) ≤ A)
     (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
     (hU : MapsTo (hyperplaneReflection ν c₀) U U) {u : W1p volume U 2}
     (hu0 : ∀ᵐ x ∂volume.restrict U, x ∉ H → W1p.value u x = 0)
@@ -476,27 +445,30 @@ private theorem le_mul_rpow_mul_add_mul_rpow_of_holderOnWith {α : ℝ≥0} (hα
     {ρ r : ℝ} (hρ : 0 < ρ) (hρr : ρ ≤ r) (hrR : r ≤ R) :
     ψ ρ ≤ A * (ρ / r) ^ ((n : ℝ) + 3) * ψ r + B * r ^ γ := by
   subst hw hD
+  have hD0 : (0 : ℝ) ≤ 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2 := by positivity
+  have hA0 : 0 ≤ A := by linarith
   have hr : 0 < r := hρ.trans_le hρr
   obtain ⟨c, hc, hint⟩ := exists_memLp_setIntegral_norm_sub_sq_le hα hG hν hH hz hr
     (ball_subset_ball hrR)
   have hdata : (K : ℝ) ^ 2 * (2 * r) ^ (2 * (α : ℝ)) * volume.real (ball z r) =
       (K : ℝ) ^ 2 * 4 ^ (α : ℝ) * ω * r ^ γ := by
-    have hr1 : r ^ ((n : ℝ) + 1) = r ^ (n + 1) := by
-      rw [← Real.rpow_natCast]
-      push_cast
-      ring_nf
-    rw [Measure.addHaar_real_ball_of_pos _ z hr, finrank_euclideanSpace_fin, ← hω, hγ,
-      Real.mul_rpow (by norm_num) hr.le, show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num,
-      ← Real.rpow_mul (by norm_num), Real.rpow_add hr, hr1, mul_comm (2 : ℝ) α]
-    ring
+    -- The volume of the ball is `ω r^{n+1}`.
+    have hvol : volume.real (ball z r) = ω * r ^ ((n : ℝ) + 1) := by
+      rw [Measure.addHaar_real_ball_of_pos _ z hr, finrank_euclideanSpace_fin, ← hω, mul_comm]
+      norm_cast
+    -- The powers: `(2 r)^{2α} r^{n+1} = 4^α r^γ`.
+    have hpow : (2 * r) ^ (2 * (α : ℝ)) * r ^ ((n : ℝ) + 1) = 4 ^ (α : ℝ) * r ^ γ := by
+      rw [Real.mul_rpow zero_le_two hr.le, Real.rpow_mul zero_le_two,
+        show (2 : ℝ) ^ (2 : ℝ) = 4 by norm_num, hγ, Real.rpow_add hr ((n : ℝ) + 1)]
+      ring
+    rw [hvol]
+    linear_combination (K : ℝ) ^ 2 * ω * hpow
   have h1 : 4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) * (ρ / r) ^ (n + 3) ≤
       A * (ρ / r) ^ ((n : ℝ) + 3) := by
-    have hq : (ρ / r) ^ (n + 3) = (ρ / r) ^ ((n : ℝ) + 3) := by
-      rw [← Real.rpow_natCast]
-      push_cast
-      ring_nf
+    have hq : (ρ / r) ^ (n + 3) = (ρ / r) ^ ((n : ℝ) + 3) := by norm_cast
     rw [hq]
     gcongr
+    linarith
   have hI0 : 0 ≤ ∫ x in ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖G x - c‖ ^ 2 :=
     integral_nonneg fun _ => by positivity
   have h2 : 4 * (4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) + 2) *
@@ -525,8 +497,7 @@ private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_rpow_of_iter
     {α : ℝ≥0} (hα : 0 < α)
     {γ ω D A : ℝ} (hγ : γ = (n : ℝ) + 1 + 2 * α)
     (hω : ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hA0 : 0 ≤ A) (hAD : 4 * (4 * D + 2) ≤ A)
-    (hAD' : 4 * D ≤ A)
+    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hAD : 4 * (4 * D + 2) ≤ A)
     {C₁ : ℝ} (hC₁ : 0 ≤ C₁)
     (hit : ∀ {φ : ℝ → ℝ} {R B : ℝ}, 0 ≤ B → MonotoneOn φ (Ioc 0 R) →
       (∀ r ∈ Ioc 0 R, 0 ≤ φ r) →
@@ -548,6 +519,7 @@ private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_rpow_of_iter
     (htR : t ≤ R) :
     ψ t ≤ C₁ * (1 + A * 4 ^ (α : ℝ) * ω) * ((K : ℝ) ^ 2 * R ^ γ + IR) * (t / R) ^ γ := by
   have hR : 0 < R := ht.trans_le htR
+  have hA0 : 0 ≤ A := le_trans (by rw [hD]; positivity) hAD
   have hψ0 : ∀ s, 0 ≤ ψ s := fun s => by
     rw [hψ]
     exact integral_nonneg fun _ => by positivity
@@ -558,16 +530,16 @@ private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_rpow_of_iter
     positivity
   have hmono : MonotoneOn ψ (Ioc 0 R) := fun a ha b hb hab => by
     rw [hψ, hψ]
-    exact monotoneOn_setIntegral_norm_gradient_sub_setAverage_sq w hball ha hb hab
+    exact W1p.monotoneOn_setIntegral_norm_gradient_sub_setAverage_sq w hball ha hb hab
   have hψR : ψ R ≤ IR := by
     rw [hψ, hIR]
-    exact setIntegral_norm_gradient_sub_setAverage_sq_le w hball
+    exact W1p.setIntegral_norm_gradient_sub_setAverage_sq_le w hball
   have hIR0 : 0 ≤ IR := by
     rw [hIR]
     exact integral_nonneg fun _ => by positivity
   -- The iteration, then `t^γ = R^γ (t / R)^γ` and arithmetic.
   have hit' := hit hB0 hmono (fun s _ => hψ0 s) (fun ρ r hρ hρr hrR =>
-    le_mul_rpow_mul_add_mul_rpow_of_holderOnWith hα hγ hω hD hA0 hAD hAD' hν hH hU hu0 hu hw hG
+    le_mul_rpow_mul_add_mul_rpow_of_holderOnWith hα hγ hω hD hAD hν hH hU hu0 hu hw hG
       hz hball hψ hψ0 hB hρ hρr hrR) t ht htR
   have htR' : t ^ γ = R ^ γ * (t / R) ^ γ := by
     rw [Real.div_rpow ht.le hR.le]
@@ -594,8 +566,7 @@ private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_rpow_of_iter
 private theorem setAverage_closedBall_norm_gradient_sub_le_of_iteration {α : ℝ≥0} (hα : 0 < α)
     {γ ω D A : ℝ} (hγ : γ = (n : ℝ) + 1 + 2 * α)
     (hω : ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hA0 : 0 ≤ A) (hAD : 4 * (4 * D + 2) ≤ A)
-    (hAD' : 4 * D ≤ A)
+    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hAD : 4 * (4 * D + 2) ≤ A)
     {C₁ : ℝ} (hC₁ : 0 ≤ C₁)
     (hit : ∀ {φ : ℝ → ℝ} {R B : ℝ}, 0 ≤ B → MonotoneOn φ (Ioc 0 R) →
       (∀ r ∈ Ioc 0 R, 0 ≤ φ r) →
@@ -618,11 +589,12 @@ private theorem setAverage_closedBall_norm_gradient_sub_le_of_iteration {α : �
     ⨍ y in closedBall z t, ‖W1p.gradient w y - ⨍ v in closedBall z t, W1p.gradient w v‖ ≤
       √(2 * C₁ * (1 + A * 4 ^ (α : ℝ) * ω) / ω) * Q * t ^ (α : ℝ) := by
   have hdec := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_rpow_of_iteration hα hγ hω hD
-    hA0 hAD hAD' hC₁ hit hν hH hU hu0 hu hw hG hz hball
+    hAD hC₁ hit hν hH hU hu0 hu hw hG hz hball
     (ψ := fun s => ∫ x in ball z s, ‖W1p.gradient w x - ⨍ y in ball z s, W1p.gradient w y‖ ^ 2)
     (fun _ => rfl) rfl ht htR
+  have hA0 : 0 ≤ A := le_trans (by rw [hD]; positivity) hAD
   subst hω
-  -- The bound in the form of `setAverage_closedBall_norm_gradient_sub_le_mul_rpow`, for an
+  -- The bound in the form of `W1p.setAverage_closedBall_norm_gradient_sub_le_mul_rpow`, for an
   -- abstract value `IR` of the `L²` mass of `∇w` on `B_R`.
   have key : ∀ IR : ℝ, IR ≤ (R ^ (((n : ℝ) + 1) / 2 + α) * Q) ^ 2 →
       C₁ * (1 + A * 4 ^ (α : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) *
@@ -638,8 +610,8 @@ private theorem setAverage_closedBall_norm_gradient_sub_le_of_iteration {α : �
             gcongr
             linarith
         _ = _ := by ring
-  exact setAverage_closedBall_norm_gradient_sub_le_mul_rpow w ((ball_subset_ball htR).trans hball)
-    ht hR hQ0 (hdec.trans (key _ hIQ))
+  exact W1p.setAverage_closedBall_norm_gradient_sub_le_mul_rpow w
+    ((ball_subset_ball htR).trans hball) ht hR hQ0 (hdec.trans (key _ hIQ))
 
 /-- The Hölder estimate up to the flat boundary, given the iteration lemma, for the gradient of
 the odd reflection `w = u - u ∘ ρ`: with `Q = K + R^{-(n+1)/2-α} ‖∇w‖` the constant is
@@ -648,8 +620,7 @@ constant of Campanato's theorem and `ω` the volume of the unit ball. -/
 private theorem holderOnWith_gradient_of_iteration {α : ℝ≥0} (hα : 0 < α)
     {γ ω D A : ℝ} (hγ : γ = (n : ℝ) + 1 + 2 * α)
     (hω : ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hA0 : 0 ≤ A) (hAD : 4 * (4 * D + 2) ≤ A)
-    (hAD' : 4 * D ≤ A)
+    (hD : D = 2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) (hAD : 4 * (4 * D + 2) ≤ A)
     {C₁ : ℝ} (hC₁ : 0 ≤ C₁)
     (hit : ∀ {φ : ℝ → ℝ} {R B : ℝ}, 0 ≤ B → MonotoneOn φ (Ioc 0 R) →
       (∀ r ∈ Ioc 0 R, 0 ≤ φ r) →
@@ -689,7 +660,7 @@ private theorem holderOnWith_gradient_of_iteration {α : ℝ≥0} (hα : 0 < α)
   have hosc : ∀ z ∈ S, ∀ t, 0 < t → t ≤ 1 * R →
       ⨍ y in closedBall z t, ‖W1p.gradient w y - ⨍ v in closedBall z t, W1p.gradient w v‖ ≤
         √(2 * C₁ * (1 + A * 4 ^ (α : ℝ) * ω) / ω) * Q * t ^ (α : ℝ) := fun z hz t ht htR =>
-    setAverage_closedBall_norm_gradient_sub_le_of_iteration hα hγ hω hD hA0 hAD hAD' hC₁ hit hν hH
+    setAverage_closedBall_norm_gradient_sub_le_of_iteration hα hγ hω hD hAD hC₁ hit hν hH
       hU hu0 hu hw (hG.mono (inter_subset_inter_left _ (ball_subset_thickening hz R))) (hS z hz) hR
       (hball z hz) hQ0 hKX (hIX z hz) ht (by rwa [one_mul] at htR)
   subst hω
@@ -701,11 +672,11 @@ private theorem holderOnWith_gradient_of_iteration {α : ℝ≥0} (hα : 0 < α)
       R ^ (α : ℝ) * Q /
         √(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * 1 ^ (n + 1)) :=
     fun z hz =>
-    norm_setAverage_closedBall_gradient_le_div w (hball1 z hz) one_pos hR hQ0
+    W1p.norm_setAverage_closedBall_gradient_le_div w (hball1 z hz) one_pos hR hQ0
       (((Lp.setIntegral_norm_sq_le_norm_sq (W1p.gradient w) (hball1 z hz)).trans
         (pow_le_pow_left₀ (norm_nonneg _) hXu 2)).trans_eq hsq)
   have hH' := TauCeti.MeasureTheory.holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le hα
-    (ρ := 1 * R) (by positivity) (fun z hz => integrableOn_closedBall_gradient w (hball1 z hz)
+    (ρ := 1 * R) (by positivity) (fun z hz => W1p.integrableOn_closedBall_gradient w (hball1 z hz)
       le_rfl) hosc havg
   refine hH'.mono_const (Real.toNNReal_le_toNNReal (le_of_eq ?_))
   rw [one_mul, one_pow, mul_one, Real.rpow_neg hR.le]
@@ -754,14 +725,12 @@ theorem
   -- dominating those of the decay estimate.
   have hiter : ∃ C₁ : ℝ, 0 ≤ C₁ ∧ ∀ {φ : ℝ → ℝ} {R B : ℝ}, 0 ≤ B → MonotoneOn φ (Ioc 0 R) →
       (∀ r ∈ Ioc 0 R, 0 ≤ φ r) →
-      (∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ R → φ ρ ≤ (4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) +
-        4 * (4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) + 2)) * (ρ / r) ^ ((n : ℝ) + 3) * φ r +
-          B * r ^ ((n : ℝ) + 1 + 2 * α)) →
+      (∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ R → φ ρ ≤ 4 * (4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) + 2) *
+        (ρ / r) ^ ((n : ℝ) + 3) * φ r + B * r ^ ((n : ℝ) + 1 + 2 * α)) →
       ∀ ρ, 0 < ρ → ρ ≤ R →
         φ ρ ≤ C₁ * ((ρ / R) ^ ((n : ℝ) + 1 + 2 * α) * φ R + B * ρ ^ ((n : ℝ) + 1 + 2 * α)) := by
     obtain ⟨ε₀, C₁, hε₀, hC₁, hit⟩ := exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add
-      (A := 4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) +
-        4 * (4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) + 2))
+      (A := 4 * (4 * (2 ^ (3 * n + 13) * ((n : ℝ) + 2) ^ 2) + 2))
       (α := (n : ℝ) + 3) (β := (n : ℝ) + 1 + 2 * α) (γ := (n : ℝ) + 1 + 2 * α) (by positivity)
       (by linarith) (by linarith)
     exact ⟨C₁, hC₁.le, fun hB hm hn hs ρ hρ hρR => hit hB hε₀.le hm hn
@@ -772,9 +741,8 @@ theorem
       (neg_lt_zero.2 hα'))).le
   exact hiter.elim fun C₁ hC₁ => ⟨_, mul_nonneg (by positivity)
     (add_nonneg (mul_nonneg hc (Real.sqrt_nonneg _)) (by positivity)),
-    fun hν hH hU hu0 hu hG hS hR hRS => holderOnWith_gradient_of_iteration hα rfl rfl rfl
-      (by positivity) (le_add_of_nonneg_left (by positivity))
-      (le_add_of_nonneg_right (by positivity)) hC₁.1 hC₁.2 hν hH hU hu0 hu rfl hG hS hR hRS rfl⟩
+    fun hν hH hU hu0 hu hG hS hR hRS => holderOnWith_gradient_of_iteration hα rfl rfl rfl le_rfl
+      hC₁.1 hC₁.2 hν hH hU hu0 hu rfl hG hS hR hRS rfl⟩
 
 end PDE
 

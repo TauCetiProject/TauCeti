@@ -161,15 +161,18 @@ theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c �
     (hz : c ≤ ⟪z, ν⟫_ℝ) : dist x z ≤ dist x (hyperplaneReflection ν c z) := by
   rcases eq_or_ne ν 0 with rfl | hν
   · simp [hyperplaneReflection_apply]
-  set s := 2 * ((⟪z, ν⟫_ℝ - c) / ‖ν‖ ^ 2) with hs
-  have hs0 : 0 ≤ s := by positivity
-  have hsν : s * ‖ν‖ ^ 2 = 2 * (⟪z, ν⟫_ℝ - c) := by
-    rw [hs]
+  have hid : ‖x - hyperplaneReflection ν c z‖ ^ 2 =
+      ‖x - z‖ ^ 2 + 4 * (⟪z, ν⟫_ℝ - c) * (⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2 := by
+    rw [hyperplaneReflection_apply, sub_sub_eq_add_sub, add_sub_right_comm, norm_add_sq_real,
+      inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, inner_sub_left]
     field_simp
-  rw [dist_eq_norm, dist_eq_norm, hyperplaneReflection_apply, ← hs, sub_sub_eq_add_sub,
-    add_sub_right_comm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_sq_real,
-    inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, inner_sub_left]
-  nlinarith
+    ring
+  have h0 : 0 ≤ 4 * (⟪z, ν⟫_ℝ - c) * (⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2 := by
+    have := sub_nonneg.2 hx
+    have := sub_nonneg.2 hz
+    positivity
+  rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), hid]
+  linarith
 
 /-- The derivative of the hyperplane reflection at every point is its linear part
 `(ℝ ∙ ν)ᗮ.reflection`. -/
