@@ -71,7 +71,10 @@ The proof compares the two functionals at the two minimizers, with every constan
 The smooth representatives `TauCeti.Vortex.reducedSolution P` then converge uniformly on the
 whole plane, together with their first derivatives
 (`TauCeti.Vortex.tendstoUniformly_reducedSolution`,
-`TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`). The sup bounds of step 2 bound the
+`TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`), hence depend continuously on
+families of polynomials of a fixed positive degree with continuous coefficients
+(`TauCeti.Vortex.continuous_reducedSolution`,
+`TauCeti.Vortex.continuous_fderiv_reducedSolution`). The sup bounds of step 2 bound the
 right-hand sides of the reduced equations, hence the Laplacians of the differences
 `w_(P i) - w_Q`, uniformly in `i`. A square-integrable function with a bounded Laplacian is bounded
 by its `L²` norm through the mean-value inequality, so the `L²` convergence of step 5 becomes
@@ -92,6 +95,10 @@ not treated here.
   `TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`: under the hypotheses of
   `TauCeti.Vortex.tendsto_reducedMinimizer`, the smooth reduced solutions and their derivatives
   converge uniformly on the plane.
+* `TauCeti.Vortex.continuous_reducedSolution`,
+  `TauCeti.Vortex.continuous_fderiv_reducedSolution`: the smooth reduced solutions and their
+  derivatives are continuous, for the topology of uniform convergence on the plane, on families of
+  polynomials of a fixed positive degree with continuous coefficients.
 * `TauCeti.Vortex.exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le`: minimizers
   of Taubes's functional are bounded in `L∞`, uniformly over polynomials with a common bound on
   `2 ‖P'‖² / (1 + ‖P‖²)²` and minimizers with a common `L²` bound.
@@ -935,5 +942,31 @@ theorem tendstoUniformly_fderiv_reducedSolution {ι : Type*} {l : Filter ι}
   exact (tendstoUniformly_reducedSolution hQ hdeg hcoeff).fderiv_of_abs_laplacian_sub_le
     (.of_forall fun i ↦ (contDiff_reducedSolution (P i)).of_le (by simp))
     ((contDiff_reducedSolution Q).of_le (by simp)) hK
+
+/-- **Uniform continuity of the reduced solutions on a parameter space.** For a family of
+polynomials of a fixed positive degree whose coefficients depend continuously on a parameter, the
+smooth reduced solutions depend continuously on the parameter in the topology of uniform
+convergence on the plane. -/
+theorem continuous_reducedSolution {X : Type*} [TopologicalSpace X] {P : X → Polynomial ℂ}
+    {m : ℕ} (hm : 0 < m) (hdeg : ∀ x, (P x).natDegree = m)
+    (hcoeff : ∀ k, Continuous fun x ↦ (P x).coeff k) :
+    Continuous fun x ↦ UniformFun.ofFun (reducedSolution (P x)) :=
+  continuous_iff_continuousAt.2 fun x ↦ UniformFun.tendsto_iff_tendstoUniformly.2 <|
+    tendstoUniformly_reducedSolution ((hdeg x).symm ▸ hm)
+      (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
+      fun k ↦ (hcoeff k).continuousAt
+
+/-- **Uniform continuity of the derivatives of the reduced solutions on a parameter space.** Under
+the hypotheses of `TauCeti.Vortex.continuous_reducedSolution`, the derivatives of the reduced
+solutions depend continuously on the parameter in the topology of uniform convergence on the
+plane. -/
+theorem continuous_fderiv_reducedSolution {X : Type*} [TopologicalSpace X]
+    {P : X → Polynomial ℂ} {m : ℕ} (hm : 0 < m) (hdeg : ∀ x, (P x).natDegree = m)
+    (hcoeff : ∀ k, Continuous fun x ↦ (P x).coeff k) :
+    Continuous fun x ↦ UniformFun.ofFun (fderiv ℝ (reducedSolution (P x))) :=
+  continuous_iff_continuousAt.2 fun x ↦ UniformFun.tendsto_iff_tendstoUniformly.2 <|
+    tendstoUniformly_fderiv_reducedSolution ((hdeg x).symm ▸ hm)
+      (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
+      fun k ↦ (hcoeff k).continuousAt
 
 end TauCeti.Vortex
