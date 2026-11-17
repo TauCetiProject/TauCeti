@@ -84,12 +84,10 @@ noncomputable def flagMinorAlgebra (n : ℕ) (R : Type*) [CommRing R] :
   Algebra.adjoin R (Set.range (flagMinor R))
 
 theorem flagMinorAlgebra_def (n : ℕ) (R : Type*) [CommRing R] :
-    flagMinorAlgebra n R = Algebra.adjoin R (Set.range (flagMinor R)) :=
-  (rfl)
+    flagMinorAlgebra n R = Algebra.adjoin R (Set.range (flagMinor R)) := by rfl
 
 theorem flagMinor_mem_flagMinorAlgebra (R : Type*) [CommRing R] (I : Finset (Fin n)) :
-    flagMinor R I ∈ flagMinorAlgebra n R :=
-  Algebra.subset_adjoin ⟨I, rfl⟩
+    flagMinor R I ∈ flagMinorAlgebra n R := Algebra.subset_adjoin ⟨I, rfl⟩
 
 /-- The empty flag minor is `1`, so the `2 ^ n - 1` nonempty flag minors already generate
 `flagMinorAlgebra n R` (including for `n = 0`, where both sides are `⊥`). -/
@@ -99,14 +97,12 @@ theorem adjoin_flagMinor_nonempty (R : Type*) [CommRing R] :
   refine le_antisymm (Algebra.adjoin_mono (Set.image_subset_range _ _)) (Algebra.adjoin_le ?_)
   rintro _ ⟨I, rfl⟩
   rcases I.eq_empty_or_nonempty with rfl | hne
-  · rw [flagMinor_empty]
-    exact one_mem _
+  · exact flagMinor_empty R ▸ one_mem _
   · exact Algebra.subset_adjoin ⟨I, hne, rfl⟩
 
 theorem BoundedSSYT.flagMinorProd_mem_flagMinorAlgebra {μ : YoungDiagram} (R : Type*) [CommRing R]
     (T : BoundedSSYT n μ) : T.flagMinorProd R ∈ flagMinorAlgebra n R := by
-  rw [T.flagMinorProd_def R]
-  exact prod_mem fun m _ ↦ flagMinor_mem_flagMinorAlgebra R (T.colFinset m)
+  rw [T.flagMinorProd_def R]; exact prod_mem fun _ _ ↦ flagMinor_mem_flagMinorAlgebra R _
 
 /-! ### The column-standardness order and tableau reconstruction -/
 
@@ -121,29 +117,23 @@ theorem flagTableauLe_def {I J : Finset (Fin n)} :
       ∃ h : #J ≤ #I, ∀ p : Fin #J, I.orderEmbOfFin rfl (Fin.castLE h p) ≤ J.orderEmbOfFin rfl p :=
   Iff.rfl
 
-theorem FlagTableauLe.card_le {I J : Finset (Fin n)} (h : FlagTableauLe I J) : #J ≤ #I :=
-  h.1
+theorem FlagTableauLe.card_le {I J : Finset (Fin n)} (h : FlagTableauLe I J) : #J ≤ #I := h.1
 
 @[refl]
-theorem FlagTableauLe.refl (I : Finset (Fin n)) : FlagTableauLe I I :=
-  ⟨le_rfl, fun _ ↦ le_rfl⟩
+theorem FlagTableauLe.refl (I : Finset (Fin n)) : FlagTableauLe I I := ⟨le_rfl, fun _ ↦ le_rfl⟩
 
 theorem FlagTableauLe.trans {I J K : Finset (Fin n)} (hIJ : FlagTableauLe I J)
-    (hJK : FlagTableauLe J K) : FlagTableauLe I K := by
-  obtain ⟨h₁, hp₁⟩ := hIJ
-  obtain ⟨h₂, hp₂⟩ := hJK
-  exact ⟨h₂.trans h₁, fun p ↦ (hp₁ (Fin.castLE h₂ p)).trans (hp₂ p)⟩
+    (hJK : FlagTableauLe J K) : FlagTableauLe I K :=
+  ⟨hJK.1.trans hIJ.1, fun p ↦ (hIJ.2 (Fin.castLE hJK.1 p)).trans (hJK.2 p)⟩
 
 /-- Columns of a bounded semistandard tableau satisfy `FlagTableauLe` from left to right. -/
 theorem BoundedSSYT.flagTableauLe_colFinset {μ : YoungDiagram} (T : BoundedSSYT n μ)
     {m₁ m₂ : ℕ} (hm : m₁ ≤ m₂) : FlagTableauLe (T.colFinset m₁) (T.colFinset m₂) := by
-  have hcard : #(T.colFinset m₂) ≤ #(T.colFinset m₁) := by
-    rw [T.card_colFinset, T.card_colFinset]
-    exact μ.colLen_anti m₁ m₂ hm
-  refine ⟨hcard, fun p ↦ Fin.le_iff_val_le_val.mpr ?_⟩
-  have hp : (p : ℕ) < μ.colLen m₂ := p.2.trans_eq (T.card_colFinset m₂)
+  refine ⟨by rw [T.card_colFinset, T.card_colFinset]; exact μ.colLen_anti m₁ m₂ hm,
+    fun p ↦ Fin.le_iff_val_le_val.mpr ?_⟩
   rw [T.coe_orderEmbOfFin_colFinset_apply m₁ rfl, T.coe_orderEmbOfFin_colFinset_apply m₂ rfl]
-  exact T.1.row_weak_of_le hm (YoungDiagram.mem_iff_lt_colLen.mpr hp)
+  exact T.1.row_weak_of_le hm
+    (YoungDiagram.mem_iff_lt_colLen.mpr (p.2.trans_eq (T.card_colFinset _)))
 
 /-- Reconstruct the Young diagram with columns of lengths `#(I m)` from a `FlagTableauLe`-chain. -/
 private def shapeOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
@@ -159,16 +149,6 @@ private theorem mem_shapeOfFlagChain_iff {k : ℕ} {I : Fin k → Finset (Fin n)
   · simp [hm, YoungDiagram.rowLen_ofRowLensFin _ _ ⟨m, hm⟩]
   · simp [hm, YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ (not_lt.mp hm)]
 
-private theorem colLen_zero_shapeOfFlagChain_le {k : ℕ} {I : Fin k → Finset (Fin n)}
-    (hanti : Antitone fun m : Fin k ↦ #(I m)) :
-    (shapeOfFlagChain I hanti).colLen 0 ≤ n := by
-  rw [shapeOfFlagChain, YoungDiagram.colLen_transpose]
-  by_cases hk : 0 < k
-  · simpa using (YoungDiagram.rowLen_ofRowLensFin (fun m : Fin k ↦ #(I m)) hanti ⟨0, hk⟩).le.trans
-      (card_finset_fin_le _)
-  · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ (by omega)]
-    exact Nat.zero_le n
-
 /-- Construct the `BoundedSSYT` whose columns are a given `FlagTableauLe`-chain `I`. -/
 private def boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
     (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂))
@@ -180,34 +160,22 @@ private def boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
        else 0
      row_weak' := fun {i m₁ m₂} hm hcell ↦ by
        have h₂ := mem_shapeOfFlagChain_iff.mp hcell
-       have h₁ := mem_shapeOfFlagChain_iff.mp ((shapeOfFlagChain I hanti).up_left_mem
-         le_rfl hm.le hcell)
+       have h₁ := mem_shapeOfFlagChain_iff.mp
+         ((shapeOfFlagChain I hanti).up_left_mem le_rfl hm.le hcell)
        simp only [h₁, h₂, ↓reduceDIte]
-       obtain ⟨_, hp⟩ := hchain ⟨m₁, h₁.1⟩ ⟨m₂, h₂.1⟩ (Fin.le_def.mpr hm.le)
-       exact Fin.le_iff_val_le_val.mp (hp ⟨i, h₂.2⟩)
+       exact Fin.le_iff_val_le_val.mp
+         ((hchain ⟨m₁, h₁.1⟩ ⟨m₂, h₂.1⟩ (Fin.le_def.mpr hm.le)).2 ⟨i, h₂.2⟩)
      col_strict' := fun {i₁ i₂ m} hi hcell ↦ by
        have h₂ := mem_shapeOfFlagChain_iff.mp hcell
-       have h₁ := mem_shapeOfFlagChain_iff.mp ((shapeOfFlagChain I hanti).up_left_mem
-         hi.le le_rfl hcell)
+       have h₁ := mem_shapeOfFlagChain_iff.mp
+         ((shapeOfFlagChain I hanti).up_left_mem hi.le le_rfl hcell)
        simp only [h₁, h₂, ↓reduceDIte]
        exact Fin.lt_def.mp (((I ⟨m, h₂.1⟩).orderEmbOfFin rfl).strictMono hi)
-     zeros' := fun h ↦ by
-       have h' : ¬ ∃ hm : _ < k, _ < #(I ⟨_, hm⟩) := h ∘ mem_shapeOfFlagChain_iff.mpr
-       simp [h'] },
+     zeros' := fun h ↦ dite_eq_right (h ∘ mem_shapeOfFlagChain_iff.mpr) },
    fun i m hcell ↦ by
      have h := mem_shapeOfFlagChain_iff.mp hcell
-     rw [← SemistandardYoungTableau.to_fun_eq_coe]
-     simp only [h, ↓reduceDIte]
+     rw [← SemistandardYoungTableau.to_fun_eq_coe]; simp only [h, ↓reduceDIte]
      exact ((I ⟨m, h.1⟩).orderEmbOfFin rfl ⟨i, h.2⟩).isLt⟩
-
-private theorem boundedSSYTOfFlagChain_apply {k : ℕ} (I : Fin k → Finset (Fin n))
-    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂))
-    (hanti : Antitone fun m : Fin k ↦ #(I m)) (i : ℕ) (m : Fin k) (hi : i < #(I m)) :
-    (boundedSSYTOfFlagChain I hchain hanti).1 i m = ((I m).orderEmbOfFin rfl ⟨i, hi⟩ : ℕ) := by
-  have h : ∃ hm : (m : ℕ) < k, i < #(I ⟨m, hm⟩) := ⟨m.2, hi⟩
-  dsimp only [boundedSSYTOfFlagChain]
-  rw [← SemistandardYoungTableau.to_fun_eq_coe]
-  simp only [h, ↓reduceDIte]
 
 /-- Every `FlagTableauLe`-chain of nonempty subsets of `Fin n` is the sequence of nonempty columns
 of a bounded semistandard Young tableau of shape with at most `n` rows. -/
@@ -217,28 +185,31 @@ theorem exists_boundedSSYT_flagMinorProd_eq {k : ℕ} (R : Type*) [CommRing R]
     ∃ (μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}) (T : BoundedSSYT n μ.1),
       T.flagMinorProd R = ∏ m : Fin k, flagMinor R (I m) := by
   have hanti : Antitone (fun m : Fin k ↦ #(I m)) := fun _ _ h ↦ (hchain _ _ h).card_le
-  let μ := shapeOfFlagChain I hanti
-  let T := boundedSSYTOfFlagChain I hchain hanti
-  have hrow0 : μ.rowLen 0 = k := by
-    refine le_antisymm (not_lt.mp fun hk ↦ ?_) (not_lt.mp fun hk ↦ ?_)
-    · obtain ⟨hm, _⟩ := mem_shapeOfFlagChain_iff.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hk)
-      omega
-    · have hmem : (0, μ.rowLen 0) ∈ μ :=
-        mem_shapeOfFlagChain_iff.mpr ⟨hk, (hne ⟨μ.rowLen 0, hk⟩).card_pos⟩
-      exact (YoungDiagram.mem_iff_lt_rowLen.mp hmem).false
-  refine ⟨⟨μ, colLen_zero_shapeOfFlagChain_le hanti⟩, T, ?_⟩
+  let μ := shapeOfFlagChain I hanti; let T := boundedSSYTOfFlagChain I hchain hanti
+  have hcol0 : μ.colLen 0 ≤ n := by
+    dsimp only [μ, shapeOfFlagChain]; rw [YoungDiagram.colLen_transpose]
+    by_cases hk : 0 < k
+    · simpa using (YoungDiagram.rowLen_ofRowLensFin _ hanti ⟨0, hk⟩).le.trans
+        (card_finset_fin_le _)
+    · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ (by omega)]; exact Nat.zero_le n
+  have hrow0 : μ.rowLen 0 = k := le_antisymm
+    (not_lt.mp fun hk ↦ by
+      obtain ⟨hm, _⟩ := mem_shapeOfFlagChain_iff.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hk); omega)
+    (not_lt.mp fun hk ↦ (YoungDiagram.mem_iff_lt_rowLen.mp
+      (mem_shapeOfFlagChain_iff.mpr ⟨hk, (hne ⟨μ.rowLen 0, hk⟩).card_pos⟩)).false)
+  have hT_apply (i : ℕ) (m : Fin k) (hi : i < #(I m)) :
+      T.1 i m = ((I m).orderEmbOfFin rfl ⟨i, hi⟩ : ℕ) := by
+    dsimp only [T, boundedSSYTOfFlagChain]; rw [← SemistandardYoungTableau.to_fun_eq_coe]
+    simp only [show ∃ hm : (m : ℕ) < k, i < #(I ⟨m, hm⟩) from ⟨m.2, hi⟩, ↓reduceDIte]
+  refine ⟨⟨μ, hcol0⟩, T, ?_⟩
   rw [T.flagMinorProd_def R, hrow0, ← Fin.prod_univ_eq_prod_range]
   refine Fintype.prod_congr _ _ fun m ↦ congrArg (flagMinor R) ?_
-  ext r
-  rw [T.mem_colFinset_iff]
+  ext r; rw [T.mem_colFinset_iff]
   have hlen : μ.colLen m = #(I m) := by simp [μ, shapeOfFlagChain, YoungDiagram.colLen_transpose]
-  constructor
-  · rintro ⟨i, hi, hir⟩
-    rw [boundedSSYTOfFlagChain_apply I hchain hanti i m (hi.trans_eq hlen)] at hir
-    exact Fin.ext hir ▸ (I m).orderEmbOfFin_mem rfl _
-  · intro hr
-    obtain ⟨i, rfl⟩ := (Finset.range_orderEmbOfFin (I m) rfl).symm.subset hr
-    exact ⟨i, i.2.trans_eq hlen.symm, boundedSSYTOfFlagChain_apply I hchain hanti i m i.2⟩
+  refine ⟨fun ⟨i, hi, hir⟩ ↦ ?_, fun hr ↦ ?_⟩
+  · rw [hT_apply i m (hi.trans_eq hlen)] at hir; exact Fin.ext hir ▸ (I m).orderEmbOfFin_mem rfl _
+  · obtain ⟨i, rfl⟩ := (Finset.range_orderEmbOfFin (I m) rfl).symm.subset hr
+    exact ⟨i, i.2.trans_eq hlen.symm, hT_apply i m i.2⟩
 
 /-! ### Quadratic shuffle Plücker straightening -/
 
@@ -258,21 +229,19 @@ private theorem mvPolynomialMinor_eq_zero_or_sign_smul_flagMinor (R : Type*) [Co
     have hord : (u ∘ τ) ∘ finCongr hcard = I'.orderEmbOfFin rfl :=
       orderEmbOfFin_unique rfl (fun _ ↦ mem_image_of_mem u (mem_univ _))
         (hτ.comp (Fin.castOrderIso hcard).strictMono)
-    have hu_eq : u = I'.orderEmbOfFin rfl ∘ finCongr hcard.symm ∘ τ.symm := by
-      ext1 i
-      simpa using congr_fun hord (finCongr hcard.symm (τ.symm i))
+    have hu_eq : u = I'.orderEmbOfFin rfl ∘ finCongr hcard.symm ∘ τ.symm :=
+      funext fun i ↦ by simpa using congr_fun hord (finCongr hcard.symm (τ.symm i))
     refine ⟨hu, Equiv.Perm.sign τ.symm, ?_⟩
     rw [Matrix.mvPolynomialMinor_eq_det_submatrix, flagMinor_def,
       Matrix.mvPolynomialMinor_eq_det_submatrix, hu_eq]
     change Matrix.det ((((Matrix.mvPolynomialX (Fin n) (Fin n) R).submatrix (I'.orderEmbOfFin rfl)
         (Fin.castLE (card_finset_fin_le I'))).submatrix
         (finCongr hcard.symm) (finCongr hcard.symm)).submatrix τ.symm id) = _
-    rw [Matrix.det_permute, Matrix.det_submatrix_equiv_self]
-    simp [zsmul_eq_mul]
+    rw [Matrix.det_permute, Matrix.det_submatrix_equiv_self]; simp [zsmul_eq_mul]
   · left
-    obtain ⟨i, j, hij, hne⟩ := Function.not_injective_iff.mp hu
+    obtain ⟨_, _, hij, hne⟩ := Function.not_injective_iff.mp hu
     rw [Matrix.mvPolynomialMinor_eq_det_submatrix]
-    exact Matrix.det_zero_of_row_eq hne (by ext k; simp [hij])
+    exact Matrix.det_zero_of_row_eq hne (by ext; simp [hij])
 
 /-- A monotonic shuffle `σ ≠ 1` of an injective `γ : κ₁ ⊕ κ₂ → Fin n` cannot map `κ₁` into `κ₁`. -/
 private theorem shuffle_map_inl_ne_of_ne_one {κ₁ κ₂ : Type*}
@@ -287,24 +256,22 @@ private theorem shuffle_map_inl_ne_of_ne_one {κ₁ κ₂ : Type*}
   have hleft (z : κ₁ ⊕ κ₂) : (σ z).isLeft ↔ z.isLeft := by
     rcases z with x | y
     · obtain ⟨y, _, hy⟩ := mem_map.mp (heq ▸ mem_map_of_mem _ (mem_map_of_mem _ (mem_univ x)))
-      dsimp at hy
-      simp [← hy]
+      simpa using congrArg Sum.isLeft hy.symm
     · rcases hsy : σ (.inr y) with x | _
       · obtain ⟨z, hz, hzx⟩ := mem_map.mp (heq.symm ▸ mem_map_of_mem _ (mem_univ x))
         obtain ⟨x', _, rfl⟩ := mem_map.mp hz
         exact absurd (σ.injective (hzx.trans hsy.symm)) (by simp)
       · simp
   have hright (z : κ₁ ⊕ κ₂) : (σ z).isRight ↔ z.isRight := by
-    have h := hleft z
-    rcases h' : σ z with _ | _ <;> rcases z with _ | _ <;> simp_all
+    have := hleft z; rcases h' : σ z with _ | _ <;> rcases z with _ | _ <;> simp_all
   have hmem : σ ∈ (Equiv.Perm.sumCongrHom κ₁ κ₂).range :=
     ⟨(Equiv.sumIsLeft.permCongr (σ.subtypePerm hleft),
       Equiv.sumIsRight.permCongr (σ.subtypePerm hright)), by
       ext (x | y)
       · have h := (hleft (.inl x)).mpr rfl
-        rcases h' : σ (.inl x) with x' | y' <;> simp [Equiv.permCongr_apply, h'] at h ⊢
+        rcases h' : σ (.inl x) with _ | _ <;> simp [Equiv.permCongr_apply, h'] at h ⊢
       · have h := (hright (.inr y)).mpr rfl
-        rcases h' : σ (.inr y) with x' | y' <;> simp [Equiv.permCongr_apply, h'] at h ⊢⟩
+        rcases h' : σ (.inr y) with _ | _ <;> simp [Equiv.permCongr_apply, h'] at h ⊢⟩
   have huniq := Subgroup.isComplement_iff_existsUnique_inv_mul_mem.mp
     (Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range hγ) σ
   exact hσ (congrArg Subtype.val <| huniq.unique (y₁ := ⟨σ, hσ₁, hσ₂⟩) (y₂ := ⟨1, hγ₁, hγ₂⟩)
@@ -333,22 +300,17 @@ private theorem sum_comp_inl_lt_of_shuffle_ne_one {κ₁ κ₂ : Type*}
       (∑ z ∈ L \ S, (γ z : ℕ)) + ∑ z ∈ S ∩ L, (γ z : ℕ) := by
     rw [inter_comm S L, ← sum_union (disjoint_sdiff_inter L S), sdiff_union_inter]; simp [L]
   have hcard : #(S \ L) = #(L \ S) := by
-    have h₁ := card_sdiff_add_card_inter S L
-    have h₂ := card_sdiff_add_card_inter L S
-    have h₃ : #S = #L := card_map _
-    rw [inter_comm L S] at h₂; omega
+    have := card_sdiff_add_card_inter S L; have := card_sdiff_add_card_inter L S
+    have : #S = #L := card_map _; rw [inter_comm L S] at *; omega
   have hpos : 0 < #(S \ L) := card_pos.mpr (sdiff_nonempty.mpr fun hsub ↦
     hSL (eq_of_subset_of_card_le hsub (card_map _).ge))
-  have hle_S : (∑ z ∈ S \ L, (γ z : ℕ)) ≤ #(S \ L) * (a₀ : ℕ) :=
-    sum_le_card_nsmul _ _ _ fun z hz ↦ by
-      rcases z with x | y
-      · exact absurd (mem_map_of_mem _ (mem_univ x)) (mem_sdiff.mp hz).2
-      · exact Fin.le_iff_val_le_val.mp (hκ₂ y)
-  have hle_L : #(L \ S) * (b₀ : ℕ) ≤ ∑ z ∈ L \ S, (γ z : ℕ) :=
-    card_nsmul_le_sum _ _ _ fun z hz ↦ by
-      obtain ⟨x, _, rfl⟩ := mem_map.mp (mem_sdiff.mp hz).1
-      exact Fin.le_iff_val_le_val.mp (hκ₁ x)
-  have hlt_mul : #(S \ L) * (a₀ : ℕ) < #(L \ S) * (b₀ : ℕ) :=
+  have hle_S : (∑ z ∈ S \ L, (γ z : ℕ)) ≤ #(S \ L) * (a₀ : ℕ) := sum_le_card_nsmul _ _ _ fun z hz ↦
+    match z, hz with
+    | .inl x, hz => absurd (mem_map_of_mem _ (mem_univ x)) (mem_sdiff.mp hz).2
+    | .inr y, _ => Fin.le_iff_val_le_val.mp (hκ₂ y)
+  have hle_L : #(L \ S) * (b₀ : ℕ) ≤ ∑ z ∈ L \ S, (γ z : ℕ) := card_nsmul_le_sum _ _ _ fun z hz ↦
+    let ⟨x, _, hx⟩ := mem_map.mp (mem_sdiff.mp hz).1; hx ▸ Fin.le_iff_val_le_val.mp (hκ₁ x)
+  have : #(S \ L) * (a₀ : ℕ) < #(L \ S) * (b₀ : ℕ) :=
     hcard ▸ Nat.mul_lt_mul_of_pos_left (Fin.lt_def.mp hab) hpos
   omega
 
@@ -359,20 +321,13 @@ private theorem card_fin_lt_add_card_compl {d₁ d₂ : ℕ} (hd : d₂ ≤ d₁
     Fintype.card (Fin d₁) <
       Fintype.card {b : Fin d₁ // ¬ b.val < p₀.val} +
         Fintype.card {a : Fin d₂ // ¬ p₀.val < a.val} := by
-  have h₁ : Fintype.card {b : Fin d₁ // b.val < p₀.val} = p₀.val := by
-    simpa using Fintype.card_congr
-      ⟨fun b : {b : Fin d₁ // b.val < p₀.val} ↦ (⟨b.1.val, b.2⟩ : Fin p₀.val),
-        fun x ↦ ⟨⟨x.val, x.2.trans (p₀.2.trans_le hd)⟩, x.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
-  have h₂ : Fintype.card {a : Fin d₂ // ¬ p₀.val < a.val} = p₀.val + 1 := by
-    simpa using Fintype.card_congr
-      ⟨fun a : {a : Fin d₂ // ¬ p₀.val < a.val} ↦
-          (⟨a.1.val, Nat.lt_succ_of_le (not_lt.mp a.2)⟩ : Fin (p₀.val + 1)),
-        fun x ↦ ⟨⟨x.val, (Nat.lt_succ_iff.mp x.2).trans_lt p₀.2⟩,
-          not_lt.mpr (Nat.lt_succ_iff.mp x.2)⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+  have h₁ : Fintype.card {b : Fin d₁ // b.val < p₀.val} = min d₁ p₀.val := by
+    rw [Fintype.card_subtype]; convert Fin.card_filter_val_lt (n := d₁) (m := p₀.val)
+  have h₂ : Fintype.card {a : Fin d₂ // ¬ p₀.val < a.val} = min d₂ (p₀.val + 1) := by
+    rw [Fintype.card_subtype]; convert Fin.card_filter_val_lt (n := d₂) (m := p₀.val + 1) using 2
+    ext a; simp
   have hsplit := Fintype.card_congr (Equiv.sumCompl fun b : Fin d₁ ↦ b.val < p₀.val)
-  rw [Fintype.card_sum] at hsplit
-  rw [Fintype.card_fin] at hsplit ⊢
-  omega
+  rw [Fintype.card_sum, Fintype.card_fin] at hsplit; rw [Fintype.card_fin]; omega
 
 /-- Row-sum conservation and strict first-factor decrease for an injective shuffle term. -/
 private theorem sum_image_shuffle_eq_and_lt {I J : Finset (Fin n)} {ι₁ κ₁ ι₂ κ₂ : Type}
@@ -390,50 +345,54 @@ private theorem sum_image_shuffle_eq_and_lt {I J : Finset (Fin n)} {ι₁ κ₁ 
     ((∑ x ∈ univ.image u₁, (x : ℕ)) + ∑ y ∈ univ.image u₂, (y : ℕ)) =
       (∑ x ∈ I, (x : ℕ)) + (∑ y ∈ J, (y : ℕ)) ∧
     (∑ x ∈ univ.image u₁, (x : ℕ)) < ∑ x ∈ I, (x : ℕ) := by
-  cases nonempty_fintype ι₁; cases nonempty_fintype ι₂; cases nonempty_fintype κ₂
-  intro u₁ u₂
+  cases nonempty_fintype ι₁; cases nonempty_fintype ι₂; cases nonempty_fintype κ₂; intro u₁ u₂
   have hsplit {ι κ : Type} [Fintype ι] [Fintype κ] {d : ℕ} (e : Fin d ≃ ι ⊕ κ)
       (f : ι → Fin n) (g : κ → Fin n) (hinj : Function.Injective (Sum.elim f g ∘ e)) :
       (∑ x ∈ univ.image (Sum.elim f g ∘ e), (x : ℕ)) =
         (∑ x : ι, (f x : ℕ)) + ∑ y : κ, (g y : ℕ) := by
     rw [sum_image fun _ _ _ _ h ↦ hinj h]
-    dsimp only [Function.comp_apply]
+    simp only [Function.comp_apply]
     rw [Fintype.sum_equiv e _ (fun z ↦ ((Sum.elim f g z : Fin n) : ℕ)) fun _ ↦ rfl,
-      Fintype.sum_sum_type]
-    simp
+      Fintype.sum_sum_type]; simp
   have hI_img (K : Finset (Fin n)) : univ.image (K.orderEmbOfFin rfl) = K := by
     rw [← Finset.coe_inj, coe_image, coe_univ, Set.image_univ, range_orderEmbOfFin]
-  have hI_sum : (∑ x ∈ I, (x : ℕ)) = (∑ x : ι₁, (α x : ℕ)) + ∑ x : κ₁, (γ (.inl x) : ℕ) := by
-    rw [← hI_img I, ← he₁]
-    exact hsplit e₁ α (γ ∘ Sum.inl) (he₁.symm ▸ (I.orderEmbOfFin rfl).injective)
-  have hJ_sum : (∑ y ∈ J, (y : ℕ)) = (∑ y : ι₂, (β y : ℕ)) + ∑ y : κ₂, (γ (.inr y) : ℕ) := by
-    rw [← hI_img J, ← he₂]
-    exact hsplit e₂ β (γ ∘ Sum.inr) (he₂.symm ▸ (J.orderEmbOfFin rfl).injective)
+  have hI_sum : (∑ x ∈ I, (x : ℕ)) = (∑ x : ι₁, (α x : ℕ)) + ∑ x : κ₁, (γ (.inl x) : ℕ) :=
+    hI_img I ▸ he₁ ▸ hsplit e₁ α (γ ∘ Sum.inl) (he₁.symm ▸ (I.orderEmbOfFin rfl).injective)
+  have hJ_sum : (∑ y ∈ J, (y : ℕ)) = (∑ y : ι₂, (β y : ℕ)) + ∑ y : κ₂, (γ (.inr y) : ℕ) :=
+    hI_img J ▸ he₂ ▸ hsplit e₂ β (γ ∘ Sum.inr) (he₂.symm ▸ (J.orderEmbOfFin rfl).injective)
   have hu₁_sum := hsplit e₁ α (γ ∘ σ ∘ Sum.inl) hu₁
   have hu₂_sum := hsplit e₂ β (γ ∘ σ ∘ Sum.inr) hu₂
   have hperm : (∑ x : κ₁, (γ (σ (.inl x)) : ℕ)) + (∑ y : κ₂, (γ (σ (.inr y)) : ℕ)) =
       (∑ x : κ₁, (γ (.inl x) : ℕ)) + ∑ y : κ₂, (γ (.inr y) : ℕ) := by
     rw [← Fintype.sum_sum_type fun z ↦ (γ (σ z) : ℕ), Equiv.sum_comp σ fun z ↦ (γ z : ℕ),
       Fintype.sum_sum_type]
-  dsimp only [Function.comp_apply] at hu₁_sum hu₂_sum
-  dsimp only [u₁, u₂]
-  omega
+  dsimp only [Function.comp_apply] at hu₁_sum hu₂_sum; dsimp only [u₁, u₂]; omega
 
-/-- Given a column index `p₀` violating `FlagTableauLe I J`, `flagMinor R I * flagMinor R J` lies in
-the `ℤ`-span of products `flagMinor R P.1 * flagMinor R P.2` with the same sizes and total row sum
-and strictly smaller first-factor row sum. -/
-private theorem flagMinor_mul_flagMinor_mem_span_of_lt (R : Type*) [CommRing R]
-    {I J : Finset (Fin n)} (hJI : #J ≤ #I) (p₀ : Fin #J)
-    (hp₀ : J.orderEmbOfFin rfl p₀ < I.orderEmbOfFin rfl (Fin.castLE hJI p₀)) :
+/-- **Quadratic shuffle straightening of flag minors.** Whenever `#J ≤ #I` and
+`¬ FlagTableauLe I J`, `flagMinor R I * flagMinor R J` is a `ℤ`-linear combination of products
+`flagMinor R I' * flagMinor R J'` with `#I' = #I`, `#J' = #J`, the same total row-index sum, and
+strictly smaller first-factor row-index sum `∑ x ∈ I', (x : ℕ) < ∑ x ∈ I, (x : ℕ)`. -/
+theorem flagMinor_mul_flagMinor_eq_sum (R : Type*) [CommRing R] {I J : Finset (Fin n)}
+    (hJI : #J ≤ #I) (hnot : ¬ FlagTableauLe I J) :
     let S := univ.filter fun P : Finset (Fin n) × Finset (Fin n) ↦
       #P.1 = #I ∧ #P.2 = #J ∧
         (∑ x ∈ P.1, (x : ℕ)) + (∑ y ∈ P.2, (y : ℕ)) =
           (∑ x ∈ I, (x : ℕ)) + (∑ y ∈ J, (y : ℕ)) ∧
         (∑ x ∈ P.1, (x : ℕ)) < ∑ x ∈ I, (x : ℕ)
-    flagMinor R I * flagMinor R J ∈ Submodule.span ℤ
-      ((fun P : Finset (Fin n) × Finset (Fin n) ↦ flagMinor R P.1 * flagMinor R P.2) '' S) := by
+    ∃ c : Finset (Fin n) × Finset (Fin n) → ℤ,
+      flagMinor R I * flagMinor R J =
+        ∑ P ∈ S, c P • (flagMinor R P.1 * flagMinor R P.2) := by
   classical
   intro S
+  suffices hmem : flagMinor R I * flagMinor R J ∈ Submodule.span ℤ
+      ((fun P : Finset (Fin n) × Finset (Fin n) ↦ flagMinor R P.1 * flagMinor R P.2) '' S) by
+    obtain ⟨l, hlS, hlc⟩ := (Finsupp.mem_span_image_iff_linearCombination ℤ).mp hmem
+    refine ⟨l, ?_⟩
+    rw [← hlc, Finsupp.linearCombination_apply]
+    exact Finsupp.sum_of_support_subset l (Finset.coe_subset.mp hlS) _ fun _ _ ↦ zero_smul _ _
+  obtain ⟨p₀, hp₀⟩ : ∃ p₀ : Fin #J,
+      J.orderEmbOfFin rfl p₀ < I.orderEmbOfFin rfl (Fin.castLE hJI p₀) := by
+    by_contra! h; exact hnot ⟨hJI, h⟩
   set r₁ := I.orderEmbOfFin rfl; set r₂ := J.orderEmbOfFin rfl
   let p₁ : Fin #I → Prop := fun b ↦ b.val < p₀.val; let p₂ : Fin #J → Prop := fun a ↦ p₀.val < a.val
   let e₁ := (Equiv.sumCompl p₁).symm; let e₂ := (Equiv.sumCompl p₂).symm
@@ -452,25 +411,23 @@ private theorem flagMinor_mul_flagMinor_mem_span_of_lt (R : Type*) [CommRing R]
     · exact absurd h (lt_of_le_of_lt (hκ₂_le y₁) (hp₀.trans_le (hκ₁_ge x₂))).ne
     · exact congrArg Sum.inr (Subtype.ext (r₂.injective h))
   have hT : Subgroup.IsComplement (T : Set (Equiv.Perm ({b // ¬ p₁ b} ⊕ {a // ¬ p₂ a})))
-      ((Equiv.Perm.sumCongrHom {b // ¬ p₁ b} {a // ¬ p₂ a}).range :
-        Set (Equiv.Perm ({b // ¬ p₁ b} ⊕ {a // ¬ p₂ a}))) := by
+      ((Equiv.Perm.sumCongrHom {b // ¬ p₁ b} {a // ¬ p₂ a}).range : Set _) := by
     convert Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range hγ_inj using 1
     ext σ; simp [T]
-  -- Expand the shuffle Plücker relation and isolate the `σ = 1` term.
   have hrel := Matrix.sum_sign_smul_mvPolynomialMinor_comp_mul_mvPolynomialMinor_comp_eq_zero R
     (Fin.castLE (card_finset_fin_le I)) id (Fin.castLE hJI) e₁ e₂ α β γ
     (card_fin_lt_add_card_compl hJI p₀) hT
-  have hu₁_one : Sum.elim α (γ ∘ Sum.inl) ∘ e₁ = r₁ := by
-    ext b; by_cases hb : p₁ b <;> simp [e₁, hb, α, γ]
-  have hu₂_one : Sum.elim β (γ ∘ Sum.inr) ∘ e₂ = r₂ := by
-    ext a; by_cases ha : p₂ a <;> simp [e₂, ha, β, γ]
-  have hc₂_eq : Fin.castLE (card_finset_fin_le I) ∘ Fin.castLE hJI =
-      Fin.castLE (card_finset_fin_le J) := rfl
+  have hu₁_one : Sum.elim α (γ ∘ Sum.inl) ∘ e₁ = r₁ :=
+    funext fun b ↦ by by_cases hb : p₁ b <;> simp [e₁, hb, α, γ]
+  have hu₂_one : Sum.elim β (γ ∘ Sum.inr) ∘ e₂ = r₂ :=
+    funext fun a ↦ by by_cases ha : p₂ a <;> simp [e₂, ha, β, γ]
   have h1T : (1 : Equiv.Perm ({b // ¬ p₁ b} ⊕ {a // ¬ p₂ a})) ∈ T :=
     mem_filter.mpr ⟨mem_univ _, fun _ _ h ↦ r₁.strictMono h, fun _ _ h ↦ r₂.strictMono h⟩
   rw [← add_sum_erase _ _ h1T, Equiv.Perm.sign_one, one_smul, Equiv.Perm.coe_one, Function.id_comp,
-    Function.id_comp, hu₁_one, hu₂_one, Function.comp_id, hc₂_eq, ← flagMinor_def, ← flagMinor_def,
-    add_eq_zero_iff_eq_neg, ← sum_neg_distrib] at hrel
+    Function.id_comp, hu₁_one, hu₂_one, Function.comp_id,
+    show Fin.castLE (card_finset_fin_le I) ∘ Fin.castLE hJI = Fin.castLE (card_finset_fin_le J)
+      from rfl,
+    ← flagMinor_def, ← flagMinor_def, add_eq_zero_iff_eq_neg, ← sum_neg_distrib] at hrel
   rw [hrel]
   refine Submodule.sum_mem _ fun σ hσ ↦ ?_
   obtain ⟨hσ1, hσT⟩ := mem_erase.mp hσ; obtain ⟨_, hσ_inl, hσ_inr⟩ := mem_filter.mp hσT
@@ -490,31 +447,6 @@ private theorem flagMinor_mul_flagMinor_mem_span_of_lt (R : Type*) [CommRing R]
       (card_image_of_injective univ hu₁).trans (Fintype.card_fin #I),
       (card_image_of_injective univ hu₂).trans (Fintype.card_fin #J), hsum, hlt⟩, rfl⟩))
 
-/-- **Quadratic shuffle straightening of flag minors.** Whenever `#J ≤ #I` and
-`¬ FlagTableauLe I J`, `flagMinor R I * flagMinor R J` is a `ℤ`-linear combination of products
-`flagMinor R I' * flagMinor R J'` with `#I' = #I`, `#J' = #J`, the same total row-index sum, and
-strictly smaller first-factor row-index sum `∑ x ∈ I', (x : ℕ) < ∑ x ∈ I, (x : ℕ)`. -/
-theorem flagMinor_mul_flagMinor_eq_sum (R : Type*) [CommRing R] {I J : Finset (Fin n)}
-    (hJI : #J ≤ #I) (hnot : ¬ FlagTableauLe I J) :
-    let S := univ.filter fun P : Finset (Fin n) × Finset (Fin n) ↦
-      #P.1 = #I ∧ #P.2 = #J ∧
-        (∑ x ∈ P.1, (x : ℕ)) + (∑ y ∈ P.2, (y : ℕ)) =
-          (∑ x ∈ I, (x : ℕ)) + (∑ y ∈ J, (y : ℕ)) ∧
-        (∑ x ∈ P.1, (x : ℕ)) < ∑ x ∈ I, (x : ℕ)
-    ∃ c : Finset (Fin n) × Finset (Fin n) → ℤ,
-      flagMinor R I * flagMinor R J =
-        ∑ P ∈ S, c P • (flagMinor R P.1 * flagMinor R P.2) := by
-  classical
-  intro S
-  obtain ⟨p₀, hp₀⟩ : ∃ p₀ : Fin #J,
-      J.orderEmbOfFin rfl p₀ < I.orderEmbOfFin rfl (Fin.castLE hJI p₀) := by
-    by_contra! h; exact hnot ⟨hJI, h⟩
-  obtain ⟨l, hlS, hlc⟩ := (Finsupp.mem_span_image_iff_linearCombination ℤ).mp
-    (flagMinor_mul_flagMinor_mem_span_of_lt R hJI p₀ hp₀)
-  refine ⟨l, ?_⟩
-  rw [← hlc, Finsupp.linearCombination_apply]
-  exact Finsupp.sum_of_support_subset l (Finset.coe_subset.mp hlS) _ fun _ _ ↦ zero_smul _ _
-
 /-! ### Multi-factor straightening and the standard-monomial basis -/
 
 /-- Weighted row-sum measure for straightening a decreasing-size tuple of flag minors. -/
@@ -526,10 +458,8 @@ tuple is a `FlagTableauLe`-chain. -/
 private theorem flagTableauLe_of_adjacent {k : ℕ} {I : Fin k → Finset (Fin n)}
     (hadj : ∀ (j : ℕ) (hj : j + 1 < k), FlagTableauLe (I ⟨j, Nat.lt_of_succ_lt hj⟩) (I ⟨j + 1, hj⟩))
     {m₁ m₂ : Fin k} (hm : m₁ ≤ m₂) : FlagTableauLe (I m₁) (I m₂) := by
-  obtain ⟨a, ha⟩ := m₁
-  obtain ⟨b, hb⟩ := m₂
-  have hab : a ≤ b := Fin.le_def.mp hm
-  clear hm
+  obtain ⟨a, ha⟩ := m₁; obtain ⟨b, hb⟩ := m₂
+  have hab : a ≤ b := Fin.le_def.mp hm; clear hm
   induction b, hab using Nat.le_induction with
   | base => exact FlagTableauLe.refl _
   | succ d _ ih => exact (ih (Nat.lt_of_succ_lt hb)).trans (hadj d hb)
@@ -544,8 +474,7 @@ private theorem straightenWeight_update_lt {k j : ℕ} (hj : j + 1 < k)
     straightenWeight
       (Function.update (Function.update I ⟨j, Nat.lt_of_succ_lt hj⟩ P.1) ⟨j + 1, hj⟩ P.2) <
       straightenWeight I := by
-  let j₀ : Fin k := ⟨j, Nat.lt_of_succ_lt hj⟩
-  let j₁ : Fin k := ⟨j + 1, hj⟩
+  let j₀ : Fin k := ⟨j, Nat.lt_of_succ_lt hj⟩; let j₁ : Fin k := ⟨j + 1, hj⟩
   have hj₀₁ : j₀ ≠ j₁ := by simp [j₀, j₁, Fin.ext_iff]
   let J := Function.update (Function.update I j₀ P.1) j₁ P.2
   have hsplit (K : Fin k → Finset (Fin n)) :
@@ -561,11 +490,8 @@ private theorem straightenWeight_update_lt {k j : ℕ} (hj : j + 1 < k)
       obtain ⟨hm₁, hm₀⟩ := mem_erase.mp hm; simp [J, hm₁, (mem_erase.mp hm₀).1]
   rw [hsplit J, hsplit I, show J j₀ = P.1 by simp [J, hj₀₁], show J j₁ = P.2 by simp [J], heq_rest]
   simp only [j₀, j₁]
-  have hk1 : k - j = k - (j + 1) + 1 := by omega
-  have hmul := congrArg ((k - (j + 1)) * ·) hPsum
-  rw [mul_add, mul_add] at hmul
-  rw [hk1, add_one_mul, add_one_mul]
-  omega
+  have hmul := congrArg ((k - (j + 1)) * ·) hPsum; rw [mul_add, mul_add] at hmul
+  rw [show k - j = k - (j + 1) + 1 by omega, add_one_mul, add_one_mul]; omega
 
 /-- Every product of nonempty flag minors sorted by decreasing size lies in the `R`-span of the
 tableau products `s.2.flagMinorProd R`. -/
@@ -578,8 +504,7 @@ private theorem prod_flagMinor_mem_span_of_antitone (R : Type*) [CommRing R] {k 
         Submodule.span R
           (Set.range fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) ↦
             s.2.flagMinorProd R) := by
-  intro W
-  induction W using Nat.strong_induction_on with
+  intro W; induction W using Nat.strong_induction_on with
   | ind W ih =>
     intro I hW hne hanti
     by_cases hchain : ∀ (j : ℕ) (hj : j + 1 < k),
@@ -587,10 +512,8 @@ private theorem prod_flagMinor_mem_span_of_antitone (R : Type*) [CommRing R] {k 
     · obtain ⟨μ, T, hT⟩ := exists_boundedSSYT_flagMinorProd_eq R I hne fun _ _ hm ↦
         flagTableauLe_of_adjacent hchain hm
       exact hT ▸ Submodule.subset_span ⟨⟨μ, T⟩, rfl⟩
-    · push Not at hchain
-      obtain ⟨j, hj, hnot⟩ := hchain
-      let j₀ : Fin k := ⟨j, Nat.lt_of_succ_lt hj⟩
-      let j₁ : Fin k := ⟨j + 1, hj⟩
+    · push Not at hchain; obtain ⟨j, hj, hnot⟩ := hchain
+      let j₀ : Fin k := ⟨j, Nat.lt_of_succ_lt hj⟩; let j₁ : Fin k := ⟨j + 1, hj⟩
       have hj₀₁ : j₀ ≠ j₁ := by simp [j₀, j₁, Fin.ext_iff]
       obtain ⟨c, hc⟩ := flagMinor_mul_flagMinor_eq_sum R
         (hanti (Fin.le_def.mpr (Nat.le_succ j))) hnot
@@ -607,11 +530,8 @@ private theorem prod_flagMinor_mem_span_of_antitone (R : Type*) [CommRing R] {k 
       obtain ⟨_, hP₁, hP₂, hPsum, hPlt⟩ := mem_filter.mp hP
       let J : Fin k → Finset (Fin n) := Function.update (Function.update I j₀ P.1) j₁ P.2
       have hJcard (m : Fin k) : #(J m) = #(I m) := by
-        by_cases hm₁ : m = j₁
-        · subst hm₁; simpa [J] using hP₂
-        · by_cases hm₀ : m = j₀
-          · subst hm₀; simpa [J, hj₀₁] using hP₁
-          · simp [J, hm₁, hm₀]
+        by_cases hm₁ : m = j₁ <;> by_cases hm₀ : m = j₀ <;>
+          simp [J, j₀, j₁, hm₁, hm₀, hj₀₁, hP₁, hP₂]
       have hJother : ∀ m ∈ (univ.erase j₀).erase j₁, J m = I m := fun m hm ↦ by
         obtain ⟨hm₁, hm₀⟩ := mem_erase.mp hm; simp [J, hm₁, (mem_erase.mp hm₀).1]
       rw [smul_mul_assoc, ← show J j₀ = P.1 by simp [J, hj₀₁], ← show J j₁ = P.2 by simp [J],
@@ -635,23 +555,19 @@ theorem prod_flagMinor_mem_span_flagMinorProd (R : Type*) [CommRing R]
     | nil => rfl
     | cons I tl ih =>
       rw [List.filter_cons]
-      rcases I.eq_empty_or_nonempty with rfl | hne
-      · simp [ih]
-      · simp [hne, ih]
+      rcases I.eq_empty_or_nonempty with rfl | hne <;> simp [*]
   rw [← hfilter]
   set L₁ := L.filter fun I ↦ decide I.Nonempty
   let L₂ := L₁.mergeSort (fun A B : Finset (Fin n) ↦ decide (#B ≤ #A))
-  have hperm : (L₁.map (flagMinor R)).prod = (L₂.map (flagMinor R)).prod :=
-    ((L₁.mergeSort_perm _).map (flagMinor R)).prod_eq.symm
   have hsorted : L₂.Pairwise (fun A B ↦ #B ≤ #A) :=
     (L₁.pairwise_mergeSort (le := fun A B : Finset (Fin n) ↦ decide (#B ≤ #A))
       (fun _ _ _ h₁ h₂ ↦ decide_eq_true (le_trans (of_decide_eq_true h₂) (of_decide_eq_true h₁)))
       (fun A B ↦ by obtain h | h := le_total #B #A <;> simp [h])).imp fun h ↦ of_decide_eq_true h
   let I : Fin L₂.length → Finset (Fin n) := fun m ↦ L₂[m.val]
-  have hprod_fin : (L₂.map (flagMinor R)).prod = ∏ m : Fin L₂.length, flagMinor R (I m) := by
-    conv_lhs => rw [← List.ofFn_getElem (xs := L₂), List.map_ofFn, List.prod_ofFn]
-    rfl
-  rw [hperm, hprod_fin]
+  rw [((L₁.mergeSort_perm _).map (flagMinor R)).prod_eq.symm,
+    show (L₂.map (flagMinor R)).prod = ∏ m : Fin L₂.length, flagMinor R (I m) by
+      conv_lhs => rw [← List.ofFn_getElem (xs := L₂), List.map_ofFn, List.prod_ofFn]
+      rfl]
   exact prod_flagMinor_mem_span_of_antitone R (straightenWeight I) I rfl
     (fun m ↦ by simpa [L₁] using (List.mem_filter.mp ((L₁.mergeSort_perm _).subset
       (List.getElem_mem m.2))).2)
@@ -666,18 +582,16 @@ theorem toSubmodule_flagMinorAlgebra (R : Type*) [CommRing R] :
       Submodule.span R
         (Set.range fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) ↦
           s.2.flagMinorProd R) := by
-  refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
-  · rw [flagMinorAlgebra_def, Algebra.adjoin_eq_span]
-    refine Submodule.span_le.mpr fun p hp ↦ ?_
-    obtain ⟨L, hL, rfl⟩ := Submonoid.exists_list_of_mem_closure hp
-    choose f hf using fun x (hx : x ∈ L) ↦ hL x hx
-    have hL_eq : L = (L.attach.map fun x ↦ f x.1 x.2).map (flagMinor R) := by
-      conv_lhs => rw [← List.attach_map_subtype_val L]
-      rw [List.map_map]
-      exact List.map_congr_left fun x _ ↦ (hf x.1 x.2).symm
-    exact hL_eq ▸ prod_flagMinor_mem_span_flagMinorProd R _
-  · rintro _ ⟨s, rfl⟩
-    exact s.2.flagMinorProd_mem_flagMinorAlgebra R
+  refine le_antisymm ?_ (Submodule.span_le.mpr fun _ ⟨s, h⟩ ↦
+    h ▸ s.2.flagMinorProd_mem_flagMinorAlgebra R)
+  rw [flagMinorAlgebra_def, Algebra.adjoin_eq_span]
+  refine Submodule.span_le.mpr fun p hp ↦ ?_
+  obtain ⟨L, hL, rfl⟩ := Submonoid.exists_list_of_mem_closure hp
+  choose f hf using fun x (hx : x ∈ L) ↦ hL x hx
+  have hL_eq : L = (L.attach.map fun x ↦ f x.1 x.2).map (flagMinor R) := by
+    conv_lhs => rw [← List.attach_map_subtype_val L]
+    rw [List.map_map]; exact List.map_congr_left fun x _ ↦ (hf x.1 x.2).symm
+  exact hL_eq ▸ prod_flagMinor_mem_span_flagMinorProd R _
 
 /-! ### Triangularity, linear independence, and `flagMinorBasis` -/
 
@@ -700,9 +614,7 @@ theorem exists_mem_support_degree_and_leadingCoeff_flagMinorProd {R : Type*} [Co
           (rename toLex (Finsupp.linearCombination R (fun s ↦ s.2.flagMinorProd R) l)) =
         l s₀ := by
   have hne : l.support.Nonempty := Finsupp.support_nonempty_iff.mpr hl
-  have : Nontrivial R :=
-    let ⟨s, hs⟩ := hne
-    ⟨⟨l s, 0, Finsupp.mem_support_iff.mp hs⟩⟩
+  have : Nontrivial R := let ⟨s, hs⟩ := hne; ⟨⟨l s, 0, Finsupp.mem_support_iff.mp hs⟩⟩
   set g : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) →
       MvPolynomial (Fin n ×ₗ Fin n) R := fun s ↦ rename toLex (s.2.flagMinorProd R)
   obtain ⟨s₀, hs₀, hmax⟩ := exists_max_image l.support (fun s ↦ lex.toSyn (lex.degree (g s))) hne
@@ -719,26 +631,21 @@ theorem exists_mem_support_degree_and_leadingCoeff_flagMinorProd {R : Type*} [Co
       rw [coeff_smul, notMem_support_iff.mp fun hmem ↦ (lex.le_degree hmem).not_gt (hlt s hs hne'),
         smul_zero]
     · exact fun h ↦ absurd hs₀ h
-  have hF_ne : F ≠ 0 := fun h0 ↦ Finsupp.mem_support_iff.mp hs₀ (by simp [← hcoeff, h0])
-  have hdeg : lex.degree F = lex.degree (g s₀) := by
-    apply lex.toSyn.injective
-    refine le_antisymm ?_ (lex.le_degree (mem_support_iff.mpr (hcoeff.trans_ne
-      (Finsupp.mem_support_iff.mp hs₀))))
-    rw [hF_eq]
-    exact lex.degree_sum_le.trans (Finset.sup_le fun s hs ↦
-      lex.degree_smul_le.trans (hmax s hs))
-  exact ⟨s₀, hs₀, hF_ne, hdeg, by rw [MonomialOrder.leadingCoeff, hdeg, hcoeff]⟩
+  have hdeg : lex.degree F = lex.degree (g s₀) := lex.toSyn.injective <| le_antisymm
+    (hF_eq ▸ lex.degree_sum_le.trans
+      (Finset.sup_le fun s hs ↦ lex.degree_smul_le.trans (hmax s hs)))
+    (lex.le_degree (mem_support_iff.mpr (hcoeff.trans_ne (Finsupp.mem_support_iff.mp hs₀))))
+  exact ⟨s₀, hs₀, fun h0 ↦ Finsupp.mem_support_iff.mp hs₀ (by simp [← hcoeff, h0]), hdeg,
+    by rw [MonomialOrder.leadingCoeff, hdeg, hcoeff]⟩
 
 /-- **Linear independence of tableau products over every commutative ring.** -/
 theorem linearIndependent_flagMinorProd (R : Type*) [CommRing R] :
     LinearIndependent R
       (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) ↦
-        s.2.flagMinorProd R) := by
-  rw [linearIndependent_iff]
-  intro l hl0
-  by_contra hl
-  obtain ⟨_, _, hne, _, _⟩ := exists_mem_support_degree_and_leadingCoeff_flagMinorProd hl
-  exact hne (by rw [hl0, map_zero])
+        s.2.flagMinorProd R) :=
+  linearIndependent_iff.mpr fun l hl0 ↦ by_contra fun hl ↦
+    let ⟨_, _, hne, _, _⟩ := exists_mem_support_degree_and_leadingCoeff_flagMinorProd hl
+    hne (by rw [hl0, map_zero])
 
 /-- **The standard-monomial basis of the flag-minor algebra**, over **every** commutative ring `R`,
 indexed by bounded semistandard Young tableaux across all shapes `μ` with at most `n` rows. -/
@@ -755,10 +662,7 @@ noncomputable def flagMinorBasis (n : ℕ) (R : Type*) [CommRing R] :
       have hmap : (Submodule.span R (Set.range v)).map (flagMinorAlgebra n R).val.toLinearMap =
           Subalgebra.toSubmodule (flagMinorAlgebra n R) := by
         rw [Submodule.map_span, ← Set.range_comp, toSubmodule_flagMinorAlgebra R]; rfl
-      have hx : (x : MvPolynomial (Fin n × Fin n) R) ∈
-          (Submodule.span R (Set.range v)).map (flagMinorAlgebra n R).val.toLinearMap :=
-        hmap.symm ▸ (x.2 : x.1 ∈ Subalgebra.toSubmodule (flagMinorAlgebra n R))
-      obtain ⟨y, hy, hyx⟩ := Submodule.mem_map.mp hx
+      obtain ⟨y, hy, hyx⟩ := Submodule.mem_map.mp (hmap.symm.le x.2)
       exact Subtype.ext hyx ▸ hy
 
 @[simp]
@@ -790,8 +694,7 @@ noncomputable def flagMinorColSubmodule (n : ℕ) (R : Type*) [CommRing R] (d : 
   zero_mem' c := isWeightedHomogeneous_zero R (flagColWeight c) (d c)
   add_mem' hf hg c := (hf c).add (hg c)
   smul_mem' r _ hf c := by
-    rw [Subalgebra.coe_smul, Algebra.smul_def, algebraMap_eq]
-    exact (hf c).C_mul r
+    rw [Subalgebra.coe_smul, Algebra.smul_def, algebraMap_eq]; exact (hf c).C_mul r
 
 @[simp]
 theorem mem_flagMinorColSubmodule_iff {R : Type*} [CommRing R] {d : Fin n → ℕ}
@@ -809,8 +712,7 @@ instance (n : ℕ) (R : Type*) [CommRing R] :
 theorem flagMinorBasis_mem_flagMinorColSubmodule (R : Type*) [CommRing R]
     (s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) :
     flagMinorBasis n R s ∈ flagMinorColSubmodule n R (fun c ↦ s.1.1.rowLen c) := fun c ↦ by
-  rw [coe_flagMinorBasis_apply]
-  exact s.2.isWeightedHomogeneous_flagColWeight_flagMinorProd R c
+  rw [coe_flagMinorBasis_apply]; exact s.2.isWeightedHomogeneous_flagColWeight_flagMinorProd R c
 
 /-- Column-multidegree components of `flagMinorAlgebra n R` are independent because polynomials of
 distinct column multidegrees have disjoint monomial supports. -/
@@ -818,20 +720,16 @@ private theorem iSupIndep_flagMinorColSubmodule (R : Type*) [CommRing R] :
     iSupIndep (flagMinorColSubmodule n R) := by
   classical
   rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
-  intro s v hv hv0 d₀ hd₀
-  ext1; ext x
+  intro s v hv hv0 d₀ hd₀; ext1; ext x
   simp only [ZeroMemClass.coe_zero, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
   by_cases hx : ∀ c : Fin n, Finsupp.weight (flagColWeight c) x = d₀ c
   · have h0 : ((flagMinorAlgebra n R).val (∑ d ∈ s, v d)).coeff x = 0 := by simp [hv0]
     rw [map_sum, coeff_sum, sum_eq_single d₀] at h0
     · exact h0
-    · intro d hd hdne
-      obtain ⟨c, hc⟩ := Function.ne_iff.mp hdne
-      exact by_contra fun hne ↦ hc ((hv d hd c hne).symm.trans (hx c))
+    · exact fun d hd hdne ↦ let ⟨c, hc⟩ := Function.ne_iff.mp hdne
+        by_contra fun hne ↦ hc ((hv d hd c hne).symm.trans (hx c))
     · exact fun h ↦ absurd hd₀ h
-  · push Not at hx
-    obtain ⟨c, hc⟩ := hx
-    exact by_contra fun hne ↦ hc (hv d₀ hd₀ c hne)
+  · push Not at hx; obtain ⟨c, hc⟩ := hx; exact by_contra fun hne ↦ hc (hv d₀ hd₀ c hne)
 
 /-- **Fundamental-multigrading decomposition.** `flagMinorAlgebra n R` is the internal direct sum of
 its column-multidegree components `flagMinorColSubmodule n R d`. -/
@@ -859,11 +757,8 @@ theorem rowLen_eq_of_mem_support_repr_flagMinorBasis {R : Type*} [CommRing R]
     (∑ t ∈ l.support with g t = d', l t • flagMinorBasis n R t) - if d' = d then x else 0
   have hv_sum : ∑ d' ∈ insert d (l.support.image g), v d' = 0 := by
     simp only [v, sum_sub_distrib, sum_ite_eq', mem_insert_self, ↓reduceIte]
-    have hfib : (∑ d' ∈ insert d (l.support.image g),
-        ∑ t ∈ l.support with g t = d', l t • flagMinorBasis n R t) =
-        ∑ t ∈ l.support, l t • flagMinorBasis n R t :=
-      sum_fiberwise_of_maps_to (fun _ ht ↦ mem_insert_of_mem (mem_image_of_mem g ht)) _
-    rw [hfib, sum_support_repr_flagMinorBasis, sub_self]
+    rw [sum_fiberwise_of_maps_to (fun _ ht ↦ mem_insert_of_mem (mem_image_of_mem g ht)) _,
+      sum_support_repr_flagMinorBasis, sub_self]
   have hv_mem : ∀ d' ∈ insert d (l.support.image g), v d' ∈ flagMinorColSubmodule n R d' :=
     fun d' _ ↦ sub_mem
       (Submodule.sum_mem _ fun t ht ↦ (mem_filter.mp ht).2 ▸
@@ -872,26 +767,21 @@ theorem rowLen_eq_of_mem_support_repr_flagMinorBasis {R : Type*} [CommRing R]
   have hv_gs : v (g s) = 0 := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).mp
     (iSupIndep_flagMinorColSubmodule R) _ v hv_mem hv_sum (g s)
     (mem_insert_of_mem (mem_image_of_mem g hs))
-  have hgs : g s ≠ d := hsd
-  simp only [v, hgs, ↓reduceIte, sub_zero] at hv_gs
+  have hgs : g s ≠ d := hsd; simp only [v, hgs, ↓reduceIte, sub_zero] at hv_gs
   have hcoeff := congrArg (Finsupp.lapply (R := R) s) (congrArg (flagMinorBasis n R).repr hv_gs)
   simp only [map_sum, map_smul, Module.Basis.repr_self, map_zero, Finsupp.lapply_apply] at hcoeff
-  have hhs : s ∈ l.support.filter (fun t ↦ g t = g s) := mem_filter.mpr ⟨hs, rfl⟩
-  rw [sum_eq_single_of_mem s hhs
+  rw [sum_eq_single_of_mem s (mem_filter.mpr ⟨hs, rfl⟩ : s ∈ l.support.filter fun t ↦ g t = g s)
     fun _ _ h ↦ by rw [Finsupp.single_eq_of_ne h.symm, smul_zero]] at hcoeff
   exact Finsupp.mem_support_iff.mp hs (by simpa using hcoeff)
 
 /-- **Vanishing off dominant weights.** If `d : Fin n → ℕ` is not weakly decreasing, the homogeneous
 component of `flagMinorAlgebra n R` of column multidegree `d` is `⊥`. -/
 theorem flagMinorColSubmodule_eq_bot_of_not_antitone (R : Type*) [CommRing R] {d : Fin n → ℕ}
-    (hd : ¬ Antitone d) : flagMinorColSubmodule n R d = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  rw [Submodule.mem_bot, ← (flagMinorBasis n R).repr.map_eq_zero_iff]
-  by_contra hne
-  obtain ⟨s, hs⟩ := Finsupp.support_nonempty_iff.mpr hne
-  exact hd (rowLen_eq_of_mem_support_repr_flagMinorBasis hx hs ▸
-    fun _ _ h ↦ s.1.1.rowLen_anti _ _ h)
+    (hd : ¬ Antitone d) : flagMinorColSubmodule n R d = ⊥ :=
+  eq_bot_iff.mpr fun _ hx ↦ (Submodule.mem_bot R).mpr <|
+    (flagMinorBasis n R).repr.map_eq_zero_iff.mp <| by_contra fun hne ↦
+      let ⟨s, hs⟩ := Finsupp.support_nonempty_iff.mpr hne
+      hd (rowLen_eq_of_mem_support_repr_flagMinorBasis hx hs ▸ fun _ _ h ↦ s.1.1.rowLen_anti _ _ h)
 
 /-- **Tableau basis of a shape component.** For a Young diagram `μ` with at most `n` rows, the
 tableau products `T.flagMinorProd R` for `T : BoundedSSYT n μ` form a free `R`-module basis of the
@@ -908,25 +798,24 @@ noncomputable def flagMinorShapeBasis (R : Type*) [CommRing R] (μ : YoungDiagra
       ((linearIndependent_flagMinorProd R).comp
         (Sigma.mk (β := fun ν : {ν : YoungDiagram // ν.colLen 0 ≤ n} ↦ BoundedSSYT n ν.1) ⟨μ, hμ⟩)
         sigma_mk_injective)
-  have hli : LinearIndependent R v :=
-    LinearIndependent.of_comp (flagMinorColSubmodule n R (fun c ↦ μ.rowLen c)).subtype (v := v) hw
-  Module.Basis.mk hli fun x _ ↦ by
-    have hx : x.1 ∈ Submodule.span R (Set.range w) := by
-      rw [← sum_support_repr_flagMinorBasis x.1]
-      refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
-      have hs1 : s.1 = ⟨μ, hμ⟩ := Subtype.ext <| by
-        dsimp only
-        rw [← YoungDiagram.ofRowLensFin_rowLen s.1.1 s.1.2, ← YoungDiagram.ofRowLensFin_rowLen μ hμ]
-        simp_rw [congr_fun (rowLen_eq_of_mem_support_repr_flagMinorBasis x.2 hs)]
-      rcases s with ⟨ν, T⟩
-      subst hs1
-      exact Submodule.subset_span ⟨T, by ext1; simp [w]⟩
-    have hmap : (Submodule.span R (Set.range v)).map
-        (flagMinorColSubmodule n R (fun c ↦ μ.rowLen c)).subtype =
-        Submodule.span R (Set.range w) := by
-      rw [Submodule.map_span, ← Set.range_comp]; rfl
-    obtain ⟨y, hy, hyx⟩ := hmap ▸ hx
-    exact Subtype.ext hyx ▸ hy
+  Module.Basis.mk
+    (LinearIndependent.of_comp (flagMinorColSubmodule n R (fun c ↦ μ.rowLen c)).subtype (v := v) hw)
+    fun x _ ↦ by
+      have hx : x.1 ∈ Submodule.span R (Set.range w) := by
+        rw [← sum_support_repr_flagMinorBasis x.1]
+        refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
+        have hs1 : s.1 = ⟨μ, hμ⟩ := Subtype.ext <| by
+          dsimp only
+          rw [← YoungDiagram.ofRowLensFin_rowLen s.1.1 s.1.2,
+            ← YoungDiagram.ofRowLensFin_rowLen μ hμ]
+          simp_rw [congr_fun (rowLen_eq_of_mem_support_repr_flagMinorBasis x.2 hs)]
+        rcases s with ⟨ν, T⟩; subst hs1
+        exact Submodule.subset_span ⟨T, by ext1; simp [w]⟩
+      have hmap : (Submodule.span R (Set.range v)).map
+          (flagMinorColSubmodule n R (fun c ↦ μ.rowLen c)).subtype =
+          Submodule.span R (Set.range w) := by rw [Submodule.map_span, ← Set.range_comp]; rfl
+      obtain ⟨y, hy, hyx⟩ := hmap ▸ hx
+      exact Subtype.ext hyx ▸ hy
 
 @[simp]
 theorem coe_flagMinorShapeBasis_apply (R : Type*) [CommRing R] (μ : YoungDiagram)
