@@ -237,17 +237,19 @@ theorem covariantPhaseForm_sub_phaseForm_mul (hu : DifferentiableAt ℝ u x)
   abel
 
 /-- The covariant derivative is covariant under gauge transformations
-`(b, α) ↦ (b - Im (u⁻¹ du), u α)` by a circle-valued `u`: `∇_{b - Im (u⁻¹ du)} (u α) = u ∇_b α`.
+`(b, α) ↦ (b - Im (u⁻¹ du), u α)` by a `u` that is circle-valued near `x`:
+`∇_{b - Im (u⁻¹ du)} (u α) = u ∇_b α` at `x`.
 Unlike `covariantPhaseForm_sub_phaseForm_mul`, no condition on the zeros of `α` is needed. -/
-theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ y, ‖u y‖ = 1) (hud : DifferentiableAt ℝ u x)
-    (hα : DifferentiableAt ℝ α x) :
+theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1)
+    (hud : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x) :
     covariantDeriv (b - phaseForm u) (u * α) x = u x • covariantDeriv b α x := by
   ext v
-  -- Since `|u| = 1`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
+  have hux : ‖u x‖ = 1 := hu.self_of_nhds
+  -- Since `|u| = 1` near `x`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
   have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
-    rw [inv_eq_conj (hu x), mul_comm, ← Complex.inner]
-    exact inner_fderiv_eq_zero_of_eventually_norm_eq (.of_forall fun y ↦ by rw [hu, hu]) v
-  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hu x]
+    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
+    exact inner_fderiv_eq_zero_of_eventually_norm_eq (by rwa [hux]) v
+  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
   have hdu : fderiv ℝ u x v = u x * (I * ((u x)⁻¹ * fderiv ℝ u x v).im) := by
     have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
       Complex.ext (by simp [hre]) (by simp)

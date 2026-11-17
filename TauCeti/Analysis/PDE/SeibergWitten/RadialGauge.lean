@@ -32,7 +32,7 @@ operator `K` (`TauCeti.poincareHomotopy`) gives the **radial connection**
 `b_rad = K (db)`,  `b_rad(x) = ∫₀¹ t db(x₀ + t (x - x₀))(x - x₀, ·) dt`
 
 (`TauCeti.SeibergWitten.radialConnection`). It vanishes on the radial direction,
-`b_rad(x)(x - x₀) = 0` (`TauCeti.SeibergWitten.radialConnection_apply_sub_self`), and has the same
+`b_rad(x)(x - x₀) = 0` (`TauCeti.SeibergWitten.radialConnection_apply_sub_center`), and has the same
 curvature as `b` (`TauCeti.SeibergWitten.extDeriv_radialConnection`). By the homotopy formula
 `d (K b) + K (db) = b`, the gauge `u = exp (i K b)` with phase
 `(K b)(x) = ∫₀¹ b(x₀ + t (x - x₀))(x - x₀) dt` (`TauCeti.SeibergWitten.radialGauge`) satisfies
@@ -126,10 +126,10 @@ theorem radialConnection_self (x₀ : E) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) 
 
 /-- The radial connection vanishes on the radial direction `x - x₀`. -/
 @[simp]
-theorem radialConnection_apply_sub_self (x₀ : E) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (x : E) :
+theorem radialConnection_apply_sub_center (x₀ : E) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (x : E) :
     radialConnection x₀ b x (fun _ ↦ x - x₀) = 0 := by
   rw [radialConnection, ← Matrix.vecCons_const]
-  exact poincareHomotopy_apply_vecCons_sub_self x₀ _ x _
+  exact poincareHomotopy_apply_vecCons_sub_center x₀ _ x _
 
 /-- The radial gauge is as smooth as the connection form. -/
 theorem contDiff_radialGauge {r : ℕ∞} (x₀ : E) (hb : ContDiff ℝ r b) :
@@ -183,7 +183,7 @@ theorem covariantDeriv_radialConnection_radialGauge_mul (x₀ : E) (hb : ContDif
     covariantDeriv (radialConnection x₀ b) (radialGauge x₀ b * α) x =
       radialGauge x₀ b x • covariantDeriv b α x := by
   rw [← sub_phaseForm_radialGauge x₀ hb]
-  exact covariantDeriv_sub_phaseForm_mul (norm_radialGauge x₀ b)
+  exact covariantDeriv_sub_phaseForm_mul (.of_forall (norm_radialGauge x₀ b))
     ((contDiff_radialGauge x₀ hb).differentiable one_ne_zero x) hα
 
 /-- The radial connection has the same curvature as `b`. -/

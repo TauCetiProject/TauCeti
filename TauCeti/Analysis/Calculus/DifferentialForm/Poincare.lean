@@ -62,7 +62,7 @@ term is split by the constant-coefficient Cartan formula
   map, which moves the centre.
 * `StarConvex.compContinuousLinearMap_poincareHomotopy_eq`: centred at a fixed point of a linear
   map, it preserves invariance of forms under that map.
-* `TauCeti.poincareHomotopy_apply_vecCons_sub_self`: it vanishes on the radial direction
+* `TauCeti.poincareHomotopy_apply_vecCons_sub_center`: it vanishes on the radial direction
   `x - x₀`.
 * `TauCeti.norm_poincareHomotopy_le`: the sharp radial bound
   `‖poincareHomotopy x₀ ω x‖ ≤ B * ‖x - x₀‖ / (n + 1)`.
@@ -173,7 +173,7 @@ theorem poincareHomotopy_add_apply {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin 
 
 /-- The Poincaré homotopy operator vanishes on the radial direction: `K ω` at `x`, contracted
 with `x - x₀`, is zero. -/
-theorem poincareHomotopy_apply_vecCons_sub_self [CompleteSpace F] (x₀ : E)
+theorem poincareHomotopy_apply_vecCons_sub_center [CompleteSpace F] (x₀ : E)
     (ω : E → E [⋀^Fin (n + 2)]→L[ℝ] F) (x : E) (v : Fin n → E) :
     poincareHomotopy x₀ ω x (Matrix.vecCons (x - x₀) v) = 0 := by
   rw [poincareHomotopy_apply]
