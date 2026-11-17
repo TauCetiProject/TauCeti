@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.CategoryTheory.Conj
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 
@@ -26,16 +25,17 @@ records how they depend on the data.
   isomorphism, does not change the automorphisms of a prestable map, nor those of its fibres:
   automorphisms of the source curve that commute with `F ≫ h` commute with `F`.
 * Base change along a flat surjective morphism, for instance along any extension `L / Ω` of the
-  field of a geometric point, is injective on automorphisms, because the projection of source
-  curves is then an epimorphism of schemes. So the automorphism group of a geometric fibre embeds
-  into that of the fibre at any larger algebraically closed field.
+  field of a geometric point, is injective on automorphisms
+  (`TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut_injective`). So the automorphism group of
+  a geometric fibre embeds into that of the fibre at any larger algebraically closed field.
+
+The general operations used here, `postcompAut`, `pullbackPostcompIso` and `pullbackAut_injective`,
+are in `TauCeti.AlgebraicGeometry.Curves.StableMaps.Category`.
 
 ## Main definitions
 
 In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
 
-* `postcompAut`: for a monomorphism of targets `h`, the identification
-  `Aut F ≃* Aut (F ≫ h)`.
 * `fiberAut F x`: the abstract automorphism group of the fibre of `F` at `x : Spec Ω ⟶ S`.
 * `fiberAutCongr`, `fiberAutPullback`, `fiberAutPostcomp`: the identifications of fibre
   automorphism groups along isomorphisms of prestable maps, base change, and postcomposition with
@@ -45,8 +45,9 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
 
 ## Main results
 
-* `pullbackAut_injective`: base change along a flat surjective morphism is injective on
-  automorphisms.
+* `fiberAutCongr_apply_asIso_hom_curve`, `fiberAutPullback_apply_asIso_hom_curve`,
+  `fiberAutPostcomp_apply_asIso_hom_curve`, `fiberAutBaseChange_apply_asIso_hom_curve`: the
+  automorphisms of source curves produced by these identifications.
 * `fiberAutBaseChange_injective`: extending the field of a point is injective on the
   automorphisms of the fibre.
 
@@ -73,60 +74,6 @@ namespace PrestableMap
 
 variable {V W S T : Scheme.{u}} {q : V ⟶ S} {n : ℕ}
 
-/-! ### Postcomposition with a monomorphism of targets -/
-
-/-- For a monomorphism of targets `h : V ⟶ W` over `S`, the automorphisms of a prestable map `F`
-are those of its postcomposition `F ≫ h`: an automorphism of the source curve commutes with
-`F ≫ h` exactly when it commutes with `F`. -/
-def postcompAut (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) [Mono h] :
-    Aut F ≃* Aut (F.postcomp h hh) :=
-  (Functor.FullyFaithful.ofFullyFaithful
-    (postcompFunctor (n := n) h hh)).autMulEquivOfFullyFaithful F
-
-/-- `postcompAut` keeps the automorphism of the source curve. -/
-@[simp]
-theorem postcompAut_apply_asIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
-    (hh : h ≫ r = q) [Mono h] (e : Aut F) :
-    (F.postcompAut h hh e).asIso.hom.curve = e.asIso.hom.curve :=
-  (rfl)
-
-/-- Base change commutes with postcomposition: the base change along `x : T ⟶ S` of `F ≫ h` is
-the base change of `F`, postcomposed with the base change `V ×_S T ⟶ W ×_S T` of `h`. The two
-have the same source curve. -/
-def pullbackPostcompIso (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q)
-    (x : T ⟶ S) :
-    (F.postcomp h hh).pullback x ≅
-      (F.pullback x).postcomp (pullback.map q x r x h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp))
-        (by simp) :=
-  isoMk (Iso.refl _) (by
-    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
-    apply pullback.hom_ext <;> simp)
-
-/-- `pullbackPostcompIso` is the identity on source curves. -/
-@[simp]
-theorem pullbackPostcompIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
-    (hh : h ≫ r = q) (x : T ⟶ S) :
-    (F.pullbackPostcompIso h hh x).hom.curve = 𝟙 _ := by
-  rw [pullbackPostcompIso]
-  exact isoMk_hom_curve _ _
-
-/-! ### Base change along a flat surjective morphism -/
-
-/-- **Base change along a flat surjective morphism is injective on automorphisms.** The
-projection `C ×_S T ⟶ C` of source curves is then flat and surjective, hence an epimorphism of
-schemes, and an automorphism of `F` is determined by its composite with it. -/
-theorem pullbackAut_injective (F : PrestableMap q n) (g : T ⟶ S) [Flat g] [Surjective g] :
-    Function.Injective (F.pullbackAut g) := by
-  have := Flat.epi_of_flat_of_surjective (pullback.fst F.curve.toBase g)
-  intro e e' hee'
-  refine Aut.ext (Iso.ext (hom_ext (PointedPrestableFamily.hom_ext ?_)))
-  rw [← cancel_epi (pullback.fst F.curve.toBase g),
-    (PointedPrestableFamily.isPullback_pullbackMap_hom g e.asIso.hom.curve).w,
-    (PointedPrestableFamily.isPullback_pullbackMap_hom g e'.asIso.hom.curve).w]
-  have := congr(($hee').asIso.hom.curve.hom ≫ pullback.fst F.curve.toBase g)
-  simp only [pullbackAut_apply_asIso_hom, pullbackMap_curve] at this
-  exact this
-
 /-! ### Automorphism groups of fibres -/
 
 /-- The **abstract automorphism group of the fibre** of a prestable map `F` at a point
@@ -144,6 +91,19 @@ def fiberAutCongr {F G : PrestableMap q n} (e : F ≅ G) (x : Spec (.of Ω) ⟶ 
     F.fiberAut x ≃* G.fiberAut x :=
   ((pullbackFunctor x).mapIso e).conjAut
 
+/-- `fiberAutCongr e x` conjugates the automorphism of the source curve of the fibre by the base
+change of `e`. -/
+@[simp]
+theorem fiberAutCongr_apply_asIso_hom_curve {F G : PrestableMap q n} (e : F ≅ G)
+    (x : Spec (.of Ω) ⟶ S) (f : F.fiberAut x) :
+    (fiberAutCongr e x f).asIso.hom.curve =
+      PointedPrestableFamily.pullbackMap x e.inv.curve ≫ f.asIso.hom.curve ≫
+        PointedPrestableFamily.pullbackMap x e.hom.curve := by
+  refine congr(($(Iso.conjAut_apply ((pullbackFunctor x).mapIso e) f)).hom.curve).trans ?_
+  erw [comp_curve, comp_curve, pullbackMap_curve, pullbackMap_curve]
+  -- The sides agree up to the spelling of the source curves of the base changes.
+  rfl
+
 /-- **The fibres of a base change are fibres.** The automorphism group of the fibre of the base
 change `F_T` of `F` along `g : T ⟶ S` at `x : Spec Ω ⟶ T` is that of the fibre of `F` at
 `x ≫ g`. -/
@@ -151,6 +111,18 @@ def fiberAutPullback (F : PrestableMap q n) (g : T ⟶ S) (x : Spec (.of Ω) ⟶
     (F.pullback g).fiberAut x ≃* F.fiberAut (x ≫ g) :=
   ((F.pullback g).pullback x).postcompAut _ (pullbackLeftPullbackSndIso_hom_snd q g x) |>.trans
     (F.pullbackCompIso g x).conjAut
+
+/-- `fiberAutPullback g x` conjugates the automorphism of the source curve by the canonical
+isomorphism `(C ×_S T) ×_T Spec Ω ≅ C ×_S Spec Ω`. -/
+@[simp]
+theorem fiberAutPullback_apply_asIso_hom_curve (F : PrestableMap q n) (g : T ⟶ S)
+    (x : Spec (.of Ω) ⟶ T) (f : (F.pullback g).fiberAut x) :
+    (F.fiberAutPullback g x f).asIso.hom.curve =
+      (F.curve.pullbackCompIso g x).inv ≫ f.asIso.hom.curve ≫
+        (F.curve.pullbackCompIso g x).hom := by
+  simp [fiberAutPullback, Iso.conjAut_apply]
+  -- The sides agree up to the spelling of the source curves of the base changes.
+  rfl
 
 /-- **Postcomposition with a monomorphism of targets does not change the fibre automorphism
 groups.** For a monomorphism of targets `h : V ⟶ W` over `S`, for instance an immersion, the
@@ -166,6 +138,16 @@ def fiberAutPostcomp (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh : h 
       (by simpa using congr($hab ≫ pullback.snd r x))⟩
   (F.pullbackPostcompIso h hh x).conjAut.trans ((F.pullback x).postcompAut _ _).symm
 
+/-- `fiberAutPostcomp` keeps the automorphism of the source curve. -/
+@[simp]
+theorem fiberAutPostcomp_apply_asIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) [Mono h] (x : Spec (.of Ω) ⟶ S) (f : (F.postcomp h hh).fiberAut x) :
+    (F.fiberAutPostcomp h hh x f).asIso.hom.curve = f.asIso.hom.curve := by
+  simp only [fiberAutPostcomp, MulEquiv.trans_apply, postcompAut_symm_apply_asIso_hom_curve,
+    Iso.conjAut_apply, Iso.trans_hom, Iso.symm_hom, comp_curve, pullbackPostcompIso_hom_curve,
+    pullbackPostcompIso_inv_curve]
+  exact (Category.id_comp _).trans (Category.comp_id _)
+
 /-- Extension of the field of a point: for a field `L` with a morphism `ι : Spec L ⟶ Spec Ω`,
 the homomorphism from the automorphisms of the fibre of `F` at `x : Spec Ω ⟶ S` to those of the
 fibre at `ι ≫ x`, by base change along `ι`. -/
@@ -173,6 +155,19 @@ def fiberAutBaseChange (F : PrestableMap q n) (x : Spec (.of Ω) ⟶ S) {L : Typ
     (ι : Spec (.of L) ⟶ Spec (.of Ω)) :
     F.fiberAut x →* F.fiberAut (ι ≫ x) :=
   (F.fiberAutPullback x ι).toMonoidHom.comp ((F.pullback x).pullbackAut ι)
+
+/-- `fiberAutBaseChange x ι` is base change of the automorphism of the source curve along `ι`,
+conjugated by the canonical isomorphism `(C ×_S Spec Ω) ×_(Spec Ω) Spec L ≅ C ×_S Spec L`. -/
+@[simp]
+theorem fiberAutBaseChange_apply_asIso_hom_curve (F : PrestableMap q n) (x : Spec (.of Ω) ⟶ S)
+    {L : Type u} [Field L] (ι : Spec (.of L) ⟶ Spec (.of Ω)) (f : F.fiberAut x) :
+    (F.fiberAutBaseChange x ι f).asIso.hom.curve =
+      (F.curve.pullbackCompIso x ι).inv ≫
+        PointedPrestableFamily.pullbackMap ι f.asIso.hom.curve ≫
+          (F.curve.pullbackCompIso x ι).hom := by
+  simp [fiberAutBaseChange]
+  -- The sides agree up to the spelling of the source curves of the base changes.
+  rfl
 
 /-- **Extending the field of a point is injective on fibre automorphisms.** A morphism of spectra
 of fields is flat and surjective, so base change along it is injective on automorphisms. In
