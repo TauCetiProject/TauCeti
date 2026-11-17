@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Conway.Three.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Closure
 import TauCeti.GroupTheory.Perm.Basic
@@ -623,18 +624,10 @@ theorem card_eq_12295800_mul_card_stabilizerChain :
 private theorem triangleParity_smul_of_mem {g : Equiv.Perm (Fin 276)} (hg : g ∈ Co3) :
     ∀ p : Fin 276 × Fin 276 × Fin 276, triangleParity (g • p) = triangleParity p := by
   rw [Co3_def] at hg
-  induction hg using Subgroup.closure_induction with
-  | mem g hg =>
-    rcases hg with rfl | rfl
+  exact TauCeti.apply_eq_of_mem_closure (by
+    rintro _ (rfl | rfl)
     · exact triangleParity_smul adj_a
-    · exact triangleParity_smul adj_b
-  | one => simp
-  | mul _ _ _ _ hx hy =>
-    intro p
-    rw [mul_smul, hx, hy]
-  | inv x _ hx =>
-    intro p
-    simpa [smul_inv_smul] using (hx (x⁻¹ • p)).symm
+    · exact triangleParity_smul adj_b) hg
 
 private theorem adj_zero_left : ∀ x : Fin 276, adj 0 x = false := by
   decide +kernel
