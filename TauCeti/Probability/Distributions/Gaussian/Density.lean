@@ -44,6 +44,8 @@ form into the one of `S⁻¹`.
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity_norm` — the same density on any
   finite-dimensional real inner product space;
+* `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_volume` — the density of a nonzero
+  scalar multiple of `stdGaussian` on any finite-dimensional real inner product space;
 * `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
   covariance is the affine range `m + range S`;
 * `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
@@ -194,6 +196,40 @@ theorem stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
   congr 1
   funext x
   simp
+
+/-- **The scaled standard Gaussian on a finite-dimensional real inner product space has the
+scaled isotropic density.** For any nonzero real scalar `c`, the pushforward of `stdGaussian E`
+under `x ↦ c • x` is `volume` weighted by
+`(2 * π * c ^ 2) ^ (-d / 2) * exp (-‖x‖ ^ 2 / (2 * c ^ 2))`, where `d` is the dimension. -/
+theorem map_smul_stdGaussian_eq_withDensity_volume (E : Type*)
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {c : ℝ} (hc : c ≠ 0) :
+    (stdGaussian E).map (fun x ↦ c • x) =
+      (volume : Measure E).withDensity fun x ↦ ENNReal.ofReal
+        ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
+          Real.exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
+  let L : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
+  have hfun : (fun x : E ↦ c • x) = fun x ↦ 0 + L x := funext fun _ ↦ by simp [L, Units.smul_def]
+  have hdet : LinearMap.det (L : E →ₗ[ℝ] E) = c ^ Module.finrank ℝ E := by
+    rw [show (L : E →ₗ[ℝ] E) = c • LinearMap.id by ext; simp [L, Units.smul_def],
+      LinearMap.det_smul, LinearMap.det_id, mul_one]
+  rw [stdGaussian_eq_withDensity_norm E, hfun, Measure.map_affine_withDensity volume L 0, hdet]
+  refine withDensity_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  have hc2 : 0 < c ^ 2 := sq_pos_of_ne_zero hc
+  have hsymm : L.symm (x - 0) = c⁻¹ • x :=
+    L.symm_apply_eq.2 (by simp [L, Units.smul_def, smul_smul, inv_mul_cancel₀ hc])
+  have hfactor : |(c ^ Module.finrank ℝ E)⁻¹| * (2 * π) ^ (-(Module.finrank ℝ E : ℝ) / 2) =
+      (2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+    have habs : |(c ^ Module.finrank ℝ E)⁻¹| = (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+      rw [abs_inv, abs_pow, ← Real.sqrt_sq_eq_abs, Real.sqrt_eq_rpow, ← Real.rpow_natCast,
+        ← Real.rpow_mul hc2.le, ← Real.rpow_neg hc2.le]
+      congr 1; ring
+    rw [habs, mul_comm, ← Real.mul_rpow (by positivity) hc2.le]
+  have hexp : -‖c⁻¹ • x‖ ^ 2 / 2 = -‖x‖ ^ 2 / (2 * c ^ 2) := by
+    rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, inv_pow]
+    field_simp [hc]
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), ← mul_assoc, hsymm, hfactor, hexp]
 
 /-- The standard Gaussian measure on a finite-dimensional real inner product space has full
 support. -/

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.MeasureTheory.Integral.OddSymmetric
 public import Mathlib.Probability.Distributions.Gaussian.Real
 
@@ -16,9 +17,11 @@ A centered Gaussian measure on a real separable Banach space is invariant under 
 Consequently, an odd function of a Gaussian vector centered at its mean has integral zero.
 This applies in particular to odd products of centered linear observables, without assuming
 independence or a nonsingular covariance.
-The standard real Gaussian product law is also invariant under planar reflections, and centered
-real Gaussian laws and their independent products are invariant under multiplication by
-deterministic scalars of unit modulus.
+The standard real Gaussian product law is also invariant under planar reflections, linear isometry
+equivalences intertwine scaled standard Gaussian measures on finite-dimensional real inner product
+spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), and centered real
+Gaussian laws and their independent products are invariant under multiplication by deterministic
+scalars of unit modulus.
 -/
 
 public section
@@ -88,6 +91,20 @@ theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
   convert ((MeasurePreserving.id (gaussianReal 0 1)).prod hneg).comp hrot using 1
   funext p
   simp [ContinuousLinearMap.rotation_apply, sub_eq_add_neg, add_comm]
+
+/-- Every linear isometry equivalence between finite-dimensional real inner product spaces
+intertwines scaled standard Gaussian measures; in particular, a linear isometry self-equivalence
+preserves every scaled standard Gaussian measure. -/
+theorem map_linearIsometryEquiv_map_smul_stdGaussian {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F]
+    (f : E ≃ₗᵢ[ℝ] F) (c : ℝ) :
+    ((stdGaussian E).map (fun x ↦ c • x)).map f = (stdGaussian F).map (fun y ↦ c • y) := by
+  rw [Measure.map_map f.continuous.measurable (by fun_prop),
+    show f ∘ (fun x : E ↦ c • x) = (fun y : F ↦ c • y) ∘ f from funext (map_smul f c),
+    ← Measure.map_map (by fun_prop) f.continuous.measurable, stdGaussian_map f]
 
 end TauCeti.Probability
 
