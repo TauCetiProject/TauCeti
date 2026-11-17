@@ -80,7 +80,7 @@ theorem isLieSmoothVector_iff {v : V} :
 
 variable {I π} in
 /-- Every operator of the representation preserves smooth vectors. -/
-theorem IsLieSmoothVector.apply [LieGroup I ∞ G] {v : V} (hv : IsLieSmoothVector I π v)
+theorem IsLieSmoothVector.apply [ContMDiffMul I ∞ G] {v : V} (hv : IsLieSmoothVector I π v)
     (h : G) : IsLieSmoothVector I π (π h v) := by
   have hfun : (fun g ↦ π g (π h v)) = (fun g ↦ π g v) ∘ (· * h) := by
     funext g
@@ -203,6 +203,11 @@ private def dualOrbit (φ : StrongDual ℝ V) {v : V} (hv : IsLieSmoothVector I 
     C^∞⟮I, G; ℝ⟯ :=
   ⟨fun g ↦ φ (π g v), φ.contMDiff.comp hv⟩
 
+omit [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] in
+private theorem dualOrbit_apply (φ : StrongDual ℝ V) {v : V} (hv : IsLieSmoothVector I π v)
+    (g : G) : dualOrbit φ hv g = φ (π g v) :=
+  rfl
+
 /-- Tested against a continuous linear functional, the orbit map of the derived action of `X`
 is `X` applied to the tested orbit map. -/
 private theorem dualOrbit_lieDerivative (φ : StrongDual ℝ V) {v : V}
@@ -212,8 +217,7 @@ private theorem dualOrbit_lieDerivative (φ : StrongDual ℝ V) {v : V}
   have h1 := φ.hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hv.hasDerivAt_apply_mul_lieExp_smul X g)
   have h2 := LeftInvariantDerivation.hasDerivAt_apply_mul_lieExp_smul X (dualOrbit φ hv) g 0
   simp only [zero_smul, lieExp_zero, mul_one] at h2
-  change φ (π g (lieDerivative π X v)) = X (dualOrbit φ hv) g
-  rw [hv.apply_lieDerivative]
+  rw [dualOrbit_apply, hv.apply_lieDerivative]
   exact h1.unique h2
 
 /-- Tested against a continuous linear functional, the derived action of `X` at a smooth vector
@@ -222,7 +226,7 @@ private theorem dual_lieDerivative (φ : StrongDual ℝ V) {v : V} (hv : IsLieSm
     (X : LeftInvariantDerivation I G) :
     φ (lieDerivative π X v) = X (dualOrbit φ hv) 1 := by
   rw [← dualOrbit_lieDerivative φ hv X]
-  simp [dualOrbit]
+  simp [dualOrbit_apply]
 
 /-- The derived action at a smooth vector is additive in the derivation. -/
 theorem IsLieSmoothVector.lieDerivative_add_left {v : V} (hv : IsLieSmoothVector I π v)
