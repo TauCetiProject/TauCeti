@@ -249,38 +249,23 @@ section SemiringAlgebra
 
 variable [CommRing R] [Semiring A] [Algebra R A]
 
-/-- Separating a head letter `p.2 ∈ B p.1` from a tail product `(l.map Prod.snd).prod` when `p.1`
-does not appear among the labels of `l`: the two elements `p.2` and `(l.map Prod.snd).prod` are
-freely independent with respect to a normalised `φ`. -/
-theorem IsFreelyIndependent.isFreelyIndependentElements_cond_list_prod
-    {φ : A →ₗ[R] R} {B : ι → Subalgebra R A} (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
-    {p : ι × A} {l : List (ι × A)} (hp : p.1 ∉ l.map Prod.fst)
-    (hpB : p.2 ∈ B p.1) (hl : ∀ q ∈ l, q.2 ∈ B q.1) :
-    IsFreelyIndependentElements φ fun b : Bool => cond b p.2 (l.map Prod.snd).prod :=
-  h.cond_adjoin_singleton_list_prod hφ hp hpB hl
-
 namespace IsFreelyIndependentElements
 
 variable {c : ι → A} {φ : A →ₗ[R] R}
 
-/-- *Factorisation of expectations along a duplicate-free product of free elements* over any
-semiring `A`: for a duplicate-free list `l` of indices of a freely independent family `c` under a
-normalised `φ`, `φ (l.map c).prod = (l.map fun i => φ (c i)).prod`. -/
+/-- *Factorisation of expectations along a duplicate-free product of free elements*: for a
+duplicate-free list `l` of indices of a freely independent family `c` under a normalised `φ`,
+`φ (l.map c).prod = (l.map fun i => φ (c i)).prod`. -/
 theorem apply_list_prod (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1)
     {l : List ι} (hnodup : l.Nodup) :
     φ (l.map c).prod = (l.map fun i => φ (c i)).prod := by
-  have hprod : l.map c = (l.map fun i => (i, c i)).map Prod.snd := by
-    simp [List.map_map, Function.comp_def]
-  have hfst : (l.map fun i => (i, c i)).map Prod.fst = l := by
-    simp [List.map_map, Function.comp_def]
-  rw [hprod, (isFreelyIndependentElements_iff.mp h).apply_list_prod hφ
-    (hfst.symm ▸ hnodup) fun p hp => by
-      obtain ⟨i, _, rfl⟩ := List.mem_map.mp hp
-      exact Algebra.self_mem_adjoin_singleton R (c i)]
-  simp [List.map_map, Function.comp_def]
+  simpa [Function.comp_def] using
+    (isFreelyIndependentElements_iff.mp h).apply_list_prod hφ (l := l.map fun i => (i, c i))
+      (by simpa [Function.comp_def] using hnodup)
+      (by simp [Algebra.self_mem_adjoin_singleton])
 
-/-- For a normalised `φ` over any semiring `A`, a duplicate-free product of free elements of unit
-means has unit mean. -/
+/-- For a normalised `φ`, a duplicate-free product of free elements of unit means has unit
+mean. -/
 theorem isUnit_apply_list_prod (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1)
     {l : List ι} (hnodup : l.Nodup) (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
     IsUnit (φ (l.map c).prod) := by

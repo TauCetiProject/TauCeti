@@ -194,8 +194,8 @@ theorem sSeries_smul (hφ : φ 1 = 1) {a : A} (ha : IsUnit (φ a)) {c : R} (hc :
   have h1 : freeCumulantSeries φ (c • a) - 1 = (freeCumulantSeries φ a - 1).subst (c • X) := by
     rw [← rescale_eq_subst, map_sub, map_one, ← freeCumulantSeries_smul]
   have hX : HasSubst (X * (Ring.inverse c • sSeries φ a ha)) := .of_constantCoeff_zero' (by simp)
-  rw [h1, subst_comp_subst_apply (.smul_X' c) hX, subst_smul hX, subst_X hX,
-    mul_smul_comm, smul_smul, Ring.mul_inverse_cancel c hc, one_smul,
+  rw [h1, subst_comp_subst_apply (.smul_X' c) hX, subst_smul hX, subst_X hX]
+  simp [smul_smul, Ring.mul_inverse_cancel c hc,
     freeCumulantSeries_sub_one_subst_X_mul_sSeries a hφ ha]
 
 /-- A scalar variable of unit value has the constant S-series given by its inverse. -/

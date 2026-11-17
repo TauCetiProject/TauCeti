@@ -27,9 +27,9 @@ Both standard constant-coefficient conventions sit compatibly inside this monoid
   `X` acts as a two-sided identity (`PowerSeries.boxedConvolution_X_of_constantCoeff_eq_zero`).
 
 Iterating `IsFreelyIndependentElements.freeCumulantSeries_mul` along
-`IsFreelyIndependent.isFreelyIndependentElements_cond_list_prod` expresses the free cumulant series
-of a product of variables from pairwise distinct members of a freely independent family (over any
-semiring `A`) as the product in `BoxedConvolution R` of their individual free cumulant series.
+`IsFreelyIndependent.cond_adjoin_singleton_list_prod` expresses the free cumulant series
+of a product of variables from pairwise distinct members of a freely independent family as the
+product in `BoxedConvolution R` of their individual free cumulant series.
 
 ## Main definitions
 
@@ -323,8 +323,8 @@ variable {R A ι : Type*} [CommRing R] [Semiring A] [Algebra R A] {φ : A →ₗ
 /-- *Free cumulants of a finite product of free variables*: if `l : List (ι × A)` has pairwise
 distinct indices and each letter `p.2` belongs to `B p.1`, where `B` is freely independent for a
 normalised `φ`, then the free cumulant series of `(l.map Prod.snd).prod` is the product in
-`BoxedConvolution R` of the free cumulant series of the letters. No traciality or `[Ring A]`
-hypothesis is needed. -/
+`BoxedConvolution R` of the free cumulant series of the letters. No traciality hypothesis is
+needed. -/
 theorem IsFreelyIndependent.toBoxed_freeCumulantSeries_list_prod {B : ι → Subalgebra R A}
     (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {l : List (ι × A)}
     (hnodup : (l.map Prod.fst).Nodup) (hl : ∀ p ∈ l, p.2 ∈ B p.1) :
@@ -335,9 +335,9 @@ theorem IsFreelyIndependent.toBoxed_freeCumulantSeries_list_prod {B : ι → Sub
   | cons p l ih =>
     rw [List.map_cons, List.nodup_cons] at hnodup
     have hl' : ∀ q ∈ l, q.2 ∈ B q.1 := fun q hq => hl q (List.mem_cons_of_mem p hq)
-    have hmul := (h.isFreelyIndependentElements_cond_list_prod hφ hnodup.1
-      (hl p List.mem_cons_self) hl').freeCumulantSeries_mul hφ (i := true) (j := false)
-      (by decide)
+    have hmul := (isFreelyIndependentElements_iff.mpr
+      (h.cond_adjoin_singleton_list_prod hφ hnodup.1 (hl p List.mem_cons_self) hl'))
+      |>.freeCumulantSeries_mul hφ (i := true) (j := false) (by decide)
     simp only [Bool.cond_true, Bool.cond_false] at hmul
     simp only [List.map_cons, List.prod_cons]
     rw [hmul, toBoxed_boxedConvolution, ih hnodup.2 hl']
@@ -349,15 +349,11 @@ theorem IsFreelyIndependentElements.toBoxed_freeCumulantSeries_list_prod {c : ι
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {l : List ι} (hnodup : l.Nodup) :
     toBoxed (freeCumulantSeries φ (l.map c).prod) =
       (l.map fun i => toBoxed (freeCumulantSeries φ (c i))).prod := by
-  have hprod : l.map c = (l.map fun i => (i, c i)).map Prod.snd := by
-    simp [List.map_map, Function.comp_def]
-  have hfst : (l.map fun i => (i, c i)).map Prod.fst = l := by
-    simp [List.map_map, Function.comp_def]
-  rw [hprod, (isFreelyIndependentElements_iff.mp h).toBoxed_freeCumulantSeries_list_prod hφ
-    (hfst.symm ▸ hnodup) fun p hp => by
-      obtain ⟨i, _, rfl⟩ := List.mem_map.mp hp
-      exact Algebra.self_mem_adjoin_singleton R (c i)]
-  simp [List.map_map, Function.comp_def]
+  simpa [Function.comp_def] using
+    (isFreelyIndependentElements_iff.mp h).toBoxed_freeCumulantSeries_list_prod hφ
+      (l := l.map fun i => (i, c i))
+      (by simpa [Function.comp_def] using hnodup)
+      (by simp [Algebra.self_mem_adjoin_singleton])
 
 end FreeProduct
 

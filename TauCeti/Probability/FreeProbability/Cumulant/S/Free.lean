@@ -441,8 +441,9 @@ theorem IsFreelyIndependent.sSeries_list_prod {B : ι → Subalgebra R A}
     rw [List.map_cons, List.nodup_cons] at hnodup
     have hl' : ∀ q ∈ l, q.2 ∈ B q.1 := fun q hq => hl q (List.mem_cons_of_mem p hq)
     have hu' : ∀ q ∈ l, IsUnit (φ q.2) := fun q hq => hu q (List.mem_cons_of_mem p hq)
-    have hmul := (h.isFreelyIndependentElements_cond_list_prod hφ hnodup.1
-      (hl p List.mem_cons_self) hl').sSeries_mul hφ (i := true) (j := false) (by decide)
+    have hmul := (isFreelyIndependentElements_iff.mpr
+      (h.cond_adjoin_singleton_list_prod hφ hnodup.1
+        (hl p List.mem_cons_self) hl')).sSeries_mul hφ (i := true) (j := false) (by decide)
       (hu p List.mem_cons_self) (h.isUnit_apply_list_prod hφ hnodup.2 hl' hu')
     simp only [Bool.cond_true, Bool.cond_false] at hmul
     refine (sSeries_congr _ _ _ (by simp)).trans (hmul.trans ?_)
@@ -457,25 +458,13 @@ theorem IsFreelyIndependentElements.sSeries_list_prod {c : ι → A}
     (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
     sSeries φ (l.map c).prod (h.isUnit_apply_list_prod hφ hnodup hu) =
       (l.attach.map fun i => sSeries φ (c i.1) (hu i.1 i.2)).prod := by
-  let l' : List (ι × A) := l.map fun i => (i, c i)
-  have hprod : (l'.map Prod.snd).prod = (l.map c).prod := by
-    simp [l', List.map_map, Function.comp_def]
-  have hfst : l'.map Prod.fst = l := by
-    simp [l', List.map_map, Function.comp_def]
-  have hu' : ∀ p ∈ l', IsUnit (φ p.2) := by
-    intro p hp
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hp
-    exact hu i hi
-  have hl' : ∀ p ∈ l', p.2 ∈ Algebra.adjoin R {c p.1} := by
-    intro p hp
-    obtain ⟨i, _, rfl⟩ := List.mem_map.mp hp
-    exact Algebra.self_mem_adjoin_singleton R (c i)
-  have hunit' := (isFreelyIndependentElements_iff.mp h).isUnit_apply_list_prod hφ
-    (hfst.symm ▸ hnodup) hl' hu'
-  refine (sSeries_congr (l.map c).prod (h.isUnit_apply_list_prod hφ hnodup hu) hunit'
-    (congrArg (momentSeries φ) hprod.symm)).trans ?_
-  rw [(isFreelyIndependentElements_iff.mp h).sSeries_list_prod hφ (hfst.symm ▸ hnodup) hl' hu']
-  simp [l', List.attach_map, List.map_map, Function.comp_def]
+  have h1 := (isFreelyIndependentElements_iff.mp h).sSeries_list_prod hφ
+    (l := l.map fun i => (i, c i))
+    (by simpa [Function.comp_def] using hnodup)
+    (by simp [Algebra.self_mem_adjoin_singleton])
+    (by simpa using hu)
+  refine (sSeries_congr _ _ _ (by simp [Function.comp_def])).trans (h1.trans ?_)
+  simp [List.attach_map, Function.comp_def]
 
 end Semiring
 
