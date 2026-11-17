@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Relative.FirstJet
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
@@ -40,6 +41,13 @@ is a primitive with zero first jet along the zero section. Vanishing of `η` as 
 tensor is needed here: vanishing of its restriction to the zero section alone does not make the
 first jet of `P η` vanish.
 
+The same holds on a tube: for a diffeomorphism `Φ` from the total space onto a manifold `M`,
+such as a tubular neighbourhood, the transported primitive `(Φ⁻¹)^* P (Φ^* η)` of a continuous
+form `η` vanishing at `Φ(0_b)` has zero first jet at `Φ(0_b)`
+(`Diffeomorph.hasFDerivAt_inChartAt_mpullback_symm_vectorBundlePoincareHomotopy`), because
+pullback along a `C¹` map preserves zero first jets
+(`TauCeti.RoughForm.hasFDerivAt_inChartAt_mpullback`).
+
 A primitive with zero first jet along a submanifold is the input to the relative Moser argument
 which, for two symplectic forms agreeing on the full ambient tangent spaces along a compact
 submanifold, produces a neighbourhood diffeomorphism fixing the submanifold whose differential is
@@ -52,6 +60,8 @@ the identity along it.
 * `TauCeti.hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`,
   `TauCeti.hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`: the relative
   Poincaré primitive of a form vanishing at `0_b` has zero first jet at `0_b`.
+* `Diffeomorph.hasFDerivAt_inChartAt_mpullback_symm_vectorBundlePoincareHomotopy`: the same for the
+  primitive transported to a tube.
 
 ## References
 
@@ -177,5 +187,33 @@ theorem hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection [IB.Bound
       (extChartAt (IB.prod 𝓘(ℝ, FV)) (zeroSection FV V b) (zeroSection FV V b)) := by
   have h := hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection hη hb
   rwa [ModelWithCorners.range_eq_univ, hasFDerivWithinAt_univ] at h
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {n : WithTop ℕ∞}
+
+/-- **Zero first jet of the relative Poincaré primitive on a tube.** Let `Φ` be a `C^n`
+diffeomorphism, `n ≥ 1`, from the total space of a `C¹` vector bundle onto `M`, over boundaryless
+models, and let `η` be a continuous form on `M` vanishing at `Φ(0_b)` as a full ambient tensor.
+Then the transported relative Poincaré primitive `(Φ⁻¹)^* P (Φ^* η)` has zero derivative, in the
+preferred chart at `Φ(0_b)`, at the chart point of `Φ(0_b)`; since it also vanishes there, its
+whole first jet vanishes at `Φ(0_b)`. -/
+theorem _root_.Diffeomorph.hasFDerivAt_inChartAt_mpullback_symm_vectorBundlePoincareHomotopy
+    [IB.Boundaryless] [I.Boundaryless] (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M)
+    (hn : 1 ≤ n) {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I 0 η) {b : B}
+    (hb : η (Φ (zeroSection FV V b)) = 0) :
+    HasFDerivAt ((mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm
+        (vectorBundlePoincareHomotopy (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η))).inChartAt
+          (Φ (zeroSection FV V b)))
+      (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I (Φ (zeroSection FV V b)) (Φ (zeroSection FV V b))) := by
+  have hη₀ : IsSmoothForm (IB.prod 𝓘(ℝ, FV)) 0 (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η) :=
+    hη.mpullback (Φ.contMDiff.of_le (by simpa using hn))
+  have h := hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection hη₀
+    (mpullback_apply_eq_zero hb)
+  rw [← Φ.symm_apply_apply (zeroSection FV V b)] at h
+  refine RoughForm.hasFDerivAt_inChartAt_mpullback (Φ.symm.contMDiff.of_le hn).contMDiffAt h ?_
+  rw [Φ.symm_apply_apply]
+  exact vectorBundlePoincareHomotopy_zeroSection _ b
 
 end TauCeti
