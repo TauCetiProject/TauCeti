@@ -489,7 +489,9 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ
       Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
       OrthonormalBasis.repr_apply_apply]
     rw [show (-1 : ℝ) - 2 = -3 by norm_num]
-    simp [inner_add_right, inner_smul_right, real_inner_comm]
+    simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.smulRight_apply, coe_innerSL_apply, smul_eq_mul, inner_add_right,
+      inner_smul_right, real_inner_comm]
     ring
 
 end RadialField

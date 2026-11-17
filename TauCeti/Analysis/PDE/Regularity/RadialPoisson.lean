@@ -35,9 +35,9 @@ coefficient exponent, which for the Laplacian is arbitrary).
   Letting `γ ↑ d / q` shows that every exponent `β > 1 - d / q` fails for some datum in `Lᵠ`
   (`TauCeti.PDE.exists_memLp_forall_energyFormH1_eq_and_not_holderOnWith_gradient`).
 * **The endpoint `q = d` is excluded.** For `γ = 1` and `d ≥ 2`, the datum `‖x‖⁻¹` lies in `Lᵠ(Ω)`
-  for every `q < d` (`IsCompact.memLp_norm_inv_restrict`) but not for `q = d`
-  (`TauCeti.not_memLp_norm_inv_closedBall`), and the gradient `-x / ((d - 1) ‖x‖)` of the solution
-  `-‖x‖ / (d - 1)` has no representative continuous at the origin
+  for every `q < d` (`IsCompact.memLp_norm_inv_restrict`) but, when `Ω` contains the origin, not
+  for `q = d` (`TauCeti.not_memLp_norm_inv_closedBall`), and the gradient `-x / ((d - 1) ‖x‖)`
+  of the solution `-‖x‖ / (d - 1)` has no representative continuous at the origin
   (`TauCeti.PDE.exists_forall_energyFormH1_eq_and_not_continuousAt_gradient`). So the `C¹`
   conclusion is lost at `q = d`, not merely weakened.
 
