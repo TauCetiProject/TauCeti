@@ -116,8 +116,10 @@ theorem interior_halfClosedImage (i : Fin A.n) :
 /-- The points of the image of chart `i` in `ℂ` that are not in its interior lie on the real
 axis, so the image and its interior differ by a null set. -/
 theorem halfClosedImage_ae_le_halfImage (i : Fin A.n) :
-    A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) :=
-  (EventuallyEqSet.inter EventuallyEqSet.rfl (Complex.setOf_le_im_ae_eq 0)).subset
+    A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) := by
+  rw [← A.interior_halfClosedImage]
+  exact (inter_setOf_im_nonneg_ae_eq_interior
+    ⟨_, (A.image i).isOpen.preimage closedUpperHalfPlaneModel.continuous_symm⟩).subset
 
 /-- Every point of the image of chart `i` in `ℂ`, including the points on the real axis, is a
 limit of points of its interior. -/

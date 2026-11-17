@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
+import TauCeti.MeasureTheory.Function.LocalRepresentative
 
 /-!
 # Morrey's embedding on half-discs
@@ -281,7 +282,7 @@ theorem eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq {V₁ V₂ : Set ℂ}
     {i : ℕ} (hi : i ≤ k) :
     EqOn (iteratedFDeriv ℝ i g₁) (iteratedFDeriv ℝ i g₂) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
   eqOn_iteratedFDeriv_of_ae_eq (subset_closure_interior_inter_setOf_im_nonneg Ω.isOpen) hV₁ hV₂
-    hUV₁ hUV₂ hg₁ hg₂ h hi
+    hUV₁ hUV₂ hg₁ hg₂ h (by exact_mod_cast hi)
 
 /-- The reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` lies in `W^{k+1,p}_loc` of an open
 set `V` between `Ω ∩ {0 ≤ im}` and `Ω`, and has a `Cᵏ` representative on `V`, which is also a
