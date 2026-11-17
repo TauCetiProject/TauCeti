@@ -203,13 +203,14 @@ theorem isAlgebraicBelyiPair_iff_of_linearDisjoint [CharZero k']
 
 /-- **Base change of algebraic Belyi pairs**: let `F / k(t)` have exact constant field `k`, of
 characteristic zero, and let `F' = F · k'` be its compositum with an algebraic extension `k' / k`,
-with `t` acting on `F'` as it does on `F`. Then `F' / k'(t)` is an algebraic Belyi pair exactly
-when `F / k(t)` is. -/
+with `t` acting on `F'` as it does on `F`. Then `F' / k'(t)` is finite and is an algebraic Belyi
+pair exactly when `F / k(t)` is. -/
 theorem isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top [CharZero k']
-    [FiniteDimensional (RatFunc k') F'] [Algebra.IsAlgebraic k k']
+    [Algebra.IsAlgebraic k k']
     (hex : IsIntegrallyClosedIn k F) (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) :
+    haveI := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
     IsAlgebraicBelyiPair k' F' ↔ IsAlgebraicBelyiPair k F :=
   isAlgebraicBelyiPair_iff_of_linearDisjoint
     (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex) hcomp hX

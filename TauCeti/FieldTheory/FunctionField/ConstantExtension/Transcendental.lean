@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.Separable.Regular
 import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.FieldTheory.AlgebraicClosure
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
 import TauCeti.FieldTheory.FunctionField.Different.Basic
 import TauCeti.FieldTheory.FunctionField.Different.IntegralBasis
 import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.Basic
@@ -20,7 +21,6 @@ import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.IntermediateField.FieldRange
 import TauCeti.FieldTheory.RatFunc.Map
 import TauCeti.RingTheory.Discriminant.Equiv
-import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # Transcendental linearly disjoint constant extensions of function fields
@@ -31,18 +31,19 @@ constants, `F' / F` is no longer integral, so a place of `F'` need not restrict 
 its valuation ring may contain all of `F` (the generic point of the curve over `k`). Nevertheless,
 both directions of the ramification and constant-field comparison survive.
 
-First, multiplication `F ⊗[k] k' → F'` is injective, making `F'` the fraction field of `F ⊗[k] k'`
-and hence of `A ⊗[k] k'` whenever `F = Frac(A)`. Tensoring further with an algebraic closure of
-`k'` shows that a geometrically reduced field with exact constants keeps exact constants after any
-linearly disjoint extension `k' / k`.
+First, since `F'` is the fraction field of `F ⊗[k] k'`
+(`TauCeti.isFractionRing_field_tensorProduct_of_linearDisjoint`), tensoring further with an
+algebraic closure of `k'` shows that a geometrically reduced field with exact constants keeps exact
+constants after any linearly disjoint extension `k' / k`.
 
-Second, for every place `P` of `F / k`, `𝒪_P ⊗[k] k'` has fraction field `F'` and admits a quotient
-`F_P ⊗[k] k'` in which a uniformizer `t` of `P` maps to `0`. Extending the localization at a
-maximal ideal above `ker(𝒪_P ⊗[k] k' → F_P ⊗[k] k')` to a valuation subring of `F'` produces a
-place `P'` of `F' / k'` whose valuation ring contains `𝒪_P` and whose order restricts to a positive
-multiple of `ord_P`. Over a perfect field `k`, comparing the order of a coordinate on `RatFunc`
-shows that `e(P ∣ k(t))` divides `e(P' ∣ k'(t))` and `P'` lies over infinity or `X - a` (`a ∈ k`)
-exactly when `P` does.
+Second, for every place `P` of `F / k`, `𝒪_P ⊗[k] k'` has fraction field `F'`
+(`TauCeti.isFractionRing_tensorProduct_of_linearDisjoint`) and admits a quotient `F_P ⊗[k] k'` in
+which a uniformizer `t` of `P` maps to `0`. Extending the localization at a maximal ideal above
+`ker(𝒪_P ⊗[k] k' → F_P ⊗[k] k')` to a valuation subring of `F'` produces a place `P'` of `F' / k'`
+whose valuation ring contains `𝒪_P` and whose order restricts to a positive multiple of `ord_P`.
+Over a perfect field `k`, comparing the order of a coordinate on `RatFunc` shows that
+`e(P ∣ k(t))` divides `e(P' ∣ k'(t))` and `P'` lies over infinity or `X - a` (`a ∈ k`) exactly when
+`P` does.
 
 Third, in the opposite direction, a place `P'` of `F' / k'` intersects `RatFunc k` either in the
 whole field `RatFunc k` or in the valuation ring of a unique place `Q` of `RatFunc k`. In the first
@@ -54,9 +55,6 @@ discriminant (`TauCeti.Place.ord_discr_localIntegralBasis_eq_zero`) and transpor
 
 ## Main results
 
-* `TauCeti.productMap_injective_of_linearDisjoint` and
-  `TauCeti.isFractionRing_tensorProduct_of_linearDisjoint`: `F ⊗[k] k'` embeds into `F'` and
-  `F' = Frac(A ⊗[k] k')` whenever `F = Frac(A)`.
 * `IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoint`: exact constants
   persist under any linearly disjoint constant extension of a geometrically reduced field.
 * `TauCeti.isSeparable_ratFunc_of_constantCompositum_eq_top`: separability over `RatFunc` persists
@@ -85,93 +83,11 @@ open scoped IntermediateField TensorProduct nonZeroDivisors
 
 namespace TauCeti
 
-section TensorAndConstants
+section ExactConstants
 
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-/-- **Linear disjointness makes multiplication `F ⊗[k] k' → F'` injective**, with no algebraicity
-hypothesis on `k' / k`. -/
-theorem productMap_injective_of_linearDisjoint
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) :
-    Function.Injective (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
-      (IsScalarTower.toAlgHom k k' F')) := by
-  let fF := IsScalarTower.toAlgHom k F F'
-  let fk := IsScalarTower.toAlgHom k k' F'
-  let e : F ⊗[k] k' ≃ₐ[k] fF.range ⊗[k] fk.range :=
-    Algebra.TensorProduct.congr (AlgEquiv.ofInjectiveField fF) (AlgEquiv.ofInjectiveField fk)
-  have hdisj : fF.range.LinearDisjoint fk.range := by
-    rw [← AlgHom.fieldRange_toSubalgebra]
-    exact Subalgebra.LinearDisjoint.symm H
-  have hcomp : Algebra.TensorProduct.productMap fF fk =
-      (Algebra.TensorProduct.productMap fF.range.val fk.range.val).comp e.toAlgHom :=
-    Algebra.TensorProduct.ext' fun _ _ ↦ rfl
-  rw [hcomp, AlgHom.coe_comp]
-  exact hdisj.injective.comp e.injective
-
-/-- **The linearly disjoint compositum `F · k'` is the fraction field of `F ⊗[k] k'`.** -/
-theorem isFractionRing_field_tensorProduct_of_linearDisjoint
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤) :
-    letI := (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
-      (IsScalarTower.toAlgHom k k' F') : F ⊗[k] k' →+* F').toAlgebra
-    IsFractionRing (F ⊗[k] k') F' := by
-  set π := Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
-    (IsScalarTower.toAlgHom k k' F')
-  let _ : Algebra (F ⊗[k] k') F' := (π : F ⊗[k] k' →+* F').toAlgebra
-  have hπ : Function.Injective (algebraMap (F ⊗[k] k') F') :=
-    productMap_injective_of_linearDisjoint H
-  have : FaithfulSMul (F ⊗[k] k') F' := (faithfulSMul_iff_algebraMap_injective _ _).mpr hπ
-  have hring : (π : F ⊗[k] k' →+* F').range =
-      Subring.closure (Set.range (algebraMap F F') ∪ Set.range (algebraMap k' F')) := by
-    rw [RingHom.range_eq_map, ← Algebra.TensorProduct.closure_range_union_range_eq_top k F k',
-      RingHom.map_closure, Set.image_union, ← Set.range_comp, ← Set.range_comp]
-    congr 2 <;> ext <;> simp [π]
-  refine IsFractionRing.of_field (F ⊗[k] k') F' fun z ↦ ?_
-  have hz : z ∈ Subfield.closure (Set.range (algebraMap F F') ∪ Set.range (algebraMap k' F')) := by
-    have htop := congrArg IntermediateField.toSubfield h
-    rw [constantCompositum_def, IntermediateField.adjoin_toSubfield] at htop
-    simp [htop]
-  obtain ⟨a, ha, b, hb, rfl⟩ := Subfield.mem_closure_iff.mp hz
-  rw [← hring] at ha hb
-  obtain ⟨x, rfl⟩ := ha
-  obtain ⟨y, rfl⟩ := hb
-  exact ⟨x, y, rfl⟩
-
-/-- **The linearly disjoint compositum `F · k'` is the fraction field of `A ⊗[k] k'`** for every
-`k`-algebra `A` with fraction field `F`, with no algebraicity assumption on `k' / k`. -/
-theorem isFractionRing_tensorProduct_of_linearDisjoint {A : Type*} [CommRing A]
-    [Algebra k A] [Algebra A F] [IsScalarTower k A F] [IsFractionRing A F]
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤) :
-    letI := (((Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
-      (IsScalarTower.toAlgHom k k' F')).comp
-      (Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k k'))) :
-        A ⊗[k] k' →+* F').toAlgebra
-    IsFractionRing (A ⊗[k] k') F' := by
-  set π := Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
-    (IsScalarTower.toAlgHom k k' F')
-  set ρ := Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k k')
-  let _ := ((π.comp ρ : A ⊗[k] k' →ₐ[k] F') : A ⊗[k] k' →+* F').toAlgebra
-  have hπ := productMap_injective_of_linearDisjoint H
-  have hρ : Function.Injective ρ :=
-    Module.Flat.rTensor_preserves_injective_linearMap (IsScalarTower.toAlgHom k A F).toLinearMap
-      (IsFractionRing.injective A F)
-  have hψ : Function.Injective (algebraMap (A ⊗[k] k') F') := hπ.comp hρ
-  let _ : Algebra (A ⊗[k] k') (F ⊗[k] k') := (ρ : A ⊗[k] k' →+* F ⊗[k] k').toAlgebra
-  have : IsScalarTower A (A ⊗[k] k') (F ⊗[k] k') := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, ρ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] k') A⁰) (F ⊗[k] k') :=
-    IsLocalization.tensorProduct_tensorProduct k k' A⁰ F
-      (by ext; simp [RingHom.algebraMap_toAlgebra, ρ])
-  let _ : Algebra (F ⊗[k] k') F' := (π : F ⊗[k] k' →+* F').toAlgebra
-  have : IsScalarTower (A ⊗[k] k') (F ⊗[k] k') F' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsFractionRing (F ⊗[k] k') F' := isFractionRing_field_tensorProduct_of_linearDisjoint H h
-  have : NoZeroDivisors (A ⊗[k] k') := hψ.noZeroDivisors _ (map_zero _) (map_mul _)
-  exact IsFractionRing.of_isLocalization_of_isFractionRing
-    (Algebra.algebraMapSubmonoid (A ⊗[k] k') A⁰) (F ⊗[k] k') F'
-    (IsLocalization.le_nonZeroDivisors_of_nontrivial _ (F ⊗[k] k'))
 
 /-- **Exact constants persist under any linearly disjoint constant extension of a geometrically
 reduced field.** The extension `k' / k` may be transcendental. -/
@@ -219,7 +135,7 @@ theorem _root_.IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoi
   have hz' : z ∈ (⊥ : IntermediateField k' F') := hbot ▸ mem_algebraicClosure_iff.mpr hz.isAlgebraic
   exact IntermediateField.mem_bot.mp hz'
 
-end TensorAndConstants
+end ExactConstants
 
 namespace Place
 
@@ -455,6 +371,44 @@ private theorem adjoin_range_fieldRange_ratFunc_eq
     rw [IsScalarTower.algebraMap_apply (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange F F',
       IntermediateField.algebraMap_apply, hX, IsScalarTower.toAlgHom_apply]
 
+/-- Transport a `RatFunc k`-basis of `F` to a basis over the image of `RatFunc k` in `F`. -/
+private noncomputable def fieldRangeRatFuncBasis {ι : Type*} (b : Module.Basis ι (RatFunc k) F) :
+    Module.Basis ι (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange F :=
+  b.mapCoeffs (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange.toRingEquiv fun a x ↦
+    (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange_smul
+      (fun _ ↦ (IsScalarTower.toAlgHom_apply k (RatFunc k) F _).symm) a x
+
+/-- The ring equivalence identifying the adjoined base field `k' · C` in `F'` with `RatFunc k'`,
+where `C` is the image of `RatFunc k` in `F`. -/
+private noncomputable def adjoinFieldRangeRatFuncEquiv
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    IntermediateField.adjoin k'
+        (Set.range (algebraMap (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange F')) ≃+*
+      RatFunc k' :=
+  ((IntermediateField.equivOfEq (adjoin_range_fieldRange_ratFunc_eq hX)).trans
+    (IsScalarTower.toAlgHom k' (RatFunc k') F').equivFieldRange.symm).toRingEquiv
+
+/-- `adjoinFieldRangeRatFuncEquiv` is compatible with the inclusions into `F'`. -/
+private theorem algebraMap_adjoinFieldRangeRatFuncEquiv
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    (c : IntermediateField.adjoin k'
+      (Set.range (algebraMap (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange F'))) :
+    algebraMap (RatFunc k') F' (adjoinFieldRangeRatFuncEquiv hX c) = (c : F') := by
+  simp only [adjoinFieldRangeRatFuncEquiv, AlgEquiv.coe_toRingEquiv, AlgEquiv.trans_apply,
+    ← IsScalarTower.toAlgHom_apply k' (RatFunc k') F', ← AlgHom.equivFieldRange_apply_coe,
+    AlgEquiv.apply_symm_apply, IntermediateField.equivOfEq_apply]
+
+/-- Ring-homomorphism form of `algebraMap_adjoinFieldRangeRatFuncEquiv`. -/
+private theorem comp_adjoinFieldRangeRatFuncEquiv
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    (algebraMap (RatFunc k') F').comp (adjoinFieldRangeRatFuncEquiv hX).toRingHom =
+      algebraMap _ F' := by
+  ext c
+  exact algebraMap_adjoinFieldRangeRatFuncEquiv hX c
+
 /-- Transport a finite `RatFunc k`-basis of `F` along a linearly disjoint constant compositum
 `F' = F · k'` to a `RatFunc k'`-basis of `F'`, via `constantExtensionBasisOfLinearDisjoint`. -/
 private noncomputable def constantExtensionRatFuncBasis
@@ -465,22 +419,13 @@ private noncomputable def constantExtensionRatFuncBasis
     {ι : Type*} [Fintype ι] (b : Module.Basis ι (RatFunc k) F) :
     Module.Basis ι (RatFunc k') F' :=
   let C := (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange
-  let e : RatFunc k ≃+* C := (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange.toRingEquiv
-  let bC : Module.Basis ι C F := b.mapCoeffs e fun a x ↦
-    (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange_smul
-      (fun _ ↦ (IsScalarTower.toAlgHom_apply k (RatFunc k) F _).symm) a x
+  let bC := fieldRangeRatFuncBasis b
   have : FiniteDimensional C F := Module.Finite.of_basis bC
   have : Algebra.IsAlgebraic C F := Algebra.IsAlgebraic.of_finite C F
-  let e' : IntermediateField.adjoin k' (Set.range (algebraMap C F')) ≃+* RatFunc k' :=
-    (IntermediateField.equivOfEq (adjoin_range_fieldRange_ratFunc_eq hX)).toRingEquiv.trans
-      (IsScalarTower.toAlgHom k' (RatFunc k') F').equivFieldRange.symm.toRingEquiv
-  (constantExtensionBasisOfLinearDisjoint H hcomp C bC).mapCoeffs e' fun c x ↦ by
-    rw [Algebra.smul_def, Algebra.smul_def]
-    congr 1
-    rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
-      IntermediateField.algebraMap_apply, ← IsScalarTower.toAlgHom_apply k' (RatFunc k') F',
-      ← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
-      IntermediateField.equivOfEq_apply]
+  (constantExtensionBasisOfLinearDisjoint H hcomp C bC).mapCoeffs
+    (adjoinFieldRangeRatFuncEquiv hX) fun c x ↦ by
+      rw [Algebra.smul_def, Algebra.smul_def, IntermediateField.algebraMap_apply,
+        algebraMap_adjoinFieldRangeRatFuncEquiv hX c]
 
 private theorem coe_constantExtensionRatFuncBasis
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
@@ -489,7 +434,7 @@ private theorem coe_constantExtensionRatFuncBasis
       algebraMap (RatFunc k') F' RatFunc.X)
     {ι : Type*} [Fintype ι] (b : Module.Basis ι (RatFunc k) F) (i : ι) :
     constantExtensionRatFuncBasis H hcomp hX b i = algebraMap F F' (b i) := by
-  simp [constantExtensionRatFuncBasis, Module.Basis.mapCoeffs_apply]
+  simp [constantExtensionRatFuncBasis, fieldRangeRatFuncBasis, Module.Basis.mapCoeffs_apply]
 
 private theorem discr_constantExtensionRatFuncBasis
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
@@ -501,40 +446,46 @@ private theorem discr_constantExtensionRatFuncBasis
       RatFunc.mapCoeffRingHom (algebraMap k k') (Algebra.discr (RatFunc k) b) := by
   let C := (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange
   let e : RatFunc k ≃+* C := (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange.toRingEquiv
-  let bC : Module.Basis ι C F := b.mapCoeffs e fun a x ↦
-    (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange_smul
-      (fun _ ↦ (IsScalarTower.toAlgHom_apply k (RatFunc k) F _).symm) a x
+  let bC := fieldRangeRatFuncBasis b
   have : FiniteDimensional C F := Module.Finite.of_basis bC
   have : Algebra.IsAlgebraic C F := Algebra.IsAlgebraic.of_finite C F
   let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
-  let e' : C' ≃+* RatFunc k' :=
-    (IntermediateField.equivOfEq (adjoin_range_fieldRange_ratFunc_eq hX)).toRingEquiv.trans
-      (IsScalarTower.toAlgHom k' (RatFunc k') F').equivFieldRange.symm.toRingEquiv
-  have he : (algebraMap C F).comp (e : RatFunc k →+* C) = algebraMap (RatFunc k) F := by
+  let e' : C' ≃+* RatFunc k' := adjoinFieldRangeRatFuncEquiv hX
+  have he : (algebraMap C F).comp e.toRingHom = algebraMap (RatFunc k) F := by
     ext r
-    rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
-      IntermediateField.algebraMap_apply, AlgHom.equivFieldRange_apply_coe,
-      IsScalarTower.toAlgHom_apply]
-  have he' : (algebraMap (RatFunc k') F').comp (e' : C' →+* RatFunc k') = algebraMap C' F' := by
-    ext c
-    rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.trans_apply,
-      AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
-      ← IsScalarTower.toAlgHom_apply k' (RatFunc k') F', ← AlgHom.equivFieldRange_apply_coe,
-      AlgEquiv.apply_symm_apply, IntermediateField.equivOfEq_apply,
-      IntermediateField.algebraMap_apply]
-  have hbC_fn : (bC : ι → F) = b := funext fun i ↦ Module.Basis.mapCoeffs_apply _ _ _ i
-  have hb'_fn : (constantExtensionRatFuncBasis H hcomp hX b : ι → F') =
-      constantExtensionBasisOfLinearDisjoint H hcomp C bC := by
-    ext i
-    rw [coe_constantExtensionRatFuncBasis, constantExtensionBasisOfLinearDisjoint_apply,
-      Module.Basis.mapCoeffs_apply]
+    simp [C, e, AlgHom.equivFieldRange_apply_coe]
+  have he' : (algebraMap (RatFunc k') F').comp e'.toRingHom = algebraMap C' F' :=
+    comp_adjoinFieldRangeRatFuncEquiv hX
+  have hdiscr_C : e (Algebra.discr (RatFunc k) b) = Algebra.discr C bC := by
+    have hbC_fn : (bC : ι → F) = b := funext fun i ↦ Module.Basis.mapCoeffs_apply _ _ _ i
+    simpa [hbC_fn] using Algebra.discr_eq_of_ringEquiv e he b
+  have hdiscr_C' : e' (Algebra.discr C' (constantExtensionBasisOfLinearDisjoint H hcomp C bC)) =
+      Algebra.discr (RatFunc k') (constantExtensionRatFuncBasis H hcomp hX b) := by
+    have hb'_fn : (constantExtensionRatFuncBasis H hcomp hX b : ι → F') =
+        constantExtensionBasisOfLinearDisjoint H hcomp C bC := by
+      ext i
+      simp [coe_constantExtensionRatFuncBasis, bC, fieldRangeRatFuncBasis,
+        Module.Basis.mapCoeffs_apply]
+    simpa [hb'_fn] using
+      Algebra.discr_eq_of_ringEquiv e' he' (constantExtensionBasisOfLinearDisjoint H hcomp C bC)
   apply (algebraMap (RatFunc k') F').injective
-  rw [hb'_fn, ← Algebra.discr_eq_of_ringEquiv e' he', ← RingEquiv.coe_toRingHom,
-    ← RingHom.comp_apply, he', IntermediateField.algebraMap_apply,
-    coe_discr_constantExtensionBasisOfLinearDisjoint H hcomp C bC, hbC_fn,
-    ← Algebra.discr_eq_of_ringEquiv e he, IsScalarTower.algebraMap_apply C F F',
-    ← RingEquiv.coe_toRingHom, ← RingHom.comp_apply (algebraMap C F), he,
-    algebraMap_mapCoeffRingHom hX]
+  calc
+    algebraMap (RatFunc k') F'
+        (Algebra.discr (RatFunc k') (constantExtensionRatFuncBasis H hcomp hX b))
+      = algebraMap (RatFunc k') F'
+          (e' (Algebra.discr C' (constantExtensionBasisOfLinearDisjoint H hcomp C bC))) := by
+        rw [hdiscr_C']
+    _ = (Algebra.discr C' (constantExtensionBasisOfLinearDisjoint H hcomp C bC) : F') :=
+        algebraMap_adjoinFieldRangeRatFuncEquiv hX _
+    _ = algebraMap C F' (Algebra.discr C bC) :=
+        coe_discr_constantExtensionBasisOfLinearDisjoint H hcomp C bC
+    _ = algebraMap F F' (algebraMap C F (e (Algebra.discr (RatFunc k) b))) := by
+        rw [← hdiscr_C, IsScalarTower.algebraMap_apply C F F']
+    _ = algebraMap F F' (algebraMap (RatFunc k) F (Algebra.discr (RatFunc k) b)) := by
+        simp [C, e, AlgHom.equivFieldRange_apply_coe]
+    _ = algebraMap (RatFunc k') F'
+          (RatFunc.mapCoeffRingHom (algebraMap k k') (Algebra.discr (RatFunc k) b)) :=
+        (algebraMap_mapCoeffRingHom hX _).symm
 
 /-- If `x ∈ F` is integral over a `RatFunc k`-subalgebra `S` mapped by `RatFunc k → F'` into
 `P'.integers`, then the image of `x` in `F'` is integral over the restricted valuation ring
@@ -554,9 +505,6 @@ private theorem isIntegral_restrict_ratFunc_of_isIntegral_ring
       (P'.restrict k' (RatFunc k')).integers fun s ↦ by
         rw [mem_integers_restrict_iff, RingHom.comp_apply, algebraMap_mapCoeffRingHom hX]
         exact hS s
-  obtain ⟨p, hp_monic, hp_eval⟩ := hx
-  refine ⟨p.map g, hp_monic.map g, ?_⟩
-  rw [eval₂_map]
   have heq : (algebraMap (P'.restrict k' (RatFunc k')).integers F').comp g =
       (algebraMap F F').comp (algebraMap S F) := by
     ext s
@@ -564,10 +512,7 @@ private theorem isIntegral_restrict_ratFunc_of_isIntegral_ring
       IsScalarTower.algebraMap_apply (P'.restrict k' (RatFunc k')).integers (RatFunc k') F',
       ValuationSubring.algebraMap_apply, RingHom.codRestrict_apply, RingHom.comp_apply,
       algebraMap_mapCoeffRingHom hX, ← IsScalarTower.algebraMap_apply S (RatFunc k) F]
-  rw [heq]
-  have hzero := congrArg (algebraMap F F') hp_eval
-  rw [map_zero, Polynomial.hom_eval₂] at hzero
-  exact hzero
+  exact hx.map_of_comp_eq g (algebraMap F F') heq
 
 private theorem differentExponent_eq_zero_of_discr_mem_and_inv_mem
     [FiniteDimensional (RatFunc k') F'] [Algebra.IsSeparable (RatFunc k') F']
