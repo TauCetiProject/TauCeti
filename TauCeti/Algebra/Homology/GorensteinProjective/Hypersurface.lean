@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.GorensteinProjective.CohenMacaulay
 public import TauCeti.Algebra.Homology.GorensteinProjective.Presentation
 public import TauCeti.RingTheory.Regular.ProjectiveDimension
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
+import Mathlib.RingTheory.Flat.TorsionFree
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
-# Projective dimension over the ambient ring of a hypersurface
+# Projective dimension and Cohen–Macaulayness over a hypersurface
 
 Let `w` be a nonzerodivisor of a commutative ring `S`. If `S` has finite global dimension,
 a finitely generated Gorenstein-projective module over `S/(w)` has projective dimension at most
-one over `S`. In particular this holds when `S` is regular local.
+one over `S`. In particular this holds when `S` is regular local, and if `S/(w)` is local then
+every Gorenstein-projective `S/(w)`-module is Cohen–Macaulay (`isCohenMacaulay_quotient`,
+`depth_eq_ringKrullDim_quotient`).
 
 This is the projective-dimension input to the construction of matrix factorizations from
 Gorenstein-projective modules: over a Noetherian ambient ring such a module admits a length-one
@@ -32,6 +38,7 @@ copresentations are needed; no comparison of singularity categories is assumed.
   representations*, Trans. Amer. Math. Soc. **260** (1980), Section 5.
 * R.-O. Buchweitz, *Maximal Cohen–Macaulay Modules and Tate Cohomology*, Mathematical Surveys
   and Monographs **262**, American Mathematical Society (2021), Section 4.
+* W. Bruns and J. Herzog, *Cohen–Macaulay Rings*, Section 3.3.
 -/
 
 public section
@@ -40,7 +47,7 @@ open CategoryTheory
 
 namespace TauCeti.IsGorensteinProjective
 
-universe u
+universe v u
 
 variable {S : Type u} [CommRing S] {w : S}
 
@@ -92,5 +99,37 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing
   hM.hasProjectiveDimensionLE_restrictScalars_quotient hw (IsLocalRing.maximalIdeal S).spanFinrank
     (IsRegularLocalRing.hasProjectiveDimensionLE
       (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+
+variable [IsRegularLocalRing S] [_root_.IsLocalRing (S ⧸ Ideal.span {w})]
+
+/-- A nontrivial Gorenstein-projective module over the local hypersurface `S ⧸ (w)` in a regular
+local ring `S` has depth equal to `ringKrullDim (S ⧸ (w))`. -/
+theorem depth_eq_ringKrullDim_quotient {M : ModuleCat.{v} (S ⧸ Ideal.span {w})}
+    [Small.{v} (S ⧸ Ideal.span {w})] (hM : IsGorensteinProjective (S ⧸ Ideal.span {w}) M)
+    (hw : w ∈ nonZeroDivisors S) [Nontrivial M] :
+    (_root_.IsLocalRing.depth M : WithBot ℕ∞) = ringKrullDim (S ⧸ Ideal.span {w}) := by
+  have hwm : w ∈ _root_.IsLocalRing.maximalIdeal S := by
+    by_contra h; exact not_subsingleton (S ⧸ Ideal.span {w}) (Ideal.Quotient.subsingleton_iff.mpr
+      (Ideal.span_singleton_eq_top.mpr (_root_.IsLocalRing.notMem_maximalIdeal.mp h)))
+  have hQ : Module.IsCohenMacaulay S (QuotSMulTop w S) :=
+    (Module.isCohenMacaulay_quotSMulTop_iff (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
+      hwm).mpr IsRegularLocalRing.isCohenMacaulay
+  have e : QuotSMulTop w S ≃ₗ[S] S ⧸ Ideal.span {w} :=
+    (Ideal.quotientEquivAlgOfEq S (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
+  have : Ring.IsCohenMacaulay (S ⧸ Ideal.span {w}) := Ring.isCohenMacaulay_iff_of_isLocalRing.mpr
+    ((Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective Ideal.Quotient.mk_surjective).mp
+      (e.isCohenMacaulay_iff.mp hQ))
+  exact hM.depth_eq_ringKrullDim
+
+/-- Every Gorenstein-projective module over the local hypersurface `S ⧸ (w)` in a regular local ring
+`S` is Cohen–Macaulay. -/
+theorem isCohenMacaulay_quotient {M : ModuleCat.{v} (S ⧸ Ideal.span {w})}
+    [Small.{v} (S ⧸ Ideal.span {w})] (hM : IsGorensteinProjective (S ⧸ Ideal.span {w}) M)
+    (hw : w ∈ nonZeroDivisors S) : Module.IsCohenMacaulay (S ⧸ Ideal.span {w}) M := by
+  cases subsingleton_or_nontrivial M
+  · exact Module.isCohenMacaulay_of_subsingleton
+  have := hM.finite
+  exact Module.isCohenMacaulay_iff_supportDim_le_depth.mpr
+    ((Module.supportDim_le_ringKrullDim _ M).trans (hM.depth_eq_ringKrullDim_quotient hw).symm.le)
 
 end TauCeti.IsGorensteinProjective
