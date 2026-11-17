@@ -94,15 +94,8 @@ theorem exists_isPrimitive_forall_apply_self_le {M : Type*} [AddCommGroup M] [Mo
   have hmin : ∀ x, x ≠ 0 → B v v ≤ B x x := fun x hx ↦ by
     rw [hvk, ← Int.toNat_of_nonneg (hpos' x hx).le]
     exact_mod_cast Nat.find_min' hex ⟨x, hx, (Int.toNat_of_nonneg (hpos' x hx).le).symm⟩
-  refine ⟨v, ?_, hmin⟩
-  obtain ⟨d, w, hd, hw, hvw⟩ := TauCeti.exists_eq_zsmul_isPrimitive hv0
-  have hww := hpos' w hw.ne_zero
-  have hle := hmin w hw.ne_zero
-  rw [hvw] at hle
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc] at hle
-  have hdd : d * d ≤ 1 := le_of_mul_le_mul_right (by rwa [one_mul]) hww
-  have hd1 : d = 1 := by nlinarith
-  rwa [hvw, hd1, one_smul]
+  refine ⟨v, TauCeti.isPrimitive_of_forall_le_of_zsmul_eq_sq_mul hv0 hmin hpos' fun d w ↦ ?_, hmin⟩
+  simp [sq, mul_assoc]
 
 /-- A vector of least norm among the nonzero vectors of an integral form has nonnegative norm:
 `B(v, v) ≤ B(2 v, 2 v) = 4 B(v, v)` unless `2 v = 0`, and then `2 B(v, v) = B(2 v, v) = 0`. -/

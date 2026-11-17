@@ -46,11 +46,16 @@ coordinate taking a nontorsion class to its positive divisibility.
   invariant under multiplication by a unit.
 * `TauCeti.exists_eq_zsmul_isPrimitive`: a nonzero vector in a free integer module is a
   positive integer multiple of a primitive vector.
+* `TauCeti.isPrimitive_of_forall_le_of_lt_zsmul` and
+  `TauCeti.isPrimitive_of_forall_le_of_zsmul_eq_sq_mul`: a nonzero minimizer of a strictly
+  scaling (or positive quadratic-scaling) function on a free integer module is primitive.
 * `TauCeti.exists_integral_coordinate_of_notMem_torsion`: a nontorsion class in a finitely
   generated abelian group has a surjective integral coordinate taking its divisibility as value.
 * `Module.Basis.isPrimitive`: a vector of an integral basis is primitive.
 * `TauCeti.IsPrimitive.exists_basis`: conversely, a primitive vector of a finite free integer
   module belongs to some integral basis of it.
+* `TauCeti.IsPrimitive.exists_units_matrix_mulVec_single_eq`: a primitive vector of `ι → ℤ` is the
+  `i`-th column of an invertible integer matrix in `(Matrix ι ι ℤ)ˣ` (i.e. `GL ι ℤ`).
 * `Module.Basis.exists_basis_eq_iff`: the relative version. The vectors `b 0, …, b (i - 1)` of a
   basis `b` followed by `v` extend to a basis exactly when some integer-valued linear functional
   vanishes on `b 0, …, b (i - 1)` and takes the value one on `v`.
@@ -220,6 +225,34 @@ theorem exists_eq_zsmul_isPrimitive [Module.Free ℤ M] {v : M}
   rw [Finset.gcd_div_eq_one hj hcj] at ha
   simp [w, ha, mul_comm]
 
+/-- A nonzero minimizer of a function `q : M → α` on a free integer module is primitive whenever
+strictly larger positive integer multiples of primitive vectors strictly increase `q`. -/
+theorem isPrimitive_of_forall_le_of_lt_zsmul [Module.Free ℤ M] {α : Type*} [Preorder α]
+    {q : M → α} {v : M} (hv : v ≠ 0) (hmin : ∀ x, x ≠ 0 → q v ≤ q x)
+    (hlt : ∀ (d : ℤ) (w : M), 1 < d → IsPrimitive w → q w < q (d • w)) :
+    IsPrimitive v := by
+  obtain ⟨d, w, hd, hw, hvw⟩ := exists_eq_zsmul_isPrimitive hv
+  have hd1 : d = 1 := by
+    by_contra hne
+    exact (hlt d w (by omega) hw).not_ge (hvw ▸ hmin w hw.ne_zero)
+  rwa [hvw, hd1, one_smul]
+
+/-- A nonzero minimizer of a positive quadratic-scaling function `q : M → R` on a free integer
+module (`q (d • w) = d ^ 2 * q w` and `0 < q w` for `w ≠ 0`) is primitive. -/
+theorem isPrimitive_of_forall_le_of_zsmul_eq_sq_mul [Module.Free ℤ M]
+    {R : Type*} [Ring R] [PartialOrder R] [IsStrictOrderedRing R]
+    {q : M → R} {v : M} (hv : v ≠ 0) (hmin : ∀ x, x ≠ 0 → q v ≤ q x)
+    (hpos : ∀ w, w ≠ 0 → 0 < q w)
+    (hsq : ∀ (d : ℤ) (w : M), q (d • w) = (d : R) ^ 2 * q w) :
+    IsPrimitive v := by
+  refine isPrimitive_of_forall_le_of_lt_zsmul hv hmin fun d w hd hw ↦ ?_
+  rw [hsq]
+  have hdR : (1 : R) < d := by exact_mod_cast hd
+  have hdsq : (1 : R) < (d : R) ^ 2 := by
+    rw [sq]
+    exact (one_mul (1 : R)).symm.trans_lt (mul_lt_mul'' hdR hdR zero_le_one zero_le_one)
+  exact lt_mul_of_one_lt_left (hpos w hw.ne_zero) hdsq
+
 /-- A nontorsion element of a finitely generated abelian group admits a surjective integral
 coordinate taking its positive divisibility as value. Divisibility is measured in the actual
 torsion-free quotient, not in the original group: every natural multiplier of the quotient
@@ -248,6 +281,25 @@ theorem IsPrimitive.exists_basis [Module.Free ℤ M] [Module.Finite ℤ M] {v : 
   obtain ⟨m, ⟨c⟩⟩ := Submodule.nonempty_basis_of_pid (Module.finBasis ℤ M) (LinearMap.ker f)
   obtain ⟨b, hb, -⟩ := c.exists_basis_finCons_of_apply_eq_one hf
   exact ⟨m + 1, b, 0, hb⟩
+
+open scoped Matrix in
+/-- Every primitive vector `v : ι → ℤ` is the `i`-th column of an invertible integer matrix
+`γ : (Matrix ι ι ℤ)ˣ` (i.e., `GL ι ℤ`): `(γ : Matrix ι ι ℤ) *ᵥ Pi.single i 1 = v`. -/
+theorem IsPrimitive.exists_units_matrix_mulVec_single_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {v : ι → ℤ} (hv : IsPrimitive v) (i : ι) :
+    ∃ γ : (Matrix ι ι ℤ)ˣ, (γ : Matrix ι ι ℤ) *ᵥ Pi.single i 1 = v := by
+  let std := Pi.basisFun ℤ ι
+  obtain ⟨m, b, j, hbj⟩ := hv.exists_basis
+  let σ : Fin m ≃ ι := (b.indexEquiv std).trans (Equiv.swap ((b.indexEquiv std) j) i)
+  let e : Module.Basis ι ℤ (ι → ℤ) := b.reindex σ
+  have hei : e i = v := by
+    have hσ : σ.symm i = j := by simp [σ]
+    simp [e, hσ, hbj]
+  refine ⟨⟨std.toMatrix e, e.toMatrix std, std.toMatrix_mul_toMatrix_flip e,
+    e.toMatrix_mul_toMatrix_flip std⟩, ?_⟩
+  ext k
+  simpa [std, Module.Basis.toMatrix_apply, Matrix.mulVec_single_one, Matrix.col_apply] using
+    congrFun hei k
 
 end TauCeti
 

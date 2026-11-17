@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Topology.Instances.Rat
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # Positive definiteness and Northcott finiteness on the integer lattice
@@ -181,29 +182,13 @@ theorem PosDef.northcott {A : Matrix ι ι ℝ} (hA : A.PosDef) :
   classical
   refine ⟨fun B ↦ ?_⟩
   have hinv_pos (k : ι) : 0 < A⁻¹ k k := hA.inv.diag_pos
-  have hcoord (x : ι → ℝ) (k : ι) : x k ^ 2 ≤ A⁻¹ k k * (x ⬝ᵥ A *ᵥ x) := by
-    set u : ι → ℝ := A⁻¹ *ᵥ Pi.single k 1
-    have hAu : A *ᵥ u = Pi.single k 1 := by
-      rw [mulVec_mulVec, mul_nonsing_inv A hA.det_pos.ne'.isUnit, one_mulVec]
-    have huAu : u ⬝ᵥ A *ᵥ u = A⁻¹ k k := by rw [hAu, dotProduct_single_one]; simp [u]
-    have hxAu : x ⬝ᵥ A *ᵥ u = x k := by rw [hAu, dotProduct_single_one]
-    have huAx : u ⬝ᵥ A *ᵥ x = x k := by rw [hA.isHermitian.isSymm.dotProduct_mulVec_comm, hxAu]
-    have hnonneg : 0 ≤ (x - (x k / A⁻¹ k k) • u) ⬝ᵥ A *ᵥ (x - (x k / A⁻¹ k k) • u) := by
-      simpa only [star_trivial] using
-        hA.posSemidef.dotProduct_mulVec_nonneg (x - (x k / A⁻¹ k k) • u)
-    have hexp : (x - (x k / A⁻¹ k k) • u) ⬝ᵥ A *ᵥ (x - (x k / A⁻¹ k k) • u) =
-        x ⬝ᵥ A *ᵥ x - x k ^ 2 / A⁻¹ k k := by
-      simp only [mulVec_sub, mulVec_smul, sub_dotProduct, dotProduct_sub, smul_dotProduct,
-        dotProduct_smul, smul_eq_mul, hxAu, huAx, huAu]
-      field_simp [(hinv_pos k).ne']
-      ring
-    rwa [hexp, sub_nonneg, div_le_iff₀ (hinv_pos k), mul_comm] at hnonneg
   set N : ℤ := ⌈max B 0 * (∑ j : ι, A⁻¹ j j) + 1⌉
   refine (Set.Finite.pi fun _ : ι ↦ Set.finite_Icc (-N) N).subset ?_
   intro z hz k _
   have hzk_sq : (z k : ℝ) ^ 2 ≤ max B 0 * ∑ j : ι, A⁻¹ j j := calc
     (z k : ℝ) ^ 2 ≤ A⁻¹ k k * max B 0 :=
-      (hcoord _ k).trans (mul_le_mul_of_nonneg_left (hz.trans (le_max_left B 0)) (hinv_pos k).le)
+      (hA.sq_apply_le_inv_apply_self_mul_dotProduct_mulVec _ k).trans
+        (mul_le_mul_of_nonneg_left (hz.trans (le_max_left B 0)) (hinv_pos k).le)
     _ ≤ (∑ j : ι, A⁻¹ j j) * max B 0 :=
       mul_le_mul_of_nonneg_right
         (Finset.single_le_sum (fun j _ ↦ (hinv_pos j).le) (Finset.mem_univ k)) (le_max_right B 0)
@@ -240,15 +225,13 @@ theorem PosDef.exists_isPrimitive_forall_dotProduct_mulVec_le [Nonempty ι] {A :
   have hmin (x : ι → ℤ) (hx : x ≠ 0) : q v ≤ q x :=
     if hxq : q x ≤ q z₀ then hv_min x (hfin.mem_toFinset.mpr ⟨hxq, hx⟩)
     else hv_le.trans (le_of_not_ge hxq)
-  obtain ⟨d, w, hd, hw, hvw⟩ := TauCeti.exists_eq_zsmul_isPrimitive hv0
-  have hqw_pos : 0 < q w := hA.dotProduct_mulVec_pos fun h0 ↦
-    hw.ne_zero (funext fun i ↦ Int.cast_eq_zero.mp (congrFun h0 i))
-  have hqvw : q v = (d : ℝ) ^ 2 * q w := by
-    have hcast : (fun i ↦ (v i : ℝ)) = (d : ℝ) • (fun i ↦ (w i : ℝ)) := by ext i; simp [hvw]
-    simp [q, hcast, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, sq, mul_assoc]
-  have hd_sq : d ^ 2 ≤ 1 := by
-    exact_mod_cast le_of_mul_le_mul_right (hqvw ▸ (one_mul (q w)).symm ▸ hmin w hw.ne_zero) hqw_pos
-  have hd1 : d = 1 := by nlinarith
-  exact ⟨v, by rwa [hvw, hd1, one_smul], hmin⟩
+  refine ⟨v, TauCeti.isPrimitive_of_forall_le_of_zsmul_eq_sq_mul hv0 hmin (fun w hw ↦ ?_)
+    (fun d w ↦ ?_), hmin⟩
+  · exact hA.dotProduct_mulVec_pos fun h0 ↦
+      hw (funext fun i ↦ Int.cast_eq_zero.mp (congrFun h0 i))
+  · have hcast : (fun i ↦ ((d • w) i : ℝ)) = (d : ℝ) • (fun i ↦ (w i : ℝ)) := by ext i; simp
+    dsimp only [q]
+    rw [hcast]
+    simp [mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, sq, mul_assoc]
 
 end Matrix

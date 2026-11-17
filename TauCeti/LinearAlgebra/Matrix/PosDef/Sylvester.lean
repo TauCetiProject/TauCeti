@@ -6,28 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
-# Sylvester's criterion and semialgebraicity of positive-definite matrices
+# Sylvester's criterion for positive-definite matrices
 
 Over a linearly ordered field `K` with trivial star, a square matrix `B : Matrix (Fin n) (Fin n) K`
 is positive definite if and only if it is symmetric and all of its leading principal minors are
 positive (`Matrix.posDef_iff_isSymm_and_det_submatrix_castLE_pos`). In rank zero both sides hold
 unconditionally.
 
-Consequently, in matrix-entry coordinates `Fin n × Fin n → K`, the positive-definite cone is a
-quantifier-free semialgebraic set (`TauCeti.isSemialgebraic_setOf_posDef`).
+For the application to semialgebraicity of the positive-definite cone in entry coordinates, see
+`TauCeti/Geometry/RealAlgebraic/Semialgebraic/PosDef.lean`.
 
 ## Main results
 
 * `Matrix.posDef_iff_isSymm_and_det_submatrix_castLE_pos`: Sylvester's criterion for
   `Matrix (Fin n) (Fin n) K`.
-* `TauCeti.isSemialgebraic_setOf_posDef`: the positive-definite matrices form a semialgebraic set
-  in entry coordinates.
 
 ## References
 
@@ -60,10 +56,8 @@ theorem posDef_iff_isSymm_and_det_submatrix_castLE_pos {K : Type*} [Field K] [Li
     have hdetB : 0 < B.det := by simpa using hMinors (Fin.last n)
     let : Invertible A := invertibleOfIsUnitDet A hA.det_pos.ne'.isUnit
     let g : Fin n ⊕ Unit ≃ Fin (n + 1) :=
-      { toFun := Sum.elim Fin.castSucc (fun _ ↦ Fin.last n)
-        invFun := Fin.lastCases (Sum.inr ()) Sum.inl
-        left_inv := fun x ↦ by cases x <;> simp
-        right_inv := fun i ↦ Fin.lastCases (by simp) (by simp) i }
+      ⟨Sum.elim Fin.castSucc fun _ ↦ Fin.last n, Fin.lastCases (Sum.inr ()) Sum.inl,
+        fun x ↦ by cases x <;> simp, Fin.lastCases (by simp) (by simp)⟩
     let bCol : Matrix (Fin n) Unit K := of fun i _ ↦ B i.castSucc (Fin.last n)
     let bCorner : Matrix Unit Unit K := of fun _ _ ↦ B (Fin.last n) (Fin.last n)
     have hblk : B.submatrix g g = fromBlocks A bCol bColᴴ bCorner := by
@@ -85,8 +79,7 @@ theorem posDef_iff_isSymm_and_det_submatrix_castLE_pos {K : Type*} [Field K] [Li
       have hS_quad : star (x ∘ Sum.inr) ⬝ᵥ (S *ᵥ (x ∘ Sum.inr)) =
           S () () * (x (Sum.inr ())) ^ 2 := by
         simp only [star_trivial, dotProduct, mulVec, Fintype.univ_punit, Finset.sum_singleton,
-          Function.comp_apply]
-        ring
+          Function.comp_apply]; ring
       rw [hS_quad]
       by_cases ht : x (Sum.inr ()) = 0
       · have hy0 : x ∘ Sum.inr = 0 := funext fun ⟨⟩ ↦ ht
@@ -95,39 +88,8 @@ theorem posDef_iff_isSymm_and_det_submatrix_castLE_pos {K : Type*} [Field K] [Li
             hx (funext fun | Sum.inl i => congrFun hxl0 i | Sum.inr () => ht)
         simpa [ht] using hA.dotProduct_mulVec_pos hu_ne
       · linarith [mul_pos hs_pos (sq_pos_of_ne_zero ht)]
-    have hB_eq : (fromBlocks A bCol bColᴴ bCorner).submatrix g.symm g.symm = B := by
-      rw [← hblk, submatrix_submatrix, Equiv.self_comp_symm, submatrix_id_id]
-    exact hB_eq ▸ hblk_posDef.submatrix g.symm.injective
+    exact (by rw [← hblk, submatrix_submatrix, Equiv.self_comp_symm, submatrix_id_id] :
+      (fromBlocks A bCol bColᴴ bCorner).submatrix g.symm g.symm = B) ▸
+        hblk_posDef.submatrix g.symm.injective
 
 end Matrix
-
-namespace TauCeti
-
-/-- In matrix-entry coordinates `Fin n × Fin n → K`, the set of positive-definite `n × n` matrices
-over a linearly ordered field with trivial star is semialgebraic. -/
-theorem isSemialgebraic_setOf_posDef {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    [StarRing K] [TrivialStar K] (n : ℕ) :
-    IsSemialgebraic {s : Fin n × Fin n → K | (Matrix.of (Function.curry s)).PosDef} := by
-  have hdet {m : ℕ} (f : Fin m → Fin n) (s : Fin n × Fin n → K) :
-      ((Matrix.of (Function.curry s)).submatrix f f).det =
-        MvPolynomial.eval s (((Matrix.mvPolynomialX (Fin n) (Fin n) K).submatrix f f).det) := by
-    rw [RingHom.map_det]
-    congr 1; ext a b; simp [Matrix.mvPolynomialX_apply, Function.curry]
-  have heq : {s : Fin n × Fin n → K | (Matrix.of (Function.curry s)).PosDef} =
-      (⋂ p : Fin n × Fin n,
-        {s | MvPolynomial.eval s (MvPolynomial.X p) =
-          MvPolynomial.eval s (MvPolynomial.X p.swap)}) ∩
-      (⋂ k : Fin n, {s | 0 < MvPolynomial.eval s
-        (((Matrix.mvPolynomialX (Fin n) (Fin n) K).submatrix
-          (Fin.castLE (Nat.succ_le_of_lt k.isLt))
-          (Fin.castLE (Nat.succ_le_of_lt k.isLt))).det)}) := by
-    ext s
-    simp only [Matrix.posDef_iff_isSymm_and_det_submatrix_castLE_pos, Matrix.IsSymm.ext_iff,
-      Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter, Prod.forall, MvPolynomial.eval_X,
-      Prod.swap_prod_mk, Matrix.of_apply, Function.curry_apply, ← hdet]
-    exact and_congr ⟨fun h i j ↦ (h i j).symm, fun h i j ↦ (h i j).symm⟩ Iff.rfl
-  rw [heq]
-  exact (IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_eval_eq _ _).inter
-    (IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_eval_pos _)
-
-end TauCeti
