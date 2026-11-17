@@ -123,8 +123,9 @@ theorem HasFiniteFreeResolution.isPseudoCoherentOver_Spec {R : CommRingCat.{u}}
   have hS : TauCeti.Huber.IsPseudoCoherentOver R Γ(Spec R, ⊤) ⊤ :=
     TauCeti.Huber.IsPseudoCoherentOver.of_projective (R := R) (M := R) |>.of_equiv
       (LinearEquiv.ofBijective (Algebra.linearMap R Γ(Spec R, ⊤)) (by
-        simpa [Algebra.coe_linearMap] using
-          ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv))
+        have h := ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv
+        simp only [Scheme.ΓSpecIso_inv] at h
+        rwa [Algebra.coe_linearMap]))
   exact (TauCeti.Huber.isPseudoCoherentOver_restrictScalars_iff hS).mpr
     (h.isPseudoCoherentOver (isAffineOpen_top _))
 
