@@ -31,6 +31,9 @@ Since `p` is a non-zero-divisor on `W`, this ring is spanned freely as a left `W
   scalars and the two generators.
 * `TauCeti.DieudonneRing.F_mul_C`, `TauCeti.DieudonneRing.V_mul_C_frobenius`,
   `TauCeti.DieudonneRing.F_mul_V`, `TauCeti.DieudonneRing.V_mul_F`: the defining relations.
+* `TauCeti.DieudonneRing.val`: the embedding into `W[F, F⁻¹; σ]`, with image
+  `TauCeti.DieudonneRing.subring` (`TauCeti.DieudonneRing.mem_subring`,
+  `TauCeti.DieudonneRing.val_mem`, `TauCeti.DieudonneRing.mk`).
 * `TauCeti.DieudonneRing.basis`: the basis `n ↦ Fⁿ` (`n ≥ 0`), `n ↦ V⁻ⁿ` (`n ≤ 0`) of `E` as a
   free left `W`-module.
 * `TauCeti.DieudonneRing.lift`: the universal property: a ring homomorphism `g : W → R` with
@@ -78,8 +81,7 @@ private lemma smul_eq_zpow (a : Multiplicative ℤ) (ξ : 𝕎 k) :
 
 private lemma zpow_frobeniusEquiv_dvd (m : ℤ) {ξ : 𝕎 k} {j : ℕ} (h : (p : 𝕎 k) ^ j ∣ ξ) :
     (p : 𝕎 k) ^ j ∣ (frobeniusEquiv p k ^ m) ξ := by
-  obtain ⟨c, rfl⟩ := h
-  exact ⟨_, by rw [map_mul, map_pow, map_natCast]⟩
+  simpa using map_dvd (frobeniusEquiv p k ^ m) h
 
 variable (p k) in
 /-- The subring of `𝕎 k [F, F⁻¹; σ]` of those `∑ aₙ Fⁿ` with `pⁿ ∣ a₋ₙ` for `n ≥ 0`; it is the
@@ -114,10 +116,16 @@ def subring : Subring (SkewLaurent p k) where
     rw [SkewMonoidAlgebra.coeff_neg, Finsupp.neg_apply]
     exact (hf a).neg_right
 
+/-- Membership in `TauCeti.DieudonneRing.subring`: the coefficient of `F⁻ⁿ` is divisible by `pⁿ`
+for every `n ≥ 0`. -/
+theorem mem_subring {x : SkewLaurent p k} :
+    x ∈ subring p k ↔ ∀ a, (p : 𝕎 k) ^ (-a.toAdd).toNat ∣ x.coeff a :=
+  Iff.rfl
+
 private lemma single_mem_subring (n : ℤ) {ξ : 𝕎 k} (h : (p : 𝕎 k) ^ (-n).toNat ∣ ξ) :
     SkewMonoidAlgebra.single (Multiplicative.ofAdd n) ξ ∈ subring p k := by
   classical
-  intro a
+  refine mem_subring.2 fun a ↦ ?_
   rw [SkewMonoidAlgebra.coeff_single, Finsupp.single_apply]
   split_ifs with ha
   · subst ha
@@ -142,18 +150,23 @@ instance : Ring (DieudonneRing p k) :=
 
 variable {p k}
 
-/-- The underlying skew Laurent polynomial of an element of the Dieudonné ring. -/
-private def val : DieudonneRing p k →+* SkewLaurent p k :=
+/-- The embedding of the Dieudonné ring into the skew Laurent polynomial ring `𝕎 k [F, F⁻¹; σ]`;
+its image is `TauCeti.DieudonneRing.subring`. -/
+def val : DieudonneRing p k →+* SkewLaurent p k :=
   (subring p k).subtype
 
-private lemma val_injective : Function.Injective (val : DieudonneRing p k → SkewLaurent p k) :=
+theorem val_injective : Function.Injective (val : DieudonneRing p k → SkewLaurent p k) :=
   Subtype.val_injective
 
 /-- An element of the Dieudonné ring from a skew Laurent polynomial in the subring. -/
-private def mk (x : SkewLaurent p k) (hx : x ∈ subring p k) : DieudonneRing p k :=
+def mk (x : SkewLaurent p k) (hx : x ∈ subring p k) : DieudonneRing p k :=
   (⟨x, hx⟩ : subring p k)
 
-private lemma val_mem (x : DieudonneRing p k) : val x ∈ subring p k :=
+@[simp]
+theorem val_mk (x : SkewLaurent p k) (hx : x ∈ subring p k) : val (mk x hx) = x := by
+  rfl
+
+theorem val_mem (x : DieudonneRing p k) : val x ∈ subring p k :=
   Subtype.prop (p := (· ∈ subring p k)) x
 
 variable (p k) in
@@ -163,7 +176,7 @@ def C : 𝕎 k →+* DieudonneRing p k :=
     single_mem_subring 0 (by simp)
 
 @[simp]
-private lemma val_C (ξ : 𝕎 k) : val (C p k ξ) = SkewMonoidAlgebra.single 1 ξ :=
+theorem val_C (ξ : 𝕎 k) : val (C p k ξ) = SkewMonoidAlgebra.single 1 ξ := by
   rfl
 
 /-- The scalars embed into the Dieudonné ring. -/
@@ -182,12 +195,12 @@ def V : DieudonneRing p k :=
     (single_mem_subring (-1) (by simp))
 
 @[simp]
-private lemma val_F : val (F p k) = SkewMonoidAlgebra.single (Multiplicative.ofAdd 1) 1 :=
+theorem val_F : val (F p k) = SkewMonoidAlgebra.single (Multiplicative.ofAdd 1) 1 := by
   rfl
 
 @[simp]
-private lemma val_V :
-    val (V p k) = SkewMonoidAlgebra.single (Multiplicative.ofAdd (-1)) (p : 𝕎 k) :=
+theorem val_V :
+    val (V p k) = SkewMonoidAlgebra.single (Multiplicative.ofAdd (-1)) (p : 𝕎 k) := by
   rfl
 
 private lemma frobeniusEquiv_inv_frobenius (ξ : 𝕎 k) :
@@ -248,25 +261,23 @@ private lemma zpowFV_neg_natCast (f v : R) (n : ℕ) : zpowFV f v (-n) = v ^ n :
     simp
   · simp
 
-private lemma zpowFV_zero (f v : R) : zpowFV f v 0 = 1 := by
-  simp [zpowFV]
-
 private lemma map_zpowFV {S : Type*} [Ring S] (g : R →+* S) (f v : R) (n : ℤ) :
     g (zpowFV f v n) = zpowFV (g f) (g v) n := by
   unfold zpowFV
   split_ifs <;> simp
 
 omit [Fact p.Prime] in
-/-- If `x y = p`, then `xⁿ yⁿ = pⁿ`. -/
-private lemma pow_mul_pow_of_mul_eq {x y : R} (h : x * y = p) (n : ℕ) :
-    x ^ n * y ^ n = (p : R) ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    calc x ^ (n + 1) * y ^ (n + 1) = x ^ n * (x * y) * y ^ n := by
-          rw [pow_succ, pow_succ']
-          simp only [mul_assoc]
-      _ = (p : R) ^ (n + 1) := by rw [h, ← Nat.cast_comm, mul_assoc, ih, pow_succ']
+/-- If `x y = y x = p`, then `xᵃ yᵃ⁺ᶜ = pᵃ yᶜ`. -/
+private lemma pow_mul_pow_add {x y : R} (hxy : x * y = p) (hyx : y * x = p) (a c : ℕ) :
+    x ^ a * y ^ (a + c) = (p : R) ^ a * y ^ c := by
+  rw [pow_add, ← mul_assoc, ← (show Commute x y from hxy.trans hyx.symm).mul_pow, hxy]
+
+omit [Fact p.Prime] in
+/-- If `x y = y x = p`, then `xᶜ⁺ᵇ yᵇ = pᵇ xᶜ`. -/
+private lemma pow_add_mul_pow {x y : R} (hxy : x * y = p) (hyx : y * x = p) (b c : ℕ) :
+    x ^ (c + b) * y ^ b = (p : R) ^ b * x ^ c := by
+  rw [pow_add, mul_assoc, ← (show Commute x y from hxy.trans hyx.symm).mul_pow, hxy]
+  exact ((Nat.cast_commute p _).pow_left _).eq.symm
 
 /-- The power of `p` in the product of two basis words. -/
 private def wordExp (m n : ℤ) : ℕ :=
@@ -281,25 +292,19 @@ private lemma zpowFV_mul_zpowFV {f v : R} (hfv : f * v = p) (hvf : v * f = p) (m
   · rw [zpowFV_natCast, zpowFV_neg_natCast]
     rcases le_total a b with hab | hab
     · obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_le hab
-      rw [show (a : ℤ) + -↑(a + c) = -c by push_cast; ring, zpowFV_neg_natCast, pow_add,
-        ← mul_assoc, pow_mul_pow_of_mul_eq hfv,
-        show wordExp a (-↑(a + c)) = a by unfold wordExp; omega]
-    · obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_le hab
-      rw [show ((b + c : ℕ) : ℤ) + -b = c by push_cast; ring, zpowFV_natCast, add_comm b c,
-        pow_add, mul_assoc, pow_mul_pow_of_mul_eq hfv,
-        show wordExp ↑(c + b) (-b) = b by unfold wordExp; omega]
-      exact ((Nat.cast_commute p _).pow_left _).eq.symm
+      rw [show (a : ℤ) + -↑(a + c) = -c by push_cast; ring, zpowFV_neg_natCast,
+        show wordExp a (-↑(a + c)) = a by unfold wordExp; omega, pow_mul_pow_add hfv hvf]
+    · obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_le' hab
+      rw [show ((c + b : ℕ) : ℤ) + -b = c by push_cast; ring, zpowFV_natCast,
+        show wordExp ↑(c + b) (-b) = b by unfold wordExp; omega, pow_add_mul_pow hfv hvf]
   · rw [zpowFV_natCast, zpowFV_neg_natCast]
     rcases le_total a b with hab | hab
     · obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_le hab
-      rw [show -(a : ℤ) + ↑(a + c) = c by push_cast; ring, zpowFV_natCast, pow_add,
-        ← mul_assoc, pow_mul_pow_of_mul_eq hvf,
-        show wordExp (-a) ↑(a + c) = a by unfold wordExp; omega]
-    · obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_le hab
-      rw [show -((b + c : ℕ) : ℤ) + b = -c by push_cast; ring, zpowFV_neg_natCast,
-        add_comm b c, pow_add, mul_assoc, pow_mul_pow_of_mul_eq hvf,
-        show wordExp (-↑(c + b)) b = b by unfold wordExp; omega]
-      exact ((Nat.cast_commute p _).pow_left _).eq.symm
+      rw [show -(a : ℤ) + ↑(a + c) = c by push_cast; ring, zpowFV_natCast,
+        show wordExp (-a) ↑(a + c) = a by unfold wordExp; omega, pow_mul_pow_add hvf hfv]
+    · obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_le' hab
+      rw [show -((c + b : ℕ) : ℤ) + b = -c by push_cast; ring, zpowFV_neg_natCast,
+        show wordExp (-↑(c + b)) b = b by unfold wordExp; omega, pow_add_mul_pow hvf hfv]
   · rw [show -(a : ℤ) + -b = -↑(a + b) by push_cast; ring, zpowFV_neg_natCast,
       zpowFV_neg_natCast, zpowFV_neg_natCast, ← pow_add,
       show wordExp (-a) (-b) = 0 by unfold wordExp; omega, pow_zero, one_mul]
@@ -408,12 +413,6 @@ private lemma coeff_val_linearCombination (l : ℤ →₀ 𝕎 k) (n : ℤ) :
   · rfl
   · rw [Finsupp.notMem_support_iff.1 h, zero_mul]
 
-private lemma eq_zero_of_mul_p_pow_eq_zero {x : 𝕎 k} {j : ℕ} (h : x * (p : 𝕎 k) ^ j = 0) :
-    x = 0 := by
-  induction j with
-  | zero => simpa using h
-  | succ j ih => exact ih (eq_zero_of_p_mul_eq_zero _ (by rwa [pow_succ, ← mul_assoc] at h))
-
 private lemma linearIndependent_word :
     LinearIndependent (𝕎 k) (word : ℤ → DieudonneRing p k) := by
   rw [linearIndependent_iff]
@@ -421,13 +420,14 @@ private lemma linearIndependent_word :
   refine Finsupp.ext fun n ↦ ?_
   have h := coeff_val_linearCombination l n
   rw [hl, map_zero, SkewMonoidAlgebra.coeff_zero, Finsupp.zero_apply] at h
-  exact eq_zero_of_mul_p_pow_eq_zero h.symm
+  have hp : IsRightRegular (p : 𝕎 k) :=
+    isRightRegular_iff_left_eq_zero_of_mul.2 (eq_zero_of_p_mul_eq_zero (p := p))
+  exact isRightRegular_iff_left_eq_zero_of_mul.1 (hp.pow _) _ h.symm
 
 private lemma mem_span_word (x : DieudonneRing p k) :
     x ∈ Submodule.span (𝕎 k) (Set.range word) := by
   classical
-  have hx : ∀ a, ∃ c, (val x).coeff a = (p : 𝕎 k) ^ (-a.toAdd).toNat * c := val_mem x
-  choose c hc using hx
+  choose c hc using fun a ↦ dvd_def.1 (mem_subring.1 (val_mem x) a)
   have : x = ∑ a ∈ (val x).support, c a • word a.toAdd := by
     apply val_injective
     rw [map_sum]
@@ -528,33 +528,27 @@ def lift (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius ξ) * f)
     (hV : ∀ ξ : 𝕎 k, v * g (frobenius ξ) = g ξ * v) (hfv : f * v = p) (hvf : v * f = p) :
     DieudonneRing p k →+* R where
   __ := liftAddHom g f v
-  map_one' := by
-    have h := liftAddHom_smul_basis g f v 1 0
-    rw [basis_zero, one_smul, map_one g, one_mul, zpowFV_zero] at h
-    exact h
+  map_one' := by simpa [zpowFV] using liftAddHom_smul_basis g f v 1 0
   map_mul' := liftAddHom_mul hF hV hfv hvf
 
 variable (hF : ∀ ξ : WittVector p k, f * g ξ = g (frobenius ξ) * f)
   (hV : ∀ ξ : WittVector p k, v * g (frobenius ξ) = g ξ * v) (hfv : f * v = p) (hvf : v * f = p)
 
+private lemma lift_apply (x : DieudonneRing p k) :
+    lift g f v hF hV hfv hvf x = liftAddHom g f v x :=
+  rfl
+
 @[simp]
 theorem lift_C (ξ : 𝕎 k) : lift g f v hF hV hfv hvf (C p k ξ) = g ξ := by
-  have h := liftAddHom_smul_basis g f v ξ 0
-  rw [basis_zero, smul_def, mul_one, zpowFV_zero, mul_one] at h
-  exact h
+  simpa [lift_apply, smul_def, zpowFV] using liftAddHom_smul_basis g f v ξ 0
 
 @[simp]
 theorem lift_F : lift g f v hF hV hfv hvf (F p k) = f := by
-  have h := liftAddHom_smul_basis g f v 1 ((1 : ℕ) : ℤ)
-  rw [basis_natCast, one_smul, pow_one, map_one, one_mul, zpowFV_natCast, pow_one] at h
-  exact h
+  simpa [lift_apply, basis_eq_word, word, zpowFV] using liftAddHom_smul_basis g f v 1 1
 
 @[simp]
 theorem lift_V : lift g f v hF hV hfv hvf (V p k) = v := by
-  have h := liftAddHom_smul_basis g f v 1 (-((1 : ℕ) : ℤ))
-  rw [basis_neg_natCast, one_smul, pow_one, map_one, one_mul, zpowFV_neg_natCast,
-    pow_one] at h
-  exact h
+  simpa [lift_apply, basis_eq_word, word, zpowFV] using liftAddHom_smul_basis g f v 1 (-1)
 
 theorem lift_comp_C : (lift g f v hF hV hfv hvf).comp (C p k) = g :=
   RingHom.ext (lift_C hF hV hfv hvf)
