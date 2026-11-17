@@ -79,9 +79,6 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
 
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
-export TauCeti (wignerCoordinateIndex wignerCoordinateIndex_inl wignerCoordinateIndex_inr
-  wignerCoordinateIndex_injective)
-
 /-- Diagonal coordinates carry weight one and strict-upper coordinates weight two. -/
 def wignerCoordinateWeight (n : ℕ) : Fin n ⊕ FinStrictUpper n → ℝ
   | .inl _ => 1
