@@ -106,6 +106,7 @@ theorem toOrderL_toOrderL_apply {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k)
   | succ k hjk ih => rw [toOrderL_succ_apply hjk, toOrderL_succ_apply (hij.trans hjk), ih]
 
 /-- Truncating twice is truncating once, to the lower of the two orders. -/
+@[simp]
 theorem toOrderL_comp_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
     (toOrderL hij).comp (toOrderL hjk) =
       (toOrderL (hij.trans hjk) : Wkp mu Omega p k →L[ℝ] Wkp mu Omega p i) :=
@@ -172,6 +173,16 @@ theorem seminorm_zero_apply (k : ℕ) (h : 0 ≤ k) (u : Wkp mu Omega p k) :
     seminorm k 0 h u = ‖value k u‖ := by
   rw [seminorm, Seminorm.comp_apply, coe_normSeminorm, ContinuousLinearMap.coe_coe, valueL_apply]
 
+/-- On `W^{0,p}(Ω)` the seminorm of order zero is the norm. -/
+theorem seminorm_zero_zero_apply (h : 0 ≤ 0) (u : Wkp mu Omega p 0) :
+    seminorm 0 0 h u = ‖u‖ := by
+  -- At the concrete order `0`, `Wkp mu Omega p 0` is reducibly `Lp`, so instance search finds the
+  -- `Lp` structures and `seminorm_zero_apply`, stated at a general order, does not fire under
+  -- `simp`; it applies up to unfolding of those instances. For the same reason this lemma is not
+  -- `@[simp]`: the simp key of its left-hand side keeps `Wkp mu Omega p 0` unreduced, while the
+  -- key of a goal reduces it to `Lp`, so `simp` would never try it.
+  exact (seminorm_zero_apply 0 h u).trans (congrArg norm (value_zero u))
+
 /-- The seminorm of order `j + 1` is the `Lᵖ` norm of the weak derivative of order `j + 1`. -/
 @[simp]
 theorem seminorm_succ_apply (k j : ℕ) (h : j + 1 ≤ k) (u : Wkp mu Omega p k) :
@@ -225,10 +236,7 @@ theorem seminorm_eq_lpNorm_iteratedFDeriv_of_contDiffOn (k j : ℕ) (h : j ≤ k
 theorem sum_seminorm_sq_zero (u : Wkp mu Omega p 0) :
     ∑ j : Fin 1, seminorm 0 j j.is_le u ^ 2 = ‖u‖ ^ 2 := by
   rw [Fin.sum_univ_one]
-  -- At the concrete order `0`, `Wkp mu Omega p 0` is reducibly `Lp`, so instance search finds the
-  -- `Lp` structures and `seminorm_zero_apply`, stated at a general order, does not fire under
-  -- `simp`; it applies up to unfolding of those instances.
-  exact congrArg (· ^ 2) ((seminorm_zero_apply 0 _ u).trans (congrArg norm (value_zero u)))
+  exact congrArg (· ^ 2) (seminorm_zero_zero_apply _ u)
 
 /-- The squared seminorms of `u ∈ W^{k+1,p}(Ω)` are those of its lower-order part together with
 the squared norm of its highest weak derivative. -/
