@@ -93,6 +93,8 @@ class IsRelativeHopfModule : Prop where
       (TensorProduct.lift (Algebra.lsmul R R N).toLinearMap).rTensor H
         (Comodule.tensorCoact (R := R) (C := H) (a ⊗ₜ[R] n))
 
+attribute [simp] IsRelativeHopfModule.coact_smul
+
 /-- A comodule algebra is a relative Hopf module over itself. -/
 instance IsRelativeHopfModule.self : IsRelativeHopfModule R H A A where
   coact_smul a b := by
