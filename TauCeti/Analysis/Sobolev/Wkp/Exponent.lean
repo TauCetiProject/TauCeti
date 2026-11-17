@@ -34,8 +34,9 @@ is unchanged up to almost everywhere equality.
   the highest weak derivative are their `Lᵖ` copies.
 * `TauCeti.Wkp.value_ofExponentLEL_ae`, `TauCeti.Wkp.iteratedGradient_ofExponentLEL_ae`: the value
   and the highest weak derivative are unchanged.
-* `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with
-  the lower-order projection and with restriction.
+* `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.toOrderL_ofExponentLEL`,
+  `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with lower-order and order-truncation
+  projections and with restriction.
 * `TauCeti.Wkp.ofExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.Wkp.opNorm_ofExponentLEL_le`, `TauCeti.Wkp.norm_ofExponentLEL_apply_le`: the bound
   `μ(Ω) ^ (1/p - 1/q)` on the operator norm.
@@ -236,6 +237,34 @@ theorem restrictL_ofExponentLEL [IsFiniteMeasure (mu.restrict (U : Set E))] (hU 
     (value_restrictL_ae hU k _).symm)
   exact ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
     (value_ofExponentLEL_ae hpq k u).symm
+
+/-- On a finite-measure domain, order truncation commutes with lowering the integrability
+exponent. -/
+theorem toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega q k) :
+    toOrderL h (ofExponentLEL hpq k u) = ofExponentLEL hpq j (toOrderL h u) := by
+  apply ext j
+  rw [value_toOrderL, value_ofExponentLEL, value_ofExponentLEL, value_toOrderL]
+
+/-- Exponent lowering and order truncation commute as continuous linear maps. -/
+theorem ofExponentLEL_comp_toOrderL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) :
+    (ofExponentLEL (mu := mu) (Omega := Omega) hpq j).comp (toOrderL h) =
+      (toOrderL h).comp (ofExponentLEL hpq k) :=
+  ContinuousLinearMap.ext fun u => (toOrderL_ofExponentLEL hpq h u).symm
+
+/-- Lowering the exponent maps each intermediate weak derivative to its `Lᵖ` copy. -/
+theorem iteratedGradient_toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega q k) :
+    iteratedGradient j (toOrderL h (ofExponentLEL hpq k u)) =
+      Lp.ofExponentLEL ℝ _ hpq (iteratedGradient j (toOrderL h u)) := by
+  rw [toOrderL_ofExponentLEL, iteratedGradient_ofExponentLEL]
+
+/-- Lowering the exponent leaves each intermediate weak derivative unchanged almost everywhere. -/
+theorem iteratedGradient_toOrderL_ofExponentLEL_ae (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega q k) :
+    ⇑(iteratedGradient j (toOrderL h (ofExponentLEL hpq k u))) =ᵐ[mu.restrict Omega]
+      iteratedGradient j (toOrderL h u) := by
+  rw [toOrderL_ofExponentLEL]
+  exact iteratedGradient_ofExponentLEL_ae hpq j (toOrderL h u)
 
 end Wkp
 
