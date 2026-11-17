@@ -33,7 +33,7 @@ deduces the focus-focus case of Williamson's classification of Cartan subalgebra
   classification, focus-focus type.** A Poisson-commuting family of quadratic forms spans the same
   space as the focus-focus block of a Darboux basis exactly when its span contains a pair with
   `A_{P₁}² = 1` and `A_{P₂}² = -1`. The family is then nondegenerate
-  (`TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_of_mem_span`).
+  (`isNondegenerateQuadraticFamily_of_mem_span_of_mul_self_eq_one_of_mul_self_eq_neg_one`).
 
 The Darboux basis is built from the eigenspaces `V₊` and `V₋` of the involution `A₁`. Both are
 isotropic, since `ω(A₁ u, w) = -ω(u, A₁ w)`, and `A₂` preserves them, acting on each as a complex
@@ -241,10 +241,10 @@ theorem exists_isDarbouxBasis_span_eq_span_focusFocus_iff (hV : finrank ℝ V = 
 four-dimensional symplectic vector space, if the span of a Poisson-commuting family `Q` of
 quadratic forms contains forms `P₁`, `P₂` with `A_{P₁}² = 1` and `A_{P₂}² = -1`, then the
 Hamiltonian endomorphisms of `Q` span a Cartan subalgebra of `sp(V, ω)`. -/
-theorem isNondegenerateQuadraticFamily_of_mem_span (hV : finrank ℝ V = 4) {ι : Type*}
-    {Q : ι → QuadraticForm ℝ V} (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0)
-    {P₁ P₂ : QuadraticForm ℝ V} (hP₁ : P₁ ∈ Submodule.span ℝ (Set.range Q))
-    (hP₂ : P₂ ∈ Submodule.span ℝ (Set.range Q))
+theorem isNondegenerateQuadraticFamily_of_mem_span_of_mul_self_eq_one_of_mul_self_eq_neg_one
+    (hV : finrank ℝ V = 4) {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0) {P₁ P₂ : QuadraticForm ℝ V}
+    (hP₁ : P₁ ∈ Submodule.span ℝ (Set.range Q)) (hP₂ : P₂ ∈ Submodule.span ℝ (Set.range Q))
     (h₁ : ω.hamiltonianEnd P₁ * ω.hamiltonianEnd P₁ = 1)
     (h₂ : ω.hamiltonianEnd P₂ * ω.hamiltonianEnd P₂ = -1) :
     ω.IsNondegenerateQuadraticFamily Q := by
