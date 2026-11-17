@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
+import Mathlib.Topology.Instances.ZMultiples
 
 /-!
 # Normalising a real angle into `[0, 2π)`
@@ -45,6 +46,8 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
   nonpositive (`Real.Angle.toReal_add_toReal_eq_sub_pi_iff`).
 * `Real.Angle.eq_two_mul_of_abs_toReal_eq`: if `θ + α = β ∈ (0, π)` with `|θ| = α`, then
   `β = 2α`.
+* `IsPreconnected.exists_forall_sub_eq_of_coe_eq`: two real functions continuous on a preconnected
+  set and equal there in `Real.Angle` differ by a constant on it.
 -/
 
 public section
@@ -167,5 +170,22 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
     have h := congrArg Real.Angle.toReal hsum
     rw [hzero, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
     linarith
+
+/-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
+on a preconnected set and agree there modulo `2π` differ by a constant on it: their difference is
+continuous with values in the discrete subgroup `2πℤ`. -/
+theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
+    {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
+    (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
+    ∃ C, ∀ x ∈ s, f x - g x = C := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · exact ⟨0, by simp⟩
+  have hmaps : Set.MapsTo (fun x ↦ f x - g x) s (AddSubgroup.zmultiples (2 * Real.pi)) :=
+    fun x hx ↦ by
+      obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (h x hx)
+      exact AddSubgroup.mem_zmultiples_iff.2 ⟨k, by rw [zsmul_eq_mul, mul_comm]; exact hk.symm⟩
+  exact ⟨f x₀ - g x₀, fun x hx ↦ hs.constant_of_mapsTo (isDiscrete_iff_discreteTopology.2
+    (inferInstanceAs (DiscreteTopology (AddSubgroup.zmultiples (2 * Real.pi))))) (hf.sub hg)
+    hmaps hx hx₀⟩
 
 end TauCeti
