@@ -77,7 +77,7 @@ theorem localFourier_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ
 /-- The factor `2πi ⟪v, η⟫` of the localized Fourier transform of a derivative `∂_v T`
 (`Distribution.localFourier_lineDerivOp`) is bounded by `2π ‖v‖ (1 + ‖η‖)`, so it costs one order
 of decay. -/
-theorem norm_two_pi_I_mul_inner_le (v η : E) :
+theorem _root_.TauCeti.norm_two_pi_I_mul_inner_le (v η : E) :
     ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * π * ‖v‖ * (1 + ‖η‖) := by
   calc ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
         simp [abs_of_pos Real.pi_pos]
@@ -109,7 +109,7 @@ theorem IsMicrolocallySmoothAt.lineDerivOp (hT : T.IsMicrolocallySmoothAt x ξ) 
   obtain ⟨C₁, hC₁⟩ := hdecay φ hφU' (N + 1)
   obtain ⟨C₂, hC₂⟩ := hdecay (∂_{v} φ) ((tsupport_fderiv_apply_subset ℝ v).trans hφU') N
   refine ⟨2 * π * ‖v‖ * C₁ + C₂, fun η hη ↦ ?_⟩
-  have hinner := norm_two_pi_I_mul_inner_le v η
+  have hinner := TauCeti.norm_two_pi_I_mul_inner_le v η
   have h1 : 0 ≤ (1 + ‖η‖) ^ N := by positivity
   rw [localFourier_lineDerivOp]
   calc (1 + ‖η‖) ^ N *

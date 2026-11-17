@@ -531,7 +531,7 @@ private theorem exists_localFourier_iteratedLineDerivOp_le {T : 𝓓'(Ω, ℂ)} 
               ≤ (1 + ‖η‖) ^ j * (2 * π * ‖m 0‖ * (1 + ‖η‖) *
                 ‖(∂^{Fin.tail m} T).localFourier φ η‖) := by
                 gcongr
-                exact norm_two_pi_I_mul_inner_le _ _
+                exact TauCeti.norm_two_pi_I_mul_inner_le _ _
             _ = _ := by ring
       _ ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * (C₁ * B * (1 + ‖η‖) ^ (k + r)) +
             C₁ * (‖m 0‖ * B) * (1 + ‖η‖) ^ (k + r + 1) :=
@@ -578,7 +578,7 @@ private theorem exists_localFourier_iteratedLineDerivOp_sub_le {T : 𝓓'(Ω, �
           exact (norm_sub_le _ _).trans_eq (by rw [norm_mul])
       _ ≤ (1 + ‖η‖) ^ (j + 1) * (2 * π * ‖m 0‖ * (1 + ‖η‖) * ‖D‖ + ‖L‖) := by
           gcongr
-          exact norm_two_pi_I_mul_inner_le _ _
+          exact TauCeti.norm_two_pi_I_mul_inner_le _ _
       _ = 2 * π * ‖m 0‖ * (1 + ‖η‖) * ((1 + ‖η‖) ^ (j + 1) * ‖D‖) +
             (1 + ‖η‖) * ((1 + ‖η‖) ^ j * ‖L‖) := by ring
       _ ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * (C₁ * B * (1 + ‖η‖) ^ (k + r)) +

@@ -48,6 +48,8 @@ cone of frequencies.
 * `TauCeti.exists_finset_diff_singleton_subset_biUnion`: if every unit vector of a closed cone `V`
   lies in an open cone, finitely many of these cones cover the nonzero vectors of `V`;
   `TauCeti.exists_finset_compl_singleton_subset_biUnion` is the case `V = E`.
+* `TauCeti.exists_forall_le_of_diff_singleton_subset_biUnion`: bounds on finitely many sets
+  covering the nonzero elements of `V` combine into one bound on `V`.
 
 ## References
 
@@ -252,5 +254,22 @@ theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [Proper
     ∃ t : Finset (sphere (0 : E) 1), {0}ᶜ ⊆ ⋃ ξ ∈ t, Γ ξ := by
   simpa [compl_eq_univ_sdiff] using exists_finset_diff_singleton_subset_biUnion isClosed_univ
     (fun _ _ _ _ ↦ mem_univ _) hΓ (fun ξ _ ↦ hξΓ ξ) hcone
+
+/-- **A uniform bound from a finite cover.** If finitely many sets `Γ ξ` cover the nonzero
+elements of `V` and `f` is bounded by `C ξ` on each `Γ ξ`, then `f` is bounded on all of `V` by a
+nonnegative constant. Combined with `TauCeti.exists_finset_diff_singleton_subset_biUnion`, this
+turns estimates on open cones around each direction into one estimate on a closed cone. -/
+theorem exists_forall_le_of_diff_singleton_subset_biUnion {X ι : Type*} [Zero X] {V : Set X}
+    {t : Finset ι} {Γ : ι → Set X} (ht : V \ {0} ⊆ ⋃ ξ ∈ t, Γ ξ) {f : X → ℝ} {C : ι → ℝ}
+    (hC : ∀ ξ ∈ t, ∀ η ∈ Γ ξ, f η ≤ C ξ) : ∃ C, 0 ≤ C ∧ ∀ η ∈ V, f η ≤ C := by
+  have hsum : 0 ≤ ∑ ξ ∈ t, |C ξ| := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
+  refine ⟨|f 0| + ∑ ξ ∈ t, |C ξ|, add_nonneg (abs_nonneg _) hsum, fun η hη ↦ ?_⟩
+  rcases eq_or_ne η 0 with rfl | hη0
+  · exact (le_abs_self _).trans (le_add_of_nonneg_right hsum)
+  obtain ⟨ξ, hξt, hηΓ⟩ := mem_iUnion₂.1 (ht ⟨hη, hη0⟩)
+  calc f η ≤ C ξ := hC ξ hξt η hηΓ
+    _ ≤ |C ξ| := le_abs_self _
+    _ ≤ ∑ ξ ∈ t, |C ξ| := Finset.single_le_sum (f := fun ξ ↦ |C ξ|) (fun _ _ ↦ abs_nonneg _) hξt
+    _ ≤ |f 0| + ∑ ξ ∈ t, |C ξ| := le_add_of_nonneg_left (abs_nonneg _)
 
 end TauCeti
