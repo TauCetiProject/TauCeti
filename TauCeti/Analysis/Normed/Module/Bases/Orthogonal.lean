@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Topology.MetricSpace.SphericallyComplete
+import Mathlib.Topology.Algebra.SeparationQuotient.FiniteDimensional
+import TauCeti.Topology.MetricSpace.Ultra.SeparationQuotient
 
 /-!
 # Best approximation and orthogonal bases
@@ -207,18 +209,10 @@ spherically complete. -/
 theorem sphericallyCompleteSpace_of_finiteDimensional {K E : Type*} [NormedField K]
     [IsUltrametricDist K] [SphericallyCompleteSpace K] [SeminormedAddCommGroup E]
     [NormedSpace K E] [IsUltrametricDist E] [FiniteDimensional K E] :
-    SphericallyCompleteSpace E := by
-  have : IsUltrametricDist (SeparationQuotient E) := ⟨fun x y z ↦ by
-    obtain ⟨a, rfl⟩ := SeparationQuotient.surjective_mk x
-    obtain ⟨b, rfl⟩ := SeparationQuotient.surjective_mk y
-    obtain ⟨c, rfl⟩ := SeparationQuotient.surjective_mk z
-    simpa only [SeparationQuotient.dist_mk] using dist_triangle_max a b c⟩
-  have : FiniteDimensional K (SeparationQuotient E) :=
-    Module.Finite.of_surjective (SeparationQuotient.mkCLM K E).toLinearMap
-      SeparationQuotient.surjective_mk
+    SphericallyCompleteSpace E :=
   have : SphericallyCompleteSpace (SeparationQuotient E) :=
     sphericallyCompleteSpace_of_finiteDimensional_normed (K := K) (E := SeparationQuotient E)
-  exact (Isometry.of_dist_eq (f := SeparationQuotient.mk)
+  (Isometry.of_dist_eq (f := SeparationQuotient.mk)
     SeparationQuotient.dist_mk).sphericallyCompleteSpace SeparationQuotient.surjective_mk
 
 end TauCeti
