@@ -199,13 +199,9 @@ theorem exists_isIso_singularHomologyMap_iUnion_negativeDiscBundle [T2Space M]
     rintro y (hy | hy)
     · exact sublevel_mono f (by linarith [hε.1]) hy
     · obtain ⟨j, x, hx, rfl⟩ := mem_iUnion.1 hy
-      have hneg := ((h j).mem_negativeDiscBundle hn).1 hx |>.1
-      have hle : (h j).normalHessian hn x.proj x.2 x.2 ≤ 0 := by
-        rcases eq_or_ne x.2 0 with h0 | h0
-        · simp [h0]
-        · exact ((h j).normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn _ hneg h0).le
       rw [mem_ofPred_eq, hΘf j x (hD j hx)]
-      linarith [hε.1]
+      linarith [hε.1, (h j).normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace hn _
+        (((h j).mem_negativeDiscBundle hn).1 hx).1]
   -- The deformation retracts `{f ≤ c + ε}` onto `{f ≤ c - ε} ∪ ⋃ j, Θ j (D j ε)`, fixing it
   -- pointwise.
   exact ⟨hD, hA, fun {A} _ _ _ _ R n ↦
@@ -481,9 +477,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle [T2
     (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hxb⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j)
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.
-  obtain ⟨j, s, rfl⟩ := mem_iUnion.1 (h.criticalPoints_subset_iUnion_range hx)
-  exact mem_iUnion.2 ⟨⟨j, fun s' ↦ (h.subsingleton_image_range hn j (mem_image_of_mem f
-    (mem_range_self s')) (mem_image_of_mem f (mem_range_self s))).trans (hcrit _ hx hxb)⟩, s, rfl⟩
+  exact h.mem_iUnion_range_of_mem_criticalPoints hn hx (hcrit _ hx hxb)
 
 end IsMorseBottFamily
 
