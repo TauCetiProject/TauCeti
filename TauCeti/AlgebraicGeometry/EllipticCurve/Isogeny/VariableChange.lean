@@ -71,7 +71,9 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.variableChangeIsogeny_negVariableChange`: the change of variables `[-1]` gives
   the negation isogeny.
 * `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`: a change of
-  variables `C` pulls the invariant differential back to `C.u` times the invariant differential.
+  variables `C` pulls the invariant differential back to `C.u` times the invariant differential,
+  and `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_comp_comp` gives the resulting
+  transformation `c ↦ c * C₂.u / C₁.u` under conjugation by two changes of variables.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
   coordinate ring back into the coordinate ring.
@@ -254,6 +256,25 @@ theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C 
     map_inv₀, hd, smul_smul, ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul]
   congr 1
   rw [mul_inv, mul_right_comm, ← map_inv₀, ← map_mul, hu]
+
+open _root_.WeierstrassCurve.Affine in
+/-- Conjugating an isogeny `φ : W₁ → W₂` with `φ^*ω₂ = c ω₁` by changes of variables `C₁` and `C₂`
+multiplies the differential pullback constant by `C₂.u / C₁.u`. -/
+theorem pullbackDifferential_variableChangeIsogeny_comp_comp
+    {W₁' W₂' : WeierstrassCurve.Affine F} (φ : Isogeny W₁ W₂) {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    (C₁ C₂ : VariableChange F) (h₁ : C₁⁻¹ • W₁' = W₁) (h₂ : C₂ • W₂ = W₂') :
+    ((variableChangeIsogeny C₂ h₂).comp
+        (φ.comp (variableChangeIsogeny C₁⁻¹ h₁))).pullbackDifferential
+        (invariantDifferential W₂') =
+      (c * C₂.u / C₁.u) • invariantDifferential W₁' := by
+  rw [pullbackDifferential_comp, LinearMap.comp_apply,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, LinearMap.map_smul,
+    pullbackDifferential_comp, LinearMap.comp_apply, hc, LinearMap.map_smul,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, smul_smul, smul_smul]
+  congr 1
+  simp only [VariableChange.inv_def, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  ring
 
 /-! ### Every isomorphism is a change of variables -/
 
