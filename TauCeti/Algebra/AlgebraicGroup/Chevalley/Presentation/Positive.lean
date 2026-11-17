@@ -273,22 +273,6 @@ local macro "g2_table" : tactic => `(tactic|
    try dsimp +instances only [numRoots, rank]
    decide))
 
-/-- The pairs of positive roots of `G₂`, in the native table order, whose sum is a root. -/
-private theorem g2_root_add_mem_range_root_iff {ht : G2.Valid} : ∀ i j : Fin 6, i < j →
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
-        Set.range (G2.simplyConnectedRootDatum ht).root →
-    (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 0 ∧ j = 3) ∨
-      (i = 1 ∧ j = 4) ∨ (i = 2 ∧ j = 3) := by
-  g2_table
-
-/-- Two positive roots of `G₂` never sum to zero. -/
-private theorem g2_root_add_ne_zero {ht : G2.Valid} : ∀ i j : Fin 6,
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ≠ 0 := by
-  simp only [ne_eq, funext_iff, Pi.add_apply, Pi.zero_apply]
-  g2_table
-
 /-- A generator at a positive root of `G₂` of larger index in the native table lies in the
 join of the generators at such roots. -/
 private theorem g2_mk_steinbergRoot_mem_iSup {ht : G2.Valid} {j k : Fin 6} (hk : j < k) (a : A) :
@@ -326,7 +310,7 @@ private theorem g2_commutatorElement_mem_iSup {ht : G2.Valid} (i j : Fin 6) (hij
   by_cases hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
       (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
         Set.range (G2.simplyConnectedRootDatum ht).root
-  · rcases g2_root_add_mem_range_root_iff i j hij hsum with
+  · rcases index_pair_of_root_add_mem_range_root_g2 ht i j hij hsum with
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · -- State the equation through the generators, so that the indices of the relator are
       -- normalized to the concrete indices of the goal.
@@ -354,7 +338,7 @@ private theorem g2_commutatorElement_mem_iSup {ht : G2.Valid} (i j : Fin 6) (hij
     · exact one_factor 4 (by decide) (by g2_table) (by g2_table) (by g2_table)
     · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
     · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
-  · rw [commutatorElement_eq_one_of_isSteinbergRelator hsum (g2_root_add_ne_zero i j) u v]
+  · rw [commutatorElement_eq_one_of_isSteinbergRelator hsum (root_add_root_ne_zero_g2 ht i j) u v]
     exact P.one_mem
 
 /-! ## Collection in the positive subgroup -/
