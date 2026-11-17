@@ -89,16 +89,15 @@ private theorem bridgeModRangeNSMul_symm_mk (G : Type*) [AddCommGroup G] (n : �
     (bridgeModRangeNSMul G n).symm (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) = mkQ n x := by
   rw [AddEquiv.symm_apply_eq, bridgeModRangeNSMul_mk]
 
-private theorem range_nsmul_prod_eq (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) :
-    (nsmulAddMonoidHom (α := G × H) n).range =
-      (nsmulAddMonoidHom (α := G) n).range.prod (nsmulAddMonoidHom (α := H) n).range := by
-  ext ⟨a, b⟩
-  simp [AddSubgroup.mem_prod, Prod.exists, exists_and_left, exists_and_right]
-
 private noncomputable def prodAddEquiv (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) :
     ModN (G × H) n ≃+ ModN G n × ModN H n :=
   (bridgeModRangeNSMul (G × H) n).trans <|
-    (QuotientAddGroup.quotientAddEquivOfEq (range_nsmul_prod_eq G H n)).trans <|
+    (QuotientAddGroup.quotientAddEquivOfEq (by
+      rw [show nsmulAddMonoidHom (α := G × H) n =
+          (nsmulAddMonoidHom (α := G) n).prodMap (nsmulAddMonoidHom (α := H) n) by
+        ext x <;> simp]
+      exact AddMonoidHom.range_prodMap (nsmulAddMonoidHom (α := G) n)
+        (nsmulAddMonoidHom (α := H) n))).trans <|
       (QuotientAddGroup.prodAddEquiv _ _).trans
         ((bridgeModRangeNSMul G n).symm.prodCongr (bridgeModRangeNSMul H n).symm)
 
