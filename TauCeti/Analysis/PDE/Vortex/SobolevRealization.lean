@@ -68,8 +68,9 @@ finite-dimensional kernel and a closed range:
 * `TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`;
 * `TauCeti.Vortex.isClosed_range_sobolevGaugeFixedOperator`.
 
-So `L_x : H¹ → L²` is upper semi-Fredholm at such a vortex. The finite dimensionality and the
-vanishing of its cokernel, and the value `2m` of its index, are not proved here.
+So `L_x : H¹ → L²` is upper semi-Fredholm at such a vortex. The vanishing of its cokernel is
+proved in `TauCeti.Analysis.PDE.Vortex.Fredholm`, and the value `2m` of its index in
+`TauCeti.Analysis.PDE.Vortex.Index`.
 
 ## References
 
