@@ -60,8 +60,8 @@ theorem lie_mulLeft_mulLeft_mem_derivationLieAlgebra (a b : A) :
       derivationLieAlgebra R A := by
   rw [mem_derivationLieAlgebra]
   intro x y
-  have h₁ := Jordan.mul_mul_mul_sub_add_add_eq_zero (Jordan.isSMulRegular_two R A) y b x a
-  have h₂ := Jordan.mul_mul_mul_sub_add_add_eq_zero (Jordan.isSMulRegular_two R A) y a x b
+  have h₁ := Jordan.mul_mul_mul_sub_add_add_eq_zero (isSMulRegular_two R A) y b x a
+  have h₂ := Jordan.mul_mul_mul_sub_add_add_eq_zero (isSMulRegular_two R A) y a x b
   simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, LinearMap.mulLeft_apply]
   rw [← sub_eq_zero]
   have key : a * (b * (x * y)) - b * (a * (x * y)) -

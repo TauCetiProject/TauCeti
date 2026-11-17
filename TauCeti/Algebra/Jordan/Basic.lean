@@ -7,25 +7,31 @@ module
 
 public import Mathlib.Algebra.Jordan.Basic
 public import Mathlib.Algebra.Regular.SMul
+public import TauCeti.Algebra.Regular.SMul
 
 /-!
 # Linearized Jordan identity
 
-The four-variable Jordan identity follows from Mathlib's operator linearization after
-cancelling `2`. It requires only absence of `2`-torsion, and supplies the common algebraic
-identity used for Peirce products and inner derivations.
+The four-variable Jordan identity follows from Mathlib's operator linearization
+`two_nsmul_lie_lmul_lmul_add_add_eq_zero` after cancelling `2`. It requires only absence of
+`2`-torsion, and supplies the common algebraic identity used for Peirce products and inner
+derivations.
+
+The commutation and annihilation laws at an idempotent,
+`mul_left_comm_of_mul_eq_self_or_zero`, `mul_eq_zero_of_mul_eq_self_of_mul_eq_zero` and
+`mul_left_comm_of_mul_eq_self_of_mul_eq_zero`, are adapted from Bryan Ehrlich's
+euclidean-jordan (https://github.com/ehrlich-b/euclidean-jordan),
+`EuclideanJordan/PeirceMul.lean` at a83407e4.
+
+## References
+
+* Faraut and Korányi, *Analysis on Symmetric Cones*, Proposition IV.1.1.
+* McCrimmon, *A Taste of Jordan Algebras*, §II.8.
 -/
 
 public section
 
 namespace TauCeti.Jordan
-
-/-- Invertibility of `2` in the scalar ring makes doubling injective on the module. -/
-theorem isSMulRegular_two (R J : Type*) [CommRing R] [AddCommGroup J] [Module R J]
-    [Invertible (2 : R)] : IsSMulRegular J (2 : ℕ) := by
-  intro x y h
-  apply (isUnit_of_invertible (2 : R)).isSMulRegular J
-  simpa only [← Nat.cast_smul_eq_nsmul R, Nat.cast_ofNat] using h
 
 /-- The evaluated four-variable linearized Jordan identity, with no `2`-torsion. -/
 theorem mul_mul_mul_sub_add_add_eq_zero {J : Type*} [NonUnitalNonAssocCommRing J]
