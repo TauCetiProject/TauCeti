@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -200,9 +201,9 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
   -- The coefficients `α (F i)` are `C^n` on the domain of the frame.
   set a : Fin (finrank ℝ E) → M → ℝ := fun i y ↦ α.1 y ![F i y]
   have ha (i) : ContMDiffOn I 𝓘(ℝ) n (a i) e.baseSet := fun y hy ↦ by
-    have h := ((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn.clm_bundle_apply
-      (E₂ := Trivial M ℝ) (hF.contMDiffOn i) y hy
-    simpa [a, ← Matrix.vec_single_eq_const] using (contMDiffWithinAt_totalSpace_iff.1 h).2
+    have h := (((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn y
+      hy).clm_bundle_apply_scalar (hF.contMDiffOn i y hy)
+    simpa [a, ← Matrix.vec_single_eq_const] using h
   -- Some member of the frame is not in the kernel of `α_x`.
   obtain ⟨j, hj⟩ : ∃ j, a j x ≠ 0 := by
     by_contra! h

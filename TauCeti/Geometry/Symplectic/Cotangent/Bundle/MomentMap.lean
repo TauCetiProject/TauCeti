@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
 
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -144,14 +145,11 @@ theorem liouvilleForm_apply_fundamentalVectorField (ξ : GroupLieAlgebra IG G)
 theorem contMDiff_momentMap_apply (ξ : GroupLieAlgebra IG G) :
     ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) ∞ fun z : CotangentBundle I M ↦ momentMap IG G z ξ := by
   -- Apply the Liouville form, a smooth section of `T*(T*M)`, to the smooth field `ξ_{T*M}`.
-  have h := ContMDiff.clm_bundle_apply (E₂ := Trivial (CotangentBundle I M) ℝ)
-    (SmoothForm.degreeOneEquiv (liouvilleForm I M)).contMDiff
-    (contMDiff_fundamentalVectorField (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (m := ∞) (n := ∞)
-      (by simp) ξ)
-  refine fun z ↦ (contMDiffAt_totalSpace_iff.1 (h z)).2.congr_of_eventuallyEq
+  refine fun z ↦ ((SmoothForm.degreeOneEquiv (liouvilleForm I M)).contMDiff z
+    |>.clm_bundle_apply_scalar (contMDiff_fundamentalVectorField
+      (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (m := ∞) (n := ∞) (by simp) ξ z)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun y ↦ ?_)
-  simp only [Trivial.eq_trivialization _ ℝ, Trivial.trivialization_apply,
-    SmoothForm.degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const,
+  simp only [SmoothForm.degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const,
     liouvilleForm_apply_fundamentalVectorField]
 
 /-- **Coadjoint equivariance of the cotangent moment map**: `μ(g • z) = Ad*_g μ(z)`. -/
