@@ -20,8 +20,9 @@ is a single point (`TopPair.subsingleton_ordinaryPairQuotient_iff`), and collaps
 `{x₀}` recovers `X` (`TopPair.ordinaryPairQuotientSingletonHomeomorph`).
 
 The collapse map, its fibres, open and closed subsets, quotient-map criteria, compactness,
-Hausdorff separation when `X` is `T₃` and `B` is closed, the universal mapping property, and
-functoriality in maps of pairs are supplied here. These are the carrier and map interfaces used
+Hausdorff separation (via neighborhood separation, in particular when `X` is `T₃` and `B` is closed
+or `X` is `T₂` and `B` is compact), the universal mapping property, and functoriality in maps of
+pairs are supplied here. These are the carrier and map interfaces used
 to build pointed smash products and reduced suspensions and to compare relative invariants with
 reduced invariants of a quotient, including pairs with empty subspace.
 
@@ -390,10 +391,14 @@ private lemma separated_basepoint_π (P : TopPair.{u}) {x : P.fst}
     exact Set.disjoint_left.1 hUV
       ((Set.ext_iff.1 (P.preimage_insert_basepoint_image_π hBU) v).1 hz₁) hv
 
-private lemma t2Space_ordinaryPairQuotient_of_disjoint (P : TopPair.{u}) [T2Space P.fst]
-    (hP : IsClosed (Set.range P.map))
+/-- The pointed quotient of a pair with `T₂` ambient space is Hausdorff whenever the subspace can
+be separated by disjoint neighborhoods from every point outside it. -/
+lemma t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet (P : TopPair.{u}) [T2Space P.fst]
     (hsep : ∀ x ∉ Set.range P.map, Disjoint (𝓝ˢ (Set.range P.map)) (𝓝 x)) :
     T2Space P.ordinaryPairQuotient := ⟨fun {z₁ z₂} hne ↦ by
+  have hP : IsClosed (Set.range P.map) :=
+    isOpen_compl_iff.1 <| isOpen_iff_mem_nhds.2 fun x hx ↦
+      Filter.disjoint_principal_left.1 ((hsep x hx).mono_left principal_le_nhdsSet)
   by_cases hz₁ : z₁ = P.ordinaryPairQuotientBasepoint
   · obtain ⟨x, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₂).resolve_right
       (hz₁ ▸ hne.symm)
@@ -425,14 +430,14 @@ private lemma t2Space_ordinaryPairQuotient_of_disjoint (P : TopPair.{u}) [T2Spac
 /-- The pointed quotient of a pair with `T₃` ambient space and closed subspace is Hausdorff. -/
 lemma t2Space_ordinaryPairQuotient_of_isClosed (P : TopPair.{u}) [T3Space P.fst]
     (hP : IsClosed (Set.range P.map)) : T2Space P.ordinaryPairQuotient :=
-  P.t2Space_ordinaryPairQuotient_of_disjoint hP fun _ hx ↦ RegularSpace.regular hP hx
+  P.t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet fun _ hx ↦ RegularSpace.regular hP hx
 
 /-- The pointed quotient of a pair with `T₂` ambient space and compact subspace is Hausdorff,
 including when the subspace is empty. -/
 instance t2Space_ordinaryPairQuotient (P : TopPair.{u}) [T2Space P.fst] [CompactSpace P.snd] :
     T2Space P.ordinaryPairQuotient :=
-  have hK : IsCompact (Set.range P.map) := isCompact_range P.map.hom.continuous
-  P.t2Space_ordinaryPairQuotient_of_disjoint hK.isClosed fun _ hx ↦ hK.disjoint_nhdsSet_nhds hx
+  P.t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet fun _ hx ↦
+    (isCompact_range P.map.hom.continuous).disjoint_nhdsSet_nhds hx
 
 /-- Collapsing a singleton `{x₀}` in `X` together with the added basepoint recovers `X`,
 with no separation assumption on `X`. -/

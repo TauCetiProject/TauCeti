@@ -37,28 +37,6 @@ open scoped unitInterval
 
 universe u
 
-namespace TauCeti.TopCat
-
-/-- The `n`-sphere `TopCat.sphere n` is compact. -/
-instance compactSpace_sphere (n : ℕ) : CompactSpace (TopCat.sphere.{u} n) :=
-  inferInstanceAs (CompactSpace (TopCat.diskBoundary.{u} (n + 1)))
-
-/-- The `n`-sphere `TopCat.sphere n` is Hausdorff. -/
-instance t2Space_sphere (n : ℕ) : T2Space (TopCat.sphere.{u} n) :=
-  TauCeti.t2Space_diskBoundary (n + 1)
-
-/-- The `0`-sphere `TopCat.sphere 0` is finite. -/
-instance finite_sphere_zero : Finite (TopCat.sphere.{u} 0) :=
-  have : Finite (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
-    TauCeti.finite_sphere_of_finrank_eq_one finrank_euclideanSpace_fin 0 1
-  Equiv.ulift.finite_iff.2 inferInstance
-
-/-- The `0`-sphere `TopCat.sphere 0` has the discrete topology. -/
-instance discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
-  Finite.instDiscreteTopology
-
-end TauCeti.TopCat
-
 namespace TauCeti
 
 private def sphereVec {n : ℕ} (s : TopCat.sphere.{u} n) : EuclideanSpace ℝ (Fin (n + 1)) :=

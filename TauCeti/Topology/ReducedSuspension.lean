@@ -195,12 +195,17 @@ instance [CompactSpace X] : CompactSpace (ReducedSuspension x₀) :=
   haveI : CompactSpace (reducedSuspensionPair x₀).fst := inferInstanceAs (CompactSpace (X × I))
   (reducedSuspensionPair x₀).compactSpace_ordinaryPairQuotient
 
-instance [T3Space X] : T2Space (ReducedSuspension x₀) := by
-  have : T3Space (reducedSuspensionPair x₀).fst := inferInstanceAs (T3Space (X × I))
-  refine (reducedSuspensionPair x₀).t2Space_ordinaryPairQuotient_of_isClosed ?_
-  rw [TopPair.range_ofSubset_map]
-  exact (isClosed_univ.prod (isClosed_singleton.union isClosed_singleton)).union
-    (isClosed_singleton.prod isClosed_univ)
+instance [T2Space X] : T2Space (ReducedSuspension x₀) := by
+  have : T2Space (reducedSuspensionPair x₀).fst := inferInstanceAs (T2Space (X × I))
+  refine (reducedSuspensionPair x₀).t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet
+    fun ⟨x, t⟩ h ↦ ?_
+  rw [TopPair.range_ofSubset_map] at h ⊢
+  exact show Disjoint (𝓝ˢ (univ ×ˢ ({0, 1} : Set I) ∪ {x₀} ×ˢ univ : Set (X × I))) (𝓝 (x, t)) by
+    rw [nhdsSet_union, disjoint_sup_left, nhds_prod_eq]
+    exact ⟨(Filter.disjoint_prod.2 <| Or.inr <| (Set.toFinite _).isCompact.disjoint_nhdsSet_nhds
+        fun ht ↦ h (Or.inl ⟨trivial, ht⟩)).mono_left (nhdsSet_prod_le _ _),
+      (Filter.disjoint_prod.2 <| Or.inl <| isCompact_singleton.disjoint_nhdsSet_nhds
+        fun hx ↦ h (Or.inr ⟨hx, trivial⟩)).mono_left (nhdsSet_prod_le _ _)⟩
 
 instance [Subsingleton X] : Subsingleton (ReducedSuspension x₀) :=
   subsingleton_of_forall_eq (basepoint x₀)
@@ -300,44 +305,36 @@ def homeomorphSmashIntervalQuotient :
         (TopPair.ordinaryPairQuotientSingletonHomeomorph_basepoint (X := TopCat.of X) x₀)
         (congrFun (Homeomorph.refl_apply _) intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint)
 
+private lemma homeomorphSmashIntervalQuotient_apply
+    (q : (reducedSuspensionPair x₀).ordinaryPairQuotient) :
+    homeomorphSmashIntervalQuotient x₀ q = SmashProduct.congrHomeomorph
+      (TopPair.ordinaryPairQuotientSingletonHomeomorph (X := TopCat.of X) x₀) (.refl _)
+      (TopPair.ordinaryPairQuotientSingletonHomeomorph_basepoint _)
+      (congrFun (Homeomorph.refl_apply _) _)
+      (TopPair.ordinaryPairQuotientProdHomeomorph ({x₀} : Set X) (ULift.down ⁻¹' ({0, 1} : Set I))
+        (TopPair.ordinaryPairQuotientHomeomorph (pairIsoProdULift x₀) q)) := rfl
+
 @[simp]
 lemma homeomorphSmashIntervalQuotient_mk (x : X) (t : I) :
     homeomorphSmashIntervalQuotient x₀ (mk x₀ (x, t)) =
       SmashProduct.mk x₀ intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint
         (x, intervalEndpointPair.{u}.ordinaryPairQuotientπ (ULift.up t)) := by
-  let e₂ := TopPair.ordinaryPairQuotientProdHomeomorph ({x₀} : Set X)
-    (ULift.down ⁻¹' ({0, 1} : Set I))
-  let e₃ := SmashProduct.congrHomeomorph
-    (TopPair.ordinaryPairQuotientSingletonHomeomorph (X := TopCat.of X) x₀)
-    (Homeomorph.refl intervalEndpointPair.{u}.ordinaryPairQuotient)
-    (TopPair.ordinaryPairQuotientSingletonHomeomorph_basepoint (X := TopCat.of X) x₀)
-    (congrFun (Homeomorph.refl_apply _) intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint)
-  have hfst : TopPair.Hom.fst (pairIsoProdULift x₀).hom (x, t) = (x, ULift.up t) :=
-    (congrArg (fun f : reducedSuspensionPair x₀ ⟶ _ ↦ TopPair.Hom.fst f (x, t))
-      (TopPair.ofSubsetIso_hom _ _)).trans
-      (congrArg (fun g : TopCat.of (X × I) ⟶ _ ↦ g (x, t)) (TopPair.ofSubsetMap_fst _ _))
-  refine (congrArg (fun z ↦ e₃ (e₂ z)) ((TopPair.ordinaryPairQuotientHomeomorph_π
-    (pairIsoProdULift x₀) (x, t)).trans (congrArg _ hfst))).trans ?_
-  refine (congrArg e₃ (TopPair.ordinaryPairQuotientProdHomeomorph_π _ _ x (ULift.up t))).trans ?_
-  exact (SmashProduct.congrHomeomorph_mk _ _ _ _ _ _).trans <|
-    congrArg (fun a ↦ SmashProduct.mk _ _ (a, _))
-      (TopPair.ordinaryPairQuotientSingletonHomeomorph_π (X := TopCat.of X) x₀ x)
+  have hfst : TopPair.Hom.fst (pairIsoProdULift x₀).hom (x, t) = (x, ULift.up t) := by
+    rw [pairIsoProdULift, TopPair.ofSubsetIso_hom]; apply TopPair.ofSubsetMap_fst_apply
+  let p : (reducedSuspensionPair x₀).fst := (x, t)
+  rw [show mk x₀ (x, t) = (reducedSuspensionPair x₀).ordinaryPairQuotientπ p from rfl,
+    homeomorphSmashIntervalQuotient_apply, TopPair.ordinaryPairQuotientHomeomorph_π, hfst,
+    TopPair.ordinaryPairQuotientProdHomeomorph_π, SmashProduct.congrHomeomorph_mk,
+    TopPair.ordinaryPairQuotientSingletonHomeomorph_π]; rfl
 
 @[simp]
 lemma homeomorphSmashIntervalQuotient_basepoint :
     homeomorphSmashIntervalQuotient x₀ (basepoint x₀) =
       SmashProduct.basepoint x₀ intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint := by
-  let e₂ := TopPair.ordinaryPairQuotientProdHomeomorph ({x₀} : Set X)
-    (ULift.down ⁻¹' ({0, 1} : Set I))
-  let e₃ := SmashProduct.congrHomeomorph
-    (TopPair.ordinaryPairQuotientSingletonHomeomorph (X := TopCat.of X) x₀)
-    (Homeomorph.refl intervalEndpointPair.{u}.ordinaryPairQuotient)
-    (TopPair.ordinaryPairQuotientSingletonHomeomorph_basepoint (X := TopCat.of X) x₀)
-    (congrFun (Homeomorph.refl_apply _) intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint)
-  exact (congrArg (fun z ↦ e₃ (e₂ z)) (TopPair.ordinaryPairQuotientHomeomorph_basepoint
-    (pairIsoProdULift x₀))).trans <|
-    (congrArg e₃ (TopPair.ordinaryPairQuotientProdHomeomorph_basepoint _ _)).trans
-      (SmashProduct.congrHomeomorph_basepoint _ _ _ _)
+  rw [show basepoint x₀ = (reducedSuspensionPair x₀).ordinaryPairQuotientBasepoint from rfl,
+    homeomorphSmashIntervalQuotient_apply, TopPair.ordinaryPairQuotientHomeomorph_basepoint,
+    TopPair.ordinaryPairQuotientProdHomeomorph_basepoint,
+    SmashProduct.congrHomeomorph_basepoint]; rfl
 
 @[simp]
 lemma homeomorphSmashIntervalQuotient_symm_mk_π (x : X) (t : I) :

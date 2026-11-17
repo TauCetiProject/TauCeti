@@ -177,11 +177,16 @@ instance [CompactSpace X] [CompactSpace Y] : CompactSpace (SmashProduct x₀ y�
   haveI : CompactSpace (smashPair x₀ y₀).fst := inferInstanceAs (CompactSpace (X × Y))
   (smashPair x₀ y₀).compactSpace_ordinaryPairQuotient
 
-instance [T3Space X] [T3Space Y] : T2Space (SmashProduct x₀ y₀) := by
-  have : T3Space (smashPair x₀ y₀).fst := inferInstanceAs (T3Space (X × Y))
-  refine (smashPair x₀ y₀).t2Space_ordinaryPairQuotient_of_isClosed ?_
-  rw [TopPair.range_ofSubset_map]
-  exact (isClosed_univ.prod isClosed_singleton).union (isClosed_singleton.prod isClosed_univ)
+instance [T2Space X] [T2Space Y] : T2Space (SmashProduct x₀ y₀) := by
+  have : T2Space (smashPair x₀ y₀).fst := inferInstanceAs (T2Space (X × Y))
+  refine (smashPair x₀ y₀).t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet fun ⟨x, y⟩ h ↦ ?_
+  rw [TopPair.range_ofSubset_map] at h ⊢
+  exact show Disjoint (𝓝ˢ (univ ×ˢ {y₀} ∪ {x₀} ×ˢ univ : Set (X × Y))) (𝓝 (x, y)) by
+    rw [nhdsSet_union, disjoint_sup_left, nhds_prod_eq]
+    exact ⟨(Filter.disjoint_prod.2 <| Or.inr <| isCompact_singleton.disjoint_nhdsSet_nhds
+        fun hy ↦ h (Or.inl ⟨trivial, hy⟩)).mono_left (nhdsSet_prod_le _ _),
+      (Filter.disjoint_prod.2 <| Or.inl <| isCompact_singleton.disjoint_nhdsSet_nhds
+        fun hx ↦ h (Or.inr ⟨hx, trivial⟩)).mono_left (nhdsSet_prod_le _ _)⟩
 
 instance subsingleton_left [Subsingleton X] : Subsingleton (SmashProduct x₀ y₀) :=
   subsingleton_of_forall_eq (basepoint x₀ y₀)
@@ -245,14 +250,14 @@ def congrHomeomorph (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e₁ x₀
 @[simp]
 lemma congrHomeomorph_mk (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e₁ x₀ = x₀') (he₂ : e₂ y₀ = y₀')
     (x : X) (y : Y) :
-    congrHomeomorph e₁ e₂ he₁ he₂ (mk x₀ y₀ (x, y)) = mk x₀' y₀' (e₁ x, e₂ y) := by
-  simp [congrHomeomorph]
+    congrHomeomorph e₁ e₂ he₁ he₂ (mk x₀ y₀ (x, y)) = mk x₀' y₀' (e₁ x, e₂ y) :=
+  map_mk _ _ he₁ he₂ x y
 
 @[simp]
 lemma congrHomeomorph_basepoint (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e₁ x₀ = x₀')
     (he₂ : e₂ y₀ = y₀') :
-    congrHomeomorph e₁ e₂ he₁ he₂ (basepoint x₀ y₀) = basepoint x₀' y₀' := by
-  simp [congrHomeomorph]
+    congrHomeomorph e₁ e₂ he₁ he₂ (basepoint x₀ y₀) = basepoint x₀' y₀' :=
+  map_basepoint _ _ he₁ he₂
 
 @[simp]
 lemma congrHomeomorph_symm (e₁ : X ≃ₜ X') (e₂ : Y ≃ₜ Y') (he₁ : e₁ x₀ = x₀')
@@ -278,8 +283,7 @@ lemma comm_mk (x : X) (y : Y) : comm x₀ y₀ (mk x₀ y₀ (x, y)) = mk y₀ x
   simp [comm, commMap]
 
 @[simp]
-lemma comm_basepoint : comm x₀ y₀ (basepoint x₀ y₀) = basepoint y₀ x₀ := by
-  simp [comm, commMap]
+lemma comm_basepoint : comm x₀ y₀ (basepoint x₀ y₀) = basepoint y₀ x₀ := by simp [comm, commMap]
 
 @[simp]
 lemma comm_symm (x₀ : X) (y₀ : Y) : (comm x₀ y₀).symm = comm y₀ x₀ := (rfl)
@@ -338,25 +342,17 @@ private lemma assocFwdMap_mk [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀
 /-- **Associativity of the smash product**: `(X ∧ Y) ∧ Z ≃ₜ X ∧ (Y ∧ Z)` whenever the outer factors
 `X` and `Z` are locally compact (in particular for all compact Hausdorff spaces). -/
 def assoc [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z) :
-    SmashProduct (basepoint x₀ y₀) z₀ ≃ₜ SmashProduct x₀ (basepoint y₀ z₀) where
-  toFun := assocFwdMap x₀ y₀ z₀
-  invFun p := comm z₀ (basepoint x₀ y₀) <|
-    congrHomeomorph (.refl Z) (comm y₀ x₀) (congrFun (Homeomorph.refl_apply Z) z₀) comm_basepoint <|
-      assocFwdMap z₀ y₀ x₀ <|
-        congrHomeomorph (comm y₀ z₀) (.refl X) comm_basepoint
-          (congrFun (Homeomorph.refl_apply X) x₀) <|
-          comm x₀ (basepoint y₀ z₀) p
-  left_inv := ind <| ind fun x y z ↦ by simp
-  right_inv := ind fun x ↦ ind fun y z ↦ by simp
-  continuous_toFun := (assocFwdMap x₀ y₀ z₀).continuous
-  continuous_invFun :=
-    (comm z₀ (basepoint x₀ y₀)).continuous.comp <|
-      (congrHomeomorph (.refl Z) (comm y₀ x₀)
-        (congrFun (Homeomorph.refl_apply Z) z₀) comm_basepoint).continuous.comp <|
-        (assocFwdMap z₀ y₀ x₀).continuous.comp <|
-          (congrHomeomorph (comm y₀ z₀) (.refl X)
-            comm_basepoint (congrFun (Homeomorph.refl_apply X) x₀)).continuous.comp
-            (comm x₀ (basepoint y₀ z₀)).continuous
+    SmashProduct (basepoint x₀ y₀) z₀ ≃ₜ SmashProduct x₀ (basepoint y₀ z₀) :=
+  let e₁ := (comm x₀ (basepoint y₀ z₀)).trans <| congrHomeomorph (comm y₀ z₀) (.refl X)
+    comm_basepoint (congrFun (Homeomorph.refl_apply X) x₀)
+  let e₂ := (congrHomeomorph (.refl Z) (comm y₀ x₀) (congrFun (Homeomorph.refl_apply Z) z₀)
+    comm_basepoint).trans (comm z₀ (basepoint x₀ y₀))
+  { toFun := assocFwdMap x₀ y₀ z₀
+    invFun p := e₂ (assocFwdMap z₀ y₀ x₀ (e₁ p))
+    left_inv := ind <| ind fun x y z ↦ by simp [e₁, e₂]
+    right_inv := ind fun x ↦ ind fun y z ↦ by simp [e₁, e₂]
+    continuous_toFun := (assocFwdMap x₀ y₀ z₀).continuous
+    continuous_invFun := e₂.continuous.comp ((assocFwdMap z₀ y₀ x₀).continuous.comp e₁.continuous) }
 
 @[simp]
 lemma assoc_mk [LocallyCompactSpace X] [LocallyCompactSpace Z] (x₀ : X) (y₀ : Y) (z₀ : Z)
@@ -538,16 +534,13 @@ def ordinaryPairQuotientProdHomeomorph [LocallyCompactSpace X]
       (fun x ↦ ordinaryPairQuotient_ind (P := qRight B)
         (fun y ↦ (congrArg (ordinaryPairQuotientProdToSmash A B)
           (((SmashProduct.lift_mk _ _ _ _ _ _).trans (prodQuotientFromBoth_π A B x _)).trans
-            (prodQuotientFromRight_π A B x y))).trans
-          (ordinaryPairQuotientProdToSmash_π A B x y))
+            (prodQuotientFromRight_π A B x y))).trans (ordinaryPairQuotientProdToSmash_π A B x y))
         (by rw [SmashProduct.mk_basepoint_right]
-            exact (congrArg (ordinaryPairQuotientProdToSmash A B)
-              (by simp [smashToOrdinaryPairQuotientProd])).trans
-              (ordinaryPairQuotientProdToSmash_basepoint A B)))
+            simpa [smashToOrdinaryPairQuotientProd] using
+              ordinaryPairQuotientProdToSmash_basepoint A B))
       (fun _ ↦ by rw [SmashProduct.mk_basepoint_left]
-                  exact (congrArg (ordinaryPairQuotientProdToSmash A B)
-                    (by simp [smashToOrdinaryPairQuotientProd])).trans
-                    (ordinaryPairQuotientProdToSmash_basepoint A B))
+                  simpa [smashToOrdinaryPairQuotientProd] using
+                    ordinaryPairQuotientProdToSmash_basepoint A B)
   continuous_toFun := (ordinaryPairQuotientProdToSmash A B).hom.continuous
   continuous_invFun := (smashToOrdinaryPairQuotientProd A B).continuous
 

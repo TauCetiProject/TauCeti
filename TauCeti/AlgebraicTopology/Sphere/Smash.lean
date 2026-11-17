@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.BasedQuotient
 public import TauCeti.Topology.ReducedSuspension
+import TauCeti.AlgebraicTopology.Sphere.Zero
 
 /-!
 # Smash products and reduced suspensions of spheres
@@ -132,10 +133,8 @@ lemma smashSphereHomeomorph_basepoint (m n : ℕ) :
     smashSphereHomeomorph.{u} m n
       (SmashProduct.basepoint (sphereBasepoint.{u} m) (sphereBasepoint.{u} n)) =
       sphereBasepoint.{u} (m + n) := by
-  dsimp only [smashSphereHomeomorph, Homeomorph.trans_apply]
-  rw [SmashProduct.congrHomeomorph_basepoint,
-    TopPair.ordinaryPairQuotientProdHomeomorph_symm_basepoint]
-  simp
+  simp only [smashSphereHomeomorph, Homeomorph.trans_apply, SmashProduct.congrHomeomorph_basepoint]
+  rw [TopPair.ordinaryPairQuotientProdHomeomorph_symm_basepoint]; simp
 
 /-- **Cube-concatenation formula for `TauCeti.smashSphereHomeomorph`**: the composite
 `Iᵐ × Iⁿ → Sᵐ ∧ Sⁿ → Sᵐ⁺ⁿ` is `TauCeti.basedCubeToSphere (m + n)` composed with `Fin.append`. -/
