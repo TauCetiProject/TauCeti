@@ -29,22 +29,22 @@ quasi-isomorphism under `(ModuleCat.extendScalars f).mapHomologicalComplex (.up 
 
 Combining this invariance with `TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure` and
 `TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic`, we obtain:
-* `TauCeti.hasLeftDerivedFunctor_extendScalars`:
+* `RingHom.hasLeftDerivedFunctor_extendScalars`:
   `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ) ⋙ DerivedCategory.Q` admits a left
   derived functor `− ⊗^L_R S : D(R) ⥤ D(S)` with respect to quasi-isomorphisms;
-* `TauCeti.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat` and
-  `TauCeti.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_boundedAbove_flat`: any left derived
+* `RingHom.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_isKFlat` and
+  `RingHom.isIso_app_of_isLeftDerivedFunctor_extendScalars_of_boundedAbove_flat`: any left derived
   functor of scalar extension is computed on the nose on K-flat complexes and, in particular, on
   bounded-above complexes of flat modules;
-* `TauCeti.isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars`: any left derived
+* `RingHom.isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars`: any left derived
   functor of scalar extension is absolute, remaining left derived after postcomposition with any
   functor;
-* `TauCeti.derivedExtendRestrictScalarsAdj`:
+* `RingHom.derivedExtendRestrictScalarsAdj`:
   every left derived functor of `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)` is left
   adjoint to derived restriction of scalars `(ModuleCat.restrictScalars f).mapDerivedCategory`,
   obtained by deriving the degreewise lift of `ModuleCat.extendRestrictScalarsAdj f`;
-* `TauCeti.derivedExtendScalars f`: the canonical choice `totalLeftDerived` of `− ⊗^L_R S`, with its
-  counit, K-flat object isomorphism, and canonical adjunction `TauCeti.derivedExtendScalarsAdj f`.
+* `RingHom.derivedExtendScalars f`: the canonical choice `totalLeftDerived` of `− ⊗^L_R S`, with its
+  counit, K-flat object isomorphism, and canonical adjunction `RingHom.derivedExtendScalarsAdj f`.
 
 ## References
 
@@ -82,7 +82,7 @@ instance quasiIso_mapHomologicalComplex_extendScalars_of_isKFlat
 
 end CochainComplex
 
-namespace TauCeti
+namespace RingHom
 
 section GeneralTarget
 
@@ -353,4 +353,4 @@ end Canonical
 
 end DerivedCategory
 
-end TauCeti
+end RingHom

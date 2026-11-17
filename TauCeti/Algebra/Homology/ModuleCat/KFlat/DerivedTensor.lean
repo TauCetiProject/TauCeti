@@ -19,8 +19,10 @@ left derived tensor bifunctor `TauCeti.derivedTensor (ModuleCat R)` is available
 `DerivedCategory (ModuleCat R)`, and any left derived bifunctor of
 `curriedTensor (CochainComplex (ModuleCat R) ℤ) ⋙ (whiskeringRight _ _ _).obj F` (for `F` inverting
 quasi-isomorphisms) is computed on the nose whenever either factor is a bounded-above complex of
-flat `R`-modules (`TauCeti.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_left`
-and `TauCeti.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_right`).
+flat `R`-modules
+(`CategoryTheory.Functor.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_left`
+and
+`CategoryTheory.Functor.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_right`).
 
 ## References
 
@@ -36,7 +38,7 @@ open CategoryTheory CategoryTheory.Functor HomologicalComplex
 
 universe u
 
-namespace TauCeti
+namespace CategoryTheory.Functor
 
 variable {R : Type u} [CommRing R] {H : Type*} [Category* H]
   (F : CochainComplex (ModuleCat.{u} R) ℤ ⥤ H)
@@ -76,4 +78,4 @@ theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_rig
   have := CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat Q b hQ
   isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right F hF α K Q
 
-end TauCeti
+end CategoryTheory.Functor
