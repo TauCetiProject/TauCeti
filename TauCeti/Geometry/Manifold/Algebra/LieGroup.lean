@@ -152,7 +152,7 @@ end TauCeti
 namespace TauCeti.Lie
 
 /-- Inversion in a `C^n` Lie group as a `C^n` diffeomorphism; it is its own inverse. -/
-@[expose, to_additive
+@[to_additive
   /-- Negation in a `C^n` additive Lie group as a `C^n` diffeomorphism; it is its own inverse. -/]
 def invDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (G : Type*)
     [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I n G] : G ≃ₘ^n⟮I, I⟯ G where
@@ -162,10 +162,10 @@ def invDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (G : Type*)
 
 @[to_additive (attr := simp)]
 theorem invDiffeomorph_apply (g : G) : invDiffeomorph I n G g = g⁻¹ :=
-  rfl
+  (rfl)
 
 @[to_additive (attr := simp)]
 theorem invDiffeomorph_symm : (invDiffeomorph I n G).symm = invDiffeomorph I n G :=
-  rfl
+  (rfl)
 
 end TauCeti.Lie
