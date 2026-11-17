@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.StripJet
+public import TauCeti.Analysis.Sobolev.Strip.Jet
 
 /-!
 # The Sobolev space `W^{1,2}` on the strip with linear boundary conditions
@@ -30,11 +30,12 @@ sections, the strip counterpart of `TauCeti.CylinderSobolev.H1`.
   `TauCeti.StripSobolev.jetLp` and `TauCeti.StripSobolev.jetClosure` shared with the cylinder,
   applied to the test sections of the strip.
 * **Translation invariance.** Translation in the `s` direction, `ξ ↦ ξ (· + a, ·)`, preserves the
-  test sections and acts on `L²` jets as an isometry
-  (`TauCeti.StripSobolev.translateL`, `TauCeti.StripSobolev.translateL_jetₗ`). It maps `H1 L₀ L₁`
-  onto itself (`TauCeti.StripSobolev.translateL_mem_H1_iff`) and is a linear isometric equivalence
-  of `H1 L₀ L₁` (`TauCeti.StripSobolev.translate`), so the `W^{1,2}` norm of a section and of its
-  translates agree (`TauCeti.StripSobolev.norm_jetₗ_translate`). This is the
+  test sections (`TauCeti.StripSobolev.comp_add_right_mem_testSection`). By the results of
+  `TauCeti.Analysis.Sobolev.Strip.Jet` on translation-invariant spaces of sections, translation
+  `TauCeti.StripSobolev.translateL` of `L²` jets maps `H1 L₀ L₁` onto itself
+  (`TauCeti.StripSobolev.translateL_mem_jetClosure_iff`) and is a linear isometric equivalence
+  `TauCeti.StripSobolev.translate (testSection L₀ L₁) a` of `H1 L₀ L₁`, so the `W^{1,2}` norm of a
+  section and of its translates agree (`TauCeti.StripSobolev.norm_jetLp_translate`). This is the
   translation-invariant norm of the strip, which a norm built from one compact piece of the strip
   does not have.
 
@@ -50,9 +51,6 @@ periodicity of the cylinder. For linear isotropic boundary conditions the Cauchy
 * `TauCeti.StripSobolev.jetₗ`: the `L²` jet of a test section.
 * `TauCeti.StripSobolev.H1 L₀ L₁`: the Sobolev space `W^{1,2}` of the strip with these boundary
   conditions.
-* `TauCeti.StripSobolev.translateL a`: translation by `a` in the `s` direction on `L²` jets.
-* `TauCeti.StripSobolev.translate L₀ L₁ a`: translation by `a` as a linear isometric equivalence
-  of `H1 L₀ L₁`.
 
 ## References
 
@@ -131,106 +129,8 @@ theorem comp_add_right_mem_testSection (hξ : ξ ∈ testSection L₀ L₁) (a :
     fun s ↦ by simpa using hξ₁ (s + a)⟩
   exact hξc.comp_homeomorph (Homeomorph.addRight ((a, 0) : ℝ × ℝ))
 
-variable (V) in
-/-- Translation by `a` in the `s` direction on `L²` jets on the strip,
-`f ↦ f (· + a, ·)`. It is a linear isometry (`TauCeti.StripSobolev.norm_translateL`). -/
-def translateL (a : ℝ) : Lp (V × V × V) 2 stripMeasure →L[ℝ] Lp (V × V × V) 2 stripMeasure :=
-  (Lp.compMeasurePreservingₗᵢ ℝ _
-    (measurePreserving_add_right_stripMeasure a)).toContinuousLinearMap
-
-/-- Translation acts on representatives by composition. -/
-theorem coeFn_translateL (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    translateL V a f =ᵐ[stripMeasure] fun z ↦ f (z + (a, 0)) :=
-  Lp.coeFn_compMeasurePreserving _ _
-
-/-- Translation preserves the norm of `L²` jets. -/
-@[simp]
-theorem norm_translateL (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    ‖translateL V a f‖ = ‖f‖ :=
-  Lp.norm_compMeasurePreserving _ _
-
-/-- Translation by `a + b` is translation by `b` followed by translation by `a`. -/
-theorem translateL_add (a b : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    translateL V (a + b) f = translateL V a (translateL V b f) := by
-  change Lp.compMeasurePreserving _ _ f =
-    Lp.compMeasurePreserving _ _ (Lp.compMeasurePreserving _ _ f)
-  rw [← Lp.compMeasurePreserving_comp_apply]
-  congr 2
-  funext z
-  ext <;> simp [add_assoc]
-
-/-- Translation by `0` is the identity. -/
-@[simp]
-theorem translateL_zero (f : Lp (V × V × V) 2 stripMeasure) : translateL V 0 f = f := by
-  change Lp.compMeasurePreserving _ _ f = f
-  conv_rhs => rw [← Lp.compMeasurePreserving_id_apply f]
-  congr 2
-  funext z
-  simp
-
-/-- The translate of the `L²` jet of a test section is the `L²` jet of its translate. -/
-theorem translateL_jetₗ (a : ℝ) (ξ : testSection L₀ L₁) :
-    translateL V a (jetₗ L₀ L₁ ξ) =
-      jetₗ L₀ L₁ ⟨_, comp_add_right_mem_testSection ξ.2 a⟩ := by
-  refine Lp.ext_iff.2 ?_
-  filter_upwards [coeFn_translateL a (jetₗ L₀ L₁ ξ),
-    (measurePreserving_add_right_stripMeasure a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetLp ξ),
-    coeFn_jetLp ⟨_, comp_add_right_mem_testSection ξ.2 a⟩] with z h₁ h₂ h₃
-  rw [h₁, h₃, jet_comp_add_right]
-  exact h₂
-
-/-- Translation maps `H1` into itself. -/
-theorem translateL_mem_H1 (a : ℝ) {f : Lp (V × V × V) 2 stripMeasure} (hf : f ∈ H1 L₀ L₁) :
-    translateL V a f ∈ H1 L₀ L₁ := by
-  have h : (H1 L₀ L₁ : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ translateL V a ⁻¹' H1 L₀ L₁ :=
-    jetClosure_subset_of_isClosed
-      ((isClosed_jetClosure (testSection L₀ L₁)).preimage (translateL V a).continuous) <| by
-      rintro _ ⟨ξ, rfl⟩
-      rw [mem_preimage, translateL_jetₗ]
-      exact jetLp_mem_jetClosure _
-  exact h hf
-
-/-- An `L²` jet lies in `H1` exactly when its translate does: translation maps `H1` onto
-itself. -/
-@[simp]
-theorem translateL_mem_H1_iff (a : ℝ) {f : Lp (V × V × V) 2 stripMeasure} :
-    translateL V a f ∈ H1 L₀ L₁ ↔ f ∈ H1 L₀ L₁ := by
-  refine ⟨fun h ↦ ?_, translateL_mem_H1 a⟩
-  have := translateL_mem_H1 (-a) h
-  rwa [← translateL_add, neg_add_cancel, translateL_zero] at this
-
-variable (L₀ L₁) in
-/-- Translation by `a` in the `s` direction, `x ↦ x (· + a, ·)`, as a linear isometric
-equivalence of the Sobolev space `H1 L₀ L₁`. Its inverse is translation by `-a`
-(`TauCeti.StripSobolev.translate_symm`). -/
-def translate (a : ℝ) : H1 L₀ L₁ ≃ₗᵢ[ℝ] H1 L₀ L₁ where
-  toFun x := ⟨translateL V a x, translateL_mem_H1 a x.2⟩
-  invFun x := ⟨translateL V (-a) x, translateL_mem_H1 (-a) x.2⟩
-  map_add' x y := Subtype.ext (map_add (translateL V a) _ _)
-  map_smul' c x := Subtype.ext (map_smul (translateL V a) c _)
-  left_inv x := Subtype.ext <| by
-    simp only
-    rw [← translateL_add, neg_add_cancel, translateL_zero]
-  right_inv x := Subtype.ext <| by
-    simp only
-    rw [← translateL_add, add_neg_cancel, translateL_zero]
-  norm_map' x := norm_translateL a (x : Lp (V × V × V) 2 stripMeasure)
-
-/-- Translation on `H1` is translation of `L²` jets. -/
-@[simp]
-theorem coe_translate (a : ℝ) (x : H1 L₀ L₁) :
-    (translate L₀ L₁ a x : Lp (V × V × V) 2 stripMeasure) = translateL V a x :=
-  (rfl)
-
-/-- The inverse of translation by `a` on `H1` is translation by `-a`. -/
-@[simp]
-theorem translate_symm (a : ℝ) : (translate L₀ L₁ a).symm = translate L₀ L₁ (-a) :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
-
-/-- **The `W^{1,2}` norm on the strip is translation invariant**: a test section and its
-translate in the `s` direction have `L²` jets of the same norm. -/
-theorem norm_jetₗ_translate (a : ℝ) (ξ : testSection L₀ L₁) :
-    ‖jetₗ L₀ L₁ ⟨_, comp_add_right_mem_testSection ξ.2 a⟩‖ = ‖jetₗ L₀ L₁ ξ‖ := by
-  rw [← translateL_jetₗ, norm_translateL]
+/-- The test sections are invariant under translation in the `s` direction. -/
+instance : IsTranslationInvariant (testSection L₀ L₁) :=
+  ⟨fun _ hξ a ↦ comp_add_right_mem_testSection hξ a⟩
 
 end TauCeti.StripSobolev

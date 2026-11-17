@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import TauCeti.Analysis.Sobolev.StripJet
+public import TauCeti.Analysis.Sobolev.Strip.Jet
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Normed.Operator.Mul
@@ -43,7 +43,7 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   gives the linear map `TauCeti.CylinderSobolev.jetₗ` into `L²(ℝ × [0, 1], V × V × V)`. Its norm
   is the `W^{1,2}` norm up to a factor between `1` and `√3`. The `L²` jets and their closure are
   the constructions `TauCeti.StripSobolev.jetLp` and `TauCeti.StripSobolev.jetClosure` of
-  `TauCeti.Analysis.Sobolev.StripJet`, shared with the strip with boundary conditions.
+  `TauCeti.Analysis.Sobolev.Strip.Jet`, shared with the strip with boundary conditions.
 * `TauCeti.CylinderSobolev.H1` is the closure of the jets of test sections: the completion of the
   test sections in the `W^{1,2}` norm, realized inside `L²` as a closed subspace, hence complete.
   An element is an `L²` jet `(ξ, ξ_s, ξ_t)`, and it is determined by its value `ξ`

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Strip
+public import TauCeti.Analysis.Sobolev.Strip.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Strip
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
