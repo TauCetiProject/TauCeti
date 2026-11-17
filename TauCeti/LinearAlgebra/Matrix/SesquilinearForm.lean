@@ -73,7 +73,9 @@ vectors also pair nontrivially with a common vector
 has a nonzero kernel element and some nonzero vector is isotropic, a matrix scaling every isotropic
 vector is scalar (`Matrix.exists_eq_scalar_of_forall_mulVec_eq_smul`).
 
-Conversely, preserving `B` implies `σ(g)ᵀ Q g = Q` (`Matrix.transpose_map_mul_mul_eq_self`). With
+Conversely, preserving `B` implies `σ(g)ᵀ Q g = Q` (`Matrix.transpose_map_mul_mul_eq_self`). Over a
+domain, a matrix `Q` with nonzero determinant and an injective `σ` yield a nonzero rank-one matrix
+`(Q u) (σ(u)ᵀ Q)` for every `u ≠ 0` (`Matrix.vecMulVec_mulVec_comp_vecMul_ne_zero`). With
 `ε * ε = 1`, vectors decompose along a hyperbolic pair
 (`Matrix.exists_eq_add_and_comp_dotProduct_mulVec_eq_zero`), giving `A.det = c₁ * c₂`
 (`Matrix.det_eq_mul_of_mulVec_eq_smul`); over a field, nonzero isotropic vectors extend to
@@ -353,6 +355,16 @@ theorem det_eq_mul_of_mulVec_eq_smul [DecidableEq n] {A : Matrix n n R} (hε : �
   have hd₂ : M₂.det = c₂ := by
     rw [TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, hef, smul_eq_mul]; ring
   rw [hA, det_mul, hd₁, hd₂]
+
+/-- For a matrix `Q` with nonzero determinant over a domain, an injective endomorphism `σ`, and a
+nonzero vector `u`, the rank-one matrix `vecMulVec (Q *ᵥ u) ((σ ∘ u) ᵥ* Q)` is nonzero. -/
+theorem vecMulVec_mulVec_comp_vecMul_ne_zero [IsDomain R] [DecidableEq n]
+    (hσ : Function.Injective σ) (hdet : Q.det ≠ 0) {u : n → R} (hu0 : u ≠ 0) :
+    vecMulVec (Q *ᵥ u) ((σ ∘ u) ᵥ* Q) ≠ 0 :=
+  vecMulVec_eq_zero.not.mpr <| not_or.mpr
+    ⟨fun h0 ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨u, hu0, h0⟩),
+      fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp
+        ⟨σ ∘ u, fun h ↦ hu0 (funext fun i ↦ hσ ((congrFun h i).trans (map_zero σ).symm)), h0⟩)⟩
 
 end CommRing
 
@@ -681,16 +693,18 @@ theorem det_eq_mul_mul_of_mulVec_eq_smul {A : Matrix n n K} (hσ : Function.Invo
   have hAM₃_v : (A * M₃) *ᵥ v = v := by
     rw [← mulVec_mulVec, TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct, ← dotProduct_mulVec,
       smul_eq_mul, inv_mul_cancel₀ hvv, one_smul, mulVec_sub, mulVec_smul, hAv, smul_smul,
-      show (1 - c₃⁻¹) * c₃ = c₃ - 1 by field_simp]; module
+      sub_mul, one_mul, inv_mul_cancel₀ hc₃]
+    module
   have hAM₃_w (w : n → K) (hew : (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0) (hfw : (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0) :
       (A * M₃) *ᵥ w = w := by
-    set w₀ := w - (((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ w))) • v
+    set α := ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ w))
+    set w₀ := w - α • v
     have hvw₀ := comp_dotProduct_mulVec_sub_inv_mul_smul_eq_zero hvv w
-    conv_lhs => rw [show w = (((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ w))) • v + w₀ by
-      dsimp [w₀]; module, mulVec_add, mulVec_smul, hAM₃_v, ← mulVec_mulVec, hM₃ hvw₀, hAw w₀
+    have hw_eq : w = w₀ + α • v := (sub_add_cancel w (α • v)).symm
+    conv_lhs => rw [hw_eq, mulVec_add, mulVec_smul, hAM₃_v, ← mulVec_mulVec, hM₃ hvw₀, hAw w₀
       (by simp [w₀, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, hew, hev])
       (by simp [w₀, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, hfw, hfv]) hvw₀]
-    dsimp [w₀]; module
+    exact hw_eq.symm
   rw [← inv_mul_cancel_right₀ hc₃ A.det, ← hd₃, ← det_mul, det_eq_mul_of_mulVec_eq_smul hε he hf
     hef hfe (by rw [← mulVec_mulVec, hM₃ ((comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev), hAe])
     (by rw [← mulVec_mulVec, hM₃ ((comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hfv), hAf]) hAM₃_w]

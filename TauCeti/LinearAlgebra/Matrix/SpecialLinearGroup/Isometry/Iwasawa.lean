@@ -82,11 +82,16 @@ private theorem ortho_proj_sup_hyperbolic (hε : ε * ε = 1) {S : Submodule K (
     exists_eq_add_and_comp_dotProduct_mulVec_eq_zero hε hxx hyy hxy hyx (v - s₀)
   have hlin {u z : n → K} (a : K) (h₁ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (h₂ : (σ ∘ z) ⬝ᵥ (Q *ᵥ w) = 0) :
       (σ ∘ (u + a • z)) ⬝ᵥ (Q *ᵥ w) = 0 := by simp [TauCeti.map_comp_smul, smul_dotProduct, h₁, h₂]
-  refine ⟨(s₀ + (ε * ((σ ∘ y) ⬝ᵥ (Q *ᵥ (v - s₀)))) • x) + ((σ ∘ x) ⬝ᵥ (Q *ᵥ (v - s₀))) • y,
+  set s₁ := (s₀ + (ε * ((σ ∘ y) ⬝ᵥ (Q *ᵥ (v - s₀)))) • x) + ((σ ∘ x) ⬝ᵥ (Q *ᵥ (v - s₀))) • y
+  have hsub : v - s₁ = w := by
+    dsimp [s₁]
+    rw [add_assoc s₀, ← sub_sub v s₀]
+    nth_rw 1 [hr]
+    exact add_sub_cancel_left _ _
+  refine ⟨s₁,
     Submodule.add_mem_sup (Submodule.add_mem_sup hs₀ (Submodule.mem_span_singleton.mpr ⟨_, rfl⟩))
       (Submodule.mem_span_singleton.mpr ⟨_, rfl⟩), ?_⟩
-  rw [show v - ((s₀ + _ • x) + _ • y) = w by
-    rw [add_assoc s₀, ← sub_sub v s₀]; nth_rw 1 [hr]; exact add_sub_cancel_left _ _]
+  rw [hsub]
   exact (S ⊔ (K ∙ x)).forall_mem_sup_span_singleton (S.forall_mem_sup_span_singleton
     (fun s hs ↦ by
       have h := hsv₀ s hs; rw [hr] at h
@@ -230,7 +235,8 @@ private theorem mulVec_anisotropic_eq_smul_of_fixes_ortho {v : n → K}
     rw [← hr₀w w (by simp [w, mulVec_sub, mulVec_smul, hey₀, hev])
       (by simp [w, mulVec_sub, mulVec_smul, hfy₀, hfv]) hvw,
       comp_mulVec_dotProduct_mulVec_mulVec hr₀Q, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hvw]
-  rw [hy_eq, show y₀ = α • v + w by dsimp [w]; module] at hy
+  have hy₀_eq : y₀ = w + α • v := (sub_add_cancel y₀ (α • v)).symm
+  rw [hy_eq, hy₀_eq] at hy
   simp only [map_comp_add, TauCeti.map_comp_smul, add_dotProduct, smul_dotProduct,
     comp_dotProduct_mulVec_sub_inv_mul_smul_eq_zero hvv rv] at hy
   exact hy (by simp [mulVec_sub, mulVec_smul, herv, hev, hfrv, hfv, hwrv,
@@ -333,10 +339,11 @@ private theorem exists_mem_iSup_compensated_reflection {v : n → K} (hev : (σ 
   have hdet1 := (det_eq_mul_mul_of_mulVec_eq_smul hσ hQ hε he hf hef hev hfv hvv hr₀e hr₀f
     hrv_eq hr₀w).symm.trans r₀.1.2
   have hσc₀_eq : σ c₀ = c₀ * μ := by
-    simp only [c₀, μ, map_neg, map_mul, map_inv₀, hσ τ,
-      show σ d = -(ε * d) by linear_combination ε * hdε - σ d * hε,
-      inv_neg, mul_inv, inv_eq_of_mul_eq_one_right hε]; field_simp
-    linear_combination ε * hτ - (σ τ + τ * σ τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))) * hε
+    have hσd : σ d ≠ 0 := (map_ne_zero σ).mpr hd
+    simp only [c₀, μ, map_neg, map_mul, map_inv₀, hσ τ]
+    field_simp
+    linear_combination -τ * hdε + ε * σ d * hτ -
+      σ d * (σ τ + τ * σ τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))) * hε
   have hμ0 : μ ≠ 0 := right_ne_zero_of_mul (hσc₀_eq ▸ hσc₀)
   have hc₀μ : c₀ * (σ c₀)⁻¹ * μ = 1 := by rw [hσc₀_eq]; field_simp
   have hrv' : (r₀ : Matrix n n K) *ᵥ v = μ • v := hrv_eq.trans
@@ -347,8 +354,8 @@ private theorem exists_mem_iSup_compensated_reflection {v : n → K} (hev : (σ 
     (by simp [w, mulVec_sub, mulVec_smul, hfx, hfv])
     (comp_dotProduct_mulVec_sub_inv_mul_smul_eq_zero hvv x)
   have hcancel : α * μ = α + τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x)) := by dsimp [α, μ]; field_simp
-  conv_lhs => rw [show x = α • v + w by dsimp [w]; module, mulVec_add, mulVec_smul, hrv', hrw,
-    smul_smul, hcancel]
+  have hx_eq : x = w + α • v := (sub_add_cancel x (α • v)).symm
+  conv_lhs => rw [hx_eq, mulVec_add, mulVec_smul, hrw, hrv', smul_smul, hcancel]
   dsimp [w]; module
 
 private theorem exists_mem_iSup_anisotropic_pair_ne {S : Submodule K (n → K)}
@@ -591,8 +598,7 @@ theorem elementaryUnitaryGroup_eq_top : Q.elementaryUnitaryGroup σ = ⊤ := by
     (by simp) (by simp) (fun _ ↦ ⟨0, Submodule.zero_mem ⊥, by simp⟩) hc
     ⟨by rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, ht₁ge,
       mulVec_smul, hr₂e], by rw [coe_mul_specialIsometryGroup_mulVec, hr₂f], by simp⟩ le_rfl
-  exact (show g = t₁⁻¹ * r₂⁻¹ * (r₂ * (t₁ * g)) by group) ▸
-    mul_mem (mul_mem (inv_mem ht₁) (inv_mem hr₂)) hg₂_mem
+  simpa [mul_assoc] using mul_mem (mul_mem (inv_mem ht₁) (inv_mem hr₂)) hg₂_mem
 
 include hσ hQ hdet htr hadm hgen in
 /-- **Unitary transvections generate the special unitary group.** Under the hypotheses of

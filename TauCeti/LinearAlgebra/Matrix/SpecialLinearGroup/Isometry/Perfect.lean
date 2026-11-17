@@ -100,6 +100,7 @@ private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (
     hsiegel (by rw [comp_smul_dotProduct_mulVec_smul, hu₀, mul_zero]) hew₁
   obtain ⟨g₂, hcs₂', hg₂_inv⟩ := hsiegel hy₀ hey₀
   refine ⟨⁅g₁, g₂⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
+  have hsum : w₁ + y₀ + -w₁ + -y₀ = 0 := by abel
   rw [commutatorElement_def, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hg₂_inv,
     Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hg₁_inv, Subgroup.coe_mul,
     SpecialLinearGroup.coe_mul, hcs₁', hcs₂',
@@ -107,7 +108,7 @@ private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (
     siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew₁])
       (by simp [hw₁e, hy₀e]),
     siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hey₀]) (by simp [hy₀e]),
-    show w₁ + y₀ + -w₁ + -y₀ = 0 by abel, siegelTransvection_zero_eq_unitaryTransvection]
+    hsum, siegelTransvection_zero_eq_unitaryTransvection]
   congr 1; simp only [w₁, map_comp_add, map_comp_neg, TauCeti.map_comp_smul, add_dotProduct,
     neg_dotProduct, smul_dotProduct, mulVec_neg, mulVec_smul, dotProduct_neg, dotProduct_smul,
     smul_eq_mul, hu₀, hy₀, hu₀y₀, hy₀u₀]; linear_combination b * hε + hb
@@ -129,9 +130,10 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v
     (by rw [hM₁x, hf, hef, mul_zero, zero_smul, add_zero, mul_one]; module)
     fun w hew hfw ↦ by simp [hM₁x, hew, hfw]
   have hd₂ : M₂.det = σ c * c⁻¹ := by
-    rw [show M₂ = 1 - vecMulVec (-(((σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹)) • v)
-        ((σ ∘ v) ᵥ* Q) by simp [M₂, unitaryTransvection_def, sub_eq_add_neg, smul_vecMulVec],
-      TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, smul_eq_mul]
+    have hM₂ : M₂ = 1 - vecMulVec (-((σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹) • v)
+        ((σ ∘ v) ᵥ* Q) := by
+      simp [M₂, unitaryTransvection_def, sub_eq_add_neg, smul_vecMulVec]
+    rw [hM₂, TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, smul_eq_mul]
     field_simp; ring
   have hB₁ (x y : n → K) : (σ ∘ (M₁ *ᵥ x)) ⬝ᵥ (Q *ᵥ (M₁ *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
     rw [hM₁x x, hM₁x y]; simp only [map_comp_add, TauCeti.map_comp_smul, map_mul, map_sub,

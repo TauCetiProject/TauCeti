@@ -262,13 +262,6 @@ theorem exists_coe_eq_unitaryTransvection (hσ : Function.Involutive σ) (hQ : (
     (comp_rep_dotProduct_mulVec_rep p) ha
   exact ⟨⟨⟨g, hg⟩, a, hga⟩, hga⟩
 
-private theorem vecMulVec_mulVec_comp_vecMul_ne_zero (hdet : Q.det ≠ 0) {u : n → K}
-    (hu0 : u ≠ 0) : vecMulVec (Q *ᵥ u) ((σ ∘ u) ᵥ* Q) ≠ 0 :=
-  vecMulVec_eq_zero.not.mpr <| not_or.mpr
-    ⟨fun h0 ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨u, hu0, h0⟩),
-      fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp
-        ⟨σ ∘ u, fun h ↦ hu0 (funext fun i ↦ (map_eq_zero σ).mp (congrFun h i)), h0⟩)⟩
-
 /-- **The parameters of the transvection group of an isotropic point.** If `σ` is an involution
 and `Q` is a nondegenerate `ε`-Hermitian matrix, the transvection `τ_{v,a}` along the
 representative `v` of an isotropic point is an isometry exactly when `a + ε σ(a) = 0`. For a
@@ -283,7 +276,7 @@ theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
   rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ (comp_rep_dotProduct_mulVec_rep p),
     add_eq_left, smul_eq_zero] at h
   exact h.resolve_right
-    (vecMulVec_mulVec_comp_vecMul_ne_zero hdet (p : ℙ K (n → K)).rep_ne_zero)
+    (vecMulVec_mulVec_comp_vecMul_ne_zero hσ.injective hdet (p : ℙ K (n → K)).rep_ne_zero)
 
 /-- **The parameters of Siegel transformations in the special isometry group.** If `σ` is an
 involution and `Q` is a nondegenerate `ε`-Hermitian matrix, the Siegel transformation `S(u, w, c)`
@@ -300,7 +293,7 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff
     exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu huw⟩
   have h := mem_specialIsometryGroup_iff.mp hg
   rw [hcg, transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, add_eq_left, smul_eq_zero] at h
-  exact h.resolve_right (vecMulVec_mulVec_comp_vecMul_ne_zero hdet hu0)
+  exact h.resolve_right (vecMulVec_mulVec_comp_vecMul_ne_zero hσ.injective hdet hu0)
 
 end Field
 

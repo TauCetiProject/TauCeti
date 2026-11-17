@@ -54,9 +54,10 @@ private theorem exists_mem_elementary_w_hyperbolic (hσ : Function.Involutive σ
       (w : Matrix n n K) *ᵥ f = (u * d) • e ∧ ∀ x : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ x) = 0 →
         (σ ∘ f) ⬝ᵥ (Q *ᵥ x) = 0 → (w : Matrix n n K) *ᵥ x = x := by
   have ha₂ : -(ε * u⁻¹ * d⁻¹) + ε * σ (-(ε * u⁻¹ * d⁻¹)) = 0 := by
-    rw [map_neg, map_mul, map_mul, map_inv₀, map_inv₀, hσε, hσu,
-      show σ d = -(ε * d) by linear_combination ε * hdε - σ d * hε, inv_neg, mul_inv,
-      inv_eq_of_mul_eq_one_right hε]; linear_combination (ε * u⁻¹ * d⁻¹) * hε
+    have hσd : σ d ≠ 0 := (map_ne_zero σ).mpr hd
+    rw [map_neg, map_mul, map_mul, map_inv₀, map_inv₀, hσε, hσu]
+    field_simp
+    linear_combination -hdε - d * hε
   obtain ⟨t₁, ht₁, hc₁⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := u * d) (by rw [map_mul, hσu]; linear_combination u * hdε)
   obtain ⟨t₂, ht₂, hc₂⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ hf ha₂
@@ -65,15 +66,15 @@ private theorem exists_mem_elementary_w_hyperbolic (hσ : Function.Involutive σ
     simp [hc₁, unitaryTransvection_mulVec, hef]
   have ht₂f : (t₂ : Matrix n n K) *ᵥ f = f := by simp [hc₂, unitaryTransvection_mulVec, hf]
   have ht₂e : (t₂ : Matrix n n K) *ᵥ e = e - (u⁻¹ * d⁻¹) • f := by
-    rw [hc₂, unitaryTransvection_mulVec, hfe, show -(ε * u⁻¹ * d⁻¹) * ε = -(u⁻¹ * d⁻¹) by
-      linear_combination -u⁻¹ * d⁻¹ * hε, neg_smul, ← sub_eq_add_neg]
+    have hcoeff : -(ε * u⁻¹ * d⁻¹) * ε = -(u⁻¹ * d⁻¹) := by linear_combination -u⁻¹ * d⁻¹ * hε
+    rw [hc₂, unitaryTransvection_mulVec, hfe, hcoeff, neg_smul, ← sub_eq_add_neg]
   have hud : (u⁻¹ * d⁻¹) * (u * d) = 1 := by field_simp
   refine ⟨t₁ * t₂ * t₁, mul_mem (mul_mem ht₁ ht₂) ht₁, ?_, ?_, fun x hex hfx ↦ ?_⟩
   · rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, ht₁e, ht₂e,
       mulVec_sub, mulVec_smul, ht₁e, ht₁f, smul_add, smul_smul, hud]; module
   · rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, ht₁f, mulVec_add,
-      mulVec_smul, ht₂f, ht₂e, show f + (u * d) • (e - (u⁻¹ * d⁻¹) • f) = (u * d) • e by
-        rw [smul_sub, smul_smul, mul_comm (u * d), hud]; module, mulVec_smul, ht₁e]
+      mulVec_smul, ht₂f, ht₂e, smul_sub, smul_smul, mul_comm (u * d), hud, one_smul,
+      ← add_sub_assoc, add_sub_cancel_left, mulVec_smul, ht₁e]
   · simp [← mulVec_mulVec, hc₁, hc₂, unitaryTransvection_mulVec, hex, hfx]
 
 /-- **Hyperbolic rescaling lies in the elementary unitary group.** Let `σ` be an involution and let
@@ -126,10 +127,10 @@ private theorem exists_mem_elementaryUnitaryGroup_siegelTransvection_zero_of_iso
   have hpair₁ : (σ ∘ (e + u')) ⬝ᵥ (Q *ᵥ (v + (-d * β) • u' + (-d * α) • e)) = α + β := by
     simp only [comp_add_dotProduct_mulVec, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
       smul_eq_mul, he, hu', heu', hu'e, α, β]; ring
+  have hvec : v + (-d * β) • u' + (-d * α) • e + (d * (α + β)) • (e + u') =
+      v + (d * β) • e + (d * α) • u' := by module
   rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, hv₂, hc₁,
-    unitaryTransvection_mulVec, hpair₁, show v + (-d * β) • u' + (-d * α) • e +
-      (d * (α + β)) • (e + u') = v + (d * β) • e + (d * α) • u' by module,
-    siegelTransvection_mulVec]
+    unitaryTransvection_mulVec, hpair₁, hvec, siegelTransvection_mulVec]
   have h1 : d * α * d⁻¹ = α := by field_simp
   simp only [u', β, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, map_inv₀, smul_smul,
     zero_smul, add_zero, ← mul_assoc, h1, hd_ratio, neg_mul]; module
@@ -184,16 +185,19 @@ private theorem siegelTransvection_mem_elementary_of_fixed_ne {a : K} (ha0 : a �
       Subgroup.coe_inv, hcs₁, coe_mul_siegelTransvection_mul_coe_inv h.2, hhe, hhx w' hew' hfw',
       siegelTransvection_smul_left hσ, hσa]
   have hw_sum : a • w' + -w' = w₀ := by
-    rw [show a • w' + -w' = (a - 1) • w' by module, smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
+    have hsub : a • w' + -w' = (a - 1) • w' := by module
+    rw [hsub, smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
   have hcs₂ : (↑((h * s₁ * h⁻¹) * s₁⁻¹) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
       (c' * a * a + (-c' - ε * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w'))) - ε * ((σ ∘ (a • w')) ⬝ᵥ (Q *ᵥ (-w')))) :=
     by rw [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hconj,
       coe_inv_specialIsometryGroup_eq_siegelTransvection he hew' hw'e hcs₁,
       siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew'])
         (by simp [TauCeti.map_comp_smul, hw'e]), hw_sum]
+  have hmem₂ : (h * s₁ * h⁻¹) * s₁⁻¹ ∈ Q.elementaryUnitaryGroup σ := by
+    simpa [mul_assoc] using
+      mul_mem hh (normal_elementaryUnitaryGroup.conj_mem _ (inv_mem hh) s₁)
   exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
-    ((show (h * s₁ * h⁻¹) * s₁⁻¹ = h * (s₁ * h⁻¹ * s₁⁻¹) by group) ▸
-      mul_mem hh (normal_elementaryUnitaryGroup.conj_mem _ (inv_mem hh) s₁)) hcs₂ hs hcs
+    hmem₂ hcs₂ hs hcs
 
 include hε he hf hef hfe hew₀ in
 private theorem siegelTransvection_mem_elementary_of_card_le_two (hcard : Fintype.card n ≤ 2)
@@ -247,13 +251,14 @@ private theorem siegelTransvection_mem_elementary_of_witt_two {u w : n → K} (h
   obtain ⟨t₃, ht₃, hc₃⟩ := hs0 (by simp [x₃, map_comp_neg, mulVec_neg, hy'_iso]) hex₃
   have hx₁e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hex₁
   have hx₂e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hex₂
+  have hx_sum : x₁ + x₂ + x₃ = w₀ := by dsimp [x₁, x₂, x₃]; module
   have hcs₀ : (↑(t₁ * t₂ * t₃) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
       (0 + 0 - ε * ((σ ∘ x₁) ⬝ᵥ (Q *ᵥ x₂)) + 0 - ε * ((σ ∘ (x₁ + x₂)) ⬝ᵥ (Q *ᵥ x₃))) := by
     rw [Subgroup.coe_mul, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul,
       hc₁, hc₂, hc₃, siegelTransvection_mul_siegelTransvection he hex₂ hx₁e,
       siegelTransvection_mul_siegelTransvection he hex₃
         (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]),
-      show x₁ + x₂ + x₃ = w₀ by dsimp [x₁, x₂, x₃]; module]
+      hx_sum]
   exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
     (mul_mem (mul_mem ht₁ ht₂) ht₃) hcs₀ hs hcs
 
