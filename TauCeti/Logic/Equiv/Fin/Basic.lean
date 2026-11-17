@@ -150,6 +150,20 @@ theorem coe_finSubSumEquiv_symm_inl {r n : ℕ} (h : r ≤ n) (i : Fin (n - r)) 
     ((finSubSumEquiv h).symm (Sum.inl i) : ℕ) = r + i := by
   simp [finSubSumEquiv]
 
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends the index `j < r` to `inr j`. -/
+@[simp]
+theorem finSubSumEquiv_castLE {r n : ℕ} (h : r ≤ n) (j : Fin r) :
+    finSubSumEquiv h (Fin.castLE h j) = Sum.inr j :=
+  (finSubSumEquiv h).eq_symm_apply.1 (finSubSumEquiv_symm_inr h j).symm
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends an index `i ≥ r` to `inl (i - r)`. -/
+theorem finSubSumEquiv_apply_of_le {r n : ℕ} (h : r ≤ n) {i : Fin n} (hi : r ≤ i) :
+    finSubSumEquiv h i = Sum.inl ⟨i - r, by omega⟩ := by
+  rw [← Equiv.eq_symm_apply]
+  ext
+  simp only [coe_finSubSumEquiv_symm_inl]
+  omega
+
 end TauCeti
 
 /-- The permutation of path coordinates that permutes the consecutive blocks of width `m` by `τ`

@@ -344,6 +344,14 @@ theorem coe_stabilizerEquivAffineGroup_apply (e : ι ≃ n ⊕ m)
     (stabilizerEquivAffineGroup e M : GL (n ⊕ m) R) = e.reindexGL R M :=
   (rfl)
 
+/-- The inverse of the isomorphism of the stabilizer with the affine group is reindexing along
+`e.symm`. -/
+@[simp]
+theorem coe_stabilizerEquivAffineGroup_symm_apply (e : ι ≃ n ⊕ m) (M : affineGroup R n m) :
+    ((stabilizerEquivAffineGroup e).symm M : GL ι R) = e.symm.reindexGL R M := by
+  rw [← Equiv.reindexGL_symm, MulEquiv.eq_symm_apply, ← coe_stabilizerEquivAffineGroup_apply,
+    MulEquiv.apply_symm_apply]
+
 variable (R) in
 /-- The stabilizer in `GL (Fin n) R` of the first `r` standard basis vectors `(e₁, …, e_r)`,
 the frame given by the `n × r` matrix `(1; 0)`, is isomorphic to the affine group
@@ -363,6 +371,16 @@ theorem coe_stabilizerCastLEEquivAffineGroup_apply {r n : ℕ} (h : r ≤ n)
     (stabilizerCastLEEquivAffineGroup R h M : GL (Fin (n - r) ⊕ Fin r) R) =
       (finSubSumEquiv h).reindexGL R M :=
   (rfl)
+
+/-- The inverse of the isomorphism of the stabilizer of `(e₁, …, e_r)` with `A_{n-r,r}(R)` is
+reindexing along the inverse of `TauCeti.finSubSumEquiv`. -/
+@[simp]
+theorem coe_stabilizerCastLEEquivAffineGroup_symm_apply {r n : ℕ} (h : r ≤ n)
+    (M : affineGroup R (Fin (n - r)) (Fin r)) :
+    ((stabilizerCastLEEquivAffineGroup R h).symm M : GL (Fin n) R) =
+      (finSubSumEquiv h).symm.reindexGL R M := by
+  rw [← Equiv.reindexGL_symm, MulEquiv.eq_symm_apply, ← coe_stabilizerCastLEEquivAffineGroup_apply,
+    MulEquiv.apply_symm_apply]
 
 end CommRing
 
