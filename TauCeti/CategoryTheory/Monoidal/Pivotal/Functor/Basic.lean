@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.LeftDual
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Spherical
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Symmetric
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
@@ -22,8 +23,11 @@ an identity of morphisms `F.obj X ⟶ F.obj Xᘁᘁ` along the path
 Equivalently, `F` is pivotal exactly when `F.map φ_X ≫ κ_X = φ_{F X}` for every `X`, where
 `κ_X = F.mapDoubleRightDualIso X : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ` is the bidual comparison.
 
-The identity functor is pivotal, and a composite of pivotal functors is pivotal. A pivotal functor
-preserves the left and right traces, and hence the left and right dimensions, up to the unit
+The identity functor is pivotal, a composite of pivotal functors is pivotal, pivotal preservation
+is invariant under monoidal natural isomorphism and reflects along faithful pivotal functors, and
+the inverse of a monoidal equivalence whose forward functor is pivotal is itself pivotal. A pivotal
+functor also intertwines `TauCeti.leftDualIsoRightDual` with the left- and right-dual comparisons,
+and preserves the left and right traces, and hence the left and right dimensions, up to the unit
 comparison `ε F : 𝟙_ D ⟶ F.obj (𝟙_ C)`: for instance
 `rightTrace (F.map f) = ε F ≫ F.map (rightTrace f) ≫ η F`. Between spherical categories it
 therefore preserves the trace and the quantum dimension.
@@ -38,8 +42,13 @@ between symmetric rigid categories is pivotal for their canonical pivotal struct
   preserves the pivotal structure;
 * `CategoryTheory.Functor.isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom`:
   the pivotal condition in terms of the bidual comparison;
-* `CategoryTheory.Functor.isPivotal_id` and `CategoryTheory.Functor.isPivotal_comp`: identities
-  and composites of pivotal functors are pivotal;
+* `CategoryTheory.Functor.isPivotal_id`, `CategoryTheory.Functor.isPivotal_comp`,
+  `CategoryTheory.Functor.isPivotal_iff_of_monoidal_iso`,
+  `CategoryTheory.Functor.IsPivotal.of_comp_faithful`, and
+  `CategoryTheory.Equivalence.inverse_isPivotal`: closure and reflection properties of pivotal
+  functors;
+* `CategoryTheory.Functor.map_leftDualIsoRightDual_hom_comp_mapRightDualIso_hom`: compatibility of
+  a pivotal functor with `TauCeti.leftDualIsoRightDual`;
 * `CategoryTheory.Functor.rightTrace_map` and `CategoryTheory.Functor.leftTrace_map`: a pivotal
   functor preserves the two traces, with the corollaries `CategoryTheory.Functor.rightDim_map`,
   `CategoryTheory.Functor.leftDim_map`, `CategoryTheory.Functor.trace_map` and
@@ -124,6 +133,70 @@ instance isPivotal_comp {E : Type*} [Category* E] [MonoidalCategory E] [RigidCat
       comp_rightAdjointMate, Category.assoc, Functor.comp_obj]
     -- The comparison `δ` of `G` slides past the image of that of `F`.
     rw [reassoc_of% (mapRightDualIso_inv_naturality (F := G) (F.mapRightDualIso X).hom)]
+
+variable {F} in
+/-- Pivotal preservation transports along a monoidal natural isomorphism of strong monoidal
+functors. -/
+theorem IsPivotal.of_monoidal_iso {G : C ⥤ D} [G.Monoidal] (α : F ≅ G) [α.hom.IsMonoidal]
+    [F.IsPivotal] : G.IsPivotal := by
+  rw [isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom]
+  intro X
+  rw [← cancel_epi (α.hom.app X), ← NatTrans.naturality_assoc,
+    Iso.hom_app_comp_mapDoubleRightDualIso_hom,
+    reassoc_of% ((isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom.mp ‹_›) X),
+    ← pivotalIsoApp_hom_naturality]
+
+variable {F} in
+/-- Monoidally naturally isomorphic strong monoidal functors preserve the pivotal structures
+simultaneously. -/
+theorem isPivotal_iff_of_monoidal_iso {G : C ⥤ D} [G.Monoidal] (α : F ≅ G) [α.hom.IsMonoidal] :
+    F.IsPivotal ↔ G.IsPivotal := by
+  have : α.symm.hom.IsMonoidal := inferInstanceAs α.inv.IsMonoidal
+  exact ⟨fun _ => IsPivotal.of_monoidal_iso α, fun _ => IsPivotal.of_monoidal_iso α.symm⟩
+
+variable {F} in
+/-- If a composite `F ⋙ G` with a faithful pivotal functor `G` is pivotal, then `F` is pivotal. -/
+theorem IsPivotal.of_comp_faithful {E : Type*} [Category* E] [MonoidalCategory E]
+    [RigidCategory E] [PivotalCategory E] (G : D ⥤ E) [G.Monoidal] [G.Faithful] [G.IsPivotal]
+    [(F ⋙ G).IsPivotal] : F.IsPivotal := by
+  rw [isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom]
+  intro X
+  apply G.map_injective
+  rw [← cancel_mono (G.mapDoubleRightDualIso (F.obj X)).hom, G.map_comp, Category.assoc]
+  have hFG := (isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom (F := F ⋙ G)).mp
+    ‹_› X
+  have hG := (isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom (F := G)).mp
+    ‹_› (F.obj X)
+  simpa only [mapDoubleRightDualIso_comp, Iso.trans_hom, Functor.mapIso_hom, Functor.comp_map,
+    Functor.comp_obj, Category.assoc] using hFG.trans hG.symm
+
+/-- The inverse of a monoidal equivalence whose forward functor is pivotal is itself pivotal. -/
+instance _root_.CategoryTheory.Equivalence.inverse_isPivotal (e : C ≌ D)
+    [e.functor.Monoidal] [e.inverse.Monoidal] [e.IsMonoidal] [e.functor.IsPivotal] :
+    e.inverse.IsPivotal := by
+  have : e.counitIso.hom.IsMonoidal := inferInstanceAs e.counit.IsMonoidal
+  have : (e.inverse ⋙ e.functor).IsPivotal := (isPivotal_iff_of_monoidal_iso e.counitIso).mpr
+    inferInstance
+  exact IsPivotal.of_comp_faithful e.functor
+
+/-- A pivotal functor intertwines the canonical comparisons `leftDualIsoRightDual` between left and
+right duals with the dual-preservation comparisons `mapLeftDualIso` and `mapRightDualIso`. -/
+@[reassoc]
+theorem map_leftDualIsoRightDual_hom_comp_mapRightDualIso_hom [F.IsPivotal] (X : C) :
+    F.map (leftDualIsoRightDual X).hom ≫ (F.mapRightDualIso X).hom =
+      (F.mapLeftDualIso X).hom ≫ (leftDualIsoRightDual (F.obj X)).hom := by
+  refine @ExactPairing.leftDualHom_ext D _ _ (F.obj X)ᘁ (F.obj X) (F.obj (ᘁX))
+    (pivotalExactPairing (F.obj X)) _ _ ?_
+  rw [pivotalExactPairing_evaluation, MonoidalCategory.whiskerLeft_comp_assoc,
+    MonoidalCategory.whiskerLeft_comp_assoc, whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation,
+    whiskerLeft_mapLeftDualIso_hom_evaluation]
+  -- Move `φ_{F X}` past the two factors on the left, rewrite through `F.IsPivotal`, and evaluate.
+  rw [whisker_exchange_assoc, whisker_exchange_assoc, ← rightAdjointMate_comp_evaluation,
+    whisker_exchange_assoc, ← comp_whiskerRight_assoc,
+    ← F.map_pivotalIsoApp_hom_comp_mapRightDualIso_hom, comp_whiskerRight_assoc,
+    ← whisker_exchange_assoc, mapRightDualIso_hom_whiskerRight_evaluation,
+    μ_natural_right_assoc, μ_natural_left_assoc, ← F.map_comp_assoc, ← F.map_comp_assoc,
+    ← whisker_exchange, Category.assoc, whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation]
 
 /-- **A pivotal functor preserves the right trace**: the right trace of `F.map f` is the image of
 the right trace of `f`, read in `𝟙_ D ⟶ 𝟙_ D` through the unit comparison of `F`. -/
