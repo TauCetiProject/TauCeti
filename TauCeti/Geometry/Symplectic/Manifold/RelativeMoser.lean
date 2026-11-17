@@ -292,13 +292,12 @@ private theorem exists_isOpen_isInvertible_flat {σ₀ σ₁ : SmoothTwoForm I M
 
 variable [I.Boundaryless]
 
-omit [FiniteDimensional ℝ E] in
 /-- **The Moser field has zero first jet where the primitive does.** Let `x` lie in the support
 of `ρ`, and let `β` vanish at `x` with zero derivative there in the preferred chart at `x`. Then
 the coordinate expression of the Moser field `X_t` in the preferred chart at `x` has zero
-derivative at the chart point of `x`. On the chart `σ_t♭ X_t = -ρ c'(t) β`, and the flat maps of
-`σ_t` are uniformly bounded below near `x`, since `σ_t♭` is invertible at `x`; so `X_t` is
-dominated by `β`. -/
+derivative at the chart point of `x`. On the chart `σ_t♭ X_t = -ρ c'(t) β`, and composing the
+flat maps of `σ_t` near `x` with the inverse of `σ_t♭` at `x` changes `X_t` only up to constant
+factors; so `X_t` is dominated by `β`. -/
 private theorem hasFDerivAt_mpullbackWithin_moserField {σ₀ σ₁ : SmoothTwoForm I M}
     {β : SmoothForm I M ℝ 1} {ρ : M → ℝ} (hρ : Continuous ρ)
     (hinv : ∀ t, ∀ x ∈ tsupport ρ,
@@ -319,23 +318,26 @@ private theorem hasFDerivAt_mpullbackWithin_moserField {σ₀ σ₁ : SmoothTwoF
     have h := σ.isSmoothForm.contDiffWithinAt_inChartAt_self x
     rw [I.range_eq_univ, contDiffWithinAt_univ] at h
     exact h.continuousAt
-  -- Since `S z₀ = σ_t♭ x` is invertible, the maps `S z` are uniformly bounded below near `z₀`.
+  -- Since `S z₀ = σ_t♭ x` is invertible, the operators `T z = (S z₀)⁻¹ ∘ S z` are continuous at
+  -- `z₀` and equal to the identity there, so they change `V` only up to constant factors.
   obtain ⟨e, he⟩ : (S z₀).IsInvertible := by
     simp only [S, z₀]
     rw [RoughForm.inChartAt_extChartAt_self, ← flat_def]; exact hinv t x hx
-  set C := 2 * ‖(e.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖
-  have hlow : ∀ᶠ z in 𝓝 z₀, ∀ v, ‖v‖ ≤ C * ‖S z v‖ :=
-    ContinuousLinearMap.eventually_forall_norm_le_two_mul_mul_norm_apply
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.continuousAt.comp hσ) fun v ↦ by
-        simpa [← he] using (e : E →L[ℝ] E →L[ℝ] ℝ).bound_of_antilipschitz e.antilipschitzWith v
+  set C := ‖(e.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖
+  set T : E → E →L[ℝ] E := fun z ↦ (e.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (S z)
+  have hT : ContinuousAt T z₀ := continuousAt_const.clm_comp
+    ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.continuousAt.comp hσ)
+  have hT₀ : T z₀ = 1 := by ext v; simp [T, ← he]
+  have hVT : V =O[𝓝 z₀] fun z ↦ T z (V z) :=
+    (isTheta_clm_apply_of_isUnit hT (hT₀ ▸ isUnit_one)).isBigO_symm
   have hρb : ∀ᶠ z in 𝓝 z₀, |ρ ((extChartAt I x).symm z)| ≤ |ρ ((extChartAt I x).symm z₀)| + 1 :=
     ((hρ.continuousAt.comp (continuousAt_extChartAt_symm x)).abs.eventually
       (gt_mem_nhds (lt_add_one |ρ ((extChartAt I x).symm z₀)|))).mono fun _ h ↦ h.le
   -- On the chart `S z (V z) = -ρ c'(t) β`, so `V` is dominated by the coordinate expression of `β`.
   have hO : V =O[𝓝 z₀] RoughForm.inChartAt β.1 x := by
-    refine Asymptotics.IsBigO.of_bound (C *
-      ((|ρ ((extChartAt I x).symm z₀)| + 1) * |deriv Real.smoothTransition t|)) ?_
-    filter_upwards [extChartAt_target_mem_nhds x, hlow, hρb] with z hz hlz hρz
+    refine hVT.trans (Asymptotics.IsBigO.of_bound (C *
+      ((|ρ ((extChartAt I x).symm z₀)| + 1) * |deriv Real.smoothTransition t|)) ?_)
+    filter_upwards [extChartAt_target_mem_nhds x, hρb] with z hz hρz
     have hSV : ‖S z (V z)‖ ≤ |ρ ((extChartAt I x).symm z) * -deriv Real.smoothTransition t| *
         ‖RoughForm.inChartAt β.1 x z‖ := by
       refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
@@ -346,7 +348,7 @@ private theorem hasFDerivAt_mpullbackWithin_moserField {σ₀ σ₁ : SmoothTwoF
       rw [show S z (V z) w = _ from h, norm_mul, Real.norm_eq_abs, mul_assoc]
       gcongr
       simpa using (RoughForm.inChartAt β.1 x z).le_opNorm ![w]
-    calc ‖V z‖ ≤ C * ‖S z (V z)‖ := hlz _
+    calc ‖T z (V z)‖ ≤ C * ‖S z (V z)‖ := (e.symm : (E →L[ℝ] ℝ) →L[ℝ] E).le_opNorm _
       _ ≤ C * (|ρ ((extChartAt I x).symm z) * -deriv Real.smoothTransition t| *
           ‖RoughForm.inChartAt β.1 x z‖) := by gcongr
       _ = C * (|ρ ((extChartAt I x).symm z)| * |deriv Real.smoothTransition t|) *

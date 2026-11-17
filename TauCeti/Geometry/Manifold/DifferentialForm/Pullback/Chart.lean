@@ -27,6 +27,9 @@ manifold; conversely, evaluating a form `φ` on the chart source agrees with eva
 Near time `t`, the pullback along a family of maps which sends `y` into the chart at `y` at time `t`
 is the flat pullback along the family read in the chart at `y`
 (`TauCeti.RoughForm.eventuallyEq_mpullback_compContinuousLinearMap`).
+Pullback along a `C¹` map preserves a zero first jet: if `ω` vanishes at `f x` with zero derivative
+there in the preferred chart, then so does `f^* ω` at `x`
+(`TauCeti.RoughForm.hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero`).
 -/
 
 public section

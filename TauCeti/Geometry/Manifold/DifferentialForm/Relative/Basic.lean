@@ -37,11 +37,13 @@ regularity over a `C^(r + 1)` bundle (`TauCeti.IsSmoothForm.vectorBundlePoincare
 additive on continuous forms (`TauCeti.vectorBundlePoincareHomotopy_add`). The identities above
 need only a `C²` bundle.
 
-Everything transports along a diffeomorphism `Φ` from the total space onto a manifold `M`, such as
-a tubular neighbourhood of an embedded submanifold
-(`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`); this is done in
-`TauCeti.Geometry.Manifold.DifferentialForm.Relative.Tube`, where the primitive is used to compare
-two symplectic forms relative to a submanifold.
+Everything transports along a diffeomorphism `Φ` from the total space onto a manifold `M`
+(`Diffeomorph.exists_isSmoothForm_relative_primitive`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Relative.Tube`). For a tubular neighbourhood of an
+embedded submanifold this gives `TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`,
+in `TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare`, and the relative Moser
+theorem in `TauCeti.Geometry.Symplectic.Manifold.RelativeMoser` uses the primitive to compare two
+symplectic forms relative to a submanifold.
 
 The flat counterpart on an open set stable under scaling the normal coordinate is
 `IsOpen.exists_contDiffOn_relative_primitive`. The base may have boundary or corners and the
