@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!
 # The billiard map preserves area, and Poincaré recurrence for billiards
@@ -59,8 +60,6 @@ returns infinitely often to each of its neighbourhoods
 
 * `TauCeti.StrictConvexBilliardTable.measurePreserving_nextCollisionEquiv`: the next-collision
   map preserves Lebesgue measure on the strip.
-* `TauCeti.StrictConvexBilliardTable.nextCollisionMeasurableEquiv`: the next-collision map as a
-  measurable equivalence of the strip.
 * `TauCeti.StrictConvexBilliardTable.measurePreserving_billiardMap`: the billiard map preserves
   the finite product measure on `AddCircle L × (-1, 1)`.
 * `TauCeti.StrictConvexBilliardTable.exists_mem_iterate_billiardMap_mem`,
@@ -90,10 +89,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (fin
 namespace StrictConvexBilliardTable
 
 variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
-
-/-- The length of the boundary of a billiard table is positive. -/
-instance instFactPeriodPos : Fact (0 < χ.period) :=
-  ⟨χ.period_pos⟩
 
 /-! ### Chord coordinates -/
 
@@ -239,20 +234,6 @@ private theorem volume_image_chordStart (hχ : Differentiable ℝ (deriv χ)) {K
 
 /-! ### The next-collision map preserves area -/
 
-/-- Lebesgue measure on `(-1, 1)` is finite. -/
-private theorem isFiniteMeasure_comap_Ioo :
-    IsFiniteMeasure ((volume : Measure ℝ).comap ((↑) : Ioo (-1 : ℝ) 1 → ℝ)) := ⟨by
-  rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioo).comap_apply, image_univ,
-    Subtype.range_coe, Real.volume_Ioo]
-  exact ENNReal.ofReal_lt_top⟩
-
-/-- Lebesgue measure on `(-1, 1)` charges every nonempty open set. -/
-private theorem isOpenPosMeasure_comap_Ioo :
-    ((volume : Measure ℝ).comap ((↑) : Ioo (-1 : ℝ) 1 → ℝ)).IsOpenPosMeasure :=
-  .comap volume isOpen_Ioo.isOpenEmbedding_subtypeVal
-
-attribute [local instance] isFiniteMeasure_comap_Ioo isOpenPosMeasure_comap_Ioo
-
 /-- The inclusion of the strip `ℝ × (-1, 1)` in the plane. -/
 private def stripIncl (x : ℝ × Ioo (-1 : ℝ) 1) : ℝ × ℝ :=
   (x.1, x.2)
@@ -314,7 +295,7 @@ private theorem image_preimage_nextCollisionEquiv (A : Set (ℝ × Ioo (-1 : ℝ
     have : χ.nextCollisionEquiv (p.1, ⟨_, χ.inner_deriv_chordDir_mem_Ioo p.1 p.2⟩) = a := by
       refine measurableEmbedding_stripIncl.injective ?_
       rw [hpa, stripIncl_nextCollisionEquiv, ← χ.nextCollision_chordStart hp]
-      rfl
+      simp [stripIncl, chordStart]
     rw [mem_preimage, this]
     exact ha
 
@@ -343,24 +324,6 @@ theorem measurePreserving_nextCollisionEquiv (hχ : Differentiable ℝ (deriv χ
   rintro _ ⟨x, -, rfl⟩
   exact χ.stripIncl_mem_image_chordEnd x
 
-/-- The inverse `(t, w) ↦ (s - L, -v)`, where `(s, v)` is the next collision of `(t, -w)`, of the
-next-collision map is measurable. -/
-private theorem measurable_nextCollisionEquiv_symm (hχ : Differentiable ℝ (deriv χ)) :
-    Measurable χ.nextCollisionEquiv.symm := by
-  -- The inverse is `τ⁻¹ ∘ ι ∘ B ∘ ι`, for the reflection `ι(s, v) = (s, -v)`.
-  set ι : ℝ × Ioo (-1 : ℝ) 1 → ℝ × Ioo (-1 : ℝ) 1 :=
-    fun x ↦ (x.1, ⟨-x.2, by linarith [x.2.2.2], by linarith [x.2.2.1]⟩)
-  have hι : Measurable ι :=
-    measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd).neg.subtype_mk
-  have hτ : Measurable fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ (x.1 - χ.period, x.2) :=
-    (measurable_fst.sub_const _).prodMk measurable_snd
-  have h : ⇑χ.nextCollisionEquiv.symm =
-      (fun x ↦ (x.1 - χ.period, x.2)) ∘ ι ∘ χ.nextCollisionEquiv ∘ ι := by
-    funext x
-    simp [ι]
-  rw [h]
-  exact hτ.comp (hι.comp ((measurePreserving_nextCollisionEquiv hχ).measurable.comp hι))
-
 /-- **The billiard map preserves area.** If the arclength parametrization `χ` is twice
 differentiable, the billiard map `β` on the space of collision states `AddCircle L × (-1, 1)`
 preserves the product of the Haar measure of `AddCircle L`, of total mass `L`, with Lebesgue
@@ -368,14 +331,11 @@ measure on `(-1, 1)`. -/
 theorem measurePreserving_billiardMap (hχ : Differentiable ℝ (deriv χ)) :
     MeasurePreserving χ.billiardMap (volume.prod (volume.comap Subtype.val))
       (volume.prod (volume.comap Subtype.val)) := by
-  let f : ℝ × Ioo (-1 : ℝ) 1 ≃ᵐ ℝ × Ioo (-1 : ℝ) 1 :=
-    ⟨χ.nextCollisionEquiv, (measurePreserving_nextCollisionEquiv hχ).measurable,
-      measurable_nextCollisionEquiv_symm hχ⟩
-  refine AddCircle.measurePreserving_of_lift f (measurePreserving_nextCollisionEquiv hχ)
-    (fun x ↦ ?_) fun x ↦ by simp [f]
+  refine AddCircle.measurePreserving_of_lift (measurePreserving_nextCollisionEquiv hχ)
+    (fun x ↦ ?_) fun x ↦ by simp
   ext
-  · simp [f, χ.nextParam_add_period x.2.2]
-  · simp [f, χ.nextTangential_add_period x.2.2]
+  · simp [χ.nextParam_add_period x.2.2]
+  · simp [χ.nextTangential_add_period x.2.2]
 
 /-! ### Poincaré recurrence -/
 
