@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
-public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 
 /-!
 # Root planes and the coadjoint orbit through a torus element
@@ -55,12 +54,8 @@ The formulas themselves are linear algebra over a commutative ring and need neit
 positivity of `B`; symmetry enters only their reading as a Hessian bilinear form, and the absence
 of zero divisors and nondegeneracy only the orthogonality and stabilizer statements.
 
-As an example, `so(3) ≅ (R³, ⨯₃)` with the dot product (`TauCeti.soThreeForm`) has the root plane
-`E = ẑ^⊥` of `t = R ẑ`, where `ẑ` is the hat matrix of the third standard basis vector, with
-rotation `J = ad ẑ` and root `α(c ẑ) = c` (`TauCeti.isRootPlane_soThree`). For `p = r ẑ` and
-`X = a ẑ` the formulas above give the Hessian `-a B / r` of the height on the tangent plane of the
-coadjoint sphere of radius `r` (`TauCeti.soThreeForm_lie_lie_smul_soThreeZ`); here `t` is a line,
-hence abelian, and the dot product is symmetric and invariant.
+The root plane of `so(3)` and its height Hessian are worked out in
+`TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`.
 
 ## Main definitions
 
@@ -74,11 +69,10 @@ hence abelian, and the dot product is symmetric and invariant.
 * `TauCeti.IsRootPlane.apply_lie_lie`, `TauCeti.IsRootPlane.mul_apply_lie_lie`: the form
   `B(q_p A, q_X C)` behind the height Hessian on a root plane, in quotient and in tangent
   coordinates.
-* `TauCeti.IsRootPlane.le_orthogonal`: root planes with roots `α ≠ ±α'` are orthogonal.
+* `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
+  `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
   in `0` when `α(p) ≠ 0`, and lies in it when `α(p) = 0`.
-* `TauCeti.isRootPlane_soThree`: the root plane of `so(3)`, and
-  `TauCeti.soThreeForm_lie_lie_smul_soThreeZ`: its height Hessian.
 
 ## References
 
@@ -277,87 +271,5 @@ theorem disjoint_lieAnnihilator (h : IsRootPlane B t α E J) (hB : B.lieInvarian
 end Stabilizer
 
 end IsRootPlane
-
-/-! ### Example: the root plane of `so(3)` -/
-
-section SoThree
-
-open Matrix LieAlgebra.Orthogonal
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-variable (R : Type*) [CommRing R] [NoZeroDivisors R] [NeZero (2 : R)]
-
-variable {R}
-
-variable (R) in
-/-- The generator `ẑ ∈ so(3)` of the rotations about the third axis. -/
-abbrev soThreeZ : so (Fin 3) R := soThreeEquiv R ![0, 0, 1]
-
-/-- The rotation `ad ẑ` preserves the plane `ẑ^⊥`. -/
-theorem lie_soThreeZ_mem_ker {x : so (Fin 3) R}
-    (hx : x ∈ LinearMap.ker (soThreeForm R (soThreeZ R))) :
-    ⁅soThreeZ R, x⁆ ∈ LinearMap.ker (soThreeForm R (soThreeZ R)) := by
-  obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
-  simp only [LinearMap.mem_ker, lie_soThreeEquiv, soThreeForm_apply_soThreeEquiv] at hx ⊢
-  exact dot_self_cross _ _
-
-variable (R) in
-/-- The rotation `J = ad ẑ` of the plane `ẑ^⊥` of `so(3)`. -/
-def soThreeRotation : Module.End R (LinearMap.ker (soThreeForm R (soThreeZ R))) :=
-  (LieAlgebra.ad R (so (Fin 3) R) (soThreeZ R)).restrict fun _ ↦ lie_soThreeZ_mem_ker
-
-@[simp]
-theorem coe_soThreeRotation_apply (v : LinearMap.ker (soThreeForm R (soThreeZ R))) :
-    (soThreeRotation R v : so (Fin 3) R) = ⁅soThreeZ R, (v : so (Fin 3) R)⁆ :=
-  (rfl)
-
-/-- **The root plane of `so(3)`.** For the dot product, the plane `ẑ^⊥` is a root plane of the
-line `t = R ẑ`, with rotation `ad ẑ` and root `α(c ẑ) = c`, the restriction of `B ẑ` to `t`. -/
-theorem isRootPlane_soThree :
-    IsRootPlane (soThreeForm R) (R ∙ soThreeZ R) ((soThreeForm R (soThreeZ R)).domRestrict _)
-      (LinearMap.ker (soThreeForm R (soThreeZ R))) (soThreeRotation R) where
-  apply_apply v := by
-    obtain ⟨x, hx⟩ := v
-    obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
-    have hu : u 2 = 0 := by simpa [dotProduct, Fin.sum_univ_three] using hx
-    refine Subtype.ext ?_
-    simp only [coe_soThreeRotation_apply, lie_soThreeEquiv, Submodule.coe_neg, ← map_neg]
-    congr 1
-    ext i
-    fin_cases i <;> simp [cross_apply, hu]
-  apply_left v w := by
-    obtain ⟨x, -⟩ := v
-    obtain ⟨y, -⟩ := w
-    obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
-    obtain ⟨w, rfl⟩ := (soThreeEquiv R).surjective y
-    simp only [coe_soThreeRotation_apply, lie_soThreeEquiv, soThreeForm_apply_soThreeEquiv,
-      cross_apply, dotProduct, Fin.sum_univ_three]
-    simp
-  lie_apply H v := by
-    obtain ⟨H, hH⟩ := H
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hH
-    simp [dotProduct, Fin.sum_univ_three]
-
-/-- **The height Hessian of the coadjoint sphere of `so(3)`.** For `p = r ẑ`, `X = a ẑ` and
-`u, w ⊥ e₃`, `B(q_p û, q_X ŵ) = r a (u ⬝ᵥ w)`. Since `p` and `X` commute and the dot product is
-symmetric and invariant (`TauCeti.isSymm_soThreeForm`, `TauCeti.lieInvariant_soThreeForm`), the
-Hessian at `p` of the height `B(·, X)` on the orbit of `p` is `-r a B` in the coordinates `û, ŵ`
-of `ẑ^⊥`, and `-a B / r` in the tangent vectors `q_p û, q_p ŵ`
-(`TauCeti.IsRootPlane.mul_apply_lie_lie`). -/
-theorem soThreeForm_lie_lie_smul_soThreeZ (r a : R) {u w : Fin 3 → R} (hu : u 2 = 0)
-    (hw : w 2 = 0) :
-    soThreeForm R ⁅soThreeEquiv R u, r • soThreeZ R⁆ ⁅soThreeEquiv R w, a • soThreeZ R⁆ =
-      r * a * (u ⬝ᵥ w) := by
-  have hmem (c : R) : c • soThreeZ R ∈ R ∙ soThreeZ R := Submodule.smul_mem _ c
-    (Submodule.mem_span_singleton_self _)
-  have hker {v : Fin 3 → R} (hv : v 2 = 0) :
-      soThreeEquiv R v ∈ LinearMap.ker (soThreeForm R (soThreeZ R)) := by
-    simp [dotProduct, Fin.sum_univ_three, hv]
-  have h := isRootPlane_soThree.apply_lie_lie ⟨r • soThreeZ R, hmem r⟩ ⟨a • soThreeZ R, hmem a⟩
-    ⟨soThreeEquiv R u, hker hu⟩ ⟨soThreeEquiv R w, hker hw⟩
-  simpa [dotProduct, Fin.sum_univ_three] using h
-
-end SoThree
 
 end TauCeti

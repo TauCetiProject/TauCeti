@@ -130,7 +130,7 @@ theorem hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul :
       (hasDerivAt_tangentAd_mulInvariantExp_smul_apply (I := I) (G := G) A p 0)
   simpa [mulInvariantExp_zero, adjointContinuousLinearMap_one] using h
 
-/-- **The Hessian of a height at a point commuting with `X`.** For an invariant form `B`, the
+/-- **The second derivative of a height for an invariant form.** For an invariant form `B`, the
 second derivative of `B(Ad_(exp tA) p, X)` at `t = 0` is `-B(⁅A, p⁆, ⁅A, X⁆)`. When `⁅X, p⁆ = 0`,
 `p` is a critical point of the height on its orbit
 (`TauCeti.Lie.hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_of_lie_eq_zero`), and this is
