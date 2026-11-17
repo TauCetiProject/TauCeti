@@ -22,7 +22,10 @@ assumptions, and the tangent images of a map, the ranges of its differentials, a
 precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
 These facts support inverse isometries and transport of curve differentiability through
 diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
-diffeomorphism is also characterized, for composition with partial coordinates.
+diffeomorphism is also characterized, for composition with partial coordinates, and pulling back a
+`C^m` maximal-atlas chart along a `C^n` diffeomorphism (`m ≤ n`) preserves membership in the
+maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
+`Diffeomorph.trans_mem_maximalAtlas_iff`).
 -/
 
 public section
@@ -46,6 +49,31 @@ is its everywhere-defined equivalence. -/
 @[simp]
 theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
     h.toPartialDiffeomorph.toPartialEquiv = h.toEquiv.toPartialEquiv := (rfl)
+
+/-- Pulling back a chart `φ` of the maximal `C^m` atlas of `N'` along a `C^n` diffeomorphism
+`h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart of the maximal `C^m` atlas of `M`. -/
+theorem trans_mem_maximalAtlas {N' : Type*} [TopologicalSpace N'] [ChartedSpace H N']
+    {m : ℕ∞ω} [IsManifold I m M] (h : M ≃ₘ^n⟮I, I⟯ N') (hm : m ≤ n)
+    {φ : OpenPartialHomeomorph N' H} (hφ : φ ∈ IsManifold.maximalAtlas I m N') :
+    h.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas I m M := by
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+  exact ⟨(contMDiffOn_of_mem_maximalAtlas hφ).comp (h.contMDiff.of_le hm).contMDiffOn
+      fun _ hx ↦ hx.2,
+    (h.symm.contMDiff.of_le hm).comp_contMDiffOn
+      ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono Set.inter_subset_left)⟩
+
+/-- Pulling back `φ` along a `C^n` diffeomorphism `h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart
+of the maximal `C^m` atlas of `M` iff `φ` lies in the maximal `C^m` atlas of `N'`. -/
+theorem trans_mem_maximalAtlas_iff {N' : Type*} [TopologicalSpace N'] [ChartedSpace H N']
+    {m : ℕ∞ω} [IsManifold I m M] [IsManifold I m N'] (h : M ≃ₘ^n⟮I, I⟯ N') (hm : m ≤ n)
+    {φ : OpenPartialHomeomorph N' H} :
+    h.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas I m M ↔
+      φ ∈ IsManifold.maximalAtlas I m N' := by
+  refine ⟨fun hφ ↦ ?_, h.trans_mem_maximalAtlas hm⟩
+  have heq : h.symm.toHomeomorph.toOpenPartialHomeomorph.trans
+      (h.toHomeomorph.toOpenPartialHomeomorph.trans φ) = φ := by
+    ext x <;> simp
+  simpa only [heq] using h.symm.trans_mem_maximalAtlas hm hφ
 
 /-- The differentials of a diffeomorphism and its inverse compose to the identity. -/
 @[simp]
