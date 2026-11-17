@@ -103,6 +103,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifolds read in arbitrary preferred charts of the source and the target.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
+* `TauCeti.contDiffAt_ext_coord_change`: on a boundaryless manifold, a change of extended charts
+  is `C^n` at every point of its domain.
 * `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`: for a `C^n` map out of a
   boundaryless manifold, the open coordinate domain on which it reads as a `C^n` map between the
   extended charts at a point and at its image.
@@ -873,6 +875,15 @@ theorem _root_.ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm {f : M →
   rw [(extChartAt I β).right_inv (interior_subset hy)] at h
   exact h.contDiffAt (Filter.mem_of_superset (isOpen_interior.mem_nhds hy)
     (interior_subset.trans (extChartAt_target_subset_range β)))
+
+/-- On a boundaryless manifold, the change of extended charts from `x'` to `x` is `C^n` at every
+point of its domain. This is Mathlib's `contDiffWithinAt_ext_coord_change` with the model range
+the whole space. -/
+theorem contDiffAt_ext_coord_change [I.Boundaryless] (x x' : M) {y : E}
+    (hy : y ∈ ((extChartAt I x').symm ≫ extChartAt I x).source) :
+    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) y := by
+  have h := contDiffWithinAt_ext_coord_change (n := n) x x' hy
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 end InteriorCharts
 
