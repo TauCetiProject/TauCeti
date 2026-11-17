@@ -43,20 +43,14 @@ To state or use the normed Fréchet and directional calculus declarations in thi
   `TauCeti.Probability.fderiv_eigenvalues₀_add_gaussianEnsemble_apply`, and
   `TauCeti.Probability.fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_apply`: smoothness and
   first/second Fréchet derivatives on `Fin n × Fin n → ℝ`.
-* `TauCeti.Probability.sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_ne_one`,
-  `TauCeti.Probability.sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_eq_one`,
-  `TauCeti.Probability.sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul`, and
+* `TauCeti.Probability.sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul` and
   `TauCeti.Probability.half_sum_fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_single`:
   deterministic coordinate-gradient inner-product and coordinate half-Laplacian identities in
   Fréchet form.
 * `TauCeti.Probability.hasDerivAt_eigenvalues₀_add_gaussianEnsemble`,
-  `TauCeti.Probability.deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv`,
-  `TauCeti.Probability.iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble`,
-  `TauCeti.Probability.sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_ne_one`,
-  `TauCeti.Probability.sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_eq_one`,
-  `TauCeti.Probability.sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul`, and
-  `TauCeti.Probability.half_sum_iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble`: 1D
-  coordinate-ray corollaries.
+  `TauCeti.Probability.deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv`, and
+  `TauCeti.Probability.iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble`: 1D coordinate-ray
+  derivatives and bridges to the Fréchet forms.
 
 ## References
 
@@ -208,15 +202,11 @@ theorem fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_apply {β n : ℕ}
   rw [eigenvalues₀_add_gaussianEnsemble_comp_eq hA k,
     TauCeti.fderiv_fderiv_comp_apply (φ := shiftEnsembleSelfAdjoint β n hA)
       (contDiffAt_eigenvalues₀ hkΦ) (contDiff_shiftEnsembleSelfAdjoint β n hA).contDiffAt v w,
-    hDΦ, fderiv_const_apply, zero_apply, zero_apply,
-    map_zero, add_zero, fderiv_fderiv_eigenvalues₀_apply hkΦ]
-  simp
+    hDΦ]
+  simp [fderiv_fderiv_eigenvalues₀_apply hkΦ]
 
-/-- **GUE coordinate-gradient inner product** (Fréchet form): for `β ≠ 1`, Hermitian `A`, and
-simple sorted eigenvalues `λₖ, λₘ` of `A + gaussianEnsemble β n g`, summing the product of their
-coordinate partial derivatives over `p : Fin n × Fin n` yields `n⁻¹ * δₖₘ`. -/
-theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
-    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g : Fin n × Fin n → ℝ)
+private theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_ne_one {β n : ℕ}
+    (hβ : β ≠ 1) {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g : Fin n × Fin n → ℝ)
     {k m : Fin (Fintype.card (Fin n))}
     (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
       (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k)
@@ -237,11 +227,8 @@ theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_ne_one {β 
   · subst hkm; simp [hH.eigenprojector₀_mul_self, hH.trace_eigenprojector₀]
   · simp [hkm, hH.eigenprojector₀_mul_of_ne hkm]
 
-/-- **GOE coordinate-gradient inner product** (Fréchet form): for `β = 1`, Hermitian symmetric `A`,
-and simple sorted eigenvalues `λₖ, λₘ` of `A + gaussianEnsemble β n g`, summing the product of their
-coordinate partial derivatives over `p : Fin n × Fin n` yields `2 * n⁻¹ * δₖₘ`. -/
-theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_eq_one {β n : ℕ} (hβ : β = 1)
-    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (hA_symm : A.IsSymm)
+private theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_eq_one {β n : ℕ}
+    (hβ : β = 1) {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (hA_symm : A.IsSymm)
     (g : Fin n × Fin n → ℝ) {k m : Fin (Fintype.card (Fin n))}
     (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
       (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k)
@@ -295,8 +282,11 @@ theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul {β n : ℕ}
 
 /-- Deterministic coordinate half-Laplacian identity (Fréchet form) at a simple sorted eigenvalue
 `λₖ` of `A + gaussianEnsemble β n g` for Hermitian `A` assuming `β ≠ 1 ∨ A.IsSymm`:
-`(1 / 2) * ∑ p, D²λₖ(g)(eₚ, eₚ) = n⁻¹ * ∑ j ≠ k, (λₖ - λⱼ)⁻¹` (supplying the repulsion drift term in
-Anderson–Guionnet–Zeitouni Theorem 4.3.2 and Lemma 4.3.4). -/
+`(1 / 2) * ∑ p, D²λₖ(g)(eₚ, eₚ) = n⁻¹ * ∑ j ≠ k, (λₖ - λⱼ)⁻¹`, where `eₚ = Pi.single p 1`
+(supplying the repulsion drift term in Anderson–Guionnet–Zeitouni Theorem 4.3.2 and Lemma 4.3.4).
+Unlike `sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul`, the right-hand side is independent
+of `β`, so the sharper hypothesis `β ≠ 1 ∨ A.IsSymm` holds for all `β ≠ 1` (since
+`gaussianEnsemble β n` branches on `β = 1` vs `β ≠ 1`). -/
 theorem half_sum_fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_single {β n : ℕ}
     {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (hβ : β ≠ 1 ∨ A.IsSymm)
     (g : Fin n × Fin n → ℝ) {k : Fin (Fintype.card (Fin n))}
@@ -393,87 +383,6 @@ theorem iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble {β n : ℕ}
     map_zero, add_zero, h0,
     fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g v v hk] at h
   exact h
-
-/-- **GUE coordinate-gradient inner product** (1D coordinate-ray form): for `β ≠ 1`, Hermitian `A`,
-and simple sorted eigenvalues `λₖ, λₘ` of `A + gaussianEnsemble β n g`, the inner product of their
-coordinate ray derivatives equals `n⁻¹ * δₖₘ`. -/
-theorem sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
-    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g : Fin n × Fin n → ℝ)
-    {k m : Fin (Fintype.card (Fin n))}
-    (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k)
-    (hm : ∀ j ≠ m, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ m) :
-    ∑ p : Fin n × Fin n,
-        deriv (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ k) 0 *
-        deriv (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ m) 0 =
-      if k = m then (n : ℝ)⁻¹ else 0 := by
-  simp_rw [deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hk,
-    deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hm]
-  exact sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_ne_one hβ hA g hk hm
-
-/-- **GOE coordinate-gradient inner product** (1D coordinate-ray form): for `β = 1`, Hermitian
-symmetric `A`, and simple sorted eigenvalues `λₖ, λₘ` of `A + gaussianEnsemble β n g`, the inner
-product of their coordinate ray derivatives equals `2 * n⁻¹ * δₖₘ`. -/
-theorem sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_eq_one {β n : ℕ} (hβ : β = 1)
-    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (hA_symm : A.IsSymm)
-    (g : Fin n × Fin n → ℝ) {k m : Fin (Fintype.card (Fin n))}
-    (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k)
-    (hm : ∀ j ≠ m, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ m) :
-    ∑ p : Fin n × Fin n,
-        deriv (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ k) 0 *
-        deriv (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ m) 0 =
-      if k = m then 2 * (n : ℝ)⁻¹ else 0 := by
-  simp_rw [deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hk,
-    deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hm]
-  exact sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_eq_one hβ hA hA_symm g hk hm
-
-/-- Deterministic coordinate-gradient inner-product identity (1D coordinate-ray form) at simple
-sorted eigenvalues `λₖ, λₘ` of `A + gaussianEnsemble β n g` for Hermitian `A` under
-`(β = 1 ∧ A.IsSymm) ∨ β = 2`, giving `(2 / (β * n)) * δₖₘ` (the quadratic-variation coefficient in
-Anderson–Guionnet–Zeitouni Theorem 4.3.2). -/
-theorem sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul {β n : ℕ}
-    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian)
-    (hβ : (β = 1 ∧ A.IsSymm) ∨ β = 2) (g : Fin n × Fin n → ℝ)
-    {k m : Fin (Fintype.card (Fin n))}
-    (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k)
-    (hm : ∀ j ≠ m, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ m) :
-    ∑ p : Fin n × Fin n,
-        deriv (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ k) 0 *
-        deriv (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ m) 0 =
-      if k = m then 2 / ((β : ℝ) * n) else 0 := by
-  simp_rw [deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hk,
-    deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hm]
-  exact sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul hA hβ g hk hm
-
-/-- Deterministic coordinate half-Laplacian identity (1D coordinate-ray form) at a simple sorted
-eigenvalue `λₖ` of `A + gaussianEnsemble β n g` for Hermitian `A` assuming `β ≠ 1 ∨ A.IsSymm`:
-`(1 / 2) * ∑ p, (d²/dt²)|₀ λₖ(A + gaussianEnsemble β n (g + t • eₚ)) = n⁻¹ * ∑ j ≠ k, (λₖ - λⱼ)⁻¹`
-(supplying the repulsion drift term in Anderson–Guionnet–Zeitouni Theorem 4.3.2 and Lemma 4.3.4). -/
-theorem half_sum_iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble {β n : ℕ}
-    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (hβ : β ≠ 1 ∨ A.IsSymm)
-    (g : Fin n × Fin n → ℝ) {k : Fin (Fintype.card (Fin n))}
-    (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
-      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k) :
-    (2 : ℝ)⁻¹ * ∑ p : Fin n × Fin n,
-        iteratedDeriv 2 (fun t : ℝ ↦
-          (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ k) 0 =
-      (n : ℝ)⁻¹ * ∑ j ∈ Finset.univ.erase k,
-        ((hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k -
-          (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j)⁻¹ := by
-  simp_rw [iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hk,
-    ← fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) (Pi.single _ 1) hk]
-  exact half_sum_fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_single hA hβ g hk
 
 end Probability
 

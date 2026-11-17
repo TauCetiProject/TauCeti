@@ -28,10 +28,13 @@ real-analytic, `C^ω`) at every nonzero vector `v`, and computes its strict Fré
 
 To state or use `TauCeti.contDiffAt_rankOneHermitianProjector`,
 `open scoped Matrix.Norms.L2Operator` and enable
-`attribute [local instance] Matrix.l2OpNormedAlgebraReal`. Both
-`TauCeti.hasStrictFDerivAt_rankOneHermitianProjector` and
-`TauCeti.fderiv_rankOneHermitianProjector_apply` depend only on the product topology on
-`Matrix n n 𝕜` (they do not require `DecidableEq n` or a choice of matrix norm).
+`attribute [local instance] Matrix.l2OpNormedAlgebraReal` (since `ContDiffAt` requires normed-space
+instances on `Matrix n n 𝕜`). By contrast, Mathlib's `HasStrictFDerivAt` and `fderiv` require only
+`[TopologicalSpace]`, so `TauCeti.hasStrictFDerivAt_rankOneHermitianProjector` and
+`TauCeti.fderiv_rankOneHermitianProjector_apply` depend only on the product topology
+`instTopologicalSpaceMatrix` on `Matrix n n 𝕜` (they require neither `DecidableEq n` nor a choice
+of matrix norm to state or apply; the ℓ² operator norm is opened only in a local `section` for
+`contDiffAt_rankOneHermitianProjector` and an internal proof helper).
 
 ## Main results
 
@@ -48,9 +51,7 @@ public section
 noncomputable section
 
 open Matrix
-open scoped ContDiff Matrix.Norms.L2Operator ComplexOrder
-
-attribute [local instance] Matrix.l2OpNormedAlgebraReal
+open scoped ContDiff ComplexOrder
 
 namespace TauCeti
 
@@ -76,6 +77,12 @@ private theorem reInnerBilin_self_ne_zero {v : n → 𝕜} (hv : v ≠ 0) :
   fun h0 ↦ dotProduct_star_self_eq_zero.not.mpr hv
     (by rw [← Matrix.ofReal_re_dotProduct_star_self v]; simpa [reInnerBilin] using h0)
 
+section L2Operator
+
+open scoped Matrix.Norms.L2Operator
+
+attribute [local instance] Matrix.l2OpNormedAlgebraReal
+
 /-- `TauCeti.rankOneHermitianProjector` is `C^m` over `ℝ` at every nonzero vector `v : n → 𝕜`. -/
 theorem contDiffAt_rankOneHermitianProjector [DecidableEq n] {v : n → 𝕜} (hv : v ≠ 0) {m : ℕ∞ω} :
     ContDiffAt ℝ m (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜) v := by
@@ -84,9 +91,7 @@ theorem contDiffAt_rankOneHermitianProjector [DecidableEq n] {v : n → 𝕜} (h
     (reInnerBilin_self_ne_zero hv)).smul
     ((vecMulVecStarBilin 𝕜 n).contDiff_apply_self (n := m)).contDiffAt
 
-/-- Strict Fréchet derivative of `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero
-vector `v : n → 𝕜`. -/
-theorem hasStrictFDerivAt_rankOneHermitianProjector {v : n → 𝕜} (hv : v ≠ 0) :
+private theorem hasStrictFDerivAt_rankOneHermitianProjector_aux {v : n → 𝕜} (hv : v ≠ 0) :
     HasStrictFDerivAt (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜)
       ((RCLike.re (star v ⬝ᵥ v))⁻¹ •
         ((vecMulVecBilin ℝ ℝ).flip (star v) +
@@ -114,6 +119,19 @@ theorem hasStrictFDerivAt_rankOneHermitianProjector {v : n → 𝕜} (hv : v ≠
     hre, sq, mul_inv]
   push_cast
   ring
+
+end L2Operator
+
+/-- Strict Fréchet derivative of `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero
+vector `v : n → 𝕜`. -/
+theorem hasStrictFDerivAt_rankOneHermitianProjector {v : n → 𝕜} (hv : v ≠ 0) :
+    HasStrictFDerivAt (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜)
+      ((RCLike.re (star v ⬝ᵥ v))⁻¹ •
+        ((vecMulVecBilin ℝ ℝ).flip (star v) +
+          (vecMulVecBilin ℝ ℝ v).comp (starL' ℝ).toLinearMap -
+          (2 : ℝ) • ((RCLike.reLm.comp (dotProductBilin ℝ ℝ (star v))).smulRight
+            (rankOneHermitianProjector v))).toContinuousLinearMap) v :=
+  hasStrictFDerivAt_rankOneHermitianProjector_aux hv
 
 /-- Applied Fréchet derivative of `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero
 vector `v : n → 𝕜` in direction `y`. -/

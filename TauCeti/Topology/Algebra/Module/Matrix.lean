@@ -11,6 +11,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Trace
 
@@ -27,6 +28,12 @@ matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R` it is `Ma
 The motivating case is `R = ℤ` and `M = AddCircle p`, where an integer matrix induces a map of
 tori `(ι → AddCircle p) → (κ → AddCircle p)`.
 
+Over a nontrivially normed field `𝕜`, matrix-vector multiplication `(M, v) ↦ M *ᵥ v` is bundled as
+the continuous bilinear map `Matrix.mulVecCLM m n 𝕜 R : Matrix m n R →L[𝕜] (n → R) →L[𝕜] (m → R)`,
+requiring only a topological ring `R` with continuous multiplication and continuous scalar action by
+`𝕜` (no finiteness on `m`, completeness, or choice of matrix norm). Its application lemma is
+`Matrix.mulVecCLM_apply`.
+
 The matrix trace (`Matrix.traceCLM`), the upper-right block projection, and the matching insertion
 are continuous linear maps over any semiring and topological module. Their application lemmas are
 `Matrix.traceCLM_apply`, `Matrix.toBlocks₁₂CLM_apply`, and `Matrix.fromBlocks₁₂CLM_apply`.
@@ -35,6 +42,7 @@ are continuous linear maps over any semiring and topological module. Their appli
 
 * `Matrix.smulVecHom`: the continuous additive action of a matrix on vectors in an additive monoid
   with a distributive scalar action.
+* `Matrix.mulVecCLM`: matrix-vector multiplication as a continuous bilinear map.
 * `Matrix.traceCLM`: matrix trace as a continuous linear map.
 * `Matrix.toBlocks₁₂CLM`: projection onto the upper-right block as a continuous linear map.
 * `Matrix.fromBlocks₁₂CLM`: insertion into the upper-right block as a continuous linear map.
@@ -161,5 +169,35 @@ theorem toLinearMap_traceCLM (n α R : Type*) [Fintype n] [AddCommMonoid R] [Top
   (rfl)
 
 end Trace
+
+section MulVec
+
+/-- `Matrix.mulVec` as a continuous bilinear map `Matrix m n R →L[𝕜] (n → R) →L[𝕜] (m → R)`. -/
+def mulVecCLM (m n 𝕜 R : Type*) [Fintype n] [NontriviallyNormedField 𝕜]
+    [NonUnitalNonAssocRing R] [Module 𝕜 R] [SMulCommClass 𝕜 R R] [IsScalarTower 𝕜 R R]
+    [TopologicalSpace R] [IsTopologicalAddGroup R] [ContinuousMul R] [ContinuousConstSMul 𝕜 R] :
+    Matrix m n R →L[𝕜] (n → R) →L[𝕜] (m → R) :=
+  let L : Matrix m n R →ₗ[𝕜] (n → R) →L[𝕜] (m → R) :=
+    { toFun M :=
+        { toLinearMap :=
+            { toFun v := M *ᵥ v
+              map_add' := mulVec_add M
+              map_smul' c v := mulVec_smul M c v }
+          cont := continuous_const.matrix_mulVec continuous_id }
+      map_add' M N := ContinuousLinearMap.ext fun v ↦ add_mulVec M N v
+      map_smul' c M := ContinuousLinearMap.ext fun v ↦ smul_mulVec c M v }
+  ⟨L, ContinuousLinearMap.continuous_of_continuous_uncurry L
+    (continuous_fst.matrix_mulVec continuous_snd)⟩
+
+/-- Applying `Matrix.mulVecCLM` evaluates `Matrix.mulVec`. -/
+@[simp]
+theorem mulVecCLM_apply {m n 𝕜 R : Type*} [Fintype n] [NontriviallyNormedField 𝕜]
+    [NonUnitalNonAssocRing R] [Module 𝕜 R] [SMulCommClass 𝕜 R R] [IsScalarTower 𝕜 R R]
+    [TopologicalSpace R] [IsTopologicalAddGroup R] [ContinuousMul R] [ContinuousConstSMul 𝕜 R]
+    (M : Matrix m n R) (v : n → R) :
+    mulVecCLM m n 𝕜 R M v = M *ᵥ v :=
+  (rfl)
+
+end MulVec
 
 end Matrix

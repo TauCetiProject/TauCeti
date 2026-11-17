@@ -270,10 +270,10 @@ theorem trace_eigenprojector₀_mul_mul_eigenprojector₀_mul (hA : A.IsHermitia
     (hA.eigenprojector₀ k * B * hA.eigenprojector₀ j * C).trace =
       (star ⇑(hA.eigenvectorBasis₀ k) ⬝ᵥ (B *ᵥ ⇑(hA.eigenvectorBasis₀ j))) *
         (star ⇑(hA.eigenvectorBasis₀ j) ⬝ᵥ (C *ᵥ ⇑(hA.eigenvectorBasis₀ k))) := by
-  rw [eigenprojector₀_def, eigenprojector₀_def, Matrix.mul_assoc (vecMulVec _ _) B,
-    mul_vecMulVec, vecMulVec_mul_vecMulVec, vecMulVec_mul, trace_vecMulVec,
-    dotProduct_comm ⇑(hA.eigenvectorBasis₀ k), smul_vecMul, smul_dotProduct, smul_eq_mul,
-    dotProduct_mulVec, dotProduct_mulVec]
+  simp only [eigenprojector₀_def, mul_vecMulVec, vecMulVec_mul, trace_vecMulVec,
+    vecMulVec_mulVec, smul_dotProduct, dotProduct_mulVec, MulOpposite.smul_eq_mul_unop,
+    MulOpposite.unop_op]
+  rw [dotProduct_comm ⇑(hA.eigenvectorBasis₀ k), mul_comm]
 
 /-- **Resolution of the identity** by the sorted rank-one spectral projectors. -/
 @[simp]

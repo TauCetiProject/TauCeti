@@ -564,7 +564,8 @@ private theorem sum_single_mul_mul_self_apply (β n : ℕ) (M : Matrix (Fin n) (
   refine (Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm.trans <| Finset.sum_congr rfl fun j _ ↦
     Finset.sum_congr rfl fun p _ ↦ by ring).trans Finset.sum_comm
 
-/-- **GUE Casimir identity**: for `β ≠ 1` and any `M`, `∑ p, Eₚ * M * Eₚ = (n⁻¹ * M.trace) • 1`. -/
+/-- **GUE Casimir identity**: for `β ≠ 1` and any `M`,
+`∑ p, Eₚ * M * Eₚ = (n⁻¹ * M.trace) • 1`, where `Eₚ = gaussianEnsemble β n (Pi.single p 1)`. -/
 theorem sum_gaussianEnsemble_single_mul_mul_self_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
     (M : Matrix (Fin n) (Fin n) ℂ) :
     ∑ p : Fin n × Fin n,
@@ -576,7 +577,8 @@ theorem sum_gaussianEnsemble_single_mul_mul_self_of_ne_one {β n : ℕ} (hβ : �
   by_cases hil : i = l <;> simp [hil, Matrix.trace, Finset.mul_sum, mul_comm]
 
 /-- **GOE Casimir identity**: for `β = 1` and any `M`,
-`∑ p, Eₚ * M * Eₚ = n⁻¹ • (M.trace • 1 + Mᵀ)`. -/
+`∑ p, Eₚ * M * Eₚ = n⁻¹ • (M.trace • 1 + Mᵀ)`, where
+`Eₚ = gaussianEnsemble β n (Pi.single p 1)`. -/
 theorem sum_gaussianEnsemble_single_mul_mul_self_of_eq_one {β n : ℕ} (hβ : β = 1)
     (M : Matrix (Fin n) (Fin n) ℂ) :
     ∑ p : Fin n × Fin n,
