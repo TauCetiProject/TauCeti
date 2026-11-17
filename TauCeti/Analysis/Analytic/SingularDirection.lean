@@ -286,15 +286,10 @@ theorem exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top {ι : Type*} 
     rw [← hvu, eventually_apply_add_smul_smul_eq_zero_iff (inv_ne_zero hv2)]
     exact hv i
   -- Apply the vertical shear `(x, t) ↦ (x + t • u, t)`, sending `(0, 1)` to `(u, 1)`.
+  let c : (E × 𝕜) ≃L[𝕜] (𝕜 × E) := ContinuousLinearEquiv.prodComm 𝕜 E 𝕜
   let L : (E × 𝕜) ≃L[𝕜] (E × 𝕜) :=
-    { toFun := fun q ↦ (q.1 + q.2 • u, q.2)
-      invFun := fun q ↦ (q.1 - q.2 • u, q.2)
-      map_add' := fun q₁ q₂ ↦ by ext <;> simp [add_smul, add_assoc, add_left_comm]
-      map_smul' := fun c q ↦ by ext <;> simp [smul_add, smul_smul]
-      left_inv := fun q ↦ by ext <;> simp
-      right_inv := fun q ↦ by ext <;> simp
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
+    c.trans (((ContinuousLinearEquiv.refl 𝕜 𝕜).skewProd (ContinuousLinearEquiv.refl 𝕜 E)
+      ((ContinuousLinearMap.id 𝕜 𝕜).smulRight u)).trans c.symm)
   refine ⟨L, fun i htop ↦ hv' i ?_⟩
   rw [analyticOrderAt_eq_top] at htop
   have hnhds : map (· + (L.symm p).2) (𝓝 (0 : 𝕜)) = 𝓝 (L.symm p).2 := by simp
@@ -303,7 +298,7 @@ theorem exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top {ι : Type*} 
     have hpt : ((L.symm p).1, ξ + (L.symm p).2) = L.symm p + ξ • ((0 : E), (1 : 𝕜)) := by
       ext <;> simp [add_comm]
     rw [hpt, map_add, map_smul, L.apply_symm_apply]
-    simp [L]
+    simp [L, c]
   rwa [← hline]
 
 /-- **General position in the last variable.** A function analytic at `p` on `E × 𝕜` that does not
