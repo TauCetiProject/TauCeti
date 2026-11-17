@@ -14,7 +14,9 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 
 The normed `ContinuousAlternatingMap.curryLeft` agrees pointwise with the norm-free
 `ContinuousAlternatingMap.curryLeftTopological`. This comparison lets normed applications use
-the topological interior-product API without importing wedge constructions.
+the topological interior-product API without importing wedge constructions. The curried map
+depends Lipschitz continuously on the map and the vector
+(`ContinuousAlternatingMap.norm_curryLeft_sub_curryLeft_le`).
 
 A continuous alternating map of one vector is read as a continuous linear functional by
 `ContinuousAlternatingMap.toDual`. Currying a continuous alternating map of two vectors in its
@@ -37,6 +39,27 @@ theorem curryLeft_eq_curryLeftTopological {n : ℕ}
   ext v
   simp only [ContinuousAlternatingMap.curryLeft_apply_apply,
     ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+
+section Lipschitz
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The difference of the curried maps `f(u, ·)` and `g(v, ·)` is bounded by
+`‖f - g‖ ‖u‖ + ‖g‖ ‖u - v‖`. -/
+theorem norm_curryLeft_sub_curryLeft_le {n : ℕ} (f g : E [⋀^Fin (n + 1)]→L[𝕜] F) (u v : E) :
+    ‖f.curryLeft u - g.curryLeft v‖ ≤ ‖f - g‖ * ‖u‖ + ‖g‖ * ‖u - v‖ := by
+  have hc := (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.map_sub f g
+  simp only [LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply] at hc
+  have hsplit : f.curryLeft u - g.curryLeft v = (f - g).curryLeft u + g.curryLeft (u - v) := by
+    rw [hc, map_sub, _root_.sub_apply]
+    abel
+  rw [hsplit]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+  · refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
+    rw [norm_curryLeft]
+
+end Lipschitz
 
 section toDual
 
