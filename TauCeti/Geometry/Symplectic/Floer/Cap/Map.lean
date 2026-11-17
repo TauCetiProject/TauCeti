@@ -284,17 +284,29 @@ theorem novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries
         novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ' i k)) a ∈
       (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)).coboundaries
         (gradeBy R F₀ fun p => n - μ₀ p) e := by
-  rw [LinearMap.mem_cocycles_iff, ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁] at ha
-  let := module (R := R) hF₁
-  let := module (R := R) hF₀
-  rw [novikovMapOfMatrix_coefficientComparison_sub_eq_add r₁ r₀ q hq hF₁ hF₀ Φ Φ' Y D₁ D₀ hY, ha.1,
-    map_zero, add_zero]
-  -- `Y` lowers the cochain degree by one, so `Y a` has cochain degree `e - 1`.
-  refine LinearMap.mem_coboundaries_iff.2 ⟨_, ?_,
-    (novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀ _).symm⟩
-  simpa only [← sub_eq_add_neg] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy
-    r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ (ε := -1)
-    (fun i k A hA => by rw [sub_neg_eq_add]; exact hYdeg i k A hA) ha.2
+  -- The maps are written as the ground-ring linear maps of their kernels, which are the maps of
+  -- the generic homotopy lemma.
+  obtain ⟨_, hΦ⟩ := exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k))
+  obtain ⟨_, hΦ'⟩ := exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ' i k))
+  obtain ⟨_, hYm⟩ := exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Y i k))
+  rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hΦ,
+    novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hΦ']
+  refine LinearMap.sub_mem_coboundaries_of_homotopy
+    (kernelMap hYm (mapKernelOfMatrix_mem hF₀ r₁ r₀ _)) (fun {b} hb => ?_) (fun {b} _ => ?_) ha
+  · -- `Y` lowers the cochain degree by one.
+    rw [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hYm]
+    simpa only [← sub_eq_add_neg] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy
+      r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ (ε := -1)
+      (fun i k A hA => by rw [sub_neg_eq_add]; exact hYdeg i k A hA) hb
+  · simp only [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hΦ,
+      ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hΦ',
+      ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hYm,
+      ← novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
+      ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
+    exact novikovMapOfMatrix_coefficientComparison_sub_eq_add r₁ r₀ q hq hF₁ hF₀ Φ Φ' Y D₁ D₀ hY b
 
 include hμ₁ in
 /-- **Module inverses of class-indexed counts on cocycles.** Let `Φ` be the generating series of a
