@@ -127,6 +127,13 @@ theorem IsHomogeneous.laplacian_eq_zero_of_le_one {p : MvPolynomial σ R} {n : �
 theorem laplacian_X (j : σ) : laplacian (X j : MvPolynomial σ R) = 0 :=
   (isHomogeneous_X R j).laplacian_eq_zero_of_le_one le_rfl
 
+/-- Relabeling the variables along an equivalence commutes with the Laplacian. -/
+theorem laplacian_rename {τ : Type*} [Fintype τ] (e : σ ≃ τ) (p : MvPolynomial σ R) :
+    laplacian (rename e p) = rename e (laplacian p) := by
+  rw [laplacian_apply, laplacian_apply, map_sum, ← Equiv.sum_comp e]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [pderiv_rename e.injective, pderiv_rename e.injective]
+
 end Laplacian
 
 section NormSq
@@ -412,6 +419,27 @@ theorem finrank_harmonicSubmodule_add_two (e : ℕ) :
   rw [TauCeti.finrank_homogeneousSubmodule_eq_multichoose,
     TauCeti.finrank_homogeneousSubmodule_eq_multichoose] at h
   omega
+
+omit [Nonempty σ] in
+/-- In at least two variables over a field of characteristic zero, the harmonic homogeneous
+polynomials of every degree form a nonzero space. -/
+theorem finrank_harmonicSubmodule_pos (hσ : 2 ≤ Fintype.card σ) (d : ℕ) :
+    0 < Module.finrank K (harmonicSubmodule σ K d) := by
+  match d with
+  | 0 =>
+    rw [finrank_harmonicSubmodule_of_le_one (by omega)]
+    simp
+  | 1 =>
+    rw [finrank_harmonicSubmodule_of_le_one le_rfl]
+    simp; omega
+  | e + 2 =>
+    rw [finrank_harmonicSubmodule_add_two]
+    obtain ⟨m, hm⟩ : ∃ m, Fintype.card σ = m + 1 + 1 := ⟨Fintype.card σ - 2, by omega⟩
+    rw [hm, Nat.multichoose_succ_succ (m + 1) (e + 1), Nat.multichoose_succ_succ (m + 1) e]
+    have hpos : 0 < (m + 1).multichoose (e + 1) := by
+      rw [Nat.multichoose_eq]
+      exact Nat.choose_pos (by omega)
+    omega
 
 end Fischer
 
