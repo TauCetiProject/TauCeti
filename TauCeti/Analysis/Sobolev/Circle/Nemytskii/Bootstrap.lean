@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 import TauCeti.Analysis.Sobolev.Circle.Slobodeckij
 import TauCeti.MeasureTheory.Integral.ContinuousMap
+import TauCeti.Topology.CompactOpen
 
 /-!
 # Sobolev membership and compact-range bounds for `C^n` Nemytskii maps on the circle
@@ -230,21 +231,6 @@ private theorem tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap
         (hC (g i - g₀)).trans (by rw [hincl0]; gcongr)
     _ < ε := by rw [div_mul_cancel₀ _ hM.ne']; linarith
 
-private theorem tendsto_continuousMap_of_eventually_eq_comp {E G : Type*}
-    [MetricSpace E] [MetricSpace G] {K' : Set E} (hK' : IsCompact K') {g : E → G}
-    (hg : ContinuousOn g K') {ι : Type*} {l : Filter ι}
-    {φ : ι → C(AddCircle T, E)} {φ₀ : C(AddCircle T, E)} (hφ : Tendsto φ l (𝓝 φ₀))
-    (hφ_mem : ∀ᶠ i in l, ∀ x, φ i x ∈ K') (hφ₀_mem : ∀ x, φ₀ x ∈ K')
-    {ψ : ι → C(AddCircle T, G)} {ψ₀ : C(AddCircle T, G)}
-    (hψ : ∀ᶠ i in l, ∀ x, ψ i x = g (φ i x)) (hψ₀ : ∀ x, ψ₀ x = g (φ₀ x)) :
-    Tendsto ψ l (𝓝 ψ₀) := by
-  rw [Metric.tendsto_nhds]; intro ε hε
-  obtain ⟨η, hη, hη_uc⟩ := Metric.uniformContinuousOn_iff.1
-    (hK'.uniformContinuousOn_of_continuous hg) ε hε
-  filter_upwards [hψ, hφ_mem, Metric.tendsto_nhds.1 hφ η hη] with i hi hi_mem hi_dist
-  refine (ContinuousMap.dist_lt_iff hε).2 fun x ↦ ?_; rw [hi x, hψ₀ x]
-  exact hη_uc _ (hi_mem x) _ (hφ₀_mem x) ((ContinuousMap.dist_apply_le_dist x).trans_lt hi_dist)
-
 section BootstrapChain
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
@@ -290,7 +276,7 @@ private theorem coeff_realConvolutionAsym_sum_single {t r' r s : ℝ} (ht : 0 �
 /-- Along the partial Fourier sums `uS S = ∑ k ∈ S, single k (u.coeff k)`, the induction
 hypothesis produces `H^r` lifts `gS S` of `(df) ∘ (uS S)` converging to `gu` in `H^{r'}`. -/
 private theorem exists_tendsto_inclusion_fderiv_approx {r' r s : ℝ} (hr' : 1 / 2 < r')
-    (hr'r : r' < r) (hrs : r < s) {U K : Set E} {δ R B₁ : ℝ} (hU : IsOpen U) (hK : IsCompact K)
+    (hr'r : r' < r) (hrs : r < s) {U K : Set E} {δ R B₁ : ℝ} (hU : IsOpen U)
     (hδ : 0 < δ) (hKδU : Metric.cthickening δ K ⊆ U) {f : E → F} (hf : ContDiffOn ℝ 1 f U)
     (hIH : ∀ v : CircleSobolev r E,
       (∀ x, toContinuousMap T (by linarith) v x ∈ Metric.cthickening δ K) → ‖v‖ ≤ R + 1 →
@@ -339,14 +325,14 @@ private theorem exists_tendsto_inclusion_fderiv_approx {r' r s : ℝ} (hr' : 1 /
   refine ⟨gS, (hev.and hgS_spec).mono fun _ h ↦ ⟨h.1.1, h.2.1⟩,
     tendsto_inclusion_of_norm_le_of_tendsto_toContinuousMap T (by linarith) hr'r hr
       (hgS_spec.mono fun _ h ↦ h.2) <|
-      tendsto_continuousMap_of_eventually_eq_comp T hK.cthickening
+      ContinuousMap.tendsto_of_eventually_eq_comp
         ((hf.continuousOn_fderiv_of_isOpen hU le_rfl).mono hKδU) huS_cont
         (hev.mono fun _ h ↦ h.1) (fun x ↦ Metric.self_subset_cthickening _ (huK x))
         (hgS_spec.mono fun _ h ↦ h.1) hgu⟩
 
 private theorem coeff_realConvolutionAsym_eq_deriv_fourierCoeff {t r' r s : ℝ} (ht : 0 ≤ t)
     (htr' : t + 1 / 2 < r') (hr'r : r' < r) (hrs : r < s) (hts : t + 1 = s)
-    {U K : Set E} {δ R B₁ : ℝ} (hU : IsOpen U) (hK : IsCompact K) (hδ : 0 < δ)
+    {U K : Set E} {δ R B₁ : ℝ} (hU : IsOpen U) (hδ : 0 < δ)
     (hKδU : Metric.cthickening δ K ⊆ U) {f : E → F} (hf : ContDiffOn ℝ 1 f U)
     (hIH : ∀ v : CircleSobolev r E,
       (∀ x, toContinuousMap T (by linarith) v x ∈ Metric.cthickening δ K) → ‖v‖ ≤ R + 1 →
@@ -364,7 +350,7 @@ private theorem coeff_realConvolutionAsym_eq_deriv_fourierCoeff {t r' r s : ℝ}
   have hs : 1 / 2 < s := by linarith
   -- Stage 1: Approximate `gu` in `H^{r'}` along the partial Fourier sums `uS S` of `u`.
   obtain ⟨gS, hgS_ev, hgS_r'⟩ := exists_tendsto_inclusion_fderiv_approx T (by linarith) hr'r hrs
-    hU hK hδ hKδU hf hIH huK huR hgu
+    hU hδ hKδU hf hIH huK huR hgu
   let uS : Finset ℤ → CircleSobolev s E := fun S ↦ ∑ k ∈ S, single k (u.coeff k)
   let A := realConvolutionAsym ht htr' (.id ℝ (E →L[ℝ] F))
   -- Stage 2: Pass to the limit on both sides of the trigonometric-polynomial chain rule.
@@ -384,7 +370,7 @@ private theorem coeff_realConvolutionAsym_eq_deriv_fourierCoeff {t r' r s : ℝ}
         hf.continuousOn.comp_continuous (toContinuousMap T hs (uS S)).continuous fun x ↦ hKδU (h x)⟩
     else fu
   have hfuS_cont : Tendsto fuS atTop (𝓝 fu) :=
-    tendsto_continuousMap_of_eventually_eq_comp T hK.cthickening (hf.continuousOn.mono hKδU)
+    ContinuousMap.tendsto_of_eventually_eq_comp (hf.continuousOn.mono hKδU)
       ((toContinuousMap T hs).continuous.tendsto u |>.comp (hasSum_single u))
       (hgS_ev.mono fun _ h ↦ h.1) huK'
       (hgS_ev.mono fun S hS x ↦ by dsimp only [fuS, uS]; rw [dite_eq_left hS.1]; rfl) fun _ ↦ rfl
@@ -491,7 +477,7 @@ private theorem exists_toContinuousMap_eq_comp_and_norm_le_aux :
           funext fun x ↦ by simpa only [toContinuousMap_inclusion] using har x
         rw [coeff_inclusion, ← fourierCoeff_toContinuousMap T hr ar n, har_eq]
         exact coeff_realConvolutionAsym_eq_deriv_fourierCoeff T ht htr' hr'r hrs hts_eq
-          hU hK hδ hK'U (hf.of_le (by norm_cast; omega)) hIH₁ huK huR
+          hU hδ hK'U (hf.of_le (by norm_cast; omega)) hIH₁ huK huR
           (fun x ↦ by simpa only [toContinuousMap_inclusion] using hgu x) n
       have hb_norm : ‖b‖ ≤ Bd :=
         (A.le_opNorm₂ _ _).trans <| mul_le_mul

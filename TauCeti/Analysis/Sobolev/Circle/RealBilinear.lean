@@ -404,78 +404,7 @@ private theorem norm_coeffConvolutionAsym_le [CompleteSpace F] (ht : 0 ≤ t) (h
       √(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖ :=
   norm_mkCoeffConvolution_le (norm_coeffConvolutionAsymAux_le ht htr B) a b
 
-/-! ### Four-part sesquilinear decomposition and public real-bilinear convolutions -/
-
-private def bilinearShift10 (L : E →L[ℝ] E' →L[ℝ] F) : E →L[ℝ] E' →L[ℝ] F :=
-  ((ContinuousLinearMap.compL ℝ E' F F (Complex.smulIEquiv F : F →L[ℝ] F)).comp L).comp
-    (Complex.smulIEquiv E : E →L[ℝ] E)
-
-private def bilinearShift01 (L : E →L[ℝ] E' →L[ℝ] F) : E →L[ℝ] E' →L[ℝ] F :=
-  (ContinuousLinearMap.compL ℝ E' F F (Complex.smulIEquiv F : F →L[ℝ] F)).comp
-    (L.flip.comp (Complex.smulIEquiv E' : E' →L[ℝ] E')).flip
-
-@[simp] private theorem bilinearShift10_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    bilinearShift10 L u v = I • L (I • u) v := by simp [bilinearShift10]
-
-@[simp] private theorem bilinearShift01_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    bilinearShift01 L u v = I • L u (I • v) := by simp [bilinearShift01]
-
-private theorem norm_bilinearShift10_le (L : E →L[ℝ] E' →L[ℝ] F) : ‖bilinearShift10 L‖ ≤ ‖L‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun u ↦ ContinuousLinearMap.opNorm_le_bound
-    _ (mul_nonneg (norm_nonneg L) (norm_nonneg u)) fun v ↦ by
-      simpa [norm_smul] using L.le_opNorm₂ (I • u) v
-
-private theorem norm_bilinearShift01_le (L : E →L[ℝ] E' →L[ℝ] F) : ‖bilinearShift01 L‖ ≤ ‖L‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun u ↦ ContinuousLinearMap.opNorm_le_bound
-    _ (mul_nonneg (norm_nonneg L) (norm_nonneg u)) fun v ↦ by
-      simpa [norm_smul] using L.le_opNorm₂ u (I • v)
-
-private def sesquiPart (b₁ b₂ : Bool) (L : E →L[ℝ] E' →L[ℝ] F) : E →L[ℝ] E' →L[ℝ] F :=
-  let L₂ := (2⁻¹ : ℝ) • (if b₂ then L + bilinearShift01 L else L - bilinearShift01 L)
-  (2⁻¹ : ℝ) • (if b₁ then L₂ + bilinearShift10 L₂ else L₂ - bilinearShift10 L₂)
-
-private theorem norm_two_inv_clm_le (b : Bool) {L S : E →L[ℝ] E' →L[ℝ] F} (hS : ‖S‖ ≤ ‖L‖) :
-    ‖(2⁻¹ : ℝ) • (if b then L + S else L - S)‖ ≤ ‖L‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun u ↦ by
-    have huS := (S.le_opNorm u).trans (mul_le_mul_of_nonneg_right hS (norm_nonneg u))
-    cases b <;> simp only [Bool.false_eq_true, ↓reduceIte, smul_apply, add_apply, sub_apply,
-      norm_smul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 2⁻¹)] <;>
-      linarith [L.le_opNorm u, norm_sub_le (L u) (S u), norm_add_le (L u) (S u)]
-
-private theorem norm_sesquiPart_le (b₁ b₂ : Bool) (L : E →L[ℝ] E' →L[ℝ] F) :
-    ‖sesquiPart b₁ b₂ L‖ ≤ ‖L‖ :=
-  (norm_two_inv_clm_le b₁ (norm_bilinearShift10_le _)).trans
-    (norm_two_inv_clm_le b₂ (norm_bilinearShift01_le L))
-
-private theorem sum_sesquiPart_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    ∑ p : Bool × Bool, sesquiPart p.1 p.2 L u v = L u v := by
-  simp only [Fintype.sum_prod_type, Fintype.sum_bool, sesquiPart, Bool.false_eq_true, ↓reduceIte,
-    smul_apply, add_apply, sub_apply]; module
-
-private def conjIf (b : Bool) : ℂ → ℂ := if b then starRingEnd ℂ else id
-private def signI (b : Bool) : ℂ := if b then -I else I
-
-private theorem sesquiPart_left_smul_I (b₁ b₂ : Bool) (L : E →L[ℝ] E' →L[ℝ] F) (x : E) (y : E') :
-    sesquiPart b₁ b₂ L (I • x) y = signI b₁ • sesquiPart b₁ b₂ L x y := by
-  cases b₁ <;> simp only [sesquiPart, signI, Bool.false_eq_true, ↓reduceIte, smul_apply, add_apply,
-    sub_apply, bilinearShift10_apply, i_smul_i_smul, map_neg, neg_apply, smul_neg, neg_smul,
-    smul_comm I (2⁻¹ : ℝ), smul_add, smul_sub] <;> abel
-
-private theorem sesquiPart_right_smul_I (b₁ b₂ : Bool) (L : E →L[ℝ] E' →L[ℝ] F) (x : E) (y : E') :
-    sesquiPart b₁ b₂ L x (I • y) = signI b₂ • sesquiPart b₁ b₂ L x y := by
-  cases b₁ <;> cases b₂ <;> simp only [sesquiPart, signI, Bool.false_eq_true, ↓reduceIte,
-    smul_apply, add_apply, sub_apply, bilinearShift10_apply, bilinearShift01_apply, i_smul_i_smul,
-    map_neg, smul_neg, neg_smul, smul_comm I (2⁻¹ : ℝ), smul_add, smul_sub] <;> abel
-
-private theorem re_add_im_signI (b : Bool) (z : ℂ) : (z.re : ℂ) + z.im * signI b = conjIf b z := by
-  cases b <;> apply Complex.ext <;> simp [signI, conjIf]
-
-private theorem sesquiPart_smul (b₁ b₂ : Bool) (L : E →L[ℝ] E' →L[ℝ] F) (z w : ℂ) (u : E) (v : E') :
-    sesquiPart b₁ b₂ L (z • u) (w • v) = (conjIf b₁ z * conjIf b₂ w) • sesquiPart b₁ b₂ L u v := by
-  rw [← Complex.re_smul_add_im_smul z u, ← Complex.re_smul_add_im_smul w v]
-  simp only [map_add, add_apply, map_smul, smul_apply, sesquiPart_right_smul_I,
-    sesquiPart_left_smul_I]
-  simp only [← Complex.coe_smul, ← re_add_im_signI b₁ z, ← re_add_im_signI b₂ w]; module
+/-! ### Public real-bilinear convolutions via four-part sesquilinear decomposition -/
 
 private def reflectRealCLM : CircleSobolev s G →L[ℝ] CircleSobolev s G :=
   (reflect : CircleSobolev s G ≃ₗᵢ[ℂ] CircleSobolev s G).toLinearIsometry.toContinuousLinearMap
@@ -519,13 +448,13 @@ variable [CompleteSpace F]
 def realConvolution (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F) :
     CircleSobolev s E →L[ℝ] CircleSobolev s E' →L[ℝ] CircleSobolev s F :=
   ∑ p : Bool × Bool,
-    (((coeffConvolution hs (sesquiPart p.1 p.2 L)).comp (reflectIf p.1)).flip.comp
+    (((coeffConvolution hs (L.sesquiPart p.1 p.2)).comp (reflectIf p.1)).flip.comp
       (reflectIf p.2)).flip
 
 private theorem realConvolution_apply (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev s E) (b : CircleSobolev s E') :
     realConvolution hs L a b = ∑ p : Bool × Bool,
-      coeffConvolution hs (sesquiPart p.1 p.2 L) (reflectIf p.1 a) (reflectIf p.2 b) := by
+      coeffConvolution hs (L.sesquiPart p.1 p.2) (reflectIf p.1 a) (reflectIf p.2 b) := by
   simp [realConvolution]
 
 /-- **Product estimate for `realConvolution` on `H^s`, `s > 1/2`.** -/
@@ -537,7 +466,7 @@ theorem norm_realConvolution_le (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F
   refine (norm_sum_bool_prod_le (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖L‖ * ‖a‖ * ‖b‖) _
     fun p ↦ ?_).trans_eq ?_
   · refine (norm_coeffConvolution_le hs _ _ _).trans ?_
-    rw [norm_reflectIf, norm_reflectIf]; have := norm_sesquiPart_le p.1 p.2 L; gcongr
+    rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
   · rw [← mul_assoc, ← mul_assoc, ← mul_assoc, ← mul_assoc, four_mul_two_rpow_add_one]
 
 /-- **Asymmetric real-bilinear product `H^r(E) × H^t(E') → H^t(F)` for `0 ≤ t` and
@@ -546,13 +475,13 @@ multiplier acts boundedly on `H^t` even when `t ≤ 1/2`. -/
 def realConvolutionAsym (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (L : E →L[ℝ] E' →L[ℝ] F) :
     CircleSobolev r E →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
   ∑ p : Bool × Bool,
-    (((coeffConvolutionAsym ht htr (sesquiPart p.1 p.2 L)).comp (reflectIf p.1)).flip.comp
+    (((coeffConvolutionAsym ht htr (L.sesquiPart p.1 p.2)).comp (reflectIf p.1)).flip.comp
       (reflectIf p.2)).flip
 
 private theorem realConvolutionAsym_apply (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     (L : E →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r E) (b : CircleSobolev t E') :
     realConvolutionAsym ht htr L a b = ∑ p : Bool × Bool,
-      coeffConvolutionAsym ht htr (sesquiPart p.1 p.2 L) (reflectIf p.1 a) (reflectIf p.2 b) := by
+      coeffConvolutionAsym ht htr (L.sesquiPart p.1 p.2) (reflectIf p.1 a) (reflectIf p.2 b) := by
   simp [realConvolutionAsym]
 
 /-- **Product estimate for `realConvolutionAsym` on `H^r × H^t → H^t`.** -/
@@ -564,7 +493,7 @@ theorem norm_realConvolutionAsym_le (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (L : E 
   refine (norm_sum_bool_prod_le
     (√(∑' n, weight (-(2 * (r - t))) n) * ‖L‖ * ‖a‖ * ‖b‖) _ fun p ↦ ?_).trans_eq ?_
   · refine (norm_coeffConvolutionAsym_le ht htr _ _ _).trans ?_
-    rw [norm_reflectIf, norm_reflectIf]; have := norm_sesquiPart_le p.1 p.2 L; gcongr
+    rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
   · ring
 
 private theorem hasSum_reflectIf (T : ℝ) [Fact (0 < T)] [CompleteSpace G] (hs : 1 / 2 < s)
@@ -578,9 +507,10 @@ private theorem hasSum_reflectIf (T : ℝ) [Fact (0 < T)] [CompleteSpace G] (hs 
   · simpa [reflectIf] using hA
   · simpa [reflectIf, reflectRealCLM, Function.comp_def] using (Equiv.neg ℤ).hasSum_iff.2 hA
 
-private theorem conjIf_fourier_ite (T : ℝ) (b : Bool) (m : ℤ) (x : AddCircle T) :
-    conjIf b (fourier (T := T) (if b then -m else m) x : ℂ) = fourier (T := T) m x := by
-  cases b <;> simp [conjIf]
+private theorem starRingEnd_ite_fourier (T : ℝ) (b : Bool) (m : ℤ) (x : AddCircle T) :
+    (if b then starRingEnd ℂ (fourier (T := T) (if b then -m else m) x : ℂ)
+      else (fourier (T := T) (if b then -m else m) x : ℂ)) = fourier (T := T) m x := by
+  cases b <;> simp
 
 /-- **On continuous representatives `realConvolution` is pointwise:** for `s > 1/2`, the continuous
 function attached to `realConvolution hs L a b` is `x ↦ L (a x) (b x)`. -/
@@ -590,12 +520,13 @@ function attached to `realConvolution hs L a b` is `x ↦ L (a x) (b x)`. -/
     toContinuousMap T hs (realConvolution hs L a b) x =
       L (toContinuousMap T hs a x) (toContinuousMap T hs b x) := by
   rw [realConvolution_apply, map_sum, ContinuousMap.coe_sum, Finset.sum_apply,
-    ← sum_sesquiPart_apply L (toContinuousMap T hs a x) (toContinuousMap T hs b x)]
+    ← L.sum_sesquiPart_apply (toContinuousMap T hs a x) (toContinuousMap T hs b x)]
   refine Finset.sum_congr rfl fun p _ ↦
-    toContinuousMap_coeffConvolution_eq T hs (sesquiPart p.1 p.2 L)
+    toContinuousMap_coeffConvolution_eq T hs (L.sesquiPart p.1 p.2)
       (reflectIf p.1 a) (reflectIf p.2 b) x (hasSum_reflectIf T hs p.1 a x)
       (hasSum_reflectIf T hs p.2 b x) fun m k ↦ ?_
-  rw [sesquiPart_smul, conjIf_fourier_ite, conjIf_fourier_ite, fourier_add]
+  rw [ContinuousLinearMap.sesquiPart_apply_smul, starRingEnd_ite_fourier,
+    starRingEnd_ite_fourier, fourier_add]
 
 /-- `realConvolution` commutes with the Sobolev inclusions `H^s → H^t`, `1/2 < t ≤ s`. -/
 @[simp] theorem realConvolution_inclusion (ht : 1 / 2 < t) (h : t ≤ s) (L : E →L[ℝ] E' →L[ℝ] F)
@@ -643,13 +574,22 @@ any order `0 ≤ t` (`t + 1/2 < r`). -/
     (realConvolutionAsym ht htr L a (single k w)).coeff n =
       (mapRealCLM (L.flip.complexLinearPart w) a).coeff (n - k) +
         (mapRealCLM (L.flip.complexAntilinearPart w) a).coeff (n + k) := by
-  have hp (b₁ b₂ : Bool) (x : E) : sesquiPart b₁ b₂ L x w =
+  have hp (b₁ b₂ : Bool) (x : E) : L.sesquiPart b₁ b₂ x w =
       if b₂ then if b₁ then (L.flip.complexAntilinearPart w).complexAntilinearPart x
         else (L.flip.complexAntilinearPart w).complexLinearPart x
       else if b₁ then (L.flip.complexLinearPart w).complexAntilinearPart x
         else (L.flip.complexLinearPart w).complexLinearPart x := by
     cases b₁ <;> cases b₂ <;>
-      simp [sesquiPart, smul_add, smul_sub, smul_comm I (2⁻¹ : ℝ)] <;> abel
+      simp only [Bool.false_eq_true, ↓reduceIte,
+        ContinuousLinearMap.sesquiPart_false_false_apply,
+        ContinuousLinearMap.sesquiPart_true_false_apply,
+        ContinuousLinearMap.sesquiPart_false_true_apply,
+        ContinuousLinearMap.sesquiPart_true_true_apply,
+        ContinuousLinearMap.complexLinearPart_apply,
+        ContinuousLinearMap.complexAntilinearPart_apply,
+        smul_apply, add_apply, sub_apply, ContinuousLinearMap.flip_apply,
+        smul_add, smul_sub, smul_comm I (2⁻¹ : ℝ), i_smul_i_smul] <;>
+      module
   rw [realConvolutionAsym_apply, coeff_sum]
   simp only [Finset.sum_apply, Fintype.sum_prod_type, Fintype.sum_bool, reflectIf_single, hp,
     Bool.false_eq_true, ↓reduceIte, coeff_coeffConvolutionAsym, coeff_single,
@@ -699,10 +639,13 @@ at every order `0 ≤ t` (including `t ≤ 1/2`). -/
     simp only [Finset.sum_apply, Fintype.sum_prod_type, Fintype.sum_bool, reflectIf_single,
       neg_zero, ite_self, coeff_coeffConvolutionAsym, coeff_single, single_addConvolution_apply,
       ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, zero_add, coeff_reflectIf,
-      Bool.false_eq_true, ↓reduceIte, coeff_mapRealCLM, ContinuousLinearMap.complexLinearPart_apply,
-      ContinuousLinearMap.complexAntilinearPart_apply, sesquiPart, bilinearShift10_apply,
-      bilinearShift01_apply, smul_apply, add_apply, sub_apply, smul_add, smul_sub,
-      smul_comm I (2⁻¹ : ℝ), i_smul_i_smul, smul_neg]
+      Bool.false_eq_true, ↓reduceIte, coeff_mapRealCLM,
+      ContinuousLinearMap.complexLinearPart_apply,
+      ContinuousLinearMap.complexAntilinearPart_apply,
+      ContinuousLinearMap.sesquiPart_false_false_apply,
+      ContinuousLinearMap.sesquiPart_true_false_apply,
+      ContinuousLinearMap.sesquiPart_false_true_apply,
+      ContinuousLinearMap.sesquiPart_true_true_apply]
     module
 
 end PublicConvolutions
