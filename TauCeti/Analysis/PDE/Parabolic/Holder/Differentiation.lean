@@ -294,7 +294,8 @@ private theorem mixedDerivL_spatialFDeriv_apply (u : ParabolicCkHolderSpace (k +
       mixedDerivL_of_lt (k := k + 1) (α := α) (F := F) (hab := hab) (r := r) (m := m + 1)
         (by omega)]
     -- Separating the last argument is linear, so it sends `0` to `0`.
-    exact (map_zero (curryRightCLM m)).symm
+    simp only [zero_apply]
+    rw [← curryRightCLM_apply, map_zero]
 
 private theorem spatialFDeriv_apply (u : ParabolicCkHolderSpace (k + 1) α E F hab)
     (p : slab (E := E) a b) : spatialFDeriv u p = (mixedDerivL 0 1 u p).curryRight 0 := by
@@ -311,7 +312,7 @@ private theorem timeSliceL_spatialFDeriv_apply (u : ParabolicCkHolderSpace (k + 
       timeSliceL_of_ne (k := k + 1) (α := α) (F := F) (hab := hab) (r := r) (m := m + 1)
         (by omega)]
     simp only [zero_apply, lp.coeFn_zero, Pi.zero_apply, HolderSpace.zero_apply]
-    exact (map_zero (curryRightCLM m)).symm
+    rw [← curryRightCLM_apply, map_zero]
 
 private theorem mixedDerivHolderL_spatialFDeriv_apply
     (u : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) (p : slab (E := E) a b) :
@@ -326,7 +327,7 @@ private theorem mixedDerivHolderL_spatialFDeriv_apply
       mixedDerivHolderL_of_ne (k := k + 1) (α := α) (F := F) (hab := hab) (r := r) (m := m + 1)
         (by omega)]
     simp only [zero_apply, HolderSpace.zero_apply]
-    exact (map_zero (curryRightCLM m)).symm
+    rw [← curryRightCLM_apply, map_zero]
 
 private theorem norm_spatialFDeriv_le (u : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ‖spatialFDeriv u‖ ≤ ‖u‖ := by
