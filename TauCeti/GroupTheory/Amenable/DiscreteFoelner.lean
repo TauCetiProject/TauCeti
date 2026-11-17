@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
 public import TauCeti.Analysis.Normed.Lp.StdSimplex
 import Mathlib.Analysis.LocallyConvex.Separation
-import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
 /-!
