@@ -141,6 +141,20 @@ theorem ContDiff.contDiff_hadamardFactor (f : E → F)
     (x : E) : ContDiff ℝ ∞ (hadamardFactor f x) := by
   simpa using ContDiff.contDiff_hadamardFactor_of_succ (⊤ : ℕ∞) f (by simpa using hf) x
 
+/-- For a smooth function, the averaged derivative in Hadamard's factorization depends smoothly on
+the basepoint and the endpoint jointly. -/
+theorem ContDiff.contDiff_hadamardFactor_uncurry (f : E → F) (hf : ContDiff ℝ ∞ f) :
+    ContDiff ℝ ∞ (fun p : E × E ↦ hadamardFactor f p.1 p.2) := by
+  have hd : ContDiff ℝ ∞ (fun q : E × E ↦ fderiv ℝ f (q.1 + q.2)) :=
+    (hf.fderiv_right (m := ∞) (by simp)).comp (contDiff_fst.add contDiff_snd)
+  have h := (hd.contDiff_segmentAverage_param (w := fun _ ↦ (1 : ℝ))
+      intervalIntegrable_const 0).comp
+    (contDiff_fst.prodMk (contDiff_snd.sub contDiff_fst) :
+      ContDiff ℝ ∞ (fun p : E × E ↦ (p.1, p.2 - p.1)))
+  convert h using 1
+  funext p
+  simp [hadamardFactor, segmentAverage]
+
 namespace TauCeti
 
 open scoped Nat in
