@@ -43,6 +43,8 @@ spaces, while this one builds a comodule from a basis equipped with a prescribed
 * `TauCeti.Comodule.basis_mem_weightSpace_ofWeights`: the `x`-th basis vector has weight `wt x`.
 * `TauCeti.Comodule.weightProj_ofWeights_eq`: for distinct weights, weight projection extracts
   the corresponding basis coordinate.
+* `TauCeti.Comodule.weightProj_ofWeights_eq_sum` and `weightProj_ofWeights_pi_eq`: for repeated
+  weights, weight projection keeps the coordinates of the given weight.
 
 ## References
 
@@ -165,6 +167,35 @@ theorem weightProj_ofWeights_eq (b : Module.Basis η R M) (wt : η → G)
   · intro hx
     have hx' : b.repr m x = 0 := by simpa [Finsupp.mem_support_iff] using hx
     rw [hx', zero_smul, map_zero]
+
+/-- **Weight projection of a diagonal comodule.** For a finite basis, projecting to the weight `g`
+keeps exactly the coordinates whose weight is `g`; the weights need not be distinct. -/
+theorem weightProj_ofWeights_eq_sum [Fintype η] [DecidableEq G] (b : Module.Basis η R M)
+    (wt : η → G) (g : G) (m : M) :
+    letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+    weightProj R G M g m = ∑ x with wt x = g, (b.repr m x) • b x := by
+  classical
+  let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+  conv_lhs => rw [← b.linearCombination_repr m]
+  rw [Finsupp.linearCombination_apply, Finsupp.sum_fintype _ _ (by simp), map_sum,
+    Finset.sum_filter]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [map_smul]
+  split_ifs with h
+  · rw [weightProj_of_mem]
+    exact h ▸ basis_mem_weightSpace_ofWeights b wt x
+  · rw [weightProj_of_mem_of_ne (Ne.symm h) (basis_mem_weightSpace_ofWeights b wt x), smul_zero]
+
+/-- The weight projection of the diagonal comodule on `I → R` keeps the coordinates of weight `g`
+and zeroes the others. -/
+theorem weightProj_ofWeights_pi_eq [Finite η] [DecidableEq G] (wt : η → G) (g : G) (v : η → R) :
+    letI : Comodule R (MonoidAlgebra R G) (η → R) := ofWeights (Pi.basisFun R η) wt
+    weightProj R G (η → R) g v = fun a ↦ if wt a = g then v a else 0 := by
+  classical
+  let _ := Fintype.ofFinite η
+  rw [weightProj_ofWeights_eq_sum]
+  ext a
+  simp [Finset.sum_apply, Pi.single_apply]
 
 /-- The coefficient matrix of `ofWeights` is the diagonal matrix of the characters. -/
 theorem coefficientMatrix_ofWeights [DecidableEq η] (b : Module.Basis η R M) (wt : η → G) :
