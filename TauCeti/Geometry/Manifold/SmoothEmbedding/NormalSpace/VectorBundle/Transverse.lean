@@ -46,59 +46,55 @@ open scoped Manifold ContDiff
 namespace TauCeti.SmoothEmbedding
 
 variable {𝕜 E V P H G M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup P] [NormedSpace 𝕜 P] [FiniteDimensional 𝕜 P]
-  [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {n m : ℕ∞ω} [IsManifold I (m + 1) M]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [FiniteDimensional 𝕜 V] [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+  [TopologicalSpace H] [TopologicalSpace G] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N] {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
+  {n m : ℕ∞ω}
 
-section LevelTrivialization
+section LevelLinearMap
 
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 P]
-  [IsManifold I 1 M] [IsManifold J 1 N] [IsManifold I (m + 1) M] in
-private def levelLinearMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {g : N → P} {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) (x : M) :
-    f.NormalSpace x hn →L[𝕜] P := by
+variable (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+  (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+  {W : Set M} (hW : IsOpen W) {g : N → P} {c : P}
+  (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x))
+
+private def levelLinearMap (x : M) : f.NormalSpace x hn →L[𝕜] P := by
   classical
   exact if hx : x ∈ W then
       (f.normalSpaceEquivOfLevel x hn (eventually_of_mem (hW.mem_nhds hx) hgf)
         (hreg x hx) (f.finrank_add_eq_of_eq_sub hn hdim x)).toContinuousLinearMap
     else 0
 
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 P]
-  [IsManifold I 1 M] [IsManifold J 1 N] [IsManifold I (m + 1) M] in
-private theorem levelLinearMap_normalClass (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {g : N → P} {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x))
-    {x : M} (hx : x ∈ W) (v : TangentSpace J (f x)) :
+private theorem levelLinearMap_normalClass {x : M} (hx : x ∈ W) (v : TangentSpace J (f x)) :
     f.levelLinearMap hn hdim hW hgf hreg x (f.normalClass x hn v) =
       mfderiv J 𝓘(𝕜, P) g (f x) v := by
   simp only [levelLinearMap, hx, ↓reduceDIte]
   exact f.normalSpaceEquivOfLevel_normalClass x hn _ _ _ v
 
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 P]
-  [IsManifold I 1 M] [IsManifold J 1 N] [IsManifold I (m + 1) M] in
-private theorem bijective_levelLinearMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {g : N → P} {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) :
+private theorem bijective_levelLinearMap :
     ∀ x ∈ W, Bijective (f.levelLinearMap hn hdim hW hgf hreg x) := fun x hx ↦ by
   simp only [levelLinearMap, hx, ↓reduceDIte]
   exact (f.normalSpaceEquivOfLevel x hn _ _ _).bijective
 
+end LevelLinearMap
+
+variable [FiniteDimensional 𝕜 E] [IsManifold I 1 M] [IsManifold J 1 N] [IsManifold I (m + 1) M]
+
+section LevelTrivialization
+
 variable [IsManifold J (m + 1) N]
 
-private theorem contMDiffOn_levelLinearMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) :
+section SingleLevel
+
+variable [FiniteDimensional 𝕜 P] (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+  (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+  {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
+  {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
+  (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x))
+
+include hm hU hfW hg in
+private theorem contMDiffOn_levelLinearMap :
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiffOn (I.prod 𝓘(𝕜, P)) 𝓘(𝕜, P) m
       (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
@@ -135,46 +131,27 @@ private theorem contMDiffOn_levelLinearMap (f : SmoothEmbedding I J n M N) (hn :
 open `U ⊆ N` containing `f '' W`, constant along `f '' W`, and regular at `f x` for every `x ∈ W`,
 then `mfderiv J 𝓘(𝕜, P) g (f x)` descends to a linear trivialization of `f.NormalSpace` over `W`
 belonging to the `C^m` maximal atlas of `f.NormalSpace`. -/
-def normalSpaceTrivializationOfLevel (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) :
-    Trivialization P (π P (fun x ↦ f.NormalSpace x hn)) :=
+def normalSpaceTrivializationOfLevel : Trivialization P (π P (fun x ↦ f.NormalSpace x hn)) :=
   letI := f.normalSpaceFiberBundle hn hdim; letI := f.normalSpaceVectorBundle hn hdim
   Trivialization.ofContinuousLinearMapOn hW (f.levelLinearMap hn hdim hW hgf hreg)
     (f.contMDiffOn_levelLinearMap hn hm hdim hW hU hfW hg hgf hreg)
     (f.bijective_levelLinearMap hn hdim hW hgf hreg)
 
-@[simp]
-theorem baseSet_normalSpaceTrivializationOfLevel (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) :
+@[simp] theorem baseSet_normalSpaceTrivializationOfLevel :
     (f.normalSpaceTrivializationOfLevel hn hm hdim hW hU hfW hg hgf hreg).baseSet = W := by
   let := f.normalSpaceFiberBundle hn hdim; let := f.normalSpaceVectorBundle hn hdim
   rw [normalSpaceTrivializationOfLevel.eq_def]
   exact Trivialization.baseSet_ofContinuousLinearMapOn _ _ _ _
 
 /-- `normalSpaceTrivializationOfLevel` is `𝕜`-linear on every fibre over `W`. -/
-instance isLinear_normalSpaceTrivializationOfLevel (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) :
+instance isLinear_normalSpaceTrivializationOfLevel :
     (f.normalSpaceTrivializationOfLevel hn hm hdim hW hU hfW hg hgf hreg).IsLinear 𝕜 := by
   let := f.normalSpaceFiberBundle hn hdim; let := f.normalSpaceVectorBundle hn hdim
   rw [normalSpaceTrivializationOfLevel.eq_def]
   exact Trivialization.isLinear_ofContinuousLinearMapOn _ _ _ _
 
 /-- `normalSpaceTrivializationOfLevel` belongs to the `C^m` maximal atlas of `f.NormalSpace`. -/
-theorem normalSpaceTrivializationOfLevel_mem_maximalAtlas
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x)) :
+theorem normalSpaceTrivializationOfLevel_mem_maximalAtlas :
     letI := f.normalSpaceFiberBundle hn hdim
     (f.normalSpaceTrivializationOfLevel hn hm hdim hW hU hfW hg hgf hreg).toOpenPartialHomeomorph ∈
       (contMDiffFiberwiseLinear M P I m).maximalAtlas
@@ -186,11 +163,7 @@ theorem normalSpaceTrivializationOfLevel_mem_maximalAtlas
 
 /-- Over `W`, `normalSpaceTrivializationOfLevel` evaluates `normalSpaceEquivOfLevel` on the normal
 fibre. -/
-theorem normalSpaceTrivializationOfLevel_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x))
+theorem normalSpaceTrivializationOfLevel_apply
     {p : TotalSpace P (fun x ↦ f.NormalSpace x hn)} (hp : p.proj ∈ W) :
     f.normalSpaceTrivializationOfLevel hn hm hdim hW hU hfW hg hgf hreg p =
       (p.proj, f.normalSpaceEquivOfLevel p.proj hn (eventually_of_mem (hW.mem_nhds hp) hgf)
@@ -202,30 +175,25 @@ theorem normalSpaceTrivializationOfLevel_apply (f : SmoothEmbedding I J n M N) (
 
 /-- Over `W`, `normalSpaceTrivializationOfLevel` sends the normal class of an ambient tangent vector
 `v` to `(x, mfderiv J 𝓘(𝕜, P) g (f x) v)`. -/
-@[simp]
-theorem normalSpaceTrivializationOfLevel_normalClass (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W : Set M} (hW : IsOpen W) {U : Set N} (hU : IsOpen U) (hfW : MapsTo f W U)
-    {g : N → P} (hg : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g U) {c : P}
-    (hgf : ∀ x ∈ W, g (f x) = c) (hreg : ∀ x ∈ W, IsRegularPoint J 𝓘(𝕜, P) g (f x))
+@[simp] theorem normalSpaceTrivializationOfLevel_normalClass
     {x : M} (hx : x ∈ W) (v : TangentSpace J (f x)) :
     f.normalSpaceTrivializationOfLevel hn hm hdim hW hU hfW hg hgf hreg
         ⟨x, f.normalClass x hn v⟩ = (x, mfderiv J 𝓘(𝕜, P) g (f x) v) := by
   rw [f.normalSpaceTrivializationOfLevel_apply hn hm hdim hW hU hfW hg hgf hreg hx]
   exact Prod.ext rfl (f.normalSpaceEquivOfLevel_normalClass _ _ _ _ _ v)
 
+end SingleLevel
+
 /-- **Overlap transition law for level-set normal trivializations.** On `W₀ ∩ W₁`, the fibrewise
 coordinate change between two level-set trivializations sends `mfderiv J 𝓘(𝕜, P) g₀ (f x) v` to
 `mfderiv J 𝓘(𝕜, P) g₁ (f x) v`. -/
-theorem coordChangeL_normalSpaceTrivializationOfLevel_mfderiv
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W₀ W₁ : Set M} (hW₀ : IsOpen W₀) (hW₁ : IsOpen W₁)
-    {U₀ U₁ : Set N} (hU₀ : IsOpen U₀) (hU₁ : IsOpen U₁)
-    (hfW₀ : MapsTo f W₀ U₀) (hfW₁ : MapsTo f W₁ U₁)
-    {g₀ g₁ : N → P} (hg₀ : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g₀ U₀)
-    (hg₁ : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g₁ U₁) {c₀ c₁ : P}
-    (hgf₀ : ∀ x ∈ W₀, g₀ (f x) = c₀) (hgf₁ : ∀ x ∈ W₁, g₁ (f x) = c₁)
+theorem coordChangeL_normalSpaceTrivializationOfLevel_mfderiv [FiniteDimensional 𝕜 P]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+    {W₀ W₁ : Set M} (hW₀ : IsOpen W₀) (hW₁ : IsOpen W₁) {U₀ U₁ : Set N} (hU₀ : IsOpen U₀)
+    (hU₁ : IsOpen U₁) (hfW₀ : MapsTo f W₀ U₀) (hfW₁ : MapsTo f W₁ U₁) {g₀ g₁ : N → P}
+    (hg₀ : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g₀ U₀) (hg₁ : ContMDiffOn J 𝓘(𝕜, P) (m + 1) g₁ U₁)
+    {c₀ c₁ : P} (hgf₀ : ∀ x ∈ W₀, g₀ (f x) = c₀) (hgf₁ : ∀ x ∈ W₁, g₁ (f x) = c₁)
     (hreg₀ : ∀ x ∈ W₀, IsRegularPoint J 𝓘(𝕜, P) g₀ (f x))
     (hreg₁ : ∀ x ∈ W₁, IsRegularPoint J 𝓘(𝕜, P) g₁ (f x))
     {x : M} (hx : x ∈ W₀ ∩ W₁) (v : TangentSpace J (f x)) :
@@ -238,22 +206,18 @@ theorem coordChangeL_normalSpaceTrivializationOfLevel_mfderiv
   simp only [normalSpaceTrivializationOfLevel.eq_def]
   exact Trivialization.coordChangeL_ofContinuousLinearMapOn_apply _ _ _ _ _ _ _ _ hx _
 
-omit [FiniteDimensional 𝕜 P] in
 /-- **Scalar transition law in codimension one (`P = 𝕜`).** On the overlap `W₀ ∩ W₁` of two scalar
 defining equations `g₀, g₁ : N → 𝕜`, `dg₁ (f x)` equals `dg₀ (f x)` scaled by `(e₀.coordChangeL 𝕜
 e₁ x) 1`. -/
 theorem mfderiv_eq_coordChangeL_normalSpaceTrivializationOfLevel_one_smul
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank 𝕜 𝕜 = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {W₀ W₁ : Set M} (hW₀ : IsOpen W₀) (hW₁ : IsOpen W₁)
-    {U₀ U₁ : Set N} (hU₀ : IsOpen U₀) (hU₁ : IsOpen U₁)
-    (hfW₀ : MapsTo f W₀ U₀) (hfW₁ : MapsTo f W₁ U₁)
-    {g₀ g₁ : N → 𝕜} (hg₀ : ContMDiffOn J 𝓘(𝕜, 𝕜) (m + 1) g₀ U₀)
-    (hg₁ : ContMDiffOn J 𝓘(𝕜, 𝕜) (m + 1) g₁ U₁) {c₀ c₁ : 𝕜}
-    (hgf₀ : ∀ x ∈ W₀, g₀ (f x) = c₀) (hgf₁ : ∀ x ∈ W₁, g₁ (f x) = c₁)
+    {W₀ W₁ : Set M} (hW₀ : IsOpen W₀) (hW₁ : IsOpen W₁) {U₀ U₁ : Set N} (hU₀ : IsOpen U₀)
+    (hU₁ : IsOpen U₁) (hfW₀ : MapsTo f W₀ U₀) (hfW₁ : MapsTo f W₁ U₁) {g₀ g₁ : N → 𝕜}
+    (hg₀ : ContMDiffOn J 𝓘(𝕜, 𝕜) (m + 1) g₀ U₀) (hg₁ : ContMDiffOn J 𝓘(𝕜, 𝕜) (m + 1) g₁ U₁)
+    {c₀ c₁ : 𝕜} (hgf₀ : ∀ x ∈ W₀, g₀ (f x) = c₀) (hgf₁ : ∀ x ∈ W₁, g₁ (f x) = c₁)
     (hreg₀ : ∀ x ∈ W₀, IsRegularPoint J 𝓘(𝕜, 𝕜) g₀ (f x))
-    (hreg₁ : ∀ x ∈ W₁, IsRegularPoint J 𝓘(𝕜, 𝕜) g₁ (f x))
-    {x : M} (hx : x ∈ W₀ ∩ W₁) :
+    (hreg₁ : ∀ x ∈ W₁, IsRegularPoint J 𝓘(𝕜, 𝕜) g₁ (f x)) {x : M} (hx : x ∈ W₀ ∩ W₁) :
     mfderiv J 𝓘(𝕜, 𝕜) g₁ (f x) =
       ((f.normalSpaceTrivializationOfLevel hn hm hdim hW₀ hU₀ hfW₀ hg₀ hgf₀ hreg₀).coordChangeL 𝕜
         (f.normalSpaceTrivializationOfLevel hn hm hdim hW₁ hU₁ hfW₁ hg₁ hgf₁ hreg₁) x 1) •
@@ -261,8 +225,7 @@ theorem mfderiv_eq_coordChangeL_normalSpaceTrivializationOfLevel_one_smul
   set τ := (f.normalSpaceTrivializationOfLevel hn hm hdim hW₀ hU₀ hfW₀ hg₀ hgf₀ hreg₀).coordChangeL
     𝕜 (f.normalSpaceTrivializationOfLevel hn hm hdim hW₁ hU₁ hfW₁ hg₁ hgf₁ hreg₁) x
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  let y₀ : 𝕜 := mfderiv J 𝓘(𝕜, 𝕜) g₀ (f x) v
-  let y₁ : 𝕜 := mfderiv J 𝓘(𝕜, 𝕜) g₁ (f x) v
+  let y₀ : 𝕜 := mfderiv J 𝓘(𝕜, 𝕜) g₀ (f x) v; let y₁ : 𝕜 := mfderiv J 𝓘(𝕜, 𝕜) g₁ (f x) v
   have hv : τ y₀ = y₁ := f.coordChangeL_normalSpaceTrivializationOfLevel_mfderiv hn hm hdim
     hW₀ hW₁ hU₀ hU₁ hfW₀ hfW₁ hg₀ hg₁ hgf₀ hgf₁ hreg₀ hreg₁ hx v
   calc y₁ = τ (y₀ • 1) := by rw [smul_eq_mul, mul_one, hv]
@@ -276,11 +239,14 @@ section TransverseCore
 
 variable [I.Boundaryless] [J.Boundaryless] [IsManifold J n N]
 
+section GeneralCodim
+
+variable [FiniteDimensional 𝕜 P] (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+  (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+
 /-- The `C^m`-compatible linear trivialization of `f.NormalSpace` around `x₀` induced by the chosen
 transverse defining equation `f.transverseDefiningMap`. -/
-def transverseNormalTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    Trivialization P (π P (fun x ↦ f.NormalSpace x hn)) :=
+def transverseNormalTrivialization (x₀ : M) : Trivialization P (π P (fun x ↦ f.NormalSpace x hn)) :=
   haveI : IsManifold J (m + 1) N := .of_le hm
   f.normalSpaceTrivializationOfLevel hn hm hdim
     ((f.isOpen_transverseAmbientSet hn hdim x₀).preimage (map_continuous f))
@@ -289,71 +255,50 @@ def transverseNormalTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0
     (fun x hx ↦ (f.mem_range_iff_transverseDefiningMap_eq_zero hn hdim x₀ hx).1 (mem_range_self x))
     (fun _ hx ↦ f.isRegularPoint_transverseDefiningMap hn hdim x₀ hx)
 
-@[simp]
-theorem baseSet_transverseNormalTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) :
+@[simp] theorem baseSet_transverseNormalTrivialization (x₀ : M) :
     (f.transverseNormalTrivialization hn hm hdim x₀).baseSet =
       f ⁻¹' f.transverseAmbientSet hn hdim x₀ := by
-  have : IsManifold J (m + 1) N := .of_le hm
-  rw [transverseNormalTrivialization.eq_def]
+  have : IsManifold J (m + 1) N := .of_le hm; rw [transverseNormalTrivialization.eq_def]
   exact f.baseSet_normalSpaceTrivializationOfLevel hn hm hdim _ _ _ _ _ _
 
 /-- The base point `x₀` belongs to the base set of `f.transverseNormalTrivialization` at `x₀`. -/
-theorem mem_baseSet_transverseNormalTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) :
+theorem mem_baseSet_transverseNormalTrivialization (x₀ : M) :
     x₀ ∈ (f.transverseNormalTrivialization hn hm hdim x₀).baseSet := by
   rw [f.baseSet_transverseNormalTrivialization hn hm hdim x₀]
   exact f.apply_mem_transverseAmbientSet hn hdim x₀
 
 /-- `f.transverseNormalTrivialization` is `𝕜`-linear on every fibre over its base set. -/
-instance isLinear_transverseNormalTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) :
+instance isLinear_transverseNormalTrivialization (x₀ : M) :
     (f.transverseNormalTrivialization hn hm hdim x₀).IsLinear 𝕜 := by
-  have : IsManifold J (m + 1) N := .of_le hm
-  rw [transverseNormalTrivialization.eq_def]
+  have : IsManifold J (m + 1) N := .of_le hm; rw [transverseNormalTrivialization.eq_def]
   exact f.isLinear_normalSpaceTrivializationOfLevel hn hm hdim _ _ _ _ _ _
 
 /-- `f.transverseNormalTrivialization` lies in the `C^m` maximal atlas of `f.NormalSpace`. -/
-theorem transverseNormalTrivialization_mem_maximalAtlas (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) :
+theorem transverseNormalTrivialization_mem_maximalAtlas (x₀ : M) :
     letI := f.normalSpaceFiberBundle hn hdim
     (f.transverseNormalTrivialization hn hm hdim x₀).toOpenPartialHomeomorph ∈
       (contMDiffFiberwiseLinear M P I m).maximalAtlas
         (TotalSpace P (fun x ↦ f.NormalSpace x hn)) := by
-  have : IsManifold J (m + 1) N := .of_le hm
-  rw [transverseNormalTrivialization.eq_def]
+  have : IsManifold J (m + 1) N := .of_le hm; rw [transverseNormalTrivialization.eq_def]
   exact f.normalSpaceTrivializationOfLevel_mem_maximalAtlas hn hm hdim _ _ _ _ _ _
 
-@[simp]
-theorem transverseNormalTrivialization_normalClass (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) {x : M} (hx : f x ∈ f.transverseAmbientSet hn hdim x₀)
-    (v : TangentSpace J (f x)) :
+@[simp] theorem transverseNormalTrivialization_normalClass (x₀ : M) {x : M}
+    (hx : f x ∈ f.transverseAmbientSet hn hdim x₀) (v : TangentSpace J (f x)) :
     f.transverseNormalTrivialization hn hm hdim x₀ ⟨x, f.normalClass x hn v⟩ =
       (x, mfderiv J 𝓘(𝕜, P) (f.transverseDefiningMap hn hdim x₀) (f x) v) := by
-  have : IsManifold J (m + 1) N := .of_le hm
-  rw [transverseNormalTrivialization.eq_def]
+  have : IsManifold J (m + 1) N := .of_le hm; rw [transverseNormalTrivialization.eq_def]
   exact f.normalSpaceTrivializationOfLevel_normalClass hn hm hdim _ _ _ _ _ _ hx v
 
 /-- **Transition-cocycle `VectorBundleCore` of the normal bundle from transverse charts.** At each
 point `x₀ : M`, the open set is `f ⁻¹' (f.transverseAmbientSet hn hdim x₀)` and the transition
 cocycle is the coordinate change between `f.transverseNormalTrivialization` charts. -/
-def transverseNormalCore (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) :
-    VectorBundleCore 𝕜 M P M :=
+def transverseNormalCore : VectorBundleCore 𝕜 M P M :=
   letI := f.normalSpaceFiberBundle hn hdim
   VectorBundleCore.ofMaximalAtlas (f.transverseNormalTrivialization hn hm hdim)
     (f.transverseNormalTrivialization_mem_maximalAtlas hn hm hdim) _root_.id
     (f.mem_baseSet_transverseNormalTrivialization hn hm hdim)
 
-@[simp]
-theorem transverseNormalCore_localTriv_baseSet (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) :
+@[simp] theorem transverseNormalCore_localTriv_baseSet (x₀ : M) :
     ((f.transverseNormalCore hn hm hdim).localTriv x₀).baseSet =
       f ⁻¹' f.transverseAmbientSet hn hdim x₀ := by
   let := f.normalSpaceFiberBundle hn hdim
@@ -363,28 +308,19 @@ theorem transverseNormalCore_localTriv_baseSet (f : SmoothEmbedding I J n M N) (
 /-- The `x₀`-th base set of `f.transverseNormalCore` is `f ⁻¹' f.transverseAmbientSet hn hdim x₀`.
 (Note that `simp` reduces `(f.transverseNormalCore ...).baseSet x₀` via
 `VectorBundleCore.baseSet_at` and `transverseNormalCore_localTriv_baseSet`.) -/
-theorem transverseNormalCore_baseSet (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) :
-    (f.transverseNormalCore hn hm hdim).baseSet x₀ =
-      f ⁻¹' f.transverseAmbientSet hn hdim x₀ := by
+theorem transverseNormalCore_baseSet (x₀ : M) :
+    (f.transverseNormalCore hn hm hdim).baseSet x₀ = f ⁻¹' f.transverseAmbientSet hn hdim x₀ := by
   rw [VectorBundleCore.baseSet_at, f.transverseNormalCore_localTriv_baseSet]
 
 /-- `f.transverseNormalCore` selects the chart indexed by `x` itself at `x : M`. -/
-@[simp]
-theorem transverseNormalCore_indexAt (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x : M) :
-    (f.transverseNormalCore hn hm hdim).indexAt x = x := by
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [transverseNormalCore.eq_def, VectorBundleCore.ofMaximalAtlas_indexAt, id_eq]
+@[simp] theorem transverseNormalCore_indexAt (x : M) :
+    (f.transverseNormalCore hn hm hdim).indexAt x = x :=
+  letI := f.normalSpaceFiberBundle hn hdim
+  by rw [transverseNormalCore.eq_def, VectorBundleCore.ofMaximalAtlas_indexAt, id_eq]
 
 /-- The coordinate change of `f.transverseNormalCore` from `x₀` to `x₁` at `x` is the
 `coordChangeL` between the corresponding transverse defining-equation trivializations. -/
-@[simp]
-theorem transverseNormalCore_coordChange (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ x₁ x : M) :
+@[simp] theorem transverseNormalCore_coordChange (x₀ x₁ x : M) :
     (f.transverseNormalCore hn hm hdim).coordChange x₀ x₁ x =
       ((f.transverseNormalTrivialization hn hm hdim x₀).coordChangeL 𝕜
         (f.transverseNormalTrivialization hn hm hdim x₁) x : P →L[𝕜] P) := by
@@ -392,51 +328,38 @@ theorem transverseNormalCore_coordChange (f : SmoothEmbedding I J n M N) (hn : n
   rw [transverseNormalCore.eq_def, VectorBundleCore.ofMaximalAtlas_coordChange]
 
 /-- The transition cocycle `f.transverseNormalCore` is `C^m`. -/
-instance isContMDiff_transverseNormalCore (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) :
+instance isContMDiff_transverseNormalCore :
     (f.transverseNormalCore hn hm hdim).IsContMDiff I m := by
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [transverseNormalCore.eq_def]
+  let := f.normalSpaceFiberBundle hn hdim; rw [transverseNormalCore.eq_def]
   exact VectorBundleCore.isContMDiff_ofMaximalAtlas _ _ _ _
 
 /-- Fibrewise continuous linear equivalence between the reconstructed fibre of
 `f.transverseNormalCore` at `x` and the quotient normal space `f.NormalSpace x hn`. -/
-def transverseNormalCoreFiberEquiv (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x : M) :
+def transverseNormalCoreFiberEquiv (x : M) :
     (f.transverseNormalCore hn hm hdim).Fiber x ≃L[𝕜] f.NormalSpace x hn :=
   letI := f.normalSpaceFiberBundle hn hdim
   VectorBundleCore.ofMaximalAtlasFiberEquiv (f.transverseNormalTrivialization hn hm hdim)
     (f.transverseNormalTrivialization_mem_maximalAtlas hn hm hdim) _root_.id
     (f.mem_baseSet_transverseNormalTrivialization hn hm hdim) x
 
-@[simp]
-theorem transverseNormalCoreFiberEquiv_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x : M) (v : (f.transverseNormalCore hn hm hdim).Fiber x) :
+@[simp] theorem transverseNormalCoreFiberEquiv_apply (x : M)
+    (v : (f.transverseNormalCore hn hm hdim).Fiber x) :
     f.transverseNormalCoreFiberEquiv hn hm hdim x v =
       (f.transverseNormalTrivialization hn hm hdim x).symm x v := by
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [transverseNormalCoreFiberEquiv.eq_def]
+  let := f.normalSpaceFiberBundle hn hdim; rw [transverseNormalCoreFiberEquiv.eq_def]
   exact VectorBundleCore.ofMaximalAtlasFiberEquiv_apply _ _ _ _ x v
 
-@[simp]
-theorem transverseNormalCoreFiberEquiv_symm_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x : M) (y : f.NormalSpace x hn) :
+@[simp] theorem transverseNormalCoreFiberEquiv_symm_apply (x : M) (y : f.NormalSpace x hn) :
     (f.transverseNormalCoreFiberEquiv hn hm hdim x).symm y =
       (f.transverseNormalTrivialization hn hm hdim x ⟨x, y⟩).2 := by
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [transverseNormalCoreFiberEquiv.eq_def]
+  let := f.normalSpaceFiberBundle hn hdim; rw [transverseNormalCoreFiberEquiv.eq_def]
   exact VectorBundleCore.ofMaximalAtlasFiberEquiv_symm_apply
     (E := fun x ↦ f.NormalSpace x hn) _ _ _ _ x y
 
 /-- At every `x : M`, `(f.transverseNormalCoreFiberEquiv hn hm hdim x).symm` sends the normal class
 of an ambient tangent vector `v` to `mfderiv J 𝓘(𝕜, P) (f.transverseDefiningMap hn hdim x) (f x) v`.
 -/
-theorem transverseNormalCoreFiberEquiv_symm_normalClass (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x : M) (v : TangentSpace J (f x)) :
+theorem transverseNormalCoreFiberEquiv_symm_normalClass (x : M) (v : TangentSpace J (f x)) :
     (f.transverseNormalCoreFiberEquiv hn hm hdim x).symm (f.normalClass x hn v) =
       mfderiv J 𝓘(𝕜, P) (f.transverseDefiningMap hn hdim x) (f x) v :=
   (f.transverseNormalCoreFiberEquiv_symm_apply hn hm hdim x (f.normalClass x hn v)).trans <|
@@ -447,8 +370,7 @@ theorem transverseNormalCoreFiberEquiv_symm_normalClass (f : SmoothEmbedding I J
 vector bundle from the transverse defining-equation cocycle `f.transverseNormalCore` produces a
 bundle canonically `C^m`-diffeomorphic to `TotalSpace P (fun x ↦ f.NormalSpace x hn)` via
 `f.transverseNormalCoreFiberEquiv` on every fibre. -/
-def transverseNormalCoreDiffeomorph (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) :
+def transverseNormalCoreDiffeomorph :
     letI := f.normalSpaceFiberBundle hn hdim
     (f.transverseNormalCore hn hm hdim).TotalSpace ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, P)⟯
       TotalSpace P (fun x ↦ f.NormalSpace x hn) :=
@@ -459,9 +381,7 @@ def transverseNormalCoreDiffeomorph (f : SmoothEmbedding I J n M N) (hn : n ≠ 
     (f.transverseNormalTrivialization_mem_maximalAtlas hn hm hdim) _root_.id
     (f.mem_baseSet_transverseNormalTrivialization hn hm hdim)
 
-@[simp]
-theorem transverseNormalCoreDiffeomorph_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+@[simp] theorem transverseNormalCoreDiffeomorph_apply
     (p : (f.transverseNormalCore hn hm hdim).TotalSpace) :
     letI := f.normalSpaceFiberBundle hn hdim
     f.transverseNormalCoreDiffeomorph hn hm hdim p =
@@ -472,9 +392,7 @@ theorem transverseNormalCoreDiffeomorph_apply (f : SmoothEmbedding I J n M N) (h
   rw [transverseNormalCoreDiffeomorph.eq_def, transverseNormalCoreFiberEquiv.eq_def]
   exact VectorBundleCore.ofMaximalAtlasDiffeomorph_apply _ _ _ _ p
 
-@[simp]
-theorem transverseNormalCoreDiffeomorph_symm_apply (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+@[simp] theorem transverseNormalCoreDiffeomorph_symm_apply
     (q : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
     letI := f.normalSpaceFiberBundle hn hdim
     (f.transverseNormalCoreDiffeomorph hn hm hdim).symm q =
@@ -487,10 +405,8 @@ theorem transverseNormalCoreDiffeomorph_symm_apply (f : SmoothEmbedding I J n M 
 
 /-- `transverseNormalCoreDiffeomorph` intertwines every core chart `localTriv x₀` with the
 corresponding transverse defining-equation trivialization `f.transverseNormalTrivialization`. -/
-theorem transverseNormalTrivialization_transverseNormalCoreDiffeomorph
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hm : m + 1 ≤ n) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) (p : (f.transverseNormalCore hn hm hdim).TotalSpace)
+theorem transverseNormalTrivialization_transverseNormalCoreDiffeomorph (x₀ : M)
+    (p : (f.transverseNormalCore hn hm hdim).TotalSpace)
     (hp : f p.proj ∈ f.transverseAmbientSet hn hdim x₀) :
     letI := f.normalSpaceFiberBundle hn hdim
     f.transverseNormalTrivialization hn hm hdim x₀
@@ -503,16 +419,19 @@ theorem transverseNormalTrivialization_transverseNormalCoreDiffeomorph
   exact VectorBundleCore.apply_ofMaximalAtlasDiffeomorph _ _ _ _ x₀ p
     ((f.baseSet_transverseNormalTrivialization hn hm hdim x₀).symm ▸ hp)
 
+end GeneralCodim
+
 /-! ### Codimension-one scalar transition cocycle -/
 
-omit [FiniteDimensional 𝕜 P] in
+section CodimOne
+
+variable (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+  (hdim : Module.finrank 𝕜 𝕜 = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
+
 /-- **Regularity of the scalar transition cocycle in codimension one.** For `P = 𝕜`, the scalar
 transition function `x ↦ (f.transverseNormalCore hn hm hdim).coordChange x₀ x₁ x 1` is `C^m` on
 each overlap `f ⁻¹' transverseAmbientSet x₀ ∩ f ⁻¹' transverseAmbientSet x₁`. -/
-theorem contMDiffOn_transverseNormalCore_coordChange_one (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 𝕜 = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ x₁ : M) :
+theorem contMDiffOn_transverseNormalCore_coordChange_one (x₀ x₁ : M) :
     ContMDiffOn I 𝓘(𝕜) m
       (fun x ↦ (f.transverseNormalCore hn hm hdim).coordChange x₀ x₁ x 1)
       (f ⁻¹' f.transverseAmbientSet hn hdim x₀ ∩ f ⁻¹' f.transverseAmbientSet hn hdim x₁) := by
@@ -520,27 +439,18 @@ theorem contMDiffOn_transverseNormalCore_coordChange_one (f : SmoothEmbedding I 
     ((f.transverseNormalCore hn hm hdim).isContMDiff_iff_contMDiffOn_coordChange_one
       (IB := I) (n := m)).1 inferInstance x₀ x₁
 
-omit [FiniteDimensional 𝕜 P] in
 /-- At every `x₀, x₁, x : M`, the scalar transition value of `f.transverseNormalCore` at `1` is
 nonzero. -/
-theorem transverseNormalCore_coordChange_one_ne_zero (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 𝕜 = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ x₁ x : M) :
+theorem transverseNormalCore_coordChange_one_ne_zero (x₀ x₁ x : M) :
     (f.transverseNormalCore hn hm hdim).coordChange x₀ x₁ x 1 ≠ 0 := by
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [f.transverseNormalCore_coordChange]
+  let := f.normalSpaceFiberBundle hn hdim; rw [f.transverseNormalCore_coordChange]
   exact ((f.transverseNormalTrivialization hn hm hdim x₀).coordChangeL 𝕜
     (f.transverseNormalTrivialization hn hm hdim x₁) x).toLinearEquiv.map_ne_zero_iff.2 one_ne_zero
 
-omit [FiniteDimensional 𝕜 P] in
 /-- **Scalar cocycle relation for transverse defining differentials.** On the overlap of two
 transverse defining equations in codimension one (`P = 𝕜`), `dg_{x₁}(f x)` equals `dg_{x₀}(f x)`
 multiplied by `(f.transverseNormalCore hn hm hdim).coordChange x₀ x₁ x 1`. -/
-theorem mfderiv_transverseDefiningMap_eq_coordChange_one_smul (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 𝕜 = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    {x₀ x₁ x : M}
+theorem mfderiv_transverseDefiningMap_eq_coordChange_one_smul {x₀ x₁ x : M}
     (hx : x ∈ f ⁻¹' f.transverseAmbientSet hn hdim x₀ ∩ f ⁻¹' f.transverseAmbientSet hn hdim x₁) :
     mfderiv J 𝓘(𝕜, 𝕜) (f.transverseDefiningMap hn hdim x₁) (f x) =
       ((f.transverseNormalCore hn hm hdim).coordChange x₀ x₁ x 1) •
@@ -550,6 +460,8 @@ theorem mfderiv_transverseDefiningMap_eq_coordChange_one_smul (f : SmoothEmbeddi
   simp only [transverseNormalTrivialization.eq_def]
   exact f.mfderiv_eq_coordChangeL_normalSpaceTrivializationOfLevel_one_smul hn hm hdim
     _ _ _ _ _ _ _ _ _ _ _ _ hx
+
+end CodimOne
 
 end TransverseCore
 

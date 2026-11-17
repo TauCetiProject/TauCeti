@@ -50,11 +50,15 @@ variable {E F H G M N : Type*}
   [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N]
 
+section C1
+
+variable [IsManifold I 1 M] [IsManifold J 1 N]
+
 /-- At a point of an open holomorphy domain between `C¹` complex manifolds, the existence of a
 `C^n` (`1 ≤ n`, including `n = ∞` and `n = ω`) immersion normal form is equivalent to injectivity of
 the complex differential. -/
 theorem isImmersionAt_iff_injective_mfderiv_of_mdifferentiableOn
-    [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N} {U : Set M} {x : M} {n : ℕ∞ω}
+    {f : M → N} {U : Set M} {x : M} {n : ℕ∞ω}
     (hf : MDifferentiableOn I J f U) (hU : IsOpen U) (hx : x ∈ U) (hn : 1 ≤ n) :
     IsImmersionAt I J n f x ↔ Injective (mfderiv I J f x) := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
@@ -64,8 +68,7 @@ theorem isImmersionAt_iff_injective_mfderiv_of_mdifferentiableOn
 
 /-- A holomorphic (`MDifferentiable`) map between `C¹` complex manifolds with injective complex
 differential everywhere is a `C^n` immersion for every `n : ℕ∞ω`, including `n = ∞` and `n = ω`. -/
-theorem _root_.MDifferentiable.isImmersion_of_injective_mfderiv
-    [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N}
+theorem _root_.MDifferentiable.isImmersion_of_injective_mfderiv {f : M → N}
     (hf : MDifferentiable I J f) (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) :
     IsImmersion I J n f := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
@@ -75,8 +78,7 @@ theorem _root_.MDifferentiable.isImmersion_of_injective_mfderiv
 
 /-- A holomorphic topological embedding between `C¹` complex manifolds with injective complex
 differential everywhere is a `C^n` smooth embedding for every `n : ℕ∞ω` (`∞` and `ω` included). -/
-theorem _root_.MDifferentiable.isSmoothEmbedding_of_isEmbedding_of_injective_mfderiv
-    [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N}
+theorem _root_.MDifferentiable.isSmoothEmbedding_of_isEmbedding_of_injective_mfderiv {f : M → N}
     (hf : MDifferentiable I J f) (hemb : IsEmbedding f)
     (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) :
     IsSmoothEmbedding I J n f :=
@@ -84,54 +86,49 @@ theorem _root_.MDifferentiable.isSmoothEmbedding_of_isEmbedding_of_injective_mfd
 
 namespace SmoothEmbedding
 
+variable (f : M → N) (hf : MDifferentiable I J f) (hemb : IsEmbedding f)
+  (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω)
+
 /-- Bundle a holomorphic (`MDifferentiable`) topological embedding with injective complex
 differential into a `SmoothEmbedding I J n M N` of arbitrary smoothness order `n : ℕ∞ω` (in
 particular `n = ∞` or `n = ω`). -/
-def ofMDifferentiable [IsManifold I 1 M] [IsManifold J 1 N] (f : M → N)
-    (hf : MDifferentiable I J f) (hemb : IsEmbedding f)
-    (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) :
-    SmoothEmbedding I J n M N :=
+def ofMDifferentiable : SmoothEmbedding I J n M N :=
   haveI : IsManifold I n M := IsManifold.of_ne_zero n one_ne_zero inferInstance
   haveI : IsManifold J n N := IsManifold.of_ne_zero n one_ne_zero inferInstance
   haveI : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   ofIsSmoothEmbedding f (hf.isSmoothEmbedding_of_isEmbedding_of_injective_mfderiv hemb hdf n)
 
-@[simp]
-theorem coe_ofMDifferentiable [IsManifold I 1 M] [IsManifold J 1 N] (f : M → N)
-    (hf : MDifferentiable I J f) (hemb : IsEmbedding f)
-    (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) :
+@[simp] theorem coe_ofMDifferentiable :
     ⇑(ofMDifferentiable (I := I) (J := J) f hf hemb hdf n) = f := by
   rw [ofMDifferentiable.eq_def, coe_ofIsSmoothEmbedding]
 
-@[simp]
-theorem ofMDifferentiable_apply [IsManifold I 1 M] [IsManifold J 1 N] (f : M → N)
-    (hf : MDifferentiable I J f) (hemb : IsEmbedding f)
-    (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) (x : M) :
+@[simp] theorem ofMDifferentiable_apply (x : M) :
     ofMDifferentiable (I := I) (J := J) f hf hemb hdf n x = f x := by
   rw [ofMDifferentiable.eq_def, ofIsSmoothEmbedding_apply]
 
+end SmoothEmbedding
+
+end C1
+
+namespace SmoothEmbedding
+
+variable {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
+  (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω)
+
 /-- Promote a positive-regularity (`m₀ ≠ 0`) complex embedding to any smoothness order `n : ℕ∞ω`,
 including `n = ∞` and complex-analytic order `n = ω`, matching `IsManifold.of_ne_zero`. -/
-def ofNeZero {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
-    (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω) :
-    SmoothEmbedding I J n M N :=
+def ofNeZero : SmoothEmbedding I J n M N :=
   haveI : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
   haveI : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
   ofMDifferentiable f (f.contMDiff.mdifferentiable hm₀) f.isEmbedding
     (f.isImmersion.mfderiv_injective hm₀) n
 
-@[simp]
-theorem coe_ofNeZero {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
-    (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω) :
-    ⇑(f.ofNeZero hm₀ n) = f := by
+@[simp] theorem coe_ofNeZero : ⇑(f.ofNeZero hm₀ n) = f := by
   have : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
   have : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
   rw [ofNeZero.eq_def, coe_ofMDifferentiable]
 
-@[simp]
-theorem ofNeZero_apply {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
-    (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω) (x : M) :
-    f.ofNeZero hm₀ n x = f x := by
+@[simp] theorem ofNeZero_apply (x : M) : f.ofNeZero hm₀ n x = f x := by
   have : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
   have : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
   rw [ofNeZero.eq_def, ofMDifferentiable_apply]

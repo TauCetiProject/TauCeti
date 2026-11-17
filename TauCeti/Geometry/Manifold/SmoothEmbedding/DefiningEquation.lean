@@ -43,15 +43,11 @@ open scoped Manifold ContDiff
 namespace TauCeti.SmoothEmbedding
 
 variable {𝕜 E V P H G M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup P] [NormedSpace 𝕜 P] [FiniteDimensional 𝕜 P]
-  [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
-  [I.Boundaryless] [J.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace N] [ChartedSpace G N]
-  {n : ℕ∞ω} [IsManifold J n N]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [FiniteDimensional 𝕜 V] [NormedAddCommGroup P] [NormedSpace 𝕜 P] [FiniteDimensional 𝕜 P]
+  [TopologicalSpace H] [TopologicalSpace G] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N] {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
+  [I.Boundaryless] [J.Boundaryless] {n : ℕ∞ω} [IsManifold J n N]
 
 private structure TransverseZeroData (f : SmoothEmbedding I J n M N) (x₀ : M) where
   ambSet : Set N
@@ -132,57 +128,50 @@ theorem isClosed_range_iff_forall_exists_contMDiffOn_eq_zero [Nontrivial P]
       isClosed_singleton.isOpen_compl).mem_nhds
       ⟨hy₀S, fun hgy₀ ↦ hy₀ ((hzero y₀ hy₀S).2 hgy₀)⟩) fun y hy hyr ↦ hy.2 ((hzero y hy.1).1 hyr)
 
-private def chosenTransverseZeroData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    TransverseZeroData (P := P) f x₀ :=
+section TransverseData
+
+variable (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+  (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M)
+
+private def chosenTransverseZeroData : TransverseZeroData (P := P) f x₀ :=
   Classical.choice (f.nonempty_transverseZeroData hn hdim x₀)
 
 /-- The open ambient neighbourhood around `f x₀` on which `f.transverseDefiningMap` cuts out
 `Set.range f`. -/
-def transverseAmbientSet (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) : Set N :=
-  (f.chosenTransverseZeroData hn hdim x₀).ambSet
+def transverseAmbientSet : Set N := (f.chosenTransverseZeroData hn hdim x₀).ambSet
 
 /-- The chosen local `C^n` transverse defining map `N → P` cutting out `Set.range f` on
 `f.transverseAmbientSet hn hdim x₀`. -/
-def transverseDefiningMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) : N → P :=
-  (f.chosenTransverseZeroData hn hdim x₀).eqFun
+def transverseDefiningMap : N → P := (f.chosenTransverseZeroData hn hdim x₀).eqFun
 
 /-- The chosen ambient slice neighbourhood `f.transverseAmbientSet hn hdim x₀` is open in `N`. -/
-theorem isOpen_transverseAmbientSet (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    IsOpen (f.transverseAmbientSet hn hdim x₀) :=
+theorem isOpen_transverseAmbientSet : IsOpen (f.transverseAmbientSet hn hdim x₀) :=
   (f.chosenTransverseZeroData hn hdim x₀).isOpen_ambSet
 
 /-- The point `f x₀` lies in `f.transverseAmbientSet hn hdim x₀`. -/
-@[simp]
-theorem apply_mem_transverseAmbientSet (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    f x₀ ∈ f.transverseAmbientSet hn hdim x₀ :=
+@[simp] theorem apply_mem_transverseAmbientSet : f x₀ ∈ f.transverseAmbientSet hn hdim x₀ :=
   (f.chosenTransverseZeroData hn hdim x₀).mem_ambSet
 
 /-- `f.transverseDefiningMap hn hdim x₀` is `C^n` on `f.transverseAmbientSet hn hdim x₀`. -/
-theorem contMDiffOn_transverseDefiningMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
+theorem contMDiffOn_transverseDefiningMap :
     ContMDiffOn J 𝓘(𝕜, P) n (f.transverseDefiningMap hn hdim x₀)
       (f.transverseAmbientSet hn hdim x₀) :=
   (f.chosenTransverseZeroData hn hdim x₀).contMDiffOn_eqFun
 
 /-- On `f.transverseAmbientSet hn hdim x₀`, `Set.range f` coincides with the zero locus of
 `f.transverseDefiningMap hn hdim x₀`. -/
-theorem mem_range_iff_transverseDefiningMap_eq_zero (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) {y : N} (hy : y ∈ f.transverseAmbientSet hn hdim x₀) :
+theorem mem_range_iff_transverseDefiningMap_eq_zero {y : N}
+    (hy : y ∈ f.transverseAmbientSet hn hdim x₀) :
     y ∈ range f ↔ f.transverseDefiningMap hn hdim x₀ y = 0 :=
   (f.chosenTransverseZeroData hn hdim x₀).mem_range_iff y hy
 
 /-- Every point of `f.transverseAmbientSet hn hdim x₀` is a regular point of
 `f.transverseDefiningMap hn hdim x₀`. -/
-theorem isRegularPoint_transverseDefiningMap (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (x₀ : M) {y : N} (hy : y ∈ f.transverseAmbientSet hn hdim x₀) :
+theorem isRegularPoint_transverseDefiningMap {y : N}
+    (hy : y ∈ f.transverseAmbientSet hn hdim x₀) :
     IsRegularPoint J 𝓘(𝕜, P) (f.transverseDefiningMap hn hdim x₀) y :=
   (f.chosenTransverseZeroData hn hdim x₀).regular y hy
+
+end TransverseData
 
 end TauCeti.SmoothEmbedding

@@ -65,8 +65,7 @@ noncomputable def ofTrivializations : VectorBundleCore 𝕜 B F ι where
   coordChange_comp i j k _ hx v :=
     (e i).coordChangeL_coordChangeL_apply 𝕜 (e j) (e k) hx.1.1 hx.1.2 hx.2 v
 
-@[simp]
-theorem ofTrivializations_localTriv_baseSet (i : ι) :
+@[simp] theorem ofTrivializations_localTriv_baseSet (i : ι) :
     ((ofTrivializations e hcont idx hidx).localTriv i).baseSet = (e i).baseSet := (rfl)
 
 /-- The `i`-th base set of `ofTrivializations e hcont idx hidx` is `(e i).baseSet`. (Note that
@@ -76,12 +75,10 @@ theorem ofTrivializations_baseSet (i : ι) :
     (ofTrivializations e hcont idx hidx).baseSet i = (e i).baseSet := by
   rw [baseSet_at, ofTrivializations_localTriv_baseSet]
 
-@[simp]
-theorem ofTrivializations_indexAt (b : B) :
+@[simp] theorem ofTrivializations_indexAt (b : B) :
     (ofTrivializations e hcont idx hidx).indexAt b = idx b := (rfl)
 
-@[simp]
-theorem ofTrivializations_coordChange (i j : ι) (b : B) :
+@[simp] theorem ofTrivializations_coordChange (i j : ι) (b : B) :
     (ofTrivializations e hcont idx hidx).coordChange i j b =
       ((e i).coordChangeL 𝕜 (e j) b : F →L[𝕜] F) := (rfl)
 
@@ -93,13 +90,11 @@ noncomputable def ofTrivializationsFiberEquiv (b : B) :
     (ofTrivializations e hcont idx hidx).Fiber b ≃L[𝕜] E b :=
   ((e (idx b)).continuousLinearEquivAt 𝕜 b (hidx b)).symm
 
-@[simp]
-theorem ofTrivializationsFiberEquiv_apply (b : B)
+@[simp] theorem ofTrivializationsFiberEquiv_apply (b : B)
     (v : (ofTrivializations e hcont idx hidx).Fiber b) :
     ofTrivializationsFiberEquiv e hcont idx hidx b v = (e (idx b)).symm b v := (rfl)
 
-@[simp]
-theorem ofTrivializationsFiberEquiv_symm_apply (b : B) (v : E b) :
+@[simp] theorem ofTrivializationsFiberEquiv_symm_apply (b : B) (v : E b) :
     (ofTrivializationsFiberEquiv e hcont idx hidx b).symm v = (e (idx b) ⟨b, v⟩).2 := (rfl)
 
 /-- The total-space bijection covering the identity on `B` induced fibrewise by
@@ -111,13 +106,12 @@ noncomputable def ofTrivializationsTotalEquiv :
   left_inv _ := by dsimp only; rw [ContinuousLinearEquiv.symm_apply_apply]
   right_inv _ := by dsimp only; rw [ContinuousLinearEquiv.apply_symm_apply]
 
-@[simp]
-theorem ofTrivializationsTotalEquiv_apply (p : (ofTrivializations e hcont idx hidx).TotalSpace) :
+@[simp] theorem ofTrivializationsTotalEquiv_apply
+    (p : (ofTrivializations e hcont idx hidx).TotalSpace) :
     ofTrivializationsTotalEquiv e hcont idx hidx p =
       ⟨p.proj, ofTrivializationsFiberEquiv e hcont idx hidx p.proj p.2⟩ := (rfl)
 
-@[simp]
-theorem ofTrivializationsTotalEquiv_symm_apply (q : TotalSpace F E) :
+@[simp] theorem ofTrivializationsTotalEquiv_symm_apply (q : TotalSpace F E) :
     (ofTrivializationsTotalEquiv e hcont idx hidx).symm q =
       ⟨q.proj, (ofTrivializationsFiberEquiv e hcont idx hidx q.proj).symm q.2⟩ := (rfl)
 
