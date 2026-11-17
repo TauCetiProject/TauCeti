@@ -78,6 +78,8 @@ coordinates of a Cauchy filter then form a compatible system, its limit in `B♭
   `A ⊆ B°` and `x, y` with all coordinates in `A`, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_of_charP`: in characteristic `p` the addition is
   coordinatewise.
+* `TauCeti.Perfectoid.uniformTilt.coeff_zero_eq_zero_iff`: in the tilt of a reduced ring, `x♯ = 0`
+  only for `x = 0`.
 * `TauCeti.Perfectoid.uniformTilt.perfectRing` and `TauCeti.Perfectoid.uniformTilt.charP`: the tilt
   is perfect, and of characteristic `p` when `B` is nonzero.
 * `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
@@ -676,6 +678,16 @@ theorem isUnit_iff_coeff_zero {x : uniformTilt p B} :
   refine isUnit_iff_exists_inv.mpr ⟨y, ext fun n ↦ ?_⟩
   simp only [map_mul, y, coeff_mk, map_one]
   exact (hu n).mul_val_inv
+
+/-- **In the tilt of a reduced ring, `x♯ = 0` only for `x = 0`**: every coordinate `x⁽ⁿ⁾` is a
+`p ^ n`-th root of `x♯`. -/
+@[simp]
+theorem coeff_zero_eq_zero_iff [IsReduced B] {x : uniformTilt p B} :
+    coeff p B 0 x = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ coeff_zero 0⟩
+  rw [coeff_zero]
+  refine IsReduced.eq_zero _ ⟨p ^ n, ?_⟩
+  rw [← h, ← coeff_pow_p_pow x 0 n, zero_add]
 
 /-- **The limit formula for the addition**:
 `(x + y)⁽ⁱ⁾ = lim_{m → ∞} (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. -/

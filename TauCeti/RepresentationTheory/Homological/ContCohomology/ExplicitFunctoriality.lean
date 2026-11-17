@@ -246,14 +246,14 @@ def cocyclesMap1 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
 
 /-- The underlying cochain of `cocyclesMap1` is the degree-one cochain pullback. -/
 @[simp]
-theorem cocyclesMap1_coe (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+theorem coe_cocyclesMap1 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z1 G M) :
     (cocyclesMap1 G M H N φ f hf hequiv c : H → N) = cochainsMap1 (φ : H →* G) f c := by
   ext h
   rfl
 
 /-- The defining formula for the degree-one cocycle pullback, the pointwise form of
-`cocyclesMap1_coe`. -/
+`coe_cocyclesMap1`. -/
 theorem cocyclesMap1_apply (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z1 G M) (h : H) :
     (cocyclesMap1 G M H N φ f hf hequiv c : H → N) h =
@@ -298,7 +298,7 @@ def cocyclesMap2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
 
 /-- The underlying cochain of `cocyclesMap2` is the degree-two cochain pullback. -/
 @[simp]
-theorem cocyclesMap2_coe (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+theorem coe_cocyclesMap2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z2 G M) :
     (cocyclesMap2 G M H N φ f hf hequiv c : H × H → N) =
       cochainsMap2 (φ : H →* G) f c := by
