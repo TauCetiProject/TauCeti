@@ -49,11 +49,12 @@ particular over any affine scheme `Spec R`).
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isRelativeEffectiveCartier_zeroSectionDivisor_pow`:
   `[0]` and `n[0]` are relative effective Cartier divisors on `E` over `S`, finite locally free of
   rank `n` (`finrank_zeroSectionDivisor_pow`).
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zeroSectionDivisor_eq_comap` and
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zeroSectionDivisor_eq_comap_of_isPullback` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pullback_mk_poleSheaf_of_isPullback`: `[0]`, `n[0]`,
   and `[𝒪_E(n[0])]` commute with arbitrary pointed base-change squares (and with projective
-  Weierstrass models via `pullback_mk_poleSheaf_projModel_of_isPullback`).
-* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.pullback_toTotal_mk_poleSheaf`: on any pointed
+  Weierstrass models in both directions via `pullback_mk_poleSheaf_projModel_of_isPullback` and
+  `pullback_mk_poleSheaf_of_isPullback_projModel`).
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pullback_toTotal_mk_poleSheaf`: on any pointed
   Weierstrass chart `c` of `E`, `[𝒪_E(n[0])]` restricts to `[𝒪_{c.equation}(n[0])]`, hence is ample
   for `n > 0` (`isAmple_pullback_toTotal_poleSheaf`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_opens_isAmple_pullback_poleSheaf`: for any
@@ -65,9 +66,9 @@ particular over any affine scheme `Spec R`).
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §2.2.
-* [R. Hartshorne, *Algebraic Geometry*][hartshorne1977], Section II.7.
-* [The Stacks Project, *Morphisms*, Tag 0D32][stacks-project]: relative ampleness over a
-  quasi-affine base.
+* R. Hartshorne, *Algebraic Geometry*, Section II.7.
+* [The Stacks Project, Tag 0D32](https://stacks.math.columbia.edu/tag/0D32): relative ampleness over
+  a quasi-affine base.
 -/
 
 public section
@@ -148,20 +149,16 @@ variable {E} {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E
 include hg h0 in
 /-- **The zero-section divisor `[0]` commutes with base change** along any pointed cartesian square
 of elliptic curves. -/
-theorem zeroSectionDivisor_eq_comap :
-    E'.zeroSectionDivisor = E.zeroSectionDivisor.comap g := by
-  rw [zeroSectionDivisor_def, zeroSectionDivisor_def]
-  refine Scheme.IdealSheafData.ker_eq_comap_of_isPullback (g := f) E.zero ?_
-  refine IsPullback.of_right ?_ h0 hg.flip
-  rw [E'.zero_comp, E.zero_comp]
-  exact IsPullback.of_horiz_isIso ⟨by simp⟩
+theorem zeroSectionDivisor_eq_comap_of_isPullback :
+    E'.zeroSectionDivisor = E.zeroSectionDivisor.comap g :=
+  Scheme.Hom.ker_eq_comap_of_isPullback_of_comp_eq_id hg E'.zero_comp E.zero_comp h0
 
 include hg h0 in
 /-- **Every multiple `n[0]` commutes with base change** along any pointed cartesian square of
 elliptic curves. -/
-theorem zeroSectionDivisor_pow_eq_comap (n : ℕ) :
+theorem zeroSectionDivisor_pow_eq_comap_of_isPullback (n : ℕ) :
     E'.zeroSectionDivisor ^ n = (E.zeroSectionDivisor ^ n).comap g := by
-  rw [zeroSectionDivisor_eq_comap hg h0, Scheme.IdealSheafData.comap_pow]
+  rw [zeroSectionDivisor_eq_comap_of_isPullback hg h0, Scheme.IdealSheafData.comap_pow]
 
 end BaseChangeDivisor
 
@@ -170,7 +167,7 @@ end BaseChangeDivisor
 theorem zeroSectionDivisor_baseChange {T : Scheme.{u}} (f : T ⟶ S) :
     (E.baseChange f).zeroSectionDivisor =
       E.zeroSectionDivisor.comap ((E.baseChangeIso f).hom ≫ pullback.fst E.structureMap f) :=
-  zeroSectionDivisor_eq_comap (E.isPullback_baseChange f)
+  zeroSectionDivisor_eq_comap_of_isPullback (E.isPullback_baseChange f)
     (by simp [← Category.assoc, E.zero_baseChangeIso_hom, pullbackSection_fst])
 
 /-- Under `E.baseChange f`, the multiple `n[0]` is the inverse image of `n[0]` on `E`. -/
@@ -182,25 +179,43 @@ theorem zeroSectionDivisor_pow_baseChange {T : Scheme.{u}} (f : T ⟶ S) (n : �
 
 /-- Along any pointed cartesian square from `E` to a projective Weierstrass model `W.projModel`,
 the zero-section divisor `[0]` on `E` is the inverse image of `W.zeroSectionDivisor`. -/
-theorem zeroSectionDivisor_eq_comap_projModel {E : EllipticCurveGeom S} {R : Type u} [CommRing R]
-    {W : WeierstrassCurve R} {g : E.carrier ⟶ W.projModel} {f : S ⟶ Spec (.of R)}
+theorem zeroSectionDivisor_eq_comap_projModel_of_isPullback {E : EllipticCurveGeom S} {R : Type u}
+    [CommRing R] {W : WeierstrassCurve R} {g : E.carrier ⟶ W.projModel} {f : S ⟶ Spec (.of R)}
     (hg : IsPullback g E.structureMap W.projModelOver f)
     (h0 : E.zero ≫ g = f ≫ W.projModelZero) :
     E.zeroSectionDivisor = W.zeroSectionDivisor.comap g := by
   rw [zeroSectionDivisor_def, WeierstrassCurve.zeroSectionDivisor_def]
-  refine Scheme.IdealSheafData.ker_eq_comap_of_isPullback (g := f) W.projModelZero ?_
-  refine IsPullback.of_right ?_ h0 hg.flip
-  rw [E.zero_comp, W.projModelZero_projModelOver]
-  exact IsPullback.of_horiz_isIso ⟨by simp⟩
+  exact Scheme.Hom.ker_eq_comap_of_isPullback_of_comp_eq_id hg E.zero_comp
+    W.projModelZero_projModelOver h0
 
 /-- Along any pointed cartesian square from `E` to a projective Weierstrass model `W.projModel`,
 `n[0]` on `E` is the inverse image of `W.zeroSectionDivisor ^ n`. -/
-theorem zeroSectionDivisor_pow_eq_comap_projModel {E : EllipticCurveGeom S} {R : Type u}
-    [CommRing R] {W : WeierstrassCurve R} {g : E.carrier ⟶ W.projModel} {f : S ⟶ Spec (.of R)}
-    (hg : IsPullback g E.structureMap W.projModelOver f)
+theorem zeroSectionDivisor_pow_eq_comap_projModel_of_isPullback {E : EllipticCurveGeom S}
+    {R : Type u} [CommRing R] {W : WeierstrassCurve R} {g : E.carrier ⟶ W.projModel}
+    {f : S ⟶ Spec (.of R)} (hg : IsPullback g E.structureMap W.projModelOver f)
     (h0 : E.zero ≫ g = f ≫ W.projModelZero) (n : ℕ) :
     E.zeroSectionDivisor ^ n = (W.zeroSectionDivisor ^ n).comap g := by
-  rw [zeroSectionDivisor_eq_comap_projModel hg h0, Scheme.IdealSheafData.comap_pow]
+  rw [zeroSectionDivisor_eq_comap_projModel_of_isPullback hg h0, Scheme.IdealSheafData.comap_pow]
+
+/-- Along any pointed cartesian square from a projective Weierstrass model `W.projModel` to `E`,
+`W.zeroSectionDivisor` is the inverse image of the zero-section divisor `[0]` on `E`. -/
+theorem zeroSectionDivisor_projModel_eq_comap_of_isPullback {E : EllipticCurveGeom S}
+    {R : Type u} [CommRing R] {W : WeierstrassCurve R} {g : W.projModel ⟶ E.carrier}
+    {f : Spec (.of R) ⟶ S} (hg : IsPullback g W.projModelOver E.structureMap f)
+    (h0 : W.projModelZero ≫ g = f ≫ E.zero) :
+    W.zeroSectionDivisor = E.zeroSectionDivisor.comap g := by
+  rw [WeierstrassCurve.zeroSectionDivisor_def, zeroSectionDivisor_def]
+  exact Scheme.Hom.ker_eq_comap_of_isPullback_of_comp_eq_id hg W.projModelZero_projModelOver
+    E.zero_comp h0
+
+/-- Along any pointed cartesian square from a projective Weierstrass model `W.projModel` to `E`,
+`W.zeroSectionDivisor ^ n` is the inverse image of `n[0]` on `E`. -/
+theorem zeroSectionDivisor_pow_projModel_eq_comap_of_isPullback {E : EllipticCurveGeom S}
+    {R : Type u} [CommRing R] {W : WeierstrassCurve R} {g : W.projModel ⟶ E.carrier}
+    {f : Spec (.of R) ⟶ S} (hg : IsPullback g W.projModelOver E.structureMap f)
+    (h0 : W.projModelZero ≫ g = f ≫ E.zero) (n : ℕ) :
+    W.zeroSectionDivisor ^ n = (E.zeroSectionDivisor ^ n).comap g := by
+  rw [zeroSectionDivisor_projModel_eq_comap_of_isPullback hg h0, Scheme.IdealSheafData.comap_pow]
 
 /-! ### The pole sheaves `𝒪_E(n[0])` -/
 
@@ -216,27 +231,33 @@ theorem poleSheaf_def (n : ℕ) :
         n).isEffectiveCartier.toInvertibleSheaf.dual :=
   (rfl)
 
+/-- The underlying `𝒪_E`-module of `𝒪_E(n[0])` is the dual of the ideal sheaf `𝒪_E(-n[0])`. -/
+@[simp]
+theorem poleSheaf_obj (n : ℕ) :
+    (E.poleSheaf n).obj = (E.zeroSectionDivisor ^ n).sheaf.dual := by
+  rw [poleSheaf_def, InvertibleSheaf.dual_obj,
+    Scheme.IdealSheafData.IsEffectiveCartier.toInvertibleSheaf_obj]
+
 /-- In the Picard group of `E.carrier`, `[𝒪_E(n[0])] = [𝒪_E([0])] ^ n`. -/
-theorem mk_poleSheaf (n : ℕ) :
+theorem mk_poleSheaf_eq_pow (n : ℕ) :
     LineBundleClass.mk (E.poleSheaf n) = LineBundleClass.mk (E.poleSheaf 1) ^ n := by
   have h₁ := E.isRelativeEffectiveCartier_zeroSectionDivisor.isEffectiveCartier
-  rw [poleSheaf_def, ← LineBundleClass.inv_mk,
-    LineBundleClass.mk_toInvertibleSheaf_congr _ (TauCeti.isEffectiveCartier_pow h₁ n) rfl,
-    LineBundleClass.mk_toInvertibleSheaf_pow h₁ n, ← inv_pow]
+  rw [poleSheaf_def,
+    LineBundleClass.mk_dual_toInvertibleSheaf_congr _ (TauCeti.isEffectiveCartier_pow h₁ n) rfl,
+    LineBundleClass.mk_dual_toInvertibleSheaf_pow h₁ n]
   congr 1
-  rw [poleSheaf_def, ← LineBundleClass.inv_mk,
-    LineBundleClass.mk_toInvertibleSheaf_congr _ h₁ (pow_one _)]
+  rw [poleSheaf_def, LineBundleClass.mk_dual_toInvertibleSheaf_congr _ h₁ (pow_one _)]
 
 /-- `𝒪_E(0[0])` has trivial class in the Picard group of `E.carrier`. -/
 @[simp]
 theorem mk_poleSheaf_zero : LineBundleClass.mk (E.poleSheaf 0) = 1 := by
-  rw [E.mk_poleSheaf 0, pow_zero]
+  rw [E.mk_poleSheaf_eq_pow 0, pow_zero]
 
 /-- In the Picard group of `E.carrier`, `[𝒪_E((m + n)[0])] = [𝒪_E(m[0])] * [𝒪_E(n[0])]`. -/
 theorem mk_poleSheaf_add (m n : ℕ) :
     LineBundleClass.mk (E.poleSheaf (m + n)) =
       LineBundleClass.mk (E.poleSheaf m) * LineBundleClass.mk (E.poleSheaf n) := by
-  rw [E.mk_poleSheaf (m + n), E.mk_poleSheaf m, E.mk_poleSheaf n, pow_add]
+  rw [E.mk_poleSheaf_eq_pow (m + n), E.mk_poleSheaf_eq_pow m, E.mk_poleSheaf_eq_pow n, pow_add]
 
 /-- **Base-change functoriality of `𝒪_E(n[0])`.** Along any pointed cartesian square `g : E' ⟶ E`
 of elliptic curves, the pole sheaf `𝒪_E(n[0])` pulls back in the Picard group to `𝒪_{E'}(n[0])`. -/
@@ -245,15 +266,11 @@ theorem pullback_mk_poleSheaf_of_isPullback {E : EllipticCurveGeom S} {S' : Sche
     (hg : IsPullback g E'.structureMap E.structureMap f)
     (h0 : E'.zero ≫ g = f ≫ E.zero) (n : ℕ) :
     LineBundleClass.pullback g (LineBundleClass.mk (E.poleSheaf n)) =
-      LineBundleClass.mk (E'.poleSheaf n) := by
-  have hE := (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-  have hE' := (E'.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-  have hcomap : ((E.zeroSectionDivisor ^ n).comap g).IsEffectiveCartier :=
-    zeroSectionDivisor_pow_eq_comap hg h0 n ▸ hE'
-  rw [poleSheaf_def, poleSheaf_def, ← LineBundleClass.inv_mk, ← LineBundleClass.inv_mk,
-    LineBundleClass.pullback_inv, hE.pullback_mk_toInvertibleSheaf hcomap,
-    LineBundleClass.mk_toInvertibleSheaf_congr hcomap hE'
-      (zeroSectionDivisor_pow_eq_comap hg h0 n).symm]
+      LineBundleClass.mk (E'.poleSheaf n) :=
+  (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow
+    n).isEffectiveCartier.pullback_mk_dual_toInvertibleSheaf_of_eq_comap
+    (E'.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
+    (zeroSectionDivisor_pow_eq_comap_of_isPullback hg h0 n)
 
 /-- Under `E.baseChange f`, `[𝒪_E(n[0])]` pulls back to `[𝒪_{E.baseChange f}(n[0])]`. -/
 theorem pullback_mk_poleSheaf_baseChange {T : Scheme.{u}} (f : T ⟶ S) (n : ℕ) :
@@ -264,97 +281,74 @@ theorem pullback_mk_poleSheaf_baseChange {T : Scheme.{u}} (f : T ⟶ S) (n : ℕ
     (by simp [← Category.assoc, E.zero_baseChangeIso_hom, pullbackSection_fst]) n
 
 /-- **Comparison with `WeierstrassCurve.poleSheaf`.** Along any pointed cartesian square from `E`
-to the projective model of an elliptic Weierstrass curve `W`, `[𝒪_W(n[0])]` pulls back to
-`[𝒪_E(n[0])]`. -/
+to the projective model of a Weierstrass curve `W`, `[𝒪_W(n[0])]` pulls back to `[𝒪_E(n[0])]`. -/
 theorem pullback_mk_poleSheaf_projModel_of_isPullback {E : EllipticCurveGeom S} {R : Type u}
-    [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic] {g : E.carrier ⟶ W.projModel}
+    [CommRing R] {W : WeierstrassCurve R} {g : E.carrier ⟶ W.projModel}
     {f : S ⟶ Spec (.of R)} (hg : IsPullback g E.structureMap W.projModelOver f)
     (h0 : E.zero ≫ g = f ≫ W.projModelZero) (n : ℕ) :
     LineBundleClass.pullback g (LineBundleClass.mk (W.poleSheaf n)) =
       LineBundleClass.mk (E.poleSheaf n) := by
-  have hW := (W.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-  have hE := (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-  have hcomap : ((W.zeroSectionDivisor ^ n).comap g).IsEffectiveCartier :=
-    zeroSectionDivisor_pow_eq_comap_projModel hg h0 n ▸ hE
-  rw [WeierstrassCurve.poleSheaf_def, poleSheaf_def, ← LineBundleClass.inv_mk,
-    ← LineBundleClass.inv_mk, LineBundleClass.pullback_inv,
-    hW.pullback_mk_toInvertibleSheaf hcomap,
-    LineBundleClass.mk_toInvertibleSheaf_congr hcomap hE
-      (zeroSectionDivisor_pow_eq_comap_projModel hg h0 n).symm]
+  rw [WeierstrassCurve.poleSheaf_def, poleSheaf_def]
+  exact (W.isEffectiveCartier_zeroSectionDivisor_pow
+    n).pullback_mk_dual_toInvertibleSheaf_of_eq_comap
+    (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
+    (zeroSectionDivisor_pow_eq_comap_projModel_of_isPullback hg h0 n)
 
-end EllipticCurveGeom
+/-- **Comparison with `WeierstrassCurve.poleSheaf`.** Along any pointed cartesian square from the
+projective model of a Weierstrass curve `W` to `E`, `[𝒪_E(n[0])]` pulls back to `[𝒪_W(n[0])]`. -/
+theorem pullback_mk_poleSheaf_of_isPullback_projModel {E : EllipticCurveGeom S} {R : Type u}
+    [CommRing R] {W : WeierstrassCurve R} {g : W.projModel ⟶ E.carrier}
+    {f : Spec (.of R) ⟶ S} (hg : IsPullback g W.projModelOver E.structureMap f)
+    (h0 : W.projModelZero ≫ g = f ≫ E.zero) (n : ℕ) :
+    LineBundleClass.pullback g (LineBundleClass.mk (E.poleSheaf n)) =
+      LineBundleClass.mk (W.poleSheaf n) := by
+  rw [poleSheaf_def, WeierstrassCurve.poleSheaf_def]
+  exact (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow
+    n).isEffectiveCartier.pullback_mk_dual_toInvertibleSheaf_of_eq_comap
+    (W.isEffectiveCartier_zeroSectionDivisor_pow n)
+    (zeroSectionDivisor_pow_projModel_eq_comap_of_isPullback hg h0 n)
 
 /-! ### Compatibility on pointed Weierstrass charts and ampleness -/
 
-namespace PointedWeierstrassChart
-
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
-  (c : PointedWeierstrassChart E.structureMap E.zero)
-
 /-- On a pointed Weierstrass chart `c` of `E`, the inverse image of `[0]` along `c.toTotal` agrees
-with the inverse image of `c.equation.zeroSectionDivisor` along `c.modelIso.hom`: both equal the
-ideal sheaf of `c.pulledZero`. -/
-theorem zeroSectionDivisor_comap_toTotal :
+with the inverse image of `c.equation.zeroSectionDivisor` along `c.modelIso.hom`. -/
+theorem zeroSectionDivisor_comap_toTotal (c : PointedWeierstrassChart E.structureMap E.zero) :
     E.zeroSectionDivisor.comap c.toTotal =
       c.equation.zeroSectionDivisor.comap c.modelIso.hom := by
-  have h₁ : c.pulledZero.ker = E.zeroSectionDivisor.comap c.toTotal := by
-    rw [EllipticCurveGeom.zeroSectionDivisor_def]
-    refine Scheme.IdealSheafData.ker_eq_comap_of_isPullback (g := c.baseMap) E.zero ?_
-    refine IsPullback.of_right ?_ c.pulledZero_toTotal c.isPullback.flip
-    rw [c.pulledZero_toBase, E.zero_comp]
-    exact IsPullback.of_horiz_isIso ⟨by simp⟩
-  have hmodel : IsPullback c.modelIso.hom c.toBase c.equation.projModelOver c.baseIso.hom :=
-    IsPullback.of_horiz_isIso ⟨c.modelIso_over⟩
-  have h₂ : c.pulledZero.ker = c.equation.zeroSectionDivisor.comap c.modelIso.hom := by
-    rw [WeierstrassCurve.zeroSectionDivisor_def]
-    refine Scheme.IdealSheafData.ker_eq_comap_of_isPullback (g := c.baseIso.hom)
-      c.equation.projModelZero ?_
-    refine IsPullback.of_right ?_ c.modelIso_zero hmodel.flip
-    rw [c.pulledZero_toBase, c.equation.projModelZero_projModelOver]
-    exact IsPullback.of_horiz_isIso ⟨(Category.id_comp _).trans (Category.comp_id _).symm⟩
-  exact h₁.symm.trans h₂
+  have h := congrArg (fun I ↦ I.comap c.modelIso.hom)
+    (zeroSectionDivisor_projModel_eq_comap_of_isPullback c.isPullback_modelIso_inv_toTotal
+      c.projModelZero_modelIso_inv_toTotal)
+  simpa only [← Scheme.IdealSheafData.comap_comp, Iso.hom_inv_id_assoc] using h.symm
 
 /-- On a pointed Weierstrass chart `c` of `E`, the inverse image of `n[0]` along `c.toTotal` agrees
 with the inverse image of `c.equation.zeroSectionDivisor ^ n` along `c.modelIso.hom`. -/
-theorem zeroSectionDivisor_pow_comap_toTotal (n : ℕ) :
+theorem zeroSectionDivisor_pow_comap_toTotal (c : PointedWeierstrassChart E.structureMap E.zero)
+    (n : ℕ) :
     (E.zeroSectionDivisor ^ n).comap c.toTotal =
       (c.equation.zeroSectionDivisor ^ n).comap c.modelIso.hom := by
   rw [Scheme.IdealSheafData.comap_pow, Scheme.IdealSheafData.comap_pow,
-    c.zeroSectionDivisor_comap_toTotal E]
+    E.zeroSectionDivisor_comap_toTotal c]
 
 /-- **Chart compatibility of `𝒪_E(n[0])`.** On a pointed Weierstrass chart `c` of `E`, the
 restriction of `[𝒪_E(n[0])]` along `c.toTotal` equals the pullback of `[𝒪_{c.equation}(n[0])]`
 along `c.modelIso.hom`. -/
-theorem pullback_toTotal_mk_poleSheaf (n : ℕ) :
+theorem pullback_toTotal_mk_poleSheaf (c : PointedWeierstrassChart E.structureMap E.zero)
+    (n : ℕ) :
     LineBundleClass.pullback c.toTotal (LineBundleClass.mk (E.poleSheaf n)) =
       LineBundleClass.pullback c.modelIso.hom
         (LineBundleClass.mk (c.equation.poleSheaf n)) := by
-  have hE := (E.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-  have hW := (c.equation.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).isEffectiveCartier
-  have hcomapE : ((E.zeroSectionDivisor ^ n).comap c.toTotal).IsEffectiveCartier :=
-    ((E.isRelativeEffectiveCartier_zeroSectionDivisor_pow n).comap_of_isPullback
-      c.isPullback).isEffectiveCartier
-  have hcomapW : ((c.equation.zeroSectionDivisor ^ n).comap c.modelIso.hom).IsEffectiveCartier :=
-    c.zeroSectionDivisor_pow_comap_toTotal E n ▸ hcomapE
-  rw [EllipticCurveGeom.poleSheaf_def, WeierstrassCurve.poleSheaf_def,
-    ← LineBundleClass.inv_mk, ← LineBundleClass.inv_mk,
-    LineBundleClass.pullback_inv, LineBundleClass.pullback_inv,
-    hE.pullback_mk_toInvertibleSheaf hcomapE, hW.pullback_mk_toInvertibleSheaf hcomapW,
-    LineBundleClass.mk_toInvertibleSheaf_congr hcomapE hcomapW
-      (c.zeroSectionDivisor_pow_comap_toTotal E n)]
+  have h := congrArg (LineBundleClass.pullback c.modelIso.hom)
+    (pullback_mk_poleSheaf_of_isPullback_projModel c.isPullback_modelIso_inv_toTotal
+      c.projModelZero_modelIso_inv_toTotal n)
+  simpa only [LineBundleClass.pullback_comp, Iso.hom_inv_id_assoc] using h
 
 /-- On any pointed Weierstrass chart `c` of `E`, the restriction of `𝒪_E(n[0])` along `c.toTotal`
 is ample for every `n > 0`. -/
-theorem isAmple_pullback_toTotal_poleSheaf {n : ℕ} (hn : 0 < n) :
+theorem isAmple_pullback_toTotal_poleSheaf (c : PointedWeierstrassChart E.structureMap E.zero)
+    {n : ℕ} (hn : 0 < n) :
     (LineBundleClass.pullback c.toTotal (LineBundleClass.mk (E.poleSheaf n))).IsAmple := by
-  rw [c.pullback_toTotal_mk_poleSheaf E n]
+  rw [E.pullback_toTotal_mk_poleSheaf c n]
   exact (c.equation.isAmple_poleSheaf hn).pullback_of_isIso c.modelIso.hom
-
-end PointedWeierstrassChart
-
-namespace EllipticCurveGeom
-
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
 
 /-- **Target-local ampleness of `𝒪_E(n[0])`.** Over any base scheme `S`, every point `s : S` has an
 affine open neighbourhood `U` over which `𝒪_E(n[0])` (`n > 0`) restricts to an ample invertible
@@ -363,31 +357,21 @@ theorem exists_isAffineOpen_isAmple_pullback_poleSheaf {n : ℕ} (hn : 0 < n) (s
     ∃ U : S.affineOpens, s ∈ U.1 ∧
       (LineBundleClass.pullback (E.structureMap ⁻¹ᵁ U.1).ι
         (LineBundleClass.mk (E.poleSheaf n))).IsAmple := by
-  obtain ⟨A⟩ := E.localModel
-  obtain ⟨i, x, rfl⟩ := A.covers s
-  let c := A.chart i
-  refine ⟨⟨c.baseMap.opensRange, isAffineOpen_opensRange c.baseMap⟩, ⟨x, rfl⟩, ?_⟩
-  have : IsOpenImmersion c.toTotal :=
-    MorphismProperty.of_isPullback c.isPullback.flip inferInstance
-  -- Both `(E.structureMap ⁻¹ᵁ c.baseMap.opensRange).ι` and `c.toTotal` are open immersions into
-  -- `E.carrier` with image `E.structureMap ⁻¹' Set.range c.baseMap`.
-  have hrange : Set.range (E.structureMap ⁻¹ᵁ c.baseMap.opensRange).ι = Set.range c.toTotal := by
-    rw [Scheme.Opens.range_ι]
-    change E.structureMap ⁻¹' Set.range c.baseMap = Set.range c.toTotal
-    rw [← Scheme.Pullback.range_fst, ← c.isPullback.isoPullback_hom_fst]
-    ext y
-    simp only [Set.mem_range, Scheme.Hom.comp_apply]
-    exact ⟨fun ⟨z, hz⟩ ↦ ⟨c.isPullback.isoPullback.inv z, by
-        have hinv : c.isPullback.isoPullback.hom (c.isPullback.isoPullback.inv z) = z := by
-          rw [← Scheme.Hom.comp_apply, Iso.inv_hom_id]
-          rfl
-        rw [hinv, hz]⟩,
-      fun ⟨z, hz⟩ ↦ ⟨c.isPullback.isoPullback.hom z, hz⟩⟩
-  let e := IsOpenImmersion.isoOfRangeEq (E.structureMap ⁻¹ᵁ c.baseMap.opensRange).ι
-    c.toTotal hrange
-  rw [← IsOpenImmersion.isoOfRangeEq_hom_fac (E.structureMap ⁻¹ᵁ c.baseMap.opensRange).ι
-      c.toTotal hrange, ← LineBundleClass.pullback_comp]
-  exact (c.isAmple_pullback_toTotal_poleSheaf E hn).pullback_of_isIso e.hom
+  obtain ⟨U, hsU, W, _, e, hover, hzero⟩ :=
+    (isLocallyWeierstrass_iff E.zero_comp).mp E.isLocallyWeierstrass s
+  refine ⟨U, hsU, ?_⟩
+  have hg : IsPullback (e.inv ≫ pullback.fst E.structureMap U.1.ι) W.projModelOver E.structureMap
+      (U.2.isoSpec.inv ≫ U.1.ι) :=
+    (IsPullback.of_hasPullback E.structureMap U.1.ι).of_iso e (.refl _) U.2.isoSpec (.refl _)
+      (by simp) hover.symm (by simp) (by simp)
+  have h0 : W.projModelZero ≫ e.inv ≫ pullback.fst E.structureMap U.1.ι =
+      (U.2.isoSpec.inv ≫ U.1.ι) ≫ E.zero := by
+    rw [← hzero]
+    simp
+  rw [← pullbackRestrictIsoRestrict_inv_fst E.structureMap U.1,
+    ← Iso.hom_inv_id_assoc e (pullback.fst E.structureMap U.1.ι), ← Category.assoc,
+    ← LineBundleClass.pullback_comp, pullback_mk_poleSheaf_of_isPullback_projModel hg h0 n]
+  exact (W.isAmple_poleSheaf hn).pullback_of_isIso _
 
 /-- **Relative ampleness of `𝒪_E(n[0])` on open covers of the base.** Over any scheme `S`, every
 point `s : S` has an open neighbourhood `U` such that `𝒪_E(n[0])` (`n > 0`) restricts to an ample

@@ -35,10 +35,11 @@ of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isP
 the same holds for the ideal sheaf of any quasi-compact morphism pulled back along an open
 immersion
 (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
-particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
-base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
-(`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
-ideal sheaves of finitely many sections
+particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, its ideal sheaf commutes
+with base change along any pointed cartesian square
+(`AlgebraicGeometry.Scheme.Hom.ker_eq_comap_of_isPullback_of_comp_eq_id`) and along the chosen
+fibre product `T ⟶ X ×_S T` (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds
+for the product of the ideal sheaves of finitely many sections
 (`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`). Taking the ideal sheaf of
 a section, or of a finite family of sections, therefore commutes with arbitrary base change.
 
@@ -204,6 +205,20 @@ theorem finrank_comap_of_isPullback {X' S' : Scheme.{u}} (I : X.IdealSheafData) 
     (s : S') :
     ((I.comap g).subschemeι ≫ f').finrank s = (I.subschemeι ≫ f).finrank (h s) :=
   Scheme.Hom.finrank_of_isPullback _ _ _ _ (I.isPullback_subschemeMap_comap f H) s
+
+/-- **The ideal sheaf of a section commutes with base change along any pointed cartesian square.**
+Given a cartesian square `g : X' ⟶ X` over `f : S' ⟶ S` and sections `s' : S' ⟶ X'`,
+`s : S ⟶ X` compatible with `g` and `f` (`s' ≫ g = f ≫ s`), if `s` is a closed immersion then
+the ideal sheaf of `s'` is the inverse image of the ideal sheaf of `s` along `g`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_eq_comap_of_isPullback_of_comp_eq_id
+    {X' S' : Scheme.{u}} {g : X' ⟶ X} {π' : X' ⟶ S'} {π : X ⟶ S} {f : S' ⟶ S}
+    (hg : IsPullback g π' π f) {s' : S' ⟶ X'} {s : S ⟶ X} [IsClosedImmersion s]
+    (hs' : s' ≫ π' = 𝟙 S') (hs : s ≫ π = 𝟙 S) (h0 : s' ≫ g = f ≫ s) :
+    s'.ker = s.ker.comap g := by
+  refine ker_eq_comap_of_isPullback (g := f) s ?_
+  refine IsPullback.of_right ?_ h0 hg.flip
+  rw [hs', hs]
+  exact IsPullback.of_horiz_isIso ⟨(Category.id_comp f).trans (Category.comp_id f).symm⟩
 
 /-- **The ideal sheaf of a section commutes with base change.** For a section `h.section_` of
 `f : X ⟶ S` which is a closed immersion, as it is when `f` is separated, the ideal sheaf of its

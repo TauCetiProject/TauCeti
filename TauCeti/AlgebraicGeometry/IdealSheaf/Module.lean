@@ -36,7 +36,9 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 * `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
   through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
-  subscheme, is the whole structure sheaf.
+  subscheme, is the whole structure sheaf;
+* `Scheme.IdealSheafData.eqToIso_inv_sheafι`: transporting `I.sheaf` along an equality of ideal
+  sheaves commutes with the inclusion `sheafι`.
 
 ## References
 
@@ -186,6 +188,21 @@ instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
   refine ⟨sheafι_app_injective _ U, fun s ↦ ⟨sectionMk _ s ?_, rfl⟩⟩
   rw [sections_top]
   exact Submodule.mem_top
+
+/-- Transporting `I.sheaf` along an equality `h : I = J` commutes with the inclusion into `𝒪_X`. -/
+@[simp, reassoc]
+lemma eqToHom_sheafι {I J : X.IdealSheafData} (h : I = J) :
+    eqToHom (congrArg sheaf h) ≫ J.sheafι = I.sheafι := by
+  subst h
+  exact Category.id_comp _
+
+/-- Transporting `I.sheaf` along an equality `h : I = J` commutes with the inclusion into `𝒪_X`. -/
+@[reassoc]
+lemma eqToIso_inv_sheafι {I J : X.IdealSheafData} (h : I = J) :
+    (eqToIso (congrArg sheaf h)).inv ≫ I.sheafι = J.sheafι := by
+  subst h
+  simp only [eqToIso_refl, Iso.refl_inv]
+  exact Category.id_comp _
 
 end
 

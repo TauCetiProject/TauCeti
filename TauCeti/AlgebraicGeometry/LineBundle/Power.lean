@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Tensor powers of line bundles
@@ -23,8 +24,12 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPow L n`: the tensor power `L^{⊗n}`.
+* `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorPow`: every monoidal tensor power
+  `TauCeti.tensorPow L n` of an invertible sheaf is invertible.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow`: the class of `L^{⊗n}` is the `n`-th
   power of the class of `L` in the Picard group.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPowObj`: the class of the monoidal tensor
+  power `TauCeti.tensorPow L.obj n` is `(mk L)ⁿ`.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso`: tensor powers of
   isomorphic line bundles are isomorphic.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
@@ -40,7 +45,7 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry MonoidalCategory
 
 namespace TauCeti
 
@@ -49,6 +54,17 @@ namespace AlgebraicGeometry
 universe u
 
 variable {X Y : Scheme.{u}}
+
+namespace SheafOfModules
+
+/-- Every monoidal tensor power `Lⁿ` of an invertible `𝒪_X`-module is invertible. -/
+noncomputable instance isInvertible_tensorPow {L : X.Modules} [isInvertible X L] (n : ℕ) :
+    isInvertible X (TauCeti.tensorPow L n) := by
+  induction n with
+  | zero => exact inferInstanceAs (isInvertible X (𝟙_ _))
+  | succ n ih => exact inferInstanceAs (isInvertible X (L ⊗ TauCeti.tensorPow L n))
+
+end SheafOfModules
 
 namespace InvertibleSheaf
 
@@ -78,6 +94,21 @@ lemma mk_tensorPow (L : InvertibleSheaf X) (n : ℕ) : mk (L.tensorPow n) = mk L
   induction n with
   | zero => simp
   | succ n ih => simp [InvertibleSheaf.tensorPow_succ, ih, pow_succ]
+
+/-- The monoidal tensor power `TauCeti.tensorPow L.obj n`, bundled as an invertible sheaf, has
+class `(mk L)ⁿ`. -/
+@[simp]
+theorem mk_tensorPowObj (L : InvertibleSheaf X) (n : ℕ)
+    (h : SheafOfModules.isInvertible X (TauCeti.tensorPow L.obj n) := inferInstance) :
+    mk ⟨TauCeti.tensorPow L.obj n, h⟩ = mk L ^ n := by
+  induction n with
+  | zero =>
+    rw [pow_zero]
+    exact mk_eq_one_iff.mpr ⟨Iso.refl _⟩
+  | succ n ih =>
+    rw [pow_succ', ← ih inferInstance, ← mk_tensorProduct]
+    exact mk_eq_mk_iff.mpr
+      ⟨(InvertibleSheaf.tensorProductObjIso L ⟨TauCeti.tensorPow L.obj n, inferInstance⟩).symm⟩
 
 end LineBundleClass
 

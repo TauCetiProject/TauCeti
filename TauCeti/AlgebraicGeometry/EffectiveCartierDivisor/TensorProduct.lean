@@ -38,7 +38,10 @@ of `I_D`, inverting gives `[𝒪_X(D + E)] = [𝒪_X(D)] * [𝒪_X(E)]`, which i
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_top`,
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_pow` and
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_prod` extend this to the empty
-  divisor, to multiples `n D` and to finite sums `∑ᵢ Dᵢ`.
+  divisor, to multiples `n D` and to finite sums `∑ᵢ Dᵢ`, and
+  `TauCeti.AlgebraicGeometry.LineBundleClass.mk_dual_toInvertibleSheaf_congr` and
+  `TauCeti.AlgebraicGeometry.LineBundleClass.mk_dual_toInvertibleSheaf_pow` record the dual
+  statements for `𝒪_X(D)` and `𝒪_X(n D)`.
 
 ## References
 
@@ -274,5 +277,18 @@ theorem mk_toInvertibleSheaf_prod {ι : Type*} (s : Finset ι) {I : ι → X.Ide
       Finset.prod_insert, Finset.prod_image]
     · exact fun x _ y _ h ↦ Subtype.ext (congrArg Subtype.val h :)
     · simpa using hi
+
+/-- The line-bundle class of the dual `𝒪_X(D)` of an effective Cartier divisor depends only on its
+ideal sheaf. -/
+theorem mk_dual_toInvertibleSheaf_congr (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier)
+    (e : I = J) : mk hI.toInvertibleSheaf.dual = mk hJ.toInvertibleSheaf.dual := by
+  subst e
+  rfl
+
+/-- The line-bundle class of `𝒪_X(n D)` is the `n`-th power of the class of `𝒪_X(D)`. -/
+theorem mk_dual_toInvertibleSheaf_pow (hI : I.IsEffectiveCartier) (n : ℕ) :
+    mk (TauCeti.isEffectiveCartier_pow hI n).toInvertibleSheaf.dual =
+      mk hI.toInvertibleSheaf.dual ^ n := by
+  rw [← inv_mk, ← inv_mk, mk_toInvertibleSheaf_pow hI n, inv_pow]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass

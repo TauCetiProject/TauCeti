@@ -174,6 +174,26 @@ lemma pullbackSectionsLE_comp_hom {W : Z.Opens} (hW : W ≤ f ⁻¹ᵁ V)
     (fun a : (pullback (f ≫ g)).obj M ⟶ (pullback (f ≫ g)).obj M ↦ a.app W
       (pullbackSectionsLE (f ≫ g) M U W _ s)) ((pullbackComp f g).app M).inv_hom_id
 
+/-- Along an open immersion `g : Y ⟶ X`, pulling back a section `s` of `M` over `U` restricts `s`
+to `g ''ᵁ (g ⁻¹ᵁ U)`, views it as a section of `M.restrict g`, and transports it across the
+comparison isomorphism `M.restrict g ≅ g^* M`. -/
+lemma pullbackSections_of_isOpenImmersion [IsOpenImmersion g] (s : Γ(M, U)) :
+    g.pullbackSections M U s =
+      ((restrictFunctorIsoPullback g).app M).hom.app (g ⁻¹ᵁ U)
+        ((M.restrictAppIso g (g ⁻¹ᵁ U)).inv
+          (M.presheaf.map (homOfLE (g.image_preimage_le U)).op s)) := by
+  have h : (restrictAdjunction g).unit.app M ≫
+      (pushforward g).map ((restrictFunctorIsoPullback g).hom.app M) =
+      (pullbackPushforwardAdjunction g).unit.app M :=
+    Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction g)
+      (pullbackPushforwardAdjunction g) M
+  have he := congrArg (fun a ↦ a.app U s) h
+  simp only [Modules.Hom.comp_app, pushforward_map_app, restrictAdjunction_unit_app_app] at he
+  rw [pullbackSections_apply, ← he]
+  -- `M.restrictAppIso g (g ⁻¹ᵁ U)` is definitionally `Iso.refl _` on the carrier of sections,
+  -- so applying its inverse wrapper preserves the underlying element of `Γ(M.restrict g, g ⁻¹ᵁ U)`.
+  rfl
+
 /-- Pulling back sections over `U` along the open immersion `U.ι : U ⟶ Y` identifies them with the
 global sections of the pullback to `U`. The global open is given as any `T` equal to `⊤`, such as
 the preimage of `⊤` under a morphism into `U`. -/
@@ -181,26 +201,28 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι 
     (P : Y.Modules) (U : Y.Opens) (T : U.toScheme.Opens) (hT : T = ⊤) :
     Function.Bijective (U.ι.pullbackSectionsLE P U T (hT ▸ by simp)) := by
   subst hT
-  have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction U.ι)
-    (pullbackPushforwardAdjunction U.ι) P
-  have h₁ : IsIso (((restrictAdjunction U.ι).unit.app P).app U) :=
-    isIso_restrictAdjunction_unit_app_app U P le_rfl
+  have h₁ : IsIso (P.presheaf.map (homOfLE (U.ι.image_preimage_le U)).op) := by
+    rw [← restrictAdjunction_unit_app_app]
+    exact isIso_restrictAdjunction_unit_app_app U P le_rfl
   have h₂ : IsIso (((pullback U.ι).obj P).presheaf.map
       (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op) :=
     have : homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp) = eqToHom (by simp) := Subsingleton.elim _ _
     this ▸ inferInstance
-  -- The pullback of sections along `U.ι` is the restriction-pushforward unit followed by the
-  -- comparison of restriction with pullback, then restriction from `U.ι ⁻¹ᵁ U` to `⊤`.
+  -- The pullback of sections along `U.ι` is restriction to `U.ι ''ᵁ (U.ι ⁻¹ᵁ U)`, transport
+  -- across `restrictAppIso` and `restrictFunctorIsoPullback`, then restriction from `U.ι ⁻¹ᵁ U`
+  -- to `⊤`.
   have h₃ : (U.ι.pullbackSectionsLE P U ⊤ (by simp) : Γ(P, U) → _) =
       ((pullback U.ι).obj P).presheaf.map (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op ∘
-        ((restrictFunctorIsoPullback U.ι).hom.app P).app (U.ι ⁻¹ᵁ U) ∘
-        ((restrictAdjunction U.ι).unit.app P).app U := by
+        ((restrictFunctorIsoPullback U.ι).app P).hom.app (U.ι ⁻¹ᵁ U) ∘
+        (P.restrictAppIso U.ι (U.ι ⁻¹ᵁ U)).inv ∘
+        P.presheaf.map (homOfLE (U.ι.image_preimage_le U)).op := by
     ext s
-    rw [pullbackSectionsLE_apply, pullbackSections_apply, ← hu]
+    rw [pullbackSectionsLE_apply, pullbackSections_of_isOpenImmersion]
     rfl
   rw [h₃]
   exact (ConcreteCategory.bijective_of_isIso _).comp
-    ((ConcreteCategory.bijective_of_isIso _).comp (ConcreteCategory.bijective_of_isIso _))
+    ((ConcreteCategory.bijective_of_isIso _).comp
+      ((ConcreteCategory.bijective_of_isIso _).comp (ConcreteCategory.bijective_of_isIso _)))
 
 /-- For `h : f ≫ g = gf`, pulling a global section back along `gf` and identifying
 `gf^* M ≅ f^* g^* M` gives its iterated pullback along `g` and then `f`. -/
