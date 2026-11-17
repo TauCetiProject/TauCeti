@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import TauCeti.Probability.Process.Filtration.Natural
-import TauCeti.Probability.Independence.Limit
+import TauCeti.Probability.Independence.Filtration
 
 /-!
 # Right continuity of the augmented natural Brownian filtration
@@ -45,43 +45,21 @@ theorem indep_shift_rightCont_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (s : ℝ≥0) :
     Indep (MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance)
       ((Filtration.natural W hmeas).rightCont s) P := by
-  classical
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let ℱ := Filtration.natural W hmeas
-  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto s
-  have hfinite (I : Finset ℝ≥0) :
-      Indep (MeasurableSpace.comap (fun ω (v : I) => W (s + v) ω - W s ω) inferInstance)
-        (ℱ.rightCont s) P := by
-    apply Indep.symm
-    refine indep_comap_of_ae_tendsto (X := fun n ω (v : I) =>
-        W (u n + v) ω - W (u n) ω) (ℱ.rightCont.le s)
-      (fun n => (I.measurable_restrict.comp
-        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) (u n))).aemeasurable)
-      (I.measurable_restrict.comp
-        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s)).aemeasurable ?_ ?_
-    · intro n
-      have hfull : Indep (MeasurableSpace.comap
-          (fun ω v => W (u n + v) ω - W (u n) ω) inferInstance) (ℱ (u n)) P := by
-        rw [Filtration.natural_eq_comap]
-        exact (IndepFun_iff_Indep ..).1 (hW.indepFun_shift (u n))
-      refine (indep_of_indep_of_le_right
-        (indep_of_indep_of_le_left hfull ?_) (ℱ.rightCont_le_of_lt (hu n))).symm
-      simp only [MeasurableSpace.comap_process_pi]
-      exact iSup_le fun v => le_iSup (fun a : ℝ≥0 =>
-        MeasurableSpace.comap (fun ω => W (u n + a) ω - W (u n) ω) inferInstance) v.val
-    · filter_upwards [hW.cont] with ω hω
-      exact tendsto_pi_nhds.2 fun v =>
-        (hω.continuousAt.tendsto.comp (hlim.add_const v.val)).sub
-          (hω.continuousAt.tendsto.comp hlim)
-  rw [MeasurableSpace.comap_process_pi, iSup_eq_iSup_finset]
-  apply indep_iSup_of_monotone
-  · intro I
-    simpa only [MeasurableSpace.comap_process_pi, iSup_subtype'] using hfinite I
-  · intro I
-    exact iSup₂_le fun v _ =>
-      ((TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).eval (a := v)).comap_le
-  · exact ℱ.rightCont.le s
-  · exact fun I J hIJ => iSup_le_iSup_of_subset hIJ
+  refine (Filtration.stronglyAdapted_natural hmeas).adapted.indep_comap_shift_rightCont
+    (fun r t hrt ↦ ?_) (fun r ↦ ?_) s
+  · have hfull : Indep (MeasurableSpace.comap
+        (fun ω v => W (r + v) ω - W r ω) inferInstance) (Filtration.natural W hmeas r) P := by
+      rw [Filtration.natural_eq_comap]
+      exact (IndepFun_iff_Indep ..).1 (hW.indepFun_shift r)
+    refine indep_of_indep_of_le_left hfull ?_
+    have hproj := MeasurableSpace.comap_le_comap_pi
+      (g := fun v ω => W (r + v) ω - W r ω) (t - r)
+    simpa only [add_tsub_cancel_of_le hrt, Pi.sub_def] using hproj
+  · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto r
+    refine ⟨u, hu, hlim, ?_⟩
+    filter_upwards [hW.cont] with ω hω
+    exact hω.continuousAt.tendsto.comp hlim
 
 /-- Every event of the raw right-continuous natural Brownian filtration has a representative
 in the original natural sigma-algebra at the same time. -/
