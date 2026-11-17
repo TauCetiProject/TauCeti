@@ -109,6 +109,8 @@ gives a set of measure one.
   empty).
 * `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
   `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
+* `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le_of_ae_norm_le`: a function bounded by
+  `B` almost everywhere on `B(x₀, R)` has `R^(-n/p) ‖f‖_{L^p(B(x₀, R))} ≤ |B(0, 1)|^(1/p) B`.
 * `MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow`: Hölder's inequality
   bounding the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` by
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
@@ -220,6 +222,44 @@ theorem rpow_neg_mul_toReal_eLpNorm_ball_le
             (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
         gcongr
     _ = _ := by rw [mul_left_comm, hRpow]; ring
+
+/-- A function bounded by `B` almost everywhere on the ball `B(x₀, R)` of radius `R > 0`, in
+dimension `n`, has scale-invariant `L^p` norm there at most a constant times `B`:
+`R^(-n/p) ‖f‖_{L^p(B(x₀, R))} ≤ |B(0, 1)|^(1/p) B`. For `p ≤ 0` the `L^p` norm vanishes. -/
+theorem rpow_neg_mul_toReal_eLpNorm_ball_le_of_ae_norm_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p R B : ℝ} {x₀ : E} (hR : 0 < R)
+    (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ R)))
+    (hfB : ∀ᵐ x ∂mu.restrict (ball x₀ R), ‖f x‖ ≤ B) :
+    R ^ (-((finrank ℝ E : ℝ) / p)) *
+        (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal ≤
+      mu.real (ball (0 : E) 1) ^ (1 / p) * B := by
+  have hne : mu.restrict (ball x₀ R) ≠ 0 := by
+    rw [Ne, Measure.restrict_eq_zero]
+    exact (measure_ball_pos mu x₀ hR).ne'
+  have hB : 0 ≤ B := by
+    have := ae_neBot.2 hne
+    obtain ⟨x, hx⟩ := hfB.exists
+    exact (norm_nonneg _).trans hx
+  have hω : 0 ≤ mu.real (ball (0 : E) 1) := measureReal_nonneg
+  rcases le_or_gt p 0 with hp | hp
+  · rw [ENNReal.ofReal_of_nonpos hp, eLpNorm_exponent_zero hf]
+    simpa using mul_nonneg (Real.rpow_nonneg hω _) hB
+  have hle := eLpNorm_le_of_ae_bound (p := ENNReal.ofReal p) hf hfB
+  rw [Measure.restrict_apply_univ, ENNReal.toReal_ofReal hp.le] at hle
+  have hnorm : (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal ≤
+      mu.real (ball x₀ R) ^ p⁻¹ * B := by
+    refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
+    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hB, measureReal_def]
+  calc R ^ (-((finrank ℝ E : ℝ) / p)) *
+        (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal
+      ≤ R ^ (-((finrank ℝ E : ℝ) / p)) * (mu.real (ball x₀ R) ^ p⁻¹ * B) := by gcongr
+    _ = _ := by
+        rw [addHaar_real_ball_rpow _ _ hR, ← mul_assoc, ← mul_assoc, ← Real.rpow_add hR,
+          one_div]
+        congr 1
+        rw [← div_eq_mul_inv, neg_add_cancel, Real.rpow_zero, one_mul]
 
 /-- Hölder's inequality for the `L²` mass on a ball: for `2 ≤ q` and a function `g` in `L^q(t)`,
 the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` of radius `r > 0` is at most
