@@ -166,18 +166,18 @@ theorem tendsto_ramanujanTheta_atTop :
       atTop (𝓝 0) :=
     isBigO_ramanujanTheta_sub.trans_tendsto
       ((tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 4)).comp tendsto_natCast_atTop_atTop)
-  have hdiv (c d : ℝ) (hd : 0 < d) (k : ℕ) (hk : 1 ≤ k) :
-      Tendsto (fun n : ℕ => c / (d * (n : ℝ) ^ k)) atTop (𝓝 0) :=
-    tendsto_const_nhds.div_atTop
-      (((tendsto_pow_atTop (by omega : k ≠ 0)).comp tendsto_natCast_atTop_atTop).const_mul_atTop hd)
   have hmain : Tendsto (fun n : ℕ =>
       1 / 3 + 4 / (135 * (n : ℝ)) - 8 / (2835 * (n : ℝ) ^ 2) - 16 / (8505 * (n : ℝ) ^ 3))
       atTop (𝓝 (1 / 3)) := by
-    simpa [pow_one] using (((tendsto_const_nhds (x := (1 / 3 : ℝ))).add
-      (hdiv 4 135 (by norm_num) 1 le_rfl)).sub
-      (hdiv 8 2835 (by norm_num) 2 (by omega))).sub
-      (hdiv 16 8505 (by norm_num) 3 (by omega))
-  simpa using herr.add hmain
+    have h := ((by fun_prop : Continuous fun t : ℝ =>
+        1 / 3 + 4 * t / 135 - 8 * t ^ 2 / 2835 - 16 * t ^ 3 / 8505).tendsto 0).comp
+        (tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop)
+    have h0 : (1 / 3 : ℝ) + 4 * 0 / 135 - 8 * 0 ^ 2 / 2835 - 16 * 0 ^ 3 / 8505 = 1 / 3 := by ring
+    rw [h0] at h
+    exact h.congr fun n => by
+      simp only [Function.comp_apply, div_eq_mul_inv, mul_inv, inv_pow]; ring
+  have hsum := (herr.add hmain).congr fun n => sub_add_cancel _ _
+  rwa [zero_add] at hsum
 
 /-- **DLMF 8.11.16**: four-term asymptotic expansion of the central exponential partial sum
 `e^{-n} ∑_{k ≤ n} n^k / k!` as `n → ∞`, with remainder `O(n^{-9/2})`. -/

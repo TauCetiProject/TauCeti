@@ -9,7 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 
 import Mathlib.Analysis.Calculus.DerivativeTest
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 
 /-!
 # Diagonal asymptotics of the incomplete Gamma functions
@@ -363,33 +363,6 @@ private theorem abs_div_sub_diagQ_le {x u : ℝ} (hx : x ∈ Icc (-(1 / 3 : ℝ)
 
 /-! ### Gaussian moments and Laplace integral reduction -/
 
-private theorem even_gaussMoment_coeffs :
-    2 ^ (-(1 / 2 : ℝ)) * Real.Gamma (1 / 2) = Real.sqrt (Real.pi / 2) ∧
-    1 / 12 * (2 ^ (1 / 2 : ℝ) * Real.Gamma (3 / 2)) = Real.sqrt (2 * Real.pi) / 24 ∧
-    1 / 864 * (2 ^ (3 / 2 : ℝ) * Real.Gamma (5 / 2)) = Real.sqrt (2 * Real.pi) / 576 ∧
-    139 / 777600 * (2 ^ (5 / 2 : ℝ) * Real.Gamma (7 / 2)) =
-      139 * Real.sqrt (2 * Real.pi) / 103680 := by
-  have hG3 : Real.Gamma (3 / 2) = 1 / 2 * Real.sqrt Real.pi := by
-    have := Real.Gamma_nat_add_half_eq_factorial 1; norm_num [Nat.factorial] at this; linarith
-  have hG5 : Real.Gamma (5 / 2) = 3 / 4 * Real.sqrt Real.pi := by
-    have := Real.Gamma_nat_add_half_eq_factorial 2; norm_num [Nat.factorial] at this; linarith
-  have hG7 : Real.Gamma (7 / 2) = 15 / 8 * Real.sqrt Real.pi := by
-    have := Real.Gamma_nat_add_half_eq_factorial 3; norm_num [Nat.factorial] at this; linarith
-  have h2_half : (2 : ℝ) ^ (1 / 2 : ℝ) = Real.sqrt 2 := (Real.sqrt_eq_rpow 2).symm
-  have h2_neg : (2 : ℝ) ^ (-(1 / 2 : ℝ)) = (Real.sqrt 2)⁻¹ := by
-    rw [Real.rpow_neg zero_le_two, h2_half]
-  have h2_3 : (2 : ℝ) ^ (3 / 2 : ℝ) = 2 * Real.sqrt 2 := by
-    rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by ring, Real.rpow_add two_pos, Real.rpow_one, h2_half]
-  have h2_5 : (2 : ℝ) ^ (5 / 2 : ℝ) = 4 * Real.sqrt 2 := by
-    rw [show (5 / 2 : ℝ) = 2 + 1 / 2 by ring, Real.rpow_add two_pos,
-      show (2 : ℝ) ^ (2 : ℝ) = 4 by norm_num, h2_half]
-  have hmul : Real.sqrt 2 * Real.sqrt Real.pi = Real.sqrt (2 * Real.pi) :=
-    (Real.sqrt_mul zero_le_two Real.pi).symm
-  exact ⟨by rw [Real.Gamma_one_half_eq, h2_neg, Real.sqrt_div Real.pi_pos.le, inv_mul_eq_div],
-    by rw [hG3, h2_half]; linear_combination 1 / 24 * hmul,
-    by rw [hG5, h2_3]; linear_combination 1 / 576 * hmul,
-    by rw [hG7, h2_5]; linear_combination 139 / 103680 * hmul⟩
-
 /-- Eight-term asymptotic sum with sign `s = ±1` on odd moments (`s = 1` for `γ(a, a)`,
 `s = -1` for `Γ(a) - γ(a, a)`). -/
 private def diagSeries8 (s a : ℝ) : ℝ :=
@@ -408,59 +381,51 @@ private theorem integrableOn_diagQ_mul_exp {a : ℝ} (ha : 0 < a) (s : ℝ) :
     IntegrableOn (fun u : ℝ => diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) (Ioi 0) := by
   rw [diagQ_mul_exp_eq_sum]
   exact integrable_finsetSum _ fun k _ =>
-    ((integrableOn_rpow_mul_exp_neg_mul_sq (half_pos ha)
-      (by linarith [Nat.cast_nonneg (α := ℝ) k] : (-1 : ℝ) < k)).congr_fun
-      (fun u _ => by rw [Real.rpow_natCast]) measurableSet_Ioi).const_mul _
+    ((integrableOn_Ioi_pow_mul_exp_neg_mul_sq_iff k).mpr (half_pos ha)).const_mul _
 
 private theorem integral_diagQ_mul_exp_eq {a s : ℝ} (ha : 0 < a) (hs : |s| = 1) :
     (a * ∫ u in Ioi (0 : ℝ), diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) =
-      diagSeries8 s a -
-        571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)) * a ^ (-7 / 2 : ℝ) := by
+      diagSeries8 s a - 571 * Real.sqrt (2 * Real.pi) / 4976640 * a ^ (-7 / 2 : ℝ) := by
   have hs2 : s ^ 2 = 1 := by rw [← sq_abs, hs, one_pow]
   have hs_even (k : ℕ) : s ^ (2 * k) = 1 := by rw [pow_mul, hs2, one_pow]
   have hs_odd (k : ℕ) : s ^ (2 * k + 1) = s := by rw [pow_succ, hs_even, one_mul]
-  have hint (k : ℕ) : IntegrableOn (fun u : ℝ => u ^ k * Real.exp (-(a / 2) * u ^ 2)) (Ioi 0) :=
-    (integrableOn_rpow_mul_exp_neg_mul_sq (half_pos ha)
-      (by linarith [Nat.cast_nonneg (α := ℝ) k] : (-1 : ℝ) < k)).congr_fun
-      (fun u _ => by dsimp only; rw [Real.rpow_natCast]) measurableSet_Ioi
-  have hmom (k : ℕ) : (a * ∫ u in Ioi (0 : ℝ), u ^ k * Real.exp (-(a / 2) * u ^ 2)) =
-      2 ^ (((k : ℝ) - 1) / 2) * Real.Gamma (((k : ℝ) + 1) / 2) * a ^ ((1 - (k : ℝ)) / 2) := by
-    have heq : ∫ u in Ioi (0 : ℝ), u ^ k * Real.exp (-(a / 2) * u ^ 2) =
-        ∫ u in Ioi (0 : ℝ), u ^ (k : ℝ) * Real.exp (-(a / 2) * u ^ (2 : ℝ)) :=
-      setIntegral_congr_fun measurableSet_Ioi fun u _ => by rw [Real.rpow_natCast, Real.rpow_two]
-    rw [heq, integral_rpow_mul_exp_neg_mul_rpow two_pos
-      (by linarith [Nat.cast_nonneg (α := ℝ) k]) (half_pos ha),
-      div_eq_mul_inv, Real.mul_rpow ha.le (by positivity), ← Real.rpow_neg_one 2,
-      ← Real.rpow_mul zero_le_two]
-    have ha_pow : a * a ^ (-((k : ℝ) + 1) / 2) = a ^ ((1 - (k : ℝ)) / 2) := by
-      rw [mul_comm, ← Real.rpow_add_one ha.ne']; congr 1; ring
-    have h2_pow : (2 : ℝ) ^ (-1 * (-((k : ℝ) + 1) / 2)) * (1 / 2) = 2 ^ (((k : ℝ) - 1) / 2) := by
-      rw [one_div, ← Real.rpow_neg_one 2, ← Real.rpow_add two_pos]; congr 1; ring
-    linear_combination (2 ^ (((k : ℝ) - 1) / 2) * Real.Gamma (((k : ℝ) + 1) / 2)) * ha_pow +
-      (Real.Gamma (((k : ℝ) + 1) / 2) * (a * a ^ (-((k : ℝ) + 1) / 2))) * h2_pow
+  have heven (m : ℕ) : (a * ∫ u in Ioi (0 : ℝ), u ^ (2 * m) * Real.exp (-(a / 2) * u ^ 2)) =
+      ((2 * m)! : ℝ) * Real.sqrt (2 * Real.pi) / (2 ^ (m + 1) * (m ! : ℝ)) *
+        a ^ ((1 / 2 : ℝ) - m) := by
+    rw [integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq (a / 2) m]
+    have hsqrt : Real.sqrt (Real.pi / (a / 2)) = Real.sqrt (2 * Real.pi) / Real.sqrt a := by
+      rw [div_div_eq_mul_div, mul_comm Real.pi 2, Real.sqrt_div (by positivity)]
+    have hrpow : a ^ ((1 / 2 : ℝ) - m) = Real.sqrt a / a ^ m := by
+      rw [Real.rpow_sub ha, Real.rpow_natCast, ← Real.sqrt_eq_rpow]
+    have hpow2 : (2 : ℝ) ^ (2 * m + 1) = 2 ^ m * 2 ^ (m + 1) := by
+      rw [← pow_add]; congr 1; omega
+    have hfact : (m ! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m)
+    rw [hsqrt, hrpow, div_pow, hpow2]
+    field_simp [hfact, (Real.sqrt_pos.mpr ha).ne', ha.ne']
+    rw [Real.sq_sqrt ha.le]
   have hodd (m : ℕ) : (a * ∫ u in Ioi (0 : ℝ), u ^ (2 * m + 1) * Real.exp (-(a / 2) * u ^ 2)) =
       2 ^ m * (m ! : ℝ) / a ^ m := by
-    rw [hmom (2 * m + 1)]; push_cast
-    rw [show (2 * (m : ℝ) + 1 - 1) / 2 = (m : ℝ) by ring,
-      show (2 * (m : ℝ) + 1 + 1) / 2 = (m : ℝ) + 1 by ring,
-      show (1 - (2 * (m : ℝ) + 1)) / 2 = -(m : ℝ) by ring,
-      Real.rpow_natCast, Real.Gamma_nat_eq_factorial, Real.rpow_neg ha.le, Real.rpow_natCast,
-      div_eq_mul_inv]
-  rw [diagQ_mul_exp_eq_sum, integral_finsetSum _ fun k _ => (hint k).const_mul _, Finset.mul_sum]
+    rw [integral_Ioi_pow_two_mul_add_one_mul_exp_neg_mul_sq (half_pos ha) m, div_pow, pow_succ,
+      pow_succ]
+    field_simp [ha.ne']
+  rw [diagQ_mul_exp_eq_sum, integral_finsetSum _ fun k _ =>
+    ((integrableOn_Ioi_pow_mul_exp_neg_mul_sq_iff k).mpr (half_pos ha)).const_mul _,
+    Finset.mul_sum]
   have hterm (k : ℕ) : a * (∫ u in Ioi (0 : ℝ),
       (diagQCoeff k * s ^ k) * (u ^ k * Real.exp (-(a / 2) * u ^ 2))) =
       (diagQCoeff k * s ^ k) * (a * ∫ u in Ioi (0 : ℝ), u ^ k * Real.exp (-(a / 2) * u ^ 2)) := by
     rw [integral_const_mul]; ring
   simp_rw [hterm]
   simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, diagQCoeff]
-  rw [hmom 0, hodd 0, hmom 2, hodd 1, hmom 4, hodd 2, hmom 6, hodd 3, hmom 8]
+  rw [heven 0, hodd 0, heven 1, hodd 1, heven 2, hodd 2, heven 3, hodd 3, heven 4]
   simp only [diagSeries8, pow_zero, pow_one, hs2, hs_odd 1, hs_even 2, hs_odd 2, hs_even 3,
     hs_odd 3, hs_even 4, Nat.factorial]
   norm_num only [Nat.cast_zero, Nat.cast_one, Nat.cast_ofNat, mul_one, zero_add]
-  obtain ⟨he0, he2, he4, he6⟩ := even_gaussMoment_coeffs
-  linear_combination
-    a ^ (1 / 2 : ℝ) * he0 + a ^ (-(1 / 2 : ℝ)) * he2 +
-      a ^ (-(3 / 2 : ℝ)) * he4 - a ^ (-(5 / 2 : ℝ)) * he6
+  have hpi : Real.sqrt (2 * Real.pi) / 2 = Real.sqrt (Real.pi / 2) := by
+    rw [Real.sqrt_mul zero_le_two, Real.sqrt_div Real.pi_pos.le]
+    field_simp [(Real.sqrt_pos.mpr two_pos).ne']
+    rw [Real.sq_sqrt zero_le_two]
+  linear_combination a ^ (1 / 2 : ℝ) * hpi
 
 private theorem abs_diagQ_le_sum {u : ℝ} (hu : 0 ≤ u) (s : ℝ) (hs : |s| = 1) :
     |diagQ (s * u)| ≤ ∑ k ∈ Finset.range 9, u ^ k := by
@@ -478,10 +443,9 @@ private theorem isBigO_gauss_tail {c s : ℝ} (hc : 0 < c) (hs : |s| = 1) :
       Real.exp (-u ^ 2)) (Ioi c) := by
     simp_rw [Finset.sum_mul]
     exact integrable_finsetSum _ fun k _ =>
-      ((integrableOn_rpow_mul_exp_neg_mul_sq one_pos
-        (by linarith [Nat.cast_nonneg (α := ℝ) k] : (-1 : ℝ) < k)).mono_set
+      (((integrableOn_Ioi_pow_mul_exp_neg_mul_sq_iff k).mpr one_pos).mono_set
         (Ioi_subset_Ioi hc.le)).congr_fun
-        (fun u _ => by dsimp only; rw [Real.rpow_natCast, neg_one_mul]) measurableSet_Ioi
+        (fun u _ => by simp only [neg_one_mul]) measurableSet_Ioi
   have hbound : (fun a : ℝ => ∫ u in Ioi c, diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2))
       =O[atTop] fun a : ℝ => Real.exp (-(c ^ 2 / 4) * a) := by
     refine IsBigO.of_bound |∫ u in Ioi c, (∑ k ∈ Finset.range 9, u ^ k) * Real.exp (-u ^ 2)| ?_
@@ -638,24 +602,17 @@ private theorem isBigO_main_interval_err {s : ℝ} (hs : |s| = 1) :
   have hle2 : (∫ u in Ioc 0 (diagCoord s (1 / 3)), 82 * u ^ 9 * Real.exp (-(a / 2) * u ^ 2)) ≤
       82 * ∫ u in Ioi (0 : ℝ), u ^ 9 * Real.exp (-(a / 2) * u ^ 2) := by
     have hint9 : IntegrableOn (fun u : ℝ => u ^ 9 * Real.exp (-(a / 2) * u ^ 2)) (Ioi 0) :=
-      (integrableOn_rpow_mul_exp_neg_mul_sq (half_pos ha)
-        (by norm_num : (-1 : ℝ) < (9 : ℕ))).congr_fun
-        (fun u _ => by dsimp only; rw [Real.rpow_natCast]) measurableSet_Ioi
+      (integrableOn_Ioi_pow_mul_exp_neg_mul_sq_iff 9).mpr (half_pos ha)
     simp_rw [mul_assoc]; rw [← integral_const_mul]
     exact setIntegral_mono_set (hint9.const_mul 82)
       ((ae_restrict_mem measurableSet_Ioi).mono fun u hu => by have : 0 < u := hu; positivity)
       (Eventually.of_forall fun _ hu => hu.1)
   have hmom9 : a * ∫ u in Ioi (0 : ℝ), u ^ 9 * Real.exp (-(a / 2) * u ^ 2) =
       384 * a ^ (-4 : ℝ) := by
-    have heq : ∫ u in Ioi (0 : ℝ), u ^ 9 * Real.exp (-(a / 2) * u ^ 2) =
-        ∫ u in Ioi (0 : ℝ), u ^ (9 : ℝ) * Real.exp (-(a / 2) * u ^ (2 : ℝ)) :=
-      setIntegral_congr_fun measurableSet_Ioi fun u _ => by
-        rw [show (9 : ℝ) = (9 : ℕ) by norm_num, Real.rpow_natCast, Real.rpow_two]
-    rw [heq, integral_rpow_mul_exp_neg_mul_rpow two_pos (by norm_num) (half_pos ha),
-      div_eq_mul_inv, Real.mul_rpow ha.le (by positivity),
-      show ((9 : ℝ) + 1) / 2 = (4 : ℕ) + 1 by norm_num, Real.Gamma_nat_eq_factorial,
-      show -((9 : ℝ) + 1) / 2 = -((5 : ℕ) : ℝ) by norm_num,
-      Real.rpow_neg (by positivity : (0 : ℝ) ≤ 2⁻¹), Real.rpow_natCast]
+    have h4 : a ^ (-4 : ℝ) = (a ^ 4)⁻¹ := by
+      have hneg : (-4 : ℝ) = -((4 : ℕ) : ℝ) := by norm_num
+      rw [hneg, Real.rpow_neg ha.le, Real.rpow_natCast]
+    rw [integral_Ioi_pow_two_mul_add_one_mul_exp_neg_mul_sq (half_pos ha) 4, h4]
     norm_num [Nat.factorial]; field_simp [ha.ne']; ring
   rw [Real.norm_eq_abs, abs_mul, abs_of_pos ha, ← Real.norm_eq_abs]
   calc a * ‖_‖ ≤ a * (82 * ∫ u in Ioi (0 : ℝ), u ^ 9 * Real.exp (-(a / 2) * u ^ 2)) :=
@@ -666,8 +623,7 @@ private theorem isBigO_main_interval_err {s : ℝ} (hs : |s| = 1) :
 private theorem isBigO_main_interval {s : ℝ} (hs : |s| = 1) :
     (fun a : ℝ => a * (∫ v in (0 : ℝ)..(1 / 3),
         (1 - s * v)⁻¹ * Real.exp (-a * diagPhase (s * v))) -
-      (diagSeries8 s a -
-        571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)) * a ^ (-7 / 2 : ℝ)))
+      (diagSeries8 s a - 571 * Real.sqrt (2 * Real.pi) / 4976640 * a ^ (-7 / 2 : ℝ)))
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
   have hc_pos : 0 < diagCoord s (1 / 3) := diagCoord_pos hs ⟨by norm_num, le_rfl⟩
   refine ((isBigO_main_interval_err hs).sub (isBigO_gauss_tail hc_pos hs)).congr' ?_ .rfl
@@ -855,8 +811,7 @@ private theorem isBigO_upper_tail :
 
 private theorem isBigO_lower_sharp :
     (fun a : ℝ => a ^ (1 - a) * Real.exp a * lowerIncompleteGamma a a -
-      (diagSeries8 1 a -
-        571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)) * a ^ (-7 / 2 : ℝ)))
+      (diagSeries8 1 a - 571 * Real.sqrt (2 * Real.pi) / 4976640 * a ^ (-7 / 2 : ℝ)))
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
   have hm := isBigO_main_interval (s := 1) (by norm_num)
   refine (hm.add isBigO_lower_tail).congr' ?_ .rfl
@@ -866,8 +821,7 @@ private theorem isBigO_lower_sharp :
 
 private theorem isBigO_upper_sharp :
     (fun a : ℝ => a ^ (1 - a) * Real.exp a * (Real.Gamma a - lowerIncompleteGamma a a) -
-      (diagSeries8 (-1) a -
-        571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)) * a ^ (-7 / 2 : ℝ)))
+      (diagSeries8 (-1) a - 571 * Real.sqrt (2 * Real.pi) / 4976640 * a ^ (-7 / 2 : ℝ)))
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
   have hm := isBigO_main_interval (s := -1) (by norm_num)
   refine (hm.add isBigO_upper_tail).congr' ?_ .rfl
@@ -893,7 +847,7 @@ theorem isBigO_mul_lowerIncompleteGamma_diag_sub :
     ((isBigO_refl (fun _ : ℝ => (1 : ℝ)) atTop).congr_right fun _ => (Real.rpow_zero _).symm)
     (by norm_num)).congr_left fun _ => mul_one _
   have h2 := (isBigO_refl (fun a : ℝ => a ^ (-7 / 2 : ℝ)) atTop).const_mul_left
-    (571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)))
+    (571 * Real.sqrt (2 * Real.pi) / 4976640)
   exact (h1.sub h2).congr' (Eventually.of_forall fun a => by unfold diagSeries8; ring) .rfl
 
 /-- Eight-term normalized diagonal asymptotic expansion of the upper incomplete Gamma tail
@@ -909,7 +863,7 @@ theorem isBigO_mul_Gamma_sub_lowerIncompleteGamma_diag_sub :
     ((isBigO_refl (fun _ : ℝ => (1 : ℝ)) atTop).congr_right fun _ => (Real.rpow_zero _).symm)
     (by norm_num)).congr_left fun _ => mul_one _
   have h2 := (isBigO_refl (fun a : ℝ => a ^ (-7 / 2 : ℝ)) atTop).const_mul_left
-    (571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)))
+    (571 * Real.sqrt (2 * Real.pi) / 4976640)
   exact (h1.sub h2).congr' (Eventually.of_forall fun a => by unfold diagSeries8; ring) .rfl
 
 private theorem isBigO_unnormalized_six {f : ℝ → ℝ} (s : ℝ)
