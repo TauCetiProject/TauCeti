@@ -180,57 +180,6 @@ section Morrey
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- The mean oscillation of a `W^{1,p}` function on a bounded convex open set `W` of positive
-measure, by the Poincaré–Wirtinger inequality and Hölder's inequality. -/
-private theorem W1p.setAverage_norm_sub_setAverage_le_of_convex (hp : p ≠ ∞) {W : Opens E}
-    (hconv : Convex ℝ (W : Set E)) (hb : Bornology.IsBounded (W : Set E)) (hW : μ W ≠ 0)
-    (u : W1p μ W p) :
-    ⨍ y in W, ‖W1p.value u y - ⨍ z in W, W1p.value u z ∂μ‖ ∂μ ≤
-      μ.real (ball (0 : E) 1) * diam (W : Set E) ^ (Module.finrank ℝ E + 1) *
-        μ.real W ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
-  set g : E → ℝ := fun y ↦ W1p.value u y - ⨍ z in W, W1p.value u z ∂μ
-  set m := μ.real W
-  set K := μ.real (ball (0 : E) 1) * diam (W : Set E) ^ (Module.finrank ℝ E + 1)
-  have hWfin : μ W ≠ ∞ := hb.measure_lt_top.ne
-  have hm : 0 < m := ENNReal.toReal_pos hW hWfin
-  have hK : 0 ≤ K := by positivity
-  have hg : AEStronglyMeasurable g (μ.restrict W) :=
-    (Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const
-  -- The Poincaré–Wirtinger inequality in `Lᵖ(W)`.
-  have hP : eLpNorm g p (μ.restrict W) ≤ ENNReal.ofReal (K / m) * ‖W1p.gradient u‖ₑ :=
-    W1p.eLpNorm_value_sub_setAverage_le_of_convex hp hconv hb
-      W.isOpen.measurableSet.nullMeasurableSet subset_rfl hW u
-  have hfin : eLpNorm g p (μ.restrict W) ≠ ∞ :=
-    (hP.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top eNorm_lt_top)).ne
-  have hPr : (eLpNorm g p (μ.restrict W)).toReal ≤ K / m * ‖W1p.gradient u‖ := by
-    have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
-    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (div_nonneg hK hm.le), toReal_eNorm] at this
-  -- Hölder's inequality: `‖g‖_{L¹(W)} ≤ ‖g‖_{Lᵖ(W)} μ(W)^(1 - 1/p)`.
-  have hq : 0 ≤ 1 - 1 / p.toReal := ENNReal.one_sub_one_div_toReal_nonneg Fact.out
-  have hholder := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (Fact.out : (1 : ℝ≥0∞) ≤ p) hg
-  rw [Measure.restrict_apply_univ, ENNReal.toReal_one, div_one] at hholder
-  have hint : ∫ y in W, ‖g y‖ ∂μ ≤ K / m * ‖W1p.gradient u‖ * m ^ (1 - 1 / p.toReal) :=
-    calc ∫ y in W, ‖g y‖ ∂μ = (eLpNorm g 1 (μ.restrict W)).toReal := by
-          rw [integral_norm_eq_lintegral_eNorm hg, eLpNorm_one_eq_lintegral_eNorm hg]
-      _ ≤ (eLpNorm g p (μ.restrict W) * μ W ^ (1 - 1 / p.toReal)).toReal :=
-          ENNReal.toReal_mono (ENNReal.mul_ne_top hfin (ENNReal.rpow_ne_top_of_nonneg hq hWfin))
-            hholder
-      _ = (eLpNorm g p (μ.restrict W)).toReal * m ^ (1 - 1 / p.toReal) := by
-          rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow]
-          rfl
-      _ ≤ _ := by gcongr
-  rw [setAverage_eq, smul_eq_mul]
-  calc m⁻¹ * ∫ y in W, ‖g y‖ ∂μ ≤ m⁻¹ * (K / m * ‖W1p.gradient u‖ * m ^ (1 - 1 / p.toReal)) := by
-        gcongr
-    _ = K * m ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
-        have h : m ^ (-(1 + 1 / p.toReal)) =
-            m ^ (-1 : ℝ) * m ^ (-1 : ℝ) * m ^ (1 - 1 / p.toReal) := by
-          rw [← Real.rpow_add hm, ← Real.rpow_add hm]
-          congr 1
-          ring
-        rw [h, Real.rpow_neg_one]
-        ring
-
 /-- If a set `s` fills at least the fraction `c` of `closedBall x r`, then
 `μ(ball x r ∩ s) ≥ c ω rⁿ`, where `ω` is the measure of the unit ball and `n` the dimension. -/
 private theorem mul_measureReal_ball_mul_pow_le_measureReal_ball_inter {s : Set E} {x : E}
@@ -291,12 +240,10 @@ private theorem W1p.setAverage_closedBall_norm_sub_le_of_convex (hp : p ≠ ∞)
   calc μ.real (ball (0 : E) 1) * diam (W : Set E) ^ (Module.finrank ℝ E + 1) * μ.real W ^ e *
         ‖W1p.gradient (W1p.restrictL hWΩ u)‖
       ≤ μ.real (ball (0 : E) 1) * (2 * r) ^ (Module.finrank ℝ E + 1) *
-          (c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E) ^ e * ‖W1p.gradient u‖ :=
-        mul_le_mul (mul_le_mul (mul_le_mul_of_nonneg_left hdiam measureReal_nonneg)
-          (Real.rpow_le_rpow_of_nonpos hpos hm (neg_nonpos.2 (by positivity))) (by positivity)
-          (by positivity))
-          (W1p.norm_gradient_restrictL_le hWΩ u)
-          (norm_nonneg _) (by positivity)
+          (c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E) ^ e * ‖W1p.gradient u‖ := by
+        gcongr _ * ?_ * ?_ * ?_
+        · exact Real.rpow_le_rpow_of_nonpos hpos hm (neg_nonpos.2 (by positivity))
+        · exact W1p.norm_gradient_restrictL_le hWΩ u
     _ = 2 ^ (Module.finrank ℝ E + 1) * μ.real (ball (0 : E) 1) *
           (c * μ.real (ball (0 : E) 1)) ^ e * ‖W1p.gradient u‖ *
             r ^ (1 - Module.finrank ℝ E / p.toReal) := by
@@ -422,7 +369,7 @@ theorem W1p.exists_holderOnWith_closure_ae_eq_of_convex
   · refine (W1p.ae_eq_preciseRepresentative u).trans ?_
     filter_upwards [self_mem_ae_restrict Ω.isOpen.measurableSet] with x hx
     rw [dite_eq_left (subset_closure hx)]
-    exact hfg (show (⟨x, subset_closure hx⟩ : closure (Ω : Set E)) ∈ Subtype.val ⁻¹' _ from hx)
+    exact hfg (x := ⟨x, subset_closure hx⟩) hx
 
 end Morrey
 
