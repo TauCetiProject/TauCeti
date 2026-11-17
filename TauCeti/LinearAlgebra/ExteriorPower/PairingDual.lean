@@ -89,7 +89,6 @@ variable (R M) in
 /-- **The exterior power of the dual of a finite projective module is the dual of its exterior
 power**: `⋀ⁿ (M^*) ≃ (⋀ⁿ M)^*`, sending `φ₁ ∧ ⋯ ∧ φₙ` to `v₁ ∧ ⋯ ∧ vₙ ↦ det (φⱼ vᵢ)`
 (`exteriorPower.pairingDualEquiv_ιMulti_ιMulti`). In top degree this is `det (M^*) ≃ (det M)^*`. -/
-@[expose]
 def pairingDualEquiv [Module.Finite R M] [Module.Projective R M] (n : ℕ) :
     ⋀[R]^n (Dual R M) ≃ₗ[R] Dual R (⋀[R]^n M) :=
   .ofBijective _ (bijective_pairingDual_of_projective n)
@@ -98,7 +97,7 @@ def pairingDualEquiv [Module.Finite R M] [Module.Projective R M] (n : ℕ) :
 @[simp]
 theorem coe_pairingDualEquiv [Module.Finite R M] [Module.Projective R M] (n : ℕ) :
     ⇑(pairingDualEquiv R M n) = pairingDual R M n :=
-  rfl
+  (rfl)
 
 /-- `exteriorPower.pairingDualEquiv` pairs `φ₁ ∧ ⋯ ∧ φₙ` with `v₁ ∧ ⋯ ∧ vₙ` to `det (φⱼ vᵢ)`. -/
 theorem pairingDualEquiv_ιMulti_ιMulti [Module.Finite R M] [Module.Projective R M] {n : ℕ}
