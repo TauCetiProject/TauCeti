@@ -31,8 +31,8 @@ The selection reuses
 the local square-energy domain, not a construction of the stochastic integral itself.
 Both the energy hypothesis and the pathwise agreement use nonnegative time with pullback
 Lebesgue measure. Under s-finiteness of the sample measure,
-`MeasureTheory.IsStronglyProgressive.exists_locallyBrownianIntegrable_ae_prod` also supplies
-finite-horizon product-a.e. agreement for the same locally integrable representative.
+`MeasureTheory.IsStronglyProgressive.exists_locallyBrownianIntegrable_ae_prod` supplies one
+locally Brownian-integrable representative agreeing product-a.e. across all finite horizons.
 
 ## References
 
@@ -98,11 +98,8 @@ theorem exists_locallyBrownianIntegrable_ae_prod
         ((↑) : ℝ≥0 → ℝ)).prod P] Function.uncurry H := by
   obtain ⟨G, hG, heq⟩ := hH.exists_locallyBrownianIntegrable_ae_time henergy
   refine ⟨G, hG, fun T ↦ ?_⟩
-  rw [NNReal.comap_volume_restrict_Ioc]
-  have h := hG.isStronglyPredictable.isStronglyProgressive.isProgressive.ae_eq_prod_of_ae_eq
-    hH.isProgressive (μ := TauCeti.nnvolume.restrict (Ioc 0 T)) (P := P) (T := T)
-    (Eventually.of_forall fun ω ↦ ae_restrict_of_ae (ae_restrict_of_ae (heq ω)))
-  simpa only [TauCeti.nnvolume_def, Measure.restrict_restrict measurableSet_Iic,
-    Iic_inter_Ioc_of_le le_rfl] using h
+  rw [NNReal.comap_volume_restrict_Ioc, ← TauCeti.nnvolume_def]
+  exact hG.isStronglyPredictable.isStronglyProgressive.isProgressive.ae_eq_prod_of_ae_eq
+    hH.isProgressive (Eventually.of_forall fun ω ↦ ae_restrict_of_ae (heq ω))
 
 end MeasureTheory.IsStronglyProgressive
