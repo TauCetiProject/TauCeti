@@ -228,7 +228,7 @@ namespace TauCeti
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
 -- Not `@[simp]`: rewriting bottom-up inside `hilbertSymbolOnSquareClasses` would block
--- `@[simp] hilbertSymbolOnSquareClasses_squareClassMap_ringEquiv` from cancelling
+-- `@[simp] RingEquiv.hilbertSymbolOnSquareClasses_squareClassMap` from cancelling
 -- `adicCompletionCongr`.
 /-- Extending a valuation-preserving isomorphism `e : K ≃+* K'` to the adic completions commutes
 with pushing square classes forward along `algebraMap`. -/

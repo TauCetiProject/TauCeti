@@ -231,19 +231,6 @@ theorem hilbertSymbolOnSquareClasses_squareClass (a b : Kˣ) :
   · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
   · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
 
-/-- Pushing square classes forward along a ring isomorphism of fields leaves the square-class
-Hilbert symbol unchanged. -/
-@[simp]
-theorem hilbertSymbolOnSquareClasses_squareClassMap_ringEquiv {L : Type*} [Field L] (e : K ≃+* L)
-    (x y : SquareClassGroup K) :
-    hilbertSymbolOnSquareClasses ((e : K →+* L).squareClassMap x) ((e : K →+* L).squareClassMap y) =
-      hilbertSymbolOnSquareClasses x y := by
-  have hmap : (e : K →+* L).toMonoidHom = (e : K →* L) := MonoidHom.ext fun _ ↦ by simp
-  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, RingHom.squareClassMap_apply,
-    RingHom.squareClassMap_apply, hilbertSymbolOnSquareClasses_squareClass,
-    hilbertSymbolOnSquareClasses_squareClass, hmap]
-  exact hilbertSymbol_units_map_ringEquiv e _ _
-
 /-- Pushing square classes forward along a surjective field homomorphism leaves the square-class
 Hilbert symbol unchanged. -/
 theorem hilbertSymbolOnSquareClasses_squareClassMap_of_surjective {L : Type*} [Field L]
@@ -323,3 +310,22 @@ theorem hilbertSymbol_eq_one_of_isSquare_left {a : Kˣ} (ha : IsSquare a) (b : K
   hilbertSymbol_eq_one_of_isSquare_left (by simp) b
 
 end TauCeti
+
+namespace RingEquiv
+
+open TauCeti
+
+/-- Pushing square classes forward along a ring isomorphism of fields leaves the square-class
+Hilbert symbol unchanged. -/
+@[simp]
+theorem hilbertSymbolOnSquareClasses_squareClassMap {K L : Type*} [Field K] [Field L]
+    (e : K ≃+* L) (x y : SquareClassGroup K) :
+    hilbertSymbolOnSquareClasses ((e : K →+* L).squareClassMap x) ((e : K →+* L).squareClassMap y) =
+      hilbertSymbolOnSquareClasses x y := by
+  have hmap : (e : K →+* L).toMonoidHom = (e : K →* L) := MonoidHom.ext fun _ ↦ by simp
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, RingHom.squareClassMap_apply,
+    RingHom.squareClassMap_apply, hilbertSymbolOnSquareClasses_squareClass,
+    hilbertSymbolOnSquareClasses_squareClass, hmap]
+  exact hilbertSymbol_units_map_ringEquiv e _ _
+
+end RingEquiv

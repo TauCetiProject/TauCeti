@@ -232,16 +232,6 @@ section Class
 
 variable {K : Type u} {L : Type v} {M : Type w} [Field K] [Field L] [Field M]
 
-private theorem isScalarTower_toAlgebra_of_leftInverse (e : K ≃+* L) (f : L ≃+* K)
-    (h : ∀ x, f (e x) = x) :
-    letI : Algebra K L := e.toRingHom.toAlgebra
-    letI : Algebra L K := f.toRingHom.toAlgebra
-    IsScalarTower K L K :=
-  letI : Algebra K L := e.toRingHom.toAlgebra
-  letI : Algebra L K := f.toRingHom.toAlgebra
-  IsScalarTower.of_algebraMap_eq fun x ↦ by
-    simp [RingHom.algebraMap_toAlgebra, h]
-
 variable [Invertible (2 : K)] [Invertible (2 : L)]
 
 /-- **Transport of regular-form isometry classes along a ring isomorphism of fields**, as an
@@ -251,9 +241,9 @@ def RegularFormClass.mapRingEquiv (e : K ≃+* L) :
   letI : Algebra K L := e.toRingHom.toAlgebra
   letI : Algebra L K := e.symm.toRingHom.toAlgebra
   haveI : IsScalarTower K L K :=
-    isScalarTower_toAlgebra_of_leftInverse e e.symm e.symm_apply_apply
+    IsScalarTower.of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
   haveI : IsScalarTower L K L :=
-    isScalarTower_toAlgebra_of_leftInverse e.symm e e.apply_symm_apply
+    IsScalarTower.of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
   RingEquiv.ofRingHom (RegularFormClass.baseChangeHom (K := K) (L := L))
     (RegularFormClass.baseChangeHom (K := L) (L := K))
     (by rw [RegularFormClass.baseChangeHom_comp, RegularFormClass.baseChangeHom_self])
