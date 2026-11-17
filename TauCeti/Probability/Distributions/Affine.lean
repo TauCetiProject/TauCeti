@@ -157,7 +157,7 @@ theorem affineDensity_apply (a b : ℝ) (f : ℝ → ℝ≥0∞) (y : ℝ) :
 @[fun_prop]
 theorem measurable_affineDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) (a b : ℝ) :
     Measurable (affineDensity a b f) := by
-  unfold affineDensity
+  rw [affineDensity.eq_unfold]
   fun_prop
 
 private noncomputable def mulLeftCLE (b : ℝ) (hb : b ≠ 0) : ℝ ≃L[ℝ] ℝ :=
