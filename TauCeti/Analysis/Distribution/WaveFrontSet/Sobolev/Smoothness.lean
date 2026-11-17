@@ -85,9 +85,7 @@ theorem exists_contDiff_cutoffTempered_eq_integral {φ : 𝓓(Ω, ℂ)}
   obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
     (fun _ ↦ isOpen_interior) fun x hx ↦
       mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  have hsum : T.cutoffTempered (∑ i, ψ i) = ∑ i, T.cutoffTempered (ψ i) :=
-    map_sum (AddMonoidHom.mk' T.cutoffTempered T.cutoffTempered_add_cutoff) ψ Finset.univ
-  rw [← hψφ, hsum]
+  rw [← hψφ, cutoffTempered_sum_cutoff]
   exact MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
 
 /-- **Smoothness from every Sobolev order.** A complex distribution is a smooth function near a
@@ -100,17 +98,8 @@ theorem notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt {x : E} 
     exact (notMem_sobolevSingularSupport_iff hy.1).1 fun hs ↦
       hy.2 (sobolevSingularSupport_subset_singularSupport s T hs)
   -- A cutoff equal to one near `x` and supported where `T` has every Sobolev order.
-  obtain ⟨χ, -, hχ1, hχs⟩ := exists_cutoff_tsupport_subset (n := ⊤) (isCompact_singleton (x := x))
-    (isOpen_interior.inter Ω.isOpen) (singleton_subset_iff.2 ⟨mem_interior_iff_mem_nhds.2 h, hx⟩)
-    inter_subset_right
-  rw [nhdsSet_singleton] at hχ1
-  obtain ⟨V, hV1, hV, hxV⟩ := _root_.eventually_nhds_iff.1 hχ1
-  let χc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM χ
-  have hχc (y : E) : χc y = χ y := by simp [χc]
-  have hχcs : tsupport χc ⊆ interior {y | ∀ s, T.IsLocallySobolevAt s y} :=
-    (tsupport_comp_subset (g := ofRealCLM) (by simp) χ).trans (hχs.trans inter_subset_left)
-  obtain ⟨g, hg, hTg⟩ := exists_contDiff_cutoffTempered_eq_integral fun s y hy ↦
-    interior_subset (hχcs hy) s
+  obtain ⟨χc, V, hV, hxV, hV1, hχcs⟩ := exists_eqOn_one_tsupport_subset (n := ⊤) (𝕜 := ℂ) h hx
+  obtain ⟨g, hg, hTg⟩ := exists_contDiff_cutoffTempered_eq_integral fun s y hy ↦ hχcs hy s
   refine (notMem_singularSupport_iff hx).2 ⟨V, hV, hxV, g, hg.contDiffOn, fun φ hφ ↦ ?_⟩
   -- On `V` the cutoff is one, so `T φ` is the value of `χ T` on `φ`.
   let ψ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun y ↦ (φ y : ℂ))
@@ -118,7 +107,7 @@ theorem notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt {x : E} 
   have hψ (y : E) : ψ y = φ y := HasCompactSupport.toSchwartzMap_toFun _ _ y
   have hφχ (y : E) : postcompCLM (𝕜 := ℝ) ofRealCLM φ y = χc y * ψ y := by
     by_cases hy : y ∈ tsupport φ
-    · simp [hχc, hψ, hV1 y (hφ hy)]
+    · simp [hψ, hV1 (hφ hy)]
     · simp [hψ, image_eq_zero_of_notMem_tsupport hy]
   rw [← complexPairing_postcompCLM_ofRealCLM, ← cutoffTempered_apply T χc hφχ, hTg]
   simp [hψ, Complex.real_smul]

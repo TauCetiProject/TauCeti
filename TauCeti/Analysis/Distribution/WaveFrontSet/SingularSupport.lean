@@ -218,21 +218,12 @@ theorem notMem_singularSupport_iff_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω, 
   · obtain ⟨U, hU, hxU, f, hf, hT⟩ := (notMem_singularSupport_iff hx).1 h
     exact isMicrolocallySmoothAt_of_apply_eq_integral hU hf hT hxU hx ξ
   obtain ⟨U, hU, hdecay⟩ := exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt h
-  -- A cutoff equal to one near `x` and supported in `U ∩ Ω`.
-  obtain ⟨χ, -, hχ1, hχs⟩ := exists_cutoff_tsupport_subset (n := ⊤) (isCompact_singleton (x := x))
-    (isOpen_interior.inter Ω.isOpen) (singleton_subset_iff.2 ⟨mem_interior_iff_mem_nhds.2 hU, hx⟩)
-    inter_subset_right
-  rw [nhdsSet_singleton] at hχ1
-  obtain ⟨V, hV1, hV, hxV⟩ := _root_.eventually_nhds_iff.1 hχ1
-  let χc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM χ
-  have hχc (y : E) : χc y = χ y := by simp [χc]
-  have hχcs : tsupport χc ⊆ U := by
-    refine (tsupport_comp_subset (g := ofRealCLM) (by simp) χ).trans ?_
-    exact hχs.trans (inter_subset_left.trans interior_subset)
+  -- A cutoff equal to one near `x` and supported in `U`.
+  obtain ⟨χc, V, hV, hxV, hV1, hχcs⟩ := exists_eqOn_one_tsupport_subset (n := ⊤) (𝕜 := ℂ) hU hx
   obtain ⟨f, hf, hT⟩ := exists_contDiff_apply_eq_integral_of_forall_decay (hdecay χc hχcs)
   refine (notMem_singularSupport_iff hx).2 ⟨V, hV, hxV, f, hf.contDiffOn, fun φ hφ ↦ hT φ ?_⟩
   intro y hy
-  simp [hχc, hV1 y (hφ (subset_tsupport _ hy))]
+  simp [hV1 (hφ (subset_tsupport _ hy))]
 
 /-- **The projection of the wave front set is the singular support** (Hörmander I,
 Proposition 8.1.3). -/

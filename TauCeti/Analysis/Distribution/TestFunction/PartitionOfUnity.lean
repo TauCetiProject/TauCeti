@@ -17,6 +17,8 @@ support. Consequently, an additive map on test functions which vanishes locally 
 continuity of the additive map is not required. Every compact subset of the domain also has a
 cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
 test function with a prescribed value there, supported in a given neighbourhood of the point.
+Every point of the domain also has a test function equal to one near it and supported in a given
+neighbourhood of it (`TestFunction.exists_eqOn_one_tsupport_subset`).
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
@@ -158,6 +160,22 @@ theorem exists_tsupport_subset_apply_eq {x : E} {s : Set E} (hs : s ∈ 𝓝 x) 
   have hsupp : tsupport (fun y ↦ u y • v) ⊆ s := (tsupport_smul_subset_left _ _).trans hus
   exact ⟨⟨fun y ↦ u y • v, hud.smul contDiff_const, hu.smul_right, hsupp.trans hsΩ⟩, hsupp,
     by simp [hux]⟩
+
+/-- Every point `x` of the domain has a test function equal to one on an open neighbourhood of `x`
+and supported in a given neighbourhood of `x`. -/
+theorem exists_eqOn_one_tsupport_subset {𝕜 : Type*} [RCLike 𝕜] {x : E} {U : Set E}
+    (hU : U ∈ 𝓝 x) (hx : x ∈ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, 𝕜), ∃ V, IsOpen V ∧ x ∈ V ∧ EqOn χ 1 V ∧ tsupport χ ⊆ U := by
+  obtain ⟨χ, -, hχ1, hχs⟩ := exists_cutoff_tsupport_subset (n := n) (isCompact_singleton (x := x))
+    (isOpen_interior.inter Ω.isOpen) (singleton_subset_iff.2 ⟨mem_interior_iff_mem_nhds.2 hU, hx⟩)
+    inter_subset_right
+  rw [nhdsSet_singleton] at hχ1
+  obtain ⟨V, hV1, hV, hxV⟩ := eventually_nhds_iff.1 hχ1
+  have hs : tsupport (fun y ↦ (χ y : 𝕜)) ⊆ tsupport χ := tsupport_comp_subset RCLike.ofReal_zero χ
+  exact ⟨⟨fun y ↦ (χ y : 𝕜), (RCLike.ofRealCLM (K := 𝕜)).contDiff.comp χ.contDiff,
+    χ.hasCompactSupport.comp_left RCLike.ofReal_zero, hs.trans χ.tsupport_subset⟩, V, hV, hxV,
+    fun y hy ↦ (congrArg (fun r : ℝ ↦ (r : 𝕜)) (hV1 y hy)).trans RCLike.ofReal_one,
+    hs.trans (hχs.trans (inter_subset_left.trans interior_subset))⟩
 
 /-- A real test function bounded in norm by one can realize the signs of arbitrary coefficients
 on a finite subset of its domain. -/
