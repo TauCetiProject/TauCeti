@@ -75,9 +75,6 @@ private theorem inChartAt_volumeForm_prod_apply (hn : finrank ℝ E = 2 * n)
         ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm))) =
       RoughForm.inChartAt (σ.volumeForm n).1 p.1 z.1 b₁ *
         RoughForm.inChartAt (τ.volumeForm m).1 p.2 z.2 b₂ := by
-  have hq : (extChartAt (I.prod J) p).symm z =
-      ((extChartAt I p.1).symm z.1, (extChartAt J p.2).symm z.2) := by
-    rw [extChartAt_prod, PartialEquiv.prod_coe_symm]
   -- The inverse product chart differentiates componentwise.
   have hfam : (fun r ↦ mfderivWithin 𝓘(ℝ, E × F) (I.prod J) (extChartAt (I.prod J) p).symm
       (range (I.prod J)) z (Fin.append (α := E × F) (fun i ↦ (b₁ i, 0)) (fun j ↦ (0, b₂ j))
@@ -101,7 +98,7 @@ private theorem inChartAt_volumeForm_prod_apply (hn : finrank ℝ E = 2 * n)
   refine (volumeForm_prod_apply_append hn hm σ τ _
     (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I p.1).symm (range I) z.1 (b₁ i))
     (fun j ↦ mfderivWithin 𝓘(ℝ, F) J (extChartAt J p.2).symm (range J) z.2 (b₂ j))).trans ?_
-  rw [hq]
+  rw [extChartAt_prod_symm_apply]
 
 section Measure
 
@@ -155,7 +152,7 @@ private theorem setLIntegral_inChartAt_volumeForm_prod [mEF : MeasurableSpace (E
           ENNReal.ofReal |RoughForm.inChartAt (τ.volumeForm m).1 y z.2 b₂| := by
     intro z hz
     have hz' : z ∈ (extChartAt (I.prod J) (x, y)).target := by
-      rw [extChartAt_prod, PartialEquiv.prod_target]
+      rw [extChartAt_prod_target]
       exact prod_mono hS₁x hS₂y hz
     rw [inChartAt_volumeForm_prod_apply hn.out hm.out σ τ hz', abs_mul,
       ENNReal.ofReal_mul (abs_nonneg _)]

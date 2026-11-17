@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -392,10 +393,10 @@ theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold 
       (mfderivWithin 𝓘(𝕜, E) I (extChartAt I p.1).symm (range I) z.1 v.1,
         mfderivWithin 𝓘(𝕜, E') J (extChartAt J p.2).symm (range J) z.2 v.2) := by
   have hz' : z.1 ∈ (extChartAt I p.1).target ∧ z.2 ∈ (extChartAt J p.2).target := by
-    rwa [extChartAt_prod, PartialEquiv.prod_target, mem_prod] at hz
+    rwa [extChartAt_prod_target, mem_prod] at hz
   have hsymm : (extChartAt (I.prod J) p).symm =
-      Prod.map (extChartAt I p.1).symm (extChartAt J p.2).symm := by
-    rw [extChartAt_prod, PartialEquiv.prod_coe_symm, Prod.map_def]
+      Prod.map (extChartAt I p.1).symm (extChartAt J p.2).symm :=
+    funext (extChartAt_prod_symm_apply p)
   rw [hsymm, ModelWithCorners.range_prod, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
     mfderivWithin_prodMap (mdifferentiableWithinAt_extChartAt_symm hz'.1)
       (mdifferentiableWithinAt_extChartAt_symm hz'.2)
