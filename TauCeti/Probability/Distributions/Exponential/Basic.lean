@@ -554,7 +554,9 @@ theorem nnrealExpMeasure_map_coe (r : ℝ) :
 theorem nnrealExpMeasure_map_coe_ennreal (r : ℝ) :
     (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ≥0∞) = (expMeasure r).map ENNReal.ofReal := by
   rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_ennreal measurable_real_toNNReal]
-  rfl
+  have hcomp : (((↑) : ℝ≥0 → ℝ≥0∞) ∘ Real.toNNReal) = ENNReal.ofReal :=
+    funext fun x => by rw [Function.comp_apply, ENNReal.ofReal]
+  rw [hcomp]
 
 /-- Pushing `expMeasure r` forward to `ℝ≥0∞` via `ENNReal.ofReal` and back via `ENNReal.toReal`
 recovers `expMeasure r`, for every rate `r`. -/

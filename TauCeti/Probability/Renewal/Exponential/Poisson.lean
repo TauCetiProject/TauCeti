@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Renewal.ArrivalMeasure
 public import TauCeti.Probability.PointProcess.Poisson.Construction
 public import TauCeti.MeasureTheory.Measure.NNReal
+import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Probability.Renewal.Exponential.Process
 import TauCeti.Probability.PointProcess.Poisson.Count
 import TauCeti.Probability.PointProcess.Poisson.Law
@@ -95,10 +96,8 @@ theorem identDistrib_renewalCountNat_nat_count_of_isPoissonRandomMeasure
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P)
     (hM : IsPoissonRandomMeasure Q M ((r : ℝ≥0∞) • nnvolume)) :
     IdentDistrib (fun ω t ↦ renewalCountNat T t ω)
-      (fun ω t ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) P Q := by
-  have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • nnvolume) :=
-    nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
-  exact identDistrib_renewalCountNat_of_hasLaw_poissonMeasure hT hindep hlaw
+      (fun ω t ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) P Q :=
+  identDistrib_renewalCountNat_of_hasLaw_poissonMeasure hT hindep hlaw
     hM.hasIndepIncrements_nat_count hM.measurable_nat_count (by simp)
     hM.ae_monotone_nat_count (fun _ _ hst ↦ hM.hasLaw_nat_count_sub_smul_nnvolume hst)
 

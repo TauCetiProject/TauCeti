@@ -20,8 +20,9 @@ Unconditionally, partial sums of gaps telescope back to occurrence times, and ga
 is measurable for the evaluation σ-algebra on measures. For locally finite integer-valued
 measures, the gap sequence determines the measure and its law; positivity of the first gap is
 equivalent to having no mass at zero; positivity of all subsequent gaps is equivalent to
-simplicity (`∀ t, μ {t} ≤ 1`); and survival of gap `n + 1` past `s` is equivalent to emptiness
-of `(T_n, T_n + s]`, including when occurrence `n + 1` is infinite.
+simplicity (`∀ t, μ {t} ≤ 1`); and, when occurrence `n` is finite and its location is simple
+(`μ {T_n} ≤ 1`), survival of gap `n + 1` past `s` is equivalent to emptiness of `(T_n, T_n + s]`,
+including when occurrence `n + 1` is infinite.
 
 ## References
 
@@ -79,6 +80,12 @@ theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
       simp [hn, hnext]
     · simp [hn, ENNReal.sub_eq_top_iff]
 
+/-- When occurrence `n` is finite, gap `n + 1` is positive if and only if the next occurrence
+(possibly infinite) is strictly later. -/
+theorem occurrenceGap_succ_pos_iff {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.occurrenceTime n ≠ ∞) :
+    0 < μ.occurrenceGap (n + 1) ↔ μ.occurrenceTime n < μ.occurrenceTime (n + 1) := by
+  rw [occurrenceGap_succ_of_ne_top hn, tsub_pos_iff_lt]
+
 /-- The zero measure has all interarrival gaps infinite. -/
 @[simp]
 theorem occurrenceGap_zero_measure (n : ℕ) : (0 : Measure ℝ≥0).occurrenceGap n = ∞ :=
@@ -124,6 +131,19 @@ theorem sum_range_succ_occurrenceGap (μ : Measure ℝ≥0) (n : ℕ) :
         top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
       simp [hn, hnext]
     · rw [ite_eq_right hn, add_tsub_cancel_of_le (μ.monotone_occurrenceTime (Nat.le_succ n))]
+
+/-- When occurrence `n` is finite, casting the sum of the `ℝ≥0`-valued interarrival gaps up to
+index `n` recovers occurrence time `n`. -/
+theorem coe_sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
+    (hn : μ.occurrenceTime n ≠ ∞) :
+    ((∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toNNReal : ℝ≥0) : ℝ≥0∞) =
+      μ.occurrenceTime n := by
+  rw [← sum_range_succ_occurrenceGap]
+  push_cast
+  refine Finset.sum_congr rfl fun i hi ↦ ENNReal.coe_toNNReal ?_
+  exact (μ.occurrenceGap_eq_top_iff i).not.mpr
+    (ne_top_of_le_ne_top hn
+      (μ.monotone_occurrenceTime (Nat.le_of_lt_succ (Finset.mem_range.mp hi))))
 
 /-- Interarrival gaps and occurrence times carry the same information for every measure on the
 half-line. -/
@@ -196,27 +216,16 @@ theorem IsIntegerValued.forall_singleton_le_one_iff_forall_occurrenceGap_succ_po
   · intro hsimp n
     by_cases hn : μ.occurrenceTime n = ∞
     · simp [occurrenceGap_succ_of_eq_top hn]
-    · rw [occurrenceGap_succ_of_ne_top hn]
-      exact tsub_pos_of_lt (hμ.occurrenceTime_lt_succ hn (hsimp _))
+    · exact (occurrenceGap_succ_pos_iff hn).2 (hμ.occurrenceTime_lt_succ hn (hsimp _))
   · intro hpos t
     let P : ℕ → Prop := fun n => μ.occurrenceTime n ≠ ∞ ∧ (μ.occurrenceTime n).toNNReal = t
-    have hsub : ∀ {m n}, P m → P n → m = n := by
-      have hlt : ∀ {m n}, m < n → P m → P n → False := by
-        intro m n hmn hm hn
-        have heq : μ.occurrenceTime m = μ.occurrenceTime n := by
-          rw [← ENNReal.coe_toNNReal hm.1, ← ENNReal.coe_toNNReal hn.1, hm.2, hn.2]
-        have hsucc : μ.occurrenceTime (m + 1) = μ.occurrenceTime m :=
-          le_antisymm
-            ((μ.monotone_occurrenceTime (Nat.succ_le_of_lt hmn)).trans_eq heq.symm)
-            (μ.monotone_occurrenceTime (Nat.le_succ m))
-        have hzero : μ.occurrenceGap (m + 1) = 0 := by
-          rw [occurrenceGap_succ_of_ne_top hm.1, hsucc, tsub_self]
-        exact (hpos m).ne' hzero
-      intro m n hm hn
-      rcases lt_trichotomy m n with h | h | h
-      · exact (hlt h hm hn).elim
-      · exact h
-      · exact (hlt h hn hm).elim
+    have hlt : ∀ {m n}, m < n → P m → P n → False := fun hmn hm hn =>
+      (((occurrenceGap_succ_pos_iff hm.1).1 (hpos _)).trans_le
+        (μ.monotone_occurrenceTime (Nat.succ_le_of_lt hmn))).ne
+        (by rw [← ENNReal.coe_toNNReal hm.1, ← ENNReal.coe_toNNReal hn.1, hm.2, hn.2])
+    have hsub : ∀ {m n}, P m → P n → m = n := fun hm hn =>
+      ((lt_trichotomy _ _).resolve_left fun h => hlt h hm hn).resolve_right
+        fun h => hlt h hn hm
     rw [congrArg (fun ρ : Measure ℝ≥0 => ρ {t}) hμ.eq_occurrenceTimeMeasure,
       occurrenceTimeMeasure_apply]
     simp only [mem_singleton_iff]
