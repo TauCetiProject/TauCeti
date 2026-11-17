@@ -172,13 +172,15 @@ functions. The sheafification unit sends the sectionwise pure tensor into the te
 sheaf. -/
 @[simp]
 theorem tensorProductSheafIso_hom_tmul (U : X.Opens) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso X.sheaf I.sheaf J.sheaf).inv ≫
         (tensorProductSheafIso I hJ).hom) U
       (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
           I.sheaf.val J.sheaf.val)).app (op U) (s ⊗ₜ t)) =
-      sectionsMul I J U s t := by
+      sectionsMul I J U s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
     I.sheaf.val J.sheaf.val
   let F := PresheafOfModules.sheafification (R := X.ringCatSheaf) (𝟙 X.ringCatSheaf.obj)
