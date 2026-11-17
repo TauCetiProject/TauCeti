@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import Mathlib.Topology.UnitInterval
 
 /-!
 # Top regularity over a coarse polyad from nearly equal fine densities
@@ -146,19 +147,6 @@ private theorem abs_relDensityOn_unionSupport_sub_ref_mul_card_le [Fintype κ₂
     ha₁
   linarith
 
-/-- Clamping a target `x : ℝ` to `[0, 1]` does not increase its distance to `d ∈ [0, 1]`. -/
-private theorem abs_sub_max_zero_min_one_le {d x : ℝ} (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) :
-    |d - max 0 (min 1 x)| ≤ |d - x| := by
-  rcases le_total 1 x with hx₁ | hx₁
-  · rw [min_eq_left hx₁, max_eq_right zero_le_one, abs_of_nonpos (by linarith),
-      abs_of_nonpos (by linarith)]
-    linarith
-  · rw [min_eq_right hx₁]
-    rcases le_total 0 x with hx₀ | hx₀
-    · rw [max_eq_right hx₀]
-    · rw [max_eq_left hx₀, abs_of_nonneg (by linarith), abs_of_nonneg (by linarith)]
-      linarith
-
 /-- Common count-to-density reduction for `(δ, r)`-top regularity over `P`. -/
 private theorem isTopRegularOverPolyad_of_count_le (H : Colored3Graph κ V) {P : Polyad3 S}
     (hδ : 0 < δ) (hηθ : η + θ ≤ δ ^ 2) (hθ : ∀ _ : κ, 0 ≤ θ * (#P.support : ℝ))
@@ -242,21 +230,20 @@ theorem isTopRegularOverPolyad_of_sum_abs_relativeDensity_sub_le [Fintype κ₂'
       (mul_nonneg zero_le_two (Nat.cast_nonneg _))).trans (hP c))
     fun c U hη₁ ↦ ?_
   set W := unionSupport U
-  set a' : ℝ := max 0 (min 1 (a c))
-  have ha'₀ : 0 ≤ a' := le_max_left _ _
-  have ha'₁ : a' ≤ 1 := max_le zero_le_one (min_le_left _ _)
+  set a' := Set.projIcc 0 1 zero_le_one (a c)
   have hclamp : ∑ Q : Polyad3 T with π Q = P, #Q.support * |(H.relativeDensity c Q : ℝ) - a'| ≤
-      ∑ Q : Polyad3 T with π Q = P, #Q.support * |(H.relativeDensity c Q : ℝ) - a c| :=
-    sum_le_sum fun Q _ ↦ mul_le_mul_of_nonneg_left
-      (abs_sub_max_zero_min_one_le (mod_cast H.relativeDensity_nonneg c Q)
-        (mod_cast H.relativeDensity_le_one c Q))
-      (Nat.cast_nonneg _)
+      ∑ Q : Polyad3 T with π Q = P, #Q.support * |(H.relativeDensity c Q : ℝ) - a c| := by
+    refine sum_le_sum fun Q _ ↦ mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
+    have hmem : (H.relativeDensity c Q : ℝ) ∈ Set.Icc (0 : ℝ) 1 :=
+      ⟨mod_cast H.relativeDensity_nonneg c Q, mod_cast H.relativeDensity_le_one c Q⟩
+    simpa only [Set.projIcc_of_mem zero_le_one hmem] using
+      Set.abs_projIcc_sub_projIcc zero_le_one (c := (H.relativeDensity c Q : ℝ)) (d := a c)
   have hWP : (#W : ℝ) ≤ #P.support := Nat.cast_le.2 (card_le_card (unionSupport_subset U))
-  have h₁ := abs_relDensityOn_unionSupport_sub_ref_mul_card_le H π hη hη₁ U c ha'₀ ha'₁
+  have h₁ := abs_relDensityOn_unionSupport_sub_ref_mul_card_le H π hη hη₁ U c a'.2.1 a'.2.2
   have h₂ := mul_le_mul_of_nonneg_left hWP (abs_nonneg ((H.relativeDensity c P : ℝ) - a'))
-  have h₃ := H.abs_relativeDensity_sub_mul_card_support_le_of_polyadMap π P c ha'₀ ha'₁
-  have habs := abs_sub_le (H.relDensityOn c W : ℝ) a' (H.relativeDensity c P)
-  rw [abs_sub_comm a'] at habs
+  have h₃ := H.abs_relativeDensity_sub_mul_card_support_le_of_polyadMap π P c a'.2.1 a'.2.2
+  have habs := abs_sub_le (H.relDensityOn c W : ℝ) (a' : ℝ) (H.relativeDensity c P)
+  rw [abs_sub_comm (a' : ℝ)] at habs
   have htri : |(H.relDensityOn c W : ℝ) - H.relativeDensity c P| * #W ≤
       |((H.relDensityOn c W : ℝ) - a') * #W| + |(H.relativeDensity c P : ℝ) - a'| * #W := by
     rw [abs_mul, Nat.abs_cast]
