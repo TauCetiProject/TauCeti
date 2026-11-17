@@ -22,8 +22,7 @@ Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(
 `-∞`. This file adds the analogous limits for `(x, a)` and `[x, a]`, and the right-continuity of
 `x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
 Reflection exchanges the two open tails, and a negation-invariant measure gives `(-∞, x]` and
-`(-x, ∞)` the same mass when `{-x}` is null. Locally finite measures have finite restrictions to
-bounded intervals, with any choice of open or closed endpoints.
+`(-x, ∞)` the same mass when `{-x}` is null.
 
 On `ℝ`, a uniform bound `C` on the mass of the unit windows `[a, a + 1]` bounds the mass of
 longer windows linearly in their length, and so makes the measure locally finite.
@@ -85,32 +84,6 @@ theorem measureReal_Iic_eq_measureReal_Ioi_neg {α : Type*} [AddCommGroup α] [P
 end Measure
 
 variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α}
-
-section CompactIntervals
-
-variable [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
-
-/-- A locally finite measure is finite on each bounded closed interval. -/
-instance Measure.isFiniteMeasure_restrict_Icc (μ : Measure α) [IsLocallyFiniteMeasure μ]
-    (a b : α) : IsFiniteMeasure (μ.restrict (Icc a b)) :=
-  ⟨by simpa using (measure_Icc_lt_top (μ := μ) (a := a) (b := b))⟩
-
-/-- A locally finite measure is finite on each bounded right-open interval. -/
-instance Measure.isFiniteMeasure_restrict_Ico (μ : Measure α) [IsLocallyFiniteMeasure μ]
-    (a b : α) : IsFiniteMeasure (μ.restrict (Ico a b)) :=
-  ⟨by simpa using (measure_Ico_lt_top (μ := μ) (a := a) (b := b))⟩
-
-/-- A locally finite measure is finite on each bounded left-open interval. -/
-instance Measure.isFiniteMeasure_restrict_Ioc (μ : Measure α) [IsLocallyFiniteMeasure μ]
-    (a b : α) : IsFiniteMeasure (μ.restrict (Ioc a b)) :=
-  ⟨by simpa using (measure_Ioc_lt_top (μ := μ) (a := a) (b := b))⟩
-
-/-- A locally finite measure is finite on each bounded open interval. -/
-instance Measure.isFiniteMeasure_restrict_Ioo (μ : Measure α) [IsLocallyFiniteMeasure μ]
-    (a b : α) : IsFiniteMeasure (μ.restrict (Ioo a b)) :=
-  ⟨by simpa using (measure_Ioo_lt_top (μ := μ) (a := a) (b := b))⟩
-
-end CompactIntervals
 
 section Preorder
 

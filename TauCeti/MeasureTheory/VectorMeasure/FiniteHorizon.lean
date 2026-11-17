@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.VectorMeasure.Measurability
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
-public import TauCeti.MeasureTheory.Measure.Stieltjes
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Topology.Order.ProjIcc
 public import TauCeti.Topology.EMetricSpace.BoundedVariation
 
@@ -242,19 +242,12 @@ theorem vectorMeasureIcc_eq_toSignedMeasure_sub
     have := hpq y ⟨hx.1.trans hy.1, hy.2⟩
     dsimp only [Pi.sub_apply]
     linarith
-  apply VectorMeasure.ext_of_restrict_Ioc hab (hf.vectorMeasureIcc_restrict hab)
-  · rw [VectorMeasure.restrict_sub, VectorMeasure.restrict_toSignedMeasure measurableSet_Ioc,
-      VectorMeasure.restrict_toSignedMeasure measurableSet_Ioc]
-    simp [Measure.restrict_restrict, measurableSet_Ioc]
-  · intro x hx
-    simpa only [hf.vectorMeasureIcc_Ioc hab (hfr a (left_mem_Icc.mpr hab)) (hfr x hx)
-      (left_mem_Icc.mpr hab) hx hx.1, _root_.sub_apply,
-      Measure.toSignedMeasure_apply_measurable measurableSet_Ioc,
-      measureReal_restrict_apply measurableSet_Ioc,
-      inter_eq_left.mpr (Ioc_subset_Ioc le_rfl hx.2), measureReal_def,
-      StieltjesFunction.measure_Ioc,
-      ENNReal.toReal_ofReal (sub_nonneg.mpr (p.mono hx.1)),
-      ENNReal.toReal_ofReal (sub_nonneg.mpr (q.mono hx.1))] using hpq x hx
+  symm
+  refine (hf.eq_vectorMeasureIcc_iff hab hfr _).mpr ⟨?_, fun x hx => ?_⟩
+  · simp [VectorMeasure.restrict_toSignedMeasure, Measure.restrict_restrict]
+  · rw [Measure.toSignedMeasure_sub_apply measurableSet_Ioc]
+    simp [measureReal_def, inter_eq_left.mpr (Ioc_subset_Ioc le_rfl hx.2),
+      p.mono hx.1, q.mono hx.1, hpq x hx]
 
 /-- Fixed-set evaluations of finite-horizon Stieltjes vector measures are strongly measurable
 when the BV paths have strongly measurable evaluations within the horizon.

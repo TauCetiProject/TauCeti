@@ -19,14 +19,15 @@ evaluations, without right-continuity assumptions.
 
 public section
 
-open MeasureTheory Set Filter
+open MeasureTheory Set Filter TopologicalSpace
 open scoped Topology
 
 /-- Strong measurability of vector-measure evaluations extends from a generating π-system
 and the whole space to every set, including nonmeasurable sets, on which vector measures vanish. -/
 theorem MeasureTheory.VectorMeasure.stronglyMeasurable_apply_of_isPiSystem
     {Ω β E : Type*} [MeasurableSpace Ω] {mβ : MeasurableSpace β}
-    [NormedAddCommGroup E] (μ : Ω → VectorMeasure β E) {S : Set (Set β)}
+    [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [MetrizableSpace E]
+    (μ : Ω → VectorMeasure β E) {S : Set (Set β)}
     (hgen : mβ = MeasurableSpace.generateFrom S) (hpi : IsPiSystem S)
     (huniv : StronglyMeasurable (fun ω => μ ω univ))
     (hS : ∀ s ∈ S, StronglyMeasurable (fun ω => μ ω s)) (s : Set β) :
@@ -46,6 +47,20 @@ theorem MeasureTheory.VectorMeasure.stronglyMeasurable_apply_of_isPiSystem
   · simp only [VectorMeasure.not_measurable _ hs]
     exact stronglyMeasurable_const
 
+/-- Measurability of vector-measure evaluations in a second-countable Borel space extends from
+a generating π-system and the whole space to every set, including nonmeasurable sets. -/
+theorem MeasureTheory.VectorMeasure.measurable_apply_of_isPiSystem
+    {Ω β E : Type*} [MeasurableSpace Ω] {mβ : MeasurableSpace β}
+    [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [MetrizableSpace E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (μ : Ω → VectorMeasure β E) {S : Set (Set β)}
+    (hgen : mβ = MeasurableSpace.generateFrom S) (hpi : IsPiSystem S)
+    (huniv : Measurable (fun ω => μ ω univ))
+    (hS : ∀ s ∈ S, Measurable (fun ω => μ ω s)) (s : Set β) :
+    Measurable (fun ω => μ ω s) :=
+  (MeasureTheory.VectorMeasure.stronglyMeasurable_apply_of_isPiSystem μ hgen hpi
+    huniv.stronglyMeasurable (fun s hs => (hS s hs).stronglyMeasurable) s).measurable
+
 namespace BoundedVariationOn
 
 variable {α Ω E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
@@ -64,21 +79,17 @@ theorem stronglyMeasurable_vectorMeasure_apply
   rcases isEmpty_or_nonempty α with hα | hα
   · simp only [eq_empty_of_isEmpty s, VectorMeasure.empty]
     exact stronglyMeasurable_const
-  obtain ⟨u, -, hu⟩ := Filter.exists_seq_monotone_tendsto_atTop_atTop α
-  obtain ⟨v, -, hv'⟩ := Filter.exists_seq_antitone_tendsto_atTop_atBot α
   have htop : StronglyMeasurable (fun ω => limUnder atTop (fun t => X t ω)) :=
-    stronglyMeasurable_of_tendsto atTop (fun n => hX (u n))
-      (tendsto_pi_nhds.mpr fun ω => (hv ω).tendsto_atTop_limUnder.comp hu)
+    stronglyMeasurable_of_tendsto (atTop : Filter α) hX
+      (tendsto_pi_nhds.mpr fun ω => (hv ω).tendsto_atTop_limUnder)
   have hbot : StronglyMeasurable (fun ω => limUnder atBot (fun t => X t ω)) :=
-    stronglyMeasurable_of_tendsto atTop (fun n => hX (v n))
-      (tendsto_pi_nhds.mpr fun ω => (hv ω).tendsto_atBot_limUnder.comp hv')
+    stronglyMeasurable_of_tendsto (atBot : Filter α) hX
+      (tendsto_pi_nhds.mpr fun ω => (hv ω).tendsto_atBot_limUnder)
   have hright (z : α) : StronglyMeasurable (fun ω => (fun t => X t ω).rightLim z) := by
     by_cases hz : ∃ b, z < b
-    · obtain ⟨b, hb⟩ := hz
-      obtain ⟨w, -, hw, hwt⟩ := exists_seq_strictAnti_tendsto' hb
-      exact stronglyMeasurable_of_tendsto atTop (fun n => hX (w n))
-        (tendsto_pi_nhds.mpr fun ω => ((hv ω).tendsto_rightLim z).comp
-          (tendsto_nhdsWithin_iff.mpr ⟨hwt, Eventually.of_forall fun n => (hw n).1⟩))
+    · have : (𝓝[>] z).NeBot := nhdsGT_neBot_of_exists_gt hz
+      exact stronglyMeasurable_of_tendsto (𝓝[>] z) hX
+        (tendsto_pi_nhds.mpr fun ω => (hv ω).tendsto_rightLim z)
     · have hz' : IsTop z := fun t => le_of_not_gt (fun ht => hz ⟨t, ht⟩)
       simpa only [rightLim_eq_of_isTop hz'] using hX z
   apply VectorMeasure.stronglyMeasurable_apply_of_isPiSystem
