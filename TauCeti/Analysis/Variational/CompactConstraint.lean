@@ -10,8 +10,8 @@ public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Variational.DirectMethod
-import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
 import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 
 /-!
@@ -86,6 +86,16 @@ variable {𝕜 V F β : Type*} [RCLike 𝕜]
   [LinearOrder β]
   {J : V →L[𝕜] F} {S₀ : Set V} {C : Set F} {E : V → β}
 
+private theorem isClosed_toWeakSpace_slice
+    (hJ : IsCompactOperator J)
+    (hS₀ : IsClosed (toWeakSpace 𝕜 V '' S₀)) (hC : IsClosed C) (R : ℝ) :
+    IsClosed (toWeakSpace 𝕜 V '' (closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C))) := by
+  rw [← inter_assoc]
+  refine hJ.isClosed_toWeakSpace_inter_preimage
+    (isBounded_closedBall.subset inter_subset_left) ?_ hC
+  rw [image_inter (toWeakSpace 𝕜 V).injective]
+  exact (isClosed_toWeakSpace_closedBall 𝕜 (0 : V) R).inter hS₀
+
 /-- On a compactly constrained set `S₀ ∩ J ⁻¹' C` in a reflexive seminormed space, any bounded
 sublevel of an energy that is weakly lower semicontinuous on bounded slices is weakly compact. -/
 theorem isCompact_toWeakSpace_sublevel_of_compact_constraint
@@ -97,27 +107,14 @@ theorem isCompact_toWeakSpace_sublevel_of_compact_constraint
       (toWeakSpace 𝕜 V '' (closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C))))
     (b : β) (hb : IsBounded {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b}) := by
-  let : NormedSpace ℝ V := .restrictScalars ℝ 𝕜 V
-  let : IsScalarTower ℝ 𝕜 V := .of_algebraMap_smul fun _ _ ↦ rfl
-  have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace' 𝕜
   obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hb
-  have hball_closed : IsClosed (toWeakSpace 𝕜 V '' closedBall (0 : V) R) := by
-    rw [← isClosed_closedBall.closure_eq, (convex_closedBall (0 : V) R).toWeakSpace_closure 𝕜]
-    exact isClosed_closure
-  have hslice_closed : IsClosed (toWeakSpace 𝕜 V '' (closedBall (0 : V) R ∩ S₀)) := by
-    rw [image_inter (toWeakSpace 𝕜 V).injective]
-    exact hball_closed.inter hS₀
-  have hK_closed : IsClosed (toWeakSpace 𝕜 V '' (closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C))) := by
-    rw [← inter_assoc]
-    exact hJ.isClosed_toWeakSpace_inter_preimage (isBounded_closedBall.subset inter_subset_left)
-      hslice_closed hC
   have hsub_eq : {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b} =
       {u ∈ closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C) | E u ≤ b} := by
     ext u
     exact ⟨fun hu ↦ ⟨⟨mem_closedBall_zero_iff.2 (hR u hu), hu.1⟩, hu.2⟩,
       fun hu ↦ ⟨hu.1.2, hu.2⟩⟩
   rw [hsub_eq] at hb ⊢
-  exact isCompact_toWeakSpace_sublevel hV hK_closed (hE R) b hb
+  exact isCompact_toWeakSpace_sublevel hV (isClosed_toWeakSpace_slice hJ hS₀ hC R) (hE R) b hb
 
 /-- A single nonempty bounded sublevel suffices for the direct method on a compactly constrained
 set `S₀ ∩ J ⁻¹' C` in a reflexive seminormed space. -/
@@ -131,17 +128,19 @@ theorem exists_isMinOn_of_compact_constraint_of_isBounded_sublevel
     {b : β} (hne : {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b}.Nonempty)
     (hb : IsBounded {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b}) :
     ∃ u ∈ S₀ ∩ J ⁻¹' C, IsMinOn E (S₀ ∩ J ⁻¹' C) u := by
-  have hcompact := isCompact_toWeakSpace_sublevel_of_compact_constraint hV hJ hS₀ hC hE b hb
   obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hb
-  have hsubset : toWeakSpace 𝕜 V '' {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b} ⊆
-      toWeakSpace 𝕜 V '' (closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C)) :=
-    image_mono fun u hu ↦ ⟨mem_closedBall_zero_iff.2 (hR u hu), hu.1⟩
-  obtain ⟨w, hw, hmin⟩ :=
-    LowerSemicontinuousOn.exists_isMinOn (hne.image _) hcompact ((hE R).mono hsubset)
-  obtain ⟨u, hu, rfl⟩ := hw
-  refine ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 fun x hx ↦ ?_⟩
-  simpa only [mem_ofPred_eq, LinearEquiv.symm_apply_apply] using
-    hmin (mem_image_of_mem (toWeakSpace 𝕜 V) hx)
+  have hsub_eq : {u ∈ S₀ ∩ J ⁻¹' C | E u ≤ b} =
+      {u ∈ closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C) | E u ≤ b} := by
+    ext u
+    exact ⟨fun hu ↦ ⟨⟨mem_closedBall_zero_iff.2 (hR u hu), hu.1⟩, hu.2⟩,
+      fun hu ↦ ⟨hu.1.2, hu.2⟩⟩
+  rw [hsub_eq] at hne hb
+  obtain ⟨u, huK, hminK⟩ := exists_isMinOn_of_weak_closed_of_isBounded_sublevel hV
+    (isClosed_toWeakSpace_slice hJ hS₀ hC R) (hE R) hne hb
+  obtain ⟨v, hv⟩ := hne
+  have hub : E u ≤ b := (hminK hv.1).trans hv.2
+  refine ⟨u, huK.2, (isMinOn_sublevel_iff hub).1 fun x hx ↦ ?_⟩
+  exact hminK (hsub_eq ▸ hx).1
 
 /-- **The direct method under compact constraints.** On a nonempty set `S₀ ∩ J ⁻¹' C` with `S₀`
 weakly closed, `C` closed, and `J` compact in a reflexive seminormed space, an energy with bounded

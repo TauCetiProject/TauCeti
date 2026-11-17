@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Semicontinuity.Defs
 public import Mathlib.Topology.Sequences
-import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
+import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -118,12 +118,8 @@ theorem isClosed_toWeakSpace_inter_preimage {J : E →L[𝕜] F} (hJ : IsCompact
     {B : Set E} (hB : IsBounded B) (hBclosed : IsClosed (toWeakSpace 𝕜 E '' B))
     {C : Set F} (hC : IsClosed C) :
     IsClosed (toWeakSpace 𝕜 E '' (B ∩ J ⁻¹' C)) := by
-  have heq : toWeakSpace 𝕜 E '' (B ∩ J ⁻¹' C) =
-      (toWeakSpace 𝕜 E '' B) ∩
-        (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w)) ⁻¹' C := by
-    ext w
-    simp [(toWeakSpace 𝕜 E).image_eq_preimage_symm]
-  rw [heq]
+  rw [image_inter (toWeakSpace 𝕜 E).injective,
+    (toWeakSpace 𝕜 E).image_eq_preimage_symm (J ⁻¹' C)]
   exact (hJ.continuousOn_toWeakSpace_symm_of_isBounded hB).preimage_isClosed_of_isClosed
     hBclosed hC
 
@@ -142,15 +138,10 @@ theorem continuousOn_closure_toWeakSpace_symm_of_isBounded {J : E →L[𝕜] F}
     (hJ : IsCompactOperator J) {B : Set E} (hB : IsBounded B) :
     ContinuousOn (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w))
       (closure (toWeakSpace 𝕜 E '' B)) := by
-  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-  let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
-  have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
   obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hB
-  have hball_closed : IsClosed (toWeakSpace 𝕜 E '' closedBall (0 : E) R) := by
-    rw [← isClosed_closedBall.closure_eq, (convex_closedBall (0 : E) R).toWeakSpace_closure 𝕜]
-    exact isClosed_closure
   have hsub : closure (toWeakSpace 𝕜 E '' B) ⊆ toWeakSpace 𝕜 E '' closedBall (0 : E) R :=
-    closure_minimal (image_mono fun x hx ↦ mem_closedBall_zero_iff.2 (hR x hx)) hball_closed
+    closure_minimal (image_mono fun x hx ↦ mem_closedBall_zero_iff.2 (hR x hx))
+      (TauCeti.isClosed_toWeakSpace_closedBall 𝕜 (0 : E) R)
   exact (hJ.continuousOn_toWeakSpace_symm_of_isBounded isBounded_closedBall).mono hsub
 
 /-- Over `ℝ` or `ℂ`, a compact operator is continuous from the weak topology to the target topology
@@ -213,11 +204,7 @@ closed. -/
 theorem isSeqClosed_toWeakSpace_preimage {J : E →L[𝕜] F} (hJ : IsCompactOperator J)
     {C : Set F} (hC : IsSeqClosed C) :
     IsSeqClosed (toWeakSpace 𝕜 E '' (J ⁻¹' C)) := by
-  have heq : toWeakSpace 𝕜 E '' (J ⁻¹' C) =
-      (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w)) ⁻¹' C := by
-    ext w
-    simp [(toWeakSpace 𝕜 E).image_eq_preimage_symm]
-  rw [heq]
+  rw [(toWeakSpace 𝕜 E).image_eq_preimage_symm]
   exact hC.preimage (hJ.seqContinuous_comp_toWeakSpace_symm (g := id) continuous_id.seqContinuous)
 
 end RCLike

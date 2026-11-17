@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Convergence in the weak topology
+# Convergence and neighborhoods in the weak topology
 
 A family converges in `WeakSpace 𝕜 E` exactly when its values under every continuous linear
 functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`). This lets
@@ -19,6 +23,19 @@ evaluations.
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
 (`TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact`): on a compact set the two topologies agree.
+
+If a linear map `J : E →ₗ[𝕜] F` has infinite-dimensional range, the common kernel of any finite
+family of continuous linear functionals on `E` contains a vector `v` with `J v ≠ 0`, so every weak
+neighborhood of `x : E` contains an entire affine line `x + 𝕜 • v` along which `J v ≠ 0`
+(`LinearMap.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace`). In particular, in an
+infinite-dimensional topological vector space every weak neighborhood contains a nontrivial affine
+line (`TauCeti.exists_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace`).
+
+## References
+
+* H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Springer,
+  2011, §3.2, Proposition 3.5.
+* R. E. Megginson, *An Introduction to Banach Space Theory*, §2.5.
 -/
 
 public section
@@ -52,3 +69,60 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isCompact [T2Space (WeakSpace 𝕜 E)]
   exact eq_of_nhds_neBot (hy'.neBot.mono (inf_le_inf_left _ h))
 
 end TauCeti
+
+section WeakNeighborhoods
+
+variable {𝕜 E F : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F]
+
+namespace LinearMap
+
+/-- If `J : E →ₗ[𝕜] F` has infinite-dimensional range, every weak neighborhood of `x : E`
+contains an entire affine line `x + 𝕜 • v` along which `J v ≠ 0`. -/
+theorem exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace (J : E →ₗ[𝕜] F)
+    (hJ : ¬ FiniteDimensional 𝕜 (LinearMap.range J)) (x : E) {U : Set (WeakSpace 𝕜 E)}
+    (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
+    ∃ v : E, J v ≠ 0 ∧ ∀ k : 𝕜, toWeakSpace 𝕜 E (x + k • v) ∈ U := by
+  have hind : IsInducing
+      (fun (w : WeakSpace 𝕜 E) (f : StrongDual 𝕜 E) ↦ f ((toWeakSpace 𝕜 E).symm w)) := ⟨rfl⟩
+  rw [hind.nhds_eq_comap] at hU
+  obtain ⟨W, hW, hWU⟩ := Filter.mem_comap.1 hU
+  rw [nhds_pi] at hW
+  obtain ⟨S, t, ht, hSt⟩ := Filter.mem_pi'.1 hW
+  -- The evaluation map on the finite set `S` has finite-dimensional image, so its kernel cannot
+  -- be contained in `ker J`.
+  let Φ : E →ₗ[𝕜] (S → 𝕜) := LinearMap.pi fun f : S ↦ f.1.toLinearMap
+  have hv : ∃ v : E, Φ v = 0 ∧ J v ≠ 0 := by
+    by_contra h
+    push Not at h
+    have hker : LinearMap.ker Φ ≤ LinearMap.ker J := fun v hv ↦ h v hv
+    have hfinQ : FiniteDimensional 𝕜 (E ⧸ LinearMap.ker Φ) :=
+      Φ.quotKerEquivRange.symm.finiteDimensional
+    have hrange : LinearMap.range ((LinearMap.ker Φ).liftQ J hker) = LinearMap.range J :=
+      Submodule.range_liftQ (LinearMap.ker Φ) J hker
+    exact hJ (hrange ▸ Module.Finite.range ((LinearMap.ker Φ).liftQ J hker))
+  obtain ⟨v, hvΦ, hJv⟩ := hv
+  refine ⟨v, hJv, fun k ↦ hWU (hSt fun f hf ↦ ?_)⟩
+  have hfv : f v = 0 := congr_fun hvΦ ⟨f, hf⟩
+  have hfx : f x ∈ t f := by simpa using mem_of_mem_nhds (ht f)
+  simpa [hfv] using hfx
+
+end LinearMap
+
+namespace TauCeti
+
+/-- In an infinite-dimensional topological vector space, every weak neighborhood of `x` contains
+a nontrivial affine line `x + 𝕜 • v` (`v ≠ 0`). -/
+theorem exists_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace
+    (hE : ¬ FiniteDimensional 𝕜 E) (x : E) {U : Set (WeakSpace 𝕜 E)}
+    (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
+    ∃ v : E, v ≠ 0 ∧ ∀ k : 𝕜, toWeakSpace 𝕜 E (x + k • v) ∈ U := by
+  have hrange : ¬ FiniteDimensional 𝕜 (LinearMap.range (LinearMap.id (R := 𝕜) (M := E))) := by
+    rw [LinearMap.range_id]
+    exact fun _ ↦ hE (Submodule.topEquiv (R := 𝕜) (M := E)).finiteDimensional
+  exact LinearMap.id.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace hrange x hU
+
+end TauCeti
+
+end WeakNeighborhoods

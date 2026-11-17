@@ -252,7 +252,7 @@ theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
 omit [DecidableEq ι] in
 /-- A bounded diagonal multiplier is injective if and only if every coefficient is nonzero. -/
 @[simp]
-theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+theorem diagonalCLM_injective_iff (d : ℓ^∞(ι, 𝕜)) :
     Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
   classical
   refine ⟨fun hinj i hi ↦ ?_, fun hd x y hxy ↦ ?_⟩

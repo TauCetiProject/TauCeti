@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
+public import Mathlib.Topology.Sequences
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
+import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 
 /-!
 # Diagonal operators on `lp` in the weak topology
@@ -34,8 +36,11 @@ operator `lp.harmonicDiagonalCLM 𝕜 p` with coefficients `1 / (n + 1)` on `ℓ
 * The harmonic diagonal operator `lp.harmonicDiagonalCLM 𝕜 p` (`x n ↦ (n + 1)⁻¹ * x n`) is compact,
   injective, dense-range (for `p ≠ ∞`), and has infinite-dimensional range; it maps
   `(n + 1) • lp.single p n 1` to `lp.single p n 1`, giving an explicit witness on `ℓ^p(ℕ, 𝕜)`
-  (in particular on `ℓ²(ℕ, 𝕜)`) of an injective compact operator whose unit level sphere is
-  unbounded, sequentially weakly closed, and not weakly closed.
+  (in particular on `ℓ²(ℕ, 𝕜)`) of an injective compact operator whose positive-radius level spheres
+  (in particular the unit level sphere) are unbounded
+  (`lp.not_isBounded_setOf_norm_harmonicDiagonalCLM_eq`), sequentially weakly closed
+  (`lp.isSeqClosed_toWeakSpace_setOf_norm_harmonicDiagonalCLM_eq`), and not weakly closed
+  (`lp.not_isClosed_toWeakSpace_setOf_norm_harmonicDiagonalCLM_eq`).
 -/
 
 public section
@@ -49,14 +54,20 @@ section DiagonalWeak
 
 variable {ι 𝕜 : Type*} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Over a complete nontrivially normed field with Hausdorff target weak topology, a bounded
-diagonal multiplier on `ℓ^p(ι, 𝕜)` is globally weak-to-norm continuous if and only if only finitely
-many of its coefficients are nonzero. -/
+/-- Over a complete nontrivially normed field, a bounded diagonal multiplier on `ℓ^p(ι, 𝕜)` is
+globally weak-to-norm continuous if and only if only finitely many of its coefficients are
+nonzero. -/
 theorem continuous_diagonalCLM_comp_toWeakSpace_symm_iff [NontriviallyNormedField 𝕜]
-    [CompleteSpace 𝕜] [T2Space (WeakSpace 𝕜 ℓ^p(ι, 𝕜))] (d : ℓ^∞(ι, 𝕜)) :
+    [CompleteSpace 𝕜] (d : ℓ^∞(ι, 𝕜)) :
     Continuous (fun w : WeakSpace 𝕜 ℓ^p(ι, 𝕜) ↦
-      diagonalCLM (p := p) d ((toWeakSpace 𝕜 ℓ^p(ι, 𝕜)).symm w)) ↔ {i : ι | d i ≠ 0}.Finite :=
-  (diagonalCLM (p := p) d).continuous_comp_toWeakSpace_symm_iff.trans
+      diagonalCLM (p := p) d ((toWeakSpace 𝕜 ℓ^p(ι, 𝕜)).symm w)) ↔ {i : ι | d i ≠ 0}.Finite := by
+  have : SeparatingDual 𝕜 ℓ^p(ι, 𝕜) := ⟨fun x hx ↦ by
+    obtain ⟨i, hi⟩ : ∃ i, x i ≠ 0 := by
+      by_contra h
+      push Not at h
+      exact hx (lp.ext (funext h))
+    exact ⟨evalCLM 𝕜 (fun _ : ι ↦ 𝕜) p i, hi⟩⟩
+  exact (diagonalCLM (p := p) d).continuous_comp_toWeakSpace_symm_iff.trans
     (finiteDimensional_range_diagonalCLM_iff d)
 
 variable [RCLike 𝕜]
@@ -193,9 +204,9 @@ theorem isCompactOperator_harmonicDiagonalCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] 
     (Nat.cofinite_eq_atTop ▸ tendsto_norm_harmonicWeights 𝕜)
 
 /-- The harmonic diagonal operator on `ℓ^p(ℕ, 𝕜)` is injective. -/
-theorem injective_harmonicDiagonalCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+theorem harmonicDiagonalCLM_injective (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     Function.Injective (harmonicDiagonalCLM 𝕜 p) :=
-  (injective_diagonalCLM_iff (harmonicWeights 𝕜)).2 (harmonicWeights_ne_zero 𝕜)
+  (diagonalCLM_injective_iff (harmonicWeights 𝕜)).2 (harmonicWeights_ne_zero 𝕜)
 
 /-- For finite exponent `1 ≤ p < ∞`, the harmonic diagonal operator on `ℓ^p(ℕ, 𝕜)` has dense
 range. -/
@@ -207,10 +218,28 @@ theorem denseRange_harmonicDiagonalCLM {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p
 theorem not_finiteDimensional_range_harmonicDiagonalCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     ¬ FiniteDimensional 𝕜 (harmonicDiagonalCLM 𝕜 p).range := by
   rw [harmonicDiagonalCLM_eq_diagonalCLM, finiteDimensional_range_diagonalCLM_iff]
-  have huniv : {n : ℕ | harmonicWeights 𝕜 n ≠ 0} = univ :=
-    eq_univ_of_forall (harmonicWeights_ne_zero 𝕜)
-  rw [huniv]
-  exact infinite_univ
+  exact infinite_univ.mono fun n _ ↦ harmonicWeights_ne_zero 𝕜 n
+
+/-- Every positive-radius level sphere of `lp.harmonicDiagonalCLM 𝕜 p` is norm-unbounded. -/
+theorem not_isBounded_setOf_norm_harmonicDiagonalCLM_eq (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    {r : ℝ} (hr : 0 < r) :
+    ¬ IsBounded {u : ℓ^p(ℕ, 𝕜) | ‖harmonicDiagonalCLM 𝕜 p u‖ = r} :=
+  not_isBounded_setOf_norm_diagonalCLM_eq (harmonicWeights 𝕜)
+    (infinite_univ.mono fun n _ ↦ harmonicWeights_ne_zero 𝕜 n)
+    (Nat.cofinite_eq_atTop ▸ tendsto_norm_harmonicWeights 𝕜) hr
+
+/-- Every level sphere of `lp.harmonicDiagonalCLM 𝕜 p` is sequentially weakly closed. -/
+theorem isSeqClosed_toWeakSpace_setOf_norm_harmonicDiagonalCLM_eq (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (r : ℝ) :
+    IsSeqClosed (toWeakSpace 𝕜 ℓ^p(ℕ, 𝕜) '' {u : ℓ^p(ℕ, 𝕜) | ‖harmonicDiagonalCLM 𝕜 p u‖ = r}) :=
+  (isCompactOperator_harmonicDiagonalCLM 𝕜 p).isSeqClosed_toWeakSpace_setOf_norm_apply_eq r
+
+/-- No positive-radius level sphere of `lp.harmonicDiagonalCLM 𝕜 p` is weakly closed. -/
+theorem not_isClosed_toWeakSpace_setOf_norm_harmonicDiagonalCLM_eq (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    {r : ℝ} (hr : 0 < r) :
+    ¬ IsClosed (toWeakSpace 𝕜 ℓ^p(ℕ, 𝕜) '' {u : ℓ^p(ℕ, 𝕜) | ‖harmonicDiagonalCLM 𝕜 p u‖ = r}) :=
+  mt ((harmonicDiagonalCLM 𝕜 p).isClosed_toWeakSpace_setOf_norm_apply_eq_iff hr).1
+    (not_finiteDimensional_range_harmonicDiagonalCLM 𝕜 p)
 
 /-- The harmonic diagonal operator sends `(n + 1) • lp.single p n 1` to the unit coordinate vector
 `lp.single p n 1`. -/
