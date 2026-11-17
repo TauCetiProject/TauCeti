@@ -23,18 +23,19 @@ tangent bundle the Stiefel manifold `V₂(E)` of orthonormal pairs. The Stiefel 
 
 has degree `±(1 + (-1)ⁿ)` at its regular values
 (`TauCeti.exists_degreeAtRegularValue_stiefelRotationFamily_eq`). This file reads that degree in
-singular homology: for `n ≥ 1`, when `V₂(E) × S¹` is connected, `τ` sends every integral
-fundamental class of `V₂(E) × S¹` to `±(1 + (-1)ⁿ)` times any integral fundamental class of
-`Sⁿ⁺¹ × Sⁿ⁺¹` (`TauCeti.exists_singularHomologyMap_stiefelRotationFamily_eq_smul`). So the image
-is `±2` times a fundamental class for even `n`
+singular homology: for `n ≥ 1`, `τ` sends every integral fundamental class of `V₂(E) × S¹` to
+`±(1 + (-1)ⁿ)` times any integral fundamental class of `Sⁿ⁺¹ × Sⁿ⁺¹`
+(`TauCeti.exists_singularHomologyMap_stiefelRotationFamily_eq_smul`). So the image is `±2` times a
+fundamental class for even `n`
 (`TauCeti.singularHomologyMap_stiefelRotationFamily_eq_two_smul_or_eq_neg_two_smul`), and zero for
 odd `n`.
 
 This is the identity `τ_*[Σ_p × S¹] = ±2 [S^{m−1} × S^{m−1}]` of the proof of Proposition 6.17 of
 Barraud–Damian–Humilière–Oancea, for the even-dimensional sphere `Sᵐ`, `m = n + 2`, with
 `Σ_p = V₂(T_p Sᵐ)`. The fundamental classes are those of `TauCeti.IsFundamentalClass`, which need
-no orientation datum and no chart on the products; on a compact connected manifold they are the
-two generators of the top integral homology.
+no orientation datum and no chart on the products; on a compact connected manifold `M` with a
+homological orientation they are `[M]` and `-[M]`
+(`TauCeti.HomologicalOrientation.isFundamentalClass_iff_eq_or_eq_neg`).
 
 The degree is read in homology through
 `TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`, which
