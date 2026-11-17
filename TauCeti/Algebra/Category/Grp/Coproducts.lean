@@ -51,19 +51,15 @@ abbrev coproductCocone : Cofan Z :=
 def coproductCoconeIsColimit : IsColimit (coproductCocone Z) :=
   Cofan.IsColimit.mk (coproductCocone Z)
     (fun s ↦ ofHom <| DirectSum.toAddMonoid fun i ↦ (s.inj i).hom)
-    (fun s i ↦ AddCommGrpCat.ext fun x ↦
-      DirectSum.toAddMonoid_of (fun j ↦ (s.inj j).hom) i x)
-    (fun s f hf ↦ by
-      apply hom_ext
-      refine DirectSum.addHom_ext fun i x ↦ ?_
-      have h := ConcreteCategory.congr_hom (hf i) x
-      simpa [DirectSum.toAddMonoid_of] using h)
+    (fun s i ↦ AddCommGrpCat.ext fun x ↦ DirectSum.toAddMonoid_of (fun j ↦ (s.inj j).hom) i x)
+    (fun _ _ hf ↦ by
+      refine hom_ext (DirectSum.addHom_ext fun i x ↦ ?_)
+      simpa [DirectSum.toAddMonoid_of] using ConcreteCategory.congr_hom (hf i) x)
 
 @[simp]
 lemma coproductCoconeIsColimit_desc (s : Cofan Z) :
     (coproductCoconeIsColimit Z).desc s =
-      ofHom (DirectSum.toAddMonoid fun i ↦ (s.inj i).hom) := by
-  rfl
+      ofHom (DirectSum.toAddMonoid fun i ↦ (s.inj i).hom) := by rfl
 
 /-- A cofan `c` on a family of abelian groups is a colimit cofan if and only if the induced
 homomorphism from the direct sum is bijective. -/
@@ -71,20 +67,16 @@ theorem isColimit_cofan_iff_bijective {Z : ι → AddCommGrpCat.{max v w}} (c : 
     Nonempty (IsColimit c) ↔
       Function.Bijective (DirectSum.toAddMonoid (β := fun i ↦ Z i) fun i ↦ (c.inj i).hom) := by
   set φ : (⨁ i : ι, Z i) →+ c.pt := DirectSum.toAddMonoid fun i ↦ (c.inj i).hom
-  constructor
-  · rintro ⟨hc⟩
-    let e := (coproductCoconeIsColimit Z).coconePointUniqueUpToIso hc
-    have hEq : ofHom φ = e.hom := by
-      rw [← coproductCoconeIsColimit_desc]
-      exact (coproductCoconeIsColimit Z).hom_ext fun j ↦ by
-        rw [IsColimit.fac, IsColimit.comp_coconePointUniqueUpToIso_hom]
+  refine ⟨fun ⟨hc⟩ ↦ ?_, fun hbij ↦ ?_⟩
+  · let e := (coproductCoconeIsColimit Z).coconePointUniqueUpToIso hc
+    have hEq : ofHom φ = e.hom := (coproductCoconeIsColimit Z).hom_ext fun j ↦ by
+      rw [← coproductCoconeIsColimit_desc, IsColimit.fac,
+        IsColimit.comp_coconePointUniqueUpToIso_hom]
     have hbij : Function.Bijective e.hom.hom := e.addCommGroupIsoToAddEquiv.bijective
     simpa [← hEq] using hbij
-  · intro hbij
-    let e : of (⨁ i : ι, Z i) ≅ c.pt := (AddEquiv.ofBijective φ hbij).toAddCommGrpIso
-    have hIso : IsIso ((coproductCoconeIsColimit Z).desc c) := by
-      rw [coproductCoconeIsColimit_desc]
-      exact (inferInstance : IsIso e.hom)
+  · let e : of (⨁ i : ι, Z i) ≅ c.pt := (AddEquiv.ofBijective φ hbij).toAddCommGrpIso
+    have : IsIso ((coproductCoconeIsColimit Z).desc c) := by
+      rw [coproductCoconeIsColimit_desc]; exact (inferInstance : IsIso e.hom)
     exact ⟨IsColimit.ofPointIso (coproductCoconeIsColimit Z)⟩
 
 /-- The categorical coproduct of a family of abelian groups is isomorphic to their direct sum. -/
