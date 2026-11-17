@@ -115,6 +115,28 @@ def evenUnitaryGroup : Subgroup (CliffordAlgebra Q)ˣ where
     · rw [hinv]
       exact hunit
 
+/-- Conjugation by a unit whose value and inverse lie in the even part of the Clifford algebra
+preserves every graded piece. -/
+theorem mul_mul_inv_mem_evenOdd {x : (CliffordAlgebra Q)ˣ}
+    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q 0) (hxi : (↑x⁻¹ : CliffordAlgebra Q) ∈ evenOdd Q 0)
+    {k : ZMod 2} {y : CliffordAlgebra Q} (hy : y ∈ evenOdd Q k) :
+    (x : CliffordAlgebra Q) * y * ↑x⁻¹ ∈ evenOdd Q k := by
+  have h : (x : CliffordAlgebra Q) * y ∈ evenOdd Q k :=
+    zero_add k ▸ SetLike.mul_mem_graded hx hy
+  exact add_zero k ▸ SetLike.mul_mem_graded h hxi
+
+/-- Reversal fixes the conjugate of a reversal-fixed element by a unit `x` with
+`reverse x * x = 1`, because reversal then inverts `x`. -/
+theorem reverse_mul_mul_inv_eq_self {x : (CliffordAlgebra Q)ˣ}
+    (hx : reverse (x : CliffordAlgebra Q) * (x : CliffordAlgebra Q) = 1) {y : CliffordAlgebra Q}
+    (hy : reverse y = y) :
+    reverse ((x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q)) =
+      (x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q) := by
+  have hxr := Units.eq_inv_of_mul_eq_one_right hx
+  have hxir : reverse (↑x⁻¹ : CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
+    rw [← hxr, reverse_reverse]
+  simp only [reverse.map_mul, hy, hxr, hxir, mul_assoc]
+
 namespace evenUnitaryGroup
 
 /-- Membership in `evenUnitaryGroup` is exactly evenness together with the unitary equation. -/
@@ -169,28 +191,6 @@ theorem coe_mem_evenOdd_zero {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitary
     (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
   have h := mem_even Q hx
   rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at h
-
-/-- The conjugate of a vector by an even unitary unit is odd. -/
-theorem mul_ι_mul_inv_mem_evenOdd_one {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q)
-    (m : M) : (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ ∈ evenOdd Q 1 := by
-  have hxe := coe_mem_evenOdd_zero Q hx
-  have hxie := coe_mem_evenOdd_zero Q (inv_mem hx)
-  have h : (x : CliffordAlgebra Q) * ι Q m ∈ evenOdd Q 1 :=
-    zero_add (1 : ZMod 2) ▸ SetLike.mul_mem_graded hxe (ι_mem_evenOdd_one Q m)
-  exact add_zero (1 : ZMod 2) ▸ SetLike.mul_mem_graded h hxie
-
-/-- Reversal fixes the conjugate of a vector by an even unitary unit, because reversal inverts
-an even unitary unit. -/
-theorem reverse_mul_ι_mul_inv (x : evenUnitaryGroup Q) (m : M) :
-    reverse (((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
-        ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ)) : CliffordAlgebra Q)) =
-      ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
-        ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ)) : CliffordAlgebra Q) := by
-  have hxr := reverse_eq_inv Q x
-  have hxir : reverse ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ)) :
-      CliffordAlgebra Q) = ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-    rw [← hxr, reverse_reverse]
-  simp only [reverse.map_mul, reverse_ι, hxr, hxir, mul_assoc]
 
 /-- The scalar unit `-1` is even and unitary. -/
 theorem neg_one_mem : (-1 : (CliffordAlgebra Q)ˣ) ∈ evenUnitaryGroup Q := by
@@ -408,6 +408,15 @@ theorem reverseEven_evenUnitaryGroupEvenPart (x : evenUnitaryGroup Q) :
   left_inv_eq_right_inv (reverseEven_evenUnitaryGroupEvenPart_mul_self Q x)
     (by rw [← map_mul, mul_inv_cancel, map_one])
 
+/-- A reversal-preserving monoid homomorphism from the even Clifford algebra sends the even part of
+an even unitary Clifford element to a unitary element of the target. -/
+theorem map_evenUnitaryGroupEvenPart_mem_unitary {B : Type w} [Monoid B] [StarMul B]
+    (e : even Q →* B) (he : ∀ x, e (reverseEven Q x) = star (e x))
+    (x : evenUnitaryGroup Q) : e (evenUnitaryGroupEvenPart Q x) ∈ unitary B := by
+  rw [Unitary.mem_iff, ← he, ← map_mul, ← map_mul, reverseEven_evenUnitaryGroupEvenPart_mul_self,
+    evenUnitaryGroupEvenPart_mul_reverseEven, map_one]
+  exact ⟨rfl, rfl⟩
+
 section Transport
 
 variable {A : Type w} [Semiring A] [Algebra R A] [StarMul A]
@@ -434,13 +443,6 @@ def evenUnitaryGroupEquivUnitaryOfAlgEquiv
   right_inv q := Subtype.ext <| (congrArg e (Subtype.ext (coe_evenUnitaryGroupEvenPart Q _) :
     evenUnitaryGroupEvenPart Q _ = e.symm q)).trans (e.apply_symm_apply q)
   map_mul' x y := Subtype.ext <| by simp
-
-/-- A reversal-preserving algebra equivalence sends the even part of an even unitary Clifford
-element to a unitary element of the target algebra. -/
-theorem map_evenUnitaryGroupEvenPart_mem_unitary
-    (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x))
-    (x : evenUnitaryGroup Q) : e (evenUnitaryGroupEvenPart Q x) ∈ unitary A :=
-  (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x).2
 
 /-- The forward unitary transport applies the algebra equivalence to the even Clifford value. -/
 @[simp]
