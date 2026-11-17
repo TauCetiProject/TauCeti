@@ -27,6 +27,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousInv G] (K : Subgr
 
 /-- The bijection `[g] ↦ [g⁻¹]` between right and left cosets, as a homeomorphism of the
 quotient topologies. -/
+@[to_additive /-- The bijection `[g] ↦ [-g]` between right and left cosets, as a homeomorphism of
+the quotient topologies. -/]
 def quotientRightRelHomeomorphQuotientLeftRel : Quotient (rightRel K) ≃ₜ G ⧸ K where
   toEquiv := quotientRightRelEquivQuotientLeftRel K
   continuous_toFun := continuous_inv.quotient_map' fun _ _ h ↦ by
@@ -38,12 +40,12 @@ def quotientRightRelHomeomorphQuotientLeftRel : Quotient (rightRel K) ≃ₜ G �
     rw [rightRel_apply, inv_inv]
     simpa using K.inv_mem h
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem quotientRightRelHomeomorphQuotientLeftRel_mk (g : G) :
     quotientRightRelHomeomorphQuotientLeftRel K (Quotient.mk _ g) = (g⁻¹ : G) :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp)]
 theorem quotientRightRelHomeomorphQuotientLeftRel_symm_mk (g : G) :
     (quotientRightRelHomeomorphQuotientLeftRel K).symm (g : G ⧸ K) = Quotient.mk _ g⁻¹ :=
   (rfl)
