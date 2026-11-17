@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -94,7 +94,7 @@ def complexProdTensorComplexVolumeEigenspaceEquiv {μ : ℂ} (hμ : μ * μ = 1)
     (congrArg (fun f ↦ f.eigenspace μ)
       (complexProdTensor_complexVolume_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ hm))).trans
     (eigenspaceTensorMapEquiv (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (involutive_apply_complexVolume o₂ hQ₂ ρ₂) hμ)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂) hμ)
 
 /-- The forward map of `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv` applies the
 tensor products of the chirality projections on `E` and `F`. -/
@@ -105,12 +105,12 @@ theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply {μ : ℂ} (hμ : μ
         (WithLp.linearEquiv 2 ℝ (V × W)).symm (o₁.prod o₂ Fact.out Fact.out)))).eigenspace μ) :
     complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂ hμ z =
       (TensorProduct.map
-          (eigenProjOfInvolutive (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (one_mul 1))
-          (eigenProjOfInvolutive (involutive_apply_complexVolume o₂ hQ₂ ρ₂) hμ) z,
+          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁) (one_mul 1))
+          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z,
         TensorProduct.map
-          (eigenProjOfInvolutive (involutive_apply_complexVolume o₁ hQ₁ ρ₁)
+          (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
-          (eigenProjOfInvolutive (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
+          (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
             ((neg_mul_neg μ μ).trans hμ)) z) := by
   simp only [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_apply]
   rw [eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]

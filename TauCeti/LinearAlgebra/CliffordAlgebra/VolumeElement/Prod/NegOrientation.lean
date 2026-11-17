@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Map
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.NegGrading
 
@@ -95,8 +96,7 @@ theorem lTensor_complexVolume_complexProdTensor_neg_orientation (hm : Even m)
     complexProdTensor_eq_cliffordProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ e (fun _ ↦ rfl)]
   exact AlgHom.lTensor_cliffordProdTensor_of_eq_neg ρ₁ (ρ₁ (complexVolume Q₁ o₁)) _ _ ρ₂ _ _
     (by rw [complexVolume_neg_orientation, map_neg])
-    (ρ₂ (complexVolume Q₂ o₂))
-    (fun w ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg])
+    (ρ₂ (complexVolume Q₂ o₂)) (map_complexVolume_mul_map_ι o₂ hm ρ₂)
     (equivOfIsometry (e.baseChangeProd ℂ) a)
 
 /-- Pointwise form of
@@ -114,7 +114,7 @@ conjugation by the involution `1 ⊗ Γ_W` carries `complexProdTensor` formed wi
 theorem conjAlgEquiv_complexProdTensor_neg_orientation (hm : Even m)
     (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) :
     (((LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-          (involutive_apply_complexVolume o₂ hQ₂ ρ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom.comp
+          (ρ₂.involutive_complexVolume o₂ hQ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom.comp
         (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂) =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by
   let e : Q.IsometryEquiv (Q₁.prod Q₂) :=
@@ -124,8 +124,8 @@ theorem conjAlgEquiv_complexProdTensor_neg_orientation (hm : Even m)
     ← AlgHom.comp_assoc,
     AlgHom.conjAlgEquiv_cliffordProdTensor_lTensor_of_eq_neg ρ₁ (ρ₁ (complexVolume Q₁ o₁)) _ _ ρ₂
       _ _ (by rw [complexVolume_neg_orientation, map_neg])
-      (ρ₂ (complexVolume Q₂ o₂)) (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
-      (fun w ↦ by rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₂ hm, map_neg])]
+      (ρ₂ (complexVolume Q₂ o₂)) (ρ₂.involutive_complexVolume o₂ hQ₂)
+      (map_complexVolume_mul_map_ι o₂ hm ρ₂)]
 
 /-- For even `m`, the `-o₁`-graded action sends the unreversed product volume element `Γ_(o₁ × o₂)`
 to `Γ_V ⊗ Γ_W`, because the `m` sign flips on `W` cancel. On the reversed product orientation
