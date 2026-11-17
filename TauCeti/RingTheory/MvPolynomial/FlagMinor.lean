@@ -119,6 +119,7 @@ private theorem castLE_cast_one {d : ℕ} (h : d ≤ n + 2) (h' : 2 = d) :
 
 /-- The flag minor of two rows `i < j` is the `2 × 2` minor on these rows and the first two
 columns. -/
+@[simp]
 theorem flagMinor_pair {i j : Fin (n + 2)} (hij : i < j) :
     flagMinor R {i, j} = X (i, 0) * X (j, 1) - X (i, 1) * X (j, 0) := by
   rw [flagMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix,
@@ -171,6 +172,7 @@ theorem flagDiagonalExponent_singleton (r : Fin n) :
   exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
 
 /-- The diagonal exponent of two rows `i < j` is that of the diagonal `z_(i,0) z_(j,1)`. -/
+@[simp]
 theorem flagDiagonalExponent_pair {i j : Fin (n + 2)} (hij : i < j) :
     flagDiagonalExponent {i, j} =
       Finsupp.single (toLex (i, 0)) 1 + Finsupp.single (toLex (j, 1)) 1 := by

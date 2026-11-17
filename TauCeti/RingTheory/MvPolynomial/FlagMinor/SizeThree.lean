@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.FlagMinor
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Presentation
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.MvPolynomial.Monomial.Quadratic
 
 /-!
 # The flag-minor algebra of the generic `3 × 3` matrix
@@ -94,11 +96,13 @@ theorem adjoin_range_flagMinor_flagRowsThree (R : Type*) [CommRing R] :
   · obtain ⟨i, rfl⟩ : I ∈ Set.range flagRowsThree := by rwa [range_flagRowsThree]
     exact Algebra.subset_adjoin ⟨i, rfl⟩
 
-/-- A product of two variables as a monomial, the form of the binomials in the toric ideal and in
-the SAGBI criterion. -/
-private theorem X_mul_X_eq_monomial {R σ : Type*} [CommSemiring R] (i j : σ) :
-    (X i * X j : MvPolynomial σ R) = monomial (Finsupp.single i 1 + Finsupp.single j 1) 1 := by
-  rw [X, X, monomial_mul_monomial, one_mul]
+/-- The seven nonempty flag minors, in the lexicographically ordered matrix variables, generate the
+flag-minor algebra in these variables. -/
+theorem adjoin_range_rename_toLex_flagMinor_flagRowsThree (R : Type*) [CommRing R] :
+    Algebra.adjoin R (Set.range fun i ↦ rename toLex (flagMinor R (flagRowsThree i))) =
+      Algebra.adjoin R (Set.range fun I : Finset (Fin 3) ↦ rename toLex (flagMinor R I)) := by
+  simp_rw [Set.range_comp' (rename toLex), ← AlgHom.map_adjoin,
+    adjoin_range_flagMinor_flagRowsThree]
 
 /-! ### The exponent map of the diagonal exponents -/
 
@@ -132,7 +136,7 @@ private theorem exists_eq_add_smul_of_linearCombination_eq {u v : Fin 7 →₀ �
   have e21 := e 2 1
   have e22 := e 2 2
   simp only [linearCombination_flagDiagonalExponent_apply] at e00 e10 e20 e11 e21 e22
-  simp [Fin.sum_univ_seven, flagRowsThree, flagDiagonalExponent_pair, flagDiagonalExponent_univ,
+  simp [Fin.sum_univ_seven, flagRowsThree, flagDiagonalExponent_univ,
     Fin.sum_univ_three] at e00 e10 e20 e11 e21 e22
   refine ⟨u ⊓ v, if v 0 ≤ u 0 then u 0 - v 0 else v 0 - u 0, ?_⟩
   split_ifs
@@ -160,7 +164,7 @@ theorem toricIdeal_flagDiagonalExponent_flagRowsThree (R : Type*) [CommRing R] :
       exact (sub_dvd_pow_sub_pow _ _ k).mul_left _
   · rw [X_mul_X_eq_monomial, X_mul_X_eq_monomial]
     refine monomial_sub_monomial_mem_toricIdeal ?_
-    simp [flagRowsThree, flagDiagonalExponent_pair]
+    simp [flagRowsThree]
     abel
 
 /-- **The initial presentation.** The relations among the leading terms, for the row-major
@@ -186,8 +190,8 @@ private theorem linearCombination_flagDiagonalExponent_lt :
   · obtain ⟨⟨r, c⟩, rfl⟩ := toLex.surjective j
     revert hj
     fin_cases r <;> fin_cases c <;>
-      simp [Prod.Lex.toLex_lt_toLex, flagRowsThree, flagDiagonalExponent_pair]
-  · simp [flagRowsThree, flagDiagonalExponent_pair]
+      simp [Prod.Lex.toLex_lt_toLex, flagRowsThree]
+  · simp [flagRowsThree]
 
 section Certificate
 
@@ -200,12 +204,6 @@ private theorem aeval_flagMinor_flagRowsThree_relation :
   simpa [flagRowsThree, mul_comm] using
     flagMinor_singleton_mul_flagMinor_pair_sub_add_eq_zero (n := 1) R
       (show (0 : Fin 3) < 1 by decide) (show (1 : Fin 3) < 2 by decide)
-
-/-- The seven minors in the lexicographically ordered matrix variables. -/
-private theorem aeval_rename_toLex_flagMinor_flagRowsThree (P : MvPolynomial (Fin 7) R) :
-    aeval (fun i ↦ rename toLex (flagMinor R (flagRowsThree i))) P =
-      rename toLex (aeval (fun i ↦ flagMinor R (flagRowsThree i)) P) := by
-  rw [← AlgHom.comp_apply, comp_aeval]
 
 /-- The leading exponents of the seven minors are their diagonal exponents. -/
 private theorem degree_rename_toLex_flagMinor_flagRowsThree [Nontrivial R] :
@@ -230,11 +228,10 @@ private theorem aeval_neg_X_mul_X_flagRowsThree :
       aeval (fun i ↦ rename toLex (flagMinor R (flagRowsThree i)))
         (monomial (Finsupp.single 0 1 + Finsupp.single 5 1) (1 : R) -
           monomial (Finsupp.single 1 1 + Finsupp.single 4 1) 1) := by
-  rw [← X_mul_X_eq_monomial, ← X_mul_X_eq_monomial, aeval_rename_toLex_flagMinor_flagRowsThree,
-    aeval_rename_toLex_flagMinor_flagRowsThree, ← sub_eq_zero, ← map_sub, ← map_sub,
-    show -(X 2 * X 3) - (X 0 * X 5 - X 1 * X 4) =
-      -(X 0 * X 5 - X 1 * X 4 + X 2 * X 3 : MvPolynomial (Fin 7) R) by ring,
-    map_neg, aeval_flagMinor_flagRowsThree_relation, neg_zero, map_zero]
+  rw [← X_mul_X_eq_monomial, ← X_mul_X_eq_monomial]
+  have h := congrArg (rename toLex) (aeval_flagMinor_flagRowsThree_relation R)
+  simp only [map_add, map_sub, map_mul, map_neg, map_zero, aeval_X] at h ⊢
+  linear_combination -h
 
 /-- Every exponent of the correction `-cd` has weight strictly below that of `af`. -/
 private theorem forall_mem_support_neg_X_mul_X_lt [Nontrivial R] :
@@ -273,12 +270,8 @@ matrix form a SAGBI basis of the flag-minor algebra for the row-major lexicograp
 theorem isSAGBIBasis_flagRowsThree (k : Type*) [Field k] :
     lex.IsSAGBIBasis (Set.range fun i ↦ rename toLex (flagMinor k (flagRowsThree i)))
       (Algebra.adjoin k (Set.range fun I : Finset (Fin 3) ↦ rename toLex (flagMinor k I))) := by
-  have h : Algebra.adjoin k (Set.range fun I : Finset (Fin 3) ↦ rename toLex (flagMinor k I)) =
-      Algebra.adjoin k (Set.range fun i ↦ rename toLex (flagMinor k (flagRowsThree i))) := by
-    rw [← Function.comp_def (rename toLex), ← Function.comp_def (rename toLex), Set.range_comp,
-      Set.range_comp, ← AlgHom.map_adjoin, ← AlgHom.map_adjoin,
-      adjoin_range_flagMinor_flagRowsThree]
-  rw [h, isSAGBIBasis_range_iff_forall_exists_aeval_eq
+  rw [← adjoin_range_rename_toLex_flagMinor_flagRowsThree,
+    isSAGBIBasis_range_iff_forall_exists_aeval_eq
     (fun i ↦ monic_rename_toLex_flagMinor k (flagRowsThree i)) (toricIdeal_degree_flagRowsThree k)]
   exact fun _ ↦ ⟨_, aeval_neg_X_mul_X_flagRowsThree k, forall_mem_support_neg_X_mul_X_lt k⟩
 
