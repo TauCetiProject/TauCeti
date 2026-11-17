@@ -93,21 +93,6 @@ open scoped nonZeroDivisors WithZero
 
 namespace TauCeti.Isogeny
 
-private theorem div_eq_zpow_sub_mul_div_of_mul_eq {a b q m c₁ c₂ k j : ℕ}
-    (hb : b ≠ 0) (hq : q ≠ 0) (hm : m ≠ 0) (hc₁ : c₁ ≠ 0)
-    (h : a * (q ^ k * m * c₁) = (q ^ j * m * c₂) * b) :
-    (a : ℚ) / b = (q : ℚ) ^ ((j : ℤ) - k) * c₂ / c₁ := by
-  have hq' : (q : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hq
-  have hm' : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm
-  have hc₁' : (c₁ : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hc₁
-  have hb' : (b : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hb
-  have hrat : (a : ℚ) * ((q : ℚ) ^ k * m * c₁) = ((q : ℚ) ^ j * m * c₂) * b := by
-    exact_mod_cast h
-  rw [zpow_sub₀ hq', zpow_natCast, zpow_natCast]
-  field_simp
-  apply mul_right_cancel₀ hm'
-  linear_combination hrat
-
 /-! ### Completed local formula -/
 
 section Local
@@ -157,14 +142,10 @@ theorem kummerRatio_eq_zpow_mul_tamagawaNumber_div_of_isMinimal
     (eventually_index_range_pointMapHom_mul_index_formalPointFiltration u hc h2 hn)
   let k₀ : ℕ := N + (WithZero.log (Valued.v c)).natAbs
   let j₀ : ℕ := ((k₀ : ℤ) - WithZero.log (Valued.v c)).toNat
-  have hj₀_int : (j₀ : ℤ) = (k₀ : ℤ) - WithZero.log (Valued.v c) := by
-    dsimp [j₀, k₀]
-    omega
+  have hj₀_int : (j₀ : ℤ) = (k₀ : ℤ) - WithZero.log (Valued.v c) := by dsimp [j₀, k₀]; omega
   have hjk : Valued.v c * WithZero.exp ((j₀ + 1 : ℕ) : ℤ) =
       WithZero.exp ((k₀ + 1 : ℕ) : ℤ) := by
-    rw [← WithZero.exp_log hvc, ← WithZero.exp_add, WithZero.exp_inj]
-    push_cast
-    omega
+    rw [← WithZero.exp_log hvc, ← WithZero.exp_add, WithZero.exp_inj]; push_cast; omega
   have hdeep := hN (k₀ + 1) (by dsimp [k₀]; omega) (j₀ + 1) hjk
   rw [C₁.index_formalPointFiltration_eq_mul_tamagawaNumber u k₀,
     C₂.index_formalPointFiltration_eq_mul_tamagawaNumber u j₀] at hdeep
@@ -175,21 +156,26 @@ theorem kummerRatio_eq_zpow_mul_tamagawaNumber_div_of_isMinimal
     (isMinimal_integer_adicCompletion_iff u (C₁.baseChange F_u)).mpr inferInstance
   have _ : IsMinimal 𝒪[F_u] (C₂.baseChange F_u) :=
     (isMinimal_integer_adicCompletion_iff u (C₂.baseChange F_u)).mpr inferInstance
+  set m := Nat.card ((integralModel R_u (C₂.baseChange F_u)).map
+    (IsLocalRing.residue R_u)).toAffine.Point
   have hred_eq :
       Nat.card ((integralModel R_u (C₁.baseChange F_u)).map
-          (IsLocalRing.residue R_u)).toAffine.Point =
-        Nat.card ((integralModel R_u (C₂.baseChange F_u)).map
-          (IsLocalRing.residue R_u)).toAffine.Point :=
+          (IsLocalRing.residue R_u)).toAffine.Point = m :=
     (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
-      (φ.natCard_point_reduction_eq.trans
-        C₂.natCard_point_reduction_baseChange_adicCompletion)
+      (φ.natCard_point_reduction_eq.trans C₂.natCard_point_reduction_baseChange_adicCompletion)
   rw [hq, hred_eq] at hdeep
+  -- Cancel the common reduced point count and solve for `φ.kummerRatio` in `ℚ`.
   have _ := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
-  have hsub : (j₀ : ℤ) - k₀ = -WithZero.log (Valued.v c) := by omega
-  rw [kummerRatio_def,
-    div_eq_zpow_sub_mul_div_of_mul_eq Nat.card_pos.ne' Nat.card_pos.ne' Nat.card_pos.ne'
-      (tamagawaNumber_pos _ _).ne' hdeep,
-    hsub]
+  have hrat := congrArg ((↑) : ℕ → ℚ) hdeep
+  push_cast at hrat
+  have hsub : -WithZero.log (Valued.v c) = (j₀ : ℤ) - k₀ := by omega
+  have hq0 : (Nat.card (A ⧸ u.asIdeal) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hm0 : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hker0 : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  rw [kummerRatio_def, hsub, zpow_sub₀ hq0, zpow_natCast, zpow_natCast]
+  field_simp [Nat.cast_ne_zero.mpr (tamagawaNumber_pos _ _).ne']
+  exact mul_right_cancel₀ hm0 (by linear_combination hrat)
 
 /-- **The local Kummer ratio on arbitrary equations over an adic completion.** Assume
 `Finite (A ⧸ u.asIdeal)`, `2 ≠ 0` in `F_u`, and `deg φ ≠ 0` in `A`. If `C₁` and `C₂` carry `E₁` and
@@ -221,15 +207,6 @@ section FinitePlaces
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-private theorem neg_log_valuation_mul_div (v : HeightOneSpectrum R) {c : K} (hc0 : c ≠ 0)
-    (C₁ C₂ : VariableChange K) :
-    -WithZero.log (v.valuation K (c * C₂.u / C₁.u)) =
-      (v.valuation K).ord c + (v.valuation K).ord (C₂.u : K) -
-        (v.valuation K).ord (C₁.u : K) := by
-  rw [← Valuation.ord_def, Valuation.ord_div _ (mul_ne_zero hc0 C₂.u.ne_zero) C₁.u.ne_zero,
-    Valuation.ord_mul _ ((v.valuation K).ne_zero_iff.mpr hc0)
-      ((v.valuation K).ne_zero_iff.mpr C₂.u.ne_zero)]
-
 private theorem neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt
     (E₁ E₂ : WeierstrassCurve K) [E₁.IsElliptic] [E₂.IsElliptic]
     (v : HeightOneSpectrum R) {c : K} (hc0 : c ≠ 0) (C₁ C₂ : VariableChange K)
@@ -242,7 +219,9 @@ private theorem neg_log_valuation_mul_div_eq_ord_add_obstructionExponentAt
   have hf₂ : obstructionExponentAt R v (C₂ • E₂) = 0 :=
     (obstructionExponentAt_eq_zero_iff_isMinimal R v (C₂ • E₂)).mpr inferInstance
   rw [obstructionExponentAt_smul] at hf₁ hf₂
-  rw [neg_log_valuation_mul_div v hc0 C₁ C₂]
+  rw [← Valuation.ord_def, Valuation.ord_div _ (mul_ne_zero hc0 C₂.u.ne_zero) C₁.u.ne_zero,
+    Valuation.ord_mul _ ((v.valuation K).ne_zero_iff.mpr hc0)
+      ((v.valuation K).ne_zero_iff.mpr C₂.u.ne_zero)]
   omega
 
 /-- For nonzero `c : K` and integral models `D₁ • E₁` and `D₂ • E₂` over `R`, the invertible
