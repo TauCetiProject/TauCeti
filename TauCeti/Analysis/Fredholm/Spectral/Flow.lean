@@ -235,10 +235,10 @@ section Single
 
 variable {S : H →L[𝕜] H}
 
-/-- The frontier of `[-c, c]` avoids a set containing neither `-c` nor `c`. -/
-private theorem disjoint_frontier_Icc {c : ℝ} {X : Set ℝ} (hc : 0 ≤ c) (h₁ : -c ∉ X)
-    (h₂ : c ∉ X) : Disjoint (frontier (Icc (-c) c)) X := by
-  rw [frontier_Icc (by linarith), disjoint_left]
+/-- The frontier of `[l, r]` avoids a set containing neither `l` nor `r`. -/
+private theorem disjoint_frontier_Icc {l r : ℝ} {X : Set ℝ} (hlr : l ≤ r) (h₁ : l ∉ X)
+    (h₂ : r ∉ X) : Disjoint (frontier (Icc l r)) X := by
+  rw [frontier_Icc hlr, disjoint_left]
   rintro x (rfl | rfl)
   exacts [h₁, h₂]
 
@@ -260,8 +260,8 @@ private theorem continuousOn_indicator_Icc_zero :
   Set.Finite.continuousOn_indicator
     (hS.finite_spectrum_inter_of_finiteDimensional_range_cfc_indicator
       (continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-        (disjoint_frontier_Icc hc h₁ h₂)) hfd)
-    (Icc_subset_Icc (by linarith) le_rfl) (disjoint_frontier_Icc hc h₁ h₂)
+        (disjoint_frontier_Icc (neg_le_self hc) h₁ h₂)) hfd)
+    (Icc_subset_Icc (by linarith) le_rfl) (disjoint_frontier_Icc (neg_le_self hc) h₁ h₂)
 
 /-- At a cut `c`, the spectral projection for `[0, c]` has finite rank. -/
 private theorem finiteDimensional_range_cfc_indicator_Icc_zero :
@@ -269,7 +269,7 @@ private theorem finiteDimensional_range_cfc_indicator_Icc_zero :
   Submodule.finiteDimensional_of_le (S.range_cfc_indicator_le_of_subset
     (Icc_subset_Icc (by linarith) le_rfl) (continuousOn_indicator_Icc_zero hS hc h₁ h₂ hfd)
     (continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-      (disjoint_frontier_Icc hc h₁ h₂)))
+      (disjoint_frontier_Icc (neg_le_self hc) h₁ h₂)))
 
 omit hc in
 /-- For cuts `c' < c` of `S`, the count for `c` is the count for `c'` plus the rank of the spectral
@@ -288,7 +288,7 @@ private theorem spectralCount_eq_add {c' : ℝ} (hc' : 0 < c') (hcc : c' < c)
     Submodule.finiteDimensional_of_le (S.range_cfc_indicator_le_of_subset (Ω' := Icc (-c) c)
       (fun x hx ↦ ⟨by linarith [hx.1], hx.2⟩) hcont
       (continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-        (disjoint_frontier_Icc hc h₁ h₂)))
+        (disjoint_frontier_Icc (neg_le_self hc) h₁ h₂)))
   rw [spectralCount_def, spectralCount_def, ← Icc_union_Ioc_eq_Icc hc'.le hcc.le]
   exact S.finrank_range_cfc_indicator_union
     (disjoint_left.2 fun x hx hx' ↦ (not_lt.2 hx.2) hx'.1)
@@ -355,6 +355,21 @@ theorem exists_isSpectralCutOn_ball_inter {X : Type*} [PseudoMetricSpace X] {B :
   obtain ⟨ε, hε, hball⟩ := nhdsWithin_basis_ball.eventually_iff.1 (hT.eventually hev)
   exact ⟨c, ε, hε, hc, fun u hu ↦ ⟨(hball hu).1, (hball hu).2.1, (hball hu).2.2.1⟩⟩
 
+omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
+/-- By the Lebesgue number lemma, if every point of a compact set `K` has a neighbourhood in `K`
+with a spectral cut, then there is a `δ > 0` such that every `δ`-ball about a point of `K` meets
+`K` in a set with a spectral cut. -/
+private theorem exists_pos_forall_exists_isSpectralCutOn_ball_inter {X : Type*}
+    [PseudoMetricSpace X] {B : X → H →L[𝕜] H} {K : Set X} (hK : IsCompact K)
+    (hloc : ∀ z ∈ K, ∃ c, ∃ ε > 0, IsSpectralCutOn B c (ball z ε ∩ K)) :
+    ∃ δ > 0, ∀ z ∈ K, ∃ c, IsSpectralCutOn B c (ball z δ ∩ K) := by
+  choose! c ε hε hcut using hloc
+  obtain ⟨δ, hδ, hleb⟩ := lebesgue_number_lemma_of_metric (c := fun z : K ↦ ball (z : X) (ε z))
+    hK (fun _ ↦ isOpen_ball) (fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, mem_ball_self (hε z hz)⟩)
+  refine ⟨δ, hδ, fun z hz ↦ ?_⟩
+  obtain ⟨i, hi⟩ := hleb z hz
+  exact ⟨c i, (hcut i i.2).mono fun w hw ↦ ⟨hi hw.1, hw.2⟩⟩
+
 /-- An interval whose endpoints lie within `ε` of `x` is contained in the ball of radius `ε`
 about `x`. -/
 private theorem Icc_subset_ball {x ε s t : ℝ} (hs : x - ε < s) (ht : t < x + ε) :
@@ -376,14 +391,11 @@ short enough subintervals of `[a, b]` have spectral cuts. -/
 private theorem exists_pos_forall_exists_isSpectralCutOn {a b : ℝ}
     (hloc : ∀ t ∈ Icc a b, ∃ c, ∃ ε > 0, IsSpectralCutOn A c (ball t ε ∩ Icc a b)) :
     ∃ δ > 0, ∀ s t, a ≤ s → s ≤ t → t ≤ b → t - s < δ → ∃ c, IsSpectralCutOn A c (Icc s t) := by
-  choose c ε hε hcut using hloc
-  obtain ⟨δ, hδ, hleb⟩ := lebesgue_number_lemma_of_metric
-    (c := fun i : Icc a b ↦ ball (i : ℝ) (ε i i.2)) isCompact_Icc (fun _ ↦ isOpen_ball)
-    (fun t ht ↦ mem_iUnion.2 ⟨⟨t, ht⟩, mem_ball_self (hε t ht)⟩)
+  obtain ⟨δ, hδ, hcut⟩ := exists_pos_forall_exists_isSpectralCutOn_ball_inter isCompact_Icc hloc
   refine ⟨δ, hδ, fun s t has hst htb hlt ↦ ?_⟩
-  obtain ⟨i, hi⟩ := hleb s ⟨has, hst.trans htb⟩
-  exact ⟨c i i.2, (hcut i i.2).mono fun u hu ↦
-    ⟨hi (Icc_subset_ball (by linarith) (by linarith) hu), has.trans hu.1, hu.2.trans htb⟩⟩
+  obtain ⟨c, hc⟩ := hcut s ⟨has, hst.trans htb⟩
+  exact ⟨c, hc.mono fun u hu ↦
+    ⟨Icc_subset_ball (by linarith) (by linarith) hu, has.trans hu.1, hu.2.trans htb⟩⟩
 
 open scoped Classical in
 /-- The change of the count over `[s, t]` for some spectral cut, or `0` if there is none. -/
@@ -704,10 +716,8 @@ theorem spectralFlow_eq_zero_of_forall_zero_notMem_spectrum {a b : ℝ} (hab : a
     have hr : spectralCount c (A t) = spectralCount c (A s) := by
       rw [spectralCount_def, spectralCount_def, Module.finrank, Module.finrank,
         isPreconnected_Icc.rank_range_cfc_indicator_eq (hA.mono hsub) (fun u hu ↦ hsa u (hsub hu))
-          (Ω := Icc 0 c) (fun u hu ↦ by
-            rw [frontier_Icc hc.pos.le, disjoint_left]
-            rintro x (rfl | rfl)
-            exacts [h0 u (hsub hu), hc.notMem_spectrum hu]) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩]
+          (Ω := Icc 0 c) (fun u hu ↦ disjoint_frontier_Icc hc.pos.le (h0 u (hsub hu))
+            (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩]
     simp [hr]
   rw [spectralFlow_eq_sub hab hA hsa hF hp]
   simp
@@ -770,13 +780,11 @@ private theorem exists_pos_forall_exists_isSpectralCutOn_ball
       ∃ c, ∃ ε > 0, IsSpectralCutOn (Function.uncurry G) c (ball z ε ∩ K) :=
     exists_isSpectralCutOn_ball_inter hG (fun w hw ↦ hsa w.1 hw.1 w.2 hw.2)
       (fun w hw ↦ hF w.1 hw.1 w.2 hw.2) hz
-  choose! c ε hε hcut using hloc
-  obtain ⟨δ, hδ, hleb⟩ := lebesgue_number_lemma_of_metric (c := fun z : K ↦ ball (z : ℝ × ℝ) (ε z))
-    (isCompact_Icc.prod isCompact_Icc) (fun _ ↦ isOpen_ball)
-    (fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, mem_ball_self (hε z hz)⟩)
+  obtain ⟨δ, hδ, hcut⟩ :=
+    exists_pos_forall_exists_isSpectralCutOn_ball_inter (isCompact_Icc.prod isCompact_Icc) hloc
   refine ⟨δ, hδ, fun s₀ hs₀ t₀ ht₀ ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hleb (s₀, t₀) ⟨hs₀, ht₀⟩
-  refine ⟨c z, fun s hs ↦ ⟨(hcut z z.2).pos, fun t ht ↦ (hcut z z.2).2 (s, t) ⟨hz ?_, hs.2, ht.2⟩⟩⟩
+  obtain ⟨c, hc⟩ := hcut (s₀, t₀) ⟨hs₀, ht₀⟩
+  refine ⟨c, fun s hs ↦ ⟨hc.pos, fun t ht ↦ hc.2 (s, t) ⟨?_, hs.2, ht.2⟩⟩⟩
   rw [← ball_prod_same]
   exact ⟨hs.1, ht.1⟩
 
