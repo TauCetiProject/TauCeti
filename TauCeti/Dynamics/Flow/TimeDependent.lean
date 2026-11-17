@@ -35,6 +35,10 @@ law of an ordinary `Flow`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
 * `TauCeti.timeDependentFlow_add_const`: the flow of a translation-invariant field commutes with
   the translation.
+* `TauCeti.timeDependentFlow_snd_eq_of_snd_eq`: the flow of a field on the plane tangent to a
+  horizontal line `y = c` preserves that line.
+* `TauCeti.timeDependentFlow_snd_mem_Icc`: the flow of a field on the plane tangent to the lines
+  `y = 0` and `y = 1` preserves the strip `ℝ × [0, 1]`.
 
 The construction uses the global autonomous Picard--Lindelöf solution from
 `TauCeti.Analysis.ODE.GlobalSolution`.
@@ -42,7 +46,7 @@ The construction uses the global autonomous Picard--Lindelöf solution from
 
 public section
 
-open Function
+open Function Set
 open scoped NNReal
 
 namespace TauCeti
@@ -221,6 +225,57 @@ theorem timeDependentFlow_add_const (v : ℝ → E → E) {K : ℝ≥0}
   have h := eq_timeDependentFlow v hv (y := fun u ↦ timeDependentFlow v hv s u x + c)
     (fun u ↦ by simpa only [hc] using (hasDerivAt_timeDependentFlow v hv s u x).add_const c) s t
   simpa using h.symm
+
+/-! ### Fields on the plane tangent to horizontal lines -/
+
+section Plane
+
+variable {v : ℝ → ℝ × ℝ → ℝ × ℝ} {K : ℝ≥0}
+
+/-- The time-dependent flow of a field on the plane whose second component vanishes on the line
+`y = c` preserves that line. -/
+theorem timeDependentFlow_snd_eq_of_snd_eq
+    (hv : LipschitzWith K (timeDependentSuspension v)) {c : ℝ} (hc : ∀ t x, (v t (x, c)).2 = 0)
+    (s t : ℝ) {p : ℝ × ℝ} (hp : p.2 = c) : (timeDependentFlow v hv s t p).2 = c := by
+  set φ : ℝ → ℝ × ℝ := fun u ↦ timeDependentFlow v hv s u p with hφ
+  -- The height of the orbit and the constant `c` solve the same scalar equation.
+  have hLip (u : ℝ) : LipschitzOnWith K (fun z ↦ (v u ((φ u).1, z)).2) univ := by
+    refine (LipschitzWith.of_dist_le_mul fun z z' ↦ ?_).lipschitzOnWith
+    have h := hv.dist_le_mul (u, ((φ u).1, z)) (u, ((φ u).1, z'))
+    simp only [timeDependentSuspension_apply, Prod.dist_eq, dist_self] at h
+    simp only [max_eq_right dist_nonneg] at h
+    exact (le_max_right _ _).trans (le_max_right _ _ |>.trans h)
+  have hf (u : ℝ) : HasDerivAt (fun u ↦ (φ u).2) ((v u ((φ u).1, (φ u).2)).2) u :=
+    by simpa using ((hasDerivAt_timeDependentFlow v hv s u p).hasFDerivAt.snd).hasDerivAt
+  have h := ODE_solution_unique_univ (v := fun u z ↦ (v u ((φ u).1, z)).2) (s := fun _ ↦ univ)
+    (f := fun u ↦ (φ u).2) (g := fun _ ↦ c) (t₀ := s) hLip (fun u ↦ ⟨hf u, trivial⟩)
+    (fun u ↦ ⟨by simpa only [hc] using hasDerivAt_const u c, trivial⟩) (by simpa [hφ] using hp)
+  exact congrFun h t
+
+/-- The time-dependent flow of a field on the plane whose second component vanishes on the lines
+`y = 0` and `y = 1` preserves the strip `ℝ × [0, 1]`. -/
+theorem timeDependentFlow_snd_mem_Icc (hv : LipschitzWith K (timeDependentSuspension v))
+    (h₀ : ∀ t x, (v t (x, 0)).2 = 0) (h₁ : ∀ t x, (v t (x, 1)).2 = 0) (s t : ℝ) {p : ℝ × ℝ}
+    (hp : p.2 ∈ Icc (0 : ℝ) 1) :
+    (timeDependentFlow v hv s t p).2 ∈ Icc (0 : ℝ) 1 := by
+  -- If the orbit meets a boundary line at some time, it stays on it at every time.
+  have hline (c : ℝ) (hc : ∀ t x, (v t (x, c)).2 = 0) (u : ℝ)
+      (hu : (timeDependentFlow v hv s u p).2 = c) : (timeDependentFlow v hv s t p).2 = c := by
+    rw [← timeDependentFlow_trans v hv s u t]
+    exact timeDependentFlow_snd_eq_of_snd_eq hv hc u t hu
+  have hz : ContinuousOn (fun u ↦ (timeDependentFlow v hv s u p).2) (uIcc s t) :=
+    (continuous_snd.comp ((continuous_timeDependentFlow v hv).comp
+      (by fun_prop : Continuous fun u : ℝ ↦ ((s, u), p)))).continuousOn
+  have hs : (timeDependentFlow v hv s s p).2 = p.2 := by simp
+  refine ⟨le_of_not_gt fun hlt ↦ ?_, le_of_not_gt fun hlt ↦ ?_⟩
+  · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
+      (mem_uIcc.2 (Or.inr ⟨hlt.le, hs ▸ hp.1⟩))
+    exact hlt.ne (hline 0 h₀ u hu)
+  · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
+      (mem_uIcc.2 (Or.inl ⟨hs ▸ hp.2, hlt.le⟩))
+    exact hlt.ne' (hline 1 h₁ u hu)
+
+end Plane
 
 end TauCeti
 

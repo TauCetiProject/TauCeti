@@ -40,7 +40,8 @@ and supported in a band of bounded time and height. A `C¹` field with these pro
 globally Lipschitz, and its global time-dependent flow `TauCeti.timeDependentFlow` exists. Its
 second component vanishes on both boundary lines, because `X_t` is tangent to them. By uniqueness
 of solutions of the scalar equation satisfied by the height, the flow preserves both boundary
-lines, and then, by the intermediate value theorem, the strip. On the strip the cut-off field is
+lines (`TauCeti.timeDependentFlow_snd_eq_of_snd_eq`), and then, by the intermediate value theorem,
+the strip (`TauCeti.timeDependentFlow_snd_mem_Icc`). On the strip the cut-off field is
 `X_t` for `t ∈ [0, 1]`, so Moser's identity
 (`TauCeti.compContinuousLinearMap_fderiv_eq_of_stripMoserVectorField`) applies along every orbit
 starting in the strip. Periodicity of the flow follows from uniqueness of solutions as well
@@ -71,57 +72,6 @@ open scoped Topology Manifold ContDiff NNReal
 namespace TauCeti
 
 variable {g : ℝ × ℝ → ℝ}
-
-/-! ### Flows of fields tangent to the boundary lines of the strip -/
-
-section Boundary
-
-variable {v : ℝ → ℝ × ℝ → ℝ × ℝ} {K : ℝ≥0}
-
-/-- The time-dependent flow of a field on the plane whose second component vanishes on the line
-`y = c` preserves that line. -/
-private theorem timeDependentFlow_snd_eq_of_snd_eq
-    (hv : LipschitzWith K (timeDependentSuspension v)) {c : ℝ} (hc : ∀ t x, (v t (x, c)).2 = 0)
-    (s t : ℝ) {p : ℝ × ℝ} (hp : p.2 = c) : (timeDependentFlow v hv s t p).2 = c := by
-  set φ : ℝ → ℝ × ℝ := fun u ↦ timeDependentFlow v hv s u p with hφ
-  -- The height of the orbit and the constant `c` solve the same scalar equation.
-  have hLip (u : ℝ) : LipschitzOnWith K (fun z ↦ (v u ((φ u).1, z)).2) univ := by
-    refine (LipschitzWith.of_dist_le_mul fun z z' ↦ ?_).lipschitzOnWith
-    have h := hv.dist_le_mul (u, ((φ u).1, z)) (u, ((φ u).1, z'))
-    simp only [timeDependentSuspension_apply, Prod.dist_eq, dist_self] at h
-    simp only [max_eq_right dist_nonneg] at h
-    exact (le_max_right _ _).trans (le_max_right _ _ |>.trans h)
-  have hf (u : ℝ) : HasDerivAt (fun u ↦ (φ u).2) ((v u ((φ u).1, (φ u).2)).2) u :=
-    by simpa using ((hasDerivAt_timeDependentFlow v hv s u p).hasFDerivAt.snd).hasDerivAt
-  have h := ODE_solution_unique_univ (v := fun u z ↦ (v u ((φ u).1, z)).2) (s := fun _ ↦ univ)
-    (f := fun u ↦ (φ u).2) (g := fun _ ↦ c) (t₀ := s) hLip (fun u ↦ ⟨hf u, trivial⟩)
-    (fun u ↦ ⟨by simpa only [hc] using hasDerivAt_const u c, trivial⟩) (by simpa [hφ] using hp)
-  exact congrFun h t
-
-/-- The time-dependent flow of a field on the plane whose second component vanishes on the lines
-`y = 0` and `y = 1` preserves the strip `ℝ × [0, 1]`. -/
-private theorem timeDependentFlow_snd_mem_Icc (hv : LipschitzWith K (timeDependentSuspension v))
-    (h₀ : ∀ t x, (v t (x, 0)).2 = 0) (h₁ : ∀ t x, (v t (x, 1)).2 = 0) (s t : ℝ) {p : ℝ × ℝ}
-    (hp : p.2 ∈ Icc (0 : ℝ) 1) :
-    (timeDependentFlow v hv s t p).2 ∈ Icc (0 : ℝ) 1 := by
-  -- If the orbit meets a boundary line at some time, it stays on it at every time.
-  have hline (c : ℝ) (hc : ∀ t x, (v t (x, c)).2 = 0) (u : ℝ)
-      (hu : (timeDependentFlow v hv s u p).2 = c) : (timeDependentFlow v hv s t p).2 = c := by
-    rw [← timeDependentFlow_trans v hv s u t]
-    exact timeDependentFlow_snd_eq_of_snd_eq hv hc u t hu
-  have hz : ContinuousOn (fun u ↦ (timeDependentFlow v hv s u p).2) (uIcc s t) :=
-    (continuous_snd.comp ((continuous_timeDependentFlow v hv).comp
-      (by fun_prop : Continuous fun u : ℝ ↦ ((s, u), p)))).continuousOn
-  have hs : (timeDependentFlow v hv s s p).2 = p.2 := by simp
-  refine ⟨le_of_not_gt fun hlt ↦ ?_, le_of_not_gt fun hlt ↦ ?_⟩
-  · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
-      (mem_uIcc.2 (Or.inr ⟨hlt.le, hs ▸ hp.1⟩))
-    exact hlt.ne (hline 0 h₀ u hu)
-  · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
-      (mem_uIcc.2 (Or.inl ⟨hs ▸ hp.2, hlt.le⟩))
-    exact hlt.ne' (hline 1 h₁ u hu)
-
-end Boundary
 
 /-! ### Uniform positivity near the strip -/
 
@@ -284,16 +234,6 @@ private theorem exists_cutoff_stripMoserVectorField {r : ℕ∞} (hr : 1 ≤ r) 
 
 /-! ### The Moser flow -/
 
-/-- The area form `dx ∧ dy` takes the value `1` on the standard basis of the plane, so its
-pullback by a linear map evaluates there to the determinant. -/
-private theorem realPlaneDx_wedge_realPlaneDy_finTwoProd (q : ℝ × ℝ) :
-    ((Prod.realPlaneDx q).wedge (Prod.realPlaneDy q)) (Module.Basis.finTwoProd ℝ) = 1 := by
-  have hbasis : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  rw [hbasis, ContinuousAlternatingMap.wedge_apply_one_one]
-  simp [Prod.realPlaneDx_apply, Prod.realPlaneDy_apply]
-
 /-- **The Moser flow on the annulus strip.** Let `1 + g` be a `C^r` density (`r ≥ 1`),
 `1`-periodic in `x`, positive on the strip `ℝ × [0, 1]`, with `∫₀¹ ∫₀¹ g(x, y) dx dy = 0`, so that
 `(1 + g) dx ∧ dy` gives the annulus the same area as `dx ∧ dy`. Then there is a family `ψ_t` of
@@ -352,7 +292,8 @@ theorem exists_stripMoserFlow {r : ℕ∞} (hr : 1 ≤ r) (hg : ContDiff ℝ r g
   have hb := congrArg (fun F ↦ F (Module.Basis.finTwoProd ℝ)) h
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply_basis,
     ContinuousAlternatingMap.smul_apply, hψ₀, fderiv_id, smul_eq_mul] at hb
-  rw [realPlaneDx_wedge_realPlaneDy_finTwoProd, realPlaneDx_wedge_realPlaneDy_finTwoProd] at hb
+  rw [Prod.realPlaneDx_wedge_realPlaneDy_finTwoProd,
+    Prod.realPlaneDx_wedge_realPlaneDy_finTwoProd] at hb
   simpa [mul_comm] using hb
 
 end TauCeti
