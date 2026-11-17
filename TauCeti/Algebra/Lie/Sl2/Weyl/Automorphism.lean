@@ -90,7 +90,7 @@ statement above then reads as a relation in the group of units rather than in th
 * `TauCeti.weylAut_mem_rootSpace`, `TauCeti.weylAut_map_rootSpace` and
   `TauCeti.exists_lieEquiv_forall_mem_rootSpace`: in the Killing setting, `weylAut` carries root
   spaces onto reflected root spaces.
-* `TauCeti.conj_weylUnit` and `TauCeti.commute_weylUnit_of_conj_eq`: conjugation functoriality and
+* `Units.conj_weylUnit` and `Units.commute_weylUnit_of_conj_eq`: conjugation functoriality and
   commutation criterion for `weylUnit`.
 * `TauCeti.weylAut_apply_eq_weylUnit_conj` and `IsSl2Triple.weylUnit_neg_symm_conj`: in an
   associative algebra the Weyl automorphism is conjugation by the Weyl element, invariant under
@@ -542,7 +542,7 @@ theorem weylUnit_of_eq_zero (hE : IsNilpotent E) (hF : IsNilpotent F) (hE0 : E =
 
 /-- Conjugating `weylUnit hE hF` by a unit `u` yields the Weyl element of the conjugated pair
 `(u * E * u⁻¹, u * F * u⁻¹)`. -/
-theorem conj_weylUnit {E' F' : A} (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
+theorem _root_.Units.conj_weylUnit {E' F' : A} (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
     (hE' : IsNilpotent E') (hF' : IsNilpotent F')
     (huE : (u : A) * E * (↑u⁻¹ : A) = E') (huF : (u : A) * F * (↑u⁻¹ : A) = F') :
     u * weylUnit hE hF * u⁻¹ = weylUnit hE' hF' := by
@@ -557,10 +557,10 @@ theorem conj_weylUnit {E' F' : A} (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpote
         hd E, hd F, huE, huF]
 
 /-- If conjugation by a unit `u` fixes `E` and `F`, then `u` commutes with `weylUnit hE hF`. -/
-theorem commute_weylUnit_of_conj_eq (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
+theorem _root_.Units.commute_weylUnit_of_conj_eq (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
     (huE : (u : A) * E * (↑u⁻¹ : A) = E) (huF : (u : A) * F * (↑u⁻¹ : A) = F) :
     Commute u (weylUnit hE hF) :=
-  mul_inv_eq_iff_eq_mul.mp (conj_weylUnit u hE hF hE hF huE huF)
+  mul_inv_eq_iff_eq_mul.mp (u.conj_weylUnit hE hF hE hF huE huF)
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 

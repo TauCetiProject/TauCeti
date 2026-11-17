@@ -23,9 +23,9 @@ reused in the double- and triple-bond braid calculations.
 
 The root-string formulas come from `IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg` and its
 highest-weight counterpart. Serre's nested-bracket identities then identify the conjugated
-raising and lowering operators; functoriality of the nilpotent exponential (`conj_weylUnit`)
-identifies the Weyl units themselves. The Geck single-bond sign comparison in
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.SingleBond`
+raising and lowering operators; functoriality of the nilpotent exponential
+(`Units.conj_weylUnit`) identifies the Weyl units themselves. The Geck single-bond sign comparison
+in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.SingleBond`
 is derived from `TauCeti.IsSerreSystem.weylUnit_conj_E_of_cartan_eq_neg_one`.
 No faithfulness, weight basis or finite-dimensionality is required.
 
@@ -150,7 +150,7 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_F_F_E_of_ne hne
   have hu : (b * a) * b * (b * a)⁻¹ = a :=
-    conj_weylUnit (b * a) hEj hFj hEi hFi
+    (b * a).conj_weylUnit hEj hFj hEi hFi
       (by simpa only [Units.conjAlgEquiv_apply] using hE)
       (by simpa only [Units.conjAlgEquiv_apply] using hF)
   calc

@@ -31,7 +31,7 @@ Following the braid proof of `IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_two`
 alternating word fixes the other root pair: the middle step fixes the intermediate root vector
 `⁅E j, ⁅E j, E i⁆⁆` because it is centralized by both `E i` and `F i`, signed exchange
 transports the raising calculation to the lowering operator, and functoriality of the
-nilpotent exponential (`commute_weylUnit_of_conj_eq`) upgrades conjugation fixation to unit
+nilpotent exponential (`Units.commute_weylUnit_of_conj_eq`) upgrades conjugation fixation to unit
 commutation.
 
 ## References
@@ -191,7 +191,7 @@ theorem weylUnit_braid_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
       hs.conjAlgEquiv_weylUnit_neg hjj hj hEj hFj, map_neg, neg_inj] at h ⊢
     exact h
   simpa only [a, b, mul_assoc] using
-    (commute_weylUnit_of_conj_eq (a * b * a * b * a) hEj hFj
+    ((a * b * a * b * a).commute_weylUnit_of_conj_eq hEj hFj
       (by simpa only [Units.conjAlgEquiv_apply] using hE)
       (by simpa only [Units.conjAlgEquiv_apply] using hF)).eq
 
