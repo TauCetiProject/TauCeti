@@ -293,7 +293,7 @@ private theorem exists_homogeneous_basis_zero_rank (N m : ℕ) (s : Fin m → �
       ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) := by
   obtain ⟨n, b, d, hb⟩ := exists_homogeneous_basis_range_idempotent N m s 0 (by ext; simp)
     (fun _ _ _ _ ↦ Submodule.zero_mem _)
-  obtain rfl : n = 0 := eq_zero_of_basis_range_zero b
+  obtain rfl : n = 0 := b.eq_zero_of_range_zero
   exact ⟨b, d, hb⟩
 
 -- Identity on a single summand of shift 3: every homogeneous basis has degree multiset {3}.

@@ -28,7 +28,9 @@ This file provides:
   (`CategoryTheory.Retract.mem_positive_smul_top_iff`, `CategoryTheory.Retract.piece_eq_bot`).
 * The `k`-linear head-coordinate map `TauCeti.GradedModuleCat.freeHeadCoord` on each homogeneous
   piece of a shifted free graded module, whose kernel is the corresponding piece of
-  `A₊ (free 𝒜 s)`.
+  `A₊ (free 𝒜 s)` (`TauCeti.GradedModuleCat.freeHeadCoord_eq_zero_iff`) and which is surjective
+  whenever the degree-`q` shift fiber is finite
+  (`TauCeti.GradedModuleCat.freeHeadCoord_surjective`).
 * Over any nontrivial commutative base ring `k`, uniqueness of the shift multiplicities and rank
   of a finite shifted free graded module up to graded isomorphism
   (`TauCeti.GradedModuleCat.card_fiber_eq_of_iso_free`,
@@ -301,8 +303,8 @@ theorem freeHeadCoord_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥)
       (coord_mem_positive_of_mem_positive_smul_top hneg s hx j.1)
 
 omit [FaithfulSMul k A] in
-/-- Canonical `k`-linear section of `freeHeadCoord` on a finite index type `I`. -/
-private def freeHeadLift {I : Type uI} [Fintype I] (s : I → ℤ) (q : ℤ) :
+/-- Canonical `k`-linear section of `freeHeadCoord` when the shift-`q` fiber is finite. -/
+private def freeHeadLift {I : Type uI} (s : I → ℤ) (q : ℤ) [Fintype {j : I // s j = q}] :
     ({j : I // s j = q} → k) →ₗ[k] (free 𝒜 s).grading.piece q where
   toFun c :=
     ⟨∑ j : {j : I // s j = q}, c j • freeGenerator (𝒜 := 𝒜) (d := s) j.1, by
@@ -313,7 +315,8 @@ private def freeHeadLift {I : Type uI} [Fintype I] (s : I → ℤ) (q : ℤ) :
 
 private theorem freeHeadCoord_freeHeadLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
-    {I : Type uI} [Fintype I] (s : I → ℤ) (q : ℤ) (c : {j : I // s j = q} → k) :
+    {I : Type uI} (s : I → ℤ) (q : ℤ) [Fintype {j : I // s j = q}]
+    (c : {j : I // s j = q} → k) :
     freeHeadCoord hneg hzero s q (freeHeadLift s q c) = c := by
   classical
   ext i
@@ -329,6 +332,15 @@ private theorem freeHeadCoord_freeHeadLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
       simp [freeGenerator_apply, hij]
     · exact fun hi ↦ absurd (Finset.mem_univ i) hi
   simp [hcoord]
+
+/-- When the shift-`q` fiber `{j : I // s j = q}` is finite (in particular, for any finite index
+type `I`), the head-coordinate map `freeHeadCoord` is surjective. -/
+theorem freeHeadCoord_surjective (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
+    {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}] :
+    Function.Surjective (freeHeadCoord hneg hzero s q) := by
+  cases nonempty_fintype {j : I // s j = q}
+  exact fun c ↦ ⟨freeHeadLift s q c, freeHeadCoord_freeHeadLift hneg hzero s q c⟩
 
 /-- Functorial action of a graded morphism between finite shifted free modules on their degree-`q`
 head coordinates. -/

@@ -42,7 +42,7 @@ concrete module-level consequences from `TauCeti.Algebra.Category.GradedModuleCa
   `LinearMap.range p` over a PID.
 * `TauCeti.multiset_map_eq_of_homogeneous_basis_range_idempotent`: uniqueness of the multiset of
   basis shifts of `LinearMap.range p`.
-* `TauCeti.eq_zero_of_basis_range_zero`,
+* `Module.Basis.eq_zero_of_range_zero`,
   `TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range`:
   rank and degree-multiset formulas for the zero idempotent and rank-one homogeneous projections.
 
@@ -302,18 +302,6 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent
   rwa [huniv d₁, huniv d₂] at hU
 
 omit [CommRing k] [Algebra k A] [GradedAlgebra 𝒜] in
-/-- Over a nontrivial ring `A`, every `Fin n`-indexed basis of the range of the zero endomorphism
-on `I → A` has `n = 0`. -/
-theorem eq_zero_of_basis_range_zero [Nontrivial A] {I : Type uI} {n : ℕ}
-    (b : Module.Basis (Fin n) A (LinearMap.range (0 : (I → A) →ₗ[A] (I → A)))) :
-    n = 0 := by
-  by_contra hn
-  have hsub : Subsingleton (LinearMap.range (0 : (I → A) →ₗ[A] (I → A))) := by
-    rw [LinearMap.range_zero]
-    infer_instance
-  exact b.ne_zero ⟨0, Nat.pos_of_ne_zero hn⟩ (Subsingleton.elim _ _)
-
-omit [CommRing k] [Algebra k A] [GradedAlgebra 𝒜] in
 /-- Any `A`-linear endomorphism `p : (I → A) →ₗ[A] (I → A)` of the form `p v = v i₀ • w` with
 `w i₀ = 1` is idempotent. -/
 theorem idempotent_of_apply_eq_smul {I : Type uI} {p : (I → A) →ₗ[A] (I → A)} (i₀ : I)
@@ -373,3 +361,18 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
 end ConnectedRing
 
 end TauCeti
+
+namespace Module.Basis
+
+/-- Over a nontrivial semiring `A`, every `Fin n`-indexed basis of the range of the zero
+endomorphism on `I → A` has `n = 0`. -/
+theorem eq_zero_of_range_zero {A : Type*} [Semiring A] [Nontrivial A] {I : Type*} {n : ℕ}
+    (b : Module.Basis (Fin n) A (LinearMap.range (0 : (I → A) →ₗ[A] (I → A)))) :
+    n = 0 := by
+  by_contra hn
+  have hsub : Subsingleton (LinearMap.range (0 : (I → A) →ₗ[A] (I → A))) := by
+    rw [LinearMap.range_zero]
+    infer_instance
+  exact b.ne_zero ⟨0, Nat.pos_of_ne_zero hn⟩ (Subsingleton.elim _ _)
+
+end Module.Basis
