@@ -73,9 +73,12 @@ where `τ` is `Real.smoothTransition`. -/
 def logCutoffConst : ℝ :=
   1 + ⨆ t, deriv smoothTransition t
 
+/-- The defining formula for the constant in the logarithmic cutoff derivative bound. -/
+theorem logCutoffConst_def : logCutoffConst = 1 + ⨆ t, deriv smoothTransition t := (rfl)
+
 /-- The constant of the derivative bound is at least one. -/
 theorem one_le_logCutoffConst : 1 ≤ logCutoffConst := by
-  unfold logCutoffConst
+  rw [logCutoffConst_def]
   linarith [smoothTransition.iSup_deriv_nonneg]
 
 /-- The constant of the derivative bound is positive. -/
@@ -85,7 +88,7 @@ theorem logCutoffConst_pos : 0 < logCutoffConst :=
 /-- The absolute value of the derivative of `Real.smoothTransition` is at most `c₀`. -/
 theorem abs_deriv_smoothTransition_le (t : ℝ) : |deriv smoothTransition t| ≤ logCutoffConst := by
   rw [abs_of_nonneg (smoothTransition.deriv_nonneg t)]
-  unfold logCutoffConst
+  rw [logCutoffConst_def]
   linarith [smoothTransition.deriv_le_iSup t]
 
 variable {ε δ r : ℝ}
@@ -201,7 +204,8 @@ private theorem logProfileDeriv_nonneg (u : ℝ) : 0 ≤ logProfileDeriv ε δ u
 
 private theorem logProfileDeriv_le (u : ℝ) :
     logProfileDeriv ε δ u ≤ logCutoffConst / log (δ / ε) := by
-  unfold logProfileDeriv logCutoffConst
+  unfold logProfileDeriv
+  rw [logCutoffConst_def]
   apply div_le_div_of_nonneg_right _ (log_div_pos hε hεδ).le
   rcases one_le_or_one_le hε hεδ u with h | h
   · rw [smoothTransition.one_of_one_le h, smoothTransition.deriv_of_one_le h]
