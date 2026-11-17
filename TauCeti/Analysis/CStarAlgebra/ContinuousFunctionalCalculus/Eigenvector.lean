@@ -19,7 +19,7 @@ of `a`:
 
 The hypothesis holds for every `f` when the spectrum of `a` is finite (`Set.Finite.continuousOn`),
 and for every `f` continuous on the spectrum when `μ` lies outside it or is an isolated point of
-it (`TauCeti.continuousOn_div_sub_of_eventually`), such as a nonzero spectral value of a compact
+it (`ContinuousOn.div_sub_of_eventually_eq`), such as a nonzero spectral value of a compact
 operator.
 
 Consequently `cfc f a` acts as multiplication by `f μ` on every eigenvector of `a` for the
@@ -36,7 +36,7 @@ functional calculus with any spectral construction acting by `f μ` on the eigen
   quotient `g` of `f` at `μ`, whenever `g` is continuous on the spectrum of `a`.
 * `TauCeti.cfc_smul_of_smul_eq_algebraMap_smul`: if `a • m = μ • m` and the difference quotient
   of `f` at `μ` is continuous on the spectrum of `a`, then `cfc f a • m = f(μ) • m`.
-* `TauCeti.continuousOn_div_sub_of_eventually`: the difference quotient of a function continuous
+* `ContinuousOn.div_sub_of_eventually_eq`: the difference quotient of a function continuous
   on a set `S` at a point `μ` that is not an accumulation point of `S` is continuous on `S`.
 -/
 
@@ -81,10 +81,12 @@ theorem cfc_smul_of_smul_eq_algebraMap_smul {M : Type*} [AddCommGroup M] [Module
   rw [← sub_eq_zero, ← sub_smul, cfc_sub_algebraMap_eq_mul f a μ hg, mul_smul, sub_smul,
     hm, sub_self, smul_zero]
 
+end TauCeti
+
 /-- The difference quotient `(f x - f μ) / (x - μ)` of a function `f` continuous on a set `S` is
 continuous on `S` as soon as no point of `S` other than `μ` lies near `μ`, that is, when `μ` is an
 isolated point of `S` or does not lie in its closure. -/
-theorem continuousOn_div_sub_of_eventually {R : Type*} [Field R] [TopologicalSpace R]
+theorem ContinuousOn.div_sub_of_eventually_eq {R : Type*} [Field R] [TopologicalSpace R]
     [ContinuousMul R] [ContinuousSub R] [ContinuousInv₀ R] {f : R → R} {S : Set R} {μ : R}
     (hf : ContinuousOn f S) (hμ : ∀ᶠ x in 𝓝 μ, x ∈ S → x = μ) :
     ContinuousOn (fun x ↦ (f x - f μ) / (x - μ)) S := by
@@ -97,5 +99,3 @@ theorem continuousOn_div_sub_of_eventually {R : Type*} [Field R] [TopologicalSpa
     exact (tendsto_pure_nhds _ x).mono_left hpure
   · exact ((hf x hx).sub continuousWithinAt_const).div
       (continuousWithinAt_id.sub continuousWithinAt_const) (sub_ne_zero.2 hxμ)
-
-end TauCeti

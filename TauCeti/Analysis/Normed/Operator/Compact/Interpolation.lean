@@ -103,12 +103,12 @@ theorem of_norm_le_mul_rpow_mul_rpow {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCom
     _ < ε := hε'
 
 /-- **Compactness from the Gram operator.** A bounded operator `T` between Hilbert spaces is
-compact as soon as `T† T` is, since `‖T x‖² = re ⟪T† T x, x⟫ ≤ ‖T† T x‖ ‖x‖` is an interpolation
-inequality with `θ = 1 / 2`. For a self-adjoint `T` this says that `T` is compact when `T²` is. -/
+compact as soon as `T† T` is. In particular a self-adjoint `T` is compact when `T²` is. -/
 theorem of_adjoint_comp_self {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
     [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
     [CompleteSpace F] {T : E →L[𝕜] F} (hT : IsCompactOperator (T.adjoint ∘L T)) :
     IsCompactOperator T := by
+  -- `‖T x‖² = re ⟪T† T x, x⟫ ≤ ‖T† T x‖ ‖x‖` is an interpolation inequality with `θ = 1 / 2`.
   refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
     (T₀ := ((T.adjoint ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E)) hT (ContinuousLinearMap.id 𝕜 E)
     (T := (T : E →ₗ[𝕜] F)) (C := 1) (θ := 1 / 2) (by norm_num) (by norm_num) fun x => ?_

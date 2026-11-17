@@ -12,10 +12,9 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Green
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Inverse
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
-import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 import TauCeti.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.Normed.Operator.Compact.FunctionalCalculus
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
-import TauCeti.Analysis.Normed.Operator.Compact.Spectrum
 
 /-!
 # Spectral powers of a strictly positive operator with compact resolvent
@@ -56,10 +55,6 @@ the mode `exp(i k x)` by `(1 + k²)^{-1/2}`, which is `1` at `k = 0`.
   commuting with `A`, such as the unitary action of a symmetry group, commutes with every power
   and preserves its domain.
 
-Along the way, `IsCompactOperator.cfc_apply_of_apply_eq_smul` shows that the functional calculus
-of a compact self-adjoint operator acts on an eigenvector for a nonzero eigenvalue `μ` as
-multiplication by `f μ`, since nonzero spectral values of a compact operator are isolated.
-
 ## References
 
 * M. A. Shubin, *Pseudodifferential Operators and Spectral Theory*, Chapter II, §10.
@@ -70,119 +65,12 @@ public section
 
 noncomputable section
 
-open Filter Topology
 open scoped InnerProductSpace NNReal
-
-namespace IsCompactOperator
-
-/-- The nonzero points of the real spectrum of a compact operator on a complex Banach space are
-isolated. -/
-theorem eventually_mem_spectrum_real_imp_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] {T : E →L[ℂ] E} (hT : IsCompactOperator T) {μ : ℝ}
-    (hμ : μ ≠ 0) : ∀ᶠ y in 𝓝 μ, y ∈ spectrum ℝ T → y = μ := by
-  have hpos : 0 < |μ| / 2 := by positivity
-  set F : Set ℝ := {y | y ∈ spectrum ℝ T ∧ |μ| / 2 ≤ |y|}
-  have hF : F.Finite := by
-    refine ((hT.finite_spectrum_norm_ge hpos).preimage Complex.ofReal_injective.injOn).subset ?_
-    rintro y ⟨hy, hyμ⟩
-    refine ⟨?_, by rwa [Complex.norm_real, Real.norm_eq_abs]⟩
-    exact (spectrum.algebraMap_mem_iff ℂ).2 hy
-  have hnear : ∀ᶠ y in 𝓝 μ, |μ| / 2 < |y| :=
-    (isOpen_lt continuous_const continuous_abs).mem_nhds (half_lt_self (abs_pos.2 hμ))
-  have havoid : ∀ᶠ y in 𝓝 μ, y ∉ F \ {μ} := hF.sdiff.isClosed.compl_mem_nhds (by simp)
-  filter_upwards [hnear, havoid] with y hy hyF hys
-  by_contra hne
-  exact hyF ⟨⟨hys, hy.le⟩, hne⟩
-
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- **Eigenvector action of the functional calculus of a compact self-adjoint operator.** If
-`T x = μ x` for a real `μ ≠ 0`, then `f(T) x = f(μ) x` for every real function `f` continuous on
-the spectrum of `T`. -/
-theorem cfc_apply_of_apply_eq_smul {T : H →L[ℂ] H} (hT : IsCompactOperator T) (f : ℝ → ℝ)
-    {x : H} {μ : ℝ} (hμ : μ ≠ 0) (hx : T x = (μ : ℂ) • x)
-    (hf : ContinuousOn f (spectrum ℝ T) := by cfc_cont_tac)
-    (hT' : IsSelfAdjoint T := by cfc_tac) :
-    cfc f T x = (f μ : ℂ) • x := by
-  have halg (r : ℝ) : algebraMap ℝ (H →L[ℂ] H) r • x = (r : ℂ) • x := by
-    rw [ContinuousLinearMap.smul_def, IsScalarTower.algebraMap_apply ℝ ℂ (H →L[ℂ] H),
-      ContinuousLinearMap.algebraMap_apply, Complex.coe_algebraMap]
-  rw [← ContinuousLinearMap.smul_def, ← halg] at hx ⊢
-  exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f hx
-    (TauCeti.continuousOn_div_sub_of_eventually hf
-      (hT.eventually_mem_spectrum_real_imp_eq hμ)) hT'
-
-end IsCompactOperator
 
 namespace LinearPMap
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
-
-/-! ### The Green operator of a strictly positive operator -/
-
-section Green
-
-/-- The Green operator of a self-adjoint operator with compact resolvent and nonnegative quadratic
-form is a positive operator. -/
-theorem greenOperator_nonneg (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) :
-    0 ≤ A.greenOperator hA h := by
-  have := h.hasOrthogonalProjection_ker
-  rw [ContinuousLinearMap.nonneg_iff_isPositive]
-  refine ⟨(A.isSelfAdjoint_greenOperator hA h).isSymmetric, fun f ↦ ?_⟩
-  set u : A.domain := ⟨A.greenOperator hA h f, A.greenOperator_mem_domain hA h f⟩
-  -- Write `f = A (G f) + Π f`; the projection onto the kernel is orthogonal to `G f`.
-  have hf : f = A u + A.ker.starProjection f := by
-    rw [apply_greenOperator, sub_add_cancel]
-  have horth : ⟪A.ker.starProjection f, (u : H)⟫_ℂ = 0 :=
-    Submodule.inner_right_of_mem_orthogonal (A.ker.starProjection_apply_mem f)
-      (A.greenOperator_mem_orthogonal_ker hA h f)
-  have hGf : A.greenOperator hA h f = (u : H) := rfl
-  rw [ContinuousLinearMap.reApplyInnerSelf_apply, ← inner_re_symm, hGf, hf, inner_add_left, horth,
-    add_zero]
-  exact hpos u
-
-variable {hA h}
-
-/-- If `ker A = 0`, the Green operator is a right inverse of `A`: `A (G f) = f`. -/
-theorem apply_greenOperator_of_ker_eq_bot (hker : A.ker = ⊥) (f : H) :
-    A ⟨A.greenOperator hA h f, A.greenOperator_mem_domain hA h f⟩ = f := by
-  have := h.hasOrthogonalProjection_ker
-  rw [apply_greenOperator, (A.ker.starProjection_apply_eq_zero_iff).2 (by simp [hker]), sub_zero]
-
-/-- If `ker A = 0`, the Green operator is a left inverse of `A`: `G (A u) = u`. -/
-theorem greenOperator_apply_apply_of_ker_eq_bot (hker : A.ker = ⊥) (u : A.domain) :
-    A.greenOperator hA h (A u) = u := by
-  have := h.hasOrthogonalProjection_ker
-  rw [greenOperator_apply_apply, (A.ker.starProjection_apply_eq_zero_iff).2 (by simp [hker]),
-    sub_zero]
-
-/-- If `ker A = 0`, the Green operator is injective. -/
-theorem injective_greenOperator (hker : A.ker = ⊥) :
-    Function.Injective (A.greenOperator hA h) := by
-  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot, ker_greenOperator, hker]
-
-/-- If `ker A = 0`, the range of the Green operator is the domain of `A`. -/
-theorem range_greenOperator_of_ker_eq_bot (hker : A.ker = ⊥) :
-    LinearMap.range (A.greenOperator hA h : H →ₗ[ℂ] H) = A.domain := by
-  rw [range_greenOperator, hker, Submodule.bot_orthogonal_eq_top, inf_top_eq]
-
-omit [CompleteSpace H] in
-/-- The eigenvalues of a strictly positive operator are positive: if `0 ≤ re ⟪A u, u⟫` on the
-domain and `ker A = 0`, then `A u = λ u` with `u ≠ 0` forces `0 < λ`. -/
-theorem pos_of_apply_eq_smul (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ)
-    (hker : A.ker = ⊥) {u : A.domain} (hu0 : (u : H) ≠ 0) {lam : ℝ}
-    (hu : A u = (lam : ℂ) • (u : H)) : 0 < lam := by
-  have hnorm : 0 < ‖(u : H)‖ ^ 2 := by positivity
-  have hre : RCLike.re ⟪A u, (u : H)⟫_ℂ = lam * ‖(u : H)‖ ^ 2 := by
-    rw [hu, inner_smul_left, Complex.conj_ofReal, inner_self_eq_norm_sq_to_K]
-    exact Complex.re_ofReal_mul lam _ |>.trans (by norm_cast)
-  refine lt_of_le_of_ne (nonneg_of_mul_nonneg_left (hre ▸ hpos u) hnorm) fun hlam ↦ hu0 ?_
-  have hmem : (u : H) ∈ A.ker := coe_mem_ker_iff.2 (by rw [hu, ← hlam, Complex.ofReal_zero,
-    zero_smul])
-  rwa [hker, Submodule.mem_bot] at hmem
-
-end Green
 
 /-! ### Negative powers -/
 
@@ -263,15 +151,15 @@ theorem injective_negPow (hker : A.ker = ⊥) (s : ℝ≥0) : Function.Injective
     rw [← negPow_add hpos, tsub_add_cancel_of_le hn]
   have hinj : Function.Injective (A.negPow hA h n) := by
     rw [negPow_natCast hpos, FunLike.coe_pow_eq_iterate]
-    exact (injective_greenOperator hker).iterate n
+    exact (A.injective_greenOperator hA h hker).iterate n
   rw [hfac, ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp] at hinj
   exact hinj.of_comp
 
-/-- **Compactness.** For `s > 0` the negative power `A^{-s}` is a compact operator. For `s ≥ 1`
-this follows from `A^{-s} = A^{-(s - 1)} G`; smaller `s` reduce to larger ones, since a
-self-adjoint operator is compact when its square is. -/
+/-- **Compactness.** For `s > 0` the negative power `A^{-s}` is a compact operator. -/
 theorem isCompactOperator_negPow {s : ℝ≥0} (hs : 0 < s) :
     IsCompactOperator (A.negPow hA h s) := by
+  -- For `s ≥ 1` this follows from `A^{-s} = A^{-(s - 1)} G`; smaller `s` reduce to larger ones,
+  -- since a self-adjoint operator is compact when its square is.
   have key : ∀ n : ℕ, ∀ s : ℝ≥0, (1 / 2 : ℝ≥0) ^ n ≤ s →
       IsCompactOperator (A.negPow hA h s) := by
     intro n
@@ -325,45 +213,33 @@ variable {hA h}
 /-- The domain of `A^s` is the range of `A^{-s}`. -/
 theorem posPow_domain (s : ℝ≥0) :
     (A.posPow hA h s).domain = LinearMap.range (A.negPow hA h s : H →ₗ[ℂ] H) := by
-  rw [posPow, inverse_domain]
   ext f
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨x, rfl⟩
-  · rintro ⟨x, rfl⟩
-    exact ⟨⟨x, Submodule.mem_top⟩, rfl⟩
+  rw [posPow, ContinuousLinearMap.mem_domain_inverse_toPMap_top_iff, LinearMap.mem_range]
+  simp only [ContinuousLinearMap.coe_coe]
 
 /-- Every value of `A^{-s}` lies in the domain of `A^s`. -/
 theorem negPow_mem_posPow_domain (s : ℝ≥0) (f : H) :
-    A.negPow hA h s f ∈ (A.posPow hA h s).domain := by
-  rw [posPow_domain]
-  exact LinearMap.mem_range_self _ f
+    A.negPow hA h s f ∈ (A.posPow hA h s).domain :=
+  ContinuousLinearMap.apply_mem_domain_inverse_toPMap_top _ f
 
 variable (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) (hker : A.ker = ⊥)
 include hpos hker
 
-private theorem ker_toPMap_negPow (s : ℝ≥0) :
-    ((A.negPow hA h s : H →ₗ[ℂ] H).toPMap ⊤).ker = ⊥ := by
-  rw [eq_bot_iff]
-  intro f hf
-  obtain ⟨y, rfl, hy⟩ := mem_ker_iff.1 hf
-  have hy' : A.negPow hA h s y = A.negPow hA h s 0 :=
-    hy.trans (_root_.map_zero (A.negPow hA h s)).symm
-  exact (Submodule.mem_bot ℂ).2 (injective_negPow hpos hker s hy')
-
 /-- `A^s A^{-s} = 1`. -/
 theorem posPow_negPow (s : ℝ≥0) (f : H) :
-    A.posPow hA h s ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ = f := by
-  refine inverse_apply_eq (ker_toPMap_negPow hpos hker s) (x := ⟨f, Submodule.mem_top⟩) ?_
-  rfl
+    A.posPow hA h s ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ = f :=
+  ContinuousLinearMap.inverse_toPMap_top_apply _ (injective_negPow hpos hker s) f
 
 /-- `A^{-s} A^s = 1` on the domain of `A^s`. -/
 theorem negPow_posPow (s : ℝ≥0) (u : (A.posPow hA h s).domain) :
-    A.negPow hA h s (A.posPow hA h s u) = u := by
-  obtain ⟨f, hf⟩ := LinearMap.mem_range.1 ((posPow_domain s).le u.2)
-  have hu : u = ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ := Subtype.ext hf.symm
-  rw [hu, posPow_negPow hpos hker]
+    A.negPow hA h s (A.posPow hA h s u) = u :=
+  ContinuousLinearMap.apply_inverse_toPMap_top _ (injective_negPow hpos hker s) u
+
+/-- If `A^{-s} f = v`, then `v` lies in the domain of `A^s` and `A^s v = f`. -/
+theorem posPow_apply_of_negPow_apply_eq {s : ℝ≥0} {f v : H} (hv : A.negPow hA h s f = v) :
+    ∃ hv' : v ∈ (A.posPow hA h s).domain, A.posPow hA h s ⟨v, hv'⟩ = f := by
+  subst hv
+  exact ⟨negPow_mem_posPow_domain s f, posPow_negPow hpos hker s f⟩
 
 /-- `A^s` is the unique operator on the range of `A^{-s}` inverting it: `A^s u = f` exactly when
 `u = A^{-s} f`. -/
@@ -373,8 +249,8 @@ theorem posPow_apply_eq_iff (s : ℝ≥0) (u : (A.posPow hA h s).domain) (f : H)
   · rintro rfl
     exact (negPow_posPow hpos hker s u).symm
   · intro hu
-    have hu' : u = ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ := Subtype.ext hu
-    rw [hu', posPow_negPow hpos hker]
+    rw [show u = ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ from Subtype.ext hu,
+      posPow_negPow hpos hker]
 
 /-- The positive powers are self-adjoint. -/
 theorem isSelfAdjoint_posPow (s : ℝ≥0) : IsSelfAdjoint (A.posPow hA h s) :=
@@ -384,19 +260,19 @@ theorem isSelfAdjoint_posPow (s : ℝ≥0) : IsSelfAdjoint (A.posPow hA h s) :=
 /-- **The identity power.** `A^0` is defined everywhere and is the identity. -/
 theorem posPow_zero : A.posPow hA h 0 = (LinearMap.id : H →ₗ[ℂ] H).toPMap ⊤ := by
   have hdom : (A.posPow hA h 0).domain = ⊤ := by
-    rw [posPow_domain, negPow_zero hpos]
-    exact LinearMap.range_eq_top.2 fun f ↦ ⟨f, rfl⟩
-  refine LinearPMap.ext hdom fun u hu hu' ↦ ?_
+    rw [posPow_domain, negPow_zero hpos, LinearMap.range_eq_top]
+    exact fun f ↦ ⟨f, by simp⟩
+  refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
   rw [posPow_apply_eq_iff hpos hker, negPow_zero hpos, one_apply_eq_self]
-  rfl
+  exact (LinearMap.toPMap_apply LinearMap.id ⊤ ⟨x, hx₂⟩).symm
 
 /-- **`A^1 = A`.** -/
 theorem posPow_one : A.posPow hA h 1 = A := by
   have hdom : (A.posPow hA h 1).domain = A.domain := by
-    rw [posPow_domain, negPow_one hpos, range_greenOperator_of_ker_eq_bot hker]
-  refine LinearPMap.ext hdom fun u hu hu' ↦ ?_
+    rw [posPow_domain, negPow_one hpos, A.range_greenOperator_of_ker_eq_bot hA h hker]
+  refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
   rw [posPow_apply_eq_iff hpos hker, negPow_one hpos,
-    greenOperator_apply_apply_of_ker_eq_bot hker]
+    A.greenOperator_apply_apply_of_ker_eq_bot hA h hker]
 
 /-- On an eigenvector of `A` for the eigenvalue `λ > 0`, the positive power `A^s` acts as
 multiplication by `λ ^ s`. -/
@@ -409,8 +285,7 @@ theorem posPow_apply_of_apply_eq_smul (s : ℝ≥0) (u : A.domain) {lam : ℝ} (
     rw [ContinuousLinearMap.map_smul, negPow_apply_of_apply_eq_smul hpos s u hlam hu, smul_smul,
       ← Complex.ofReal_mul, ← Real.rpow_add hlam, add_neg_cancel, Real.rpow_zero,
       Complex.ofReal_one, one_smul]
-  have hmem : (u : H) ∈ (A.posPow hA h s).domain := hneg ▸ negPow_mem_posPow_domain s _
-  exact ⟨hmem, (posPow_apply_eq_iff hpos hker s _ _).2 hneg.symm⟩
+  exact posPow_apply_of_negPow_apply_eq hpos hker hneg
 
 end PosPow
 
@@ -422,24 +297,12 @@ variable {hA h} {U : H →L[ℂ] H} (hUdom : ∀ u ∈ A.domain, U u ∈ A.domai
   (hUA : ∀ u : A.domain, A ⟨U u, hUdom u u.2⟩ = U (A u))
 include hUA
 
-/-- A bounded operator commuting with a strictly positive operator `A` commutes with its Green
-operator. -/
-theorem commute_greenOperator (hker : A.ker = ⊥) : Commute (A.greenOperator hA h) U := by
-  refine ContinuousLinearMap.ext fun f ↦ ?_
-  simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply]
-  -- Both `G (U f)` and `U (G f)` solve `A v = U f`.
-  set u : A.domain := ⟨A.greenOperator hA h f, A.greenOperator_mem_domain hA h f⟩
-  have h1 := greenOperator_apply_apply_of_ker_eq_bot (hA := hA) (h := h) hker
-    ⟨U u, hUdom u u.2⟩
-  rw [hUA, apply_greenOperator_of_ker_eq_bot hker] at h1
-  exact h1
-
 /-- **Equivariance of the negative powers.** A bounded operator commuting with a strictly
 positive operator `A`, such as the unitary action of a symmetry group of `A`, commutes with every
 negative power `A^{-s}`. -/
 theorem commute_negPow (hker : A.ker = ⊥) (s : ℝ≥0) : Commute (A.negPow hA h s) U := by
   rw [negPow_def, CFC.rpow_def]
-  exact Commute.cfc_nnreal (commute_greenOperator hUdom hUA hker) _
+  exact Commute.cfc_nnreal (A.commute_greenOperator hA h hUdom hUA hker) _
 
 /-- **Equivariance of the positive powers.** A bounded operator `U` commuting with a strictly
 positive operator `A` preserves the domain of every positive power `A^s` and commutes with it. -/
@@ -451,8 +314,7 @@ theorem posPow_apply_of_commute (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u
     rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
       (commute_negPow hUdom hUA hker s).eq, ContinuousLinearMap.mul_def,
       ContinuousLinearMap.comp_apply, negPow_posPow hpos hker]
-  have hmem : U u ∈ (A.posPow hA h s).domain := hneg ▸ negPow_mem_posPow_domain s _
-  exact ⟨hmem, (posPow_apply_eq_iff hpos hker s _ _).2 hneg.symm⟩
+  exact posPow_apply_of_negPow_apply_eq hpos hker hneg
 
 end Commute
 
