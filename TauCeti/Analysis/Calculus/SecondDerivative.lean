@@ -19,6 +19,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The second derivative as a derivative
@@ -106,6 +107,8 @@ Morse-theoretic definitions that use them.
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
+* `TauCeti.isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero`: in one variable the second
+  derivative is invertible exactly when the second iterated derivative is nonzero.
 * `TauCeti.fderiv_scalar_comp_eq_zero_iff`: post-composition with a scalar function whose
   derivative is nonzero preserves vanishing of the differential.
 * `TauCeti.fderiv_fderiv_scalar_comp_apply`: the second-order chain rule through a function of
@@ -533,6 +536,18 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
   have h := iteratedFDeriv_two_apply (𝕜 := 𝕜) φ t ![a, b]
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [Fin.prod_univ_two] using h.symm
+
+/-- The second derivative of a scalar function of one variable, a map from `𝕜` to the linear forms
+on `𝕜`, is invertible exactly when the second iterated derivative is nonzero. -/
+theorem isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero {φ : 𝕜 → 𝕜} {t : 𝕜} :
+    (fderiv 𝕜 (fderiv 𝕜 φ) t).IsInvertible ↔ iteratedDeriv 2 φ t ≠ 0 := by
+  have h : fderiv 𝕜 (fderiv 𝕜 φ) t =
+      (ContinuousLinearMap.toSpanSingletonCLE : 𝕜 ≃L[𝕜] 𝕜 →L[𝕜] 𝕜) ∘L
+        ContinuousLinearMap.toSpanSingleton 𝕜 (iteratedDeriv 2 φ t) := by
+    ext
+    simpa using fderiv_fderiv_apply_eq_smul_iteratedDeriv φ t 1 1
+  rw [h, ContinuousLinearMap.isInvertible_equiv_comp,
+    ContinuousLinearMap.isInvertible_toSpanSingleton_iff]
 
 /-- Scalar post-composition with nonzero derivative preserves criticality. -/
 @[simp]
