@@ -103,7 +103,7 @@ theorem ιTensorObj_superTensorObjIsoTensorObj_hom_f (τ : ZMod 2) (K L : Cochai
     HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r n h ≫
         (superTensorObjIsoTensorObj τ K L).hom.f n =
       (((-1 : ℤˣ) ^ (τ * r) : ℤˣ) : ℤ) •
-        ((K.X p ◁ (L.signedDifferentialXIso τ r).hom) ≫
+        ((K.X p ◁ (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).hom) ≫
           HomologicalComplex.ιTensorObj K L p r n h) := by
   simp [superTensorObjIsoTensorObj]
 
@@ -114,10 +114,9 @@ theorem ιTensorObj_superTensorObjIsoTensorObj_inv_f (τ : ZMod 2) (K L : Cochai
     (p r n : ℤ) (h : p + r = n) :
     HomologicalComplex.ιTensorObj K L p r n h ≫ (superTensorObjIsoTensorObj τ K L).inv.f n =
       (((-1 : ℤˣ) ^ (τ * r) : ℤˣ) : ℤ) •
-        ((K.X p ◁ (L.signedDifferentialXIso τ r).inv) ≫
+        ((K.X p ◁ (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).inv) ≫
           HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r n h) := by
-  rw [superTensorObjIsoTensorObj, whiskerLeftIso_inv, HomologicalComplex.ι_whiskerLeft,
-    CochainComplex.signedDifferentialIso_inv_f, whiskerLeft_zsmul, Preadditive.zsmul_comp]
+  simp [superTensorObjIsoTensorObj, whiskerLeft_zsmul]
 
 end Conjugation
 
@@ -126,6 +125,11 @@ section Differential
 universe u
 
 variable {R : Type u} [CommRing R]
+
+/-- The sign of the super differential is that of the parity `p + τ`. -/
+private theorem negOnePow_mul_uzpow (p : ℤ) (τ : ZMod 2) :
+    p.negOnePow * (-1 : ℤˣ) ^ τ = (-1 : ℤˣ) ^ ((p : ZMod 2) + τ) := by
+  rw [uzpow_add, uzpow_intCast_eq_negOnePow]
 
 /-- **The super differential.** For complexes of modules, the differential of the super tensor
 product `superTensorObj τ K L` on the summand `K^p ⊗ L^r` is `d ⊗ 1 + (-1)^(p + τ) 1 ⊗ d`: the
@@ -137,12 +141,12 @@ theorem ιTensorObj_superTensorObj_d (τ : ZMod 2) (K L : CochainComplex (Module
       (K.d p p' ▷ (L.signedDifferential τ).X r) ≫
           HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p' r n' (by omega) +
         (((-1 : ℤˣ) ^ ((p : ZMod 2) + τ) : ℤˣ) : ℤ) •
-          ((K.X p ◁ ((L.signedDifferentialXIso τ r).hom ≫ L.d r r' ≫
-              (L.signedDifferentialXIso τ r').inv)) ≫
+          ((K.X p ◁ ((L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).hom ≫ L.d r r' ≫
+              (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r').inv)) ≫
             HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r' n' (by omega)) := by
-  rw [HomologicalComplex.ι_tensorObj_d' K (L.signedDifferential τ) h hp hr hn,
-    CochainComplex.signedDifferential_d_eq, whiskerLeft_zsmul, Preadditive.zsmul_comp,
-    Units.smul_def, smul_smul, ← Units.val_mul, ← uzpow_intCast_eq_negOnePow, ← uzpow_add]
+  simp only [HomologicalComplex.ι_tensorObj_d' K (L.signedDifferential τ) h hp hr hn,
+    CochainComplex.scaleDifferential_d_eq, whiskerLeft_zsmul, Preadditive.zsmul_comp,
+    Units.smul_def, smul_smul, ← Units.val_mul, negOnePow_mul_uzpow]
 
 end Differential
 
@@ -188,17 +192,16 @@ theorem ιTensorObj_superBraiding_hom_f (τ τ' : ZMod 2) (K L : CochainComplex 
     HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r n h ≫
         (superBraiding τ τ' K L).hom.f n =
       (((-1 : ℤˣ) ^ ((p + τ) * (r + τ')) : ℤˣ) : ℤ) •
-        ((K.X p ◁ (L.signedDifferentialXIso τ r).hom) ≫ (β_ (K.X p) (L.X r)).hom ≫
-          (L.X r ◁ (K.signedDifferentialXIso τ' p).inv) ≫
+        ((K.X p ◁ (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).hom) ≫
+          (β_ (K.X p) (L.X r)).hom ≫
+          (L.X r ◁ (K.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ') p).inv) ≫
           HomologicalComplex.ιTensorObj L (K.signedDifferential τ') r p n (by omega)) := by
-  simp only [superBraiding]
-  rw [HomologicalComplex.zsmul_f_apply, Preadditive.comp_zsmul, HomologicalComplex.comp_f,
-    HomologicalComplex.comp_f, ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
-    braiding_eq_koszulBraiding, koszulBraiding_hom, Preadditive.zsmul_comp, Category.assoc,
-    HomologicalComplex.ιTensorObj, ι_koszulBraidingHom_assoc, koszulBraidingSummand_def,
-    Units.smul_def, Preadditive.zsmul_comp, Category.assoc,
-    ιTensorObj_superTensorObjIsoTensorObj_inv_f]
-  simp only [Preadditive.comp_zsmul, smul_smul, uzpow_superBraiding]
+  simp only [superBraiding, braiding_eq_koszulBraiding, koszulBraiding_hom,
+    ι_koszulBraidingHom_assoc, koszulBraidingSummand_def,
+    ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
+    ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
+    HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
+    Units.smul_def, smul_smul, uzpow_superBraiding]
 
 end Symmetry
 

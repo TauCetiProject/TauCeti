@@ -46,8 +46,8 @@ Three operations change gradings.
   (`TauCeti.ParityComplex.reindex`).
 
 Raw reindexing and the native shift differ by the parity change `Π^k` and by the sign
-`(-1)^(q k)` in degree `q`: `TauCeti.ParityComplex.reindexIsoShift` is an isomorphism
-`Π^k ⋙ reindex k ≅ shift k`, built from `CochainComplex.restrictionAddIsoShift`.
+`(-1)^(q k)` in degree `q`: `TauCeti.ParityComplex.parityShiftCompReindexIsoShift` is an
+isomorphism `Π^k ⋙ reindex k ≅ shift k`, built from `CochainComplex.restrictionAddIsoShift`.
 
 Every sign exponent here is read in `ZMod 2`, including for negative degrees: the parity of an
 integer `n` is `(n : ZMod 2)`, so that for instance a virtual dimension `d = -1` has odd parity.
@@ -71,8 +71,8 @@ An exponent computed with `Int.toNat` would instead give `0` there.
 * `TauCeti.ParityComplex.term_parityShift`, `TauCeti.ParityComplex.term_shift` and
   `TauCeti.ParityComplex.term_reindex`: the terms of `Π^k X`, of the native shift and of the raw
   reindexing.
-* `TauCeti.ParityComplex.reindexIsoShift`: the raw reindexing after the parity change `Π^k` is
-  the native shift, up to the degreewise sign `(-1)^(q k)`.
+* `TauCeti.ParityComplex.parityShiftCompReindexIsoShift`: the raw reindexing after the parity
+  change `Π^k` is the native shift, up to the degreewise sign `(-1)^(q k)`.
 
 ## References
 
@@ -162,6 +162,17 @@ def termMap {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
 theorem termMap_def {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
     termMap f q σ = (X.termIso rfl).hom ≫ (f (σ - q)).f q ≫ (Y.termIso rfl).inv := (rfl)
 
+/-- The component of the identity is the identity. -/
+@[simp]
+theorem termMap_id (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) : termMap (𝟙 X) q σ = 𝟙 _ := by
+  simp [termMap_def, termIso]
+
+/-- The components of even chain maps compose. -/
+@[reassoc, simp]
+theorem termMap_comp {X Y Z : ParityComplex C} (f : X ⟶ Y) (g : Y ⟶ Z) (q : ℤ) (σ : ZMod 2) :
+    termMap (f ≫ g) q σ = termMap f q σ ≫ termMap g q σ := by
+  simp [termMap_def, termIso]
+
 /-- Transporting the component of an even chain map along an equality of independent
 parities. -/
 @[reassoc]
@@ -210,6 +221,22 @@ theorem term_parityShift (k : ZMod 2) (X : ParityComplex C) (q : ℤ) (σ : ZMod
 def parityShiftZeroIso : parityShift C 0 ≅ 𝟭 (ParityComplex C) :=
   GradedObject.comapEq (CochainComplex C ℤ) (funext add_zero) ≪≫ Pi.comapId _ _
 
+/-- The component of `Π^0 X ≅ X` on the part of independent parity `τ` is the identification
+`X (τ + 0) = X τ`. -/
+@[simp]
+theorem parityShiftZeroIso_hom_app_apply (X : ParityComplex C) (τ : ZMod 2) :
+    (parityShiftZeroIso (C := C)).hom.app X τ = eqToHom (congrArg X (add_zero τ)) := by
+  -- The second factor `Pi.comapId` has identity components.
+  exact Category.comp_id (obj := CochainComplex C ℤ) _
+
+/-- The component of `X ≅ Π^0 X` on the part of independent parity `τ` is the identification
+`X τ = X (τ + 0)`. -/
+@[simp]
+theorem parityShiftZeroIso_inv_app_apply (X : ParityComplex C) (τ : ZMod 2) :
+    (parityShiftZeroIso (C := C)).inv.app X τ = eqToHom (congrArg X (add_zero τ).symm) := by
+  -- The first factor, the inverse of `Pi.comapId`, has identity components.
+  exact Category.id_comp (obj := CochainComplex C ℤ) _
+
 /-- Parity changes compose additively: `Π^k ⋙ Π^l ≅ Π^(k + l)`. Since `k + k = 0` in `ZMod 2`,
 together with `TauCeti.ParityComplex.parityShiftZeroIso` this shows that `Π^k` is an
 involution. -/
@@ -219,6 +246,24 @@ def parityShiftCompIso (k l : ZMod 2) :
     GradedObject.comapEq (CochainComplex C ℤ) (funext fun τ ↦ by
       simp only [Function.comp_apply]
       rw [add_assoc, add_comm l])
+
+/-- The component of `Π^l (Π^k X) ≅ Π^(k + l) X` on the part of independent parity `τ` is the
+identification `X ((τ + l) + k) = X (τ + (k + l))`. -/
+@[simp]
+theorem parityShiftCompIso_hom_app_apply (k l : ZMod 2) (X : ParityComplex C) (τ : ZMod 2) :
+    (parityShiftCompIso (C := C) k l).hom.app X τ =
+      eqToHom (congrArg X (show τ + l + k = τ + (k + l) by rw [add_assoc, add_comm l])) := by
+  -- The first factor `Pi.comapComp` has identity components.
+  exact Category.id_comp (obj := CochainComplex C ℤ) _
+
+/-- The component of `Π^(k + l) X ≅ Π^l (Π^k X)` on the part of independent parity `τ` is the
+identification `X (τ + (k + l)) = X ((τ + l) + k)`. -/
+@[simp]
+theorem parityShiftCompIso_inv_app_apply (k l : ZMod 2) (X : ParityComplex C) (τ : ZMod 2) :
+    (parityShiftCompIso (C := C) k l).inv.app X τ =
+      eqToHom (congrArg X (show τ + (k + l) = τ + l + k by rw [add_assoc, add_comm l])) := by
+  -- The second factor, the inverse of `Pi.comapComp`, has identity components.
+  exact Category.comp_id (obj := CochainComplex C ℤ) _
 
 variable (C)
 
@@ -279,23 +324,26 @@ variable (C) in
 /-- **Raw reindexing and the native shift.** Reindexing by `k : ℤ` after the parity change
 `Π^k` is the native shift by `k`, through multiplication by `(-1)^(q k)` in degree `q`
 (`CochainComplex.restrictionAddIsoShift`). -/
-noncomputable def reindexIsoShift (k : ℤ) : parityShift C k ⋙ reindex C k ≅ shift C k :=
+noncomputable def parityShiftCompReindexIsoShift (k : ℤ) :
+    parityShift C k ⋙ reindex C k ≅ shift C k :=
   Functor.isoWhiskerLeft (parityShift C k)
     (NatIso.pi fun _ ↦ CochainComplex.restrictionAddIsoShift C k)
 
 /-- In degree `q`, the comparison between raw reindexing and the native shift is multiplication
 by `(-1)^(q k)`. -/
 @[simp]
-theorem reindexIsoShift_hom_app_apply_f (k : ℤ) (X : ParityComplex C) (τ : ZMod 2) (q : ℤ) :
-    (((reindexIsoShift C k).hom.app X) τ).f q =
+theorem parityShiftCompReindexIsoShift_hom_app_apply_f (k : ℤ) (X : ParityComplex C) (τ : ZMod 2)
+    (q : ℤ) :
+    (((parityShiftCompReindexIsoShift C k).hom.app X) τ).f q =
       (q * k).negOnePow • 𝟙 ((X (τ + k)).X (q + k)) :=
   CochainComplex.restrictionAddIsoShift_hom_app_f C k (X (τ + k)) q
 
 /-- The inverse comparison between raw reindexing and the native shift has the same degreewise
 sign `(-1)^(q k)`. -/
 @[simp]
-theorem reindexIsoShift_inv_app_apply_f (k : ℤ) (X : ParityComplex C) (τ : ZMod 2) (q : ℤ) :
-    (((reindexIsoShift C k).inv.app X) τ).f q =
+theorem parityShiftCompReindexIsoShift_inv_app_apply_f (k : ℤ) (X : ParityComplex C) (τ : ZMod 2)
+    (q : ℤ) :
+    (((parityShiftCompReindexIsoShift C k).inv.app X) τ).f q =
       (q * k).negOnePow • 𝟙 ((X (τ + k)).X (q + k)) :=
   CochainComplex.restrictionAddIsoShift_inv_app_f C k (X (τ + k)) q
 
