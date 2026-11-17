@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Vertex.VertexOperator
 public import Mathlib.RingTheory.Binomial
-import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Delta expansions of local formal distributions
@@ -232,7 +231,7 @@ theorem mulSub_pow_comp_shift {N : Type*} [AddCommGroup N] (φ : M →+ N) (k : 
   induction k generalizing m n with
   | zero => rfl
   | succ k ih =>
-    simp only [pow_succ', AddMonoid.End.mul_apply, mulSub_apply]
+    simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, mulSub_apply]
     have h : m + 1 + s = m + s + 1 := by omega
     rw [ih, ih, h, ← map_sub]
 

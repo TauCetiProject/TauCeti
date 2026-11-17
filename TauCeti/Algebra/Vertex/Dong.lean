@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Vertex.NormalOrder
 public import TauCeti.Algebra.Vertex.ResidueProduct
-import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Vertex.FormalDistribution
 import Mathlib.Tactic.Abel
 
@@ -118,7 +117,8 @@ private theorem mulSub₂₃_pow_swap₁₂ (k : ℕ) (D : Dist3 M) :
   | zero => rfl
   | succ k ih =>
     have h1 (E : Dist3 M) : mulSub₂₃ (swap₁₂ E) = swap₁₂ (mulSub₁₃ E) := rfl
-    rw [pow_succ', AddMonoid.End.mul_apply, ih, h1, pow_succ', AddMonoid.End.mul_apply]
+    rw [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, ih, h1, pow_succ',
+      AddMonoid.End.coe_mul, Function.comp_apply]
 
 private theorem mulSub₁₃_pow_swap₁₂ (k : ℕ) (D : Dist3 M) :
     (mulSub₁₃ ^ k) (swap₁₂ D) = swap₁₂ ((mulSub₂₃ ^ k) D) := by
@@ -134,19 +134,19 @@ private theorem mulSub₂₃_apply_eq_sub (D : Dist3 M) :
 private theorem commute_mulSub₁₃_mulSub₁₂ :
     Commute (mulSub₁₃ : AddMonoid.End (Dist3 M)) mulSub₁₂ := by
   ext D a b c
-  simp only [AddMonoid.End.mul_apply, mulSub₁₃_apply, mulSub₁₂_apply]
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub₁₃_apply, mulSub₁₂_apply]
   abel
 
 private theorem commute_mulSub₂₃_mulSub₁₂ :
     Commute (mulSub₂₃ : AddMonoid.End (Dist3 M)) mulSub₁₂ := by
   ext D a b c
-  simp only [AddMonoid.End.mul_apply, mulSub₂₃_apply, mulSub₁₂_apply]
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub₂₃_apply, mulSub₁₂_apply]
   abel
 
 private theorem commute_mulSub₂₃_mulSub₁₃ :
     Commute (mulSub₂₃ : AddMonoid.End (Dist3 M)) mulSub₁₃ := by
   ext D a b c
-  simp only [AddMonoid.End.mul_apply, mulSub₂₃_apply, mulSub₁₃_apply]
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub₂₃_apply, mulSub₁₃_apply]
   abel
 
 private theorem mulSub₁₂_pow_eval (k : ℕ) (D : Dist3 M) (a b c : ℤ) :
@@ -155,7 +155,7 @@ private theorem mulSub₁₂_pow_eval (k : ℕ) (D : Dist3 M) (a b c : ℤ) :
   induction k generalizing a b with
   | zero => rfl
   | succ k ih =>
-    simp only [pow_succ', AddMonoid.End.mul_apply, mulSub₁₂_apply,
+    simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, mulSub₁₂_apply,
       FormalDistribution.mulSub_apply, ih]
 
 private theorem mulSub₁₃_pow_eval (k : ℕ) (D : Dist3 M) (a b c : ℤ) :
@@ -164,7 +164,7 @@ private theorem mulSub₁₃_pow_eval (k : ℕ) (D : Dist3 M) (a b c : ℤ) :
   induction k generalizing a c with
   | zero => rfl
   | succ k ih =>
-    simp only [pow_succ', AddMonoid.End.mul_apply, mulSub₁₃_apply,
+    simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, mulSub₁₃_apply,
       FormalDistribution.mulSub_apply, ih]
 
 private theorem mulSub₂₃_pow_eval (k : ℕ) (D : Dist3 M) (a b c : ℤ) :
@@ -173,7 +173,7 @@ private theorem mulSub₂₃_pow_eval (k : ℕ) (D : Dist3 M) (a b c : ℤ) :
   induction k generalizing b c with
   | zero => rfl
   | succ k ih =>
-    simp only [pow_succ', AddMonoid.End.mul_apply, mulSub₂₃_apply,
+    simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, mulSub₂₃_apply,
       FormalDistribution.mulSub_apply, ih]
 
 /-- Pointwise finite sums commute with `mulSub₂₃ ^ k`. -/
@@ -194,7 +194,7 @@ private theorem mulSub₂₃_pow_finsum (k : ℕ) (H : ℕ → Dist3 M)
         fun a b c ↦ ∑ᶠ i, (mulSub₂₃ (H i)) a b c := by
       ext a b c
       exact (finsum_sub_distrib (hfin a (b + 1) c) (hfin a b (c + 1))).symm
-    rw [pow_succ, AddMonoid.End.mul_apply, hstep, ih _ hfin']
+    rw [pow_succ, AddMonoid.End.coe_mul, Function.comp_apply, hstep, ih _ hfin']
     ext a b c
     exact finsum_congr fun _ ↦ rfl
 
@@ -228,31 +228,31 @@ private theorem mulSub₂₃_pow_eq_zero_of_split :
   | r₀ + 1, 0, t, E, E₁, E₂, _, hsplit, h₂₃, h₁₃ => by
     have hE₂ : E₂ = 0 := by simpa using h₁₃
     have hexp : r₀ + 1 + 0 + t = (r₀ + 1) + t := by omega
-    rw [hexp, hsplit, hE₂, add_zero, pow_add, AddMonoid.End.mul_apply, h₂₃, map_zero]
+    rw [hexp, hsplit, hE₂, add_zero, pow_add, AddMonoid.End.coe_mul, Function.comp_apply,
+      h₂₃, map_zero]
   | r₀ + 1, s + 1, t, E, E₁, E₂, h₁₂, hsplit, h₂₃, h₁₃ => by
     have hexp : r₀ + 1 + (s + 1) + t = (r₀ + 1 + s + t) + 1 := by omega
-    rw [hexp, pow_succ, AddMonoid.End.mul_apply, mulSub₂₃_apply_eq_sub, map_sub]
+    rw [hexp, pow_succ, AddMonoid.End.coe_mul, Function.comp_apply, mulSub₂₃_apply_eq_sub, map_sub]
     have h₁ : (mulSub₂₃ ^ (r₀ + 1 + s + t)) (mulSub₁₃ E) = 0 :=
       mulSub₂₃_pow_eq_zero_of_split
         (E₁ := mulSub₁₃ E₁) (E₂ := mulSub₁₃ E₂)
-        (by rw [← AddMonoid.End.mul_apply,
-              (commute_mulSub₁₃_mulSub₁₂.pow_right (r₀ + 1)).symm.eq,
-              AddMonoid.End.mul_apply, h₁₂, map_zero])
+        (by simpa only [AddMonoid.End.coe_mul, Function.comp_apply, h₁₂, map_zero] using
+          DFunLike.congr_fun (commute_mulSub₁₃_mulSub₁₂.pow_right (r₀ + 1)).symm.eq E)
         (by rw [hsplit, map_add])
-        (by rw [← AddMonoid.End.mul_apply, (commute_mulSub₂₃_mulSub₁₃.pow_left t).eq,
-              AddMonoid.End.mul_apply, h₂₃, map_zero])
-        (by rwa [← AddMonoid.End.mul_apply, ← pow_succ])
+        (by simpa only [AddMonoid.End.coe_mul, Function.comp_apply, h₂₃, map_zero] using
+          DFunLike.congr_fun (commute_mulSub₂₃_mulSub₁₃.pow_left t).eq E₁)
+        (by simpa only [pow_succ, AddMonoid.End.coe_mul, Function.comp_apply] using h₁₃)
     have h₂ : (mulSub₂₃ ^ (r₀ + 1 + s + t)) (mulSub₁₂ E) = 0 := by
       have hexp' : r₀ + 1 + s + t = r₀ + (s + 1) + t := by omega
       rw [hexp']
       exact mulSub₂₃_pow_eq_zero_of_split
         (E₁ := mulSub₁₂ E₁) (E₂ := mulSub₁₂ E₂)
-        (by rwa [← AddMonoid.End.mul_apply, ← pow_succ])
+        (by simpa only [pow_succ, AddMonoid.End.coe_mul, Function.comp_apply] using h₁₂)
         (by rw [hsplit, map_add])
-        (by rw [← AddMonoid.End.mul_apply, (commute_mulSub₂₃_mulSub₁₂.pow_left t).eq,
-              AddMonoid.End.mul_apply, h₂₃, map_zero])
-        (by rw [← AddMonoid.End.mul_apply, (commute_mulSub₁₃_mulSub₁₂.pow_left (s + 1)).eq,
-              AddMonoid.End.mul_apply, h₁₃, map_zero])
+        (by simpa only [AddMonoid.End.coe_mul, Function.comp_apply, h₂₃, map_zero] using
+          DFunLike.congr_fun (commute_mulSub₂₃_mulSub₁₂.pow_left t).eq E₁)
+        (by simpa only [AddMonoid.End.coe_mul, Function.comp_apply, h₁₃, map_zero] using
+          DFunLike.congr_fun (commute_mulSub₁₃_mulSub₁₂.pow_left (s + 1)).eq E₂)
     rw [h₁, h₂, sub_zero]
 
 end Dist3
@@ -304,8 +304,8 @@ theorem nonnegResidueProduct_left {A B C : VertexOperator R V} {r s t : ℕ}
   -- Step 2: Apply `mulSub₂₃_pow_eq_zero_of_split`, commute `mulSub₁₂ ^ n`, and take residue at `0`.
   have hD0 : (mulSub₂₃ ^ (r + s + t)) D = 0 := mulSub₂₃_pow_eq_zero_of_split h₁₂ hjac h₂₃ h₁₃
   have hDn : (mulSub₂₃ ^ (r + s + t)) ((mulSub₁₂ ^ n) D) = 0 := by
-    rw [← AddMonoid.End.mul_apply, ((commute_mulSub₂₃_mulSub₁₂.pow_left _).pow_right n).eq,
-      AddMonoid.End.mul_apply, hD0, map_zero]
+    simpa only [AddMonoid.End.coe_mul, Function.comp_apply, hD0, map_zero] using
+      DFunLike.congr_fun ((commute_mulSub₂₃_mulSub₁₂.pow_left (r + s + t)).pow_right n).eq D
   have hres : (fun b c ↦ ((mulSub₁₂ ^ n) D) 0 b c) =
       (nonnegResidueProduct n A B).commutatorDistribution C := by
     funext m c
@@ -489,7 +489,7 @@ theorem normalOrder_left {A B C : VertexOperator R V} {r s t : ℕ}
   have hAB0 := (isLocalOfOrder_iff_mulSub_pow_eq_zero A B r).mp hAB
   let ev : Module.End R V →+ V := LinearMap.evalAddMonoidHom v
   have h₁₂ : (mulSub₁₂ ^ (r + 1)) E = 0 := by
-    rw [pow_succ, AddMonoid.End.mul_apply, htel]
+    rw [pow_succ, AddMonoid.End.coe_mul, Function.comp_apply, htel]
     funext p b c'
     exact (mulSub₁₂_pow_eval r _ p b c').trans
       ((FormalDistribution.mulSub_pow_comp

@@ -8,12 +8,10 @@ module
 public import Mathlib.Algebra.Group.Hom.Defs
 
 /-!
-# Multiplicative maps, monoid homomorphisms, and endomorphisms
+# Multiplicative maps applied entrywise
 
 A multiplicative map applied entrywise to a scalar multiple `c • v` of a family gives
 `f c • (f ∘ v)`. This is the scalar companion of Mathlib's `map_comp_mul` and `map_comp_pow`.
-
-Multiplication in `Monoid.End M` and `AddMonoid.End M` acts on elements by composition.
 
 Composing a monoid homomorphism with an injective one does not change whether it is trivial.
 This is the triviality companion of Mathlib's `MonoidHom.cancel_left`.
@@ -21,23 +19,10 @@ This is the triviality companion of Mathlib's `MonoidHom.cancel_left`.
 ## Main results
 
 * `TauCeti.map_comp_smul`: `f ∘ (c • v) = f c • (f ∘ v)`.
-* `Monoid.End.mul_apply`, `AddMonoid.End.mul_apply`: `(f * g) x = f (g x)`.
 * `MonoidHom.comp_eq_one_iff`: for injective `g`, `g.comp f = 1 ↔ f = 1`.
 -/
 
 public section
-
-namespace Monoid.End
-
--- `@[simp]` is omitted to avoid colliding with `Monoid.End.coe_mul`.
-/-- Multiplication in `Monoid.End M` acts on elements by function composition. -/
-@[to_additive mul_apply
-/-- Multiplication in `AddMonoid.End M` acts on elements by function composition. -/]
-theorem mul_apply {M : Type*} [MulOne M] (f g : Monoid.End M) (x : M) :
-    (f * g) x = f (g x) :=
-  (rfl)
-
-end Monoid.End
 
 namespace TauCeti
 
