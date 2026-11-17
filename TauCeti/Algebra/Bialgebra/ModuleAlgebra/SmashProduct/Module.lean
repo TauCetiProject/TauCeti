@@ -183,12 +183,13 @@ noncomputable def moduleOfCompatible [AddCommMonoid M] [Module R M]
     [μ.IsCompatibleAction M] : Module μ.SmashProduct M :=
   Module.compHom M (lsmulAlgHom μ M).toRingHom
 
-private theorem moduleOfCompatible_smul [AddCommMonoid M] [Module R M]
+@[simp]
+theorem moduleOfCompatible_smul [AddCommMonoid M] [Module R M]
     [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
     [μ.IsCompatibleAction M] (z : μ.SmashProduct) (m : M) :
     let _ := moduleOfCompatible μ M
     z • m = lsmulAlgHom μ M z m :=
-  rfl
+  (rfl)
 
 theorem isScalarTower_moduleOfCompatible [AddCommMonoid M] [Module R M]
     [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
@@ -217,15 +218,17 @@ noncomputable def moduleA [AddCommMonoid M] [Module μ.SmashProduct M] : Module 
 noncomputable def moduleH [AddCommMonoid M] [Module μ.SmashProduct M] : Module H M :=
   Module.compHom M μ.includeH.toRingHom
 
-private theorem moduleA_smul [AddCommMonoid M] [Module μ.SmashProduct M] (a : A) (m : M) :
+@[simp]
+theorem moduleA_smul [AddCommMonoid M] [Module μ.SmashProduct M] (a : A) (m : M) :
     let _ := moduleA μ M
     a • m = μ.includeA a • m :=
-  rfl
+  (rfl)
 
-private theorem moduleH_smul [AddCommMonoid M] [Module μ.SmashProduct M] (h : H) (m : M) :
+@[simp]
+theorem moduleH_smul [AddCommMonoid M] [Module μ.SmashProduct M] (h : H) (m : M) :
     let _ := moduleH μ M
     h • m = μ.includeH h • m :=
-  rfl
+  (rfl)
 
 theorem isSmashModule_moduleA_moduleH [AddCommMonoid M] [Module μ.SmashProduct M] :
     let _ := moduleA μ M
@@ -348,6 +351,62 @@ noncomputable def moduleEquiv [AddCommMonoid M] [Module R M] :
   invFun := toSmashModule μ M
   left_inv := toSmashModule_ofSmashModule μ M
   right_inv := ofSmashModule_toSmashModule μ M
+
+@[simp]
+theorem moduleEquiv_apply_moduleA [AddCommMonoid M] [Module R M]
+    (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ }) :
+    (moduleEquiv μ M m).moduleA = let _ := m.1; moduleA μ M :=
+  (rfl)
+
+@[simp]
+theorem moduleEquiv_apply_moduleH [AddCommMonoid M] [Module R M]
+    (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ }) :
+    (moduleEquiv μ M m).moduleH = let _ := m.1; moduleH μ M :=
+  (rfl)
+
+@[simp]
+theorem moduleEquiv_apply_moduleA_smul [AddCommMonoid M] [Module R M]
+    (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ })
+    (a : A) (x : M) :
+    (let _ := (moduleEquiv μ M m).moduleA; a • x) = (let _ := m.1; μ.includeA a • x) :=
+  (rfl)
+
+@[simp]
+theorem moduleEquiv_apply_moduleH_smul [AddCommMonoid M] [Module R M]
+    (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ })
+    (h : H) (x : M) :
+    (let _ := (moduleEquiv μ M m).moduleH; h • x) = (let _ := m.1; μ.includeH h • x) :=
+  (rfl)
+
+@[simp]
+theorem moduleEquiv_symm_apply_val [AddCommMonoid M] [Module R M]
+    (d : CompatibleActionData μ M) :
+    ((moduleEquiv μ M).symm d).1 =
+      let _ := d.moduleA
+      let _ := d.towerA
+      let _ := d.moduleH
+      let _ := d.towerH
+      let _ := d.compatible
+      moduleOfCompatible μ M :=
+  (rfl)
+
+@[simp]
+theorem moduleEquiv_symm_apply_smul [AddCommMonoid M] [Module R M]
+    (d : CompatibleActionData μ M) (z : μ.SmashProduct) (x : M) :
+    (let _ := ((moduleEquiv μ M).symm d).1; z • x) =
+      let _ := d.moduleA
+      let _ := d.towerA
+      let _ := d.moduleH
+      let _ := d.towerH
+      let _ := d.compatible
+      lsmulAlgHom μ M z x :=
+  (rfl)
+
+theorem moduleEquiv_symm_apply_smash_smul [AddCommMonoid M] [Module R M]
+    (d : CompatibleActionData μ M) (a : A) (h : H) (x : M) :
+    (let _ := ((moduleEquiv μ M).symm d).1; μ.smash a h • x) =
+      (let _ := d.moduleA; let _ := d.moduleH; a • (h • x)) := by
+  simp
 
 end ModuleEquivalence
 

@@ -368,9 +368,11 @@ private theorem bilinLift_toEnd_apply {μ : LeftModuleAlgebra R H A} {C : Type*}
     induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ => simp [hy₁, hy₂, mul_add]
     | tmul b k =>
+      -- Reassociate to expose `fH h * fA b` so the covariance law `hf.mul_eq_sum` applies.
+      have hreassoc : (fA a * fH h) * (fA b * fH k) = fA a * (fH h * fA b) * fH k := by
+        simp only [mul_assoc]
       rw [toEnd_tmul_tmul, μ.smashMulPure_eq_sum (ℛ R h), map_sum, bilinLift_tmul, bilinLift_tmul,
-        show (fA a * fH h) * (fA b * fH k) = fA a * (fH h * fA b) * fH k by simp [mul_assoc],
-        hf.mul_eq_sum (ℛ R h) b, Finset.mul_sum, Finset.sum_mul]
+        hreassoc, hf.mul_eq_sum (ℛ R h) b, Finset.mul_sum, Finset.sum_mul]
       refine Finset.sum_congr rfl fun i _ => ?_
       simp [bilinLift_tmul, map_mul, mul_assoc]
 
