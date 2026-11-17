@@ -48,8 +48,8 @@ ring, it also proves that the common kernel of the `Lᵢ` modulo `J` consists of
 * `TauCeti.freePairing_freeRemove_left`: `B(Lᵢ x, y) = B(x, θᵢ y)` when `χ i j = χ j i` for all
   `j`.
 * `TauCeti.isSymm_freePairing`: `B` is symmetric when `χ` is.
-* `TauCeti.freePairing_freeHalfScale_left`, `TauCeti.freePairing_star_star`: `B` is invariant
-  under diagonal scalings, and under word reversal when `χ` is symmetric.
+* `TauCeti.freePairing_freeHalfScale_left`: every diagonal scaling is self-adjoint for `B`.
+* `TauCeti.freePairing_star_star`: `B` is invariant under word reversal when `χ` is symmetric.
 * `TauCeti.freePairing_ι_pow_ι_pow`: in rank one,
   `B(θᵢⁿ, θᵢⁿ) = ∏_(k < n) (1 + χ i i + ⋯ + χ i iᵏ)`.
 * `TauCeti.mul_mem_halfRadical_left`, `TauCeti.mul_mem_halfRadical_right`: `J` is a left
@@ -193,7 +193,7 @@ theorem isSymm_freePairing (hχ : ∀ i j, χ i j = χ j i) : (freePairing χ).I
   | add a b ha hb => simp [ha, hb]
   | ι_mul i a ha => rw [freePairing_ι_mul_left, ha, freePairing_freeRemove_left χ (hχ i)]
 
-/-- The form is invariant under every diagonal scaling: `B(c · x, z) = B(x, c · z)`. Both sides
+/-- Every diagonal scaling is self-adjoint for the form: `B(c · x, z) = B(x, c · z)`. Both sides
 vanish unless `x` and `z` have the same multidegree `β`, where they are multiplied by `c^β`. -/
 theorem freePairing_freeHalfScale_left (c : I → R) (x z : FreeAlgebra R I) :
     freePairing χ (freeHalfScale c x) z = freePairing χ x (freeHalfScale c z) := by
