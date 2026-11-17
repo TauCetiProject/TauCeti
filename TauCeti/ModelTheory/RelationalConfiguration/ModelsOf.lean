@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
+public import TauCeti.ModelTheory.Infinitary.Theory
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import Mathlib.ModelTheory.Encoding
@@ -54,6 +55,8 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
   `modelsOfTheory_singleton`, `modelsOfTheory_insert`, `modelsOfTheory_union`, and
   `modelsOfTheory_iUnion`: model classes of first-order theories turn unions of theories into
   intersections of model classes.
+* `TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`: the model class of a
+  countable first-order theory is the model class of its `L_{ω₁ω}` conjunction.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_realize`: on a countable carrier, the
   configurations realizing an infinitary formula with countable branching at a fixed valuation
   form a measurable set.
@@ -235,6 +238,19 @@ theorem modelsOfTheory_eq_biInter_modelsOf (T : L.Theory) :
     modelsOfTheory (V := V) T = ⋂ φ ∈ T, modelsOf φ.toOmega := by
   ext c
   simp
+
+/-- **A countable first-order theory has the model class of one `L_{ω₁ω}` sentence.** Embedding a
+countable first-order theory into `L_{ω₁ω}` and taking `Theoryω.conjunction` yields the same model
+class on every carrier `V`. -/
+@[simp]
+theorem modelsOf_conjunction_image_toOmega {T : L.Theory}
+    (h : (BoundedFormula.toOmega '' T).Countable) :
+    modelsOf (V := V) (Theoryω.conjunction (BoundedFormula.toOmega '' T) h) =
+      modelsOfTheory T := by
+  ext c
+  rw [mem_modelsOf, mem_modelsOfTheory,
+    @Theoryω.realize_conjunction_iff L _ V c.toStructure h,
+    @Theoryω.model_image_toOmega_iff L V c.toStructure T]
 
 /-- Every configuration is a model of the empty theory. -/
 @[simp]

@@ -61,8 +61,6 @@ by Morley's theorem.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`: the model class of a
-  countable first-order theory is the model class of its `L_{ω₁ω}` conjunction.
 * `FirstOrder.Language.LEquiv.quotientIsoSetoidOnTheoryEquiv`,
   `FirstOrder.Language.LEquiv.lift_mk_quotient_isoSetoidOnTheory_onTheory`,
   `FirstOrder.Language.LEquiv.countable_quotient_isoSetoidOnTheory_onTheory_iff`, and
@@ -101,19 +99,6 @@ open FirstOrder FirstOrder.Language Cardinal Ordinal Set
 namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
-
-/-- **A countable first-order theory has the model class of one `L_{ω₁ω}` sentence.** Embedding a
-countable first-order theory into `L_{ω₁ω}` and taking `Theoryω.conjunction` yields the same model
-class on every carrier `V`. -/
-@[simp]
-theorem modelsOf_conjunction_image_toOmega {T : L.Theory}
-    (h : (BoundedFormula.toOmega '' T).Countable) :
-    modelsOf (V := V) (Theoryω.conjunction (BoundedFormula.toOmega '' T) h) =
-      modelsOfTheory T := by
-  ext c
-  rw [mem_modelsOf, mem_modelsOfTheory,
-    @Theoryω.realize_conjunction_iff L _ V c.toStructure h,
-    @Theoryω.model_image_toOmega_iff L V c.toStructure T]
 
 variable (V) in
 /-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
