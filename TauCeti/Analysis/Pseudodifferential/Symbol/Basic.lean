@@ -36,6 +36,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
+  a family of smooth functions indexed by symbols and closed under these derivatives satisfies
+  all symbol estimates once it satisfies the order-`m` bound
+  (`TauCeti.Symbol.exists_norm_mixedDeriv_le_of_deriv_eq`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so do a constant
   (`TauCeti.Symbol.const`) and the multiplication `ψ(x) id` by a smooth real function `ψ`
@@ -60,8 +63,10 @@ symbols are closed under the operations above, and they form a two-sided ideal u
 (`TauCeti.Symbol.IsSmoothing.comp_right`, `TauCeti.Symbol.IsSmoothing.comp_left`). A smooth
 coefficient vanishing at all large frequencies is smoothing
 (`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`,
-`TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), while in positive dimension a nonzero
-constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
+`TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), also when the radius beyond which it
+vanishes depends on the compact set of positions
+(`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
+dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -826,6 +831,54 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
   rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
     Pi.zero_apply]
 
+/-- Let `F a` be a family of smooth functions of the position and the frequency, indexed by the
+symbols `a` of every order, whose coordinate derivatives are again members of the family:
+`∂_{x_j} (F a) = F (S j a)` with `S j a` of the order of `a`, and `∂_{ξ_j} (F a) = F (T j a)` with
+`T j a` of one order less. If every member satisfies the order-`m` bound `C ⟨ξ⟩ ^ m` on compact
+sets of positions, then every member satisfies all symbol estimates of its order. -/
+theorem exists_norm_mixedDeriv_le_of_deriv_eq
+    (F : ∀ {m : ℝ}, Symbol n V W m → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (S : ∀ {m : ℝ}, Fin n → Symbol n V W m → Symbol n V W m)
+    (T : ∀ {m : ℝ}, Fin n → Symbol n V W m → Symbol n V W (m - 1))
+    (hF : ∀ {m : ℝ} (a : Symbol n V W m), ContDiff ℝ ∞ (F a))
+    (hS : ∀ {m : ℝ} (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n),
+      coordinateDeriv [j] (fun y ↦ F a (y, ξ)) x = F (S j a) (x, ξ))
+    (hT : ∀ {m : ℝ} (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n),
+      coordinateDeriv [j] (fun η ↦ F a (x, η)) ξ = F (T j a) (x, ξ))
+    (hbound : ∀ {m : ℝ} (a : Symbol n V W m) {K : Set (CoordinateSpace n)}, IsCompact K →
+      ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖F a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (F a) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  obtain ⟨D, hD⟩ : ∃ D, α.length + β.length = D := ⟨_, rfl⟩
+  induction D generalizing m α β with
+  | zero =>
+    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
+      simpa [List.length_eq_zero_iff] using hD
+    obtain ⟨C, hC0, hC⟩ := hbound a hK
+    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+  | succ D ih =>
+    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
+    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
+      · simp at hD
+      · obtain ⟨C, hC0, hC⟩ := ih (S j a) α' [] (by simpa using hD)
+        refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+        have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+            coordinateDeriv [j] (fun y ↦ F a (y, q.2)) q.1) = F (S j a) :=
+          funext fun q ↦ hS a j q.1 q.2
+        rw [← mixedDeriv_coordinateDeriv_fst (hF a), hfun]
+        exact hC x hx ξ
+    · have hlen : α.length + β'.length = D := by
+        simp only [List.length_append, List.length_singleton] at hD
+        omega
+      obtain ⟨C, hC0, hC⟩ := ih (T j a) α β' hlen
+      refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+      have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+          coordinateDeriv [j] (fun η ↦ F a (q.1, η)) q.2) = F (T j a) :=
+        funext fun q ↦ hT a j q.1 q.2
+      rw [← mixedDeriv_coordinateDeriv_snd, hfun, ← order_sub_one_sub_length]
+      exact hC x hx ξ
+
 end Deriv
 
 section Spatial
@@ -1377,37 +1430,52 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
   obtain ⟨a', ha'⟩ := ha (m'' - m')
   exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
+/-- The symbol estimates of every order `m` for a smooth coefficient that vanishes, on each compact
+set `K` of positions, at all frequencies of norm at least some radius `R_K`. -/
+private theorem exists_bound_of_forall_isCompact_eq_zero
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hR : ∀ K : Set (CoordinateSpace n), IsCompact K →
+      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0)
+    (m : ℝ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  -- The radius is taken on the closed `1`-neighbourhood of `K`, so that the coefficient vanishes
+  -- on a neighbourhood of each `(x, ξ)` with `x ∈ K` and `‖ξ‖ > R`; on `K × closedBall 0 R` the
+  -- continuous quotient of the derivative by the weight is bounded.
+  obtain ⟨R, hR⟩ := hR _ (hK.cthickening (r := 1))
+  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
+    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
+    |>.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div
+      hw fun p => (rpow_weight_pos p.2 _).ne').continuousOn
+  refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h := hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
+    rw [Real.norm_eq_abs, Pi.div_apply] at h
+    rw [← div_le_iff₀ (rpow_weight_pos ξ _)]
+    exact (le_abs_self _).trans (h.trans (le_max_left M 0))
+  · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) =ᶠ[nhds x] 0 := by
+      filter_upwards [Metric.ball_mem_nhds x one_pos] with y hy
+      have hyK : y ∈ Metric.cthickening 1 K :=
+        Metric.thickening_subset_cthickening 1 K (Metric.mem_thickening_iff.2 ⟨x, hx, hy⟩)
+      have hy0 : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
+        Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+          fun η hη => hR y hyK η (le_of_lt hη)
+      rw [(hy0.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
+    rw [mixedDeriv_def, (hzero.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply,
+      norm_zero]
+    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+
 /-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
 of two cut-off expansions, is a symbol of every order `m`. -/
 def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
     (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) : Symbol n V W m where
   coefficient := f
   contDiff_coefficient := hf
-  exists_bound K hK α β := by
-    -- At frequencies of norm `> R` every mixed derivative vanishes; on the compact set
-    -- `K ×ˢ closedBall 0 R` the continuous quotient of the derivative by the weight is bounded.
-    have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
-        (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
-      (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
-        Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
-    have hKR := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
-    obtain ⟨M, hM⟩ := hKR.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div hw
-      fun p => (rpow_weight_pos p.2 _).ne').continuousOn
-    refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
-    rcases le_or_gt ‖ξ‖ R with hξ | hξ
-    · have h := (le_abs_self _).trans ((hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
-        (le_max_left M 0))
-      rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
-      exact h
-    · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) = 0 := by
-        funext y
-        have hy : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
-          Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-            fun η hη => hR y η (le_of_lt hη)
-        rw [(hy.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
-        rfl
-      rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply, norm_zero]
-      exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+  exists_bound _ hK α β := exists_bound_of_forall_isCompact_eq_zero hf
+    (fun _ _ => ⟨R, fun x _ ξ hξ => hR x ξ hξ⟩) m hK α β
 
 @[simp]
 theorem coefficient_ofBoundedFrequencySupport
@@ -1423,10 +1491,20 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
 
+/-- A symbol is smoothing if on every compact set `K` of positions it vanishes at all frequencies
+of norm at least some radius `R_K`. The radius may grow with `K`, as it does for the difference
+`χ(L(x) ξ) - χ(ξ)` of a frequency cutoff and its composition with a position-dependent linear
+change of frequency `L(x)`. -/
+theorem isSmoothing_of_forall_isCompact_coefficient_eq_zero {a : Symbol n V W m}
+    (ha : ∀ K : Set (CoordinateSpace n), IsCompact K →
+      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
+  isSmoothing_iff_forall_exists_bound.2 fun m' _ hK α β =>
+    exists_bound_of_forall_isCompact_eq_zero a.contDiff_coefficient ha m' hK α β
+
 /-- A symbol vanishing at every frequency of norm at least `R` is smoothing. -/
 theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
     (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
-  fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
+  isSmoothing_of_forall_isCompact_coefficient_eq_zero fun _ _ => ⟨R, fun x _ ξ hξ => ha x ξ hξ⟩
 
 /-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
 least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/
