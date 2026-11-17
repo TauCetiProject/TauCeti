@@ -56,9 +56,10 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   `ContinuousCohomology.map` consumes.
 * `TauCeti.SmoothDiscreteTopRep`, `TauCeti.smoothDiscreteι`: the smooth discrete objects as a full
   subcategory of `TopRep R G`, and its inclusion functor.
-* `TauCeti.DiscreteRep`: the discrete `G`-modules with continuous `G`-action as a category, the
-  source side of the dictionary in bundled form; its morphisms are Mathlib's
-  `Representation.IntertwiningMap`s.
+* `TauCeti.DiscreteRep`, `TauCeti.DiscreteRep.mkIso`: the discrete `G`-modules with continuous
+  `G`-action as a category (the source side of the dictionary in bundled form, with Mathlib's
+  `Representation.IntertwiningMap`s as morphisms), and building isomorphisms from
+  `Representation.Equiv`.
 * `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`: the two translations as functors.
 * `TauCeti.smoothDiscreteResFunctor`: restriction to a subgroup as a functor between the smooth
   discrete subcategories; `TauCeti.smoothDiscreteResTopRep` is its object map as a transparent
@@ -710,6 +711,22 @@ rather than with the representations `TauCeti.DiscreteRep.ρ` that
 lemma DiscreteRep.equivariant {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y) (g : G) (x : X.V) :
     f.toLinearMap (g • x) = g • f.toLinearMap x := by
   simpa using f.isIntertwining _ _ g x
+
+/-- An equivalence between the underlying representations of two discrete `G`-modules induces an
+isomorphism in `DiscreteRep R G`, mirroring `Rep.mkIso`. -/
+def DiscreteRep.mkIso {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) : X ≅ Y where
+  hom := e.toIntertwiningMap
+  inv := e.symm.toIntertwiningMap
+  hom_inv_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.symm_apply_apply
+  inv_hom_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.apply_symm_apply
+
+/-- The forward morphism of `DiscreteRep.mkIso e` is `e.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_hom {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).hom = e.toIntertwiningMap := (rfl)
+
+/-- The inverse morphism of `DiscreteRep.mkIso e` is `e.symm.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_inv {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).inv = e.symm.toIntertwiningMap := (rfl)
 
 variable (R G)
 
