@@ -108,6 +108,14 @@ noncomputable def homMk {M N : FrobeniusModuleCat σ} (f : M.carrier ⟶ N.carri
     M ⟶ N :=
   InducedCategory.homMk ⟨f, h⟩
 
+/-- An isomorphism of linearized Frobenius modules from a module isomorphism intertwining the
+linearizations. -/
+noncomputable def isoMk {M N : FrobeniusModuleCat σ} (e : M.carrier ≅ N.carrier)
+    (h : (ModuleCat.extendScalars σ).map e.hom ≫ N.linearization.hom =
+      M.linearization.hom ≫ e.hom) :
+    M ≅ N :=
+  InducedCategory.isoMk (Endofunctor.Algebra.isoMk e h)
+
 @[simp] theorem forget_obj (M : FrobeniusModuleCat σ) : (forget σ).obj M = M.carrier := (rfl)
 
 @[simp] theorem forget_map {M N : FrobeniusModuleCat σ} (f : M ⟶ N) :
@@ -115,6 +123,12 @@ noncomputable def homMk {M N : FrobeniusModuleCat σ} (f : M.carrier ⟶ N.carri
 
 @[simp] theorem homMk_hom_f {M N : FrobeniusModuleCat σ} (f : M.carrier ⟶ N.carrier) (h) :
     (homMk f h).hom.f = f := (rfl)
+
+@[simp] theorem isoMk_hom_hom_f {M N : FrobeniusModuleCat σ} (e : M.carrier ≅ N.carrier) (h) :
+    (isoMk e h).hom.hom.f = e.hom := (rfl)
+
+@[simp] theorem isoMk_inv_hom_f {M N : FrobeniusModuleCat σ} (e : M.carrier ≅ N.carrier) (h) :
+    (isoMk e h).inv.hom.f = e.inv := (rfl)
 
 @[reassoc (attr := simp)]
 theorem map_hom_f_comp_linearization_hom {M N : FrobeniusModuleCat σ} (f : M ⟶ N) :
@@ -136,6 +150,12 @@ theorem hom_ext {M N : FrobeniusModuleCat σ} {f g : M ⟶ N} (h : f.hom.f = g.h
 
 instance : (forget σ).Faithful where
   map_injective h := hom_ext h
+
+/-- A morphism of linearized Frobenius modules is an isomorphism when its underlying module map
+is. -/
+instance : (forget σ).ReflectsIsomorphisms :=
+  inferInstanceAs
+    (inducedFunctor (toAlgebra (σ := σ)) ⋙ Endofunctor.Algebra.forget _).ReflectsIsomorphisms
 
 section Frobenius
 
@@ -159,10 +179,12 @@ theorem linearization_hom_eq :
 /-- The linearization in terms of the Frobenius: `L (s ⊗ m) = s • F m`. -/
 @[simp]
 theorem linearization_hom_tmul (s : S) (m : M.carrier) :
-    M.linearization.hom (s ⊗ₜ m) = s • M.frobenius m :=
-  (congrArg (fun φ : (ModuleCat.extendScalars σ).obj M.carrier ⟶ M.carrier ↦ φ (s ⊗ₜ m))
-    M.linearization_hom_eq).trans
-      (ModuleCat.extendScalarsHomEquivSemilinearMap_symm_apply_tmul σ M.frobenius s m)
+    M.linearization.hom (s ⊗ₜ m) = s • M.frobenius m := by
+  -- Here `s ⊗ₜ m` uses the module `S` over itself, while the lemma uses its restriction of scalars
+  -- along `σ`: the two module structures are equal by definition, but not syntactically, so the
+  -- lemma is applied with `exact` rather than rewritten.
+  rw [linearization_hom_eq]
+  exact ModuleCat.extendScalarsHomEquivSemilinearMap_symm_apply_tmul σ M.frobenius s m
 
 /-- The image of the Frobenius spans the module: the linearization is surjective. -/
 theorem span_range_frobenius : Submodule.span S (Set.range M.frobenius) = ⊤ := by
@@ -188,6 +210,11 @@ theorem map_comp_linearization_hom_iff {M N : FrobeniusModuleCat σ}
     (f : M.carrier ⟶ N.carrier) :
     (ModuleCat.extendScalars σ).map f ≫ N.linearization.hom = M.linearization.hom ≫ f ↔
       ∀ m, f (M.frobenius m) = N.frobenius (f m) := by
+  -- Both sides of `h` evaluated at `1 ⊗ m` are, by definition, `L (1 ⊗ f m)` and `f (L (1 ⊗ m))`:
+  -- `(extendScalars σ).map f` sends `1 ⊗ m` to `1 ⊗ f m` (`ModuleCat.ExtendScalars.map_tmul`). That
+  -- lemma and `ModuleCat.comp_apply` cannot be rewritten with, because `1 ⊗ m` here uses the module
+  -- `S` over itself rather than its restriction of scalars along `σ`; so the identifications are
+  -- left to definitional unfolding.
   refine ⟨fun h m ↦ ?_, fun h ↦ ModuleCat.ExtendScalars.hom_ext fun m ↦ ?_⟩
   · rw [frobenius_apply, frobenius_apply]
     exact (congrArg (fun φ : (ModuleCat.extendScalars σ).obj M.carrier ⟶ N.carrier ↦
@@ -210,6 +237,18 @@ noncomputable def homMkOfFrobenius {M N : FrobeniusModuleCat σ} (f : M.carrier 
 @[simp] theorem homMkOfFrobenius_hom_f {M N : FrobeniusModuleCat σ} (f : M.carrier ⟶ N.carrier)
     (h) : (homMkOfFrobenius f h).hom.f = f := (rfl)
 
+/-- An isomorphism of linearized Frobenius modules from a module isomorphism intertwining the
+Frobenii. -/
+noncomputable def isoMkOfFrobenius {M N : FrobeniusModuleCat σ} (e : M.carrier ≅ N.carrier)
+    (h : ∀ m, e.hom (M.frobenius m) = N.frobenius (e.hom m)) : M ≅ N :=
+  isoMk e ((map_comp_linearization_hom_iff e.hom).mpr h)
+
+@[simp] theorem isoMkOfFrobenius_hom_hom_f {M N : FrobeniusModuleCat σ}
+    (e : M.carrier ≅ N.carrier) (h) : (isoMkOfFrobenius e h).hom.hom.f = e.hom := (rfl)
+
+@[simp] theorem isoMkOfFrobenius_inv_hom_f {M N : FrobeniusModuleCat σ}
+    (e : M.carrier ≅ N.carrier) (h) : (isoMkOfFrobenius e h).inv.hom.f = e.inv := (rfl)
+
 end Frobenius
 
 section OfFrobenius
@@ -224,6 +263,10 @@ variable (M : ModuleCat.{u} S) (F : M →ₛₗ[σ] M)
   linearization := asIso ((ModuleCat.extendScalarsHomEquivSemilinearMap σ M M).symm F)
 
 @[simp] theorem ofFrobenius_carrier : (ofFrobenius M F).carrier = M := (rfl)
+
+theorem ofFrobenius_linearization_hom :
+    (ofFrobenius M F).linearization.hom =
+      (ModuleCat.extendScalarsHomEquivSemilinearMap σ M M).symm F := (rfl)
 
 @[simp] theorem frobenius_ofFrobenius : (ofFrobenius M F).frobenius = F :=
   (ModuleCat.extendScalarsHomEquivSemilinearMap σ M M).apply_symm_apply F
@@ -291,16 +334,15 @@ private theorem rightUnitor_comm (M : FrobeniusModuleCat σ) :
 /-- The associator of linearized Frobenius modules: that of the underlying modules. -/
 noncomputable def associator (M N P : FrobeniusModuleCat σ) :
     tensorObj (tensorObj M N) P ≅ tensorObj M (tensorObj N P) :=
-  InducedCategory.isoMk (Endofunctor.Algebra.isoMk
-    (α_ M.carrier N.carrier P.carrier) (associator_comm M N P))
+  isoMk (α_ M.carrier N.carrier P.carrier) (associator_comm M N P)
 
 /-- The left unitor of linearized Frobenius modules: that of the underlying modules. -/
 noncomputable def leftUnitor (M : FrobeniusModuleCat σ) : tensorObj (tensorUnit σ) M ≅ M :=
-  InducedCategory.isoMk (Endofunctor.Algebra.isoMk (λ_ M.carrier) (leftUnitor_comm M))
+  isoMk (λ_ M.carrier) (leftUnitor_comm M)
 
 /-- The right unitor of linearized Frobenius modules: that of the underlying modules. -/
 noncomputable def rightUnitor (M : FrobeniusModuleCat σ) : tensorObj M (tensorUnit σ) ≅ M :=
-  InducedCategory.isoMk (Endofunctor.Algebra.isoMk (ρ_ M.carrier) (rightUnitor_comm M))
+  isoMk (ρ_ M.carrier) (rightUnitor_comm M)
 
 noncomputable instance : MonoidalCategoryStruct (FrobeniusModuleCat σ) where
   tensorObj := tensorObj
@@ -383,10 +425,25 @@ noncomputable instance : MonoidalCategory (FrobeniusModuleCat σ) :=
 noncomputable instance : (forget σ).Monoidal :=
   Monoidal.fromInducedMonoidal (forget σ) (forgetInducingFunctorData σ)
 
+@[simp] theorem forget_ε : Functor.LaxMonoidal.ε (forget σ) = 𝟙 (𝟙_ (ModuleCat.{u} S)) := (rfl)
+
+@[simp] theorem forget_η : η (forget σ) = 𝟙 (𝟙_ (ModuleCat.{u} S)) := (rfl)
+
+@[simp] theorem forget_μ (M N : FrobeniusModuleCat σ) :
+    Functor.LaxMonoidal.μ (forget σ) M N = 𝟙 (M.carrier ⊗ N.carrier) := (rfl)
+
+@[simp] theorem forget_δ (M N : FrobeniusModuleCat σ) :
+    δ (forget σ) M N = 𝟙 (M.carrier ⊗ N.carrier) := (rfl)
+
 /-- The Frobenius of a tensor product is the tensor product of the Frobenii. -/
 @[simp]
 theorem tensor_frobenius_tmul (M N : FrobeniusModuleCat σ) (m : M.carrier) (n : N.carrier) :
     (M ⊗ N).frobenius (m ⊗ₜ n) = M.frobenius m ⊗ₜ N.frobenius n := by
+  -- By `tensor_linearization_hom`, `(M ⊗ N).frobenius (m ⊗ n)` is by definition
+  -- `(L_M ⊗ L_N) (δ (1 ⊗ (m ⊗ n)))`, and `δ (1 ⊗ (m ⊗ n)) = (1 ⊗ m) ⊗ (1 ⊗ n)`
+  -- (`ModuleCat.extendScalars_δ_tmul`). Neither can be rewritten with: the carrier of `M ⊗ N` is
+  -- `M.carrier ⊗ N.carrier` only after unfolding the induced monoidal structure, and the lemma is
+  -- stated with the change-of-rings tensor product.
   rw [frobenius_apply M, frobenius_apply N]
   exact (frobenius_apply (M ⊗ N) (m ⊗ₜ n)).trans
     (congrArg (M.linearization.hom ⊗ₘ N.linearization.hom)
@@ -396,6 +453,10 @@ theorem tensor_frobenius_tmul (M N : FrobeniusModuleCat σ) (m : M.carrier) (n :
 @[simp]
 theorem tensorUnit_frobenius_apply (r : S) :
     (𝟙_ (FrobeniusModuleCat σ)).frobenius r = σ r :=
+  -- The Frobenius of the unit sends `r` to `η (1 ⊗ r)` (`tensorUnit_linearization_hom`), and
+  -- `η` is the multiplication `S ⊗_{S,σ} S → S` (`ModuleCat.extendScalars_η`). Mathlib's
+  -- `ModuleCat.restrictScalars_η` computes the adjoint of `η`, the unit `S → S` of restriction
+  -- of scalars, as `r ↦ σ r`: that adjoint is by definition `r ↦ η (1 ⊗ r)`, our left side.
   (frobenius_apply (𝟙_ (FrobeniusModuleCat σ)) r).trans (ModuleCat.restrictScalars_η σ r)
 
 end Monoidal
