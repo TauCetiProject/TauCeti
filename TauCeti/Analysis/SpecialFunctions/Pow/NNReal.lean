@@ -110,6 +110,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
   `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
 * `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
+* `ENNReal.tendsto_const_mul_rpow_one_div_atTop`: `M * c ^ (1 / p) → M` as `p → ∞` for
+  `c ∉ {0, ∞}` and any `M : ℝ≥0∞`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
@@ -316,6 +318,13 @@ theorem tendsto_rpow_one_div_atTop {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ 
   have hexp : Filter.Tendsto (fun p : ℝ ↦ 1 / p) Filter.atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop Filter.tendsto_id
   simpa [coe_rpow_of_ne_zero hc0] using tendsto_coe.2 (tendsto_const_nhds.nnrpow hexp (.inl hc0))
+
+/-- For a finite nonzero `c` and any `M : ℝ≥0∞`, `M * c ^ (1 / p)` tends to `M` as the real
+exponent `p` tends to infinity. -/
+theorem tendsto_const_mul_rpow_one_div_atTop (M : ℝ≥0∞) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
+    Filter.Tendsto (fun p : ℝ ↦ M * c ^ (1 / p)) Filter.atTop (𝓝 M) := by
+  simpa only [mul_one] using
+    Tendsto.const_mul (tendsto_rpow_one_div_atTop hc0 hc) (.inl one_ne_zero)
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
