@@ -319,7 +319,7 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
       PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = some (PLPath.ofSegments 𝕜
         ((raiseList b i π.dirDurations j₀ k₁ (π.dirDurations[j₀]'(by omega)).1
           (π.dirDurations[j₀]'(by omega)).2 θ).map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam))) := by
-  obtain ⟨j₀', k₁, θ', hj₀k₁, hk₁s, hθ₀', hθ₁', hmin, hfall, hcross, -, hrai⟩ :=
+  obtain ⟨j₀', k₁, θ, hj₀k₁, hk₁s, hθ₀, hθ₁, hmin, hfall, hcross, -, hrai⟩ :=
     π.exists_raise_toPLPath_eq hlam f i F hF (f (P.root i)) h1
   obtain ⟨z, hz⟩ := π.exists_minHeight_eq_intCast hlam f i F hF
   have hminH : (π.toPLPath 𝕜 f).minHeight F =
@@ -341,12 +341,8 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
   have hdpos : ∀ k (hk : k < D.length), 0 < D[k].2 := fun k hk ↦ by
     rw [getElem_dirDurations]; exact π.duration_pos _
   -- Heights of the realization at the vertices are the rational heights of the encoding.
-  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) := by
-    intro k
-    simp only [hgt, ← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
-    congr 1
-    refine List.map_congr_left fun p _ ↦ ?_
-    simp [seg, H, hF]
+  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) :=
+    apply_sum_take_map_smul D f F (P.coroot' i) hF
   have hgt_succ : ∀ k (hk : k < D.length), hgt (k + 1) = hgt k + D[k].2 * H D[k].1 := by
     intro k hk
     simp only [hgt, List.map_take]
@@ -368,18 +364,10 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
     have := hnegH j₀ hj₀lt le_rfl hj₀k₁
     rw [hDj₀] at this
     exact mul_neg_of_pos_of_neg (by rw [hd]; exact π.duration_pos _) this
-  set θ : ℚ := (z + 1 - hgt j₀) / (d * H τ) with hθ
-  have hθd : θ * (d * H τ) = z + 1 - hgt j₀ := div_mul_cancel₀ _ hdH.ne
-  have hθ' : θ' = θ := by
-    have hc := hcross
-    rw [hHF, hz, hFseg] at hc
-    have hc' : θ' * ((d * H τ : ℚ) : 𝕜) = ((z + 1 - hgt j₀ : ℚ) : 𝕜) := by
-      push_cast at hc ⊢
-      linear_combination hc
-    rw [hθ, Rat.cast_div, eq_div_iff (by exact_mod_cast hdH.ne), hc']
-  rw [hθ'] at hθ₀' hθ₁' hrai
-  have hθ₀ : 0 ≤ θ := by exact_mod_cast hθ₀'
-  have hθ₁ : θ < 1 := by exact_mod_cast hθ₁'
+  have hθd : θ * (d * H τ) = z + 1 - hgt j₀ := by
+    rw [hHF, hz, hFseg] at hcross
+    have hc : hgt j₀ + θ * (d * H τ) = z + 1 := by exact_mod_cast hcross
+    linarith
   -- The heights strictly between `j₀` and `k₁` lie strictly between `z` and `z + 1`.
   have hanti : ∀ m k, j₀ ≤ k → k + m ≤ k₁ → hgt (k + m) ≤ hgt k := by
     intro m
@@ -408,37 +396,24 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
     subst hkk
     rw [hgtk₁] at this
     exact nonneg_of_mul_nonneg_right (by linarith) (hdpos k hk)
-  -- Heights at breaks are congruent to `a_k ⟨τ_k λ, αᵢ^∨⟩` modulo integers.
-  have hcong : ∀ k (hk : k < D.length), ∃ m : ℤ,
-      hgt k - ((D.take k).map Prod.snd).sum * H D[k].1 = m := fun k hk ↦
-    π.linked_dirDurations.exists_sum_take_sub_mul_eq_intCast hlam (P.coroot' i) hk
   refine ⟨j₀, k₁, hj₀k₁, hk₁, θ, hθ₀, hθ₁.le, fun k hk hj₀k hkk ↦ ?_, fun k hk hj₀k hkk ↦ ?_,
     fun k hk hkk ↦ ?_, ?_, ?_⟩
   · have := hnegH k hk hj₀k hkk
     rw [hHdef] at this
     exact_mod_cast this
   · -- The height at the break is strictly between the integers `z` and `z + 1`.
-    rintro ⟨m, hm⟩
-    obtain ⟨m', hm'⟩ := hcong k hk
     obtain ⟨h₁, h₂⟩ := hbetween k hj₀k hkk
-    have hk' : hgt k = ((m' + m : ℤ) : ℚ) := by
-      simp only [H] at hm'
-      push_cast
-      linarith
-    rw [hk'] at h₁ h₂
-    have h₁' : z < m' + m := by exact_mod_cast h₁
-    have h₂' : m' + m < z + 1 := by exact_mod_cast h₂
-    omega
+    exact π.linked_dirDurations.not_exists_sum_take_mul_eq_intCast hlam (P.coroot' i) hk h₁ h₂
   · have := hrightH k hk hkk
     rw [hHdef] at this
     exact_mod_cast this
   · -- The height at the cut is the integer `z + 1`.
-    obtain ⟨m, hm⟩ := hcong j₀ hj₀lt
-    refine ⟨z + 1 - m, ?_⟩
-    rw [hDj₀] at hm ⊢
-    simp only [H] at hm hθd
-    push_cast
-    linear_combination hθd - hm
+    have hcut : hgt j₀ + θ * (D[j₀].2 * H D[j₀].1) = ((z + 1 : ℤ) : ℚ) := by
+      rw [hDj₀]
+      push_cast
+      linear_combination hθd
+    exact π.linked_dirDurations.exists_sum_take_add_mul_mul_eq_intCast hlam (P.coroot' i) hj₀lt θ
+      hcut
   · rw [hrai, hDj₀]
     congr 2
     simp only [raiseList, hseg, List.map_append, List.map_cons, List.map_map, List.map_take,
