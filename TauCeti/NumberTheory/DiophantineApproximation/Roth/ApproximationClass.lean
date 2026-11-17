@@ -196,12 +196,20 @@ theorem profileClass_of_forall_ne_zero {N : ℕ} {f : A → ℝ} (hf : ∀ a, f 
     profileClass N f = cellIndex N (logProfile f) := by
   rw [profileClass, dite_eq_right (not_exists.mpr hf)]
 
+open scoped Classical in
+/-- With a vanishing value, the class of a family is the corner `N • e a` of the simplex at a
+place `a` where the family vanishes. -/
+theorem profileClass_of_exists_eq_zero (N : ℕ) {f : A → ℝ} (h : ∃ a, f a = 0) :
+    ∃ a, f a = 0 ∧ profileClass N f = Pi.single a N :=
+  ⟨h.choose, h.choose_spec, by rw [profileClass, dite_eq_left h]⟩
+
 /-- With a vanishing value, the class of a family is a corner of the simplex, whose entries sum
 to `N`. -/
 theorem sum_profileClass_of_exists_eq_zero (N : ℕ) {f : A → ℝ} (h : ∃ a, f a = 0) :
     ∑ a, profileClass N f a = N := by
   classical
-  rw [profileClass, dite_eq_left h, Finset.sum_pi_single']
+  obtain ⟨a, -, ha⟩ := profileClass_of_exists_eq_zero N h
+  rw [ha, Finset.sum_pi_single']
   simp
 
 /-- The class of a family with values in `[0, 1]` is a label with `∑ a, c a ≤ N`. -/
@@ -223,9 +231,10 @@ theorem le_rpow_profileClass_div (N : ℕ) {f : A → ℝ} (hf₀ : ∀ a, 0 ≤
     (a : A) : f a ≤ (∏ b, f b) ^ ((profileClass N f a : ℝ) / N) := by
   by_cases h : ∃ a, f a = 0
   · classical
-    rw [profileClass, dite_eq_left h]
-    rcases eq_or_ne a h.choose with rfl | ha
-    · rw [h.choose_spec]
+    obtain ⟨b, hb, hc⟩ := profileClass_of_exists_eq_zero N h
+    rw [hc]
+    rcases eq_or_ne a b with rfl | ha
+    · rw [hb]
       exact rpow_nonneg (prod_nonneg fun b _ ↦ hf₀ b) _
     · simpa [ha] using hf₁ a
   · push Not at h

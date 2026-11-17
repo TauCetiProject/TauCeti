@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.NumberTheory.DiophantineApproximation.Roth.ApproximationClass
+public import TauCeti.NumberTheory.DiophantineApproximation.Roth.ApproximationFactor
 
 import Mathlib.Algebra.Algebra.IsSimpleRing
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
@@ -45,18 +45,8 @@ Bombieri–Gubler (6.9), which bounds every local factor by a power of the produ
 For `c = (1 - |S| / N) κ - 1 > 1` the gap is multiplicative above a threshold, so the solutions
 whose height lies in a window `(X, A X]` are at most `⌈log A / log ((c + 1) / 2)⌉` per class.
 
-## Main definitions
-
-* `NumberField.sPlaceAbsValue` and `NumberField.sPlaceWeight`: the absolute value and the weight
-  (`mult v` at an infinite place, `1` at a finite one) of a place of `Sinf ⊕ Sfin`.
-* `NumberField.approxFactor`: the local factor `min 1 (w v (β - α v)) ^ weight` at a place.
-* `NumberField.approxClass`: the approximation class of `β` at side `1 / N`.
-
 ## Main results
 
-* `NumberField.prod_approxFactor`: the product of the local factors is the left side of Roth's
-  inequality.
-* `NumberField.ncard_image_approxClass_le`: at most `(N + |S|).choose |S|` classes occur.
 * `NumberField.mulHeight₁_rpow_le_four_pow_mul_mulHeight₁_of_approxClass_eq`: the gap principle
   in relative multiplicative heights, `H(β) ^ ((1 - |S| / N) κ - 1) ≤ 4 ^ [K : ℚ] H(β')`.
 * `NumberField.mul_absLogHeight₁_sub_le_of_approxClass_eq`: the strong gap principle in absolute
@@ -79,99 +69,8 @@ open Finset Real Height Module
 namespace NumberField
 
 variable {K F : Type*} [Field K] [NumberField K] [Field F] [Algebra K F]
-variable (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
-
-/-! ### The places of `Sinf` and `Sfin` as one index type -/
-
-/-- The absolute value of `K` underlying a place of `Sinf` or of `Sfin`, the two sets of places
-being joined into the index type `Sinf ⊕ Sfin`. -/
-def sPlaceAbsValue : Sinf ⊕ Sfin → AbsoluteValue K ℝ :=
-  Sum.elim (fun v ↦ v.1.1) fun v ↦ v.1.1
-
-@[simp]
-theorem sPlaceAbsValue_inl (v : Sinf) : sPlaceAbsValue Sinf Sfin (.inl v) = v.1.1 :=
-  (rfl)
-
-@[simp]
-theorem sPlaceAbsValue_inr (v : Sfin) : sPlaceAbsValue Sinf Sfin (.inr v) = v.1.1 :=
-  (rfl)
-
-/-- The weight of a place of `Sinf` or of `Sfin` in Mathlib's relative normalization of heights:
-`mult v` at an infinite place and `1` at a finite place. -/
-noncomputable def sPlaceWeight : Sinf ⊕ Sfin → ℕ :=
-  Sum.elim (fun v ↦ v.1.mult) fun _ ↦ 1
-
-@[simp]
-theorem sPlaceWeight_inl (v : Sinf) : sPlaceWeight Sinf Sfin (.inl v) = v.1.mult :=
-  (rfl)
-
-@[simp]
-theorem sPlaceWeight_inr (v : Sfin) : sPlaceWeight Sinf Sfin (.inr v) = 1 :=
-  (rfl)
-
-/-! ### Local factors and approximation classes -/
-
-/-- The local approximation factor `min 1 (w v (β - α v)) ^ weight` of `β ∈ K` to the target
-`α v ∈ F` at a place `v` of `Sinf` or of `Sfin`, measured by the absolute value `w v` of `F` and
-raised to the weight `mult v` at an infinite place. Its product over the places is the left side
-of Roth's inequality (`NumberField.prod_approxFactor`). As for `NumberField.approxProd`, the data
-`w` and `α` are indexed by the underlying absolute value of a place. -/
-noncomputable def approxFactor (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ)
-    (α : AbsoluteValue K ℝ → F) (β : K) (a : Sinf ⊕ Sfin) : ℝ :=
-  min 1 (w (sPlaceAbsValue Sinf Sfin a) (algebraMap K F β - α (sPlaceAbsValue Sinf Sfin a))) ^
-    sPlaceWeight Sinf Sfin a
-
-variable {Sinf Sfin} (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ) (α : AbsoluteValue K ℝ → F)
-
-@[simp]
-theorem approxFactor_inl (β : K) (v : Sinf) :
-    approxFactor Sinf Sfin w α β (.inl v) =
-      min 1 (w v.1.1 (algebraMap K F β - α v.1.1)) ^ v.1.mult :=
-  (rfl)
-
-@[simp]
-theorem approxFactor_inr (β : K) (v : Sfin) :
-    approxFactor Sinf Sfin w α β (.inr v) = min 1 (w v.1.1 (algebraMap K F β - α v.1.1)) := by
-  simp [approxFactor]
-
-theorem approxFactor_nonneg (β : K) (a : Sinf ⊕ Sfin) : 0 ≤ approxFactor Sinf Sfin w α β a :=
-  pow_nonneg (le_min zero_le_one (AbsoluteValue.nonneg _ _)) _
-
-theorem approxFactor_le_one (β : K) (a : Sinf ⊕ Sfin) : approxFactor Sinf Sfin w α β a ≤ 1 :=
-  pow_le_one₀ (le_min zero_le_one (AbsoluteValue.nonneg _ _)) (min_le_left _ _)
-
-/-- The product of the local approximation factors of `β` is the left side of Roth's inequality,
-a product over the infinite places of `Sinf` with exponents `mult v` times a product over the
-finite places of `Sfin`. -/
-theorem prod_approxFactor (β : K) :
-    ∏ a, approxFactor Sinf Sfin w α β a =
-      (∏ v ∈ Sinf, min 1 (w v.1 (algebraMap K F β - α v.1)) ^ v.mult) *
-        ∏ v ∈ Sfin, min 1 (w v.1 (algebraMap K F β - α v.1)) := by
-  rw [Fintype.prod_sum_type]
-  simp only [approxFactor_inl, approxFactor_inr]
-  rw [Finset.prod_coe_sort Sinf (fun v ↦ min 1 (w v.1 (algebraMap K F β - α v.1)) ^ v.mult),
-    Finset.prod_coe_sort Sfin (fun v ↦ min 1 (w v.1 (algebraMap K F β - α v.1)))]
-
-variable (Sinf Sfin) in
-/-- The approximation class of `β ∈ K` at side `1 / N`: the class `TauCeti.profileClass` of its
-family of local approximation factors. When `β` is none of the targets it labels the cell of side
-`1 / N` containing the logarithmic profile `log Λ_v(β) / log Λ(β)` of the local factors; when `β`
-is the target at a place `v`, it is the corner `N • e v` of the simplex. -/
-noncomputable def approxClass (N : ℕ) (β : K) : Sinf ⊕ Sfin → ℕ :=
-  TauCeti.profileClass N (approxFactor Sinf Sfin w α β)
-
-theorem approxClass_def (N : ℕ) (β : K) :
-    approxClass Sinf Sfin w α N β = TauCeti.profileClass N (approxFactor Sinf Sfin w α β) :=
-  (rfl)
-
-/-- At most `(N + |S|).choose |S|` approximation classes occur, where `|S|` is the number of
-places of `Sinf` and `Sfin`. -/
-theorem ncard_image_approxClass_le (X : Set K) (N : ℕ) :
-    (approxClass Sinf Sfin w α N '' X).ncard ≤
-      (N + (#Sinf + #Sfin)).choose (#Sinf + #Sfin) := by
-  have h := TauCeti.ncard_image_profileClass_le (X := X) (approxFactor Sinf Sfin w α)
-    (fun β _ ↦ approxFactor_nonneg w α β) (fun β _ ↦ approxFactor_le_one w α β) N
-  simpa only [Fintype.card_sum, Fintype.card_coe, ← approxClass_def] using h
+variable {Sinf : Finset (InfinitePlace K)} {Sfin : Finset (FinitePlace K)}
+  (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ) (α : AbsoluteValue K ℝ → F)
 
 /-! ### The gap principle -/
 
@@ -228,6 +127,7 @@ private theorem max_approxFactor_le {N : ℕ} {κ : ℝ} (hκ : 0 ≤ κ) {β β
   refine max_le ?_ ?_
   · refine (TauCeti.le_rpow_profileClass_div N (approxFactor_nonneg w α β)
       (approxFactor_le_one w α β) a).trans ?_
+    rw [← approxClass_def]
     exact rpow_le_rpow (h₀ β) hβ hexp
   · refine (TauCeti.le_rpow_profileClass_div N (approxFactor_nonneg w α β')
       (approxFactor_le_one w α β') a).trans ?_
@@ -350,19 +250,14 @@ theorem mul_absLogHeight₁_sub_le_of_approxClass_eq
     (hle : absLogHeight₁ β ≤ absLogHeight₁ β') :
     ((1 - (#Sinf + #Sfin : ℝ) / N) * κ - 1) * absLogHeight₁ β - log 4 ≤ absLogHeight₁ β' := by
   have hd : (0 : ℝ) < finrank ℚ K := by exact_mod_cast finrank_pos
-  have hH := mulHeight₁_pos β
-  have hH' := mulHeight₁_pos β'
-  rw [absLogHeight₁_eq_div, absLogHeight₁_eq_div, logHeight₁_eq_log_mulHeight₁,
-    logHeight₁_eq_log_mulHeight₁] at hle ⊢
-  have hle' : mulHeight₁ β ≤ mulHeight₁ β' :=
-    (log_le_log_iff hH hH').mp (le_of_mul_le_mul_right (by simpa [div_eq_mul_inv] using hle)
-      (inv_pos.mpr hd))
+  set x := (1 - (#Sinf + #Sfin : ℝ) / N) * κ
   have h := log_le_log (by positivity)
     (mulHeight₁_rpow_le_four_pow_mul_mulHeight₁_of_approxClass_eq w α hwInf hwFin hN hκ hne hβ
-      hβ' hclass hle')
-  rw [log_rpow hH, log_mul (by positivity) hH'.ne', log_pow] at h
-  rw [mul_div_assoc', sub_le_iff_le_add, div_le_iff₀ hd]
-  rw [div_add' _ _ _ hd.ne', div_mul_cancel₀ _ hd.ne']
+      hβ' hclass (absLogHeight₁_le_absLogHeight₁_iff.mp hle))
+  rw [log_rpow (mulHeight₁_pos β), log_mul (by positivity) (mulHeight₁_pos β').ne', log_pow] at h
+  rw [absLogHeight₁_eq_div, absLogHeight₁_eq_div, logHeight₁_eq_log_mulHeight₁,
+    logHeight₁_eq_log_mulHeight₁]
+  field_simp
   linarith
 
 /-- **The count of solutions in a window** (Bombieri–Gubler, proof of Theorem 6.5.4). Let `w v`

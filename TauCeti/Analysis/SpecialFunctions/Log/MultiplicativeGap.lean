@@ -85,8 +85,9 @@ namespace Set
 
 /-- **Counting by classes with a multiplicative gap.** Let `h` measure the points of `s` in the
 window `(X, A X]`, with `X > 0`, and let `c` sort them into classes. If two distinct points of one
-class always have values at least a factor `ρ > 1` apart, then `s` has at most
-`⌈log A / log ρ⌉` points in each class. -/
+class always have values at least a factor `ρ > 1` apart, then the number of points of `s` is at
+most `⌈log A / log ρ⌉` times the number `(c '' s).ncard` of classes. The bound is stated with
+`Set.ncard`, which is `0` on infinite sets, so it says nothing when `s` or `c '' s` is infinite. -/
 theorem ncard_le_ceil_mul_ncard_of_gap {ι γ : Type*} {s : Set ι} (h : ι → ℝ) (c : ι → γ)
     {X A ρ : ℝ} (hX : 0 < X) (hρ : 1 < ρ) (hs : ∀ x ∈ s, h x ∈ Ioc X (A * X))
     (hgap : ∀ x ∈ s, ∀ y ∈ s, x ≠ y → c x = c y → h x ≤ h y → ρ * h x ≤ h y) :
