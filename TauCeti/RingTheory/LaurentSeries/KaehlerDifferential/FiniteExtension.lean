@@ -8,24 +8,18 @@ module
 public import TauCeti.RingTheory.LaurentSeries.Level.KaehlerDifferential
 
 /-!
-# Differential traces and residues in finite Laurent extensions
+# Differential traces and residues on scalar-extended Laurent one-forms
 
-Write `F = K⸨X⸩` and `Ω = ContinuousKaehlerDifferential K`. The trace on the scalar
-extension `L ⊗[F] Ω` sends `x ⊗ ω` to `Tr_{L/F}(x) ω`. For an isomorphism
-`e : L ≃ₐ[F] Level K d`, with `d` nonzero in `K`, this tensor product identifies with
-the continuous one-forms of the ramified level. The comparison sends `x ⊗ ω` to
-`e(x)` times the pullback of `ω`, and intertwines the two differential traces.
+Write `F = K⸨X⸩` and `Ω = ContinuousKaehlerDifferential K`. For any commutative `F`-algebra `L`,
+the trace on the scalar extension `L ⊗[F] Ω` sends `x ⊗ ω` to `Tr_{L/F}(x) ω`, and its residue is
+the `X⁻¹`-coefficient of this trace. For an isomorphism `e : L ≃ₐ[F] Level K d`, with `d` nonzero
+in `K`, this tensor product identifies with the continuous one-forms of the ramified level via
+`AlgEquiv.laurentDifferentialTensorEquiv`, sending `x ⊗ ω` to `e(x)` times the pullback of `ω`.
 
-Consequently the coefficient residue computed in the level parameter is independent
-of the chosen isomorphism: it equals the residue of the trace. This supplies a
-chart-independent residue on `L ⊗[F] Ω`, not just on coefficients of forms expressed
-in `dt`. When `K` is algebraically closed of characteristic zero, every finite
-extension has such a chart by `Level.algEquivOfFinrankEq` from
-`LaurentSeries.Puiseux.FiniteExtension`.
-
-The constructions reuse the scalar-extension comparison and trace-residue identity
-for explicit levels from `LaurentSeries.Level.KaehlerDifferential`. No topology or
-derivation on an arbitrary extension is chosen here.
+For formally étale `F`-algebras, the intrinsic continuous one-forms `Ω¹_cont(L/K)` identify with
+`L ⊗[F] Ω` via `Extension.ContinuousKaehlerDifferential.tensorEquiv`; the intrinsic trace, residue,
+and chart-independence results live in `KaehlerDifferential/Trace.lean` and
+`KaehlerDifferential/Level.lean` and are constructed from the base-change maps here.
 
 ## References
 
@@ -40,9 +34,9 @@ open scoped LaurentSeries
 
 namespace TauCeti.ContinuousKaehlerDifferential
 
-variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K⸨X⸩ L]
+variable {K : Type*} [Field K] (L : Type*) [CommRing L] [Algebra K⸨X⸩ L]
 
-/-- The differential trace on scalar-extended continuous forms: apply the field trace
+/-- The differential trace on scalar-extended continuous forms: apply the algebra trace
 on the first tensor factor, so that `x ⊗ ω` maps to `Tr(x) ω`. As with `Algebra.trace`,
 this is zero for infinite-dimensional extensions. -/
 noncomputable def traceBaseChange :
@@ -96,7 +90,7 @@ namespace AlgEquiv
 open TauCeti TauCeti.ContinuousKaehlerDifferential
 open TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential
 
-variable {K : Type*} [Field K] {L : Type*} [Field L] [Algebra K⸨X⸩ L]
+variable {K : Type*} [Field K] {L : Type*} [CommRing L] [Algebra K⸨X⸩ L]
   {d : ℕ+} [NeZero ((d : ℕ) : K)]
 
 /-- A level chart identifies scalar-extended forms with the continuous forms of that
@@ -136,47 +130,5 @@ theorem laurentDifferentialTensorEquiv_smul
   induction η using TensorProduct.inductionOn with
   | tmul y ω => simp [smul_tmul', smul_eq_mul, mul_smul]
   | add η θ hη hθ => simp [smul_add, hη, hθ]
-
-/-- Differential trace commutes with every level chart. In particular the trace
-transported from the explicit level is the trace on the first tensor factor. -/
-@[simp]
-theorem trace_laurentDifferentialTensorEquiv
-    (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
-    (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.trace K d
-        (e.laurentDifferentialTensorEquiv η) = traceBaseChange L η := by
-  induction η using TensorProduct.inductionOn with
-  | tmul x ω =>
-    simp only [laurentDifferentialTensorEquiv_tmul,
-      TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.trace_smul_map,
-      traceBaseChange_tmul]
-    rw [Algebra.trace_eq_of_algEquiv e]
-  | add η θ hη hθ => simp [hη, hθ]
-
-/-- **Trace-residue compatibility in any level chart.** The residue of the trace
-of a scalar-extended form is the coefficient residue in the level parameter. -/
-theorem residueBaseChange_eq_coeff (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
-    (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    residueBaseChange L η =
-      (TauCeti.LaurentSeries.Level.ringEquivLaurentSeries K d
-        (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K d
-          (e.laurentDifferentialTensorEquiv η))).coeff (-1) := by
-  rw [residueBaseChange_apply, ← trace_laurentDifferentialTensorEquiv e]
-  exact coeff_neg_one_equivLaurentSeries_trace _
-
-/-- **Independence of the level chart.** Two isomorphisms with ramified levels give
-the same coefficient residue on scalar-extended forms. The levels need not be
-identified in advance. -/
-theorem coeff_laurentDifferentialTensorEquiv_eq {n : ℕ+} [NeZero ((n : ℕ) : K)]
-    (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K d)
-    (e' : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries.Level K n)
-    (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    (TauCeti.LaurentSeries.Level.ringEquivLaurentSeries K d
-      (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K d
-        (e.laurentDifferentialTensorEquiv η))).coeff (-1) =
-    (TauCeti.LaurentSeries.Level.ringEquivLaurentSeries K n
-      (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K n
-        (e'.laurentDifferentialTensorEquiv η))).coeff (-1) := by
-  rw [← residueBaseChange_eq_coeff e, ← residueBaseChange_eq_coeff e']
 
 end AlgEquiv
