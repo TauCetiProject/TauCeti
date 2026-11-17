@@ -247,6 +247,8 @@ theorem SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap (f : M → M')
     funext u
     rw [SmoothForm.mpullback_prodMk_mpullback_prodMap f hf, SmoothForm.coe_mpullback,
       mpullback_apply_eq_compContinuousLinearMapCLM]
+    -- The sides agree by `Function.comp_apply` and `L = mfderiv f x`, up to the defeq of the
+    -- tangent space at `f x` with `E'`, which blocks rewriting with `Function.comp_apply`.
     rfl
   rw [hfun] at h
   refine h.unique ?_

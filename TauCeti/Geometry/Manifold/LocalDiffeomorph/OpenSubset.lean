@@ -42,6 +42,8 @@ subset can be carried, near any point of its source, to the ambient manifold.
   it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
+* `TauCeti.bijective_mfderiv_subtype_val`, `TauCeti.bijective_mfderiv_inclusion`: the inclusions
+  of an open subset in `M` and in a larger open subset have bijective differentials.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
   agrees near a point of its source with a partial diffeomorphism out of the ambient manifold.
 -/
@@ -256,6 +258,33 @@ theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
         refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 ?_
         exact contMDiffWithinAt_id.congr (fun z hz ↦ e.right_inv hz) (e.right_inv hy) }
   exact Φ.isLocalDiffeomorphAt I I n (mem_univ x)
+
+/-- The inclusion of an open subset has bijective differentials. -/
+theorem bijective_mfderiv_subtype_val {U : TopologicalSpace.Opens M} (x : U) :
+    Function.Bijective (mfderiv I I (Subtype.val : U → M) x) :=
+  ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).bijective
+
+/-- The differential of the inclusion of `V` in `M` factors through the inclusion of `V` in a
+larger open set `U`. -/
+theorem mfderiv_subtype_val_inclusion_apply {U V : TopologicalSpace.Opens M} (h : V ≤ U) (y : V)
+    (v : TangentSpace I y) :
+    mfderiv I I (Subtype.val : U → M) (TopologicalSpace.Opens.inclusion h y)
+        (mfderiv I I (TopologicalSpace.Opens.inclusion h) y v) =
+      mfderiv I I (Subtype.val : V → M) y v := by
+  rw [← mfderiv_comp_apply y ((contMDiff_subtype_val (n := 1)).mdifferentiableAt one_ne_zero)
+    ((contMDiff_inclusion (n := 1) h).mdifferentiableAt one_ne_zero)]
+  -- `Subtype.val ∘ Opens.inclusion h` is `Subtype.val`, pointwise by definition.
+  rfl
+
+/-- The inclusion of nested open sets has bijective differentials. -/
+theorem bijective_mfderiv_inclusion {U V : TopologicalSpace.Opens M} (h : V ≤ U) (y : V) :
+    Function.Bijective (mfderiv I I (TopologicalSpace.Opens.inclusion h) y) := by
+  have hcomp : ⇑(mfderiv I I (Subtype.val : U → M) (TopologicalSpace.Opens.inclusion h y)) ∘
+      ⇑(mfderiv I I (TopologicalSpace.Opens.inclusion h) y) =
+      ⇑(mfderiv I I (Subtype.val : V → M) y) :=
+    funext (mfderiv_subtype_val_inclusion_apply h y)
+  exact (Function.Bijective.of_comp_iff' (bijective_mfderiv_subtype_val _) _).1
+    (hcomp ▸ bijective_mfderiv_subtype_val y)
 
 end TauCeti
 

@@ -276,7 +276,7 @@ theorem grayVectorField_eq_of_kerDistribution_eq
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α').1 x =
         f (t, x) • (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
     filter_upwards [hc, hker] with t ht hk x
-    exact apply_eq_smul_of_kerDistribution_eq (hk x) (ht.apply_reebVectorField x)
+    exact apply_eq_smul_of_kerDistribution_le (hk x).ge (ht.apply_reebVectorField x)
   have hfs (x : M) : ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ f (t₀, x) :=
     contMDiffAt_apply_reebVectorField_mpullback_prodMk α α' hc
   have hf₀ : ContMDiff I 𝓘(ℝ) 1 (fun x ↦ f (t₀, x)) := fun x ↦

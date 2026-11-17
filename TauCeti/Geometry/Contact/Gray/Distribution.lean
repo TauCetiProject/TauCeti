@@ -92,27 +92,6 @@ theorem isLocalContactFormFamily_iff {U : Opens M} {α : SmoothForm (𝓘(ℝ, �
             x = (ξ t x).comap (mfderiv I I (Subtype.val : U → M) x).toLinearMap :=
   Iff.rfl
 
-omit [IsManifold I ∞ M] in
-/-- The differential of the inclusion of `V` in `M` factors through the inclusion of `V` in a
-larger open set `U`. -/
-private theorem mfderiv_subtype_val_inclusion_apply {U V : Opens M} (h : V ≤ U) (y : V)
-    (v : TangentSpace I y) :
-    mfderiv I I (Subtype.val : U → M) (Opens.inclusion h y) (mfderiv I I (Opens.inclusion h) y v) =
-      mfderiv I I (Subtype.val : V → M) y v := by
-  rw [← mfderiv_comp_apply y ((contMDiff_subtype_val (n := 1)).mdifferentiableAt one_ne_zero)
-    ((contMDiff_inclusion (n := 1) h).mdifferentiableAt one_ne_zero)]
-  -- `Subtype.val ∘ Opens.inclusion h` is `Subtype.val`, pointwise by definition.
-  rfl
-
-omit [IsManifold I ∞ M] in
-/-- The inclusion of nested open sets has bijective differentials. -/
-private theorem bijective_mfderiv_inclusion {U V : Opens M} (h : V ≤ U) (y : V) :
-    Function.Bijective (mfderiv I I (Opens.inclusion h) y) := by
-  have : ⇑(mfderiv I I (Opens.inclusion h) y) = id :=
-    funext (Manifold.mfderiv_inclusion_apply h y)
-  rw [this]
-  exact Function.bijective_id
-
 namespace IsLocalContactFormFamily
 
 variable {U V : Opens M} {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1} {t₀ : ℝ}
@@ -268,12 +247,6 @@ end IsContactDistributionFamily
 namespace SmoothForm
 
 variable {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1}
-
-omit [IsManifold I ∞ M] in
-/-- The inclusion of an open set has bijective differentials. -/
-private theorem bijective_mfderiv_subtype_val {U : Opens M} (x : U) :
-    Function.Bijective (mfderiv I I (Subtype.val : U → M) x) :=
-  ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).bijective
 
 /-- The restriction of a smooth family of contact forms to an open set is a local defining family
 of its kernels. -/
