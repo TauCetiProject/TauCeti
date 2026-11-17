@@ -130,11 +130,8 @@ theorem integralGroupRingCast_single (m : ℕ) (a : (ZMod m)ˣ) (r : ℤ) :
 /-- Coefficient extension from `ℤ[(ZMod m)ˣ]` to `ℚ[(ZMod m)ˣ]` is injective. -/
 theorem integralGroupRingCast_injective (m : ℕ) :
     Function.Injective (integralGroupRingCast m) := by
-  intro x y hxy
-  ext a
-  have h := congrArg (fun f : MonoidAlgebra ℚ (ZMod m)ˣ ↦ f.coeff a) hxy
-  simp only [coeff_integralGroupRingCast] at h
-  exact Int.cast_injective h
+  rw [integralGroupRingCast_def, MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_injective _ Int.cast_injective
 
 /-- The coefficient of `stickelberger m` at `b` is `(b⁻¹)₀ / m`. -/
 @[simp]
@@ -319,16 +316,9 @@ theorem mem_stickelbergerDenominatorIdeal_iff_forall_exists_int {m : ℕ} [NeZer
     x ∈ stickelbergerDenominatorIdeal m ↔
       ∀ c : (ZMod m)ˣ, ∃ n : ℤ,
         (n : ℚ) = (integralGroupRingCast m x * stickelberger m).coeff c := by
-  constructor
-  · rintro ⟨y, hy⟩ c
-    exact ⟨y.coeff c, by rw [← coeff_integralGroupRingCast, hy]⟩
-  · intro h
-    choose f hf using h
-    classical
-    refine ⟨∑ c : (ZMod m)ˣ, MonoidAlgebra.single c (f c),
-      MonoidAlgebra.ext (Finsupp.ext fun c ↦ ?_)⟩
-    rw [coeff_integralGroupRingCast, MonoidAlgebra.coeff_sum, Finset.sum_apply']
-    simp [Finsupp.single_apply, hf c]
+  rw [mem_stickelbergerDenominatorIdeal, ← Set.mem_range, integralGroupRingCast_def,
+    MonoidAlgebra.coe_mapRingHom, MonoidAlgebra.range_map]
+  simp [Set.mem_range]
 
 /-- **Congruence criterion for the denominator ideal.** An element `x = ∑ nₐ [a] ∈ ℤ[(ZMod m)ˣ]`
 belongs to `J_m` if and only if `∑ nₐ a = 0` in `ZMod m`. -/
@@ -745,6 +735,7 @@ theorem one_mem_stickelbergerIdeal_two :
   norm_num
 
 /-- At conductor `2`, the integral Stickelberger ideal is the whole group ring. -/
+@[simp]
 theorem stickelbergerIdeal_two : stickelbergerIdeal 2 = ⊤ :=
   Ideal.eq_top_of_isUnit_mem _ one_mem_stickelbergerIdeal_two isUnit_one
 
@@ -775,47 +766,38 @@ theorem one_mem_stickelbergerIdeal_three :
     norm_num
 
 /-- At conductor `3`, the integral Stickelberger ideal is the whole group ring. -/
+@[simp]
 theorem stickelbergerIdeal_three : stickelbergerIdeal 3 = ⊤ :=
   Ideal.eq_top_of_isUnit_mem _ one_mem_stickelbergerIdeal_three isUnit_one
+
+private theorem unitOfCoprime_three_inv_five :
+    (ZMod.unitOfCoprime 3 (by decide) : (ZMod 5)ˣ)⁻¹ = ZMod.unitOfCoprime 2 (by decide) :=
+  inv_eq_of_mul_eq_one_right (Units.ext (by
+    rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime, Units.val_one]
+    decide))
+
+private theorem unitOfCoprime_two_inv_five :
+    (ZMod.unitOfCoprime 2 (by decide) : (ZMod 5)ˣ)⁻¹ = ZMod.unitOfCoprime 3 (by decide) :=
+  inv_eq_iff_eq_inv.mpr unitOfCoprime_three_inv_five.symm
 
 /- Sanity checks at conductor `5`: the coefficients of `θ_5` at `[3]` and `[2]` are `2 / 5` and
 `3 / 5`, and those of the positive smoothing `s_{5, 2}` are `0` and `1`. -/
 example : (stickelberger 5).coeff (ZMod.unitOfCoprime 3 (by decide)) = 2 / 5 := by
-  have hinv : (ZMod.unitOfCoprime 3 (by decide) : (ZMod 5)ˣ)⁻¹ =
-      ZMod.unitOfCoprime 2 (by decide) :=
-    inv_eq_of_mul_eq_one_right (Units.ext (by
-      rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime, Units.val_one]
-      decide))
-  have hval : ((2 : ZMod 5).val : ℚ) = 2 := by decide
-  rw [coeff_stickelberger, hinv, ZMod.coe_unitOfCoprime, Nat.cast_ofNat, hval]
+  rw [coeff_stickelberger, unitOfCoprime_three_inv_five, ZMod.coe_unitOfCoprime,
+    ZMod.val_natCast_of_lt (by decide)]
   norm_num
 
 example : (stickelberger 5).coeff (ZMod.unitOfCoprime 2 (by decide)) = 3 / 5 := by
-  have hinv : (ZMod.unitOfCoprime 2 (by decide) : (ZMod 5)ˣ)⁻¹ =
-      ZMod.unitOfCoprime 3 (by decide) :=
-    inv_eq_of_mul_eq_one_right (Units.ext (by
-      rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime, Units.val_one]
-      decide))
-  have hval : ((3 : ZMod 5).val : ℚ) = 3 := by decide
-  rw [coeff_stickelberger, hinv, ZMod.coe_unitOfCoprime, Nat.cast_ofNat, hval]
+  rw [coeff_stickelberger, unitOfCoprime_two_inv_five, ZMod.coe_unitOfCoprime,
+    ZMod.val_natCast_of_lt (by decide)]
   norm_num
 
 example : (stickelbergerSmoothing 5 2).coeff (ZMod.unitOfCoprime 3 (by decide)) = 0 := by
-  have hinv : (ZMod.unitOfCoprime 3 (by decide) : (ZMod 5)ˣ)⁻¹ =
-      ZMod.unitOfCoprime 2 (by decide) :=
-    inv_eq_of_mul_eq_one_right (Units.ext (by
-      rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime, Units.val_one]
-      decide))
-  rw [coeff_stickelbergerSmoothing, hinv, ZMod.coe_unitOfCoprime]
+  rw [coeff_stickelbergerSmoothing, unitOfCoprime_three_inv_five, ZMod.coe_unitOfCoprime]
   decide
 
 example : (stickelbergerSmoothing 5 2).coeff (ZMod.unitOfCoprime 2 (by decide)) = 1 := by
-  have hinv : (ZMod.unitOfCoprime 2 (by decide) : (ZMod 5)ˣ)⁻¹ =
-      ZMod.unitOfCoprime 3 (by decide) :=
-    inv_eq_of_mul_eq_one_right (Units.ext (by
-      rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime, Units.val_one]
-      decide))
-  rw [coeff_stickelbergerSmoothing, hinv, ZMod.coe_unitOfCoprime]
+  rw [coeff_stickelbergerSmoothing, unitOfCoprime_two_inv_five, ZMod.coe_unitOfCoprime]
   decide
 
 end TauCeti

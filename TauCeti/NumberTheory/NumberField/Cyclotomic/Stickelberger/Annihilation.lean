@@ -18,10 +18,14 @@ import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.GroupWithZero.Torsion
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.NumberTheory.GaussSum
+import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
@@ -99,6 +103,72 @@ namespace TauCeti
 
 /-! ### Smoothed Gauss descent and prime principalization -/
 
+/-- The canonical additive character `t ↦ ζ ^ Tr(t)` on a finite extension `F / ZMod p` attached
+to a primitive `p`-th root of unity `ζ`. -/
+private noncomputable def traceAddChar (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [Field F]
+    [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) :
+    AddChar F L :=
+  (AddChar.zmodChar p hζ.pow_eq_one).compAddMonoidHom (Algebra.trace (ZMod p) F).toAddMonoidHom
+
+private theorem traceAddChar_apply (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [Field F]
+    [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) (t : F) :
+    traceAddChar p F hζ t = ζ ^ (Algebra.trace (ZMod p) F t).val := by
+  simp [traceAddChar, AddChar.zmodChar_apply]
+
+/-- For a prime `p` and a primitive `p`-th root of unity `ζ`, the trace character `t ↦ ζ ^ Tr(t)`
+on a finite field of characteristic `p` is primitive. -/
+private theorem isPrimitive_traceAddChar {p : ℕ} [Fact p.Prime] (F : Type*) {L : Type*} [Field F]
+    [Finite F] [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) :
+    (traceAddChar p F hζ).IsPrimitive := by
+  refine AddChar.IsPrimitive.of_ne_one fun h ↦ ?_
+  obtain ⟨t, ht⟩ := Algebra.trace_surjective (ZMod p) F 1
+  have hval := traceAddChar_apply p F hζ t
+  rw [h, one_apply, ht, ZMod.val_one, pow_one] at hval
+  exact hζ.ne_one (Fact.out : p.Prime).one_lt hval.symm
+
+/-- Any ring endomorphism `τ` of `L` fixing the values of `χ` and sending `ζ ↦ ζ ^ b` scales the
+Gauss sum `g(χ, traceAddChar p F hζ)` by `χ⁻¹ b`. -/
+private theorem map_gaussSum_traceAddChar {p : ℕ} [Fact p.Prime] {F L : Type*} [Field F]
+    [Fintype F] [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p)
+    (χ : MulChar F L) (τ : L →+* L) (b : (ZMod p)ˣ)
+    (hτχ : ∀ t, τ (χ t) = χ t) (hτζ : τ ζ = ζ ^ (b : ZMod p).val) :
+    τ (gaussSum χ (traceAddChar p F hζ)) =
+      χ⁻¹ (algebraMap (ZMod p) F b) * gaussSum χ (traceAddChar p F hζ) := by
+  let u_b : Fˣ := Units.map (algebraMap (ZMod p) F).toMonoidHom b
+  have hτψ (t : F) : τ (traceAddChar p F hζ t) = ((traceAddChar p F hζ).mulShift (u_b : F)) t := by
+    rw [traceAddChar_apply, map_pow, hτζ, ← pow_mul, AddChar.mulShift_apply, traceAddChar_apply]
+    have htr : Algebra.trace (ZMod p) F ((u_b : F) * t) =
+        (b : ZMod p) * Algebra.trace (ZMod p) F t := by
+      have hsmul : (u_b : F) * t = (b : ZMod p) • t := by
+        simp [u_b, Algebra.smul_def]
+      rw [hsmul, LinearMap.map_smul, smul_eq_mul]
+    rw [htr, ZMod.val_mul]
+    exact (pow_eq_pow_of_modEq (Nat.mod_modEq _ p) hζ.pow_eq_one).symm
+  have hτgs : τ (gaussSum χ (traceAddChar p F hζ)) =
+      gaussSum χ ((traceAddChar p F hζ).mulShift (u_b : F)) := by
+    simp only [gaussSum, map_sum, map_mul, hτχ, hτψ]
+  rw [hτgs, gaussSum_mulShift_eq χ (traceAddChar p F hζ) u_b]
+  simp only [u_b, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+
+/-- Under the compositum isomorphism `Gal(L/ℚ) ≃* Gal(K/ℚ) × (ZMod p)ˣ`, every automorphism
+`ρ ∈ Gal(L/K)` corresponds to a pure `(ZMod p)ˣ` factor `(1, b)`. -/
+private theorem restrictScalars_eq_galEquivProd_symm_one
+    (K L : Type*) [Field K] [NumberField K] [Field L] [Algebra K L]
+    [Algebra ℚ L] [IsScalarTower ℚ K L] [IsGalois ℚ K]
+    (p : ℕ) [NeZero p] [IsCyclotomicExtension {p} K L]
+    (hcop : ((NumberField.discr K).natAbs).Coprime p)
+    {ζp : L} (hζp : IsPrimitiveRoot ζp p) (ρ : Gal(L/K)) :
+    ρ.restrictScalars ℚ =
+      (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζp).symm
+        (1, hζp.autToPow ℚ (ρ.restrictScalars ℚ)) := by
+  apply (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζp).injective
+  have hres : (ρ.restrictScalars ℚ).restrictNormal K = 1 := by
+    ext z
+    apply (algebraMap K L).injective
+    rw [AlgEquiv.restrictNormal_commutes (ρ.restrictScalars ℚ) K z]
+    exact ρ.commutes z
+  simp [hres]
+
 /-- **Smoothed Gauss descent.** Let `m ≥ 2`, let `K` be an `m`-th cyclotomic extension of `ℚ`, and
 let `P` be a maximal ideal of `𝓞 K` whose norm is prime to `m`. For every denominator multiplier
 `x ∈ stickelbergerDenominatorIdeal m`, the Galois-weighted product
@@ -129,8 +199,6 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
   have : IsGalois K L := IsCyclotomicExtension.isGalois {p} K L
   have : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {p} K L
-  have : IsGalois ℚ L :=
-    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension ℚ K L {p}
   let ζp : L := IsCyclotomicExtension.zeta p K L
   have hζp : IsPrimitiveRoot ζp p := IsCyclotomicExtension.zeta_spec p K L
   let e : Gal(L/ℚ) ≃* Gal(K/ℚ) × (ZMod p)ˣ :=
@@ -142,21 +210,15 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
   have hσ_K (a : (ZMod m)ˣ) (z : K) :
       σ a (algebraMap K L z) = algebraMap K L (((galEquivZMod m K).symm a) z) := by
     have hcomm := (σ a).restrictNormal_commutes K z
-    have hres : (σ a).restrictNormal K = (galEquivZMod m K).symm a :=
-      IsCyclotomicExtension.restrictNormal_galEquivProd_symm ℚ K L p hcop hζp _
-    rw [hres] at hcomm
+    rw [IsCyclotomicExtension.restrictNormal_galEquivProd_symm] at hcomm
     exact hcomm.symm
   have hτ_K (b : (ZMod p)ˣ) (z : K) : τ b (algebraMap K L z) = algebraMap K L z := by
     have hcomm := (τ b).restrictNormal_commutes K z
-    have hres : (τ b).restrictNormal K = 1 :=
-      IsCyclotomicExtension.restrictNormal_galEquivProd_symm ℚ K L p hcop hζp _
-    rw [hres, AlgEquiv.one_apply] at hcomm
+    rw [IsCyclotomicExtension.restrictNormal_galEquivProd_symm, AlgEquiv.one_apply] at hcomm
     exact hcomm.symm
   have hτ_ζp (b : (ZMod p)ˣ) : τ b ζp = ζp ^ (b : ZMod p).val := by
     have hspec := hζp.autToPow_spec ℚ (τ b)
-    have haut : hζp.autToPow ℚ (τ b) = b :=
-      IsCyclotomicExtension.autToPow_galEquivProd_symm ℚ K L p hcop hζp _
-    rw [haut] at hspec
+    rw [IsCyclotomicExtension.autToPow_galEquivProd_symm] at hspec
     exact hspec.symm
   -- Step 3: Build the Gauss sum `g = g(χ_P, ψ) ∈ L` on `𝓞 K ⧸ P` with `g ^ m = Φ(P)`.
   let _ := Ideal.Quotient.field P
@@ -171,47 +233,24 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
   have hf : Function.Injective f :=
     (algebraMap K L).injective.comp (FaithfulSMul.algebraMap_injective _ _)
   let χ : MulChar (𝓞 K ⧸ P) L := (Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f
-  let ψ : AddChar (𝓞 K ⧸ P) L :=
-    (AddChar.zmodChar p hζp.pow_eq_one).compAddMonoidHom
-      (Algebra.trace (ZMod p) (𝓞 K ⧸ P)).toAddMonoidHom
-  have hψ (t : 𝓞 K ⧸ P) : ψ t = ζp ^ (Algebra.trace (ZMod p) (𝓞 K ⧸ P) t).val := by
-    simp [ψ, AddChar.zmodChar_apply]
-  have hψp : ψ.IsPrimitive := by
-    refine AddChar.IsPrimitive.of_ne_one fun h ↦ ?_
-    obtain ⟨t, ht⟩ := Algebra.trace_surjective (ZMod p) (𝓞 K ⧸ P) 1
-    have hval := hψ t
-    rw [h, one_apply, ht, ZMod.val_one, pow_one] at hval
-    exact hζp.ne_one hp.one_lt hval.symm
-  let g : L := gaussSum χ ψ
+  let g : L := gaussSum χ (traceAddChar p (𝓞 K ⧸ P) hζp)
   have hg_pow : g ^ m = f (Ideal.stickelbergerPhi P m) :=
-    (Ideal.stickelbergerPhi_prime P hP hm hf hψp).symm
+    (Ideal.stickelbergerPhi_prime P hP hm hf (isPrimitive_traceAddChar (𝓞 K ⧸ P) hζp)).symm
   have hΦ_ne : Ideal.stickelbergerPhi P m ≠ 0 := Ideal.stickelbergerPhi_ne_zero hP hm
-  have hg_ne : g ≠ 0 := by
-    intro hg0
-    exact hΦ_ne (hf (by rw [map_zero, ← hg_pow, hg0, zero_pow (NeZero.ne m)]))
+  have hg_ne : g ≠ 0 := fun hg0 ↦
+    hΦ_ne (hf (by rw [map_zero, ← hg_pow, hg0, zero_pow (NeZero.ne m)]))
   -- Step 4: Compute `τ b g = f (ω_b) * g` with `ω_b ^ m = 1`, and descend `G_x` to `Kˣ`.
   have hτ_g (b : (ZMod p)ˣ) : ∃ ω : 𝓞 K, ω ^ m = 1 ∧ τ b g = f ω * g := by
     let u_b : (𝓞 K ⧸ P)ˣ := Units.map (algebraMap (ZMod p) (𝓞 K ⧸ P)).toMonoidHom b
     refine ⟨Ideal.powerResidueSymbol P m (u_b : 𝓞 K ⧸ P),
       Ideal.powerResidueSymbol_pow_eq_one u_b.ne_zero, ?_⟩
-    have hτ_χ (t : 𝓞 K ⧸ P) : τ b (χ t) = χ t :=
-      hτ_K b (algebraMap (𝓞 K) K ((Ideal.powerResidueSymbol P m)⁻¹ t))
-    have hτ_ψ (t : 𝓞 K ⧸ P) : τ b (ψ t) = (ψ.mulShift u_b) t := by
-      rw [hψ t, map_pow, hτ_ζp b, ← pow_mul, AddChar.mulShift_apply, hψ]
-      have htr : Algebra.trace (ZMod p) (𝓞 K ⧸ P) ((u_b : 𝓞 K ⧸ P) * t) =
-          (b : ZMod p) * Algebra.trace (ZMod p) (𝓞 K ⧸ P) t := by
-        have hsmul : (u_b : 𝓞 K ⧸ P) * t = (b : ZMod p) • t := by
-          simp [u_b, Algebra.smul_def]
-        rw [hsmul, LinearMap.map_smul, smul_eq_mul]
-      rw [htr, ZMod.val_mul]
-      exact (pow_eq_pow_of_modEq (Nat.mod_modEq _ p) hζp.pow_eq_one).symm
-    have hτ_gs : τ b g = gaussSum χ (ψ.mulShift u_b) := by
-      simp only [g, gaussSum, map_sum, map_mul, hτ_χ, hτ_ψ]
-    rw [hτ_gs, gaussSum_mulShift_eq χ ψ u_b]
-    congr 1
+    have hact := map_gaussSum_traceAddChar hζp χ (τ b).toRingHom b
+      (fun t ↦ hτ_K b (algebraMap (𝓞 K) K ((Ideal.powerResidueSymbol P m)⁻¹ t))) (hτ_ζp b)
     have hχinv : χ⁻¹ = (Ideal.powerResidueSymbol P m).ringHomComp f := by
       simp only [χ, ← MulChar.ringHomComp_inv, inv_inv]
-    rw [hχinv, MulChar.ringHomComp_apply]
+    simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+      hχinv, MulChar.ringHomComp_apply, u_b, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_ofClass] using hact
   let Gx : L := ∏ a : (ZMod m)ˣ, (σ a g) ^ x.coeff a
   have hGx_ne : Gx ≠ 0 :=
     Finset.prod_ne_zero_iff.mpr fun a _ ↦
@@ -230,18 +269,10 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
         rw [← AlgEquiv.mul_apply, hστ a b, AlgEquiv.mul_apply, hτg, map_mul, hσ_ω a]
       rw [map_zpow₀, h1, mul_zpow, ← zpow_natCast, ← zpow_mul, mul_comm ((a : ZMod m).val : ℤ)]
     obtain ⟨k, hk⟩ := mem_stickelbergerDenominatorIdeal_iff_dvd.mp hx
-    have hfω_ne : f ω ≠ 0 := by
-      intro h0
-      have : (f ω) ^ m = 0 := by rw [h0, zero_pow (NeZero.ne m)]
-      rw [← map_pow, hω, map_one] at this
-      exact one_ne_zero this
+    have hfω_ne : f ω ≠ 0 := fun h0 ↦
+      one_ne_zero (by rw [← map_one f, ← hω, map_pow, h0, zero_pow (NeZero.ne m)])
     have hfω_pow : (f ω) ^ (∑ a : (ZMod m)ˣ, x.coeff a * ((a : ZMod m).val : ℤ)) = 1 := by
       rw [hk, zpow_mul, zpow_natCast, ← map_pow, hω, map_one, one_zpow]
-    have hprod_fω :
-        ∏ a : (ZMod m)ˣ, (f ω) ^ (x.coeff a * ((a : ZMod m).val : ℤ)) =
-          (f ω) ^ (∑ a : (ZMod m)ˣ, x.coeff a * ((a : ZMod m).val : ℤ)) :=
-      Finset.induction_on Finset.univ (by simp) fun i s hi ih ↦ by
-        rw [Finset.prod_insert hi, Finset.sum_insert hi, zpow_add₀ hfω_ne, ih]
     calc
       τ b Gx = ∏ a : (ZMod m)ˣ, τ b ((σ a g) ^ x.coeff a) := map_prod (τ b) _ _
       _ = ∏ a : (ZMod m)ˣ,
@@ -250,19 +281,12 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
       _ = (∏ a : (ZMod m)ˣ, (f ω) ^ (x.coeff a * ((a : ZMod m).val : ℤ))) * Gx :=
           Finset.prod_mul_distrib
       _ = (f ω) ^ (∑ a : (ZMod m)ˣ, x.coeff a * ((a : ZMod m).val : ℤ)) * Gx := by
-          rw [hprod_fω]
+          rw [Finset.prod_zpow_eq_zpow_sum_of_isUnit _ hfω_ne.isUnit]
       _ = Gx := by rw [hfω_pow, one_mul]
   have hGx_fixed (ρ : Gal(L/K)) : ρ Gx = Gx := by
-    set ρ' : Gal(L/ℚ) := ρ.restrictScalars ℚ with hρ'_def
-    have hres : ρ'.restrictNormal K = 1 := by
-      ext z
-      apply (algebraMap K L).injective
-      rw [AlgEquiv.restrictNormal_commutes ρ' K z]
-      exact ρ.commutes z
-    have hρ'_eq : ρ' = τ (hζp.autToPow ℚ ρ') :=
-      e.injective (by simp [e, τ, hres])
-    rw [← AlgEquiv.restrictScalars_apply ℚ ρ Gx, ← hρ'_def, hρ'_eq]
-    exact hτ_Gx (hζp.autToPow ℚ ρ')
+    rw [← AlgEquiv.restrictScalars_apply ℚ ρ Gx,
+      restrictScalars_eq_galEquivProd_symm_one K L p hcop hζp ρ]
+    exact hτ_Gx _
   obtain ⟨α, hαL⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed Gx).mpr hGx_fixed)
   have hα_ne : α ≠ 0 := fun h0 ↦ hGx_ne (by rw [← hαL, h0, map_zero])
   refine ⟨Units.mk0 α hα_ne, (algebraMap K L).injective ?_⟩
@@ -277,9 +301,64 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
             (((galEquivZMod m K).symm a) • Ideal.stickelbergerPhi P m)) ^ x.coeff a) := by
           refine Finset.prod_congr rfl fun a _ ↦ ?_
           rw [map_zpow₀, hg_pow]
-          congr 1
-          simp only [f, RingHom.comp_apply, hσ_K a]
-          congr 1
+          refine congrArg (· ^ x.coeff a) ?_
+          rw [RingHom.comp_apply, hσ_K a, ← NumberField.algebraMap_smul_eq_apply]
+
+/-- **Galois-twisted Stickelberger relation.** Applying `σ_a ∈ Gal(K/ℚ)` to `Φ(P)` shifts its
+prime factorization to `∏_b (σ_{a b⁻¹} • P) ^ b₀`. -/
+private theorem span_smul_stickelbergerPhi_of_isMaximal {m : ℕ} [NeZero m] (hm : 2 ≤ m)
+    {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) (a : (ZMod m)ˣ) :
+    Ideal.span {((galEquivZMod m K).symm a) • Ideal.stickelbergerPhi P m} =
+      ∏ b : (ZMod m)ˣ,
+        (((galEquivZMod m K).symm (a * b⁻¹)) • P) ^ (b : ZMod m).val := by
+  let φ : (ZMod m)ˣ → Gal(K/ℚ) := fun c ↦ (galEquivZMod m K).symm c
+  have hrel : Ideal.span {Ideal.stickelbergerPhi P m} =
+      ∏ b : (ZMod m)ˣ, (φ b⁻¹ • P) ^ (b : ZMod m).val := by
+    rw [Ideal.span_stickelbergerPhi_of_isMaximal hm P hP]
+    refine Fintype.prod_equiv (galEquivZMod m K) _ _ fun τK ↦ ?_
+    have hinv : τK⁻¹ = φ (galEquivZMod m K τK)⁻¹ := by simp [φ, map_inv]
+    rw [hinv, MulEquiv.coe_toEquiv]
+  calc
+    Ideal.span {φ a • Ideal.stickelbergerPhi P m}
+        = φ a • Ideal.span {Ideal.stickelbergerPhi P m} := by
+          rw [Ideal.smul_closure, Set.smul_set_singleton]
+    _ = φ a • ∏ b : (ZMod m)ˣ, (φ b⁻¹ • P) ^ (b : ZMod m).val := by rw [hrel]
+    _ = ∏ b : (ZMod m)ˣ, (φ a • (φ b⁻¹ • P) ^ (b : ZMod m).val) := Finset.smul_prod'
+    _ = ∏ b : (ZMod m)ˣ, (φ (a * b⁻¹) • P) ^ (b : ZMod m).val := by
+          refine Finset.prod_congr rfl fun b _ ↦ ?_
+          rw [smul_pow', smul_smul, ← map_mul]
+
+/-- Exponent bookkeeping for Stickelberger principalization: reindexing the double product of
+twisted prime powers by `c = a b⁻¹` and applying the integral coefficient identity
+`m * y.coeff c = ∑ a, x.coeff a * (a c⁻¹)₀` collapses the product to
+`(∏ c, Q c ^ y.coeff c) ^ m`. -/
+private theorem prod_prod_pow_zpow_eq_pow {m : ℕ} [NeZero m] {G : Type*} [CommGroup G]
+    (Q : (ZMod m)ˣ → G) {x y : MonoidAlgebra ℤ (ZMod m)ˣ}
+    (hxy : integralGroupRingCast m y = integralGroupRingCast m x * stickelberger m) :
+    ∏ a : (ZMod m)ˣ, (∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (b : ZMod m).val) ^ x.coeff a =
+      (∏ c : (ZMod m)ˣ, Q c ^ y.coeff c) ^ m := by
+  have hreindex (a : (ZMod m)ˣ) :
+      ∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (b : ZMod m).val =
+        ∏ c : (ZMod m)ˣ, Q c ^ ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ) := by
+    refine Fintype.prod_equiv ((Equiv.inv (ZMod m)ˣ).trans (Equiv.mulLeft a)) _ _ fun b ↦ ?_
+    simp only [Equiv.trans_apply, Equiv.inv_apply, Equiv.coe_mulLeft, mul_inv_rev, inv_inv,
+      mul_comm b a⁻¹, mul_inv_cancel_left, zpow_natCast]
+  calc
+    ∏ a : (ZMod m)ˣ, (∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (b : ZMod m).val) ^ x.coeff a
+        = ∏ a : (ZMod m)ˣ,
+            (∏ c : (ZMod m)ˣ, Q c ^ ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) ^ x.coeff a :=
+          Finset.prod_congr rfl fun a _ ↦ by rw [hreindex a]
+    _ = ∏ c : (ZMod m)ˣ,
+          Q c ^ (∑ a : (ZMod m)ˣ, x.coeff a * ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) :=
+          Finset.prod_prod_zpow Finset.univ Finset.univ (fun c _ ↦ Group.isUnit (Q c)) _ _
+    _ = ∏ c : (ZMod m)ˣ, Q c ^ ((m : ℤ) * y.coeff c) :=
+          Finset.prod_congr rfl fun c _ ↦ by
+            rw [← natCast_mul_coeff_of_integralGroupRingCast_eq hxy c]
+    _ = (∏ c : (ZMod m)ˣ, Q c ^ y.coeff c) ^ m := by
+          rw [← Finset.prod_pow]
+          refine Finset.prod_congr rfl fun c _ ↦ ?_
+          rw [mul_comm (m : ℤ), zpow_mul, zpow_natCast]
 
 /-- **Prime principalization.** Let `m` be a positive integer, let `K` be an `m`-th cyclotomic
 extension of `ℚ`, and let `P` be a maximal ideal of `𝓞 K` whose norm is prime to `m`. For every
@@ -292,10 +371,8 @@ theorem exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal (m : ℕ) [NeZero m]
     ∃ u : Kˣ, toPrincipalIdeal (𝓞 K) K u =
       ∏ c : (ZMod m)ˣ,
         FractionalIdeal.mk0 K
-          ⟨((galEquivZMod m K).symm c) • P,
-            mem_nonZeroDivisors_of_ne_zero
-              (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
-                (RingOfIntegers.not_isField K))⟩ ^ y.coeff c := by
+          ⟨((galEquivZMod m K).symm c) • P, mem_nonZeroDivisors_of_ne_zero (NeZero.ne _)⟩ ^
+            y.coeff c := by
   by_cases hm : 2 ≤ m
   · obtain ⟨x, hxy⟩ := mem_stickelbergerIdeal.mp hy
     obtain ⟨u, hu⟩ := exists_pow_eq_prod_stickelbergerPhi_zpow m K hm P hP
@@ -317,46 +394,17 @@ theorem exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal (m : ℕ) [NeZero m]
       refine Finset.prod_congr rfl fun a _ ↦ ?_
       rw [Units.val_zpow_eq_zpow_val, Units.val_mk0]
     let Q : (ZMod m)ˣ → (FractionalIdeal (𝓞 K)⁰ K)ˣ := fun c ↦
-      FractionalIdeal.mk0 K
-        ⟨φ c • P,
-          mem_nonZeroDivisors_of_ne_zero
-            (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
-              (RingOfIntegers.not_isField K))⟩
-    -- Expand `(uΦ a)` via Stickelberger's ideal relation.
+      FractionalIdeal.mk0 K ⟨φ c • P, mem_nonZeroDivisors_of_ne_zero (NeZero.ne _)⟩
     have huΦ_ideal (a : (ZMod m)ˣ) :
         toPrincipalIdeal (𝓞 K) K (uΦ a) =
           ∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (b : ZMod m).val := by
-      have hrel : Ideal.span {Ideal.stickelbergerPhi P m} =
-          ∏ b : (ZMod m)ˣ, (φ b⁻¹ • P) ^ (b : ZMod m).val := by
-        rw [Ideal.span_stickelbergerPhi_of_isMaximal hm P hP]
-        refine Fintype.prod_equiv (galEquivZMod m K) _ _ fun τK ↦ ?_
-        have hinv : τK⁻¹ = φ (galEquivZMod m K τK)⁻¹ := by
-          simp [φ, map_inv]
-        rw [hinv, MulEquiv.coe_toEquiv]
-      have hspan : Ideal.span {φ a • Ideal.stickelbergerPhi P m} =
-          ∏ b : (ZMod m)ˣ, (φ (a * b⁻¹) • P) ^ (b : ZMod m).val := by
-        calc
-          Ideal.span {φ a • Ideal.stickelbergerPhi P m}
-              = φ a • Ideal.span {Ideal.stickelbergerPhi P m} := by
-                rw [Ideal.pointwise_smul_def, Ideal.map_span, Set.image_singleton]
-                rfl
-          _ = φ a • ∏ b : (ZMod m)ˣ, (φ b⁻¹ • P) ^ (b : ZMod m).val := by rw [hrel]
-          _ = ∏ b : (ZMod m)ˣ, (φ a • (φ b⁻¹ • P) ^ (b : ZMod m).val) := Finset.smul_prod'
-          _ = ∏ b : (ZMod m)ˣ, (φ (a * b⁻¹) • P) ^ (b : ZMod m).val := by
-                refine Finset.prod_congr rfl fun b _ ↦ ?_
-                rw [smul_pow', smul_smul, ← map_mul]
       apply Units.ext
-      rw [coe_toPrincipalIdeal, Units.val_mk0, ← FractionalIdeal.coeIdeal_span_singleton, hspan,
-        ← FractionalIdeal.coeIdealHom_apply, map_prod, Units.coe_prod]
+      rw [coe_toPrincipalIdeal, Units.val_mk0, ← FractionalIdeal.coeIdeal_span_singleton,
+        span_smul_stickelbergerPhi_of_isMaximal hm P hP a, ← FractionalIdeal.coeIdealHom_apply,
+        map_prod, Units.coe_prod]
       refine Finset.prod_congr rfl fun b _ ↦ ?_
       rw [FractionalIdeal.coeIdealHom_apply, FractionalIdeal.coeIdeal_pow,
         Units.val_pow_eq_pow_val, FractionalIdeal.coe_mk0]
-    have hprod_zpow_sum (c : (ZMod m)ˣ) :
-        ∏ a : (ZMod m)ˣ, Q c ^ (x.coeff a * ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) =
-          Q c ^ (∑ a : (ZMod m)ˣ, x.coeff a * ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) :=
-      Finset.induction_on Finset.univ (by simp) fun i s hi ih ↦ by
-        rw [Finset.prod_insert hi, Finset.sum_insert hi, zpow_add, ih]
-    -- Compare `m`-th powers of invertible fractional ideals, then cancel via `HasUniqueRoots`.
     have hpow : toPrincipalIdeal (𝓞 K) K u ^ m = (∏ c : (ZMod m)ˣ, Q c ^ y.coeff c) ^ m := by
       calc
         toPrincipalIdeal (𝓞 K) K u ^ m
@@ -365,34 +413,9 @@ theorem exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal (m : ℕ) [NeZero m]
               rw [hu_pow, map_prod]
               exact Finset.prod_congr rfl fun a _ ↦ map_zpow _ _ _
         _ = ∏ a : (ZMod m)ˣ,
-              (∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (b : ZMod m).val) ^ x.coeff a := by
-              refine Finset.prod_congr rfl fun a _ ↦ by rw [huΦ_ideal a]
-        _ = ∏ a : (ZMod m)ˣ,
-              ∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (x.coeff a * ((b : ZMod m).val : ℤ)) := by
-              refine Finset.prod_congr rfl fun a _ ↦ ?_
-              rw [← Finset.prod_zpow]
-              refine Finset.prod_congr rfl fun b _ ↦ ?_
-              rw [← zpow_natCast, ← zpow_mul, mul_comm ((b : ZMod m).val : ℤ)]
-        _ = ∏ a : (ZMod m)ˣ,
-              ∏ c : (ZMod m)ˣ, Q c ^ (x.coeff a * ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) := by
-              refine Finset.prod_congr rfl fun a _ ↦ ?_
-              refine Fintype.prod_equiv ((Equiv.inv (ZMod m)ˣ).trans (Equiv.mulLeft a)) _ _
-                fun b ↦ ?_
-              simp only [Equiv.trans_apply, Equiv.inv_apply, Equiv.coe_mulLeft, mul_inv_rev,
-                inv_inv, mul_comm b a⁻¹, mul_inv_cancel_left]
-        _ = ∏ c : (ZMod m)ˣ,
-              ∏ a : (ZMod m)ˣ, Q c ^ (x.coeff a * ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) :=
-              Finset.prod_comm
-        _ = ∏ c : (ZMod m)ˣ,
-              Q c ^ (∑ a : (ZMod m)ˣ, x.coeff a * ((a * c⁻¹ : (ZMod m)ˣ).val.val : ℤ)) := by
-              exact Finset.prod_congr rfl fun c _ ↦ hprod_zpow_sum c
-        _ = ∏ c : (ZMod m)ˣ, Q c ^ ((m : ℤ) * y.coeff c) := by
-              refine Finset.prod_congr rfl fun c _ ↦ by
-                rw [← natCast_mul_coeff_of_integralGroupRingCast_eq hxy c]
-        _ = (∏ c : (ZMod m)ˣ, Q c ^ y.coeff c) ^ m := by
-              rw [← Finset.prod_pow]
-              refine Finset.prod_congr rfl fun c _ ↦ ?_
-              rw [mul_comm (m : ℤ), zpow_mul, zpow_natCast]
+              (∏ b : (ZMod m)ˣ, Q (a * b⁻¹) ^ (b : ZMod m).val) ^ x.coeff a :=
+              Finset.prod_congr rfl fun a _ ↦ by rw [huΦ_ideal a]
+        _ = (∏ c : (ZMod m)ˣ, Q c ^ y.coeff c) ^ m := prod_prod_pow_zpow_eq_pow Q hxy
     refine Units.ext (HasUniqueRoots.pow_left_injective (NeZero.ne m) ?_)
     simpa only [← Units.val_pow_eq_pow_val] using congrArg Units.val hpow
   · -- Conductor `m = 1`: `stickelbergerIdeal 1 = ⊥`, so `y = 0`.
@@ -403,6 +426,17 @@ theorem exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal (m : ℕ) [NeZero m]
     exact ⟨1, by simp⟩
 
 /-! ### Full annihilation of the cyclotomic class group -/
+
+/-- Pushing an ideal of `𝓞 K` forward along `RingOfIntegers.mapRingEquiv τ.toRingEquiv`
+coincides with the pointwise Galois action `τ • I`. -/
+private theorem ideal_map_ringOfIntegers_mapRingEquiv {K : Type*} [Field K] [NumberField K]
+    (τ : Gal(K/ℚ)) (I : Ideal (𝓞 K)) :
+    I.map (RingOfIntegers.mapRingEquiv τ.toRingEquiv) = τ • I := by
+  rw [Ideal.pointwise_smul_def]
+  refine congrArg (fun f : 𝓞 K →+* 𝓞 K ↦ I.map f) (RingHom.ext fun x ↦ RingOfIntegers.ext ?_)
+  rw [RingOfIntegers.mapRingHom_apply, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+    MulSemiringAction.toRingHom_apply, RingOfIntegers.coe_eq_algebraMap,
+    RingOfIntegers.coe_eq_algebraMap, NumberField.algebraMap_smul_eq_apply]
 
 /-- **Stickelberger's theorem.** For every positive conductor `m` and every `m`-th cyclotomic
 extension `K / ℚ`, the integral Stickelberger ideal `stickelbergerIdeal m` annihilates the full
@@ -428,15 +462,14 @@ theorem stickelbergerIdeal_annihilates (m : ℕ) [NeZero m]
         simp only [map_mul, mul_zpow, Finset.prod_mul_distrib] }
   -- Step 1: `act` kills every maximal ideal `P` with `(absNorm P).Coprime m`.
   have hprime (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) :
-      act (ClassGroup.mk0 ⟨P, mem_nonZeroDivisors_of_ne_zero
-        (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
-          (RingOfIntegers.not_isField K))⟩) = 1 := by
+      act (ClassGroup.mk0 ⟨P, mem_nonZeroDivisors_of_ne_zero (NeZero.ne _)⟩) = 1 := by
     obtain ⟨u, hu⟩ := exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal m K P hP hx
     have hmk := congrArg (ClassGroup.mk K) hu
     rw [ClassGroup.mk_toPrincipalIdeal, map_prod] at hmk
     refine (Finset.prod_congr rfl fun a _ ↦ ?_).trans hmk.symm
     rw [map_zpow, ClassGroup.mk_mk0 K, ClassGroup.mulEquivHom_apply, ClassGroup.mulEquiv_mk0]
-    congr 2
+    exact congrArg (· ^ x.coeff a)
+      (congrArg ClassGroup.mk0 (Subtype.ext (ideal_map_ringOfIntegers_mapRingEquiv _ P)))
   -- Step 2: By unique factorization, `act` kills every nonzero ideal `I` with
   -- `(absNorm I).Coprime m`.
   have hideal (I : Ideal (𝓞 K)) (hI : (Ideal.absNorm I).Coprime m) (hI0 : I ≠ ⊥) :
@@ -454,7 +487,8 @@ theorem stickelbergerIdeal_annihilates (m : ℕ) [NeZero m]
       rw [map_mul, Nat.coprime_mul_iff_left] at hI
       have hmul : (⟨P * A, mem_nonZeroDivisors_of_ne_zero hI0⟩ : (Ideal (𝓞 K))⁰) =
           ⟨P, mem_nonZeroDivisors_of_ne_zero hP.ne_zero⟩ *
-            ⟨A, mem_nonZeroDivisors_of_ne_zero hA0⟩ := rfl
+            ⟨A, mem_nonZeroDivisors_of_ne_zero hA0⟩ :=
+        (Submonoid.mk_mul_mk (Ideal (𝓞 K))⁰ P A _ _).symm
       rw [hmul, map_mul, map_mul, hprime P hI.1, ih hI.2 hA0, one_mul]
   -- Step 3: Represent `c` by an integral ideal `I` coprime to `(m)` (hence of norm coprime to `m`).
   have hact : act c = 1 := by
@@ -522,8 +556,9 @@ theorem stickelbergerIdeal_annihilates_baseChange (R : Type*) [CommRing R]
           = ∑ a : (ZMod m)ˣ,
               r ⊗ₜ[ℤ] (x.coeff a • Additive.ofMul (g a (Additive.toMul c))) := by
             refine Finset.sum_congr rfl fun a _ ↦ ?_
-            rw [TensorProduct.smul_tmul', smul_eq_mul, ← zsmul_eq_mul, TensorProduct.smul_tmul]
-            rfl
+            rw [TensorProduct.smul_tmul', smul_eq_mul, ← zsmul_eq_mul, TensorProduct.smul_tmul,
+              AddMonoidHom.coe_toIntLinearMap, AddEquiv.coe_toAddMonoidHom,
+              MulEquiv.toAdditive_apply_apply]
       _ = r ⊗ₜ[ℤ] (∑ a : (ZMod m)ˣ, x.coeff a • Additive.ofMul (g a (Additive.toMul c))) :=
             (TensorProduct.tmul_sum r _ _).symm
       _ = 0 := by rw [hsum, TensorProduct.tmul_zero]
@@ -540,27 +575,11 @@ theorem subsingleton_classGroup_of_one_mem_stickelbergerIdeal (m : ℕ) [NeZero 
   have htriv (c : ClassGroup (𝓞 K)) : c = 1 := by
     have h := stickelbergerIdeal_annihilates m K 1 h1 c
     classical
-    have hcoeff (a : (ZMod m)ˣ) :
-        (1 : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a = if (1 : (ZMod m)ˣ) = a then 1 else 0 := by
-      rw [MonoidAlgebra.one_def, MonoidAlgebra.coeff_single, Finsupp.single_apply]
-    simp only [hcoeff] at h
-    have hprod :
-        (∏ a : (ZMod m)ˣ,
-          (ClassGroup.mulEquivHom
-            (RingOfIntegers.mapRingEquiv (((galEquivZMod m K).symm a).toRingEquiv)) c) ^
-              (if (1 : (ZMod m)ˣ) = a then (1 : ℤ) else 0)) =
-          ClassGroup.mulEquivHom
-            (RingOfIntegers.mapRingEquiv (((galEquivZMod m K).symm 1).toRingEquiv)) c := by
-      rw [Finset.prod_eq_single (1 : (ZMod m)ˣ)]
-      · simp
-      · intro a _ ha
-        simp [ha.symm]
-      · intro hmem
-        exact absurd (Finset.mem_univ _) hmem
-    rw [hprod, map_one] at h
-    have hrefl : RingOfIntegers.mapRingEquiv (1 : Gal(K/ℚ)).toRingEquiv = RingEquiv.refl (𝓞 K) :=
-      RingEquiv.ext fun _ ↦ Subtype.ext rfl
-    rwa [hrefl, ClassGroup.mulEquivHom_apply, ClassGroup.mulEquiv_refl, MulEquiv.refl_apply] at h
+    simp only [MonoidAlgebra.one_def, MonoidAlgebra.coeff_single, Finsupp.single_apply,
+      pow_ite, zpow_one, zpow_zero, Finset.prod_ite_eq, Finset.mem_univ, ↓reduceIte, map_one,
+      AlgEquiv.toRingEquiv_one, RingOfIntegers.mapRingEquiv_refl, ClassGroup.mulEquivHom_apply,
+      ClassGroup.mulEquiv_refl, MulEquiv.refl_apply] at h
+    exact h
   exact ⟨fun c₁ c₂ ↦ (htriv c₁).trans (htriv c₂).symm⟩
 
 /-- Whenever `1 ∈ stickelbergerIdeal m`, every `m`-th cyclotomic extension of `ℚ` has class number
