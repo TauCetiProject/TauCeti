@@ -462,6 +462,13 @@ private def hermitianConjLinearEquiv (U : Matrix.unitaryGroup (Fin p) ℂ) :
     (by rw [← hermitianConjLinearMap_mul, ← mul_val, inv_mul_cancel, one_val,
           hermitianConjLinearMap_one])
 
+private theorem coe_hermitianConjLinearEquiv_apply (U : Matrix.unitaryGroup (Fin p) ℂ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
+    (hermitianConjLinearEquiv U A : Matrix (Fin p) (Fin p) ℂ) =
+      (U : Matrix (Fin p) (Fin p) ℂ) * (A : Matrix (Fin p) (Fin p) ℂ) *
+        (U : Matrix (Fin p) (Fin p) ℂ)ᴴ :=
+  rfl
+
 /-- Unitary conjugation `A ↦ U * A * Uᴴ` on the complex Hermitian subspace, as a real linear
 isometry equivalence for the Frobenius norm. -/
 def hermitianConj (U : Matrix.unitaryGroup (Fin p) ℂ) :
@@ -469,10 +476,13 @@ def hermitianConj (U : Matrix.unitaryGroup (Fin p) ℂ) :
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) where
   toLinearEquiv := hermitianConjLinearEquiv U
   norm_map' A := by
-    let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℂ) := Matrix.frobeniusNormedAddCommGroup
     refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
-    change ‖(U : Matrix (Fin p) (Fin p) ℂ) * A.1 * (U : Matrix (Fin p) (Fin p) ℂ)ᴴ‖ ^ 2 =
-      ‖(A : Matrix (Fin p) (Fin p) ℂ)‖ ^ 2
+    rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq,
+      selfAdjoint.coe_inner_complex, selfAdjoint.coe_inner_complex,
+      coe_hermitianConjLinearEquiv_apply]
+    let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℂ) := Matrix.frobeniusNormedAddCommGroup
+    let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℂ) := Matrix.frobeniusInnerProductSpace
+    rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq]
     simpa [star_eq_conjTranspose] using
       Matrix.frobenius_norm_sq_conj_unitary
         ((U⁻¹ : Matrix.unitaryGroup (Fin p) ℂ) : Matrix (Fin p) (Fin p) ℂ) A.1 (U⁻¹).2
@@ -504,8 +514,8 @@ theorem hermitianConj_mul (U₁ U₂ : Matrix.unitaryGroup (Fin p) ℂ) :
 theorem hermitianConj_symm (U : Matrix.unitaryGroup (Fin p) ℂ) :
     (hermitianConj U).symm = hermitianConj U⁻¹ := by
   refine LinearIsometryEquiv.ext fun A ↦ (hermitianConj U).symm_apply_eq.2 ?_
-  rw [← LinearIsometryEquiv.trans_apply, ← hermitianConj_mul, mul_inv_cancel, hermitianConj_one]
-  rfl
+  rw [← LinearIsometryEquiv.trans_apply, ← hermitianConj_mul, mul_inv_cancel, hermitianConj_one,
+    LinearIsometryEquiv.coe_refl, id_eq]
 
 /-- Unitary conjugation preserves `Re tr (A * A)`. -/
 theorem re_trace_mul_self_hermitianConj_apply (U : Matrix.unitaryGroup (Fin p) ℂ)

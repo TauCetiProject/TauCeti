@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Lebesgue measure on the complex Hermitian subspace
@@ -88,10 +90,6 @@ private theorem hermitianLebesgue_eq_addHaar (p : ℕ) :
     Basis.eq_of_apply_eq fun ab ↦ by simp [hermitianBasis_apply]
   rw [hermitianLebesgue, ← Module.Basis.addHaar_basisFun, Basis.map_addHaar, hb]
 
-private theorem trace_single_mul (p : ℕ) (M : Matrix (Fin p) (Fin p) ℂ) (k l : Fin p) (z : ℂ) :
-    (Matrix.single k l z * M).trace = z * M l k := by
-  simp [Matrix.trace, Matrix.mul_apply, Matrix.single_apply, ite_and, Finset.sum_ite_eq]
-
 /-- Pairing any Hermitian matrix with `hermitianBasis p ab` extracts `hermitianCoordinates p A ab`,
 doubled off the diagonal. -/
 private theorem inner_hermitianBasis (p : ℕ)
@@ -101,40 +99,28 @@ private theorem inner_hermitianBasis (p : ℕ)
   obtain ⟨i, j⟩ := ab
   rw [selfAdjoint.inner_eq_re_trace_mul]
   rcases lt_trichotomy i j with h | rfl | h
-  · rw [coe_hermitianBasis_of_lt p h, Matrix.add_mul, Matrix.trace_add, trace_single_mul,
-      trace_single_mul, hermitianCoordinates_apply_of_le p A h.le, ite_eq_right h.ne,
+  · rw [coe_hermitianBasis_of_lt p h, Matrix.add_mul, Matrix.trace_add, Matrix.trace_single_mul,
+      Matrix.trace_single_mul, smul_eq_mul, smul_eq_mul,
+      hermitianCoordinates_apply_of_le p A h.le, ite_eq_right h.ne,
       ← selfAdjoint.coe_apply_conj A i j]
     simp
     ring
-  · rw [coe_hermitianBasis_diag p i, trace_single_mul, hermitianCoordinates_apply_self]
+  · rw [coe_hermitianBasis_diag p i, Matrix.trace_single_mul, smul_eq_mul,
+      hermitianCoordinates_apply_self]
     simp
-  · rw [coe_hermitianBasis_of_gt p h, Matrix.sub_mul, Matrix.trace_sub, trace_single_mul,
-      trace_single_mul, hermitianCoordinates_apply_of_gt p A h, ite_eq_right h.ne',
+  · rw [coe_hermitianBasis_of_gt p h, Matrix.sub_mul, Matrix.trace_sub, Matrix.trace_single_mul,
+      Matrix.trace_single_mul, smul_eq_mul, smul_eq_mul,
+      hermitianCoordinates_apply_of_gt p A h, ite_eq_right h.ne',
       ← selfAdjoint.coe_apply_conj A j i]
     simp
     ring
 
-private def hermScale (p : ℕ) (ab : Fin p × Fin p) : ℝˣ :=
-  if ab.1 = ab.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)
-
-private theorem hermScale_coe (p : ℕ) (ab : Fin p × Fin p) :
-    ((hermScale p ab : ℝˣ) : ℝ) = if ab.1 = ab.2 then 1 else (Real.sqrt 2)⁻¹ := by
-  rw [hermScale]
-  split <;> simp
-
-private theorem orthonormal_hermScaled (p : ℕ) :
-    Orthonormal ℝ ⇑((hermitianBasis p).unitsSMul (hermScale p)) := by
-  rw [orthonormal_iff_ite]
-  intro ab cd
-  rw [Basis.unitsSMul_apply, Basis.unitsSMul_apply, Units.smul_def, Units.smul_def,
-    real_inner_smul_left, real_inner_smul_right, inner_hermitianBasis,
-    ← hermitianBasis_repr, Basis.repr_self, Finsupp.single_apply]
+private theorem inner_hermitianBasis_self (p : ℕ) (ab cd : Fin p × Fin p) :
+    ⟪hermitianBasis p ab, hermitianBasis p cd⟫ =
+      if ab = cd then (if ab.1 = ab.2 then 1 else 2) else 0 := by
+  rw [inner_hermitianBasis, ← hermitianBasis_repr, Basis.repr_self, Finsupp.single_apply]
   by_cases h : ab = cd
-  · subst h
-    by_cases hd : ab.1 = ab.2
-    · simp [hermScale_coe, hd]
-    · simp only [hermScale_coe, hd, ↓reduceIte, mul_one]
-      rw [← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), inv_mul_cancel₀ two_ne_zero]
+  · subst h; simp
   · simp [h]
 
 /-- The Frobenius-orthonormal basis of the complex Hermitian subspace obtained from
@@ -142,7 +128,19 @@ private theorem orthonormal_hermScaled (p : ℕ) :
 def hermitianOrthonormalBasis (p : ℕ) :
     OrthonormalBasis (Fin p × Fin p) ℝ
       (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
-  ((hermitianBasis p).unitsSMul (hermScale p)).toOrthonormalBasis (orthonormal_hermScaled p)
+  ((hermitianBasis p).unitsSMul fun ab ↦
+      if ab.1 = ab.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)).toOrthonormalBasis <| by
+    rw [orthonormal_iff_ite]
+    intro ab cd
+    rw [Basis.unitsSMul_apply, Basis.unitsSMul_apply, Units.smul_def, Units.smul_def,
+      real_inner_smul_left, real_inner_smul_right, inner_hermitianBasis_self]
+    by_cases h : ab = cd
+    · subst h
+      by_cases hd : ab.1 = ab.2
+      · simp [hd]
+      · simp only [hd, ↓reduceIte, Units.val_mk0]
+        rw [← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), inv_mul_cancel₀ two_ne_zero]
+    · simp [h]
 
 @[simp]
 theorem coe_hermitianOrthonormalBasis_apply (p : ℕ) (ab : Fin p × Fin p) :
@@ -150,47 +148,8 @@ theorem coe_hermitianOrthonormalBasis_apply (p : ℕ) (ab : Fin p × Fin p) :
         selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) =
       (if ab.1 = ab.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • hermitianBasis p ab := by
   rw [hermitianOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
-    Units.smul_def, hermScale_coe]
-
-private theorem addHaar_hermScaled (p : ℕ) :
-    ((hermitianBasis p).unitsSMul (hermScale p)).addHaar =
-      (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) := by
-  rw [← Basis.toBasis_toOrthonormalBasis _ (orthonormal_hermScaled p),
-    OrthonormalBasis.addHaar_eq_volume]
-
-private theorem card_hermitian_offDiag (p : ℕ) :
-    ((Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card : ℝ) =
-      (p : ℝ) * ((p : ℝ) - 1) := by
-  have hdiag : (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 = ab.2).card = p := by
-    rw [show (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 = ab.2) =
-      Finset.univ.image (fun i : Fin p ↦ (i, i)) by ext ⟨a, b⟩; simp [eq_comm],
-      Finset.card_image_of_injective _ fun _ _ h ↦ (Prod.mk.inj h).1, Finset.card_fin]
-  have hsum := Finset.card_filter_add_card_filter_not
-    (s := (Finset.univ : Finset (Fin p × Fin p))) (fun ab ↦ ab.1 = ab.2)
-  simp only [hdiag, Finset.card_univ, Fintype.card_prod, Fintype.card_fin] at hsum
-  linarith [show (p : ℝ) + ((Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card : ℝ) =
-    (p : ℝ) * p from mod_cast hsum]
-
-private theorem prod_hermScale_inv (p : ℕ) :
-    (((∏ ab, hermScale p ab)⁻¹ : ℝˣ) : ℝ) =
-      Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2) := by
-  set N : ℕ := (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card with hN
-  have hprod : ((∏ ab, hermScale p ab : ℝˣ) : ℝ) = (Real.sqrt 2)⁻¹ ^ N := by
-    rw [← Units.coeHom_apply, map_prod]
-    simp only [Units.coeHom_apply, hermScale_coe]
-    rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const]
-  rw [Units.val_inv_eq_inv_val, hprod, inv_pow, inv_inv, Real.sqrt_eq_rpow,
-    ← Real.rpow_natCast ((2 : ℝ) ^ (1 / 2 : ℝ)) N, ← Real.rpow_mul (by norm_num)]
-  congr 1; rw [hN, card_hermitian_offDiag]; ring
-
-private theorem volume_parallelepiped_hermitianBasis (p : ℕ) :
-    (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)))
-        (hermitianBasis p).parallelepiped =
-      ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2)) := by
-  rw [Basis.coe_parallelepiped, ← addHaar_hermScaled p, Measure.addHaar_parallelepiped,
-    Basis.det_unitsSMul]
-  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one, prod_hermScale_inv]
-  exact congrArg ENNReal.ofReal (abs_of_nonneg (Real.rpow_nonneg (by norm_num) _))
+    Units.smul_def]
+  split_ifs <;> simp
 
 end comparison
 
@@ -200,8 +159,25 @@ end comparison
 theorem volume_hermitianMatrix_eq_smul_hermitianLebesgue (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ))) =
       ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2)) • hermitianLebesgue p := by
-  rw [hermitianLebesgue_eq_addHaar, Basis.addHaar_def, ← volume_parallelepiped_hermitianBasis]
-  exact Measure.addHaarMeasure_unique _ _
+  rw [hermitianLebesgue_eq_addHaar, (hermitianBasis p).volume_eq_smul_addHaar]
+  congr 2
+  have hgram : Matrix.gram ℝ (hermitianBasis p) =
+      Matrix.diagonal fun ab : Fin p × Fin p ↦ if ab.1 = ab.2 then (1 : ℝ) else 2 := by
+    ext ab cd
+    simp only [Matrix.gram_apply, Matrix.diagonal_apply, inner_hermitianBasis_self]
+  rw [hgram, Matrix.det_diagonal, Finset.prod_ite, Finset.prod_const_one, one_mul,
+    Finset.prod_const]
+  have hcard : ((Finset.univ.filter fun ab : Fin p × Fin p ↦ ¬ab.1 = ab.2).card : ℝ) =
+      (p : ℝ) * ((p : ℝ) - 1) := by
+    have hfilt : (Finset.univ.filter fun ab : Fin p × Fin p ↦ ¬ab.1 = ab.2) =
+        (Finset.univ : Finset (Fin p)).offDiag := by
+      ext ⟨a, b⟩; simp
+    rw [hfilt, Finset.offDiag_card, Finset.card_univ, Fintype.card_fin,
+      Nat.cast_sub (Nat.le_mul_self p), Nat.cast_mul]
+    ring
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num), hcard,
+    Real.rpow_eq_pow]
+  congr 1; ring
 
 /-- In dimension zero, `TauCeti.hermitianLebesgue` is the Dirac measure at `0`. -/
 theorem hermitianLebesgue_zero : hermitianLebesgue 0 = Measure.dirac 0 := by
@@ -231,18 +207,12 @@ variable {p : ℕ}
 /-- Unitary conjugation pushes `TauCeti.hermitianLebesgue` forward to itself. -/
 @[simp]
 theorem map_hermitianConj_hermitianLebesgue (U : Matrix.unitaryGroup (Fin p) ℂ) :
-    (hermitianLebesgue p).map (hermitianConj U) = hermitianLebesgue p := by
-  have hvol := (hermitianConj U).measurePreserving.map_eq
-  rw [volume_hermitianMatrix_eq_smul_hermitianLebesgue p,
-    Measure.map_smul _ (hermitianConj U).continuous.aemeasurable] at hvol
-  set c : ENNReal := ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2))
-  have hc : c⁻¹ * c = 1 := ENNReal.inv_mul_cancel
-    (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos two_pos _)).ne' ENNReal.ofReal_ne_top
-  simpa [smul_smul, hc] using congrArg (c⁻¹ • ·) hvol
+    (hermitianLebesgue p).map (hermitianConj U) = hermitianLebesgue p :=
+  (hermitianConj U).map_addHaar (hermitianLebesgue p)
 
 /-- Unitary conjugation preserves `TauCeti.hermitianLebesgue`. -/
 theorem measurePreserving_hermitianConj_hermitianLebesgue (U : Matrix.unitaryGroup (Fin p) ℂ) :
     MeasurePreserving (hermitianConj U) (hermitianLebesgue p) (hermitianLebesgue p) :=
-  ⟨(hermitianConj U).continuous.measurable, map_hermitianConj_hermitianLebesgue U⟩
+  (hermitianConj U).measurePreserving_addHaar (hermitianLebesgue p)
 
 end Matrix.UnitaryGroup

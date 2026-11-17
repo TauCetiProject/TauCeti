@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.LinearAlgebra.UnitaryGroup
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Orthogonal conjugation on the symmetric subspace
@@ -16,9 +16,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 For an orthogonal matrix `O : Matrix.orthogonalGroup (Fin p) ℝ`, conjugation `A ↦ O * A * Oᵀ`
 preserves both symmetry and the Frobenius norm, so it defines a real linear isometry equivalence
 `Matrix.UnitaryGroup.symmetricConj O` of `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)`.
-Consequently it preserves the Frobenius volume and, by the constant-ratio comparison
-`TauCeti.volume_symmetricMatrix_eq_smul_symmetricLebesgue`, also preserves the coordinate Lebesgue
-measure `TauCeti.symmetricLebesgue p`.
+Consequently it preserves every additive Haar measure on the symmetric subspace, and in particular
+the coordinate Lebesgue measure `TauCeti.symmetricLebesgue p`.
 
 ## Main declarations
 
@@ -97,8 +96,8 @@ theorem symmetricConj_mul (O₁ O₂ : Matrix.orthogonalGroup (Fin p) ℝ) :
 theorem symmetricConj_symm (O : Matrix.orthogonalGroup (Fin p) ℝ) :
     (symmetricConj O).symm = symmetricConj O⁻¹ := by
   refine LinearIsometryEquiv.ext fun A ↦ (symmetricConj O).symm_apply_eq.2 ?_
-  rw [← LinearIsometryEquiv.trans_apply, ← symmetricConj_mul, mul_inv_cancel, symmetricConj_one]
-  rfl
+  rw [← LinearIsometryEquiv.trans_apply, ← symmetricConj_mul, mul_inv_cancel, symmetricConj_one,
+    LinearIsometryEquiv.coe_refl, id_eq]
 
 /-- Orthogonal conjugation preserves `(A * A).trace`. -/
 theorem trace_mul_self_symmetricConj_apply (O : Matrix.orthogonalGroup (Fin p) ℝ)
@@ -112,18 +111,12 @@ theorem trace_mul_self_symmetricConj_apply (O : Matrix.orthogonalGroup (Fin p) �
 /-- Orthogonal conjugation pushes `TauCeti.symmetricLebesgue` forward to itself. -/
 @[simp]
 theorem map_symmetricConj_symmetricLebesgue (O : Matrix.orthogonalGroup (Fin p) ℝ) :
-    (symmetricLebesgue p).map (symmetricConj O) = symmetricLebesgue p := by
-  have hvol := (symmetricConj O).measurePreserving.map_eq
-  rw [volume_symmetricMatrix_eq_smul_symmetricLebesgue p,
-    Measure.map_smul _ (symmetricConj O).continuous.aemeasurable] at hvol
-  set c : ENNReal := ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 4))
-  have hc : c⁻¹ * c = 1 := ENNReal.inv_mul_cancel
-    (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos two_pos _)).ne' ENNReal.ofReal_ne_top
-  simpa [smul_smul, hc] using congrArg (c⁻¹ • ·) hvol
+    (symmetricLebesgue p).map (symmetricConj O) = symmetricLebesgue p :=
+  (symmetricConj O).map_addHaar (symmetricLebesgue p)
 
 /-- Orthogonal conjugation preserves `TauCeti.symmetricLebesgue`. -/
 theorem measurePreserving_symmetricConj_symmetricLebesgue (O : Matrix.orthogonalGroup (Fin p) ℝ) :
     MeasurePreserving (symmetricConj O) (symmetricLebesgue p) (symmetricLebesgue p) :=
-  ⟨(symmetricConj O).continuous.measurable, map_symmetricConj_symmetricLebesgue O⟩
+  (symmetricConj O).measurePreserving_addHaar (symmetricLebesgue p)
 
 end Matrix.UnitaryGroup

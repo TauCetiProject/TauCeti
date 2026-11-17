@@ -8,19 +8,21 @@ module
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Lebesgue
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Orthogonal
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
-public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.HasLaw
+import TauCeti.Probability.Distributions.Gaussian.Symmetry
 
 /-!
 # Probability laws, conjugation invariance, and coordinate marginals of the GOE and GUE
 
-With independent standard Gaussian coordinates `g : Fin n × Fin n → ℝ`, the `β = 1` construction
-`TauCeti.Probability.gaussianEnsemble` takes values in the real symmetric subspace
-`selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)` and defines the **Gaussian orthogonal
-ensemble** (`TauCeti.Probability.goeMeasure n`), while the `β = 2` construction takes values in
-the complex Hermitian subspace `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)` and defines
-the **Gaussian unitary ensemble** (`TauCeti.Probability.gueMeasure n`).
+With independent standard Gaussian coordinates `g : Fin n × Fin n → ℝ`,
+`TauCeti.Probability.gaussianEnsembleReal` (the `β = 1` construction with real entries) takes
+values in the real symmetric subspace `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)` and
+defines the **Gaussian orthogonal ensemble** (`TauCeti.Probability.goeMeasure n`), while
+`TauCeti.Probability.gaussianEnsembleHermitian` (the `β = 2` construction
+`TauCeti.Probability.gaussianEnsemble 2`, packaged into the subspace) takes values in the complex
+Hermitian subspace `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)` and defines the
+**Gaussian unitary ensemble** (`TauCeti.Probability.gueMeasure n`).
 
 This file connects both ensembles to the standard Gaussian measure `ProbabilityTheory.stdGaussian`
 on their respective Frobenius inner-product spaces:
@@ -85,8 +87,8 @@ def gaussianEnsembleReal (n : ℕ) (g : Fin n × Fin n → ℝ) :
 theorem symmetricCoordinates_gaussianEnsembleReal (n : ℕ) (g : Fin n × Fin n → ℝ)
     (ij : upperTriangle n) :
     symmetricCoordinates n (gaussianEnsembleReal n g) ij =
-      (Real.sqrt n)⁻¹ * (if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1 :=
-  (symmetricCoordinates n).apply_symm_apply _ ▸ rfl
+      (Real.sqrt n)⁻¹ * (if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1 := by
+  rw [gaussianEnsembleReal, ContinuousLinearEquiv.apply_symm_apply]
 
 @[fun_prop]
 theorem continuous_gaussianEnsembleReal (n : ℕ) : Continuous (gaussianEnsembleReal n) := by
@@ -209,24 +211,6 @@ theorem gaussianEnsembleHermitian_eq_smul_sum_hermitianOrthonormalBasis (n : ℕ
     mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, smul_eq_mul]
   split_ifs <;> ring
 
-/-- For the `2 × 2` GUE matrix, the `(0, 1)` entry has real part `g (0, 1) / 2` and imaginary part
-`g (1, 0) / 2`. -/
-theorem re_gaussianEnsemble_two_two_zero_one (g : Fin 2 × Fin 2 → ℝ) :
-    (gaussianEnsemble 2 2 g 0 1).re = g (0, 1) / 2 := by
-  have h := hermitianCoordinates_gaussianEnsembleHermitian 2 g (0, 1)
-  rw [hermitianCoordinates_apply_of_le 2 _ (by decide), coe_gaussianEnsembleHermitian,
-    ite_eq_right (by decide), Nat.cast_ofNat, ← mul_inv,
-    Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 2)] at h
-  linarith
-
-theorem im_gaussianEnsemble_two_two_zero_one (g : Fin 2 × Fin 2 → ℝ) :
-    (gaussianEnsemble 2 2 g 0 1).im = g (1, 0) / 2 := by
-  have h := hermitianCoordinates_gaussianEnsembleHermitian 2 g (1, 0)
-  rw [hermitianCoordinates_apply_of_gt 2 _ (by decide), coe_gaussianEnsembleHermitian,
-    ite_eq_right (by decide), Nat.cast_ofNat, ← mul_inv,
-    Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 2)] at h
-  linarith
-
 end EnsembleMaps
 
 /-! ### The GOE and GUE probability measures -/
@@ -295,17 +279,19 @@ instance isProbabilityMeasure_gueMeasure (n : ℕ) : IsProbabilityMeasure (gueMe
     inferInstance
 
 instance isGaussian_goeMeasure (n : ℕ) : IsGaussian (goeMeasure n) := by
-  rw [goeMeasure_eq_map_stdGaussian]
-  change IsGaussian ((stdGaussian _).map
-    (ContinuousLinearMap.lsmul ℝ ℝ (Real.sqrt (2 / n)) :
-      selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) →L[ℝ] _))
+  rw [goeMeasure_eq_map_stdGaussian,
+    show (fun A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) ↦ Real.sqrt (2 / n) • A) =
+      ⇑(ContinuousLinearMap.lsmul ℝ ℝ (Real.sqrt (2 / n)) :
+        selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) →L[ℝ] _) from
+      funext fun A ↦ (ContinuousLinearMap.lsmul_apply ℝ ℝ _ A).symm]
   infer_instance
 
 instance isGaussian_gueMeasure (n : ℕ) : IsGaussian (gueMeasure n) := by
-  rw [gueMeasure_eq_map_stdGaussian]
-  change IsGaussian ((stdGaussian _).map
-    (ContinuousLinearMap.lsmul ℝ ℝ (Real.sqrt n)⁻¹ :
-      selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) →L[ℝ] _))
+  rw [gueMeasure_eq_map_stdGaussian,
+    show (fun A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) ↦ (Real.sqrt n)⁻¹ • A) =
+      ⇑(ContinuousLinearMap.lsmul ℝ ℝ (Real.sqrt n)⁻¹ :
+        selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) →L[ℝ] _) from
+      funext fun A ↦ (ContinuousLinearMap.lsmul_apply ℝ ℝ _ A).symm]
   infer_instance
 
 @[simp]
@@ -336,18 +322,11 @@ theorem map_coe_gueMeasure (n : ℕ) :
     (gueMeasure n).map Subtype.val =
       (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (gaussianEnsemble 2 n) := by
   rw [gueMeasure_def,
-    Measure.map_map measurable_subtype_coe (measurable_gaussianEnsembleHermitian n)]
-  rfl
+    Measure.map_map measurable_subtype_coe (measurable_gaussianEnsembleHermitian n),
+    show Subtype.val ∘ gaussianEnsembleHermitian n = gaussianEnsemble 2 n from
+      funext (coe_gaussianEnsembleHermitian n)]
 
 /-! ### Orthogonal and unitary conjugation invariance -/
-
-private theorem map_linearIsometryEquiv_map_smul_stdGaussian {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    (f : E ≃ₗᵢ[ℝ] E) (c : ℝ) :
-    ((stdGaussian E).map (fun A ↦ c • A)).map f = (stdGaussian E).map (fun A ↦ c • A) := by
-  rw [Measure.map_map f.continuous.measurable (by fun_prop),
-    show f ∘ (fun A : E ↦ c • A) = (fun A ↦ c • A) ∘ f from funext (map_smul f c),
-    ← Measure.map_map (by fun_prop) f.continuous.measurable, stdGaussian_map f]
 
 /-- **Orthogonal conjugation invariance of the GOE.** Conjugating by any orthogonal matrix
 `O : Matrix.orthogonalGroup (Fin n) ℝ` preserves `goeMeasure n`. -/
@@ -377,17 +356,13 @@ theorem measurePreserving_hermitianConj_gueMeasure {n : ℕ}
 
 /-! ### Coordinate pushforwards, entry laws, and joint independence -/
 
-private theorem gaussianReal_map_scale {c : ℝ} {v : ℝ≥0} (hv : c ^ 2 = v) :
-    (gaussianReal 0 1).map (fun x : ℝ ↦ c * x) = gaussianReal 0 v := by
-  rw [gaussianReal_map_const_mul]
-  simp only [mul_zero, mul_one]
-  exact congrArg _ (NNReal.coe_injective hv)
-
 private theorem gaussianReal_map_goeScale (n : ℕ) (ij : upperTriangle n) :
     (gaussianReal 0 1).map
       (fun x : ℝ ↦ (Real.sqrt n)⁻¹ * (if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * x) =
       gaussianReal 0 (if ij.1.1 = ij.1.2 then (2 / n : ℝ≥0) else (1 / n : ℝ≥0)) := by
-  refine gaussianReal_map_scale ?_
+  rw [gaussianReal_map_const_mul]
+  simp only [mul_zero, mul_one]
+  refine congrArg _ (NNReal.coe_injective ?_)
   rcases Nat.eq_zero_or_pos n with rfl | _
   · simp
   · by_cases hd : ij.1.1 = ij.1.2 <;>
@@ -452,7 +427,9 @@ private theorem gaussianReal_map_gueScale (n : ℕ) (ab : Fin n × Fin n) :
     (gaussianReal 0 1).map
       (fun x : ℝ ↦ (Real.sqrt n)⁻¹ * (if ab.1 = ab.2 then 1 else (Real.sqrt 2)⁻¹) * x) =
       gaussianReal 0 (if ab.1 = ab.2 then (1 / n : ℝ≥0) else (1 / (2 * n) : ℝ≥0)) := by
-  refine gaussianReal_map_scale ?_
+  rw [gaussianReal_map_const_mul]
+  simp only [mul_zero, mul_one]
+  refine congrArg _ (NNReal.coe_injective ?_)
   rcases Nat.eq_zero_or_pos n with rfl | _
   · simp
   · by_cases hd : ab.1 = ab.2 <;>
