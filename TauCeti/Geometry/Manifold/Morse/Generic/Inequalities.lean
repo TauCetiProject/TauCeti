@@ -221,6 +221,14 @@ private theorem finite_band (j : ℕ) (hj : j ≤ N) (i : ℕ) :
   finite_singularHomology_sublevelPair_of_contMDiff V hf hf.continuous.isProperMap
     (hs j.le_succ) (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia)) i
 
+omit [Module.Finite k V] in
+include hf hs₀ hreg in
+/-- The bands of `f` cut at regular values have no homology above the dimension of `M`. -/
+private theorem isZero_band (j : ℕ) (hj : j ≤ N) {i : ℕ} (hi : finrank ℝ E < i) :
+    IsZero ((sublevelPair f (hs j.le_succ)).singularHomology V i) :=
+  isZero_singularHomology_sublevelPair_of_contMDiff hf hf.continuous.isProperMap (hs j.le_succ)
+    (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia)) V hi
+
 include hf hs₀ hsN hreg
 
 /-- **The weak inequalities for the bands of a smooth function.** Let `f` be a smooth function on
@@ -266,9 +274,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_o
           ℤ) :=
   sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair hs hs₀ hsN V
     (fun j hj ↦ finite_band V hf hs hs₀ hreg j hj) fun j hj ↦
-      isZero_singularHomology_sublevelPair_of_contMDiff hf hf.continuous.isProperMap
-        (hs j.le_succ) (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia))
-        V (by lia)
+      isZero_band V hf hs hs₀ hreg j hj (by lia)
 
 /-- **The Morse polynomial identity for the bands of a smooth function.** Let `f` be a smooth
 function on a compact boundaryless manifold, and cut its values at regular values
@@ -291,9 +297,7 @@ theorem exists_sum_range_monomial_sum_sublevelPair_eq_add_mul_of_contMDiff {n : 
       ∀ i, n ≤ i → Q.coeff i = 0 :=
   exists_sum_range_monomial_sum_sublevelPair_eq_add_mul hs hs₀ hsN V
     (fun j hj ↦ finite_band V hf hs hs₀ hreg j hj) fun j hj ↦
-      isZero_singularHomology_sublevelPair_of_contMDiff hf hf.continuous.isProperMap
-        (hs j.le_succ) (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia))
-        V (by lia)
+      isZero_band V hf hs hs₀ hreg j hj (by lia)
 
 /-- **The lacunary principle for the bands of a smooth function.** Let `f` be a smooth function on
 a compact boundaryless manifold, and cut its values at regular values
