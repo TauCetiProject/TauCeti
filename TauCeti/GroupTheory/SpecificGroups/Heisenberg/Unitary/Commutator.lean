@@ -150,7 +150,7 @@ variable {K : Type*} [Field K]
 variable {p n : ℕ} [ExpChar K p]
 
 /-- Every first coordinate occurs in the quadratic finite-field unitary root group. -/
-theorem exists_coe_x_eq_iterateFrobenius (hK : Nat.card K = (p ^ n) ^ 2) (x : K) :
+theorem exists_coe_x_iterateFrobenius_eq (hK : Nat.card K = (p ^ n) ^ 2) (x : K) :
     ∃ a : unitarySubgroup (iterateFrobenius K p n), (a : HeisenbergGroup K).x = x :=
   exists_coe_x_eq (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
     (FiniteField.exists_add_iterateFrobenius_eq_one hK) x
@@ -171,7 +171,7 @@ theorem mem_center_iterateFrobenius_iff (hK : Nat.card K = (p ^ n) ^ 2)
     a ∈ Subgroup.center (unitarySubgroup (iterateFrobenius K p n)) ↔
       (a : HeisenbergGroup K).x = 0 :=
   mem_center_iff (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
-    (FiniteField.exists_iterateFrobenius_ne hK) a
+    (FiniteField.exists_iterateFrobenius_ne_of_card_eq_sq hK) a
 
 /-- The centre of the quadratic finite-field unitary root group is its trace-zero central
 axis. -/
@@ -180,7 +180,7 @@ theorem center_eq_zAxis_subgroupOf_iterateFrobenius (hK : Nat.card K = (p ^ n) ^
       zAxis.subgroupOf (unitarySubgroup (iterateFrobenius K p n)) :=
   center_eq_zAxis_subgroupOf
     (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
-    (FiniteField.exists_iterateFrobenius_ne hK)
+    (FiniteField.exists_iterateFrobenius_ne_of_card_eq_sq hK)
 
 /-- For the quadratic finite-field involution, the derived subgroup of the unitary root group
 is its centre, in every characteristic. -/
