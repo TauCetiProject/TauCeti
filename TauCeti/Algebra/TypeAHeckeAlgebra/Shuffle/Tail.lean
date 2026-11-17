@@ -134,18 +134,8 @@ theorem consSelected_swap (a b : Fin (k + l)) (M : ShuffleMask k l) :
   · have hypos : 0 < (y : ℕ) := Nat.pos_of_ne_zero fun h ↦ hy0 (Fin.ext h)
     let p : Fin (k + l) := ⟨y.val - 1, by omega⟩
     have hyp : y = shiftSelectedEmb k l p := Fin.ext (by simp [p]; omega)
-    have hswap : Equiv.swap (shiftSelectedEmb k l a) (shiftSelectedEmb k l b)
-        (shiftSelectedEmb k l p) = shiftSelectedEmb k l (Equiv.swap a b p) := by
-      by_cases hpa : p = a
-      · subst hpa
-        simp
-      · by_cases hpb : p = b
-        · subst hpb
-          simp
-        · rw [Equiv.swap_apply_of_ne_of_ne hpa hpb, Equiv.swap_apply_of_ne_of_ne
-            ((shiftSelectedEmb k l).injective.ne hpa) ((shiftSelectedEmb k l).injective.ne hpb)]
-    rw [hyp, mem_swap, hswap, shiftSelectedEmb_mem_consSelected, shiftSelectedEmb_mem_consSelected,
-      mem_swap]
+    rw [hyp, mem_swap, (shiftSelectedEmb k l).swap_apply, shiftSelectedEmb_mem_consSelected,
+      shiftSelectedEmb_mem_consSelected, mem_swap]
 
 /-- Prepending a selected position at site `0` leaves the rest-position count before shifted
 positions unchanged. -/
@@ -260,16 +250,7 @@ theorem consRest_swap (a b : Fin (k + l)) (M : ShuffleMask k l) :
   refine Fin.cases ?_ (fun p ↦ ?_) y
   · rw [mem_swap, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero a).symm (Fin.succ_ne_zero b).symm]
     simp
-  · have hswap : Equiv.swap a.succ b.succ p.succ = (Equiv.swap a b p).succ := by
-      by_cases hpa : p = a
-      · subst hpa
-        simp
-      · by_cases hpb : p = b
-        · subst hpb
-          simp
-        · rw [Equiv.swap_apply_of_ne_of_ne hpa hpb, Equiv.swap_apply_of_ne_of_ne
-            ((Fin.succ_injective _).ne hpa) ((Fin.succ_injective _).ne hpb)]
-    rw [mem_swap, hswap, succ_mem_consRest, succ_mem_consRest, mem_swap]
+  · rw [mem_swap, (Fin.succ_injective _).swap_apply, succ_mem_consRest, succ_mem_consRest, mem_swap]
 
 /-- Prepending a rest position at site `0` adds `1` to the rest-position count before every
 shifted position. -/
