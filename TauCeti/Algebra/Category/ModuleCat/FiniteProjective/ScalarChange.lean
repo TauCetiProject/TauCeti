@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.BalancedExtension
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 
@@ -41,9 +42,11 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 
 ## Main results
 
-* `TauCeti.SplitK0.of_extendScalars_obj`: the split `K₀` class of an extended module agrees
-  with the class of any module linearly isomorphic to its balanced extension.
-* `TauCeti.SplitK0.map_finiteProjectiveModulesExtendScalars_{id,comp}`: functoriality on split `K₀`.
+* `TauCeti.SplitK0.of_extendScalars_obj`, `of_finiteProjectiveModulesExtendScalars_selfObj`:
+  the split `K₀` class of an extended module and `[S ⊗_R R] = [S]`.
+* `TauCeti.SplitK0.map_finiteProjectiveModulesExtendScalars_{id,comp}`,
+  `map_extendScalars_comp_restrictScalars_{self,eq_zero}`: functoriality and restriction-extension
+  compositions on split `K₀`.
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
   scalars preserves finitely generated projective modules.
 * `RingHom.finiteProjectiveModules_le_inverseImage_restrictScalars_iff`: restriction of scalars
@@ -125,15 +128,11 @@ noncomputable def finiteProjectiveModulesExtendScalarsCompιIso :
 
 @[simp] theorem finiteProjectiveModulesExtendScalarsCompιIso_hom_app (P) :
     f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P =
-      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P) := by
-  unfold finiteProjectiveModulesExtendScalarsCompιIso ObjectProperty.liftCompιIso
-  rw [Iso.refl_hom, NatTrans.id_app]; exact (eqToHom_refl _ _).symm
+      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P) := (eqToHom_refl _ _).symm
 
 @[simp] theorem finiteProjectiveModulesExtendScalarsCompιIso_inv_app (P) :
     f.finiteProjectiveModulesExtendScalarsCompιIso.inv.app P =
-      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P).symm := by
-  unfold finiteProjectiveModulesExtendScalarsCompιIso ObjectProperty.liftCompιIso
-  rw [Iso.refl_inv, NatTrans.id_app]; exact (eqToHom_refl _ _).symm
+      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P).symm := (eqToHom_refl _ _).symm
 
 /-! ### Coherence of extension of scalars on finitely generated projective modules -/
 
@@ -268,11 +267,8 @@ private theorem compCompιIso_hom_app_eq {T : Type u} [Ring T] (g : S →+* T) (
 private theorem compCompιIso_hom_app {T : Type u} [Ring T] (g : S →+* T) (P) :
     (f.compCompιIso g).hom.app P =
       eqToHom (f.finiteProjectiveModulesExtendScalars_comp_obj_obj g P) := by
-  rw [compCompιIso_hom_app_eq]
-  refine (congrArg₂ (· ≫ ·) (g.finiteProjectiveModulesExtendScalarsCompιIso_hom_app _)
-    (congrArg (BalancedExtension.functor g).map
-      (f.finiteProjectiveModulesExtendScalarsCompιIso_hom_app P))).trans ?_
-  exact (congrArg _ (eqToHom_map (BalancedExtension.functor g) _)).trans (eqToHom_trans _ _)
+  simp only [compCompιIso_hom_app_eq, finiteProjectiveModulesExtendScalarsCompιIso_hom_app]
+  exact (congrArg _ (eqToHom_map _ _)).trans (eqToHom_trans _ _)
 
 private theorem compCompιIso_inv_app {T : Type u} [Ring T] (g : S →+* T) (P) :
     (f.compCompιIso g).inv.app P =
@@ -304,6 +300,34 @@ noncomputable def finiteProjectiveModulesExtendScalarsComp {T : Type u} [Ring T]
   rw [finiteProjectiveModulesExtendScalarsComp, liftNatIso_inv_app_hom,
     finiteProjectiveModulesExtendScalarsCompιIso_inv_app, compCompιIso_hom_app]; rfl
 
+@[reassoc] private theorem extendScalars_map_hom_comp {P Q} (u : P ⟶ Q) :
+    (f.finiteProjectiveModulesExtendScalars.map u).hom ≫
+      f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app Q =
+    f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P ≫
+      (BalancedExtension.functor f).map u.hom :=
+  f.finiteProjectiveModulesExtendScalarsCompιIso.hom.naturality u
+
+@[reassoc] private theorem extendScalarsComp_hom_app_hom_comp {T : Type u} [Ring T]
+    (g : S →+* T) (P) :
+    ((f.finiteProjectiveModulesExtendScalarsComp g).hom.app P).hom ≫
+      g.finiteProjectiveModulesExtendScalarsCompιIso.hom.app
+        (f.finiteProjectiveModulesExtendScalars.obj P) ≫
+      (BalancedExtension.functor g).map (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P) =
+    (g.comp f).finiteProjectiveModulesExtendScalarsCompιIso.hom.app P ≫
+      (BalancedExtension.functorComp f g).hom.app P.obj := by
+  rw [← compCompιIso_hom_app_eq]; exact liftNatIso_hom_app_hom_comp ..
+
+@[reassoc] private theorem map_extendScalarsComp_hom_app_hom_comp {T : Type u} [Ring T]
+    {C : Type*} [Category* C] (F : ModuleCat.{u} T ⥤ C) (g : S →+* T) (P) :
+    F.map ((f.finiteProjectiveModulesExtendScalarsComp g).hom.app P).hom ≫
+      F.map (g.finiteProjectiveModulesExtendScalarsCompιIso.hom.app
+        (f.finiteProjectiveModulesExtendScalars.obj P)) ≫
+      F.map ((BalancedExtension.functor g).map
+        (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)) =
+    F.map ((g.comp f).finiteProjectiveModulesExtendScalarsCompιIso.hom.app P) ≫
+      F.map ((BalancedExtension.functorComp f g).hom.app P.obj) := by
+  simp only [← Functor.map_comp, extendScalarsComp_hom_app_hom_comp]
+
 /-- **Pentagon coherence** for `RingHom.finiteProjectiveModulesExtendScalarsComp`. -/
 @[reassoc] theorem finiteProjectiveModulesExtendScalarsComp_assoc {R₁ R₂ R₃ R₄ : Type u}
     [Ring R₁] [Ring R₂] [Ring R₃] [Ring R₄] (f₁₂ : R₁ →+* R₂) (f₂₃ : R₂ →+* R₃) (f₃₄ : R₃ →+* R₄) :
@@ -315,33 +339,21 @@ noncomputable def finiteProjectiveModulesExtendScalarsComp {T : Type u} [Ring T]
         (f₂₃.finiteProjectiveModulesExtendScalarsComp f₃₄).hom ≫
       (Functor.associator _ _ _).inv := by
   refine NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _ ?_
+  rw [← cancel_mono (f₃₄.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
+    ← cancel_mono ((BalancedExtension.functor f₃₄).map
+      (f₂₃.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _)),
+    ← cancel_mono ((BalancedExtension.functor f₃₄).map ((BalancedExtension.functor f₂₃).map
+      (f₁₂.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)))]
   have hcomp := congrArg (fun α ↦ α.app P.obj)
     (BalancedExtension.functorComp_assoc.{u, u, u, u, u} f₁₂ f₂₃ f₃₄)
-  have hnat₁ := f₃₄.finiteProjectiveModulesExtendScalarsCompιIso.hom.naturality
-    ((f₁₂.finiteProjectiveModulesExtendScalarsComp f₂₃).hom.app P)
-  have hnat₂ := (BalancedExtension.functorComp f₂₃ f₃₄).hom.naturality
-    (f₁₂.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)
-  rw [← cancel_mono (f₃₄.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
-    ← cancel_mono ((BalancedExtension.functor f₃₄).map ((f₁₂.compCompιIso f₂₃).hom.app P))]
-  dsimp only [NatTrans.comp_app, ObjectProperty.FullSubcategory.comp_hom,
-    ObjectProperty.FullSubcategory.id_hom, Functor.whiskerRight_app, Functor.whiskerLeft_app,
+  have hnat := ((BalancedExtension.functorComp f₂₃ f₃₄).hom.naturality
+    (f₁₂.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)).symm
+  dsimp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
     Functor.associator_inv_app, Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj,
-    ObjectProperty.ι_map] at hcomp hnat₁ hnat₂ ⊢
-  rw [Category.comp_id] at hcomp ⊢
-  rw [Category.assoc, Category.assoc, Category.assoc,
-    ← Category.assoc _ (f₃₄.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _), hnat₁,
-    Category.assoc, ← Functor.map_comp]
-  unfold finiteProjectiveModulesExtendScalarsComp
-  rw [liftNatIso_hom_app_hom_comp, Functor.map_comp,
-    ← Category.assoc (f₃₄.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
-    ← compCompιIso_hom_app_eq, liftNatIso_hom_app_hom_comp_assoc,
-    compCompιIso_hom_app_eq f₁₂ f₂₃ P, Functor.map_comp,
-    ← Category.assoc (f₃₄.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
-    ← compCompιIso_hom_app_eq, Category.assoc, liftNatIso_hom_app_hom_comp_assoc, ← hnat₂,
-    ← Category.assoc ((f₃₄.comp f₂₃).finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
-    ← compCompιIso_hom_app_eq, liftNatIso_hom_app_hom_comp_assoc, hcomp,
-    finiteProjectiveModulesExtendScalarsCompιIso_hom_app,
-    finiteProjectiveModulesExtendScalarsCompιIso_hom_app]
+    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.id_hom] at hcomp hnat ⊢
+  simp only [Category.comp_id, Category.assoc] at hcomp ⊢
+  simp only [extendScalars_map_hom_comp_assoc, map_extendScalarsComp_hom_app_hom_comp,
+    extendScalarsComp_hom_app_hom_comp_assoc, hnat, hcomp]; rfl
 
 /-- **Left-unit coherence** for `RingHom.finiteProjectiveModulesExtendScalars{Id,Comp}`. -/
 @[reassoc] theorem finiteProjectiveModulesExtendScalarsComp_id_comp :
@@ -352,18 +364,12 @@ noncomputable def finiteProjectiveModulesExtendScalarsComp {T : Type u} [Ring T]
   refine NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _ ?_
   rw [← cancel_mono (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)]
   have hcomp := congrArg (fun α ↦ α.app P.obj) (BalancedExtension.functorComp_id_comp.{u, u, u} f)
-  have hnat := f.finiteProjectiveModulesExtendScalarsCompιIso.hom.naturality
-    ((finiteProjectiveModulesExtendScalarsId R).hom.app P)
-  dsimp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj, ObjectProperty.ι_map,
-    Functor.id_obj, NatTrans.comp_app, NatTrans.id_app, Functor.whiskerRight_app,
-    Functor.leftUnitor_hom_app, ObjectProperty.FullSubcategory.comp_hom,
-    ObjectProperty.FullSubcategory.id_hom] at hnat hcomp ⊢
-  rw [Category.comp_id] at hcomp ⊢
-  rw [Category.id_comp, Category.assoc, hnat, extendScalarsId_hom_app_hom, Functor.map_comp,
-    ← Category.assoc (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
-    ← compCompιIso_hom_app_eq, finiteProjectiveModulesExtendScalarsComp,
-    liftNatIso_hom_app_hom_comp_assoc, hcomp, finiteProjectiveModulesExtendScalarsCompιIso_hom_app,
-    finiteProjectiveModulesExtendScalarsCompιIso_hom_app]; exact Category.comp_id _
+  dsimp only [NatTrans.comp_app, NatTrans.id_app, Functor.whiskerRight_app,
+    Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj, ObjectProperty.ι_obj,
+    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.id_hom] at hcomp ⊢
+  simp only [Category.comp_id, Category.id_comp, Category.assoc] at hcomp ⊢
+  simp only [extendScalars_map_hom_comp, extendScalarsId_hom_app_hom, Functor.map_comp,
+    extendScalarsComp_hom_app_hom_comp_assoc, hcomp]; exact Category.comp_id _
 
 /-- **Right-unit coherence** for `RingHom.finiteProjectiveModulesExtendScalars{Id,Comp}`. -/
 @[reassoc] theorem finiteProjectiveModulesExtendScalarsComp_comp_id :
@@ -374,17 +380,15 @@ noncomputable def finiteProjectiveModulesExtendScalarsComp {T : Type u} [Ring T]
   refine NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _ ?_
   rw [← cancel_mono (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)]
   have hcomp := congrArg (fun α ↦ α.app P.obj) (BalancedExtension.functorComp_comp_id.{u, u, u} f)
-  have hnat := (BalancedExtension.functorId S).hom.naturality
-    (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)
-  dsimp only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_map, NatTrans.comp_app,
-    NatTrans.id_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.id_obj,
-    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.id_hom] at hnat hcomp ⊢
-  rw [Category.comp_id] at hcomp ⊢
-  rw [Category.id_comp, Category.assoc, extendScalarsId_hom_app_hom, Category.assoc, ← hnat,
-    ← Category.assoc ((RingHom.id S).finiteProjectiveModulesExtendScalarsCompιIso.hom.app _),
-    ← compCompιIso_hom_app_eq, finiteProjectiveModulesExtendScalarsComp,
-    liftNatIso_hom_app_hom_comp_assoc, hcomp, finiteProjectiveModulesExtendScalarsCompιIso_hom_app,
-    finiteProjectiveModulesExtendScalarsCompιIso_hom_app]; exact Category.comp_id _
+  have hnat := ((BalancedExtension.functorId S).hom.naturality
+    (f.finiteProjectiveModulesExtendScalarsCompιIso.hom.app P)).symm
+  dsimp only [NatTrans.comp_app, NatTrans.id_app, Functor.whiskerLeft_app,
+    Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj, Functor.id_map,
+    ObjectProperty.ι_obj, ObjectProperty.FullSubcategory.comp_hom,
+    ObjectProperty.FullSubcategory.id_hom] at hcomp hnat ⊢
+  simp only [Category.comp_id, Category.id_comp, Category.assoc] at hcomp ⊢
+  simp only [extendScalarsId_hom_app_hom, Category.assoc, hnat,
+    extendScalarsComp_hom_app_hom_comp_assoc, hcomp]; exact Category.comp_id _
 
 section Square
 
@@ -565,5 +569,49 @@ theorem map_finiteProjectiveModulesExtendScalars_of_linearEquiv_pi {ι : Type*} 
   (SplitK0.map_of.{u, u} f.finiteProjectiveModulesExtendScalars P).trans <|
     of_extendScalars_obj ((BalancedExtension.congr f θ).trans
       ((BalancedExtension.piScalarRight f ι).trans θ'.symm))
+
+variable (f)
+
+/-- Extension of scalars along `f : R →+* S` sends `[R]` to `[S]`. -/
+@[simp] theorem of_finiteProjectiveModulesExtendScalars_selfObj :
+    SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj
+      (FiniteProjectiveModules.selfObj R)) = SplitK0.of.{u} (FiniteProjectiveModules.selfObj S) :=
+  of_extendScalars_obj <| (BalancedExtension.congr f
+    ((eqToIso (FiniteProjectiveModules.selfObj_obj R)).toLinearEquiv.trans
+      (LinearEquiv.funUnique Unit R R).symm)).trans <|
+    (BalancedExtension.piScalarRight f Unit).trans ((LinearEquiv.funUnique Unit S S).trans
+      (eqToIso (FiniteProjectiveModules.selfObj_obj S).symm).toLinearEquiv)
+
+/-- Along a surjective `p : E →+* A` making `A` finite projective over `E`, extending scalars after
+restricting scalars induces the identity on `SplitK0`. -/
+theorem map_extendScalars_comp_restrictScalars_self {E A : Type u} [Ring E] [Ring A] (p : E →+* A)
+    (hp : Function.Surjective p) (hfin : letI := p.toModule; Module.Finite E A)
+    (hproj : letI := p.toModule; Module.Projective E A) :
+    (SplitK0.map.{u, u} p.finiteProjectiveModulesExtendScalars).comp
+      (SplitK0.map.{u, u} (p.finiteProjectiveModulesRestrictScalars hfin hproj)) =
+        AddMonoidHom.id _ :=
+  SplitK0.hom_ext fun M ↦ by
+    rw [AddMonoidHom.comp_apply, SplitK0.map_of, SplitK0.map_of, AddMonoidHom.id_apply]
+    exact of_extendScalars_obj <| (BalancedExtension.congr p
+      (eqToIso (p.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M)).toLinearEquiv).trans
+        (BalancedExtension.restrictScalarsSelfEquiv p hp M.obj)
+
+/-- If `p : E →+* A`, `p' : E →+* B` satisfy `p e = 1` and `p' e = 0`, then extending along `p`
+after restricting along `p'` induces the zero map on `SplitK0`. -/
+theorem map_extendScalars_comp_restrictScalars_eq_zero {E A B : Type u} [Ring E] [Ring A] [Ring B]
+    (p : E →+* A) (p' : E →+* B) (hfin : letI := p'.toModule; Module.Finite E B)
+    (hproj : letI := p'.toModule; Module.Projective E B) (e : E) (hp : p e = 1) (hp' : p' e = 0) :
+    (SplitK0.map.{u, u} p.finiteProjectiveModulesExtendScalars).comp
+      (SplitK0.map.{u, u} (p'.finiteProjectiveModulesRestrictScalars hfin hproj)) = 0 :=
+  SplitK0.hom_ext fun N ↦ by
+    rw [AddMonoidHom.comp_apply, SplitK0.map_of, SplitK0.map_of, AddMonoidHom.zero_apply]
+    have : Subsingleton ((BalancedExtension.functor p).obj
+        ((ModuleCat.restrictScalars.{u} p').obj N.obj)) :=
+      BalancedExtension.subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero p p' e hp hp' _
+    exact of_eq_zero_of_isZero <| Limits.IsZero.of_full_of_faithful_of_isZero
+      (finiteProjectiveModules A).ι _ <| (ModuleCat.isZero_of_subsingleton _).of_iso <|
+        eqToIso ((p.finiteProjectiveModulesExtendScalars_obj_obj _).trans <| congrArg
+          (BalancedExtension.functor p).obj
+          (p'.finiteProjectiveModulesRestrictScalars_obj_obj _ _ N))
 
 end TauCeti.SplitK0

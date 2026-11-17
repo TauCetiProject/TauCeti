@@ -9,14 +9,11 @@ public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ExtendScalars
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
-public import TauCeti.RingTheory.Morita.Matrix
 
-import Mathlib.Algebra.Category.ModuleCat.Ulift
-import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Group.Prod
-import TauCeti.CategoryTheory.ObjectProperty
 import TauCeti.LinearAlgebra.FreeModule.PID
 import TauCeti.RingTheory.LocalRing.Module
 
@@ -42,54 +39,6 @@ open CategoryTheory CategoryTheory.Limits
 universe u u' v
 
 namespace TauCeti
-
-/-! ### Extension and restriction of scalars on `SplitK0` -/
-
-namespace SplitK0
-
-/-- Extension of scalars along `f : R →+* S` sends `[R]` to `[S]`. -/
-@[simp] theorem of_finiteProjectiveModulesExtendScalars_selfObj {R S : Type u} [Ring R] [Ring S]
-    (f : R →+* S) : SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj
-      (FiniteProjectiveModules.selfObj R)) = SplitK0.of.{u} (FiniteProjectiveModules.selfObj S) :=
-  of_extendScalars_obj <| (BalancedExtension.congr f
-    ((eqToIso (FiniteProjectiveModules.selfObj_obj R)).toLinearEquiv.trans
-      (LinearEquiv.funUnique Unit R R).symm)).trans <|
-    (BalancedExtension.piScalarRight f Unit).trans ((LinearEquiv.funUnique Unit S S).trans
-      (eqToIso (FiniteProjectiveModules.selfObj_obj S).symm).toLinearEquiv)
-
-/-- Along a surjective `p : E →+* A` making `A` finite projective over `E`, extending scalars after
-restricting scalars induces the identity on `SplitK0`. -/
-theorem map_extendScalars_comp_restrictScalars_self {E A : Type u} [Ring E] [Ring A] (p : E →+* A)
-    (hp : Function.Surjective p) (hfin : letI := p.toModule; Module.Finite E A)
-    (hproj : letI := p.toModule; Module.Projective E A) :
-    (SplitK0.map.{u, u} p.finiteProjectiveModulesExtendScalars).comp
-      (SplitK0.map.{u, u} (p.finiteProjectiveModulesRestrictScalars hfin hproj)) =
-        AddMonoidHom.id _ :=
-  SplitK0.hom_ext fun M ↦ by
-    rw [AddMonoidHom.comp_apply, SplitK0.map_of, SplitK0.map_of, AddMonoidHom.id_apply]
-    exact of_extendScalars_obj <| (BalancedExtension.congr p
-      (eqToIso (p.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M)).toLinearEquiv).trans
-        (BalancedExtension.restrictScalarsSelfEquiv p hp M.obj)
-
-/-- If `p : E →+* A`, `p' : E →+* B` satisfy `p e = 1` and `p' e = 0`, then extending along `p`
-after restricting along `p'` induces the zero map on `SplitK0`. -/
-theorem map_extendScalars_comp_restrictScalars_eq_zero {E A B : Type u} [Ring E] [Ring A] [Ring B]
-    (p : E →+* A) (p' : E →+* B) (hfin : letI := p'.toModule; Module.Finite E B)
-    (hproj : letI := p'.toModule; Module.Projective E B) (e : E) (hp : p e = 1) (hp' : p' e = 0) :
-    (SplitK0.map.{u, u} p.finiteProjectiveModulesExtendScalars).comp
-      (SplitK0.map.{u, u} (p'.finiteProjectiveModulesRestrictScalars hfin hproj)) = 0 :=
-  SplitK0.hom_ext fun N ↦ by
-    rw [AddMonoidHom.comp_apply, SplitK0.map_of, SplitK0.map_of, AddMonoidHom.zero_apply]
-    have : Subsingleton ((BalancedExtension.functor p).obj
-        ((ModuleCat.restrictScalars.{u} p').obj N.obj)) :=
-      BalancedExtension.subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero p p' e hp hp' _
-    exact of_eq_zero_of_isZero <| IsZero.of_full_of_faithful_of_isZero
-      (finiteProjectiveModules A).ι _ <| (ModuleCat.isZero_of_subsingleton _).of_iso <|
-        eqToIso ((p.finiteProjectiveModulesExtendScalars_obj_obj _).trans <| congrArg
-          (BalancedExtension.functor p).obj
-          (p'.finiteProjectiveModulesRestrictScalars_obj_obj _ _ N))
-
-end SplitK0
 
 /-! ### Comparison between `SplitK0` and `ExactK0` of finitely generated projective modules -/
 
@@ -237,7 +186,6 @@ instance {R : Type u} [Ring R] [Subsingleton R] :
         (finiteProjectiveModules R).ι P (ModuleCat.isZero_of_subsingleton P.obj)
 
 section ProdRing
-
 variable (R S : Type u) [Ring R] [Ring S]
 
 /-- **`SplitK0` of finite projective modules commutes with binary products of rings.** -/
@@ -288,96 +236,13 @@ noncomputable def finiteProjectiveModulesProdSplitK0Equiv :
           (RingHom.projective_toModule_of_split _ (AddMonoidHom.inr R S) (by simp)
             AddMonoidHom.mul_inr)) x.2 :=
   AddEquiv.ofProdCoprod_symm_apply _ _ _ _ _ _ _ _ _ x
-
 end ProdRing
 
 section MatrixMorita
-
 variable (R : Type u) [Ring R]
 
 section Index
-
-variable (ι : Type v) [Fintype ι] [DecidableEq ι]
-
-private def toMatrixModCatUliftIso : ModuleCat.toMatrixModCat.{u, v, u} R ι ≅
-    ModuleCat.uliftFunctor.{v, u, u} R ⋙ ModuleCat.toMatrixModCat.{u, v, max u v} R ι :=
-  NatIso.ofComponents (fun M ↦
-    ({ toFun f i := ULift.up (f i), invFun f i := (f i).down, left_inv _ := rfl,
-       right_inv _ := rfl, map_add' _ _ := rfl,
-       map_smul' A w := funext fun i ↦ ULift.ext <| by
-         dsimp only; rw [ModuleCat.toMatrixModCat_obj_smul_apply]
-         exact (map_sum (ULift.moduleEquiv (R := R) (M := M)) _ Finset.univ).symm } :
-      ((ModuleCat.toMatrixModCat.{u, v, u} R ι).obj M) ≃ₗ[Matrix ι ι R]
-        ((ModuleCat.toMatrixModCat.{u, v, max u v} R ι).obj
-          ((ModuleCat.uliftFunctor.{v, u, u} R).obj M))).toModuleIso)
-    fun _ ↦ ModuleCat.hom_ext <| LinearMap.ext fun _ ↦ funext fun _ ↦ rfl
-
-private theorem finiteProjectiveModules_toMatrixModCat
-    (P : (finiteProjectiveModules R).FullSubcategory) : finiteProjectiveModules (Matrix ι ι R)
-      ((ModuleCat.toMatrixModCat.{u, v, u} R ι).obj P.obj) := by
-  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i⟩⟩
-  · have : Subsingleton ((ModuleCat.toMatrixModCat.{u, v, u} R ι).obj P.obj) :=
-      subsingleton_of_forall_eq 0 fun _ ↦ funext isEmptyElim
-    exact (finiteProjectiveModules _).prop_of_isZero (ModuleCat.isZero_of_subsingleton _)
-  · obtain ⟨_, _⟩ := finiteProjectiveModules_iff.mp P.property
-    have : Small.{max u v} R := small_lift.{u, v} R
-    let E := ModuleCat.matrixEquivalence.{u, v, u} R i
-    exact (finiteProjectiveModules _).prop_of_iso ((toMatrixModCatUliftIso R ι).app P.obj).symm <|
-      finiteProjectiveModules_iff.mpr
-        ⟨(E.finite_functor_obj_iff _).mpr (Module.Finite.equiv (ULift.moduleEquiv (R := R)).symm),
-         (E.projective_functor_obj_iff _).mpr
-           (Module.Projective.of_equiv (ULift.moduleEquiv (R := R)).symm)⟩
-
-/-- Canonical functor sending a finite projective `R`-module `P` to the `Matrix ι ι R`-module
-`ι → P`, independent of any choice of index in `ι`. -/
-noncomputable def finiteProjectiveModulesToMatrixFunctor :
-    (finiteProjectiveModules R).FullSubcategory ⥤
-      (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory :=
-  (finiteProjectiveModules (Matrix ι ι R)).lift
-    ((finiteProjectiveModules R).ι ⋙ ModuleCat.toMatrixModCat.{u, v, u} R ι)
-    (finiteProjectiveModules_toMatrixModCat R ι)
-
-instance : (finiteProjectiveModulesToMatrixFunctor R ι).Additive :=
-  have : (finiteProjectiveModulesToMatrixFunctor R ι ⋙ (finiteProjectiveModules _).ι).Additive :=
-    inferInstanceAs ((finiteProjectiveModules R).ι ⋙
-      ModuleCat.toMatrixModCat.{u, v, u} R ι).Additive
-  Functor.additive_of_comp_faithful _ (finiteProjectiveModules (Matrix ι ι R)).ι
-
-@[simp] theorem finiteProjectiveModulesToMatrixFunctor_obj_obj (P) :
-    ((finiteProjectiveModulesToMatrixFunctor R ι).obj P).obj =
-      (ModuleCat.toMatrixModCat.{u, v, u} R ι).obj P.obj := (rfl)
-
-@[simp] theorem finiteProjectiveModulesToMatrixFunctor_map_hom
-    {P Q : (finiteProjectiveModules R).FullSubcategory} (g : P ⟶ Q) :
-    ((finiteProjectiveModulesToMatrixFunctor R ι).map g).hom =
-      eqToHom (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P) ≫
-        (ModuleCat.toMatrixModCat.{u, v, u} R ι).map g.hom ≫
-          eqToHom (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι Q).symm :=
-  ObjectProperty.lift_map_hom_of_eq rfl g (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P)
-    (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι Q)
-
-variable [Nonempty ι]
-
-instance : (finiteProjectiveModulesToMatrixFunctor R ι).IsEquivalence := by
-  obtain ⟨i⟩ := ‹Nonempty ι›; let E := ModuleCat.matrixEquivalence.{u, v, u} R i
-  have : (ModuleCat.toMatrixModCat.{u, v, max u v} R ι).IsEquivalence :=
-    inferInstanceAs E.functor.IsEquivalence
-  have := Functor.Full.of_iso (toMatrixModCatUliftIso R ι).symm
-  have := Functor.Faithful.of_iso (toMatrixModCatUliftIso R ι).symm
-  have : (finiteProjectiveModulesToMatrixFunctor R ι).EssSurj :=
-    (ObjectProperty.essSurj_lift_iff _ _ _).mpr fun Q hQ ↦ by
-      obtain ⟨hfinQ, hprojQ⟩ := finiteProjectiveModules_iff.mp hQ
-      have : Small.{max u v} R := small_lift.{u, v} R
-      let M : ModuleCat.{max u v} R := E.inverse.obj Q
-      have hfinM : Module.Finite R M := (E.symm.finite_functor_obj_iff Q).mpr hfinQ
-      have : Module.Projective R M := (E.symm.projective_functor_obj_iff Q).mpr hprojQ
-      have : Small.{u} M := @Module.Finite.small.{u, u, max u v} R M _ _ _ (small_self R) hfinM
-      let e := Shrink.linearEquiv.{u} R M; let P₀ : ModuleCat.{u} R := ModuleCat.of R (Shrink.{u} M)
-      exact ⟨⟨P₀, finiteProjectiveModules_iff.mpr
-        ⟨Module.Finite.equiv e.symm, Module.Projective.of_equiv e.symm⟩⟩,
-        ⟨(toMatrixModCatUliftIso R ι).app P₀ ≪≫ E.functor.mapIso
-          ((ULift.moduleEquiv (R := R) (M := P₀)).trans e).toModuleIso ≪≫ E.counitIso.app Q⟩⟩
-  unfold finiteProjectiveModulesToMatrixFunctor at *; exact {}
+variable (ι : Type v) [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
 /-- **Matrix Morita invariance of `SplitK0`:** `P ↦ (ι → P)` induces a canonical isomorphism
 `K₀(proj R) ≃+ K₀(proj (Matrix ι ι R))`. -/
@@ -408,12 +273,12 @@ theorem finiteProjectiveModulesMatrixSplitK0Equiv_apply (x) :
     eqToIso (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι _) ≪≫
       (ModuleCat.toMatrixModCat.{u, v, u} R ι).mapIso
         (eqToIso (FiniteProjectiveModules.finFreeObj_obj R (Fintype.card ι))) ≪≫
-      (toMatrixModCatUliftIso R ι).app P₀ ≪≫ (ModuleCat.toMatrixModCat.{u, v, max u v} R ι).mapIso
+      (toMatrixModCatUliftIso.{u, v, u} R ι).app P₀ ≪≫
+      (ModuleCat.toMatrixModCat.{u, v, max u v} R ι).mapIso
         ((ULift.moduleEquiv (R := R) (M := P₀)).trans
           (LinearEquiv.funCongrLeft R R (Fintype.equivFin ι))).toModuleIso ≪≫
       (toMatrixModCatPiLinearEquiv R ι).toModuleIso ≪≫
       eqToIso (FiniteProjectiveModules.selfObj_obj (Matrix ι ι R)).symm
-
 end Index
 
 /-- For any `i : ι`, `finiteProjectiveModulesToMatrixFunctor` induces the same map on `SplitK0` as
@@ -435,7 +300,6 @@ theorem finiteProjectiveModulesMatrixSplitK0Equiv_eq (ι : Type u) [Fintype ι] 
       (ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesSplitK0Equiv :=
   AddEquiv.toAddMonoidHom_injective <| (SplitK0.mapEquiv_toAddMonoidHom.{u, u} _).trans
     (map_finiteProjectiveModulesToMatrixFunctor_eq R ι i)
-
 end MatrixMorita
 
 section OfFree
