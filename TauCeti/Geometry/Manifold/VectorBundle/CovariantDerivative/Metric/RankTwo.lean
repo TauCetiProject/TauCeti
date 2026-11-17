@@ -90,7 +90,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
   {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M}
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   [ContMDiffCovariantDerivative cov 1] [ContMDiffCovariantDerivative cov ∞]
