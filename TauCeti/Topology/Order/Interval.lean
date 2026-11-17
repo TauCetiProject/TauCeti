@@ -34,6 +34,7 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing function on a compact interval has a continuous inverse on
 its range, extended to the whole codomain by clamping.
+A function continuous on every closed interval `[a, b]` with `b ≥ a` is continuous on `[a, ∞)`.
 A path that starts in an open set and leaves it has a first exit time.
 A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` is so on `[a, b]`.
 
@@ -47,6 +48,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   contained in `ball x ε`.
 * `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
   order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
+* `TauCeti.continuousOn_Ici_of_forall_Icc` — continuity on `Ici a` from continuity on `Icc a b`
+  for every `b ≥ a`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
@@ -136,6 +139,16 @@ theorem _root_.Set.OrdConnected.uIcc_subset_ball_inter {s : Set ℝ} (hs : s.Ord
     rw [Real.ball_eq_Ioo]
     exact ordConnected_Ioo
   exact (hball.inter hs).uIcc_subset ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hy.1), hx⟩ hy
+
+/-- A function into a topological space that is continuous on `[a, b]` for every `b ≥ a` is
+continuous on `[a, ∞)`. -/
+theorem continuousOn_Ici_of_forall_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [NoMaxOrder α] [TopologicalSpace X] {f : α → X} {a : α}
+    (h : ∀ b ≥ a, ContinuousOn f (Icc a b)) : ContinuousOn f (Ici a) :=
+  continuousOn_of_locally_continuousOn fun t ht ↦
+    let ⟨b, htb⟩ := exists_gt t
+    ⟨Iio b, isOpen_Iio, htb,
+      (h b (mem_Ici.1 ht |>.trans htb.le)).mono fun _ hr ↦ ⟨hr.1, hr.2.le⟩⟩
 
 /-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
 is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
