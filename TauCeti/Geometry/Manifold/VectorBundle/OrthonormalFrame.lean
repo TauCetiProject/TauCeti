@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Associated
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.FiberBundle.Principal.Equivariant
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -728,66 +729,62 @@ theorem contMDiff_fiberwiseMap_map_iff {Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b} :
     LinearIsometryEquiv.apply_symm_apply]
 
 variable (V) in
-/-- A family of fibrewise linear isometric equivalences `Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b` that is `C^n` in
-both directions on vector-bundle total spaces induces an equivariant `C^n` diffeomorphism between
-the charted orthonormal frame bundles of `E` and `E'`. -/
+/-- A family of fibrewise linear isometric equivalences `Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b` that is `C^n` on
+vector-bundle total spaces induces an equivariant `C^n` diffeomorphism between the charted
+orthonormal frame bundles of `E` and `E'`. Smoothness of the inverse is automatic via
+`TauCeti.PrincipalBundle.diffeomorphOfEquivariant`. -/
 def manifoldTotalSpaceMapDiffeomorph (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
     (hΦ : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F')) n
-      (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E')))
-    (hΦ' : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, F)) n
-      (fun x : TotalSpace F' E' ↦ (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E))) :
+      (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E'))) :
     ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)
       ≃ₘ^n⟮IB.prod (Unitary.model (V →L[ℝ] V)), IB.prod (Unitary.model (V →L[ℝ] V))⟯
-    ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F' E' V) where
-  toFun := ManifoldTotalSpace.fiberwiseMap fun b ↦ Fiber.map (F := F) (F' := F') Φ (b := b)
-  invFun := ManifoldTotalSpace.fiberwiseMap fun b ↦
-    Fiber.map (F := F') (F' := F) (fun y ↦ (Φ y).symm) (b := b)
-  left_inv x := by
-    obtain ⟨p, rfl⟩ :=
-      (ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)).surjective x
-    simp
-  right_inv x := by
-    obtain ⟨p, rfl⟩ :=
-      (ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F' E' V)).surjective x
-    simp
-  contMDiff_toFun := contMDiff_fiberwiseMap_map hΦ
-  contMDiff_invFun := contMDiff_fiberwiseMap_map hΦ'
+    ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F' E' V) :=
+  PrincipalBundle.diffeomorphOfEquivariant (unitary (V →L[ℝ] V))
+    (Fiber.mapEquiv F F' V Φ)
+    (fun _ g φ ↦ by simp only [Fiber.mapEquiv_apply, Fiber.map_smul])
+    ((contMDiff_fiberwiseMap_map hΦ).congr fun x ↦ by
+      obtain ⟨p, rfl⟩ :=
+        (ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)).surjective x
+      simp)
 
+/-- `manifoldTotalSpaceMapDiffeomorph` acts on `ManifoldTotalSpace` by the fibrewise map
+`Fiber.map Φ`. -/
 @[simp]
 theorem manifoldTotalSpaceMapDiffeomorph_apply (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
     (hΦ : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F')) n
       (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E')))
-    (hΦ' : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, F)) n
-      (fun x : TotalSpace F' E' ↦ (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E)))
     (x : ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)) :
-    manifoldTotalSpaceMapDiffeomorph V Φ hΦ hΦ' x =
-      ManifoldTotalSpace.fiberwiseMap (fun b ↦ Fiber.map (F := F) (F' := F') Φ (b := b)) x :=
-  (rfl)
+    manifoldTotalSpaceMapDiffeomorph V Φ hΦ x =
+      ManifoldTotalSpace.fiberwiseMap (fun b ↦ Fiber.map (F := F) (F' := F') Φ (b := b)) x := by
+  obtain ⟨p, rfl⟩ :=
+    (ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)).surjective x
+  simp [manifoldTotalSpaceMapDiffeomorph]
 
+/-- `(manifoldTotalSpaceMapDiffeomorph V Φ hΦ).symm` acts on `ManifoldTotalSpace` by the fibrewise
+map `Fiber.map (fun y ↦ (Φ y).symm)`. -/
 @[simp]
-theorem manifoldTotalSpaceMapDiffeomorph_symm (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
+theorem manifoldTotalSpaceMapDiffeomorph_symm_apply (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
     (hΦ : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F')) n
       (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E')))
-    (hΦ' : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, F)) n
-      (fun x : TotalSpace F' E' ↦ (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E))) :
-    (manifoldTotalSpaceMapDiffeomorph V Φ hΦ hΦ').symm =
-      manifoldTotalSpaceMapDiffeomorph V (fun b ↦ (Φ b).symm) hΦ' hΦ :=
-  Diffeomorph.ext fun _ ↦ rfl
+    (x : ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F' E' V)) :
+    (manifoldTotalSpaceMapDiffeomorph V Φ hΦ).symm x =
+      ManifoldTotalSpace.fiberwiseMap
+        (fun b ↦ Fiber.map (F := F') (F' := F) (fun y ↦ (Φ y).symm) (b := b)) x := by
+  obtain ⟨p, rfl⟩ :=
+    (ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F' E' V)).surjective x
+  simp [manifoldTotalSpaceMapDiffeomorph]
 
 /-- The diffeomorphism `manifoldTotalSpaceMapDiffeomorph` is equivariant for the right action of
 `unitary (V →L[ℝ] V)`. -/
 theorem manifoldTotalSpaceMapDiffeomorph_smul (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b)
     (hΦ : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F')) n
       (fun x : TotalSpace F E ↦ (⟨x.proj, Φ x.proj x.2⟩ : TotalSpace F' E')))
-    (hΦ' : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, F)) n
-      (fun x : TotalSpace F' E' ↦ (⟨x.proj, (Φ x.proj).symm x.2⟩ : TotalSpace F E)))
     (g : (unitary (V →L[ℝ] V))ᵐᵒᵖ)
     (x : ManifoldTotalSpace (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)) :
-    manifoldTotalSpaceMapDiffeomorph V Φ hΦ hΦ' (g • x) =
-      g • manifoldTotalSpaceMapDiffeomorph V Φ hΦ hΦ' x := by
-  obtain ⟨p, rfl⟩ :=
-    (ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)).surjective x
-  simp
+    manifoldTotalSpaceMapDiffeomorph V Φ hΦ (g • x) =
+      g • manifoldTotalSpaceMapDiffeomorph V Φ hΦ x := by
+  rcases g with ⟨g⟩
+  exact PrincipalBundle.diffeomorphOfEquivariant_op_smul _ _ _ g x
 
 end Naturality
 
