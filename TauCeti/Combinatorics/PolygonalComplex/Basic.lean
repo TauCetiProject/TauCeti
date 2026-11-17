@@ -162,6 +162,12 @@ def cornerVertex (c : C.Corner) : C.graph.V := C.graph.src (C.outgoing c)
 @[simp] theorem tgt_incoming (c : C.Corner) : C.graph.tgt (C.incoming c) = C.cornerVertex c := by
   rw [incoming_eq_outgoing_prevCorner, tgt_outgoing, nextCorner_prevCorner]
 
+/-- The corner following the corner at a position `i` of a face, other than its last position, is
+at the position `i + 1`. -/
+theorem nextCorner_mk_of_add_one_lt {f : C.Face} {i : Fin (C.sides f)}
+    (hi : (i : ℕ) + 1 < C.sides f) : C.nextCorner ⟨f, i⟩ = ⟨f, ⟨(i : ℕ) + 1, hi⟩⟩ :=
+  Sigma.ext rfl (heq_of_eq (Fin.ext (Fin.coe_finRotate_of_add_one_lt hi)))
+
 /-- Any two corners of a face are joined by a path in the one-skeleton, along the sides of the
 face. -/
 theorem nonempty_path_cornerVertex (f : C.Face) (i j : Fin (C.sides f)) :
@@ -172,9 +178,8 @@ theorem nonempty_path_cornerVertex (f : C.Face) (i j : Fin (C.sides f)) :
     | zero => exact ⟨.nil⟩
     | succ k ih =>
       obtain ⟨P⟩ := ih (by omega)
-      refine ⟨P.cons ⟨C.outgoing ⟨f, ⟨k, by omega⟩⟩, rfl, ?_⟩⟩
-      rw [tgt_outgoing, nextCorner_def]
-      exact congrArg (fun j => C.cornerVertex ⟨f, j⟩) (Fin.ext (Fin.coe_finRotate_of_add_one_lt hk))
+      exact ⟨P.cons ⟨C.outgoing ⟨f, ⟨k, by omega⟩⟩, rfl,
+        by rw [tgt_outgoing, C.nextCorner_mk_of_add_one_lt hk]⟩⟩
   obtain ⟨P⟩ := key i i.2
   obtain ⟨Q⟩ := key j j.2
   exact ⟨P.reverse.comp Q⟩
@@ -224,12 +229,6 @@ theorem prevCorner_mk_of_ne_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j :
   have h : finRotate _ i = j := Fin.ext (by rw [Fin.coe_finRotate_eq_ite]; split_ifs <;> omega)
   rw [← h]
   exact C.prevCorner_nextCorner ⟨f, i⟩
-
-/-- The corner following the first corner of a face with at least two sides is its second
-corner. -/
-theorem nextCorner_mk_zero_of_one_lt {f : C.Face} (hf : 1 < C.sides f) :
-    C.nextCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ = ⟨f, ⟨1, hf⟩⟩ :=
-  Sigma.ext rfl (heq_of_eq (Fin.ext (Fin.coe_finRotate_of_add_one_lt hf)))
 
 /-- A corner is its own successor exactly on a monogon. -/
 @[simp] theorem nextCorner_eq_self_iff {c : C.Corner} : C.nextCorner c = c ↔ C.sides c.1 = 1 := by

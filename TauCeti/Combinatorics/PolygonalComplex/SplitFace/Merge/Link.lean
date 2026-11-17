@@ -59,7 +59,7 @@ variable {C : PolygonalComplex.{u, v, w}} {g₁ g₂ : C.Face} (h : C.IsMergeabl
 /-! ### The corners of the merged face at the two ends of `d` -/
 
 omit h in
-/-- A side off the edge of `d` is not one of the two occurrences of `d`. -/
+/-- A side other than the two occurrences of `d` lies off the edge of `d`. -/
 private theorem toGeomEdge_outgoing_ne_of_ne {c : C.Corner} (h : C.IsMergeable g₁ g₂)
     (h₁ : c ≠ C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) (h₂ : c ≠ ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) :
     C.graph.toGeomEdge (C.outgoing c) ≠
@@ -122,7 +122,7 @@ private theorem coe_outgoing_joinCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
   have := C.sides_pos g₁
   rw [joinCorner_of_one_lt h h₂, coe_outgoing_mergeFaces,
     mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
-    C.nextCorner_mk_zero_of_one_lt h₂]
+    C.nextCorner_mk_of_add_one_lt (i := ⟨0, C.sides_pos g₂⟩) h₂]
   exact congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
 
 private theorem coe_incoming_joinCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
@@ -155,8 +155,8 @@ private theorem cornerVertex_joinCorner : (C.mergeFaces h).cornerVertex (joinCor
 /-! ### Germs -/
 
 /-- The germ of the merged complex standing for a germ of `C`: a germ off the edge of `d` stands
-for itself, `d` stands for the outgoing side of the corner of the merged face at its source, and
-`d⁻¹` for the outgoing side of the corner of the merged face at its target. -/
+for itself, `d` is represented by the outgoing side of the corner of the merged face at its source,
+and `d⁻¹` by the outgoing side of the corner of the merged face at its target. -/
 private noncomputable def mergeGerm (e : C.graph.E) : (C.mergeFaces h).graph.E := by
   classical
   exact if he : C.graph.toGeomEdge e = C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
@@ -323,9 +323,8 @@ instance {v : C.graph.V} [Finite (C.vertexLink v).E] :
     fun _ _ he => Prod.ext (Subtype.ext (mergeFacesCornerOrigin_injective h.ne
       (congrArg (·.1.1) he))) (congrArg (·.2) he)
 
-/-- Merging two faces keeps the surface links: a circle link stays a circle and an interval link
-stays an interval, since the merge only smooths out the germs `d` and `d⁻¹` of the link and the
-remaining germs keep their degrees. -/
+/-- Merging two faces preserves the surface-link condition at every vertex: a link that is a
+finite circle or a finite interval stays a finite circle or a finite interval. -/
 theorem HasSurfaceLink.mergeFaces {v : C.graph.V} (hv : C.HasSurfaceLink v) :
     (C.mergeFaces h).HasSurfaceLink v := by
   obtain ⟨hfin, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 hv

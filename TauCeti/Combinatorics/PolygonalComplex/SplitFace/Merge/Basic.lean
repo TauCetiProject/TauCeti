@@ -430,7 +430,7 @@ theorem mergeFacesCornerOrigin_prevCorner (c : (C.mergeFaces h).Corner)
     · rw [mergeFacesCornerOrigin_none_of_not_lt hk1] at h₂ ⊢
       have hk2 : C.sides g₁ ≤ k := by
         by_contra hlt
-        rw [C.nextCorner_mk_zero_of_one_lt (by omega)] at h₂
+        rw [C.nextCorner_mk_of_add_one_lt (i := ⟨0, C.sides_pos g₂⟩) (by dsimp only; omega)] at h₂
         exact h₂ (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
       rw [(C.mergeFaces h).prevCorner_mk_of_ne_zero (i := ⟨k - 1, by omega⟩) (by omega) rfl,
         mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega),
@@ -551,8 +551,7 @@ private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.side
   rw [← C.tgt_side_eq_src_side (i := ⟨0, C.sides_pos g₂⟩) (by dsimp only; split_ifs <;> omega),
     ← outgoing_def _ ⟨_, _⟩, h.outgoing_eq, SerreGraph.tgt_rev]
 
-/-- The side of the merged face at the position where `Y` starts is the second side of `g₂`, which
-starts at the source of `d`. -/
+/-- The side of the merged face at the position where `Y` starts begins at the source of `d`. -/
 theorem src_side_mergeFaces_none_sides_sub_one (h₂ : 1 < C.sides g₂) :
     C.graph.src ((C.mergeFaces h).side none
       ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).1 =
