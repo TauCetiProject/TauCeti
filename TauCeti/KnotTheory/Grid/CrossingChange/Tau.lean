@@ -197,13 +197,6 @@ theorem natAbs_tau_sub_le_one_of_isCrossCommutation {H : GridDiagram n} (hH : H.
   · exact hG.natAbs_tau_sub_le_one_of_isRowCrossCommutation K hH h
   · exact hG.natAbs_tau_sub_le_one_of_isColumnCrossCommutation K hH h
 
-/-- Any cross-commutation between knot grids keeps `τ` within `[τ(G) - 1, τ(G) + 1]`. -/
-theorem tau_mem_Icc_of_isCrossCommutation {H : GridDiagram n} (hH : H.IsKnot)
-    (h : G.IsCrossCommutation H) :
-    hH.tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K + 1) := by
-  have hle := hG.natAbs_tau_sub_le_one_of_isCrossCommutation K hH h
-  exact ⟨by omega, by omega⟩
-
 end IsKnot
 
 end GridDiagram
@@ -220,20 +213,6 @@ theorem IsCrossingChange.natAbs_tau_sub_le_one {L L' : GridLink} (h : IsCrossing
   rw [IsKnot.tau_toGridLink, IsKnot.tau_toGridLink]
   exact ((isKnot_toGridLink G).mp hL).natAbs_tau_sub_le_one_of_isCrossCommutation K
     ((isKnot_toGridLink G').mp hL') hcross
-
-/-- Along a single crossing change between grid knots, `|τ(L') - τ(L)| ≤ 1`. -/
-theorem IsCrossingChange.abs_tau_sub_le_one {L L' : GridLink} (h : IsCrossingChange L L')
-    (hL : L.IsKnot) (hL' : L'.IsKnot) (K : Type*) [CommRing K] [CharP K 2] :
-    |hL'.tau K - hL.tau K| ≤ 1 := by
-  rw [Int.abs_eq_natAbs]
-  exact Nat.cast_le.mpr (h.natAbs_tau_sub_le_one hL hL' K)
-
-/-- Along a single crossing change between grid knots, `τ(L') ∈ [τ(L) - 1, τ(L) + 1]`. -/
-theorem IsCrossingChange.tau_mem_Icc {L L' : GridLink} (h : IsCrossingChange L L')
-    (hL : L.IsKnot) (hL' : L'.IsKnot) (K : Type*) [CommRing K] [CharP K 2] :
-    hL'.tau K ∈ Set.Icc (hL.tau K - 1) (hL.tau K + 1) := by
-  have hle := h.natAbs_tau_sub_le_one hL hL' K
-  exact ⟨by omega, by omega⟩
 
 namespace IsKnot
 
