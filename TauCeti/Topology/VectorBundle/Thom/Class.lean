@@ -358,6 +358,17 @@ theorem fiberThomPairOverMap_comp_thomPairOverIso_hom {b : B} (hb : b ∈ W) :
     ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
     prodThomPairFiberMap_fst_apply, continuousLinearEquivAt_apply]
 
+/-- The inverse form of `Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom`: on
+the fibre over `b ∈ W`, the identification of the Thom pair of `W × F` with `(E|_W, E₀|_W)` is the
+inverse of the isomorphism of fibre pairs given by the trivialization at `b`. -/
+@[reassoc]
+theorem prodThomPairFiberMap_comp_thomPairOverIso_inv (b : W) :
+    prodThomPairFiberMap F b ≫ (e.thomPairOverIso 𝕜 hW).inv =
+      (e.continuousLinearEquivAt 𝕜 b (hW b.2)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E b.2 := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.2]
+
 include hW in
 /-- **Local classes over a trivializing set.** For `W` contained in the base set of a linear
 trivialization, every class `g ∈ Hⁿ(F, F ∖ {0})` pulls back, along the trivialization followed by
@@ -399,18 +410,14 @@ theorem singularCohomology_thomPairOver_ext
     (h : ∀ b (hb : b ∈ W), TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ u =
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ v) : u = v := by
   let φ := e.thomPairOverIso ℝ hW
-  have hφ (b : W) : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
   -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
   have hφu (w : (thomPairOver F E W).singularCohomology R' K M' (finrank ℝ F)) :
       TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ w) = w := by
     simp [← TopPair.singularCohomologyMap_comp_apply]
   refine (hφu u).symm.trans ((congrArg _ (singularCohomology_prodThomPair_ext fun b ↦ ?_)).trans
     (hφu v))
-  simp only [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  simp only [← TopPair.singularCohomologyMap_comp_apply, φ,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b]
   simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
 
 end ThomPairOverExt

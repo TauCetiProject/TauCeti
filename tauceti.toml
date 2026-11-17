@@ -69,10 +69,11 @@ url = "https://fleet.taucetiproject.org"
 # control live routing without a source PR; zero cap disables new Namespace work.
 namespace_enabled = true
 namespace_build_cap = 8
-pr_order = ["github", "fleet", "namespace"]
-# Keep a few PR builds waiting for the next fleet runner when GitHub is full.
-# This observational limit can briefly overshoot under simultaneous pickers.
-pr_queue_limit = 3
+pr_order = ["fleet", "namespace", "github"]
+# Prefer filling the Fleet PR pool (with a small bounded waiting queue) before spilling
+# onto Namespace or GitHub-hosted capacity. This observational limit can briefly
+# overshoot under simultaneous pickers.
+pr_queue_limit = 10
 staging_order = ["tauchonki2"]
 
 # Staging is reserved for these hosts; other membership comes from the registered runners.

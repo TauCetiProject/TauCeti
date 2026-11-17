@@ -22,6 +22,8 @@ manifold-derivative API.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
 * `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse differentiable along its
   image has injective derivative.
+* `TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp`: if `Φ ∘ Ψ = κ` near `x`, then `dΦ` takes
+  `dΨ(u)` to `dκ(u)`.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
@@ -29,7 +31,7 @@ manifold-derivative API.
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -74,6 +76,20 @@ theorem mfderiv_injective_of_leftInverse {f : M → N} {g : N → M}
   rw [hgf.comp_eq_id, mfderiv_id] at h
   exact Function.LeftInverse.injective (g := mfderiv J I g (f x)) fun v ↦
     (DFunLike.congr_fun h v).symm
+
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] in
+/-- If `Φ ∘ Ψ = κ` on a neighbourhood of `x`, the differential of `Φ` at `Ψ x` takes `dΨ(u)` to
+`dκ(u)`. -/
+theorem mfderiv_apply_mfderiv_of_eventuallyEq_comp {Ψ : M → N} {Φ : N → P} {κ : M → P}
+    (hΦΨ : Φ ∘ Ψ =ᶠ[𝓝 x] κ) (hΦ : MDifferentiableAt J K Φ (Ψ x))
+    (hΨ : MDifferentiableAt I J Ψ x) (u : TangentSpace I x) :
+    mfderiv J K Φ (Ψ x) (mfderiv I J Ψ x u) = mfderiv I K κ x u := by
+  rw [← mfderiv_comp_apply x hΦ hΨ, hΦΨ.mfderiv_eq]
+  -- The cast between the tangent spaces at `(Φ ∘ Ψ) x` and `κ x` is definitionally the identity.
+  rfl
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
 /-- **The derivative of an affine reparametrization.** For a map `u` from a normed space, the
