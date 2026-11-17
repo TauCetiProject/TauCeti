@@ -96,6 +96,8 @@ the two terms of the index cancel.
 * `Matrix.continuousAt_spectralAngleSum`: the spectral angle sum is continuous where the
   multiplicity of the eigenvalue `1` is locally constant.
 * `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`: the zero axiom.
+* `Matrix.UnitaryGroup.isRoot_one_charpoly_souriau_iff`: the Souriau map has the eigenvalue `1`
+  exactly when the frame has singular imaginary part, that is, when `U ℝⁿ` meets `ℝⁿ`.
 
 ## References
 
@@ -444,6 +446,33 @@ theorem maslovIndex_eq_zero_of_forall_not_isRoot {U V : unitaryGroup n ℂ} (γ 
     (h : ∀ t, ¬(souriau (γ t) : Matrix n n ℂ).charpoly.IsRoot 1) : maslovIndex γ = 0 :=
   maslovIndex_eq_zero_of_rootMultiplicity_eq γ fun t => rootMultiplicity_eq_zero (h t)
 
+/-- **Transversality through the Souriau map.** The Souriau map `U Uᵀ` of a unitary frame `U` has
+the eigenvalue `1` exactly when the imaginary part of `U` is singular, that is, when some nonzero
+real vector `x` has `U x` real: when the Lagrangian `U ℝⁿ` meets `ℝⁿ`. -/
+theorem isRoot_one_charpoly_souriau_iff (U : unitaryGroup n ℂ) :
+    (souriau U : Matrix n n ℂ).charpoly.IsRoot 1 ↔
+      ((U : Matrix n n ℂ).map Complex.im).det = 0 := by
+  have hU : (U : Matrix n n ℂ) * (U : Matrix n n ℂ)ᴴ = 1 := by
+    rw [← star_eq_conjTranspose]
+    exact mem_unitaryGroup_iff.1 U.2
+  -- `1 - U Uᵀ = U (Uᴴ - Uᵀ) = -2 i U (Im U)ᵀ`.
+  have hfac : (1 : Matrix n n ℂ) - (souriau U : Matrix n n ℂ) =
+      (U : Matrix n n ℂ) * ((-2 * Complex.I) • (((U : Matrix n n ℂ).map Complex.im).map
+        ((↑) : ℝ → ℂ))ᵀ) := by
+    have him : (U : Matrix n n ℂ)ᴴ - (U : Matrix n n ℂ)ᵀ = (-2 * Complex.I) •
+        (((U : Matrix n n ℂ).map Complex.im).map ((↑) : ℝ → ℂ))ᵀ := by
+      ext i j
+      apply Complex.ext <;> simp
+      ring
+    rw [coe_souriau, ← him, Matrix.mul_sub, hU]
+  have hdetU : (U : Matrix n n ℂ).det ≠ 0 := by
+    have h := congrArg det hU
+    rw [det_mul, det_one] at h
+    exact left_ne_zero_of_mul_eq_one h
+  rw [Polynomial.IsRoot.def, eval_charpoly, scalar_apply, diagonal_one, hfac, det_mul, det_smul,
+    det_transpose, show (((U : Matrix n n ℂ).map Complex.im).map ((↑) : ℝ → ℂ)).det =
+      (((U : Matrix n n ℂ).map Complex.im).det : ℂ) from (Complex.ofRealHom.map_det _).symm]
+  simp [hdetU, Complex.I_ne_zero]
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
 `(⌊x⌋ + ⌈x⌉) / 2`: it is `⌊x⌋ + 1/2` if `x` is not an integer and `x` if it is. -/
 private theorem div_pi_sub_angleOffset (φ : ℝ) :

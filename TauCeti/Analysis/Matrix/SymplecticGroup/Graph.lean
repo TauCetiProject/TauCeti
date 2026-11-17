@@ -83,6 +83,13 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
+omit [Fintype n] in
+theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromBlocks 1 (-(Complex.I • 1))
+      (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
+      (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
+  (rfl)
+
 /-- The graph frame sends the real point `x` to `(conj (φ x), φ (A x))`, where `φ (x, y) = x + i y`.
 -/
 theorem graphFrame_mulVec (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → ℝ) :

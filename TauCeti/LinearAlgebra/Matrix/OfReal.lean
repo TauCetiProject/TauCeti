@@ -27,6 +27,8 @@ by the same congruence.
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
+  complex matrix.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
 * `Matrix.map_im_conjTranspose_mul_self_mul_map_ofReal`: likewise, the imaginary part of the Gram
@@ -65,6 +67,14 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
+
+/-- A real square matrix is invertible exactly when it is invertible as a complex matrix. -/
+@[simp]
+theorem isUnit_map_ofReal_iff [Fintype n] [DecidableEq n] {M : Matrix n n ℝ} :
+    IsUnit (M.map ((↑) : ℝ → ℂ)) ↔ IsUnit M := by
+  rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det,
+    show (M.map ((↑) : ℝ → ℂ)).det = (M.det : ℂ) from (Complex.ofRealHom.map_det M).symm,
+    isUnit_iff_ne_zero, isUnit_iff_ne_zero, Complex.ofReal_ne_zero]
 
 /-- The real Gram matrix `Re ((M N)ᴴ (M N))` of the columns of `M N`, for a real matrix `N`, is
 `Nᵀ Re (Mᴴ M) N`. -/

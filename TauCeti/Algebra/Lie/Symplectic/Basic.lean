@@ -35,6 +35,8 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.transpose_mem_sp` and `LieAlgebra.Symplectic.conjTranspose_mem_sp`: the
   symplectic Lie algebra is stable under transpose, and under conjugate transpose over a star
   ring.
+* `LieAlgebra.Symplectic.J_mul_mem_sp_iff`: `J * S` lies in `sp l R` exactly when `S` is
+  symmetric.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
@@ -122,6 +124,15 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
     star_J, conjTranspose_zero, conjTranspose_transpose_eq_transpose_conjTranspose] at h
   rw [mem_sp, eq_neg_iff_add_eq_zero, ← neg_eq_zero, ← h]
   noncomm_ring
+
+/-- **Hamiltonian matrices**: `J * S` lies in the symplectic Lie algebra exactly when `S` is
+symmetric. For the standard form `ω(x, y) = xᵀ J y`, `J * S` is the linear Hamiltonian vector field
+of the quadratic Hamiltonian `x ↦ xᵀ S x / 2`. -/
+theorem J_mul_mem_sp_iff {S : Matrix (l ⊕ l) (l ⊕ l) R} : J l R * S ∈ sp l R ↔ S.IsSymm := by
+  rw [mem_sp, transpose_mul, J_transpose, Matrix.mul_neg, neg_mul, Matrix.mul_assoc, J_squared,
+    ← Matrix.mul_assoc, J_squared, Matrix.mul_neg, Matrix.mul_one, neg_mul, Matrix.one_mul,
+    neg_neg, neg_neg]
+  exact Iff.rfl
 
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
