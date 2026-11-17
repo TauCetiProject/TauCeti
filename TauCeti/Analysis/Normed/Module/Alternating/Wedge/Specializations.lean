@@ -71,6 +71,16 @@ theorem wedge_smul_right (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge φ (c • ψ) = c • wedge φ ψ :=
   pairedWedge_smul_right _ _ _ _ _
 
+/-- The real wedge vanishes when its first form is zero. -/
+@[simp]
+theorem wedge_zero_left (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge (0 : E [⋀^Fin k]→L[ℝ] ℝ) ψ = 0 :=
+  pairedWedge_zero_left _ _ _
+
+/-- The real wedge vanishes when its second form is zero. -/
+@[simp]
+theorem wedge_zero_right (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge φ (0 : E [⋀^Fin l]→L[ℝ] ℝ) = 0 :=
+  pairedWedge_zero_right _ _ _
+
 /-- The real wedge obeys the binomial operator-norm bound. -/
 theorem norm_wedge_le (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ) :
     ‖wedge φ ψ‖ ≤ (k + l).choose k * ‖φ‖ * ‖ψ‖ := by
