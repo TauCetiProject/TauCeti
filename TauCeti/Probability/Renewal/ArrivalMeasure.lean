@@ -249,20 +249,6 @@ theorem occurrenceGap_renewalArrivalMeasure {Ω : Type*} (T : ℕ → Ω → ℝ
     (renewalArrivalMeasure T ω).occurrenceGap n = (T n ω : ℝ≥0∞) := by
   simp [renewalArrivalMeasure_eq_occurrenceTimeMeasure, arrival_def]
 
-/-- Extracting `ℝ≥0` interarrival-gap representatives from `renewalArrivalMeasure T ω` recovers
-the increment sequence `T`. -/
-theorem toNNReal_occurrenceGap_renewalArrivalMeasure {Ω : Type*} (T : ℕ → Ω → ℝ≥0) (ω : Ω)
-    (n : ℕ) :
-    ((renewalArrivalMeasure T ω).occurrenceGap n).toNNReal = T n ω := by
-  simp
-
-/-- Extracting real-valued interarrival-gap representatives from `renewalArrivalMeasure T ω`
-recovers the real-coerced increment sequence. -/
-theorem toReal_occurrenceGap_renewalArrivalMeasure {Ω : Type*} (T : ℕ → Ω → ℝ≥0) (ω : Ω)
-    (n : ℕ) :
-    ((renewalArrivalMeasure T ω).occurrenceGap n).toReal = (T n ω : ℝ) := by
-  simp
-
 /-- When the `n`-th occurrence time of `μ` is finite, the `(n + 1)`-st renewal arrival time of
 its `ℝ≥0` interarrival-gap representatives on the canonical space `Measure ℝ≥0` equals that
 occurrence time. -/
