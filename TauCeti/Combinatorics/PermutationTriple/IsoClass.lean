@@ -51,6 +51,9 @@ of the thrice-punctured sphere, as isomorphism classes of connected triples are 
   label.
 * `TauCeti.MarkedIsoClass.stabilizerEquiv`: fixing a label identifies marked classes with
   connected triples modulo permutations stabilizing that label.
+* `TauCeti.MarkedIsoClass.stabilizer_eq_bot`, `TauCeti.MarkedIsoClass.natCard_mul_factorial`:
+  relabeling acts freely on marked connected triples, so each marked class of degree `n` has
+  `n!` elements and `Nat.card (MarkedIsoClass n) * n! = n * Nat.card (ConnectedTriple n)`.
 -/
 
 open Equiv MulAction
@@ -244,7 +247,7 @@ end ConnectedIsoClass
 action `τ • (t, i) = (τ • t, τ i)`: the relabeling moves the label along with the triple.
 Quotienting by the stabilizer of the label instead would never identify pairs with different
 labels. -/
-def MarkedIsoClass (n : ℕ) : Type :=
+@[expose] def MarkedIsoClass (n : ℕ) : Type :=
   MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedTriple n × Fin n)
 
 namespace MarkedIsoClass
@@ -252,7 +255,7 @@ namespace MarkedIsoClass
 variable {n : ℕ}
 
 /-- The class of a connected triple with the marked label `i`. -/
-def mk (t : ConnectedTriple n) (i : Fin n) : MarkedIsoClass n :=
+@[expose] def mk (t : ConnectedTriple n) (i : Fin n) : MarkedIsoClass n :=
   Quotient.mk'' (t, i)
 
 /-- Two marked connected triples determine the same class exactly when they are related by the
@@ -280,6 +283,20 @@ theorem mk_surjective (c : MarkedIsoClass n) :
     ∃ (t : ConnectedTriple n) (i : Fin n), mk t i = c :=
   Quotient.inductionOn' c fun ti => ⟨ti.1, ti.2, rfl⟩
 
+/-- Equality of marked classes is decidable: on representatives, search through the finitely many
+relabelings. -/
+instance : DecidableEq (MarkedIsoClass n) := fun c c' =>
+  Quotient.recOnSubsingleton₂ c c' fun x x' =>
+    decidable_of_iff (∃ τ : Perm (Fin n), τ • x'.1 = x.1 ∧ τ x'.2 = x.2)
+      (mk_eq_mk_iff_exists_smul (t := x.1) (i := x.2)).symm
+
+/-- Marked classes are finite. Only `Finite` is registered, so that `Nat.card` stays the simp
+normal form of their number. -/
+instance : Finite (MarkedIsoClass n) :=
+  Finite.of_surjective (fun x : ConnectedTriple n × Fin n => mk x.1 x.2) fun c => by
+    obtain ⟨t, i, rfl⟩ := mk_surjective c
+    exact ⟨(t, i), rfl⟩
+
 /-- A function on marked triples that is unchanged by simultaneous relabeling descends to
 marked isomorphism classes. -/
 def lift {α : Sort*} (f : ConnectedTriple n → Fin n → α)
@@ -303,6 +320,33 @@ def forget : MarkedIsoClass n → ConnectedIsoClass n :=
 theorem forget_mk (t : ConnectedTriple n) (i : Fin n) :
     (mk t i).forget = ConnectedIsoClass.mk t :=
   (rfl)
+
+/-- Relabeling acts freely on marked connected triples: a relabeling fixing a connected triple
+and one of its sheets is an automorphism of a transitive triple fixing a sheet, hence the
+identity. -/
+theorem stabilizer_eq_bot (x : ConnectedTriple n × Fin n) :
+    stabilizer (Perm (Fin n)) x = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun τ hτ => ?_
+  rw [mem_stabilizer_iff, Prod.smul_mk, Prod.mk.injEq] at hτ
+  have ht : τ • x.1.1 = x.1.1 := congrArg Subtype.val hτ.1
+  refine x.1.1.eq_one_of_mem_automorphismGroup_of_apply_eq x.1.2.isPretransitive ?_ hτ.2
+  exact PermutationTriple.mem_automorphismGroup_iff.2
+    ⟨by rw [← PermutationTriple.smul_σ0, ht], by rw [← PermutationTriple.smul_σ1, ht]⟩
+
+/-- Relabeling acts freely on marked connected triples. -/
+instance : IsCancelSMul (Perm (Fin n)) (ConnectedTriple n × Fin n) :=
+  isCancelSMul_iff_stabilizer_eq_bot.2 stabilizer_eq_bot
+
+/-- `Nat.card (MarkedIsoClass n) * n! = n * Nat.card (ConnectedTriple n)`: since relabeling acts
+freely, the `n` markings of the connected triples of degree `n` fall into marked classes of
+exactly `n!` elements each. -/
+theorem natCard_mul_factorial :
+    Nat.card (MarkedIsoClass n) * n.factorial = n * Nat.card (ConnectedTriple n) := by
+  have h := Nat.card_congr (selfEquivOrbitsQuotientProd stabilizer_eq_bot :
+    ConnectedTriple n × Fin n ≃ MarkedIsoClass n × Perm (Fin n))
+  rw [Nat.card_prod, Nat.card_prod, Nat.card_eq_fintype_card (α := Fin n),
+    Nat.card_eq_fintype_card (α := Perm (Fin n)), Fintype.card_perm, Fintype.card_fin] at h
+  exact h.symm.trans (mul_comm _ _)
 
 /-- Fixing any label identifies its stabilizer-orbit quotient with marked triple classes.
 For positive degree, `i = 0` gives the fixed-zero-label description. -/

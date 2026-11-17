@@ -20,11 +20,13 @@ manifold-derivative API.
   derivatives taken at `x`, so the composite is an endomorphism of the single tangent space
   `T_x M`.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
+* `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse differentiable along its
+  image has injective derivative.
+* `TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp`: if `Φ ∘ Ψ = κ` near `x`, then `dΦ` takes
+  `dΨ(u)` to `dκ(u)`.
 * `TauCeti.mfderiv_mfderiv_of_eventuallyEq_id`,
   `TauCeti.mfderiv_comp_mfderiv_eq_id_of_eventuallyEq`: if `g ∘ f =ᶠ[𝓝 x] id`, then
   `dg_(f x) ∘ df_x = id` on `T_x M`.
-* `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse differentiable along its
-  image has injective derivative.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
@@ -65,27 +67,8 @@ theorem _root_.HasMFDerivAt.iterate {f : M → M} {f' : TangentSpace I x →L[�
     have ihn' : HasMFDerivAt I I f^[n] (f x) (f' ^ n) := by rw [hx]; exact ihn
     exact ihn'.comp x hf
 
-section Map
-
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
-  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-
-/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x) (df_x v) = v`. -/
-theorem mfderiv_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
-    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
-    (hgf : g ∘ f =ᶠ[𝓝 x] id) (v : TangentSpace I x) :
-    mfderiv J I g (f x) (mfderiv I J f x v) = v := by
-  have h := (mfderiv_comp_apply x hg hf v).symm
-  rwa [hgf.mfderiv_eq, mfderiv_id] at h
-
-/-- Continuous-linear-map form of `mfderiv_mfderiv_of_eventuallyEq_id`: `dg_(f x) ∘ df_x = id`. -/
-theorem mfderiv_comp_mfderiv_eq_id_of_eventuallyEq {f : M → N} {g : N → M}
-    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
-    (hgf : g ∘ f =ᶠ[𝓝 x] id) :
-    (mfderiv J I g (f x)).comp (mfderiv I J f x) =
-      ContinuousLinearMap.id 𝕜 (TangentSpace I x) :=
-  ContinuousLinearMap.ext (mfderiv_mfderiv_of_eventuallyEq_id hg hf hgf)
-
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
 /-- A map `f` with a left inverse `g` has injective derivative at every point `x` where `f` is
 differentiable and `g` is differentiable at `f x`: by the chain rule, `dg_(f x)` is a left inverse
 of `df_x`. -/
@@ -97,7 +80,41 @@ theorem mfderiv_injective_of_leftInverse {f : M → N} {g : N → M}
   exact Function.LeftInverse.injective (g := mfderiv J I g (f x)) fun v ↦
     (DFunLike.congr_fun h v).symm
 
-end Map
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] in
+/-- If `Φ ∘ Ψ = κ` on a neighbourhood of `x`, the differential of `Φ` at `Ψ x` takes `dΨ(u)` to
+`dκ(u)`. -/
+theorem mfderiv_apply_mfderiv_of_eventuallyEq_comp {Ψ : M → N} {Φ : N → P} {κ : M → P}
+    (hΦΨ : Φ ∘ Ψ =ᶠ[𝓝 x] κ) (hΦ : MDifferentiableAt J K Φ (Ψ x))
+    (hΨ : MDifferentiableAt I J Ψ x) (u : TangentSpace I x) :
+    mfderiv J K Φ (Ψ x) (mfderiv I J Ψ x u) = mfderiv I K κ x u := by
+  rw [← mfderiv_comp_apply x hΦ hΨ, hΦΨ.mfderiv_eq]
+  -- The cast between the tangent spaces at `(Φ ∘ Ψ) x` and `κ x` is definitionally the identity.
+  rfl
+
+section EventuallyEqId
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x) (df_x v) = v`. -/
+theorem mfderiv_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) (v : TangentSpace I x) :
+    mfderiv J I g (f x) (mfderiv I J f x v) = v := by
+  simpa using mfderiv_apply_mfderiv_of_eventuallyEq_comp hgf hg hf v
+
+/-- Continuous-linear-map form of `mfderiv_mfderiv_of_eventuallyEq_id`: `dg_(f x) ∘ df_x = id`. -/
+theorem mfderiv_comp_mfderiv_eq_id_of_eventuallyEq {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) :
+    (mfderiv J I g (f x)).comp (mfderiv I J f x) =
+      ContinuousLinearMap.id 𝕜 (TangentSpace I x) :=
+  ContinuousLinearMap.ext (mfderiv_mfderiv_of_eventuallyEq_id hg hf hgf)
+
+end EventuallyEqId
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
 /-- **The derivative of an affine reparametrization.** For a map `u` from a normed space, the
