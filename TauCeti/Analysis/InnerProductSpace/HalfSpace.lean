@@ -10,11 +10,11 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 /-!
 # Inner-product half-spaces
 
-A translation orthogonal to the normal vector preserves a strict half-space. The ball of radius
-`r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`. The projection
-`z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}`. Relative to an
-orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
-projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`.
+A strict half-space is convex, and a translation orthogonal to the normal vector preserves it.
+The ball of radius `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`.
+The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}`.
+Relative to an orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part
+along the projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`.
 -/
 
 public section
@@ -31,6 +31,13 @@ theorem mapsTo_add_smul_of_halfSpace {E : Type*} [SeminormedAddCommGroup E]
     Set.MapsTo (· + t • τ) s s := fun x hx => by
   have hx' := (hΩ x).1 hx
   exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
+
+/-- The half-space `{x | c < ⟪x, ν⟫}` is convex. -/
+theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {s : Set E} {ν : E} {c : ℝ} (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) : Convex ℝ s := by
+  have h : s = {x | c < innerSL ℝ ν x} := Set.ext fun x => by simp [hΩ x, real_inner_comm]
+  rw [h]
+  exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
 
 /-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
 theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
