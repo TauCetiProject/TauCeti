@@ -30,6 +30,8 @@ This file contains basic facts about finite partial sums.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
+* `TauCeti.prefixSum_two_rev`: for a tuple of length at least `2`, the prefix sum of length `2` of
+  its reversal is the sum of the last two entries of the original tuple.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
 * `TauCeti.sum_filter_rev_eq_prefixSum`: summing `x ∘ Fin.rev` over the suffix `n - k ≤ i.val`
@@ -113,6 +115,14 @@ theorem prefixSum_eq_sum_castLE {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
   ext i
   simp only [mem_filter, mem_univ, true_and, mem_map, Fin.castLEEmb_apply]
   exact ⟨fun hi ↦ ⟨⟨i, hi⟩, rfl⟩, fun ⟨j, hj⟩ ↦ hj ▸ j.isLt⟩
+
+/-- The prefix sum of length `2` of the reversed tuple `j ↦ x j.rev` is the sum of the last two
+entries `x (n - 1)` and `x (n - 2)` of `x`. -/
+theorem prefixSum_two_rev (h2 : 2 ≤ n) (x : Fin n → M) :
+    prefixSum 2 (fun j ↦ x j.rev) = x ⟨n - 1, by omega⟩ + x ⟨n - 2, by omega⟩ := by
+  have h0 : (Fin.castLE h2 0).rev = ⟨n - 1, by omega⟩ := Fin.ext (by simp [Fin.val_rev])
+  have h1 : (Fin.castLE h2 1).rev = ⟨n - 2, by omega⟩ := Fin.ext (by simp [Fin.val_rev])
+  rw [prefixSum_eq_sum_castLE h2, Fin.sum_univ_two, h0, h1]
 
 /-- Capping the length of a prefix sum at `n` does not change it. -/
 @[simp]
