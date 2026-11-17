@@ -96,5 +96,4 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
 /-- The commutator `ξ H - H ξ` of a skew-adjoint `ξ` with a self-adjoint `H` is self-adjoint. -/
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
     {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
-  rw [IsSelfAdjoint, star_sub, star_mul, star_mul, hH.star_eq, skewAdjoint.mem_iff.mp hξ, mul_neg,
-    neg_mul, sub_neg_eq_add, neg_add_eq_sub]
+  simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]

@@ -272,16 +272,6 @@ theorem range_unitaryTorusRestriction_unitaryCoadjointRepresentation_unitaryToru
     unitaryTorusRestriction_unitaryTracePairing, RCLike.re_to_complex, Unitary.coe_star,
     RCLike.ofReal_eq_complex_ofReal]
 
-/-- The entries of `diag(z) P`, for `P` the permutation matrix of `σ⁻¹`: row `k` has the single
-nonzero entry `z k`, in column `σ⁻¹ k`. -/
-theorem coe_unitaryTorusHom_mul_permutationUnitary_apply (z : ι → Circle) (σ : Equiv.Perm ι)
-    (k i : ι) :
-    ((unitaryTorusHom ι z * permutationUnitary σ : unitaryGroup ι ℂ) : Matrix ι ι ℂ) k i =
-      if i = σ⁻¹ k then (z k : ℂ) else 0 := by
-  rw [Submonoid.coe_mul, coe_unitaryTorusHom, coe_permutationUnitary, diagonal_mul,
-    Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_apply, Pi.single_apply, mul_ite, mul_one,
-    mul_zero]
-
 section Weyl
 
 variable {n : ℕ}

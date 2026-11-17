@@ -115,12 +115,14 @@ variable (ι) in
 the skew-Hermitian onto the Hermitian matrices, with inverse `K ↦ i K`. -/
 def unitaryLieAlgebraEquivSelfAdjoint :
     unitaryLieAlgebra ι ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι ℂ) :=
-  skewAdjoint.negISMulEquiv
+  (LinearEquiv.ofEq _ _ (skewAdjoint.toSubmodule_lieSubalgebra ℝ (Matrix ι ι ℂ))).trans
+    skewAdjoint.negISMulEquiv
 
 @[simp]
 theorem coe_unitaryLieAlgebraEquivSelfAdjoint_apply (X : unitaryLieAlgebra ι) :
     (unitaryLieAlgebraEquivSelfAdjoint ι X : Matrix ι ι ℂ) = -I • (X : Matrix ι ι ℂ) :=
-  skewAdjoint.coe_negISMulEquiv_apply (A := Matrix ι ι ℂ) X
+  skewAdjoint.coe_negISMulEquiv_apply
+    ⟨(X : Matrix ι ι ℂ), skewAdjoint.mem_lieSubalgebra.mp X.2⟩
 
 @[simp]
 theorem coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply
@@ -138,7 +140,8 @@ variable (ι) in
 def unitaryAdjointRepresentation :
     Representation ℝ (unitaryGroup ι ℂ) (unitaryLieAlgebra ι) where
   toFun U :=
-    { toFun X := ⟨U * X * star (U : Matrix ι ι ℂ), skewAdjoint.conjugate X.2 _⟩
+    { toFun X := ⟨U * X * star (U : Matrix ι ι ℂ), skewAdjoint.mem_lieSubalgebra.mpr <|
+        skewAdjoint.conjugate (skewAdjoint.mem_lieSubalgebra.mp X.2) _⟩
       map_add' X Y := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
       map_smul' c X := Subtype.ext (by simp) }
   map_one' := LinearMap.ext fun X => Subtype.ext (by simp)
@@ -238,9 +241,8 @@ theorem unitaryCoadjointRepresentation_unitaryTracePairing (U : unitaryGroup ι 
         (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).conjugate _⟩ := by
   ext X
   apply Complex.ofReal_injective
-  rw [unitaryCoadjointRepresentation_apply_apply, ofReal_unitaryTracePairing_apply,
-    ofReal_unitaryTracePairing_apply, coe_unitaryAdjointRepresentation_apply,
-    ← Unitary.star_eq_inv, Unitary.coe_star, star_star]
+  simp only [unitaryCoadjointRepresentation_apply_apply, ofReal_unitaryTracePairing_apply,
+    coe_unitaryAdjointRepresentation_apply, ← Unitary.star_eq_inv, Unitary.coe_star, star_star]
   -- `tr(H Uᴴ X U) = tr(U H Uᴴ X)` by cyclicity of the trace.
   simp only [← Matrix.mul_assoc]
   rw [trace_mul_comm _ (U : Matrix ι ι ℂ)]

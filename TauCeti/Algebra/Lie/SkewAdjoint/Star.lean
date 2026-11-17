@@ -15,8 +15,8 @@ In an associative `R`-algebra `A` with a star operation, for which `star` is tri
 skew-adjoint elements `star X = -X` are closed under the commutator bracket
 `⁅X, Y⁆ = X Y - Y X`: `star ⁅X, Y⁆ = ⁅star Y, star X⁆ = ⁅Y, X⁆ = -⁅X, Y⁆`. So they form a Lie
 subalgebra of `A`, `TauCeti.skewAdjoint.lieSubalgebra R A`, with underlying submodule
-`skewAdjoint.submodule R A`. For `A = Matrix ι ι ℂ` over `R = ℝ` this is the unitary Lie algebra of
-skew-Hermitian matrices.
+`skewAdjoint.submodule R A` (`TauCeti.skewAdjoint.toSubmodule_lieSubalgebra`). For
+`A = Matrix ι ι ℂ` over `R = ℝ` this is the unitary Lie algebra of skew-Hermitian matrices.
 -/
 
 public section
@@ -30,12 +30,15 @@ variable (R A : Type*) [CommRing R] [StarMul R] [TrivialStar R] [Ring A] [StarRi
 
 /-- The **Lie subalgebra of skew-adjoint elements** `star X = -X` of a star algebra `A`, for the
 commutator bracket. -/
-@[expose]
 def lieSubalgebra : LieSubalgebra R A :=
   { skewAdjoint.submodule R A with
     lie_mem' := fun {X Y} hX hY => skewAdjoint.mem_iff.mpr <| by
-      rw [Ring.lie_def, star_sub, star_mul, star_mul, skewAdjoint.mem_iff.mp hX,
-        skewAdjoint.mem_iff.mp hY, neg_mul_neg, neg_mul_neg, neg_sub] }
+      simp [Ring.lie_def, skewAdjoint.mem_iff.mp hX, skewAdjoint.mem_iff.mp hY] }
+
+@[simp]
+theorem toSubmodule_lieSubalgebra :
+    (lieSubalgebra R A).toSubmodule = skewAdjoint.submodule R A :=
+  Submodule.ext fun _ => Iff.rfl
 
 variable {R A}
 

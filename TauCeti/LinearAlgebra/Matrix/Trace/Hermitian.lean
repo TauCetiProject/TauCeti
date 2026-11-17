@@ -35,10 +35,9 @@ theorem IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type
     [Fintype ι] {H X : Matrix ι ι 𝕜} (hH : H.IsHermitian) (hX : Xᴴ = -X) :
     RCLike.re (H * X).trace = 0 := by
   have h : star (H * X).trace = -(H * X).trace := by
-    rw [← trace_conjTranspose, conjTranspose_mul, hH.eq, hX, Matrix.neg_mul, trace_neg,
-      trace_mul_comm]
+    simp [← trace_conjTranspose, hH.eq, hX, trace_mul_comm X]
   have := congrArg RCLike.re h
-  rw [RCLike.star_def, RCLike.conj_re, map_neg] at this
+  simp only [RCLike.star_def, RCLike.conj_re, map_neg] at this
   linarith
 
 end Matrix
