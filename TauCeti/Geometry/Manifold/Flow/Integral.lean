@@ -151,15 +151,18 @@ private theorem contMDiff_integralField {n : ℕ∞}
       (fun p : F × M ↦ (⟨p, integralField v f p⟩ : TangentBundle (𝓘(ℝ, F).prod I) (F × M))) := by
   have h₁ : ContMDiff (𝓘(ℝ, F).prod I) 𝓘(ℝ, F).tangent n
       (fun p : F × M ↦ (⟨p.1, f p.2⟩ : TangentBundle 𝓘(ℝ, F) F)) := by
-    -- The tangent bundle of the model space `F` is `F × F`.
+    -- The tangent bundle of the model space `F` is `F × F`: by
+    -- `tangentBundleModelSpaceHomeomorph_coe_symm` the inverse homeomorphism is
+    -- `(TotalSpace.toProd F F).symm`, which sends `(a, b)` to `⟨a, b⟩` by definition. The fibre
+    -- `TangentSpace 𝓘(ℝ, F) a` is `F` only definitionally, so `Equiv.symm_apply_eq` cannot rewrite.
     have hg : ContMDiff (𝓘(ℝ, F).prod I) 𝓘(ℝ, F × F) n (fun p : F × M ↦ (p.1, f p.2)) :=
       contMDiff_fst.prodMk_space (hf.comp contMDiff_snd)
     exact (contMDiff_tangentBundleModelSpaceHomeomorph_symm (I := 𝓘(ℝ, F)) (n := n)).comp hg
   refine ((contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, F)) (M := F) (I' := I)
     (M' := M)).comp (h₁.prodMk (hv.comp contMDiff_snd))).congr fun p ↦ ?_
-  -- `(equivTangentBundleProd _ F I M).symm (a, b)` is `⟨(a.1, b.1), (a.2, b.2)⟩` by definition.
-  rw [integralField_apply]
-  rfl
+  rw [Function.comp_apply, eq_comm, Equiv.symm_apply_eq, equivTangentBundleProd_apply,
+    integralField_apply]
+  simp only [Function.comp_apply]
 
 /-- On an open interval of times of the flow domain at `x`, the curve
 `σ ↦ (r + I(σ, x), φ_σ x)` is an integral curve of the field `(f, v)`. -/
