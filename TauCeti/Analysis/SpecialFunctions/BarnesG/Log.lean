@@ -107,9 +107,9 @@ theorem analyticOnNhd_logBarnesG : AnalyticOnNhd ℂ logBarnesG slitPlane :=
 theorem eqOn_logBarnesG {L : ℂ → ℂ} (hL : DifferentiableOn ℂ L slitPlane)
     (he : ∀ z ∈ slitPlane, Complex.exp (L z) = barnesG z) (h1 : L 1 = 0) :
     EqOn L logBarnesG slitPlane :=
-  eqOn_of_eqOn_exp_comp isOpen_slitPlane
+  hL.continuousOn.eqOn_of_eqOn_exp_comp differentiableOn_logBarnesG.continuousOn
     (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-    hL differentiableOn_logBarnesG (fun z hz ↦ he z hz) (fun _ hz ↦ exp_logBarnesG hz)
+    (fun z hz ↦ (he z hz).trans (exp_logBarnesG hz).symm)
     one_mem_slitPlane (h1.trans logBarnesG_one.symm)
 
 /-- On `Complex.slitPlane`, the real part of `logBarnesG z` is `Real.log ‖barnesG z‖`. -/
