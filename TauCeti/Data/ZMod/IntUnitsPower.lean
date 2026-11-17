@@ -31,6 +31,9 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 * `TauCeti.finrank_zmod_two_additive_intUnits`: `Module.finrank (ZMod 2) (Additive ℤˣ) = 1`.
 * `TauCeti.uzpow_intCast_eq_negOnePow`: the sign `(-1) ^ (n mod 2)` of a parity is the sign
   `Int.negOnePow n` of any integer lift.
+* `TauCeti.uzpow_mul_eq_of_forall_uzpow_eq`: any map between Koszul-signed degree semirings
+  that preserves `u ^ ·` for a unit `u : ℤˣ` automatically preserves pairwise powers
+  `u ^ (p * q)`.
 -/
 
 public section
@@ -85,6 +88,19 @@ theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
 /-- The sign `(-1) ^ i` of the parity `i` of an integer `n` is the sign `Int.negOnePow n`. -/
 theorem uzpow_intCast_eq_negOnePow (n : ℤ) : (-1 : ℤˣ) ^ (n : ZMod 2) = n.negOnePow := by
   rw [uzpow_intCast, Int.negOnePow_def]
+
+/-- Any function between Koszul-signed degree semirings that preserves `u ^ ·` for a unit
+`u : ℤˣ` automatically preserves pairwise powers `u ^ (p * q)`. -/
+theorem uzpow_mul_eq_of_forall_uzpow_eq {ι κ : Type*} [CommSemiring ι] [Module ι (Additive ℤˣ)]
+    [CommSemiring κ] [Module κ (Additive ℤˣ)] {u : ℤˣ} {f : ι → κ}
+    (hf : ∀ p : ι, u ^ f p = u ^ p) (p q : ι) :
+    u ^ (f p * f q) = u ^ (p * q) := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · rw [uzpow_mul, uzpow_mul, hf p]
+    rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ p) with h | h
+    · rw [h, one_uzpow, one_uzpow]
+    · rw [h, hf q]
 
 /-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
 theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
