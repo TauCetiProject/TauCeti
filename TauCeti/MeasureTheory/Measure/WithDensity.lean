@@ -110,16 +110,24 @@ open Set
 
 /-- **The folded density.** If `μ` has density `f` with respect to Lebesgue measure, then the
 folded law has density `f x + f (-x)` on the positive half-line and `0` elsewhere. -/
-theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) :
     (volume.withDensity f).map (|·|) =
       volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
-  have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
-    simpa [Measure.neg_def] using MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
-  rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
+  obtain ⟨g, hg, hfg⟩ := hf
+  have hfg' : (fun x => f (-x)) =ᵐ[volume] fun x => g (-x) :=
+    (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving.ae_eq_comp hfg
+  have hind : (Ioi (0 : ℝ)).indicator (fun x => f x + f (-x)) =ᵐ[volume]
+      (Ioi 0).indicator fun x => g x + g (-x) := by
+    filter_upwards [hfg, hfg'] with x h h'
+    simp only [Set.indicator, h, h']
+  rw [withDensity_congr_ae hfg, withDensity_congr_ae hind]
+  have hneg : (volume.withDensity g).neg = volume.withDensity fun x => g (-x) := by
+    simpa [Measure.neg_def] using MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume g
+  rw [(volume.withDensity g).map_abs_eq_restrict_add_restrict, hneg,
     restrict_withDensity measurableSet_Ici,
     restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
     ← withDensity_indicator measurableSet_Ioi, ← withDensity_indicator measurableSet_Ioi,
-    ← withDensity_add_left (hf.indicator measurableSet_Ioi)]
+    ← withDensity_add_left (hg.indicator measurableSet_Ioi)]
   congr 1
   ext x
   by_cases hx : x ∈ Ioi 0 <;> simp [hx]
@@ -190,15 +198,16 @@ change of variables for measures upgrades to one for densities.
 This is the step that turns a pointwise density computation into an identity of measures, so the
 work in an application is the factorization hypothesis alone. -/
 theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : α → β}
-    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f) (hjac : Measurable jac)
-    (hg : Measurable g) (hmap : (μ.withDensity jac).map f = ν)
+    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f)
+    (hjac : AEMeasurable jac μ) (hg : Measurable g) (hmap : (μ.withDensity jac).map f = ν)
     (hh : ∀ᵐ z ∂μ, jac z * g (f z) = h z) :
     (μ.withDensity h).map f = ν.withDensity g := by
   ext q hq
   have hcomp : Measurable fun z => q.indicator g (f z) := (hg.indicator hq).comp hf
   rw [Measure.map_apply hf hq, withDensity_apply _ (hf hq), withDensity_apply _ hq,
     ← lintegral_indicator (hf hq), ← lintegral_indicator hq, ← hmap,
-    lintegral_map (hg.indicator hq) hf, lintegral_withDensity_eq_lintegral_mul _ hjac hcomp]
+    lintegral_map (hg.indicator hq) hf,
+    lintegral_withDensity_eq_lintegral_mul₀ hjac hcomp.aemeasurable]
   refine lintegral_congr_ae ?_
   filter_upwards [hh] with z hz
   by_cases hzq : f z ∈ q
@@ -210,9 +219,20 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
 /-- **A pulled-back weight is pushed forward.** The image under a measurable `f` of `μ` weighted by
 `g ∘ f` is the image of `μ` weighted by `g`. This is the case of
 `map_withDensity_eq_withDensity` with trivial Jacobian. -/
-theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
-    (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
-  map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
+theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g (μ.map f)) :
+    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g := by
+  obtain ⟨g', hg', hgg'⟩ := hg
+  obtain ⟨f', hf', hff'⟩ := hf
+  have hmap : μ.map f = μ.map f' := Measure.map_congr hff'
+  rw [hmap] at hgg'
+  have h1 : g ∘ f =ᵐ[μ] g' ∘ f' := by
+    filter_upwards [ae_of_ae_map hf'.aemeasurable hgg', hff'] with x hx hx'
+    simp only [Function.comp_apply, hx', hx]
+  rw [Measure.map_congr ((withDensity_absolutelyContinuous _ _).ae_eq hff'),
+    withDensity_congr_ae h1, hmap, withDensity_congr_ae hgg']
+  exact map_withDensity_eq_withDensity (jac := fun _ => 1) hf' aemeasurable_const hg'
+    (by simp) (by simp)
 
 /-- **A pulled-back weight is pushed forward along a measurable embedding.** Unlike
 `map_withDensity_comp`, no measurability of the weight `g` is needed. -/
