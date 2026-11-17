@@ -24,6 +24,12 @@ the within-set pullback commutes with the flat exterior derivative within `s`
 (`TauCeti.extDerivWithin_mpullbackWithin`). This is how flat constructions on non-open parameter
 domains are compared with the manifold exterior derivative.
 
+Pullback along a continuously differentiable map keeps a zero first jet zero: if a form vanishes
+at the image of a point, with zero chart first jet there, then so does its pullback
+(`TauCeti.hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero`). This is how primitives
+vanishing to first order along a submanifold, such as the tube primitives used by the relative
+Moser theorem, are transported along diffeomorphisms.
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition 14.26.

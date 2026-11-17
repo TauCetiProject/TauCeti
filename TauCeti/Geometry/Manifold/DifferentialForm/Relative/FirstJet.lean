@@ -47,7 +47,7 @@ a tubular neighbourhood of an embedded submanifold
 degree on `M`, with `r ≥ 1`, has a `C^r` form `β` with `d β = η - ρ^* η` that vanishes along
 `i` as a full ambient tensor (`Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback`), and
 `d β = η` when `i^* η = 0` (`Diffeomorph.exists_isSmoothForm_relative_primitive`). This needs `Φ`
-and the bundle to be `C^(r + 1)`. Since pullback along a `C²` map preserves zero first jets
+and the bundle to be `C^(r + 1)`. Since pullback along a `C¹` map preserves zero first jets
 (`TauCeti.hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero`), `β` moreover has zero first
 jet at every point of `i` where `η` vanishes as a full ambient tensor.
 
