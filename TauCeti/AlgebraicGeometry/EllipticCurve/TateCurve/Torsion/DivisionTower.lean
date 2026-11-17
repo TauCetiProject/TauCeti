@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Torsion.Galois
-public import TauCeti.FieldTheory.IsAlgClosed.Units
-public import TauCeti.RingTheory.Perfection
+import TauCeti.RingTheory.Perfection
 
 /-!
 # Compatible division points of a Tate curve
 
 A compatible family `uₖ` of `ℓ^k`-th roots of the Tate parameter determines a point of the
-Tate module whose exponent is one at every level. For `ℓ ≠ 0`, such a point exists over an
-algebraically closed complete ultrametric extension. Choosing roots independently at each level
-would not suffice: the compatibility `uₖ₊₁ ^ ℓ = uₖ` is essential.
+Tate module whose exponent is one at every level. Such a point exists whenever the `ℓ`-th
+power map on the extension's units is surjective, in particular over an algebraically closed
+complete ultrametric extension for `ℓ ≠ 0`. Choosing roots independently at each level would
+not suffice: the compatibility `uₖ₊₁ ^ ℓ = uₖ` is essential.
 
 The action of a continuous `K`-automorphism `σ` on this Tate-module point detects exactly its
 action on the entire root family. In particular, the root-of-unity displacement formulas at
@@ -52,22 +52,16 @@ theorem tateModuleTransition_tateDivisionPoint (k : ℕ) (v : Lˣ)
   simp only [tateModuleTransition_apply, coe_tateDivisionPoint]
   rw [← map_nsmul, ← ofMul_pow]
 
-/-- A Tate-module point with level-one exponent one is not an `ℓ`-multiple when `ℓ ≠ 1`. -/
-theorem ne_nsmul_of_tateTorsionExponent_proj_one_eq_one (hℓ : ℓ ≠ 1)
+/-- A nonzero level-`k` exponent obstructs divisibility by `ℓ ^ k` in the Tate module. -/
+theorem ne_pow_nsmul_of_tateTorsionExponent_proj_ne_zero (k : ℕ)
     {x : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)}
-    (hx : tateTorsionExponent L q hq (ℓ ^ 1) (TateModule.proj 1 x) = 1)
-    (y : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) : x ≠ ℓ • y := by
+    (hx : tateTorsionExponent L q hq (ℓ ^ k) (TateModule.proj k x) ≠ 0)
+    (y : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) : x ≠ ℓ ^ k • y := by
   intro h
-  have hy : ℓ • TateModule.proj 1 y = 0 := by
-    simpa using AddSubgroup.torsionBy.nsmul (TateModule.proj 1 y)
-  have he := congrArg (fun z ↦ tateTorsionExponent L q hq (ℓ ^ 1) (TateModule.proj 1 z)) h
-  rw [hx, map_nsmul, hy, map_zero, pow_one] at he
-  have hm : (1 : ℤ) ∈ (ℓ : ℤ) • (⊤ : Submodule ℤ ℤ) := by
-    rw [← Submodule.Quotient.mk_eq_zero, Ideal.Quotient.mk_eq_mk, map_one]
-    exact he
-  obtain ⟨a, -, ha⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hm
-  have hd : (ℓ : ℤ) ∣ 1 := ⟨a, ha.symm⟩
-  exact hℓ (Nat.dvd_one.mp (by exact_mod_cast hd))
+  have hy : ℓ ^ k • TateModule.proj k y = 0 :=
+    AddSubgroup.torsionBy.nsmul (TateModule.proj k y)
+  apply hx
+  rw [h, map_nsmul, hy, map_zero]
 
 variable (u : ℕ → Lˣ)
   (hu : ∀ k, u k ^ (ℓ ^ k) = Units.map (algebraMap K L : K →* L) q)
@@ -91,8 +85,18 @@ Tate module. Thus it supplies an integral, not merely rational, Kummer direction
 theorem tateDivisionTower_ne_nsmul (hℓ : ℓ ≠ 1)
     (y : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) :
     tateDivisionTower q hq ℓ u hu hcompat ≠ ℓ • y := by
-  apply ne_nsmul_of_tateTorsionExponent_proj_one_eq_one q hq ℓ hℓ
-  rw [proj_tateDivisionTower, tateTorsionExponent_tateDivisionPoint]
+  have hx : tateTorsionExponent L q hq (ℓ ^ 1)
+      (TateModule.proj 1 (tateDivisionTower q hq ℓ u hu hcompat)) ≠ 0 := by
+    rw [proj_tateDivisionTower, tateTorsionExponent_tateDivisionPoint, pow_one]
+    intro he
+    have hm : (1 : ℤ) ∈ (ℓ : ℤ) • (⊤ : Submodule ℤ ℤ) := by
+      rw [← Submodule.Quotient.mk_eq_zero, Ideal.Quotient.mk_eq_mk, map_one]
+      exact he
+    obtain ⟨a, -, ha⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hm
+    have hd : (ℓ : ℤ) ∣ 1 := ⟨a, ha.symm⟩
+    exact hℓ (Nat.dvd_one.mp (by exact_mod_cast hd))
+  simpa only [pow_one] using
+    ne_pow_nsmul_of_tateTorsionExponent_proj_ne_zero q hq ℓ 1 hx y
 
 section Galois
 
@@ -145,15 +149,16 @@ end Galois
 
 variable (L)
 
-/-- For `ℓ ≠ 0`, over an algebraically closed complete ultrametric extension there is a
-Tate-module point whose exponent is one at every level. In particular, the levelwise
-surjectivity of the exponent maps is realized by compatible preimages of one. -/
-theorem exists_forall_tateTorsionExponent_proj_eq_one [IsAlgClosed L] [NeZero ℓ] :
+/-- If the `ℓ`-th power map on the extension's units is surjective, there is a Tate-module
+point whose exponent is one at every level. In particular, the levelwise surjectivity of the
+exponent maps is realized by compatible preimages of one. -/
+theorem exists_forall_tateTorsionExponent_proj_eq_one
+    (hℓ : Surjective fun v : Lˣ ↦ v ^ ℓ) :
     ∃ x : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point), ∀ k,
       tateTorsionExponent L q hq (ℓ ^ k) (TateModule.proj k x) =
         (1 : QuotSMulTop ((ℓ ^ k : ℕ) : ℤ) ℤ) := by
   obtain ⟨u, hu₀⟩ := Perfection.coeffMonoidHom_surjective
-    (RootableBy.surjective_pow Lˣ ℕ (NeZero.ne ℓ)) 0
+    hℓ 0
     (Units.map (algebraMap K L : K →* L) q)
   refine ⟨tateDivisionTower q hq ℓ (fun k ↦ Perfection.coeffMonoidHom Lˣ ℓ k u)
     (fun k ↦ (Perfection.coeffMonoidHom_pow_p_pow_self u k).trans hu₀)
