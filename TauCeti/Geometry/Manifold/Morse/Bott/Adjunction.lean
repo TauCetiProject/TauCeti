@@ -426,14 +426,14 @@ theorem exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv [T2Space M]
   have hρ' : (ContinuousMap.inclusion hX).comp ρ =
       (ContinuousMap.inclusion inter_subset_left).comp r :=
     ContinuousMap.ext fun _ ↦ rfl
-  set e := ContinuousMap.HomotopyEquiv.ofRetraction hX ρ hρ (hρ' ▸ G.toHomotopy)
+  set e := ContinuousMap.HomotopyEquiv.ofRetraction hX ρ hρ (G.toHomotopy.cast hρ'.symm rfl)
   have he₁ (x) : (e x : M) = x := ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ x
   have he : e.toFun = ContinuousMap.inclusion hX := ContinuousMap.ext fun x ↦ Subtype.ext (he₁ x)
   have he' : e.invFun = ρ :=
     ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ _ _ _)
   refine ⟨e, he₁, fun x ↦ ?_, ?_⟩
   · simpa only [← he, ← he'] using hρ x
-  · exact he ▸ he' ▸ hρ' ▸ ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy
+  · rw [he, he', hρ']; exact ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy
 
 end IsMorseBottFamily
 
