@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.MeasureTheory.Group.Measure
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -130,6 +131,18 @@ theorem translateL_zero (f : Lp E p stripMeasure) : translateL E p 0 f = f := by
   congr 2
   funext z
   simp
+
+/-- Translation by `-a` undoes translation by `a`. -/
+@[simp]
+theorem translateL_neg_translateL (a : ℝ) (f : Lp E p stripMeasure) :
+    translateL E p (-a) (translateL E p a f) = f := by
+  rw [← translateL_add, neg_add_cancel, translateL_zero]
+
+/-- Translation by `a` undoes translation by `-a`. -/
+@[simp]
+theorem translateL_translateL_neg (a : ℝ) (f : Lp E p stripMeasure) :
+    translateL E p a (translateL E p (-a) f) = f := by
+  rw [← translateL_add, add_neg_cancel, translateL_zero]
 
 end Translation
 
@@ -320,36 +333,33 @@ theorem translateL_mem_jetClosure (a : ℝ) {f : Lp (V × V × V) 2 stripMeasure
 theorem translateL_mem_jetClosure_iff (a : ℝ) {f : Lp (V × V × V) 2 stripMeasure} :
     translateL (V × V × V) 2 a f ∈ jetClosure S ↔ f ∈ jetClosure S := by
   refine ⟨fun h ↦ ?_, translateL_mem_jetClosure a⟩
-  have := translateL_mem_jetClosure (-a) h
-  rwa [← translateL_add, neg_add_cancel, translateL_zero] at this
+  simpa using translateL_mem_jetClosure (-a) h
 
 variable (S) in
 /-- Translation by `a` in the `s` direction, `x ↦ x (· + a, ·)`, as a linear isometric
 equivalence of `jetClosure S`. Its inverse is translation by `-a`
 (`TauCeti.StripSobolev.translate_symm`). -/
-def translate (a : ℝ) : jetClosure S ≃ₗᵢ[ℝ] jetClosure S where
-  toFun x := ⟨translateL (V × V × V) 2 a x, translateL_mem_jetClosure a x.2⟩
-  invFun x := ⟨translateL (V × V × V) 2 (-a) x, translateL_mem_jetClosure (-a) x.2⟩
-  map_add' x y := Subtype.ext (map_add (translateL (V × V × V) 2 a) _ _)
-  map_smul' c x := Subtype.ext (map_smul (translateL (V × V × V) 2 a) c _)
-  left_inv x := Subtype.ext <| by
-    simp only
-    rw [← translateL_add, neg_add_cancel, translateL_zero]
-  right_inv x := Subtype.ext <| by
-    simp only
-    rw [← translateL_add, add_neg_cancel, translateL_zero]
-  norm_map' x := norm_translateL a (x : Lp (V × V × V) 2 stripMeasure)
+def translate (a : ℝ) : jetClosure S ≃ₗᵢ[ℝ] jetClosure S :=
+  ((Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_add_right_stripMeasure a)
+      (measurePreserving_add_right_stripMeasure (-a))
+      (EventuallyEq.of_eq (funext fun z ↦ by simp [add_assoc]))).submoduleMap
+        (jetClosure S)).trans <|
+    LinearIsometryEquiv.ofEq _ _ <| le_antisymm
+      (Submodule.map_le_iff_le_comap.2 fun f hf ↦ by
+        simpa [translateL_apply] using translateL_mem_jetClosure a hf)
+      fun f hf ↦ ⟨_, translateL_mem_jetClosure (-a) hf, by
+        simpa [translateL_apply] using translateL_translateL_neg a f⟩
 
 /-- Translation on `jetClosure S` is translation of `L²` jets. -/
 @[simp]
 theorem coe_translate (a : ℝ) (x : jetClosure S) :
-    (translate S a x : Lp (V × V × V) 2 stripMeasure) = translateL (V × V × V) 2 a x :=
-  (rfl)
+    (translate S a x : Lp (V × V × V) 2 stripMeasure) = translateL (V × V × V) 2 a x := by
+  simp [translate, translateL_apply]
 
 /-- The inverse of translation by `a` on `jetClosure S` is translation by `-a`. -/
 @[simp]
 theorem translate_symm (a : ℝ) : (translate S a).symm = translate S (-a) :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
+  LinearIsometryEquiv.ext fun x ↦ (translate S a).symm_apply_eq.2 <| Subtype.ext <| by simp
 
 /-- **The `W^{1,2}` norm is translation invariant**: an element of `S` and its translate in the
 `s` direction have `L²` jets of the same norm. -/
