@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Spectral.Projection
 public import TauCeti.Analysis.InnerProductSpace.Spectral.FiniteRank
+import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Topology.Algebra.Indicator
 
 /-!
@@ -29,7 +30,7 @@ upwards: none cross `±c`. It does not depend on the cut
 by the rank of the spectral projection for `(c', c]`, whose frontier avoids every spectrum along
 `[s, t]`, so this rank is constant. Near a self-adjoint Fredholm operator there is a cut
 (`IsSelfAdjoint.exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm`), so every
-time has a neighbourhood with a cut (`TauCeti.exists_isSpectralCutOn_ball_inter_Icc`).
+time has a neighbourhood with a cut (`TauCeti.exists_isSpectralCutOn_ball_inter`).
 
 **Gluing the local counts.** A *spectral flow potential* (`TauCeti.IsSpectralFlowPotential`) is an
 integer function `F` on `[a, b]` whose increment over every subinterval `[s, t]` with a cut `c` is
@@ -109,10 +110,10 @@ namespace TauCeti
 
 /-! ### Spectral cuts and local counts -/
 
-/-- `c` is a **spectral cut** of the path `A` on the set `s` of times: `c > 0`, and for every
-`u ∈ s` neither `-c` nor `c` is in the spectrum of `A u`, and the spectral projection of `A u` for
-`[-c, c]` has finite rank. -/
-def IsSpectralCutOn (A : ℝ → H →L[𝕜] H) (c : ℝ) (s : Set ℝ) : Prop :=
+/-- `c` is a **spectral cut** of the family `A` on the set `s` of parameters, typically the times
+of a path: `c > 0`, and for every `u ∈ s` neither `-c` nor `c` is in the spectrum of `A u`, and the
+spectral projection of `A u` for `[-c, c]` has finite rank. -/
+def IsSpectralCutOn {α : Type*} (A : α → H →L[𝕜] H) (c : ℝ) (s : Set α) : Prop :=
   0 < c ∧ ∀ u ∈ s, -c ∉ spectrum ℝ (A u) ∧ c ∉ spectrum ℝ (A u) ∧
     FiniteDimensional 𝕜 (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A u)).range
 
@@ -127,7 +128,9 @@ theorem spectralCount_def (c : ℝ) (T : H →L[𝕜] H) :
     spectralCount c T = Module.finrank 𝕜 (cfc ((Icc 0 c).indicator (1 : ℝ → ℝ)) T).range :=
   (rfl)
 
-variable {A : ℝ → H →L[𝕜] H} {c : ℝ} {s t : Set ℝ}
+section General
+
+variable {α : Type*} {A : α → H →L[𝕜] H} {c : ℝ} {s t : Set α}
 
 /-- Unfolds `TauCeti.IsSpectralCutOn`. -/
 theorem isSpectralCutOn_iff : IsSpectralCutOn A c s ↔ 0 < c ∧ ∀ u ∈ s,
@@ -138,25 +141,29 @@ theorem isSpectralCutOn_iff : IsSpectralCutOn A c s ↔ 0 < c ∧ ∀ u ∈ s,
 /-- A spectral cut is positive. -/
 theorem IsSpectralCutOn.pos (h : IsSpectralCutOn A c s) : 0 < c := h.1
 
-/-- At a time of a spectral cut `c`, `-c` is not in the spectrum. -/
-theorem IsSpectralCutOn.neg_notMem_spectrum (h : IsSpectralCutOn A c s) {u : ℝ} (hu : u ∈ s) :
+/-- At a parameter of a spectral cut `c`, `-c` is not in the spectrum. -/
+theorem IsSpectralCutOn.neg_notMem_spectrum (h : IsSpectralCutOn A c s) {u : α} (hu : u ∈ s) :
     -c ∉ spectrum ℝ (A u) :=
   (h.2 u hu).1
 
-/-- At a time of a spectral cut `c`, `c` is not in the spectrum. -/
-theorem IsSpectralCutOn.notMem_spectrum (h : IsSpectralCutOn A c s) {u : ℝ} (hu : u ∈ s) :
+/-- At a parameter of a spectral cut `c`, `c` is not in the spectrum. -/
+theorem IsSpectralCutOn.notMem_spectrum (h : IsSpectralCutOn A c s) {u : α} (hu : u ∈ s) :
     c ∉ spectrum ℝ (A u) :=
   (h.2 u hu).2.1
 
-/-- At a time of a spectral cut `c`, the spectral projection for `[-c, c]` has finite rank. -/
+/-- At a parameter of a spectral cut `c`, the spectral projection for `[-c, c]` has finite rank. -/
 theorem IsSpectralCutOn.finiteDimensional_range_cfc_indicator_Icc (h : IsSpectralCutOn A c s)
-    {u : ℝ} (hu : u ∈ s) :
+    {u : α} (hu : u ∈ s) :
     FiniteDimensional 𝕜 (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A u)).range :=
   (h.2 u hu).2.2
 
-/-- A spectral cut on a set of times is a spectral cut on every subset. -/
+/-- A spectral cut on a set of parameters is a spectral cut on every subset. -/
 theorem IsSpectralCutOn.mono (h : IsSpectralCutOn A c s) (hts : t ⊆ s) : IsSpectralCutOn A c t :=
   ⟨h.1, fun u hu ↦ h.2 u (hts hu)⟩
+
+end General
+
+variable {A : ℝ → H →L[𝕜] H} {c : ℝ} {s t : Set ℝ}
 
 /-- A spectral cut of the reversed path `t ↦ A (-t)` on `[s, t]` is a spectral cut of `A` on
 `[-t, -s]`. -/
@@ -333,15 +340,18 @@ theorem IsSpectralCutOn.spectralCount_sub_spectralCount_eq {s t c c' : ℝ} (hst
     linarith
   · rfl
 
-/-- **Spectral cuts exist locally.** Every time `t₀` of a continuous path of self-adjoint Fredholm
-operators on `[a, b]` has a neighbourhood in `[a, b]` on which the path has a spectral cut. -/
-theorem exists_isSpectralCutOn_ball_inter_Icc {a b t₀ : ℝ} (hA : ContinuousOn A (Icc a b))
-    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (hF : ∀ t ∈ Icc a b, (A t).IsFredholm)
-    (ht₀ : t₀ ∈ Icc a b) : ∃ c, ∃ ε > 0, IsSpectralCutOn A c (ball t₀ ε ∩ Icc a b) := by
+/-- **Spectral cuts exist locally.** Every point `z` of a set `K` of parameters, on which a family
+of self-adjoint Fredholm operators is continuous, has a neighbourhood in `K` on which the family has
+a spectral cut. For instance, every time of a continuous path of self-adjoint Fredholm operators on
+`[a, b]` has a neighbourhood in `[a, b]` on which the path has a spectral cut. -/
+theorem exists_isSpectralCutOn_ball_inter {X : Type*} [PseudoMetricSpace X] {B : X → H →L[𝕜] H}
+    {K : Set X} {z : X} (hB : ContinuousOn B K) (hsa : ∀ x ∈ K, IsSelfAdjoint (B x))
+    (hF : ∀ x ∈ K, (B x).IsFredholm) (hz : z ∈ K) :
+    ∃ c, ∃ ε > 0, IsSpectralCutOn B c (ball z ε ∩ K) := by
   obtain ⟨c, hc, hev⟩ :=
-    (hsa t₀ ht₀).exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm (hF t₀ ht₀)
-  have hT : Tendsto A (𝓝[Icc a b] t₀) (𝓝[{S | IsSelfAdjoint S}] (A t₀)) :=
-    tendsto_nhdsWithin_iff.2 ⟨hA t₀ ht₀, eventually_nhdsWithin_of_forall hsa⟩
+    (hsa z hz).exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm (hF z hz)
+  have hT : Tendsto B (𝓝[K] z) (𝓝[{S | IsSelfAdjoint S}] (B z)) :=
+    tendsto_nhdsWithin_iff.2 ⟨hB z hz, eventually_nhdsWithin_of_forall hsa⟩
   obtain ⟨ε, hε, hball⟩ := nhdsWithin_basis_ball.eventually_iff.1 (hT.eventually hev)
   exact ⟨c, ε, hε, hc, fun u hu ↦ ⟨(hball hu).1, (hball hu).2.1, (hball hu).2.2.1⟩⟩
 
@@ -544,7 +554,7 @@ theorem exists_isSpectralFlowPotential {a b : ℝ} (hA : ContinuousOn A (Icc a b
     (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (hF : ∀ t ∈ Icc a b, (A t).IsFredholm) :
     ∃ F, IsSpectralFlowPotential A a b F :=
   exists_isSpectralFlowPotential_of_loc hA hsa fun _ ht ↦
-    exists_isSpectralCutOn_ball_inter_Icc hA hsa hF ht
+    exists_isSpectralCutOn_ball_inter hA hsa hF ht
 
 /-- **Uniqueness of spectral flow potentials**: for a continuous path of self-adjoint Fredholm
 operators on `[a, b]`, any two potentials have the same increment over `[a, b]`. -/
@@ -552,7 +562,7 @@ theorem IsSpectralFlowPotential.sub_eq_sub {a b : ℝ} {F G : ℝ → ℤ}
     (hFp : IsSpectralFlowPotential A a b F) (hGp : IsSpectralFlowPotential A a b G) (hab : a ≤ b)
     (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
     (hF : ∀ t ∈ Icc a b, (A t).IsFredholm) : F b - F a = G b - G a :=
-  hFp.sub_eq_sub_of_loc hGp hab fun _ ht ↦ exists_isSpectralCutOn_ball_inter_Icc hA hsa hF ht
+  hFp.sub_eq_sub_of_loc hGp hab fun _ ht ↦ exists_isSpectralCutOn_ball_inter hA hsa hF ht
 
 /-! ### Spectral flow -/
 
@@ -568,7 +578,7 @@ private theorem spectralFlow_eq_sub_of_loc {a b : ℝ} (hab : a ≤ b)
 theorem spectralFlow_eq_sub {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
     (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (hF : ∀ t ∈ Icc a b, (A t).IsFredholm)
     {F : ℝ → ℤ} (hFp : IsSpectralFlowPotential A a b F) : spectralFlow A a b = F b - F a :=
-  spectralFlow_eq_sub_of_loc hab (fun _ ht ↦ exists_isSpectralCutOn_ball_inter_Icc hA hsa hF ht)
+  spectralFlow_eq_sub_of_loc hab (fun _ ht ↦ exists_isSpectralCutOn_ball_inter hA hsa hF ht)
     hFp
 
 /-- **Phillips' partition formula.** For a partition `a = p 0 ≤ p 1 ≤ ⋯ ≤ p n = b` and a spectral
@@ -685,22 +695,20 @@ operators without `0` in their spectra, has no spectral flow: no eigenvalue cros
 theorem spectralFlow_eq_zero_of_forall_zero_notMem_spectrum {a b : ℝ} (hab : a ≤ b)
     (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
     (h0 : ∀ t ∈ Icc a b, (0 : ℝ) ∉ spectrum ℝ (A t)) : spectralFlow A a b = 0 := by
-  have hF (t : ℝ) (ht : t ∈ Icc a b) : (A t).IsFredholm := by
-    obtain ⟨w, hw⟩ := (spectrum.zero_notMem_iff ℝ).1 (h0 t ht)
-    have he : ((ContinuousLinearEquiv.unitsEquiv 𝕜 H w : H ≃L[𝕜] H) : H →L[𝕜] H) = A t :=
-      ContinuousLinearMap.ext fun x ↦ by simp [hw]
-    exact he ▸ (ContinuousLinearEquiv.unitsEquiv 𝕜 H w).isFredholm
+  have hF (t : ℝ) (ht : t ∈ Icc a b) : (A t).IsFredholm :=
+    ContinuousLinearMap.isFredholm_of_isUnit ((spectrum.zero_notMem_iff ℝ).1 (h0 t ht))
   -- Since `0` and the cut stay out of the spectrum, every local count vanishes.
   have hp : IsSpectralFlowPotential A a b 0 := by
     intro s t c has hst htb hc
     have hsub : Icc s t ⊆ Icc a b := Icc_subset_Icc has htb
-    have hr := congr_arg Cardinal.toNat (isPreconnected_Icc.rank_range_cfc_indicator_eq
-      (hA.mono hsub) (fun u hu ↦ hsa u (hsub hu)) (Ω := Icc 0 c) (fun u hu ↦ by
-        rw [frontier_Icc hc.pos.le, disjoint_left]
-        rintro x (rfl | rfl)
-        exacts [h0 u (hsub hu), hc.notMem_spectrum hu]) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩)
-    have hr' : spectralCount c (A t) = spectralCount c (A s) := hr
-    simp [hr']
+    have hr : spectralCount c (A t) = spectralCount c (A s) := by
+      rw [spectralCount_def, spectralCount_def, Module.finrank, Module.finrank,
+        isPreconnected_Icc.rank_range_cfc_indicator_eq (hA.mono hsub) (fun u hu ↦ hsa u (hsub hu))
+          (Ω := Icc 0 c) (fun u hu ↦ by
+            rw [frontier_Icc hc.pos.le, disjoint_left]
+            rintro x (rfl | rfl)
+            exacts [h0 u (hsub hu), hc.notMem_spectrum hu]) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩]
+    simp [hr]
   rw [spectralFlow_eq_sub hab hA hsa hF hp]
   simp
 
@@ -758,26 +766,17 @@ private theorem exists_pos_forall_exists_isSpectralCutOn_ball
       IsSpectralCutOn (G s) c (ball t₀ δ ∩ Icc a b) := by
   set K := Icc u v ×ˢ Icc a b
   -- Every point of the rectangle has a ball on which a single cut works.
-  have hloc : ∀ z ∈ K, ∃ c > 0, ∃ ε > 0, ∀ w ∈ ball z ε ∩ K,
-      -c ∉ spectrum ℝ (Function.uncurry G w) ∧ c ∉ spectrum ℝ (Function.uncurry G w) ∧
-        FiniteDimensional 𝕜 (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ))
-          (Function.uncurry G w)).range := by
-    rintro ⟨s, t⟩ ⟨hs, ht⟩
-    obtain ⟨c, hc, hev⟩ :=
-      (hsa s hs t ht).exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
-        (hF s hs t ht)
-    have hT : Tendsto (Function.uncurry G) (𝓝[K] (s, t)) (𝓝[{S | IsSelfAdjoint S}] (G s t)) :=
-      tendsto_nhdsWithin_iff.2 ⟨hG (s, t) ⟨hs, ht⟩,
-        eventually_nhdsWithin_of_forall fun w hw ↦ hsa w.1 hw.1 w.2 hw.2⟩
-    obtain ⟨ε, hε, hball⟩ := nhdsWithin_basis_ball.eventually_iff.1 (hT.eventually hev)
-    exact ⟨c, hc, ε, hε, fun w hw ↦ ⟨(hball hw).1, (hball hw).2.1, (hball hw).2.2.1⟩⟩
-  choose! c hc ε hε hcut using hloc
+  have hloc (z : ℝ × ℝ) (hz : z ∈ K) :
+      ∃ c, ∃ ε > 0, IsSpectralCutOn (Function.uncurry G) c (ball z ε ∩ K) :=
+    exists_isSpectralCutOn_ball_inter hG (fun w hw ↦ hsa w.1 hw.1 w.2 hw.2)
+      (fun w hw ↦ hF w.1 hw.1 w.2 hw.2) hz
+  choose! c ε hε hcut using hloc
   obtain ⟨δ, hδ, hleb⟩ := lebesgue_number_lemma_of_metric (c := fun z : K ↦ ball (z : ℝ × ℝ) (ε z))
     (isCompact_Icc.prod isCompact_Icc) (fun _ ↦ isOpen_ball)
     (fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, mem_ball_self (hε z hz)⟩)
   refine ⟨δ, hδ, fun s₀ hs₀ t₀ ht₀ ↦ ?_⟩
   obtain ⟨z, hz⟩ := hleb (s₀, t₀) ⟨hs₀, ht₀⟩
-  refine ⟨c z, fun s hs ↦ ⟨hc z z.2, fun t ht ↦ hcut z z.2 (s, t) ⟨hz ?_, hs.2, ht.2⟩⟩⟩
+  refine ⟨c z, fun s hs ↦ ⟨(hcut z z.2).pos, fun t ht ↦ (hcut z z.2).2 (s, t) ⟨hz ?_, hs.2, ht.2⟩⟩⟩
   rw [← ball_prod_same]
   exact ⟨hs.1, ht.1⟩
 
@@ -792,10 +791,6 @@ theorem spectralFlow_add_spectralFlow_eq_add (hab : a ≤ b) (huv : u ≤ v)
     spectralFlow (G u) a b + spectralFlow (fun s ↦ G s b) u v =
       spectralFlow (fun s ↦ G s a) u v + spectralFlow (G v) a b := by
   obtain ⟨δ, hδ, hcut⟩ := exists_pos_forall_exists_isSpectralCutOn_ball hG hsa hF
-  have hG₁ {s : ℝ} (hs : s ∈ Icc u v) : ContinuousOn (G s) (Icc a b) :=
-    hG.comp (Continuous.prodMk_right s).continuousOn fun _ ht ↦ ⟨hs, ht⟩
-  have hG₂ {t : ℝ} (ht : t ∈ Icc a b) : ContinuousOn (fun s ↦ G s t) (Icc u v) :=
-    hG.comp (Continuous.prodMk_left t).continuousOn fun _ hs ↦ ⟨hs, ht⟩
   have hb : b ∈ Icc a b := ⟨hab, le_rfl⟩
   have ha : a ∈ Icc a b := ⟨le_rfl, hab⟩
   -- The spectral flow of a side `[a, b]` at height `s` minus that of the right side up to `s`
@@ -806,7 +801,7 @@ theorem spectralFlow_add_spectralFlow_eq_add (hab : a ≤ b) (huv : u ≤ v)
   have key {p q : ℝ} (hup : u ≤ p) (hpq : p ≤ q) (hqv : q ≤ v) (hlt : q - p < δ) : Θ q = Θ p := by
     have hsub : Icc p q ⊆ Icc u v := Icc_subset_Icc hup hqv
     have hstrip := spectralFlow_sub_spectralFlow_of_forall_exists_isSpectralCutOn hab hpq
-      (fun s hs ↦ hG₁ (hsub hs)) (fun t ht ↦ (hG₂ ht).mono hsub)
+      (fun s hs ↦ hG.uncurry_left s (hsub hs)) (fun t ht ↦ (hG.uncurry_right t ht).mono hsub)
       (fun s hs ↦ hsa s (hsub hs)) (fun s hs ↦ hF s (hsub hs)) fun t₀ ht₀ ↦ by
         obtain ⟨c, hc⟩ := hcut p ⟨hup, hpq.trans hqv⟩ t₀ ht₀
         exact ⟨c, δ, hδ, fun s hs ↦ hc s ⟨by
@@ -815,7 +810,8 @@ theorem spectralFlow_add_spectralFlow_eq_add (hab : a ≤ b) (huv : u ≤ v)
     -- Split the vertical sides at `p`.
     have hconcat {t : ℝ} (ht : t ∈ Icc a b) : spectralFlow (fun s ↦ G s t) u q =
         spectralFlow (fun s ↦ G s t) u p + spectralFlow (fun s ↦ G s t) p q :=
-      spectralFlow_add_adjacent_intervals hup hpq ((hG₂ ht).mono (Icc_subset_Icc le_rfl hqv))
+      spectralFlow_add_adjacent_intervals hup hpq
+        ((hG.uncurry_right t ht).mono (Icc_subset_Icc le_rfl hqv))
         (fun s hs ↦ hsa s ⟨hs.1, hs.2.trans hqv⟩ t ht)
         (fun s hs ↦ hF s ⟨hs.1, hs.2.trans hqv⟩ t ht)
     simp only [Θ, hconcat ha, hconcat hb]
@@ -859,13 +855,11 @@ theorem spectralFlow_eq_of_homotopy_of_zero_notMem_spectrum (hab : a ≤ b) (huv
     (ha : ∀ s ∈ Icc u v, (0 : ℝ) ∉ spectrum ℝ (G s a))
     (hb : ∀ s ∈ Icc u v, (0 : ℝ) ∉ spectrum ℝ (G s b)) :
     spectralFlow (G v) a b = spectralFlow (G u) a b := by
-  have hG₂ {t : ℝ} (ht : t ∈ Icc a b) : ContinuousOn (fun s ↦ G s t) (Icc u v) :=
-    hG.comp (Continuous.prodMk_left t).continuousOn fun _ hs ↦ ⟨hs, ht⟩
   have := spectralFlow_add_spectralFlow_eq_add hab huv hG hsa hF
-  rw [spectralFlow_eq_zero_of_forall_zero_notMem_spectrum huv (hG₂ ⟨le_rfl, hab⟩)
-      (fun s hs ↦ hsa s hs a ⟨le_rfl, hab⟩) ha,
-    spectralFlow_eq_zero_of_forall_zero_notMem_spectrum huv (hG₂ ⟨hab, le_rfl⟩)
-      (fun s hs ↦ hsa s hs b ⟨hab, le_rfl⟩) hb] at this
+  rw [spectralFlow_eq_zero_of_forall_zero_notMem_spectrum huv
+      (hG.uncurry_right a (left_mem_Icc.2 hab)) (fun s hs ↦ hsa s hs a ⟨le_rfl, hab⟩) ha,
+    spectralFlow_eq_zero_of_forall_zero_notMem_spectrum huv
+      (hG.uncurry_right b (right_mem_Icc.2 hab)) (fun s hs ↦ hsa s hs b ⟨hab, le_rfl⟩) hb] at this
   linarith
 
 end Homotopy
