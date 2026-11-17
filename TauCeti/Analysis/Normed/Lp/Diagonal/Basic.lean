@@ -23,12 +23,12 @@ A bounded scalar family defines coordinatewise multiplication on `lp` for every 
 `1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms, the multiplier is
 injective precisely when none of its coefficients vanish (`lp.injective_diagonalCLM_iff`), and its
 range is finite-dimensional precisely when only finitely many coefficients are nonzero
-(`lp.finite_range_diagonalCLM_iff`). Finite coordinate truncations have rank at most the number of
-retained coordinates, and the discarded coefficients bound their error in operator norm. These
-estimates provide finite-rank approximations of diagonal operators. Over a locally compact scalar
-field, coefficients tending to zero along the cofinite filter give a compact diagonal operator.
-Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence
-(`lp.ofAntitone`), in particular the inverse-natural multiplier `n ↦ ((n + 1 : 𝕜)⁻¹)`
+(`lp.finiteDimensional_range_diagonalCLM_iff`). Finite coordinate truncations have rank at most
+the number of retained coordinates, and the discarded coefficients bound their error in operator
+norm. These estimates provide finite-rank approximations of diagonal operators. Over a locally
+compact scalar field, coefficients tending to zero along the cofinite filter give a compact
+diagonal operator. Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0` sequence defines a nonnegative bounded
+sequence (`lp.ofAntitone`), in particular the inverse-natural multiplier `n ↦ ((n + 1 : 𝕜)⁻¹)`
 (`lp.invNatSucc`), whose diagonal operator is compact and injective on infinite-dimensional
 `ℓ^p(ℕ, 𝕜)`.
 
@@ -264,8 +264,8 @@ omit [DecidableEq ι] in
 /-- A bounded diagonal operator on `ℓ^p(ι, 𝕜)` has finite-dimensional range if and only if only
 finitely many of its coefficients are nonzero. -/
 @[simp]
-theorem finite_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
-    Module.Finite 𝕜 (LinearMap.range (diagonalCLM (p := p) d).toLinearMap) ↔
+theorem finiteDimensional_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+    FiniteDimensional 𝕜 (LinearMap.range (diagonalCLM (p := p) d).toLinearMap) ↔
       {i | d i ≠ 0}.Finite := by
   classical
   refine ⟨fun h ↦ Set.not_infinite.1 fun hinf ↦ ?_, fun hfin ↦ ?_⟩
