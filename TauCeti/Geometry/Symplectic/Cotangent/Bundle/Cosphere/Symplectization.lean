@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Symplectization.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
+public import TauCeti.Topology.VectorBundle.ZeroSection
 
 /-!
 # The punctured cotangent bundle is the symplectization of the unit cosphere bundle
@@ -155,26 +156,24 @@ end ExpSMul
 
 /-! ### The punctured cotangent bundle -/
 
+section Punctured
+
+omit [IsManifold I ∞ M]
+
+variable [IsManifold I 1 M]
+
 variable (I M) in
-/-- The **punctured cotangent bundle** `T*M \ 0`, the open set of covectors other than zero. It
-does not depend on a metric. -/
-def punctured : Opens (CotangentBundle I M) where
-  carrier := {z | z.2 ≠ 0}
-  is_open' := by
-    refine isOpen_iff_forall_mem_open.2 fun q hq ↦ ?_
-    let e := trivializationAt (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) q.proj
-    -- Over the base set of `e`, a covector is nonzero exactly when its coordinate is.
-    have key (z : CotangentBundle I M) (hz : z ∈ e.source) : (e z).2 ≠ 0 ↔ z.2 ≠ 0 := by
-      rw [← e.continuousLinearEquivAt_apply' (R := ℝ) z hz]
-      exact map_ne_zero_iff _ (e.continuousLinearEquivAt ℝ _ _).injective
-    exact ⟨e.source ∩ e ⁻¹' (Set.univ ×ˢ {0}ᶜ), fun z ⟨hz, hz'⟩ ↦ (key z hz).1 hz'.2,
-      e.continuousOn.isOpen_inter_preimage e.open_source (isOpen_univ.prod isOpen_compl_singleton),
-      FiberBundle.mem_trivializationAt_proj_source, Set.mem_univ _,
-      (key q FiberBundle.mem_trivializationAt_proj_source).2 hq⟩
+/-- The **punctured cotangent bundle** `T*M \ 0`, the open set of covectors other than zero
+(`TauCeti.zeroSectionCompl`). It does not depend on a metric. -/
+def punctured : Opens (CotangentBundle I M) :=
+  ⟨zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ),
+    isOpen_zeroSectionCompl _ _⟩
 
 @[simp]
 theorem mem_punctured {z : CotangentBundle I M} : z ∈ punctured I M ↔ z.2 ≠ 0 :=
   Iff.rfl
+
+end Punctured
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
