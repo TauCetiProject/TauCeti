@@ -9,7 +9,9 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
+public import Mathlib.NumberTheory.LSeries.Convolution
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 
 /-!
 # The trivial ideal weight and Dedekind zeta coefficients
@@ -19,6 +21,11 @@ the Dedekind zeta function.  There is one necessary exception: Mathlib's coeffic
 integral ideals and therefore has value `1` at index zero, contributed by the zero ideal, whereas
 an `ArithmeticFunction` has value zero there.  Since `LSeries` ignores its zero coefficient, the
 two coefficient systems define the same series.
+
+On positive integers, `dedekindZetaCoeff K` is multiplicative (`dedekindZetaCoeff_one`,
+`dedekindZetaCoeff_mul_of_coprime`), so converting `k ↦ (dedekindZetaCoeff K k : R)` to an
+`ArithmeticFunction R` yields a multiplicative arithmetic function over any commutative semiring
+`R` (`isMultiplicative_toArithmeticFunction_dedekindZetaCoeff`).
 
 Since `1 * 1 = 1` pointwise, the same identification shows that regrouping has no
 pointwise-product formula as soon as some norm is attained by two ideals
@@ -106,6 +113,41 @@ theorem dedekindZeta_eq_LSeries_normCoeff_one (s : ℂ) :
   apply LSeries_congr
   intro n hn
   rw [normCoeff_one_apply, ite_eq_right hn]
+
+/-- There is a unique integral ideal of absolute norm `1` (the unit ideal). -/
+@[simp]
+theorem dedekindZetaCoeff_one : dedekindZetaCoeff K 1 = 1 := by
+  have h : (dedekindZetaCoeff K 1 : ℂ) = 1 := by
+    have h1 := (IdealArithmeticFunction.isMultiplicative_one (K := K)).normCoeff.1
+    simpa only [normCoeff_one_apply, one_ne_zero, ↓reduceIte] using h1
+  exact_mod_cast h
+
+/-- On positive coprime integers, the ideal-counting function `dedekindZetaCoeff K` is
+multiplicative. -/
+theorem dedekindZetaCoeff_mul_of_coprime {a b : ℕ} (ha : a ≠ 0) (hb : b ≠ 0)
+    (hab : a.Coprime b) :
+    dedekindZetaCoeff K (a * b) = dedekindZetaCoeff K a * dedekindZetaCoeff K b := by
+  have hab0 : a * b ≠ 0 := mul_ne_zero ha hb
+  have h : (dedekindZetaCoeff K (a * b) : ℂ) =
+      (dedekindZetaCoeff K a : ℂ) * (dedekindZetaCoeff K b : ℂ) := by
+    have hm := (IdealArithmeticFunction.isMultiplicative_one (K := K)).normCoeff.2 hab
+    simpa only [normCoeff_one_apply, ha, hb, hab0, ↓reduceIte] using hm
+  exact_mod_cast h
+
+/-- For any number field `K` and commutative semiring `R`, the arithmetic function of ideal counts
+`k ↦ (dedekindZetaCoeff K k : R)` is multiplicative. -/
+theorem isMultiplicative_toArithmeticFunction_dedekindZetaCoeff
+    (R : Type*) [CommSemiring R] :
+    (toArithmeticFunction (fun k ↦ (dedekindZetaCoeff K k : R))).IsMultiplicative := by
+  constructor
+  · simp [toArithmeticFunction]
+  · intro a b hab
+    rcases eq_or_ne a 0 with rfl | ha
+    · simp [toArithmeticFunction]
+    rcases eq_or_ne b 0 with rfl | hb
+    · simp [toArithmeticFunction]
+    have hab0 : a * b ≠ 0 := mul_ne_zero ha hb
+    simp [toArithmeticFunction, ha, hb, hab0, dedekindZetaCoeff_mul_of_coprime K ha hb hab]
 
 /-- **Regrouping does not turn pointwise products into pointwise products.** If two or more
 integral ideals share the absolute norm `n`, then no formula

@@ -13,6 +13,9 @@ public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 Primitive Dirichlet characters are identified by their lifts to a common nonzero level. Equality
 of the lifts forces equality of the original levels, because changing level preserves the
 conductor. This gives an equality criterion without choosing representatives at prime arguments.
+In particular, any primitive character `χ'` inducing a character `χ` at nonzero level has level
+`χ.conductor` (`IsPrimitive.level_eq_conductor`) and agrees with `χ.primitiveCharacter` on
+natural numbers (`IsPrimitive.apply_natCast_eq_primitiveCharacter`).
 
 For primitive quadratic characters, their product at the least common multiple level is principal
 exactly when the original characters coincide, including their levels. This separates the
@@ -42,6 +45,27 @@ theorem IsPrimitive.changeLevel_eq_changeLevel_iff [CommMonoidWithZero R] [NeZer
     exact ⟨rfl, changeLevel_injective hN h⟩
   · rintro ⟨rfl, rfl⟩
     rfl
+
+/-- Any primitive character inducing `χ` has level equal to `χ.conductor`. -/
+theorem IsPrimitive.level_eq_conductor [CommMonoidWithZero R] [NeZero L]
+    {χ : DirichletCharacter R L} {χ' : DirichletCharacter R N}
+    (hχ' : χ'.IsPrimitive) (hdvd : N ∣ L) (hind : changeLevel hdvd χ' = χ) :
+    N = χ.conductor := by
+  simp only [← hind, conductor_changeLevel, (isPrimitive_def χ').mp hχ']
+
+/-- Any primitive character inducing `χ` agrees with `χ.primitiveCharacter` on natural numbers. -/
+theorem IsPrimitive.apply_natCast_eq_primitiveCharacter [CommMonoidWithZero R] [NeZero L]
+    {χ : DirichletCharacter R L} {χ' : DirichletCharacter R N}
+    (hχ' : χ'.IsPrimitive) (hdvd : N ∣ L) (hind : changeLevel hdvd χ' = χ) (a : ℕ) :
+    χ' (a : ZMod N) = χ.primitiveCharacter (a : ZMod χ.conductor) := by
+  have h := (hχ'.changeLevel_eq_changeLevel_iff χ.primitiveCharacter_isPrimitive
+    hdvd χ.conductor_dvd_level).mp (hind.trans χ.changeLevel_primitiveCharacter.symm)
+  suffices ∀ {c : ℕ} (ψ : DirichletCharacter R c) (he : N = c),
+      he ▸ χ' = ψ → χ' (a : ZMod N) = ψ (a : ZMod c) from
+    this χ.primitiveCharacter h.1 h.2
+  rintro c ψ rfl hchar
+  dsimp only at hchar
+  rw [hchar]
 
 section Quadratic
 

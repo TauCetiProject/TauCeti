@@ -34,6 +34,8 @@ prime into them.
   ideals above it, packaged for `ClassGroup.mk0`.
 * `TauCeti.NumberField.heightOneSpectrumOfLiesOver`: a prime of `𝓞 K` above a rational prime,
   as a height-one prime.
+* `TauCeti.NumberField.primesOverHeightOneFinset`: the finite set of height-one primes of `𝓞 K`
+  lying over a rational prime `p`, with cardinality matching `primesOverFinset`.
 * `TauCeti.NumberField.eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton`: if a single
   prime lies above `p`, it is the only height-one prime containing `p`.
 * `TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton`: an unramified prime
@@ -138,6 +140,55 @@ theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal 
   Finset.mem_singleton.mp <| mem_of_natCast_mem_asIdeal (fun Q hQ ↦ by
     rw [hT, Set.mem_singleton_iff] at hQ
     exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
+
+variable (K p) in
+/-- The finite set of height-one primes of `𝓞 K` lying over the rational prime `p`, built as the
+image of `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` under `heightOneSpectrumOfLiesOver`. -/
+noncomputable def primesOverHeightOneFinset : Finset (HeightOneSpectrum (𝓞 K)) := by
+  classical
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
+  let s : Finset (Ideal (𝓞 K)) := primesOverFinset (span {(p : ℤ)} : Ideal ℤ) (𝓞 K)
+  exact s.attach.image fun P : {P : Ideal (𝓞 K) // P ∈ s} ↦
+    have hP : P.1 ∈ primesOver (span {(p : ℤ)} : Ideal ℤ) (𝓞 K) :=
+      (mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2
+    have := hP.1
+    have := hP.2
+    heightOneSpectrumOfLiesOver p P.1
+
+/-- A height-one prime `Q` lies in `primesOverHeightOneFinset K p` iff `Q.asIdeal` lies over
+`span {(p : ℤ)}`. -/
+@[simp]
+theorem mem_primesOverHeightOneFinset {Q : HeightOneSpectrum (𝓞 K)} :
+    Q ∈ primesOverHeightOneFinset K p ↔
+      Q.asIdeal ∈ primesOver (span {(p : ℤ)} : Ideal ℤ) (𝓞 K) := by
+  classical
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
+  simp only [primesOverHeightOneFinset, Finset.mem_image, Finset.mem_attach, true_and,
+    Subtype.exists]
+  constructor
+  · rintro ⟨P, hP, rfl⟩
+    simpa using (mem_primesOverFinset_iff hp0 (𝓞 K)).mp hP
+  · intro hQ
+    refine ⟨Q.asIdeal, (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ, ?_⟩
+    exact HeightOneSpectrum.ext (by simp)
+
+/-- Every height-one prime containing `(p : 𝓞 K)` belongs to `primesOverHeightOneFinset K p`. -/
+theorem mem_primesOverHeightOneFinset_of_natCast_mem (Q : HeightOneSpectrum (𝓞 K))
+    (hQ : (p : 𝓞 K) ∈ Q.asIdeal) : Q ∈ primesOverHeightOneFinset K p :=
+  mem_of_natCast_mem_asIdeal (fun _ h ↦ mem_primesOverHeightOneFinset.mpr h) Q hQ
+
+/-- `primesOverHeightOneFinset K p` has the same cardinality as
+`primesOverFinset (span {(p : ℤ)}) (𝓞 K)`. -/
+@[simp]
+theorem card_primesOverHeightOneFinset :
+    (primesOverHeightOneFinset K p).card =
+      (primesOverFinset (span {(p : ℤ)} : Ideal ℤ) (𝓞 K)).card := by
+  classical
+  rw [primesOverHeightOneFinset, Finset.card_image_of_injective, Finset.card_attach]
+  intro P Q h
+  exact Subtype.ext (by simpa using congrArg HeightOneSpectrum.asIdeal h)
 
 end HeightOne
 

@@ -14,17 +14,32 @@ public import Mathlib.Data.Nat.GCD.BigOperators
 Inversion preserves primitivity, and a primitive character is trivial exactly at level one. An
 injective change of coefficient ring preserves factorization through a lower level, hence the
 conductor and primitivity of a Dirichlet character. The conductor of a product of Dirichlet
-characters with pairwise coprime conductors is the product of their conductors.
+characters with pairwise coprime conductors is the product of their conductors, and the conductor
+of a character of nonzero level is itself nonzero. Every nonprincipal Dirichlet character modulo a
+prime is primitive.
 -/
 
 public section
 
 namespace DirichletCharacter
 
+/-- The conductor of a Dirichlet character of nonzero level is nonzero. -/
+instance instNeZeroConductor {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
+    (χ : DirichletCharacter R n) : NeZero χ.conductor :=
+  ⟨χ.conductor_ne_zero⟩
+
 /-- A primitive character is principal exactly when its level is one. -/
 theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
   rw [eq_one_iff_conductor_eq_one, (isPrimitive_def _).mp hχ]
+
+/-- Every nonprincipal Dirichlet character modulo a prime `p` is primitive (of conductor `p`). -/
+theorem isPrimitive_of_prime_of_ne_one {R : Type*} [CommMonoidWithZero R] {p : ℕ} (hp : p.Prime)
+    {χ : DirichletCharacter R p} (hχ : χ ≠ 1) : χ.IsPrimitive := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  rw [isPrimitive_def]
+  exact (hp.eq_one_or_self_of_dvd _ χ.conductor_dvd_level).resolve_left
+    (mt eq_one_iff_conductor_eq_one.mpr hχ)
 
 /-! ### Injective changes of the coefficient ring -/
 
