@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.RelHomotopyGroup
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
 /-!
@@ -120,7 +120,7 @@ theorem isZero_singularHomology_mappingCylinder (hf : f.IsNConnected n) {m : ℕ
   isZero_singularHomology_ofSubset_of_relHomotopyGroup (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin (ModuleCat.of R R) (by lia)
 
 /-- The map induced on singular homology by `f` is the map induced by the inclusion of the bottom
 face of the mapping cylinder, up to the isomorphisms induced by the homeomorphism of `X` with the
@@ -161,7 +161,7 @@ theorem isIso_singularHomologyMap (hf : f.IsNConnected n) {m : ℕ} (hm : m < n)
   have := isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (m := m) (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin (ModuleCat.of R R) (m := m) (by lia)
   rw [singularHomologyMap_eq]
   infer_instance
 
@@ -175,7 +175,7 @@ theorem epi_singularHomologyMap (hf : f.IsNConnected n) {m : ℕ} (hm : m ≤ n)
   have := epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (m := m) (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin (ModuleCat.of R R) (m := m) (by lia)
   rw [singularHomologyMap_eq]
   infer_instance
 

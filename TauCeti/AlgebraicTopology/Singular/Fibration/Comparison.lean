@@ -119,8 +119,8 @@ private lemma isIso_singularHomologyMap_cellDiskPullbackPairHom (sq : CommSq f p
   have hP' := mem_serreFibrations_pullbackFst hp' (cellULiftMap C n j)
   rcases Nat.lt_or_ge m n with hm | hm
   · exact isIso_of_source_target_iso_zero _
-      (isZero_singularHomology_preimage_sphere R hP (by simpa using hm)).isoZero
-      (isZero_singularHomology_preimage_sphere R hP' (by simpa using hm)).isoZero
+      (isZero_singularHomology_preimage_sphere (ModuleCat.of R R) hP (by simpa using hm)).isoZero
+      (isZero_singularHomology_preimage_sphere (ModuleCat.of R R) hP' (by simpa using hm)).isoZero
   obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_le' hm
   -- Through the identifications `Hq+n(Pⱼ, ∂Pⱼ) ≅ Hq(Fⱼ)`, the map is the fibre map of `f` on `Hq`.
   rw [← isIso_comp_right_iff _ (cellDiskPullbackPairSingularHomologyIso hp' R n q j).hom,
