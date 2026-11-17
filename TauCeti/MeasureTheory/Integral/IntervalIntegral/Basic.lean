@@ -27,6 +27,8 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
+  everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -159,6 +161,21 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
       (∫ t in t₁..t₂, (g t - g' t)),
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+open Filter Topology Interval in
+/-- If `‖F i x‖ ≤ B i` almost everywhere on `Ι a b` eventually along `l` and `B i → 0`, then for
+any locally finite measure `μ` the interval integrals `∫ x in a..b, F i x ∂μ` tend to `0` along
+`l`. -/
+theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {l : Filter ι} {F : ι → ℝ → E}
+    {B : ι → ℝ} {a b : ℝ} (hB : Tendsto B l (𝓝 0))
+    (hF : ∀ᶠ i in l, ∀ᵐ x ∂μ, x ∈ Ι a b → ‖F i x‖ ≤ B i) :
+    Tendsto (fun i ↦ ∫ x in a..b, F i x ∂μ) l (𝓝 0) := by
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr
+    (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _)
+      (hF.mono fun i hi ↦ ?_) (by simpa using hB.mul_const (μ.real (Ι a b))))
+  rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
+  exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
 
 end intervalIntegral
 
