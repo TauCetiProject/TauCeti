@@ -145,6 +145,17 @@ theorem _root_.UpperHalfPlane.poincareRiemannianMetric_inner (z : ℍ)
 instance instRiemannianBundle : RiemannianBundle (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
   ⟨poincareRiemannianMetric.toRiemannianMetric⟩
 
+/-- The inner product of two tangent vectors at a point of the upper half-plane is their
+Euclidean inner product divided by the square of the imaginary part. -/
+@[simp]
+theorem _root_.UpperHalfPlane.inner_def (z : ℍ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    inner ℝ v w =
+      inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
+        (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 :=
+  -- The `RiemannianBundle` instance is `poincareRiemannianMetric`, so the inner product of the
+  -- instance is `poincareRiemannianMetric.inner` by definition.
+  _root_.UpperHalfPlane.poincareRiemannianMetric_inner z v w
+
 /-- The Poincaré tensor is smooth as a real Riemannian bundle. -/
 instance instIsContMDiffRiemannianBundle : IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ
     (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
