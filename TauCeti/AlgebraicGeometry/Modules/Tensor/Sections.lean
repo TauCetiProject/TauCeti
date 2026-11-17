@@ -38,9 +38,10 @@ locus of a section of an invertible sheaf.
 * `AlgebraicGeometry.Scheme.Modules.bijective_smul_tensorPowSection`: if `e` is a basis of `L`
   over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`.
 * `AlgebraicGeometry.Scheme.Modules.associator_hom_app_tmulRight`,
-  `AlgebraicGeometry.Scheme.Modules.leftUnitor_hom_app_tmulRight`, and
-  `AlgebraicGeometry.Scheme.Modules.tensorPowSuccIso_hom_app_tmulRight_tensorPowSection`: monoidal
-  coherence identities for `tmulRight` and `tensorPowSection`.
+  `AlgebraicGeometry.Scheme.Modules.leftUnitor_hom_app_tmulRight`,
+  `AlgebraicGeometry.Scheme.Modules.tensorPowSuccIso_hom_app_tmulRight_tensorPowSection`, and
+  `AlgebraicGeometry.Scheme.Modules.sectionsFunctor_μ_comp_map`: monoidal coherence identities for
+  `tmulRight`, `tensorPowSection`, and `sectionsFunctor`.
 -/
 
 public section
@@ -341,6 +342,26 @@ theorem tensorPowSuccIso_hom_app_tmulRight_tensorPowSection {U : X.Opens}
     rw [tensorPowSuccIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
       tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
     exact (tensorPowSection_succ e (n + 1)).symm
+
+/-- A morphism `φ : M ⊗ N ⟶ P` whose composite with `SheafOfModules.tensorUnderlyingIso.inv` is
+the sheafification of `g : M.val ⊗ N.val ⟶ P.val` followed by `sheafificationIso` agrees with `g`
+on sections over `U` after precomposing with `μ (sectionsFunctor U)`. -/
+theorem sectionsFunctor_μ_comp_map {M N P : X.Modules} (φ : M ⊗ N ⟶ P)
+    (g : MonoidalCategory.tensorObj M.val N.val ⟶ P.val)
+    (hφ : (SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N).inv ≫ φ =
+      (PresheafOfModules.sheafification.{u} (𝟙 X.ringCatSheaf.obj)).map g ≫
+        (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf P).hom) (U : X.Opens) :
+    Functor.LaxMonoidal.μ (sectionsFunctor U) M N ≫ (sectionsFunctor U).map φ = g.app (op U) := by
+  let adj := TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf
+  have h1 : adj.homEquiv _ _ ((SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N).inv ≫ φ) =
+      g :=
+    (congrArg (adj.homEquiv _ _) (hφ.trans
+      ((congrArg ((PresheafOfModules.sheafification.{u} (𝟙 X.ringCatSheaf.obj)).map g ≫ ·)
+        (TauCeti.SheafOfModules.sheafificationForgetAdjunction_counit_app X.sheaf P).symm).trans
+        (adj.homEquiv_counit _ _ g).symm))).trans ((adj.homEquiv _ _).apply_symm_apply g)
+  rw [sectionsFunctor_μ, sectionsFunctor_map]
+  exact congrArg (fun ψ ↦ ψ.app (op U))
+    ((TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf) φ).trans h1)
 
 end
 

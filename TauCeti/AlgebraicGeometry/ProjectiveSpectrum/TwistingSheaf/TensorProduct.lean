@@ -276,52 +276,6 @@ section Monoidal
 
 open MonoidalCategory
 
-/-- Over any scheme `X`, evaluating an isomorphism `M ⊗ N ≅ P` built from
-`SheafOfModules.tensorUnderlyingIso` and the sheafification of a presheaf morphism `g` on the lax
-monoidal sections map agrees with evaluating `g` directly. -/
-private lemma sectionsFunctor_μ_comp_isoOfSheafIso {X : Scheme.{u}} (M N P : X.Modules)
-    (g : MonoidalCategory.tensorObj M.val N.val ⟶ P.val)
-    (e : (PresheafOfModules.sheafification.{u} (𝟙 X.ringCatSheaf.obj)).obj
-        (MonoidalCategory.tensorObj M.val N.val) ≅
-      (P : _root_.SheafOfModules.{u} X.ringCatSheaf))
-    (he : e.hom = (PresheafOfModules.sheafification.{u} (𝟙 X.ringCatSheaf.obj)).map g ≫
-      (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf P).hom)
-    (U : X.Opens) (s : Γ(M, U)) (t : Γ(N, U)) :
-    (Scheme.Modules.isoOfSheafIso X
-        (SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N ≪≫ e)).hom.app U
-      (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N (s ⊗ₜ t)) =
-      g.app (op U) (s ⊗ₜ t) := by
-  let R₀ := TauCeti.SheafOfModules.ringCatSheaf X.sheaf
-  let M' : _root_.SheafOfModules.{u} R₀ := M
-  let N' : _root_.SheafOfModules.{u} R₀ := N
-  let P' : _root_.SheafOfModules.{u} R₀ := P
-  let e' : M' ⊗ N' ≅ P' := SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M' N' ≪≫ e
-  let adj := TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf
-  have hp' : (M'.tensorUnderlyingIso N').inv ≫ e'.hom =
-      (PresheafOfModules.sheafification.{u} (𝟙 R₀.obj)).map g ≫
-        (TauCeti.SheafOfModules.sheafificationIso R₀ P').hom :=
-    (Iso.inv_hom_id_assoc (M'.tensorUnderlyingIso N') e.hom).trans he
-  have h1 : adj.homEquiv _ _ ((M'.tensorUnderlyingIso N').inv ≫ e'.hom) = g :=
-    (congrArg (adj.homEquiv _ _) (hp'.trans
-      ((congrArg ((PresheafOfModules.sheafification.{u} (𝟙 R₀.obj)).map g ≫ ·)
-        (TauCeti.SheafOfModules.sheafificationForgetAdjunction_counit_app X.sheaf P').symm).trans
-        (adj.homEquiv_counit _ _ g).symm))).trans ((adj.homEquiv _ _).apply_symm_apply g)
-  have h2 : Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget R₀) M' N' ≫
-      (_root_.SheafOfModules.forget R₀).map e'.hom = g :=
-    (TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf) e'.hom).trans h1
-  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf := _root_.SheafOfModules.forget _
-  let _ : F.LaxMonoidal := TauCeti.SheafOfModules.forgetLaxMonoidal X.sheaf
-  let z : ↑(MonoidalCategory.tensorObj ((Scheme.Modules.sectionsFunctor U).obj M)
-      ((Scheme.Modules.sectionsFunctor U).obj N)) := s ⊗ₜ t
-  have hμ₀ : Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N z =
-      (Functor.LaxMonoidal.μ F M N).app (op U) z := by
-    change Functor.LaxMonoidal.μ
-      (F ⋙ TauCeti.PresheafOfModulesOfCommRing.evaluation (op U)) M N z = _
-    rw [Functor.LaxMonoidal.comp_μ, TauCeti.PresheafOfModulesOfCommRing.evaluation_μ]; rfl
-  exact (congrArg ((Scheme.Modules.isoOfSheafIso X e').hom.app U) hμ₀).trans
-    ((congrArg (fun v ↦ v.app (op U) ((Functor.LaxMonoidal.μ F M N).app (op U) z))
-      (Scheme.Modules.isoOfSheafIso_hom_val X e')).trans (congrArg (fun φ ↦ φ.app (op U) z) h2))
-
 variable {ι : Type*} (f : ι → A) (hf : ∀ i, f i ∈ 𝒜 1) (hcover : ⨆ i, basicOpen 𝒜 (f i) = ⊤)
 include hf hcover
 
@@ -356,19 +310,24 @@ theorem twistingSheafTensorIso_hom_app_μ (m n : ℤ) (U : (Proj 𝒜).Opens)
         (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U)
           (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n) (s ⊗ₜ t)) =
       twistingSheaf.mul 𝒜 U m n s t := by
-  have he : ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf
-        (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).symm ≪≫
-      twistingSheaf.tensorProductIso f hf hcover m n).hom =
+  let M := twistingSheaf 𝒜 m; let N := twistingSheaf 𝒜 n
+  let e := (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).symm ≪≫
+    twistingSheaf.tensorProductIso f hf hcover m n
+  have hφ : (SheafOfModules.tensorUnderlyingIso (R := (Proj 𝒜).sheaf) M N).inv ≫
+      (twistingSheafTensorIso f hf hcover m n).hom =
       (PresheafOfModules.sheafification.{u} (𝟙 (Proj 𝒜).ringCatSheaf.obj)).map
         (twistingSheaf.tensorPresheafHom 𝒜 m n) ≫
       (TauCeti.SheafOfModules.sheafificationIso (Proj 𝒜).ringCatSheaf _).hom :=
-    (congrArg (fun φ ↦ (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf
-        (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).inv ≫ φ)
-      (twistingSheaf.tensorProductIso_hom f hf hcover m n)).trans (Iso.inv_hom_id_assoc _ _)
-  exact (sectionsFunctor_μ_comp_isoOfSheafIso (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)
-    (twistingSheaf 𝒜 (m + n)) (twistingSheaf.tensorPresheafHom 𝒜 m n) _ he U s t).trans
-    ((twistingSheaf.tensorPresheafHom_app_apply m n U (s ⊗ₜ t)).trans
-      (TensorProduct.lift.tmul (f' := twistingSheaf.mul 𝒜 U m n) s t))
+    (congrArg _ (SheafOfModules.Hom.ext (Scheme.Modules.isoOfSheafIso_hom_val (Proj 𝒜) _))).trans
+      ((Iso.inv_hom_id_assoc (SheafOfModules.tensorUnderlyingIso (R := (Proj 𝒜).sheaf) M N)
+        e.hom).trans ((congrArg ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).inv
+          ≫ ·) (twistingSheaf.tensorProductIso_hom f hf hcover m n)).trans
+        (Iso.inv_hom_id_assoc _ _)))
+  have happ := congrArg (fun ψ ↦ ψ (s ⊗ₜ t)) (Scheme.Modules.sectionsFunctor_μ_comp_map
+    (twistingSheafTensorIso f hf hcover m n).hom (twistingSheaf.tensorPresheafHom 𝒜 m n) hφ U)
+  simp only [Scheme.Modules.sectionsFunctor_map] at happ
+  exact happ.trans ((twistingSheaf.tensorPresheafHom_app_apply m n U (s ⊗ₜ t)).trans
+    (TensorProduct.lift.tmul (f' := twistingSheaf.mul 𝒜 U m n) s t))
 
 /-- On sections over `U`, `twistingSheafTensorIso` sends `Scheme.Modules.tmulRight` of `s` and `t`
 to the product `twistingSheaf.mul 𝒜 U m n s t`. -/

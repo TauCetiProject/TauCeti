@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+import Mathlib.RingTheory.Localization.Module
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
@@ -347,45 +348,29 @@ private theorem isLocallySurjective_freeHomEquiv_symm_of_span_eq_top :
   let s : I → E.sections := fun k ↦ E.sectionsEquivTop.symm (σ k)
   let φ := (SheafOfModules.freeHomEquiv E).symm s
   refine ⟨fun {W} m x hxW ↦ ?_⟩
+  -- Shrink to a basic open `D = D(f) ⊆ W` inside an affine chart `U i` containing `x`.
   obtain ⟨i, hxU⟩ := Opens.mem_iSup.mp (hcover.symm ▸ Opens.mem_top x)
   obtain ⟨f, hfW, hxf⟩ := (hU i).exists_basicOpen_le ⟨x, hxW⟩ hxU
   let D := X.basicOpen f
-  let rf := homOfLE (X.basicOpen_le f)
-  let m' : Γ(E, D) := E.presheaf.map (homOfLE hfW).op m
+  -- Localization at `f` preserves spanning sets, so the restrictions of `σ` span `Γ(E, D)`.
+  have := (hU i).isLocalization_basicOpen f
   have := E.isLocalizedModule_basicOpenRestrict (hU i) f
-  obtain ⟨⟨y, ⟨_, d, rfl⟩⟩, hy⟩ := IsLocalizedModule.surj (.powers f) (E.basicOpenRestrict f) m'
-  rw [basicOpenRestrict_apply] at hy
-  obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp
-    (hspan i ▸ Submodule.mem_top (x := y))
-  have hu : IsUnit (X.presheaf.map rf.op (f ^ d)) := by
-    rw [map_pow]; exact (X.toRingedSpace.isUnit_res_basicOpen f).pow d
-  let uinv : Γ(X, D) := ↑hu.unit⁻¹
-  let a₀ : I → Γ(X, D) := fun k ↦ uinv * X.presheaf.map rf.op (c k)
-  let a : I → X.ringCatSheaf.obj.obj (op D) := a₀
-  refine ⟨D, homOfLE hfW, ⟨∑ k ∈ c.support, a k •
-    (SheafOfModules.freeSection (R := X.ringCatSheaf) k).eval (op D), ?_⟩, hxf⟩
-  have hφ : φ.val.app (op D) (∑ k ∈ c.support, a k •
-      (SheafOfModules.freeSection (R := X.ringCatSheaf) k).eval (op D)) =
-      ∑ k ∈ c.support, a k • (s k).eval (op D) := by
-    refine (map_sum _ _ _).trans (Finset.sum_congr rfl fun k _ ↦ ?_)
-    refine ((φ.val.app (op D)).hom.map_smul _ _).trans ?_
-    exact congrArg (a k • ·) (congrArg (fun t : E.sections ↦ t.eval (op D))
-      (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection s k))
-  have hterm (k : I) : a k • (s k).eval (op D) =
-      a₀ k • E.presheaf.map rf.op (E.presheaf.map (U i).leTop.op (σ k)) := by
-    rw [PresheafOfModules.sections.eval, sectionsEquivTop_symm_val, ← Functor.map_comp_apply,
-      ← op_comp]; rfl
-  have hmap_y : E.presheaf.map rf.op y = ∑ k ∈ c.support, X.presheaf.map rf.op (c k) •
-      E.presheaf.map rf.op (E.presheaf.map (U i).leTop.op (σ k)) := by
-    rw [← hc, Finsupp.sum, map_sum]; exact Finset.sum_congr rfl fun k _ ↦ by rw [E.map_smul]
-  have hsum : ∑ k ∈ c.support, a₀ k • E.presheaf.map rf.op (E.presheaf.map (U i).leTop.op (σ k)) =
-      uinv • E.presheaf.map rf.op y := by
-    rw [hmap_y, Finset.smul_sum]; exact Finset.sum_congr rfl fun k _ ↦ mul_smul _ _ _
-  have hm : (hu.unit : Γ(X, D)) • m' = E.presheaf.map rf.op y := by
-    rw [IsUnit.unit_spec]; exact hy
-  have hgoal : ∑ k ∈ c.support, a₀ k • E.presheaf.map rf.op (E.presheaf.map (U i).leTop.op (σ k)) =
-      m' := by rw [hsum, ← hm, ← mul_smul, Units.inv_mul, one_smul]
-  exact hφ.trans ((Finset.sum_congr rfl fun k _ ↦ hterm k).trans hgoal)
+  have hD := span_eq_top_of_isLocalizedModule Γ(X, D) (.powers f) (E.basicOpenRestrict f) (hspan i)
+  -- Every generator `σ k|_D` lies in the image of `φ.val.app (op D)`, hence so does `m|_D`.
+  have hle : Submodule.span Γ(X, D)
+      (E.basicOpenRestrict f '' Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) ≤
+      LinearMap.range (φ.val.app (op D)).hom := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨_, ⟨k, rfl⟩, rfl⟩
+    refine ⟨(SheafOfModules.freeSection (R := X.ringCatSheaf) k).eval (op D), ?_⟩
+    have hsec := congrArg (fun t : E.sections ↦ t.eval (op D))
+      (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection s k)
+    refine hsec.trans ?_
+    rw [PresheafOfModules.sections.eval, sectionsEquivTop_symm_val, basicOpenRestrict_apply,
+      ← Functor.map_comp_apply, ← op_comp]
+    exact congrArg (fun l : D ⟶ ⊤ ↦ E.presheaf.map l.op (σ k)) (Subsingleton.elim _ _)
+  obtain ⟨z, hz⟩ := hle (hD ▸ Submodule.mem_top (x := E.presheaf.map (homOfLE hfW).op m))
+  exact ⟨D, homOfLE hfW, ⟨z, hz⟩, hxf⟩
 
 /-- If a family of global sections of a quasi-coherent module `E` spans `Γ(E, U i)` over every
 member `U i` of an affine open cover of `X`, then it defines a `GeneratingSections` of `E`. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Spec
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
-import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Coherent
+import TauCeti.AlgebraicGeometry.Cohomology.Projective
 
 /-!
 # Coherence of higher direct images for projective schemes over a Noetherian ring

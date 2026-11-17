@@ -163,6 +163,20 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_ε
   rw [Functor.LaxMonoidal.comp_ε, hε]
   rfl
 
+variable {X} in
+/-- The tensor comparison of the sections functor over `U` is the `U`-component of the tensor
+comparison of the forgetful functor to presheaves of modules. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_μ (U : X.Opens) (M N : X.Modules) :
+    Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N =
+      (Functor.LaxMonoidal.μ
+        (_root_.SheafOfModules.forget (SheafOfModules.ringCatSheaf X.sheaf)) M N).app (.op U) := by
+  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf := _root_.SheafOfModules.forget _
+  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
+  -- `sectionsFunctor U` is `F ⋙ evaluation (op U)` and `evaluation`'s tensor comparison is `𝟙`.
+  change Functor.LaxMonoidal.μ (F ⋙ PresheafOfModulesOfCommRing.evaluation (.op U)) M N = _
+  rw [Functor.LaxMonoidal.comp_μ, PresheafOfModulesOfCommRing.evaluation_μ]
+  exact Category.id_comp ((Functor.LaxMonoidal.μ F M N).app (.op U))
+
 end
 
 end TauCeti

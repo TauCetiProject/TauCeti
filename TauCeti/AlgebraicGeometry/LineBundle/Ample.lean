@@ -43,6 +43,8 @@ on every affine scheme, and so is every torsion class there
   sections can be taken in any line bundle representing the relevant power.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.of_pow`: if a positive power `aⁿ` is ample,
   then so is `a`.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.quasiSeparatedSpace`: every scheme carrying
+  an ample line bundle is quasi-separated.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_one_iff`: the structure sheaf is ample
   exactly when `X` is quasi-affine.
 
@@ -99,6 +101,18 @@ theorem IsAmple.of_pow {a : LineBundleClass X} {n : ℕ} (hn : 0 < n) (h : (a ^ 
   exists_isAffineOpen_nonvanishingLocus x := by
     obtain ⟨m, hm, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
     exact ⟨n * m, Nat.mul_pos hn hm, L, hL.trans (pow_mul a n m).symm, s, hx, hs⟩
+
+/-- Every scheme carrying an ample line bundle is quasi-separated: it is covered by affine
+nonvanishing loci `X_{s_x}`, whose pairwise overlaps are nonvanishing loci over affine opens and
+hence quasi-compact. -/
+theorem IsAmple.quasiSeparatedSpace {a : LineBundleClass X} (ha : a.IsAmple) :
+    QuasiSeparatedSpace X := by
+  choose _ _ M _ s hs hAff using fun x : X ↦ ha.exists_isAffineOpen_nonvanishingLocus x
+  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun x ↦ (M x).obj.nonvanishingLocus (s x))
+    (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hs x⟩) hAff fun x y ↦ ?_
+  rw [← Opens.coe_inf, ← Scheme.Modules.nonvanishingLocus_map
+    ((M x).obj.nonvanishingLocus (s x)).leTop (s y)]
+  exact Scheme.Modules.isCompact_nonvanishingLocus (hAff x).isCompact _
 
 /-- The structure sheaf `𝒪_X` is ample exactly when `X` is quasi-affine: the nonvanishing loci of
 global sections of a line bundle isomorphic to `𝒪_X` are the basic open sets of global regular

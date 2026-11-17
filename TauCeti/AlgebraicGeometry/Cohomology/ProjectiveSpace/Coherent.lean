@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Generators
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
+import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.ProjectionFormula
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
@@ -15,42 +19,25 @@ import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Presentation
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.RingTheory.Finiteness.Finsupp
 
 /-!
-# Serre's finiteness and vanishing theorems for projective schemes
+# Serre's finiteness and vanishing theorems on `Proj (Sym_R M)`
 
-Let `R` be a Noetherian commutative ring and `X` a scheme projective over `R`
-(`AlgebraicGeometry.Scheme.IsProjectiveOver R X`). For every quasi-coherent `𝒪_X`-module `F` of
-finite type (equivalently, coherent on the locally Noetherian scheme `X`):
-1. **Serre's finiteness theorem** (`AlgebraicGeometry.Scheme.IsProjectiveOver.finite_cohomology`,
-   `TauCeti.SymmetricAlgebra.finite_cohomology_proj`, `Module.Basis.finite_cohomology_proj`):
-   `H^q(X, F)` is a finitely generated `R`-module for every `q ≥ 0`. Properness is essential; see
-   `TauCeti.Examples.AlgebraicGeometry.Cohomology.Finiteness` for the failure on `Spec R[t]`.
+Let `R` be a Noetherian commutative ring and `M` a finitely generated `R`-module. For every
+quasi-coherent `𝒪`-module `F` of finite type on `Proj (Sym_R M)`:
+1. **Serre's finiteness theorem** (`TauCeti.SymmetricAlgebra.finite_cohomology_proj`):
+   `H^q(Proj (Sym_R M), F)` is a finitely generated `R`-module for every `q ≥ 0` (properness is
+   essential; see `TauCeti.Examples.AlgebraicGeometry.Cohomology.Finiteness`).
 2. **Serre's vanishing theorem**
-   (`TauCeti.SymmetricAlgebra.exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf`,
-   `Module.Basis.exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf`, and
-   `Scheme.Hom.exists_forall_ge_subsingleton_cohomology_tensor_pullback_twistingSheaf`):
-   for a closed immersion `i : X ⟶ Proj (Sym_R M)` with `M` finite over `R`, some `m₀ : ℤ` gives
-   `H^q(X, F ⊗ i^* 𝒪(m)) = 0` for all `m ≥ m₀` and `q > 0`.
+   (`TauCeti.SymmetricAlgebra.exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf`):
+   some `m₀ : ℤ` gives `H^q(Proj (Sym_R M), F ⊗ 𝒪(m)) = 0` for all `m ≥ m₀` and `q > 0`.
 
-## Proof outline
-
-For `P` finite free with basis indexed by a nontrivial `Fintype κ`, Čech vanishing
-(`Module.Basis.subsingleton_cohomology_proj_of_card_le`) kills `H^q` for `q ≥ card κ`. Descending
-on `q`, `TauCeti.SymmetricAlgebra.exists_forall_ge_epi_biproduct_twistingSheaf` gives a short exact
-sequence `0 ⟶ K ⟶ ⨁_{Fin k} 𝒪(-d) ⟶ F ⟶ 0` with `K` finitely presented
-(`AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel`);
-`Module.Finite.of_exact_of_isNoetherian` and `Module.Basis.finite_cohomology_twistingSheaf` yield
-finiteness, while twisting by `𝒪(m)` and
-`Module.Basis.subsingleton_cohomology_twistingSheaf_of_neg_card_lt` yield vanishing. Surjecting
-`R^{r+2} ↠ M` embeds `Proj (Sym_R M)` into `Proj (Sym_R R^{r+2})` via
-`AlgebraicGeometry.Proj.mapSymmetricAlgebraOfSurjective` and
-`AlgebraicGeometry.Proj.pullbackTwistingSheafMapSymmetricAlgebraIso`, and closed immersions transfer
-coherence and cohomology
-(`AlgebraicGeometry.Scheme.Modules.isFinitePresentation_pushforward_of_isFinite`,
-`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquiv`,
-`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardTensorRightIso`).
+For general projective schemes over `R`, see `TauCeti.AlgebraicGeometry.Cohomology.Projective`.
+The proof descends on `q` from Čech vanishing on `Proj (Sym_R R^{r+2})` via a short exact sequence
+`0 ⟶ K ⟶ ⨁_{Fin k} 𝒪(-n₀) ⟶ F ⟶ 0`, then transfers to `Proj (Sym_R M)` along a closed immersion
+induced by a surjection `R^{r+2} ↠ M`.
 
 ## References
 
@@ -79,6 +66,17 @@ variable {R P : Type u} [CommRing R] [AddCommMonoid P] [Module R P]
 local notation "𝒜" => homogeneousSubmodule R P
 local notation "𝒪(" m ")" => (Proj.twistingSheaf 𝒜 m : Scheme.Modules (Proj 𝒜))
 
+private theorem exists_shortExact_biproduct_twistingSheaf [IsNoetherianRing R] [Module.Finite R P]
+    (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
+    ∃ (n₀ k : ℕ) (p : (⨁ fun _ : Fin k ↦ 𝒪(-(n₀ : ℤ))) ⟶ F),
+      (ShortComplex.mk (kernel.ι p) p (kernel.condition p)).ShortExact ∧
+      (kernel p).IsQuasicoherent ∧ (kernel p).IsFiniteType := by
+  obtain ⟨n₀, hn₀⟩ := exists_forall_ge_epi_biproduct_twistingSheaf R P F
+  obtain ⟨k, p, hp⟩ := hn₀ n₀ le_rfl
+  exact ⟨n₀, k, p,
+    ShortComplex.ShortExact.mk' (ShortComplex.exact_kernel p) inferInstance inferInstance,
+    inferInstance, inferInstance⟩
+
 private theorem finite_cohomology_proj_aux [IsNoetherianRing R] {κ : Type*} [Fintype κ]
     [Nontrivial κ] (b : Module.Basis κ R P) :
     ∀ (d : ℕ) (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ),
@@ -88,10 +86,7 @@ private theorem finite_cohomology_proj_aux [IsNoetherianRing R] {κ : Type*} [Fi
     infer_instance
   | d + 1, F, _, _, q, hq => by
     have : Module.Finite R P := Module.Finite.of_basis b
-    obtain ⟨n₀, hn₀⟩ := exists_forall_ge_epi_biproduct_twistingSheaf R P F
-    obtain ⟨k, p, hp⟩ := hn₀ n₀ le_rfl
-    have hS : (ShortComplex.mk (kernel.ι p) p (kernel.condition p)).ShortExact :=
-      ShortComplex.ShortExact.mk' (ShortComplex.exact_kernel p) inferInstance inferInstance
+    obtain ⟨n₀, k, p, hS, _, _⟩ := exists_shortExact_biproduct_twistingSheaf F
     have : ∀ _ : Fin k, Module.Finite R (Cohomology 𝒪(-(n₀ : ℤ)) q) :=
       fun _ ↦ b.finite_cohomology_twistingSheaf (-(n₀ : ℤ)) q
     have : Module.Finite R (Cohomology (kernel p) (q + 1)) :=
@@ -118,10 +113,7 @@ private theorem exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf_au
     ⟨0, fun m _ q hq _ ↦ b.subsingleton_cohomology_proj_of_card_le (F ⊗ 𝒪(m)) q (by simpa using hq)⟩
   | d + 1, F, _, _ => by
     have : Module.Finite R P := Module.Finite.of_basis b
-    obtain ⟨n₀, hn₀⟩ := exists_forall_ge_epi_biproduct_twistingSheaf R P F
-    obtain ⟨k, p, hp⟩ := hn₀ n₀ le_rfl
-    have hS : (ShortComplex.mk (kernel.ι p) p (kernel.condition p)).ShortExact :=
-      ShortComplex.ShortExact.mk' (ShortComplex.exact_kernel p) inferInstance inferInstance
+    obtain ⟨n₀, k, p, hS, _, _⟩ := exists_shortExact_biproduct_twistingSheaf F
     obtain ⟨m₁, hm₁⟩ :=
       exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf_aux b d (kernel p)
     refine ⟨max m₁ ((n₀ : ℤ) - Fintype.card κ + 1), fun m hm q hqd hq ↦ ?_⟩
@@ -177,68 +169,3 @@ theorem exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf [IsNoether
       (hm₀ m hm q (by simp) hq))⟩
 
 end TauCeti.SymmetricAlgebra
-
-namespace Module.Basis
-
-open TauCeti.SymmetricAlgebra
-
-variable {R P : Type u} [CommRing R] [AddCommMonoid P] [Module R P]
-
-local notation "𝒜" => homogeneousSubmodule R P
-
-/-- **Serre's finiteness theorem on projective space.** Over a Noetherian ring `R`, for `P` free
-with a finite basis and quasi-coherent `F` of finite type on `Proj (Sym_R P)`,
-`H^q(Proj (Sym_R P), F)` is a finitely generated `R`-module for every `q : ℕ`. -/
-theorem finite_cohomology_proj [IsNoetherianRing R] {κ : Type*} [Finite κ]
-    (b : Module.Basis κ R P) (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType]
-    (q : ℕ) : Module.Finite R (Cohomology F q) :=
-  have := Module.Finite.of_basis b
-  TauCeti.SymmetricAlgebra.finite_cohomology_proj R P F q
-
-/-- **Serre's vanishing theorem on projective space.** Over a Noetherian ring `R`, for `P` free
-with a finite basis and quasi-coherent `F` of finite type on `Proj (Sym_R P)`, some `m₀ : ℤ` gives
-`H^q(Proj (Sym_R P), F ⊗ 𝒪(m)) = 0` for all `m ≥ m₀` and `q > 0`. -/
-theorem exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf [IsNoetherianRing R]
-    {κ : Type*} [Finite κ] (b : Module.Basis κ R P)
-    (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
-    ∃ m₀ : ℤ, ∀ m ≥ m₀, ∀ q > 0,
-      Subsingleton (Cohomology (F ⊗ (Proj.twistingSheaf 𝒜 m : (Proj 𝒜).Modules)) q) :=
-  have := Module.Finite.of_basis b
-  TauCeti.SymmetricAlgebra.exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf R P F
-
-end Module.Basis
-
-namespace AlgebraicGeometry.Scheme
-
-open TauCeti.SymmetricAlgebra
-
-/-- **Serre's finiteness theorem for projective schemes** (Hartshorne, Theorem III.5.2(a); Stacks
-Tag 02O6, projective-over-`Spec R` case): if `X` is projective over a Noetherian ring `R`, then for
-every quasi-coherent `𝒪_X`-module `F` of finite type and `q : ℕ`, `H^q(X, F)` is finite over `R`. -/
-instance IsProjectiveOver.finite_cohomology (R : Type u) [CommRing R] [IsNoetherianRing R]
-    {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
-    (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ) :
-    Module.Finite R (Cohomology F q) := by
-  obtain ⟨M, _, _, _, i, hi, hiR⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  exact (i.moduleFinite_cohomology_pushforward_iff R F q).mp
-    (TauCeti.SymmetricAlgebra.finite_cohomology_proj R M ((pushforward i).obj F) q)
-
-/-- **Serre's vanishing theorem on closed subschemes of `Proj (Sym_R M)`** (Hartshorne, Theorem
-III.5.2(b)): for a closed immersion `i : X ⟶ Proj (Sym_R M)` with `R` Noetherian and `M` finite
-over `R`, and quasi-coherent `F` of finite type on `X`, some `m₀ : ℤ` gives
-`H^q(X, F ⊗ i^* 𝒪(m)) = 0` for all `m ≥ m₀` and `q > 0`. -/
-theorem Hom.exists_forall_ge_subsingleton_cohomology_tensor_pullback_twistingSheaf
-    {R M : Type u} [CommRing R] [IsNoetherianRing R] [AddCommMonoid M] [Module R M]
-    [Module.Finite R M] {X : Scheme.{u}} (i : X ⟶ Proj (homogeneousSubmodule R M))
-    [IsClosedImmersion i] (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
-    ∃ m₀ : ℤ, ∀ m ≥ m₀, ∀ q > 0,
-      Subsingleton (Cohomology (F ⊗ (Scheme.Modules.pullback i).obj
-        (Proj.twistingSheaf (homogeneousSubmodule R M) m :
-          (Proj (homogeneousSubmodule R M)).Modules)) q) := by
-  obtain ⟨m₀, hm₀⟩ :=
-    TauCeti.SymmetricAlgebra.exists_forall_ge_subsingleton_cohomology_tensor_twistingSheaf R M
-      ((pushforward i).obj F)
-  exact ⟨m₀, fun m hm q hq ↦
-    (i.subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible F _ q).mp (hm₀ m hm q hq)⟩
-
-end AlgebraicGeometry.Scheme
