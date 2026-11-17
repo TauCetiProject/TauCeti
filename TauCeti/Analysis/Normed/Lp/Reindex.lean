@@ -132,6 +132,12 @@ theorem lpCongrLeft_apply (e : ι ≃ ι') (f : lp (fun _ : ι ↦ E) p) (i : ι
     lpCongrLeft p 𝕜 E e f i = f (e.symm i) :=
   (rfl)
 
+/-- As a function, the reindexed sequence is `f ∘ e.symm`. -/
+@[simp]
+theorem coe_lpCongrLeft (e : ι ≃ ι') (f : lp (fun _ : ι ↦ E) p) :
+    ⇑(lpCongrLeft p 𝕜 E e f) = ⇑f ∘ e.symm :=
+  (rfl)
+
 @[simp]
 theorem lpCongrLeft_symm (e : ι ≃ ι') :
     (lpCongrLeft p 𝕜 E e).symm = lpCongrLeft p 𝕜 E e.symm := by

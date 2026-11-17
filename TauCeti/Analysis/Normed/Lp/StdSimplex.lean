@@ -122,10 +122,8 @@ supported probability vectors. -/
 theorem lpCongrLeft_mem_stdSimplex {β : Type*} (e : α ≃ β) {u : lp (fun _ : α ↦ ℝ) 1}
     (hu : u ∈ stdSimplex α) : LinearIsometryEquiv.lpCongrLeft 1 ℝ ℝ e u ∈ stdSimplex β := by
   obtain ⟨hu0, hufin, hu1⟩ := hu
-  have hcoe : ⇑(LinearIsometryEquiv.lpCongrLeft 1 ℝ ℝ e u) = ⇑u ∘ e.symm :=
-    funext fun b ↦ LinearIsometryEquiv.lpCongrLeft_apply e u b
   refine ⟨fun b ↦ by simp [hu0], ?_, ?_⟩
-  · rw [hcoe]
+  · rw [LinearIsometryEquiv.coe_lpCongrLeft]
     exact hufin.comp_of_injective e.symm.injective
   · simpa [hu1] using e.symm.tsum_eq u
 

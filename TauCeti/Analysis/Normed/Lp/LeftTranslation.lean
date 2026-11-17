@@ -76,6 +76,11 @@ theorem leftTranslation_apply (g : G) (f : lp (fun _ : α ↦ E) p) (a : α) :
     leftTranslation p 𝕜 g f a = f (g⁻¹ • a) := by
   simp [leftTranslation]
 
+/-- As a function, the left translate `L_g f` is `a ↦ f (g⁻¹ • a)`. -/
+theorem coe_leftTranslation (g : G) (f : lp (fun _ : α ↦ E) p) :
+    ⇑(leftTranslation p 𝕜 g f) = fun a ↦ f (g⁻¹ • a) :=
+  funext (leftTranslation_apply g f)
+
 /-- The inverse of left translation by `g` is left translation by `g⁻¹`. -/
 theorem leftTranslation_symm (g : G) :
     (leftTranslation p 𝕜 g).symm = leftTranslation p 𝕜 (α := α) (E := E) g⁻¹ := by
