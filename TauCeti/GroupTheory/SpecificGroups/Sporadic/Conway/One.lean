@@ -63,14 +63,14 @@ theorem Co1.smul_def (g : Co1) (p : leechLattice.antipodalPairs 4) :
 /-- A quotient representative acts by its lattice-isometry permutation of minimal pairs. -/
 @[simp]
 theorem Co1.mk_smul (e : Co0) (p : leechLattice.antipodalPairs 4) :
-    (e : Co1) • p = Isometry.antipodalPairsHom leechLattice 4 e p := (rfl)
+    (e : Co1) • p = Isometry.antipodalPairsHom leechLattice 4 e p := by
+  rw [Co1.smul_def, Co1.antipodalPairsHom_mk]
 
 /-- The inverse of a quotient representative acts by the inverse pair permutation. -/
 @[simp]
 theorem Co1.mk_inv_smul (e : Co0) (p : leechLattice.antipodalPairs 4) :
     (e : Co1)⁻¹ • p = (Isometry.antipodalPairsHom leechLattice 4 e).symm p := by
-  rw [Co1.smul_def, map_inv, Co1.antipodalPairsHom_mk]
-  rfl
+  rw [Co1.smul_def, map_inv, Co1.antipodalPairsHom_mk, Equiv.Perm.inv_def]
 
 /-- The action of the first Conway lattice group on minimal pairs is faithful. -/
 instance Co1.instFaithfulSMul : FaithfulSMul Co1 (leechLattice.antipodalPairs 4) where
