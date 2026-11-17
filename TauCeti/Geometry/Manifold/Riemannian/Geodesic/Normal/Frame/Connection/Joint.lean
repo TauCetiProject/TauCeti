@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Connection
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Connection.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -14,7 +14,8 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 The connection matrix in a normal orthonormal frame is linear in the tangent direction.
 Expanding that direction in the orthonormal basis reduces joint regularity questions to
 the already available smoothness of finitely many connection matrices on the normal
-neighbourhood.
+neighbourhood. The radial connection operator is jointly smooth in its endpoint and
+time, giving smooth coefficients for the radial parallel-transport equation.
 -/
 
 public noncomputable section
@@ -32,37 +33,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {ι : Type*} [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι]
   {p : M} {U : Set (TangentSpace I p)}
 
-/-- The normal-frame connection matrix at a fixed point, as a linear function of the
-initial tangent direction. -/
-def normalFrameConnectionLinearMap
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) :
-    TangentSpace I p →ₗ[ℝ] (TangentSpace I p →L[ℝ] TangentSpace I p) where
-  toFun v := b.normalFrameConnectionOperator (U := U) v q
-  map_add' v w := b.normalFrameConnectionOperator_add (U := U) v w q
-  map_smul' c v := b.normalFrameConnectionOperator_smul (U := U) c v q
-
-/-- Every normal-frame connection matrix is a finite sum of the matrices in the initial
-orthonormal basis directions. -/
-theorem normalFrameConnectionOperator_eq_sum
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p))
-    (v : TangentSpace I p) (q : M) :
-    b.normalFrameConnectionOperator (U := U) v q =
-      ∑ i, ⟪b i, v⟫_ℝ • b.normalFrameConnectionOperator (U := U) (b i) q := by
-  let L := normalFrameConnectionLinearMap (U := U) b q
-  calc
-    _ = L v := rfl
-    _ = L (∑ i, ⟪b i, v⟫_ℝ • b i) := by rw [b.sum_repr']
-    _ = ∑ i, ⟪b i, v⟫_ℝ • b.normalFrameConnectionOperator (U := U) (b i) q := by
-      simpa only [map_sum, map_smul] using
-        (show ∑ i, ⟪b i, v⟫_ℝ • L (b i) =
-          ∑ i, ⟪b i, v⟫_ℝ • b.normalFrameConnectionOperator (U := U) (b i) q from rfl)
-
 variable [I.Boundaryless] [T2Space M]
+
+namespace IsNormalDomain
 
 omit [I.Boundaryless] [T2Space M] in
 /-- The normal-frame connection matrix is jointly smooth in the tangent direction and the
 base point, on the product of the tangent space and the normal neighbourhood. -/
-theorem IsNormalDomain.contMDiffOn_normalFrameConnectionOperator_joint
+theorem contMDiffOn_normalFrameConnectionOperator_joint
     (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) :
     ContMDiffOn (𝓘(ℝ, TangentSpace I p).prod I)
@@ -75,7 +53,7 @@ theorem IsNormalDomain.contMDiffOn_normalFrameConnectionOperator_joint
       (fun x ↦ ∑ i, ⟪b i, x.1⟫_ℝ •
         b.normalFrameConnectionOperator (U := U) (b i) x.2) := by
     funext x
-    exact normalFrameConnectionOperator_eq_sum b x.1 x.2
+    exact b.normalFrameConnectionOperator_eq_sum x.1 x.2
   rw [heq]
   apply contMDiffOn_finsetSum
   intro i _
@@ -102,15 +80,15 @@ theorem IsNormalDomain.contMDiffOn_normalFrameConnectionOperator_joint
 
 /-- The linear parallel-transport equation has coefficients jointly smooth in its radial
 endpoint and time wherever the corresponding radial point lies in the normal domain. -/
-theorem IsNormalDomain.contMDiffOn_radialConnectionOperator_joint
+theorem contDiffOn_normalFrameConnectionOperator_radial_joint
     (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) :
-    ContMDiffOn (𝓘(ℝ, TangentSpace I p).prod 𝓘(ℝ))
-      𝓘(ℝ, TangentSpace I p →L[ℝ] TangentSpace I p) ∞
+    ContDiffOn ℝ ∞
       (fun x : TangentSpace I p × ℝ ↦
         b.normalFrameConnectionOperator (U := U) x.1
           (riemannianExp I M p (x.2 • x.1)))
       {x | x.2 • x.1 ∈ U} := by
+  rw [← contMDiffOn_iff_contDiffOn, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
   have hmul : ContMDiffOn (𝓘(ℝ, TangentSpace I p).prod 𝓘(ℝ))
       𝓘(ℝ, TangentSpace I p) ∞
       (fun x : TangentSpace I p × ℝ ↦ x.2 • x.1) {x | x.2 • x.1 ∈ U} :=
@@ -126,5 +104,17 @@ theorem IsNormalDomain.contMDiffOn_radialConnectionOperator_joint
     contMDiffOn_fst.prodMk hexp
   exact (h.contMDiffOn_normalFrameConnectionOperator_joint b).comp hpair
     (fun x hx ↦ ⟨Set.mem_univ _, Set.mem_image_of_mem _ hx⟩)
+
+/-- Along a radial geodesic, the normal-frame connection operator has smooth coefficients. -/
+theorem contDiffOn_normalFrameConnectionOperator_radial (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) :
+    ContDiffOn ℝ ∞
+      (fun t : ℝ ↦ b.normalFrameConnectionOperator (U := U) v (riemannianExp I M p (t • v)))
+      {t | t • v ∈ U} := by
+  have hpair : ContDiff ℝ ∞ (fun t : ℝ ↦ (v, t)) := contDiff_const.prodMk contDiff_id
+  exact (h.contDiffOn_normalFrameConnectionOperator_radial_joint b).comp
+    hpair.contDiffOn (fun _ ht ↦ ht)
+
+end IsNormalDomain
 
 end TauCeti.Manifold
