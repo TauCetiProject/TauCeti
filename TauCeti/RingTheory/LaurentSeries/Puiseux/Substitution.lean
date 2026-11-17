@@ -25,13 +25,18 @@ valuation topology (`Puiseux/Valuation.lean`) and homomorphism continuity criter
 This file studies lifts of Laurent-series substitutions `LaurentSeries.substAlgHom hφ hφ₀` and
 formal-coordinate automorphisms `LaurentSeries.substAlgEquiv φ` from `K⸨X⸩` to `puiseuxField K`:
 
-* **Automatic continuity and valuation scaling**: every algebraic ring endomorphism lifting
-  `LaurentSeries.substAlgHom hφ hφ₀` (or intertwining any pair of ramified levels via a Laurent
-  substitution) is automatically continuous (`continuous_of_apply_algebraMap_substAlgHom`,
-  `continuous_of_apply_levelEmbedding_substAlgHom`), multiplies rational orders and `addVal K` by
-  `φ.order.toNat`, and raises `valuation K` to the `φ.order.toNat`-th power. Every ring
-  automorphism lifting `LaurentSeries.substAlgEquiv φ` is automatically a homeomorphism preserving
-  orders and valuations (`isHomeomorph_of_apply_algebraMap_substAlgEquiv`).
+* **Automatic continuity and valuation scaling**: every ring endomorphism intertwining any pair of
+  ramified levels `n` and `m` via a Laurent-series substitution `LaurentSeries.substAlgHom hφ hφ₀`
+  is automatically continuous (`continuous_of_apply_levelEmbedding_substAlgHom`). For level-one
+  lifts, every ring endomorphism extending `LaurentSeries.substAlgHom hφ hφ₀` on `K⸨X⸩` is
+  automatically continuous (`continuous_of_apply_algebraMap_substAlgHom`), multiplies rational
+  orders (`order_of_apply_algebraMap_substAlgHom`) and `addVal K`
+  (`addVal_of_apply_algebraMap_substAlgHom`) by `φ.order.toNat`, and raises `valuation K` to the
+  `φ.order.toNat`-th power (`valuation_of_apply_algebraMap_substAlgHom`). Every ring endomorphism
+  extending `LaurentSeries.substAlgEquiv φ` on `K⸨X⸩` preserves rational orders, `addVal K`, and
+  valuations (`order_of_apply_algebraMap_substAlgEquiv`, `addVal_of_apply_algebraMap_substAlgEquiv`,
+  `valuation_of_apply_algebraMap_substAlgEquiv`), and every ring automorphism extending it is
+  automatically a homeomorphism (`isHomeomorph_of_apply_algebraMap_substAlgEquiv`).
 * **Automatic level compatibility**: every `K`-algebra lift `ρ` of `LaurentSeries.substAlgHom`
   preserves each ramified level `n` via a Laurent substitution `ψ` satisfying `ψ ^ n = φ.expand n`
   (`exists_substAlgHom_apply_levelEmbedding`).
