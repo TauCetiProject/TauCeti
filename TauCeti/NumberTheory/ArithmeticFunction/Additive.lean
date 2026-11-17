@@ -1,48 +1,69 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2023 Arend Mellendijk and 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Arend Mellendijk, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.Data.Nat.Factorization.Induction
 
 /-!
 # Additive, strongly additive, and completely additive arithmetic functions
 
-An arithmetic function `f : ArithmeticFunction R` taking values in an additive structure with zero
-is **additive** (`ArithmeticFunction.IsAdditive`) when `f 1 = 0` and `f (m * n) = f m + f n` for
-all positive coprime `m` and `n`. Two strengthenings appear throughout probabilistic and analytic
+`ArithmeticFunction.IsAdditiveOnCoprime` is the positive coprime-product law alone. It does not
+require the value at one to vanish: with a noncancellative target, that value may be a nonzero
+additive idempotent (for instance, in `ℕ∞`, the indicator sending positive integers to `⊤`).
+`ArithmeticFunction.IsAdditive` includes the normalization `f 1 = 0`. With the usual additive zero
+laws, left cancellation makes the two conditions agree
+(`ArithmeticFunction.IsAdditiveOnCoprime.isAdditive`,
+`ArithmeticFunction.isAdditive_iff_isAdditiveOnCoprime`). All predicates need only zero and
+addition; no associativity or commutativity is imposed.
+
+All four predicates use Mathlib's `ArithmeticFunction`, so the value at zero is zero. The weak
+coprime law retains positive-input guards. For `AddZeroClass` targets, its instance at zero and one
+would force normalization, and an unrestricted complete product-to-sum law at zero would force every
+value to zero. However, since `0.Coprime n` holds only at `n = 1` where both `f 0` and `f 1` vanish,
+coprime additivity of a normalized additive function automatically extends to all coprime pairs in
+`ℕ` (`ArithmeticFunction.IsAdditive.map_mul_of_coprime`), and all prime-factorization expansions
+hold unconditionally for every `n : ℕ` (including `n = 0` and `n = 1`).
+
+`ArithmeticFunction.IsAdditive.isMultiplicative_of_eq_monoidHom` sends a normalized additive
+function through a monoid homomorphism from `Multiplicative A`. Its conclusion uses Mathlib's
+multiplicative predicate, including the cases of zero inputs. Natural powers are a specialization
+through Mathlib's `powersHom`; the output's value at zero is supplied by its arithmetic carrier.
+
+Two strengthenings of `ArithmeticFunction.IsAdditive` appear throughout probabilistic and analytic
 number theory:
 
 * **Strong additivity** (`ArithmeticFunction.IsStronglyAdditive`): `f` is additive and
-  `f (p ^ k) = f p` for every prime `p` and exponent `k > 0`, modeled on `ω = cardDistinctFactors`.
+  `f (p ^ k) = f p` for every prime `p` and nonzero exponent `k`, modeled on
+  `ω = cardDistinctFactors`.
 * **Complete additivity** (`ArithmeticFunction.IsCompletelyAdditive`): `f 1 = 0` and
-  `f (m * n) = f m + f n` for all positive `m` and `n` without coprimality, modeled on
-  `Ω = cardFactors`.
-
-As with Mathlib's `ArithmeticFunction.IsMultiplicative`, the carrier retains `f 0 = 0`, and the
-explicit `f 1 = 0` clause is required in non-cancellative codomains such as `ℕ∞` (where the
-indicator sending positive integers to `⊤` satisfies `f (m * n) = f m + f n` on positive inputs
-without vanishing at `1`); when addition is left-cancellative, the coprime product law alone forces
-`f 1 = 0` (`ArithmeticFunction.isAdditive_iff_of_isLeftCancelAdd`). Moreover, since `0.Coprime n`
-holds only at `n = 1`, where both `f 0` and `f 1` vanish, coprime additivity automatically extends
-to all coprime pairs in `ℕ` (`ArithmeticFunction.IsAdditive.map_mul_of_coprime`), and all three
-prime-factorization expansions hold unconditionally for every `n : ℕ` (including `n = 0` and
-`n = 1`).
+  `f (m * n) = f m + f n` for all nonzero `m` and `n` without coprimality, modeled on
+  `Ω = cardFactors`. Over an `AddZeroClass` target, a completely additive function corresponds to
+  a unital monoid homomorphism `PNat →* Multiplicative A`, while retaining `ArithmeticFunction`'s
+  zero-totalized carrier.
 
 ## Main definitions
 
-* `ArithmeticFunction.IsAdditive`: additive arithmetic functions (`f 1 = 0` and coprime additivity
-  on positive inputs).
+* `ArithmeticFunction.IsAdditiveOnCoprime`: unnormalized additive arithmetic functions (coprime
+  additivity on nonzero inputs).
+* `ArithmeticFunction.IsAdditive`: normalized additive arithmetic functions (`f 1 = 0` and coprime
+  additivity on nonzero inputs).
 * `ArithmeticFunction.IsStronglyAdditive`: strongly additive arithmetic functions (`IsAdditive` and
-  `f (p ^ k) = f p` for prime `p` and `0 < k`).
+  `f (p ^ k) = f p` for prime `p` and `k ≠ 0`).
 * `ArithmeticFunction.IsCompletelyAdditive`: completely additive arithmetic functions (`f 1 = 0`
-  and `f (m * n) = f m + f n` on all positive inputs).
+  and `f (m * n) = f m + f n` on all nonzero inputs).
 
 ## Main results
 
+* `ArithmeticFunction.IsAdditiveOnCoprime.isAdditive`: under `[AddZeroClass A] [IsLeftCancelAdd A]`,
+  `IsAdditiveOnCoprime f` implies `IsAdditive f`.
+* `ArithmeticFunction.IsAdditive.isMultiplicative_of_eq_monoidHom`: composing a normalized additive
+  function with a monoid homomorphism from `Multiplicative A` yields a multiplicative arithmetic
+  function.
 * `ArithmeticFunction.IsAdditive.sum_primeFactors_pow_factorization`: for additive `f` and every
   `n : ℕ`, `f n = ∑ p ∈ n.primeFactors, f (p ^ n.factorization p)`.
 * `ArithmeticFunction.IsAdditive.eq_iff_eq_on_prime_powers`: two additive functions are equal if
@@ -65,13 +86,10 @@ prime-factorization expansions hold unconditionally for every `n : ℕ` (includi
 
 * H. Iwaniec and E. Kowalski, *Analytic Number Theory*, §1.2.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter III.1.
-* Alex Kontorovich, Terence Tao and contributors, *Prime Number Theorem and More*,
+* Arend Mellendijk, Alex Kontorovich, Terence Tao and contributors, *Prime Number Theorem and More*,
   `PrimeNumberTheoremAnd/IwaniecKowalskiCh1.lean` (Apache-2.0, revision
-  `127b50e33f6033e2147921167a117af96d9ba4ea`), which defines `ArithmeticFunction.IsAdditive` over
-  `[AddZeroClass R]` via `f (m * n) = f m + f n` on positive coprime inputs; the predicate here
-  adds the explicit `f 1 = 0` clause needed in non-cancellative codomains and recovers that
-  characterization under `[IsLeftCancelAdd R]` via
-  `ArithmeticFunction.isAdditive_iff_of_isLeftCancelAdd`.
+  `127b50e33f6033e2147921167a117af96d9ba4ea`), from which the weak coprime-product relation and the
+  motivating exponentiation consequence originate.
 * `Mathlib.NumberTheory.ArithmeticFunction.Defs` (`ArithmeticFunction.IsMultiplicative`), from
   whose `iff_ne_zero`, `map_prod`, `map_prod_of_prime`, `map_prod_of_subset_primeFactors`,
   `prod_primeFactors`, `eq_iff_eq_on_prime_powers`, `lcm_apply_mul_gcd_apply`, and
@@ -84,45 +102,93 @@ open Finset
 
 namespace ArithmeticFunction
 
-variable {R S : Type*}
-
 /-! ### Additive arithmetic functions -/
 
-/-- An arithmetic function `f` is **additive** if `f 1 = 0` and `f (m * n) = f m + f n` for all
-positive coprime natural numbers `m` and `n`. -/
-def IsAdditive [AddZeroClass R] (f : ArithmeticFunction R) : Prop :=
-  f 1 = 0 ∧ ∀ {m n : ℕ}, 0 < m → 0 < n → m.Coprime n → f (m * n) = f m + f n
+/-- The additive law on positive coprime inputs, without normalization at one. -/
+structure IsAdditiveOnCoprime {A : Type*} [Zero A] [Add A] (f : ArithmeticFunction A) : Prop where
+  /-- Values add on positive coprime products. -/
+  map_mul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → f (m * n) = f m + f n
 
-/-- Unfolding characterization of `ArithmeticFunction.IsAdditive`. -/
-theorem isAdditive_def [AddZeroClass R] {f : ArithmeticFunction R} :
-    f.IsAdditive ↔ f 1 = 0 ∧ ∀ {m n : ℕ}, 0 < m → 0 < n → m.Coprime n → f (m * n) = f m + f n :=
-  Iff.rfl
+/-- A normalized additive arithmetic function has value zero at one and adds on positive
+coprime products. -/
+structure IsAdditive {A : Type*} [Zero A] [Add A] (f : ArithmeticFunction A) : Prop
+    extends IsAdditiveOnCoprime f where
+  /-- The value at one vanishes. -/
+  map_one : f 1 = 0
 
-/-- In a codomain with left-cancellative addition, the coprime product law on positive inputs
+attribute [simp, grind =] IsAdditive.map_one
+
+/-- Left cancellation forces the value at one to vanish, so the coprime-product law is normalized.
+No associativity or commutativity of addition is needed. -/
+theorem IsAdditiveOnCoprime.isAdditive {A : Type*} [AddZeroClass A] [IsLeftCancelAdd A]
+    {f : ArithmeticFunction A} (hf : IsAdditiveOnCoprime f) : IsAdditive f := by
+  refine ⟨hf, ?_⟩
+  have h : f 1 + 0 = f 1 + f 1 := by
+    simpa using hf.map_mul one_ne_zero one_ne_zero (Nat.coprime_one_left 1)
+  exact (add_left_cancel h).symm
+
+/-- Applying a monoid homomorphism to the positive values of a normalized additive function
+produces a multiplicative arithmetic function. The output's zero value is already part of its
+arithmetic-function carrier. -/
+theorem IsAdditive.isMultiplicative_of_eq_monoidHom {A R : Type*} [AddZeroClass A]
+    [MonoidWithZero R] {f : ArithmeticFunction A} (hf : IsAdditive f)
+    (φ : Multiplicative A →* R) {g : ArithmeticFunction R}
+    (hg : ∀ n : ℕ, n ≠ 0 → g n = φ (Multiplicative.ofAdd (f n))) :
+    g.IsMultiplicative := by
+  refine IsMultiplicative.iff_ne_zero.2 ⟨?_, ?_⟩
+  · simpa [hf.map_one] using hg 1 one_ne_zero
+  intro m n hm hn hmn
+  rw [hg (m * n) (mul_ne_zero hm hn), hf.map_mul hm hn hmn,
+    ofAdd_add, map_mul, hg m hm, hg n hn]
+
+variable {R S : Type*}
+
+/-- Under left-cancellative addition with zero laws, `IsAdditive` and `IsAdditiveOnCoprime`
+coincide. -/
+theorem isAdditive_iff_isAdditiveOnCoprime [AddZeroClass R] [IsLeftCancelAdd R]
+    {f : ArithmeticFunction R} : f.IsAdditive ↔ f.IsAdditiveOnCoprime :=
+  ⟨fun hf ↦ hf.toIsAdditiveOnCoprime, IsAdditiveOnCoprime.isAdditive⟩
+
+/-- In a codomain with left-cancellative addition, the coprime product law on nonzero inputs
 already forces `f 1 = 0` via `f 1 = f (1 * 1) = f 1 + f 1`. -/
 theorem isAdditive_iff_of_isLeftCancelAdd [AddZeroClass R] [IsLeftCancelAdd R]
     {f : ArithmeticFunction R} :
-    f.IsAdditive ↔ ∀ {m n : ℕ}, 0 < m → 0 < n → m.Coprime n → f (m * n) = f m + f n :=
-  ⟨fun hf ↦ hf.2, fun h ↦ by
-    have h1 := h zero_lt_one zero_lt_one (Nat.coprime_one_left 1)
-    rw [mul_one] at h1
-    exact ⟨add_left_cancel (h1.symm.trans (add_zero (f 1)).symm), h⟩⟩
+    f.IsAdditive ↔ ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → f (m * n) = f m + f n :=
+  ⟨fun hf ↦ hf.map_mul, fun h ↦ IsAdditiveOnCoprime.isAdditive ⟨h⟩⟩
 
 namespace IsAdditive
+
+section ZeroAdd
+
+variable [Zero R] [Add R] {f : ArithmeticFunction R}
+
+/-- Characterization of `IsAdditive` as a conjunction of vanishing at `1` and coprime additivity
+on nonzero inputs. -/
+theorem iff_ne_zero :
+    f.IsAdditive ↔
+      f 1 = 0 ∧ ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → f (m * n) = f m + f n :=
+  ⟨fun hf ↦ ⟨hf.map_one, hf.map_mul⟩, fun ⟨h1, hmul⟩ ↦ ⟨⟨hmul⟩, h1⟩⟩
+
+/-- Two additive arithmetic functions are equal if and only if they agree at every prime power
+`p ^ k` with `p` prime and `k ≠ 0`. -/
+theorem eq_iff_eq_on_prime_powers {g : ArithmeticFunction R} (hf : f.IsAdditive)
+    (hg : g.IsAdditive) :
+    f = g ↔ ∀ p k : ℕ, p.Prime → k ≠ 0 → f (p ^ k) = g (p ^ k) := by
+  refine ⟨fun h _ _ _ _ ↦ h ▸ rfl, fun h ↦ ext fun n ↦ ?_⟩
+  induction n using Nat.recOnPosPrimePosCoprime with
+  | zero => simp
+  | one => rw [hf.map_one, hg.map_one]
+  | prime_pow p k hp hk => exact h p k hp hk.ne'
+  | coprime a b ha hb hab iha ihb =>
+    have ha0 : a ≠ 0 := (zero_lt_one.trans ha).ne'
+    have hb0 : b ≠ 0 := (zero_lt_one.trans hb).ne'
+    rw [hf.map_mul ha0 hb0 hab, hg.map_mul ha0 hb0 hab, iha, ihb]
+
+end ZeroAdd
 
 section AddZeroClass
 
 variable [AddZeroClass R] {f : ArithmeticFunction R}
-
-/-- An additive arithmetic function vanishes at `1`. -/
-@[simp, grind =]
-theorem map_one (hf : f.IsAdditive) : f 1 = 0 :=
-  hf.1
-
-/-- Additivity on positive coprime factors. -/
-theorem map_mul (hf : f.IsAdditive) {m n : ℕ} (hm : 0 < m) (hn : 0 < n) (hmn : m.Coprime n) :
-    f (m * n) = f m + f n :=
-  hf.2 hm hn hmn
 
 /-- Additivity extends to all coprime pairs in `ℕ`: if one factor is `0`, coprimality forces the
 other to be `1`, and both `f 0` and `f 1` vanish. Stated with `m.gcd n = 1` (definitionally
@@ -137,48 +203,29 @@ theorem map_mul_of_coprime (hf : f.IsAdditive) {m n : ℕ} (hmn : m.gcd n = 1) :
   rcases eq_or_ne n 0 with rfl | hn
   · obtain rfl : m = 1 := Nat.coprime_zero_right m |>.mp hmn
     simp [hf.map_one]
-  exact hf.2 (Nat.pos_of_ne_zero hm) (Nat.pos_of_ne_zero hn) hmn
-
-/-- Characterization of `IsAdditive` using nonzero guards in place of positivity. -/
-theorem iff_ne_zero :
-    f.IsAdditive ↔ f 1 = 0 ∧ ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → f (m * n) = f m + f n :=
-  and_congr_right' <| forall₂_congr fun _ _ ↦
-    ⟨fun h hm hn ↦ h (Nat.pos_of_ne_zero hm) (Nat.pos_of_ne_zero hn),
-      fun h hm hn ↦ h hm.ne' hn.ne'⟩
+  exact hf.map_mul hm hn hmn
 
 /-- Characterization of `IsAdditive` using coprimality on all of `ℕ`, matching the shape of
 `ArithmeticFunction.IsMultiplicative`. -/
 theorem iff_coprime :
     f.IsAdditive ↔ f 1 = 0 ∧ ∀ {m n : ℕ}, m.Coprime n → f (m * n) = f m + f n :=
   ⟨fun hf ↦ ⟨hf.map_one, fun hmn ↦ hf.map_mul_of_coprime hmn⟩,
-    fun ⟨h1, h⟩ ↦ ⟨h1, fun _ _ hmn ↦ h hmn⟩⟩
-
-/-- Two additive arithmetic functions are equal if and only if they agree at every prime power
-`p ^ k` with `p` prime and `k ≠ 0`. -/
-theorem eq_iff_eq_on_prime_powers {g : ArithmeticFunction R} (hf : f.IsAdditive)
-    (hg : g.IsAdditive) :
-    f = g ↔ ∀ p k : ℕ, p.Prime → k ≠ 0 → f (p ^ k) = g (p ^ k) := by
-  refine ⟨fun h _ _ _ _ ↦ h ▸ rfl, fun h ↦ ext fun n ↦ ?_⟩
-  induction n using Nat.recOnPosPrimePosCoprime with
-  | zero => simp
-  | one => rw [hf.map_one, hg.map_one]
-  | prime_pow p k hp hk => exact h p k hp hk.ne'
-  | coprime a b _ _ hab iha ihb =>
-    rw [hf.map_mul_of_coprime hab, hg.map_mul_of_coprime hab, iha, ihb]
+    fun ⟨h1, h⟩ ↦ ⟨⟨fun _ _ hmn ↦ h hmn⟩, h1⟩⟩
 
 /-- Post-composing an additive arithmetic function on nonzero inputs with an additive monoid
 homomorphism preserves additivity. -/
 theorem of_eq_addMonoidHom [AddZeroClass S] {F : Type*} [FunLike F R S] [AddMonoidHomClass F R S]
     (hf : f.IsAdditive) (φ : F) {g : ArithmeticFunction S} (hg : ∀ n ≠ 0, g n = φ (f n)) :
-    g.IsAdditive :=
-  iff_ne_zero.mpr ⟨by rw [hg 1 one_ne_zero, hf.map_one, _root_.map_zero φ], fun {m n} hm hn hmn ↦ by
-    rw [hg (m * n) (mul_ne_zero hm hn), hg m hm, hg n hn, hf.map_mul_of_coprime hmn,
-      _root_.map_add φ]⟩
+    g.IsAdditive where
+  map_mul {m n} hm hn hmn := by
+    rw [hg (m * n) (mul_ne_zero hm hn), hg m hm, hg n hn, hf.map_mul hm hn hmn, _root_.map_add φ]
+  map_one := by rw [hg 1 one_ne_zero, hf.map_one, _root_.map_zero φ]
 
 /-- Pointwise scalar multiplication by a distributive action preserves additivity. -/
 @[grind ←]
-theorem smul [DistribSMul S R] (hf : f.IsAdditive) (c : S) : (c • f).IsAdditive :=
-  ⟨by simp [hf.map_one], fun hm hn hmn ↦ by simp [hf.map_mul hm hn hmn, smul_add]⟩
+theorem smul [DistribSMul S R] (hf : f.IsAdditive) (c : S) : (c • f).IsAdditive where
+  map_mul hm hn hmn := by simp [hf.map_mul hm hn hmn, smul_add]
+  map_one := by simp [hf.map_one]
 
 end AddZeroClass
 
@@ -202,10 +249,11 @@ variable [AddCommMonoid R] {f g : ArithmeticFunction R}
 
 /-- The pointwise sum of two additive arithmetic functions is additive. -/
 @[grind ←]
-theorem add (hf : f.IsAdditive) (hg : g.IsAdditive) : (f + g).IsAdditive :=
-  ⟨by simp [hf.map_one, hg.map_one], fun hm hn hmn ↦ by
+theorem add (hf : f.IsAdditive) (hg : g.IsAdditive) : (f + g).IsAdditive where
+  map_mul hm hn hmn := by
     simp only [add_apply, hf.map_mul hm hn hmn, hg.map_mul hm hn hmn]
-    exact add_add_add_comm _ _ _ _⟩
+    exact add_add_add_comm _ _ _ _
+  map_one := by simp [hf.map_one, hg.map_one]
 
 open scoped Function in
 /-- An additive function converts the product of a pairwise coprime finite family into the sum of
@@ -286,24 +334,27 @@ theorem map_div_of_coprime [AddGroup R] {f : ArithmeticFunction R} (hf : f.IsAdd
 /-- Pointwise negation preserves additivity. -/
 @[grind ←]
 theorem neg [SubtractionMonoid R] {f : ArithmeticFunction R} (hf : f.IsAdditive) :
-    (-f).IsAdditive :=
-  ⟨by simp [hf.map_one], fun hm hn hmn ↦ by
-    rw [neg_apply, mul_comm, hf.map_mul hn hm hmn.symm, neg_add_rev, neg_apply, neg_apply]⟩
+    (-f).IsAdditive where
+  map_mul hm hn hmn := by
+    rw [neg_apply, mul_comm, hf.map_mul hn hm hmn.symm, neg_add_rev, neg_apply, neg_apply]
+  map_one := by simp [hf.map_one]
 
 /-- Pointwise subtraction preserves additivity. -/
 @[grind ←]
 theorem sub [SubtractionCommMonoid R] {f g : ArithmeticFunction R} (hf : f.IsAdditive)
-    (hg : g.IsAdditive) : (f - g).IsAdditive :=
-  ⟨by simp [hf.map_one, hg.map_one], fun hm hn hmn ↦ by
+    (hg : g.IsAdditive) : (f - g).IsAdditive where
+  map_mul hm hn hmn := by
     simp only [sub_apply, hf.map_mul hm hn hmn, hg.map_mul hm hn hmn]
-    exact (sub_add_sub_comm _ _ _ _).symm⟩
+    exact (sub_add_sub_comm _ _ _ _).symm
+  map_one := by simp [hf.map_one, hg.map_one]
 
 end IsAdditive
 
 /-- The zero arithmetic function is additive. -/
 @[simp, grind .]
-theorem isAdditive_zero [AddZeroClass R] : (0 : ArithmeticFunction R).IsAdditive :=
-  ⟨by simp, fun _ _ _ ↦ by simp⟩
+theorem isAdditive_zero [AddZeroClass R] : (0 : ArithmeticFunction R).IsAdditive where
+  map_mul _ _ _ := by simp
+  map_one := by simp
 
 /-- A finite pointwise sum of additive arithmetic functions is additive. -/
 theorem isAdditive_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι) (f : ι → ArithmeticFunction R)
@@ -313,58 +364,55 @@ theorem isAdditive_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι) (f : ι �
 /-! ### Strongly additive arithmetic functions -/
 
 /-- An arithmetic function `f` is **strongly additive** if it is additive and `f (p ^ k) = f p`
-for every prime `p` and positive exponent `k`. -/
-def IsStronglyAdditive [AddZeroClass R] (f : ArithmeticFunction R) : Prop :=
-  f.IsAdditive ∧ ∀ {p k : ℕ}, p.Prime → 0 < k → f (p ^ k) = f p
+for every prime `p` and nonzero exponent `k`. -/
+structure IsStronglyAdditive {A : Type*} [Zero A] [Add A] (f : ArithmeticFunction A) : Prop
+    extends IsAdditive f where
+  /-- At every positive power of a prime `p`, a strongly additive function takes the value `f p`. -/
+  map_prime_pow : ∀ {p k : ℕ}, p.Prime → k ≠ 0 → f (p ^ k) = f p
 
-/-- Unfolding characterization of `ArithmeticFunction.IsStronglyAdditive`. -/
-theorem isStronglyAdditive_def [AddZeroClass R] {f : ArithmeticFunction R} :
-    f.IsStronglyAdditive ↔ f.IsAdditive ∧ ∀ {p k : ℕ}, p.Prime → 0 < k → f (p ^ k) = f p :=
-  Iff.rfl
+attribute [simp, grind =] IsStronglyAdditive.map_prime_pow
+attribute [grind →] IsStronglyAdditive.toIsAdditive
 
 namespace IsStronglyAdditive
 
-section AddZeroClass
+section ZeroAdd
 
-variable [AddZeroClass R] {f : ArithmeticFunction R}
+variable [Zero R] [Add R] {f : ArithmeticFunction R}
 
-/-- Every strongly additive arithmetic function is additive. -/
-@[grind →]
-theorem isAdditive (hf : f.IsStronglyAdditive) : f.IsAdditive :=
-  hf.1
-
-/-- A strongly additive arithmetic function vanishes at `1`. -/
-@[simp, grind =]
-theorem map_one (hf : f.IsStronglyAdditive) : f 1 = 0 :=
-  hf.isAdditive.map_one
-
-/-- At every positive power of a prime `p`, a strongly additive function takes the value `f p`. -/
-@[simp, grind =]
-theorem map_prime_pow (hf : f.IsStronglyAdditive) {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0) :
-    f (p ^ k) = f p :=
-  hf.2 hp (Nat.pos_of_ne_zero hk)
+/-- Unfolding characterization of `ArithmeticFunction.IsStronglyAdditive`. -/
+theorem iff_ne_zero :
+    f.IsStronglyAdditive ↔ f.IsAdditive ∧ ∀ {p k : ℕ}, p.Prime → k ≠ 0 → f (p ^ k) = f p :=
+  ⟨fun hf ↦ ⟨hf.toIsAdditive, hf.map_prime_pow⟩, fun ⟨hadd, hpow⟩ ↦ ⟨hadd, hpow⟩⟩
 
 /-- Two strongly additive arithmetic functions are equal if and only if they agree on all primes. -/
 theorem eq_iff_eq_on_primes {g : ArithmeticFunction R} (hf : f.IsStronglyAdditive)
     (hg : g.IsStronglyAdditive) :
     f = g ↔ ∀ p : ℕ, p.Prime → f p = g p := by
-  refine ⟨fun h _ _ ↦ h ▸ rfl, fun h ↦ (hf.isAdditive.eq_iff_eq_on_prime_powers
-    hg.isAdditive).mpr fun p k hp hk ↦ ?_⟩
+  refine ⟨fun h _ _ ↦ h ▸ rfl, fun h ↦ (hf.toIsAdditive.eq_iff_eq_on_prime_powers
+    hg.toIsAdditive).mpr fun p k hp hk ↦ ?_⟩
   rw [hf.map_prime_pow hp hk, hg.map_prime_pow hp hk, h p hp]
+
+end ZeroAdd
+
+section AddZeroClass
+
+variable [AddZeroClass R] {f : ArithmeticFunction R}
 
 /-- Post-composing a strongly additive arithmetic function on nonzero inputs with an additive
 monoid homomorphism preserves strong additivity. -/
 theorem of_eq_addMonoidHom [AddZeroClass S] {F : Type*} [FunLike F R S] [AddMonoidHomClass F R S]
     (hf : f.IsStronglyAdditive) (φ : F) {g : ArithmeticFunction S}
-    (hg : ∀ n ≠ 0, g n = φ (f n)) : g.IsStronglyAdditive :=
-  ⟨hf.isAdditive.of_eq_addMonoidHom φ hg, fun {p k} hp hk ↦ by
-    rw [hg (p ^ k) (pow_ne_zero k hp.ne_zero), hg p hp.ne_zero, hf.map_prime_pow hp hk.ne']⟩
+    (hg : ∀ n ≠ 0, g n = φ (f n)) : g.IsStronglyAdditive where
+  toIsAdditive := hf.toIsAdditive.of_eq_addMonoidHom φ hg
+  map_prime_pow {p k} hp hk := by
+    rw [hg (p ^ k) (pow_ne_zero k hp.ne_zero), hg p hp.ne_zero, hf.map_prime_pow hp hk]
 
 /-- Pointwise scalar multiplication by a distributive action preserves strong additivity. -/
 @[grind ←]
 theorem smul [DistribSMul S R] (hf : f.IsStronglyAdditive) (c : S) :
-    (c • f).IsStronglyAdditive :=
-  ⟨hf.isAdditive.smul c, fun hp hk ↦ by simp [hf.map_prime_pow hp hk.ne']⟩
+    (c • f).IsStronglyAdditive where
+  toIsAdditive := hf.toIsAdditive.smul c
+  map_prime_pow hp hk := by simp [hf.map_prime_pow hp hk]
 
 end AddZeroClass
 
@@ -389,15 +437,15 @@ variable [AddCommMonoid R] {f g : ArithmeticFunction R}
 /-- The pointwise sum of two strongly additive arithmetic functions is strongly additive. -/
 @[grind ←]
 theorem add (hf : f.IsStronglyAdditive) (hg : g.IsStronglyAdditive) :
-    (f + g).IsStronglyAdditive :=
-  ⟨hf.isAdditive.add hg.isAdditive, fun hp hk ↦ by
-    simp [hf.map_prime_pow hp hk.ne', hg.map_prime_pow hp hk.ne']⟩
+    (f + g).IsStronglyAdditive where
+  toIsAdditive := hf.toIsAdditive.add hg.toIsAdditive
+  map_prime_pow hp hk := by simp [hf.map_prime_pow hp hk, hg.map_prime_pow hp hk]
 
 /-- **Distinct-prime representation of a strongly additive function.** For every `n : ℕ`
 (including `0` and `1`), `f n = ∑ p ∈ n.primeFactors, f p`. -/
 theorem sum_primeFactors (hf : f.IsStronglyAdditive) (n : ℕ) :
     f n = ∑ p ∈ n.primeFactors, f p := by
-  rw [hf.isAdditive.sum_primeFactors_pow_factorization]
+  rw [hf.toIsAdditive.sum_primeFactors_pow_factorization]
   refine sum_congr rfl fun p hp ↦ hf.map_prime_pow (Nat.prime_of_mem_primeFactors hp) ?_
   exact Finsupp.mem_support_iff.mp (Nat.support_factorization n ▸ hp)
 
@@ -406,23 +454,25 @@ end AddCommMonoid
 /-- Pointwise negation preserves strong additivity. -/
 @[grind ←]
 theorem neg [SubtractionMonoid R] {f : ArithmeticFunction R} (hf : f.IsStronglyAdditive) :
-    (-f).IsStronglyAdditive :=
-  ⟨hf.isAdditive.neg, fun hp hk ↦ by simp [hf.map_prime_pow hp hk.ne']⟩
+    (-f).IsStronglyAdditive where
+  toIsAdditive := hf.toIsAdditive.neg
+  map_prime_pow hp hk := by simp [hf.map_prime_pow hp hk]
 
 /-- Pointwise subtraction preserves strong additivity. -/
 @[grind ←]
 theorem sub [SubtractionCommMonoid R] {f g : ArithmeticFunction R} (hf : f.IsStronglyAdditive)
-    (hg : g.IsStronglyAdditive) : (f - g).IsStronglyAdditive :=
-  ⟨hf.isAdditive.sub hg.isAdditive, fun hp hk ↦ by
-    simp [hf.map_prime_pow hp hk.ne', hg.map_prime_pow hp hk.ne']⟩
+    (hg : g.IsStronglyAdditive) : (f - g).IsStronglyAdditive where
+  toIsAdditive := hf.toIsAdditive.sub hg.toIsAdditive
+  map_prime_pow hp hk := by simp [hf.map_prime_pow hp hk, hg.map_prime_pow hp hk]
 
 end IsStronglyAdditive
 
 /-- The zero arithmetic function is strongly additive. -/
 @[simp, grind .]
 theorem isStronglyAdditive_zero [AddZeroClass R] :
-    (0 : ArithmeticFunction R).IsStronglyAdditive :=
-  ⟨isAdditive_zero, fun _ _ ↦ by simp⟩
+    (0 : ArithmeticFunction R).IsStronglyAdditive where
+  toIsAdditive := isAdditive_zero
+  map_prime_pow _ _ := by simp
 
 /-- A finite pointwise sum of strongly additive arithmetic functions is strongly additive. -/
 theorem isStronglyAdditive_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι)
@@ -432,71 +482,56 @@ theorem isStronglyAdditive_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι)
 
 /-- The distinct-prime-factor counting function `ω = cardDistinctFactors` is strongly additive. -/
 @[simp, grind .]
-theorem isStronglyAdditive_cardDistinctFactors : cardDistinctFactors.IsStronglyAdditive :=
-  ⟨⟨cardDistinctFactors_one, fun _ _ hmn ↦ cardDistinctFactors_mul hmn⟩,
-    fun hp hk ↦ (cardDistinctFactors_apply_prime_pow hp hk.ne').trans
-      (cardDistinctFactors_apply_prime hp).symm⟩
+theorem isStronglyAdditive_cardDistinctFactors : cardDistinctFactors.IsStronglyAdditive where
+  map_mul _ _ hmn := cardDistinctFactors_mul hmn
+  map_one := cardDistinctFactors_one
+  map_prime_pow hp hk := (cardDistinctFactors_apply_prime_pow hp hk).trans
+    (cardDistinctFactors_apply_prime hp).symm
 
 /-- The distinct-prime-factor counting function `ω = cardDistinctFactors` is additive. -/
 @[simp, grind .]
 theorem isAdditive_cardDistinctFactors : cardDistinctFactors.IsAdditive :=
-  isStronglyAdditive_cardDistinctFactors.isAdditive
+  isStronglyAdditive_cardDistinctFactors.toIsAdditive
 
 /-! ### Completely additive arithmetic functions -/
 
 /-- An arithmetic function `f` is **completely additive** if `f 1 = 0` and `f (m * n) = f m + f n`
-for all positive natural numbers `m` and `n`. -/
-def IsCompletelyAdditive [AddZeroClass R] (f : ArithmeticFunction R) : Prop :=
-  f 1 = 0 ∧ ∀ {m n : ℕ}, 0 < m → 0 < n → f (m * n) = f m + f n
+for all nonzero natural numbers `m` and `n`. -/
+structure IsCompletelyAdditive {A : Type*} [Zero A] [Add A] (f : ArithmeticFunction A) : Prop where
+  /-- The value at one vanishes. -/
+  map_one : f 1 = 0
+  /-- Values add on all positive products. -/
+  map_mul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → f (m * n) = f m + f n
 
-/-- Unfolding characterization of `ArithmeticFunction.IsCompletelyAdditive`. -/
-theorem isCompletelyAdditive_def [AddZeroClass R] {f : ArithmeticFunction R} :
-    f.IsCompletelyAdditive ↔ f 1 = 0 ∧ ∀ {m n : ℕ}, 0 < m → 0 < n → f (m * n) = f m + f n :=
-  Iff.rfl
+attribute [simp, grind =] IsCompletelyAdditive.map_one
+attribute [simp, grind =] IsCompletelyAdditive.map_mul
 
-/-- In a codomain with left-cancellative addition, `f (m * n) = f m + f n` on positive inputs
+/-- In a codomain with left-cancellative addition, `f (m * n) = f m + f n` on nonzero inputs
 already forces `f 1 = 0`. -/
 theorem isCompletelyAdditive_iff_of_isLeftCancelAdd [AddZeroClass R] [IsLeftCancelAdd R]
     {f : ArithmeticFunction R} :
-    f.IsCompletelyAdditive ↔ ∀ {m n : ℕ}, 0 < m → 0 < n → f (m * n) = f m + f n :=
-  ⟨fun hf ↦ hf.2, fun h ↦ by
-    have h1 := h zero_lt_one zero_lt_one
-    rw [mul_one] at h1
-    exact ⟨add_left_cancel (h1.symm.trans (add_zero (f 1)).symm), h⟩⟩
+    f.IsCompletelyAdditive ↔ ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → f (m * n) = f m + f n :=
+  ⟨fun hf ↦ hf.map_mul, fun h ↦ by
+    have h1 : f 1 + 0 = f 1 + f 1 := by simpa using h one_ne_zero one_ne_zero
+    exact ⟨(add_left_cancel h1).symm, h⟩⟩
 
 namespace IsCompletelyAdditive
 
-section AddZeroClass
+section ZeroAdd
 
-variable [AddZeroClass R] {f : ArithmeticFunction R}
+variable [Zero R] [Add R] {f : ArithmeticFunction R}
 
 /-- Every completely additive arithmetic function is additive. -/
 @[grind →]
-theorem isAdditive (hf : f.IsCompletelyAdditive) : f.IsAdditive :=
-  ⟨hf.1, fun hm hn _ ↦ hf.2 hm hn⟩
+theorem isAdditive (hf : f.IsCompletelyAdditive) : f.IsAdditive where
+  map_mul hm hn _ := hf.map_mul hm hn
+  map_one := hf.map_one
 
-/-- A completely additive arithmetic function vanishes at `1`. -/
-@[simp, grind =]
-theorem map_one (hf : f.IsCompletelyAdditive) : f 1 = 0 :=
-  hf.1
-
-/-- Complete additivity on positive factors. -/
-theorem map_mul (hf : f.IsCompletelyAdditive) {m n : ℕ} (hm : 0 < m) (hn : 0 < n) :
-    f (m * n) = f m + f n :=
-  hf.2 hm hn
-
-/-- Complete additivity on nonzero factors. -/
-@[simp, grind =]
-theorem map_mul_of_ne_zero (hf : f.IsCompletelyAdditive) {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0) :
-    f (m * n) = f m + f n :=
-  hf.2 (Nat.pos_of_ne_zero hm) (Nat.pos_of_ne_zero hn)
-
-/-- Characterization of `IsCompletelyAdditive` using nonzero guards in place of positivity. -/
+/-- Characterization of `IsCompletelyAdditive` as a conjunction of vanishing at `1` and additivity
+on nonzero inputs. -/
 theorem iff_ne_zero :
     f.IsCompletelyAdditive ↔ f 1 = 0 ∧ ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → f (m * n) = f m + f n :=
-  and_congr_right' <| forall₂_congr fun _ _ ↦
-    ⟨fun h hm hn ↦ h (Nat.pos_of_ne_zero hm) (Nat.pos_of_ne_zero hn),
-      fun h hm hn ↦ h hm.ne' hn.ne'⟩
+  ⟨fun hf ↦ ⟨hf.map_one, hf.map_mul⟩, fun ⟨h1, hmul⟩ ↦ ⟨h1, hmul⟩⟩
 
 /-- Two completely additive arithmetic functions are equal if and only if they agree on all
 primes. -/
@@ -513,22 +548,29 @@ theorem eq_iff_eq_on_primes {g : ArithmeticFunction R} (hf : f.IsCompletelyAddit
     · simp
     rcases eq_or_ne b 0 with rfl | hb
     · simp
-    rw [hf.map_mul_of_ne_zero ha hb, hg.map_mul_of_ne_zero ha hb, iha, ihb]
+    rw [hf.map_mul ha hb, hg.map_mul ha hb, iha, ihb]
+
+end ZeroAdd
+
+section AddZeroClass
+
+variable [AddZeroClass R] {f : ArithmeticFunction R}
 
 /-- Post-composing a completely additive arithmetic function on nonzero inputs with an additive
 monoid homomorphism preserves complete additivity. -/
 theorem of_eq_addMonoidHom [AddZeroClass S] {F : Type*} [FunLike F R S] [AddMonoidHomClass F R S]
     (hf : f.IsCompletelyAdditive) (φ : F) {g : ArithmeticFunction S}
-    (hg : ∀ n ≠ 0, g n = φ (f n)) : g.IsCompletelyAdditive :=
-  iff_ne_zero.mpr ⟨by rw [hg 1 one_ne_zero, hf.map_one, _root_.map_zero φ], fun {m n} hm hn ↦ by
-    rw [hg (m * n) (mul_ne_zero hm hn), hg m hm, hg n hn, hf.map_mul_of_ne_zero hm hn,
-      _root_.map_add φ]⟩
+    (hg : ∀ n ≠ 0, g n = φ (f n)) : g.IsCompletelyAdditive where
+  map_one := by rw [hg 1 one_ne_zero, hf.map_one, _root_.map_zero φ]
+  map_mul {m n} hm hn := by
+    rw [hg (m * n) (mul_ne_zero hm hn), hg m hm, hg n hn, hf.map_mul hm hn, _root_.map_add φ]
 
 /-- Pointwise scalar multiplication by a distributive action preserves complete additivity. -/
 @[grind ←]
 theorem smul [DistribSMul S R] (hf : f.IsCompletelyAdditive) (c : S) :
-    (c • f).IsCompletelyAdditive :=
-  ⟨by simp [hf.map_one], fun hm hn ↦ by simp [hf.map_mul hm hn, smul_add]⟩
+    (c • f).IsCompletelyAdditive where
+  map_one := by simp [hf.map_one]
+  map_mul hm hn := by simp [hf.map_mul hm hn, smul_add]
 
 end AddZeroClass
 
@@ -556,7 +598,7 @@ theorem map_pow [AddMonoid R] {f : ArithmeticFunction R} (hf : f.IsCompletelyAdd
   · cases k <;> simp [hf.map_one]
   induction k with
   | zero => simp [hf.map_one]
-  | succ k ih => rw [pow_succ, hf.map_mul_of_ne_zero (pow_ne_zero k hn) hn, ih, succ_nsmul]
+  | succ k ih => rw [pow_succ, hf.map_mul (pow_ne_zero k hn) hn, ih, succ_nsmul]
 
 section AddCommMonoid
 
@@ -565,10 +607,11 @@ variable [AddCommMonoid R] {f g : ArithmeticFunction R}
 /-- The pointwise sum of two completely additive arithmetic functions is completely additive. -/
 @[grind ←]
 theorem add (hf : f.IsCompletelyAdditive) (hg : g.IsCompletelyAdditive) :
-    (f + g).IsCompletelyAdditive :=
-  ⟨by simp [hf.map_one, hg.map_one], fun hm hn ↦ by
+    (f + g).IsCompletelyAdditive where
+  map_one := by simp [hf.map_one, hg.map_one]
+  map_mul hm hn := by
     simp only [add_apply, hf.map_mul hm hn, hg.map_mul hm hn]
-    exact add_add_add_comm _ _ _ _⟩
+    exact add_add_add_comm _ _ _ _
 
 /-- A completely additive function converts any finite product of nonzero naturals into the sum of
 its values. -/
@@ -580,8 +623,7 @@ theorem map_prod {ι : Type*} (g : ι → ℕ) (hf : f.IsCompletelyAdditive) (s 
   | insert a s has ih =>
     have ha : g a ≠ 0 := hs a (mem_insert_self a s)
     have hs' : ∀ i ∈ s, g i ≠ 0 := fun i hi ↦ hs i (mem_insert_of_mem hi)
-    rw [prod_insert has, sum_insert has, hf.map_mul_of_ne_zero ha (prod_ne_zero_iff.mpr hs'),
-      ih hs']
+    rw [prod_insert has, sum_insert has, hf.map_mul ha (prod_ne_zero_iff.mpr hs'), ih hs']
 
 /-- **Factorization formula for a completely additive function.** For every `n : ℕ` (including `0`
 and `1`), `f n = ∑ p ∈ n.primeFactors, n.factorization p • f p`. -/
@@ -598,30 +640,33 @@ theorem map_div [AddGroup R] {f : ArithmeticFunction R} (hf : f.IsCompletelyAddi
     {m d : ℕ} (hdm : d ∣ m) (hm : m ≠ 0) : f (m / d) = f m - f d := by
   have hd : d ≠ 0 := ne_zero_of_dvd_ne_zero hm hdm
   have hmd : m / d ≠ 0 := fun h ↦ hm (by rw [← Nat.div_mul_cancel hdm, h, zero_mul])
-  exact eq_sub_of_add_eq <| by rw [← hf.map_mul_of_ne_zero hmd hd, Nat.div_mul_cancel hdm]
+  exact eq_sub_of_add_eq <| by rw [← hf.map_mul hmd hd, Nat.div_mul_cancel hdm]
 
 /-- Pointwise negation preserves complete additivity. -/
 @[grind ←]
 theorem neg [SubtractionMonoid R] {f : ArithmeticFunction R} (hf : f.IsCompletelyAdditive) :
-    (-f).IsCompletelyAdditive :=
-  ⟨by simp [hf.map_one], fun hm hn ↦ by
-    rw [neg_apply, mul_comm, hf.map_mul hn hm, neg_add_rev, neg_apply, neg_apply]⟩
+    (-f).IsCompletelyAdditive where
+  map_one := by simp [hf.map_one]
+  map_mul hm hn := by
+    rw [neg_apply, mul_comm, hf.map_mul hn hm, neg_add_rev, neg_apply, neg_apply]
 
 /-- Pointwise subtraction preserves complete additivity. -/
 @[grind ←]
 theorem sub [SubtractionCommMonoid R] {f g : ArithmeticFunction R} (hf : f.IsCompletelyAdditive)
-    (hg : g.IsCompletelyAdditive) : (f - g).IsCompletelyAdditive :=
-  ⟨by simp [hf.map_one, hg.map_one], fun hm hn ↦ by
+    (hg : g.IsCompletelyAdditive) : (f - g).IsCompletelyAdditive where
+  map_one := by simp [hf.map_one, hg.map_one]
+  map_mul hm hn := by
     simp only [sub_apply, hf.map_mul hm hn, hg.map_mul hm hn]
-    exact (sub_add_sub_comm _ _ _ _).symm⟩
+    exact (sub_add_sub_comm _ _ _ _).symm
 
 end IsCompletelyAdditive
 
 /-- The zero arithmetic function is completely additive. -/
 @[simp, grind .]
 theorem isCompletelyAdditive_zero [AddZeroClass R] :
-    (0 : ArithmeticFunction R).IsCompletelyAdditive :=
-  ⟨by simp, fun _ _ ↦ by simp⟩
+    (0 : ArithmeticFunction R).IsCompletelyAdditive where
+  map_one := by simp
+  map_mul _ _ := by simp
 
 /-- A finite pointwise sum of completely additive arithmetic functions is completely additive. -/
 theorem isCompletelyAdditive_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι)
@@ -631,8 +676,9 @@ theorem isCompletelyAdditive_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι)
 
 /-- The total-prime-factor counting function `Ω = cardFactors` is completely additive. -/
 @[simp, grind .]
-theorem isCompletelyAdditive_cardFactors : cardFactors.IsCompletelyAdditive :=
-  ⟨cardFactors_one, fun hm hn ↦ cardFactors_mul hm.ne' hn.ne'⟩
+theorem isCompletelyAdditive_cardFactors : cardFactors.IsCompletelyAdditive where
+  map_one := cardFactors_one
+  map_mul hm hn := cardFactors_mul hm hn
 
 /-- The total-prime-factor counting function `Ω = cardFactors` is additive. -/
 @[simp, grind .]

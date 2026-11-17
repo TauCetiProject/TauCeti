@@ -928,7 +928,7 @@ theorem sum_Icc_sub_sq_le {f : ArithmeticFunction ℝ} (hf : f.IsStronglyAdditiv
     ∑ n ∈ Icc 1 N, (f n - A) ^ 2 ≤ 77 * (N : ℝ) * B := by
   intro A B
   set Afull := ∑ p ∈ Nat.primesLE N, ∑ k ∈ Icc 1 (p.log N), f (p ^ k) / (p : ℝ) ^ k
-  have hfull := hf.isAdditive.sum_Icc_sub_sum_primesLE_Icc_log_sq_le N
+  have hfull := hf.toIsAdditive.sum_Icc_sub_sum_primesLE_Icc_log_sq_le N
   have hBfull := hf.sum_primesLE_Icc_log_sq_le N
   have hAdiff := hf.sum_primesLE_Icc_log_sub_sum_primesLE_sq_le N
   -- Combine `(7 / 6) * (30 * N * (2 * B)) + 7 * N * B = (70 + 7) * N * B = 77 * N * B`.
