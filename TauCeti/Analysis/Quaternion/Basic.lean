@@ -33,6 +33,9 @@ quaternionic line in real dimension above four, and packages the standard basis
 * `TauCeti.finrank_piLp_quaternion`: a finite quaternionic coordinate space has real dimension
   four times the number of coordinates.
 * `Quaternion.orthonormalBasisOneIJK`: the basis `1, i, j, k` of `ℍ` as an orthonormal basis.
+* `Quaternion.normSq_inv_norm_smul_star`, `Quaternion.mul_inv_norm_smul_star`: for nonzero `q`,
+  normalizing `star q` by `‖q‖⁻¹` gives a unit quaternion, and right multiplication by it sends any
+  `q` to the nonnegative real quaternion `‖q‖`.
 -/
 
 public section
@@ -63,6 +66,23 @@ theorem Quaternion.toBasis_orthonormalBasisOneIJK :
   refine Module.Basis.eq_of_apply_eq fun n ↦ ?_
   rw [OrthonormalBasis.coe_toBasis, coe_orthonormalBasisOneIJK]
   fin_cases n <;> ext <;> simp [QuaternionAlgebra.basisOneIJK, Module.Basis.coe_ofEquivFun]
+
+/-- For any nonzero Hamilton quaternion `q`, `(‖q‖⁻¹ : ℝ) • star q` has unit norm square. -/
+theorem Quaternion.normSq_inv_norm_smul_star {q : ℍ} (hq : q ≠ 0) :
+    normSq ((‖q‖⁻¹ : ℝ) • star q) = 1 := by
+  have hn : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  rw [normSq_smul, normSq_star, normSq_eq_norm_mul_self]
+  field_simp
+
+/-- Multiplying a Hamilton quaternion `q` on the right by `(‖q‖⁻¹ : ℝ) • star q` yields the
+nonnegative real quaternion `‖q‖`. -/
+theorem Quaternion.mul_inv_norm_smul_star (q : ℍ) :
+    q * ((‖q‖⁻¹ : ℝ) • star q) = ((‖q‖ : ℝ) : ℍ) := by
+  by_cases hq : q = 0
+  · simp [hq]
+  · have hn : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
+    rw [mul_smul_comm, self_mul_star, normSq_eq_norm_mul_self, ← coe_mul_eq_smul, ← coe_mul,
+      ← mul_assoc, inv_mul_cancel₀ hn, one_mul]
 
 namespace TauCeti
 
