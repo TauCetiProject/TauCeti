@@ -43,10 +43,8 @@ form into the one of `S⁻¹`.
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity_norm` — the same density on any
-  finite-dimensional real inner product space,
-  `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_norm` for a nonzero scalar multiple, and
-  `LinearIsometryEquiv.measurePreserving_map_smul_stdGaussian` for isometric invariance of a scalar
-  multiple;
+  finite-dimensional real inner product space, and
+  `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_norm` for a nonzero scalar multiple;
 * `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
   covariance is the affine range `m + range S`;
 * `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
@@ -215,9 +213,9 @@ theorem map_smul_stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup
   have hAlin : (A : E →ₗ[ℝ] E) = c • LinearMap.id := LinearMap.ext fun x => by simp [A, u]
   have hAsymm : ∀ z : E, A.symm z = c⁻¹ • z := fun z =>
     A.symm_apply_eq.mpr <| by simp [A, u, smul_smul, hc]
-  rw [stdGaussian_eq_withDensity_norm E,
-    show (c • · : E → E) = fun x => 0 + A x from funext fun x => by simp [A, u],
-    Measure.map_affine_withDensity volume A 0]
+  have hAfun : (c • · : E → E) = fun x => 0 + A x :=
+    funext fun x => by simp [A, u]
+  rw [stdGaussian_eq_withDensity_norm E, hAfun, Measure.map_affine_withDensity volume A 0]
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   have hdet : |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| =
       (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
@@ -231,18 +229,6 @@ theorem map_smul_stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup
   dsimp only
   rw [← ENNReal.ofReal_mul (abs_nonneg _), hdet, hnorm, ← mul_assoc, mul_comm ((c ^ 2) ^ _),
     ← Real.mul_rpow (by positivity) (sq_nonneg c)]
-
-/-- A linear isometry equivalence between finite-dimensional real inner product spaces preserves
-any scalar multiple of `ProbabilityTheory.stdGaussian`. -/
-theorem _root_.LinearIsometryEquiv.measurePreserving_map_smul_stdGaussian
-    {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (L : E ≃ₗᵢ[ℝ] F) (c : ℝ) :
-    MeasurePreserving L ((stdGaussian E).map (c • ·)) ((stdGaussian F).map (c • ·)) := by
-  refine ⟨L.continuous.measurable, ?_⟩
-  rw [Measure.map_map L.continuous.measurable (by fun_prop),
-    show (L : E → F) ∘ (c • ·) = (c • ·) ∘ L from funext (map_smul L c),
-    ← Measure.map_map (by fun_prop) L.continuous.measurable, stdGaussian_map L]
 
 /-- The standard Gaussian measure on a finite-dimensional real inner product space has full
 support. -/

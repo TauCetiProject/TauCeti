@@ -196,9 +196,7 @@ def selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜) :
 /-- Conjugating by the identity unitary matrix is the identity isometry. -/
 @[simp] theorem selfAdjointConj_one :
     selfAdjointConj (1 : Matrix.unitaryGroup (Fin p) 𝕜) = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext fun _ ↦ Subtype.ext <| by
-    rw [coe_selfAdjointConj_apply, OneMemClass.coe_one, Matrix.conjTranspose_one, one_mul, mul_one]
-    rfl
+  LinearIsometryEquiv.ext fun _ ↦ Subtype.ext <| by simp
 
 /-- Unitary conjugation is a left action of `Matrix.unitaryGroup`. -/
 theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :

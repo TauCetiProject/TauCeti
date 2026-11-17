@@ -11,7 +11,6 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Orthogonal
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
 import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.Probability.Distributions.Gaussian.Affine
-import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
 # Laws, moments, conjugation invariance, and entry characterizations of the GOE and GUE
@@ -263,9 +262,9 @@ theorem hasLaw_goeMatrix_of_upperTriangle {Ω : Type*} [MeasurableSpace Ω] {P :
     fun x ↦ (symmetricCoordinates n).symm fun ij ↦
       (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * x ij)
   have hf : Measurable f := by unfold f; fun_prop
-  rw [goeMeasure_eq_map_pi_upperTriangle,
-    show (fun ω ↦ goeMatrix n (fun p ↦ g p ω)) = fun ω ↦ f (fun ij ↦ g ij.1 ω)
-      from funext fun ω ↦ goeMatrix_def n _]
+  have hfun : (fun ω ↦ goeMatrix n (fun p ↦ g p ω)) = fun ω ↦ f (fun ij ↦ g ij.1 ω) :=
+    funext fun ω ↦ goeMatrix_def n _
+  rw [goeMeasure_eq_map_pi_upperTriangle, hfun]
   exact (hasLaw_map hf.aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
 
 /-- Independent standard Gaussian entries give `goeMeasure n`. -/
@@ -307,17 +306,13 @@ theorem gueMeasure_eq_map_stdGaussian (n : ℕ) :
 
 /-- `TauCeti.Probability.goeMeasure` is a Gaussian measure on the real symmetric subspace. -/
 instance isGaussian_goeMeasure (n : ℕ) : IsGaussian (goeMeasure n) := by
-  rw [goeMeasure_eq_map_stdGaussian,
-    show (((Real.sqrt 2 / Real.sqrt n) • ·) : _ → _) =
-      ⇑((Real.sqrt 2 / Real.sqrt n) • ContinuousLinearMap.id ℝ _) by ext; simp]
-  infer_instance
+  rw [goeMeasure_eq_map_stdGaussian]
+  exact isGaussian_map_smul _
 
 /-- `TauCeti.Probability.gueMeasure` is a Gaussian measure on the complex Hermitian subspace. -/
 instance isGaussian_gueMeasure (n : ℕ) : IsGaussian (gueMeasure n) := by
-  rw [gueMeasure_eq_map_stdGaussian,
-    show (((Real.sqrt n)⁻¹ • ·) : _ → _) =
-      ⇑((Real.sqrt n)⁻¹ • ContinuousLinearMap.id ℝ _) by ext; simp]
-  infer_instance
+  rw [gueMeasure_eq_map_stdGaussian]
+  exact isGaussian_map_smul _
 
 /-- Characteristic function of `TauCeti.Probability.goeMeasure n`. -/
 theorem charFun_goeMeasure (n : ℕ)
@@ -394,10 +389,10 @@ theorem covarianceBilin_gueMeasure (n : ℕ) :
 /-- In dimension one, reading the single entry of `goeMeasure 1` gives `N(0, 2)`. -/
 @[simp] theorem map_symmetricFinOneEquiv_goeMeasure :
     (goeMeasure 1).map symmetricFinOneEquiv = gaussianReal 0 2 := by
+  have hcomp : ⇑symmetricFinOneEquiv ∘ ⇑(goeMatrix 1) = (Real.sqrt 2 * ·) ∘ fun g ↦ g (0, 0) :=
+    funext fun g ↦ by simp
   rw [goeMeasure_def,
-    Measure.map_map symmetricFinOneEquiv.continuous.measurable (measurable_goeMatrix 1),
-    show (symmetricFinOneEquiv ∘ goeMatrix 1 : (Fin 1 × Fin 1 → ℝ) → ℝ) =
-      (Real.sqrt 2 * ·) ∘ fun g ↦ g (0, 0) from funext fun g ↦ by simp,
+    Measure.map_map symmetricFinOneEquiv.continuous.measurable (measurable_goeMatrix 1), hcomp,
     ← Measure.map_map (by fun_prop) (by fun_prop),
     (measurePreserving_eval (fun _ : Fin 1 × Fin 1 ↦ gaussianReal 0 1) (0, 0)).map_eq]
   exact gaussianReal_zero_one_map_const_mul _ (by simp)
@@ -405,10 +400,10 @@ theorem covarianceBilin_gueMeasure (n : ℕ) :
 /-- In dimension one, reading the single real entry of `gueMeasure 1` gives `N(0, 1)`. -/
 @[simp] theorem map_hermitianFinOneEquiv_gueMeasure :
     (gueMeasure 1).map hermitianFinOneEquiv = gaussianReal 0 1 := by
+  have hcomp : ⇑hermitianFinOneEquiv ∘ ⇑(gueMatrix 1) = fun g ↦ g (0, 0) :=
+    funext fun g ↦ by simp
   rw [gueMeasure_def,
-    Measure.map_map hermitianFinOneEquiv.continuous.measurable (measurable_gueMatrix 1),
-    show (hermitianFinOneEquiv ∘ gueMatrix 1 : (Fin 1 × Fin 1 → ℝ) → ℝ) = fun g ↦ g (0, 0)
-      from funext fun g ↦ by simp,
+    Measure.map_map hermitianFinOneEquiv.continuous.measurable (measurable_gueMatrix 1), hcomp,
     (measurePreserving_eval (fun _ : Fin 1 × Fin 1 ↦ gaussianReal 0 1) (0, 0)).map_eq]
 
 /-- Orthogonal conjugation `A ↦ U * A * Uᵀ` preserves `TauCeti.Probability.goeMeasure n`. -/
@@ -474,11 +469,14 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_one {n : ℕ}
       (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H *
         ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ :=
     ((continuous_const.mul continuous_id).mul continuous_const).measurable
-  rw [gaussianEnsembleLaw_one_eq_map_goeMeasure, Measure.map_map hconj (measurable_castSym n),
-    show (fun H : Matrix (Fin n) (Fin n) ℂ ↦ (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal *
-        H * ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ) ∘ castSym n =
-      castSym n ∘ Matrix.UnitaryGroup.symmetricConj U from funext fun A ↦ Matrix.ext fun i j ↦ by
-        simp [castSym, Matrix.mul_apply, Matrix.conjTranspose_apply],
+  have hcomm (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
+      (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * castSym n A *
+        ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ =
+        castSym n (Matrix.UnitaryGroup.symmetricConj U A) :=
+    Matrix.ext fun i j ↦ by simp [castSym, Matrix.mul_apply, Matrix.conjTranspose_apply]
+  rw [gaussianEnsembleLaw_one_eq_map_goeMeasure, Measure.map_map hconj (measurable_castSym n)]
+  simp_rw [Function.comp_def, hcomm]
+  rw [← Function.comp_def (castSym n) (Matrix.UnitaryGroup.symmetricConj U),
     ← Measure.map_map (measurable_castSym n)
       (Matrix.UnitaryGroup.symmetricConj U).continuous.measurable, map_symmetricConj_goeMeasure]
 
@@ -491,11 +489,9 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
   have hconj : Measurable fun H : Matrix (Fin n) (Fin n) ℂ ↦
       (U : Matrix (Fin n) (Fin n) ℂ) * H * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ :=
     ((continuous_const.mul continuous_id).mul continuous_const).measurable
-  rw [gaussianEnsembleLaw_two_eq_map_gueMeasure, Measure.map_map hconj measurable_subtype_coe,
-    show (fun H : Matrix (Fin n) (Fin n) ℂ ↦
-        (U : Matrix (Fin n) (Fin n) ℂ) * H * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ) ∘ Subtype.val =
-      Subtype.val ∘ Matrix.UnitaryGroup.hermitianConj U
-      from funext fun A ↦ (Matrix.UnitaryGroup.coe_hermitianConj_apply U A).symm,
+  rw [gaussianEnsembleLaw_two_eq_map_gueMeasure, Measure.map_map hconj measurable_subtype_coe]
+  simp_rw [Function.comp_def, ← Matrix.UnitaryGroup.coe_hermitianConj_apply]
+  rw [← Function.comp_def Subtype.val (Matrix.UnitaryGroup.hermitianConj U),
     ← Measure.map_map measurable_subtype_coe
       (Matrix.UnitaryGroup.hermitianConj U).continuous.measurable, map_hermitianConj_gueMeasure]
 
@@ -516,11 +512,9 @@ theorem map_symmetricCoordinates_goeMeasure (n : ℕ) :
   have : ∀ ij : upperTriangle n, SigmaFinite ((gaussianReal 0 1).map (scale ij)) :=
     fun ij ↦ by rw [hfactor ij]; infer_instance
   rw [goeMeasure_eq_map_pi_upperTriangle,
-    Measure.map_map (symmetricCoordinates n).continuous.measurable (by fun_prop),
-    show (symmetricCoordinates n ∘ fun x : upperTriangle n → ℝ ↦
-        (symmetricCoordinates n).symm fun ij ↦ scale ij (x ij)) =
-      fun x ij ↦ scale ij (x ij) from funext fun x ↦ (symmetricCoordinates n).apply_symm_apply _,
-    Measure.pi_map_pi fun ij ↦ by fun_prop]
+    Measure.map_map (symmetricCoordinates n).continuous.measurable (by fun_prop)]
+  simp_rw [Function.comp_def, ContinuousLinearEquiv.apply_symm_apply]
+  rw [Measure.pi_map_pi (f := scale) fun ij ↦ by fun_prop]
   exact congrArg Measure.pi (funext hfactor)
 
 /-- Under `gueMeasure n`, `hermitianCoordinates n` has independent Gaussian coordinates:
@@ -539,11 +533,10 @@ theorem map_hermitianCoordinates_gueMeasure (n : ℕ) :
     · simp [mul_pow, one_div]
   have : ∀ ij : Fin n × Fin n, SigmaFinite ((gaussianReal 0 1).map (scale ij)) :=
     fun ij ↦ by rw [hfactor ij]; infer_instance
+  have hcomp : ⇑(hermitianCoordinates n) ∘ ⇑(gueMatrix n) = fun g ij ↦ scale ij (g ij) :=
+    funext fun g ↦ funext (hermitianCoordinates_gueMatrix n g)
   rw [gueMeasure_def, Measure.map_map (hermitianCoordinates n).continuous.measurable
-    (measurable_gueMatrix n),
-    show (hermitianCoordinates n ∘ gueMatrix n : (Fin n × Fin n → ℝ) → Fin n × Fin n → ℝ) =
-      fun g ij ↦ scale ij (g ij) from funext fun g ↦ funext (hermitianCoordinates_gueMatrix n g),
-    Measure.pi_map_pi fun ij ↦ by fun_prop]
+    (measurable_gueMatrix n), hcomp, Measure.pi_map_pi fun ij ↦ by fun_prop]
   exact congrArg Measure.pi (funext hfactor)
 
 /-- **Characterization of the GOE by independent Gaussian entries.** A random symmetric matrix `H`

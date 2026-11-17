@@ -94,10 +94,9 @@ theorem goePDF_pos (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin
 
 /-- `TauCeti.Probability.goePDFReal` is continuous on the real symmetric subspace. -/
 @[fun_prop] theorem continuous_goePDFReal (n : ℕ) : Continuous (goePDFReal n) := by
-  simp only [show goePDFReal n = fun H ↦ (2 : ℝ) ^ (-((n : ℝ) * ((n : ℝ) + 3)) / 4) *
-      ((n : ℝ) / Real.pi) ^ (((n : ℝ) * ((n : ℝ) + 1)) / 4) *
-      Real.exp (-((n : ℝ) / 4) * ‖H‖ ^ 2)
-    from funext fun H ↦ by rw [goePDFReal, selfAdjoint.norm_sq_eq_trace_sq]]; fun_prop
+  unfold goePDFReal
+  simp_rw [← selfAdjoint.norm_sq_eq_trace_sq]
+  fun_prop
 
 /-- `TauCeti.Probability.goePDFReal` is measurable. -/
 @[fun_prop] theorem measurable_goePDFReal (n : ℕ) : Measurable (goePDFReal n) :=
@@ -137,12 +136,12 @@ theorem goeMeasure_eq_withDensity_volume (n : ℕ) :
     (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) hc]
   refine withDensity_congr_ae (.of_forall fun H ↦ congrArg ENNReal.ofReal ?_)
   rw [div_pow, Real.sq_sqrt (by norm_num), Real.sq_sqrt hnR.le, hfinrank,
-    selfAdjoint.norm_sq_eq_trace_sq,
-    show 2 * Real.pi * (2 / (n : ℝ)) = ((n : ℝ) / (4 * Real.pi))⁻¹ by field_simp; ring,
-    show -((n : ℝ) * ((n : ℝ) + 1) / 2) / 2 = -(((n : ℝ) * ((n : ℝ) + 1)) / 4) by ring,
-    Real.inv_rpow (by positivity), Real.rpow_neg (by positivity), inv_inv,
-    show -((H : Matrix (Fin n) (Fin n) ℝ) ^ 2).trace / (2 * (2 / (n : ℝ))) =
-      -((n : ℝ) / 4) * ((H : Matrix (Fin n) (Fin n) ℝ) ^ 2).trace by field_simp; ring]
+    selfAdjoint.norm_sq_eq_trace_sq]
+  congr 1
+  · have hbase : 2 * Real.pi * (2 / (n : ℝ)) = ((n : ℝ) / (4 * Real.pi))⁻¹ := by field_simp; ring
+    have hexp : -((n : ℝ) * ((n : ℝ) + 1) / 2) / 2 = -(((n : ℝ) * ((n : ℝ) + 1)) / 4) := by ring
+    rw [hbase, hexp, Real.inv_rpow (by positivity), Real.rpow_neg (by positivity), inv_inv]
+  · exact congrArg Real.exp (by field_simp; ring)
 
 /-- `goeMeasure n` has density `goePDF n` against `symmetricLebesgue n`. -/
 theorem goeMeasure_eq_withDensity_symmetricLebesgue (n : ℕ) :
@@ -156,9 +155,9 @@ theorem goeMeasure_eq_withDensity_symmetricLebesgue (n : ℕ) :
   have hsplit : ((n : ℝ) / (4 * Real.pi)) ^ (((n : ℝ) * ((n : ℝ) + 1)) / 4) =
       (2 : ℝ) ^ (-2 * ((n : ℝ) * ((n : ℝ) + 1)) / 4) *
         ((n : ℝ) / Real.pi) ^ (((n : ℝ) * ((n : ℝ) + 1)) / 4) := by
-    rw [show (n : ℝ) / (4 * Real.pi) = ((2 : ℝ) ^ (2 : ℕ))⁻¹ * ((n : ℝ) / Real.pi) by
-        norm_num; ring,
-      Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow (by positivity),
+    have h4 : (n : ℝ) / (4 * Real.pi) = ((2 : ℝ) ^ (2 : ℕ))⁻¹ * ((n : ℝ) / Real.pi) := by
+      norm_num; ring
+    rw [h4, Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow (by positivity),
       ← Real.rpow_natCast 2 2, ← Real.rpow_mul (by norm_num), ← Real.rpow_neg (by norm_num)]
     exact congrArg (· * _) (congrArg _ (by ring))
   rw [hsplit, ← mul_assoc, ← mul_assoc, ← Real.rpow_add two_pos]
@@ -236,9 +235,9 @@ theorem guePDF_pos (n : ℕ) (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin
 
 /-- `TauCeti.Probability.guePDFReal` is continuous on the complex Hermitian subspace. -/
 @[fun_prop] theorem continuous_guePDFReal (n : ℕ) : Continuous (guePDFReal n) := by
-  simp only [show guePDFReal n = fun H ↦ (2 : ℝ) ^ (-(n : ℝ) / 2) *
-      ((n : ℝ) / Real.pi) ^ (((n : ℝ) ^ 2) / 2) * Real.exp (-((n : ℝ) / 2) * ‖H‖ ^ 2)
-    from funext fun H ↦ by rw [guePDFReal, selfAdjoint.norm_sq_eq_re_trace_sq]]; fun_prop
+  unfold guePDFReal
+  simp_rw [← selfAdjoint.norm_sq_eq_re_trace_sq]
+  fun_prop
 
 /-- `TauCeti.Probability.guePDFReal` is measurable. -/
 @[fun_prop] theorem measurable_guePDFReal (n : ℕ) : Measurable (guePDFReal n) :=
@@ -273,12 +272,11 @@ theorem gueMeasure_eq_withDensity_volume (n : ℕ) :
     (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) hc]
   refine withDensity_congr_ae (.of_forall fun H ↦ congrArg ENNReal.ofReal ?_)
   rw [inv_pow, Real.sq_sqrt hnR.le, finrank_hermitianMatrix, Nat.cast_pow,
-    selfAdjoint.norm_sq_eq_re_trace_sq,
-    show 2 * Real.pi * (n : ℝ)⁻¹ = ((n : ℝ) / (2 * Real.pi))⁻¹ by field_simp,
-    show -((n : ℝ) ^ 2) / 2 = -(((n : ℝ) ^ 2) / 2) by ring,
-    Real.inv_rpow (by positivity), Real.rpow_neg (by positivity), inv_inv,
-    show -((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re / (2 * (n : ℝ)⁻¹) =
-      -((n : ℝ) / 2) * ((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re by field_simp]
+    selfAdjoint.norm_sq_eq_re_trace_sq]
+  congr 1
+  · have hbase : 2 * Real.pi * (n : ℝ)⁻¹ = ((n : ℝ) / (2 * Real.pi))⁻¹ := by field_simp
+    rw [hbase, neg_div, Real.inv_rpow (by positivity), Real.rpow_neg (by positivity), inv_inv]
+  · exact congrArg Real.exp (by field_simp)
 
 /-- `gueMeasure n` has density `guePDF n` against `hermitianLebesgue n`. -/
 theorem gueMeasure_eq_withDensity_hermitianLebesgue (n : ℕ) :
@@ -289,8 +287,8 @@ theorem gueMeasure_eq_withDensity_hermitianLebesgue (n : ℕ) :
   simp only [Pi.smul_apply, smul_eq_mul, guePDF, guePDFReal]
   rw [← ENNReal.ofReal_mul (Real.rpow_nonneg (by norm_num) _)]
   refine congrArg ENNReal.ofReal ?_
-  rw [show (n : ℝ) / (2 * Real.pi) = (2 : ℝ)⁻¹ * ((n : ℝ) / Real.pi) by ring,
-    Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow (by norm_num),
+  have h2 : (n : ℝ) / (2 * Real.pi) = (2 : ℝ)⁻¹ * ((n : ℝ) / Real.pi) := by ring
+  rw [h2, Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow (by norm_num),
     ← Real.rpow_neg (by norm_num), ← mul_assoc, ← mul_assoc, ← Real.rpow_add two_pos]
   exact congrArg (· * _ * _) (congrArg _ (by ring))
 

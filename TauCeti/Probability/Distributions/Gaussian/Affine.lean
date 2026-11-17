@@ -36,6 +36,10 @@ allowed, so the result applies both to embeddings and to possibly singular proje
   index types.
 * `TauCeti.Probability.multivariateGaussian_one_eq_map_pi`: the identity-covariance law as a
   product of its Gaussian coordinate laws.
+* `TauCeti.Probability.isGaussian_map_smul`: scaling a Gaussian measure by a real scalar preserves
+  Gaussianity.
+* `LinearIsometryEquiv.measurePreserving_map_smul_stdGaussian`: linear isometry equivalences
+  preserve scalar multiples of `ProbabilityTheory.stdGaussian`.
 
 ## References
 
@@ -199,3 +203,31 @@ theorem multivariateGaussian_one_eq_map_pi (m : EuclideanSpace ℝ ι) :
     (WithLp.toLp_add 2 m.ofLp x).symm
 
 end TauCeti.Probability
+
+namespace TauCeti.Probability
+
+/-- Scaling a Gaussian measure by a real scalar `c` yields a Gaussian measure. -/
+theorem isGaussian_map_smul {E : Type*} [TopologicalSpace E] [AddCommMonoid E] [Module ℝ E]
+    [ContinuousConstSMul ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [IsGaussian μ] (c : ℝ) :
+    IsGaussian (μ.map (c • ·)) := by
+  have hsmul : (c • · : E → E) = ⇑(c • ContinuousLinearMap.id ℝ E) :=
+    funext fun x ↦ by rw [smul_apply, ContinuousLinearMap.id_apply]
+  rw [hsmul]
+  exact isGaussian_map_of_measurable (L := c • ContinuousLinearMap.id ℝ E)
+    (c • ContinuousLinearMap.id ℝ E).continuous.measurable
+
+end TauCeti.Probability
+
+/-- A linear isometry equivalence between finite-dimensional real inner product spaces preserves
+any scalar multiple of `ProbabilityTheory.stdGaussian`. -/
+theorem LinearIsometryEquiv.measurePreserving_map_smul_stdGaussian
+    {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (L : E ≃ₗᵢ[ℝ] F) (c : ℝ) :
+    MeasurePreserving L ((stdGaussian E).map (c • ·)) ((stdGaussian F).map (c • ·)) := by
+  refine ⟨L.continuous.measurable, ?_⟩
+  rw [Measure.map_map L.continuous.measurable (by fun_prop)]
+  simp_rw [Function.comp_def, map_smul]
+  rw [← Function.comp_def (c • ·) L, ← Measure.map_map (by fun_prop) L.continuous.measurable,
+    stdGaussian_map L]

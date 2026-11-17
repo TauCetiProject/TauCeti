@@ -75,9 +75,10 @@ section comparison
 
 private theorem hermitianLebesgue_eq_addHaar (p : ℕ) :
     hermitianLebesgue p = (hermitianBasis p).addHaar := by
-  rw [hermitianLebesgue, ← Module.Basis.addHaar_basisFun, Basis.map_addHaar,
-    show (Pi.basisFun ℝ (Fin p × Fin p)).map (hermitianCoordinates p).symm.toLinearEquiv =
-      hermitianBasis p from Basis.eq_of_apply_eq fun ij ↦ by simp [hermitianBasis_apply]]
+  have hb : (Pi.basisFun ℝ (Fin p × Fin p)).map (hermitianCoordinates p).symm.toLinearEquiv =
+      hermitianBasis p :=
+    Basis.eq_of_apply_eq fun ij ↦ by simp [hermitianBasis_apply]
+  rw [hermitianLebesgue, ← Module.Basis.addHaar_basisFun, Basis.map_addHaar, hb]
 
 /-- Pairing `A` with `hermitianBasis p kl` gives its `kl` coordinate, doubled off the diagonal. -/
 theorem inner_hermitianBasis (p : ℕ)
@@ -146,9 +147,11 @@ theorem hermitianOrthonormalBasis_apply (p : ℕ) (ij : Fin p × Fin p) :
 private theorem card_hermOffDiag (p : ℕ) :
     ((Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2).card : ℝ) =
       (p : ℝ) * ((p : ℝ) - 1) := by
-  rw [show (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2) =
-      (Finset.univ : Finset (Fin p)).offDiag by ext; simp [Finset.mem_offDiag],
-    Finset.offDiag_card, Finset.card_fin, Nat.cast_sub (Nat.le_mul_self p), Nat.cast_mul]; ring
+  have hoff : (Finset.univ.filter fun ij : Fin p × Fin p ↦ ij.1 ≠ ij.2) =
+      (Finset.univ : Finset (Fin p)).offDiag := by
+    ext; simp [Finset.mem_offDiag]
+  rw [hoff, Finset.offDiag_card, Finset.card_fin, Nat.cast_sub (Nat.le_mul_self p), Nat.cast_mul]
+  ring
 
 end comparison
 
@@ -188,9 +191,11 @@ theorem hermitianLebesgue_zero : hermitianLebesgue 0 = Measure.dirac 0 := by
 theorem measurePreserving_hermitianFinOneEquiv :
     MeasurePreserving hermitianFinOneEquiv (hermitianLebesgue 1) volume := by
   let : Unique (Fin 1 × Fin 1) := ⟨⟨(0, 0)⟩, fun _ ↦ Subsingleton.elim _ _⟩
-  rw [show (hermitianFinOneEquiv : _ → ℝ) =
-      MeasurableEquiv.funUnique (Fin 1 × Fin 1) ℝ ∘ hermitianCoordinates 1 from funext fun A ↦ by
-        simp [MeasurableEquiv.funUnique, Subsingleton.elim default ((0, 0) : Fin 1 × Fin 1)]]
+  have hcomp : ⇑hermitianFinOneEquiv =
+      ⇑(MeasurableEquiv.funUnique (Fin 1 × Fin 1) ℝ) ∘ ⇑(hermitianCoordinates 1) :=
+    funext fun A ↦ by
+      simp [Subsingleton.elim default ((0, 0) : Fin 1 × Fin 1)]
+  rw [hcomp]
   exact (volume_preserving_funUnique (Fin 1 × Fin 1) ℝ).comp
     (measurePreserving_hermitianCoordinates 1)
 
