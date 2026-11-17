@@ -203,38 +203,18 @@ private theorem bruhatNormalForm_unique (n : D.weylSubgroup k)
     (heq : (u₁ : D.points k) * (n : D.points k) * (b₁ : D.points k) =
       (u₂ : D.points k) * (n : D.points k) * (b₂ : D.points k)) :
     (u₁, b₁) = (u₂, b₂) := by
-  have hu_conj :
-      (u₂ : D.points k)⁻¹ * (u₁ : D.points k) ∈
-        (D.negativePoints k).map (MulAut.conj (n : D.points k)).toMonoidHom :=
-    ((u₂⁻¹ * u₁).2).2
-  obtain ⟨v, hv_neg, hv_eq⟩ := Subgroup.mem_map.mp hu_conj
-  have hv_bor_eq : v = (b₂ : D.points k) * (b₁ : D.points k)⁻¹ := by
-    have hconj : (n : D.points k) * v * (n : D.points k)⁻¹ =
-        (u₂ : D.points k)⁻¹ * (u₁ : D.points k) := hv_eq
-    calc
-      v = (n : D.points k)⁻¹ * ((n : D.points k) * v * (n : D.points k)⁻¹) *
-            (n : D.points k) := by group
-      _ = (n : D.points k)⁻¹ * ((u₂ : D.points k)⁻¹ * (u₁ : D.points k)) *
-            (n : D.points k) := by rw [hconj]
-      _ = (n : D.points k)⁻¹ * (u₂ : D.points k)⁻¹ *
-            ((u₁ : D.points k) * (n : D.points k) * (b₁ : D.points k)) *
-            (b₁ : D.points k)⁻¹ := by group
-      _ = (n : D.points k)⁻¹ * (u₂ : D.points k)⁻¹ *
-            ((u₂ : D.points k) * (n : D.points k) * (b₂ : D.points k)) *
-            (b₁ : D.points k)⁻¹ := by rw [heq]
-      _ = (b₂ : D.points k) * (b₁ : D.points k)⁻¹ := by group
-  have hv_inf : v ∈ D.negativePoints k ⊓ D.borelSubgroup k := by
-    refine ⟨hv_neg, ?_⟩
-    rw [hv_bor_eq]
-    exact (D.borelSubgroup k).mul_mem b₂.2 ((D.borelSubgroup k).inv_mem b₁.2)
-  rw [D.negativePoints_inf_borelSubgroup_eq_bot k, Subgroup.mem_bot] at hv_inf
-  have hb : b₁ = b₂ :=
-    Subtype.ext (mul_inv_eq_one.mp (hv_bor_eq.symm.trans hv_inf)).symm
-  have hu : u₁ = u₂ := by
-    have hmul : (u₂ : D.points k)⁻¹ * (u₁ : D.points k) = 1 := by
-      rw [← hv_eq, hv_inf, map_one]
-    exact Subtype.ext (inv_mul_eq_one.mp hmul).symm
-  exact Prod.ext hu hb
+  obtain ⟨v₁, hv₁, hvu₁⟩ := Subgroup.mem_map.mp u₁.2.2
+  obtain ⟨v₂, hv₂, hvu₂⟩ := Subgroup.mem_map.mp u₂.2.2
+  have hmul : v₁ * (b₁ : D.points k) = v₂ * (b₂ : D.points k) := by
+    apply mul_left_cancel (a := (n : D.points k))
+    rw [← hvu₁, ← hvu₂] at heq
+    simpa [MulAut.conj_apply, mul_assoc] using heq
+  have hpair := Subgroup.mul_injective_of_disjoint
+    (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot k))
+    (a₁ := (⟨v₁, hv₁⟩, b₁)) (a₂ := (⟨v₂, hv₂⟩, b₂)) hmul
+  obtain ⟨hv, rfl⟩ := Prod.mk.inj hpair
+  obtain rfl := Subtype.mk.inj hv
+  exact Prod.ext (Subtype.ext (hvu₁.symm.trans hvu₂)) rfl
 
 private theorem iSup_inversions_le_positivePoints_inf_conj_negativePoints
     (n : D.weylSubgroup k) :
