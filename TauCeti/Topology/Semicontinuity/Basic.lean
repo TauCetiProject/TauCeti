@@ -20,6 +20,10 @@ A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and 
 lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
 `A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is needed,
 because the bound on the partial sums passes to their limit through the closed sublevel set.
+
+On a closed set `s`, `LowerSemicontinuousOn f s` is equivalent to closedness of every relative
+sublevel set `s ∩ f ⁻¹' Set.Iic b`
+(`TauCeti.lowerSemicontinuousOn_iff_isClosed_inter_preimage_Iic`).
 -/
 
 public section
@@ -28,16 +32,28 @@ open Topology
 
 namespace TauCeti
 
-variable {X β : Type*} [TopologicalSpace X] [CompleteLinearOrder β]
+variable {X β : Type*} [TopologicalSpace X]
 
 /-- A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s` is lower semicontinuous. -/
-theorem lowerSemicontinuous_iSup_nhds (G : Set X → β) :
+theorem lowerSemicontinuous_iSup_nhds [CompleteLinearOrder β] (G : Set X → β) :
     LowerSemicontinuous fun x ↦ ⨆ s ∈ 𝓝 x, G s := by
   intro x c hc
   obtain ⟨s, hcs⟩ := lt_iSup_iff.1 hc
   obtain ⟨hs, hcs⟩ := lt_iSup_iff.1 hcs
   filter_upwards [eventually_mem_nhds_iff.2 hs] with y hy
   exact hcs.trans_le (le_iSup₂_of_le s hy le_rfl)
+
+/-- On a closed set, lower semicontinuity is equivalent to closedness of every relative sublevel
+set. -/
+theorem lowerSemicontinuousOn_iff_isClosed_inter_preimage_Iic [LinearOrder β] {f : X → β}
+    {s : Set X} (hs : IsClosed s) :
+    LowerSemicontinuousOn f s ↔ ∀ b : β, IsClosed (s ∩ f ⁻¹' Set.Iic b) := by
+  rw [lowerSemicontinuousOn_iff_preimage_Iic]
+  refine ⟨fun h b ↦ ?_, fun h b ↦ ⟨s ∩ f ⁻¹' Set.Iic b, h b, by
+    rw [← Set.inter_assoc, Set.inter_self]⟩⟩
+  obtain ⟨v, hv, hbv⟩ := h b
+  rw [hbv]
+  exact hs.inter hv
 
 end TauCeti
 
