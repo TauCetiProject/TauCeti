@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Brauer.Associativity
 public import TauCeti.Combinatorics.Brauer.Generator
 public import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Combinatorics.Brauer.WeightedAssociativity
 
 /-!
 # The Brauer relations between two cap-cup diagrams
@@ -65,6 +66,13 @@ counts here vanish, and the hypotheses that make them vanish are exactly the one
 pairs genuinely distinct: on a repeated pair the stack closes up a loop and
 `TauCeti.middleLoopCount_capCup_capCup` counts it.
 
+Finally, this file records how stacking `capCup a b` (`a ≠ b`) onto an arbitrary diagram `D` acts
+on its underlying matching and middle-loop count: `composeDiagram (capCup a b) D` reconnects `D`
+at `Sum.inr a` and `Sum.inr b` (`TauCeti.composeDiagram_capCup_left`), closing up one middle loop
+when `D` already cups `a` to `b` and none otherwise (`TauCeti.middleLoopCount_capCup_left`), with
+mirror statements `TauCeti.composeDiagram_capCup_right` and
+`TauCeti.middleLoopCount_capCup_right` when `capCup a b` is stacked below `D`.
+
 ## Main results
 
 * `TauCeti.composeDiagram_capCup_capCup_eq_relabel_left` and
@@ -81,6 +89,10 @@ pairs genuinely distinct: on a repeated pair the stack closes up a loop and
   `TauCeti.middleLoopCount_capCup_capCup_right_of_ne`.
 * `TauCeti.composeDiagram_capCup_capCup_comm`: **cap-cup diagrams on disjoint pairs commute**, with
   `TauCeti.middleLoopCount_capCup_capCup_of_disjoint` counting no loop.
+* `TauCeti.composeDiagram_capCup_left`, `TauCeti.composeDiagram_capCup_right`,
+  `TauCeti.middleLoopCount_capCup_left` and `TauCeti.middleLoopCount_capCup_right`: **stacking a
+  cap-cup diagram onto an arbitrary diagram** reconnects its two endpoints and closes up a loop
+  precisely when those two endpoints already form an arc.
 
 ## References
 
@@ -394,5 +406,125 @@ theorem middleLoopCount_capCup_capCup_of_disjoint (hac : a ≠ c) (had : a ≠ d
   · exact had (h.symm.trans h')
   · exact hbc (h.symm.trans h')
   · exact hbd (h.symm.trans h')
+
+/-! ### Stacking a cap-cup diagram onto an arbitrary diagram -/
+
+/-- When `D` matches `z` with `Sum.inr a` and does not cup `a` to `b`, the strand of
+`composeDiagram (capCup a b) D` starting at `z` traverses the cap of `capCup a b` and exits at
+`D.val (Sum.inr b)`. -/
+private theorem composeDiagram_capCup_val_of_val_eq_inr (hab : a ≠ b) {D : BrauerDiagram k}
+    {z : Fin k ⊕ Fin k} (hz : D.val z = Sum.inr a) (hzb : z ≠ Sum.inr b) :
+    (composeDiagram (capCup a b) D).val z = D.val (Sum.inr b) := by
+  have hcup : D.val (Sum.inr b) ≠ Sum.inr a := fun h => hzb (D.val.injective (hz.trans h.symm))
+  have hstep_ab : stackStep (capCup a b) D (Sum.inl a) = Sum.inr (Sum.inr b) := by
+    rw [stackStep_inl, capCup_val_inl_left hab, Sum.elim_inl]
+  -- Whether `z` lies at the bottom or at the top, its strand reaches middle state `Sum.inr b`.
+  obtain ⟨s, hstart, hpath⟩ : ∃ s, stackStart (capCup a b) D z = Sum.inr s ∧
+      Relation.ReflTransGen (fun u v => stackStep (capCup a b) D u = Sum.inr v) s (Sum.inr b) := by
+    rcases z with i | j
+    · exact ⟨Sum.inl a, by rw [stackStart_inl, hz, Sum.elim_inr], .single hstep_ab⟩
+    · have hja : j ≠ a := fun h => D.apply_ne (Sum.inr a) (h ▸ hz)
+      have hjb : j ≠ b := fun h => hzb (congrArg Sum.inr h)
+      refine ⟨Sum.inr j, by rw [stackStart_inr, capCup_val_inr_of_ne hja hjb, Sum.elim_inl],
+        Relation.ReflTransGen.head ?_ (.single hstep_ab)⟩
+      rw [stackStep_inr, hz, Sum.elim_inr]
+  -- From `Sum.inr b`, the strand follows `D.val (Sum.inr b)` out of the stack.
+  refine (composeDiagram_val_eq_iff (capCup a b) D).mpr (Or.inr ?_)
+  rcases hw : D.val (Sum.inr b) with i' | j'
+  · exact ⟨s, Sum.inr b, hstart, hpath, by rw [stackStep_inr, hw, Sum.elim_inl]⟩
+  · have hj'a : j' ≠ a := fun h => hcup (hw.trans (congrArg Sum.inr h))
+    have hj'b : j' ≠ b := fun h => D.apply_ne (Sum.inr b) (hw.trans (congrArg Sum.inr h))
+    exact ⟨s, Sum.inl j', hstart, hpath.tail (by rw [stackStep_inr, hw, Sum.elim_inr]),
+      by rw [stackStep_inl, capCup_val_inl_of_ne hj'a hj'b, Sum.elim_inr]⟩
+
+/-- **Stacking a cap-cup diagram above an arbitrary diagram reconnects its two top points.** For
+`a ≠ b`, stacking `capCup a b` above `D` cuts the arcs of `D` meeting `Sum.inr a` and `Sum.inr b`,
+puts the cup of `capCup a b` between `Sum.inr a` and `Sum.inr b`, and joins their old partners in
+`D` through the cap of `capCup a b`. When `D` already cups `a` to `b`, `reconnect` is the identity
+and `D` is unchanged. -/
+theorem composeDiagram_capCup_left (hab : a ≠ b) (D : BrauerDiagram k) :
+    composeDiagram (capCup a b) D = D.reconnect (Sum.inr a) (Sum.inr b) := by
+  have hne : Sum.inr b ≠ (Sum.inr a : Fin k ⊕ Fin k) := Sum.inr_injective.ne hab.symm
+  refine Subtype.ext (Equiv.ext fun x => ?_)
+  by_cases hxa : x = Sum.inr a
+  · rw [hxa, PerfectMatching.reconnect_val_self hne]
+    exact composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_left hab)
+  by_cases hxb : x = Sum.inr b
+  · rw [hxb, PerfectMatching.reconnect_val_right hne]
+    exact composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_right hab)
+  by_cases hDa : x = D.val (Sum.inr a)
+  · rw [hDa, PerfectMatching.reconnect_val_val_self hne]
+    exact composeDiagram_capCup_val_of_val_eq_inr hab (D.apply_apply _) (hDa ▸ hxb)
+  by_cases hDb : x = D.val (Sum.inr b)
+  · rw [hDb, PerfectMatching.reconnect_val_val_right hne, capCup_comm]
+    exact composeDiagram_capCup_val_of_val_eq_inr hab.symm (D.apply_apply _) (hDb ▸ hxa)
+  rw [PerfectMatching.reconnect_val_of_ne hxa hxb hDa hDb]
+  have hya : D.val x ≠ Sum.inr a := fun h => hDa (D.apply_eq_of_apply_eq h).symm
+  have hyb : D.val x ≠ Sum.inr b := fun h => hDb (D.apply_eq_of_apply_eq h).symm
+  rcases x with i | j <;> rcases hy : D.val _ with i' | j'
+  · exact composeDiagram_val_inl_eq_inl_of_cap_lower _ _ hy
+  · exact composeDiagram_val_inl_eq_inr_of_through _ _ hy
+      (capCup_val_inl_of_ne (fun h => hya (hy.trans (congrArg Sum.inr h)))
+        (fun h => hyb (hy.trans (congrArg Sum.inr h))))
+  · exact composeDiagram_val_inr_eq_inl_of_through _ _
+      (capCup_val_inr_of_ne (fun h => hxa (congrArg Sum.inr h))
+        (fun h => hxb (congrArg Sum.inr h))) hy
+  · exact composeDiagram_val_inr_eq_inr_of_cup_lower _ _
+      (capCup_val_inr_of_ne (fun h => hxa (congrArg Sum.inr h))
+        (fun h => hxb (congrArg Sum.inr h))) hy
+      (capCup_val_inl_of_ne (fun h => hya (hy.trans (congrArg Sum.inr h)))
+        (fun h => hyb (hy.trans (congrArg Sum.inr h))))
+
+/-- **Stacking a cap-cup diagram below an arbitrary diagram reconnects its two bottom points**,
+the reflection of `TauCeti.composeDiagram_capCup_left`. -/
+theorem composeDiagram_capCup_right (hab : a ≠ b) (D : BrauerDiagram k) :
+    composeDiagram D (capCup a b) = D.reconnect (Sum.inl a) (Sum.inl b) := by
+  have hswap (u v z : Fin k ⊕ Fin k) :
+      (Equiv.swap u v z).swap = Equiv.swap u.swap v.swap z.swap :=
+    Function.Injective.map_swap (Equiv.sumComm _ _).injective u v z
+  apply BrauerDiagram.flip_injective
+  rw [flip_composeDiagram, BrauerDiagram.flip_capCup, composeDiagram_capCup_left hab]
+  refine Subtype.ext (Equiv.ext fun x => ?_)
+  rw [BrauerDiagram.flip_val, PerfectMatching.reconnect_val, PerfectMatching.reconnect_val,
+    Equiv.permCongr_apply, Equiv.permCongr_apply, Equiv.symm_swap, Equiv.symm_swap,
+    BrauerDiagram.flip_val_inr, BrauerDiagram.flip_val, hswap, Sum.swap_swap,
+    hswap (D.val (Sum.inl a)) (Sum.inl b)]
+  rfl
+
+/-- **Middle loops when a cap-cup diagram is stacked above an arbitrary diagram**: at `a ≠ b`, the
+stack closes up one loop when `D` cups `a` to `b`, and no loop otherwise. -/
+theorem middleLoopCount_capCup_left (hab : a ≠ b) (D : BrauerDiagram k) :
+    middleLoopCount (capCup a b) D = if D.val (Sum.inr a) = Sum.inr b then 1 else 0 := by
+  split_ifs with hcup
+  · have hCD : composeDiagram (capCup a b) D = D := by
+      rw [composeDiagram_capCup_left hab, ← hcup, PerfectMatching.reconnect_partner]
+    have hassoc := middleLoopCount_add_middleLoopCount_composeDiagram (capCup a b) (capCup a b) D
+    rw [composeDiagram_capCup_capCup, middleLoopCount_capCup_capCup hab, hCD] at hassoc
+    omega
+  · refine middleLoopCount_eq_zero_iff.mpr fun m hm => ?_
+    have hmem {x : Fin k} (hx : OnMiddleLoop (capCup a b) D x) : x = a ∨ x = b :=
+      (BrauerDiagram.isCap_capCup_inl_iff hab).mp
+        ((isMiddleVertex_def _ _ _).mp hx.isMiddleVertex).1
+    have hstep {x : Fin k} (hx : OnMiddleLoop (capCup a b) D x) :
+        ∃ c, D.val (Sum.inr x) = Sum.inr c ∧ (c = a ∨ c = b) := by
+      obtain ⟨c, hc⟩ := Sum.isRight_iff.mp
+        ((D.isCup_def _).mp ((isMiddleVertex_def _ _ _).mp hx.isMiddleVertex).2).2
+      exact ⟨c, hc, hmem (hx.reflTransGen (.single ((middleAdj_def _ _ _ _).mpr (Or.inr hc))))⟩
+    rcases hmem hm with rfl | rfl
+    · obtain ⟨c, hc, rfl | rfl⟩ := hstep hm
+      · exact D.apply_ne (Sum.inr c) hc
+      · exact hcup hc
+    · obtain ⟨c, hc, rfl | rfl⟩ := hstep hm
+      · exact hcup (D.apply_eq_of_apply_eq hc)
+      · exact D.apply_ne (Sum.inr c) hc
+
+/-- **Middle loops when a cap-cup diagram is stacked below an arbitrary diagram**, the reflection
+of `TauCeti.middleLoopCount_capCup_left`. -/
+theorem middleLoopCount_capCup_right (hab : a ≠ b) (D : BrauerDiagram k) :
+    middleLoopCount D (capCup a b) = if D.val (Sum.inl a) = Sum.inl b then 1 else 0 := by
+  rw [← middleLoopCount_flip, BrauerDiagram.flip_capCup, middleLoopCount_capCup_left hab,
+    BrauerDiagram.flip_val_inr]
+  exact if_congr ⟨fun h => by simpa using congrArg Sum.swap h,
+    fun h => by rw [h]; rfl⟩ rfl rfl
 
 end TauCeti
