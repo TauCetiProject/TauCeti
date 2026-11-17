@@ -41,8 +41,10 @@ nonnegative on `S` is also nonnegative at `x`
 
 ## Main results
 
-* `PointedCone.nsmulSaturated_toAddSubmonoid` and `PointedCone.nsmulSaturated_latticePoints`: over
-  a linearly ordered field `K`, `σ.toAddSubmonoid` and `σ.latticePoints i` are `NSMulSaturated`.
+* `PointedCone.nsmulSaturated_toAddSubmonoid`, `PointedCone.nsmulSaturated_latticePoints`, and
+  `AddMonoidHom.nsmulSaturation_le_latticePoints_hull_image`: over a linearly ordered field `K`,
+  `σ.toAddSubmonoid` and `σ.latticePoints i` are `NSMulSaturated`, so `S.nsmulSaturation` maps into
+  `PointedCone.hull K (i '' S)`.
 * `PointedCone.toAddSubmonoid_hull_rat` and
   `PointedCone.toAddSubmonoid_hull_rat_eq_nsmulSaturation`: the additive submonoid of a rational
   pointed cone `PointedCone.hull ℚ s` (resp. `PointedCone.hull ℚ (S : Set V)`) equals
@@ -247,3 +249,18 @@ theorem FG.mem_nsmulSaturation_iff_forall_nonneg_of_mem_closure {S : AddSubmonoi
 end GeneratedGroup
 
 end AddSubmonoid
+
+namespace AddMonoidHom
+
+open PointedCone
+
+/-- Over a linearly ordered field `K`, every element in the saturation of `S` maps into the cone
+hull of `i '' S`. -/
+theorem nsmulSaturation_le_latticePoints_hull_image {K N W : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] [AddCommMonoid N] [AddCommMonoid W] [Module K W]
+    (i : N →+ W) (S : AddSubmonoid N) :
+    S.nsmulSaturation ≤ (hull K (i '' (S : Set N))).latticePoints i :=
+  (AddSubmonoid.nsmulSaturation_le_iff_le (nsmulSaturated_latticePoints _ i)).mpr
+    fun _ hx => mem_latticePoints.mpr (subset_hull (Set.mem_image_of_mem i hx))
+
+end AddMonoidHom
