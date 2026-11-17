@@ -144,7 +144,8 @@ private theorem exists_hasFDerivAt_inner_deriv_chordDir (hn : n ≠ 0) (hχ : Co
     intro p
     have hp : p = p.1 • ((1 : ℝ), (0 : ℝ)) + p.2 • ((0 : ℝ), (1 : ℝ)) := by ext <;> simp
     conv_lhs => rw [hp]
-    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm, mul_comm p.2]
+    simp only [map_add, map_smul, smul_eq_mul]
+    ring
   -- The derivative is the map `(a, b) ↦ (a, α a + c b)`, inverted by `(a, z) ↦ (a, (z - α a) / c)`.
   refine ⟨ContinuousLinearEquiv.equivOfInverse ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod G')
     ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
@@ -292,29 +293,28 @@ theorem nextCollisionPartialDiffeomorph_target (hn : n ≠ 0) (hχ : ContDiff �
 
 /-! ### The billiard map as a homeomorphism -/
 
-/-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
-theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv := by
-  have h := (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn.comp_continuous
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd) :
-      Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ ((x.1, x.2) : ℝ × ℝ))
+/-- A map of `ℝ × ℝ` that is continuous on the strip `ℝ × (-1, 1)` and maps it into itself
+restricts to a continuous map of `ℝ × (-1, 1)`. -/
+private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
+    (hf : ContinuousOn f (univ ×ˢ Ioo (-1) 1))
+    (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1 : ℝ) 1) :
+    Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
+      ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
     fun x ↦ ⟨mem_univ _, x.2.2⟩
-  simp only [comp_def, nextCollision_apply] at h
-  refine ((continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk
-    fun x ↦ χ.nextTangential_mem_Ioo x.2.2)).congr fun x ↦ ?_
-  simp
+  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
+
+/-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
+theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv :=
+  (continuous_restrict_strip (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn
+    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.2).congr fun x ↦ by simp
 
 /-- The inverse of the next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is
 `C²`. -/
 theorem continuous_nextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
-    Continuous χ.nextCollisionEquiv.symm := by
-  have h := (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn.comp_continuous
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd) :
-      Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ ((x.1, x.2) : ℝ × ℝ))
-    fun x ↦ ⟨mem_univ _, x.2.2⟩
-  simp only [comp_def] at h
-  refine ((continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk
-    fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2)).congr fun x ↦ ?_
-  simp
+    Continuous χ.nextCollisionEquiv.symm :=
+  (continuous_restrict_strip (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn
+    fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2).congr fun x ↦ by simp
 
 /-- The projection `ℝ × (-1, 1) → AddCircle L × (-1, 1)` onto the space of collision states is an
 open quotient map. -/
@@ -322,23 +322,26 @@ private theorem isOpenQuotientMap_prodMap_coe :
     IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
   QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
 
+/-- A map of `AddCircle L × (-1, 1)` is continuous when it lifts along the projection from
+`ℝ × (-1, 1)` to a continuous map. -/
+private theorem continuous_of_lift
+    {g : AddCircle χ.period × Ioo (-1 : ℝ) 1 → AddCircle χ.period × Ioo (-1 : ℝ) 1}
+    {F : ℝ × Ioo (-1 : ℝ) 1 → ℝ × Ioo (-1 : ℝ) 1} (hF : Continuous F)
+    (h : ∀ (s : ℝ) v, g (s, v) = (((F (s, v)).1 : AddCircle χ.period), (F (s, v)).2)) :
+    Continuous g := by
+  rw [← χ.isOpenQuotientMap_prodMap_coe.continuous_comp_iff]
+  convert χ.isOpenQuotientMap_prodMap_coe.continuous.comp hF using 1
+  funext ⟨s, v⟩
+  exact h s v
+
 /-- **The billiard map is a homeomorphism.** If `χ` is `C²`, the billiard map `β` of the table is
 a homeomorphism of the space of collision states `AddCircle L × (-1, 1)`. -/
 def billiardHomeomorph (hχ : ContDiff ℝ 2 χ) :
     AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
   toEquiv := χ.billiardMap
-  continuous_toFun := by
-    rw [← χ.isOpenQuotientMap_prodMap_coe.continuous_comp_iff]
-    convert χ.isOpenQuotientMap_prodMap_coe.continuous.comp
-      (χ.continuous_nextCollisionEquiv hχ) using 1
-    funext ⟨s, v⟩
-    simp
-  continuous_invFun := by
-    rw [← χ.isOpenQuotientMap_prodMap_coe.continuous_comp_iff]
-    convert χ.isOpenQuotientMap_prodMap_coe.continuous.comp
-      (χ.continuous_nextCollisionEquiv_symm hχ) using 1
-    funext ⟨s, v⟩
-    simp [AddCircle.coe_period]
+  continuous_toFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv hχ) fun s v ↦ by simp
+  continuous_invFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv_symm hχ)
+    fun s v ↦ by simp [AddCircle.coe_period]
 
 /-- The underlying bijection of the billiard homeomorphism is the billiard map. -/
 @[simp]
