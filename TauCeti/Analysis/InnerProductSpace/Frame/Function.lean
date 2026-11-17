@@ -43,7 +43,7 @@ def IsFrameFunction (f : {v : E // ‖v‖ = 1} → ℝ) (w : ℝ) : Prop :=
       ∑ i, f ⟨b i, b.norm_eq_one i⟩ = w
 
 /-- The defining orthonormal-basis equation, as a public introduction and elimination rule. -/
-theorem isFrameFunction_iff [FiniteDimensional ℂ E] (f : {v : E // ‖v‖ = 1} → ℝ) (w : ℝ) :
+@[simp] theorem isFrameFunction_iff [FiniteDimensional ℂ E] (f : {v : E // ‖v‖ = 1} → ℝ) (w : ℝ) :
     IsFrameFunction f w ↔
       ∀ b : OrthonormalBasis (Fin (Module.finrank ℂ E)) ℂ E,
         ∑ i, f ⟨b i, b.norm_eq_one i⟩ = w :=
@@ -162,7 +162,8 @@ theorem apply_eq_weight_of_finrank_one (hf : IsFrameFunction f w)
 
 end IsFrameFunction
 
-/-- In dimension zero the empty orthonormal basis forces exactly weight zero. -/
+/-- In dimension zero the empty orthonormal basis forces exactly weight zero. It is not
+`@[simp]`: the simp lemma `isFrameFunction_iff` already rewrites its left-hand side. -/
 theorem isFrameFunction_iff_of_finrank_zero [FiniteDimensional ℂ E]
     (f : {v : E // ‖v‖ = 1} → ℝ) (w : ℝ)
     (hd : Module.finrank ℂ E = 0) : IsFrameFunction f w ↔ w = 0 := by
@@ -260,7 +261,8 @@ theorem IsFrameFunction.trace_eq {T : E →ₗ[ℂ] E} {w : ℝ}
         (hT.coe_re_inner_self_apply (b i)).symm
     _ = (w : ℂ) := by exact_mod_cast hf.2 b
 
-/-- In dimension one the frame condition says exactly that the function is constant. -/
+/-- In dimension one the frame condition says exactly that the function is constant. It is not
+`@[simp]`: the simp lemma `isFrameFunction_iff` already rewrites its left-hand side. -/
 theorem isFrameFunction_iff_of_finrank_one [FiniteDimensional ℂ E]
     (f : {v : E // ‖v‖ = 1} → ℝ) (w : ℝ)
     (hd : Module.finrank ℂ E = 1) : IsFrameFunction f w ↔ ∀ v, f v = w := by
@@ -271,7 +273,7 @@ theorem isFrameFunction_iff_of_finrank_one [FiniteDimensional ℂ E]
 
 omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
 /-- The weight-three function is induced by the Hermitian matrix `diag(2, 1, 0)`. -/
-theorem quadraticFrameFunction_diagonal_two_one_zero
+private theorem quadraticFrameFunction_diagonal_two_one_zero
     (v : {v : EuclideanSpace ℂ (Fin 3) // ‖v‖ = 1}) :
     quadraticFrameFunction (Matrix.diagonal (![2, 1, 0] : Fin 3 → ℂ)).toEuclideanLin v =
       2 * ‖v.val 0‖ ^ 2 + ‖v.val 1‖ ^ 2 := by
@@ -283,16 +285,8 @@ theorem quadraticFrameFunction_diagonal_two_one_zero
       (![2, 1, 0] : Fin 3 → ℝ) v.val
 
 omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
-/-- The matrix inducing the weight-three example is positive semidefinite. -/
-theorem diagonal_two_one_zero_posSemidef :
-    (Matrix.diagonal (![2, 1, 0] : Fin 3 → ℂ)).PosSemidef := by
-  apply Matrix.PosSemidef.diagonal
-  intro i
-  fin_cases i <;> norm_num
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] in
 /-- The operator inducing the weight-three example has trace three. -/
-theorem trace_diagonal_two_one_zero :
+private theorem trace_diagonal_two_one_zero :
     (Matrix.diagonal (![2, 1, 0] : Fin 3 → ℂ)).toEuclideanLin.trace
       ℂ (EuclideanSpace ℂ (Fin 3)) = 3 := by
   norm_num [Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.trace_diagonal,
