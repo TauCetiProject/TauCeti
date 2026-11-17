@@ -76,6 +76,19 @@ theorem endpointHomeomorph_map (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.
   apply Subtype.ext
   simp
 
+/-- Maps of mapping-path fibres commute with the constant-path inclusion of ordinary fibres. -/
+@[simp]
+theorem map_ofFiber (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a)
+    (hk : b k = k') (x : f ⁻¹' {k}) :
+    map a b h hk (ofFiber f k x) =
+      ofFiber f' k' ⟨a x.val,
+        (ContinuousMap.congr_fun h x.val).symm.trans ((congrArg b x.property).trans hk)⟩ := by
+  apply Subtype.ext
+  rw [map_val, ofFiber_val, ofFiber_val]
+  refine Prod.ext rfl ?_
+  ext _
+  exact hk
+
 /-- The pullback comparison respects the induced map of fixed-end path spaces. -/
 @[simp]
 theorem pullbackHomeomorph_map_val (a : C(B, B')) (b : C(K, K'))
