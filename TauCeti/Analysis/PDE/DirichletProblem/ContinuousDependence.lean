@@ -34,8 +34,6 @@ equation `-∂ᵢ(Aⁱʲ(x, u) ∂ⱼu) = ℓ` continuous, as needed for a Schau
 
 ## Main declarations
 
-* `TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`: `|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖`
-  when the coefficient differences are bounded by `Λ, β, γ`.
 * `TauCeti.PDE.norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`: the stability
   estimate for data in `H⁻¹(Ω)` and boundary values in `H¹(Ω)`, from the two-problem energy
   estimate `TauCeti.PDE.norm_sub_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`.
@@ -78,23 +76,6 @@ attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpac
 -- The shortcut instances of the energy-form file, so that the operator norm of the bundled
 -- energy form `TauCeti.PDE.energyFormH1L` is found by instance search.
 attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
-
-/-- **The difference of two energy forms.** If both coefficient fields are essentially bounded
-and almost everywhere on `Ω` we have `|ηᵀ (a - a') ξ| ≤ Λ ‖η‖ ‖ξ‖`, `‖b - b'‖ ≤ β` and
-`|c - c'| ≤ γ`, then the energy forms `B` of `(a, b, c)` and `B'` of `(a', b', c')` satisfy
-`|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖` on `H¹(Ω)`: their difference is the energy form of
-the difference of the coefficients. -/
-theorem abs_energyFormH1_sub_energyFormH1_le
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
-    (hLam : 0 ≤ Lam)
-    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ η ξ : EuclideanSpace ℝ ι,
-      |η ⬝ᵥ ((a x - a' x) *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (hb : ∀ᵐ x ∂mu.restrict Omega, ‖b x - b' x‖ ≤ beta)
-    (hc : ∀ᵐ x ∂mu.restrict Omega, ‖c x - c' x‖ ≤ gamma) (u v : W1p mu Omega 2) :
-    |energyFormH1 a b c u v - energyFormH1 a' b' c' u v| ≤ (Lam + beta + gamma) * ‖u‖ * ‖v‖ := by
-  rw [← energyFormH1_sub hcoeff hcoeff', ← Real.norm_eq_abs, mul_assoc]
-  exact norm_energyFormH1_le_of_bounds (a := a - a') (b := b - b') (c := c - c') hLam ha hb hc u v
 
 /-- **Stability of the Dirichlet problem under perturbation of the energy form, the data and
 the boundary values.** Let `u ∈ H¹(Ω)` satisfy `B(u, v) = ℓ(v)` for every `v ∈ H¹₀(Ω)`, where `B`
