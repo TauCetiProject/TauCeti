@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.FieldOfModuli
 public import Mathlib.RingTheory.TensorProduct.Basic
 import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Transcendental
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.Separable.Regular
 
@@ -204,8 +204,8 @@ private theorem isFractionRing_tensorProduct :
     (transcendental_algebraMap_iff (algebraMap (RatFunc K) M.pair).injective).mpr
       RatFunc.transcendental_X
   have ht : Transcendental k (algebraMap M.pair X t₀) := by
-    change Transcendental k (M.embedding (algebraMap (RatFunc K) M.pair RatFunc.X))
-    rw [M.embedding_algebraMap_X]
+    dsimp only [t₀]
+    rw [RingHom.algebraMap_toAlgebra, M.embedding_algebraMap_X]
     exact (transcendental_algebraMap_iff (algebraMap (RatFunc k) X).injective).mpr
       RatFunc.transcendental_X
   have : FiniteDimensional K⟮t₀⟯ M.pair := hF₀.finiteDimensional_adjoin ht₀
@@ -243,10 +243,8 @@ theorem fractionRingEquiv_algebraMap_tmul (c : k) (y : M.pair) :
     (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
       (IsScalarTower.toAlgHom K k X)).toRingHom.toAlgebra
   have : IsFractionRing (M.pair ⊗[K] k) X := M.isFractionRing_tensorProduct
-  change IsFractionRing.ringEquivOfRingEquiv (K := FractionRing (k ⊗[K] M.pair)) (L := X)
-    (Algebra.TensorProduct.comm K k M.pair).toRingEquiv
-    (algebraMap (k ⊗[K] M.pair) _ (c ⊗ₜ y)) = _
-  rw [IsFractionRing.ringEquivOfRingEquiv_algebraMap]
+  unfold fractionRingEquiv
+  rw [AlgEquiv.ofRingEquiv_apply, IsFractionRing.ringEquivOfRingEquiv_algebraMap]
   simp [RingHom.algebraMap_toAlgebra]
 
 /-- **Degree invariance for models**: over any extension `k / K` (algebraic or transcendental),
@@ -264,17 +262,17 @@ theorem finrank_pair :
     (transcendental_algebraMap_iff (algebraMap (RatFunc K) M.pair).injective).mpr
       RatFunc.transcendental_X
   have ht : Transcendental k (algebraMap M.pair X t₀) := by
-    change Transcendental k (M.embedding (algebraMap (RatFunc K) M.pair RatFunc.X))
-    rw [M.embedding_algebraMap_X]
+    dsimp only [t₀]
+    rw [RingHom.algebraMap_toAlgebra, M.embedding_algebraMap_X]
     exact (transcendental_algebraMap_iff (algebraMap (RatFunc k) X).injective).mpr
       RatFunc.transcendental_X
   have : FiniteDimensional K⟮t₀⟯ M.pair := hF₀.finiteDimensional_adjoin ht₀
   have hld : (IsScalarTower.toAlgHom K k X).fieldRange.LinearDisjoint M.pair :=
-    linearDisjoint_of_constantCompositum_eq_top_of_transcendental ht M.constantCompositum_eq_top
+    linearDisjoint_of_transcendental ht
   have hfin := finrank_over_adjoin_simple_eq_of_linearDisjoint hld M.constantCompositum_eq_top t₀
-  change Module.finrank k⟮M.embedding (algebraMap (RatFunc K) M.pair RatFunc.X)⟯ X =
-    Module.finrank K⟮algebraMap (RatFunc K) M.pair RatFunc.X⟯ M.pair at hfin
-  rw [M.embedding_algebraMap_X, finrank_adjoin_algebraMap_X, finrank_adjoin_algebraMap_X] at hfin
+  dsimp only [t₀] at hfin
+  rw [RingHom.algebraMap_toAlgebra, M.embedding_algebraMap_X, finrank_adjoin_algebraMap_X,
+    finrank_adjoin_algebraMap_X] at hfin
   exact hfin.symm
 
 /-- The **base change** of a model `Y = (F₀, t)` over `K` of `X = (F, t)` to an algebraic

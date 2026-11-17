@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.LocalData
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Transcendental
 import TauCeti.FieldTheory.FunctionField.SeparablyGenerated
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.Separable.Regular
@@ -65,14 +67,14 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
     (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
       RatFunc.transcendental_X
   have ht' : Transcendental k' (algebraMap F F' t) := by
-    change Transcendental k' (algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X))
+    dsimp only [t]
     rw [hX]
     exact (transcendental_algebraMap_iff (algebraMap (RatFunc k') F').injective).mpr
       RatFunc.transcendental_X
   have : FiniteDimensional k⟮t⟯ F := hF.finiteDimensional_adjoin ht
   have : IsDomain (F ⊗[k] k') := isDomain_tensorProduct_of_isGeometricallyReduced hex k'
   have hld : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F :=
-    linearDisjoint_of_constantCompositum_eq_top_of_transcendental ht' hcomp
+    linearDisjoint_of_transcendental ht'
   let s := (finite_setOf_restrict_eq (k' := k) (F' := F) k (RatFunc k)
     (markedPlace k i)).toFinset
   let s' := (finite_setOf_restrict_eq (k' := k') (F' := F') k' (RatFunc k')

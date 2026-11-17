@@ -54,6 +54,8 @@ to the canonical fraction fields used by Mathlib's different API.
   action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
   with `attribute [local instance 10]`.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
+* `TauCeti.Place.restrictOfRamificationIdxNeZero`: normalized restriction of a place `P'` of
+  `F' / k'` nontrivial on `F` (`ramificationIdx F P' ≠ 0`), without assuming `F' / F` is integral.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
 * `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
@@ -65,6 +67,11 @@ to the canonical fraction fields used by Mathlib's different API.
 ## Main results
 
 * `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`.
+* `TauCeti.Place.ord_algebraMap_restrictOfRamificationIdxNeZero`,
+  `TauCeti.Place.mem_integers_restrictOfRamificationIdxNeZero_iff`,
+  `TauCeti.Place.restrictOfRamificationIdxNeZero_eq_restrict`, and
+  `TauCeti.Place.ord_algebraMap_eq_zero_of_ramificationIdx_eq_zero`: order scaling, integrality,
+  agreement with `restrict` in integral extensions, and vanishing of orders at trivial places.
 * `TauCeti.Place.ramificationIdx_eq_of_ringEquiv`: the ramification index is unchanged when the
   field below is replaced by an isomorphic copy with the same image in `F'`.
 * `TauCeti.Place.restrict_eq_iff_integers_le`, `TauCeti.Place.restrict_eq_iff_forall_ord_pos`
@@ -529,6 +536,73 @@ theorem algebraMap_mem_filtration {r : F} {m : ℕ}
   nlinarith
 
 end Restrict
+
+section RestrictOfRamificationIdxNeZero
+
+variable (k) in
+/-- **Normalized restriction of a place nontrivial on `F`.** Without `[Algebra.IsIntegral F F']`, a
+place `P'` of `F' / k'` restricts to a place of `F / k` whenever `ramificationIdx F P' ≠ 0`. -/
+noncomputable def restrictOfRamificationIdxNeZero (P' : Place k' F')
+    (h : ramificationIdx F P' ≠ 0) : Place k F where
+  valuation := (P'.valuation.comap (algebraMap F F')).normalization
+  valuation_surjective :=
+    Valuation.normalization_surjective _ (ramificationIdx_def (F := F) (P' := P') ▸ h)
+  isTrivialOn := by
+    have : P'.valuation.IsTrivialOn k := ⟨fun c hc ↦ by
+      rw [IsScalarTower.algebraMap_apply k k' F']
+      exact P'.isTrivialOn.eq_one _ ((_root_.map_ne_zero (algebraMap k k')).mpr hc)⟩
+    have : (P'.valuation.comap (algebraMap F F')).IsTrivialOn k :=
+      Valuation.IsTrivialOn.comap P'.valuation (IsScalarTower.toAlgHom k F F')
+    exact Valuation.IsTrivialOn.normalization _
+
+/-- The valuation of `restrictOfRamificationIdxNeZero` is the normalization of the restricted
+valuation. -/
+@[simp]
+theorem valuation_restrictOfRamificationIdxNeZero (P' : Place k' F')
+    (h : ramificationIdx F P' ≠ 0) :
+    (P'.restrictOfRamificationIdxNeZero k h).valuation =
+      (P'.valuation.comap (algebraMap F F')).normalization := by
+  rw [restrictOfRamificationIdxNeZero]
+
+/-- **Order scaling for `restrictOfRamificationIdxNeZero`**:
+`ord_{P'}(f) = e(P' ∣ F) · ord_P(f)`. -/
+theorem ord_algebraMap_restrictOfRamificationIdxNeZero (P' : Place k' F')
+    (h : ramificationIdx F P' ≠ 0) (f : F) :
+    P'.ord (algebraMap F F' f) =
+      ramificationIdx F P' * (P'.restrictOfRamificationIdxNeZero k h).ord f := by
+  simpa only [Valuation.ord_comap, ← valuation_restrictOfRamificationIdxNeZero (k := k) P' h,
+    ord_valuation, ramificationIdx_def, mul_comm] using
+    (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
+
+/-- An element of `F` is integral at `restrictOfRamificationIdxNeZero` exactly when its image is
+integral at `P'`. -/
+theorem mem_integers_restrictOfRamificationIdxNeZero_iff (P' : Place k' F')
+    (h : ramificationIdx F P' ≠ 0) (f : F) :
+    f ∈ (P'.restrictOfRamificationIdxNeZero k h).integers ↔ algebraMap F F' f ∈ P'.integers := by
+  rw [mem_integers_iff_ord_nonneg, mem_integers_iff_ord_nonneg,
+    ord_algebraMap_restrictOfRamificationIdxNeZero (k := k) P' h]
+  exact ⟨fun hf ↦ mul_nonneg (Nat.cast_nonneg _) hf,
+    fun hf ↦ nonneg_of_mul_nonneg_right hf (by exact_mod_cast Nat.pos_of_ne_zero h)⟩
+
+/-- In an integral extension, `restrictOfRamificationIdxNeZero` agrees with `restrict`. -/
+@[simp]
+theorem restrictOfRamificationIdxNeZero_eq_restrict [Algebra.IsIntegral F F'] (P' : Place k' F')
+    (h : ramificationIdx F P' ≠ 0) :
+    P'.restrictOfRamificationIdxNeZero k h = P'.restrict k F :=
+  integers_injective <| SetLike.ext fun f ↦ by
+    rw [mem_integers_restrictOfRamificationIdxNeZero_iff, mem_integers_restrict_iff]
+
+omit [Field k] [Algebra k F] [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
+/-- At a place `P'` of `F'` trivial on `F`, every element of `F` has order zero at `P'`. -/
+theorem ord_algebraMap_eq_zero_of_ramificationIdx_eq_zero {P' : Place k' F'}
+    (h : ramificationIdx F P' = 0) (f : F) :
+    P'.ord (algebraMap F F' f) = 0 := by
+  simpa only [Valuation.ord_comap, ord_valuation] using
+    (Valuation.ordIndex_eq_zero_iff (P'.valuation.comap (algebraMap F F'))).mp
+      (ramificationIdx_def (F := F) (P' := P') ▸ h) f
+
+end RestrictOfRamificationIdxNeZero
 
 section RestrictMap
 

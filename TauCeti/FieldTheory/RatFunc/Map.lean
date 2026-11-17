@@ -33,6 +33,8 @@ absolute Galois group, acts on the rational function field.
   carries `K` onto `L` along `σ`, and the two extensions have the same degree.
 * `TauCeti.algebraMap_ratFunc_algebraMap_polynomial`: a `K`-algebra map `K(X) → L(X)` sending `X`
   to `X` maps a polynomial over `K` to the polynomial with its coefficients mapped to `L`.
+* `TauCeti.algebraMap_algebraMap_polynomial`: commuting-square version mapping a polynomial over
+  `K` into an `L(X)`-algebra `F'` through `F` and through `L(X)`.
 * `RatFunc.mapRingEquiv_algebraMap_ratFunc`: for such an algebra map from `K(X)` to `L(X)`, the
   coefficient map of an automorphism of `L` fixing the image of `K` fixes the image of `K(X)`.
 * `RatFunc.mapRingHom_algebraMap`: Mathlib's `RatFunc.mapRingHom φ` restricts to `φ` on
@@ -167,6 +169,32 @@ theorem algebraMap_ratFunc_algebraMap_polynomial
     ← RatFunc.aeval_X_left_eq_algebraMap, Polynomial.aeval_map_algebraMap]
 
 end Polynomial
+
+section PolynomialSquare
+
+open scoped Polynomial
+
+/-- A polynomial in `t` over `K` has the same image in `F'` through `F` as through `L(t)` when
+`F → F'` sends the image of `X` in `F` to the image of `X` in `F'`. -/
+theorem algebraMap_algebraMap_polynomial {K L F F' : Type*}
+    [CommRing K] [IsDomain K] [CommRing L] [IsDomain L] [CommSemiring F] [Semiring F']
+    [Algebra K L] [Algebra K F] [Algebra K F'] [Algebra L F'] [Algebra F F']
+    [IsScalarTower K L F'] [IsScalarTower K F F']
+    [Algebra (RatFunc K) F] [IsScalarTower K (RatFunc K) F]
+    [Algebra (RatFunc L) F'] [IsScalarTower L (RatFunc L) F']
+    (hX : algebraMap F F' (algebraMap (RatFunc K) F RatFunc.X) =
+      algebraMap (RatFunc L) F' RatFunc.X) (p : K[X]) :
+    algebraMap F F' (algebraMap (RatFunc K) F (algebraMap K[X] (RatFunc K) p)) =
+      algebraMap (RatFunc L) F' (algebraMap L[X] (RatFunc L) (p.map (algebraMap K L))) := by
+  have h₁ := Polynomial.aeval_algHom_apply
+    ((IsScalarTower.toAlgHom K F F').comp (IsScalarTower.toAlgHom K (RatFunc K) F)) RatFunc.X p
+  have h₂ := Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom L (RatFunc L) F') RatFunc.X
+    (p.map (algebraMap K L))
+  simp only [AlgHom.comp_apply, IsScalarTower.toAlgHom_apply,
+    RatFunc.aeval_X_left_eq_algebraMap] at h₁ h₂
+  rw [← h₁, ← h₂, hX, Polynomial.aeval_map_algebraMap]
+
+end PolynomialSquare
 
 end TauCeti
 

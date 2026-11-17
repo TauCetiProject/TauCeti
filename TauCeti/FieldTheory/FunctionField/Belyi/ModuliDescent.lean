@@ -50,6 +50,10 @@ This proves Köck's Theorem 2.2:
 
 * `TauCeti.AlgebraicBelyiPair.modelOfMinpolyMemLifts`: the model `K(t)(z)` of `X` over `K` attached
   to a generator `z` of `X / k(t)` whose minimal polynomial lifts to `K(t)`.
+* `TauCeti.AlgebraicBelyiPair.modelOfMinpolyMemLiftsGen`: the distinguished generator of
+  `modelOfMinpolyMemLifts` corresponding to `z`.
+* `TauCeti.AlgebraicBelyiPair.modelOfMinpolyMemLiftsEquiv`: canonical `K(t)`-algebra isomorphism
+  identifying the function field of `modelOfMinpolyMemLifts` with the subfield `K(t)(z)` of `X`.
 * `TauCeti.AlgebraicBelyiPair.pointedModel`: the model of `X` over `X.pointedFieldOfModuli P` at a
   rational unbranched place `P` of degree one.
 * `TauCeti.AlgebraicBelyiPair.modelOfIsGalois`: over an algebraically closed field `k`, a model of a
@@ -57,6 +61,12 @@ This proves Köck's Theorem 2.2:
 
 ## Main results
 
+* `TauCeti.AlgebraicBelyiPair.embedding_modelOfMinpolyMemLifts_algebraMap_ratFunc`,
+  `TauCeti.AlgebraicBelyiPair.embedding_modelOfMinpolyMemLiftsGen`,
+  `TauCeti.AlgebraicBelyiPair.adjoin_modelOfMinpolyMemLiftsGen`,
+  `TauCeti.AlgebraicBelyiPair.map_minpoly_modelOfMinpolyMemLiftsGen`, and
+  `TauCeti.AlgebraicBelyiPair.range_embedding_modelOfMinpolyMemLifts`: characteristic API for
+  `modelOfMinpolyMemLifts` without unfolding its definition.
 * `TauCeti.AlgebraicBelyiPair.isDefinedOver_pointedFieldOfModuli`: the class of `X` is defined over
   `X.pointedFieldOfModuli P`.
 * `TauCeti.AlgebraicBelyiPair.exists_model_relfinrank_le` and
@@ -95,19 +105,22 @@ variable {k : Type u} [Field k] [CharZero k]
 
 /-! ### Model from a descended minimal polynomial -/
 
+section ModelOfMinpolyMemLifts
+
+variable (X : AlgebraicBelyiPair k) {K : Type u} [Field K] [CharZero K] [Algebra K k]
+  [Algebra (RatFunc K) (RatFunc k)]
+  (hC : ∀ c : K, algebraMap (RatFunc K) (RatFunc k) (RatFunc.C c) =
+    RatFunc.C (algebraMap K k c))
+  (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
+  {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
+  (hlift : minpoly (RatFunc k) z ∈ Polynomial.lifts (algebraMap (RatFunc K) (RatFunc k)))
+
 /-- **Model from a descended minimal polynomial.** Suppose `z` generates the function field of an
 algebraic Belyi pair `X` over `k(t)` and its minimal polynomial over `k(t)` lifts to `K(t)` along a
 `K`-compatible map `K(t) → k(t)` sending `t` to `t`. Then the subfield `K(t)(z)` of `X` is an
 algebraic Belyi pair over `K` and a model of `X` over `K`, with no algebraicity assumption on
 `k / K`. -/
-noncomputable def modelOfMinpolyMemLifts (X : AlgebraicBelyiPair k) {K : Type u} [Field K]
-    [CharZero K] [Algebra K k] [Algebra (RatFunc K) (RatFunc k)]
-    (hC : ∀ c : K, algebraMap (RatFunc K) (RatFunc k) (RatFunc.C c) =
-      RatFunc.C (algebraMap K k c))
-    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
-    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
-    (hlift : minpoly (RatFunc k) z ∈ Polynomial.lifts (algebraMap (RatFunc K) (RatFunc k))) :
-    Model K X :=
+noncomputable def modelOfMinpolyMemLifts : Model K X :=
   letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
   haveI : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
   letI : Algebra (RatFunc K) X :=
@@ -147,6 +160,137 @@ noncomputable def modelOfMinpolyMemLifts (X : AlgebraicBelyiPair k) {K : Type u}
         constantCompositum_def, IntermediateField.adjoin_toSubfield] at hcomp
       rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
         IntermediateField.adjoin_toSubfield, Set.union_comm, hcomp] }
+
+/-- The distinguished generator of `(X.modelOfMinpolyMemLifts hC hX hgen hlift).pair` over `K(t)`,
+whose image under the model embedding is `z`
+(`TauCeti.AlgebraicBelyiPair.embedding_modelOfMinpolyMemLiftsGen`). -/
+noncomputable def modelOfMinpolyMemLiftsGen :
+    (X.modelOfMinpolyMemLifts hC hX hgen hlift).pair :=
+  letI : Algebra (RatFunc K) X :=
+    ((algebraMap (RatFunc k) X).comp (algebraMap (RatFunc K) (RatFunc k))).toAlgebra
+  IntermediateField.AdjoinSimple.gen (RatFunc K) z
+
+/-- The embedding of `modelOfMinpolyMemLifts` sends its distinguished generator to `z`. -/
+@[simp]
+theorem embedding_modelOfMinpolyMemLiftsGen :
+    (X.modelOfMinpolyMemLifts hC hX hgen hlift).embedding
+      (X.modelOfMinpolyMemLiftsGen hC hX hgen hlift) = z :=
+  (rfl)
+
+/-- On `K(t)`, the embedding of `modelOfMinpolyMemLifts` agrees with `K(t) → k(t) → X`. -/
+@[simp]
+theorem embedding_modelOfMinpolyMemLifts_algebraMap_ratFunc (r : RatFunc K) :
+    (X.modelOfMinpolyMemLifts hC hX hgen hlift).embedding
+      (algebraMap (RatFunc K) (X.modelOfMinpolyMemLifts hC hX hgen hlift).pair r) =
+      algebraMap (RatFunc k) X (algebraMap (RatFunc K) (RatFunc k) r) :=
+  (rfl)
+
+/-- Adjoining the generator of `F⟮z⟯` inside `F⟮z⟯` recovers `⊤`. -/
+private theorem adjoin_adjoinSimple_gen {F E : Type*} [Field F] [Field E] [Algebra F E] (a : E) :
+    F⟮IntermediateField.AdjoinSimple.gen F a⟯ = ⊤ := by
+  apply IntermediateField.map_injective F⟮a⟯.val
+  rw [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
+    IntermediateField.fieldRange_val]
+  rfl
+
+/-- The distinguished generator generates the function field of `modelOfMinpolyMemLifts` over
+`K(t)`. -/
+theorem adjoin_modelOfMinpolyMemLiftsGen :
+    (RatFunc K)⟮X.modelOfMinpolyMemLiftsGen hC hX hgen hlift⟯ = ⊤ := by
+  let _ : Algebra (RatFunc K) X :=
+    ((algebraMap (RatFunc k) X).comp (algebraMap (RatFunc K) (RatFunc k))).toAlgebra
+  exact adjoin_adjoinSimple_gen (F := RatFunc K) z
+
+/-- The minimal polynomial over `K(t)` of the distinguished generator of `modelOfMinpolyMemLifts`
+maps along `K(t) → k(t)` to `minpoly (RatFunc k) z`. -/
+theorem map_minpoly_modelOfMinpolyMemLiftsGen :
+    (minpoly (RatFunc K) (X.modelOfMinpolyMemLiftsGen hC hX hgen hlift)).map
+      (algebraMap (RatFunc K) (RatFunc k)) = minpoly (RatFunc k) z := by
+  let _ : Algebra (RatFunc K) X :=
+    ((algebraMap (RatFunc k) X).comp (algebraMap (RatFunc K) (RatFunc k))).toAlgebra
+  have : IsScalarTower (RatFunc K) (RatFunc k) X := .of_algebraMap_eq fun _ ↦ rfl
+  have hz : IsIntegral (RatFunc k) z := Algebra.IsIntegral.isIntegral z
+  have hzK : IsIntegral (RatFunc K) z := hz.of_minpoly_mem_lifts hlift
+  have hmp : minpoly (RatFunc K) (X.modelOfMinpolyMemLiftsGen hC hX hgen hlift) =
+      minpoly (RatFunc K) z :=
+    IntermediateField.minpoly_gen (RatFunc K) z
+  rw [hmp]
+  exact minpoly.map_algebraMap hzK hlift
+
+/-- Given a compatible `K(t)`-algebra structure on `X`, the function field of
+`modelOfMinpolyMemLifts` is canonically isomorphic over `K(t)` to the subfield `K(t)(z)` of `X`. -/
+noncomputable def modelOfMinpolyMemLiftsEquiv [Algebra (RatFunc K) X]
+    [IsScalarTower (RatFunc K) (RatFunc k) X] :
+    (X.modelOfMinpolyMemLifts hC hX hgen hlift).pair ≃ₐ[RatFunc K] (RatFunc K)⟮z⟯ :=
+  let f : (X.modelOfMinpolyMemLifts hC hX hgen hlift).pair →ₐ[RatFunc K] X :=
+    { (X.modelOfMinpolyMemLifts hC hX hgen hlift).embedding with
+      commutes' := fun r ↦ by
+        rw [RingHom.toFun_eq_coe,
+          X.embedding_modelOfMinpolyMemLifts_algebraMap_ratFunc hC hX hgen hlift r,
+          ← IsScalarTower.algebraMap_apply (RatFunc K) (RatFunc k) X] }
+  have hrange : f.fieldRange = (RatFunc K)⟮z⟯ := by
+    rw [AlgHom.fieldRange_eq_map, ← X.adjoin_modelOfMinpolyMemLiftsGen hC hX hgen hlift,
+      IntermediateField.adjoin_map, Set.image_singleton]
+    exact congrArg (fun a ↦ (RatFunc K)⟮a⟯)
+      (X.embedding_modelOfMinpolyMemLiftsGen hC hX hgen hlift)
+  let f' : (X.modelOfMinpolyMemLifts hC hX hgen hlift).pair →ₐ[RatFunc K] (RatFunc K)⟮z⟯ :=
+    { toFun := fun y ↦ ⟨f y, by
+        have hy : f y ∈ f.fieldRange := AlgHom.mem_fieldRange.mpr ⟨y, rfl⟩
+        rwa [hrange] at hy⟩
+      map_one' := Subtype.ext f.map_one
+      map_mul' := fun a b ↦ Subtype.ext (f.map_mul a b)
+      map_zero' := Subtype.ext f.map_zero
+      map_add' := fun a b ↦ Subtype.ext (f.map_add a b)
+      commutes' := fun r ↦ Subtype.ext (f.commutes r) }
+  AlgEquiv.ofBijective f'
+    ⟨fun _ _ h ↦ f.toRingHom.injective (congrArg (fun u : (RatFunc K)⟮z⟯ ↦ (u : X)) h),
+      fun ⟨w, hw⟩ ↦ by
+        rw [← hrange] at hw
+        obtain ⟨y, rfl⟩ := AlgHom.mem_fieldRange.mp hw
+        exact ⟨y, rfl⟩⟩
+
+/-- Under `modelOfMinpolyMemLiftsEquiv`, coercing to `X` recovers the model embedding. -/
+@[simp]
+theorem coe_modelOfMinpolyMemLiftsEquiv [Algebra (RatFunc K) X]
+    [IsScalarTower (RatFunc K) (RatFunc k) X]
+    (y : (X.modelOfMinpolyMemLifts hC hX hgen hlift).pair) :
+    ((X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift y : (RatFunc K)⟮z⟯) : X) =
+      (X.modelOfMinpolyMemLifts hC hX hgen hlift).embedding y :=
+  (rfl)
+
+/-- `modelOfMinpolyMemLiftsEquiv` carries the distinguished generator to `AdjoinSimple.gen`. -/
+@[simp]
+theorem modelOfMinpolyMemLiftsEquiv_modelOfMinpolyMemLiftsGen [Algebra (RatFunc K) X]
+    [IsScalarTower (RatFunc K) (RatFunc k) X] :
+    X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift
+      (X.modelOfMinpolyMemLiftsGen hC hX hgen hlift) =
+      IntermediateField.AdjoinSimple.gen (RatFunc K) z :=
+  Subtype.ext (X.embedding_modelOfMinpolyMemLiftsGen hC hX hgen hlift)
+
+/-- The inverse of `modelOfMinpolyMemLiftsEquiv` sends `AdjoinSimple.gen` back to the
+distinguished generator. -/
+@[simp]
+theorem modelOfMinpolyMemLiftsEquiv_symm_gen [Algebra (RatFunc K) X]
+    [IsScalarTower (RatFunc K) (RatFunc k) X] :
+    (X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift).symm
+      (IntermediateField.AdjoinSimple.gen (RatFunc K) z) =
+      X.modelOfMinpolyMemLiftsGen hC hX hgen hlift := by
+  rw [AlgEquiv.symm_apply_eq, modelOfMinpolyMemLiftsEquiv_modelOfMinpolyMemLiftsGen]
+
+/-- The image of the embedding of `modelOfMinpolyMemLifts` in `X` is the subfield `K(t)(z)`. -/
+theorem range_embedding_modelOfMinpolyMemLifts [Algebra (RatFunc K) X]
+    [IsScalarTower (RatFunc K) (RatFunc k) X] :
+    Set.range (X.modelOfMinpolyMemLifts hC hX hgen hlift).embedding = ((RatFunc K)⟮z⟯ : Set X) := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [← X.coe_modelOfMinpolyMemLiftsEquiv hC hX hgen hlift y]
+    exact (X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift y).2
+  · intro hx
+    refine ⟨(X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift).symm ⟨x, hx⟩, ?_⟩
+    rw [← X.coe_modelOfMinpolyMemLiftsEquiv hC hX hgen hlift, AlgEquiv.apply_symm_apply]
+
+end ModelOfMinpolyMemLifts
 
 /-! ### Descent to the pointed field of moduli -/
 

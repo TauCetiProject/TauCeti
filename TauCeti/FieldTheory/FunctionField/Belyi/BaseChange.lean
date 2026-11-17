@@ -7,7 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Transcendental
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Transcendental
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.Separable.Regular
@@ -216,7 +217,7 @@ theorem isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top [CharZero k']
     (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
       RatFunc.transcendental_X
   have ht' : Transcendental k' (algebraMap F F' t) := by
-    change Transcendental k' (algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X))
+    dsimp only [t]
     rw [hX]
     exact (transcendental_algebraMap_iff (algebraMap (RatFunc k') F').injective).mpr
       RatFunc.transcendental_X
@@ -225,7 +226,7 @@ theorem isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top [CharZero k']
   have : Algebra.IsGeometricallyReduced k F := isGeometricallyReduced_of_separating ht
   have : IsDomain (F ⊗[k] k') := isDomain_tensorProduct_of_isGeometricallyReduced hex k'
   have hld : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F :=
-    linearDisjoint_of_constantCompositum_eq_top_of_transcendental ht' hcomp
+    linearDisjoint_of_transcendental ht'
   refine ⟨fun h' ↦ ⟨hex, fun {Q} hQ ↦ ?_⟩, fun h ↦
     ⟨.of_constantCompositum_eq_top_of_transcendental hex ht' hcomp, fun {Q'} hQ' ↦ ?_⟩⟩
   · obtain ⟨Q', hne, rfl⟩ := exists_restrictOfRamificationIdxNeZero_eq hF hld hcomp Q
