@@ -158,20 +158,8 @@ example :
     exact congrArg (ofPairHomeomorph S hS).symm <|
       (congrFun (Pair.Hom.spaComap_comp p f) x₀).symm.trans <| by
         rw [hp, Pair.Hom.spaComap_id, id_eq]
-  let p₁ : Pair.Hom T S :=
-    { toRingHom := RingHom.fst _ _
-      continuous_toRingHom := continuous_fst
-      map_mem_plus a ha := by
-        rw [Pair.powerBounded_plus] at ha ⊢
-        rw [powerBoundedSubring_prod] at ha
-        exact ha.1 }
-  let p₂ : Pair.Hom T S :=
-    { toRingHom := RingHom.snd _ _
-      continuous_toRingHom := continuous_snd
-      map_mem_plus a ha := by
-        rw [Pair.powerBounded_plus] at ha ⊢
-        rw [powerBoundedSubring_prod] at ha
-        exact ha.2 }
+  let p₁ : Pair.Hom T S := Pair.powerBoundedFst ℚ_[2] ℚ_[2]
+  let p₂ : Pair.Hom T S := Pair.powerBoundedSnd ℚ_[2] ℚ_[2]
   let y₁ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm (p₁.spaComap x₀)
   let y₂ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm (p₂.spaComap x₀)
   have hy₁ : (comapOfPair hS hT f).hom.base y₁ = (ofPairHomeomorph S hS).symm x₀ :=
