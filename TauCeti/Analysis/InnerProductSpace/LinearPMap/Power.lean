@@ -228,8 +228,10 @@ theorem negPow_mem_posPow_domain (s : ℝ≥0) (f : H) :
 
 /-- **Nesting of domains.** The domains of the positive powers decrease: for `s ≤ t`, the domain of
 `A^t` is contained in that of `A^s`. -/
-theorem posPow_domain_antitone (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ)
-    {s t : ℝ≥0} (hst : s ≤ t) : (A.posPow hA h t).domain ≤ (A.posPow hA h s).domain := by
+theorem posPow_domain_antitone (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) :
+    Antitone fun s ↦ (A.posPow hA h s).domain := by
+  intro s t hst
+  dsimp only
   rw [posPow_domain, posPow_domain]
   rintro _ ⟨f, rfl⟩
   -- `A^{-t} f = A^{-s} (A^{-(t - s)} f)`.
