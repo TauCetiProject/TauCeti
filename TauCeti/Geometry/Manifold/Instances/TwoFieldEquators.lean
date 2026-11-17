@@ -140,9 +140,10 @@ sphere (`TauCeti.quaternionFrame`) are continuous and orthonormal at every point
 theorem nonempty_homologicalOrientation_twoFieldEquators_quaternionFrame (hn : 2 ≤ n)
     (hij : i ≠ j) :
     Nonempty
-      (letI := twoFieldEquatorsChartedSpace (n := n) (u := fun x ↦ quaternionFrame (x : E) i)
-          (v := fun x ↦ quaternionFrame (x : E) j)
-          (continuous_quaternionFrame_sphere i) (continuous_quaternionFrame_sphere j)
+      (letI := twoFieldEquatorsChartedSpace (E := E) (n := n)
+          (u := fun x ↦ quaternionFrame (x : E) i) (v := fun x ↦ quaternionFrame (x : E) j)
+          ((continuous_quaternionFrame i).comp continuous_subtype_val)
+          ((continuous_quaternionFrame j).comp continuous_subtype_val)
           (fun x : sphere (0 : E) 1 ↦
             orthonormal_quaternionFrame_pair_of_ne (norm_eq_of_mem_sphere x) hij);
         HomologicalOrientation

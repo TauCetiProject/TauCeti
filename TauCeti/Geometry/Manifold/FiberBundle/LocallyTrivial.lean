@@ -150,8 +150,8 @@ end Charts
 
 section Orientation
 
-variable {Z B F : Type} [TopologicalSpace Z] [T2Space Z] [TopologicalSpace B] [TopologicalSpace F]
-  {proj : Z → B} {n m : ℕ} [ChartedSpace (EuclideanSpace ℝ (Fin n)) B]
+variable {Z : Type} {B F : Type*} [TopologicalSpace Z] [T2Space Z] [TopologicalSpace B]
+  [TopologicalSpace F] {proj : Z → B} {n m : ℕ} [ChartedSpace (EuclideanSpace ℝ (Fin n)) B]
   [ChartedSpace (EuclideanSpace ℝ (Fin m)) F] [SimplyConnectedSpace B] [SimplyConnectedSpace F]
 
 /-- **The total space of a locally trivial map with simply connected base and fibre is
