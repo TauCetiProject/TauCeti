@@ -8,13 +8,14 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LpDecay
-import TauCeti.Analysis.PDE.FundamentalSolution.Planar.GradientEstimate
+import TauCeti.Analysis.PDE.Regularity.PlanarGradientEstimate
 public import TauCeti.Analysis.PDE.Vortex.Existence
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Sobolev.Poincare.Planar
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Continuity of the minimizer of Taubes's functional in the polynomial
@@ -88,8 +89,9 @@ not treated here.
 * `TauCeti.Vortex.continuous_reducedMinimizer`: the minimizer is continuous on families of
   polynomials of a fixed positive degree with continuous coefficients.
 * `TauCeti.Vortex.tendstoUniformly_reducedSolution`,
-  `TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`: under the same hypotheses, the smooth
-  reduced solutions and their derivatives converge uniformly on the plane.
+  `TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`: under the hypotheses of
+  `TauCeti.Vortex.tendsto_reducedMinimizer`, the smooth reduced solutions and their derivatives
+  converge uniformly on the plane.
 * `TauCeti.Vortex.exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le`: minimizers
   of Taubes's functional are bounded in `L∞`, uniformly over polynomials with a common bound on
   `2 ‖P'‖² / (1 + ‖P‖²)²` and minimizers with a common `L²` bound.
@@ -806,14 +808,6 @@ theorem continuous_reducedMinimizer {X : Type*} [TopologicalSpace X] {P : X → 
 
 /-! ### Uniform convergence of the reduced solutions -/
 
-/-- A continuous function on the plane bounded almost everywhere is bounded everywhere. -/
-private theorem abs_le_of_ae_abs_le {w : ℂ → ℝ} (hw : Continuous w) {M : ℝ}
-    (h : ∀ᵐ z, |w z| ≤ M) (z : ℂ) : |w z| ≤ M := by
-  have hc : IsClosed {z | |w z| ≤ M} := isClosed_le hw.abs continuous_const
-  have huniv := (Measure.dense_of_ae h).closure_eq
-  rw [hc.closure_eq] at huniv
-  exact Set.eq_univ_iff_forall.1 huniv z
-
 /-- Two-sided bounds on the Laplacian of the reduced solution `w` of `P`: if `|w| ≤ M` and
 `2 ‖P'‖² / (1 + ‖P‖²)² ≤ G`, then `-1 / 8 ≤ Δw ≤ exp (2M) / 8 + G`. -/
 private theorem laplacian_reducedSolution_bounds {P : Polynomial ℂ} (hm : 0 < P.natDegree)
@@ -882,7 +876,8 @@ private theorem exists_eventually_abs_laplacian_sub_le_and_tendsto_integral_sq {
   have hsup {P : Polynomial ℂ} (hm : 0 < P.natDegree)
       (hG : ∀ z, 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ 1024 * C)
       (hPB : ‖W1p.value (reducedMinimizer P)‖ ≤ B) (z : ℂ) : |reducedSolution P z| ≤ M := by
-    refine abs_le_of_ae_abs_le (contDiff_reducedSolution P).continuous ?_ z
+    refine (Continuous.ae_le_iff_le volume (contDiff_reducedSolution P).continuous.abs
+      continuous_const).1 ?_ z
     filter_upwards [hM P hm hG _ (forall_sobolevReducedFunctional_reducedMinimizer_le hm) hPB,
       value_reducedMinimizer_ae_eq_reducedSolution hm] with z hz hz'
     rwa [← hz']

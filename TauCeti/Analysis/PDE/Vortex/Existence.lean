@@ -65,8 +65,8 @@ All in the namespace `TauCeti.Vortex`:
 * `reducedSolution`: the smooth representative of the minimizer of Taubes's functional, a
   canonical such solution (`laplacian_reducedSolution`, `memLp_reducedSolution`,
   `tendsto_reducedSolution_cocompact`), characterized by `eq_reducedSolution_of_ae_eq`; for monic
-  `P` it gives a framed vortex with zero divisor `P`
-  (`equation_amplitudeField_reducedSolution_eq_zero`).
+  `P` it gives a framed vortex
+  (`equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue`).
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
 * `framedVortexSubMulAction`: the smooth framed degree-`m` vortices, preserved by smooth framed
@@ -156,8 +156,9 @@ the smooth function that agrees almost everywhere with the minimizer
 `TauCeti.Vortex.reducedMinimizer P` of Taubes's functional. It solves the reduced equation
 `Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` at every point
 (`TauCeti.Vortex.laplacian_reducedSolution`), and the field with amplitude `u₀ + w` and section
-`P`, `u₀` the background amplitude, is a framed vortex with zero divisor `P` when `P` is monic
-(`TauCeti.Vortex.equation_amplitudeField_reducedSolution_eq_zero`). It is `0` for constant `P`. -/
+`P`, `u₀` the background amplitude, is a framed vortex when `P` is monic
+(`TauCeti.Vortex.equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue`). It is
+`0` for constant `P`. -/
 def reducedSolution : ℂ → ℝ :=
   if hm : 0 < P.natDegree then
     (exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le hm
@@ -233,7 +234,8 @@ theorem tendsto_reducedSolution_cocompact :
 reconstructed from the amplitude `u₀ + w`, with `u₀` the background amplitude and `w` the reduced
 solution, and the section `P` solves the vortex equations everywhere and has the degree-`m` end
 framing `α(z) (z / ‖z‖)⁻ᵐ → 1` at infinity. -/
-theorem equation_amplitudeField_reducedSolution_eq_zero (hP : P.Monic) (hm : 0 < P.natDegree) :
+theorem equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue (hP : P.Monic)
+    (hm : 0 < P.natDegree) :
     (∀ z, equation (amplitudeField
       (fun z ↦ backgroundAmplitude P.eval z + reducedSolution P z) P.eval) z = 0) ∧
       Tendsto (fun z ↦ sectionValue
@@ -262,7 +264,7 @@ theorem exists_contDiff_equation_amplitudeField_eq_zero_and_tendsto (hP : P.Moni
     contDiff_amplitudeField (n := ⊤) ((contDiff_backgroundAmplitude
       ((P.differentiable.contDiff).restrict_scalars ℝ)).add (contDiff_reducedSolution P))
       ((P.differentiable.contDiff).restrict_scalars ℝ),
-    equation_amplitudeField_reducedSolution_eq_zero hP hm⟩
+    equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue hP hm⟩
 
 end ReducedSolution
 
