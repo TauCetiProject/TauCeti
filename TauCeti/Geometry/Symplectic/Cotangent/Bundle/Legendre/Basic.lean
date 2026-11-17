@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -30,7 +31,8 @@ derivative**, or **Legendre map**, `FL : TM → T*M`
 
 the derivative at `v` of `L` restricted to the fibre `T_x M`. This needs no chart or connection,
 since only derivatives along a single fibre occur, and it covers the identity of `M`. In a bundle
-chart with coordinates `(q, v)` it is the partial derivative `(q, v) ↦ (q, ∂L/∂v)`, so it loses one
+chart with coordinates `(q, v)` it is the partial derivative `(q, v) ↦ (q, ∂L/∂v)` of the local
+Lagrangian `L ∘ (chart)⁻¹` (`TauCeti.extChartAt_legendreMap_extChartAt_symm`), so it loses one
 degree of smoothness: if `L` is `C^n` then `FL` is `C^m` whenever `m + 1 ≤ n`
 (`TauCeti.contMDiff_legendreMap`).
 
@@ -41,7 +43,12 @@ one-form** `θ_L = FL^*λ` (`TauCeti.cartanForm`) and **Cartan two-form** `ω_L 
 symplectic form `ω = -dλ` of the cotangent bundle (`TauCeti.mpullback_legendreMap_symplecticForm`).
 Explicitly `θ_L(v)(ξ) = FL(v)(dπ ξ)` (`TauCeti.cartanForm_apply`). These are the structures
 through which a Lagrangian system on `TM` is compared with a Hamiltonian system on `T*M`: when `FL`
-is a diffeomorphism, the corresponding Hamiltonian is `E_L ∘ FL⁻¹`.
+is a diffeomorphism, the corresponding Hamiltonian is `E_L ∘ FL⁻¹`. On a boundaryless manifold,
+read in a tangent-bundle chart with local Lagrangian `ℓ`, the differential of `FL` is that of the
+Legendre map of `ℓ` (`TauCeti.mfderiv_legendreMap_eq_fderiv_linearLegendreMap`), `dE_L` is the
+derivative of the local energy (`TauCeti.mvfderiv_lagrangianEnergy_eq_fderiv`), and `ω_L` is the
+pullback of the canonical form of `E × E'` by that differential
+(`TauCeti.eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap`).
 
 Differentiating the Legendre map once more along the fibre gives the **fibre Hessian**
 (`TauCeti.fiberHessian`): at a tangent vector `v` at `x` it is the bilinear form on `T_x M` given by
@@ -81,6 +88,8 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
 
 * `TauCeti.legendreMap`: the fibre derivative `FL : TM → T*M` of a Lagrangian.
 * `TauCeti.contMDiff_legendreMap`: `FL` is `C^m` when `L` is `C^n` and `m + 1 ≤ n`.
+* `TauCeti.extChartAt_legendreMap_extChartAt_symm`: in a tangent-bundle chart, `FL` is the
+  Legendre map `TauCeti.linearLegendreMap` of the local Lagrangian.
 * `TauCeti.lagrangianEnergy`: the energy `E_L(v) = FL(v)(v) - L(v)`, with
   `TauCeti.contMDiff_lagrangianEnergy`.
 * `TauCeti.fiberHessian`, `TauCeti.IsRegularLagrangian`: the fibre Hessian of a Lagrangian, and
@@ -97,6 +106,10 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
   `ω_L = -dθ_L = FL^*ω`.
 * `TauCeti.IsRegularLagrangian.isSymplectic_cartanTwoForm`: `ω_L` is symplectic for a smooth
   regular Lagrangian.
+* `TauCeti.mfderiv_legendreMap_eq_fderiv_linearLegendreMap`,
+  `TauCeti.mvfderiv_lagrangianEnergy_eq_fderiv`,
+  `TauCeti.eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap`: on a boundaryless manifold, the
+  differentials of `FL` and `E_L`, and `ω_L`, in a tangent-bundle chart.
 * `TauCeti.mechanicalLagrangian`: the Lagrangian `½ g(v, v) - V(x)`, with its Legendre map,
   energy and fibre Hessian, and its regularity for `g` invertible onto the dual, in particular
   for positive definite `g` in finite dimensions.
@@ -772,5 +785,123 @@ theorem isRegularLagrangian_mechanicalLagrangian [FiniteDimensional ℝ E]
     ContinuousLinearMap.isInvertible_of_pos (E := E) (hpos x)
 
 end Mechanical
+
+/-! ### The Legendre map in tangent-bundle charts -/
+
+section Chart
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M]
+
+/-- **The Legendre map in a tangent-bundle chart.** Read in the tangent-bundle chart at `v` and the
+cotangent-bundle chart at `FL(v)`, the Legendre map is the Legendre map
+`(q, u) ↦ (q, ∂_u ℓ(q, u))` of the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
+theorem extChartAt_legendreMap_extChartAt_symm (L : TangentBundle I M → ℝ) (v : TangentBundle I M)
+    {y : E × E} (hy : y ∈ (extChartAt I.tangent v).target) :
+    extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L v)
+        (legendreMap L ((extChartAt I.tangent v).symm y)) =
+      linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y := by
+  obtain ⟨hb, hw2⟩ := Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd v hy
+  set w := (extChartAt I.tangent v).symm y
+  have hy₁ : y.1 ∈ (extChartAt I v.proj).target := Bundle.fst_mem_extChartAt_target v hy
+  have hwproj : w.proj = (extChartAt I v.proj).symm y.1 := Bundle.proj_extChartAt_symm v hy
+  rw [CotangentBundle.extChartAt_apply]
+  refine Prod.ext ?_ ?_
+  · simp only [linearLegendreMap_fst, proj_legendreMap, hwproj]
+    exact (extChartAt I v.proj).right_inv hy₁
+  · -- The base point of `FL w` is that of `w`, by definition of the Legendre map.
+    refine (legendreMap_snd_comp_symmL L hb).trans ?_
+    rw [linearLegendreMap_snd, hw2]
+    congr 1
+    funext u
+    simp only [Function.comp_apply]
+    rw [Bundle.extChartAt_symm_apply_of_mem_baseSet v (hwproj ▸ hb), ← hwproj,
+      Trivialization.symmL_apply _ hb]
+
+/-- In the tangent-bundle chart at `v`, the pairing `FL(w)(w)` in the energy of a tangent vector
+`w` with coordinates `y` is `∂_u ℓ(y)(y.2)`, for the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
+theorem legendreMap_snd_extChartAt_symm (L : TangentBundle I M → ℝ)
+    (v : TangentBundle I M) {y : E × E} (hy : y ∈ (extChartAt I.tangent v).target) :
+    (legendreMap L ((extChartAt I.tangent v).symm y)).2 ((extChartAt I.tangent v).symm y).2 =
+      (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y).2 y.2 := by
+  obtain ⟨hb, hw2⟩ := Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd v hy
+  set w := (extChartAt I.tangent v).symm y
+  set e := trivializationAt E (TangentSpace I) v.proj
+  have h := congrArg Prod.snd (extChartAt_legendreMap_extChartAt_symm L v hy)
+  rw [CotangentBundle.extChartAt_apply] at h
+  rw [← h, ← hw2]
+  exact congrArg (legendreMap L w).2
+    ((Trivialization.symmL_apply e hb _).trans (e.symm_proj_apply w hb)).symm
+
+end Chart
+
+/-! ### The differentials of `FL` and `E_L`, and `ω_L`, in tangent-bundle charts -/
+
+section ChartDifferential
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [I.Boundaryless] {L : TangentBundle I M → ℝ}
+
+section TwiceDifferentiable
+
+variable [IsManifold I 2 M] {n : WithTop ℕ∞}
+
+/-- **The differential of the Legendre map in a tangent-bundle chart.** On a boundaryless
+manifold, for a `C^n` Lagrangian with `2 ≤ n`, the differential of `FL` at `v`, read in the
+preferred charts, is the derivative of the Legendre map of the local Lagrangian
+`ℓ = L ∘ (chart at v)⁻¹` at the coordinates of `v`. -/
+theorem mfderiv_legendreMap_eq_fderiv_linearLegendreMap (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) n L)
+    (hn : 2 ≤ n) (v : TangentBundle I M) :
+    mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v =
+      fderiv ℝ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm))
+        (extChartAt I.tangent v v) := by
+  have hFL := (contMDiff_legendreMap (m := 1) hL hn v).mdifferentiableAt one_ne_zero
+  rw [hFL.mfderiv, ModelWithCorners.range_eq_univ, fderivWithin_univ]
+  refine Filter.EventuallyEq.fderiv_eq ?_
+  filter_upwards [extChartAt_target_mem_nhds (I := I.tangent) v] with y hy
+  exact extChartAt_legendreMap_extChartAt_symm L v hy
+
+/-- **The differential of the energy in a tangent-bundle chart.** On a boundaryless manifold, for
+a `C^n` Lagrangian with `2 ≤ n`, the differential of `E_L` at `v` is the derivative of the energy
+`∂_u ℓ(y)(y.2) - ℓ(y)` of the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹` at the coordinates of
+`v`. -/
+theorem mvfderiv_lagrangianEnergy_eq_fderiv (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) n L)
+    (hn : 2 ≤ n) (v : TangentBundle I M) :
+    mvfderiv I.tangent (lagrangianEnergy L) v =
+      fderiv ℝ (fun y ↦ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y).2 y.2 -
+        (L ∘ (extChartAt I.tangent v).symm) y) (extChartAt I.tangent v v) := by
+  have hE := (contMDiff_lagrangianEnergy (m := 1) hL hn v).mdifferentiableAt
+    one_ne_zero
+  rw [mvfderiv_eq_fderivWithin_extChartAt_target hE,
+    fderivWithin_of_isOpen (isOpen_extChartAt_target v) (mem_extChartAt_target v)]
+  refine Filter.EventuallyEq.fderiv_eq ?_
+  filter_upwards [extChartAt_target_mem_nhds (I := I.tangent) v] with y hy
+  simp only [Function.comp_apply, lagrangianEnergy_apply, legendreMap_snd_extChartAt_symm L v hy]
+
+end TwiceDifferentiable
+
+variable [IsManifold I ∞ M]
+
+/-- **The Cartan two-form in a tangent-bundle chart.** On a boundaryless manifold, `ω_L` at `v` is
+the pullback of the canonical symplectic form of `E × E'` by the derivative of the Legendre map of
+the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
+theorem eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (v : TangentBundle I M) (X W : TangentSpace I.tangent v) :
+    SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X W =
+      strongDualCotangentSymplecticForm
+        (fderiv ℝ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm))
+          (extChartAt I.tangent v v) X)
+        (fderiv ℝ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm))
+          (extChartAt I.tangent v v) W) := by
+  rw [← mpullback_legendreMap_symplecticForm hL,
+    SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl),
+    CotangentBundle.eval₂_symplecticForm,
+    mfderiv_legendreMap_eq_fderiv_linearLegendreMap hL (by simp)]
+  -- Both sides evaluate the canonical form on the same two vectors of the model `E × E'`.
+  rfl
+
+end ChartDifferential
 
 end TauCeti
