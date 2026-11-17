@@ -22,12 +22,13 @@ class of the lifting modulo `H¹₀(Ω)`, not on its values in the interior. The
 For zero forcing its action on liftings is an idempotent projection onto weakly homogeneous
 solutions. More generally, a solved lifting can replace the original lifting for any forcing.
 
-For operator-norm expressions, activate the local instance `liftingOperatorNorm`, as well as
-the usual Sobolev normed-space instances. This shortcut prevents instance synthesis from
-expanding the nested Sobolev subtypes.
+For operator-norm expressions, use `open scoped DirichletLifting` together with the usual
+Sobolev normed-space instances and the two `W1p0.instStrongDualNormed*` shortcuts.
+The scope supplies the full canonical seminormed group and real normed space structures on
+joint lifting operators, avoiding expansion of nested Sobolev subtypes in instance synthesis.
 
-The construction uses `IsCoercive.solutionWithLifting`, the Lax–Milgram solution for the
-correction `u - g` with forcing `ℓ - B(g, ·)`.
+The construction uses `IsCoercive.solutionWithLifting`, which adds `g` to the Lax–Milgram
+solution for the correction `u - g` with forcing `ℓ - B(g, ·)`.
 
 ## References
 
@@ -50,24 +51,49 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 
-/-- Shortcut for norm synthesis on operators with Sobolev-dual input, avoiding expansion
-of the nested Sobolev subtypes. -/
-noncomputable local instance forcingNormedAddCommGroup :
-    NormedAddCommGroup (StrongDual ℝ (W1p0 mu Omega 2)) := inferInstance
+attribute [local instance] W1p0.instStrongDualNormedAddCommGroup W1p0.instStrongDualNormedSpace
 
-/-- Shortcut for the real normed space structure on the forcing space. -/
-noncomputable local instance forcingNormedSpace :
-    NormedSpace ℝ (StrongDual ℝ (W1p0 mu Omega 2)) := inferInstance
+/-! ### Opt-in operator-space shortcuts
 
-/-- The Sobolev topology from its seminormed structure, kept syntactically aligned for
-operator-norm instance synthesis. -/
-noncomputable local instance liftingTopology : TopologicalSpace (W1p mu Omega 2) :=
-  (inferInstance : SeminormedAddCommGroup (W1p mu Omega 2)).toUniformSpace.toTopologicalSpace
+`open scoped DirichletLifting` activates the canonical structures and projection shortcuts
+below. They are needed when operator-norm lemmas infer the operator space before its Sobolev
+parameters are known; without them even `norm_nonneg` can exceed the default heartbeat limit.
+They do not replace the canonical subtype topologies on the input or output spaces. -/
 
-/-- Shortcut for the canonical operator norm on joint lifting and forcing maps. -/
-noncomputable local instance liftingOperatorNorm :
-    Norm ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) := by
-  infer_instance
+namespace DirichletLifting
+
+/-- The canonical seminormed group structure on joint lifting operators, cached for synthesis. -/
+scoped instance instSeminormedAddCommGroup :
+    SeminormedAddCommGroup
+      ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) :=
+  ContinuousLinearMap.toSeminormedAddCommGroup
+
+/-- The canonical real normed space structure on joint lifting operators, cached for synthesis. -/
+scoped instance instNormedSpace :
+    NormedSpace ℝ
+      ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) :=
+  ContinuousLinearMap.toNormedSpace
+
+/-- Addition from the cached seminormed structure, avoiding topology comparisons in
+`norm_add_le`. -/
+scoped instance instAdd :
+    Add ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) :=
+  instSeminormedAddCommGroup.toAdd
+
+/-- Subtraction from the cached seminormed structure, avoiding topology comparisons in
+`norm_sub_le`. -/
+scoped instance instSub :
+    Sub ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) :=
+  instSeminormedAddCommGroup.toSub
+
+/-- Norm compatibility with scalar multiplication, cached for `norm_smul`. -/
+scoped instance instNormSMulClass :
+    NormSMulClass ℝ
+      ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) := inferInstance
+
+end DirichletLifting
+
+open scoped DirichletLifting
 
 variable (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
   (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
@@ -120,7 +146,7 @@ theorem dirichletSolutionWithLiftingL_sub_mem (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
     dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) - g ∈ w1p0Submodule mu Omega 2 := by
   obtain ⟨w, hw⟩ := (liftingCoercive hcoeff hcoercive).solutionWithLifting_sub_mem_range g ℓ
-  rw [liftingOperator_eq, ← hw]
+  rw [liftingOperator_eq, ← hw, Submodule.subtypeL_apply, ← ClosedSubmodule.mem_toSubmodule_iff]
   exact w.2
 
 /-- The Dirichlet solution operator satisfies the weak equation against every `H¹₀` test. -/
@@ -128,8 +154,8 @@ theorem dirichletSolutionWithLiftingL_sub_mem (g : W1p mu Omega 2)
 theorem energyFormH1_dirichletSolutionWithLiftingL (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) (v : W1p0 mu Omega 2) :
     energyFormH1 a b c (dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ)) v = ℓ v := by
-  rw [← energyFormH1L_apply hcoeff, liftingOperator_eq]
-  exact (liftingCoercive hcoeff hcoercive).apply_solutionWithLifting g ℓ v
+  simpa only [liftingOperator_eq, energyFormH1L_apply, Submodule.subtypeL_apply] using
+    (liftingCoercive hcoeff hcoercive).apply_solutionWithLifting g ℓ v
 
 /-- Characterization of the solution operator by its boundary class and weak equation. -/
 theorem dirichletSolutionWithLiftingL_eq_iff {g u : W1p mu Omega 2}
@@ -181,13 +207,10 @@ theorem dirichletSolutionWithLiftingL_coe (w : W1p0 mu Omega 2)
 theorem dirichletSolutionWithLiftingL_zero_dirichletForcing (f : Lp ℝ 2 (mu.restrict Omega)) :
     dirichletSolutionWithLiftingL hcoeff hcoercive (0, dirichletForcing f) =
       (weakSolutionDirichlet hcoeff hcoercive f : W1p mu Omega 2) := by
-  rw [dirichletSolutionWithLiftingL_zero]
-  congr 1
-  apply eq_weakSolutionDirichlet hcoeff hcoercive
-  rw [isWeakSolutionDirichlet_iff_inner]
-  intro v
-  rw [← dirichletForcing_apply, ← energyFormH1L0_apply hcoeff]
-  exact hcoercive.apply_solutionOfFunctional_eq (dirichletForcing f) v
+  have hweak := isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive f
+  exact (dirichletSolutionWithLiftingL_eq_iff hcoeff hcoercive).2
+    ⟨by rw [sub_zero]; exact (weakSolutionDirichlet hcoeff hcoercive f).2,
+      hweak.energyFormH1_eq_dirichletForcing⟩
 
 variable {C : ℝ} (hC : 0 < C)
   (hlower : ∀ w : W1p0 mu Omega 2,
@@ -209,26 +232,26 @@ theorem norm_dirichletSolutionWithLiftingL_apply_le (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
     ‖dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ)‖ ≤
       ‖g‖ + (‖ℓ‖ + ‖energyFormH1L hcoeff‖ * ‖g‖) / C := by
+  rw [liftingOperator_eq]
+  refine ((liftingCoercive hcoeff hcoercive).norm_solutionWithLifting_apply_le hC
+    (fun w => by simpa only [energyFormH1L_apply, Submodule.subtypeL_apply] using hlower w)
+    g ℓ).trans ?_
   calc
-    _ ≤ ‖dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) - g‖ + ‖g‖ :=
-      norm_le_norm_sub_add _ _
-    _ ≤ _ := by
-      linarith [norm_dirichletSolutionWithLiftingL_sub_le hcoeff hcoercive hC hlower g ℓ]
+    _ ≤ ‖g‖ + 1 * ((‖ℓ‖ + ‖energyFormH1L hcoeff‖ * ‖g‖ * 1) / C) := by
+      gcongr <;> exact Submodule.norm_subtypeL_le _
+    _ = _ := by ring
 
 /-- Operator-norm bound for the joint boundary-lifting and forcing solution map. -/
 theorem norm_dirichletSolutionWithLiftingL_le :
     ‖dirichletSolutionWithLiftingL hcoeff hcoercive‖ ≤
       1 + (1 + ‖energyFormH1L hcoeff‖) / C := by
-  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-  intro p
+  rw [liftingOperator_eq]
+  refine ((liftingCoercive hcoeff hcoercive).norm_solutionWithLifting_le hC
+    (fun w => by
+      simpa only [energyFormH1L_apply, Submodule.subtypeL_apply] using hlower w)).trans ?_
   calc
-    _ ≤ ‖p.1‖ + (‖p.2‖ + ‖energyFormH1L hcoeff‖ * ‖p.1‖) / C :=
-      norm_dirichletSolutionWithLiftingL_apply_le hcoeff hcoercive hC hlower p.1 p.2
-    _ ≤ ‖p‖ + (‖p‖ + ‖energyFormH1L hcoeff‖ * ‖p‖) / C := by
-      gcongr
-      · exact norm_fst_le p
-      · exact norm_snd_le p
-      · exact norm_fst_le p
+    _ ≤ 1 + 1 * ((1 + ‖energyFormH1L hcoeff‖ * 1) / C) := by
+      gcongr <;> exact Submodule.norm_subtypeL_le _
     _ = _ := by ring
 
 end TauCeti.PDE

@@ -106,7 +106,8 @@ theorem solutionWithLifting_eq_iff_sub_mem_range (h : IsCoercive (B.bilinearComp
     rw [map_sub, hw, hw']
     abel
 
-/-- Replacing the lifting by any lifted solution preserves its boundary class. -/
+/-- Replacing the lifting `g` by the lifted solution for `(g, ℓ')` leaves the solution for
+`(g, ℓ)` unchanged. -/
 @[simp]
 theorem solutionWithLifting_solutionWithLifting (h : IsCoercive (B.bilinearComp S S))
     (g : H) (ℓ' ℓ : StrongDual ℝ V) :
