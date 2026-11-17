@@ -389,13 +389,9 @@ theorem hasDerivAt_timeDependentFlowOf_self {s : ℝ → S} {β : S} (t : ℝ) (
     HasDerivAt (fun u ↦ A.eval (A.pull (timeDependentFlowOf X t u) (s u)) y)
       (A.eval β y) t := by
   have hX₁ := hX.of_le (m := 1) one_le_two
-  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I 2
-      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((t, t), y) :=
-    (contMDiffOn_timeDependentFlowOf (n := 2) one_le_two hX).contMDiffAt
-      ((isOpen_timeDependentFlowDomain hX₁).mem_nhds (mem_timeDependentFlowDomain_self hX₁ t y))
   exact hid (Eventually.of_forall (timeDependentFlowOf_self X t))
-    (hflow.comp (t, y) (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt)
+    (contMDiffAt_uncurry_timeDependentFlowOf (n := 2) one_le_two hX
+      (mem_timeDependentFlowDomain_self hX₁ t y))
     (Eventually.of_forall fun x ↦
       hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x))
 
