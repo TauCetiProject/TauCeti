@@ -13,6 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Complex Gaussians as Schwartz functions
@@ -42,7 +43,8 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   its values.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
-* `SchwartzMap.eLpNorm_gaussian`: its `Lᵖ` norms `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`.
+* `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
+  `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`, and its `L^∞` norm `1`.
 * `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
   `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
@@ -153,10 +155,11 @@ theorem eLpNorm_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpa
     (gaussian hb).continuous.aestronglyMeasurable]
   have hpow (x : V) : ‖gaussian hb x‖ₑ ^ p.toReal =
       ENNReal.ofReal (Real.exp (-(b.re * p.toReal) * ‖x‖ ^ 2)) := by
-    rw [← ofReal_norm, gaussian_apply, norm_exp,
-      ENNReal.ofReal_rpow_of_nonneg (Real.exp_nonneg _) hp'.le, ← Real.exp_mul,
-      ← ofReal_pow, mul_comm (-b), re_ofReal_mul, neg_re]
-    ring_nf
+    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp'.le]
+    simp only [gaussian_apply, norm_exp, ← Real.exp_mul]
+    congr 2
+    simp only [mul_re, neg_re, neg_im, ← ofReal_pow, ofReal_re, ofReal_im, mul_zero, sub_zero]
+    ring
   have hint : Integrable (fun x : V ↦ Real.exp (-(b.re * p.toReal) * ‖x‖ ^ 2)) := by
     refine (GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := V)
       (show 0 < ((b.re * p.toReal : ℝ) : ℂ).re by simpa using hbp) 0 0).norm.congr
@@ -170,6 +173,30 @@ theorem eLpNorm_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpa
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity), ← Real.rpow_mul (by positivity)]
   congr 2
   field_simp
+
+open MeasureTheory Filter in
+open scoped ENNReal in
+/-- **The supremum of the Gaussian.** For `0 < b.re`, the Gaussian `exp (-b ‖x‖²)` has `L^∞`
+norm `1`, its modulus at the origin. -/
+theorem eLpNorm_gaussian_top [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
+    (hb : 0 < b.re) : eLpNorm (gaussian hb : 𝓢(V, ℂ)) ∞ volume = 1 := by
+  have hbound (x : V) : ‖gaussian hb x‖ ≤ 1 := by
+    rw [gaussian_apply, norm_exp, Real.exp_le_one_iff]
+    simp only [mul_re, neg_re, neg_im, ← ofReal_pow, ofReal_re, ofReal_im, mul_zero, sub_zero]
+    nlinarith [sq_nonneg ‖x‖]
+  have hm : MemLp (gaussian hb : 𝓢(V, ℂ)) ∞ volume :=
+    memLp_top_of_bound (gaussian hb).continuous.aestronglyMeasurable 1
+      (Eventually.of_forall hbound)
+  rw [eLpNorm_exponent_top (gaussian hb).continuous.aestronglyMeasurable]
+  refine le_antisymm (by simpa using eLpNormEssSup_le_of_ae_bound (Eventually.of_forall hbound)) ?_
+  -- The bound is attained at the origin, where the Gaussian is continuous.
+  have h0 : ‖gaussian hb (0 : V)‖ = 1 := by simp [gaussian_apply]
+  rw [← ENNReal.ofReal_one, ← h0, ← eLpNorm_exponent_top
+    (gaussian hb).continuous.aestronglyMeasurable]
+  refine ENNReal.ofReal_le_of_le_toReal ?_
+  rw [← Lp.norm_toLp _ hm]
+  exact Lp.norm_le_norm_top_of_ae_eq_of_continuousAt hm.coeFn_toLp
+    (gaussian hb).continuous.continuousAt
 
 end SchwartzMap
 

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
-import TauCeti.MeasureTheory.Function.Lp.Norm
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+public import TauCeti.Analysis.PDE.Schrodinger.Basic
+import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
 # The Schrödinger evolution of a Gaussian
@@ -38,8 +40,9 @@ This is the basic test case of the dispersive and Strichartz estimates.
   nor the constant can be improved.
 * **The time integrability of the Strichartz norms.** The function `t ↦ ‖S(t) g‖_r` lies in
   `L^q(ℝ)` exactly when `q n (1/2 - 1/r) > 1`. In particular it does so for every admissible pair
-  `2/q + n/r = n/2` with `q < ∞`, where `q n (1/2 - 1/r) = 2`: on the line, the Gaussian evolution
-  lies in `L⁴_t L^∞_x`, the admissible pair `(4, ∞)` of dimension one, but not in `L²_t L^∞_x`.
+  `2/q + n/r = n/2` with `q < ∞`, where `q n (1/2 - 1/r) = 2`. On the line the Gaussian evolution
+  lies in `L⁴_t L^∞_x`, at the endpoint `(4, ∞)` of the admissible range, but not in
+  `L²_t L^∞_x`, a non-admissible pair where `q n (1/2 - 1/r) = 1`.
 
 ## Main declarations
 
@@ -159,60 +162,25 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
 
 /-! ### Lebesgue norms -/
 
-/-- The `L^∞` norm of the real Gaussian `u^(-n/4) exp(-π ‖x‖² / u)` is its value `u^(-n/4)` at the
-origin. -/
-private theorem eLpNorm_rpow_mul_rexp_div_top {u : ℝ} (hu : 0 < u) :
-    eLpNorm (fun x : E ↦ u ^ (-(Module.finrank ℝ E : ℝ) / 4) * rexp (-π * ‖x‖ ^ 2 / u)) ∞
-        volume = ENNReal.ofReal (u ^ (-(Module.finrank ℝ E : ℝ) / 4)) := by
-  set φ : E → ℝ := fun x ↦ u ^ (-(Module.finrank ℝ E : ℝ) / 4) * rexp (-π * ‖x‖ ^ 2 / u)
-  have hφ : Continuous φ := continuous_rpow_mul_rexp_div _
-  have hbound (x : E) : ‖φ x‖ ≤ u ^ (-(Module.finrank ℝ E : ℝ) / 4) := by
-    rw [Real.norm_of_nonneg (by positivity)]
-    refine mul_le_of_le_one_right (by positivity) (Real.exp_le_one_iff.2 ?_)
-    exact div_nonpos_of_nonpos_of_nonneg (by nlinarith [pi_pos, sq_nonneg ‖x‖]) hu.le
-  have hm : MemLp φ ∞ volume :=
-    memLp_top_of_bound hφ.aestronglyMeasurable _ (Eventually.of_forall hbound)
-  rw [eLpNorm_exponent_top hφ.aestronglyMeasurable]
-  refine le_antisymm (eLpNormEssSup_le_of_ae_bound (Eventually.of_forall hbound)) ?_
-  -- The bound is attained at the origin, where `φ` is continuous.
-  have h0 : ‖φ 0‖ = u ^ (-(Module.finrank ℝ E : ℝ) / 4) := by
-    rw [Real.norm_of_nonneg (by positivity)]
-    simp [φ]
-  rw [← h0, ← eLpNorm_exponent_top hφ.aestronglyMeasurable]
-  refine ENNReal.ofReal_le_of_le_toReal ?_
-  rw [← Lp.norm_toLp φ hm]
-  exact Lp.norm_le_norm_top_of_ae_eq_of_continuousAt hm.coeFn_toLp hφ.continuousAt
-
-/-- The `Lʳ` norm of the real Gaussian `u^(-n/4) exp(-π ‖x‖² / u)`, `0 < r < ∞`. -/
-private theorem eLpNorm_rpow_mul_rexp_div {u : ℝ} (hu : 0 < u) {r : ℝ≥0∞} (hr0 : r ≠ 0)
-    (hr : r ≠ ∞) :
+/-- The real Gaussian `u^(-n/4) exp(-π ‖x‖² / u)` is `u^(-n/4)` times the Schwartz Gaussian
+`exp(-(π / u) ‖x‖²)`, in every Lebesgue norm. -/
+private theorem eLpNorm_rpow_mul_rexp_div {u : ℝ} (hu : 0 < u) (r : ℝ≥0∞) :
     eLpNorm (fun x : E ↦ u ^ (-(Module.finrank ℝ E : ℝ) / 4) * rexp (-π * ‖x‖ ^ 2 / u)) r
         volume =
-      ENNReal.ofReal (r.toReal ^ (-(Module.finrank ℝ E : ℝ) / (2 * r.toReal)) *
-        u ^ (-(Module.finrank ℝ E : ℝ) * (2⁻¹ - r.toReal⁻¹) / 2)) := by
-  have hρ : 0 < r.toReal := ENNReal.toReal_pos hr0 hr
+      ENNReal.ofReal (u ^ (-(Module.finrank ℝ E : ℝ) / 4)) *
+        eLpNorm (SchwartzMap.gaussian (b := ((π / u : ℝ) : ℂ))
+          (by simpa using div_pos pi_pos hu) : 𝓢(E, ℂ)) r volume := by
   have hf : (fun x : E ↦ u ^ (-(Module.finrank ℝ E : ℝ) / 4) * rexp (-π * ‖x‖ ^ 2 / u)) =
       u ^ (-(Module.finrank ℝ E : ℝ) / 4) • fun x : E ↦ rexp (-(π / u) * ‖x‖ ^ 2) := by
     ext x
     rw [Pi.smul_apply, smul_eq_mul]
     ring_nf
-  -- The real Gaussian `exp(-(π / u) ‖x‖²)` has the norms of the Schwartz Gaussian.
-  have hb : 0 < ((π / u : ℝ) : ℂ).re := by simpa using div_pos pi_pos hu
-  have hg : eLpNorm (fun x : E ↦ rexp (-(π / u) * ‖x‖ ^ 2)) r volume =
-      eLpNorm (SchwartzMap.gaussian hb : 𝓢(E, ℂ)) r volume := by
-    refine eLpNorm_congr_norm_ae (Continuous.aestronglyMeasurable (by fun_prop))
-      (SchwartzMap.continuous _).aestronglyMeasurable (Eventually.of_forall fun x ↦ ?_)
-    rw [SchwartzMap.coe_gaussian_ofReal, norm_real]
-    ring_nf
-  rw [hf, eLpNorm_const_smul, hg, SchwartzMap.eLpNorm_gaussian hb hr0 hr, ofReal_re,
-    ← ofReal_norm, Real.norm_of_nonneg (by positivity), ← ENNReal.ofReal_mul (by positivity),
-    show π / (π / u * r.toReal) = u / r.toReal by field_simp,
-    Real.div_rpow hu.le hρ.le, mul_div_assoc', ← Real.rpow_add hu,
-    neg_div (2 * r.toReal) (Module.finrank ℝ E : ℝ),
-    Real.rpow_neg hρ.le, inv_mul_eq_div]
-  congr 3
-  field_simp
-  ring
+  rw [hf, eLpNorm_const_smul, ← ofReal_norm, Real.norm_of_nonneg (by positivity)]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Continuous.aestronglyMeasurable (by fun_prop))
+    (SchwartzMap.continuous _).aestronglyMeasurable (Eventually.of_forall fun x ↦ ?_)
+  rw [SchwartzMap.coe_gaussian_ofReal, norm_real]
+  ring_nf
 
 /-- **The modulus of the evolved Gaussian.** `|S(t) g (x)| = (1 + 16π²t²)^(-n/4)
 exp(-π ‖x‖² / (1 + 16π²t²))` for the Gaussian `g(x) = exp(-π ‖x‖²)`. -/
@@ -241,7 +209,8 @@ theorem eLpNorm_schrodingerPropagator_toLp_gaussian_top (t : ℝ) :
     eLpNorm (schrodingerPropagator ℂ t
         ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2)) ∞ volume =
       ENNReal.ofReal ((1 + 16 * π ^ 2 * t ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 4)) := by
-  rw [eLpNorm_schrodingerPropagator_toLp_gaussian_eq, eLpNorm_rpow_mul_rexp_div_top (by positivity)]
+  rw [eLpNorm_schrodingerPropagator_toLp_gaussian_eq, eLpNorm_rpow_mul_rexp_div (by positivity),
+    SchwartzMap.eLpNorm_gaussian_top, mul_one]
 
 /-- **The Lebesgue norms of the evolved Gaussian.** For `0 < r < ∞`,
 `‖S(t) g‖_r = r^(-n/(2r)) (1 + 16π²t²)^(-n (1/2 - 1/r) / 2)` for the Gaussian
@@ -252,8 +221,20 @@ theorem eLpNorm_schrodingerPropagator_toLp_gaussian {r : ℝ≥0∞} (hr0 : r �
         ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2)) r volume =
       ENNReal.ofReal (r.toReal ^ (-(Module.finrank ℝ E : ℝ) / (2 * r.toReal)) *
         (1 + 16 * π ^ 2 * t ^ 2) ^ (-(Module.finrank ℝ E : ℝ) * (2⁻¹ - r.toReal⁻¹) / 2)) := by
-  rw [eLpNorm_schrodingerPropagator_toLp_gaussian_eq,
-    eLpNorm_rpow_mul_rexp_div (by positivity) hr0 hr]
+  have hρ : 0 < r.toReal := ENNReal.toReal_pos hr0 hr
+  set u : ℝ := 1 + 16 * π ^ 2 * t ^ 2
+  have hu : 0 < u := by positivity
+  -- The real identity `u^(-n/4) (u / r)^(n/(2r)) = r^(-n/(2r)) u^(-n (1/2 - 1/r) / 2)`.
+  have key : u ^ (-(Module.finrank ℝ E : ℝ) / 4) *
+      (π / (π / u * r.toReal)) ^ ((Module.finrank ℝ E : ℝ) / (2 * r.toReal)) =
+      r.toReal ^ (-(Module.finrank ℝ E : ℝ) / (2 * r.toReal)) *
+        u ^ (-(Module.finrank ℝ E : ℝ) * (2⁻¹ - r.toReal⁻¹) / 2) := by
+    rw [show π / (π / u * r.toReal) = u * r.toReal⁻¹ by field_simp,
+      Real.mul_rpow hu.le (inv_nonneg.2 hρ.le), Real.inv_rpow hρ.le, ← Real.rpow_neg hρ.le,
+      ← mul_assoc, ← Real.rpow_add hu, mul_comm]
+    congr 2 <;> ring
+  rw [eLpNorm_schrodingerPropagator_toLp_gaussian_eq, eLpNorm_rpow_mul_rexp_div hu,
+    SchwartzMap.eLpNorm_gaussian _ hr0 hr, ofReal_re, ← ENNReal.ofReal_mul (by positivity), key]
 
 /-! ### Sharpness of the dispersive estimate -/
 
@@ -281,40 +262,48 @@ theorem tendsto_rpow_mul_eLpNorm_schrodingerPropagator_toLp_gaussian_top :
     filter_upwards [eventually_gt_atTop 0] with v hv
     field_simp
     ring
+  -- The product `(4π|t|)^(n/2) (1 + v)^(-n/4)` is `(v / (1 + v))^(n/4)`.
+  have key (t : ℝ) : (16 * π ^ 2 * t ^ 2 / (1 + 16 * π ^ 2 * t ^ 2)) ^
+      ((Module.finrank ℝ E : ℝ) / 4) = (4 * π * |t|) ^ ((Module.finrank ℝ E : ℝ) / 2) *
+        (1 + 16 * π ^ 2 * t ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 4) := by
+    have hv : (16 * π ^ 2 * t ^ 2) ^ ((Module.finrank ℝ E : ℝ) / 4) =
+        (4 * π * |t|) ^ ((Module.finrank ℝ E : ℝ) / 2) := by
+      rw [show 16 * π ^ 2 * t ^ 2 = (4 * π * |t|) ^ (2 : ℝ) by
+        rw [Real.rpow_two, mul_pow, sq_abs]; ring, ← Real.rpow_mul (by positivity)]
+      ring_nf
+    rw [Real.div_rpow (by positivity) (by positivity), hv, neg_div, Real.rpow_neg (by positivity),
+      div_eq_mul_inv]
   have hlim := (hfrac.comp hv).rpow_const (p := (Module.finrank ℝ E : ℝ) / 4) (Or.inl one_ne_zero)
   rw [Real.one_rpow] at hlim
   refine hlim.congr fun t ↦ ?_
   rw [eLpNorm_schrodingerPropagator_toLp_gaussian_top, ENNReal.toReal_ofReal (by positivity),
-    Function.comp_apply, Real.div_rpow (by positivity) (by positivity), div_eq_mul_inv,
-    ← Real.rpow_neg (by positivity), show 16 * π ^ 2 * t ^ 2 = (4 * π * |t|) ^ (2 : ℝ) by
-      rw [Real.rpow_two, mul_pow, sq_abs]; ring,
-    ← Real.rpow_mul (by positivity), neg_div]
-  ring_nf
+    Function.comp_apply, key]
 
 /-! ### Time integrability -/
 
 /-- `t ↦ c (1 + 16π²t²)^(-a/2)`, `c > 0`, lies in `L^q(ℝ)`, `0 < q < ∞`, exactly when
-`q a > 1`. -/
+`q a > 1`: it is a multiple of the dilated Japanese bracket `(1 + ‖4πt‖²)^(-a/2)`. -/
 private theorem memLp_mul_one_add_rpow_iff {c : ℝ} (hc : 0 < c) (a : ℝ) {q : ℝ≥0∞} (hq0 : q ≠ 0)
     (hq : q ≠ ∞) :
     MemLp (fun t : ℝ ↦ c * (1 + 16 * π ^ 2 * t ^ 2) ^ (-a / 2)) q volume ↔ 1 < q.toReal * a := by
-  rw [← integrable_norm_rpow_iff (by fun_prop :
-    Measurable fun t : ℝ ↦ c * (1 + 16 * π ^ 2 * t ^ 2) ^ (-a / 2)).aestronglyMeasurable hq0 hq]
-  have h (t : ℝ) : ‖c * (1 + 16 * π ^ 2 * t ^ 2) ^ (-a / 2)‖ ^ q.toReal =
-      c ^ q.toReal * (1 + ‖4 * π * t‖ ^ 2) ^ (-(q.toReal * a) / 2) := by
-    rw [Real.norm_of_nonneg (by positivity), Real.mul_rpow hc.le (by positivity),
-      ← Real.rpow_mul (by positivity), Real.norm_eq_abs, sq_abs]
-    congr 2 <;> ring
-  simp_rw [h]
-  rw [integrable_const_mul_iff (isUnit_iff_ne_zero.2 (by positivity)),
-    integrable_comp_mul_left_iff (fun s : ℝ ↦ (1 + ‖s‖ ^ 2) ^ (-(q.toReal * a) / 2))
-      (by positivity)]
-  refine ⟨fun hint ↦ ?_, fun h ↦ ?_⟩
-  · -- At the critical decay the bracket is not integrable over the cone `ℝ`.
-    by_contra! hle
-    exact not_integrableOn_rpow_neg_one_add_norm_sq volume (by simpa using hle) isOpen_univ
-      (fun _ _ _ _ ↦ Set.mem_univ _) (Set.mem_univ 1) one_ne_zero hint.integrableOn
-  · exact integrable_rpow_neg_one_add_norm_sq (by simpa using h)
+  set g : ℝ → ℝ := fun s ↦ (1 + ‖s‖ ^ 2) ^ (-a / 2)
+  have hf : (fun t : ℝ ↦ c * (1 + 16 * π ^ 2 * t ^ 2) ^ (-a / 2)) =
+      c • fun t ↦ g ((4 * π)⁻¹⁻¹ • t) := by
+    ext t
+    simp only [g, Pi.smul_apply, smul_eq_mul, inv_inv, Real.norm_eq_abs, sq_abs]
+    ring_nf
+  -- Scaling the variable and the value multiplies the `L^q` norm by a positive finite constant.
+  have he : eLpNorm (c • fun t ↦ g ((4 * π)⁻¹⁻¹ • t)) q volume =
+      ‖c‖ₑ * ENNReal.ofReal (|(4 * π)⁻¹| ^ (1 / q.toReal)) * eLpNorm g q volume := by
+    rw [eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume g (by positivity),
+      Module.finrank_self, Nat.cast_one, mul_assoc]
+  have hk0 : ‖c‖ₑ * ENNReal.ofReal (|(4 * π)⁻¹| ^ (1 / q.toReal)) ≠ 0 :=
+    mul_ne_zero (eNorm_ne_zero.2 hc.ne') (ENNReal.ofReal_pos.2 (by positivity)).ne'
+  have hiff := memLp_rpow_neg_one_add_norm_sq_iff (V := ℝ) volume a hq0 hq
+  rw [Module.finrank_self, Nat.cast_one] at hiff
+  rw [hf, ← hiff, memLp_iff, memLp_iff, he]
+  exact ⟨fun h ↦ ENNReal.lt_top_of_mul_ne_top_right h.ne hk0,
+    ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top ENNReal.ofReal_lt_top)⟩
 
 /-- **The exact time integrability of the Strichartz norms of the evolved Gaussian.** For
 `0 < q < ∞` and `0 < r ≤ ∞`, the function `t ↦ ‖S(t) g‖_r` of the Gaussian `g(x) = exp(-π ‖x‖²)`
@@ -341,9 +330,10 @@ theorem memLp_eLpNorm_schrodingerPropagator_toLp_gaussian_iff {q r : ℝ≥0∞}
     ring_nf
 
 /-- **The evolved Gaussian at the admissible pairs.** If `2/q + n/r = n/2` with `0 < q < ∞`, then
-`t ↦ ‖S(t) g‖_r` lies in `L^q(ℝ)` for the Gaussian `g(x) = exp(-π ‖x‖²)`. On the line this is the
-admissible pair `(4, ∞)`; the endpoint `q = 2` of the line fails there, since
-`q n (1/2 - 1/r) = 1` (`TauCeti.memLp_eLpNorm_schrodingerPropagator_toLp_gaussian_iff`). -/
+`t ↦ ‖S(t) g‖_r` lies in `L^q(ℝ)` for the Gaussian `g(x) = exp(-π ‖x‖²)`. On the line the
+admissible pairs are the `(q, r)` with `4 ≤ q` and `1/r = 1/2 - 2/q`, and `(4, ∞)` is the endpoint
+of this range. The non-admissible pair `(2, ∞)`, where `q n (1/2 - 1/r) = 1`, fails
+(`TauCeti.memLp_eLpNorm_schrodingerPropagator_toLp_gaussian_iff`). -/
 theorem memLp_eLpNorm_schrodingerPropagator_toLp_gaussian_of_admissible {q r : ℝ≥0∞}
     (hq0 : q ≠ 0) (hq : q ≠ ∞) (hr0 : r ≠ 0)
     (hqr : 2 * q.toReal⁻¹ + Module.finrank ℝ E * r.toReal⁻¹ = Module.finrank ℝ E / 2) :
