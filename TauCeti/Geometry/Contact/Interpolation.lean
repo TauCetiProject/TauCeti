@@ -167,8 +167,8 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt {K
 contact at every point of a set `K`, and let `α₁` agree with `α₀` at the points of `K`, with `dα₁`
 agreeing with `dα₀` on the hyperplanes `ker α₀`. Then there is a smooth partial diffeomorphism `φ`
 of `M`, whose source and target are open neighbourhoods of `K`, which fixes every point of `K` and
-pulls `α₁` back to a positive multiple of `α₀` on its source. Neither `K` nor `M` need be compact,
-and `α₀` and `α₁` need only be contact near `K`. -/
+pulls `α₁` back to a positive multiple of `α₀` on its source. Neither `K` nor `M` need be compact.
+Only `α₀` is assumed contact, and only at the points of `K`. -/
 theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
     (hc : ∀ x ∈ K, IsContactFormAt α₀.1 x) (hval : ∀ x ∈ K, α₁.1 x = α₀.1 x)
     (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.1 x, ∀ w ∈ RoughForm.ker α₀.1 x,

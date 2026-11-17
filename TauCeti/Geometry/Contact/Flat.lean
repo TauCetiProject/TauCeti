@@ -101,6 +101,18 @@ theorem contactFlat_apply (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpac
     α.contactFlat x v w = mextDeriv α.1 x ![v, w] + α.1 x ![v] * α.1 x ![w] := by
   simp [contactFlat, SmoothBundleForm.eval₂_apply]
 
+/-- The contact flat map evaluates as the bilinear form `dα + α ⊗ α` of linear algebra, the form
+whose left separation `Module.Dual.IsContact.separatingLeft_add_smulRight` characterizes contact
+covectors. -/
+theorem contactFlat_apply_eq_bilinFormAt_add_smulRight (α : SmoothForm I M ℝ 1) (x : M)
+    (v w : TangentSpace I x) :
+    α.contactFlat x v w = ((mextDerivₗ I 1 α).bilinFormAt x +
+      (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ).smulRight
+        (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)) v w := by
+  rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
+    LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
+    degreeOneEquiv_coe_apply, smul_eq_mul, contactFlat_apply]
+
 /-- **Contact flat maps of a smooth family of one-forms.** Let `α m` be one-forms on `M` depending
 on a parameter `m ∈ N`, and let `b : N → M`. If the values `(α m)_(b m)` and the exterior
 derivatives `(dα m)_(b m)` depend `C^n` on `m`, as sections along `b`, then so do the contact flat
@@ -172,11 +184,7 @@ theorem isInvertible_contactFlat_of_isContactFormAt [FiniteDimensional ℝ E] {x
     (h : IsContactFormAt α.1 x) : (α.contactFlat x).IsInvertible :=
   ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
     (isContactFormAt_iff_isContact.1 h).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v
-      fun w ↦ by
-        rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
-          LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
-          degreeOneEquiv_coe_apply, smul_eq_mul]
-        exact (contactFlat_apply α x v w).symm.trans (hv w)
+      fun w ↦ (contactFlat_apply_eq_bilinFormAt_add_smulRight α x v w).symm.trans (hv w)
 
 /-- **In odd dimension, an invertible contact flat map detects a contact point.** On a manifold
 modelled on a space of odd finite dimension, if the contact flat map of `α` at `x` is invertible,
@@ -189,12 +197,8 @@ theorem isContactFormAt_of_isInvertible_contactFlat [FiniteDimensional ℝ E]
   refine isContactFormAt_iff_isContact.2 (Module.Dual.isContact_of_separatingLeft_add_smulRight
     (V := TangentSpace I x) (isAlt_bilinFormAt _ x) hodd fun v hv ↦ h.bijective.1 ?_)
   ext w
-  have hvw := hv w
-  rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
-    LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
-    degreeOneEquiv_coe_apply, smul_eq_mul] at hvw
-  rw [contactFlat_apply, map_zero, zero_apply]
-  exact hvw
+  rw [contactFlat_apply_eq_bilinFormAt_add_smulRight, map_zero, zero_apply]
+  exact hv w
 
 /-- On a manifold modelled on a space of odd finite dimension, `α` satisfies the pointwise contact
 condition at `x` exactly when its contact flat map at `x` is invertible. -/
@@ -217,9 +221,8 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
       α.1 x ![v] = 1 ∧ ∀ w, mextDeriv α.1 x ![v, w] = 0 := by
   have h := (isContactForm_def.1 hα x).add_smulRight_apply_eq_self_iff
     (isAlt_bilinFormAt _ x) (r := v)
-  simp only [LinearMap.ext_iff, LinearMap.add_apply, LinearMap.smulRight_apply,
-    LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
-    LinearMap.zero_apply, smul_eq_mul] at h
+  simp only [LinearMap.ext_iff, ← contactFlat_apply_eq_bilinFormAt_add_smulRight,
+    LinearMap.zero_apply] at h
   rw [ContinuousLinearMap.ext_iff]
   simpa using h
 

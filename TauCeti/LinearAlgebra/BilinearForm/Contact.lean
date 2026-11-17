@@ -384,11 +384,9 @@ theorem IsContact.separatingLeft_add_smulRight (hB : B.IsAlt) (h : a.IsContact B
   simpa [w.2] using hv w
 
 /-- **The converse in odd dimension.** On a finite-dimensional space of odd dimension, if `B` is
-alternating and `B + a ⊗ a` is left-separating, then `a` is contact for `B`. The odd dimension
-gives a nonzero vector `k` in the kernel of `B`; since `B + a ⊗ a` is left-separating, `a k ≠ 0`,
-so `V = ker a ⊕ K k`, and a vector of `ker a` which is `B`-orthogonal to `ker a` is then
-`B`-orthogonal to everything. The dimension hypothesis is needed: on a symplectic plane, `a = 0`
-is not contact although `B + a ⊗ a = B` is left-separating. -/
+alternating and `B + a ⊗ a` is left-separating, then `a` is contact for `B`. The dimension
+hypothesis is needed: on a symplectic plane, `a = 0` is not contact although `B + a ⊗ a = B` is
+left-separating. -/
 theorem isContact_of_separatingLeft_add_smulRight [FiniteDimensional K V] (hB : B.IsAlt)
     (hodd : Odd (finrank K V)) (h : (B + a.smulRight a).SeparatingLeft) : a.IsContact B := by
   have hBv (v w : V) : (B + a.smulRight a) v w = B v w + a v * a w := by simp
