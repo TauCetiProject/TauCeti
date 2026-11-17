@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
+public import TauCeti.Algebra.Homology.ChainComplex.Exact
 
 /-!
 # Construction and comparison of projective resolutions
@@ -21,7 +22,13 @@ lift of the identity of `X`, so it is homotopic to Mathlib's comparison
 `ChainComplex.toProjectiveResolution` packages an augmented projective chain complex
 which is exact in positive degrees and exact at its augmentation. Its quasi-isomorphism proof
 is adapted from Mathlib's `CategoryTheory.ProjectiveResolution.of`, by Markus Himmel,
-Kim Morrison, Jakob von Raumer and Joël Riou.
+Kim Morrison, Jakob von Raumer and Joël Riou; the quasi-isomorphism itself, which needs no
+projectivity, is `ChainComplex.quasiIso_toSingle₀Equiv_symm`.
+
+A complex of projectives whose differentials factor through short exact sequences
+`0 ⟶ A (p + 1) ⟶ K.X p ⟶ A p ⟶ 0` is a projective resolution of `A 0`
+(`CategoryTheory.ProjectiveResolution.splice`), by the splicing lemmas of
+`TauCeti.Algebra.Homology.ChainComplex.Exact`.
 -/
 
 public section
@@ -33,6 +40,7 @@ namespace ChainComplex
 open CategoryTheory CategoryTheory.Limits
 
 variable {C : Type*} [Category* C] [Abelian C] {X : C}
+
 
 /-- An augmented complex of projectives, exact in positive degrees and at its epimorphic
 augmentation, is a projective resolution. -/
@@ -46,19 +54,7 @@ def toProjectiveResolution (K : ChainComplex C ℕ) (ε : K.X 0 ⟶ X) (hε : K.
   complex := K
   projective := hP
   π := (ChainComplex.toSingle₀Equiv _ _).symm ⟨ε, hε⟩
-  quasiIso := ⟨fun n => by
-    cases n with
-    | zero =>
-      have hπ := ChainComplex.toSingle₀Equiv_symm_apply_f_zero (C := K) ε hε
-      rw [ChainComplex.quasiIsoAt₀_iff,
-        ShortComplex.quasiIso_iff_of_zeros' _ (by simp) rfl rfl]
-      refine (ShortComplex.exact_and_epi_g_iff_of_iso
-        (S₂ := ShortComplex.mk _ _ hε) ?_).2 ⟨h₀, inferInstance⟩
-      exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-        (by simp) (by simp [hπ])
-    | succ n =>
-      rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _)]
-      exact h n⟩
+  quasiIso := quasiIso_toSingle₀Equiv_symm K ε hε h₀ h
 
 /-- The exact-complex construction retains the given complex. -/
 @[simp] theorem toProjectiveResolution_complex (K : ChainComplex C ℕ) (ε : K.X 0 ⟶ X) (hε)
@@ -71,9 +67,38 @@ def toProjectiveResolution (K : ChainComplex C ℕ) (ε : K.X 0 ⟶ X) (hε : K.
     (K.toProjectiveResolution ε hε hP h₀ h).π =
       (ChainComplex.toSingle₀Equiv _ _).symm ⟨ε, hε⟩ := (rfl)
 
+
 end ChainComplex
 
 namespace CategoryTheory.ProjectiveResolution
+
+section Splice
+
+variable {C : Type*} [Category* C] [Abelian C] {K : ChainComplex C ℕ} [∀ p, Projective (K.X p)]
+  {A : ℕ → C} (ι : ∀ p, A (p + 1) ⟶ K.X p) (ε : ∀ p, K.X p ⟶ A p) (w : ∀ p, ι p ≫ ε p = 0)
+  (hS : ∀ p, (ShortComplex.mk _ _ (w p)).ShortExact) (hd : ∀ p, K.d (p + 1) p = ε (p + 1) ≫ ι p)
+
+/-- **Splicing short exact sequences into a projective resolution.** A complex of projectives
+whose differentials factor as `K.X (p + 1) ⟶ A (p + 1) ⟶ K.X p` through short exact sequences
+`0 ⟶ A (p + 1) ⟶ K.X p ⟶ A p ⟶ 0` is a projective resolution of `A 0`, with augmentation
+`ε 0`. -/
+-- The body is exposed so that the complex of the resolution is `K` itself.
+@[expose]
+def splice : ProjectiveResolution (A 0) :=
+  have : Epi (ε 0) := (hS 0).epi_g
+  K.toProjectiveResolution (ε 0) (ChainComplex.d_one_zero_comp_of_shortExact ι ε w hd)
+    inferInstance (ChainComplex.exact_d_one_zero_of_shortExact ι ε w hS hd)
+    (ChainComplex.exactAt_succ_of_shortExact ι ε w hS hd)
+
+@[simp]
+lemma splice_complex : (splice ι ε w hS hd).complex = K := (rfl)
+
+@[simp]
+lemma splice_π_f_zero : (splice ι ε w hS hd).π.f 0 = ε 0 :=
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero (ε 0) _
+
+end Splice
+
 
 variable {C : Type*} [Category* C] [Abelian C] {X : C} (P Q : ProjectiveResolution X)
   (f : P.complex ⟶ Q.complex) (hf : f ≫ Q.π = P.π)

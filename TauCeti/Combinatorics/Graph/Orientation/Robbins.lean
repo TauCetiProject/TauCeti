@@ -170,9 +170,9 @@ theorem exists_stronglyConnected_orientation (d : G.EarDecomposition H)
 
 end EarDecomposition
 
-/-- The sufficient direction of Robbins' theorem: a finite `2`-edge-connected multigraph admits
-a strongly connected orientation. -/
-theorem IsEdgeConnected.exists_stronglyConnected_orientation [Finite V(G)] [Finite E(G)]
+/-- The sufficient direction of Robbins' theorem: a `2`-edge-connected multigraph with finitely
+many edges admits a strongly connected orientation. -/
+theorem IsEdgeConnected.exists_stronglyConnected_orientation [Finite E(G)]
     (hG : G.IsEdgeConnected 2) :
     ∃ o : G.Orientation, @Quiver.IsStronglyConnected G.vertexSet ⟨o.Hom⟩ := by
   cases isEmpty_or_nonempty G.vertexSet with
@@ -184,10 +184,10 @@ theorem IsEdgeConnected.exists_stronglyConnected_orientation [Finite V(G)] [Fini
         (isEdgeConnected_two_iff_exists_isVertexStart_earDecomposition (G := G)).1 hG
       exact d.exists_stronglyConnected_orientation hd
 
-/-- **Robbins' theorem.** A finite multigraph is `2`-edge-connected exactly when it admits a
-strongly connected orientation. -/
+/-- **Robbins' theorem.** A multigraph with finitely many edges is `2`-edge-connected exactly
+when it admits a strongly connected orientation. -/
 theorem isEdgeConnected_two_iff_exists_stronglyConnected_orientation
-    [Finite V(G)] [Finite E(G)] :
+    [Finite E(G)] :
     G.IsEdgeConnected 2 ↔
       ∃ o : G.Orientation, @Quiver.IsStronglyConnected G.vertexSet ⟨o.Hom⟩ :=
   ⟨IsEdgeConnected.exists_stronglyConnected_orientation,

@@ -54,7 +54,7 @@ namespace TauCeti.InternalGrading
 
 variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- If `X` strictly lowers degree in a module torsion-free over its coefficient domain, the
 polynomial torsion submodule equals the submodule of elements killed by powers of `X`.
@@ -100,7 +100,7 @@ namespace TauCeti.InternalGrading
 
 variable {k M : Type*} [Field k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.Finite k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- Over a field, the torsion submodule of a finitely generated graded polynomial module is
 annihilated by one power of `X`, and equals the kernel of that power. The module itself need not
@@ -139,7 +139,7 @@ theorem torsion_eq_torsionBy_X_pow (hd : d ≠ 0)
 /-- A finitely generated polynomial module over a field admits a homogeneous complement to
 its torsion submodule when `X` strictly lowers degree. The complement is not canonical;
 no homogeneous basis is assumed or asserted. -/
-theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd : d ≠ 0)
+theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M ℤ) (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     ∃ L : Submodule k[X] M, IsCompl (Submodule.torsion k[X] M) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L := by
@@ -197,14 +197,14 @@ section InducedGradings
 
 variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
-  (G : InternalGrading k M) {d : ℕ} (hd : d ≠ 0)
+  (G : InternalGrading k M ℤ) {d : ℕ} (hd : d ≠ 0)
   (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
 
 -- The standard constructors accept the `k[X]`-submodule directly.
-example : InternalGrading k (Submodule.torsion k[X] M) :=
+example : InternalGrading k (Submodule.torsion k[X] M) ℤ :=
   G.submodule _ (G.isHomogeneous_torsion hd hX)
 
-example : InternalGrading k (M ⧸ Submodule.torsion k[X] M) :=
+example : InternalGrading k (M ⧸ Submodule.torsion k[X] M) ℤ :=
   G.quotient _ (G.isHomogeneous_torsion hd hX)
 
 end InducedGradings
@@ -236,7 +236,7 @@ local notation "Q" => k[X] ⧸ Submodule.span k[X] {(X ^ 2 : k[X])}
 
 -- A positive-length torsion module with two distinct nonzero homogeneous classes.
 -- Its grading is induced on the actual module quotient, not on an alternate representation.
-private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
+private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q ℤ,
     (∀ ⦃p : ℤ⦄ ⦃x⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - 1)) ∧
     (Submodule.Quotient.mk (1 : k[X]) : Q) ∈ G.piece 0 ∧
     (Submodule.Quotient.mk (X : k[X]) : Q) ∈ G.piece (-1) ∧
@@ -291,7 +291,7 @@ private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
         I.smul_mem y (Submodule.mem_span_singleton_self (X ^ 2 : k[X]))
 
 -- Every element of k[X]/(X²) is torsion; the theorem still constructs the homogeneous splitting.
-example : ∃ (G : InternalGrading k Q) (L : Submodule k[X] Q),
+example : ∃ (G : InternalGrading k Q ℤ) (L : Submodule k[X] Q),
     Submodule.torsion k[X] Q = ⊤ ∧ IsCompl (Submodule.torsion k[X] Q) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L := by
   obtain ⟨G, hX, _, _, _, _, hann, _⟩ := quotient_X_sq_example k
@@ -320,7 +320,7 @@ private instance (i : Bool) : IsScalarTower k k[X] (mixedSummand k i) := by
 private instance (i : Bool) : Module.Finite k[X] (mixedSummand k i) := by
   cases i <;> dsimp [mixedSummand] <;> infer_instance
 
-example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
+example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i) ℤ)
     (L : Submodule k[X] (⨁ i : Bool, mixedSummand k i)),
     IsCompl (Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i)) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L ∧
@@ -328,7 +328,7 @@ example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
       Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i) ≠ ⊤ := by
   classical
   obtain ⟨H, hHX, _, _, h1, _, hann, _⟩ := quotient_X_sq_example k
-  let J : ∀ i : Bool, InternalGrading k (mixedSummand k i) := fun i ↦
+  let J : ∀ i : Bool, InternalGrading k (mixedSummand k i) ℤ := fun i ↦
     match i with
     | false => Polynomial.negDegreeGrading k
     | true => H

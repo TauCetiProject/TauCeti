@@ -133,21 +133,14 @@ open Filter Pointwise Topology
 
 namespace TauCeti.Huber
 
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
+
 namespace PairOfDefinition
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-
-omit [NonarchimedeanRing A] in
 /-- The original ring of definition is contained in the subring obtained by adjoining `T`. -/
 private theorem le_adjoinRing (P : PairOfDefinition A) (T : Finset A) :
     P.ringOfDefinition ≤ Subring.closure ((P.ringOfDefinition : Set A) ∪ (T : Set A)) :=
   fun _ ha ↦ Subring.subset_closure (Set.mem_union_left _ ha)
-
-end PairOfDefinition
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A]
-
-namespace PairOfDefinition
 
 /-! ### Enlarging the ideal of definition -/
 
@@ -398,7 +391,9 @@ theorem sup_idealOfDefinition (P Q : PairOfDefinition A) :
 
 end PairOfDefinition
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+section UnionDescriptions
+
+variable [IsTopologicalRing A] [IsHuberRing A]
 
 /-- Wedhorn Corollary 6.4: an element of a Huber ring is power-bounded exactly when it belongs
 to some ring of definition. Equivalently, `A°` is the union of all rings of definition. -/
@@ -449,11 +444,12 @@ theorem isOpen_setOf_isTopologicallyNilpotent :
   rw [hunion]
   exact isOpen_iUnion fun P ↦ P.isOpen_idealImage 1
 
+end UnionDescriptions
+
 /-! ### Wedhorn Lemma 6.2: the rings of definition are the open bounded subrings -/
 
 namespace PairOfDefinition
 
-omit [IsTopologicalRing A] [IsHuberRing A] in
 /-- A product of `n` elements of a set `S ⊆ B` whose images lie in `Iᵏ` has image in `I^(k * n)`.
 
 This is the multiplicative bookkeeping behind Wedhorn's `Jⁿ = T(nk)·B` step: the `n`-th power of
@@ -475,7 +471,6 @@ private theorem mem_idealImage_of_mem_pow (P : PairOfDefinition A) {B : Subring 
     rw [Nat.mul_succ, MulMemClass.coe_mul]
     exact P.mul_mem_idealImage_add (ih u hu) (hS v hv)
 
-omit [IsTopologicalRing A] [IsHuberRing A] in
 /-- **The core of Wedhorn Lemma 6.2.** Let `Gk` span `Iᵏ`, let `Iᵏ` lie inside a subring `B`, and
 let every element of `Gk` have a counterpart in a subset `S` of `B`; write `J = (S)` for the ideal
 of `B` it spans. Then `I^(k * (n + 1))` lands inside `Jⁿ`.
@@ -521,7 +516,8 @@ private theorem idealImage_subset_image_span_pow (P : PairOfDefinition A) {B : S
       rw [← Finset.sum_attach Gk fun z ↦ (z : A) * (c z : A)]
       exact Finset.sum_congr rfl fun z _ ↦ by rw [hueq z.1 z.2, hweq z.1]
 
-omit [IsHuberRing A] in
+variable [IsTopologicalRing A]
+
 /-- **The boundedness step of Wedhorn Lemma 6.2.** If `B` is bounded and `S ⊆ B` has images in
 `Iᵏ⁺¹`, then some power `Jᵐ` of the ideal `J = (S)` of `B` lies in any given neighbourhood of `0`
 in `B`: `Jᵐ` lies in `Iᵐ · B`, which is inside a neighbourhood of `0` of `A` for `m` large. -/
@@ -535,6 +531,10 @@ private theorem exists_span_pow_subset_of_isBounded (P : PairOfDefinition A) {B 
     (P.mem_idealImage_of_mem_pow hSk m i hi)
 
 end PairOfDefinition
+
+section Lemma62Substantial
+
+variable [IsTopologicalRing A] [IsHuberRing A]
 
 /-- **Wedhorn Lemma 6.2, the substantial implication.** Every open bounded subring `B` of a Huber
 ring is a ring of definition.
@@ -590,7 +590,8 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq (B : Subring A)
   · -- Boundedness of `B` shrinks `Jᵐ` inside any neighbourhood of `0`.
     exact P.exists_span_pow_subset_of_isBounded hbdd hSk hs
 
-omit [IsTopologicalRing A] [IsHuberRing A] in
+end Lemma62Substantial
+
 /-- **Wedhorn Lemma 6.2, the easy implication `(b) ⇒ (c)`.** An open subring whose subspace
 topology is adic is bounded: the powers of the ideal are open in `B`, hence open in `A`, and each
 of them absorbs multiplication by `B` because it is an ideal of `B`.
@@ -609,6 +610,12 @@ theorem isBounded_of_isAdic {B : Subring A} (hopen : IsOpen (B : Set A)) {J : Id
       ⟨0, (J ^ n).zero_mem, rfl⟩, ?_⟩
   rintro _ ⟨_, ⟨y, hy, rfl⟩, b, hb, rfl⟩
   exact hn (Ideal.mul_mem_right ⟨b, hb⟩ _ hy)
+
+variable [IsTopologicalRing A]
+
+section Lemma62Criterion
+
+variable [IsHuberRing A]
 
 /-- **Wedhorn Lemma 6.2.** For a subring `B` of a Huber ring the following are equivalent:
 
@@ -643,9 +650,10 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq_iff (B : Subring A) :
   rintro ⟨Q, rfl⟩
   exact ⟨Q.isOpen_ringOfDefinition, Q.isBounded_ringOfDefinition⟩
 
+end Lemma62Criterion
+
 /-! ### Additional parts of Wedhorn Corollary 6.4 -/
 
-omit [IsHuberRing A] in
 /-- **Wedhorn Corollary 6.4(1), the intersection half.** The intersection of two rings of
 definition is a ring of definition: it is open as an intersection of two opens and bounded as a
 subset of either.
@@ -662,6 +670,8 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq_inf (P Q : PairOfDefinition 
         exact P.isOpen_ringOfDefinition.inter Q.isOpen_ringOfDefinition)
     (P.isBounded_ringOfDefinition.subset
       (by rw [Subring.coe_inf]; exact Set.inter_subset_left))
+
+variable [IsHuberRing A]
 
 /-- **Every open subring of a Huber ring contains a ring of definition:** intersect any ring of
 definition with it and apply Lemma 6.2. This is the form in which Wedhorn Corollary 6.4(4) is

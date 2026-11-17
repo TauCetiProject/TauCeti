@@ -213,7 +213,8 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
   by_cases hq : q = inf
   · simp only [negativePlaneWeight, hq, ↓reduceIte]
     simpa only [endSign_inf, neg_one_mul] using
-      Floer.contMDiffAt_smoothTransition_endCoord_comp inf 1 (hf y₀) (ne_endCenter hS inf)
+      Floer.contMDiffAt_smoothTransition_endCoord_comp inf (hf y₀) contMDiffAt_const
+        (ne_endCenter hS inf)
   · simp only [negativePlaneWeight, hq, ↓reduceIte]
     exact contMDiffAt_const
 
@@ -459,7 +460,7 @@ theorem contMDiff_cappingAlmostComplex
     (hf.comp contMDiff_subtype_val) (hb.comp contMDiff_subtype_val) (fun y : U => hL y)
     (fun y : U => y.2)
   refine contMDiffAt_subtype_iff (U := U)
-    (x := ⟨p, mem_plumbedSphere_of_le_norm_sub_endCenter hq (hS p) hge⟩).mp ?_
+    (x := ⟨p, mem_plumbedSphere_of_le_norm_sub_endCenter (hS p) hge⟩).mp ?_
   refine (hU _).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
   simp only [comp_apply, cappingAlmostComplex_eq_plumbedAlmostComplex h₀ Jb hJb y.2]
 
