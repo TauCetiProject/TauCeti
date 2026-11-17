@@ -31,7 +31,8 @@ A continuous function on `ℝ` with limits at `±∞` is bounded.
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
-Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
+Near `0`, the product `‖x‖ * R` is eventually less than any positive bound, and a bound
+`‖u‖ * S₀ ≤ R₀` with `0 < R₀` gives `‖u‖ * s < R₀` whenever `s < S₀`.
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 
@@ -57,6 +58,7 @@ contains `0`.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
+* `TauCeti.norm_mul_lt_of_mul_le` -- `‖u‖ * s < R₀` when `0 < R₀`, `s < S₀`, and `‖u‖ * S₀ ≤ R₀`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
@@ -128,6 +130,14 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
 theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
   (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
+
+/-- If `‖u‖ * S₀ ≤ R₀` with `0 < R₀` and `s < S₀`, then `‖u‖ * s < R₀`, including when
+`‖u‖ = 0`. -/
+theorem norm_mul_lt_of_mul_le {E : Type*} [SeminormedAddGroup E] {u : E} {s S₀ R₀ : ℝ}
+    (h0 : 0 < R₀) (hs : s < S₀) (hu : ‖u‖ * S₀ ≤ R₀) : ‖u‖ * s < R₀ := by
+  rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
+  · simpa [← hu0] using h0
+  · exact (mul_lt_mul_of_pos_left hs hu0).trans_le hu
 
 /-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
