@@ -107,6 +107,18 @@ def crossing (X Y : S.withCrossings.FreeMonoidal) : X ⊗ Y ⟶ Y ⊗ X :=
 def crossingInv (X Y : S.withCrossings.FreeMonoidal) : Y ⊗ X ⟶ X ⊗ Y :=
   FreeMonoidal.coupon (S := S.withCrossings) (CrossingCoupon.crossingInv X.as Y.as)
 
+/-- The formal crossing is the coupon `CrossingCoupon.crossing` of `S.withCrossings`. -/
+theorem crossing_def (X Y : S.withCrossings.FreeMonoidal) :
+    crossing X Y = FreeMonoidal.coupon (S := S.withCrossings) (CrossingCoupon.crossing X.as Y.as) :=
+  (rfl)
+
+/-- The formal reverse crossing is the coupon `CrossingCoupon.crossingInv` of
+`S.withCrossings`. -/
+theorem crossingInv_def (X Y : S.withCrossings.FreeMonoidal) :
+    crossingInv X Y =
+      FreeMonoidal.coupon (S := S.withCrossings) (CrossingCoupon.crossingInv X.as Y.as) :=
+  (rfl)
+
 variable (S) in
 /-- The axioms of a braided monoidal category for the formal crossings: crossings and reverse
 crossings are mutually inverse, crossings are natural in both variables with respect to every
@@ -342,6 +354,12 @@ theorem lift_map_coupon (g : S.Coupon) : (lift fo fc h).map (coupon g) = fc g :=
 theorem lift_map_braiding_hom (X Y : S.BraidedPresented R) :
     (lift fo fc h).map (β_ X Y).hom = (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).hom :=
   lift_liftCoupon_map_crossing fo fc X.as Y.as
+
+/-- The inverse braiding of two words goes to the inverse braiding of their images. -/
+@[simp]
+theorem lift_map_braiding_inv (X Y : S.BraidedPresented R) :
+    (lift fo fc h).map (β_ X Y).inv = (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).inv :=
+  lift_liftCoupon_map_crossingInv fo fc X.as Y.as
 
 instance : (lift fo fc h).Braided where
   braided X Y := by
