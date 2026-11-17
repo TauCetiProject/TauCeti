@@ -190,14 +190,6 @@ theorem isSymm_freePairing (hχ : ∀ i j, χ i j = χ j i) : (freePairing χ).I
   | add a b ha hb => simp [ha, hb]
   | ι_mul i a ha => rw [freePairing_ι_mul_left, ha, freePairing_freeRemove_left χ (hχ i)]
 
-/-- **Adjunction of the right skew derivative and right multiplication**:
-`B(Rᵢ x, y) = B(x, y θᵢ)`, when `χ` is symmetric. -/
-theorem freePairing_freeRemoveRight_left {i : I} (hχ : ∀ i j, χ i j = χ j i)
-    (x y : FreeAlgebra R I) :
-    freePairing χ (freeRemoveRight χ i x) y = freePairing χ x (y * ι R i) := by
-  rw [(isSymm_freePairing χ hχ).eq, ← freePairing_mul_ι_left χ (hχ i),
-    (isSymm_freePairing χ hχ).eq]
-
 /-- The form is invariant under every diagonal scaling: `B(c · x, z) = B(x, c · z)`. Both sides
 vanish unless `x` and `z` have the same multidegree `β`, where they are multiplied by `c^β`. -/
 theorem freePairing_freeHalfScale_left (c : I → R) (x z : FreeAlgebra R I) :
@@ -208,6 +200,20 @@ theorem freePairing_freeHalfScale_left (c : I → R) (x z : FreeAlgebra R I) :
   | add a b ha hb => simp [ha, hb]
   | ι_mul i a ha =>
     simp [ha, freeRemove_freeHalfScale]
+
+/-- **Adjunction of the right skew derivative and right multiplication**:
+`B(Rᵢ x, y) = B(x, y θᵢ)`. -/
+theorem freePairing_freeRemoveRight_left (i : I) (x y : FreeAlgebra R I) :
+    freePairing χ (freeRemoveRight χ i x) y = freePairing χ x (y * ι R i) := by
+  induction x using FreeAlgebra.induction_ι_mul generalizing y with
+  | one => simp
+  | smul r a ha => simp [ha]
+  | add a b ha hb => simp [ha, hb]
+  | ι_mul j a ha =>
+    rcases eq_or_ne i j with rfl | h
+    · simp [freeRemoveRight_mul, SigmaDerivation.leibniz, ha, freePairing_freeHalfScale_left,
+        add_comm]
+    · simp [freeRemoveRight_mul, SigmaDerivation.leibniz, ha, h, h.symm]
 
 /-- The form is invariant under word reversal, when `χ` is symmetric. -/
 theorem freePairing_star_star (hχ : ∀ i j, χ i j = χ j i) (x z : FreeAlgebra R I) :
@@ -279,12 +285,12 @@ theorem freeRemove_mem_halfRadical {i : I} (hχ : ∀ j, χ i j = χ j i) {x : F
   intro z
   rw [freePairing_freeRemove_left χ hχ, hx]
 
-/-- The radical is stable under the right skew derivative `Rᵢ`, when `χ` is symmetric. -/
-theorem freeRemoveRight_mem_halfRadical (hχ : ∀ i j, χ i j = χ j i) {i : I}
-    {x : FreeAlgebra R I} (hx : x ∈ halfRadical χ) : freeRemoveRight χ i x ∈ halfRadical χ := by
+/-- The radical is stable under the right skew derivative `Rᵢ`. -/
+theorem freeRemoveRight_mem_halfRadical {i : I} {x : FreeAlgebra R I} (hx : x ∈ halfRadical χ) :
+    freeRemoveRight χ i x ∈ halfRadical χ := by
   rw [mem_halfRadical] at hx ⊢
   intro z
-  rw [freePairing_freeRemoveRight_left χ hχ, hx]
+  rw [freePairing_freeRemoveRight_left, hx]
 
 /-- The radical is stable under every diagonal scaling, so the torus acts on the quotient. -/
 theorem freeHalfScale_mem_halfRadical (c : I → R) {x : FreeAlgebra R I}
