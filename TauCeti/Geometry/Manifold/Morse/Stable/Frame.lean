@@ -64,7 +64,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   stable, respectively unstable, manifold have admissible times.
 * `stableNormal_apply`, `mfderiv_unstableFrame`: the two maps read at any admissible time.
 * `zero_mem_linearForwardTimes_self`, `zero_mem_linearBackwardTimes_self`,
-  `stableNormal_unstableFrame_self`: at the centre of the chart every time is admissible, and the
+  `stableNormal_unstableFrame_self`: at the centre of the chart the time `0` is admissible, and the
   normal coordinates invert the unstable frame.
 * `eventually_span_mtangentConeAt_stableSet_eq_comap`: for all large times `T`, the tangent space
   of the stable manifold is read off the derivative of `φ ∘ Φ_T`.

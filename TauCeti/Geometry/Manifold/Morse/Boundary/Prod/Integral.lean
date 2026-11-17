@@ -60,8 +60,9 @@ map of the product is built from that of the moving factor and the identity of t
   product.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_prod_right`,
   `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_prod_left` and
-  `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod_of_ne`: the boundary
-  coefficients of a product along each factor, and between pairs differing in both components.
+  `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod_eq_zero_of_ne`: the
+  boundary coefficients of a product along each factor, and between pairs differing in both
+  components.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod`: the boundary
   coefficients of a product.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseChainProdEquiv_comp_signedMorseBoundary`: the
@@ -123,8 +124,8 @@ theorem map_prodNegativeEquiv_prodOrientation :
         ((φ.contMDiffAt φ.mem_source).of_le (by simp))
         ((ψ.contMDiffAt ψ.mem_source).of_le (by simp))).symm)
         (op.prod oq φ.finrank_negativeWeight_fun ψ.finrank_negativeWeight_fun) := by
-  rw [prodOrientation, ← Orientation.map_trans, LinearEquiv.symm_trans_self, Orientation.map_refl]
-  rfl
+  rw [prodOrientation, ← Orientation.map_trans, LinearEquiv.symm_trans_self, Orientation.map_refl,
+    Equiv.refl_apply]
 
 /-- Reversing the orientation of the first factor reverses the product orientation. -/
 @[simp]
@@ -165,9 +166,7 @@ include hφp hφp' hψ
 /-- **The comparison map along a trajectory of the first factor.** At a point `(y, q)` of a
 trajectory of the product from `(p, q)` to `(p', q)`, with `q` a critical point of `g`, the
 comparison map of the product charts sends the pair `(a, b)` of coordinates of negative weight to
-the comparison of `a` along the trajectory of `X` through `y`, with `b` unchanged. At the critical
-point `q` the normal coordinates of `W^s(q)` invert the unstable frame of `W^u(q)` and `g` has
-vanishing differential. -/
+the comparison of `a` along the trajectory of `X` through `y`, with `b` unchanged. -/
 theorem trajectoryComparison_prod_right (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g)
     (hq : q ∈ criticalPoints 𝓘(ℝ, E') g) {y : M}
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet p') (a : {i // φp.weight i < 0} → ℝ)
@@ -229,16 +228,12 @@ theorem trajectorySign_prod_right (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse �
     -- The identity of `ℝ` acts on a value of the differential of `f`, a vector of the tangent
     -- space of `ℝ`, which `LinearEquiv.refl_apply` does not see as an element of `ℝ`.
     rfl
-  have hCP : Bijective ((hX.prod hY).trajectoryComparison (φp.prod ψ) (φp'.prod ψ) (y, q)) := by
-    rw [← funext hLP]
-    exact LP.bijective
   rw [hu]
-  refine trajectorySign_eq_of_map_eq hCP ?_
-  rw [show LinearEquiv.ofBijective _ hCP = LP from LinearEquiv.ext fun v ↦ (hLP v).symm]
-  rw [hLP_def, Orientation.map_trans, MorseChart.map_prodNegativeEquiv_prodOrientation,
-    Orientation.map_trans, Orientation.map_trans, Orientation.map_reindex, Orientation.map_prod,
-    hmap, Orientation.map_refl, Equiv.refl_apply, Orientation.prod_units_smul_left,
-    Orientation.reindex_units_smul, Orientation.map_units_smul, Orientation.map_units_smul]
+  refine trajectorySign_eq_of_map_eq LP hLP ?_
+  -- Along the factor `L` of `LP`, the comparison map of `X` scales the orientation by `u`.
+  simp only [hLP_def, Orientation.map_trans, MorseChart.map_prodNegativeEquiv_prodOrientation,
+    Orientation.map_reindex, Orientation.map_prod, hmap, Orientation.map_refl, Equiv.refl_apply,
+    Orientation.prod_units_smul_left, Orientation.reindex_units_smul, Orientation.map_units_smul]
   congr 1
   simp only [MorseChart.trajectoryTargetOrientation_def, MorseChart.prodOrientation,
     Orientation.prod_reindex_finCongr_left, Orientation.prod_reindex_finCongr_right,
@@ -324,42 +319,33 @@ theorem trajectorySign_prod_left (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse �
     rw [trajectoryComparison_prod_left (hX := hX) (hY := hY) hφ hψq hψq' hf hg hp hw a b]
     simp only [LP, L, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
       LinearEquiv.prodCongr_apply, LinearEquiv.ofBijective_apply]
+    -- As in `trajectorySign_prod_right`, the identity of `ℝ` acts on a value of the differential
+    -- of `g`, a vector of the tangent space of `ℝ`, which `LinearEquiv.refl_apply` does not see.
     rfl
-  have hCP : Bijective ((hX.prod hY).trajectoryComparison (φ.prod ψq) (φ.prod ψq') (p, w)) := by
-    rw [← funext hLP]
-    exact LP.bijective
   have hunit : ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * hY.trajectorySign ψq ψq' oq oq' hqq' w) =
       (((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * u : ℤˣ) : ℤ) := by
-    rw [hu]
-    push_cast
-    rfl
+    rw [hu, Units.val_mul, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
   rw [hunit]
-  refine trajectorySign_eq_of_map_eq hCP ?_
-  rw [show LinearEquiv.ofBijective _ hCP = LP from LinearEquiv.ext fun v ↦ (hLP v).symm]
-  rw [hLP_def, Orientation.map_trans, MorseChart.map_prodNegativeEquiv_prodOrientation,
-    Orientation.map_trans, Orientation.map_trans, Orientation.map_trans, Orientation.map_trans,
+  refine trajectorySign_eq_of_map_eq LP hLP ?_
+  -- Along the factor `L` of `LP`, the comparison map of `Y` scales the orientation by `u`.
+  simp only [hLP_def, Orientation.map_trans, MorseChart.map_prodNegativeEquiv_prodOrientation,
     Orientation.map_reindex, Orientation.map_prod, hmap, Orientation.map_refl, Equiv.refl_apply,
-    Orientation.prod_units_smul_right, Orientation.reindex_units_smul,
-    Orientation.map_units_smul, Orientation.map_units_smul, Orientation.map_units_smul,
-    Orientation.map_units_smul, show ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * u : ℤˣ) =
-      u * (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p from mul_comm _ _, map_mul, mul_smul]
+    Orientation.prod_units_smul_right, Orientation.reindex_units_smul, Orientation.map_units_smul]
+  rw [mul_comm ((-1 : ℤˣ) ^ manifoldMorseIndex 𝓘(ℝ, E) f p) u, map_mul, mul_smul]
   congr 1
+  -- The Koszul sign: exchanging the `ind p` directions of `W^u(p)` with the one direction of the
+  -- flow multiplies the orientation by `(-1) ^ (ind p * 1)` (`Orientation.map_prodComm_prod`),
+  -- while the reassociations preserve it (`Orientation.map_prodAssoc_prod`).
   have hk : Units.map (Int.castRingHom ℝ).toMonoidHom ((-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p) =
       (-1 : ℝˣ) ^ (manifoldMorseIndex 𝓘(ℝ, E) f p * 1) := by
     ext
     simp
-  rw [hk, ψq'.trajectoryTargetOrientation_def, Orientation.prod_reindex_finCongr_right,
-    Orientation.reindex_finCongr_reindex_finCongr, Orientation.map_reindex,
-    Orientation.map_prodAssoc_symm_prod]
-  simp only [Orientation.map_reindex, Orientation.reindex_finCongr_reindex_finCongr]
-  rw [Orientation.map_prod, Orientation.map_prodComm_prod, Orientation.map_refl, Equiv.refl_apply,
-    Orientation.prod_units_smul_left]
-  simp only [Orientation.map_units_smul, Orientation.reindex_units_smul]
-  congr 1
-  simp only [MorseChart.trajectoryTargetOrientation_def, MorseChart.prodOrientation,
+  simp only [hk, MorseChart.trajectoryTargetOrientation_def, MorseChart.prodOrientation,
     Orientation.prod_reindex_finCongr_left, Orientation.prod_reindex_finCongr_right,
-    Orientation.map_reindex, Orientation.map_prodAssoc_prod, Orientation.map_prod,
-    Orientation.map_refl, Equiv.refl_apply, Orientation.reindex_finCongr_reindex_finCongr]
+    Orientation.reindex_finCongr_reindex_finCongr, Orientation.map_reindex,
+    Orientation.map_prodAssoc_symm_prod, Orientation.map_prodAssoc_prod, Orientation.map_prod,
+    Orientation.map_prodComm_prod, Orientation.map_refl, Equiv.refl_apply,
+    Orientation.prod_units_smul_left, Orientation.map_units_smul, Orientation.reindex_units_smul]
 
 end FirstFactorConstant
 
@@ -418,17 +404,6 @@ variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] [Finit
   (𝔬 : MorseOrientation f X) (𝔬' : MorseOrientation g Y)
 include hf hg
 
-omit [CompactSpace M] [T2Space M] [CompactSpace N] [T2Space N] in
-/-- The Morse index of the separated sum at `(p, q)` is the sum of the indices. -/
-private theorem manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (p : criticalPoints 𝓘(ℝ, E) f) (q : criticalPoints 𝓘(ℝ, E') g) :
-    manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd)
-        ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
-          (p, q) : M × N) =
-      manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q :=
-  manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
-    ((hf.contMDiff _).of_le (by norm_num)) ((hg.contMDiff _).of_le (by norm_num))
-
 /-- **The boundary coefficients of a product along the second factor.** The coefficient of
 `(p, q')` in the integral Morse boundary of `(p, q)` is the coefficient of `q'` in the boundary of
 `q`, multiplied by the Koszul sign `(-1) ^ ind p`: the trajectories are those of `Y`, and the
@@ -442,8 +417,10 @@ theorem signedMorseBoundaryCoeff_prod_left (hYs : hY.IsMorseSmale) (p : critical
           (p, q')) =
       (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * hY.signedMorseBoundaryCoeff 𝔬' q q' := by
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
-  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm hX hY hf hg p q
-  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm hX hY hf hg p q'
+  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q'
   by_cases hqq' : manifoldMorseIndex 𝓘(ℝ, E') g q = manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   swap
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hqq', mul_zero]
@@ -485,8 +462,10 @@ theorem signedMorseBoundaryCoeff_prod_right (hXs : hX.IsMorseSmale)
           (p', q)) =
       hX.signedMorseBoundaryCoeff 𝔬 p p' := by
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
-  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm hX hY hf hg p q
-  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm hX hY hf hg p' q
+  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p' q
   by_cases hpp' : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f p' + 1
   swap
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpp']
@@ -521,7 +500,8 @@ variable {hX hY}
 /-- **No boundary coefficient of a product moves both components.** For `p ≠ p'` and `q ≠ q'`,
 the coefficient of `(p', q')` in the integral Morse boundary of `(p, q)` vanishes: a trajectory
 between them would lower the index of each factor by at least one. -/
-theorem signedMorseBoundaryCoeff_prod_of_ne (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale)
+theorem signedMorseBoundaryCoeff_prod_eq_zero_of_ne (hXs : hX.IsMorseSmale)
+    (hYs : hY.IsMorseSmale)
     {p p' : criticalPoints 𝓘(ℝ, E) f}
     {q q' : criticalPoints 𝓘(ℝ, E') g} (hpp : p ≠ p') (hqq : q ≠ q') :
     (hX.prod hY).signedMorseBoundaryCoeff (𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable)
@@ -529,8 +509,10 @@ theorem signedMorseBoundaryCoeff_prod_of_ne (hXs : hX.IsMorseSmale) (hYs : hY.Is
           (p, q))
         ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
           (p', q')) = 0 := by
-  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm hX hY hf hg p q
-  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm hX hY hf hg p' q'
+  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p' q'
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q =
     manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   · refine (signedMorseBoundaryCoeff_of_morseIndex_eq_add_one (hX := hX.prod hY)
@@ -572,7 +554,7 @@ theorem signedMorseBoundaryCoeff_prod (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseS
     rw [ite_eq_right hpp, ite_eq_left rfl, zero_add,
       hX.signedMorseBoundaryCoeff_prod_right hY hf hg 𝔬 𝔬' hXs]
   · rw [ite_eq_right hpp, ite_eq_right hqq, add_zero,
-      hXs.signedMorseBoundaryCoeff_prod_of_ne hf hg 𝔬 𝔬' hYs hpp hqq]
+      hXs.signedMorseBoundaryCoeff_prod_eq_zero_of_ne hf hg 𝔬 𝔬' hYs hpp hqq]
 
 /-- **The integral Morse complex of a product is the tensor product complex.** For Morse–Smale
 pseudo-gradients `X` and `Y`, the product orientation data and any commutative ring `R`, under the

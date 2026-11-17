@@ -81,7 +81,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   trajectories between critical points of consecutive index.
 * `trajectorySign_eq_one_or_eq_neg_one`: so the sign of such a trajectory is `±1`.
 * `exists_trajectorySign_eq_and_map_eq`, `trajectorySign_eq_of_map_eq`: where the comparison map
-  is an isomorphism, the sign is the unit by which it scales the target orientation.
+  is an isomorphism, the sign is the unit by which it scales the target orientation; the second
+  reads it off any linear equivalence agreeing with the comparison map.
 * `trajectorySign_flow`: the sign is constant along each trajectory.
 * `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
   signs.
@@ -275,14 +276,20 @@ theorem exists_trajectorySign_eq_and_map_eq {y : M}
   · rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
     omega
 
-/-- **Reading off the sign.** If the comparison map is an isomorphism carrying `op` to the target
-orientation scaled by a unit sign `u`, the sign of the trajectory is `u`. -/
-theorem trajectorySign_eq_of_map_eq {y : M} (h : Bijective (hX.trajectoryComparison φp φq y))
-    {u : ℤˣ} (hu : Orientation.map _
-      (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h) op =
-        Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq) :
+/-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
+carries `op` to the target orientation scaled by a unit sign `u`, the sign of the trajectory is
+`u`. -/
+theorem trajectorySign_eq_of_map_eq {y : M}
+    (L : ({i // φp.weight i < 0} → ℝ) ≃ₗ[ℝ] ℝ × ({i // φq.weight i < 0} → ℝ))
+    (hL : ∀ v, L v = hX.trajectoryComparison φp φq y v) {u : ℤˣ}
+    (hu : Orientation.map _ L op =
+      Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq) :
     hX.trajectorySign φp φq op oq hpq y = u := by
+  have h : Bijective (hX.trajectoryComparison φp φq y) := by
+    rw [← funext hL]
+    exact L.bijective
   obtain ⟨v, hv, hmap⟩ := exists_trajectorySign_eq_and_map_eq (op := op) (oq := oq) (hpq := hpq) h
+  rw [show LinearEquiv.ofBijective _ h = L from LinearEquiv.ext fun v ↦ (hL v).symm] at hmap
   rw [hv, Orientation.intCast_units_smul_injective _ (hmap.symm.trans hu)]
 
 /-- **Reversing the orientation at the source reverses the sign.** -/

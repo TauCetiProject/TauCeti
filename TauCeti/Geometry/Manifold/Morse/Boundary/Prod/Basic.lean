@@ -133,6 +133,17 @@ theorem coe_criticalPointsCompFstAddCompSndEquiv_symm
       ((pq.1 : M), (pq.2 : N)) :=
   (rfl)
 
+/-- The Morse index of the separated sum at the critical point attached to `(p, q)` is the sum of
+the indices of `p` and `q`. -/
+theorem manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ E'] (hf' : IsMorse 𝓘(ℝ, E) f) (hg' : IsMorse 𝓘(ℝ, E') g)
+    (p : criticalPoints 𝓘(ℝ, E) f) (q : criticalPoints 𝓘(ℝ, E') g) :
+    manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd)
+        ((criticalPointsCompFstAddCompSndEquiv f g hf hg).symm (p, q) : M × N) =
+      manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q :=
+  manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
+    ((hf'.contMDiff _).of_le (by norm_num)) ((hg'.contMDiff _).of_le (by norm_num))
+
 end Equiv
 
 variable (f g) in
@@ -261,12 +272,10 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
   have h := hXs.prod hYs
   have hfg := hf.comp_fst_add_comp_snd_chartedSpaceProd hg
-  have hindP := manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
-    ((hf.contMDiff _).of_le (by norm_num)) ((hg.contMDiff _).of_le (by norm_num))
-    (p := e.symm (p, q))
-  have hindQ := manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
-    ((hf.contMDiff _).of_le (by norm_num)) ((hg.contMDiff _).of_le (by norm_num))
-    (p := e.symm (p', q'))
+  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p' q'
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q =
     manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   swap
