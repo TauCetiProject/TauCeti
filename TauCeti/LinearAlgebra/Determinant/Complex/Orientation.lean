@@ -52,7 +52,7 @@ complex vector spaces and complex-linear maps:
   restriction of a complex one, the isomorphism
   `det B₂ ⊗ (det B₅)^* ≃ (det B₁ ⊗ (det B₄)^*) ⊗ (det B₃ ⊗ (det B₆)^*)`
   (`TauCeti.detLineSixTermEquiv`) sends complex positive elements to tensor products of complex
-  positive elements (`TauCeti.exists_detLineSixTermEquiv_congr_eq_tmul`).
+  positive elements (`TauCeti.exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul`).
 
 No sign corrections enter, because complex vector spaces have even real dimension. The second
 statement is the form needed for Fredholm operators. A stabilization `D₂ : Λ → F` of a
@@ -99,8 +99,8 @@ likewise for `(det E)^*` and `det E ⊗ (det F)^*`.
   sequences.
 * `TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`: compatibility with four-term exact
   sequences, hence with stabilizations of complex-linear Fredholm operators.
-* `TauCeti.exists_detLineSixTermEquiv_congr_eq_tmul`: compatibility with six-term exact
-  sequences, hence with compositions of complex-linear maps.
+* `TauCeti.exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul`: compatibility
+  with six-term exact sequences, hence with compositions of complex-linear maps.
 
 ## References
 
@@ -835,10 +835,10 @@ through real isomorphisms `eᵢ : Aᵢ ≃ Bᵢ` to the real restriction of an e
 `det A₁ ⊗ (det A₄)^*` and of `det A₃ ⊗ (det A₆)^*`. With all `eᵢ` the identity, this says that
 `TauCeti.detLineSixTermEquiv` respects complex orientations for exact sequences of complex vector
 spaces. -/
-theorem exists_detLineSixTermEquiv_congr_eq_tmul (hg₁ : Function.Injective g₁)
-    (hg₁₂ : Function.Exact g₁ g₂) (hg₂₃ : Function.Exact g₂ g₃) (hg₃₄ : Function.Exact g₃ g₄)
-    (hg₄₅ : Function.Exact g₄ g₅) (hg₅ : Function.Surjective g₅) (e₁ : A₁ ≃ₗ[ℝ] B₁)
-    (e₂ : A₂ ≃ₗ[ℝ] B₂) (e₃ : A₃ ≃ₗ[ℝ] B₃) (e₄ : A₄ ≃ₗ[ℝ] B₄) (e₅ : A₅ ≃ₗ[ℝ] B₅)
+theorem exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
+    (hg₁ : Function.Injective g₁) (hg₁₂ : Function.Exact g₁ g₂) (hg₂₃ : Function.Exact g₂ g₃)
+    (hg₃₄ : Function.Exact g₃ g₄) (hg₄₅ : Function.Exact g₄ g₅) (hg₅ : Function.Surjective g₅)
+    (e₁ : A₁ ≃ₗ[ℝ] B₁) (e₂ : A₂ ≃ₗ[ℝ] B₂) (e₃ : A₃ ≃ₗ[ℝ] B₃) (e₄ : A₄ ≃ₗ[ℝ] B₄) (e₅ : A₅ ≃ₗ[ℝ] B₅)
     (e₆ : A₆ ≃ₗ[ℝ] B₆) (he₁ : g₁ ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f₁.restrictScalars ℝ)
     (he₂ : g₂ ∘ₗ e₂.toLinearMap = e₃.toLinearMap ∘ₗ f₂.restrictScalars ℝ)
     (he₃ : g₃ ∘ₗ e₃.toLinearMap = e₄.toLinearMap ∘ₗ f₃.restrictScalars ℝ)

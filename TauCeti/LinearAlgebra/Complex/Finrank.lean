@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Real finrank of a compatible complex module
@@ -105,8 +106,7 @@ theorem finrank_range_eq_two_mul_of_comp_eq [AddCommGroup V'] [Module ℝ V'] [A
     [Module ℝ W'] {f : V →ₗ[ℂ] W} {g : V' →ₗ[ℝ] W'} (e : V ≃ₗ[ℝ] V') (e' : W ≃ₗ[ℝ] W')
     (h : g ∘ₗ e.toLinearMap = e'.toLinearMap ∘ₗ f.restrictScalars ℝ) :
     Module.finrank ℝ (range g) = 2 * Module.finrank ℂ (range f) := by
-  have hr : range g = (range (f.restrictScalars ℝ)).map e'.toLinearMap := by
-    rw [← range_comp, ← h, range_comp_of_range_eq_top _ e.range]
-  rw [hr, LinearEquiv.finrank_map_eq, finrank_range_restrictScalars_eq_two_mul]
+  rw [← (f.restrictScalars ℝ).map_range_eq_range_of_comp_eq e.surjective h,
+    LinearEquiv.finrank_map_eq, finrank_range_restrictScalars_eq_two_mul]
 
 end LinearMap

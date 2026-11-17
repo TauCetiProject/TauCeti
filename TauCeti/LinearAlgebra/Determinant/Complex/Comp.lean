@@ -26,10 +26,11 @@ sequence `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f
 are formed from the underlying real-linear maps. It is therefore an instance of the statement
 about six-term exact sequences of real vector spaces isomorphic to the real restriction of an
 exact sequence of complex vector spaces and complex-linear maps
-(`TauCeti.exists_detLineSixTermEquiv_congr_eq_tmul`). For the composition, the isomorphisms are
-those between the real and complex kernels and cokernels (`LinearMap.kerRestrictScalarsEquiv`,
-`LinearMap.cokerRestrictScalarsEquiv`), which commute with the maps of the two kernel–cokernel
-sequences (`LinearMap.kerCompToKer_comp_kerRestrictScalarsEquiv` and its companions).
+(`TauCeti.exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul`).
+For the composition, the isomorphisms are those between the real and complex kernels and
+cokernels (`LinearMap.kerRestrictScalarsEquiv`, `LinearMap.cokerRestrictScalarsEquiv`), which
+commute with the maps of the two kernel–cokernel sequences
+(`LinearMap.kerCompToKer_comp_kerRestrictScalarsEquiv` and its companions).
 
 Orientations of determinant lines of complex-linear Fredholm operators are oriented this way
 when an operator is composed with another complex-linear operator. For instance, a complex-linear
@@ -80,7 +81,7 @@ theorem IsComplexPositiveDetLine.exists_detLineCompEquiv_eq_tmul
     Module.Finite.quotient_range_comp (f.restrictScalars ℝ) (g.restrictScalars ℝ)
   -- The kernel–cokernel sequence of the real composite is isomorphic to that of the complex
   -- composite, through the identifications of the real and complex kernels and cokernels.
-  obtain ⟨s₁, s₂, hs₁, hs₂, h⟩ := exists_detLineSixTermEquiv_congr_eq_tmul
+  obtain ⟨s₁, s₂, hs₁, hs₂, h⟩ := exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
     (Submodule.inclusion_injective _)
     ((f.restrictScalars ℝ).exact_inclusion_kerCompToKer (g.restrictScalars ℝ))
     ((f.restrictScalars ℝ).exact_kerCompToKer_kerToCoker (g.restrictScalars ℝ))
