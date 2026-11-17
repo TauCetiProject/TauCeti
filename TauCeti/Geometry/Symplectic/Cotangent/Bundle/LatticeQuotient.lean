@@ -374,7 +374,7 @@ theorem proj_comp_mk : proj hα ∘ mk hα = TotalSpace.proj :=
 /-! ### The fibres of the projection -/
 
 /-- The map `(x, c) ↦ ∑ i, c i • α i x` is smooth. -/
-private theorem contMDiff_sum_smul :
+theorem contMDiff_sum_smul :
     ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
       (fun q : B × (ι → ℝ) ↦ (⟨q.1, ∑ i, q.2 i • SmoothForm.degreeOneEquiv (α i) q.1⟩ :
         CotangentBundle I B)) :=

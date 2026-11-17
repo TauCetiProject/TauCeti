@@ -172,14 +172,11 @@ private theorem frameCover_snd_apply (x : (ι → ℝ) × B) (w : E) :
     (fun j ↦ x.1 j • SmoothForm.degreeOneEquiv (α j) x.2) w').trans
     (Finset.sum_congr rfl fun j _ ↦ rfl)
 
-/-- The cover by frame coordinates is smooth: it is a sum of smooth sections with smooth
-coefficients. -/
+/-- The cover by frame coordinates is smooth: it is `contMDiff_sum_smul` with the factors of
+the product swapped. -/
 private theorem contMDiff_frameCover :
     ContMDiff (𝓘(ℝ, ι → ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (frameCover α) :=
-  ContMDiff.sum_sectionAlong Finset.univ _ contMDiff_snd fun j _ ↦
-    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).contMDiff.comp
-      contMDiff_fst).smul_totalSpace
-      ((SmoothForm.degreeOneEquiv (α j)).contMDiff.comp contMDiff_snd)
+  (contMDiff_sum_smul (α := α)).comp (contMDiff_snd.prodMk contMDiff_fst)
 
 /-- The angles and actions `(-p c, a(x))` of the action–angle chart at `Ψ(c, x)`. -/
 private def anglesActions (x : (ι → ℝ) × B) : (ι → ℝ) × (ι → ℝ) := (-(p • x.1), a x.2)
