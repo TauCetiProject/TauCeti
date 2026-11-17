@@ -53,7 +53,9 @@ and fullness of its range. A discrete subgroup containing a full lattice is a fu
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
 * `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
-* `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
+* `ZLattice.instDiscreteTopologySpanSingleton`, `ZLattice.instIsZLatticeSpanSingleton`: the
+  integer span of a single vector in a real normed space is discrete, and the integer span of a
+  nonzero scalar in a normed field `K` (when discrete) is a full `K`-lattice.
 -/
 
 public section
@@ -61,12 +63,6 @@ public section
 open MeasureTheory Module Set
 
 namespace TauCeti
-
-/-- The integer lattice in the real line has the discrete topology. -/
-instance discreteTopology_span_one :
-    DiscreteTopology (Submodule.span ℤ {1} : Submodule ℤ ℝ) := by
-  rw [← Set.range_eq_singleton (Module.Basis.singleton_apply Unit ℝ)]
-  infer_instance
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ι : Type*}
 
@@ -241,6 +237,24 @@ theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedA
     [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
     [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
   ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
+
+/-- The integer span of a single vector in a real normed space is discrete. -/
+instance instDiscreteTopologySpanSingleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (v : E) : DiscreteTopology (Submodule.span ℤ {v}) := by
+  let _ : NormedSpace ℚ E := NormedSpace.restrictScalars ℚ ℝ E
+  refine (NormedSpace.discreteTopology_zmultiples v).of_subset ?_
+  rw [← Submodule.coe_toAddSubgroup, Submodule.span_singleton_toAddSubgroup_eq_zmultiples]
+
+/-- The integer span of a nonzero scalar in a normed field `K`, when discrete, is a full
+`K`-lattice. -/
+instance instIsZLatticeSpanSingleton {K : Type*} [NormedField K] (c : K) [NeZero c]
+    [DiscreteTopology (Submodule.span ℤ {c} : Submodule ℤ K)] :
+    IsZLattice K (Submodule.span ℤ {c} : Submodule ℤ K) where
+  span_top := by
+    rw [Submodule.span_span_of_tower ℤ K, eq_top_iff]
+    intro x _
+    rw [← div_mul_cancel₀ x (NeZero.ne c), ← smul_eq_mul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self c)
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]

@@ -16,8 +16,7 @@ import TauCeti.Algebra.Module.ZLattice.Summable
 
 Let `L` be a discrete subgroup of a finite-dimensional real normed space `E`. This file studies
 the theta series `Θ_L(τ) = ∑_{v ∈ L} exp (π i ‖v‖² τ)` and the theta series
-`θ_{γ+L}(τ) = ∑_{v ∈ L} exp (π i ‖γ + v‖² τ)` of a translate as `im τ → ∞`, and on the imaginary
-axis.
+`θ_{γ+L}(τ) = ∑_{v ∈ L} exp (π i ‖γ + v‖² τ)` of a translate as `im τ → ∞`.
 
 The term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`. On a half-plane `{τ | y ≤ im τ}`,
 `0 < y`, the terms are therefore dominated by the summable Gaussian `exp (-π y ‖γ + v‖²)`, so the
@@ -27,11 +26,6 @@ vector `v = -γ`, which is constantly `1` and exists only when `γ ∈ L`. By do
 identifies the constant term of the `q`-expansion of `Θ_L`: it is `1`, in `q = exp (2 π i τ)` for
 an even lattice and in `exp (π i τ)` for an integral one. It also shows that `Θ_L` is never a cusp
 form, for any group having `∞` as a cusp.
-
-On the imaginary axis `τ = i y` every term is the positive real number `exp (-π y ‖γ + v‖²)`, so
-`θ_{γ+L}(i y)` is a positive real number and `Θ_L(i y) ≥ 1`. In particular `Θ_L` does not vanish
-there; this is the nonvanishing used to show that the rank of an even unimodular lattice is
-divisible by `8`.
 
 ## Main statements
 
@@ -48,9 +42,6 @@ divisible by `8`.
 * `ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero`: for even `L` the constant term of the
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
-* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
-  `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
-  `Θ_L ≥ 1`.
 
 ## References
 
@@ -226,43 +217,5 @@ theorem IsIntegral.qExpansion_two_thetaSeries_coeff_zero (hL : IsIntegral L) :
   exact ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
 
 end InnerProduct
-
-section ImaginaryAxis
-
-variable {E : Type*} [NormedAddCommGroup E] (L : Submodule ℤ E)
-
-/-- On the imaginary axis the theta series of `γ + L` is real:
-`θ_{γ+L}(i y) = ∑_{v ∈ L} exp (-π y ‖γ + v‖²)`. -/
-theorem thetaCoset_eq_ofReal_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
-    thetaCoset L γ τ = ((∑' v : L, Real.exp (-(π * τ.im) * ‖γ + (v : E)‖ ^ 2) : ℝ) : ℂ) := by
-  have hτ' : (τ : ℂ) = τ.im * I := Complex.ext (by simp [hτ]) (by simp)
-  rw [thetaCoset_apply, ofReal_tsum]
-  refine tsum_congr fun v => ?_
-  rw [hτ', ofReal_exp]
-  congr 1
-  push_cast
-  linear_combination (π * ‖γ + (v : E)‖ ^ 2 * τ.im : ℂ) * I_sq
-
-variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
-
-/-- On the imaginary axis the theta series of `γ + L` has positive real part (and is real, by
-`ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`). -/
-theorem re_thetaCoset_pos (γ : E) {τ : ℍ} (hτ : τ.re = 0) : 0 < (thetaCoset L γ τ).re := by
-  rw [thetaCoset_eq_ofReal_of_re_eq_zero L γ hτ, ofReal_re]
-  exact (summable_exp_neg_mul_norm_add_sq L (by positivity) γ).tsum_pos
-    (fun _ => (Real.exp_pos _).le) 0 (Real.exp_pos _)
-
-/-- On the imaginary axis the theta series of a discrete subgroup has real part at least `1`, the
-contribution of the zero vector (and is real, by `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`). -/
-theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries L τ).re := by
-  rw [← thetaCoset_zero, thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ, ofReal_re]
-  simpa using (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) 0).le_tsum 0
-    fun _ _ => (Real.exp_pos _).le
-
-/-- The theta series of a discrete subgroup does not vanish on the imaginary axis. -/
-theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=
-  fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
-
-end ImaginaryAxis
 
 end ZLattice

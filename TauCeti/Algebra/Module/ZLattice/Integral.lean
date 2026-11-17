@@ -51,6 +51,9 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
 * `ZLattice.IsUnimodular.span_eq_top`: a unimodular lattice in a finite-dimensional space spans it.
+* `ZLattice.isIntegral_iff_isUnimodular_of_dual_le`,
+  `ZLattice.dual_lt_iff_not_isIntegral_of_dual_le`: when `dual L ≤ L`, `L` is integral if and only
+  if it is unimodular, and `dual L < L` holds if and only if `L` is not integral.
 * `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v` is even if and only if `‖v‖² ∈ 2ℤ`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
@@ -265,6 +268,23 @@ theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E}
 theorem IsIntegral.isUnimodular_iff {L : Submodule ℤ E} (h : IsIntegral L) :
     IsUnimodular L ↔ dual L ≤ L :=
   ⟨fun hu ↦ hu.dual_eq.le, h.antisymm⟩
+
+/-- A lattice containing its dual is integral if and only if it is unimodular. -/
+theorem isIntegral_iff_isUnimodular_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) :
+    IsIntegral L ↔ IsUnimodular L :=
+  ⟨fun hi ↦ hi.antisymm h, IsUnimodular.isIntegral⟩
+
+/-- When `dual L ≤ L`, the inclusion `dual L < L` is strict if and only if `L` is not integral. -/
+theorem dual_lt_iff_not_isIntegral_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) :
+    dual L < L ↔ ¬ IsIntegral L := by
+  rw [lt_iff_le_and_ne, and_iff_right h, ne_comm, ne_eq, ← isUnimodular_iff_eq_dual,
+    isIntegral_iff_isUnimodular_of_dual_le h]
+
+/-- When `dual L ≤ L`, the inclusion `dual L < L` is strict if and only if `L` is not
+unimodular. -/
+theorem dual_lt_iff_not_isUnimodular_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) :
+    dual L < L ↔ ¬ IsUnimodular L := by
+  rw [dual_lt_iff_not_isIntegral_of_dual_le h, isIntegral_iff_isUnimodular_of_dual_le h]
 
 /-- The `ℤ`-span of an orthonormal basis is unimodular. -/
 theorem isUnimodular_span_orthonormalBasis {ι : Type*} [Fintype ι]
