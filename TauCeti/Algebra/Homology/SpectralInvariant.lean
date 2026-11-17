@@ -138,19 +138,23 @@ theorem spectralInvariant_le_iff (hI : Monotone I) {a : ℝ} :
 theorem spectralInvariant_eq_top_iff : spectralInvariant I σ = ⊤ ↔ ∀ a : ℝ, σ ∉ I a := by
   simp [spectralInvariant]
 
-/-- For an increasing filtration, the spectral invariant is `-∞` exactly when `σ` is represented
-at every level. -/
-theorem spectralInvariant_eq_bot_iff (hI : Monotone I) :
-    spectralInvariant I σ = ⊥ ↔ ∀ a : ℝ, σ ∈ I a := by
-  refine ⟨fun h a ↦ mem_of_spectralInvariant_lt hI (h ▸ EReal.bot_lt_coe a), fun h ↦ ?_⟩
+/-- If `σ` is represented at every level, its spectral invariant is `-∞`. -/
+theorem spectralInvariant_eq_bot_of_forall_mem (h : ∀ a : ℝ, σ ∈ I a) :
+    spectralInvariant I σ = ⊥ := by
   refine (EReal.eq_bot_iff_forall_lt _).2 fun a ↦ spectralInvariant_lt_iff.2 ⟨a - 1, h _, ?_⟩
   exact EReal.coe_lt_coe_iff.2 (sub_one_lt a)
 
+/-- For an increasing filtration, the spectral invariant is `-∞` exactly when `σ` is represented
+at every level. -/
+theorem spectralInvariant_eq_bot_iff (hI : Monotone I) :
+    spectralInvariant I σ = ⊥ ↔ ∀ a : ℝ, σ ∈ I a :=
+  ⟨fun h a ↦ mem_of_spectralInvariant_lt hI (h ▸ EReal.bot_lt_coe a),
+    spectralInvariant_eq_bot_of_forall_mem⟩
+
 /-- The zero element is represented at every level, so its spectral invariant is `-∞`. -/
 @[simp]
-theorem spectralInvariant_zero : spectralInvariant I 0 = ⊥ := by
-  refine (EReal.eq_bot_iff_forall_lt _).2 fun a ↦ spectralInvariant_lt_iff.2 ⟨a - 1, zero_mem _, ?_⟩
-  exact EReal.coe_lt_coe_iff.2 (sub_one_lt a)
+theorem spectralInvariant_zero : spectralInvariant I 0 = ⊥ :=
+  spectralInvariant_eq_bot_of_forall_mem fun _ ↦ zero_mem _
 
 /-- The spectral invariant does not see signs. -/
 @[simp]
@@ -218,7 +222,6 @@ theorem mem_of_spectralInvariant_eq_coe (hI : Monotone I)
   by_contra hrS
   obtain ⟨c, hrc, hc⟩ := hS r hrS
   have hσ : σ ∈ I r := hc (mem_of_spectralInvariant_lt hI (hr ▸ EReal.coe_lt_coe_iff.2 hrc))
-  have : Nonempty (Set.Iio r) := ⟨⟨r - 1, sub_one_lt r⟩⟩
   obtain ⟨⟨b, hb⟩, hσb⟩ := (Submodule.mem_iSup_of_directed _
     (hI.comp (Subtype.mono_coe _)).directed_le).1 (hleft r hσ)
   have := hr ▸ spectralInvariant_le_of_mem hσb
@@ -320,10 +323,8 @@ theorem mem_range_of_spectralInvariant_eq_coe (hact : IsClosed (Set.range act))
     r ∈ Set.range act := by
   have hmono := (moduleCatHomologyImage_mono K n).comp (actionFiltration_mono V act)
   refine mem_of_spectralInvariant_eq_coe hmono (fun a ↦ ?_) (fun a ha ↦ ?_) hr
-  · have : Nonempty (Set.Iio a) := ⟨⟨a - 1, sub_one_lt a⟩⟩
-    refine (moduleCatHomologyImage_mono K n (actionFiltration_le_iSup_Iio V act a)).trans_eq ?_
-    exact moduleCatHomologyImage_iSup_of_directed _
-      ((actionFiltration_mono V act).comp (Subtype.mono_coe _)).directed_le
+  · exact moduleCatHomologyImage_le_iSup_Iio (actionFiltration_mono V act)
+      (actionFiltration_le_iSup_Iio V act a)
   · obtain ⟨c, hac, hc⟩ := exists_lt_actionFiltration_le V act hact ha
     exact ⟨c, hac, moduleCatHomologyImage_mono K n hc⟩
 

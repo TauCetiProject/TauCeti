@@ -34,6 +34,8 @@ represented in an increasing union is represented at some stage. A chain map car
   cycle in `V`.
 * `HomologicalComplex.moduleCatHomologyImage_iSup_of_directed`: the construction commutes with
   directed suprema.
+* `HomologicalComplex.moduleCatHomologyImage_le_iSup_Iio`: the construction preserves left
+  continuity of increasing families.
 * `HomologicalComplex.map_moduleCatHomologyImage_le`: chain maps respect the construction.
 -/
 
@@ -101,6 +103,14 @@ theorem moduleCatHomologyImage_iSup_of_directed {κ : Type*} (V : κ → Submodu
   obtain ⟨z, hz, rfl⟩ := mem_moduleCatHomologyImage_iff.1 hσ
   obtain ⟨k, hk⟩ := (Submodule.mem_iSup_of_directed V hV).1 hz
   exact Submodule.mem_iSup_of_mem k (homologyπ_mem_moduleCatHomologyImage hk)
+
+/-- A left continuous increasing family of submodules, each `F a` lying in the union of the
+`F b` for `b < a`, induces a left continuous family of the classes they represent. -/
+theorem moduleCatHomologyImage_le_iSup_Iio {α : Type*} [LinearOrder α]
+    {F : α → Submodule R (K.X n)} (hF : Monotone F) {a : α} (h : F a ≤ ⨆ b : Set.Iio a, F b) :
+    K.moduleCatHomologyImage n (F a) ≤ ⨆ b : Set.Iio a, K.moduleCatHomologyImage n (F b) :=
+  (moduleCatHomologyImage_mono K n h).trans_eq
+    (moduleCatHomologyImage_iSup_of_directed _ (hF.comp (Subtype.mono_coe _)).directed_le)
 
 /-- A chain map carrying `V` into `W` in degree `n` carries the classes represented in `V` to
 classes represented in `W`. -/
