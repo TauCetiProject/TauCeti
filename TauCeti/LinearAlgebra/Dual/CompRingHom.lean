@@ -234,14 +234,6 @@ theorem compRingHom_apply_algebraMap_comp_of_commutes (L : Dual R (ι → R)) (f
     exact (hf (x i)).symm
   rw [h, compRingHom_apply_comp]
 
-/-- A coefficient homomorphism commuting with the base-ring maps preserves evaluation
-on pointwise base-ring coordinates. -/
-theorem compRingHom_apply_fun_algebraMap_of_commutes (L : Dual R (ι → R)) (f : R →+* S)
-    (hf : ∀ a, f (algebraMap A R a) = algebraMap A S a) (x : ι → A) :
-    L.compRingHom f (fun i ↦ algebraMap A S (x i)) =
-      f (L (fun i ↦ algebraMap A R (x i))) :=
-  L.compRingHom_apply_algebraMap_comp_of_commutes f hf x
-
 /-- Transport along an algebra homomorphism commutes with evaluation on points over the
 base ring. In particular this applies to conjugation fixing the base field. -/
 @[simp]
