@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import Mathlib.Analysis.Convex.Basic
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
 /-!
@@ -18,10 +19,13 @@ an ordered `R`-module (`TauCeti.isOrderedModule_of_cfc`), and nonnegative scalar
 preserves nonnegativity (`TauCeti.smul_nonneg_of_cfc`) without needing a separate `StarModule R A`
 assumption.
 
-Over `ℝ`, the square-root congruence argument also generalizes Mathlib's C⋆-algebra theorem
-`IsStrictlyPositive.add_nonneg` to arbitrary star-ordered algebras with a real continuous
-functional calculus (`IsStrictlyPositive.add_nonneg_of_cfc`): if `a` is strictly positive and
-`0 ≤ b`, then `a + b = √a (1 + √a⁻¹ b √a⁻¹) √a` is strictly positive.
+Over `ℝ`, the square-root congruence argument also generalizes Mathlib's C⋆-algebra theorems
+`IsStrictlyPositive.add_nonneg` and `IsStrictlyPositive.nonneg_add` to arbitrary star-ordered
+algebras with a real continuous functional calculus (`IsStrictlyPositive.add_nonneg_of_cfc`,
+`IsStrictlyPositive.nonneg_add_of_cfc`): if `a` is strictly positive and `0 ≤ b`, then
+`a + b = √a (1 + √a⁻¹ b √a⁻¹) √a` is strictly positive. Consequently the cone
+`{p : A | IsStrictlyPositive p}` of strictly positive elements is convex over `ℝ`
+(`IsStrictlyPositive.convex_setOf`).
 
 ## Main declarations
 
@@ -29,8 +33,10 @@ functional calculus (`IsStrictlyPositive.add_nonneg_of_cfc`): if `a` is strictly
   over a star-ordered scalar semiring `R` is an ordered `R`-module.
 * `TauCeti.smul_nonneg_of_cfc`: `0 ≤ c` and `0 ≤ a` imply `0 ≤ c • a` in a star-ordered algebra
   with a continuous functional calculus.
-* `IsStrictlyPositive.add_nonneg_of_cfc`: adding a nonnegative element to a strictly positive
-  element yields a strictly positive element in any real-CFC star-ordered algebra.
+* `IsStrictlyPositive.add_nonneg_of_cfc`, `IsStrictlyPositive.nonneg_add_of_cfc`: adding a
+  nonnegative element to a strictly positive element (on either side) yields a strictly positive
+  element in any real-CFC star-ordered algebra.
+* `IsStrictlyPositive.convex_setOf`: `{p : A | IsStrictlyPositive p}` is convex over `ℝ`.
 -/
 
 public section
@@ -111,5 +117,19 @@ theorem IsStrictlyPositive.add_nonneg_of_cfc {a b : A} (ha : IsStrictlyPositive 
       _ = a + b := by rw [huu, u.mul_inv, u.inv_mul, one_mul, mul_one]
   rw [← hconj]
   exact IsStrictlyPositive.conjugate_of_isUnit_of_isSelfAdjoint (1 + q) (u : A) u.isUnit hu_sa h1q
+
+/-- Adding a strictly positive element `b` to a nonnegative element `a` in a real-CFC star-ordered
+algebra yields a strictly positive element `a + b` (generalizing `IsStrictlyPositive.nonneg_add`
+from C⋆-algebras to any algebra with a real continuous functional calculus). -/
+theorem IsStrictlyPositive.nonneg_add_of_cfc {a b : A} (ha : 0 ≤ a) (hb : IsStrictlyPositive b) :
+    IsStrictlyPositive (a + b) :=
+  add_comm b a ▸ hb.add_nonneg_of_cfc ha
+
+/-- The cone `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex over `ℝ`. -/
+theorem IsStrictlyPositive.convex_setOf : Convex ℝ {p : A | IsStrictlyPositive p} := by
+  have : IsOrderedModule ℝ A := TauCeti.isOrderedModule_of_cfc
+  rw [convex_iff_forall_pos]
+  intro p hp q hq u v hu hv _
+  exact (hp.smul hu).add_nonneg_of_cfc (smul_nonneg hv.le hq.nonneg)
 
 end StrictPositivity

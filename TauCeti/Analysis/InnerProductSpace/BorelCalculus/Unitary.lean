@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Exponential
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
@@ -69,13 +70,6 @@ open scoped InnerProductSpace Real unitInterval
 section Unitary
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- Real scalar multiplication on `H →L[ℂ] H` (acting on the codomain via
-`ContinuousLinearMap.instSMul`) commutes with the Hilbert-space adjoint. Mathlib's
-`StarModule.complexToReal` covers only `Module.complexToReal`, so this `Prop` instance unlocks
-`Module ℝ` and `NormedSpace ℝ` on `selfAdjoint (H →L[ℂ] H)`. -/
-instance ContinuousLinearMap.instStarModuleReal : StarModule ℝ (H →L[ℂ] H) where
-  star_smul r T := by simp [← Complex.coe_smul]
 
 namespace Unitary
 
@@ -257,17 +251,15 @@ end UnitaryConj
 
 /-- The canonical norm-continuous path `t ↦ expUnitary (t • borelArg u)` from `1` to `u` in
 `unitary (H →L[ℂ] H)`. -/
-def borelPathToOne (u : unitary (H →L[ℂ] H)) : Path 1 u where
-  toFun t := selfAdjoint.expUnitary ((t : ℝ) • borelArg u)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simp
+def borelPathToOne (u : unitary (H →L[ℂ] H)) : Path 1 u :=
+  (selfAdjoint.expUnitaryPathToOne (A := H →L[ℂ] H) (borelArg u)).cast rfl
+    (expUnitary_borelArg u).symm
 
 /-- Evaluating `borelPathToOne u` at `t` gives `selfAdjoint.expUnitary ((t : ℝ) • borelArg u)`. -/
 @[simp]
 theorem borelPathToOne_apply (u : unitary (H →L[ℂ] H)) (t : I) :
-    borelPathToOne u t = selfAdjoint.expUnitary ((t : ℝ) • borelArg u) :=
-  (rfl)
+    borelPathToOne u t = selfAdjoint.expUnitary ((t : ℝ) • borelArg u) := by
+  rw [borelPathToOne, Path.cast_coe, selfAdjoint.expUnitaryPathToOne_apply]
 
 /-- Along `borelPathToOne u`, the distance from `1` never exceeds `‖(u - 1 : H →L[ℂ] H)‖`. -/
 theorem norm_borelPathToOne_sub_one_le (u : unitary (H →L[ℂ] H)) (t : I) :

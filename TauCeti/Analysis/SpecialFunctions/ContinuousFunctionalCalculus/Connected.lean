@@ -10,17 +10,17 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometr
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Topology.Algebra.Star.Unitary
 import Mathlib.Algebra.Order.Star.Real
-import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 
 /-!
 # Polar paths and path-connectedness of groups of units via the continuous functional calculus
 
 In an algebra `A` with a real continuous functional calculus and compatible star order, the set
-`{p : A | IsStrictlyPositive p}` of strictly positive elements is convex and contains `1`: for any
-strictly positive `p` and `t ∈ [0, 1]`, the affine interpolation `(1 - t) • 1 + t • p` remains
-strictly positive.
+`{p : A | IsStrictlyPositive p}` of strictly positive elements is convex
+(`IsStrictlyPositive.convex_setOf`) and contains `1`: for any strictly positive `p` and
+`t ∈ [0, 1]`, the affine interpolation `(1 - t) • 1 + t • p` remains strictly positive.
 
 When `A` is a complete normed `ℝ`-algebra, `Units.val : Aˣ → A` is an open embedding onto
 `{a : A | IsUnit a}`, so this straight line lifts to an explicit path
@@ -41,7 +41,6 @@ so `Aˣ` is path-connected if and only if `unitary A` is (`Units.pathConnectedSp
 
 ## Main declarations
 
-* `IsStrictlyPositive.convex_setOf`: `{p : A | IsStrictlyPositive p}` is convex over `ℝ`.
 * `IsStrictlyPositive.one_sub_smul_add_smul`: `(1 - t) • 1 + t • p` is strictly positive for
   `t ∈ [0, 1]`.
 * `IsStrictlyPositive.isPathConnected_setOf`: `{p : A | IsStrictlyPositive p}` is path-connected.
@@ -75,13 +74,6 @@ variable {A : Type*} [Ring A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
   [TopologicalSpace A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
 
-/-- The cone `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex over `ℝ`. -/
-theorem IsStrictlyPositive.convex_setOf : Convex ℝ {p : A | IsStrictlyPositive p} := by
-  have : IsOrderedModule ℝ A := TauCeti.isOrderedModule_of_cfc
-  rw [convex_iff_forall_pos]
-  intro p hp q hq u v hu hv _
-  exact (hp.smul hu).add_nonneg_of_cfc (smul_nonneg hv.le hq.nonneg)
-
 /-- Affine interpolation `(1 - t) • 1 + t • p` between `1` and a strictly positive element `p`
 remains strictly positive for every `t ∈ [0, 1]`. -/
 theorem IsStrictlyPositive.one_sub_smul_add_smul {p : A} (hp : IsStrictlyPositive p) {t : ℝ}
@@ -96,21 +88,6 @@ theorem IsStrictlyPositive.isPathConnected_setOf [ContinuousSMul ℝ A] :
   IsStrictlyPositive.convex_setOf.isPathConnected ⟨1, isStrictlyPositive_one⟩
 
 end Convex
-
-section BanachUnits
-
-/-- In a complete normed ring `R`, the set `{r : R | IsUnit r}` of invertible elements is
-path-connected if and only if the topological group `Rˣ` is path-connected. -/
-theorem TauCeti.isPathConnected_isUnit_iff {R : Type*} [NormedRing R] [CompleteSpace R] :
-    IsPathConnected {r : R | IsUnit r} ↔ PathConnectedSpace Rˣ := by
-  have hrange : range (Units.val : Rˣ → R) = {r : R | IsUnit r} := by
-    ext r
-    exact ⟨fun ⟨u, hu⟩ ↦ hu ▸ u.isUnit, fun hr ↦ ⟨hr.unit, hr.unit_spec⟩⟩
-  let e := (Units.isOpenEmbedding_val (R := R)).isEmbedding.toHomeomorph
-  rw [← hrange, isPathConnected_iff_pathConnectedSpace]
-  exact ⟨fun _ ↦ e.symm.pathConnectedSpace, fun _ ↦ e.pathConnectedSpace⟩
-
-end BanachUnits
 
 section PolarPath
 

@@ -54,6 +54,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence.
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
+* `ContinuousLinearMap.instStarModuleReal`: `StarModule ℝ (E →L[𝕜] E)` for the pointwise real
+  scalar action on bounded operators.
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
@@ -202,6 +204,16 @@ theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T
     IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
 
 end RealAdjoint
+
+/-- Real scalar multiplication on `E →L[𝕜] E` (acting on the codomain via
+`ContinuousLinearMap.instSMul`) commutes with the Hilbert-space adjoint whenever the real action on
+`E` is compatible with the `𝕜`-action. Mathlib's `StarModule.complexToReal` covers only
+`Module.complexToReal`, so this `Prop` instance unlocks `Module ℝ` and `NormedSpace ℝ` on
+`selfAdjoint (E →L[𝕜] E)`. -/
+instance (priority := 900) instStarModuleReal [CompleteSpace E] [Module ℝ E]
+    [ContinuousConstSMul ℝ E] [IsScalarTower ℝ 𝕜 E] : StarModule ℝ (E →L[𝕜] E) where
+  star_smul r T := by
+    rw [← smul_one_smul 𝕜 r T, star_smul, star_smul, star_one, smul_one_smul]
 
 section RealAdjointBilinear
 
