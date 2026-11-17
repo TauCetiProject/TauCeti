@@ -53,7 +53,7 @@ theorem dirichletData_entireCompletion_ne_zero_of_one_le_re (hne : χ ≠ 1) {s 
 /-- A nonprincipal primitive Dirichlet entire completion has no zeros on `Re s ≤ 0`. -/
 theorem dirichletData_entireCompletion_ne_zero_of_re_nonpos (hne : χ ≠ 1) {s : ℂ}
     (hs : s.re ≤ 0) : (dirichletData χ hχ).entireCompletion s ≠ 0 := by
-  rw [← sub_sub_cancel 1 s, dirichletData_entireCompletion_one_sub χ hχ hne]
+  rw [← sub_sub_cancel 1 s, dirichletData_entireCompletion_one_sub χ hχ]
   refine mul_ne_zero (DirichletCharacter.rootNumber_ne_zero hχ) ?_
   exact dirichletData_entireCompletion_ne_zero_of_one_le_re χ⁻¹ hχ.inv (inv_ne_one.mpr hne)
     (by simp only [sub_re, one_re]; linarith)
@@ -96,23 +96,17 @@ theorem re_one_div_sub_pos_of_dirichletData_entireCompletion_eq_zero (hne : χ �
 theorem analyticOrderAt_dirichletData_entireCompletion_one_sub (s : ℂ) :
     analyticOrderAt (dirichletData χ hχ).entireCompletion (1 - s) =
       analyticOrderAt (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
-  have h := dirichletData_hasMeromorphicContinuation χ hχ
-  have hm := (dirichletData_hasFunctionalEquation χ hχ).meromorphicOrderAt_entireCompletion_one_sub
-    h s
-  rw [(h.analyticAt_entireCompletion _).meromorphicOrderAt_eq,
-    (h.dual.analyticAt_entireCompletion _).meromorphicOrderAt_eq, dirichletData_dual] at hm
-  exact ENat.map_natCast_injective hm
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasFunctionalEquation χ hχ).analyticOrderAt_entireCompletion_one_sub
+      (dirichletData_hasMeromorphicContinuation χ hχ) s
 
 /-- Reflection across the real axis transports zero orders from `Λ₀(χ)` at `s` to `Λ₀(χ⁻¹)`
 at `conj s`. -/
 theorem analyticOrderAt_dirichletData_inv_entireCompletion_conj (s : ℂ) :
     analyticOrderAt (dirichletData χ⁻¹ hχ.inv).entireCompletion (conj s) =
       analyticOrderAt (dirichletData χ hχ).entireCompletion s := by
-  have h := dirichletData_hasMeromorphicContinuation χ hχ
-  have hm := h.meromorphicOrderAt_dual_entireCompletion_conj s
-  rw [(h.analyticAt_entireCompletion _).meromorphicOrderAt_eq,
-    (h.dual.analyticAt_entireCompletion _).meromorphicOrderAt_eq, dirichletData_dual] at hm
-  exact ENat.map_natCast_injective hm
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasMeromorphicContinuation χ hχ).analyticOrderAt_dual_entireCompletion_conj s
 
 /-- The composite `ρ ↦ 1 - conj ρ` preserves the zero orders of a primitive Dirichlet entire
 completion. -/
