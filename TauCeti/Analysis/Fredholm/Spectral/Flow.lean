@@ -509,6 +509,13 @@ private theorem exists_isSpectralFlowPotential_of_loc {a b : ℝ} (hA : Continuo
   obtain ⟨δ, hδ, hcut⟩ := exists_pos_forall_exists_isSpectralCutOn hloc
   exact ⟨_, isSpectralFlowPotential_gridPotential hA hsa hcut hδ⟩
 
+/-- A function which near each point of `[a, b]` equals its value at that point takes the same
+value at `a` and `b`. -/
+private theorem eq_of_forall_eventually_eq_nhdsWithin_Icc {β : Type*} {f : ℝ → β} {a b : ℝ}
+    (hab : a ≤ b) (h : ∀ x ∈ Icc a b, ∀ᶠ y in 𝓝[Icc a b] x, f y = f x) : f b = f a :=
+  isPreconnected_Icc.induction₂ (fun x y ↦ f x = f y) (fun x hx ↦ (h x hx).mono fun _ ↦ Eq.symm)
+    (fun _ _ _ _ _ _ ↦ Eq.trans) (fun _ _ _ _ ↦ Eq.symm) ⟨hab, le_rfl⟩ ⟨le_rfl, hab⟩
+
 omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
 /-- Two potentials have the same increment over `[a, b]` when every time has a neighbourhood with a
 spectral cut: their difference is locally constant on the interval. -/
@@ -516,17 +523,14 @@ private theorem IsSpectralFlowPotential.sub_eq_sub_of_loc {a b : ℝ} {F G : ℝ
     (hF : IsSpectralFlowPotential A a b F) (hG : IsSpectralFlowPotential A a b G) (hab : a ≤ b)
     (hloc : ∀ t ∈ Icc a b, ∃ c, ∃ ε > 0, IsSpectralCutOn A c (ball t ε ∩ Icc a b)) :
     F b - F a = G b - G a := by
-  have hD : ContinuousOn (fun x ↦ F x - G x) (Icc a b) := by
-    intro t₀ ht₀
+  have := eq_of_forall_eventually_eq_nhdsWithin_Icc (f := fun x ↦ F x - G x) hab fun t₀ ht₀ ↦ by
     obtain ⟨c, ε, hε, hc⟩ := hloc t₀ ht₀
-    refine (continuousWithinAt_const (b := F t₀ - G t₀)).congr_of_eventuallyEq ?_ rfl
     filter_upwards [inter_mem_nhdsWithin (Icc a b) (ball_mem_nhds t₀ hε)] with u ⟨hu, huε⟩
     -- Compare `F` and `G` over the interval between `t₀` and `u`.
     have hcu := hc.mono (ordConnected_Icc.uIcc_subset_ball_inter ht₀ ⟨huε, hu⟩)
     have h₁ := hF.sub_eq_of_uIcc ht₀ hu hcu
     have h₂ := hG.sub_eq_of_uIcc ht₀ hu hcu
     linarith
-  have := isPreconnected_Icc.constant hD ⟨hab, le_rfl⟩ ⟨le_rfl, hab⟩
   linarith
 
 /-- **Existence of spectral flow potentials** for a continuous path of self-adjoint Fredholm
@@ -713,11 +717,9 @@ private theorem spectralFlow_sub_spectralFlow_of_forall_exists_isSpectralCutOn (
   obtain ⟨Fv, hFv⟩ := exists_isSpectralFlowPotential (hG₁ v hv) (hsa v hv) (hF v hv)
   -- Along the strip, the difference of the potentials of the two sides minus the spectral flow
   -- of the vertical path is locally constant, hence constant.
-  have hD : ContinuousOn (fun t ↦ Fv t - Fu t - spectralFlow (fun s ↦ G s t) u v) (Icc a b) := by
-    intro t₀ ht₀
+  have hD' := eq_of_forall_eventually_eq_nhdsWithin_Icc
+      (f := fun t ↦ Fv t - Fu t - spectralFlow (fun s ↦ G s t) u v) hab fun t₀ ht₀ ↦ by
     obtain ⟨c, ε, hε, hc⟩ := hloc t₀ ht₀
-    refine (continuousWithinAt_const (b := Fv t₀ - Fu t₀ -
-      spectralFlow (fun s ↦ G s t₀) u v)).congr_of_eventuallyEq ?_ rfl
     filter_upwards [inter_mem_nhdsWithin (Icc a b) (ball_mem_nhds t₀ hε)] with t ⟨ht, htε⟩
     have hsub := ordConnected_Icc.uIcc_subset_ball_inter ht₀ ⟨htε, ht⟩
     -- The vertical path at a time of the neighbourhood has the cut `c`.
@@ -730,7 +732,6 @@ private theorem spectralFlow_sub_spectralFlow_of_forall_exists_isSpectralCutOn (
     have h₂ := hFu.sub_eq_of_uIcc ht₀ ht ((hc u hu).mono hsub)
     rw [hvert ⟨htε, ht⟩, hvert ⟨mem_ball_self hε, ht₀⟩]
     linarith
-  have hD' := isPreconnected_Icc.constant hD ⟨hab, le_rfl⟩ ⟨le_rfl, hab⟩
   rw [spectralFlow_eq_sub hab (hG₁ v hv) (hsa v hv) (hF v hv) hFv,
     spectralFlow_eq_sub hab (hG₁ u hu) (hsa u hu) (hF u hu) hFu]
   linarith
@@ -782,9 +783,8 @@ theorem spectralFlow_add_spectralFlow_eq_add (hab : a ≤ b) (huv : u ≤ v)
       (fun s hs ↦ hG.uncurry_left s (hsub hs)) (fun t ht ↦ (hG.uncurry_right t ht).mono hsub)
       (fun s hs ↦ hsa s (hsub hs)) (fun s hs ↦ hF s (hsub hs)) fun t₀ ht₀ ↦ by
         obtain ⟨c, hc⟩ := hcut p ⟨hup, hpq.trans hqv⟩ t₀ ht₀
-        exact ⟨c, δ, hδ, fun s hs ↦ hc s ⟨by
-          rw [Real.ball_eq_Ioo]
-          exact ⟨by linarith [hs.1], by linarith [hs.2]⟩, hsub hs⟩⟩
+        exact ⟨c, δ, hδ, fun s hs ↦
+          hc s ⟨Real.Icc_subset_ball (by linarith) (by linarith) hs, hsub hs⟩⟩
     -- Split the vertical sides at `p`.
     have hconcat {t : ℝ} (ht : t ∈ Icc a b) : spectralFlow (fun s ↦ G s t) u q =
         spectralFlow (fun s ↦ G s t) u p + spectralFlow (fun s ↦ G s t) p q :=
@@ -794,15 +794,12 @@ theorem spectralFlow_add_spectralFlow_eq_add (hab : a ≤ b) (huv : u ≤ v)
         (fun s hs ↦ hF s ⟨hs.1, hs.2.trans hqv⟩ t ht)
     simp only [Θ, hconcat ha, hconcat hb]
     linarith
-  have hΘ : ContinuousOn Θ (Icc u v) := by
-    intro σ hσ
-    refine (continuousWithinAt_const (b := Θ σ)).congr_of_eventuallyEq ?_ rfl
+  have := eq_of_forall_eventually_eq_nhdsWithin_Icc (f := Θ) huv fun σ hσ ↦ by
     filter_upwards [inter_mem_nhdsWithin (Icc u v) (ball_mem_nhds σ hδ)] with s ⟨hs, hsδ⟩
     rw [Real.ball_eq_Ioo] at hsδ
     rcases le_total s σ with h | h
     · exact (key hs.1 h hσ.2 (by linarith [hsδ.1])).symm
     · exact key hσ.1 h hs.2 (by linarith [hsδ.2])
-  have := isPreconnected_Icc.constant hΘ ⟨huv, le_rfl⟩ ⟨le_rfl, huv⟩
   simp only [Θ, spectralFlow_self] at this
   linarith
 
