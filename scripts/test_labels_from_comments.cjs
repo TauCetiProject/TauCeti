@@ -14,13 +14,16 @@ const parse = new AsyncFunction('context', 'core', scripts[0]);
 const apply = new AsyncFunction('context', 'github', 'process', 'core', scripts[1]);
 const issue = { owner: 'TauCetiProject', repo: 'test-repo', number: 123 };
 // Evaluate the actual job condition with Actions' case-insensitive contains semantics.
-const jobCondition = workflow.match(/^    if: >-\n((?:      .*\n)+)/m)[1];
-const admit = new Function('github', 'contains', `return (${jobCondition});`);
+// Actions string literals have no escapes, so keep backslashes literal in the JS source.
+const jobCondition = workflow.match(/^    if: >-\n((?:      .*\n)+)/m)[1].replace(/\\/g, '\\\\');
+const admit = new Function('github', 'contains', 'startsWith', 'format', 'fromJSON', `return (${jobCondition});`);
+const format = (template, ...args) => template.replace(/\{(\d+)\}/g, (_, i) => String(args[i]));
 const repository = workflow.match(/github.repository == '([^']+)'/)[1];
 const needsRunner = (body, repo = repository, commenter = 1, author = 1, isPR = true) => admit({
   repository: repo, event: { comment: { body, user: { id: commenter } },
     issue: { user: { id: author }, pull_request: isPR ? {} : null } },
-}, (value, search) => value.toLowerCase().includes(search.toLowerCase()));
+}, (value, search) => value.toLowerCase().includes(search.toLowerCase()),
+  (value, prefix) => value.toLowerCase().startsWith(prefix.toLowerCase()), format, JSON.parse);
 
 async function commands(body) {
   let output;
@@ -76,10 +79,14 @@ async function execute(body, initial = [], failure, options = {}) {
   return { labels, calls, pullReads, pageReads };
 }
 
-test('exact standalone commands accept whitespace, CRLF, and multiword labels', async () => {
-  assert.deepEqual(await commands('  dont-repair-in-queue \r\n\t-help wanted\r\ndocumentation'), [
+test('exact standalone commands accept trailing whitespace, CRLF, and multiword labels', async () => {
+  assert.deepEqual(await commands('dont-repair-in-queue \r\n-help wanted\t\r\ndocumentation'), [
     ['dont-repair-in-queue', true], ['help wanted', false], ['documentation', true],
   ]);
+});
+
+test('indented commands are inert, matching the line-start prefilter', async () => {
+  assert.deepEqual(await commands('  hold\n\t-keep\n    documentation'), []);
 });
 
 test('last instruction wins independently for each label', async () => {
@@ -139,9 +146,10 @@ test('unrecognized comments make no API calls', async () => {
   assert.deepEqual(calls, []);
 });
 
-test('ordinary conversation and queue merge notifications never request a runner', () => {
+test('ordinary conversation, AI review scoreboards, and queue merge notifications never request a runner', () => {
   for (const body of [
     'Thanks!', 'bors merge', '/review', '',
+    '<!--tauceti-scoreboard-->\n## AI review\n\nkeep\nDocumentation: please hold this clear.',
     'Pull request successfully merged into main.\n\nBuild succeeded:\n' +
       '  * [build](https://github.com/TauCetiProject/TauCeti/actions/runs/42531937757)\n\n' +
       'Merged revision: `1d5dafa62c122f5cce5cd8f1257ade2825f1ee87`.\n\n' +
@@ -150,20 +158,34 @@ test('ordinary conversation and queue merge notifications never request a runner
   assert.equal(needsRunner('dont-repair-in-queue', 'someone/fork'), false);
 });
 
-test('every allowlisted command passes admission with whitespace and CRLF', async () => {
+test('prose mentioning label words mid-line never requests a runner', () => {
+  for (const body of [
+    'We should keep this lemma and hold off on the refactor.',
+    'Please add documentation for the new API.\r\nThis is an enhancement; help wanted.',
+    'Review: the proof is fine.\n\nI would keep `foo` and note mathlib-overlap concerns.',
+    '> hold\n- keep\n`documentation`\n * enhancement\n  hold',
+    'Marked as self-tested: no, please do not add dont-repair-in-queue.',
+  ]) assert.equal(needsRunner(body), false, body);
+});
+
+test('every allowlisted line-start command passes admission with trailing whitespace and CRLF', async () => {
   const allowed = [...scripts[0].match(/new Set\(\[([\s\S]*?)\]\)/)[1].matchAll(/'([^']+)'/g)]
     .map(match => match[1]);
   for (const label of allowed) {
     for (const prefix of ['', '-']) {
-      const body = `Some context\r\n\t ${prefix}${label} \r\nThanks!`;
-      assert.equal(needsRunner(body), true, body);
-      assert.deepEqual(await commands(body), [[label, prefix === '']]);
+      for (const body of [
+        `${prefix}${label}`, `${prefix}${label} \nThanks!`,
+        `Some context\n${prefix}${label}`, `Some context\r\n${prefix}${label} \r\nThanks!`,
+      ]) {
+        assert.equal(needsRunner(body), true, body);
+        assert.deepEqual(await commands(body), [[label, prefix === '']]);
+      }
     }
   }
 });
 
 test('broad admission never relaxes the exact command parser', async () => {
-  for (const body of ['Please add documentation.', 'DONT-REPAIR-IN-QUEUE', '> enhancement']) {
+  for (const body of ['Documentation is missing.', 'DONT-REPAIR-IN-QUEUE', 'ok\nKeeping this.', 'Holds.']) {
     assert.equal(needsRunner(body), true);
     assert.deepEqual(await commands(body), []);
   }
@@ -173,6 +195,9 @@ test('broad admission never relaxes the exact command parser', async () => {
 test('self-tested author commands admit only PR authors before runner allocation', () => {
   assert.equal(needsRunner('self-tested'), true);
   assert.equal(needsRunner('-self-tested'), true);
+  assert.equal(needsRunner('Verified locally.\r\nself-tested'), true);
+  assert.equal(needsRunner('Verified locally.\nself-tested', repository, 2, 1), false);
+  assert.equal(needsRunner('this is self-tested'), false);
   assert.equal(needsRunner('self-tested', repository, 2, 1), false);
   assert.equal(needsRunner('self-tested', repository, 1, 1, false), false);
 });

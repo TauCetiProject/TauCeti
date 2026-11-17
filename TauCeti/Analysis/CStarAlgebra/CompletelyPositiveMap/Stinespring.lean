@@ -12,6 +12,8 @@ public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
+import TauCeti.Analysis.CStarAlgebra.Module.Gram
+import TauCeti.Analysis.CStarAlgebra.Module.Self
 
 /-!
 # Stinespring's dilation theorem and unitary uniqueness of minimal dilations

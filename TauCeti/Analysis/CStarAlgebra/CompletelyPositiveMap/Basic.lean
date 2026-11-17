@@ -8,26 +8,28 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-public import TauCeti.Analysis.CStarAlgebra.Module.Gram
-public import TauCeti.Analysis.CStarAlgebra.Module.Self
+public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 
 /-!
-# Basic API and the Kadison–Schwarz inequality for completely positive maps
+# Basic API for completely positive maps
 
 Mathlib defines `CompletelyPositiveMap A B` (with notation `A →CP B` in scope `CStarAlgebra`) for
 linear maps between C⋆-algebras whose entrywise action on `CStarMatrix (Fin k) (Fin k) A` preserves
 positivity for every `k`. Every completely positive map is positive (`OrderHomClass`), hence
 star-preserving and automatically continuous (`ContinuousLinearMapClass`).
 
+`TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap` establishes the general and unital
+Kadison–Schwarz inequalities (`CompletelyPositiveMapClass.star_map_mul_map_le`,
+`CompletelyPositiveMapClass.star_map_mul_map_le_of_map_one`) and the sharp norm bound
+(`CompletelyPositiveMapClass.norm_apply_le`, `TauCeti.IsNPositive.opNorm_eq_norm_map_one`).
+
 This file equips `A →CP B` with its convex cone structure, composition, the completely positive
 partial order (`ψ ≤ φ` when `φ - ψ` is completely positive), the canonical compression examples
-`a ↦ star b * a * b` and `S ↦ V† ∘L S ∘L V`, and the Kadison–Schwarz inequality for maps on a
-unital C⋆-algebra `D`:
+`a ↦ star b * a * b` and `S ↦ V† ∘L S ∘L V`, and the following corollaries on a unital domain `D`:
 
-* `star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a)` for any codomain C⋆-algebra `B` (unital or not);
-* `star (φ a) * φ a ≤ φ (star a * a)` when the codomain is unital and `φ 1 ≤ 1` (in particular
-  when `φ 1 = 1`);
-* `‖φ a‖ ≤ ‖φ 1‖ * ‖a‖` and `‖φ.toContinuousLinearMap‖ = ‖φ 1‖`.
+* `star (φ a) * φ a ≤ φ (star a * a)` for subunital completely positive maps `φ 1 ≤ 1`;
+* `‖φ.toContinuousLinearMap‖ = ‖φ 1‖`, and `‖φ.toContinuousLinearMap‖ ≤ 1` when `φ 1 ≤ 1`.
 
 ## Main declarations
 
@@ -40,13 +42,11 @@ unital C⋆-algebra `D`:
   `CompletelyPositiveMap.le_iff_exists_add`.
 * `CompletelyPositiveMap.conj`, `CompletelyPositiveMap.conjCLM`: compression `a ↦ star b * a * b`
   on a C⋆-algebra and `S ↦ V† ∘L S ∘L V` between Hilbert-space operator algebras.
-* `CompletelyPositiveMap.star_map_mul_map_le_of_map_one_le`,
-  `CompletelyPositiveMap.star_map_mul_map_le`,
-  `CompletelyPositiveMap.star_map_mul_map_le_norm_map_one_smul`: the Kadison–Schwarz inequality in
-  subunital, unital, and general form.
-* `CompletelyPositiveMap.norm_apply_le_norm_map_one_mul`,
-  `CompletelyPositiveMap.norm_toContinuousLinearMap`: sharp norm bound and operator norm formula
-  `‖φ.toContinuousLinearMap‖ = ‖φ 1‖`.
+* `CompletelyPositiveMap.star_map_mul_map_le_of_map_one_le`: subunital Kadison–Schwarz inequality
+  (`φ 1 ≤ 1`).
+* `CompletelyPositiveMap.norm_toContinuousLinearMap`,
+  `CompletelyPositiveMap.norm_toContinuousLinearMap_le_one_of_map_one_le`: operator norm formula
+  `‖φ.toContinuousLinearMap‖ = ‖φ 1‖` and contractivity of subunital maps.
 
 ## References
 
@@ -94,8 +94,6 @@ variable {A B C : Type*}
 
 /-- The underlying `ℂ`-linear map of `φ` agrees with its `LinearMapClass` coercion. -/
 theorem toLinearMap_eq_coe (φ : A →CP B) : φ.toLinearMap = (φ : A →ₗ[ℂ] B) := (rfl)
-
-@[simp] theorem coe_toLinearMap (φ : A →CP B) : ⇑φ.toLinearMap = φ := (rfl)
 
 /-- Reinterpret a completely positive map as a positive linear map. -/
 def toPositiveLinearMap (φ : A →CP B) : A →ₚ[ℂ] B := .ofClass φ
@@ -327,100 +325,19 @@ variable {D E B : Type*}
 `star (φ a) * φ a ≤ φ (star a * a)` for every `a : D`. -/
 theorem star_map_mul_map_le_of_map_one_le (φ : D →CP E) (hφ : φ 1 ≤ 1) (a : D) :
     star (φ a) * φ a ≤ φ (star a * a) := by
-  have hquad := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
-    (φ.map_cstarMatrix_nonneg _ (CStarMatrix.gram_nonneg ![1, a])) ![-φ a, 1]
-  have hstar1 : star (φ 1) = φ 1 :=
-    (IsSelfAdjoint.of_nonneg (_root_.map_nonneg φ zero_le_one)).star_eq
-  simp only [Fin.sum_univ_two, CStarMatrix.map_apply, CStarMatrix.gram_apply,
-    CStarModule.unop_inner_mulOpposite, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, star_neg, star_one, mul_one, one_mul, mul_neg, neg_mul, neg_neg,
-    map_star, hstar1] at hquad
-  have hconj : star (φ a) * φ 1 * φ a ≤ star (φ a) * φ a := by
-    simpa using star_left_conjugate_le_conjugate hφ (φ a)
-  have hsub :
-      (star (φ a) * φ 1 * φ a + -(star (φ a) * φ a)) + (-(star (φ a) * φ a) + φ (star a * a)) ≤
-        φ (star a * a) - star (φ a) * φ a := by
-    simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
-      add_le_add_right hconj (-(star (φ a) * φ a) + (-(star (φ a) * φ a) + φ (star a * a)))
-  exact sub_nonneg.mp (hquad.trans hsub)
-
-/-- **Kadison–Schwarz inequality** (unital form): if `φ : D →CP E` is unital (`φ 1 = 1`), then
-`star (φ a) * φ a ≤ φ (star a * a)` for every `a : D`. -/
-theorem star_map_mul_map_le (φ : D →CP E) (hφ : φ 1 = 1) (a : D) :
-    star (φ a) * φ a ≤ φ (star a * a) :=
-  φ.star_map_mul_map_le_of_map_one_le hφ.le a
-
-/-- **Kadison–Schwarz inequality** (general form): for any completely positive map `φ : D →CP B`
-from a unital C⋆-algebra `D` into a (possibly nonunital) C⋆-algebra `B`,
-`star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a)` for every `a : D`. -/
-theorem star_map_mul_map_le_norm_map_one_smul (φ : D →CP B) (a : D) :
-    star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) := by
-  let ι : B →CP B⁺¹ := (Unitization.inrNonUnitalStarAlgHom ℂ B : B →CP B⁺¹)
-  by_cases h0 : φ 1 = 0
-  · have hzero : φ (star a * a) = 0 := by
-      have hle : star a * a ≤ (‖star a * a‖ : ℝ) • (1 : D) := by
-        rw [← Algebra.algebraMap_eq_smul_one]
-        exact (IsSelfAdjoint.star_mul_self a).le_algebraMap_norm_self
-      exact le_antisymm
-        ((OrderHomClass.mono φ hle).trans_eq (by simp [← Complex.coe_smul, h0]))
-        (_root_.map_nonneg φ (star_mul_self_nonneg a))
-    have hks := (ι.comp φ).star_map_mul_map_le_of_map_one_le (by simp [ι, h0]) a
-    have hks' : ((star (φ a) * φ a : B) : B⁺¹) ≤ ((0 : B) : B⁺¹) := by
-      simpa [ι, Unitization.inrNonUnitalStarAlgHom_apply, hzero] using hks
-    simpa [h0, hzero] using Unitization.inr_le_inr_iff.mp hks'
-  · have hnorm : (0 : ℝ≥0) < ‖φ 1‖₊ := nnNorm_pos.mpr h0
-    let c : ℝ≥0 := ‖φ 1‖₊⁻¹
-    let ψ : D →CP B⁺¹ := c • (ι.comp φ)
-    have hψ1 : ψ 1 ≤ 1 := by
-      have hcφ1 : ((c • φ 1 : B) : B⁺¹) ∈ Set.Icc (0 : B⁺¹) 1 := by
-        rw [CStarAlgebra.inr_mem_Icc_iff_norm_le]
-        exact ⟨smul_nonneg c.coe_nonneg (_root_.map_nonneg φ zero_le_one), by
-          simp [c, NNReal.smul_def, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr h0)]⟩
-      simpa [ψ, ι, Unitization.inrNonUnitalStarAlgHom_apply, Unitization.inr_smul,
-        NNReal.smul_def] using hcφ1.2
-    have hksB : (c * c) • (star (φ a) * φ a) ≤ c • φ (star a * a) := by
-      rw [← Unitization.inr_le_inr_iff]
-      simpa [ψ, ι, Unitization.inrNonUnitalStarAlgHom_apply, NNReal.smul_def, ← Complex.coe_smul,
-        Unitization.inr_smul, smul_mul_assoc, mul_smul_comm, smul_smul] using
-        ψ.star_map_mul_map_le_of_map_one_le hψ1 a
-    have hmul := smul_le_smul_of_nonneg_left hksB (‖φ 1‖₊ * ‖φ 1‖₊).coe_nonneg
-    rw [← NNReal.smul_def, ← NNReal.smul_def, smul_smul, smul_smul] at hmul
-    have hcc : (‖φ 1‖₊ * ‖φ 1‖₊) * (c * c) = 1 := by
-      rw [mul_mul_mul_comm, mul_inv_cancel₀ hnorm.ne', mul_one]
-    have hc1 : (‖φ 1‖₊ * ‖φ 1‖₊) * c = ‖φ 1‖₊ := by
-      rw [mul_assoc, mul_inv_cancel₀ hnorm.ne', mul_one]
-    simpa [hcc, hc1, NNReal.smul_def] using hmul
-
-/-- For a completely positive map `φ : D →CP B` on a unital C⋆-algebra `D`,
-`‖φ a‖ ≤ ‖φ 1‖ * ‖a‖` for every `a : D`. -/
-theorem norm_apply_le_norm_map_one_mul (φ : D →CP B) (a : D) :
-    ‖φ a‖ ≤ ‖φ 1‖ * ‖a‖ := by
-  have hle_aa : star a * a ≤ (‖a‖ ^ 2 : ℝ) • (1 : D) := by
-    rw [sq, ← CStarRing.norm_star_mul_self, ← Algebra.algebraMap_eq_smul_one]
-    exact (IsSelfAdjoint.star_mul_self a).le_algebraMap_norm_self
-  have hnorm_aa : ‖φ (star a * a)‖ ≤ ‖a‖ ^ 2 * ‖φ 1‖ :=
-    (CStarAlgebra.norm_le_norm_of_le_of_nonneg (OrderHomClass.mono φ hle_aa)
-      (_root_.map_nonneg φ (star_mul_self_nonneg a))).trans_eq
-      (by simp [← Complex.coe_smul, norm_smul])
-  have hsq : ‖φ a‖ ^ 2 ≤ (‖φ 1‖ * ‖a‖) ^ 2 := by
-    calc ‖φ a‖ ^ 2 = ‖star (φ a) * φ a‖ := by rw [CStarRing.norm_star_mul_self, sq]
-      _ ≤ ‖‖φ 1‖ • φ (star a * a)‖ := CStarAlgebra.norm_le_norm_of_le_of_nonneg
-          (φ.star_map_mul_map_le_norm_map_one_smul a) (star_mul_self_nonneg (φ a))
-      _ = ‖φ 1‖ * ‖φ (star a * a)‖ := by simp [norm_smul]
-      _ ≤ ‖φ 1‖ * (‖a‖ ^ 2 * ‖φ 1‖) := by gcongr
-      _ = (‖φ 1‖ * ‖a‖) ^ 2 := by ring
-  exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp hsq
+  have hnorm : ‖φ 1‖ ≤ 1 :=
+    (CStarAlgebra.norm_le_one_iff_of_nonneg (φ 1) (_root_.map_nonneg φ zero_le_one)).mpr hφ
+  calc star (φ a) * φ a
+      ≤ ‖φ 1‖ • φ (star a * a) := CompletelyPositiveMapClass.star_map_mul_map_le φ a
+    _ ≤ (1 : ℝ) • φ (star a * a) :=
+        smul_le_smul_of_nonneg_right hnorm (_root_.map_nonneg φ (star_mul_self_nonneg a))
+    _ = φ (star a * a) := one_smul ℝ _
 
 /-- A completely positive map `φ : D →CP B` on a unital C⋆-algebra attains its operator norm at the
 unit: `‖φ.toContinuousLinearMap‖ = ‖φ 1‖`. -/
 @[simp] theorem norm_toContinuousLinearMap (φ : D →CP B) :
-    ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ := by
-  refine le_antisymm
-    (φ.toContinuousLinearMap.opNorm_le_bound (norm_nonneg _) fun a =>
-      by simpa using φ.norm_apply_le_norm_map_one_mul a) ?_
-  rcases subsingleton_or_nontrivial D with hD | hD
-  · simp [Subsingleton.elim (1 : D) 0]
-  · simpa using φ.toContinuousLinearMap.le_opNorm 1
+    ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ :=
+  (φ.isNPositive 2).opNorm_eq_norm_map_one
 
 /-- A subunital completely positive map (`φ 1 ≤ 1`) between unital C⋆-algebras is contractive. -/
 theorem norm_toContinuousLinearMap_le_one_of_map_one_le (φ : D →CP E) (hφ : φ 1 ≤ 1) :

@@ -23,7 +23,9 @@ its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
 (`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
 
 Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
-giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`).
+giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`). More generally, a
+morphism `f : X ⟶ Y` over `S` induces a `Γ(S, ⊤)`-algebra homomorphism
+`Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
 -/
 
 public section
@@ -191,6 +193,36 @@ noncomputable def sectionAlgHom (U : S.Opens) :
 theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
     sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
   (rfl)
+
+/-- On global sections, `sectionAlgHom g hσ ⊤` applies `σ.appTop`. -/
+theorem sectionAlgHom_top_apply (b : Γ(Z, ⊤)) :
+    sectionAlgHom g hσ ⊤ b = σ.appTop b :=
+  (sectionAlgHom_apply g hσ ⊤ b).trans congr($(σ.appLE_eq_app).hom b)
+
+/-- A morphism `f : X ⟶ Y` over `S` (`f ≫ g = h`) induces `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)`. -/
+noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+    Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤) :=
+  letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+  { f.appTop.hom with
+    commutes' r := congr($((Scheme.Hom.comp_appTop f g).symm.trans
+      (congrArg Scheme.Hom.appTop hfg)).hom r) }
+
+/-- Evaluating `f.appTopAlgHom hfg` applies `f.appTop`. -/
+@[simp] theorem _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom_apply {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) (u : Γ(Y, ⊤)) :
+    f.appTopAlgHom hfg u = f.appTop u := (rfl)
+
+/-- The underlying function of `f.appTopAlgHom hfg` is `f.appTop`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) : ⇑(f.appTopAlgHom hfg) = f.appTop :=
+  (rfl)
+
+/-- Coercing `f.appTopAlgHom hfg` to a ring homomorphism recovers `f.appTop.hom`. -/
+@[simp, norm_cast] theorem _root_.AlgebraicGeometry.Scheme.Hom.toRingHom_appTopAlgHom
+    {X Y S : Scheme.{u}} (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    (f.appTopAlgHom hfg : Γ(Y, ⊤) →+* Γ(X, ⊤)) = f.appTop.hom := (rfl)
 
 end SectionAlgHom
 

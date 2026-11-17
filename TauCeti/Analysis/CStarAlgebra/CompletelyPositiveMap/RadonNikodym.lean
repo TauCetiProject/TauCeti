@@ -9,6 +9,8 @@ public import Mathlib.Order.Hom.Basic
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Stinespring
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import TauCeti.Analysis.CStarAlgebra.Module.Gram
+import TauCeti.Analysis.CStarAlgebra.Module.Self
 
 /-!
 # Arveson's Radon–Nikodym theorem for completely positive maps
