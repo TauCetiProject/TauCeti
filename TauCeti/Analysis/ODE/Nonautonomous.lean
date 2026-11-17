@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.Analysis.ODE.ExistUnique
-import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Topology.Order.ProjIcc
+import TauCeti.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.ODE.Gronwall.TwoSided
 import TauCeti.MeasureTheory.Integral.Cosh
 
@@ -80,6 +79,10 @@ private theorem norm_nonautCurve_sub_le (k : ℝ) (x : E) (u : ℝ →ᵇ E) (t 
     Real.norm_of_nonneg (Real.cosh_pos _).le]
   exact mul_le_mul_of_nonneg_left (u.norm_coe_le_norm t) (Real.cosh_pos _).le
 
+private theorem nonautCurve_sub (k : ℝ) (x : E) (u₁ u₂ : ℝ →ᵇ E) (t : ℝ) :
+    nonautCurve k x u₁ t - nonautCurve k x u₂ t = Real.cosh (2 * k * t) • (u₁ t - u₂ t) := by
+  simp [nonautCurve, smul_sub]
+
 /-- Plain function underlying the weighted Picard map for a time-dependent vector field. -/
 private noncomputable def nonautPicardMap (v : ℝ → E → E) (k : ℝ) (x : E) (u : ℝ →ᵇ E) (t : ℝ) :
     E :=
@@ -125,7 +128,7 @@ private theorem nonautPicardOp_apply (u : ℝ →ᵇ E) (t : ℝ) :
 private theorem contractingWith_nonautPicardOp :
     ContractingWith (1 / 2 : ℝ≥0) (nonautPicardOp hvc hk hv hx) := by
   refine ⟨by norm_num, LipschitzWith.of_dist_le_mul fun u₁ u₂ ↦ ?_⟩
-  rw [show ((1 / 2 : ℝ≥0) : ℝ) = 1 / 2 by norm_num,
+  rw [NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat,
     BoundedContinuousFunction.dist_le (by positivity)]
   intro t
   have hcosh := Real.cosh_pos (2 * k * t)
@@ -134,10 +137,8 @@ private theorem contractingWith_nonautPicardOp :
   have hbound (s : ℝ) : ‖v s (nonautCurve k x u₁ s) - v s (nonautCurve k x u₂ s)‖ ≤
       k * dist u₁ u₂ * Real.cosh (2 * k * s) := by
     refine (hv s _ _).trans ?_
-    rw [show nonautCurve k x u₁ s - nonautCurve k x u₂ s =
-        Real.cosh (2 * k * s) • (u₁ s - u₂ s) by simp [nonautCurve, smul_sub],
-      norm_smul, Real.norm_of_nonneg (Real.cosh_pos _).le, ← dist_eq_norm, ← mul_assoc,
-      mul_right_comm k (Real.cosh _)]
+    rw [nonautCurve_sub, norm_smul, Real.norm_of_nonneg (Real.cosh_pos _).le, ← dist_eq_norm,
+      ← mul_assoc, mul_right_comm k (Real.cosh _)]
     gcongr
     exact u₁.dist_coe_le_dist s
   have hstep := TauCeti.norm_intervalIntegral_le_cosh
@@ -185,7 +186,10 @@ private theorem hasDerivAt_boundedTimeSolution {v : ℝ → E → E}
     (hvc : Continuous (Function.uncurry v)) {K : ℝ≥0} (hv : ∀ t, LipschitzWith K (v t))
     {M : ℝ} {x : E} (hx : ∀ s, ‖v s x‖ ≤ M) (t : ℝ) :
     HasDerivAt (boundedTimeSolution hvc hv hx) (v t (boundedTimeSolution hvc hv hx t)) t := by
-  have hcomp : Continuous fun s : ℝ ↦ v s (boundedTimeSolution hvc hv hx s) :=
+  unfold boundedTimeSolution
+  have hcomp : Continuous fun s : ℝ ↦ v s (nonautCurve ((K : ℝ) + 1) x
+      (nonautFixedPoint hvc (by positivity)
+        (fun r ↦ ((hv r).weaken (le_add_of_nonneg_right zero_le_one)).norm_sub_le) hx) s) :=
     hvc.comp (continuous_id.prodMk (continuous_nonautCurve _ _ _))
   have hprim := intervalIntegral.integral_hasDerivAt_right (hcomp.intervalIntegrable 0 t)
     (hcomp.stronglyMeasurableAtFilter _ _) hcomp.continuousAt
@@ -233,7 +237,7 @@ private theorem hasDerivAt_clampedSolution_of_mem_Ioo {R : ℝ} (hR : 0 ≤ R) (
   have hproj : clampedField v hR t = v t := by
     ext y
     simp [clampedField, Set.projIcc_of_mem (neg_le_self hR) (Ioo_subset_Icc_self ht)]
-  rw [← hproj]
+  rw [← hproj, clampedSolution]
   exact hasDerivAt_boundedTimeSolution _ _ _ t
 
 private theorem clampedSolution_eq_of_abs_lt {R₁ R₂ : ℝ} (hR₁ : 0 < R₁) (hR₂ : 0 < R₂) (x : E)
@@ -296,6 +300,7 @@ theorem nonautonomousSolution_self (t₀ : ℝ) (x : E) :
 theorem hasDerivAt_nonautonomousSolution (t₀ : ℝ) (x : E) (t : ℝ) :
     HasDerivAt (nonautonomousSolution v hvc hv t₀ x)
       (v t (nonautonomousSolution v hvc hv t₀ x t)) t := by
+  unfold nonautonomousSolution
   have h := (hasDerivAt_nonautonomousZero (v := fun s y ↦ v (t₀ + s) y)
     (fun y ↦ (hvc y).comp (continuous_const.add continuous_id))
     (fun s ↦ hv (t₀ + s)) x (t - t₀)).comp_sub_const t t₀
@@ -330,21 +335,11 @@ theorem nonautonomousSolution_eq_integral (t₀ : ℝ) (x : E) (t : ℝ) :
 theorem eqOn_nonautonomousSolution_of_hasDerivWithinAt {I : Set ℝ} (hI : I.OrdConnected)
     {t₀ : ℝ} (ht₀ : t₀ ∈ I) {γ : ℝ → E}
     (hγ : ∀ s ∈ I, HasDerivWithinAt γ (v s (γ s)) I s) :
-    EqOn γ (nonautonomousSolution v hvc hv t₀ (γ t₀)) I := fun t ht ↦ by
-  have hsub : Icc (min t₀ t) (max t₀ t) ⊆ I := by
-    rw [Icc_min_max]
-    exact hI.uIcc_subset ht₀ ht
-  have hle := TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le (E := E)
-    (a := min t₀ t) (b := max t₀ t)
-    (f := fun s ↦ γ s - nonautonomousSolution v hvc hv t₀ (γ t₀) s)
-    (f' := fun s ↦ v s (γ s) - v s (nonautonomousSolution v hvc hv t₀ (γ t₀) s))
-    (δ := 0) (K := K) (ε := 0) ⟨min_le_left t₀ t, le_max_left t₀ t⟩
-    (fun s hs ↦ ((hγ s (hsub hs)).mono hsub).sub
-      (hasDerivAt_nonautonomousSolution v hvc hv t₀ (γ t₀) s).hasDerivWithinAt)
-    (by simp) (fun s _ ↦ by simpa only [add_zero] using (hv s).norm_sub_le _ _)
-    t ⟨min_le_right t₀ t, le_max_right t₀ t⟩
-  rw [gronwallBound_ε0_δ0] at hle
-  exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
+    EqOn γ (nonautonomousSolution v hvc hv t₀ (γ t₀)) I :=
+  hI.isPreconnected.ode_eqOn (V := Function.uncurry v)
+    (fun _ _ ↦ ⟨K, univ, univ_mem, fun r ↦ (hv r).lipschitzOnWith⟩)
+    ht₀ (nonautonomousSolution_self v hvc hv t₀ (γ t₀)).symm hγ
+    fun s _ ↦ (hasDerivAt_nonautonomousSolution v hvc hv t₀ (γ t₀) s).hasDerivWithinAt
 
 /-- **Global uniqueness.** Every curve solving `γ' t = v t (γ t)` on `ℝ` coincides with
 `ODE.nonautonomousSolution` through its value at any chosen time `t₀`. -/

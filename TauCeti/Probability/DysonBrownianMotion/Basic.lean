@@ -127,9 +127,10 @@ theorem continuous_driving (hX : IsDysonPath n x w X) : Continuous w := by
       (fun u : ℝ≥0 ↦ ∫ s in (0 : ℝ)..u, dysonDrift n (X s.toNNReal) i) t :=
     hprim_contOn.continuousAt
       (mem_of_superset (Iio_mem_nhds (lt_add_one t)) Iio_subset_Iic_self)
-  rw [show (fun u : ℝ≥0 ↦ w u i) = fun u : ℝ≥0 ↦
-      X u i - x i - ∫ s in (0 : ℝ)..u, dysonDrift n (X s.toNNReal) i from
-    funext fun u ↦ by linarith [hX.eq_integral u i]]
+  have hw_eq : (fun u : ℝ≥0 ↦ w u i) = fun u : ℝ≥0 ↦
+      X u i - x i - ∫ s in (0 : ℝ)..u, dysonDrift n (X s.toNNReal) i :=
+    funext fun u ↦ by linarith [hX.eq_integral u i]
+  rw [hw_eq]
   exact ((((continuous_apply i).comp hX.continuous).continuousAt).sub continuousAt_const).sub
     hprim_at
 
@@ -209,20 +210,19 @@ theorem integral_sum_Ioi_sub_inv_le (hX : IsDysonPath n x w X) (t : ℝ≥0) :
   have hmono := intervalIntegral.integral_mono_on_of_le_Ioo t.coe_nonneg (hint_lhs.const_mul _)
     hint_rhs fun s hs ↦ mul_sum_Ioi_sub_inv_le_sum_sub_two_mul_mul_dysonDrift
       (hX.strictAnti s.toNNReal (Real.toNNReal_pos.2 hs.1)).antitone
+  have hrhs_eq :
+      (∑ i : Fin n, ∫ s in (0 : ℝ)..t,
+        ((n : ℝ) - 1 - 2 * (i : ℝ)) * dysonDrift n (X s.toNNReal) i) =
+      ∑ i : Fin n, ((n : ℝ) - 1 - 2 * (i : ℝ)) * (X t i - x i - w t i) :=
+    Finset.sum_congr rfl fun i _ ↦ by
+      rw [intervalIntegral.integral_const_mul]; congr 1; linarith [hX.eq_integral t i]
   rw [intervalIntegral.integral_const_mul,
     intervalIntegral.integral_finsetSum fun i _ ↦
-      (hX.intervalIntegrable_dysonDrift t i).const_mul _,
-    show (∑ i : Fin n, ∫ s in (0 : ℝ)..t,
-        ((n : ℝ) - 1 - 2 * (i : ℝ)) * dysonDrift n (X s.toNNReal) i) =
-      ∑ i : Fin n, ((n : ℝ) - 1 - 2 * (i : ℝ)) * (X t i - x i - w t i) from
-      Finset.sum_congr rfl fun i _ ↦ by
-        rw [intervalIntegral.integral_const_mul]; congr 1; linarith [hX.eq_integral t i]] at hmono
-  have hmul := mul_le_mul_of_nonneg_left hmono (by positivity : (0 : ℝ) ≤ (n : ℝ) / 2)
+      (hX.intervalIntegrable_dysonDrift t i).const_mul _, hrhs_eq] at hmono
   have hn_pos : (0 : ℝ) < n := Nat.cast_pos.2 hn
-  rwa [show ((n : ℝ) / 2) * (2 * (n : ℝ)⁻¹ * ∫ s in (0 : ℝ)..t, ∑ i : Fin n,
-      ∑ j ∈ Finset.Ioi i, (X s.toNNReal i - X s.toNNReal j)⁻¹) =
-    ∫ s in (0 : ℝ)..t, ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (X s.toNNReal i - X s.toNNReal j)⁻¹ by
-      field_simp [hn_pos.ne']] at hmul
+  have hcancel : ((n : ℝ) / 2) * (2 * (n : ℝ)⁻¹) = 1 := by field_simp [hn_pos.ne']
+  have hmul := mul_le_mul_of_nonneg_left hmono (by positivity : (0 : ℝ) ≤ (n : ℝ) / 2)
+  rwa [← mul_assoc, hcancel, one_mul] at hmul
 
 private theorem sq_sub_eq_two_mul_integral_and_integrable (hX : IsDysonPath n x w X)
     (hY : IsDysonPath n y w Y) {s t : ℝ≥0} (hst : s ≤ t) (i : Fin n) :
@@ -361,9 +361,10 @@ theorem congr {B' : Fin n → ℝ≥0 → Ω → ℝ} (hX : IsDysonSolution β n
     (hXY : ∀ᵐ ω ∂P, ∀ t, X t ω = Y t ω) :
     IsDysonSolution β n x P B' Y := by
   filter_upwards [hX, ae_all_iff.2 hB, hXY] with ω hω hωB hωX
-  rwa [← show (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) =
-        fun t i ↦ Real.sqrt (2 / (β * n)) * B' i t ω from by ext t i; rw [hωB i t],
-    ← funext hωX]
+  have hB_eq : (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) =
+      fun t i ↦ Real.sqrt (2 / (β * n)) * B' i t ω := by
+    ext t i; rw [hωB i t]
+  rwa [← hB_eq, ← funext hωX]
 
 /-- **Almost-sure pathwise uniqueness for `IsDysonSolution`.** Any two solutions started at `x` and
 driven by the same process `B` agree at all times almost surely, for every `β : ℝ` and `n : ℕ`
@@ -446,8 +447,9 @@ theorem isDysonPath_of_le_one {n : ℕ} (hn : n ≤ 1) (x : Fin n → ℝ)
 /-- At `n = 0`, the unique empty path is a Dyson trajectory for every forcing path `w`. -/
 theorem isDysonPath_zero (x : Fin 0 → ℝ) (w : ℝ≥0 → Fin 0 → ℝ) :
     IsDysonPath 0 x w (fun _ ↦ Fin.elim0) := by
-  rw [show (fun _ : ℝ≥0 ↦ (Fin.elim0 : Fin 0 → ℝ)) = fun t ↦ x + w t from
-    by ext _ i; exact Fin.elim0 i]
+  have heq : (fun _ : ℝ≥0 ↦ (Fin.elim0 : Fin 0 → ℝ)) = fun t ↦ x + w t := by
+    ext _ i; exact Fin.elim0 i
+  rw [heq]
   exact isDysonPath_of_le_one (Nat.zero_le 1) x (continuous_pi fun i ↦ Fin.elim0 i)
 
 /-- At `n = 1`, there is no pairwise repulsion, so `t ↦ x + w t` is a Dyson trajectory for every
@@ -579,14 +581,12 @@ theorem isDysonPath_twoParticleDysonPath {x : Fin 2 → ℝ} (hx : Antitone x) :
       ring
     · simp only [Fin.mk_one, Pi.zero_apply, add_zero, dysonDrift_apply, Nat.cast_ofNat,
         herase1, Finset.sum_singleton]
-      rw [show (∫ s in (0 : ℝ)..t, (2 : ℝ)⁻¹ * (twoParticleDysonPath x s.toNNReal 1 -
-            twoParticleDysonPath x s.toNNReal 0)⁻¹) =
-          -(∫ s in (0 : ℝ)..t, (2 : ℝ)⁻¹ * (Real.sqrt ((x 0 - x 1) ^ 2 + 2 * s))⁻¹) from by
-        rw [← intervalIntegral.integral_neg]
-        refine intervalIntegral.integral_congr fun s hs ↦ ?_
-        rw [uIcc_of_le t.coe_nonneg] at hs
-        rw [← neg_sub (twoParticleDysonPath x s.toNNReal 0), inv_neg, hgap hs.1, mul_neg],
-        hval, twoParticleDysonPath_apply_one]
+      rw [intervalIntegral.integral_congr
+          (g := fun s ↦ -((2 : ℝ)⁻¹ * (Real.sqrt ((x 0 - x 1) ^ 2 + 2 * s))⁻¹))
+          fun s hs ↦ by
+            rw [uIcc_of_le t.coe_nonneg] at hs
+            rw [← neg_sub (twoParticleDysonPath x s.toNNReal 0), inv_neg, hgap hs.1, mul_neg],
+        intervalIntegral.integral_neg, hval, twoParticleDysonPath_apply_one]
       ring
 
 /-- Non-vacuous measure-level witness for `IsDysonSolution` at `n = 2` from any `Antitone x`

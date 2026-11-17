@@ -86,6 +86,17 @@ private theorem shiftedTruncatedCurve_zero {ε : ℝ} (hε : 0 < ε) (n : ℕ) (
     (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) : shiftedTruncatedCurve hε n x w hw 0 = x :=
   ODE.nonautonomousSolution_self _ _ _ 0 x
 
+private theorem continuous_shiftedTruncatedCurve {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x : Fin n → ℝ)
+    (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) :
+    Continuous (shiftedTruncatedCurve hε n x w hw) :=
+  ODE.continuous_nonautonomousSolution_apply _ _ _ 0 x
+
+private theorem hasDerivAt_shiftedTruncatedCurve {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x : Fin n → ℝ)
+    (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) (r : ℝ) :
+    HasDerivAt (shiftedTruncatedCurve hε n x w hw)
+      (shiftedTruncatedField ε n w r (shiftedTruncatedCurve hε n x w hw r)) r :=
+  ODE.hasDerivAt_nonautonomousSolution _ _ _ 0 x r
+
 section Basic
 
 variable {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x : Fin n → ℝ) (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w)
@@ -98,7 +109,7 @@ noncomputable def truncatedDysonPath (t : ℝ≥0) : Fin n → ℝ :=
 
 /-- `truncatedDysonPath` is continuous on `[0, ∞)`. -/
 theorem continuous_truncatedDysonPath : Continuous (truncatedDysonPath hε n x w hw) :=
-  ((ODE.continuous_nonautonomousSolution_apply _ _ _ 0 x).comp NNReal.continuous_coe).add hw
+  ((continuous_shiftedTruncatedCurve hε n x w hw).comp NNReal.continuous_coe).add hw
 
 /-- Value of `truncatedDysonPath` at time `0`. -/
 @[simp]
@@ -112,20 +123,22 @@ theorem truncatedDysonPath_eq_integral (t : ℝ≥0) (i : Fin n) :
       x i + w t i +
         ∫ s in (0 : ℝ)..t,
           truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw s.toNNReal) i := by
-  have hZ := ODE.nonautonomousSolution_eq_integral (shiftedTruncatedField ε n w)
-    (continuous_shiftedTruncatedField hε n hw) (lipschitzWith_shiftedTruncatedField hε n w) 0 x t
+  have hZ : shiftedTruncatedCurve hε n x w hw t =
+      x + ∫ s in (0 : ℝ)..t,
+        shiftedTruncatedField ε n w s (shiftedTruncatedCurve hε n x w hw s) := by
+    rw [shiftedTruncatedCurve]
+    exact ODE.nonautonomousSolution_eq_integral _ _ _ 0 x t
   have hcont : Continuous fun s : ℝ ↦
       shiftedTruncatedField ε n w s (shiftedTruncatedCurve hε n x w hw s) :=
     (continuous_truncatedDysonDrift hε n).comp
-      ((ODE.continuous_nonautonomousSolution_apply _ _ _ 0 x).add
-        (hw.comp continuous_real_toNNReal))
+      ((continuous_shiftedTruncatedCurve hε n x w hw).add (hw.comp continuous_real_toNNReal))
   have hproj := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ) i).intervalIntegral_comp_comm
     (hcont.intervalIntegrable (μ := volume) 0 t)
   simp only [ContinuousLinearMap.proj_apply] at hproj
   have hZ_i : shiftedTruncatedCurve hε n x w hw t i =
       x i + (∫ s in (0 : ℝ)..t,
         shiftedTruncatedField ε n w s (shiftedTruncatedCurve hε n x w hw s)) i := by
-    simpa only [shiftedTruncatedCurve, Pi.add_apply] using congrFun hZ i
+    simpa only [Pi.add_apply] using congrFun hZ i
   have hcongr : ∫ s in (0 : ℝ)..t,
         shiftedTruncatedField ε n w s (shiftedTruncatedCurve hε n x w hw s) i =
       ∫ s in (0 : ℝ)..t, truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw s.toNNReal) i :=
@@ -199,14 +212,16 @@ theorem eq_truncatedDysonPath_of_eq_integral {ε : ℝ} (hε : 0 < ε) {n : ℕ}
     have hr_le : r.toNNReal ≤ T := Real.toNNReal_le_iff_le_coe.2 hr.2
     have hZr : Z r + w r.toNNReal = Y r.toNNReal := by
       simpa only [Real.coe_toNNReal r hr.1] using hZY r.toNNReal hr_le
-    rw [show shiftedTruncatedField ε n w r (Z r) = g r by
-      simp only [g, shiftedTruncatedField, min_eq_left hr_le, hZr]]
+    have hfield : shiftedTruncatedField ε n w r (Z r) = g r := by
+      simp only [g, shiftedTruncatedField, min_eq_left hr_le, hZr]
+    rw [hfield]
     exact (hZ_deriv r).hasDerivWithinAt
+  have hZ0 : Z 0 = x := by simp [Z]
   have hEqOn : EqOn Z (shiftedTruncatedCurve hε n x w hw) (Icc (0 : ℝ) T) := by
-    simpa only [show Z 0 = x by simp [Z], shiftedTruncatedCurve] using
-      ODE.eqOn_nonautonomousSolution_of_hasDerivWithinAt (shiftedTruncatedField ε n w)
-        (continuous_shiftedTruncatedField hε n hw) (lipschitzWith_shiftedTruncatedField hε n w)
-        ordConnected_Icc ⟨le_rfl, T.coe_nonneg⟩ hZ_ode
+    rw [shiftedTruncatedCurve, ← hZ0]
+    exact ODE.eqOn_nonautonomousSolution_of_hasDerivWithinAt (shiftedTruncatedField ε n w)
+      (continuous_shiftedTruncatedField hε n hw) (lipschitzWith_shiftedTruncatedField hε n w)
+      ordConnected_Icc ⟨le_rfl, T.coe_nonneg⟩ hZ_ode
   rw [← hZY t ht, truncatedDysonPath, hEqOn ⟨t.coe_nonneg, NNReal.coe_le_coe.2 ht⟩]
 
 /-- **Grönwall stability of `truncatedDysonPath` in `(x, w)` on `[0, T]`.** Perturbing the initial
@@ -224,10 +239,10 @@ theorem dist_truncatedDysonPath_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x₁ x�
   have hZ_le := norm_le_gronwallBound_of_norm_deriv_right_le (a := (0 : ℝ)) (b := T) (K := K)
     (δ := dist x₁ x₂) (ε := K * δ) (f := fun r ↦ Z₁ r - Z₂ r)
     (f' := fun r ↦ shiftedTruncatedField ε n w₁ r (Z₁ r) - shiftedTruncatedField ε n w₂ r (Z₂ r))
-    ((ODE.continuous_nonautonomousSolution_apply _ _ _ 0 x₁).sub
-      (ODE.continuous_nonautonomousSolution_apply _ _ _ 0 x₂)).continuousOn
-    (fun r _ ↦ ((ODE.hasDerivAt_nonautonomousSolution _ _ _ 0 x₁ r).sub
-      (ODE.hasDerivAt_nonautonomousSolution _ _ _ 0 x₂ r)).hasDerivWithinAt)
+    ((continuous_shiftedTruncatedCurve hε n x₁ w₁ hw₁).sub
+      (continuous_shiftedTruncatedCurve hε n x₂ w₂ hw₂)).continuousOn
+    (fun r _ ↦ ((hasDerivAt_shiftedTruncatedCurve hε n x₁ w₁ hw₁ r).sub
+      (hasDerivAt_shiftedTruncatedCurve hε n x₂ w₂ hw₂ r)).hasDerivWithinAt)
     (by simp [Z₁, Z₂, dist_eq_norm])
     fun r hr ↦ by
       have hlip := (lipschitzWith_truncatedDysonDrift hε n).dist_le_mul
@@ -278,21 +293,20 @@ theorem sum_truncatedDysonPath_sub_sq_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
     have hcoord (i : Fin n) : HasDerivAt (fun u ↦ (Zx u i - Zy u i) ^ 2)
         (2 * ((shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) *
           (Zx r i - Zy r i))) r := by
-      have hderiv (z : Fin n → ℝ) := ODE.hasDerivAt_nonautonomousSolution
-        (shiftedTruncatedField ε n w) (continuous_shiftedTruncatedField hε n hw)
-        (lipschitzWith_shiftedTruncatedField hε n w) 0 z r
       have hdiff : HasDerivAt (fun u ↦ Zx u i - Zy u i)
           (shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) r :=
-        (hasDerivAt_pi.1 (hderiv x) i).sub (hasDerivAt_pi.1 (hderiv y) i)
+        (hasDerivAt_pi.1 (hasDerivAt_shiftedTruncatedCurve hε n x w hw r) i).sub
+          (hasDerivAt_pi.1 (hasDerivAt_shiftedTruncatedCurve hε n y w hw r) i)
       simpa only [sq] using (hdiff.fun_mul hdiff).congr_deriv (by ring)
     simpa only [φ, Finset.mul_sum] using HasDerivAt.fun_sum fun i _ ↦ hcoord i
   have hφ_nonpos (r : ℝ) : 2 * ∑ i : Fin n,
       (shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) *
         (Zx r i - Zy r i) ≤ 0 := by
     refine mul_nonpos_of_nonneg_of_nonpos zero_le_two ?_
-    simp_rw [shiftedTruncatedField,
-      show ∀ i : Fin n, Zx r i - Zy r i = (Zx r + w r.toNNReal) i - (Zy r + w r.toNNReal) i from
-        fun i ↦ by simp]
+    have hshift (i : Fin n) :
+        Zx r i - Zy r i = (Zx r + w r.toNNReal) i - (Zy r + w r.toNNReal) i := by
+      simp
+    simp_rw [shiftedTruncatedField, hshift]
     exact sum_truncatedDysonDrift_sub_mul_sub_nonpos hε n _ _
   have hanti : Antitone φ := antitone_of_deriv_nonpos (fun r ↦ (hφ_deriv r).differentiableAt)
     (fun r ↦ (hφ_deriv r).deriv.symm ▸ hφ_nonpos r)

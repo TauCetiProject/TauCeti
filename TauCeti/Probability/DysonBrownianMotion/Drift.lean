@@ -139,9 +139,7 @@ theorem dysonDrift_add_const (n : ℕ) (x : Fin n → ℝ) (c : ℝ) :
 theorem dysonDrift_smul (n : ℕ) (c : ℝ) (x : Fin n → ℝ) :
     dysonDrift n (c • x) = c⁻¹ • dysonDrift n x := by
   ext i
-  simp only [dysonDrift, Pi.smul_apply, smul_eq_mul,
-    show ∀ j : Fin n, (c * x i - c * x j)⁻¹ = c⁻¹ * (x i - x j)⁻¹ from fun j ↦ by
-      rw [← mul_sub, mul_inv], ← Finset.mul_sum]
+  simp only [dysonDrift, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_inv, ← Finset.mul_sum]
   ring
 
 /-- `dysonDrift n` is continuous at every configuration with pairwise distinct coordinates. -/
@@ -274,8 +272,9 @@ theorem sum_dysonDrift_sq {n : ℕ} {x : Fin n → ℝ} (hx : Function.Injective
       _ = ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, ((x i - x j)⁻¹ ^ 2 + (x j - x i)⁻¹ ^ 2) :=
           (Finset.sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : Fin n ↦ (x i - x j)⁻¹ ^ 2)).symm
       _ = 2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 := by
-          simp_rw [show ∀ i j : Fin n, (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 from fun i j ↦ by
-            rw [← neg_sub (x i) (x j), inv_neg, neg_sq], ← two_mul, ← Finset.mul_sum]
+          have hsym (i j : Fin n) : (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 := by
+            rw [← neg_sub (x i) (x j), inv_neg, neg_sq]
+          simp_rw [hsym, ← two_mul, ← Finset.mul_sum]
   simp_rw [dysonDrift_eq_inv_mul_sum, mul_pow, ← Finset.mul_sum, hexpand, Finset.sum_add_distrib]
   rw [Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero Finset.univ hx.injOn, add_zero, hpair]
   ring
@@ -399,7 +398,8 @@ private theorem abs_truncatedGap_sub_le {ε : ℝ} (hε : 0 < ε) {n : ℕ}
   have hgap : |a - b| ≤ 2 * dist x y := by
     have h1 : |x u - y u| ≤ dist x y := by simpa [Real.dist_eq] using dist_le_pi_dist x y u
     have h2 : |x v - y v| ≤ dist x y := by simpa [Real.dist_eq] using dist_le_pi_dist x y v
-    rw [show a - b = (x u - y u) - (x v - y v) by dsimp [a, b]; ring]
+    dsimp only [a, b]
+    rw [sub_sub_sub_comm]
     exact (abs_sub _ _).trans (by linarith)
   rw [inv_sub_inv ha.ne' hb.ne', abs_div, abs_sub_comm, abs_of_pos (mul_pos ha hb)]
   calc |max a ε - max b ε| / (max a ε * max b ε)
@@ -419,12 +419,13 @@ theorem lipschitzWith_truncatedDysonDrift {ε : ℝ} (hε : 0 < ε) (n : ℕ) :
   · exact Fin.elim0 i
   set f : Fin n → Fin n → ℝ := fun u v ↦ (max (x u - x v) ε)⁻¹ - (max (y u - y v) ε)⁻¹
   set L : ℝ := 2 * ε⁻¹ ^ 2 * dist x y
+  have hdiff :
+      ((∑ j ∈ Finset.Ioi i, (max (x i - x j) ε)⁻¹) - ∑ j ∈ Finset.Iio i, (max (x j - x i) ε)⁻¹) -
+        ((∑ j ∈ Finset.Ioi i, (max (y i - y j) ε)⁻¹) - ∑ j ∈ Finset.Iio i, (max (y j - y i) ε)⁻¹) =
+      (∑ j ∈ Finset.Ioi i, f i j) - ∑ j ∈ Finset.Iio i, f j i := by
+    simp only [f, Finset.sum_sub_distrib]; ring
   rw [Real.dist_eq, truncatedDysonDrift_apply, truncatedDysonDrift_apply, ← mul_sub, abs_mul,
-    abs_of_nonneg (inv_nonneg.2 (Nat.cast_nonneg n)),
-    show ((∑ j ∈ Finset.Ioi i, (max (x i - x j) ε)⁻¹) - ∑ j ∈ Finset.Iio i, (max (x j - x i) ε)⁻¹)
-      - ((∑ j ∈ Finset.Ioi i, (max (y i - y j) ε)⁻¹) - ∑ j ∈ Finset.Iio i, (max (y j - y i) ε)⁻¹)
-      = (∑ j ∈ Finset.Ioi i, f i j) - ∑ j ∈ Finset.Iio i, f j i by
-        simp only [f, Finset.sum_sub_distrib]; ring]
+    abs_of_nonneg (inv_nonneg.2 (Nat.cast_nonneg n)), hdiff]
   have hcard : ((Finset.Ioi i).card : ℝ) + ((Finset.Iio i).card : ℝ) ≤ n := by
     have hle : (Finset.Ioi i ∪ Finset.Iio i).card ≤ n :=
       (Finset.card_le_univ _).trans_eq (Fintype.card_fin n)
