@@ -456,6 +456,32 @@ theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
     completedGroupAlgebraEquiv μ = toCompletedGroupAlgebra μ :=
   AlgEquiv.ofBijective_apply _ _ _
 
+/-- Forgetting invertibility of `completedGroupAlgebraEquiv` gives `toCompletedGroupAlgebra`. -/
+@[simp]
+theorem toAlgHom_completedGroupAlgebraEquiv :
+    (completedGroupAlgebraEquiv (Γ := Γ) (p := p)).toAlgHom = toCompletedGroupAlgebra :=
+  AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- `completedGroupAlgebraEquiv.symm` is a left inverse to `toCompletedGroupAlgebra`. -/
+@[simp]
+theorem completedGroupAlgebraEquiv_symm_toCompletedGroupAlgebra (μ : D(Γ, ℤ_[p])) :
+    completedGroupAlgebraEquiv.symm (toCompletedGroupAlgebra μ) = μ :=
+  completedGroupAlgebraEquiv.symm_apply_apply μ
+
+/-- `toCompletedGroupAlgebra` is a right inverse to `completedGroupAlgebraEquiv.symm`. -/
+@[simp]
+theorem toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm
+    (x : completedGroupAlgebra ℤ_[p] Γ) :
+    toCompletedGroupAlgebra (completedGroupAlgebraEquiv.symm x) = x :=
+  completedGroupAlgebraEquiv.apply_symm_apply x
+
+/-- `completedGroupAlgebraEquiv.symm` sends the group element `γ` in `ℤ_p[[Γ]]` to
+`dirac ℤ_[p] γ`. -/
+@[simp]
+theorem completedGroupAlgebraEquiv_symm_of (γ : Γ) :
+    completedGroupAlgebraEquiv.symm (completedGroupAlgebra.of ℤ_[p] Γ γ) = dirac ℤ_[p] γ := by
+  rw [← toCompletedGroupAlgebra_dirac, completedGroupAlgebraEquiv_symm_toCompletedGroupAlgebra]
+
 open Topology in
 /-- **The comparison is a homeomorphism.** For a profinite group `Γ`, the comparison of integral
 measures with the completed group algebra `ℤ_p[[Γ]]` is a homeomorphism from the weak topology on
