@@ -33,7 +33,7 @@ In `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}`, with the identification of
 columns of the graph frame `Matrix.graphFrame A`, and the diagonal is `Γ(1) = {(conj z, z)}`.
 The unitary matrix `T = (1/√2) [[1, 1], [i, -i]]` (`TauCeti.diagonalStraightening`) sends
 `(conj z, z)` to `√2 (Re z, Im z)`, so it carries the diagonal onto the real points `ℝ^{n ⊕ n}`
-(`TauCeti.realImage_diagonalStraightening_mul_graphFrame_one`). The index relative to the diagonal
+(`TauCeti.GLSymplectic.souriau_graphUnitaryFrame_one`). The index relative to the diagonal
 is therefore the index of the path `T Γ(Ψ t)` relative to `ℝ^{n ⊕ n}`, which is
 `Matrix.UnitaryGroup.maslovIndex`, defined on paths of unitary frames. The graph of a symplectic
 matrix is Lagrangian (`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`), so the real
@@ -206,25 +206,6 @@ theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n) (n ⊕
   congr 1
   simp [Matrix.add_mul, ← map_ofReal_mul, Matrix.mul_assoc, nonsing_inv_mul _ hP]
 
-/-- The diagonal straightening of the graph frame of the identity, whose columns span the
-diagonal, is the real matrix `√2 • 1`. -/
-private theorem diagonalStraightening_mul_graphFrame_one :
-    diagonalStraightening n * graphFrame 1 =
-      ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
-  rw [diagonalStraightening_mul_graphFrame, sub_self, Matrix.mul_zero,
-    map_ofReal_sqrt_two_smul_one]
-  ext i j
-  by_cases hij : i = j
-  · simp [hij, Matrix.add_apply, inv_sqrt_two]
-    ring
-  · simp [hij, Matrix.add_apply]
-
-/-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
-of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
-theorem realImage_diagonalStraightening_mul_graphFrame_one :
-    (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
-  rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
-
 namespace GLSymplectic
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
@@ -271,17 +252,6 @@ theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :
   Continuous.subtype_mk (continuous_const.mul (Units.continuous_val.comp
     (continuous_realOrthonormalize continuous_graphFrameUnit))) _
 
-/-- At the identity, the unitary graph frame frames the real points: the Souriau map of the
-straightened diagonal is the identity. -/
-theorem souriau_graphUnitaryFrame_one :
-    souriau (graphUnitaryFrame (1 : GLSymplectic n ℝ)) = 1 := by
-  have h : (graphUnitaryFrame (1 : GLSymplectic n ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
-      ((1 : unitaryGroup (n ⊕ n) ℂ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
-    simpa [realImage_graphUnitaryFrame, realImage_diagonalStraightening_mul_graphFrame_one]
-      using (realImage_map_ofReal (isUnit_one (M := Matrix (n ⊕ n) (n ⊕ n) ℝ))).symm
-  rw [souriau_eq_of_realImage_eq h]
-  exact Subtype.ext (by simp)
-
 /-- **The Souriau map of a graph without eigenvalue `-1`.** If the symplectic matrix `A` has no
 eigenvalue `-1`, the straightened graph `T Γ(A)` is the graph `{x + i B x}` of the symmetric
 matrix `B = J (1 - A) (1 + A)⁻¹`, so its Souriau map is the Cayley transform of `B`. -/
@@ -318,6 +288,17 @@ theorem souriau_graphUnitaryFrame_eq_cayley (A : GLSymplectic n ℝ)
     rw [realImage_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h1,
       realImage_mul_map_ofReal _ hunit, realImage_realOrthonormalize, hF]
   rw [souriau_eq_of_realImage_eq hreal, hU]
+
+/-- At the identity, the unitary graph frame frames the real points: the Souriau map of the
+straightened diagonal is the identity, the Cayley transform of the Cayley generator `0`. -/
+theorem souriau_graphUnitaryFrame_one :
+    souriau (graphUnitaryFrame (1 : GLSymplectic n ℝ)) = 1 := by
+  have h1 : IsUnit (1 + (((1 : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
+    rw [OneMemClass.coe_one, Units.val_one, ← two_smul ℝ, ← Algebra.algebraMap_eq_smul_one]
+    exact (IsUnit.mk0 _ two_ne_zero).map _
+  refine Subtype.ext ?_
+  rw [souriau_graphUnitaryFrame_eq_cayley 1 h1]
+  simp
 
 /-! ### The Conley–Zehnder index -/
 
