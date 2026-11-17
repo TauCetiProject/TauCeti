@@ -159,7 +159,7 @@ theorem not_isOutwardPointing_mfderivWithin_Ici (c : ℝ → M) :
 
 variable [IsManifold (𝓡∂ (n + 1)) 1 M]
 
-local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+local instance instIsManifoldBoundaryTangentSpace : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
     ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
 
 /-- The tangent space `T_q∂M` of the boundary at `q ∈ ∂M`, as a subspace of `T_qM`: the range of
@@ -358,8 +358,9 @@ section Naturality
 variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace (EuclideanHalfSpace (n + 1)) M']
   [IsManifold (𝓡∂ (n + 1)) 1 M']
 
-local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M') := isManifold_boundary M' one_ne_zero
+local instance instIsManifoldBoundaryTangentSpaceNaturality :
+    IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M') :=
+  isManifold_boundary M' one_ne_zero
 
 /-- **Naturality.** A diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`,
 maps `∂M` onto `∂M'` (Mathlib's `Diffeomorph.image_boundary`), and its differential at `q ∈ ∂M`
