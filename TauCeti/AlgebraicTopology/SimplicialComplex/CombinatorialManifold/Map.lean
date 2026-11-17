@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Finite
 
 /-!
 # Relabeling combinatorial balls and spheres
 
-An injective map of ambient vertex types sends a combinatorial ball to a combinatorial ball
-or sphere of the same dimension. This allows local models described using disjoint tagged vertex
-types, such as joins, to be compared with the original complexes.
-
-The transport uses `StellarEquivalentUpToRelabeling.map`: injectively relabel the stellar
-equivalence to a standard simplex (resp. simplex boundary), whose image is again a standard
-simplex (resp. simplex boundary) with the same number of vertices.
+This file proves that an injective map of ambient vertex types preserves combinatorial balls and
+spheres of a given dimension and reflects combinatorial balls (`IsCombinatorialBall.map`,
+`IsCombinatorialSphere.map`, and `isCombinatorialBall_map_iff`; reflection for combinatorial spheres
+is proved in `CombinatorialManifold.Stellar`).
 
 ## References
 
@@ -49,5 +47,23 @@ theorem IsCombinatorialSphere.map (h : IsCombinatorialSphere K n) (f : ι → κ
       simpa only [Function.Embedding.coeFn_mk] using map_simplexBoundary V ⟨f, hf⟩
     rw [← hmap]
     exact he.map f hf
+
+/-- An injective vertex relabeling preserves and reflects combinatorial balls. -/
+@[simp]
+theorem isCombinatorialBall_map_iff {f : ι → κ} (hf : Function.Injective f) :
+    IsCombinatorialBall (K.map f) n ↔ IsCombinatorialBall K n := by
+  refine ⟨fun hb => ?_, fun hb => hb.map f hf⟩
+  have hKfin : K.faces.Finite := (finite_faces_map_iff_of_injective f hf).mp hb.finite_faces
+  have hdim : dimension K = (n : WithBot ℕ∞) :=
+    (dimension_map_of_injective f hf).symm.trans hb.dimension_eq
+  obtain ⟨V, _, hVcard⟩ := exists_face_card_eq_of_dimension_eq hdim
+  obtain ⟨W, hWcard, heW⟩ := isCombinatorialBall_iff.mp hb
+  have hVW : W.card = (V.image f).card := by
+    rw [Finset.card_image_of_injective V hf, hVcard, hWcard]
+  have heVf : StellarEquivalentUpToRelabeling (K.map f) ((simplex V).map f) := by
+    rw [map_simplex]
+    exact heW.trans (stellarEquivalentUpToRelabeling_simplex_of_card_eq hVW)
+  exact isCombinatorialBall_iff.mpr
+    ⟨V, hVcard, (stellarEquivalentUpToRelabeling_map_iff hKfin hf).mp heVf⟩
 
 end PreAbstractSimplicialComplex
