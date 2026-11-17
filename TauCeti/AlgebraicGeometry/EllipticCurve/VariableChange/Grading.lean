@@ -59,15 +59,22 @@ private theorem even_strictCoordDegree (i : Fin 3) : Even (strictCoordDegree i) 
   fin_cases i <;> decide
 
 /-- The even homological grading on `A = ℤ[a₁, a₂, a₃, a₄, a₆]`, placing `aᵢ` in degree `2i`. -/
-@[expose] def baseGrading (n : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) :=
+def baseGrading (n : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) :=
   weightedHomogeneousSubmodule ℤ baseDegree n
+
+/-- Definitional characterization of `baseGrading` as the weighted homogeneous submodule for
+`baseDegree`. -/
+theorem baseGrading_def (n : ℕ) :
+    baseGrading n = weightedHomogeneousSubmodule ℤ baseDegree n := (rfl)
 
 theorem mem_baseGrading_iff {n : ℕ} {p : MvPolynomial Coeff ℤ} :
     p ∈ baseGrading n ↔ p.IsWeightedHomogeneous baseDegree n :=
   mem_weightedHomogeneousSubmodule ℤ baseDegree n p
 @[simp] theorem X_mem_baseGrading (i : Coeff) : X i ∈ baseGrading (2 * coefficientWeight i) :=
   isWeightedHomogeneous_X ℤ baseDegree i
-instance : GradedAlgebra baseGrading := MvPolynomial.weightedGradedAlgebra ℤ baseDegree
+/-- The ring `A = ℤ[a₁, ⋯, a₆]` is graded by even homological degrees. Marked `@[no_expose]` so
+`baseGrading` stays unexposed while directly reusing `MvPolynomial.weightedGradedAlgebra`. -/
+@[no_expose] instance : GradedAlgebra baseGrading := MvPolynomial.weightedGradedAlgebra ℤ baseDegree
 
 private theorem weight_baseDegree (d : Coeff →₀ ℕ) :
     Finsupp.weight baseDegree d = 2 * Finsupp.weight coefficientWeight d := by
