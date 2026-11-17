@@ -167,16 +167,18 @@ private theorem fromRowVectors_toRowVectors (hι : ∀ s, IsIdempotentElem (ι s
   | ht m ψ => simp [fromRowVectors, toRowVectors, -BalancedTensorProduct.piRight_tmul]
   | ha z z' hz hz' => rw [map_add, map_add, hz, hz']
 
+/-- On row vectors, `fromRowVectors` is `φ ↦ ∑ x, φ x ⊗ (1 ⊗ x)`. -/
+private theorem fromRowVectors_apply [DecidableEq X] (hι : ∀ s, IsIdempotentElem (ι s))
+    (φ : X → M) :
+    fromRowVectors N M hι φ = ∑ x, BalancedTensorProduct.tmul R A (φ x) (N.generator hι x) := by
+  simp [fromRowVectors, BalancedTensorProduct.piRight_symm_apply, inducedProj_single]
+
 private theorem toRowVectors_fromRowVectors (hι : ∀ s, IsIdempotentElem (ι s)) {φ : X → M}
     (hφ : φ ∈ N.boxTensor M) : toRowVectors N M (fromRowVectors N M hι φ) = φ := by
   classical
   ext y
-  rw [fromRowVectors, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    BalancedTensorProduct.piRight_symm_apply, map_sum, map_sum]
-  simp only [BalancedTensorProduct.lTensor_tmul, toRowVectors_tmul, coe_inducedProj_apply,
-    Finset.sum_apply, Pi.single_apply, ite_mul, one_mul, zero_mul, apply_ite op, op_zero,
-    ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  exact mem_boxTensor_iff.mp hφ y
+  simpa [fromRowVectors_apply, toRowVectors_tmul, Pi.single_apply, apply_ite op] using
+    mem_boxTensor_iff.mp hφ y
 
 variable (N M) in
 /-- **The box tensor product is the balanced tensor product with the induced module**: when the
@@ -202,13 +204,8 @@ theorem coe_balancedTensorEquiv_tmul (hι : ∀ s, IsIdempotentElem (ι s)) (m :
 theorem balancedTensorEquiv_symm_apply [DecidableEq X] (hι : ∀ s, IsIdempotentElem (ι s))
     (φ : N.boxTensor M) :
     (balancedTensorEquiv N M hι).symm φ =
-      ∑ x, BalancedTensorProduct.tmul R A ((φ : X → M) x) (N.generator hι x) := by
-  rw [LinearEquiv.symm_apply_eq]
-  ext y
-  simp only [map_sum, Submodule.coe_sum, coe_balancedTensorEquiv_tmul, coe_generator,
-    Finset.sum_apply, Pi.single_apply, apply_ite op, op_zero, ite_smul, zero_smul,
-    Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  exact (mem_boxTensor_iff.mp φ.2 y).symm
+      ∑ x, BalancedTensorProduct.tmul R A ((φ : X → M) x) (N.generator hι x) :=
+  fromRowVectors_apply (N := N) hι (φ : X → M)
 
 /-- **The identification is an isomorphism of complexes**: when the `ι s` are idempotent cycles,
 it carries the tensor differential `dM ⊗ 1 + 1 ⊗ ∂` of `M ⊗_A (A ⊠ N)` to the box tensor
