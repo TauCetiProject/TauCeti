@@ -42,7 +42,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
   never integrable over the whole space, for an additive Haar measure on a nontrivial space.
-* `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
+* `TauCeti.integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball`,
+  `TauCeti.integrableOn_norm_sub_rpow_ball`: translation equivalence and integrability after
+  translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
@@ -83,17 +85,31 @@ open scoped ENNReal
 /-- Off-diagonal real-norm domination `‖f y‖ ≤ C * ‖x - y‖ ^ s` on a measurable set `Ω` implies
 almost-everywhere extended-norm domination `‖f y‖ₑ ≤ ENNReal.ofReal C * ‖x - y‖ₑ ^ s` under
 `μ.restrict Ω` whenever singletons have `μ`-measure zero. -/
-theorem ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le {E F : Type*} [NormedAddCommGroup E]
+theorem ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le {E F : Type*} [SeminormedAddGroup E]
     [MeasurableSpace E] {μ : Measure E} [NullSingletonClass μ] [SeminormedAddGroup F]
     {Ω : Set E} (hΩ : MeasurableSet Ω) {f : E → F} {x : E} {s C : ℝ} (hC : 0 ≤ C)
     (hf : ∀ y ∈ Ω, x ≠ y → ‖f y‖ ≤ C * ‖x - y‖ ^ s) :
     ∀ᵐ y ∂μ.restrict Ω, ‖f y‖ₑ ≤ ENNReal.ofReal C * ‖x - y‖ₑ ^ s := by
   filter_upwards [ae_restrict_mem hΩ,
     ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := μ) x))] with y hy hyx
-  have hne : x ≠ y := Ne.symm hyx
-  have hpos : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
-  rw [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_rpow_of_pos hpos, ← ENNReal.ofReal_mul hC]
-  exact ENNReal.ofReal_le_ofReal (hf y hy hne)
+  calc ‖f y‖ₑ = ENNReal.ofReal ‖f y‖ := (ofReal_norm _).symm
+    _ ≤ ENNReal.ofReal (C * ‖x - y‖ ^ s) := ENNReal.ofReal_le_ofReal (hf y hy (Ne.symm hyx))
+    _ = ENNReal.ofReal C * ENNReal.ofReal (‖x - y‖ ^ s) := ENNReal.ofReal_mul hC
+    _ ≤ ENNReal.ofReal C * ENNReal.ofReal ‖x - y‖ ^ s :=
+        mul_le_mul_right (ENNReal.ofReal_rpow_le (norm_nonneg _)) _
+    _ = ENNReal.ofReal C * ‖x - y‖ₑ ^ s := by rw [ofReal_norm]
+
+/-- Translation invariance reducing integrability of `y ↦ ‖x - y‖ ^ s` on `ball x R` to
+integrability of `z ↦ ‖z‖ ^ s` on `ball 0 R`. -/
+theorem integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball {E : Type*}
+    [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E] {μ : Measure E}
+    [μ.IsAddLeftInvariant] {s R : ℝ} (x : E) :
+    IntegrableOn (fun y : E => ‖x - y‖ ^ s) (ball x R) μ ↔
+      IntegrableOn (fun z : E => ‖z‖ ^ s) (ball 0 R) μ := by
+  have hpre : (fun z : E => x + z) ⁻¹' ball x R = ball (0 : E) R := by ext z; simp [mem_ball]
+  rw [← (measurePreserving_add_left μ x).integrableOn_comp_preimage
+    (measurableEmbedding_addLeft x), hpre]
+  simp only [Function.comp_def, sub_add_cancel_left, norm_neg]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -207,23 +223,12 @@ theorem integral_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < 
   simp only [nsmul_eq_mul, smul_eq_mul]
   simp [d, mul_assoc]
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- Translation invariance reducing `IntegrableOn` of `y ↦ ‖x - y‖ ^ s` on `ball x R` to
-`z ↦ ‖z‖ ^ s` on `ball 0 R`. -/
-private theorem integrableOn_norm_sub_rpow_ball_iff_zero {s R : ℝ} (x : E) :
-    IntegrableOn (fun y : E => ‖x - y‖ ^ s) (ball x R) mu ↔
-      IntegrableOn (fun z : E => ‖z‖ ^ s) (ball 0 R) mu := by
-  have hpres := measurePreserving_add_right mu x
-  have hemb := (MeasurableEquiv.addRight x : E ≃ᵐ E).measurableEmbedding
-  have hpre : (fun z : E => z + x) ⁻¹' ball x R = ball (0 : E) R := by ext z; simp [mem_ball]
-  rw [← hpres.integrableOn_comp_preimage hemb, hpre]
-  exact integrableOn_congr_fun (fun z _ => by simp [norm_neg]) measurableSet_ball
-
 /-- The kernel with pole `x` and exponent `s > -dim E` is integrable on every ball centred
 at `x`. -/
 theorem integrableOn_norm_sub_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s) (x : E)
     {R : ℝ} : IntegrableOn (fun y : E => ‖x - y‖ ^ s) (ball x R) mu :=
-  (integrableOn_norm_sub_rpow_ball_iff_zero x).2 (integrableOn_norm_rpow_ball hs)
+  (integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball x).2
+    (integrableOn_norm_rpow_ball hs)
 
 /-- The kernel with pole `x` and exponent `s > -dim E` is locally integrable. -/
 theorem locallyIntegrable_norm_sub_rpow {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s) (x : E) :
@@ -343,13 +348,6 @@ theorem setLIntegral_enorm_sub_rpow_le_of_mem_closure {s : ℝ}
         ((dist_le_diam_of_mem hb.closure (subset_closure hy) hx).trans_eq (diam_closure Ω))
     _ = _ := setLIntegral_closedBall_enorm_sub_rpow hs diam_nonneg x
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem ofReal_norm_rpow_le_enorm_rpow (v : E) (s : ℝ) :
-    ENNReal.ofReal (‖v‖ ^ s) ≤ ‖v‖ₑ ^ s := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · rcases eq_or_ne s 0 with rfl | hs <;> simp [Real.zero_rpow, *]
-  · rw [← ofReal_norm, ENNReal.ofReal_rpow_of_pos (norm_pos_iff.2 hv)]
-
 /-- Bochner integral form of `TauCeti.setLIntegral_enorm_sub_rpow_le_of_mem_closure`. -/
 theorem setIntegral_norm_sub_rpow_le_of_mem_closure {s : ℝ}
     (hs : -(Module.finrank ℝ E : ℝ) < s) {Ω : Set E} {x : E}
@@ -365,7 +363,8 @@ theorem setIntegral_norm_sub_rpow_le_of_mem_closure {s : ℝ}
   rw [← ENNReal.ofReal_le_ofReal_iff hrhs,
     ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_sub_rpow_of_isBounded hs hb x)
       (ae_of_all _ fun _ => Real.rpow_nonneg (norm_nonneg _) _)]
-  exact (lintegral_mono fun y => ofReal_norm_rpow_le_enorm_rpow (x - y) s).trans
+  exact (lintegral_mono fun y => by
+    rw [← ofReal_norm]; exact ENNReal.ofReal_rpow_le (norm_nonneg _)).trans
     (setLIntegral_enorm_sub_rpow_le_of_mem_closure hs hb hx)
 
 /-- On a nontrivial space, if `s ≤ -dim E` and `x ∈ interior Ω`, the lower integral of
@@ -377,13 +376,14 @@ theorem setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior [Nontrivial E] {s : �
   by_contra hne
   have hball_ne : ∫⁻ y in ball x r, ENNReal.ofReal (‖x - y‖ ^ s) ∂mu ≠ ⊤ :=
     ne_top_of_le_ne_top hne
-      ((lintegral_mono fun y => ofReal_norm_rpow_le_enorm_rpow (x - y) s).trans
+      ((lintegral_mono fun y => by
+        rw [← ofReal_norm]; exact ENNReal.ofReal_rpow_le (norm_nonneg _)).trans
         (lintegral_mono_set hball))
   have hint : IntegrableOn (fun y : E => ‖x - y‖ ^ s) (ball x r) mu :=
     (lintegral_ofReal_ne_top_iff_integrable
       (by fun_prop : Measurable fun y : E => ‖x - y‖ ^ s).aestronglyMeasurable
       (ae_of_all _ fun _ => Real.rpow_nonneg (norm_nonneg _) _)).1 hball_ne
-  exact (((integrableOn_norm_sub_rpow_ball_iff_zero x).trans
+  exact (((integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball x).trans
     (integrableOn_norm_rpow_ball_iff hr)).1 hint).not_ge hs
 
 /-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
