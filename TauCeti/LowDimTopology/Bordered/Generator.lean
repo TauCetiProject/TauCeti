@@ -156,44 +156,18 @@ theorem card_occupied_add_card [Fintype AlphaCircle] (x : H.Generator) :
 
 /-! ### The `0`-chain of a generator -/
 
-section Chain
-
-variable [DecidableEq Point]
-
-/-- The `0`-chain of a generator: the sum of the unit chains at its intersection points. -/
-def generatorChain (x : H.Generator) : Point → ℤ :=
-  ∑ j, Pi.single (x.point j) 1
+/-- The `0`-chain of a generator: the indicator function of its intersection points. -/
+noncomputable def generatorChain (x : H.Generator) : Point → ℤ :=
+  (Set.range x.point).indicator 1
 
 /-- The `0`-chain of a generator is the indicator of its points: an intersection point `q` is a
 point of `x` exactly when it is the point of `x` on the `β`-circle through `q`. -/
-theorem generatorChain_apply (x : H.Generator) (q : Point) :
+@[simp]
+theorem generatorChain_apply [DecidableEq Point] (x : H.Generator) (q : Point) :
     H.generatorChain x q = if x.point (H.beta q) = q then 1 else 0 := by
-  rw [generatorChain, Finset.sum_apply, Finset.sum_eq_single (H.beta q)]
-  · simp [Pi.single_apply, eq_comm]
-  · intro j _ hj
-    refine Pi.single_eq_of_ne (fun h => hj ?_) 1
-    rw [h, x.beta_point]
-  · simp
-
-/-- The `0`-chain of a generator has total weight one on an `α`-arc it occupies and zero on any
-other `α`-arc. -/
-theorem sum_generatorChain_of_alpha_eq_inl [Fintype Point] [DecidableEq Arc]
-    [DecidableEq AlphaCircle] (x : H.Generator) (a : Arc) :
-    ∑ q with H.alpha q = .inl a, H.generatorChain x q = if a ∈ H.occupied x then 1 else 0 := by
-  simp only [generatorChain, Finset.sum_apply, Pi.single_apply]
-  rw [Finset.sum_comm]
-  simp only [Finset.sum_ite_eq', Finset.mem_filter, Finset.mem_univ, true_and]
-  rw [Finset.sum_boole]
-  split_ifs with ha
-  · obtain ⟨j₀, hj₀⟩ := mem_occupied.mp ha
-    rw [Finset.card_eq_one.mpr ⟨j₀, ?_⟩, Nat.cast_one]
-    ext j
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-    exact ⟨fun hj => x.alpha_comp_point_injective (hj.trans hj₀.symm), fun hj => hj ▸ hj₀⟩
-  · rw [Finset.card_eq_zero.mpr, Nat.cast_zero]
-    exact Finset.filter_eq_empty_iff.mpr fun j _ hj => ha (mem_occupied.mpr ⟨j, hj⟩)
-
-end Chain
+  have : q ∈ Set.range x.point ↔ x.point (H.beta q) = q :=
+    ⟨by rintro ⟨j, rfl⟩; simp, fun h => ⟨_, h⟩⟩
+  simp only [generatorChain, Set.indicator_apply, this, Pi.one_apply]
 
 /-! ### The idempotents of a generator -/
 

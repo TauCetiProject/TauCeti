@@ -123,6 +123,26 @@ namespace TauCeti
 
 universe u v w r
 
+/-- Pushed forward along the `α`-curves, the `0`-chain of a generator is `1` on an `α`-arc it
+occupies and `0` on any other `α`-arc: the points of a generator lie on distinct `α`-curves. -/
+theorem BorderedHeegaardIntersectionSystem.pushBoundary_alpha_generatorChain_inl {g : ℕ}
+    {Arc : Type u} {AlphaCircle : Type v} {Point : Type w}
+    (H : BorderedHeegaardIntersectionSystem g Arc AlphaCircle Point) [Fintype Point]
+    [DecidableEq Arc] [DecidableEq AlphaCircle] (x : H.Generator) (a : Arc) :
+    StrandGradingGroup.pushBoundary H.alpha (H.generatorChain x) (.inl a) =
+      if a ∈ H.occupied x then 1 else 0 := by
+  classical
+  have h : H.generatorChain x = fun q => if q ∈ univ.image x.point then 1 else 0 := by
+    ext q
+    simp only [generatorChain_apply, mem_image, mem_univ, true_and]
+    exact if_congr ⟨fun h => ⟨_, h⟩, by rintro ⟨j, rfl⟩; simp⟩ rfl rfl
+  have hinj : Set.InjOn H.alpha (univ.image x.point : Finset Point) := by
+    simp only [coe_image, coe_univ, Set.image_univ]
+    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ hij
+    rw [x.alpha_comp_point_injective hij]
+  rw [h, StrandGradingGroup.pushBoundary_indicator hinj]
+  simp [image_image]
+
 /-- The incidence data of a bordered Heegaard diagram of genus `g` whose boundary carries the `n`
 ends of the `α`-arcs. On top of the intersection data it records the ends of each `α`-arc as
 points `0, …, n - 1` of the boundary, in the order of the boundary orientation; the next node
@@ -414,7 +434,7 @@ end Boundary
 
 section Domain
 
-variable [DecidableEq Point] {H}
+variable {H}
 
 /-- `D` is a domain connecting the generator `x` to the generator `y`: at every intersection
 point, the boundary of its `α`-part is `y - x` and the boundary of its `β`-part is `x - y`. Nothing
@@ -424,6 +444,7 @@ def IsDomainBetween (x y : H.Generator) (D : Region → ℤ) : Prop :=
       H.generatorChain y q - H.generatorChain x q) ∧
     H.betaArcBoundary (H.betaBoundary D) = H.generatorChain x - H.generatorChain y
 
+@[simp]
 theorem isDomainBetween_iff {x y : H.Generator} {D : Region → ℤ} :
     H.IsDomainBetween x y D ↔
       (∀ q, H.alphaArcBoundary (H.alphaBoundary D) (.inl q) =
@@ -433,11 +454,11 @@ theorem isDomainBetween_iff {x y : H.Generator} {D : Region → ℤ} :
 
 /-- The zero domain connects every generator to itself. -/
 theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
-  simp [isDomainBetween_iff]
+  simp
 
 /-- The whole surface connects every generator to itself. -/
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
-  simp [isDomainBetween_iff]
+  simp
 
 namespace IsDomainBetween
 
@@ -469,7 +490,8 @@ theorem alphaArcBoundary_inr [Finite Point] [DecidableEq Arc] (hD : H.IsDomainBe
   have := Fintype.ofFinite Point
   have h := H.sum_alphaArcBoundary_inl_add_inr_eq_zero (H.alphaBoundary D) a
   rw [Finset.sum_congr rfl fun q _ => hD.1 q, Finset.sum_sub_distrib,
-    H.sum_generatorChain_of_alpha_eq_inl, H.sum_generatorChain_of_alpha_eq_inl] at h
+    ← StrandGradingGroup.pushBoundary_apply, ← StrandGradingGroup.pushBoundary_apply,
+    H.pushBoundary_alpha_generatorChain_inl, H.pushBoundary_alpha_generatorChain_inl] at h
   linarith
 
 /-- **The border class of a domain and the occupancies.** Added up over the two ends of each arc,
@@ -589,13 +611,13 @@ theorem alphaBoundary_eq_zero_of_mem_provincialPeriodicDomains {P : Region → �
     rw [hc, hc, hv, alphaCurve_inr]
   simp [h, H.alphaLeft_inr, H.alphaRight_inr, hb]
 
-variable [DecidableEq Point] {H}
+variable {H}
 
 /-- A domain connects a generator to itself and has multiplicity zero at the region of the
 basepoint exactly when it is periodic. -/
 theorem isDomainBetween_self_iff [Finite Point] {x : H.Generator} {P : Region → ℤ} :
     H.IsDomainBetween x x P ∧ P (H.borderRegion 0) = 0 ↔ P ∈ H.periodicDomains := by
-  simp [isDomainBetween_iff, alphaArcBoundary_eq_zero_iff_forall_inl, and_comm]
+  simp [alphaArcBoundary_eq_zero_iff_forall_inl, and_comm]
 
 /-- Given a domain `D` connecting `x` to `y`, another domain `D'` connects `x` to `y` with the same
 basepoint multiplicity as `D` exactly when `D' - D` is periodic. So the domains connecting `x` to
@@ -661,7 +683,7 @@ theorem provinciallyAdmissible_iff_finite_setOf_mem_provincialPeriodicDomains_no
     H.ProvinciallyAdmissible ↔ {P | P ∈ H.provincialPeriodicDomains ∧ 0 ≤ P}.Finite :=
   H.provinciallyAdmissible_iff.trans H.provincialPeriodicDomains.finite_setOf_mem_nonneg_iff.symm
 
-variable [DecidableEq Point] [Finite Point] [Finite Region] {H}
+variable [Finite Point] [Finite Region] {H}
 
 /-- **Finiteness in an admissible diagram.** In an admissible diagram, there are only finitely
 many nonnegative domains connecting `x` to `y` with a given basepoint multiplicity. -/
