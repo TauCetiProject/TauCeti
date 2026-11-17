@@ -33,6 +33,9 @@ The Cayley transform itself and its algebraic properties are in
   of a self-adjoint partial linear map is unitary and star-normal.
 * `IsSelfAdjoint.resolvent_eq_cfc_cayley`: the resolvent `R(z)` is the continuous function
   `(1 - U) ((z - i) - (z + i) U)⁻¹` of the Cayley transform `U`.
+* `IsSelfAdjoint.ofReal_re_inverseCayley_eq_and_mem_spectrum`: away from `1`, the inverse Cayley
+  image `i (1 + w) / (1 - w)` of a point `w` of the spectrum of `U` is real and lies in the
+  spectrum of `A`.
 * `LinearPMap.Intertwines.comp_cfc_cayley_eq`: an intertwiner `X A ⊆ B X` of self-adjoint partial
   linear maps satisfies `X f(U_A) = f(U_B) X` for every symbol `f` continuous on both spectra.
 
@@ -113,6 +116,16 @@ theorem _root_.IsSelfAdjoint.resolvent_eq_cfc_cayley (hA : IsSelfAdjoint A) {z :
     simp [cayley_apply]
   simp only [hU, mul_sub, mul_add, mul_smul_comm, mul_one]
   linear_combination (norm := module) (-2 * I) • h
+
+/-- Away from `1`, a point `w` of the spectrum of the Cayley transform of a self-adjoint partial
+linear map `A` has a real inverse Cayley image `i (1 + w) / (1 - w)`, which lies in the spectrum of
+`A`. -/
+theorem _root_.IsSelfAdjoint.ofReal_re_inverseCayley_eq_and_mem_spectrum (hA : IsSelfAdjoint A)
+    {w : ℂ} (hw : w ∈ _root_.spectrum ℂ A.cayley) (h1 : w ≠ 1) :
+    (((I * (1 + w) / (1 - w)).re : ℝ) : ℂ) = I * (1 + w) / (1 - w) ∧
+      I * (1 + w) / (1 - w) ∈ A.spectrum := by
+  have hmem := (mem_spectrum_cayley_iff hA.neg_I_mem_resolventSet h1).mp hw
+  exact ⟨Complex.ext (by simp) (by simpa using (hA.spectrum_subset_im_eq_zero hmem).symm), hmem⟩
 
 section Intertwining
 

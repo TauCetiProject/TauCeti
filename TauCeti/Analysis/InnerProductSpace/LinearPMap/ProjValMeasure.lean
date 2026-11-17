@@ -102,8 +102,21 @@ theorem _root_.IsSelfAdjoint.spectralPVM_eq_map (hA : IsSelfAdjoint A) :
       A.cayley.spectralPVM.map (fun w => (I * (1 + (w : ℂ)) / (1 - w)).re) (by fun_prop) :=
   (rfl)
 
+/-- The spectral projection of `A` on a Borel set `B` is the spectral projection of its Cayley
+transform on the preimage of `B` under the real inverse Cayley coordinate. -/
+@[simp]
+theorem _root_.IsSelfAdjoint.spectralPVM_proj (hA : IsSelfAdjoint A) (B : Set ℝ)
+    (hB : MeasurableSet B) :
+    haveI := hA.isStarNormal_cayley
+    (A.spectralPVM hA).proj B hB =
+      A.cayley.spectralPVM.proj
+        ((fun w : _root_.spectrum ℂ A.cayley => (I * (1 + (w : ℂ)) / (1 - w)).re) ⁻¹' B)
+        ((by fun_prop : Measurable _) hB) := by
+  rw [hA.spectralPVM_eq_map, ProjValMeasure.map_proj]
+
 /-- The diagonal measures of the spectral measure of `A` are the pushforwards of the diagonal
 measures of its Cayley transform along the real inverse Cayley coordinate. -/
+@[simp]
 theorem _root_.IsSelfAdjoint.spectralPVM_diag (hA : IsSelfAdjoint A) (ξ : H) :
     haveI := hA.isStarNormal_cayley
     (A.spectralPVM hA).diag ξ =
@@ -123,15 +136,6 @@ theorem _root_.IsSelfAdjoint.diagMeasure_cayley_preimage_singleton_one_eq_zero
     (cayley_apply_eq_self_iff hA.neg_I_mem_resolventSet).mp (by simpa using hx)
   rw [ProjValMeasure.proj_eq_zero_iff_forall_diag_apply_eq_zero] at h
   simpa using h ξ
-
-/-- Away from `1`, a point `w` of the spectrum of the Cayley transform has a real inverse Cayley
-image `i (1 + w) / (1 - w)`, which lies in the spectrum of `A`. -/
-private theorem ofReal_re_inverseCayley_eq_and_mem_spectrum (hA : IsSelfAdjoint A) {w : ℂ}
-    (hw : w ∈ _root_.spectrum ℂ A.cayley) (h1 : w ≠ 1) :
-    (((I * (1 + w) / (1 - w)).re : ℝ) : ℂ) = I * (1 + w) / (1 - w) ∧
-      I * (1 + w) / (1 - w) ∈ A.spectrum := by
-  have hmem := (mem_spectrum_cayley_iff hA.neg_I_mem_resolventSet h1).mp hw
-  exact ⟨Complex.ext (by simp) (by simpa using (hA.spectrum_subset_im_eq_zero hmem).symm), hmem⟩
 
 /-- **The resolvent formula.** At every resolvent point `z`, in particular at every nonreal `z`,
 the diagonal matrix elements of the resolvent of a self-adjoint partial linear map are the
@@ -154,7 +158,7 @@ theorem _root_.IsSelfAdjoint.inner_resolvent_apply_eq_integral (hA : IsSelfAdjoi
   refine integral_congr_ae ?_
   filter_upwards [h1] with w hw
   have h1w : 1 - (w : ℂ) ≠ 0 := sub_ne_zero.mpr (Ne.symm hw)
-  rw [(ofReal_re_inverseCayley_eq_and_mem_spectrum hA w.2 hw).1]
+  rw [(hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.2 hw).1]
   field_simp
   ring
 
@@ -220,7 +224,7 @@ theorem _root_.IsSelfAdjoint.spectralPVM_proj_eq_zero_of_forall_mem_resolventSet
     (hA.diagMeasure_cayley_preimage_singleton_one_eq_zero ξ)
   -- A point `w ≠ 1` of the spectrum of `U` has its inverse Cayley image in the spectrum of `A`.
   by_contra h1
-  obtain ⟨hre, hmem⟩ := ofReal_re_inverseCayley_eq_and_mem_spectrum hA w.2 h1
+  obtain ⟨hre, hmem⟩ := hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.2 h1
   exact (A.mem_spectrum_iff _).mp hmem (hre ▸ hBA _ hw)
 
 /-- For `x = v - U v` in the domain, the quadratic form is `re ⟪A x, x⟫ = -2 im ⟪v, U v⟫` and
@@ -322,7 +326,8 @@ private theorem exists_eq_sub_cayley_diag_compl_eq_zero (hA : IsSelfAdjoint A) {
   rw [ContinuousLinearMap.coe_coe] at hy
   have hPx : P.proj B hB x = x := by rw [← hy, P.proj_apply_proj]
   have hUP : A.cayley (P.proj B hB v) = P.proj B hB (A.cayley v) := by
-    simpa using congr($((hA.commute_cayley_spectralPVM_proj B hB).eq) v)
+    simpa only [mul_apply_eq_comp] using
+      congr($((hA.commute_cayley_spectralPVM_proj B hB).eq) v)
   refine ⟨P.proj B hB v, ?_, ?_⟩
   · have hxv : v - A.cayley v = x := congrArg Prod.fst hv
     rw [hUP, ← ContinuousLinearMap.map_sub, hxv, hPx]
@@ -362,7 +367,8 @@ private theorem exists_ne_zero_mem_range_spectralPVM_proj (hA : IsSelfAdjoint A)
     by_contra! h'
     exact h (ContinuousLinearMap.ext h')
   have hUP : A.cayley (P v) = P (A.cayley v) := by
-    simpa using congr($((hA.commute_cayley_spectralPVM_proj B hB).eq) v)
+    simpa only [mul_apply_eq_comp] using
+      congr($((hA.commute_cayley_spectralPVM_proj B hB).eq) v)
   refine ⟨⟨P v - A.cayley (P v),
     mem_domain_of_mem_graph ((mem_graph_iff_exists_cayley hm).mpr ⟨P v, rfl⟩)⟩, fun h0 => ?_,
     v - A.cayley v, by simp [hUP]⟩
