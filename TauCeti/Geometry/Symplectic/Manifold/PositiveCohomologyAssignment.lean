@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.UnitDisc.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ComplexDifferentiable
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Positive cohomology assignments
@@ -264,7 +265,12 @@ theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)
     fun z hz ↦ ⟨⟨z, (hs z).1 hz⟩, mem_ball_self hr⟩
   have hadm : ∀ z : s, IsCompact ((σ.comp (subdisc _ r (hc z) hr)) ⁻¹' Z) := fun z ↦ by
     rw [ContinuousMap.coe_comp, preimage_comp]
-    exact isCompact_subdisc_preimage h (norm_sub_ne_of_pairwise_disjoint (fun _ ↦ hr) hdisj hcov z)
+    -- No point of `σ⁻¹(Z)` lies on the circle `‖w - z‖ = r`: it lies in one of the discs.
+    refine isCompact_subdisc_preimage h fun w hw ↦ ?_
+    obtain ⟨y, hy⟩ := hcov w hw
+    obtain rfl | hzy := eq_or_ne z y
+    · exact (mem_ball_iff_norm.1 hy).ne
+    · exact norm_sub_ne_of_disjoint_ball hr.ne' (hdisj hzy) hy
   rw [A.charge_eq_sum σ h (fun z : s ↦ ((z : 𝔻) : ℂ)) (fun _ ↦ r) hc (fun _ ↦ hr) hdisj hcov hadm,
     ← Finset.sum_coe_sort s]
   refine Finset.sum_congr rfl fun z _ ↦ (A.localCharge_eq_charge_comp_subdisc h (hc z) hr
