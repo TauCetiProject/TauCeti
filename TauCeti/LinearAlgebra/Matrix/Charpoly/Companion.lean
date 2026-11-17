@@ -87,12 +87,15 @@ private theorem det_charmatrix_companion_submatrix_last {m : ℕ} (c : Fin (m + 
   have hBtri : B.IsUpperTriangular := fun i k hki => by
     have hlt : (k : ℕ) < (i : ℕ) := hki
     have hne : i.succ ≠ k.castSucc := by simp [Fin.ext_iff]; omega
+    have hk : (k : ℕ) ≤ m := Nat.le_of_lt_succ k.isLt
+    have hik : (i : ℕ) ≠ k := Nat.ne_of_gt hlt
     simp [B, submatrix_apply, Fin.succAbove_last, charmatrix_apply, diagonal_apply_ne _ hne,
-      companion_apply, show (k : ℕ) ≤ m by have := k.isLt; omega, show (i : ℕ) ≠ k by omega]
+      companion_apply, hk, hik]
   have hdiag : ∀ i : Fin (m + 1), B i i = -1 := fun i => by
     have hne : i.succ ≠ i.castSucc := by simp [Fin.ext_iff]
+    have hi : (i : ℕ) ≤ m := Nat.le_of_lt_succ i.isLt
     simp [B, submatrix_apply, Fin.succAbove_last, charmatrix_apply, diagonal_apply_ne _ hne,
-      companion_apply, show (i : ℕ) ≤ m by have := i.isLt; omega]
+      companion_apply, hi]
   rw [det_of_isUpperTriangular hBtri]
   simp [hdiag]
 
@@ -147,13 +150,6 @@ section Order
 
 variable {R : Type*} [Ring R]
 
-private theorem one_ne_zero_of_two_ne_zero (h2 : (2 : R) ≠ 0) : (1 : R) ≠ 0 :=
-  fun h1 => h2 (by rw [← one_add_one_eq_two, h1, add_zero])
-
-private theorem neg_one_ne_one_of_two_ne_zero (h2 : (2 : R) ≠ 0) : (-1 : R) ≠ 1 :=
-  fun h => h2 ((neg_add_cancel (1 : R)).symm.trans
-    ((congrArg (· + 1) h).trans one_add_one_eq_two)).symm
-
 /-- A companion matrix shifts each of the first `n - 1` standard basis vectors to the next. -/
 theorem companion_mulVec_single_of_lt {n : ℕ} (c : Fin n → R) {j : Fin n} (hj : (j : ℕ) + 1 < n) :
     companion c *ᵥ Pi.single j 1 = Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
@@ -189,7 +185,8 @@ theorem companion_const_one_pow_eq_one (n : ℕ) :
   let Mℤ : Matrix (Fin n) (Fin n) ℤ := companion (fun _ => 1)
   have hsum : ∑ k ∈ Finset.range (n + 1), Mℤ ^ k = 0 := by
     have h := aeval_self_charpoly Mℤ
-    rw [show Mℤ.charpoly = _ from charpoly_companion_const_one n, map_sum] at h
+    dsimp only [Mℤ] at h
+    rw [charpoly_companion_const_one n, map_sum] at h
     simpa using h
   have hℤ : Mℤ ^ (n + 1) = 1 := sub_eq_zero.mp <| by rw [← geom_sum_mul, hsum, zero_mul]
   have hmap : (Int.castRingHom R).mapMatrix Mℤ = companion (fun _ : Fin n => (1 : R)) := by
@@ -200,21 +197,23 @@ theorem companion_const_one_pow_eq_one (n : ℕ) :
 `(2 : R) ≠ 0`. -/
 theorem orderOf_companion_const_one {n : ℕ} (hn : 0 < n) (h2 : (2 : R) ≠ 0) :
     orderOf (companion (fun _ : Fin n => (1 : R))) = n + 1 := by
-  have h10 := one_ne_zero_of_two_ne_zero h2
+  have : Nontrivial R := nontrivial_of_ne (2 : R) 0 h2
   set M := companion (fun _ : Fin n => (1 : R))
   refine (orderOf_eq_iff (by omega)).2 ⟨companion_const_one_pow_eq_one n, fun m hmlt hm0 hpow => ?_⟩
   rcases lt_or_eq_of_le (Nat.le_of_lt_succ hmlt) with hmn | rfl
   · have hv := congrArg (fun A => A ⟨0, hn⟩ ⟨0, hn⟩) hpow
     rw [companion_pow_zero_zero hn _ hm0 hmn, one_apply_eq] at hv
-    exact h10 hv.symm
+    exact one_ne_zero hv.symm
   · have hM1 : M = 1 := by
       simpa [M, pow_succ', hpow] using companion_const_one_pow_eq_one (R := R) m
     have hv := congrArg (fun A => A ⟨0, hn⟩ ⟨m - 1, by omega⟩) hM1
     dsimp only [M] at hv
     rw [companion_apply, ite_eq_right (by simp; omega)] at hv
     rcases eq_or_ne m 1 with rfl | hm1
-    · simp only [one_apply_eq] at hv; exact neg_one_ne_one_of_two_ne_zero h2 hv
-    · rw [one_apply_ne (by simp [Fin.ext_iff]; omega)] at hv; exact h10 (neg_eq_zero.mp hv)
+    · simp only [one_apply_eq] at hv
+      exact h2 (one_add_one_eq_two (R := R) ▸ neg_eq_iff_add_eq_zero.mp hv)
+    · rw [one_apply_ne (by simp [Fin.ext_iff]; omega)] at hv
+      exact one_ne_zero (neg_eq_zero.mp hv)
 
 /-- The signed `n`-cycle companion matrix satisfies `M ^ n = -1` over any ring. -/
 theorem companion_single_zero_one_pow_eq_neg_one {n : ℕ} (hn : 0 < n) :
@@ -234,7 +233,7 @@ theorem companion_single_zero_one_pow_eq_neg_one {n : ℕ} (hn : 0 < n) :
 and `(2 : R) ≠ 0`. -/
 theorem orderOf_companion_single_zero_one {n : ℕ} (hn : 0 < n) (h2 : (2 : R) ≠ 0) :
     orderOf (companion (Pi.single ⟨0, hn⟩ (1 : R))) = 2 * n := by
-  have h10 := one_ne_zero_of_two_ne_zero h2
+  have : Nontrivial R := nontrivial_of_ne (2 : R) 0 h2
   set N := companion (Pi.single ⟨0, hn⟩ (1 : R))
   have hpow2n : N ^ (2 * n) = 1 := by
     rw [two_mul, pow_add, companion_single_zero_one_pow_eq_neg_one hn, neg_one_mul, neg_neg]
@@ -242,17 +241,17 @@ theorem orderOf_companion_single_zero_one {n : ℕ} (hn : 0 < n) (h2 : (2 : R) �
   rcases lt_trichotomy m n with hmn | rfl | hnm
   · have hv := congrArg (fun A => A ⟨0, hn⟩ ⟨0, hn⟩) hpow
     rw [companion_pow_zero_zero hn _ hm0 hmn, one_apply_eq] at hv
-    exact h10 hv.symm
+    exact one_ne_zero hv.symm
   · rw [companion_single_zero_one_pow_eq_neg_one hn] at hpow
     have hv := congrArg (fun A => A ⟨0, hn⟩ ⟨0, hn⟩) hpow
     rw [Matrix.neg_apply, one_apply_eq] at hv
-    exact neg_one_ne_one_of_two_ne_zero h2 hv
-  · rw [show m = n + (m - n) by omega, pow_add,
+    exact h2 (one_add_one_eq_two (R := R) ▸ neg_eq_iff_add_eq_zero.mp hv)
+  · rw [← Nat.add_sub_of_le hnm.le, pow_add,
       companion_single_zero_one_pow_eq_neg_one hn, neg_one_mul] at hpow
     have hv := congrArg (fun A => A ⟨0, hn⟩ ⟨0, hn⟩) hpow
     rw [Matrix.neg_apply, companion_pow_zero_zero hn _ (by omega) (by omega), neg_zero,
       one_apply_eq] at hv
-    exact h10 hv.symm
+    exact one_ne_zero hv.symm
 
 end Order
 

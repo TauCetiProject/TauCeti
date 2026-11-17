@@ -43,8 +43,9 @@ theorem roots_geom_sum {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ n) :
     rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hn) 1), hp,
       ← nthRoots, hζ.nthRoots_eq (one_pow n)]
   obtain ⟨m, rfl⟩ : ∃ m, n = 1 + m := ⟨n - 1, by omega⟩
-  rw [Multiset.range_add, show Multiset.range 1 = {0} from rfl, Multiset.map_add,
-    Multiset.map_singleton, pow_zero, one_mul, Multiset.map_map, add_comm] at hroots
+  rw [Multiset.range_add, Multiset.range_succ 0, Multiset.range_zero, Multiset.cons_zero,
+    Multiset.map_add, Multiset.map_singleton, pow_zero, one_mul, Multiset.map_map, add_comm]
+    at hroots
   rw [add_left_cancel hroots, Nat.add_sub_cancel_left]
   exact Multiset.map_congr rfl fun e _ ↦ by simp [add_comm]
 
@@ -56,7 +57,7 @@ theorem roots_X_pow_add_one {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ (2 * n)
   obtain rfl | hn := eq_or_ne n 0
   · rw [pow_zero, ← C_1, ← map_add, roots_C]; simp
   have hζn : ζ ^ n = -1 := (hζ.pow (by omega) (mul_comm 2 n)).eq_neg_one_of_two_right
-  rw [show (X ^ n + 1 : R[X]) = X ^ n - C (-1) by simp [sub_neg_eq_add], ← nthRoots,
+  rw [← sub_neg_eq_add, ← C_1, ← map_neg, ← nthRoots,
     (hζ.pow (by omega) rfl : IsPrimitiveRoot (ζ ^ 2) n).nthRoots_eq hζn]
   exact Multiset.map_congr rfl fun k _ ↦ by rw [← pow_mul, ← pow_succ]
 

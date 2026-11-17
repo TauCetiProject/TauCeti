@@ -165,10 +165,12 @@ theorem roots_charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (
   have hh : 2 * n - 2 = 2 * (n - 1) := by omega
   have hexp_mid : Complex.exp (2 * Real.pi * Complex.I * ((n - 1 : ℕ) / (2 * n - 2 : ℕ))) = -1 := by
     have hne : ((n - 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-    rw [show (2 : ℂ) * Real.pi * Complex.I * (((n - 1 : ℕ) : ℂ) / ((2 * n - 2 : ℕ) : ℂ)) =
-      Real.pi * Complex.I by rw [hh]; push_cast; field_simp [hne], Complex.exp_pi_mul_I]
+    have harg : (2 : ℂ) * Real.pi * Complex.I * (((n - 1 : ℕ) : ℂ) / ((2 * n - 2 : ℕ) : ℂ)) =
+        Real.pi * Complex.I := by
+      rw [hh]; push_cast; field_simp [hne]
+    rw [harg, Complex.exp_pi_mul_I]
   have hroots2 : ((X : ℂ[X]) + 1).roots = {-1} := by
-    rw [show ((X : ℂ[X]) + 1) = X - C (-1) by simp, roots_X_sub_C]
+    rw [← sub_neg_eq_add, ← C_1, ← map_neg, roots_X_sub_C]
   rw [roots_mul (mul_ne_zero hp1 hp2), roots_X_pow_add_one_complex (n - 1), hroots2,
     add_comm, Multiset.singleton_add, Multiset.map_cons, hexp_mid, hh]
   simp [Multiset.map_map]

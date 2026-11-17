@@ -54,9 +54,9 @@ theorem eigenvalues_of_hasCartanType_E6 {b : P.Base} (h : HasCartanType P b .E6)
   refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num) hc⟩
   have h4 : (4 : ℂ) / 12 = 1 / 3 := by norm_num
   have h8 : (8 : ℂ) / 12 = 2 / 3 := by norm_num
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul hc,
-    show (List.range 12).filter (Nat.Coprime · 12) = [1, 5, 7, 11] by decide,
-    show (List.range 3).filter (Nat.Coprime · 3) = [1, 2] by decide,
+  have h12 : (List.range 12).filter (Nat.Coprime · 12) = [1, 5, 7, 11] := by decide
+  have h3 : (List.range 3).filter (Nat.Coprime · 3) = [1, 2] := by decide
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul hc, h12, h3,
     DynkinType.exponents_E6, DynkinType.coxeterNumber_E6]
   simp only [List.mem_cons, List.not_mem_nil, Multiset.insert_eq_cons, Multiset.mem_cons,
     Multiset.mem_singleton, or_false, exists_eq_or_imp, exists_eq_left, Nat.cast_one,
@@ -75,9 +75,9 @@ theorem eigenvalues_of_hasCartanType_E7 {b : P.Base} (h : HasCartanType P b .E7)
   have hc := charpoly_of_hasCartanType_E7_of_actsBy h hnd hall hW
   refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic_mul (by norm_num) hc⟩
   have h9 : (9 : ℂ) / 18 = 1 / 2 := by norm_num
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul hc,
-    show (List.range 18).filter (Nat.Coprime · 18) = [1, 5, 7, 11, 13, 17] by decide,
-    show (List.range 2).filter (Nat.Coprime · 2) = [1] by decide,
+  have h18 : (List.range 18).filter (Nat.Coprime · 18) = [1, 5, 7, 11, 13, 17] := by decide
+  have h2 : (List.range 2).filter (Nat.Coprime · 2) = [1] := by decide
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic_mul hc, h18, h2,
     DynkinType.exponents_E7, DynkinType.coxeterNumber_E7]
   simp only [List.mem_cons, List.not_mem_nil, Multiset.insert_eq_cons, Multiset.mem_cons,
     Multiset.mem_singleton, or_false, exists_eq_or_imp, exists_eq_left, Nat.cast_one,
@@ -95,8 +95,8 @@ theorem eigenvalues_of_hasCartanType_E8 {b : P.Base} (h : HasCartanType P b .E8)
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_E8_of_actsBy h hnd hall hW
   refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic hc⟩
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc,
-    show (List.range 30).filter (Nat.Coprime · 30) = [1, 7, 11, 13, 17, 19, 23, 29] by decide,
+  have h30 : (List.range 30).filter (Nat.Coprime · 30) = [1, 7, 11, 13, 17, 19, 23, 29] := by decide
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc, h30,
     DynkinType.exponents_E8, DynkinType.coxeterNumber_E8]
   simp
 
@@ -111,8 +111,8 @@ theorem eigenvalues_of_hasCartanType_F4 {b : P.Base} (h : HasCartanType P b .F4)
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_F4_of_actsBy h hnd hall hW
   refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic hc⟩
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc,
-    show (List.range 12).filter (Nat.Coprime · 12) = [1, 5, 7, 11] by decide,
+  have h12 : (List.range 12).filter (Nat.Coprime · 12) = [1, 5, 7, 11] := by decide
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc, h12,
     DynkinType.exponents_F4, DynkinType.coxeterNumber_F4]
   simp
 
@@ -127,8 +127,8 @@ theorem eigenvalues_of_hasCartanType_G2 {b : P.Base} (h : HasCartanType P b .G2)
       (W.map (Int.castRingHom ℂ)).charpoly.roots.Nodup := by
   have hc := charpoly_of_hasCartanType_G2_of_actsBy h hnd hall hW
   refine ⟨fun ζ => ?_, nodup_roots_charpoly_of_charpoly_eq_cyclotomic hc⟩
-  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc,
-    show (List.range 6).filter (Nat.Coprime · 6) = [1, 5] by decide,
+  have h6 : (List.range 6).filter (Nat.Coprime · 6) = [1, 5] := by decide
+  rw [mem_roots_charpoly_of_charpoly_eq_cyclotomic hc, h6,
     DynkinType.exponents_G2, DynkinType.coxeterNumber_G2]
   simp
 end TauCeti.Coxeter

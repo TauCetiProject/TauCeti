@@ -9,6 +9,7 @@ public import Mathlib.Data.Multiset.Range
 public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
 import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Multiset.Range
 
 /-!
 # Coxeter numbers and exponent multisets of Dynkin types
@@ -79,7 +80,7 @@ theorem numRoots_eq_rank_mul_coxeterNumber (t : DynkinType) :
     rcases n with _ | n
     · simp
     · simp only [numRoots_D, add_tsub_cancel_right, rank_D, coxeterNumber_D]
-      rw [show 2 * (n + 1) - 2 = 2 * n by omega]; ring
+      rw [Nat.mul_succ, Nat.add_sub_cancel]; ring
   | _ => simp
 
 /-- For a valid Dynkin type, `h = |Φ| / r`. -/
@@ -131,31 +132,31 @@ theorem le_coxeterNumber_of_mem_exponents {t : DynkinType} {e : ℕ} (he : e ∈
     rcases he with rfl | ⟨k, _, rfl⟩ <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
-private theorem map_sub_map_range (m h : ℕ) (f : ℕ → ℕ) (hf : ∀ k < m, h - f k = f (m - 1 - k)) :
-    ((Multiset.range m).map f).map (h - ·) = (Multiset.range m).map f := by
-  have hrev : (Multiset.range m).map (fun k => m - 1 - k) = Multiset.range m := by
-    refine ((Multiset.Nodup.map_on (fun x hx y hy hxy => ?_) (Multiset.nodup_range m)).ext
-      (Multiset.nodup_range m)).2 fun x => ?_
-    · rw [Multiset.mem_range] at hx hy; omega
-    · simp only [Multiset.mem_map, Multiset.mem_range]
-      exact ⟨fun ⟨k, hk, hkx⟩ => by omega, fun hx => ⟨m - 1 - x, by omega, by omega⟩⟩
-  rw [Multiset.map_map,
-    Multiset.map_congr rfl fun k hk =>
-      show ((h - ·) ∘ f) k = (f ∘ fun j => m - 1 - j) k from hf k (Multiset.mem_range.1 hk),
-    ← Multiset.map_map, hrev]
-
 /-- **Exponent duality**: replacing each exponent `e` by `h - e` preserves `t.exponents`. -/
 theorem map_coxeterNumber_sub_exponents (t : DynkinType) :
     t.exponents.map (t.coxeterNumber - ·) = t.exponents := by
   cases t with
-  | A n => exact map_sub_map_range n (n + 1) (· + 1) fun k hk => by omega
-  | B n | C n => exact map_sub_map_range n (2 * n) (2 * · + 1) fun k hk => by omega
+  | A n =>
+    rw [exponents_A, coxeterNumber_A, Multiset.map_map, ← Multiset.map_range_reflect (· + 1) n]
+    exact Multiset.map_congr rfl fun k hk => by
+      rw [Function.comp_apply]; have := Multiset.mem_range.1 hk; omega
+  | B n =>
+    rw [exponents_B, coxeterNumber_B, Multiset.map_map, ← Multiset.map_range_reflect (2 * · + 1) n]
+    exact Multiset.map_congr rfl fun k hk => by
+      rw [Function.comp_apply]; have := Multiset.mem_range.1 hk; omega
+  | C n =>
+    rw [exponents_C, coxeterNumber_C, Multiset.map_map, ← Multiset.map_range_reflect (2 * · + 1) n]
+    exact Multiset.map_congr rfl fun k hk => by
+      rw [Function.comp_apply]; have := Multiset.mem_range.1 hk; omega
   | D n =>
     rcases n with _ | n; · simp
     simp only [exponents_D, Nat.succ_ne_zero, ↓reduceIte, coxeterNumber_D, Nat.add_sub_cancel,
-      Multiset.map_cons]
-    rw [show 2 * (n + 1) - 2 - n = n by omega,
-      map_sub_map_range n (2 * (n + 1) - 2) (2 * · + 1) fun k hk => by omega]
+      Multiset.map_cons, Multiset.map_map]
+    congr 1
+    · omega
+    · rw [← Multiset.map_range_reflect (2 * · + 1) n]
+      exact Multiset.map_congr rfl fun k hk => by
+        rw [Function.comp_apply]; have := Multiset.mem_range.1 hk; omega
   | E6 | E7 | E8 | F4 | G2 => decide
 
 /-- **Twice the sum of the exponents of `t` equals its number of roots**: `2 ∑ eᵢ = |Φ|`. -/
@@ -165,8 +166,7 @@ theorem two_mul_sum_exponents_eq_numRoots (t : DynkinType) :
       t.rank * t.coxeterNumber := by
     rw [Multiset.map_congr rfl fun e he => Nat.add_sub_of_le (le_coxeterNumber_of_mem_exponents he)]
     simp [card_exponents]
-  rw [Multiset.sum_map_add, show t.exponents.map (fun e => e) = t.exponents by simp,
-    map_coxeterNumber_sub_exponents] at hpair
+  rw [Multiset.sum_map_add, Multiset.map_id', map_coxeterNumber_sub_exponents] at hpair
   rw [two_mul, hpair, numRoots_eq_rank_mul_coxeterNumber]
 
 /-- Every exponent of a valid Dynkin type is positive. -/
@@ -178,7 +178,8 @@ theorem pos_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ} (he : e �
     obtain ⟨k, _, rfl⟩ := he; omega
   | D n =>
     have hn : 4 ≤ n := valid_D.mp ht
-    simp only [exponents_D, show n ≠ 0 by omega, ↓reduceIte, Multiset.mem_cons, Multiset.mem_map,
+    have hn0 : n ≠ 0 := by omega
+    simp only [exponents_D, hn0, ↓reduceIte, Multiset.mem_cons, Multiset.mem_map,
       Multiset.mem_range] at he
     rcases he with rfl | ⟨k, _, rfl⟩ <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
@@ -197,8 +198,9 @@ theorem one_mem_exponents {t : DynkinType} (ht : t.Valid) : 1 ∈ t.exponents :=
   | B n => have := valid_B.mp ht; exact Multiset.mem_map.2 ⟨0, Multiset.mem_range.2 (by omega), rfl⟩
   | C n => have := valid_C.mp ht; exact Multiset.mem_map.2 ⟨0, Multiset.mem_range.2 (by omega), rfl⟩
   | D n =>
-    have := valid_D.mp ht
-    simp only [exponents_D, show n ≠ 0 by omega, ↓reduceIte, Multiset.mem_cons]
+    have hn : 4 ≤ n := valid_D.mp ht
+    have hn0 : n ≠ 0 := by omega
+    simp only [exponents_D, hn0, ↓reduceIte, Multiset.mem_cons]
     exact Or.inr (Multiset.mem_map.2 ⟨0, Multiset.mem_range.2 (by omega), rfl⟩)
   | E6 | E7 | E8 | F4 | G2 => simp
 

@@ -118,8 +118,9 @@ theorem roots_charpoly_of_hasCartanType_of_actsBy [DecidableEq ι] {t : DynkinTy
       roots_charpoly_of_hasCartanType_C_of_actsBy
         (by have := DynkinType.valid_C.mp ht; omega) h hnd hall hW
   | D n =>
-    have := DynkinType.valid_D.mp ht
-    simpa [DynkinType.exponents_D, show n ≠ 0 by omega, DynkinType.coxeterNumber_D] using
+    have hn4 := DynkinType.valid_D.mp ht
+    have hn0 : n ≠ 0 := by omega
+    simpa [DynkinType.exponents_D, hn0, DynkinType.coxeterNumber_D] using
       roots_charpoly_of_hasCartanType_D_of_actsBy (by omega) h hnd hall hW
   | E6 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_E6 h hnd hall hW)
   | E7 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_E7 h hnd hall hW)
