@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
+public import Mathlib.Topology.Sets.Opens
+import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
 
@@ -17,7 +19,9 @@ import Mathlib.Topology.Order.Compact
 
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
-Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
+Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
+so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
@@ -155,6 +159,17 @@ theorem setLIntegral_reProdIm_comp_im (s t : Set ℝ) {F : ℝ → ℝ≥0∞} (
 end Complex
 
 namespace TauCeti
+
+open TopologicalSpace
+
+/-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
+differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
+Lebesgue measure. -/
+theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
+    ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
+      (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ) := by
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
+  exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/
