@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.SpectralObject
 public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Subobject.Lattice
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.Homology.HomotopyCategory.Triangulated
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
@@ -32,6 +33,10 @@ cohomology `H^{p+q}` of the mapping cone of `F_q ⟶ F_{q+1}`
 (`CochainComplex.spectralSequenceFirstPageXIso`). When this map is a monomorphism, for instance
 for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piece
 (`CochainComplex.spectralSequenceFirstPageXIsoCokernel`).
+
+A natural transformation `α : F ⟶ G` induces a morphism of spectral objects
+(`CochainComplex.spectralObjectMap`), which only depends on `α` up to homotopies of its components
+commuting with the transition maps (`CochainComplex.spectralObjectMap_eq_of_homotopy`).
 
 ## Main definitions
 
@@ -64,6 +69,10 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
   cones.
 * `CochainComplex.spectralObjectMap_hom_app_hIso`: on `H^n(f)`, `spectralObjectMap α` is the map
   in cohomology of the induced morphism of mapping cones.
+* `CochainComplex.triangulatedSpectralObjectMap_eq_of_homotopy`,
+  `CochainComplex.spectralObjectMap_eq_of_homotopy`: natural transformations whose components are
+  related by homotopies commuting with the transition maps induce the same morphism of spectral
+  objects.
 
 ## References
 
@@ -136,6 +145,22 @@ lemma triangulatedSpectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   simp [triangulatedSpectralObjectMap]
   rfl
 
+/-- **Compatible homotopies induce the same morphism of triangulated spectral objects.** If the
+components of two natural transformations `α β : F ⟶ G` are related by homotopies `h i` which
+commute with the transition maps of `F` and `G`, then `α` and `β` induce the same morphism of
+triangulated spectral objects: the maps of mapping cones they induce are homotopic
+(`CochainComplex.mappingCone.mapHomotopy`), hence equal in the homotopy category. -/
+lemma triangulatedSpectralObjectMap_eq_of_homotopy (α β : F ⟶ G)
+    (h : ∀ i, Homotopy (α.app i) (β.app i))
+    (hh : ∀ ⦃i j : ι⦄ (f : i ⟶ j) (p q : ℤ),
+      (F.map f).f p ≫ (h j).hom p q = (h i).hom p q ≫ (G.map f).f q) :
+    triangulatedSpectralObjectMap α = triangulatedSpectralObjectMap β := by
+  ext : 1
+  refine NatTrans.ext (funext fun D ↦ ?_)
+  obtain ⟨i, j, f, rfl⟩ := ComposableArrows.mk₁_surjective D
+  exact HomotopyCategory.eq_of_homotopy _ _
+    (mappingCone.mapHomotopy _ _ _ _ (α.naturality f) (β.naturality f) (h i) (h j) (hh f))
+
 end Triangulated
 
 section SpectralObject
@@ -205,6 +230,16 @@ lemma spectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
     spectralObjectMap (α ≫ β) = spectralObjectMap α ≫ spectralObjectMap β := by
   simp [spectralObjectMap]
   rfl
+
+/-- **Compatible homotopies induce the same morphism of spectral objects.** If the components of
+two natural transformations `α β : F ⟶ G` are related by homotopies `h i` which commute with the
+transition maps of `F` and `G`, then `α` and `β` induce the same morphism of spectral objects, and
+so the same morphism of spectral sequences. -/
+lemma spectralObjectMap_eq_of_homotopy (α β : F ⟶ G) (h : ∀ i, Homotopy (α.app i) (β.app i))
+    (hh : ∀ ⦃i j : ι⦄ (f : i ⟶ j) (p q : ℤ),
+      (F.map f).f p ≫ (h j).hom p q = (h i).hom p q ≫ (G.map f).f q) :
+    spectralObjectMap α = spectralObjectMap β := by
+  rw [spectralObjectMap, spectralObjectMap, triangulatedSpectralObjectMap_eq_of_homotopy α β h hh]
 
 /-- On `H^n(f)`, the morphism of spectral objects induced by `α` is the map in cohomology of the
 morphism of mapping cones of `F.map f` and `G.map f`. -/
