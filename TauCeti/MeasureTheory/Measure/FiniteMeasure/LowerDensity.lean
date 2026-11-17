@@ -96,7 +96,7 @@ theorem mul_hausdorffMeasure_le_measure_of_tendsto [l.NeBot] (hμ : Tendsto μ l
       ENNReal.ofReal (c * ρ ^ d) ≤ (μ i : Measure X) (closedBall y ρ))
     {U : Set X} (hU : IsOpen U) (hZU : (Z₀ : Set X) ⊆ U) :
     ENNReal.ofReal (c / 2 ^ d) * μH[d] (Z₀ : Set X) ≤ (ν : Measure X) U := by
-  refine Measure.mul_hausdorffMeasure_le_measure_of_isOpen _ (Nat.cast_nonneg d) hU hZU
+  refine Measure.mul_hausdorffMeasure_le_measure_of_isOpen _ hU hZU
     fun x hx ↦ Eventually.frequently ?_
   filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ hρ
   have h2ρ : 0 ≤ 2 * ρ := by linarith [hρ.1]
