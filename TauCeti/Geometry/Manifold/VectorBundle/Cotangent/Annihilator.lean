@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.QuotientRange
-import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # The annihilator subbundle of a distribution
@@ -100,8 +99,9 @@ theorem mem_annihilatorSpace_iff {x : M} {p : TangentSpace I x →L[𝕜] 𝕜} 
 
 /-- A covector lies in the annihilator of `D` at `x` when its kernel contains `D x`. -/
 theorem mem_annihilatorSpace_iff_le_ker {x : M} {p : TangentSpace I x →L[𝕜] 𝕜} :
-    p ∈ annihilatorSpace I D x ↔ D x ≤ LinearMap.ker p.toLinearMap :=
-  mem_annihilatorSpace_iff
+    p ∈ annihilatorSpace I D x ↔ D x ≤ LinearMap.ker p.toLinearMap := by
+  rw [mem_annihilatorSpace_iff]
+  exact ⟨fun h v hv ↦ LinearMap.mem_ker.mpr (h v hv), fun h v hv ↦ LinearMap.mem_ker.mp (h hv)⟩
 
 section FiniteDimensional
 
@@ -116,31 +116,16 @@ theorem finrank_add_finrank_annihilatorSpace (x : M) :
 /-- On a finite-dimensional manifold a tangent vector lies in `D x` exactly when every covector
 of the annihilator `D⁰_x` vanishes on it: `D x` is the common kernel of its annihilator. -/
 theorem mem_iff_forall_mem_annihilatorSpace {x : M} {v : TangentSpace I x} :
-    v ∈ D x ↔ ∀ p ∈ annihilatorSpace I D x, p v = 0 := by
-  refine ⟨fun hv p hp ↦ mem_annihilatorSpace_iff.mp hp v hv, fun h ↦ ?_⟩
-  by_contra hv
-  -- A linear functional separating `v` from `D x` is continuous in finite dimensions.
-  obtain ⟨a, ha, haD⟩ := Submodule.exists_le_ker_of_notMem hv
-  exact ha (h (LinearMap.toContinuousLinearMap a)
-    (mem_annihilatorSpace_iff_le_ker.mpr haD))
+    v ∈ D x ↔ ∀ p ∈ annihilatorSpace I D x, p v = 0 :=
+  StrongDual.mem_iff_forall_mem_polarSubmodule (E := E) (D x)
 
 /-- **The annihilator of a hyperplane.** If a nonzero covector `α` at `x` has kernel `D x`, then
 the annihilator of `D` at `x` is the line spanned by `α`. -/
 theorem annihilatorSpace_eq_span_singleton {x : M} {α : TangentSpace I x →L[𝕜] 𝕜} (hα : α ≠ 0)
     (hker : LinearMap.ker α.toLinearMap = D x) :
     annihilatorSpace I D x = 𝕜 ∙ α := by
-  have hα' : α.toLinearMap ≠ 0 := fun h ↦ hα (ContinuousLinearMap.coe_injective h)
-  -- `D x` is the kernel of a nonzero functional, so it has codimension one.
-  have hD : finrank 𝕜 (D x) + 1 = finrank 𝕜 E := by
-    have := LinearMap.finrank_range_add_finrank_ker α.toLinearMap
-    rw [LinearMap.range_eq_top.mpr (α.toLinearMap.surjective_of_ne_zero hα'), finrank_top,
-      finrank_self, hker, finrank_tangentSpace] at this
-    omega
-  refine (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).mpr
-    (mem_annihilatorSpace_iff_le_ker.mpr hker.ge)) ?_).symm
-  have := finrank_add_finrank_annihilatorSpace (D := D) x
-  rw [finrank_span_singleton hα]
-  omega
+  rw [annihilatorSpace_def, ← hker]
+  exact StrongDual.polarSubmodule_ker_eq_span_singleton (E := E) hα
 
 end FiniteDimensional
 
