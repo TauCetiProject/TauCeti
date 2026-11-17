@@ -74,7 +74,7 @@ def toPresheafOfModulesCompRestrictFunctorIso :
 @[simp]
 lemma toPresheafOfModulesCompRestrictFunctorIso_hom_app_app_apply (M : Y.Modules) (V : X.Opensᵒᵖ)
     (x : ((restrictFunctor f).obj ((Scheme.Modules.toPresheafOfModules Y).obj M)).obj V) :
-    dsimp% only [Functor.comp_obj]
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
       (((toPresheafOfModulesCompRestrictFunctorIso f).hom.app M).app V) x = x :=
   (rfl)
 
@@ -83,7 +83,7 @@ lemma toPresheafOfModulesCompRestrictFunctorIso_hom_app_app_apply (M : Y.Modules
 lemma toPresheafOfModulesCompRestrictFunctorIso_inv_app_app_apply (M : Y.Modules) (V : X.Opensᵒᵖ)
     (x : ((Scheme.Modules.toPresheafOfModules X).obj
       ((Scheme.Modules.restrictFunctor f).obj M)).obj V) :
-    dsimp% only [Functor.comp_obj]
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
       (((toPresheafOfModulesCompRestrictFunctorIso f).inv.app M).app V) x = x :=
   (rfl)
 
@@ -93,7 +93,9 @@ variable {f}
 @[simp]
 lemma restrictFunctor_obj_map_apply (P : Y.PresheafOfModules) {U V : X.Opensᵒᵖ} (i : U ⟶ V)
     (y : ((restrictFunctor f).obj P).obj U) :
-    ((restrictFunctor f).obj P).map i y = P.map (f.opensFunctor.map i.unop).op y :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, Functor.comp_map,
+        CommRingCat.forgetToRingCat_obj, CommRingCat.forgetToRingCat_map_hom]
+      ((restrictFunctor f).obj P).map i y = P.map (f.opensFunctor.map i.unop).op y :=
   (rfl)
 
 -- The `show`s identify `Γ(X, V)` and `Γ(Y, f ''ᵁ V)` with the rings `ringCatSheaf.obj.obj` acting
@@ -122,7 +124,8 @@ lemma restrictFunctor_obj_hom_app_smul {P : Y.PresheafOfModules} {Q : X.Presheaf
 @[simp]
 lemma restrictFunctor_map_app_apply {P Q : Y.PresheafOfModules} (φ : P ⟶ Q) (V : X.Opensᵒᵖ)
     (y : ((restrictFunctor f).obj P).obj V) :
-    ((restrictFunctor f).map φ).app V y = φ.app (op (f.opensFunctor.obj V.unop)) y :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+      ((restrictFunctor f).map φ).app V y = φ.app (op (f.opensFunctor.obj V.unop)) y :=
   (rfl)
 
 variable (f)
