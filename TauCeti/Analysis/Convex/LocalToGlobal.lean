@@ -182,6 +182,14 @@ theorem continuousLinearEquiv_comp {F : Type*} [NormedAddCommGroup F] [NormedSpa
 
 end IsConvexChart
 
+/-- A cover of `X` by convexity charts of `f` is one by convexity charts of `e ∘ f`. -/
+private theorem exists_isConvexChart_continuousLinearEquiv_comp {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : X → E}
+    (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart f U) (e : E ≃L[ℝ] F) (x : X) :
+    ∃ U, x ∈ U ∧ IsConvexChart (e ∘ f) U :=
+  let ⟨U, hx, hU⟩ := hloc x
+  ⟨U, hx, hU.continuousLinearEquiv_comp e⟩
+
 /-- Fibres of `f` in `V` over points outside `f '' V` are empty, so it suffices to check that the
 fibres over points of `f '' V` are preconnected. -/
 private theorem isPreconnected_inter_preimage_singleton_of_forall_mem_image {Y : Type*} {f : X → Y}
@@ -430,6 +438,17 @@ private theorem exists_mapClusterPt_of_dist_le (hf : IsProperMap f) (a : X) {C :
     ).exists_mapClusterPt (f := atTop) (u := u) (tendsto_principal.2 (Eventually.of_forall huK))
   exact ⟨x₀, hx₀⟩
 
+/-- **Nearly bounded functions at cluster points.** If a continuous `g` satisfies
+`g (u n) ≤ c + 1 / (n + 1)` along a sequence `u`, then `g x₀ ≤ c` at every cluster point `x₀`. -/
+private theorem le_of_mapClusterPt_of_le_add_one_div {g : X → ℝ} (hg : Continuous g) {c : ℝ}
+    {u : ℕ → X} {x₀ : X} (hx₀ : MapClusterPt x₀ atTop u)
+    (hu : ∀ n : ℕ, g (u n) ≤ c + 1 / (n + 1)) : g x₀ ≤ c := by
+  refine le_of_forall_pos_le_add fun ε hε ↦
+    (isClosed_le hg continuous_const).mem_of_mapClusterPt hx₀ ?_
+  filter_upwards [tendsto_one_div_add_atTop_nhds_zero_nat.eventually (eventually_le_nhds hε)]
+    with n hn
+  linarith [hu n]
+
 /-- **Midpoints.** For every `t ∈ [0, 1]` there is a point at chain distance `t ρ x y` from `x` and
 `(1 - t) ρ x y` from `y`. -/
 private theorem exists_chainDist_eq_mul (hf : IsProperMap f)
@@ -457,18 +476,15 @@ private theorem exists_chainDist_eq_mul (hf : IsProperMap f)
     calc dist (f x) (f (m n)) ≤ chainDist f x (m n) := dist_le_chainDist hR _ _
       _ ≤ t * (L + 1 / (n + 1)) := hxm n
       _ ≤ L + 1 / (n + 1) := mul_le_of_le_one_left (by positivity) ht.2
-  have hlim : ∀ s : ℝ, Tendsto (fun n : ℕ ↦ s * (L + 1 / ((n : ℝ) + 1))) atTop (𝓝 (s * L)) :=
-    fun s ↦ by simpa using (tendsto_one_div_add_atTop_nhds_zero_nat.const_add L).const_mul s
   -- Bounds holding along the sequence up to errors tending to zero pass to the cluster point.
-  have hbound : ∀ g : X → ℝ, Continuous g → ∀ s : ℝ,
-      (∀ n : ℕ, g (m n) ≤ s * (L + 1 / (n + 1))) → g m₀ ≤ s * L := by
-    refine fun g hg s hgm ↦ le_of_forall_pos_le_add fun ε hε ↦
-      (isClosed_le hg continuous_const).mem_of_mapClusterPt hm₀ ?_
-    filter_upwards [(hlim s).eventually (eventually_le_nhds (lt_add_of_pos_right _ hε))] with n hn
-    exact (hgm n).trans hn
-  have h₁ := hbound _ (continuous_chainDist hR hloc hf.continuous x) t hxm
+  have hbound : ∀ g : X → ℝ, Continuous g → ∀ s ∈ Icc (0 : ℝ) 1,
+      (∀ n : ℕ, g (m n) ≤ s * (L + 1 / (n + 1))) → g m₀ ≤ s * L := fun g hg s hs hgm ↦
+    le_of_mapClusterPt_of_le_add_one_div hg hm₀ fun n ↦ (hgm n).trans <| by
+      rw [mul_add]
+      exact add_le_add_right (mul_le_of_le_one_left (by positivity) hs.2) _
+  have h₁ := hbound _ (continuous_chainDist hR hloc hf.continuous x) t ht hxm
   have h₂ := hbound _ ((continuous_chainDist hR hloc hf.continuous y).congr
-    fun w ↦ chainDist_comm hR y w) (1 - t) hmy
+    fun w ↦ chainDist_comm hR y w) (1 - t) ⟨sub_nonneg.2 ht.2, by linarith [ht.1]⟩ hmy
   have h₃ : L ≤ chainDist f x m₀ + chainDist f m₀ y := chainDist_triangle hR x m₀ y
   have h₄ : (1 - t) * L = L - t * L := by ring
   exact ⟨m₀, by linarith [h₄], by linarith [h₄]⟩
@@ -611,15 +627,11 @@ private theorem exists_pos_forall_chainDist_lt_mem (hf : IsProperMap f)
   obtain ⟨s₀, hs₀⟩ := exists_mapClusterPt_of_dist_le hf p (C := 0) fun n ↦ (hsd n).trans_eq
     (zero_add _).symm
   have hs₀O : s₀ ∈ frontier O := isClosed_frontier.mem_of_mapClusterPt hs₀ (.of_forall hsO)
-  have hfs₀ : f s₀ = f p := by
-    have hfc := hf.continuous
-    refine dist_le_zero.1 (le_of_forall_pos_le_add fun ε hε ↦ ?_)
-    rw [zero_add]
-    have hcl : IsClosed {w | dist (f w) (f p) ≤ ε} := isClosed_le (by fun_prop) continuous_const
-    refine hcl.mem_of_mapClusterPt hs₀ ?_
-    filter_upwards [tendsto_one_div_add_atTop_nhds_zero_nat.eventually (eventually_le_nhds hε)]
-      with n hn
-    exact (dist_comm _ _).trans_le ((hsd n).trans hn)
+  have hfs₀ : f s₀ = f p := dist_le_zero.1 <|
+    le_of_mapClusterPt_of_le_add_one_div (g := fun w ↦ dist (f w) (f p))
+      (hf.continuous.dist continuous_const) hs₀ fun n ↦ by
+        rw [dist_comm, zero_add]
+        exact hsd n
   by_cases hs₀N : s₀ ∈ N
   · -- The limit lies in `C ⊆ O`, which is open and so misses its frontier.
     have : s₀ ∈ O := ⟨hCO₁ (hNC ⟨hs₀N, hfs₀⟩), hs₀N⟩
@@ -839,9 +851,7 @@ theorem convex_range_of_isConvexChart (hf : IsProperMap f)
     (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart f U) : Convex ℝ (range f) := by
   set e := toEuclidean (E := E)
   have h := convex_range_of_strictConvexSpace (f := e ∘ f)
-    (e.toHomeomorph.isProperMap.comp hf) fun x ↦
-      let ⟨U, hx, hU⟩ := hloc x
-      ⟨U, hx, hU.continuousLinearEquiv_comp e⟩
+    (e.toHomeomorph.isProperMap.comp hf) (exists_isConvexChart_continuousLinearEquiv_comp hloc e)
   rw [range_comp] at h
   simpa [image_image] using h.linear_image (e.symm : _ →ₗ[ℝ] E)
 
@@ -852,9 +862,8 @@ theorem isPreconnected_preimage_singleton_of_isConvexChart (hf : IsProperMap f)
     (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart f U) (v : E) : IsPreconnected (f ⁻¹' {v}) := by
   set e := toEuclidean (E := E)
   have h := isPreconnected_preimage_singleton_of_strictConvexSpace (f := e ∘ f)
-    (e.toHomeomorph.isProperMap.comp hf) (fun x ↦
-      let ⟨U, hx, hU⟩ := hloc x
-      ⟨U, hx, hU.continuousLinearEquiv_comp e⟩) (e v)
+    (e.toHomeomorph.isProperMap.comp hf) (exists_isConvexChart_continuousLinearEquiv_comp hloc e)
+    (e v)
   convert h using 1
   ext x
   simp
