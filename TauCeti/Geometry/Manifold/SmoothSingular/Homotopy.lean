@@ -348,6 +348,17 @@ theorem smoothSingularChainHomotopyEquivOfContMDiff_hom
       SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R := by
   rfl
 
+/-- The inverse map of `smoothSingularChainHomotopyEquivOfContMDiff` is the chain map induced by
+collapsing `M` to the constant smooth `0`-simplex at `c`. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivOfContMDiff_inv
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
+    (smoothSingularChainHomotopyEquivOfContMDiff R hF c h₀ h₁).inv =
+      SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R := by
+  rfl
+
 /-- On a smoothly contractible charted space, the inclusion of smooth singular chains into singular
 chains is a quasi-isomorphism. -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff
