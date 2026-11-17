@@ -31,9 +31,10 @@ all pairs `x, y ∈ S` with `dist x y ≤ h`, taking the value `0` when no such 
   the increment set is bounded above.
 * `UniformContinuousOn.tendsto_modulusOfContinuityOn_nhdsGT_zero`,
   `ContinuousOn.tendsto_modulusOfContinuityOn_nhdsGT_zero`,
+  `ContinuousOn.bddAbove_modulusOfContinuityOn_set`,
   `TauCeti.uniformContinuousOn_iff_tendsto_modulusOfContinuityOn`: vanishing of the modulus as
-  `h → 0⁺` for uniformly continuous maps, and characterization when small-mesh increment sets are
-  bounded above.
+  `h → 0⁺` for uniformly continuous maps, boundedness of increment sets on compact domains, and
+  characterization when small-mesh increment sets are bounded above.
 * `Isometry.modulusOfContinuityOn_comp`, `TauCeti.modulusOfContinuityOn_neg`,
   `TauCeti.modulusOfContinuityOn_smul`, `TauCeti.modulusOfContinuityOn_add_le`,
   `LipschitzOnWith.modulusOfContinuityOn_le`, `LipschitzOnWith.bddAbove_modulusOfContinuityOn_set`,
@@ -48,7 +49,8 @@ all pairs `x, y ∈ S` with `dist x y ≤ h`, taking the value `0` when no such 
 Because `Real.sSup` maps unbounded-above sets to `0`, lower-bound and monotonicity statements that
 read individual increments back out of `modulusOfContinuityOn f S h` assume `BddAbove` of the
 increment set `{a | ∃ x ∈ S, ∃ y ∈ S, dist x y ≤ h ∧ a = dist (f x) (f y)}`, supplied for bounded
-images by `TauCeti.bddAbove_modulusOfContinuityOn_set` and for Lipschitz or Hölder maps by
+images by `TauCeti.bddAbove_modulusOfContinuityOn_set`, for continuous maps on compact sets by
+`ContinuousOn.bddAbove_modulusOfContinuityOn_set`, and for Lipschitz or Hölder maps by
 `LipschitzOnWith.bddAbove_modulusOfContinuityOn_set` and
 `HolderOnWith.bddAbove_modulusOfContinuityOn_set`. Upper bounds
 (`TauCeti.modulusOfContinuityOn_le`), nonnegativity, and scalar rescaling
@@ -227,6 +229,14 @@ theorem ContinuousOn.tendsto_modulusOfContinuityOn_nhdsGT_zero
     Tendsto (TauCeti.modulusOfContinuityOn f K) (𝓝[>] 0) (𝓝 0) :=
   (hK.uniformContinuousOn_of_continuous hf).tendsto_modulusOfContinuityOn_nhdsGT_zero
 
+/-- For a continuous map on a compact set `K`, the increment set defining
+`modulusOfContinuityOn f K h` is bounded above at every mesh `h`. -/
+theorem ContinuousOn.bddAbove_modulusOfContinuityOn_set
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
+    {f : X → Y} {K : Set X} (hf : ContinuousOn f K) (hK : IsCompact K) (h : ℝ) :
+    BddAbove {a : ℝ | ∃ x ∈ K, ∃ y ∈ K, dist x y ≤ h ∧ a = dist (f x) (f y)} :=
+  TauCeti.bddAbove_modulusOfContinuityOn_set (hK.image_of_continuousOn hf).isBounded h
+
 /-- Post-composing with an isometry preserves the uniform modulus of continuity. -/
 theorem Isometry.modulusOfContinuityOn_comp {X Y Z : Type*} [PseudoMetricSpace X]
     [PseudoMetricSpace Y] [PseudoMetricSpace Z] {g : Y → Z} (hg : Isometry g)
@@ -304,6 +314,7 @@ theorem modulusOfContinuityOn_fun_neg [SeminormedAddCommGroup Y] (f : X → Y) (
   modulusOfContinuityOn_neg f S h
 
 /-- Scalar multiplication scales the uniform modulus of continuity by `‖c‖`, unconditionally. -/
+@[simp]
 theorem modulusOfContinuityOn_smul {𝕜 : Type*} [SeminormedRing 𝕜] [SeminormedAddCommGroup Y]
     [Module 𝕜 Y] [NormSMulClass 𝕜 Y] (c : 𝕜) (f : X → Y) (S : Set X) (h : ℝ) :
     modulusOfContinuityOn (c • f) S h = ‖c‖ * modulusOfContinuityOn f S h := by
@@ -320,6 +331,7 @@ theorem modulusOfContinuityOn_smul {𝕜 : Type*} [SeminormedRing 𝕜] [Seminor
     Real.sSup_smul_of_nonneg (norm_nonneg c), smul_eq_mul]
 
 /-- Pointwise scalar multiplication scales the uniform modulus of continuity by `‖c‖`. -/
+@[simp]
 theorem modulusOfContinuityOn_fun_smul {𝕜 : Type*} [SeminormedRing 𝕜] [SeminormedAddCommGroup Y]
     [Module 𝕜 Y] [NormSMulClass 𝕜 Y] (c : 𝕜) (f : X → Y) (S : Set X) (h : ℝ) :
     modulusOfContinuityOn (fun x ↦ c • f x) S h = ‖c‖ * modulusOfContinuityOn f S h :=

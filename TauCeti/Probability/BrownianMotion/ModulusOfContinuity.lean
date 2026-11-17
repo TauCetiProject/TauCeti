@@ -681,13 +681,6 @@ private lemma summable_exp_neg_floor_mul_gaussianPDFReal {q : ℕ} (hq : 2 ≤ q
     (add_left_injective (N₁ + 1))).congr fun k ↦ ?_
   dsimp only [Function.comp_apply]; rw [← Real.exp_nat_mul]; congr 1; push_cast; ring
 
-private lemma bddAbove_modulusOfContinuityOn_Iic {g : ℝ≥0 → ℝ} (hg : Continuous g)
-    (T : ℝ≥0) (h : ℝ) :
-    BddAbove {a : ℝ | ∃ x ∈ Iic T, ∃ y ∈ Iic T, dist x y ≤ h ∧ a = dist (g x) (g y)} :=
-  TauCeti.bddAbove_modulusOfContinuityOn_set
-    (((isCompact_Icc (a := (0 : ℝ≥0)) (b := T)).image hg).isBounded.subset
-      (image_mono fun _ hx ↦ ⟨zero_le, hx⟩)) h
-
 private lemma le_modulus_div_sqrt_of_exists_gt {g : ℝ≥0 → ℝ} {b_nn : ℝ≥0} {ε h : ℝ} {n : ℕ}
     (hbdd : BddAbove {a : ℝ | ∃ x ∈ Iic (1 : ℝ≥0), ∃ y ∈ Iic (1 : ℝ≥0),
       dist x y ≤ h ∧ a = dist (g x) (g y)})
@@ -781,7 +774,9 @@ private lemma ae_eventually_le_modulus_div_sqrt {Ω : Type*} [MeasurableSpace Ω
     abs_of_nonneg (Real.sqrt_nonneg _)] at hj
   have h1h_gt : b < 1 / h := (le_self_pow₀ hb_gt1.le (by omega : N₀ + 1 ≠ 0)).trans_lt h1h_gt_pow
   rw [← hb_eq]
-  exact le_modulus_div_sqrt_of_exists_gt (bddAbove_modulusOfContinuityOn_Iic hcont 1 h)
+  exact le_modulus_div_sqrt_of_exists_gt
+    (hcont.continuousOn.bddAbove_modulusOfContinuityOn_set
+      (by rw [← Icc_bot]; exact isCompact_Icc) h)
     hb_gt1 hh.1 h1h_gt rfl hj
 
 end LowerBoundHelpers
@@ -850,11 +845,10 @@ private lemma modulusOfContinuityOn_Iic_one_rescaled_div_sqrt_mul_log
   have hlog_h : 0 < Real.log (1 / h) := Real.log_pos ((one_lt_div hh_pos).2 hh_lt_one)
   have hmod : TauCeti.modulusOfContinuityOn (fun u ↦ (√(T : ℝ))⁻¹ * g (T * u)) (Iic 1)
       (h / (T : ℝ)) = (√(T : ℝ))⁻¹ * TauCeti.modulusOfContinuityOn g (Iic T) h := by
-    have h1 := TauCeti.modulusOfContinuityOn_fun_smul (√(T : ℝ))⁻¹
-      (fun u : ℝ≥0 ↦ g (T * u)) (Iic 1) (h / (T : ℝ))
-    rw [TauCeti.modulusOfContinuityOn_Iic_nnreal_mul g hT, mul_div_cancel₀ _ hT_pos.ne',
-      Real.norm_of_nonneg (inv_nonneg.2 (Real.sqrt_nonneg _))] at h1
-    exact h1
+    rw [show (fun u ↦ (√(T : ℝ))⁻¹ * g (T * u)) = fun u ↦ (√(T : ℝ))⁻¹ • g (T * u) from
+      funext fun _ ↦ (smul_eq_mul ..).symm]
+    simp [-smul_eq_mul, TauCeti.modulusOfContinuityOn_Iic_nnreal_mul g hT,
+      mul_div_cancel₀ _ hT_pos.ne', abs_of_nonneg (Real.sqrt_nonneg _)]
   have hsqrt_u : √(2 * (h / (T : ℝ)) * Real.log ((T : ℝ) / h)) =
       (√(T : ℝ))⁻¹ * √(2 * h * Real.log ((T : ℝ) / h)) := by
     rw [show 2 * (h / (T : ℝ)) * Real.log ((T : ℝ) / h) =
@@ -921,12 +915,14 @@ theorem ae_forall_tendsto_modulusOfContinuityOn_Iic_div_sqrt_mul_log (hB : IsBro
   · filter_upwards [self_mem_nhdsWithin] with h _
     exact div_le_div_of_nonneg_right
       (TauCeti.modulusOfContinuityOn_mono_set (Iic_subset_Iic.2 hinv_le)
-        (bddAbove_modulusOfContinuityOn_Iic hcont T h))
+        (hcont.continuousOn.bddAbove_modulusOfContinuityOn_set
+          (by rw [← Icc_bot]; exact isCompact_Icc) h))
       (Real.sqrt_nonneg _)
   · filter_upwards [self_mem_nhdsWithin] with h _
     exact div_le_div_of_nonneg_right
       (TauCeti.modulusOfContinuityOn_mono_set (Iic_subset_Iic.2 hT_le)
-        (bddAbove_modulusOfContinuityOn_Iic hcont ((m + 1 : ℕ) : ℝ≥0) h))
+        (hcont.continuousOn.bddAbove_modulusOfContinuityOn_set
+          (by rw [← Icc_bot]; exact isCompact_Icc) h))
       (Real.sqrt_nonneg _)
 
 /-- **Lévy's exact uniform modulus of continuity** in explicit `sSup` form on `[0, T]` for `T > 0`
@@ -953,9 +949,8 @@ theorem ae_tendsto_modulusOfContinuityOn_Iic_const_mul_div_sqrt_mul_log
         (TauCeti.modulusOfContinuityOn (B · ω) (Iic T) h / √(2 * h * Real.log (1 / h))))
       (𝓝[>] 0) (𝓝 |c|) := by simpa only [mul_one] using hω.const_mul |c|
   refine hmul.congr fun h ↦ ?_
-  have h1 := TauCeti.modulusOfContinuityOn_fun_smul c (B · ω) (Iic T) h
-  simp only [smul_eq_mul, Real.norm_eq_abs] at h1
-  rw [h1, mul_div_assoc]
+  rw [show (fun t ↦ c * B t ω) = fun t ↦ c • B t ω from funext fun _ ↦ (smul_eq_mul ..).symm]
+  simp [-smul_eq_mul, mul_div_assoc]
 
 end MainTheorems
 
