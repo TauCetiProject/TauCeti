@@ -40,7 +40,11 @@ through `m - 1`, all nonlinear partition terms cancel in the `m`-th composite co
 (`FormalMultilinearSeries.taylorComp_sub_taylorComp_of_eq_lt_right`). Dually, using the singleton
 partition `OrderedFinpartition.atomic m` (`OrderedFinpartition.length_lt_of_ne_atomic`), when two
 outer series agree in orders `1` through `m - 1`, their composite difference reduces to the atomic
-term (`FormalMultilinearSeries.taylorComp_sub_taylorComp_of_eq_lt_left`).
+term (`FormalMultilinearSeries.taylorComp_sub_taylorComp_of_eq_lt_left`). An ordered partition is
+uniquely determined by its unordered family of block ranges
+(`OrderedFinpartition.eq_of_forall_exists_range_emb_eq`), so permutations of `Fin n` act on
+`OrderedFinpartition n` via pushforward (`OrderedFinpartition.mapPerm`,
+`OrderedFinpartition.permEquiv`).
 
 The inductive step in `FormalMultilinearSeries.taylorComp_assoc` splits ordered partitions of
 `m + 1` via `OrderedFinpartition.extendEquiv` and differentiates along lines in formal series
@@ -77,8 +81,7 @@ theorem length_eq_iff {n : ℕ} (c : OrderedFinpartition n) :
     ((Finset.sum_eq_sum_iff_of_le (s := Finset.univ) (f := fun _ ↦ 1) (g := c.partSize)
       fun j _ ↦ c.partSize_pos j).mp (by simp [h]) i (Finset.mem_univ i)).symm
   rcases c with ⟨l, s, hp, e, hm, ho, hd, hc⟩
-  dsimp at h hs
-  subst l
+  dsimp at h hs; subst l
   obtain rfl : s = fun _ ↦ 1 := funext hs
   refine OrderedFinpartition.ext (y := atomic n) rfl (heq_of_eq rfl)
     (heq_of_eq <| funext₂ fun i j ↦ ?_)
@@ -119,8 +122,7 @@ theorem eq_single_iff_length {n : ℕ} (hn : 0 < n) {c : OrderedFinpartition n} 
   refine ⟨fun h ↦ h ▸ rfl, fun hl ↦ ?_⟩
   have hsum := c.sum_partSize
   rcases c with ⟨l, s, hp, e, hm, ho, hd, hc⟩
-  dsimp at hl hsum
-  subst l
+  dsimp at hl hsum; subst l
   obtain rfl : s = fun _ ↦ n := funext fun i ↦ by rw [Subsingleton.elim i 0]; simpa using hsum
   exact OrderedFinpartition.ext (y := single n hn) rfl (heq_of_eq rfl)
     (heq_of_eq <| funext fun i ↦ by rw [Subsingleton.elim i 0]; exact (hm 0).eq_id)
@@ -129,9 +131,7 @@ theorem eq_single_iff_length {n : ℕ} (hn : 0 < n) {c : OrderedFinpartition n} 
 parts. -/
 theorem one_lt_length_of_ne_single {n : ℕ} (hn : 0 < n) {c : OrderedFinpartition n}
     (hc : c ≠ single n hn) : 1 < c.length := by
-  have hpos := c.length_pos hn
-  have hne : c.length ≠ 1 := mt (c.eq_single_iff_length hn).mpr hc
-  omega
+  have := c.length_pos hn; have : c.length ≠ 1 := mt (c.eq_single_iff_length hn).mpr hc; omega
 
 /-- Every part of a partition other than `OrderedFinpartition.single n hn` has size strictly less
 than `n`. -/
@@ -142,35 +142,67 @@ theorem partSize_lt_of_ne_single {n : ℕ} (hn : 0 < n) {c : OrderedFinpartition
   refine Fintype.card_eq_one_iff.mpr ⟨i, fun j ↦ by_contra fun hji ↦ ?_⟩
   have hle := Finset.add_le_sum (fun k _ ↦ Nat.zero_le (c.partSize k))
     (Finset.mem_univ i) (Finset.mem_univ j) (Ne.symm hji)
-  have hj := c.partSize_pos j
-  rw [c.sum_partSize] at hle
-  omega
+  have := c.partSize_pos j; rw [c.sum_partSize] at hle; omega
+
+/-- Two ordered partitions of `Fin n` are equal if every block of the first has the same range as
+some block of the second. -/
+theorem eq_of_forall_exists_range_emb_eq {n : ℕ} {c₁ c₂ : OrderedFinpartition n}
+    (h : ∀ i, ∃ j, Set.range (c₁.emb i) = Set.range (c₂.emb j)) : c₁ = c₂ := by
+  choose f hf using h
+  have hfinj : Function.Injective f := fun i₁ i₂ hfi ↦ by_contra fun hne ↦
+    Set.disjoint_left.mp (c₁.disjoint (Set.mem_univ _) (Set.mem_univ _) hne)
+      ⟨⟨0, c₁.partSize_pos i₁⟩, rfl⟩ (by dsimp only; rw [hf i₂, ← hfi, ← hf i₁]; exact ⟨_, rfl⟩)
+  have hfsurj : Function.Surjective f := fun j ↦ by
+    obtain ⟨i, a, ha⟩ := c₁.cover (c₂.emb j ⟨0, c₂.partSize_pos j⟩)
+    exact ⟨i, by_contra fun hne ↦ Set.disjoint_left.mp
+      (c₂.disjoint (Set.mem_univ _) (Set.mem_univ _) hne)
+      (by dsimp only; rw [← hf i]; exact ⟨a, ha⟩) ⟨_, rfl⟩⟩
+  have hlen : c₁.length = c₂.length := by
+    simpa using Fintype.card_congr (Equiv.ofBijective f ⟨hfinj, hfsurj⟩)
+  rcases c₁ with ⟨l₁, s₁, hp₁, e₁, hm₁, ho₁, hd₁, hc₁⟩
+  rcases c₂ with ⟨l₂, s₂, hp₂, e₂, hm₂, ho₂, hd₂, hc₂⟩
+  dsimp at f hf hlen; subst hlen
+  have hmax (i : Fin l₁) : e₁ i ⟨s₁ i - 1, Nat.sub_one_lt_of_lt (hp₁ i)⟩ =
+      e₂ (f i) ⟨s₂ (f i) - 1, Nat.sub_one_lt_of_lt (hp₂ (f i))⟩ :=
+    IsGreatest.unique (s := Set.range (e₁ i))
+      ⟨⟨_, rfl⟩, Set.forall_mem_range.2 fun _ ↦ (hm₁ i).monotone (Fin.mk_le_mk.2 (by omega))⟩
+      (by rw [hf i]; exact ⟨⟨_, rfl⟩, Set.forall_mem_range.2 fun _ ↦
+        (hm₂ (f i)).monotone (Fin.mk_le_mk.2 (by omega))⟩)
+  have hf_id : f = id := StrictMono.eq_id fun a b hab ↦
+    ho₂.lt_iff_lt.mp (hmax a ▸ hmax b ▸ ho₁ hab)
+  subst hf_id
+  obtain rfl : s₁ = s₂ := funext fun i ↦ by
+    have hcard := congrArg Finset.card (Finset.coe_inj.mp (by simpa using hf i) :
+      Finset.univ.image (e₁ i) = Finset.univ.image (e₂ i))
+    simpa [Finset.card_image_of_injective _ (hm₁ i).injective,
+      Finset.card_image_of_injective _ (hm₂ i).injective] using hcard
+  exact OrderedFinpartition.ext rfl (heq_of_eq rfl)
+    (heq_of_eq <| funext fun i ↦ ((hm₁ i).range_inj_of_wellFoundedLT (hm₂ i)).mp (hf i))
 
 private def permEmb {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
     (i : Fin c.length) : Fin (c.partSize i) ↪o Fin n :=
-  (Finset.univ.image (σ.symm ∘ c.emb i)).orderEmbOfFin <| by
-    rw [Finset.card_image_of_injective _ (σ.symm.injective.comp (c.emb_strictMono i).injective),
+  (Finset.univ.image (σ ∘ c.emb i)).orderEmbOfFin <| by
+    rw [Finset.card_image_of_injective _ (σ.injective.comp (c.emb_strictMono i).injective),
       Finset.card_univ, Fintype.card_fin]
 
 private theorem range_permEmb {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
-    (i : Fin c.length) : Set.range (permEmb c σ i) = σ.symm '' Set.range (c.emb i) := by
-  simpa [permEmb, Finset.range_orderEmbOfFin, Function.comp_def] using
-    Set.range_comp σ.symm (c.emb i)
+    (i : Fin c.length) : Set.range (permEmb c σ i) = σ '' Set.range (c.emb i) := by
+  simpa [permEmb, Finset.range_orderEmbOfFin, Function.comp_def] using Set.range_comp σ (c.emb i)
 
 private def permMax {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n))
     (i : Fin c.length) : Fin n :=
   permEmb c σ i ⟨c.partSize i - 1, Nat.sub_one_lt_of_lt (c.partSize_pos i)⟩
 
 private theorem permMax_injective {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
-    Function.Injective (permMax c σ) := fun i₁ i₂ h ↦ by_contra fun hne ↦ by
-  have h₁ : permMax c σ i₁ ∈ σ.symm '' Set.range (c.emb i₁) := range_permEmb c σ i₁ ▸ ⟨_, rfl⟩
-  have h₂ : permMax c σ i₁ ∈ σ.symm '' Set.range (c.emb i₂) := range_permEmb c σ i₂ ▸ ⟨_, h.symm⟩
-  exact Set.disjoint_left.mp (Set.disjoint_image_of_injective σ.symm.injective <|
-    c.disjoint (Set.mem_univ _) (Set.mem_univ _) hne) h₁ h₂
+    Function.Injective (permMax c σ) := fun i₁ i₂ h ↦ by_contra fun hne ↦
+  Set.disjoint_left.mp (Set.disjoint_image_of_injective σ.injective <|
+    c.disjoint (Set.mem_univ _) (Set.mem_univ _) hne)
+    (range_permEmb c σ i₁ ▸ ⟨_, rfl⟩ : permMax c σ i₁ ∈ σ '' Set.range (c.emb i₁))
+    (range_permEmb c σ i₂ ▸ ⟨_, h.symm⟩ : permMax c σ i₁ ∈ σ '' Set.range (c.emb i₂))
 
-/-- Pull back an ordered partition of `Fin n` along a permutation `σ`, sorting each permuted block
+/-- Push forward an ordered partition of `Fin n` along a permutation `σ`, sorting each mapped block
 and reordering the blocks by increasing maximum element. -/
-private def mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+def mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
     OrderedFinpartition n where
   length := c.length
   partSize i := c.partSize (Tuple.sort (permMax c σ) i)
@@ -181,52 +213,73 @@ private def mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin 
     ((permMax_injective c σ).comp (Tuple.sort (permMax c σ)).injective)
   disjoint i₁ _ i₂ _ hne := by
     rw [Function.onFun, range_permEmb, range_permEmb]
-    exact Set.disjoint_image_of_injective σ.symm.injective <|
+    exact Set.disjoint_image_of_injective σ.injective <|
       c.disjoint (Set.mem_univ _) (Set.mem_univ _) ((Tuple.sort (permMax c σ)).injective.ne hne)
   cover x := by
-    obtain ⟨i, j, hj⟩ := c.cover (σ x)
-    refine ⟨(Tuple.sort (permMax c σ)).symm i, ?_⟩
-    rw [Equiv.apply_symm_apply, range_permEmb]
-    exact ⟨σ x, ⟨j, hj⟩, σ.symm_apply_apply x⟩
+    obtain ⟨i, j, hj⟩ := c.cover (σ.symm x)
+    exact ⟨(Tuple.sort (permMax c σ)).symm i, by
+      rw [Equiv.apply_symm_apply, range_permEmb]; exact ⟨σ.symm x, ⟨j, hj⟩, σ.apply_symm_apply x⟩⟩
 
-private theorem mapPerm_symm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
-    mapPerm (mapPerm c σ) σ.symm = c := by
-  let π := Tuple.sort (permMax c σ)
-  let π' : Equiv.Perm (Fin c.length) := Tuple.sort (permMax (mapPerm c σ) σ.symm)
-  have hemb (i : Fin c.length) :
-      (permEmb (mapPerm c σ) σ.symm i : Fin (c.partSize (π i)) → Fin n) = c.emb (π i) :=
-    (Finset.orderEmbOfFin_unique _ (fun j ↦ by
-      have hmem : c.emb (π i) j ∈ σ '' Set.range (permEmb c σ (π i)) := by
-        rw [range_permEmb]
-        exact ⟨σ.symm (c.emb (π i) j), ⟨c.emb (π i) j, ⟨j, rfl⟩, rfl⟩, σ.apply_symm_apply _⟩
-      rcases hmem with ⟨_, ⟨k, rfl⟩, hx⟩
-      exact Finset.mem_image.mpr ⟨k, Finset.mem_univ _, by simpa [mapPerm] using hx⟩)
-      (c.emb_strictMono (π i))).symm
-  have hπ' : (fun i ↦ π (π' i)) = id := StrictMono.eq_id fun a b hab ↦ by
-    have hlt : permEmb (mapPerm c σ) σ.symm (π' a)
-          ⟨c.partSize (π (π' a)) - 1, Nat.sub_one_lt_of_lt (c.partSize_pos _)⟩ <
-        permEmb (mapPerm c σ) σ.symm (π' b)
-          ⟨c.partSize (π (π' b)) - 1, Nat.sub_one_lt_of_lt (c.partSize_pos _)⟩ :=
-      (mapPerm (mapPerm c σ) σ.symm).parts_strictMono hab
-    rw [congrFun (hemb (π' a)), congrFun (hemb (π' b))] at hlt
-    exact c.parts_strictMono.lt_iff_lt.mp hlt
-  refine OrderedFinpartition.ext rfl
-    (heq_of_eq (funext fun i ↦ congrArg c.partSize (congrFun hπ' i)))
-    (Function.hfunext rfl fun i₁ i₂ hi ↦ ?_)
-  obtain rfl : i₁ = i₂ := eq_of_heq hi
-  refine Function.hfunext (congrArg (fun k ↦ Fin (c.partSize k)) (congrFun hπ' i₁))
-    fun j₁ j₂ hj ↦ ?_
-  have hcast {k : Fin c.length} (hk : k = i₁) (j : Fin (c.partSize k)) (hj : j ≍ j₂) :
-      c.emb k j = c.emb i₁ j₂ := by subst hk; exact congrArg _ (eq_of_heq hj)
-  exact heq_of_eq ((congrFun (hemb (π' i₁)) j₁).trans (hcast (congrFun hπ' i₁) j₁ hj))
+@[simp]
+theorem mapPerm_length {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    (c.mapPerm σ).length = c.length := (rfl)
+
+/-- The blocks of `c.mapPerm σ` are the `σ`-images of the blocks of `c`, matched by a bijection of
+part indices that preserves part sizes. -/
+theorem exists_equiv_mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    ∃ π : Fin (c.mapPerm σ).length ≃ Fin c.length,
+      ∀ i, (c.mapPerm σ).partSize i = c.partSize (π i) ∧
+        Set.range ((c.mapPerm σ).emb i) = σ '' Set.range (c.emb (π i)) :=
+  ⟨Tuple.sort (permMax c σ), fun _ ↦ ⟨rfl, range_permEmb c σ _⟩⟩
+
+@[simp]
+theorem mapPerm_one {n : ℕ} (c : OrderedFinpartition n) : c.mapPerm 1 = c :=
+  let ⟨π, hπ⟩ := c.exists_equiv_mapPerm 1
+  eq_of_forall_exists_range_emb_eq fun i ↦ ⟨π i, by simpa using (hπ i).2⟩
+
+/-- Pushing forward an ordered partition successively along `σ` and `τ` equals pushing forward
+along `τ * σ`. -/
+theorem mapPerm_mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ τ : Equiv.Perm (Fin n)) :
+    (c.mapPerm σ).mapPerm τ = c.mapPerm (τ * σ) := by
+  obtain ⟨π₁, hπ₁⟩ := (c.mapPerm σ).exists_equiv_mapPerm τ
+  obtain ⟨π₂, hπ₂⟩ := c.exists_equiv_mapPerm σ
+  obtain ⟨π₃, hπ₃⟩ := c.exists_equiv_mapPerm (τ * σ)
+  exact eq_of_forall_exists_range_emb_eq fun i ↦ ⟨π₃.symm (π₂ (π₁ i)), by
+    rw [(hπ₁ i).2, (hπ₂ (π₁ i)).2, (hπ₃ _).2, Equiv.apply_symm_apply, ← Set.image_comp]; rfl⟩
+
+@[simp]
+theorem mapPerm_mapPerm_symm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    (c.mapPerm σ).mapPerm σ.symm = c := by
+  rw [mapPerm_mapPerm, ← Equiv.Perm.inv_def, inv_mul_cancel, mapPerm_one]
+
+@[simp]
+theorem mapPerm_symm_mapPerm {n : ℕ} (c : OrderedFinpartition n) (σ : Equiv.Perm (Fin n)) :
+    (c.mapPerm σ.symm).mapPerm σ = c := by
+  rw [mapPerm_mapPerm, ← Equiv.Perm.inv_def, mul_inv_cancel, mapPerm_one]
 
 /-- Action of a permutation `σ : Equiv.Perm (Fin n)` as a bijection on `OrderedFinpartition n`. -/
-private def permEquiv {n : ℕ} (σ : Equiv.Perm (Fin n)) :
+def permEquiv {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     OrderedFinpartition n ≃ OrderedFinpartition n where
-  toFun c := mapPerm c σ
-  invFun c := mapPerm c σ.symm
-  left_inv c := mapPerm_symm c σ
-  right_inv c := by simpa only [Equiv.symm_symm] using mapPerm_symm c σ.symm
+  toFun c := c.mapPerm σ
+  invFun c := c.mapPerm σ.symm
+  left_inv c := c.mapPerm_mapPerm_symm σ
+  right_inv c := c.mapPerm_symm_mapPerm σ
+
+@[simp]
+theorem permEquiv_apply {n : ℕ} (σ : Equiv.Perm (Fin n)) (c : OrderedFinpartition n) :
+    permEquiv σ c = c.mapPerm σ := (rfl)
+
+@[simp]
+theorem permEquiv_symm {n : ℕ} (σ : Equiv.Perm (Fin n)) :
+    (permEquiv σ).symm = permEquiv σ.symm := (rfl)
+
+@[simp]
+theorem permEquiv_one {n : ℕ} : permEquiv (1 : Equiv.Perm (Fin n)) = Equiv.refl _ :=
+  Equiv.ext mapPerm_one
+
+theorem permEquiv_mul {n : ℕ} (σ τ : Equiv.Perm (Fin n)) :
+    permEquiv (σ * τ) = (permEquiv τ).trans (permEquiv σ) :=
+  Equiv.ext fun c ↦ (c.mapPerm_mapPerm τ σ).symm
 
 end OrderedFinpartition
 
@@ -515,37 +568,37 @@ theorem taylorComp_comp_perm (q : FormalMultilinearSeries 𝕜 F G)
     q.taylorComp p m (v ∘ σ) = q.taylorComp p m v := by
   classical
   rw [FormalMultilinearSeries.taylorComp, sum_apply, sum_apply,
-    ← (OrderedFinpartition.permEquiv σ).sum_comp]
+    ← (OrderedFinpartition.permEquiv σ.symm).sum_comp]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
-  rw [compAlongOrderedFinpartition_apply, compAlongOrderedFinpartition_apply]
-  let π := Tuple.sort (OrderedFinpartition.permMax c σ)
-  have houter : (OrderedFinpartition.permEquiv σ c).applyOrderedFinpartition
-        (fun i ↦ p ((OrderedFinpartition.permEquiv σ c).partSize i)) (v ∘ σ) =
-      (c.applyOrderedFinpartition (fun i ↦ p (c.partSize i)) v) ∘ π := by
-    funext i
-    simp only [OrderedFinpartition.applyOrderedFinpartition_apply]
-    have hmem (j : Fin (c.partSize (π i))) :
-        ∃ k, c.emb (π i) k = σ (OrderedFinpartition.permEmb c σ (π i) j) := by
-      have hm : OrderedFinpartition.permEmb c σ (π i) j ∈ σ.symm '' Set.range (c.emb (π i)) :=
-        OrderedFinpartition.range_permEmb c σ (π i) ▸ ⟨j, rfl⟩
-      obtain ⟨_, ⟨k, rfl⟩, hy⟩ := hm
+  rw [OrderedFinpartition.permEquiv_apply, compAlongOrderedFinpartition_apply,
+    compAlongOrderedFinpartition_apply]
+  obtain ⟨π, hπ⟩ := c.exists_equiv_mapPerm σ.symm
+  let π' : Equiv.Perm (Fin c.length) := (finCongr (c.mapPerm_length σ.symm)).symm.trans π
+  refine (FormalMultilinearSeries.congr q (c.mapPerm_length σ.symm)
+    (w := (c.applyOrderedFinpartition (fun i ↦ p (c.partSize i)) v) ∘ π') fun a ha₁ _ ↦ ?_).trans ?_
+  · let i : Fin (c.mapPerm σ.symm).length := ⟨a, ha₁⟩
+    simp only [OrderedFinpartition.applyOrderedFinpartition_apply, Function.comp_apply]
+    have hmem (j : Fin ((c.mapPerm σ.symm).partSize i)) :
+        ∃ k, c.emb (π i) k = σ ((c.mapPerm σ.symm).emb i j) := by
+      obtain ⟨_, ⟨k, rfl⟩, hy⟩ :
+          (c.mapPerm σ.symm).emb i j ∈ σ.symm '' Set.range (c.emb (π i)) := (hπ i).2 ▸ ⟨j, rfl⟩
       exact ⟨k, by rw [← hy, σ.apply_symm_apply]⟩
-    let τ := Equiv.ofBijective (fun j ↦ (hmem j).choose) <|
-      Finite.injective_iff_bijective.mp fun j₁ j₂ h ↦
-        (OrderedFinpartition.permEmb c σ (π i)).injective <| σ.injective <| by
-          rw [← (hmem j₁).choose_spec, ← (hmem j₂).choose_spec, h]
-    have hfun : (v ∘ σ) ∘ (OrderedFinpartition.permEquiv σ c).emb i = (v ∘ c.emb (π i)) ∘ τ :=
-      funext fun j ↦ congrArg v (hmem j).choose_spec.symm
-    rw [hfun]
+    let τ : Equiv.Perm (Fin (c.partSize (π i))) :=
+      (finCongr (hπ i).1).symm.trans <| Equiv.ofBijective (fun j ↦ (hmem j).choose) <|
+        (Fintype.bijective_iff_injective_and_card _).mpr ⟨fun j₁ j₂ h ↦
+          ((c.mapPerm σ.symm).emb_strictMono i).injective <| σ.injective <|
+            ((hmem j₁).choose_spec.symm.trans (congrArg _ h)).trans (hmem j₂).choose_spec,
+          by simp [(hπ i).1]⟩
+    refine (FormalMultilinearSeries.congr p (hπ i).1 (w := (v ∘ c.emb (π i)) ∘ τ)
+      fun b hb₁ _ ↦ congrArg v (hmem ⟨b, hb₁⟩).choose_spec.symm).trans ?_
     by_cases h2 : 2 ≤ c.partSize (π i)
     · exact hp _ h2 (c.partSize_le (π i)) _ τ
     · have : Subsingleton (Fin (c.partSize (π i))) := ⟨fun _ _ ↦ Fin.ext (by omega)⟩
       rw [Equiv.Perm.coe_subsingleton τ]; rfl
-  rw [houter]
-  by_cases h2 : 2 ≤ c.length
-  · exact hq _ h2 c.length_le _ π
-  · have : Subsingleton (Fin c.length) := ⟨fun _ _ ↦ Fin.ext (by omega)⟩
-    rw [Equiv.Perm.coe_subsingleton π]; rfl
+  · by_cases h2 : 2 ≤ c.length
+    · exact hq _ h2 c.length_le _ π'
+    · have : Subsingleton (Fin c.length) := ⟨fun _ _ ↦ Fin.ext (by omega)⟩
+      rw [Equiv.Perm.coe_subsingleton π']; rfl
 
 private noncomputable def curryLeftSeries (p : FormalMultilinearSeries 𝕜 E F) (e : E) :
     FormalMultilinearSeries 𝕜 E F :=
