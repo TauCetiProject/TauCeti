@@ -111,7 +111,8 @@ the same policy; shared files, imports and roadmap areas alone do not establish 
 
 ## Changing labels by comment
 
-Anyone who can comment can add or remove the labels below, without triage access.
+Anyone who can comment can add or remove the general labels below, without triage access.
+The author-only `self-tested` command is described separately below.
 Post a new issue or pull request conversation comment with the exact label on its own
 line to add it, or prefix it with `-` to remove it. For example:
 
@@ -135,7 +136,15 @@ Review bodies and inline review comments are not processed.
 
 A hold does not withdraw a contribution already admitted to staging or exempt a PR from
 the no-stacking policy. Generated CI, review, queue, and roadmap-attribution labels are
-managed by their owning automation and cannot be changed by comment commands.
+managed by their owning automation and cannot be changed by comment commands, except
+`self-tested` as described below.
+
+The author of a pull request may also post `self-tested` to add the `self-tested` label,
+or `-self-tested` to remove it. Comments from anyone else, and comments on issues, are
+ignored for this label. The label is a persistent declaration that the author runs local verification: leave it in
+place through fix and rebase pushes, and remove it if verification fails or is incomplete.
+Admission checks trusted-team membership and source scope directly; no separate Actions
+receipt is required. Reviews on the current head and staging tests still run.
 
 ## Mathlib dependency
 
