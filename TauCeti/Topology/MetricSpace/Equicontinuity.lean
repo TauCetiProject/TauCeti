@@ -51,7 +51,7 @@ theorem equicontinuous_of_forall_dist_le {X Y Z W ι : Type*} [TopologicalSpace 
     isOpen_lt (hg.dist (hg.comp (continuous_const.prodMk continuous_snd))) continuous_const
   obtain ⟨u, v, hu, -, hx₀u, huv_univ, huv⟩ :=
     generalized_tube_lemma (isCompact_singleton (x := x₀)) isCompact_univ hn
-      fun ⟨x, y⟩ ⟨hx, _⟩ ↦ by simpa [show x = x₀ from hx] using hδ
+      (by rintro ⟨x, y⟩ ⟨rfl, _⟩; simpa using hδ)
   filter_upwards [hu.mem_nhds (hx₀u rfl)] with x hxu i
   rw [dist_comm]
   calc dist (F i x) (F i x₀)

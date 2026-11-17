@@ -7,6 +7,7 @@ module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 
 /-!
 # Convexity of relative entropy
@@ -338,16 +339,6 @@ private theorem klFun_add_le_of_add_eq_one {u₁ u₂ v₁ v₂ : ℝ} (hu₁ : 
   simpa only [smul_eq_mul] using
     convexOn_klFun.2 (div_nonneg hu₁ hv₁) (div_nonneg hu₂ hv₂) hv₁ hv₂ hvsum
 
-/-- When `μ₁ ≪ ν₁`, vanishing of `(dν₁/dξ).toReal` forces vanishing of `(dμ₁/dξ).toReal`
-`ξ`-almost everywhere. -/
-private theorem ae_toReal_rnDeriv_eq_zero_imp {μ₁ ν₁ ξ : Measure α} [IsFiniteMeasure μ₁]
-    [IsFiniteMeasure ν₁] [IsFiniteMeasure ξ] (h : μ₁ ≪ ν₁) :
-    ∀ᵐ x ∂ξ, (ν₁.rnDeriv ξ x).toReal = 0 → (μ₁.rnDeriv ξ x).toReal = 0 := by
-  filter_upwards [Measure.rnDeriv_mul_rnDeriv (κ := ξ) h, Measure.rnDeriv_lt_top ν₁ ξ]
-    with x hmul hfin hv
-  have hν₀ : ν₁.rnDeriv ξ x = 0 := (ENNReal.toReal_eq_zero_iff _).1 hv |>.resolve_right hfin.ne
-  simp [show μ₁.rnDeriv ξ x = 0 by simpa [Pi.mul_apply, hν₀] using hmul.symm]
-
 /-- **Subadditivity of relative entropy.** For finite measures `μ₁, μ₂, ν₁, ν₂`, the relative
 entropy of `μ₁ + μ₂` against `ν₁ + ν₂` is at most `klDiv μ₁ ν₁ + klDiv μ₂ ν₂`. -/
 theorem klDiv_add_le {μ₁ μ₂ ν₁ ν₂ : Measure α} [IsFiniteMeasure μ₁] [IsFiniteMeasure μ₂]
@@ -365,7 +356,8 @@ theorem klDiv_add_le {μ₁ μ₂ ν₁ ν₂ : Measure α} [IsFiniteMeasure μ�
     klDiv_eq_lintegral_rnDeriv_mul_klFun_div hμ₂ν₂ hν₂ξ, ← lintegral_add_left (by fun_prop)]
   refine lintegral_mono_ae ?_
   filter_upwards [Measure.rnDeriv_add' μ₁ μ₂ ξ, Measure.rnDeriv_add' ν₁ ν₂ ξ, ξ.rnDeriv_self,
-    ae_toReal_rnDeriv_eq_zero_imp (ξ := ξ) hμ₁ν₁, ae_toReal_rnDeriv_eq_zero_imp (ξ := ξ) hμ₂ν₂,
+    Measure.ae_toReal_rnDeriv_eq_zero_imp (κ := ξ) hμ₁ν₁,
+    Measure.ae_toReal_rnDeriv_eq_zero_imp (κ := ξ) hμ₂ν₂,
     Measure.rnDeriv_lt_top μ₁ ξ, Measure.rnDeriv_lt_top μ₂ ξ,
     Measure.rnDeriv_lt_top ν₁ ξ, Measure.rnDeriv_lt_top ν₂ ξ]
     with x hμadd hνadd hξself hzero₁ hzero₂ hμ₁fin hμ₂fin hν₁fin hν₂fin

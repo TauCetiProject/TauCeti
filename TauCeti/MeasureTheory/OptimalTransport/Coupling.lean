@@ -42,9 +42,10 @@ separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
 * `TauCeti.IsCoupling.measurePreserving_fst`, `TauCeti.IsCoupling.measurePreserving_snd`,
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
-* `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.sum` and
-  `TauCeti.isCoupling_zero` — the relation is compatible with the additive and scalar structure
-  of measures, which is what mixtures of transport problems use;
+* `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.smul_add_smul`,
+  `TauCeti.IsCoupling.smul_add_smul_left`, `TauCeti.IsCoupling.smul_add_smul_right`,
+  `TauCeti.IsCoupling.sum` and `TauCeti.isCoupling_zero` — the relation is compatible with the
+  additive and scalar structure of measures, which is what mixtures of transport problems use;
 * `TauCeti.IsCoupling.sub_add` — replacing a finite part of a coupling by a measure with the same
   two marginals keeps the coupling property, which is how a plan is perturbed locally;
 * `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
@@ -370,6 +371,24 @@ protected theorem smul_add_smul {σ : Measure (X × Y)} (hπ : IsCoupling π μ 
   have h := (hπ.smul (a : ENNReal)).add (hσ.smul (b : ENNReal))
   simp only [Measure.coe_nnreal_smul] at h
   rwa [← add_smul, ← add_smul, hab, one_smul, one_smul] at h
+
+/-- A convex combination of couplings with a common target marginal couples the convex combination
+of their source marginals to that target. -/
+protected theorem smul_add_smul_left {σ : Measure (X × Y)} {μ' : Measure X}
+    (hπ : IsCoupling π μ ν) (hσ : IsCoupling σ μ' ν) {a b : NNReal} (hab : a + b = 1) :
+    IsCoupling (a • π + b • σ) (a • μ + b • μ') ν := by
+  have h := (hπ.smul (a : ENNReal)).add (hσ.smul (b : ENNReal))
+  simp only [Measure.coe_nnreal_smul] at h
+  rwa [← add_smul, hab, one_smul] at h
+
+/-- A convex combination of couplings with a common source marginal couples that source to the
+convex combination of their target marginals. -/
+protected theorem smul_add_smul_right {σ : Measure (X × Y)} {ν' : Measure Y}
+    (hπ : IsCoupling π μ ν) (hσ : IsCoupling σ μ ν') {a b : NNReal} (hab : a + b = 1) :
+    IsCoupling (a • π + b • σ) μ (a • ν + b • ν') := by
+  have h := (hπ.smul (a : ENNReal)).add (hσ.smul (b : ENNReal))
+  simp only [Measure.coe_nnreal_smul] at h
+  rwa [← add_smul, hab, one_smul] at h
 
 /-- The sum of a family of couplings couples the sums of the two families of marginals. -/
 protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι → Measure X}

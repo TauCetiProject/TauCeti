@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Continuity
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Symmetric
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
-import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Sinkhorn divergences
@@ -409,7 +408,8 @@ private theorem add_mul_exp_logMeanPotential {u v p₀ p₁ : X → ℝ} (hε : 
       u x * Real.exp (p₀ x / ε) + v x * Real.exp (p₁ x / ε) := by
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   rcases eq_or_lt_of_le (add_nonneg (hu x) (hv x)) with huv0 | huv_pos
-  · simp [show u x = 0 by linarith [hu x, hv x], show v x = 0 by linarith [hu x, hv x]]
+  · obtain ⟨hu0, hv0⟩ := (add_eq_zero_iff_of_nonneg (hu x) (hv x)).1 huv0.symm
+    simp [hu0, hv0]
   · have hnum_pos := add_mul_exp_pos (a := p₀ x / ε) (b := p₁ x / ε) (hu x) (hv x) huv_pos
     rw [logMeanPotential, mul_div_cancel_left₀ _ hεpos.ne',
       Real.exp_log (div_pos hnum_pos huv_pos), mul_div_cancel₀ _ huv_pos.ne']
@@ -551,29 +551,6 @@ section Compact
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [CompactSpace X]
   {c : X × X → ℝ≥0∞} {ε : ℝ≥0} {μ ν : Measure X}
 
-omit [MeasurableSpace X] [CompactSpace X] in
-/-- When `c` avoids `∞` and `ε ≠ 0`, continuity of the Gibbs kernel `exp (-c / ε)` forces `c`
-itself to be continuous. -/
-private theorem continuous_of_continuous_entropicGibbsKernel (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
-    (hkc : Continuous (uncurry (entropicGibbsKernel c ε))) : Continuous c := by
-  have hne : ∀ z : X × X, uncurry (entropicGibbsKernel c ε) z ≠ 0 := fun z ↦ by
-    rw [uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z)]; exact (Real.exp_pos _).ne'
-  have hc_eq : c = fun z ↦
-      ENNReal.ofReal (-(ε : ℝ) * Real.log (uncurry (entropicGibbsKernel c ε) z)) :=
-    funext fun z ↦ by
-      rw [uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z), Real.log_exp,
-        show -(ε : ℝ) * (-(c z).toReal / ε) = (c z).toReal by field_simp [NNReal.coe_ne_zero.2 hε],
-        ENNReal.ofReal_toReal (hfin z)]
-  rw [hc_eq]
-  exact ENNReal.continuous_ofReal.comp (continuous_const.mul (hkc.log hne))
-
-omit [MeasurableSpace X] in
-/-- On a compact space, a finite-valued cost whose Gibbs kernel is continuous at positive
-temperature is bounded above by a finite `ℝ≥0` constant. -/
-private theorem exists_le_of_continuous_entropicGibbsKernel (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
-    (hkc : Continuous (uncurry (entropicGibbsKernel c ε))) : ∃ B : ℝ≥0, ∀ z, c z ≤ B :=
-  (continuous_of_continuous_entropicGibbsKernel hfin hε hkc).exists_forall_le_coe_of_ne_top hfin
-
 /-- **The kernel lower bound for the Sinkhorn divergence.** The Sinkhorn divergence is at least
 `ε / 2` times the squared distance between the kernel mean embeddings of the tilted measures
 `e^{p/ε} μ` and `e^{q/ε} ν` of the self-potentials, each of which recovers its measure through the
@@ -637,17 +614,6 @@ theorem sinkhornDivergence_eq_zero_iff [BorelSpace X] [HasOuterApproxClosed X]
       (sub_eq_zero.1 (norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 hsq)))
   rw [hμp, hνq, htilt]
 
-private theorem norm_smul_add_smul_sq_of_norm_sq_eq_one {E : Type*} [SeminormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {a b : ℝ} (hab : a + b = 1) {z₀ z₁ : E} (hz₀ : ‖z₀‖ ^ 2 = 1)
-    (hz₁ : ‖z₁‖ ^ 2 = 1) :
-    ‖a • z₀ + b • z₁‖ ^ 2 = 1 - a * b * ‖z₀ - z₁‖ ^ 2 := by
-  have hcomb : z₀ - (b / (a + b)) • (z₀ - z₁) = a • z₀ + b • z₁ := by
-    rw [hab, div_one, show a = 1 - b by linarith]; module
-  have hsq := mul_norm_sq_add_mul_norm_sub_sq (a := a) (b := b)
-    (by rw [hab]; exact one_ne_zero) (z₀ - z₁) z₀
-  rw [show z₀ - z₁ - z₀ = -z₁ by abel, norm_neg, hcomb, hab, one_mul, div_one, hz₀, hz₁] at hsq
-  linarith
-
 /-- **Quantitative convexity of Sinkhorn negentropy.** Tilting `a • μ₀ + b • μ₁` by the
 logarithmic Radon--Nikodym-weighted mean of the self-potentials `p₀` and `p₁` interpolates the
 tilted measures `a • tilt μ₀ ε p₀ + b • tilt μ₁ ε p₁` linearly; weak duality and completing the
@@ -705,8 +671,8 @@ private theorem exists_sq_norm_sinkhornNegentropy_smul_add_smul_le [OpensMeasura
         ((hk.integrable_kolmogorovFeature hkc _).smul_measure ENNReal.coe_ne_top)
         ((hk.integrable_kolmogorovFeature hkc _).smul_measure ENNReal.coe_ne_top),
       hk.kernelMeanEmbedding_smul_measure, hk.kernelMeanEmbedding_smul_measure,
-      ENNReal.coe_toReal, ENNReal.coe_toReal]
-    exact norm_smul_add_smul_sq_of_norm_sq_eq_one habR (hnorm hEp₀) (hnorm hEp₁)
+      ENNReal.coe_toReal, ENNReal.coe_toReal,
+      norm_smul_add_smul_sq habR, hnorm hEp₀, hnorm hEp₁, mul_one, mul_one, habR]
   refine ⟨p₀, p₁, C₀, C₁, hp₀, hp₁, hp₀C, hp₁C, hμ₀p, hμ₁p, ?_⟩
   simp only [sinkhornNegentropy_def, hμ₀, hμ₁]; rw [hEm] at hdual; linarith
 

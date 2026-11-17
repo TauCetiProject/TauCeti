@@ -11,6 +11,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Measure.FiniteMeasure.Equicontinuous
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
 import TauCeti.Topology.Instances.ENNReal
+import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
@@ -115,15 +116,10 @@ private theorem abs_entropicSoftmin_sub_le [IsProbabilityMeasure ν] (hc : Measu
     (ψ := fun y ↦ ψ y / ε) (IsProbabilityMeasure.ne_zero ν)
     (integrable_exp_neg_toReal_add hc hψ hψC x₁) (integrable_exp_neg_toReal_add hc hψ hψC x₂)
     (δ := δ / ε) fun y ↦ by
-      rw [show -(c (x₁, y)).toReal / (ε : ℝ) - -(c (x₂, y)).toReal / ε =
-        -((c (x₁, y)).toReal - (c (x₂, y)).toReal) / ε by ring,
-        abs_div, abs_neg, abs_of_pos hεpos]
+      rw [← sub_div, neg_sub_neg, abs_div, abs_sub_comm, abs_of_pos hεpos]
       exact div_le_div_of_nonneg_right (hosc y) hεpos.le
-  rw [show entropicSoftmin c ε ν ψ x₁ - entropicSoftmin c ε ν ψ x₂ =
-    -(ε : ℝ) * (logIntegralExp (fun z ↦ -(c z).toReal / ε) ν (fun y ↦ ψ y / ε) x₁ -
-      logIntegralExp (fun z ↦ -(c z).toReal / ε) ν (fun y ↦ ψ y / ε) x₂) by
-      simp only [entropicSoftmin]; ring,
-    abs_mul, abs_neg, abs_of_pos hεpos]
+  simp only [entropicSoftmin]
+  rw [← mul_sub, abs_mul, abs_neg, abs_of_pos hεpos]
   exact (mul_le_mul_of_nonneg_left hlog hεpos.le).trans_eq (mul_div_cancel₀ _ hεpos.ne')
 
 /-- When `c ≤ B` and `ψ` has oscillation at most `B`, the sum `entropicSoftmin c ε ν ψ x + ψ y` is
@@ -138,8 +134,7 @@ private theorem entropicSoftmin_add_le [IsProbabilityMeasure ν] (hc : Measurabl
     calc Real.exp ((ψ y - 2 * B) / ε) = ∫ _, Real.exp ((ψ y - 2 * B) / ε) ∂ν := by simp
       _ ≤ _ := integral_mono (integrable_const _) (integrable_exp_neg_toReal_add hc hψ hψC x)
           fun y' ↦ Real.exp_le_exp.2 <| by
-            rw [show -(c (x, y')).toReal / (ε : ℝ) + ψ y' / ε =
-              (ψ y' - (c (x, y')).toReal) / ε by ring]
+            rw [← add_div, neg_add_eq_sub]
             exact div_le_div_of_nonneg_right
               (by linarith [(le_abs_self _).trans (hosc y y'),
                 ENNReal.toReal_le_coe_of_le_coe (hcB (x, y'))]) hεpos.le
@@ -400,11 +395,6 @@ variable {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
   [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
   [OpensMeasurableSpace Y] [OpensMeasurableSpace (X × Y)] {c : X × Y → ℝ≥0∞} {ε B : ℝ≥0}
 
-private theorem totallyBounded_range_of_abs_le {ι : Type*} {f : ι → ℝ} {M : ℝ}
-    (hM : ∀ i, |f i| ≤ M) : TotallyBounded (range f) :=
-  (isCompact_Icc (a := -M) (b := M)).totallyBounded.subset <| by
-    rintro _ ⟨i, rfl⟩; exact abs_le.1 (hM i)
-
 omit [CompactSpace X] [OpensMeasurableSpace X] [OpensMeasurableSpace Y]
   [OpensMeasurableSpace (X × Y)] in
 /-- Equicontinuity of the left potentials `q ↦ φ q` for any family of regularised potential
@@ -456,11 +446,11 @@ private theorem equicontinuous_entropicGibbsFactor {ι : Type*} [MeasurableSpace
   refine (Real.abs_exp_sub_exp_le (hle x₁) (hle x₂)).trans ?_
   rw [mul_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
-  rw [show |(φ qy.1 x₁ + ψ qy.1 qy.2 - (c (x₁, qy.2)).toReal) / ε -
-        (φ qy.1 x₂ + ψ qy.1 qy.2 - (c (x₂, qy.2)).toReal) / ε| =
-      |(φ qy.1 x₁ - φ qy.1 x₂) - ((c (x₁, qy.2)).toReal - (c (x₂, qy.2)).toReal)| / ε by
-      rw [← sub_div, abs_div, abs_of_pos hεpos]; congr 2; ring,
-    div_mul_eq_mul_div, div_le_div_iff_of_pos_right hεpos]
+  have hdiff : (φ qy.1 x₁ + ψ qy.1 qy.2 - (c (x₁, qy.2)).toReal) / ε -
+      (φ qy.1 x₂ + ψ qy.1 qy.2 - (c (x₂, qy.2)).toReal) / ε =
+      ((φ qy.1 x₁ - φ qy.1 x₂) - ((c (x₁, qy.2)).toReal - (c (x₂, qy.2)).toReal)) / ε := by
+    ring
+  rw [hdiff, abs_div, abs_of_pos hεpos, div_mul_eq_mul_div, div_le_div_iff_of_pos_right hεpos]
   linarith [abs_sub (φ qy.1 x₁ - φ qy.1 x₂) ((c (x₁, qy.2)).toReal - (c (x₂, qy.2)).toReal),
     (hpair qy.1).abs_sub_left_le x₁ x₂ δ h', h' qy.2]
 
@@ -472,8 +462,8 @@ private theorem totallyBounded_range_entropicGibbsFactor (hfin : ∀ z, c z ≠ 
     TotallyBounded
       (range fun qy : ι × Y ↦ entropicGibbsFactor c ε (φ qy.1) (ψ qy.1) (x, qy.2)) :=
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  totallyBounded_range_of_abs_le (M := Real.exp (2 * B / ε)) fun qy ↦ by
-    rw [abs_of_nonneg (entropicGibbsFactor_nonneg _),
+  Metric.totallyBounded_range_of_dist_le (c := 0) (M := Real.exp (2 * B / ε)) fun qy ↦ by
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg (entropicGibbsFactor_nonneg _),
       entropicGibbsFactor_of_ne_top (hfin (x, qy.2)), Real.exp_le_exp]
     exact div_le_div_of_nonneg_right
       (by linarith [(hpair qy.1).add_le x qy.2, (c (x, qy.2)).toReal_nonneg]) hεpos.le
@@ -527,10 +517,12 @@ theorem continuous_toReal_entropicTransportCost (hc : Continuous c) (hfin : ∀ 
   intro η hη
   have hunif_φ := ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous
     (continuous_fst.tendsto p₀) (equicontinuous_left_of_isRegularizedPotentialPair hc hfin hspec)
-    fun x ↦ totallyBounded_range_of_abs_le fun q ↦ (hspec q).abs_left_le x
+    fun x ↦ Metric.totallyBounded_range_of_dist_le (c := 0) fun q ↦ by
+      simpa only [Real.dist_eq, sub_zero] using (hspec q).abs_left_le x
   have hunif_ψ := ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous
     (continuous_snd.tendsto p₀) (equicontinuous_right_of_isRegularizedPotentialPair hc hfin hspec)
-    fun y ↦ totallyBounded_range_of_abs_le fun q ↦ (hspec q).abs_right_le y
+    fun y ↦ Metric.totallyBounded_range_of_dist_le (c := 0) fun q ↦ by
+      simpa only [Real.dist_eq, sub_zero] using (hspec q).abs_right_le y
   have hunif_G := ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous
     (continuous_fst.tendsto p₀) (equicontinuous_entropicGibbsFactor hc hfin hε hspec)
     (totallyBounded_range_entropicGibbsFactor hfin hε hspec)

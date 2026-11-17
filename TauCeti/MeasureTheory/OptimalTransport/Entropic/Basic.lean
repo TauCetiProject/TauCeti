@@ -601,16 +601,6 @@ theorem entropicTransportCost_dirac_dirac (hc : Measurable c) (ε : ℝ≥0) (x 
 
 section Convexity
 
-private theorem isCoupling_smul_add_smul_left {μ₀ μ₁ : Measure X} {ν : Measure Y}
-    {π₀ π₁ : Measure (X × Y)} {a b : ℝ≥0} (hab : a + b = 1) (hπ₀ : IsCoupling π₀ μ₀ ν)
-    (hπ₁ : IsCoupling π₁ μ₁ ν) :
-    IsCoupling (a • π₀ + b • π₁) (a • μ₀ + b • μ₁) ν := by
-  have h := (hπ₀.smul (a : ℝ≥0∞)).add (hπ₁.smul (b : ℝ≥0∞))
-  have hν : (a : ℝ≥0∞) • ν + (b : ℝ≥0∞) • ν = ν := by
-    rw [← add_smul, ← ENNReal.coe_add, hab, ENNReal.coe_one, one_smul]
-  rwa [hν, Measure.coe_nnreal_smul, Measure.coe_nnreal_smul,
-    Measure.coe_nnreal_smul, Measure.coe_nnreal_smul] at h
-
 /-- **Convexity of entropic optimal transport in the first marginal.** For finite measures and
 nonnegative weights summing to `1`, the regularised transport cost out of `a • μ₀ + b • μ₁` is at
 most the weighted sum of the regularised transport costs out of `μ₀` and `μ₁`. No measurability of
@@ -620,8 +610,8 @@ theorem entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measure X} {�
     (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) :
     entropicTransportCost c ε (a • μ₀ + b • μ₁) ν ≤
       a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν := by
-  rcases eq_or_ne a 0 with rfl | ha; · simp [show b = 1 by simpa using hab]
-  rcases eq_or_ne b 0 with rfl | hb; · simp [show a = 1 by simpa using hab]
+  rcases eq_or_ne a 0 with rfl | ha; · rw [zero_add] at hab; simp [hab]
+  rcases eq_or_ne b 0 with rfl | hb; · rw [add_zero] at hab; simp [hab]
   by_cases h₀ : entropicTransportCost c ε μ₀ ν = ∞
   · simp [h₀, ENNReal.mul_top (ENNReal.coe_ne_zero.2 ha)]
   by_cases h₁ : entropicTransportCost c ε μ₁ ν = ∞
@@ -636,7 +626,7 @@ theorem entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measure X} {�
     rw [Measure.add_prod, Measure.prod_smul_left, Measure.prod_smul_left]
   calc entropicTransportCost c ε (a • μ₀ + b • μ₁) ν
       ≤ ∫⁻ z, c z ∂(a • π₀ + b • π₁) + ε * klDiv (a • π₀ + b • π₁) ((a • μ₀ + b • μ₁).prod ν) :=
-        entropicTransportCost_le (isCoupling_smul_add_smul_left hab hπ₀ hπ₁) c ε
+        entropicTransportCost_le (hπ₀.smul_add_smul_left hπ₁ hab) c ε
     _ ≤ a * (∫⁻ z, c z ∂π₀ + ε * klDiv π₀ (μ₀.prod ν)) +
           b * (∫⁻ z, c z ∂π₁ + ε * klDiv π₁ (μ₁.prod ν)) := by
         rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure, hprod,
