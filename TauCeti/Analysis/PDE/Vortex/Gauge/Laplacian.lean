@@ -73,9 +73,10 @@ for every `j ≤ k`. It is well defined because multiplication by the potential 
 `∫ w · d₀* d₀ φ = ∫ (d₀* d₀ w) φ` (`TauCeti.Vortex.sobolevGaugeLaplacianEquiv_eq_iff`). Its graph
 is closed, because integration against a fixed square-integrable function is continuous on
 `W^{n,2}(ℂ)`, so it is bounded by the closed graph theorem; uniqueness and existence above make it
-bijective, and the open mapping theorem bounds its inverse
+bijective, and the open mapping theorem bounds its inverse, which solves the weak equation
 (`TauCeti.Vortex.sobolevGaugeLaplacianEquiv_symm_apply_eq_iff`). For `j = k - 1` this is the
-invertibility of the linearization at the identity of the Coulomb gauge condition
+analytic input for the invertibility of the linearization at the identity of the Coulomb gauge
+condition
 `d₀* (u · x₀ - x₀) = 0`, as a map `H^(k+1)(ℂ) → H^(k-1)(ℂ)`, for the action of the Sobolev framed
 gauge group `G_(k+1)` (`TauCeti.Vortex.sobolevGaugeGroup`) on `A_m^k`: the input of the
 implicit function theorem for the gauge slice.
@@ -279,8 +280,8 @@ private theorem exists_wkp_value_ae_eq_sq_add_sq_mul (hk : 1 < k) (hjk : j ≤ k
       (by exact_mod_cast (by omega : N ≤ j + 2))
       (Wkp.value_mem_realSobolevFunctions (by norm_num) (by norm_num) w)
   exact exists_wkp_value_ae_eq_of_mem_realSobolevFunctions (by norm_num) (by norm_num)
-    (realSobolevFunctions_mono (by norm_num) (by norm_num) (by exact_mod_cast (by omega : j ≤ N))
-      (sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (by omega) hxN hwN))
+    (by exact_mod_cast (by omega : j ≤ N))
+    (sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (by omega) hxN hwN)
 
 /-- Multiplication by the potential `p² + q²` of the gauge Laplacian, as a linear map
 `W^{j+2,2}(ℂ) → W^{j,2}(ℂ)`. -/
@@ -356,9 +357,7 @@ private theorem integral_value_mul_gaugeAdjoint_gaugeDirection_eq_gaugeLaplacian
   have hL : ∫ z, Δ φ z * Wkp.value (j + 2) w z =
       ∫ z, Wkp.value j (Wkp.laplacianL j w) z * φ z := by
     have h := Wkp.integral_laplacian_smul_value_eq_laplacianL j w ψ
-    have hψ : (ψ : ℂ → ℝ) = φ := rfl
-    rw [hψ] at h
-    simpa only [smul_eq_mul, mul_comm (φ _)] using h
+    simpa only [ψ, TestFunction.coe_mk, smul_eq_mul, mul_comm (φ _)] using h
   have i₁ : Integrable (fun z ↦ -(Δ φ z * Wkp.value (j + 2) w z)) volume :=
     (hΔφ.integrable_mul hw).neg
   have i₂ : Integrable (fun z ↦ Wkp.value (j + 2) w z * ((x z 2 ^ 2 + x z 3 ^ 2) * φ z))
@@ -445,7 +444,7 @@ private theorem gaugeLaplacianₗ_surjective (hk : 1 < k) (hjk : j ≤ k)
     exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk hjk hx hcont
       (Wkp.value_mem_realSobolevFunctions (p := 2) (by norm_num) (by norm_num) g)
   obtain ⟨w, hw⟩ := exists_wkp_value_ae_eq_of_mem_realSobolevFunctions (p := 2) (k := j + 2)
-    (by norm_num) (by norm_num) (by exact_mod_cast hu)
+    (by norm_num) (by norm_num) (by push_cast; exact le_rfl) hu
   refine ⟨w, wkp_eq_of_forall_integral_value_mul_eq fun φ hφ hc ↦ ?_⟩
   rw [← integral_value_mul_gaugeAdjoint_gaugeDirection_eq_gaugeLaplacianₗ hk hjk hx hcont w hφ hc,
     ← hweak φ (hφ.of_le (by simp)) hc]
@@ -456,9 +455,10 @@ private theorem gaugeLaplacianₗ_surjective (hk : 1 < k) (hjk : j ≤ k)
 linear isomorphism `W^{j+2,2}(ℂ) ≃ W^{j,2}(ℂ)`, where `Δ` is the weak Laplacian
 `TauCeti.Wkp.laplacianL` (`TauCeti.Vortex.value_sobolevGaugeLaplacianEquiv_ae_eq`). It is
 characterized by the weak equation `∫ w · d₀* d₀ φ = ∫ (d₀* d₀ w) φ` for smooth compactly
-supported `φ` (`TauCeti.Vortex.sobolevGaugeLaplacianEquiv_eq_iff`). Its inverse is bounded: for
-`j = k - 1`, the solution `u ∈ W^{k+1,2}(ℂ)` of `d₀* d₀ u = g` depends continuously on
-`g ∈ W^{k-1,2}(ℂ)` (`TauCeti.Vortex.sobolevGaugeLaplacianEquiv_symm_apply_eq_iff`). -/
+supported `φ` (`TauCeti.Vortex.sobolevGaugeLaplacianEquiv_eq_iff`). As a continuous linear
+isomorphism it has a bounded inverse: for `j = k - 1`, the solution `u ∈ W^{k+1,2}(ℂ)` of
+`d₀* d₀ u = g` depends continuously on `g ∈ W^{k-1,2}(ℂ)`, and it is characterized by the weak
+equation (`TauCeti.Vortex.sobolevGaugeLaplacianEquiv_symm_apply_eq_iff`). -/
 noncomputable def sobolevGaugeLaplacianEquiv (hk : 1 < k) (hjk : j ≤ k)
     (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) :
     Wkp (volume : Measure ℂ) ⊤ 2 (j + 2) ≃L[ℝ] Wkp (volume : Measure ℂ) ⊤ 2 j :=
@@ -469,8 +469,9 @@ noncomputable def sobolevGaugeLaplacianEquiv (hk : 1 < k) (hjk : j ≤ k)
 private theorem sobolevGaugeLaplacianEquiv_apply (hk : 1 < k) (hjk : j ≤ k)
     (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
     (w : Wkp (volume : Measure ℂ) ⊤ 2 (j + 2)) :
-    sobolevGaugeLaplacianEquiv hk hjk hx hcont w = gaugeLaplacianₗ hk hjk hx w :=
-  rfl
+    sobolevGaugeLaplacianEquiv hk hjk hx hcont w = gaugeLaplacianₗ hk hjk hx w := by
+  rw [sobolevGaugeLaplacianEquiv, ContinuousLinearEquiv.coeFn_ofBijective, gaugeLaplacianCLM,
+    ContinuousLinearMap.coeFn_ofSeqClosedGraph]
 
 /-- **The gauge Laplacian is `-Δ + (p² + q²)`** on `W^{j+2,2}(ℂ)`, with the weak Laplacian
 `TauCeti.Wkp.laplacianL`. -/

@@ -36,8 +36,8 @@ On the whole Sobolev scale, the sum of the second directional weak derivatives a
 orthonormal basis is a bounded operator `Δ : W^{k+2,p}(Ω) → W^{k,p}(Ω)`
 (`TauCeti.Wkp.laplacianL`). Integrating by parts twice in each direction shows that it is the
 distributional Laplacian, `∫ Δφ • u = ∫ φ • Δu` for every test function `φ` on `Ω`, and this
-identity determines it; in particular it does not depend on the basis. On `W^{2,p}(Ω)` it is the
-trace of the weak Hessian.
+identity determines it; in particular it is the same sum along every orthonormal basis. On
+`W^{2,p}(Ω)` it is the trace of the weak Hessian.
 
 No boundedness or boundary regularity of `Ω` is used.
 
@@ -50,7 +50,8 @@ No boundedness or boundary regularity of `Ω` is used.
 * `TauCeti.Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq`: for a test function `φ`, regarded
   as an element of `W^{2,p}(Ω)`, the trace of the weak Hessian is `Δφ`.
 * `TauCeti.Wkp.laplacianL`: the weak Laplacian as a bounded operator
-  `W^{k+2,p}(Ω) → W^{k,p}(Ω)`.
+  `W^{k+2,p}(Ω) → W^{k,p}(Ω)`, and `TauCeti.Wkp.laplacianL_eq_sum`: it is the sum of the second
+  directional weak derivatives along any orthonormal basis.
 * `TauCeti.Wkp.integral_laplacian_smul_value_eq_laplacianL`: it is the distributional Laplacian,
   and `TauCeti.Wkp.laplacianL_eq_of_forall_integral_laplacian_smul_eq`: it is the only element of
   `W^{k,p}(Ω)` that is, since elements of `W^{k,p}(Ω)` are determined by their integrals against
@@ -133,7 +134,7 @@ theorem trace_iteratedGradient_ofTestFunctionₗ_ae_eq (φ : 𝓓(Omega, ℝ)) :
 sum of the second directional weak derivatives along the standard orthonormal basis of `E`. It is
 the distributional Laplacian (`TauCeti.Wkp.integral_laplacian_smul_value_eq_laplacianL`), which
 determines it (`TauCeti.Wkp.laplacianL_eq_of_forall_integral_laplacian_smul_eq`), so the choice of
-basis does not matter. -/
+basis does not matter (`TauCeti.Wkp.laplacianL_eq_sum`). -/
 noncomputable def laplacianL (k : ℕ) : Wkp mu Omega p (k + 2) →L[ℝ] Wkp mu Omega p k :=
   ∑ i, (lineDerivL (stdOrthonormalBasis ℝ E i) k).comp
     (lineDerivL (stdOrthonormalBasis ℝ E i) (k + 1))
@@ -153,13 +154,13 @@ theorem integral_fderiv_fderiv_smul_value_eq (k : ℕ) (u : Wkp mu Omega p (k + 
     at e1 e2
   rw [e1, e2, neg_neg]
 
-/-- **The weak Laplacian is the distributional Laplacian**: for `u ∈ W^{k+2,p}(Ω)` and a test
-function `φ` on `Ω`, `∫ Δφ • u = ∫ φ • Δu`. -/
-theorem integral_laplacian_smul_value_eq_laplacianL (k : ℕ) (u : Wkp mu Omega p (k + 2))
-    (φ : 𝓓(Omega, ℝ)) :
+/-- The sum of the second directional weak derivatives along an orthonormal basis `b` is the
+distributional Laplacian: `∫ Δφ • u = ∫ φ • ∑ᵢ ∂_{bᵢ}∂_{bᵢ}u` for `u ∈ W^{k+2,p}(Ω)`. -/
+private theorem integral_laplacian_smul_value_eq_sum {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (k : ℕ) (u : Wkp mu Omega p (k + 2)) (φ : 𝓓(Omega, ℝ)) :
     ∫ x, Δ (φ : E → ℝ) x • value (k + 2) u x ∂mu =
-      ∫ x, (φ : E → ℝ) x • value k (laplacianL k u) x ∂mu := by
-  set b := stdOrthonormalBasis ℝ E
+      ∫ x, (φ : E → ℝ) x •
+        value k ((∑ i, (lineDerivL (b i) k).comp (lineDerivL (b i) (k + 1))) u) x ∂mu := by
   have hφ1 : ContDiff ℝ 1 (fderiv ℝ (φ : E → ℝ)) := φ.contDiff.fderiv_right (by simp)
   have hΔφ : ∀ x, Δ (φ : E → ℝ) x =
       ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) := fun x ↦
@@ -184,7 +185,8 @@ theorem integral_laplacian_smul_value_eq_laplacianL (k : ℕ) (u : Wkp mu Omega 
     _ = ∑ i, ∫ x, (φ : E → ℝ) x •
           value k (lineDerivL (b i) k (lineDerivL (b i) (k + 1) u)) x ∂mu :=
         Finset.sum_congr rfl fun i _ ↦ integral_fderiv_fderiv_smul_value_eq k u φ (b i)
-    _ = ∫ x, (φ : E → ℝ) x • value k (laplacianL k u) x ∂mu := by
+    _ = ∫ x, (φ : E → ℝ) x •
+          value k ((∑ i, (lineDerivL (b i) k).comp (lineDerivL (b i) (k + 1))) u) x ∂mu := by
         rw [← integral_finsetSum _ fun i _ ↦ hint₂ i]
         refine integral_congr_ae ?_
         -- the value of the sum is the sum of the values, almost everywhere in `Ω`
@@ -195,9 +197,28 @@ theorem integral_laplacian_smul_value_eq_laplacianL (k : ℕ) (u : Wkp mu Omega 
         by_cases hxΩ : x ∈ (Omega : Set E)
         · have h := hx hxΩ
           simp only [ContinuousLinearMap.comp_apply] at h
-          simp only [laplacianL, sum_apply, ContinuousLinearMap.comp_apply, b] at h ⊢
+          simp only [sum_apply, ContinuousLinearMap.comp_apply] at h ⊢
           rw [h, Finset.smul_sum]
         · simp [φ.zero_on_compl hxΩ]
+
+/-- **The weak Laplacian along any orthonormal basis**: for every orthonormal basis `b` of `E`,
+`Δu = ∑ᵢ ∂_{bᵢ}∂_{bᵢ}u` for `u ∈ W^{k+2,p}(Ω)`. In particular the definition of
+`TauCeti.Wkp.laplacianL` does not depend on the choice of basis. -/
+theorem laplacianL_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) (k : ℕ) :
+    (laplacianL k : Wkp mu Omega p (k + 2) →L[ℝ] Wkp mu Omega p k) =
+      ∑ i, (lineDerivL (b i) k).comp (lineDerivL (b i) (k + 1)) := by
+  ext1 u
+  refine ext_of_forall_integral_smul_value_eq fun φ ↦ ?_
+  rw [← integral_laplacian_smul_value_eq_sum b, laplacianL, ← integral_laplacian_smul_value_eq_sum]
+
+/-- **The weak Laplacian is the distributional Laplacian**: for `u ∈ W^{k+2,p}(Ω)` and a test
+function `φ` on `Ω`, `∫ Δφ • u = ∫ φ • Δu`. -/
+theorem integral_laplacian_smul_value_eq_laplacianL (k : ℕ) (u : Wkp mu Omega p (k + 2))
+    (φ : 𝓓(Omega, ℝ)) :
+    ∫ x, Δ (φ : E → ℝ) x • value (k + 2) u x ∂mu =
+      ∫ x, (φ : E → ℝ) x • value k (laplacianL k u) x ∂mu := by
+  rw [laplacianL_eq_sum (stdOrthonormalBasis ℝ E)]
+  exact integral_laplacian_smul_value_eq_sum _ k u φ
 
 /-- **The weak Laplacian is determined by integration by parts**: an element `d ∈ W^{k,p}(Ω)` with
 `∫ Δφ • u = ∫ φ • d` for every test function `φ` on `Ω` is the weak Laplacian of

@@ -158,13 +158,14 @@ open scoped ENNReal LineDeriv
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
 
-/-- **Bessel-potential functions of natural order `k` are `W^{k,p}` values.** For `1 < p < ∞`,
-a real function in `H^{k,p}(ℝⁿ)` agrees almost everywhere with the value of an element of the
-weak-derivative Sobolev space `W^{k,p}(ℝⁿ)`. -/
+/-- **Bessel-potential functions of order at least `k` are `W^{k,p}` values.** For `1 < p < ∞`
+and a natural `k ≤ s`, a real function in `H^{s,p}(ℝⁿ)` agrees almost everywhere with the value of
+an element of the weak-derivative Sobolev space `W^{k,p}(ℝⁿ)`. -/
 theorem exists_wkp_value_ae_eq_of_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} {f : E → ℝ} (hf : f ∈ realSobolevFunctions E k p) :
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} {s : ℝ} (hks : (k : ℝ) ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) :
     ∃ w : Wkp (volume : Measure E) ⊤ p k, (Wkp.value k w : E → ℝ) =ᵐ[volume] f := by
-  obtain ⟨u, hu, hk⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨u, hu, hk⟩ := mem_realSobolevFunctions.1 (realSobolevFunctions_mono hp hp_top hks hf)
   obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k u).1 hk
   exact ⟨w, hw.trans hu⟩
 
@@ -185,7 +186,7 @@ theorem exists_w1p_value_ae_eq_of_mem_realSobolevFunctions {p : ℝ≥0∞} [Fac
     (hf : f ∈ realSobolevFunctions E s p) :
     ∃ w : W1p (volume : Measure E) ⊤ p, (W1p.value w : E → ℝ) =ᵐ[volume] f := by
   obtain ⟨w, hw⟩ := exists_wkp_value_ae_eq_of_mem_realSobolevFunctions hp hp_top (k := 1)
-    (realSobolevFunctions_mono hp hp_top (by exact_mod_cast hs) hf)
+    (by exact_mod_cast hs) hf
   exact ⟨Wkp.firstOrder 0 w, by rw [Wkp.value_firstOrder]; exact hw⟩
 
 /-- **Classical derivatives of Sobolev functions.** For `1 < p < ∞` and `s ≥ 0`, each classical
