@@ -54,10 +54,10 @@ of `T` reads it (`ContinuousLinearMap.detLineChartEquiv_detLineCongr_of_comp_eq`
 kernel coordinate `q` of a chart to `q₁` multiplies it by the determinant of `q₁ ∘ kerSection q`
 (`ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul`), and changing the stabilizer `D₂` to
 `D₂ + (D₁.coprod D₂) ∘ L`, with `L` valued in the kernel of `q`, multiplies it by the determinant
-of `1 + snd ∘ L` (`ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_comp_eq`). Over `ℝ`,
-when the stabilizer and the coordinate move continuously with a parameter, both determinants are
-close to `1`, so the chart with moving data is a positive multiple of the chart with the data
-frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`).
+of `1 + snd ∘ L` (`ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_coprod_apply_eq_sub`).
+Over `ℝ`, when the stabilizer and the coordinate move continuously with a parameter, both
+determinants are close to `1`, so the chart with moving data is a positive multiple of the chart
+with the data frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`).
 
 ## Main definitions
 
@@ -76,8 +76,8 @@ frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`).
   the same operator related by automorphisms of `E × Λ` and of `G` differ by a ratio of
   determinants.
 * `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul`,
-  `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_comp_eq`: changing the kernel
-  coordinate or the stabilizer of a kernel chart multiplies it by a determinant.
+  `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_coprod_apply_eq_sub`: changing the
+  kernel coordinate or the stabilizer of a kernel chart multiplies it by a determinant.
 * `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
   chart valid on an open neighbourhood.
 * `ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`: over `ℝ`, the transition between
@@ -355,8 +355,8 @@ variable [ContinuousAdd Λ] in
 /-- **Changing the stabilizer.** Let `D₂' = D₂ + (D₁.coprod D₂) ∘ L` for a map `L : Λ → E × Λ`
 with values in the kernel of the coordinate `q`. Then the kernel charts `(D₂', q)` and `(D₂, q)` of
 `D₁` differ by the determinant of the induced change `1 + snd ∘ L` of the stabilizing space. -/
-theorem detLineChartEquiv_apply_eq_det_smul_of_comp_eq {D₂' : Λ →L[𝕜] F} {L : Λ →L[𝕜] E × Λ}
-    (hL : ∀ l, D₁.coprod D₂ (L l) = D₂' l - D₂ l) (hqL : ∀ l, q (L l) = 0)
+theorem detLineChartEquiv_apply_eq_det_smul_of_coprod_apply_eq_sub {D₂' : Λ →L[𝕜] F}
+    {L : Λ →L[𝕜] E × Λ} (hL : ∀ l, D₁.coprod D₂ (L l) = D₂' l - D₂ l) (hqL : ∀ l, q (L l) = 0)
     (h : ((D₁.coprod D₂).prod q).IsInvertible) (h' : ((D₁.coprod D₂').prod q).IsInvertible)
     (y : (D₁ : E →ₗ[𝕜] F).detLine) :
     detLineChartEquiv D₁ D₂' q h' y =
@@ -744,7 +744,7 @@ theorem eventually_detLineChartEquiv_eq_smul (hT : ContinuousWithinAt T s x₀)
   filter_upwards [ev₀, ev₁, ev₂, evΦ, evK] with x h0x h1x h2x hΦx hKx
   refine ⟨h2x, h0x, (K x).det * (Φ x).det, mul_pos hKx hΦx, fun y ↦ ?_⟩
   rw [detLineChartEquiv_apply_eq_det_smul h1x h2x,
-    detLineChartEquiv_apply_eq_det_smul_of_comp_eq (L := L x)
+    detLineChartEquiv_apply_eq_det_smul_of_coprod_apply_eq_sub (L := L x)
       (fun l ↦ apply_kerSection_right (isInvertible_prod_comm.mp h0x) _)
       (fun l ↦ apply_kerSection _) h0x h1x, smul_smul]
 
