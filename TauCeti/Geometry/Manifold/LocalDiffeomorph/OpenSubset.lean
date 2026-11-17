@@ -152,6 +152,8 @@ noncomputable def subtypeRestr (U : TopologicalSpace.Opens M) (hU : Nonempty U) 
   open_source := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).open_source
   open_target := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).open_target
   contMDiffOn_toFun := by
+    -- The fields above are definitionally those of the restricted open partial homeomorphism;
+    -- the projection lemma is unavailable until this definition is complete.
     change ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.subtypeRestr hU)
       (Φ.toOpenPartialHomeomorph.subtypeRestr hU).source
     rw [OpenPartialHomeomorph.subtypeRestr_coe, OpenPartialHomeomorph.subtypeRestr_source]
@@ -160,6 +162,13 @@ noncomputable def subtypeRestr (U : TopologicalSpace.Opens M) (hU : Nonempty U) 
     refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff ..).mp ?_
     exact (Φ.contMDiffOn_invFun.mono (Φ.toOpenPartialHomeomorph.subtypeRestr_target_subset hU)
       x hx).congr_of_mem (Φ.toOpenPartialHomeomorph.subtypeRestr_symm_eqOn hU).symm hx
+
+/-- The underlying open partial homeomorphism of the restriction to `U` is Mathlib's
+restriction to that open subset. -/
+@[simp]
+theorem subtypeRestr_toOpenPartialHomeomorph (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
+    (Φ.subtypeRestr U hU).toOpenPartialHomeomorph = Φ.toOpenPartialHomeomorph.subtypeRestr hU :=
+  (rfl)
 
 /-- The source of the restriction to `U` is the preimage of `Φ.source` in `U`. -/
 @[simp]
@@ -172,10 +181,8 @@ lies in `U`. -/
 @[simp]
 theorem subtypeRestr_target (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
     (Φ.subtypeRestr U hU).target = Φ.target ∩ Φ.symm ⁻¹' U := by
-  change (Φ.toOpenPartialHomeomorph.subtypeRestr hU).target = _
-  rw [OpenPartialHomeomorph.subtypeRestr_def, OpenPartialHomeomorph.trans_target,
-    TopologicalSpace.Opens.openPartialHomeomorphSubtypeCoe_target]
-  rfl
+  rw [← toOpenPartialHomeomorph_target, subtypeRestr_toOpenPartialHomeomorph]
+  simp [OpenPartialHomeomorph.subtypeRestr_def, mfld_simps]
 
 /-- The restriction to `U` evaluates as `Φ`. -/
 @[simp]
