@@ -41,6 +41,10 @@ and vanishing on boundaries.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
+* `TauCeti.singularHomologyFunctor_obj_obj_eq_homology`: singular homology with coefficients in
+  `k` is the homology of the singular chains with coefficients in `k`.
+* `ContinuousMap.singularHomologyMap_iterate`: the iterates of a self-map act on singular homology
+  by the powers of its action.
 -/
 
 public section
@@ -58,6 +62,13 @@ variable (k : Type u) [Ring k]
 /-- The **simplicial singular chain complex** functor with coefficients in the ring `k`. -/
 abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
+
+/-- The degree-`n` singular homology with coefficients in `k` is the degree-`n` homology of the
+singular chains with coefficients in `k`. -/
+theorem singularHomologyFunctor_obj_obj_eq_homology (X : TopCat.{u}) (n : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj X =
+      ((singularChains k).obj X).homology n :=
+  rfl
 
 section Singular
 
@@ -255,7 +266,8 @@ abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace
 
 variable {k n} in
 /-- The identity map induces the identity on singular homology. -/
-@[simp]
+-- Not a simp lemma: `ContinuousMap.singularHomologyMap_id'` rewrites the map itself, so the
+-- `simpNF` linter rejects it.
 theorem singularHomologyMap_id {Y : Type u} [TopologicalSpace Y] (x) :
     singularHomologyMap k n (ContinuousMap.id Y) x = x := by
   rw [singularHomologyMap, TopCat.ofHom_id, CategoryTheory.Functor.map_id,
@@ -274,6 +286,7 @@ theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [Topologi
 
 variable {k n} in
 /-- The identity map induces the identity linear map on singular homology. -/
+@[simp]
 theorem singularHomologyMap_id' {Y : Type u} [TopologicalSpace Y] :
     singularHomologyMap k n (ContinuousMap.id Y) = LinearMap.id :=
   LinearMap.ext singularHomologyMap_id
@@ -284,5 +297,18 @@ theorem singularHomologyMap_comp' {Y Z W : Type u} [TopologicalSpace Y] [Topolog
     [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) :
     singularHomologyMap k n (g.comp g') = singularHomologyMap k n g ∘ₗ singularHomologyMap k n g' :=
   LinearMap.ext (singularHomologyMap_comp g g')
+
+variable {k n} in
+/-- The `m`-th iterate of a self-map acts on singular homology by the `m`-th power of the action of
+the map. -/
+theorem singularHomologyMap_iterate {Y : Type u} [TopologicalSpace Y] (f : C(Y, Y)) (m : ℕ) :
+    singularHomologyMap k n ⟨f^[m], f.continuous.iterate m⟩ = singularHomologyMap k n f ^ m := by
+  induction m with
+  | zero => exact singularHomologyMap_id'
+  | succ m ih =>
+    have h : (⟨f^[m + 1], f.continuous.iterate (m + 1)⟩ : C(Y, Y)) =
+        (⟨f^[m], f.continuous.iterate m⟩ : C(Y, Y)).comp f :=
+      ContinuousMap.ext fun _ ↦ Function.iterate_succ_apply _ _ _
+    rw [h, singularHomologyMap_comp', ih, pow_succ, Module.End.mul_eq_comp]
 
 end ContinuousMap
