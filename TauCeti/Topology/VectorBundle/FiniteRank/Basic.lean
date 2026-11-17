@@ -149,6 +149,13 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
 
+/-- Evaluating the fibre map of `eqToHom h` casts the coordinate index along the rank equality. -/
+@[simp] theorem fiberMap_eqToHom_apply (h : A = D) (x : B)
+    (v : Fin A.rank → 𝕜) (i : Fin D.rank) :
+    (eqToHom h).fiberMap x v i = v (Fin.cast (congrArg rank h).symm i) := by
+  subst h
+  simp only [eqToHom_refl, fiberMap_id, ContinuousLinearMap.id_apply, Fin.cast_refl, id_eq]
+
 /-- Each point lies in the chart labelled by itself. -/
 theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
   simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x

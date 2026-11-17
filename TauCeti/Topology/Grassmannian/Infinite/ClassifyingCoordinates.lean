@@ -306,11 +306,13 @@ theorem cylinderLinearMap_def (p : I × X) : cylinderLinearMap j₀ j₁ p =
     (v : (((ContinuousMap.snd : C(I × X, X)) : I × X → X) *ᵖ E) p) : cylinderLinearMap j₀ j₁ p v =
       (1 - algebraMap ℝ 𝕜 p.1.1) • j₀ p.2 v + (algebraMap ℝ 𝕜 p.1.1) • j₁ p.2 v := (rfl)
 @[simp] theorem cylinderLinearMap_zero (x : X) : cylinderLinearMap j₀ j₁ (0, x) = j₀ x := by
-  change (1 - algebraMap ℝ 𝕜 0) • j₀ x + (algebraMap ℝ 𝕜 0) • j₁ x = j₀ x
-  rw [map_zero, sub_zero, one_smul, zero_smul, add_zero]
+  rw [cylinderLinearMap_def]
+  dsimp only
+  rw [Set.Icc.coe_zero, map_zero, sub_zero, one_smul, zero_smul, add_zero]
 @[simp] theorem cylinderLinearMap_one (x : X) : cylinderLinearMap j₀ j₁ (1, x) = j₁ x := by
-  change (1 - algebraMap ℝ 𝕜 1) • j₀ x + (algebraMap ℝ 𝕜 1) • j₁ x = j₁ x
-  rw [map_one, sub_self, zero_smul, one_smul, zero_add]
+  rw [cylinderLinearMap_def]
+  dsimp only
+  rw [Set.Icc.coe_one, map_one, sub_self, zero_smul, one_smul, zero_add]
 end Algebraic
 
 /-- Linearly interpolating classifying coordinates `j₀, j₁` yields classifying coordinates on

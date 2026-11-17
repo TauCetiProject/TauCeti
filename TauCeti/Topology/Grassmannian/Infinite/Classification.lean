@@ -381,12 +381,6 @@ end CoreComparisons
 section Bijection
 variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [TopologicalSpace X]
 
-private theorem fiberMap_eqToHom_apply {B : Type*} [TopologicalSpace B]
-    {A D : FiniteRankBundleCore 𝕜 B} (h : A = D) (x : B)
-    (v : Fin A.rank → 𝕜) (i : Fin D.rank) :
-    (eqToHom h).fiberMap x v i = v (Fin.cast (congrArg FiniteRankBundleCore.rank h).symm i) := by
-  subst h; simp
-
 private theorem pointIndexedCoreFiberEquiv_toInfinite_pullback_symm_apply
     {k n : ℕ} (V : finiteGrassmannian 𝕜 k n) (w : Tautological 𝕜 k V.toInfinite) :
     (pointIndexedCoreFiberEquiv 𝕜 (Fin k → 𝕜)
@@ -452,7 +446,8 @@ def _root_.TauCeti.finiteGrassmannian.pullbackTautologicalCoreIso (k n : ℕ) :
   have hv (v : Fin k → 𝕜) :
       (eqToHom (FiniteRankBundleCore.pullback_ofBundle (Tautological 𝕜 k)
         (finiteGrassmannian.toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)))).fiberMap V v =
-          v := funext fun i ↦ by simp [fiberMap_eqToHom_apply]
+          v := funext fun i ↦ by
+    simp only [FiniteRankBundleCore.fiberMap_eqToHom_apply, Fin.cast_refl, id_eq]
   refine ContinuousLinearMap.ext fun v ↦ ?_
   rw [ContinuousLinearMap.comp_apply, hv, hIso]
   exact congrArg
@@ -477,7 +472,7 @@ def _root_.TauCeti.finiteGrassmannian.pullbackTautologicalCoreIso (k n : ℕ) :
     ((finiteGrassmannian.toInfiniteTautologicalHomeomorph 𝕜 k n).continuous.congr
       finiteGrassmannian.toInfiniteTautologicalHomeomorph_apply) V)
   refine ContinuousLinearMap.ext fun v ↦ funext fun i ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, fiberMap_eqToHom_apply, hIso]
+  rw [ContinuousLinearMap.comp_apply, FiniteRankBundleCore.fiberMap_eqToHom_apply, hIso]
   simp only [Fin.cast_refl, id_eq]
   exact congrArg (· i) (pointIndexedCoreFiberEquiv_toInfinite_pullback_symm_apply V _)
 

@@ -493,20 +493,17 @@ end WhitneySum
   dsimp only [pullback, ofBundle]
   congr
   · funext x
-    change f ⁻¹' ((pointIndexedCore 𝕜 (Fin n → 𝕜) E).localTriv (f x)).baseSet =
-      ((pointIndexedCore 𝕜 (Fin n → 𝕜) ((⇑f) *ᵖ E)).localTriv x).baseSet
-    rw [pointIndexedCore_localTriv_baseSet, pointIndexedCore_localTriv_baseSet,
+    rw [VectorBundleCore.baseSet_at, VectorBundleCore.baseSet_at,
+      pointIndexedCore_localTriv_baseSet, pointIndexedCore_localTriv_baseSet,
       htriv x, Trivialization.pullback_baseSet]
   · funext x
     exact (pointIndexedCore_indexAt 𝕜 (Fin n → 𝕜) ((⇑f) *ᵖ E) x).symm
   · funext i j x
     rw [pointIndexedCore_coordChange, pointIndexedCore_coordChange]
     simp only [htriv]
+    set eᵢ := trivializationAt (Fin n → 𝕜) E (f i)
+    set eⱼ := trivializationAt (Fin n → 𝕜) E (f j)
     refine ContinuousLinearMap.ext fun v ↦ ?_
-    let eᵢ := trivializationAt (Fin n → 𝕜) E (f i)
-    let eⱼ := trivializationAt (Fin n → 𝕜) E (f j)
-    change (eᵢ.coordChangeL 𝕜 eⱼ (f x) : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)) v =
-      ((eᵢ.pullback f).coordChangeL 𝕜 (eⱼ.pullback f) x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)) v
     simp only [ContinuousLinearEquiv.coe_coe]
     by_cases hx : x ∈ (eᵢ.pullback f).baseSet ∩ (eⱼ.pullback f).baseSet
     · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := hx
