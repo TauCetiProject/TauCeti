@@ -47,9 +47,9 @@ gives a threshold `δ > 0` such that every sequence of solutions for parameters 
 areas at most `A` and images of an open `Ω ⊆ D` in a compact `K ⊆ V`, has a subsequence whose
 parameters converge to some `R₀ ∈ C` and which converges locally uniformly on `Ω` off a finite set
 `Z` of bubbling points, with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`. The regularity of the limit, the
-bubbles at the points of `Z` and the behaviour near the pole `∞` are not treated here. The
-long-neck end `R → ∞` of the family is in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`.
+bubbles at the points of `Z` and the behaviour near the pole `∞` are not treated here. Interior
+compactness at the long-neck end `R → ∞`, on the pair of pants and the caps of the PSS planes, is
+in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`.
 
 **Manifold targets.** For a target manifold `M` with a nondegenerate two-form `ω`, such as a
 closed symplectic manifold, the family is built from the structures
