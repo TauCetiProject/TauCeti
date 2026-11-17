@@ -43,8 +43,6 @@ orthonormal basis `e`. The second derivative is symmetric by
 * `TauCeti.LeftFueterOn.laplacian_eq_zero`, `TauCeti.RightFueterOn.laplacian_eq_zero`: a function
   that is Fueter regular on a neighbourhood of `q`, with derivative differentiable at `q`, has
   vanishing Laplacian at `q`.
-* `TauCeti.LeftFueterOn.laplacian_eq_zero_of_contDiffOn` and its right counterpart: a Fueter
-  regular function of class `C²` on an open set is harmonic there.
 
 ## References
 
@@ -119,17 +117,5 @@ theorem RightFueterOn.laplacian_eq_zero (hf : RightFueterOn f s) (hs : s ∈ �
     simpa using clm_apply_fderiv_eq_zero (𝕜 := ℝ) (L := LinearMap.toContinuousLinearMap fueterRight)
       (g := fderiv ℝ f) (hev.mono fun _ hx ↦ by simpa using hx.fueterRight_fderiv) w
   simp [hL]
-
-/-- A left Fueter regular function of class `C²` on an open set is harmonic there. -/
-theorem LeftFueterOn.laplacian_eq_zero_of_contDiffOn (hf : LeftFueterOn f s) (hs : IsOpen s)
-    (h₂ : ContDiffOn ℝ 2 f s) (hq : q ∈ s) : Δ f q = 0 :=
-  hf.laplacian_eq_zero (hs.mem_nhds hq)
-    (((h₂.contDiffAt (hs.mem_nhds hq)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
-
-/-- A right Fueter regular function of class `C²` on an open set is harmonic there. -/
-theorem RightFueterOn.laplacian_eq_zero_of_contDiffOn (hf : RightFueterOn f s) (hs : IsOpen s)
-    (h₂ : ContDiffOn ℝ 2 f s) (hq : q ∈ s) : Δ f q = 0 :=
-  hf.laplacian_eq_zero (hs.mem_nhds hq)
-    (((h₂.contDiffAt (hs.mem_nhds hq)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
 
 end TauCeti

@@ -14,7 +14,7 @@ import TauCeti.Analysis.Analytic.ConvergenceRadius
 import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 /-!
-# Taylor terms and symmetric Taylor series of analytic functions
+# The leading term of a rescaled Taylor remainder
 
 If `f` has the power series `∑ₖ pₖ` at `x`, then along the rays `t ↦ x + t • y` the Taylor
 remainder of order `k` is of size `tᵏ`, and after division by `tᵏ` it converges to the term of
@@ -32,10 +32,7 @@ Over `ℝ` or `ℂ`, when the codomain is complete, symmetrizing `p` via the ite
 derivatives replaces `p` on the exact same convergence ball by the canonical Taylor series
 `n ↦ (n!)⁻¹ • iteratedFDeriv 𝕜 n f x`, which depends only on `f` and `x`
 (`HasFPowerSeriesOnBall.inv_factorial_smul_iteratedFDeriv`,
-`HasFPowerSeriesAt.inv_factorial_smul_iteratedFDeriv`). Over any characteristic-zero field, if all
-iterated Fréchet derivatives of an analytic function into a complete space vanish at `x`, then the
-function vanishes on a neighbourhood of `x`
-(`AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero`).
+`HasFPowerSeriesAt.inv_factorial_smul_iteratedFDeriv`).
 -/
 
 public section
@@ -137,15 +134,3 @@ theorem HasFPowerSeriesAt.inv_factorial_smul_iteratedFDeriv (hp : HasFPowerSerie
   ⟨r, hr.inv_factorial_smul_iteratedFDeriv⟩
 
 end RCLike
-
-/-- If `f` is analytic at `x` over a characteristic-zero field into a complete space and all of its
-iterated Fréchet derivatives at `x` vanish, then `f` vanishes on a neighbourhood of `x`. -/
-theorem AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero [CharZero 𝕜] [CompleteSpace F]
-    (hf : AnalyticAt 𝕜 f x) (h : ∀ n : ℕ, iteratedFDeriv 𝕜 n f x = 0) : f =ᶠ[𝓝 x] 0 := by
-  obtain ⟨p, r, hp⟩ := hf
-  filter_upwards [Metric.eball_mem_nhds x hp.r_pos] with y hy
-  have hy0 : y - x ∈ Metric.eball (0 : E) r := by
-    simpa [Metric.mem_eball, edist_dist, dist_eq_norm] using hy
-  have hsum := hp.hasSum_iteratedFDeriv hy0
-  simp only [h, zero_apply, smul_zero, add_sub_cancel] at hsum
-  exact hsum.unique hasSum_zero

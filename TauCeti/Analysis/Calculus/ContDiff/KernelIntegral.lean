@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 
 /-!
@@ -63,7 +64,9 @@ theorem iteratedFDeriv_bilin_kernel_sub
   have hsub_ne : z - y ≠ 0 := sub_ne_zero.2 hne
   have hcd : ContDiffAt ℝ ∞ (fun p ↦ K (z - p)) y :=
     (hK (z - y) hsub_ne).comp y (contDiffAt_const.sub contDiffAt_id)
-  have hcomp : (fun p ↦ B (K (z - p)) c) = B.flip c ∘ fun p ↦ K (z - p) := rfl
+  have hcomp : (fun p ↦ B (K (z - p)) c) = B.flip c ∘ fun p ↦ K (z - p) := by
+    funext p
+    simp
   have htrans : (fun p ↦ K (z - p)) = fun p ↦ K (z + (-1 : ℝ) • p) := by
     funext p
     simp [sub_eq_add_neg]
@@ -79,19 +82,29 @@ theorem norm_iteratedFDeriv_bilin_kernel_sub_le
     {z y : W} (hne : z ≠ y) (c : G) (k : ℕ) :
     ‖iteratedFDeriv ℝ k (fun p ↦ B (K (z - p)) c) y‖ ≤
       ‖B‖ * ‖iteratedFDeriv ℝ k K (z - y)‖ * ‖c‖ := by
-  rw [iteratedFDeriv_bilin_kernel_sub B hK hne c k]
+  have hcd : ContDiffAt ℝ ∞ (fun p ↦ K (z - p)) y :=
+    (hK (z - y) (sub_ne_zero.2 hne)).comp y (contDiffAt_const.sub contDiffAt_id)
+  have hcomp : (fun p ↦ B (K (z - p)) c) = B.flip c ∘ fun p ↦ K (z - p) := by
+    funext p
+    simp
   have hflip : ‖B.flip c‖ ≤ ‖B‖ * ‖c‖ :=
-    ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg (norm_nonneg B) (norm_nonneg c)) fun u ↦ by
-      rw [ContinuousLinearMap.flip_apply]
-      exact (B.le_opNorm₂ u c).trans_eq (by ring)
-  calc ‖(B.flip c).compContinuousMultilinearMap ((-1 : ℝ) ^ k • iteratedFDeriv ℝ k K (z - y))‖
-      ≤ ‖B.flip c‖ * ‖(-1 : ℝ) ^ k • iteratedFDeriv ℝ k K (z - y)‖ :=
-        (B.flip c).norm_compContinuousMultilinearMap_le _
-    _ ≤ (‖B‖ * ‖c‖) * ‖(-1 : ℝ) ^ k • iteratedFDeriv ℝ k K (z - y)‖ :=
-        mul_le_mul_of_nonneg_right hflip (norm_nonneg _)
-    _ = ‖B‖ * ‖iteratedFDeriv ℝ k K (z - y)‖ * ‖c‖ := by
-        rw [norm_smul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
-        ring
+    (B.flip.le_opNorm c).trans_eq (by rw [ContinuousLinearMap.opNorm_flip])
+  have hnorm_sub : ‖iteratedFDeriv ℝ k (fun p ↦ K (z - p)) y‖ =
+      ‖iteratedFDeriv ℝ k K (z - y)‖ := by
+    have htrans : (fun p ↦ K (z - p)) = fun p ↦ K (z + (-1 : ℝ) • p) := by
+      funext p
+      simp [sub_eq_add_neg]
+    rw [htrans, norm_iteratedFDeriv_comp_const_smul (fun p ↦ K (z + p)),
+      iteratedFDeriv_comp_add_left]
+    simp [sub_eq_add_neg]
+  rw [hcomp]
+  calc ‖iteratedFDeriv ℝ k (B.flip c ∘ fun p ↦ K (z - p)) y‖
+      ≤ ‖B.flip c‖ * ‖iteratedFDeriv ℝ k (fun p ↦ K (z - p)) y‖ :=
+        (B.flip c).norm_iteratedFDeriv_comp_left hcd (WithTop.coe_le_coe.2 le_top)
+    _ ≤ (‖B‖ * ‖c‖) * ‖iteratedFDeriv ℝ k K (z - y)‖ := by
+        rw [hnorm_sub]
+        exact mul_le_mul_of_nonneg_right hflip (norm_nonneg _)
+    _ = ‖B‖ * ‖iteratedFDeriv ℝ k K (z - y)‖ * ‖c‖ := by ring
 
 /-- Strong measurability of the `k`-th spatial jet of `p ↦ B (K (φ z - p)) (w z)` at `y ∈ ball q₀ δ`
 using a continuous radial ramp to excise the pole `0`. -/
@@ -139,10 +152,7 @@ private theorem aestronglyMeasurable_iteratedFDeriv_bilin_kernel_sub
     have htri := norm_sub_le (φ z - y) (q₀ - y)
     rw [sub_sub_sub_cancel_right, norm_sub_rev q₀ y] at htri
     linarith
-  have hne : φ z ≠ y := by
-    intro heq
-    rw [heq, sub_self, norm_zero] at hsep
-    linarith
+  have hne : φ z ≠ y := sub_ne_zero.1 (norm_pos_iff.1 (hρ.trans_le hsep))
   have hχ1 : χ (φ z - y) = 1 := by
     have h1 : 1 ≤ 2 * (‖φ z - y‖ / ρ) - 1 := by
       have hdiv : 1 ≤ ‖φ z - y‖ / ρ := (one_le_div hρ).2 hsep
@@ -181,14 +191,14 @@ theorem hasFTaylorSeriesUpToOn_integral_bilin_kernel_sub
         have htri := norm_sub_norm_le (φ z - q₀) (y - q₀)
         rw [sub_sub_sub_cancel_right] at htri
         linarith
-      have hne : φ z ≠ y := fun heq ↦ by rw [heq, sub_self, norm_zero] at hsep; linarith
+      have hne : φ z ≠ y := sub_ne_zero.1 (norm_pos_iff.1 ((sub_pos.2 hr).trans_le hsep))
       exact (norm_iteratedFDeriv_bilin_kernel_sub_le B hK hne (w z) i).trans
         (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (hC i _ hsep) (norm_nonneg B))
           (norm_nonneg (w z)))
     · filter_upwards [hδ] with z hz
       have hcd : ContDiffOn ℝ ∞ (fun p ↦ B (K (φ z - p)) (w z)) (ball q₀ r) := fun y hy ↦ by
         have hy_lt : ‖y - q₀‖ < r := by simpa [mem_ball, dist_eq_norm] using hy
-        have hne : φ z ≠ y := fun heq ↦ by rw [heq] at hz; linarith
+        have hne : φ z ≠ y := fun heq ↦ by linarith [heq ▸ hz]
         exact ((B.flip (w z)).contDiff.contDiffAt.comp y
           ((hK (φ z - y) (sub_ne_zero.2 hne)).comp y
             (contDiffAt_const.sub contDiffAt_id))).contDiffWithinAt

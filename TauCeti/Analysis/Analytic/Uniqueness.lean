@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Analytic.Order
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.RCLike.Basic
 
 -- Proof-only: the identity principle
--- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero` and its analytic inputs, and
+-- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero` and its analytic inputs,
+-- `HasFPowerSeriesOnBall.hasSum_iteratedFDeriv`, and
 -- `SeparatingDual.exists_continuousLinearEquiv_apply_eq` for the change of coordinates.
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
+import Mathlib.Analysis.Analytic.IteratedFDeriv
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Convex.PathConnected
@@ -22,7 +25,7 @@ import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Analytic functions are determined by their restrictions to lines
+# Analytic functions are determined by their restrictions to lines and their jets
 
 A function analytic at `p` vanishes on a neighbourhood of `p` exactly when its restriction
 `t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`. The nontrivial
@@ -35,6 +38,10 @@ some direction `v` has a restriction that does not vanish identically, and in li
 whose last axis is `v` the germ becomes regular in the last variable, as Weierstrass preparation
 requires (`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`).
 
+Over any characteristic-zero nontrivially normed field, an analytic function into a complete space
+whose iterated Fréchet derivatives at `x` all vanish must vanish on a neighbourhood of `x`
+(`AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero`).
+
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives.
 
@@ -44,6 +51,9 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero`: an analytic function into a complete
+  space over a characteristic-zero field whose iterated Fréchet derivatives all vanish at `x`
+  vanishes near `x`.
 
 ## References
 
@@ -54,6 +64,8 @@ lives.
 public section
 
 open Filter Metric Topology
+
+section RCLike
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -134,5 +146,27 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+end RCLike
+
+section JetUniqueness
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- If `f` is analytic at `x` over a characteristic-zero field into a complete space and all of its
+iterated Fréchet derivatives at `x` vanish, then `f` vanishes on a neighbourhood of `x`. -/
+theorem AnalyticAt.eventuallyEq_zero_of_iteratedFDeriv_eq_zero {f : E → F} {x : E}
+    (hf : AnalyticAt 𝕜 f x) (h : ∀ n : ℕ, iteratedFDeriv 𝕜 n f x = 0) : f =ᶠ[𝓝 x] 0 := by
+  obtain ⟨p, r, hp⟩ := hf
+  filter_upwards [Metric.eball_mem_nhds x hp.r_pos] with y hy
+  have hy0 : y - x ∈ Metric.eball (0 : E) r := by
+    simpa [Metric.mem_eball, edist_dist, dist_eq_norm] using hy
+  have hsum := hp.hasSum_iteratedFDeriv hy0
+  simp only [h, zero_apply, smul_zero, add_sub_cancel] at hsum
+  exact hsum.unique hasSum_zero
+
+end JetUniqueness
 
 end
