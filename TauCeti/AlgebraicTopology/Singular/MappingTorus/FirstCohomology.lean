@@ -42,13 +42,15 @@ So, up to the coefficient `m`, the only degree-one class is the one evaluating t
 Geometrically `ε ∘ δ` counts how many times a cycle winds around the base circle of the mapping
 torus; that comparison with the projection `T_φ → S¹` is not made here.
 
-For a closed orientable surface `F`, `H₁(F; ℤ)` is free of finite rank, and
-`det (1 - φ_*) ≠ 0` is the condition `b₁(Y_φ) = 1` of
-`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff`. In that case `H¹(Y_φ; ℤ) ≅ ℤ`, with no
-torsion, while the torsion of `H₁(Y_φ; ℤ)` has order `|det (1 - φ_*)|`
+For a closed orientable surface `F`, `H₁(F; ℤ)` is free of finite rank. If the integral
+determinant `det (1 - φ_*)` is nonzero, then `H¹(Y_φ; ℤ) ≅ ℤ`, with no torsion, while the
+torsion of `H₁(Y_φ; ℤ)` has order `|det (1 - φ_*)|`
 (`TauCeti.MappingTorus.card_torsion_homology_one_eq_natAbs_det`). By the splitting of the
 cohomology of a product with a circle (`TopCat.singularCohomologySphereProdEquiv`), this makes the
-summand `θ ⌣ pr₂^* H¹(Y_φ; ℤ)` of `H²(S¹ × Y_φ; ℤ)` a single copy of `ℤ`.
+summand `θ ⌣ pr₂^* H¹(Y_φ; ℤ)` of `H²(S¹ × Y_φ; ℤ)` a single copy of `ℤ`. The integral
+determinant is nonzero exactly when its rational counterpart is, which by
+`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff` over `ℚ` is the condition `b₁(Y_φ) = 1`;
+that base change from `ℤ` to `ℚ` is not made here.
 
 ## Main results
 
@@ -141,20 +143,13 @@ theorem bijective_leftComp_wangδ_zero
       (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) 1).hom).det ≠ 0) :
     Function.Bijective (Linear.leftComp k M (wangδ φ (ModuleCat.of k k) 0)) := by
   refine ⟨fun g g' h ↦ (cancel_epi (wangδ φ (ModuleCat.of k k) 0)).1 h, fun f ↦ ?_⟩
-  -- A morphism into a torsion-free module vanishes on the torsion, which is the kernel of `δ`.
-  have hker : LinearMap.ker (wangδ φ (ModuleCat.of k k) 0).hom ≤ LinearMap.ker f.hom := by
-    rw [ker_wangδ_zero_eq_torsion φ hdet]
-    rintro c ⟨a, hac⟩
-    rw [LinearMap.mem_ker]
-    apply (isRegular_iff_mem_nonZeroDivisors.mpr a.2).isSMulRegular
-    dsimp only
-    rw [smul_zero, ← map_smul, ← Submonoid.smul_def, hac, map_zero]
-  -- So `f` factors through the quotient by the kernel of `δ`, which `δ` identifies with `H₀(F)`.
-  refine ⟨(ModuleCat.homLinearEquiv (S := k)).symm (((LinearMap.ker _).liftQ f.hom hker).comp
-    ((wangδ φ (ModuleCat.of k k) 0).hom.quotKerEquivOfSurjective
-      ((ModuleCat.epi_iff_surjective _).1 inferInstance)).symm.toLinearMap),
+  -- A morphism into a torsion-free module vanishes on the torsion, so it factors through the
+  -- quotient by the torsion, which `δ` identifies with `H₀(F)`.
+  refine ⟨(ModuleCat.homLinearEquiv (S := k)).symm
+    ((Submodule.torsion k _).liftQ f.hom f.hom.torsion_le_ker ∘ₗ
+      (homologyOneQuotTorsionEquiv φ hdet).symm.toLinearMap),
     ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)⟩
-  simp
+  simp [-homologyOneQuotTorsionEquiv_mk, ← homologyOneQuotTorsionEquiv_mk φ hdet c]
 
 /-- **The first cohomology of a mapping torus, as morphisms out of `H₀(F)`.** If `F` is
 path-connected, `H₁(F)` is free of finite rank and `det (𝟙 - φ_*) ≠ 0` on it, then for a
@@ -185,12 +180,26 @@ theorem wangδ_zero_comp_cohomologyOneEquivHom
       (TopCat.of (MappingTorus φ)).singularKronecker k 1 α :=
   (LinearEquiv.ofBijective _ (bijective_leftComp_wangδ_zero φ M hdet)).apply_symm_apply _
 
+/-- The Kronecker evaluation of the class that `cohomologyOneEquivHom` assigns to a morphism
+`g : H₀(F) ⟶ M` is the Wang connecting morphism followed by `g`. -/
+@[simp, reassoc]
+theorem singularKronecker_cohomologyOneEquivHom_symm
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) 1).hom).det ≠ 0)
+    (g : (((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of F)).homology 0 ⟶ M) :
+    (TopCat.of (MappingTorus φ)).singularKronecker k 1 ((cohomologyOneEquivHom φ M hdet).symm g) =
+      wangδ φ (ModuleCat.of k k) 0 ≫ g := by
+  rw [← wangδ_zero_comp_cohomologyOneEquivHom φ M hdet, LinearEquiv.apply_symm_apply]
+
 /-- **The first cohomology of a mapping torus.** If `F` is path-connected, `H₁(F)` is free of
 finite rank and `det (𝟙 - φ_*) ≠ 0` on it, then for a torsion-free module `M`,
 `H¹(T_φ; M) ≃ M`. The class corresponding to `m` evaluates on `c ∈ H₁(T_φ)` to `ε(δ c) • m`,
 with `δ` the Wang connecting morphism and `ε` the augmentation of `H₀(F)`
 (`TauCeti.MappingTorus.singularKronecker_cohomologyOneEquiv_symm_apply`). With `k = M = ℤ` and a
-closed orientable surface `F`, this is `H¹(Y_φ; ℤ) ≅ ℤ` when `b₁(Y_φ) = 1`. -/
+closed orientable surface `F`, this is `H¹(Y_φ; ℤ) ≅ ℤ` when the integral determinant
+`det (1 - φ_*)` is nonzero; that this matches `b₁(Y_φ) = 1`, through base change to `ℚ` and
+`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff`, is not made here. -/
 def cohomologyOneEquiv
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) 1).hom).det ≠ 0) :
