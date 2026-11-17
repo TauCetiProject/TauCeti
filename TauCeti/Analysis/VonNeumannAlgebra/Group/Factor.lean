@@ -25,8 +25,11 @@ factor theorem** (`TauCeti.isFactor_groupVonNeumannAlgebra_iff`): `groupVonNeuma
 factor if and only if every nonidentity conjugacy class of `Γ` is infinite. Consequently,
 nontrivial commutative groups never give factors
 (`TauCeti.not_isFactor_groupVonNeumannAlgebra_of_isMulCommutative`), while nonabelian free groups
-yield II₁ factors (`TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup`,
-`TauCeti.isFactor_groupVonNeumannAlgebra_freeGroup`).
+yield factors (`TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup`,
+`TauCeti.isFactor_groupVonNeumannAlgebra_freeGroup`), which are also finite by
+`TauCeti.isFinite_groupVonNeumannAlgebra`. (As further mathematical context, these
+infinite-dimensional finite factors are the classical type II₁ free-group factors; type
+classification is not formalized here.)
 
 ## References
 

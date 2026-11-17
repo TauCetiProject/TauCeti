@@ -64,8 +64,9 @@ theorem rightRegular_apply (g : G) (f : Lp E p μ) :
 
 /-- Right translation on `Lᵖ(G, E)` is represented by right translation of functions. -/
 theorem coeFn_rightRegular (g : G) (f : Lp E p μ) :
-    μ.rightRegular 𝕜 E p g f =ᵐ[μ] fun x => f (x * g) :=
-  Lp.coeFn_compMeasurePreserving f (measurePreserving_mul_right μ g)
+    μ.rightRegular 𝕜 E p g f =ᵐ[μ] fun x => f (x * g) := by
+  rw [rightRegular_apply]
+  exact Lp.coeFn_compMeasurePreserving f (measurePreserving_mul_right μ g)
 
 /-- On a compact group with a finite right-invariant Borel measure, right translation sends the
 `Lp` class of a continuous function `F` to the class of `x ↦ F (x * g)`. -/
@@ -73,13 +74,15 @@ theorem coeFn_rightRegular (g : G) (f : Lp E p μ) :
 theorem rightRegular_toLp [TopologicalSpace G] [ContinuousMul G] [CompactSpace G] [BorelSpace G]
     [SecondCountableTopologyEither G E] [IsFiniteMeasure μ] (F : C(G, E)) (g : G) :
     μ.rightRegular 𝕜 E p g (ContinuousMap.toLp p μ 𝕜 F) =
-      ContinuousMap.toLp p μ 𝕜 (F.comp (.mulRight g)) :=
-  Lp.compMeasurePreserving_toLp 𝕜 F (.mulRight g) (measurePreserving_mul_right μ g)
+      ContinuousMap.toLp p μ 𝕜 (F.comp (.mulRight g)) := by
+  rw [rightRegular_apply]
+  exact Lp.compMeasurePreserving_toLp 𝕜 F (.mulRight g) (measurePreserving_mul_right μ g)
 
 /-- Right translation preserves the `Lᵖ` norm. -/
 @[simp]
-theorem norm_rightRegular_apply (g : G) (f : Lp E p μ) : ‖μ.rightRegular 𝕜 E p g f‖ = ‖f‖ :=
-  Lp.norm_compMeasurePreserving f (measurePreserving_mul_right μ g)
+theorem norm_rightRegular_apply (g : G) (f : Lp E p μ) : ‖μ.rightRegular 𝕜 E p g f‖ = ‖f‖ := by
+  rw [rightRegular_apply]
+  exact Lp.norm_compMeasurePreserving f (measurePreserving_mul_right μ g)
 
 /-- **The right regular representation on `L²(G, E)` is unitary.** -/
 theorem isUnitary_rightRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
@@ -103,6 +106,7 @@ theorem continuous_rightRegular_apply [TopologicalSpace G] [IsTopologicalGroup G
   have hg : Continuous fun g : G => ContinuousMap.mulRight (X := G) g :=
     (ContinuousMap.curry
       ⟨fun q : G × G => q.2 * q.1, continuous_snd.mul continuous_fst⟩).continuous
+  simp only [rightRegular_apply]
   exact continuous_const.compMeasurePreservingLp hg _ hp
 
 /-- For a bi-invariant measure, every left regular operator commutes with every right regular

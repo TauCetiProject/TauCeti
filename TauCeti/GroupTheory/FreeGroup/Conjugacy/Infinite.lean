@@ -13,11 +13,14 @@ import TauCeti.GroupTheory.FreeGroup.CSA
 /-!
 # Infinite conjugacy classes in nonabelian free groups
 
-Nonabelian free groups are the canonical examples of ICC (infinite conjugacy class) groups, yielding
-the free-group II₁ factors `L(F_n)` via Murray and von Neumann's ICC factor theorem
-(`TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup`). Since free groups are torsion-free and
-commutative transitive (`IsFreeGroup.isCommTransitive`), `IsFreeGroup.infinite_setOf_isConj` and
-`FreeGroup.infinite_setOf_isConj` follow immediately from
+Nonabelian free groups are the canonical examples of ICC (infinite conjugacy class) groups, so
+Murray and von Neumann's ICC factor theorem shows that their group von Neumann algebras are factors
+(`TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup`,
+`TauCeti.isFactor_groupVonNeumannAlgebra_freeGroup`, finite by
+`TauCeti.isFinite_groupVonNeumannAlgebra`; as further mathematical context, these
+infinite-dimensional finite factors are the classical type II₁ free-group factors). Since free
+groups are torsion-free and commutative transitive (`IsFreeGroup.isCommTransitive`),
+`IsFreeGroup.infinite_setOf_isConj` and `FreeGroup.infinite_setOf_isConj` follow immediately from
 `Group.IsCommTransitive.infinite_setOf_isConj`.
 -/
 

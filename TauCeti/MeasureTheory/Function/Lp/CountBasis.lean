@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # The point-mass Hilbert basis and Parseval identities on counting-measure `L²`
@@ -132,13 +132,6 @@ theorem hasSum_countHilbertBasis (f : Lp 𝕜 2 (Measure.count : Measure α)) :
 
 end Basis
 
-private theorem hasSum_integral_count {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [CompleteSpace F] {g : α → F}
-    (hg : Integrable g (Measure.count : Measure α)) (hsm : StronglyMeasurable g) :
-    HasSum g (∫ a, g a ∂(Measure.count : Measure α)) := by
-  rw [Measure.count] at hg ⊢
-  exact (hasSum_integral_measure hg).congr_fun fun a => (integral_dirac' _ a hsm).symm
-
 section NormSq
 
 variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E]
@@ -150,7 +143,6 @@ theorem hasSum_norm_sq_apply (f : Lp E 2 (Measure.count : Measure α)) :
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   exact hasSum_integral_count
     ((memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable f)).mp (Lp.memLp f))
-    ((continuous_pow 2).comp_stronglyMeasurable (Lp.stronglyMeasurable f).norm)
 
 /-- The squared norms of the values of any counting-measure `L²` function are summable. -/
 theorem summable_norm_sq_apply (f : Lp E 2 (Measure.count : Measure α)) :
@@ -175,7 +167,6 @@ theorem hasSum_inner_apply (f g : Lp E 2 (Measure.count : Measure α)) :
     HasSum (fun a : α => ⟪f a, g a⟫_𝕜) ⟪f, g⟫_𝕜 := by
   rw [L2.inner_def]
   exact hasSum_integral_count (L2.integrable_inner f g)
-    ((Lp.stronglyMeasurable f).inner (Lp.stronglyMeasurable g))
 
 /-- **Polarized Parseval identity** (`tsum` form) for vector-valued counting-measure `L²`. -/
 theorem tsum_inner_apply (f g : Lp E 2 (Measure.count : Measure α)) :
