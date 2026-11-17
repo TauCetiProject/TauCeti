@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Yosida.Basic
 public import TauCeti.Analysis.InnerProductSpace.Exponential
+import TauCeti.Analysis.Semigroups.Group.Stone.Basic
 public import TauCeti.Analysis.Normed.Operator.Dense
 public import Mathlib.Data.PNat.Basic
 
@@ -52,9 +53,9 @@ in the Kitware DKPS formalization at `b9a02d00c`
      (`expBounded_eq_exp`), so nothing is lost; what *is* saved is the 576 lines
      of `ExpBounded/{Helpers,Adjoint,Unitary}` establishing summability, the
      group law and unitarity, all of which Mathlib already has.
-  2. Unitarity comes from `selfAdjoint.expUnitary`, and the derivative from
-     `hasDerivAt_exp_smul_const` — Mathlib's derivative of `t ↦ exp (t • x)` in a
-     *non-commutative* algebra.
+  2. Norm preservation comes directly from the native bounded Stone group.
+     The Duhamel estimate uses `TauCeti.exp_add_sub_exp_eq_integral`, so no
+     separate differentiation or interpolation proof is retained.
 -/
 
 public section
@@ -73,8 +74,12 @@ private noncomputable def yosidaFlow (A : H →ₗ.[ℂ] H) (n : ℕ+) (t : ℝ)
 
 private theorem yosidaFlow_norm (hA : IsSelfAdjoint A) (n : ℕ+) (t : ℝ) (x : H) :
     ‖yosidaFlow A n t x‖ = ‖x‖ := by
-  exact ContinuousLinearMap.norm_exp_smul_I_apply _
-    (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ)) t x
+  have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp _
+    (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))).norm_map t x
+  rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply] at h
+  -- The native group acts through a real-linear restriction of the complex exponential.
+  change ‖NormedSpace.exp ((t : ℂ) • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ = ‖x‖ at h
+  simpa only [yosidaFlow, Complex.coe_smul] using h
 
 private theorem yosidaFlow_difference (hA : IsSelfAdjoint A) (m n : ℕ+) (t : ℝ) (x : H) :
     ‖yosidaFlow A m t x - yosidaFlow A n t x‖ ≤
