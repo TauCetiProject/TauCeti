@@ -29,6 +29,8 @@ inclusion.
 ## Main results
 
 * `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
+* `TauCeti.integrableOn_rpow_mul_exp_mul_Ioi`: integrability of `t ^ s * exp (a * t)` on `(c, ∞)`
+  for any real exponent `s`, negative rate `a < 0`, and positive cutoff `0 < c`.
 * `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
 * `TauCeti.lintegral_ofReal_exp_neg_mul_mul_lintegral`: an iterated exponential integral is a
   Stieltjes-kernel integral.
@@ -62,6 +64,24 @@ theorem integrableOn_pow_mul_exp_neg_mul_Ioi (n : ℕ) {b : ℝ} (hb : 0 < b) :
     (p := (1 : ℝ)) (s := (n : ℝ)) (b := b)
     (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) one_pos hb
   simpa only [Real.rpow_one, Real.rpow_natCast, neg_mul] using h
+
+/-- On a positive right half-line `(c, ∞)` with `0 < c`, every real power `t ^ s` times an
+exponentially decaying factor `exp (a * t)` (`a < 0`) is integrable, with no lower bound on the
+exponent `s`. -/
+theorem integrableOn_rpow_mul_exp_mul_Ioi (s : ℝ) {a c : ℝ} (ha : a < 0) (hc : 0 < c) :
+    IntegrableOn (fun t : ℝ => t ^ s * Real.exp (a * t)) (Set.Ioi c) := by
+  rcases le_or_gt s 0 with hs | hs
+  · refine ((integrableOn_exp_mul_Ioi ha c).const_mul (c ^ s)).mono'
+      (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    have ht0 : 0 < t := hc.trans ht
+    rw [Real.norm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht0.le s) (Real.exp_pos _).le)]
+    exact mul_le_mul_of_nonneg_right
+      (Real.rpow_le_rpow_of_nonpos hc ht.le hs) (Real.exp_pos _).le
+  · have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := s) (b := -a)
+      (by linarith) one_pos (neg_pos.mpr ha)
+    simp only [Real.rpow_one, neg_neg] at h
+    exact h.mono_set (Ioi_subset_Ioi hc.le)
 
 /-- The integral of a natural power times an exponentially decaying factor on `(0, ∞)`. -/
 theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :

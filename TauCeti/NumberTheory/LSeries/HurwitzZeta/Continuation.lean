@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Series
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.DSlope.Continuous
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
@@ -15,7 +14,9 @@ import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.Analysis.MellinTransform.Growth
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Data.ZMod.Count
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
 
 /-!
@@ -266,12 +267,6 @@ private theorem rpow_mul_norm_div_one_sub_exp_le {a A η : ℝ} {c : ℂ} {t : �
           (Real.rpow_nonneg ht0.le _)
     _ = (1 - Real.exp (-1))⁻¹ * (t ^ A * Real.exp (-η * t)) := by ring
 
-private theorem integrableOn_rpow_mul_exp_Ioi_one {A η : ℝ} (hA : -1 < A) (hη : 0 < η) :
-    IntegrableOn (fun t : ℝ => t ^ A * Real.exp (-η * t)) (Ioi 1) := by
-  have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := A) (b := η) hA one_pos hη
-  simp only [Real.rpow_one] at h
-  exact h.mono_set (Ioi_subset_Ioi zero_le_one)
-
 private theorem aestronglyMeasurable_hurwitzTailIntegrand (s c : ℂ) :
     AEStronglyMeasurable
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (Complex.exp (-c * t) / (1 - Complex.exp (-t))))
@@ -292,12 +287,10 @@ private theorem continuousOn_hurwitzTailIntegral :
   rw [mem_ofPred_eq] at hp₀
   let η := p₀.2.re / 2
   have hη : 0 < η := by dsimp [η]; linarith
-  let A := max 0 p₀.1.re
-  have hA : -1 < A := by linarith [le_max_left (0 : ℝ) p₀.1.re]
   have hbint : Integrable
-      (fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ A * Real.exp (-η * t)))
+      (fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ p₀.1.re * Real.exp (-η * t)))
       (volume.restrict (Ioi 1)) :=
-    (integrableOn_rpow_mul_exp_Ioi_one hA hη).const_mul _
+    (integrableOn_rpow_mul_exp_mul_Ioi p₀.1.re (neg_neg_of_pos hη) one_pos).const_mul _
   have hcont_t : ∀ᶠ t : ℝ in ae (volume.restrict (Ioi 1)),
       ContinuousAt (fun p : ℂ × ℂ =>
         (t : ℂ) ^ (p.1 - 1) * (Complex.exp (-p.2 * t) / (1 - Complex.exp (-t)))) p₀ := by
@@ -305,11 +298,11 @@ private theorem continuousOn_hurwitzTailIntegral :
     exact (continuousAt_const.cpow ((continuous_fst.sub continuous_const).continuousAt)
       (ofReal_mem_slitPlane.mpr (zero_lt_one.trans ht))).mul
         ((((continuous_snd.neg.mul continuous_const).cexp).div_const _).continuousAt)
-  have hopen : IsOpen {p : ℂ × ℂ | p.1.re < A + 1 ∧ η < p.2.re} :=
+  have hopen : IsOpen {p : ℂ × ℂ | p.1.re < p₀.1.re + 1 ∧ η < p.2.re} :=
     (isOpen_lt (continuous_re.comp continuous_fst) continuous_const).inter
       (isOpen_lt continuous_const (continuous_re.comp continuous_snd))
-  have hnhds : {p : ℂ × ℂ | p.1.re < A + 1 ∧ η < p.2.re} ∈ 𝓝 p₀ :=
-    hopen.mem_nhds ⟨by linarith [le_max_right (0 : ℝ) p₀.1.re], by dsimp [η]; linarith⟩
+  have hnhds : {p : ℂ × ℂ | p.1.re < p₀.1.re + 1 ∧ η < p.2.re} ∈ 𝓝 p₀ :=
+    hopen.mem_nhds ⟨by linarith, by dsimp [η]; linarith⟩
   refine ContinuousAt.continuousWithinAt (MeasureTheory.continuousAt_of_dominated
     (Eventually.of_forall fun p => aestronglyMeasurable_hurwitzTailIntegrand p.1 p.2)
     ?_ hbint hcont_t)
@@ -347,12 +340,10 @@ private theorem differentiableAt_hurwitzTailIntegral_right (s₀ : ℂ) {c₀ : 
     DifferentiableAt ℂ (fun c => hurwitzTailIntegral s₀ c) c₀ := by
   let η := c₀.re / 2
   have hη : 0 < η := by dsimp [η]; linarith
-  let A := max 0 s₀.re
-  have hA : -1 < A := by linarith [le_max_left (0 : ℝ) s₀.re]
   have hbint : Integrable
-      (fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ A * Real.exp (-η * t)))
+      (fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ s₀.re * Real.exp (-η * t)))
       (volume.restrict (Ioi 1)) :=
-    (integrableOn_rpow_mul_exp_Ioi_one hA hη).const_mul _
+    (integrableOn_rpow_mul_exp_mul_Ioi s₀.re (neg_neg_of_pos hη) one_pos).const_mul _
   have hopen : IsOpen {c : ℂ | η < c.re} := isOpen_lt continuous_const continuous_re
   have hd := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (μ := volume.restrict (Ioi 1))
@@ -360,7 +351,7 @@ private theorem differentiableAt_hurwitzTailIntegral_right (s₀ : ℂ) {c₀ : 
       (t : ℂ) ^ (s₀ - 1) * (Complex.exp (-c * t) / (1 - Complex.exp (-t))))
     (F' := fun (c : ℂ) (t : ℝ) => (t : ℂ) ^ (s₀ - 1) *
       ((Complex.exp (-c * t) * (-(t : ℂ))) / (1 - Complex.exp (-t))))
-    (bound := fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ A * Real.exp (-η * t)))
+    (bound := fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ s₀.re * Real.exp (-η * t)))
     (hopen.mem_nhds (by dsimp [η]; linarith))
     (Eventually.of_forall fun c => aestronglyMeasurable_hurwitzTailIntegrand s₀ c)
     (integrableOn_hurwitzTailIntegrand s₀ hc₀)
@@ -375,7 +366,7 @@ private theorem differentiableAt_hurwitzTailIntegral_right (s₀ : ℂ) {c₀ : 
     rw [hmul_eq]
     simpa [norm_cpow_eq_rpow_re_of_pos ht0, abs_of_pos ht0, mul_comm t,
       ← Real.rpow_add_one ht0.ne'] using
-      rpow_mul_norm_div_one_sub_exp_le ht (le_max_right _ _) (le_of_lt hc)
+      rpow_mul_norm_div_one_sub_exp_le ht le_rfl (le_of_lt hc)
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _ c _
     have h1 : HasDerivAt (fun w : ℂ => -w * t) (-(t : ℂ)) c := by
       simpa using ((hasDerivAt_id c).neg.mul_const (t : ℂ))
@@ -418,18 +409,10 @@ private theorem analyticOnNhd_hurwitzStageCore (M : ℕ) :
         ((Complex.differentiable_one_div_Gamma.dslope _ p.1).comp p differentiableAt_fst)
   exact ((hd_invG.mul (hd_head.add hd_tail)).add hd_sum).differentiableWithinAt
 
-private theorem integral_Ioc_cpow_sub_one {w : ℂ} (hw : 0 < w.re) :
-    (∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (w - 1)) = 1 / w := by
-  have hw0 : w ≠ 0 := fun h => lt_irrefl (0 : ℝ) (by rwa [h, zero_re] at hw)
-  rw [← intervalIntegral.integral_of_le zero_le_one,
-    integral_cpow (Or.inl (by simp; linarith))]
-  simp [sub_add_cancel, Complex.zero_cpow hw0]
-
 private theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ}
     (hs : -(M : ℝ) < s.re) (c : ℂ) :
     hurwitzHeadIntegral M s c =
       hurwitzBernoulliCoeff (M + 1) c / (s + M) + hurwitzHeadIntegral (M + 1) s c := by
-  have hre : 0 < (s + M).re := by simp; linarith
   have hint1 : IntegrableOn
       (fun t : ℝ => hurwitzBernoulliCoeff (M + 1) c * (t : ℂ) ^ (s + M - 1)) (Ioc 0 1) :=
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
@@ -449,11 +432,11 @@ private theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ}
       exact h.trans (congrArg _ (by push_cast; ring))
     rw [hurwitzTaylorQuot_eq_add_mul_succ M c (ofReal_mem_ball_two (Ioc_subset_Icc_self ht)),
       mul_add, mul_comm ((t : ℂ) ^ _), ← mul_assoc ((t : ℂ) ^ _), hpow]
-  have hexp : s + (M : ℂ) - 1 = (s + M) - 1 := by ring
   unfold hurwitzHeadIntegral
   rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioc hcongr,
-    MeasureTheory.integral_add hint1 hint2, MeasureTheory.integral_const_mul, hexp,
-    integral_Ioc_cpow_sub_one hre, mul_one_div]
+    MeasureTheory.integral_add hint1 hint2, MeasureTheory.integral_const_mul,
+    integral_Ioc_zero_cpow (by simp; linarith) zero_le_one]
+  simp [sub_add_cancel, div_eq_mul_inv]
 
 private theorem hurwitzStageCore_succ_eq (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
     hurwitzStageCore (M + 1) s c = hurwitzStageCore M s c := by
@@ -646,8 +629,9 @@ private theorem hurwitzHeadIntegral_zero_add_one_div {s : ℂ} (hs : 1 < s.re) (
     (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
       (intervalIntegral.intervalIntegrable_cpow' (by simp; linarith))
   have h1div : (1 : ℂ) / (s - 1) = ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s - 2) := by
-    have hexp : s - (2 : ℂ) = (s - 1) - 1 := by ring
-    rw [hexp, integral_Ioc_cpow_sub_one (by simp; linarith)]
+    have hexp : s - (2 : ℂ) + 1 = s - 1 := by ring
+    rw [integral_Ioc_zero_cpow (by simp; linarith) zero_le_one, hexp]
+    simp
   unfold hurwitzHeadIntegral
   rw [h1div, ← MeasureTheory.integral_add (integrableOn_hurwitzHeadIntegrand 0 hs0) hint_pow]
   exact MeasureTheory.setIntegral_congr_fun measurableSet_Ioc (eqOn_hurwitzStageZero_add_cpow s c)
