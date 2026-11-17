@@ -158,11 +158,9 @@ private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] 
   have hZ := (TauCeti.PadicInt.isSquare_intCast_iff_legendreSym_eq_one hp hndvd).mpr hsq_leg
   rw [Int.cast_prod] at hZ
   have hu_sq : IsSquare (∏ i ∈ S, (u i : ℤ_[p]) * approxInt (u i) (k i)) :=
-    Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
-      fun i _ ↦ isSquare_mul_approxInt hp (u i) (k i)
+    Finset.isSquare_prod _ fun i _ ↦ isSquare_mul_approxInt hp (u i) (k i)
   have hv_sq : IsSquare (∏ i ∈ S, (v i : ℤ_[p]) * approxInt (v i) (k' i)) :=
-    Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
-      fun i _ ↦ isSquare_mul_approxInt hp (v i) (k' i)
+    Finset.isSquare_prod _ fun i _ ↦ isSquare_mul_approxInt hp (v i) (k' i)
   have hcomb : IsSquare (((∏ i ∈ S, (u i : ℤ_[p])) * ∏ i ∈ S, (v i : ℤ_[p])) *
       (∏ i ∈ S, (approxInt (u i) (k i) : ℤ_[p]) * approxInt (v i) (k' i)) ^ 2) := by
     convert (hu_sq.mul hv_sq).mul hZ using 1
@@ -175,21 +173,6 @@ private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] 
   exact (TauCeti.IsIntegrallyClosed.isSquare_mul_sq_iff hne).mp hcomb
 
 /-! ### Assembling an integral `ℤ_p`-isometry from fiberwise unit-diagonal equivalences -/
-
-/-- Diagonal Jordan form of `L_p` indexed by `Fin n` when `rank L = n`. -/
-private theorem exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow
-    (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) {n : ℕ}
-    (hn : finrank ℤ L = n) :
-    ∃ (b : Basis (Fin n) ℤ_[p] (L.LocalCarrier p)) (u : Fin n → ℤ_[p]ˣ) (k : Fin n → ℕ),
-      (L.localIntegralForm p).iIsOrtho b ∧
-        ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i := by
-  have hnL : finrank ℤ_[p] (L.LocalCarrier p) = n := by
-    rw [Module.finrank_eq_card_basis ((Module.finBasis ℤ L).baseChange ℤ_[p]), Fintype.card_fin, hn]
-  obtain ⟨b', u', k', hb', hbu'⟩ :=
-    L.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp L.form_nondegenerate
-  refine ⟨b'.reindex (finCongr hnL), fun i ↦ u' ((finCongr hnL).symm i),
-    fun i ↦ k' ((finCongr hnL).symm i), hb'.reindex (finCongr hnL), fun i ↦ ?_⟩
-  simpa [Basis.reindex_apply] using hbu' ((finCongr hnL).symm i)
 
 /-- Given two diagonal Jordan forms of the same rank at an odd prime `p` whose `p`-primary
 discriminant bilinear modules are isometric, `k` and `l` agree up to a permutation `σ` and every
@@ -269,27 +252,6 @@ private theorem localIntegralForm_equivalent_of_forall_fiber
   exact ((L.isSymm_localIntegralForm p).equivalent_iff_toQuadraticMap_equivalent
     (M.isSymm_localIntegralForm p)).mpr (hL_quad.trans (hdiag.trans hM_quad.symm))
 
-/-- The local determinant of `L` in `ℤ_p` differs by a unit square from `(∏ᵢ uᵢ) p^{∑ᵢ kᵢ}` in any
-orthogonal diagonal Jordan basis `b` of `L_p`. -/
-private theorem exists_unit_sq_mul_det_eq {L : IntegralLattice V} {p : ℕ} [Fact p.Prime] {n : ℕ}
-    (hn : finrank ℤ L = n) {b : Basis (Fin n) ℤ_[p] (L.LocalCarrier p)}
-    {u : Fin n → ℤ_[p]ˣ} {k : Fin n → ℕ}
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
-    ∃ d : ℤ_[p]ˣ, (d : ℤ_[p]) ^ 2 * (L.determinant : ℤ_[p]) =
-      (∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ (∑ i, k i) := by
-  let b₀ := ((Module.finBasis ℤ L).reindex (finCongr hn)).baseChange ℤ_[p]
-  have hdet₀ : ((L.localIntegralForm p).toMatrix b₀).det = (L.determinant : ℤ_[p]) :=
-    L.det_toMatrix_localIntegralForm p _
-  have hdet_b : ((L.localIntegralForm p).toMatrix b).det =
-      (∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ (∑ i, k i) := by
-    rw [hb.toMatrix_eq_diagonal, Matrix.det_diagonal]
-    simp_rw [hbu, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
-  have hchg := LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det b₀ b (L.localIntegralForm p)
-  have hu_chg : IsUnit (b₀.toMatrix b).det := b₀.isUnit_det b
-  refine ⟨hu_chg.unit, ?_⟩
-  rw [IsUnit.unit_spec, ← hdet₀, ← hchg, hdet_b]
-
 /-! ### Odd-prime classification theorems -/
 
 /-- **Odd-prime local classification by the discriminant bilinear module.** Let `p` be an odd prime
@@ -314,13 +276,15 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule
     exact ⟨hrank, hsq, h.map primaryDiscriminantBilinearIsometry⟩
   · rintro ⟨hrank, hsq, hdisc⟩
     obtain ⟨b, u, k, hb, hbu⟩ :=
-      L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp (rfl : finrank ℤ L = _)
+      L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp L.form_nondegenerate
+        (rfl : finrank ℤ L = _)
     obtain ⟨c, v, l, hc, hcv⟩ :=
-      M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp hrank.symm
+      M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp M.form_nondegenerate
+        hrank.symm
     obtain ⟨σ, hσ, hpos⟩ :=
       exists_perm_and_isSquare_pos_of_isometry_primaryComponent hp hb hc hbu hcv hdisc
-    obtain ⟨dL, hdL⟩ := exists_unit_sq_mul_det_eq rfl hb hbu
-    obtain ⟨dM, hdM⟩ := exists_unit_sq_mul_det_eq hrank.symm hc hcv
+    obtain ⟨dL, hdL⟩ := L.exists_unit_sq_mul_determinant_eq_prod_mul_pow hb hbu
+    obtain ⟨dM, hdM⟩ := M.exists_unit_sq_mul_determinant_eq_prod_mul_pow hc hcv
     have hsum_eq : ∑ j, l j = ∑ i, k i :=
       (Equiv.sum_comp (σ : Fin _ ≃ Fin _) l).symm.trans (Finset.sum_congr rfl fun i _ ↦ hσ i)
     have hprod_v : ∏ j, (v j : ℤ_[p]) = ∏ i, (v (σ i) : ℤ_[p]) :=
@@ -419,9 +383,11 @@ theorem localIntegralForm_equivalent_iff_of_finrank_eq_rank
     AddGroup.rank_congr fLM.toAddEquiv
   have hrank : finrank ℤ L = finrank ℤ M := hLrank.trans (hrank_eq.trans hMrank.symm)
   obtain ⟨b, u, k, hb, hbu⟩ :=
-    L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp (rfl : finrank ℤ L = _)
+    L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp L.form_nondegenerate
+      (rfl : finrank ℤ L = _)
   obtain ⟨c, v, l, hc, hcv⟩ :=
-    M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp hrank.symm
+    M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp M.form_nondegenerate
+      hrank.symm
   obtain ⟨σ, hσ, hpos⟩ :=
     exists_perm_and_isSquare_pos_of_isometry_primaryComponent hp hb hc hbu hcv ⟨fLM⟩
   -- Minimal rank forces every exponent `k i` to be nonzero, so the `m = 0` fiber is empty.

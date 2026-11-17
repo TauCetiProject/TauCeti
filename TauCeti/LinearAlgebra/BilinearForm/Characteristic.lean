@@ -222,34 +222,19 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] 
   let b := Free.chooseBasis R M
   have : Finite (Free.ChooseBasisIndex R M) := Module.Finite.finite_basis b
   let _ : Fintype (Free.ChooseBasisIndex R M) := Fintype.ofFinite _
-  -- Reduce modulo `(2)`: `S = R ⧸ (2)` is a Boolean ring (`a * a = a`, `a + a = 0`).
+  -- Reduce modulo `(2)`: `S = R ⧸ (2)` satisfies `a * a = a` and `2 = 0`.
   let I : Ideal R := Ideal.span {(2 : R)}
   let S := R ⧸ I
   have h2_mem : (2 : R) ∈ I := Ideal.subset_span (Set.mem_singleton _)
-  have h2S : (2 : S) = 0 := by
-    rw [← map_ofNat (Ideal.Quotient.mk I) 2]
+  have h2S : ((2 : ℕ) : S) = 0 := by
+    rw [Nat.cast_ofNat, ← map_ofNat (Ideal.Quotient.mk I) 2]
     exact Ideal.Quotient.eq_zero_iff_mem.mpr h2_mem
   have hmul_self (a : S) : a * a = a := by
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective a
     rw [← map_mul, ← sub_eq_zero, ← map_sub]
     refine Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr ?_)
     simpa [sq] using h2 r
-  have hadd_self (a : S) : a + a = 0 := by
-    rw [← two_mul, h2S, zero_mul]
-  let toS : ZMod 2 →+* S :=
-    { toFun := fun | ⟨0, _⟩ => 0 | ⟨1, _⟩ => 1
-      map_one' := rfl
-      map_mul' := fun
-        | ⟨0, _⟩, ⟨0, _⟩ => (mul_zero 0).symm
-        | ⟨0, _⟩, ⟨1, _⟩ => (zero_mul 1).symm
-        | ⟨1, _⟩, ⟨0, _⟩ => (mul_zero 1).symm
-        | ⟨1, _⟩, ⟨1, _⟩ => (mul_one 1).symm
-      map_zero' := rfl
-      map_add' := fun
-        | ⟨0, _⟩, ⟨0, _⟩ => (add_zero 0).symm
-        | ⟨0, _⟩, ⟨1, _⟩ => (zero_add 1).symm
-        | ⟨1, _⟩, ⟨0, _⟩ => (add_zero 1).symm
-        | ⟨1, _⟩, ⟨1, _⟩ => (hadd_self 1).symm }
+  let toS : ZMod 2 →+* S := ZMod.castHom (ringChar.dvd h2S) S
   -- Partition `1 : S` into orthogonal idempotents over subsets `T` of the Gram entries `X`,
   -- reducing each piece to a symmetric system over `ℤ/2ℤ`.
   let G : Free.ChooseBasisIndex R M → Free.ChooseBasisIndex R M → S :=

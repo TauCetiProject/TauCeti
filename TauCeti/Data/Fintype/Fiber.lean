@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Data.Multiset.Fintype
@@ -317,8 +318,7 @@ theorem isSquare_prod_filter_of_isSquare_prod {G ι α : Type*} [CommGroup G] [D
       w).symm
     rw [hpart, Finset.prod_insert (Finset.notMem_erase z _)]
   have hP_sq : IsSquare (∏ m ∈ P, ∏ i ∈ s with k i = m, w i) :=
-    Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
-      fun m hm ↦ hne m (Finset.ne_of_mem_erase hm)
+    Finset.isSquare_prod _ fun m hm ↦ hne m (Finset.ne_of_mem_erase hm)
   rw [hsplit] at hfull
   simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
 
