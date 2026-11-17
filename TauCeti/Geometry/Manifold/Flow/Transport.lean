@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.Flow.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Transverse
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -274,18 +275,16 @@ theorem exists_contMDiff_mvfderiv_eq_of_isTransverseAlong [SigmaCompactSpace N]
     exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong hZ hg hι himm hind htr hdim
   -- Cut `h` off by a smooth function `χ` supported in `U` and equal to `1` near the image of `ι`.
   let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric N
-  obtain ⟨V, hV, hιV, hVU⟩ := normal_exists_closure_subset hclosed hU hιU
-  obtain ⟨W, hW, hιW, hWV⟩ := normal_exists_closure_subset hclosed hV hιV
+  obtain ⟨W, hW, hιW, hWU⟩ := normal_exists_closure_subset hclosed hU hιU
   obtain ⟨χ, hχ, -, hsupp, hone⟩ :=
-    exists_contMDiff_support_eq_eq_one_iff I (n := ⊤) hV isClosed_closure hWV
+    isClosed_closure.exists_contMDiff_tsupport_subset_eq_one_iff (I := I) hU hWU
   refine ⟨W, hW, hιW, fun x ↦ χ x * h x, contMDiff_of_tsupport fun x hx ↦ ?_,
     fun s ↦ by simp [h0], fun x hx ↦ ?_⟩
-  · have hxU : x ∈ U := hVU (by simpa [tsupport, hsupp] using tsupport_mul_subset_left hx)
-    exact hχ.contMDiffAt.mul (hh.contMDiffAt (hU.mem_nhds hxU))
+  · exact hχ.contMDiffAt.mul (hh.contMDiffAt (hU.mem_nhds (hsupp (tsupport_mul_subset_left hx))))
   · have heq : (fun y ↦ χ y * h y) =ᶠ[𝓝 x] h := by
       filter_upwards [hW.mem_nhds hx] with y hy
       rw [(hone y).1 (subset_closure hy), one_mul]
     rw [heq.mvfderiv_eq]
-    exact hZh x (hVU (subset_closure (hWV (subset_closure hx))))
+    exact hZh x (hWU (subset_closure hx))
 
 end TauCeti
