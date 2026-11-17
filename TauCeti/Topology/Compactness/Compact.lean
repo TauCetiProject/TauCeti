@@ -15,8 +15,9 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact and σ-compact subsets of topological spaces, and limits along
-ultrafilters of families eventually in a compact set.
+General lemmas about compact and σ-compact subsets of topological spaces, limits along
+ultrafilters of families eventually in a compact set, and families whose values tend to the
+cocompact filter, whose images therefore lie in no fixed compact set.
 -/
 
 public section
@@ -90,6 +91,16 @@ theorem _root_.IsCompact.closure_image_subset_range {Y : Type*} [TopologicalSpac
     closure (f '' s) ⊆ Set.range f := by
   rw [(hs.image_of_continuousOn hf).isClosed.closure_eq]
   exact Set.image_subset_range _ _
+
+/-- If the values `u i z` at one point `z ∈ S` tend to the cocompact filter, then no compact set
+contains the images `u i '' S` for every `i`. -/
+theorem not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact {ι α : Type*} {l : Filter ι}
+    [l.NeBot] {u : ι → α → X} {S : Set α} {z : α} (hz : z ∈ S)
+    (hu : Tendsto (fun i ↦ u i z) l (cocompact X)) :
+    ¬ ∃ K : Set X, IsCompact K ∧ ∀ i, MapsTo (u i) S K := by
+  rintro ⟨K, hK, huK⟩
+  obtain ⟨i, hi⟩ := (hu.eventually hK.compl_mem_cocompact).exists
+  exact hi (huK i hz)
 
 /-- A preconnected noncompact space has no compact connected component: its only component is the
 whole space. -/
