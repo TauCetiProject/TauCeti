@@ -93,9 +93,8 @@ private theorem exists_bezout_simpleDivPowMat_one (i : Fin t.rank) :
   have hI : I = ⊤ := by_contra fun hne => by
     obtain ⟨p, hp, hdiv⟩ : ∃ p : ℕ, p.Prime ∧ ∀ r s, (p : ℤ) ∣ D.simpleDivPowMat i 1 r s := by
       let d := Submodule.IsPrincipal.generator I
-      have hd r s : d ∣ D.simpleDivPowMat i 1 r s := Ideal.mem_span_singleton.mp <| by
-        rw [show Ideal.span {d} = I from Submodule.IsPrincipal.span_singleton_generator I]
-        exact Ideal.subset_span ⟨(r, s), rfl⟩
+      have hd r s : d ∣ D.simpleDivPowMat i 1 r s :=
+        (Submodule.IsPrincipal.mem_iff_generator_dvd I).mp (Ideal.subset_span ⟨(r, s), rfl⟩)
       by_cases hd0 : d.natAbs = 0
       · exact ⟨2, Nat.prime_two, fun r s => by
           have h0 := hd r s; rw [Int.natAbs_eq_zero.mp hd0, zero_dvd_iff] at h0; simp [h0]⟩
@@ -161,8 +160,7 @@ private theorem rootSubgroupPoints_simpleIndex_injective (A : Type v) [CommRing 
         D.simpleDivPowMat_eq_zero_of_weight_ne i hne, Int.cast_zero, mul_zero]
     · exact fun habs => (habs (Finset.mem_range.mpr (by omega))).elim
   have hrecover (u : A) : ∑ pq ∈ S, (c pq : A) * mat u pq.1 pq.2 = u := by
-    conv_rhs => rw [show u = u * ((∑ pq ∈ S, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 : ℤ) : A) by
-      rw [hcS, Int.cast_one, mul_one], Int.cast_sum, Finset.mul_sum]
+    conv_rhs => rw [← mul_one u, ← Int.cast_one (R := A), ← hcS, Int.cast_sum, Finset.mul_sum]
     exact Finset.sum_congr rfl fun pq hpq => by rw [hentry u hpq, Int.cast_mul]; ring
   intro u₁ u₂ h; refine toAdd.injective ?_
   rw [← hrecover (toAdd u₁), ← hrecover (toAdd u₂)]; simp only [mat, ofAdd_toAdd, h]

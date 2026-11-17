@@ -107,8 +107,8 @@ theorem torusPoints_map_algebraMap_conj_eq_self (s₀ : Fin t.rank → ℤˣ)
         (D.coordinateRoot γ) = 1 := by
       simpa only [RingHom.toMonoidHom_eq_coe, hγ, map_one] using
         (map_torusCharacter (algebraMap ℤ B) s₀ (D.coordinateRoot γ)).symm
-    rw [show f B = _ from D.map_torusPoints _ _, ← ofAdd_toAdd u,
-      D.torusPoints_conj_rootSubgroupPoints, hmap, Units.val_one, one_mul]
+    dsimp only [f]; rw [D.map_torusPoints, ← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints,
+      hmap, Units.val_one, one_mul]
   simpa only [D.map_torusPoints] using
     D.conj_eq_self_of_forall_conj_simpleRootSubgroup_and_torus (D.torusPoints ℤ s₀)
       (fun B _ m => hconj B _ (hs₀ m)) (fun B _ m => hconj B _ (by
@@ -125,9 +125,9 @@ theorem simpleCorootPoints_neg_one_conj_eq_self (i : Fin t.rank)
     (fun m => by
       rw [D.coordinateRoot_def, D.torusCharacter_simpleCorootParameter]
       rcases heven m with ⟨k, hk⟩; dsimp only; rw [hk, ← two_mul, zpow_mul]; simp) A g
-  rwa [show (fun j => Units.map (algebraMap ℤ A).toMonoidHom (D.simpleCorootParameter i ℤ (-1) j)) =
-      D.simpleCorootParameter i A (-1) from funext fun j => by simp [D.simpleCorootParameter_apply],
-    ← D.simpleCorootPoints_eq_torusPoints] at h
+  have hparam : (fun j => Units.map (algebraMap ℤ A).toMonoidHom
+      (D.simpleCorootParameter i ℤ (-1) j)) = D.simpleCorootParameter i A (-1) := by ext; simp
+  rwa [hparam, ← D.simpleCorootPoints_eq_torusPoints] at h
 
 /-- **In rank one, `D.simpleCorootPoints i A (-1)` is central in `D.points A` over every ring.** -/
 theorem simpleCorootPoints_neg_one_conj_eq_self_of_rank_eq_one (hr : t.rank = 1) (i : Fin t.rank)

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Ring.Hom
+import TauCeti.RingTheory.Subring.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 
 /-!
@@ -32,14 +32,6 @@ open TauCeti
 
 namespace AddMonoidHom
 
-private theorem infinite_subring_of_pow_mem {K : Type*} [Field K] [Infinite K] (E : Subring K)
-    {a : ℕ} (ha : 0 < a) (hpow : ∀ x : K, x ^ a ∈ E) : Infinite E := by
-  classical
-  by_contra hfin; rw [not_infinite_iff_finite] at hfin
-  exact Set.infinite_univ
-    ((Set.finite_iUnion fun c : E => (Polynomial.nthRootsFinset a c.1).finite_toSet).subset
-      fun x _ => Set.mem_iUnion.mpr ⟨⟨x ^ a, hpow x⟩, by simp [Polynomial.mem_nthRootsFinset ha]⟩)
-
 /-- **Intertwining a nonzero additive endomorphism of an infinite field with split-torus characters
 forces positive rational proportionality.** -/
 theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fintype κ] [Field K]
@@ -48,8 +40,7 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
       f ((torusCharacter s ξ : K) * u) = (torusCharacter s η : K) * f u) :
     ∃ d m : ℕ, 0 < d ∧ 0 < m ∧ d • η = m • ξ := by
   classical
-  obtain ⟨u₀, hu₀⟩ : ∃ u₀ : K, f u₀ ≠ 0 := by_contra fun h0 => by
-    push Not at h0; exact hf (AddMonoidHom.ext h0)
+  obtain ⟨u₀, hu₀⟩ := DFunLike.ne_iff.mp hf; rw [zero_apply] at hu₀
   let h : K →+ K := AddMonoidHom.mk' (fun x => (f u₀)⁻¹ * f (u₀ * x)) fun x y => by
     rw [mul_add, map_add, mul_add]
   have hh1 : h 1 = 1 := by simp [h, inv_mul_cancel₀ hu₀]
@@ -77,9 +68,8 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
   have hsOf (u : Kˣ) : torusCharacter (sOf u) ξ = u ^ a := by
     rw [torusCharacter_mulSingle]; split_ifs with h0
     · rw [← zpow_natCast, Int.natAbs_of_nonneg h0]
-    · rw [show ξ i₀ = -(a : ℤ) by rw [Int.ofNat_natAbs_of_nonpos (le_of_not_ge h0), neg_neg],
-        inv_zpow', neg_neg, zpow_natCast]
-  have : Infinite E := infinite_subring_of_pow_mem E ha fun x => by
+    · rw [inv_zpow', ← zpow_natCast, Int.ofNat_natAbs_of_nonpos (le_of_not_ge h0)]
+  have : Infinite E := E.infinite_of_pow_mem ha fun x => by
     by_cases hx : x = 0; · rw [hx, zero_pow ha.ne']; exact E.zero_mem
     intro y; simpa [hsOf (Units.mk0 x hx)] using
       (hhscale (sOf (Units.mk0 x hx)) y).trans (congrArg (· * h y) (hhtorus _).symm)
@@ -87,16 +77,15 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
   · refine (RingHom.not_forall_map_pow_mul_map_pow_eq_one g E.subtype (.inl had.ne')
       (n := a * (-z).toNat) fun x hx => ?_).elim
     have hxK : (x : K) ≠ 0 := fun h0 => hx (Subtype.ext h0); let u : Kˣ := Units.mk0 (x : K) hxK
+    have hgx : g (x ^ a) = (torusCharacter (sOf u) η : K) := by
+      simpa [g, u, hsOf] using hhtorus (sOf u)
     have hpow : g x ^ (a * d) = ((u ^ ((a : ℤ) * z) : Kˣ) : K) := by
-      rw [pow_mul, ← map_pow, show g (x ^ a) = (torusCharacter (sOf u) η : K) by
-        simpa [g, u, hsOf] using hhtorus (sOf u)]
-      rw [← Units.val_pow_eq_pow_val, ← torusCharacter_nsmul, hz, torusCharacter_zsmul, hsOf,
-        ← zpow_natCast, ← zpow_mul]
+      rw [pow_mul, ← map_pow, hgx, ← Units.val_pow_eq_pow_val, ← torusCharacter_nsmul, hz,
+        torusCharacter_zsmul, hsOf, ← zpow_natCast, ← zpow_mul]
     have hzn : (a : ℤ) * z = -((a * (-z).toNat : ℕ) : ℤ) := by
       rw [Nat.cast_mul, Int.toNat_of_nonneg (neg_nonneg.mpr hzle), mul_neg, neg_neg]
-    simp only [hzn, zpow_neg, zpow_natCast, Units.val_inv_eq_inv_val,
-      Units.val_pow_eq_pow_val, u, Units.val_mk0] at hpow
-    simp [hpow, hxK]
+    rw [hzn, zpow_neg, zpow_natCast] at hpow
+    simp [hpow, u, hxK]
   · exact ⟨d, z.toNat, hd, Int.lt_toNat.mpr hzpos, by
       rw [hz, ← natCast_zsmul, Int.toNat_of_nonneg hzpos.le]⟩
 

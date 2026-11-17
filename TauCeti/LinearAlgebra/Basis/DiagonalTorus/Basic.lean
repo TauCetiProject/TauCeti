@@ -431,8 +431,8 @@ theorem exists_nsmul_eq_zsmul_of_torusCharacter_eq_one_imp {K : Type*} [Field K]
     have hs (μ : κ → ℤ) : torusCharacter s μ = t i₀ ^ (-ξ i₁ * μ i₀ + ξ i₀ * μ i₁) := by
       rw [torusCharacter_mul, torusCharacter_mulSingle, torusCharacter_mulSingle,
         ← zpow_mul, ← zpow_mul, ← zpow_add]
-    have hsξ : torusCharacter s ξ = 1 := by
-      rw [hs, show -ξ i₁ * ξ i₀ + ξ i₀ * ξ i₁ = 0 by ring, zpow_zero]
+    have hξ0 : -ξ i₁ * ξ i₀ + ξ i₀ * ξ i₁ = 0 := by ring
+    have hsξ : torusCharacter s ξ = 1 := by rw [hs, hξ0, zpow_zero]
     have hδ : -ξ i₁ * η i₀ + ξ i₀ * η i₁ = δ := by dsimp [δ]; ring
     have hsη := hker s hsξ
     rw [hs, hδ] at hsη
