@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
-public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.Map
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
@@ -17,9 +16,10 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 
 Covariant representations of a fixed C⋆-action can be summed over an arbitrary index type.
 The Hilbert space is `lp H 2`, and both representations act coordinatewise: the coefficient
-representation is `NonUnitalStarAlgHom.hilbertSum` and the group representation is
-`ContRepresentation.hilbertSum`. Strong continuity follows from uniform approximation by finite
-coordinate sums.
+representation is the direct sum `NonUnitalStarAlgHom.hilbertSum` of the coefficient
+representations, and the group representation is the Hilbert direct sum
+`ContRepresentation.hilbertSum` of the unitary group representations.
+Strong continuity follows from uniform approximation by finite coordinate sums.
 
 The vector-integrated form acts coordinatewise as well: evaluation in a summand commutes
 with the integral. In particular, integration commutes with infinite Hilbert direct sums,
@@ -47,7 +47,7 @@ variable {G A ι : Type*} {H : ι → Type*} [Group G] [TopologicalSpace G]
 /-- The Hilbert direct sum of a family of covariant representations. The coefficient and group
 representations act coordinatewise on `lp H 2`. -/
 def hilbertSum : CovariantRepresentation α (lp H 2) where
-  coefficient := .hilbertSum fun i => (P i).coefficient
+  coefficient := NonUnitalStarAlgHom.hilbertSum fun i => (P i).coefficient
   group := .hilbertSum (fun i => (P i).group) fun i => (P i).isUnitary
   isUnitary := ContRepresentation.isUnitary_hilbertSum _ _
   continuous_orbit x := (lp.continuous_mapCLM_apply (p := 2) (by simp)

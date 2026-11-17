@@ -29,7 +29,8 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
-* `NonUnitalStarAlgHom.isNondegenerate_iff_map_one` and
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`,
+  `NonUnitalStarAlgHom.isNondegenerate_iff_map_one`, and
   `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: on a unital C⋆-algebra, nondegeneracy is
   equivalent to `π 1 = 1` and promotes `π` to a unital `StarAlgHom`.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
@@ -94,7 +95,7 @@ theorem isNondegenerate_of_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆�
 operator. -/
 theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
-  hρ.ext fun a => by simp [← map_mul]
+  hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
 
 /-- A representation of a unital C⋆-algebra is nondegenerate if and only if it maps `1` to `1`. -/
 theorem isNondegenerate_iff_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
