@@ -60,7 +60,8 @@ proper map whose fibre over a point of a connected target is a single such point
 * `TauCeti.HomologicalOrientation.degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn`: a proper
   map with a one-point fibre, at whose point it is a local homeomorphism, has degree `±1`.
 * `TauCeti.HomologicalOrientation.localIndex_addRight`: translations of a finite-dimensional real
-  normed space have local index one, being properly homotopic to the identity.
+  normed space have local index one, being properly homotopic to the identity, and so degree one
+  (`TauCeti.HomologicalOrientation.degree_addRight`).
 * `TauCeti.HomologicalOrientation.exists_eventuallyEq_and_localIndex_comap_eq`: the local index
   of a map read in open coordinates `j : M → E`, `k : N → F` of finite-dimensional real normed
   spaces is that of a map `E → F` agreeing with the coordinate expression near the point.
@@ -500,6 +501,12 @@ theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v
   have hfib : ContinuousMap.addRight v ⁻¹' {x + v} = {x} := by ext; simp
   rw [← o.localDegree_eq_localIndex o hE hE _ hfib,
     o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap, ← hdeg]
+
+/-- Translations of a finite-dimensional real normed space have degree one. -/
+theorem degree_addRight (v : E) : o.degree o hE (ContinuousMap.addRight v) = 1 := by
+  have hfib : ContinuousMap.addRight v ⁻¹' {0 + v} = {0} := by ext; simp
+  rw [← o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap (0 + v),
+    o.localDegree_eq_localIndex o hE hE _ hfib, o.localIndex_addRight hE]
 
 variable {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   (o' : HomologicalOrientation F F n) (hF : finrank ℝ F = n)
