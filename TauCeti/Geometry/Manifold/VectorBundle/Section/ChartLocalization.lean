@@ -425,20 +425,26 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
   refine le_antisymm ?_ ((TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun p ↦
     letI := p.memTrivializationAtlas
     continuous_chartTestSection _ _ p.contMDiffOn_chart p.source_subset e U hU)
-  -- Each fixed-compact stage factors continuously through finitely many chart extensions.
+  -- Each fixed-compact stage is a finite sum of continuous factorizations through the chart
+  -- extensions of test charts at points of `M`.
+  let p : M → ChartTestData I F V n := fun x ↦ ⟨trivializationAt F V x, testChart F I V x,
+    contMDiffOn_testChart V x, testChart_source_subset V x⟩
   let := TauCeti.finalLocallyConvexTopology
     (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n))
   rw [compactlySupportedTopology_def]
-  refine (TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun K ↦ ?_
+  refine (TauCeti.FinalLocallyConvexTopology.le_of_sum_factor _ (fun x ↦ (p x).chartTestSection)
+    fun K ↦ ?_).trans ((TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun x ↦
+      TauCeti.FinalLocallyConvexTopology.continuous _ (p x))
   obtain ⟨s, ψ, L, hL, hψ, hdecomp⟩ := exists_ofSupportedIn_eq_sum (I := I) (F := F) (V := V)
     (n := n) K
-  simp_rw [funext hdecomp]
-  refine continuous_finsetSum _ fun x _ ↦ ?_
-  exact (TauCeti.FinalLocallyConvexTopology.continuous ChartTestData.chartTestSection
-      ⟨trivializationAt F V x, testChart F I V x, contMDiffOn_testChart V x,
-        testChart_source_subset V x⟩).comp
-    ((TestFunction.continuous_ofSupportedIn _).comp
-      ((continuous_chartLocalization _ _ _ _ _ _ _ _ e U hU hcover).comp continuous_subtype_val))
+  refine ⟨s, fun x ↦ (TestFunction.ofSupportedInCLM ℝ (hL x)).toLinearMap ∘ₗ
+    (trivializationAt F V x).chartLocalization (testChart F I V x)
+      (contMDiffOn_testChart_symm V x) (testChart_source_subset V x) (ψ x) (L x) (hL x) (hψ x) ∘ₗ
+    (supportedIn I F n V K).subtype, fun x _ ↦ ?_, LinearMap.ext fun σ ↦ ?_⟩
+  · exact (TestFunction.ofSupportedInCLM ℝ (hL x)).continuous.comp
+      ((continuous_chartLocalization _ _ (contMDiffOn_testChart_symm V x) _ _ _ (hL x) (hψ x) e U hU
+        hcover).comp continuous_subtype_val)
+  · simp [p, hdecomp σ]
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
