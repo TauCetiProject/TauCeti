@@ -10,6 +10,7 @@ import Mathlib.RingTheory.Ideal.Int
 import TauCeti.Algebra.Group.Coprime
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
+import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Cyclotomic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Span
@@ -61,9 +62,6 @@ quotient vanishes modulo `p`, that is `|a| ^ (p - 1) ≡ 1 (mod p ^ 2)`
   natural number `n` not divisible by `p`.
 * `IsPrimitiveRoot.eisenstein_reciprocity`: **the Eisenstein reciprocity law**
   `(α / a)_p = (a / α)_p` for primary `α` and an integer `a` not divisible by `p`.
-* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_natCast_mk_toInteger_of_not_dvd` and
-  `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_not_dvd`:
-  `(ζ / a)_p = ζ ^ ((|a| ^ (p - 1) - 1) / p)` for `p ∤ a`.
 * `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_pow_mul`:
   `((ζ ^ c * α) / a)_p = ζ ^ (c (|a| ^ (p - 1) - 1) / p) · (a / (ζ ^ c * α))_p`.
 * `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_mul_eq_iff`: for `α` coprime
@@ -85,29 +83,6 @@ namespace IsPrimitiveRoot
 
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [NumberField K]
   [IsCyclotomicExtension {p} ℚ K] {ζ : K} (hζ : IsPrimitiveRoot ζ p)
-
-/-- **The `p`-th power residue symbol of `ζ` at a natural number.** For `p ∤ n`, the symbol of `ζ`
-at `n 𝓞 K` is `ζ ^ ((n ^ (p - 1) - 1) / p)`. -/
-theorem powerResidueSymbolIdeal_span_natCast_mk_toInteger_of_not_dvd {n : ℕ} (hn : ¬ p ∣ n) :
-    powerResidueSymbolIdeal (span {(n : 𝓞 K)}) p (Ideal.Quotient.mk _ hζ.toInteger) =
-      hζ.toInteger ^ ((n ^ (p - 1) - 1) / p) := by
-  have hp : p.Prime := Fact.out
-  have hN : absNorm (span {(n : 𝓞 K)}) = n ^ (p - 1) := by
-    rw [absNorm_span_natCast, IsCyclotomicExtension.Rat.finrank_ringOfIntegers p K,
-      Nat.totient_prime hp]
-  have hcop : (absNorm (span {(n : 𝓞 K)})).Coprime p := by
-    rw [hN]
-    exact ((hp.coprime_iff_not_dvd.mpr hn).symm).pow_left _
-  rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hcop hζ.toInteger_isPrimitiveRoot.pow_eq_one, hN]
-
-/-- **The `p`-th power residue symbol of `ζ` at a rational integer.** For `p ∤ a`, the symbol of
-`ζ` at `a 𝓞 K` is `ζ ^ ((|a| ^ (p - 1) - 1) / p)`. -/
-theorem powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_not_dvd {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) :
-    powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p (Ideal.Quotient.mk _ hζ.toInteger) =
-      hζ.toInteger ^ ((a.natAbs ^ (p - 1) - 1) / p) := by
-  have hna : ¬ p ∣ a.natAbs := by rwa [← Int.natCast_dvd]
-  rw [span_singleton_intCast_eq_natAbs,
-    hζ.powerResidueSymbolIdeal_span_natCast_mk_toInteger_of_not_dvd hna]
 
 /-- Eisenstein reciprocity at the norm of a maximal ideal `P` whose norm is prime to `p`:
 `(α / N P)_p = (N P / α)_p`. -/
@@ -245,9 +220,11 @@ theorem powerResidueSymbolIdeal_span_intCast_mk_toInteger_pow_mul (hp2 : p ≠ 2
   have hp : p.Prime := Fact.out
   have hunit : IsUnit (hζ.toInteger ^ c) :=
     (hζ.toInteger_isPrimitiveRoot.isUnit hp.ne_zero).pow c
+  have hna : a.natAbs.Coprime p :=
+    (hp.coprime_iff_not_dvd.mpr (by rwa [← Int.natCast_dvd])).symm
   rw [span_singleton_mul_left_unit hunit, map_mul, map_mul, map_pow, map_pow,
-    hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_not_dvd ha, ← pow_mul, mul_comm _ c,
-    hζ.eisenstein_reciprocity hp2 hα ha]
+    hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_coprime hna, Nat.totient_prime hp,
+    ← pow_mul, mul_comm _ c, hζ.eisenstein_reciprocity hp2 hα ha]
 
 /-- **When the non-primary associate `ζ * α` satisfies reciprocity against `a`.** For primary `α`
 coprime to a rational integer `a` with `p ∤ a`, the equality `((ζ * α) / a)_p = (a / (ζ * α))_p`

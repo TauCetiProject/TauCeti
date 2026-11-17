@@ -122,16 +122,11 @@ theorem pow_left_inj_of_pow_eq_one_of_coprime {M : Type*} [Monoid M] {x y : M} {
   rcases eq_or_ne m 0 with rfl | hm
   · rw [Nat.Coprime, Nat.gcd_zero_left] at hmn
     simpa [hmn] using h
-  have hm' : 0 < m := Nat.pos_of_ne_zero hm
-  let ux : Mˣ := ⟨x, x ^ (m - 1),
-    by rw [← pow_succ', Nat.sub_add_cancel hm', hx],
-    by rw [← pow_succ, Nat.sub_add_cancel hm', hx]⟩
-  let uy : Mˣ := ⟨y, y ^ (m - 1),
-    by rw [← pow_succ', Nat.sub_add_cancel hm', hy],
-    by rw [← pow_succ, Nat.sub_add_cancel hm', hy]⟩
+  let ux : Mˣ := Units.ofPowEqOne x m hx hm
+  let uy : Mˣ := Units.ofPowEqOne y m hy hm
   obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := Mˣ) hmn
-  have huxm : ux ^ m = 1 := Units.ext hx
-  have huym : uy ^ m = 1 := Units.ext hy
+  have huxm : ux ^ m = 1 := Units.pow_ofPowEqOne hx hm
+  have huym : uy ^ m = 1 := Units.pow_ofPowEqOne hy hm
   have huxyn : ux ^ n = uy ^ n := Units.ext h
   exact congr_arg Units.val ((hij ux).symm.trans (by rw [huxm, huxyn, ← huym, hij uy]))
 
