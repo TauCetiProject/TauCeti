@@ -33,13 +33,15 @@ restriction between affine opens. No finiteness, freeness or flatness is require
 The construction combines `Scheme.Modules.symmetricPowerSectionsIso` with the internal
 grading of `TauCeti.SymmetricAlgebra.gradedAlgebra`.
 
-Through this comparison, properties of symmetric algebras of modules transfer to `Sym F`: the
-graded symmetric algebra is generated in degree one
-(`TauCeti.AlgebraicGeometry.isGeneratedInDegreeOne_gradedSymmetricAlgebra`), its sections
-in degree zero are isomorphic to `Γ(X, U)` for every open `U`, and the graded ring of affine
-sections `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra of finite type when `F` is of finite type.
-These are the inputs for the relative `Proj` of `Sym F` to be proper over
-`X` with invertible twisting sheaves.
+Through this comparison, degree-one generation and finite-type generation over affine opens
+transfer from symmetric algebras of modules to `Sym F`: the graded symmetric algebra is generated
+in degree one (`TauCeti.AlgebraicGeometry.isGeneratedInDegreeOne_gradedSymmetricAlgebra`), and over
+an affine open `U` the graded ring of sections `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra of finite
+type when `F` is of finite type. Separately, the unit `𝒪_X ⟶ Sym⁰ F` is an isomorphism
+(`TauCeti.AlgebraicGeometry.isIso_one_gradedSymmetricAlgebra`), so `Γ(Sym⁰ F, U)` is a finite
+`Γ(X, U)`-module over every open `U` (`CategoryTheory.CommMon.finite_sections_zero_of_isIso_one`).
+These are the inputs for the relative `Proj` of `Sym F` to be proper over `X` with invertible
+twisting sheaves.
 
 ## Main results
 
@@ -50,10 +52,8 @@ These are the inputs for the relative `Proj` of `Sym F` to be proper over
   `Γ(X, U)`-algebra.
 * `TauCeti.AlgebraicGeometry.isGeneratedInDegreeOne_gradedSymmetricAlgebra`: `Sym F` is generated
   in degree one.
-* `TauCeti.AlgebraicGeometry.finite_sections_gradedSymmetricAlgebra_zero` and
-  `TauCeti.AlgebraicGeometry.finiteType_gradedSections_gradedSymmetricAlgebra`: over an affine open
-  `U`, `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra of finite type if `F` is of finite type;
-  `Γ(Sym⁰ F, U)` is a finite `Γ(X, U)`-module over every open `U`.
+* `TauCeti.AlgebraicGeometry.finiteType_gradedSections_gradedSymmetricAlgebra`: over an affine
+  open `U`, `⨁ n, Γ(Symⁿ F, U)` is a `Γ(X, U)`-algebra of finite type if `F` is of finite type.
 
 ## References
 
@@ -290,7 +290,6 @@ lemma gradedSymmetricAlgebraSectionsEquiv_restrict (hU : IsAffineOpen U) {V : X.
     exact congrArg (DirectSum.of _ n) (sectionsDegreeIso_restrict F hU hV i n x)
   · simp only [map_add, ha, hb]
 
-
 /-- **The sections of the graded symmetric algebra are generated in degree one.** Over an affine
 open `U`, the sections of `Sym¹ F` generate the graded ring of sections `⨁ n, Γ(Symⁿ F, U)` as a
 `Γ(X, U)`-algebra. -/
@@ -317,11 +316,6 @@ theorem isGeneratedInDegreeOne_gradedSymmetricAlgebra :
     ((gradedSymmetricAlgebra X).obj F).obj.IsGeneratedInDegreeOne :=
   CommMon.isGeneratedInDegreeOne_of_adjoin_eq_top fun _ hU ↦
     adjoin_gradedSectionsGrading_one_gradedSymmetricAlgebra_eq_top F hU
-
-/-- Over every open `U`, the sections of `Sym⁰ F` form a finite `Γ(X, U)`-module. -/
-instance finite_sections_gradedSymmetricAlgebra_zero (U : X.Opens) :
-    Module.Finite Γ(X, U) Γ(((gradedSymmetricAlgebra X).obj F).obj.X 0, U) :=
-  CommMon.finite_sections_zero_of_isIso_one _ U
 
 /-- Over an affine open `U`, the graded ring of sections `⨁ n, Γ(Symⁿ F, U)` of the graded
 symmetric algebra of a quasicoherent sheaf of finite type is a `Γ(X, U)`-algebra of finite type. -/

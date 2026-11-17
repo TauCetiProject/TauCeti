@@ -175,7 +175,7 @@ lemma gAlgebraSections_toFun (r : Γ(X, U)) :
 
 /-- If the unit `𝒪_X ⟶ A₀` of a graded algebra is an isomorphism, then over every open `U` the
 sections `Γ(A₀, U)` form a finite `Γ(X, U)`-module. -/
-theorem finite_sections_zero_of_isIso_one [IsIso A.toMon.one] :
+instance finite_sections_zero_of_isIso_one [IsIso A.toMon.one] :
     Module.Finite Γ(X, U) Γ(A.X 0, U) := by
   -- the unit induces an isomorphism `Γ(X, U) ≅ Γ(A₀, U)`
   refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
