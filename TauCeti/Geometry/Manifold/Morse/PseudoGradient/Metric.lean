@@ -30,7 +30,7 @@ Riemannian metric `g` on `M`
 metrics apply to the flow of every adapted pseudo-gradient. Moreover `g` can be prescribed
 to be the Euclidean metric of the coordinates of given Morse charts, in which `X` is linear, on
 given pairwise disjoint closed sets inside them, forming a locally finite family, for instance on
-closed balls around the critical points (`exists_contMDiffRiemannianMetric_inner_eq`).
+closed balls around the critical points (`exists_contMDiffRiemannianMetric_inner_eq_euclideanForm`).
 
 The metric is glued from local metrics by a partition of unity, as in
 `TauCeti.nonempty_contMDiffRiemannianMetric`. The fibrewise condition `g (X, ·) = -df` is affine in
@@ -47,8 +47,9 @@ metrics satisfy it.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric_inner_eq`: a smooth metric
-  with `g (X, ·) = -df` which is the Euclidean metric of given Morse charts on given closed sets.
+* `TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric_inner_eq_euclideanForm`: a
+  smooth metric with `g (X, ·) = -df` which is the Euclidean metric of given Morse charts on given
+  closed sets.
 * `TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric_neg_mgradient_eq`: **every
   adapted pseudo-gradient is a negative gradient**, `X = -grad_g f` for a smooth metric `g`.
 
@@ -174,7 +175,7 @@ critical points.** Let `f` be smooth and `X` a pseudo-gradient adapted to `f`. L
 locally finite family of pairwise disjoint closed sets, each contained in the source of a Morse
 chart `φ i` in which `X` is the linear field. Then there is a smooth Riemannian metric `g` with
 `g (X, ·) = -df`, which on each `A i` is the Euclidean metric of the coordinates of `φ i`. -/
-theorem exists_contMDiffRiemannianMetric_inner_eq [T2Space M] [SigmaCompactSpace M]
+theorem exists_contMDiffRiemannianMetric_inner_eq_euclideanForm [T2Space M] [SigmaCompactSpace M]
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hX : IsAdaptedPseudoGradient f X)
     (φ : ∀ i, MorseChart E f (p i))
     (hφ : ∀ i, ∀ y ∈ (φ i).toChart.source,
@@ -233,7 +234,7 @@ theorem exists_contMDiffRiemannianMetric_neg_mgradient_eq [T2Space M] [SigmaComp
     ∃ g : ContMDiffRiemannianMetric 𝓘(ℝ, E) ∞ E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x),
       letI : RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x) := ⟨g.toRiemannianMetric⟩
       ∀ y, -Manifold.mgradient 𝓘(ℝ, E) f y = X y := by
-  obtain ⟨g, hg, -⟩ := hX.exists_contMDiffRiemannianMetric_inner_eq hf
+  obtain ⟨g, hg, -⟩ := hX.exists_contMDiffRiemannianMetric_inner_eq_euclideanForm hf
     (p := (Empty.elim : Empty → M)) (fun i ↦ i.elim) (fun i ↦ i.elim) (A := Empty.elim)
     (fun i ↦ i.elim) (locallyFinite_of_finite _) (fun i ↦ i.elim) fun i ↦ i.elim
   refine ⟨g, fun y ↦ ?_⟩
