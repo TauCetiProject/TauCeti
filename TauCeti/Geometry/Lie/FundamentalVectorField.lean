@@ -70,6 +70,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   exactly when every `exp (t ξ)` acts trivially.
 * `TauCeti.InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot`: for a faithful action,
   `ξ ↦ ξ_M` is injective.
+* `TauCeti.finiteDimensional_of_isotropy_fundamental_eq_bot`: a Lie group acting locally freely
+  at a point of a finite-dimensional manifold is finite-dimensional.
 
 ## References
 
@@ -637,5 +639,26 @@ theorem InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot [FaithfulSMul G M
 end Kernel
 
 end InfinitesimalAction
+
+section FiniteDimensional
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+/-- **A Lie group acting locally freely at a point of a finite-dimensional manifold is
+finite-dimensional.** This is `InfinitesimalAction.finiteDimensional_of_isotropy_eq_bot` for the
+fundamental vector fields, read on the model space `E` of `G`. -/
+theorem finiteDimensional_of_isotropy_fundamental_eq_bot {x : M}
+    (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
+    FiniteDimensional ℝ E :=
+  have := (InfinitesimalAction.fundamental I G I' M).finiteDimensional_of_isotropy_eq_bot x hfree
+  (tangentSpaceCastModel I (1 : G)).toLinearEquiv.finiteDimensional
+
+end FiniteDimensional
 
 end TauCeti

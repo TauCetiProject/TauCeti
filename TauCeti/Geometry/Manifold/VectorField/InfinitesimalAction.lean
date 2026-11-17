@@ -43,9 +43,12 @@ the Lie bracket of two vector fields vanishing at `x` vanishes at `x`. The orbit
 `𝔤 ⧸ 𝔤_x` with `𝔤 · x` (`TauCeti.InfinitesimalAction.quotIsotropyEquivOrbitTangent`), and more
 generally `𝔨 ⧸ (𝔨 ∩ 𝔤_x)` with `𝔨 · x` for a subspace `𝔨` of `𝔤`
 (`TauCeti.InfinitesimalAction.quotIsotropyEquivMap`); rank–nullity gives
-`dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. For the fundamental vector fields of a Lie group action, `𝔤 · x`
-and `𝔤_x` are the image and the kernel of the differential at the identity of the orbit map
-`g ↦ g • x`. These are the pointwise data entering the differential of a moment map.
+`dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. Where the action is locally free, that is `𝔤_x = 0`, the orbit
+map embeds `𝔤` into the tangent space at `x`, so `𝔤` is finite-dimensional when `M` is
+(`TauCeti.InfinitesimalAction.finiteDimensional_of_isotropy_eq_bot`). For the fundamental vector
+fields of a Lie group action, `𝔤 · x` and `𝔤_x` are the image and the kernel of the differential at
+the identity of the orbit map `g ↦ g • x`. These are the pointwise data entering the differential
+of a moment map.
 
 ## Main definitions
 
@@ -242,6 +245,12 @@ theorem coe_quotIsotropyEquivMap_mk (p : Submodule ℝ 𝔤) (Z : p) :
 theorem finrank_orbitTangent_of_isotropy_eq_bot (h : a.isotropy x = ⊥) :
     Module.finrank ℝ (a.orbitTangent x) = Module.finrank ℝ 𝔤 :=
   LinearMap.finrank_range_of_inj ((a.isotropy_eq_bot_iff x).1 h)
+
+/-- **A Lie algebra acting locally freely at a point of a finite-dimensional manifold is
+finite-dimensional.** If `𝔤_x` vanishes, `Z ↦ Z_M(x)` embeds `𝔤` into the tangent space at `x`. -/
+theorem finiteDimensional_of_isotropy_eq_bot [FiniteDimensional ℝ E] (h : a.isotropy x = ⊥) :
+    FiniteDimensional ℝ 𝔤 :=
+  FiniteDimensional.of_injective (a.eval x) ((a.isotropy_eq_bot_iff x).1 h)
 
 /-- The isotropy algebra of a restricted action is the preimage of the isotropy algebra. -/
 @[simp]
