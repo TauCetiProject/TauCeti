@@ -194,11 +194,6 @@ theorem preimage_structureMap_box (C : ∀ i, Set (R i)) :
   ext x
   simp
 
-/-- The range of `structureMap` is the integral box `box A`. -/
-theorem range_structureMap_eq_box :
-    range (structureMap R A 𝓕) = box A :=
-  range_structureMap R A
-
 /-- The range of the top-level inclusion `Πʳ i, [R i, A i]_[⊤] → Πʳ i, [R i, A i]_[𝓕]`, which is
 the principal stage of `Set.univ` (empty exceptional set), equals the integral box `box A`. -/
 theorem range_inclusion_top_eq_box :

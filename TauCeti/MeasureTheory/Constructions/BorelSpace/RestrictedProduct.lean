@@ -193,8 +193,10 @@ theorem measurableSet_range_structureMap [Countable ι] [∀ i, TopologicalSpace
     [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)] {𝓕 : Filter ι}
     (hA : ∀ i, MeasurableSet (A i)) :
     MeasurableSet (range (structureMap R A 𝓕)) := by
-  rw [range_structureMap_eq_box]
-  exact measurableSet_box hA
+  convert measurableSet_box (R := R) (A := A) (𝓕 := 𝓕) hA using 1
+  -- `range_structureMap` uses `f.1 i`, defeq to `f i` via `RestrictedProduct`'s `DFunLike`.
+  rw [range_structureMap, box_def]
+  rfl
 
 /-- With Borel factors, the inclusion of a principal stage `Πʳ i, [R i, A i]_[𝓟 S]` into
 `Πʳ i, [R i, A i]_[𝓕]` (`𝓕 ≤ 𝓟 S`) is a measurable embedding whenever `S` is countable and `A i`
