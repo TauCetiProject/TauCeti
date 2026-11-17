@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.Group.Subgroup.Pi
 import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -207,30 +208,6 @@ section Subring
 variable {R ι : Type*} [CommRing R] [Fintype ι]
   {S : Subring R} [S.toAddSubgroup.FiniteIndex]
 
-private def piSubringAddEquiv (S : Subring R) :
-    (ι → S) ≃+ AddSubgroup.pi Set.univ (fun _ : ι ↦ S.toAddSubgroup) where
-  toFun v := ⟨fun i ↦ (v i : R), fun i _ ↦ (v i).2⟩
-  invFun w i := ⟨w.1 i, w.2 i trivial⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-
-private noncomputable def cokernelSubringEquivQuotientRange (S : Subring R) (A : Matrix ι ι S) :
-    ((ι → S) ⧸ LinearMap.range A.mulVecLin) ≃+
-      (AddSubgroup.pi Set.univ (fun _ : ι ↦ S.toAddSubgroup) ⧸
-        ((piSubringAddEquiv S).toAddMonoidHom.comp
-          (A.mulVecLin.toAddMonoidHom.comp (piSubringAddEquiv S).symm.toAddMonoidHom)).range) :=
-  QuotientAddGroup.congr (LinearMap.range A.mulVecLin).toAddSubgroup _ (piSubringAddEquiv S) <| by
-    ext w
-    simp only [AddSubgroup.mem_map, Submodule.mem_toAddSubgroup, LinearMap.mem_range,
-      AddMonoidHom.mem_range, AddMonoidHom.coe_comp, Function.comp_apply,
-      AddEquiv.coe_toAddMonoidHom, LinearMap.toAddMonoidHom_coe]
-    refine ⟨?_, ?_⟩
-    · rintro ⟨x, ⟨v, rfl⟩, rfl⟩
-      exact ⟨piSubringAddEquiv S v, by simp⟩
-    · rintro ⟨u, rfl⟩
-      exact ⟨A.mulVecLin ((piSubringAddEquiv S).symm u), ⟨_, rfl⟩, rfl⟩
-
 /-- **Cokernel cardinality along a finite-index subring.** If `S` has finite additive index in `R`
 and `(A.det : R) ∈ nonZeroDivisors R`, then `(ι → S) ⧸ range A.mulVecLin` and
 `(ι → R) ⧸ range (A.map S.subtype).mulVecLin` have the same `Nat.card` (`0` when infinite). -/
@@ -239,16 +216,27 @@ theorem card_quotient_range_mulVecLin_subring [DecidableEq ι] {A : Matrix ι ι
     Nat.card ((ι → S) ⧸ LinearMap.range A.mulVecLin) =
       Nat.card ((ι → R) ⧸ LinearMap.range (A.map S.subtype).mulVecLin) := by
   let H : AddSubgroup (ι → R) := AddSubgroup.pi Set.univ fun _ : ι ↦ S.toAddSubgroup
-  let g : H →+ H := (piSubringAddEquiv S).toAddMonoidHom.comp
-    (A.mulVecLin.toAddMonoidHom.comp (piSubringAddEquiv S).symm.toAddMonoidHom)
+  let e : (ι → S) ≃+ H := (AddSubgroup.piEquiv fun _ : ι ↦ S.toAddSubgroup).symm
+  let g : H →+ H := e.toAddMonoidHom.comp (A.mulVecLin.toAddMonoidHom.comp e.symm.toAddMonoidHom)
   let f : (ι → R) →+ (ι → R) := (A.map S.subtype).mulVecLin.toAddMonoidHom
+  let eQuot : ((ι → S) ⧸ LinearMap.range A.mulVecLin) ≃+ (H ⧸ g.range) :=
+    QuotientAddGroup.congr (LinearMap.range A.mulVecLin).toAddSubgroup g.range e <| by
+      ext w
+      simp only [AddSubgroup.mem_map, Submodule.mem_toAddSubgroup, LinearMap.mem_range,
+        AddMonoidHom.mem_range, g, AddMonoidHom.coe_comp, Function.comp_apply,
+        AddEquiv.coe_toAddMonoidHom, LinearMap.toAddMonoidHom_coe]
+      refine ⟨?_, ?_⟩
+      · rintro ⟨x, ⟨v, rfl⟩, rfl⟩
+        exact ⟨e v, by simp⟩
+      · rintro ⟨u, rfl⟩
+        exact ⟨A.mulVecLin (e.symm u), ⟨_, rfl⟩, rfl⟩
   have hdet : (A.map S.subtype).det ∈ nonZeroDivisors R := by
     rwa [← RingHom.mapMatrix_apply, ← RingHom.map_det]
   have hinj : Function.Injective f := mulVec_injective_of_det_mem_nonZeroDivisors hdet
   have hcomp : f.comp H.subtype = H.subtype.comp g := by
     ext w i
-    simp [f, g, piSubringAddEquiv, mulVec, dotProduct]
-  rw [Nat.card_congr (cokernelSubringEquivQuotientRange S A).toEquiv,
+    simp [H, f, g, e, mulVec, dotProduct]
+  rw [Nat.card_congr eQuot.toEquiv,
     AddSubgroup.natCard_quotient_range_eq_of_comp_subtype (H := H) hinj hcomp]
   rfl
 

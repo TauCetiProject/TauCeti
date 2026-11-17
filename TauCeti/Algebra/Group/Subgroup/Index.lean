@@ -23,7 +23,7 @@ We also record the `FiniteIndex` instance on `Subgroup.pi` along a finite set of
 ## Main results
 
 * `Subgroup.instFiniteIndexPi`, `AddSubgroup.instFiniteIndexPi`: `Subgroup.pi I H` has finite index
-  whenever `I` is finite and each `H i` has finite index.
+  whenever `I` is finite and `H i` has finite index for each `i ∈ I`.
 * `Subgroup.relIndex_map_eq_index_range`, `AddSubgroup.relIndex_map_eq_index_range`: for an
   injective endomorphism `f` stabilizing a finite-index subgroup `H`,
   `(H.map f).relIndex H = f.range.index`.
@@ -46,7 +46,7 @@ finite index. -/
 /-- A product additive subgroup constrained on finitely many coordinates by finite-index additive
 subgroups has finite index. -/]
 instance instFiniteIndexPi (I : Set ι) [Finite I] (H : ∀ i, Subgroup (G i))
-    [∀ i, (H i).FiniteIndex] : (Subgroup.pi I H).FiniteIndex := by
+    [∀ i : I, (H i.1).FiniteIndex] : (Subgroup.pi I H).FiniteIndex := by
   have hpi : Subgroup.pi I H = ⨅ i : I, (H i.1).comap (Pi.evalMonoidHom G i.1) := by
     ext x
     simp [Subgroup.mem_pi]

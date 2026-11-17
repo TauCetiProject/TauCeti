@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.Module.Submodule.Pointwise
 import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -30,8 +31,6 @@ has finite index (`ℤ ⧸ 2ℤ` is finite), yet `2 ∈ nonZeroDivisors ℤ` map
 
 ## Main results
 
-* `Submodule.smul_eq_self_of_finite`: over a commutative semiring, an `M`-regular scalar fixes any
-  finite submodule `N`, `a • N = N`.
 * `Ideal.smul_eq_self_of_finite`, `Ideal.le_span_singleton_of_finite`: for a finite ideal `I` and
   `a ∈ nonZeroDivisors R`, `a • I = I` and `I ≤ Ideal.span {a}`.
 * `Ideal.quotientSpanSingletonQuotientEquivOfFinite`: `(R ⧸ I) ⧸ (mk I a) ≃+* R ⧸ (a)` when `I` is
@@ -43,25 +42,6 @@ has finite index (`ℤ ⧸ 2ℤ` is finite), yet `2 ∈ nonZeroDivisors ℤ` map
 public section
 
 open scoped Pointwise
-
-namespace Submodule
-
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- If scalar multiplication by `a` is injective on `M` and `N` is a finite submodule of `M`, then
-`a • N = N`: an injective self-map of the finite type `N` is surjective. -/
-theorem smul_eq_self_of_finite (N : Submodule R M) [Finite N] {a : R}
-    (ha : IsSMulRegular M a) : a • N = N := by
-  refine le_antisymm ?_ fun y hy ↦ ?_
-  · intro x hx
-    obtain ⟨n, hn, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists x a N |>.mp hx
-    exact N.smul_mem a hn
-  · have hinj : Function.Injective (fun x : N ↦ (⟨a • x.1, N.smul_mem a x.2⟩ : N)) :=
-      fun x₁ x₂ h ↦ Subtype.ext (ha (congrArg Subtype.val h))
-    obtain ⟨x, hx⟩ := Finite.surjective_of_injective hinj ⟨y, hy⟩
-    exact Submodule.mem_smul_pointwise_iff_exists y a N |>.mpr ⟨x.1, x.2, congrArg Subtype.val hx⟩
-
-end Submodule
 
 namespace Ideal
 
