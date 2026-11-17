@@ -38,8 +38,9 @@ theorem S_eval_neg (n : ℤ) (x : R) :
   | neg_add_one n ih1 ih2 =>
     have hpow : (-(n : ℤ) - 1).negOnePow = -(n : ℤ).negOnePow := by
       rw [← Int.negOnePow_neg, neg_sub, sub_neg_eq_add, add_comm, Int.negOnePow_succ]
-    rw [hpow, show (-↑n - 1 : ℤ) = -↑n + 1 - 2 by omega, S_sub_two]
-    simp only [show (-↑n + 1 - 1 : ℤ) = -↑n by omega, Polynomial.eval_sub, Polynomial.eval_mul,
+    have hidx : (-(n : ℤ) - 1) = -(n : ℤ) + 1 - 2 := by omega
+    rw [hpow, hidx, S_sub_two]
+    simp only [add_sub_cancel_right, Polynomial.eval_sub, Polynomial.eval_mul,
       Polynomial.eval_X, ih1, ih2, Int.negOnePow_add, Int.negOnePow_neg, Int.negOnePow_one,
       Units.val_mul, Units.val_neg, Units.val_one, Int.cast_mul, Int.cast_neg, Int.cast_one]
     ring
@@ -57,11 +58,10 @@ private theorem natCast_le_and_one_le_S_eval_sub {x : R} (hx : 2 ≤ x) (n : ℕ
     have hn1 : ((n + 1 : ℕ) : R) ≤ (S R n).eval x := by
       push_cast; simpa only [add_sub_cancel] using add_le_add ih.1 ih.2
     refine ⟨by simpa using hn1, ?_⟩
-    have hrec : (S R ((n + 1 : ℕ) : ℤ)).eval x - (S R n).eval x =
+    have hrec : (S R ((n : ℤ) + 1)).eval x - (S R n).eval x =
         (x - 2) * (S R n).eval x + ((S R n).eval x - (S R ((n : ℤ) - 1)).eval x) := by
-      push_cast; rw [S_add_one]
-      simp only [Polynomial.eval_sub, Polynomial.eval_mul, Polynomial.eval_X]; ring
-    rw [show (((n + 1 : ℕ) : ℤ) - 1) = (n : ℤ) by omega, hrec]
+      rw [S_add_one]; simp only [Polynomial.eval_sub, Polynomial.eval_mul, Polynomial.eval_X]; ring
+    rw [Nat.cast_add, Nat.cast_one, add_sub_cancel_right, hrec]
     exact le_add_of_nonneg_of_le (mul_nonneg (sub_nonneg.mpr hx)
       ((Nat.cast_nonneg (n + 1)).trans hn1)) ih.2
 

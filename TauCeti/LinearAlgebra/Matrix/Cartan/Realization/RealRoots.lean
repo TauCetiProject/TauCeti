@@ -49,8 +49,7 @@ theorem smul_mem_realRoots (w : R.weylGroup hdiag) {α : Dual K H} (hα : α ∈
     ⟨w * u, i, (mul_smul w u (R.root i)).symm.trans (congrArg (w • ·) hu)⟩
 theorem neg_mem_realRoots {α : Dual K H} (hα : α ∈ R.realRoots hdiag) : -α ∈ R.realRoots hdiag := by
   obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff hdiag).mp hα
-  refine (R.mem_realRoots_iff hdiag).mpr ⟨w * R.simpleReflectionMem hdiag i, i, ?_⟩
-  rw [mul_smul, simpleReflectionMem_smul_root_self, smul_neg]
+  exact (R.mem_realRoots_iff hdiag).mpr ⟨w * R.simpleReflectionMem hdiag i, i, by simp [mul_smul]⟩
 theorem zero_notMem_realRoots : (0 : Dual K H) ∉ R.realRoots hdiag := fun h0 ↦ by
   obtain ⟨w, i, hwi⟩ := (R.mem_realRoots_iff hdiag).mp h0
   exact R.root_linearIndependent.ne_zero i (by simpa using congrArg (w⁻¹ • ·) hwi)
@@ -155,8 +154,8 @@ theorem corootAut_coroot_eq_coroot_of_smul_root_eq {u : R.weylGroup (hA.diag_map
     R.corootAut (hA.diag_map K) u (R.coroot j) = R.coroot i := by
   have hconj : R.simpleReflectionMem (hA.diag_map K) i =
       u * R.simpleReflectionMem (hA.diag_map K) j * u⁻¹ := by
-    simpa using R.conj_simpleReflectionMem_eq_of_smul_root_eq hA
-      (show (1 : R.weylGroup (hA.diag_map K)) • R.root i = u • R.root j by simpa using hu.symm)
+    have h1 : (1 : R.weylGroup (hA.diag_map K)) • R.root i = u • R.root j := by rw [one_smul, hu]
+    simpa using R.conj_simpleReflectionMem_eq_of_smul_root_eq hA h1
   have heval := congrArg (fun w ↦ R.corootAut (hA.diag_map K) w (R.coroot i)) hconj
   have hpair : R.root j ((R.corootAut (hA.diag_map K) u).symm (R.coroot i)) = 2 := by
     rw [← LinearEquiv.coe_inv, ← map_inv, ← R.smul_dual_apply, hu, R.root_coroot, hA.diag_map K i]
@@ -203,15 +202,23 @@ theorem realReflection_eq_of_smul_root_eq {w : R.weylGroup (hA.diag_map K)} {i :
       R.corootAut (hA.diag_map K) w (R.coroot i) := R.realCoroot_eq_of_smul_root_eq hA _ rfl
 @[simp] theorem realCoroot_root (i : I) :
     R.realCoroot hA (R.root_mem_realRoots (hA.diag_map K) i) = R.coroot i := by
-  simpa using R.realCoroot_eq_of_smul_root_eq hA (R.root_mem_realRoots (hA.diag_map K) i)
-    (one_smul _ _)
+  simpa using R.realCoroot_eq_of_smul_root_eq hA (R.root_mem_realRoots _ i) (one_smul _ _)
 @[simp] theorem realCoroot_smul (w : R.weylGroup (hA.diag_map K)) {α : Dual K H}
     (hα : α ∈ R.realRoots (hA.diag_map K)) :
     R.realCoroot hA (R.smul_mem_realRoots (hA.diag_map K) w hα) =
       R.corootAut (hA.diag_map K) w (R.realCoroot hA hα) := by
   obtain ⟨u, i, hui⟩ := (R.mem_realRoots_iff (hA.diag_map K)).mp hα
-  rw [R.realCoroot_eq_of_smul_root_eq hA _ (show (w * u) • R.root i = w • α by rw [mul_smul, hui]),
-    R.realCoroot_eq_of_smul_root_eq hA hα hui, map_mul, mul_apply_eq_comp]
+  have hwu : (w * u) • R.root i = w • α := by rw [mul_smul, hui]
+  rw [R.realCoroot_eq_of_smul_root_eq hA _ hwu, R.realCoroot_eq_of_smul_root_eq hA hα hui,
+    map_mul, mul_apply_eq_comp]
+/-- Negating a real root negates its real coroot: `(-α)^∨ = -α^∨`. -/
+@[simp] theorem realCoroot_neg {α : Dual K H} (hα : α ∈ R.realRoots (hA.diag_map K)) :
+    R.realCoroot hA (R.neg_mem_realRoots (hA.diag_map K) hα) = -R.realCoroot hA hα := by
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (hA.diag_map K)).mp hα
+  have hneg : (w * R.simpleReflectionMem (hA.diag_map K) i) • R.root i = -(w • R.root i) := by
+    simp [mul_smul]
+  rw [R.realCoroot_eq_of_smul_root_eq hA _ hneg, R.realCoroot_smul_root, map_mul]
+  simp [mul_apply_eq_comp]
 @[simp] theorem apply_realCoroot_self {α : Dual K H} (hα : α ∈ R.realRoots (hA.diag_map K)) :
     α (R.realCoroot hA hα) = 2 := by
   obtain ⟨w, i, hwi⟩ := (R.mem_realRoots_iff (hA.diag_map K)).mp hα
@@ -224,16 +231,23 @@ theorem realReflection_eq_of_smul_root_eq {w : R.weylGroup (hA.diag_map K)} {i :
 @[simp] theorem realReflection_root (i : I) :
     R.realReflection hA (R.root_mem_realRoots (hA.diag_map K) i) =
       R.simpleReflectionMem (hA.diag_map K) i := by
-  simpa using R.realReflection_eq_of_smul_root_eq hA (R.root_mem_realRoots (hA.diag_map K) i)
-    (one_smul _ _)
+  simpa using R.realReflection_eq_of_smul_root_eq hA (R.root_mem_realRoots _ i) (one_smul _ _)
 @[simp] theorem realReflection_smul (w : R.weylGroup (hA.diag_map K)) {α : Dual K H}
     (hα : α ∈ R.realRoots (hA.diag_map K)) :
     R.realReflection hA (R.smul_mem_realRoots (hA.diag_map K) w hα) =
       w * R.realReflection hA hα * w⁻¹ := by
   obtain ⟨u, i, hui⟩ := (R.mem_realRoots_iff (hA.diag_map K)).mp hα
-  rw [R.realReflection_eq_of_smul_root_eq hA _
-    (show (w * u) • R.root i = w • α by rw [mul_smul, hui]),
-    R.realReflection_eq_of_smul_root_eq hA hα hui]; simp [mul_assoc]
+  have hwu : (w * u) • R.root i = w • α := by rw [mul_smul, hui]
+  rw [R.realReflection_eq_of_smul_root_eq hA _ hwu, R.realReflection_eq_of_smul_root_eq hA hα hui]
+  simp [mul_assoc]
+/-- Opposite real roots determine the same reflection: `s_{-α} = s_α`. -/
+@[simp] theorem realReflection_neg {α : Dual K H} (hα : α ∈ R.realRoots (hA.diag_map K)) :
+    R.realReflection hA (R.neg_mem_realRoots (hA.diag_map K) hα) = R.realReflection hA hα := by
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (hA.diag_map K)).mp hα
+  have hneg : (w * R.simpleReflectionMem (hA.diag_map K) i) • R.root i = -(w • R.root i) := by
+    simp [mul_smul]
+  rw [R.realReflection_eq_of_smul_root_eq hA _ hneg, R.realReflection_smul_root, mul_assoc w]
+  simp [← mul_assoc]
 /-- Reflection formula for `R.realReflection`: `s_α(φ) = φ - φ(α^∨) • α`. -/
 theorem coe_realReflection_apply {α : Dual K H} (hα : α ∈ R.realRoots (hA.diag_map K))
     (φ : Dual K H) :

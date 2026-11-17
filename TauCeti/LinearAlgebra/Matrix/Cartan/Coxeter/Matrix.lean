@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Basic
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 
 /-!
 # The Coxeter matrix of an integral or generalized Cartan matrix
@@ -135,9 +134,6 @@ namespace TauCeti.CartanDatum
 
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y] (D : CartanDatum ι X Y)
 
-/-- The Cartan matrix of a `TauCeti.CartanDatum` is a generalized Cartan matrix. -/
-theorem isGeneralizedCartan : D.cartan.IsGeneralizedCartan :=
-  ⟨D.cartan_apply_self, fun _ _ ↦ D.cartan_nonpos, D.cartan_eq_zero_iff⟩
 /-- The entries of `D.cartan.cartanCoxeterMatrix` agree with `TauCeti.CartanDatum.braidLength`. -/
 @[simp] theorem cartanCoxeterMatrix_cartan_apply [DecidableEq ι] (i j : ι) :
     D.cartan.cartanCoxeterMatrix i j = D.braidLength i j := by

@@ -200,9 +200,10 @@ theorem exists_nsmul_root_of_add_eq_nsmul_root {α β : Dual K H}
   let hli := R.linearIndependent_nat_root
   let x : Submodule.span ℕ (Set.range R.root) := ⟨α, R.posRootCone_def ▸ hα⟩
   let y : Submodule.span ℕ (Set.range R.root) := ⟨β, R.posRootCone_def ▸ hβ⟩
+  have hxy : x + y = k • ⟨R.root i, R.posRootCone_def ▸ R.root_mem_posRootCone i⟩ :=
+    Subtype.ext hsum
   have hrepr : hli.repr x + hli.repr y = Finsupp.single i k := by
-    rw [← map_add, show x + y = k • ⟨R.root i, R.posRootCone_def ▸ R.root_mem_posRootCone i⟩ from
-      Subtype.ext hsum, map_nsmul, hli.repr_eq_single i _ rfl, Finsupp.smul_single_one]
+    rw [← map_add, hxy, map_nsmul, hli.repr_eq_single i _ rfl, Finsupp.smul_single_one]
   have hx_single : hli.repr x = Finsupp.single i (hli.repr x i) := by
     ext j; rcases eq_or_ne j i with rfl | hji
     · simp

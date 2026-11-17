@@ -96,13 +96,14 @@ theorem involutive_corootReflection (i : I) :
   simp only [LinearEquiv.dualMap_apply, corootReflection_apply, simpleReflection_apply,
     map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, mul_comm]
 
-theorem simpleReflection_ne_one [CharZero K] (i : I) : R.simpleReflection hdiag i ≠ 1 := fun h1 ↦ by
-  have htwo : (2 : K) • R.root i = 0 := by
-    rw [two_smul, ← neg_eq_iff_add_eq_zero, ← R.simpleReflection_root_self hdiag i, h1,
-      FunLike.coe_one_eq_id, id_eq]
-  exact (smul_eq_zero.mp htwo).elim two_ne_zero (R.root_linearIndependent.ne_zero i)
-theorem corootReflection_ne_one [CharZero K] (i : I) : R.corootReflection hdiag i ≠ 1 := fun h1 ↦
-  R.simpleReflection_ne_one hdiag i (by
+theorem simpleReflection_ne_one [NeZero (2 : K)] (i : I) : R.simpleReflection hdiag i ≠ 1 :=
+  fun h1 ↦ by
+    have htwo : (2 : K) • R.root i = 0 := by
+      rw [two_smul, ← neg_eq_iff_add_eq_zero, ← R.simpleReflection_root_self hdiag i, h1,
+        FunLike.coe_one_eq_id, id_eq]
+    exact (smul_eq_zero.mp htwo).elim (NeZero.ne 2) (R.root_linearIndependent.ne_zero i)
+theorem corootReflection_ne_one [NeZero (2 : K)] (i : I) : R.corootReflection hdiag i ≠ 1 :=
+  fun h1 ↦ R.simpleReflection_ne_one hdiag i (by
     rw [← dualMap_corootReflection, h1]; ext φ h; simp [LinearEquiv.dualMap_apply])
 theorem simpleReflection_apply_eq_apply_corootReflection (i : I) (φ : Dual K H) (h : H) :
     R.simpleReflection hdiag i φ h = φ (R.corootReflection hdiag i h) := by
@@ -180,9 +181,10 @@ theorem simpleReflectionMem_smul_root_self (i : I) :
 @[simp] theorem corootReflectionMem_inv (i : I) :
     (R.corootReflectionMem hdiag i)⁻¹ = R.corootReflectionMem hdiag i :=
   Subtype.ext (R.corootReflection_inv hdiag i)
-theorem simpleReflectionMem_ne_one [CharZero K] (i : I) : R.simpleReflectionMem hdiag i ≠ 1 :=
+theorem simpleReflectionMem_ne_one [NeZero (2 : K)] (i : I) :
+    R.simpleReflectionMem hdiag i ≠ 1 :=
   fun h ↦ R.simpleReflection_ne_one hdiag i (congrArg Subtype.val h)
-@[simp] theorem orderOf_simpleReflectionMem [CharZero K] (i : I) :
+@[simp] theorem orderOf_simpleReflectionMem [NeZero (2 : K)] (i : I) :
     orderOf (R.simpleReflectionMem hdiag i) = 2 :=
   orderOf_eq_prime (by rw [sq, simpleReflectionMem_mul_self]) (R.simpleReflectionMem_ne_one hdiag i)
 
@@ -324,7 +326,7 @@ theorem length_mul_le (w₁ w₂ : R.weylGroup hdiag) :
   obtain ⟨l₁, hl₁, rfl⟩ := R.exists_wordProd_length_eq hdiag w₁
   obtain ⟨l₂, hl₂, rfl⟩ := R.exists_wordProd_length_eq hdiag w₂
   simpa [← wordProd_append, ← hl₁, ← hl₂] using R.length_wordProd_le hdiag (l₁ ++ l₂)
-@[simp] theorem length_simpleReflectionMem [CharZero K] (i : I) :
+@[simp] theorem length_simpleReflectionMem [NeZero (2 : K)] (i : I) :
     R.length hdiag (R.simpleReflectionMem hdiag i) = 1 := by
   have hle : R.length hdiag (R.simpleReflectionMem hdiag i) ≤ 1 := by
     simpa using R.length_wordProd_le hdiag [i]
@@ -377,8 +379,8 @@ variable {I H : Type*} [AddCommGroup H] [Module ℚ H] {A : Matrix I I ℤ}
 
 theorem corootReflection_mem_lattice (i : I) {y : H} (hy : y ∈ L.lattice) :
     R.corootReflection hdiag i y ∈ L.lattice := by
-  rw [corootReflection_apply, show R.root i y = (L.pairing (L.root i) ⟨y, hy⟩ : ℚ) by simp,
-    Int.cast_smul_eq_zsmul]
+  have hpair : R.root i y = (L.pairing (L.root i) ⟨y, hy⟩ : ℚ) := by simp
+  rw [corootReflection_apply, hpair, Int.cast_smul_eq_zsmul]
   exact sub_mem hy (Submodule.smul_mem _ _ (L.coroot_mem i))
 theorem corootAut_mem_lattice (w : R.weylGroup hdiag) {y : H} (hy : y ∈ L.lattice) :
     R.corootAut hdiag w y ∈ L.lattice := by
