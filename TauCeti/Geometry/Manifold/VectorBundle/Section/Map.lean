@@ -59,6 +59,34 @@ protected def map (s : Cₛ^n⟮I; F, V⟯) : Cₛ^n⟮I; G, W⟯ :=
 theorem map_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
     ContMDiffSection.map ϕ hϕ s x = ϕ x (s x) := (rfl)
 
+/-- The identity family of fibre maps acts identically on sections. -/
+@[simp]
+theorem map_id :
+    ContMDiffSection.map (fun _ ↦ id : ∀ x, V x → V x) contMDiff_id =
+      (id : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; F, V⟯) := by
+  funext s
+  ext x
+  rfl
+
+/-- Pointwise injective fibre maps act injectively on sections. -/
+theorem map_injective (h : ∀ x, Function.Injective (ϕ x)) :
+    Function.Injective (ContMDiffSection.map ϕ hϕ) := by
+  intro s t hst
+  ext x
+  exact h x (DFunLike.congr_fun hst x)
+
+/-- Composition of families of fibre maps induces composition of their actions on sections. -/
+theorem map_comp {J : Type*} [NormedAddCommGroup J] [NormedSpace 𝕜 J] {Z : M → Type*}
+    [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace J Z)] [FiberBundle J Z]
+    (ψ : ∀ x, W x → Z x)
+    (hψ : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, J)) n
+      (fun p : TotalSpace G W ↦ (⟨p.proj, ψ p.proj p.2⟩ : TotalSpace J Z))) :
+    ContMDiffSection.map (fun x ↦ ψ x ∘ ϕ x) (hψ.comp hϕ) =
+      ContMDiffSection.map ψ hψ ∘ ContMDiffSection.map ϕ hϕ := by
+  funext s
+  ext x
+  rfl
+
 end Map
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
@@ -78,6 +106,11 @@ def mapLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; G, W⟯ where
 @[simp]
 theorem mapLinearMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
     mapLinearMap ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+/-- As a function, fibrewise linear transport is the action of the underlying fibre maps. -/
+theorem coe_mapLinearMap :
+    (mapLinearMap ϕ hϕ : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯) =
+      ContMDiffSection.map (fun x ↦ ϕ x) hϕ := (rfl)
 
 /-- A fibrewise linear map cannot enlarge the closed support of a section. -/
 theorem tsupport_mapLinearMap_subset (s : Cₛ^n⟮I; F, V⟯) :
@@ -139,10 +172,8 @@ theorem mapLinearMap_smul_function (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F,
 
 /-- Pointwise injectivity of a bundle map implies injectivity on smooth sections. -/
 theorem mapLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
-    Function.Injective (mapLinearMap ϕ hϕ) := by
-  intro s t hst
-  ext x
-  exact h x (DFunLike.congr_fun hst x)
+    Function.Injective (mapLinearMap ϕ hϕ) :=
+  ContMDiffSection.map_injective (fun x ↦ ϕ x) hϕ h
 
 /-- The identity bundle map acts identically on sections. -/
 @[simp]

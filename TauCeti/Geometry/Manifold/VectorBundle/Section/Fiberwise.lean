@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
-public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
@@ -36,7 +36,7 @@ topology, and continuity is local on the target frame domain
 
 ## References
 
-* M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §2, for continuity of composition
+* M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1, for continuity of composition
   in the compact-open `C^∞` topology.
 -/
 
@@ -94,11 +94,9 @@ theorem continuous_map_frameTopology (hcover : ∀ x : M, ∃ i, x ∈ U i) :
   -- coefficients.
   let σ : D i × F → TotalSpace F V := fun p ↦ ⟨((p.1 : U' j) : M), (e i).symm _ p.2⟩
   have hσ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F)) n σ := by
-    intro p
-    rw [(e i).contMDiffAt_iff (f := σ) ((e i).mem_source.mpr (hU i p.1.2))]
-    refine ⟨(hval.comp contMDiff_fst).contMDiffAt, ?_⟩
-    refine contMDiffAt_snd.congr_of_eventuallyEq (Eventually.of_forall fun q ↦ ?_)
-    exact congrArg Prod.snd ((e i).apply_mk_symm (hU i q.1.2) q.2)
+    convert (e i).contMDiffOn_symm.comp_contMDiff (hval.prodMap contMDiff_id)
+      (fun p ↦ (e i).mem_target.mpr (hU i p.1.2)) using 1
+    exact funext fun p ↦ (e i).mk_symm (hU i p.1.2) p.2
   let g : C^n⟮I.prod 𝓘(𝕜, F), D i × F; 𝓘(𝕜, G), G⟯ :=
     ⟨fun p ↦ ((e' j) ⟨((p.1 : U' j) : M), ϕ _ ((e i).symm _ p.2)⟩).2, fun p ↦
       (((e' j).contMDiffAt_iff ((e' j).mem_source.mpr (hU' j (p.1 : U' j).2))).mp

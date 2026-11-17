@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 
 /-!
 # Pairing maps in the manifold weak Whitney topology
@@ -46,14 +47,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
-
-/-- A pair of maps is visible in a product chart exactly when each map is visible in the
-corresponding factor chart. -/
-theorem prodMk_mem_extChartAt_prod_source_iff (f : C^n⟮I, M; J, N⟯) (g : C^n⟮I, M; J', N'⟯)
-    {y : N × N'} {x : M} :
-    f.prodMk g x ∈ (extChartAt (J.prod J') y).source ↔
-      f x ∈ (extChartAt J y.1).source ∧ g x ∈ (extChartAt J' y.2).source := by
-  simp only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod]
 
 variable [IsManifold I n M] [IsManifold J n N] [IsManifold J' n N']
 
@@ -104,8 +97,11 @@ theorem continuous_prodMk_manifoldWeakWhitney :
     Continuous (fun p : C^n⟮I, M; J, N⟯ × C^n⟮I, M; J', N'⟯ ↦ p.1.prodMk p.2) := by
   refine continuous_iff_continuousAt.mpr fun ⟨f₀, g₀⟩ ↦ ?_
   refine tendsto_manifoldWeakWhitney_iff.mpr fun x y m hm K hK V hV h₀ ↦ ?_
-  have hsrc (w : (extChartAt I x).target) (hw : w ∈ K) :=
-    (prodMk_mem_extChartAt_prod_source_iff f₀ g₀).mp ((mem_chartJetSet.mp h₀) w hw).1
+  have hsrc (w : (extChartAt I x).target) (hw : w ∈ K) :
+      f₀ ((extChartAt I x).symm w) ∈ (extChartAt J y.1).source ∧
+        g₀ ((extChartAt I x).symm w) ∈ (extChartAt J' y.2).source := by
+    simpa only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod] using
+      ((mem_chartJetSet.mp h₀) w hw).1
   let D (w : (extChartAt I x).target) := iteratedFDerivWithin 𝕜 m
     (extChartAt (J.prod J') y ∘ f₀.prodMk g₀ ∘ (extChartAt I x).symm) (extChartAt I x).target w
   -- On `K`, the coordinate derivative of `(f₀, g₀)` stays in a compact subset of the open set of
@@ -126,7 +122,8 @@ theorem continuous_prodMk_manifoldWeakWhitney :
       (eventually_forall_mem_source_and_dist_iteratedFDerivWithin_lt hK
         (fun w hw ↦ (hsrc w hw).2) hm hδ)] with ⟨f, g⟩ ⟨hf, hg⟩
   refine mem_chartJetSet.mpr fun w hw ↦
-    ⟨(prodMk_mem_extChartAt_prod_source_iff f g).mpr ⟨(hf w hw).1, (hg w hw).1⟩,
+    ⟨by simpa only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod] using
+        And.intro (hf w hw).1 (hg w hw).1,
       hδV (Metric.mem_thickening_iff.mpr ⟨_, mem_image_of_mem D hw, ?_⟩)⟩
   dsimp only [D]
   rw [iteratedFDerivWithin_extChartAt_prodMk f g w.2 (hf w hw).1 (hg w hw).1 hm,
