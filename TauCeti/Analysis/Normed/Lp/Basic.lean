@@ -28,14 +28,15 @@ multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r�
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
 linearly independent, and
 vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. For `0 < p < ∞` and distinct indices `i ≠ j`, the norm and distance
-of a difference of two single-coordinate vectors equal `(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)`
-(`lp.norm_single_sub_single_of_ne`, `lp.dist_single_single_of_ne`), so unit coordinate vectors in
-`ℓ²` sit at pairwise distance `√2` (`lp.dist_single_one_two_of_ne`). In `ℓ²`, the squared norm of a
-finite sum of single-coordinate vectors is the sum of the squared norms of its coordinates
-(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
-operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
-many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}`
+normed rings at every exponent. For distinct indices `i ≠ j`, the norm of a difference of two
+single-coordinate vectors equals `(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)` for `0 < p < ∞`
+(`lp.norm_single_sub_single_of_ne`), while the distance between them equals
+`(‖x‖ ^ p + ‖y‖ ^ p) ^ (1 / p)` for `1 ≤ p < ∞` (`lp.dist_single_single_of_ne`), so distinct unit
+coordinate vectors in `ℓ²` sit at pairwise distance `√2` (`lp.dist_single_one_two_of_ne`). In `ℓ²`,
+the squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of
+its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It
+follows that the operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to
+`F`, for finitely many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}`
 (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
@@ -234,7 +235,8 @@ theorem separableSpace_of_countable_nontrivial [∀ i, TopologicalSpace.Separabl
   · have hnt : Nontrivial (E i) := ⟨⟨f i, 0, hfi⟩⟩
     exact Submodule.subset_span (Set.mem_iUnion.2 ⟨⟨i, hnt⟩, f i, rfl⟩)
 
-/-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is. -/
+/-- For a finite exponent `1 ≤ p < ∞` and a countable index type, `lp E p` is separable when every
+`E i` is. -/
 theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
     (hp : p ≠ ⊤) : TopologicalSpace.SeparableSpace (lp E p) :=
   separableSpace_of_countable_nontrivial (Set.to_countable _) hp

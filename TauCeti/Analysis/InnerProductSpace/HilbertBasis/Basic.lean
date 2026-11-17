@@ -23,6 +23,11 @@ It also expands the value of a continuous linear map in a Hilbert basis,
 linear map vanishing on all but finitely many vectors of a Hilbert basis has finite rank, since
 every vector is the sum of its basis expansion, and that a continuous linear map is determined by
 its matrix entries in Hilbert bases of its source and target (`HilbertBasis.ext_inner_apply`).
+
+Finally, `lp.hilbertBasisFun` bundles the standard unit coordinate vectors of `ℓ²(ι, 𝕜)` as a
+Hilbert basis (the `ℓ²` analogue of `EuclideanSpace.basisFun`), with simp lemmas for its
+coordinate representation (`lp.hilbertBasisFun_repr`), basis vectors (`lp.hilbertBasisFun_apply`),
+and coordinate inner products (`lp.hilbertBasisFun_inner`).
 -/
 
 public section
@@ -96,3 +101,35 @@ theorem hasFiniteRange_of_apply_eq_zero {iota F : Type*}
     exact ⟨b i, rfl⟩
 
 end HilbertBasis
+
+namespace lp
+
+open scoped InnerProductSpace lp
+
+/-- The standard unit coordinate vectors, bundled as a Hilbert basis of `ℓ²(ι, 𝕜)`. This is the
+`ℓ²` analogue of `EuclideanSpace.basisFun`. -/
+noncomputable def hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜) :=
+  HilbertBasis.ofRepr (LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜))
+
+/-- The coordinate representation of `lp.hilbertBasisFun` is the identity isometry on `ℓ²(ι, 𝕜)`. -/
+@[simp]
+theorem hilbertBasisFun_repr (ι 𝕜 : Type*) [RCLike 𝕜] :
+    (hilbertBasisFun ι 𝕜).repr = LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜) :=
+  (rfl)
+
+/-- The `i`-th vector of `lp.hilbertBasisFun` is the unit single-coordinate vector at `i`. -/
+@[simp]
+theorem hilbertBasisFun_apply (ι 𝕜 : Type*) [RCLike 𝕜] [DecidableEq ι] (i : ι) :
+    hilbertBasisFun ι 𝕜 i = lp.single 2 i 1 := by
+  rw [← HilbertBasis.repr_symm_single, hilbertBasisFun_repr]
+  exact (LinearIsometryEquiv.refl 𝕜 _).symm_apply_eq.2 rfl
+
+/-- Inner product against the `i`-th vector of `lp.hilbertBasisFun` evaluates the `i`-th
+coordinate. -/
+@[simp]
+theorem hilbertBasisFun_inner (ι 𝕜 : Type*) [RCLike 𝕜] (x : ℓ²(ι, 𝕜)) (i : ι) :
+    ⟪hilbertBasisFun ι 𝕜 i, x⟫_𝕜 = x i := by
+  rw [← (hilbertBasisFun ι 𝕜).repr_apply_apply]
+  simp
+
+end lp

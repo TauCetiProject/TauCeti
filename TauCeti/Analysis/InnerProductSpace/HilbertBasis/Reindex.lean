@@ -14,9 +14,8 @@ import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 # Reindexing Hilbert bases and unitary equivalences between Hilbert spaces
 
 This file provides the infinite-dimensional `HilbertBasis` counterparts of Mathlib's
-`EuclideanSpace.basisFun`, `OrthonormalBasis.reindex`, and `OrthonormalBasis.equiv`:
+`OrthonormalBasis.reindex` and `OrthonormalBasis.equiv`:
 
-* `lp.hilbertBasisFun ι 𝕜`: the standard unit coordinate basis of `ℓ²(ι, 𝕜)`.
 * `HilbertBasis.reindex b e`: reindexing a Hilbert basis `b` along `e : ι ≃ ι'`.
 * `HilbertBasis.equiv b c e`: the linear isometric equivalence `E ≃ₗᵢ[𝕜] F` sending each basis
   vector `b i` to `c (e i)`, characterized as the unique unitary map with this action on `b`
@@ -29,38 +28,6 @@ This file provides the infinite-dimensional `HilbertBasis` counterparts of Mathl
 -/
 
 public section
-
-open scoped InnerProductSpace lp
-
-namespace lp
-
-/-- The standard unit coordinate vectors, bundled as a Hilbert basis of `ℓ²(ι, 𝕜)`. This is the
-`ℓ²` analogue of `EuclideanSpace.basisFun`. -/
-noncomputable def hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜) :=
-  HilbertBasis.ofRepr (LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜))
-
-/-- The coordinate representation of `lp.hilbertBasisFun` is the identity isometry on `ℓ²(ι, 𝕜)`. -/
-@[simp]
-theorem hilbertBasisFun_repr (ι 𝕜 : Type*) [RCLike 𝕜] :
-    (hilbertBasisFun ι 𝕜).repr = LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜) :=
-  (rfl)
-
-/-- The `i`-th vector of `lp.hilbertBasisFun` is the unit single-coordinate vector at `i`. -/
-@[simp]
-theorem hilbertBasisFun_apply (ι 𝕜 : Type*) [RCLike 𝕜] [DecidableEq ι] (i : ι) :
-    hilbertBasisFun ι 𝕜 i = lp.single 2 i 1 := by
-  rw [← HilbertBasis.repr_symm_single, hilbertBasisFun_repr]
-  exact (LinearIsometryEquiv.refl 𝕜 _).symm_apply_eq.2 rfl
-
-/-- Inner product against the `i`-th vector of `lp.hilbertBasisFun` evaluates the `i`-th
-coordinate. -/
-@[simp]
-theorem hilbertBasisFun_inner (ι 𝕜 : Type*) [RCLike 𝕜] (x : ℓ²(ι, 𝕜)) (i : ι) :
-    ⟪hilbertBasisFun ι 𝕜 i, x⟫_𝕜 = x i := by
-  rw [← (hilbertBasisFun ι 𝕜).repr_apply_apply]
-  simp
-
-end lp
 
 namespace HilbertBasis
 
