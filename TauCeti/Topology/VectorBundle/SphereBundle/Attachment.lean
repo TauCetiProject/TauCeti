@@ -82,14 +82,13 @@ variable {X : Type u} [TopologicalSpace X]
   [∀ x, NormedAddCommGroup (E x)] [FiberBundle F E]
 
 /-- **Homeomorphism from the `A = ∅` relative base of `D(E)` to `S(E)`.** The forward map forgets
-the unit-disc bound `‖v‖ ≤ 1`; the inverse uses `‖v‖ = 1 ⇒ ‖v‖ ≤ 1`
-(`sphereBundle_subset_discBundle`) and injects into the sphere summand of
-`Subtype.val ⁻¹' S(E) ∪ π_D ⁻¹' ∅`. -/
+the unit-disc bound `‖v‖ ≤ 1`; the inverse uses `‖v‖ = 1 ⇒ ‖v‖ ≤ 1` and injects into the sphere
+summand of `Subtype.val ⁻¹' S(E) ∪ π_D ⁻¹' ∅`. -/
 def bundleSphereRelCWBaseHomeomorph :
     ↥(Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' (∅ : Set X)) ≃ₜ
       sphereBundle F E where
   toFun x := ⟨x.1.1, x.2.elim id False.elim⟩
-  invFun s := ⟨⟨s.1, sphereBundle_subset_discBundle F E s.2⟩, Or.inl s.2⟩
+  invFun s := ⟨⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩, Or.inl s.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
@@ -102,7 +101,7 @@ theorem coe_bundleSphereRelCWBaseHomeomorph_apply
 
 theorem coe_bundleSphereRelCWBaseHomeomorph_symm_apply (s : sphereBundle F E) :
     ((bundleSphereRelCWBaseHomeomorph F E).symm s : discBundle F E) =
-      ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ :=
+      ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ :=
   (rfl)
 
 /-- Transport an attaching map `g : S(E) → Z` along `bundleSphereRelCWBaseHomeomorph` to the
@@ -768,7 +767,7 @@ def bundleDiskAttachmentInl : C(discBundle F E, bundleDiskAttachmentSpace F E hr
 /-- On the unit sphere bundle `S(E)`, `bundleDiskAttachmentInl` glues each vector `s` to `g s` in
 `Z`. -/
 theorem bundleDiskAttachmentInl_sphere (s : sphereBundle F E) :
-    bundleDiskAttachmentInl F E hr g ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ =
+    bundleDiskAttachmentInl F E hr g ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ =
       bundleDiskAttachmentInr F E hr g (g s) :=
   bundleDiskRelAttachmentInl_eq_inr F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g)
     ((bundleSphereRelCWBaseHomeomorph F E).symm s)
@@ -778,7 +777,8 @@ theorem bundleDiskAttachmentInl_sphere (s : sphereBundle F E) :
 uniquely to a continuous map `Z ∪_g D(E) → W`. -/
 def bundleDiskAttachmentDesc {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
-    (hfg : ∀ s : sphereBundle F E, f ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ = h (g s)) :
+    (hfg : ∀ s : sphereBundle F E,
+      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s)) :
     C(bundleDiskAttachmentSpace F E hr g, W) :=
   bundleDiskRelAttachmentDesc F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g) f h fun b ↦
     hfg (bundleSphereRelCWBaseHomeomorph F E b)
@@ -786,7 +786,8 @@ def bundleDiskAttachmentDesc {W : Type w} [TopologicalSpace W]
 @[simp]
 theorem bundleDiskAttachmentDesc_inl {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
-    (hfg : ∀ s : sphereBundle F E, f ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ = h (g s))
+    (hfg : ∀ s : sphereBundle F E,
+      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s))
     (v : discBundle F E) :
     bundleDiskAttachmentDesc F E hr g f h hfg (bundleDiskAttachmentInl F E hr g v) = f v :=
   bundleDiskRelAttachmentDesc_inl F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g) f h _ v
@@ -794,7 +795,8 @@ theorem bundleDiskAttachmentDesc_inl {W : Type w} [TopologicalSpace W]
 @[simp]
 theorem bundleDiskAttachmentDesc_inr {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
-    (hfg : ∀ s : sphereBundle F E, f ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ = h (g s))
+    (hfg : ∀ s : sphereBundle F E,
+      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s))
     (z : Z) :
     bundleDiskAttachmentDesc F E hr g f h hfg (bundleDiskAttachmentInr F E hr g z) = h z :=
   bundleDiskRelAttachmentDesc_inr F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g) f h _ z
@@ -802,14 +804,16 @@ theorem bundleDiskAttachmentDesc_inr {W : Type w} [TopologicalSpace W]
 @[simp]
 theorem bundleDiskAttachmentDesc_comp_inl {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
-    (hfg : ∀ s : sphereBundle F E, f ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ = h (g s)) :
+    (hfg : ∀ s : sphereBundle F E,
+      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s)) :
     (bundleDiskAttachmentDesc F E hr g f h hfg).comp (bundleDiskAttachmentInl F E hr g) = f :=
   ContinuousMap.ext (bundleDiskAttachmentDesc_inl F E hr g f h hfg)
 
 @[simp]
 theorem bundleDiskAttachmentDesc_comp_inr {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
-    (hfg : ∀ s : sphereBundle F E, f ⟨s.1, sphereBundle_subset_discBundle F E s.2⟩ = h (g s)) :
+    (hfg : ∀ s : sphereBundle F E,
+      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s)) :
     (bundleDiskAttachmentDesc F E hr g f h hfg).comp (bundleDiskAttachmentInr F E hr g) = h :=
   ContinuousMap.ext (bundleDiskAttachmentDesc_inr F E hr g f h hfg)
 
