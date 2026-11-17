@@ -189,39 +189,6 @@ end Velocity
 
 section HorizontalProjection
 
-section BaseFrame
-
-variable [IsManifold J 1 N]
-
-omit [FiniteDimensional ℝ F] [RiemannianBundle (fun y : N ↦ TangentSpace J y)] in
-/-- Near a parameter where `σ t` lies in the tangent-bundle trivialization base set at `y`, a
-continuous curve's tangent field `W` expands in the local frame of `b` with coefficients read from
-`sectionCoord σ W y`. -/
-private theorem eventually_eq_sum_repr_sectionCoord_smul_localFrame
-    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F) {σ : ℝ → N}
-    (W : ∀ r, TangentSpace J (σ r)) {y : N} {s : Set ℝ} {t : ℝ}
-    (hy : σ t ∈ (trivializationAt F (TangentSpace J) y).baseSet)
-    (hσ : ContinuousWithinAt σ s t) :
-    ∀ᶠ r in 𝓝[s] t, W r = ∑ i, b.repr (sectionCoord (F := F) σ W y r) i •
-      (trivializationAt F (TangentSpace J) y).localFrame b i (σ r) := by
-  have hnear : ∀ᶠ r in 𝓝[s] t, σ r ∈ (trivializationAt F (TangentSpace J) y).baseSet :=
-    hσ.preimage_mem_nhdsWithin ((trivializationAt F (TangentSpace J) y).open_baseSet.mem_nhds hy)
-  refine hnear.mono fun r hr ↦ ?_
-  simpa only [sectionCoord_apply] using
-    b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := ℝ) hr (W r)
-
-omit [RiemannianBundle (fun y : N ↦ TangentSpace J y)] in
-/-- Differentiability of `sectionCoord σ W y` within `s` at `t` implies differentiability of each
-coordinate function in a model-fibre basis `b`. -/
-private theorem differentiableWithinAt_repr_sectionCoord
-    {ι : Type*} (b : Module.Basis ι ℝ F) {σ : ℝ → N}
-    {W : ∀ r, TangentSpace J (σ r)} {y : N} {s : Set ℝ} {t : ℝ}
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := F) σ W y) s t) (i : ι) :
-    DifferentiableWithinAt ℝ (fun r ↦ b.repr (sectionCoord (F := F) σ W y r) i) s t :=
-  (b.coord i).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt t hW
-
-end BaseFrame
-
 include h
 
 variable [IsManifold I 2 M] [IsManifold J 2 N]
@@ -293,9 +260,8 @@ private theorem horizontalLift_eq_sum_repr_sectionCoord_smul
     h.horizontalLift (γ r) (U r) = ∑ i,
       b.repr (sectionCoord (F := F) (f ∘ γ) U y r) i •
         h.horizontalLiftLocalFrame b y i (γ r) := by
-  conv_lhs => rw [b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := ℝ) hr (U r)]
-  simp only [h.horizontalLiftLocalFrame_def, sectionCoord_apply, Function.comp_apply,
-    map_sum, map_smul]
+  conv_lhs => rw [eq_sum_repr_sectionCoord_smul_localFrame (f ∘ γ) U b hr]
+  simp only [h.horizontalLiftLocalFrame_def, Function.comp_apply, map_sum, map_smul]
 
 omit [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
@@ -311,9 +277,8 @@ private theorem eventually_horizontalLift_eq_sum_repr_sectionCoord_smul
         h.horizontalLiftLocalFrame b (f (γ t)) i (γ r) := by
   have hfγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (f ∘ γ) s t :=
     (h.isSubmersion.contMDiff.mdifferentiableAt (by simp)).comp_mdifferentiableWithinAt t hγ
-  refine (eventually_eq_sum_repr_sectionCoord_smul_localFrame b U
-    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
-    hfγ.continuousWithinAt).mono fun r hr ↦ ?_
+  refine (eventually_eq_sum_repr_sectionCoord_smul_localFrame (f ∘ γ) U b hfγ.continuousWithinAt
+    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))).mono fun r hr ↦ ?_
   rw [hr]
   simp only [h.horizontalLiftLocalFrame_def, Function.comp_apply, map_sum, map_smul]
 
@@ -331,7 +296,7 @@ theorem differentiableWithinAt_sectionCoord_horizontalLift
           h.horizontalLiftLocalFrame b (f (γ t)) i (γ r)) (γ t)) s t := by
     refine differentiableWithinAt_sectionCoord_sum γ fun i _ ↦ ?_
     rw [sectionCoord_smul]
-    exact (differentiableWithinAt_repr_sectionCoord b hU i).smul
+    exact (differentiableWithinAt_repr_sectionCoord (f ∘ γ) U b hU i).smul
       (h.differentiableWithinAt_sectionCoord_horizontalLiftLocalFrame b hγ i)
   refine hsum.congr_of_eventuallyEq
     ((h.eventually_horizontalLift_eq_sum_repr_sectionCoord_smul b U hγ).mono fun r hr ↦ ?_) ?_
@@ -370,7 +335,7 @@ theorem mfderiv_alongCurveWithin_horizontalLift
     FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t))
   have hfγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (f ∘ γ) s t :=
     (h.isSubmersion.contMDiff.mdifferentiableAt (by simp)).comp_mdifferentiableWithinAt t hγ
-  have hc (i) := differentiableWithinAt_repr_sectionCoord b hU i
+  have hc (i) := differentiableWithinAt_repr_sectionCoord (f ∘ γ) U b hU i
   have hE (i : Fin (Module.finrank ℝ F)) :
       CMDiffAt 1 (T% ((trivializationAt F (TangentSpace J) (f (γ t))).localFrame b i)) (f (γ t)) :=
     contMDiffAt_localFrame_of_mem 1 _ b i hbase
@@ -386,9 +351,8 @@ theorem mfderiv_alongCurveWithin_horizontalLift
       (h.eventually_horizontalLift_eq_sum_repr_sectionCoord_smul b U hγ)
       (h.horizontalLift_eq_sum_repr_sectionCoord_smul b U hbase),
     alongCurveWithin_congr covN (f ∘ γ) _
-      (eventually_eq_sum_repr_sectionCoord_smul_localFrame b U hbase hfγ.continuousWithinAt)
-      (by simpa only [sectionCoord_apply, Function.comp_apply] using
-        b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := ℝ) hbase (U t)),
+      (eventually_eq_sum_repr_sectionCoord_smul_localFrame (f ∘ γ) U b hfγ.continuousWithinAt hbase)
+      (eq_sum_repr_sectionCoord_smul_localFrame (f ∘ γ) U b hbase),
     alongCurveWithin_sum covM γ Finset.univ _
       (fun i _ ↦ by rw [sectionCoord_smul]; exact (hc i).smul (hLcoord i)),
     alongCurveWithin_sum covN (f ∘ γ) Finset.univ _

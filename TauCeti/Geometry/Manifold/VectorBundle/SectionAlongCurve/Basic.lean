@@ -5,19 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Coordinates of vector-bundle sections along curves
 
 This file records the coordinate reading of a section of a vector bundle along a curve in one of
-the bundle's canonical trivializations. It also relates manifold differentiability of the
+the bundle's canonical trivializations, its expansion in the associated local frame of a model-fibre
+basis, and its differentiability properties. It also relates manifold differentiability of the
 corresponding total-space map to differentiability and higher regularity of that coordinate
 reading.
 
 ## Main definitions and results
 
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
+* `TauCeti.Manifold.eq_sum_repr_sectionCoord_smul_localFrame`,
+  `TauCeti.Manifold.eventually_eq_sum_repr_sectionCoord_smul_localFrame`: pointwise and
+  filter-eventually expansion of a section along a curve in a local frame using `sectionCoord`.
+* `TauCeti.Manifold.differentiableWithinAt_repr_sectionCoord`,
+  `TauCeti.Manifold.differentiableAt_repr_sectionCoord`: differentiability of basis coordinates of
+  `sectionCoord`.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
   reading within a parameter set.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
@@ -108,7 +117,46 @@ theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
   ext t
   simp only [sectionCoord_apply, Function.comp_apply]
 
+/-! ### Local-frame expansion -/
+
+/-- At a parameter where `γ t` lies in the trivialization base set at `x`, `W t` expands in the
+local frame of a finite model-fibre basis `b` with coefficients read from `sectionCoord γ W x t`. -/
+theorem eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 F) {x : M} {t : 𝕜}
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    W t = ∑ i, b.repr (sectionCoord (F := F) γ W x t) i •
+      (trivializationAt F V x).localFrame b i (γ t) := by
+  simpa only [sectionCoord_apply] using
+    b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := 𝕜) hx (W t)
+
+/-- Along a filter `l` where `γ` tends to a point `y` in the trivialization base set at `x`, `W`
+eventually expands in the local frame of a finite model-fibre basis `b` with coefficients read from
+`sectionCoord γ W x`. -/
+theorem eventually_eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 F) {x y : M} {l : Filter 𝕜}
+    (hγ : Tendsto γ l (𝓝 y)) (hy : y ∈ (trivializationAt F V x).baseSet) :
+    ∀ᶠ r in l, W r = ∑ i, b.repr (sectionCoord (F := F) γ W x r) i •
+      (trivializationAt F V x).localFrame b i (γ r) :=
+  (hγ.eventually ((trivializationAt F V x).open_baseSet.mem_nhds hy)).mono fun _ hr ↦
+    eq_sum_repr_sectionCoord_smul_localFrame γ W b hr
+
 /-! ### Differentiability of the coordinate reading -/
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable within `s` at `t`, then each
+coordinate function in a model-fibre basis `b` is differentiable within `s` at `t`. -/
+theorem differentiableWithinAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {s : Set 𝕜} {t : 𝕜}
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ W x) s t) (i : ι) :
+    DifferentiableWithinAt 𝕜 (fun r ↦ b.repr (sectionCoord (F := F) γ W x r) i) s t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt t hW
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable at `t`, then each coordinate
+function in a model-fibre basis `b` is differentiable at `t`. -/
+theorem differentiableAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {t : 𝕜}
+    (hW : DifferentiableAt 𝕜 (sectionCoord (F := F) γ W x) t) (i : ι) :
+    DifferentiableAt 𝕜 (fun r ↦ b.repr (sectionCoord (F := F) γ W x r) i) t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp t hW
 
 /-- A finite sum of sections along a curve whose coordinate readings are differentiable within
 `s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/
