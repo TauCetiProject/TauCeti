@@ -23,8 +23,9 @@ inclusion `tailIncl`:
 * `tailJucysMurphy q (Fin.last n) = 1` and `tailAdditiveJucysMurphy q (Fin.last n) = 0`;
 * `tailIncl q n (tailJucysMurphy q i) = tailJucysMurphy q i.succ` (and likewise for the additive
   family);
-* stepping downward across crossing `i : Fin n` in `TypeAHeckeAlgebra R q (n + 1)` conjugates by
-  `T q i`, giving at strand `0` the first-site recursion
+* stepping downward across crossing `i : Fin n` in `TypeAHeckeAlgebra R q (n + 1)` sandwiches by
+  `T q i` (with an extra `q⁻¹ • T q i` term in the additive case), giving at strand `0` the
+  first-site recursion
   `tailJucysMurphy q (0 : Fin (n + 2)) = T q 0 * tailIncl q (n + 1) (tailJucysMurphy q 0) * T q 0`
   and its additive counterpart valid also at `q² = 1`;
 * `tailJucysMurphy q (0 : Fin (n + 1))` centralizes `(tailIncl q n).range` and is conjugate to the
@@ -152,12 +153,10 @@ theorem tailIncl_tailAdditiveJucysMurphy (i : Fin n) :
 theorem tailJucysMurphy_castSucc (i : Fin n) :
     tailJucysMurphy q i.castSucc =
       T (n := n + 1) q i * tailJucysMurphy q i.succ * T (n := n + 1) q i := by
-  have hrev : (i.castSucc.rev : Fin (n + 1)) = ⟨i.rev.val + 1, by omega⟩ := by
-    ext
-    simp [Fin.rev_castSucc]
-  have hsucc : (⟨i.rev.val, by omega⟩ : Fin (n + 1)) = i.succ.rev := by
-    ext
-    simp [Fin.rev_succ]
+  have hrev : (i.castSucc.rev : Fin (n + 1)) = ⟨i.rev.val + 1, by omega⟩ :=
+    Fin.ext (by simp [Fin.rev_castSucc])
+  have hsucc : (⟨i.rev.val, by omega⟩ : Fin (n + 1)) = i.succ.rev :=
+    Fin.ext (by simp [Fin.rev_succ])
   have hT : (⟨i.rev.val, by omega⟩ : Fin n) = i.rev := Fin.ext rfl
   rw [tailJucysMurphy, hrev, jucysMurphy_succ i.rev.val (by omega), hsucc, hT, map_mul, map_mul,
     strandRevEquiv_T, Fin.rev_rev, ← tailJucysMurphy]
@@ -168,12 +167,10 @@ theorem tailAdditiveJucysMurphy_castSucc (i : Fin n) :
     tailAdditiveJucysMurphy q i.castSucc =
       T (n := n + 1) q i * tailAdditiveJucysMurphy q i.succ * T (n := n + 1) q i +
         (↑q⁻¹ : R) • T (n := n + 1) q i := by
-  have hrev : (i.castSucc.rev : Fin (n + 1)) = ⟨i.rev.val + 1, by omega⟩ := by
-    ext
-    simp [Fin.rev_castSucc]
-  have hsucc : (⟨i.rev.val, by omega⟩ : Fin (n + 1)) = i.succ.rev := by
-    ext
-    simp [Fin.rev_succ]
+  have hrev : (i.castSucc.rev : Fin (n + 1)) = ⟨i.rev.val + 1, by omega⟩ :=
+    Fin.ext (by simp [Fin.rev_castSucc])
+  have hsucc : (⟨i.rev.val, by omega⟩ : Fin (n + 1)) = i.succ.rev :=
+    Fin.ext (by simp [Fin.rev_succ])
   have hT : (⟨i.rev.val, by omega⟩ : Fin n) = i.rev := Fin.ext rfl
   rw [tailAdditiveJucysMurphy, hrev, additiveJucysMurphy_succ i.rev.val (by omega), hsucc, hT,
     map_add, map_mul, map_mul, map_smul, strandRevEquiv_T, Fin.rev_rev, ← tailAdditiveJucysMurphy]

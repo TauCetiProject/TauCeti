@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.JucysMurphy.Tail
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Shuffle.InnerProduct
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Shuffle.Basic
 
 /-!
 # First-site decomposition and Jucys–Murphy compression on shuffle modules
@@ -34,9 +34,8 @@ operator of the rest module `U`:
 
 and hence the same identity for `tailJucysMurphy q 0`. Proving the additive compression directly by
 induction on `k + l` establishes both identities over every commutative ring `R` and unit `q`,
-including the symmetric-group specialization `q² = 1`. On the orthonormal-mask Hilbert carrier
-`PiLp 2`, `firstSelectedHilbertProj` and `firstRestHilbertProj` are bounded self-adjoint orthogonal
-projections satisfying the corresponding Hilbert-space compression identities.
+including the symmetric-group specialization `q² = 1`. The `PiLp 2` Hilbert-carrier projections and
+compression identities are in `TauCeti.Algebra.TypeAHeckeAlgebra.Shuffle.Tail.InnerProduct`.
 
 ## Main definitions
 
@@ -46,8 +45,6 @@ projections satisfying the corresponding Hilbert-space compression identities.
   at site `0`.
 * `TauCeti.TypeAHeckeAlgebra.firstSelectedProj` and `firstRestProj`: coordinate projections onto
   masks with `0 ∈ S.1` and `0 ∉ S.1`.
-* `TauCeti.TypeAHeckeAlgebra.firstSelectedHilbertProj` and `firstRestHilbertProj`: the
-  corresponding orthogonal projections on the `PiLp 2` shuffle Hilbert carrier.
 
 ## Main results
 
@@ -60,8 +57,6 @@ projections satisfying the corresponding Hilbert-space compression identities.
 * `firstRestProj_comp_shuffleRep_tailAdditiveJucysMurphy_zero_comp_firstRestProj` and
   `firstRestProj_comp_shuffleRep_tailJucysMurphy_zero_comp_firstRestProj`: **first-site
   Jucys–Murphy rest-compression identity** (additive and multiplicative).
-* `firstRestHilbertProj_shuffleHilbertRep_tailJucysMurphy_zero`:
-  the Hilbert-carrier rest-compression identity.
 
 ## References
 
@@ -74,20 +69,12 @@ projections satisfying the corresponding Hilbert-space compression identities.
 public section
 
 open Finset
-open scoped InnerProductSpace
 
 namespace TauCeti.TypeAHeckeAlgebra
 
 namespace ShuffleMask
 
 variable {k l : ℕ}
-
-/-- Before position `0` there are no rest positions. -/
-@[simp]
-theorem restIndex_zero [NeZero (k + l)] (S : ShuffleMask k l) :
-    S.restIndex (0 : Fin (k + l)) = 0 := by
-  rw [restIndex_def]
-  simp
 
 /-! ### Prepending a selected or rest position at site `0` -/
 
@@ -97,13 +84,11 @@ def shiftSelectedEmb (k l : ℕ) : Fin (k + l) ↪ Fin ((k + 1) + l) :=
 
 /-- `shiftSelectedEmb` increments the underlying natural-number position by `1`. -/
 @[simp]
-theorem val_shiftSelectedEmb (p : Fin (k + l)) : (shiftSelectedEmb k l p : ℕ) = p + 1 :=
-  (rfl)
+theorem val_shiftSelectedEmb (p : Fin (k + l)) : (shiftSelectedEmb k l p : ℕ) = p + 1 := (rfl)
 
 /-- A shifted position in `Fin ((k + 1) + l)` is never `0`. -/
 @[simp]
-theorem shiftSelectedEmb_ne_zero (p : Fin (k + l)) :
-    shiftSelectedEmb k l p ≠ 0 := by
+theorem shiftSelectedEmb_ne_zero (p : Fin (k + l)) : shiftSelectedEmb k l p ≠ 0 := by
   simp [Fin.ext_iff]
 
 /-- Prepending a selected position at site `0` inserts `0` and shifts all selected positions of `M`
@@ -237,6 +222,17 @@ def consSelectedEquiv :
   left_inv M := tailOfZeroMem_consSelected M
   right_inv S := Subtype.ext (consSelected_tailOfZeroMem S.1 S.2)
 
+/-- Forward evaluation of `consSelectedEquiv` prepends a selected position at site `0`. -/
+@[simp]
+theorem consSelectedEquiv_apply (M : ShuffleMask k l) :
+    consSelectedEquiv M = ⟨M.consSelected, zero_mem_consSelected M⟩ := (rfl)
+
+/-- Inverse evaluation of `consSelectedEquiv` removes the selected position at site `0`. -/
+@[simp]
+theorem consSelectedEquiv_symm_apply
+    (S : {S : ShuffleMask (k + 1) l // (0 : Fin ((k + 1) + l)) ∈ S.1}) :
+    consSelectedEquiv.symm S = tailOfZeroMem S.1 S.2 := (rfl)
+
 /-- Prepending a rest position at site `0` shifts every selected position of `M` by `Fin.succ`. -/
 def consRest (M : ShuffleMask k l) : ShuffleMask k (l + 1) :=
   ⟨M.1.map (Fin.succEmb (k + l)), by rw [card_map, M.2]⟩
@@ -244,14 +240,12 @@ def consRest (M : ShuffleMask k l) : ShuffleMask k (l + 1) :=
 /-- `M.consRest` never selects site `0`. -/
 @[simp]
 theorem zero_notMem_consRest (M : ShuffleMask k l) :
-    (0 : Fin (k + (l + 1))) ∉ M.consRest.1 := by
-  simp [consRest]
+    (0 : Fin (k + (l + 1))) ∉ M.consRest.1 := by simp [consRest]
 
 /-- A shifted position `p.succ` belongs to `M.consRest` if and only if `p` belongs to `M`. -/
 @[simp]
 theorem succ_mem_consRest {M : ShuffleMask k l} {p : Fin (k + l)} :
-    p.succ ∈ M.consRest.1 ↔ p ∈ M.1 := by
-  simp [consRest]
+    p.succ ∈ M.consRest.1 ↔ p ∈ M.1 := by simp [consRest]
 
 /-- Prepending a rest position at site `0` is injective. -/
 theorem consRest_injective : Function.Injective (@consRest k l) := by
@@ -331,6 +325,17 @@ def consRestEquiv :
   left_inv M := tailOfZeroNotMem_consRest M
   right_inv S := Subtype.ext (consRest_tailOfZeroNotMem S.1 S.2)
 
+/-- Forward evaluation of `consRestEquiv` prepends a rest position at site `0`. -/
+@[simp]
+theorem consRestEquiv_apply (M : ShuffleMask k l) :
+    consRestEquiv M = ⟨M.consRest, zero_notMem_consRest M⟩ := (rfl)
+
+/-- Inverse evaluation of `consRestEquiv` removes the rest position at site `0`. -/
+@[simp]
+theorem consRestEquiv_symm_apply
+    (S : {S : ShuffleMask k (l + 1) // (0 : Fin (k + (l + 1))) ∉ S.1}) :
+    consRestEquiv.symm S = tailOfZeroNotMem S.1 S.2 := (rfl)
+
 end ShuffleMask
 
 /-! ### First-site coordinate projections -/
@@ -348,41 +353,34 @@ variable (R U) [NeZero (k + l)]
 out masks that leave site `0` in the rest. -/
 def firstSelectedProj : Module.End R (ShuffleMask k l → U) where
   toFun f S := if (0 : Fin (k + l)) ∈ S.1 then f S else 0
-  map_add' f g := funext fun S ↦ by simp only [Pi.add_apply]; split_ifs <;> simp
-  map_smul' r f := funext fun S ↦ by
-    simp only [Pi.smul_apply, RingHom.id_apply]
-    split_ifs <;> simp
+  map_add' _ _ := funext fun _ ↦ by simp only [Pi.add_apply]; split_ifs <;> simp
+  map_smul' _ _ := funext fun _ ↦ by simp only [Pi.smul_apply, RingHom.id_apply]; split_ifs <;> simp
 
 /-- Linear projection on `ShuffleMask k l → U` retaining masks that leave site `0` in the rest and
 zeroing out masks that select site `0`. -/
 def firstRestProj : Module.End R (ShuffleMask k l → U) where
   toFun f S := if (0 : Fin (k + l)) ∈ S.1 then 0 else f S
-  map_add' f g := funext fun S ↦ by simp only [Pi.add_apply]; split_ifs <;> simp
-  map_smul' r f := funext fun S ↦ by
-    simp only [Pi.smul_apply, RingHom.id_apply]
-    split_ifs <;> simp
+  map_add' _ _ := funext fun _ ↦ by simp only [Pi.add_apply]; split_ifs <;> simp
+  map_smul' _ _ := funext fun _ ↦ by simp only [Pi.smul_apply, RingHom.id_apply]; split_ifs <;> simp
 
 variable {R U}
 
 /-- Pointwise evaluation of `firstSelectedProj` at mask `S`. -/
 @[simp]
 theorem firstSelectedProj_apply (f : ShuffleMask k l → U) (S : ShuffleMask k l) :
-    firstSelectedProj R U f S = if (0 : Fin (k + l)) ∈ S.1 then f S else 0 :=
-  (rfl)
+    firstSelectedProj R U f S = if (0 : Fin (k + l)) ∈ S.1 then f S else 0 := (rfl)
 
 /-- Pointwise evaluation of `firstRestProj` at mask `S`. -/
 @[simp]
 theorem firstRestProj_apply (f : ShuffleMask k l → U) (S : ShuffleMask k l) :
-    firstRestProj R U f S = if (0 : Fin (k + l)) ∈ S.1 then 0 else f S :=
-  (rfl)
+    firstRestProj R U f S = if (0 : Fin (k + l)) ∈ S.1 then 0 else f S := (rfl)
 
 /-- `firstSelectedProj` is idempotent under composition. -/
 @[simp]
 theorem firstSelectedProj_comp_firstSelectedProj :
     (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstSelectedProj R U =
-      firstSelectedProj R U := by
-  refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+      firstSelectedProj R U :=
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
 
 /-- `firstSelectedProj` is an idempotent endomorphism. -/
 theorem isIdempotentElem_firstSelectedProj :
@@ -393,9 +391,8 @@ theorem isIdempotentElem_firstSelectedProj :
 @[simp]
 theorem firstRestProj_comp_firstRestProj :
     (firstRestProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstRestProj R U =
-      firstRestProj R U := by
-  refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+      firstRestProj R U :=
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
 
 /-- `firstRestProj` is an idempotent endomorphism. -/
 theorem isIdempotentElem_firstRestProj :
@@ -405,25 +402,20 @@ theorem isIdempotentElem_firstRestProj :
 /-- `firstSelectedProj` annihilates the image of `firstRestProj`. -/
 @[simp]
 theorem firstSelectedProj_comp_firstRestProj :
-    (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstRestProj R U =
-      0 := by
-  refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+    (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstRestProj R U = 0 :=
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
 
 /-- `firstRestProj` annihilates the image of `firstSelectedProj`. -/
 @[simp]
 theorem firstRestProj_comp_firstSelectedProj :
-    (firstRestProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstSelectedProj R U =
-      0 := by
-  refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+    (firstRestProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstSelectedProj R U = 0 :=
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
 
 /-- `firstSelectedProj` and `firstRestProj` sum to the identity operator. -/
 @[simp]
 theorem firstSelectedProj_add_firstRestProj :
-    (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) + firstRestProj R U = 1 := by
-  refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+    (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) + firstRestProj R U = 1 :=
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
 
 end Nonempty
 
@@ -925,219 +917,5 @@ theorem shuffleRep_tailJucysMurphy_zero_firstRestProj_consRest
   simpa [ShuffleMask.zero_notMem_consRest] using h
 
 end Module
-
-/-! ### Orthogonal projections and compression on the `PiLp 2` shuffle Hilbert carrier -/
-
-section Hilbert
-
-variable {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ} {k l : ℕ}
-variable {U : Type*} [NormedAddCommGroup U] [InnerProductSpace 𝕜 U]
-
-section Projections
-
-variable (𝕜 U) [NeZero (k + l)]
-
-/-- Orthogonal projection onto masks selecting site `0` on the `PiLp 2` shuffle Hilbert carrier. -/
-noncomputable def firstSelectedHilbertProj :
-    Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U) :=
-  ((WithLp.linearEquiv 2 𝕜 (ShuffleMask k l → U)).symm.conjAlgEquiv 𝕜)
-    (firstSelectedProj 𝕜 U)
-
-/-- Orthogonal projection onto masks leaving site `0` in the rest on the `PiLp 2` shuffle Hilbert
-carrier. -/
-noncomputable def firstRestHilbertProj :
-    Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U) :=
-  ((WithLp.linearEquiv 2 𝕜 (ShuffleMask k l → U)).symm.conjAlgEquiv 𝕜)
-    (firstRestProj 𝕜 U)
-
-variable {𝕜 U}
-
-/-- Pointwise evaluation of `firstSelectedHilbertProj` at mask `S`. -/
-@[simp]
-theorem firstSelectedHilbertProj_apply (f : PiLp 2 fun _ : ShuffleMask k l ↦ U)
-    (S : ShuffleMask k l) :
-    firstSelectedHilbertProj 𝕜 U f S = if (0 : Fin (k + l)) ∈ S.1 then f S else 0 :=
-  (rfl)
-
-/-- Pointwise evaluation of `firstRestHilbertProj` at mask `S`. -/
-@[simp]
-theorem firstRestHilbertProj_apply (f : PiLp 2 fun _ : ShuffleMask k l ↦ U)
-    (S : ShuffleMask k l) :
-    firstRestHilbertProj 𝕜 U f S = if (0 : Fin (k + l)) ∈ S.1 then 0 else f S :=
-  (rfl)
-
-/-- `firstSelectedHilbertProj` and `firstRestHilbertProj` sum to `1`. -/
-@[simp]
-theorem firstSelectedHilbertProj_add_firstRestHilbertProj :
-    (firstSelectedHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) +
-      firstRestHilbertProj 𝕜 U = 1 := by
-  rw [firstSelectedHilbertProj, firstRestHilbertProj, ← map_add,
-    firstSelectedProj_add_firstRestProj, map_one]
-
-/-- `firstSelectedHilbertProj` is idempotent under composition. -/
-@[simp]
-theorem firstSelectedHilbertProj_comp_firstSelectedHilbertProj :
-    (firstSelectedHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
-      firstSelectedHilbertProj 𝕜 U = firstSelectedHilbertProj 𝕜 U := by
-  refine LinearMap.ext fun f ↦ PiLp.ext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- `firstRestHilbertProj` is idempotent under composition. -/
-@[simp]
-theorem firstRestHilbertProj_comp_firstRestHilbertProj :
-    (firstRestHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
-      firstRestHilbertProj 𝕜 U = firstRestHilbertProj 𝕜 U := by
-  refine LinearMap.ext fun f ↦ PiLp.ext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- `firstSelectedHilbertProj` annihilates the image of `firstRestHilbertProj`. -/
-@[simp]
-theorem firstSelectedHilbertProj_comp_firstRestHilbertProj :
-    (firstSelectedHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
-      firstRestHilbertProj 𝕜 U = 0 := by
-  refine LinearMap.ext fun f ↦ PiLp.ext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- `firstRestHilbertProj` annihilates the image of `firstSelectedHilbertProj`. -/
-@[simp]
-theorem firstRestHilbertProj_comp_firstSelectedHilbertProj :
-    (firstRestHilbertProj 𝕜 U : Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) ∘ₗ
-      firstSelectedHilbertProj 𝕜 U = 0 := by
-  refine LinearMap.ext fun f ↦ PiLp.ext fun S ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- `firstSelectedHilbertProj` is symmetric with respect to the `PiLp 2` inner product. -/
-theorem isSymmetric_firstSelectedHilbertProj :
-    (firstSelectedHilbertProj 𝕜 U :
-      Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)).IsSymmetric := by
-  intro f g
-  simp only [PiLp.inner_apply, firstSelectedHilbertProj_apply]
-  refine Finset.sum_congr rfl fun S _ ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- `firstRestHilbertProj` is symmetric with respect to the `PiLp 2` inner product. -/
-theorem isSymmetric_firstRestHilbertProj :
-    (firstRestHilbertProj 𝕜 U :
-      Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)).IsSymmetric := by
-  intro f g
-  simp only [PiLp.inner_apply, firstRestHilbertProj_apply]
-  refine Finset.sum_congr rfl fun S _ ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- The images of `firstSelectedHilbertProj` and `firstRestHilbertProj` are pairwise orthogonal. -/
-theorem inner_firstSelectedHilbertProj_firstRestHilbertProj
-    (f g : PiLp 2 fun _ : ShuffleMask k l ↦ U) :
-    ⟪firstSelectedHilbertProj 𝕜 U f, firstRestHilbertProj 𝕜 U g⟫_𝕜 = 0 := by
-  simp only [PiLp.inner_apply, firstSelectedHilbertProj_apply, firstRestHilbertProj_apply]
-  refine Finset.sum_eq_zero fun S _ ↦ ?_
-  by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
-
-/-- `firstSelectedHilbertProj` is continuous on the `PiLp 2` shuffle Hilbert carrier. -/
-theorem continuous_firstSelectedHilbertProj :
-    Continuous (firstSelectedHilbertProj 𝕜 U :
-      Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) := by
-  -- Expose the `toLp ∘ firstSelectedProj ∘ ofLp` definition to apply `PiLp.continuous_toLp`.
-  change Continuous (fun f ↦ WithLp.toLp 2 (firstSelectedProj 𝕜 U (WithLp.ofLp f)))
-  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun S ↦ ?_)
-  by_cases h : (0 : Fin (k + l)) ∈ S.1
-  · simpa [h] using PiLp.continuous_apply 2 (fun _ : ShuffleMask k l ↦ U) S
-  · simpa [h] using continuous_const
-
-/-- `firstRestHilbertProj` is continuous on the `PiLp 2` shuffle Hilbert carrier. -/
-theorem continuous_firstRestHilbertProj :
-    Continuous (firstRestHilbertProj 𝕜 U :
-      Module.End 𝕜 (PiLp 2 fun _ : ShuffleMask k l ↦ U)) := by
-  -- Expose the `toLp ∘ firstRestProj ∘ ofLp` definition to apply `PiLp.continuous_toLp`.
-  change Continuous (fun f ↦ WithLp.toLp 2 (firstRestProj 𝕜 U (WithLp.ofLp f)))
-  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun S ↦ ?_)
-  by_cases h : (0 : Fin (k + l)) ∈ S.1
-  · simpa [h] using continuous_const
-  · simpa [h] using PiLp.continuous_apply 2 (fun _ : ShuffleMask k l ↦ U) S
-
-end Projections
-
-/-- Tail normalized Jucys–Murphy elements act symmetrically on `shuffleHilbertRep` for a real
-parameter and symmetric rest generators. -/
-theorem isSymmetric_shuffleHilbertRep_tailJucysMurphy (hq : star (q : 𝕜) = q)
-    (ρ : TypeAHeckeAlgebra 𝕜 q l →ₐ[𝕜] Module.End 𝕜 U)
-    (hρ : ∀ i, (ρ (T q i)).IsSymmetric) (i : Fin (k + l)) :
-    (shuffleHilbertRep k ρ (tailJucysMurphy q i)).IsSymmetric := by
-  have : Fact (IsSelfAdjoint (q : 𝕜)) := ⟨hq⟩
-  intro f g
-  simpa only [star_tailJucysMurphy] using
-    inner_shuffleHilbertRep_star k ρ hρ (tailJucysMurphy q i) f g
-
-/-- Tail additive Jucys–Murphy elements act symmetrically on `shuffleHilbertRep` for a real
-parameter and symmetric rest generators. -/
-theorem isSymmetric_shuffleHilbertRep_tailAdditiveJucysMurphy (hq : star (q : 𝕜) = q)
-    (ρ : TypeAHeckeAlgebra 𝕜 q l →ₐ[𝕜] Module.End 𝕜 U)
-    (hρ : ∀ i, (ρ (T q i)).IsSymmetric) (i : Fin (k + l)) :
-    (shuffleHilbertRep k ρ (tailAdditiveJucysMurphy q i)).IsSymmetric := by
-  have : Fact (IsSelfAdjoint (q : 𝕜)) := ⟨hq⟩
-  intro f g
-  simpa only [star_tailAdditiveJucysMurphy] using
-    inner_shuffleHilbertRep_star k ρ hρ (tailAdditiveJucysMurphy q i) f g
-
-/-- **Pointwise Hilbert-carrier first-site additive Jucys–Murphy rest-compression identity.** -/
-theorem firstRestHilbertProj_shuffleHilbertRep_tailAdditiveJucysMurphy_zero
-    (k : ℕ) (ρ : TypeAHeckeAlgebra 𝕜 q (l + 1) →ₐ[𝕜] Module.End 𝕜 U)
-    (f : PiLp 2 fun _ : ShuffleMask k (l + 1) ↦ U) (S : ShuffleMask k (l + 1)) :
-    firstRestHilbertProj 𝕜 U
-        (shuffleHilbertRep k ρ (tailAdditiveJucysMurphy q (0 : Fin (k + (l + 1))))
-          (firstRestHilbertProj 𝕜 U f)) S =
-      ρ (tailAdditiveJucysMurphy q (0 : Fin (l + 1))) (firstRestHilbertProj 𝕜 U f S) := by
-  have hproj : WithLp.ofLp (firstRestHilbertProj 𝕜 U f) = firstRestProj 𝕜 U (WithLp.ofLp f) :=
-    funext fun M ↦ firstRestHilbertProj_apply f M
-  have h := congrFun (LinearMap.congr_fun
-    (firstRestProj_comp_shuffleRep_tailAdditiveJucysMurphy_zero_comp_firstRestProj k ρ)
-    (WithLp.ofLp f)) S
-  simpa only [LinearMap.comp_apply, LinearMap.compLeft_apply, Function.comp_apply,
-    firstRestHilbertProj_apply, shuffleHilbertRep_apply, hproj, firstRestProj_apply] using h
-
-/-- **Pointwise Hilbert-carrier first-site normalized Jucys–Murphy rest-compression identity.** -/
-theorem firstRestHilbertProj_shuffleHilbertRep_tailJucysMurphy_zero
-    (k : ℕ) (ρ : TypeAHeckeAlgebra 𝕜 q (l + 1) →ₐ[𝕜] Module.End 𝕜 U)
-    (f : PiLp 2 fun _ : ShuffleMask k (l + 1) ↦ U) (S : ShuffleMask k (l + 1)) :
-    firstRestHilbertProj 𝕜 U
-        (shuffleHilbertRep k ρ (tailJucysMurphy q (0 : Fin (k + (l + 1))))
-          (firstRestHilbertProj 𝕜 U f)) S =
-      ρ (tailJucysMurphy q (0 : Fin (l + 1))) (firstRestHilbertProj 𝕜 U f S) := by
-  have hproj : WithLp.ofLp (firstRestHilbertProj 𝕜 U f) = firstRestProj 𝕜 U (WithLp.ofLp f) :=
-    funext fun M ↦ firstRestHilbertProj_apply f M
-  have h := congrFun (LinearMap.congr_fun
-    (firstRestProj_comp_shuffleRep_tailJucysMurphy_zero_comp_firstRestProj k ρ)
-    (WithLp.ofLp f)) S
-  simpa only [LinearMap.comp_apply, LinearMap.compLeft_apply, Function.comp_apply,
-    firstRestHilbertProj_apply, shuffleHilbertRep_apply, hproj, firstRestProj_apply] using h
-
-/-- **Operator-level Hilbert-carrier first-site additive Jucys–Murphy rest-compression identity.**
-Compressing `shuffleHilbertRep k ρ (tailAdditiveJucysMurphy q 0)` by `firstRestHilbertProj` equals
-the fiberwise action of `ρ (tailAdditiveJucysMurphy q 0)` on `firstRestHilbertProj`. -/
-theorem firstRestHilbertProj_comp_shuffleHilbertRep_tailAdditiveJucysMurphy_zero_comp
-    (k : ℕ) (ρ : TypeAHeckeAlgebra 𝕜 q (l + 1) →ₐ[𝕜] Module.End 𝕜 U) :
-    firstRestHilbertProj 𝕜 U ∘ₗ
-        shuffleHilbertRep k ρ (tailAdditiveJucysMurphy q (0 : Fin (k + (l + 1)))) ∘ₗ
-          firstRestHilbertProj 𝕜 U =
-      (((WithLp.linearEquiv 2 𝕜 (ShuffleMask k (l + 1) → U)).symm.conjAlgEquiv 𝕜)
-          ((ρ (tailAdditiveJucysMurphy q (0 : Fin (l + 1)))).compLeft (ShuffleMask k (l + 1)))) ∘ₗ
-        firstRestHilbertProj 𝕜 U :=
-  LinearMap.ext fun f ↦ PiLp.ext fun S ↦
-    firstRestHilbertProj_shuffleHilbertRep_tailAdditiveJucysMurphy_zero k ρ f S
-
-/-- **Operator-level Hilbert-carrier first-site normalized Jucys–Murphy rest-compression identity.**
-Compressing `shuffleHilbertRep k ρ (tailJucysMurphy q 0)` by `firstRestHilbertProj` equals the
-fiberwise action of `ρ (tailJucysMurphy q 0)` on `firstRestHilbertProj`. -/
-theorem firstRestHilbertProj_comp_shuffleHilbertRep_tailJucysMurphy_zero_comp
-    (k : ℕ) (ρ : TypeAHeckeAlgebra 𝕜 q (l + 1) →ₐ[𝕜] Module.End 𝕜 U) :
-    firstRestHilbertProj 𝕜 U ∘ₗ
-        shuffleHilbertRep k ρ (tailJucysMurphy q (0 : Fin (k + (l + 1)))) ∘ₗ
-          firstRestHilbertProj 𝕜 U =
-      (((WithLp.linearEquiv 2 𝕜 (ShuffleMask k (l + 1) → U)).symm.conjAlgEquiv 𝕜)
-          ((ρ (tailJucysMurphy q (0 : Fin (l + 1)))).compLeft (ShuffleMask k (l + 1)))) ∘ₗ
-        firstRestHilbertProj 𝕜 U :=
-  LinearMap.ext fun f ↦ PiLp.ext fun S ↦
-    firstRestHilbertProj_shuffleHilbertRep_tailJucysMurphy_zero k ρ f S
-
-end Hilbert
 
 end TauCeti.TypeAHeckeAlgebra

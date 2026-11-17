@@ -18,19 +18,13 @@ its Coxeter length in `TauCeti.permCoxeterSystem n` is `n.choose 2`. Right multi
 `ℓ (σ * Fin.revPerm) + ℓ σ = ℓ Fin.revPerm`, making `Fin.revPerm` the unique longest element of
 `TauCeti.permCoxeterSystem n`.
 
-Conjugation by `Fin.revPerm` reverses the simple reflections, sending the adjacent transposition
-`transposition i` to `transposition i.rev`.
-
 ## Main results
 
-* `TauCeti.BraidGroup.strand_rev` and `TauCeti.BraidGroup.strandSucc_rev`: reversing generator
-  indices exchanges and reverses the two crossed strands.
-* `TauCeti.BraidGroup.revPerm_mul_transposition_mul_revPerm` and
-  `TauCeti.BraidGroup.revPerm_mul_transposition`: conjugation by `Fin.revPerm` reverses the
-  adjacent transpositions.
 * `TauCeti.permCoxeterSystem_length_revPerm`: the Coxeter length of `Fin.revPerm` is `n.choose 2`.
 * `TauCeti.isLongest_permCoxeterSystem_revPerm`: `Fin.revPerm` is the longest element of
   `TauCeti.permCoxeterSystem n`.
+* `TauCeti.permCoxeterSystem_bruhatLE_revPerm`: every permutation lies below `Fin.revPerm` in the
+  Bruhat order of `TauCeti.permCoxeterSystem n`.
 
 ## References
 
@@ -39,43 +33,6 @@ Conjugation by `Fin.revPerm` reverses the simple reflections, sending the adjace
 -/
 
 public section
-
-namespace TauCeti.BraidGroup
-
-variable {n : ℕ}
-
-/-- Reversing the crossing index sends the lower crossed strand to the reversal of the upper
-crossed strand. -/
-@[simp]
-theorem strand_rev (i : Fin (n - 1)) : strand i.rev = (strandSucc i).rev := by
-  ext
-  simp only [val_strand, val_strandSucc, Fin.val_rev]
-  omega
-
-/-- Reversing the crossing index sends the upper crossed strand to the reversal of the lower
-crossed strand. -/
-@[simp]
-theorem strandSucc_rev (i : Fin (n - 1)) : strandSucc i.rev = (strand i).rev := by
-  ext
-  simp only [val_strand, val_strandSucc, Fin.val_rev]
-  omega
-
-/-- `Fin.revPerm` intertwines each adjacent transposition with the reversed one. -/
-theorem revPerm_mul_transposition (i : Fin (n - 1)) :
-    Fin.revPerm * transposition i = transposition i.rev * Fin.revPerm := by
-  rw [transposition_eq_swap, Equiv.mul_swap_eq_swap_mul, Fin.revPerm_apply, Fin.revPerm_apply,
-    Equiv.swap_comm, ← strand_rev, ← strandSucc_rev, ← transposition_eq_swap]
-
-/-- Conjugation by `Fin.revPerm` reverses the index of an adjacent transposition. -/
-@[simp]
-theorem revPerm_mul_transposition_mul_revPerm (i : Fin (n - 1)) :
-    Fin.revPerm * transposition i * Fin.revPerm = transposition i.rev := by
-  have hself : (Fin.revPerm : Equiv.Perm (Fin n)) * Fin.revPerm = 1 := by
-    ext x
-    simp
-  rw [revPerm_mul_transposition, mul_assoc, hself, mul_one]
-
-end TauCeti.BraidGroup
 
 namespace TauCeti
 
