@@ -8,13 +8,18 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Finite sums of `MemLp.toLp` classes, and composition with a continuous linear map
+# Sums and linear combinations in `Lᵖ`, and composition with a continuous linear map
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
 class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
 witness on the sum.
+
+Mathlib describes the representatives of sums, negatives and scalar multiples in `Lᵖ` almost
+everywhere (`MeasureTheory.Lp.coeFn_add` and its siblings); this file records the forms that
+transport almost-everywhere descriptions `⇑u =ᵐ[μ] g` of the summands, which compute the
+representatives of linear combinations.
 
 Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
 the bundled continuous semilinear map `L.compLpL p μ`; this file also records that the two agree.
@@ -24,6 +29,9 @@ the bundled continuous semilinear map `L.compLpL p μ`; this file also records t
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
+  `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
+  `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 -/
 
@@ -51,6 +59,30 @@ theorem toLp_finsetSum (hsum : MemLp (fun x ↦ ∑ i ∈ s, f i x) p μ) (hf : 
   exact toLp_congr _ _ (.of_forall fun x ↦ (Finset.sum_apply x s f).symm)
 
 end MeasureTheory.MemLp
+
+namespace MeasureTheory.Lp
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] {u v : Lp E p μ} {g h : α → E}
+
+/-- If `u` and `v` are almost everywhere `g` and `h`, then `u + v` is almost everywhere `g + h`. -/
+theorem coeFn_add_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u + v) =ᵐ[μ] g + h :=
+  (coeFn_add u v).trans (hu.add hv)
+
+/-- If `u` and `v` are almost everywhere `g` and `h`, then `u - v` is almost everywhere `g - h`. -/
+theorem coeFn_sub_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u - v) =ᵐ[μ] g - h :=
+  (coeFn_sub u v).trans (hu.sub hv)
+
+/-- If `u` is almost everywhere `g`, then `-u` is almost everywhere `-g`. -/
+theorem coeFn_neg_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) : ⇑(-u) =ᵐ[μ] -g :=
+  (coeFn_neg u).trans hu.neg
+
+/-- If `u` is almost everywhere `g`, then `c • u` is almost everywhere `c • g`. -/
+theorem coeFn_smul_ae_eq_of_ae_eq [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (c : 𝕜)
+    (hu : ⇑u =ᵐ[μ] g) : ⇑(c • u) =ᵐ[μ] c • g :=
+  (coeFn_smul c u).trans (hu.const_smul c)
+
+end MeasureTheory.Lp
 
 namespace ContinuousLinearMap
 

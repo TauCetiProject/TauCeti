@@ -12,7 +12,9 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
 
-The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. We differentiate it along
+The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. For the cylindrical datum
+`K = H_t dt` and `J_t` independent of `s` it commutes with translations in `s`
+(`floerOperator_comp_sub`). We differentiate it along
 jointly `C²` families of maps and Hamiltonians and differentiable families of endomorphisms.
 The formula includes the target derivative of `J`, both Hamiltonian linearizations, and the
 independent parameter variations of `K` and `J`. Domain dependence of the coefficients is
@@ -23,7 +25,8 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
 and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
 (`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
-there (`floerLinearization_congr_of_eventuallyEq`). For `C¹` coefficients `J` and `C²`
+there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their
+values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
@@ -78,6 +81,15 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
   rw [floerOperator_def, ω.isComplexLinearMap_perturbedFDeriv_iff]
   -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
+
+/-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
+structure `J_t` independent of `s`, the Floer operator of the translate `w ↦ f(w - (R, 0))` at `z`
+is the Floer operator of `f` at `z - (R, 0)`. -/
+theorem floerOperator_comp_sub (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ)
+    (f : ℝ × ℝ → V) (R : ℝ) (z : ℝ × ℝ) :
+    ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (fun w ↦ f (w - (R, 0))) z =
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) f (z - (R, 0)) := by
+  simp only [floerOperator_def, fderiv_comp_sub, Prod.snd_sub, sub_zero]
 
 /-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
 endomorphism fields, the coordinate Floer operator has derivative `Y(u)(∂t u - X_Kt)` at every
@@ -202,6 +214,14 @@ theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     (u : ℝ × ℝ → V) {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[nhds z] η) :
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The linearization at `z` depends on the Floer data `J`, `Ks`, `Kt` only through their values
+at `z`, as functions of the target point. -/
+theorem floerLinearization_congr_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u ξ : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J' Ks' Kt' u ξ z := by
+  rw [floerLinearization_def, floerLinearization_def, hJ, hKs, hKt]
 
 /-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
 linearized Floer operator at the domain point `z`. -/

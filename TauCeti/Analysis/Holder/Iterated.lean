@@ -90,13 +90,6 @@ local instance CkHolderSpace.instNormedAddCommGroupBoundedContinuousFunction (n 
     NormedAddCommGroup (E →ᵇ (E [×n]→L[ℝ] F)) :=
   inferInstance
 
-/-- Shortcut instance for bounded continuous fields of `n`-multilinear maps, needed for operator
-norms of continuous linear maps into these fields indexed by the order `n`. It is local for the
-same reason. -/
-local instance CkHolderSpace.instNormedSpaceBoundedContinuousFunction (n : ℕ) :
-    NormedSpace ℝ (E →ᵇ (E [×n]→L[ℝ] F)) :=
-  inferInstance
-
 /-- The space of bounded `C^k` maps whose iterated Fréchet derivatives through order `k` are
 bounded and whose `k`-th iterated derivative is globally `α`-Hölder. Its norm is
 
