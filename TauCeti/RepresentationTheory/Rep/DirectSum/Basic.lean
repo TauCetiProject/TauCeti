@@ -20,7 +20,8 @@ categorical biproduct.
 
 The natural identification with a dependent product conjugates the direct-sum action to the
 componentwise action, so finite direct sums can also be studied through product linear maps.
-For arbitrary index types with decidable equality, `Representation.tprodDirectSumLeftEquiv`
+For arbitrary index types, `Representation.directSumEquivCongr` lifts a family of equivalences to
+an equivalence of direct sums, and with decidable equality `Representation.tprodDirectSumLeftEquiv`
 lifts `TensorProduct.directSumLeft` to an equivalence of representations distributing
 `Representation.tprod` over `Representation.directSum` on the left.
 -/
@@ -47,6 +48,45 @@ theorem conj_directSum_linearEquivFunOnFintype
   simp only [LinearEquiv.conj_apply_apply, LinearMap.coe_piMap, Pi.map_apply,
     DirectSum.linearEquivFunOnFintype_apply, directSum_apply, DirectSum.lmap_apply]
   rw [← DirectSum.linearEquivFunOnFintype_apply k ι V, LinearEquiv.apply_symm_apply]
+
+section Congr
+
+variable {k G ι : Type*} [Semiring k] [Monoid G]
+  {V W : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
+  [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
+  {ρ : ∀ i, Representation k G (V i)} {σ : ∀ i, Representation k G (W i)}
+
+/-- **Congruence for a direct sum of representations**: a family `e i : (ρ i).Equiv (σ i)`
+induces `(directSum ρ).Equiv (directSum σ)` lifting `DirectSum.congrLinearEquiv`. -/
+noncomputable def directSumEquivCongr (e : ∀ i, (ρ i).Equiv (σ i)) :
+    (directSum ρ).Equiv (directSum σ) :=
+  .mk (DirectSum.congrLinearEquiv fun i ↦ (e i).toLinearEquiv) fun g ↦
+    LinearMap.ext fun x ↦ DFinsupp.ext fun i ↦ by
+      simpa [directSum_apply, DirectSum.coe_congrLinearEquiv] using
+        LinearMap.ext_iff.mp ((e i).toIntertwiningMap.isIntertwining' g) (x i)
+
+/-- The linear equivalence underlying `directSumEquivCongr` is `DirectSum.congrLinearEquiv`. -/
+@[simp] theorem directSumEquivCongr_toLinearEquiv (e : ∀ i, (ρ i).Equiv (σ i)) :
+    (directSumEquivCongr e).toLinearEquiv =
+      DirectSum.congrLinearEquiv fun i ↦ (e i).toLinearEquiv := (rfl)
+
+/-- Evaluating `directSumEquivCongr` on a direct sum applies each equivalence componentwise. -/
+@[simp] theorem directSumEquivCongr_apply (e : ∀ i, (ρ i).Equiv (σ i)) (x : ⨁ i, V i)
+    (i : ι) : directSumEquivCongr e x i = e i (x i) := by
+  simp [directSumEquivCongr, DirectSum.coe_congrLinearEquiv]
+
+/-- The inverse of `directSumEquivCongr` applies the inverse equivalences componentwise. -/
+@[simp] theorem directSumEquivCongr_symm_apply (e : ∀ i, (ρ i).Equiv (σ i)) (y : ⨁ i, W i)
+    (i : ι) : (directSumEquivCongr e).symm y i = (e i).symm (y i) := by
+  rw [← (e i).symm_apply_apply ((directSumEquivCongr e).symm y i),
+    ← directSumEquivCongr_apply, Representation.Equiv.apply_symm_apply]
+
+/-- `directSumEquivCongr` maps `v` in summand `i` to `e i v` in summand `i`. -/
+@[simp] theorem directSumEquivCongr_lof [DecidableEq ι] (e : ∀ i, (ρ i).Equiv (σ i)) (i : ι)
+    (v : V i) : directSumEquivCongr e (lof k ι V i v) = lof k ι W i (e i v) := by
+  simp [directSumEquivCongr, DirectSum.coe_congrLinearEquiv]
+
+end Congr
 
 section TensorProduct
 

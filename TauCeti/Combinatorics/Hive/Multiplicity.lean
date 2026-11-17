@@ -65,7 +65,6 @@ identifies integer hive counts with tensor-product multiplicities and invariant 
 public section
 
 open CategoryTheory MonoidalCategory Matrix MvPolynomial YoungDiagram
-open scoped DirectSum
 
 namespace TauCeti.Hive
 
@@ -118,13 +117,6 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
   simp only [hpol, ↓reduceIte, hsh, Nat.cast_smul_eq_nsmul]
 
 /-! ### Hom-space multiplicities and invariants on rational Weyl modules -/
-
-/-- Schur's lemma combined with highest-weight injectivity on `rationalWeylFDRep ℂ n`. -/
-private theorem finrank_hom_rationalWeylFDRep {n : ℕ} (γ σ : DominantWeight n) :
-    Module.finrank ℂ (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n σ) =
-      if γ = σ then 1 else 0 := by
-  classical
-  rw [FDRep.finrank_hom_simple_simple, if_congr (nonempty_iso_rationalWeylFDRep_iff ℂ) rfl rfl]
 
 open scoped Classical in
 /-- Partition-indexed multiplicity sum matching `hiveCount (productBoundary lam μ γ)`. -/
@@ -217,43 +209,6 @@ theorem hiveCount_comm {n : ℕ} (l m p : DominantWeight n) :
   exact (Linear.homCongr ℂ (Iso.refl _)
     (β_ (rationalWeylFDRep ℂ n l) (rationalWeylFDRep ℂ n m))).finrank_eq
 
-/-- The tensor unit of `FDRep ℂ (GL (Fin n) ℂ)` is isomorphic to the rational Weyl module of the
-zero dominant weight. -/
-private theorem nonempty_iso_tensorUnit_rationalWeylFDRep_zero (n : ℕ) :
-    Nonempty (𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ≅ rationalWeylFDRep ℂ n 0) := by
-  let _ (l : DominantWeight n) :
-      AddCommGroup (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule := inferInstance
-  have h0 : (0 : DominantWeight n) = (weightOfShape n ⊥).shift 0 := by ext i; simp
-  obtain ⟨e⟩ := IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
-    (isRationalRep_detPowerRep (n := n) 0) (isRationalRep_rationalWeylRep n 0) fun t => by
-      have hlhs : (detPowerRep ℂ n 0).character (diagGL t) = 1 := by
-        rw [char_detPowerRep, zpow_zero, Units.val_one]
-      have hrhs : Representation.character
-          (V := ↥(weylModuleOfShape ℂ n (0 : DominantWeight n).detShiftShape).toSubmodule)
-          (rationalWeylRep ℂ n 0) (diagGL t) = 1 := by
-        rw [h0, char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n (by simp) 0 t,
-          diagramSchurPoly_bot]
-        simp
-      rw [hlhs, hrhs]
-  -- `𝟙_ (FDRep ℂ (GL (Fin n) ℂ))` has carrier `ℂ` definitionally (cf. `FDRep.char_tensorUnit`).
-  refine ⟨e.toLinearEquiv.toFDRepIso fun g x => ?_⟩
-  have hunit : (𝟙_ (FDRep ℂ (GL (Fin n) ℂ))).ρ g x = detPowerRep ℂ n 0 g x := by
-    rw [FDRep.tensorUnit_ρ]
-    simp [detPowerRep_zero]
-  rw [hunit]
-  exact LinearMap.ext_iff.mp (e.toIntertwiningMap.isIntertwining' g) x
-
-private noncomputable def directSumEquivCongr {k G ι : Type*} [Semiring k] [Monoid G]
-    {V W : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
-    [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
-    {ρ : ∀ i, Representation k G (V i)} {σ : ∀ i, Representation k G (W i)}
-    (e : ∀ i, (ρ i).Equiv (σ i)) :
-    (Representation.directSum ρ).Equiv (Representation.directSum σ) :=
-  .mk (DirectSum.congrLinearEquiv fun i => (e i).toLinearEquiv) fun g =>
-    LinearMap.ext fun x => DFinsupp.ext fun i => by
-      simpa [Representation.directSum_apply, DirectSum.coe_congrLinearEquiv] using
-        LinearMap.ext_iff.mp ((e i).toIntertwiningMap.isIntertwining' g) (x i)
-
 /-- **The invariant form of the hive model for `GL n ℂ`**: for all dominant weights `λ, μ, ν` of
 `GL n ℂ`, the complex dimension of the space of `GL n ℂ`-invariants
 `𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ⟶ V_λ ⊗ V_μ ⊗ V_ν` equals the number of integer hives with cyclic
@@ -264,13 +219,13 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
           rationalWeylFDRep ℂ n ν) =
       hiveCount ![lam.1, μ.1, ν.1] := by
   classical
-  obtain ⟨i₀⟩ := nonempty_iso_tensorUnit_rationalWeylFDRep_zero n
+  obtain ⟨i₀⟩ := nonempty_iso_tensorUnit_rationalWeylFDRep_zero ℂ n
   rw [(Linear.homCongr ℂ i₀ (α_ _ _ _).symm).finrank_eq]
   obtain ⟨he₁₂⟩ := nonempty_equiv_fdrep_tensor_rationalWeyl lam μ
   have he₃ := (FDRep.tprodEquiv
       (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n ν)).trans <|
     (he₁₂.tprod (.refl _)).trans <| (Representation.tprodDirectSumLeftEquiv _ _).trans <|
-      directSumEquivCongr fun p =>
+      Representation.directSumEquivCongr fun p =>
         (FDRep.tprodEquiv (rationalWeylFDRep ℂ n
           ((weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift)))
           (rationalWeylFDRep ℂ n ν)).symm
@@ -282,7 +237,7 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
   have hdual : productBoundary lam μ ν.dual = ![lam.1, μ.1, ν.1] := by
     ext s i; fin_cases s <;> simp
   rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he₃]
-  simp only [finrank_hom_eq_hiveCount, hrot, ← finrank_hom_rationalWeylFDRep]
+  simp only [finrank_hom_eq_hiveCount, hrot, ← finrank_hom_rationalWeylFDRep ℂ]
   rw [← FDRep.finrank_hom_of_equiv_directSum _ _ _ he₁₂, finrank_hom_eq_hiveCount, hdual]
 
 /-! ### Concrete representation-theoretic and finite-alphabet checks -/
