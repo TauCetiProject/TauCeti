@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType
 public import TauCeti.Geometry.Manifold.Quotient.Sunada
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
-import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
 
 /-!
 # Isospectral quotients of a Riemannian manifold
