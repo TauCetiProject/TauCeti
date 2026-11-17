@@ -87,24 +87,25 @@ private theorem eventuallyEq_extChartAt_snd_vectorBundle {i z : ManifoldTotalSpa
   rw [← ManifoldTotalSpace.homeomorph_symm_proj w] at hwb_z hwb_i1 ⊢
   exact (Trivialization.coordChangeL_apply_snd 𝕜 _ _ hwb_z hwb_i1).symm
 
-/-- For a `C^1` vector bundle `V`, the nonlinear first-jet coordinate change from the preferred
-chart at `z` to any chart `i` containing `z` agrees with the derivative component (`.2`) of the
-linear `FirstJetBundle.coordChange` from `z.proj` to `i.proj`. -/
-theorem coordChange_self_left_eq_firstJetBundle_coordChange_snd {i z : ManifoldTotalSpace F V}
-    (hi : z ∈ (chartAt (ModelProd HB F) i).source) (A : EB →L[𝕜] F) :
-    coordChange (IB := IB) (IF := 𝓘(𝕜, F)) (F := F) (E := V) z i z A =
-      (FirstJetBundle.coordChange IB F V z.proj i.proj z.proj
-        ((trivializationAt F V z.proj ((ManifoldTotalSpace.homeomorph F V).symm z)).2, A)).2 := by
-  set b := z.proj
-  set b_i := i.proj
+private theorem hasFDerivWithinAt_fiberCoordChange_chartComp {i z : ManifoldTotalSpace F V}
+    (hi : z ∈ (chartAt (ModelProd HB F) i).source) :
+    let b := z.proj
+    let b_i := i.proj
+    let v := (trivializationAt F V b ((ManifoldTotalSpace.homeomorph F V).symm z)).2
+    HasFDerivWithinAt
+      (fun q : EB × F ↦ FirstJetBundle.fiberCoordChange IB F V b b_i
+        (extChartAt IB b_i ((extChartAt IB b).symm q.1)) q.2)
+      (((fderivWithin 𝕜 (FirstJetBundle.fiberCoordChange IB F V b b_i) (range IB)
+            (extChartAt IB b_i b)).comp
+          ((tangentCoordChange IB b b_i b).comp (ContinuousLinearMap.fst 𝕜 EB F))).flip v +
+        (((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V b_i) b : F →L[𝕜] F).comp
+          (ContinuousLinearMap.snd 𝕜 EB F)))
+      (range (IB.prod 𝓘(𝕜, F))) (extChartAt IB b b, v) := by
+  intro b b_i v
   have hb_ext := mem_extChartAt_source (I := IB) b
-  set v := (trivializationAt F V b ((ManifoldTotalSpace.homeomorph F V).symm z)).2
   have hb_i' := ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi
   have hb_i := (FirstJetBundle.mem_baseSet_iff (H := HB) F V).2 hb_i'
   have hbi_ext : b ∈ (extChartAt IB b_i).source := (extChartAt_source IB b_i).symm ▸ hb_i'.2
-  have hz_pt : extChartAt (IB.prod 𝓘(𝕜, F)) z z = (extChartAt IB b b, v) :=
-    Prod.ext (ManifoldTotalSpace.extChartAt_fst_eq (mem_chart_source _ z))
-      (ManifoldTotalSpace.extChartAt_snd_eq IB z z)
   have hbase_step : HasFDerivWithinAt
       (fun q : EB × F ↦ (extChartAt IB b_i ∘ (extChartAt IB b).symm) q.1)
       ((tangentCoordChange IB b b_i b).comp (ContinuousLinearMap.fst 𝕜 EB F))
@@ -119,8 +120,27 @@ theorem coordChange_self_left_eq_firstJetBundle_coordChange_snd {i z : ManifoldT
         rw [Function.comp_apply, extChartAt_coe]; exact mem_range_self _).clm_apply
     (hasFDerivAt_snd (𝕜 := 𝕜) (E := EB) (F := F)).hasFDerivWithinAt
   dsimp only [Function.comp_def] at hclm
-  rw [(extChartAt IB b).left_inv hb_ext, FirstJetBundle.fiberCoordChange_extChartAt hb_i'.2,
+  rwa [(extChartAt IB b).left_inv hb_ext, FirstJetBundle.fiberCoordChange_extChartAt hb_i'.2,
     add_comm] at hclm
+
+/-- For a `C^1` vector bundle `V`, the nonlinear first-jet coordinate change from the preferred
+chart at `z` to any chart `i` containing `z` agrees with the derivative component (`.2`) of the
+linear `FirstJetBundle.coordChange` from `z.proj` to `i.proj`. -/
+theorem coordChange_self_left_eq_firstJetBundle_coordChange_snd {i z : ManifoldTotalSpace F V}
+    (hi : z ∈ (chartAt (ModelProd HB F) i).source) (A : EB →L[𝕜] F) :
+    coordChange (IB := IB) (IF := 𝓘(𝕜, F)) (F := F) (E := V) z i z A =
+      (FirstJetBundle.coordChange IB F V z.proj i.proj z.proj
+        ((trivializationAt F V z.proj ((ManifoldTotalSpace.homeomorph F V).symm z)).2, A)).2 := by
+  set b := z.proj
+  set b_i := i.proj
+  set v := (trivializationAt F V b ((ManifoldTotalSpace.homeomorph F V).symm z)).2
+  have hb_ext := mem_extChartAt_source (I := IB) b
+  have hbi_ext : b ∈ (extChartAt IB b_i).source :=
+    (extChartAt_source IB b_i).symm ▸ (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
+  have hz_pt : extChartAt (IB.prod 𝓘(𝕜, F)) z z = (extChartAt IB b b, v) :=
+    Prod.ext (ManifoldTotalSpace.extChartAt_fst_eq (mem_chart_source _ z))
+      (ManifoldTotalSpace.extChartAt_snd_eq IB z z)
+  -- Step 1: differentiate both sides of `eventuallyEq_extChartAt_snd_vectorBundle`.
   have hT_snd : HasFDerivWithinAt
       (fun q : EB × F ↦ (extChartAt (IB.prod 𝓘(𝕜, F)) i
         ((extChartAt (IB.prod 𝓘(𝕜, F)) z).symm q)).2)
@@ -129,16 +149,20 @@ theorem coordChange_self_left_eq_firstJetBundle_coordChange_snd {i z : ManifoldT
     hz_pt ▸ hasFDerivAt_snd.comp_hasFDerivWithinAt _
       (hasFDerivWithinAt_tangentCoordChange ⟨mem_extChartAt_source z,
         (extChartAt_source (IB.prod 𝓘(𝕜, F)) i).symm ▸ hi⟩)
+  have hclm := hasFDerivWithinAt_fiberCoordChange_chartComp (IB := IB) hi
   have hev := eventuallyEq_extChartAt_snd_vectorBundle (IB := IB) hi
   have hrange : (extChartAt IB b b, v) ∈ range (IB.prod 𝓘(𝕜, F)) :=
     hz_pt ▸ extChartAt_target_subset_range z (mem_extChartAt_target z)
+  -- Step 2: identify the derivatives by `UniqueDiffOn`, then evaluate on the graph of `A`.
   have heq_clm := ((IB.prod 𝓘(𝕜, F)).uniqueDiffOn _ hrange).eq hT_snd
     (hclm.congr_of_eventuallyEq hev (hev.self_of_nhdsWithin hrange))
   ext u
-  have hcomp_base : tangentCoordChange IB b b_i b (tangentCoordChange IB b_i b b u) = u := by
+  have hcomp_base :
+      tangentCoordChange IB z.proj i.proj z.proj (tangentCoordChange IB i.proj z.proj z.proj u) =
+        u := by
     rw [tangentCoordChange_comp ⟨⟨hbi_ext, hb_ext⟩, hbi_ext⟩, tangentCoordChange_self hbi_ext]
   have happ := DFunLike.congr_fun heq_clm
-    (tangentCoordChange IB b_i b b u, A (tangentCoordChange IB b_i b b u))
+    (tangentCoordChange IB i.proj z.proj z.proj u, A (tangentCoordChange IB i.proj z.proj z.proj u))
   simp only [comp_apply, add_apply, flip_apply, ContinuousLinearMap.coe_fst',
     ContinuousLinearMap.coe_snd', hcomp_base] at happ
   rw [coordChange_apply, FirstJetBundle.coordChange_apply]
@@ -300,6 +324,8 @@ private theorem contMDiff_ofFirstJetBundle (n : ℕ∞ω) :
   have htriv : ContMDiffAt (IB.prod 𝓘(𝕜, F × (EB →L[𝕜] F))) 𝓘(𝕜, F × (EB →L[𝕜] F)) n
       (fun q ↦ (trivializationAt (F × (EB →L[𝕜] F)) (FirstJetBundle IB F V) q₀.proj q).2) q₀ :=
     (Bundle.contMDiffAt_totalSpace_iff.1 contMDiffAt_id).2
+  -- Stage 1: smoothness of the target projection `q ↦ (ofFirstJetBundle q).proj` using the
+  -- value coordinate in the preferred trivialization at `q₀.proj`.
   have hproj_smooth : ContMDiffAt (IB.prod 𝓘(𝕜, F × (EB →L[𝕜] F))) (IB.prod 𝓘(𝕜, F)) n
       (fun q ↦ (ofFirstJetBundle q).proj) q₀ := by
     refine ManifoldTotalSpace.contMDiffAt_iff.2 ⟨Bundle.contMDiffAt_proj (FirstJetBundle IB F V),
@@ -314,6 +340,8 @@ private theorem contMDiff_ofFirstJetBundle (n : ℕ∞ω) :
       FirstJetBundle.trivializationAt_apply_snd, FirstJetBundle.coordChange_apply]
     exact (Trivialization.coordChangeL_apply (R := 𝕜) _ _
       ⟨mem_baseSet_trivializationAt F V b, hq⟩ v).symm
+  -- Stage 2: smoothness of the fibre jet coordinate via
+  -- `coordChange_self_left_eq_firstJetBundle_coordChange_snd`.
   refine Bundle.contMDiffAt_totalSpace_iff.2 ⟨hproj_smooth,
     ((ContinuousLinearMap.snd 𝕜 F (EB →L[𝕜] F)).contMDiffAt.comp q₀ htriv).congr_of_eventuallyEq
       ?_⟩

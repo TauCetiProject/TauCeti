@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Manifold.FiberBundle.Submersion
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The vertical tangent bundle of a smooth fibre bundle
@@ -34,9 +35,6 @@ and `TE` it is the constant linear inclusion `w ↦ (0, w)`.
 
 ## Main definitions and results
 
-* `TauCeti.ManifoldTotalSpace.fst_comp_tangentCoordChange`, `fst_continuousLinearMapAt_tangent`, and
-  `mfderiv_proj_symmL`: compatibility of `mfderiv proj` with preferred tangent coordinates and
-  tangent coordinate changes on `ManifoldTotalSpace F E`.
 * `TauCeti.verticalSubmodule` and `TauCeti.VerticalSpace`: the kernel submodule `ker (mfderiv proj)`
   and its subtype carrier, with preferred-chart linear equivalence `VerticalSpace.modelEquivAt`.
 * `TauCeti.VerticalSpace.vectorPrebundle` and `contMDiffVectorBundle`: the `C^n` vector bundle
@@ -52,8 +50,9 @@ and `TE` it is the constant linear inclusion `w ↦ (0, w)`.
 * I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer,
   1993, §§6.11, 9.3.
 * D. J. Saunders, *The Geometry of Jet Bundles*, Cambridge University Press, 1989, §§1.2, 2.2.
-* Tangent-coordinate bridges and submersion projection derivatives build on
-  `TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic` and
+* Tangent-coordinate bridges and submersion projection derivatives (including
+  `fst_comp_tangentCoordChange`, `fst_continuousLinearMapAt_tangent`, and `mfderiv_proj_symmL`)
+  come from `TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic` and
   `TauCeti.Geometry.Manifold.FiberBundle.Submersion` (generalizing
   `TauCeti.Geometry.Manifold.VectorBundle.Submersion`).
 -/
@@ -74,85 +73,6 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜]
   {IF : ModelWithCorners 𝕜 EF HF} {F : Type*} [TopologicalSpace F] [ChartedSpace HF F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)]
   [FiberBundle F E]
-
-namespace ManifoldTotalSpace
-
-section TangentCoordChange
-variable [IsManifold IB 1 B] [IsManifold IF 1 F] [ContMDiffFiberBundle 1 F E IB IF]
-
-/-- On the overlap of two preferred charts of `ManifoldTotalSpace F E`, the first component of
-`tangentCoordChange` intertwines with the base `tangentCoordChange` via `Prod.fst`. -/
-theorem fst_comp_tangentCoordChange {i j z : ManifoldTotalSpace F E}
-    (hi : z ∈ (chartAt (ModelProd HB HF) i).source)
-    (hj : z ∈ (chartAt (ModelProd HB HF) j).source) :
-    (ContinuousLinearMap.fst 𝕜 EB EF).comp (tangentCoordChange (IB.prod IF) i j z) =
-      (tangentCoordChange IB i.proj j.proj z.proj).comp (ContinuousLinearMap.fst 𝕜 EB EF) := by
-  have hi' : z ∈ (extChartAt (IB.prod IF) i).source := (extChartAt_source (IB.prod IF) i).symm ▸ hi
-  have hj' : z ∈ (extChartAt (IB.prod IF) j).source := (extChartAt_source (IB.prod IF) j).symm ▸ hj
-  have hbi : z.proj ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ (proj_mem_of_mem_chartAt_source hi).2
-  have hbj : z.proj ∈ (extChartAt IB j.proj).source :=
-    (extChartAt_source IB j.proj).symm ▸ (proj_mem_of_mem_chartAt_source hj).2
-  have hLHS := (hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := EF)).comp_hasFDerivWithinAt _
-    (hasFDerivWithinAt_tangentCoordChange (I := IB.prod IF) ⟨hi', hj'⟩)
-  have hRHS := ((extChartAt_fst_eq (IB := IB) (IF := IF) hi).symm ▸
-      hasFDerivWithinAt_tangentCoordChange (I := IB) ⟨hbi, hbj⟩).comp (extChartAt (IB.prod IF) i z)
-    ((hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := EF)).hasFDerivWithinAt (s := range (IB.prod IF)))
-    fun y hy ↦ by rw [ModelWithCorners.range_prod] at hy; exact hy.1
-  have hrange := extChartAt_target_subset_range i ((extChartAt (IB.prod IF) i).map_source hi')
-  have hev : (fun y : EB × EF ↦ (extChartAt (IB.prod IF) j ((extChartAt (IB.prod IF) i).symm y)).1)
-      =ᶠ[𝓝[range (IB.prod IF)] (extChartAt (IB.prod IF) i z)]
-      fun y : EB × EF ↦ (extChartAt IB j.proj ∘ (extChartAt IB i.proj).symm) y.1 := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem
-        ((extChartAt (IB.prod IF) i).map_source hi'),
-      nhdsWithin_le_nhds (extChartAt_preimage_mem_nhds' hi'
-        ((chartAt (ModelProd HB HF) j).open_source.mem_nhds hj))] with y hyt hyj
-    rw [extChartAt_fst_eq hyj, proj_extChartAt_symm i hyt, Function.comp_apply]
-  exact (IB.prod IF).uniqueDiffOn.eq hrange hLHS
-    (hRHS.congr_of_eventuallyEq hev (hev.self_of_nhdsWithin hrange))
-
-/-- In the preferred tangent trivialization around `i`, the first coordinate of a tangent vector `v`
-at `z` equals the base tangent coordinate around `i.proj` of `mfderiv proj z v`. -/
-theorem fst_continuousLinearMapAt_tangent {i z : ManifoldTotalSpace F E}
-    (hi : z ∈ (chartAt (ModelProd HB HF) i).source) (v : TangentSpace (IB.prod IF) z) :
-    ((trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i).continuousLinearMapAt 𝕜 z v).1 =
-      (trivializationAt EB (TangentSpace IB) i.proj).continuousLinearMapAt 𝕜 z.proj
-        (mfderiv (IB.prod IF) IB proj z v) := by
-  have hz_self := mem_chart_source (ModelProd HB HF) z
-  have hbi := (proj_mem_of_mem_chartAt_source hi).2
-  have hv : v = (trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) z).symmL 𝕜 z
-      (tangentSpaceCastModel (IB.prod IF) z v) := by
-    rw [TauCeti.Manifold.symmL_trivializationAt_self_eq_tangentSpaceCastModel_symm]
-    simp
-  have hmfd : mfderiv (IB.prod IF) IB proj z v =
-      (trivializationAt EB (TangentSpace IB) z.proj).symmL 𝕜 z.proj
-        (tangentSpaceCastModel (IB.prod IF) z v).1 := by
-    rw [TauCeti.Manifold.symmL_trivializationAt_self_eq_tangentSpaceCastModel_symm]
-    exact (tangentSpaceCastModel IB z.proj).injective (by simp)
-  rw [hmfd]; nth_rw 1 [hv]
-  rw [TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange hz_self hi,
-    TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange (mem_chart_source HB z.proj) hbi]
-  exact DFunLike.congr_fun (fst_comp_tangentCoordChange hz_self hi) _
-
-/-- In the preferred tangent trivialization around `i`, `mfderiv proj z` sends the tangent vector at
-`z` with coordinate pair `p : EB × EF` to the base tangent vector at `z.proj` with coordinate
-`p.1`. -/
-theorem mfderiv_proj_symmL {i z : ManifoldTotalSpace F E}
-    (hi : z ∈ (chartAt (ModelProd HB HF) i).source) (p : EB × EF) :
-    mfderiv (IB.prod IF) IB (proj : ManifoldTotalSpace F E → B) z
-        ((trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i).symmL 𝕜 z p) =
-      (trivializationAt EB (TangentSpace IB) i.proj).symmL 𝕜 z.proj p.1 := by
-  have hbi := (proj_mem_of_mem_chartAt_source hi).2
-  have h := fst_continuousLinearMapAt_tangent hi
-    ((trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i).symmL 𝕜 z p)
-  rw [(trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i).continuousLinearMapAt_symmL
-    hi] at h
-  have h0 := congrArg ((trivializationAt EB (TangentSpace IB) i.proj).symmL 𝕜 z.proj) h.symm
-  rwa [(trivializationAt EB (TangentSpace IB) i.proj).symmL_continuousLinearMapAt hbi] at h0
-
-end TangentCoordChange
-
-end ManifoldTotalSpace
 
 variable (IB IF F E) in
 /-- The vertical tangent submodule `ker (mfderiv proj z)` inside `TangentSpace (IB.prod IF) z` at
@@ -348,9 +268,9 @@ def pretrivializationAt (i : ManifoldTotalSpace F E) :
     rintro ⟨z, v⟩ (hz : z ∈ (chartAt (ModelProd HB HF) i).source)
     dsimp only; rw [dite_eq_left hz]; congr 1; ext; rw [val_mk]
     set eT := trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i
-    rw [show (0, (eT.continuousLinearMapAt 𝕜 z v).2) = eT.continuousLinearMapAt 𝕜 z v from
-        Prod.ext (continuousLinearMapAt_coe_fst hz v).symm rfl,
-      eT.symmL_continuousLinearMapAt hz]
+    have hpair : (0, (eT.continuousLinearMapAt 𝕜 z v).2) = eT.continuousLinearMapAt 𝕜 z v :=
+      Prod.ext (continuousLinearMapAt_coe_fst hz v).symm rfl
+    rw [hpair, eT.symmL_continuousLinearMapAt hz]
   right_inv' := by
     rintro ⟨z, w⟩ ⟨hz : z ∈ (chartAt _ i).source, -⟩; dsimp only; rw [dite_eq_left hz]
     simp only [val_mk,
@@ -620,27 +540,24 @@ theorem contMDiffWithinAt_toTangentBundle_comp_iff {n : ℕ∞ω}
     hproj.continuousWithinAt.preimage_mem_nhdsWithin
       ((chartAt (ModelProd HB HF) (g x₀).proj).open_source.mem_nhds
         (mem_chart_source _ (g x₀).proj))
+  have hpair_at {p : VerticalBundle IB IF F E}
+      (hp : p.proj ∈ (chartAt (ModelProd HB HF) (g x₀).proj).source) :
+      (trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) (g x₀).proj
+        (toTangentBundle p)).2 =
+        ((0 : EB), (trivializationAt EF (VerticalSpace IB IF F E) (g x₀).proj p).2) := by
+    have h1 := VerticalSpace.continuousLinearMapAt_coe_fst hp p.2
+    rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hp] at h1
+    refine Prod.ext h1 ?_
+    rw [VerticalSpace.trivializationAt_apply,
+      Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hp]
+    rfl
+  -- In the matching trivializations over `(g x₀).proj`, `toTangentBundle` acts as `w ↦ (0, w)`.
   have hpair : (fun x ↦ (trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) (g x₀).proj
         (toTangentBundle (g x))).2) =ᶠ[𝓝[s] x₀]
       fun x ↦ ((0 : EB),
         (trivializationAt EF (VerticalSpace IB IF F E) (g x₀).proj (g x)).2) := by
-    filter_upwards [hmem] with x hx
-    have h1 := VerticalSpace.continuousLinearMapAt_coe_fst hx (g x).2
-    rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx] at h1
-    refine Prod.ext h1 ?_
-    rw [VerticalSpace.trivializationAt_apply,
-      Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx]
-    rfl
-  have hpair₀ : (trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) (g x₀).proj
-        (toTangentBundle (g x₀))).2 =
-      ((0 : EB), (trivializationAt EF (VerticalSpace IB IF F E) (g x₀).proj (g x₀)).2) := by
-    have hx₀ := mem_chart_source (ModelProd HB HF) (g x₀).proj
-    have h1 := VerticalSpace.continuousLinearMapAt_coe_fst hx₀ (g x₀).2
-    rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx₀] at h1
-    refine Prod.ext h1 ?_
-    rw [VerticalSpace.trivializationAt_apply,
-      Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx₀]
-    rfl
+    filter_upwards [hmem] with x hx using hpair_at hx
+  have hpair₀ := hpair_at (mem_chart_source (ModelProd HB HF) (g x₀).proj)
   constructor
   · intro h
     have h' : ContMDiffWithinAt IM 𝓘(𝕜, EB × EF) n
@@ -693,17 +610,7 @@ namespace VerticalSpace
 variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
   {IB : ModelWithCorners 𝕜 EB HB} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-private theorem hasFDerivAt_prodMk_add_smul (u : EB) (y₀ y : F) :
-    HasFDerivAt (fun t : 𝕜 ↦ (u, y₀ + t • y))
-      (ContinuousLinearMap.smulRight (1 : 𝕜 →L[𝕜] 𝕜) ((0 : EB), y)) 0 := by
-  suffices hd : ContinuousLinearMap.smulRight (1 : 𝕜 →L[𝕜] 𝕜) ((0 : EB), y) =
-      (0 : 𝕜 →L[𝕜] EB).prod ((ContinuousLinearMap.id 𝕜 𝕜).smulRight y) by
-    exact hd ▸ (hasFDerivAt_const (𝕜 := 𝕜) u (0 : 𝕜)).prodMk
-      (((hasFDerivAt_id (𝕜 := 𝕜) (0 : 𝕜)).smul_const y).const_add y₀)
-  exact ContinuousLinearMap.ext fun _ ↦ by simp
-
-variable [TopologicalSpace B] [ChartedSpace HB B]
+  [TopologicalSpace B] [ChartedSpace HB B]
   {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ b, AddCommMonoid (V b)]
   [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)] [FiberBundle F V] [VectorBundle 𝕜 F V]
 
@@ -762,6 +669,7 @@ theorem hasMFDerivAt_homeomorph_mk_add_smul (z : ManifoldTotalSpace F V) (w : V 
   have hb := mem_baseSet_trivializationAt F V z.proj
   set γ : 𝕜 → ManifoldTotalSpace F V := fun t ↦
     ManifoldTotalSpace.homeomorph F V ⟨z.proj, z.snd + t • w⟩
+  -- Step 1: continuity of `γ` at `0` via linearity of the preferred trivialization.
   have hlin : ∀ t : 𝕜, (trivializationAt F V z.proj ⟨z.proj, z.snd + t • w⟩).2 =
       (trivializationAt F V z.proj ⟨z.proj, z.snd⟩).2 +
         t • (trivializationAt F V z.proj ⟨z.proj, w⟩).2 := fun _ ↦ by
@@ -771,6 +679,7 @@ theorem hasMFDerivAt_homeomorph_mk_add_smul (z : ManifoldTotalSpace F V) (w : V 
     dsimp only [γ]; simp_rw [hlin]
     exact contMDiffAt_const.add (contMDiffAt_id.smul contMDiffAt_const)
   have hγ0 : γ 0 = z := by simp [γ]
+  -- Step 2: translate the target continuous linear map into model coordinates `EB × F`.
   have hw_coord : modelEquivAt (IB := IB) z (verticalLift IB z w) =
       (trivializationAt F V z.proj ⟨z.proj, w⟩).2 := by
     rw [modelEquivAt_verticalLift,
@@ -796,13 +705,14 @@ theorem hasMFDerivAt_homeomorph_mk_add_smul (z : ManifoldTotalSpace F V) (w : V 
       ContinuousLinearEquiv.apply_symm_apply, map_smul, ContinuousLinearMap.smulRight_apply,
       one_apply_eq_self]
     exact congrArg (c • ·) (Prod.ext (VerticalSpace.tangentSpaceCastModel_coe_fst z _) hw_coord)
+  -- Step 3: compute the chart derivative via `hasFDerivAt_prodMk_add_smul`.
   refine ⟨hcont.continuousAt, ?_⟩
   rw [hmap, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_eq]
   have heq : ∀ t : 𝕜, writtenInExtChartAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) 0 γ t =
       (extChartAt IB z.proj z.proj, (trivializationAt F V z.proj ⟨z.proj, z.snd⟩).2 +
         t • (trivializationAt F V z.proj ⟨z.proj, w⟩).2) := fun t ↦ by
     simpa [writtenInExtChartAt, hγ0, γ] using extChartAt_homeomorph_mk_add_smul (IB := IB) hb w t
-  exact (hasFDerivAt_prodMk_add_smul (extChartAt IB z.proj z.proj) _ _).hasFDerivWithinAt
+  exact (hasFDerivAt_prodMk_add_smul (extChartAt IB z.proj z.proj) _ _ 0).hasFDerivWithinAt
     |>.congr_of_eventuallyEq (.of_forall heq) (heq 0)
 
 /-- In any preferred chart `i` of `ManifoldTotalSpace F V` containing `z`, `verticalLift IB z`
@@ -822,7 +732,7 @@ theorem continuousLinearMapAt_verticalLift [IsManifold IB 1 B] [ContMDiffVectorB
   rw [writtenInExtChartAt_model_space, modelWithCornersSelf_coe, range_id,
     extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_eq, hasFDerivWithinAt_univ] at hcomp
   have hdirect := hasFDerivAt_prodMk_add_smul (𝕜 := 𝕜) (extChartAt IB i.proj z.proj)
-    (trivializationAt F V i.proj ⟨z.proj, z.snd⟩).2 (trivializationAt F V i.proj ⟨z.proj, w⟩).2
+    (trivializationAt F V i.proj ⟨z.proj, z.snd⟩).2 (trivializationAt F V i.proj ⟨z.proj, w⟩).2 0
   rw [← funext (extChartAt_homeomorph_mk_add_smul (IB := IB) hbi w)] at hdirect
   have huniq := DFunLike.congr_fun (hcomp.unique hdirect) (1 : 𝕜)
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,

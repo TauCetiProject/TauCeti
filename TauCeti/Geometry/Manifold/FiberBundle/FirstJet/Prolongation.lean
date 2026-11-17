@@ -32,13 +32,13 @@ holonomic sections of `J¹E` via the pointwise Cartan contact map.
 
 ## Regularity and boundary hypotheses
 
-* Prolongation, coordinate derivative formulas (`FiberFirstJet.coordAt_prolongAt`), `C^m`
-  smoothness of `prolong` and `jet` from `C^n` sections when `m + 1 ≤ n`
-  (`FiberFirstJetBundle.contMDiffAt_prolong`, `contMDiffOn_prolong`, `contMDiff_jet`), local
-  realization of arbitrary 1-jets (`FiberFirstJetBundle.exists_contMDiffAt_prolong_eq`, requiring
-  only `[IF.Boundaryless]`), and the holonomic contact criterion
-  (`FiberFirstJetBundle.contactFormAt_comp_mfderiv_eq_zero_iff`) all work on `C^1` bundles and
-  allow boundary on `B`.
+* Prolongation, coordinate derivative formulas (`FiberFirstJet.hasFDerivWithinAt_localRep`,
+  `FiberFirstJet.coordAt_prolongAt`), `C^m` smoothness of `prolong` and `jet` from `C^n` sections
+  when `m + 1 ≤ n` (`FiberFirstJetBundle.contMDiffAt_prolong`, `contMDiffOn_prolong`,
+  `contMDiff_jet`), local realization of arbitrary 1-jets
+  (`FiberFirstJetBundle.exists_contMDiffAt_prolong_eq`, requiring only `[IF.Boundaryless]`), and
+  the holonomic contact criterion (`FiberFirstJetBundle.contactFormAt_comp_mfderiv_eq_zero_iff`)
+  all work on `C^1` bundles and allow boundary on `B`.
 * The germ-quotient bridge `FiberFirstJetBundle.prolong_eq_iff_firstJetAt_mk_eq` requires `∞`
   smoothness and `[IB.Boundaryless]` because `TauCeti.FirstJetAt` is defined as the quotient of
   `C^∞` germs using `fderiv` (rather than `fderivWithin` on `range IB`).
@@ -175,7 +175,10 @@ theorem hasFDerivWithinAt_writtenInExtChartAt_of_proj_eventuallyEq
       (range IB) (extChartAt IB x x) := by
   have hx_eq : (s x).proj = x := hproj.eq_of_nhds
   have hxx' := mem_extChartAt_source (I := IB) x
+  have hrange : extChartAt IB x x ∈ range IB :=
+    extChartAt_target_subset_range x ((extChartAt IB x).map_source hxx')
   set W := writtenInExtChartAt IB (IB.prod IF) x s
+  -- Stage 1: in preferred charts around `x` and `s x`, the base coordinate of `W` is locally `id`.
   have hW_fst : (Prod.fst ∘ W) =ᶠ[𝓝[range IB] extChartAt IB x x] id := by
     filter_upwards [extChartAt_target_mem_nhdsWithin (I := IB) x,
       nhdsWithin_le_nhds (extChartAt_preimage_mem_nhds (hs.continuousAt.preimage_mem_nhds
@@ -184,17 +187,14 @@ theorem hasFDerivWithinAt_writtenInExtChartAt_of_proj_eventuallyEq
     have hu3' : (s ((extChartAt IB x).symm u)).proj = (extChartAt IB x).symm u := hu3
     simp only [W, writtenInExtChartAt, Function.comp_apply, id_eq]
     rw [ManifoldTotalSpace.extChartAt_fst_eq hu2, hx_eq, hu3', (extChartAt IB x).right_inv hu1]
+  -- Stage 2: identify the horizontal derivative component via uniqueness on `range IB`.
   have hW_fd := hs.differentiableWithinAt_writtenInExtChartAt.hasFDerivWithinAt
   have hfst : (ContinuousLinearMap.fst 𝕜 EB EF).comp
       (fderivWithin 𝕜 W (range IB) (extChartAt IB x x)) = ContinuousLinearMap.id 𝕜 EB :=
-    (IB.uniqueDiffOn _ (extChartAt_target_subset_range x
-      ((extChartAt IB x).map_source hxx'))).eq
+    (IB.uniqueDiffOn _ hrange).eq
       ((hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := EF)).comp_hasFDerivWithinAt _ hW_fd)
       ((hasFDerivWithinAt_id (𝕜 := 𝕜) (extChartAt IB x x) (range IB)).congr_of_eventuallyEq
-        hW_fst (by
-          dsimp only [W, writtenInExtChartAt, Function.comp_apply, id_eq]
-          rw [(extChartAt IB x).left_inv hxx',
-            ManifoldTotalSpace.extChartAt_fst_eq (mem_chart_source _ (s x)), hx_eq]))
+        hW_fst (hW_fst.self_of_nhdsWithin hrange))
   have hderiv_eq : fderivWithin 𝕜 W (range IB) (extChartAt IB x x) =
       (ContinuousLinearMap.id 𝕜 EB).prod (modelEquivAt (s x) (prolongAt hs hproj)) := by
     rw [modelEquivAt_prolongAt]
@@ -202,6 +202,71 @@ theorem hasFDerivWithinAt_writtenInExtChartAt_of_proj_eventuallyEq
       ContinuousLinearMap.id_apply, ContinuousLinearMap.coe_snd']
     exact DFunLike.congr_fun hfst v
   rwa [← hderiv_eq]
+
+/-- Near `extChartAt IB i.proj x`, the local fibre representative `localRep IB IF s i` factors
+through `writtenInExtChartAt IB (IB.prod IF) x s` sandwiched between the base and ambient chart
+transitions. -/
+private theorem localRep_eventuallyEq_writtenInExtChartAt {s : B → ManifoldTotalSpace F E} {x : B}
+    {i : ManifoldTotalSpace F E} (hs : ContinuousAt s x)
+    (hbi : x ∈ (extChartAt IB i.proj).source) :
+    localRep IB IF s i =ᶠ[𝓝[range IB] extChartAt IB i.proj x]
+      fun u ↦ ((extChartAt (IB.prod IF) i ∘ (extChartAt (IB.prod IF) (s x)).symm)
+        ((writtenInExtChartAt IB (IB.prod IF) x s ∘
+          (extChartAt IB x ∘ (extChartAt IB i.proj).symm)) u)).2 := by
+  have hsx' := mem_extChartAt_source (I := IB.prod IF) (s x)
+  have hxx' := mem_extChartAt_source (I := IB) x
+  filter_upwards [nhdsWithin_le_nhds (extChartAt_preimage_mem_nhds' hbi (Filter.inter_mem
+    (hs.preimage_mem_nhds
+      ((isOpen_extChartAt_source (I := IB.prod IF) (s x)).mem_nhds hsx'))
+    ((isOpen_extChartAt_source (I := IB) x).mem_nhds hxx')))] with u ⟨hus, hux⟩
+  simp only [localRep_apply, writtenInExtChartAt, Function.comp_apply]
+  rw [(extChartAt IB x).left_inv hux, (extChartAt (IB.prod IF) (s x)).left_inv hus]
+
+/-- For a differentiable local section `s` at `x` into a `C^1` fibre bundle, the local
+representative `localRep IB IF s i` in any preferred bundle chart `i` containing `s x` has
+Fréchet derivative `coordAt i (prolongAt hs hproj)` within `range IB` at
+`extChartAt IB i.proj x`. -/
+theorem hasFDerivWithinAt_localRep [IsManifold IB 1 B] [IsManifold IF 1 F]
+    [ContMDiffFiberBundle 1 F E IB IF] {s : B → ManifoldTotalSpace F E} {x : B}
+    (hs : MDifferentiableAt IB (IB.prod IF) s x)
+    (hproj : (ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 x] id)
+    {i : ManifoldTotalSpace F E} (hi : s x ∈ (chartAt (ModelProd HB HF) i).source) :
+    HasFDerivWithinAt (localRep IB IF s i) (coordAt i (prolongAt hs hproj))
+      (range IB) (extChartAt IB i.proj x) := by
+  have hx_eq : (s x).proj = x := hproj.eq_of_nhds
+  have hbi : x ∈ (extChartAt IB i.proj).source :=
+    (extChartAt_source IB i.proj).symm ▸ hx_eq ▸
+      (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
+  have hi' : s x ∈ (extChartAt (IB.prod IF) i).source :=
+    (extChartAt_source (IB.prod IF) i).symm ▸ hi
+  have hsx' := mem_extChartAt_source (I := IB.prod IF) (s x)
+  have hxx' := mem_extChartAt_source (I := IB) x
+  have hrange : extChartAt IB i.proj x ∈ range IB :=
+    extChartAt_target_subset_range i.proj ((extChartAt IB i.proj).map_source hbi)
+  -- Stage 1: differentiate the base chart transition, then compose with `writtenInExtChartAt`.
+  set W := writtenInExtChartAt IB (IB.prod IF) x s
+  have hbase : HasFDerivWithinAt (extChartAt IB x ∘ (extChartAt IB i.proj).symm)
+      (tangentCoordChange IB i.proj (s x).proj (s x).proj) (range IB) (extChartAt IB i.proj x) := by
+    rw [hx_eq]; exact hasFDerivWithinAt_tangentCoordChange ⟨hbi, hxx'⟩
+  have hpt1 : (extChartAt IB x ∘ (extChartAt IB i.proj).symm) (extChartAt IB i.proj x) =
+      extChartAt IB x x := by rw [Function.comp_apply, (extChartAt IB i.proj).left_inv hbi]
+  have hmid := (hpt1 ▸ hasFDerivWithinAt_writtenInExtChartAt_of_proj_eventuallyEq hs hproj).comp _
+    hbase fun u _ ↦ by rw [Function.comp_apply, extChartAt_coe]; exact mem_range_self _
+  -- Stage 2: compose with the ambient chart transition and project onto the fibre factor.
+  have hpt2 : (W ∘ (extChartAt IB x ∘ (extChartAt IB i.proj).symm)) (extChartAt IB i.proj x) =
+      extChartAt (IB.prod IF) (s x) (s x) := by
+    dsimp only [W, writtenInExtChartAt, Function.comp_apply]
+    rw [(extChartAt IB i.proj).left_inv hbi, (extChartAt IB x).left_inv hxx']
+  have htop := hasFDerivAt_snd.comp_hasFDerivWithinAt _
+    ((hpt2 ▸ hasFDerivWithinAt_tangentCoordChange (I := IB.prod IF) ⟨hsx', hi'⟩).comp _ hmid
+      fun u _ ↦ by
+        simp only [W, writtenInExtChartAt, Function.comp_apply, extChartAt_coe]
+        exact mem_range_self _)
+  -- Stage 3: transfer along the eventual equality with `localRep IB IF s i`.
+  have hev := localRep_eventuallyEq_writtenInExtChartAt (IB := IB) (IF := IF) hs.continuousAt hbi
+  rw [coordAt_eq_coordChange_modelEquivAt hi]
+  exact (htop.congr_of_eventuallyEq hev (hev.self_of_nhdsWithin hrange)).congr_fderiv
+    (by ext u; rw [coordChange_apply]; rfl)
 
 /-- In any preferred bundle chart `i` containing `s x`, the jet coordinate `coordAt i` of
 `prolongAt hs hproj` is the derivative `fderivWithin` of `localRep IB IF s i` within `range IB`. -/
@@ -215,46 +280,9 @@ theorem coordAt_prolongAt [IsManifold IB 1 B] [IsManifold IF 1 F]
   have hbi : x ∈ (extChartAt IB i.proj).source :=
     (extChartAt_source IB i.proj).symm ▸ hx_eq ▸
       (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
-  have hi' : s x ∈ (extChartAt (IB.prod IF) i).source :=
-    (extChartAt_source (IB.prod IF) i).symm ▸ hi
-  have hsx' := mem_extChartAt_source (I := IB.prod IF) (s x)
-  have hxx' := mem_extChartAt_source (I := IB) x
-  rw [coordAt_eq_coordChange_modelEquivAt hi]
-  set W := writtenInExtChartAt IB (IB.prod IF) x s
-  have hbase : HasFDerivWithinAt (extChartAt IB x ∘ (extChartAt IB i.proj).symm)
-      (tangentCoordChange IB i.proj (s x).proj (s x).proj) (range IB) (extChartAt IB i.proj x) := by
-    rw [hx_eq]; exact hasFDerivWithinAt_tangentCoordChange ⟨hbi, hxx'⟩
-  have hpt1 : (extChartAt IB x ∘ (extChartAt IB i.proj).symm) (extChartAt IB i.proj x) =
-      extChartAt IB x x := by rw [Function.comp_apply, (extChartAt IB i.proj).left_inv hbi]
-  have hmid := (hpt1 ▸ hasFDerivWithinAt_writtenInExtChartAt_of_proj_eventuallyEq hs hproj).comp _
-    hbase fun u _ ↦ by rw [Function.comp_apply, extChartAt_coe]; exact mem_range_self _
-  have hpt2 : (W ∘ (extChartAt IB x ∘ (extChartAt IB i.proj).symm)) (extChartAt IB i.proj x) =
-      extChartAt (IB.prod IF) (s x) (s x) := by
-    dsimp only [W, writtenInExtChartAt, Function.comp_apply]
-    rw [(extChartAt IB i.proj).left_inv hbi, (extChartAt IB x).left_inv hxx']
-  have htop := hasFDerivAt_snd.comp_hasFDerivWithinAt _
-    ((hpt2 ▸ hasFDerivWithinAt_tangentCoordChange (I := IB.prod IF) ⟨hsx', hi'⟩).comp _ hmid
-      fun u _ ↦ by
-        simp only [W, writtenInExtChartAt, Function.comp_apply, extChartAt_coe]
-        exact mem_range_self _)
-  have hev : localRep IB IF s i =ᶠ[𝓝[range IB] extChartAt IB i.proj x]
-      fun u ↦ ((extChartAt (IB.prod IF) i ∘ (extChartAt (IB.prod IF) (s x)).symm)
-        ((W ∘ (extChartAt IB x ∘ (extChartAt IB i.proj).symm)) u)).2 := by
-    filter_upwards [nhdsWithin_le_nhds (extChartAt_preimage_mem_nhds' hbi (Filter.inter_mem
-      (hs.continuousAt.preimage_mem_nhds
-        ((isOpen_extChartAt_source (I := IB.prod IF) (s x)).mem_nhds hsx'))
-      ((isOpen_extChartAt_source (I := IB) x).mem_nhds hxx')))] with u ⟨hus, hux⟩
-    simp only [localRep_apply, W, writtenInExtChartAt, Function.comp_apply]
-    rw [(extChartAt IB x).left_inv hux, (extChartAt (IB.prod IF) (s x)).left_inv hus]
-  have hpt_eq : localRep IB IF s i (extChartAt IB i.proj x) =
-      ((extChartAt (IB.prod IF) i ∘ (extChartAt (IB.prod IF) (s x)).symm)
-        ((W ∘ (extChartAt IB x ∘ (extChartAt IB i.proj).symm)) (extChartAt IB i.proj x))).2 := by
-    dsimp only [localRep, W, writtenInExtChartAt, Function.comp_apply]
-    rw [(extChartAt IB i.proj).left_inv hbi, (extChartAt IB x).left_inv hxx',
-      (extChartAt (IB.prod IF) (s x)).left_inv hsx']
-  exact (((htop.congr_of_eventuallyEq hev hpt_eq).fderivWithin (IB.uniqueDiffOn _
-    (extChartAt_target_subset_range i.proj ((extChartAt IB i.proj).map_source hbi)))).trans
-    (by ext u; rw [coordChange_apply]; rfl)).symm
+  exact ((hasFDerivWithinAt_localRep hs hproj hi).fderivWithin
+    (IB.uniqueDiffOn _ (extChartAt_target_subset_range i.proj
+      ((extChartAt IB i.proj).map_source hbi)))).symm
 
 end FiberFirstJet
 
@@ -347,6 +375,8 @@ theorem contMDiffAt_prolong {m n : ℕ∞ω} [IsManifold IB 1 B] [IsManifold IF 
   set i := s x₀
   have hx₀_eq : i.proj = x₀ := hproj.eq_of_nhds
   have hx₀_src : x₀ ∈ (extChartAt IB i.proj).source := hx₀_eq.symm ▸ mem_extChartAt_source x₀
+  -- Stage 1: show the local fibre representative is `C^n` within `range IB`, so its `fderivWithin`
+  -- is `C^m` on `range IB` and composes with `extChartAt IB i.proj`.
   have hrep : ContDiffWithinAt 𝕜 n (FiberFirstJet.localRep IB IF s i) (range IB)
       (extChartAt IB i.proj x₀) := by
     have hfn : FiberFirstJet.localRep IB IF s i =
@@ -367,6 +397,8 @@ theorem contMDiffAt_prolong {m n : ℕ∞ω} [IsManifold IB 1 B] [IsManifold IF 
     rw [← contMDiffWithinAt_univ]
     exact hfd.comp x₀ hext.contMDiffWithinAt fun x _ ↦ by
       rw [extChartAt_coe]; exact mem_range_self _
+  -- Stage 2: transfer `C^m` regularity to the trivialization coordinate of `prolong IB IF s` via
+  -- `FiberFirstJet.coordAt_prolongAt` on a neighbourhood of `x₀`.
   refine hderiv.congr_of_eventuallyEq ?_
   filter_upwards [(hs.of_le (le_trans le_add_self hmn)).eventually_mdifferentiableAt one_ne_zero,
     eventually_eventually_nhds.2 hproj,
@@ -450,6 +482,119 @@ theorem prolong_eq_iff_firstJetAt_mk_eq [IsManifold IB ∞ B] [IsManifold IF ∞
     ((extChartAt_source (IB.prod IF) i).symm ▸ hi₂) (Prod.ext ?_ h)
   rw [ManifoldTotalSpace.extChartAt_fst_eq hi₁, ManifoldTotalSpace.extChartAt_fst_eq hi₂, hx₁, hx₂]
 
+/-- Affine chart-model lift `(u, v₀ + A (u - u₀))` around `z : ManifoldTotalSpace F E` with
+slope `A : EB →L[𝕜] EF`. -/
+private def localAffineCoord (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF)
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) (b : B) : EB × EF :=
+  (extChartAt IB z.proj b,
+    (extChartAt (IB.prod IF) z z).2 + A (extChartAt IB z.proj b - extChartAt IB z.proj z.proj))
+
+/-- Local section witness near `z.proj` obtained by pulling back `localAffineCoord` along
+`(extChartAt (IB.prod IF) z).symm`. -/
+private def localAffineSection (IB : ModelWithCorners 𝕜 EB HB) (IF : ModelWithCorners 𝕜 EF HF)
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) (b : B) : ManifoldTotalSpace F E :=
+  (extChartAt (IB.prod IF) z).symm (localAffineCoord IB IF z A b)
+
+private theorem localAffineCoord_self (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    localAffineCoord IB IF z A z.proj = extChartAt (IB.prod IF) z z := by
+  simp only [localAffineCoord, sub_self, map_zero, add_zero]
+  exact Prod.ext (ManifoldTotalSpace.extChartAt_fst_eq (mem_chart_source _ z)).symm rfl
+
+private theorem localAffineSection_self (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    localAffineSection IB IF z A z.proj = z := by
+  rw [localAffineSection, localAffineCoord_self,
+    (extChartAt (IB.prod IF) z).left_inv (mem_extChartAt_source z)]
+
+private theorem localAffineCoord_mem_range [IF.Boundaryless]
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) (b : B) :
+    localAffineCoord IB IF z A b ∈ range (IB.prod IF) := by
+  rw [ModelWithCorners.range_prod, IF.range_eq_univ]
+  exact ⟨by dsimp only [localAffineCoord]; rw [extChartAt_coe]; exact mem_range_self _, mem_univ _⟩
+
+private theorem contMDiffAt_localAffineCoord (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    ContMDiffAt IB 𝓘(𝕜, EB × EF) ω (localAffineCoord IB IF z A) z.proj :=
+  have hf : ContDiff 𝕜 ω fun u : EB ↦
+      (extChartAt (IB.prod IF) z z).2 + A (u - extChartAt IB z.proj z.proj) :=
+    contDiff_const.add (A.contDiff.comp (contDiff_id.sub contDiff_const))
+  contMDiffAt_extChartAt.prodMk_space
+    (hf.contDiffAt.contMDiffAt.comp z.proj contMDiffAt_extChartAt)
+
+private theorem contMDiffAt_localAffineSection [IF.Boundaryless]
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    ContMDiffAt IB (IB.prod IF) ω (localAffineSection IB IF z A) z.proj := by
+  rw [← contMDiffWithinAt_univ]
+  exact ((localAffineCoord_self (IB := IB) (IF := IF) z A).symm ▸
+    contMDiffWithinAt_extChartAt_symm_range_self z).comp z.proj
+    (contMDiffAt_localAffineCoord (IB := IB) (IF := IF) z A).contMDiffWithinAt
+    fun b _ ↦ localAffineCoord_mem_range z A b
+
+private theorem proj_comp_localAffineSection_eventuallyEq [IF.Boundaryless]
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    (ManifoldTotalSpace.proj ∘ localAffineSection IB IF z A) =ᶠ[𝓝 z.proj] id := by
+  have hu_open : IsOpen ((IB.prod IF).symm ⁻¹' (chartAt (ModelProd HB HF) z).target) :=
+    (chartAt (ModelProd HB HF) z).open_target.preimage (IB.prod IF).continuous_symm
+  have hu_mem : localAffineCoord IB IF z A z.proj ∈
+      (IB.prod IF).symm ⁻¹' (chartAt (ModelProd HB HF) z).target := by
+    rw [localAffineCoord_self]
+    exact ((extChartAt_target (I := IB.prod IF) z) ▸ mem_extChartAt_target z).1
+  have hg_mem : ∀ᶠ b in 𝓝 z.proj,
+      localAffineCoord IB IF z A b ∈ (extChartAt (IB.prod IF) z).target := by
+    filter_upwards [(contMDiffAt_localAffineCoord (IB := IB) (IF := IF) z A).continuousAt.eventually
+      (hu_open.mem_nhds hu_mem)] with b hb
+    rw [extChartAt_target]
+    exact ⟨hb, localAffineCoord_mem_range z A b⟩
+  filter_upwards [hg_mem,
+    (isOpen_extChartAt_source (I := IB) z.proj).mem_nhds (mem_extChartAt_source z.proj)]
+    with b hb1 hb2
+  dsimp only [Function.comp_apply, localAffineSection, id_eq]
+  rw [ManifoldTotalSpace.proj_extChartAt_symm z hb1]
+  exact (extChartAt IB z.proj).left_inv hb2
+
+private theorem writtenInExtChartAt_localAffineSection_eventuallyEq [IF.Boundaryless]
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    writtenInExtChartAt IB (IB.prod IF) z.proj (localAffineSection IB IF z A) =ᶠ[
+      𝓝[range IB] extChartAt IB z.proj z.proj]
+      fun u ↦ (u, (extChartAt (IB.prod IF) z z).2 + A (u - extChartAt IB z.proj z.proj)) := by
+  set u₀ := extChartAt IB z.proj z.proj with hu₀
+  set v₀ := (extChartAt (IB.prod IF) z z).2
+  let f : EB → EF := fun u ↦ v₀ + A (u - u₀)
+  have hf_cont : Continuous f :=
+    continuous_const.add (A.continuous.comp (continuous_id.sub continuous_const))
+  have hu_open : IsOpen ((IB.prod IF).symm ⁻¹' (chartAt (ModelProd HB HF) z).target) :=
+    (chartAt (ModelProd HB HF) z).open_target.preimage (IB.prod IF).continuous_symm
+  have hu₀_mem : (u₀, f u₀) ∈ (IB.prod IF).symm ⁻¹' (chartAt (ModelProd HB HF) z).target := by
+    have hf₀ : (u₀, f u₀) = extChartAt (IB.prod IF) z z :=
+      localAffineCoord_self (IB := IB) (IF := IF) z A
+    rw [hf₀]
+    exact ((extChartAt_target (I := IB.prod IF) z) ▸ mem_extChartAt_target z).1
+  filter_upwards [hu₀ ▸ extChartAt_target_mem_nhdsWithin (I := IB) z.proj,
+    nhdsWithin_le_nhds ((continuousAt_id.prodMk hf_cont.continuousAt).eventually
+      (hu_open.mem_nhds hu₀_mem))] with u hu1 hu2
+  have hmem : (u, f u) ∈ (extChartAt (IB.prod IF) z).target := by
+    rw [extChartAt_target, ModelWithCorners.range_prod, IF.range_eq_univ]
+    exact ⟨hu2, extChartAt_target_subset_range z.proj hu1, mem_univ _⟩
+  dsimp only [writtenInExtChartAt, Function.comp_apply]
+  rw [localAffineSection_self]
+  dsimp only [localAffineSection, localAffineCoord]
+  rw [(extChartAt IB z.proj).right_inv hu1]
+  exact (extChartAt (IB.prod IF) z).right_inv hmem
+
+private theorem fderivWithin_writtenInExtChartAt_localAffineSection [IF.Boundaryless]
+    (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) :
+    fderivWithin 𝕜 (writtenInExtChartAt IB (IB.prod IF) z.proj (localAffineSection IB IF z A))
+        (range IB) (extChartAt IB z.proj z.proj) =
+      (ContinuousLinearMap.id 𝕜 EB).prod A := by
+  set u₀ := extChartAt IB z.proj z.proj with hu₀
+  set v₀ := (extChartAt (IB.prod IF) z z).2
+  have hf_deriv : HasFDerivAt (fun u ↦ v₀ + A (u - u₀)) A u₀ := by
+    simpa using (A.hasFDerivAt.comp u₀ (hasFDerivAt_sub_const u₀)).const_add v₀
+  have hrange : u₀ ∈ range IB :=
+    hu₀ ▸ extChartAt_target_subset_range z.proj (mem_extChartAt_target z.proj)
+  have hev := writtenInExtChartAt_localAffineSection_eventuallyEq (IB := IB) (IF := IF) z A
+  exact (((hasFDerivAt_id u₀).prodMk hf_deriv).hasFDerivWithinAt (s := range IB)
+    |>.congr_of_eventuallyEq hev (hev.self_of_nhdsWithin hrange)).fderivWithin
+    (IB.uniqueDiffOn u₀ hrange)
+
 /-- **Every 1-jet over a boundaryless fibre is realized by a local `C^n` section**: for any `z` and
 `j : FiberFirstJet IB IF F E z`, there exists a map `s : B → ManifoldTotalSpace F E` that is `C^n`
 at `z.proj`, satisfies `s z.proj = z` and `(ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 z.proj] id`, and has
@@ -458,75 +603,19 @@ theorem exists_contMDiffAt_prolong_eq {n : ℕ∞ω} [IF.Boundaryless]
     (z : ManifoldTotalSpace F E) (j : FiberFirstJet IB IF F E z) :
     ∃ s : B → ManifoldTotalSpace F E, ContMDiffAt IB (IB.prod IF) n s z.proj ∧ s z.proj = z ∧
       (ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 z.proj] id ∧ prolong IB IF s z.proj = ⟨z, j⟩ := by
-  set u₀ := extChartAt IB z.proj z.proj with hu₀
-  set v₀ := (extChartAt (IB.prod IF) z z).2
   set A := FiberFirstJet.modelEquivAt z j
-  have hpt_pair : (u₀, v₀) = extChartAt (IB.prod IF) z z :=
-    Prod.ext (ManifoldTotalSpace.extChartAt_fst_eq (mem_chart_source _ z)).symm rfl
-  let f : EB → EF := fun u ↦ v₀ + A (u - u₀)
-  have hf_smooth : ContDiff 𝕜 ω f :=
-    contDiff_const.add (A.contDiff.comp (contDiff_id.sub contDiff_const))
-  have hf_deriv : HasFDerivAt f A u₀ := by
-    simpa [f] using (A.hasFDerivAt.comp u₀ (hasFDerivAt_sub_const u₀)).const_add v₀
-  have hf_val : f u₀ = v₀ := by simp [f]
-  let g : B → EB × EF := fun b ↦ (extChartAt IB z.proj b, f (extChartAt IB z.proj b))
-  have hg_smooth : ContMDiffAt IB 𝓘(𝕜, EB × EF) ω g z.proj :=
-    contMDiffAt_extChartAt.prodMk_space
-      (hf_smooth.contDiffAt.contMDiffAt.comp z.proj contMDiffAt_extChartAt)
-  have hg_pt : g z.proj = extChartAt (IB.prod IF) z z := by
-    dsimp only [g]
-    rw [← hu₀, hf_val, hpt_pair]
-  have hg_range (b : B) : g b ∈ range (IB.prod IF) := by
-    rw [ModelWithCorners.range_prod, IF.range_eq_univ]
-    exact ⟨by dsimp only [g]; rw [extChartAt_coe]; exact mem_range_self _, mem_univ _⟩
-  set s : B → ManifoldTotalSpace F E := fun b ↦ (extChartAt (IB.prod IF) z).symm (g b)
-  have hs_pt : s z.proj = z := by
-    dsimp only [s]
-    rw [hg_pt, (extChartAt (IB.prod IF) z).left_inv (mem_extChartAt_source z)]
-  have hs_top : ContMDiffAt IB (IB.prod IF) ω s z.proj := by
-    rw [← contMDiffWithinAt_univ]
-    exact (hg_pt.symm ▸ contMDiffWithinAt_extChartAt_symm_range_self z).comp z.proj
-      hg_smooth.contMDiffWithinAt fun b _ ↦ hg_range b
-  have hu_open : IsOpen ((IB.prod IF).symm ⁻¹' (chartAt (ModelProd HB HF) z).target) :=
-    (chartAt (ModelProd HB HF) z).open_target.preimage (IB.prod IF).continuous_symm
-  have hu₀_mem : (u₀, f u₀) ∈ (IB.prod IF).symm ⁻¹' (chartAt (ModelProd HB HF) z).target := by
-    rw [hf_val, hpt_pair]
-    exact ((extChartAt_target (I := IB.prod IF) z) ▸ mem_extChartAt_target z).1
-  have hg_mem : ∀ᶠ b in 𝓝 z.proj, g b ∈ (extChartAt (IB.prod IF) z).target := by
-    filter_upwards [hg_smooth.continuousAt.eventually
-      (hu_open.mem_nhds (by simpa only [g, ← hu₀] using hu₀_mem))] with b hb
-    rw [extChartAt_target]
-    exact ⟨hb, hg_range b⟩
-  have hproj : (ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 z.proj] id := by
-    filter_upwards [hg_mem,
-      (isOpen_extChartAt_source (I := IB) z.proj).mem_nhds (mem_extChartAt_source z.proj)]
-      with b hb1 hb2
-    rw [Function.comp_apply, ManifoldTotalSpace.proj_extChartAt_symm z hb1,
-      (extChartAt IB z.proj).left_inv hb2, id_eq]
+  set s := localAffineSection IB IF z A
+  -- Stage 1: value, `C^ω` regularity, and local section property of the affine chart lift `s`.
+  have hs_pt : s z.proj = z := localAffineSection_self z A
+  have hs_top : ContMDiffAt IB (IB.prod IF) ω s z.proj := contMDiffAt_localAffineSection z A
+  have hproj : (ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 z.proj] id :=
+    proj_comp_localAffineSection_eventuallyEq z A
   refine ⟨s, hs_top.of_le le_top, hs_pt, hproj, ?_⟩
+  -- Stage 2: identify the prolongation in preferred model coordinates via the chart derivative.
   have hs_md := hs_top.mdifferentiableAt (by simp)
   rw [prolong_of_mdifferentiableAt hs_md hproj, mk_eq_mk_iff_modelEquivAt]
   refine ⟨hs_pt, ?_⟩
-  rw [FiberFirstJet.modelEquivAt_prolongAt, ← hu₀]
-  have hev : writtenInExtChartAt IB (IB.prod IF) z.proj s =ᶠ[𝓝[range IB] u₀]
-      fun u ↦ (u, f u) := by
-    filter_upwards [hu₀ ▸ extChartAt_target_mem_nhdsWithin (I := IB) z.proj,
-      nhdsWithin_le_nhds ((continuousAt_id.prodMk hf_smooth.continuous.continuousAt).eventually
-        (hu_open.mem_nhds hu₀_mem))] with u hu1 hu2
-    have hmem : (u, f u) ∈ (extChartAt (IB.prod IF) z).target := by
-      rw [extChartAt_target, ModelWithCorners.range_prod, IF.range_eq_univ]
-      exact ⟨hu2, extChartAt_target_subset_range z.proj hu1, mem_univ _⟩
-    simp only [writtenInExtChartAt, Function.comp_apply, hs_pt, s, g]
-    rw [(extChartAt IB z.proj).right_inv hu1, (extChartAt (IB.prod IF) z).right_inv hmem]
-  have hpt_W : writtenInExtChartAt IB (IB.prod IF) z.proj s u₀ = (u₀, f u₀) := by
-    dsimp only [writtenInExtChartAt, Function.comp_apply]
-    rw [hs_pt, hu₀, (extChartAt IB z.proj).left_inv (mem_extChartAt_source z.proj), hs_pt,
-      ← hpt_pair, ← hu₀, hf_val]
-  have hw_fd := (((hasFDerivAt_id u₀).prodMk hf_deriv).hasFDerivWithinAt (s := range IB)
-    |>.congr_of_eventuallyEq hev hpt_W).fderivWithin
-    (IB.uniqueDiffOn u₀
-      (hu₀ ▸ extChartAt_target_subset_range z.proj (mem_extChartAt_target z.proj)))
-  rw [hw_fd]
+  rw [FiberFirstJet.modelEquivAt_prolongAt, fderivWithin_writtenInExtChartAt_localAffineSection]
   ext v
   rfl
 
@@ -541,6 +630,7 @@ theorem contactFormAt_comp_mfderiv_eq_zero_iff [IsManifold IB 1 B] [IsManifold I
     (contactFormAt (σ x)).comp (mfderiv IB ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) σ x) = 0 ↔
       σ x = prolong IB IF (targetProj ∘ σ) x := by
   rw [targetProj_eq_proj]
+  -- Stage 1: relate `mfderiv` of `σ`, the projected section `TotalSpace.proj ∘ σ`, and `prolongAt`.
   have hs : MDifferentiableAt IB (IB.prod IF) (TotalSpace.proj ∘ σ) x :=
     (Bundle.mdifferentiableAt_proj (FiberFirstJet IB IF F E)).comp x hσ
   have hproj : (ManifoldTotalSpace.proj ∘ (TotalSpace.proj ∘ σ)) =ᶠ[𝓝 x] id := by
@@ -564,6 +654,7 @@ theorem contactFormAt_comp_mfderiv_eq_zero_iff [IsManifold IB 1 B] [IsManifold I
         tangentSpaceCast IB x (σ x).proj.proj v := by
     rw [← hprolong v]
     exact (FiberFirstJet.prolongAt hs hproj).mfderiv_proj_apply _
+  -- Stage 2: expand `contactFormAt` in ambient tangent coordinates for both implications.
   have hzero : ((0 : VerticalSpace IB IF F E (σ x).proj) :
       TangentSpace (IB.prod IF) (σ x).proj) = 0 := rfl
   rw [prolong_of_mdifferentiableAt hs hproj]

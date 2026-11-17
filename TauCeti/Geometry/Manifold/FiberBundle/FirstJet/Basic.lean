@@ -14,12 +14,16 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 For a fibre bundle `π : E → B` over a manifold `B` (modelled on `IB`) with manifold fibre `F`
 (modelled on `IF`), a 1-jet over `z : ManifoldTotalSpace F E` represents the first-order behaviour
-at `π(z)` of local sections passing through `z`. Rather than quotienting `C^∞` section germs —
-which requires boundaryless models and smooth bump extensions to realize arbitrary derivatives —
-`TauCeti.FiberFirstJet IB IF F E z` models a 1-jet intrinsically as a continuous linear
-right-inverse `j : T_{z.proj} B →L[𝕜] T_z E` of `mfderiv proj z`. Every differentiable local
-section `s` with `s(x) = z` induces such a splitting via `ds_x`, and over boundaryless models every
-splitting arises from a local section.
+at `π(z)` of local sections passing through `z`. Rather than quotienting `C^∞` local section germs
+— which fixes regularity to `C^∞` and requires boundaryless base models for ordinary total
+derivatives (`TauCeti.FirstJetAt`) — `TauCeti.FiberFirstJet IB IF F E z` models a 1-jet
+intrinsically as a continuous linear right-inverse `j : T_{z.proj} B →L[𝕜] T_z E` of
+`mfderiv proj z`. Every differentiable local section `s` with `s(x) = z` induces such a splitting
+via `ds_x`. Locally, over any boundaryless fibre model `[IF.Boundaryless]` (with no boundaryless
+assumption on `B` and no bump functions needed), every splitting is realized by a `C^n` local
+section defined in a chart neighbourhood of `z`
+(`FiberFirstJetBundle.exists_contMDiffAt_prolong_eq` in `FirstJet.Prolongation`); smooth bump
+extensions would only be needed to extend such a local section globally across `B`.
 
 Unlike a vector bundle, `J¹E → E` (`targetProj`) has no coordinate-independent zero section: local
 bundle transitions mix base and fibre coordinates, contributing an additive shear term to local
@@ -280,34 +284,30 @@ instance : AddTorsor (TangentSpace IB z.proj →L[𝕜] VerticalSpace IB IF F E 
   vsub_vadd' j₁ j₂ := by ext u; simp [sub_add_cancel]
   vadd_vsub' φ j := by ext u; simp
 
-/-- The **vertical contact projection** sending `w ∈ T_z E` to `w - j (dπ_z w) ∈ V_z E`. -/
+/-- The **vertical contact projection** sending `w ∈ T_z E` to `w - j (dπ_z w) ∈ V_z E`,
+implemented via `ContinuousLinearMap.projKerOfRightInverse`. -/
 def contactProj (j : FiberFirstJet IB IF F E z) :
     TangentSpace (IB.prod IF) z →L[𝕜] VerticalSpace IB IF F E z :=
-  let p : TangentSpace (IB.prod IF) z →L[𝕜] ↥(verticalSubmodule IB IF F E z) :=
-    ContinuousLinearMap.codRestrict
-      (ContinuousLinearMap.id 𝕜 (TangentSpace (IB.prod IF) z) -
-        j.toContinuousLinearMap.comp (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z))
-      (verticalSubmodule IB IF F E z)
-      fun w ↦ mem_verticalSubmodule_iff.2 <| by simp [j.mfderiv_proj_apply]
-  p
+  let dπ := mfderiv (IB.prod IF) IB (ManifoldTotalSpace.proj : ManifoldTotalSpace F E → B) z
+  dπ.projKerOfRightInverse j.toContinuousLinearMap j.mfderiv_proj_apply
 
 @[simp]
 theorem coe_contactProj (j : FiberFirstJet IB IF F E z)
     (w : TangentSpace (IB.prod IF) z) :
     (j.contactProj w : TangentSpace (IB.prod IF) z) =
       w - j (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z w) :=
-  (rfl)
+  ContinuousLinearMap.coe_projKerOfRightInverse_apply _ _ j.mfderiv_proj_apply w
 
 @[simp]
 theorem contactProj_coe (j : FiberFirstJet IB IF F E z)
     (v : VerticalSpace IB IF F E z) :
     j.contactProj (v : TangentSpace (IB.prod IF) z) = v :=
-  VerticalSpace.ext (by simp)
+  ContinuousLinearMap.projKerOfRightInverse_apply_idem _ _ j.mfderiv_proj_apply v
 
 @[simp]
 theorem contactProj_apply_self (j : FiberFirstJet IB IF F E z)
     (u : TangentSpace IB z.proj) : j.contactProj (j u) = 0 :=
-  VerticalSpace.ext (by simp)
+  ContinuousLinearMap.projKerOfRightInverse_comp_inv _ _ j.mfderiv_proj_apply u
 
 /-- The kernel of the vertical contact projection `j.contactProj` is the horizontal subspace
 `range j` spanned by the first jet `j`. -/
@@ -325,40 +325,28 @@ theorem ker_contactProj (j : FiberFirstJet IB IF F E z) :
   · rintro ⟨u, rfl⟩
     exact j.contactProj_apply_self u
 
-/-- Direct-sum splitting `T_z E ≃L[𝕜] T_{z.proj} B × V_z E` determined by a first jet `j`. -/
+/-- Direct-sum splitting `T_z E ≃L[𝕜] T_{z.proj} B × V_z E` determined by a first jet `j`,
+implemented via `ContinuousLinearEquiv.equivOfRightInverse`. -/
 def splittingEquiv (j : FiberFirstJet IB IF F E z) :
     TangentSpace (IB.prod IF) z ≃L[𝕜] TangentSpace IB z.proj × VerticalSpace IB IF F E z :=
-  let p : TangentSpace (IB.prod IF) z →L[𝕜] ↥(verticalSubmodule IB IF F E z) := j.contactProj
-  let e : TangentSpace (IB.prod IF) z ≃L[𝕜]
-      TangentSpace IB z.proj × ↥(verticalSubmodule IB IF F E z) :=
-    ContinuousLinearEquiv.equivOfInverse
-      ((mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z).prod p)
-      (j.toContinuousLinearMap.comp (ContinuousLinearMap.fst 𝕜 _ _) +
-        (verticalSubmodule IB IF F E z).subtypeL.comp (ContinuousLinearMap.snd 𝕜 _ _))
-      (fun w ↦ by
-        have hp : ((p w : ↥(verticalSubmodule IB IF F E z)) : TangentSpace (IB.prod IF) z) =
-            w - j (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z w) := rfl
-        simp [hp])
-      (fun ⟨u, v⟩ ↦ by
-        ext
-        · simp [mem_verticalSubmodule_iff.1 v.2]
-        · have hp : ∀ w, ((p w : ↥(verticalSubmodule IB IF F E z)) :
-              TangentSpace (IB.prod IF) z) =
-              w - j (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z w) := fun _ ↦ rfl
-          simp [hp, mem_verticalSubmodule_iff.1 v.2])
-  e
+  let dπ := mfderiv (IB.prod IF) IB (ManifoldTotalSpace.proj : ManifoldTotalSpace F E → B) z
+  ContinuousLinearEquiv.equivOfRightInverse dπ j.toContinuousLinearMap j.mfderiv_proj_apply
 
 @[simp]
 theorem splittingEquiv_apply (j : FiberFirstJet IB IF F E z)
     (w : TangentSpace (IB.prod IF) z) : j.splittingEquiv w =
       (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z w, j.contactProj w) :=
-  (rfl)
+  Prod.ext
+    (ContinuousLinearEquiv.fst_equivOfRightInverse _ _ j.mfderiv_proj_apply w)
+    (VerticalSpace.ext
+      ((ContinuousLinearEquiv.snd_equivOfRightInverse _ _ j.mfderiv_proj_apply w).trans
+        (j.coe_contactProj w).symm))
 
 @[simp]
 theorem splittingEquiv_symm_apply (j : FiberFirstJet IB IF F E z)
     (p : TangentSpace IB z.proj × VerticalSpace IB IF F E z) :
     j.splittingEquiv.symm p = j p.1 + (p.2 : TangentSpace (IB.prod IF) z) :=
-  (rfl)
+  ContinuousLinearEquiv.equivOfRightInverse_symm_apply _ _ j.mfderiv_proj_apply p
 
 end Carrier
 
@@ -445,12 +433,13 @@ theorem ofCoordAt_coordAt {i z : ManifoldTotalSpace F E}
   set eB := trivializationAt EB (TangentSpace IB) i.proj
   set u := eB.continuousLinearMapAt 𝕜 z.proj v
   have hv : eB.symmL 𝕜 z.proj u = v := eB.symmL_continuousLinearMapAt hbi v
-  rw [show ((ContinuousLinearMap.id 𝕜 EB).prod (coordAt i j)) u =
-        eT.continuousLinearMapAt 𝕜 z (j v) from Prod.ext
+  have hpair : ((ContinuousLinearMap.id 𝕜 EB).prod (coordAt i j)) u =
+      eT.continuousLinearMapAt 𝕜 z (j v) :=
+    Prod.ext
       (by rw [ContinuousLinearMap.prod_apply, id_apply,
-            ← continuousLinearMapAt_apply_symmL_fst hz j u, hv])
-      (by rw [ContinuousLinearMap.prod_apply, coordAt_apply, hv]),
-    eT.symmL_continuousLinearMapAt hz]
+        ← continuousLinearMapAt_apply_symmL_fst hz j u, hv])
+      (by rw [ContinuousLinearMap.prod_apply, coordAt_apply, hv])
+  rw [hpair, eT.symmL_continuousLinearMapAt hz]
 
 /-- Nonlinear first-jet coordinate change from chart `i` to chart `k` at `z`. -/
 def coordChange (i k z : ManifoldTotalSpace F E) (A : EB →L[𝕜] EF) : EB →L[𝕜] EF :=
@@ -539,6 +528,7 @@ theorem coordChange_eq_firstJetCoordChange_snd [IB.Boundaryless] [IF.Boundaryles
       (firstJetCoordChange h g (extChartAt IB k.proj z.proj)
         ((extChartAt (IB.prod IF) i z).2, A)).2 := by
   intro h g
+  -- Stage 1: chart-source memberships and base-fibre pairing `extChartAt i z`.
   have hi' : z ∈ (extChartAt (IB.prod IF) i).source := (extChartAt_source (IB.prod IF) i).symm ▸ hi
   have hk' : z ∈ (extChartAt (IB.prod IF) k).source := (extChartAt_source (IB.prod IF) k).symm ▸ hk
   have hbi : z.proj ∈ (extChartAt IB i.proj).source :=
@@ -550,6 +540,7 @@ theorem coordChange_eq_firstJetCoordChange_snd [IB.Boundaryless] [IF.Boundaryles
     dsimp only [h]
     rw [Function.comp_apply, (extChartAt IB k.proj).left_inv hbk,
       ManifoldTotalSpace.extChartAt_fst_eq hi]) rfl
+  -- Stage 2: total Fréchet derivatives of the base and ambient chart transitions.
   have hh_deriv : HasFDerivAt h (tangentCoordChange IB k.proj i.proj z.proj)
       (extChartAt IB k.proj z.proj) := by
     have hd := hasFDerivWithinAt_tangentCoordChange (I := IB) ⟨hbk, hbi⟩
@@ -558,6 +549,7 @@ theorem coordChange_eq_firstJetCoordChange_snd [IB.Boundaryless] [IF.Boundaryles
       (tangentCoordChange (IB.prod IF) i k z) (extChartAt (IB.prod IF) i z) := by
     have hd := hasFDerivWithinAt_tangentCoordChange (I := IB.prod IF) ⟨hi', hk'⟩
     rwa [(IB.prod IF).range_eq_univ, hasFDerivWithinAt_univ] at hd
+  -- Stage 3: differentiate `g` by the chain rule and match with `firstJetCoordChange`.
   let pt : EB × EF := (extChartAt IB k.proj z.proj, (extChartAt (IB.prod IF) i z).2)
   have hinner : HasFDerivAt (fun q : EB × EF ↦ (h q.1, q.2)) _ pt :=
     (hh_deriv.comp pt (hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := EF))).prodMk
