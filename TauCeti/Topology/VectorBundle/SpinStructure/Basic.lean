@@ -115,6 +115,47 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
 instance nonempty_P (s : SpinStructure F E n) (x : X) : Nonempty (s.P x) :=
   ⟨(FiberBundle.homeomorphAt (realCliffordSpinGroupZero n) s.P x).symm 1⟩
 
+/-- The orthonormal frame attached to a point `p` of `P` equals `⟨p.proj, φ⟩` for some
+orthonormal frame `φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E p.proj`. -/
+theorem exists_toFrame_eq_mk (s : SpinStructure F E n)
+    (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
+    ∃ φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E p.proj, s.toFrame p = ⟨p.proj, φ⟩ :=
+  ⟨s.proj_toFrame p ▸ (s.toFrame p).frame,
+    OrthonormalFrameBundle.eq_mk_of_proj_eq (s.toFrame p) (s.proj_toFrame p)⟩
+
+/-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` is finite-dimensional. -/
+theorem finiteDimensional_fiber (s : SpinStructure F E n) (x : X) :
+    FiniteDimensional ℝ (E x) := by
+  obtain ⟨p⟩ := s.nonempty_P x
+  obtain ⟨φ, -⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
+  exact φ.toLinearEquiv.finiteDimensional
+
+/-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` has dimension `n`. -/
+theorem finrank_fiber (s : SpinStructure F E n) (x : X) :
+    Module.finrank ℝ (E x) = n := by
+  obtain ⟨p⟩ := s.nonempty_P x
+  obtain ⟨φ, -⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
+  simpa [finrank_euclideanSpace_fin] using φ.toLinearEquiv.finrank_eq.symm
+
+/-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
+`n` is finite-dimensional. -/
+theorem finiteDimensional_model [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiberBundle F E] [VectorBundle ℝ F E] [Nonempty X] (s : SpinStructure F E n) :
+    FiniteDimensional ℝ F := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have := s.finiteDimensional_fiber x
+  exact ((trivializationAt F E x).linearEquivAt ℝ x
+    (FiberBundle.mem_baseSet_trivializationAt' x)).finiteDimensional
+
+/-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
+`n` has dimension `n`. -/
+theorem finrank_model [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiberBundle F E] [VectorBundle ℝ F E] [Nonempty X] (s : SpinStructure F E n) :
+    Module.finrank ℝ F = n := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  rw [← ((trivializationAt F E x).linearEquivAt ℝ x
+    (FiberBundle.mem_baseSet_trivializationAt' x)).finrank_eq, s.finrank_fiber x]
+
 /-! ### Equivalences -/
 
 /-- An **equivalence of Spin structures** `s ≃ t` on the same bundle: a family of bijections
@@ -385,6 +426,19 @@ theorem pullbackLift_toFrame_pullback (s : SpinStructure F E n) (f : K)
     OrthonormalFrameBundle.pullbackLift f ((s.pullback f).toFrame p) =
       s.toFrame (Pullback.lift f p) :=
   s.pullbackLift_pullbackToFrame f p
+
+/-- If `s.toFrame ⟨f y, p⟩` is the frame `φ` at `f y`, then `(s.pullback f).toFrame ⟨y, p⟩` is the
+same frame viewed in the pullback fibre at `y`. -/
+theorem toFrame_pullback_mk (s : SpinStructure F E n) (f : K) (y : Y) (p : s.P (f y))
+    {φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E (f y)} (h : s.toFrame ⟨f y, p⟩ = ⟨f y, φ⟩) :
+    (s.pullback f).toFrame (⟨y, p⟩ : TotalSpace (realCliffordSpinGroupZero n) (s.pullback f).P) =
+      (⟨y, φ⟩ : OrthonormalFrameBundle ℝ F ((f : Y → X) *ᵖ E) (EuclideanSpace ℝ (Fin n))) := by
+  apply (OrthonormalFrameBundle.pullbackHomeomorph (f : Y → X)).injective
+  apply Subtype.ext
+  simp only [OrthonormalFrameBundle.pullbackHomeomorph_apply,
+    OrthonormalFrameBundle.pullbackLift_mk]
+  exact Prod.ext ((s.pullback f).proj_toFrame ⟨y, p⟩)
+    ((s.pullbackLift_toFrame_pullback f ⟨y, p⟩).trans h)
 
 /-- The **pullback of an equivalence** of Spin structures along a continuous map: equivalences
 commute with pullback. -/
