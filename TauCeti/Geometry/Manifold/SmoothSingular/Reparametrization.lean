@@ -16,28 +16,13 @@ import TauCeti.LinearAlgebra.Determinant.Basic
 /-!
 # Reparametrization and barycentric subdivision invariance of smooth singular integration
 
-This file defines smooth, affine, and vertex-permutation reparametrizations of smooth singular
-simplices and proves the resulting change-of-variables and barycentric subdivision formulas for
-integrating differential forms over smooth singular simplices and chains.
-
-## Main definitions and results
-
-* `TauCeti.SmoothSimplex.compContDiffOn`: reparametrize a smooth `p`-simplex by a map `ℝ^q → ℝ^p`
-  that is smooth on a neighbourhood of `Δ^q` and sends `Δ^q` into `Δ^p`.
-* `TauCeti.SmoothSimplex.compAffineMapMk`: precompose a smooth `p`-simplex with the affine map
-  `Δ^q → Δ^p` determined by a tuple of barycentric vertices.
-* `TauCeti.SmoothSimplex.compPerm`: reorder the vertices of a smooth `p`-simplex by a permutation
-  of `Fin (p + 1)`.
-* `TauCeti.SmoothSimplex.integral_compContDiffOn_of_det_nonneg`,
-  `TauCeti.SmoothSimplex.integral_compContDiffOn_of_det_nonpos`: orientation-preserving and
-  orientation-reversing change-of-variables formulas for smooth bijective reparametrizations of
-  `Δᵖ`.
-* `TauCeti.SmoothSimplex.integral_compPerm`: permuting the vertices scales the integral of any
-  `p`-form by the sign of the permutation.
-* `TauCeti.SmoothSimplex.sum_sign_integral_compAffineMapMk_vertex`,
-  `TauCeti.chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex`,
-  `TauCeti.subcomplexSubdivisionX_comp_integrationCochain`: barycentric subdivision preserves
-  integration of continuous differential forms on smooth singular chains.
+Defines smooth, affine, and vertex-permutation reparametrizations of smooth singular simplices
+(`compContDiffOn`, `compAffineMapMk`, `compPerm`) and proves change-of-variables and barycentric
+subdivision invariance (`integral_compContDiffOn_of_det_nonneg`,
+`integral_compContDiffOn_of_det_nonpos`, `integral_compPerm`,
+`sum_sign_integral_compAffineMapMk_vertex`,
+`chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex`,
+`subcomplexSubdivisionX_comp_integrationCochain`).
 
 ## References
 
@@ -66,8 +51,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 of `Δ^q` and sends `Δ^q` into `Δ^p`. -/
 def compContDiffOn {q : ℕ} (σ : SmoothSimplex I M p)
     {Ψ : EuclideanSpace ℝ (Fin q) → EuclideanSpace ℝ (Fin p)}
-    {U : Set (EuclideanSpace ℝ (Fin q))}
-    (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex q))
+    {U : Set (EuclideanSpace ℝ (Fin q))} (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex q))
     (hmaps : MapsTo Ψ (fullSimplex q) (fullSimplex p)) : SmoothSimplex I M q :=
   mk (σ.toContinuousMap.comp
       ⟨hmaps.restrict Ψ (fullSimplex q) (fullSimplex p),
@@ -79,12 +63,10 @@ def compContDiffOn {q : ℕ} (σ : SmoothSimplex I M p)
 @[simp]
 theorem toContinuousMap_compContDiffOn_apply {q : ℕ} (σ : SmoothSimplex I M p)
     {Ψ : EuclideanSpace ℝ (Fin q) → EuclideanSpace ℝ (Fin p)}
-    {U : Set (EuclideanSpace ℝ (Fin q))}
-    (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex q))
+    {U : Set (EuclideanSpace ℝ (Fin q))} (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex q))
     (hmaps : MapsTo Ψ (fullSimplex q) (fullSimplex p)) (x : fullSimplex q) :
     (σ.compContDiffOn hΨ hU hmaps).toContinuousMap x = σ.toContinuousMap ⟨Ψ x, hmaps x.2⟩ := by
-  rw [compContDiffOn, toContinuousMap_mk]
-  rfl
+  rw [compContDiffOn, toContinuousMap_mk]; rfl
 
 /-- Precompose a smooth `p`-simplex with the affine map `Δ^q → Δ^p` determined by a tuple of
 barycentric vertices `v`. This is definitionally the simplex pushed forward by
@@ -106,8 +88,7 @@ theorem toContinuousMap_compAffineMapMk_apply {q : ℕ} (σ : SmoothSimplex I M 
         (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex q x)) :=
     Subtype.ext (affineMapAmbient_coe v x)
   rw [toContinuousMap_apply, compAffineMapMk, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-    hx, toContinuousMap_apply, Homeomorph.apply_symm_apply,
-    StdSimplex.continuousAffineMapMk_apply]
+    hx, toContinuousMap_apply, Homeomorph.apply_symm_apply, StdSimplex.continuousAffineMapMk_apply]
 
 /-- Reorder the vertices of a smooth `p`-simplex by a permutation `π` of `Fin (p + 1)`. -/
 def compPerm (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 1))) : SmoothSimplex I M p :=
@@ -120,103 +101,81 @@ theorem toContinuousMap_compPerm_apply (σ : SmoothSimplex I M p) (π : Equiv.Pe
     (σ.compPerm π).toContinuousMap x =
       σ.toContinuousMap ⟨simplexMapAmbient π x, mapsTo_simplexMapAmbient π x.2⟩ := by
   rw [compPerm, toContinuousMap_compAffineMapMk_apply]
-  congr 1
-  exact Subtype.ext (congrFun (congrArg DFunLike.coe (affineMapAmbient_single π)) x.val)
+  exact congrArg σ.toContinuousMap
+    (Subtype.ext (congrFun (congrArg DFunLike.coe (affineMapAmbient_single π)) x.val))
 
 private theorem mpullbackWithin_comp_eval_basis (σ : SmoothSimplex I M p)
     {Ψ : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin p)}
-    (hmaps : MapsTo Ψ (fullSimplex p) (fullSimplex p))
-    {x : EuclideanSpace ℝ (Fin p)} (hx : x ∈ fullSimplex p)
-    {L : EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin p)}
+    (hmaps : MapsTo Ψ (fullSimplex p) (fullSimplex p)) {x : EuclideanSpace ℝ (Fin p)}
+    (hx : x ∈ fullSimplex p) {L : EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin p)}
     (hΨ : HasFDerivWithinAt Ψ L (fullSimplex p) x) (φ : RoughForm I M F p) :
-    mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I (σ.extension ∘ Ψ) (fullSimplex p) φ x
-      (fun i ↦ EuclideanSpace.single i 1) =
-    L.det •
-      mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ (Ψ x)
+    mpullbackWithin (𝓡 p) I (σ.extension ∘ Ψ) (fullSimplex p) φ x
+        (fun i ↦ EuclideanSpace.single i 1) =
+      L.det • mpullbackWithin (𝓡 p) I σ.extension (fullSimplex p) φ (Ψ x)
         (fun i ↦ EuclideanSpace.single i 1) := by
-  have hσx : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension
-      (fullSimplex p) (Ψ x) :=
-    (σ.contMDiffOn_extension (Ψ x) (hmaps hx)).mdifferentiableWithinAt (by simp)
-  have hmp := mpullbackWithin_comp_apply_of_hasFDerivWithinAt hΨ hσx hmaps
-    (uniqueDiffOn_fullSimplex p x hx) φ
+  have hmp := mpullbackWithin_comp_apply_of_hasFDerivWithinAt hΨ
+    ((σ.contMDiffOn_extension (Ψ x) (hmaps hx)).mdifferentiableWithinAt (by simp))
+    hmaps (uniqueDiffOn_fullSimplex p x hx) φ
   refine (congrArg (fun η ↦ η (fun i ↦ EuclideanSpace.single i 1)) hmp).trans ?_
-  let η : EuclideanSpace ℝ (Fin p) [⋀^Fin p]→L[ℝ] F :=
-    mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ (Ψ x)
+  let η := mpullbackWithin (𝓡 p) I σ.extension (fullSimplex p) φ (Ψ x)
   exact congrFun (congrArg DFunLike.coe
     (AlternatingMap.compLinearMap_eq_det_smul (EuclideanSpace.basisFun (Fin p) ℝ).toBasis
-      η.toAlternatingMap L.toLinearMap))
-    (fun i ↦ EuclideanSpace.single i 1)
+      η.toAlternatingMap L.toLinearMap)) (fun i ↦ EuclideanSpace.single i 1)
+
+section Reparam
+
+variable (σ : SmoothSimplex I M p) {Ψ : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin p)}
+  {U : Set (EuclideanSpace ℝ (Fin p))} (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex p))
+  (hmaps : MapsTo Ψ (fullSimplex p) (fullSimplex p)) (hinj : InjOn Ψ (fullSimplex p))
+  (himage : Ψ '' fullSimplex p = fullSimplex p)
+
+include hinj himage
+
+private theorem integral_compContDiffOn_of_det_eq {s : ℝ}
+    (hdet : ∀ x ∈ fullSimplex p, (fderiv ℝ Ψ x).det = s * |(fderiv ℝ Ψ x).det|)
+    (φ : RoughForm I M F p) :
+    (σ.compContDiffOn hΨ hU hmaps).integral φ = s • σ.integral φ := by
+  rw [(σ.compContDiffOn hΨ hU hmaps).integral_eq_setIntegral_mpullbackWithin φ
+    (g := σ.extension ∘ Ψ) fun x ↦ by
+      rw [Function.comp_apply, toContinuousMap_compContDiffOn_apply,
+        σ.extension_coe ⟨Ψ x, hmaps x.2⟩]]
+  have hΨfderiv : ∀ x ∈ fullSimplex p,
+      HasFDerivWithinAt Ψ (fderiv ℝ Ψ x) (fullSimplex p) x := fun x hx ↦
+    ((hΨ.contDiffAt (mem_nhdsSet_iff_forall.mp hU x hx)).differentiableAt
+      (by simp)).hasFDerivAt.hasFDerivWithinAt
+  have hpt (x : EuclideanSpace ℝ (Fin p)) (hx : x ∈ fullSimplex p) :
+      mpullbackWithin (𝓡 p) I (σ.extension ∘ Ψ) (fullSimplex p) φ x
+          (fun i ↦ EuclideanSpace.single i 1) =
+        s • |(fderiv ℝ Ψ x).det| • mpullbackWithin (𝓡 p) I σ.extension (fullSimplex p) φ (Ψ x)
+          (fun i ↦ EuclideanSpace.single i 1) := by
+    rw [smul_smul, ← hdet x hx]; exact σ.mpullbackWithin_comp_eval_basis hmaps hx (hΨfderiv x hx) φ
+  rw [setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet hpt, MeasureTheory.integral_smul,
+    integral_def]
+  have hcov := MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul volume
+    (isClosed_fullSimplex p).measurableSet hΨfderiv hinj
+    (fun y ↦ mpullbackWithin (𝓡 p) I σ.extension (fullSimplex p) φ y
+      (fun i ↦ EuclideanSpace.single i 1))
+  rw [himage] at hcov; exact congrArg (s • ·) hcov.symm
 
 /-- **Orientation-preserving reparametrization of simplex integrals.** If `Ψ` is a smooth bijective
 self-reparametrization of `Δᵖ` with nonnegative Jacobian determinant everywhere on `Δᵖ`, then
 integrating any `p`-form over `σ ∘ Ψ` gives the same value as over `σ`. -/
-theorem integral_compContDiffOn_of_det_nonneg (σ : SmoothSimplex I M p)
-    {Ψ : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin p)}
-    {U : Set (EuclideanSpace ℝ (Fin p))}
-    (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex p))
-    (hmaps : MapsTo Ψ (fullSimplex p) (fullSimplex p))
-    (hinj : InjOn Ψ (fullSimplex p)) (himage : Ψ '' fullSimplex p = fullSimplex p)
+theorem integral_compContDiffOn_of_det_nonneg
     (hdet : ∀ x ∈ fullSimplex p, 0 ≤ (fderiv ℝ Ψ x).det) (φ : RoughForm I M F p) :
     (σ.compContDiffOn hΨ hU hmaps).integral φ = σ.integral φ := by
-  rw [(σ.compContDiffOn hΨ hU hmaps).integral_eq_setIntegral_mpullbackWithin φ
-    (g := σ.extension ∘ Ψ) fun x ↦ by
-      rw [Function.comp_apply, toContinuousMap_compContDiffOn_apply,
-        σ.extension_coe ⟨Ψ x, hmaps x.2⟩]]
-  have hΨfderiv : ∀ x ∈ fullSimplex p,
-      HasFDerivWithinAt Ψ (fderiv ℝ Ψ x) (fullSimplex p) x := fun x hx ↦
-    ((hΨ.contDiffAt (mem_nhdsSet_iff_forall.mp hU x hx)).differentiableAt
-      (by simp)).hasFDerivAt.hasFDerivWithinAt
-  have hpt : ∀ x ∈ fullSimplex p,
-      mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I (σ.extension ∘ Ψ) (fullSimplex p) φ x
-        (fun i ↦ EuclideanSpace.single i 1) =
-      |(fderiv ℝ Ψ x).det| •
-        mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ (Ψ x)
-          (fun i ↦ EuclideanSpace.single i 1) := fun x hx ↦ by
-    rw [abs_of_nonneg (hdet x hx)]
-    exact σ.mpullbackWithin_comp_eval_basis hmaps hx (hΨfderiv x hx) φ
-  rw [setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet hpt, integral_def]
-  have hcov := MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul volume
-    (isClosed_fullSimplex p).measurableSet hΨfderiv hinj
-    (fun y ↦ mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ y
-      (fun i ↦ EuclideanSpace.single i 1))
-  rw [himage] at hcov
-  exact hcov.symm
+  simpa using σ.integral_compContDiffOn_of_det_eq hΨ hU hmaps hinj himage (s := 1)
+    (fun x hx ↦ by rw [abs_of_nonneg (hdet x hx), one_mul]) φ
 
 /-- **Orientation-reversing reparametrization of simplex integrals.** If `Ψ` is a smooth bijective
 self-reparametrization of `Δᵖ` with nonpositive Jacobian determinant everywhere on `Δᵖ`, then
 integrating any `p`-form over `σ ∘ Ψ` negates the integral over `σ`. -/
-theorem integral_compContDiffOn_of_det_nonpos (σ : SmoothSimplex I M p)
-    {Ψ : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin p)}
-    {U : Set (EuclideanSpace ℝ (Fin p))}
-    (hΨ : ContDiffOn ℝ ∞ Ψ U) (hU : U ∈ 𝓝ˢ (fullSimplex p))
-    (hmaps : MapsTo Ψ (fullSimplex p) (fullSimplex p))
-    (hinj : InjOn Ψ (fullSimplex p)) (himage : Ψ '' fullSimplex p = fullSimplex p)
+theorem integral_compContDiffOn_of_det_nonpos
     (hdet : ∀ x ∈ fullSimplex p, (fderiv ℝ Ψ x).det ≤ 0) (φ : RoughForm I M F p) :
     (σ.compContDiffOn hΨ hU hmaps).integral φ = -σ.integral φ := by
-  rw [(σ.compContDiffOn hΨ hU hmaps).integral_eq_setIntegral_mpullbackWithin φ
-    (g := σ.extension ∘ Ψ) fun x ↦ by
-      rw [Function.comp_apply, toContinuousMap_compContDiffOn_apply,
-        σ.extension_coe ⟨Ψ x, hmaps x.2⟩]]
-  have hΨfderiv : ∀ x ∈ fullSimplex p,
-      HasFDerivWithinAt Ψ (fderiv ℝ Ψ x) (fullSimplex p) x := fun x hx ↦
-    ((hΨ.contDiffAt (mem_nhdsSet_iff_forall.mp hU x hx)).differentiableAt
-      (by simp)).hasFDerivAt.hasFDerivWithinAt
-  have hpt : ∀ x ∈ fullSimplex p,
-      mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I (σ.extension ∘ Ψ) (fullSimplex p) φ x
-        (fun i ↦ EuclideanSpace.single i 1) =
-      -(|(fderiv ℝ Ψ x).det| •
-        mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ (Ψ x)
-          (fun i ↦ EuclideanSpace.single i 1)) := fun x hx ↦ by
-    rw [abs_of_nonpos (hdet x hx), neg_smul, neg_neg]
-    exact σ.mpullbackWithin_comp_eval_basis hmaps hx (hΨfderiv x hx) φ
-  rw [setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet hpt,
-    MeasureTheory.integral_neg, integral_def]
-  have hcov := MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul volume
-    (isClosed_fullSimplex p).measurableSet hΨfderiv hinj
-    (fun y ↦ mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ y
-      (fun i ↦ EuclideanSpace.single i 1))
-  rw [himage] at hcov
-  exact congrArg Neg.neg hcov.symm
+  simpa using σ.integral_compContDiffOn_of_det_eq hΨ hU hmaps hinj himage (s := -1)
+    (fun x hx ↦ by rw [abs_of_nonpos (hdet x hx), neg_one_mul, neg_neg]) φ
+
+end Reparam
 
 /-- Permuting the vertices of a smooth simplex scales the integral of any `p`-form by the sign of
 the permutation. -/
@@ -224,23 +183,14 @@ theorem integral_compPerm (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 
     (φ : RoughForm I M F p) :
     (σ.compPerm π).integral φ = (π.sign : ℝ) • σ.integral φ := by
   have heq : σ.compPerm π = σ.compContDiffOn (simplexMapAmbient π).contDiff.contDiffOn
-      Filter.univ_mem (mapsTo_simplexMapAmbient π) := by
-    ext x
-    simp
-  have hdet (x : EuclideanSpace ℝ (Fin p)) :
-      (fderiv ℝ (simplexMapAmbient π) x).det = (π.sign : ℝ) := by
-    rw [(simplexMapAmbient π).hasFDerivAt.fderiv, ContinuousLinearMap.det,
-      det_contLinear_simplexMapAmbient_perm]
+      Filter.univ_mem (mapsTo_simplexMapAmbient π) := by ext x; simp
   rw [heq]
-  rcases Int.units_eq_one_or π.sign with hsign | hsign
-  · rw [σ.integral_compContDiffOn_of_det_nonneg _ Filter.univ_mem (mapsTo_simplexMapAmbient π)
-      (simplexMapAmbient_perm_injective π).injOn (image_simplexMapAmbient_perm π)
-      (fun x _ ↦ by rw [hdet, hsign]; norm_num)]
-    simp [hsign]
-  · rw [σ.integral_compContDiffOn_of_det_nonpos _ Filter.univ_mem (mapsTo_simplexMapAmbient π)
-      (simplexMapAmbient_perm_injective π).injOn (image_simplexMapAmbient_perm π)
-      (fun x _ ↦ by rw [hdet, hsign]; norm_num)]
-    simp [hsign]
+  exact σ.integral_compContDiffOn_of_det_eq _ Filter.univ_mem (mapsTo_simplexMapAmbient π)
+    (simplexMapAmbient_perm_injective π).injOn (image_simplexMapAmbient_perm π)
+    (fun x _ ↦ by
+      rw [(simplexMapAmbient π).hasFDerivAt.fderiv, ContinuousLinearMap.det,
+        det_contLinear_simplexMapAmbient_perm]
+      rcases Int.units_eq_one_or π.sign with h | h <;> simp [h]) φ
 
 /-- **Barycentric subdivision preserves simplex integration.** The signed sum of the integrals of a
 continuous `p`-form over the barycentric subdivision simplices of `σ` equals the integral of the
@@ -253,9 +203,8 @@ theorem sum_sign_integral_compAffineMapMk_vertex [IsManifold I 1 M]
   have hterm (π : Equiv.Perm (Fin (p + 1))) :
       (σ.compAffineMapMk (BarycentricSubdivision.vertex π)).integral φ =
         ∫ x in fullSimplex p,
-          LinearMap.det
-            (affineMapAmbient (BarycentricSubdivision.vertex π)).contLinear.toLinearMap •
-            mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ
+          (affineMapAmbient (BarycentricSubdivision.vertex π)).contLinear.det •
+            mpullbackWithin (𝓡 p) I σ.extension (fullSimplex p) φ
               (affineMapAmbient (BarycentricSubdivision.vertex π) x)
               (fun i ↦ EuclideanSpace.single i 1) := by
     let A := affineMapAmbient (BarycentricSubdivision.vertex π)
@@ -263,11 +212,10 @@ theorem sum_sign_integral_compAffineMapMk_vertex [IsManifold I 1 M]
     rw [τ.integral_eq_setIntegral_mpullbackWithin φ (g := σ.extension ∘ A) fun x ↦ by
       rw [Function.comp_apply, toContinuousMap_compAffineMapMk_apply,
         σ.extension_coe ⟨A x, mapsTo_affineMapAmbient _ x.2⟩]]
-    refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦ ?_
-    exact σ.mpullbackWithin_comp_eval_basis (mapsTo_affineMapAmbient _) hx
-      A.hasFDerivAt.hasFDerivWithinAt φ
-  simp_rw [hterm]
-  rw [integral_def]
+    exact setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦
+      σ.mpullbackWithin_comp_eval_basis (mapsTo_affineMapAmbient _) hx
+        A.hasFDerivAt.hasFDerivWithinAt φ
+  simp_rw [hterm]; rw [integral_def]
   exact BarycentricSubdivision.sum_sign_setIntegral_affineMapAmbient_vertex
     (σ.integrableOn_mpullbackWithin hφ σ.extension_coe)
 
@@ -294,16 +242,13 @@ theorem chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex {R : Type
   rw [hfac, AffineChain.simplex_def, AffineChain.subdivision_single, map_sum,
     ModuleCat.hom_sum, LinearMap.sum_apply, map_sum]
   refine Finset.sum_congr rfl fun π _ ↦ ?_
-  have hvertex :
-      ⇑(StdSimplex.affineMapMk (R := ℝ) (StdSimplex.single : Fin (p + 1) → _)) ∘
-        BarycentricSubdivision.vertex π = BarycentricSubdivision.vertex π := by
-    funext k
-    simp [StdSimplex.affineMapMk_apply]
+  have hvertex : ⇑(StdSimplex.affineMapMk (R := ℝ) (StdSimplex.single : Fin (p + 1) → _)) ∘
+      BarycentricSubdivision.vertex π = BarycentricSubdivision.vertex π :=
+    funext fun k ↦ by simp [StdSimplex.affineMapMk_apply]
   rw [hvertex, one_mul, AffineChain.subcomplexChain_single, ModuleCat.hom_smul,
     LinearMap.smul_apply, map_zsmul,
     _root_.SSet.chainsLinearEquivFinsupp_ιChainComplex (smoothSingularSubcomplex I M : SSet),
-    Finsupp.smul_single, Units.smul_def]
-  rfl
+    Finsupp.smul_single, Units.smul_def]; rfl
 
 /-- **Barycentric subdivision preserves integration of continuous forms on real smooth chains.** -/
 @[reassoc]
@@ -318,15 +263,11 @@ theorem subcomplexSubdivisionX_comp_integrationCochain [IsManifold I 1 M]
     chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex]
   let Iφ : (SmoothSimplex I M p →₀ ℝ) →+ F :=
     AddMonoidHom.mk' (fun c ↦ chainIntegral c φ) (fun c d ↦ chainIntegral_add c d φ)
-  -- Express `chainIntegral` as an `AddMonoidHom` to pull the finite sum out.
-  change Iφ _ = _
-  rw [map_sum]
-  refine (Finset.sum_congr rfl fun π _ ↦ ?_).trans
+  refine (map_sum Iφ _ _).trans <| (Finset.sum_congr rfl fun π _ ↦ ?_).trans
     (SmoothSimplex.sum_sign_integral_compAffineMapMk_vertex σ hφ)
-  -- Unfold `Iφ` back to `chainIntegral` on each single-simplex term.
-  change chainIntegral _ φ = _
-  rw [chainIntegral_single]
-  rcases Int.units_eq_one_or π.sign with h | h <;> simp [h]
+  have h := chainIntegral_single (SmoothSimplex.compAffineMapMk σ
+    (BarycentricSubdivision.vertex π)) (π.sign • (1 : ℝ)) φ
+  rcases Int.units_eq_one_or π.sign with hs | hs <;> simpa [Iφ, hs] using h
 
 end SubdivisionChains
 

@@ -30,21 +30,22 @@ last coordinate to the zeroth position. Every map of barycentric simplices induc
 vertices, read on full-dimensional simplices, is the restriction of the continuous affine map
 `simplexMapAmbient` of the ambient Euclidean spaces; the face inclusions are the case of the
 coface vertex maps `Fin.succAbove`. More generally, every affine map of barycentric simplices with
-arbitrary vertices is the restriction of the explicit continuous affine map `affineMapAmbient` of
-the ambient spaces (`TauCeti.affineMapAmbient_coe`,
-`TauCeti.exists_continuousAffineMap_eq_affineMapMk`), whose linear-part determinant equals the
-determinant of the barycentric weight matrix of its vertices
-(`TauCeti.det_contLinear_affineMapAmbient`); for a vertex permutation this determinant is the sign
-of the permutation (`TauCeti.det_contLinear_simplexMapAmbient_perm`). In coordinates, the face map
-omitting the vertex `e_j` inserts a zero `j`-th coordinate, and the face map omitting the origin
-puts the missing barycentric weight in front; a permutation of the vertices induces an affine
-symmetry of the simplex. Cycling the vertices relates the two readings of the face opposite the
-origin: through the coordinates other than the `j`-th one, and through the last coordinates as the
-face map does. The simplex is a compact convex set with nonempty interior, so derivatives within it
-are unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for
+arbitrary vertices is the restriction of a continuous affine map of the ambient spaces
+(`TauCeti.exists_continuousAffineMap_eq_affineMapMk`). In coordinates, the face map omitting the
+vertex `e_j` inserts a zero `j`-th coordinate, and the face map omitting the origin puts the
+missing barycentric weight in front; a permutation of the vertices induces an affine symmetry of
+the simplex. Cycling the vertices relates the two readings of the face opposite the origin:
+through the coordinates other than the `j`-th one, and through the last coordinates as the face
+map does. The simplex is a compact convex set with nonempty interior, so derivatives within it are
+unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for
 derivatives and integrals of forms. The face maps are injective, hence closed embeddings of the
 ambient Euclidean spaces (`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back
 along them preserves compact supports.
+
+Explicitly, `affineMapAmbient` constructs the ambient affine extension (`affineMapAmbient_coe`),
+with linear-part determinant equal to the determinant of the barycentric weight matrix
+(`det_contLinear_affineMapAmbient`), and equal to the sign of the permutation for vertex
+permutations (`det_contLinear_simplexMapAmbient_perm`).
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -333,8 +334,7 @@ theorem affineMapAmbient_coe {k m : ℕ}
     (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) (x : fullSimplex k) :
     affineMapAmbient v x.val = ((fullSimplexEquivStdSimplex m).symm
       (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex k x))).val := by
-  ext i
-  rw [affineMapAmbient_apply, fullSimplexEquivStdSimplex_symm_apply]
+  ext i; rw [affineMapAmbient_apply, fullSimplexEquivStdSimplex_symm_apply]
   simp [Fin.sum_univ_succ]
 
 /-- The affine ambient map carries the full-dimensional simplex into the full-dimensional
@@ -352,89 +352,70 @@ theorem contLinear_affineMapAmbient_single {k m : ℕ}
       ((fullSimplexEquivStdSimplex m).symm (v j.succ)).val -
         ((fullSimplexEquivStdSimplex m).symm (v 0)).val := by
   have h := (affineMapAmbient v).contLinear_apply_vsub (EuclideanSpace.single j (1 : ℝ)) 0
-  rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at h
-  rw [h]
-  ext i
-  simp [affineMapAmbient_apply, PiLp.single_apply]
+  ext i; simpa [affineMapAmbient_apply, PiLp.single_apply] using congrArg (· i) h
 
 /-- Two continuous affine maps on `ℝᵏ` that agree on the full-dimensional simplex `Δᵏ` are equal
 everywhere. -/
 theorem continuousAffineMap_eq_of_eqOn_fullSimplex {k : ℕ} {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {A B : EuclideanSpace ℝ (Fin k) →ᴬ[ℝ] F}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {A B : EuclideanSpace ℝ (Fin k) →ᴬ[ℝ] F}
     (h : Set.EqOn A B (fullSimplex k)) : A = B := by
   have h0 : A 0 = B 0 := h (zero_mem_fullSimplex k)
-  have hlin : A.contLinear = B.contLinear := by
-    apply ContinuousLinearMap.coe_injective
-    exact (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.ext fun j ↦ by
-      have hj : EuclideanSpace.single j (1 : ℝ) ∈ fullSimplex k := single_one_mem_fullSimplex j
+  have hlin : A.contLinear = B.contLinear := ContinuousLinearMap.coe_injective <|
+    (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.ext fun j ↦ by
       have hA := A.contLinear_apply_vsub (EuclideanSpace.single j (1 : ℝ)) 0
       have hB := B.contLinear_apply_vsub (EuclideanSpace.single j (1 : ℝ)) 0
       rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at hA hB
       simp only [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply,
-        ContinuousLinearMap.coe_coe, hA, hB, h hj, h0]
+        ContinuousLinearMap.coe_coe, hA, hB, h (single_one_mem_fullSimplex j), h0]
   ext x
-  have hA := A.contLinear_apply_vsub x 0
-  have hB := B.contLinear_apply_vsub x 0
+  have hA := A.contLinear_apply_vsub x 0; have hB := B.contLinear_apply_vsub x 0
   rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at hA hB
-  have hsub : A x - A 0 = B x - B 0 := by rw [← hA, ← hB, hlin]
-  rw [h0] at hsub
-  exact sub_left_inj.mp hsub
+  exact sub_left_inj.mp (h0 ▸ (hA.symm.trans (by rw [hlin, hB])))
 
 /-- On vertex maps, `affineMapAmbient` coincides with `simplexMapAmbient`. -/
 theorem affineMapAmbient_single {k m : ℕ} (f : Fin (k + 1) → Fin (m + 1)) :
-    affineMapAmbient (StdSimplex.single ∘ f) = simplexMapAmbient f := by
-  refine continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ ?_
-  rw [affineMapAmbient_coe _ ⟨x, hx⟩, simplexMapAmbient_coe f ⟨x, hx⟩]
-  congr 2
-  ext i
-  rw [StdSimplex.weights_map_apply]
-  simp [Finsupp.single_apply, mul_ite, Finset.sum_filter]
+    affineMapAmbient (StdSimplex.single ∘ f) = simplexMapAmbient f :=
+  continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ by
+    rw [affineMapAmbient_coe _ ⟨x, hx⟩, simplexMapAmbient_coe f ⟨x, hx⟩]
+    congr 2; ext i; rw [StdSimplex.weights_map_apply]
+    simp [Finsupp.single_apply, mul_ite, Finset.sum_filter]
 
 /-- Composing affine maps of simplices corresponds to composing their ambient affine maps. -/
 theorem affineMapAmbient_comp {j k m : ℕ}
     (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1)))
     (w : Fin (j + 1) → StdSimplex ℝ (Fin (k + 1))) :
     affineMapAmbient (StdSimplex.affineMapMk v ∘ w) =
-      (affineMapAmbient v).comp (affineMapAmbient w) := by
-  refine continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ ?_
-  rw [ContinuousAffineMap.comp_apply, affineMapAmbient_coe _ ⟨x, hx⟩,
-    affineMapAmbient_coe _ ⟨x, hx⟩,
-    affineMapAmbient_coe v ((fullSimplexEquivStdSimplex k).symm
-      (StdSimplex.affineMapMk w (fullSimplexEquivStdSimplex j ⟨x, hx⟩))),
-    Homeomorph.apply_symm_apply]
-  congr 2
-  exact DFunLike.congr_fun
-    (StdSimplex.comp_affineMapMk (StdSimplex.affineMapMk v) w).symm _
+      (affineMapAmbient v).comp (affineMapAmbient w) :=
+  continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ by
+    rw [ContinuousAffineMap.comp_apply, affineMapAmbient_coe _ ⟨x, hx⟩,
+      affineMapAmbient_coe _ ⟨x, hx⟩, affineMapAmbient_coe, Homeomorph.apply_symm_apply]
+    congr 2
+    exact DFunLike.congr_fun (StdSimplex.comp_affineMapMk (StdSimplex.affineMapMk v) w).symm _
 
 /-- The identity vertex map induces the identity ambient affine map. -/
 @[simp]
 theorem simplexMapAmbient_id (m : ℕ) :
-    simplexMapAmbient (id : Fin (m + 1) → Fin (m + 1)) = ContinuousAffineMap.id ℝ _ := by
-  refine continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ ?_
-  rw [simplexMapAmbient_coe id ⟨x, hx⟩, ContinuousAffineMap.coe_id, id_eq, StdSimplex.map_id]
-  exact congrArg Subtype.val ((fullSimplexEquivStdSimplex m).symm_apply_apply ⟨x, hx⟩)
+    simplexMapAmbient (id : Fin (m + 1) → Fin (m + 1)) = ContinuousAffineMap.id ℝ _ :=
+  continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ by
+    rw [simplexMapAmbient_coe id ⟨x, hx⟩, ContinuousAffineMap.coe_id, id_eq, StdSimplex.map_id]
+    exact congrArg Subtype.val ((fullSimplexEquivStdSimplex m).symm_apply_apply ⟨x, hx⟩)
 
 /-- Ambient vertex maps are functorial under composition. -/
 theorem simplexMapAmbient_comp {j k m : ℕ} (g : Fin (k + 1) → Fin (m + 1))
     (f : Fin (j + 1) → Fin (k + 1)) :
-    simplexMapAmbient (g ∘ f) = (simplexMapAmbient g).comp (simplexMapAmbient f) := by
-  refine continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ ?_
-  rw [ContinuousAffineMap.comp_apply, simplexMapAmbient_coe (g ∘ f) ⟨x, hx⟩,
-    simplexMapAmbient_coe f ⟨x, hx⟩,
-    simplexMapAmbient_coe g ((fullSimplexEquivStdSimplex k).symm
-      ((fullSimplexEquivStdSimplex j ⟨x, hx⟩).map f)),
-    Homeomorph.apply_symm_apply, StdSimplex.map_map]
-  rfl
+    simplexMapAmbient (g ∘ f) = (simplexMapAmbient g).comp (simplexMapAmbient f) :=
+  continuousAffineMap_eq_of_eqOn_fullSimplex fun x hx ↦ by
+    rw [ContinuousAffineMap.comp_apply, simplexMapAmbient_coe (g ∘ f) ⟨x, hx⟩,
+      simplexMapAmbient_coe f ⟨x, hx⟩, simplexMapAmbient_coe, Homeomorph.apply_symm_apply,
+      StdSimplex.map_map]; rfl
 
 /-- The ambient extension of a permutation of the vertices is injective. -/
 theorem simplexMapAmbient_perm_injective {m : ℕ} (σ : Equiv.Perm (Fin (m + 1))) :
-    Function.Injective (simplexMapAmbient σ) := by
-  refine Function.LeftInverse.injective (g := simplexMapAmbient σ.symm) fun x ↦ ?_
-  have h : (simplexMapAmbient σ.symm).comp (simplexMapAmbient σ) = ContinuousAffineMap.id ℝ _ := by
-    rw [← simplexMapAmbient_comp, show (⇑σ.symm ∘ ⇑σ) = id from funext σ.symm_apply_apply,
-      simplexMapAmbient_id]
-  exact DFunLike.congr_fun h x
+    Function.Injective (simplexMapAmbient σ) :=
+  Function.LeftInverse.injective (g := simplexMapAmbient σ.symm) fun x ↦ DFunLike.congr_fun
+    (show (simplexMapAmbient σ.symm).comp (simplexMapAmbient σ) = ContinuousAffineMap.id ℝ _ by
+      rw [← simplexMapAmbient_comp, show (⇑σ.symm ∘ ⇑σ) = id from funext σ.symm_apply_apply,
+        simplexMapAmbient_id]) x
 
 /-- The determinant of the linear part of `affineMapAmbient v` equals the determinant of the
 barycentric weight matrix whose `i`-th column is the weight vector of `v i`. -/
@@ -443,94 +424,50 @@ theorem det_contLinear_affineMapAmbient {p : ℕ}
     LinearMap.det (affineMapAmbient v).contLinear.toLinearMap =
       (Matrix.of fun j i : Fin (p + 1) ↦ (v i).weights j).det := by
   let M : Matrix (Fin (p + 1)) (Fin (p + 1)) ℝ := Matrix.of fun j i ↦ (v i).weights j
-  let e : (Fin (p + 1) → ℝ) ≃ₗ[ℝ] (Fin (p + 1) → ℝ) :=
-    { toFun u := Fin.cons (∑ j, u j) (u ∘ Fin.succ)
-      map_add' u w := by
-        ext i
-        cases i using Fin.cases <;> simp [Finset.sum_add_distrib]
-      map_smul' r u := by
-        ext i
-        cases i using Fin.cases <;> simp [Finset.mul_sum]
-      invFun w := Fin.cons (w 0 - ∑ j : Fin p, w j.succ) (w ∘ Fin.succ)
-      left_inv u := by
-        ext i
-        cases i using Fin.cases <;> simp [Fin.sum_univ_succ]
-      right_inv w := by
-        ext i
-        cases i using Fin.cases <;> simp [Fin.sum_univ_succ] }
-  let L : (Fin (p + 1) → ℝ) →ₗ[ℝ] (Fin (p + 1) → ℝ) :=
-    e.toLinearMap ∘ₗ Matrix.toLin' M ∘ₗ e.symm.toLinearMap
-  let b₁ := Pi.basisFun ℝ (Fin (p + 1))
-  let N : Matrix (Fin (p + 1)) (Fin (p + 1)) ℝ := LinearMap.toMatrix b₁ b₁ L
-  have hNdet : N.det = M.det := by
-    rw [LinearMap.det_toMatrix]
-    have hedet : LinearMap.det e.toLinearMap * LinearMap.det e.symm.toLinearMap = 1 := by
-      rw [← LinearMap.det_comp, LinearEquiv.comp_coe, LinearEquiv.symm_trans_self,
-        LinearEquiv.refl_toLinearMap, LinearMap.det_id]
-    have hL : LinearMap.det L = LinearMap.det (Matrix.toLin' M) := by
-      dsimp only [L]
-      rw [LinearMap.det_comp, LinearMap.det_comp]
-      linear_combination LinearMap.det (Matrix.toLin' M) * hedet
-    rw [hL, LinearMap.det_toLin']
-  have hsumM : ∀ u : Fin (p + 1) → ℝ, ∑ j, M.mulVec u j = ∑ i, u i := fun u ↦ by
-    simp only [M, Matrix.mulVec, dotProduct, Matrix.of_apply]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← Finset.sum_mul, StdSimplex.total_of_fintype, one_mul]
-  have hrow0 : ∀ i : Fin (p + 1), N 0 i = if i = 0 then 1 else 0 := fun i ↦ by
-    have hN : N 0 i = (L (Pi.single i 1)) 0 := by
-      simp [N, b₁]
-    rw [hN]
-    -- `L` conjugates `M.mulVec` by `e`, whose `0`-th coordinate sums all entries.
-    change ∑ j, M.mulVec (e.symm (Pi.single i 1)) j = _
-    rw [hsumM]
-    have he : ∑ k, (e.symm (Pi.single i (1 : ℝ))) k = (e (e.symm (Pi.single i 1))) 0 := rfl
-    rw [he, e.apply_symm_apply]
-    simp [Pi.single_apply, eq_comm]
+  let P : Matrix (Fin (p + 1)) (Fin (p + 1)) ℝ :=
+    Matrix.of fun i j ↦ if i = 0 ∨ i = j then 1 else 0
+  let Q : Matrix (Fin (p + 1)) (Fin (p + 1)) ℝ :=
+    Matrix.of fun i j ↦ if i = j then 1 else if i = 0 then -1 else 0
+  have hP : P.det = 1 := by
+    have ht : P.IsUpperTriangular := fun i j hij ↦ by
+      dsimp at hij; simp [P, ((Fin.zero_le j).trans_lt hij).ne', ne_of_gt hij]
+    simp [Matrix.det_of_isUpperTriangular ht, P]
+  have hQ : Q.det = 1 := by
+    have ht : Q.IsUpperTriangular := fun i j hij ↦ by
+      dsimp at hij; simp [Q, ((Fin.zero_le j).trans_lt hij).ne', ne_of_gt hij]
+    simp [Matrix.det_of_isUpperTriangular ht, Q]
+  have hPM (i j : Fin (p + 1)) : (P * M) i j = if i = 0 then 1 else M i j := by
+    by_cases hi : i = 0
+    · subst hi; simp [Matrix.mul_apply, P, M, StdSimplex.total_of_fintype]
+    · simp [Matrix.mul_apply, P, hi]
+  have hrow0 (j : Fin (p + 1)) : (P * M * Q) 0 j = if j = 0 then 1 else 0 := by
+    cases j using Fin.cases with
+    | zero => simp [Matrix.mul_apply, Q, hPM, Fin.sum_univ_succ]
+    | succ k => simp [Matrix.mul_apply, Q, hPM, Fin.sum_univ_succ, (Fin.succ_ne_zero k).symm]
   let b := (EuclideanSpace.basisFun (Fin p) ℝ).toBasis
-  have hsub : N.submatrix Fin.succ Fin.succ =
+  have hsub : (P * M * Q).submatrix Fin.succ Fin.succ =
       LinearMap.toMatrix b b (affineMapAmbient v).contLinear.toLinearMap := by
     ext j k
-    have hN : N j.succ k.succ = (L (Pi.single k.succ 1)) j.succ := by
-      simp [N, b₁]
-    rw [Matrix.submatrix_apply, hN]
-    have hLval : (L (Pi.single k.succ (1 : ℝ))) j.succ =
-        (v k.succ).weights j.succ - (v 0).weights j.succ := by
-      -- On positive indices `e` is the identity, so `(L w) j.succ = (M.mulVec (e.symm w)) j.succ`.
-      change M.mulVec (e.symm (Pi.single k.succ 1)) j.succ = _
-      simp only [M, Matrix.mulVec, dotProduct, Matrix.of_apply, Fin.sum_univ_succ]
-      let ek : Fin (p + 1) → ℝ := Pi.single k.succ 1
-      have h0 : (e.symm ek) 0 = -1 := by
-        -- Evaluate `e.symm` at `0` by definition.
-        change ek 0 - ∑ m : Fin p, ek m.succ = -1
-        simp [ek, Pi.single_apply]
-      have hsucc : ∀ m : Fin p, (e.symm ek) m.succ = if m = k then 1 else 0 := fun m ↦ by
-        -- Evaluate `e.symm` at `m.succ` by definition.
-        change ek m.succ = _
-        simp [ek, Pi.single_apply]
-      -- Name `Pi.single k.succ 1` as `ek` so `rw [h0]` and `hsucc` match.
-      change M j.succ 0 * (e.symm ek) 0 + ∑ i : Fin p, M j.succ i.succ * (e.symm ek) i.succ = _
-      rw [h0]
-      simp only [M, Matrix.of_apply, hsucc, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq',
-        Finset.mem_univ, ↓reduceIte]
-      ring
-    rw [hLval, LinearMap.toMatrix_apply]
     have hc := congrArg (fun z : EuclideanSpace ℝ (Fin p) ↦ z j)
       (contLinear_affineMapAmbient_single v k)
-    simpa [b, ContinuousAffineMap.coe_contLinear] using hc.symm
-  rw [← LinearMap.det_toMatrix b, ← hsub, ← hNdet, Matrix.det_succ_row_zero, Fin.sum_univ_succ]
+    simp only [Matrix.submatrix_apply, Matrix.mul_apply, Fin.sum_univ_succ, hPM, Q,
+      Fin.succ_ne_zero, ↓reduceIte, Fin.succ_inj, M, Matrix.of_apply, LinearMap.toMatrix_apply,
+      (Fin.succ_ne_zero k).symm, mul_neg, mul_one, mul_ite, mul_zero, Finset.sum_ite_eq',
+      Finset.mem_univ]
+    simpa [b, ContinuousAffineMap.coe_contLinear, sub_eq_add_neg, add_comm] using hc.symm
+  rw [← LinearMap.det_toMatrix b, ← hsub,
+    show M.det = (P * M * Q).det by simp [Matrix.det_mul, hP, hQ],
+    Matrix.det_succ_row_zero, Fin.sum_univ_succ]
   simp [hrow0]
 
 /-- The determinant of the linear part of the ambient affine map induced by a vertex permutation
 equals the sign of the permutation. -/
 theorem det_contLinear_simplexMapAmbient_perm {p : ℕ} (σ : Equiv.Perm (Fin (p + 1))) :
     LinearMap.det (simplexMapAmbient σ).contLinear.toLinearMap = (σ.sign : ℝ) := by
-  rw [← affineMapAmbient_single, det_contLinear_affineMapAmbient]
-  rw [← Matrix.det_transpose]
+  rw [← affineMapAmbient_single, det_contLinear_affineMapAmbient, ← Matrix.det_transpose]
   have hM : (Matrix.of fun j i : Fin (p + 1) ↦
       ((StdSimplex.single (R := ℝ) ∘ σ) i).weights j).transpose = σ.toPEquiv.toMatrix := by
-    ext i j
-    simp [PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, Finsupp.single_apply, eq_comm]
+    ext i j; simp [PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, Finsupp.single_apply, eq_comm]
   rw [hM, Matrix.det_permutation]
 
 /-- Every affine map of barycentric simplices, given by its vertices `v`, read on full-dimensional
