@@ -324,20 +324,6 @@ theorem analyticAt_mkD_of_analyticAt {E : Type*} [NormedAddCommGroup E] [NormedS
   exact (hU x hx).2.differentiableAt.congr_of_eventuallyEq
     (Filter.eventually_of_mem (hopen.mem_nhds hx) fun y hy => hcoe y hy)
 
-private noncomputable def restrictSphereCLM (c : ℂ) {R : ℝ} (hR : 0 < R) :
-    discAlgebra c R →L[ℂ] C(sphere c |R|, ℂ) :=
-  have hsphere_sub : ∀ ζ : sphere c |R|, ζ.1 ∈ closedBall c R := fun ζ =>
-    mem_closedBall.2 (by rw [mem_sphere.1 ζ.2, abs_of_pos hR])
-  LinearMap.mkContinuous
-    { toFun := fun f => ⟨fun ζ => (f : C(closedBall c R, ℂ)) ⟨ζ.1, hsphere_sub ζ⟩,
-        (f : C(closedBall c R, ℂ)).continuous.comp (continuous_subtype_val.subtype_mk _)⟩
-      map_add' := fun _ _ => ContinuousMap.ext fun _ => by simp
-      map_smul' := fun _ _ => ContinuousMap.ext fun _ => by simp }
-    1 fun f => by
-      rw [one_mul, AddSubgroupClass.coe_norm, ContinuousMap.norm_le _ (norm_nonneg _)]
-      intro ζ
-      exact ContinuousMap.norm_coe_le_norm (f : C(closedBall c R, ℂ)) ⟨ζ.1, hsphere_sub ζ⟩
-
 /-- For any complex normed space `E`, an analytic map `W : E → discAlgebra c R` at `a` evaluates to
 a jointly analytic function `(x, z) ↦ extend (W x) z` at every `(a, z₀)` with `z₀ ∈ ball c R`. -/
 theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -345,11 +331,14 @@ theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [Norm
     (hz₀ : z₀ ∈ ball c R) (hW : AnalyticAt ℂ W a) :
     AnalyticAt ℂ (fun q : E × ℂ => extend (W q.1) q.2) (a, z₀) := by
   have hR : 0 < R := dist_nonneg.trans_lt (mem_ball.1 hz₀)
-  have hsphere_sub : ∀ ζ : sphere c |R|, ζ.1 ∈ closedBall c R := fun ζ =>
-    mem_closedBall.2 (by rw [mem_sphere.1 ζ.2, abs_of_pos hR])
-  let res : discAlgebra c R →L[ℂ] C(sphere c |R|, ℂ) := restrictSphereCLM c hR
+  have hsphere_sub : sphere c |R| ⊆ closedBall c R := by
+    rw [abs_of_pos hR]
+    exact sphere_subset_closedBall
+  let res : discAlgebra c R →L[ℂ] C(sphere c |R|, ℂ) :=
+    (ContinuousMap.compCLM ℂ ℂ (ContinuousMap.inclusion hsphere_sub)).comp
+      (discAlgebra c R).valA.toContinuousLinearMap
   -- The Cauchy kernel `z ↦ (ζ ↦ ζ - z)⁻¹` as a `C(sphere c |R|, ℂ)`-valued analytic map near `z₀`.
-  let ζId : C(sphere c |R|, ℂ) := ⟨Subtype.val, continuous_subtype_val⟩
+  let ζId : C(sphere c |R|, ℂ) := ContinuousMap.subtypeVal (sphere c |R|)
   let κ : ℂ → C(sphere c |R|, ℂ) := fun z => ζId - z • (1 : C(sphere c |R|, ℂ))
   have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : ζ.1 - z ≠ 0 := by
     intro h
@@ -383,7 +372,7 @@ theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [Norm
   have hint : circleIntegralCLM c R (Ring.inverse (κ q.2) * res (W q.1)) =
       ∮ ζ in C(c, R), (ζ - q.2)⁻¹ • extend (W q.1) ζ := by
     refine circleIntegralCLM_eq_circleIntegral c R _ _ fun ζ => ?_
-    simp [hinv_eq, κUnit, res, restrictSphereCLM, extend_apply (W q.1) ⟨ζ.1, hsphere_sub ζ⟩]
+    simp [hinv_eq, κUnit, res, ← extend_apply (W q.1) (ContinuousMap.inclusion hsphere_sub ζ)]
   have hdiff : DiffContOnCl ℂ (extend (W q.1)) (ball c R) :=
     ⟨differentiableOn_extend (W q.1),
       (continuousOn_extend (W q.1)).mono closure_ball_subset_closedBall⟩
