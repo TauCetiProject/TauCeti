@@ -64,6 +64,33 @@ theorem exists_mem_nhds_isInvertible_norm_inverse_le {K : Set X} (hK : IsCompact
   refine ⟨V, hV, C, by positivity, fun x hx y hy ↦ ?_⟩
   exact (hUV ⟨subset_of_mem_nhdsSet hU hx, hy⟩).imp_right le_of_lt
 
+/-- On a compact parameter set `K` where `Φ (S x)` is invertible, if `Φ` is continuous and `S` and
+`J` are continuous on `K`, then `Φ (S x - δ • J x)` remains invertible with uniformly bounded
+inverses for all sufficiently small real weights `δ`. -/
+theorem exists_pos_isInvertible_map_sub_smul_norm_inverse_le
+    {M : Type*} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [Module ℝ M] [ContinuousSMul ℝ M]
+    {K : Set X} (hK : IsCompact K) {Φ : M → E →L[𝕜] F} (hΦ : Continuous Φ)
+    (S J : X → M) (hS : ContinuousOn S K) (hJ : ContinuousOn J K)
+    (hinv : ∀ x ∈ K, (Φ (S x)).IsInvertible) :
+    ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ δ : ℝ, |δ| ≤ ε →
+      (Φ (S x - δ • J x)).IsInvertible ∧ ‖(Φ (S x - δ • J x)).inverse‖ ≤ C := by
+  let : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  let L : K × ℝ → E →L[𝕜] F := fun z ↦ Φ (S z.1 - z.2 • J z.1)
+  have hL : Continuous L :=
+    hΦ.comp ((hS.domRestrict.comp continuous_fst).sub
+      (continuous_snd.smul (hJ.domRestrict.comp continuous_fst)))
+  obtain ⟨V, hV, C, hC, hbound⟩ :=
+    isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le L 0
+      (fun _ _ ↦ hL.continuousAt) (by
+        intro p _
+        dsimp only [L]
+        rw [zero_smul ℝ (J p), sub_zero]
+        exact hinv p p.property)
+  obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
+  refine ⟨r / 2, by positivity, C, hC, fun x hx δ hδ ↦ hbound ⟨x, hx⟩ (mem_univ _) δ (hrV ?_)⟩
+  simpa only [Metric.mem_ball, Real.dist_eq, sub_zero] using hδ.trans_lt (half_lt_self hr)
+
 end IsCompact
 
 namespace IsCompact

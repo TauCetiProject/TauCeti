@@ -50,6 +50,10 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
   components, and the bound `‖x‖ + ‖Du‖_p ≤ √2 ‖(x, Du)‖`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
   with its exact and almost-everywhere characteristic equations.
+* `TauCeti.WeakDerivStep.toIdL`: pushforward along `base` to the weak-derivative graph over the
+  identity on `Lp F p (mu.restrict Omega)`.
+* `TauCeti.WeakDerivStep.mkLine`: on the line, constructing an element of `WeakDerivStep` from a
+  weak line derivative in direction `1`.
 * `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
   `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral`: on the line, the squared norms of a
   `W^{1,2}` path and of its weak derivative are the integrals of `‖φ‖²` and `‖φ'‖²` for a `C¹`
@@ -367,6 +371,31 @@ theorem tendsto_iff_prev_weakFDeriv {base : X →L[ℝ] Lp F p (mu.restrict Omeg
     WithLp.prodContinuousLinearEquiv_apply]
   exact Prod.tendsto_iff _ _
 
+/-- Push a weak-derivative graph element forward along its `base` map to the weak-derivative graph
+over the identity on `Lp F p (mu.restrict Omega)`. -/
+def toIdL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
+    WeakDerivStep mu Omega p base →L[ℝ]
+      WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) :=
+  ContinuousLinearMap.codRestrict
+    ((base.withLpProdMap 2 (ContinuousLinearMap.id ℝ _)).comp
+      (weakDerivStepSubmodule mu Omega p base).toSubmodule.subtypeL)
+    _ fun u ↦ (mem_weakDerivStepSubmodule_iff _ _).mpr <| by
+      simpa using (mem_weakDerivStepSubmodule_iff base u.val).mp u.property
+
+/-- Pushing forward to the identity-based graph sends `prev` to `base (prev base u)`. -/
+@[simp]
+theorem prev_toIdL (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (u : WeakDerivStep mu Omega p base) :
+    prev _ (toIdL base u) = base (prev base u) := by
+  simp [prev_coe, toIdL]
+
+/-- Pushing forward to the identity-based graph preserves `weakFDeriv`. -/
+@[simp]
+theorem weakFDeriv_toIdL (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (u : WeakDerivStep mu Omega p base) :
+    weakFDeriv _ (toIdL base u) = weakFDeriv base u := by
+  simp [weakFDeriv_coe, toIdL]
+
 end WeakDerivStep
 
 end TopologicalModule
@@ -425,7 +454,7 @@ instance [CompleteSpace X] (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
 
 end UniformModule
 
-/-! ### Norms of a path with a `C¹` representative on the line -/
+/-! ### Constructors and norms on the line -/
 
 section Line
 
@@ -453,6 +482,52 @@ theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
   simp [← toSpanSingleton_deriv]
 
 end Line
+
+end WeakDerivStep
+
+namespace WeakDerivStep
+
+section MkLine
+
+variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
+  {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ}
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- Construct a 1D weak-derivative graph element from `x : X`, a scalar-parameter weak derivative
+`g : Lp F p (mu.restrict Omega)`, and `HasWeakLineDerivOn mu Omega (base x) g 1`. -/
+def mkLine (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X) (g : Lp F p (mu.restrict Omega))
+    (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
+    WeakDerivStep mu Omega p base :=
+  mk base x _ h.hasWeakFDerivOn_toSpanSingletonLIE_compLp
+
+/-- The selected element of `mkLine base x g h` is `x`. -/
+@[simp]
+theorem prev_mkLine (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
+    (g : Lp F p (mu.restrict Omega)) (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
+    prev base (mkLine base x g h) = x :=
+  prev_mk _ _ _ _
+
+/-- The weak Fréchet derivative of `mkLine base x g h` pushes `g` forward along
+`ContinuousLinearMap.toSpanSingletonLIE ℝ F`. -/
+@[simp]
+theorem weakFDeriv_mkLine (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
+    (g : Lp F p (mu.restrict Omega)) (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
+    weakFDeriv base (mkLine base x g h) =
+      (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp
+        g :=
+  weakFDeriv_mk _ _ _ _
+
+/-- Evaluating `weakFDeriv` of `mkLine base x g h` at `1` recovers `g` almost everywhere. -/
+theorem weakFDeriv_mkLine_apply_one_ae (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
+    (g : Lp F p (mu.restrict Omega)) (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
+    (fun s ↦ weakFDeriv base (mkLine base x g h) s 1) =ᵐ[mu.restrict Omega] g := by
+  rw [weakFDeriv_mkLine]
+  filter_upwards [(ContinuousLinearMap.toSpanSingletonLIE ℝ F)
+    |>.toLinearIsometry.toContinuousLinearMap.coeFn_compLp g] with s hs
+  simp [hs]
+
+end MkLine
 
 end WeakDerivStep
 
