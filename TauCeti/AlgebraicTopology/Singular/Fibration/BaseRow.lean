@@ -90,6 +90,14 @@ def serreSpectralSequenceProj : serreSpectralSequence C p R ⟶ serreSpectralSeq
   filteredSpaceSpectralSequenceMap (ModuleCat.of R R) (monotone_preimageSkeleton p)
     (monotone_preimageSkeleton (𝟙 B)) p (mapsTo_preimageSkeleton (C := C) p fun _ ↦ rfl)
 
+/-- The projection of the Serre spectral sequence onto the base is the morphism of spectral
+sequences of filtered spaces induced by `p`. -/
+lemma serreSpectralSequenceProj_def :
+    serreSpectralSequenceProj p R C = filteredSpaceSpectralSequenceMap (ModuleCat.of R R)
+      (monotone_preimageSkeleton p) (monotone_preimageSkeleton (𝟙 B)) p
+      (mapsTo_preimageSkeleton (C := C) p fun _ ↦ rfl) :=
+  (rfl)
+
 end Proj
 
 /-! ### The row `q = 0` of the first and second pages -/
@@ -97,23 +105,6 @@ end Proj
 section Row
 
 variable {C D : Set B} [RelCWComplex C D]
-
-/-- Two maps of pairs of subspaces acting by the same map `g` induce the same map on homology, up
-to equalities of the subspaces: one is an isomorphism exactly when the other is. -/
-private lemma isIso_singularHomologyMap_ofInclusion_iff {X Y : _root_.TopCat.{u}} (g : X → Y)
-    {s t s₁ t₁ : Set X} {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h' : s' ⊆ t'} {h₁ : s₁ ⊆ t₁}
-    {h₁' : s₁' ⊆ t₁'} (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
-    (φ : TopPair.ofInclusion h ⟶ TopPair.ofInclusion h')
-    (ψ : TopPair.ofInclusion h₁ ⟶ TopPair.ofInclusion h₁')
-    (hφ : ∀ x, (TopPair.Hom.fst φ x).1 = g x.1) (hψ : ∀ x, (TopPair.Hom.fst ψ x).1 = g x.1)
-    (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap φ (ModuleCat.of R R) n) ↔
-      IsIso (TopPair.singularHomologyMap ψ (ModuleCat.of R R) n) := by
-  subst hs ht hs' ht'
-  obtain rfl : φ = ψ := TopPair.hom_ext_of_fst _ (by
-    ext x
-    exact Subtype.ext ((hφ x).trans (hψ x).symm))
-  rfl
 
 variable {p}
 
@@ -132,7 +123,7 @@ theorem isIso_serreSpectralSequenceProj_hom_two_f (hp : serreFibrations p)
     (monotone_preimageSkeleton p) (monotone_preimageSkeleton (𝟙 B)) p
     (mapsTo_preimageSkeleton (C := C) p fun _ ↦ rfl) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hn
   rw [← Iso.eq_comp_inv] at e
-  rw [serreSpectralSequenceProj, e]
+  rw [serreSpectralSequenceProj_def, e]
   suffices IsIso (TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton p)
       (monotone_preimageSkeleton (𝟙 B)) p (mapsTo_preimageSkeleton (C := C) p fun _ ↦ rfl)
       (by lia : pq.2 ≤ pq.2 + 1)) (ModuleCat.of R R) n) from inferInstance
@@ -150,7 +141,7 @@ theorem isIso_serreSpectralSequenceProj_hom_two_f (hp : serreFibrations p)
         (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _))
   have hb : (pq.2 + 1).toNat = n := by lia
   have hb' : (pq.2 + 1 + 1).toNat = n + 1 := by lia
-  refine (isIso_singularHomologyMap_ofInclusion_iff R p ?_ ?_ ?_ ?_ _ _
+  refine (TopPair.isIso_singularHomologyMap_ofInclusion_congr (ModuleCat.of R R) p ?_ ?_ ?_ ?_ _ _
     (filteredSpaceStepMap_fst_apply _ _ _ _ _) (fun x ↦ by
       rw [TopCat.Hom.preimagePairMap_fst]
       exact p.coe_preimageMap_apply _ _ x) n).2 key
@@ -202,12 +193,10 @@ theorem isZero_serreSpectralSequence_id_page_two_X {C D : Set B} [RelCWComplex C
   · -- Otherwise the stages are the skeleta `Xᵏ⁻¹ ⊆ Xᵏ` with `k = b + 1 ≠ n`.
     obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (by lia : 0 ≤ pq.2 + 1)
     have h₁ : preimageSkeleton C (𝟙 B) pq.2 = (skeletonLT C k : Set B) := by
-      rw [preimageSkeleton_def, hk, Int.toNat_natCast]
-      rfl
+      rw [preimageSkeleton_def, hk, Int.toNat_natCast, _root_.TopCat.coe_id, preimage_id]
     have h₂ : preimageSkeleton C (𝟙 B) (pq.2 + 1) = (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set B) := by
       rw [preimageSkeleton_def, show pq.2 + 1 + 1 = ((k + 1 : ℕ) : ℤ) by push_cast; lia,
-        Int.toNat_natCast]
-      rfl
+        Int.toNat_natCast, _root_.TopCat.coe_id, preimage_id]
     exact (TopPair.isZero_singularHomology_ofInclusion_congr _ _
       (skeletonLT_subset_skeletonLT_succ C k) h₂ h₁ n).2
       (isZero_singularHomology_skeletonPair_of_ne C (ModuleCat.of R R) (by lia))
@@ -234,12 +223,8 @@ private lemma isZero_serreSpectralObject_id_abutmentFiltration (k j : ℕ) (hj :
     have hcok := ((serreSpectralSequence univ (𝟙 B) R).isZero_page_X_of_le le_rfl
       (isZero_serreSpectralSequence_id_page_two_X R _ (by dsimp; lia)) (k + 3) (by lia)).of_iso
         e.symm
-    have hmap : (serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap ((j : ℤ) - 1) (-k) = 0 :=
-      hF.eq_of_src _ _
-    have : IsIso (cokernel.π
-        ((serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap ((j : ℤ) - 1) (-k))) := by
-      rw [hmap]
-      infer_instance
+    have := cokernel.π_of_zero (hF.eq_of_src
+      ((serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap ((j : ℤ) - 1) (-k)) 0)
     exact hcok.of_iso (asIso (cokernel.π _))
 
 /-- The graded piece `F_k H_k / F_{k-1} H_k` of the filtration of `H_k(B; R)` by the images of the
@@ -250,12 +235,9 @@ private def cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso (k : ℕ) (b m
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
         (ModuleCat.of R R)).obj B := by
   subst hb hm
-  have hmap : (serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap ((k : ℤ) - 1) (-k) = 0 :=
-    (isZero_serreSpectralObject_id_abutmentFiltration R k k le_rfl).eq_of_src _ _
-  have : IsIso (cokernel.π
-      ((serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap ((k : ℤ) - 1) (-k))) := by
-    rw [hmap]
-    infer_instance
+  have := cokernel.π_of_zero ((isZero_serreSpectralObject_id_abutmentFiltration R k k
+    le_rfl).eq_of_src
+      ((serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap ((k : ℤ) - 1) (-k)) 0)
   have := isIso_serreSpectralObject_abutmentFiltrationι (MorphismProperty.id_mem _ B) R univ
     (subset_univ _) k (b := (k : ℤ) - 1 + 1) (by lia)
   exact (asIso (cokernel.π _)).symm ≪≫
