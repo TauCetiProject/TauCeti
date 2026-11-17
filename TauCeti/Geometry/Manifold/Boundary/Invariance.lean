@@ -43,6 +43,13 @@ values in a half-space model. Otherwise `φ y` would be an interior point of the
 and `φ.symm`, a continuous injection into `E` with image in `A`, would carry a neighbourhood of
 `φ y` onto a neighbourhood of `y`, so `y` would be an interior point of `A`.
 
+The reduction from `𝕜` to `ℝ` in `ContinuousOn.isInteriorPoint_of_injOn` follows Mathlib's
+`MDifferentiableAt.isInteriorPoint_of_surjective_mfderiv`, and the proofs of
+`ModelWithCorners.isOpen_interior_of_finiteDimensional` and
+`ModelWithCorners.isClosed_boundary_of_finiteDimensional` follow Mathlib's
+`ModelWithCorners.isOpen_interior` and `ModelWithCorners.isClosed_boundary`, all in
+`Mathlib/Geometry/Manifold/IsManifold/InteriorBoundary.lean` (Michael Rothgang, Ben Eltschig).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press (2002), Theorem 2B.3 (invariance
@@ -62,21 +69,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E H E' H' : Type*} [Norm
   [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {M N : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- Invariance of domain between normed spaces over `ℝ` or `ℂ`, after restricting scalars to
-`ℝ`. -/
-private theorem IsOpen.image_of_continuousOn_of_injOn_of_isRCLikeNormedField
-    [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E'] (hEE' : finrank 𝕜 E = finrank 𝕜 E')
-    {g : E → E'} {W : Set E} (hW : IsOpen W) (hg : ContinuousOn g W) (hginj : InjOn g W) :
-    IsOpen (g '' W) := by
-  let _ := IsRCLikeNormedField.rclike 𝕜
-  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  let _ : NormedSpace ℝ E' := NormedSpace.restrictScalars ℝ 𝕜 E'
-  have _ : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
-  have _ : IsScalarTower ℝ 𝕜 E' := .restrictScalars ℝ 𝕜 E'
-  have _ : FiniteDimensional ℝ E' := .trans ℝ 𝕜 E'
-  refine hW.image_of_continuousOn_of_injOn (E := E) (F := E') hg hginj ?_
-  rw [← Module.finrank_mul_finrank ℝ 𝕜 E, ← Module.finrank_mul_finrank ℝ 𝕜 E', hEE']
-
 /-- Over `ℝ` or `ℂ`, a map continuous and injective on a neighbourhood `U` of an interior point
 `x`, between charted spaces modelled on spaces of the same finite dimension, sends `x` to an
 interior point and `U` onto a neighbourhood of `f x`. -/
@@ -84,6 +76,7 @@ private theorem ContinuousOn.isInteriorPoint_and_image_mem_nhds_of_injOn [IsRCLi
     [FiniteDimensional 𝕜 E'] (hEE' : finrank 𝕜 E = finrank 𝕜 E') {f : M → N} {U : Set M}
     {x : M} (hf : ContinuousOn f U) (hU : U ∈ 𝓝 x) (hinj : InjOn f U)
     (hx : I.IsInteriorPoint x) : I'.IsInteriorPoint (f x) ∧ f '' U ∈ 𝓝 (f x) := by
+  simp only [ModelWithCorners.IsInteriorPoint, extChartAt_coe, Function.comp_apply] at hx ⊢
   set c := chartAt H x
   set d := chartAt H' (f x)
   -- Read `f` in the model spaces, on the open set `W` of interior coordinates of the points of
@@ -109,7 +102,7 @@ private theorem ContinuousOn.isInteriorPoint_and_image_mem_nhds_of_injOn [IsRCLi
     rw [← I.right_inv (interior_subset hy.1), ← I.right_inv (interior_subset hz.1)]
     exact congrArg I h₂
   have hgW : IsOpen (g '' W) :=
-    hW.image_of_continuousOn_of_injOn_of_isRCLikeNormedField hEE' hg hginj
+    hW.image_of_continuousOn_of_injOn_of_isRCLikeNormedField (E := E) (F := E') hg hginj hEE'
   have hxW : I (c x) ∈ W := by
     have hxV : x ∈ V := ⟨mem_interior_iff_mem_nhds.2 hU, mem_chart_source H' (f x)⟩
     refine ⟨hx, by simp [c, mem_chart_source], ?_⟩
@@ -216,12 +209,11 @@ theorem coe_fst_apply_zero_eq_zero_of_notMem_interior
   -- Then `φ y` is an interior point of the half-space model, and `φ.symm` carries a neighbourhood
   -- of it onto a neighbourhood of `y` in `E`, which lies in `A`.
   have hint : ((𝓡∂ m).prod 𝓘(ℝ, V)).IsInteriorPoint (φ y) := by
-    change φ y ∈ ((𝓡∂ m).prod 𝓘(ℝ, V)).interior (EuclideanHalfSpace m × V)
-    rw [ModelWithCorners.interior_prod]
-    refine ⟨?_, BoundarylessManifold.isInteriorPoint⟩
-    change (𝓡∂ m).IsInteriorPoint (φ y).1
-    rw [ModelWithCorners.isInteriorPoint_iff_mem_interior_range_self,
-      interior_range_modelWithCornersEuclideanHalfSpace]
+    simp only [ModelWithCorners.IsInteriorPoint, extChartAt_prod, PartialEquiv.prod_coe,
+      ModelWithCorners.range_prod, interior_prod_eq, mem_prod, extChartAt_self_apply,
+      interior_range_modelWithCornersEuclideanHalfSpace,
+      ModelWithCorners.Boundaryless.range_eq_univ, interior_univ, mem_univ, and_true,
+      mem_ofPred_eq, modelWithCornersEuclideanHalfSpace_apply]
     exact hpos
   have hfin : finrank ℝ (EuclideanSpace ℝ (Fin m) × V) = finrank ℝ E := by
     rw [hdim, finrank_prod, finrank_euclideanSpace_fin]

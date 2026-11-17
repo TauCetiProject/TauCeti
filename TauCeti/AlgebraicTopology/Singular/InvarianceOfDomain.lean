@@ -39,7 +39,8 @@ manifold.
 ## Main results
 
 * `IsOpen.image_of_continuousOn_of_injOn`: **invariance of domain** for manifolds without
-  boundary modelled on finite-dimensional real normed spaces of the same dimension.
+  boundary modelled on finite-dimensional real normed spaces of the same dimension, and
+  `IsOpen.image_of_continuousOn_of_injOn_of_isRCLikeNormedField` its form over `ℝ` or `ℂ`.
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
   open embedding, and `IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn` is its form for
   a map continuous and injective on an open set.
@@ -347,3 +348,29 @@ theorem finrank_eq [Nonempty X] {f : X → E} (hf : IsOpenEmbedding f) {g : X �
     hf.isEmbedding)
 
 end Topology.IsOpenEmbedding
+
+section IsRCLikeNormedField
+
+variable {𝕜 : Type*} [NormedField 𝕜] [IsRCLikeNormedField 𝕜] {E F M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [FiniteDimensional 𝕜 F] [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N]
+  [ChartedSpace F N]
+
+/-- **Invariance of domain over `ℝ` or `ℂ`.** Let `M` and `N` be topological manifolds without
+boundary, charted on normed spaces `E` and `F` over `ℝ` or `ℂ`, with `F` finite dimensional and
+`finrank 𝕜 E = finrank 𝕜 F`. If `f : M → N` is continuous and injective on an open set `U`, then
+`f '' U` is open. This is `IsOpen.image_of_continuousOn_of_injOn` after restricting scalars to
+`ℝ`, as in Mathlib's `MDifferentiableAt.isInteriorPoint_of_surjective_mfderiv`. -/
+theorem IsOpen.image_of_continuousOn_of_injOn_of_isRCLikeNormedField {f : M → N} {U : Set M}
+    (hU : IsOpen U) (hf : ContinuousOn f U) (hinj : InjOn f U) (hEF : finrank 𝕜 E = finrank 𝕜 F) :
+    IsOpen (f '' U) := by
+  let _ := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  let _ : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ 𝕜 F
+  have _ : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
+  have _ : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
+  have _ : FiniteDimensional ℝ F := .trans ℝ 𝕜 F
+  refine hU.image_of_continuousOn_of_injOn (E := E) (F := F) hf hinj ?_
+  rw [← Module.finrank_mul_finrank ℝ 𝕜 E, ← Module.finrank_mul_finrank ℝ 𝕜 F, hEF]
+
+end IsRCLikeNormedField
