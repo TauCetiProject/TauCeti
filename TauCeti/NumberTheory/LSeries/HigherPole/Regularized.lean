@@ -8,13 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.NumberTheory.LSeries.HigherPole.Boundary
-import Mathlib.Analysis.Analytic.Order
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Complex.HalfPlane
-import Mathlib.Analysis.Meromorphic.Order
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Contour.MeromorphicLaurent
 
 /-!
@@ -82,37 +77,16 @@ private theorem mem_re_gt_of_add_pos {a ε y u : ℝ} (h : 0 < ε + u) :
   simp
   linarith
 
-/-- Triangle-inequality inclusion of `((a : ℂ) + ε + y * I) + u` into the closed ball around
-`(a : ℂ) + y₀ * I` when `ε, u ≥ 0` and `ε + u + |y - y₀| ≤ r / 2`. -/
-private theorem mem_closedBall_of_add_im_le {a ε u y y₀ r : ℝ} (hε0 : 0 ≤ ε) (hu0 : 0 ≤ u)
-    (hsum : ε + u + |y - y₀| ≤ r / 2) :
-    (((a : ℂ) + ε + y * I) + u) ∈ closedBall ((a : ℂ) + y₀ * I) (r / 2) := by
-  rw [mem_closedBall, dist_eq_norm]
-  have hsub : (((a : ℂ) + ε + y * I) + u) - ((a : ℂ) + y₀ * I) =
-      ((ε + u : ℝ) : ℂ) + ((y - y₀ : ℝ) : ℂ) * I := by push_cast; ring
-  have h1 : ‖((ε + u : ℝ) : ℂ)‖ = ε + u := Complex.norm_of_nonneg (add_nonneg hε0 hu0)
-  have h2 : ‖((y - y₀ : ℝ) : ℂ) * I‖ = |y - y₀| := by simp [-ofReal_sub]
-  calc
-    ‖(((a : ℂ) + ε + y * I) + u) - ((a : ℂ) + y₀ * I)‖
-        ≤ ‖((ε + u : ℝ) : ℂ)‖ + ‖((y - y₀ : ℝ) : ℂ) * I‖ := by rw [hsub]; exact norm_add_le _ _
-    _ = ε + u + |y - y₀| := by rw [h1, h2]
-    _ ≤ r / 2 := hsum
-
-/-- Norm bound on the polynomial weight `((u ^ k / k! : ℝ) : ℂ)` for `u ∈ [0, 1]`. -/
-private theorem norm_pow_div_factorial_le_one {k : ℕ} {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
-    ‖(((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))‖ ≤ 1 := by
-  have hfac : (1 : ℝ) ≤ k.factorial := by exact_mod_cast Nat.factorial_pos k
-  have hpow_nonneg : 0 ≤ u ^ k := pow_nonneg hu0 k
-  have hpow_le : u ^ k ≤ 1 := pow_le_one₀ hu0 hu1
-  rw [Complex.norm_real, Real.norm_of_nonneg (div_nonneg hpow_nonneg (by positivity))]
-  exact div_le_one_of_le₀ (hpow_le.trans hfac) (by positivity)
-
 /-- Pointwise bound on `‖z * (u ^ k / k!)‖` for `u ∈ [0, 1]` when `‖z‖ ≤ B` (`0 ≤ B`). -/
 private theorem norm_mul_pow_div_factorial_le {z : ℂ} {B u : ℝ} {k : ℕ} (hz : ‖z‖ ≤ B)
     (hB : 0 ≤ B) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
     ‖z * (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))‖ ≤ B := by
+  have hfac : (1 : ℝ) ≤ k.factorial := by exact_mod_cast Nat.factorial_pos k
+  have hwt : ‖(((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))‖ ≤ 1 := by
+    rw [Complex.norm_real, Real.norm_of_nonneg (div_nonneg (pow_nonneg hu0 k) (by positivity))]
+    exact div_le_one_of_le₀ ((pow_le_one₀ hu0 hu1).trans hfac) (by positivity)
   rw [norm_mul]
-  simpa using mul_le_mul hz (norm_pow_div_factorial_le_one hu0 hu1) (norm_nonneg _) hB
+  simpa using mul_le_mul hz hwt (norm_nonneg _) hB
 
 /-- Interval integral norm bound on `[c, 1]` (`0 ≤ c ≤ 1`) against the weight `u ^ k / k!`. -/
 private theorem norm_intervalIntegral_mul_weight_le {f : ℝ → ℂ} {c B : ℝ} {k : ℕ}
@@ -191,8 +165,13 @@ private theorem exists_away_local_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
   have hy' : |y - y₀| < ρ := by simpa [Real.dist_eq] using mem_ball.mp hy
   by_cases huρ : u ≤ ρ
   · have hρ_le : ρ ≤ r / 6 := min_le_right _ _
-    have hdist : (((a : ℂ) + ε + y * I) + u) ∈ closedBall z₀ (r / 2) :=
-      mem_closedBall_of_add_im_le hε.1 hu0.le (by linarith [hε.2])
+    have hdist : (((a : ℂ) + ε + y * I) + u) ∈ closedBall z₀ (r / 2) := by
+      rw [mem_closedBall, dist_eq_norm]
+      refine (norm_le_abs_re_add_abs_im _).trans ?_
+      have hre : ((((a : ℂ) + ε + y * I) + u) - z₀).re = ε + u := by simp [z₀]; ring
+      have him : ((((a : ℂ) + ε + y * I) + u) - z₀).im = y - y₀ := by simp [z₀]
+      rw [hre, him, abs_of_nonneg (add_nonneg hε.1 hu0.le)]
+      linarith [hε.2]
     rw [hderiv_eq _ (closedBall_subset_ball (half_lt_self hr) hdist)
       (mem_re_gt_of_add_pos (by linarith [hε.1]))]
     exact (hB₁ _ hdist).trans ((le_max_left _ _).trans (le_max_left _ _))
@@ -277,65 +256,6 @@ private theorem exists_away_compact_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ
   exact (norm_intervalIntegral_mul_weight_le le_rfl zero_le_one (hB0 y₀)
     (hB y₀ ε hε_Icc y hy_ball)).trans (Finset.single_le_sum (f := B) (fun z _ ↦ hB0 z) hy₀t)
 
-/-- Subtracting `A` from an analytic numerator `g` with `g a = A` lowers the polar order of
-`(g z - A) / (z - a) ^ (k + 1)` at `a` to at most `k`. -/
-private theorem meromorphicPolarOrderAt_remainder_le {g : ℂ → ℂ} {a A : ℝ} {k : ℕ}
-    (hg : AnalyticAt ℂ g a) (hga : g a = A) :
-    TauCeti.Contour.meromorphicPolarOrderAt
-      ((fun z : ℂ ↦ g z - (A : ℂ)) / fun z : ℂ ↦ (z - a) ^ (k + 1)) a ≤ k := by
-  set f : ℂ → ℂ := fun z ↦ g z - (A : ℂ)
-  set d : ℂ → ℂ := fun z ↦ (z - a) ^ (k + 1)
-  have hf_an : AnalyticAt ℂ f a := hg.sub analyticAt_const
-  have hd_an : AnalyticAt ℂ d a := (analyticAt_id.sub analyticAt_const).pow (k + 1)
-  have hf_ord : (1 : WithTop ℤ) ≤ meromorphicOrderAt f a := by
-    have hne0 : analyticOrderAt f a ≠ 0 :=
-      analyticOrderAt_ne_zero.mpr ⟨hf_an, sub_eq_zero.mpr hga⟩
-    rw [hf_an.meromorphicOrderAt_eq]
-    cases hord : analyticOrderAt f a with
-    | top => exact le_top
-    | coe n =>
-      exact WithTop.coe_le_coe.mpr
-        (Int.ofNat_le.mpr (Nat.pos_of_ne_zero fun h0 ↦ hne0 (by simp [hord, h0])))
-  have hQ_ord : ((-(k : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (f / d) a := by
-    rw [meromorphicOrderAt_div hf_an.meromorphicAt hd_an.meromorphicAt]
-    have hd_ord : meromorphicOrderAt d a = (((k + 1 : ℕ) : ℤ) : WithTop ℤ) := by
-      simp [d, fun_meromorphicOrderAt_pow_id_sub_const]
-    rw [hd_ord]
-    cases hx : meromorphicOrderAt f a with
-    | top => simp
-    | coe n =>
-      rw [hx] at hf_ord
-      have hn1 : (1 : ℤ) ≤ n := WithTop.coe_le_coe.mp hf_ord
-      rw [← WithTop.LinearOrderedAddCommGroup.coe_sub, WithTop.coe_le_coe]
-      omega
-  by_contra hlt
-  have hpos : 0 < TauCeti.Contour.meromorphicPolarOrderAt (f / d) a := by omega
-  have heq := TauCeti.Contour.meromorphicOrderAt_eq_neg_of_meromorphicPolarOrderAt_pos hpos
-  rw [heq, ← WithTop.LinearOrderedAddCommGroup.coe_neg, WithTop.coe_le_coe] at hQ_ord
-  omega
-
-/-- Termwise derivative of a finite Laurent principal part `∑ i : Fin m, c i / (w - a) ^ (i + 1)`
-away from `a`. -/
-private theorem hasDerivAt_laurent_principal_part {m : ℕ} (c : Fin m → ℂ) {a : ℝ} {z : ℂ}
-    (hza : z - (a : ℂ) ≠ 0) :
-    HasDerivAt (fun w : ℂ ↦ ∑ i : Fin m, c i / (w - a) ^ (i.val + 1))
-      (∑ i : Fin m, c i * (-((i.val + 1 : ℕ) : ℂ) / (z - a) ^ (i.val + 2))) z := by
-  refine HasDerivAt.fun_sum fun i _ ↦ ?_
-  have hp : HasDerivAt (fun w : ℂ ↦ (w - a) ^ (i.val + 1))
-      (((i.val + 1 : ℕ) : ℂ) * (z - a) ^ i.val) z := by
-    simpa only [add_tsub_cancel_right, mul_one, id_eq] using
-      HasDerivAt.fun_pow ((hasDerivAt_id z).sub_const (a : ℂ)) (i.val + 1)
-  have hmul : HasDerivAt (fun w : ℂ ↦ c i / (w - a) ^ (i.val + 1))
-      (c i * (-(((i.val + 1 : ℕ) : ℂ) * (z - a) ^ i.val) /
-        ((z - a) ^ (i.val + 1)) ^ 2)) z := by
-    simpa [div_eq_mul_inv] using (hp.inv (pow_ne_zero _ hza)).const_mul (c i)
-  refine hmul.congr_deriv (congrArg (c i * ·) ?_)
-  have hsq : ((z - (a : ℂ)) ^ (i.val + 1)) ^ 2 = (z - a) ^ (i.val + 2) * (z - a) ^ i.val := by
-    rw [← pow_mul, ← pow_add]
-    congr 1
-    omega
-  rw [hsq, neg_div, mul_div_mul_right _ _ (pow_ne_zero _ hza), ← neg_div]
-
 /-- Laurent decomposition of `R` on a right half-disc near `a`: the polar order is at most `k`,
 and `deriv R` decomposes into an analytic derivative plus at most `k` polar derivative terms. -/
 private theorem exists_near_pole_deriv_laurent {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
@@ -349,47 +269,40 @@ private theorem exists_near_pole_deriv_laurent {F : ℂ → ℂ} {a A : ℝ} {k 
   intro R
   obtain ⟨r₀, hr₀, g, hg, hga, hF⟩ := h.pole
   let f : ℂ → ℂ := fun z ↦ g z - (A : ℂ)
-  let d : ℂ → ℂ := fun z ↦ (z - a) ^ (k + 1)
-  let Q : ℂ → ℂ := f / d
+  let Q : ℂ → ℂ := fun z ↦ f z / (z - a) ^ (k + 1)
   have hf_an : AnalyticAt ℂ f a := (hg a (mem_ball_self hr₀)).sub analyticAt_const
-  have hd_an : AnalyticAt ℂ d a := (analyticAt_id.sub analyticAt_const).pow (k + 1)
-  obtain ⟨c, q, hq_an, hQ_laur⟩ := TauCeti.Contour.exists_laurent_data_of_meromorphicAt
-    (hf_an.meromorphicAt.div hd_an.meromorphicAt)
-  obtain ⟨r_q, hr_q, hq_ball⟩ := hq_an.exists_ball_analyticOnNhd
-  obtain ⟨r_e, hr_e, hlaur_ball⟩ :=
-    Metric.eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp hQ_laur)
+  have hd_an : AnalyticAt ℂ (fun z : ℂ ↦ (z - a) ^ (k + 1)) a :=
+    (analyticAt_id.sub analyticAt_const).pow (k + 1)
+  have hQ : MeromorphicAt Q a := hf_an.meromorphicAt.fun_div hd_an.meromorphicAt
+  have hord : TauCeti.Contour.meromorphicPolarOrderAt Q a ≤ k :=
+    TauCeti.Contour.meromorphicPolarOrderAt_div_sub_pow_le_of_tendsto_zero hf_an.meromorphicAt
+      (by simpa [f, hga] using hf_an.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
+  obtain ⟨r_q, hr_q, hq_ball⟩ :=
+    (TauCeti.Contour.meromorphicAnalyticPartAt_analyticAt hQ).exists_ball_analyticOnNhd
+  obtain ⟨r_e, hr_e, hlaur_ball⟩ := Metric.eventually_nhds_iff_ball.mp
+    (eventually_nhdsWithin_iff.mp
+      (TauCeti.Contour.eventuallyEq_meromorphicAnalyticPartAt_add_meromorphicPolarPartAt hQ))
   let r₁ : ℝ := min r₀ (min r_q r_e)
   have hsub₀ : ball (a : ℂ) r₁ ⊆ ball (a : ℂ) r₀ := ball_subset_ball (min_le_left _ _)
   have hsub_q : ball (a : ℂ) r₁ ⊆ ball (a : ℂ) r_q :=
     ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _))
   have hsub_e : ball (a : ℂ) r₁ ⊆ ball (a : ℂ) r_e :=
     ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _))
-  refine ⟨r₁, lt_min hr₀ (lt_min hr_q hr_e), _,
-    meromorphicPolarOrderAt_remainder_le (hg a (mem_ball_self hr₀)) hga,
-    c, q, hq_ball.mono hsub_q, fun z hz hzre ↦ ?_⟩
+  refine ⟨r₁, lt_min hr₀ (lt_min hr_q hr_e), _, hord,
+    TauCeti.Contour.meromorphicPolarCoeffAt hQ, TauCeti.Contour.meromorphicAnalyticPartAt hQ,
+    hq_ball.mono hsub_q, fun z hz hzre ↦ ?_⟩
   have hopen : IsOpen (ball (a : ℂ) r₁ ∩ {w : ℂ | a < w.re}) :=
     isOpen_ball.inter (isOpen_re_gt a)
-  have hev : R =ᶠ[𝓝 z] fun w ↦ q w + ∑ i, c i / (w - a) ^ (i.val + 1) := by
+  have hev : R =ᶠ[𝓝 z] fun w ↦ TauCeti.Contour.meromorphicAnalyticPartAt hQ w +
+      TauCeti.Contour.meromorphicPolarPartAt hQ w := by
     refine eventuallyEq_of_mem (hopen.mem_nhds ⟨hz, hzre⟩) fun w ⟨hw, hwre⟩ ↦ ?_
     have hwa : w ≠ a := fun h0 ↦ by simp [h0] at hwre
-    have hRw : R w = Q w := by simp only [R, Q, Pi.div_apply, f, d, hF w (hsub₀ hw) hwre, sub_div]
+    have hRw : R w = Q w := by simp only [R, Q, f, hF w (hsub₀ hw) hwre, sub_div]
     exact hRw.trans (hlaur_ball w (hsub_e hw) hwa)
   rw [hev.deriv_eq]
-  have hza : z - (a : ℂ) ≠ 0 := sub_ne_zero.mpr fun h0 ↦ by simp [h0] at hzre
+  have hza : z ≠ a := fun h0 ↦ by simp [h0] at hzre
   exact (((hq_ball _ (hsub_q hz)).differentiableAt.hasDerivAt).add
-    (hasDerivAt_laurent_principal_part c hza)).deriv
-
-/-- Elementary norm lower bound `(u + |y|) / 2 ≤ ‖((ε + u : ℝ) : ℂ) + y * I‖` for `ε, u ≥ 0`. -/
-private theorem half_add_abs_le_norm {ε u y : ℝ} (hε : 0 ≤ ε) (hu : 0 ≤ u) :
-    (u + |y|) / 2 ≤ ‖((ε + u : ℝ) : ℂ) + y * I‖ := by
-  let w : ℂ := ((ε + u : ℝ) : ℂ) + y * I
-  have hre : u ≤ ‖w‖ := by
-    have h1 : |w.re| ≤ ‖w‖ := abs_re_le_norm w
-    have h2 : w.re = ε + u := by simp [w]
-    rw [h2, abs_of_nonneg (by linarith)] at h1
-    linarith
-  have him : |y| ≤ ‖w‖ := by simpa [w] using abs_im_le_norm w
-  linarith
+    (TauCeti.Contour.hasDerivAt_meromorphicPolarPartAt hQ hza)).deriv
 
 /-- Pointwise bound on a single weighted polar derivative term for `j + 1 ≤ k` and `u ∈ (0, 1]`. -/
 private theorem norm_laurent_term_mul_weight_le {j k : ℕ} (hj : j + 1 ≤ k) {c w : ℂ} {u y : ℝ}
@@ -428,8 +341,10 @@ private theorem norm_laurent_integrand_le {m k : ℕ} (hm_le : m ≤ k) {c : Fin
       (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))‖ ≤
       M₀ + (∑ i : Fin m, ‖c i‖ * ((i.val + 1 : ℕ) : ℝ) * (2 : ℝ) ^ (i.val + 2)) * (u + |y|)⁻¹ := by
   intro z
-  have hz_sub : z - a = ((ε + u : ℝ) : ℂ) + y * I := by simp only [z]; push_cast; ring
-  have hza_ge : (u + |y|) / 2 ≤ ‖z - a‖ := hz_sub ▸ half_add_abs_le_norm hε0 hu0.le
+  have hre : (z - a).re = ε + u := by simp [z]; ring
+  have him : (z - a).im = y := by simp [z]
+  have hza_ge : (u + |y|) / 2 ≤ ‖z - a‖ := by
+    linarith [hre ▸ re_le_norm (z - a), him ▸ abs_im_le_norm (z - a)]
   calc
     ‖(wq + ∑ i : Fin m, c i * (-((i.val + 1 : ℕ) : ℂ) / (z - a) ^ (i.val + 2))) *
         (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))‖
@@ -448,24 +363,49 @@ private theorem norm_laurent_integrand_le {m k : ℕ} (hm_le : m ≤ k) {c : Fin
       exact Finset.sum_le_sum fun i _ ↦
         norm_laurent_term_mul_weight_le (Nat.succ_le_of_lt (i.isLt.trans_le hm_le)) hu0 hu1 hza_ge
 
-/-- Interval integrability and logarithmic upper bound for `∫ u in 0..δ, (M₀ + C * (u + |y|)⁻¹)`
-when `0 < δ ≤ 1` and `0 < |y| ≤ δ`. -/
-private theorem integral_const_add_inv_le_log {M₀ C δ y : ℝ} (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
-    (hM₀ : 0 ≤ M₀) (hC : 0 ≤ C) (hy0 : y ≠ 0) (hyδ : |y| ≤ δ) :
-    IntervalIntegrable (fun u : ℝ ↦ M₀ + C * (u + |y|)⁻¹) volume 0 δ ∧
-      ∫ u : ℝ in (0 : ℝ)..δ, (M₀ + C * (u + |y|)⁻¹) ≤ M₀ + C * (Real.log 2 + |Real.log y|) := by
+/-- Logarithmic upper bound on the near-pole head integral
+`∫ u in 0..δ, deriv R (((a : ℂ) + ε + y * I) + u) * (u ^ k / k!)` from the Laurent decomposition
+of `deriv R` on the half-disc `ball a r₁ ∩ {z | a < z.re}`. -/
+private theorem norm_integral_near_pole_head_le {R q : ℂ → ℂ} {m k : ℕ} (hm_le : m ≤ k)
+    {c : Fin m → ℂ} {a r₁ M_q δ ε y : ℝ} (hr₁ : 0 < r₁)
+    (hδ : 0 < δ) (hδ1 : δ ≤ 1) (hδr : δ ≤ r₁ / 6) (hM_q : 0 ≤ M_q)
+    (hε : ε ∈ Ioo (0 : ℝ) δ) (hy0 : y ≠ 0) (hyδ : |y| ≤ δ)
+    (hMq : ∀ z ∈ closedBall (a : ℂ) (r₁ / 2), ‖deriv q z‖ ≤ M_q)
+    (hderiv_laur : ∀ z ∈ ball (a : ℂ) r₁, a < z.re →
+      deriv R z = deriv q z +
+        ∑ i : Fin m, c i * (-((i.val + 1 : ℕ) : ℂ) / (z - a) ^ (i.val + 2))) :
+    ‖∫ u : ℝ in (0 : ℝ)..δ,
+      deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)‖ ≤
+      M_q + (∑ i : Fin m, ‖c i‖ * ((i.val + 1 : ℕ) : ℝ) * (2 : ℝ) ^ (i.val + 2)) *
+        (Real.log 2 + |Real.log y|) := by
+  let C_pole : ℝ := ∑ i : Fin m, ‖c i‖ * ((i.val + 1 : ℕ) : ℝ) * (2 : ℝ) ^ (i.val + 2)
+  have : 0 ≤ C_pole := Finset.sum_nonneg fun i _ ↦ by positivity
   have hy_pos : 0 < |y| := abs_pos.mpr hy0
-  have hinv_int : IntervalIntegrable (fun u : ℝ ↦ (u + |y|)⁻¹) volume 0 δ := by
-    refine ContinuousOn.intervalIntegrable_of_Icc hδ0.le
-      ((continuousOn_id.add continuousOn_const).inv₀ fun u hu h0 ↦ ?_)
-    simp only [Pi.add_apply, id_eq] at h0
-    linarith [hu.1]
-  have hmaj_int : IntervalIntegrable (fun u : ℝ ↦ M₀ + C * (u + |y|)⁻¹) volume 0 δ :=
-    intervalIntegrable_const.add (hinv_int.const_mul C)
-  refine ⟨hmaj_int, ?_⟩
-  have heval : ∫ u : ℝ in (0 : ℝ)..δ, (M₀ + C * (u + |y|)⁻¹) =
-      M₀ * δ + C * Real.log ((δ + |y|) / |y|) := by
-    rw [intervalIntegral.integral_add intervalIntegrable_const (hinv_int.const_mul C),
+  have hinv_int : IntervalIntegrable (fun u : ℝ ↦ (u + |y|)⁻¹) volume 0 δ :=
+    intervalIntegral.intervalIntegrable_inv
+      (fun u hu ↦ by rw [uIcc_of_le hδ.le] at hu; linarith [hu.1])
+      (continuousOn_id.add continuousOn_const)
+  have hmaj_int : IntervalIntegrable (fun u : ℝ ↦ M_q + C_pole * (u + |y|)⁻¹) volume 0 δ :=
+    intervalIntegrable_const.add (hinv_int.const_mul C_pole)
+  have hhead_le : ‖∫ u : ℝ in (0 : ℝ)..δ,
+      deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)‖ ≤
+      ∫ u : ℝ in (0 : ℝ)..δ, (M_q + C_pole * (u + |y|)⁻¹) :=
+    norm_integral_le_of_norm_le hδ.le (.of_forall fun u ⟨hu0, huδ⟩ ↦ by
+      set z : ℂ := ((a : ℂ) + ε + y * I) + u
+      have hz_cb : z ∈ closedBall (a : ℂ) (r₁ / 2) := by
+        rw [mem_closedBall, dist_eq_norm]
+        refine (norm_le_abs_re_add_abs_im _).trans ?_
+        have hre : (z - a).re = ε + u := by simp [z]; ring
+        have him : (z - a).im = y := by simp [z]
+        rw [hre, him, abs_of_nonneg (add_nonneg hε.1.le hu0.le)]
+        linarith [hε.2]
+      rw [hderiv_laur z (closedBall_subset_ball (half_lt_self hr₁) hz_cb)
+        (mem_re_gt_of_add_pos (by linarith [hε.1]))]
+      exact norm_laurent_integrand_le hm_le (hMq z hz_cb) hM_q hε.1.le hu0 (huδ.trans hδ1))
+      hmaj_int
+  have heval : ∫ u : ℝ in (0 : ℝ)..δ, (M_q + C_pole * (u + |y|)⁻¹) =
+      M_q * δ + C_pole * Real.log ((δ + |y|) / |y|) := by
+    rw [intervalIntegral.integral_add intervalIntegrable_const (hinv_int.const_mul C_pole),
       intervalIntegral.integral_const, intervalIntegral.integral_const_mul,
       integral_comp_add_right (fun x : ℝ ↦ x⁻¹), zero_add,
       integral_inv_of_pos hy_pos (by positivity), smul_eq_mul]
@@ -476,11 +416,12 @@ private theorem integral_const_add_inv_le_log {M₀ C δ y : ℝ} (hδ0 : 0 < δ
         (div_le_div_of_nonneg_right (by linarith) hy_pos.le)
     rw [Real.log_div two_ne_zero hy_pos.ne', Real.log_abs] at h1
     linarith [neg_abs_le (Real.log y)]
-  rw [heval]
   calc
-    M₀ * δ + C * Real.log ((δ + |y|) / |y|)
-        ≤ M₀ * 1 + C * (Real.log 2 + |Real.log y|) := by gcongr
-    _ = M₀ + C * (Real.log 2 + |Real.log y|) := by ring
+    ‖∫ u : ℝ in (0 : ℝ)..δ,
+        deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)‖
+        ≤ M_q * δ + C_pole * Real.log ((δ + |y|) / |y|) := heval ▸ hhead_le
+    _ ≤ M_q * 1 + C_pole * (Real.log 2 + |Real.log y|) := by gcongr
+    _ = M_q + C_pole * (Real.log 2 + |Real.log y|) := by ring
 
 /-- Logarithmic bound near the pole: there exist `δ > 0` and constants `C₁, C₂ ≥ 0` such that
 for all `ε ∈ (0, δ)` and all `y` with `0 < |y| ≤ δ`,
@@ -520,22 +461,10 @@ private theorem exists_near_pole_log_bound {F : ℂ → ℂ} {a A : ℝ} {k : �
   have htail_le : ‖∫ u : ℝ in δ..1, φ u‖ ≤ B_tail :=
     norm_intervalIntegral_mul_weight_le hδ.le hδ1 hBt0 fun u hu ↦
       hBt ε ⟨hε.1.le, hε.2.le⟩ y (abs_le.mp hyδ) u ⟨hu.1.le, hu.2⟩
-  obtain ⟨hmaj_int, heval_le⟩ :=
-    integral_const_add_inv_le_log hδ hδ1 (le_max_right M_q 0) hCp0 hy0 hyδ
-  have hhead_le : ‖∫ u : ℝ in (0 : ℝ)..δ, φ u‖ ≤
-      ∫ u : ℝ in (0 : ℝ)..δ, (max M_q 0 + C_pole * (u + |y|)⁻¹) :=
-    norm_integral_le_of_norm_le hδ.le (.of_forall fun u ⟨hu0, huδ⟩ ↦ by
-      set z : ℂ := ((a : ℂ) + ε + y * I) + u with hz
-      have hz_cb : z ∈ closedBall (a : ℂ) (r₁ / 2) := by
-        simpa using mem_closedBall_of_add_im_le (a := a) (y₀ := 0) hε.1.le hu0.le
-          (by simpa using (by linarith [hε.2, min_le_right 1 (r₁ / 6)] : ε + u + |y| ≤ r₁ / 2))
-      simp only [φ]
-      rw [← hz, hderiv_laur z (closedBall_subset_ball (half_lt_self hr₁) hz_cb)
-        (mem_re_gt_of_add_pos (by linarith [hε.1]))]
-      exact norm_laurent_integrand_le hm_le ((hMq z hz_cb).trans (le_max_left _ _))
-        (le_max_right _ _) hε.1.le hu0 (huδ.trans hδ1)) hmaj_int
-  refine (norm_add_le _ _).trans ((add_le_add (hhead_le.trans heval_le) htail_le).trans_eq ?_)
-  simp only [C₁]
+  have hhead_le := norm_integral_near_pole_head_le hm_le hr₁ hδ hδ1 (min_le_right _ _)
+    (le_max_right M_q 0) hε hy0 hyδ (fun z hz ↦ (hMq z hz).trans (le_max_left _ _)) hderiv_laur
+  refine (norm_add_le _ _).trans ((add_le_add hhead_le htail_le).trans_eq ?_)
+  simp only [C₁, C_pole]
   ring
 
 /-- Uniform integrable majorant on `Icc (-L) L` (`0 < L`) combining the near-pole logarithmic
