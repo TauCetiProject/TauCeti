@@ -132,6 +132,7 @@ to the canonical fraction fields used by Mathlib's different API.
   Dedekind, finiteness, and separability properties of the local integral closure `𝒪'_P`.
 * `TauCeti.Place.isIntegral_algebraMap_iff_mem_integers`: the local integral closure `𝒪'_P`
   contracts to `𝒪_P`.
+* `TauCeti.Place.isIntegral_integers_algebraMap`: constants are integral over `𝒪_P`.
 
 ## References
 
@@ -233,10 +234,11 @@ section Constants
 
 variable [Algebra.IsIntegral k k']
 
-/-- Constants of `F' / k'` are integral over `𝒪_P` (hence lie in the local model `𝒪'_P`), since
-`k'` is integral over `k ⊆ 𝒪_P`. -/
-theorem algebraMap_mem_integralClosure (c : k') :
-    algebraMap k' F' c ∈ integralClosure (P.integers) F' := by
+variable {F'} in
+/-- Constants of `F'` are integral over the valuation ring of every place of `F / k`: they are
+integral over `k`, which lies in `𝒪_P`. -/
+theorem isIntegral_integers_algebraMap (c : k') :
+    IsIntegral P.integers (algebraMap k' F' c) := by
   have := isScalarTower_constants_integersExtension F' P
   exact (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
 
@@ -252,7 +254,7 @@ with `TauCeti.Place.isScalarTower_constants_integralClosure`. -/
 noncomputable def algebraConstantsIntegralClosure :
     Algebra k' (integralClosure (P.integers) F') :=
   ((algebraMap k' F').codRestrict (integralClosure (P.integers) F')
-    (algebraMap_mem_integralClosure F' P)).toAlgebra
+    (isIntegral_integers_algebraMap P)).toAlgebra
 
 attribute [local instance] algebraConstantsIntegralClosure in
 /-- The action of `TauCeti.Place.algebraConstantsIntegralClosure` on `𝒪'_P` is compatible with

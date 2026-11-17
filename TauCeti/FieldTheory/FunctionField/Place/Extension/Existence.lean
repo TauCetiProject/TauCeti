@@ -38,7 +38,6 @@ place whose restriction is the original place.
 * `TauCeti.Place.ramificationIdxIn_pos`: the ramification index of a place of the base in an
   algebraic extension of function fields is positive, since some place lies above it; the
   constants may grow by an integral extension.
-* `TauCeti.Place.isIntegral_integers_algebraMap`: constants are integral over `𝒪_P`.
 * `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`: the integral closure of the
   valuation ring `𝒪_P` in the larger field is the intersection of the valuation rings of the
   places above `P` (Stichtenoth, Section III.2).
@@ -125,13 +124,6 @@ theorem ramificationIdxIn_pos (hF' : IsFunctionField k' F') {P : Place k F} :
   exact ramificationIdx_pos F _
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-omit [Algebra.IsIntegral F F'] in
-/-- Constants of `F'` are integral over the valuation ring of every place of `F / k`: they are
-integral over `k`, which lies in `𝒪_P`. -/
-theorem isIntegral_integers_algebraMap (P : Place k F) (c : k') :
-    IsIntegral P.integers (algebraMap k' F' c) :=
-  algebraMap_mem_integralClosure F' P c
 
 /-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`**
 (Stichtenoth, Section III.2): an element of `F'` is integral over the valuation ring of a place
