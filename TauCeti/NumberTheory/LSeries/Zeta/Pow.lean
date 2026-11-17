@@ -5,7 +5,10 @@ Authors: The PrimeNumberTheoremAnd contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.Dirichlet
+public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
+public import Mathlib.NumberTheory.LSeries.RiemannZeta
+import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.NumberTheory.LSeries.Convolution
 
 /-!
 # The Dirichlet series of the `k`-fold divisor function
@@ -18,7 +21,12 @@ absolutely and has sum `riemannZeta s ^ k`. At `k = 0` both sides are `1`.
 ## Main results
 
 * `ArithmeticFunction.LSeriesHasSum_zeta_pow`: for `Re s > 1`, the Dirichlet series of `ζ ^ k`
-  converges absolutely, with sum `riemannZeta s ^ k`.
+  has sum `riemannZeta s ^ k`.
+* `ArithmeticFunction.summable_norm_term_zeta_pow`: for `Re s > 1`, the Dirichlet series of
+  `ζ ^ k` converges absolutely.
+
+Both follow from Mathlib's `ArithmeticFunction.LSeriesHasSum_zeta` by
+`ArithmeticFunction.LSeriesHasSum_pow`.
 
 ## References
 
@@ -36,21 +44,21 @@ namespace ArithmeticFunction
 open scoped ArithmeticFunction.zeta LSeries.notation
 
 /-- **The Dirichlet series of `d_k = ζ ^ k`.** For every `k : ℕ` and `Re s > 1`, the Dirichlet
-series of the `k`-fold divisor function `ζ ^ k` converges absolutely, and its sum is
-`riemannZeta s ^ k`. Here `ζ` is the arithmetic function, not `riemannZeta`. -/
+series of the `k`-fold divisor function `ζ ^ k` has sum `riemannZeta s ^ k`. Here `ζ` is the
+arithmetic function, not `riemannZeta`. -/
 theorem LSeriesHasSum_zeta_pow (k : ℕ) {s : ℂ} (hs : 1 < s.re) :
-    Summable (fun n : ℕ ↦ ‖LSeries.term (fun n ↦ ((ζ ^ k : ArithmeticFunction ℕ) n : ℂ)) s n‖) ∧
     LSeriesHasSum (fun n ↦ ((ζ ^ k : ArithmeticFunction ℕ) n : ℂ)) s (riemannZeta s ^ k) := by
-  have key : LSeriesHasSum ↗((ζ ^ k : ArithmeticFunction ℕ) : ArithmeticFunction ℂ) s
-      (riemannZeta s ^ k) := by
-    induction k with
-    | zero =>
-      rw [pow_zero, pow_zero, natCoe_one, one_eq_delta, LSeriesHasSum_iff]
-      exact ⟨(hasSum_single 1 fun n hn ↦ by simp [LSeries.term_delta, hn]).summable,
-        congr_fun LSeries_delta s⟩
-    | succ k ih =>
-      rw [pow_succ, pow_succ, natCoe_mul]
-      exact LSeriesHasSum_mul ih (LSeriesHasSum_zeta hs)
-  exact ⟨summable_norm_iff.mpr key.LSeriesSummable, key⟩
+  have hζ : LSeriesHasSum ↗(ζ : ArithmeticFunction ℂ) s (riemannZeta s) := by
+    simpa only [natCoe_apply] using LSeriesHasSum_zeta hs
+  simpa only [← natCoe_pow, natCoe_apply] using LSeriesHasSum_pow hζ k
+
+/-- For every `k : ℕ` and `Re s > 1`, the Dirichlet series of the `k`-fold divisor function
+`ζ ^ k` converges absolutely. -/
+theorem summable_norm_term_zeta_pow (k : ℕ) {s : ℂ} (hs : 1 < s.re) :
+    Summable fun n : ℕ ↦
+      ‖LSeries.term (fun n ↦ ((ζ ^ k : ArithmeticFunction ℕ) n : ℂ)) s n‖ := by
+  have h := (LSeriesHasSum_zeta_pow k hs).LSeriesSummable
+  rw [LSeriesSummable] at h
+  exact summable_norm_iff.mpr h
 
 end ArithmeticFunction
