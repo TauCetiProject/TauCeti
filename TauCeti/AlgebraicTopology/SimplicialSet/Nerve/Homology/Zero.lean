@@ -189,17 +189,92 @@ private lemma eqToHom_ι_eq_ιPostcomp (M : C ⥤ A) {m : ℕ} {ρ : ComposableA
     (h : ρ = ν.postcomp q) (h₀ : M.obj (ν.obj 0) = M.obj (ρ.obj 0)) :
     eqToHom h₀ ≫ ιCategoryChainComplex M ρ = ιPostcomp M ν q := by subst h; simp [ιPostcomp]
 
+private def terminalPostcompMap (M : C ⥤ A) {t : C} (ht : IsTerminal t) (n : ℕ) :
+    (categoryChainComplex C M).X n ⟶ (categoryChainComplex C M).X (n + 1) :=
+  Cofan.IsColimit.desc (isColimitCategoryChainComplexXCofan M n)
+    fun σ ↦ ιPostcomp M σ (ht.from σ.right)
+
+private lemma ι_terminalPostcompMap (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
+    (σ : ComposableArrows C n) :
+    ιCategoryChainComplex M σ ≫ terminalPostcompMap M ht n =
+      ιPostcomp M σ (ht.from σ.right) :=
+  Cofan.IsColimit.fac (isColimitCategoryChainComplexXCofan M n) _ σ
+
 private def terminalHomotopyStep (M : C ⥤ A) {t : C} (ht : IsTerminal t) (n : ℕ) :
     (categoryChainComplex C M).X n ⟶ (categoryChainComplex C M).X (n + 1) :=
-  (-1 : ℤ) ^ (n + 1) • Cofan.IsColimit.desc (isColimitCategoryChainComplexXCofan M n)
-    fun σ ↦ ιPostcomp M σ (ht.from σ.right)
+  (-1 : ℤ) ^ (n + 1) • terminalPostcompMap M ht n
 
 private lemma ι_terminalHomotopyStep (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
     (σ : ComposableArrows C n) :
     ιCategoryChainComplex M σ ≫ terminalHomotopyStep M ht n =
-      (-1 : ℤ) ^ (n + 1) • ιPostcomp M σ (ht.from σ.right) :=
-  (Preadditive.comp_zsmul _ _ _).trans (congrArg ((-1 : ℤ) ^ (n + 1) • ·)
-    (Cofan.IsColimit.fac (isColimitCategoryChainComplexXCofan M n) _ σ))
+      (-1 : ℤ) ^ (n + 1) • ιPostcomp M σ (ht.from σ.right) := by
+  rw [terminalHomotopyStep, Preadditive.comp_zsmul, ι_terminalPostcompMap]
+
+omit [Preadditive A] [HasCoproducts A] in
+@[reassoc] private lemma eqToHom_map_postcomp_zero_one (M : C ⥤ A) {n : ℕ}
+    (σ : ComposableArrows C (n + 1)) {Y : C} (g : σ.right ⟶ Y)
+    (h₁ : M.obj (σ.obj 1) = M.obj ((σ.postcomp g).obj 1)) :
+    eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫
+        M.map ((σ.postcomp g).map (homOfLE (Fin.zero_le (1 : Fin (n + 3))))) =
+      M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫ eqToHom h₁ := by
+  have hta : (σ.postcomp g).totalArrow 0 1 (Fin.zero_le _) =
+      σ.totalArrow 0 1 (Fin.zero_le _) := by
+    rw [ComposableArrows.totalArrow_congr _ Fin.castSucc_zero.symm Fin.castSucc_one.symm,
+      ComposableArrows.totalArrow_postcomp_castSucc_castSucc]
+  rw [ComposableArrows.totalArrow_def, ComposableArrows.totalArrow_def] at hta
+  obtain ⟨_, hobj₁, hm⟩ := Quiver.Total.mk.inj hta
+  have hmap : eqToHom (σ.postcomp_obj_zero g).symm ≫
+      (σ.postcomp g).map (homOfLE (Fin.zero_le (1 : Fin (n + 3)))) =
+      σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2)))) ≫ eqToHom hobj₁.symm := by
+    rw [← cancel_mono (eqToHom hobj₁), Category.assoc, Category.assoc, eqToHom_trans,
+      eqToHom_refl, Category.comp_id]
+    exact ((conj_eqToHom_iff_heq' _ _ (σ.postcomp_obj_zero g).symm hobj₁).mpr hm.symm).symm
+  rw [← eqToHom_map M (σ.postcomp_obj_zero g).symm, ← M.map_comp, hmap, M.map_comp, eqToHom_map]
+
+private lemma ιPostcomp_δ_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
+    (σ : ComposableArrows C (n + 1)) :
+    ιPostcomp M σ (ht.from σ.right) ≫ (categorySimplicialObject C M).δ 0 =
+      M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+        ιPostcomp M ((nerve C).δ 0 σ) (ht.from _) := by
+  have hδ₀ := CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal σ ht 0
+  have h₁ : M.obj (σ.obj 1) = M.obj ((σ.postcomp (ht.from σ.right)).obj 1) := by
+    rw [← Fin.castSucc_one, σ.postcomp_obj_castSucc]
+  calc
+    ιPostcomp M σ (ht.from σ.right) ≫ (categorySimplicialObject C M).δ 0
+      = eqToHom (congrArg M.obj (σ.postcomp_obj_zero _).symm) ≫
+          M.map ((σ.postcomp (ht.from σ.right)).map (homOfLE (Fin.zero_le (1 : Fin (n + 3))))) ≫
+          ιCategoryChainComplex M ((nerve C).δ 0 (σ.postcomp (ht.from σ.right))) := by
+        dsimp only [ιPostcomp]
+        rw [Category.assoc, ιCategorySimplicialObject_δ_zero]
+    _ = M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+          eqToHom h₁ ≫ ιCategoryChainComplex M ((nerve C).δ 0 (σ.postcomp (ht.from σ.right))) :=
+        eqToHom_map_postcomp_zero_one_assoc M σ (ht.from σ.right) h₁ _
+    _ = M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+          ιPostcomp M ((nerve C).δ 0 σ) (ht.from _) :=
+        congrArg (M.map _ ≫ ·) (eqToHom_ι_eq_ιPostcomp M hδ₀ h₁)
+
+private lemma ιPostcomp_δ_castSucc_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
+    (σ : ComposableArrows C (n + 1)) (j : Fin (n + 1)) :
+    ιPostcomp M σ (ht.from σ.right) ≫ (categorySimplicialObject C M).δ j.castSucc.succ =
+      ιPostcomp M ((nerve C).δ j.succ σ) (ht.from _) := by
+  have hδj : (nerve C).δ j.castSucc.succ (σ.postcomp (ht.from σ.right)) =
+      ComposableArrows.postcomp ((nerve C).δ j.succ σ) (ht.from _) := by
+    rw [Fin.succ_castSucc]
+    exact CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal σ ht j.succ
+  dsimp only [ιPostcomp]
+  rw [Category.assoc, ιCategorySimplicialObject_δ_succ]
+  exact eqToHom_ι_eq_ιPostcomp M hδj _
+
+private lemma ιPostcomp_δ_last (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n)
+    {Y : C} (g : σ.right ⟶ Y) :
+    ιPostcomp M σ g ≫ (categorySimplicialObject C M).δ (Fin.last (n + 1)) =
+      ιCategoryChainComplex M σ := by
+  have hδl : (nerve C).δ (Fin.last n).succ (σ.postcomp g) = σ := by
+    rw [Fin.succ_last]
+    exact CategoryTheory.nerve.δ_last_postcomp σ g
+  dsimp only [ιPostcomp]
+  rw [← Fin.succ_last, Category.assoc, ιCategorySimplicialObject_δ_succ]
+  exact eqToHom_ιCategoryChainComplex M hδl.symm _
 
 private lemma ιPostcomp_d_one_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t)
     (σ : ComposableArrows C 0) :
@@ -209,132 +284,74 @@ private lemma ιPostcomp_d_one_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t)
     ComposableArrows.ext₁ (σ.postcomp_obj_zero _) (σ.postcomp_obj_last _) <| by
       rw [← cancel_mono (eqToHom (σ.postcomp_obj_last _))]
       exact ht.hom_ext _ _
-  have hι : ιPostcomp M σ (ht.from σ.right) = ιCategoryChainComplex₁ M (ht.from (σ.obj 0)) :=
-    (eqToHom_ιCategoryChainComplex M hpost.symm _).trans (ιCategoryChainComplex_mk₁ M _)
-  have hσ : ιCategoryChainComplex₀ M (σ.obj 0) = ιCategoryChainComplex M σ :=
-    (ιCategoryChainComplex_mk₀ M (σ.obj 0)).symm.trans
-      ((Category.id_comp _).symm.trans (eqToHom_ιCategoryChainComplex M
-        (ComposableArrows.ext₀ rfl : σ = ComposableArrows.mk₀ (σ.obj 0)) rfl))
+  have hι : ιPostcomp M σ (ht.from σ.right) = ιCategoryChainComplex₁ M (ht.from (σ.obj 0)) := by
+    dsimp only [ιPostcomp]
+    rw [eqToHom_ιCategoryChainComplex M hpost.symm _, ιCategoryChainComplex_mk₁]
+  have hσ : ιCategoryChainComplex₀ M (σ.obj 0) = ιCategoryChainComplex M σ := by
+    rw [← ιCategoryChainComplex_mk₀,
+      ← eqToHom_ιCategoryChainComplex M
+        (ComposableArrows.ext₀ rfl : ComposableArrows.mk₀ (σ.obj 0) = σ) rfl]
+    -- `(ComposableArrows.mk₀ (σ.obj 0)).obj 0` is `σ.obj 0` definitionally, so `eqToHom rfl = 𝟙 _`.
+    exact Category.id_comp _
   rw [hι, ιCategoryChainComplex₁_d_one_zero, hσ]
 
-private lemma ιPostcomp_d_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
-    (σ : ComposableArrows C (n + 1)) :
-    ιPostcomp M σ (ht.from σ.right) ≫ (categoryChainComplex C M).d (n + 2) (n + 1) =
-      M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-          ιPostcomp M ((nerve C).δ 0 σ) (ht.from _) +
-        (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
-          ιPostcomp M ((nerve C).δ j.succ σ) (ht.from _)) +
-        (-1 : ℤ) ^ (n + 2) • ιCategoryChainComplex M σ := by
-  let g := ht.from σ.right; let τ := σ.postcomp g
-  let h₀ : M.obj (σ.obj 0) = M.obj (τ.obj 0) := congrArg M.obj (σ.postcomp_obj_zero g).symm
-  let δ₀σ : ComposableArrows C n := (nerve C).δ 0 σ
-  let δ₀τ : ComposableArrows C (n + 1) := (nerve C).δ 0 τ
-  have hexp : ιPostcomp M σ g ≫ (categoryChainComplex C M).d (n + 2) (n + 1) =
-      (eqToHom h₀ ≫ (M.map (τ.map (homOfLE (Fin.zero_le (1 : Fin (n + 3))))) ≫
-          ιCategoryChainComplex M δ₀τ) +
-        ∑ j : Fin (n + 1), eqToHom h₀ ≫
-          ((-1 : ℤ) ^ (j.castSucc.val + 1) •
-            ιCategoryChainComplex M ((nerve C).δ j.castSucc.succ τ))) +
-      eqToHom h₀ ≫ ((-1 : ℤ) ^ ((Fin.last (n + 1)).val + 1) •
-        ιCategoryChainComplex M ((nerve C).δ (Fin.last (n + 1)).succ τ)) :=
-    (Category.assoc _ _ _).trans (((congrArg (eqToHom h₀ ≫ ·) (ιCategoryChainComplex_d M τ)).trans
-      ((Preadditive.comp_add _ _ _ _ _ _).trans (congrArg (_ + ·)
-        ((Preadditive.comp_sum _ _ _).trans (Fin.sum_univ_castSucc _))))).trans
-      (add_assoc _ _ _).symm)
-  have hterm₀ : eqToHom h₀ ≫ (M.map (τ.map (homOfLE (Fin.zero_le (1 : Fin (n + 3))))) ≫
-      ιCategoryChainComplex M δ₀τ) =
-      M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫ ιPostcomp M δ₀σ (ht.from _) := by
-    have hta : τ.totalArrow 0 1 (Fin.zero_le _) = σ.totalArrow 0 1 (Fin.zero_le _) :=
-      (τ.totalArrow_congr Fin.castSucc_zero.symm Fin.castSucc_one.symm (Fin.zero_le _)).trans
-        (σ.totalArrow_postcomp_castSucc_castSucc g 0 1 (Fin.zero_le _))
-    rw [ComposableArrows.totalArrow_def, ComposableArrows.totalArrow_def] at hta
-    obtain ⟨_, h₁, hm⟩ := Quiver.Total.mk.inj hta
-    have hmap : eqToHom (σ.postcomp_obj_zero g).symm ≫
-        τ.map (homOfLE (Fin.zero_le (1 : Fin (n + 3)))) =
-        σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2)))) ≫ eqToHom h₁.symm := by
-      rw [← cancel_mono (eqToHom h₁), Category.assoc, Category.assoc, eqToHom_trans,
-        eqToHom_refl, Category.comp_id]
-      exact ((conj_eqToHom_iff_heq' _ _ (σ.postcomp_obj_zero g).symm h₁).mpr hm.symm).symm
-    have hδ₀ : δ₀τ = δ₀σ.postcomp (ht.from _) :=
-      CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal σ ht 0
-    have hMmap : eqToHom h₀ ≫ M.map (τ.map (homOfLE (Fin.zero_le (1 : Fin (n + 3))))) =
-        M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-          eqToHom (congrArg M.obj h₁.symm) := by
-      rw [← eqToHom_map M (σ.postcomp_obj_zero g).symm, ← M.map_comp, hmap, M.map_comp, eqToHom_map]
-    exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) hMmap).trans
-      ((Category.assoc _ _ _).trans (congrArg (M.map _ ≫ ·)
-        (eqToHom_ι_eq_ιPostcomp M hδ₀ (congrArg M.obj h₁.symm)))))
-  have hsum : (∑ j : Fin (n + 1), eqToHom h₀ ≫ ((-1 : ℤ) ^ (j.castSucc.val + 1) •
-      ιCategoryChainComplex M ((nerve C).δ j.castSucc.succ τ))) =
-      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
-        ιPostcomp M ((nerve C).δ j.succ σ) (ht.from _) :=
-    Finset.sum_congr rfl fun j _ ↦ by
-      have hδj : ((nerve C).δ j.castSucc.succ τ : ComposableArrows C (n + 1)) =
-          ComposableArrows.postcomp ((nerve C).δ j.succ σ) (ht.from _) :=
-        (congrArg (fun i ↦ ((nerve C).δ i τ : ComposableArrows C (n + 1)))
-          (Fin.succ_castSucc j).symm).trans
-          (CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal σ ht j.succ)
-      exact (Preadditive.comp_zsmul _ _ _).trans (Fin.val_castSucc j ▸
-        congrArg ((-1 : ℤ) ^ (j.val + 1) • ·) (eqToHom_ι_eq_ιPostcomp M hδj h₀))
-  have hlast : eqToHom h₀ ≫ ((-1 : ℤ) ^ ((Fin.last (n + 1)).val + 1) •
-      ιCategoryChainComplex M ((nerve C).δ (Fin.last (n + 1)).succ τ)) =
-      (-1 : ℤ) ^ (n + 2) • ιCategoryChainComplex M σ := by
-    have hδl : ((nerve C).δ (Fin.last (n + 1)).succ τ : ComposableArrows C (n + 1)) = σ :=
-      (congrArg (fun i ↦ ((nerve C).δ i τ : ComposableArrows C (n + 1)))
-        (Fin.succ_last (n + 1))).trans (CategoryTheory.nerve.δ_last_postcomp σ g)
-    have hval : (Fin.last (n + 1)).val + 1 = n + 2 := congrArg (· + 1) (Fin.val_last (n + 1))
-    exact (Preadditive.comp_zsmul _ _ _).trans ((congrArg (fun k ↦ (-1 : ℤ) ^ k • _) hval).trans
-      (congrArg ((-1 : ℤ) ^ (n + 2) • ·) (eqToHom_ιCategoryChainComplex M hδl.symm h₀)))
-  exact hexp.trans (congrArg₂ (· + ·) (congrArg₂ (· + ·) hterm₀ hsum) hlast)
+private lemma terminalPostcompMap_δ_castSucc (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
+    (i : Fin (n + 2)) :
+    terminalPostcompMap M ht (n + 1) ≫ (categorySimplicialObject C M).δ i.castSucc =
+      (categorySimplicialObject C M).δ i ≫ terminalPostcompMap M ht n := by
+  ext σ
+  refine i.cases ?_ fun j ↦ ?_
+  · calc
+      ιCategoryChainComplex M σ ≫
+          terminalPostcompMap M ht (n + 1) ≫
+          (categorySimplicialObject C M).δ (0 : Fin (n + 2)).castSucc
+        = M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+            ιPostcomp M ((nerve C).δ 0 σ) (ht.from _) := by
+          rw [Fin.castSucc_zero, ← Category.assoc, ι_terminalPostcompMap, ιPostcomp_δ_zero]
+      _ = M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+            ιCategoryChainComplex M ((nerve C).δ 0 σ) ≫ terminalPostcompMap M ht n :=
+          congrArg (M.map _ ≫ ·) (ι_terminalPostcompMap M ht _).symm
+      _ = (M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+            ιCategoryChainComplex M ((nerve C).δ 0 σ)) ≫ terminalPostcompMap M ht n :=
+          (Category.assoc _ _ _).symm
+      _ = ιCategoryChainComplex M σ ≫
+            (categorySimplicialObject C M).δ 0 ≫ terminalPostcompMap M ht n :=
+          (ιCategorySimplicialObject_δ_zero_assoc M σ _).symm
+  · rw [← Fin.succ_castSucc, ← Category.assoc, ι_terminalPostcompMap, ιPostcomp_δ_castSucc_succ,
+      ιCategorySimplicialObject_δ_succ_assoc]
+    exact (ι_terminalPostcompMap M ht _).symm
 
-private lemma ι_terminalHomotopy_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
-    (σ : ComposableArrows C (n + 1)) :
-    ιCategoryChainComplex M σ ≫
-      ((categoryChainComplex C M).d (n + 1) n ≫ terminalHomotopyStep M ht n +
-        terminalHomotopyStep M ht (n + 1) ≫ (categoryChainComplex C M).d (n + 2) (n + 1)) =
-      ιCategoryChainComplex M σ := by
-  let T := M.obj (σ.obj 0) ⟶ (categoryChainComplex C M).X (n + 1)
-  let a₀ : T := M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-    ιPostcomp M ((nerve C).δ 0 σ) (ht.from _)
-  let aj (j : Fin (n + 1)) : T := ιPostcomp M ((nerve C).δ j.succ σ) (ht.from _)
-  have h₁ : ιCategoryChainComplex M σ ≫ ((categoryChainComplex C M).d (n + 1) n ≫
-      terminalHomotopyStep M ht n) = (-1 : ℤ) ^ (n + 1) • a₀ +
-        ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 1) • aj j) :=
-    (Category.assoc _ _ _).symm.trans (((congrArg (· ≫ _) (ιCategoryChainComplex_d M σ)).trans
-      (Preadditive.add_comp _ _ _ _ _ _)).trans (congrArg₂ (· + ·)
-        ((Category.assoc _ _ _).trans ((congrArg (M.map _ ≫ ·)
-          (ι_terminalHomotopyStep M ht ((nerve C).δ 0 σ))).trans (Preadditive.comp_zsmul _ _ _)))
-        ((Preadditive.sum_comp _ _ _).trans (Finset.sum_congr rfl fun j _ ↦
-          (Preadditive.zsmul_comp _ _ _).trans (congrArg ((-1 : ℤ) ^ (j.val + 1) • ·)
-            (ι_terminalHomotopyStep M ht ((nerve C).δ j.succ σ)))))))
-  have hsmul (x₀ : T) (xj : Fin (n + 1) → T) :
-      (-1 : ℤ) ^ (n + 2) • (x₀ + (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • xj j) +
-          (-1 : ℤ) ^ (n + 2) • ιCategoryChainComplex M σ) =
-        (-1 : ℤ) ^ (n + 2) • x₀ +
-          (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 2) • xj j)) +
-          ιCategoryChainComplex M σ := by
-    rw [smul_add, smul_add, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_zsmul,
-      Finset.smul_sum]
-    exact congrArg₂ (· + ·) (congrArg (_ + ·) (Finset.sum_congr rfl fun j _ ↦
-      smul_comm ((-1 : ℤ) ^ (n + 2)) ((-1 : ℤ) ^ (j.val + 1)) _)) rfl
-  have h₂ : ιCategoryChainComplex M σ ≫ (terminalHomotopyStep M ht (n + 1) ≫
-      (categoryChainComplex C M).d (n + 2) (n + 1)) = (-1 : ℤ) ^ (n + 2) • a₀ +
-        (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 2) • aj j)) +
-          ιCategoryChainComplex M σ :=
-    (Category.assoc _ _ _).symm.trans (((congrArg (· ≫ _) (ι_terminalHomotopyStep M ht σ)).trans
-      ((Preadditive.zsmul_comp _ _ _).trans
-        (congrArg ((-1 : ℤ) ^ (n + 2) • ·) (ιPostcomp_d_succ M ht σ)))).trans (hsmul a₀ aj))
-  have halg (x₀ : T) (xj : Fin (n + 1) → T) :
-      ((-1 : ℤ) ^ (n + 1) • x₀ +
-          ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 1) • xj j)) +
-        ((-1 : ℤ) ^ (n + 2) • x₀ +
-          (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 2) • xj j)) +
-          ιCategoryChainComplex M σ) = ιCategoryChainComplex M σ := by
-    have hc (x : T) : (-1 : ℤ) ^ (n + 1) • x + (-1 : ℤ) ^ (n + 2) • x = 0 := by
-      rw [pow_succ (-1 : ℤ) (n + 1), mul_neg_one, neg_zsmul, add_neg_cancel]
-    rw [← add_assoc, add_add_add_comm, hc, zero_add, ← Finset.sum_add_distrib,
-      Finset.sum_eq_zero fun j _ ↦ by rw [← smul_add, hc, smul_zero], zero_add]
-  exact (Preadditive.comp_add _ _ _ _ _ _).trans ((congrArg₂ (· + ·) h₁ h₂).trans (halg a₀ aj))
+private lemma terminalPostcompMap_δ_last (M : C ⥤ A) {t : C} (ht : IsTerminal t) (n : ℕ) :
+    terminalPostcompMap M ht n ≫ (categorySimplicialObject C M).δ (Fin.last (n + 1)) = 𝟙 _ := by
+  ext σ
+  rw [← Category.assoc, ι_terminalPostcompMap, ιPostcomp_δ_last, Category.comp_id]
+
+private lemma terminalPostcompMap_d_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) (n : ℕ) :
+    terminalPostcompMap M ht (n + 1) ≫ (categoryChainComplex C M).d (n + 2) (n + 1) =
+      (categoryChainComplex C M).d (n + 1) n ≫ terminalPostcompMap M ht n +
+        (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
+  -- Expand both boundaries as alternating face sums and peel off the final face `δ (last)` of
+  -- `terminalPostcompMap`, which equals `𝟙`.
+  rw [AlgebraicTopology.alternatingFaceMapComplex_obj_d,
+    AlgebraicTopology.alternatingFaceMapComplex_obj_d,
+    AlgebraicTopology.AlternatingFaceMapComplex.objD,
+    AlgebraicTopology.AlternatingFaceMapComplex.objD,
+    Preadditive.comp_sum, Preadditive.sum_comp, Fin.sum_univ_castSucc]
+  simp only [Preadditive.comp_zsmul, Preadditive.zsmul_comp, Fin.val_castSucc, Fin.val_last,
+    terminalPostcompMap_δ_castSucc, terminalPostcompMap_δ_last]
+
+private lemma alternating_sign_cancel {G : Type*} [AddCommGroup G] (k : ℕ) (s x : G) :
+    (-1 : ℤ) ^ k • s + (-1 : ℤ) ^ (k + 1) • (s + (-1 : ℤ) ^ (k + 1) • x) = x := by
+  rw [smul_add, ← add_assoc, ← add_smul, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
+    one_zsmul, pow_succ (-1 : ℤ) k, mul_neg_one, add_neg_cancel, zero_zsmul, zero_add]
+
+private lemma terminalHomotopy_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) (n : ℕ) :
+    (categoryChainComplex C M).d (n + 1) n ≫ terminalHomotopyStep M ht n +
+      terminalHomotopyStep M ht (n + 1) ≫ (categoryChainComplex C M).d (n + 2) (n + 1) =
+      𝟙 _ := by
+  rw [terminalHomotopyStep, terminalHomotopyStep, Preadditive.comp_zsmul,
+    Preadditive.zsmul_comp, terminalPostcompMap_d_succ]
+  exact alternating_sign_cancel (n + 1) _ _
 
 section Single₀
 
@@ -392,8 +409,8 @@ def categoryChainComplexTerminalHomotopy (M : C ⥤ A) {t : C} (ht : IsTerminal 
       have hzf : (categoryChainComplexFromTerminalSingle₀ M t).f (n + 1) = 0 :=
         (HomologicalComplex.isZero_single_obj_X _ 0 (M.obj t) (n + 1)
           (Nat.succ_ne_zero n)).eq_of_src _ _
-      rw [hzf, comp_zero, add_zero]; ext σ
-      exact (Category.comp_id _).trans (ι_terminalHomotopy_succ M ht σ).symm
+      rw [hzf, comp_zero, add_zero]
+      exact (terminalHomotopy_succ M ht n).symm
 
 /-- When `t` is terminal in `C`, `categoryChainComplex C M` is chain homotopy equivalent to
 `M.obj t` concentrated in degree `0`. -/
