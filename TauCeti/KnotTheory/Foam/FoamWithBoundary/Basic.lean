@@ -324,19 +324,14 @@ private theorem nextSidePerm_eq_permCongr
   ext y
   obtain ⟨x, rfl⟩ := eSide.surjective y
   obtain ⟨c, rfl⟩ := (cornerSideEquiv true chirality₁ seamEnds₁ h_inl₁ h_inr₁).surjective x
-  have hInc : cornerSideEquiv true chirality₂ seamEnds₂ h_inl₂ h_inr₂
+  have hcs (dir : Bool) : cornerSideEquiv dir chirality₂ seamEnds₂ h_inl₂ h_inr₂
       (((eV.prodCongr (Equiv.refl (Fin 6))).sumCongr
         (φ.vertex.prodCongr (Equiv.refl (Fin 3)))) c) =
-      eSide (cornerSideEquiv true chirality₁ seamEnds₁ h_inl₁ h_inr₁ c) :=
-    cornerSideFun_comp true φ eV eS chirality₁ chirality₂ seamEnds₁ seamEnds₂ h_chir h_seam c
-  have hOut : cornerSideEquiv false chirality₂ seamEnds₂ h_inl₂ h_inr₂
-      (((eV.prodCongr (Equiv.refl (Fin 6))).sumCongr
-        (φ.vertex.prodCongr (Equiv.refl (Fin 3)))) c) =
-      eSide (cornerSideEquiv false chirality₁ seamEnds₁ h_inl₁ h_inr₁ c) :=
-    cornerSideFun_comp false φ eV eS chirality₁ chirality₂ seamEnds₁ seamEnds₂ h_chir h_seam c
-  rw [Equiv.permCongr_apply, eSide.symm_apply_apply, ← hInc]
+      eSide (cornerSideEquiv dir chirality₁ seamEnds₁ h_inl₁ h_inr₁ c) :=
+    cornerSideFun_comp dir φ eV eS chirality₁ chirality₂ seamEnds₁ seamEnds₂ h_chir h_seam c
+  rw [Equiv.permCongr_apply, eSide.symm_apply_apply, ← hcs true]
   dsimp only [nextSidePerm, cornerIncomingEquiv, cornerOutgoingEquiv, Equiv.trans_apply]
-  rw [Equiv.symm_apply_apply, Equiv.symm_apply_apply, hOut]
+  rw [Equiv.symm_apply_apply, Equiv.symm_apply_apply, hcs false]
 
 end FoamWithBoundary
 
@@ -579,24 +574,18 @@ theorem sideEndpoint_inr (dir : Bool) (e : W.Edge) :
   rcases F.seamEnds.symm (s, dir != decide (i = 0)) with ⟨v, k⟩ | w <;> rfl
 
 /-- Sheet `0` along a seam `s` starts at `seamTarget s` (opposite to `s`). -/
-theorem sideStart_inl_zero (s : F.Seam) :
-    F.sideStart (Sum.inl (s, 0)) = F.seamTarget s := by
-  simp
+theorem sideStart_inl_zero (s : F.Seam) : F.sideStart (Sum.inl (s, 0)) = F.seamTarget s := by simp
 
 /-- Sheet `0` along a seam `s` ends at `seamSource s` (opposite to `s`). -/
-theorem sideEnd_inl_zero (s : F.Seam) :
-    F.sideEnd (Sum.inl (s, 0)) = F.seamSource s := by
-  simp
+theorem sideEnd_inl_zero (s : F.Seam) : F.sideEnd (Sum.inl (s, 0)) = F.seamSource s := by simp
 
 /-- Sheets `1` and `2` along a seam `s` start at `seamSource s` (matching `s`). -/
 theorem sideStart_inl_of_ne_zero (s : F.Seam) {i : Fin 3} (hi : i ≠ 0) :
-    F.sideStart (Sum.inl (s, i)) = F.seamSource s := by
-  simp [hi]
+    F.sideStart (Sum.inl (s, i)) = F.seamSource s := by simp [hi]
 
 /-- Sheets `1` and `2` along a seam `s` end at `seamTarget s` (matching `s`). -/
 theorem sideEnd_inl_of_ne_zero (s : F.Seam) {i : Fin 3} (hi : i ≠ 0) :
-    F.sideEnd (Sum.inl (s, i)) = F.seamTarget s := by
-  simp [hi]
+    F.sideEnd (Sum.inl (s, i)) = F.seamTarget s := by simp [hi]
 
 @[simp] theorem sideBoundary_nextSide (x : F.Side) :
     F.sideBoundary (F.nextSide x) = F.sideBoundary x :=
@@ -648,16 +637,12 @@ def signedSegment : F.Side → (F.Seam ⊕ W.Edge) × Bool
 
 @[simp] theorem signedSegment_inl (s : F.Seam) (i : Fin 3) :
     F.signedSegment (Sum.inl (s, i)) = (Sum.inl s, decide (i ≠ 0)) := (rfl)
-
 theorem signedSegment_inl_zero (s : F.Seam) :
     F.signedSegment (Sum.inl (s, 0)) = (Sum.inl s, false) := (rfl)
-
 theorem signedSegment_inl_one (s : F.Seam) :
     F.signedSegment (Sum.inl (s, 1)) = (Sum.inl s, true) := (rfl)
-
 theorem signedSegment_inl_two (s : F.Seam) :
     F.signedSegment (Sum.inl (s, 2)) = (Sum.inl s, true) := (rfl)
-
 @[simp] theorem signedSegment_inr (e : W.Edge) :
     F.signedSegment (Sum.inr e) = (Sum.inr e, true) := (rfl)
 
@@ -1140,17 +1125,6 @@ def symm {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V}
       rcases z with ⟨c, i⟩ | c <;> simp [x]
     rw [ψ.boundary.apply_symm_apply, ← ψ.map_circleBoundary x, hxz])
 
-@[simp] theorem symm_vertex {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V}
-    (ψ : F.IsoOver φ G) : ψ.symm.vertex = ψ.vertex.symm := (rfl)
-@[simp] theorem symm_seam {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V}
-    (ψ : F.IsoOver φ G) : ψ.symm.seam = ψ.seam.symm := (rfl)
-@[simp] theorem symm_seamCircle {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V}
-    (ψ : F.IsoOver φ G) : ψ.symm.seamCircle = ψ.seamCircle.symm := (rfl)
-@[simp] theorem symm_facet {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V}
-    (ψ : F.IsoOver φ G) : ψ.symm.facet = ψ.facet.symm := (rfl)
-@[simp] theorem symm_boundary {φ : W.Iso V} {F : FoamWithBoundary W} {G : FoamWithBoundary V}
-    (ψ : F.IsoOver φ G) : ψ.symm.boundary = ψ.boundary.symm := (rfl)
-
 /-- Composition of prefoam isomorphisms over `φ₁.trans φ₂`. -/
 def trans {φ₁ : W.Iso V} {φ₂ : V.Iso U}
     {F : FoamWithBoundary W} {G : FoamWithBoundary V} {H : FoamWithBoundary U}
@@ -1162,34 +1136,32 @@ def trans {φ₁ : W.Iso V} {φ₂ : V.Iso U}
   boundary := ψ₁.boundary.trans ψ₂.boundary
   map_chirality v := by simp
   map_seamEnds x := by
-    have hsum : Sum.map (Prod.map (ψ₁.vertex.trans ψ₂.vertex) id) (φ₁.trans φ₂).vertex x =
-        Sum.map (Prod.map ψ₂.vertex id) φ₂.vertex
-          (Sum.map (Prod.map ψ₁.vertex id) φ₁.vertex x) := by
-      rcases x with ⟨v, k⟩ | w <;> simp
-    rw [hsum, ψ₂.map_seamEnds, ψ₁.map_seamEnds]
-    rcases F.seamEnds x with ⟨s, b⟩
-    rfl
+    have h := ψ₂.map_seamEnds (Sum.map (Prod.map ψ₁.vertex id) φ₁.vertex x)
+    rw [ψ₁.map_seamEnds] at h
+    rcases x with ⟨v, k⟩ | w <;> simpa [Prod.map] using h
   map_genus f := by simp
   map_boundaryFacet b := by simp
   map_sideBoundary x := by
-    have hsum : Sum.map (Prod.map (ψ₁.seam.trans ψ₂.seam) id) (φ₁.trans φ₂).edge x =
-        Sum.map (Prod.map ψ₂.seam id) φ₂.edge (Sum.map (Prod.map ψ₁.seam id) φ₁.edge x) := by
-      rcases x with ⟨s, i⟩ | e <;> simp
-    rw [hsum, ψ₂.map_sideBoundary, ψ₁.map_sideBoundary]
-    rfl
+    have h := ψ₂.map_sideBoundary (Sum.map (Prod.map ψ₁.seam id) φ₁.edge x)
+    rw [ψ₁.map_sideBoundary] at h
+    rcases x with ⟨s, i⟩ | e <;> simpa using h
   map_circleBoundary z := by
-    have hsum : Sum.map (Prod.map (ψ₁.seamCircle.trans ψ₂.seamCircle) id) (φ₁.trans φ₂).circle z =
-        Sum.map (Prod.map ψ₂.seamCircle id) φ₂.circle
-          (Sum.map (Prod.map ψ₁.seamCircle id) φ₁.circle z) := by
-      rcases z with ⟨c, i⟩ | c <;> simp
-    rw [hsum, ψ₂.map_circleBoundary, ψ₁.map_circleBoundary]
-    rfl
+    have h := ψ₂.map_circleBoundary (Sum.map (Prod.map ψ₁.seamCircle id) φ₁.circle z)
+    rw [ψ₁.map_circleBoundary] at h
+    rcases z with ⟨c, i⟩ | c <;> simpa using h
 
 section Groupoid
 
 variable {φ : W.Iso V} {φ₁ : W.Iso V} {φ₂ : V.Iso U} {φ₃ : U.Iso T}
   {F : FoamWithBoundary W} {G : FoamWithBoundary V}
   {H : FoamWithBoundary U} {K : FoamWithBoundary T}
+
+@[simp] theorem symm_vertex (ψ : F.IsoOver φ G) : ψ.symm.vertex = ψ.vertex.symm := (rfl)
+@[simp] theorem symm_seam (ψ : F.IsoOver φ G) : ψ.symm.seam = ψ.seam.symm := (rfl)
+@[simp] theorem symm_seamCircle (ψ : F.IsoOver φ G) :
+    ψ.symm.seamCircle = ψ.seamCircle.symm := (rfl)
+@[simp] theorem symm_facet (ψ : F.IsoOver φ G) : ψ.symm.facet = ψ.facet.symm := (rfl)
+@[simp] theorem symm_boundary (ψ : F.IsoOver φ G) : ψ.symm.boundary = ψ.boundary.symm := (rfl)
 
 @[simp] theorem trans_vertex (ψ₁ : F.IsoOver φ₁ G) (ψ₂ : G.IsoOver φ₂ H) :
     (ψ₁.trans ψ₂).vertex = ψ₁.vertex.trans ψ₂.vertex := (rfl)
@@ -1251,6 +1223,41 @@ theorem nextSide_eq_permCongr : G.nextSide = ψ.sideEquiv.permCongr F.nextSide :
 @[simp] theorem map_nextSide (x : F.Side) :
     G.nextSide (ψ.sideEquiv x) = ψ.sideEquiv (F.nextSide x) := by
   rw [ψ.nextSide_eq_permCongr, Equiv.permCongr_apply, Equiv.symm_apply_apply]
+
+/-- Every isomorphism commutes with `signedSegment`, relabelling seams and boundary edges while
+preserving orientation signs. -/
+@[simp] theorem map_signedSegment (x : F.Side) :
+    G.signedSegment (ψ.sideEquiv x) =
+      Prod.map (Sum.map ψ.seam φ.edge) id (F.signedSegment x) := by
+  rcases x with ⟨s, i⟩ | e <;> rfl
+
+/-- Every isomorphism transports cyclic side orbits via `sideEquiv`. -/
+@[simp] theorem map_sideCycle (x : F.Side) :
+    G.sideCycle (ψ.sideEquiv x) = (F.sideCycle x).map ψ.sideEquiv := by
+  have hsc : Function.Semiconj ψ.sideEquiv F.nextSide G.nextSide :=
+    fun y ↦ (ψ.map_nextSide y).symm
+  have hiter : ∀ n, G.nextSide^[n] (ψ.sideEquiv x) = ψ.sideEquiv (F.nextSide^[n] x) :=
+    fun n ↦ (hsc.iterate_right n x).symm
+  have hper : Function.minimalPeriod G.nextSide (ψ.sideEquiv x) =
+      Function.minimalPeriod F.nextSide x :=
+    Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
+      simp [Function.IsPeriodicPt, Function.IsFixedPt, hiter]
+  rw [sideCycle_def, sideCycle_def, Function.periodicOrbit_def, Function.periodicOrbit_def,
+    hper, Cycle.map_coe, List.map_map]
+  exact congrArg ((↑) : List G.Side → Cycle G.Side) (List.map_congr_left fun n _ ↦ hiter n)
+
+/-- Every isomorphism transports signed cyclic boundary words by relabelling seams and boundary
+edges while preserving orientation signs. -/
+@[simp] theorem map_sideWord (x : F.Side) :
+    G.sideWord (ψ.sideEquiv x) =
+      (F.sideWord x).map (Prod.map (Sum.map ψ.seam φ.edge) id) := by
+  rw [sideWord_def, sideWord_def, ψ.map_sideCycle]
+  induction F.sideCycle x with
+  | nil => rfl
+  | cons a l _ =>
+    simp only [Cycle.map_coe, List.map_map]
+    congr 1
+    exact List.map_congr_left fun y _ ↦ ψ.map_signedSegment y
 
 /-- Equivalence of boundary component fibres over `f` and `ψ.facet f`. -/
 def facetBoundaryEquiv (f : F.Facet) : F.FacetBoundary f ≃ G.FacetBoundary (ψ.facet f) :=
@@ -1394,14 +1401,10 @@ abbrev relabelOver {W : ClosedWeb.{u}} {V : ClosedWeb.{v}} (F : FoamWithBoundary
     F.sideBoundary_ne_circleBoundary _ _ (eB.injective h)
   boundary_surjective b := by
     rcases F.boundary_surjective (eB.symm b) with ⟨x, hx⟩ | ⟨z, hz⟩
-    · set eSide := (eS.prodCongr (Equiv.refl (Fin 3))).sumCongr φ.edge
-      refine Or.inl ⟨eSide x, ?_⟩
-      dsimp only [Function.comp_apply]
-      rw [eSide.symm_apply_apply, hx, eB.apply_symm_apply]
-    · set eCSide := (eSC.prodCongr (Equiv.refl (Fin 3))).sumCongr φ.circle
-      refine Or.inr ⟨eCSide z, ?_⟩
-      dsimp only [Function.comp_apply]
-      rw [eCSide.symm_apply_apply, hz, eB.apply_symm_apply]
+    · refine Or.inl ⟨((eS.prodCongr (Equiv.refl (Fin 3))).sumCongr φ.edge) x, ?_⟩
+      simp only [Function.comp_apply, Equiv.symm_apply_apply, hx, eB.apply_symm_apply]
+    · refine Or.inr ⟨((eSC.prodCongr (Equiv.refl (Fin 3))).sumCongr φ.circle) z, ?_⟩
+      simp only [Function.comp_apply, Equiv.symm_apply_apply, hz, eB.apply_symm_apply]
 
 /-- Canonical isomorphism from `F` to `F.relabelOver φ eV eS eSC eF eB` over `φ`. -/
 def relabelOverIso {W : ClosedWeb.{u}} {V : ClosedWeb.{v}} (F : FoamWithBoundary W) (φ : W.Iso V)
@@ -1449,16 +1452,14 @@ def mapBoundaryIso {W V : ClosedWeb.{u}} (F : FoamWithBoundary W) (φ : W.Iso V)
     F.IsoOver φ (F.mapBoundary φ) :=
   F.relabelOverIso φ (Equiv.refl _) (Equiv.refl _) (Equiv.refl _) (Equiv.refl _) (Equiv.refl _)
 
-@[simp] theorem mapBoundaryIso_vertex {W V : ClosedWeb.{u}} (F : FoamWithBoundary W)
-    (φ : W.Iso V) : (F.mapBoundaryIso φ).vertex = Equiv.refl _ := (rfl)
-@[simp] theorem mapBoundaryIso_seam {W V : ClosedWeb.{u}} (F : FoamWithBoundary W)
-    (φ : W.Iso V) : (F.mapBoundaryIso φ).seam = Equiv.refl _ := (rfl)
-@[simp] theorem mapBoundaryIso_seamCircle {W V : ClosedWeb.{u}} (F : FoamWithBoundary W)
-    (φ : W.Iso V) : (F.mapBoundaryIso φ).seamCircle = Equiv.refl _ := (rfl)
-@[simp] theorem mapBoundaryIso_facet {W V : ClosedWeb.{u}} (F : FoamWithBoundary W)
-    (φ : W.Iso V) : (F.mapBoundaryIso φ).facet = Equiv.refl _ := (rfl)
-@[simp] theorem mapBoundaryIso_boundary {W V : ClosedWeb.{u}} (F : FoamWithBoundary W)
-    (φ : W.Iso V) : (F.mapBoundaryIso φ).boundary = Equiv.refl _ := (rfl)
+section MapBoundarySimp
+variable {W V : ClosedWeb.{u}} (F : FoamWithBoundary W) (φ : W.Iso V)
+@[simp] theorem mapBoundaryIso_vertex : (F.mapBoundaryIso φ).vertex = Equiv.refl _ := (rfl)
+@[simp] theorem mapBoundaryIso_seam : (F.mapBoundaryIso φ).seam = Equiv.refl _ := (rfl)
+@[simp] theorem mapBoundaryIso_seamCircle : (F.mapBoundaryIso φ).seamCircle = Equiv.refl _ := (rfl)
+@[simp] theorem mapBoundaryIso_facet : (F.mapBoundaryIso φ).facet = Equiv.refl _ := (rfl)
+@[simp] theorem mapBoundaryIso_boundary : (F.mapBoundaryIso φ).boundary = Equiv.refl _ := (rfl)
+end MapBoundarySimp
 
 end Relabel
 

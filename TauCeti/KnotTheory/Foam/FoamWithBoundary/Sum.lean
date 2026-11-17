@@ -289,31 +289,17 @@ theorem nextSide_sum :
 
 @[simp] theorem numBoundaryComponents_sum_inl (f : F.Facet) :
     (F.sum G).numBoundaryComponents (Sum.inl f) = F.numBoundaryComponents f := by
-  rw [numBoundaryComponents_def, numBoundaryComponents_def]
-  refine Nat.card_congr
-    { toFun := fun b ↦ match b with
-        | ⟨Sum.inl b₁, hb⟩ => ⟨b₁, Sum.inl.inj hb⟩
-        | ⟨Sum.inr _, hb⟩ => nomatch hb
-      invFun := fun b ↦ ⟨Sum.inl b.1, congrArg Sum.inl b.2⟩
-      left_inv := by
-        rintro ⟨b₁ | b₂, hb⟩
-        · rfl
-        · cases hb
-      right_inv := fun _ ↦ rfl }
+  rw [numBoundaryComponents_def, numBoundaryComponents_def,
+    Nat.card_congr (Equiv.subtypeSum (p := fun b ↦ (F.sum G).boundaryFacet b = Sum.inl f)),
+    Nat.card_sum]
+  simp [FacetBoundary]
 
 @[simp] theorem numBoundaryComponents_sum_inr (g : G.Facet) :
     (F.sum G).numBoundaryComponents (Sum.inr g) = G.numBoundaryComponents g := by
-  rw [numBoundaryComponents_def, numBoundaryComponents_def]
-  refine Nat.card_congr
-    { toFun := fun b ↦ match b with
-        | ⟨Sum.inl _, hb⟩ => nomatch hb
-        | ⟨Sum.inr b₂, hb⟩ => ⟨b₂, Sum.inr.inj hb⟩
-      invFun := fun b ↦ ⟨Sum.inr b.1, congrArg Sum.inr b.2⟩
-      left_inv := by
-        rintro ⟨b₁ | b₂, hb⟩
-        · cases hb
-        · rfl
-      right_inv := fun _ ↦ rfl }
+  rw [numBoundaryComponents_def, numBoundaryComponents_def,
+    Nat.card_congr (Equiv.subtypeSum (p := fun b ↦ (F.sum G).boundaryFacet b = Sum.inr g)),
+    Nat.card_sum]
+  simp [FacetBoundary]
 
 @[simp] theorem facetEulerChar_sum_inl (f : F.Facet) :
     (F.sum G).facetEulerChar (Sum.inl f) = F.facetEulerChar f := by
