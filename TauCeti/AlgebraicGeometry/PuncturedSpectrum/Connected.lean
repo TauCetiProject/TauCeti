@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import Mathlib.AlgebraicGeometry.Restrict
 public import Mathlib.RingTheory.Depth.Basic
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
-import TauCeti.AlgebraicGeometry.Scheme.Connected
+import TauCeti.AlgebraicGeometry.Scheme.Connected.Basic
 
 /-!
 # Connectedness of the punctured spectrum
