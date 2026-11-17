@@ -104,21 +104,9 @@ private theorem diag_mem_centralizer_centralizer
   classical
   intro T hT
   -- the matrix entries of an operator commuting with the diagonal copy of `S` lie in `S'`
-  have hentry (i j : ι) : T.piLpEntry i j ∈ (S : Set (H →L[𝕜] H)).centralizer := by
-    intro s hs
-    have hsT := hT _ (StarSubalgebra.mem_map.mpr ⟨s, hs, rfl⟩)
-    ext h
-    have h' := congr_arg (fun w => w i) (DFunLike.congr_fun hsT (PiLp.single 2 j h))
-    simp only [mul_apply_eq_comp, PiLp.diagStarAlgHom_apply, PiLp.diagStarAlgHom_apply_single]
-      at h'
-    simpa [mul_apply_eq_comp] using h'
-  ext w i
-  simp only [mul_apply_eq_comp]
-  rw [ContinuousLinearMap.apply_eq_sum_piLpEntry, PiLp.diagStarAlgHom_apply,
-    ContinuousLinearMap.apply_eq_sum_piLpEntry, map_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [PiLp.diagStarAlgHom_apply]
-  simpa using DFunLike.congr_fun (hx _ (hentry i j)) (w j)
+  have hentry (i j : ι) : T.piLpEntry i j ∈ (S : Set (H →L[𝕜] H)).centralizer := fun s hs => by
+    simpa using congrArg (fun U => U.piLpEntry i j) (hT _ (StarSubalgebra.mem_map.mpr ⟨s, hs, rfl⟩))
+  exact ContinuousLinearMap.ext_piLpEntry fun i j => by simpa using hx _ (hentry i j)
 
 end Amplification
 
