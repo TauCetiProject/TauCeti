@@ -6,7 +6,6 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
-public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.NumberTheory.LSeries.EulerProduct
@@ -23,6 +22,8 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
 
 * `ArithmeticFunction.IsCompletelyMultiplicative`: the predicate.
 * `ArithmeticFunction.IsCompletelyMultiplicative.isMultiplicative`: it implies multiplicativity.
+* `ArithmeticFunction.IsCompletelyMultiplicative.eq_iff_eq_on_primes`: a completely
+  multiplicative function is determined by its values at primes.
 * `ArithmeticFunction.completelyMultiplicativeEquiv`: completely multiplicative arithmetic
   functions are the same as `ℕ →*₀ R`, compatibly with evaluation.
 * `ArithmeticFunction.IsCompletelyMultiplicative.pmul_mul`: pointwise multiplication by a
@@ -33,15 +34,9 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
   `ArithmeticFunction.IsCompletelyMultiplicative.LSeries_eulerProduct_tprod`: Euler products.
 * Instances: `ζ`, `pow k`, `n ↦ n ^ ν` for complex `ν`, the Liouville function and the
   arithmetic function of a Dirichlet character.
-
-The predicate and its closure properties are adapted from Arend Mellendijk's PNT+
-`CompletelyMultiplicative.lean` (relocated there from `IwaniecKowalskiCh1.lean` and
-`SelbergBounds.lean`) at revision e1ed50ef52b80922d0cf26293cdc74b84039b5d6, in
-https://github.com/TauCetiProject/PrimeNumberTheoremAnd, generalized from real coefficients to
-monoids with zero.
 -/
 
-@[expose] public section
+public section
 
 open Nat
 
@@ -60,6 +55,11 @@ variable [MonoidWithZero R]
 def IsCompletelyMultiplicative (f : ArithmeticFunction R) : Prop :=
   f 1 = 1 ∧ ∀ m n, f (m * n) = f m * f n
 
+/-- Unfolding the definition of complete multiplicativity. -/
+theorem isCompletelyMultiplicative_iff {f : ArithmeticFunction R} :
+    f.IsCompletelyMultiplicative ↔ f 1 = 1 ∧ ∀ m n, f (m * n) = f m * f n :=
+  Iff.rfl
+
 namespace IsCompletelyMultiplicative
 
 variable {f : ArithmeticFunction R}
@@ -68,6 +68,7 @@ variable {f : ArithmeticFunction R}
 theorem map_one (hf : f.IsCompletelyMultiplicative) : f 1 = 1 :=
   hf.1
 
+@[simp]
 theorem map_mul (hf : f.IsCompletelyMultiplicative) (m n : ℕ) : f (m * n) = f m * f n :=
   hf.2 m n
 
@@ -103,10 +104,19 @@ def toMonoidWithZeroHom (hf : f.IsCompletelyMultiplicative) : ℕ →*₀ R wher
 @[simp]
 theorem coe_toMonoidWithZeroHom (hf : f.IsCompletelyMultiplicative) :
     ⇑hf.toMonoidWithZeroHom = f :=
-  rfl
+  (rfl)
 
+@[simp]
 theorem map_pow (hf : f.IsCompletelyMultiplicative) (n k : ℕ) : f (n ^ k) = f n ^ k :=
   _root_.map_pow hf.toMonoidWithZeroHom n k
+
+/-- Two completely multiplicative functions are equal if and only if they agree at primes. -/
+theorem eq_iff_eq_on_primes {R : Type*} [CommMonoidWithZero R] {f g : ArithmeticFunction R}
+    (hf : f.IsCompletelyMultiplicative) (hg : g.IsCompletelyMultiplicative) :
+    f = g ↔ ∀ p, p.Prime → f p = g p := by
+  rw [IsMultiplicative.eq_iff_eq_on_prime_powers f hf.isMultiplicative g hg.isMultiplicative]
+  refine ⟨fun h p hp ↦ by simpa using h p 1 hp, fun h p i hp ↦ ?_⟩
+  rw [hf.map_pow, hg.map_pow, h p hp]
 
 end IsCompletelyMultiplicative
 
@@ -139,12 +149,12 @@ def completelyMultiplicativeEquiv :
 theorem completelyMultiplicativeEquiv_apply_apply
     (f : {f : ArithmeticFunction R // f.IsCompletelyMultiplicative}) (n : ℕ) :
     completelyMultiplicativeEquiv f n = f.1 n :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem completelyMultiplicativeEquiv_symm_apply_apply (g : ℕ →*₀ R) (n : ℕ) :
     (completelyMultiplicativeEquiv.symm g).1 n = g n :=
-  rfl
+  (rfl)
 
 /-- The constant function `ζ` (equal to `1` away from `0`) is completely multiplicative. -/
 theorem isCompletelyMultiplicative_zeta : IsCompletelyMultiplicative ζ :=
@@ -214,9 +224,8 @@ theorem mul_moebius_pmul [Ring R] {f : ArithmeticFunction R}
       (ζ * (μ : ArithmeticFunction R)) n * f n := by
     simp only [ArithmeticFunction.mul_apply, pmul_apply, Finset.sum_mul]
     refine Finset.sum_congr rfl fun x hx ↦ ?_
-    simp only [← (mem_divisorsAntidiagonal.mp hx).1, hf.map_mul, intCoe_apply, natCoe_apply,
-      zeta_apply_ne (left_ne_zero_of_mem_divisorsAntidiagonal hx), cast_one, one_mul]
-    rw [← mul_assoc, ← mul_assoc, (Int.cast_commute _ _).eq]
+    simp [← (mem_divisorsAntidiagonal.mp hx).1, hf.map_mul, (Int.cast_commute _ _).eq, mul_assoc,
+      left_ne_zero_of_mem_divisorsAntidiagonal hx]
   rw [key, coe_zeta_mul_coe_moebius, ArithmeticFunction.one_apply]
   split_ifs with h <;> simp [h, hf.map_one]
 
@@ -251,7 +260,7 @@ theorem LSeries_eulerProduct_hasProd (hf : f.IsCompletelyMultiplicative) {s : �
     HasProd (fun p : Primes ↦ (1 - f p * (p : ℂ) ^ (-s))⁻¹) (LSeries f s) := by
   simpa using TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence (c := 0) hf.map_one
     (fun _ _ _ ↦ hf.map_mul _ _) (fun p _ r ↦ by
-      rw [show r + 2 = r + 1 + 1 from rfl, pow_succ, hf.map_mul, mul_comm]; simp) hs
+      rw [pow_succ' _ (r + 1), hf.map_mul]; simp) hs
 
 /-- The Euler product `∏ₚ (1 - f p p⁻ˢ)⁻¹ = L(f, s)` of the L-series of a completely
 multiplicative function at a point of absolute convergence. -/
