@@ -46,6 +46,10 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   into a monoid commute exactly when their commutator lies in the kernel.
 * `MonoidHom.commutator_top_ker_comp_le_ker`: if `p` has central kernel, then `φ` kills the
   commutators of arbitrary elements with the kernel of `p ∘ φ`.
+* `MonoidHom.commutatorElement_eq_of_ker_le_center`: when `p` has central kernel, a commutator
+  `⁅a, b⁆` depends only on `p a` and `p b`.
+* `MonoidHom.commute_commutatorElement_of_ker_le_center`: when `p` has central kernel and `p g`
+  commutes with `p u` and `p v`, `g` commutes with `⁅u, v⁆`.
 * `MonoidHom.eq_of_comp_eq_of_ker_le_center`: two homomorphisms from a perfect group which agree
   modulo a central subgroup are equal.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
@@ -379,6 +383,32 @@ theorem _root_.MonoidHom.commutator_top_ker_comp_le_ker {E F : Type*} [Group E] 
     ⁅(⊤ : Subgroup F), (p.comp φ).ker⁆ ≤ φ.ker := by
   rw [commutator_le]
   exact fun f _ r hr ↦ φ.commutatorElement_mem_ker_iff.mpr (mem_center_iff.mp (hp hr) (φ f))
+
+/-- If `p : E →* M` has central kernel, then the commutator `⁅a, b⁆` in `E` depends only on the
+images `p a` and `p b`. -/
+theorem _root_.MonoidHom.commutatorElement_eq_of_ker_le_center {E M : Type*} [Group E] [Monoid M]
+    (p : E →* M) (hp : p.ker ≤ center E) {a₁ a₂ b₁ b₂ : E}
+    (ha : p a₁ = p a₂) (hb : p b₁ = p b₂) : ⁅a₁, b₁⁆ = ⁅a₂, b₂⁆ := by
+  have hza : a₁⁻¹ * a₂ ∈ center E := hp <| by
+    rw [MonoidHom.mem_ker, map_mul, ← ha, ← map_mul, inv_mul_cancel, map_one]
+  have hzb : b₁⁻¹ * b₂ ∈ center E := hp <| by
+    rw [MonoidHom.mem_ker, map_mul, ← hb, ← map_mul, inv_mul_cancel, map_one]
+  rw [← commutatorElement_mul_mul_of_mem_center (a := a₁) (c := b₁) hza hzb,
+    mul_inv_cancel_left, mul_inv_cancel_left]
+
+/-- If `p : E →* M` has central kernel and `p g` commutes with both `p u` and `p v`, then `g`
+commutes with the commutator `⁅u, v⁆` in `E`. -/
+theorem _root_.MonoidHom.commute_commutatorElement_of_ker_le_center {E M : Type*} [Group E]
+    [Monoid M] (p : E →* M) (hp : p.ker ≤ center E) {g u v : E}
+    (hu : Commute (p g) (p u)) (hv : Commute (p g) (p v)) : Commute g ⁅u, v⁆ := by
+  have hgu : p (g * u * g⁻¹) = p u := by
+    rw [map_mul, map_mul, hu.eq, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
+  have hgv : p (g * v * g⁻¹) = p v := by
+    rw [map_mul, map_mul, hv.eq, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
+  have hconj : g * ⁅u, v⁆ * g⁻¹ = ⁅u, v⁆ := by
+    rw [← MulAut.conj_apply, map_commutatorElement, MulAut.conj_apply, MulAut.conj_apply]
+    exact p.commutatorElement_eq_of_ker_le_center hp hgu hgv
+  exact mul_inv_eq_iff_eq_mul.mp hconj
 
 /-- **Two homomorphisms from a perfect group which agree modulo a central subgroup are equal.**
 Their pointwise quotient takes central values, so it is a homomorphism to an abelian group, and it
