@@ -15,13 +15,14 @@ public import TauCeti.Topology.Algebra.Group.Perm
 
 The product topology on relational configurations is compact Hausdorff, and relabelling by a
 permutation of the carrier is continuous. Restriction along a vertex map is continuous, and
-jointly continuous in the vertex map when the target carrier is discrete. Hence, for a discrete
-carrier, the *logic action* of its permutation group, with the topology of pointwise convergence,
-is jointly continuous, for every language, so stabilizers of configurations are closed subgroups
-(`TauCeti.isClosed_stabilizer`). Specifying an atom's truth value gives a clopen, measurable
-cylinder. On countable carriers in countable relational vocabularies the topology is Polish and
-its Borel σ-algebra is the existing product σ-algebra. The same construction handles finite and
-empty carriers.
+jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
+truth value gives a clopen, measurable cylinder. On countable carriers in countable relational
+vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
+The same construction handles finite and empty carriers.
+
+For a discrete carrier, the *logic action* of its permutation group, with the topology of
+pointwise convergence, is jointly continuous, for every language, so stabilizers of
+configurations are closed subgroups (`TauCeti.isClosed_stabilizer`).
 
 These are the usual spaces of structures used for the logic action; see Gao,
 *Invariant Descriptive Set Theory*. The measurable coordinates and encoding of structures are
