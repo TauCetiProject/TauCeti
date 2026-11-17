@@ -173,6 +173,22 @@ theorem degree_eq_zero_iff {k : Fin Ω.numItems} : Ω.degree k = 0 ↔ Ω.IsFree
   simp only [degree, Nat.add_eq_zero_iff, card_eq_zero, filter_eq_empty_iff, mem_univ,
     true_implies, isFreeItem_iff, isConstantItem_iff, not_exists, not_and]
 
+variable {Ω} in
+/-- An item of degree one of a variable base belongs to no other variable base. -/
+theorem notMem_baseItems_of_degree_eq_one {μ ν : Fin Ω.numBases} {k : Fin Ω.numItems}
+    (hk : k ∈ Ω.baseItems μ) (hdeg : Ω.degree k = 1) (hν : ν ≠ μ) : k ∉ Ω.baseItems ν := by
+  have h₁ : #{ν | k ∈ Ω.baseItems ν} ≤ 1 := by rw [degree_def] at hdeg; omega
+  exact fun hkν => hν (card_le_one.1 h₁ ν (by simpa using hkν) μ (by simpa using hk))
+
+variable {Ω} in
+/-- An item of degree one of a variable base is not constant. -/
+theorem not_isConstantItem_of_degree_eq_one {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
+    (hk : k ∈ Ω.baseItems μ) (hdeg : Ω.degree k = 1) : ¬ Ω.IsConstantItem k := by
+  have hpos : 0 < #{ν | k ∈ Ω.baseItems ν} := card_pos.2 ⟨μ, by simpa using hk⟩
+  have h₀ : #{b ∈ Ω.constBases | b.1 = k} = 0 := by rw [degree_def] at hdeg; omega
+  rintro ⟨b, hb, rfl⟩
+  exact filter_eq_empty_iff.1 (card_eq_zero.1 h₀) hb rfl
+
 /-! ### Open and closed boundaries -/
 
 /-- A boundary `i` crosses (or intersects) the variable base `μ` when `α(μ) < i < β(μ)`. A constant
