@@ -293,21 +293,16 @@ theorem isNoetherianRing_localization_away_of_surjective {A : Type*} [CommRing A
     {n : ℕ} {π : restrictedMvPowerSeriesCompletion n O →ₐ[O] A} (hπ : Function.Surjective π) :
     IsNoetherianRing (Localization.Away (algebraMap O A ϖ)) := by
   have := isNoetherianRing_localization_away_restrictedMvPowerSeriesCompletion ϖ n
-  set ϖP := algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ
-  set ϖA := algebraMap O A ϖ
-  have hsub : Submonoid.powers ϖP ≤ (Submonoid.powers ϖA).comap π.toRingHom :=
-    fun _ ⟨m, hm⟩ ↦ ⟨m, by rw [← hm, map_pow, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, π.commutes]⟩
-  let φ : Localization.Away ϖP →+* Localization.Away ϖA :=
-    IsLocalization.map (Localization.Away ϖA) π.toRingHom hsub
-  refine isNoetherianRing_of_surjective _ _ φ fun z ↦ ?_
-  obtain ⟨m, a, hma⟩ := IsLocalization.Away.surj ϖA z
-  obtain ⟨p, rfl⟩ := hπ a
-  let s : Submonoid.powers ϖP := ⟨ϖP ^ m, m, rfl⟩
-  refine ⟨IsLocalization.mk' (Localization.Away ϖP) p s, ?_⟩
-  dsimp only [φ]
-  rw [IsLocalization.map_mk', IsLocalization.mk'_eq_iff_eq_mul]
-  simpa only [s, ϖP, ϖA, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_pow, π.commutes]
-    using hma.symm
+  have : IsLocalization.Away (π (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ))
+      (Localization.Away (algebraMap O A ϖ)) := by
+    rw [π.commutes ϖ]
+    infer_instance
+  exact isNoetherianRing_of_surjective _ _
+    (IsLocalization.Away.mapₐ
+      (Localization.Away (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ))
+      (Localization.Away (algebraMap O A ϖ)) π
+      (algebraMap O (restrictedMvPowerSeriesCompletion n O) ϖ)).toRingHom
+    (IsLocalization.Away.mapₐ_surjective_of_surjective _ hπ)
 
 include ϖ in
 /-- If `A` is strictly topologically of finite type over a complete rank-one valuation base `O`,
