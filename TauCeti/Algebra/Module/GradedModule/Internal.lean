@@ -578,6 +578,19 @@ theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule
   have := koszulTwist_mem_piece _ hx' q
   rwa [InternalGrading.ofDecomposition_piece] at this
 
+/-- The Koszul twist is homogeneous of degree zero. -/
+theorem InternalGrading.isHomogeneous_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) :
+    LinearMap.IsHomogeneous (G.koszulTwist q) G.piece G.piece 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    simpa only [add_zero] using G.koszulTwist_mem_piece hx q
+
+/-- The Koszul twist of a decomposition `ℳ` is homogeneous of degree zero. -/
+theorem InternalGrading.isHomogeneous_koszulTwist_ofDecomposition (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] (q : ℤ) :
+    LinearMap.IsHomogeneous ((InternalGrading.ofDecomposition ℳ).koszulTwist q) ℳ ℳ 0 := by
+  simpa only [InternalGrading.ofDecomposition_piece] using
+    (InternalGrading.ofDecomposition ℳ).isHomogeneous_koszulTwist q
+
 /-- On an element of degree `e` of a decomposition `ℳ`, the Koszul twist of parameter `q` of the
 grading of `ℳ` acts as the scalar `(-1)^(q * e)`. -/
 theorem InternalGrading.koszulTwist_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
@@ -632,6 +645,13 @@ theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M ℤ) (q :
     koszulTwist G q ∘ₗ koszulTwist G q = LinearMap.id := by
   rw [koszulTwist_comp, ← two_mul, koszulTwist_two_mul]
 
+/-- Postcomposing a linear map twice with the same Koszul twist leaves it unchanged. -/
+@[simp]
+theorem InternalGrading.koszulTwist_comp_koszulTwist_comp {N : Type w}
+    [AddCommMonoid N] [Module R N] (G : InternalGrading R M ℤ) (q : ℤ) (f : N →ₗ[R] M) :
+    koszulTwist G q ∘ₗ koszulTwist G q ∘ₗ f = f := by
+  rw [← LinearMap.comp_assoc, koszulTwist_comp_self, LinearMap.id_comp]
+
 /-- The Koszul twist of any parameter is an involution, pointwise. -/
 @[simp]
 theorem InternalGrading.koszulTwist_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) (x : M) :
@@ -647,6 +667,17 @@ theorem InternalGrading.koszulTwist_neg (G : InternalGrading R M ℤ) (q : ℤ) 
   rw [← LinearMap.comp_id (koszulTwist G (-q)), ← koszulTwist_comp_self G q,
     ← LinearMap.comp_assoc, koszulTwist_comp, neg_add_cancel, koszulTwist_zero,
     LinearMap.id_comp]
+
+/-- An additive map that vanishes on every nonzero homogeneous piece is invariant under any Koszul
+twist. -/
+theorem InternalGrading.map_koszulTwist_of_map_eq_zero {N : Type w} [AddCommMonoid N]
+    (G : InternalGrading R M ℤ) (f : M →+ N)
+    (hf : ∀ p : ℤ, ∀ x : M, x ∈ G.piece p → p ≠ 0 → f x = 0) (q : ℤ) (x : M) :
+    f (G.koszulTwist q x) = f x := by
+  have h0 := (G.isHomogeneous_koszulTwist q).map_decompose 0 x
+  rw [add_zero] at h0
+  rw [G.map_eq_map_decompose f hf, G.map_eq_map_decompose f hf x, ← h0,
+    G.koszulTwist_apply_of_mem_zero (DirectSum.decompose G.piece x 0).2 q]
 
 namespace LinearMap.IsHomogeneous
 
