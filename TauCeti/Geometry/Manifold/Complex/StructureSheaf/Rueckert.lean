@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Polynomial.Rueckert
 
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Geometry.Manifold.Algebra.SMul
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
@@ -41,9 +40,9 @@ namely the polynomials over `𝒪_{E, x₀}` distinguished at the maximal ideal 
 As an immediate consequence before inducting on dimension, a Weierstrass polynomial generates a
 prime ideal (or is a prime element) in `𝒪_{E × ℂ, (x₀, w₀)}` if and only if it does so in
 `(𝒪_{E, x₀})[X]`. Combining `evalEquiv` in dimension `0`, `isRueckert_evalVertical` on
-`(Fin n → ℂ) × ℂ`, and chart pullback yields `stalk_induction`, which transfers any ring-theoretic
-property of `ℂ` stable under ring equivalences and Rückert extensions to the holomorphic stalk at
-any point of a finite-dimensional complex manifold without boundary.
+`(Fin n → ℂ) × ℂ`, and `exists_ringEquiv_stalk_modelSpace` yields `stalk_induction`, which
+transfers any ring-theoretic property of `ℂ` stable under ring equivalences and Rückert extensions
+to the holomorphic stalk at any point of a finite-dimensional complex manifold without boundary.
 
 ## Main results
 
@@ -173,7 +172,6 @@ theorem stalk_induction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
       φ.IsRueckert W → P A → P B)
     (x : X) :
     P ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   have hmodel (n : ℕ) : ∀ y : Fin n → ℂ,
       P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk y) := by
     induction n with
@@ -185,9 +183,9 @@ theorem stalk_induction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
         (E := Fin (n + 1) → ℂ) (F := (Fin n → ℂ) × ℂ) (by simp)).toContDiffDiffeomorph ω
       exact hequiv (e.holomorphicStalkEquiv y)
         (hrueckert (isRueckert_evalVertical (e y).1 (e y).2) (ih (e y).1))
-  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) :=
-    ContinuousLinearEquiv.ofFinrankEq (by simp)
-  exact hequiv (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e))
-    (hmodel (Module.finrank ℂ E) ((e ∘ extChartAt I x) x))
+  obtain ⟨V, _, _, _, v, hV, ⟨φ⟩⟩ := exists_ringEquiv_stalk_modelSpace (I := I) x
+  let e := (ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℂ)
+    (E := V) (F := Fin (Module.finrank ℂ E) → ℂ) (by simp [hV])).toContDiffDiffeomorph ω
+  exact hequiv ((e.holomorphicStalkEquiv v).trans φ) (hmodel (Module.finrank ℂ E) (e v))
 
 end TauCeti.holomorphicStructureSheaf
