@@ -17,7 +17,7 @@ import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables

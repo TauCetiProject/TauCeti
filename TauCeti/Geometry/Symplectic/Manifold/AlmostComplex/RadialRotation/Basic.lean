@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Transport
 public import TauCeti.Analysis.InnerProductSpace.PlaneRotation
-public import TauCeti.Analysis.InnerProductSpace.NormPow
+public import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 public import TauCeti.Analysis.SpecialFunctions.Pow.Regularity
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 

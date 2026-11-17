@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
-public import TauCeti.Analysis.InnerProductSpace.NormPow
+public import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Conco
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
