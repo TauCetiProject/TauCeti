@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.Geometry.Manifold.DeRham.Circle
 public import TauCeti.Geometry.Manifold.DeRham.CompactlySupportedMayerVietoris
 public import TauCeti.Geometry.Manifold.DeRham.MayerVietoris
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Poincare.Pairing
 
 import Mathlib.Algebra.FiveLemma
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 import TauCeti.Geometry.Manifold.DeRham.DisjointUnion
 import TauCeti.Geometry.Manifold.DeRham.Euclidean
@@ -34,9 +32,10 @@ On an oriented boundaryless Hausdorff σ-compact finite-dimensional smooth manif
 `H^k_dR(M) ≃ₗ[ℝ] Module.Dual ℝ (H^l_c(M))` (`TauCeti.bijective_poincarePairing`,
 `TauCeti.poincareDuality`), proved by `TauCeti.mayerVietoris_induction` from Euclidean open boxes,
 Mayer–Vietoris connecting maps (`TauCeti.poincarePairing_mayerVietorisδ`), and disjoint open unions
-(`TauCeti.bijective_poincarePairing_iSup`). Corollaries include nondegeneracy, finite-dimensionality
-on compact manifolds (including nonorientable ones via `Manifold.OrientationCover`), Betti-number
-symmetry (`TauCeti.finrank_deRhamCohomology_eq_of_orientation`), and evaluations on `S¹` and `ℝ`.
+(`TauCeti.bijective_poincarePairing_iSup`). Corollaries include nondegeneracy, compact-manifold
+duality `TauCeti.poincareDualityCompact`, finite-dimensionality on compact manifolds (including
+nonorientable ones via `Manifold.OrientationCover`), and Betti-number symmetry
+(`TauCeti.finrank_deRhamCohomology_eq_of_orientation`).
 
 ## References
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 17 and Problems 18-6 to 18-8.
@@ -85,27 +84,6 @@ private theorem integralWedgeCompactlySupported_apply {a b : ℕ}
     (η : compactlySupportedForms I M b) :
     integralWedgeCompactlySupported o φ η = integralTopForm o (RoughForm.wedge φ.1 η.1.1) := by
   rw [integralWedgeCompactlySupported, LinearMap.mk₂_apply, SmoothForm.coe_wedge]
-
-omit [BoundarylessManifold I M] [T2Space M] in
-private theorem integralWedgeCompactlySupported_neg {a b : ℕ}
-    (o : Manifold.Orientation I M (Fin (a + b))) (φ : SmoothForm I M ℝ a)
-    (η : compactlySupportedForms I M b) :
-    integralWedgeCompactlySupported o φ (-η) = -integralWedgeCompactlySupported o φ η := by
-  have h : -η = (-1 : ℝ) • η := Subtype.ext <| Subtype.ext <| by
-    rw [Submodule.coe_neg, Submodule.coe_neg, Submodule.coe_smul, Submodule.coe_smul,
-      neg_smul, one_smul]
-  rw [h, (integralWedgeCompactlySupported o φ).map_smul, smul_eq_mul, neg_one_mul]
-
-omit [BoundarylessManifold I M] [T2Space M] in
-private theorem integralWedgeCompactlySupported_sub {a b : ℕ}
-    (o : Manifold.Orientation I M (Fin (a + b))) (φ₁ φ₂ : SmoothForm I M ℝ a)
-    (η : compactlySupportedForms I M b) :
-    integralWedgeCompactlySupported o (φ₁ - φ₂) η =
-      integralWedgeCompactlySupported o φ₁ η - integralWedgeCompactlySupported o φ₂ η := by
-  have h : φ₁ - φ₂ = φ₁ + (-1 : ℝ) • φ₂ := Subtype.ext <| by
-    rw [Submodule.coe_sub, Submodule.coe_add, Submodule.coe_smul, sub_eq_add_neg, neg_smul,
-      one_smul]
-  rw [h, LinearMap.map_add₂, LinearMap.map_smul₂, smul_eq_mul, neg_one_mul, ← sub_eq_add_neg]
 
 omit [BoundarylessManifold I M] in
 private theorem integralWedgeCompactlySupported_extendByZero {U W : Opens M} {a b : ℕ}
@@ -229,10 +207,11 @@ private theorem integralTopForm_mayerVietoris_step {j l : ℕ}
   have hdδ : compactlySupportedForms.mextDerivₗ I V l δ =
       -compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (l + 1) τ' :=
     Subtype.ext <| by rw [Submodule.coe_neg, ← heqV, hτV, neg_neg]
-  rw [hdγ, hdδ, integralWedgeCompactlySupported_neg,
+  rw [hdγ, hdδ,
+    map_neg (integralWedgeCompactlySupported ((o.reindex (finCongr hjl)).restrict V) β),
     integralWedgeCompactlySupported_extendByZero (o.reindex (finCongr hjl)) inf_le_left α τ',
     integralWedgeCompactlySupported_extendByZero (o.reindex (finCongr hjl)) inf_le_right β τ',
-    ← mul_add, ← sub_eq_add_neg, ← integralWedgeCompactlySupported_sub, hαβ,
+    ← mul_add, ← sub_eq_add_neg, ← LinearMap.map_sub₂, hαβ,
     integralWedgeCompactlySupported_apply]
 
 /-- **Compatibility of the Poincaré pairing with the Mayer–Vietoris connecting maps.** -/
@@ -319,6 +298,110 @@ private theorem comm_poincarePairing_prod_inf (U V : Opens M)
   LinearMap.ext fun ⟨_, _⟩ ↦ LinearMap.ext fun _ ↦ by
     simp [prodPoincarePairing, poincarePairing_extendByZero]
 
+/-- Degree-zero step of the Mayer–Vietoris union argument for Poincaré duality on `U ⊔ V`. -/
+private theorem bijective_poincarePairing_sup_zero {b : ℕ}
+    (o : Manifold.Orientation I M (Fin (0 + b))) (U V : Opens M)
+    [SigmaCompactSpace U] [SigmaCompactSpace V]
+    [SigmaCompactSpace (U ⊓ V : Opens M)] [SigmaCompactSpace (U ⊔ V : Opens M)]
+    (hU : Bijective (poincarePairing I U (o.restrict U)))
+    (hV : Bijective (poincarePairing I V (o.restrict V)))
+    (hUV : Injective (poincarePairing I (U ⊓ V : Opens M) (o.restrict (U ⊓ V)))) :
+    Bijective (poincarePairing I (U ⊔ V : Opens M) (o.restrict (U ⊔ V))) := by
+  -- Above the manifold dimension `b = dim M`, `H_c^{b+1}(U ⊓ V) = 0`, so extension by zero
+  -- `H_c^b(U) × H_c^b(V) → H_c^b(U ⊔ V)` is surjective and its dual map is injective.
+  have hl : Module.finrank ℝ E < b + 1 := by
+    have hcard := o.card_eq; rw [Fintype.card_fin] at hcard; omega
+  have := subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt I (U ⊓ V : Opens M) hl
+  have hsurj : Surjective
+      ((compactlySupportedDeRhamCohomology.extendByZero (I := I)
+          (le_sup_left : U ≤ U ⊔ V) b).coprod
+        (compactlySupportedDeRhamCohomology.extendByZero (I := I)
+          (le_sup_right : V ≤ U ⊔ V) b)) := fun y ↦
+    (compactlySupportedDeRhamCohomology.exact_mayerVietoris₃ U V b y).mp (Subsingleton.elim _ 0)
+  -- Apply the left-exact three-term lemma to:
+  --   0 ─▶ H⁰(U ⊔ V) ──▶ H⁰(U) × H⁰(V) ──────▶ H⁰(U ⊓ V)
+  --           │                 │                   │
+  --        P_{U ⊔ V}         P_{U, V}            P_{U ⊓ V}
+  --           ▼                 ▼                   ▼
+  --   0 ─▶ H_c^b(U ⊔ V)* ─▶ (H_c^b(U) × H_c^b(V))* ─▶ H_c^b(U ⊓ V)*
+  exact LinearMap.bijective_of_bijective_of_injective_of_left_exact _ _ _ _
+    (poincarePairing I (U ⊔ V : Opens M) (o.restrict (U ⊔ V))) (prodPoincarePairing U V o)
+    (poincarePairing I (U ⊓ V : Opens M) (o.restrict (U ⊓ V)))
+    (comm_poincarePairing_sup_prod U V o) (comm_poincarePairing_prod_inf U V o)
+    (deRhamCohomology.exact_mayerVietoris₂ U V 0)
+    (LinearMap.exact_dualMap_iff.mpr
+      (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
+    (bijective_prodPoincarePairing U V o hU hV) hUV
+    (deRhamCohomology.injective_mayerVietoris_zero U V)
+    (LinearMap.dualMap_injective_of_surjective hsurj)
+
+/-- Positive-degree step of the Mayer–Vietoris union argument for Poincaré duality on `U ⊔ V`,
+applying the five lemma to the signed pairing diagram connecting degrees `(j, b + 1)` and
+`(j + 1, b)`. -/
+private theorem bijective_poincarePairing_sup_succ {j b : ℕ}
+    (hjl : (j + 1) + b = j + (b + 1)) (o : Manifold.Orientation I M (Fin ((j + 1) + b)))
+    (U V : Opens M) [SigmaCompactSpace U] [SigmaCompactSpace V]
+    [SigmaCompactSpace (U ⊓ V : Opens M)] [SigmaCompactSpace (U ⊔ V : Opens M)]
+    (hU' : Bijective (poincarePairing I U ((o.reindex (finCongr hjl)).restrict U)))
+    (hV' : Bijective (poincarePairing I V ((o.reindex (finCongr hjl)).restrict V)))
+    (hUV' : Bijective (poincarePairing I (U ⊓ V : Opens M)
+      ((o.reindex (finCongr hjl)).restrict (U ⊓ V))))
+    (hU : Bijective (poincarePairing I U (o.restrict U)))
+    (hV : Bijective (poincarePairing I V (o.restrict V)))
+    (hUV : Injective (poincarePairing I (U ⊓ V : Opens M) (o.restrict (U ⊓ V)))) :
+    Bijective (poincarePairing I (U ⊔ V : Opens M) (o.restrict (U ⊔ V))) := by
+  let o' := o.reindex (finCongr hjl)
+  -- `poincarePairing_mayerVietorisδ` satisfies `P_{U ⊔ V} (δ x) y = s * P_{U ⊓ V} x (δ_c y)`
+  -- with the unit sign factor `s = (-1)^(j + 1)`. Multiplying the first two vertical pairings
+  -- (at degree `(j, b + 1)`) by `s` makes all four squares of the five-term diagram commute
+  -- strictly. Writing `(H_c^q)₂ := H_c^q(U) × H_c^q(V)`, the diagram is:
+  --
+  --   H^j(U)×H^j(V) ─▶ H^j(U⊓V) ─δ─▶ H^{j+1}(U⊔V) ─▶ H^{j+1}(U)×H^{j+1}(V) ─▶ H^{j+1}(U⊓V)
+  --         │             │               │                    │                    │
+  --     s•P_{U,V}     s•P_{U⊓V}        P_{U⊔V}              P_{U,V}              P_{U⊓V}
+  --         ▼             ▼               ▼                    ▼                    ▼
+  --   (H_c^{b+1})₂* ─▶ H_c^{b+1}(U⊓V)* ─δ_c*─▶ H_c^b(U⊔V)* ─▶ (H_c^b)₂* ─▶ H_c^b(U⊓V)*
+  let s : ℝ := (-1 : ℝ) ^ (j + 1)
+  have hs : IsUnit s := isUnit_one.neg.pow (j + 1)
+  have hsmul {A B : Type _} [AddCommMonoid A] [Module ℝ A] [AddCommMonoid B] [Module ℝ B]
+      {f : A →ₗ[ℝ] B} (hf : Bijective f) : Bijective (s • f) := by
+    have heq : ⇑(s • f) = (s • ·) ∘ ⇑f := funext (LinearMap.smul_apply s f)
+    rw [heq]
+    exact hs.smul_bijective.comp hf
+  have hc₁ : ((compactlySupportedDeRhamCohomology.extendByZero (I := I)
+        (inf_le_left : U ⊓ V ≤ U) (b + 1)).prod
+        (-compactlySupportedDeRhamCohomology.extendByZero (I := I)
+          (inf_le_right : U ⊓ V ≤ V) (b + 1))).dualMap.comp
+      (s • prodPoincarePairing U V o') =
+      (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))).comp
+        ((deRhamCohomology.map (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
+            (contMDiff_inclusion _) j).coprod
+          (-deRhamCohomology.map (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
+            (contMDiff_inclusion _) j)) := by
+    rw [LinearMap.comp_smul, LinearMap.smul_comp, comm_poincarePairing_prod_inf U V o']
+  have hc₂ : (compactlySupportedDeRhamCohomology.mayerVietorisδ I U V b).dualMap.comp
+      (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) =
+      (poincarePairing I (U ⊔ V : Opens M) (o.restrict (U ⊔ V))).comp
+        (deRhamCohomology.mayerVietorisδ I U V j) :=
+    LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
+      simpa only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearMap.smul_apply,
+        smul_eq_mul, s, o'] using (poincarePairing_mayerVietorisδ hjl o U V x y).symm
+  exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective _ _ _ _ _ _ _ _
+    (s • prodPoincarePairing U V o') (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict _))
+    (poincarePairing I (U ⊔ V : Opens M) (o.restrict (U ⊔ V))) (prodPoincarePairing U V o)
+    (poincarePairing I (U ⊓ V : Opens M) (o.restrict (U ⊓ V)))
+    hc₁ hc₂ (comm_poincarePairing_sup_prod U V o) (comm_poincarePairing_prod_inf U V o)
+    (deRhamCohomology.exact_mayerVietoris₃ U V j) (deRhamCohomology.exact_mayerVietoris₁ U V j)
+    (deRhamCohomology.exact_mayerVietoris₂ U V (j + 1))
+    (LinearMap.exact_dualMap_iff.mpr
+      (compactlySupportedDeRhamCohomology.exact_mayerVietoris₁ U V b))
+    (LinearMap.exact_dualMap_iff.mpr
+      (compactlySupportedDeRhamCohomology.exact_mayerVietoris₃ U V b))
+    (LinearMap.exact_dualMap_iff.mpr
+      (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
+    (hsmul (bijective_prodPoincarePairing U V o' hU' hV')).2 (hsmul hUV')
+    (bijective_prodPoincarePairing U V o hU hV) hUV
+
 private theorem bijective_poincarePairing_sup {n : ℕ} (o : Manifold.Orientation I M (Fin n))
     (U V : Opens M) [SigmaCompactSpace U] [SigmaCompactSpace V]
     [SigmaCompactSpace (U ⊓ V : Opens M)] [SigmaCompactSpace (U ⊔ V : Opens M)]
@@ -333,82 +416,20 @@ private theorem bijective_poincarePairing_sup {n : ℕ} (o : Manifold.Orientatio
       Bijective (poincarePairing I (U ⊔ V : Opens M)
         ((o.reindex (finCongr hab.symm)).restrict (U ⊔ V))) := by
   intro a b hab
-  let o₁ := o.reindex (finCongr hab.symm)
   cases a with
   | zero =>
-    have hl : Module.finrank ℝ E < b + 1 := by
-      have hcard := o.card_eq; rw [Fintype.card_fin] at hcard; omega
-    have := subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt I (U ⊓ V : Opens M) hl
-    have hsurj : Surjective
-        ((compactlySupportedDeRhamCohomology.extendByZero (I := I)
-            (le_sup_left : U ≤ U ⊔ V) b).coprod
-          (compactlySupportedDeRhamCohomology.extendByZero (I := I)
-            (le_sup_right : V ≤ U ⊔ V) b)) := fun y ↦
-      (compactlySupportedDeRhamCohomology.exact_mayerVietoris₃ U V b y).mp (Subsingleton.elim _ 0)
-    exact LinearMap.bijective_of_bijective_of_injective_of_left_exact _ _ _ _
-      (poincarePairing I (U ⊔ V : Opens M) (o₁.restrict (U ⊔ V))) (prodPoincarePairing U V o₁)
-      (poincarePairing I (U ⊓ V : Opens M) (o₁.restrict (U ⊓ V)))
-      (comm_poincarePairing_sup_prod U V o₁) (comm_poincarePairing_prod_inf U V o₁)
-      (deRhamCohomology.exact_mayerVietoris₂ U V 0)
-      (LinearMap.exact_dualMap_iff.mpr
-        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
-      (bijective_prodPoincarePairing U V o₁ (hU 0 b hab) (hV 0 b hab)) (hUV 0 b hab).1
-      (deRhamCohomology.injective_mayerVietoris_zero U V)
-      (LinearMap.dualMap_injective_of_surjective hsurj)
+    exact bijective_poincarePairing_sup_zero (o.reindex (finCongr hab.symm)) U V
+      (hU 0 b hab) (hV 0 b hab) (hUV 0 b hab).1
   | succ j =>
     have hjb : j + (b + 1) = n := by omega
     have hjl : (j + 1) + b = j + (b + 1) := by omega
-    let o' := o₁.reindex (finCongr hjl)
-    have hre : o' = o.reindex (finCongr hjb.symm) :=
+    have hre : (o.reindex (finCongr hab.symm)).reindex (finCongr hjl) =
+        o.reindex (finCongr hjb.symm) :=
       Manifold.Orientation.reindex_finCongr_reindex_finCongr _ _ o
-    let s : ℝ := (-1 : ℝ) ^ (j + 1)
-    have hs : IsUnit s := isUnit_one.neg.pow (j + 1)
-    have hbij₁ : Bijective (s • prodPoincarePairing U V o') := by
-      have heq : ⇑(s • prodPoincarePairing U V o') =
-          (s • ·) ∘ ⇑(prodPoincarePairing U V o') := funext fun x ↦ LinearMap.smul_apply s _ x
-      rw [heq]
-      exact hs.smul_bijective.comp
-        (bijective_prodPoincarePairing U V o' (hre ▸ hU j (b + 1) hjb) (hre ▸ hV j (b + 1) hjb))
-    have hbij₂ : Bijective (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) := by
-      have heq : ⇑(s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) =
-          (s • ·) ∘ ⇑(poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) :=
-        funext fun x ↦ LinearMap.smul_apply s _ x
-      rw [heq]
-      exact hs.smul_bijective.comp (hre ▸ hUV j (b + 1) hjb)
-    have hc₁ : ((compactlySupportedDeRhamCohomology.extendByZero (I := I)
-          (inf_le_left : U ⊓ V ≤ U) (b + 1)).prod
-          (-compactlySupportedDeRhamCohomology.extendByZero (I := I)
-            (inf_le_right : U ⊓ V ≤ V) (b + 1))).dualMap.comp
-        (s • prodPoincarePairing U V o') =
-        (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))).comp
-          ((deRhamCohomology.map (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
-              (contMDiff_inclusion _) j).coprod
-            (-deRhamCohomology.map (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
-              (contMDiff_inclusion _) j)) := by
-      rw [LinearMap.comp_smul, LinearMap.smul_comp, comm_poincarePairing_prod_inf U V o']
-    have hc₂ : (compactlySupportedDeRhamCohomology.mayerVietorisδ I U V b).dualMap.comp
-        (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) =
-        (poincarePairing I (U ⊔ V : Opens M) (o₁.restrict (U ⊔ V))).comp
-          (deRhamCohomology.mayerVietorisδ I U V j) :=
-      LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
-        simpa only [LinearMap.comp_apply, LinearMap.dualMap_apply, LinearMap.smul_apply,
-          smul_eq_mul, s, o'] using (poincarePairing_mayerVietorisδ hjl o₁ U V x y).symm
-    exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective _ _ _ _ _ _ _ _
-      (s • prodPoincarePairing U V o') (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict _))
-      (poincarePairing I (U ⊔ V : Opens M) (o₁.restrict (U ⊔ V))) (prodPoincarePairing U V o₁)
-      (poincarePairing I (U ⊓ V : Opens M) (o₁.restrict (U ⊓ V)))
-      hc₁ hc₂ (comm_poincarePairing_sup_prod U V o₁) (comm_poincarePairing_prod_inf U V o₁)
-      (deRhamCohomology.exact_mayerVietoris₃ U V j) (deRhamCohomology.exact_mayerVietoris₁ U V j)
-      (deRhamCohomology.exact_mayerVietoris₂ U V (j + 1))
-      (LinearMap.exact_dualMap_iff.mpr
-        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₁ U V b))
-      (LinearMap.exact_dualMap_iff.mpr
-        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₃ U V b))
-      (LinearMap.exact_dualMap_iff.mpr
-        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
-      hbij₁.2 hbij₂
-      (bijective_prodPoincarePairing U V o₁ (hU (j + 1) b hab) (hV (j + 1) b hab))
-      (hUV (j + 1) b hab).1
+    exact bijective_poincarePairing_sup_succ hjl (o.reindex (finCongr hab.symm)) U V
+      (hre.symm ▸ hU j (b + 1) hjb) (hre.symm ▸ hV j (b + 1) hjb)
+      (hre.symm ▸ hUV j (b + 1) hjb)
+      (hU (j + 1) b hab) (hV (j + 1) b hab) (hUV (j + 1) b hab).1
 
 end MayerVietorisStep
 
@@ -685,6 +706,27 @@ def poincareDualityCompact {k l : ℕ} (o : Manifold.Orientation I M (Fin (k + l
   (poincareDuality o).trans (LinearEquiv.ofBijective _
     (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I l)).symm.dualMap
 
+/-- `TauCeti.poincareDualityCompact` agrees with `TauCeti.poincarePairing` on classes coming from
+compactly supported cohomology. -/
+@[simp]
+theorem poincareDualityCompact_apply_toDeRhamCohomology {k l : ℕ}
+    (o : Manifold.Orientation I M (Fin (k + l)))
+    (x : deRhamCohomology I M k) (y : compactlySupportedDeRhamCohomology I M l) :
+    poincareDualityCompact o x
+        (compactlySupportedDeRhamCohomology.toDeRhamCohomology I M l y) =
+      poincarePairing I M o x y := by
+  rw [poincareDualityCompact, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply,
+    LinearEquiv.ofBijective_symm_apply_apply, poincareDuality_apply]
+
+/-- Reversing the orientation negates `TauCeti.poincareDualityCompact`. -/
+@[simp]
+theorem poincareDualityCompact_neg {k l : ℕ} (o : Manifold.Orientation I M (Fin (k + l)))
+    (x : deRhamCohomology I M k) :
+    poincareDualityCompact (-o) x = -poincareDualityCompact o x := by
+  ext z
+  obtain ⟨y, rfl⟩ := (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I l).2 z
+  simp
+
 private theorem finiteDimensional_deRhamCohomology_of_orientation
     (o : Manifold.Orientation I M (Fin (Module.finrank ℝ E))) (k : ℕ) :
     FiniteDimensional ℝ (deRhamCohomology I M k) := by
@@ -735,60 +777,5 @@ theorem finrank_deRhamCohomology_eq_of_orientation {k l : ℕ}
   (poincareDualityCompact o).finrank_eq.trans Subspace.dual_finrank_eq
 
 end CompactManifold
-
-section Examples
-
-/-- On the counterclockwise circle `S¹`, `⟨[dθ], [1]⟩ = 2π`. -/
-theorem poincarePairing_circleOrientation_circleAngularClosedForm_const_one :
-    poincarePairing (𝓡 1) Circle (circleOrientation.reindex (finCongr (Nat.add_zero 1).symm))
-        (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
-        (compactlySupportedDeRhamCohomology.const (𝓡 1) Circle 1) = 2 * Real.pi := by
-  let ψ : compactlySupportedClosedForms (𝓡 1) Circle 1 :=
-    ⟨circleAngularClosedForm.1, (mem_compactlySupportedClosedForms (𝓡 1)).mpr
-      ⟨(mem_compactlySupportedForms (𝓡 1)).mpr
-        (isCompact_univ.of_isClosed_subset (_root_.isClosed_tsupport _) (subset_univ _)),
-        circleAngularClosedForm.2⟩⟩
-  have hmk : (LinearEquiv.ofBijective _
-      (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective (𝓡 1) 1)).symm
-      (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm) =
-      compactlySupportedDeRhamCohomology.mk (𝓡 1) 1 ψ :=
-    (LinearEquiv.ofBijective _
-      (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective (𝓡 1) 1)).injective <| by
-      rw [LinearEquiv.apply_symm_apply]
-      exact (compactlySupportedDeRhamCohomology.toDeRhamCohomology_mk (𝓡 1) 1 ψ).symm
-  rw [poincarePairing_const_right, one_mul, hmk,
-    Manifold.Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
-    Manifold.Orientation.reindex_refl, compactlySupportedDeRhamCohomology.integral_mk]
-  dsimp only [ψ]
-  rw [coe_circleAngularClosedForm]
-  exact integralTopForm_circleOrientation_circleAngularForm
-
-/-- For any orientation of `S¹`, `|⟨[dθ], [1]⟩| = 2π`. -/
-theorem abs_poincarePairing_circleAngularClosedForm_const_one
-    (o : Manifold.Orientation (𝓡 1) Circle (Fin (1 + 0))) :
-    |poincarePairing (𝓡 1) Circle o
-        (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
-        (compactlySupportedDeRhamCohomology.const (𝓡 1) Circle 1)| = 2 * Real.pi := by
-  rcases o.eq_or_eq_neg (circleOrientation.reindex (finCongr (Nat.add_zero 1).symm)) with rfl | rfl
-  · rw [poincarePairing_circleOrientation_circleAngularClosedForm_const_one,
-      abs_of_pos Real.two_pi_pos]
-  · rw [poincarePairing_neg, LinearMap.neg_apply, LinearMap.neg_apply, abs_neg,
-      poincarePairing_circleOrientation_circleAngularClosedForm_const_one,
-      abs_of_pos Real.two_pi_pos]
-
-/-- On the oriented real line `ℝ`, `⟨[1], [ψ]⟩ = ∫ t, ψ t (fun _ ↦ 1)`. -/
-theorem poincarePairing_real_const_one_mk
-    (ψ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1) :
-    poincarePairing 𝓘(ℝ, ℝ) ℝ (Manifold.Orientation.real.reindex (finCongr (zero_add 1).symm))
-        (deRhamCohomology.const 𝓘(ℝ, ℝ) ℝ 1)
-        (compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, ℝ) 1 ψ) = ∫ t : ℝ, ψ.1.1 t (fun _ ↦ 1) := by
-  rw [poincarePairing_const_one_left, Manifold.Orientation.reindex_finCongr_reindex_finCongr,
-    finCongr_refl, Manifold.Orientation.reindex_refl,
-    compactlySupportedDeRhamCohomology.integral_mk]
-  exact integralTopForm_real_eq_integral (ψ.1.isSmoothForm.of_le (by simp))
-    ((mem_compactlySupportedForms 𝓘(ℝ, ℝ)).mp
-      ((mem_compactlySupportedClosedForms 𝓘(ℝ, ℝ)).mp ψ.2).1)
-
-end Examples
 
 end TauCeti

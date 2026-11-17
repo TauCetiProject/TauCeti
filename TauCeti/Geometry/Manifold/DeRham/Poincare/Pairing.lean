@@ -26,7 +26,7 @@ cohomology, computed on classes by integrating a representative.
 Composing it with the wedge product `H^k_dR(M) → H^l_c(M) → H^(k+l)_c(M)` gives the Poincaré
 pairing `⟨[φ], [ψ]⟩ = ∫_M φ ∧ ψ` between de Rham cohomology and compactly supported de Rham
 cohomology in complementary degrees `k + l = n`. Poincaré duality, proved in
-`TauCeti.Geometry.Manifold.DeRham.PoincareDuality`, asserts that this pairing identifies
+`TauCeti.Geometry.Manifold.DeRham.Poincare.Duality`, asserts that this pairing identifies
 `H^k_dR(M)` with the dual of `H^l_c(M)`.
 
 Both maps need the manifold to be boundaryless. On `M = [0, 1]` the form `dx` is exact, yet the

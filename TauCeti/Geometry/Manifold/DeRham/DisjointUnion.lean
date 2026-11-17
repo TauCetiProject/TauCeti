@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Poincare.Pairing
 public import Mathlib.LinearAlgebra.DFinsupp
 
 import TauCeti.Topology.Sets.Opens
