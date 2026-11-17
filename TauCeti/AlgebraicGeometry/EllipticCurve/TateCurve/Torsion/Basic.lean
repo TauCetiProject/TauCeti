@@ -226,6 +226,18 @@ theorem tateTorsionExponent_tateRootsOfUnityHom (ζ : Additive (rootsOfUnity n L
   (exact_tateRootsOfUnityHom_tateTorsionExponent L q hq n).apply_apply_eq_zero ζ
 
 open scoped AddSubgroup in
+/-- Two torsion points whose exponents differ by a factor `a` differ by a root-of-unity
+point after subtracting `a` times the second point. -/
+theorem exists_tateRootsOfUnityHom_add_zsmul
+    (P Q : (((tateCurveAt q hq)⁄L).toAffine.Point)[(n : ℤ)])
+    (a : ℤ) (ha : tateTorsionExponent L q hq n P = a • tateTorsionExponent L q hq n Q) :
+    ∃ ζ : Additive (rootsOfUnity n L), P = tateRootsOfUnityHom L q hq n ζ + a • Q := by
+  have hz : tateTorsionExponent L q hq n (P - a • Q) = 0 := by
+    simp [ha]
+  obtain ⟨ζ, hζ⟩ := (exact_tateRootsOfUnityHom_tateTorsionExponent L q hq n _).mp hz
+  exact ⟨ζ, sub_eq_iff_eq_add.mp hζ.symm⟩
+
+open scoped AddSubgroup in
 /-- For any representative `a` of its exponent, a Tate torsion point is a root-of-unity
 point plus `a` times the chosen division point. -/
 theorem exists_tateRootsOfUnityHom_add_zsmul_tateDivisionPoint
@@ -234,10 +246,8 @@ theorem exists_tateRootsOfUnityHom_add_zsmul_tateDivisionPoint
     (a : ℤ) (ha : tateTorsionExponent L q hq n P = (a : QuotSMulTop (n : ℤ) ℤ)) :
     ∃ ζ : Additive (rootsOfUnity n L),
       P = tateRootsOfUnityHom L q hq n ζ + a • tateDivisionPoint q hq n u hu := by
-  have hz : tateTorsionExponent L q hq n (P - a • tateDivisionPoint q hq n u hu) = 0 := by
-    simp [ha]
-  obtain ⟨ζ, hζ⟩ := (exact_tateRootsOfUnityHom_tateTorsionExponent L q hq n _).mp hz
-  exact ⟨ζ, sub_eq_iff_eq_add.mp hζ.symm⟩
+  exact exists_tateRootsOfUnityHom_add_zsmul L q hq n P (tateDivisionPoint q hq n u hu) a
+    (by simpa using ha)
 
 /-- Exponent classes arising from Tate torsion are exactly those whose period power is an
 `n`-th power. This retains the rational obstruction when the field lacks a root of `q`. -/
