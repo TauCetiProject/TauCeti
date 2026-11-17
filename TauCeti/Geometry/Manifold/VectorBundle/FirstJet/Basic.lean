@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The first-jet bundle of a vector bundle
@@ -41,6 +43,17 @@ change of charts.
   representative (`TauCeti.FirstJetBundle.trivializationAt_jet`), and it is a `C^n` section of
   `J¹V` for a `C^(n+1)` section `s` (`TauCeti.FirstJetBundle.contMDiff_jet`).
   For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`.
+* `TauCeti.FirstJetBundle.jet_eq_zero_iff`,
+  `TauCeti.FirstJetBundle.jet_eq_zero_iff_hasFDerivWithinAt`,
+  `TauCeti.FirstJetBundle.jet_eq_zero_iff_of_mem_baseSet`: characterization and chart independence
+  of vanishing first jets.
+* `TauCeti.FirstJetBundle.hasFDerivWithinAt_localRep_congr_chart_of_eq_zero`,
+  `TauCeti.FirstJetBundle.hasFDerivWithinAt_localRep_clm_apply_of_eq_zero`, and
+  `TauCeti.FirstJetBundle.hasFDerivWithinAt_localRep_smul_of_eq_zero`: at a zero of a section `s`,
+  changing charts, applying a continuous Hom-bundle section `A`, and multiplying by a continuous
+  scalar function `f` all act tensorially on the derivative of the local representative; in
+  particular, they preserve vanishing first jets (`TauCeti.FirstJetBundle.jet_clm_apply_eq_zero`,
+  `TauCeti.FirstJetBundle.jet_smul_eq_zero`).
 * `TauCeti.FirstJetBundle.value` and `TauCeti.FirstJetBundle.ofDeriv`: the fibres of the projection
   `J¹V → V` and of the inclusion `Hom(TM, V) → J¹V` of continuous linear maps (for
   finite-dimensional fibres, `Hom(TM, V) = T*M ⊗ V`). The projection sends `j¹s(x)` to
@@ -733,6 +746,284 @@ theorem coordChange_ofDeriv {y i : M} (hi : y ∈ baseSet (H := H) F V i)
   exact congrArg (fun w ↦ (trivializationAt F V i ⟨y, w⟩).2) hL
 
 end Kernel
+
+section Vanishing
+
+variable {I F}
+
+section
+
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommMonoid (V x)]
+  [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- At a zero of a section `s`, the local representative vanishes at the image of `y` in any chart
+and trivialization domain containing `y`. -/
+theorem localRep_extChartAt_eq_zero {s : ∀ x, V x} {i y : M}
+    (hy : y ∈ baseSet (H := H) F V i) (hs0 : s y = 0) :
+    localRep I F s i (extChartAt I i y) = 0 := by
+  rw [localRep_extChartAt I F s hy.2, hs0,
+    (trivializationAt F V i).apply_eq_prod_continuousLinearEquivAt 𝕜 y hy.1, map_zero]
+
+/-- **Chart change of a derivative at a zero of a section.** If a section `s` of a topological
+vector bundle vanishes at `y`, then changing charts and trivializations transforms
+`HasFDerivWithinAt` of its local representative tensorially, by the value coordinate change
+composed with the chart Jacobian. Unlike the general jet transformation `coordChange_jet`, this
+requires no `ContMDiffVectorBundle` hypothesis on `V`. -/
+theorem hasFDerivWithinAt_localRep_congr_chart_of_eq_zero [IsManifold I 1 M]
+    {s : ∀ x, V x} {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j)
+    (hs0 : s y = 0) {L : E →L[𝕜] F}
+    (hs : HasFDerivWithinAt (localRep I F s i) L (range I) (extChartAt I i y)) :
+    HasFDerivWithinAt (localRep I F s j)
+      (((trivializationAt F V i).coordChangeL 𝕜 (trivializationAt F V j) y : F →L[𝕜] F).comp
+        (L.comp (tangentCoordChange I j i y))) (range I) (extChartAt I j y) := by
+  have hyi := mem_extChartAt_source_of_mem_baseSet I hi
+  have hyj := mem_extChartAt_source_of_mem_baseSet I hj
+  have hcc : ContinuousAt (fun b ↦ ((trivializationAt F V i).coordChangeL 𝕜
+      (trivializationAt F V j) b : F →L[𝕜] F)) y :=
+    (continuousOn_coordChange 𝕜 (trivializationAt F V i) (trivializationAt F V j)).continuousAt
+      (((trivializationAt F V i).open_baseSet.inter
+        (trivializationAt F V j).open_baseSet).mem_nhds ⟨hi.1, hj.1⟩)
+  have hsymm : ContinuousWithinAt (extChartAt I j).symm (range I) (extChartAt I j y) :=
+    (continuousOn_extChartAt_symm j _ ((extChartAt I j).map_source hyj)).mono_of_mem_nhdsWithin
+      (extChartAt_target_mem_nhdsWithin_of_mem ((extChartAt I j).map_source hyj))
+  have hc : ContinuousWithinAt (fiberCoordChange I F V i j) (range I) (extChartAt I j y) := by
+    have h := hcc.continuousWithinAt (s := univ)
+    rw [← (extChartAt I j).left_inv hyj] at h
+    exact h.comp hsymm (mapsTo_univ _ _)
+  have hrep : HasFDerivWithinAt (localRep I F s i) L (range I)
+      ((extChartAt I i ∘ (extChartAt I j).symm) (extChartAt I j y)) := by
+    rwa [Function.comp_apply, (extChartAt I j).left_inv hyj]
+  have hcomp : HasFDerivWithinAt
+      (fun z ↦ localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z))
+      (L.comp (tangentCoordChange I j i y)) (range I) (extChartAt I j y) :=
+    hrep.comp _ (hasFDerivWithinAt_tangentCoordChange ⟨hyj, hyi⟩)
+      (mapsTo_extChartAt_comp_extChartAt_symm I i j _)
+  have hu0 :
+      localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) (extChartAt I j y)) = 0 := by
+    rw [Function.comp_apply, (extChartAt I j).left_inv hyj]
+    exact localRep_extChartAt_eq_zero hi hs0
+  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero hc hcomp hu0
+  rw [fiberCoordChange_extChartAt hj.2] at hd
+  exact hd.congr_of_eventuallyEq (localRep_eventuallyEq_fiberCoordChange I F s hi hj)
+    (by rw [localRep_extChartAt_eq_zero hj hs0, hu0, map_zero])
+
+/-- At a zero of a section `s` of a topological vector bundle over a `C¹` manifold, having zero
+chart derivative within `range I` is independent of the choice of chart and trivialization
+containing the point. -/
+theorem hasFDerivWithinAt_localRep_zero_iff_of_mem_baseSet [IsManifold I 1 M]
+    {s : ∀ x, V x} {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j)
+    (hs0 : s y = 0) :
+    HasFDerivWithinAt (localRep I F s i) (0 : E →L[𝕜] F) (range I) (extChartAt I i y) ↔
+      HasFDerivWithinAt (localRep I F s j) (0 : E →L[𝕜] F) (range I) (extChartAt I j y) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero] using
+      hasFDerivWithinAt_localRep_congr_chart_of_eq_zero hi hj hs0 h
+  · simpa only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero] using
+      hasFDerivWithinAt_localRep_congr_chart_of_eq_zero hj hi hs0 h
+
+section
+
+variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
+
+/-- A first-jet coordinate change at a point in the overlap of both chart domains vanishes only on
+the zero jet. -/
+theorem coordChange_eq_zero_iff {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j)
+    {v : F × (E →L[𝕜] F)} :
+    coordChange I F V i j y v = 0 ↔ v = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  have := coordChange_comp_apply (I := I) (F := F) (V := V) hi hj hi v
+  rw [h, map_zero, coordChange_self_apply hi] at this
+  exact this.symm
+
+/-- The first jet of a section at `x` vanishes exactly when the section vanishes at `x` and its
+preferred local representative has zero chart derivative within `range I` at `x`. -/
+theorem jet_eq_zero_iff {s : ∀ x, V x} {x : M} :
+    jet I F s x = 0 ↔
+      s x = 0 ∧ fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) = 0 := by
+  refine (Prod.ext_iff (x := (jet I F s x : F × (E →L[𝕜] F))) (y := (0, 0))).trans ?_
+  rw [← value_eq_zero_iff I F x (jet I F s x), value_jet, jet_snd]
+
+/-- A section vanishing at `x` whose local representative has derivative `0` within `range I` at
+`x` has zero first jet at `x`. -/
+theorem jet_eq_zero_of_hasFDerivWithinAt_zero {s : ∀ x, V x} {x : M} (hs0 : s x = 0)
+    (hd : HasFDerivWithinAt (localRep I F s x) (0 : E →L[𝕜] F) (range I) (extChartAt I x x)) :
+    jet I F s x = 0 :=
+  jet_eq_zero_iff.2 ⟨hs0, hd.fderivWithin
+    (I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x)))⟩
+
+/-- For a section differentiable at `x`, its first jet vanishes at `x` exactly when its value is `0`
+and its local representative has derivative `0` within `range I` at `x`. -/
+theorem jet_eq_zero_iff_hasFDerivWithinAt {s : ∀ x, V x} {x : M}
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun y ↦ TotalSpace.mk' F y (s y)) x) :
+    jet I F s x = 0 ↔
+      s x = 0 ∧
+        HasFDerivWithinAt (localRep I F s x) (0 : E →L[𝕜] F) (range I) (extChartAt I x x) := by
+  refine ⟨fun h ↦ ?_, fun ⟨hs0, hd⟩ ↦ jet_eq_zero_of_hasFDerivWithinAt_zero hs0 hd⟩
+  obtain ⟨hs0, hfd⟩ := jet_eq_zero_iff.1 h
+  refine ⟨hs0, ?_⟩
+  rw [← hfd]
+  exact (differentiableWithinAt_localRep I F hs (mem_baseSet_self (H := H) F V x)).hasFDerivWithinAt
+
+/-- On a boundaryless manifold, a section differentiable at `x` has zero first jet at `x` exactly
+when its value is `0` and its local representative has Fréchet derivative `0` at `x`. -/
+theorem jet_eq_zero_iff_hasFDerivAt [I.Boundaryless] {s : ∀ x, V x} {x : M}
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun y ↦ TotalSpace.mk' F y (s y)) x) :
+    jet I F s x = 0 ↔
+      s x = 0 ∧ HasFDerivAt (localRep I F s x) (0 : E →L[𝕜] F) (extChartAt I x x) := by
+  rw [jet_eq_zero_iff_hasFDerivWithinAt hs, ModelWithCorners.range_eq_univ, hasFDerivWithinAt_univ]
+
+/-- **Chart independence of vanishing first jets.** For a section differentiable at `y`, its first
+jet vanishes at `y` exactly when `s y = 0` and the chart derivative of its local representative at
+any chart and trivialization domain `i` containing `y` vanishes at `y`. -/
+theorem jet_eq_zero_iff_of_mem_baseSet {s : ∀ x, V x} {i y : M}
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (s x)) y)
+    (hi : y ∈ baseSet (H := H) F V i) :
+    jet I F s y = 0 ↔
+      s y = 0 ∧ fderivWithin 𝕜 (localRep I F s i) (range I) (extChartAt I i y) = 0 := by
+  have hc : coordChange I F V y i y (jet I F s y) = 0 ↔ jet I F s y = 0 :=
+    coordChange_eq_zero_iff (mem_baseSet_self (H := H) F V y) hi
+  rw [← hc, coordChange_jet I F hs hi, Prod.mk_eq_zero]
+  refine and_congr ?_ Iff.rfl
+  rw [(trivializationAt F V i).apply_eq_prod_continuousLinearEquivAt 𝕜 y hi.1]
+  exact ((trivializationAt F V i).continuousLinearEquivAt 𝕜 y hi.1).map_eq_zero_iff
+
+end
+
+/-- **Multiplying a section by a continuous scalar function at a zero.** If `f : M → 𝕜` is
+continuous at `y`, `s y = 0`, and `localRep I F s i` has derivative `L` within `range I` at
+`extChartAt I i y`, then `localRep I F (fun m ↦ f m • s m) i` has derivative `f y • L` there.
+No differentiability of `f` is needed. -/
+theorem hasFDerivWithinAt_localRep_smul_of_eq_zero
+    {f : M → 𝕜} {s : ∀ m, V m} {i y : M}
+    (hy : y ∈ baseSet (H := H) F V i) (hf : ContinuousAt f y) (hs0 : s y = 0)
+    {L : E →L[𝕜] F}
+    (hs : HasFDerivWithinAt (localRep I F s i) L (range I) (extChartAt I i y)) :
+    HasFDerivWithinAt (localRep I F (fun m ↦ f m • s m) i)
+      (f y • L) (range I) (extChartAt I i y) := by
+  have hyS : y ∈ (extChartAt I i).source := mem_extChartAt_source_of_mem_baseSet I hy
+  have hsymm : ContinuousWithinAt (extChartAt I i).symm (range I) (extChartAt I i y) :=
+    (continuousOn_extChartAt_symm i _ ((extChartAt I i).map_source hyS)).mono_of_mem_nhdsWithin
+      (extChartAt_target_mem_nhdsWithin_of_mem ((extChartAt I i).map_source hyS))
+  let lsm : 𝕜 →L[𝕜] F →L[𝕜] F := ContinuousLinearMap.lsmul 𝕜 𝕜
+  have hfc : ContinuousWithinAt (fun z ↦ lsm (f ((extChartAt I i).symm z)))
+      (range I) (extChartAt I i y) := by
+    have hf' : ContinuousWithinAt (f ∘ (extChartAt I i).symm) (range I) (extChartAt I i y) := by
+      have h := hf.continuousWithinAt (s := univ)
+      rw [← (extChartAt I i).left_inv hyS] at h
+      exact h.comp hsymm (mapsTo_univ _ _)
+    exact lsm.continuous.continuousWithinAt.comp hf' (mapsTo_univ _ _)
+  have hu0 : localRep I F s i (extChartAt I i y) = 0 := localRep_extChartAt_eq_zero hy hs0
+  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero hfc hs hu0
+  rw [(extChartAt I i).left_inv hyS] at hd
+  have hder : (lsm (f y)).comp L = f y • L := by
+    ext v; simp [lsm]
+  rw [hder] at hd
+  refine hd.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hy hy.2] with z hz
+    rw [localRep_apply, localRep_apply,
+      (trivializationAt F V i).apply_eq_prod_continuousLinearEquivAt 𝕜 _ hz.1,
+      (trivializationAt F V i).apply_eq_prod_continuousLinearEquivAt 𝕜 _ hz.1, map_smul]
+    rfl
+  · rw [localRep_extChartAt_eq_zero hy (by rw [hs0, smul_zero]), hu0, map_zero]
+
+/-- Multiplying a section with zero first jet at `x` by a scalar function continuous at `x`
+produces a section with zero first jet at `x`. No differentiability of the scalar function is
+needed. -/
+theorem jet_smul_eq_zero [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
+    {f : M → 𝕜} {s : ∀ m, V m} {x : M} (hf : ContinuousAt f x)
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun m ↦ TotalSpace.mk' F m (s m)) x)
+    (hjet : jet I F s x = 0) :
+    jet I F (fun m ↦ f m • s m) x = 0 := by
+  obtain ⟨hs0, hd⟩ := (jet_eq_zero_iff_hasFDerivWithinAt hs).1 hjet
+  refine jet_eq_zero_of_hasFDerivWithinAt_zero (by rw [hs0, smul_zero]) ?_
+  simpa only [smul_zero] using hasFDerivWithinAt_localRep_smul_of_eq_zero
+    (mem_baseSet_self (H := H) F V x) hf hs0 hd
+
+end
+
+section ClmApply
+
+variable {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  {V₁ : M → Type*} [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, AddCommGroup (V₁ x)]
+  [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)] [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  {V₂ : M → Type*} [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, AddCommGroup (V₂ x)]
+  [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
+
+/-- **Applying a continuous bundle homomorphism to a section at a zero.** Let `A : Hom(V₁, V₂)` be
+continuous at `y` as a section of the Hom bundle, and let `s` be a section of `V₁` with `s y = 0`
+whose local representative at `i` has derivative `L` within `range I` at `extChartAt I i y`. Then
+the local representative of `m ↦ A m (s m)` has derivative
+`(inCoordinates i y i y (A y)).comp L` there. No differentiability of `A` is needed. -/
+theorem hasFDerivWithinAt_localRep_clm_apply_of_eq_zero
+    {A : ∀ m, V₁ m →L[𝕜] V₂ m} {s : ∀ m, V₁ m} {i y : M}
+    (hy₁ : y ∈ baseSet (H := H) F₁ V₁ i) (hy₂ : y ∈ (trivializationAt F₂ V₂ i).baseSet)
+    (hA : ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) m (A m)) y)
+    (hs0 : s y = 0) {L : E →L[𝕜] F₁}
+    (hs : HasFDerivWithinAt (localRep I F₁ s i) L (range I) (extChartAt I i y)) :
+    HasFDerivWithinAt (localRep I F₂ (fun m ↦ A m (s m)) i)
+      ((ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ i y i y (A y)).comp L)
+      (range I) (extChartAt I i y) := by
+  let eH := trivializationAt (F₁ →L[𝕜] F₂) (fun m ↦ V₁ m →L[𝕜] V₂ m) i
+  have hyH : y ∈ eH.baseSet := by
+    rw [hom_trivializationAt_baseSet (RingHom.id 𝕜) i]
+    exact ⟨hy₁.1, hy₂⟩
+  have hyS : y ∈ (extChartAt I i).source := mem_extChartAt_source_of_mem_baseSet I hy₁
+  have hAe : ContinuousAt (fun m ↦ (eH ⟨m, A m⟩).2) y :=
+    ((eH.continuousOn.continuousAt (eH.open_source.mem_nhds (eH.mem_source.2 hyH))).comp hA).snd
+  have hcoord : ContinuousAt
+      (fun m ↦ ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ i m i m (A m)) y := by
+    refine hAe.congr (Eventually.of_forall fun m ↦ ?_)
+    exact congrArg Prod.snd
+      (hom_trivializationAt_apply (F₁ := F₁) (E₁ := V₁) (F₂ := F₂) (E₂ := V₂) (σ := RingHom.id 𝕜)
+        i ⟨m, A m⟩)
+  have hsymm : ContinuousWithinAt (extChartAt I i).symm (range I) (extChartAt I i y) :=
+    (continuousOn_extChartAt_symm i _ ((extChartAt I i).map_source hyS)).mono_of_mem_nhdsWithin
+      (extChartAt_target_mem_nhdsWithin_of_mem ((extChartAt I i).map_source hyS))
+  have hc : ContinuousWithinAt
+      (fun z ↦ ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ i
+        ((extChartAt I i).symm z) i ((extChartAt I i).symm z) (A ((extChartAt I i).symm z)))
+      (range I) (extChartAt I i y) := by
+    have h := hcoord.continuousWithinAt (s := univ)
+    rw [← (extChartAt I i).left_inv hyS] at h
+    exact h.comp hsymm (mapsTo_univ _ _)
+  have hu0 : localRep I F₁ s i (extChartAt I i y) = 0 := localRep_extChartAt_eq_zero hy₁ hs0
+  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero hc hs hu0
+  rw [(extChartAt I i).left_inv hyS] at hd
+  refine hd.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hy₁ hy₁.2,
+      mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hyS
+        ((trivializationAt F₂ V₂ i).open_baseSet.mem_nhds hy₂))] with z hz₁ hz₂
+    rw [localRep_apply, localRep_apply,
+      ContinuousLinearMap.inCoordinates_eq hz₁.1 hz₂, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply,
+      (trivializationAt F₁ V₁ i).apply_eq_prod_continuousLinearEquivAt 𝕜 _ hz₁.1,
+      (trivializationAt F₂ V₂ i).apply_eq_prod_continuousLinearEquivAt 𝕜 _ hz₂]
+    simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+  · rw [localRep_extChartAt_eq_zero ⟨hy₂, hy₁.2⟩ (by rw [hs0, map_zero]), hu0, map_zero]
+
+/-- Applying a continuous bundle homomorphism `A : Hom(V₁, V₂)` to a section with zero first jet
+at `x` produces a section with zero first jet at `x`. No differentiability of `A` is needed. -/
+theorem jet_clm_apply_eq_zero [IsManifold I 1 M]
+    [ContMDiffVectorBundle 1 F₁ V₁ I] [ContMDiffVectorBundle 1 F₂ V₂ I]
+    {A : ∀ m, V₁ m →L[𝕜] V₂ m} {s : ∀ m, V₁ m} {x : M}
+    (hA : ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) m (A m)) x)
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F₁)) (fun m ↦ TotalSpace.mk' F₁ m (s m)) x)
+    (hjet : jet I F₁ s x = 0) :
+    jet I F₂ (fun m ↦ A m (s m)) x = 0 := by
+  obtain ⟨hs0, hd⟩ := (jet_eq_zero_iff_hasFDerivWithinAt hs).1 hjet
+  refine jet_eq_zero_of_hasFDerivWithinAt_zero (by rw [hs0, map_zero]) ?_
+  simpa only [ContinuousLinearMap.comp_zero] using hasFDerivWithinAt_localRep_clm_apply_of_eq_zero
+    (mem_baseSet_self (H := H) F₁ V₁ x) (mem_baseSet_trivializationAt F₂ V₂ x) hA hs0 hd
+
+end ClmApply
+
+end Vanishing
 
 section Trivial
 

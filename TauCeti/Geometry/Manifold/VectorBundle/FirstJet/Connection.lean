@@ -44,7 +44,14 @@ trivialization.
   `TauCeti.FirstJetBundle.covariantDerivative_sub_covariantDerivative`: changing the covariant
   derivative by an endomorphism-valued one-form `A` changes the derivative coordinate of the
   splitting by `A` applied to the value coordinate; in particular two covariant derivatives give
-  splittings that differ by their difference tensor applied to the value.
+  splittings that differ by their difference tensor applied to the value, and they agree at any
+  point where a differentiable section vanishes
+  (`TauCeti.FirstJetBundle.covariantDerivative_eq_of_eq_zero`).
+* `TauCeti.FirstJetBundle.jet_eq_zero_iff_covariantDerivative`,
+  `TauCeti.FirstJetBundle.covariantDerivative_eq_zero_iff_fderivWithin_localRep_eq_zero`, and
+  `TauCeti.FirstJetBundle.covariantDerivative_eq_zero_iff_hasFDerivWithinAt_localRep`: for any
+  covariant derivative `∇` over a set containing `x`, a differentiable section has zero first jet
+  at `x` exactly when both its value and its covariant derivative vanish at `x`.
 
 For instance, on the trivial line bundle over `ℝ` the jet of the constant section `1` is sent to
 `0` by the flat derivative `d` and to `a` by `d + a dt`, while its value stays `1`.
@@ -328,6 +335,62 @@ theorem connectionEquiv_symm_apply (hcov : IsCovariantDerivativeOn F cov U)
     (p : V x × (TangentSpace I x →L[𝕜] V x)) :
     (connectionEquiv hcov x).symm p = horizontalLift hcov x p.1 + ofDeriv I F x p.2 :=
   (rfl)
+
+/-! ### Vanishing first jets and covariant derivatives -/
+
+/-- **Connection independence at a zero.** Two covariant derivatives over `U` agree at any point
+`x ∈ U` where a differentiable section `s` vanishes. -/
+theorem covariantDerivative_eq_of_eq_zero
+    {cov' : (Π x : M, V x) → (Π x : M, TangentSpace I x →L[𝕜] V x)}
+    (hcov : IsCovariantDerivativeOn F cov U) (hcov' : IsCovariantDerivativeOn F cov' U)
+    (hx : x ∈ U) {s : Π x : M, V x} (hs : MDiffAt (T% s) x) (hs0 : s x = 0) :
+    cov s x = cov' s x := by
+  have h := covariantDerivative_sub_covariantDerivative hcov hcov' hx (jet I F s x)
+  rw [covariantDerivative_jet hcov hx hs, covariantDerivative_jet hcov' hx hs, value_jet, hs0,
+    map_zero, sub_eq_zero] at h
+  exact h
+
+/-- **Zero first jet via an arbitrary connection.** For any covariant derivative `∇` over a set
+containing `x`, a section differentiable at `x` has zero first jet at `x` exactly when both its
+value and its covariant derivative vanish at `x`. -/
+theorem jet_eq_zero_iff_covariantDerivative (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s : Π x : M, V x} (hs : MDiffAt (T% s) x) :
+    jet I F s x = 0 ↔ s x = 0 ∧ cov s x = 0 := by
+  rw [← (connectionEquiv hcov x).map_eq_zero_iff, connectionEquiv_apply, value_jet,
+    covariantDerivative_jet hcov hx hs, Prod.mk_eq_zero]
+
+/-- At a zero of a differentiable section, its covariant derivative (for any connection over a set
+containing `x`) vanishes exactly when the chart derivative of its preferred local representative
+within `range I` vanishes. -/
+theorem covariantDerivative_eq_zero_iff_fderivWithin_localRep_eq_zero
+    (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U) {s : Π x : M, V x}
+    (hs : MDiffAt (T% s) x) (hs0 : s x = 0) :
+    cov s x = 0 ↔ fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) = 0 := by
+  have h1 := jet_eq_zero_iff_covariantDerivative hcov hx hs
+  have h2 := jet_eq_zero_iff (I := I) (F := F) (s := s) (x := x)
+  simp only [hs0, true_and] at h1 h2
+  exact h1.symm.trans h2
+
+/-- At a zero of a differentiable section, its covariant derivative vanishes exactly when its
+preferred local representative has derivative `0` within `range I` at `x`. -/
+theorem covariantDerivative_eq_zero_iff_hasFDerivWithinAt_localRep
+    (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U) {s : Π x : M, V x}
+    (hs : MDiffAt (T% s) x) (hs0 : s x = 0) :
+    cov s x = 0 ↔
+      HasFDerivWithinAt (localRep I F s x) (0 : E →L[𝕜] F) (range I) (extChartAt I x x) := by
+  have h1 := jet_eq_zero_iff_covariantDerivative hcov hx hs
+  have h2 := jet_eq_zero_iff_hasFDerivWithinAt hs
+  simp only [hs0, true_and] at h1 h2
+  exact h1.symm.trans h2
+
+/-- On a boundaryless manifold, at a zero of a differentiable section, its covariant derivative
+vanishes exactly when its preferred local representative has Fréchet derivative `0` at `x`. -/
+theorem covariantDerivative_eq_zero_iff_hasFDerivAt_localRep [I.Boundaryless]
+    (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U) {s : Π x : M, V x}
+    (hs : MDiffAt (T% s) x) (hs0 : s x = 0) :
+    cov s x = 0 ↔ HasFDerivAt (localRep I F s x) (0 : E →L[𝕜] F) (extChartAt I x x) := by
+  rw [covariantDerivative_eq_zero_iff_hasFDerivWithinAt_localRep hcov hx hs hs0,
+    ModelWithCorners.range_eq_univ, hasFDerivWithinAt_univ]
 
 end FirstJetBundle
 

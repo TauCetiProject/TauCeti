@@ -58,6 +58,10 @@ coefficient space is any Banach space.
 * `TauCeti.mextDeriv_vectorBundlePoincareHomotopy_add_vectorBundlePoincareHomotopy_mextDeriv`:
   `d (P η) + P (d η) = η - ρ^* η`.
 * `TauCeti.mextDeriv_vectorBundlePoincareHomotopy`: `d β = η - ρ^* η` for closed `η`.
+* `TauCeti.mpullback_symm_vectorBundlePoincareHomotopy_zeroSection`,
+  `TauCeti.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy`, and
+  `TauCeti.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_mpullback_eq_zero`: the
+  vanishing and exterior-derivative identities transported across a diffeomorphism `Φ`.
 * `Diffeomorph.exists_isSmoothForm_relative_primitive`: the relative Poincaré lemma on a tube.
 
 ## References
@@ -220,7 +224,76 @@ theorem mextDeriv_vectorBundlePoincareHomotopy_of_mpullback_zeroSection_eq_zero
 /-! ### Transport to a tube -/
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+omit [CompleteSpace F] in
+/-- Pulling the relative Poincaré operator back across a diffeomorphism `Φ` from the total space
+of a vector bundle gives a form vanishing along `Φ ∘ 0` as a full ambient tensor. -/
+@[simp]
+theorem mpullback_symm_vectorBundlePoincareHomotopy_zeroSection {n : WithTop ℕ∞}
+    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) (η : RoughForm I M F (k + 1)) (b : B) :
+    mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm
+      (vectorBundlePoincareHomotopy (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η))
+      (Φ (zeroSection FV V b)) = 0 :=
+  mpullback_apply_eq_zero ((congrArg _ (Φ.symm_apply_apply _)).trans
+    (vectorBundlePoincareHomotopy_zeroSection _ b))
+
+/-- **The relative Poincaré identity transported across a diffeomorphism.** For a `C^n`
+diffeomorphism `Φ` with `2 ≤ n` from the total space of a `C²` vector bundle onto a `C²` manifold
+`M`, and a closed `C¹` form `η` of positive degree on `M`, the transported relative Poincaré
+operator `β = (Φ⁻¹)^* P(Φ^* η)` satisfies `d β = η - (Φ ∘ 0 ∘ π ∘ Φ⁻¹)^* η`. -/
+theorem mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy [IsManifold I 2 M]
+    [IsManifold IB 2 B] [ContMDiffVectorBundle 2 FV V IB] {n : WithTop ℕ∞}
+    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) (h2 : (2 : WithTop ℕ∞) ≤ n)
+    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I 1 η) (hclosed : mextDeriv η = 0) :
+    mextDeriv (mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm
+        (vectorBundlePoincareHomotopy (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η))) =
+      η - mpullback I I (Φ ∘ zeroSection FV V ∘ π FV V ∘ Φ.symm) η := by
+  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by norm_num) h2).ne'
+  have hη₀ : IsSmoothForm (IB.prod 𝓘(ℝ, FV)) 1 (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η) :=
+    hη.mpullback (Φ.contMDiff.of_le h2)
+  have hβ₀ : IsSmoothForm (IB.prod 𝓘(ℝ, FV)) 1
+      (vectorBundlePoincareHomotopy (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η)) :=
+    have : IsManifold IB 1 B := .of_le one_le_two
+    have : ContMDiffVectorBundle 1 FV V IB := .of_le one_le_two
+    have : IsManifold IB (((1 : ℕ∞) : WithTop ℕ∞) + 1) B := .of_le (n := 2) (by norm_num)
+    have : ContMDiffVectorBundle (((1 : ℕ∞) : WithTop ℕ∞) + 1) FV V IB :=
+      .of_le (n := 2) (by norm_num)
+    hη₀.vectorBundlePoincareHomotopy
+  have hd := Φ.mdifferentiable hn0
+  have hds := Φ.symm.mdifferentiable hn0
+  have hZ := (contMDiff_zeroSection ℝ V (IB := IB) (F := FV) (n := 1)).mdifferentiable one_ne_zero
+  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
+  rw [← mpullback_mextDeriv (Φ.symm.contMDiff.of_le h2)
+      ((isSmoothBundleForm_def 1 _).mpr hβ₀.contMDiff),
+    mextDeriv_vectorBundlePoincareHomotopy hη₀
+      (hη.mextDeriv_mpullback_eq_zero hclosed (Φ.contMDiff.of_le h2)),
+    mpullback_sub, mpullback_symm_mpullback hn0, ← mpullback_comp (hZ.comp hp) hd,
+    ← mpullback_comp hds (hd.comp (hZ.comp hp))]
+  -- Both retractions are `Φ ∘ 0 ∘ π ∘ Φ⁻¹`, associated differently.
+  simp only [Function.comp_assoc]
+
+/-- **Transported relative Poincaré primitive.** When a closed `C¹` form `η` of positive degree on
+`M` restricts to zero along `Φ ∘ 0`, the transported relative Poincaré operator
+`β = (Φ⁻¹)^* P(Φ^* η)` satisfies `d β = η`. -/
+theorem mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_mpullback_eq_zero
+    [IsManifold I 2 M] [IsManifold IB 2 B] [ContMDiffVectorBundle 2 FV V IB] {n : WithTop ℕ∞}
+    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) (h2 : (2 : WithTop ℕ∞) ≤ n)
+    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I 1 η) (hclosed : mextDeriv η = 0)
+    (hi : mpullback IB I (Φ ∘ zeroSection FV V) η = 0) :
+    mextDeriv (mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm
+        (vectorBundlePoincareHomotopy (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η))) = η := by
+  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by norm_num) h2).ne'
+  have : IsManifold IB 1 B := .of_le one_le_two
+  have : ContMDiffVectorBundle 1 FV V IB := .of_le one_le_two
+  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
+  have hiΦ := ((Φ.contMDiff.of_le h2).comp
+    (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable (by norm_num)
+  rw [mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy Φ h2 hη hclosed,
+    ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
+    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
+
+variable [IsManifold I 2 M]
   {n : WithTop ℕ∞} [IsManifold IB n B] [ContMDiffVectorBundle n FV V IB]
 
 /-- **The relative Poincaré lemma on a tube.** Let `Φ` be a `C^n` diffeomorphism from the total
@@ -236,30 +309,15 @@ theorem _root_.Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback
       ∀ b, β (Φ (zeroSection FV V b)) = 0 := by
   have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
   have h2 : (2 : WithTop ℕ∞) ≤ n := le_trans (by rw [← one_add_one_eq_two]; gcongr) hn
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by norm_num) h2).ne'
   have : IsManifold IB ((r : WithTop ℕ∞) + 1) B := .of_le hn
   have : ContMDiffVectorBundle ((r : WithTop ℕ∞) + 1) FV V IB := .of_le hn
   have : IsManifold IB 2 B := .of_le h2
   have : ContMDiffVectorBundle 2 FV V IB := .of_le h2
   have hη₀ := hη.mpullback (Φ.contMDiff.of_le hn)
   have hβ₀ := hη₀.vectorBundlePoincareHomotopy
-  refine ⟨mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm (vectorBundlePoincareHomotopy
-    (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η)), hβ₀.mpullback (Φ.symm.contMDiff.of_le hn), ?_,
-    fun b ↦ ?_⟩
-  · have hd := Φ.mdifferentiable hn0
-    have hds := Φ.symm.mdifferentiable hn0
-    have hZ := (contMDiff_zeroSection ℝ V (IB := IB) (F := FV) (n := 1)).mdifferentiable one_ne_zero
-    have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
-    rw [← mpullback_mextDeriv (Φ.symm.contMDiff.of_le h2)
-        ((isSmoothBundleForm_def 1 _).mpr (hβ₀.of_le hr').contMDiff),
-      mextDeriv_vectorBundlePoincareHomotopy (hη₀.of_le hr')
-        (hη.of_le hr' |>.mextDeriv_mpullback_eq_zero hclosed (Φ.contMDiff.of_le h2)),
-      mpullback_sub, mpullback_symm_mpullback hn0, ← mpullback_comp (hZ.comp hp) hd,
-      ← mpullback_comp hds (hd.comp (hZ.comp hp))]
-    -- Both retractions are `Φ ∘ 0 ∘ π ∘ Φ⁻¹`, associated differently.
-    simp only [Function.comp_assoc]
-  · exact mpullback_apply_eq_zero ((congrArg _ (Φ.symm_apply_apply _)).trans
-      (vectorBundlePoincareHomotopy_zeroSection _ b))
+  exact ⟨_, hβ₀.mpullback (Φ.symm.contMDiff.of_le hn),
+    mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy Φ h2 (hη.of_le hr') hclosed,
+    mpullback_symm_vectorBundlePoincareHomotopy_zeroSection Φ η⟩
 
 /-- **The relative Poincaré lemma on a tube**, for forms restricting to zero on the core. Let `Φ`
 be a `C^n` diffeomorphism from the total space of a `C^n` vector bundle onto `M`, such as a
@@ -272,13 +330,16 @@ theorem _root_.Diffeomorph.exists_isSmoothForm_relative_primitive
     (hi : mpullback IB I (Φ ∘ zeroSection FV V) η = 0) :
     ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧ mextDeriv β = η ∧
       ∀ b, β (Φ (zeroSection FV V b)) = 0 := by
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_mextDeriv_eq_sub_mpullback hr hn hη hclosed
-  refine ⟨β, hβ, ?_, hβ₀⟩
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
-  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
-  have hiΦ := (Φ.contMDiff.comp (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable
-    hn0
-  rw [hdβ, ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
-    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
+  have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+  have h2 : (2 : WithTop ℕ∞) ≤ n := le_trans (by rw [← one_add_one_eq_two]; gcongr) hn
+  have : IsManifold IB ((r : WithTop ℕ∞) + 1) B := .of_le hn
+  have : ContMDiffVectorBundle ((r : WithTop ℕ∞) + 1) FV V IB := .of_le hn
+  have : IsManifold IB 2 B := .of_le h2
+  have : ContMDiffVectorBundle 2 FV V IB := .of_le h2
+  have hβ₀ := (hη.mpullback (Φ.contMDiff.of_le hn)).vectorBundlePoincareHomotopy
+  exact ⟨_, hβ₀.mpullback (Φ.symm.contMDiff.of_le hn),
+    mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_mpullback_eq_zero Φ h2
+      (hη.of_le hr') hclosed hi,
+    mpullback_symm_vectorBundlePoincareHomotopy_zeroSection Φ η⟩
 
 end TauCeti

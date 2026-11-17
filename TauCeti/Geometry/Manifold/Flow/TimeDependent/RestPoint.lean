@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.VectorField.FirstJet
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -32,7 +34,9 @@ This file proves the **variational equation at a rest point**: the linearized fl
 (`TauCeti.hasDerivAt_mfderiv_timeDependentFlowOf_of_forall_eq_zero`). Consequently, if the
 linearization vanishes at all times between `s` and `t`, that is if `X` has zero first jet at `p`
 along the time interval, then `φ_{s,t}` fixes `p` to first order: its differential at `p` is the
-identity (`TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero`).
+identity (`TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero`, and formulated directly
+via `TauCeti.FirstJetBundle.jet` in
+`TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_jet_eq_zero`).
 
 This is the step of the relative Moser argument which preserves the ambient differential along a
 fixed submanifold: a Moser vector field built from a primitive with zero first jet along the
@@ -53,8 +57,9 @@ counterpart of `TauCeti.hasDerivAt_mfderiv_flowOf_of_eq_zero`. The two-time comp
   the flow from time `t` at a common rest point have derivative `L_t` at time `t`.
 * `TauCeti.hasDerivAt_mfderiv_timeDependentFlowOf_of_forall_eq_zero`: the variational equation
   `A'(t) = L_t ∘ A(t)` at a common rest point.
-* `TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero`: a field with zero first jet at a
-  common rest point has flow maps with identity differential there.
+* `TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero` and
+  `TauCeti.mfderiv_timeDependentFlowOf_eq_id_of_forall_jet_eq_zero`: a field with zero first jet
+  at a common rest point has flow maps with identity differential there.
 
 ## References
 
@@ -169,5 +174,19 @@ theorem mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero
   rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
   subst hD
   exact h.trans (mfderiv_timeDependentFlowOf_self X s p)
+
+/-- **First-jet formulation of identity differential at a rest point.** Let `X` be a jointly `C²`
+time-dependent vector field vanishing at `p` at all times whose first jet
+`TauCeti.FirstJetBundle.jet` vanishes at `p` for every time in `uIcc s t`. Then the differential at
+`p` of the flow map from `s` to `t` is the identity of `T_p M`. -/
+theorem mfderiv_timeDependentFlowOf_eq_id_of_forall_jet_eq_zero
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun q : ℝ × M ↦ (⟨q.2, X q.1 q.2⟩ : TangentBundle I M)))
+    (hp : ∀ u, X u p = 0) {s t : ℝ}
+    (hjet : ∀ u ∈ uIcc s t, FirstJetBundle.jet I E (X u) p = 0) :
+    mfderiv I I (timeDependentFlowOf X s t) p = ContinuousLinearMap.id ℝ (TangentSpace I p) :=
+  mfderiv_timeDependentFlowOf_eq_id_of_forall_eq_zero hX hp fun u hu ↦
+    ((FirstJetBundle.jet_eq_zero_iff_fderiv_mpullbackWithin_extChartAt_symm (X u) p).1
+      (hjet u hu)).2
 
 end TauCeti

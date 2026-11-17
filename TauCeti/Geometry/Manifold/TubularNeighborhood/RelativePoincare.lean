@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
+import TauCeti.Geometry.Manifold.DifferentialForm.Relative.FirstJet
 
 /-!
 # The relative Poincaré lemma near an embedded submanifold
@@ -15,18 +16,22 @@ Let `f : M → N` be a smooth embedding of finite-dimensional boundaryless manif
 Hausdorff and second countable, and let `O` be an open neighbourhood of its image. This file
 proves that `O` contains an open neighbourhood `W` of the image of `f` with the following
 property. Every closed `C^r` form `η` of positive degree on `N`, with `r ≥ 1`, that restricts to
-zero along `f` becomes exact on restriction to `W`, with a `C^r` primitive vanishing along the
-image of `f` as a full ambient tensor
+zero along `f` becomes exact on restriction to `W`, with a `C^r` primitive `β` vanishing along the
+image of `f` as a full ambient tensor; moreover, at every point `f x` where `η` itself vanishes as
+a full ambient tensor, `β` has zero chart derivative at `f x`, hence zero first jet there
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). The ambient form `η` itself
-need not vanish along the image of `f`, only its pullback `f^* η` does. The neighbourhood `W`
-is chosen before the form, so it serves every such form of every degree at once.
+need not vanish along the image of `f` for `β` to be a primitive, only its pullback `f^* η` does;
+the full ambient vanishing is needed specifically for the first jet of `β` to vanish. The
+neighbourhood `W` is chosen before the form, so it serves every such form of every degree at once.
 
 The neighbourhood `W` is a tubular neighbourhood: by the tubular neighbourhood theorem
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_normalBundle_subset`) it is the image of a
 diffeomorphism from the total space of the normal bundle of `f`, sending the zero section to
 `f`. The primitive is transported from the fibre-scaling primitive on that total space
-(`Diffeomorph.exists_isSmoothForm_relative_primitive`). Neither compactness nor closedness of the
-image of `f` is needed.
+(`TauCeti.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_mpullback_eq_zero`), whose
+first-jet vanishing follows from
+`TauCeti.hasFDerivAt_inChartAt_mpullback_symm_vectorBundlePoincareHomotopy_zeroSection`. Neither
+compactness nor closedness of the image of `f` is needed.
 
 ## References
 
@@ -59,7 +64,9 @@ variable {E V H G M N : Type*}
 the image of a smooth embedding `f : M → N` contains an open neighbourhood `W` of that image with
 the following property. Every closed `C^r` form `η` of positive degree on `N`, with `1 ≤ r` and
 `f^* η = 0`, restricts on `W` to the exterior derivative of a `C^r` form `β` that vanishes at
-every point of the image of `f` as a full ambient tensor. -/
+every point of the image of `f` as a full ambient tensor. At every point `f x` where `η` itself
+vanishes as a full ambient tensor, `β` moreover has zero chart derivative (hence zero first jet) at
+`f x`. -/
 theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N) {O : Set N}
     (hO : IsOpen O) (hfO : range f ⊆ O) :
     ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧ ∃ hfW : range f ⊆ W,
@@ -67,7 +74,12 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
         mextDeriv η = 0 → mpullback I J f η = 0 →
         ∃ β : RoughForm J W F k, IsSmoothForm J r β ∧
           mextDeriv β = mpullback J J (Subtype.val : W → N) η ∧
-          ∀ x, β ⟨f x, hfW (mem_range_self x)⟩ = 0 := by
+          (∀ x, β ⟨f x, hfW (mem_range_self x)⟩ = 0) ∧
+          ∀ x, η (f x) = 0 →
+            HasFDerivAt (β.inChartAt ⟨f x, hfW (mem_range_self x)⟩)
+              (0 : V →L[ℝ] V [⋀^Fin k]→L[ℝ] F)
+              (extChartAt J (⟨f x, hfW (mem_range_self x)⟩ : W)
+                (⟨f x, hfW (mem_range_self x)⟩ : W)) := by
   let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
   have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E := by simp [P]
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
@@ -77,6 +89,8 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
   have : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold J ((∞ : ℕ∞ω) + 1) N := IsManifold.of_le (n := ∞) (by simp)
   have := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
+  have : ContMDiffVectorBundle 1 P (fun x ↦ f.NormalSpace x hn) I := .of_le (n := ∞) (by simp)
+  have : ContMDiffVectorBundle 2 P (fun x ↦ f.NormalSpace x hn) I := .of_le (n := ∞) (by simp)
   have hfW : range f ⊆ W := by
     rintro _ ⟨x, rfl⟩
     rw [← hΦ x]
@@ -94,13 +108,25 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
       (mpullback J J (Subtype.val : W → N) η) = 0 := by
     rw [← mpullback_comp ((Φ.contMDiff.comp (contMDiff_zeroSection ℝ _)).mdifferentiable
       (by simp)) (hval.mdifferentiable (by simp)), hcomp, hi]
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_relative_primitive hr
-    (by exact_mod_cast (le_top : r + 1 ≤ ⊤)) hηW hclosedW hiW
-  refine ⟨β, hβ, hdβ, fun x ↦ ?_⟩
-  -- The point `f x` of `W` is the image under `Φ` of the zero vector over `x`.
-  have hx : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
+  have hle : (r : WithTop ℕ∞) + 1 ≤ ∞ := by exact_mod_cast (le_top : r + 1 ≤ ⊤)
+  have : IsManifold I ((r : WithTop ℕ∞) + 1) M := .of_le hle
+  have : ContMDiffVectorBundle ((r : WithTop ℕ∞) + 1) P (fun x ↦ f.NormalSpace x hn) I :=
+    .of_le hle
+  have hβ₀ := (hηW.mpullback (Φ.contMDiff.of_le hle)).vectorBundlePoincareHomotopy
+  have hx (x : M) : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
     Subtype.ext (hΦ x).symm
-  rw [hx]
-  exact hβ₀ x
+  refine ⟨_, hβ₀.mpullback (Φ.symm.contMDiff.of_le hle),
+    mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_mpullback_eq_zero Φ (by simp)
+      (hηW.of_le hr') hclosedW hiW,
+    fun x ↦ ?_, fun x hηx ↦ ?_⟩
+  -- The point `f x` of `W` is the image under `Φ` of the zero vector over `x`.
+  · rw [hx x]
+    exact mpullback_symm_vectorBundlePoincareHomotopy_zeroSection Φ _ x
+  · have hηWx : mpullback J J (Subtype.val : W → N) η (Φ (zeroSection P _ x)) = 0 := by
+      rw [← hx x]
+      exact mpullback_apply_eq_zero hηx
+    rw [hx x]
+    exact hasFDerivAt_inChartAt_mpullback_symm_vectorBundlePoincareHomotopy_zeroSection Φ
+      (by simp) (hηW.of_le zero_le) hηWx
 
 end TauCeti.SmoothEmbedding
