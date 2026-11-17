@@ -240,12 +240,14 @@ private theorem norm_wordCov_le [IsProbabilityMeasure P] {k n : ℕ} {B : ℝ}
       (by simpa using fun i ↦
         (integral_norm_pow_le_sqrt_integral_norm_pow (hηp i)).trans (Real.sqrt_le_sqrt (hη i)))
       w (w ∘ finRotate k)
-  have h2 : ‖(∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P)‖ ≤ (n : ℝ)⁻¹ ^ k * B := by
-    rw [norm_mul]
-    exact (mul_le_mul (hw_le w₁) (hw_le w₂) (norm_nonneg _) (by positivity)).trans_eq <| by
-      rw [show ((Real.sqrt n)⁻¹ ^ k * √B) * ((Real.sqrt n)⁻¹ ^ k * √B) =
-        (Real.sqrt n)⁻¹ ^ (2 * k) * (√B * √B) by rw [two_mul, pow_add]; ring,
-        hsqrt_pow, Real.mul_self_sqrt hB]
+  have h2 : ‖(∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P)‖ ≤ (n : ℝ)⁻¹ ^ k * B :=
+    calc ‖(∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P)‖
+        = ‖∫ ω, wordProd ξ η w₁ ω ∂P‖ * ‖∫ ω, wordProd ξ η w₂ ω ∂P‖ := norm_mul _ _
+      _ ≤ ((Real.sqrt n)⁻¹ ^ k * √B) * ((Real.sqrt n)⁻¹ ^ k * √B) :=
+          mul_le_mul (hw_le w₁) (hw_le w₂) (norm_nonneg _) (by positivity)
+      _ = (Real.sqrt n)⁻¹ ^ (2 * k) * (√B * √B) := by
+          rw [mul_mul_mul_comm, ← pow_add, ← two_mul]
+      _ = (n : ℝ)⁻¹ ^ k * B := by rw [hsqrt_pow, Real.mul_self_sqrt hB]
   exact (norm_sub_le _ _).trans ((add_le_add h1 h2).trans_eq (by ring))
 
 private theorem card_survivingWordPairs_le {k n : ℕ} (hn : n ≠ 0)
@@ -290,8 +292,7 @@ theorem variance_inv_mul_re_trace_pow_wignerMatrix_le
       not_false_eq_true, zero_pow, smul_zero]
     positivity
   rcases eq_or_ne n 0 with rfl | hn
-  · rw [show (fun ω ↦ ((0 : ℕ) : ℝ)⁻¹ * ((wignerMatrix ξ η 0 ω ^ k).trace).re) = 0 by
-      ext; simp [_root_.inv_zero], ProbabilityTheory.variance_zero]; simp
+  · rw [ProbabilityTheory.variance_const_mul]; simp
   rw [variance_re_trace_eq_re_sum_wordCov hk hξp hηp n]
   classical
   let Surv : Finset ((Fin k → Fin n) × (Fin k → Fin n)) := univ.filter IsSurvivingWordPair
