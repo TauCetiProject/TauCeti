@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.NonTorsion
+import TauCeti.KnotTheory.Grid.Homology.Transpose
 
 /-!
 # The invariant `τ` of a knot grid diagram
@@ -30,16 +31,16 @@ Two transfer principles are recorded, which are the algebraic content of the ine
 satisfied by `τ` under chain maps between grid complexes. Knot grids whose homologies are
 isomorphic as Alexander-graded `K[U]`-modules have the same invariant
 (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`); this is how the invariance of `GH⁻`
-descends to `τ`. A homogeneous `K[U]`-linear map of Alexander degree `δ` from `GH⁻(G)` to
-`GH⁻(G')` with a left inverse up to multiplication by a power of `U` satisfies
+descends to `τ`, and in particular diagonal reflection preserves `τ`
+(`GridDiagram.IsKnot.tau_transpose`). A homogeneous `K[U]`-linear map of Alexander degree `δ` from
+`GH⁻(G)` to `GH⁻(G')` with a left inverse up to multiplication by a power of `U` satisfies
 `τ(G') ≤ τ(G) - δ`, provided `GH⁻(G)` is not torsion
 (`GridDiagram.IsKnot.tau_le_tau_sub_of_comp_eq_X_pow_smul`); the crossing change maps of
 Ozsváth--Stipsicz--Szabó, Chapter 6, supply such pairs of maps in degrees `0` and `-1`, and the
 resulting two inequalities bound the change of `τ` under a crossing change.
 
-Finally, over a field, when the `X`-marking state `G.X` receives an even number of counted
-rectangles from every grid state and has the largest Alexander grading of any grid state,
-`τ(G) = -A(G.X)`
+Finally, when the `X`-marking state `G.X` receives an even number of counted rectangles from every
+grid state and has the largest Alexander grading of any grid state, `τ(G) = -A(G.X)`
 (`GridDiagram.IsKnot.tau_eq_neg_alexanderℤ_X`). The standard torus knot grids satisfy both
 hypotheses; their values of `τ` are in `TorusLink/Tau.lean`.
 
@@ -60,6 +61,7 @@ hypotheses; their values of `τ` are in `TorusLink/Tau.lean`.
   does not change `τ`.
 * `TauCeti.GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`: isomorphic Alexander-graded
   unblocked homologies have the same invariant.
+* `TauCeti.GridDiagram.IsKnot.tau_transpose`: diagonal reflection preserves `τ`.
 * `TauCeti.GridDiagram.IsKnot.tau_le_tau_sub_of_comp_eq_X_pow_smul`: a
   homogeneous map of degree `δ` out of a non-torsion `GH⁻(G)` with a left inverse up to a power
   of `U` gives `τ(G') ≤ τ(G) - δ`.
@@ -195,15 +197,9 @@ theorem isGreatest_nonTorsionDegrees_neg_tau :
     ((InternalGrading.nonTorsionDegrees_nonempty_iff _).mpr hT)
     (hG.bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading K)
 
-end Ring
-
-section Field
-
-variable (K : Type*) [Field K] [CharP K 2]
-
-/-- **`τ` from the `X`-marking state.** Over a field, if every grid state has an even number of
-counted rectangles into the `X`-marking state `G.X`, and `G.X` has the largest Alexander grading
-of any grid state, then `τ(G) = -A(G.X)`. -/
+/-- **`τ` from the `X`-marking state.** If every grid state has an even number of counted
+rectangles into the `X`-marking state `G.X`, and `G.X` has the largest Alexander grading of any
+grid state, then `τ(G) = -A(G.X)`. -/
 theorem tau_eq_neg_alexanderℤ_X
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card)
     (h : ∀ x : GridState n, hG.toOddComponentGridDiagram.alexanderℤ x ≤
@@ -211,7 +207,14 @@ theorem tau_eq_neg_alexanderℤ_X
     hG.tau K = -hG.toOddComponentGridDiagram.alexanderℤ G.X := by
   rw [tau_def, hG.supNonTorsionDegree_alexanderUnblockedHomologyGrading_eq hX h]
 
-end Field
+end Ring
+
+/-- Diagonal reflection preserves the invariant `τ` of a knot grid diagram. -/
+@[simp]
+theorem tau_transpose {n : ℕ} {G : GridDiagram n} (hG : G.transpose.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    hG.tau K = ((G.isKnot_transpose).mp hG).tau K :=
+  (((G.isKnot_transpose).mp hG).unblockedHomologyIsomorphic_transpose K).tau_eq.symm
 
 end GridDiagram.IsKnot
 

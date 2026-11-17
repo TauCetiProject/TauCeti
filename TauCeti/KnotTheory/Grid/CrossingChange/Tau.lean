@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.CrossingChange.Grading
-public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
+public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
+public import TauCeti.KnotTheory.Grid.Move.Tau
+import TauCeti.KnotTheory.Grid.CrossingChange.Grading
 import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
+import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
 
 /-!
-# Crossing change maps and the invariant `τ`
+# Crossing change maps, the invariant `τ`, and the unknotting-number bound
 
 Let `C` be a column turn at the columns `a = C.column` and `b = finRotate n a` of a grid diagram
 `G`, and let `G' = G.swapColumns a b`. Write `Φ : GC⁻(G) → GC⁻(G')` for the commutation map of
 `C` and `Ψ : GC⁻(G') → GC⁻(G)` for the commutation map of `G'` turning at the same columns in
 another row `t`; the target of `Ψ` is the complex of `G'.swapColumns a b`, which is `G`. This file
-turns the chain homotopies of the crossing change maps into the crossing change inequality for `τ`.
+turns the chain homotopies of the crossing change maps into the crossing change inequality for `τ`
+and deduces the bound `|τ(L)| ≤ u(L)` by the unknotting number.
 
 The comparison along a single column turn is in `Homology/Commutation/Tau.lean`: if
 `ΨΦ` is chain homotopic to multiplication by `p` with `p(U, …, U) = U ^ k`, then `GH⁻(G')` is not
@@ -37,8 +40,15 @@ homotopy equations are in `CrossingChange/Homotopy/Equation.lean`. Together they
 assumption that `GH⁻` is non-torsion is needed here: the two composites show that `GH⁻(G)` and
 `GH⁻(G')` are torsion together, and then both invariants vanish. With `O_a` off the arc of column
 `b`, the markings of `G'` are in the first order and exchanging its columns returns `G`, so
-`τ(G) ≤ τ(G') ≤ τ(G) + 1`. In either case `τ` changes by at most one. This is the inequality from
-which the bound of `|τ|` by the unknotting number follows.
+`τ(G) ≤ τ(G') ≤ τ(G) + 1`. In either case `τ` changes by at most one.
+
+Diagonal reflection extends the bound `|τ(G') - τ(G)| ≤ 1` from column cross-commutations to row
+cross-commutations and hence to every crossing change of grid knots
+(`GridLink.IsCrossingChange.natAbs_tau_sub_le_one`). Induction along walks in
+`GridLink.crossingChangeGraph` then shows that `|τ(L) - τ(L')|` is bounded by the crossing-change
+distance (`GridLink.IsKnot.natAbs_tau_sub_le_edist`), and specializing `L'` to the unknot over any
+commutative ring of characteristic two yields `|τ(L)| ≤ u(L)`
+(`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`).
 
 ## Main results
 
@@ -49,14 +59,22 @@ which the bound of `|τ|` by the unknotting number follows.
   `τ(G) ≤ τ(G') ≤ τ(G) + 1` across every crossing change with `O_a` off the arc of column `b`.
 * `TauCeti.GridDiagram.IsKnot.abs_tau_swapColumns_sub_tau_le_one`: `|τ(G') - τ(G)| ≤ 1` across
   every crossing change.
+* `TauCeti.GridDiagram.IsCrossCommutation.natAbs_tau_sub_le_one` and
+  `TauCeti.GridLink.IsCrossingChange.natAbs_tau_sub_le_one`: a single cross-commutation or crossing
+  change alters `τ` by at most `1`.
+* `TauCeti.GridLink.IsKnot.natAbs_tau_sub_le_edist`: `|τ(L) - τ(L')|` is bounded by the extended
+  distance in `crossingChangeGraph`.
+* `TauCeti.GridLink.IsKnot.natAbs_tau_le_unknottingNumber`: **the unknotting-number bound**
+  `|τ(L)| ≤ u(L)` over any commutative ring of characteristic two.
 
 ## References
 
 * P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical Surveys
   and Monographs 208, 2015, Sections 6.1 and 6.2: the crossing change maps, their composites, and
-  the resulting inequality for `τ`.
+  the resulting crossing-change and unknotting-number bounds for `τ`.
 * S. Sarkar, *Grid diagrams and the Ozsváth--Szabó tau-invariant*, Math. Res. Lett. 18 (2011),
-  arXiv:1011.5265: the crossing change inequality for `τ` from grid diagrams.
+  arXiv:1011.5265: the crossing-change inequality and unknotting-number bound for `τ` from grid
+  diagrams.
 -/
 
 public section
@@ -157,6 +175,90 @@ theorem abs_tau_swapColumns_sub_tau_le_one {a : Fin n}
 
 end IsKnot
 
+/-! ### Cross-commutation bounds on knot diagrams -/
+
+/-- A column cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
+theorem IsColumnCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsColumnCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff _ _).mp h
+  exact Nat.cast_le.mp
+    ((Int.natCast_natAbs _).trans_le (hG.abs_tau_swapColumns_sub_tau_le_one K ha))
+
+/-- A row cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
+theorem IsRowCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsRowCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  simpa only [IsKnot.tau_transpose] using
+    ((G.isColumnCrossCommutation_transpose G').mpr h).natAbs_tau_sub_le_one
+      ((G.isKnot_transpose).mpr hG) ((G'.isKnot_transpose).mpr hG') K
+
+/-- Any cross-commutation (of rows or columns) between knot grid diagrams alters `τ` by at most
+`1`. -/
+theorem IsCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
+  rcases (isCrossCommutation_iff _ _).mp h with h | h
+  · exact h.natAbs_tau_sub_le_one hG hG' K
+  · exact h.natAbs_tau_sub_le_one hG hG' K
+
 end GridDiagram
+
+/-! ### Crossing-change distance and the unknotting-number bound on grid knots -/
+
+namespace GridLink
+
+/-- A crossing change between grid knots alters `τ` by at most `1`. -/
+theorem IsCrossingChange.natAbs_tau_sub_le_one {L L' : GridLink}
+    (h : IsCrossingChange L L') (hL : L.IsKnot) (hL' : L'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    (hL'.tau K - hL.tau K).natAbs ≤ 1 := by
+  obtain ⟨n, G, G', hcross, rfl, rfl⟩ := (isCrossingChange_iff _ _).mp h
+  rw [IsKnot.tau_toGridLink, IsKnot.tau_toGridLink]
+  exact hcross.natAbs_tau_sub_le_one _ _ K
+
+namespace IsKnot
+
+/-- Along any walk in the crossing-change graph between grid knots, `τ` changes by at most the
+length of the walk. -/
+theorem natAbs_tau_sub_le_length {L L' : GridLink} (hL : L.IsKnot) (hL' : L'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] (p : crossingChangeGraph.Walk L L') :
+    (hL'.tau K - hL.tau K).natAbs ≤ p.length := by
+  induction p with
+  | nil => simp
+  | @cons u v w hadj p ih =>
+    have hcc : IsCrossingChange u v := (crossingChangeGraph_adj.mp hadj).2
+    have hv : v.IsKnot := hcc.isKnot_iff.mpr hL
+    have hstep := hcc.natAbs_tau_sub_le_one hL hv K
+    have htail := ih hv hL'
+    have htri := Int.natAbs_add_le (hL'.tau K - hv.tau K) (hv.tau K - hL.tau K)
+    rw [sub_add_sub_cancel] at htri
+    simp only [SimpleGraph.Walk.length_cons]
+    omega
+
+/-- **Crossing-change distance bound for `τ`.** Between any two grid knots `L` and `L'`, the
+difference `|τ(L) - τ(L')|` is bounded by their extended distance in `crossingChangeGraph`. -/
+theorem natAbs_tau_sub_le_edist {L L' : GridLink} (hL : L.IsKnot) (hL' : L'.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    ((hL.tau K - hL'.tau K).natAbs : ℕ∞) ≤ crossingChangeGraph.edist L L' := by
+  rw [SimpleGraph.edist_eq_sInf, le_sInf_iff]
+  rintro _ ⟨p, rfl⟩
+  rw [← Int.natAbs_neg, neg_sub]
+  exact Nat.cast_le.mpr (hL.natAbs_tau_sub_le_length hL' K p)
+
+/-- **The unknotting-number bound for `τ`.** For every grid knot `L` and every commutative ring `K`
+of characteristic two, `|τ(L)| ≤ u(L)`. -/
+theorem natAbs_tau_le_unknottingNumber {L : GridLink} (hL : L.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    ((hL.tau K).natAbs : ℕ∞) ≤ L.unknottingNumber := by
+  simpa only [unknottingNumber_def, tau_unknot, sub_zero] using
+    hL.natAbs_tau_sub_le_edist isKnot_unknot K
+
+end IsKnot
+
+end GridLink
 
 end TauCeti
