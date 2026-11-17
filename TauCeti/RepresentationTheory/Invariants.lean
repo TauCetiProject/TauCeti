@@ -68,7 +68,8 @@ quasi-isomorphisms of complexes of representations. Invertibility of `#G` is als
 invariants preserve epimorphisms exactly when `#G` is a unit, as the augmentation `k[G] ⟶ k`
 shows, since an invariant of `k[G]` has constant coefficients. Over `ZMod 2` and a group of order
 two, the augmentation is onto while its restriction to invariants is zero. Without any
-hypothesis on `#G`, invariants of a finite group commute with filtered colimits, because finitely
+hypothesis on `#G`, invariants of a finitely generated group, in particular of a finite group,
+commute with filtered colimits: invariance is tested on a finite generating set, and finitely
 many equations `g • v = v` that hold in a filtered colimit already hold at a common stage. In
 particular the dimension of the invariants is additive in short exact sequences of
 finite-dimensional representations over a field in which `#G` is invertible.
@@ -138,7 +139,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   epimorphisms, homology and finite colimits.
 * `Rep.preservesEpimorphisms_invariantsFunctor_iff`: for a finite group, taking invariants
   preserves epimorphisms if and only if `#G` is a unit in `k`.
-* An instance saying that invariants of a finite group preserve filtered colimits.
+* An instance saying that invariants of a finitely generated group, in particular of a finite
+  group, preserve filtered colimits.
 * `CategoryTheory.Functor.mapRepresentation`: the representation `g ↦ F(σ g)` on `F(M)`.
 * `CategoryTheory.Functor.invariants_mapRepresentation` and
   `CategoryTheory.Functor.map_ofHom_subtype_invariants_injective`: when `#G` is invertible, an
@@ -648,8 +650,9 @@ theorem invariantsFunctor_map_surjective {A B : Rep.{w} k G} (f : A ⟶ B)
   rintro ⟨y, hy⟩
   obtain ⟨x, rfl⟩ := hf y
   refine ⟨⟨A.ρ.averageMap x, A.ρ.averageMap_invariant x⟩, Subtype.ext ?_⟩
-  -- The value of `(invariantsFunctor k G).map f` on an invariant `v` is `f v` by definition.
-  exact (Representation.IntertwiningMap.map_averageMap f.hom x).trans (B.ρ.averageMap_id _ hy)
+  rw [invariantsFunctor_map_hom]
+  exact (LinearMap.codRestrict_apply _ _ _).trans
+    ((Representation.IntertwiningMap.map_averageMap f.hom x).trans (B.ρ.averageMap_id _ hy))
 
 /-- When `#G` is invertible in `k`, taking invariants preserves epimorphisms. -/
 instance : (invariantsFunctor.{w} k G).PreservesEpimorphisms where
@@ -688,8 +691,9 @@ theorem preservesEpimorphisms_invariantsFunctor_iff {k : Type u} {G : Type v} [C
       simpa [Representation.coeff_ofMulAction] using (congrArg (·.coeff g) (hx g)).symm
     have hsum : (ε.hom x).down = ∑ g : G, x.coeff g := by
       simp [ε, leftRegularHom, Finsupp.sum_fintype, ← Finset.sum_smul]
-    -- The value of `(invariantsFunctor k G).map ε` on an invariant `v` is `ε v` by definition.
-    have h1 : (ε.hom x).down = 1 := congrArg (ULift.down ∘ Subtype.val) hx1
+    have h1 : (ε.hom x).down = 1 := by
+      simpa [invariantsFunctor_map_hom, LinearMap.codRestrict] using
+        congrArg (ULift.down ∘ Subtype.val) hx1
     simp only [hsum, hconst, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
       ← Nat.card_eq_fintype_card] at h1
     exact IsUnit.of_mul_eq_one _ h1
@@ -698,15 +702,17 @@ theorem preservesEpimorphisms_invariantsFunctor_iff {k : Type u} {G : Type v} [C
 
 section Filtered
 
-variable {k : Type u} {G : Type v} [CommRing k] [Group G] [Finite G]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] [IsMulFG G]
 
 open Types.FilteredColimit in
-/-- **Invariants of a finite group commute with filtered colimits.** An invariant of the colimit
-comes from a vector at some stage; each of the finitely many equations `g • v = v` holds at a later
-stage, hence all of them at a common later stage. No invertibility of `#G` is needed. -/
+/-- **Invariants of a finitely generated group commute with filtered colimits.** An invariant of
+the colimit comes from a vector at some stage. It is invariant as soon as it is fixed by a finite
+generating set `s`; each of the finitely many equations `g • v = v` for `g ∈ s` holds at a later
+stage, hence all of them at a common later stage. In particular this applies to finite groups, and
+no invertibility of `#G` is needed. -/
 instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
   preserves_filtered_colimits J _ _ := ⟨fun {D} ↦ ⟨fun {c} hc ↦ by
-    have : Fintype G := Fintype.ofFinite G
+    obtain ⟨s, hs⟩ := Group.exists_of_isMulFG G
     classical
     -- Filtered colimits of representations are computed on underlying sets, where they are
     -- described elementwise.
@@ -718,9 +724,9 @@ instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
       -- The underlying function of a morphism of representations, after `forget₂` and `forget`,
       -- is its `hom` by definition.
       replace hv : (c.ι.app i).hom v = x := hv
-      -- For each `g` the vectors `g • v` and `v` have the same image `x`, so they agree at a
-      -- later stage, recorded as an object of the filtered category `Under i`.
-      have hg (g : G) : ∃ X : Under i,
+      -- For each generator `g` the vectors `g • v` and `v` have the same image `x`, so they agree
+      -- at a later stage, recorded as an object of the filtered category `Under i`.
+      have hg (g : s) : ∃ X : Under i,
           (D.map X.hom).hom ((D.obj i).ρ g v) = (D.map X.hom).hom v := by
         have h : (c.ι.app i).hom ((D.obj i).ρ g v) = (c.ι.app i).hom v := by
           rw [hom_comm_apply, hv]
@@ -729,16 +735,15 @@ instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
         exact ⟨Under.mk f, hf⟩
       choose X hX using hg
       obtain ⟨S, hS⟩ := IsFiltered.sup_objs_exists (Finset.univ.image X)
-      refine ⟨S.right, ⟨(D.map S.hom).hom v, fun g ↦ ?_⟩, ?_⟩
-      · obtain ⟨m⟩ := hS (Finset.mem_image_of_mem X (Finset.mem_univ g))
+      refine ⟨S.right, ⟨(D.map S.hom).hom v,
+        (Representation.mem_invariants_iff_of_closure_eq_top _ hs _).2 fun g hg ↦ ?_⟩, ?_⟩
+      · obtain ⟨m⟩ := hS (Finset.mem_image_of_mem X (Finset.mem_univ ⟨g, hg⟩))
         rw [← Under.w m, Functor.map_comp]
         simp only [hom_comp, Representation.IntertwiningMap.comp_apply, ← hom_comm_apply, hX]
       · -- The image of `D.map S.hom v` in the colimit is that of `v`, by naturality of `c`.
         refine Subtype.ext (hv.symm.trans ?_)
         rw [← c.w S.hom, hom_comp]
-        -- Both sides are `c.ι.app S.right` applied to `D.map S.hom v`: the right side unfolds
-        -- the action of `invariantsFunctor` on morphisms, a restriction of `hom`, by definition.
-        rfl
+        simp [invariantsFunctor_map_hom, LinearMap.codRestrict]
     · intro i j xi xj h
       obtain ⟨l, f, g, hfg⟩ := (isColimit_eq_iff _ hT).1 (congrArg Subtype.val h)
       exact ⟨l, f, g, Subtype.ext hfg⟩⟩⟩
