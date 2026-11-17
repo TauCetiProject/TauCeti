@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.ColumnRowPartitioned
+public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.Logic.Equiv.Fin.Basic
@@ -138,14 +138,9 @@ private theorem toBlocks₁₁_mul_of_mem_affineGroup {M : GL (n ⊕ m) R}
     (hM : M ∈ affineGroup R n m) (N : GL (n ⊕ m) R) :
     ((M * N : GL (n ⊕ m) R) : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁ =
       (M : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁ * (N : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁ := by
-  have h := fromBlocks_multiply (M : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁
-    (M : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₂ (M : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₂₁
-    (M : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₂₂ (N : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁
-    (N : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₂ (N : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₂₁
-    (N : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₂₂
-  simp only [fromBlocks_toBlocks] at h
-  rw [Units.val_mul, h, toBlocks_fromBlocks₁₁, (mem_affineGroup_iff.1 hM).1, Matrix.zero_mul,
-    add_zero]
+  conv_lhs => rw [Units.val_mul, ← fromBlocks_toBlocks (M : Matrix (n ⊕ m) (n ⊕ m) R),
+    ← fromBlocks_toBlocks (N : Matrix (n ⊕ m) (n ⊕ m) R)]
+  simp [fromBlocks_multiply, (mem_affineGroup_iff.1 hM).1]
 
 variable (R n m)
 
@@ -192,14 +187,12 @@ def affineProjection : affineGroup R n m →* GL n R where
     { val := ((M : GL (n ⊕ m) R) : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁
       inv := (((M⁻¹ : affineGroup R n m) : GL (n ⊕ m) R) : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁
       val_inv := by
-        rw [← toBlocks₁₁_mul_of_mem_affineGroup M.2, ← Subgroup.coe_mul, mul_inv_cancel,
-          Subgroup.coe_one, Units.val_one, ← fromBlocks_one, toBlocks_fromBlocks₁₁]
+        rw [← toBlocks₁₁_mul_of_mem_affineGroup M.2, ← Subgroup.coe_mul]
+        simp [← fromBlocks_one]
       inv_val := by
-        rw [← toBlocks₁₁_mul_of_mem_affineGroup M⁻¹.2, ← Subgroup.coe_mul, inv_mul_cancel,
-          Subgroup.coe_one, Units.val_one, ← fromBlocks_one, toBlocks_fromBlocks₁₁] }
-  map_one' := Units.ext (by
-    simp only [Subgroup.coe_one, Units.val_one]
-    rw [← fromBlocks_one, toBlocks_fromBlocks₁₁])
+        rw [← toBlocks₁₁_mul_of_mem_affineGroup M⁻¹.2, ← Subgroup.coe_mul]
+        simp [← fromBlocks_one] }
+  map_one' := Units.ext (by simp [← fromBlocks_one])
   map_mul' M N := Units.ext (toBlocks₁₁_mul_of_mem_affineGroup M.2 N)
 
 /-- The matrix underlying the projection of `M` is the upper left block of `M`. -/
@@ -324,15 +317,6 @@ theorem affineGroup_eq_stabilizer :
   rw [MulAction.mem_stabilizer_iff, GeneralLinearGroup.smul_def,
     mem_affineGroup_iff_mul_fromRows]
 
-omit [Fintype n] [DecidableEq n] [Fintype m] [Fintype ι] in
-/-- The matrix `(0; 1)` is the frame of the standard basis columns `e_(inr j)`. -/
-private theorem fromRows_zero_one_submatrix (e : ι ≃ n ⊕ m) :
-    (fromRows (0 : Matrix n m R) (1 : Matrix m m R)).submatrix e id =
-      (1 : Matrix ι ι R).submatrix id (e.symm ∘ Sum.inr) := by
-  ext i j
-  obtain ⟨i, rfl⟩ := e.symm.surjective i
-  rcases i with i | i <;> simp [Matrix.one_apply]
-
 /-- For an equivalence `e : ι ≃ n ⊕ m`, reindexing along `e` carries the stabilizer in `GL ι R`
 of the standard basis columns `e⁻¹ (inr j)`, `j : m`, onto the affine group `A_{n,m}(R)`. -/
 theorem map_stabilizer_eq_affineGroup (e : ι ≃ n ⊕ m) :
@@ -340,9 +324,9 @@ theorem map_stabilizer_eq_affineGroup (e : ι ≃ n ⊕ m) :
         (e.reindexGL R).toMonoidHom =
       affineGroup R n m := by
   ext M
-  rw [Subgroup.mem_map_equiv, Equiv.reindexGL_symm, MulAction.mem_stabilizer_iff,
-    GeneralLinearGroup.smul_def, mem_affineGroup_iff_mul_fromRows,
-    ← fromRows_zero_one_submatrix e, Equiv.coe_reindexGL, Equiv.symm_symm, submatrix_mul_equiv,
+  rw [Subgroup.mem_map_equiv, mem_affineGroup_iff_mul_fromRows,
+    ← fromRows_zero_one_submatrix_equiv e]
+  simp [MulAction.mem_stabilizer_iff, GeneralLinearGroup.smul_def, submatrix_mul_equiv,
     (submatrix_injective e.surjective Function.surjective_id).eq_iff]
 
 /-- For an equivalence `e : ι ≃ n ⊕ m`, the stabilizer in `GL ι R` of the standard basis columns
