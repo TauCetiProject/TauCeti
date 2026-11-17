@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
-import Mathlib.Topology.Instances.ZMultiples
+import TauCeti.Topology.Circle.Degree
 
 /-!
 # Normalising a real angle into `[0, 2π)`
@@ -172,20 +172,16 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
     linarith
 
 /-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
-on a preconnected set and agree there modulo `2π` differ by a constant on it: their difference is
-continuous with values in the discrete subgroup `2πℤ`. -/
+on a preconnected set and agree there modulo `2π` differ by a constant on it: this is
+`Circle.exists_forall_eq_add_of_exp_eq` on the subtype, through `Real.Angle.toCircle`. -/
 theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
     {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
     (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
     ∃ C, ∀ x ∈ s, f x - g x = C := by
-  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · exact ⟨0, by simp⟩
-  have hmaps : Set.MapsTo (fun x ↦ f x - g x) s (AddSubgroup.zmultiples (2 * Real.pi)) :=
-    fun x hx ↦ by
-      obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (h x hx)
-      exact AddSubgroup.mem_zmultiples_iff.2 ⟨k, by rw [zsmul_eq_mul, mul_comm]; exact hk.symm⟩
-  exact ⟨f x₀ - g x₀, fun x hx ↦ hs.constant_of_mapsTo (isDiscrete_iff_discreteTopology.2
-    (inferInstanceAs (DiscreteTopology (AddSubgroup.zmultiples (2 * Real.pi))))) (hf.sub hg)
-    hmaps hx hx₀⟩
+  have := isPreconnected_iff_preconnectedSpace.1 hs
+  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun x : s ↦ f x)
+    (G' := fun x : s ↦ g x) hf.domRestrict hg.domRestrict
+    fun x ↦ by simpa only [Real.Angle.toCircle_coe] using congrArg Real.Angle.toCircle (h x x.2)
+  exact ⟨c, fun x hx ↦ by linarith [hc ⟨x, hx⟩]⟩
 
 end TauCeti

@@ -66,7 +66,7 @@ the focus–focus value `(1, 0)` of `F`. Precisely, along the counterclockwise c
 relative equilibria off the axis, every function `L` continuous on `[0, 2π]` that agrees with
 `Θ ∘ γ` modulo `2π` off the axis satisfies `L(2π) = L(0) - 2π`
 (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`). This holds for every
-`r ≤ 1 / 2` (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_half`).
+`r ≤ 1` (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one`).
 This drop of the rotation angle is the input to the classical computation of the Hamiltonian
 monodromy of the pendulum around `(1, 0)`.
 
@@ -215,8 +215,7 @@ private theorem exists_forall_Icc_pos {F : ℝ × ℝ → ℝ} (hF : Continuous 
 /-- Along the values `(h, j)` with `j > 0` tending to `(h₀, 0)`, the momentum `j` tends to `0⁺`. -/
 private theorem tendsto_snd_nhdsWithin_snd_pos (h₀ : ℝ) :
     Tendsto Prod.snd (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0)) (𝓝[>] 0) :=
-  tendsto_nhdsWithin_iff.2 ⟨(continuous_snd.tendsto _).mono_left nhdsWithin_le_nhds,
-    eventually_nhdsWithin_of_forall fun _ hc ↦ hc⟩
+  continuous_snd.continuousWithinAt.tendsto_nhdsWithin fun _ hc ↦ hc
 
 /-- Along the values `(h, j)` with `j > 0` tending to `(h₀, 0)`, the energy eventually lies in
 every interval `[h₀ - δ, h₀ + δ]` with `δ > 0`. -/
@@ -423,8 +422,7 @@ private theorem abs_integral_turningPoint_le {h j c m : ℝ} (hj : 0 < j) (hc : 
     rw [uIcc_of_le (neg_le_neg hch.le)] at hw
     beta_reduce
     rw [← two_mul_div_mul_sqrt_eq (hm.trans_le (hgd w hw)).ne']
-    simp only [hI]
-    ring_nf
+    simp only [hI, neg_sq, neg_one_mul]
   have hψ : ContinuousOn (fun w ↦ 4 * (h - -1 * w) / (6 * -1 * w ^ 2 - 4 * h * w - 2 * -1))
       (Icc (-h) (-c)) :=
     ContinuousOn.div (by fun_prop) (by fun_prop) fun w hw ↦ (hm.trans_le (hgd w hw)).ne'
@@ -580,10 +578,9 @@ theorem tendsto_uncurry_sphericalPendulumRotationAngle_nhdsWithin_snd_pos_of_lt_
 `(h₀, 0)` with `j > 0`. -/
 private theorem tendsto_prodMk_neg_nhdsWithin_snd_neg (h₀ : ℝ) :
     Tendsto (fun c : ℝ × ℝ ↦ (c.1, -c.2)) (𝓝[{c : ℝ × ℝ | c.2 < 0}] (h₀, 0))
-      (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0)) :=
-  tendsto_nhdsWithin_iff.2 ⟨by simpa using ((by fun_prop : Continuous fun c : ℝ × ℝ ↦
-    (c.1, -c.2)).tendsto (h₀, 0)).mono_left nhdsWithin_le_nhds,
-    eventually_nhdsWithin_of_forall fun _ hc ↦ neg_pos.2 hc⟩
+      (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0)) := by
+  simpa using (by fun_prop : Continuous fun c : ℝ × ℝ ↦ (c.1, -c.2)).continuousWithinAt
+    |>.tendsto_nhdsWithin (x := (h₀, 0)) fun _ hc ↦ neg_pos.2 hc
 
 /-- For `h₀ > 1`, the rotation angle `Θ(h, j)` tends to `-2π` as `(h, j) → (h₀, 0)` with
 `j < 0`. -/
@@ -608,14 +605,14 @@ theorem tendsto_uncurry_sphericalPendulumRotationAngle_nhdsWithin_snd_neg_of_lt_
 /-- As `j → 0⁺` at a fixed energy `h`, the value `(h, j)` tends to `(h, 0)` with `j > 0`. -/
 private theorem tendsto_prodMk_nhdsGT (h : ℝ) :
     Tendsto (fun j : ℝ ↦ (h, j)) (𝓝[>] 0) (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h, 0)) :=
-  tendsto_nhdsWithin_iff.2 ⟨((by fun_prop : Continuous fun j : ℝ ↦ (h, j)).tendsto 0).mono_left
-    nhdsWithin_le_nhds, eventually_nhdsWithin_of_forall fun _ hj ↦ hj⟩
+  (by fun_prop : Continuous fun j : ℝ ↦ (h, j)).continuousWithinAt.tendsto_nhdsWithin
+    fun _ hj ↦ hj
 
 /-- As `j → 0⁻` at a fixed energy `h`, the value `(h, j)` tends to `(h, 0)` with `j < 0`. -/
 private theorem tendsto_prodMk_nhdsLT (h : ℝ) :
     Tendsto (fun j : ℝ ↦ (h, j)) (𝓝[<] 0) (𝓝[{c : ℝ × ℝ | c.2 < 0}] (h, 0)) :=
-  tendsto_nhdsWithin_iff.2 ⟨((by fun_prop : Continuous fun j : ℝ ↦ (h, j)).tendsto 0).mono_left
-    nhdsWithin_le_nhds, eventually_nhdsWithin_of_forall fun _ hj ↦ hj⟩
+  (by fun_prop : Continuous fun j : ℝ ↦ (h, j)).continuousWithinAt.tendsto_nhdsWithin
+    fun _ hj ↦ hj
 
 /-- For `-1 < h < 1`, the rotation angle tends to `π` as `j → 0⁺`. -/
 theorem tendsto_sphericalPendulumRotationAngle_nhdsGT_of_lt_one {h : ℝ} (h₁ : -1 < h)
@@ -786,9 +783,8 @@ private theorem tendsto_sphericalPendulumRotationAngle_circle {r : ℝ} (hr : 0 
         (𝓝[Ioo π (2 * π)] (2 * π)) (𝓝 (-(2 * π))) := by
   set γ : ℝ → ℝ × ℝ := fun t ↦ (1 + r * cos t, r * sin t) with hγdef
   have hγ : ∀ {s : Set ℝ} {t₀ : ℝ} {S : Set (ℝ × ℝ)}, (∀ t ∈ s, γ t ∈ S) →
-      Tendsto γ (𝓝[s] t₀) (𝓝[S] (γ t₀)) := fun hs ↦ tendsto_nhdsWithin_iff.2
-    ⟨((by fun_prop : Continuous γ).tendsto _).mono_left nhdsWithin_le_nhds,
-      eventually_nhdsWithin_of_forall hs⟩
+      Tendsto γ (𝓝[s] t₀) (𝓝[S] (γ t₀)) := fun hs ↦
+    (by fun_prop : Continuous γ).continuousWithinAt.tendsto_nhdsWithin hs
   have hup : ∀ t ∈ Ioo 0 π, γ t ∈ {c : ℝ × ℝ | 0 < c.2} := fun t ht ↦
     mul_pos hr (sin_pos_of_pos_of_lt_pi ht.1 ht.2)
   have hdown : ∀ t ∈ Ioo π (2 * π), γ t ∈ {c : ℝ × ℝ | c.2 < 0} := fun t ht ↦ by
@@ -878,18 +874,27 @@ theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle {r : ℝ}
   have h₃ := key (right_nhdsWithin_Ioo_neBot h2pi) hIcc₂ ⟨by linarith, le_rfl⟩ hC₂ l₂π
   linarith
 
-/-- The counterclockwise circles of radius `0 < r ≤ 1 / 2` about the focus–focus value `(1, 0)`
+/-- The counterclockwise circles of radius `0 < r ≤ 1` about the focus–focus value `(1, 0)`
 run above the curve of relative equilibria off the axis `j = 0`, so a continuous lift `L` of the
 rotation angle along such a circle satisfies `L(2π) - L(0) = -2π`
 (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`). -/
-theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_half {r : ℝ}
-    (hr : 0 < r) (hr₂ : r ≤ 1 / 2) {L : ℝ → ℝ} (hL : ContinuousOn L (Icc 0 (2 * π)))
+theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one {r : ℝ}
+    (hr : 0 < r) (hr₂ : r ≤ 1) {L : ℝ → ℝ} (hL : ContinuousOn L (Icc 0 (2 * π)))
     (hLΘ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
       (L t : Real.Angle) = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) :
     L (2 * π) - L 0 = -(2 * π) :=
   sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle hr
     (fun t ht ↦ mem_sphericalPendulumTurningPointDomain_of_sq_lt (mul_ne_zero hr.ne' ht) (by
-      nlinarith [mul_le_mul_of_nonneg_left (sin_sq_le_one t) (sq_nonneg r),
-        mul_le_mul_of_nonneg_left (neg_one_le_cos t) hr.le])) hL hLΘ
+      -- `2 (1 + r cos t) - r² sin² t = (1 + r cos t)² + 1 - r²`, and `cos t > -1` off the axis.
+      have hc : 0 < 1 + cos t := by
+        rcases (neg_one_le_cos t).lt_or_eq with hc | hc
+        · linarith
+        · exact absurd (by linear_combination sin_sq_add_cos_sq t + (cos t - 1) * hc)
+            (pow_ne_zero 2 ht)
+      have hrc : 0 < r * (1 + cos t) := mul_pos hr hc
+      have key : 2 * (1 + r * cos t) - (r * sin t) ^ 2 = (1 + r * cos t) ^ 2 + (1 - r ^ 2) := by
+        linear_combination -r ^ 2 * sin_sq_add_cos_sq t
+      nlinarith [mul_pos hrc (by linarith : 0 < 2 - r + r * cos t)]))
+    hL hLΘ
 
 end TauCeti
