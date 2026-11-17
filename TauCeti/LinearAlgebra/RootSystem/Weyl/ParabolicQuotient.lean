@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 import TauCeti.GroupTheory.Coxeter.ChainProperty
+import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
@@ -231,13 +232,8 @@ theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
     {w : P.weylGroup} {β : ι} (hβ : b.IsPos β) (hneg : P.coroot' β (w • lam) < 0) :
     (weylCoxeterSystem P b).BruhatStep (RootPairing.weylGroup.ofIdx P β * w) w := by
   have := P.flip_isReduced
-  have hinv : β ∈ inversions P b w⁻¹ := by
-    refine (mem_inversions P b w⁻¹ β).mpr ⟨hβ, fun hpos ↦ hneg.not_ge ?_⟩
-    have h := coroot'_weylGroupToPerm_smul P w⁻¹ β (w • lam)
-    rw [inv_smul_smul] at h
-    rw [← h]
-    exact coroot'_nonneg_of_mem_posRoots P b hlam ((mem_posRoots P b _).mpr hpos)
-  exact (P.bruhatStep_ofIdx_mul_iff_mem_inversions b w hβ).mpr hinv
+  exact (P.bruhatStep_ofIdx_mul_iff_mem_inversions b w hβ).mpr
+    (mem_inversions_inv_of_coroot'_smul_neg P b hlam hβ hneg)
 
 omit [P.flip.IsReduced] in
 /-- **A simple reflection that does not shorten `w` pairs nonnegatively.** If `sᵢ` is not a left
