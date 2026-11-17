@@ -23,7 +23,8 @@ a continuous linear map `W^{k,p}(E) →L[ℝ] C₀(E)`, and it is injective.
 
 ## Main declarations
 
-* `TauCeti.Wkp.eq_of_value_ae_eq`: a Sobolev function has at most one representative in `C₀`.
+* `TauCeti.Wkp.zeroAtInfty_eq_of_value_ae_eq`: a Sobolev function has at most one representative
+  in `C₀`.
 * `TauCeti.Wkp.value_ae_eq_of_tendsto`: if `uₙ → w` in `W^{k,p}` and the representatives of the
   `uₙ` in `C₀` converge to `g`, then `g` represents `w`.
 * `TauCeti.Wkp.toZeroAtInftyOfExists`: the continuous representative, as a continuous linear map
@@ -46,7 +47,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
 /-- Two continuous representatives of the same Sobolev function coincide. -/
-theorem eq_of_value_ae_eq {u : Wkp mu ⊤ p k} {g g' : C₀(E, ℝ)}
+theorem zeroAtInfty_eq_of_value_ae_eq {u : Wkp mu ⊤ p k} {g g' : C₀(E, ℝ)}
     (hg : value k u =ᵐ[mu] g) (hg' : value k u =ᵐ[mu] g') : g = g' :=
   ZeroAtInftyContinuousMap.ext <| congrFun <|
     (Continuous.ae_eq_iff_eq mu g.continuous g'.continuous).mp (hg.symm.trans hg')
@@ -76,13 +77,13 @@ private def toZeroAtInftyOfExistsₗ (h : ∀ u : Wkp mu ⊤ p k, ∃ g : C₀(E
     Wkp mu ⊤ p k →ₗ[ℝ] C₀(E, ℝ) where
   toFun u := (h u).choose
   map_add' u v := by
-    refine eq_of_value_ae_eq (u := u + v) (h (u + v)).choose_spec ?_
+    refine zeroAtInfty_eq_of_value_ae_eq (u := u + v) (h (u + v)).choose_spec ?_
     have hadd : ⇑(value k u + value k v) =ᵐ[mu] ⇑(value k u) + ⇑(value k v) := by
       simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value k u) (value k v)
     filter_upwards [(h u).choose_spec, (h v).choose_spec, hadd] with x hu hv hadd
     rw [value_add, hadd, Pi.add_apply, hu, hv, _root_.add_apply]
   map_smul' c u := by
-    refine eq_of_value_ae_eq (u := c • u) (h (c • u)).choose_spec ?_
+    refine zeroAtInfty_eq_of_value_ae_eq (u := c • u) (h (c • u)).choose_spec ?_
     have hsmul : ⇑(c • value k u) =ᵐ[mu] c • ⇑(value k u) := by
       simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_smul c (value k u)
     filter_upwards [(h u).choose_spec, hsmul] with x hu hsmul
@@ -95,7 +96,7 @@ sending a Sobolev function to this unique representative is a continuous linear 
 def toZeroAtInftyOfExists (h : ∀ u : Wkp mu ⊤ p k, ∃ g : C₀(E, ℝ), value k u =ᵐ[mu] g) :
     Wkp mu ⊤ p k →L[ℝ] C₀(E, ℝ) :=
   .ofSeqClosedGraph (g := toZeroAtInftyOfExistsₗ h) fun _ _ _ hu hg =>
-    eq_of_value_ae_eq (value_ae_eq_of_tendsto hu (fun _ => (h _).choose_spec) hg)
+    zeroAtInfty_eq_of_value_ae_eq (value_ae_eq_of_tendsto hu (fun _ => (h _).choose_spec) hg)
       (h _).choose_spec
 
 /-- The continuous representative represents the value of a Sobolev function. -/
@@ -111,7 +112,7 @@ theorem toZeroAtInftyOfExists_eq_iff
     (g : C₀(E, ℝ)) :
     toZeroAtInftyOfExists h u = g ↔ value k u =ᵐ[mu] g :=
   ⟨fun hg => hg ▸ value_ae_eq_toZeroAtInftyOfExists h u,
-    fun hg => eq_of_value_ae_eq (value_ae_eq_toZeroAtInftyOfExists h u) hg⟩
+    fun hg => zeroAtInfty_eq_of_value_ae_eq (value_ae_eq_toZeroAtInftyOfExists h u) hg⟩
 
 /-- The continuous representative determines the Sobolev function. -/
 theorem toZeroAtInftyOfExists_injective
