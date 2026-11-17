@@ -222,8 +222,8 @@ theorem complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst
     (D : firstOrderOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     (complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd D).1 =
       complexDerivationEquivComplexifiedVectorField
-        (firstOrderOperatorsEquivDerivationProd ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ D).1 :=
-  (rfl)
+        (firstOrderOperatorsEquivDerivationProd ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ D).1 := by
+  simp [complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd]
 
 /-- The complexified vector field of a first-order complex scalar operator is `1 ⊗ X + i ⊗ Y`,
 where `X` and `Y` are the vector fields of the real and imaginary parts of its derivation part. -/
