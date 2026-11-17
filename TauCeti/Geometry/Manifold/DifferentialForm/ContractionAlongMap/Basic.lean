@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.ContractionAlongMap
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Interior
 
 /-!
@@ -22,6 +22,16 @@ which need not factor through a vector field on `N`. For a fixed-coefficient dif
 `mfderiv I I' p x`:
 
 `C_(p, V)(ω)_x (v₁, …, vₖ) = ω (p x) (V x, dpₓ v₁, …, dpₓ vₖ)`.
+
+Differentiating or integrating a pulled-back form `p_t^* ω` along a moving family of maps
+`P : M × T → N` whose slices `p_t x = P (x, t)` are not invertible (for example, a homotopy or a
+non-immersive deformation) naturally produces a contraction along `(p_t, ∂_t P)` whose velocity
+section `∂_t P` lies in `p_t^* TN` and generally does not descend to a vector field on `N`. This
+module develops the general contraction operator along `(p, V)` that feeds family contraction in
+`TauCeti.Geometry.Manifold.DifferentialForm.ContractionAlongMap.Family`, Cartan's variation formula
+in `TauCeti.Geometry.Manifold.DifferentialForm.ContractionAlongMap.MovingPullback`, and the
+moving-pullback homotopy operator in
+`TauCeti.Geometry.Manifold.DifferentialForm.ContractionAlongMap.Homotopy`.
 
 The relative counterpart `TauCeti.mcontractionAlongMapWithin` uses `mfderivWithin I I' p s x` so
 that regularity and chain-rule statements hold on subsets with unique derivatives, including
@@ -39,12 +49,15 @@ boundary and corner domains.
   `C_(p, V)(q^* η) = C_(q ∘ p, dq ∘ V) η`, which together recover `TauCeti.mpullback_interior` for
   related fields.
 * `TauCeti.mpullback_subtype_val_mcontractionAlongMap`,
-  `TauCeti.mpullback_inclusion_mcontractionAlongMap`: restriction to open submanifolds.
+  `TauCeti.mpullback_inclusion_mcontractionAlongMap`,
+  `TauCeti.mcontractionAlongMap_mpullback_subtype_val`,
+  `TauCeti.mcontractionAlongMap_mpullback_inclusion`: source and target restriction to open
+  submanifolds.
 * `TauCeti.mcontractionAlongMap_wedgeWith_apply`,
   `TauCeti.mcontractionAlongMap_wedgeWith_zero_right`,
-  `TauCeti.mcontractionAlongMap_wedgeWith_zero_left`: the graded antiderivation law for paired
-  wedges across all positive-sum degree pairs, specializing at `p = id` to
-  `TauCeti.RoughForm.interior_wedgeWith_apply`.
+  `TauCeti.mcontractionAlongMap_wedgeWith_zero_left` (and their `Within` and real-valued `wedge`
+  counterparts): the graded antiderivation law for paired and real wedges across all positive-sum
+  degree pairs, specializing at `p = id` to `TauCeti.RoughForm.interior_wedgeWith_apply`.
 * `ContMDiffWithinAt.mcontractionAlongMapWithin`, `ContMDiffAt.mcontractionAlongMap_family`,
   `TauCeti.IsSmoothForm.mcontractionAlongMap`, `TauCeti.SmoothForm.mcontractionAlongMap`: `C^m`
   regularity, joint smoothness in parameters, and the bundled `ℝ`-linear map on `SmoothForm`.
@@ -519,15 +532,37 @@ theorem mcontractionAlongMap_mpullback_subtype_val (U' : Opens N) (p : M → U')
   refine congrArg (ω (p x)) (funext fun i ↦ ?_)
   cases i using Fin.cases with
   | zero =>
-    change mfderiv I' I' (Subtype.val : U' → N) (p x) (V x) = V x
-    rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    simp only [Matrix.cons_val_zero, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
       Manifold.tangentSpaceOpenEquiv_apply]
+    rfl
   | succ i =>
-    change mfderiv I' I' (Subtype.val : U' → N) (p x) (mfderiv I I' p x (v i)) =
-      mfderiv I I' ((Subtype.val : U' → N) ∘ p) x (v i)
-    rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-      Manifold.tangentSpaceOpenEquiv_apply]
-    exact (Manifold.mfderiv_subtype_val_comp_apply (v i)).symm
+    simp only [Matrix.cons_val_succ, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      Manifold.tangentSpaceOpenEquiv_apply, Manifold.mfderiv_subtype_val_comp_apply]
+    rfl
+
+/-- Contracting a form restricted along `Opens.inclusion h` for nested open target subsets
+`U' ≤ W'` along `p : M → U'` agrees with contracting along `Opens.inclusion h ∘ p`, with no
+regularity hypothesis. -/
+@[simp]
+theorem mcontractionAlongMap_mpullback_inclusion {U' W' : Opens N} (h : U' ≤ W') (p : M → U')
+    (V : (x : M) → TangentSpace I' (p x)) (ω : RoughForm I' W' F (k + 1)) :
+    mcontractionAlongMap I I' p V (mpullback I' I' (Opens.inclusion h) ω) =
+      mcontractionAlongMap I I' (Opens.inclusion h ∘ p) (fun x ↦ V x) ω := by
+  ext x v
+  rw [mcontractionAlongMap_apply, mpullback_inclusion_apply]
+  refine Eq.trans ?_
+    (mcontractionAlongMap_apply (I := I) (I' := I') (Opens.inclusion h ∘ p)
+      (fun x ↦ V x) ω x v).symm
+  refine congrArg (ω (Opens.inclusion h (p x))) (funext fun i ↦ ?_)
+  cases i using Fin.cases with
+  | zero => rfl
+  | succ i =>
+    simp only [Matrix.cons_val_succ]
+    have h1 := Manifold.mfderiv_subtype_val_comp_apply (J := I) (I := I') (U := U') (f := p)
+      (x := x) (v i)
+    have h2 := Manifold.mfderiv_subtype_val_comp_apply (J := I) (I := I') (U := W')
+      (f := Opens.inclusion h ∘ p) (x := x) (v i)
+    exact h1.symm.trans h2
 
 /-! ### Antiderivation law for paired wedges -/
 
@@ -596,6 +631,21 @@ theorem mcontractionAlongMap_wedgeWith_apply {l : ℕ} (μ : F₁ →L[ℝ] F₂
   simpa only [mcontractionAlongMapWithin_univ, mpullbackWithin_univ] using
     mcontractionAlongMapWithin_wedgeWith_apply (I := I) (I' := I') μ p V univ φ ψ x v
 
+/-- **Real-valued wedge antiderivation within a set (both degrees positive).** -/
+theorem mcontractionAlongMapWithin_wedge_apply {l : ℕ}
+    (p : M → N) (V : (x : M) → TangentSpace I' (p x)) (s : Set M)
+    (φ : RoughForm I' N ℝ (k + 1)) (ψ : RoughForm I' N ℝ (l + 1))
+    (x : M) (v : Fin (k + 1 + l) → TangentSpace I x) :
+    mcontractionAlongMapWithin (k := k + 1 + l) I I' p V s (φ.wedge ψ) x v =
+      (mcontractionAlongMapWithin I I' p V s φ).wedge (mpullbackWithin I I' p s ψ) x
+          (v ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+        (-1 : ℝ) ^ (k + 1) •
+          (mpullbackWithin I I' p s φ).wedge
+            (mcontractionAlongMapWithin I I' p V s ψ) x v := by
+  simpa only [RoughForm.wedge_def] using
+    mcontractionAlongMapWithin_wedgeWith_apply (I := I) (I' := I') (ContinuousLinearMap.mul ℝ ℝ)
+      p V s φ ψ x v
+
 /-- **Real-valued wedge antiderivation (both degrees positive).** -/
 theorem mcontractionAlongMap_wedge_apply {l : ℕ}
     (p : M → N) (V : (x : M) → TangentSpace I' (p x))
@@ -634,6 +684,28 @@ theorem mcontractionAlongMap_wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L
   simpa only [mcontractionAlongMapWithin_univ, mpullbackWithin_univ] using
     mcontractionAlongMapWithin_wedgeWith_zero_right (I := I) (I' := I') μ p V univ φ ψ
 
+/-- **Real-valued wedge law when the right factor has degree zero (within a set).** -/
+@[simp]
+theorem mcontractionAlongMapWithin_wedge_zero_right
+    (p : M → N) (V : (x : M) → TangentSpace I' (p x)) (s : Set M)
+    (φ : RoughForm I' N ℝ (k + 1)) (ψ : RoughForm I' N ℝ 0) :
+    mcontractionAlongMapWithin (k := k) I I' p V s (φ.wedge ψ) =
+      (mcontractionAlongMapWithin I I' p V s φ).wedge (mpullbackWithin I I' p s ψ) := by
+  simpa only [RoughForm.wedge_def] using
+    mcontractionAlongMapWithin_wedgeWith_zero_right (I := I) (I' := I')
+      (ContinuousLinearMap.mul ℝ ℝ) p V s φ ψ
+
+/-- **Real-valued wedge law when the right factor has degree zero.** -/
+@[simp]
+theorem mcontractionAlongMap_wedge_zero_right
+    (p : M → N) (V : (x : M) → TangentSpace I' (p x))
+    (φ : RoughForm I' N ℝ (k + 1)) (ψ : RoughForm I' N ℝ 0) :
+    mcontractionAlongMap (k := k) I I' p V (φ.wedge ψ) =
+      (mcontractionAlongMap I I' p V φ).wedge (mpullback I I' p ψ) := by
+  simpa only [RoughForm.wedge_def] using
+    mcontractionAlongMap_wedgeWith_zero_right (I := I) (I' := I')
+      (ContinuousLinearMap.mul ℝ ℝ) p V φ ψ
+
 /-- **Paired-wedge law when the left factor has degree zero (within a set).** The zero-form
 contraction term is omitted and `(-1)^0 = 1`: `C_(p, V)(φ ∧_μ ψ) = p^* φ ∧_μ C_(p, V) ψ`. -/
 @[simp]
@@ -662,6 +734,28 @@ theorem mcontractionAlongMap_wedgeWith_zero_left {l : ℕ} (μ : F₁ →L[ℝ] 
   simpa only [mcontractionAlongMapWithin_univ, mpullbackWithin_univ] using
     mcontractionAlongMapWithin_wedgeWith_zero_left (I := I) (I' := I') μ p V univ φ ψ
 
+/-- **Real-valued wedge law when the left factor has degree zero (within a set).** -/
+@[simp]
+theorem mcontractionAlongMapWithin_wedge_zero_left {l : ℕ}
+    (p : M → N) (V : (x : M) → TangentSpace I' (p x)) (s : Set M)
+    (φ : RoughForm I' N ℝ 0) (ψ : RoughForm I' N ℝ (l + 1)) :
+    mcontractionAlongMapWithin (k := 0 + l) I I' p V s (φ.wedge ψ) =
+      (mpullbackWithin I I' p s φ).wedge (mcontractionAlongMapWithin I I' p V s ψ) := by
+  simpa only [RoughForm.wedge_def] using
+    mcontractionAlongMapWithin_wedgeWith_zero_left (I := I) (I' := I')
+      (ContinuousLinearMap.mul ℝ ℝ) p V s φ ψ
+
+/-- **Real-valued wedge law when the left factor has degree zero.** -/
+@[simp]
+theorem mcontractionAlongMap_wedge_zero_left {l : ℕ}
+    (p : M → N) (V : (x : M) → TangentSpace I' (p x))
+    (φ : RoughForm I' N ℝ 0) (ψ : RoughForm I' N ℝ (l + 1)) :
+    mcontractionAlongMap (k := 0 + l) I I' p V (φ.wedge ψ) =
+      (mpullback I I' p φ).wedge (mcontractionAlongMap I I' p V ψ) := by
+  simpa only [RoughForm.wedge_def] using
+    mcontractionAlongMap_wedgeWith_zero_left (I := I) (I' := I')
+      (ContinuousLinearMap.mul ℝ ℝ) p V φ ψ
+
 end Wedge
 
 /-! ### Fibre coordinates, regularity, and smooth families -/
@@ -670,37 +764,57 @@ section Smooth
 
 variable [IsManifold I 1 M] [IsManifold I' 1 N]
 
-/-- In fibre coordinates centred at `x₀` and `p x₀`, `mcontractionAlongMapWithin` inserts the
+/-- In fibre coordinates centred at `x₀ : M` and `y₀ : N`, `mcontractionAlongMapWithin` inserts the
 tangent-bundle fibre coordinate of `V x` into the fibre coordinate of `ω (p x)` and precomposes
-with the tangent coordinates of `mfderivWithin I I' p s`. -/
+with the tangent coordinates of `mfderivWithin I I' p s x`. The target tangent trivialization at
+`y₀` must be valid at `p x`. -/
 theorem RoughForm.inCoordinates_mcontractionAlongMapWithin (ω : RoughForm I' N F (k + 1))
-    (p : M → N) (V : (x : M) → TangentSpace I' (p x)) (s : Set M) (x₀ x : M)
-    (hx : p x ∈ (trivializationAt E' (TangentSpace I') (p x₀)).baseSet) :
+    (p : M → N) (V : (x : M) → TangentSpace I' (p x)) (s : Set M) (x₀ x : M) (y₀ : N)
+    (hx : p x ∈ (trivializationAt E' (TangentSpace I') y₀).baseSet) :
     ContinuousAlternatingMap.inCoordinates E F x₀ x x₀ x
         (mcontractionAlongMapWithin I I' p V s ω x) =
-      ((ContinuousAlternatingMap.inCoordinates E' F (p x₀) (p x) (p x₀) (p x)
+      ((ContinuousAlternatingMap.inCoordinates E' F y₀ (p x) y₀ (p x)
         (ω (p x))).curryLeft
-          ((trivializationAt E' (TangentSpace I') (p x₀) ⟨p x, V x⟩).2)).compContinuousLinearMap
-        (inTangentCoordinates I I' id p (mfderivWithin I I' p s) x₀ x) := by
-  set e' := trivializationAt E' (TangentSpace I') (p x₀)
+          ((trivializationAt E' (TangentSpace I') y₀ ⟨p x, V x⟩).2)).compContinuousLinearMap
+        (ContinuousLinearMap.inCoordinates E (TangentSpace I) E' (TangentSpace I')
+          x₀ x y₀ (p x) (mfderivWithin I I' p s x)) := by
+  let c : TangentSpace I' (p x) [⋀^Fin k]→L[ℝ] Trivial N F (p x) :=
+    ContinuousAlternatingMap.curryLeft (E := E') (ω (p x)) (V x)
+  have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
+    (F₁ := E) (F₂ := E') (F₃ := F) (V₁ := TangentSpace I) (V₂ := TangentSpace I')
+    (V₃ := Trivial N F) (x₀ := x₀) (y₀ := y₀) (z₀ := y₀)
+    c (mfderivWithin I I' p s x) hx
+  set e' := trivializationAt E' (TangentSpace I') y₀
+  have hcur : ContinuousAlternatingMap.inCoordinates E' F y₀ (p x) y₀ (p x) c =
+      (ContinuousAlternatingMap.inCoordinates E' F y₀ (p x) y₀ (p x) (ω (p x))).curryLeft
+        (e' ⟨p x, V x⟩).2 := by
+    ext v
+    simp only [c, ContinuousAlternatingMap.inCoordinates,
+      Bundle.Trivial.eq_trivialization N F (trivializationAt F (Trivial N F) y₀),
+      Bundle.Trivial.continuousLinearMapAt_trivialization,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
+      ContinuousLinearMap.id_apply, ContinuousAlternatingMap.curryLeft_apply_apply]
+    refine congrArg (ω (p x)) (funext fun i ↦ ?_)
+    cases i using Fin.cases with
+    | zero =>
+      simp only [Matrix.cons_val_zero]
+      rw [e'.symmL_apply hx, e'.symm_apply_apply_mk hx]
+      rfl
+    | succ i =>
+      simp only [Matrix.cons_val_succ]
+      rfl
+  rw [hcur] at h
   ext v
+  have hv := congrArg (fun a ↦ a v) h
   simp only [ContinuousAlternatingMap.inCoordinates,
     Bundle.Trivial.eq_trivialization M F (trivializationAt F (Trivial M F) x₀),
-    Bundle.Trivial.eq_trivialization N F (trivializationAt F (Trivial N F) (p x₀)),
+    Bundle.Trivial.eq_trivialization N F (trivializationAt F (Trivial N F) y₀),
     Bundle.Trivial.continuousLinearMapAt_trivialization,
     ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
-    ContinuousLinearMap.id_apply, ContinuousAlternatingMap.curryLeft_apply_apply,
-    inTangentCoordinates, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.coe_comp,
-    id_eq, mcontractionAlongMapWithin_apply]
-  refine congrArg (ω (p x)) (funext fun i ↦ ?_)
-  cases i using Fin.cases with
-  | zero =>
-    simp only [Matrix.cons_val_zero]
-    rw [e'.symmL_apply hx, e'.symm_apply_apply_mk hx]
-  | succ i =>
-    simp only [Matrix.cons_val_succ]
-    exact (e'.symmL_continuousLinearMapAt hx _).symm
+    ContinuousLinearMap.id_apply, mcontractionAlongMapWithin_apply] at hv ⊢
+  exact hv
 
 /-- **Within-set `C^m` regularity of contraction along a map.** If `ω` is `C^m` within `t` at
 `p x`, `p` is `C^n` within `s` at `x` with `m + 1 ≤ n`, and `y ↦ (p y, V y)` is `C^m` into `TN`
@@ -735,8 +849,8 @@ theorem _root_.ContMDiffWithinAt.mcontractionAlongMapWithin {m n : WithTop ℕ�
         (FiberBundle.mem_baseSet_trivializationAt' (p x)))
   filter_upwards [hmem] with y hy
   simpa only [Function.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
-    LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply]
-    using ω.inCoordinates_mcontractionAlongMapWithin (I := I) p V s x y hy
+    LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply, inTangentCoordinates, id_eq]
+    using ω.inCoordinates_mcontractionAlongMapWithin (I := I) p V s x y (p x) hy
 
 /-- `C^m` regularity of `mcontractionAlongMapWithin` on a unique-differentiability set `s`. -/
 theorem _root_.ContMDiffOn.mcontractionAlongMapWithin {m n : WithTop ℕ∞}
@@ -806,27 +920,11 @@ theorem _root_.ContMDiffAt.mcontractionAlongMap_family [IsManifold I'' 1 L] {m n
       ((trivializationAt E' (TangentSpace I') (p q₀ (g q₀))).open_baseSet.mem_nhds
         (FiberBundle.mem_baseSet_trivializationAt' (p q₀ (g q₀))))
   filter_upwards [hmem] with q hq
-  set e' := trivializationAt E' (TangentSpace I') (p q₀ (g q₀))
-  ext v
-  simp only [Function.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
+  simpa only [Function.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply,
-    ContinuousAlternatingMap.inCoordinates,
-    Bundle.Trivial.eq_trivialization M F (trivializationAt F (Trivial M F) (g q₀)),
-    Bundle.Trivial.eq_trivialization N F (trivializationAt F (Trivial N F) (p q₀ (g q₀))),
-    Bundle.Trivial.continuousLinearMapAt_trivialization,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
-    ContinuousLinearMap.id_apply, ContinuousAlternatingMap.curryLeft_apply_apply,
-    inTangentCoordinates, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.coe_comp,
-    mcontractionAlongMap_apply]
-  refine congrArg (ω (p q (g q))) (funext fun i ↦ ?_)
-  cases i using Fin.cases with
-  | zero =>
-    simp only [Matrix.cons_val_zero]
-    rw [e'.symmL_apply hq, e'.symm_apply_apply_mk hq]
-  | succ i =>
-    simp only [Matrix.cons_val_succ]
-    exact (e'.symmL_continuousLinearMapAt hq _).symm
+    mcontractionAlongMapWithin_univ, mfderivWithin_univ, inTangentCoordinates]
+    using ω.inCoordinates_mcontractionAlongMapWithin (I := I) (p q) (V q) univ (g q₀) (g q)
+      (p q₀ (g q₀)) hq
 
 /-- Contracting a `C^m` fixed-coefficient form along a `C^(m + 1)` map `p` and a `C^m` section
 `V` of `p^* TN` produces a `C^m` form. -/

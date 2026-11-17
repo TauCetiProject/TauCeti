@@ -107,6 +107,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   instance `TauCeti.FiberBundle.t2Space_totalSpace`.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
+* `TauCeti.Manifold.contMDiffAt_tangentBundle_restrictOpen`: restricting a `C^n` tangent-bundle
+  section to an open submanifold preserves `C^n` regularity at a point.
 * `TauCeti.Manifold.restrictOpenTangentSpaceBilinear`: restriction of a field of bilinear maps on
   the tangent spaces to an open submanifold, and
   `TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilinear`: restriction preserves `C^n`
@@ -941,6 +943,45 @@ theorem eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
   change (tangentBundleCore I U).coordChange (achart H x) (achart H y) y z =
     (tangentBundleCore I M).coordChange (achart H (x : M)) (achart H (y : M)) (y : M) z
   exact DFunLike.congr_fun hcoord z
+
+/-- Restricting a `C^n` tangent-bundle section to an open submanifold preserves `C^n` regularity
+at a point, without completeness assumptions on the model space. -/
+theorem contMDiffAt_tangentBundle_restrictOpen [IsManifold I 1 M] {n : ℕ∞ω}
+    {U : Opens M} {V : ∀ x : M, TangentSpace I x} {x : U}
+    (hV : ContMDiffAt I I.tangent n (fun y ↦ TotalSpace.mk' E y (V y)) (x : M)) :
+    ContMDiffAt I I.tangent n
+      (fun u : U ↦ TotalSpace.mk' E u ((tangentSpaceOpenEquiv (I := I) u).symm (V u)))
+      x := by
+  rw [contMDiffAt_section_iff]
+  have hcomp := hV.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
+  rw [Bundle.contMDiffAt_totalSpace_iff] at hcomp
+  refine hcomp.2.congr_of_eventuallyEq ?_
+  filter_upwards [
+    (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
+    continuousAt_subtype_val.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (x : M))),
+    eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x]
+      with y hyU hyM hsymm
+  have hout :
+      (trivializationAt E (TangentSpace I : U → Type _) x).continuousLinearMapAt 𝕜 y
+        ((tangentSpaceOpenEquiv (I := I) y).symm (V y)) =
+      (trivializationAt E (TangentSpace I : M → Type _) (x : M)).continuousLinearMapAt 𝕜 (y : M)
+        (V y) := by
+    set z := (trivializationAt E (TangentSpace I : M → Type _) (x : M)).continuousLinearMapAt 𝕜
+      (y : M) (V y)
+    have hw : (tangentSpaceOpenEquiv (I := I) y).symm (V y) =
+        (trivializationAt E (TangentSpace I : U → Type _) x).symmL 𝕜 y z := by
+      apply (tangentSpaceOpenEquiv (I := I) y).injective
+      rw [ContinuousLinearEquiv.apply_symm_apply, hsymm]
+      exact (Trivialization.symmL_continuousLinearMapAt
+        (trivializationAt E (TangentSpace I : M → Type _) (x : M)) hyM (V y)).symm
+    rw [hw, Trivialization.continuousLinearMapAt_symmL _ hyU]
+  rw [Trivialization.continuousLinearMapAt_apply, Trivialization.continuousLinearMapAt_apply,
+    Trivialization.coe_linearMapAt_of_mem _ hyU,
+    Trivialization.coe_linearMapAt_of_mem _ hyM] at hout
+  exact hout
 
 section RestrictOpenBilin
 

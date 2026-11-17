@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import Mathlib.Analysis.Calculus.TangentCone.Prod
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
-import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 
 /-!
@@ -46,15 +47,18 @@ operator `TauCeti.cylinderHomotopy` applied to `P^* form`
 
 * `TauCeti.contractionAlongMapWithin`, `TauCeti.contractionAlongMap`: contraction of a differential
   form along a map and a vector field along that map.
-* `TauCeti.contractionAlongMap_comp_right`, `TauCeti.contractionAlongMap_compContinuousLinearMap`:
-  naturality under precomposition on the source and pullback on the target.
+* `TauCeti.contractionAlongMap_comp_right`,
+  `TauCeti.contractionAlongMap_compContinuousLinearMap_fderiv`: naturality under precomposition on
+  the source and pullback on the target.
 * `ContDiffWithinAt.contractionAlongMapWithin`, `ContDiff.contractionAlongMap`: `C^m` regularity.
 * `TauCeti.familyContractionWithin`, `TauCeti.familyContraction`: contraction of a form along a
-  one-parameter family `P : E × ℝ → F` and its time velocity.
+  one-parameter family `P : E × ℝ → F` and its time velocity, with linearity, naturality, and
+  `C^m` regularity.
 * `TauCeti.hasDerivAt_compContinuousLinearMap_fderivWithin_family`,
   `TauCeti.hasDerivAt_compContinuousLinearMap_fderiv_family`: differentiation of moving pullbacks
   within a set and on the whole space.
-* `TauCeti.hasDerivAt_comp_eq_familyContraction_extDeriv`: the degree-zero specialization
+* `TauCeti.hasDerivAt_comp_familyContractionWithin_extDerivWithin`,
+  `TauCeti.hasDerivAt_comp_familyContraction_extDeriv`: the degree-zero specialization
   `∂ₜ (f ∘ pₜ)ₓ = C_(pₜ, Vₜ)(df)ₓ 0`.
 * `TauCeti.intervalIntegral_familyContraction_eq_cylinderHomotopy`: agreement of the time integral
   of `familyContraction` over `[0, 1]` with `cylinderHomotopy` of the product pullback.
@@ -275,8 +279,9 @@ theorem contractionAlongMapWithin_comp_right {h : E' → E} {p : E → F} {V : E
   ext v
   rfl
 
-/-- **Source naturality.** Precomposing `(p, V)` with a differentiable map `h : E' → E` pulls back
-the contraction along `h`. -/
+/-- **Source naturality.** If `h : E' → E` is differentiable at `z` and `p : E → F` is
+differentiable at `h z`, then precomposing `(p, V)` with `h` pulls back the contraction along `h`.
+-/
 theorem contractionAlongMap_comp_right {h : E' → E} {p : E → F} {V : E → F}
     {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G} {z : E'}
     (hh : DifferentiableAt ℝ h z) (hp : DifferentiableAt ℝ p (h z)) :
@@ -288,8 +293,8 @@ theorem contractionAlongMap_comp_right {h : E' → E} {p : E → F} {V : E → F
 
 /-- **Target naturality within sets.** Contracting a pulled-back form `q^* η` along `(p, V)` is
 contracting `η` along `(q ∘ p, Dq ∘ V)`. -/
-theorem contractionAlongMapWithin_compContinuousLinearMap {p : E → F} {q : F → F'} {V : E → F}
-    {η : F' → F' [⋀^Fin (k + 1)]→L[ℝ] G} {s : Set E} {t : Set F} {x : E}
+theorem contractionAlongMapWithin_compContinuousLinearMap_fderivWithin {p : E → F} {q : F → F'}
+    {V : E → F} {η : F' → F' [⋀^Fin (k + 1)]→L[ℝ] G} {s : Set E} {t : Set F} {x : E}
     (hp : DifferentiableWithinAt ℝ p s x) (hq : DifferentiableWithinAt ℝ q t (p x))
     (hst : MapsTo p s t) (hs : UniqueDiffWithinAt ℝ s x) :
     contractionAlongMapWithin p V
@@ -304,15 +309,16 @@ theorem contractionAlongMapWithin_compContinuousLinearMap {p : E → F} {q : F �
 
 /-- **Target naturality.** Contracting a pulled-back form `q^* η` along `(p, V)` is contracting `η`
 along `(q ∘ p, Dq ∘ V)`. -/
-theorem contractionAlongMap_compContinuousLinearMap {p : E → F} {q : F → F'} {V : E → F}
+theorem contractionAlongMap_compContinuousLinearMap_fderiv {p : E → F} {q : F → F'} {V : E → F}
     {η : F' → F' [⋀^Fin (k + 1)]→L[ℝ] G} {x : E}
     (hp : DifferentiableAt ℝ p x) (hq : DifferentiableAt ℝ q (p x)) :
     contractionAlongMap p V
         (fun y ↦ (η (q y)).compContinuousLinearMap (fderiv ℝ q y)) x =
       contractionAlongMap (q ∘ p) (fun y ↦ fderiv ℝ q (p y) (V y)) η x := by
   simpa only [contractionAlongMapWithin_univ, fderivWithin_univ] using
-    contractionAlongMapWithin_compContinuousLinearMap (s := univ) (t := univ) (V := V) (η := η)
-      hp.differentiableWithinAt hq.differentiableWithinAt (mapsTo_univ _ _) uniqueDiffWithinAt_univ
+    contractionAlongMapWithin_compContinuousLinearMap_fderivWithin (s := univ) (t := univ)
+      (V := V) (η := η) hp.differentiableWithinAt hq.differentiableWithinAt
+      (mapsTo_univ _ _) uniqueDiffWithinAt_univ
 
 /-! ### Regularity -/
 
@@ -332,9 +338,7 @@ theorem _root_.ContDiffWithinAt.contractionAlongMapWithin {m n : WithTop ℕ∞}
         |>.comp_contDiffWithinAt (hform.comp x hpm hst)).clm_apply hV
   have hdp : ContDiffWithinAt ℝ m (fderivWithin ℝ p s) s x :=
     hp.fderivWithin_right hs hmn hx
-  change ContDiffWithinAt ℝ m
-    (fun y ↦ ((form (p y)).curryLeft (V y)).compContinuousLinearMap (fderivWithin ℝ p s y)) s x
-  simpa only [Function.comp_def, compContinuousLinearMapCLM_apply]
+  simpa only [Function.comp_def, compContinuousLinearMapCLM_apply, ← contractionAlongMapWithin_def]
     using (ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
       (𝕜 := ℝ) (E := E) (F := F) (G := G) (ι := Fin k) m |>.comp_contDiffWithinAt hdp).clm_apply
       hcur
@@ -410,35 +414,359 @@ theorem familyContraction_apply (P : E × ℝ → F) (t : ℝ)
         fun i ↦ fderiv ℝ (fun y ↦ P (y, t)) x (v i)) :=
   (rfl)
 
+@[simp]
+theorem familyContractionWithin_zero (P : E × ℝ → F) (s : Set E) (t : ℝ) :
+    familyContractionWithin P s t (0 : F → F [⋀^Fin (k + 1)]→L[ℝ] G) = 0 :=
+  contractionAlongMapWithin_zero _ _ _
+
+@[simp]
+theorem familyContraction_zero (P : E × ℝ → F) (t : ℝ) :
+    familyContraction P t (0 : F → F [⋀^Fin (k + 1)]→L[ℝ] G) = 0 :=
+  contractionAlongMap_zero _ _
+
+@[simp]
+theorem familyContractionWithin_add (P : E × ℝ → F) (s : Set E) (t : ℝ)
+    (form₁ form₂ : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContractionWithin P s t (form₁ + form₂) =
+      familyContractionWithin P s t form₁ + familyContractionWithin P s t form₂ :=
+  contractionAlongMapWithin_add _ _ form₁ form₂ _
+
+@[simp]
+theorem familyContraction_add (P : E × ℝ → F) (t : ℝ)
+    (form₁ form₂ : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContraction P t (form₁ + form₂) =
+      familyContraction P t form₁ + familyContraction P t form₂ :=
+  contractionAlongMap_add _ _ form₁ form₂
+
+@[simp]
+theorem familyContractionWithin_smul (c : ℝ) (P : E × ℝ → F) (s : Set E) (t : ℝ)
+    (form : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContractionWithin P s t (c • form) = c • familyContractionWithin P s t form :=
+  contractionAlongMapWithin_smul c _ _ form _
+
+@[simp]
+theorem familyContraction_smul (c : ℝ) (P : E × ℝ → F) (t : ℝ)
+    (form : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContraction P t (c • form) = c • familyContraction P t form :=
+  contractionAlongMap_smul c _ _ form
+
+@[simp]
+theorem familyContractionWithin_neg (P : E × ℝ → F) (s : Set E) (t : ℝ)
+    (form : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContractionWithin P s t (-form) = -familyContractionWithin P s t form :=
+  contractionAlongMapWithin_neg _ _ form _
+
+@[simp]
+theorem familyContraction_neg (P : E × ℝ → F) (t : ℝ)
+    (form : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContraction P t (-form) = -familyContraction P t form :=
+  contractionAlongMap_neg _ _ form
+
+@[simp]
+theorem familyContractionWithin_sub (P : E × ℝ → F) (s : Set E) (t : ℝ)
+    (form₁ form₂ : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContractionWithin P s t (form₁ - form₂) =
+      familyContractionWithin P s t form₁ - familyContractionWithin P s t form₂ :=
+  contractionAlongMapWithin_sub _ _ form₁ form₂ _
+
+@[simp]
+theorem familyContraction_sub (P : E × ℝ → F) (t : ℝ)
+    (form₁ form₂ : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    familyContraction P t (form₁ - form₂) =
+      familyContraction P t form₁ - familyContraction P t form₂ :=
+  contractionAlongMap_sub _ _ form₁ form₂
+
+/-- **Source naturality of `familyContractionWithin`.** Precomposing a moving family `P : E × ℝ → F`
+in its spatial argument with `h : E' → E` pulls back `familyContractionWithin` along `h`. -/
+theorem familyContractionWithin_comp_prodMap_id {h : E' → E} {P : E × ℝ → F}
+    {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G} {s' : Set E'} {s : Set E} {t : ℝ} {z : E'}
+    (hh : DifferentiableWithinAt ℝ h s' z)
+    (hP : DifferentiableWithinAt ℝ (fun y ↦ P (y, t)) s (h z))
+    (hst : MapsTo h s' s) (hs' : UniqueDiffWithinAt ℝ s' z) :
+    familyContractionWithin (P ∘ Prod.map h id) s' t form z =
+      (familyContractionWithin P s t form (h z)).compContinuousLinearMap
+        (fderivWithin ℝ h s' z) := by
+  have hbase := contractionAlongMapWithin_comp_right (h := h) (p := fun y ↦ P (y, t))
+    (V := fun y ↦ deriv (fun u ↦ P (y, u)) t) (form := form) hh hP hst hs'
+  simpa only [familyContractionWithin_def, Function.comp_def, Prod.map_apply, id_eq] using hbase
+
+/-- **Source naturality of `familyContraction`.** If `h : E' → E` is differentiable at `z` and
+`P : E × ℝ → F` is differentiable at `(h z, t)`, precomposing `P` in its spatial argument with `h`
+pulls back `familyContraction` along `h`. -/
+theorem familyContraction_comp_prodMap_id {h : E' → E} {P : E × ℝ → F}
+    {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G} {t : ℝ} {z : E'}
+    (hh : DifferentiableAt ℝ h z) (hP : DifferentiableAt ℝ P (h z, t)) :
+    familyContraction (P ∘ Prod.map h id) t form z =
+      (familyContraction P t form (h z)).compContinuousLinearMap (fderiv ℝ h z) := by
+  have hP_slice : DifferentiableAt ℝ (fun y ↦ P (y, t)) (h z) :=
+    hP.comp (h z) (hasFDerivAt_prodMk_left (𝕜 := ℝ) (h z) t).differentiableAt
+  have hvel : fderiv ℝ (P ∘ Prod.map h id) (z, t) (0, 1) = fderiv ℝ P (h z, t) (0, 1) := by
+    have hmap : HasFDerivAt (Prod.map h (id : ℝ → ℝ))
+        ((fderiv ℝ h z).prodMap (ContinuousLinearMap.id ℝ ℝ)) (z, t) :=
+      hh.hasFDerivAt.prodMap (z, t) (hasFDerivAt_id t)
+    rw [fderiv_comp (z, t) hP hmap.differentiableAt, hmap.fderiv]
+    simp
+  have hbase := contractionAlongMap_comp_right (h := h) (p := fun y ↦ P (y, t))
+    (V := fun y ↦ fderiv ℝ P (y, t) (0, 1)) (form := form) hh hP_slice
+  ext v
+  rw [familyContraction_apply, compContinuousLinearMap_apply, familyContraction_apply, hvel]
+  simpa only [contractionAlongMap_apply, compContinuousLinearMap_apply, Function.comp_def,
+    Prod.map_apply, id_eq] using DFunLike.congr_fun hbase v
+
+/-- **Target naturality of `familyContractionWithin`.** Contracting a pulled-back form `q^* η`
+along a moving family `P` equals contracting `η` along `q ∘ P`. -/
+theorem familyContractionWithin_compContinuousLinearMap_fderivWithin {P : E × ℝ → F} {q : F → F'}
+    {η : F' → F' [⋀^Fin (k + 1)]→L[ℝ] G} {s : Set E} {t_set : Set F} {x : E} {t : ℝ}
+    (hPs : DifferentiableWithinAt ℝ (fun y ↦ P (y, t)) s x)
+    (hPt : DifferentiableAt ℝ (fun u ↦ P (x, u)) t)
+    (hq : DifferentiableWithinAt ℝ q t_set (P (x, t)))
+    (hst : MapsTo (fun y ↦ P (y, t)) s t_set) (hs : UniqueDiffWithinAt ℝ s x)
+    (hmaps_t : (fun u ↦ P (x, u)) ⁻¹' t_set ∈ 𝓝 t) :
+    familyContractionWithin P s t
+        (fun y ↦ (η (q y)).compContinuousLinearMap (fderivWithin ℝ q t_set y)) x =
+      familyContractionWithin (q ∘ P) s t η x := by
+  have hvel : deriv (fun u ↦ q (P (x, u))) t =
+      fderivWithin ℝ q t_set (P (x, t)) (deriv (fun u ↦ P (x, u)) t) := by
+    obtain ⟨U, hUsub, hUopen, htU⟩ := mem_nhds_iff.mp hmaps_t
+    have hc : HasDerivWithinAt (fun u ↦ q (P (x, u)))
+        (fderivWithin ℝ q t_set (P (x, t)) (deriv (fun u ↦ P (x, u)) t)) U t :=
+      hq.hasFDerivWithinAt.comp_hasDerivWithinAt t hPt.hasDerivAt.hasDerivWithinAt
+        (fun _ hu ↦ hUsub hu)
+    exact (hc.hasDerivAt (hUopen.mem_nhds htU)).deriv
+  have hbase := contractionAlongMapWithin_compContinuousLinearMap_fderivWithin
+    (p := fun y ↦ P (y, t)) (q := q) (V := fun y ↦ deriv (fun u ↦ P (y, u)) t) (η := η)
+    hPs hq hst hs
+  ext v
+  simpa only [familyContractionWithin_apply, contractionAlongMapWithin_apply, Function.comp_def,
+    hvel] using DFunLike.congr_fun hbase v
+
+/-- **Target naturality of `familyContraction`.** Contracting a pulled-back form `q^* η` along a
+moving family `P` equals contracting `η` along `q ∘ P`. -/
+theorem familyContraction_compContinuousLinearMap_fderiv {P : E × ℝ → F} {q : F → F'}
+    {η : F' → F' [⋀^Fin (k + 1)]→L[ℝ] G} {x : E} {t : ℝ}
+    (hP : DifferentiableAt ℝ P (x, t)) (hq : DifferentiableAt ℝ q (P (x, t))) :
+    familyContraction P t (fun y ↦ (η (q y)).compContinuousLinearMap (fderiv ℝ q y)) x =
+      familyContraction (q ∘ P) t η x := by
+  have hPs : DifferentiableAt ℝ (fun y ↦ P (y, t)) x :=
+    hP.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x t).differentiableAt
+  have hvel : fderiv ℝ (q ∘ P) (x, t) (0, 1) =
+      fderiv ℝ q (P (x, t)) (fderiv ℝ P (x, t) (0, 1)) := by
+    rw [fderiv_comp (x, t) hq hP, ContinuousLinearMap.comp_apply]
+  have hbase := contractionAlongMap_compContinuousLinearMap_fderiv
+    (p := fun y ↦ P (y, t)) (q := q) (V := fun y ↦ fderiv ℝ P (y, t) (0, 1)) (η := η) hPs hq
+  ext v
+  rw [familyContraction_apply, familyContraction_apply, hvel]
+  simpa only [contractionAlongMap_apply, Function.comp_def] using DFunLike.congr_fun hbase v
+
+/-- Pointwise `C^m` regularity of `familyContractionWithin` within a unique-differentiability set
+when `m + 1 ≤ n`. -/
+theorem _root_.ContDiffWithinAt.familyContractionWithin {m n : WithTop ℕ∞}
+    {P : E × ℝ → F} {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G}
+    {s : Set E} {U : Set ℝ} {t_set : Set F} {x : E} {t : ℝ}
+    (hform : ContDiffWithinAt ℝ m form t_set (P (x, t)))
+    (hP : ContDiffWithinAt ℝ n P (s ×ˢ U) (x, t)) (hmn : m + 1 ≤ n)
+    (hst : MapsTo (fun y ↦ P (y, t)) s t_set) (hs : UniqueDiffOn ℝ s) (hxs : x ∈ s)
+    (hU : IsOpen U) (htU : t ∈ U) :
+    ContDiffWithinAt ℝ m (familyContractionWithin P s t form) s x := by
+  have hmaps_slice : MapsTo (fun y : E ↦ (y, t)) s (s ×ˢ U) := fun _ hy ↦ Set.mk_mem_prod hy htU
+  have hslice_n : ContDiffWithinAt ℝ n (fun y ↦ P (y, t)) s x :=
+    hP.comp x ((contDiff_id.prodMk contDiff_const).contDiffWithinAt (s := s)) hmaps_slice
+  have h1n : (1 : WithTop ℕ∞) ≤ n := (le_add_of_nonneg_left bot_le).trans hmn
+  have hP1 : ContDiffWithinAt ℝ (1 : ℕ) P (s ×ˢ U) (x, t) := hP.of_le (by exact_mod_cast h1n)
+  obtain ⟨W, hWmem, -, hP1on⟩ := hP1.contDiffOn (le_refl (1 : WithTop ℕ∞)) (by simp)
+  rw [insert_eq_of_mem (Set.mk_mem_prod hxs htU)] at hWmem
+  obtain ⟨W₀, hW₀open, hxW₀, hW₀sub⟩ := mem_nhdsWithin.mp hWmem
+  have hV_eq : (fun y ↦ fderivWithin ℝ P (s ×ˢ U) (y, t) (0, 1)) =ᶠ[𝓝[s] x]
+      (fun y ↦ deriv (fun u ↦ P (y, u)) t) := by
+    have hpre : (fun y : E ↦ (y, t)) ⁻¹' W₀ ∈ 𝓝 x :=
+      (continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds (hW₀open.mem_nhds hxW₀)
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hpre] with y hy hyW₀
+    have hWmem_y : W ∈ 𝓝[s ×ˢ U] (y, t) :=
+      Filter.mem_of_superset
+        (Filter.inter_mem (nhdsWithin_le_nhds (hW₀open.mem_nhds hyW₀)) self_mem_nhdsWithin) hW₀sub
+    have hdPy : DifferentiableWithinAt ℝ P (s ×ˢ U) (y, t) :=
+      ((hP1on (y, t) (hW₀sub ⟨hyW₀, Set.mk_mem_prod hy htU⟩)).mono_of_mem_nhdsWithin
+        hWmem_y).differentiableWithinAt one_ne_zero
+    exact fderivWithin_apply_mk_zero_one hdPy hy (hU.mem_nhds htU)
+  have hV_m : ContDiffWithinAt ℝ m (fun y ↦ deriv (fun u ↦ P (y, u)) t) s x := by
+    have hdf : ContDiffWithinAt ℝ m (fun y ↦ fderivWithin ℝ P (s ×ˢ U) (y, t) (0, 1)) s x :=
+      ((hP.fderivWithin_right (hs.prod hU.uniqueDiffOn) hmn ⟨hxs, htU⟩).comp x
+        ((contDiff_id.prodMk contDiff_const).contDiffWithinAt (s := s))
+        hmaps_slice).clm_apply contDiffWithinAt_const
+    exact hdf.congr_of_eventuallyEq hV_eq.symm
+      (fderivWithin_apply_mk_zero_one (hP1.differentiableWithinAt one_ne_zero) hxs
+        (hU.mem_nhds htU)).symm
+  exact hform.contractionAlongMapWithin (p := fun y ↦ P (y, t)) hslice_n hV_m hmn hst hs hxs
+
+/-- `C^m` regularity of `familyContractionWithin` on a unique-differentiability set when
+`m + 1 ≤ n`. -/
+theorem _root_.ContDiffOn.familyContractionWithin {m n : WithTop ℕ∞}
+    {P : E × ℝ → F} {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G}
+    {s : Set E} {U : Set ℝ} {t_set : Set F} {t : ℝ}
+    (hform : ContDiffOn ℝ m form t_set) (hP : ContDiffOn ℝ n P (s ×ˢ U)) (hmn : m + 1 ≤ n)
+    (hst : MapsTo (fun y ↦ P (y, t)) s t_set) (hs : UniqueDiffOn ℝ s)
+    (hU : IsOpen U) (htU : t ∈ U) :
+    ContDiffOn ℝ m (familyContractionWithin P s t form) s :=
+  fun x hx ↦ (hform (P (x, t)) (hst hx)).familyContractionWithin (hP (x, t) ⟨hx, htU⟩)
+    hmn hst hs hx hU htU
+
+/-- Pointwise `C^m` regularity of `familyContraction` when `m + 1 ≤ n`. -/
+theorem _root_.ContDiffAt.familyContraction {m n : WithTop ℕ∞}
+    {P : E × ℝ → F} {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G} {x : E} {t : ℝ}
+    (hform : ContDiffAt ℝ m form (P (x, t))) (hP : ContDiffAt ℝ n P (x, t)) (hmn : m + 1 ≤ n) :
+    ContDiffAt ℝ m (familyContraction P t form) x := by
+  have hslice_n : ContDiffAt ℝ n (fun y ↦ P (y, t)) x :=
+    hP.comp x (contDiff_id.prodMk contDiff_const).contDiffAt
+  have hV_m : ContDiffAt ℝ m (fun y ↦ fderiv ℝ P (y, t) (0, 1)) x :=
+    ((hP.fderiv_right hmn).comp x (contDiff_id.prodMk contDiff_const).contDiffAt).clm_apply
+      contDiffAt_const
+  exact hform.contractionAlongMap (p := fun y ↦ P (y, t)) hslice_n hV_m hmn
+
+/-- Global `C^m` regularity of `familyContraction` when `m + 1 ≤ n`. -/
+theorem _root_.ContDiff.familyContraction {m n : WithTop ℕ∞}
+    {P : E × ℝ → F} {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G} {t : ℝ}
+    (hform : ContDiff ℝ m form) (hP : ContDiff ℝ n P) (hmn : m + 1 ≤ n) :
+    ContDiff ℝ m (familyContraction P t form) :=
+  contDiff_iff_contDiffAt.mpr fun _ ↦ hform.contDiffAt.familyContraction hP.contDiffAt hmn
+
 theorem familyContractionWithin_univ_eq_of_differentiableAt {P : E × ℝ → F} {t : ℝ} {x : E}
     (hP : DifferentiableAt ℝ P (x, t)) (form : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
     familyContractionWithin P univ t form x = familyContraction P t form x := by
   have hvel : deriv (fun u ↦ P (x, u)) t = fderiv ℝ P (x, t) (0, 1) :=
-    (hP.hasFDerivAt.comp_hasDerivAt t (hasFDerivAt_prodMk_right (𝕜 := ℝ) x t).hasDerivAt).deriv
+    (hasDerivAt_slice_right hP).deriv
   ext v
   simp [familyContractionWithin_apply, familyContraction_apply, hvel]
 
-private theorem fderivWithin_prod_comp_inl {P : E × ℝ → F} {s : Set E} {U : Set ℝ}
-    {y : E} {u : ℝ} (hs : UniqueDiffWithinAt ℝ s y) (hu : u ∈ U)
-    (hP : DifferentiableWithinAt ℝ P (s ×ˢ U) (y, u)) :
-    fderivWithin ℝ P (s ×ˢ U) (y, u) ∘L .inl ℝ E ℝ =
-      fderivWithin ℝ (fun z ↦ P (z, u)) s y := by
-  symm
-  have hm : MapsTo (fun z ↦ (z, u)) s (s ×ˢ U) := fun _ hz ↦ ⟨hz, hu⟩
-  exact (hP.hasFDerivWithinAt.comp y (hasFDerivAt_prodMk_left (𝕜 := ℝ) y u).hasFDerivWithinAt
-    hm).fderivWithin hs
+/-- Contracting the product pullback `(η ∘ P)^*` along `(0, 1)` and restricting to `E × {0}` via
+`ContinuousLinearMap.inl` recovers `familyContractionWithin`. -/
+private theorem compContinuousLinearMap_inl_curryLeft_pullback_eq_familyContractionWithin
+    {P : E × ℝ → F} {s s' : Set E} {U' : Set ℝ} {y : E} {t : ℝ}
+    (hs'eq : s' =ᶠ[𝓝 y] s) (hs' : UniqueDiffWithinAt ℝ s' y) (hy : y ∈ s')
+    (hU' : U' ∈ 𝓝 t) (hP : DifferentiableWithinAt ℝ P (s' ×ˢ U') (y, t))
+    (η : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
+    (((η (P (y, t))).compContinuousLinearMap
+      (fderivWithin ℝ P (s' ×ˢ U') (y, t))).curryLeft (0, 1)).compContinuousLinearMap
+      (.inl ℝ E ℝ) = familyContractionWithin P s t η y := by
+  have hfderiv_s' : fderivWithin ℝ (fun z ↦ P (z, t)) s' y =
+      fderivWithin ℝ (fun z ↦ P (z, t)) s y :=
+    fderivWithin_congr_set hs'eq
+  have hinl := fderivWithin_slice_left hP hs' (mem_of_mem_nhds hU')
+  have hvel := fderivWithin_apply_mk_zero_one hP hy hU'
+  ext v
+  simp only [familyContractionWithin_apply, compContinuousLinearMap_apply, curryLeft_apply_apply,
+    ← hfderiv_s', hinl, ← hvel, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
+  congr 1
+  funext i
+  cases i using Fin.cases <;> rfl
 
-private theorem fderivWithin_prod_zero_one {P : E × ℝ → F} {s : Set E} {U : Set ℝ}
-    {y : E} {u : ℝ} (hy : y ∈ s) (hU : IsOpen U) (hu : u ∈ U)
-    (hP : DifferentiableWithinAt ℝ P (s ×ˢ U) (y, u)) :
-    fderivWithin ℝ P (s ×ˢ U) (y, u) (0, 1) = deriv (fun w ↦ P (y, w)) u := by
-  symm
-  have hw : HasDerivWithinAt (fun w ↦ P (y, w))
-      (fderivWithin ℝ P (s ×ˢ U) (y, u) (0, 1)) U u :=
-    hP.hasFDerivWithinAt.comp_hasDerivWithinAt u
-      (hasFDerivAt_prodMk_right (𝕜 := ℝ) y u).hasDerivAt.hasDerivWithinAt
-      (fun _ hw ↦ ⟨hy, hw⟩)
-  exact (hw.hasDerivAt (hU.mem_nhds hu)).deriv
+/-- Core of `hasDerivAt_compContinuousLinearMap_fderivWithin_family` once `P` has been restricted
+to a rectangular neighbourhood `(s ∩ O₁) ×ˢ U'` on which it is `C²` and maps into `t_set`. -/
+private theorem hasDerivAt_compContinuousLinearMap_fderivWithin_family_of_contDiffOn
+    {P : E × ℝ → F} {form : F → F [⋀^Fin (k + 1)]→L[ℝ] G}
+    {s O₁ : Set E} {U' : Set ℝ} {t_set : Set F} {x : E} {t : ℝ}
+    (hs : UniqueDiffOn ℝ s) (hxc : x ∈ closure (interior s)) (hxs : x ∈ s)
+    (hO₁open : IsOpen O₁) (hxO₁ : x ∈ O₁) (hU'open : IsOpen U') (htU' : t ∈ U')
+    (hPon : ContDiffOn ℝ (2 : ℕ) P ((s ∩ O₁) ×ˢ U'))
+    (hst' : MapsTo P ((s ∩ O₁) ×ˢ U') t_set)
+    (hform : DifferentiableWithinAt ℝ form t_set (P (x, t))) :
+    HasDerivAt
+      (fun u ↦ (form (P (x, u))).compContinuousLinearMap
+        (fderivWithin ℝ (fun y ↦ P (y, u)) s x))
+      (extDerivWithin (familyContractionWithin P s t form) s x +
+        familyContractionWithin P s t (extDerivWithin form t_set) x) t := by
+  set s' := s ∩ O₁
+  have hxs' : x ∈ s' := ⟨hxs, hxO₁⟩
+  have hs'u : UniqueDiffOn ℝ s' := hs.inter hO₁open
+  have hWu : UniqueDiffOn ℝ (s' ×ˢ U') := UniqueDiffOn.prod hs'u hU'open.uniqueDiffOn
+  have hxc' : x ∈ closure (interior s') := by
+    rw [mem_closure_iff_nhds] at hxc ⊢
+    intro V₀ hV₀
+    obtain ⟨y, ⟨hyV₀, hyO₁⟩, hys⟩ := hxc (V₀ ∩ O₁) (inter_mem hV₀ (hO₁open.mem_nhds hxO₁))
+    exact ⟨y, hyV₀, by simpa only [s', interior_inter, hO₁open.interior_eq] using ⟨hys, hyO₁⟩⟩
+  have hxtc' : (x, t) ∈ closure (interior (s' ×ˢ U')) := by
+    rw [interior_prod_eq, hU'open.interior_eq, closure_prod_eq]
+    exact ⟨hxc', subset_closure htU'⟩
+  have hxt' : (x, t) ∈ s' ×ˢ U' := ⟨hxs', htU'⟩
+  have hs'eq_at : ∀ y ∈ O₁, s' =ᶠ[𝓝 y] s := fun y hy ↦ by
+    filter_upwards [hO₁open.mem_nhds hy] with z hz
+    simp [s', hz]
+  -- Pull `form` back to the product `s' ×ˢ U'`.
+  let Ω : E × ℝ → (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] G :=
+    fun q ↦ (form (P q)).compContinuousLinearMap (fderivWithin ℝ P (s' ×ˢ U') q)
+  let contractInl : ((E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] G) →L[ℝ] E [⋀^Fin k]→L[ℝ] G :=
+    compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
+      (curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := G) (n := k)).toContinuousLinearMap.flip (0, 1)
+  have hdP : DifferentiableWithinAt ℝ P (s' ×ˢ U') (x, t) :=
+    (hPon (x, t) hxt').differentiableWithinAt (by norm_num)
+  have hd2P : DifferentiableWithinAt ℝ (fderivWithin ℝ P (s' ×ˢ U')) (s' ×ˢ U') (x, t) :=
+    ((hPon (x, t) hxt').fderivWithin_right hWu (by norm_num) hxt').differentiableWithinAt
+      one_ne_zero
+  have hdΩ : DifferentiableWithinAt ℝ Ω (s' ×ˢ U') (x, t) :=
+    (hform.comp (x, t) hdP hst').continuousAlternatingMapCompContinuousLinearMap hd2P
+  set A := fderivWithin ℝ Ω (s' ×ˢ U') (x, t)
+  -- Identify `contractInl (Ω (y, t))` with `familyContractionWithin` on `s'`.
+  have hslice_eq : ∀ y ∈ s', contractInl (Ω (y, t)) = familyContractionWithin P s t form y := by
+    intro y hy
+    have hdPy : DifferentiableWithinAt ℝ P (s' ×ˢ U') (y, t) :=
+      (hPon (y, t) ⟨hy, htU'⟩).differentiableWithinAt (by norm_num)
+    simpa only [contractInl, Ω, ContinuousLinearMap.comp_apply, compContinuousLinearMapCLM_apply,
+      ContinuousLinearMap.flip_apply, LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply]
+      using compContinuousLinearMap_inl_curryLeft_pullback_eq_familyContractionWithin
+        (hs'eq_at y hy.2) (hs'u y hy) hy (hU'open.mem_nhds htU') hdPy form
+  -- Compute `extDerivWithin (familyContractionWithin P s t form) s x` via `s'`.
+  have hd_contr : extDerivWithin (familyContractionWithin P s t form) s x =
+      alternatizeUncurryFin (contractInl ∘L A ∘L .inl ℝ E ℝ) := by
+    have hev : (fun y ↦ contractInl (Ω (y, t))) =ᶠ[𝓝[s'] x]
+        familyContractionWithin P s t form := by
+      filter_upwards [self_mem_nhdsWithin] with y hy using hslice_eq y hy
+    have hm_left : MapsTo (fun y ↦ (y, t)) s' (s' ×ˢ U') := fun _ hy ↦ ⟨hy, htU'⟩
+    have hslice_d : HasFDerivWithinAt (fun y ↦ Ω (y, t)) (A ∘L .inl ℝ E ℝ) s' x := by
+      simpa only [Function.comp_def] using
+        hdΩ.hasFDerivWithinAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x t).hasFDerivWithinAt
+          hm_left
+    have hfderiv_slice : fderivWithin ℝ (fun y ↦ contractInl (Ω (y, t))) s' x =
+        contractInl ∘L (A ∘L .inl ℝ E ℝ) :=
+      (contractInl.hasFDerivAt.comp_hasFDerivWithinAt x hslice_d).fderivWithin (hs'u x hxs')
+    rw [← extDerivWithin_congr_set (hs'eq_at x hxO₁), ← hev.extDerivWithin_eq (hslice_eq x hxs'),
+      extDerivWithin, hfderiv_slice, ContinuousLinearMap.comp_assoc]
+  -- Compute `familyContractionWithin P s t (extDerivWithin form t_set) x` via pullback of `d form`.
+  have hcontr_d : familyContractionWithin P s t (extDerivWithin form t_set) x =
+      ((alternatizeUncurryFin A).curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+    have hpull_d := extDerivWithin_pullback hform (hPon (x, t) hxt') (by norm_num)
+      hWu hxtc' hxt' hst'
+    dsimp only [A]
+    rw [← extDerivWithin, hpull_d]
+    exact (compContinuousLinearMap_inl_curryLeft_pullback_eq_familyContractionWithin
+      (hs'eq_at x hxO₁) (hs'u x hxs') hxs' (hU'open.mem_nhds htU') hdP
+      (extDerivWithin form t_set)).symm
+  -- Combine both terms through the constant-coefficient Cartan identity for `(0, 1)`.
+  have hcartan : extDerivWithin (familyContractionWithin P s t form) s x +
+      familyContractionWithin P s t (extDerivWithin form t_set) x =
+      (A (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+    have key := congrArg (compContinuousLinearMapCLM (.inl ℝ E ℝ))
+      (alternatizeUncurryFin_curryLeft_comp_add_curryLeft A (0, 1))
+    rw [map_add, compContinuousLinearMapCLM_apply, compContinuousLinearMapCLM_apply,
+      compContinuousLinearMapCLM_apply, alternatizeUncurryFin_compContinuousLinearMap] at key
+    rw [hd_contr, hcontr_d]
+    exact key
+  rw [hcartan]
+  -- Differentiate `u ↦ (Ω (x, u)).compContinuousLinearMap (.inl ℝ E ℝ)` at `t`.
+  let C := compContinuousLinearMapCLM (𝕜 := ℝ) (F := G) (ι := Fin (k + 1)) (.inl ℝ E ℝ)
+  have hderivΩ : HasDerivAt (fun u ↦ C (Ω (x, u))) (C (A (0, 1))) t := by
+    have hw : HasDerivWithinAt (fun u ↦ Ω (x, u)) (A (0, 1)) U' t :=
+      hasDerivWithinAt_slice_right hdΩ hxs'
+    exact C.hasFDerivAt.comp_hasDerivAt t (hw.hasDerivAt (hU'open.mem_nhds htU'))
+  refine hderivΩ.congr_of_eventuallyEq ?_
+  filter_upwards [hU'open.mem_nhds htU'] with u hu
+  have hdPu : DifferentiableWithinAt ℝ P (s' ×ˢ U') (x, u) :=
+    (hPon (x, u) ⟨hxs', hu⟩).differentiableWithinAt (by norm_num)
+  have hfderiv_s' : fderivWithin ℝ (fun y ↦ P (y, u)) s' x =
+      fderivWithin ℝ (fun y ↦ P (y, u)) s x :=
+    fderivWithin_inter (hO₁open.mem_nhds hxO₁)
+  have hinl := fderivWithin_slice_left hdPu (hs'u x hxs') hu
+  ext v
+  simp only [C, Ω, compContinuousLinearMapCLM_apply, compContinuousLinearMap_apply, ← hfderiv_s',
+    hinl, ContinuousLinearMap.coe_comp, Function.comp_assoc]
 
 /-- **Differentiation of moving pullbacks within a set.** Let `P : E × ℝ → F` be `C²` within
 `s ×ˢ U` at `(x, t)`, where `s` has unique derivatives with `x ∈ s ∩ closure (interior s)` and `U`
@@ -463,139 +791,20 @@ theorem hasDerivAt_compContinuousLinearMap_fderivWithin_family {r : WithTop ℕ�
   -- Shrink to open rectangular neighbourhoods `O₁` of `x` and `O₂ ⊆ U` of `t` on which `P` is
   -- `C²` within `(s ∩ O₁) ×ˢ O₂` and maps into `t_set`.
   obtain ⟨W₀, hW₀open, hxW₀, hW₀maps⟩ := mem_nhdsWithin.mp hmaps
-  obtain ⟨W₁, hW₁mem, hW₁sub, hP2on⟩ :=
-    hP2.contDiffOn (le_refl (2 : WithTop ℕ∞)) (by simp)
-  have hxt_mem : (x, t) ∈ s ×ˢ U := ⟨hxs, htU⟩
-  rw [insert_eq_of_mem hxt_mem] at hW₁mem hW₁sub
+  obtain ⟨W₁, hW₁mem, -, hP2on⟩ := hP2.contDiffOn (le_refl (2 : WithTop ℕ∞)) (by simp)
+  rw [insert_eq_of_mem (⟨hxs, htU⟩ : (x, t) ∈ s ×ˢ U)] at hW₁mem
   obtain ⟨W₂, hW₂open, hxW₂, hW₂sub⟩ := mem_nhdsWithin.mp hW₁mem
   obtain ⟨O₁, O₂, hO₁open, hO₂open, hxO₁, htO₂, hOprod⟩ :=
     isOpen_prod_iff.mp (hW₀open.inter (hW₂open.inter (isOpen_univ.prod hU))) x t
       ⟨hxW₀, hxW₂, mem_univ x, htU⟩
-  set s' := s ∩ O₁
-  set U' := O₂
-  have hU'sub : U' ⊆ U := fun u hu ↦ (@hOprod (x, u) ⟨hxO₁, hu⟩).2.2.2
-  have htU' : t ∈ U' := htO₂
-  have hxs' : x ∈ s' := ⟨hxs, hxO₁⟩
-  have hs'u : UniqueDiffOn ℝ s' := hs.inter hO₁open
-  have hWu : UniqueDiffOn ℝ (s' ×ˢ U') := UniqueDiffOn.prod hs'u hO₂open.uniqueDiffOn
-  have hsubSU : s' ×ˢ U' ⊆ s ×ˢ U := prod_mono inter_subset_left hU'sub
-  have hsubW₁ : s' ×ˢ U' ⊆ W₁ := fun q hq ↦
-    hW₂sub ⟨(hOprod ⟨hq.1.2, hq.2⟩).2.1, hsubSU hq⟩
-  have hPon : ContDiffOn ℝ (2 : ℕ) P (s' ×ˢ U') := hP2on.mono hsubW₁
-  have hst' : MapsTo P (s' ×ˢ U') t_set := fun q hq ↦
-    hW₀maps ⟨(hOprod ⟨hq.1.2, hq.2⟩).1, hsubSU hq⟩
-  have hxc' : x ∈ closure (interior s') := by
-    rw [mem_closure_iff_nhds] at hxc ⊢
-    intro V₀ hV₀
-    obtain ⟨y, ⟨hyV₀, hyO₁⟩, hys⟩ := hxc (V₀ ∩ O₁) (inter_mem hV₀ (hO₁open.mem_nhds hxO₁))
-    exact ⟨y, hyV₀, by simpa only [s', interior_inter, hO₁open.interior_eq] using ⟨hys, hyO₁⟩⟩
-  have hxtc' : (x, t) ∈ closure (interior (s' ×ˢ U')) := by
-    rw [interior_prod_eq, hO₂open.interior_eq, closure_prod_eq]
-    exact ⟨hxc', subset_closure htU'⟩
-  have hxt' : (x, t) ∈ s' ×ˢ U' := ⟨hxs', htU'⟩
-  -- Pull `form` back to the product `s' ×ˢ U'`.
-  let Ω : E × ℝ → (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] G :=
-    fun q ↦ (form (P q)).compContinuousLinearMap (fderivWithin ℝ P (s' ×ˢ U') q)
-  let contractInl : ((E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] G) →L[ℝ] E [⋀^Fin k]→L[ℝ] G :=
-    compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
-      (curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := G) (n := k)).toContinuousLinearMap.flip (0, 1)
-  have hdP : DifferentiableWithinAt ℝ P (s' ×ˢ U') (x, t) :=
-    (hPon (x, t) hxt').differentiableWithinAt (by norm_num)
-  have hd2P : DifferentiableWithinAt ℝ (fderivWithin ℝ P (s' ×ˢ U')) (s' ×ˢ U') (x, t) :=
-    ((hPon (x, t) hxt').fderivWithin_right hWu (by norm_num) hxt').differentiableWithinAt
-      one_ne_zero
-  have hdΩ : DifferentiableWithinAt ℝ Ω (s' ×ˢ U') (x, t) :=
-    (hform.comp (x, t) hdP hst').continuousAlternatingMapCompContinuousLinearMap hd2P
-  set A := fderivWithin ℝ Ω (s' ×ˢ U') (x, t)
-  -- Identify `contractInl (Ω (y, t))` with `familyContractionWithin` on `s'`.
-  have hslice_eq : ∀ y ∈ s', contractInl (Ω (y, t)) = familyContractionWithin P s t form y := by
-    intro y hy
-    have hyt' : (y, t) ∈ s' ×ˢ U' := ⟨hy, htU'⟩
-    have hdPy : DifferentiableWithinAt ℝ P (s' ×ˢ U') (y, t) :=
-      (hPon (y, t) hyt').differentiableWithinAt (by norm_num)
-    have hfderiv_s' : fderivWithin ℝ (fun z ↦ P (z, t)) s' y =
-        fderivWithin ℝ (fun z ↦ P (z, t)) s y :=
-      fderivWithin_inter (hO₁open.mem_nhds hy.2)
-    have hinl := fderivWithin_prod_comp_inl (hs'u y hy) htU' hdPy
-    have hvel := fderivWithin_prod_zero_one hy hO₂open htU' hdPy
-    ext v
-    change Ω (y, t) (Matrix.vecCons (0, 1) fun i ↦ (v i, 0)) = _
-    rw [familyContractionWithin_apply, ← hfderiv_s', ← hinl, ← hvel]
-    simp only [Ω, compContinuousLinearMap_apply]
-    congr 1
-    funext i
-    cases i using Fin.cases <;> rfl
-  -- Compute `extDerivWithin (familyContractionWithin P s t form) s x` via `s'`.
-  have hs'eq : s' =ᶠ[𝓝 x] s := by
-    filter_upwards [hO₁open.mem_nhds hxO₁] with y hy
-    simp [s', hy]
-  have hd_contr : extDerivWithin (familyContractionWithin P s t form) s x =
-      alternatizeUncurryFin (contractInl ∘L A ∘L .inl ℝ E ℝ) := by
-    have hev : (fun y ↦ contractInl (Ω (y, t))) =ᶠ[𝓝[s'] x]
-        familyContractionWithin P s t form := by
-      filter_upwards [self_mem_nhdsWithin] with y hy using hslice_eq y hy
-    have hm_left : MapsTo (fun y ↦ (y, t)) s' (s' ×ˢ U') := fun _ hy ↦ ⟨hy, htU'⟩
-    have hslice_d : HasFDerivWithinAt (fun y ↦ Ω (y, t)) (A ∘L .inl ℝ E ℝ) s' x := by
-      simpa only [Function.comp_def] using
-        hdΩ.hasFDerivWithinAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x t).hasFDerivWithinAt
-          hm_left
-    have hfderiv_slice : fderivWithin ℝ (fun y ↦ contractInl (Ω (y, t))) s' x =
-        contractInl ∘L (A ∘L .inl ℝ E ℝ) :=
-      (contractInl.hasFDerivAt.comp_hasFDerivWithinAt x hslice_d).fderivWithin (hs'u x hxs')
-    rw [← extDerivWithin_congr_set hs'eq, ← hev.extDerivWithin_eq (hslice_eq x hxs'),
-      extDerivWithin, hfderiv_slice, ContinuousLinearMap.comp_assoc]
-  -- Compute `familyContractionWithin P s t (extDerivWithin form t_set) x` via pullback of `d form`.
-  have hcontr_d : familyContractionWithin P s t (extDerivWithin form t_set) x =
-      ((alternatizeUncurryFin A).curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
-    have hpull_d := extDerivWithin_pullback hform (hPon (x, t) hxt') (by norm_num)
-      hWu hxtc' hxt' hst'
-    change _ = ((extDerivWithin Ω (s' ×ˢ U') (x, t)).curryLeft (0, 1)).compContinuousLinearMap
-      (.inl ℝ E ℝ)
-    rw [hpull_d]
-    have hfderiv_s' : fderivWithin ℝ (fun z ↦ P (z, t)) s' x =
-        fderivWithin ℝ (fun z ↦ P (z, t)) s x :=
-      fderivWithin_inter (hO₁open.mem_nhds hxO₁)
-    have hinl := fderivWithin_prod_comp_inl (hs'u x hxs') htU' hdP
-    have hvel := fderivWithin_prod_zero_one hxs' hO₂open htU' hdP
-    ext v
-    change _ = (extDerivWithin form t_set (P (x, t))).compContinuousLinearMap
-      (fderivWithin ℝ P (s' ×ˢ U') (x, t)) (Matrix.vecCons (0, 1) fun i ↦ (v i, 0))
-    rw [familyContractionWithin_apply, ← hfderiv_s', ← hinl, ← hvel,
-      compContinuousLinearMap_apply]
-    congr 1
-    funext i
-    cases i using Fin.cases <;> rfl
-  -- Combine both terms through the constant-coefficient Cartan identity for `(0, 1)`.
-  have hcartan : extDerivWithin (familyContractionWithin P s t form) s x +
-      familyContractionWithin P s t (extDerivWithin form t_set) x =
-      (A (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
-    have key := congrArg (compContinuousLinearMapCLM (.inl ℝ E ℝ))
-      (alternatizeUncurryFin_curryLeft_comp_add_curryLeft A (0, 1))
-    rw [map_add, compContinuousLinearMapCLM_apply, compContinuousLinearMapCLM_apply,
-      compContinuousLinearMapCLM_apply, alternatizeUncurryFin_compContinuousLinearMap] at key
-    rw [hd_contr, hcontr_d]
-    exact key
-  rw [hcartan]
-  -- Differentiate `u ↦ (Ω (x, u)).compContinuousLinearMap (.inl ℝ E ℝ)` at `t`.
-  let C := compContinuousLinearMapCLM (𝕜 := ℝ) (F := G) (ι := Fin (k + 1)) (.inl ℝ E ℝ)
-  have hderivΩ : HasDerivAt (fun u ↦ C (Ω (x, u))) (C (A (0, 1))) t := by
-    have hm_right : MapsTo (fun u ↦ (x, u)) U' (s' ×ˢ U') := fun _ hu ↦ ⟨hxs', hu⟩
-    have hw : HasDerivWithinAt (fun u ↦ Ω (x, u)) (A (0, 1)) U' t :=
-      hdΩ.hasFDerivWithinAt.comp_hasDerivWithinAt t
-        (hasFDerivAt_prodMk_right (𝕜 := ℝ) x t).hasDerivAt.hasDerivWithinAt hm_right
-    exact C.hasFDerivAt.comp_hasDerivAt t (hw.hasDerivAt (hO₂open.mem_nhds htU'))
-  refine hderivΩ.congr_of_eventuallyEq ?_
-  filter_upwards [hO₂open.mem_nhds htU'] with u hu
-  have hxu' : (x, u) ∈ s' ×ˢ U' := ⟨hxs', hu⟩
-  have hdPu : DifferentiableWithinAt ℝ P (s' ×ˢ U') (x, u) :=
-    (hPon (x, u) hxu').differentiableWithinAt (by norm_num)
-  have hfderiv_s' : fderivWithin ℝ (fun y ↦ P (y, u)) s' x =
-      fderivWithin ℝ (fun y ↦ P (y, u)) s x :=
-    fderivWithin_inter (hO₁open.mem_nhds hxO₁)
-  have hinl := fderivWithin_prod_comp_inl (hs'u x hxs') hu hdPu
-  ext v
-  simp only [C, Ω, compContinuousLinearMapCLM_apply, compContinuousLinearMap_apply, ← hfderiv_s',
-    ← hinl, ContinuousLinearMap.coe_comp, Function.comp_assoc]
+  have hsubSU : (s ∩ O₁) ×ˢ O₂ ⊆ s ×ˢ U :=
+    prod_mono inter_subset_left fun u hu ↦ (@hOprod (x, u) ⟨hxO₁, hu⟩).2.2.2
+  have hPon : ContDiffOn ℝ (2 : ℕ) P ((s ∩ O₁) ×ˢ O₂) :=
+    hP2on.mono fun q hq ↦ hW₂sub ⟨(hOprod ⟨hq.1.2, hq.2⟩).2.1, hsubSU hq⟩
+  have hst' : MapsTo P ((s ∩ O₁) ×ˢ O₂) t_set :=
+    fun q hq ↦ hW₀maps ⟨(hOprod ⟨hq.1.2, hq.2⟩).1, hsubSU hq⟩
+  exact hasDerivAt_compContinuousLinearMap_fderivWithin_family_of_contDiffOn hs hxc hxs
+    hO₁open hxO₁ hO₂open htO₂ hPon hst' hform
 
 /-- **Differentiation of moving pullbacks** on normed spaces:
 `∂ₜ(pₜ^* form)ₓ = d(C_(pₜ, Vₜ) form)ₓ + C_(pₜ, Vₜ)(d form)ₓ`. Neither invertibility of the slices
@@ -627,7 +836,7 @@ theorem hasDerivAt_compContinuousLinearMap_fderiv_family {r : WithTop ℕ∞}
 
 /-- **Differentiation of moving pullbacks in degree zero** within a set:
 `∂ₜ(f ∘ pₜ)ₓ = C_(pₜ, Vₜ)(df)ₓ 0`. Only differentiability of `P` and `f` is needed. -/
-theorem hasDerivAt_comp_eq_familyContractionWithin_extDerivWithin
+theorem hasDerivAt_comp_familyContractionWithin_extDerivWithin
     {P : E × ℝ → F} {f : F → G} {s : Set E} {U : Set ℝ} {t_set : Set F} {x : E} {t : ℝ}
     (hxs : x ∈ s) (hU : IsOpen U) (htU : t ∈ U)
     (ht : UniqueDiffWithinAt ℝ t_set (P (x, t)))
@@ -644,27 +853,25 @@ theorem hasDerivAt_comp_eq_familyContractionWithin_extDerivWithin
         (hW₀open.mem_nhds hxW₀))
   have hcurve : HasDerivWithinAt (fun u ↦ P (x, u))
       (fderivWithin ℝ P (s ×ˢ U) (x, t) (0, 1)) (U ∩ (fun u ↦ (x, u)) ⁻¹' W₀) t :=
-    hP.hasFDerivWithinAt.comp_hasDerivWithinAt t
-      (hasFDerivAt_prodMk_right (𝕜 := ℝ) x t).hasDerivAt.hasDerivWithinAt
-      fun _ hu ↦ ⟨hxs, hu.1⟩
+    (hasDerivWithinAt_slice_right hP hxs).mono inter_subset_left
   have hcomp : HasDerivWithinAt (fun u ↦ f (P (x, u)))
       (fderivWithin ℝ f t_set (P (x, t)) (fderivWithin ℝ P (s ×ˢ U) (x, t) (0, 1)))
       (U ∩ (fun u ↦ (x, u)) ⁻¹' W₀) t :=
     hf.hasFDerivWithinAt.comp_hasDerivWithinAt t hcurve
       fun _ hu ↦ hW₀maps ⟨hu.2, hxs, hu.1⟩
-  have hvel := fderivWithin_prod_zero_one hxs hU htU hP
+  have hvel := fderivWithin_apply_mk_zero_one hP hxs (hU.mem_nhds htU)
   refine (hcomp.hasDerivAt hO).congr_deriv ?_
   rw [familyContractionWithin_apply, extDerivWithin_constOfIsEmpty f ht, hvel]
   simp
 
 /-- **Differentiation of moving pullbacks in degree zero** on normed spaces:
 `∂ₜ(f ∘ pₜ)ₓ = C_(pₜ, Vₜ)(df)ₓ 0`. -/
-theorem hasDerivAt_comp_eq_familyContraction_extDeriv
+theorem hasDerivAt_comp_familyContraction_extDeriv
     {P : E × ℝ → F} {f : F → G} {x : E} {t : ℝ}
     (hP : DifferentiableAt ℝ P (x, t)) (hf : DifferentiableAt ℝ f (P (x, t))) :
     HasDerivAt (fun u ↦ f (P (x, u)))
       (familyContraction P t (extDeriv fun y ↦ constOfIsEmpty ℝ F (Fin 0) (f y)) x 0) t := by
-  have h := hasDerivAt_comp_eq_familyContractionWithin_extDerivWithin
+  have h := hasDerivAt_comp_familyContractionWithin_extDerivWithin
     (s := univ) (U := univ) (t_set := univ) (mem_univ x) isOpen_univ (mem_univ t)
     uniqueDiffWithinAt_univ
     (by simpa only [univ_prod_univ, differentiableWithinAt_univ] using hP)
@@ -673,24 +880,21 @@ theorem hasDerivAt_comp_eq_familyContraction_extDeriv
     familyContractionWithin_univ_eq_of_differentiableAt hP _] using h
 
 /-- Integrating `familyContraction P t form` over `t ∈ [0, 1]` agrees with the cylinder homotopy
-operator `TauCeti.cylinderHomotopy` applied to the product pullback `P^* form`. -/
+operator `TauCeti.cylinderHomotopy` applied to the product pullback `P^* form`, assuming only
+differentiability of `P` at `(x, t)` for `t ∈ (0, 1)`. -/
 theorem intervalIntegral_familyContraction_eq_cylinderHomotopy
-    {P : E × ℝ → F} {x : E} (hP : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ P (x, t))
+    {P : E × ℝ → F} {x : E} (hP : ∀ t ∈ Ioo (0 : ℝ) 1, DifferentiableAt ℝ P (x, t))
     (form : F → F [⋀^Fin (k + 1)]→L[ℝ] G) :
     (∫ t in (0 : ℝ)..1, familyContraction P t form x) =
       cylinderHomotopy (fun q ↦ (form (P q)).compContinuousLinearMap (fderiv ℝ P q)) x := by
   rw [cylinderHomotopy_apply]
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [uIcc_of_le zero_le_one] at ht
-  have hinl : fderiv ℝ P (x, t) ∘L .inl ℝ E ℝ = fderiv ℝ (fun y ↦ P (y, t)) x := by
-    simpa only [univ_prod_univ, fderivWithin_univ] using
-      fderivWithin_prod_comp_inl (s := univ) (U := univ) uniqueDiffWithinAt_univ (mem_univ t)
-        (by simpa only [univ_prod_univ, differentiableWithinAt_univ] using hP t ht)
-  ext v
-  simp only [familyContraction_apply, compContinuousLinearMap_apply, curryLeft_apply_apply,
-    ← hinl, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
-  congr 1
-  funext i
-  cases i using Fin.cases <;> rfl
+  refine intervalIntegral.integral_congr_Ioo_of_le zero_le_one fun t ht ↦ ?_
+  have hPt : DifferentiableAt ℝ P (x, t) := hP t ht
+  rw [← familyContractionWithin_univ_eq_of_differentiableAt hPt form]
+  simpa only [univ_prod_univ, fderivWithin_univ] using
+    (compContinuousLinearMap_inl_curryLeft_pullback_eq_familyContractionWithin (s := univ)
+      (s' := univ) (U' := univ) (Filter.Eventually.of_forall fun _ ↦ Iff.rfl)
+      uniqueDiffWithinAt_univ (mem_univ x) univ_mem
+      (by simpa only [univ_prod_univ, differentiableWithinAt_univ] using hPt) form).symm
 
 end TauCeti

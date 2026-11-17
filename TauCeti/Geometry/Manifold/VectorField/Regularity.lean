@@ -23,6 +23,8 @@ manifold differential of a function to tangent vectors whose base point varies.
 
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
+* `TauCeti.contMDiff_tangentBundle_mk_const` and `TauCeti.contMDiff_tangentBundle_mk_const_opens`:
+  smoothness of a constant model vector on a normed space or an open subset of a normed space.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -132,6 +134,32 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
     exact hv p
 
 end TangentBundleInputs
+
+namespace TauCeti
+
+/-- A constant model vector gives a `C^n` section of the tangent bundle of a normed space. -/
+theorem contMDiff_tangentBundle_mk_const (v : E) :
+    ContMDiff 𝓘(𝕜, E) (𝓘(𝕜, E)).tangent n
+      (fun x : E ↦ (TotalSpace.mk' E x (v : TangentSpace 𝓘(𝕜, E) x) :
+        TangentBundle 𝓘(𝕜, E) E)) :=
+  (contMDiff_vectorSpace_iff_contDiff (𝕜 := 𝕜) (E := E)
+    (V := fun x : E ↦ (v : TangentSpace 𝓘(𝕜, E) x))).2 contDiff_const
+
+/-- A constant model vector gives a `C^n` section of the tangent bundle of an open subset of a
+normed space. -/
+theorem contMDiff_tangentBundle_mk_const_opens (U : TopologicalSpace.Opens E) (v : E) :
+    ContMDiff 𝓘(𝕜, E) (𝓘(𝕜, E)).tangent n
+      (fun u : U ↦ (TotalSpace.mk' E u (v : TangentSpace 𝓘(𝕜, E) u) :
+        TangentBundle 𝓘(𝕜, E) U)) := by
+  intro u
+  refine (Manifold.contMDiffAt_tangentBundle_restrictOpen (I := 𝓘(𝕜, E)) (n := n) (U := U)
+    (V := fun x : E ↦ (v : TangentSpace 𝓘(𝕜, E) x))
+    (contMDiff_tangentBundle_mk_const (𝕜 := 𝕜) (n := n) v (u : E))).congr_of_eventuallyEq ?_
+  exact Filter.Eventually.of_forall fun y ↦
+    congrArg (TotalSpace.mk' E y)
+      (Manifold.tangentSpaceOpenEquiv_symm_apply (I := 𝓘(𝕜, E)) y v).symm
+
+end TauCeti
 
 /-- If `f` is `C^n` at a point, its differential evaluated on tangent vectors is `C^m` at
 every vector over that point, provided `m + 1 ≤ n`. -/
