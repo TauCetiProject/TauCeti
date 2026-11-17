@@ -32,10 +32,11 @@ Suppose now that `f`, `β`, and `j : W → V` are differentiable and that `fderi
 local minimum and `fderiv ℝ β x = 0` by Fermat's theorem). Consequently:
 1. Where `β x ≠ 0`, differentiating `relativeTranslate f β p x` in the parameter `p` gives the
    surjective scaling `q ↦ β x • q` onto `V`.
-2. Where `β x = 0`, we have `x ∈ C`, `relativeTranslate f β p x = f x`, and the parameter
-   derivative vanishes while the spatial derivative agrees with `fderiv ℝ f x`.
+2. Where `β x = 0`, we have `relativeTranslate f β p x = f x`, and the parameter derivative
+   vanishes while the spatial derivative agrees with `fderiv ℝ f x`.
 
-Therefore, if `f` is already transverse to `j` along `C`, the incidence equation of
+Therefore, if `f` is already transverse to `j` along the zero set `{x | β x = 0}` (in particular,
+along `C` when `β x = 0 ↔ x ∈ C`), the incidence equation of
 `(x, p) ↦ relativeTranslate f β p x` against `j` has surjective total derivative at every
 incidence point `((x, y), p)` with `relativeTranslate f β p x = j y`.
 Applying the finite-dimensional parametric transversality theorem from
@@ -43,8 +44,9 @@ Applying the finite-dimensional parametric transversality theorem from
 Morse--Sard threshold) then yields that almost every parameter
 `p : V` (for additive Haar measure), and in particular arbitrarily small parameters `‖p‖ < r`,
 makes `relativeTranslate f β p` transverse to `j` while agreeing with `f` on `C`. Combining this
-with `IsOpen.exists_contDiff_support_eq` on `Cᶜ` eliminates the external cutoff altogether for any
-closed set `C` in a finite-dimensional real normed space.
+with `IsOpen.exists_contDiff_support_eq` on `Cᶜ` constructs a smooth nonnegative cutoff with
+`β x = 0 ↔ x ∈ C`, eliminating the external cutoff altogether for any closed set `C` in a
+finite-dimensional real normed space.
 
 ## Main declarations
 
