@@ -539,8 +539,8 @@ private theorem pv_contract (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) {q : 
 
 /-! ### Contracting next to a nested block -/
 
-/-- The number of the boundary point `q` after `2 * j` points are inserted before position `c`. -/
-private def ins (c j q : ℕ) : ℕ := if q < c then q else q + 2 * j
+/-- The number of the boundary point `q` after `l` points are inserted before position `c`. -/
+private def ins (c l q : ℕ) : ℕ := if q < c then q else q + l
 
 /-- `x` is the planar matching `f` with the fully nested matching of `2 * j` points inserted before
 position `c`: the inserted points `c, …, c + 2 * j - 1` are joined in nested pairs, and every
@@ -550,7 +550,7 @@ private structure IsNestedInsert (x : PlanarMatching K) (f : PlanarMatching N) (
   card_eq : K = N + 2 * j
   le : c ≤ N
   block : ∀ s < j, pv x (c + s) = c + 2 * j - 1 - s
-  outside : ∀ q < N, pv x (ins c j q) = ins c j (pv f q)
+  outside : ∀ q < N, pv x (ins c (2 * j) q) = ins c (2 * j) (pv f q)
 
 private theorem IsNestedInsert.cast {x : PlanarMatching K} {f : PlanarMatching N} {c j : ℕ}
     (h : IsNestedInsert x f c j) (hK : K = K') : IsNestedInsert (cast hK x) f c j where
@@ -582,7 +582,7 @@ private theorem IsNestedInsert.contract_left {x : PlanarMatching (k + 2)} {f : P
   have b₀' : pv x (a + 1 + 2 * j + 1) = a + 1 := by
     rw [show a + 1 + 2 * j + 1 = a + 1 + 2 * (j + 1) - 1 - 0 by omega, ← b₀, pv_pv x (by omega)]
   have hfa := h.outside a (by omega)
-  rw [show ins (a + 1) (j + 1) a = a by simp only [ins]; split_ifs <;> omega] at hfa
+  rw [show ins (a + 1) (2 * (j + 1)) a = a by simp only [ins]; split_ifs <;> omega] at hfa
   refine ⟨⟨by omega, by omega, fun s hs => ?_, fun q hq => ?_⟩, ?_⟩
   · rw [pv_contract _ _ (by omega), show skipN a (a + s) = a + 1 + (s + 1) by
       simp only [skipN]; split_ifs <;> omega, h.block (s + 1) (by omega)]
@@ -593,11 +593,11 @@ private theorem IsNestedInsert.contract_left {x : PlanarMatching (k + 2)} {f : P
     rw [pv_contract _ _ (by simp only [ins]; split_ifs <;> omega)]
     by_cases hqa : q = a
     · subst hqa
-      rw [show skipN a (ins a j a) = a + 1 + 2 * j + 1 by
+      rw [show skipN a (ins a (2 * j) a) = a + 1 + 2 * j + 1 by
           simp only [skipN, ins]; split_ifs <;> omega, b₀']
       simp only [joinN, ite_eq_right (show (a : ℕ) + 1 ≠ a by omega), hfa, unskipN, ins]
       split_ifs <;> omega
-    · rw [show skipN a (ins a j q) = ins (a + 1) (j + 1) q by
+    · rw [show skipN a (ins a (2 * j) q) = ins (a + 1) (2 * (j + 1)) q by
         simp only [skipN, ins]; split_ifs <;> omega, h.outside q hq]
       simp only [joinN, unskipN, ins]
       split_ifs <;> omega
@@ -618,7 +618,7 @@ private theorem IsNestedInsert.contract_right {x : PlanarMatching (k + 2)} {f : 
   have b₀' : pv x a = c := by
     rw [ha, show c + 2 * j + 1 = c + 2 * (j + 1) - 1 - 0 by omega, ← b₀, pv_pv x (by omega)]
   have hfc := h.outside c (by omega)
-  rw [show ins c (j + 1) c = a + 1 by simp only [ins]; split_ifs <;> omega] at hfc
+  rw [show ins c (2 * (j + 1)) c = a + 1 by simp only [ins]; split_ifs <;> omega] at hfc
   refine ⟨⟨by omega, by omega, fun s hs => ?_, fun q hq => ?_⟩, ?_⟩
   · rw [pv_contract _ _ (by omega), show skipN a (c + 1 + s) = c + (s + 1) by
       simp only [skipN]; split_ifs <;> omega, h.block (s + 1) (by omega)]
@@ -628,12 +628,12 @@ private theorem IsNestedInsert.contract_right {x : PlanarMatching (k + 2)} {f : 
     have hwq := pv_ne f hq
     rw [pv_contract _ _ (by simp only [ins]; split_ifs <;> omega)]
     by_cases hqc : q = c
-    · rw [hqc, show skipN a (ins (c + 1) j c) = c by
+    · rw [hqc, show skipN a (ins (c + 1) (2 * j) c) = c by
           simp only [skipN, ins]; split_ifs <;> omega, b₀]
       rw [hqc] at hw hwq
       simp only [joinN, unskipN, ins] at hfc ⊢
       split_ifs at hfc ⊢ <;> omega
-    · rw [show skipN a (ins (c + 1) j q) = ins c (j + 1) q by
+    · rw [show skipN a (ins (c + 1) (2 * j) q) = ins c (2 * (j + 1)) q by
         simp only [skipN, ins]; split_ifs <;> omega, h.outside q hq]
       simp only [joinN, unskipN, ins]
       split_ifs <;> omega
@@ -679,8 +679,8 @@ private theorem isNestedInsert_append_nested {n p : ℕ} (x : PlanarMatching (n 
   · rw [pv_append_right _ _ (by omega) (by omega), pv_nested _ (by omega)]
     omega
   · have := pv_lt x hq
-    rw [show ins (n + p) p q = q from ite_eq_left hq, pv_append_left _ _ hq,
-      show ins (n + p) p (pv x q) = pv x q from ite_eq_left this]
+    rw [show ins (n + p) (2 * p) q = q from ite_eq_left hq, pv_append_left _ _ hq,
+      show ins (n + p) (2 * p) (pv x q) = pv x q from ite_eq_left this]
 
 private theorem isNestedInsert_nested_append {n p : ℕ} (x : PlanarMatching (n + p)) :
     IsNestedInsert ((nested n).append x) x (n - n) n := by
@@ -688,9 +688,9 @@ private theorem isNestedInsert_nested_append {n p : ℕ} (x : PlanarMatching (n 
   · rw [Nat.sub_self, zero_add, pv_append_left _ _ (by omega), pv_nested _ (by omega)]
     omega
   · have := pv_lt x hq
-    rw [show ins (n - n) n q = n + n + q by simp only [ins]; split_ifs <;> omega,
+    rw [show ins (n - n) (2 * n) q = n + n + q by simp only [ins]; split_ifs <;> omega,
       pv_append_right _ _ (by omega) (by omega), show n + n + q - (n + n) = q by omega,
-      show ins (n - n) n (pv x q) = n + n + pv x q by simp only [ins]; split_ifs <;> omega]
+      show ins (n - n) (2 * n) (pv x q) = n + n + pv x q by simp only [ins]; split_ifs <;> omega]
 
 /-- Gluing a planar matching to the fully nested matching on its right pulls every strand
 straight: the result is the planar matching itself. -/
