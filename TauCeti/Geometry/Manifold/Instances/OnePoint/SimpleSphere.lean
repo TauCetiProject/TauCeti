@@ -11,6 +11,7 @@ public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Geometry.Manifold.Instances.OnePoint.ContinuousSMul
 import TauCeti.Topology.Compactification.OnePoint.Stabilizer
 
 /-!
@@ -317,10 +318,8 @@ theorem IsSimpleSphere.eq_one_of_forall_apply_smul_eq (hu : IsSimpleSphere u) (h
   -- Conjugate a fixed point `p` of `g` to `∞`; there `g` becomes the affine map `z ↦ a z + b`.
   obtain ⟨p, hp⟩ := exists_smul_eq_self g
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℂ) (∞ : OnePoint ℂ) p
-  have hσc : Continuous (σ • · : OnePoint ℂ → OnePoint ℂ) :=
-    (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) σ).continuous
   have hu' : IsSimpleSphere fun w ↦ u (σ • w) := hu.comp_smul σ
-  have hc' : Continuous fun w ↦ u (σ • w) := hc.comp hσc
+  have hc' : Continuous fun w ↦ u (σ • w) := hc.comp (continuous_const_smul σ)
   have hginf : (σ⁻¹ * g * σ) • (∞ : OnePoint ℂ) = (∞ : OnePoint ℂ) := by
     rw [mul_smul, mul_smul, hσ, hp, ← hσ, inv_smul_smul]
   -- `σ⁻¹ g σ` acts on `ℂ` as the affine map `z ↦ a z + b`, `a ≠ 0`, attached to it.
@@ -354,7 +353,7 @@ theorem IsSimpleSphere.eq_one_of_forall_apply_smul_eq (hu : IsSimpleSphere u) (h
       field_simp
       ring
     refine absurd (hu'.comp_smul (upperRightHom c)) (not_isSimpleSphere_of_forall_mul
-      (hc'.comp (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) (upperRightHom c)).continuous)
+      (hc'.comp (continuous_const_smul (upperRightHom c)))
       ha ha1 fun z ↦ ?_)
     simp only [upperRightHom_smul_coe]
     rw [← hcoe (z + c), show a * (z + c) + b = a * z + c by linear_combination hfix]
