@@ -18,7 +18,7 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Module.LocalFactorization
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
-import TauCeti.Analysis.PDE.Vortex.Divisor
+import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 

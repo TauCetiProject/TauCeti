@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.Algebra.Polynomial
 import Mathlib.Analysis.Polynomial.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.MeasureTheory.Integral.Asymptotics
 
 /-!
@@ -38,6 +39,22 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   zero at infinity.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
+* `Polynomial.exists_forall_le_norm_eval`: a nonconstant polynomial over a normed field has
+  `‖P‖ ≥ c` outside some closed disc.
+
+For the monic polynomial `P = ∏_{a ∈ D} (X - a)` of a multiset `D` of `m` points of a normed
+field with `‖a‖ ≤ R` for every `a ∈ D`, the bounds are explicit in `m` and `R`:
+`‖P z‖ ≤ (‖z‖ + R)ᵐ` everywhere, `(‖z‖ - R)ᵐ ≤ ‖P z‖` for `R ≤ ‖z‖`, `1 ≤ ‖P z‖` for
+`R + 1 ≤ ‖z‖`, `(1 + ‖z‖)ᵐ ≤ (2 (1 + R))ᵐ (1 + ‖P z‖)` everywhere, and
+`‖P' z‖ ≤ m (‖z‖ + R)ᵐ⁻¹` everywhere (`Polynomial.norm_eval_multiset_prod_X_sub_C_le`,
+`Polynomial.pow_le_norm_eval_multiset_prod_X_sub_C`,
+`Polynomial.one_le_norm_eval_multiset_prod_X_sub_C`,
+`Polynomial.one_add_norm_pow_le_mul_one_add_norm_eval_multiset_prod_X_sub_C`,
+`Polynomial.norm_derivative_eval_multiset_prod_X_sub_C_le`). Consequently the functions
+`‖P'‖² / (1 + ‖P‖²)²` and, for `m ≥ 1`, `(1 + ‖P‖²)⁻¹` are at most a constant depending only on
+`m` and `R` times `(1 + ‖z‖)⁻²`
+(`Polynomial.norm_derivative_eval_multiset_prod_X_sub_C_sq_div_mul_le`,
+`Polynomial.inv_one_add_norm_eval_multiset_prod_X_sub_C_sq_mul_le`).
 -/
 
 public section
@@ -198,5 +215,181 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     rw [← pow_mul]
     exact pow_le_pow_right₀ h₁ (by omega)
   linarith [hpow.trans ha]
+
+section RootBound
+
+variable {𝕜 : Type*} [NormedField 𝕜]
+
+/-- A nonconstant polynomial over a normed field has modulus at least `c` outside some closed
+disc, for every real `c`. -/
+theorem exists_forall_le_norm_eval {P : 𝕜[X]} (hm : 0 < P.natDegree) (c : ℝ) :
+    ∃ R : ℝ, ∀ z ∉ Metric.closedBall (0 : 𝕜) R, c ≤ ‖P.eval z‖ := by
+  obtain ⟨R, -, hR⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : 𝕜)).eventually_iff.mp
+    ((P.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.mp hm)
+      tendsto_norm_cobounded_atTop).eventually_ge_atTop c)
+  exact ⟨R, hR⟩
+
+variable {D : Multiset 𝕜} {R : ℝ}
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R`, then
+`‖(∏_{a ∈ D} (X - a)).eval z‖ ≤ (‖z‖ + R) ^ card D` at every `z`. -/
+theorem norm_eval_multiset_prod_X_sub_C_le (hD : ∀ a ∈ D, ‖a‖ ≤ R) (z : 𝕜) :
+    ‖((D.map fun a ↦ X - C a).prod).eval z‖ ≤ (‖z‖ + R) ^ Multiset.card D := by
+  rw [eval_multiset_prod_X_sub_C, Multiset.norm_prod_map]
+  calc (D.map fun a ↦ ‖z - a‖).prod ≤ (D.map fun _ ↦ ‖z‖ + R).prod :=
+        Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ norm_nonneg _)
+          fun a ha ↦ (norm_sub_le z a).trans (by linarith [hD a ha])
+    _ = (‖z‖ + R) ^ Multiset.card D := by simp
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R` and `R ≤ ‖z‖`, then
+`(‖z‖ - R) ^ card D ≤ ‖(∏_{a ∈ D} (X - a)).eval z‖`. -/
+theorem pow_le_norm_eval_multiset_prod_X_sub_C (hD : ∀ a ∈ D, ‖a‖ ≤ R) {z : 𝕜}
+    (hz : R ≤ ‖z‖) :
+    (‖z‖ - R) ^ Multiset.card D ≤ ‖((D.map fun a ↦ X - C a).prod).eval z‖ := by
+  rw [eval_multiset_prod_X_sub_C, Multiset.norm_prod_map]
+  calc (‖z‖ - R) ^ Multiset.card D = (D.map fun _ ↦ ‖z‖ - R).prod := by simp
+    _ ≤ (D.map fun a ↦ ‖z - a‖).prod :=
+        Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ sub_nonneg.mpr hz)
+          fun a ha ↦ by linarith [norm_sub_norm_le z a, hD a ha]
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R` and
+`R + 1 ≤ ‖z‖`, then `1 ≤ ‖(∏_{a ∈ D} (X - a)).eval z‖`. -/
+theorem one_le_norm_eval_multiset_prod_X_sub_C (hD : ∀ a ∈ D, ‖a‖ ≤ R) {z : 𝕜}
+    (hz : R + 1 ≤ ‖z‖) : 1 ≤ ‖((D.map fun a ↦ X - C a).prod).eval z‖ :=
+  (one_le_pow₀ (by linarith)).trans (pow_le_norm_eval_multiset_prod_X_sub_C hD (by linarith))
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R`, then
+`(1 + ‖z‖) ^ card D ≤ (2 (1 + R)) ^ card D (1 + ‖(∏_{a ∈ D} (X - a)).eval z‖)` at every `z`. -/
+theorem one_add_norm_pow_le_mul_one_add_norm_eval_multiset_prod_X_sub_C
+    (hD : ∀ a ∈ D, ‖a‖ ≤ R) (z : 𝕜) :
+    (1 + ‖z‖) ^ Multiset.card D ≤
+      (2 * (1 + R)) ^ Multiset.card D * (1 + ‖((D.map fun a ↦ X - C a).prod).eval z‖) := by
+  rcases D.empty_or_exists_mem with rfl | ⟨a, ha⟩
+  · simp
+  have hR : 0 ≤ R := (norm_nonneg a).trans (hD a ha)
+  have hP := norm_nonneg (((D.map fun a ↦ X - C a).prod).eval z)
+  rcases le_or_gt (2 * R + 1) ‖z‖ with hz | hz
+  · -- Far from the roots, `1 + ‖z‖ ≤ 2 (‖z‖ - R)`.
+    calc (1 + ‖z‖) ^ Multiset.card D ≤ (2 * (‖z‖ - R)) ^ Multiset.card D :=
+          pow_le_pow_left₀ (by positivity) (by linarith) _
+      _ = 2 ^ Multiset.card D * (‖z‖ - R) ^ Multiset.card D := mul_pow _ _ _
+      _ ≤ _ := mul_le_mul (pow_le_pow_left₀ zero_le_two (by linarith) _)
+            ((pow_le_norm_eval_multiset_prod_X_sub_C hD (by linarith)).trans (by linarith))
+            (pow_nonneg (by linarith) _) (by positivity)
+  · calc (1 + ‖z‖) ^ Multiset.card D ≤ (2 * (1 + R)) ^ Multiset.card D :=
+          pow_le_pow_left₀ (by positivity) (by linarith) _
+      _ ≤ _ := le_mul_of_one_le_right (by positivity) (by linarith)
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R`, then the derivative
+of `∏_{a ∈ D} (X - a)` satisfies `‖P'(z)‖ ≤ card D (‖z‖ + R) ^ (card D - 1)` at every `z`. -/
+theorem norm_derivative_eval_multiset_prod_X_sub_C_le (hD : ∀ a ∈ D, ‖a‖ ≤ R) (z : 𝕜) :
+    ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ ≤
+      Multiset.card D * (‖z‖ + R) ^ (Multiset.card D - 1) := by
+  induction D using Multiset.induction_on with
+  | empty => simp
+  | cons a D ih =>
+    have hD' : ∀ b ∈ D, ‖b‖ ≤ R := fun b hb ↦ hD b (Multiset.mem_cons_of_mem hb)
+    have ha : ‖z - a‖ ≤ ‖z‖ + R :=
+      (norm_sub_le z a).trans (by linarith [hD a (Multiset.mem_cons_self a D)])
+    have hzR : 0 ≤ ‖z‖ + R := (norm_nonneg _).trans ha
+    simp only [Multiset.map_cons, Multiset.prod_cons, derivative_mul, derivative_sub,
+      derivative_X, derivative_C, sub_zero, one_mul, eval_add, eval_mul, eval_sub, eval_X,
+      eval_C, Multiset.card_cons, add_tsub_cancel_right, Nat.cast_add, Nat.cast_one]
+    calc _ ≤ ‖((D.map fun a ↦ X - C a).prod).eval z‖ +
+          ‖z - a‖ * ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ :=
+          (norm_add_le _ _).trans_eq (by rw [norm_mul])
+      _ ≤ (‖z‖ + R) ^ Multiset.card D +
+          (‖z‖ + R) * (Multiset.card D * (‖z‖ + R) ^ (Multiset.card D - 1)) := by
+          gcongr
+          · exact norm_eval_multiset_prod_X_sub_C_le hD' z
+          · exact ih hD'
+      _ = (Multiset.card D + 1) * (‖z‖ + R) ^ Multiset.card D := by
+          rcases Nat.eq_zero_or_pos (Multiset.card D) with h | h
+          · simp [h]
+          · rw [mul_left_comm, ← pow_succ', Nat.sub_add_cancel h]
+            ring
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R`, then the derivative
+of `P = ∏_{a ∈ D} (X - a)` satisfies
+`‖P'(z)‖ (1 + ‖z‖) ≤ card D (2 (1 + R)) ^ (2 card D) (1 + ‖P(z)‖)` at every `z`. -/
+theorem norm_derivative_eval_multiset_prod_X_sub_C_mul_le (hD : ∀ a ∈ D, ‖a‖ ≤ R) (z : 𝕜) :
+    ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ * (1 + ‖z‖) ≤
+      Multiset.card D * (2 * (1 + R)) ^ (2 * Multiset.card D) *
+        (1 + ‖((D.map fun a ↦ X - C a).prod).eval z‖) := by
+  rcases D.empty_or_exists_mem with rfl | ⟨a, ha⟩
+  · simp
+  have hR : 0 ≤ R := (norm_nonneg a).trans (hD a ha)
+  have hk : 0 < Multiset.card D := Multiset.card_pos_iff_exists_mem.2 ⟨a, ha⟩
+  set k := Multiset.card D
+  set Λ := 1 + R
+  set T := 1 + ‖z‖
+  have hΛ : 1 ≤ Λ := le_add_of_nonneg_right hR
+  have hT : 1 ≤ T := le_add_of_nonneg_right (norm_nonneg z)
+  -- `‖z‖ + R ≤ Λ T`, so `‖P'‖ T ≤ k Λᵏ Tᵏ`, and `Tᵏ ≤ (2 Λ)ᵏ (1 + ‖P‖)`.
+  calc ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ * T
+      ≤ k * (Λ * T) ^ (k - 1) * T := by
+        gcongr
+        refine (norm_derivative_eval_multiset_prod_X_sub_C_le hD z).trans ?_
+        gcongr
+        nlinarith [norm_nonneg z]
+    _ = k * Λ ^ (k - 1) * T ^ k := by
+        rw [mul_pow, mul_assoc, mul_assoc, ← pow_succ, Nat.sub_add_cancel hk]
+        ring
+    _ ≤ k * (2 * Λ) ^ k * ((2 * Λ) ^ k *
+          (1 + ‖((D.map fun a ↦ X - C a).prod).eval z‖)) := by
+        gcongr
+        · exact (pow_le_pow_right₀ hΛ (Nat.sub_le k 1)).trans
+            (pow_le_pow_left₀ (by positivity) (by linarith) k)
+        · exact one_add_norm_pow_le_mul_one_add_norm_eval_multiset_prod_X_sub_C hD z
+    _ = _ := by ring
+
+/-- If the multiset `D` is nonempty and every point of `D` lies in the closed disc of radius `R`,
+then `P = ∏_{a ∈ D} (X - a)` satisfies
+`(1 + ‖P(z)‖²)⁻¹ (1 + ‖z‖)² ≤ 2 (2 (1 + R)) ^ (2 card D)` at every `z`. -/
+theorem inv_one_add_norm_eval_multiset_prod_X_sub_C_sq_mul_le (hD : ∀ a ∈ D, ‖a‖ ≤ R)
+    (hD₀ : D ≠ 0) (z : 𝕜) :
+    (1 + ‖((D.map fun a ↦ X - C a).prod).eval z‖ ^ 2)⁻¹ * (1 + ‖z‖) ^ 2 ≤
+      2 * (2 * (1 + R)) ^ (2 * Multiset.card D) := by
+  set N := ‖((D.map fun a ↦ X - C a).prod).eval z‖
+  have hT : 1 ≤ 1 + ‖z‖ := le_add_of_nonneg_right (norm_nonneg z)
+  have hk : 1 ≤ Multiset.card D := Multiset.card_pos.2 hD₀
+  obtain ⟨a, ha⟩ := Multiset.exists_mem_of_ne_zero hD₀
+  have hR : 0 ≤ R := (norm_nonneg a).trans (hD a ha)
+  have h := one_add_norm_pow_le_mul_one_add_norm_eval_multiset_prod_X_sub_C hD z
+  rw [inv_mul_eq_div, div_le_iff₀ (by positivity)]
+  calc (1 + ‖z‖) ^ 2 ≤ ((1 + ‖z‖) ^ Multiset.card D) ^ 2 := by
+        gcongr
+        exact le_self_pow₀ hT (by omega)
+    _ ≤ ((2 * (1 + R)) ^ Multiset.card D * (1 + N)) ^ 2 :=
+        pow_le_pow_left₀ (by positivity) h 2
+    _ ≤ 2 * (2 * (1 + R)) ^ (2 * Multiset.card D) * (1 + N ^ 2) := by
+        rw [mul_pow, ← pow_mul, mul_comm (Multiset.card D) 2, mul_comm 2 ((2 * (1 + R)) ^ _),
+          mul_assoc]
+        gcongr
+        nlinarith [sq_nonneg (N - 1)]
+
+/-- If every point of the multiset `D` lies in the closed disc of radius `R`, then
+`P = ∏_{a ∈ D} (X - a)` satisfies
+`‖P'(z)‖² / (1 + ‖P(z)‖²)² (1 + ‖z‖)² ≤ 2 (card D)² (2 (1 + R)) ^ (4 card D)` at every `z`. -/
+theorem norm_derivative_eval_multiset_prod_X_sub_C_sq_div_mul_le (hD : ∀ a ∈ D, ‖a‖ ≤ R)
+    (z : 𝕜) :
+    ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ ^ 2 /
+        (1 + ‖((D.map fun a ↦ X - C a).prod).eval z‖ ^ 2) ^ 2 * (1 + ‖z‖) ^ 2 ≤
+      2 * Multiset.card D ^ 2 * (2 * (1 + R)) ^ (4 * Multiset.card D) := by
+  set N := ‖((D.map fun a ↦ X - C a).prod).eval z‖
+  have h := norm_derivative_eval_multiset_prod_X_sub_C_mul_le hD z
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  calc ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ ^ 2 * (1 + ‖z‖) ^ 2
+      = (‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ * (1 + ‖z‖)) ^ 2 := by ring
+    _ ≤ (Multiset.card D * (2 * (1 + R)) ^ (2 * Multiset.card D) * (1 + N)) ^ 2 :=
+        pow_le_pow_left₀ (by positivity) h 2
+    _ = (Multiset.card D * (2 * (1 + R)) ^ (2 * Multiset.card D)) ^ 2 * (1 + N) ^ 2 := by ring
+    _ ≤ (Multiset.card D * (2 * (1 + R)) ^ (2 * Multiset.card D)) ^ 2 *
+          (2 * (1 + N ^ 2) ^ 2) := by
+        gcongr
+        nlinarith [sq_nonneg (N - 1), sq_nonneg N]
+    _ = _ := by ring
+
+end RootBound
 
 end Polynomial
