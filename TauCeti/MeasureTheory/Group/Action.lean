@@ -16,11 +16,13 @@ public import Mathlib.Topology.MetricSpace.IsometricSMul
 General facts about `SMulInvariantMeasure`, Mathlib's class of measures invariant under a scalar
 multiplication, that do not concern ergodicity: the restriction of an invariant measure to an
 exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), counting
-measure is invariant under any measurable group action (`instSMulInvariantMeasureCount`), and for a
+measure is invariant under any measurable group action (`instSMulInvariantMeasureCount`), for a
 transitive isometric action all balls of one radius have the same invariant measure
-(`measure_ball_eq_measure_ball`). Every scalar multiplication on a discrete measurable space and
-every linear action on a finite-dimensional real space has measurable translations
-(`DiscreteMeasurableSpace.toMeasurableConstSMul`, `measurableConstSMul_of_finiteDimensional`).
+(`measure_ball_eq_measure_ball`), and on a finite measure space with measurable singletons any
+atom has finite orbit (`finite_orbit_of_measure_singleton_ne_zero`). Every scalar multiplication
+on a discrete measurable space and every linear action on a finite-dimensional real space has
+measurable translations (`DiscreteMeasurableSpace.toMeasurableConstSMul`,
+`measurableConstSMul_of_finiteDimensional`).
 -/
 
 public section
@@ -79,6 +81,23 @@ theorem measure_ball_eq_measure_ball (μ : Measure X) [SMulInvariantMeasure G X 
   rw [← Metric.smul_ball, measure_smul]
 
 end Ball
+
+section Orbit
+
+/-- Under a measure-preserving group action on a finite measure space with measurable singletons,
+any point of nonzero singleton measure has a finite orbit. -/
+theorem finite_orbit_of_measure_singleton_ne_zero {G α : Type*} [Group G] [MulAction G α]
+    {_ : MeasurableSpace α} [MeasurableSingletonClass α] {μ : Measure α} [IsFiniteMeasure μ]
+    [SMulInvariantMeasure G α μ] {x : α} (hx : μ {x} ≠ 0) :
+    Finite (MulAction.orbit G x) := by
+  rw [Set.finite_coe_iff]
+  by_contra hinf
+  refine measure_ne_top μ (MulAction.orbit G x)
+    ((Set.not_finite.mp hinf).meas_eq_top ⟨μ {x}, hx, ?_⟩)
+  rintro _ ⟨g, rfl⟩
+  simp [← smul_set_singleton, measure_smul]
+
+end Orbit
 
 section Linear
 
