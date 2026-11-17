@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Basic facts about manifold derivatives
@@ -27,6 +28,9 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
+* `TauCeti.tangentSpaceCast_mfderiv_comp`, `TauCeti.tangentSpaceCast_mfderiv_comp_id`: the chain
+  rule across a propositional equality `g ∘ f = h` (or `g ∘ f = id`), transported via
+  `tangentSpaceCast` to a common base point.
 -/
 
 public section
@@ -123,5 +127,33 @@ theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v
     exact hu (by simpa [Function.comp_def, smul_smul, hε] using h'.comp (c + ε • w) hψ)
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   exact (smul_zero ε).symm
+
+variable {E' H' N E'' H'' P : Type*}
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] in
+/-- **The chain rule across a propositional function equality.** When `g ∘ f = h` holds
+propositionally, transporting both `dg_(f x) (df_x v)` and `dh_x v` to a common base point `z₀`
+via `tangentSpaceCast` equates them without requiring `g (f x)` and `h x` to be definitionally
+equal. -/
+theorem tangentSpaceCast_mfderiv_comp {g : N → P} {f : M → N} {h : M → P}
+    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x) (heq : g ∘ f = h)
+    (z₀ : P) (v : TangentSpace I x) :
+    tangentSpaceCast K (g (f x)) z₀ (mfderiv J K g (f x) (mfderiv I J f x v)) =
+      tangentSpaceCast K (h x) z₀ (mfderiv I K h x v) := by
+  subst heq
+  exact congrArg (tangentSpaceCast K (g (f x)) z₀) (mfderiv_comp_apply x hg hf v).symm
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- **The chain rule for a left-inverse composition.** When `g ∘ f = id` holds propositionally,
+transporting `dg_(f x) (df_x v)` from `g (f x)` to `x` via `tangentSpaceCast` recovers `v`. -/
+theorem tangentSpaceCast_mfderiv_comp_id {g : N → M} {f : M → N}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x) (heq : g ∘ f = id)
+    (v : TangentSpace I x) :
+    tangentSpaceCast I (g (f x)) x (mfderiv J I g (f x) (mfderiv I J f x v)) = v := by
+  rw [tangentSpaceCast_mfderiv_comp hg hf heq x v, mfderiv_id, ContinuousLinearMap.id_apply,
+    id_eq, tangentSpaceCast_self]
 
 end TauCeti

@@ -14,7 +14,9 @@ public import TauCeti.Geometry.Manifold.Submersion.Split
 For transverse maps `f : X → N` and `g : Y → N`, the projections from the equal-value
 subtype have tangent images `df⁻¹(range dg)` and `dg⁻¹(range df)`, respectively.
 Consequently the projection to `X` is a submersion when `g` is a submersion, and the
-projection to `Y` is a submersion when `f` is. These results use the previously constructed
+projection to `Y` is a submersion when `f` is. In addition, a submersion in either factor
+is automatically transverse to any map in the other factor (`Manifold.IsSubmersion.transverse_left`,
+`Manifold.IsSubmersion.transverse_right`). These results use the previously constructed
 transverse fibre-product atlas and its inherited topology, including for an empty fibre
 product. No Hausdorff or countability assumptions are needed.
 
@@ -32,6 +34,41 @@ public section
 
 open Function Module Set
 open scoped Manifold ContDiff
+
+namespace Manifold.IsSubmersion
+
+variable {𝕜 EX HX X EY HY Y EN HN N : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  [NormedAddCommGroup EY] [NormedSpace 𝕜 EY] [TopologicalSpace HY]
+  [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN]
+  {IX : ModelWithCorners 𝕜 EX HX} {IY : ModelWithCorners 𝕜 EY HY}
+  {IN : ModelWithCorners 𝕜 EN HN}
+  [TopologicalSpace X] [ChartedSpace HX X]
+  [TopologicalSpace Y] [ChartedSpace HY Y]
+  [TopologicalSpace N] [ChartedSpace HN N]
+  {n : ℕ∞ω} {f : X → N}
+
+/-- A `C^n` submersion (`n ≠ 0`) in the first factor is transverse to every map in the second
+factor, because its differential at every point is surjective. -/
+theorem transverse_left (hf : IsSubmersion IX IN n f) (hn : n ≠ 0) (g : Y → N) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  rw [LinearMap.range_eq_top.2 (hf.surjective_mfderiv hn p.1), top_sup_eq]
+
+/-- A `C^n` submersion (`n ≠ 0`) in the second factor is transverse to every map in the first
+factor, because its differential at every point is surjective. -/
+theorem transverse_right {g : Y → N} (hg : IsSubmersion IY IN n g) (hn : n ≠ 0) (f : X → N)
+    (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hs := (tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp (hg.surjective_mfderiv hn p.2)
+  have hr : (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
+  rw [hr, sup_top_eq]
+
+end Manifold.IsSubmersion
 
 namespace TauCeti
 
