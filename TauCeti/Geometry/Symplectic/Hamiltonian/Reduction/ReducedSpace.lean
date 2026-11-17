@@ -21,31 +21,36 @@ import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 
 Let a Lie group `G` act smoothly and properly by symplectomorphisms on a symplectic manifold
 `(M, σ)`, with coadjoint-equivariant moment map `μ : M → 𝔤*`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap`), and let `c ∈ 𝔤*` be a value such that `G` acts
-freely at every point of the level `Z = μ⁻¹(c)`. Write `G_c` for the coadjoint stabilizer of `c`,
-with Lie algebra `𝔤_c = {ξ | ⁅ξ, c⁆ = 0}`. The **Marsden–Weinstein–Meyer theorem** says that the
-reduced space `Z / G_c` is a smooth manifold of dimension `dim M - dim 𝔤 - dim 𝔤_c` carrying a
-unique symplectic form `ω_red` with
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap`). Write `G_c` for the coadjoint stabilizer of
+`c ∈ 𝔤*`, with Lie algebra `𝔤_c = {ξ | ⁅ξ, c⁆ = 0}`, and let `c` be a regular value of `μ` such
+that `G_c` acts freely on the level `Z = μ⁻¹(c)`. The **Marsden–Weinstein–Meyer theorem** says
+that the reduced space `Z / G_c` is a smooth manifold, of dimension `dim M - dim 𝔤 - dim 𝔤_c` when
+`Z` is nonempty, carrying a unique symplectic form `ω_red` with
 
 `π^* ω_red = i^* σ`,
 
 for the orbit projection `π : Z → Z / G_c` and the inclusion `i : Z → M`. This file assembles it:
 
-* Freeness makes `c` a regular value (`forall_differential_surjective_of_stabilizer_eq_bot`), so
-  `Z` is an embedded submanifold of `M` with tangent spaces `ker dμ`. Its regular-level atlas
-  (`TauCeti.SmoothTwoForm.IsMomentMap.levelChartedSpace`) is carried to the `G_c`-space
-  `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`
+* If `G` acts freely at every point of `Z`, then `c` is a regular value
+  (`forall_differential_surjective_of_stabilizer_eq_bot`) and `G_c` acts freely on `Z`
+  (`isCancelSMul_levelSubMulAction`).
+* As `c` is a regular value, `Z` is an embedded submanifold of `M` with tangent spaces `ker dμ`.
+  Its regular-level atlas (`TauCeti.SmoothTwoForm.IsMomentMap.levelChartedSpace`) is carried to
+  the `G_c`-space `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionChartedSpace`).
 * Give `G_c` an embedded Lie subgroup structure `d`, for instance that of the closed-subgroup
   theorem (`TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed` with
   `TauCeti.Lie.isClosed_stabilizer_coadjointRepresentation`). Then `G_c` acts smoothly, properly and
   freely on `Z`, and the quotient manifold theorem (`ProperSMul.instIsManifoldOrbitRelQuotient`)
-  makes `Z / G_c` a smooth manifold for which `π` is a submersion
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientChartedSpace`).
-* The kernel of `dπ_z` is the orbit tangent space of `G_c` at `z`. The inclusion carries it into
-  `𝔤 · z ∩ ker dμ_z = 𝔤_c · z`, and both spaces have the dimension of `𝔤_c`, since both actions are
-  free and `G_c` is a manifold of dimension `dim 𝔤_c`
-  (`TauCeti.Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation`). So **the
+  makes `Z / G_c` a smooth manifold
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isManifold_orbitRelQuotient`) for which `π` is a
+  submersion
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isSubmersion_quotientMk_levelSubMulAction`).
+* The kernel of `dπ_z` is the orbit tangent space of `G_c` at `z`. The inclusion carries it
+  injectively into `𝔤 · z ∩ ker dμ_z = 𝔤_c · z`. It has the dimension of `𝔤_c`, since `G_c` acts
+  freely and is a manifold of dimension `dim 𝔤_c`
+  (`TauCeti.Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation`), while
+  `𝔤_c · z` has dimension at most that. So **the
   vertical vectors of `π` are those that `di` sends into `𝔤_c · z`**
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.ker_mfderiv_quotientMk_levelSubMulAction`).
 
@@ -66,8 +71,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `ker_mfderiv_quotientMk_levelSubMulAction`: the vertical directions of the orbit projection.
 * `existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`: **the Marsden–Weinstein–Meyer
   theorem**, the unique reduced symplectic form.
-* `finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator`: the reduced space has
-  dimension `dim M - dim 𝔤 - dim 𝔤_c`.
+* `finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator`: when the level is nonempty,
+  the reduced space has dimension `dim M - dim 𝔤 - dim 𝔤_c`.
 
 ## References
 
@@ -196,81 +201,80 @@ end Level
 
 section Quotient
 
-variable [T2Space M] [ProperSMul G M] (hσ : σ.IsSymplectic)
-  (hfree : ∀ x, μ x = c → MulAction.stabilizer G x = ⊥)
+variable [ProperSMul G M]
+  (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)]
   (hn : finrank ℝ E' - finrank ℝ (GroupLieAlgebra I G) = n)
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   (d : Lie.EmbeddedLieSubgroupData I ((Lie.coadjointRepresentation ℝ I G).stabilizer c) F)
 
-omit [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ F]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
 /-- The hypotheses of the quotient manifold theorem for the action of `G_c`, with the Lie group
-structure `d`, on the free level `μ⁻¹(c)`. -/
+structure `d`, on the regular level `μ⁻¹(c)`, other than freeness. -/
 private theorem quotient_hypotheses :
     letI := d.chartedSpace
-    letI := h.levelSubMulActionChartedSpace c
-      (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
+    letI := h.levelSubMulActionChartedSpace c hreg hn
     LieGroup 𝓘(ℝ, F) ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c) ∧
       IsManifold 𝓘(ℝ, Fin n → ℝ) ∞ (h.levelSubMulAction c) ∧
       ContMDiffSMul 𝓘(ℝ, F) 𝓘(ℝ, Fin n → ℝ) ∞
         ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) ∧
-      ProperSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) ∧
-      IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
+      ProperSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
   let := d.chartedSpace
-  have hreg := h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree
   let := h.levelSubMulActionChartedSpace c hreg hn
   ⟨d.lieGroup, h.isManifold_levelSubMulAction hreg hn,
     h.contMDiffSMul_levelSubMulAction d.contMDiff_subtypeVal
       (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn),
-    h.properSMul_levelSubMulAction, h.isCancelSMul_levelSubMulAction hfree⟩
+    h.properSMul_levelSubMulAction⟩
 
 variable (c) in
 /-- **The atlas of the reduced space** `μ⁻¹(c) / G_c`: the slice charts of the quotient manifold
 theorem `ProperSMul.orbitRelQuotientChartedSpace`, for the free and proper action of the coadjoint
-stabilizer `G_c`, with the Lie group structure `d`, on the regular level `μ⁻¹(c)`. -/
+stabilizer `G_c`, with the Lie group structure `d`, on the regular level `μ⁻¹(c)`. If `G` acts
+freely on the level, then `c` is a regular value
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.forall_differential_surjective_of_stabilizer_eq_bot`)
+and `G_c` acts freely on the level
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCancelSMul_levelSubMulAction`). -/
 @[instance_reducible]
 def orbitRelQuotientChartedSpace :
     ChartedSpace (ProperSMul.QuotientModelSpace F (Fin n → ℝ))
       (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
         (h.levelSubMulAction c)) :=
   letI := d.chartedSpace
-  letI := h.levelSubMulActionChartedSpace c
-    (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-  haveI := (h.quotient_hypotheses hσ hfree hn d).1
-  haveI := (h.quotient_hypotheses hσ hfree hn d).2.1
-  haveI := (h.quotient_hypotheses hσ hfree hn d).2.2.1
-  haveI := (h.quotient_hypotheses hσ hfree hn d).2.2.2.1
-  haveI := (h.quotient_hypotheses hσ hfree hn d).2.2.2.2
+  letI := h.levelSubMulActionChartedSpace c hreg hn
+  haveI := (h.quotient_hypotheses hreg hn d).1
+  haveI := (h.quotient_hypotheses hreg hn d).2.1
+  haveI := (h.quotient_hypotheses hreg hn d).2.2.1
+  haveI := (h.quotient_hypotheses hreg hn d).2.2.2
   ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F)
     ((Lie.coadjointRepresentation ℝ I G).stabilizer c) 𝓘(ℝ, Fin n → ℝ) (h.levelSubMulAction c)
 
 /-- **The reduced space is a smooth manifold** `μ⁻¹(c) / G_c`, for the atlas
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientChartedSpace`. -/
 theorem isManifold_orbitRelQuotient :
-    letI := h.orbitRelQuotientChartedSpace c hσ hfree hn d
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
     IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞
       (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
         (h.levelSubMulAction c)) := by
   let := d.chartedSpace
-  let := h.levelSubMulActionChartedSpace c
-    (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-  obtain ⟨_, _, _, _, _⟩ := h.quotient_hypotheses hσ hfree hn d
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   exact ProperSMul.instIsManifoldOrbitRelQuotient
 
 /-- **The orbit projection onto the reduced space is a smooth submersion.** -/
 theorem isSubmersion_quotientMk_levelSubMulAction :
-    letI := h.levelSubMulActionChartedSpace c
-      (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-    letI := h.orbitRelQuotientChartedSpace c hσ hfree hn d
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
     Manifold.IsSubmersion 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞
       (Quotient.mk (MulAction.orbitRel ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
         (h.levelSubMulAction c))) := by
   let := d.chartedSpace
-  let := h.levelSubMulActionChartedSpace c
-    (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-  obtain ⟨_, _, _, _, _⟩ := h.quotient_hypotheses hσ hfree hn d
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   exact ProperSMul.isSubmersion_quotientMk
 
-omit [I'.Boundaryless] [T2Space M] [ProperSMul G M] [FiniteDimensional ℝ F] in
+omit [I'.Boundaryless] [ProperSMul G M] [FiniteDimensional ℝ F]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
 /-- The orbit directions of `G_c` on the level are orbit directions of `G`: the inclusion of the
 level is `G_c`-equivariant, and `G_c` acts on `M` through its inclusion into `G`, so the
 differential of the inclusion carries the fundamental vector field of `ξ ∈ Lie(G_c)` to that of
@@ -301,14 +305,15 @@ private theorem mfderiv_coe_fundamentalVectorField_mem_orbitTangent
   rw [InfinitesimalAction.fundamental_apply, h2]
   exact h1.symm
 
+variable [T2Space M]
+
 /-- **The vertical directions of the reduced space are the stabilizer orbit directions.** At a
 point `z` of the level, a tangent vector is in the kernel of the differential of the orbit
 projection `μ⁻¹(c) → μ⁻¹(c) / G_c` exactly when the differential of the inclusion `i` sends it
 into `𝔤_c · z`. -/
 theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
-    letI := h.levelSubMulActionChartedSpace c
-      (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-    letI := h.orbitRelQuotientChartedSpace c hσ hfree hn d
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
     (mfderiv 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
         (Quotient.mk (MulAction.orbitRel ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
           (h.levelSubMulAction c))) z).ker =
@@ -316,9 +321,8 @@ theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
         ((InfinitesimalAction.fundamental I G I' M).eval z)).comap
         (mfderiv 𝓘(ℝ, Fin n → ℝ) I' (Subtype.val : h.levelSubMulAction c → M) z).toLinearMap := by
   let := d.chartedSpace
-  have hreg := h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree
   let := h.levelSubMulActionChartedSpace c hreg hn
-  obtain ⟨_, _, _, _, _⟩ := h.quotient_hypotheses hσ hfree hn d
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   have : LieGroup 𝓘(ℝ, F) 3 ((Lie.coadjointRepresentation ℝ I G).stabilizer c) :=
     LieGroup.of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
@@ -345,88 +349,82 @@ theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
         hemb.contMDiff z ξ
     · rw [← h.range_mfderiv_coe_levelSubMulAction hreg hn]
       exact ⟨_, rfl⟩
-  -- Both actions are free, so `V` and `W` both have the dimension of `𝔤_c`.
-  have hdim : finrank ℝ (V.map di) = finrank ℝ W := by
+  -- `G_c` acts freely, so `V` has the dimension of `𝔤_c`, which bounds that of `W`.
+  have hdim : finrank ℝ W ≤ finrank ℝ (V.map di) := by
     have : T2Space G := I.t2Space_of_lieGroup ∞
     have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     have hV : V.map di ≃ₗ[ℝ] V := (Submodule.equivMapOfInjective di hdi V).symm
     have hiso := Lie.isotropy_eq_bot_of_stabilizer_eq_bot (I := 𝓘(ℝ, F))
       (I' := 𝓘(ℝ, Fin n → ℝ))
       (IsCancelSMul.stabilizer_eq_bot (G := (Lie.coadjointRepresentation ℝ I G).stabilizer c) z)
-    have hisoM := Lie.isotropy_eq_bot_of_stabilizer_eq_bot (I := I) (I' := I') (hfree z hz)
-    rw [hV.finrank_eq, InfinitesimalAction.finrank_orbitTangent_of_isotropy_eq_bot _ _ hiso,
-      ← (Submodule.equivMapOfInjective _
-        ((InfinitesimalAction.isotropy_eq_bot_iff _ _).1 hisoM) _).finrank_eq]
-    exact d.finrank_eq_finrank_lieSubalgebraOfSubgroup.trans
-      (Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation
-        BoundarylessManifold.isInteriorPoint)
-  rw [← Submodule.eq_of_le_of_finrank_eq hle hdim, Submodule.comap_map_eq_of_injective hdi]
+    rw [hV.finrank_eq, InfinitesimalAction.finrank_orbitTangent_of_isotropy_eq_bot _ _ hiso]
+    exact (Submodule.finrank_map_le _ _).trans_eq
+      (d.finrank_eq_finrank_lieSubalgebraOfSubgroup.trans
+        (Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation
+          BoundarylessManifold.isInteriorPoint)).symm
+  rw [← Submodule.eq_of_le_of_finrank_le hle hdim, Submodule.comap_map_eq_of_injective hdi]
 
 /-- **The Marsden–Weinstein–Meyer theorem.** Let a Lie group `G` act smoothly and properly by
 symplectomorphisms on a symplectic manifold `(M, σ)`, with coadjoint-equivariant moment map `μ`,
-and let `G` act freely at the points of the level `μ⁻¹(c)`. Then the reduced space
-`μ⁻¹(c) / G_c`, the orbit space of the coadjoint stabilizer `G_c` acting on the level, carries a
-unique symplectic form `ω_red` with `π^* ω_red = i^* σ`, for the orbit projection
+let `c` be a regular value of `μ`, and let the coadjoint stabilizer `G_c` act freely on the level
+`μ⁻¹(c)`. Then the reduced space `μ⁻¹(c) / G_c`, the orbit space of `G_c` acting on the level,
+carries a unique symplectic form `ω_red` with `π^* ω_red = i^* σ`, for the orbit projection
 `π : μ⁻¹(c) → μ⁻¹(c) / G_c` and the inclusion `i : μ⁻¹(c) → M`. -/
-theorem existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback
+theorem existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
-    letI := h.levelSubMulActionChartedSpace c
-      (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-    letI := h.orbitRelQuotientChartedSpace c hσ hfree hn d
-    haveI := h.isManifold_levelSubMulAction
-      (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn
-    haveI := h.isManifold_orbitRelQuotient hσ hfree hn d
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    haveI := h.isManifold_levelSubMulAction hreg hn
+    haveI := h.isManifold_orbitRelQuotient hreg hn d
     ∃! η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
         (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
           (h.levelSubMulAction c)),
       η.IsSymplectic ∧
         SmoothForm.mpullback _
-            (h.isSubmersion_quotientMk_levelSubMulAction hσ hfree hn d).contMDiff η =
-          SmoothForm.mpullback Subtype.val (h.isSmoothEmbedding_coe_levelSubMulAction
-            (h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree) hn).contMDiff σ := by
+            (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff η =
+          SmoothForm.mpullback Subtype.val
+            (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff σ := by
   let := d.chartedSpace
-  have hreg := h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree
   have := d.lieGroup
   let := h.levelSubMulActionChartedSpace c hreg hn
   have := h.isManifold_levelSubMulAction hreg hn
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   have := h.contMDiffSMul_levelSubMulAction d.contMDiff_subtypeVal hemb
-  let := h.orbitRelQuotientChartedSpace c hσ hfree hn d
-  have := h.isManifold_orbitRelQuotient hσ hfree hn d
+  let := h.orbitRelQuotientChartedSpace c hreg hn d
+  have := h.isManifold_orbitRelQuotient hreg hn d
   exact h.existsUnique_isSymplectic_mpullback_eq_mpullback hσ hG hemb.contMDiff
     (fun z ↦ h.mem_levelSubMulAction.1 z.2) (h.range_mfderiv_coe_levelSubMulAction hreg hn)
-    (h.isSubmersion_quotientMk_levelSubMulAction hσ hfree hn d) Quotient.mk_surjective
-    (h.ker_mfderiv_quotientMk_levelSubMulAction hσ hfree hn d)
+    (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) Quotient.mk_surjective
+    (h.ker_mfderiv_quotientMk_levelSubMulAction hreg hn d)
     (fun k ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, F)) k)
     (fun k z ↦ Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit z k)))
     (fun z z' hzz' ↦
       MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hzz'.symm)))
     Subtype.val fun k z ↦ SubMulAction.val_smul k z
 
-include hσ hfree hn d in
-/-- **The dimension of the reduced space.** If the level `μ⁻¹(c)` is nonempty, the reduced space
-`μ⁻¹(c) / G_c` has dimension `dim M - dim 𝔤 - dim 𝔤_c`: its model space
-`ProperSMul.QuotientModelSpace F (Fin n → ℝ)` satisfies
+include hreg hn d in
+/-- **The dimension of the reduced space.** If the form is nondegenerate and the level `μ⁻¹(c)` is
+nonempty, the reduced space `μ⁻¹(c) / G_c` has dimension `dim M - dim 𝔤 - dim 𝔤_c`: its model
+space `ProperSMul.QuotientModelSpace F (Fin n → ℝ)` satisfies
 `dim (μ⁻¹(c) / G_c) + dim 𝔤 + dim 𝔤_c = dim M`. -/
 theorem finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator
-    (z : h.levelSubMulAction c) :
+    (hσ : σ.IsNondegenerate) (z : h.levelSubMulAction c) :
     finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) + finrank ℝ (GroupLieAlgebra I G) +
       finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) c) = finrank ℝ E' := by
   let := d.chartedSpace
-  have hreg := h.forall_differential_surjective_of_stabilizer_eq_bot hσ hfree
   let := h.levelSubMulActionChartedSpace c hreg hn
   have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
-  let := h.orbitRelQuotientChartedSpace c hσ hfree hn d
+  let := h.orbitRelQuotientChartedSpace c hreg hn d
   have hz : μ z = c := h.mem_levelSubMulAction.1 z.2
-  have : T2Space G := I.t2Space_of_lieGroup ∞
   exact h.toIsMomentMap.finrank_add_finrank_add_finrank_lieAnnihilator
-    (hσ.isNondegenerate.nondegenerate_bilinFormAt z) hz (h.momentCocycle_eq_zero z)
+    (hσ.nondegenerate_bilinFormAt z) hz (h.momentCocycle_eq_zero z)
     (h.range_mfderiv_coe_levelSubMulAction hreg hn z)
     (hemb.isImmersion.mfderiv_injective (by simp) z)
-    (Lie.isotropy_eq_bot_of_stabilizer_eq_bot (I := I) (I' := I') (hfree z hz))
-    ((h.isSubmersion_quotientMk_levelSubMulAction hσ hfree hn d).surjective_mfderiv (by simp) z)
-    (h.ker_mfderiv_quotientMk_levelSubMulAction hσ hfree hn d z)
+    ((h.toIsMomentMap.differential_surjective_iff (hσ.nondegenerate_bilinFormAt z)).1
+      (hreg z hz))
+    ((h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).surjective_mfderiv (by simp) z)
+    (h.ker_mfderiv_quotientMk_levelSubMulAction hreg hn d z)
 
 end Quotient
 

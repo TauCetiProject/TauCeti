@@ -265,12 +265,12 @@ theorem differential_surjective_of_stabilizer_levelSubMulAction_eq_bot
     ((h.stabilizer_levelSubMulAction_eq_bot_iff z).1 hz)
 
 /-- **A free level is a regular level.** If `G` acts freely at every point of the level `μ⁻¹(c)`
-of a symplectic form, then `c` is a regular value of `μ`. -/
+of a nondegenerate form, then `c` is a regular value of `μ`. -/
 theorem forall_differential_surjective_of_stabilizer_eq_bot (h : σ.IsEquivariantMomentMap μ)
-    (hσ : σ.IsSymplectic) (hfree : ∀ x, μ x = c → MulAction.stabilizer G x = ⊥) :
+    (hσ : σ.IsNondegenerate) (hfree : ∀ x, μ x = c → MulAction.stabilizer G x = ⊥) :
     ∀ x, μ x = c → Function.Surjective (h.differential x) :=
   fun x hx ↦ h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot
-    (hσ.isNondegenerate.nondegenerate_bilinFormAt x) (hfree x hx)
+    (hσ.nondegenerate_bilinFormAt x) (hfree x hx)
 
 end IsEquivariantMomentMap
 
