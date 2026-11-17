@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.Sign
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.ModEq
+import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # The signed count of a fibre over a regular value
@@ -45,6 +46,8 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
   `1` and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with a bijection that preserves
   orientation on the fibre does not change the degree.
+* `TauCeti.degreeAtRegularValue_eq_ncard`: where `f` preserves orientations along the fibre, the
+  degree is the number of preimages.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
@@ -165,6 +168,19 @@ theorem abs_degreeAtRegularValue_le_ncard (h : (f ⁻¹' {y}).Finite) :
   refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
   simpa using Finset.sum_le_sum fun x (_ : x ∈ h.toFinset) ↦
     abs_orientationSign_le_one (o := o) (o' := o') (f := f) (x := x)
+
+/-- If `f` preserves orientations at every point of the fibre over `y`, the degree at `y` is the
+number of preimages. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
+conventions. -/
+theorem degreeAtRegularValue_eq_ncard
+    (h : ∀ x ∈ f ⁻¹' {y}, IsOrientationPreservingAt o o' f x) :
+    degreeAtRegularValue o o' f y = (f ⁻¹' {y}).ncard := by
+  rw [degreeAtRegularValue, finsum_mem_congr rfl fun x hx ↦
+    orientationSign_of_isOrientationPreservingAt (h x hx)]
+  rcases (f ⁻¹' {y}).finite_or_infinite with hf | hf
+  · rw [← finsum_one, Nat.cast_finsum_mem hf, Nat.cast_one]
+  · rw [hf.ncard, Nat.cast_zero]
+    exact finsum_mem_eq_zero_of_infinite (by simpa [Function.support_const one_ne_zero] using hf)
 
 /-- Over a regular value, the degree has the parity of the number of preimages: every orientation
 sign is `1` or `-1`. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
