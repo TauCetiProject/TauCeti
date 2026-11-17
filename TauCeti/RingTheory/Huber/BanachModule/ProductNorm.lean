@@ -251,19 +251,6 @@ theorem norm_lift_le_mul_productSeminormOfUniformContinuous
 
 end OfUniformContinuous
 
-private theorem map_toCompletion {A V W V' W' : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A]
-    [AddCommGroup V] [Module A V] [TopologicalSpace V]
-    [AddCommGroup W] [Module A W] [TopologicalSpace W]
-    [AddCommGroup V'] [Module A V'] [TopologicalSpace V']
-    [AddCommGroup W'] [Module A W'] [TopologicalSpace W']
-    (f : V →L[A] V') (g : W →L[A] W') (u : V ⊗[A] W) :
-    map f g (toCompletion A V W u) =
-      toCompletion A V' W' (TensorProduct.map f.toLinearMap g.toLinearMap u) := by
-  induction u using TensorProduct.inductionOn with
-  | tmul v w => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-
 /-- Functoriality bound for `productSeminormOfUniformContinuous` under bounded continuous
 `A`-linear maps. -/
 theorem productSeminormOfUniformContinuous_map_le [IsTopologicalRing A] {V' W' : Type*}
