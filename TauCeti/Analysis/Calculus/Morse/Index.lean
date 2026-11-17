@@ -334,8 +334,8 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
     simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
     rw [fderiv_fderiv_slice_right_apply hf]
     simp
-  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod,
-    QuadraticForm.sigNeg_zero, zero_add]
+  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
+    zero_add]
 
 /-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
 at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`

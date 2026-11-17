@@ -65,7 +65,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 ## Main results
 
 * `SymplecticForm.floerEnergyDensity_eq`: the pointwise energy identity.
-* `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative.
+* `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative,
+  so its energy is monotone in the domain
+  (`SymplecticForm.setIntegral_floerEnergyDensity_mono_set`).
 * `SymplecticForm.floerEnergyDensity_eq_zero_iff`: under tameness, the energy density of a
   solution vanishes exactly where the perturbed derivative does.
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
@@ -805,6 +807,19 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
       (hKdiff hKs (habU hz)) (hKdiff hKt (habU hz)),
     integral_sub hsum hcurv, integral_add harea hderiv, stdComplexLineReal_eq,
     stdComplexLineImag_eq, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+
+/-- **Monotonicity of the energy in the domain.** If `u` solves the Floer equation on a measurable
+set `t` for almost complex structures `J z` tamed by `ω`, and the Floer energy density is
+integrable on `t`, then the energy over every subset `s` of `t` is at most the energy over `t`. -/
+theorem setIntegral_floerEnergyDensity_mono_set (ω : SymplecticForm V) {s t : Set (ℝ × ℝ)}
+    (hst : s ⊆ t) (ht : MeasurableSet t) (hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) t)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ t, ω.Tames (J z))
+    (h : ∀ z ∈ t, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ∫ z in s, ω.floerEnergyDensity Ks Kt u z ≤ ∫ z in t, ω.floerEnergyDensity Ks Kt u z :=
+  setIntegral_mono_set hint
+    (ae_restrict_of_forall_mem ht fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (h z hz))
+    (Eventually.of_forall hst)
 
 /-- **The energy controls the perturbed derivative in `L²`.** Let `u` solve the Floer equation on
 a measurable set `U` for domain-dependent almost complex structures `J z` satisfying
