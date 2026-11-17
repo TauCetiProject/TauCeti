@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.StdBasis
 
@@ -51,6 +52,9 @@ vectors indexed by `ι`.
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
+* `Module.Basis.map_sum_mul_eq_map_mul_apply`: pushing a scaled finite-basis expansion of an
+  algebra element through a ring homomorphism `f` when scalar multiples of the coordinates and the
+  basis vectors lift through a ring homomorphism `g`.
 * `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
   vector.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
@@ -213,6 +217,29 @@ theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b �
   simpa using LinearMap.congr_fun this 1
 
 end RingHom
+
+/-- Pushing a scaled finite-basis expansion of an `R`-algebra element `x : A` through a ring
+homomorphism `f : A →+* T`: if `r'`, `c j`, and `v j` in `S` lift `f (algebraMap R A r)`,
+`f (algebraMap R A (r * b.repr x j))`, and `f (b j)` along a ring homomorphism `g : S →+* T`,
+then `g (∑ j, c j * v j) = g r' * f x`. -/
+theorem map_sum_mul_eq_map_mul_apply {R A S T G H : Type*} [Fintype ι]
+    [CommSemiring R] [Semiring A] [Algebra R A] [Semiring S] [Semiring T]
+    [FunLike G S T] [RingHomClass G S T] [FunLike H A T] [RingHomClass H A T]
+    (b : Basis ι R A) (g : G) (f : H)
+    {x : A} {r : R} {r' : S} {c v : ι → S}
+    (hr : f (algebraMap R A r) = g r')
+    (hc : ∀ j, f (algebraMap R A (r * b.repr x j)) = g (c j))
+    (hv : ∀ j, f (b j) = g (v j)) :
+    g (∑ j, c j * v j) = g r' * f x := by
+  calc
+    g (∑ j, c j * v j)
+        = ∑ j, g (c j) * g (v j) := by simp only [map_sum, map_mul]
+      _ = ∑ j, f (algebraMap R A (r * b.repr x j)) * f (b j) := by simp only [hc, hv]
+      _ = ∑ j, f (algebraMap R A r * (b.repr x j • b j)) := by
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          simp only [map_mul, Algebra.smul_def, mul_assoc]
+      _ = g r' * f x := by
+          rw [← map_sum, ← Finset.mul_sum, b.sum_repr, map_mul, hr]
 
 section Ring
 
