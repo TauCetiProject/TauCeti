@@ -9,6 +9,7 @@ public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Analysis.MeanInequalitiesPow
+import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 import TauCeti.Analysis.SpecificLimits.DyadicSum
@@ -64,6 +65,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`.
 * `LipschitzOnWith.holderOnWith_of_norm_le`: a bounded `L`-Lipschitz function with norm bound
   `M` is Hölder of any exponent at most one with constant `L + 2 M`.
+* `LocallyLipschitzOn.exists_holderOnWith_of_isCompact`: a function locally Lipschitz on `s` is
+  Hölder of any exponent at most one on each compact subset of `s`.
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
@@ -273,6 +276,17 @@ theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
   simpa using HolderOnWith.of_le_of_dist_le (K := L) (β := 1)
     (fun x hx y hy _ => by simpa using h.dist_le_mul x hx y hy) hdiam hα
     (by norm_num : (0 : ℝ≥0) < 1)
+
+/-- A function locally Lipschitz on `s` is `α`-Hölder on each compact subset of `s`, for every
+`α ≤ 1`. -/
+theorem LocallyLipschitzOn.exists_holderOnWith_of_isCompact {X F : Type*}
+    [PseudoMetricSpace X] [SeminormedAddCommGroup F] {s K : Set X} {f : X → F} {α : ℝ≥0}
+    (hf : LocallyLipschitzOn s f) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ C, HolderOnWith C α f K := by
+  obtain ⟨L, hL⟩ := (hf.mono hKs).exists_lipschitzOnWith_of_compact hK
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hf.mono hKs).continuousOn
+  exact ⟨_, hL.holderOnWith_of_norm_le (M := M.toNNReal)
+    (fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)) hα⟩
 
 /-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
 `z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/

@@ -21,13 +21,13 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 On an open convex set, bounds for a derivative field and its next derivative give a Hölder
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
 hypothesis only at their top derivative. Currying preserves these bounds exactly. On an open set
-that need not be convex, a `C^1` map is Hölder on every compact subset, so one more derivative
-makes the top derivative Hölder there.
+that need not be convex, a `C^1` map is locally Lipschitz, hence Hölder on every compact subset,
+so one more derivative makes the top derivative Hölder there.
 -/
 
 public section
 
-open Set Topology
+open Set
 open scoped NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
@@ -67,23 +67,22 @@ theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt {k j : ℕ} {s : Set
   have hlip := Convex.lipschitzOnWith_of_nnNorm_fderiv_le hdiff hder hconv
   exact hlip.holderOnWith_of_norm_le hb hα
 
+/-- A map of class `C^1` on an open set `s` is locally Lipschitz on `s`. Compare Mathlib's
+`ContDiffOn.locallyLipschitzOn`, which assumes `s` convex instead of open. -/
+theorem _root_.ContDiffOn.locallyLipschitzOn_of_isOpen {𝕂 E' F' : Type*} [RCLike 𝕂]
+    [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
+    {s : Set E'} {g : E' → F'} (hg : ContDiffOn 𝕂 1 g s) (hs : IsOpen s) :
+    LocallyLipschitzOn s g := by
+  intro x hx
+  obtain ⟨L, t, ht, hLt⟩ := (hg.contDiffAt (hs.mem_nhds hx)).exists_lipschitzOnWith
+  exact ⟨L, t, mem_nhdsWithin_of_mem_nhds ht, hLt⟩
+
 /-- A map of class `C^1` on an open set `s` is `α`-Hölder on each compact subset of `s`, for every
 `α ≤ 1`. -/
 theorem _root_.ContDiffOn.exists_holderOnWith {s K : Set E} {g : E → F} {α : ℝ≥0}
     (hg : ContDiffOn ℝ 1 g s) (hs : IsOpen s) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
-    ∃ C, HolderOnWith C α g K := by
-  have hloc (x : E) (hx : x ∈ K) :
-      ∃ r > 0, ∃ L : ℝ≥0, HolderOnWith L α g (Metric.ball x r) := by
-    have h1 : ContDiffAt ℝ 1 g x := hg.contDiffAt (hs.mem_nhds (hKs hx))
-    obtain ⟨L, t, ht, hLt⟩ := h1.exists_lipschitzOnWith
-    have hb : ∀ᶠ y in 𝓝 x, ‖g y‖ < ‖g x‖ + 1 :=
-      h1.continuousAt.norm.eventually (gt_mem_nhds (lt_add_one _))
-    obtain ⟨r, hr, hrt⟩ := Metric.mem_nhds_iff.1 (Filter.inter_mem ht hb)
-    refine ⟨r, hr, L + 2 * (‖g x‖₊ + 1), ?_⟩
-    exact (hLt.mono fun y hy ↦ (hrt hy).1).holderOnWith_of_norm_le
-      (fun y hy ↦ by simpa using (hrt hy).2.le) hα
-  obtain ⟨δ, hδ, L, -, hL, -⟩ := hK.exists_holderOnWith_thickening_and_norm_le hloc
-  exact ⟨L, hL.mono (Metric.self_subset_thickening hδ K)⟩
+    ∃ C, HolderOnWith C α g K :=
+  (hg.locallyLipschitzOn_of_isOpen hs).exists_holderOnWith_of_isCompact hα hK hKs
 
 /-- For a map of class `C^{k+1}` on an open set `s`, the `k`-th derivative is `α`-Hölder on each
 compact subset of `s`, for every `α ≤ 1`. -/

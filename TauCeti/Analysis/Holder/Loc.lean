@@ -159,6 +159,16 @@ private theorem holderOnWith_iteratedFDeriv_add (f g : CkHolderLocSpace k α Ω 
     iteratedFDeriv_add_apply (f.contDiffAt (hKΩ hy)) (g.contDiffAt (hKΩ hy))]
   exact HolderOnWith.add hC hD x hx y hy
 
+private theorem holderOnWith_iteratedFDeriv_sub (f g : CkHolderLocSpace k α Ω F) {K : Set E}
+    (hKΩ : K ⊆ Ω) (hK : IsCompact K) :
+    ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k (⇑f - ⇑g)) K := by
+  obtain ⟨C, hC⟩ := f.exists_holderOnWith hKΩ hK
+  obtain ⟨D, hD⟩ := g.exists_holderOnWith hKΩ hK
+  refine ⟨C + D, fun x hx y hy ↦ ?_⟩
+  rw [iteratedFDeriv_sub_apply (f.contDiffAt (hKΩ hx)) (g.contDiffAt (hKΩ hx)),
+    iteratedFDeriv_sub_apply (f.contDiffAt (hKΩ hy)) (g.contDiffAt (hKΩ hy))]
+  exact HolderOnWith.sub hC hD x hx y hy
+
 private theorem holderOnWith_iteratedFDeriv_smul (c : ℝ) (f : CkHolderLocSpace k α Ω F)
     {K : Set E} (hKΩ : K ⊆ Ω) (hK : IsCompact K) :
     ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k (c • ⇑f)) K := by
@@ -206,33 +216,34 @@ instance : IsSMulApply ℝ (CkHolderLocSpace k α Ω F) where
 
 instance : IsNegApply (CkHolderLocSpace k α Ω F) where
 
-instance instSub : Sub (CkHolderLocSpace k α Ω F) where
+@[no_expose] instance instSub : Sub (CkHolderLocSpace k α Ω F) where
   sub f g :=
     { toFun := f - g
       contDiffOn' := f.contDiffOn.sub g.contDiffOn
-      holderOnWith' := fun _ hKΩ hK ↦ by
-        simpa [sub_eq_add_neg] using (f + (-1 : ℝ) • g).holderOnWith' _ hKΩ hK
+      holderOnWith' := fun _ hKΩ hK ↦ holderOnWith_iteratedFDeriv_sub f g hKΩ hK
       eq_zero_of_notMem' := fun x hx ↦ by
         simp [f.apply_eq_zero_of_notMem hx, g.apply_eq_zero_of_notMem hx] }
 
 instance : IsSubApply (CkHolderLocSpace k α Ω F) where
 
-instance instNSMul : SMul ℕ (CkHolderLocSpace k α Ω F) where
+@[no_expose] instance instNSMul : SMul ℕ (CkHolderLocSpace k α Ω F) where
   smul c f :=
     { toFun := c • ⇑f
       contDiffOn' := f.contDiffOn.const_smul c
       holderOnWith' := fun _ hKΩ hK ↦ by
-        simpa [← Nat.cast_smul_eq_nsmul ℝ] using ((c : ℝ) • f).holderOnWith' _ hKΩ hK
+        rw [← Nat.cast_smul_eq_nsmul ℝ]
+        exact holderOnWith_iteratedFDeriv_smul c f hKΩ hK
       eq_zero_of_notMem' := fun x hx ↦ by simp [f.apply_eq_zero_of_notMem hx] }
 
 instance : IsSMulApply ℕ (CkHolderLocSpace k α Ω F) where
 
-instance instZSMul : SMul ℤ (CkHolderLocSpace k α Ω F) where
+@[no_expose] instance instZSMul : SMul ℤ (CkHolderLocSpace k α Ω F) where
   smul c f :=
     { toFun := c • ⇑f
       contDiffOn' := f.contDiffOn.const_smul c
       holderOnWith' := fun _ hKΩ hK ↦ by
-        simpa [← Int.cast_smul_eq_zsmul ℝ] using ((c : ℝ) • f).holderOnWith' _ hKΩ hK
+        rw [← Int.cast_smul_eq_zsmul ℝ]
+        exact holderOnWith_iteratedFDeriv_smul c f hKΩ hK
       eq_zero_of_notMem' := fun x hx ↦ by simp [f.apply_eq_zero_of_notMem hx] }
 
 instance : IsSMulApply ℤ (CkHolderLocSpace k α Ω F) where
@@ -287,19 +298,22 @@ theorem coe_ofContDiffOn : ⇑(ofContDiffOn g hg hH) = (Ω : Set E).indicator g 
 
 /-- `ofContDiffOn g` agrees with `g` on `Ω`. -/
 @[simp]
-theorem ofContDiffOn_apply_of_mem {x : E} (hx : x ∈ Ω) : ofContDiffOn g hg hH x = g x :=
-  indicator_of_mem hx g
+theorem ofContDiffOn_apply_of_mem {x : E} (hx : x ∈ Ω) : ofContDiffOn g hg hH x = g x := by
+  rw [coe_ofContDiffOn]
+  exact indicator_of_mem hx g
 
 /-- `ofContDiffOn g` vanishes off `Ω`. -/
 @[simp]
-theorem ofContDiffOn_apply_of_notMem {x : E} (hx : x ∉ Ω) : ofContDiffOn g hg hH x = 0 :=
-  indicator_of_notMem hx g
+theorem ofContDiffOn_apply_of_notMem {x : E} (hx : x ∉ Ω) : ofContDiffOn g hg hH x = 0 := by
+  rw [coe_ofContDiffOn]
+  exact indicator_of_notMem hx g
 
 /-- `ofContDiffOn g` has the derivatives of `g` at points of `Ω`. -/
 @[simp]
 theorem iteratedFDeriv_ofContDiffOn (i : ℕ) {x : E} (hx : x ∈ Ω) :
-    iteratedFDeriv ℝ i (ofContDiffOn g hg hH) x = iteratedFDeriv ℝ i g x :=
-  iteratedFDeriv_indicator_of_mem_nhds (Ω.isOpen.mem_nhds hx) i
+    iteratedFDeriv ℝ i (ofContDiffOn g hg hH) x = iteratedFDeriv ℝ i g x := by
+  rw [coe_ofContDiffOn]
+  exact iteratedFDeriv_indicator_of_mem_nhds (Ω.isOpen.mem_nhds hx) i
 
 /-- Every element is `ofContDiffOn` of its own underlying map. -/
 @[simp]
@@ -344,6 +358,7 @@ theorem coe_restrictBCF {i : ℕ} (hi : i ≤ k) (f : CkHolderLocSpace k α Ω F
 theorem memHolder_restrictBCF (f : CkHolderLocSpace k α Ω F) :
     MemHolder α (restrictBCF K hK le_rfl f : K → E [×k]→L[ℝ] F) := by
   obtain ⟨C, hC⟩ := f.exists_holderOnWith hK K.isCompact
+  rw [coe_restrictBCF]
   exact ⟨C, hC.holderWith⟩
 
 /-- The `k`-th derivative field of an element on a compact set `K ⊆ Ω`, as an element of the
