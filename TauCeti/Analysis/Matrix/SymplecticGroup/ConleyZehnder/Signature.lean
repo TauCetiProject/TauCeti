@@ -27,7 +27,9 @@ symmetric invertible matrix `S` with `‖S‖ < 2π` in the `ℓ²` operator nor
 
 For the form `ω(x, y) = xᵀ J y`, `exp (t J S)` is the linearized flow of the quadratic Hamiltonian
 `H(x) = xᵀ S x / 2` with `ι_{X_H} ω = dH`. The case of the rotations `S = diag (α, α)` is
-`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`.
+`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`. Since `J` is
+unitary, `‖J S‖ = ‖S‖` (`Matrix.l2_opNorm_J_mul`), which is how the bound on `S` controls
+`exp (t J S)`.
 
 ## Proof
 
@@ -58,6 +60,13 @@ public section
 open Matrix NormedSpace Set
 open scoped unitInterval Matrix.Norms.L2Operator
 
+/-- Multiplying by the canonical skew-symmetric matrix `J` preserves the `ℓ²` operator norm, as `J`
+is unitary. -/
+@[simp]
+theorem Matrix.l2_opNorm_J_mul {l 𝕜 : Type*} [Fintype l] [DecidableEq l] [RCLike 𝕜]
+    (S : Matrix (l ⊕ l) (l ⊕ l) 𝕜) : ‖J l 𝕜 * S‖ = ‖S‖ :=
+  CStarRing.norm_mem_unitary_mul S (J_mem_unitaryGroup l 𝕜)
+
 namespace TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
@@ -69,6 +78,17 @@ open Matrix.GeneralLinearGroup Matrix.UnitaryGroup
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-! ### The signature axiom -/
+
+/-- Since `J` is unitary, `‖t J S‖ = |t| ‖S‖`. -/
+private theorem norm_smul_J_mul (t : ℝ) (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    ‖t • (J n ℝ * S)‖ = |t| * ‖S‖ := by
+  rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul]
+
+/-- Halving an invertible matrix keeps it invertible. -/
+private theorem det_inv_two_smul_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet : S.det ≠ 0) :
+    ((2⁻¹ : ℝ) • S).det ≠ 0 := by
+  rw [det_smul]
+  exact mul_ne_zero (pow_ne_zero _ (by norm_num)) hdet
 
 /-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` has derivative `S / 2` at
 `t = 0`. -/
@@ -120,7 +140,7 @@ private theorem isUnit_one_add_exp_smul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) �
     IsUnit (1 + exp (t • (J n ℝ * S))) := by
   rw [add_comm]
   refine isUnit_exp_add_one (lt_of_le_of_lt ?_ hSπ)
-  rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul, abs_of_nonneg ht.1]
+  rw [norm_smul_J_mul, abs_of_nonneg ht.1]
   exact mul_le_of_le_one_left (norm_nonneg S) ht.2
 
 /-- For `S` invertible with `‖S‖ < π`, the Cayley generator
@@ -130,12 +150,11 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
     (J n ℝ * (1 - exp (t • (J n ℝ * S))) * (1 + exp (t • (J n ℝ * S)))⁻¹).det ≠ 0 := by
   have h1 : IsUnit (exp (t • (J n ℝ * S)) - 1) :=
     isUnit_exp_sub_one ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
-      (by rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul, abs_of_nonneg ht.1]
+      (by rw [norm_smul_J_mul, abs_of_nonneg ht.1]
           nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
-  have h1' : IsUnit (1 - exp (t • (J n ℝ * S))) := by rw [← neg_sub]; exact h1.neg
   rw [det_mul, det_mul]
   exact mul_ne_zero (mul_ne_zero (isUnit_det_J n ℝ).ne_zero
-    ((isUnit_iff_isUnit_det _).1 h1').ne_zero)
+    ((isUnit_iff_isUnit_det _).1 (IsUnit.sub_iff.1 h1)).ne_zero)
     ((isUnit_iff_isUnit_det _).1 (isUnit_nonsing_inv_iff.2
       (isUnit_one_add_exp_smul_J_mul hSπ ht))).ne_zero
 
@@ -182,13 +201,13 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
     (fun t ht hdt ↦ by
       obtain rfl := hcross t ht hdt
       rw [hA0]
-      exact nondegenerate_crossingForm_zero (hS.smul _)
-        (by rw [det_smul]; exact mul_ne_zero (pow_ne_zero _ (by norm_num)) hdet))
+      exact nondegenerate_crossingForm_zero (hS.smul _) (det_inv_two_smul_ne_zero hdet))
   rw [conleyZehnderIndex_def, hmas, hA0, sigPos_sub_sigNeg_crossingForm_zero,
     signature_smul_of_pos (by norm_num),
-    sigPos_sub_sigNeg_crossingForm_eq_zero (hdetA 1 (right_mem_Icc.2 zero_le_one) one_ne_zero),
+    sigPos_sub_sigNeg_crossingForm_eq_zero (hA 1 (right_mem_Icc.2 zero_le_one)).isSymm
+      (hdetA 1 (right_mem_Icc.2 zero_le_one) one_ne_zero),
     finsum_mem_eq_zero_of_forall_eq_zero fun t ht ↦ sigPos_sub_sigNeg_crossingForm_eq_zero
-      (hdetA t (Ioo_subset_Icc_self ht) ht.1.ne') _]
+      (hA t (Ioo_subset_Icc_self ht)).isSymm (hdetA t (Ioo_subset_Icc_self ht) ht.1.ne') _]
   push_cast
   ring
 
@@ -209,7 +228,8 @@ theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two {S : Matrix (n
     { toFun s := expOfMemSp (((1 + (s : ℝ)) / 2) • X)
         ((LieAlgebra.Symplectic.sp n ℝ).smul_mem _ hXsp)
       continuous_toFun :=
-        continuous_expOfMemSp_smul ((continuous_const.add continuous_subtype_val).div_const _) _
+        continuous_expOfMemSp
+          (((continuous_const.add continuous_subtype_val).div_const _).smul continuous_const) _
       source' := by
         refine Subtype.ext (Units.ext ?_)
         simp [hX']
@@ -236,13 +256,13 @@ theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two {S : Matrix (n
     rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by norm_num)]
     linarith
   rw [← hsplit, conleyZehnderIndex_trans, conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS'
-    (by rw [det_smul]; exact mul_ne_zero (pow_ne_zero _ (by norm_num)) hdet) hnorm,
+    (det_inv_two_smul_ne_zero hdet) hnorm,
     signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one δ
     fun s ↦ ?_, add_zero]
   have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
   rw [hδ]
   refine isUnit_exp_sub_one ((isUnit_iff_isUnit_det _).2 (by simp [X, hs.ne', hdet])) ?_
-  rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul, abs_of_pos hs]
+  rw [norm_smul_J_mul, abs_of_pos hs]
   nlinarith [s.2.2, norm_nonneg S]
 
 end GLSymplectic

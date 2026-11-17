@@ -60,6 +60,7 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
 /-- A local ring homomorphism applied entrywise preserves and reflects invertibility of a square
 matrix. Every ring homomorphism from a field to a nontrivial ring is local, so this covers the
 casts `ℚ → ℝ` and `ℝ → ℂ`. -/
+@[simp]
 theorem isUnit_map_iff (f : F) [IsLocalHom f] (A : Matrix n n R) :
     IsUnit (A.map f) ↔ IsUnit A := by
   have hdet : f A.det = (A.map f).det := RingHom.map_det (f : R →+* S) A

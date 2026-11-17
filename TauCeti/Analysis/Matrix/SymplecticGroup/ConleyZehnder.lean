@@ -393,7 +393,7 @@ theorem not_isRoot_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n �
   have hG : (G : Matrix (n ⊕ n) (n ⊕ n) ℂ) = diagonalStraightening n * graphFrame M :=
     IsUnit.unit_spec _
   set U : GL (n ⊕ n) ℂ := Unitary.toUnits (graphUnitaryFrame A)
-  have hU : (U : Matrix (n ⊕ n) (n ⊕ n) ℂ) = graphUnitaryFrame A := rfl
+  have hU : (U : Matrix (n ⊕ n) (n ⊕ n) ℂ) = graphUnitaryFrame A := Unitary.val_toUnits_apply _
   obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal (M := G) (M' := U) (by
     rw [hG, hU, realImage_graphUnitaryFrame])
   -- The imaginary part of `T Γ(A)` is `J (1 - A) / √2`, which is invertible.
@@ -403,7 +403,7 @@ theorem not_isRoot_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n �
       simp
     rw [hG, diagonalStraightening_mul_graphFrame]
     ext i j
-    simp [hs]
+    simp [hs, -map_ofReal_mul]
   have hdetO : O.det ≠ 0 := by
     intro h0
     have h := (isUnit_iff_isUnit_det _).1 U.isUnit
@@ -414,9 +414,9 @@ theorem not_isRoot_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n �
     map_mul_algebraMap Complex.imLm O _
   rw [isRoot_one_charpoly_souriau_iff, ← hU, hO, hIm, hImG, det_mul, det_smul,
     det_mul]
-  have h1' : IsUnit (1 - M) := by rw [← neg_sub]; exact h1.neg
   exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (inv_ne_zero (Real.sqrt_pos.2 two_pos).ne'))
-    (mul_ne_zero (isUnit_det_J n ℝ).ne_zero ((isUnit_iff_isUnit_det _).1 h1').ne_zero)) hdetO
+    (mul_ne_zero (isUnit_det_J n ℝ).ne_zero
+      ((isUnit_iff_isUnit_det _).1 (IsUnit.sub_iff.1 h1)).ne_zero)) hdetO
 
 /-- **The zero axiom.** A path of symplectic matrices none of which has the eigenvalue `1` has
 Conley–Zehnder index zero. -/

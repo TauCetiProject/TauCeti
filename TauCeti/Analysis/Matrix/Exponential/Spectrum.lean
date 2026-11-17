@@ -76,6 +76,12 @@ theorem exists_norm_le_exp_eq_of_mem_spectrum (Y : Matrix m m ℝ) {z : ℂ}
   exact ⟨ν, (spectrum.norm_le_norm_of_mem hν).trans_eq (l2_opNorm_map_ofReal Y), hν,
     by rw [Complex.exp_eq_exp_ℂ]⟩
 
+/-- The norm of an integer multiple of `c i` is `|k| c`. -/
+private theorem norm_intCast_mul_ofReal_mul_I (k : ℤ) {c : ℝ} (hc : 0 ≤ c) :
+    ‖(k : ℂ) * (c * Complex.I)‖ = |(k : ℝ)| * c := by
+  rw [norm_mul, Complex.norm_intCast, norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
+    Real.norm_eq_abs, abs_of_nonneg hc]
+
 /-- **A small invertible real matrix has exponential without eigenvalue `1`.** If `Y` is invertible
 and `‖Y‖ < 2π`, then `exp Y - 1` is invertible. -/
 theorem isUnit_exp_sub_one {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖ < 2 * Real.pi) :
@@ -92,9 +98,8 @@ theorem isUnit_exp_sub_one {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖
   have hk : k = 0 := by
     by_contra hk
     have h1 : (1 : ℝ) ≤ |(k : ℝ)| := by exact_mod_cast Int.one_le_abs hk
-    have hnorm : ‖(k : ℂ) * (2 * Real.pi * Complex.I)‖ = |(k : ℝ)| * (2 * Real.pi) := by
-      rw [norm_mul, Complex.norm_intCast, norm_mul, Complex.norm_I, mul_one, norm_mul,
-        Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos]
+    have hnorm := norm_intCast_mul_ofReal_mul_I k (c := 2 * Real.pi) (by positivity)
+    push_cast at hnorm
     nlinarith [Real.pi_pos]
   subst hk
   rw [Int.cast_zero, zero_mul, spectrum.zero_mem_iff, isUnit_map_ofReal_iff] at hν
@@ -121,8 +126,8 @@ theorem isUnit_exp_add_one {Y : Matrix m m ℝ} (hYπ : ‖Y‖ < Real.pi) : IsU
   have h1 : (1 : ℝ) ≤ |((2 * k + 1 : ℤ) : ℝ)| := by
     exact_mod_cast Int.one_le_abs (by omega)
   have hnorm : ‖ν‖ = |((2 * k + 1 : ℤ) : ℝ)| * Real.pi := by
-    rw [hν, norm_mul, Complex.norm_intCast, norm_mul, Complex.norm_I, mul_one,
-      Complex.norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos]
+    rw [hν]
+    exact norm_intCast_mul_ofReal_mul_I _ Real.pi_pos.le
   nlinarith [Real.pi_pos]
 
 end Matrix

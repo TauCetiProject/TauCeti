@@ -51,6 +51,7 @@ namespace Matrix
 variable {l m n : Type*}
 
 /-- The complex image `O` of an orthogonal real matrix `O` satisfies `O Oᵀ = 1`. -/
+@[simp]
 theorem map_ofReal_mul_transpose_map_ofReal_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
     (hO : O ∈ orthogonalGroup n ℝ) : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
   rw [← transpose_map]
@@ -72,6 +73,7 @@ theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
   hA.map _ fun _ ↦ by simp
 
 /-- The complex image of a product of real matrices is the product of the complex images. -/
+@[simp]
 theorem map_ofReal_mul [Fintype m] (M : Matrix l m ℝ) (N : Matrix m n ℝ) :
     (M * N).map ((↑) : ℝ → ℂ) = M.map (↑) * N.map (↑) :=
   Matrix.map_mul (f := Complex.ofRealHom)

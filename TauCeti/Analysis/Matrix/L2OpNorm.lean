@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.LinearAlgebra.SymplecticGroup
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.Analysis.Matrix.Frobenius
-import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # The `ℓ²` operator norm as a normed real algebra
@@ -34,8 +32,6 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
-* `Matrix.l2_opNorm_J_mul`: multiplying by the canonical skew-symmetric matrix `J` preserves the
-  `ℓ²` operator norm.
 * `Matrix.l2_opNorm_map_ofReal`: a real matrix has the same `ℓ²` operator norm as a complex
   matrix.
 -/
@@ -119,13 +115,6 @@ theorem l2_opNorm_sub_diagonal_diag_le (A : Matrix n n 𝕜) :
     rw [l2_opNorm_diagonal]
     exact (pi_norm_le_iff_of_nonneg (norm_nonneg A)).mpr fun i ↦ A.norm_apply_le_l2_opNorm i i
   linarith [norm_sub_le A (diagonal A.diag)]
-
-/-- Multiplying by the canonical skew-symmetric matrix `J` preserves the `ℓ²` operator norm, as `J`
-is unitary. -/
-@[simp]
-theorem l2_opNorm_J_mul {l : Type*} [Fintype l] [DecidableEq l] (S : Matrix (l ⊕ l) (l ⊕ l) 𝕜) :
-    ‖J l 𝕜 * S‖ = ‖S‖ :=
-  CStarRing.norm_mem_unitary_mul S (J_mem_unitaryGroup l 𝕜)
 
 section OfReal
 
