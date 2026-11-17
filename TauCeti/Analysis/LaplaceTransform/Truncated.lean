@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
-public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.LaplaceTransform.Basic
+import TauCeti.MeasureTheory.Integral.Exp.Complex
 
 /-!
 # Truncated Laplace transforms of bounded functions
@@ -18,7 +19,7 @@ and its truncations `G_T z = ∫ t in 0..T, f t * exp (-z t)`:
 
 * each truncation is entire (`differentiable_intervalIntegral_mul_cexp_neg_mul`), and, for `f`
   bounded on `[0, ∞)`, the full transform is holomorphic on `0 < re z`
-  (`differentiableOn_integral_mul_cexp_neg_mul`), being a locally uniform limit of truncations;
+  (`differentiableOn_integral_mul_cexp_neg_mul`);
 * if `‖f‖ ≤ M` on `[0, ∞)`, the tail bound `‖G z - G_T z‖ ≤ M exp (-T re z) / re z` holds for
   `0 < re z` (`norm_integral_sub_intervalIntegral_mul_cexp_neg_mul_le`), and if `‖f‖ ≤ M` on
   `[0, T]`, then `‖G_T z‖ ≤ M exp (-T re z) / (-re z)` for `re z < 0`
@@ -41,14 +42,6 @@ namespace TauCeti
 
 variable {f : ℝ → ℂ} {M T : ℝ}
 
-/-- Multiplying by the exponential kernel `cexp (-z t)` does not change interval integrability. -/
-theorem intervalIntegrable_mul_cexp_neg_mul_iff {a b : ℝ} (z : ℂ) :
-    IntervalIntegrable (fun t : ℝ ↦ f t * cexp (-z * t)) volume a b ↔
-      IntervalIntegrable f volume a b := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mul_continuousOn (g := fun t : ℝ ↦ cexp (-z * t)) (by fun_prop)⟩
-  have := h.mul_continuousOn (g := fun t : ℝ ↦ cexp (z * t)) (by fun_prop)
-  simpa [mul_assoc, ← Complex.exp_add] using this
-
 /-- Multiplying by the exponential kernel `cexp (-z t)` does not change almost-everywhere strong
 measurability. -/
 theorem aestronglyMeasurable_mul_cexp_neg_mul_iff {μ : Measure ℝ} (z : ℂ) :
@@ -67,7 +60,8 @@ theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ} :
   swap
   · have : (fun z : ℂ ↦ ∫ t in a..b, f t * cexp (-z * t)) = fun _ ↦ 0 :=
       funext fun z ↦ intervalIntegral.integral_undef
-        ((intervalIntegrable_mul_cexp_neg_mul_iff z).not.mpr hf)
+        (by simpa only [smul_eq_mul, mul_comm] using
+          (intervalIntegrable_cexp_neg_mul_smul_iff (g := f) z).not.mpr hf)
     rw [this]
     exact differentiable_const _
   intro z₀
@@ -199,28 +193,11 @@ theorem differentiableOn_integral_mul_cexp_neg_mul
         hf ((aestronglyMeasurable_mul_cexp_neg_mul_iff z).1 h.aestronglyMeasurable)
     rw [this]
     exact differentiableOn_const _
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (mem_Ici.mpr le_rfl))
-  have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const Complex.continuous_re
-  -- The truncations at `n : ℕ` converge to the transform uniformly on each `{c < re z}`.
-  refine TendstoLocallyUniformlyOn.differentiableOn (φ := atTop)
-    (F := fun (n : ℕ) (z : ℂ) ↦ ∫ t in (0 : ℝ)..n, f t * cexp (-z * t)) ?_
-    (.of_forall fun n ↦
-      differentiable_intervalIntegral_mul_cexp_neg_mul.differentiableOn) hopen
-  rw [Metric.tendstoLocallyUniformlyOn_iff]
-  intro ε hε z₀ hz₀
-  have hc : 0 < z₀.re / 2 := half_pos hz₀
-  refine ⟨{z | z₀.re / 2 < z.re}, mem_nhdsWithin_of_mem_nhds
-    ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds (half_lt_self hz₀)), ?_⟩
-  have hlim : Tendsto (fun n : ℕ ↦ M * Real.exp (-(z₀.re / 2) * n) / (z₀.re / 2)) atTop (𝓝 0) := by
-    have := ((Real.tendsto_exp_atBot.comp (tendsto_natCast_atTop_atTop.const_mul_atTop_of_neg
-      (neg_lt_zero.mpr hc))).const_mul M).div_const (z₀.re / 2)
-    simpa using this
-  filter_upwards [hlim.eventually (gt_mem_nhds hε)] with n hn z hz
-  rw [dist_eq_norm]
-  refine lt_of_le_of_lt ?_ hn
-  calc _ ≤ M * Real.exp (-z.re * n) / z.re :=
-        norm_integral_sub_intervalIntegral_mul_cexp_neg_mul_le hf hbound (hc.trans hz) n.cast_nonneg
-    _ ≤ M * Real.exp (-(z₀.re / 2) * n) / (z₀.re / 2) := by
-        gcongr
+  refine differentiableOn_of_hasLaplace_re_gt (f := f) (a := 0) fun z (hz : 0 < z.re) ↦ ?_
+  rw [← hasLaplace_restrict_Ici_iff]
+  refine HasLaplace.intro ?_ ?_
+  · simpa only [IntegrableOn, smul_eq_mul, mul_comm (cexp _) (f _)] using
+      integrableOn_mul_cexp_neg_mul hf hbound hz
+  · simp only [smul_eq_mul, mul_comm (cexp _) (f _)]
 
 end TauCeti
