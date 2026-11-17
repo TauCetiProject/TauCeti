@@ -152,7 +152,7 @@ private noncomputable def twistedDualRingHom :
     · apply (toTwistedMod σ d₀ hd₀).symm.injective
       simp
 
-private noncomputable instance :
+private noncomputable instance instAlgebraTwistedDual :
     Algebra S (TrivSqZeroExt (ExteriorAlgebra S M) (TwistedMod σ d₀ hd₀)) :=
   (twistedDualRingHom (σ := σ) (d₀ := d₀) (hd₀ := hd₀)).toAlgebra' fun s z ↦ by
     ext
@@ -165,18 +165,22 @@ private noncomputable instance :
       rw [hd₀_all hd₀ s z.fst, AlgHom.commutes,
         Algebra.commutes s ((toTwistedMod σ d₀ hd₀).symm z.snd), add_comm]
 
+private theorem twistedDual_algebraMap :
+    algebraMap S (TrivSqZeroExt (ExteriorAlgebra S M) (TwistedMod σ d₀ hd₀)) =
+      twistedDualRingHom (σ := σ) (d₀ := d₀) (hd₀ := hd₀) :=
+  RingHom.algebraMap_toAlgebra' _ _
+
 private theorem twistedDual_algebraMap_fst (s : S) :
     (algebraMap S (TrivSqZeroExt (ExteriorAlgebra S M) (TwistedMod σ d₀ hd₀)) s).fst =
       algebraMap S (ExteriorAlgebra S M) s := by
-  change (twistedDualRingHom (σ := σ) (d₀ := d₀) (hd₀ := hd₀) s).fst = _
+  rw [twistedDual_algebraMap]
   simp [twistedDualRingHom]
 
 private theorem twistedDual_algebraMap_snd (s : S) :
     (toTwistedMod σ d₀ hd₀).symm
         (algebraMap S (TrivSqZeroExt (ExteriorAlgebra S M) (TwistedMod σ d₀ hd₀)) s).snd =
       d₀ s := by
-  change (toTwistedMod σ d₀ hd₀).symm
-    (twistedDualRingHom (σ := σ) (d₀ := d₀) (hd₀ := hd₀) s).snd = _
+  rw [twistedDual_algebraMap]
   simp [twistedDualRingHom]
 
 private theorem twistedDual_smul_snd (s : S)

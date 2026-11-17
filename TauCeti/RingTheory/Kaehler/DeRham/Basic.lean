@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.IntegerGrading
 public import TauCeti.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
+import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -357,7 +358,7 @@ theorem extDeriv_mem_grading {p : ℤ} {x : ExteriorAlgebra S Ω[S⁄R]} (hx : x
         exact neg_mem (TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one ω))
       (fun s ↦ TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one _)
       (fun ω ↦ by
-        rw [show (1 + 1 : ℤ) = ((2 : ℕ) : ℤ) by rfl,
+        rw [one_add_one_eq_two, ← Nat.cast_ofNat (n := 2),
           TauCeti.ExteriorAlgebra.integerGrading_natCast]
         exact extDerivOne_mem_exteriorPower_two R S ω)
       (mem_grading_iff.mp hx)
@@ -478,12 +479,6 @@ private theorem dB_mul_add_mul_dB (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →�
     Int.negOnePow_one, Units.smul_def, Units.val_neg, Units.val_one, neg_one_zsmul] at h
   exact eq_neg_iff_add_eq_zero.mp h
 
-private theorem mem_centralizer_apply (f : S →ₐ[R] B) (s : S) :
-    f s ∈ Subalgebra.centralizer R (Set.range f) := by
-  rw [Subalgebra.mem_centralizer_iff]
-  rintro _ ⟨t, rfl⟩
-  rw [← map_mul, mul_comm, map_mul]
-
 private theorem dB_mem_centralizer (f : S →ₐ[R] B)
     (hcomm : ∀ s t : S, f s * dB (f t) = dB (f t) * f s) (t : S) :
     dB (f t) ∈ Subalgebra.centralizer R (Set.range f) := by
@@ -498,7 +493,7 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
       (∀ s : S, F (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) = f s) ∧
       (∀ s : S, F (ExteriorAlgebra.ι S (KaehlerDifferential.D R S s)) = dB (f s)) } :=
   let C := Subalgebra.centralizer R (Set.range f)
-  let fC : S →ₐ[R] C := f.codRestrict C (mem_centralizer_apply f)
+  let fC : S →ₐ[R] C := f.codRestrict C (Subalgebra.apply_mem_centralizer_range R f)
   letI : Algebra S C :=
     fC.toRingHom.toAlgebra' fun s c ↦ Subtype.ext <|
       (Subalgebra.mem_centralizer_iff R).mp c.2 (f s) ⟨s, rfl⟩
@@ -509,8 +504,8 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
       map_smul' := fun r s ↦ Subtype.ext <| by simp
       map_one_eq_zero' := Subtype.ext <| by simp [hB.map_one_eq_zero]
       leibniz' := fun s t ↦ Subtype.ext <| by
-        change dB (f (s * t)) = f s * dB (f t) + f t * dB (f s)
-        rw [map_mul, hB.toIsNonUnitalDGAlgebra.leibniz_of_mem_zero (hf₀ s), hcomm t s, add_comm] }
+        simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra', fC,
+          hB.toIsNonUnitalDGAlgebra.leibniz_of_mem_zero (hf₀ s), hcomm t s, add_comm] }
   let φ : Ω[S⁄R] →ₗ[S] C := D₀.liftKaehlerDifferential
   have hanti : ∀ ω₁ ω₂ : Ω[S⁄R], φ ω₁ * φ ω₂ + φ ω₂ * φ ω₁ = 0 := by
     intro ω₁ ω₂
