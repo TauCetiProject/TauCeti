@@ -43,9 +43,6 @@ concentrated near `1`. Neither σ-finiteness of `μ` nor any countability of `G`
   and `‖L_y u - u‖ ≤ ε` for `y ∈ S`, then `‖k ⋆ u - u‖ ≤ ε`.
 * `MeasureTheory.Lp.tendsto_convolutionL_left`: `k i ⋆ u → u` in `Lᵖ` for kernels concentrating at
   the identity, for `1 ≤ p < ∞`.
-* `MeasureTheory.Lp.convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv`:
-  for `h ∈ L¹(G, μ; 𝕜)` (`[RCLike 𝕜]`) and `k ∈ L¹(G, μ; ℝ)`, right convolution with `k` is the
-  Bochner integral `∫ z, k z • R_(z⁻¹) h ∂μ` of weighted right translates.
 * `MeasureTheory.Lp.tendsto_convolutionL_right`,
   `MeasureTheory.Lp.tendsto_convolutionL_ofRealCLM_compLp_right`: `h ⋆ k i → h` in real and
   `RCLike`-valued `L¹` for nonnegative kernels concentrating at the identity.
@@ -72,23 +69,6 @@ section LeftInvariant
 
 variable [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
   [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {hp : p ≠ ∞}
-
-omit [CompleteSpace E] in
-/-- Convolving on the left with a real `L¹` kernel coerced into an `RCLike` scalar field `𝕜` agrees
-with convolving with the real kernel directly. -/
-theorem convolutionL_ofRealCLM_compLp_left {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E]
-    [IsScalarTower ℝ 𝕜 E] [SMulCommClass ℝ 𝕜 E] (k : Lp ℝ 1 μ) (u : Lp E p μ) :
-    convolutionL μ p hp ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) u =
-      convolutionL μ p hp k u := by
-  rw [convolutionL_apply, convolutionL_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp k] with y hy
-  rw [RCLike.ofRealCLM_apply] at hy
-  rw [hy, leftTranslation_apply, leftTranslation_apply]
-  refine Lp.ext ?_
-  filter_upwards [coeFn_smul (k y : 𝕜) (DomMulAct.mk y⁻¹ • u),
-    coeFn_smul (k y) (DomMulAct.mk y⁻¹ • u)] with x h₁ h₂
-  rw [h₁, h₂, Pi.smul_apply, Pi.smul_apply, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
 
 /-- If `k` is a nonnegative kernel of integral one which vanishes outside `S`, and every left
 translate `L_y u` with `y ∈ S` lies within `ε` of `u`, then `‖k ⋆ u - u‖_p ≤ ε`. -/
@@ -123,39 +103,6 @@ end LeftInvariant
 section ModularInversion
 
 variable [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
-
-/-- **Right convolution as a Bochner integral of right translates.** For `h ∈ L¹(G, μ; 𝕜)` over an
-`RCLike` field `𝕜` and a real kernel `k ∈ L¹(G, μ; ℝ)`, convolving `h` on the right with `k` equals
-`∫ z, k z • R_(z⁻¹) h ∂μ`. -/
-theorem convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv
-    {𝕜 : Type*} [RCLike 𝕜] (h : Lp 𝕜 1 μ) (k : Lp ℝ 1 μ) :
-    convolutionL μ 1 ENNReal.one_ne_top h ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) =
-      ∫ z, k z • rightTranslation μ 1 𝕜 z⁻¹ h ∂μ := by
-  apply (modularInversion (E := 𝕜) μ 1 𝕜).injective
-  have hJ : ⇑(modularInversion (E := 𝕜) μ 1 ℝ) = ⇑(modularInversion (E := 𝕜) μ 1 𝕜) :=
-    funext fun u => Lp.ext <| (coeFn_modularInversion (𝕜 := ℝ) u).trans
-      (coeFn_modularInversion (𝕜 := 𝕜) u).symm
-  have hcomm := (modularInversion (E := 𝕜) μ 1 ℝ).toContinuousLinearEquiv.integral_comp_comm
-    (μ := μ) fun z => k z • rightTranslation μ 1 𝕜 z⁻¹ h
-  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hJ] at hcomm
-  rw [modularInversion_convolutionL, modularInversion_ofRealCLM_compLp,
-    convolutionL_ofRealCLM_compLp_left, convolutionL_apply, ← hcomm]
-  have hinner (z : G) :
-      modularInversion μ 1 𝕜 (k z • rightTranslation μ 1 𝕜 z⁻¹ h) =
-        k z • leftTranslation μ 1 ℝ z⁻¹ (modularInversion μ 1 𝕜 h) := by
-    have hJz : modularInversion (E := 𝕜) μ 1 𝕜 = (modularInversion (E := 𝕜) μ 1 ℝ : _ → _) :=
-      hJ.symm
-    rw [congr_fun hJz _, map_smul, ← congr_fun hJz _, rightTranslation_apply,
-      modularInversion_modularInversion, leftTranslation_apply, leftTranslation_apply]
-  simp_rw [hinner]
-  have hinv := integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
-    fun y => k y⁻¹ • leftTranslation μ 1 ℝ y (modularInversion μ 1 𝕜 h)
-  simp only [inv_inv] at hinv
-  rw [hinv]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_modularInversion (𝕜 := ℝ) k] with y hy
-  rw [ENNReal.toReal_one, inv_one, Real.rpow_one, smul_eq_mul] at hy
-  rw [hy, smul_smul]
 
 /-- **Right approximate identity over an `RCLike` field.** Convolution on the right with nonnegative
 real kernels of integral one which concentrate at the identity converges strongly to the identity on
