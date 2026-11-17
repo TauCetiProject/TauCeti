@@ -78,15 +78,18 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 private def profile (s : ℝ) (y : E) : ℂ :=
   (1 + 4 * s * I) ^ (-(finrank ℝ E : ℂ) / 2) * cexp (-‖y‖ ^ 2 / (1 + 4 * s * I))
 
-private theorem ofReal_sqrt_mul_sq {c : ℝ} (hc : 0 < c) (a : ℝ) :
-    ((√c * a : ℝ) : ℂ) ^ 2 = c * a ^ 2 := by
-  rw [← ofReal_pow, mul_pow, Real.sq_sqrt hc.le, ofReal_mul, ofReal_pow]
+private theorem norm_sqrt_smul_sq {c : ℝ} (hc : 0 < c) (x : E) : ‖√c • x‖ ^ 2 = c * ‖x‖ ^ 2 := by
+  rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg c), mul_pow, Real.sq_sqrt hc.le]
+
+private theorem ofReal_norm_sqrt_smul_sq {c : ℝ} (hc : 0 < c) (x : E) :
+    (‖√c • x‖ : ℂ) ^ 2 = c * ‖x‖ ^ 2 := by
+  exact_mod_cast norm_sqrt_smul_sq hc x
 
 private theorem profile_mul_sqrt_smul {c : ℝ} (hc : 0 < c) (t : ℝ) (x : E) :
     (1 + 4 * c * t * I) ^ (-(finrank ℝ E : ℂ) / 2) *
         cexp (-c * ‖x‖ ^ 2 / (1 + 4 * c * t * I)) =
       profile (c * t) (√c • x) := by
-  rw [profile, norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg c), ofReal_sqrt_mul_sq hc]
+  rw [profile, ofReal_norm_sqrt_smul_sq hc]
   push_cast
   congr 2 <;> ring
 
@@ -119,6 +122,16 @@ private theorem continuous_profile (s : ℝ) : Continuous (profile (E := E) s) :
 private theorem profile_zero (y : E) :
     profile 0 y = (SchwartzMap.gaussian (b := 1) (by simp) : 𝓢(E, ℂ)) y := by
   simp [profile, SchwartzMap.gaussian_apply]
+
+/-- `a^s (a⁻¹ w⁻¹)^s = w^(-s)` for `a > 0` and `w` off the negative real axis, with the principal
+power. -/
+private theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : w.arg ≠ π)
+    (s : ℂ) : (a : ℂ) ^ s * ((a : ℂ)⁻¹ * w⁻¹) ^ s = w ^ (-s) := by
+  have has : (a : ℂ) ^ s ≠ 0 := by simp [ha.ne']
+  rw [mul_cpow (by simpa [← ofReal_inv, arg_ofReal_of_nonneg (inv_nonneg.2 ha.le)]
+      using arg_mem_Ioc w⁻¹),
+    inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
+  field_simp
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -168,15 +181,11 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian {c : ℝ} (hc : 0 < c) (t : �
   have hw : w.arg ≠ π := (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp [w])))).1
   congr 1
   · -- `(π / c)^(n/2) (π / b)^(n/2) = w^(-n/2)`, since `π / b = (π / c)⁻¹ w⁻¹`.
-    have hb' : (π : ℂ) / b = (((π / c : ℝ)⁻¹ : ℝ) : ℂ) * w⁻¹ := by
+    have hb' : (π : ℂ) / b = ((π / c : ℝ) : ℂ)⁻¹ * w⁻¹ := by
       simp only [b]
       push_cast
       field_simp
-    rw [hb', mul_cpow (by rw [arg_ofReal_of_nonneg (by positivity), zero_add]; exact arg_mem_Ioc _),
-      ← mul_assoc, ha,
-      ← mul_cpow_ofReal_nonneg (by positivity) (by positivity), ← ofReal_mul,
-      mul_inv_cancel₀ (by positivity), ofReal_one, one_cpow, one_mul, inv_cpow _ _ hw,
-      ← cpow_neg, neg_div]
+    rw [hb', ha, ofReal_cpow_mul_inv_mul_inv_cpow (by positivity) hw, neg_div]
   · congr 1
     simp only [b, w]
     push_cast
@@ -190,8 +199,7 @@ theorem norm_schrodingerPropagator_toLp_gaussian {c : ℝ} (hc : 0 < c) (t : ℝ
       (1 + 16 * c ^ 2 * t ^ 2) ^ (-(finrank ℝ E : ℝ) / 4) *
         Real.exp (-c * ‖x‖ ^ 2 / (1 + 16 * c ^ 2 * t ^ 2)) := by
   filter_upwards [coeFn_schrodingerPropagator_toLp_gaussian hc t] with x hx
-  rw [hx, profile_mul_sqrt_smul hc, norm_profile, norm_smul,
-    Real.norm_of_nonneg (Real.sqrt_nonneg c), mul_pow (√c), Real.sq_sqrt hc.le]
+  rw [hx, profile_mul_sqrt_smul hc, norm_profile, norm_sqrt_smul_sq hc]
   congr 2 <;> ring
 
 /-! ### Norms of the evolved Gaussian -/
@@ -236,22 +244,6 @@ theorem eLpNorm_schrodingerPropagator_toLp_gaussian_top {c : ℝ} (hc : 0 < c) (
 
 /-! ### The dispersive constant is sharp -/
 
-/-- The Gaussian `g_π(x) = exp(-π ‖x‖²)` has unit mass. -/
-private theorem eLpNorm_toLp_gaussian_pi_one :
-    eLpNorm ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2) 1
-      volume = 1 := by
-  set g : 𝓢(E, ℂ) := SchwartzMap.gaussian (b := π) (by simpa using pi_pos)
-  rw [eLpNorm_congr_ae (g.coeFn_toLp 2 volume),
-    eLpNorm_one_eq_lintegral_eNorm g.continuous.aestronglyMeasurable,
-    ← ofReal_integral_norm_eq_lintegral_eNorm (g.integrable (μ := volume))]
-  have h : ∀ x : E, ‖g x‖ = Real.exp (-π * ‖x‖ ^ 2) := fun x ↦ by
-    rw [SchwartzMap.gaussian_apply, norm_exp]
-    congr 1
-    norm_cast
-  simp_rw [h]
-  rw [GaussianFourier.integral_rexp_neg_mul_sq_norm pi_pos, div_self pi_ne_zero, Real.one_rpow,
-    ENNReal.ofReal_one]
-
 /-- **The dispersive constant is sharp.** If `‖S(t) f‖_∞ ≤ A |t|^(-n/2) ‖f‖₁` for every `t > 0`
 and every integrable `f ∈ L²`, then `A ≥ (4π)^(-n/2)`, the constant of
 `TauCeti.eLpNorm_schrodingerPropagator_le`. The Gaussian `g_π` has `‖g_π‖₁ = 1` and
@@ -266,12 +258,16 @@ theorem four_mul_pi_rpow_le_of_eLpNorm_schrodingerPropagator_le {A : ℝ}
   set g : 𝓢(E, ℂ) := SchwartzMap.gaussian (b := π) (by simpa using pi_pos)
   have hg : Integrable (g.toLp 2 (μ := volume)) volume :=
     (g.integrable (μ := volume)).congr (g.coeFn_toLp 2 volume).symm
+  -- `g_π` has unit mass.
+  have hg1 : eLpNorm (g.toLp 2 (μ := volume)) 1 volume = 1 := by
+    rw [eLpNorm_congr_ae (g.coeFn_toLp 2 volume), SchwartzMap.eLpNorm_gaussian_one]
+    simp [pi_ne_zero]
   -- For `u > 0`, testing at `t = u⁻¹` gives `(u² + 16π²)^(-n/4) ≤ A`.
   have key : ∀ u : ℝ, 0 < u → (u ^ 2 + 16 * π ^ 2) ^ (-n / 4) ≤ A := fun u hu ↦ by
     have hu2 : 0 < u ^ 2 := by positivity
     have ht := h u⁻¹ (inv_pos.2 hu) _ hg
-    rw [eLpNorm_schrodingerPropagator_toLp_gaussian_top pi_pos, eLpNorm_toLp_gaussian_pi_one,
-      mul_one, ENNReal.ofReal_le_ofReal_iff'] at ht
+    rw [eLpNorm_schrodingerPropagator_toLp_gaussian_top pi_pos, hg1, mul_one,
+      ENNReal.ofReal_le_ofReal_iff'] at ht
     have hlhs : (1 + 16 * π ^ 2 * u⁻¹ ^ 2) ^ (-n / 4) =
         (u ^ 2 + 16 * π ^ 2) ^ (-n / 4) * (u ^ 2) ^ (n / 4) := by
       rw [show 1 + 16 * π ^ 2 * u⁻¹ ^ 2 = (u ^ 2 + 16 * π ^ 2) * (u ^ 2)⁻¹ by
@@ -296,9 +292,11 @@ theorem four_mul_pi_rpow_le_of_eLpNorm_schrodingerPropagator_le {A : ℝ}
       (Or.inl (by positivity : (0 : ℝ) ^ 2 + 16 * π ^ 2 ≠ 0))
   have hlim := hcont.tendsto.mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
   have hle := le_of_tendsto hlim (eventually_nhdsWithin_of_forall fun u hu ↦ key u hu)
-  have h16 : (0 : ℝ) ^ 2 + 16 * π ^ 2 = (4 * π) ^ 2 := by ring
-  rwa [h16, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), show ((2 : ℕ) : ℝ) * (-n / 4) =
-    -n / 2 by push_cast; ring] at hle
+  have h0 : ((0 : ℝ) ^ 2 + 16 * π ^ 2) ^ (-n / 4) = (4 * π) ^ (-n / 2) := by
+    rw [show -n / 2 = 2 * (-n / 4) by ring, Real.rpow_mul (by positivity), Real.rpow_two]
+    congr 1
+    ring
+  rwa [h0] at hle
 
 /-! ### Scaling forces admissibility -/
 
@@ -324,8 +322,12 @@ private theorem eLpNorm_eLpNorm_schrodingerPropagator_toLp_gaussian {c : ℝ} (h
   have htime := Measure.eLpNorm_comp_inv_smul volume
     (fun t ↦ eLpNorm (profile (E := E) t) r volume) (inv_ne_zero hc.ne') q
   simp only [inv_inv, smul_eq_mul, finrank_self, Nat.cast_one] at htime
-  rw [htime, abs_of_pos (inv_pos.2 hc), Real.inv_rpow hc.le, ← Real.rpow_neg hc.le, ← mul_assoc,
-    ← ENNReal.ofReal_mul (by positivity), Real.inv_sqrt_rpow_eq_rpow hc.le, one_div]
+  -- The space dilation contributes `c^(-n/(2r))` and the time dilation `c^(-1/q)`.
+  have hpow : (√c)⁻¹ ^ ((finrank ℝ E : ℝ) / r.toReal) * |c⁻¹| ^ (1 / q.toReal) =
+      c ^ (-((finrank ℝ E : ℝ) / r.toReal) / 2) * c ^ (-q.toReal⁻¹) := by
+    simp [Real.inv_sqrt_rpow_eq_rpow hc.le, abs_of_pos hc, Real.inv_rpow hc.le,
+      Real.rpow_neg hc.le]
+  rw [htime, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hpow]
 
 /-- The `L²` norm of `g_c` is `c^(-n/4)` times that of `g_1`, the profile at time `0`. -/
 private theorem eNorm_toLp_gaussian {c : ℝ} (hc : 0 < c) :
@@ -336,7 +338,7 @@ private theorem eNorm_toLp_gaussian {c : ℝ} (hc : 0 < c) :
   have hfun : ⇑(SchwartzMap.gaussian (b := c) (by simpa using hc) : 𝓢(E, ℂ)) =
       fun x ↦ profile (E := E) 0 ((√c)⁻¹⁻¹ • x) := funext fun x ↦ by
     rw [profile_zero, inv_inv, SchwartzMap.gaussian_apply, SchwartzMap.gaussian_apply,
-      norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg c), ofReal_sqrt_mul_sq hc]
+      ofReal_norm_sqrt_smul_sq hc]
     congr 1
     ring
   rw [hfun, Measure.eLpNorm_comp_inv_smul volume _ (inv_ne_zero (Real.sqrt_pos.2 hc).ne'),
@@ -383,8 +385,10 @@ theorem two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le {
     have hreal := ENNReal.toReal_mono
       (ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hΓ))
       (hscale c hc)
-    rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal,
-      ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofReal (by positivity)] at hreal
+    have h1 : 0 ≤ c ^ (-(n / r.toReal) / 2) * c ^ (-q.toReal⁻¹) := by positivity
+    have h2 : 0 ≤ c ^ (-(n / 2) / 2) := by positivity
+    simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal h1,
+      ENNReal.toReal_ofReal h2] at hreal
     have hsplit : c ^ (-(n / r.toReal) / 2) * c ^ (-q.toReal⁻¹) =
         c ^ (-(n / 2) / 2) * c ^ (n / 4 - n / r.toReal / 2 - q.toReal⁻¹) := by
       rw [← Real.rpow_add hc, ← Real.rpow_add hc]
