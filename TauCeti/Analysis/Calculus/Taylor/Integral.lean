@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.TaylorIntegral
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.Taylor.Basic
@@ -37,13 +39,20 @@ remainder bound `TauCeti.abs_sub_taylorWithinEval_le` along the segment `[0, 1]`
   is `iteratedFDeriv 𝕜 n f (x + t • y) (fun _ ↦ y)`.
 * `TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le`: Taylor's remainder bound of order `n` along a
   segment `[x, x + y]` between arbitrary real normed spaces.
+* `TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_norm_sub_le`: for a complete target, the
+  order-`(m + 1)` Taylor remainder along `[x, x + y]` is at most `B / (m + 1)!` when the top
+  derivative applied to `y` stays within `B` of its value at `x`, by the integral form of the
+  remainder.
+* `TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_holderWith`: for a `C^n` map whose `n`-th
+  derivative is `α`-Hölder with constant `C`, the order-`n` Taylor remainder is at most
+  `C ‖y‖ ^ (n + α) / n!`, for an arbitrary target space, by pairing with a unit functional.
 * `ContDiffAt.isBigO_sub_sum_iteratedFDeriv` and `ContDiffAt.isBigO_sub_taylor_three`: asymptotic
   `O(‖x' - x‖ ^ (n + 1))` and third-order `O(‖x' - x‖ ^ 4)` Taylor expansions at a point.
 -/
 
 public section
 
-open scoped ContDiff Nat Topology
+open scoped ContDiff Nat NNReal Topology
 
 section LineDerivatives
 
@@ -152,6 +161,113 @@ theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le {f : E → F} {x y : E} {
             mul_le_mul_of_nonneg_right (hM t ht) (pow_nonneg (norm_nonneg y) _)
   rw [htaylor, abs_of_nonneg (norm_nonneg rem)] at hbound
   simpa using hbound
+
+/-- **Taylor remainder bound from the oscillation of the top derivative.** If `f`, with values in
+a complete space, is `C^(m + 1)` at each point of the segment from `x` to `x + y`, and along that
+segment the top derivative
+`D^(m + 1) f (x + t • y) (y, …, y)` stays within `B` of its value at `x`, then the order-`(m + 1)`
+Taylor polynomial of `f` at `x` approximates `f (x + y)` with error at most `B / (m + 1)!`. -/
+theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_norm_sub_le [CompleteSpace F]
+    {f : E → F} {x y : E} {m : ℕ}
+    (hf : ∀ t ∈ Set.Icc (0 : ℝ) 1, ContDiffAt ℝ (m + 1) f (x + t • y)) {B : ℝ}
+    (hB : ∀ t ∈ Set.Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (m + 1) f (x + t • y) (fun _ => y) -
+      iteratedFDeriv ℝ (m + 1) f x (fun _ => y)‖ ≤ B) :
+    ‖f (x + y) - ∑ k ∈ Finset.range (m + 1 + 1),
+        (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ => y)‖ ≤ B / (m + 1)! := by
+  set D : ℝ → F := fun t => iteratedFDeriv ℝ (m + 1) f (x + t • y) (fun _ => y)
+  have hD : ContinuousOn D (Set.Icc 0 1) := fun t ht =>
+    ContinuousAt.continuousWithinAt <| (continuous_eval_const _).continuousAt.comp
+      (((hf t ht).continuousAt_iteratedFDeriv (by norm_cast)).comp (f := fun s : ℝ => x + s • y)
+        (continuous_const.add (continuous_id.smul continuous_const)).continuousAt)
+  have hpow : Continuous fun t : ℝ => (1 - t) ^ m := (continuous_const.sub continuous_id).pow m
+  have hint : ∫ t in (0 : ℝ)..1, (1 - t) ^ m = ((m : ℝ) + 1)⁻¹ := by
+    rw [intervalIntegral.integral_comp_sub_left (fun t => t ^ m), integral_pow]
+    simp
+  -- The integral form of the remainder, with the top derivative at `x` subtracted.
+  have hrem : f (x + y) - ∑ k ∈ Finset.range (m + 1 + 1),
+      (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ => y) =
+      (m ! : ℝ)⁻¹ • ∫ t in (0 : ℝ)..1, (1 - t) ^ m • (D t - D 0) := by
+    simp_rw [smul_sub]
+    have hI : IntervalIntegrable (fun t : ℝ => (1 - t) ^ m • D t) MeasureTheory.volume 0 1 :=
+      (hpow.continuousOn.smul hD).intervalIntegrable_of_Icc zero_le_one
+    have hI' : IntervalIntegrable (fun t : ℝ => (1 - t) ^ m • D 0) MeasureTheory.volume 0 1 :=
+      (hpow.smul continuous_const).intervalIntegrable 0 1
+    rw [intervalIntegral.integral_sub hI hI',
+      intervalIntegral.integral_smul_const, hint,
+      map_add_eq_sum_add_integral_iteratedFDeriv hf,
+      Finset.sum_range_succ _ (m + 1)]
+    simp only [D, zero_smul, add_zero, smul_sub, smul_smul, Nat.factorial_succ]
+    push_cast
+    rw [mul_inv, mul_comm ((m : ℝ) + 1)⁻¹]
+    abel
+  rw [hrem, norm_smul, Real.norm_of_nonneg (by positivity)]
+  have hle : ‖∫ t in (0 : ℝ)..1, (1 - t) ^ m • (D t - D 0)‖ ≤
+      ∫ t in (0 : ℝ)..1, (1 - t) ^ m * B := by
+    refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
+      (.of_forall fun t ht => ?_) ((hpow.mul continuous_const).intervalIntegrable _ _)
+    have h1t : 0 ≤ 1 - t := sub_nonneg.2 ht.2
+    rw [norm_smul, Real.norm_of_nonneg (pow_nonneg h1t m)]
+    exact mul_le_mul_of_nonneg_left (by simpa [D] using hB t (Set.Ioc_subset_Icc_self ht))
+      (pow_nonneg h1t m)
+  rw [intervalIntegral.integral_mul_const, hint] at hle
+  calc (m ! : ℝ)⁻¹ * ‖∫ t in (0 : ℝ)..1, (1 - t) ^ m • (D t - D 0)‖
+      ≤ (m ! : ℝ)⁻¹ * (((m : ℝ) + 1)⁻¹ * B) := by gcongr
+    _ = B / (m + 1)! := by
+        rw [Nat.factorial_succ]
+        push_cast
+        field_simp
+
+/-- **Multivariate Taylor remainder bound for a Hölder top derivative.** If `f` is `C^n` and its
+`n`-th derivative is `α`-Hölder with constant `C`, then the order-`n` Taylor polynomial of `f` at
+`x` approximates `f (x + y)` with error at most `C * ‖y‖ ^ (n + α) / n!`, without any completeness
+assumption on the target space. -/
+theorem TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_holderWith {f : E → F} {n : ℕ}
+    (hf : ContDiff ℝ n f) {C α : ℝ≥0} (hH : HolderWith C α (iteratedFDeriv ℝ n f)) (x y : E) :
+    ‖f (x + y) - ∑ k ∈ Finset.range (n + 1),
+        (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ => y)‖ ≤
+      C * ‖y‖ ^ ((n : ℝ) + α) / n ! := by
+  -- Along the segment the `n`-th derivative, applied to `y`, moves by at most `C ‖y‖ ^ (n + α)`.
+  have hD (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+      ‖iteratedFDeriv ℝ n f (x + t • y) (fun _ => y) - iteratedFDeriv ℝ n f x (fun _ => y)‖ ≤
+        C * ‖y‖ ^ ((n : ℝ) + α) := by
+    rw [← sub_apply]
+    refine ((iteratedFDeriv ℝ n f (x + t • y) - iteratedFDeriv ℝ n f x).le_opNorm _).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← dist_eq_norm]
+    have hdist : dist (x + t • y) x ≤ ‖y‖ := by
+      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg ht.1]
+      exact mul_le_of_le_one_left (norm_nonneg y) ht.2
+    calc dist (iteratedFDeriv ℝ n f (x + t • y)) (iteratedFDeriv ℝ n f x) * ‖y‖ ^ n
+        ≤ C * dist (x + t • y) x ^ (α : ℝ) * ‖y‖ ^ n := by gcongr; exact hH.dist_le _ _
+      _ ≤ C * ‖y‖ ^ (α : ℝ) * ‖y‖ ^ n := by gcongr
+      _ = C * ‖y‖ ^ ((n : ℝ) + α) := by
+          rw [Real.rpow_add_of_nonneg (norm_nonneg y) n.cast_nonneg α.coe_nonneg,
+            Real.rpow_natCast]
+          ring
+  rcases n with _ | m
+  · simpa using hD 1 ⟨zero_le_one, le_rfl⟩
+  -- Pair the remainder with a unit functional `g`; the real-valued `g ∘ f` has a complete target.
+  set rem := f (x + y) - ∑ k ∈ Finset.range (m + 1 + 1),
+    (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ => y)
+  obtain ⟨g, hg_norm, hg_rem⟩ := exists_dual_vector'' ℝ rem
+  replace hg_rem : g rem = ‖rem‖ := by simpa using hg_rem
+  have hgf {k : ℕ} (hk : k ≤ m + 1) (z : E) :
+      iteratedFDeriv ℝ k (g ∘ f) z (fun _ => y) = g (iteratedFDeriv ℝ k f z (fun _ => y)) := by
+    rw [g.iteratedFDeriv_comp_left hf.contDiffAt (by exact_mod_cast hk),
+      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply]
+  have h := TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le_of_norm_sub_le (x := x) (y := y)
+    (fun _ _ => (g.contDiff.comp hf).contDiffAt) (B := C * ‖y‖ ^ (((m + 1 : ℕ) : ℝ) + α))
+    fun t ht => by
+      rw [hgf le_rfl, hgf le_rfl, ← map_sub]
+      exact (g.le_opNorm _).trans
+        ((mul_le_mul hg_norm (hD t ht) (norm_nonneg _) zero_le_one).trans_eq (one_mul _))
+  have hg : g rem = (g ∘ f) (x + y) - ∑ k ∈ Finset.range (m + 1 + 1),
+      (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k (g ∘ f) x (fun _ => y) := by
+    rw [map_sub, map_sum, Function.comp_apply]
+    congr 1
+    refine Finset.sum_congr rfl fun k hk => ?_
+    rw [map_smul, hgf (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))]
+  rw [← hg_rem, hg]
+  exact (Real.le_norm_self _).trans h
 
 /-- **Taylor's theorem of order `n` with `O(‖x' - x‖ ^ (n + 1))` remainder.** If `f` is `C^(n + 1)`
 at `x`, then `f x' - ∑ k ≤ n, (k!)⁻¹ • D^k f(x)(x' - x, …, x' - x) = O(‖x' - x‖ ^ (n + 1))` as
