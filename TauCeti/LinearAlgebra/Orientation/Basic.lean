@@ -32,9 +32,10 @@ compatibility under linear equivalences.
 * `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
   determinant transport an orientation to the same orientation.
 * `Orientation.map_eq_det_inv_smul_of_card_eq_finrank`,
-  `Orientation.map_eq_iff_det_pos_of_card_eq_finrank` and
-  `Orientation.eq_or_eq_neg_of_card_eq_finrank`: the finite-dimensional facts about orientation
-  transport, valid without finite-dimensionality (the index type is then empty).
+  `Orientation.map_eq_iff_det_pos_of_card_eq_finrank`,
+  `Orientation.eq_or_eq_neg_of_card_eq_finrank`, and
+  `Orientation.ne_iff_eq_neg_of_card_eq_finrank`: the finite-dimensional facts about orientation
+  transport and equality, valid without finite-dimensionality (the index type is then empty).
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
@@ -199,6 +200,14 @@ theorem Orientation.eq_or_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M
     · exact .inl rfl
   · have : FiniteDimensional R M := Module.finite_of_finrank_pos (h ▸ Fintype.card_pos)
     exact Orientation.eq_or_eq_neg x₁ x₂ h
+
+/-- If the index type has cardinality equal to the dimension, an orientation equals the negation of
+another orientation if and only if they are not equal. Unlike `Orientation.ne_iff_eq_neg`, this
+needs no `FiniteDimensional` hypothesis. -/
+theorem Orientation.ne_iff_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : x₁ ≠ x₂ ↔ x₁ = -x₂ :=
+  ⟨fun hn ↦ (eq_or_eq_neg_of_card_eq_finrank x₁ x₂ h).resolve_left hn, fun he ↦
+    he.symm ▸ (Module.Ray.ne_neg_self x₂).symm⟩
 
 /-- When the index type has cardinality equal to the `finrank`, two self-equivalences transport an
 orientation to the same orientation if and only if their determinants have the same sign. No
