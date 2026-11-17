@@ -27,6 +27,9 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
+  projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
+  finite.
 * `Module.Dual.apply_eq_mul_apply_of_nonneg`: over an ordered ring, if `f x = 1`, a functional `g`
   nonnegative on the half-space `{v | 0 ≤ f v}` is the multiple `g x • f` of `f`.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
@@ -86,6 +89,32 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
   exact ⟨fun h => ⟨f y, h.symm⟩, by rintro ⟨c, rfl⟩; simp [hfx]⟩
 
 end Semiring
+
+section CommSemiring
+
+variable (R ι : Type*) [CommSemiring R]
+
+/-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
+theorem linearIndependent_proj :
+    LinearIndependent R (fun i : ι ↦ (LinearMap.proj i : Dual R (ι → R))) := by
+  classical
+  intro f g hfg
+  ext i
+  have h := LinearMap.congr_fun hfg (Pi.single i (1 : R))
+  simpa only [Finsupp.linearCombination_apply, Finsupp.sum, LinearMap.sum_apply,
+    LinearMap.smul_apply, LinearMap.proj_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one,
+    mul_zero, Finset.sum_ite_eq', Finsupp.if_mem_support] using h
+
+/-- The coordinate projections on `ι → R` span the dual space when `ι` is finite. -/
+theorem span_range_proj_eq_top [Finite ι] :
+    Submodule.span R (Set.range fun i : ι ↦ (LinearMap.proj i : Dual R (ι → R))) = ⊤ := by
+  classical
+  have h : ⇑(Pi.basisFun R ι).dualBasis = fun i ↦ (LinearMap.proj i : Dual R (ι → R)) := by
+    ext i x
+    simp
+  exact h ▸ (Pi.basisFun R ι).dualBasis.span_eq
+
+end CommSemiring
 
 section OrderedCommRing
 

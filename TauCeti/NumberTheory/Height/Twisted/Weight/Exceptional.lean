@@ -378,7 +378,7 @@ theorem map_exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual 
         exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL']
 
 /-- Pulling forms back along a linear equivalence transports the exceptional subspace by
-preimage (Evertse--Ferretti, Lemma 7.3(iii)), even for degenerate data. -/
+preimage, even for degenerate data. -/
 theorem exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
     {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W] (e : W ≃ₗ[K] V) :
     exceptionalSubspace (fun v i ↦ (L v i).comp e.toLinearMap) c =
@@ -387,17 +387,6 @@ theorem exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V)
     Submodule.comap_map_eq_of_injective e.injective]
 
 section FinTwo
-
-private theorem linearIndependent_fin_two_proj (K : Type*) [Field K] :
-    LinearIndependent K (fun i : Fin 2 ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) :=
-  Fintype.linearIndependent_iff.mpr fun g hg i ↦ by
-    have := LinearMap.congr_fun hg (Pi.single i 1)
-    fin_cases i <;> simpa [Pi.single_apply] using this
-
-private theorem span_range_fin_two_proj (K : Type*) [Field K] :
-    span K (range fun i : Fin 2 ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) = ⊤ :=
-  (linearIndependent_fin_two_proj K).span_eq_top_of_card_eq_finrank'
-    (by simp [Subspace.dual_finrank_eq])
 
 private theorem finsum_apply_eq_sum_toFinset {Ω : Type*} {c : Ω → Fin 2 → ℝ}
     (hc : HasFiniteSupport c) (i : Fin 2) :
@@ -413,8 +402,8 @@ private theorem weight_fin_two_proj_top {K Ω : Type*} [Field K]
     finsum_apply_eq_sum_toFinset hc 0, finsum_apply_eq_sum_toFinset hc 1,
     ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun v _ ↦ by
-    rw [localWeight_top (linearIndependent_fin_two_proj K) (span_range_fin_two_proj K),
-      Fin.sum_univ_two]
+    rw [localWeight_top (Module.Dual.linearIndependent_proj K (Fin 2))
+      (Module.Dual.span_range_proj_eq_top K (Fin 2)), Fin.sum_univ_two]
 
 private theorem weightRatio_fin_two_proj_single_one {K Ω : Type*} [Field K]
     {c : Ω → Fin 2 → ℝ} (hc : HasFiniteSupport c) :
@@ -485,7 +474,8 @@ theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
       finrank_span_singleton (Pi.single_eq_zero_iff.not.mpr one_ne_zero)
     rw [h, finrank_top, Module.finrank_fin_fun] at hdim
     omega
-  refine ((eq_exceptionalSubspace_iff (fun _ ↦ span_range_fin_two_proj K) hc _).mpr
+  refine ((eq_exceptionalSubspace_iff
+    (fun _ ↦ Module.Dual.span_range_proj_eq_top K (Fin 2)) hc _).mpr
     ⟨hE_ne_top, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩).symm
   · exact if h : U = K ∙ e₁ then h ▸ le_rfl
       else (weightRatio_fin_two_proj_lt_single_one hc hlt hU h).le
