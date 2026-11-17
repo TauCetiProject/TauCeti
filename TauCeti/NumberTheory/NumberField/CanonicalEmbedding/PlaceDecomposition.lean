@@ -44,7 +44,8 @@ integral points of `W`:
 ## Main definitions
 
 * `Submodule.realPlaceSpan W w`, `Submodule.complexPlaceSpan W w`: the local `ℝ`- and `ℂ`-spans of
-  `W` in `EuclideanSpace ℝ ι` and `EuclideanSpace ℂ ι` at real and complex places `w`.
+  `W` in `EuclideanSpace ℝ ι` and `EuclideanSpace ℂ ι` at real and complex places `w`, with
+  universal properties `Submodule.realPlaceSpan_le_iff` and `Submodule.complexPlaceSpan_le_iff`.
 * `Submodule.placeSpanProd W`: the `L²` product of the local place spans across all infinite places.
 * `Submodule.euclideanSpanEquivPlaceSpanProd W`: `W.euclideanSpan ≃ₗᵢ[ℝ] W.placeSpanProd`.
 * `Submodule.supSlice W`, `Submodule.euclideanBallSlice W`: the local sup-norm and local Euclidean
@@ -110,6 +111,26 @@ theorem toLp_mem_complexPlaceSpan {W : Submodule K (ι → K)}
     (w : {w : InfinitePlace K // w.IsComplex}) {v : ι → K} (hv : v ∈ W) :
     (WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ∈ W.complexPlaceSpan w :=
   subset_span ⟨v, hv, rfl⟩
+
+/-- `W.realPlaceSpan w` is contained in an `ℝ`-submodule `U` if and only if the image of every
+vector of `W` under `w` belongs to `U`. -/
+@[simp]
+theorem realPlaceSpan_le_iff {W : Submodule K (ι → K)} {w : {w : InfinitePlace K // w.IsReal}}
+    {U : Submodule ℝ (EuclideanSpace ℝ ι)} :
+    W.realPlaceSpan w ≤ U ↔
+      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ∈ U := by
+  rw [realPlaceSpan, span_le, image_subset_iff, subset_def]
+  simp only [mem_preimage, SetLike.mem_coe]
+
+/-- `W.complexPlaceSpan w` is contained in a `ℂ`-submodule `U` if and only if the image of every
+vector of `W` under `w` belongs to `U`. -/
+@[simp]
+theorem complexPlaceSpan_le_iff {W : Submodule K (ι → K)}
+    {w : {w : InfinitePlace K // w.IsComplex}} {U : Submodule ℂ (EuclideanSpace ℂ ι)} :
+    W.complexPlaceSpan w ≤ U ↔
+      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ∈ U := by
+  rw [complexPlaceSpan, span_le, image_subset_iff, subset_def]
+  simp only [mem_preimage, SetLike.mem_coe]
 
 /-- The real-place span of the zero subspace is zero. -/
 @[simp]

@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.Height.Arakelov.Comparison
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PlaceDecomposition
 
-import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Estimates
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
@@ -63,7 +62,6 @@ Over `ℚ`, for an integer matrix `A` with linearly independent rows, the primit
   `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`,
   `Submodule.exists_linearIndependent_integerPoints_prod_height2_le_sqrt_pow`: integral `K`-bases of
   `W` with bounded product of absolute sup or Euclidean heights.
-* `Matrix.subspaceHeight_ker_mulVecLin`: Hodge-duality identity `H₂(ker A) = H₂(rowSpace A)`.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le_sqrt_pow`,
@@ -440,17 +438,7 @@ open Submodule
 
 section NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Finite m] [Fintype ι]
-
-/-- Hodge duality identifies the height of `ker A` with the height of the row space of `A`, without
-any rank assumption on `A`. -/
-theorem subspaceHeight_ker_mulVecLin [LinearOrder ι] (A : Matrix m ι K) :
-    (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (Set.range A.row)).subspaceHeight := by
-  cases nonempty_fintype m
-  rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy, subspaceHeight_euclideanDual,
-    generatedBy_eq_span_rows]
-
-variable [LinearOrder ι]
+variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Fintype ι] [LinearOrder ι]
 
 private theorem exists_ker_basis_of_subspace (A : Matrix m ι K) (f : (ι → K) → ℝ) {B C : ℝ}
     (h : ∃ z : Fin (finrank K (LinearMap.ker A.mulVecLin)) → ι → 𝓞 K,

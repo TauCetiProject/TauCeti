@@ -209,7 +209,7 @@ variable {K m ι : Type*} [Field K] [NumberField K]
 
 section Ordered
 
-variable [Finite m] [Fintype ι] [LinearOrder ι]
+variable [Fintype ι] [LinearOrder ι]
 
 private theorem exists_ker_ne_zero_of_subspace {A : Matrix m ι K} (hA : A.rank < Fintype.card ι)
     (f : (ι → K) → ℝ) {B C : ℝ}
