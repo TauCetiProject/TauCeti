@@ -78,7 +78,8 @@ theorem gridExponentialProcess_pos (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → �
     (W : ℝ≥0 → Ω → ℝ) (n : ℕ) (t : ℝ≥0) (ω : Ω) :
     0 < gridExponentialProcess τ θ W n t ω := gridExponential_pos _ θ W n ω
 
-/-- Only the active clipped dates, heights and integrator values affect the likelihood. -/
+/-- Only the clipped dates and integrator values through `n`, and heights before `n`,
+affect the likelihood. -/
 theorem gridExponentialProcess_congr {τ σ : ℕ → ℝ≥0} {θ η : ℕ → Ω → ℝ}
     {W V : ℝ≥0 → Ω → ℝ} {n : ℕ} {s t : ℝ≥0} {ω : Ω}
     (hτ : ∀ j ≤ n, min t (τ j) = min s (σ j))
@@ -100,7 +101,7 @@ theorem gridExponentialProcess_eq_gridExponential_of_ge {τ : ℕ → ℝ≥0} {
   exact gridExponential_congr hmin (fun _ _ ↦ rfl) (fun j hj ↦ by rw [hmin j hj])
 
 /-- At or before a prefix's last date, later trading intervals do not affect the process. -/
-theorem gridExponentialProcess_eq_prefix_of_le {τ : ℕ → ℝ≥0} {j n : ℕ}
+theorem gridExponentialProcess_eq_of_le {τ : ℕ → ℝ≥0} {j n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hjn : j ≤ n)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) {t : ℝ≥0} (ht : t ≤ τ j) :
     gridExponentialProcess τ θ W n t = gridExponentialProcess τ θ W j t := by
@@ -121,17 +122,17 @@ theorem gridExponentialProcess_eq_one_of_le {τ : ℕ → ℝ≥0} {n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ)
     {t : ℝ≥0} (ht : t ≤ τ 0) :
     gridExponentialProcess τ θ W n t = 1 := by
-  rw [gridExponentialProcess_eq_prefix_of_le hτ (Nat.zero_le n) θ W ht,
+  rw [gridExponentialProcess_eq_of_le hτ (Nat.zero_le n) θ W ht,
     gridExponentialProcess_zero]
   rfl
 
-/-- At an interior trading date, the process is the corresponding sampled likelihood. -/
+/-- At any trading date through `n`, the process is the corresponding sampled likelihood. -/
 @[simp]
 theorem gridExponentialProcess_eq_gridExponential {τ : ℕ → ℝ≥0} {j n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hjn : j ≤ n)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) :
     gridExponentialProcess τ θ W n (τ j) = gridExponential τ θ W j := by
-  rw [gridExponentialProcess_eq_prefix_of_le hτ hjn θ W le_rfl]
+  rw [gridExponentialProcess_eq_of_le hτ hjn θ W le_rfl]
   exact gridExponentialProcess_eq_gridExponential_of_ge
     (hτ.mono (Set.Iic_subset_Iic.mpr hjn)) θ W le_rfl
 
@@ -231,7 +232,7 @@ theorem gridExponentialProcess_eq_mul_exp {τ : ℕ → ℝ≥0} {j n : ℕ}
     (ht : t ∈ Set.Icc (τ j) (τ (j + 1))) (ω : Ω) :
     gridExponentialProcess τ θ W n t ω = gridExponential τ θ W j ω *
       exp (θ j ω * (W t ω - W (τ j) ω) - θ j ω ^ 2 * ((t : ℝ) - τ j) / 2) := by
-  rw [gridExponentialProcess_eq_prefix_of_le hτ hjn θ W ht.2,
+  rw [gridExponentialProcess_eq_of_le hτ hjn θ W ht.2,
     gridExponentialProcess_succ, min_eq_left ht.2, min_eq_right ht.1,
     gridExponentialProcess_eq_gridExponential_of_ge
       (hτ.mono (Set.Iic_subset_Iic.mpr (Nat.le_of_lt hjn))) θ W ht.1]

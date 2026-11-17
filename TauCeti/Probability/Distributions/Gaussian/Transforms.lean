@@ -112,7 +112,7 @@ theorem gaussian_exp_integral (a : ℝ) :
   have h := congrFun (ProbabilityTheory.mgf_fun_id_gaussianReal (μ := 0) (v := 1)) a
   simpa [ProbabilityTheory.mgf] using h
 
-/-- A Gaussian exponential normalized by its cumulant has mean one. -/
+/-- A Gaussian exponential normalized by its cumulant-generating function has mean one. -/
 theorem integral_exp_mul_sub_gaussianReal (μ b : ℝ) (v : ℝ≥0) :
     ∫ y, Real.exp (b * y - (μ * b + (v : ℝ) * b ^ 2 / 2)) ∂gaussianReal μ v = 1 := by
   simp_rw [Real.exp_sub, integral_div]
