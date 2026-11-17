@@ -10,6 +10,7 @@ public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
 public import TauCeti.Topology.Category.TopCat.Pushout
+import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
@@ -416,18 +417,23 @@ theorem exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv [T2Space M]
     · rintro _ ⟨x, hx, rfl⟩
       exact (SmoothEmbedding.IsCriticalSubmanifold.apply_le_of_mem_negativeDiscBundle
         (fun x hx ↦ hΘf a x (hsrc a hx)) hx).trans (by linarith [hε.1])
-  -- The retraction `r`, read as a map onto `X`, is a left inverse of the inclusion of `X`.
+  -- The retraction `r`, read as a map onto `X`, is a left inverse of the inclusion of `X`. Both
+  -- `ContinuousMap.inclusion hX x` and `ContinuousMap.inclusion inter_subset_left ⟨x, _⟩` are the
+  -- point `x` of `M` with a membership proof, so `hr` applies to `x` as it stands.
   set ρ := (ContinuousMap.inclusion inter_subset_right).comp r
-  have hρ : ρ.comp (ContinuousMap.inclusion hX) = ContinuousMap.id _ :=
-    ContinuousMap.ext fun x ↦ Subtype.ext <| by
-      have hx := congrArg Subtype.val (hr ⟨x.1, hX x.2, x.2⟩)
-      exact hx
+  have hρ (x) : ρ (ContinuousMap.inclusion hX x) = x :=
+    Subtype.ext (congrArg Subtype.val (hr ⟨x.1, hX x.2, x.2⟩) :)
   have hρ' : (ContinuousMap.inclusion hX).comp ρ =
       (ContinuousMap.inclusion inter_subset_left).comp r :=
     ContinuousMap.ext fun _ ↦ rfl
-  refine ⟨⟨ContinuousMap.inclusion hX, ρ, hρ ▸ ContinuousMap.Homotopic.refl _,
-    hρ' ▸ ⟨G.toHomotopy⟩⟩, fun _ ↦ rfl, fun x ↦ congrArg (· x) hρ, ?_⟩
-  exact hρ' ▸ ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy
+  set e := ContinuousMap.HomotopyEquiv.ofRetraction hX ρ hρ (hρ' ▸ G.toHomotopy)
+  have he₁ (x) : (e x : M) = x := ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ x
+  have he : e.toFun = ContinuousMap.inclusion hX := ContinuousMap.ext fun x ↦ Subtype.ext (he₁ x)
+  have he' : e.invFun = ρ :=
+    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ _ _ _)
+  refine ⟨e, he₁, fun x ↦ ?_, ?_⟩
+  · simpa only [← he, ← he'] using hρ x
+  · exact he ▸ he' ▸ hρ' ▸ ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy
 
 end IsMorseBottFamily
 
