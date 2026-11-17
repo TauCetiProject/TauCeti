@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 public import TauCeti.RepresentationTheory.Continuous.Invariants
-import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Exponential
 import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.RepresentationTheory.Continuous.InvariantComplement
@@ -84,51 +83,6 @@ variable {Γ : Type v} [Group Γ]
 
 section PosSemidefHelpers
 
-private theorem norm_gnsVector_eq_one {φ : Γ → ℂ}
-    (hφ : (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1) (g : Γ) :
-    ‖hφ.gnsVector g‖ = 1 := by
-  have hsq : ‖hφ.gnsVector g‖ ^ 2 = 1 := by
-    rw [@norm_sq_eq_re_inner ℂ, hφ.inner_gnsVector, inv_mul_cancel, h1, RCLike.one_re]
-  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp hsq
-
-private theorem norm_le_one_of_posSemidef_inv_mul {φ : Γ → ℂ}
-    (hφ : (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1) (g : Γ) :
-    ‖φ g‖ ≤ 1 := by
-  simpa using hφ.norm_le_one_of_apply_self_eq_one (a := 1) (b := g) (by simp [h1]) (by simp [h1])
-
-private theorem one_sub_re_nonneg_of_posSemidef_inv_mul {φ : Γ → ℂ}
-    (hφ : (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1) (g : Γ) :
-    0 ≤ 1 - (φ g).re := by
-  linarith [Complex.re_le_norm (φ g), norm_le_one_of_posSemidef_inv_mul hφ h1 g]
-
-private theorem norm_sub_one_sq_le_two_mul_one_sub_re {φ : Γ → ℂ}
-    (hφ : (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1) (g : Γ) :
-    ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - (φ g).re) := by
-  have hnorm : (φ g).re ^ 2 + (φ g).im ^ 2 ≤ 1 := by
-    have h := pow_le_pow_left₀ (norm_nonneg (φ g)) (norm_le_one_of_posSemidef_inv_mul hφ h1 g) 2
-    rwa [Complex.sq_norm, Complex.normSq_apply, ← sq, ← sq, one_pow] at h
-  rw [Complex.sq_norm, Complex.normSq_apply]
-  simp only [Complex.sub_re, Complex.one_re, Complex.sub_im, Complex.one_im, sub_zero]
-  nlinarith
-
-private theorem one_sub_re_le_norm_sub_one (z : ℂ) : 1 - z.re ≤ ‖z - 1‖ := by
-  calc 1 - z.re = (1 - z).re := by simp
-    _ ≤ ‖1 - z‖ := Complex.re_le_norm (1 - z)
-    _ = ‖z - 1‖ := norm_sub_rev 1 z
-
-private theorem norm_gnsVector_one_sub_lt {φ : Γ → ℂ}
-    (hφ : (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1)
-    {g : Γ} {δ : ℝ} (hδ : 0 < δ) (hg : ‖φ g - 1‖ < δ ^ 2 / 2) :
-    ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ < δ := by
-  have hsq := hφ.norm_gnsVector_sub_sq 1 g
-  rw [inv_one, one_mul, h1, RCLike.one_re] at hsq
-  have hre : 1 - (φ g).re < δ ^ 2 / 2 := (one_sub_re_le_norm_sub_one (φ g)).trans_lt hg
-  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev]
-  have hlt : ‖hφ.gnsVector 1 - hφ.gnsVector g‖ ^ 2 < δ ^ 2 := by
-    rw [hsq]
-    exact (by linarith : 2 * (1 - (φ g).re) < δ ^ 2)
-  exact (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp hlt
-
 /-- If a normalized positive-definite function `φ` satisfies `‖φ h - 1‖ ≥ ε₀ > 0` while `φ a` and
 `φ b` are within `ε₀ ^ 2 / 32` of `1`, the triangle inequality in the GNS space gives
 `1 - (φ (a⁻¹ * h * b)).re ≥ ε₀ ^ 2 / 8`. -/
@@ -143,25 +97,18 @@ private theorem one_sub_re_mul_ge_of_posSemidef {φ : Γ → ℂ}
     rw [inv_one, one_mul, h1, RCLike.one_re] at hsq
     have hle : ε₀ ^ 2 ≤ ‖η 1 - η h‖ ^ 2 := by
       calc ε₀ ^ 2 ≤ ‖φ h - 1‖ ^ 2 := pow_le_pow_left₀ hε₀.le hh 2
-        _ ≤ 2 * (1 - (φ h).re) := norm_sub_one_sq_le_two_mul_one_sub_re hφ h1 h
+        _ ≤ 2 * (1 - (φ h).re) := hφ.norm_sub_one_sq_le h1 h
         _ = ‖η 1 - η h‖ ^ 2 := hsq.symm
     exact (sq_le_sq₀ hε₀.le (norm_nonneg _)).mp hle
   have h1a : ‖η 1 - η a‖ ≤ ε₀ / 4 := by
-    have hsq := hφ.norm_gnsVector_sub_sq 1 a
-    rw [inv_one, one_mul, h1, RCLike.one_re] at hsq
-    have hrea : 1 - (φ a).re < ε₀ ^ 2 / 32 := (one_sub_re_le_norm_sub_one (φ a)).trans_lt ha
-    have hlt : ‖η 1 - η a‖ ^ 2 ≤ (ε₀ / 4) ^ 2 := by
-      rw [hsq]
-      exact (by linarith : 2 * (1 - (φ a).re) ≤ (ε₀ / 4) ^ 2)
-    exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp hlt
+    refine (hφ.norm_gnsVector_sub_lt h1 (by positivity) ?_).le
+    rw [inv_one, one_mul]
+    exact ha.trans_eq (by ring)
   have hhb : ‖η (h * b) - η h‖ ≤ ε₀ / 4 := by
-    have hsq := hφ.norm_gnsVector_sub_sq h (h * b)
-    rw [inv_mul_cancel_left, h1, RCLike.one_re, norm_sub_rev] at hsq
-    have hreb : 1 - (φ b).re < ε₀ ^ 2 / 32 := (one_sub_re_le_norm_sub_one (φ b)).trans_lt hb
-    have hlt : ‖η (h * b) - η h‖ ^ 2 ≤ (ε₀ / 4) ^ 2 := by
-      rw [hsq]
-      exact (by linarith : 2 * (1 - (φ b).re) ≤ (ε₀ / 4) ^ 2)
-    exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp hlt
+    rw [norm_sub_rev]
+    refine (hφ.norm_gnsVector_sub_lt h1 (by positivity) ?_).le
+    rw [inv_mul_cancel_left]
+    exact hb.trans_eq (by ring)
   have htri : ‖η 1 - η h‖ ≤ ‖η 1 - η a‖ + ‖η a - η (h * b)‖ + ‖η (h * b) - η h‖ := by
     calc ‖η 1 - η h‖
         ≤ ‖η 1 - η (h * b)‖ + ‖η (h * b) - η h‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
@@ -206,29 +153,6 @@ private theorem posSemidef_cexp_neg_tsum {φ : ℕ → Γ → ℂ}
   exact Complex.continuous_exp.continuousAt.tendsto.comp
     (((hsumm g).hasSum.tendsto_sum_nat).const_mul (-(t : ℂ)))
 
-/-- If all double translates `n ↦ Φ (a⁻¹ * s n * b)` tend to `0`, then `⟪u₀, π (s n) v₀⟫ → 0` for
-every pair of vectors in the span of the GNS vectors of `Φ`. -/
-private theorem tendsto_inner_gnsRepresentation_of_tendsto_mul {Φ : Γ → ℂ}
-    (hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef) {s : ℕ → Γ}
-    (hs : ∀ a b : Γ, Tendsto (fun n ↦ Φ (a⁻¹ * s n * b)) atTop (𝓝 0))
-    {u₀ v₀ : hΦ.gnsSpace}
-    (hu₀ : u₀ ∈ Submodule.span ℂ (Set.range hΦ.gnsVector))
-    (hv₀ : v₀ ∈ Submodule.span ℂ (Set.range hΦ.gnsVector)) :
-    Tendsto (fun n ↦ ⟪u₀, hΦ.gnsRepresentation (s n) v₀⟫_ℂ) atTop (𝓝 0) := by
-  induction hu₀ using Submodule.span_induction with
-  | mem _ hx =>
-    obtain ⟨a, rfl⟩ := hx
-    induction hv₀ using Submodule.span_induction with
-    | mem _ hy =>
-      obtain ⟨b, rfl⟩ := hy
-      simpa [mul_assoc] using hs a b
-    | zero => simp
-    | add _ _ _ _ h₁ h₂ => simpa [inner_add_right] using h₁.add h₂
-    | smul c _ _ h => simpa [inner_smul_right] using h.const_mul c
-  | zero => simp
-  | add _ _ _ _ h₁ h₂ => simpa [inner_add_left] using h₁.add h₂
-  | smul c _ _ h => simpa [inner_smul_left] using h.const_mul (conj c)
-
 /-- If all double translates `n ↦ Φ (a⁻¹ * s n * b)` along a sequence `s : ℕ → Γ` in `Λ` tend to
 `0`, then the GNS representation of `Φ` has no nonzero `Λ`-invariant vector. -/
 private theorem not_exists_invariant_gnsSpace_of_tendsto_mul {Λ : Subgroup Γ} {Φ : Γ → ℂ}
@@ -237,45 +161,13 @@ private theorem not_exists_invariant_gnsSpace_of_tendsto_mul {Λ : Subgroup Γ} 
     (hdecay : ∀ a b : Γ, Tendsto (fun n ↦ Φ (a⁻¹ * s n * b)) atTop (𝓝 0)) :
     ¬ ∃ v : hΦ.gnsSpace, v ≠ 0 ∧ v ∈ (hΦ.gnsRepresentation.restrict Λ.subtype).invariants := by
   rintro ⟨v, hv0, hvΛ⟩
-  let u : hΦ.gnsSpace := (‖v‖⁻¹ : ℂ) • v
-  have hu_norm : ‖u‖ = 1 := norm_smul_inv_norm hv0
-  have hu_inv (n : ℕ) : hΦ.gnsRepresentation (s n) u = u := by
-    simpa only [u, map_smul, restrict_apply_apply, Subgroup.coe_subtype] using
-      congrArg ((‖v‖⁻¹ : ℂ) • ·) (hvΛ ⟨s n, hsΛ n⟩)
-  have hu_cl :
-      u ∈ _root_.closure (Submodule.span ℂ (Set.range hΦ.gnsVector) : Set hΦ.gnsSpace) := by
-    rw [← Submodule.topologicalClosure_coe, hΦ.gnsVector_dense]
-    trivial
-  obtain ⟨u₀, hu₀_mem, hu₀_dist⟩ :=
-    Metric.mem_closure_iff.mp hu_cl (1 / 3 : ℝ) (by norm_num)
-  rw [dist_eq_norm] at hu₀_dist
-  have htend0 := tendsto_inner_gnsRepresentation_of_tendsto_mul hΦ hdecay hu₀_mem hu₀_mem
-  have hge_const (n : ℕ) : (2 / 9 : ℝ) ≤ ‖⟪u₀, hΦ.gnsRepresentation (s n) u₀⟫_ℂ‖ := by
-    have hu₀_norm : ‖u₀‖ < 4 / 3 := by
-      linarith [norm_sub_norm_le u₀ u, norm_sub_rev u u₀, hu_norm]
-    have hu_inner : ⟪u, u⟫_ℂ = 1 := by
-      rw [inner_self_eq_norm_sq_to_K, hu_norm]
-      norm_num
-    have hsplit : (1 : ℂ) - ⟪u₀, hΦ.gnsRepresentation (s n) u₀⟫_ℂ =
-        ⟪u - u₀, u⟫_ℂ + ⟪u₀, hΦ.gnsRepresentation (s n) (u - u₀)⟫_ℂ := by
-      rw [inner_sub_left, map_sub, inner_sub_right, hu_inv n, hu_inner]
-      ring
-    have hlt79 : ‖(1 : ℂ) - ⟪u₀, hΦ.gnsRepresentation (s n) u₀⟫_ℂ‖ < 7 / 9 := by
-      rw [hsplit]
-      calc ‖⟪u - u₀, u⟫_ℂ + ⟪u₀, hΦ.gnsRepresentation (s n) (u - u₀)⟫_ℂ‖
-          ≤ ‖⟪u - u₀, u⟫_ℂ‖ + ‖⟪u₀, hΦ.gnsRepresentation (s n) (u - u₀)⟫_ℂ‖ := norm_add_le _ _
-        _ ≤ ‖u - u₀‖ * ‖u‖ + ‖u₀‖ * ‖hΦ.gnsRepresentation (s n) (u - u₀)‖ :=
-            add_le_add (norm_inner_le_norm _ _) (norm_inner_le_norm _ _)
-        _ = ‖u - u₀‖ + ‖u₀‖ * ‖u - u₀‖ := by
-            rw [hu_norm, mul_one, hΦ.isUnitary_gnsRepresentation.norm_map]
-        _ < 7 / 9 := by nlinarith [norm_nonneg (u - u₀), norm_nonneg u₀]
-    have h1norm : (1 : ℝ) - ‖⟪u₀, hΦ.gnsRepresentation (s n) u₀⟫_ℂ‖ ≤
-        ‖(1 : ℂ) - ⟪u₀, hΦ.gnsRepresentation (s n) u₀⟫_ℂ‖ := by
-      simpa using norm_sub_norm_le (1 : ℂ) ⟪u₀, hΦ.gnsRepresentation (s n) u₀⟫_ℂ
-    linarith
-  obtain ⟨n, hn⟩ := (Metric.tendsto_nhds.mp htend0 (2 / 9) (by norm_num)).exists
-  rw [dist_zero_right] at hn
-  exact (not_lt_of_ge (hge_const n)) hn
+  have hconst : (fun n ↦ ⟪v, hΦ.gnsRepresentation (s n) v⟫_ℂ) = fun _ ↦ ⟪v, v⟫_ℂ := by
+    ext n
+    have hvn : hΦ.gnsRepresentation (s n) v = v := hvΛ ⟨s n, hsΛ n⟩
+    rw [hvn]
+  have h0 := hΦ.tendsto_inner_gnsRepresentation_of_tendsto_mul hdecay v v
+  rw [hconst] at h0
+  exact hv0 (inner_self_eq_zero.mp (tendsto_nhds_unique tendsto_const_nhds h0))
 
 end PosSemidefHelpers
 
@@ -336,8 +228,9 @@ theorem IsKazhdanPair.norm_sub_starProjection_invariants_le {Λ : Subgroup Γ} [
   have hle : δ * ‖η‖ ≤ δ * ε := by linarith [hproj_le, hF g hgF]
   exact le_of_mul_le_mul_left hle hδ
 
-/-- For a Kazhdan pair `(F, δ)` (`δ > 0`) of a normal subgroup `Λ`, any vector moved by strictly
-less than `ε * δ` on `F` (`ε > 0`) is strictly within `ε` of a `Λ`-invariant vector. -/
+/-- For a Kazhdan pair `(F, δ)` (`δ > 0`) of a normal subgroup `Λ` in the universe `v` of `Γ`,
+any vector in a unitary representation on a Hilbert space (in any universe) moved by strictly less
+than `ε * δ` on `F` (`ε > 0`) is strictly within `ε` of a `Λ`-invariant vector. -/
 theorem IsKazhdanPair.exists_invariant_norm_sub_lt {Λ : Subgroup Γ} [Λ.Normal]
     {F : Finset Γ} {δ : ℝ} (hK : Λ.IsKazhdanPair.{v} F δ) (hδ : 0 < δ)
     {H : Type u} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
@@ -403,7 +296,8 @@ private theorem approx_invariant_of_posSemidef_approx {Λ : Subgroup Γ}
       _ < δ := hξF g hg
   have horb (k : Λ) : ‖(ρ.restrict Λ.subtype) k ξ - ξ‖ ≤ (3 / 4 : ℝ) * ε := by
     have hk := hFδ φ hφ hφ1 hφF k k.property
-    have hre : 1 - (φ k).re < ε ^ 2 / 4 := (one_sub_re_le_norm_sub_one (φ k)).trans_lt hk
+    have hre : 1 - (φ k).re < ε ^ 2 / 4 :=
+      lt_of_le_of_lt (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ k)) hk
     have hsq : ‖ρ k ξ - ξ‖ ^ 2 = 2 * (1 - (φ k).re) := by
       rw [@norm_sub_sq ℂ, hρ.norm_map, hξ, one_pow]
       have hsymm : RCLike.re ⟪ρ k ξ, ξ⟫_ℂ = (φ k).re :=
@@ -429,9 +323,9 @@ private theorem posSemidef_approx_of_approx_invariant {Λ : Subgroup Γ}
   obtain ⟨F, δ₀, hδ₀, hF⟩ := hinv (ε / 2) (half_pos hε)
   refine ⟨F, δ₀ ^ 2 / 2, by positivity, fun φ hφ h1 hφF h hh ↦ ?_⟩
   let ξ := hφ.gnsVector 1
-  have hξ : ‖ξ‖ = 1 := norm_gnsVector_eq_one hφ h1 1
+  have hξ : ‖ξ‖ = 1 := hφ.norm_gnsVector_eq_one h1 1
   have hξF (g : Γ) (hg : g ∈ F) : ‖hφ.gnsRepresentation g ξ - ξ‖ < δ₀ :=
-    norm_gnsVector_one_sub_lt hφ h1 hδ₀ (hφF g hg)
+    hφ.norm_gnsRepresentation_gnsVector_one_sub_lt h1 hδ₀ (hφF g hg)
   obtain ⟨v, hv, hvξ⟩ := hF hφ.gnsSpace hφ.gnsRepresentation hφ.isUnitary_gnsRepresentation
     ξ hξ hξF
   have hvh : hφ.gnsRepresentation h v = v := hv ⟨h, hh⟩
@@ -467,6 +361,41 @@ private theorem tendstoUniformlyOn_of_posSemidef_approx {Λ : Subgroup Γ}
   filter_upwards [hev] with i hi x hx
   simpa only [Pi.one_apply, dist_eq_norm', norm_sub_rev] using hFδ (φ i) (hpd i) (h1 i) hi x hx
 
+/-- If quantitative positive-definite approximation fails on `Λ`, any exhaustion `(A i, δ i)` along
+a nontrivial filter `l` of finite subsets of `Γ` and positive tolerances tending to `0` produces a
+family of normalized positive-definite functions converging pointwise to `1` on `Γ` but not
+uniformly on `Λ`. -/
+private theorem posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion {Λ : Subgroup Γ}
+    {ι : Type w} {l : Filter ι} [l.NeBot]
+    (A : ι → Finset Γ) (δ : ι → ℝ) (hδ : ∀ i, 0 < δ i)
+    (hA : ∀ g : Γ, ∀ᶠ i in l, g ∈ A i) (hδ0 : Tendsto δ l (𝓝 0))
+    (hunif : ∀ φ : ι → Γ → ℂ,
+      (∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef) →
+        (∀ i, φ i 1 = 1) → (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) →
+          TendstoUniformlyOn φ 1 l Λ) :
+    PosSemidefApprox Λ := by
+  by_contra hnot
+  unfold PosSemidefApprox at hnot
+  push Not at hnot
+  obtain ⟨ε₀, hε₀, hbad⟩ := hnot
+  have hex (i : ι) := hbad (A i) (δ i) (hδ i)
+  choose φ hpd h1 hF h hΛ hge using hex
+  have hpt (g : Γ) : Tendsto (fun i : ι ↦ φ i g) l (𝓝 1) := by
+    rw [Metric.tendsto_nhds]
+    intro r hr
+    have hδr : ∀ᶠ i in l, δ i < r := by
+      filter_upwards [Metric.tendsto_nhds.mp hδ0 r hr] with i hi
+      rw [dist_zero_right, Real.norm_of_nonneg (hδ i).le] at hi
+      exact hi
+    filter_upwards [hA g, hδr] with i hgi hri
+    rw [dist_eq_norm]
+    exact (hF i g hgi).trans hri
+  have hu := Metric.tendstoUniformlyOn_iff.mp (hunif φ hpd h1 hpt) ε₀ hε₀
+  obtain ⟨i, hi⟩ := hu.exists
+  have hlt : ‖φ i (h i) - 1‖ < ε₀ := by
+    simpa only [Pi.one_apply, dist_eq_norm, norm_sub_rev] using hi (h i) (hΛ i)
+  exact (not_lt_of_ge (hge i)) hlt
+
 /-- Uniform convergence on `Λ` along arbitrary filters in universe `v` implies quantitative
 positive-definite approximation on `Λ`. -/
 private theorem posSemidef_approx_of_tendstoUniformlyOn {Λ : Subgroup Γ}
@@ -476,25 +405,13 @@ private theorem posSemidef_approx_of_tendstoUniformlyOn {Λ : Subgroup Γ}
           TendstoUniformlyOn φ 1 l Λ) :
     PosSemidefApprox Λ := by
   classical
-  by_contra hnot
-  unfold PosSemidefApprox at hnot
-  push Not at hnot
-  obtain ⟨ε₀, hε₀, hbad⟩ := hnot
-  have hex (i : Finset Γ × ℕ) := hbad i.1 (1 / (i.2 + 1 : ℝ)) Nat.one_div_pos_of_nat
-  choose φ hpd h1 hF h hΛ hge using hex
-  have hpt (g : Γ) : Tendsto (fun i : Finset Γ × ℕ ↦ φ i g) atTop (𝓝 1) := by
-    rw [Metric.tendsto_nhds]
-    intro r hr
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hr
-    refine Filter.eventually_atTop.mpr ⟨({g}, n), fun i hi ↦ ?_⟩
-    rw [dist_eq_norm]
-    exact (hF i g (hi.1 (Finset.mem_singleton_self g))).trans
-      ((Nat.one_div_le_one_div hi.2).trans_lt hn)
-  have hu := Metric.tendstoUniformlyOn_iff.mp (hunif _ atTop φ hpd h1 hpt) ε₀ hε₀
-  obtain ⟨i, hi⟩ := hu.exists
-  have hlt : ‖φ i (h i) - 1‖ < ε₀ := by
-    simpa only [Pi.one_apply, dist_eq_norm, norm_sub_rev] using hi (h i) (hΛ i)
-  exact (not_lt_of_ge (hge i)) hlt
+  refine posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := atTop)
+    (fun i : Finset Γ × ℕ ↦ i.1) (fun i ↦ 1 / (i.2 + 1 : ℝ))
+    (fun _ ↦ Nat.one_div_pos_of_nat)
+    (fun g ↦ Filter.eventually_atTop.mpr ⟨({g}, 0), fun i hi ↦ hi.1 (Finset.mem_singleton_self g)⟩)
+    (tendsto_one_div_add_atTop_nhds_zero_nat.comp
+      (Filter.tendsto_atTop_atTop.mpr fun n ↦ ⟨(∅, n), fun _ hi ↦ hi.2⟩))
+    (hunif (Finset Γ × ℕ) atTop)
 
 /-- When `Γ` is countable, sequential uniform convergence on `Λ` already implies quantitative
 positive-definite approximation on `Λ`. -/
@@ -505,29 +422,14 @@ private theorem posSemidef_approx_of_tendstoUniformlyOn_nat [Countable Γ] {Λ :
           TendstoUniformlyOn φ 1 atTop Λ) :
     PosSemidefApprox Λ := by
   classical
-  by_contra hnot
-  unfold PosSemidefApprox at hnot
-  push Not at hnot
-  obtain ⟨ε₀, hε₀, hbad⟩ := hnot
   obtain ⟨e, he⟩ := exists_surjective_nat Γ
-  let A (n : ℕ) : Finset Γ := (Finset.range (n + 1)).image e
-  have hex (n : ℕ) := hbad (A n) (1 / (n + 1 : ℝ)) Nat.one_div_pos_of_nat
-  choose φ hpd h1 hF h hΛ hge using hex
-  have hpt (g : Γ) : Tendsto (fun n : ℕ ↦ φ n g) atTop (𝓝 1) := by
-    obtain ⟨k₀, rfl⟩ := he g
-    rw [Metric.tendsto_nhds]
-    intro r hr
-    obtain ⟨n₀, hn₀⟩ := exists_nat_one_div_lt hr
-    refine Filter.eventually_atTop.mpr ⟨max k₀ n₀, fun n hn ↦ ?_⟩
-    have hmem : e k₀ ∈ A n :=
-      Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le (le_of_max_le_left hn)))
-    rw [dist_eq_norm]
-    exact (hF n (e k₀) hmem).trans ((Nat.one_div_le_one_div (le_of_max_le_right hn)).trans_lt hn₀)
-  have hu := Metric.tendstoUniformlyOn_iff.mp (hunif φ hpd h1 hpt) ε₀ hε₀
-  obtain ⟨n, hn⟩ := hu.exists
-  have hlt : ‖φ n (h n) - 1‖ < ε₀ := by
-    simpa only [Pi.one_apply, dist_eq_norm, norm_sub_rev] using hn (h n) (hΛ n)
-  exact (not_lt_of_ge (hge n)) hlt
+  refine posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := atTop)
+    (fun n : ℕ ↦ (Finset.range (n + 1)).image e) (fun n ↦ 1 / (n + 1 : ℝ))
+    (fun _ ↦ Nat.one_div_pos_of_nat) (fun g ↦ ?_)
+    tendsto_one_div_add_atTop_nhds_zero_nat hunif
+  obtain ⟨k₀, rfl⟩ := he g
+  exact Filter.eventually_atTop.mpr ⟨k₀, fun n hn ↦
+    Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le hn))⟩
 
 omit [Group Γ] in
 /-- Summability of the weighted series `∑' k, (k + 1) * (1 - φ k g)` along an exhaustion of `Γ`. -/
@@ -585,7 +487,7 @@ private theorem tendsto_cexp_neg_tsum_mul_zero [DecidableEq Γ] {e : ℕ → Γ}
       rw [hψ_re]
       exact (mul_le_mul_of_nonneg_left hre_ge (by positivity)).trans <|
         hsumm_re.le_tsum n fun k _ ↦ mul_nonneg (by positivity)
-          (one_sub_re_nonneg_of_posSemidef_inv_mul (hpd k) (h1 k) _)
+          ((hpd k).one_sub_re_nonneg (h1 k) _)
     rw [Complex.norm_exp, show (-(t : ℂ) * ψ ((e ka)⁻¹ * s n * e kb)).re =
         -t * (ψ ((e ka)⁻¹ * s n * e kb)).re by simp]
     exact Real.exp_le_exp.mpr (by nlinarith)
@@ -636,8 +538,8 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
   have hex_inv := (isKazhdanPair_def Λ F₀ δ₀).mp hK
     hΦ.gnsSpace hΦ.gnsRepresentation hΦ.isUnitary_gnsRepresentation
-    ⟨hΦ.gnsVector 1, norm_gnsVector_eq_one hΦ hΦ1 1,
-      fun g hg ↦ norm_gnsVector_one_sub_lt hΦ hΦ1 hδ₀ (htF₀ g hg)⟩
+    ⟨hΦ.gnsVector 1, hΦ.norm_gnsVector_eq_one hΦ1 1,
+      fun g hg ↦ hΦ.norm_gnsRepresentation_gnsVector_one_sub_lt hΦ1 hδ₀ (htF₀ g hg)⟩
   exact not_exists_invariant_gnsSpace_of_tendsto_mul hΦ hsΛ
     (tendsto_cexp_neg_tsum_mul_zero he hA_sub hpd h1 hsumm hε₀
       (fun k x hx ↦ (hF k x hx).trans_le (min_le_right _ _)) hsε ht)
@@ -664,13 +566,11 @@ theorem relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal
       ⟨F, ε * δ, mul_pos hε hδ, fun H _ _ _ ρ hρ ξ _ hξF ↦
         hK.exists_invariant_norm_sub_lt hδ hρ hε ξ hξF⟩
   · obtain ⟨F, δ, hδ, hF⟩ := approx_invariant_of_posSemidef_approx.{v} hpd_approx zero_lt_one
-    refine IsKazhdanPair.relativePropertyT
-      ((isKazhdanPair_def Λ F δ).mpr fun H _ _ _ ρ hρ ⟨ξ, hξ, hξF⟩ ↦ ?_) hδ
-    obtain ⟨v, hv, hvξ⟩ := hF H ρ hρ ξ hξ hξF
-    exact ⟨v, fun hv0 ↦ by simp [hv0, hξ] at hvξ, hv⟩
+    exact (isKazhdanPair_of_exists_invariant_norm_sub_lt_one hF).relativePropertyT hδ
 
-/-- For a normal subgroup `Λ` with relative property (T), every filter of normalized
-positive-definite functions converging pointwise to `1` on `Γ` converges uniformly to `1` on `Λ`. -/
+/-- For a normal subgroup `Λ` with relative property (T) in the universe `v` of `Γ`, every filter
+of normalized positive-definite functions converging pointwise to `1` on `Γ` converges uniformly
+to `1` on `Λ`. -/
 theorem RelativePropertyT.tendstoUniformlyOn_of_normal {Λ : Subgroup Γ} [Λ.Normal]
     (hΛ : Λ.RelativePropertyT.{v}) {ι : Type w} {l : Filter ι} {φ : ι → Γ → ℂ}
     (hpd : ∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef)
@@ -713,10 +613,7 @@ theorem relativePropertyT_iff_forall_exists_invariant_norm_sub_lt (Λ : Subgroup
     (posSemidef_approx_of_relativePropertyT
       ((Λ.relativePropertyT_iff_relativePropertyT.{u, v}).mp hΛ)) hε, fun hinv ↦ ?_⟩
   obtain ⟨F, δ, hδ, hF⟩ := hinv 1 zero_lt_one
-  refine IsKazhdanPair.relativePropertyT
-    ((isKazhdanPair_def Λ F δ).mpr fun H _ _ _ ρ hρ ⟨ξ, hξ, hξF⟩ ↦ ?_) hδ
-  obtain ⟨v, hv, hvξ⟩ := hF H ρ hρ ξ hξ hξF
-  exact ⟨v, fun hv0 ↦ by simp [hv0, hξ] at hvξ, hv⟩
+  exact (isKazhdanPair_of_exists_invariant_norm_sub_lt_one hF).relativePropertyT hδ
 
 /-- **Quantitative positive-definite characterization of relative property (T).** A subgroup `Λ` of
 a countable discrete group `Γ` has relative property (T) if and only if for every `ε > 0` there is

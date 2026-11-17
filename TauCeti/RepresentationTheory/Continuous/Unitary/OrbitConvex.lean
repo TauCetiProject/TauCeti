@@ -103,20 +103,20 @@ convex hull of the orbit `{ρ m v | m : M}`. -/
 theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ : ρ.IsUnitary)
     (v : V) :
     ρ.invariants.starProjection v ∈ closure (convexHull ℝ (Set.range fun m : M ↦ ρ m v)) := by
-  let : InnerProductSpace ℝ V :=
-    { Inner.rclikeToReal 𝕜 V with
-      norm_sq_eq_re_inner := norm_sq_eq_re_inner
-      conj_inner_symm := fun _ _ ↦ inner_re_symm _ _
-      add_left := fun _ _ _ ↦ by simp +instances only [Inner.rclikeToReal, inner_add_left, map_add]
-      smul_left := fun x y r ↦ by
-        rw [← algebraMap_smul 𝕜 r x]
-        simp +instances only [Inner.rclikeToReal, RCLike.algebraMap_eq_ofReal, inner_smul_left,
-          RCLike.conj_ofReal, RCLike.re_ofReal_mul, conj_trivial] }
   let C := closure (convexHull ℝ (Set.range fun m : M ↦ ρ m v))
   have hCne : C.Nonempty := ⟨v, subset_closure (subset_convexHull ℝ _ ⟨1, by simp⟩)⟩
   have hCconv : Convex ℝ C := (convex_convexHull ℝ _).closure
+  -- Pass `InnerProductSpace.rclikeToReal 𝕜 V` explicitly rather than as a local instance so its
+  -- restricted `NormedSpace ℝ V` does not clash with the caller's `[NormedSpace ℝ V]`.
+  have hCconv_r : @Convex ℝ V _ _ _ (InnerProductSpace.rclikeToReal 𝕜 V).toSMul C := by
+    intro x hx y hy a b ha hb hab
+    have hsmul (r : ℝ) (z : V) :
+        @HSMul.hSMul ℝ V V (@instHSMul ℝ V (InnerProductSpace.rclikeToReal 𝕜 V).toSMul) r z =
+          r • z := algebraMap_smul 𝕜 r z
+    simpa only [hsmul] using hCconv hx hy ha hb hab
   obtain ⟨w, hwC, hwmin⟩ :=
-    exists_norm_eq_iInf_of_complete_convex hCne isClosed_closure.isComplete hCconv 0
+    @exists_norm_eq_iInf_of_complete_convex V _ (InnerProductSpace.rclikeToReal 𝕜 V)
+      C hCne isClosed_closure.isComplete hCconv_r 0
   have hle (z : V) (hz : z ∈ C) : ‖w‖ ≤ ‖z‖ := by
     have h0 : ‖(0 : V) - w‖ ≤ ‖(0 : V) - z‖ := by
       rw [hwmin]
@@ -135,7 +135,7 @@ theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ 
         _ = ‖(2 : ℝ) • ((2 : ℝ)⁻¹ • (w + ρ m w))‖ := by
             rw [← smul_add, norm_smul (2 : ℝ), Real.norm_of_nonneg zero_le_two]
         _ = ‖w + ρ m w‖ := by rw [smul_smul]; norm_num
-    have hpar := parallelogram_law_with_norm ℝ (ρ m w) w
+    have hpar := parallelogram_law_with_norm 𝕜 (ρ m w) w
     rw [hρ.norm_map, add_comm (ρ m w) w] at hpar
     have hsq : ‖ρ m w - w‖ ^ 2 ≤ 0 := by
       nlinarith [pow_le_pow_left₀ (by positivity) hmid_norm 2]

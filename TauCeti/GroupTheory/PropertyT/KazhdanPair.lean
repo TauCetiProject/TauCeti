@@ -37,6 +37,8 @@ the Hilbert-space universe `u`.
 ## Main statements
 
 * `Subgroup.IsKazhdanPair.relativePropertyT`: a Kazhdan pair gives relative property (T).
+* `Subgroup.isKazhdanPair_of_exists_invariant_norm_sub_lt_one`: approximation by `Λ`-invariant
+  vectors within distance `< 1` yields a Kazhdan pair.
 * `Subgroup.isKazhdanPair_top_univ_one`: for a finite group `Γ`, `(Γ, 1)` is a Kazhdan pair
   for `⊤`.
 * `Subgroup.relativePropertyT_iff_exists_isKazhdanPair`: relative property (T) is equivalent to
@@ -145,6 +147,20 @@ theorem IsKazhdanPair.relativePropertyT {Λ : Subgroup Γ} {F : Finset Γ} {δ :
   (relativePropertyT_def Λ).mpr fun H _ _ _ ρ hu hρ ↦
     hΛ H ρ hu ((hasAlmostInvariantVectors_def ρ).mp hρ F δ hδ)
 
+/-- If every `(F, δ)`-invariant unit vector of a unitary representation in universe `u` lies at
+distance strictly less than `1` from a `Λ`-invariant vector, then `(F, δ)` is a Kazhdan pair for
+`Λ`. -/
+theorem isKazhdanPair_of_exists_invariant_norm_sub_lt_one {Λ : Subgroup Γ} {F : Finset Γ}
+    {δ : ℝ}
+    (h : ∀ (H : Type u) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+      (ρ : ContRepresentation ℂ Γ H), ρ.IsUnitary →
+        ∀ ξ : H, ‖ξ‖ = 1 → (∀ g ∈ F, ‖ρ g ξ - ξ‖ < δ) →
+          ∃ v ∈ (ρ.restrict Λ.subtype).invariants, ‖v - ξ‖ < 1) :
+    Λ.IsKazhdanPair.{u} F δ := by
+  rintro H _ _ _ ρ hρ ⟨ξ, hξ, hξF⟩
+  obtain ⟨v, hv, hvξ⟩ := h H ρ hρ ξ hξ hξF
+  exact ⟨v, fun hv0 ↦ by simp [hv0, hξ] at hvξ, hv⟩
+
 /-- In a finite group `Γ`, the pair `(Γ, 1)` is a Kazhdan pair for `⊤`: averaging a unit vector
 moved by less than `1` by every element gives an invariant vector within distance less than `1`
 of it, which therefore cannot vanish. -/
@@ -182,8 +198,8 @@ theorem relativePropertyT_iff_exists_isKazhdanPair (Λ : Subgroup Γ) :
   rw [restrict_hilbertSum, mem_invariants_hilbertSum_iff] at hx
   exact hx0 (lp.ext (funext fun i ↦ not_not.mp fun h ↦ hinv i (x i) h (hx i)))
 
-/-- A Kazhdan pair in the universe `v` of the ambient group is a Kazhdan pair in every Hilbert-space
-universe `u`, by embedding the GNS representation of `g ↦ ⟪ξ, ρ g ξ⟫` isometrically into `H`. -/
+/-- A Kazhdan pair in the universe `v` of the ambient group is a Kazhdan pair in every
+Hilbert-space universe `u`. -/
 theorem IsKazhdanPair.of_universe {Λ : Subgroup Γ} {F : Finset Γ} {δ : ℝ}
     (h : Λ.IsKazhdanPair.{v} F δ) : Λ.IsKazhdanPair.{u} F δ := by
   rintro H _ _ _ ρ hρ ⟨ξ, hξ, hF⟩
@@ -234,44 +250,58 @@ theorem relativePropertyT_max_iff (Λ : Subgroup Γ) :
   obtain ⟨F, δ, hδ, hK⟩ := Λ.relativePropertyT_iff_exists_isKazhdanPair.{u, v}.mp h
   exact ((Λ.isKazhdanPair_max_iff.{u} F δ).mp hK).relativePropertyT hδ
 
-/-- **Universe independence of Kazhdan pairs.** When the ambient group `Γ` is countable, whether
-`(F, δ)` is a Kazhdan pair for `Λ` is independent of the Hilbert-space universe. -/
-theorem isKazhdanPair_iff_isKazhdanPair [Countable Γ] (Λ : Subgroup Γ) (F : Finset Γ) (δ : ℝ) :
-    Λ.IsKazhdanPair.{u} F δ ↔ Λ.IsKazhdanPair.{w} F δ := by
+/-- Every countable group is isomorphic to a group in `Type 0`. -/
+private theorem exists_mulEquiv_type0 [Countable Γ] :
+    ∃ (G₀ : Type) (_ : Group G₀), Nonempty (G₀ ≃* Γ) := by
   obtain ⟨f, hf⟩ := exists_injective_nat Γ
   let e : Set.range f ≃ Γ := (Equiv.ofInjective f hf).symm
   let : Group (Set.range f) := e.group
-  let φ : Set.range f ≃* Γ := e.mulEquiv
-  let Λ₀ : Subgroup (Set.range f) := Λ.comap φ.toMonoidHom
-  let F₀ : Finset (Set.range f) := F.map φ.symm.toEquiv.toEmbedding
+  exact ⟨Set.range f, inferInstance, ⟨e.mulEquiv⟩⟩
+
+/-- Transporting along a group isomorphism `G₀ ≃* Γ` with `G₀ : Type 0` reduces `IsKazhdanPair.{u}`
+to `IsKazhdanPair.{0}` on `G₀`. -/
+private theorem isKazhdanPair_iff_type0 {G₀ : Type} [Group G₀] (φ : G₀ ≃* Γ)
+    (Λ : Subgroup Γ) (F : Finset Γ) (δ : ℝ) :
+    Λ.IsKazhdanPair.{u} F δ ↔
+      (Λ.comap φ.toMonoidHom).IsKazhdanPair.{0} (F.map φ.symm.toEquiv.toEmbedding) δ := by
+  let Λ₀ := Λ.comap φ.toMonoidHom
+  let F₀ := F.map φ.symm.toEquiv.toEmbedding
   have hΛ : Λ₀.map φ.toMonoidHom = Λ := Subgroup.map_comap_eq_self_of_surjective φ.surjective Λ
   have hF : F₀.map φ.toEquiv.toEmbedding = F := by
     ext g
     simp [F₀]
-  have hu : Λ.IsKazhdanPair.{u} F δ ↔ Λ₀.IsKazhdanPair.{0} F₀ δ := by
-    rw [← hΛ, ← hF, isKazhdanPair_map_mulEquiv_iff]
-    exact Λ₀.isKazhdanPair_max_iff.{u} F₀ δ
-  have hw : Λ.IsKazhdanPair.{w} F δ ↔ Λ₀.IsKazhdanPair.{0} F₀ δ := by
-    rw [← hΛ, ← hF, isKazhdanPair_map_mulEquiv_iff]
-    exact Λ₀.isKazhdanPair_max_iff.{w} F₀ δ
-  exact hu.trans hw.symm
+  calc Λ.IsKazhdanPair.{u} F δ
+      ↔ (Λ₀.map φ.toMonoidHom).IsKazhdanPair.{u} (F₀.map φ.toEquiv.toEmbedding) δ := by
+        rw [hΛ, hF]
+    _ ↔ Λ₀.IsKazhdanPair.{u} F₀ δ := isKazhdanPair_map_mulEquiv_iff φ
+    _ ↔ Λ₀.IsKazhdanPair.{0} F₀ δ := Λ₀.isKazhdanPair_max_iff.{u} F₀ δ
+
+/-- Transporting along a group isomorphism `G₀ ≃* Γ` with `G₀ : Type 0` reduces
+`RelativePropertyT.{u}` to `RelativePropertyT.{0}` on `G₀`. -/
+private theorem relativePropertyT_iff_type0 {G₀ : Type} [Group G₀] (φ : G₀ ≃* Γ)
+    (Λ : Subgroup Γ) :
+    Λ.RelativePropertyT.{u} ↔ (Λ.comap φ.toMonoidHom).RelativePropertyT.{0} := by
+  -- Passing through `G₀ : Type 0` is needed because `relativePropertyT_iff_exists_isKazhdanPair`
+  -- requires universe `max u v`, whereas `u` may be smaller than `v`.
+  let Λ₀ := Λ.comap φ.toMonoidHom
+  have hΛ : Λ₀.map φ.toMonoidHom = Λ := Subgroup.map_comap_eq_self_of_surjective φ.surjective Λ
+  calc Λ.RelativePropertyT.{u}
+      ↔ (Λ₀.map φ.toMonoidHom).RelativePropertyT.{u} := by rw [hΛ]
+    _ ↔ Λ₀.RelativePropertyT.{u} := relativePropertyT_map_mulEquiv_iff φ
+    _ ↔ Λ₀.RelativePropertyT.{0} := Λ₀.relativePropertyT_max_iff.{u}
+
+/-- **Universe independence of Kazhdan pairs.** When the ambient group `Γ` is countable, whether
+`(F, δ)` is a Kazhdan pair for `Λ` is independent of the Hilbert-space universe. -/
+theorem isKazhdanPair_iff_isKazhdanPair [Countable Γ] (Λ : Subgroup Γ) (F : Finset Γ) (δ : ℝ) :
+    Λ.IsKazhdanPair.{u} F δ ↔ Λ.IsKazhdanPair.{w} F δ := by
+  obtain ⟨G₀, _, ⟨φ⟩⟩ := exists_mulEquiv_type0 (Γ := Γ)
+  exact (isKazhdanPair_iff_type0.{u} φ Λ F δ).trans (isKazhdanPair_iff_type0.{w} φ Λ F δ).symm
 
 /-- **Universe independence of relative property (T).** When the ambient group `Γ` is countable,
 relative property (T) of `Λ` is independent of the Hilbert-space universe. -/
 theorem relativePropertyT_iff_relativePropertyT [Countable Γ] (Λ : Subgroup Γ) :
     Λ.RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{w} := by
-  obtain ⟨f, hf⟩ := exists_injective_nat Γ
-  let e : Set.range f ≃ Γ := (Equiv.ofInjective f hf).symm
-  let : Group (Set.range f) := e.group
-  let φ : Set.range f ≃* Γ := e.mulEquiv
-  let Λ₀ : Subgroup (Set.range f) := Λ.comap φ.toMonoidHom
-  have hΛ : Λ₀.map φ.toMonoidHom = Λ := Subgroup.map_comap_eq_self_of_surjective φ.surjective Λ
-  have hu : Λ.RelativePropertyT.{u} ↔ Λ₀.RelativePropertyT.{0} := by
-    rw [← hΛ, relativePropertyT_map_mulEquiv_iff]
-    exact Λ₀.relativePropertyT_max_iff.{u}
-  have hw : Λ.RelativePropertyT.{w} ↔ Λ₀.RelativePropertyT.{0} := by
-    rw [← hΛ, relativePropertyT_map_mulEquiv_iff]
-    exact Λ₀.relativePropertyT_max_iff.{w}
-  exact hu.trans hw.symm
+  obtain ⟨G₀, _, ⟨φ⟩⟩ := exists_mulEquiv_type0 (Γ := Γ)
+  exact (relativePropertyT_iff_type0.{u} φ Λ).trans (relativePropertyT_iff_type0.{w} φ Λ).symm
 
 end Subgroup
