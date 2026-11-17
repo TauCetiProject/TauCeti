@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
-import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -28,12 +28,14 @@ norm, invertibility of `Φ_T` is an open condition in `E →L[𝕜] F`:
   transverse to `ker T` (`Disjoint V T.ker`), `T` restricts to a topological isomorphism
   `V ≃L[𝕜] V.map T`, the image `V.map T` is closed and topologically complementary to the fixed
   orthogonal complement `(V.map T₀)ᗮ`, and `F ⧸ V.map T ≃L[𝕜] (V.map T₀)ᗮ`.
-* **Openness at `T₀`:** when `E` and `F` are complete, `V` is closed, `V.map T₀` is closed, and
-  `Disjoint V T₀.ker`, Banach's open mapping theorem makes `Φ_{T₀}` invertible, so `Φ_T` stays
-  invertible for all `T` in an operator-norm neighborhood of `T₀`.
-* **Finite-dimensional `V`:** when `V` is finite-dimensional and `Disjoint V T₀.ker`, closedness of
-  `V` and `V.map T₀` is automatic, so `Disjoint V T.ker` and `(V.map T).IsTopCompl (V.map T₀)ᗮ`
-  hold throughout a neighborhood of `T₀`.
+* **Openness at `T₀`:** when `V` and `F` are complete (for instance when `E` and `F` are complete
+  and `V` is closed), `V.map T₀` is closed, and `Disjoint V T₀.ker`, Banach's open mapping theorem
+  (via `ContinuousLinearMap.coprodSubtypeLEquivOfIsCompl`) makes `Φ_{T₀}` invertible, so `Φ_T`
+  stays invertible for all `T` in an operator-norm neighborhood of `T₀`.
+* **Finite-dimensional `V`:** when `F` is complete, `V` is finite-dimensional, and
+  `Disjoint V T₀.ker`, completeness of `V` and closedness of `V.map T₀` are automatic without
+  completeness of `E`, so `Disjoint V T.ker` and `(V.map T).IsTopCompl (V.map T₀)ᗮ` hold
+  throughout a neighborhood of `T₀`.
 * **Closed finite-codimension `V`:** when `V` is closed of finite codimension and `(V.map T₀)ᗮ` is
   finite-dimensional, invertibility of `Φ_T` forces `T` to be Fredholm (in particular, to have
   closed range) by Bourbaki's restriction criterion
@@ -41,7 +43,7 @@ norm, invertibility of `Φ_T` is an open condition in `E →L[𝕜] F`:
   $$\dim \ker T \le \operatorname{codim} V, \qquad
     \dim \operatorname{coker} T \le \dim (T₀(V))^{\perp},$$
   and index `T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 (V.map T₀)ᗮ`. When `Φ_{T₀}` is also
-  invertible (for instance when `E` and `F` are complete, `V.map T₀` is closed, and
+  invertible (for instance when `V` and `F` are complete, `V.map T₀` is closed, and
   `Disjoint V T₀.ker`), this equals `T₀.index`, so kernel and cokernel dimensions change by equal
   signed amounts between `T₀` and `T` (dropping when `V` complements `T₀.ker`, such as
   `V = (T₀.ker)ᗮ`). Specializing to `V = (T₀.ker)ᗮ` for any closed-range operator `T₀` between
@@ -354,75 +356,65 @@ theorem continuous_transverseCoprod (T₀ : E →L[𝕜] F) (V : Submodule 𝕜 
   unfold transverseCoprod
   fun_prop
 
-section Complete
+section CompleteCodom
 
-variable [CompleteSpace E] [CompleteSpace F]
+variable [CompleteSpace F]
 
-/-- **Invertibility of `Φ_{T₀}`.** When `E` and `F` are complete, `V ≤ E` is closed, `V.map T₀` is
-closed in `F`, and `Disjoint V T₀.ker`, the coproduct `T₀.transverseCoprod V T₀` is invertible. -/
+/-- **Invertibility of `Φ_{T₀}`.** When `V ≤ E` and `F` are complete, `V.map T₀` is closed in `F`,
+and `Disjoint V T₀.ker`, the coproduct `T₀.transverseCoprod V T₀` is invertible. -/
 theorem isInvertible_transverseCoprod_self (T₀ : E →L[𝕜] F) {V : Submodule 𝕜 E}
-    (hV : IsClosed (V : Set E)) (hTV : IsClosed ((V.map (T₀ : E →ₗ[𝕜] F)) : Set F))
+    [CompleteSpace V] (hTV : IsClosed ((V.map (T₀ : E →ₗ[𝕜] F)) : Set F))
     (hdisj : Disjoint V T₀.ker) :
     (T₀.transverseCoprod V T₀).IsInvertible := by
-  have : CompleteSpace V := hV.isComplete.completeSpace_coe
   let W := V.map (T₀ : E →ₗ[𝕜] F)
   have : W.HasOrthogonalProjection := Submodule.hasOrthogonalProjection_iff_isClosed.mpr hTV
-  rw [ContinuousLinearMap.isInvertible_iff_bijective]
-  refine ⟨?_, ?_⟩
-  · -- Injectivity from `W ⊓ Wᗮ = ⊥` and `Disjoint V T₀.ker`.
-    intro ⟨u₁, w₁⟩ ⟨u₂, w₂⟩ h
-    have huw : T₀ (u₁ - u₂ : V) + ((w₁ - w₂ : Wᗮ) : F) = 0 := by
-      simpa only [transverseCoprod_apply, AddSubgroupClass.coe_sub, map_sub,
-        add_sub_add_comm] using sub_eq_zero.mpr h
-    have hmemW : T₀ (u₁ - u₂ : V) ∈ W := Submodule.mem_map_of_mem (u₁ - u₂).2
-    have hmemWo : T₀ (u₁ - u₂ : V) ∈ Wᗮ := by
-      rw [eq_neg_of_add_eq_zero_left huw]
-      exact Wᗮ.neg_mem (w₁ - w₂).2
-    have hTu0 : T₀ (u₁ - u₂ : V) = 0 :=
-      (Submodule.mem_bot 𝕜).mp (W.inf_orthogonal_eq_bot ▸ ⟨hmemW, hmemWo⟩)
-    have hu0 : (u₁ - u₂ : V) = 0 := Subtype.ext <|
-      (Submodule.disjoint_def.mp hdisj) (u₁ - u₂).1 (u₁ - u₂).2 hTu0
-    have hw0 : (w₁ - w₂ : Wᗮ) = 0 :=
-      ZeroMemClass.coe_eq_zero.mp (by simpa only [hTu0, zero_add] using huw)
-    exact Prod.ext (sub_eq_zero.mp hu0) (sub_eq_zero.mp hw0)
-  · -- Surjectivity from the orthogonal decomposition `F = W ⊕ Wᗮ`.
-    intro y
-    obtain ⟨v, hv, hTv⟩ := Submodule.starProjection_apply_mem W y
-    rw [ContinuousLinearMap.coe_coe] at hTv
-    refine ⟨(⟨v, hv⟩, ⟨Wᗮ.starProjection y, Submodule.starProjection_apply_mem Wᗮ y⟩), ?_⟩
-    simp only [transverseCoprod_apply, hTv, Submodule.starProjection_orthogonal, sub_apply,
-      id_apply, add_sub_cancel]
+  have : CompleteSpace Wᗮ := W.isClosed_orthogonal.completeSpace_coe
+  have hrange : (T₀.comp V.subtypeL).range = W := by
+    simp [W, LinearMap.range_comp]
+  have hcompl : IsCompl (T₀.comp V.subtypeL).range Wᗮ := by
+    simpa only [hrange] using W.isCompl_orthogonal
+  have hker : (T₀.comp V.subtypeL).ker = ⊥ := by
+    rw [toLinearMap_comp, Submodule.toLinearMap_subtypeL, LinearMap.ker_eq_bot]
+    exact LinearMap.injective_domRestrict_iff.mpr hdisj
+  refine ⟨(T₀.comp V.subtypeL).coprodSubtypeLEquivOfIsCompl hcompl hker, ?_⟩
+  rw [coprodSubtypeLEquivOfIsCompl, ContinuousLinearEquiv.coe_ofBijective, transverseCoprod_def]
 
 /-- **Openness of the transverse-subspace condition.** Under the hypotheses of
 `isInvertible_transverseCoprod_self`, `T₀.transverseCoprod V T` stays invertible for all `T` in an
 operator-norm neighborhood of `T₀`. -/
 theorem eventually_nhds_isInvertible_transverseCoprod (T₀ : E →L[𝕜] F) {V : Submodule 𝕜 E}
-    (hV : IsClosed (V : Set E)) (hTV : IsClosed ((V.map (T₀ : E →ₗ[𝕜] F)) : Set F))
+    [CompleteSpace V] (hTV : IsClosed ((V.map (T₀ : E →ₗ[𝕜] F)) : Set F))
     (hdisj : Disjoint V T₀.ker) :
-    ∀ᶠ T in 𝓝 T₀, (T₀.transverseCoprod V T).IsInvertible :=
-  (T₀.continuous_transverseCoprod V).continuousAt.eventually
-    (T₀.isInvertible_transverseCoprod_self hV hTV hdisj).eventually_nhds
+    ∀ᶠ T in 𝓝 T₀, (T₀.transverseCoprod V T).IsInvertible := by
+  have : CompleteSpace (V.map (T₀ : E →ₗ[𝕜] F))ᗮ :=
+    (V.map (T₀ : E →ₗ[𝕜] F)).isClosed_orthogonal.completeSpace_coe
+  exact (T₀.continuous_transverseCoprod V).continuousAt.eventually
+    (T₀.isInvertible_transverseCoprod_self hTV hdisj).eventually_nhds
 
-/-- **Finite-dimensional transverse subspace stability.** If `V ≤ E` is finite-dimensional and
-`Disjoint V T₀.ker`, then `T₀.transverseCoprod V T₀` is invertible without explicit closedness
-hypotheses. -/
+/-- **Finite-dimensional transverse subspace stability.** If `F` is complete, `V ≤ E` is
+finite-dimensional, and `Disjoint V T₀.ker`, then `T₀.transverseCoprod V T₀` is invertible without
+explicit closedness hypotheses or completeness of `E`. -/
 theorem isInvertible_transverseCoprod_self_of_finiteDimensional (T₀ : E →L[𝕜] F)
     (V : Submodule 𝕜 E) [FiniteDimensional 𝕜 V] (hdisj : Disjoint V T₀.ker) :
     (T₀.transverseCoprod V T₀).IsInvertible := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   have : FiniteDimensional 𝕜 (V.map (T₀ : E →ₗ[𝕜] F)) := Module.Finite.map V (T₀ : E →ₗ[𝕜] F)
-  exact T₀.isInvertible_transverseCoprod_self V.isClosed_of_finiteDimensional
+  exact T₀.isInvertible_transverseCoprod_self
     (V.map (T₀ : E →ₗ[𝕜] F)).isClosed_of_finiteDimensional hdisj
 
-/-- **Finite-dimensional transverse subspace openness.** If `V ≤ E` is finite-dimensional and
-`Disjoint V T₀.ker`, then `T₀.transverseCoprod V T` is invertible for all `T` near `T₀` (so in
-particular `Disjoint V T.ker` and `(V.map T).IsTopCompl (V.map T₀)ᗮ` hold near `T₀`). -/
+/-- **Finite-dimensional transverse subspace openness.** If `F` is complete, `V ≤ E` is
+finite-dimensional, and `Disjoint V T₀.ker`, then `T₀.transverseCoprod V T` is invertible for all
+`T` near `T₀` (so in particular `Disjoint V T.ker` and `(V.map T).IsTopCompl (V.map T₀)ᗮ` hold
+near `T₀`), without completeness of `E`. -/
 theorem eventually_nhds_isInvertible_transverseCoprod_of_finiteDimensional (T₀ : E →L[𝕜] F)
     (V : Submodule 𝕜 E) [FiniteDimensional 𝕜 V] (hdisj : Disjoint V T₀.ker) :
-    ∀ᶠ T in 𝓝 T₀, (T₀.transverseCoprod V T).IsInvertible :=
-  (T₀.continuous_transverseCoprod V).continuousAt.eventually
-    (T₀.isInvertible_transverseCoprod_self_of_finiteDimensional V hdisj).eventually_nhds
+    ∀ᶠ T in 𝓝 T₀, (T₀.transverseCoprod V T).IsInvertible := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
+  have : FiniteDimensional 𝕜 (V.map (T₀ : E →ₗ[𝕜] F)) := Module.Finite.map V (T₀ : E →ₗ[𝕜] F)
+  exact T₀.eventually_nhds_isInvertible_transverseCoprod
+    (V.map (T₀ : E →ₗ[𝕜] F)).isClosed_of_finiteDimensional hdisj
 
-end Complete
+end CompleteCodom
 
 end Normed
 
@@ -439,17 +431,18 @@ is invertible. -/
 theorem isInvertible_transverseCoprod_orthogonal_ker_self (T₀ : E →L[𝕜] F)
     (hT₀ : IsClosed (T₀.range : Set F)) :
     (T₀.transverseCoprod (T₀.ker)ᗮ T₀).IsInvertible := by
-  refine T₀.isInvertible_transverseCoprod_self T₀.ker.isClosed_orthogonal ?_
-    T₀.ker.orthogonal_disjoint.symm
+  have : CompleteSpace (T₀.ker)ᗮ := T₀.ker.isClosed_orthogonal.completeSpace_coe
+  refine T₀.isInvertible_transverseCoprod_self ?_ T₀.ker.orthogonal_disjoint.symm
   simpa only [LinearMap.map_orthogonal_ker_eq_range] using hT₀
 
 /-- Near a closed-range operator `T₀` between Hilbert spaces, `T₀.transverseCoprod (T₀.ker)ᗮ T`
 stays invertible. -/
 theorem eventually_nhds_isInvertible_transverseCoprod_orthogonal_ker (T₀ : E →L[𝕜] F)
     (hT₀ : IsClosed (T₀.range : Set F)) :
-    ∀ᶠ T in 𝓝 T₀, (T₀.transverseCoprod (T₀.ker)ᗮ T).IsInvertible :=
-  (T₀.continuous_transverseCoprod (T₀.ker)ᗮ).continuousAt.eventually
-    (T₀.isInvertible_transverseCoprod_orthogonal_ker_self hT₀).eventually_nhds
+    ∀ᶠ T in 𝓝 T₀, (T₀.transverseCoprod (T₀.ker)ᗮ T).IsInvertible := by
+  have : CompleteSpace (T₀.ker)ᗮ := T₀.ker.isClosed_orthogonal.completeSpace_coe
+  refine T₀.eventually_nhds_isInvertible_transverseCoprod ?_ T₀.ker.orthogonal_disjoint.symm
+  simpa only [LinearMap.map_orthogonal_ker_eq_range] using hT₀
 
 end OrthogonalKer
 

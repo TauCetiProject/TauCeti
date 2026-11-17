@@ -12,6 +12,7 @@ import Mathlib.Tactic.Abel
 import TauCeti.Analysis.Fredholm.Prod
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # Block triangular reduction and Schur complements for Fredholm packages
@@ -772,16 +773,6 @@ theorem continuousAt_schurComplement {T : E →L[𝕜] F}
   have := pkg.continuousAt_inverse_topLeftBlock hA
   unfold schurComplement
   fun_prop
-
-@[fun_prop]
-private theorem continuousAt_clm_prod {α E₁ F₁ F₂ : Type*} [TopologicalSpace α]
-    [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
-    [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
-    [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
-    {f : α → E₁ →L[𝕜] F₁} {g : α → E₁ →L[𝕜] F₂} {a : α}
-    (hf : ContinuousAt f a) (hg : ContinuousAt g a) :
-    ContinuousAt (fun x ↦ (f x).prod (g x)) a :=
-  (ContinuousLinearMap.prodL 𝕜).continuousAt.comp (hf.prodMk hg)
 
 /-- The forward column-elimination equivalence `pkg.domTriangularEquiv S` depends continuously on
 `S` in operator norm at every `T` with invertible top-left block. -/

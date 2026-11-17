@@ -243,9 +243,9 @@ theorem FredholmPackage.isFredholm_quasiInverse [ContinuousSub E] [ContinuousSub
     {T : E →L[𝕜] F} (pkg : T.FredholmPackage) [T1Space pkg.decDom.X₀] :
     pkg.quasiInverse.IsFredholm where
   isStrictMap := by
-    rw [FredholmPackage.quasiInverse]
-    change Topology.IsStrictMap (Subtype.val ∘ fun y ↦ pkg.equiv.symm (pkg.decCodom.proj y))
-    rw [← Topology.IsEmbedding.subtypeVal.isStrictMap_iff]
+    rw [FredholmPackage.quasiInverse, coe_comp, coe_comp, Submodule.coe_subtypeL,
+      Submodule.coe_subtype, ← Topology.IsEmbedding.subtypeVal.isStrictMap_iff,
+      ContinuousLinearEquiv.coe_coe, ← ContinuousLinearEquiv.coe_toHomeomorph]
     exact pkg.equiv.symm.toHomeomorph.comp_isStrictMap_iff.mpr
       (Submodule.isQuotientMap_projectionOntoL pkg.decCodom.isTopCompl).isStrictMap
   isClosed_range := by
