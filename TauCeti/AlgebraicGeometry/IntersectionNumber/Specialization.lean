@@ -474,16 +474,14 @@ def specialFiberPicardSpecialization :
   let S := LinearMap.range (toBase.specialFiberWeightedIntersectionMatrix hX hη).vecMulLinear
   let φ : Additive (LineBundleClass X) →+ _ ⧸ S :=
     S.mkQ.toAddMonoidHom.comp (toBase.specialFiberMultidegree hX hη h₀ h₁)
-  have hker : ∀ a ∈ p.ker, φ a = 0 := fun a ha ↦ by
-    rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero, ← ofMul_toMul a]
+  have hker : p.ker ≤ φ.ker := fun a ha ↦ by
+    rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, ← ofMul_toMul a]
     refine toBase.specialFiberMultidegree_mem_range_of_pullback_genericFiberι_eq_one
       K hX hη h₀ h₁ ?_
     simpa only [p, MonoidHom.toAdditive_apply_apply, LineBundleClass.pullbackHom_apply,
       toMul_ofMul, toMul_zero] using congrArg Additive.toMul (AddMonoidHom.mem_ker.mp ha)
-  exact (QuotientAddGroup.lift p.ker φ hker).comp
-    (QuotientAddGroup.liftEquiv p.ker
-      (toBase.toAdditive_pullbackHom_genericFiberι_surjective K hX) rfl).symm.toAddMonoidHom
+  exact p.liftOfSurjective (toBase.toAdditive_pullbackHom_genericFiberι_surjective K hX) ⟨φ, hker⟩
 
 /-- `specialFiberPicardSpecialization` sends the restriction of `a : LineBundleClass X` to the
 quotient class of `specialFiberMultidegree a` (not `@[simp]` because `genericFiber` is an
@@ -494,17 +492,11 @@ theorem specialFiberPicardSpecialization_pullback (a : LineBundleClass X) :
         (Additive.ofMul (pullback (genericFiberι R K toBase) a)) =
       Submodule.Quotient.mk (toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul a)) := by
   let p := MonoidHom.toAdditive (pullbackHom (genericFiberι R K toBase))
-  have hp := toBase.toAdditive_pullbackHom_genericFiberι_surjective K hX
   have hpa : Additive.ofMul (pullback (genericFiberι R K toBase) a) = p (Additive.ofMul a) :=
     Additive.toMul.injective (by simp [p])
-  have hsymm : (QuotientAddGroup.liftEquiv p.ker hp rfl).symm (p (Additive.ofMul a)) =
-      QuotientAddGroup.mk (Additive.ofMul a) :=
-    (QuotientAddGroup.liftEquiv p.ker hp rfl).injective (by
-      rw [AddEquiv.apply_symm_apply, QuotientAddGroup.liftEquiv_mk])
-  rw [specialFiberPicardSpecialization, hpa, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    hsymm]
-  refine (QuotientAddGroup.lift_mk' (N := p.ker) _ (Additive.ofMul a)).trans ?_
-  rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, Submodule.mkQ_apply]
+  rw [specialFiberPicardSpecialization, hpa, AddMonoidHom.liftOfSurjective,
+    AddMonoidHom.liftOfRightInverse_comp_apply]
+  rfl
 
 /-- **Exact kernel of `specialFiberPicardSpecialization`**
 ([Stacks, Tag 0CEI](https://stacks.math.columbia.edu/tag/0CEI); Liu, Section 9.1). A line-bundle
