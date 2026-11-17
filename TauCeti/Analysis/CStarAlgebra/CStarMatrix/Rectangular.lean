@@ -154,19 +154,14 @@ theorem mapₙₐ_eq_map [Fintype n] [Semiring R] [NonUnitalNonAssocSemiring A] 
     [NonUnitalNonAssocSemiring B] [Module R B] [Star B] (f : A →⋆ₙₐ[R] B) (M : CStarMatrix n n A) :
     mapₙₐ f M = M.map f := (rfl)
 
-/-- Evaluating `reindexₗ R A e₁ e₂ M` at `(i, j)` looks up `M (e₁.symm i) (e₂.symm j)`. -/
-theorem reindexₗ_apply_eq [Semiring R] [AddCommMonoid A] [Module R A]
-    (e₁ : m ≃ l) (e₂ : n ≃ o) (M : CStarMatrix m n A) (i : l) (j : o) :
-    reindexₗ R A e₁ e₂ M i j = M (e₁.symm i) (e₂.symm j) := (rfl)
-
 /-- Rectangular row-and-column reindexing respects matrix multiplication when inner equivalences
 match. -/
 theorem reindexₗ_mul [Fintype m] [Fintype o] [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
     (e₁ : l ≃ n) (e₂ : m ≃ o) (e₃ : p ≃ q) (M : CStarMatrix l m A) (N : CStarMatrix m p A) :
     reindexₗ R A e₁ e₂ M * reindexₗ R A e₂ e₃ N = reindexₗ R A e₁ e₃ (M * N) := by
   ext i k
-  simp only [mul_apply, reindexₗ_apply_eq]
-  exact (Fintype.sum_equiv e₂ _ _ fun j ↦ by simp).symm
+  simp only [mul_apply, reindexₗ_apply]
+  exact (Fintype.sum_equiv e₂ _ _ fun j ↦ by simp [Matrix.reindex, Matrix.submatrix]).symm
 
 /-- Rectangular row-and-column reindexing swaps equivalences under `conjTranspose`. -/
 theorem reindexₗ_conjTranspose [Semiring R] [AddCommMonoid A] [Module R A] [Star A]
@@ -243,19 +238,6 @@ theorem toCLM_mul [Fintype l] [Fintype m] (M : CStarMatrix l m A) (N : CStarMatr
 
 variable [PartialOrder A] [StarOrderedRing A]
 
-/-- Adjoint relation for `toCLM` with respect to `CStarMatrix.conjTranspose` (stated directly on
-`CStarMatrix.conjTranspose`, delegating to `CStarMatrix.inner_toCLM_conjTranspose_left`). -/
-theorem inner_toCLM_conjTranspose [Fintype m] [Fintype n]
-    (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(A, n → A)) (w : C⋆ᵐᵒᵈ(A, m → A)) :
-    ⟪toCLM M.conjTranspose v, w⟫_A = ⟪v, toCLM M w⟫_A :=
-  inner_toCLM_conjTranspose_left (M := M) (v := v) (w := w)
-
-/-- Right-hand adjoint relation for `toCLM` with respect to `CStarMatrix.conjTranspose`. -/
-theorem inner_toCLM_conjTranspose' [Fintype m] [Fintype n]
-    (M : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(A, m → A)) (w : C⋆ᵐᵒᵈ(A, n → A)) :
-    ⟪v, toCLM M.conjTranspose w⟫_A = ⟪toCLM M v, w⟫_A :=
-  inner_toCLM_conjTranspose_right (M := M) (v := v) (w := w)
-
 /-- The operator norm on rectangular `CStarMatrix` values is submultiplicative. -/
 theorem norm_hMul_le [Fintype l] [Fintype m] [Fintype n]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) : ‖M * N‖ ≤ ‖M‖ * ‖N‖ := by
@@ -266,7 +248,8 @@ theorem norm_hMul_le [Fintype l] [Fintype m] [Fintype n]
 private theorem norm_conjTranspose_le [Fintype m] [Fintype n] (M : CStarMatrix m n A) :
     ‖M.conjTranspose‖ ≤ ‖M‖ := by
   refine norm_le_of_forall_inner_le (C := ‖M‖₊) fun v w ↦ ?_
-  rw [coe_nnNorm, inner_toCLM_conjTranspose']
+  rw [coe_nnNorm, show ⟪w, toCLM M.conjTranspose v⟫_A = ⟪toCLM M w, v⟫_A from
+    inner_toCLM_conjTranspose_right (M := M)]
   calc ‖⟪toCLM M w, v⟫_A‖
       ≤ ‖toCLM M w‖ * ‖v‖ := CStarModule.norm_inner_le _
     _ ≤ (‖toCLM M‖ * ‖w‖) * ‖v‖ :=
@@ -289,7 +272,9 @@ square `CStarRing` norm estimate of `CStarMatrix.instCStarRing` in Mathlib. -/
   · have hsqrt : ‖M‖ ≤ √‖M * M.conjTranspose‖ := by
       rw [norm_def, ContinuousLinearMap.opNorm_le_iff (by positivity)]
       intro v
-      rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A), ← inner_toCLM_conjTranspose',
+      rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A),
+        ← show ⟪v, toCLM M.conjTranspose (toCLM M v)⟫_A = ⟪toCLM M v, toCLM M v⟫_A from
+          inner_toCLM_conjTranspose_right (M := M),
         ← ContinuousLinearMap.comp_apply, ← toCLM_mul]
       have hinner : ‖⟪v, toCLM (M * M.conjTranspose) v⟫_A‖ ≤
           ‖M * M.conjTranspose‖ * ‖v‖ ^ 2 := by
