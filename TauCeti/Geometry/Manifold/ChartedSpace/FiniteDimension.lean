@@ -26,6 +26,8 @@ universe-polymorphic topological-manifold statements to the same-universe case.
 
 * `ChartedSpace.ofFinrankEq`: re-charts a charted space modelled on `E` onto any finite-dimensional
   Hausdorff topological vector space `F` of equal `Module.finrank 𝕜`.
+* `ChartedSpace.ofFinrankEq_def`: `ofFinrankEq h` equals `transHomeomorph` along
+  `ContinuousLinearEquiv.ofFinrankEq h`.
 * `ChartedSpace.ofFinrankEq_chartAt` and `ChartedSpace.ofFinrankEq_atlas`: the preferred charts
   and atlas of `ChartedSpace.ofFinrankEq`.
 -/
@@ -44,25 +46,38 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- Re-chart a space `X` modelled on a finite-dimensional Hausdorff topological vector space `E`
 over a complete nontrivially normed field `𝕜` onto any finite-dimensional Hausdorff topological
 vector space `F` of the same dimension, possibly in a different universe. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def ofFinrankEq (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) :
     ChartedSpace F X :=
   transHomeomorph (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph
 
+/-- `ChartedSpace.ofFinrankEq h` is obtained by transporting charts along
+`ContinuousLinearEquiv.ofFinrankEq h`. -/
+theorem ofFinrankEq_def (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) :
+    ofFinrankEq (X := X) h =
+      transHomeomorph (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph :=
+  (rfl)
+
+-- Neither `ofFinrankEq_chartAt` nor `ofFinrankEq_atlas` is tagged `@[simp]`: `simpNF` runs in
+-- non-module mode where `ofFinrankEq` (`@[instance_reducible]`) unfolds to `transHomeomorph`,
+-- reducing both LHSs via `transHomeomorph_chartAt` and `transHomeomorph_atlas`.
+
 /-- The preferred chart of `ChartedSpace.ofFinrankEq h` at `x` is the original chart at `x`
 postcomposed with `ContinuousLinearEquiv.ofFinrankEq h`. -/
+@[mfld_simps]
 theorem ofFinrankEq_chartAt (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) (x : X) :
     letI := ofFinrankEq (X := X) h
     chartAt F x =
       (chartAt E x).transHomeomorph (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph :=
-  (rfl)
+  transHomeomorph_chartAt (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph x
 
 /-- The atlas of `ChartedSpace.ofFinrankEq h` consists of the original charts postcomposed with
 `ContinuousLinearEquiv.ofFinrankEq h`. -/
+@[mfld_simps]
 theorem ofFinrankEq_atlas (h : Module.finrank 𝕜 E = Module.finrank 𝕜 F) :
     letI := ofFinrankEq (X := X) h
     atlas F X =
       (·.transHomeomorph (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph) '' atlas E X :=
-  (rfl)
+  transHomeomorph_atlas (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph
 
 end ChartedSpace

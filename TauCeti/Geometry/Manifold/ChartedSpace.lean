@@ -151,7 +151,7 @@ variable {H H' H'' X : Type*} [TopologicalSpace H] [TopologicalSpace H'] [Topolo
 
 /-- The charted-space structure on `X` obtained by postcomposing every `H`-valued chart with a
 homeomorphism `e : H ≃ₜ H'` of model spaces. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 def transHomeomorph [ChartedSpace H X] (e : H ≃ₜ H') : ChartedSpace H' X where
   atlas := (·.transHomeomorph e) '' atlas H X
   chartAt x := (chartAt H x).transHomeomorph e
