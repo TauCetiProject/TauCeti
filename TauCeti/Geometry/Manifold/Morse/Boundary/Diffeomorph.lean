@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
-public import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Diffeomorph
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
-import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # Naturality of the integral Morse boundary under diffeomorphisms
@@ -22,12 +19,13 @@ intertwines: `dσ (X y) = X' (σ y)`. Then `σ` carries every object of the inte
 compatibly with the signs.
 
 * **Flows.** `σ` conjugates the flows, `Φ'_t ∘ σ = σ ∘ Φ_t`
-  (`TauCeti.IsAdaptedPseudoGradient.flow_apply_diffeomorph`), so it carries stable and unstable
-  manifolds and the middle-level slices of trajectories to those of `(f', X')`.
+  (`TauCeti.IsAdaptedPseudoGradient.flow_apply_diffeomorph`, in
+  `TauCeti/Geometry/Manifold/Morse/PseudoGradient/Diffeomorph.lean`), so it carries stable and
+  unstable manifolds and the middle-level slices of trajectories to those of `(f', X')`.
 * **Morse charts.** A Morse chart `φ` for `f'` at `σ x` pulls back to the Morse chart `φ ∘ σ` for
-  `f` at `x`, with the same coordinates and weights (`TauCeti.MorseChart.pullback`); if `X'` is
-  linear in `φ`, then `X` is linear in `φ ∘ σ`. The Morse indices of `f` at `x` and of `f'` at
-  `σ x` agree.
+  `f` at `x`, with the same coordinates and weights (`TauCeti.MorseChart.pullback`, in
+  `TauCeti/Geometry/Manifold/Morse/Diffeomorph.lean`); if `X'` is linear in `φ`, then `X` is linear
+  in `φ ∘ σ`. The Morse indices of `f` at `x` and of `f'` at `σ x` agree.
 * **Frames and signs.** In the pulled-back charts, the unstable frames, the normal coordinates of
   the stable manifolds and the comparison maps of `(f, X)` at `y` are those of `(f', X')` at
   `σ y`, read through `dσ`. Hence the sign of the trajectory through `y`, for orientations
@@ -52,9 +50,6 @@ saddle and the two from the saddle to the minimum.
 
 ## Main definitions
 
-* `TauCeti.MorseChart.pullback`: the pullback `φ ∘ σ` of a Morse chart along a diffeomorphism.
-* `TauCeti.criticalPointsEquivOfComp`: the critical points of `f' ∘ σ` are those of `f'`, moved
-  by `σ⁻¹`.
 * `TauCeti.MorseOrientation.pullback`: the pullback of orientation data along a diffeomorphism
   intertwining the pseudo-gradients.
 
@@ -62,10 +57,8 @@ saddle and the two from the saddle to the minimum.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `flow_apply_diffeomorph`: the diffeomorphism conjugates the flows.
-* `preimage_unstableSet_diffeomorph`, `preimage_stableSet_diffeomorph`,
-  `preimage_morseTrajectorySlice_diffeomorph`: it carries unstable and stable manifolds and the
-  slices of trajectories to those of `(f', X')`.
+* `preimage_morseTrajectorySlice_diffeomorph`: the diffeomorphism carries the slices of
+  trajectories to those of `(f', X')`.
 * `trajectoryComparison_pullback`: the comparison maps agree.
 * `trajectorySign_pullback`, `signedTrajectoryCount_pullback`: so do the signs of the trajectories
   and their signed counts.
@@ -93,87 +86,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace E M']
   {f : M → ℝ} {f' : M' → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
   {X' : (x : M') → TangentSpace 𝓘(ℝ, E) x} {σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M'}
+  [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ M']
 
 variable (hf : f' ∘ σ = f)
 
-/-- The bijection between the critical points of `f` and those of `f'` given by `σ`, when
-`f' ∘ σ = f`: `σ` is a local diffeomorphism, so `x` is a critical point of `f' ∘ σ` exactly when
-`σ x` is a critical point of `f'`. -/
-@[expose]
-def criticalPointsEquivOfComp : criticalPoints 𝓘(ℝ, E) f ≃ criticalPoints 𝓘(ℝ, E) f' :=
-  σ.toEquiv.subtypeEquiv fun x ↦ by
-    rw [← hf]
-    exact (σ.isLocalDiffeomorph x).mem_criticalPoints_comp_iff (by simp)
-
-/-- The bijection of critical points is `σ`. -/
-@[simp]
-theorem coe_criticalPointsEquivOfComp_apply (p : criticalPoints 𝓘(ℝ, E) f) :
-    (criticalPointsEquivOfComp hf p : M') = σ p :=
-  rfl
-
-variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ M']
-
 namespace MorseChart
 
-variable {x : M}
-
-include hf in
-/-- **Morse indices under a diffeomorphism.** If `f' ∘ σ = f` and `φ` is a Morse chart for `f'` at
-`σ x`, then the Morse index of `f` at `x` is the Morse index of `f'` at `σ x`. -/
-theorem manifoldMorseIndex_eq_of_comp (φ : MorseChart E f' (σ x)) :
-    manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f' (σ x) := by
-  rw [← hf]
-  exact (σ.isLocalDiffeomorph x).manifoldMorseIndex_comp (by simp)
-    ((φ.contMDiffAt φ.mem_source).of_le (by simp))
-    (mem_criticalPoints_iff_mfderiv_eq_zero.2 ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl))
-
-/-- **The pullback of a Morse chart along a diffeomorphism.** If `f' ∘ σ = f`, a Morse chart `φ`
-for `f'` at `σ x` gives the Morse chart `φ ∘ σ` for `f` at `x`, with the same coordinates and
-weights. -/
--- The body is exposed and reducible: the types of the orientations and frames of the pulled-back
--- chart depend on its weights, which must reduce to those of `φ`, also during rewriting, for the
--- transport lemmas to be stated and used.
-@[expose, reducible]
-noncomputable def pullback (φ : MorseChart E f' (σ x)) : MorseChart E f x where
-  toChart := σ.toHomeomorph.transOpenPartialHomeomorph φ.toChart
-  mem_maximalAtlas := σ.transOpenPartialHomeomorph_mem_maximalAtlas φ.mem_maximalAtlas
-  mem_source := φ.mem_source
-  apply_self := φ.apply_self
-  coord := φ.coord
-  weight := φ.weight
-  weight_eq_neg_one_or_eq_one := φ.weight_eq_neg_one_or_eq_one
-  ncard_weight_neg := by rw [φ.ncard_weight_neg, φ.manifoldMorseIndex_eq_of_comp hf]
-  eq_quadratic y hy := by
-    rw [← hf, comp_apply, comp_apply, φ.eq_quadratic (σ y) hy]
-    rfl
-
-variable (φ : MorseChart E f' (σ x))
-
-/-- The chart of the pullback is the chart `φ ∘ σ`. -/
-theorem coe_pullback_toChart : ⇑(φ.pullback hf).toChart = φ.toChart ∘ σ :=
-  rfl
-
-/-- The source of the pullback is the preimage of the source. -/
-theorem pullback_source : (φ.pullback hf).toChart.source = σ ⁻¹' φ.toChart.source :=
-  rfl
-
-/-- The target of the pullback is the target. -/
-theorem pullback_target : (φ.pullback hf).toChart.target = φ.toChart.target :=
-  rfl
-
-/-- The pullback keeps the coordinates. -/
-theorem pullback_coord : (φ.pullback hf).coord = φ.coord :=
-  rfl
-
-/-- The pullback keeps the weights. -/
-theorem pullback_weight : (φ.pullback hf).weight = φ.weight :=
-  rfl
-
-/-- The linear flow of the pullback is the linear flow of `φ`. -/
-@[simp]
-theorem pullback_linearFlow : (φ.pullback hf).linearFlow = φ.linearFlow := by
-  ext t z i
-  simp
+variable {x : M} (φ : MorseChart E f' (σ x))
 
 /-- The pullback keeps the coordinates of negative weight. -/
 @[simp]
@@ -205,34 +124,6 @@ theorem trajectoryTargetOrientation_pullback {p : M}
   rw [trajectoryTargetOrientation_def, trajectoryTargetOrientation_def,
     Orientation.prod_reindex_finCongr_right, Orientation.reindex_finCongr_reindex_finCongr,
     Orientation.reindex_finCongr_reindex_finCongr]
-
-include hf in
-/-- The Morse indices of `f'` at `σ p` and `σ q`, centres of Morse charts, differ by one when
-those of `f` at `p` and `q` do. -/
-theorem manifoldMorseIndex_eq_add_one_of_comp {p q : M} (φp : MorseChart E f' (σ p))
-    (φq : MorseChart E f' (σ q))
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
-    manifoldMorseIndex 𝓘(ℝ, E) f' (σ p) = manifoldMorseIndex 𝓘(ℝ, E) f' (σ q) + 1 := by
-  rw [← φp.manifoldMorseIndex_eq_of_comp hf, ← φq.manifoldMorseIndex_eq_of_comp hf]
-  exact hpq
-
-variable {φ}
-
-/-- **Linear fields pull back.** If `σ` carries `X` to `X'` and `X'` is the linear field
-`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`, then `X` is the same linear field in the pullback of
-`φ`. -/
-theorem coord_mfderiv_pullback (hσX : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y (X y) = X' (σ y))
-    (hφ : ∀ y ∈ φ.toChart.source,
-      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X' y)) =
-        fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
-    ∀ y ∈ (φ.pullback hf).toChart.source,
-      (φ.pullback hf).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.pullback hf).toChart y (X y)) =
-        fun i ↦ -((φ.pullback hf).weight i *
-          (φ.pullback hf).coord ((φ.pullback hf).toChart y) i) := by
-  intro y hy
-  rw [coe_pullback_toChart, σ.mfderiv_comp_diffeomorph (by simp), ContinuousLinearMap.comp_apply,
-    hσX]
-  exact hφ (σ y) hy
 
 end MorseChart
 
@@ -282,30 +173,7 @@ variable [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'
 
 include hσX
 
-/-! ### Flows, stable and unstable manifolds -/
-
-/-- **A diffeomorphism intertwining two pseudo-gradients conjugates their flows**:
-`Φ'_t (σ y) = σ (Φ_t y)`. The image under `σ` of an orbit of `X` is an integral curve of `X'`. -/
-theorem flow_apply_diffeomorph (t : ℝ) (y : M) : hX'.flow t (σ y) = σ (hX.flow t y) := by
-  have hγ : IsMIntegralCurve (σ ∘ fun t ↦ hX.flow t y) X' := by
-    rw [isMIntegralCurve_iff_isMIntegralCurveOn]
-    exact (isMIntegralCurve_iff_isMIntegralCurveOn.1 (hX.isMIntegralCurve_flow y)).map_of_mfderiv_eq
-      (fun t _ ↦ σ.mdifferentiable (by simp) _) fun t _ ↦ hσX _
-  simpa using hX'.flow_apply_eq_of_isMIntegralCurve hγ t
-
-/-- **`σ` carries unstable manifolds to unstable manifolds**: `W^u(p) = σ⁻¹ (W'^u(σ p))`. -/
-theorem preimage_unstableSet_diffeomorph (p : M) :
-    σ ⁻¹' hX'.flow.unstableSet (σ p) = hX.flow.unstableSet p := by
-  ext y
-  simp only [mem_preimage, Flow.mem_unstableSet, flow_apply_diffeomorph hX hX' hσX]
-  exact σ.toHomeomorph.isEmbedding.tendsto_nhds_iff.symm
-
-/-- **`σ` carries stable manifolds to stable manifolds**: `W^s(q) = σ⁻¹ (W'^s(σ q))`. -/
-theorem preimage_stableSet_diffeomorph (q : M) :
-    σ ⁻¹' hX'.flow.stableSet (σ q) = hX.flow.stableSet q := by
-  ext y
-  simp only [mem_preimage, Flow.mem_stableSet, flow_apply_diffeomorph hX hX' hσX]
-  exact σ.toHomeomorph.isEmbedding.tendsto_nhds_iff.symm
+/-! ### Trajectories -/
 
 include hf in
 /-- **`σ` carries trajectories to trajectories**: the middle-level slice of the trajectories of `X`
@@ -334,20 +202,20 @@ include hf in
 theorem linearForwardTimes_pullback (y : M) :
     hX.linearForwardTimes (φ.pullback hf) y = hX'.linearForwardTimes φ (σ y) := by
   ext T
-  rw [mem_linearForwardTimes, mem_linearForwardTimes, flow_apply_diffeomorph hX hX' hσX,
-    MorseChart.pullback_linearFlow]
-  -- The chart, coordinates, linear flow and target of the pullback are those of `φ`, moved by `σ`.
-  exact Iff.rfl
+  simp only [mem_linearForwardTimes, flow_apply_diffeomorph hX hX' hσX,
+    MorseChart.pullback_linearFlow, Homeomorph.transOpenPartialHomeomorph_source,
+    Homeomorph.transOpenPartialHomeomorph_target, Homeomorph.transOpenPartialHomeomorph_apply,
+    Diffeomorph.coe_toHomeomorph, comp_apply, mem_preimage]
 
 include hf in
 /-- The times of linear backward flow of `y` in the pullback of `φ` are those of `σ y` in `φ`. -/
 theorem linearBackwardTimes_pullback (y : M) :
     hX.linearBackwardTimes (φ.pullback hf) y = hX'.linearBackwardTimes φ (σ y) := by
   ext T
-  rw [mem_linearBackwardTimes, mem_linearBackwardTimes, flow_apply_diffeomorph hX hX' hσX,
-    MorseChart.pullback_linearFlow]
-  -- The chart, coordinates, linear flow and target of the pullback are those of `φ`, moved by `σ`.
-  exact Iff.rfl
+  simp only [mem_linearBackwardTimes, flow_apply_diffeomorph hX hX' hσX,
+    MorseChart.pullback_linearFlow, Homeomorph.transOpenPartialHomeomorph_source,
+    Homeomorph.transOpenPartialHomeomorph_target, Homeomorph.transOpenPartialHomeomorph_apply,
+    Diffeomorph.coe_toHomeomorph, comp_apply, mem_preimage]
 
 /-- In the pullback of a chart, the chart composed with the time-`t` map of the flow of `X` is the
 chart composed with the time-`t` map of the flow of `X'`, composed with `σ`. -/
@@ -373,13 +241,13 @@ theorem stableNormal_pullback_apply {y : M} (hy : y ∈ hX.flow.stableSet x)
   obtain ⟨T, hT⟩ := (hX'.eventually_mem_linearForwardTimes hφ hy').exists
   have hT' : T ∈ hX.linearForwardTimes (φ.pullback hf) y := by
     rwa [linearForwardTimes_pullback hf hX hX' hσX]
-  have hD : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ((φ.pullback hf).toChart ∘ hX.flow T) y =
-      (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX'.flow T) (σ y)).comp
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y) := by
-    rw [toChart_comp_flow_pullback hf hX hX' hσX, σ.mfderiv_comp_diffeomorph (by simp)]
+  have hD : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ((φ.pullback hf).toChart ∘ hX.flow T) y w =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX'.flow T) (σ y)
+        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y w) := by
+    rw [toChart_comp_flow_pullback hf hX hX' hσX, σ.mfderiv_comp_diffeomorph (by simp),
+      ContinuousLinearMap.comp_apply]
   rw [stableNormal_apply (MorseChart.coord_mfderiv_pullback hf hσX hφ) hT', hD,
     MorseChart.pullback_negativeCoord, stableNormal_apply hφ hT]
-  rfl
 
 /-- **The unstable frame pulls back.** At a point `y` of `W^u(x)`, `dσ` carries the unstable frame
 of `W^u(x)` in the pullback of `φ` to that of `W'^u(σ x)` at `σ y` in `φ`. -/
