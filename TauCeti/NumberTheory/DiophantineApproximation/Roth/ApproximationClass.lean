@@ -49,6 +49,10 @@ of this.
   Bombieri–Gubler's (6.9); the first is attained.
 * `TauCeti.one_sub_card_div_lt_sum_cellIndex_div`: Bombieri–Gubler's (6.10), the label of a point
   on the hyperplane `∑ a, y a = 1` sums to more than `N - card A`.
+* `TauCeti.profileClass`: the class of a family with values in `[0, 1]`, which may vanish. A
+  vanishing value sends the family to a corner of the simplex, where the upper half of (6.9)
+  (`TauCeti.le_rpow_profileClass_div`) and (6.10)
+  (`TauCeti.one_sub_card_div_lt_sum_profileClass_div`) still hold.
 
 ## References
 
@@ -174,6 +178,88 @@ theorem ncard_image_cellIndex_le {ι : Type*} {X : Set ι} (φ : A → ι → �
   refine Set.ncard_le_ncard ?_ (finite_setOf_sum_le A N)
   rintro _ ⟨x, hx, rfl⟩
   exact sum_cellIndex_le N (fun a ↦ hφ₀ a x hx) (hφ₁ x hx)
+
+/-! ### Families with a vanishing value -/
+
+open scoped Classical in
+/-- The approximation class of a family `f : A → ℝ` with values in `[0, 1]`, at side `1 / N`.
+When no value of `f` vanishes, it is the label `cellIndex N (logProfile f)` of the logarithmic
+profile. When some `f a` vanishes the product of the family is `0` and the profile carries no
+information; the class is then the corner `N • e a` of the simplex, for one such `a`. Either way
+the class is a label with `∑ a, c a ≤ N` satisfying the upper half of (6.9), and (6.10) when
+`0 < N` and the product is less than `1`. -/
+noncomputable def profileClass (N : ℕ) (f : A → ℝ) : A → ℕ :=
+  if h : ∃ a, f a = 0 then Pi.single h.choose N else cellIndex N (logProfile f)
+
+/-- Without a vanishing value, the class of a family is the label of its logarithmic profile. -/
+theorem profileClass_of_forall_ne_zero {N : ℕ} {f : A → ℝ} (hf : ∀ a, f a ≠ 0) :
+    profileClass N f = cellIndex N (logProfile f) := by
+  rw [profileClass, dite_eq_right (not_exists.mpr hf)]
+
+/-- With a vanishing value, the class of a family is a corner of the simplex, whose entries sum
+to `N`. -/
+theorem sum_profileClass_of_exists_eq_zero (N : ℕ) {f : A → ℝ} (h : ∃ a, f a = 0) :
+    ∑ a, profileClass N f a = N := by
+  classical
+  rw [profileClass, dite_eq_left h, Finset.sum_pi_single']
+  simp
+
+/-- The class of a family with values in `[0, 1]` is a label with `∑ a, c a ≤ N`. -/
+theorem sum_profileClass_le (N : ℕ) {f : A → ℝ} (hf₀ : ∀ a, 0 ≤ f a) (hf₁ : ∀ a, f a ≤ 1) :
+    ∑ a, profileClass N f a ≤ N := by
+  by_cases h : ∃ a, f a = 0
+  · exact (sum_profileClass_of_exists_eq_zero N h).le
+  · push Not at h
+    rw [profileClass_of_forall_ne_zero h]
+    have hpos a : 0 < f a := (hf₀ a).lt_of_ne' (h a)
+    refine sum_cellIndex_le N (logProfile_nonneg hpos hf₁) ?_
+    by_cases hprod : ∏ b, f b = 1
+    · simp [logProfile_apply, hprod]
+    · exact (sum_logProfile hpos hprod).le
+
+/-- **The upper half of Bombieri–Gubler (6.9) for a family with values in `[0, 1]`**: each `f a`
+is at most `Λ ^ (c a / N)`, where `Λ` is the product of the family and `c` its class. -/
+theorem le_rpow_profileClass_div (N : ℕ) {f : A → ℝ} (hf₀ : ∀ a, 0 ≤ f a) (hf₁ : ∀ a, f a ≤ 1)
+    (a : A) : f a ≤ (∏ b, f b) ^ ((profileClass N f a : ℝ) / N) := by
+  by_cases h : ∃ a, f a = 0
+  · classical
+    rw [profileClass, dite_eq_left h]
+    rcases eq_or_ne a h.choose with rfl | ha
+    · rw [h.choose_spec]
+      exact rpow_nonneg (prod_nonneg fun b _ ↦ hf₀ b) _
+    · simpa [ha] using hf₁ a
+  · push Not at h
+    rw [profileClass_of_forall_ne_zero h]
+    exact le_rpow_cellIndex_div N (fun b ↦ (hf₀ b).lt_of_ne' (h b)) hf₁ a
+
+/-- **Bombieri–Gubler (6.10) for a family with values in `[0, 1]`**: for `0 < N`, if the product
+of the family is less than `1`, then its class sums to more than `N - card A`, after division
+by `N`. -/
+theorem one_sub_card_div_lt_sum_profileClass_div {N : ℕ} (hN : 0 < N) {f : A → ℝ}
+    (hf₀ : ∀ a, 0 ≤ f a) (hprod : ∏ b, f b < 1) :
+    1 - (Fintype.card A : ℝ) / N < ∑ a, (profileClass N f a : ℝ) / N := by
+  by_cases h : ∃ a, f a = 0
+  · have hA : 0 < (Fintype.card A : ℝ) := by
+      exact_mod_cast Fintype.card_pos_iff.mpr ⟨h.choose⟩
+    have hN' : (0 : ℝ) < N := by exact_mod_cast hN
+    rw [← Finset.sum_div, ← Nat.cast_sum, sum_profileClass_of_exists_eq_zero N h,
+      div_self hN'.ne']
+    linarith [div_pos hA hN']
+  · push Not at h
+    have hpos a : 0 < f a := (hf₀ a).lt_of_ne' (h a)
+    rw [profileClass_of_forall_ne_zero h]
+    exact one_sub_card_div_lt_sum_cellIndex_div hN (sum_logProfile hpos hprod.ne)
+
+/-- The classes of a family of maps into `[0, 1]`: at most `(N + card A).choose (card A)` of
+them occur. -/
+theorem ncard_image_profileClass_le {ι : Type*} {X : Set ι} (φ : ι → A → ℝ)
+    (hφ₀ : ∀ x ∈ X, ∀ a, 0 ≤ φ x a) (hφ₁ : ∀ x ∈ X, ∀ a, φ x a ≤ 1) (N : ℕ) :
+    ((fun x ↦ profileClass N (φ x)) '' X).ncard ≤
+      (N + Fintype.card A).choose (Fintype.card A) := by
+  rw [← ncard_setOf_sum_le A N]
+  refine Set.ncard_le_ncard ?_ (finite_setOf_sum_le A N)
+  rintro _ ⟨x, hx, rfl⟩
+  exact sum_profileClass_le N (hφ₀ x hx) (hφ₁ x hx)
 
 end TauCeti
 
