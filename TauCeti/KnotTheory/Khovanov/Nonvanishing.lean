@@ -16,9 +16,10 @@ public import TauCeti.KnotTheory.PDCode.Oriented.VertexResolution
 /-!
 # The enhanced-state Euler sum and nonvanishing of Khovanov homology
 
-Specializing the enhanced state sum `TauCeti.OrientedPDCode.enhancedStateSum` of an oriented
-PD-code `D` at `q = 1` gives the **normalized enhanced-state Euler sum**
-`TauCeti.OrientedPDCode.enhancedStateEulerSum`:
+This file evaluates the normalized enhanced-state Euler sum
+`TauCeti.OrientedPDCode.enhancedStateEulerSum` (defined in
+`TauCeti.KnotTheory.Khovanov.EnhancedState` as the `q = 1` specialization of
+`TauCeti.OrientedPDCode.enhancedStateSum`):
 
 `E(D) = ∑_s (-1) ^ (|s| + n₋) 2 ^ k(s)`,
 
@@ -53,17 +54,9 @@ over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)` evaluates
 hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)` with
 `i ∈ [-n₋, n₊]` for every planar link diagram, including the empty diagram.
 
-## Main definitions
-
-* `TauCeti.OrientedPDCode.enhancedStateEulerSum`: the normalized enhanced-state Euler sum
-  `E(D) = ∑_s (-1) ^ (|s| + n₋) 2 ^ k(s)`.
-
 ## Main results
 
-* `TauCeti.OrientedPDCode.eval₂_one_enhancedStateSum`: evaluating `enhancedStateSum` at `q = 1`
-  yields `enhancedStateEulerSum`.
-* `TauCeti.OrientedPDCode.enhancedStateEulerSum_changeCrossing` and
-  `TauCeti.OrientedPDCode.enhancedStateEulerSum_mirror`: crossing-change and mirror invariance of
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum_changeCrossing`: crossing-change invariance of
   `E(D)`.
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_congr_toPDCode`: reorientation invariance of `E(D)`
   for planar diagrams.
@@ -95,8 +88,6 @@ hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)
 
 public section
 
-noncomputable section
-
 open CategoryTheory CategoryTheory.Limits Finset LaurentPolynomial
 
 namespace TauCeti.OrientedPDCode
@@ -105,49 +96,7 @@ universe u
 
 variable {n : ℕ}
 
-/-! ### Definition, `q = 1` specialization, and crossing-free base cases -/
-
-/-- **The normalized enhanced-state Euler sum** `E(D) = ∑_s (-1) ^ (|s| + n₋) 2 ^ k(s)` of an
-oriented PD-code `D`, where `|s| = #{i | s i = false}` counts the `B`-smoothings in `s`, `n₋` is
-`D.negativeCrossingCount`, and `k(s)` is `D.toPDCode.stateLoopCount s`. -/
-def enhancedStateEulerSum (D : OrientedPDCode n) : ℤ :=
-  ∑ s : Fin n → Bool,
-    (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) * 2 ^ D.toPDCode.stateLoopCount s
-
-/-- Defining sum of `TauCeti.OrientedPDCode.enhancedStateEulerSum`. -/
-theorem enhancedStateEulerSum_def (D : OrientedPDCode n) :
-    D.enhancedStateEulerSum = ∑ s : Fin n → Bool,
-      (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) *
-        2 ^ D.toPDCode.stateLoopCount s := (rfl)
-
-/-- **Evaluating the enhanced state sum at `q = 1`** yields the normalized enhanced-state Euler
-sum `E(D)`, without any planarity assumption. -/
-@[simp] theorem eval₂_one_enhancedStateSum (D : OrientedPDCode n) :
-    eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = D.enhancedStateEulerSum := by
-  rw [D.enhancedStateSum_eq_sum, D.enhancedStateEulerSum_def, map_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [Units.smul_def, zsmul_eq_mul, map_mul, map_mul, map_intCast, map_pow, map_add,
-    eval₂_T, eval₂_T, eval₂_T, D.coe_negOnePow_stateCochainDegree s]
-  norm_num
-
-/-- **A crossing-free diagram with `c` circles has `E(D) = 2 ^ c`.** -/
-theorem enhancedStateEulerSum_of_zero (D : OrientedPDCode 0) :
-    D.enhancedStateEulerSum = (2 : ℤ) ^ D.componentCount := by
-  rw [← D.eval₂_one_enhancedStateSum, D.enhancedStateSum_eq_pow, PDCode.componentCount_eq,
-    PDCode.crossingComponentCount_eq_zero, zero_add, map_pow, map_add, eval₂_T, eval₂_T]
-  norm_num
-
-/-- The empty diagram has enhanced-state Euler sum `1`. -/
-@[simp] theorem enhancedStateEulerSum_empty : empty.enhancedStateEulerSum = 1 := by
-  rw [← empty.eval₂_one_enhancedStateSum, enhancedStateSum_empty, map_one]
-
-/-- Either orientation of the crossing-free unknot has enhanced-state Euler sum `2`. -/
-@[simp] theorem enhancedStateEulerSum_unknot (o : Bool) :
-    (unknot o).enhancedStateEulerSum = 2 := by
-  rw [← (unknot o).eval₂_one_enhancedStateSum, enhancedStateSum_unknot, map_add, eval₂_T, eval₂_T]
-  norm_num
-
-/-! ### Crossing-change invariance and diagram symmetries -/
+/-! ### Crossing-change invariance -/
 
 /-- **Crossing-change invariance of `E(D)`.** Switching crossing `i` between over and under leaves
 `E(D)` unchanged, without any planarity assumption. -/
@@ -159,63 +108,6 @@ theorem enhancedStateEulerSum_of_zero (D : OrientedPDCode 0) :
   have hmod := D.card_false_flipStateEquiv_add_negativeCrossingCount_changeCrossing_mod_two i s
   rw [neg_one_pow_eq_pow_mod_two, hmod, ← neg_one_pow_eq_pow_mod_two, toPDCode_changeCrossing,
     D.toPDCode.stateLoopCount_changeCrossing_flipStateEquiv i s]
-
-/-- Reversing all component orientations preserves `E(D)`. -/
-@[simp] theorem enhancedStateEulerSum_reverse (D : OrientedPDCode n) :
-    D.reverse.enhancedStateEulerSum = D.enhancedStateEulerSum := by
-  simp [enhancedStateEulerSum_def]
-
-/-- Reading a crossing from its next slot preserves `E(D)`. -/
-@[simp] theorem enhancedStateEulerSum_rotateCrossing (D : OrientedPDCode n) (i : Fin n) :
-    (D.rotateCrossing i).enhancedStateEulerSum = D.enhancedStateEulerSum := by
-  simp [enhancedStateEulerSum_def, negativeCrossingCount_def]
-
-/-- Mirroring an oriented PD-code preserves `E(D)`, without any planarity assumption. -/
-@[simp] theorem enhancedStateEulerSum_mirror (D : OrientedPDCode n) :
-    D.mirror.enhancedStateEulerSum = D.enhancedStateEulerSum := by
-  rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def,
-    ← (Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot).sum_comp]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hcard : #{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} +
-      #{j | s j = false} = n := by
-    have htrue : #{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} =
-        #{j | ¬(s j = false)} := by
-      refine congrArg card (Finset.ext fun j ↦ ?_)
-      simp [Equiv.arrowCongr_apply, Equiv.boolNot]
-    rw [htrue, add_comm, card_filter_add_card_filter_not, card_univ, Fintype.card_fin]
-  have hn := D.positiveCrossingCount_add_negativeCrossingCount
-  have hsign : (-1 : ℤ) ^
-        (#{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} +
-          D.mirror.negativeCrossingCount) =
-      (-1 : ℤ) ^ (#{j | s j = false} + D.negativeCrossingCount) := by
-    rw [negativeCrossingCount_mirror]
-    exact neg_one_pow_congr (by simp only [Nat.even_iff]; omega)
-  have hloop : D.mirror.toPDCode.stateLoopCount
-      (Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s) = D.toPDCode.stateLoopCount s := by
-    have hfn : Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s = fun i ↦ !s i := by
-      funext i
-      simp [Equiv.arrowCongr_apply]
-    rw [mirror_toPDCode, hfn, D.toPDCode.stateLoopCount_mirror]
-    simp only [Bool.not_not]
-  rw [hsign, hloop]
-
-/-- Relabelling half-edges and crossings preserves `E(D)`. -/
-@[simp] theorem enhancedStateEulerSum_relabel {m : ℕ} (D : OrientedPDCode n)
-    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
-    (D.relabel half cross).enhancedStateEulerSum = D.enhancedStateEulerSum := by
-  rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def,
-    ← (Equiv.arrowCongr cross (Equiv.refl Bool)).sum_comp]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hcard : #{j | Equiv.arrowCongr cross (Equiv.refl Bool) s j = false} =
-      #{j | s j = false} :=
-    Finset.card_equiv cross.symm fun j ↦ by simp [Equiv.arrowCongr_apply]
-  have hloop : (D.relabel half cross).toPDCode.stateLoopCount
-      (Equiv.arrowCongr cross (Equiv.refl Bool) s) = D.toPDCode.stateLoopCount s := by
-    rw [relabel_toPDCode, PDCode.stateLoopCount_relabel]
-    congr 1
-    ext j
-    simp [Equiv.arrowCongr_apply]
-  rw [hcard, negativeCrossingCount_relabel, hloop]
 
 /-! ### Planar parity, reorientation invariance, and the normalized recurrence -/
 
@@ -454,5 +346,3 @@ theorem exists_not_isZero_khovanovHomology_rat :
 end IntAndRat
 
 end TauCeti.OrientedPDCode
-
-end
