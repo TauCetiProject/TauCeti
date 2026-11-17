@@ -60,6 +60,14 @@ theorem flatMap_substituteLetter_map {γ : Type*} (f : α → List (β × Bool))
   rw [List.flatMap_map]
   exact List.flatMap_congr fun a _ => by simp [substituteLetter]
 
+/-- Renaming the generators after substituting a letter is substituting the renamed words. -/
+@[simp]
+theorem map_prodMap_substituteLetter {γ : Type*} (g : β → γ) (f : α → List (β × Bool))
+    (z : α × Bool) :
+    (substituteLetter f z).map (Prod.map g id) =
+      substituteLetter (fun x => (f x).map (Prod.map g id)) z := by
+  obtain ⟨x, _ | _⟩ := z <;> simp [substituteLetter]
+
 /-- Changing the word assigned to a generator that does not occur in a word does not change the
 substitution without free reduction. -/
 theorem flatMap_substituteLetter_update_of_notMem [DecidableEq α] {w : List (α × Bool)} {y : α}
