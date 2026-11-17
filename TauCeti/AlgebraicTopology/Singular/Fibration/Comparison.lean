@@ -383,7 +383,6 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
   let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
   refine isIso_singularHomologyMap_of_commSq hp (MorphismProperty.id_mem _ B) R sq
     ContinuousMap.IsWeakHomotopyEquivalence.id k (fun b q hq ↦ ?_)
-  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
   -- The fibre of the identity over `b` is a point.
   let F := TopCat.Hom.fiber (𝟙 B) ((𝟙 B) b)
   let t := _root_.TopCat.isTerminalPUnit.from F
@@ -393,10 +392,8 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
       (_root_.TopCat.isoOfHomeo (Homeomorph.homeomorphOfUnique F PUnit)).hom]
     infer_instance
   -- The map from the fibre of `p` to a point factors through the fibre map.
-  have hfac : sq.fiberMap b ≫ t = _root_.TopCat.isTerminalPUnit.from (p.fiber b) :=
-    _root_.TopCat.isTerminalPUnit.hom_ext _ _
-  rw [← isIso_comp_right_iff _ (H.map t), ← H.map_comp, hfac]
-  exact hfib b q hq
+  exact (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R) (sq.fiberMap b) q
+    inferInstance).1 (hfib b q hq)
 
 /-- **A Serre fibration with acyclic fibres is a homology isomorphism.** Let `p : E ⟶ B` be a Serre
 fibration whose fibres are path-connected and have no `R`-homology in the positive degrees
