@@ -96,28 +96,25 @@ theorem map_inclusion_restrict {K : PreAbstractSimplicialComplex ι} {s t : Set 
 no extra isolated vertices. -/
 def restrictVertices (K : PreAbstractSimplicialComplex ι) :
     AbstractSimplicialComplex ({v : ι | ({v} : Finset ι) ∈ K} : Set ι) :=
-  { K.restrict {v : ι | ({v} : Finset ι) ∈ K} with
-    singleton_mem v := by
-      have hv : ({v.1} : Finset ι) ∈ K := v.2
-      simpa only [restrict, Set.mem_ofPred_eq, Finset.map_singleton,
-        Function.Embedding.coe_subtype] using hv }
+  (K.restrict {v : ι | ({v} : Finset ι) ∈ K}).toAbstractSimplicialComplex _ fun v => by
+    have hv : ({v.1} : Finset ι) ∈ K := v.2
+    simpa only [restrict, Set.mem_ofPred_eq, Finset.map_singleton,
+      Function.Embedding.coe_subtype] using hv
 
 /-- The underlying precomplex of `K.restrictVertices` is the restriction of `K` to its vertex
 set. -/
 theorem toPreAbstractSimplicialComplex_restrictVertices (K : PreAbstractSimplicialComplex ι) :
     K.restrictVertices.toPreAbstractSimplicialComplex =
-      K.restrict {v : ι | ({v} : Finset ι) ∈ K} := by
-  ext σ
-  rfl
+      K.restrict {v : ι | ({v} : Finset ι) ∈ K} :=
+  (rfl)
 
 /-- Membership in `K.restrictVertices` is membership of the underlying vertex finset in `K`. -/
 @[simp]
 theorem mem_restrictVertices_iff (K : PreAbstractSimplicialComplex ι)
     (σ : Finset ({v : ι | ({v} : Finset ι) ∈ K} : Set ι)) :
     σ ∈ K.restrictVertices ↔
-      σ.map (Function.Embedding.subtype (· ∈ ({v : ι | ({v} : Finset ι) ∈ K} : Set ι))) ∈ K := by
-  rw [← AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex,
-    toPreAbstractSimplicialComplex_restrictVertices, mem_restrict_iff]
+      σ.map (Function.Embedding.subtype (· ∈ ({v : ι | ({v} : Finset ι) ∈ K} : Set ι))) ∈ K :=
+  Iff.rfl
 
 /-- Relabeling `K.restrictVertices` back into the ambient vertex type recovers `K`. -/
 theorem map_restrictVertices [DecidableEq ι] (K : PreAbstractSimplicialComplex ι) :
@@ -137,32 +134,24 @@ variable {ι : Type*}
 attribute [local instance] Classical.decEq
 
 /-- Restrict a complex to a set of vertices, changing the vertex type to that set. -/
-def restrict (K : AbstractSimplicialComplex ι) (s : Set ι) : AbstractSimplicialComplex s where
-  faces := {σ | σ.image Subtype.val ∈ K}
-  isRelLowerSet_faces := by
-    intro σ hσ
-    refine ⟨?_, ?_⟩
-    · exact Finset.image_nonempty.mp (K.isRelLowerSet_faces.prop_of_mem hσ)
-    · intro τ hτσ hτ
-      exact K.isRelLowerSet_faces.mem_of_le hσ
-        (Finset.image_mono _ hτσ) (hτ.image _)
-  singleton_mem v := by
-    simp only [Set.mem_ofPred_eq, Finset.image_singleton]
-    exact K.singleton_mem v.1
+def restrict (K : AbstractSimplicialComplex ι) (s : Set ι) : AbstractSimplicialComplex s :=
+  (K.toPreAbstractSimplicialComplex.restrict s).toAbstractSimplicialComplex _ fun v => by
+    have hv : ({v.1} : Finset ι) ∈ K.toPreAbstractSimplicialComplex := K.singleton_mem v.1
+    simpa only [PreAbstractSimplicialComplex.restrict, Set.mem_ofPred_eq, Finset.map_singleton,
+      Function.Embedding.coe_subtype] using hv
 
 /-- A face in the restriction is a face after forgetting the vertex-membership proofs. -/
 @[simp]
 theorem mem_restrict_iff (K : AbstractSimplicialComplex ι) (s : Set ι) (σ : Finset s) :
-    σ ∈ K.restrict s ↔ σ.image Subtype.val ∈ K := (Iff.rfl)
+    σ ∈ K.restrict s ↔ σ.image Subtype.val ∈ K :=
+  PreAbstractSimplicialComplex.mem_restrict_iff_image K.toPreAbstractSimplicialComplex s σ
 
 /-- Restricting an abstract simplicial complex commutes with passing to the underlying
 precomplex. -/
 theorem toPreAbstractSimplicialComplex_restrict (K : AbstractSimplicialComplex ι) (s : Set ι) :
     (K.restrict s).toPreAbstractSimplicialComplex =
-      K.toPreAbstractSimplicialComplex.restrict s := by
-  refine SetLike.ext fun σ => ?_
-  rw [mem_toPreAbstractSimplicialComplex, mem_restrict_iff,
-    PreAbstractSimplicialComplex.mem_restrict_iff_image, mem_toPreAbstractSimplicialComplex]
+      K.toPreAbstractSimplicialComplex.restrict s :=
+  (rfl)
 
 /-- The canonical simplicial inclusion of a vertex restriction into the original complex. -/
 def restrictInclusion (K : AbstractSimplicialComplex ι) (s : Set ι) :
@@ -204,8 +193,7 @@ of the original complex contained in the chosen set. -/
 @[simp]
 theorem mem_map_restrict_iff (K : AbstractSimplicialComplex ι) (s : Set ι) (σ : Finset ι) :
     σ ∈ (K.restrict s).toPreAbstractSimplicialComplex.map
-      (Subtype.val : s → ι) ↔ σ ∈ K ∧ (σ : Set ι) ⊆ s := by
-  rw [toPreAbstractSimplicialComplex_restrict, PreAbstractSimplicialComplex.mem_map_restrict_iff,
-    mem_toPreAbstractSimplicialComplex]
+      (Subtype.val : s → ι) ↔ σ ∈ K ∧ (σ : Set ι) ⊆ s :=
+  PreAbstractSimplicialComplex.mem_map_restrict_iff K.toPreAbstractSimplicialComplex s σ
 
 end AbstractSimplicialComplex
