@@ -126,9 +126,12 @@ instance hasGoodReduction_baseChange_adicCompletion :
   rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self]
   exact C.isUnit_Δ
 
-/-- The reduction at `𝒪[F_u]` of an elliptic equation over `O_u` has as many points as its
-reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
-theorem natCard_point_reduction_baseChange_adicCompletion :
+omit [Finite (A ⧸ u.asIdeal)] [C.IsElliptic] in
+/-- The reduction at `𝒪[F_u]` of a minimal equation over `O_u` has as many nonsingular points as
+its reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
+theorem natCard_point_reduction_baseChange_adicCompletion
+    [IsDiscreteValuationRing 𝒪[u.adicCompletion F]]
+    [(C.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F]] :
     Nat.card ((C.baseChange (u.adicCompletion F)).reduction 𝒪[u.adicCompletion F]).toAffine.Point =
       Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
         (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
