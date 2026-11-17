@@ -273,17 +273,15 @@ theorem rightShift_pow_leftShift_pow (m : ℕ) (f : ℓ^p(ℕ, E)) :
     (rightShift 𝕜 E p ^ m) ((leftShift 𝕜 E p ^ m) f) =
       f - ∑ i : Fin m, lp.single p (i : ℕ) (f i) := by
   ext k
-  simp only [lp.coeFn_sub, Pi.sub_apply, lp.coeFn_sum, Finset.sum_apply]
+  rw [lp.coeFn_sub, Pi.sub_apply]
   by_cases hk : k < m
   · rw [rightShift_pow_apply_of_lt 𝕜 E p hk,
-      Finset.sum_eq_single (⟨k, hk⟩ : Fin m)
-        (fun i _ hi ↦
-          lp.single_apply_ne (E := fun _ : ℕ ↦ E) p (i : ℕ) (f i) (mt Fin.ext hi.symm))
-        (fun h ↦ (h (Finset.mem_univ _)).elim),
-      lp.single_apply_self (E := fun _ : ℕ ↦ E), sub_self]
+      lp.sum_single_apply_of_injOn_of_mem (E := fun _ : ℕ ↦ E) (j := ⟨k, hk⟩)
+        Fin.val_injective.injOn (Finset.mem_univ _),
+      sub_self]
   · have hkm : m ≤ k := Nat.le_of_not_lt hk
-    rw [Finset.sum_eq_zero fun (i : Fin m) _ ↦
-        lp.single_apply_ne (E := fun _ : ℕ ↦ E) p (i : ℕ) (f i) (ne_of_gt (i.isLt.trans_le hkm)),
+    rw [lp.sum_single_apply_eq_zero_of_forall_ne (E := fun _ : ℕ ↦ E)
+        (fun (i : Fin m) _ ↦ (i.isLt.trans_le hkm).ne'),
       sub_zero, ← Nat.sub_add_cancel hkm, rightShift_pow_apply_add, leftShift_pow_apply]
 
 /-- The defect `id - rightShift ∘ leftShift` is the coordinate projection onto coordinate `0`. -/
@@ -459,10 +457,9 @@ noncomputable def kerLeftShiftPowEquiv (m : ℕ) :
   invFun v := ⟨∑ i : Fin m, lp.single p (i : ℕ) (v i), by
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
     ext n
-    simp only [leftShift_pow_apply, lp.coeFn_zero, Pi.zero_apply, lp.coeFn_sum, Finset.sum_apply]
-    exact Finset.sum_eq_zero fun i _ ↦
-      lp.single_apply_ne (E := fun _ : ℕ ↦ E) p (i : ℕ) (v i)
-        (ne_of_gt (i.isLt.trans_le (Nat.le_add_left m n)))⟩
+    rw [leftShift_pow_apply, lp.coeFn_zero, Pi.zero_apply]
+    exact lp.sum_single_apply_eq_zero_of_forall_ne
+      fun i _ ↦ (i.isLt.trans_le (Nat.le_add_left m n)).ne'⟩
   left_inv f := by
     ext k
     have hf : (leftShift 𝕜 E p ^ m) f = 0 := by
@@ -472,12 +469,7 @@ noncomputable def kerLeftShiftPowEquiv (m : ℕ) :
     exact congr($h.symm k)
   right_inv v := by
     ext j
-    simp only [lp.coeFn_sum, Finset.sum_apply]
-    rw [Finset.sum_eq_single j
-        (fun i _ hi ↦
-          lp.single_apply_ne (E := fun _ : ℕ ↦ E) p (i : ℕ) (v i) (mt Fin.ext hi.symm))
-        (fun h ↦ (h (Finset.mem_univ _)).elim),
-      lp.single_apply_self (E := fun _ : ℕ ↦ E)]
+    exact lp.sum_single_apply_of_injOn_of_mem Fin.val_injective.injOn (Finset.mem_univ j)
 
 @[simp]
 theorem kerLeftShiftPowEquiv_apply (m : ℕ)
@@ -500,13 +492,8 @@ noncomputable def cokerRightShiftPowEquiv (m : ℕ) :
       (evalCLM 𝕜 (fun _ : ℕ ↦ E) p i).toLinearMap).quotKerEquivOfSurjective
       (show Function.Surjective _ from fun v ↦ ⟨∑ i : Fin m, lp.single p (i : ℕ) (v i), by
         ext j
-        simp only [LinearMap.pi_apply, ContinuousLinearMap.coe_coe, evalCLM_apply, lp.coeFn_sum,
-          Finset.sum_apply]
-        rw [Finset.sum_eq_single j
-            (fun i _ hi ↦
-              lp.single_apply_ne (E := fun _ : ℕ ↦ E) p (i : ℕ) (v i) (mt Fin.ext hi.symm))
-            (fun h ↦ (h (Finset.mem_univ _)).elim),
-          lp.single_apply_self (E := fun _ : ℕ ↦ E)]⟩)
+        rw [LinearMap.pi_apply, ContinuousLinearMap.coe_coe, evalCLM_apply]
+        exact lp.sum_single_apply_of_injOn_of_mem Fin.val_injective.injOn (Finset.mem_univ j)⟩)
 
 @[simp]
 theorem cokerRightShiftPowEquiv_mk (m : ℕ) (f : ℓ^p(ℕ, E)) (i : Fin m) :
@@ -520,12 +507,8 @@ theorem cokerRightShiftPowEquiv_symm_apply (m : ℕ) (v : Fin m → E) :
   apply (cokerRightShiftPowEquiv 𝕜 E p m).injective
   ext j
   rw [LinearEquiv.apply_symm_apply, cokerRightShiftPowEquiv_mk]
-  simp only [lp.coeFn_sum, Finset.sum_apply]
-  rw [Finset.sum_eq_single j
-      (fun i _ hi ↦
-        lp.single_apply_ne (E := fun _ : ℕ ↦ E) p (i : ℕ) (v i) (mt Fin.ext hi.symm))
-      (fun h ↦ (h (Finset.mem_univ _)).elim),
-    lp.single_apply_self (E := fun _ : ℕ ↦ E)]
+  symm
+  exact lp.sum_single_apply_of_injOn_of_mem Fin.val_injective.injOn (Finset.mem_univ j)
 
 /-- The unilateral right shift on `ℓ^p(ℕ, E)` is a closed topological embedding. -/
 theorem isClosedEmbedding_rightShift : IsClosedEmbedding (rightShift 𝕜 E p) :=

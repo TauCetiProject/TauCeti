@@ -29,11 +29,15 @@ multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r�
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
 linearly independent, and
 vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
-to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
-most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+normed rings at every exponent. Finite sums of single-coordinate vectors over a finset `s` along a
+map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
+(`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
+(`lp.sum_single_apply_eq_zero_of_forall_ne`). In `ℓ²`, the squared norm of a finite sum of
+single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
+many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
+`lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
@@ -161,6 +165,23 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
     exact lp.single_apply_ne (E := fun _ : ι ↦ 𝕜) p (f j) 1
       (fun hij ↦ hi ⟨j, hij.symm⟩)
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
+
+/-- Evaluating a finite sum of single-coordinate vectors `∑ i ∈ s, lp.single p (g i) (v i)` at
+`g j` for `j ∈ s` recovers `v j`, provided `g` is injective on `s`. -/
+theorem sum_single_apply_of_injOn_of_mem {κ : Type*} {s : Finset κ} {g : κ → ι}
+    {v : ∀ i, E (g i)} {j : κ} (hg : Set.InjOn g s) (hj : j ∈ s) :
+    (∑ i ∈ s, lp.single p (g i) (v i)) (g j) = v j := by
+  rw [lp.coeFn_sum, Finset.sum_apply, Finset.sum_eq_single j
+    (fun i hi hne ↦ lp.single_apply_ne p (g i) (v i) fun h ↦ hne (hg hi hj h.symm))
+    (fun h ↦ absurd hj h), lp.single_apply_self]
+
+/-- Evaluating a finite sum of single-coordinate vectors `∑ i ∈ s, lp.single p (g i) (v i)` at a
+coordinate `k` not equal to `g i` for any `i ∈ s` returns `0`. -/
+theorem sum_single_apply_eq_zero_of_forall_ne {κ : Type*} {s : Finset κ} {g : κ → ι}
+    {v : ∀ i, E (g i)} {k : ι} (hk : ∀ i ∈ s, k ≠ g i) :
+    (∑ i ∈ s, lp.single p (g i) (v i)) k = 0 := by
+  rw [lp.coeFn_sum, Finset.sum_apply]
+  exact Finset.sum_eq_zero fun i hi ↦ lp.single_apply_ne p (g i) (v i) (hk i hi)
 
 end Single
 
