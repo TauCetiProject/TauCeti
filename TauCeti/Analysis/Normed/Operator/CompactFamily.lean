@@ -15,6 +15,10 @@ import Mathlib.Topology.Order.Compact
 A continuous family of bounded operators which is invertible on a compact parameter slice
 remains invertible on a common neighborhood of that slice, with a uniform operator-norm bound
 on its inverses. Only the domain of the operators needs to be complete.
+
+A continuous family of bounded operators with a continuous family of left inverses moves norms
+by a uniformly bounded factor in both directions on a compact parameter set
+(`IsCompact.exists_norm_apply_le_and_norm_le`).
 -/
 
 public section
@@ -59,5 +63,32 @@ theorem exists_mem_nhds_isInvertible_norm_inverse_le {K : Set X} (hK : IsCompact
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_prod_iff.1 hnear
   refine ⟨V, hV, C, by positivity, fun x hx y hy ↦ ?_⟩
   exact (hUV ⟨subset_of_mem_nhdsSet hU hx, hy⟩).imp_right le_of_lt
+
+end IsCompact
+
+namespace IsCompact
+
+variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a compact parameter set, a continuous family of operators `L x` with a continuous family of
+left inverses `Linv x` changes norms by a uniformly bounded factor: `‖L x v‖` and `‖v‖` are
+comparable uniformly in `x`, since the norms of `L` and `Linv` are bounded there. -/
+theorem exists_norm_apply_le_and_norm_le {K : Set X} (hK : IsCompact K) {L : X → E →L[𝕜] F}
+    {Linv : X → F →L[𝕜] E} (hL : ContinuousOn L K) (hLinv : ContinuousOn Linv K)
+    (hLL : ∀ x ∈ K, (Linv x).comp (L x) = ContinuousLinearMap.id 𝕜 E) :
+    ∃ c, 1 ≤ c ∧ ∀ x ∈ K, ∀ v, ‖L x v‖ ≤ c * ‖v‖ ∧ ‖v‖ ≤ c * ‖L x v‖ := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hL.norm
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hLinv.norm
+  refine ⟨max 1 (max A B), le_max_left _ _, fun x hx v ↦ ⟨?_, ?_⟩⟩
+  · have hAx : ‖L x‖ ≤ max 1 (max A B) :=
+      (by simpa using hA _ hx : ‖L x‖ ≤ A).trans ((le_max_left A B).trans (le_max_right 1 _))
+    exact ((L x).le_opNorm v).trans (mul_le_mul_of_nonneg_right hAx (norm_nonneg _))
+  · have hBx : ‖Linv x‖ ≤ max 1 (max A B) :=
+      (by simpa using hB _ hx : ‖Linv x‖ ≤ B).trans ((le_max_right A B).trans (le_max_right 1 _))
+    calc ‖v‖ = ‖Linv x (L x v)‖ := by
+          rw [← ContinuousLinearMap.comp_apply, hLL x hx, ContinuousLinearMap.id_apply]
+      _ ≤ ‖Linv x‖ * ‖L x v‖ := (Linv x).le_opNorm _
+      _ ≤ max 1 (max A B) * ‖L x v‖ := mul_le_mul_of_nonneg_right hBx (norm_nonneg _)
 
 end IsCompact
