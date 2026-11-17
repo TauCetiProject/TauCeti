@@ -16,6 +16,11 @@ by its values in `k` on singular simplices (`TauCeti.cochainValuesEquiv`). This 
 cup product along the unitors in these terms: `φ ⌣ ψ` takes a simplex to the product of the values
 of `φ` on its front face and of `ψ` on its back face, the cup product of Hatcher, Section 3.2.
 
+The tensor unit `𝟙_ (ModuleCat k)` is `ModuleCat.of k k` by definition (the `tensorUnit` field of
+Mathlib's monoidal structure on `ModuleCat k`). The statements below use this definitional
+equality: cochains with coefficients `𝟙_ (ModuleCat k)`, which is how the cup product is typed,
+are given directly to `cochainValuesEquiv k (ModuleCat.of k k)`, with no transport between the two.
+
 ## Main results
 
 * `TopCat.cochainValuesEquiv_cupCochain`: the cup product of a `p`-cochain and a `q`-cochain on

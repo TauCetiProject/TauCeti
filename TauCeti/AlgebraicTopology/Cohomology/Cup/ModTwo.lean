@@ -111,7 +111,11 @@ private lemma homologyMap_zmodFourToTwo_eq_zero (X : TopCat.{0})
   decide
 
 /-- The mod `2` cochain complex of `X`, with chain and cochain coefficients
-`𝟙_ (ModuleCat (ZMod 2))`. -/
+`𝟙_ (ModuleCat (ZMod 2))`. Since `𝟙_ (ModuleCat (ZMod 2))` is `ModuleCat.of (ZMod 2) (ZMod 2)` by
+definition, this complex unfolds to the `linearYonedaObj` of the chain complex of `toSSet.obj X`
+with coefficients `ModuleCat.of (ZMod 2) (ZMod 2)`. The lemmas below use this unfolding to apply
+`cochainValuesEquiv` (through `modTwoValues`) and `cochainValuesEquiv_linearYonedaObj_d_zero_one`
+and `_d_one_two` to its cochains, as `TopCat.cochainValuesEquiv_cupCochain_one_one` does. -/
 private abbrev modTwoCochains (X : TopCat.{0}) : CochainComplex (ModuleCat (ZMod 2)) ℕ :=
   X.singularCochainComplex (𝟙_ (ModuleCat.{0} (ZMod 2))) (ZMod 2) (𝟙_ (ModuleCat (ZMod 2)))
 
@@ -168,6 +172,8 @@ private lemma exists_sub_eq_of_mul_eq (X : TopCat.{0})
   let K := toSSet.obj X
   -- The `ℤ/4`-cocycle `Θ` with values `ι f + 2 ι g` on integral chains, `ι` being `ZMod.cast`.
   let v : K _⦋1⦌ → ZMod 4 := fun τ ↦ (ZMod.cast (f τ) : ZMod 4) + 2 * ZMod.cast (g τ)
+  -- `singularCochainComplex` unfolds to the `linearYonedaObj` of the integral chain complex of
+  -- `K`, which `cochainValuesEquiv` and `linearYonedaObjMap` below are applied to directly.
   let Z := X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ (ZMod 4))
   let Θ : Z.X 1 := (cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) K 1).symm v
   have hΘ : Z.d 1 2 Θ = 0 := by
