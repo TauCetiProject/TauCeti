@@ -279,14 +279,17 @@ theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
 
 /-- A function locally Lipschitz on `s` is `α`-Hölder on each compact subset of `s`, for every
 `α ≤ 1`. -/
-theorem LocallyLipschitzOn.exists_holderOnWith_of_isCompact {X F : Type*}
-    [PseudoMetricSpace X] [SeminormedAddCommGroup F] {s K : Set X} {f : X → F} {α : ℝ≥0}
+theorem LocallyLipschitzOn.exists_holderOnWith_of_isCompact {X Y : Type*}
+    [PseudoMetricSpace X] [PseudoMetricSpace Y] {s K : Set X} {f : X → Y} {α : ℝ≥0}
     (hf : LocallyLipschitzOn s f) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
     ∃ C, HolderOnWith C α f K := by
   obtain ⟨L, hL⟩ := (hf.mono hKs).exists_lipschitzOnWith_of_compact hK
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hf.mono hKs).continuousOn
-  exact ⟨_, hL.holderOnWith_of_norm_le (M := M.toNNReal)
-    (fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)) hα⟩
+  obtain ⟨D, hD⟩ := Metric.isBounded_iff.1
+    (hK.image_of_continuousOn (hf.mono hKs).continuousOn).isBounded
+  exact ⟨_, HolderOnWith.of_le_of_dist_le (K := L) (D := D.toNNReal) (β := 1)
+    (fun x hx y hy _ ↦ by simpa using hL.dist_le_mul x hx y hy)
+    (fun x hx y hy ↦ (hD (mem_image_of_mem f hx) (mem_image_of_mem f hy)).trans
+      (Real.le_coe_toNNReal D)) hα one_pos⟩
 
 /-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
 `z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/

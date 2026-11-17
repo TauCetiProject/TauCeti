@@ -79,16 +79,19 @@ theorem _root_.ContDiffOn.locallyLipschitzOn_of_isOpen {𝕂 E' F' : Type*} [RCL
 
 /-- A map of class `C^1` on an open set `s` is `α`-Hölder on each compact subset of `s`, for every
 `α ≤ 1`. -/
-theorem _root_.ContDiffOn.exists_holderOnWith {s K : Set E} {g : E → F} {α : ℝ≥0}
-    (hg : ContDiffOn ℝ 1 g s) (hs : IsOpen s) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
-    ∃ C, HolderOnWith C α g K :=
+theorem _root_.ContDiffOn.exists_holderOnWith {𝕂 E' F' : Type*} [RCLike 𝕂]
+    [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
+    {s K : Set E'} {g : E' → F'} {α : ℝ≥0} (hg : ContDiffOn 𝕂 1 g s) (hs : IsOpen s)
+    (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) : ∃ C, HolderOnWith C α g K :=
   (hg.locallyLipschitzOn_of_isOpen hs).exists_holderOnWith_of_isCompact hα hK hKs
 
 /-- For a map of class `C^{k+1}` on an open set `s`, the `k`-th derivative is `α`-Hölder on each
 compact subset of `s`, for every `α ≤ 1`. -/
-theorem _root_.ContDiffOn.exists_holderOnWith_iteratedFDeriv {k : ℕ} {s K : Set E} {f : E → F}
-    {α : ℝ≥0} (hf : ContDiffOn ℝ (k + 1) f s) (hs : IsOpen s) (hα : α ≤ 1) (hK : IsCompact K)
-    (hKs : K ⊆ s) : ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k f) K :=
+theorem _root_.ContDiffOn.exists_holderOnWith_iteratedFDeriv {𝕂 E' F' : Type*} [RCLike 𝕂]
+    [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
+    {k : ℕ} {s K : Set E'} {f : E' → F'} {α : ℝ≥0} (hf : ContDiffOn 𝕂 (k + 1) f s)
+    (hs : IsOpen s) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ C, HolderOnWith C α (iteratedFDeriv 𝕂 k f) K :=
   ContDiffOn.exists_holderOnWith (fun _ hx ↦ ((hf.contDiffAt (hs.mem_nhds hx)).iteratedFDeriv_right
     (add_comm _ _).le).contDiffWithinAt) hs hα hK hKs
 
