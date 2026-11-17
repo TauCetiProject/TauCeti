@@ -13,15 +13,19 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 If `P'` lies over `P` in an algebraic extension `F' / F`, the embedding of fields extends
 uniquely to a continuous ring homomorphism `P.Completion →+* P'.Completion`. The
-extended valuation is the original completed valuation raised to the ramification index.
-The induced algebra structure makes the completed extension available for local Galois theory.
+extended valuation is the original completed valuation raised to the ramification index
+(`valuation_completionExtension`, `ord_completionExtension`), so completion preserves the
+ramification index `e(P' ∣ P)` (`ramificationIdx_completionPlace`). The induced algebra structure
+makes the completed extension available for local Galois theory.
 
 The algebra structure is explicit, since choosing different places above `P` gives different
 completed extensions. Install `completionExtensionAlgebra` locally. When the constant fields
 agree, `isScalarTower_completionExtensionAlgebra` also identifies the original constant action
-through the completed extension. The completed extension restricts to a local homomorphism
-`completionIntegersExtension` of completed valuation rings, whose algebra
-`completionIntegersExtensionAlgebra` is likewise installed locally.
+through the completed extension. The completed extension restricts to an injective local
+homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
+`completionIntegersExtensionAlgebra` is likewise installed locally and makes `𝒪̂_{P'}` a
+torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`completionIntegersExtension_injective`,
+`isScalarTower_completionIntegers`, `isTorsionFree_completionIntegers`).
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -142,6 +146,18 @@ theorem algebraMap_completionExtensionAlgebra :
     letI := P.completionExtensionAlgebra P' hP
     algebraMap P.Completion P'.Completion = P.completionExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
+
+/-- Completion preserves the ramification index, with no finiteness assumption on the residue
+extension. -/
+theorem ramificationIdx_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    ramificationIdx P.Completion P'.completionPlace = ramificationIdx F P' := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [ramificationIdx_def,
+    Valuation.ordIndex_eq_mul_of_forall_ord_eq _ P.completionPlace.valuation (fun x ↦ by
+      rw [Valuation.ord_comap, ord_valuation, ord_valuation, algebraMap_completionExtensionAlgebra,
+        P.ord_completionExtension P' hP x]),
+    Valuation.ordIndex_eq_one_of_surjective _ P.completionPlace.valuation_surjective, mul_one]
 
 /-- Through the completed extension, the embedding of `F'` in its completion is semilinear over
 the embedding of `F` in its completion. -/
