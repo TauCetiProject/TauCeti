@@ -305,8 +305,6 @@ private theorem mfderiv_coe_fundamentalVectorField_mem_orbitTangent
   rw [InfinitesimalAction.fundamental_apply, h2]
   exact h1.symm
 
-variable [T2Space M]
-
 /-- **The vertical directions of the reduced space are the stabilizer orbit directions.** At a
 point `z` of the level, a tangent vector is in the kernel of the differential of the orbit
 projection `μ⁻¹(c) → μ⁻¹(c) / G_c` exactly when the differential of the inclusion `i` sends it
@@ -320,6 +318,8 @@ theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
       ((lieAnnihilator ℝ (GroupLieAlgebra I G) c).toSubmodule.map
         ((InfinitesimalAction.fundamental I G I' M).eval z)).comap
         (mfderiv 𝓘(ℝ, Fin n → ℝ) I' (Subtype.val : h.levelSubMulAction c → M) z).toLinearMap := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   let := d.chartedSpace
   let := h.levelSubMulActionChartedSpace c hreg hn
   obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
@@ -351,7 +351,6 @@ theorem ker_mfderiv_quotientMk_levelSubMulAction (z : h.levelSubMulAction c) :
       exact ⟨_, rfl⟩
   -- `G_c` acts freely, so `V` has the dimension of `𝔤_c`, which bounds that of `W`.
   have hdim : finrank ℝ W ≤ finrank ℝ (V.map di) := by
-    have : T2Space G := I.t2Space_of_lieGroup ∞
     have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     have hV : V.map di ≃ₗ[ℝ] V := (Submodule.equivMapOfInjective di hdi V).symm
     have hiso := Lie.isotropy_eq_bot_of_stabilizer_eq_bot (I := 𝓘(ℝ, F))
