@@ -64,7 +64,7 @@ of the realization at a vortex to all of its translates and rotations.
 * `TauCeti.Vortex.sobolevGaugeFixedOperator_coefficientMotion_apply`,
   `TauCeti.Vortex.sobolevGaugeFixedOperator_coefficientMotion`: the intertwining law.
 * `TauCeti.Vortex.ker_sobolevGaugeFixedOperator_coefficientMotion`,
-  `TauCeti.Vortex.surjective_sobolevGaugeFixedOperator_coefficientMotion_iff`,
+  `TauCeti.Vortex.sobolevGaugeFixedOperator_coefficientMotion_surjective_iff`,
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_coefficientMotion_iff`,
   `TauCeti.Vortex.index_sobolevGaugeFixedOperator_coefficientMotion`: its consequences.
 
@@ -428,7 +428,7 @@ theorem ker_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
   simpa using hy₀
 
 /-- The realization at a moved coefficient is onto exactly when the realization at `c` is. -/
-theorem surjective_sobolevGaugeFixedOperator_coefficientMotion_iff (u : Circle) (a : ℂ)
+theorem sobolevGaugeFixedOperator_coefficientMotion_surjective_iff (u : Circle) (a : ℂ)
     (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     Function.Surjective (sobolevGaugeFixedOperator (coefficientMotion u a c)) ↔
       Function.Surjective (sobolevGaugeFixedOperator c) := by
