@@ -129,7 +129,7 @@ theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1)
   have h := fderiv_comp_add_right (𝕜 := ℝ) (f := ξ) (x := (s, t)) ((0 : ℝ), (1 : ℝ))
   rw [hper] at h
   simp only [Prod.mk_add_mk, add_zero] at h
-  simp [jet, ← h, hξp]
+  simp [jet_apply, ← h, hξp]
 
 /-- The jet of a section vanishing for `|s| ≥ R` vanishes for `|s| > R`. -/
 theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) {z : ℝ × ℝ}
@@ -139,7 +139,7 @@ theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) =
   have h : ξ =ᶠ[𝓝 z] 0 := by
     filter_upwards [this] with w hw
     exact hR w.1 w.2 hw.le
-  simp [jet, h.fderiv_eq, h.eq_of_nhds]
+  simp [jet_apply, h.fderiv_eq, h.eq_of_nhds]
 
 /-- For a section vanishing for `|s| ≥ R`, the integral over the strip of a function vanishing
 wherever the jet of the section vanishes is its integral over `[-R, R] × [0, 1]`. -/
@@ -236,7 +236,7 @@ private theorem integral_smul_fderiv_add_eq_zero {φ : ℝ × ℝ → ℝ} (hφ 
       (φ z • fderiv ℝ ξ z + (fderiv ℝ φ z).smulRight (ξ z)) z := fun z ↦
     (hφd z).hasFDerivAt.smul (hξd z).hasFDerivAt
   have hF : ∀ z, jet ξ z = 0 → F z = 0 := fun z h ↦ by
-    simp only [jet, Prod.mk_eq_zero] at h
+    simp only [jet_apply, Prod.mk_eq_zero] at h
     have hd : fderiv ℝ ξ z e = 0 := by
       rcases he with rfl | rfl
       exacts [h.2.1, h.2.2]
@@ -358,9 +358,9 @@ theorem valueL_injective : Function.Injective (valueL (V := V)) := by
     simp only [TopologicalSpace.Opens.coe_mk, hΩ] at h
     exact h.mono fun z hz ↦ hz (mem_univ z)
   have h₂ := hcomp (Or.inl rfl) (P := (ContinuousLinearMap.fst ℝ V V).comp
-    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ rfl
+    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by simp [jet_apply]
   have h₃ := hcomp (Or.inr rfl) (P := (ContinuousLinearMap.snd ℝ V V).comp
-    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ rfl
+    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by simp [jet_apply]
   refine Subtype.ext ((Lp.eq_zero_iff_ae_eq_zero).2 ?_)
   filter_upwards [hx₁, h₂, h₃] with z h₁ h₂ h₃
   exact Prod.ext h₁ (Prod.ext h₂ h₃)
@@ -369,16 +369,21 @@ end Value
 
 /-! ### The cutoff -/
 
-private theorem norm_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ‖ξ z‖ ≤ ‖jet ξ z‖ :=
-  norm_fst_le (jet ξ z)
+private theorem norm_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ‖ξ z‖ ≤ ‖jet ξ z‖ := by
+  rw [jet_apply]
+  exact norm_fst_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
 
 private theorem norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z (1, 0)‖ ≤ ‖jet ξ z‖ :=
-  (norm_fst_le ((fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) : V × V)).trans (norm_snd_le (jet ξ z))
+    ‖fderiv ℝ ξ z (1, 0)‖ ≤ ‖jet ξ z‖ := by
+  rw [jet_apply]
+  exact (norm_fst_le ((fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) : V × V)).trans
+    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
 
 private theorem norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z (0, 1)‖ ≤ ‖jet ξ z‖ :=
-  (norm_snd_le ((fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) : V × V)).trans (norm_snd_le (jet ξ z))
+    ‖fderiv ℝ ξ z (0, 1)‖ ≤ ‖jet ξ z‖ := by
+  rw [jet_apply]
+  exact (norm_snd_le ((fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) : V × V)).trans
+    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
 
 private theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
@@ -723,7 +728,7 @@ private theorem norm_jetₗ_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM 
   have hmain := hest hξ hper (neg_le_self (le_max_right R 0)) hvan
   have hF : ∀ z, jet (ξ : ℝ × ℝ → V) z = 0 → ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 = 0 := fun z hz ↦ by
-    simp only [jet, Prod.mk_eq_zero] at hz
+    simp only [jet_apply, Prod.mk_eq_zero] at hz
     obtain ⟨h₀, h₁, h₂⟩ := hz
     simp [h₀, h₁, h₂]
   rw [← integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ hF, ← hx, ← hy] at hmain

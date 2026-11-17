@@ -36,7 +36,7 @@ on `L^p(ℝ × [0, 1], E)` as a linear isometry (`TauCeti.StripSobolev.translate
 invariant under translation (`TauCeti.StripSobolev.IsTranslationInvariant`), it maps
 `jetClosure S` onto itself and is a linear isometric equivalence of it
 (`TauCeti.StripSobolev.translate`), so the `W^{1,2}` norm is translation invariant
-(`TauCeti.StripSobolev.norm_jetLp_translate`).
+(`TauCeti.StripSobolev.norm_jetLp_comp_add_right`).
 
 ## Main definitions
 
@@ -147,7 +147,7 @@ theorem translateL_translateL_neg (a : ℝ) (f : Lp E p stripMeasure) :
 end Translation
 
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
-@[expose] def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
+def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
   (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
 
 /-- The components of the jet. -/
@@ -363,7 +363,7 @@ theorem translate_symm (a : ℝ) : (translate S a).symm = translate S (-a) :=
 
 /-- **The `W^{1,2}` norm is translation invariant**: an element of `S` and its translate in the
 `s` direction have `L²` jets of the same norm. -/
-theorem norm_jetLp_translate (a : ℝ) (ξ : S) :
+theorem norm_jetLp_comp_add_right (a : ℝ) (ξ : S) :
     ‖jetLp S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.2 a⟩‖ = ‖jetLp S ξ‖ := by
   rw [← translateL_jetLp, norm_translateL]
 

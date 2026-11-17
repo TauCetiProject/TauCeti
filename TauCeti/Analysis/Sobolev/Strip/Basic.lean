@@ -35,9 +35,9 @@ sections, the strip counterpart of `TauCeti.CylinderSobolev.H1`.
   `TauCeti.StripSobolev.translateL` of `L²` jets maps `H1 L₀ L₁` onto itself
   (`TauCeti.StripSobolev.translateL_mem_jetClosure_iff`) and is a linear isometric equivalence
   `TauCeti.StripSobolev.translate (testSection L₀ L₁) a` of `H1 L₀ L₁`, so the `W^{1,2}` norm of a
-  section and of its translates agree (`TauCeti.StripSobolev.norm_jetLp_translate`). This is the
-  translation-invariant norm of the strip, which a norm built from one compact piece of the strip
-  does not have.
+  section and of its translates agree (`TauCeti.StripSobolev.norm_jetLp_comp_add_right`). This is
+  the translation-invariant norm of the strip, which a norm built from one compact piece of the
+  strip does not have.
 
 The boundary conditions are imposed on the test sections; they hold for the elements of `H1` in
 the sense of this closure. First-order operators with essentially bounded coefficients act on the
