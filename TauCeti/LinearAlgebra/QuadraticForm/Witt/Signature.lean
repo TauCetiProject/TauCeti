@@ -38,6 +38,8 @@ available in `Mathlib.FieldTheory.IsRealClosed.Real`.
   classes over ordered real closed fields.
 * `WittRing.dimMod2_eq_intCast_signature` and `mem_fundamentalIdeal_iff_even_signature`: over any
   ordered field, dimension modulo two agrees with signature modulo two.
+* `WittRing.signature_oneFoldPfisterClass`: over any ordered field, the signature of a one-fold
+  Pfister class `⟨⟨a⟩⟩` is `0` for `a > 0` and `2` for `a < 0`.
 * `mem_fundamentalIdeal_pow_iff_dvd_signature` and `fundamentalIdeal_pow_map_equivInt`: over an
   ordered real closed field, `I(K)^n` consists of the Witt classes whose signature is divisible by
   `2^n`.
@@ -127,6 +129,17 @@ theorem dvd_signature_of_mem_fundamentalIdeal_pow {x : WittRing K} {n : ℕ}
       rw [map_add]
       exact dvd_add ha hb
 
+/-- Over any ordered field, the signature of a one-fold Pfister class `⟨⟨a⟩⟩ = ⟨1, -a⟩` is `0` when
+`a > 0` and `2` when `a < 0`. -/
+@[simp]
+theorem WittRing.signature_oneFoldPfisterClass (a : Kˣ) :
+    signature (oneFoldPfisterClass a) = if 0 < (a : K) then 0 else 2 := by
+  rw [oneFoldPfisterClass_eq, map_add, map_one, signature_wittClass,
+    RegularFormClass.signature_mk_rankOne]
+  rcases lt_or_gt_of_ne a.ne_zero with ha | ha
+  · simp [ha, ha.not_gt]
+  · simp [ha, not_lt_of_gt ha]
+
 variable [IsRealClosed K]
 
 /-- Every Witt class over an ordered real closed field is its signature times the positive unit
@@ -183,18 +196,6 @@ theorem RegularFormClass.eq_iff_rank_eq_and_signature_eq {x y : RegularFormClass
     omega
   subst hab
   exact add_left_cancel h
-
-omit [IsRealClosed K] in
-/-- Over any ordered field, the signature of a one-fold Pfister class `⟨⟨a⟩⟩ = ⟨1, -a⟩` is `0` when
-`a > 0` and `2` when `a < 0`. -/
-@[simp]
-theorem WittRing.signature_oneFoldPfisterClass (a : Kˣ) :
-    signature (oneFoldPfisterClass a) = if 0 < (a : K) then 0 else 2 := by
-  rw [oneFoldPfisterClass_eq, map_add, map_one, signature_wittClass,
-    RegularFormClass.signature_mk_rankOne]
-  rcases lt_or_gt_of_ne a.ne_zero with ha | ha
-  · simp [ha, ha.not_gt]
-  · simp [ha, not_lt_of_gt ha]
 
 /-- **Powers of the fundamental ideal over an ordered real closed field.** A Witt class lies in
 `I(K)^n` if and only if its integer signature is divisible by `2^n`. -/

@@ -28,14 +28,13 @@ of Lam's comparison (Lam V.3.20). On `⟨-1, -1, -1⟩` (`σ = -3`, `(-3) % 8 = 
 `s = [ℍ]` and both correction factors in Lam V.3.20 equal `[ℍ]`, confirming that the discriminant
 correction `[(-1, d)]^C(n - 1, 2)` cannot be omitted.
 
-The formula also illustrates two boundaries of the general theory (for general semireal
-non-additivity `c(2 + 1) ≠ c(2) · c(1)`, see `TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`):
-
-* over `ℝ`, only one summand needs to lie in `I(ℝ)²` for additivity: `4 ∈ I(ℝ)²` and `3 ∉ I(ℝ)²`
-  still satisfy `c(4 + 3) = 1 = [ℍ] · [ℍ]`;
-* even adjoining the Clifford invariant to `(rank, discr, hasseInvariant)` does **not** classify
-  regular forms over `K`, since `⟨1, 1, 1, 1⟩` (`σ = 4`) and `⟨-1, -1, -1, -1⟩` (`σ = -4`) share
-  all four invariants `(4, 0, 1, [(-1, -1)])`.
+The formula also illustrates how additivity behaves over `ℝ` when only one summand lies in
+`I(ℝ)²`: `4 ∈ I(ℝ)²` and `3 ∉ I(ℝ)²` still satisfy `c(4 + 3) = 1 = [ℍ] · [ℍ]`. For the general
+semireal failure of additivity `c(2 + 1) ≠ c(2) · c(1)`, see
+`TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`; for the general semireal non-classification
+witness `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne` showing that
+`⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share all four invariants `(4, 0, 1, [(-1, -1)])` while
+remaining non-isometric, see `TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford`.
 
 ## Main results
 
@@ -43,9 +42,6 @@ non-additivity `c(2 + 1) ≠ c(2) · c(1)`, see `TauCeti.LinearAlgebra.Quadratic
   `TauCeti.RegularFormClass.cliffordInvariant_eq_ite_signature`, and
   `QuadraticForm.cliffordInvariant_formClass_eq_ite_signature`: eightfold-periodic formula for the
   Clifford invariant over an ordered real closed field.
-* `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne`: `⟨1, 1, 1, 1⟩` and
-  `⟨-1, -1, -1, -1⟩` share rank, discriminant, Hasse invariant, and Clifford invariant while
-  remaining non-isometric over any ordered field.
 * `TauCeti.cliffordInvariant_formClass_realSignatureForm`: the Clifford invariant of the real
   normal form `p⟨1⟩ ⊥ q⟨-1⟩` is `[ℍ[ℝ]]` when `(p - q) % 8 ∈ {3, 4, 5, 6}` and `1` otherwise.
 
@@ -142,30 +138,6 @@ theorem cliffordInvariant_eq_neg_one_neg_one_iff_signature (x : RegularFormClass
       3 ≤ signature x % 8 ∧ signature x % 8 ≤ 6 := by
   rw [← WittRing.cliffordInvariant_wittClass,
     WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature, WittRing.signature_wittClass]
-
-omit [IsRealClosed K] in
-/-- Over any ordered field, `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share rank (`4`), discriminant
-(`0`), Hasse invariant (`1`), and Clifford invariant (`[(-1, -1)]`), while remaining non-isometric
-by signature. -/
-theorem four_nsmul_one_invariants_eq_and_ne :
-    let posFour : RegularFormClass K := 4 • 1
-    let negFour : RegularFormClass K :=
-      4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩
-    posFour.rank = 4 ∧ negFour.rank = 4 ∧
-      discr posFour = 0 ∧ discr negFour = 0 ∧
-      hasseInvariant posFour = 1 ∧ hasseInvariant negFour = 1 ∧
-      cliffordInvariant posFour = BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ∧
-      cliffordInvariant negFour = BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ∧
-      posFour ≠ negFour := by
-  obtain ⟨hr1, hr2, hd1, hd2, hs1, hs2, hne⟩ := four_nsmul_one_ne_four_nsmul_neg_one (K := K)
-  refine ⟨hr1, hr2, hd1, hd2, hs1, hs2, ?_, ?_, hne⟩
-  · rw [cliffordInvariant_nsmul_one,
-      (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff (Nat.choose 5 4)).mpr
-        (by decide)]
-  · rw [cliffordInvariant_eq_hasseInvariant_mul, hs2, hd2, hr2,
-      BrauerGroup.quaternionClassOnSquareClasses_zero_right, one_pow, mul_one, one_mul,
-      (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff (Nat.choose 5 4)).mpr
-        (by decide)]
 
 end RegularFormClass
 

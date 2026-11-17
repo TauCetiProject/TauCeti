@@ -31,7 +31,11 @@ equal values on isometric binary forms (Lam V.3.18).
 
 Every symbol is `2`-torsion, so the Hasse invariant takes values in the `2`-torsion of the Brauer
 group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the forms `⟨1, 1⟩` and
-`⟨-1, -1⟩` have the same rank and the same discriminant, and different Hasse invariants.
+`⟨-1, -1⟩` have the same rank and the same discriminant, and different Hasse invariants. Over any
+semireal field `K`, however, `(rank, discr, hasseInvariant)` still does not classify regular forms:
+`⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share rank `4`, trivial discriminant, and trivial Hasse
+invariant (`[(-1, -1)]^C(4, 2) = 1`), yet are not isometric because `-1` is not a sum of squares in
+`K`.
 
 ## Main definitions
 
@@ -66,6 +70,9 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
+* `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one`: over any semireal field,
+  `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` witness that rank, discriminant, and Hasse invariant do
+  not classify regular forms.
 
 ## References
 
@@ -323,6 +330,44 @@ theorem hasseInvariant_nsmul_mk_rankOne (n : ℕ) (a : Kˣ) :
 theorem hasseInvariant_nsmul_one (n : ℕ) :
     hasseInvariant (n • (1 : RegularFormClass K)) = 1 := by
   rw [← mk_rankOne_one, hasseInvariant_nsmul_mk_rankOne, quaternionClass_one_left, one_pow]
+
+/-! ### Non-classification over semireal fields -/
+
+section Semireal
+
+variable [IsSemireal K]
+
+/-- **Rank, discriminant, and Hasse invariant do not classify regular forms over a semireal
+field**: `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` both have rank `4`, discriminant `0`, and Hasse
+invariant `1` (`[(-1, -1)]` occurs `C(4, 2) = 6` times), yet they are not isometric because `-1`
+is not a sum of squares in `K`. In particular this holds over every ordered field, such as `ℚ`
+and `ℝ`. -/
+theorem four_nsmul_one_ne_four_nsmul_neg_one :
+    let posFour : RegularFormClass K := 4 • 1
+    let negFour : RegularFormClass K :=
+      4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩
+    posFour.rank = 4 ∧ negFour.rank = 4 ∧
+      discr posFour = 0 ∧ discr negFour = 0 ∧
+      hasseInvariant posFour = 1 ∧ hasseInvariant negFour = 1 ∧
+      posFour ≠ negFour := by
+  dsimp only
+  refine ⟨by rw [rank_nsmul, rank_one, mul_one], by rw [rank_nsmul, rank_mk, mul_one],
+    by rw [discr_nsmul, discr_one, smul_zero], ?_,
+    hasseInvariant_nsmul_one 4, ?_, ?_⟩
+  · rw [discr_nsmul, discr_mk, Fin.prod_univ_one, ← squareClass_pow]
+    exact (squareClass_eq_zero_iff _).mpr ⟨(-1 : Kˣ) ^ 2, by rw [← pow_add]⟩
+  · rw [hasseInvariant_nsmul_mk_rankOne,
+      (quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 4 2)).mpr (by decide)]
+  · intro h
+    rw [← mk_rankOne_one, nsmul_mk_rankOne, nsmul_mk_rankOne, mk_eq_mk_iff] at h
+    obtain ⟨e⟩ := h
+    have hneg : presentedForm (⟨4, fun _ => (1 : Kˣ)⟩ : RegularFormPresentation K)
+        (e.symm (Pi.single 0 1)) = -1 := by
+      rw [e.symm.map_app, presentedForm_apply]
+      simp [Pi.single_apply]
+    exact IsSemireal.not_isSumSq_neg_one K (by rw [← hneg, presentedForm_apply]; simp)
+
+end Semireal
 
 end RegularFormClass
 
