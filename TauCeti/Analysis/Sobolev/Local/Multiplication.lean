@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Mollification
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
@@ -179,6 +180,53 @@ theorem MemWkpLoc.bilin [FiniteDimensional ℝ F] [CompleteSpace H] (B : F →L[
   let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le.trans hqp⟩
   exact hf.bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_of_holderTriple hp le_rfl) hg
 
+omit [FiniteDimensional ℝ G] in
+/-- Smooth-factor weak Leibniz identity for a continuous bilinear map against a test function:
+expanding the smooth factor `F_sm` in a finite basis of `F` reduces to scalar smooth multiplication
+(`HasWeakLineDerivOn.contDiff_smul`) and `HasWeakLineDerivOn.sum`. -/
+private theorem integral_lineDeriv_smul_bilin_of_contDiff [FiniteDimensional ℝ F] [CompleteSpace H]
+    (B : F →L[ℝ] G →L[ℝ] H) {g g' : ℂ → G} {u : ℂ} (hg : HasWeakLineDerivOn volume Ω g g' u)
+    {F_sm : ℂ → F} (hF : ContDiff ℝ ∞ F_sm) (ψ : 𝓓(Ω, ℝ)) :
+    (∫ z, (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (F_sm z) (g z)) +
+        (∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) =
+      -∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (g' z) := by
+  let b := Module.finBasis ℝ F
+  let ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
+  have hBrep (x : F) (y : G) : ∑ i, ℓ i x • B (b i) y = B x y := by
+    have hx : ∑ i, ℓ i x • b i = x := by simp [ℓ]
+    conv_rhs => rw [← hx, map_sum, sum_apply]
+    simp [map_smul]
+  have hfd (i : Fin (finrank ℝ F)) (z : ℂ) :
+      fderiv ℝ (fun w => ℓ i (F_sm w)) z u = ℓ i (fderiv ℝ F_sm z u) := by
+    rw [fderiv_fun_comp z (ℓ i).differentiableAt (hF.differentiable (by simp) z),
+      ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply]
+  have hc (i : Fin (finrank ℝ F)) : ContDiff ℝ ∞ fun w => ℓ i (F_sm w) :=
+    (ℓ i).contDiff.comp hF
+  have hsum := HasWeakLineDerivOn.sum (F := H) Finset.univ fun i _ =>
+    (hg.clm_comp (B (b i))).contDiff_smul (hc i)
+  have hbilin : HasWeakLineDerivOn volume Ω (fun z => B (F_sm z) (g z))
+      (fun z => B (F_sm z) (g' z) + B (fderiv ℝ F_sm z u) (g z)) u :=
+    (hsum.congr_ae (.of_forall fun z => hBrep (F_sm z) (g z))).congr_ae_deriv
+      (.of_forall fun z => by simp only [Finset.sum_add_distrib, hfd, hBrep])
+  have hDFu_c : Continuous fun z => fderiv ℝ F_sm z u :=
+    (ContinuousLinearMap.apply ℝ F u).continuous.comp
+      ((hF.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))).continuous_fderiv one_ne_zero)
+  have h1 : Integrable (fun z => (ψ : ℂ → ℝ) z • B (F_sm z) (g' z)) volume :=
+    ψ.integrable_smul <| hg.locallyIntegrableOn_deriv.continuousOn_clm_apply
+      Ω.isOpen.isLocallyClosed (B.continuous.comp hF.continuous).continuousOn
+  have h2 : Integrable (fun z => (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) volume :=
+    ψ.integrable_smul <| hg.locallyIntegrableOn.continuousOn_clm_apply
+      Ω.isOpen.isLocallyClosed (B.continuous.comp hDFu_c).continuousOn
+  have hibp := hbilin.integral_lineDeriv_smul_eq_neg_integral_smul ψ
+  have hsplit : ∫ z, (ψ : ℂ → ℝ) z • (B (F_sm z) (g' z) + B (fderiv ℝ F_sm z u) (g z)) =
+      (∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (g' z)) +
+        ∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z) := by
+    rw [← integral_add h1 h2]
+    exact integral_congr_ae (.of_forall fun z => smul_add _ _ _)
+  simp only [← TestFunction.lineDerivOp_apply] at hibp
+  rw [hsplit] at hibp
+  exact eq_neg_of_add_eq_zero_left (by rw [hibp]; abel)
+
 /-- **The weak Leibniz rule for mixed-exponent local Sobolev maps.** For `2 < p ≤ ∞` and
 `1 ≤ q ≤ ∞`, if `f ∈ W^{1,p}_loc(Ω; F)` has weak derivative `Df` and `g ∈ W^{1,q}_loc(Ω; G)` has
 weak derivative `Dg` with `F` and `G` finite-dimensional and `H` complete, then for any continuous
@@ -222,82 +270,15 @@ theorem HasWeakFDerivOn.bilin [FiniteDimensional ℝ F] [CompleteSpace H]
   refine hasWeakLineDerivOn_iff_testFunction.2
     ⟨inferInstance, hfg_loc, hDfg_loc.add hfDg_loc, fun ψ => ?_⟩
   have hDgu := hDg.hasWeakLineDerivOn u
-  have hg_loc : LocallyIntegrableOn g Ω := hDgu.locallyIntegrableOn
-  have hDgu_loc : LocallyIntegrableOn (fun z => Dg z u) Ω := hDgu.locallyIntegrableOn_deriv
-  -- Smooth-factor Leibniz identity obtained by expanding `F_sm` in a finite basis of `F`.
-  let b := Module.finBasis ℝ F
-  let ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
-  have hsmooth {F_sm : ℂ → F} (hF : ContDiff ℝ ∞ F_sm) :
-      (∫ z, (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (F_sm z) (g z)) +
-          (∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) =
-        -∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (Dg z u) := by
-    have hF1 : ContDiff ℝ 1 F_sm := hF.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))
-    have hDFu_c : Continuous fun z => fderiv ℝ F_sm z u :=
-      (ContinuousLinearMap.apply ℝ F u).continuous.comp (hF1.continuous_fderiv one_ne_zero)
-    have hi1 (i : Fin (finrank ℝ F)) :
-        Integrable (fun z => (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (ℓ i (F_sm z) • b i) (g z)) volume := by
-      have hloc1 : LocallyIntegrableOn (fun z => ℓ i (F_sm z) • B (b i) (g z)) Ω :=
-        (memLpLoc_one_iff_locallyIntegrableOn hloc).1 <|
-          (hg1.memLpLoc.clm_comp (B (b i))).continuousOn_smul
-            ((ℓ i).continuous.comp hF.continuous).continuousOn
-      simpa only [map_smul, smul_apply] using (∂_{u} ψ).integrable_smul hloc1
-    have hi2 (i : Fin (finrank ℝ F)) :
-        Integrable (fun z => (ψ : ℂ → ℝ) z • B (ℓ i (fderiv ℝ F_sm z u) • b i) (g z)) volume := by
-      have hloc2 : LocallyIntegrableOn (fun z => ℓ i (fderiv ℝ F_sm z u) • B (b i) (g z)) Ω :=
-        (memLpLoc_one_iff_locallyIntegrableOn hloc).1 <|
-          (hg1.memLpLoc.clm_comp (B (b i))).continuousOn_smul
-            ((ℓ i).continuous.comp hDFu_c).continuousOn
-      simpa only [map_smul, smul_apply] using ψ.integrable_smul hloc2
-    have hi3 (i : Fin (finrank ℝ F)) :
-        Integrable (fun z => (ψ : ℂ → ℝ) z • B (ℓ i (F_sm z) • b i) (Dg z u)) volume := by
-      have hloc3 : LocallyIntegrableOn (fun z => ℓ i (F_sm z) • B (b i) (Dg z u)) Ω :=
-        (memLpLoc_one_iff_locallyIntegrableOn hloc).1 <|
-          ((hDg1.clm_comp (ContinuousLinearMap.apply ℝ G u)).clm_comp (B (b i))).continuousOn_smul
-            ((ℓ i).continuous.comp hF.continuous).continuousOn
-      simpa only [map_smul, smul_apply] using ψ.integrable_smul hloc3
-    have hterm (i : Fin (finrank ℝ F)) :
-        (∫ z, (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (ℓ i (F_sm z) • b i) (g z)) +
-            (∫ z, (ψ : ℂ → ℝ) z • B (ℓ i (fderiv ℝ F_sm z u) • b i) (g z)) =
-          -∫ z, (ψ : ℂ → ℝ) z • B (ℓ i (F_sm z) • b i) (Dg z u) := by
-      let ψi : 𝓓(Ω, ℝ) :=
-        TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℝ ℝ) ((ℓ i).contDiff.comp hF) ψ
-      have hibp := congrArg (B (b i)) (hDgu.integral_lineDeriv_smul_eq_neg_integral_smul ψi)
-      have hψi_l : Integrable (fun z => lineDeriv ℝ (ψi : ℂ → ℝ) z u • g z) volume := by
-        simpa only [← TestFunction.lineDerivOp_apply] using (∂_{u} ψi).integrable_smul hg_loc
-      rw [← (B (b i)).integral_comp_comm hψi_l, map_neg,
-        ← (B (b i)).integral_comp_comm (ψi.integrable_smul hDgu_loc)] at hibp
-      rw [← integral_add (hi1 i) (hi2 i)]
-      refine (integral_congr_ae (.of_forall fun z => ?_)).trans
-        (hibp.trans (congrArg Neg.neg (integral_congr_ae (.of_forall fun z => ?_))))
-      · have hd1 : HasFDerivAt (fun w => ℓ i (F_sm w)) ((ℓ i).comp (fderiv ℝ F_sm z)) z :=
-          (ℓ i).hasFDerivAt.comp z (hF.differentiable (by simp) z).hasFDerivAt
-        have hd2 : HasFDerivAt (ψ : ℂ → ℝ) (fderiv ℝ (ψ : ℂ → ℝ) z) z :=
-          (ψ.contDiff.differentiable (by simp) z).hasFDerivAt
-        have hψi_coe : (ψi : ℂ → ℝ) = (fun w => ℓ i (F_sm w)) * (ψ : ℂ → ℝ) := by
-          ext w; simp [ψi, mul_comm]
-        have hld : lineDeriv ℝ (ψi : ℂ → ℝ) z u =
-            (∂_{u} ψ : 𝓓(Ω, ℝ)) z * ℓ i (F_sm z) + (ψ : ℂ → ℝ) z * ℓ i (fderiv ℝ F_sm z u) := by
-          rw [hψi_coe, ((hd1.mul hd2).hasLineDerivAt u).lineDeriv]
-          simp [TestFunction.lineDerivOp_apply_eq_fderiv ψ u z, mul_comm, add_comm]
-        rw [hld, add_smul, map_add, map_smul, map_smul, map_smul, map_smul,
-          smul_apply, smul_apply, smul_smul, smul_smul]
-      · simp [ψi, map_smul, smul_smul]
-    have hsum_eq := Finset.sum_congr (s₁ := Finset.univ) rfl fun i _ => hterm i
-    rw [Finset.sum_add_distrib, Finset.sum_neg_distrib] at hsum_eq
-    have hrep (x : F) (y : G) : ∑ i, B (ℓ i x • b i) y = B x y := by
-      have hx : ∑ i, ℓ i x • b i = x := by simp [ℓ]
-      conv_rhs => rw [← hx, map_sum, sum_apply]
-    rw [← integral_finsetSum _ fun i _ => hi1 i, ← integral_finsetSum _ fun i _ => hi2 i,
-      ← integral_finsetSum _ fun i _ => hi3 i] at hsum_eq
-    simpa only [← Finset.smul_sum, hrep] using hsum_eq
   -- Pass from the mollified sequence `fn n` to `f`.
   obtain ⟨fn, hfn, hlim_f, hlim_Df⟩ :=
     exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn B hp1.le hfi hDf hDfp
       ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   have hlim := tendsto_nhds_unique
-    ((hlim_f (∂_{u} ψ) (ψ.tsupport_lineDerivOp_subset u) hg_loc).add
+    ((hlim_f (∂_{u} ψ) (ψ.tsupport_lineDerivOp_subset u) hDgu.locallyIntegrableOn).add
       (hlim_Df u ψ Subset.rfl hgp'))
-    ((hlim_f ψ Subset.rfl hDgu_loc).neg.congr fun n => (hsmooth (hfn n)).symm)
+    ((hlim_f ψ Subset.rfl hDgu.locallyIntegrableOn_deriv).neg.congr fun n =>
+      (integral_lineDeriv_smul_bilin_of_contDiff B hDgu (hfn n) ψ).symm)
   have hψu : (fun z => lineDeriv ℝ (ψ : ℂ → ℝ) z u • B (f z) (g z)) =
       fun z => (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (f z) (g z) :=
     funext fun z => by rw [TestFunction.lineDerivOp_apply]
