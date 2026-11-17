@@ -337,14 +337,8 @@ abbrev mappingCone {K L : CochainComplex.Plus C} (φ : K ⟶ L) : CochainComplex
   ⟨CochainComplex.mappingCone φ.hom, by
     obtain ⟨a, _⟩ := K.property
     obtain ⟨b, _⟩ := L.property
-    refine ⟨min (a - 1) b, ?_⟩
-    rw [CochainComplex.isStrictlyGE_iff]
-    intro i hi
-    have hK : IsZero (K.obj.X (i + 1)) := K.obj.isZero_of_isStrictlyGE a (i + 1) (by lia)
-    have hL : IsZero (L.obj.X i) := L.obj.isZero_of_isStrictlyGE b i (by lia)
-    rw [IsZero.iff_id_eq_zero]
-    exact CochainComplex.mappingCone.ext_from φ.hom (i + 1) i rfl
-      (hK.eq_of_src _ _) (hL.eq_of_src _ _)⟩
+    exact ⟨min (a - 1) b,
+      CochainComplex.isStrictlyGE_mappingCone φ.hom a b (min (a - 1) b) (by lia) (by lia)⟩⟩
 
 /-- The triangle `K ⟶ L ⟶ mappingCone φ ⟶ K⟦1⟧` in `CochainComplex.Plus C`. -/
 abbrev mappingConeTriangle {K L : CochainComplex.Plus C} (φ : K ⟶ L) :

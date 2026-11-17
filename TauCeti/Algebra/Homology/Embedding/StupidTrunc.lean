@@ -103,17 +103,6 @@ lemma πStupidTruncLE_f_of_lt {i : ℤ} (hi : n < i) :
     (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i = 0 :=
   (K.isZero_stupidTrunc_embeddingUpIntLE_X n hi).eq_of_tgt _ _
 
-/-- The projection `K ⟶ σ^{≤ n} K` onto the brutal truncation is an epimorphism: it is an
-isomorphism in degrees `≤ n` and its codomain vanishes in degrees `> n`. -/
-instance epi_πStupidTrunc : Epi (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)) := by
-  refine HomologicalComplex.epi_of_epi_f _ fun i ↦ ?_
-  by_cases hi : i ≤ n
-  · have : IsIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i) :=
-      K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n) (i := (n - i).natAbs) (i' := i)
-        (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])
-    infer_instance
-  · exact ⟨fun _ _ _ ↦ (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by lia)).eq_of_src _ _⟩
-
 section Top
 
 variable [K.IsStrictlyLE n]
