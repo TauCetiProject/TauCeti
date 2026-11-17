@@ -54,12 +54,10 @@ namespace TauCeti
 
 universe u
 
-variable {k A B : Type*} {M : Type u} [Field k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
-  [AddCommGroup M] [Module k M]
-
 section TensorModule
 
-variable [Module (A ⊗[k] B) M]
+variable {k A B M : Type*} [CommSemiring k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
+  [AddCommGroup M] [Module k M] [Module (A ⊗[k] B) M]
 
 /-- **A subspace stable under both factors.** In a simple `A ⊗[k] B`-module, a `k`-subspace
 stable under the actions of `a ⊗ 1` and of `1 ⊗ b` is `⊥` or `⊤`: these elements generate
@@ -87,6 +85,9 @@ theorem eq_bot_or_eq_top_of_tmul_smul_mem [IsSimpleModule (A ⊗[k] B) M] (p : S
     exact hm'
 
 end TensorModule
+
+variable {k A B : Type*} {M : Type u} [Field k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
+  [AddCommGroup M] [Module k M]
 
 /-! ### Two commuting actions with no common invariant subspace -/
 
