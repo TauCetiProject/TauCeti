@@ -366,11 +366,8 @@ theorem multiplierHom_comp_starAlgHom :
     I.multiplierHom.comp I.starAlgHom = DoubleCentralizer.coeHom :=
   NonUnitalStarAlgHom.ext fun x => by simp
 
-theorem norm_multiplierHom_le (a : A) : ‖I.multiplierHom a‖ ≤ ‖a‖ := by
-  let e := DoubleCentralizer.congr I.toNonUnitalStarSubalgebraEquiv.symm
-  rw [multiplierHom, NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
-    NonUnitalStarAlgHom.norm_map e (EmbeddingLike.injective e)]
-  exact I.toNonUnitalStarSubalgebra.norm_multiplierHom_le _ a
+theorem norm_multiplierHom_le (a : A) : ‖I.multiplierHom a‖ ≤ ‖a‖ :=
+  NonUnitalStarAlgHom.norm_apply_le I.multiplierHom a
 
 theorem multiplierHom_eq_zero_iff {a : A} :
     I.multiplierHom a = 0 ↔ a ∈ I.leftAnnihilator := by
