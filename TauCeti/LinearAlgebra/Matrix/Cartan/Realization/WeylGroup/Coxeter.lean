@@ -38,8 +38,10 @@ or finite-dimensionality of `H`:
   `(w αᵢ)^∨ = w(hᵢ)` (`R.realCoroot`) and the **real reflection** `s_{w αᵢ} = w sᵢ w⁻¹`
   (`R.realReflection`) are independent of the presentation `α = w(αᵢ)`, and reflections are
   attached exclusively to real roots;
-* rank-one and rank-two realizations specialize to order `2` (`A₁`), `DihedralGroup 4` of order `8`
-  (`B₂`), and the infinite dihedral group `DihedralGroup 0` (affine `A₁⁽¹⁾`).
+* rank-one realizations specialize to order `2` (`A₁`, over any field of characteristic not `2`,
+  with the unique simple reflection acting as `-id` on minimal realizations), while rank-two
+  realizations over characteristic-zero fields specialize to `DihedralGroup 4` of order `8` (`B₂`)
+  and the infinite dihedral group `DihedralGroup 0` (affine `A₁⁽¹⁾`).
 
 ## Main definitions
 
@@ -818,8 +820,9 @@ end RealRootsCoxeter
 
 section RankOneAndTwo
 
-/-- **Rank-one Weyl group (`|I| = 1`, e.g. type `A₁`)**: the Weyl group has cardinality `2`. -/
-theorem card_weylGroup_of_unique {I K H : Type*} [Unique I] [Field K] [CharZero K]
+/-- **Rank-one Weyl group (`|I| = 1`, e.g. type `A₁`)**: over a field of characteristic not `2`,
+the Weyl group has cardinality `2`. -/
+theorem card_weylGroup_of_unique {I K H : Type*} [Unique I] [Field K] [NeZero (2 : K)]
     [AddCommGroup H] [Module K H] {A : Matrix I I K}
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) :
     Nat.card (R.weylGroup hdiag) = 2 := by
@@ -841,9 +844,9 @@ theorem card_weylGroup_of_unique {I K H : Type*} [Unique I] [Field K] [CharZero 
   rw [← Nat.card_congr (Equiv.ofBijective _ hf)]; simp
 
 /-- **Rank-one minimal realization (`A₁`, `s(ω) = -ω`)**: on the dual of a minimal rank-one
-realization over a characteristic-zero field, the unique simple reflection acts by `-id` on every
-weight (in particular negating the fundamental weight `ω`). -/
-theorem simpleReflection_eq_neg_of_isMinimal {I K H : Type*} [Unique I] [Field K] [CharZero K]
+realization over a field of characteristic not `2`, the unique simple reflection acts by `-id` on
+every weight (in particular negating the fundamental weight `ω`). -/
+theorem simpleReflection_eq_neg_of_isMinimal {I K H : Type*} [Unique I] [Field K] [NeZero (2 : K)]
     [AddCommGroup H] [Module K H] {A : Matrix I I K}
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) (hmin : R.IsMinimal)
     (φ : Dual K H) : R.simpleReflection hdiag default φ = -φ := by
@@ -868,8 +871,9 @@ theorem simpleReflection_eq_neg_of_isMinimal {I K H : Type*} [Unique I] [Field K
   rw [R.simpleReflection_apply_apply, hspan h, map_smul, simpleCoreflection_coroot_self,
     smul_neg, map_neg, ← hspan h, LinearMap.neg_apply]
 
-/-- **Type `A₁` check (`CartanMatrix.A 1`)**: the Weyl group has order `2`. -/
-theorem card_weylGroup_A_one {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
+/-- **Type `A₁` check (`CartanMatrix.A 1`)**: over a field of characteristic not `2`, the Weyl group
+has order `2`. -/
+theorem card_weylGroup_A_one {K H : Type*} [Field K] [NeZero (2 : K)] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((CartanMatrix.A 1).map (Int.cast : ℤ → K)) H) :
     Nat.card (R.weylGroup (mapIntCast_diag fun i ↦ congrFun (CartanMatrix.A_diag 1) i)) = 2 :=
   R.card_weylGroup_of_unique _
@@ -897,14 +901,6 @@ noncomputable def dihedralGroupMulEquivWeyl {I K H : Type*} [Field K] [CharZero 
     (R.orderOf_weylSimple_mul_weylSimple hdiag hoff hzero i j)
     (by rw [hrange, R.closure_range_weylSimple])
 
-/-- **Type `B₂` Coxeter entry**: `a₀₁ a₁₀ = (-2)(-1) = 2`, so `m₀₁ = 4` (not `3`). -/
-@[simp]
-theorem cartanCoxeterMatrix_B_two : cartanCoxeterMatrix (CartanMatrix.B 2) 0 1 = 4 := by
-  have hprod : CartanMatrix.B 2 0 1 * CartanMatrix.B 2 1 0 = 2 := by
-    rw [CartanMatrix.B_two]; decide
-  rw [cartanCoxeterMatrix_of_ne_of_le (CartanMatrix.B 2) (by decide) (by omega), hprod,
-    coxeterOrder_two]
-
 /-- **Type `B₂` Weyl group**: isomorphic to `DihedralGroup 4`. -/
 noncomputable def dihedralGroupFourEquivWeylBTwo {K H : Type*} [Field K] [CharZero K]
     [AddCommGroup H] [Module K H]
@@ -921,13 +917,6 @@ theorem card_weylGroup_B_two {K H : Type*} [Field K] [CharZero K] [AddCommGroup 
     (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H) :
     Nat.card (R.weylGroup (mapIntCast_diag (CartanMatrix.B_diag 2))) = 8 := by
   rw [← Nat.card_congr (R.dihedralGroupFourEquivWeylBTwo).toEquiv, DihedralGroup.nat_card]
-
-/-- **Affine `A₁⁽¹⁾` Coxeter entry**: for `A = !![2, -2; -2, 2]`, `a₀₁ a₁₀ = 4`, so `m₀₁ = 0`
-(encoding `∞`). -/
-@[simp]
-theorem cartanCoxeterMatrix_affine_A_one :
-    cartanCoxeterMatrix !![(2 : ℤ), -2; -2, 2] 0 1 = 0 :=
-  cartanCoxeterMatrix_of_ne_of_lt !![(2 : ℤ), -2; -2, 2] (by decide) (by decide)
 
 /-- **Affine `A₁⁽¹⁾` Weyl group**: isomorphic to the infinite dihedral group `DihedralGroup 0`. -/
 noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [CharZero K]

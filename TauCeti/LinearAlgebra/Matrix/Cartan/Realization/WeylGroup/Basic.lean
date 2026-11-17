@@ -8,8 +8,8 @@ module
 public import Mathlib.GroupTheory.Coxeter.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Reflection
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.RootLattice
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -26,7 +26,8 @@ pairing, fixes the Cartan center pointwise, identifies the Weyl group of an enla
 of any sub-realization supplementing the Cartan center (`R.restrictWeylEquiv`) compatibly with the
 root lattice (`R.restrictRootLatticeEquiv`), and stabilizes `Q`, `Y` and `P`.
 
-For an integral matrix `A`, `TauCeti.cartanCoxeterMatrix A` sets `mᵢᵢ = 1`, `mᵢⱼ = 2, 3, 4, 6` when
+For an integral matrix `A`, the associated Coxeter matrix `TauCeti.cartanCoxeterMatrix A` (defined
+in `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Matrix`) sets `mᵢᵢ = 1`, `mᵢⱼ = 2, 3, 4, 6` when
 `i ≠ j` and `aᵢⱼ aⱼᵢ = 0, 1, 2, 3`, and `mᵢⱼ = 0` (encoding `∞`) when `i ≠ j` and `aᵢⱼ aⱼᵢ ≥ 4`.
 Whenever `A` has diagonal `2` and symmetric zero pattern, the simple reflections satisfy
 `(sᵢ sⱼ) ^ mᵢⱼ = 1`, giving a surjective homomorphism `R.coxeterToWeyl` onto `R.weylGroup` (proved
@@ -34,7 +35,6 @@ an isomorphism in `TauCeti.LinearAlgebra.Matrix.Cartan.Realization.WeylGroup.Cox
 
 ## Main definitions
 
-* `TauCeti.cartanCoxeterMatrix`: the Kac–Moody Coxeter matrix of an integral matrix `A`.
 * `TauCeti.CartanRealization.simpleReflection`, `TauCeti.CartanRealization.simpleCoreflection`,
   `TauCeti.CartanRealization.weylGroup`, `TauCeti.CartanRealization.weylSimple`,
   `TauCeti.CartanRealization.length`, `TauCeti.CartanRealization.corootAction`.
@@ -65,81 +65,6 @@ public section
 open Module Polynomial.Chebyshev
 
 namespace TauCeti
-
-/-! ### The Coxeter matrix of a generalized Cartan matrix -/
-
-section CoxeterMatrix
-
-/-- **The Coxeter matrix attached to an integral Cartan matrix.** On the diagonal the entry is `1`.
-Off the diagonal it translates the Cartan product `aᵢⱼ aⱼᵢ` into `2, 3, 4, 6` when
-`aᵢⱼ aⱼᵢ = 0, 1, 2, 3` (`TauCeti.coxeterOrder`), and into `0` (Mathlib's encoding of an infinite
-order) otherwise — in particular when `aᵢⱼ aⱼᵢ = 4` at two distinct nodes, as in affine `A₁⁽¹⁾`. -/
-noncomputable def cartanCoxeterMatrix {I : Type*} (A : Matrix I I ℤ) : CoxeterMatrix I := by
-  classical
-  exact
-    { M := Matrix.of fun i j ↦
-        if i = j then 1
-        else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0
-      isSymm := Matrix.IsSymm.ext fun i j ↦ by
-        simp only [Matrix.of_apply, eq_comm (a := i), mul_comm (A i j)]
-      diagonal i := by simp
-      off_diagonal i j hij := by
-        simp only [Matrix.of_apply, hij, ↓reduceIte]
-        split_ifs with hle
-        · rcases lt_or_ge (A i j * A j i) 0 with hlt | hge
-          · have h0 : coxeterOrder (A i j * A j i) = 0 := coxeterOrder_eq_zero_iff.mpr <| by
-              simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega
-            omega
-          · have hmem : A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
-              simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega
-            have := two_le_coxeterOrder hmem
-            omega
-        · decide }
-
-/-- Unfolded entry formula for `TauCeti.cartanCoxeterMatrix`. -/
-theorem cartanCoxeterMatrix_apply {I : Type*} [DecidableEq I] (A : Matrix I I ℤ) (i j : I) :
-    cartanCoxeterMatrix A i j =
-      if i = j then 1
-      else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0 := by
-  -- Reconcile the classical `DecidableEq` inside `cartanCoxeterMatrix` with the caller's instance.
-  change (letI := Classical.decEq I;
-    if i = j then 1 else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0) = _
-  congr 1
-
-theorem cartanCoxeterMatrix_self {I : Type*} (A : Matrix I I ℤ) (i : I) :
-    cartanCoxeterMatrix A i i = 1 :=
-  (cartanCoxeterMatrix A).diagonal i
-
-theorem cartanCoxeterMatrix_of_ne {I : Type*} (A : Matrix I I ℤ) {i j : I} (hij : i ≠ j) :
-    cartanCoxeterMatrix A i j =
-      if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0 := by
-  classical simp [cartanCoxeterMatrix_apply, hij]
-
-@[simp]
-theorem cartanCoxeterMatrix_of_ne_of_le {I : Type*} (A : Matrix I I ℤ) {i j : I} (hij : i ≠ j)
-    (h : A i j * A j i ≤ 3) : cartanCoxeterMatrix A i j = coxeterOrder (A i j * A j i) := by
-  simp [cartanCoxeterMatrix_of_ne A hij, h]
-
-@[simp]
-theorem cartanCoxeterMatrix_of_ne_of_lt {I : Type*} (A : Matrix I I ℤ) {i j : I} (hij : i ≠ j)
-    (h : 3 < A i j * A j i) : cartanCoxeterMatrix A i j = 0 := by
-  simp [cartanCoxeterMatrix_of_ne A hij, not_le.mpr h]
-
-/-- When all off-diagonal Cartan products lie in `{0, 1, 2, 3}`, `cartanCoxeterMatrix` agrees with
-`coxeterMatrixOfCartanMatrix`. -/
-theorem cartanCoxeterMatrix_eq_coxeterMatrixOfCartanMatrix {I : Type*} (A : Matrix I I ℤ)
-    (hdiag : ∀ i, A i i = 2)
-    (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) :
-    cartanCoxeterMatrix A = coxeterMatrixOfCartanMatrix A hdiag hmem := by
-  ext i j
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  · have hle : A i j * A j i ≤ 3 := by
-      have := hmem i j hij
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at this; omega
-    rw [cartanCoxeterMatrix_of_ne_of_le A hij hle, coxeterMatrixOfCartanMatrix_apply]
-
-end CoxeterMatrix
 
 namespace CartanRealization
 
