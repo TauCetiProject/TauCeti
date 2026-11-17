@@ -32,8 +32,9 @@ strict density, and ball density (`denseRange_coe`, `closure_image_closedBall`).
 ## Implementation notes
 
 Algebraic structure is transported along `DoubleCentralizerStrict.equiv` in an `@[expose]` section
-so transport and topology/uniformity agreement hold definitionally downstream; seminorms are marked
-`@[no_expose]` and accessed via `seminorm_apply` and `seminormFamily_apply`.
+so transport and topology/uniformity agreement hold definitionally downstream; `coeHom`,
+`inducingFn`, `seminorm`, `seminormFamily`, `uniformEquivDoubleCentralizer`, and
+`homeomorphDoubleCentralizer` are marked `@[no_expose]` and accessed via their `*_apply` lemmas.
 
 ## References
 
@@ -218,10 +219,10 @@ def starAlgEquiv : 𝓜ₛ(𝕜, A) ≃⋆ₐ[𝕜] 𝓜(𝕜, A) where
   toDoubleCentralizer_injective (DoubleCentralizer.coe_star a)
 
 /-- The canonical inclusion `A →⋆ₙₐ[𝕜] 𝓜ₛ(𝕜, A)` as a nonunital `⋆`-algebra homomorphism. -/
-noncomputable def coeHom : A →⋆ₙₐ[𝕜] 𝓜ₛ(𝕜, A) :=
+@[no_expose] noncomputable def coeHom : A →⋆ₙₐ[𝕜] 𝓜ₛ(𝕜, A) :=
   starAlgEquiv.symm.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom
 
-@[simp] theorem coeHom_apply (a : A) : (coeHom a : 𝓜ₛ(𝕜, A)) = (a : 𝓜ₛ(𝕜, A)) := rfl
+@[simp] theorem coeHom_apply (a : A) : (coeHom a : 𝓜ₛ(𝕜, A)) = (a : 𝓜ₛ(𝕜, A)) := (rfl)
 
 end Star
 
@@ -237,14 +238,14 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
 variable (𝕜 A) in
 /-- The linear map inducing the strict topology: `m` is sent to `a ↦ (m.fst a, m.snd a)` valued in
 the `L¹`-product `WithLp 1 (A × A)`. -/
-noncomputable def inducingFn : 𝓜ₛ(𝕜, A) →ₗ[𝕜] (A → WithLp 1 (A × A)) where
+@[no_expose] noncomputable def inducingFn : 𝓜ₛ(𝕜, A) →ₗ[𝕜] (A → WithLp 1 (A × A)) where
   toFun m a := WithLp.toLp 1 (m.toDoubleCentralizer.fst a, m.toDoubleCentralizer.snd a)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 @[simp] theorem inducingFn_apply (m : 𝓜ₛ(𝕜, A)) (a : A) :
     inducingFn 𝕜 A m a = WithLp.toLp 1 (m.toDoubleCentralizer.fst a, m.toDoubleCentralizer.snd a) :=
-  rfl
+  (rfl)
 
 theorem inducingFn_injective : Function.Injective (inducingFn 𝕜 A) := fun _ _ h =>
   toDoubleCentralizer_injective <| DoubleCentralizer.ext_fst_snd
@@ -477,22 +478,28 @@ theorem uniformContinuous_toDoubleCentralizer :
 variable (𝕜 A) in
 /-- When `A` is unital, the strict topology and the norm topology on `𝓜(𝕜, A)` coincide via a
 uniform equivalence. -/
-noncomputable def uniformEquivDoubleCentralizer : 𝓜ₛ(𝕜, A) ≃ᵤ 𝓜(𝕜, A) where
+@[no_expose] noncomputable def uniformEquivDoubleCentralizer : 𝓜ₛ(𝕜, A) ≃ᵤ 𝓜(𝕜, A) where
   __ := equiv
   uniformContinuous_toFun := uniformContinuous_toDoubleCentralizer
   uniformContinuous_invFun := uniformContinuous_ofDoubleCentralizer
 
+@[simp] theorem uniformEquivDoubleCentralizer_apply (m : 𝓜ₛ(𝕜, A)) :
+    uniformEquivDoubleCentralizer 𝕜 A m = m.toDoubleCentralizer := (rfl)
+
+@[simp] theorem uniformEquivDoubleCentralizer_symm_apply (m : 𝓜(𝕜, A)) :
+    (uniformEquivDoubleCentralizer 𝕜 A).symm m = ofDoubleCentralizer m := (rfl)
+
 variable (𝕜 A) in
 /-- When `A` is unital, the strict topology and the norm topology on `𝓜(𝕜, A)` coincide via a
 homeomorphism. -/
-noncomputable def homeomorphDoubleCentralizer : 𝓜ₛ(𝕜, A) ≃ₜ 𝓜(𝕜, A) :=
+@[no_expose] noncomputable def homeomorphDoubleCentralizer : 𝓜ₛ(𝕜, A) ≃ₜ 𝓜(𝕜, A) :=
   (uniformEquivDoubleCentralizer 𝕜 A).toHomeomorph
 
 @[simp] theorem homeomorphDoubleCentralizer_apply (m : 𝓜ₛ(𝕜, A)) :
-    homeomorphDoubleCentralizer 𝕜 A m = m.toDoubleCentralizer := rfl
+    homeomorphDoubleCentralizer 𝕜 A m = m.toDoubleCentralizer := (rfl)
 
 @[simp] theorem homeomorphDoubleCentralizer_symm_apply (m : 𝓜(𝕜, A)) :
-    (homeomorphDoubleCentralizer 𝕜 A).symm m = ofDoubleCentralizer m := rfl
+    (homeomorphDoubleCentralizer 𝕜 A).symm m = ofDoubleCentralizer m := (rfl)
 
 end Unital
 

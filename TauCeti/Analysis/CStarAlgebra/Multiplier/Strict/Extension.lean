@@ -136,6 +136,11 @@ def congrUniformEquiv (e : A ≃⋆ₐ[ℂ] B) : 𝓜ₛ(ℂ, A) ≃ᵤ 𝓜ₛ(
   uniformContinuous_invFun := uniformContinuous_of_continuousAt_zero
     (congr e.symm).toAddEquiv.toAddMonoidHom (continuous_congr e.symm).continuousAt
 
+@[simp] theorem coe_congrUniformEquiv (e : A ≃⋆ₐ[ℂ] B) : ⇑(congrUniformEquiv e) = congr e := (rfl)
+
+@[simp] theorem congrUniformEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
+    (congrUniformEquiv e).symm = congrUniformEquiv e.symm := (rfl)
+
 /-- A `⋆`-algebra isomorphism `e : A ≃⋆ₐ[ℂ] B` induces a strict homeomorphism
 `𝓜ₛ(ℂ, A) ≃ₜ 𝓜ₛ(ℂ, B)`. -/
 def congrHomeomorph (e : A ≃⋆ₐ[ℂ] B) : 𝓜ₛ(ℂ, A) ≃ₜ 𝓜ₛ(ℂ, B) := (congrUniformEquiv e).toHomeomorph

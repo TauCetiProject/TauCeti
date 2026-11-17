@@ -22,8 +22,9 @@ and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `Doub
 is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
 proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
-(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric,
-and when `A` is unital it is a linear isometric equivalence
+(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric
+(making `DoubleCentralizer.coeTwoSidedIdeal` closed when `A` is complete,
+`isClosed_coeTwoSidedIdeal`), and when `A` is unital it is a linear isometric equivalence
 (`DoubleCentralizer.ofUnitalLinearIsometryEquiv`).
 
 A bounded operator `L` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y` is the left
@@ -114,6 +115,12 @@ theorem norm_coe (a : A) : ‖(a : 𝓜(𝕜, A))‖ = ‖a‖ := by
 theorem isometry_coe : Isometry (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) := by
   intro a b
   simp only [edist_dist, dist_eq_norm, ← coe_sub, norm_coe]
+
+/-- The canonical ideal `coeTwoSidedIdeal 𝕜 A` of a complete regular normed algebra with zero
+annihilators is closed in `𝓜(𝕜, A)`. -/
+instance isClosed_coeTwoSidedIdeal [FaithfulSMul Aᵐᵒᵖ A] [FaithfulSMul A A] [CompleteSpace A] :
+    IsClosed (coeTwoSidedIdeal 𝕜 A : Set 𝓜(𝕜, A)) :=
+  coe_coeTwoSidedIdeal (𝕜 := 𝕜) (A := A) ▸ isometry_coe.isClosedEmbedding.isClosed_range
 
 end RegularNormedAlgebra
 

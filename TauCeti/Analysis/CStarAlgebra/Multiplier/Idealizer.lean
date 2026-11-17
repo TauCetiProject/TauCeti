@@ -5,24 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Ideal
-public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
-public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Topology.Algebra.Star.Idealizer
+import TauCeti.Analysis.CStarAlgebra.Ideal
+import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # Essential-ideal universal property and concrete idealizer models of multiplier algebras
 
 This file establishes two structural characterizations of the multiplier algebra `𝓜(ℂ, A)` of a
 C⋆-algebra (complementing `DoubleCentralizer.ofUnitalAlgEquiv`,
-`DoubleCentralizer.ofUnitalStarAlgEquiv`, and `DoubleCentralizer.ofUnitalLinearIsometryEquiv`):
+`DoubleCentralizer.ofUnitalStarAlgEquiv`, `DoubleCentralizer.ofUnitalLinearIsometryEquiv`, and the
+canonical essential ideal `DoubleCentralizer.coeTwoSidedIdeal` in
+`TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`):
 
 1. **Universal property among essential ideal extensions**
    (`NonUnitalStarAlgHom.idealToMultiplier`).
-   For a normed algebra `A` with zero annihilators, `DoubleCentralizer.coeTwoSidedIdeal` is an
-   essential two-sided ideal of `𝓜(𝕜, A)` (`DoubleCentralizer.inf_coeTwoSidedIdeal_eq_bot_iff`).
-   Conversely, any injective `ι : A →⋆ₙₐ[ℂ] D` whose range absorbs left multiplication induces a
+   Any injective `ι : A →⋆ₙₐ[ℂ] D` whose range absorbs left multiplication induces a
    unique `ι.idealToMultiplier hι hmul : D →⋆ₙₐ[ℂ] 𝓜(ℂ, A)` extending `coe`, injective iff `ι(A)`
    has zero left annihilator in `D` (`idealToMultiplier_injective_iff`,
    `idealToMultiplier_injective_iff_forall_twoSidedIdeal`).
@@ -46,55 +45,6 @@ public section
 noncomputable section
 
 open scoped MultiplierAlgebra
-
-namespace DoubleCentralizer
-
-/-! ### The canonical essential ideal in `𝓜(𝕜, A)` -/
-
-section CanonicalIdeal
-
-variable (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [FaithfulSMul Aᵐᵒᵖ A] [FaithfulSMul A A]
-
-/-- The image of `A` in `𝓜(𝕜, A)` bundled as a two-sided ideal. -/
-def coeTwoSidedIdeal : TwoSidedIdeal 𝓜(𝕜, A) :=
-  TwoSidedIdeal.mk' (Set.range (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A))) ⟨0, coe_zero⟩
-    (by rintro _ _ ⟨a, rfl⟩ ⟨b, rfl⟩; exact ⟨a + b, coe_add a b⟩)
-    (by rintro _ ⟨a, rfl⟩; exact ⟨-a, coe_neg a⟩)
-    (by rintro m _ ⟨a, rfl⟩; exact ⟨m.fst a, (mul_coe_eq_coe_fst m a).symm⟩)
-    (by rintro _ m ⟨a, rfl⟩; exact ⟨m.snd a, (coe_mul_eq_coe_snd a m).symm⟩)
-
-variable {𝕜 A}
-
-@[simp] theorem coe_coeTwoSidedIdeal :
-    (coeTwoSidedIdeal 𝕜 A : Set 𝓜(𝕜, A)) = Set.range (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
-  TwoSidedIdeal.coe_mk' _ _ _ _ _ _
-
-@[simp] theorem mem_coeTwoSidedIdeal {m : 𝓜(𝕜, A)} :
-    m ∈ coeTwoSidedIdeal 𝕜 A ↔ m ∈ Set.range (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
-  TwoSidedIdeal.mem_mk' _ _ _ _ _ _ m
-
-theorem coe_mem_coeTwoSidedIdeal (a : A) : (a : 𝓜(𝕜, A)) ∈ coeTwoSidedIdeal 𝕜 A :=
-  mem_coeTwoSidedIdeal.mpr ⟨a, rfl⟩
-
-/-- **Essentiality of `A` in `𝓜(𝕜, A)`.** Every nonzero two-sided ideal of `𝓜(𝕜, A)` has nonzero
-intersection with `coeTwoSidedIdeal 𝕜 A`. -/
-@[simp] theorem inf_coeTwoSidedIdeal_eq_bot_iff {J : TwoSidedIdeal 𝓜(𝕜, A)} :
-    J ⊓ coeTwoSidedIdeal 𝕜 A = ⊥ ↔ J = ⊥ := by
-  refine ⟨fun h => eq_bot_iff.mpr fun m hm => ?_, fun h => by simp [h]⟩
-  rw [TwoSidedIdeal.mem_bot]
-  refine eq_zero_of_forall_mul_coe_eq_zero fun a => ?_
-  have hmem : m * (a : 𝓜(𝕜, A)) ∈ J ⊓ coeTwoSidedIdeal 𝕜 A :=
-    ⟨J.mul_mem_right m a hm, (coeTwoSidedIdeal 𝕜 A).mul_mem_left m a (coe_mem_coeTwoSidedIdeal a)⟩
-  rwa [h, TwoSidedIdeal.mem_bot] at hmem
-
-instance isClosed_coeTwoSidedIdeal [RegularNormedAlgebra 𝕜 A] [CompleteSpace A] :
-    IsClosed (coeTwoSidedIdeal 𝕜 A : Set 𝓜(𝕜, A)) :=
-  coe_coeTwoSidedIdeal (𝕜 := 𝕜) (A := A) ▸ isometry_coe.isClosedEmbedding.isClosed_range
-
-end CanonicalIdeal
-
-end DoubleCentralizer
 
 namespace NonUnitalStarAlgHom
 
