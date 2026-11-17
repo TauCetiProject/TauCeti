@@ -163,6 +163,20 @@ theorem coe_clopensEquiv_symm (V : Clopens X) :
     (clopensEquiv.symm V : Set (ConnectedComponents X)) = mk '' V :=
   (rfl)
 
+open TopologicalSpace in
+@[simp]
+theorem mem_clopensEquiv {U : Clopens (ConnectedComponents X)} {x : X} :
+    x ∈ clopensEquiv U ↔ mk x ∈ U :=
+  Iff.rfl
+
+open TopologicalSpace in
+/-- A point lies in a clopen set exactly when its connected component lies in the corresponding
+clopen set of components. -/
+@[simp]
+theorem mk_mem_clopensEquiv_symm {V : Clopens X} {x : X} :
+    mk x ∈ clopensEquiv.symm V ↔ x ∈ V := by
+  rw [← mem_clopensEquiv, OrderIso.apply_symm_apply]
+
 section Opens
 
 open TopologicalSpace
