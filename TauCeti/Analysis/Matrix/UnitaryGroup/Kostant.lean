@@ -218,14 +218,9 @@ theorem mem_range_unitaryTorusDualInclusion_iff {ν : Dual ℝ (unitaryLieAlgebr
     obtain ⟨H, rfl⟩ := (unitaryTracePairingEquiv ι).surjective ν
     rw [unitaryTracePairingEquiv_apply] at h ⊢
     have hH : (H : Matrix ι ι ℂ).IsHermitian := (H.2 : IsSelfAdjoint (H : Matrix ι ι ℂ)).isHermitian
-    -- A matrix commuting with every diagonal unitary matrix is diagonal.
-    have hdiag : (H : Matrix ι ι ℂ).IsDiag := fun i j hij => by
-      have hc := mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff.mp
-        (Representation.mem_stabilizer.mpr
-          (h _ (unitaryTorusHom_mem_unitaryTorus (Pi.mulSingle i (Circle.exp Real.pi)))))
-      rw [coe_unitaryTorusHom] at hc
-      refine apply_eq_zero_of_commute_diagonal hc fun h => Circle.exp_pi_ne_one ?_
-      rwa [Circle.coe_inj, Pi.mulSingle_eq_same, Pi.mulSingle_eq_of_ne hij.symm] at h
+    have hdiag : (H : Matrix ι ι ℂ).IsDiag := isDiag_of_forall_commute_unitaryTorusHom fun z =>
+      mem_stabilizer_unitaryCoadjointRepresentation_unitaryTracePairing_iff.mp
+        (Representation.mem_stabilizer.mpr (h _ (unitaryTorusHom_mem_unitaryTorus z)))
     refine ⟨fun k => ((H : Matrix ι ι ℂ) k k).re, ?_⟩
     rw [unitaryTorusDualInclusion_apply]
     congr 1

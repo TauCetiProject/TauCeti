@@ -102,6 +102,7 @@ def unitaryLieAlgebra : LieSubalgebra ℝ (Matrix ι ι ℂ) :=
 
 variable {ι}
 
+@[simp]
 theorem mem_unitaryLieAlgebra_iff {X : Matrix ι ι ℂ} : X ∈ unitaryLieAlgebra ι ↔ Xᴴ = -X :=
   skewAdjoint.mem_lieSubalgebra.trans skewAdjoint.mem_iff
 
