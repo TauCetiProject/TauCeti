@@ -32,7 +32,8 @@ is not hyperregular (`TauCeti.not_isHyperregularLagrangian_exp_snd`), and the Ha
 
 ## Main declarations
 
-* `ContDiff.contMDiff_comp_snd_tangentBundle_modelSpace`: `f(v)` is as smooth as `f`.
+* `ContDiff.contMDiff_comp_snd_tangentBundle_modelSpace`: a function of the fibre component of a
+  tangent vector is as smooth as the function itself.
 * `TauCeti.legendreMap_comp_snd`, `TauCeti.fiberHessian_comp_snd`,
   `TauCeti.lagrangianEnergy_comp_snd`: the Legendre map, fibre Hessian and energy of `f(v)`.
 * `TauCeti.isRegularLagrangian_comp_snd_iff`, `TauCeti.isHyperregularLagrangian_comp_snd_iff`:
@@ -60,11 +61,14 @@ section VectorSpace
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   (f : E → 𝕜)
 
-/-- A Lagrangian `f(v)` depending only on the velocity is as smooth as `f`. -/
-theorem _root_.ContDiff.contMDiff_comp_snd_tangentBundle_modelSpace {n : WithTop ℕ∞} {f : E → 𝕜}
-    (hf : ContDiff 𝕜 n f) :
-    ContMDiff 𝓘(𝕜, E).tangent 𝓘(𝕜, 𝕜) n (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) :=
-  hf.contMDiff.comp (contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E))
+/-- On the tangent bundle of a model space `H` with model vector space `E`, a function `f(v)` of
+the fibre component alone is as smooth as `f`. In particular a Lagrangian `f(v)` depending only on
+the velocity is as smooth as `f`. -/
+theorem _root_.ContDiff.contMDiff_comp_snd_tangentBundle_modelSpace {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {H : Type*} [TopologicalSpace H]
+    (I : ModelWithCorners 𝕜 E H) {n : WithTop ℕ∞} {f : E → F} (hf : ContDiff 𝕜 n f) :
+    ContMDiff I.tangent 𝓘(𝕜, F) n (fun p : TangentBundle I H ↦ f p.2) :=
+  hf.contMDiff.comp (contMDiff_snd_tangentBundle_modelSpace H I)
 
 /-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity is
 `(q, v) ↦ (q, Df(v))`. -/
