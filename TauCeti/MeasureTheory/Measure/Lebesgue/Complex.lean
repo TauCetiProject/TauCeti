@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
+import Mathlib.Analysis.Complex.Isometry
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
@@ -18,7 +21,9 @@ import Mathlib.Topology.Order.Compact
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
-Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
+Interchanging the real and imaginary coordinates preserves planar area, and rotations
+`z ↦ u z` by `u : Circle` preserve every additive Haar measure on `ℂ`
+(`Circle.measurePreserving_coe_mul`). On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
 and a function of the real or imaginary part integrates by Fubini as the length of the other
@@ -125,6 +130,12 @@ theorem measurePreserving_coordinateSwapCLE :
   rw [heq]
   exact Complex.volume_preserving_equiv_real_prod.symm.comp
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
+
+/-- Rotation `z ↦ u z` by `u : Circle` preserves every additive Haar measure on the plane. -/
+theorem _root_.Circle.measurePreserving_coe_mul (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+    (u : Circle) : MeasurePreserving (fun z : ℂ ↦ (u : ℂ) * z) μ μ := by
+  have h := (rotation u).measurePreserving_addHaar μ
+  rwa [show ⇑(rotation u) = fun z : ℂ ↦ (u : ℂ) * z from funext (rotation_apply u)] at h
 
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
