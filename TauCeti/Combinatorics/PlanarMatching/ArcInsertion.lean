@@ -124,16 +124,13 @@ def insertArc (x : PlanarMatching k) (a : Fin (k + 1)) : PlanarMatching (k + 2) 
     (x.insertArc a).1.val a.succ = a.castSucc :=
   PerfectMatching.extend_apply_right (succ_ne_castSucc a).symm _
 
-private theorem insertArc_val_skip (x : PlanarMatching k) (a : Fin (k + 1)) (i : Fin k) :
-    (x.insertArc a).1.val (skip a i) = skip a (x.1.val i) := insertArcPM_skip x a i
-
 /-- Outside the inserted arc, `insertArc` acts on boundary points as the original planar matching
 conjugated by skipping the two inserted positions. -/
 @[simp] theorem insertArc_val_succAbove_succAbove (x : PlanarMatching k) (a : Fin (k + 1))
     (i : Fin k) :
     (x.insertArc a).1.val (a.castSucc.succAbove (a.succAbove i)) =
       a.castSucc.succAbove (a.succAbove (x.1.val i)) :=
-  insertArc_val_skip x a i
+  insertArcPM_skip x a i
 
 private theorem pv_insertArc (x : PlanarMatching k) (a : Fin (k + 1)) {q : ℕ} (hq : q < k + 2) :
     pv (x.insertArc a) q =
@@ -147,8 +144,8 @@ private theorem pv_insertArc (x : PlanarMatching k) (a : Fin (k + 1)) {q : ℕ} 
   have hz : (⟨q, hq⟩ : Fin (k + 2)) ≠ a.castSucc ∧
       (⟨q, hq⟩ : Fin (k + 2)) ≠ a.succ := by
     simp only [ne_eq, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]; exact ⟨h₁, h₂⟩
-  rw [pv_of_lt _ hq, ← skip_unskip a ⟨q, hq⟩ hz, insertArc_val_skip, coe_skip_eq_skipN,
-    ← pv_coe, coe_unskip_eq_unskipN, ite_eq_right h₁, ite_eq_right h₂]
+  rw [pv_of_lt _ hq, ← skip_unskip a ⟨q, hq⟩ hz, insertArc, insertArcPM_skip, coe_skip,
+    ← pv_coe, coe_unskip_eq_unskipN, ite_eq_right h₁, ite_eq_right h₂, skipN]
 
 private theorem pv_insertArc_self (x : PlanarMatching k) (a : Fin (k + 1)) :
     pv (x.insertArc a) a = (a : ℕ) + 1 :=
@@ -483,7 +480,7 @@ theorem capAt_comp (c : Fin (q + 1)) (g : TLDiagram q m) :
   have hns := skipN_lt_and_ne (a := c) i.isLt
   have hs : ∀ j : Fin q,
       ((c.castSucc.succAbove (c.succAbove j) : Fin (q + 2)) : ℕ) = skipN c j :=
-    coe_skip_eq_skipN c
+    fun j => by rw [← skip, coe_skip, skipN]
   have hpv₁ : ((D.insertBottomArc c).matching.1.val
       ((c.castSucc.succAbove (c.succAbove i)).castAdd m) : ℕ) = skipN c (pv D.matching i) := by
     rw [← pv_coe, Fin.val_castAdd, hs i, matching_insertBottomArc, pv_cast,
@@ -656,12 +653,38 @@ private theorem glueFn_two_of_adj {a : ℕ} {ψ : ℕ → ℕ} (hψ : ∀ u, ψ 
   obtain ⟨e₂, n₂, n₂'⟩ := h_out (a + 2) (Or.inr rfl) (skipN a q) hr.1 hr.2
   have hsk : skipN (a + 1) (skipN a q) = skipN (a + 2) (skipN a q) := by
     simp only [skipN]; split_ifs <;> omega
-  have hcf : ∀ f, contractFn a f q = unskipN a (splice a f (skipN a q)) := fun _ => rfl
+  have hcf (f : ℕ → ℕ) : contractFn a f q = unskipN a (splice a f (skipN a q)) := by
+    rw [contractFn, erasePair_apply]
   simp only [glueFn, Nat.add_zero]
   rw [hcf, hcf, splice_of_ne _ hr.1 hr.2, splice_of_ne _ hr.1 hr.2, e₁, e₂,
     rejoin_of_ne _ n₁ n₁', rejoin_of_ne _ n₂ n₂', ← hsk]
   rw [← hsk] at n₂ n₂'
   simp only [unskipN] at n₁ n₁' n₂ n₂' ⊢; split_ifs at * <;> omega
+
+private theorem glueFn_two_add_of_flanking_adj {K K₁ K₀ a c : ℕ} {z : PlanarMatching K}
+    {z₁ : PlanarMatching K₁} {z₀ : PlanarMatching K₀} (hK : a + 2 + 2 * c + 2 ≤ K)
+    (hK₁ : a + 2 + 2 * c ≤ K₁) (hzL : pv z a = a + 1)
+    (hzR : pv z (a + 2 + 2 * c) = a + 2 + 2 * c + 1) (hz₁L : pv z₁ a = a + 1)
+    (hcR : contractFn (a + 2 + 2 * c) (pv z) = pv z₁) (hcL : contractFn a (pv z₁) = pv z₀) :
+    glueFn a (2 + c) (pv z) = glueFn a c (pv z₀) ∧
+    glueCircles a (2 + c) (pv z) = glueCircles a c (pv z₀) + 1 := by
+  obtain ⟨y, hy⟩ := exists_pv_eq_glueFn (n := a + 2) c _ z (by omega)
+  have hψ₁ := glueFn_of_adj_left (a := a) (m := a + 2) (by omega) c hzL
+  have hψ₂ : glueFn (a + 2) c (pv z) (a + 2) = a + 2 + 1 := by
+    simpa only [add_zero] using glueFn_of_adj_right (n := a + 2) (d := 0) c
+      (by simpa only [add_zero] using hzR)
+  obtain ⟨h2fn, h2c⟩ := glueFn_two_of_adj (by rw [← hy]; exact pv_pv_eq y) hψ₁ hψ₂
+  obtain ⟨hRfn, hRc⟩ := glueFn_glueFn (n := a + 2) (j := 1) c 0 _ z (by omega)
+  simp only [glueFn, glueCircles, add_zero, zero_add] at hRfn hRc
+  rw [hcR] at hRfn hRc
+  obtain ⟨hLfn, hLc⟩ := contractFn_glueFn (a := a) c a _ z₁ (le_refl _) (by omega)
+  rw [hcL] at hLfn hLc
+  obtain ⟨hs, hsc⟩ := glueFn_add a 2 c (pv z)
+  have hi : ∀ {k} {φ : ℕ → ℕ}, φ k = k + 1 → circleInd k φ = 1 :=
+    fun h => by simp only [circleInd, h, ite_true]
+  have h₁ := hi hzR; have h₂ := hi hψ₂; have h₃ := hi hz₁L
+  have h₄ := hi (glueFn_of_adj_left (m := a + 2) (by omega) c hz₁L)
+  exact ⟨by rw [hs, h2fn, ← hRfn, hLfn], by rw [hsc, h2c]; omega⟩
 
 /-- **A cup at position `c` followed by the matching cap closes one circle**: `cupAt c ≫ capAt c`
 is the identity matching on `q` strands carrying one closed circle. -/
@@ -692,30 +715,11 @@ is the identity matching on `q` strands carrying one closed circle. -/
   have hz₁_c : contractFn (2 * q - c) (pv z₁) = pv z₀ := by
     rw [pv_append_eq, contractFn_appendFn_left _ _ (by omega), hcup_c,
       show q + (q + 2) - 2 = q + q by omega, pv_append_eq]
-  obtain ⟨y, hy⟩ := exists_pv_eq_glueFn (n := 2 * q - c + 2) c _ z (by omega)
-  have hψ₁ := glueFn_of_adj_left (a := 2 * q - c) (m := 2 * q - c + 2) (by omega) c hz_cup
-  have hψ₂ : glueFn (2 * q - c + 2) c (pv z) (2 * q - c + 2) = 2 * q - c + 2 + 1 := by
-    simpa only [add_zero] using glueFn_of_adj_right (n := 2 * q - c + 2) (d := 0) c
-      (by rwa [show 2 * q - (c : ℕ) + 2 + 2 * c + 0 = 2 * q + 2 + c by omega])
-  obtain ⟨h2fn, h2c⟩ := glueFn_two_of_adj (by rw [← hy]; exact pv_pv_eq y) hψ₁ hψ₂
-  obtain ⟨hRfn, hRc⟩ := glueFn_glueFn (n := 2 * q - c + 2) (j := 1) c 0 _ z (by omega)
-  simp only [glueFn, glueCircles, add_zero, zero_add] at hRfn hRc
-  rw [show 2 * q - (c : ℕ) + 2 + 2 * c = 2 * q + 2 + c by omega, hz_c] at hRfn hRc
-  obtain ⟨hLfn, hLc⟩ :=
-    contractFn_glueFn (a := 2 * q - c) c (2 * q - c) _ z₁ (le_refl _) (by omega)
-  rw [hz₁_c] at hLfn hLc
-  have hmid_fn : glueFn (2 * q - c) 2 (glueFn (2 * q - c + 2) c (pv z)) =
-      glueFn (2 * q - c) c (pv z₀) := by rw [h2fn, ← hRfn, hLfn]
-  have hmid_c : glueCircles (2 * q - c + 2) c (pv z) = glueCircles (2 * q - c) c (pv z₀) := by
-    have hi : ∀ {k} {φ : ℕ → ℕ}, φ k = k + 1 → circleInd k φ = 1 :=
-      fun h => by simp only [circleInd, h, ite_true]
-    have h₁ := hi hz_cap; have h₂ := hi hψ₂
-    have h₃ := hi (by rw [pv_append_left _ _ (by omega), hcup_pv] : pv z₁ (2 * q - c) = _)
-    have h₄ := hi (glueFn_of_adj_left (m := 2 * q - c + 2) (by omega) c
-      (by rw [pv_append_left _ _ (by omega), hcup_pv] : pv z₁ (2 * q - c) = _))
-    omega
+  have hidx : 2 * q - (c : ℕ) + 2 + 2 * c = 2 * q + 2 + c := by omega
+  obtain ⟨hmid_fn, hmid_c⟩ := glueFn_two_add_of_flanking_adj (a := 2 * q - c) (c := c)
+    (by omega) (by omega) hz_cup (by rwa [hidx])
+    (by rw [pv_append_left _ _ (by omega), hcup_pv]) (by rwa [hidx]) hz₁_c
   obtain ⟨hs₁, hs₁c⟩ := glueFn_add q (q - c) (2 + c) (pv z)
-  obtain ⟨hs₂, hs₂c⟩ := glueFn_add (2 * q - c) 2 c (pv z)
   obtain ⟨hs₀, hs₀c⟩ := glueFn_add q (q - c) c (pv z₀)
   rw [show q - (c : ℕ) + (2 + c) = q + 2 by omega,
     show q + (q - (c : ℕ)) = 2 * q - c by omega] at hs₁ hs₁c
@@ -723,10 +727,10 @@ is the identity matching on `q` strands carrying one closed circle. -/
     show q + (q - (c : ℕ)) = 2 * q - c by omega] at hs₀ hs₀c
   exact TLDiagram.ext
     (eq_of_pv_eq <| by
-      rw [matching_comp, pv_glueMiddle, hs₁, hs₂, hmid_fn, ← hs₀, ← pv_glueMiddle,
+      rw [matching_comp, pv_glueMiddle, hs₁, hmid_fn, ← hs₀, ← pv_glueMiddle,
         glueMiddle_append_nested])
     (by rw [circles_comp, circles_cupAt, circles_capAt, zero_add, zero_add, glueMiddleCircles_eq,
-          hs₁c, hs₂c, hs₂, hmid_fn, h2c, hmid_c]
+          hs₁c, hmid_fn, hmid_c]
         have hz₀c : glueCircles q q (pv z₀) = 0 := by
           rw [← glueMiddleCircles_eq, glueMiddleCircles_append_nested]
         dsimp only; omega)

@@ -39,6 +39,9 @@ Temperley–Lieb diagrams.
 * `TauCeti.PlanarMatching.glueMiddle_append_nested`,
   `TauCeti.PlanarMatching.glueMiddle_nested_append`: gluing next to a fully nested matching
   changes nothing.
+* `TauCeti.PlanarMatching.reflect_append`, `TauCeti.PlanarMatching.reflect_contract`,
+  `TauCeti.PlanarMatching.glueMiddle_reflect`, `TauCeti.PlanarMatching.glueMiddleCircles_reflect`:
+  compatibility of juxtaposition, contraction, and middle gluing with reflection.
 
 ## Implementation notes
 
@@ -719,9 +722,6 @@ theorem glueMiddleCircles_nested_append {n p : ℕ} (x : PlanarMatching (n + p))
   (glueMiddle_of_isNestedInsert_right n le_rfl _ (isNestedInsert_nested_append x)).2
 
 /-! ### Partner helpers, transport, and reflection -/
-
-private theorem coe_skip_eq_skipN (a : Fin (k + 1)) (i : Fin k) :
-    (skip a i : ℕ) = skipN a i := coe_skip a i
 
 private theorem coe_unskip_eq_unskipN (a : Fin (k + 1)) (y : Fin (k + 2))
     (hy : y ≠ a.castSucc ∧ y ≠ a.succ) :
