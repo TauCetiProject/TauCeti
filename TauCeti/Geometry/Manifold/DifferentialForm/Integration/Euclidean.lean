@@ -7,16 +7,16 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+public import TauCeti.Geometry.Manifold.Orientation.Euclidean
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Integrals of top forms through parametrizations by `ℝᵖ`
 
-The standard orientation of `ℝᵖ = EuclideanSpace ℝ (Fin p)`
-(`TauCeti.Manifold.Orientation.euclideanSpace p`) is the constant orientation in which the
-standard basis `(e₁, …, eₚ)` is positive. Against it, the integral of an integrable top form `ψ`
-on `ℝᵖ` is the Lebesgue integral of `ψ(e₁, …, eₚ)`
-(`TauCeti.integralTopForm_euclideanSpace_eq_integral`).
+Against the standard orientation of `ℝᵖ = EuclideanSpace ℝ (Fin p)`
+(`TauCeti.Manifold.Orientation.euclideanSpace p`), in which the standard basis `(e₁, …, eₚ)` is
+positive, the integral of an integrable top form `ψ` on `ℝᵖ` is the Lebesgue integral of
+`ψ(e₁, …, eₚ)` (`TauCeti.integralTopForm_euclideanSpace_eq_integral`).
 
 Let `N` be a `p`-dimensional manifold with an orientation `o`, and let `g : ℝᵖ → N` be an open
 embedding on an open set `U ⊆ ℝᵖ` that preserves orientation there from the standard orientation
@@ -28,10 +28,6 @@ to `o`. Then an integrable top form `φ` on `N` supported in the image `g(K)` of
 (`TauCeti.integralTopForm_eq_setIntegral_mpullback`). The proof moves the integral to `U` by
 change of variables along the open embedding `U → N`, and then to `ℝᵖ`, on which the pullback
 `g^*φ`, cut off outside `U`, is a top form vanishing outside `K`.
-
-## Main definitions
-
-* `TauCeti.Manifold.Orientation.euclideanSpace p`: the standard orientation of `ℝᵖ`.
 
 ## Main results
 
@@ -52,27 +48,6 @@ open MeasureTheory Set Topology TopologicalSpace
 open scoped Manifold
 
 namespace TauCeti
-
-namespace Manifold.Orientation
-
-/-- The standard orientation of `ℝᵖ`, the constant orientation in which the standard basis
-`(e₁, …, eₚ)` is positive. -/
-def euclideanSpace (p : ℕ) :
-    Orientation 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) (EuclideanSpace ℝ (Fin p)) (Fin p) :=
-  model (EuclideanSpace.basisFun (Fin p) ℝ).toBasis.orientation (by simp)
-
-/-- The standard orientation of `ℝᵖ` is the constant model orientation of the standard basis. -/
-theorem euclideanSpace_eq_model (p : ℕ) :
-    euclideanSpace p = model (EuclideanSpace.basisFun (Fin p) ℝ).toBasis.orientation (by simp) :=
-  (rfl)
-
-/-- At every point of `ℝᵖ`, the standard orientation is the orientation of the standard basis. -/
-@[simp]
-theorem orientationAt_euclideanSpace (p : ℕ) (x : EuclideanSpace ℝ (Fin p)) :
-    orientationAt (euclideanSpace p) x = (EuclideanSpace.basisFun (Fin p) ℝ).toBasis.orientation :=
-  orientationAt_model ..
-
-end Manifold.Orientation
 
 /-- Against the standard orientation of `ℝᵖ`, the oriented integral of an integrable top form is
 the Lebesgue integral of its value on the standard basis. -/
