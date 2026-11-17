@@ -129,19 +129,27 @@ variable (V) in
 def jetₗ : testSection V →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure :=
   (StripSobolev.jetₗ V).comp (Submodule.inclusion testSection_le_testMap)
 
+/-- The `L²` jet of a test section is the `L²` jet of the underlying test map of the strip. -/
+theorem jetₗ_eq_stripJetₗ (ξ : testSection V) :
+    jetₗ V ξ = StripSobolev.jetₗ V (Submodule.inclusion testSection_le_testMap ξ) :=
+  LinearMap.comp_apply _ _ _
+
 /-- The `L²` jet of a test section is represented by its jet. -/
-theorem coeFn_jetₗ (ξ : testSection V) : jetₗ V ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) :=
-  StripSobolev.coeFn_jetₗ _
+theorem coeFn_jetₗ (ξ : testSection V) : jetₗ V ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) := by
+  rw [jetₗ_eq_stripJetₗ]
+  exact StripSobolev.coeFn_jetₗ _
 
 /-- The `L²` jet of a test section is the class of its jet. -/
 theorem jetₗ_apply (ξ : testSection V) :
-    jetₗ V ξ = (memLp_jet (testSection_le_testMap ξ.2)).toLp (jet (ξ : ℝ × ℝ → V)) :=
-  StripSobolev.jetₗ_apply _
+    jetₗ V ξ = (memLp_jet (testSection_le_testMap ξ.2)).toLp (jet (ξ : ℝ × ℝ → V)) := by
+  rw [jetₗ_eq_stripJetₗ]
+  exact StripSobolev.jetₗ_apply _
 
 /-- The norm of the `L²` jet of a test section is the `L²` norm of its jet on the strip. -/
 theorem norm_jetₗ (ξ : testSection V) :
-    ‖jetₗ V ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure).toReal :=
-  StripSobolev.norm_jetₗ _
+    ‖jetₗ V ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure).toReal := by
+  rw [jetₗ_eq_stripJetₗ]
+  exact StripSobolev.norm_jetₗ _
 
 variable (V) in
 /-- The Sobolev space `W^{1,2}(ℝ × S¹, V)`: the closure in `L²(ℝ × [0, 1], V × V × V)` of the jets
@@ -155,18 +163,16 @@ abbrev H1 : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
 /-- `H1` is the closure of the set of jets of test sections. -/
 theorem coe_H1 :
     (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) = closure (Set.range (jetₗ V)) := by
-  rw [StripSobolev.coe_H1]
-  congr 1
-  ext f
-  constructor
-  · rintro ⟨ξ, hξ, rfl⟩
-    exact ⟨⟨ξ, hξ⟩, rfl⟩
-  · rintro ⟨ξ, rfl⟩
-    exact ⟨_, ξ.2, rfl⟩
+  rw [StripSobolev.coe_H1, show (jetₗ V : testSection V → _) =
+      StripSobolev.jetₗ V ∘ Submodule.inclusion testSection_le_testMap from
+    funext jetₗ_eq_stripJetₗ, Set.range_comp, ← LinearMap.coe_range, Submodule.range_inclusion,
+    Submodule.comap_coe, Submodule.coe_subtype]
+  simp only [Set.preimage, SetLike.mem_coe]
 
 /-- The jet of a test section lies in `H1`. -/
-theorem jetₗ_mem_H1 (ξ : testSection V) : jetₗ V ξ ∈ H1 V :=
-  StripSobolev.jetₗ_mem_H1 (ξ := Submodule.inclusion testSection_le_testMap ξ) ξ.2
+theorem jetₗ_mem_H1 (ξ : testSection V) : jetₗ V ξ ∈ H1 V := by
+  rw [← SetLike.mem_coe, coe_H1]
+  exact subset_closure ⟨ξ, rfl⟩
 
 /-- The jets of test sections are dense in `H1`. -/
 theorem denseRange_codRestrict_jetₗ : DenseRange ((jetₗ V).codRestrict (H1 V) jetₗ_mem_H1) := by
@@ -584,8 +590,9 @@ private theorem exists_compact_estimate [FiniteDimensional ℝ V] {M : ℝ × �
     have := norm_jetₗ_le hM hest ξ
     simp only [S, mem_ofPred_eq]
     linarith
-  have hH1 : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ S :=
-    StripSobolev.H1_subset_of_isClosed hS fun ξ hξ ↦ hrange ⟨⟨ξ, hξ⟩, rfl⟩
+  have hH1 : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ S := by
+    rw [coe_H1]
+    exact closure_minimal hrange hS
   intro x
   have := hH1 x.2
   simp only [S, mem_ofPred_eq] at this
