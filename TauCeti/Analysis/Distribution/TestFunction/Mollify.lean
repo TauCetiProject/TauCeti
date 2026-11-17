@@ -240,17 +240,8 @@ theorem mollifyCLM_eq_mollify (φ : 𝓓((⊤ : Opens E), F)) :
 /-- A bound `C` on the values of `φ` bounds its mollification. -/
 theorem norm_mollifyCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : ℝ} (hC : ∀ y, ‖φ y‖ ≤ C)
     (x : E) : ‖mollifyCLM μ ρ φ x‖ ≤ C := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  refine (norm_translateAverageCLM_apply_le φ hC x).trans ?_
-  calc (∫ y : closedBall (0 : E) ρ.rOut, ‖ρ.normed μ y • ContinuousLinearMap.id ℝ F‖ ∂_) * C
-      ≤ (∫ y : closedBall (0 : E) ρ.rOut, ρ.normed μ y ∂(μ.comap (↑))) * C := by
-        refine mul_le_mul_of_nonneg_right (integral_mono_of_nonneg
-          (ae_of_all _ fun _ ↦ norm_nonneg _) ((ρ.continuous_normed.comp continuous_subtype_val)
-            |>.integrable_of_hasCompactSupport (.of_compactSpace _)) (ae_of_all _ fun y ↦ ?_)) hC0
-        dsimp only
-        rw [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)]
-        exact mul_le_of_le_one_right (ρ.nonneg_normed _) ContinuousLinearMap.norm_id_le
-    _ = C := by rw [ρ.integral_closedBall_normed, one_mul]
+  rw [mollifyCLM_apply]
+  exact ρ.norm_normed_convolution_le hC x
 
 /-- Mollification enlarges supports by at most `r = ρ.rOut`. -/
 theorem tsupport_mollifyCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :
