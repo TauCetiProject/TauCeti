@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
-public import TauCeti.MeasureTheory.Measure.StrictMono
+public import TauCeti.Order.Interval.SeparatedBox
 public import Mathlib.MeasureTheory.Constructions.Pi
 
 import TauCeti.Algebra.BigOperators.Fin

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
+public import TauCeti.Order.Interval.SeparatedBox
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -29,44 +30,6 @@ open MeasureTheory Set
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-- Box endpoints `a, b : ι → α` are separated when each coordinate interval is well-ordered
-(`a i ≤ b i`) and earlier right endpoints do not exceed later left endpoints. -/
-def IsSeparatedBox {ι α : Type*} [Preorder ι] [Preorder α] (a b : ι → α) : Prop :=
-  (∀ i, a i ≤ b i) ∧ ∀ ⦃i j : ι⦄, i < j → b i ≤ a j
-
-/-- Explicit characterization of separated box endpoints. -/
-theorem isSeparatedBox_iff {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α} :
-    IsSeparatedBox a b ↔ (∀ i, a i ≤ b i) ∧ ∀ ⦃i j : ι⦄, i < j → b i ≤ a j :=
-  (Iff.rfl)
-
-/-- Construct `IsSeparatedBox` from coordinatewise order and strict-index separation. -/
-theorem IsSeparatedBox.mk {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α}
-    (hle : ∀ i, a i ≤ b i) (hsep : ∀ ⦃i j : ι⦄, i < j → b i ≤ a j) : IsSeparatedBox a b :=
-  ⟨hle, hsep⟩
-
-/-- Separated box endpoints satisfy `a i ≤ b i` in every coordinate. -/
-theorem IsSeparatedBox.le {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α}
-    (h : IsSeparatedBox a b) (i : ι) : a i ≤ b i :=
-  h.1 i
-
-/-- Separated box endpoints place `b i` at or before `a j` whenever `i < j`. -/
-theorem IsSeparatedBox.le_of_lt {ι α : Type*} [Preorder ι] [Preorder α] {a b : ι → α}
-    (h : IsSeparatedBox a b) {i j : ι} (hij : i < j) : b i ≤ a j :=
-  h.2 hij
-
-/-- Precomposing separated box endpoints with a strictly monotone index map preserves separation. -/
-theorem IsSeparatedBox.comp {ι ι' α : Type*} [Preorder ι] [Preorder ι'] [Preorder α]
-    {a b : ι → α} (h : IsSeparatedBox a b) {f : ι' → ι} (hf : StrictMono f) :
-    IsSeparatedBox (a ∘ f) (b ∘ f) :=
-  IsSeparatedBox.mk (fun i => h.le (f i)) fun _ _ hij => h.le_of_lt (hf hij)
-
-/-- Subtracting a constant on the right preserves separation of box endpoints. -/
-theorem IsSeparatedBox.sub_const {ι α : Type*} [Preorder ι] [Preorder α] [AddCommSemigroup α]
-    [Sub α] [OrderedSub α] {a b : ι → α} (h : IsSeparatedBox a b) (c : α) :
-    IsSeparatedBox (fun i => a i - c) (fun i => b i - c) :=
-  IsSeparatedBox.mk (fun i => tsub_le_tsub_right (h.le i) c) fun _ _ hij =>
-    tsub_le_tsub_right (h.le_of_lt hij) c
 
 private abbrev PosStrictMono (n : ℕ) : Set (Fin n → ℝ≥0) :=
   {s | (∀ i, 0 < s i) ∧ StrictMono s}
@@ -96,7 +59,7 @@ private theorem isPiSystem_separatedBoxSystem (n : ℕ) :
       fun hx => ⟨fun i => ⟨(hx i).1.1, (hx i).2.1⟩, fun i => ⟨(hx i).1.2, (hx i).2.2⟩⟩⟩
   rw [hinter] at hne ⊢
   obtain ⟨x, hx⟩ := hne
-  refine ⟨a, b, ⟨fun i => ?_, fun i j hij => ?_⟩, rfl⟩
+  refine ⟨a, b, IsSeparatedBox.mk (fun i => ?_) (fun i j hij => ?_), rfl⟩
   · have hxi : x.1 i ∈ Ioc (a i) (b i) := hx i (mem_univ i)
     exact hxi.1.le.trans hxi.2
   · exact (min_le_left _ _).trans ((h₁.le_of_lt hij).trans (le_max_left _ _))
@@ -134,7 +97,8 @@ private theorem exists_rat_separatedBox_mem {n : ℕ} (x : ↥(PosStrictMono n))
   have hqa_nonneg (i : Fin n) : 0 ≤ (qa i : ℝ) := (hlow_nonneg i).trans (hqa_low i).le
   have hqb_nonneg (i : Fin n) : 0 ≤ (qb i : ℝ) :=
     (x.1 i).coe_nonneg.trans (hqb_gt i).le
-  refine ⟨qa, qb, ⟨fun i => ?_, fun i j hij => ?_⟩, fun i => ?_, fun i _ => ⟨?_, ?_⟩⟩
+  refine ⟨qa, qb, IsSeparatedBox.mk (fun i => ?_) (fun i j hij => ?_),
+    fun i => ?_, fun i _ => ⟨?_, ?_⟩⟩
   · exact Real.toNNReal_mono ((hqa_lt i).trans (hqb_gt i)).le
   · have hi : (i : ℕ) + 1 < n := by omega
     have hj : 0 < (j : ℕ) := by omega
