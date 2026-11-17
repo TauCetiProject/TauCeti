@@ -64,10 +64,9 @@ theorem derivative_hermiteHeat_succ (n : ℕ) (t : R) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [hermiteHeat_succ (n + 1), derivative_sub, derivative_mul, derivative_mul, ih,
-      hermiteHeat_succ n]
-    simp only [derivative_X, derivative_C, derivative_one, zero_mul,
-      zero_add, derivative_mul, Nat.cast_add, Nat.cast_one, map_add, map_one]
+    rw [hermiteHeat_succ (n + 1), derivative_sub, derivative_mul, derivative_C_mul, ih,
+      derivative_C_mul, hermiteHeat_succ n]
+    simp only [derivative_X, Nat.cast_add, Nat.cast_one, map_add, map_one]
     ring
 
 /-- Spatial differentiation lowers the index, with the constant case included. -/
@@ -86,8 +85,8 @@ theorem iterate_derivative_hermiteHeat (n k : ℕ) (t : R) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, derivative_mul, derivative_C, zero_mul, zero_add,
-      derivative_hermiteHeat, Nat.descFactorial_succ, Nat.cast_mul, map_mul, Nat.sub_sub]
+    rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_hermiteHeat,
+      Nat.descFactorial_succ, Nat.cast_mul, map_mul, Nat.sub_sub]
     ring
 
 /-- Changing coefficient rings commutes with the variance-parameter Hermite family. -/
@@ -165,32 +164,29 @@ theorem hermiteHeat_ode (n : ℕ) (t : R) :
     C t * derivative (derivative (hermiteHeat n t)) - X * derivative (hermiteHeat n t) +
       C (n : R) * hermiteHeat n t = 0 := by
   have h := derivative_hermiteHeat_succ n t
-  rw [hermiteHeat_succ, derivative_sub, derivative_mul, derivative_mul] at h
-  simp only [derivative_X, derivative_C, zero_mul, zero_add, one_mul, map_add, map_one] at h
+  rw [hermiteHeat_succ, derivative_sub, derivative_mul, derivative_C_mul] at h
+  simp only [derivative_X, one_mul, map_add, map_one] at h
   linear_combination -h
 
-/-- Spatial second derivatives lower the index by two. -/
-theorem derivative_derivative_hermiteHeat_add_two (n : ℕ) (t : R) :
-    derivative (derivative (hermiteHeat (n + 2) t)) =
-      C ((n + 2 : R) * (n + 1)) * hermiteHeat n t := by
-  rw [derivative_hermiteHeat_succ (n + 1), derivative_mul, derivative_C,
-    zero_mul, zero_add, derivative_hermiteHeat_succ, map_mul]
-  simp only [Nat.cast_add, Nat.cast_one, map_add, map_one, C_ofNat]
-  ring
+/-- Scaling variance and the polynomial variable commutes with the Hermite family.
+No invertibility of the scale factor is required. -/
+theorem hermiteHeat_sq_mul_comp (n : ℕ) (a t : R) :
+    (hermiteHeat n (a ^ 2 * t)).comp (C a * X) = C (a ^ n) * hermiteHeat n t := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp
+  | one => simp
+  | more n ih ih' =>
+    rw [hermiteHeat_add_two, sub_comp, mul_comp, X_comp, mul_comp, C_comp, ih, ih',
+      hermiteHeat_add_two]
+    simp only [pow_add, pow_one, map_mul, map_pow]
+    ring
 
 /-- Scaling the variance and spatial coordinate recovers the native probabilists' Hermite
 polynomial. The formula requires no invertibility of the scale factor. -/
 theorem eval_hermiteHeat_sq_mul (n : ℕ) (a x : R) :
     (hermiteHeat n (a ^ 2)).eval (a * x) =
       a ^ n * Polynomial.aeval x (Polynomial.hermite n) := by
-  induction n using Nat.twoStepInduction with
-  | zero => simp
-  | one => simp
-  | more n ih ih' =>
-    rw [hermiteHeat_add_two, eval_sub, eval_mul, eval_X, eval_mul, eval_C, ih, ih',
-      Polynomial.hermite_add_two]
-    simp only [map_sub, map_mul, aeval_X, nsmul_eq_mul, map_add, map_natCast, map_one,
-      Nat.cast_add, Nat.cast_one, pow_add, pow_one]
-    ring
+  have h := congrArg (fun p : R[X] ↦ p.eval x) (hermiteHeat_sq_mul_comp n a 1)
+  simpa [eval_comp, hermiteHeat_one_right, ← algebraMap_int_eq, eval_map_algebraMap] using h
 
 end TauCeti

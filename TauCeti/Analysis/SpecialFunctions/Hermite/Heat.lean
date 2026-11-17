@@ -45,43 +45,42 @@ theorem eval_hermiteHeat (n : ℕ) {t : ℝ} (ht : 0 < t) (x : ℝ) :
   have h := eval_hermiteHeat_sq_mul n (√t) (x / √t)
   rwa [sq_sqrt ht.le, mul_div_cancel₀ _ (sqrt_pos.mpr ht).ne'] at h
 
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
 /-- Space-time Hermite polynomials are jointly smooth on the entire time-space plane,
 including time zero. -/
 theorem contDiff_hermiteHeat (n : ℕ) (k : WithTop ℕ∞) :
-    ContDiff ℝ k (fun p : ℝ × ℝ ↦ (hermiteHeat n p.1).eval p.2) := by
+    ContDiff 𝕜 k (fun p : 𝕜 × 𝕜 ↦ (hermiteHeat n p.1).eval p.2) := by
   induction n using Nat.twoStepInduction with
-  | zero => simpa using (contDiff_const : ContDiff ℝ k (fun _ : ℝ × ℝ ↦ (1 : ℝ)))
-  | one => simpa using (contDiff_snd : ContDiff ℝ k (fun p : ℝ × ℝ ↦ p.2))
+  | zero => simpa using (contDiff_const : ContDiff 𝕜 k (fun _ : 𝕜 × 𝕜 ↦ (1 : 𝕜)))
+  | one => simpa using (contDiff_snd : ContDiff 𝕜 k (fun p : 𝕜 × 𝕜 ↦ p.2))
   | more n ih ih' =>
     simp only [hermiteHeat_add_two, eval_sub, eval_mul, eval_X, eval_C]
     exact (contDiff_snd.mul ih').sub ((contDiff_fst.mul contDiff_const).mul ih)
 
-private theorem hasDerivAt_hermiteHeat_time_aux (n : ℕ) (t x : ℝ) :
+private theorem hasDerivAt_hermiteHeat_time_aux [CharZero 𝕜] (n : ℕ) (t x : 𝕜) :
     HasDerivAt (fun u ↦ (hermiteHeat n u).eval x)
       (-1 / 2 * (derivative (derivative (hermiteHeat n t))).eval x) t := by
   induction n using Nat.twoStepInduction with
-  | zero => simpa using hasDerivAt_const t (1 : ℝ)
+  | zero => simpa using hasDerivAt_const t (1 : 𝕜)
   | one => simpa using hasDerivAt_const t x
   | more n ih ih' =>
     have h := (ih'.const_mul x).sub
-      (((hasDerivAt_id t).mul_const (n + 1 : ℝ)).mul ih)
-    have hode := congrArg (fun p : ℝ[X] ↦ p.eval x) (hermiteHeat_ode n t)
-    have hdd : (derivative (derivative (hermiteHeat (n + 1) t))).eval x =
-        (n + 1 : ℝ) * (derivative (hermiteHeat n t)).eval x := by
-      rw [derivative_hermiteHeat_succ, derivative_mul]
-      simp only [derivative_C, zero_mul, zero_add, eval_mul, eval_C]
+      (((hasDerivAt_id t).mul_const (n + 1 : 𝕜)).mul ih)
+    have hode := congrArg (fun p : 𝕜[X] ↦ p.eval x) (hermiteHeat_ode n t)
     simp only [eval_add, eval_sub, eval_mul, eval_C, eval_X, eval_zero] at hode
     convert h using 1
     · ext u
       simp [hermiteHeat_add_two]
-    · rw [derivative_derivative_hermiteHeat_add_two, eval_mul, eval_C, hdd]
-      simp only [id_eq]
-      linear_combination -(n + 1 : ℝ) / 2 * hode
+    · rw [derivative_hermiteHeat_succ (n + 1), derivative_C_mul,
+        derivative_hermiteHeat_succ, derivative_C_mul]
+      simp only [eval_mul, eval_C, Nat.cast_add, Nat.cast_one, id_eq]
+      linear_combination -(n + 1 : 𝕜) / 2 * hode
 
 /-- Time differentiation lowers the index by two, including at time zero. -/
-theorem hasDerivAt_hermiteHeat_time (n : ℕ) (t x : ℝ) :
+theorem hasDerivAt_hermiteHeat_time [CharZero 𝕜] (n : ℕ) (t x : 𝕜) :
     HasDerivAt (fun u ↦ (hermiteHeat n u).eval x)
-      (-((n.descFactorial 2 : ℝ) / 2) * (hermiteHeat (n - 2) t).eval x) t := by
+      (-((n.descFactorial 2 : 𝕜) / 2) * (hermiteHeat (n - 2) t).eval x) t := by
   have hdd := iterate_derivative_hermiteHeat n 2 t
   simp only [Function.iterate_succ_apply', Function.iterate_zero, id_eq] at hdd
   convert hasDerivAt_hermiteHeat_time_aux n t x using 1
@@ -90,28 +89,43 @@ theorem hasDerivAt_hermiteHeat_time (n : ℕ) (t x : ℝ) :
 
 /-- The ordinary time derivative of a space-time Hermite polynomial. -/
 @[simp]
-theorem deriv_hermiteHeat_time (n : ℕ) (t x : ℝ) :
+theorem deriv_hermiteHeat_time [CharZero 𝕜] (n : ℕ) (t x : 𝕜) :
     deriv (fun u ↦ (hermiteHeat n u).eval x) t =
-      -((n.descFactorial 2 : ℝ) / 2) * (hermiteHeat (n - 2) t).eval x :=
+      -((n.descFactorial 2 : 𝕜) / 2) * (hermiteHeat (n - 2) t).eval x :=
   (hasDerivAt_hermiteHeat_time n t x).deriv
 
 /-- The spatial derivative of a space-time Hermite polynomial, including the constant case. -/
-theorem hasDerivAt_hermiteHeat_space (n : ℕ) (t x : ℝ) :
+theorem hasDerivAt_hermiteHeat_space (n : ℕ) (t x : 𝕜) :
     HasDerivAt (fun y ↦ (hermiteHeat n t).eval y)
-      ((n : ℝ) * (hermiteHeat (n - 1) t).eval x) x := by
+      ((n : 𝕜) * (hermiteHeat (n - 1) t).eval x) x := by
   simpa only [derivative_hermiteHeat, eval_mul, eval_C] using
     (hermiteHeat n t).hasDerivAt x
 
-/-- The backward heat equation for the space-time Hermite polynomials,
-with ordinary derivatives valid even at time zero. -/
-theorem hermiteHeat_heat_equation (n : ℕ) (t x : ℝ) :
-    deriv (fun u ↦ (hermiteHeat n u).eval x) t +
-      1 / 2 * deriv (deriv fun y ↦ (hermiteHeat n t).eval y) x = 0 := by
+/-- The second spatial derivative lowers the index by two, including low degrees. -/
+theorem hasDerivAt_deriv_hermiteHeat_space (n : ℕ) (t x : 𝕜) :
+    HasDerivAt (deriv fun y ↦ (hermiteHeat n t).eval y)
+      ((n.descFactorial 2 : 𝕜) * (hermiteHeat (n - 2) t).eval x) x := by
   have hspace : deriv (fun y ↦ (hermiteHeat n t).eval y) =
       fun y ↦ (derivative (hermiteHeat n t)).eval y :=
     funext fun y ↦ (hermiteHeat n t).deriv
-  rw [(hasDerivAt_hermiteHeat_time_aux n t x).deriv, hspace,
-    (derivative (hermiteHeat n t)).deriv]
+  rw [hspace]
+  have hdd := iterate_derivative_hermiteHeat n 2 t
+  simp only [Function.iterate_succ_apply', Function.iterate_zero, id_eq] at hdd
+  simpa only [hdd, eval_mul, eval_C] using (derivative (hermiteHeat n t)).hasDerivAt x
+
+/-- The ordinary second spatial derivative of a space-time Hermite polynomial. -/
+@[simp]
+theorem deriv_deriv_hermiteHeat_space (n : ℕ) (t x : 𝕜) :
+    deriv (deriv fun y ↦ (hermiteHeat n t).eval y) x =
+      (n.descFactorial 2 : 𝕜) * (hermiteHeat (n - 2) t).eval x :=
+  (hasDerivAt_deriv_hermiteHeat_space n t x).deriv
+
+/-- The backward heat equation for the space-time Hermite polynomials,
+with ordinary derivatives valid even at time zero. -/
+theorem hermiteHeat_heat_equation [CharZero 𝕜] (n : ℕ) (t x : 𝕜) :
+    deriv (fun u ↦ (hermiteHeat n u).eval x) t +
+      1 / 2 * deriv (deriv fun y ↦ (hermiteHeat n t).eval y) x = 0 := by
+  rw [deriv_hermiteHeat_time, deriv_deriv_hermiteHeat_space]
   ring
 
 end TauCeti
