@@ -48,12 +48,16 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   for an operator intertwined with the derivative by substitution.
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
+* `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
+  and negating the variable commute with the Euler operator `X * d⁄dX`.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
 * `PowerSeries.coeff_iterate_derivative_eq_descFactorial`: the `M`-th coefficient of `f⁽ⁱ⁾` is
   `(M + i) (M + i - 1) ⋯ (M + 1)` times the `(M + i)`-th coefficient of `f`.
-* `PowerSeries.coeff_X_pow_mul_iterate_derivative`: `Xⁱ f⁽ⁱ⁾` has `M`-th coefficient
-  `M (M - 1) ⋯ (M - i + 1)` times that of `f`.
+* `PowerSeries.coeff_X_pow_mul_iterate_derivative`, `PowerSeries.coeff_X_mul_derivative`,
+  `PowerSeries.coeff_sub_smul_X_mul_derivative`, `PowerSeries.sub_smul_X_mul_derivative_eq_iff`:
+  coefficient action of `Xⁱ f⁽ⁱ⁾`, `X * d⁄dX`, and `f ↦ f - c • (X * d⁄dX f)`, and explicit
+  characterization of formal solutions to `f - c • (X * d⁄dX f) = u` over a field.
 * `PowerSeries.derivative_algebraMap_polynomial`, `PowerSeries.derivative_polynomial_smul`: the
   derivative of the image of a polynomial, and the Leibniz rule for the action of `R[X]` on
   `A⟦X⟧`.
@@ -125,6 +129,19 @@ theorem coeff_X_pow_mul_iterate_derivative (f : R⟦X⟧) (i M : ℕ) :
   · rw [coeff_iterate_derivative_eq_descFactorial, Nat.sub_add_cancel h]
   · rw [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp h), Nat.cast_zero, zero_mul]
 
+/-- Multiplying the derivative by `X` multiplies the `n`-th coefficient by `n`. -/
+theorem coeff_X_mul_derivative (f : R⟦X⟧) (n : ℕ) :
+    coeff n (X * d⁄dX f) = n * coeff n f := by
+  have h := coeff_X_pow_mul_iterate_derivative f 1 n
+  rwa [pow_one, Function.iterate_one, Nat.descFactorial_one] at h
+
+/-- Rescaling commutes with the Euler operator `X * d⁄dX`. -/
+theorem rescale_X_mul_derivative (a : R) (φ : R⟦X⟧) :
+    rescale a (X * d⁄dX φ) = X * d⁄dX (rescale a φ) := by
+  ext n
+  rw [coeff_rescale, coeff_X_mul_derivative, coeff_X_mul_derivative, coeff_rescale]
+  ring
+
 /-- The shifted coefficient identity when `n + 1` can be cancelled. -/
 private theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative_of_hasUniqueDiv
     [HasUniqueDiv R] (v : R⟦X⟧)
@@ -181,6 +198,11 @@ end CommSemiring
 section CommRing
 
 variable {R : Type*} [CommRing R]
+
+/-- Negating the variable commutes with the Euler operator `X * d⁄dX`. -/
+theorem evalNegHom_X_mul_derivative (φ : R⟦X⟧) :
+    evalNegHom (X * d⁄dX φ) = X * d⁄dX (evalNegHom φ) :=
+  rescale_X_mul_derivative (-1) φ
 
 /-- An operator intertwined with the derivative by substitution satisfies the iterated chain
 rule. -/
@@ -278,6 +300,22 @@ theorem eq_of_mul_derivative_eq_mul [HasUniqueDiv R] {u P Q w : R⟦X⟧}
         (nsmul_right_injective m.succ_ne_zero (hm.trans (smul_zero _).symm))
 
 end CommRing
+
+/-- The `n`-th coefficient of `f - c • (X * d⁄dX f)` is `(1 - c * n) • coeff n f`. -/
+theorem coeff_sub_smul_X_mul_derivative {R A : Type*} [Ring R] [CommRing A] [Module R A]
+    (c : R) (f : A⟦X⟧) (n : ℕ) :
+    coeff n (f - c • (X * d⁄dX f)) = (1 - c * n) • coeff n f := by
+  rw [map_sub, coeff_smul, coeff_X_mul_derivative, ← nsmul_eq_mul, sub_smul, one_smul,
+    mul_smul, Nat.cast_smul_eq_nsmul]
+
+/-- For a field `K` and `c : K` such that `1 - c * k ≠ 0` for all `k : ℕ`, a series `f : A⟦X⟧`
+solves `f - c • (X * d⁄dX f) = u` if and only if its `k`-th coefficient is
+`(1 - c * k)⁻¹ • coeff k u`. -/
+theorem sub_smul_X_mul_derivative_eq_iff {K A : Type*} [Field K] [CommRing A] [Module K A]
+    {f u : A⟦X⟧} {c : K} (hc : ∀ k : ℕ, (1 : K) - c * k ≠ 0) :
+    f - c • (X * d⁄dX f) = u ↔ f = mk fun k => (1 - c * k)⁻¹ • coeff k u := by
+  simp only [PowerSeries.ext_iff, coeff_sub_smul_X_mul_derivative, coeff_mk]
+  exact forall_congr' fun k => (eq_inv_smul_iff₀ (hc k)).symm
 
 section Algebra
 

@@ -98,9 +98,8 @@ theorem airyModulusSqCoeff_succ (k : ℕ) :
     airyModulusSqCoeff (k + 1) =
       (6 * (k : ℚ) + 1) * (6 * (k : ℚ) + 3) * (6 * (k : ℚ) + 5) /
         (96 * ((k : ℚ) + 1)) * airyModulusSqCoeff k := by
-  rw [airyModulusSqCoeff_def, airyModulusSqCoeff_def,
-    show 3 * (k + 1) = 3 * k + 1 + 1 + 1 by omega,
-    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_succ,
+  rw [airyModulusSqCoeff_def, airyModulusSqCoeff_def, mul_add_one, Finset.prod_range_add,
+    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one,
     Nat.factorial_succ, pow_succ]
   push_cast; field_simp; ring
 
@@ -256,26 +255,16 @@ theorem coeff_airyDerivPhaseSeries (k : ℕ) :
 theorem constantCoeff_airyDerivPhaseSeries : constantCoeff airyDerivPhaseSeries = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_airyDerivPhaseSeries, airyDerivPhaseCoeff_zero]
 
-private theorem mk_div_one_sub_two_mul_derivative (u : ℚ⟦X⟧) :
-    PowerSeries.mk (fun k => coeff k u / (1 - 2 * (k : ℚ))) -
-      (2 : ℚ) • (X * d⁄dX (PowerSeries.mk fun k => coeff k u / (1 - 2 * (k : ℚ)))) = u := by
-  ext k
-  have hne : (1 - 2 * (k : ℚ)) ≠ 0 := by exact_mod_cast (show (1 : ℤ) - 2 * k ≠ 0 by omega)
-  have hcd : coeff k (X * d⁄dX (PowerSeries.mk fun k => coeff k u / (1 - 2 * (k : ℚ)))) =
-      (k : ℚ) * (coeff k u / (1 - 2 * (k : ℚ))) := by
-    simpa using coeff_X_pow_mul_iterate_derivative
-      (PowerSeries.mk fun k => coeff k u / (1 - 2 * (k : ℚ))) 1 k
-  rw [map_sub, coeff_smul, coeff_mk, hcd, smul_eq_mul,
-    show coeff k u / (1 - 2 * (k : ℚ)) - 2 * ((k : ℚ) * (coeff k u / (1 - 2 * (k : ℚ)))) =
-      (1 - 2 * (k : ℚ)) * (coeff k u / (1 - 2 * (k : ℚ))) by ring,
-    mul_div_cancel₀ _ hne]
-
 /-- Applying `1 - 2 X d⁄dX` to `airyPhaseSeries` recovers the formal inverse of
 `airyModulusSqSeries`. -/
 theorem airyPhaseSeries_sub_two_X_mul_derivative :
     airyPhaseSeries - (2 : ℚ) • (X * d⁄dX airyPhaseSeries) =
-      invOfUnit airyModulusSqSeries 1 :=
-  mk_div_one_sub_two_mul_derivative (invOfUnit airyModulusSqSeries 1)
+      invOfUnit airyModulusSqSeries 1 := by
+  rw [sub_smul_X_mul_derivative_eq_iff fun k => by
+    have h : (1 : ℕ) ≠ 2 * k := by omega
+    exact sub_ne_zero.mpr (by exact_mod_cast h)]
+  ext k
+  simp [airyPhaseCoeff_def, div_eq_inv_mul]
 
 /-- **Formal Wronskian differential equation for `airyPhaseSeries`**
 (from DLMF 9.8.14, 9.8.20, 9.8.22):
@@ -289,8 +278,12 @@ theorem airyModulusSqSeries_mul_airyPhaseSeries_sub_two_X_mul_derivative :
 `airyDerivModulusSqSeries`. -/
 theorem airyDerivPhaseSeries_sub_two_X_mul_derivative :
     airyDerivPhaseSeries - (2 : ℚ) • (X * d⁄dX airyDerivPhaseSeries) =
-      invOfUnit airyDerivModulusSqSeries 1 :=
-  mk_div_one_sub_two_mul_derivative (invOfUnit airyDerivModulusSqSeries 1)
+      invOfUnit airyDerivModulusSqSeries 1 := by
+  rw [sub_smul_X_mul_derivative_eq_iff fun k => by
+    have h : (1 : ℕ) ≠ 2 * k := by omega
+    exact sub_ne_zero.mpr (by exact_mod_cast h)]
+  ext k
+  simp [airyDerivPhaseCoeff_def, div_eq_inv_mul]
 
 /-- **Formal Wronskian differential equation for `airyDerivPhaseSeries`**
 (from DLMF 9.8.14, 9.8.21, 9.8.23):
@@ -516,20 +509,6 @@ theorem eq_map_airyZeroSeriesU_iff {A : Type*} [CommRing A] [Algebra ℚ A] {g :
     eq_map_algebraMap_binomialReversion_iff (f := evalNegHom airyDerivPhaseSeries) (g := g)
       (by simp) (Units.mk0 (3 / 2 : ℚ) (by norm_num)) (3 : ℚ)
 
-private theorem evalNegHom_mul_sub_two_X_mul_derivative {M P : ℚ⟦X⟧}
-    (h : M * (P - (2 : ℚ) • (X * d⁄dX P)) = 1) :
-    evalNegHom M * (evalNegHom P - (2 : ℚ) • (X * d⁄dX (evalNegHom P))) = 1 := by
-  have hsmul (p : ℚ⟦X⟧) : (2 : ℚ) • p = 2 * p := by rw [Algebra.smul_def, map_ofNat]
-  have hneg : evalNegHom (X * d⁄dX P) = X * d⁄dX (evalNegHom P) := by
-    simp only [evalNegHom, map_mul, rescale_X, derivative_rescale]; ring
-  have h' := congrArg evalNegHom h
-  rwa [hsmul, map_mul, map_sub, map_one, map_mul, map_ofNat, hneg, ← hsmul] at h'
-
-private theorem sq_mul_of_eq_binomialPow_neg_half {S D : ℚ⟦X⟧}
-    (hD0 : constantCoeff D = 1) (h : S = D.binomialPow (-1 / 2 : ℚ)) : S ^ 2 * D = 1 := by
-  rw [h, pow_binomialPow hD0, show (2 : ℕ) • (-1 / 2 : ℚ) = -1 by norm_num]
-  simpa [binomialPow_one hD0] using binomialPow_neg_mul hD0 (1 : ℚ)
-
 /-- **Differential formula for `airyZeroSeriesV`**:
 `airyZeroSeriesV = (airyZeroSeriesT - 3 • (X * d⁄dX airyZeroSeriesT)) ^ (-1 / 2)`. -/
 theorem airyZeroSeriesV_eq_binomialPow_derivative :
@@ -539,21 +518,23 @@ theorem airyZeroSeriesV_eq_binomialPow_derivative :
     (f := evalNegHom airyPhaseSeries) (by simp) (Units.mk0 (3 / 2 : ℚ) (by norm_num)) (3 : ℚ)
     (by
       norm_num
-      exact evalNegHom_mul_sub_two_X_mul_derivative
-        airyModulusSqSeries_mul_airyPhaseSeries_sub_two_X_mul_derivative)
-  simp only [Units.val_mk0, ← airyZeroSeriesT_def, show (3 / 2 : ℚ) - 1 = 1 / 2 by norm_num] at hsub
+      have h := congrArg evalNegHom
+        airyModulusSqSeries_mul_airyPhaseSeries_sub_two_X_mul_derivative
+      rwa [map_mul, map_sub, map_one, evalNegHom_smul, evalNegHom_X_mul_derivative] at h)
+  simp only [Units.val_mk0, ← airyZeroSeriesT_def] at hsub
   have hd0 : constantCoeff (airyZeroSeriesT - (3 : ℚ) • (X * d⁄dX airyZeroSeriesT)) = 1 := by simp
+  have hexp : (1 / 4 : ℚ) + ((3 / 2 : ℚ) - 1) * (-1 / 2 : ℚ) = 0 := by norm_num
   rw [airyZeroSeriesV_def, hsub,
     binomialPow_mul (constantCoeff_binomialPow constantCoeff_airyZeroSeriesT _) hd0,
     binomialPow_binomialPow constantCoeff_airyZeroSeriesT, ← mul_assoc,
-    ← binomialPow_add constantCoeff_airyZeroSeriesT,
-    show (1 / 4 : ℚ) + (1 / 2 : ℚ) * (-1 / 2 : ℚ) = 0 by norm_num, binomialPow_zero, one_mul]
+    ← binomialPow_add constantCoeff_airyZeroSeriesT, hexp, binomialPow_zero, one_mul]
 
 /-- Polynomial differential relation between `airyZeroSeriesV` and `airyZeroSeriesT`:
 `V ^ 2 * (T - 3 • (X * d⁄dX T)) = 1`. -/
 theorem airyZeroSeriesV_sq_mul :
-    airyZeroSeriesV ^ 2 * (airyZeroSeriesT - (3 : ℚ) • (X * d⁄dX airyZeroSeriesT)) = 1 :=
-  sq_mul_of_eq_binomialPow_neg_half (by simp) airyZeroSeriesV_eq_binomialPow_derivative
+    airyZeroSeriesV ^ 2 * (airyZeroSeriesT - (3 : ℚ) • (X * d⁄dX airyZeroSeriesT)) = 1 := by
+  rw [airyZeroSeriesV_eq_binomialPow_derivative]
+  exact pow_binomialPow_mul_eq_one (by simp) (by norm_num)
 
 /-- **Differential formula for `airyZeroSeriesW`**:
 `airyZeroSeriesW =`
@@ -566,23 +547,25 @@ theorem airyZeroSeriesW_eq_binomialPow_derivative :
     (f := evalNegHom airyDerivPhaseSeries) (by simp) (Units.mk0 (3 / 2 : ℚ) (by norm_num)) (3 : ℚ)
     (by
       norm_num
-      exact evalNegHom_mul_sub_two_X_mul_derivative
-        airyDerivModulusSqSeries_mul_airyDerivPhaseSeries_sub_two_X_mul_derivative)
-  simp only [Units.val_mk0, ← airyZeroSeriesU_def, show (3 / 2 : ℚ) - 1 = 1 / 2 by norm_num] at hsub
+      have h := congrArg evalNegHom
+        airyDerivModulusSqSeries_mul_airyDerivPhaseSeries_sub_two_X_mul_derivative
+      rwa [map_mul, map_sub, map_one, evalNegHom_smul, evalNegHom_X_mul_derivative] at h)
+  simp only [Units.val_mk0, ← airyZeroSeriesU_def] at hsub
   have hd0 : constantCoeff (airyZeroSeriesU - (3 : ℚ) • (X * d⁄dX airyZeroSeriesU)) = 1 := by simp
+  have hexp : (-1 / 4 : ℚ) + ((3 / 2 : ℚ) - 1) * (-1 / 2 : ℚ) = -1 / 2 := by norm_num
   rw [airyZeroSeriesW_def, hsub,
     binomialPow_mul (constantCoeff_binomialPow constantCoeff_airyZeroSeriesU _) hd0,
     binomialPow_binomialPow constantCoeff_airyZeroSeriesU, ← mul_assoc,
-    ← binomialPow_add constantCoeff_airyZeroSeriesU,
-    show (-1 / 4 : ℚ) + (1 / 2 : ℚ) * (-1 / 2 : ℚ) = -1 / 2 by norm_num,
+    ← binomialPow_add constantCoeff_airyZeroSeriesU, hexp,
     ← binomialPow_mul constantCoeff_airyZeroSeriesU hd0]
 
 /-- Polynomial differential relation between `airyZeroSeriesW` and `airyZeroSeriesU`:
 `W ^ 2 * (U * (U - 3 • (X * d⁄dX U))) = 1`. -/
 theorem airyZeroSeriesW_sq_mul :
     airyZeroSeriesW ^ 2 *
-      (airyZeroSeriesU * (airyZeroSeriesU - (3 : ℚ) • (X * d⁄dX airyZeroSeriesU))) = 1 :=
-  sq_mul_of_eq_binomialPow_neg_half (by simp) airyZeroSeriesW_eq_binomialPow_derivative
+      (airyZeroSeriesU * (airyZeroSeriesU - (3 : ℚ) • (X * d⁄dX airyZeroSeriesU))) = 1 := by
+  rw [airyZeroSeriesW_eq_binomialPow_derivative]
+  exact pow_binomialPow_mul_eq_one (by simp) (by norm_num)
 
 /-! ## Exact rational coefficients (DLMF 9.8.22–9.8.23 and 9.9.18–9.9.21) -/
 
@@ -629,8 +612,9 @@ private theorem X_pow_six_dvd_mul_jet6 (a b : Fin 6 → ℚ) :
 private theorem X_pow_six_dvd_mul {f g : ℚ⟦X⟧} {a b : Fin 6 → ℚ}
     (hf : (X : ℚ⟦X⟧) ^ 6 ∣ f - jet6 a) (hg : (X : ℚ⟦X⟧) ^ 6 ∣ g - jet6 b) :
     (X : ℚ⟦X⟧) ^ 6 ∣ f * g - jet6 (mulJet6 a b) := by
-  rw [show f * g - jet6 (mulJet6 a b) = (f - jet6 a) * g + jet6 a * (g - jet6 b) +
-    (jet6 a * jet6 b - jet6 (mulJet6 a b)) by ring]
+  have hsplit : f * g - jet6 (mulJet6 a b) =
+      (f - jet6 a) * g + jet6 a * (g - jet6 b) + (jet6 a * jet6 b - jet6 (mulJet6 a b)) := by ring
+  rw [hsplit]
   exact dvd_add (dvd_add (dvd_mul_of_dvd_left hf g) (dvd_mul_of_dvd_right hg _))
     (X_pow_six_dvd_mul_jet6 a b)
 
@@ -662,10 +646,8 @@ private theorem X_pow_six_dvd_subst_X_mul {R Q : ℚ⟦X⟧} {r q : Fin 6 → �
   have hterm (k n : ℕ) (hk : k ≤ n) (hn : n < 6) :
       coeff k R • coeff n ((X * Q) ^ k) = r ⟨k, by omega⟩ * powJet6 q k ⟨n - k, by omega⟩ := by
     have hQk := X_pow_six_dvd_pow hQ k
-    have hshift : coeff n (X ^ k * Q ^ k) = coeff (n - k) (Q ^ k) := by
-      conv_lhs => rw [show n = (n - k) + k by omega, coeff_X_pow_mul]
-    rw [smul_eq_mul, coeff_eq_of_X_pow_six_dvd hR (by omega), mul_pow, hshift,
-      coeff_eq_of_X_pow_six_dvd hQk (by omega)]
+    rw [smul_eq_mul, coeff_eq_of_X_pow_six_dvd hR (by omega), mul_pow, coeff_X_pow_mul',
+      ite_eq_left hk, coeff_eq_of_X_pow_six_dvd hQk (by omega)]
   rw [X_pow_dvd_iff]; intro n hn
   have hsum : (∑ k ∈ Finset.range (n + 1), coeff k R • coeff n ((X * Q) ^ k)) =
       ∑ k ∈ Finset.range (n + 1),
@@ -679,9 +661,7 @@ private theorem X_pow_six_dvd_derivativeThree {f : ℚ⟦X⟧} {a : Fin 6 → �
     (hf : (X : ℚ⟦X⟧) ^ 6 ∣ f - jet6 a) :
     (X : ℚ⟦X⟧) ^ 6 ∣ (f - (3 : ℚ) • (X * d⁄dX f)) - jet6 (derivativeThreeJet6 a) := by
   rw [X_pow_dvd_iff]; intro n hn
-  have hcd : coeff n (X * d⁄dX f) = (n : ℚ) * coeff n f := by
-    simpa using coeff_X_pow_mul_iterate_derivative f 1 n
-  rw [map_sub, map_sub, coeff_smul, smul_eq_mul, hcd,
+  rw [map_sub, coeff_sub_smul_X_mul_derivative, smul_eq_mul,
     coeff_eq_of_X_pow_six_dvd hf hn, coeff_sum_C_mul_X_pow, dite_eq_left hn]
   interval_cases n <;> simp [derivativeThreeJet6] <;> ring
 
@@ -832,10 +812,11 @@ private theorem X_pow_six_dvd_binomialReversion_three_halves_three {f : ℚ⟦X�
     hrev ▸ X_pow_six_dvd_pow (X_pow_six_dvd_subst_X_mul hf hv_neg3) 2
   have hsq : (X : ℚ⟦X⟧) ^ 6 ∣ ((jet6 v).binomialPow (3 / 2 : ℚ) * S) ^ 2 - 1 := by
     have hv3 : ((jet6 v).binomialPow (3 / 2 : ℚ)) ^ 2 = jet6 v ^ 3 := by
-      rw [pow_binomialPow hv_cc, show (2 : ℕ) • (3 / 2 : ℚ) = (3 : ℕ) by norm_num,
-        binomialPow_natCast hv_cc 3]
-    rw [mul_pow, hv3, show jet6 v ^ 3 * S ^ 2 - 1 =
-      jet6 v ^ 3 * (S ^ 2 - jet6 q) + (jet6 v ^ 3 * jet6 q - 1) by ring]
+      have hexp : (2 : ℕ) • (3 / 2 : ℚ) = ((3 : ℕ) : ℚ) := by norm_num
+      rw [pow_binomialPow hv_cc, hexp, binomialPow_natCast hv_cc 3]
+    have hsplit : jet6 v ^ 3 * S ^ 2 - 1 =
+        jet6 v ^ 3 * (S ^ 2 - jet6 q) + (jet6 v ^ 3 * jet6 q - 1) := by ring
+    rw [mul_pow, hv3, hsplit]
     exact dvd_add (dvd_mul_of_dvd_right hS2 _) hq_prod
   have hprod_cc : constantCoeff ((jet6 v).binomialPow (3 / 2 : ℚ) * S) = 1 := by
     rw [map_mul, constantCoeff_binomialPow hv_cc, hS0, one_mul]

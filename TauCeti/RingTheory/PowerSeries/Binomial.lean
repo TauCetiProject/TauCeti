@@ -201,8 +201,9 @@ private theorem subst_binomialSeries_sub_one_self (r s : R) :
   · rw [constantCoeff_subst_of_constantCoeff_zero' (by simp)]; simp
   · have hsplit : (binomialSeries R s).subst (binomialSeries R r - 1) =
         (binomialSeries R (s - 1)).subst (binomialSeries R r - 1) * binomialSeries R r := by
-      conv_lhs => rw [show s = (s - 1) + 1 by ring, binomialSeries_add, binomialSeries_one]
-      rw [subst_mul hsub, subst_add hsub, subst_one, subst_X hsub, add_sub_cancel]
+      have hmul : binomialSeries R s = binomialSeries R (s - 1) * (1 + X) := by
+        rw [← binomialSeries_one (R := R), ← binomialSeries_add, sub_add_cancel]
+      rw [hmul, subst_mul hsub, subst_add hsub, subst_one, subst_X hsub, add_sub_cancel]
     have hderiv := one_add_X_mul_derivative_binomialSeries (A := R) r
     rw [derivative_subst hsub, map_sub, derivative_one, sub_zero, derivative_binomialSeries,
       subst_smul hsub]
@@ -316,6 +317,19 @@ theorem binomialPow_mul_neg {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
     f.binomialPow r * f.binomialPow (-r) = 1 := by
   rw [← binomialPow_add hf, add_neg_cancel, binomialPow_zero]
 
+/-- `f.binomialPow (-1 : R)` is the left inverse of `f`. -/
+@[simp]
+theorem binomialPow_neg_one_mul {f : A⟦X⟧} (hf : constantCoeff f = 1) :
+    f.binomialPow (-1 : R) * f = 1 := by
+  have h := binomialPow_neg_mul hf (1 : R)
+  rwa [binomialPow_one hf] at h
+
+/-- `f.binomialPow (-1 : R)` is the right inverse of `f`. -/
+@[simp]
+theorem mul_binomialPow_neg_one {f : A⟦X⟧} (hf : constantCoeff f = 1) :
+    f * f.binomialPow (-1 : R) = 1 := by
+  rw [mul_comm, binomialPow_neg_one_mul hf]
+
 /-- Every formal binomial power of a series with constant coefficient `1` is a unit. -/
 theorem isUnit_binomialPow {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
     IsUnit (f.binomialPow r) :=
@@ -323,11 +337,8 @@ theorem isUnit_binomialPow {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) :
 
 /-- At exponent `-1`, the formal binomial power is `invOfUnit f 1`. -/
 theorem binomialPow_neg_one {f : A⟦X⟧} (hf : constantCoeff f = 1) :
-    f.binomialPow (-1 : R) = invOfUnit f 1 := by
-  have h1 : f * invOfUnit f 1 = 1 := mul_invOfUnit f 1 hf
-  have h2 : f.binomialPow (-1 : R) * f = 1 := by
-    simpa [binomialPow_one hf] using binomialPow_neg_mul hf (1 : R)
-  exact left_inv_eq_right_inv h2 h1
+    f.binomialPow (-1 : R) = invOfUnit f 1 :=
+  left_inv_eq_right_inv (binomialPow_neg_one_mul hf) (mul_invOfUnit f 1 hf)
 
 /-- At a negated natural number `-(n : R)`, the formal binomial power is `(invOfUnit f 1) ^ n`. -/
 theorem binomialPow_neg_natCast {f : A⟦X⟧} (hf : constantCoeff f = 1) (n : ℕ) :
@@ -367,6 +378,11 @@ theorem pow_binomialPow {f : A⟦X⟧} (hf : constantCoeff f = 1) (r : R) (n : �
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, ih, succ_nsmul, binomialPow_add hf]
+
+/-- If `n • r = -1`, then `(f.binomialPow r) ^ n * f = 1`. -/
+theorem pow_binomialPow_mul_eq_one {f : A⟦X⟧} (hf : constantCoeff f = 1)
+    {n : ℕ} {r : R} (hr : n • r = -1) : f.binomialPow r ^ n * f = 1 := by
+  rw [pow_binomialPow hf, hr, binomialPow_neg_one_mul hf]
 
 /-- Taking the formal binomial power of `f ^ n` scales the exponent by `n`. -/
 theorem binomialPow_pow {f : A⟦X⟧} (hf : constantCoeff f = 1) (n : ℕ) (r : R) :
@@ -646,8 +662,7 @@ theorem binomialPow_binomialReversion_mul_subst {f : A⟦X⟧} (hf : constantCoe
   have hfG0 : constantCoeff (f.subst (P.substInvOfIsUnit hP1) : A⟦X⟧) = 1 := by
     rw [constantCoeff_subst_of_constantCoeff_zero' (constantCoeff_substInvOfIsUnit P hP1),
       hf, map_one]
-  rw [binomialPow_binomialPow hfG0, neg_mul, Units.inv_mul]
-  simpa [binomialPow_one hfG0] using binomialPow_neg_mul hfG0 (1 : R)
+  rw [binomialPow_binomialPow hfG0, neg_mul, Units.inv_mul, binomialPow_neg_one_mul hfG0]
 
 /-- **Congruence modulo `X ^ m` for `binomialReversion`**: if `constantCoeff g = 1` and
 `X ^ m ∣ g ^ a * f(X * g ^ (-b)) - 1`, then `X ^ m ∣ g - f.binomialReversion a b`. -/
@@ -667,15 +682,15 @@ theorem X_pow_dvd_sub_binomialReversion {f g : A⟦X⟧} (hf : constantCoeff f =
     rw [constantCoeff_subst_of_constantCoeff_zero' hH0, hf, map_one]
   have hpow := X_pow_dvd_binomialPow_sub_binomialPow
     (by rw [map_mul, constantCoeff_binomialPow hg, hfH0, one_mul]) hdvd (-b * (↑a⁻¹ : R))
+  have hexp : (a : R) * (-b * (↑a⁻¹ : R)) = -b := by
+    rw [mul_comm (a : R), mul_assoc, Units.inv_mul, mul_one]
   rw [binomialPow_one_left, binomialPow_mul (constantCoeff_binomialPow hg _) hfH0,
-    binomialPow_binomialPow hg,
-    show (a : R) * (-b * (↑a⁻¹ : R)) = -b by
-      rw [mul_comm (a : R), mul_assoc, Units.inv_mul, mul_one],
-    ← subst_binomialPow hf hH] at hpow
+    binomialPow_binomialPow hg, hexp, ← subst_binomialPow hf hH] at hpow
   have hXP : X ^ (m + 1) ∣ P.subst H - X := by
-    rw [show P.subst H - X = X * (g.binomialPow (-b) *
-        (f.binomialPow (-b * (↑a⁻¹ : R))).subst H - 1) by
-      rw [subst_mul hH, subst_X hH, mul_sub, mul_one, mul_assoc], pow_succ']
+    have hPX : P.subst H - X =
+        X * (g.binomialPow (-b) * (f.binomialPow (-b * (↑a⁻¹ : R))).subst H - 1) := by
+      rw [subst_mul hH, subst_X hH, mul_sub, mul_one, mul_assoc]
+    rw [hPX, pow_succ']
     exact mul_dvd_mul_left X hpow
   set G : A⟦X⟧ := X * S.binomialPow (-b)
   have hGeq : P.substInvOfIsUnit hP1 = G :=
@@ -728,8 +743,7 @@ theorem binomialReversion_zero {f : A⟦X⟧} (hf : constantCoeff f = 1) (a : R�
     f.binomialReversion a 0 = f.binomialPow (-(↑a⁻¹ : R)) := by
   refine ((eq_binomialReversion_iff hf a 0).mpr ⟨constantCoeff_binomialPow hf _, ?_⟩).symm
   rw [neg_zero, binomialPow_zero, mul_one, X_subst, binomialPow_binomialPow hf, neg_mul,
-    Units.inv_mul]
-  simpa [binomialPow_one hf] using binomialPow_neg_mul hf (1 : R)
+    Units.inv_mul, binomialPow_neg_one_mul hf]
 
 /-- The linear coefficient of `f.binomialReversion a b` is `-(a⁻¹) • coeff 1 f`. -/
 theorem coeff_one_binomialReversion (f : A⟦X⟧) (a : Rˣ) (b : R) :
