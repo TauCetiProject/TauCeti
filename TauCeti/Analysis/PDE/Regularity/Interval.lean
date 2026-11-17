@@ -210,9 +210,9 @@ private theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 
     (Integrable.of_bound ha.aemeasurable.inv.aestronglyMeasurable _ hinv).const_mul k
   have h2 : Integrable (fun t => (a t)⁻¹ * (Φ t + F t)) (volume.restrict (Ioo x₀ x₁)) :=
     (hΦ.add hF).bdd_mul ha.aemeasurable.inv.aestronglyMeasurable hinv
-  rw [W1p.intervalTraceL_apply, ← W1p.integral_gradient_eq_intervalRepresentativeL_sub,
-    intervalIntegral.integral_of_le hx.le, integral_Ioc_eq_integral_Ioo, integral_congr_ae hgrad,
-    integral_sub h1 h2, integral_const_mul]
+  rw [W1p.intervalTraceL_apply,
+    ← W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u (s := ⟨x₀, _⟩) (t := ⟨x₁, _⟩)
+      hx.le, integral_congr_ae hgrad, integral_sub h1 h2, integral_const_mul]
   ring
 
 /-- The constant `k` of the first integral `a u' + F = k - Φ`, where `|Φ| ≤ N` on `(x₀, x₁)`, is
@@ -354,8 +354,8 @@ theorem abs_intervalRepresentativeL_sub_le_of_forall_integral_eq (hx : x₀ < x�
     refine h.trans (mul_le_mul_of_nonneg_left (ENNReal.toReal_mono hF.eLpNorm_ne_top
       (eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl)))
       (Real.rpow_nonneg (sub_nonneg.2 hyz) _))
-  rw [← W1p.integral_gradient_eq_intervalRepresentativeL_sub, intervalIntegral.integral_of_le hyz,
-    integral_Ioc_eq_integral_Ioo, abs_of_nonneg (sub_nonneg.2 hyz)]
+  rw [← W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u hyz,
+    abs_of_nonneg (sub_nonneg.2 hyz)]
   calc |∫ t in Ioo (y : ℝ) z, W1p.gradient u t|
       ≤ ∫ t in Ioo (y : ℝ) z, |W1p.gradient u t| := abs_integral_le_integral_abs
     _ ≤ ∫ t in Ioo (y : ℝ) z, (K + |F t| / lam) :=
@@ -521,13 +521,10 @@ theorem abs_intervalRepresentativeL_sub_le_min_mul_div (hx : x₀ < x₁) {lam M
   rw [W1p.intervalTraceL_apply, Prod.mk.injEq] at htr
   have hgi : IntegrableOn (W1p.gradient u) (Ioo x₀ x₁) :=
     (Lp.memLp (W1p.gradient u)).integrable Fact.out
-  -- `∫ c..d u' = ū d - ū c`, as a set integral over `(c, d)`.
-  have hFTC : ∀ c d : Icc x₀ x₁, (c : ℝ) ≤ d → ∫ t in Ioo (c : ℝ) d, W1p.gradient u t =
-      W1p.intervalRepresentativeL hx u d - W1p.intervalRepresentativeL hx u c := fun c d hcd => by
-    rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hcd,
-      W1p.integral_gradient_eq_intervalRepresentativeL_sub]
   have hint : ∫ t in Ioo x₀ x₁, W1p.gradient u t = 0 := by
-    rw [hFTC ⟨x₀, left_mem_Icc.2 hx.le⟩ ⟨x₁, right_mem_Icc.2 hx.le⟩ hx.le, htr.1, htr.2, sub_self]
+    rw [W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u
+      (s := ⟨x₀, left_mem_Icc.2 hx.le⟩) (t := ⟨x₁, right_mem_Icc.2 hx.le⟩) hx.le, htr.1, htr.2,
+      sub_self]
   have hbound := ae_abs_le_div_of_integral_eq_zero hx hlam haM hgi hint
     (hk.mono fun t ht => by linarith) hG
   have hN : 0 ≤ N / lam := by
@@ -536,7 +533,7 @@ theorem abs_intervalRepresentativeL_sub_le_min_mul_div (hx : x₀ < x₁) {lam M
   -- Integrating `|u'| ≤ N / λ` from either endpoint.
   have hI : ∀ c d : Icc x₀ x₁, (c : ℝ) ≤ d → |W1p.intervalRepresentativeL hx u d -
       W1p.intervalRepresentativeL hx u c| ≤ ((d : ℝ) - c) * (N / lam) := fun c d hcd => by
-    rw [← hFTC c d hcd, ← Real.norm_eq_abs]
+    rw [← W1p.setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hx u hcd, ← Real.norm_eq_abs]
     refine (norm_setIntegral_le_of_norm_le_const_ae measure_Ioo_lt_top
       (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo c.2.1 d.2.2)
         (hbound.mono fun t ht => (Real.norm_eq_abs _).trans_le ht))).trans_eq ?_
