@@ -76,21 +76,6 @@ namespace ParabolicC2HolderSpace
 variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-/-- The spatial slices of the extension of `u` constant in time have the gradient `D_x u`. -/
-private theorem hasFDerivAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) {t : ℝ}
-    (ht : t ∈ Icc a b) (y : E) :
-    HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
-      (timeExtension hab.le (spatialFDerivL f) y t) y := by
-  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
-
-/-- The time slices of the extension of `u` constant in time have the time derivative `∂ₜ u` on
-`[a, b]`. -/
-private theorem hasDerivWithinAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) (x : E)
-    {s : ℝ} (hs : s ∈ Icc a b) :
-    HasDerivWithinAt (timeExtension hab.le f x) (timeExtension hab.le (timeDerivL f) x s)
-      (Icc a b) s := by
-  simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
-
 /-! ### Supremum-norm interpolation -/
 
 /-- **Interpolation inequality for the spatial gradient.** For every `ε > 0`,
@@ -224,21 +209,15 @@ private theorem eHolderNorm_valueL_add_eHolderNorm_spatialFDerivL_le (hα : α �
             nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
             nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) +
         14 * ε ^ (-(1 + (α : ℝ))) * ‖valueL f‖₊) := by
-  have hx : ∀ t ∈ Icc a b, ∀ y,
-      HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
-        (timeExtension hab.le (spatialFDerivL f) y t) y := fun t ht y ↦
-    hasFDerivAt_timeExtension f ht y
   have hxx : ∀ t ∈ Icc a b, ∀ y,
       HasFDerivAt (fun z ↦ timeExtension hab.le (spatialFDerivL f) z t)
         (timeExtension hab.le (spatialSecondFDerivL f) y t) y := by
     intro t ht y
     simpa [timeExtension_def, projIcc_of_mem hab.le ht] using
       f.hasSpatialSecondFDerivAt ⟨t, ht⟩ y
-  have ht : ∀ y, ∀ t ∈ Icc a b,
-      HasDerivWithinAt (timeExtension hab.le f y)
-        (timeExtension hab.le (timeDerivL f) y t) (Icc a b) t := fun y t ht ↦
-    hasDerivWithinAt_timeExtension f y ht
-  have h := ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le hα hε hε₁ hx hxx ht
+  have h := ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le hα hε hε₁
+    (fun t ht y ↦ f.hasFDerivAt_timeExtension ht y) hxx
+    (fun y t ht ↦ f.hasDerivWithinAt_timeExtension y ht)
     (M₀ := ‖valueL f‖₊) (M₂ := ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖₊)
     (Mₜ := ‖(timeDerivL f).toBoundedContinuousFunction‖₊)
     (H₂ := nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _))

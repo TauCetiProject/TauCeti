@@ -55,6 +55,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
   and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
   two-sided a priori bounds and uniqueness for the Cauchy problem.
+* `TauCeti.ParabolicC2HolderSpace.norm_valueL_le_exp_mul_mul_add_norm_euclideanParabolicOperatorL`:
+  the comparison principle as a bound on `‖u‖_∞` by a bound on `|u(·, 0)|` and `‖P u‖_{α,par}`.
 
 ## References
 
@@ -543,6 +545,43 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le
   rw [neg_apply] at hge
   exact abs_le.2 ⟨neg_le.1 hge, le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le hα ha hc
     hγ hM hK u (fun q ↦ (abs_le.1 (hP q)).2) (fun x ↦ (abs_le.1 (hinit x)).2) p⟩
+
+/-- **The comparison principle as a supremum bound.** On `ℝⁿ × [0, T]`, `T ≤ T₀`, with `a`
+positive semidefinite and `‖c‖ ≤ K`, every `u ∈ C_b^{2+α,1+α/2}` with `|u(·, 0)| ≤ M` satisfies
+`‖u‖_∞ ≤ e^(K T₀) (1 + T₀) (M + ‖P u‖_{α,par})`. -/
+theorem norm_valueL_le_exp_mul_mul_add_norm_euclideanParabolicOperatorL (hα : α ≤ 1)
+    {K T₀ T : ℝ≥0} {hT : (0 : ℝ) < T} (hTT₀ : T ≤ T₀)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (hck : ‖c‖ ≤ K) (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {M : ℝ}
+    (hM : ∀ x, |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ M) :
+    ‖valueL u‖ ≤
+      Real.exp (K * T₀) * (1 + T₀) * (M + ‖euclideanParabolicOperatorL hα a b c u‖) := by
+  set P := ‖euclideanParabolicOperatorL hα a b c u‖
+  have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
+  have hP₀ : 0 ≤ P := norm_nonneg _
+  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
+  have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα (b := b) ha
+    (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
+    K.coe_nonneg u (fun q ↦ by
+      simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
+        (euclideanParabolicOperatorL hα a b c u) q) hM p
+  obtain ⟨ht₀, htT⟩ := (slabTime p).2
+  have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans (by exact_mod_cast hTT₀)
+  rw [valueL_apply, Real.norm_eq_abs]
+  refine hmax.trans ?_
+  rw [sub_zero]
+  have hexp : Real.exp (K * (slabTime p : ℝ)) ≤ Real.exp (K * T₀) :=
+    Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)
+  have hlin : M + (slabTime p : ℝ) * P ≤ (1 + T₀) * (M + P) := by
+    nlinarith [mul_le_mul_of_nonneg_right htT₀ hP₀, mul_nonneg T₀.coe_nonneg hM₀]
+  calc _ ≤ Real.exp (K * T₀) * (M + (slabTime p : ℝ) * P) :=
+        mul_le_mul_of_nonneg_right hexp (by positivity)
+    _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (M + P)) :=
+        mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
+    _ = _ := by ring
 
 /-- **Uniqueness for the Cauchy problem.** For degenerate elliptic `a`, an element of
 `C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` is determined by `P u` and its initial trace `u(·, t₀)`. -/

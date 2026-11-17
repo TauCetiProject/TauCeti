@@ -146,9 +146,7 @@ private theorem norm_valueHolderL_restrictL_le (hα : α ≤ 1) {κ d : ℝ} (h�
       Real.rpow_neg hd.le]
     exact (div_eq_mul_inv _ _).symm
   have hW := norm_valueHolderL_le_add_sq_mul hα w hρ (by rw [hρ2]; nlinarith)
-  have hwV : ‖valueL w‖ ≤ ‖valueL u‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
-      simpa [w] using (valueL u).norm_coe_le_norm _
+  have hwV : ‖valueL w‖ ≤ ‖valueL u‖ := norm_valueL_restrictL_le u
   have hwY : (nnHolderNorm α ((spatialSecondFDerivL w).toBoundedContinuousFunction : _ → _) : ℝ) +
       nnHolderNorm α ((timeDerivL w).toBoundedContinuousFunction : _ → _) ≤ ‖w‖ := by
     have := norm_def w

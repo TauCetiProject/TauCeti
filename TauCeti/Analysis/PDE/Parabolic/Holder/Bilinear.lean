@@ -331,9 +331,7 @@ theorem norm_compHolder₂_valueHolderL_le_of_eq_zero {s : ℝ} (has : a ≤ s) 
     mem_slab.2 ⟨hp, (mem_slab.1 p.2).2⟩
   have hw : ∀ p (hp : p ∈ S), w ⟨p, hmem p hp⟩ = u p := fun p hp ↦ by
     simp [w]
-  have hwu : ‖valueL w‖ ≤ ‖valueL u‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
-      simpa [w] using (valueL u).norm_coe_le_norm _
+  have hwu : ‖valueL w‖ ≤ ‖valueL u‖ := norm_valueL_restrictL_le u
   have hcoe : (valueHolderL hα w : slab (E := E) s b → G) = (valueL w : slab (E := E) s b → G) :=
     funext fun p ↦ by simp
   have hHS : HolderOnWith (nnHolderNorm α (valueL w : slab (E := E) s b → G)) α

@@ -174,6 +174,12 @@ theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
   rw [restrictL_eq_restrict]
   exact norm_restrict_le ha hb hab' f
 
+/-- Restriction to a smaller slab does not increase the supremum norm of the value. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueL (restrictL ha hb hab' f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    simpa using (valueL f).norm_coe_le_norm _
+
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
 theorem restrictL_self (f : ParabolicC2HolderSpace α E F hab) :

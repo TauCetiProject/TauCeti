@@ -68,8 +68,6 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `exists_norm_le_euclideanParabolicOperatorL_add`: the global estimate with the supremum norm of
   `u` on the right.
 * `exists_norm_le_euclideanParabolicOperatorL`: the global Schauder estimate.
-* `norm_valueL_le_exp_mul_mul_add_norm_euclideanParabolicOperatorL`: the comparison principle as
-  a bound on `‖u‖_∞` by a bound on `|u(·, 0)|` and `‖P u‖_{α,par}`.
 
 ## References
 
@@ -450,43 +448,6 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add (hα₀ : 0 < α) (hα₁
     mul_le_mul_of_nonneg_left hzn hk, mul_nonneg hC₂ hG₀,
     mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ Cs * (1 + T₀))) hP₀,
     mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ Cs * (1 + T₀))) hV₀]
-
-/-- **The comparison principle as a supremum bound.** On `ℝⁿ × [0, T]`, `T ≤ T₀`, with `a`
-positive semidefinite and `‖c‖ ≤ K`, every `u ∈ C_b^{2+α,1+α/2}` with `|u(·, 0)| ≤ M` satisfies
-`‖u‖_∞ ≤ e^(K T₀) (1 + T₀) (M + ‖P u‖_{α,par})`. -/
-theorem norm_valueL_le_exp_mul_mul_add_norm_euclideanParabolicOperatorL (hα : α ≤ 1)
-    {K T₀ T : ℝ≥0} {hT : (0 : ℝ) < T} (hTT₀ : T ≤ T₀)
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    (hck : ‖c‖ ≤ K) (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {M : ℝ}
-    (hM : ∀ x, |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ M) :
-    ‖valueL u‖ ≤
-      Real.exp (K * T₀) * (1 + T₀) * (M + ‖euclideanParabolicOperatorL hα a b c u‖) := by
-  set P := ‖euclideanParabolicOperatorL hα a b c u‖
-  have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
-  have hP₀ : 0 ≤ P := norm_nonneg _
-  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
-  have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα (b := b) ha
-    (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
-    K.coe_nonneg u (fun q ↦ by
-      simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
-        (euclideanParabolicOperatorL hα a b c u) q) hM p
-  obtain ⟨ht₀, htT⟩ := (slabTime p).2
-  have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans (by exact_mod_cast hTT₀)
-  rw [valueL_apply, Real.norm_eq_abs]
-  refine hmax.trans ?_
-  rw [sub_zero]
-  have hexp : Real.exp (K * (slabTime p : ℝ)) ≤ Real.exp (K * T₀) :=
-    Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)
-  have hlin : M + (slabTime p : ℝ) * P ≤ (1 + T₀) * (M + P) := by
-    nlinarith [mul_le_mul_of_nonneg_right htT₀ hP₀, mul_nonneg T₀.coe_nonneg hM₀]
-  calc _ ≤ Real.exp (K * T₀) * (M + (slabTime p : ℝ) * P) :=
-        mul_le_mul_of_nonneg_right hexp (by positivity)
-    _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (M + P)) :=
-        mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
-    _ = _ := by ring
 
 /-- **The global Schauder estimate.** For `0 < α < 1`, ellipticity constants `λ > 0` and `Λ`, a
 bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the horizon, there is a
