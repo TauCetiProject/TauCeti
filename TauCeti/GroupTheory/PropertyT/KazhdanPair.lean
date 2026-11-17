@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.PropertyT.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
-import Mathlib.Algebra.Group.TransferInstance
+import Mathlib.Algebra.Group.Shrink
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 
 /-!
@@ -25,14 +25,17 @@ vector. Their Hilbert direct sum has almost invariant vectors, given by the chos
 placed in single coordinates, and still has no nonzero `Λ`-invariant vector, since a vector of the
 sum is invariant exactly when each of its coordinates is.
 
-Using the GNS realization of positive-definite matrix coefficients, any unitary representation in
-an arbitrary universe `u` with an `(F, δ)`-invariant unit vector receives an intertwining linear
-isometry from a GNS Hilbert space in the universe `v` of `Γ`; thus `IsKazhdanPair.{v}` and
-`RelativePropertyT.{v}` imply `IsKazhdanPair.{u}` and `RelativePropertyT.{u}` for every universe
-`u`, and coincide unconditionally with `IsKazhdanPair.{max u v}` and
-`RelativePropertyT.{max u v}`. When `Γ` is countable, transporting its group structure to a subset
-of `ℕ` in `Type 0` makes `IsKazhdanPair.{u}` and `RelativePropertyT.{u}` completely independent of
-the Hilbert-space universe `u`.
+Using Mathlib's `Shrink.mulEquiv : Shrink.{u} Γ ≃* Γ` together with the GNS realization of
+positive-definite matrix coefficients, whenever `Γ` is `u`-small (`[Small.{u} Γ]`), any unitary
+representation in an arbitrary universe `w` with an `(F, δ)`-invariant unit vector receives an
+intertwining linear isometry from a GNS Hilbert space in `Type u`; thus `IsKazhdanPair.{u}` and
+`RelativePropertyT.{u}` imply `IsKazhdanPair.{w}` and `RelativePropertyT.{w}` for every universe
+`w`. Since `Γ : Type v` is always `v`-small (`small_self`) and `max u v`-small (`small_max`,
+which is not a typeclass instance, so the `*_max_iff` equivalences are provided explicitly),
+`IsKazhdanPair.{v}` and `RelativePropertyT.{v}` coincide unconditionally with
+`IsKazhdanPair.{max u v}` and `RelativePropertyT.{max u v}`. When `Γ` is small in both `u` and `w`
+(for example whenever `Γ` is countable, via `Countable.toSmall`), `IsKazhdanPair` and
+`RelativePropertyT` are independent of the Hilbert-space universe.
 
 ## Main statements
 
@@ -43,11 +46,13 @@ the Hilbert-space universe `u`.
   for `⊤`.
 * `Subgroup.relativePropertyT_iff_exists_isKazhdanPair`: relative property (T) is equivalent to
   the existence of a Kazhdan pair.
-* `Subgroup.IsKazhdanPair.of_universe`, `Subgroup.RelativePropertyT.of_universe`,
-  `Subgroup.isKazhdanPair_max_iff`, `Subgroup.relativePropertyT_max_iff`: unconditional universe
-  transfer from the group universe `v`.
+* `Subgroup.IsKazhdanPair.of_universe`, `Subgroup.RelativePropertyT.of_universe`: universe transfer
+  from any universe `u` in which `Γ` is small (`[Small.{u} Γ]`).
 * `Subgroup.isKazhdanPair_iff_isKazhdanPair`, `Subgroup.relativePropertyT_iff_relativePropertyT`:
-  full universe independence when `Γ` is countable.
+  universe equivalence between any two universes in which `Γ` is small (in particular for countable
+  `Γ`).
+* `Subgroup.isKazhdanPair_max_iff`, `Subgroup.relativePropertyT_max_iff`: unconditional universe
+  equivalence between `max u v` and `v`.
 
 ## References
 
@@ -59,7 +64,7 @@ public section
 
 namespace Subgroup
 
-universe u v w
+universe u w v
 
 open ContRepresentation
 open scoped ComplexOrder InnerProductSpace
@@ -198,110 +203,75 @@ theorem relativePropertyT_iff_exists_isKazhdanPair (Λ : Subgroup Γ) :
   rw [restrict_hilbertSum, mem_invariants_hilbertSum_iff] at hx
   exact hx0 (lp.ext (funext fun i ↦ not_not.mp fun h ↦ hinv i (x i) h (hx i)))
 
-/-- A Kazhdan pair in the universe `v` of the ambient group is a Kazhdan pair in every
-Hilbert-space universe `u`. -/
-theorem IsKazhdanPair.of_universe {Λ : Subgroup Γ} {F : Finset Γ} {δ : ℝ}
-    (h : Λ.IsKazhdanPair.{v} F δ) : Λ.IsKazhdanPair.{u} F δ := by
+/-- A Kazhdan pair in a universe `u` in which the ambient group `Γ` is small is a Kazhdan pair in
+every Hilbert-space universe `w`. -/
+theorem IsKazhdanPair.of_universe [Small.{u} Γ] {Λ : Subgroup Γ} {F : Finset Γ} {δ : ℝ}
+    (h : Λ.IsKazhdanPair.{u} F δ) : Λ.IsKazhdanPair.{w} F δ := by
   rintro H _ _ _ ρ hρ ⟨ξ, hξ, hF⟩
-  let φ : Γ → ℂ := fun g ↦ ⟪ξ, ρ g ξ⟫_ℂ
-  have hφ : (Matrix.of fun g h : Γ ↦ φ (g⁻¹ * h)).PosSemidef :=
-    hρ.posSemidef_inner_map_inv_mul ξ
-  let T := hφ.gnsIsometry hρ (fun _ ↦ rfl)
+  let e : Shrink.{u} Γ ≃* Γ := Shrink.mulEquiv
+  let ρ₀ : ContRepresentation ℂ (Shrink.{u} Γ) H := ρ.restrict e.toMonoidHom
+  have hρ₀ : ρ₀.IsUnitary := hρ.restrict e.toMonoidHom
+  let φ : Shrink.{u} Γ → ℂ := fun g ↦ ⟪ξ, ρ₀ g ξ⟫_ℂ
+  have hφ : (Matrix.of fun g h : Shrink.{u} Γ ↦ φ (g⁻¹ * h)).PosSemidef :=
+    hρ₀.posSemidef_inner_map_inv_mul ξ
+  let T := hφ.gnsIsometry hρ₀ (fun _ ↦ rfl)
+  let σ : ContRepresentation ℂ Γ hφ.gnsSpace := hφ.gnsRepresentation.restrict e.symm.toMonoidHom
+  have hσ : σ.IsUnitary := hφ.isUnitary_gnsRepresentation.restrict e.symm.toMonoidHom
   let ξ₀ := hφ.gnsVector 1
   have hTξ₀ : T ξ₀ = ξ := by simp [T, ξ₀]
   have hξ₀_norm : ‖ξ₀‖ = 1 := by rw [← T.norm_map, hTξ₀, hξ]
-  have hξ₀_F (g : Γ) (hg : g ∈ F) : ‖hφ.gnsRepresentation g ξ₀ - ξ₀‖ < δ := by
-    rw [← T.norm_map, map_sub, hφ.gnsIsometry_gnsRepresentation, hTξ₀]
+  have hTσ (g : Γ) (x : hφ.gnsSpace) : T (σ g x) = ρ g (T x) := by
+    simpa [σ, ρ₀, e, T] using
+      hφ.gnsIsometry_gnsRepresentation hρ₀ (fun _ ↦ rfl) (e.symm g) x
+  have hξ₀_F (g : Γ) (hg : g ∈ F) : ‖σ g ξ₀ - ξ₀‖ < δ := by
+    rw [← T.norm_map, map_sub, hTσ, hTξ₀]
     exact hF g hg
-  obtain ⟨v₀, hv₀, hv₀Λ⟩ := h hφ.gnsSpace hφ.gnsRepresentation hφ.isUnitary_gnsRepresentation
-    ⟨ξ₀, hξ₀_norm, hξ₀_F⟩
+  obtain ⟨v₀, hv₀, hv₀Λ⟩ := h hφ.gnsSpace σ hσ ⟨ξ₀, hξ₀_norm, hξ₀_F⟩
   refine ⟨T v₀, fun h0 ↦ hv₀ (T.injective (by simpa using h0)), fun k ↦ ?_⟩
-  rw [restrict_apply_apply, ← hφ.gnsIsometry_gnsRepresentation hρ (fun _ ↦ rfl)]
+  rw [restrict_apply_apply, ← hTσ]
   exact congrArg T (hv₀Λ k)
+
+/-- **Universe independence of Kazhdan pairs.** When the ambient group `Γ` is small in both `u` and
+`w` (for example whenever `Γ` is countable), whether `(F, δ)` is a Kazhdan pair for `Λ` is
+equivalent in universes `u` and `w`. -/
+theorem isKazhdanPair_iff_isKazhdanPair [Small.{u} Γ] [Small.{w} Γ] (Λ : Subgroup Γ)
+    (F : Finset Γ) (δ : ℝ) :
+    Λ.IsKazhdanPair.{u} F δ ↔ Λ.IsKazhdanPair.{w} F δ :=
+  ⟨IsKazhdanPair.of_universe, IsKazhdanPair.of_universe⟩
 
 /-- Being a Kazhdan pair in universe `max u v` is equivalent to being a Kazhdan pair in the
 universe `v` of the group. -/
 theorem isKazhdanPair_max_iff (Λ : Subgroup Γ) (F : Finset Γ) (δ : ℝ) :
-    Λ.IsKazhdanPair.{max u v} F δ ↔ Λ.IsKazhdanPair.{v} F δ := by
-  refine ⟨fun h H _ _ _ ρ hρ ⟨ξ, hξ, hF⟩ ↦ ?_, IsKazhdanPair.of_universe⟩
-  let H' : PUnit.{u + 1} → Type v := fun _ ↦ H
-  let ρ' : ∀ i : PUnit.{u + 1}, ContRepresentation ℂ Γ (H' i) := fun _ ↦ ρ
-  let hρ' : ∀ i : PUnit.{u + 1}, (ρ' i).IsUnitary := fun _ ↦ hρ
-  obtain ⟨x, hx0, hx⟩ :=
-    h (lp H' 2) (hilbertSum ρ' hρ') (isUnitary_hilbertSum ρ' hρ') ⟨lp.single 2 PUnit.unit ξ,
-      by rw [lp.norm_single (by norm_num), hξ], fun g hg ↦ by
-        rw [hilbertSum_apply_single, ← lp.single_sub, lp.norm_single (by norm_num)]
-        exact hF g hg⟩
-  rw [restrict_hilbertSum, mem_invariants_hilbertSum_iff] at hx
-  refine ⟨x PUnit.unit, fun h0 ↦ hx0 (lp.ext (funext fun ⟨⟩ ↦ h0)), hx PUnit.unit⟩
+    Λ.IsKazhdanPair.{max u v} F δ ↔ Λ.IsKazhdanPair.{v} F δ :=
+  ⟨fun h ↦ have : Small.{max u v} Γ := small_max Γ; h.of_universe, IsKazhdanPair.of_universe⟩
 
-/-- Relative property (T) in the universe `v` of the ambient group implies relative property (T)
-in every Hilbert-space universe `u`. -/
-theorem RelativePropertyT.of_universe {Λ : Subgroup Γ}
-    (h : Λ.RelativePropertyT.{v}) : Λ.RelativePropertyT.{u} := by
-  obtain ⟨F, δ, hδ, hK⟩ := Λ.relativePropertyT_iff_exists_isKazhdanPair.{v, v}.mp h
+/-- Relative property (T) in a universe `u` in which the ambient group `Γ` is small implies
+relative property (T) in every Hilbert-space universe `w`. -/
+theorem RelativePropertyT.of_universe [Small.{u} Γ] {Λ : Subgroup Γ}
+    (h : Λ.RelativePropertyT.{u}) : Λ.RelativePropertyT.{w} := by
+  let e : Shrink.{u} Γ ≃* Γ := Shrink.mulEquiv
+  let Λ₀ : Subgroup (Shrink.{u} Γ) := Λ.comap e.toMonoidHom
+  have hΛ₀_map : Λ₀.map e.toMonoidHom = Λ :=
+    Subgroup.map_comap_eq_self_of_surjective e.surjective Λ
+  have hΛ₀ : Λ₀.RelativePropertyT.{u} :=
+    (relativePropertyT_map_mulEquiv_iff e).mp (hΛ₀_map.symm ▸ h)
+  obtain ⟨F₀, δ, hδ, hK₀⟩ := Λ₀.relativePropertyT_iff_exists_isKazhdanPair.{u, u}.mp hΛ₀
+  have hK : Λ.IsKazhdanPair.{u} (F₀.map e.toEquiv.toEmbedding) δ := by
+    rw [← hΛ₀_map]
+    exact (isKazhdanPair_map_mulEquiv_iff e).mpr hK₀
   exact hK.of_universe.relativePropertyT hδ
+
+/-- **Universe independence of relative property (T).** When the ambient group `Γ` is small in both
+`u` and `w` (for example whenever `Γ` is countable), relative property (T) of `Λ` is equivalent in
+universes `u` and `w`. -/
+theorem relativePropertyT_iff_relativePropertyT [Small.{u} Γ] [Small.{w} Γ] (Λ : Subgroup Γ) :
+    Λ.RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{w} :=
+  ⟨RelativePropertyT.of_universe, RelativePropertyT.of_universe⟩
 
 /-- Relative property (T) in universe `max u v` is equivalent to relative property (T) in the
 universe `v` of the group. -/
 theorem relativePropertyT_max_iff (Λ : Subgroup Γ) :
-    Λ.RelativePropertyT.{max u v} ↔ Λ.RelativePropertyT.{v} := by
-  refine ⟨fun h ↦ ?_, RelativePropertyT.of_universe⟩
-  obtain ⟨F, δ, hδ, hK⟩ := Λ.relativePropertyT_iff_exists_isKazhdanPair.{u, v}.mp h
-  exact ((Λ.isKazhdanPair_max_iff.{u} F δ).mp hK).relativePropertyT hδ
-
-/-- Every countable group is isomorphic to a group in `Type 0`. -/
-private theorem exists_mulEquiv_type0 [Countable Γ] :
-    ∃ (G₀ : Type) (_ : Group G₀), Nonempty (G₀ ≃* Γ) := by
-  obtain ⟨f, hf⟩ := exists_injective_nat Γ
-  let e : Set.range f ≃ Γ := (Equiv.ofInjective f hf).symm
-  let : Group (Set.range f) := e.group
-  exact ⟨Set.range f, inferInstance, ⟨e.mulEquiv⟩⟩
-
-/-- Transporting along a group isomorphism `G₀ ≃* Γ` with `G₀ : Type 0` reduces `IsKazhdanPair.{u}`
-to `IsKazhdanPair.{0}` on `G₀`. -/
-private theorem isKazhdanPair_iff_type0 {G₀ : Type} [Group G₀] (φ : G₀ ≃* Γ)
-    (Λ : Subgroup Γ) (F : Finset Γ) (δ : ℝ) :
-    Λ.IsKazhdanPair.{u} F δ ↔
-      (Λ.comap φ.toMonoidHom).IsKazhdanPair.{0} (F.map φ.symm.toEquiv.toEmbedding) δ := by
-  let Λ₀ := Λ.comap φ.toMonoidHom
-  let F₀ := F.map φ.symm.toEquiv.toEmbedding
-  have hΛ : Λ₀.map φ.toMonoidHom = Λ := Subgroup.map_comap_eq_self_of_surjective φ.surjective Λ
-  have hF : F₀.map φ.toEquiv.toEmbedding = F := by
-    ext g
-    simp [F₀]
-  calc Λ.IsKazhdanPair.{u} F δ
-      ↔ (Λ₀.map φ.toMonoidHom).IsKazhdanPair.{u} (F₀.map φ.toEquiv.toEmbedding) δ := by
-        rw [hΛ, hF]
-    _ ↔ Λ₀.IsKazhdanPair.{u} F₀ δ := isKazhdanPair_map_mulEquiv_iff φ
-    _ ↔ Λ₀.IsKazhdanPair.{0} F₀ δ := Λ₀.isKazhdanPair_max_iff.{u} F₀ δ
-
-/-- Transporting along a group isomorphism `G₀ ≃* Γ` with `G₀ : Type 0` reduces
-`RelativePropertyT.{u}` to `RelativePropertyT.{0}` on `G₀`. -/
-private theorem relativePropertyT_iff_type0 {G₀ : Type} [Group G₀] (φ : G₀ ≃* Γ)
-    (Λ : Subgroup Γ) :
-    Λ.RelativePropertyT.{u} ↔ (Λ.comap φ.toMonoidHom).RelativePropertyT.{0} := by
-  -- Passing through `G₀ : Type 0` is needed because `relativePropertyT_iff_exists_isKazhdanPair`
-  -- requires universe `max u v`, whereas `u` may be smaller than `v`.
-  let Λ₀ := Λ.comap φ.toMonoidHom
-  have hΛ : Λ₀.map φ.toMonoidHom = Λ := Subgroup.map_comap_eq_self_of_surjective φ.surjective Λ
-  calc Λ.RelativePropertyT.{u}
-      ↔ (Λ₀.map φ.toMonoidHom).RelativePropertyT.{u} := by rw [hΛ]
-    _ ↔ Λ₀.RelativePropertyT.{u} := relativePropertyT_map_mulEquiv_iff φ
-    _ ↔ Λ₀.RelativePropertyT.{0} := Λ₀.relativePropertyT_max_iff.{u}
-
-/-- **Universe independence of Kazhdan pairs.** When the ambient group `Γ` is countable, whether
-`(F, δ)` is a Kazhdan pair for `Λ` is independent of the Hilbert-space universe. -/
-theorem isKazhdanPair_iff_isKazhdanPair [Countable Γ] (Λ : Subgroup Γ) (F : Finset Γ) (δ : ℝ) :
-    Λ.IsKazhdanPair.{u} F δ ↔ Λ.IsKazhdanPair.{w} F δ := by
-  obtain ⟨G₀, _, ⟨φ⟩⟩ := exists_mulEquiv_type0 (Γ := Γ)
-  exact (isKazhdanPair_iff_type0.{u} φ Λ F δ).trans (isKazhdanPair_iff_type0.{w} φ Λ F δ).symm
-
-/-- **Universe independence of relative property (T).** When the ambient group `Γ` is countable,
-relative property (T) of `Λ` is independent of the Hilbert-space universe. -/
-theorem relativePropertyT_iff_relativePropertyT [Countable Γ] (Λ : Subgroup Γ) :
-    Λ.RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{w} := by
-  obtain ⟨G₀, _, ⟨φ⟩⟩ := exists_mulEquiv_type0 (Γ := Γ)
-  exact (relativePropertyT_iff_type0.{u} φ Λ).trans (relativePropertyT_iff_type0.{w} φ Λ).symm
+    Λ.RelativePropertyT.{max u v} ↔ Λ.RelativePropertyT.{v} :=
+  ⟨fun h ↦ have : Small.{max u v} Γ := small_max Γ; h.of_universe, RelativePropertyT.of_universe⟩
 
 end Subgroup

@@ -37,9 +37,12 @@ its GNS representation, since the GNS vectors span a dense subspace.
   `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`,
   `Matrix.PosSemidef.norm_gnsVector_eq_one`, `Matrix.PosSemidef.norm_gnsVector_sub_lt` and
   `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_lt`.
-* `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_of_tendsto_mul` and
+* `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_of_tendsto_mul`,
+  `Matrix.PosSemidef.eq_zero_of_eventually_gnsRepresentation_eq_self`,
+  `Matrix.PosSemidef.invariants_restrict_gnsRepresentation_eq_bot`, and
   `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_cofinite`: decay of matrix coefficients of
-  the GNS representation along a filter or at infinity.
+  the GNS representation along a filter or at infinity, and the resulting vanishing of invariant
+  vectors.
 * `Matrix.PosSemidef.gnsIsometry` and `Matrix.PosSemidef.gnsEquiv`: the universal property of
   the GNS representation.
 * `TauCeti.posSemidef_inv_mul_iff_exists_isUnitary`: a function on a group is positive definite
@@ -256,6 +259,28 @@ theorem tendsto_inner_gnsRepresentation_of_tendsto_mul {ι : Type*} {l : Filter 
   calc ‖⟪x, hφ.gnsRepresentation (s i) (y - y')⟫_𝕜‖
       ≤ ‖x‖ * ‖hφ.gnsRepresentation (s i) (y - y')‖ := norm_inner_le_norm _ _
     _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (y - y'), norm_nonneg x]
+
+/-- If all double translates `i ↦ φ (a⁻¹ * s i * b)` converge to `0` along a nontrivial filter `l`,
+then any vector in the GNS space fixed eventually by `gnsRepresentation (s i)` is zero. -/
+theorem eq_zero_of_eventually_gnsRepresentation_eq_self {ι : Type*} {l : Filter ι} [l.NeBot]
+    {s : ι → G} (hs : ∀ a b : G, Tendsto (fun i ↦ φ (a⁻¹ * s i * b)) l (𝓝 0))
+    {v : hφ.gnsSpace} (hv : ∀ᶠ i in l, hφ.gnsRepresentation (s i) v = v) :
+    v = 0 := by
+  have hconst : Tendsto (fun i ↦ ⟪v, hφ.gnsRepresentation (s i) v⟫_𝕜) l (𝓝 ⟪v, v⟫_𝕜) :=
+    tendsto_const_nhds.congr' (hv.mono fun i hi ↦ congrArg (⟪v, ·⟫_𝕜) hi.symm)
+  exact inner_self_eq_zero.mp
+    (tendsto_nhds_unique hconst (hφ.tendsto_inner_gnsRepresentation_of_tendsto_mul hs v v))
+
+/-- If all double translates `i ↦ φ (a⁻¹ * f (s i) * b)` along a monoid homomorphism `f : K →* G`
+converge to `0` along a nontrivial filter `l`, then the restricted GNS representation
+`gnsRepresentation.restrict f` has no nonzero invariant vectors. -/
+theorem invariants_restrict_gnsRepresentation_eq_bot {ι K : Type*} {l : Filter ι} [l.NeBot]
+    [Monoid K] (f : K →* G) {s : ι → K}
+    (hs : ∀ a b : G, Tendsto (fun i ↦ φ (a⁻¹ * f (s i) * b)) l (𝓝 0)) :
+    (hφ.gnsRepresentation.restrict f).invariants = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun v hv ↦
+    hφ.eq_zero_of_eventually_gnsRepresentation_eq_self hs <|
+      Eventually.of_forall fun i ↦ by simpa using hv (s i)
 
 /-- If a positive-definite function vanishes at infinity, then so does every coefficient
 `g ↦ ⟪x, π g y⟫` of its GNS representation `π`. -/

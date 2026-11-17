@@ -41,9 +41,13 @@ permanence of the Haagerup property under increasing unions and finite-index ove
 
 ## Main declarations
 
+* `Matrix.IsHermitian.apply_inv_eq_star`: conjugate symmetry `φ g⁻¹ = star (φ g)` for functions
+  with Hermitian kernel `(g, h) ↦ φ (g⁻¹ * h)`.
 * `Matrix.PosSemidef.norm_apply_le_one`, `Matrix.PosSemidef.one_sub_re_nonneg`,
   `Matrix.PosSemidef.norm_sub_one_sq_le`: norm and real-part bounds for normalized positive-definite
   functions.
+* `Matrix.PosSemidef.sqrt_re_one_sub_re_mul_le`: subadditivity (triangle inequality) of
+  `g ↦ √(re (φ 1) - re (φ g))` for positive-definite functions on a group.
 * `Matrix.PosSemidef.comp_monoidHom`: restriction along a group homomorphism.
 * `TauCeti.posSemidef_inv_mul_of_tendsto`: pointwise limits.
 * `Matrix.PosSemidef.extend_subtype`: extension by zero from a subgroup.
@@ -67,6 +71,17 @@ noncomputable section
 
 open Filter Matrix Topology
 open scoped ComplexOrder
+
+namespace Matrix.IsHermitian
+
+/-- For a function `φ : G → R` whose kernel `(g, h) ↦ φ (g⁻¹ * h)` is Hermitian,
+`φ g⁻¹ = star (φ g)`. -/
+theorem apply_inv_eq_star {R G : Type*} [Star R] [DivInvOneMonoid G] {φ : G → R}
+    (h : (of fun g h : G ↦ φ (g⁻¹ * h)).IsHermitian) (g : G) :
+    φ g⁻¹ = star (φ g) := by
+  simpa using (h.apply g 1).symm
+
+end Matrix.IsHermitian
 
 namespace Matrix.PosSemidef
 
@@ -92,6 +107,58 @@ theorem norm_sub_one_sq_le {φ : G → 𝕜} (hφ : (of fun g h : G ↦ φ (g⁻
   rw [← RCLike.normSq_eq_def', RCLike.normSq_apply]
   simp only [map_sub, RCLike.one_re, RCLike.one_im, sub_zero]
   nlinarith
+
+/-- **Triangle inequality for positive-definite functions.** For any positive-definite function
+`φ : G → 𝕜`, `g ↦ √(re (φ 1) - re (φ g))` is subadditive:
+`√(re (φ 1) - re (φ (g * h))) ≤ √(re (φ 1) - re (φ g)) + √(re (φ 1) - re (φ h))`. -/
+theorem sqrt_re_one_sub_re_mul_le {φ : G → 𝕜}
+    (hφ : (of fun x y : G ↦ φ (x⁻¹ * y)).PosSemidef) (g h : G) :
+    Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ (g * h))) ≤
+      Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ g)) +
+        Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ h)) := by
+  let A : ℝ := RCLike.re (φ 1) - RCLike.re (φ g)
+  let B : ℝ := RCLike.re (φ 1) - RCLike.re (φ h)
+  let C : ℝ := RCLike.re (φ 1) - RCLike.re (φ (g * h))
+  have hre_inv (z : G) : RCLike.re (φ z⁻¹) = RCLike.re (φ z) := by
+    rw [hφ.isHermitian.apply_inv_eq_star, RCLike.star_def, RCLike.conj_re]
+  -- Evaluate the `3 × 3` principal submatrix on `![1, g, g * h]` against `![t, s - t, -s]`.
+  have hM : ((of fun x y : G ↦ φ (x⁻¹ * y)).submatrix ![1, g, g * h] ![1, g, g * h]).PosSemidef :=
+    hφ.submatrix ![1, g, g * h]
+  have hquad (t s : ℝ) : 0 ≤ A * (t * t) + (C - A - B) * (t * s) + B * (s * s) := by
+    let x : Fin 3 → 𝕜 := ![(t : 𝕜), ((s - t : ℝ) : 𝕜), ((-s : ℝ) : 𝕜)]
+    have hre : 0 ≤ RCLike.re (star x ⬝ᵥ
+        ((of fun a b : G ↦ φ (a⁻¹ * b)).submatrix ![1, g, g * h] ![1, g, g * h]).mulVec x) :=
+      hM.re_dotProduct_nonneg x
+    have heval : RCLike.re (star x ⬝ᵥ
+        ((of fun a b : G ↦ φ (a⁻¹ * b)).submatrix ![1, g, g * h] ![1, g, g * h]).mulVec x) =
+        2 * (A * (t * t) + (C - A - B) * (t * s) + B * (s * s)) := by
+      simp only [x, dotProduct, mulVec, Fin.sum_univ_three, Matrix.submatrix_apply, of_apply,
+        Pi.star_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+        Matrix.tail_cons, Matrix.head_cons, inv_one, one_mul, mul_one, inv_mul_cancel,
+        inv_mul_cancel_left, RCLike.star_def, RCLike.conj_ofReal, map_add,
+        RCLike.re_ofReal_mul, RCLike.re_mul_ofReal]
+      have h1 : (g * h)⁻¹ * g = h⁻¹ := by group
+      rw [h1, hre_inv g, hre_inv h, hre_inv (g * h)]
+      dsimp only [A, B, C]
+      ring
+    linarith
+  have hA : 0 ≤ A := by simpa using hquad 1 0
+  have hB : 0 ≤ B := by simpa using hquad 0 1
+  have hdisc : discrim A (C - A - B) B ≤ 0 :=
+    discrim_le_zero fun t ↦ by simpa using hquad t 1
+  have hsq : (C - A - B) ^ 2 ≤ (2 * (Real.sqrt A * Real.sqrt B)) ^ 2 := by
+    rw [discrim] at hdisc
+    have : (2 * (Real.sqrt A * Real.sqrt B)) ^ 2 = 4 * A * B := by
+      rw [mul_pow, mul_pow, Real.sq_sqrt hA, Real.sq_sqrt hB]
+      ring
+    linarith
+  have hle : C - A - B ≤ 2 * (Real.sqrt A * Real.sqrt B) :=
+    le_of_sq_le_sq hsq (by positivity)
+  refine Real.sqrt_le_iff.mpr ⟨by positivity, ?_⟩
+  have hsq_sum : (Real.sqrt A + Real.sqrt B) ^ 2 = A + B + 2 * (Real.sqrt A * Real.sqrt B) := by
+    rw [add_sq, Real.sq_sqrt hA, Real.sq_sqrt hB]
+    ring
+  linarith
 
 /-- The restriction of a positive-definite function on `G` along a group homomorphism `f : K →* G`
 is positive definite. In particular, the restriction to a subgroup is positive definite. -/

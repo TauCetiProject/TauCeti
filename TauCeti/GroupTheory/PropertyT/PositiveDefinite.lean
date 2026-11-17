@@ -79,98 +79,6 @@ open scoped ComplexConjugate ComplexOrder InnerProductSpace
 
 variable {Γ : Type v} [Group Γ]
 
-/-! ### Auxiliary bounds on normalized positive-definite functions -/
-
-section PosSemidefHelpers
-
-/-- If a normalized positive-definite function `φ` satisfies `‖φ h - 1‖ ≥ ε₀ > 0` while `φ a` and
-`φ b` are within `ε₀ ^ 2 / 32` of `1`, the triangle inequality in the GNS space gives
-`1 - (φ (a⁻¹ * h * b)).re ≥ ε₀ ^ 2 / 8`. -/
-private theorem one_sub_re_mul_ge_of_posSemidef {φ : Γ → ℂ}
-    (hφ : (Matrix.of fun x y : Γ ↦ φ (x⁻¹ * y)).PosSemidef) (h1 : φ 1 = 1)
-    {ε₀ : ℝ} (hε₀ : 0 < ε₀) {h a b : Γ} (hh : ε₀ ≤ ‖φ h - 1‖)
-    (ha : ‖φ a - 1‖ < ε₀ ^ 2 / 32) (hb : ‖φ b - 1‖ < ε₀ ^ 2 / 32) :
-    ε₀ ^ 2 / 8 ≤ 1 - (φ (a⁻¹ * h * b)).re := by
-  let η := hφ.gnsVector
-  have h1h : ε₀ ≤ ‖η 1 - η h‖ := by
-    have hsq := hφ.norm_gnsVector_sub_sq 1 h
-    rw [inv_one, one_mul, h1, RCLike.one_re] at hsq
-    have hle : ε₀ ^ 2 ≤ ‖η 1 - η h‖ ^ 2 := by
-      calc ε₀ ^ 2 ≤ ‖φ h - 1‖ ^ 2 := pow_le_pow_left₀ hε₀.le hh 2
-        _ ≤ 2 * (1 - (φ h).re) := hφ.norm_sub_one_sq_le h1 h
-        _ = ‖η 1 - η h‖ ^ 2 := hsq.symm
-    exact (sq_le_sq₀ hε₀.le (norm_nonneg _)).mp hle
-  have h1a : ‖η 1 - η a‖ ≤ ε₀ / 4 := by
-    refine (hφ.norm_gnsVector_sub_lt h1 (by positivity) ?_).le
-    rw [inv_one, one_mul]
-    exact ha.trans_eq (by ring)
-  have hhb : ‖η (h * b) - η h‖ ≤ ε₀ / 4 := by
-    rw [norm_sub_rev]
-    refine (hφ.norm_gnsVector_sub_lt h1 (by positivity) ?_).le
-    rw [inv_mul_cancel_left]
-    exact hb.trans_eq (by ring)
-  have htri : ‖η 1 - η h‖ ≤ ‖η 1 - η a‖ + ‖η a - η (h * b)‖ + ‖η (h * b) - η h‖ := by
-    calc ‖η 1 - η h‖
-        ≤ ‖η 1 - η (h * b)‖ + ‖η (h * b) - η h‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-      _ ≤ ‖η 1 - η a‖ + ‖η a - η (h * b)‖ + ‖η (h * b) - η h‖ := by
-          gcongr; exact norm_sub_le_norm_sub_add_norm_sub _ _ _
-  have hmid : ε₀ / 2 ≤ ‖η a - η (h * b)‖ := by linarith
-  have hsq := hφ.norm_gnsVector_sub_sq a (h * b)
-  rw [← mul_assoc, h1, RCLike.one_re] at hsq
-  have hpow : (ε₀ / 2) ^ 2 ≤ 2 * (1 - (φ (a⁻¹ * h * b)).re) :=
-    (pow_le_pow_left₀ (by positivity) hmid 2).trans_eq hsq
-  linarith
-
-/-- Pointwise exponential of a convergent nonnegative-weighted sum `∑' k, (k + 1) * (1 - φ k g)` of
-normalized positive-definite functions is positive definite. -/
-private theorem posSemidef_cexp_neg_tsum {φ : ℕ → Γ → ℂ}
-    (hpd : ∀ k, (Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)).PosSemidef)
-    {t : ℝ} (ht : 0 ≤ t)
-    (hsumm : ∀ g, Summable fun k : ℕ ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k g)) :
-    (Matrix.of fun a b : Γ ↦
-      Complex.exp (-(t : ℂ) * ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b)))).PosSemidef := by
-  let Φ_approx (N : ℕ) (g : Γ) : ℂ :=
-    Complex.exp (-(t : ℂ) * ∑ k ∈ Finset.range N, ((k + 1 : ℝ) : ℂ) * (1 - φ k g))
-  have happrox (N : ℕ) : (Matrix.of fun a b : Γ ↦ Φ_approx N (a⁻¹ * b)).PosSemidef := by
-    let S : Matrix Γ Γ ℂ :=
-      ∑ k ∈ Finset.range N, ((t * (k + 1 : ℝ) : ℝ) : ℂ) • Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)
-    have hS : S.PosSemidef :=
-      Matrix.posSemidef_sum (Finset.range N) fun k _ ↦
-        (hpd k).smul (by exact_mod_cast (by positivity : (0 : ℝ) ≤ t * (k + 1)))
-    have hc : (0 : ℂ) ≤ (Real.exp (-∑ k ∈ Finset.range N, t * (k + 1 : ℝ)) : ℂ) := by
-      exact_mod_cast (Real.exp_pos _).le
-    refine (congrArg Matrix.PosSemidef ?_).mp (hS.map_cexp.smul hc)
-    ext a b
-    simp only [S, Φ_approx, Matrix.smul_apply, Matrix.map_apply, Matrix.sum_apply, Matrix.of_apply,
-      smul_eq_mul, Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_sum,
-      Complex.ofReal_mul, ← Complex.exp_add, Finset.mul_sum]
-    congr 1
-    rw [← Finset.sum_neg_distrib, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
-  refine TauCeti.posSemidef_inv_mul_of_tendsto (l := atTop)
-    (ψ := fun g ↦ Complex.exp (-(t : ℂ) * ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k g)))
-    happrox fun g ↦ ?_
-  exact Complex.continuous_exp.continuousAt.tendsto.comp
-    (((hsumm g).hasSum.tendsto_sum_nat).const_mul (-(t : ℂ)))
-
-/-- If all double translates `n ↦ Φ (a⁻¹ * s n * b)` along a sequence `s : ℕ → Γ` in `Λ` tend to
-`0`, then the GNS representation of `Φ` has no nonzero `Λ`-invariant vector. -/
-private theorem not_exists_invariant_gnsSpace_of_tendsto_mul {Λ : Subgroup Γ} {Φ : Γ → ℂ}
-    (hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef)
-    {s : ℕ → Γ} (hsΛ : ∀ n, s n ∈ Λ)
-    (hdecay : ∀ a b : Γ, Tendsto (fun n ↦ Φ (a⁻¹ * s n * b)) atTop (𝓝 0)) :
-    ¬ ∃ v : hΦ.gnsSpace, v ≠ 0 ∧ v ∈ (hΦ.gnsRepresentation.restrict Λ.subtype).invariants := by
-  rintro ⟨v, hv0, hvΛ⟩
-  have hconst : (fun n ↦ ⟪v, hΦ.gnsRepresentation (s n) v⟫_ℂ) = fun _ ↦ ⟪v, v⟫_ℂ := by
-    ext n
-    have hvn : hΦ.gnsRepresentation (s n) v = v := hvΛ ⟨s n, hsΛ n⟩
-    rw [hvn]
-  have h0 := hΦ.tendsto_inner_gnsRepresentation_of_tendsto_mul hdecay v v
-  rw [hconst] at h0
-  exact hv0 (inner_self_eq_zero.mp (tendsto_nhds_unique tendsto_const_nhds h0))
-
-end PosSemidefHelpers
-
 /-! ### Normal subgroups: quantitative Kazhdan approximation without countability -/
 
 section Normal
@@ -218,9 +126,7 @@ theorem IsKazhdanPair.norm_sub_starProjection_invariants_le {Λ : Subgroup Γ} [
     abel
   have hproj_le : ‖ρ g η - η‖ ≤ ‖ρ g ξ - ξ‖ := by
     rw [hcomm]
-    have hpyth := W.norm_sq_eq_add_norm_sq_starProjection (ρ g ξ - ξ)
-    have hnn : 0 ≤ ‖W.starProjection (ρ g ξ - ξ)‖ ^ 2 := sq_nonneg _
-    exact (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by linarith)
+    exact Wᗮ.norm_starProjection_apply_le _
   have hscale : ‖σ g η₀ - η₀‖ = ‖η‖⁻¹ * ‖ρ g η - η‖ := by
     rw [← Submodule.norm_coe, Submodule.coe_sub, coe_subrepresentation_apply, map_smul, ← smul_sub,
       norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)]
@@ -476,8 +382,37 @@ private theorem tendsto_cexp_neg_tsum_mul_zero [DecidableEq Γ] {e : ℕ → Γ}
       Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le (le_of_max_le_left hn)))
     have hb_mem : e kb ∈ A n := hA n <|
       Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le (le_of_max_le_right hn)))
-    have hre_ge : ε₀ ^ 2 / 8 ≤ 1 - (φ n ((e ka)⁻¹ * s n * e kb)).re :=
-      one_sub_re_mul_ge_of_posSemidef (hpd n) (h1 n) hε₀ (hsε n) (hF n _ ha_mem) (hF n _ hb_mem)
+    have hre_ge : ε₀ ^ 2 / 8 ≤ 1 - (φ n ((e ka)⁻¹ * s n * e kb)).re := by
+      let u : ℝ := Real.sqrt (ε₀ ^ 2 / 32)
+      have hu2 : u ^ 2 = ε₀ ^ 2 / 32 := Real.sq_sqrt (by positivity)
+      have htri₁ := (hpd n).sqrt_re_one_sub_re_mul_le (e ka * ((e ka)⁻¹ * s n * e kb)) (e kb)⁻¹
+      have htri₂ := (hpd n).sqrt_re_one_sub_re_mul_le (e ka) ((e ka)⁻¹ * s n * e kb)
+      have hinv : (φ n (e kb)⁻¹).re = (φ n (e kb)).re := by
+        rw [(hpd n).isHermitian.apply_inv_eq_star (e kb), Complex.star_def, Complex.conj_re]
+      have hprod : e ka * ((e ka)⁻¹ * s n * e kb) * (e kb)⁻¹ = s n := by group
+      simp only [RCLike.re_to_complex, hprod, h1 n, Complex.one_re, hinv] at htri₁
+      simp only [RCLike.re_to_complex, h1 n, Complex.one_re] at htri₂
+      have hre_a : 1 - (φ n (e ka)).re ≤ ε₀ ^ 2 / 32 :=
+        le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ n (e ka)))
+          (hF n _ ha_mem).le
+      have hre_b : 1 - (φ n (e kb)).re ≤ ε₀ ^ 2 / 32 :=
+        le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ n (e kb)))
+          (hF n _ hb_mem).le
+      have hsq_s : (4 * u) ^ 2 ≤ 1 - (φ n (s n)).re := by
+        have hnorm : ‖φ n (s n) - 1‖ ^ 2 ≤ 2 * (1 - (φ n (s n)).re) :=
+          (hpd n).norm_sub_one_sq_le (h1 n) (s n)
+        have hε_sq : ε₀ ^ 2 ≤ ‖φ n (s n) - 1‖ ^ 2 := pow_le_pow_left₀ hε₀.le (hsε n) 2
+        nlinarith
+      have hsqrt_s : 4 * u ≤ Real.sqrt (1 - (φ n (s n)).re) :=
+        Real.le_sqrt_of_sq_le hsq_s
+      have hsqrt_a : Real.sqrt (1 - (φ n (e ka)).re) ≤ u := Real.sqrt_le_sqrt hre_a
+      have hsqrt_b : Real.sqrt (1 - (φ n (e kb)).re) ≤ u := Real.sqrt_le_sqrt hre_b
+      have hsqrt_mid : 2 * u ≤ Real.sqrt (1 - (φ n ((e ka)⁻¹ * s n * e kb)).re) := by
+        linarith
+      have hsq_mid : (2 * u) ^ 2 ≤ (Real.sqrt (1 - (φ n ((e ka)⁻¹ * s n * e kb)).re)) ^ 2 :=
+        pow_le_pow_left₀ (by positivity) hsqrt_mid 2
+      rw [Real.sq_sqrt (by simpa using (hpd n).one_sub_re_nonneg (h1 n) _)] at hsq_mid
+      nlinarith
     have hsumm_re : Summable fun k : ℕ ↦ (k + 1 : ℝ) * (1 - (φ k ((e ka)⁻¹ * s n * e kb)).re) := by
       simpa using Complex.reCLM.summable (hsumm ((e ka)⁻¹ * s n * e kb))
     have hψ_re : (ψ ((e ka)⁻¹ * s n * e kb)).re =
@@ -533,17 +468,35 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
       rw [Metric.mem_ball, dist_zero_right, Real.norm_of_nonneg ht.le]
       exact half_lt_self hr)
   let Φ (g : Γ) : ℂ := Complex.exp (-(t : ℂ) * ψ g)
-  have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef :=
-    posSemidef_cexp_neg_tsum hpd ht.le hsumm
+  have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef := by
+    let K (k : ℕ) : Matrix Γ Γ ℂ :=
+      ((t * (k + 1 : ℝ) : ℝ) : ℂ) • Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)
+    have hK (k : ℕ) : (K k).PosSemidef :=
+      (hpd k).smul (by exact_mod_cast mul_nonneg ht.le (by positivity : (0 : ℝ) ≤ k + 1))
+    let c (k : ℕ) : ℝ := t * (k + 1 : ℝ)
+    have hterm (a b : Γ) (k : ℕ) :
+        -(t : ℂ) * (((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b))) = K k a b - (c k : ℂ) := by
+      simp only [K, c, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, Complex.ofReal_mul]
+      ring
+    have hsumm' (a b : Γ) : Summable fun k : ℕ ↦ K k a b - (c k : ℂ) :=
+      ((hsumm (a⁻¹ * b)).mul_left (-(t : ℂ))).congr (hterm a b)
+    have htsum_eq (a b : Γ) :
+        -(t : ℂ) * ψ (a⁻¹ * b) = ∑' k : ℕ, (K k a b - (c k : ℂ)) := by
+      rw [show -(t : ℂ) * ψ (a⁻¹ * b) =
+          ∑' k : ℕ, -(t : ℂ) * (((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b))) from
+        tsum_mul_left.symm]
+      exact tsum_congr (hterm a b)
+    simpa only [Φ, htsum_eq] using TauCeti.posSemidef_cexp_tsum_sub hK hsumm'
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
-  have hex_inv := (isKazhdanPair_def Λ F₀ δ₀).mp hK
+  obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
     hΦ.gnsSpace hΦ.gnsRepresentation hΦ.isUnitary_gnsRepresentation
     ⟨hΦ.gnsVector 1, hΦ.norm_gnsVector_eq_one hΦ1 1,
       fun g hg ↦ hΦ.norm_gnsRepresentation_gnsVector_one_sub_lt hΦ1 hδ₀ (htF₀ g hg)⟩
-  exact not_exists_invariant_gnsSpace_of_tendsto_mul hΦ hsΛ
-    (tendsto_cexp_neg_tsum_mul_zero he hA_sub hpd h1 hsumm hε₀
-      (fun k x hx ↦ (hF k x hx).trans_le (min_le_right _ _)) hsε ht)
-    hex_inv
+  have hbot : (hΦ.gnsRepresentation.restrict Λ.subtype).invariants = ⊥ :=
+    hΦ.invariants_restrict_gnsRepresentation_eq_bot Λ.subtype (s := fun n ↦ ⟨s n, hsΛ n⟩)
+      (tendsto_cexp_neg_tsum_mul_zero he hA_sub hpd h1 hsumm hε₀
+        (fun k x hx ↦ (hF k x hx).trans_le (min_le_right _ _)) hsε ht)
+  exact hv0 ((Submodule.mem_bot ℂ).mp (hbot ▸ hvΛ))
 
 end Bridges
 
@@ -610,8 +563,7 @@ theorem relativePropertyT_iff_forall_exists_invariant_norm_sub_lt (Λ : Subgroup
               ∀ ξ : H, ‖ξ‖ = 1 → (∀ g ∈ F, ‖ρ g ξ - ξ‖ < δ) →
                 ∃ v ∈ (ρ.restrict Λ.subtype).invariants, ‖v - ξ‖ < ε := by
   refine ⟨fun hΛ ε hε ↦ approx_invariant_of_posSemidef_approx
-    (posSemidef_approx_of_relativePropertyT
-      ((Λ.relativePropertyT_iff_relativePropertyT.{u, v}).mp hΛ)) hε, fun hinv ↦ ?_⟩
+    (posSemidef_approx_of_relativePropertyT hΛ.of_universe) hε, fun hinv ↦ ?_⟩
   obtain ⟨F, δ, hδ, hF⟩ := hinv 1 zero_lt_one
   exact (isKazhdanPair_of_exists_invariant_norm_sub_lt_one hF).relativePropertyT hδ
 
@@ -625,8 +577,7 @@ theorem relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt (Λ : Subgroup �
         ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧
           ∀ φ : Γ → ℂ, (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef → φ 1 = 1 →
             (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε := by
-  refine ⟨fun hΛ ↦ posSemidef_approx_of_relativePropertyT
-    ((Λ.relativePropertyT_iff_relativePropertyT.{u, v}).mp hΛ), fun hpd_approx ↦ ?_⟩
+  refine ⟨fun hΛ ↦ posSemidef_approx_of_relativePropertyT hΛ.of_universe, fun hpd_approx ↦ ?_⟩
   exact (Λ.relativePropertyT_iff_forall_exists_invariant_norm_sub_lt.{u}).mpr fun ε hε ↦
     approx_invariant_of_posSemidef_approx hpd_approx hε
 
