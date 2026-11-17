@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Geometry.Manifold.Instances.Stiefel
 public import TauCeti.Geometry.Sphere.LinearIsometry
-public import TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Orthonormal
+import TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast
 
 /-!
 # The Stiefel manifold as a homogeneous space
