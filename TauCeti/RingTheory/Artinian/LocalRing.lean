@@ -57,24 +57,13 @@ theorem IsAtom.le_torsionBySet_maximalIdeal {R : Type*} [CommRing R] [IsLocalRin
     {M : Type*} [AddCommGroup M] [Module R M] {a : Submodule R M} (ha : IsAtom a) :
     a ≤ torsionBySet R M (maximalIdeal R) := by
   have : IsSimpleModule R a := isSimpleModule_iff_isAtom.mpr ha
+  have hann : Module.annihilator R a = maximalIdeal R :=
+    IsLocalRing.eq_maximalIdeal IsSimpleModule.annihilator_isMaximal
   intro x hx
   rw [mem_torsionBySet_iff]
   intro m
-  let x' : a := ⟨x, hx⟩
-  -- If `m • x' ≠ 0`, simplicity spans `a` by `m • x'`, forcing `1 - r * m` to kill `x' ≠ 0`.
-  suffices h : (m : R) • x' = 0 from congrArg Subtype.val h
-  by_contra hmx
-  have htop : Submodule.span R {(m : R) • x'} = ⊤ :=
-    (eq_bot_or_eq_top _).resolve_left (span_singleton_eq_bot.not.mpr hmx)
-  obtain ⟨r, hr⟩ := mem_span_singleton.mp (htop.symm ▸ mem_top : x' ∈ _)
-  have hunit : IsUnit (1 - r * (m : R)) := by
-    refine notMem_maximalIdeal.mp fun hmem ↦
-      (maximalIdeal.isMaximal R).ne_top ((Ideal.eq_top_iff_one _).mpr ?_)
-    have hrm : r * (m : R) ∈ maximalIdeal R := (maximalIdeal R).mul_mem_left r m.prop
-    simpa using add_mem hmem hrm
-  have hzero : (1 - r * (m : R)) • x' = 0 := by
-    rw [sub_smul, one_smul, mul_smul, hr, sub_self]
-  exact hmx (by simp [hunit.smul_eq_zero.mp hzero])
+  have hm : (m : R) ∈ Module.annihilator R a := hann.symm ▸ m.prop
+  exact congrArg Subtype.val (Module.mem_annihilator.mp hm ⟨x, hx⟩)
 
 namespace TauCeti
 

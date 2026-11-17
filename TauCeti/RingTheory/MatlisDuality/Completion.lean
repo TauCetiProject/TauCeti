@@ -34,9 +34,9 @@ biduality between Artinian `R`-modules and finitely generated `R̂`-modules (Sta
 * Conversely, for an Artinian `R`-module `M`, `Hom_R(M, E)` is finitely generated over `R̂` and
   evaluation gives `M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[R̂] E)`
   (`TauCeti.IsInjectiveEnvelope.adicCompletionEvalEquivOfArtinian`).
-* For a finitely generated `R`-module `N`, `Hom_{R̂}(N̂, E) ≃ₗ[R̂] Hom_R(N, E)` and
-  `Hom_{R̂}(R̂ ⊗[R] N, E) ≃ₗ[R̂] Hom_R(N, E)`, identifying the double Matlis dual of `N` with its
-  `𝔪`-adic completion: `N̂ ≃ₗ[R̂] ((N →ₗ[R] E) →ₗ[R] E)`
+* For a finitely generated `R`-module `N`, `Hom_{R̂}(N̂, E) ≃ₗ[R̂] Hom_R(N, E)`
+  (`TauCeti.IsInjectiveEnvelope.adicCompletionLinearMapEquiv`), identifying the double Matlis dual
+  of `N` with its `𝔪`-adic completion: `N̂ ≃ₗ[R̂] ((N →ₗ[R] E) →ₗ[R] E)`
   (`TauCeti.IsInjectiveEnvelope.adicCompletionEquivDoubleDualOfFinite`).
 
 ## References
@@ -51,9 +51,9 @@ public section
 
 noncomputable section
 
-universe u v w z
+universe u v w
 
-open IsLocalRing LinearMap TensorProduct
+open IsLocalRing LinearMap
 
 namespace TauCeti.IsInjectiveEnvelope
 
@@ -122,34 +122,6 @@ theorem adicCompletionLinearMapEquiv_symm_apply_of (f : N →ₗ[R] E) (x : N) :
     (hι.adicCompletionLinearMapEquiv N).symm f (_root_.AdicCompletion.of (maximalIdeal R) N x) =
       f x :=
   AdicCompletion.torsionLiftEquiv_apply_of hι.mem_primaryComponent f x
-
-/-- For a finitely generated `R`-module `N` over a Noetherian local ring `R`, the tensor-Hom
-comparison `Hom_{R̂}(R̂ ⊗[R] N, E) ≃ₗ[R̂] Hom_R(N, E)` built via
-`TauCeti.AdicCompletion.ofTensorProductEquiv`. -/
-def tensorAdicCompletionLinearMapEquiv :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    (_root_.AdicCompletion (maximalIdeal R) R ⊗[R] N
-        →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E)
-      ≃ₗ[_root_.AdicCompletion (maximalIdeal R) R] (N →ₗ[R] E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  exact (AdicCompletion.torsionTensorLiftEquiv hι.mem_primaryComponent).symm
-
-@[simp]
-theorem tensorAdicCompletionLinearMapEquiv_apply
-    (g : letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-         _root_.AdicCompletion (maximalIdeal R) R ⊗[R] N
-           →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E)
-    (x : N) :
-    hι.tensorAdicCompletionLinearMapEquiv N g x = g (1 ⊗ₜ x) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  exact AdicCompletion.torsionTensorLiftEquiv_symm_apply hι.mem_primaryComponent g x
-
-@[simp]
-theorem tensorAdicCompletionLinearMapEquiv_symm_apply_tmul (f : N →ₗ[R] E)
-    (a : _root_.AdicCompletion (maximalIdeal R) R) (x : N) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    (hι.tensorAdicCompletionLinearMapEquiv N).symm f (a ⊗ₜ x) = a • f x :=
-  a.torsionTensorLiftEquiv_apply_tmul hι.mem_primaryComponent f x
 
 end CompletionHomAdjunction
 
@@ -396,21 +368,6 @@ theorem adicCompletionEquivDoubleDualOfFinite_apply_apply
   simp [adicCompletionEquivDoubleDualOfFinite, adicCompletionLinearMapEquiv]
 
 end DoubleDualCompletion
-
-section Complete
-
-variable [IsAdicComplete (maximalIdeal R) R]
-
-/-- Over a complete Noetherian local ring, evaluation into the double Matlis dual is bijective on
-any product `M × P` of a finitely generated module `M` and an Artinian module `P` (such as
-`R × E`, which is neither finite nor Artinian when `dim R ≥ 1`). -/
-theorem bijective_applyₗ_prod_of_finite_of_artinian
-    (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
-    (P : Type z) [AddCommGroup P] [Module R P] [IsArtinian R P] :
-    Function.Bijective (applyₗ : (M × P) →ₗ[R] ((M × P) →ₗ[R] E) →ₗ[R] E) :=
-  bijective_applyₗ_prod_iff.mpr ⟨hι.bijective_applyₗ_of_finite M, hι.bijective_applyₗ_of_artinian P⟩
-
-end Complete
 
 end IsInjectiveEnvelope
 
