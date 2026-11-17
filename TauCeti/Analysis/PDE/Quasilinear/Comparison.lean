@@ -339,9 +339,7 @@ private theorem norm_gradient_truncation_sq_le
         (fun x ↦ A x (W1p.value z x)) lam Lam :=
       uniformlyEllipticOn_iff.2 ⟨hlam, (hA 0).le, fun x hx ↦
         ⟨(hA (W1p.value z x)).lower_bound hx, (hA (W1p.value z x)).upper_bound hx⟩⟩
-    simpa using hz'.integrable_energyIntegrand_jetField hz (b := 0) (c := 0) (beta := 0)
-      (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ ↦ by simp)
-      (fun _ _ ↦ by simp) z (truncation hε (u - v))
+    exact hz'.integrable_matrixBilinearForm_gradient hz z (truncation hε (u - v))
   -- Testing both inequalities with `φ_ε`, the difference of the two energy densities has
   -- nonpositive integral, and it dominates `1_S ((λ / 2) ‖∇w‖² - ((L ε)² / (2 λ)) ‖∇v‖²)`.
   rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral] at huv
