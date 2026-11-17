@@ -12,10 +12,11 @@ public import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation
 
 Let `u : ℝ × ℝ → V` solve the coordinate Floer equation
 `∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` (`TauCeti.SymplecticForm.floerOperator`) on an
-open set `Ω`, and suppose that the data `J`, `K_s` and `K_t` are invariant under the translations
-`z ↦ z + c v` of the domain in a direction `v`. Then every translate `z ↦ u(z + c v)` solves the
-same equation near `Ω`, and differentiating the family at `c = 0` shows that the infinitesimal
-translation `∂ᵥu = du(v)` lies in the kernel of the linearized operator:
+open set `Ω`, and suppose that at each point `z` of `Ω` the data `J`, `K_s` and `K_t` are
+invariant under the small translations `z ↦ z + c v` in a direction `v`. Then for small `c` the
+translate `y ↦ u(y + c v)` solves the same equation at `z`, and differentiating this family at
+`c = 0` shows that the infinitesimal translation `∂ᵥu = du(v)` lies in the kernel of the
+linearized operator:
 
 `D_u (∂ᵥu) = 0`
 
