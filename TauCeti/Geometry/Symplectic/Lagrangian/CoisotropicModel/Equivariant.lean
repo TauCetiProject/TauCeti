@@ -56,6 +56,8 @@ equivariant.
 
 ## Main results
 
+* `LinearMap.BilinForm.IsAlt.exists_equivariant_projection`: an equivariant coisotropic embedding
+  provides an equivariant projection onto the kernel of the pulled back form.
 * `LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel`:
   equivariant uniqueness of linear coisotropic embeddings.
 * `TauCeti.SymplecticForm.exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic`: the
@@ -104,6 +106,14 @@ private theorem apply_mem_orthogonal_map_ker (hPσ : ∀ g w, (P (σ g w) : W) =
   simp only [SetLike.mem_coe, LinearMap.mem_ker] at hw ⊢
   exact Subtype.ext ((hPσ g w).trans (by rw [hw, ZeroMemClass.coe_zero, map_zero]))
 
+/-- For semisimple `ρ`, the symplectic orthogonal of the image of `ι` has an invariant
+complement. -/
+private theorem exists_isCompl_orthogonal_range [ρ.IsSemisimpleRepresentation] :
+    ∃ Y : Subrepresentation ρ, IsCompl (ω.orthogonal (LinearMap.range ι)) Y.toSubmodule := by
+  obtain ⟨Y, hY⟩ := exists_isCompl
+    (⟨_, fun g _ hv ↦ apply_mem_orthogonal_range hρ hισ g hv⟩ : Subrepresentation ρ)
+  exact ⟨Y, Subrepresentation.isCompl_toSubmodule.2 hY⟩
+
 end Construction
 
 /-- A vector `ω`-orthogonal to `ι(ker P)` pairs with `ι w` as with `ι (P w)`. -/
@@ -134,9 +144,7 @@ private theorem exists_complement :
   set R := ω.orthogonal (LinearMap.range ι)
   set E := ω.orthogonal ((LinearMap.ker P).map ι)
   have hRE : R ≤ E := ω.orthogonal_le (LinearMap.map_le_range)
-  obtain ⟨Q₀, hQ₀⟩ := exists_isCompl
-    (⟨R, fun g _ hv ↦ apply_mem_orthogonal_range hρ hισ g hv⟩ : Subrepresentation ρ)
-  rw [← Subrepresentation.isCompl_toSubmodule] at hQ₀
+  obtain ⟨Q₀, hQ₀⟩ := exists_isCompl_orthogonal_range hρ hισ
   refine ⟨Q₀.toSubmodule ⊓ E, inf_le_right, fun g v hv ↦
     ⟨Q₀.apply_mem_toSubmodule g hv.1, apply_mem_orthogonal_map_ker hρ hισ hPσ g hv.2⟩,
     fun v hv h ↦ ?_, ?_⟩
@@ -245,27 +253,27 @@ private theorem exists_isotropic_dual_lift (hB : B.IsAlt) (hσ : IsInvariantForm
 
 end Model
 
-/-- An invariant complement of `R = ι(K)` in `V` pulls back to an invariant complement of `K` in
-`W`, whose projection onto `K` is equivariant. -/
-private theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation]
+/-- **Equivariant projection onto the kernel.** Let a group `G` act on a symplectic vector space
+`(V, ω)` by a semisimple representation `ρ` preserving `ω`, and on `W` by a representation `σ`. If
+`ι : W → V` is an injective `G`-equivariant linear map with coisotropic image, pulling `ω` back to
+`B`, then the kernel `K` of `B` has a `G`-equivariant projection `P : W → K`, as asked for by
+`LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel`. It projects
+along the preimage of an invariant complement of `ι(K)` in `V`. -/
+theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation]
     (hρ : IsInvariantForm ρ ω.toBilinForm)
     (hσ : IsInvariantForm σ B) (hι : Function.Injective ι)
     (hω : ∀ w w', ω (ι w) (ι w') = B w w') (hC : ω.IsCoisotropic (LinearMap.range ι))
     (hισ : ∀ g w, ι (σ g w) = ρ g (ι w)) :
     ∃ P : W →ₗ[ℝ] LinearMap.ker B, (∀ k : LinearMap.ker B, P k = k) ∧
       ∀ g w, (P (σ g w) : W) = σ g (P w) := by
-  have hR := SymplecticForm.map_ker_eq_orthogonal_range ω hω hC
-  obtain ⟨Y, hY⟩ := exists_isCompl
-    (⟨_, fun g _ hv ↦ apply_mem_orthogonal_range hρ hισ g hv⟩ : Subrepresentation ρ)
-  rw [← Subrepresentation.isCompl_toSubmodule] at hY
-  dsimp only at hY
-  rw [← hR] at hY
-  have hC' (g : G) {w : W} (hw : w ∈ Y.toSubmodule.comap ι) : σ g w ∈ Y.toSubmodule.comap ι := by
+  obtain ⟨Y, hY⟩ := exists_isCompl_orthogonal_range hρ hισ
+  rw [← SymplecticForm.map_ker_eq_orthogonal_range ω hω hC] at hY
+  let K : Subrepresentation σ := ⟨LinearMap.ker B, fun g _ hk ↦ hσ.apply_mem_ker g hk⟩
+  let C : Subrepresentation σ := ⟨Y.toSubmodule.comap ι, fun g w hw ↦ by
     rw [Submodule.mem_comap, hισ]
-    exact Y.apply_mem_toSubmodule g hw
-  have hK (g : G) {k : W} (hk : k ∈ LinearMap.ker B) : σ g k ∈ LinearMap.ker B := by
-    simpa using (hσ.kerRepresentation g ⟨k, hk⟩).2
-  have h : IsCompl (LinearMap.ker B) (Y.toSubmodule.comap ι) := by
+    exact Y.apply_mem_toSubmodule g hw⟩
+  have h : IsCompl K C := by
+    rw [← Subrepresentation.isCompl_toSubmodule]
     refine ⟨Submodule.disjoint_def.2 fun k hk hkY ↦ hι ?_, codisjoint_iff.2 ?_⟩
     · rw [map_zero]
       exact Submodule.disjoint_def.1 hY.disjoint _ (Submodule.mem_map_of_mem hk) hkY
@@ -275,13 +283,13 @@ private theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation]
       obtain ⟨k, hk, rfl⟩ := hr
       refine Submodule.mem_sup.2 ⟨k, hk, w - k, ?_, add_sub_cancel _ _⟩
       rwa [Submodule.mem_comap, map_sub, ← hry, add_sub_cancel_left]
-  -- The projection commutes with each `σ g`, which preserves both its range and its kernel.
-  have hcomm (g : G) : Commute (Submodule.projection _ _ h) (σ g) :=
-    LinearMap.IsIdempotentElem.commute_iff (Submodule.isIdempotentElem_projection h) |>.2
-      ⟨by rw [Submodule.range_projection, Module.End.mem_invtSubmodule]; exact fun _ ↦ hK g,
-        by rw [Submodule.ker_projection, Module.End.mem_invtSubmodule]; exact fun _ ↦ hC' g⟩
-  refine ⟨Submodule.projectionOnto _ _ h, Submodule.projectionOnto_apply_left h, fun g w ↦ ?_⟩
-  simpa using LinearMap.congr_fun (hcomm g).eq w
+  -- The first component of the splitting of `σ` along `K ⊕ C`, an equivalence of representations.
+  let e := Subrepresentation.equivProdOfIsCompl h
+  refine ⟨LinearMap.fst ℝ K.toSubmodule C.toSubmodule ∘ₗ e.toLinearMap, fun k ↦ ?_, fun g w ↦ ?_⟩
+  · simp [e]
+  · have he : e (σ g w) = K.toRepresentation.prod C.toRepresentation g (e w) :=
+      LinearMap.congr_fun (e.toIntertwiningMap.isIntertwining' g) w
+    simp [he, Subrepresentation.toRepresentation_apply]
 
 /-- **Equivariant uniqueness of the linear coisotropic embedding.** Let a group `G` act on a
 finite-dimensional symplectic vector space `(V, ω)` by a semisimple representation `ρ` preserving
