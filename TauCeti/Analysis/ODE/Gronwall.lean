@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 
 /-!
 # Grönwall-type estimates
@@ -36,8 +37,9 @@ For a monotone `g` the differential form needs neither continuity nor differenti
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
 `E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`), that `z ↦ E_λ(z - t)` has derivative `1`
-at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), and `E_λ(T) ≤ T e^{|λ|T}`
-(`TauCeti.integral_exp_mul_le`).
+at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), `E_λ(T) ≤ T e^{|λ|T}`
+(`TauCeti.integral_exp_mul_le`), and the discrete-to-continuous geometric sum limit
+`τ j * ∑_{n < N j} (1 + m * τ j) ^ n → E_m(d)` (`TauCeti.tendsto_mul_sum_one_add_mul_pow`).
 
 Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
 satisfies `g' ≤ -λ g` on `[T, ∞)` is bounded by `g T exp (-λ (t - T))` there
@@ -200,6 +202,31 @@ theorem integral_exp_mul_le (lam T : ℝ) :
         · rw [abs_of_nonpos h]; nlinarith [hr.1, hr.2]
     simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
     linarith
+
+/-- **Discrete-to-continuous exponential integral limit.** Along any filter `l`, if `τ j → 0` and
+`N j * τ j → d`, then the geometric sum `τ j * ∑_{n < N j} (1 + m * τ j) ^ n` tends to
+`∫ r in 0..d, exp (m * r)`. -/
+theorem tendsto_mul_sum_one_add_mul_pow {ι : Type*} {l : Filter ι} {m d : ℝ} {τ : ι → ℝ}
+    {N : ι → ℕ} (hτ0 : Tendsto τ l (𝓝 0))
+    (hN : Tendsto (fun j ↦ (N j : ℝ) * τ j) l (𝓝 d)) :
+    Tendsto (fun j ↦ τ j * ∑ n ∈ Finset.range (N j), (1 + m * τ j) ^ n) l
+      (𝓝 (∫ r in (0 : ℝ)..d, exp (m * r))) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simpa [mul_comm] using hN
+  have hint : (∫ r in (0 : ℝ)..d, exp (m * r)) = (exp (m * d) - 1) / m := by
+    rw [intervalIntegral.integral_comp_mul_left (f := exp) hm, mul_zero, integral_exp, exp_zero,
+      smul_eq_mul, div_eq_inv_mul]
+  rw [hint]
+  refine (((tendsto_one_add_mul_pow (m := m) hτ0 hN).sub_const 1).div_const m).congr fun j ↦ ?_
+  have hgeom := geom_sum_mul (1 + m * τ j) (N j)
+  rw [show 1 + m * τ j - 1 = m * τ j by ring] at hgeom
+  have hmul : m * (τ j * ∑ n ∈ Finset.range (N j), (1 + m * τ j) ^ n) =
+      (1 + m * τ j) ^ N j - 1 := by
+    calc m * (τ j * ∑ n ∈ Finset.range (N j), (1 + m * τ j) ^ n)
+        = (∑ n ∈ Finset.range (N j), (1 + m * τ j) ^ n) * (m * τ j) := by ring
+      _ = (1 + m * τ j) ^ N j - 1 := hgeom
+  rw [div_eq_iff hm, mul_comm _ m]
+  exact hmul.symm
 
 /-- **Exponential decay from a differential inequality.** If `g' ≤ -lam * g` on `[T, ∞)`, then
 `g t ≤ g T * exp (-(lam * (t - T)))` for every `t ≥ T`. -/
