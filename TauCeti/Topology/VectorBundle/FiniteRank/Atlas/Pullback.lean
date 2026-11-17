@@ -40,10 +40,8 @@ def pullback (A : FiniteRankAtlas 𝕜 Y) (f : C(X, Y)) : FiniteRankAtlas 𝕜 X
 
 @[simp] theorem rank_pullback (A : FiniteRankAtlas 𝕜 Y) (f : C(X, Y)) :
     (A.pullback f).rank = A.rank.comap f := (rfl)
-
 @[simp] theorem pullback_trivialOfRank (r : LocallyConstant Y ℕ) (f : C(X, Y)) :
     (trivialOfRank 𝕜 r).pullback f = trivialOfRank 𝕜 (r.comap f) := (rfl)
-
 @[simp] theorem pullback_trivial (f : C(X, Y)) (n : ℕ) :
     (trivial 𝕜 Y n).pullback f = trivial 𝕜 X n := (rfl)
 
@@ -84,16 +82,13 @@ def pullbackMap {A D : FiniteRankAtlas 𝕜 Y} (φ : A ⟶ D) (f : C(X, Y)) :
         (fun q : TotalSpace Unit A.Fiber => φ.fiberMap q.proj q.2)).1 φ.continuous_totalSpaceMap n
       exact ⟨((A.pullback f).continuous_proj.comp continuous_subtype_val).subtype_mk _,
         (hφ.comp (((pullbackLift A f).continuous.comp continuous_subtype_val).subtype_mk
-          fun p => p.2)).congr fun ⟨⟨x, _⟩, hx⟩ => by
-            dsimp only [Function.comp_apply, pullbackLift_mk]
-            exact ((D.stratumCore n).pullbackLift_mk inc ⟨x, hx⟩ _).symm⟩
+          fun p => p.2)).congr fun ⟨⟨x, _⟩, hx⟩ =>
+            ((D.stratumCore n).pullbackLift_mk inc ⟨x, hx⟩ _).symm⟩
 
 @[simp] theorem fiberMap_pullbackMap {A D : FiniteRankAtlas 𝕜 Y} (φ : A ⟶ D)
     (f : C(X, Y)) (x : X) : (pullbackMap φ f).fiberMap x = φ.fiberMap (f x) := (rfl)
-
 @[simp] theorem pullbackMap_id (A : FiniteRankAtlas 𝕜 Y) (f : C(X, Y)) :
     pullbackMap (𝟙 A) f = 𝟙 (A.pullback f) := hom_ext fun _ => rfl
-
 @[simp] theorem pullbackMap_comp {A D E : FiniteRankAtlas 𝕜 Y} (φ : A ⟶ D) (ψ : D ⟶ E)
     (f : C(X, Y)) : pullbackMap (φ ≫ ψ) f = pullbackMap φ f ≫ pullbackMap ψ f :=
   hom_ext fun _ => rfl
@@ -102,17 +97,15 @@ def pullbackMap {A D : FiniteRankAtlas 𝕜 Y} (φ : A ⟶ D) (f : C(X, Y)) :
 -- Expose the object assignment so morphism types act on `A.pullback f`.
 @[expose, reducible]
 def pullbackFunctor (f : C(X, Y)) : FiniteRankAtlas 𝕜 Y ⥤ FiniteRankAtlas 𝕜 X where
-  obj A := A.pullback f
-  map φ := pullbackMap φ f
+  obj A := A.pullback f; map φ := pullbackMap φ f
 
 @[simp] theorem pullbackFunctor_obj (f : C(X, Y)) (A : FiniteRankAtlas 𝕜 Y) :
     (pullbackFunctor f).obj A = A.pullback f := (rfl)
-
 @[simp] theorem pullbackFunctor_map (f : C(X, Y)) {A D : FiniteRankAtlas 𝕜 Y} (φ : A ⟶ D) :
     (pullbackFunctor f).map φ = pullbackMap φ f := (rfl)
 
 instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
-  map_add := by intros; exact hom_ext fun _ => rfl
+  map_add := hom_ext fun _ => rfl
 
 /-- Pullback along the identity continuous map is strictly the identity functor. -/
 @[simp] theorem pullbackFunctor_id :

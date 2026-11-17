@@ -70,16 +70,13 @@ structure FiniteRankVectorBundle (𝕜 : Type v) [NontriviallyNormedField 𝕜]
     VectorBundle 𝕜 (Fin n → 𝕜) (fun x : {x : X // rank x = n} => Fiber x.1)
 
 attribute [instance] FiniteRankVectorBundle.addCommGroupFiber
-  FiniteRankVectorBundle.moduleFiber
-  FiniteRankVectorBundle.topologicalSpaceFiber
-  FiniteRankVectorBundle.topologicalSpaceStratum
-  FiniteRankVectorBundle.fiberBundleStratum
+  FiniteRankVectorBundle.moduleFiber FiniteRankVectorBundle.topologicalSpaceFiber
+  FiniteRankVectorBundle.topologicalSpaceStratum FiniteRankVectorBundle.fiberBundleStratum
   FiniteRankVectorBundle.vectorBundleStratum
 
 namespace FiniteRankVectorBundle
 
-variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
-  {X : Type u} [TopologicalSpace X]
+variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] {X : Type u} [TopologicalSpace X]
 
 section TotalSpace
 
@@ -87,13 +84,10 @@ variable (V : FiniteRankVectorBundle.{w} 𝕜 X)
 
 /-- The clopen base stratum where `V` has rank `n`. -/
 abbrev Stratum (n : ℕ) : Type u := {x : X // V.rank x = n}
-
 /-- The fibre family of `V` restricted to its rank-`n` stratum. -/
 abbrev StratumFiber (n : ℕ) (x : V.Stratum n) : Type w := V.Fiber x.1
-
 /-- The disjoint union of the native stratum total spaces of `V`. -/
-abbrev GluedTotalSpace : Type (max u w) :=
-  Σ n : ℕ, TotalSpace (Fin n → 𝕜) (V.StratumFiber n)
+abbrev GluedTotalSpace : Type (max u w) := Σ n : ℕ, TotalSpace (Fin n → 𝕜) (V.StratumFiber n)
 
 /-- Projection of the glued stratum total spaces to the base `X`. -/
 def gluedProj (p : V.GluedTotalSpace) : X := p.2.proj.1
@@ -131,7 +125,6 @@ def totalSpaceHomeomorph : V.GluedTotalSpace ≃ₜ TotalSpace Unit V.Fiber :=
 
 @[simp] theorem totalSpaceHomeomorph_apply (p : V.GluedTotalSpace) :
     V.totalSpaceHomeomorph p = ⟨p.2.proj.1, p.2.2⟩ := (rfl)
-
 @[simp] theorem totalSpaceHomeomorph_symm_apply (p : TotalSpace Unit V.Fiber) :
     V.totalSpaceHomeomorph.symm p = ⟨V.rank p.proj, ⟨⟨p.proj, rfl⟩, p.2⟩⟩ := (rfl)
 
@@ -153,12 +146,10 @@ theorem isOpenEmbedding_stratum (n : ℕ) :
 /-- Image of the `n`th stratum total space: `{p : TotalSpace Unit V.Fiber | V.rank p.proj = n}`. -/
 theorem range_stratum (n : ℕ) :
     Set.range (fun p : TotalSpace (Fin n → 𝕜) (V.StratumFiber n) =>
-      V.totalSpaceHomeomorph ⟨n, p⟩) =
-      {p : TotalSpace Unit V.Fiber | V.rank p.proj = n} := by
+      V.totalSpaceHomeomorph ⟨n, p⟩) = {p : TotalSpace Unit V.Fiber | V.rank p.proj = n} := by
   ext ⟨x, v⟩
-  refine ⟨fun ⟨q, hq⟩ => ?_, fun hx => ⟨⟨⟨x, hx⟩, v⟩, rfl⟩⟩
-  have hx : q.proj.1 = x := congrArg TotalSpace.proj hq
-  exact hx ▸ q.proj.2
+  exact ⟨fun ⟨q, hq⟩ => (congrArg (fun p => V.rank p.proj) hq).symm.trans q.proj.2,
+    fun hx => ⟨⟨⟨x, hx⟩, v⟩, rfl⟩⟩
 
 /-- Inclusion of each fibre into the glued variable-rank total space is an inducing map. -/
 theorem totalSpaceMk_isInducing (x : X) :
@@ -175,14 +166,12 @@ theorem continuous_mk_iff_rankStrata {Y : Type*} [TopologicalSpace Y] {b : Y →
     Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit V.Fiber)) ↔
       ∀ n : ℕ, Continuous (fun y : {y : Y // V.rank (b y) = n} =>
         (⟨⟨b y, y.2⟩, s y⟩ : TotalSpace (Fin n → 𝕜) (V.StratumFiber n))) := by
-  constructor
-  · intro hs n
-    rw [(IsEmbedding.sigmaMk (σ := fun n => TotalSpace (Fin n → 𝕜) (V.StratumFiber n))
+  refine ⟨fun hs n => ?_, fun hs => ?_⟩
+  · rw [(IsEmbedding.sigmaMk (σ := fun n => TotalSpace (Fin n → 𝕜) (V.StratumFiber n))
       (i := n)).continuous_iff]
-    refine (V.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtype_val)).congr ?_
-    rintro ⟨_, hy⟩; cases hy; rfl
-  · intro hs
-    refine continuous_of_cover_nhds (s := fun n : ℕ => {y : Y | V.rank (b y) = n})
+    exact (V.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtype_val)).congr
+      fun ⟨_, hy⟩ => by cases hy; rfl
+  · refine continuous_of_cover_nhds (s := fun n : ℕ => {y : Y | V.rank (b y) = n})
       (fun y => ⟨V.rank (b y),
         ((V.rank.isLocallyConstant.isOpen_fiber _).preimage hb).mem_nhds rfl⟩) fun n => ?_
     rw [continuousOn_iff_continuous_domRestrict]
@@ -259,7 +248,6 @@ def totalSpaceMap (f : Hom V W) : C(TotalSpace Unit V.Fiber, TotalSpace Unit W.F
 
 @[simp] theorem totalSpaceMap_mk (f : Hom V W) (x : X) (v : V.Fiber x) :
     f.totalSpaceMap ⟨x, v⟩ = ⟨x, f.fiberMap x v⟩ := (rfl)
-
 @[simp] theorem proj_totalSpaceMap (f : Hom V W) (p : TotalSpace Unit V.Fiber) :
     (f.totalSpaceMap p).proj = p.proj := (rfl)
 
@@ -276,28 +264,22 @@ def continuousLinearMap (f : Hom V W) (x : X) : V.Fiber x →L[𝕜] W.Fiber x :
     (f.continuousLinearMap x : V.Fiber x →ₗ[𝕜] W.Fiber x) = f.fiberMap x := (rfl)
 
 instance : Zero (Hom V W) := ⟨⟨fun _ => 0, W.continuous_zeroSection.comp V.continuous_proj⟩⟩
-
 instance : Add (Hom V W) :=
   ⟨fun f g => ⟨fun x => f.fiberMap x + g.fiberMap x,
     W.continuous_add f.continuous_totalSpaceMap g.continuous_totalSpaceMap⟩⟩
-
 instance : Neg (Hom V W) :=
   ⟨fun f => ⟨fun x => -f.fiberMap x, by
     simpa only [neg_one_smul, LinearMap.neg_apply] using
       W.continuous_smul (continuous_const (y := (-1 : 𝕜))) f.continuous_totalSpaceMap⟩⟩
-
 instance : Sub (Hom V W) := ⟨fun f g => f + -g⟩
-
 instance : SMul ℕ (Hom V W) :=
   ⟨fun n f => ⟨fun x => n • f.fiberMap x, by
     simpa only [Nat.cast_smul_eq_nsmul, LinearMap.smul_apply] using
       W.continuous_smul (continuous_const (y := (n : 𝕜))) f.continuous_totalSpaceMap⟩⟩
-
 instance : SMul ℤ (Hom V W) :=
   ⟨fun n f => ⟨fun x => n • f.fiberMap x, by
     simpa only [Int.cast_smul_eq_zsmul, LinearMap.smul_apply] using
       W.continuous_smul (continuous_const (y := (n : 𝕜))) f.continuous_totalSpaceMap⟩⟩
-
 instance : AddCommGroup (Hom V W) :=
   Function.Injective.addCommGroup (fun f => f.fiberMap) (fun _ _ h => Hom.ext h)
     rfl (fun _ _ => rfl) (fun _ => rfl) (fun _ _ => funext fun _ => (sub_eq_add_neg _ _).symm)
@@ -353,8 +335,7 @@ theorem totalSpaceMap_injective : Function.Injective (Hom.totalSpaceMap (V := V)
 /-- Faithful realization of variable-rank vector bundles by their glued total spaces. -/
 -- Expose the object assignment so morphism types reduce to the glued total spaces.
 @[expose] def totalSpaceFunctor : FiniteRankVectorBundle.{w} 𝕜 X ⥤ TopCat.{max u w} where
-  obj V := TopCat.of (TotalSpace Unit V.Fiber)
-  map f := TopCat.ofHom f.totalSpaceMap
+  obj V := TopCat.of (TotalSpace Unit V.Fiber); map f := TopCat.ofHom f.totalSpaceMap
 
 @[simp] theorem totalSpaceFunctor_obj (V : FiniteRankVectorBundle.{w} 𝕜 X) :
     totalSpaceFunctor.obj V = TopCat.of (TotalSpace Unit V.Fiber) := (rfl)
@@ -367,8 +348,7 @@ instance : (totalSpaceFunctor.{w} (𝕜 := 𝕜) (X := X)).Faithful where
 /-- Additive evaluation of a variable-rank vector bundle and its morphisms on the fibre at `x`. -/
 -- Expose the object assignment so evaluated morphisms act on the actual fibres.
 @[expose] def fiberFunctor (x : X) : FiniteRankVectorBundle.{w} 𝕜 X ⥤ ModuleCat.{w} 𝕜 where
-  obj V := ModuleCat.of 𝕜 (V.Fiber x)
-  map f := ModuleCat.ofHom (f.fiberMap x)
+  obj V := ModuleCat.of 𝕜 (V.Fiber x); map f := ModuleCat.ofHom (f.fiberMap x)
 
 @[simp] theorem fiberFunctor_obj (x : X) (V : FiniteRankVectorBundle.{w} 𝕜 X) :
     (fiberFunctor x).obj V = ModuleCat.of 𝕜 (V.Fiber x) := (rfl)
@@ -384,8 +364,7 @@ def isoMk (e : ∀ x, V.Fiber x ≃ₗ[𝕜] W.Fiber x)
       (⟨p.proj, e p.proj p.2⟩ : TotalSpace Unit W.Fiber))
     (h' : Continuous fun p : TotalSpace Unit W.Fiber =>
       (⟨p.proj, (e p.proj).symm p.2⟩ : TotalSpace Unit V.Fiber)) : V ≅ W where
-  hom := ⟨fun x => (e x).toLinearMap, h⟩
-  inv := ⟨fun x => (e x).symm.toLinearMap, h'⟩
+  hom := ⟨fun x => (e x).toLinearMap, h⟩; inv := ⟨fun x => (e x).symm.toLinearMap, h'⟩
   hom_inv_id := hom_ext fun x => LinearMap.ext (e x).symm_apply_apply
   inv_hom_id := hom_ext fun x => LinearMap.ext (e x).apply_symm_apply
 
@@ -428,7 +407,7 @@ noncomputable def ofFixedRankStratum (m : ℕ) :
       FiberwiseEquiv.vectorBundle (𝕜 := 𝕜) (Fin n → 𝕜) (E₁ := (inc : _ → X) *ᵖ E) eqv⟩
   else
     let S := {x : X // LocallyConstant.const X n x = m}
-    have : IsEmpty S := ⟨fun x => hm ((congrFun (LocallyConstant.coe_const n) x.1).symm.trans x.2)⟩
+    have : IsEmpty S := ⟨fun x => hm x.2⟩
     ⟨FiberwiseEquiv.totalSpaceTopology (Fin m → 𝕜) (E₁ := Bundle.Trivial S (Fin m → 𝕜)) isEmptyElim,
       FiberwiseEquiv.fiberBundle (Fin m → 𝕜) (E₁ := Bundle.Trivial S (Fin m → 𝕜)) isEmptyElim,
       FiberwiseEquiv.vectorBundle (𝕜 := 𝕜) (Fin m → 𝕜) (E₁ := Bundle.Trivial S (Fin m → 𝕜))
@@ -454,7 +433,7 @@ private theorem topologicalSpaceStratum_ofFixedRank_self :
       (E₁ := ((⟨Subtype.val, continuous_subtype_val⟩ :
         C({x : X // LocallyConstant.const X n x = n}, X)) : _ → X) *ᵖ E)
       (E₂ := (ofFixedRank 𝕜 n E).StratumFiber n) fun x => ContinuousLinearEquiv.refl 𝕜 (E x.1) := by
-  dsimp only [ofFixedRank]; rw [ofFixedRankStratum, dite_eq_left_iff.2 fun h => (h rfl).elim]
+  dsimp only [ofFixedRank]; rw [ofFixedRankStratum, dite_eq_left rfl]
 
 /-- Homeomorphism from the total space of `ofFixedRank 𝕜 n E` to `TotalSpace (Fin n → 𝕜) E`. -/
 noncomputable def ofFixedRankHomeomorph :
@@ -470,16 +449,13 @@ noncomputable def ofFixedRankHomeomorph :
         · subst hm
           let tStr := FiberwiseEquiv.totalSpaceTopology (Fin n → 𝕜) (E₁ := (inc : _ → X) *ᵖ E)
             (E₂ := (ofFixedRank 𝕜 n E).StratumFiber n) eqv
-          have hc : @Continuous _ _ tStr _
-              (fun q : TotalSpace (Fin n → 𝕜) ((ofFixedRank 𝕜 n E).StratumFiber n) =>
-                (⟨q.proj.1, q.2⟩ : TotalSpace (Fin n → 𝕜) E)) :=
-            @Continuous.congr _ _ tStr _ _ _
+          exact topologicalSpaceStratum_ofFixedRank_self 𝕜 n E ▸
+            (@Continuous.congr _ _ tStr _ _ _
               ((Pullback.continuous_lift (Fin n → 𝕜) E (inc : _ → X)).comp
                 (FiberwiseEquiv.continuous_totalSpace_to (Fin n → 𝕜) (E₁ := (inc : _ → X) *ᵖ E)
-                  (E₂ := (ofFixedRank 𝕜 n E).StratumFiber n) eqv)) fun _ => rfl
-          exact topologicalSpaceStratum_ofFixedRank_self 𝕜 n E ▸ hc
+                  (E₂ := (ofFixedRank 𝕜 n E).StratumFiber n) eqv)) fun _ => rfl)
         · have : IsEmpty (TotalSpace (Fin m → 𝕜) ((ofFixedRank 𝕜 n E).StratumFiber m)) :=
-            ⟨fun p => hm ((congrFun (LocallyConstant.coe_const n) p.proj.1).symm.trans p.proj.2)⟩
+            ⟨fun p => hm p.proj.2⟩
           exact continuous_of_discreteTopology
       exact (hglued.comp (ofFixedRank 𝕜 n E).totalSpaceHomeomorph.symm.continuous).congr
         fun _ => rfl
@@ -495,7 +471,7 @@ noncomputable def ofFixedRankHomeomorph :
           exact ⟨((FiberBundle.continuous_proj (Fin n → 𝕜) E).comp
             continuous_subtype_val).subtype_mk fun y => y.2, continuous_subtype_val⟩
         · have : IsEmpty {y : TotalSpace (Fin n → 𝕜) E // (ofFixedRank 𝕜 n E).rank y.proj = m} :=
-            ⟨fun y => hm ((congrFun (LocallyConstant.coe_const n) y.1.proj).symm.trans y.2)⟩
+            ⟨fun y => hm y.2⟩
           exact continuous_of_discreteTopology }
 
 @[simp] theorem ofFixedRankHomeomorph_apply (p : TotalSpace Unit (ofFixedRank 𝕜 n E).Fiber) :
@@ -519,10 +495,10 @@ noncomputable def zero : FiniteRankVectorBundle.{w} 𝕜 X :=
 @[simp] theorem rank_zero : (zero.{w} 𝕜 X).rank = LocallyConstant.const X 0 := (rfl)
 
 /-- The rank-zero bundle `zero 𝕜 X` is a zero object in `FiniteRankVectorBundle.{w} 𝕜 X`. -/
-theorem isZero_zero : IsZero (zero.{w} 𝕜 X) := by
-  rw [IsZero.iff_id_eq_zero]; refine hom_ext fun x => LinearMap.ext fun _ => ?_
-  have : Subsingleton ((zero.{w} 𝕜 X).Fiber x) := inferInstanceAs (Subsingleton PUnit.{w + 1})
-  exact Subsingleton.elim _ _
+theorem isZero_zero : IsZero (zero.{w} 𝕜 X) :=
+  (IsZero.iff_id_eq_zero _).2 <| hom_ext fun x => LinearMap.ext fun _ =>
+    letI : Subsingleton ((zero.{w} 𝕜 X).Fiber x) := inferInstanceAs (Subsingleton PUnit.{w + 1})
+    Subsingleton.elim _ _
 
 noncomputable instance : HasZeroObject (FiniteRankVectorBundle.{w} 𝕜 X) :=
   ⟨⟨zero.{w} 𝕜 X, isZero_zero⟩⟩
@@ -611,12 +587,11 @@ variable (𝕜 X) in
           (ULift.moduleEquiv : ULift.{w'} (V.Fiber x) ≃ₗ[𝕜] V.Fiber x).toLinearMap)
       continuous_totalSpaceMap := ((uliftHomeomorph.{w, w'} W).symm.continuous.comp <|
         f.totalSpaceMap.continuous.comp (uliftHomeomorph.{w, w'} V).continuous).congr fun _ => by
-          simp only [Function.comp_apply, uliftHomeomorph_apply, Hom.totalSpaceMap_mk,
-            uliftHomeomorph_symm_apply]; rfl }
+        simp only [Function.comp_apply, uliftHomeomorph_apply, Hom.totalSpaceMap_mk,
+          uliftHomeomorph_symm_apply]; rfl }
 
 @[simp] theorem uliftFunctor_obj (V : FiniteRankVectorBundle.{w} 𝕜 X) :
     (uliftFunctor.{w, w'} 𝕜 X).obj V = ulift.{w, w'} V := (rfl)
-
 @[simp] theorem fiberMap_uliftFunctor_map {V W : FiniteRankVectorBundle.{w} 𝕜 X}
     (f : V ⟶ W) (x : X) : ((uliftFunctor.{w, w'} 𝕜 X).map f).fiberMap x =
       (ULift.moduleEquiv : ULift.{w'} (W.Fiber x) ≃ₗ[𝕜] W.Fiber x).symm.toLinearMap.comp
@@ -638,9 +613,7 @@ instance : (uliftFunctor.{w, w'} 𝕜 X).Full where
           (ULift.moduleEquiv : ULift.{w'} (V.Fiber x) ≃ₗ[𝕜] V.Fiber x).symm.toLinearMap)
        continuous_totalSpaceMap := ((uliftHomeomorph.{w, w'} W).continuous.comp <|
          ψ.totalSpaceMap.continuous.comp (uliftHomeomorph.{w, w'} V).symm.continuous).congr
-         fun _ => by
-           simp only [Function.comp_apply, uliftHomeomorph_symm_apply, Hom.totalSpaceMap_mk,
-             uliftHomeomorph_apply]; rfl },
+         fun _ => by simp },
       hom_ext fun _ => LinearMap.ext fun _ => rfl⟩
 
 end ULift

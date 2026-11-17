@@ -234,21 +234,20 @@ theorem isIso_iff_bijective {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) :
     refine (continuous_subtype_val.comp <| (jointSourceHomeomorph A D n n).symm.continuous.comp <|
       (inv φ).continuous_totalSpaceMap.comp (jointTargetHomeomorph A D n n).continuous).congr
         fun ⟨⟨x, w⟩, hm, hn⟩ => ?_
-    have hsymm : (inv φ).fiberMap ⟨x, hm, hn⟩ (fun j => w (Fin.cast hn.symm j)) =
-        fun j => (e x).symm w (Fin.cast hm.symm j) := by
+    have hsymm : (inv φ).fiberMap ⟨x, hm, hn⟩ (w ∘ Fin.cast hn.symm) =
+        (e x).symm w ∘ Fin.cast hm.symm := by
       apply (hφ ⟨x, hm, hn⟩).1
       have hinvφ := congrArg (fun k : A.jointTargetCore D n n ⟶ A.jointTargetCore D n n =>
-        k.fiberMap ⟨x, hm, hn⟩ (fun j => w (Fin.cast hn.symm j))) (IsIso.inv_hom_id φ)
+        k.fiberMap ⟨x, hm, hn⟩ (w ∘ Fin.cast hn.symm)) (IsIso.inv_hom_id φ)
       simp only [FiniteRankBundleCore.fiberMap_comp, FiniteRankBundleCore.fiberMap_id,
         ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hinvφ
       refine hinvφ.trans ?_
-      symm
       rw [fiberMap_toCoordinateHom f ⟨x, hm, hn⟩]
-      have harg : ((fun k => (e x).symm w (Fin.cast hm.symm k)) ∘ Fin.cast hm) = (e x).symm w :=
+      have harg : ((e x).symm w ∘ Fin.cast hm.symm) ∘ Fin.cast hm = (e x).symm w :=
         funext fun _ => by simp
       rw [harg]
-      exact congrArg (· ∘ Fin.cast hn.symm)
-        ((LinearEquiv.ofBijective_apply _ _).symm.trans ((e x).apply_symm_apply w))
+      exact (congrArg (· ∘ Fin.cast hn.symm)
+        ((LinearEquiv.ofBijective_apply _ _).symm.trans ((e x).apply_symm_apply w))).symm
     dsimp only [Function.comp_apply, Set.domRestrict_apply]
     rw [jointTargetHomeomorph_apply, CoordinateHom.totalSpaceMap_def,
       jointSourceHomeomorph_symm_apply]
@@ -270,65 +269,52 @@ def ofCoreObj (C : FiniteRankBundleCore 𝕜 X) : FiniteRankAtlas 𝕜 X where
   charts m :=
     if h : C.rank = m then h ▸ (C.pullback ⟨Subtype.val, continuous_subtype_val⟩).core
     else (FiniteRankBundleCore.trivial 𝕜 {x : X // LocallyConstant.const X C.rank x = m} m).core
-  indexAt_eq m x :=
-    if h : C.rank = m then by
-      cases h; exact congrArg (fun Z : VectorBundleCore 𝕜 _ (Fin C.rank → 𝕜) _ => Z.indexAt x)
-        (dite_eq_left_iff.2 fun h' => (h' rfl).elim)
-    else congrArg (fun Z : VectorBundleCore 𝕜 _ (Fin m → 𝕜) _ => Z.indexAt x)
-      (dite_eq_right_iff.2 fun h' => (h h').elim)
+  indexAt_eq m x := by
+    by_cases h : C.rank = m
+    · cases h; exact congrArg (fun Z : VectorBundleCore 𝕜 _ (Fin C.rank → 𝕜) _ => Z.indexAt x)
+        (dite_eq_left rfl)
+    · exact congrArg (fun Z : VectorBundleCore 𝕜 _ (Fin m → 𝕜) _ => Z.indexAt x) (dite_eq_right h)
 
 @[simp] theorem rank_ofCoreObj (C : FiniteRankBundleCore 𝕜 X) :
     (ofCoreObj C).rank = LocallyConstant.const X C.rank := (rfl)
-
 @[simp] theorem charts_ofCoreObj_self (C : FiniteRankBundleCore 𝕜 X) :
     (ofCoreObj C).charts C.rank = (C.pullback ⟨Subtype.val, continuous_subtype_val⟩).core :=
-  dite_eq_left_iff.2 fun h => (h rfl).elim
+  dite_eq_left rfl
 
 /-- Homeomorphism between `C.core.TotalSpace` and `TotalSpace Unit (ofCoreObj C).Fiber`. -/
 def ofCoreHomeomorph (C : FiniteRankBundleCore 𝕜 X) :
     C.core.TotalSpace ≃ₜ TotalSpace Unit (ofCoreObj C).Fiber :=
   let inc : C({x : X // LocallyConstant.const X C.rank x = C.rank}, X) :=
     ⟨Subtype.val, continuous_subtype_val⟩
-  { toFun p := ⟨p.proj, p.2⟩
-    invFun p := ⟨p.proj, p.2⟩
-    left_inv _ := rfl
-    right_inv _ := rfl
+  { toFun p := ⟨p.proj, p.2⟩, invFun p := ⟨p.proj, p.2⟩, left_inv _ := rfl, right_inv _ := rfl
     continuous_toFun := ((ofCoreObj C).continuous_mk_iff_rankStrata C.core.continuous_proj
       (fun p : C.core.TotalSpace => p.2)).2 fun m => by
         by_cases hm : C.rank = m
         · subst hm
-          have hc : Continuous fun y :
-              {y : C.core.TotalSpace // (ofCoreObj C).rank y.proj = C.rank} =>
-              (⟨⟨y.1.proj, y.2⟩, y.1.2⟩ : (C.pullback inc).core.TotalSpace) :=
-            (C.continuous_core_pullback_iff inc).2
-              ⟨(C.core.continuous_proj.comp continuous_subtype_val).subtype_mk fun y => y.2,
-                continuous_subtype_val.congr fun y =>
-                  (C.pullbackLift_mk inc ⟨y.1.proj, y.2⟩ y.1.2).symm⟩
-          exact (charts_ofCoreObj_self C ▸ hc).congr fun _ => rfl
+          exact (charts_ofCoreObj_self C ▸ (C.continuous_core_pullback_iff inc).2
+            ⟨(C.core.continuous_proj.comp continuous_subtype_val).subtype_mk fun y => y.2,
+              continuous_subtype_val.congr fun y =>
+                (C.pullbackLift_mk inc ⟨y.1.proj, y.2⟩ y.1.2).symm⟩).congr fun _ => rfl
         · have : IsEmpty {p : C.core.TotalSpace // (ofCoreObj C).rank p.proj = m} :=
-            ⟨fun p => hm ((congrFun (LocallyConstant.coe_const C.rank) p.1.proj).symm.trans p.2)⟩
+            ⟨fun p => hm p.2⟩
           exact continuous_of_discreteTopology
     continuous_invFun := by
-      have hglued : Continuous fun q : (ofCoreObj C).GluedTotalSpace => (⟨q.2.proj.1, fun i => q.2.2
-          (Fin.cast ((congrFun (LocallyConstant.coe_const C.rank) q.2.proj.1).symm.trans q.2.proj.2)
-            i)⟩ : C.core.TotalSpace) := continuous_sigma fun m => by
+      have hglued : Continuous fun q : (ofCoreObj C).GluedTotalSpace => (⟨q.2.proj.1, fun i =>
+          q.2.2 (Fin.cast q.2.proj.2 i)⟩ : C.core.TotalSpace) := continuous_sigma fun m => by
         by_cases hm : C.rank = m
         · subst hm
           have hc : Continuous fun p : (C.pullback inc).core.TotalSpace =>
-              (⟨p.proj.1, fun i => p.2 (Fin.cast ((congrFun (LocallyConstant.coe_const C.rank)
-                p.proj.1).symm.trans p.proj.2) i)⟩ : C.core.TotalSpace) :=
+              (⟨p.proj.1, fun i => p.2 (Fin.cast p.proj.2 i)⟩ : C.core.TotalSpace) :=
             (C.continuous_pullbackLift inc).congr fun ⟨_, _⟩ => by
               rw [C.pullbackLift_mk]; exact congrArg (TotalSpace.mk _) (funext fun _ => by simp)
           exact (charts_ofCoreObj_self C ▸ hc).congr fun _ => rfl
-        · have : IsEmpty (((ofCoreObj C).charts m).TotalSpace) := ⟨fun p =>
-            hm ((congrFun (LocallyConstant.coe_const C.rank) p.proj.1).symm.trans p.proj.2)⟩
+        · have : IsEmpty (((ofCoreObj C).charts m).TotalSpace) := ⟨fun p => hm p.proj.2⟩
           exact continuous_of_discreteTopology
-      refine (hglued.comp (ofCoreObj C).totalSpaceHomeomorph.symm.continuous).congr fun p => ?_
-      dsimp only [Function.comp_apply]; rw [totalSpaceHomeomorph_symm_apply]; rfl }
+      exact (hglued.comp (ofCoreObj C).totalSpaceHomeomorph.symm.continuous).congr fun _ => by
+        dsimp only [Function.comp_apply]; rw [totalSpaceHomeomorph_symm_apply]; rfl }
 
 @[simp] theorem ofCoreHomeomorph_apply (C : FiniteRankBundleCore 𝕜 X) (p : C.core.TotalSpace) :
     ofCoreHomeomorph C p = ⟨p.proj, p.2⟩ := (rfl)
-
 @[simp] theorem ofCoreHomeomorph_symm_apply (C : FiniteRankBundleCore 𝕜 X)
     (p : TotalSpace Unit (ofCoreObj C).Fiber) : (ofCoreHomeomorph C).symm p = ⟨p.proj, p.2⟩ := (rfl)
 
@@ -355,9 +341,8 @@ def ofCore : FiniteRankBundleCore 𝕜 X ⥤ FiniteRankAtlas 𝕜 X where
     ((ofCore 𝕜 X).map f).fiberMap x = (f.fiberMap x).toLinearMap := (rfl)
 
 instance : (ofCore 𝕜 X).Additive where
-  map_add := by
-    intros; exact hom_ext fun _ => LinearMap.ext fun _ => by
-      simp only [FiniteRankBundleCore.fiberMap_add]; rfl
+  map_add := hom_ext fun _ => LinearMap.ext fun _ => by
+    simp only [FiniteRankBundleCore.fiberMap_add]; rfl
 
 instance : (ofCore 𝕜 X).Faithful where
   map_injective {C D _ _} h := FiniteRankBundleCore.hom_ext fun x => ContinuousLinearMap.ext
@@ -366,8 +351,7 @@ instance : (ofCore 𝕜 X).Faithful where
 instance : (ofCore 𝕜 X).Full where
   map_surjective {C D} φ := ⟨coordinateHomOfTotalSpace φ.fiberMap <|
     ((ofCoreHomeomorph D).symm.continuous.comp <|
-      φ.continuous_totalSpaceMap.comp (ofCoreHomeomorph C).continuous).congr fun _ => by
-        simp only [Function.comp_apply, ofCoreHomeomorph_symm_apply]; rfl,
+      φ.continuous_totalSpaceMap.comp (ofCoreHomeomorph C).continuous).congr fun _ => rfl,
     hom_ext fun x => LinearMap.ext (fiberMap_coordinateHomOfTotalSpace φ.fiberMap _ x)⟩
 
 /-- Pulling back the `n`th stratum core of a constant-rank-`n` atlas recovers it up to iso. -/
@@ -376,16 +360,15 @@ def ofCorePullbackIso (A : FiniteRankAtlas 𝕜 X) (n : ℕ) (hn : ∀ x, A.rank
       continuous_id.subtype_mk hn⟩) ≅ A := by
   let s : C(X, {x : X // A.rank x = n}) := ⟨fun x => ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩
   let C := (A.stratumCore n).pullback s
-  let e (x : X) : ((ofCore 𝕜 X).obj C).Fiber x ≃ₗ[𝕜] A.Fiber x := LinearEquiv.funCongrLeft 𝕜 𝕜
-    (finCongr ((hn x).trans (congrFun (LocallyConstant.coe_const C.rank) x).symm))
+  let e (x : X) : ((ofCore 𝕜 X).obj C).Fiber x ≃ₗ[𝕜] A.Fiber x :=
+    LinearEquiv.funCongrLeft 𝕜 𝕜 (finCongr (hn x))
   refine isoMk e ((A.continuous_mk_iff_rankStrata (ofCoreObj C).continuous_proj _).2 fun m => ?_) ?_
   · by_cases hm : n = m
     · subst hm
       refine ((((A.stratumCore n).continuous_pullbackLift s).comp
         (ofCoreHomeomorph C).symm.continuous).comp continuous_subtype_val).congr
-        fun ⟨⟨x, v⟩, _⟩ => ?_
-      dsimp only [Function.comp_apply, e]; rw [ofCoreHomeomorph_symm_apply]
-      exact (A.stratumCore n).pullbackLift_eq_mk s _ rfl (funext fun _ => congrArg v (Fin.ext rfl))
+        fun ⟨⟨x, v⟩, _⟩ => (A.stratumCore n).pullbackLift_eq_mk s _ rfl
+          (funext fun _ => congrArg v (Fin.ext rfl))
     · have : IsEmpty {p : TotalSpace Unit ((ofCore 𝕜 X).obj C).Fiber // A.rank p.proj = m} :=
         ⟨fun p => hm ((hn p.1.proj).symm.trans p.2)⟩
       exact continuous_of_discreteTopology
@@ -393,12 +376,10 @@ def ofCorePullbackIso (A : FiniteRankAtlas 𝕜 X) (n : ℕ) (hn : ∀ x, A.rank
         (⟨p.proj, (e p.proj).symm p.2⟩ : C.core.TotalSpace) :=
       ((A.stratumCore n).continuous_core_pullback_iff s).2 ⟨A.continuous_proj,
         (((A.continuous_mk_iff_rankStrata A.continuous_proj (fun p => p.2)).1 continuous_id n).comp
-          (continuous_id.subtype_mk fun p => hn p.proj)).congr fun ⟨x, v⟩ => by
-            dsimp only [Function.comp_apply, id_eq, e]
-            exact (TotalSpace.ext rfl (heq_of_eq <| funext fun _ => congrArg v (Fin.ext rfl))).trans
+          (continuous_id.subtype_mk fun p => hn p.proj)).congr fun ⟨x, v⟩ =>
+            (TotalSpace.ext rfl (heq_of_eq <| funext fun _ => congrArg v (Fin.ext rfl))).trans
               ((A.stratumCore n).pullbackLift_mk s x _).symm⟩
-    exact ((ofCoreHomeomorph C).continuous.comp hcore).congr fun p => by
-      dsimp only [Function.comp_apply]; rw [ofCoreHomeomorph_apply]
+    exact ((ofCoreHomeomorph C).continuous.comp hcore).congr fun _ => rfl
 
 /-- An atlas lies in the essential image of `ofCore` iff its rank takes at most one value. -/
 theorem exists_ofCore_iso_iff (A : FiniteRankAtlas 𝕜 X) :
@@ -407,9 +388,7 @@ theorem exists_ofCore_iso_iff (A : FiniteRankAtlas 𝕜 X) :
   constructor
   · rintro ⟨C, ⟨e⟩⟩ _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
     have hr := e.finiteRankAtlas_rank_eq
-    exact ((congrFun (LocallyConstant.coe_const C.rank) x).symm.trans
-      (congrArg (· x) hr)).symm.trans
-      ((congrFun (LocallyConstant.coe_const C.rank) y).symm.trans (congrArg (· y) hr))
+    exact (congrArg (· x) hr).symm.trans (congrArg (· y) hr)
   · intro hsub; rcases isEmpty_or_nonempty X with hX | hX
     · let Z₀ := FiniteRankBundleCore.trivial 𝕜 X 0
       have : IsEmpty (TotalSpace Unit ((ofCore 𝕜 X).obj Z₀).Fiber) := ⟨fun p => isEmptyElim p.proj⟩

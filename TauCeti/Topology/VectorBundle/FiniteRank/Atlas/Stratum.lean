@@ -37,7 +37,6 @@ def stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
 
 @[simp] theorem rank_stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     (A.stratumCore n).rank = n := (rfl)
-
 @[simp] theorem core_stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     (A.stratumCore n).core = A.charts n := (rfl)
 
@@ -76,8 +75,8 @@ def trivial (n : ℕ) : FiniteRankAtlas 𝕜 X := trivialOfRank 𝕜 (LocallyCon
 @[simp] theorem rank_trivial (n : ℕ) : (trivial 𝕜 X n).rank = LocallyConstant.const X n := (rfl)
 
 /-- The rank-zero trivial atlas is a zero object, including over an empty or disconnected base. -/
-theorem isZero_trivial_zero : IsZero (trivial 𝕜 X 0) := by
-  rw [IsZero.iff_id_eq_zero]; apply hom_ext; intro x; ext v i; exact Fin.elim0 i
+theorem isZero_trivial_zero : IsZero (trivial 𝕜 X 0) :=
+  (IsZero.iff_id_eq_zero _).2 <| hom_ext fun _ => LinearMap.ext fun _ => funext fun i => Fin.elim0 i
 
 instance : HasZeroObject (FiniteRankAtlas 𝕜 X) := ⟨⟨trivial 𝕜 X 0, isZero_trivial_zero⟩⟩
 

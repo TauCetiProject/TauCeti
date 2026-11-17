@@ -440,20 +440,14 @@ theorem isIso_iff_bijective (f : A ⟶ D) :
   · intro hf
     have hfx (x : B) : (f.fiberMap x).IsInvertible :=
       let e := LinearEquiv.ofBijective (f.fiberMap x).toLinearMap (hf x)
-      ⟨{ e with
-         continuous_toFun := (f.fiberMap x).continuous
-         continuous_invFun := e.symm.toLinearMap.continuous_on_pi },
-        ContinuousLinearMap.ext fun _ => rfl⟩
-    have hinv_op (i j : B) (x : B) (hi : x ∈ D.core.baseSet i) (hj : x ∈ A.core.baseSet j) :
+      ⟨{ e with continuous_toFun := (f.fiberMap x).continuous
+                continuous_invFun := e.symm.toLinearMap.continuous_on_pi }, rfl⟩
+    have hinv_op (i j x : B) (hi : x ∈ D.core.baseSet i) (hj : x ∈ A.core.baseSet j) :
         (f.operator j i ⟨x, hj, hi⟩).IsInvertible := by
       rw [f.operator_eq, inChartCoordinates_core]
-      have hA : (A.core.coordChange j x x).IsInvertible :=
-        ⟨(A.core.localTriv j).coordChangeL 𝕜 (A.core.localTriv x) x,
-          A.core.localTriv_coordChangeL ⟨hj, A.mem_baseSet_self x⟩⟩
-      have hD : (D.core.coordChange x i x).IsInvertible :=
-        ⟨(D.core.localTriv x).coordChangeL 𝕜 (D.core.localTriv i) x,
-          D.core.localTriv_coordChangeL ⟨D.mem_baseSet_self x, hi⟩⟩
-      exact hD.comp ((hfx x).comp hA)
+      exact ContinuousLinearMap.IsInvertible.comp
+        ⟨_, D.core.localTriv_coordChangeL ⟨D.mem_baseSet_self x, hi⟩⟩
+        ((hfx x).comp ⟨_, A.core.localTriv_coordChangeL ⟨hj, A.mem_baseSet_self x⟩⟩)
     let g : D ⟶ A :=
       { operator i j :=
           ⟨fun u => (f.operator j i ⟨u.1, u.2.2, u.2.1⟩).inverse,
@@ -463,21 +457,15 @@ theorem isIso_iff_bijective (f : A ⟶ D) :
         compatible i i' j j' x hi hi' hj hj' v := by
           have h' := hinv_op i' j' x hi' hj'
           apply Function.LeftInverse.injective h'.inverse_apply_self
-          dsimp only [ContinuousMap.coe_mk]
-          rw [h'.self_apply_inverse]
+          dsimp only [ContinuousMap.coe_mk]; rw [h'.self_apply_inverse]
           have hcomp := f.compatible j j' i i' x hj hj' hi hi'
             ((f.operator j i ⟨x, hj, hi⟩).inverse v)
-          rw [(hinv_op i j x hi hj).self_apply_inverse] at hcomp
-          exact hcomp.symm }
+          rw [(hinv_op i j x hi hj).self_apply_inverse] at hcomp; exact hcomp.symm }
     have hgf (x : B) : g.fiberMap x = (f.fiberMap x).inverse := by
-      rw [← operator_self g x]
-      dsimp only [g, ContinuousMap.coe_mk]
-      rw [operator_self f x]
+      rw [← operator_self g x]; dsimp only [g, ContinuousMap.coe_mk]; rw [operator_self f x]
     exact ⟨g,
-      hom_ext fun x => by
-        simpa only [fiberMap_comp, fiberMap_id, hgf] using (hfx x).inverse_comp_self,
-      hom_ext fun x => by
-        simpa only [fiberMap_comp, fiberMap_id, hgf] using (hfx x).self_comp_inverse⟩
+      hom_ext fun x => by simpa [fiberMap_comp, hgf] using (hfx x).inverse_comp_self,
+      hom_ext fun x => by simpa [fiberMap_comp, hgf] using (hfx x).self_comp_inverse⟩
 
 end Isomorphisms
 end FiniteRankBundleCore
