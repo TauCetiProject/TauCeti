@@ -39,8 +39,8 @@ along `modelWithCornersSelf_prod`.
 
 ## Main declarations
 
-* `TauCeti.MorseChart.coord_mfderiv_prod`: the product of fields linear in Morse charts is linear
-  in the product Morse chart.
+* `TauCeti.MorseChart.coord_mfderiv_prod` and `TauCeti.MorseChart.forall_coord_mfderiv_prod`: the
+  product of fields linear in Morse charts is linear in the product Morse chart.
 * `TauCeti.IsAdaptedPseudoGradient.prod`: the product field is a pseudo-gradient adapted to the
   separated sum.
 * `TauCeti.IsAdaptedPseudoGradient.flow_prod` and `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`:
@@ -116,6 +116,23 @@ theorem coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
   · exact congrFun hφ j
   · exact congrFun hψ j
 
+/-- **The product of linear fields is linear in the product of Morse charts**, at every point of
+its source, when `X` is the linear field in `φ` and `Y` the linear field in `ψ` at every point of
+their sources. -/
+theorem forall_coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
+    {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z}
+    (hφ : ∀ z ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart z (X z)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart z) i))
+    (hψ : ∀ z ∈ ψ.toChart.source, ψ.coord (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart z (Y z)) =
+      fun i ↦ -(ψ.weight i * ψ.coord (ψ.toChart z) i)) :
+    ∀ p ∈ (φ.prod ψ).toChart.source, (φ.prod ψ).coord (mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ, E × E')
+      (φ.prod ψ).toChart p (Manifold.prodVectorField X Y p)) =
+      fun i ↦ -((φ.prod ψ).weight i * (φ.prod ψ).coord ((φ.prod ψ).toChart p) i) := by
+  intro p hp
+  have hp' := hp
+  rw [prod_toChart] at hp'
+  exact φ.coord_mfderiv_prod ψ hp (hφ p.1 hp'.1) (hψ p.2 hp'.2)
+
 end MorseChart
 
 /-! ### Products of adapted pseudo-gradients -/
@@ -146,11 +163,7 @@ theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g 
       (hX.mdifferentiable p₁) (hY.mdifferentiable p₂)).1 hp
     obtain ⟨φ, hφ⟩ := hX.exists_morseChart p₁ h₁
     obtain ⟨ψ, hψ⟩ := hY.exists_morseChart p₂ h₂
-    refine ⟨φ.prod ψ, fun q hq ↦ φ.coord_mfderiv_prod ψ hq ?_ ?_⟩
-    · rw [MorseChart.prod_toChart] at hq
-      exact hφ q.1 hq.1
-    · rw [MorseChart.prod_toChart] at hq
-      exact hψ q.2 hq.2
+    exact ⟨φ.prod ψ, φ.forall_coord_mfderiv_prod ψ hφ hψ⟩
 
 /-! ### The flow, stable and unstable manifolds of a product -/
 

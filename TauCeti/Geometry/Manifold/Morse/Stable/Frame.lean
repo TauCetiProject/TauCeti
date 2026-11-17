@@ -63,6 +63,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `eventually_mem_linearForwardTimes`, `eventually_mem_linearBackwardTimes`: points of the
   stable, respectively unstable, manifold have admissible times.
 * `stableNormal_apply`, `mfderiv_unstableFrame`: the two maps read at any admissible time.
+* `zero_mem_linearForwardTimes_self`, `zero_mem_linearBackwardTimes_self`,
+  `stableNormal_unstableFrame_self`: at the centre of the chart every time is admissible, and the
+  normal coordinates invert the unstable frame.
 * `eventually_span_mtangentConeAt_stableSet_eq_comap`: for all large times `T`, the tangent space
   of the stable manifold is read off the derivative of `φ ∘ Φ_T`.
 * `stableNormal_eq_zero_iff`, `surjective_stableNormal`: the normal coordinates vanish exactly on
@@ -192,6 +195,22 @@ private theorem mfderiv_toChart_comp_flow_mfderiv_flow {y : M} {s t : ℝ}
     simp [Flow.map_add]
   rw [Flow.map_add] at hs
   rw [hcomp, mfderiv_comp_apply y ((φ.mdifferentiableAt_toChart hs).comp _ (hd s _)) (hd t y)]
+
+/-- The linear forward orbit of the centre of a Morse chart is the centre, so `0` is a time of
+linear forward flow of the centre. -/
+theorem zero_mem_linearForwardTimes_self : (0 : ℝ) ∈ hX.linearForwardTimes φ x := by
+  refine (hX.mem_linearForwardTimes φ).2 ⟨by simp, fun t _ ↦ ?_⟩
+  have h0 : φ.linearFlow t 0 = 0 := funext fun i ↦ by simp
+  rw [Flow.map_zero_apply, φ.apply_self, map_zero, h0, map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
+
+/-- The linear backward orbit of the centre of a Morse chart is the centre, so `0` is a time of
+linear backward flow of the centre. -/
+theorem zero_mem_linearBackwardTimes_self : (0 : ℝ) ∈ hX.linearBackwardTimes φ x := by
+  refine (hX.mem_linearBackwardTimes φ).2 ⟨by simp, fun t _ ↦ ?_⟩
+  have h0 : φ.linearFlow t 0 = 0 := funext fun i ↦ by simp
+  rw [neg_zero, Flow.map_zero_apply, φ.apply_self, map_zero, h0, map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
 
 variable (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
   fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -628,6 +647,18 @@ theorem flow_log_eq_of_exp_smul_negativeCoord_eq (hf : IsMorse 𝓘(ℝ, E) f) {
   have := congrArg (hX.flow (S + Real.log μ)) heq
   rwa [← Flow.map_add, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply,
     show S + Real.log μ + -S = Real.log μ by ring] at this
+
+/-- **At the centre of a Morse chart, the normal coordinates invert the unstable frame.** At the
+critical point `x` itself, both maps are read off the derivative of the chart: the frame sends `c`
+to the vector with coordinates `c` in the directions of negative weight and `0` elsewhere, and the
+normal coordinates read the coordinates of negative weight. -/
+@[simp]
+theorem stableNormal_unstableFrame_self (c : {i // φ.weight i < 0} → ℝ) :
+    hX.stableNormal φ x (hX.unstableFrame φ x c) = c := by
+  have h := hX.mfderiv_unstableFrame hφ zero_mem_linearBackwardTimes_self c
+  rw [hX.stableNormal_apply hφ zero_mem_linearForwardTimes_self]
+  rw [neg_zero, Flow.map_zero, comp_id, Real.exp_zero, one_smul] at h ⊢
+  rw [h, φ.negativeCoord_negativeExtend]
 
 end IsAdaptedPseudoGradient
 

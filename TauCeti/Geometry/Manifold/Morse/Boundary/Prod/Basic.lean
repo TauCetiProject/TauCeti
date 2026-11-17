@@ -36,8 +36,8 @@ and it is a trajectory of `X` from `p` to `p'`. Hence the boundary coefficients 
 
 and on chains `∂ (p ⊗ q) = ∂ p ⊗ q + p ⊗ ∂ q`. Over `ZMod 2` there is no Koszul sign; with integral
 coefficients the second term carries the sign `(-1)^{ind p}`, which comes from orienting the
-unstable manifold of `(p, q)` by the unstable manifold of `p` followed by that of `q`, and is not
-treated here.
+unstable manifold of `(p, q)` by the unstable manifold of `p` followed by that of `q`
+(`TauCeti.Geometry.Manifold.Morse.Boundary.Prod.Integral`).
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Prod`, which treats
 separated sums on Euclidean spaces. On compact manifolds no sublevel or Lipschitz hypothesis is
@@ -95,6 +95,10 @@ attribute [local instance] isManifold_chartedSpaceProd
 variable (f g) in
 /-- **The critical points of a separated sum are the pairs of critical points**, as an equivalence
 of critical sets, for differentiable `f` and `g`. -/
+-- The body is exposed: orientation data on the product (`TauCeti.MorseOrientation.prod`) attach to
+-- the critical point `(p, q)` objects whose types mention the pair of points, which must reduce to
+-- `(p, q)`.
+@[expose]
 noncomputable def criticalPointsCompFstAddCompSndEquiv (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g) :
     criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ≃
@@ -146,6 +150,14 @@ section Chain
 
 variable {R : Type*} [CommSemiring R] {hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f}
   {hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g}
+
+/-- The defining formula of the identification of the chains of a separated sum with the tensor
+product of chains. -/
+theorem morseChainProdEquiv_def (R : Type*) [CommSemiring R] :
+    morseChainProdEquiv f g R hf hg =
+      (Finsupp.domLCongr (criticalPointsCompFstAddCompSndEquiv f g hf hg)).trans
+        (finsuppTensorFinsupp' R _ _).symm :=
+  (rfl)
 
 /-- The chain `a • (p, q)` corresponds to `a • p ⊗ q`. -/
 @[simp]
