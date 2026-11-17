@@ -184,13 +184,7 @@ def toSimpleGraphIso (f : Iso G H) : G.toSimpleGraph ≃g H.toSimpleGraph where
   map_rel_iff' := by
     intro x y
     simp only [toSimpleGraph_adj, f.vertexEquiv.injective.ne_iff]
-    refine and_congr_right fun _ ↦ ?_
-    constructor
-    · rintro ⟨e, he⟩
-      exact ⟨f.edgeEquiv.symm ⟨e, he.edge_mem⟩,
-        (f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) x y).mp (by simpa using he)⟩
-    · rintro ⟨e, he⟩
-      exact ⟨f.edgeEquiv ⟨e, he.edge_mem⟩, (f.map_isLink_iff ⟨e, he.edge_mem⟩ x y).mpr he⟩
+    exact and_congr_right fun _ ↦ f.map_adj_iff x y
 
 /-- The induced simple-graph isomorphism uses the original vertex equivalence. -/
 @[simp]
