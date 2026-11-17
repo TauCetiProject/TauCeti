@@ -23,6 +23,14 @@ scalar function localizes even a section without compact support, and a cutoff e
 on the support acts as the identity. These operations provide the support stages and
 localizations used in test sections and their inductive-limit topologies.
 
+For fields of continuous linear maps `η : ∀ x, V x →L[𝕜] G`,
+`ContMDiffSection.tsupport_clm_apply_subset` bounds the pairing support by the section support.
+`ContMDiffSection.continuousOn_clm_apply` gives continuity of the pairing on a set `U`,
+and `ContMDiffSection.continuous_clm_apply_of_tsupport_subset` gives global continuity
+when the section is supported in an open `U`. Continuity of the field on `U` means
+continuity of total-space evaluation `p ↦ η p.proj p.snd` on `(π F V) ⁻¹' U`.
+These lemmas allow arbitrary topological module targets `G`.
+
 The smoothness of multiplication is supplied by Mathlib's `ContMDiff.smul_section`.
 -/
 

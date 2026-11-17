@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
-public import Mathlib.Geometry.Manifold.BumpFunction
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -31,17 +31,21 @@ The statements concern continuous sources along fields, not functions on jet spa
 turning uniqueness along every field into a jet identity additionally needs local
 realization of jets.
 
-The proof uses Mathlib's
-`Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero` and smooth bump
-functions, together with `ContMDiffSection.evalLinearMap_surjective` to test every
-fibre vector and the separating dual to detect Banach-valued pairings. Compact
-support is the native `ContMDiffSection.tsupport`, not the support of the map into
-the total space.
+`ContMDiffSection.integrable_clm_apply_of_tsupport_subset` establishes integrability
+under weaker assumptions: an arbitrary nontrivially normed field, a normed codomain
+without completeness, arbitrary section regularity, and a fibre bundle without
+vector-bundle, finite-dimensionality, Hausdorff, or manifold-smoothness assumptions.
+It requires open-set measurability and finiteness on compact sets, but not positivity
+on nonempty open sets.
 
-## References
-
-* Ian M. Anderson, *The Variational Bicomplex*, Chapter 2, §B, for uniqueness of
-  Euler source coefficients from arbitrary supported variations.
+The uniqueness proof uses Mathlib's
+`MeasureTheory.integral_pos_of_integrable_nonneg_ne_zero` and
+`SmoothBumpFunction.nhds_basis_tsupport`, together with
+`ContMDiffSection.evalLinearMap_surjective` to test every fibre vector,
+`SeparatingDual.eq_zero_of_forall_dual_eq_zero` to detect Banach-valued pairings, and
+`ContinuousLinearMap.integral_comp_comm` to commute dual evaluation with integration.
+Compact support is the native `ContMDiffSection.tsupport`, not the support of the
+map into the total space.
 -/
 
 public section
@@ -104,10 +108,8 @@ theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x 
   have hs (ℓ : G →L[ℝ] ℝ) (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : x ∈ U) :
       ℓ (η x (s x)) ≤ 0 := by
     by_contra! hpos
-    have hηℓ : ContinuousOn (fun p : TotalSpace F V ↦ (ℓ.comp (η p.proj)) p.snd)
-        ((π F V) ⁻¹' U) := by
-      simpa only [ContinuousLinearMap.comp_apply] using ℓ.continuous.comp_continuousOn' hη
-    have hc := s.continuousOn_clm_apply (η := fun y ↦ ℓ.comp (η y)) hηℓ
+    -- Localize the scalar pairing where it is positive, using a smooth bump equal to one at x.
+    have hc := ℓ.continuous.comp_continuousOn' (s.continuousOn_clm_apply hη)
     obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
       (inter_mem (hU.mem_nhds hx)
         ((hc.continuousAt (hU.mem_nhds hx)).preimage_mem_nhds (Ioi_mem_nhds hpos)))
@@ -122,24 +124,21 @@ theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x 
       (hρ.trans inter_subset_left))
     have hgs (y : M) : (g • s) y = ρ y • s y := by
       simpa only [hg] using ContMDiffSection.smul_apply g s y
-    have hcont := (g • s).continuous_clm_apply_of_tsupport_subset
-      (η := fun y ↦ ℓ.comp (η y)) hU hηℓ hsU
-    have hp := hcont.integral_pos_of_hasCompactSupport_nonneg_ne_zero (μ := μ)
-        (hsc.of_isClosed_subset (_root_.isClosed_tsupport _)
-          ((g • s).tsupport_clm_apply_subset (fun y ↦ ℓ.comp (η y))))
-        (fun y ↦ ?_) (x := x) (by
-          simpa only [ContinuousLinearMap.comp_apply, hgs, ρ.eq_one, one_smul] using hpos.ne')
-    · simp only [ContinuousLinearMap.comp_apply] at hp
-      rw [ℓ.integral_comp_comm
-        ((g • s).integrable_clm_apply_of_tsupport_subset hU hη hsc hsU),
-        h (g • s) hsc hsU, map_zero] at hp
-      exact hp.false
-    · by_cases hy : y ∈ tsupport ρ
-      · simpa only [Pi.zero_apply, ContinuousLinearMap.comp_apply, hgs, map_smul,
-          smul_eq_mul] using
+    have hint := (g • s).integrable_clm_apply_of_tsupport_subset (μ := μ) hU hη hsc hsU
+    have hcont := ℓ.continuous.comp'
+      ((g • s).continuous_clm_apply_of_tsupport_subset hU hη hsU)
+    have hnonneg : 0 ≤ fun y ↦ ℓ (η y ((g • s) y)) := by
+      intro y
+      by_cases hy : y ∈ tsupport ρ
+      · simpa only [Pi.zero_apply, hgs, map_smul, smul_eq_mul] using
           mul_nonneg (ρ.nonneg (x := y)) (hρ hy).2.le
       · simp only [Pi.zero_apply, hgs, image_eq_zero_of_notMem_tsupport hy,
           zero_smul, map_zero, le_refl]
+    -- Positivity contradicts the vanishing integral of this localized test section.
+    have hp := integral_pos_of_integrable_nonneg_ne_zero hcont (ℓ.integrable_comp hint)
+      hnonneg (x := x) (by simpa only [hgs, ρ.eq_one, one_smul] using hpos.ne')
+    rw [ℓ.integral_comp_comm hint, h (g • s) hsc hsU, map_zero] at hp
+    exact hp.false
   intro x hx
   ext v
   obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) n x v
