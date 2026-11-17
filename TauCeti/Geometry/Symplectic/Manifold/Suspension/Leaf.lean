@@ -67,8 +67,11 @@ almost complex structure of `(ℝ / ℤ) × (ℝ / dℤ)`, so `v` is pseudoholom
 (`TauCeti.IsPseudoholomorphicAt.of_comp`), and it is not constant. A nonconstant pseudoholomorphic
 map from a compact surface to the torus has positive area and is therefore onto
 (`TauCeti.surjective_of_isPseudoholomorphicAt_addCircleProd`). So the image of every nonconstant
-horizontal curve, critical points allowed, is the whole torus `(ℝ / ℤ) × γ`. The degree with which
-`v` covers the torus is not computed here.
+horizontal curve, critical points allowed, is the whole torus `(ℝ / ℤ) × γ`. When `C` is
+modelled on the plane `ℝ × ℝ`, the degree with which `v` covers the torus is positive
+(`TauCeti.SmoothMappingTorus.exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt`, in
+`TauCeti.Geometry.Symplectic.Manifold.Suspension.Orientation`), and it is the number of preimages
+of every regular value (`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`).
 
 ## Main results
 
