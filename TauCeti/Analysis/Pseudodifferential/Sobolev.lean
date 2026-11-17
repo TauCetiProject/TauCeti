@@ -17,6 +17,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -89,11 +90,13 @@ families of operators.
   of `Op(a) u`, a case of
   `TauCeti.Symbol.HasCompactSpatialSupport.fourier_integral_fourierChar_smul_apply` for
   `x ↦ ∫ exp(2πi ⟪ζ, x⟫) a(x, g ζ) (𝓕 u ζ) dζ` with a general frequency map `g`.
-* `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
-  the Sobolev estimate on Schwartz functions, on the Fourier side.
+* `TauCeti.Symbol.rpow_mul_norm_fourier_apply_le` and
+  `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
+  the pointwise kernel bound, and the Sobolev estimate on Schwartz functions, on the Fourier side.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
-  `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
-  on Schwartz functions.
+  `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` and
+  `TauCeti.Symbol.HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM` identifying
+  its values on Schwartz functions.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
@@ -559,10 +562,11 @@ theorem HasCompactSpatialSupport.fourier_quantizeSchwartzValue (ha : a.HasCompac
   rw [hq]
   exact ha.fourier_integral_fourierChar_smul_apply u (continuous_const_smul _) hgu ξ
 
-/-- The pointwise kernel bound behind the Sobolev estimate: Peetre's inequality and the decay of
-`â` give `⟨ξ⟩ ^ (s - m) ‖â(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` with
-`k(η) = (1 + ‖η‖) ^ (|s - m| - N)`. -/
-private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ : 0 ≤ C₀)
+/-- **The pointwise kernel bound** behind the Sobolev estimate: Peetre's inequality and a decay
+bound `(1 + ‖η‖) ^ N ‖â(η, ξ)‖ ≤ C₀ ⟨ξ⟩ ^ m` give
+`⟨ξ⟩ ^ (s - m) ‖â(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` with
+`k(η) = (1 + ‖η‖) ^ (|s - m| - N)` and `B = 2 ^ (|s - m| / 2) C₀ (2π) ^ |m|`. -/
+theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ : 0 ≤ C₀)
     (hdecay : ∀ η ξ : CoordinateSpace n,
       (1 + ‖η‖) ^ N * ‖𝓕 (fun x ↦ a.coefficient (x, ξ)) η‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (ξ ζ : CoordinateSpace n) (v : V) :
@@ -584,8 +588,7 @@ private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ :
     rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
     ring_nf
   have hw : (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) * (1 + ‖ζ‖ ^ 2) ^ (m / 2) = (1 + ‖ζ‖ ^ 2) ^ (s / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+    rw [← one_add_norm_sq_rpow_add, sub_add_cancel]
   calc (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) * ‖A v‖
       ≤ (2 ^ (|s - m| / 2) * (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) * (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2)) *
           ((C₀ * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * (t ^ N)⁻¹) * ‖v‖) := by
@@ -654,24 +657,22 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
         eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume := by
   set N : ℕ := ⌈|s - m|⌉₊ + n + 1
   set k : CoordinateSpace n → ℝ := fun η ↦ (1 + ‖η‖) ^ (-((N : ℝ) - |s - m|))
-  have hk_int : Integrable k := integrable_one_add_norm (by
-    rw [finrank_euclideanSpace, Fintype.card_fin]
-    have := Nat.le_ceil |s - m|
-    push_cast [N]
-    linarith)
   set B := 2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m|
-  have hB : 0 ≤ B := by positivity
-  set A := ENNReal.ofReal (B * ∫ η, k η)
-  have hA : sobolevFactor n m s * C₀ = B * ∫ η, k η := by
+  set A := ENNReal.ofReal (∫ η, B * k η)
+  have hA : sobolevFactor n m s * C₀ = ∫ η, B * k η := by
+    rw [integral_const_mul]
     simp only [sobolevFactor, B, k, N]
     ring
   rw [hA]
   -- The pointwise bound by the kernel `B k(ξ - ζ)` acting on `⟨ζ⟩ ^ s ‖𝓕 u ζ‖`.
   have hpt := ha.enorm_smul_fourier_quantizeSchwartzValue_le (s := s) hC₀ hdecay u
   -- Schur's test for the kernel `B k(ξ - ζ)`, whose row and column integrals are `A`.
-  have hint : ∫⁻ η, ENNReal.ofReal (B * k η) = A := by
-    rw [← ofReal_integral_eq_lintegral_ofReal (hk_int.const_mul B)
-      (.of_forall fun η ↦ mul_nonneg hB (Real.rpow_nonneg (by positivity) _)), integral_const_mul]
+  have hk : Integrable fun η ↦ B * k η :=
+    (integrable_one_add_norm (r := N - |s - m|) (by
+      have := Nat.le_ceil |s - m|
+      push_cast [N, finrank_euclideanSpace_fin]
+      linarith)).const_mul B
+  have hk0 : 0 ≤ᵐ[volume] fun η ↦ B * k η := .of_forall fun _ ↦ by positivity
   have hkcont : Continuous k :=
     (continuous_const.add continuous_norm).rpow_const fun x ↦
       Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg x)).ne'
@@ -687,10 +688,8 @@ private theorem HasCompactSpatialSupport.eLpNorm_smul_fourier_quantizeSchwartzVa
     ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
   have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
     (p := 2) one_le_two (A := A) (B := A)
-    (.of_forall fun x ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) x).trans
-      hint |>.le)
-    (.of_forall fun y ↦ (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) y).trans
-      hint |>.le)
+    (.of_forall fun ξ ↦ (lintegral_ofReal_sub_left_eq_ofReal_integral hk hk0 ξ).le)
+    (.of_forall fun ζ ↦ (lintegral_ofReal_sub_right_eq_ofReal_integral hk hk0 ζ).le)
   calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * k (ξ - ζ)) *
           ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ) 2 volume :=
         eLpNorm_mono_eNorm ((hw (s - m)).smul
@@ -866,6 +865,18 @@ theorem toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply
     Lp.toTemperedDistribution_apply]
   exact integral_congr_ae ((ha.memLp_quantizeSchwartzValue u 2).coeFn_toLp.mono fun x hx ↦ by
     simp only [hx])
+
+/-- On a Schwartz function `u`, the operator `Op(a) : H^s → H^{s - m}` gives the element of
+`H^{s - m}` defined by the Schwartz function `Op(a) u`, which has compact support. -/
+theorem HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (u : 𝓢(CoordinateSpace n, V)) :
+    a.quantizeSobolev ha s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
+        ((ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (a.contDiff_quantizeSchwartzValue u)) := by
+  refine BesselPotentialSpace.ext ?_
+  ext φ
+  simp
 
 /-- The operator norm of `Op(a) : H^s → H^{s - m}` is at most any constant of the Sobolev
 estimate on the Fourier side. -/

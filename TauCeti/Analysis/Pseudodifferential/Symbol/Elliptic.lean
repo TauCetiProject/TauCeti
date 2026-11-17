@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.CutoffInverse
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Elliptic symbols and their inverse symbols
@@ -149,7 +150,7 @@ private theorem isInvertible_comp_and_norm_inverse_le {b : W →L[ℂ] U} {a : V
     _ ≤ (D * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) * (C * (1 + ‖ξ‖ ^ 2) ^ (-m' / 2)) :=
         mul_le_mul ha.2 hb.2 (norm_nonneg _) ((norm_nonneg _).trans ha.2)
     _ = D * C * (1 + ‖ξ‖ ^ 2) ^ (-(m' + m) / 2) := by
-        rw [show -(m' + m) / 2 = -m / 2 + -m' / 2 by ring, Real.rpow_add (by positivity)]
+        rw [show -(m' + m) = -m + -m' by ring, one_add_norm_sq_rpow_add]
         ring
 
 /-- The pointwise composition of elliptic symbols is elliptic. -/
@@ -327,10 +328,7 @@ inverse is the Bessel weight of order `-s`. -/
 theorem isUniformlyEllipticAbove_besselPotential (s R : ℝ) :
     (besselPotential s : Symbol n V V s).IsUniformlyEllipticAbove R := by
   refine isUniformlyEllipticAbove_of_comp_eq_id (isUniform_besselPotential (-s)) fun x ξ _ => ?_
-  have hw : (0 : ℝ) < 1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2 := by positivity
-  have h₁ : (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (-s / 2) * (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (s / 2) =
-      1 := by
-    rw [← Real.rpow_add hw, neg_div, neg_add_cancel, Real.rpow_zero]
+  have h₁ := one_add_norm_sq_rpow_neg_mul_rpow ((2 * Real.pi)⁻¹ • ξ) s
   have h₂ : (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (s / 2) * (1 + ‖(2 * Real.pi)⁻¹ • ξ‖ ^ 2) ^ (-s / 2) =
       1 := by
     rw [mul_comm, h₁]
