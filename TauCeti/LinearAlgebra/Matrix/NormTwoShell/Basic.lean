@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Algebra.Order.Group.PosPart
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.LinearAlgebra.Matrix.DotProduct
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import TauCeti.LinearAlgebra.Matrix.ZMatrix
