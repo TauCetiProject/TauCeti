@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Holder.Rescaling
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Complex.Conformal.Moebius
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Isothermal charts for a Hölder almost complex structure on the plane
