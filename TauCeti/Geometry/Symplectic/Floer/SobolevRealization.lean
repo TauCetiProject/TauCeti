@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
+public import TauCeti.Geometry.Symplectic.Floer.SpectralGap
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
@@ -43,6 +44,14 @@ range: the Fredholm property of `D_u` minus the finiteness of its cokernel.
   `TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`) gives finite-dimensional
   kernel (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`) and closed range
   (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`).
+* At the stationary cylinder `u(s, t) = x(t)` over a nondegenerate orbit `x`, `D_u` is the
+  translation-invariant operator `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`, and the spectral gap
+  estimate `TauCeti.Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator` bounds
+  every test section in `L²` by `D_u`. So `D_u` is bounded below on `W^{1,2}`, `‖ξ‖ ≤ K ‖D_u ξ‖`
+  (`exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt`), and injective
+  (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt`). This is
+  the injective half of the invertibility of `D_u` at a stationary cylinder; its surjectivity
+  is not proved here.
 
 The finiteness of the cokernel, hence the Fredholm property and the index, needs the same estimate
 for the formal adjoint of `D_u`.
@@ -250,9 +259,13 @@ theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
       (mul_le_mul hJb hdX (norm_nonneg _) hBJ0))
   exact (norm_floerJetCoeff_le ω _ _ _ _ (s, t)).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
 
-/-- The semi-Fredholm estimate along a Floer trajectory, in the form consumed by Peetre's argument
-on the cylinder. -/
-private theorem exists_estimate_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+/-- **The semi-Fredholm estimate along a Floer trajectory**, in the form
+`TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
+the estimate
+`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`
+for the coefficient field of the linearized Floer operator on jets. -/
+theorem exists_hasSemiFredholmEstimate_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
     (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t)
@@ -306,8 +319,8 @@ theorem finiteDimensional_ker_floerSobolevOperator (ω : SymplecticForm V) {H : 
     FiniteDimensional ℝ (ω.floerSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         u).ker := by
-  obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff ω hX hH hxm hndm hxp hndp hJ hJxm hJxp hu
-    hJu huxm huxp hδm hδp
+  obtain ⟨C, T, hest⟩ := exists_hasSemiFredholmEstimate_floerJetCoeff ω hX hH hxm hndm hxp hndp hJ
+    hJxm hJxp hu hJu huxm huxp hδm hδp
   exact finiteDimensional_ker_jetOperator_comp_subtypeL
     (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp) hest
 
@@ -336,9 +349,219 @@ theorem isClosed_range_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ →
     IsClosed ((ω.floerSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         u).range : Set (Lp V 2 stripMeasure)) := by
-  obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff ω hX hH hxm hndm hxp hndp hJ hJxm hJxp hu
-    hJu huxm huxp hδm hδp
+  obtain ⟨C, T, hest⟩ := exists_hasSemiFredholmEstimate_floerJetCoeff ω hX hH hxm hndm hxp hndp hJ
+    hJxm hJxp hu hJu huxm huxp hδm hδp
   exact isClosed_range_jetOperator_comp_subtypeL
     (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp) hest
+
+end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+open CylinderSobolev
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
+  {ξ : ℝ × ℝ → V}
+
+/-- For continuous `J_t` and `S_t`, the stationary cylinder operator of a `C¹` map is continuous. -/
+private theorem continuous_stationaryCylinderOperator
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
+  have h := hξ.continuous_fderiv one_ne_zero
+  simp only [funext (stationaryCylinderOperator_def J S ξ)]
+  exact (h.clm_apply continuous_const).add (((hJc.comp continuous_snd).clm_apply
+    ((h.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous))))
+
+omit [FiniteDimensional ℝ V] in
+/-- The stationary cylinder operator vanishes wherever the jet of the map vanishes. -/
+private theorem stationaryCylinderOperator_eq_zero_of_jet_eq_zero {z : ℝ × ℝ} (h : jet ξ z = 0) :
+    stationaryCylinderOperator J S ξ z = 0 := by
+  rw [jet_apply, Prod.mk_eq_zero, Prod.mk_eq_zero] at h
+  simp only [stationaryCylinderOperator_def, stdComplexLineReal_eq, stdComplexLineImag_eq, h.1,
+    h.2.1, h.2.2, map_zero, sub_zero, add_zero]
+
+/-- **The `L²` estimate of the stationary cylinder operator on test sections.** Let each `J_t` be
+`ω`-compatible and depend continuously on `t`, let each `S_t` be infinitesimally symplectic and
+depend continuously on `t`, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return map `Ψ(1)` of
+`ζ' = S_t ζ`. Then there is a constant `C` with `∫ ‖ξ‖² ≤ C ∫ ‖D ξ‖²` over the strip
+`ℝ × [0, 1]` for every test section `ξ` of the cylinder, where `D = ∂s + J_t (∂t - S_t)`. This is
+`TauCeti.Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator` with the forms
+`g_t = ω(·, J_t ·)` replaced by the norm, to which they are uniformly equivalent for
+`t ∈ [0, 1]`. -/
+theorem exists_integral_norm_sq_le_mul_integral_norm_sq_stationaryCylinderOperator
+    (hJ : ∀ t, ω.Compatible (J t))
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S)
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    ∃ C, ∀ ξ ∈ testSection V, ∫ z, ‖ξ z‖ ^ 2 ∂stripMeasure ≤
+      C * ∫ z, ‖stationaryCylinderOperator J S ξ z‖ ^ 2 ∂stripMeasure := by
+  have hJc' : Continuous fun p : ℝ × V ↦ J p.1 p.2 := by
+    simpa using (hJc.comp continuous_fst).clm_apply continuous_snd
+  obtain ⟨C, hC, hest⟩ :=
+    exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator hJ hJc' hS hSc hdet
+  -- The forms `g_t` are uniformly equivalent to the norm for `t ∈ [0, 1]`.
+  obtain ⟨a, ha, b, -, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    isCompact_Icc hJc.continuousOn fun t _ ↦ (hJ t).tames
+  refine ⟨a⁻¹ * C * b, fun ξ hξm ↦ ?_⟩
+  obtain ⟨hξ, hper, -⟩ := mem_testSection_iff.1 hξm
+  set D := stationaryCylinderOperator J S ξ
+  have hDc : Continuous D := continuous_stationaryCylinderOperator hJc hSc (hξ.of_le one_le_two)
+  have hgD : Integrable (fun z ↦ ω.associatedBilinForm (J z.2) (D z) (D z)) stripMeasure :=
+    integrable_of_jet_eq_zero hξm (continuous_associatedBilinForm_apply_self hJc' hDc)
+      fun z h ↦ by simp [D, stationaryCylinderOperator_eq_zero_of_jet_eq_zero h]
+  have hdecay : Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
+      (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
+    simpa [Function.comp_def, jet_apply, stdComplexLineImag_eq, Prod.mk_zero_zero] using
+      ((continuous_fst.prodMk (continuous_snd.comp continuous_snd)).tendsto
+        (0 : V × V × V)).comp (tendsto_jet_comap_fst_cocompact hξm)
+  obtain ⟨hgξ, hle⟩ := hest ξ hξ hper hdecay hgD
+  have hstrip : MeasurableSet ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1) :=
+    MeasurableSet.univ.prod measurableSet_Icc
+  -- Compare the norms with the forms `g_t` on the strip.
+  have h₁ : ∫ z in univ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 ≤
+      a⁻¹ * ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) := by
+    rw [← integral_const_mul]
+    refine setIntegral_mono_on (integrable_of_jet_eq_zero hξm (hξ.continuous.norm.pow 2)
+      fun z h ↦ ?_) (hgξ.const_mul _) hstrip fun z hz ↦ ?_
+    · rw [jet_apply, Prod.mk_eq_zero] at h
+      simp [h.1]
+    · rw [le_inv_mul_iff₀ ha]
+      exact (hab z.2 hz.2 _).1
+  have h₂ : ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (D z) (D z) ≤
+      b * ∫ z in univ ×ˢ Icc 0 1, ‖D z‖ ^ 2 := by
+    rw [← integral_const_mul]
+    exact setIntegral_mono_on hgD ((integrable_of_jet_eq_zero hξm (hDc.norm.pow 2) fun z h ↦ by
+      simp [D, stationaryCylinderOperator_eq_zero_of_jet_eq_zero h]).const_mul b) hstrip
+      fun z hz ↦ (hab z.2 hz.2 _).2
+  calc ∫ z in univ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2
+      ≤ a⁻¹ * (C * (b * ∫ z in univ ×ˢ Icc 0 1, ‖D z‖ ^ 2)) :=
+        h₁.trans (mul_le_mul_of_nonneg_left (hle.trans (mul_le_mul_of_nonneg_left h₂ hC))
+          (inv_nonneg.2 ha.le))
+    _ = a⁻¹ * C * b * ∫ z in univ ×ˢ Icc 0 1, ‖D z‖ ^ 2 := by ring
+
+end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+open CylinderSobolev
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+section Stationary
+
+/-! ### The stationary cylinder at a nondegenerate orbit -/
+
+variable (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+  (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+  (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
+  (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+  {J : ℝ → V → AlmostComplexStructure V}
+  (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+  (hJx : ∀ t, ω.Compatible (J t (x t)))
+
+include hH hx in
+/-- An orbit of a jointly `C²` Hamiltonian is `C¹`. -/
+private theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField : ContDiff ℝ 1 x := by
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
+  rw [show deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) from funext fun t ↦ (hx t).deriv]
+  exact (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
+    (continuous_id.prodMk hxc)
+
+include hx in
+/-- The stationary cylinder over an orbit has vanishing slice defect `∂t u - X_{H_t}(u)`. -/
+private theorem sliceDefect_stationary_eq_zero :
+    sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) (fun w : ℝ × ℝ ↦ x w.2) = 0 := by
+  funext z
+  obtain ⟨s, t⟩ := z
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
+      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
+        (ω.hamiltonianVectorField (H t) (x t))).comp (snd ℝ ℝ ℝ)) (s, t) :=
+    (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
+  simp [sliceDefect_def, h.fderiv]
+
+include hX hH hx hJ hJx in
+/-- At the stationary cylinder over a nondegenerate orbit, the coefficients of the linearized Floer
+operator are bounded and satisfy the semi-Fredholm estimate. -/
+private theorem memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationary
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    MemLp (ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) (fun w ↦ x w.2)) ∞ stripMeasure ∧
+      ∃ C T : ℝ, HasSemiFredholmEstimate (ω.floerJetCoeff
+        (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
+          (fun w ↦ x w.2)) C T := by
+  have hu : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ x w.2 :=
+    (contDiff_one_of_hasDerivAt_hamiltonianVectorField ω hH hx).comp contDiff_snd
+  -- The loops of `u` and its slice defect do not depend on `s`, so they converge uniformly.
+  have hc (f : ℝ → V) (l : Filter ℝ) : TendstoUniformlyOn (fun (_ : ℝ) t ↦ f t) f l (Icc 0 1) :=
+    fun _ hU ↦ Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hU
+  have h₀ (l : Filter ℝ) : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (H t)) (fun w : ℝ × ℝ ↦ x w.2) (s, t)) 0 l (Icc 0 1) := by
+    simpa only [sliceDefect_stationary_eq_zero ω hx, Pi.zero_apply] using hc 0 l
+  exact ⟨ω.memLp_floerJetCoeff hH hJ hu (hc x _) (hc x _) (h₀ _) (h₀ _),
+    ω.exists_hasSemiFredholmEstimate_floerJetCoeff hX hH hx hnd hx hnd hJ hJx hJx hu
+      (fun z ↦ hJx z.2) (hc x _) (hc x _) (h₀ _) (h₀ _)⟩
+
+include hX hH hx hJ hJx in
+/-- **The global `L²` bound at a stationary cylinder.** At the stationary cylinder over a
+nondegenerate orbit, the linearized Floer operator bounds every test section in `L²` over the whole
+strip: `∫ ‖ξ‖² ≤ C ∫ ‖D ξ‖²`. This is the spectral gap estimate
+`TauCeti.Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator` for the forms
+`g_t = ω(·, J_t(x(t)) ·)`, which are uniformly equivalent to the norm for `t ∈ [0, 1]`. -/
+private theorem exists_integral_norm_sq_le_mul_integral_floerJetCoeff_stationary
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    ∃ C : ℝ, ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C * ∫ z, ‖ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2
+          ∂stripMeasure := by
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  obtain ⟨C, hC⟩ := Floer.exists_integral_norm_sq_le_mul_integral_norm_sq_stationaryCylinderOperator
+    (J := fun t ↦ J t (x t)) (S := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) hJx
+    (hJ.continuous.comp (continuous_id.prodMk hxc))
+    (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
+      (hH.comp (contDiff_prodMk_right t)).contDiffAt)
+    (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc)
+    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+  refine ⟨C, fun ξ ↦ ?_⟩
+  simp only [floerJetCoeff_jet, floerLinearization_eq_stationaryCylinderOperator ω J H hx]
+  exact hC ξ ξ.2
+
+include hX hH hx hJ hJx in
+/-- **The linearized Floer operator at a nondegenerate orbit is bounded below on `W^{1,2}`.**
+Let `x` be an orbit of a jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is
+globally Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map, and let `J_t(y)`
+be a `C¹` family of almost complex structures that is `ω`-compatible along `x`. At the stationary
+cylinder `u(s, t) = x(t)`, the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the
+linearized Floer operator, which is the translation-invariant operator
+`∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`, satisfies `‖ξ‖_{W^{1,2}} ≤ K ‖D_u ξ‖_{L²}` for a
+constant `K`. -/
+theorem exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    ∃ C : ℝ≥0, ∀ ξ : H1 V, ‖ξ‖ ≤ C * ‖ω.floerSobolevOperator
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
+        (fun w ↦ x w.2) ξ‖ := by
+  obtain ⟨hM, C, T, hest⟩ :=
+    memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationary ω hX hH hx hJ hJx hnd
+  obtain ⟨C', hL2⟩ :=
+    exists_integral_norm_sq_le_mul_integral_floerJetCoeff_stationary ω hX hH hx hJ hJx hnd
+  exact exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
+
+include hX hH hx hJ hJx in
+/-- **The linearized Floer operator at a nondegenerate orbit is injective on `W^{1,2}`.** Under the
+hypotheses of `exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt`,
+the realization of the linearized Floer operator at the stationary cylinder `u(s, t) = x(t)` has
+trivial kernel. -/
+theorem ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).ker = ⊥ := by
+  obtain ⟨hM, C, T, hest⟩ :=
+    memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationary ω hX hH hx hJ hJx hnd
+  obtain ⟨C', hL2⟩ :=
+    exists_integral_norm_sq_le_mul_integral_floerJetCoeff_stationary ω hX hH hx hJ hJx hnd
+  exact ker_jetOperator_comp_subtypeL_eq_bot hM hest hL2
+
+end Stationary
 
 end TauCeti.SymplecticForm

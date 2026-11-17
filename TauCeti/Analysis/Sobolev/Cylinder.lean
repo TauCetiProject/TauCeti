@@ -68,6 +68,11 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`. The estimate is stated in the
   form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
+  strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
+  `‖x‖ ≤ K ‖D x‖` on `H1`
+  (`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`), so it is
+  injective (`TauCeti.CylinderSobolev.ker_jetOperator_comp_subtypeL_eq_bot`).
 * Integrals of functions of period one in `t` over `ℝ × [-1, 2]` are controlled by those over the
   strip (`TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`), and the smooth cutoff comes from
   `IsCompact.exists_contDiff_cutoff_eventuallyEq_one`.
@@ -169,6 +174,29 @@ theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) =
     filter_upwards [this] with w hw
     exact hR w.1 w.2 hw.le
   simp [jet, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The jet of a test section tends to zero as `|s| → ∞`. -/
+theorem tendsto_jet_comap_fst_cocompact (hξ : ξ ∈ testSection V) :
+    Tendsto (jet ξ) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
+  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  refine tendsto_const_nhds.congr' ?_
+  have hev : ∀ᶠ z : ℝ × ℝ in comap Prod.fst (cocompact ℝ), R < |z.1| :=
+    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
+      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
+  filter_upwards [hev] with z hz
+  exact (jet_eq_zero_of_lt_abs hR hz).symm
+
+/-- A continuous function that vanishes wherever the jet of a test section vanishes is integrable
+on the strip. -/
+theorem integrable_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E] (hξ : ξ ∈ testSection V)
+    {F : ℝ × ℝ → E} (hF : Continuous F) (h0 : ∀ z, jet ξ z = 0 → F z = 0) :
+    Integrable F stripMeasure := by
+  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (hF.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
+    (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ h0 z (jet_eq_zero_of_lt_abs hR ?_)
+  have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
+  rwa [mem_Icc, ← abs_le, not_le] at h
 
 /-- For a section vanishing for `|s| ≥ R`, the integral over the strip of a function vanishing
 wherever the jet of the section vanishes is its integral over `[-R, R] × [0, 1]`. -/
@@ -879,6 +907,82 @@ theorem isClosed_range_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
       Set (Lp W 2 stripMeasure)) := by
   obtain ⟨K, hK, hbound⟩ := exists_compact_estimate hM hest
   exact ContinuousLinearMap.isClosed_range_of_compact_estimate _ hK hbound
+
+/-- An `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` over the strip bounds the restricted value of the jet of
+a test section by `√C' ‖D ξ‖`. -/
+private theorem norm_restrictValue_jetₗ_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C' : ℝ} (T : ℝ) (ξ : testSection V)
+    (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ‖restrictValue T (jetₗ V ξ)‖ ≤ √(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖ := by
+  have hjm := memLp_jet ξ.2
+  -- `‖ξ‖²` is integrable on the strip, being dominated by `‖jet ξ‖²`.
+  have hint : Integrable (fun z ↦ ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) stripMeasure := by
+    refine (hjm.integrable_norm_pow two_ne_zero).mono'
+      (((mem_testSection_iff.1 ξ.2).1.continuous.norm.pow 2).aestronglyMeasurable)
+      (Eventually.of_forall fun z ↦ ?_)
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_norm_jet _ z) 2
+  have hD : ‖jetOperator M (jetₗ V ξ)‖ ^ 2 =
+      ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    exact integral_congr_ae ((jetOperator_jetₗ_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz])
+  have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
+      ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
+    setIntegral_mono_set hint (Eventually.of_forall fun z ↦ by positivity)
+      (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
+  have hsq : ‖restrictValue T (jetₗ V ξ)‖ ^ 2 ≤
+      (√(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖) ^ 2 := by
+    rw [sq_norm_restrictValue_jetₗ, mul_pow, Real.sq_sqrt (le_max_right _ _), hD]
+    refine hsub.trans (hL2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ?_))
+    exact integral_nonneg fun z ↦ by positivity
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
+
+/-- **An estimate from below on `W^{1,2}`.** Let `M` be an essentially bounded coefficient field on
+the cylinder whose first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` satisfies the semi-Fredholm
+estimate (`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`), and suppose that `D` also bounds the
+value of every test section in `L²` over the whole strip: `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`. Then the
+extension of `D` to `W^{1,2}(ℝ × S¹, V)` is bounded below: `‖x‖ ≤ K ‖D x‖` for every `x`. The
+global `L²` bound removes the compact error term of the semi-Fredholm estimate. -/
+theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ}
+    (hest : HasSemiFredholmEstimate M C T)
+    (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator M).comp (H1 V).subtypeL x‖ := by
+  set c := √(max C 0) * (1 + √(max C' 0))
+  have hc : 0 ≤ c := by positivity
+  refine ⟨⟨c, hc⟩, ?_⟩
+  -- The estimate holds on a closed set containing the jets of all test sections.
+  set S : Set (Lp (V × V × V) 2 stripMeasure) := {f | ‖f‖ ≤ c * ‖jetOperator M f‖}
+  have hS : IsClosed S := isClosed_le continuous_norm
+    (continuous_const.mul (continuous_norm.comp (jetOperator M).continuous))
+  have hrange : Set.range (jetₗ V) ⊆ S := by
+    rintro _ ⟨ξ, rfl⟩
+    have h₁ := norm_jetₗ_le hM hest ξ
+    have h₂ := norm_restrictValue_jetₗ_le hM T ξ (hL2 ξ)
+    simp only [S, mem_ofPred_eq]
+    calc ‖jetₗ V ξ‖
+        ≤ √(max C 0) * (‖jetOperator M (jetₗ V ξ)‖ + ‖restrictValue T (jetₗ V ξ)‖) := h₁
+      _ ≤ √(max C 0) * (‖jetOperator M (jetₗ V ξ)‖ +
+          √(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖) := by gcongr
+      _ = c * ‖jetOperator M (jetₗ V ξ)‖ := by ring
+  intro x
+  have := H1_subset_of_isClosed hS hrange x.2
+  simp only [S, mem_ofPred_eq] at this
+  exact this
+
+/-- **Injectivity on `W^{1,2}`.** Under the hypotheses of
+`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`, a semi-Fredholm
+estimate together with a global `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` on test sections, the extension
+of `D` to `W^{1,2}(ℝ × S¹, V)` has trivial kernel. -/
+theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ} (hest : HasSemiFredholmEstimate M C T)
+    (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ((jetOperator M).comp (H1 V).subtypeL).ker = ⊥ := by
+  obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
+  exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
 
 end Operator
 
