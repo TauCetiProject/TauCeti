@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasur
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 
 /-!
-# Extending a Lipschitz uniformly elliptic field to the whole space
+# Extending a uniformly elliptic field to the whole space
 
 Results about a divergence-form operator on the whole space or on a half-space, such as global
 `H²` regularity, ask for a coefficient field that is uniformly elliptic and Lipschitz there. A field
@@ -30,6 +30,11 @@ near `C`.
 The case of a field that is locally Lipschitz and uniformly elliptic on an open set `Ω`, with
 `C ⊆ Ω` and `T` the whole space, is a corollary: apply the construction with `S` a compact
 neighbourhood of `C` in `Ω`, on which `a` is Lipschitz.
+
+Without any regularity there is a simpler extension: a measurable field that is uniformly elliptic
+on an open set `Ω`, extended by `λ I` off `Ω`, is a measurable field that is uniformly elliptic with
+the same constants on the whole space. The boundary De Giorgi estimates use it to pass from a
+subsolution on `Ω` to its zero extension on the whole space.
 
 ## Main declarations
 

@@ -56,6 +56,8 @@ is the boundary step of the global Hölder estimate for the Dirichlet problem.
   `v ∈ H¹(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_posPart_nonpos`: the zero extension of `u⁺` is a weak
   subsolution on every larger open set.
+* `TauCeti.PDE.mul_measureReal_ball_le_measureReal_setOf_le_zero`: the exterior density at `x₀`
+  passes to the sublevel set `{g ≤ 0}` of a function that is nonpositive off `Ω`.
 * `TauCeti.PDE.exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff`: the
   reduction of the supremum at the boundary.
 * `TauCeti.PDE.exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff`: its
@@ -316,9 +318,9 @@ private theorem exists_uniformlyEllipticOn_top_extendByZeroL_posPart
   · rw [indicator_of_notMem hxO, hx, indicator_of_notMem hxO]
 
 omit [DecidableEq ι] in
-/-- The exterior density at `x₀` passes to the superlevel sets of a function that is nonpositive
-off `Ω`: if `g ≤ 0` almost everywhere on `B(x₀, R) \ Ω` and `Ωᶜ` fills the proportion `θ` of
-`B(x₀, R)`, so does `{g ≤ 0}`. -/
+/-- The exterior density at `x₀` passes to the sublevel set `{g ≤ 0}` of a function that is
+nonpositive off `Ω`: if `g ≤ 0` almost everywhere on `B(x₀, R) \ Ω` and `Ωᶜ` fills the proportion
+`θ` of `B(x₀, R)`, so does `{g ≤ 0}`. -/
 theorem mul_measureReal_ball_le_measureReal_setOf_le_zero {θ R : ℝ}
     {x₀ : EuclideanSpace ℝ ι} {g : EuclideanSpace ℝ ι → ℝ}
     (hθR : θ * mu.real (ball x₀ R) ≤ mu.real (ball x₀ R \ (Omega : Set (EuclideanSpace ℝ ι))))
