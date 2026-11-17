@@ -65,6 +65,7 @@ theorem principalOperator_self (p : E) : principalOperator p p = p := by
   ring_nf
 
 /-- The coefficient operator scales vectors orthogonal to the gradient by `1 + ‖p‖²`. -/
+@[simp]
 theorem principalOperator_of_orthogonal (p v : E) (h : inner ℝ p v = 0) :
     principalOperator p v = (1 + ‖p‖ ^ 2) • v := by
   simp [principalOperator_apply, h]
