@@ -229,8 +229,10 @@ theorem comp_eq_envelopingAugmentation_iff (ε : 𝒜.Augmentation) {hB : IsDGAl
   have hsu : (ε.envelopingDGAlgHomEquiv hB φ).val.IsStrictlyUnital ε.isStrictUnit
       eB.toAInfinityAugmentation.isStrictUnit := by simpa using (ε.envelopingDGAlgHomEquiv hB φ).2
   rw [hsu.isAugmented_iff_taylor_comp_inclusion_mem, envelopingDGAlgHomEquiv_comp_inclusion]
-  exact ⟨fun h w ↦ by simp [show eB (φ (ι R w)) = 0 by simpa using congrArg (· (ι R w)) h],
-    fun h ↦ ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun w ↦ by simpa using h w⟩
+  refine ⟨fun h w ↦ ?_, fun h ↦
+    ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun w ↦ by simpa using h w⟩
+  have heB : eB (φ (ι R w)) = 0 := by simpa using congrArg (· (ι R w)) h
+  simp [heB]
 
 /-- **Augmented universal property of `U(A, ε) = Ω B_∞ A`**: augmentation-preserving DG algebra
 morphisms `U(A, ε) ⟶ B` correspond bijectively to strictly unital augmented `A∞` morphisms

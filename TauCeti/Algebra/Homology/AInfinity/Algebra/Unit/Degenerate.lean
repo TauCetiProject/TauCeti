@@ -150,8 +150,8 @@ private theorem sum_unitCollapseTerm_eq {n : ℕ} (x : Fin (n + 1) → A) (j : F
   rw [hsum]
   rcases Nat.eq_zero_or_pos n with rfl | hn; · simp (disch := omega)
   rcases Nat.eq_zero_or_pos j.1 with hj0 | hj0
-  · simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero, dite_eq_left, sub_zero,
-      show y = x by simp [y, hj0]]
+  · have hyx : y = x := by simp [y, hj0]
+    simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero, dite_eq_left, sub_zero, hyx]
     exact splice_two_succ_eq_subword R hn hj0 x
   rcases Nat.lt_or_ge j.1 n with hjlt | hjge
   · simp (disch := omega) only [ite_eq_right, ite_eq_left, dite_eq_left, sub_zero]
@@ -234,8 +234,10 @@ theorem taylor_prepend_prepend_eq_zero (h : 𝒜.StrictUnit e) (a b : A) (w : Re
     dsimp only [T, LinearMap.comp_apply]; rw [prepend_of_tprod, prepend_of_tprod]
     exact h.taylor_of_tprod_eq_zero ⟨m.1 + 1 + 1, by omega⟩ (by dsimp; omega) _ hy
   rcases habw with rfl | rfl | hw
-  · rw [show T = 0 from linearMap_ext R A fun m y ↦ hT m y ⟨0, rfl⟩, LinearMap.zero_apply]
-  · rw [show T = 0 from linearMap_ext R A fun m y ↦ hT m y ⟨1, rfl⟩, LinearMap.zero_apply]
+  · have hT0 : T = 0 := linearMap_ext R A fun m y ↦ hT m y ⟨0, rfl⟩
+    rw [hT0, LinearMap.zero_apply]
+  · have hT0 : T = 0 := linearMap_ext R A fun m y ↦ hT m y ⟨1, rfl⟩
+    rw [hT0, LinearMap.zero_apply]
   · exact LinearMap.mem_ker.mp (degenerateWords_le_iff.2
       (fun m y ⟨i, hi⟩ ↦ LinearMap.mem_ker.mpr (hT m y ⟨i.succ.succ, by simpa using hi⟩)) hw)
 
@@ -257,8 +259,8 @@ private theorem apply_subword_of_mem_block {k : ℕ} (x : Fin k → A) {j : Fin 
     t (subword R x a b) = if b = 1 then e' else 0 := by
   have := j.isLt; by_cases hb1 : b = 1
   · subst hb1
-    rw [ite_eq_left rfl, subword_one R A x (by omega),
-      show x ⟨a, by omega⟩ = e by rw [← hj]; exact congrArg x (Fin.ext (by simp; omega)), ht_unit]
+    have hja : (⟨a, by omega⟩ : Fin k) = j := Fin.ext (by simp; omega)
+    rw [ite_eq_left rfl, subword_one R A x (by omega), hja, hj, ht_unit]
   · rw [ite_eq_right hb1, apply_eq_comp_letter_of_mem_degenerateWords t ht_deg
       (subword_mem_degenerateWords x ⟨j, ha, hb, hj⟩),
       letter_subword_of_ne_one R A x a hb1, map_zero, map_zero]
@@ -346,12 +348,11 @@ theorem degenerateWords_le_ker_taylor_coalgHom_sub_barDifferential
   rw [LinearMap.mem_ker, LinearMap.sub_apply, sub_eq_zero]; simp only [LinearMap.comp_apply]
   rw [taylor_coalgHom_of_tprod t ht_unit ht_deg hB x j hj,
     hA.apply_barDifferential_of_tprod_of_higher_eq_zero ht_deg x j hj]
+  rw [← grading_piece] at ht_hom
   have hkt : t ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 (subword R x 0 n)) =
       -ℬ.grading.koszulTwist 1 (t (subword R x 0 n)) := by
     simpa [InternalGrading.koszulTwist_one_shift_one] using
-      ((show LinearMap.IsHomogeneous t (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece
-        (ℬ.grading.shift 1).piece 0 by simpa only [grading_piece] using ht_hom).koszulTwist_apply
-        1 (subword R x 0 n)).symm
+      (ht_hom.koszulTwist_apply 1 (subword R x 0 n)).symm
   rw [hkt, sub_eq_add_neg]; congr 1; split_ifs <;> simp
 
 end Morphism
