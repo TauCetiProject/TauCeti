@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Conformally Euclidean asymptotically Euclidean ends
@@ -309,24 +310,18 @@ private theorem hasFDerivAt_conformal_rpow {n : ℕ} (hn : 3 ≤ n) (c p : ℝ)
   exact (hin.rpow_const (p := p) (Or.inl hvy.ne')).congr_fderiv <| by
     ext v; simp [smul_smul, mul_assoc]
 
-private theorem exists_nonneg_bound_one_add_rpow_Icc (a r : ℝ) :
-    ∃ B : ℝ, 0 ≤ B ∧ ∀ s ∈ Icc (-1 / 2 : ℝ) (1 / 2), |a * (1 + s) ^ r| ≤ B := by
-  have hpos : ∀ s ∈ Icc (-1 / 2 : ℝ) (1 / 2), 0 < 1 + s := fun s hs ↦ by linarith [hs.1]
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (f := fun s : ℝ ↦ a * (1 + s) ^ r) <| fun s hs ↦
-      (continuousAt_const.mul
-        ((continuousAt_const.add continuousAt_id).rpow_const (Or.inl (hpos s hs).ne'))
-        ).continuousWithinAt
-  refine ⟨max M 0, le_max_right M 0, fun s hs ↦ ?_⟩
-  exact (Real.norm_eq_abs _ ▸ hM s hs).trans (le_max_left M 0)
-
 private theorem exists_conformal_rpow_zero_first_decay {n : ℕ} (hn : 3 ≤ n) (c p : ℝ) :
     ∃ C₀ : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), max 1 (2 * |c|) < ‖x‖ →
       |(1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ p - 1| ≤ C₀ * ‖x‖ ^ (-((n : ℝ) - 2)) ∧
       ‖fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ p) x‖ ≤
         C₀ * ‖x‖ ^ (-((n : ℝ) - 2) - 1) := by
   set q : ℝ := 2 - (n : ℝ)
-  obtain ⟨B₁, hB₁, hM₁⟩ := exists_nonneg_bound_one_add_rpow_Icc p (p - 1)
+  set B₁ : ℝ := |p| * (2 : ℝ) ^ |p - 1|
+  have hM₁ : ∀ s ∈ Icc (-1 / 2 : ℝ) (1 / 2), |p * (1 + s) ^ (p - 1)| ≤ B₁ := fun s hs ↦ by
+    have hpos : 0 < 1 + s := by linarith [hs.1]
+    rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hpos _)]
+    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos (by linarith [hs.2])
+      (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.1]) _) (abs_nonneg p)
   refine ⟨B₁ * |c| * (1 + |q|), fun x hx ↦ ?_⟩
   have hx0 : x ≠ 0 := norm_pos_iff.1 ((zero_lt_one.trans_le (le_max_left _ _)).trans hx)
   have hsK : c * ‖x‖ ^ q ∈ Icc (-1 / 2 : ℝ) (1 / 2) := mul_norm_rpow_mem_Icc hn c hx
@@ -348,7 +343,7 @@ private theorem exists_conformal_rpow_zero_first_decay {n : ℕ} (hn : 3 ≤ n) 
         ≤ B₁ * |c| * (|q| * ‖x‖ ^ (q - 1)) :=
           mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hb1 (abs_nonneg c)) (by positivity)
       _ = B₁ * |c| * |q| * ‖x‖ ^ (q - 1) := by ring
-  have hBc : 0 ≤ B₁ * |c| := mul_nonneg hB₁ (abs_nonneg c)
+  have hBc : 0 ≤ B₁ * |c| := by positivity
   have hqn : -((n : ℝ) - 2) = q := by dsimp [q]; ring
   rw [hqn]
   exact ⟨h0.trans (mul_le_mul_of_nonneg_right
@@ -391,13 +386,17 @@ private theorem exists_conformal_rpow_second_decay {n : ℕ} (hn : 3 ≤ n) (c p
           (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ p)) x‖ ≤
         C₂ * ‖x‖ ^ (-((n : ℝ) - 2) - 2) := by
   set q : ℝ := 2 - (n : ℝ)
-  obtain ⟨B₁, _, hM₁⟩ := exists_nonneg_bound_one_add_rpow_Icc p (p - 1)
-  obtain ⟨B₂, _, hM₂⟩ := exists_nonneg_bound_one_add_rpow_Icc (p * (p - 1)) (p - 2)
+  set B₁ : ℝ := |p| * (2 : ℝ) ^ |p - 1|
+  set B₂ : ℝ := |p * (p - 1)| * (2 : ℝ) ^ |p - 2|
   refine ⟨B₁ * |c| * (|q| * (|q - 2| + 1)) + B₂ * c ^ 2 * q ^ 2, fun x hx ↦ ?_⟩
   have hx1 : 1 ≤ ‖x‖ := (le_max_left 1 (2 * |c|)).trans hx.le
   have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx1)
-  have hb1 := hM₁ _ (mul_norm_rpow_mem_Icc hn c hx)
-  have hb2 := hM₂ _ (mul_norm_rpow_mem_Icc hn c hx)
+  have hs := mul_norm_rpow_mem_Icc hn c hx
+  have hpow (a r : ℝ) : |a * (1 + c * ‖x‖ ^ q) ^ r| ≤ |a| * (2 : ℝ) ^ |r| := by
+    have hpos : 0 < 1 + c * ‖x‖ ^ q := by linarith [hs.1]
+    rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hpos _)]
+    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos (by linarith [hs.2])
+      (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.1]) r) (abs_nonneg a)
   rw [fderiv_fderiv_conformal_rpow hn c p hx]
   have ht1 : ‖(((p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2) * c ^ 2) •
         fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x)).smulRight
@@ -413,10 +412,8 @@ private theorem exists_conformal_rpow_second_decay {n : ℕ} (hn : 3 ≤ n) (c p
           (|q| * ‖x‖ ^ (q - 1)) * (|q| * ‖x‖ ^ (q - 1))
         = |p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2)| * c ^ 2 * q ^ 2 *
             (‖x‖ ^ (q - 1) * ‖x‖ ^ (q - 1)) := by rw [← sq_abs q]; ring
-      _ ≤ B₂ * c ^ 2 * q ^ 2 * ‖x‖ ^ (q - 2) :=
-          mul_le_mul (mul_le_mul_of_nonneg_right
-            (mul_le_mul_of_nonneg_right hb2 (sq_nonneg c)) (sq_nonneg q)) hqexp
-            (by positivity) (by positivity)
+      _ ≤ B₂ * c ^ 2 * q ^ 2 * ‖x‖ ^ (q - 2) := by
+          have := hpow (p * (p - 1)) (p - 2); gcongr
   have ht2 : ‖(p * (1 + c * ‖x‖ ^ q) ^ (p - 1) * c) •
         fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x‖ ≤
       B₁ * |c| * (|q| * (|q - 2| + 1)) * ‖x‖ ^ (q - 2) := by
@@ -428,9 +425,8 @@ private theorem exists_conformal_rpow_second_decay {n : ℕ} (hn : 3 ≤ n) (c p
       exact norm_iteratedFDeriv_two_norm_rpow_le q hx0
     calc |p * (1 + c * ‖x‖ ^ q) ^ (p - 1)| * |c| *
           ‖fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x‖
-        ≤ B₁ * |c| * (|q| * (|q - 2| + 1) * ‖x‖ ^ (q - 2)) :=
-          mul_le_mul (mul_le_mul_of_nonneg_right hb1 (abs_nonneg c)) hH
-            (ContinuousLinearMap.opNorm_nonneg _) (by positivity)
+        ≤ B₁ * |c| * (|q| * (|q - 2| + 1) * ‖x‖ ^ (q - 2)) := by
+          have := hpow p (p - 1); gcongr
       _ = B₁ * |c| * (|q| * (|q - 2| + 1)) * ‖x‖ ^ (q - 2) := by ring
   have hqn : -((n : ℝ) - 2) - 2 = q - 2 := by dsimp [q]; ring
   rw [hqn, add_mul]

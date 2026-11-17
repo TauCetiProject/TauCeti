@@ -466,26 +466,6 @@ theorem tendsto_normalizedCoordinateFlux_schwarzschildCoeff {n : ℕ} (hn : 3 �
   rw [hm] at hlim
   exact (tendsto_normalizedCoordinateFlux_iff_of_eqOn_exterior heq).2 hlim
 
-private theorem hasFDerivAt_coord_mul_coord_mul_norm_rpow {n : ℕ} (i j : Fin n)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
-    HasFDerivAt (fun y : EuclideanSpace ℝ (Fin n) ↦ y i * y j * ‖y‖ ^ (-(n : ℝ)))
-      ((‖x‖ ^ (-(n : ℝ))) • ((x j) • innerSL ℝ (EuclideanSpace.basisFun (Fin n) ℝ i) +
-          (x i) • innerSL ℝ (EuclideanSpace.basisFun (Fin n) ℝ j)) +
-        (x i * x j * (-(n : ℝ) * ‖x‖ ^ (-(n : ℝ) - 2))) • innerSL ℝ x) x := by
-  have hcoord : ∀ k : Fin n, HasFDerivAt (fun y : EuclideanSpace ℝ (Fin n) ↦ y k)
-      (innerSL ℝ (EuclideanSpace.basisFun (Fin n) ℝ k)) x := fun k ↦
-    (innerSL ℝ (EuclideanSpace.basisFun (Fin n) ℝ k)).hasFDerivAt.congr_of_eventuallyEq <|
-      Eventually.of_forall fun y ↦ by
-        simp only [coe_innerSL_apply, EuclideanSpace.basisFun_inner]
-  have hprod : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin n) ↦ y i * y j)
-      ((x j) • innerSL ℝ (EuclideanSpace.basisFun (Fin n) ℝ i) +
-        (x i) • innerSL ℝ (EuclideanSpace.basisFun (Fin n) ℝ j)) x :=
-    ((hcoord i).mul (hcoord j)).congr_fderiv (by ext v; simp [add_comm])
-  exact (hprod.mul (hasFDerivAt_norm_rpow_of_ne (-(n : ℝ)) hx)).congr_fderiv <| by
-    ext v
-    simp only [add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul]
-    ring
-
 private theorem sum_fderiv_radialTensor_basis {n : ℕ} {r : ℝ} (hr : 0 < r)
     {x : EuclideanSpace ℝ (Fin n)} (hnorm : ‖x‖ = r) (j : Fin n) :
     ∑ i : Fin n, (fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ y i * y j * ‖y‖ ^ (-(n : ℝ))) x
@@ -494,6 +474,12 @@ private theorem sum_fderiv_radialTensor_basis {n : ℕ} {r : ℝ} (hr : 0 < r)
         (EuclideanSpace.basisFun (Fin n) ℝ j)) =
       ((n : ℝ) - 1) * x j * r ^ (-(n : ℝ)) := by
   have hx0 : x ≠ 0 := norm_pos_iff.1 (hnorm.symm ▸ hr)
+  have hcoord (k : Fin n) : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin n) ↦ y k)
+      (EuclideanSpace.proj (𝕜 := ℝ) k) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) k).hasFDerivAt.congr_of_eventuallyEq <|
+      Eventually.of_forall fun _ ↦ by simp only [PiLp.proj_apply]
+  have hd (a b : Fin n) :=
+    ((hcoord a).fun_mul (hcoord b)).fun_mul (hasFDerivAt_norm_rpow_of_ne (-(n : ℝ)) hx0)
   have hterm : ∀ i : Fin n,
       fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ y i * y j * ‖y‖ ^ (-(n : ℝ))) x
           (EuclideanSpace.basisFun (Fin n) ℝ i) -
@@ -501,11 +487,10 @@ private theorem sum_fderiv_radialTensor_basis {n : ℕ} {r : ℝ} (hr : 0 < r)
           (EuclideanSpace.basisFun (Fin n) ℝ j) =
       r ^ (-(n : ℝ)) * (x j - x i * if i = j then 1 else 0) := by
     intro i
-    rw [(hasFDerivAt_coord_mul_coord_mul_norm_rpow i j hx0).fderiv,
-      (hasFDerivAt_coord_mul_coord_mul_norm_rpow i i hx0).fderiv]
-    simp only [add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, hnorm,
-      (EuclideanSpace.basisFun (Fin n) ℝ).inner_eq_ite, ↓reduceIte,
-      EuclideanSpace.inner_basisFun_real, @eq_comm _ j i]
+    rw [(hd i j).fderiv, (hd i i).fderiv]
+    simp only [add_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, PiLp.proj_apply,
+      EuclideanSpace.inner_basisFun_real, hnorm]
+    simp only [EuclideanSpace.basisFun_apply, PiLp.single_apply, ↓reduceIte, @eq_comm _ j i]
     ring
   rw [Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.mul_sum]
   simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
