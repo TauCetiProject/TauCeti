@@ -40,6 +40,8 @@ a basis, so there are `|A| ^ r` homomorphisms to an abelian group `A`.
 * `TauCeti.natCard_addMonoidHom_eq_pow_finrank`: a free abelian group of finite rank `r` has
   `Nat.card A ^ r` homomorphisms to `A`; they are finite in number when `A` is finite
   (`TauCeti.finite_addMonoidHom`).
+* `TauCeti.nodup_addMonoidHom_zmod_two`: for a nonzero `ι : G →+ ℤ/2` and a `χ` other than `0`
+  and `ι`, the homomorphisms `0`, `ι`, `χ` and `χ + ι` are pairwise distinct.
 * `TauCeti.univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two`,
   `TauCeti.addMonoidHom_zmod_two_eq_zero_or_eq_or_eq_or_eq_add_of_finrank_eq_two`: a free abelian
   group of rank two has four homomorphisms to `ℤ/2`, namely `0`, `ι`, `χ` and `χ + ι` for any
@@ -130,6 +132,13 @@ instance finite_addMonoidHom (M A : Type*) [AddCommGroup M] [AddCommGroup A] [Mo
     rw [natCard_addMonoidHom_eq_pow_finrank]
     exact pow_ne_zero _ Nat.card_pos.ne'
 
+/-- For a nonzero homomorphism `ι` to `ℤ/2` and a `χ` other than `0` and `ι`, the homomorphisms
+`0`, `ι`, `χ` and `χ + ι` are pairwise distinct. -/
+theorem nodup_addMonoidHom_zmod_two {G : Type*} [AddCommGroup G] {ι χ : G →+ ZMod 2}
+    (hι : ι ≠ 0) (hχ₀ : χ ≠ 0) (hχι : χ ≠ ι) : [0, ι, χ, χ + ι].Nodup := by
+  simp [add_eq_zero_iff_eq_of_charTwo (ZMod 2), hι, hχ₀, hχι, hχι.symm,
+    eq_comm (a := (0 : G →+ ZMod 2))]
+
 section RankTwo
 
 variable {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
@@ -148,8 +157,7 @@ theorem univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two [Fintype (Λ →+ ZMod 2
     (Finset.univ : Finset (Λ →+ ZMod 2)) = {0, ι, χ, χ + ι} := by
   refine (Finset.eq_univ_of_card _ ?_).symm
   rw [← Nat.card_eq_fintype_card, natCard_addMonoidHom_zmod_two_of_finrank_eq_two h]
-  simp [Finset.card_insert_of_notMem, add_eq_zero_iff_eq_of_charTwo (ZMod 2), hι, hχ₀, hχι,
-    hχι.symm, eq_comm (a := (0 : Λ →+ ZMod 2))]
+  simpa using List.toFinset_card_of_nodup (nodup_addMonoidHom_zmod_two hι hχ₀ hχι)
 
 /-- On a lattice of rank two, if `ι` is a nonzero homomorphism to `ℤ/2` and `χ` is neither `0`
 nor `ι`, every homomorphism to `ℤ/2` is `0`, `ι`, `χ` or `χ + ι`. -/

@@ -9,7 +9,6 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.Data.ZMod.Basic
-import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.FreeModule.Int
 
 /-!
@@ -85,10 +84,10 @@ theorem twistIndex_eq_of_finrank_eq_two [Module.Free ℤ Λ] [Module.Finite ℤ 
       (if s (χ + ι) = -1 then 1 else 0) := by
   classical
   let _ := Fintype.ofFinite (Λ →+ ZMod 2)
+  have := nodup_addMonoidHom_zmod_two hι hχ₀ hχι
   rw [twistIndex_def, Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter,
     univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two h hι hχ₀ hχι]
-  simp [-Finset.sum_boole, Finset.sum_insert, add_eq_zero_iff_eq_of_charTwo (ZMod 2), hι, hχ₀,
-    hχι, hχι.symm, eq_comm (a := (0 : Λ →+ ZMod 2)), add_assoc]
+  simp_all [-Finset.sum_boole, Finset.sum_insert, eq_comm (a := (0 : Λ →+ ZMod 2)), add_assoc]
 
 /-- A lattice of rank two has twist index at most `3`, so the label `(σ, i)` of a torus has
 `i ∈ {0, 1, 2, 3}`. -/

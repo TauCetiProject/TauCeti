@@ -55,7 +55,8 @@ on the two sign characters that are nontrivial on `S¹`, `sgn det (1 - P)` on th
 character and `sgn det (1 + P)` on the character that is nontrivial on `γ` only. Their twist index
 is `1` or `0` according as `det (1 + P)` is negative or not
 (`TauCeti.twistIndex_orbitTorusTwistSign`). The orbit traversed twice has return map `P ^ 2`, and
-its orbit torus is the double cover of `S¹ × γ` defined by the character nontrivial on `γ`. Its
+its orbit torus is the double cover of `S¹ × γ` defined by the character nontrivial on `γ` only
+(that is, trivial on `S¹`). Its
 untwisted sign is the product of the two signs of `S¹ × γ` trivial on `S¹`, since
 `1 - P ^ 2 = (1 - P) (1 + P)` (`TauCeti.orbitTorusTwistSign_sq_zero`), and its twist index is
 `0`, since `det (1 + P ^ 2) = (trace P) ^ 2` is never negative when `det P = 1`
@@ -250,10 +251,11 @@ theorem twistIndex_orbitTorusTwistSign_sq (hdet : P.det = 1) :
     twistIndex (orbitTorusTwistSign (P ^ 2)) = 0 := by
   have h : (1 + P ^ 2).det = P.trace ^ 2 := by
     rw [det_one_add_fin_two, det_pow, Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two P, hdet]
-    simp [trace_sub]
+    simp only [one_smul, trace_sub, trace_smul, smul_eq_mul, trace_one, Fintype.card_fin,
+      Nat.cast_ofNat, one_pow]
     ring
   rw [twistIndex_orbitTorusTwistSign, h]
-  exact ite_eq_right_iff.2 fun h' ↦ absurd h' (not_lt.2 (sq_nonneg _))
+  exact ite_eq_right (not_lt.2 (sq_nonneg _))
 
 omit [IsStrictOrderedRing R] in
 /-- The twist label of an orbit torus is `1` if `det (1 + P) < 0` and `0` otherwise. -/
