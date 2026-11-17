@@ -26,6 +26,8 @@ The solutions in a window are then at most `⌈log A / log ρ⌉` times the numb
 
 ## Main results
 
+* `Finset.exists_pow_card_sub_one_mul_lt_of_gap`: the largest of `k` points above `X` with
+  pairwise multiplicative gaps `ρ > 0` exceeds `ρ ^ (k - 1) X`.
 * `Finset.card_le_ceil_of_gap`: at most `⌈log A / log ρ⌉` reals in `(X, A X]` with pairwise
   multiplicative gaps `ρ`.
 * `Set.ncard_le_ceil_mul_ncard_of_gap`: the same count for points of any type, measured by a
@@ -45,7 +47,7 @@ namespace Finset
 
 /-- The largest of `k` points above `X` with pairwise multiplicative gaps `ρ > 0` exceeds
 `ρ ^ (k - 1) X`. -/
-private theorem exists_pow_card_sub_one_mul_lt_of_gap {X ρ : ℝ} (hρ : 0 < ρ) (t : Finset ℝ)
+theorem exists_pow_card_sub_one_mul_lt_of_gap {t : Finset ℝ} {X ρ : ℝ} (hρ : 0 < ρ)
     (ht : ∀ x ∈ t, X < x) (hgap : ∀ x ∈ t, ∀ y ∈ t, x < y → ρ * x ≤ y) (hne : t.Nonempty) :
     ∃ y ∈ t, ρ ^ (#t - 1) * X < y := by
   classical
@@ -70,7 +72,7 @@ theorem card_le_ceil_of_gap {t : Finset ℝ} {X A ρ : ℝ} (hX : 0 < X) (hρ : 
     #t ≤ ⌈log A / log ρ⌉₊ := by
   rcases t.eq_empty_or_nonempty with rfl | hne
   · simp
-  obtain ⟨y, hy, hXy⟩ := exists_pow_card_sub_one_mul_lt_of_gap (zero_lt_one.trans hρ) t
+  obtain ⟨y, hy, hXy⟩ := exists_pow_card_sub_one_mul_lt_of_gap (zero_lt_one.trans hρ)
     (fun x hx ↦ (ht x hx).1) hgap hne
   have hpow : ρ ^ (#t - 1) < A := lt_of_mul_lt_mul_right (hXy.trans_le (ht y hy).2) hX.le
   have hlog : ((#t - 1 : ℕ) : ℝ) < log A / log ρ := by
