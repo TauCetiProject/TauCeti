@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
+public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Symplectic.TameMetric
 
@@ -74,58 +78,44 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The polar parametrization of the closed unit disc by the unit square: `(s, t)` goes to the point
 of radius `1 - s` and angle `2πt`. -/
 private def polarCap (z : ℝ × ℝ) : ℝ × ℝ :=
-  ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2))
+  polarCoord.symm (1 - z.1, 2 * π * z.2)
+
+private theorem polarCap_apply (z : ℝ × ℝ) :
+    polarCap z = ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2)) :=
+  rfl
 
 private theorem contDiff_polarCap {n : WithTop ℕ∞} : ContDiff ℝ n polarCap := by
-  unfold polarCap
+  rw [funext polarCap_apply]
   fun_prop
 
-/-- The derivative of the polar parametrization: the `s`-direction goes to the inward radial
-vector, the `t`-direction to `2π (1 - s)` times the counterclockwise tangent vector. -/
+/-- The derivative of the polar parametrization: the inverse polar map after the affine map
+`(s, t) ↦ (1 - s, 2πt)`. -/
 private theorem hasFDerivAt_polarCap (z : ℝ × ℝ) :
-    HasFDerivAt polarCap
-      (((-cos (2 * π * z.2)) • ContinuousLinearMap.fst ℝ ℝ ℝ +
-          (-(2 * π * (1 - z.1) * sin (2 * π * z.2))) • ContinuousLinearMap.snd ℝ ℝ ℝ).prod
-        ((-sin (2 * π * z.2)) • ContinuousLinearMap.fst ℝ ℝ ℝ +
-          (2 * π * (1 - z.1) * cos (2 * π * z.2)) • ContinuousLinearMap.snd ℝ ℝ ℝ)) z := by
-  have hr : HasFDerivAt (fun z : ℝ × ℝ ↦ 1 - z.1) (-ContinuousLinearMap.fst ℝ ℝ ℝ) z := by
-    simpa using (hasFDerivAt_fst (p := z)).const_sub 1
-  have hθ : HasFDerivAt (fun z : ℝ × ℝ ↦ 2 * π * z.2) ((2 * π) • ContinuousLinearMap.snd ℝ ℝ ℝ)
-      z := by
-    simpa using (hasFDerivAt_snd (p := z)).const_mul (2 * π)
-  refine ((hr.mul ((hasDerivAt_cos _).comp_hasFDerivAt z hθ)).prodMk
-    (hr.mul ((hasDerivAt_sin _).comp_hasFDerivAt z hθ))).congr_fderiv ?_
-  ext <;> simp <;> ring
+    HasFDerivAt polarCap ((fderivPolarCoordSymm (1 - z.1, 2 * π * z.2)).comp
+      ((-ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((2 * π) • ContinuousLinearMap.snd ℝ ℝ ℝ))) z :=
+  (hasFDerivAt_polarCoord_symm _).comp z
+    ((hasFDerivAt_fst.const_sub 1).prodMk (hasFDerivAt_snd.const_mul (2 * π)))
 
+/-- The `s`-direction goes to the inward radial vector. -/
 private theorem fderiv_polarCap_apply_fst (z : ℝ × ℝ) :
     fderiv ℝ polarCap z (1, 0) = -(cos (2 * π * z.2), sin (2 * π * z.2)) := by
   rw [(hasFDerivAt_polarCap z).fderiv]
-  simp
+  simp [fderivPolarCoordSymm]
 
+/-- The `t`-direction goes to `2π (1 - s)` times the counterclockwise tangent vector. -/
 private theorem fderiv_polarCap_apply_snd (z : ℝ × ℝ) :
     fderiv ℝ polarCap z (0, 1) =
       (2 * π * (1 - z.1)) • (-sin (2 * π * z.2), cos (2 * π * z.2)) := by
   rw [(hasFDerivAt_polarCap z).fderiv]
-  ext <;> simp
+  ext <;> simp [fderivPolarCoordSymm] <;> ring
 
 private theorem polarCap_add_one (z : ℝ × ℝ) : polarCap (z.1, z.2 + 1) = polarCap z := by
-  simp only [polarCap, mul_add, mul_one, cos_add_two_pi, sin_add_two_pi]
+  simp only [polarCap_apply, mul_add, mul_one, cos_add_two_pi, sin_add_two_pi]
 
 private theorem polarCap_norm_sq (z : ℝ × ℝ) :
     (polarCap z).1 ^ 2 + (polarCap z).2 ^ 2 = (1 - z.1) ^ 2 := by
-  simp only [polarCap]
+  simp only [polarCap_apply]
   nlinarith [sin_sq_add_cos_sq (2 * π * z.2)]
-
-/-- **Every disc is a cap of its boundary loop.** For a `C²` map `u` of the plane, the map
-`(s, t) ↦ u ((1 - s) cos 2πt, (1 - s) sin 2πt)`, which runs over the closed unit disc in polar
-coordinates, is a cylinder from the boundary loop `t ↦ u (cos 2πt, sin 2πt)` to the constant loop
-at the centre `u 0`; in particular it is a cap of the boundary loop. -/
-theorem isLoopCylinder_comp_polar {u : ℝ × ℝ → M}
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) :
-    IsLoopCylinder I (fun z ↦ u ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2)))
-      (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) fun _ ↦ u 0 :=
-  ⟨hu.comp (contDiff_polarCap (n := 2)).contMDiff, fun z ↦ congrArg u (polarCap_add_one z),
-    fun t ↦ by simp, fun t ↦ by simp [← Prod.mk_zero_zero]⟩
 
 /-- The derivative of a disc read in polar coordinates. -/
 private theorem mfderiv_comp_polarCap_apply {u : ℝ × ℝ → M} {z : ℝ × ℝ}
@@ -178,9 +168,9 @@ private theorem exists_polarCap_eq {z : ℝ × ℝ} (hz : z.1 ^ 2 + z.2 ^ 2 ≤ 
   have h2π : 2 * π * (Complex.arg c / (2 * π)) = Complex.arg c := by
     field_simp
   ext
-  · simp only [polarCap, sub_sub_cancel, h2π, Complex.norm_mul_cos_arg]
+  · simp only [polarCap_apply, sub_sub_cancel, h2π, Complex.norm_mul_cos_arg]
     simp [c]
-  · simp only [polarCap, sub_sub_cancel, h2π, Complex.norm_mul_sin_arg]
+  · simp only [polarCap_apply, sub_sub_cancel, h2π, Complex.norm_mul_sin_arg]
     simp [c]
 
 /-! ### Pseudoholomorphic discs in an exact symplectic manifold -/
@@ -296,13 +286,8 @@ private theorem mfderiv_comp_polarCap_eq_zero (hω : ω.IsNondegenerate)
   obtain ⟨h₁, h₂⟩ := mfderiv_comp_polarCap_apply_fst_snd hdiff (hhol _ hdisc)
   rw [hzero, neg_zero] at h₁
   rw [hzero, map_zero, smul_zero] at h₂
-  set L := mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ polarCap) z
-  refine ContinuousLinearMap.ext fun v : ℝ × ℝ ↦ ?_
-  have hv : v = v.1 • ((1, 0) : ℝ × ℝ) + v.2 • ((0, 1) : ℝ × ℝ) := by ext <;> simp
-  calc L v = L (v.1 • ((1, 0) : ℝ × ℝ)) + L (v.2 • ((0, 1) : ℝ × ℝ)) :=
-        (congrArg L hv).trans (L.map_add _ _)
-    _ = v.1 • L (1, 0) + v.2 • L (0, 1) := congrArg₂ (· + ·) (L.map_smul _ _) (L.map_smul _ _)
-    _ = 0 := by rw [h₁, h₂, smul_zero, smul_zero, add_zero]
+  exact ContinuousLinearMap.prod_ext (ContinuousLinearMap.ext_ring h₁)
+    (ContinuousLinearMap.ext_ring h₂)
 
 /-- **A pseudoholomorphic disc with vanishing boundary integral is constant.** Under the hypotheses
 of `IsNondegenerate.pathIntegral_disc_boundary_nonneg`, if the line integral of `α` along the
@@ -349,16 +334,18 @@ theorem IsNondegenerate.apply_eq_apply_zero_of_pathIntegral_eq_zero (hω : ω.Is
       (u ∘ polarCap) p = (u ∘ polarCap) (1 / 2, 1 / 2) := by
     rw [← closure_Ioo zero_ne_one, ← closure_prod_eq]
     exact (isClosed_singleton.preimage hw.continuous).closure_subset_iff.2 hconst
-  have hcentre : (u ∘ polarCap) (1, 0) = u 0 := by simp [polarCap, ← Prod.mk_zero_zero]
+  have hcentre : (u ∘ polarCap) (1, 0) = u 0 := by simp [polarCap_apply, ← Prod.mk_zero_zero]
   -- Every point of the closed disc is on the polar cap, up to the period of the angle.
   obtain ⟨p, hp, rfl⟩ := exists_polarCap_eq hz
   have hper : Periodic (fun t ↦ (u ∘ polarCap) (p.1, t)) 1 := fun t ↦
     congrArg u (polarCap_add_one (p.1, t))
   have hfract : (u ∘ polarCap) (p.1, Int.fract p.2) = (u ∘ polarCap) p := by
     simpa [← Int.self_sub_floor] using hper.sub_int_mul_eq ⌊p.2⌋
-  rw [← Function.comp_apply (f := u), ← hfract,
-    hconst' (p.1, Int.fract p.2) ⟨hp, Int.fract_nonneg _, (Int.fract_lt_one _).le⟩, ← hcentre,
-    hconst' (1, 0) ⟨⟨zero_le_one, le_rfl⟩, le_rfl, zero_le_one⟩]
+  calc u (polarCap p) = (u ∘ polarCap) (p.1, Int.fract p.2) := hfract.symm
+    _ = (u ∘ polarCap) (1, 0) :=
+      (hconst' (p.1, Int.fract p.2) ⟨hp, Int.fract_nonneg _, (Int.fract_lt_one _).le⟩).trans
+        (hconst' (1, 0) ⟨⟨zero_le_one, le_rfl⟩, le_rfl, zero_le_one⟩).symm
+    _ = u 0 := hcentre
 
 /-- **No disc bubbles on exact Lagrangians.** Let `ω = dα` be a nondegenerate exact two-form and
 `i : N → M` a map with `i^* α = df`, for instance an exact Lagrangian map with primitive `f`. A
