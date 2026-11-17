@@ -36,12 +36,13 @@ balls `{u | productSeminorm A V W u < r}` (`r > 0`) form a neighbourhood basis o
 uniformities coincide.
 
 Over a complete nontrivially normed field `L`, for ultrametric normed `L`-spaces `V` and `W`
-(neither completeness of `V`, `W` nor spherical completeness of `L` is needed), almost-contractive
-projections on finite-dimensional subspaces bound contractions with continuous functionals on
-`E₀ ≤ V` (`norm_lid_map_le_productSeminorm`). Combined with almost-norming functionals, this shows
-that `productSeminorm L V W` is a cross norm (`productSeminorm_tmul`) and is definite
-(`productSeminorm_eq_zero_iff`). The continuous extension to `CompletedTensor A V W` and the
-resulting definite completed product norm are developed in
+(neither completeness of `V`, `W` nor spherical completeness of `L` is needed), bounded linear
+extensions on finite-dimensional enlargements
+(`Submodule.exists_linearMap_comp_subtype_eq_norm_le`) bound contractions with continuous
+functionals on closed subspaces `E₀ ≤ V` (`norm_lid_map_le_productSeminorm`). Combined with
+almost-norming functionals, this shows that `productSeminorm L V W` is a cross norm
+(`productSeminorm_tmul`) and is definite (`productSeminorm_eq_zero_iff`). The continuous extension
+to `CompletedTensor A V W` and the resulting definite completed product norm are developed in
 `TauCeti.RingTheory.Huber.BanachModule.ProductNorm`.
 
 ## Main definitions
@@ -660,41 +661,8 @@ variable {L V W : Type*} [NontriviallyNormedField L] [CompleteSpace L]
   [NormedAddCommGroup V] [IsUltrametricDist V] [NormedSpace L V]
   [NormedAddCommGroup W] [IsUltrametricDist W] [NormedSpace L W]
 
-/-- Any continuous linear functional on a finite-dimensional subspace `E₀ ≤ V` extends to an
-`L`-linear functional on `V` whose norm on a given finite set `S ⊆ V` is at most `c * ‖φ₀‖`. -/
-private theorem exists_linearMap_comp_subtype_eq_of_finite (E₀ : Submodule L V)
-    [FiniteDimensional L E₀] (φ₀ : StrongDual L E₀) {S : Set V} (hS : S.Finite)
-    {c : ℝ} (hc : 1 < c) :
-    ∃ ψ : V →ₗ[L] L, ψ.comp E₀.subtype = φ₀.toLinearMap ∧
-      ∀ x ∈ S, ‖ψ x‖ ≤ c * ‖φ₀‖ * ‖x‖ := by
-  let E' : Submodule L V := E₀ ⊔ Submodule.span L S
-  have : FiniteDimensional L E' :=
-    have := FiniteDimensional.span_of_finite L hS
-    Submodule.finiteDimensional_sup E₀ _
-  let D : Submodule L E' := E₀.comap E'.subtype
-  let e : D ≃ₗ[L] E₀ := Submodule.comapSubtypeEquivOfLe le_sup_left
-  obtain ⟨p, hp_id, hp_norm⟩ := D.exists_projection_norm_le hc
-  obtain ⟨π, hπ⟩ := E'.subtype.exists_leftInverse_of_injective E'.ker_subtype
-  let ψ : V →ₗ[L] L := φ₀.toLinearMap.comp (e.toLinearMap.comp (p.toLinearMap.comp π))
-  refine ⟨ψ, ?_, fun x hxS ↦ ?_⟩
-  · ext x
-    have hxE' : (x : V) ∈ E' := Submodule.mem_sup_left x.2
-    have hπx : π (x : V) = ⟨(x : V), hxE'⟩ := LinearMap.congr_fun hπ ⟨(x : V), hxE'⟩
-    have hpx : p ⟨(x : V), hxE'⟩ = ⟨⟨(x : V), hxE'⟩, x.2⟩ := hp_id ⟨⟨(x : V), hxE'⟩, x.2⟩
-    have hex : e ⟨⟨(x : V), hxE'⟩, x.2⟩ = x := Subtype.ext rfl
-    simp [ψ, hπx, hpx, hex]
-  · have hxE' : x ∈ E' := Submodule.mem_sup_right (Submodule.subset_span hxS)
-    have hπx : π x = ⟨x, hxE'⟩ := LinearMap.congr_fun hπ ⟨x, hxE'⟩
-    have hnorm_e : ‖e (p ⟨x, hxE'⟩)‖ = ‖(p ⟨x, hxE'⟩ : E')‖ := rfl
-    have hpx : ‖(p ⟨x, hxE'⟩ : E')‖ ≤ c * ‖x‖ :=
-      (p.le_opNorm ⟨x, hxE'⟩).trans (mul_le_mul_of_nonneg_right hp_norm (norm_nonneg x))
-    calc ‖ψ x‖ = ‖φ₀ (e (p ⟨x, hxE'⟩))‖ := by simp [ψ, hπx]
-      _ ≤ ‖φ₀‖ * ‖(p ⟨x, hxE'⟩ : E')‖ := hnorm_e ▸ φ₀.le_opNorm _
-      _ ≤ ‖φ₀‖ * (c * ‖x‖) := mul_le_mul_of_nonneg_left hpx (norm_nonneg φ₀)
-      _ = c * ‖φ₀‖ * ‖x‖ := by ring
-
 private theorem norm_lid_map_le_mul_productSeminorm_of_one_lt (E₀ : Submodule L V)
-    [FiniteDimensional L E₀] (φ₀ : StrongDual L E₀) (u₀ : E₀ ⊗[L] W) {c : ℝ} (hc : 1 < c) :
+    (hE₀ : IsClosed (E₀ : Set V)) (φ₀ : StrongDual L E₀) (u₀ : E₀ ⊗[L] W) {c : ℝ} (hc : 1 < c) :
     ‖TensorProduct.lid L W (TensorProduct.map φ₀.toLinearMap LinearMap.id u₀)‖ ≤
       c * ‖φ₀‖ * productSeminorm L V W (TensorProduct.map E₀.subtype LinearMap.id u₀) := by
   have hmul0 : 0 ≤ c * ‖φ₀‖ := mul_nonneg (zero_lt_one.trans hc).le (norm_nonneg φ₀)
@@ -705,8 +673,9 @@ private theorem norm_lid_map_le_mul_productSeminorm_of_one_lt (E₀ : Submodule 
   dsimp only
   rw [smul_eq_mul]
   set b : ℝ := ((Finset.univ.sup fun j ↦ ‖v j‖₊ * ‖w j‖₊ : ℝ≥0) : ℝ)
+  have := FiniteDimensional.span_of_finite L (Set.finite_range v)
   obtain ⟨ψ, hψ_comp, hψ_norm⟩ :=
-    exists_linearMap_comp_subtype_eq_of_finite E₀ φ₀ (Set.finite_range v) hc
+    E₀.exists_linearMap_comp_subtype_eq_norm_le (Submodule.span L (Set.range v)) hE₀ φ₀ hc
   have hmap : TensorProduct.map φ₀.toLinearMap (LinearMap.id : W →ₗ[L] W) u₀ =
       TensorProduct.map ψ LinearMap.id (∑ j, v j ⊗ₜ[L] w j) := by
     rw [hvw, ← LinearMap.comp_apply, ← TensorProduct.map_comp, hψ_comp, LinearMap.id_comp]
@@ -717,14 +686,16 @@ private theorem norm_lid_map_le_mul_productSeminorm_of_one_lt (E₀ : Submodule 
     exact_mod_cast Finset.le_sup (f := fun i ↦ ‖v i‖₊ * ‖w i‖₊) (Finset.mem_univ j)
   simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.lid_tmul, norm_smul]
   calc ‖ψ (v j)‖ * ‖w j‖ ≤ (c * ‖φ₀‖ * ‖v j‖) * ‖w j‖ :=
-        mul_le_mul_of_nonneg_right (hψ_norm (v j) (Set.mem_range_self j)) (norm_nonneg (w j))
+        mul_le_mul_of_nonneg_right
+          (hψ_norm (v j) (Submodule.mem_sup_right (Submodule.subset_span (Set.mem_range_self j))))
+          (norm_nonneg (w j))
     _ = c * ‖φ₀‖ * (‖v j‖ * ‖w j‖) := by ring
     _ ≤ c * ‖φ₀‖ * b := mul_le_mul_of_nonneg_left hvw_le hmul0
 
-/-- Contracting a tensor in `E₀ ⊗[L] W` (`E₀ ≤ V` finite-dimensional) with a continuous linear
-functional `φ₀ : StrongDual L E₀` has norm at most `‖φ₀‖` times the `V ⊗[L] W`-product seminorm of
-its image. -/
-theorem norm_lid_map_le_productSeminorm (E₀ : Submodule L V) [FiniteDimensional L E₀]
+/-- Contracting a tensor in `E₀ ⊗[L] W` (`E₀ ≤ V` closed) with a continuous linear functional
+`φ₀ : StrongDual L E₀` has norm at most `‖φ₀‖` times the `V ⊗[L] W`-product seminorm of its
+image. -/
+theorem norm_lid_map_le_productSeminorm (E₀ : Submodule L V) (hE₀ : IsClosed (E₀ : Set V))
     (φ₀ : StrongDual L E₀) (u₀ : E₀ ⊗[L] W) :
     ‖TensorProduct.lid L W (TensorProduct.map φ₀.toLinearMap LinearMap.id u₀)‖ ≤
       ‖φ₀‖ * productSeminorm L V W (TensorProduct.map E₀.subtype LinearMap.id u₀) := by
@@ -736,7 +707,7 @@ theorem norm_lid_map_le_productSeminorm (E₀ : Submodule L V) [FiniteDimensiona
   calc ‖TensorProduct.lid L W (TensorProduct.map φ₀.toLinearMap LinearMap.id u₀)‖
       ≤ (1 + ε / (B + 1)) * B := by
         simpa only [B, mul_assoc] using
-          norm_lid_map_le_mul_productSeminorm_of_one_lt E₀ φ₀ u₀ hc
+          norm_lid_map_le_mul_productSeminorm_of_one_lt E₀ hE₀ φ₀ u₀ hc
     _ = B + ε * (B / (B + 1)) := by ring
     _ < B + ε * 1 := by gcongr; exact (div_lt_one hB1).mpr (lt_add_one B)
     _ = B + ε := by ring
@@ -764,7 +735,8 @@ theorem productSeminorm_tmul (v : V) (w : W) :
     TauCeti.exists_strongDual_apply_eq_one_of_finiteDimensional (K := L) hv₀ hc
   have hφ₀_norm : ‖φ₀‖ ≤ c / ‖v‖ := by simpa [v₀, div_eq_mul_inv] using hφ₀
   have hle : ‖w‖ ≤ ‖φ₀‖ * P := by
-    simpa [P, v₀, hφ₀v] using norm_lid_map_le_productSeminorm E₀ φ₀ (v₀ ⊗ₜ[L] w)
+    simpa [P, v₀, hφ₀v] using
+      norm_lid_map_le_productSeminorm E₀ E₀.isClosed_of_finiteDimensional φ₀ (v₀ ⊗ₜ[L] w)
   have hvw : ‖v‖ * ‖w‖ ≤ c * P := by
     have hle' : ‖w‖ ≤ (c / ‖v‖) * P := hle.trans (mul_le_mul_of_nonneg_right hφ₀_norm hP)
     rw [div_mul_eq_mul_div, le_div_iff₀ (norm_pos_iff.mpr hv)] at hle'
@@ -798,7 +770,8 @@ theorem productSeminorm_eq_zero_iff {u : V ⊗[L] W} :
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [← TensorProduct.sum_tmul, ← hxi i]
   have hz0 (k : Fin (Module.finrank L E₀)) : z k = 0 := by
-    have hle := norm_lid_map_le_productSeminorm E₀ (b₀.coord k).toContinuousLinearMap u₀
+    have hle := norm_lid_map_le_productSeminorm E₀ E₀.isClosed_of_finiteDimensional
+      (b₀.coord k).toContinuousLinearMap u₀
     rw [hu₀_map, h0, mul_zero] at hle
     have hlhs : TensorProduct.lid L W
         (TensorProduct.map ((b₀.coord k).toContinuousLinearMap).toLinearMap LinearMap.id u₀) =

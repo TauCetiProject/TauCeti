@@ -36,6 +36,9 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   `Submodule.exists_projection_norm_le`: a closed subspace of finite codimension (in particular,
   any subspace of a finite-dimensional space) is the range of a continuous linear projection of
   norm at most `c`, for any `c > 1`.
+* `Submodule.exists_linearMap_comp_subtype_eq_norm_le`: any continuous linear map `φ` from a closed
+  subspace `D` into a seminormed space extends to a linear map `ψ` on `E` satisfying
+  `‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖` on `D ⊔ G` for any finite-dimensional subspace `G` and `c > 1`.
 * `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional space of
   countable type has a `t`-orthogonal basis indexed by `ℕ`.
 * `Submodule.exists_finiteDimensional_le_infDist_le`: for a closed subspace `D`, a
@@ -279,6 +282,47 @@ theorem _root_.Submodule.exists_projection_norm_le [FiniteDimensional K E] (D : 
     {c : ℝ} (hc : 1 < c) :
     ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ‖p‖ ≤ c :=
   D.exists_projection_norm_le_of_finiteDimensional_quotient D.isClosed_of_finiteDimensional hc
+
+/-- **Bounded linear extensions on finite-dimensional enlargements**: over a complete nontrivially
+normed field, for every closed subspace `D` and finite-dimensional subspace `G` of an ultrametric
+normed space `E`, every continuous linear map `φ : D →L[K] F` into a seminormed `K`-space `F`,
+and every `c > 1`, there is a linear map `ψ : E →ₗ[K] F` extending `φ`
+(`ψ.comp D.subtype = φ.toLinearMap`) such that `‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖` for all `x ∈ D ⊔ G`. -/
+theorem _root_.Submodule.exists_linearMap_comp_subtype_eq_norm_le
+    (D G : Submodule K E) (hD : IsClosed (D : Set E)) [FiniteDimensional K G]
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace K F]
+    (φ : D →L[K] F) {c : ℝ} (hc : 1 < c) :
+    ∃ ψ : E →ₗ[K] F, ψ.comp D.subtype = φ.toLinearMap ∧
+      ∀ x ∈ D ⊔ G, ‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖ := by
+  let E' : Submodule K E := G ⊔ D
+  let D' : Submodule K E' := D.comap E'.subtype
+  have hD' : IsClosed (D' : Set E') := hD.preimage continuous_subtype_val
+  have : FiniteDimensional K (E' ⧸ D') :=
+    Module.Finite.equiv (LinearMap.quotientInfEquivSupQuotient G D)
+  let e : D' ≃ₗ[K] D := Submodule.comapSubtypeEquivOfLe le_sup_right
+  obtain ⟨p, hp_id, hp_norm⟩ := D'.exists_projection_norm_le_of_finiteDimensional_quotient hD' hc
+  obtain ⟨π, hπ⟩ := E'.subtype.exists_leftInverse_of_injective E'.ker_subtype
+  let ψ : E →ₗ[K] F := φ.toLinearMap.comp (e.toLinearMap.comp (p.toLinearMap.comp π))
+  refine ⟨ψ, ?_, fun x hx ↦ ?_⟩
+  · ext x
+    have hxE' : (x : E) ∈ E' := Submodule.mem_sup_right x.2
+    have hπx : π (x : E) = ⟨(x : E), hxE'⟩ := LinearMap.congr_fun hπ ⟨(x : E), hxE'⟩
+    have hpx : p ⟨(x : E), hxE'⟩ = e.symm x := hp_id (e.symm x)
+    simp [ψ, hπx, hpx]
+  · have hxE' : x ∈ E' := by rwa [sup_comm] at hx
+    have hπx : π x = ⟨x, hxE'⟩ := LinearMap.congr_fun hπ ⟨x, hxE'⟩
+    have hnorm_e : ‖e (p ⟨x, hxE'⟩)‖ = ‖p ⟨x, hxE'⟩‖ := by
+      rw [← norm_coe, ← norm_coe (p ⟨x, hxE'⟩), ← norm_coe (p ⟨x, hxE'⟩ : E'),
+        comapSubtypeEquivOfLe_apply_coe]
+    have hpx : ‖p ⟨x, hxE'⟩‖ ≤ c * ‖x‖ := by
+      calc ‖p ⟨x, hxE'⟩‖ ≤ ‖p‖ * ‖(⟨x, hxE'⟩ : E')‖ := p.le_opNorm ⟨x, hxE'⟩
+        _ = ‖p‖ * ‖x‖ := by rw [← norm_coe]
+        _ ≤ c * ‖x‖ := mul_le_mul_of_nonneg_right hp_norm (norm_nonneg x)
+    calc ‖ψ x‖ = ‖φ (e (p ⟨x, hxE'⟩))‖ := by simp [ψ, hπx]
+      _ ≤ ‖φ‖ * ‖e (p ⟨x, hxE'⟩)‖ := φ.le_opNorm _
+      _ = ‖φ‖ * ‖p ⟨x, hxE'⟩‖ := by rw [hnorm_e]
+      _ ≤ ‖φ‖ * (c * ‖x‖) := mul_le_mul_of_nonneg_left hpx (norm_nonneg φ)
+      _ = c * ‖φ‖ * ‖x‖ := by ring
 
 /-- **`t`-orthogonal bases of infinite-dimensional spaces of countable type**: over a complete
 nontrivially normed field, if a sequence has dense span in an infinite-dimensional ultrametric
