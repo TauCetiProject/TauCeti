@@ -19,32 +19,38 @@ import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral
 Pochhammer's `(0+, 1+, 0-, 1-)` commutator contour integral `Complex.hypergeometricPochhammerLoop`
 (DLMF 15.6.5) removes both endpoint integrability restrictions of Euler's integral
 `Complex.eulerIntegral` simultaneously. Starting and ending at a basepoint `A ∈ (0, 1)` where
-`ph t = ph (1 - t) = 0`, with circle radii `ρ₀ < A` around `0` and `ρ₁ < 1 - A` around `1`, the
-contour avoids both branch points `0` and `1`: the circular arcs cross the branch cuts `(-∞, 0]`
-of `t ^ (b - 1)` and `[1, ∞)` of `(1 - t) ^ (c - b - 1)` with explicitly tracked branches
+`ph t = ph (1 - t) = 0`, with circle radii `0 < ρ₀ < A` around `0` and `0 < ρ₁ < 1 - A` around `1`,
+the contour avoids both branch points `0` and `1`: the circular arcs cross the branch cuts
+`(-∞, 0]` of `t ^ (b - 1)` and `[1, ∞)` of `(1 - t) ^ (c - b - 1)` with explicitly tracked branches
 (`t = ρ₀ e^{iθ}` for `θ ∈ [0, 2π]` and `t = 1 - ρ₁ e^{iφ}` for `φ ∈ [0, 2π]`), accruing the
 monodromy factors `exp (2πi (b - 1))` and `exp (2πi (c - b - 1))` on the intervening radial
 segments. Meanwhile, for `z` in the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`, the
-admissibility conditions `‖z‖ * ρ₀ < 1` and `closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane`
-keep `1 - z * t` inside `Complex.slitPlane` along the entire contour, so the principal branch of
-`(1 - z * t) ^ (-a)` crosses no branch cut.
+admissibility conditions `‖z‖ * ρ₀ < 1` and
+`Metric.closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane` keep `1 - z * t` inside
+`Complex.slitPlane` along the entire contour, so the principal branch of `(1 - z * t) ^ (-a)`
+crosses no branch cut.
 
 Splitting the radial segments at `A` expresses `Complex.hypergeometricPochhammerLoop` as a linear
 combination of the two `(0+)` keyhole pieces from
 `TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral`. Consequently:
 
-* `Complex.hypergeometricPochhammerLoop_eq`: the integral is independent of `(A, ρ₀, ρ₁)` for all
-  complex parameters `(a, b, c)`.
-* `Complex.analyticOnNhd_hypergeometricPochhammerLoop`: the integral is jointly holomorphic in all
-  four variables `(a, b, c, z)` with no real-part restrictions.
+* `Complex.hypergeometricPochhammerLoop_eq`: for all complex parameters `(a, b, c)`, the integral is
+  independent of admissible `(A, ρ₀, ρ₁)` satisfying `0 < ρ₀ < A`, `0 < ρ₁ < 1 - A`,
+  `‖z‖ * ρ₀ < 1`, and `Metric.closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane`.
+* `Complex.analyticOnNhd_hypergeometricPochhammerLoop`: for fixed `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`,
+  the integral is jointly holomorphic in all four variables `(a, b, c, z)` on
+  `{p | ‖p.2.2.2‖ * ρ₀ < 1 ∧ Metric.closedBall (1 - p.2.2.2) (‖p.2.2.2‖ * ρ₁) ⊆ Complex.slitPlane}`
+  with no real-part restrictions.
 * `Complex.hypergeometricPochhammerLoop_eq_integral`,
   `Complex.hypergeometricPochhammerLoop_eq_eulerIntegral`, and
-  `Complex.eulerIntegral_eq_hypergeometricPochhammerLoop`: for `0 < re b < re c`, shrinking the
-  radii collapses the contour onto `[0, 1]`, yielding DLMF 15.6.5 on the cut plane.
+  `Complex.eulerIntegral_eq_hypergeometricPochhammerLoop`: for `0 < re b < re c` and admissible
+  `(A, ρ₀, ρ₁)`, shrinking the radii collapses the contour onto `[0, 1]`, yielding DLMF 15.6.5 on
+  the cut plane (with `b, c - b ∉ {1, 2, …}` for
+  `Complex.eulerIntegral_eq_hypergeometricPochhammerLoop`).
 * `Complex.hypergeometricPochhammerLoop_zero` and `Complex.hypergeometricPochhammerLoop_zero_left`:
-  at `z = 0` or `a = 0`, parameter holomorphy evaluates the integral in closed form via reciprocal
-  Gamma factors across all `(b, c) ∈ ℂ × ℂ`, yielding Pochhammer's contour integral for Euler's
-  Beta function (DLMF 5.12.12).
+  at `z = 0` or `a = 0` with `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`, parameter holomorphy evaluates the
+  integral in closed form via reciprocal Gamma factors across all `(b, c) ∈ ℂ × ℂ`, yielding
+  Pochhammer's contour integral for Euler's Beta function (DLMF 5.12.12).
 
 ## References
 
@@ -460,9 +466,11 @@ theorem analyticOnNhd_hypergeometricPochhammerLoop {A ρ₀ ρ₁ : ℝ}
   exact (hypergeometricPochhammerLoop_eq_affineLoopZero q.1 q.2.1 q.2.2.1 q.2.2.2 hρ₀ hρ₀A hρ₁
     hρ₁A hq).symm
 
-/-- **Collapsing Pochhammer's contour onto `[0, 1]`.** When `0 < re b < re c`, Pochhammer's
-double-loop integral equals `-(1 - e^{2πi b}) (1 - e^{2πi (c - b)})` times the unnormalized Euler
-integral over `[0, 1]`. -/
+/-- **Collapsing Pochhammer's contour onto `[0, 1]`.** When `0 < re b < re c` and `(A, ρ₀, ρ₁)` is
+admissible (`0 < ρ₀ < A`, `0 < ρ₁ < 1 - A`, `‖z‖ * ρ₀ < 1`, and
+`Metric.closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane`), Pochhammer's double-loop integral
+equals `-(1 - e^{2πi b}) (1 - e^{2πi (c - b)})` times the unnormalized Euler integral over
+`[0, 1]`. -/
 theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) {A ρ₀ ρ₁ : ℝ} (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁)
     (hρ₁A : ρ₁ < 1 - A) (hz₀ : ‖z‖ * ρ₀ < 1)
@@ -516,9 +524,10 @@ theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0
   rw [hcov, hexp_b, hexp_cb]
   linear_combination -(1 - exp (2 * π * I * b)) * (1 - exp (2 * π * I * (c - b))) * hadj
 
-/-- When `0 < re b < re c`, Pochhammer's contour integral is
-`(4π² e^{cπi} / (Γ(1 - b) Γ(1 + b - c)))` times `Complex.eulerIntegral`, including when `b` or
-`c - b` is a positive integer where both sides vanish. -/
+/-- When `0 < re b < re c` and `(A, ρ₀, ρ₁)` is admissible (`0 < ρ₀ < A`, `0 < ρ₁ < 1 - A`,
+`‖z‖ * ρ₀ < 1`, and `Metric.closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane`), Pochhammer's
+contour integral is `(4π² e^{cπi} / (Γ(1 - b) Γ(1 + b - c)))` times `Complex.eulerIntegral`,
+including when `b` or `c - b` is a positive integer where both sides vanish. -/
 theorem hypergeometricPochhammerLoop_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) {A ρ₀ ρ₁ : ℝ} (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁)
     (hρ₁A : ρ₁ < 1 - A) (hz₀ : ‖z‖ * ρ₀ < 1)
@@ -561,9 +570,11 @@ theorem hypergeometricPochhammerLoop_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (h
           rw [I_sq, hexpc, hrefl_b, hrefl_cb]
           ring
 
-/-- **DLMF 15.6.5 in the Euler convergence region.** For `0 < re b < re c` and
-`b, c - b ∉ {1, 2, …}`, `Complex.eulerIntegral` is represented on the cut plane by Pochhammer's
-double-loop contour integral. -/
+/-- **DLMF 15.6.5 in the Euler convergence region.** For `0 < re b < re c`,
+`b, c - b ∉ {1, 2, …}`, and admissible `(A, ρ₀, ρ₁)` (`0 < ρ₀ < A`, `0 < ρ₁ < 1 - A`,
+`‖z‖ * ρ₀ < 1`, and `Metric.closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane`),
+`Complex.eulerIntegral` is represented on the cut plane by Pochhammer's double-loop contour
+integral. -/
 theorem eulerIntegral_eq_hypergeometricPochhammerLoop (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1) (hcb_int : ∀ n : ℕ, c - b ≠ n + 1)
     {A ρ₀ ρ₁ : ℝ} (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁) (hρ₁A : ρ₁ < 1 - A)
@@ -583,7 +594,7 @@ theorem eulerIntegral_eq_hypergeometricPochhammerLoop (a : ℂ) {b c z : ℂ} (h
 
 /-- **Pochhammer's contour integral for Euler's Beta function (DLMF 5.12.12).** At zero argument,
 `Complex.hypergeometricPochhammerLoop` evaluates in closed form for all complex `a`, `b`, and `c`
-with no real-part restrictions. -/
+with no real-part restrictions whenever `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`. -/
 @[simp]
 theorem hypergeometricPochhammerLoop_zero (a b c : ℂ) {A ρ₀ ρ₁ : ℝ}
     (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁) (hρ₁A : ρ₁ < 1 - A) :

@@ -18,24 +18,39 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 # Single-loop contour integrals for the Gauss hypergeometric function
 
 Euler's integral `Complex.eulerIntegral` represents Olver's regularized Gauss hypergeometric
-function only when `0 < re b < re c`. Replacing either endpoint of `[0, 1]` by a small keyhole
-loop continues the integral analytically across the corresponding parameter half-plane boundary
-throughout the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`:
+function only when `0 < re b < re c`. Replacing either endpoint of `[0, 1]` by a sufficiently small
+keyhole loop continues the integral analytically across the corresponding parameter half-plane
+boundary throughout the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`:
 
 * `Complex.hypergeometricLoopOne` is the `(1+)` loop integral (DLMF 15.6.2) running from `0` to
   `1 - ρ` along the lower edge of the cut `(-∞, 1]` (`ph t = 0`, `ph (t - 1) = -π`),
   counterclockwise around `1 + ρ e^{iθ}` (`θ ∈ [-π, π]`) crossing `(1, ∞)` with principal values
   (`ph (t - 1) = 0`), and back from `1 - ρ` to `0` along the upper edge of `(-∞, 1]`
-  (`ph (t - 1) = π`). For `0 < re b` it is independent of `ρ` and holomorphic in `(a, c, z)`.
+  (`ph (t - 1) = π`). For `0 < re b`, it is independent of admissible radii `ρ ∈ (0, 1)` satisfying
+  `Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane` (`Complex.hypergeometricLoopOne_eq`),
+  which implies `1 - z ∈ Complex.slitPlane` and keeps `1 - z * t` inside `Complex.slitPlane` along
+  the contour. For fixed `b` with `0 < re b` and `ρ ∈ (0, 1)`, it is jointly holomorphic in
+  `(a, c, z)` on `{p | Metric.closedBall (1 - p.2.2) (‖p.2.2‖ * ρ) ⊆ Complex.slitPlane}`
+  (`Complex.analyticOnNhd_hypergeometricLoopOne`).
 * `Complex.hypergeometricLoopZero` is the `(0+)` loop integral (DLMF 15.6.4) running from `1` to
   `ρ` (`ph t = ph (1 - t) = 0`), counterclockwise around `ρ e^{iθ}` (`θ ∈ [0, 2π]`, `ph t = π` on
-  `(-∞, 0)`), and back from `ρ` to `1` (`ph t = 2π`). For `0 < re (c - b)` it is independent of `ρ`
-  and jointly holomorphic in `(a, b, z)` along lines of fixed `c - b`.
+  `(-∞, 0)`), and back from `ρ` to `1` (`ph t = 2π`). For `0 < re (c - b)` (i.e. `re b < re c`)
+  and `1 - z ∈ Complex.slitPlane`, it is independent of admissible radii `ρ ∈ (0, 1)` satisfying
+  `‖z‖ * ρ < 1` (`Complex.hypergeometricLoopZero_eq`), which keeps `1 - z * t` inside
+  `Complex.slitPlane` along both the radial segment and the circle. For fixed `d = c - b` with
+  `0 < re d` and `ρ ∈ (0, 1)`, it is jointly holomorphic in `(a, b, z)` along lines `c = b + d` on
+  `{p | 1 - p.2.2 ∈ Complex.slitPlane ∧ ‖p.2.2‖ * ρ < 1}`
+  (`Complex.analyticOnNhd_hypergeometricLoopZero`).
 
-For `0 < re b < re c`, shrinking the loop radius collapses each contour onto `[0, 1]`, yielding
-DLMF 15.6.2 and 15.6.4 on the cut plane. At `a = 0` or `z = 0`, parameter holomorphy evaluates both
-integrals in closed form via reciprocal Gamma factors. Pochhammer's `(0+, 1+, 0-, 1-)` double-loop
-integral (DLMF 15.6.5 and 5.12.12) is developed in
+For `0 < re b < re c` and admissible radii `ρ ∈ (0, 1)` (satisfying
+`Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane` for `hypergeometricLoopOne`, or
+`1 - z ∈ Complex.slitPlane` and `‖z‖ * ρ < 1` for `hypergeometricLoopZero`), shrinking the loop
+radius collapses each contour onto `[0, 1]`, yielding DLMF 15.6.2 (away from `c - b ∈ {1, 2, …}` for
+`Complex.eulerIntegral_eq_hypergeometricLoopOne`) and 15.6.4 (away from `b ∈ {1, 2, …}` for
+`Complex.eulerIntegral_eq_hypergeometricLoopZero`) on the cut plane. At `a = 0` or `z = 0` with
+`ρ ∈ (0, 1)` (and `0 < re b` or `re b < re c`, respectively), parameter holomorphy evaluates both
+integrals in closed form via reciprocal Gamma factors.
+Pochhammer's `(0+, 1+, 0-, 1-)` double-loop integral (DLMF 15.6.5 and 5.12.12) is developed in
 `TauCeti.Analysis.SpecialFunctions.Hypergeometric.PochhammerLoop` using the same keyhole
 infrastructure.
 
@@ -44,9 +59,9 @@ infrastructure.
 Both single-loop contours (and Pochhammer's double-loop contour) reduce to a single internal `(0+)`
 keyhole functional `affineLoopZero` for `u ^ (β - 1) * (1 - u) ^ (γ - 1) * (w₀ - w₁ * u) ^ (-a)`
 on `[ρ, A]`: directly at `(b, c - b, 1, z)` for `hypergeometricLoopZero` and via `u = 1 - t` at
-`(c - b, b, 1 - z, -z)` for `hypergeometricLoopOne`. Under `w = log u`, two radii bound a rectangle
-`[log ρ₁, log ρ₂] × [0, 2π]`, so Cauchy's theorem on rectangles proves radius independence
-uniformly.
+`(c - b, b, 1 - z, -z)` for `hypergeometricLoopOne`. Under `w = log u`, two admissible radii in
+`(0, 1)` bound a rectangle `[min (log ρ₁) (log ρ₂), max (log ρ₁) (log ρ₂)] × [0, 2π]`, so Cauchy's
+theorem on rectangles proves radius independence uniformly.
 
 ## References
 
@@ -577,8 +592,9 @@ theorem analyticOnNhd_hypergeometricLoopOne {b : ℂ} (hb : 0 < b.re) {ρ : ℝ}
     dsimp only
     exact (hypergeometricLoopOne_eq_affineLoopZero q.1 b q.2.1 q.2.2 ρ).symm)
 
-/-- **Collapsing the `(1+)` loop onto `[0, 1]`.** When `0 < re b < re c`, the `(1+)` loop integral
-equals `2 i sin(π (c - b))` times the unnormalized Euler integral over `[0, 1]`. -/
+/-- **Collapsing the `(1+)` loop onto `[0, 1]`.** When `0 < re b < re c`, `ρ ∈ (0, 1)`, and
+`Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane`, the `(1+)` loop integral equals
+`2 i sin(π (c - b))` times the unnormalized Euler integral over `[0, 1]`. -/
 theorem hypergeometricLoopOne_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re)
     {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) (hz : closedBall (1 - z) (‖z‖ * ρ) ⊆ slitPlane) :
     hypergeometricLoopOne a b c z ρ =
@@ -620,9 +636,10 @@ theorem hypergeometricLoopOne_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re
       = 2 * I * (exp (-((c - b) * π * I)) * exp ((c - b) * π * I)) * sin (π * (c - b)) := by ring
     _ = 2 * I * sin (π * (c - b)) := by rw [← exp_add, neg_add_cancel, exp_zero, mul_one]
 
-/-- When `0 < re b < re c`, the `(1+)` loop integral is `(2πi Γ(b) / Γ(1 + b - c))` times
-`Complex.eulerIntegral`, including at positive integer values of `c - b` where both sides
-vanish. -/
+/-- When `0 < re b < re c`, `ρ ∈ (0, 1)`, and
+`Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane`, the `(1+)` loop integral is
+`(2πi Γ(b) / Γ(1 + b - c))` times `Complex.eulerIntegral`, including at positive integer values of
+`c - b` where both sides vanish. -/
 theorem hypergeometricLoopOne_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
     (hz : closedBall (1 - z) (‖z‖ * ρ) ⊆ slitPlane) :
@@ -646,9 +663,10 @@ theorem hypergeometricLoopOne_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 <
     _ = 2 * π * I * Gamma b / Gamma (1 + b - c) * ((Gamma b * Gamma (c - b))⁻¹ * E) := by
           rw [hrefl]; ring
 
-/-- **DLMF 15.6.2 in the Euler convergence region.** For `0 < re b < re c` and
-`c - b ∉ {1, 2, …}`, `Complex.eulerIntegral` is represented on the cut plane by the `(1+)` loop
-integral around `1`. -/
+/-- **DLMF 15.6.2 in the Euler convergence region.** For `0 < re b < re c`,
+`c - b ∉ {1, 2, …}`, `ρ ∈ (0, 1)`, and
+`Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane`, `Complex.eulerIntegral` is represented
+on the cut plane by the `(1+)` loop integral around `1`. -/
 theorem eulerIntegral_eq_hypergeometricLoopOne (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (hcb : ∀ n : ℕ, c - b ≠ n + 1) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
     (hz : closedBall (1 - z) (‖z‖ * ρ) ⊆ slitPlane) :
@@ -796,7 +814,8 @@ theorem analyticOnNhd_hypergeometricLoopZero {d : ℂ} (hd : 0 < d.re) {ρ : ℝ
     dsimp only
     rw [hypergeometricLoopZero_eq_affineLoopZero, add_sub_cancel_left])
 
-/-- **Collapsing the `(0+)` loop onto `[0, 1]`.** When `0 < re b < re c`, the `(0+)` loop integral
+/-- **Collapsing the `(0+)` loop onto `[0, 1]`.** When `0 < re b < re c`,
+`1 - z ∈ Complex.slitPlane`, and `ρ ∈ (0, 1)` satisfies `‖z‖ * ρ < 1`, the `(0+)` loop integral
 equals `(e^{2πi b} - 1)` times the unnormalized Euler integral over `[0, 1]`. -/
 theorem hypergeometricLoopZero_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re)
     (hz : 1 - z ∈ slitPlane) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
@@ -813,9 +832,9 @@ theorem hypergeometricLoopZero_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.r
       (closedBall_one_subset_slitPlane_iff.mpr hzρ) hint, hexp]
   rfl
 
-/-- When `0 < re b < re c`, the `(0+)` loop integral is
-`(2πi e^{bπi} Γ(c - b) / Γ(1 - b))` times `Complex.eulerIntegral`, including at positive integer
-values of `b` where both sides vanish. -/
+/-- When `0 < re b < re c`, `1 - z ∈ Complex.slitPlane`, and `ρ ∈ (0, 1)` satisfies `‖z‖ * ρ < 1`,
+the `(0+)` loop integral is `(2πi e^{bπi} Γ(c - b) / Γ(1 - b))` times `Complex.eulerIntegral`,
+including at positive integer values of `b` where both sides vanish. -/
 theorem hypergeometricLoopZero_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (hz : 1 - z ∈ slitPlane) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
     (hzρ : ‖z‖ * ρ < 1) :
@@ -844,8 +863,9 @@ theorem hypergeometricLoopZero_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 
     _ = 2 * π * I * exp (b * π * I) * Gamma (c - b) / Gamma (1 - b) *
           ((Gamma b * Gamma (c - b))⁻¹ * E) := by rw [hrefl]; ring
 
-/-- **DLMF 15.6.4 in the Euler convergence region.** For `0 < re b < re c` and `b ∉ {1, 2, …}`,
-`Complex.eulerIntegral` is represented on the cut plane by the `(0+)` loop integral around `0`. -/
+/-- **DLMF 15.6.4 in the Euler convergence region.** For `0 < re b < re c`, `b ∉ {1, 2, …}`,
+`1 - z ∈ Complex.slitPlane`, and `ρ ∈ (0, 1)` satisfying `‖z‖ * ρ < 1`, `Complex.eulerIntegral` is
+represented on the cut plane by the `(0+)` loop integral around `0`. -/
 theorem eulerIntegral_eq_hypergeometricLoopZero (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1) (hz : 1 - z ∈ slitPlane) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
@@ -862,8 +882,8 @@ theorem eulerIntegral_eq_hypergeometricLoopZero (a : ℂ) {b c z : ℂ} (hb : 0 
   field_simp
   linear_combination (eulerIntegral a b c z) * hexp.symm
 
-/-- At zero argument the `(0+)` loop integral evaluates in closed form for all complex `a` and `b`
-whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
+/-- At zero argument the `(0+)` loop integral evaluates in closed form for all complex `a`, `b`,
+and `c` whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
 @[simp]
 theorem hypergeometricLoopZero_zero (a : ℂ) {b c : ℂ} (hbc : b.re < c.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
@@ -895,7 +915,7 @@ theorem hypergeometricLoopZero_zero (a : ℂ) {b c : ℂ} (hbc : b.re < c.re) {�
     eulerIntegral_zero a hw hwd, add_sub_cancel_left, ← div_eq_mul_inv, div_div]
 
 /-- With first parameter zero, the `(0+)` loop integral is independent of `z` and evaluates in
-closed form for all complex `b` and `z` whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
+closed form for all complex `b`, `c`, and `z` whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
 @[simp]
 theorem hypergeometricLoopZero_zero_left {b c : ℂ} (hbc : b.re < c.re) (z : ℂ) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
