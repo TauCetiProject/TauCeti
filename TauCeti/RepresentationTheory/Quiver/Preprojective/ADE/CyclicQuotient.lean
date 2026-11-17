@@ -152,22 +152,6 @@ attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*) [CommRing k]
 
-private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport
-    {V W : Type*} [Finite V] [Finite W] {G : SimpleGraph V} {H : SimpleGraph W}
-    [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)] (e : G ≃g H)
-    (hH : ∀ y : Quiver.TotalPath (DoubledQuiver H), 0 < y.2.2.length →
-      signlessPreprojectiveMk k (DoubledQuiver H) (ofPath y) ∈
-        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)))
-    (x : Quiver.TotalPath (DoubledQuiver G)) (hx : 0 < x.2.2.length) :
-    signlessPreprojectiveMk k (DoubledQuiver G) (ofPath x) ∈
-      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  let E := signlessPreprojectiveAlgebraEquiv k e
-  have hmap : E (signlessPreprojectiveMk k (DoubledQuiver G) (ofPath x)) ∈
-      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) := by
-    rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofPath]
-    exact hH _ (by rwa [Prefunctor.length_mapTotalPath])
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm hmap
-
 /-- **When every bad prime of `t` is invertible in `k`, every positive-length path in the signless
 preprojective algebra of a graph isomorphic to `diagramGraph t.cartanMatrix` lies in the commutator
 submodule.** -/
@@ -180,23 +164,23 @@ theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_iso
   by_cases hsl : t.IsSimplyLaced
   · cases t with
     | A n =>
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
-        (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
+      exact (forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+        k e).mpr (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
     | D n =>
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
-        (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k (hbad 2 rfl)) x hx
+      exact (forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+        k e).mpr (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k (hbad 2 rfl)) x hx
     | E6 =>
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
-        (signlessPreprojectiveMk_E6_ofPath_mem_commutatorSubmodule k
+      exact (forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+        k e).mpr (signlessPreprojectiveMk_E6_ofPath_mem_commutatorSubmodule k
           (hbad 2 (Or.inl rfl)) (hbad 3 (Or.inr rfl))) x hx
     | E7 =>
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
-        (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k
+      exact (forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+        k e).mpr (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k
           (hbad 2 (Or.inl rfl)) (hbad 3 (Or.inr rfl))) x hx
     | E8 =>
       have e' : G ≃g zigzagE8Graph := by rwa [zigzagE8Graph_eq_diagramGraph]
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e'
-        (signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule k
+      exact (forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+        k e').mpr (signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule k
           (hbad 2 (Or.inl rfl)) (hbad 3 (Or.inr (Or.inl rfl)))
           (hbad 5 (Or.inr (Or.inr rfl)))) x hx
     | B _ | C _ | F4 | G2 => simp at hsl
@@ -204,8 +188,8 @@ theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_iso
       simp only [DynkinType.rank_A, DynkinType.cartanMatrix_A,
         DynkinType.diagramGraph_cartanMatrix_A]
       rwa [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced hsl] at e
-    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e'
-      (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
+    exact (forall_pos_length_signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_iff_of_iso
+      k e').mpr (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
 
 /-- **When every bad prime of `t` is invertible in `k`, the cyclic quotient of the signless
 preprojective algebra of a graph isomorphic to `diagramGraph t.cartanMatrix` vanishes in positive
@@ -300,25 +284,7 @@ section BadCharacteristic
 
 attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
-variable (k : Type*) [CommRing k]
-
-private theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport
-    {V W : Type*} [Finite V] [Finite W] {G : SimpleGraph V} {H : SimpleGraph W}
-    [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
-    (e : G ≃g H) {d : ℕ}
-    (hH : ∃ z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d,
-      z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H))) :
-    ∃ z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d,
-      z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  obtain ⟨z, hz, hz0⟩ := hH
-  let E := signlessPreprojectiveAlgebraEquiv k e
-  refine ⟨E.symm z, ?_, fun h => hz0 ?_⟩
-  · rw [signlessPreprojectiveAlgebraEquiv_symm,
-      signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff]
-    exact hz
-  · simpa only [AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule E h
-
-variable [Nontrivial k]
+variable (k : Type*) [CommRing k] [Nontrivial k]
 
 /-- **At a bad prime `p` of a valid Dynkin type `t`, if `(p : k) = 0` in a nontrivial commutative
 ring `k`, then the signless preprojective algebra of any graph isomorphic to
@@ -334,46 +300,46 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBa
   | D n =>
     rcases hp with rfl
     exact ⟨4, by simp,
-      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e
+      (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e).mpr
         (exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k
           (DynkinType.valid_D.mp ht) hp0)⟩
   | E6 =>
     have e' : G ≃g diagramGraph (CartanMatrix.E 6) := by rwa [DynkinType.cartanMatrix_E6] at e
     rcases hp with rfl | rfl
     · exact ⟨4, by simp,
-      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+      (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
         (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
           (by decide) hp0)⟩
     · exact ⟨6, by simp,
-      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+      (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
         (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
           (by decide) hp0)⟩
   | E7 =>
     have e' : G ≃g diagramGraph (CartanMatrix.E 7) := by rwa [DynkinType.cartanMatrix_E7] at e
     rcases hp with rfl | rfl
     · exact ⟨4, by simp,
-      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+      (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
         (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
           (by decide) hp0)⟩
     · exact ⟨6, by simp,
-      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+      (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
         (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
           (by decide) hp0)⟩
   | E8 =>
     rcases hp with rfl | rfl | rfl
     · have e' : G ≃g diagramGraph (CartanMatrix.E 8) := by rwa [DynkinType.cartanMatrix_E8] at e
       exact ⟨4, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
           (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
             (by decide) hp0)⟩
     · have e' : G ≃g diagramGraph (CartanMatrix.E 8) := by rwa [DynkinType.cartanMatrix_E8] at e
       exact ⟨6, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
           (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
             (by decide) hp0)⟩
     · have e' : G ≃g zigzagE8Graph := by rwa [zigzagE8Graph_eq_diagramGraph]
       exact ⟨10, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
           ⟨signlessWord k zigzagE8Graph [3, 2, 3, 4, 3, 4, 3, 4, 3, 4, 3],
             signlessWord_E8_cyclicWord_mem_grade_ten k,
             signlessWord_E8_cyclicWord_notMem_commutatorSubmodule k hp0⟩⟩

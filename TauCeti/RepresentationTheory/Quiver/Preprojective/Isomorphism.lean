@@ -133,7 +133,8 @@ theorem signlessPreprojectiveAlgebraEquiv_trans {X : Type*} [Finite X] {K : Simp
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
 
 /-- Graph relabelling preserves and reflects the path-length grading of the signless preprojective
-algebra. -/
+algebra. Deliberately not a `simp` lemma, since `TauCeti.mem_signlessPreprojectiveGrade_iff`
+already rewrites its left-hand side. -/
 theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff
     (e : G ≃g H) {d : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
     signlessPreprojectiveAlgebraEquiv k e x ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d ↔

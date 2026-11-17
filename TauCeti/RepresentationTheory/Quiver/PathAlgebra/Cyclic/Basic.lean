@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.List.Rotate
 public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
+import TauCeti.Combinatorics.Network.Walk
 
 /-!
 # Commutators and cyclic classes of paths in a path algebra
@@ -86,30 +87,23 @@ section ClosedPath
 
 variable {Q : Type u} [Quiver.{v} Q]
 
-/-- The sequence of arrows of a path, recorded with their endpoints in latest-arrow-first order. -/
-private def pathArrows : ∀ {a b : Q}, Path a b → List (Σ i j : Q, i ⟶ j)
-  | _, _, .nil => []
-  | _, _, .cons q e => ⟨_, _, e⟩ :: pathArrows q
-
-private theorem pathArrows_comp {a b c : Q} (p : Path a b) (q : Path b c) :
-    pathArrows (p.comp q) = pathArrows q ++ pathArrows p := by
-  induction q with
-  | nil => simp [pathArrows]
-  | cons q e ih => simp only [Path.comp_cons, pathArrows, ih, List.cons_append]
-
 open Classical in
 /-- The linear functional on `pathAlgebra k Q` sending closed basis paths whose arrow sequence is a
 cyclic rotation of `p` to `1` and all other basis paths to `0`. -/
 private noncomputable def closedPathIndicator (k : Type w) [Semiring k] {a : Q} (p : Path a a) :
     pathAlgebra k Q →ₗ[k] k :=
   liftLinear k fun x =>
-    if x.1 = x.2.1 ∧ (pathArrows x.2.2).IsRotated (pathArrows p) then 1 else 0
+    if x.1 = x.2.1 ∧
+        (ArrowWalk.arrows (Q := Quiver.Hom) x.2.2).IsRotated
+          (ArrowWalk.arrows (Q := Quiver.Hom) p) then 1 else 0
 
 open Classical in
 private theorem closedPathIndicator_ofPath (k : Type w) [Semiring k] {a : Q} (p : Path a a)
     (x : Quiver.TotalPath Q) :
     closedPathIndicator k p (ofPath x) =
-      if x.1 = x.2.1 ∧ (pathArrows x.2.2).IsRotated (pathArrows p) then 1 else 0 :=
+      if x.1 = x.2.1 ∧
+          (ArrowWalk.arrows (Q := Quiver.Hom) x.2.2).IsRotated
+            (ArrowWalk.arrows (Q := Quiver.Hom) p) then 1 else 0 :=
   liftLinear_ofPath k _ x
 
 private theorem closedPathIndicator_mul_ofPath (k : Type w) [Semiring k] {a : Q} (p : Path a a)
@@ -123,9 +117,15 @@ private theorem closedPathIndicator_mul_ofPath (k : Type w) [Semiring k] {a : Q}
   · subst hb₂
     by_cases hb₁ : b₁ = a₂
     · subst hb₁
-      simp only [ofPath_mul_ofPath_of_comp, closedPathIndicator_ofPath, true_and, pathArrows_comp]
-      have hrot : (pathArrows p₁ ++ pathArrows p₂).IsRotated (pathArrows p) ↔
-          (pathArrows p₂ ++ pathArrows p₁).IsRotated (pathArrows p) :=
+      simp only [ofPath_mul_ofPath_of_comp, closedPathIndicator_ofPath, true_and]
+      rw [ArrowWalk.arrows_comp (Q := Quiver.Hom) p₂ p₁,
+        ArrowWalk.arrows_comp (Q := Quiver.Hom) p₁ p₂]
+      have hrot : (ArrowWalk.arrows (Q := Quiver.Hom) p₂ ++
+            ArrowWalk.arrows (Q := Quiver.Hom) p₁).IsRotated
+              (ArrowWalk.arrows (Q := Quiver.Hom) p) ↔
+          (ArrowWalk.arrows (Q := Quiver.Hom) p₁ ++
+            ArrowWalk.arrows (Q := Quiver.Hom) p₂).IsRotated
+              (ArrowWalk.arrows (Q := Quiver.Hom) p) :=
         ⟨fun h => List.isRotated_append.symm.trans h, fun h => List.isRotated_append.trans h⟩
       simp only [hrot]
     · rw [ofPath_mul_ofPath_of_comp, ofPath_mul_ofPath_of_not_composable hb₁,
