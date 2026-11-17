@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Limit
+public import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Cofinal quotient systems of an adic completion
@@ -155,14 +156,9 @@ section PowLe
 
 variable {I}
 
-private theorem exists_pow_le_pow {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) (n : ℕ) :
-    ∃ m : ℕ, I ^ m ≤ J ^ n :=
-  let ⟨k, hk⟩ := hIJ
-  ⟨k * n, (pow_mul I k n).le.trans (Ideal.pow_right_mono hk n)⟩
-
 private theorem ofPowLe_aux {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) {m n : ℕ} (hmn : m ≤ n) :
-    (Ideal.Quotient.factorPow J hmn).comp (toQuotient I (exists_pow_le_pow hIJ n)) =
-      toQuotient I (exists_pow_le_pow hIJ m) :=
+    (Ideal.Quotient.factorPow J hmn).comp (toQuotient I (Ideal.exists_pow_le_pow hIJ n)) =
+      toQuotient I (Ideal.exists_pow_le_pow hIJ m) :=
   RingHom.ext fun x ↦ factor_toQuotient I _ _ (Ideal.pow_le_pow_right hmn) x
 
 /-- When a power of `I` is contained in `J`, the projections onto `R ⧸ J ^ n` assemble into an
@@ -170,31 +166,27 @@ private theorem ofPowLe_aux {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) {m n 
 depend on the chosen exponent. -/
 noncomputable def ofPowLe {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) :
     AdicCompletion I R →ₐ[R] AdicCompletion J R :=
-  let f := liftRingHom J (fun n ↦ toQuotient I (exists_pow_le_pow hIJ n)) (ofPowLe_aux hIJ)
+  let f := liftRingHom J (fun n ↦ toQuotient I (Ideal.exists_pow_le_pow hIJ n)) (ofPowLe_aux hIJ)
   { f with
     toFun := f
     commutes' := fun r ↦ ext_evalₐ fun n ↦ by
       simpa only [f, algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, toQuotient_of,
         evalₐ_of] using
-        evalₐ_liftRingHom J (fun m ↦ toQuotient I (exists_pow_le_pow hIJ m)) (ofPowLe_aux hIJ) n
-          (of I R r) }
+        evalₐ_liftRingHom J (fun m ↦ toQuotient I (Ideal.exists_pow_le_pow hIJ m)) (ofPowLe_aux hIJ)
+          n (of I R r) }
 
 /-- Evaluating `ofPowLe hIJ` modulo `J ^ n` recovers `toQuotient`. -/
 @[simp]
 theorem evalₐ_ofPowLe {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) (n : ℕ)
     (x : AdicCompletion I R) :
-    evalₐ J n (ofPowLe hIJ x) =
-      toQuotient I ⟨hIJ.choose * n,
-        (pow_mul I hIJ.choose n).le.trans (Ideal.pow_right_mono hIJ.choose_spec n)⟩ x :=
-  evalₐ_liftRingHom J (fun m ↦ toQuotient I (exists_pow_le_pow hIJ m)) (ofPowLe_aux hIJ) n x
+    evalₐ J n (ofPowLe hIJ x) = toQuotient I (Ideal.exists_pow_le_pow hIJ n) x :=
+  evalₐ_liftRingHom J (fun m ↦ toQuotient I (Ideal.exists_pow_le_pow hIJ m)) (ofPowLe_aux hIJ) n x
 
 /-- Projecting `ofPowLe hIJ` onto any open ideal quotient for `J` recovers `toQuotient` for `I`. -/
 @[simp]
 theorem toQuotient_ofPowLe {J L : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
     (hJL : ∃ n : ℕ, J ^ n ≤ L) (x : AdicCompletion I R) :
-    toQuotient J hJL (ofPowLe hIJ x) =
-      toQuotient I ⟨hIJ.choose * hJL.choose, (pow_mul I hIJ.choose hJL.choose).le.trans
-        ((Ideal.pow_right_mono hIJ.choose_spec hJL.choose).trans hJL.choose_spec)⟩ x := by
+    toQuotient J hJL (ofPowLe hIJ x) = toQuotient I (Ideal.exists_pow_le_trans hIJ hJL) x := by
   rw [toQuotient, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
     evalₐ_ofPowLe hIJ hJL.choose, factor_toQuotient I _ _ hJL.choose_spec]
 
@@ -208,9 +200,7 @@ theorem ofPowLe_of {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) (r : R) :
 /-- `ofPowLe` is independent of the proof that a power of `I` lies in `J`, and composes
 functorially across chains of ideals. -/
 theorem ofPowLe_comp {J L : Ideal R} (hJL : ∃ k : ℕ, J ^ k ≤ L) (hIJ : ∃ k : ℕ, I ^ k ≤ J) :
-    (ofPowLe hJL).comp (ofPowLe hIJ) =
-      ofPowLe ⟨hIJ.choose * hJL.choose, (pow_mul I hIJ.choose hJL.choose).le.trans
-        ((Ideal.pow_right_mono hIJ.choose_spec hJL.choose).trans hJL.choose_spec)⟩ :=
+    (ofPowLe hJL).comp (ofPowLe hIJ) = ofPowLe (Ideal.exists_pow_le_trans hIJ hJL) :=
   AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
     rw [AlgHom.comp_apply, evalₐ_ofPowLe hJL n, toQuotient_ofPowLe hIJ _, evalₐ_ofPowLe _ n]
 
@@ -218,9 +208,7 @@ theorem ofPowLe_comp {J L : Ideal R} (hJL : ∃ k : ℕ, J ^ k ≤ L) (hIJ : ∃
 @[simp]
 theorem ofPowLe_ofPowLe {J L : Ideal R} (hJL : ∃ k : ℕ, J ^ k ≤ L) (hIJ : ∃ k : ℕ, I ^ k ≤ J)
     (x : AdicCompletion I R) :
-    ofPowLe hJL (ofPowLe hIJ x) =
-      ofPowLe ⟨hIJ.choose * hJL.choose, (pow_mul I hIJ.choose hJL.choose).le.trans
-        ((Ideal.pow_right_mono hIJ.choose_spec hJL.choose).trans hJL.choose_spec)⟩ x :=
+    ofPowLe hJL (ofPowLe hIJ x) = ofPowLe (Ideal.exists_pow_le_trans hIJ hJL) x :=
   DFunLike.congr_fun (ofPowLe_comp hJL hIJ) x
 
 /-- On a single ideal, `ofPowLe` is the identity algebra homomorphism. -/
@@ -281,11 +269,7 @@ cofinality bounds. -/
 theorem equivOfPowLe_trans {J L : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
     (hJI : ∃ k : ℕ, J ^ k ≤ I) (hJL : ∃ k : ℕ, J ^ k ≤ L) (hLJ : ∃ k : ℕ, L ^ k ≤ J) :
     (equivOfPowLe hIJ hJI).trans (equivOfPowLe hJL hLJ) =
-      equivOfPowLe
-        ⟨hIJ.choose * hJL.choose, (pow_mul I hIJ.choose hJL.choose).le.trans
-          ((Ideal.pow_right_mono hIJ.choose_spec hJL.choose).trans hJL.choose_spec)⟩
-        ⟨hLJ.choose * hJI.choose, (pow_mul L hLJ.choose hJI.choose).le.trans
-          ((Ideal.pow_right_mono hLJ.choose_spec hJI.choose).trans hJI.choose_spec)⟩ := by
+      equivOfPowLe (Ideal.exists_pow_le_trans hIJ hJL) (Ideal.exists_pow_le_trans hLJ hJI) := by
   ext x; simp
 
 /-- `equivOfPowLe` commutes with the canonical maps from `R` into the completions. -/

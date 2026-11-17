@@ -49,15 +49,12 @@ section Module
 variable {R : Type*} [CommRing R] (I : Ideal R) (S M : Type*) [CommRing S] [Algebra R S]
   [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
 
-private theorem pow_smul_top_eq_restrictScalars_map_pow (n : ℕ) :
-    (I ^ n • ⊤ : Submodule R M) =
-      (((I.map (algebraMap R S)) ^ n • (⊤ : Submodule S M)).restrictScalars R) := by
-  rw [← Ideal.map_pow, Submodule.restrictScalars_map_smul_eq]; rfl
-
 private noncomputable def quotLevelEquiv (n : ℕ) :
     (M ⧸ (I ^ n • ⊤ : Submodule R M)) ≃ₗ[R]
       M ⧸ ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M) :=
-  (Submodule.quotEquivOfEq _ _ (pow_smul_top_eq_restrictScalars_map_pow I S M n)).trans
+  (Submodule.quotEquivOfEq _ _ (by
+    rw [← Ideal.map_pow, Submodule.restrictScalars_map_smul_eq,
+      Submodule.restrictScalars_top])).trans
     (Submodule.Quotient.restrictScalarsEquiv R _)
 
 @[simp] private theorem quotLevelEquiv_mk (n : ℕ) (m : M) :
@@ -141,20 +138,15 @@ end Module
 
 section Algebra
 
-private theorem pow_smul_top_le_pow {A : Type*} [CommRing A] (J : Ideal A) (n : ℕ) :
-    J ^ n • (⊤ : Submodule A A) ≤ J ^ n :=
-  Submodule.smul_le.mpr fun _ hr _ _ ↦ Ideal.mul_mem_right _ _ hr
-
 variable {R S S' : Type*} [CommRing R] [CommRing S] [CommRing S'] [Algebra R S] [Algebra R S']
   (I : Ideal R)
 
-private theorem factor_quotLevelEquiv_mk (n : ℕ) (s : S) :
-    Submodule.factor (pow_smul_top_le_pow (I.map (algebraMap R S)) n)
-        (quotLevelEquiv I S S n (Submodule.Quotient.mk s)) =
+private theorem factor_quotLevelEquiv_mk (n : ℕ) (s : S)
+    (h : (I.map (algebraMap R S)) ^ n • (⊤ : Submodule S S) ≤ (I.map (algebraMap R S)) ^ n) :
+    Submodule.factor h (quotLevelEquiv I S S n (Submodule.Quotient.mk s)) =
       Ideal.Quotient.mk ((I.map (algebraMap R S)) ^ n) s := by
   simpa [Ideal.Quotient.factor_mk] using
-    congrArg (Submodule.factor (pow_smul_top_le_pow (I.map (algebraMap R S)) n))
-      (quotLevelEquiv_mk I S S n s)
+    congrArg (Submodule.factor h) (quotLevelEquiv_mk I S S n s)
 
 /-- On an `R`-algebra `S`, `mapAlgebraMapLinearEquiv` intertwines the module-level completion of
 `Algebra.linearMap R S` with `AdicCompletion.mapₐ (Algebra.ofId R S)`. -/
@@ -163,12 +155,12 @@ private theorem factor_quotLevelEquiv_mk (n : ℕ) (s : S) :
       mapₐ (Algebra.ofId R S)
         (fun _ hx ↦ Ideal.mem_comap.mpr (Ideal.mem_map_of_mem (algebraMap R S) hx)) x := by
   refine ext_evalₐ fun n ↦ ?_
-  rw [evalₐ_mapₐ, ← factor_eval_eq_evalₐ _ _ (pow_smul_top_le_pow _ n),
-    ← factor_eval_eq_evalₐ I x (pow_smul_top_le_pow I n), eval_apply, eval_apply,
-    val_mapAlgebraMapLinearEquiv, map_val_apply]
+  rw [evalₐ_mapₐ, ← factor_eval_eq_evalₐ _ _ ((Ideal.smul_eq_mul _ _).trans_le Ideal.mul_le_left),
+    ← factor_eval_eq_evalₐ I x ((Ideal.smul_eq_mul _ _).trans_le Ideal.mul_le_left),
+    eval_apply, eval_apply, val_mapAlgebraMapLinearEquiv, map_val_apply]
   obtain ⟨r, hr⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
   rw [← hr, LinearMap.reduceModIdeal_apply]
-  exact (factor_quotLevelEquiv_mk I n _).trans (by simp)
+  exact (factor_quotLevelEquiv_mk I n _ _).trans (by simp)
 
 /-- An `R`-algebra homomorphism `f : S →ₐ[R] S'` maps `I.map (algebraMap R S)` into
 `I.map (algebraMap R S')`, and `mapAlgebraMapLinearEquiv` intertwines `map I f.toLinearMap` with
@@ -181,13 +173,14 @@ theorem mapAlgebraMapLinearEquiv_map_algHom (f : S →ₐ[R] S')
     mapAlgebraMapLinearEquiv I S' S' (map I f.toLinearMap x) =
       mapₐ f hf (mapAlgebraMapLinearEquiv I S S x) := by
   refine ext_evalₐ fun n ↦ ?_
-  rw [evalₐ_mapₐ, ← factor_eval_eq_evalₐ _ _ (pow_smul_top_le_pow _ n),
-    ← factor_eval_eq_evalₐ _ _ (pow_smul_top_le_pow _ n), eval_apply, eval_apply,
-    val_mapAlgebraMapLinearEquiv, val_mapAlgebraMapLinearEquiv, map_val_apply]
+  rw [evalₐ_mapₐ, ← factor_eval_eq_evalₐ _ _ ((Ideal.smul_eq_mul _ _).trans_le Ideal.mul_le_left),
+    ← factor_eval_eq_evalₐ _ _ ((Ideal.smul_eq_mul _ _).trans_le Ideal.mul_le_left),
+    eval_apply, eval_apply, val_mapAlgebraMapLinearEquiv, val_mapAlgebraMapLinearEquiv,
+    map_val_apply]
   obtain ⟨s, hs⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
   rw [← hs, LinearMap.reduceModIdeal_apply]
-  exact (factor_quotLevelEquiv_mk I n _).trans <| Ideal.quotientMap_mk.symm.trans
-    (congrArg (Ideal.quotientMap _ f.toRingHom _) (factor_quotLevelEquiv_mk I n s).symm)
+  exact (factor_quotLevelEquiv_mk I n _ _).trans <| Ideal.quotientMap_mk.symm.trans
+    (congrArg (Ideal.quotientMap _ f.toRingHom _) (factor_quotLevelEquiv_mk I n s _).symm)
 
 /-- For a module-finite faithful extension `S` of a Noetherian ring `R` and any ideal `I` of `R`,
 `AdicCompletion I R →ₐ[R] AdicCompletion (I.map (algebraMap R S)) S` is injective. -/

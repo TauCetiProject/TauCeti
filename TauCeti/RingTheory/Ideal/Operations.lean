@@ -28,6 +28,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.eq_one_of_mul_eq_one`: a two-sided left factor of the unit ideal is the unit ideal.
   Over a commutative semiring, this implies that the divisor antidiagonal of the unit ideal
   is a singleton.
+* `Ideal.exists_pow_le_pow` and `Ideal.exists_pow_le_trans`: power cofinality of left ideals
+  passes to arbitrary powers and is transitive.
 * `Ideal.toAddSubgroup_mul_eq_closure_mul`: additive generators of a product of ideals.
 * `Ideal.smul_top_eq_top_of_surjective`: an ideal that expands the whole of a module expands the
   whole of the target of any surjective linear map out of it, for instance of every factor of a
@@ -133,6 +135,30 @@ theorem list_prod_mem_pow {l : List R} (h : ∀ a ∈ l, a ∈ I) : l.prod ∈ I
     rw [List.prod_append, List.prod_singleton, List.length_append, List.length_singleton,
       Submodule.pow_succ]
     exact Ideal.mul_mem_mul (ih fun b hb ↦ h b (by simp [hb])) (h a (by simp))
+
+/-- If a power of a left ideal `I` lies in `J`, then for every `n`, some power of `I` lies in
+`J ^ n`. -/
+theorem exists_pow_le_pow (hIJ : ∃ k : ℕ, I ^ k ≤ J) (n : ℕ) :
+    ∃ m : ℕ, I ^ m ≤ J ^ n := by
+  obtain ⟨k, hk⟩ := hIJ
+  refine ⟨k * n, ?_⟩
+  induction n with
+  | zero => simp [Submodule.pow_zero]
+  | succ n ih =>
+    rcases eq_or_ne k 0 with rfl | hk0
+    · simp only [zero_mul, Submodule.pow_zero] at hk ih ⊢
+      rw [Submodule.pow_succ]
+      exact (Submodule.one_mul 1).ge.trans (Ideal.mul_mono ih hk)
+    · rw [Nat.mul_succ, Submodule.pow_add _ hk0, Submodule.pow_succ]
+      exact Ideal.mul_mono ih hk
+
+/-- Power containment of left ideals is transitive: if some power of `I` lies in `J` and some
+power of `J` lies in `L`, then some power of `I` lies in `L`. -/
+theorem exists_pow_le_trans {L : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
+    (hJL : ∃ n : ℕ, J ^ n ≤ L) : ∃ m : ℕ, I ^ m ≤ L :=
+  let ⟨n, hn⟩ := hJL
+  let ⟨m, hm⟩ := exists_pow_le_pow hIJ n
+  ⟨m, hm.trans hn⟩
 
 end Mul
 
