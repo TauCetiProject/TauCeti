@@ -318,12 +318,12 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [CompleteS
   [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G] [CompleteSpace E] [IsManifold I ∞ Q]
   [MulAction G Q] [ContMDiffSMul IG I ∞ G Q]
 
-/-- **Horizontal covectors.** If the vertical tangent vectors of `ρ` are the orbit directions
-`𝔤 · q`, a covector lies in the zero level of the cotangent moment map exactly when it vanishes on
-the vertical tangent vectors. -/
-theorem momentMap_eq_zero_iff
-    (hker : ∀ q, (mfderiv I IB ρ q).ker = (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
-    (z : CotangentBundle I Q) :
+/-- **Horizontal covectors.** If the vertical tangent vectors of `ρ` at `q` are the orbit
+directions `𝔤 · q`, a covector at `q` lies in the zero level of the cotangent moment map exactly
+when it vanishes on the vertical tangent vectors. -/
+theorem momentMap_eq_zero_iff {z : CotangentBundle I Q}
+    (hker : (mfderiv I IB ρ z.proj).ker =
+      (InfinitesimalAction.fundamental IG G I Q).orbitTangent z.proj) :
     momentMap IG G z = 0 ↔ ∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0 := by
   refine ⟨fun h v hv ↦ ?_, fun h ↦ LinearMap.ext fun ξ ↦ ?_⟩
   · have hv' : v ∈ (InfinitesimalAction.fundamental IG G I Q).orbitTangent z.proj := by
@@ -339,11 +339,12 @@ theorem momentMap_eq_zero_iff
     exact h _ (LinearMap.mem_ker.1 hmem)
 
 /-- **The zero level consists of pullbacks.** If `dρ_q` has a continuous right inverse and the
-vertical tangent vectors of `ρ` are the orbit directions, a covector at `q` lies in `μ⁻¹(0)`
+vertical tangent vectors of `ρ` at `q` are the orbit directions, a covector at `q` lies in `μ⁻¹(0)`
 exactly when it is the pullback of a covector at `ρ q`. -/
-theorem momentMap_eq_zero_iff_exists_cotangentRel
-    (hker : ∀ q, (mfderiv I IB ρ q).ker = (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
-    {z : CotangentBundle I Q} (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) :
+theorem momentMap_eq_zero_iff_exists_cotangentRel {z : CotangentBundle I Q}
+    (hker : (mfderiv I IB ρ z.proj).ker =
+      (InfinitesimalAction.fundamental IG G I Q).orbitTangent z.proj)
+    (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) :
     momentMap IG G z = 0 ↔ ∃ w, cotangentRel I IB ρ z w := by
   rw [momentMap_eq_zero_iff hker]
   exact ⟨fun hz ↦ ⟨_, cotangentRel_reductionMap hρ hz⟩,
@@ -362,7 +363,7 @@ theorem exists_momentMap_eq_zero_and_reductionMap_eq
   set z : CotangentBundle I Q := TotalSpace.mk' (E →L[ℝ] ℝ) q (p ∘L mfderiv I IB ρ q)
   have h : cotangentRel I IB ρ z (TotalSpace.mk' (EB →L[ℝ] ℝ) (ρ q) p) :=
     (cotangentRel_mk_iff I IB ρ q _ p).2 rfl
-  exact ⟨z, (momentMap_eq_zero_iff_exists_cotangentRel hker (hρ q)).2 ⟨_, h⟩,
+  exact ⟨z, (momentMap_eq_zero_iff_exists_cotangentRel (hker q) (hρ q)).2 ⟨_, h⟩,
     (eq_reductionMap_of_cotangentRel (hρ q) h).symm⟩
 
 variable [ContMDiffConstSMul I ∞ G Q] [IsManifold I 2 Q]
@@ -377,7 +378,7 @@ theorem reductionMap_smul
     (hz : momentMap IG G z = 0) (g : G) :
     reductionMap I IB ρ (g • z) = reductionMap I IB ρ z :=
   (eq_reductionMap_of_cotangentRel (hρ _) ((cotangentRel_smul_iff hinv hρd g z _).2
-    (cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff hker z).1 hz)))).symm
+    (cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff (hker z.proj)).1 hz)))).symm
 
 /-- **The fibres of the reduction map on the zero level are the orbits.** Let the differentials
 of `ρ` have continuous right inverses, its vertical tangent vectors be the orbit directions, and
@@ -396,9 +397,9 @@ theorem reductionMap_eq_reductionMap_iff
   -- Both `g • z` and `z'` are pullbacks of the same covector at `ρ q'`, with base point `q'`.
   have h₁ : cotangentRel I IB ρ (g • z) (reductionMap I IB ρ z') :=
     (cotangentRel_smul_iff hinv hρd g z _).2
-      (h ▸ cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff hker z).1 hz))
+      (h ▸ cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff (hker z.proj)).1 hz))
   have h₂ : cotangentRel I IB ρ z' (reductionMap I IB ρ z') :=
-    cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff hker z').1 hz')
+    cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff (hker z'.proj)).1 hz')
   exact eq_of_cotangentRel_of_proj_eq h₁ h₂ ((proj_smul g z).trans hg)
 
 end MomentMap
@@ -474,11 +475,11 @@ theorem mpullback_reductionMap_comp_symplecticForm_quotientMk {f : X → Cotange
     SmoothForm.mpullback
         (reductionMap I 𝓘(ℝ, QuotientModelSpace EG E) (Quotient.mk (MulAction.orbitRel G Q)) ∘ f)
         (contMDiff_reductionMap_comp isSubmersion_quotientMk hf
-          (fun x ↦ (momentMap_eq_zero_iff ker_mfderiv_quotientMk (f x)).1 (hz x)) le_rfl)
+          (fun x ↦ (momentMap_eq_zero_iff (ker_mfderiv_quotientMk _)).1 (hz x)) le_rfl)
         (symplecticForm 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q)) =
       SmoothForm.mpullback f hf (symplecticForm I Q) := by
   let _ := orbitRelQuotientChartedSpace IG G I Q
   exact CotangentBundle.mpullback_reductionMap_comp_symplecticForm isSubmersion_quotientMk hf
-    fun x ↦ (momentMap_eq_zero_iff ker_mfderiv_quotientMk (f x)).1 (hz x)
+    fun x ↦ (momentMap_eq_zero_iff (ker_mfderiv_quotientMk _)).1 (hz x)
 
 end ProperSMul
