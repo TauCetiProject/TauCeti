@@ -523,29 +523,21 @@ section IntegralAffineTransport
 variable {N' U : Type*} [AddCommGroup N'] [NormedAddCommGroup U] [NormedSpace ℝ U]
   {i' : N' →+ U} {h' : TauCeti.Toric.IsIntegralLattice i'}
 
-/-- `wallsEquiv` acts on underlying sets as the image under `e.toContinuousAffineEquiv`. -/
-theorem coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv
-    (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h') (w : C.walls) :
-    (C.wallsEquiv e w : Set U) = e.toContinuousAffineEquiv '' (w : Set V) := by
-  rw [e.coe_toContinuousAffineEquiv]
-  exact C.coe_wallsEquiv_apply e w
+/-- The quiver prefunctor transporting admissible segments of `C` to `C.image e` along `e`. -/
+abbrev imagePrefunctor (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h') :
+    C.wallComplement ⥤q (C.image e).wallComplement :=
+  WallComplement.mapReindexPrefunctor e.toContinuousAffineEquiv (C.wallsEquiv e)
+    (fun w => e.coe_toContinuousAffineEquiv.symm ▸ C.coe_wallsEquiv_apply e w)
 
 /-- Transport an allowed vertex of `C` to `C.image e` along an integral affine equivalence `e`. -/
 abbrev imageEndpoint (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
     (x : C.wallComplement) : (C.image e).wallComplement :=
-  x.mapReindex e.toContinuousAffineEquiv (C.wallsEquiv e)
-    (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e)
+  (C.imagePrefunctor e).obj x
 
 /-- `imageEndpoint` acts on ambient points as `e`. -/
 theorem imageEndpoint_val (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
     (x : C.wallComplement) : (C.imageEndpoint e x).val = e x.val := by
   simp
-
-/-- The quiver prefunctor transporting admissible segments of `C` to `C.image e` along `e`. -/
-abbrev imagePrefunctor (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h') :
-    C.wallComplement ⥤q (C.image e).wallComplement :=
-  WallComplement.mapReindexPrefunctor e.toContinuousAffineEquiv (C.wallsEquiv e)
-    (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e)
 
 /-- Transport an admissible polygonal path of `C` to `C.image e` along an integral affine
 equivalence `e`. -/
@@ -553,14 +545,14 @@ def imagePath (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h
     {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     AdmissiblePLPath (C.imageEndpoint e x) (C.imageEndpoint e y) :=
   p.affineMapReindex e.toContinuousAffineEquiv (C.wallsEquiv e)
-    (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e)
+    (fun w => e.coe_toContinuousAffineEquiv.symm ▸ C.coe_wallsEquiv_apply e w)
 
 /-- `imagePath` unfolds to `Quiver.Path.affineMapReindex` along `e.toContinuousAffineEquiv` and
 `C.wallsEquiv e`. -/
 theorem imagePath_eq_affineMapReindex (C : FinitePolyhedralComplex h)
-    (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
-    C.imagePath e p = p.affineMapReindex e.toContinuousAffineEquiv (C.wallsEquiv e)
-      (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e) :=
+    (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y)
+    (hW : ∀ w : C.walls, (C.wallsEquiv e w : Set U) = e.toContinuousAffineEquiv '' (w : Set V)) :
+    C.imagePath e p = p.affineMapReindex e.toContinuousAffineEquiv (C.wallsEquiv e) hW :=
   (rfl)
 
 /-- `imagePath` is `Prefunctor.mapPath` along `C.imagePrefunctor e`. -/
@@ -610,8 +602,7 @@ theorem map_val_vertices_imagePath (C : FinitePolyhedralComplex h)
     (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     (C.imagePath e p).vertices.map WallComplement.val =
       (p.vertices.map WallComplement.val).map e := by
-  rw [imagePath_eq_affineMapReindex, Quiver.Path.map_val_vertices_affineMapReindex,
-    e.coe_toContinuousAffineEquiv]
+  simp only [vertices_imagePath, List.map_map, Function.comp_def, e.coe_toContinuousAffineEquiv]
 
 @[simp]
 theorem imagePath_reverse (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
@@ -663,7 +654,7 @@ theorem crossingWord_image (C : FinitePolyhedralComplex h) (ν : C.walls → V �
   simp_rw [hlin]
   exact Quiver.Path.crossingWord_affineMapReindex ν C.pairwise_disjoint_intrinsicInterior_walls
     e.toContinuousAffineEquiv (C.wallsEquiv e)
-    (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e) p
+    (fun w => e.coe_toContinuousAffineEquiv.symm ▸ C.coe_wallsEquiv_apply e w) p
 
 end IntegralAffineTransport
 

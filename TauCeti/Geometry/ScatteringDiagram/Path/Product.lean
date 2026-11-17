@@ -44,53 +44,6 @@ noncomputable section
 
 open Set
 
-namespace TauCeti
-
-/-- Coplanar commutation transfers to the image wall family under an injective affine map. -/
-theorem commute_of_affineSpan_image_eq {V U ι G : Type*} [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup U] [Module ℝ U] [Mul G] {W : ι → Set V} (label : ι → G)
-    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
-    {f : V →ᵃ[ℝ] U} (hf : Function.Injective f) {i j : ι}
-    (hij : affineSpan ℝ (f '' W i) = affineSpan ℝ (f '' W j)) :
-    Commute (label i) (label j) := by
-  refine hcomm i j ((AffineSubspace.gciMapComap hf).l_injective ?_)
-  rwa [AffineSubspace.map_span, AffineSubspace.map_span]
-
-end TauCeti
-
-namespace ContinuousAffineEquiv
-
-/-- Coplanar commutation transfers to the image wall family under a continuous affine
-equivalence. -/
-theorem commute_of_affineSpan_image_eq {V U ι G : Type*}
-    [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-    [AddCommGroup U] [Module ℝ U] [TopologicalSpace U] [Mul G] {W : ι → Set V}
-    (e : V ≃ᴬ[ℝ] U) (label : ι → G)
-    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
-    {i j : ι} (hij : affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j)) :
-    Commute (label i) (label j) := by
-  have hfeq : (e.toAffineEquiv.toAffineMap : V → U) = e := by
-    rw [AffineEquiv.coe_toAffineMap, e.coe_coe]
-  rw [← hfeq] at hij
-  exact TauCeti.commute_of_affineSpan_image_eq label hcomm (hfeq.symm ▸ e.injective) hij
-
-/-- Coplanar commutation transfers along a continuous affine equivalence and a wall bijection. -/
-theorem commute_of_affineSpan_reindex_eq {V U ι ι' G : Type*}
-    [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-    [AddCommGroup U] [Module ℝ U] [TopologicalSpace U] [Mul G]
-    {W : ι → Set V} {W' : ι' → Set U}
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i)
-    (label : ι → G)
-    (hcomm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j))
-    {i' j' : ι'} (hij : affineSpan ℝ (W' i') = affineSpan ℝ (W' j')) :
-    Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j') := by
-  obtain ⟨i, rfl⟩ := r.surjective i'
-  obtain ⟨j, rfl⟩ := r.surjective j'
-  rw [hW i, hW j] at hij
-  simpa using e.commute_of_affineSpan_image_eq label hcomm hij
-
-end ContinuousAffineEquiv
-
 namespace TauCeti.WallComplement
 
 variable {V ι G K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
