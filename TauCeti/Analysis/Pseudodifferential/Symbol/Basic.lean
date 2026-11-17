@@ -37,8 +37,9 @@ space, and develop the first operations of the symbol calculus:
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
-  of multiplication by `f`, has order `0`; in particular so does a constant
-  (`TauCeti.Symbol.const`);
+  of multiplication by `f`, has order `0`; in particular so do a constant
+  (`TauCeti.Symbol.const`) and the multiplication `ψ(x) id` by a smooth real function `ψ`
+  (`TauCeti.Symbol.cutoff`);
 * `TauCeti.Symbol.ofFrequency`: a smooth coefficient `b(ξ)` independent of the position with
   `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩^(m - k)` has order `m`, with estimates uniform in the position
   (`TauCeti.Symbol.isUniform_ofFrequency`);
@@ -902,6 +903,65 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   rcases eq_or_ne α [] with rfl | hα
   · simp
   · simp [coordinateDeriv_const T hα]
+
+variable (V) in
+/-- The symbol `ψ(x) id_V` of multiplication by a smooth real function `ψ`. -/
+def cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) : Symbol n V V 0 :=
+  ofSpatial (fun x => ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)
+
+@[simp]
+theorem coefficient_cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (cutoff V hψ).coefficient p = ψ p.1 • ContinuousLinearMap.id ℂ V := by
+  rw [cutoff, coefficient_ofSpatial]
+
+/-- The symbol of multiplication by a compactly supported smooth function has compact spatial
+support. -/
+theorem hasCompactSpatialSupport_cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) : (cutoff V hψ).HasCompactSpatialSupport :=
+  (hasCompactSpatialSupport_ofSpatial_iff _).2 hψc.smul_right
+
+/-- The position derivatives of the cutoff symbol are those of `ψ`. -/
+theorem mixedDeriv_cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (α : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α [] (cutoff V hψ).coefficient x ξ =
+      coordinateDeriv α ψ x • ContinuousLinearMap.id ℂ V := by
+  have h : (cutoff V hψ).coefficient = fun p => ψ p.1 • ContinuousLinearMap.id ℂ V :=
+    funext (coefficient_cutoff hψ)
+  rw [h, mixedDeriv_nil_comp_fst (fun y => ψ y • ContinuousLinearMap.id ℂ V)]
+  exact (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
+    (ContinuousLinearMap.id ℂ V)).coordinateDeriv_comp_left α (hψ.of_le (by simp)) x
+
+/-- If `ψ` is constant near `x`, all nonempty position derivatives of the cutoff symbol vanish
+at `x`. -/
+theorem mixedDeriv_cutoff_eq_zero {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    {x : CoordinateSpace n} {c : ℝ} (hx : ψ =ᶠ[nhds x] fun _ => c) {α : List (Fin n)}
+    (hα : α ≠ []) (ξ : CoordinateSpace n) :
+    mixedDeriv α [] (cutoff V hψ).coefficient x ξ = 0 := by
+  rw [mixedDeriv_cutoff, (hx.coordinateDeriv α).eq_of_nhds, coordinateDeriv_const c hα,
+    Pi.zero_apply, zero_smul]
+
+/-- The cutoff symbol is additive in the cutoff function. -/
+theorem cutoff_add {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.add hψ') = cutoff V hψ + cutoff V hψ' := by
+  ext1
+  funext p
+  simp [add_smul]
+
+/-- The cutoff symbol commutes with subtraction of cutoff functions. -/
+theorem cutoff_sub {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.sub hψ') = cutoff V hψ - cutoff V hψ' := by
+  ext1
+  funext p
+  simp [sub_smul]
+
+/-- The cutoff symbol of the zero function is zero. -/
+@[simp]
+theorem cutoff_zero (hψ : ContDiff ℝ ∞ (0 : CoordinateSpace n → ℝ)) :
+    cutoff V hψ = 0 := by
+  ext1
+  funext p
+  simp
 
 end Spatial
 
