@@ -26,34 +26,9 @@ public section
 
 namespace TauCeti
 
-variable {𝕜 E A : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E F G A : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   [NormedRing A] [NormedAlgebra 𝕜 A]
-
-/-- **Orders of vanishing add under multiplication.** If the iterated derivatives of `g` of order
-`i < m` and those of `h` of order `i < n` vanish at `x`, then so do those of `g * h` of every
-order `k < m + n`. -/
-theorem iteratedFDeriv_mul_eq_zero_of_lt_add {g h : E → A} {N : WithTop ℕ∞} {x : E}
-    (hg : ContDiffAt 𝕜 N g x) (hh : ContDiffAt 𝕜 N h x) {m n k : ℕ}
-    (hgx : ∀ i < m, iteratedFDeriv 𝕜 i g x = 0) (hhx : ∀ i < n, iteratedFDeriv 𝕜 i h x = 0)
-    (hk : k < m + n) (hkN : k ≤ N) :
-    iteratedFDeriv 𝕜 k (fun y ↦ g y * h y) x = 0 := by
-  -- Work on an open neighbourhood of `x` on which both factors are `C^k`.
-  obtain ⟨u, hu, hgu⟩ := hg.contDiffOn hkN (by simp)
-  obtain ⟨v, hv, hhv⟩ := hh.contDiffOn hkN (by simp)
-  obtain ⟨s, hsuv, hs, hxs⟩ := mem_nhds_iff.mp (Filter.inter_mem hu hv)
-  have hbound := norm_iteratedFDerivWithin_mul_le (hgu.mono fun _ hy ↦ (hsuv hy).1)
-    (hhv.mono fun _ hy ↦ (hsuv hy).2) hs.uniqueDiffOn hxs le_rfl
-  simp only [iteratedFDerivWithin_of_isOpen _ hs hxs] at hbound
-  refine norm_le_zero_iff.mp (hbound.trans ?_)
-  -- Each Leibniz term has a factor `D^i g x` with `i < m` or `D^(k-i) h x` with `k - i < n`.
-  refine (Finset.sum_eq_zero fun i hi ↦ ?_).le
-  rw [Finset.mem_range] at hi
-  rcases lt_or_ge i m with him | him
-  · simp [hgx i him]
-  · simp [hhx (k - i) (by omega)]
-
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
-  [NormedSpace 𝕜 G]
 
 /-- **Orders of vanishing add under application.** If the iterated derivatives of a family of
 continuous linear maps `f` of order `i < m` and those of `g` of order `i < n` vanish at `x`, then
@@ -77,6 +52,24 @@ theorem iteratedFDeriv_clm_apply_eq_zero_of_lt_add {f : E → F →L[𝕜] G} {g
   rcases lt_or_ge i m with him | him
   · simp [hfx i him]
   · simp [hgx (k - i) (by omega)]
+
+/-- **Orders of vanishing add under multiplication.** If the iterated derivatives of `g` of order
+`i < m` and those of `h` of order `i < n` vanish at `x`, then so do those of `g * h` of every
+order `k < m + n`. -/
+theorem iteratedFDeriv_mul_eq_zero_of_lt_add {g h : E → A} {N : WithTop ℕ∞} {x : E}
+    (hg : ContDiffAt 𝕜 N g x) (hh : ContDiffAt 𝕜 N h x) {m n k : ℕ}
+    (hgx : ∀ i < m, iteratedFDeriv 𝕜 i g x = 0) (hhx : ∀ i < n, iteratedFDeriv 𝕜 i h x = 0)
+    (hk : k < m + n) (hkN : k ≤ N) :
+    iteratedFDeriv 𝕜 k (fun y ↦ g y * h y) x = 0 := by
+  -- The product is the application of the left multiplications `y ↦ (g y * ·)` to `h`, and
+  -- these vanish to the same order as `g`, up to the order `k` that matters.
+  let L := ContinuousLinearMap.mul 𝕜 A
+  refine iteratedFDeriv_clm_apply_eq_zero_of_lt_add (f := L ∘ g) (m := min m (k + 1))
+    (L.contDiff.contDiffAt.comp x hg) hh (fun i hi ↦ ?_) hhx (by omega) hkN
+  rw [L.iteratedFDeriv_comp_left hg (le_trans (by exact_mod_cast (by omega : i ≤ k)) hkN),
+    hgx i (by omega)]
+  ext
+  simp
 
 /-- **A multilinear map on `k` copies of the increment vanishes to order `k`.** If the iterated
 derivatives of a family `S` of continuous `k`-multilinear maps of order `i < m` vanish at `x`, then

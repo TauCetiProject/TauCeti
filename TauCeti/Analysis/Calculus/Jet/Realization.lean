@@ -25,6 +25,8 @@ zero or symmetry assumptions.
 is its finite Taylor sum about the chosen center. The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
+* `taylorMonomial`, `iteratedFDeriv_taylorMonomial_self`: the one-term case
+  `y ↦ A (y - x, …, y - x) / k!`, whose only nonzero derivative at `x` is `A`;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
   neighborhood of the center-value pair `(x, A 0 0)`;
 * `exists_contDiff_hasCompactSupport_iteratedFDeriv_eq`: on a finite-dimensional real base,
@@ -167,6 +169,52 @@ theorem iteratedFDeriv_finiteJetPolynomial_self (r : ℕ)
   simp_rw [hsym]
   simp [Fintype.card_perm, nsmul_eq_mul, ← smul_assoc,
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i.val)]
+
+/-- The normalized Taylor monomial `y ↦ A (y - x, …, y - x) / k!` of a continuous `k`-multilinear
+map `A`, centered at `x`. It is the finite jet polynomial whose only nonzero datum is `A`, in order
+`k` (`taylorMonomial_eq_finiteJetPolynomial`), so for symmetric `A` its only nonzero derivative at
+`x` is `A`, in order `k` (`iteratedFDeriv_taylorMonomial_self`,
+`iteratedFDeriv_taylorMonomial_of_ne`). -/
+noncomputable def taylorMonomial (k : ℕ) (A : E [×k]→L[𝕜] F) (x y : E) : F :=
+  (k.factorial : 𝕜)⁻¹ • A fun _ ↦ y - x
+
+/-- Evaluation of the Taylor monomial. -/
+theorem taylorMonomial_apply (k : ℕ) (A : E [×k]→L[𝕜] F) (x y : E) :
+    taylorMonomial k A x y = (k.factorial : 𝕜)⁻¹ • A fun _ ↦ y - x := by
+  rw [taylorMonomial]
+
+/-- The Taylor monomial of `A` is the finite jet polynomial with datum `A` in order `k` and zero
+in lower orders. -/
+theorem taylorMonomial_eq_finiteJetPolynomial (k : ℕ) (A : E [×k]→L[𝕜] F) (x : E) :
+    taylorMonomial k A x = finiteJetPolynomial k (Fin.lastCases A fun _ ↦ 0) x := by
+  ext y
+  simp [taylorMonomial_apply, finiteJetPolynomial_apply, Fin.sum_univ_castSucc]
+
+/-- The Taylor monomial is smooth (and in fact a polynomial). -/
+theorem contDiff_taylorMonomial (k : ℕ) (A : E [×k]→L[𝕜] F) (x : E) {n : ℕ∞ω} :
+    ContDiff 𝕜 n (taylorMonomial k A x) := by
+  rw [taylorMonomial_eq_finiteJetPolynomial]
+  exact contDiff_finiteJetPolynomial ..
+
+/-- The derivative of order `k` at the center of the Taylor monomial of a symmetric `A` is `A`. -/
+theorem iteratedFDeriv_taylorMonomial_self [CharZero 𝕜] (k : ℕ) (A : E [×k]→L[𝕜] F) (x : E)
+    (hA : ∀ (v : Fin k → E) (σ : Equiv.Perm (Fin k)), A (v ∘ σ) = A v) :
+    iteratedFDeriv 𝕜 k (taylorMonomial k A x) x = A := by
+  rw [taylorMonomial_eq_finiteJetPolynomial]
+  simpa using iteratedFDeriv_finiteJetPolynomial_self k (Fin.lastCases A fun _ ↦ 0) x
+    (Fin.last k) (by simpa using hA)
+
+/-- The derivatives of orders other than `k` at the center of a Taylor monomial vanish. -/
+theorem iteratedFDeriv_taylorMonomial_of_ne [CharZero 𝕜] (k : ℕ) (A : E [×k]→L[𝕜] F) (x : E)
+    {j : ℕ} (hj : j ≠ k) :
+    iteratedFDeriv 𝕜 j (taylorMonomial k A x) x = 0 := by
+  rw [taylorMonomial_eq_finiteJetPolynomial]
+  rcases lt_or_gt_of_ne hj with hj | hj
+  · have h := iteratedFDeriv_finiteJetPolynomial_self k (Fin.lastCases A fun _ ↦ 0) x
+      (Fin.castSucc ⟨j, hj⟩) fun v σ ↦ by simp only [Fin.lastCases_castSucc, zero_apply]
+    simp only [Fin.lastCases_castSucc, Fin.val_castSucc] at h
+    exact h
+  · exact congrFun (iteratedFDeriv_finiteJetPolynomial_eq_zero_of_le k _ x j hj) x
 
 /-- A finite symmetric jet is realized by an analytic smooth function whose graph stays
 in any prescribed neighborhood of the center-value pair `(x, A 0 0)` near the center. -/
