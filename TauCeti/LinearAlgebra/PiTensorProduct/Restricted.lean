@@ -56,6 +56,11 @@ product (`TauCeti.RestrictedTensor.finiteEquiv`).
   finite stages embed.
 * `TauCeti.RestrictedTensor.tprod_eq_ofFinite`: a pure tensor computed at any finite stage
   containing the places where the family differs from the references.
+* `TauCeti.RestrictedTensor.map_id`, `TauCeti.RestrictedTensor.map_comp`: the induced maps are
+  functorial.
+* `TauCeti.RestrictedTensor.finiteEquiv_apply_ofFinite`,
+  `TauCeti.RestrictedTensor.finiteEquiv_symm_apply`: the identification for a finite index type,
+  on finite stages and in the inverse direction.
 
 ## References
 
@@ -64,7 +69,7 @@ product (`TauCeti.RestrictedTensor.finiteEquiv`).
 * J. R. Getz, *An introduction to automorphic representations*, §7.1.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 open scoped TensorProduct
 
@@ -145,6 +150,12 @@ def stageMultilinear (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) :
   map_update_smul' f j c x := by
     simp only [extendFamily_update w h, MultilinearMap.map_update_smul]
 
+/-- Adjoining reference vectors to a family of vectors. -/
+@[simp]
+theorem stageMultilinear_apply (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) (f : ∀ i : S, W i) :
+    stageMultilinear R w h f = PiTensorProduct.tprod R (extendFamily w T f) :=
+  (rfl)
+
 /-- The transition map `⨂_{i ∈ S} W i → ⨂_{i ∈ T} W i` adjoining the reference vectors at the
 places of `T \ S`. -/
 def stageMap (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T) :
@@ -186,46 +197,39 @@ section contract
 
 variable {S T : Finset ι} (h : S ⊆ T)
 
-omit [DecidableEq ι] [∀ i, AddCommMonoid (W i)] in
-private theorem restrict_update_of_mem [DecidableEq S] [DecidableEq T] (g : ∀ i : T, W i) (j : T)
-    (hj : j.1 ∈ S) (z : W j) :
-    (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
-      Function.update (fun i : S ↦ g ⟨i.1, h i.2⟩) ⟨j.1, hj⟩ z := by
-  funext i
-  by_cases hij : i = ⟨j.1, hj⟩
-  · subst hij; simp
-  · rw [Function.update_of_ne hij, Function.update_of_ne]
-    exact fun h' ↦ hij (Subtype.ext (show i.1 = j.1 from congrArg Subtype.val h'))
-
-omit [DecidableEq ι] [∀ i, AddCommMonoid (W i)] in
-private theorem restrict_update_of_notMem [DecidableEq T] (g : ∀ i : T, W i) (j : T)
-    (hj : j.1 ∉ S) (z : W j) :
-    (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) = fun i : S ↦ g ⟨i.1, h i.2⟩ := by
-  funext i
-  rw [Function.update_of_ne]
-  rintro rfl
-  exact hj i.2
-
-private theorem prod_update_of_mem [DecidableEq T] (φ : ∀ i, Module.Dual R (W i))
+/-- Changing an entry of the family at a place of `S` changes the contraction only in its tensor
+factor. -/
+private theorem contract_update_of_mem [DecidableEq T] (φ : ∀ i, Module.Dual R (W i))
     (g : ∀ i : T, W i) (j : T) (hj : j.1 ∈ S) (z : W j) :
-    ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i) =
+    (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i)) •
+        PiTensorProduct.tprod R (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
+      (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i)) •
+        PiTensorProduct.tprod R (Function.update (fun i : S ↦ g ⟨i.1, h i.2⟩) ⟨j.1, hj⟩ z) := by
+  have hres : (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
+      Function.update (fun i : S ↦ g ⟨i.1, h i.2⟩) ⟨j.1, hj⟩ z :=
+    Function.update_comp_eq_of_injective' g (f := fun i : S ↦ (⟨i.1, h i.2⟩ : T))
+      (fun _ _ hab ↦ Subtype.ext (by simpa using hab)) ⟨j.1, hj⟩ z
+  have hprod : ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i) =
       ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i) := by
-  refine Finset.prod_congr rfl fun i hi ↦ ?_
-  rw [Function.update_of_ne]
-  rintro rfl
-  exact (Finset.mem_filter.mp hi).2 hj
+    rw [Finset.prod_congr rfl fun i _ ↦ Function.apply_update (fun i : T ↦ ⇑(φ i)) g j z i]
+    exact Finset.prod_update_of_notMem (by simp [hj]) _ _
+  rw [hres, hprod]
 
-private theorem prod_update_of_notMem [DecidableEq T] (φ : ∀ i, Module.Dual R (W i))
+/-- Changing an entry of the family at a place of `T \ S` changes the contraction only in its
+scalar factor. -/
+private theorem contract_update_of_notMem [DecidableEq T] (φ : ∀ i, Module.Dual R (W i))
     (g : ∀ i : T, W i) (j : T) (hj : j.1 ∉ S) (z : W j) :
-    ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i) =
+    (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i)) •
+        PiTensorProduct.tprod R (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) =
+      φ j z • (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S) \ {j}, φ i (g i)) •
+        PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.1, h i.2⟩) := by
+  have hres : (fun i : S ↦ Function.update g j z ⟨i.1, h i.2⟩) = fun i : S ↦ g ⟨i.1, h i.2⟩ :=
+    Function.update_comp_eq_of_forall_ne' g z fun i hi ↦ hj (hi ▸ i.2)
+  have hprod : ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (Function.update g j z i) =
       φ j z * ∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S) \ {j}, φ i (g i) := by
-  have hupd : (fun i : T ↦ φ i (Function.update g j z i)) =
-      Function.update (fun i : T ↦ φ i (g i)) j (φ j z) := by
-    funext i
-    by_cases hi : i = j
-    · subst hi; simp
-    · simp [Function.update_of_ne hi]
-  rw [hupd, Finset.prod_update_of_mem (by simp [hj])]
+    rw [Finset.prod_congr rfl fun i _ ↦ Function.apply_update (fun i : T ↦ ⇑(φ i)) g j z i]
+    exact Finset.prod_update_of_mem (by simp [hj]) _ _
+  rw [hres, hprod, mul_smul]
 
 variable (R) in
 /-- Contracting the places of `T \ S` against linear forms, as a multilinear map. -/
@@ -235,23 +239,20 @@ def contractMultilinear (φ : ∀ i, Module.Dual R (W i)) :
     PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.1, h i.2⟩)
   map_update_add' g j x y := by
     by_cases hj : j.1 ∈ S
-    · simp only [restrict_update_of_mem h _ _ hj, prod_update_of_mem φ _ _ hj,
-        MultilinearMap.map_update_add, smul_add]
-    · simp only [restrict_update_of_notMem h _ _ hj, prod_update_of_notMem φ _ _ hj, map_add,
-        add_mul, add_smul]
+    · simp only [contract_update_of_mem h φ g j hj, MultilinearMap.map_update_add, smul_add]
+    · simp only [contract_update_of_notMem h φ g j hj, map_add, add_smul]
   map_update_smul' g j c x := by
     by_cases hj : j.1 ∈ S
-    · simp only [restrict_update_of_mem h _ _ hj, prod_update_of_mem φ _ _ hj,
-        MultilinearMap.map_update_smul, RingHom.id_apply]
+    · simp only [contract_update_of_mem h φ g j hj, MultilinearMap.map_update_smul]
       rw [smul_comm]
-    · simp only [restrict_update_of_notMem h _ _ hj, prod_update_of_notMem φ _ _ hj, map_smul,
-        smul_eq_mul, mul_assoc, mul_smul, RingHom.id_apply]
+    · simp only [contract_update_of_notMem h φ g j hj, map_smul, smul_eq_mul, mul_smul,
+        RingHom.id_apply]
 
 /-- The contraction on a family of vectors. -/
 theorem contractMultilinear_apply (φ : ∀ i, Module.Dual R (W i)) (g : ∀ i : T, W i) :
     contractMultilinear R h φ g = (∏ i ∈ Finset.univ.filter (fun i : T ↦ i.1 ∉ S), φ i (g i)) •
       PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.1, h i.2⟩) :=
-  rfl
+  (rfl)
 
 end contract
 
@@ -282,7 +283,9 @@ variable {ι : Type*} [DecidableEq ι] (R : Type*) [CommSemiring R] (W : ι → 
 
 /-- The **restricted tensor product** of modules `W i` with respect to reference vectors `w i`:
 the direct limit, over finite sets `S` of indices, of the tensor products `⨂_{i ∈ S} W i`, along
-the maps adjoining reference vectors. -/
+the maps adjoining reference vectors. Its body is exposed so that the module structure of the direct
+limit transfers to it. -/
+@[expose]
 def RestrictedTensor (w : ∀ i, W i) : Type _ :=
   Module.DirectLimit (fun S : Finset ι ↦ ⨂[R] i : S, W i)
     (fun _ _ h ↦ RestrictedTensor.stageMap R w h)
@@ -292,15 +295,15 @@ namespace RestrictedTensor
 variable (w : ∀ i, W i)
 
 /-- The restricted tensor product is a commutative monoid, as a direct limit. -/
-instance : AddCommMonoid (RestrictedTensor R W w) :=
+instance instAddCommMonoid : AddCommMonoid (RestrictedTensor R W w) :=
   inferInstanceAs (AddCommMonoid (Module.DirectLimit _ _))
 
 /-- The restricted tensor product is a module, as a direct limit. -/
-instance : Module R (RestrictedTensor R W w) :=
+instance instModule : Module R (RestrictedTensor R W w) :=
   inferInstanceAs (Module R (Module.DirectLimit _ _))
 
 /-- The restricted tensor product of additive groups is an additive group. -/
-instance {R : Type*} [CommRing R] {W : ι → Type*} [∀ i, AddCommGroup (W i)]
+instance instAddCommGroup {R : Type*} [CommRing R] {W : ι → Type*} [∀ i, AddCommGroup (W i)]
     [∀ i, Module R (W i)] (w : ∀ i, W i) : AddCommGroup (RestrictedTensor R W w) :=
   inferInstanceAs (AddCommGroup (Module.DirectLimit _ _))
 
@@ -430,6 +433,30 @@ theorem map_tprod (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f i (w i) = w' i)
   rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_not] at hi
   rw [hi, hf]
 
+variable (w) in
+/-- The identity maps of the factors induce the identity. -/
+@[simp]
+theorem map_id :
+    map (w := w) (fun i ↦ (LinearMap.id : W i →ₗ[R] W i)) (fun _ ↦ rfl) = LinearMap.id :=
+  hom_ext fun S ↦ LinearMap.ext fun x ↦ by simp [PiTensorProduct.map_id]
+
+/-- The map induced by composites of factorwise maps is the composite of the induced maps. -/
+theorem map_comp {W'' : ι → Type*} [∀ i, AddCommMonoid (W'' i)] [∀ i, Module R (W'' i)]
+    {w'' : ∀ i, W'' i} (g : ∀ i, W' i →ₗ[R] W'' i) (hg : ∀ i, g i (w' i) = w'' i)
+    (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f i (w i) = w' i) :
+    map (fun i ↦ g i ∘ₗ f i) (fun i ↦ by rw [LinearMap.comp_apply, hf, hg]) =
+      map g hg ∘ₗ map f hf :=
+  hom_ext fun S ↦ LinearMap.ext fun x ↦ by simp [PiTensorProduct.map_comp]
+
+/-- Applying two induced maps in turn is applying the map induced by the composites. -/
+@[simp]
+theorem map_map {W'' : ι → Type*} [∀ i, AddCommMonoid (W'' i)] [∀ i, Module R (W'' i)]
+    {w'' : ∀ i, W'' i} (g : ∀ i, W' i →ₗ[R] W'' i) (hg : ∀ i, g i (w' i) = w'' i)
+    (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f i (w i) = w' i) (x : RestrictedTensor R W w) :
+    map g hg (map f hf x) =
+      map (fun i ↦ g i ∘ₗ f i) (fun i ↦ by rw [LinearMap.comp_apply, hf, hg]) x := by
+  rw [map_comp, LinearMap.comp_apply]
+
 end map
 
 variable (R W w) in
@@ -447,14 +474,30 @@ def finiteEquiv [Fintype ι] : RestrictedTensor R W w ≃ₗ[R] ⨂[R] i, W i :=
     (PiTensorProduct.reindex R (fun i : (Finset.univ : Finset ι) ↦ W i)
       (Equiv.subtypeUnivEquiv Finset.mem_univ))
 
+/-- For a finite index type, an element of a stage `S` is sent to the full stage by adjoining
+references, then reindexed by `Finset.univ ≃ ι`. -/
+theorem finiteEquiv_apply_ofFinite [Fintype ι] (S : Finset ι) (x : ⨂[R] i : S, W i) :
+    finiteEquiv R W w (ofFinite R W w S x) =
+      PiTensorProduct.reindex R (fun i : (Finset.univ : Finset ι) ↦ W i)
+        (Equiv.subtypeUnivEquiv Finset.mem_univ) (stageMap R w (Finset.subset_univ S) x) :=
+  congrArg (PiTensorProduct.reindex R _ _)
+    (lift_ofFinite (fun S ↦ stageMap R w (Finset.subset_univ S))
+      (fun _ T h x ↦ stageMap_stageMap w h (Finset.subset_univ T) x) S x)
+
+/-- For a finite index type, the inverse of `finiteEquiv` reindexes by `ι ≃ Finset.univ` and
+includes the full stage. -/
+theorem finiteEquiv_symm_apply [Fintype ι] (x : ⨂[R] i, W i) :
+    (finiteEquiv R W w).symm x = ofFinite R W w Finset.univ
+      ((PiTensorProduct.reindex R (fun i : (Finset.univ : Finset ι) ↦ W i)
+        (Equiv.subtypeUnivEquiv Finset.mem_univ)).symm x) :=
+  (rfl)
+
 /-- For a finite index type, a pure tensor at a stage `S` corresponds to the pure tensor of the
 family extended by references. -/
 theorem finiteEquiv_ofFinite [Fintype ι] (S : Finset ι) (f : ∀ i : S, W i) :
     finiteEquiv R W w (ofFinite R W w S (PiTensorProduct.tprod R f)) =
       PiTensorProduct.tprod R fun i ↦ extendFamily w Finset.univ f ⟨i, Finset.mem_univ i⟩ := by
-  change PiTensorProduct.reindex _ _ _ (lift (fun S ↦ stageMap R w (Finset.subset_univ S))
-    (fun S T h x ↦ stageMap_stageMap w h (Finset.subset_univ T) x) (ofFinite R W w S _)) = _
-  rw [lift_ofFinite, stageMap_tprod, PiTensorProduct.reindex_tprod]
+  rw [finiteEquiv_apply_ofFinite, stageMap_tprod, PiTensorProduct.reindex_tprod]
   rfl
 
 end RestrictedTensor
