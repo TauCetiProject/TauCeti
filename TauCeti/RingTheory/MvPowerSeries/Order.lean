@@ -14,8 +14,8 @@ public import Mathlib.RingTheory.MvPowerSeries.Substitution
 -- Proof-only: coefficients of a difference of substitutions.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
-import Mathlib.Data.Finsupp.Order
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Inverse
 
 /-!
@@ -684,62 +684,6 @@ end CommRing
 
 section MaximalIdeal
 
-open scoped Classical in
-private noncomputable def peelMinVar {σ R : Type*} [Semiring R] [LinearOrder σ]
-    (g : MvPowerSeries σ R) (i : σ) : MvPowerSeries σ R :=
-  fun γ ↦ if ∀ j < i, γ j = 0 then coeff (γ + Finsupp.single i 1) g else 0
-
-open scoped Classical in
-private theorem coeff_peelMinVar {σ R : Type*} [Semiring R] [LinearOrder σ]
-    (g : MvPowerSeries σ R) (i : σ) (γ : σ →₀ ℕ) :
-    coeff γ (peelMinVar g i) =
-      if ∀ j < i, γ j = 0 then coeff (γ + Finsupp.single i 1) g else 0 := by
-  rw [coeff_apply]
-  rfl
-
-open scoped Classical in
-/-- Over a linearly ordered finite variable set `σ`, any power series `g` with `coeff 0 g = 0`
-decomposes by peeling off the least variable in each nonzero exponent's support:
-`g = ∑ i, X i * peelMinVar g i`. -/
-private theorem eq_sum_X_mul_peelMinVar {σ R : Type*} [Semiring R] [Fintype σ] [LinearOrder σ]
-    {g : MvPowerSeries σ R} (hg0 : coeff 0 g = 0) :
-    g = ∑ i : σ, X i * peelMinVar g i := by
-  ext β
-  rw [map_sum]
-  rcases eq_or_ne β 0 with rfl | hβ0
-  · -- At `β = 0`, both sides vanish by `coeff 0 g = 0` and `coeff_zero_X_mul`.
-    rw [hg0, Finset.sum_eq_zero fun i _ ↦ coeff_zero_X_mul _ i]
-  · -- At `β ≠ 0`, only `i₀ = min' β.support` contributes `coeff β g`.
-    have hne : β.support.Nonempty := Finsupp.support_nonempty_iff.mpr hβ0
-    let i₀ : σ := β.support.min' hne
-    rw [Finset.sum_eq_single i₀]
-    · have hi₀ : Finsupp.single i₀ 1 ≤ β := by
-        rw [Finsupp.single_le_iff, Nat.one_le_iff_ne_zero, ← Finsupp.mem_support_iff]
-        exact β.support.min'_mem hne
-      have hmin : ∀ j < i₀, (β - Finsupp.single i₀ (1 : ℕ)) j = 0 := fun j hj ↦ by
-        have hjnot : j ∉ β.support := fun hmem ↦ hj.not_ge (β.support.min'_le j hmem)
-        rw [Finsupp.tsub_apply, Finsupp.notMem_support_iff.mp hjnot, zero_tsub]
-      rw [X_def, coeff_monomial_mul, ite_eq_left hi₀, one_mul, coeff_peelMinVar,
-        ite_eq_left hmin, tsub_add_cancel_of_le hi₀]
-    · -- For `i ≠ i₀` with `single i 1 ≤ β`, we have `i₀ < i` and `(β - single i 1) i₀ ≠ 0`.
-      intro i _ hne_i
-      rw [X_def, coeff_monomial_mul]
-      split_ifs with hle
-      · rw [one_mul, coeff_peelMinVar]
-        have hnotmin : ¬ ∀ j < i, (β - Finsupp.single i (1 : ℕ)) j = 0 := fun hmin ↦ by
-          have hi_mem : i ∈ β.support := by
-            rw [Finsupp.mem_support_iff, ← Nat.one_le_iff_ne_zero, ← Finsupp.single_le_iff]
-            exact hle
-          have hi₀_lt : i₀ < i := (β.support.min'_le i hi_mem).lt_of_ne hne_i.symm
-          have hne0 : (β - Finsupp.single i (1 : ℕ)) i₀ ≠ 0 := by
-            rw [Finsupp.tsub_apply, Finsupp.single_eq_of_ne hi₀_lt.ne, tsub_zero]
-            exact Finsupp.mem_support_iff.mp (β.support.min'_mem hne)
-          exact hne0 (hmin i₀ hi₀_lt)
-        rw [ite_eq_right hnotmin]
-      · rfl
-    · intro hmem
-      exact absurd (Finset.mem_univ i₀) hmem
-
 section LocalRing
 
 variable {σ R : Type*} [CommRing R] [IsLocalRing R]
@@ -762,25 +706,9 @@ theorem monomial_mem_maximalIdeal_pow (α : σ →₀ ℕ) (r : R) :
 least `k` belongs to `𝔪 ^ k`. -/
 theorem mem_maximalIdeal_pow_of_le_order [Finite σ] {g : MvPowerSeries σ R} {k : ℕ}
     (hg : (k : ℕ∞) ≤ g.order) :
-    g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ k := by
-  classical
-  cases nonempty_fintype σ
-  let _ : LinearOrder σ := LinearOrder.lift' (Fintype.equivFin σ) (Fintype.equivFin σ).injective
-  induction k generalizing g with
-  | zero => simp
-  | succ k ih =>
-    have hg0 : coeff 0 g = 0 :=
-      coeff_of_lt_order ((by simp : ((0 : σ →₀ ℕ).degree : ℕ∞) < (k + 1 : ℕ)).trans_le hg)
-    have hq_ord : ∀ i : σ, (k : ℕ∞) ≤ (peelMinVar g i).order := fun i ↦
-      nat_le_order fun γ hγ ↦ by
-        rw [coeff_peelMinVar]
-        split_ifs with hmin
-        · refine coeff_of_lt_order ((Nat.cast_lt.mpr ?_).trans_le hg)
-          rw [map_add, Finsupp.degree_single]
-          exact Nat.add_lt_add_right hγ 1
-        · rfl
-    rw [eq_sum_X_mul_peelMinVar hg0, pow_succ']
-    exact sum_mem fun i _ ↦ Ideal.mul_mem_mul (X_mem_maximalIdeal i) (ih (hq_ord i))
+    g ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ k :=
+  pow_le_pow_left' (Ideal.span_le.mpr (Set.range_subset_iff.mpr X_mem_maximalIdeal)) k
+    (mem_pow_span_range_X_iff_le_order.mpr hg)
 
 end LocalRing
 
