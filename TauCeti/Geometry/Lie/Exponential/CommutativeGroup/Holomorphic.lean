@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
+public import TauCeti.Geometry.Lie.RestrictScalars
 import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import TauCeti.Geometry.Manifold.Complex.Analytic
 
@@ -45,14 +46,16 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedSpace ℝ E]
   [IsScalarTower ℝ ℂ E] [FiniteDimensional ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace E G] [Group G]
-  [LieGroup 𝓘(ℝ, E) ∞ G] [T2Space G] [LieGroup 𝓘(ℂ, E) ∞ G] [IsMulCommutative G]
+  [T2Space G] [LieGroup 𝓘(ℂ, E) ∞ G] [IsMulCommutative G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- **The exponential of a commutative complex Lie group is holomorphic.** -/
 theorem mdifferentiable_mulInvariantExp_complex :
+    haveI : LieGroup 𝓘(ℝ, E) ∞ G := LieGroup.restrictScalars_self ℝ (𝕜 := ℂ)
     MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, E) (fun v : E ↦
       mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) (v : GroupLieAlgebra 𝓘(ℝ, E) G)) := by
+  have : LieGroup 𝓘(ℝ, E) ∞ G := LieGroup.restrictScalars_self ℝ (𝕜 := ℂ)
   intro v
   have h₀ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E)
       (fun w : E ↦ mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) (w : GroupLieAlgebra 𝓘(ℝ, E) G)) 0 := by
@@ -80,8 +83,10 @@ theorem mdifferentiable_mulInvariantExp_complex :
 /-- **The exponential of a commutative complex Lie group is an entire map**: it is `C^n` over `ℂ`
 for every `n`, including `n = ω`. -/
 theorem contMDiff_mulInvariantExp_complex (n : ℕ∞ω) :
+    haveI : LieGroup 𝓘(ℝ, E) ∞ G := LieGroup.restrictScalars_self ℝ (𝕜 := ℂ)
     ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, E) n (fun v : E ↦
       mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) (v : GroupLieAlgebra 𝓘(ℝ, E) G)) :=
+  have : LieGroup 𝓘(ℝ, E) ∞ G := LieGroup.restrictScalars_self ℝ (𝕜 := ℂ)
   have : FiniteDimensional ℂ E := .of_restrictScalars_finite ℝ ℂ E
   mdifferentiable_mulInvariantExp_complex.contMDiff
 
