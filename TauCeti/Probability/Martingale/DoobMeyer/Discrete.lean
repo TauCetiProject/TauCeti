@@ -80,13 +80,14 @@ theorem integral_predictablePart [CompleteSpace E] [SigmaFiniteFiltration μ ℱ
 /-- **Optional sampling for the Doob compensator.** On an event known at a stopping time
 `σ ≤ N`, the compensator of an adapted integrable process grows from `σ` to `N` by the same
 amount, on average, as the process itself. -/
-theorem setIntegral_predictablePart_sub_stoppedValue [CompleteSpace E] [IsFiniteMeasure μ]
+theorem setIntegral_predictablePart_sub_stoppedValue [CompleteSpace E] [SigmaFiniteFiltration μ ℱ]
     (hf : StronglyAdapted ℱ f) (hint : ∀ n, Integrable (f n) μ) {σ : Ω → WithTop ℕ}
     (hσ : IsStoppingTime ℱ σ) {N : ℕ} (hσN : ∀ ω, σ ω ≤ N) {s : Set Ω}
     (hs : MeasurableSet[hσ.measurableSpace] s) :
     ∫ ω in s, (predictablePart f ℱ μ N ω - stoppedValue (predictablePart f ℱ μ) σ ω) ∂μ =
       ∫ ω in s, (f N ω - stoppedValue f σ ω) ∂μ := by
   have hM := martingale_martingalePart hf hint (μ := μ)
+  have := hσ.sigmaFinite_stopping_time (μ := μ)
   -- Optional sampling for the martingale part removes its increment.
   have hMσ : ∫ ω in s, stoppedValue (martingalePart f ℱ μ) σ ω ∂μ =
       ∫ ω in s, martingalePart f ℱ μ N ω ∂μ := by
