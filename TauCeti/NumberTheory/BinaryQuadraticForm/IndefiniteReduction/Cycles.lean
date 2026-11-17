@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.IndefiniteReduction.Root
 import Mathlib.Tactic.LinearCombination
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -541,16 +542,6 @@ theorem primitiveGaussReducedForms_subset_gaussReducedForms (D : ℤ) :
     primitiveGaussReducedForms D ⊆ gaussReducedForms D :=
   filter_subset _ _
 
-/-- The reduction step preserves the content of a form. -/
-@[simp] theorem content_reductionStep (f : BinaryQuadraticForm ℤ) :
-    f.reductionStep.content = f.content := by
-  rw [reductionStep_eq_smul, content_smul]
-
-/-- The reduction step preserves primitivity. -/
-@[simp] theorem isPrimitive_reductionStep (f : BinaryQuadraticForm ℤ) :
-    f.reductionStep.IsPrimitive ↔ f.IsPrimitive := by
-  rw [reductionStep_eq_smul, isPrimitive_smul_iff]
-
 /-- Every primitive form of positive nonsquare discriminant `D` is properly equivalent to a member
 of `primitiveGaussReducedForms D`. -/
 theorem exists_smul_mem_primitiveGaussReducedForms {f : BinaryQuadraticForm ℤ}
@@ -564,19 +555,19 @@ section PrimitiveCycles
 
 variable (D : ℤ) [Fact (¬ IsSquare D)]
 
+/-- Equivalence between primitive elements of `gaussReducedForms D` and
+`primitiveGaussReducedForms D`. -/
+private def primitiveGaussReducedFormsEquiv :
+    {f : gaussReducedForms D // f.1.IsPrimitive} ≃ primitiveGaussReducedForms D :=
+  (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ gaussReducedForms D) IsPrimitive).trans <|
+    Equiv.subtypeEquivRight fun _ ↦ by
+      rw [mem_primitiveGaussReducedForms, mem_gaussReducedForms, and_assoc]
+
 /-- For nonsquare `D`, the reduction step as a permutation of `primitiveGaussReducedForms D`. -/
 noncomputable def primitiveReductionPerm : Equiv.Perm (primitiveGaussReducedForms D) :=
-  Equiv.ofBijective
-    (fun f ↦ ⟨f.1.reductionStep, by
-      obtain ⟨hD, hf, hp⟩ := mem_primitiveGaussReducedForms.mp f.2
-      exact mem_primitiveGaussReducedForms.mpr
-        ⟨by rw [discrim_reductionStep, hD], hf.reductionStep (not_isSquare_of_discrim_eq hD),
-          (isPrimitive_reductionStep f.1).mpr hp⟩⟩)
-    (Finite.injective_iff_bijective.mp fun f g h ↦ by
-      obtain ⟨hDf, hf, -⟩ := mem_primitiveGaussReducedForms.mp f.2
-      obtain ⟨hDg, hg, -⟩ := mem_primitiveGaussReducedForms.mp g.2
-      exact Subtype.ext <| reductionStep_injOn ⟨hf, not_isSquare_of_discrim_eq hDf⟩
-        ⟨hg, not_isSquare_of_discrim_eq hDg⟩ (congrArg Subtype.val h))
+  (primitiveGaussReducedFormsEquiv D).permCongr <|
+    (reductionPerm D).subtypePerm fun f ↦ by
+      rw [coe_reductionPerm_apply, isPrimitive_reductionStep]
 
 variable {D}
 
@@ -584,20 +575,7 @@ variable {D}
 @[simp] theorem coe_primitiveReductionPerm_apply (f : primitiveGaussReducedForms D) :
     (primitiveReductionPerm D f : BinaryQuadraticForm ℤ) =
       (f : BinaryQuadraticForm ℤ).reductionStep := by
-  simp only [primitiveReductionPerm, Equiv.ofBijective_apply]
-
-/-- Iterates of `primitiveReductionPerm D` agree with iterates of `reductionPerm D` on the
-underlying form. -/
-private theorem coe_primitiveReductionPerm_pow (f : primitiveGaussReducedForms D) (n : ℕ) :
-    (((primitiveReductionPerm D ^ n) f : primitiveGaussReducedForms D) : BinaryQuadraticForm ℤ) =
-      (((reductionPerm D ^ n)
-        ⟨f.1, primitiveGaussReducedForms_subset_gaussReducedForms D f.2⟩ : gaussReducedForms D) :
-          BinaryQuadraticForm ℤ) := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply, coe_primitiveReductionPerm_apply,
-      pow_succ', Equiv.Perm.mul_apply, coe_reductionPerm_apply, ih]
+  simp [primitiveReductionPerm, primitiveGaussReducedFormsEquiv]
 
 /-- Inclusion into `gaussReducedForms D` preserves and reflects cycles of `primitiveReductionPerm D`
 and `reductionPerm D`. -/
@@ -607,17 +585,8 @@ theorem sameCycle_primitiveReductionPerm_iff_sameCycle_reductionPerm
       (reductionPerm D).SameCycle
         ⟨f.1, primitiveGaussReducedForms_subset_gaussReducedForms D f.2⟩
         ⟨g.1, primitiveGaussReducedForms_subset_gaussReducedForms D g.2⟩ := by
-  constructor
-  · intro h
-    obtain ⟨n, hn⟩ := h.exists_nat_pow_eq
-    refine ⟨n, ?_⟩
-    rw [zpow_natCast]
-    exact Subtype.ext ((coe_primitiveReductionPerm_pow f n).symm.trans (congrArg Subtype.val hn))
-  · intro h
-    obtain ⟨n, hn⟩ := h.exists_nat_pow_eq
-    refine ⟨n, ?_⟩
-    rw [zpow_natCast]
-    exact Subtype.ext ((coe_primitiveReductionPerm_pow f n).trans (congrArg Subtype.val hn))
+  rw [primitiveReductionPerm, Equiv.Perm.sameCycle_permCongr_iff, Equiv.Perm.sameCycle_subtypePerm]
+  rfl
 
 /-- **Gauss's theorem for primitive reduced forms**: two primitive Gauss reduced forms of nonsquare
 discriminant `D` lie in the same cycle of `primitiveReductionPerm D` if and only if they are

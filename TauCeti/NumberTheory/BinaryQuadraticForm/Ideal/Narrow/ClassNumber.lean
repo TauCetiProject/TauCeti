@@ -30,13 +30,13 @@ a canonical bijection `primitiveCycleEquivNarrowPic` between cycles of primitive
 and `NarrowPic O_D`, expressing `#NarrowPic O_D` as the number of primitive reduction cycles
 (`nat_card_narrowPic`).
 
-Under the forgetful homomorphism `O_D.narrowToPic : NarrowPic O_D →* Pic O_D`, the oriented narrow
-class `f.narrowPicClass` projects to the wide Picard class `picClass`
-(`narrowToPic_narrowPicClass`), because the sign-correction factor `√D` generates a principal ideal.
-When `D > 0` is a fundamental discriminant, `O_D` is the maximal order of `ℚ(√D)`
-(`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), so `maximalOrderNarrowPicEquiv` identifies
-`NarrowPic O_D` with `NumberField.NarrowClassGroup` and counts the narrow class group by primitive
-cycles (`nat_card_narrowClassGroup`).
+Combined with `narrowToPic_narrowPicClass` (which projects `f.narrowPicClass` to `picClass` under
+the forgetful homomorphism `O_D.narrowToPic : NarrowPic O_D →* Pic O_D`), every wide Picard class
+of `O_D` is represented by a primitive Gauss reduced form
+(`exists_mem_primitiveGaussReducedForms_picClass_eq`). When `D > 0` is a fundamental discriminant,
+`O_D` is the maximal order of `ℚ(√D)` (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), so
+`maximalOrderNarrowPicEquiv` identifies `NarrowPic O_D` with `NumberField.NarrowClassGroup` and
+counts the narrow class group by primitive cycles (`nat_card_narrowClassGroup`).
 
 The final section certifies the narrow and wide class numbers at the three canonical indefinite test
 discriminants `D = 5`, `8`, and `12`:
@@ -60,9 +60,8 @@ discriminants `D = 5`, `8`, and `12`:
   `primitiveReductionPerm D` and `NarrowPic (QuadraticOrder.numberFieldOrder D hD)`.
 * `TauCeti.BinaryQuadraticForm.nat_card_narrowPic`: cycle-count formula for
   `NarrowPic (QuadraticOrder.numberFieldOrder D hD)`.
-* `TauCeti.BinaryQuadraticForm.narrowToPic_narrowPicClass` and
-  `TauCeti.BinaryQuadraticForm.picClass_eq_of_sameCycle`: projection from `narrowPicClass` to
-  `picClass` and cycle-invariance of `picClass`.
+* `TauCeti.BinaryQuadraticForm.picClass_eq_of_sameCycle`: forms in the same primitive reduction
+  cycle represent the same wide Picard class.
 * `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup`: for a positive fundamental discriminant
   `D`, `#Cl⁺(ℚ(√D))` equals the number of cycles of `primitiveReductionPerm D`.
 * `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_five`,
@@ -94,15 +93,6 @@ open GlobalNumberFields
 section Order
 
 variable (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)]
-
-/-- Forgetting positivity maps the oriented narrow class of a primitive form to its wide Picard
-class, because the orientation factor `idealSignFactor` generates a principal ideal. -/
-@[simp] theorem narrowToPic_narrowPicClass {f : BinaryQuadraticForm ℤ} (hf : f.discrim = D)
-    (hprim : f.IsPrimitive) :
-    (QuadraticOrder.numberFieldOrder D hD).narrowToPic (f.narrowPicClass D hf hprim) =
-      picClass D hD ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hprim⟩⟩ := by
-  rw [narrowPicClass_def, NumberFieldOrder.narrowToPic_mk, orientedInvertibleFractionalIdeal_def,
-    map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul, picClass_def]
 
 /-- Forms in the same cycle of `primitiveReductionPerm D` represent the same wide Picard class. -/
 theorem picClass_eq_of_sameCycle {f g : primitiveGaussReducedForms D}

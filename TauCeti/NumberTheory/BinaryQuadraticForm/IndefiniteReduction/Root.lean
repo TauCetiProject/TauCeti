@@ -13,33 +13,41 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 /-!
 # Real roots of indefinite binary quadratic forms
 
-An integral binary quadratic form `f = a x² + b x y + c y²` of positive discriminant
-`D = b² - 4 a c` has two distinct real roots for the inhomogeneous polynomial `a t² + b t + c`:
-its **first root** `ω₁(f) = (-b + √D) / (2 a)` and its **second root** `ω₂(f) = (-b - √D) / (2 a)`.
-Unlike positive definite forms, whose leading coefficient has a fixed sign, an indefinite form in a
-proper equivalence class or in a cycle of Gauss reduced forms alternates the sign of `a`, so both
-roots are real and neither lies in a half-plane. Nonetheless, because changes of variables in
-`SL(2, ℤ)` have determinant `+1` rather than `-1`, the Möbius transformation
-`t ↦ (p t + q) / (r t + s)` of `γ = !![p, q; r, s] ∈ SL(2, ℤ)` carries the first root of `f` to the
-first root of `γ • f` and the second root of `f` to the second root of `γ • f`, regardless of the
-signs of `a` and `(γ • f).a`.
+For an integral binary quadratic form `f = a x² + b x y + c y²` of discriminant `D = b² - 4 a c`,
+we define the real root expressions `ω₁(f) = (-b + √D) / (2 a)` (`firstRoot`) and
+`ω₂(f) = (-b - √D) / (2 a)` (`secondRoot`) unconditionally (using Lean's real square root and
+division-by-zero conventions). When `D ≥ 0` and `a ≠ 0`, these are the real roots of the
+inhomogeneous quadratic polynomial `a t² + b t + c` (`eval_firstRoot`, `eval_secondRoot`), and they
+are distinct when `D > 0`.
 
-When `D ≥ 0` is not a square, `√D` is irrational, so `ω₁(f)` and `ω₂(f)` are irrational
+When `D ≥ 0` is not a square (which forces `a ≠ 0`, and likewise `(γ • f).a ≠ 0` for every
+`γ ∈ SL(2, ℤ)`), `√D` is irrational, so `ω₁(f)` and `ω₂(f)` are irrational
 (`irrational_firstRoot`, `irrational_secondRoot`) and `ω₁(f)` uniquely determines all three
 coefficients `(a, b, c)` among forms of discriminant `D` (`firstRoot_injOn`): the `√D`-component
 `1 / (2 a)` fixes `a`, the rational part `-b / (2 a)` fixes `b`, and the discriminant fixes `c`.
+Unlike positive definite forms, whose leading coefficient has a fixed sign, an indefinite form of
+nonnegative nonsquare discriminant alternates the sign of `a` along a proper equivalence class or a
+cycle of Gauss reduced forms, so both roots are real and neither lies in a half-plane. Nonetheless,
+for nonnegative nonsquare `D`, every Möbius denominator `r ωᵢ(f) + s` is nonzero and, because
+changes of variables in `SL(2, ℤ)` have determinant `+1` rather than `-1`, the Möbius
+transformation `t ↦ (p t + q) / (r t + s)` of `γ = !![p, q; r, s] ∈ SL(2, ℤ)` carries `ω₁(f)` to
+`ω₁(γ • f)` and `ω₂(f)` to `ω₂(γ • f)` regardless of the signs of `a` and `(γ • f).a`
+(`firstRoot_smul`, `secondRoot_smul`).
 
-In terms of the two roots, Gauss reducedness of `f` is equivalent to the classical root separation
-condition (`isGaussReduced_iff_roots`):
-`ω₁(f) * ω₂(f) < 0`, `|ω₁(f)| < 1`, and `1 < |ω₂(f)|`.
-One reduction step `f ↦ f.reductionStep` acts on `ω₁(f)` by the continued-fraction step
-`ω₁(f.reductionStep) = -q - 1 / ω₁(f)` with `q = (⌊√D⌋ + b) / (2 c)`
-(`firstRoot_mul_firstRoot_reductionStep`).
+In terms of the two root expressions, Gauss reducedness of `f` is unconditionally equivalent to the
+classical root separation condition (`isGaussReduced_iff_roots`):
+`ω₁(f) * ω₂(f) < 0`, `|ω₁(f)| < 1`, and `1 < |ω₂(f)|` (both sides are false when `a = 0` or
+`D ≤ 0`). For a nonnegative nonsquare discriminant `D`, one reduction step `f ↦ f.reductionStep`
+satisfies `ω₁(f) ω₁(f.reductionStep) = -q ω₁(f) - 1` (equivalently
+`ω₁(f.reductionStep) = -q - 1 / ω₁(f)`, since `ω₁(f)` is irrational and hence nonzero) with
+`q = (⌊√D⌋ + b) / (2 c)` (`firstRoot_mul_firstRoot_reductionStep`).
 
 ## Main definitions
 
-* `TauCeti.BinaryQuadraticForm.firstRoot`: the real number `(-b + √D) / (2 a)`.
-* `TauCeti.BinaryQuadraticForm.secondRoot`: the real number `(-b - √D) / (2 a)`.
+* `TauCeti.BinaryQuadraticForm.firstRoot`: the real root expression `(-b + √D) / (2 a)` (a genuine
+  root of `a t² + b t + c` when `D ≥ 0` and `a ≠ 0`).
+* `TauCeti.BinaryQuadraticForm.secondRoot`: the real root expression `(-b - √D) / (2 a)` (a genuine
+  root of `a t² + b t + c` when `D ≥ 0` and `a ≠ 0`).
 
 ## Main results
 
@@ -51,12 +59,13 @@ One reduction step `f ↦ f.reductionStep` acts on `ω₁(f)` by the continued-f
 * `TauCeti.BinaryQuadraticForm.firstRoot_injOn`: for a nonnegative nonsquare discriminant `D`, a
   form of discriminant `D` is determined by its first root.
 * `TauCeti.BinaryQuadraticForm.firstRoot_smul` and `TauCeti.BinaryQuadraticForm.secondRoot_smul`:
-  both roots transform by the Möbius action of `SL(2, ℤ)`.
-* `TauCeti.BinaryQuadraticForm.denom_inv_mul_denom_firstRoot`: the Möbius automorphy-factor
-  identity `((γ⁻¹ 1 0) ω₁(γ • f) + γ⁻¹ 1 1) ((γ 1 0) ω₁(f) + γ 1 1) = 1`.
-* `TauCeti.BinaryQuadraticForm.reductionStep_eq_smul` and
-  `TauCeti.BinaryQuadraticForm.firstRoot_mul_firstRoot_reductionStep`: explicit matrix action of
-  `reductionStep` on forms and on `firstRoot`.
+  for a nonnegative nonsquare discriminant, both roots transform by the Möbius action of
+  `SL(2, ℤ)`.
+* `TauCeti.BinaryQuadraticForm.denom_inv_mul_denom_firstRoot`: for a nonnegative nonsquare
+  discriminant, the Möbius automorphy-factor identity
+  `((γ⁻¹ 1 0) ω₁(γ • f) + γ⁻¹ 1 1) ((γ 1 0) ω₁(f) + γ 1 1) = 1`.
+* `TauCeti.BinaryQuadraticForm.firstRoot_mul_firstRoot_reductionStep`: for a nonnegative nonsquare
+  discriminant, the continued-fraction relation `ω₁(f) ω₁(f.reductionStep) = -q ω₁(f) - 1`.
 
 ## References
 
@@ -73,13 +82,17 @@ open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
 
-/-- The **first root** `(-b + √D) / (2 a)` of an integral binary quadratic form
-`f = a x² + b x y + c y²` of discriminant `D = b² - 4 a c`. -/
+/-- The **first root expression** `(-b + √D) / (2 a)` of an integral binary quadratic form
+`f = a x² + b x y + c y²` of discriminant `D = b² - 4 a c`, defined unconditionally using Lean's
+real square root and division-by-zero conventions; it is a genuine root of `a t² + b t + c = 0`
+when `D ≥ 0` and `a ≠ 0` (`eval_firstRoot`). -/
 noncomputable def firstRoot (f : BinaryQuadraticForm ℤ) : ℝ :=
   (-(f.b : ℝ) + √(f.discrim : ℝ)) / (2 * f.a)
 
-/-- The **second root** `(-b - √D) / (2 a)` of an integral binary quadratic form
-`f = a x² + b x y + c y²` of discriminant `D = b² - 4 a c`. -/
+/-- The **second root expression** `(-b - √D) / (2 a)` of an integral binary quadratic form
+`f = a x² + b x y + c y²` of discriminant `D = b² - 4 a c`, defined unconditionally using Lean's
+real square root and division-by-zero conventions; it is a genuine root of `a t² + b t + c = 0`
+when `D ≥ 0` and `a ≠ 0` (`eval_secondRoot`). -/
 noncomputable def secondRoot (f : BinaryQuadraticForm ℤ) : ℝ :=
   (-(f.b : ℝ) - √(f.discrim : ℝ)) / (2 * f.a)
 
@@ -364,7 +377,8 @@ theorem denom_secondRoot_ne_zero {f : BinaryQuadraticForm ℤ} (hpos : 0 ≤ f.d
   rw [← firstRoot_neg]
   exact denom_firstRoot_ne_zero (hd.symm ▸ hpos) (hd.symm ▸ hD) γ
 
-/-- Cleared-denominator Möbius covariance of `firstRoot` under `SL(2, ℤ)`. -/
+/-- Cleared-denominator Möbius covariance of `firstRoot` under `SL(2, ℤ)` for a form of nonnegative
+nonsquare discriminant. -/
 theorem denom_mul_firstRoot_smul {f : BinaryQuadraticForm ℤ} (hpos : 0 ≤ f.discrim)
     (hD : ¬ IsSquare f.discrim) (γ : SL(2, ℤ)) :
     ((γ 1 0 : ℝ) * f.firstRoot + γ 1 1) * (γ • f).firstRoot =
@@ -374,7 +388,8 @@ theorem denom_mul_firstRoot_smul {f : BinaryQuadraticForm ℤ} (hpos : 0 ≤ f.d
     (a_ne_zero_of_not_isSquare_discrim (by rwa [discrim_smul]))
   simpa only [rootAux, discrim_smul, firstRoot_def] using h
 
-/-- Cleared-denominator Möbius covariance of `secondRoot` under `SL(2, ℤ)`. -/
+/-- Cleared-denominator Möbius covariance of `secondRoot` under `SL(2, ℤ)` for a form of nonnegative
+nonsquare discriminant. -/
 theorem denom_mul_secondRoot_smul {f : BinaryQuadraticForm ℤ} (hpos : 0 ≤ f.discrim)
     (hD : ¬ IsSquare f.discrim) (γ : SL(2, ℤ)) :
     ((γ 1 0 : ℝ) * f.secondRoot + γ 1 1) * (γ • f).secondRoot =
@@ -403,8 +418,9 @@ theorem secondRoot_smul {f : BinaryQuadraticForm ℤ} (hpos : 0 ≤ f.discrim)
   (eq_div_iff_mul_eq (denom_secondRoot_ne_zero hpos hD γ)).mpr
     (by rw [mul_comm]; exact denom_mul_secondRoot_smul hpos hD γ)
 
-/-- **Automorphy-factor product identity**: the Möbius denominators of `γ` at `f.firstRoot` and of
-`γ⁻¹` at `(γ • f).firstRoot` multiply to `1`. -/
+/-- **Automorphy-factor product identity**: for a form `f` of nonnegative nonsquare discriminant,
+the Möbius denominators of `γ` at `f.firstRoot` and of `γ⁻¹` at `(γ • f).firstRoot` multiply to
+`1`. -/
 theorem denom_inv_mul_denom_firstRoot {f : BinaryQuadraticForm ℤ} (hpos : 0 ≤ f.discrim)
     (hD : ¬ IsSquare f.discrim) (γ : SL(2, ℤ)) :
     ((γ⁻¹ 1 0 : ℝ) * (γ • f).firstRoot + γ⁻¹ 1 1) * ((γ 1 0 : ℝ) * f.firstRoot + γ 1 1) = 1 := by
@@ -416,20 +432,6 @@ theorem denom_inv_mul_denom_firstRoot {f : BinaryQuadraticForm ℤ} (hpos : 0 �
     simp [Matrix.SpecialLinearGroup.SL2_inv_expl]
   rw [hinv₀, hinv₁]
   linear_combination -(γ 1 0 : ℝ) * hm + hdet
-
-/-- Explicit change-of-variables formula for `reductionStep`:
-`f.reductionStep = (T ^ (-((Int.sqrt f.discrim + f.b) / (2 * f.c))) * S) • f`. -/
-theorem reductionStep_eq_smul (f : BinaryQuadraticForm ℤ) :
-    f.reductionStep =
-      (ModularGroup.T ^ (-((Int.sqrt f.discrim + f.b) / (2 * f.c))) * ModularGroup.S) • f := by
-  ext
-  · rw [reductionStep_a, mul_smul, S_smul, T_zpow_smul]
-  · rw [reductionStep_b, mul_smul, S_smul, T_zpow_smul]
-    dsimp only
-    linear_combination -Int.mul_ediv_add_emod (Int.sqrt f.discrim + f.b) (2 * f.c)
-  · rw [reductionStep_c, mul_smul, S_smul, T_zpow_smul]
-    dsimp only
-    ring
 
 /-- **Action of `reductionStep` on `firstRoot`**: for `f` of nonnegative nonsquare discriminant,
 `ω₁(f) ω₁(f.reductionStep) = -q ω₁(f) - 1` where `q = (⌊√D⌋ + b) / (2 c)`. -/

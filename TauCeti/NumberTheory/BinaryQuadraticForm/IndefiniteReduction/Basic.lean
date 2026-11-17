@@ -270,6 +270,13 @@ reduced forms (`reductionPerm`). -/
 def reductionStep (f : BinaryQuadraticForm ℤ) : BinaryQuadraticForm ℤ :=
   (ModularGroup.T ^ (-((Int.sqrt f.discrim + f.b) / (2 * f.c))) * ModularGroup.S) • f
 
+/-- Explicit change-of-variables formula for `reductionStep`:
+`f.reductionStep = (T ^ (-((Int.sqrt f.discrim + f.b) / (2 * f.c))) * S) • f`. -/
+theorem reductionStep_eq_smul (f : BinaryQuadraticForm ℤ) :
+    f.reductionStep =
+      (ModularGroup.T ^ (-((Int.sqrt f.discrim + f.b) / (2 * f.c))) * ModularGroup.S) • f := by
+  rfl
+
 /-- The reduction step is a proper change of variables. -/
 theorem reductionStep_mem_orbit (f : BinaryQuadraticForm ℤ) :
     f.reductionStep ∈ orbit SL(2, ℤ) f :=
@@ -279,6 +286,16 @@ theorem reductionStep_mem_orbit (f : BinaryQuadraticForm ℤ) :
 @[simp] theorem discrim_reductionStep (f : BinaryQuadraticForm ℤ) :
     f.reductionStep.discrim = f.discrim :=
   discrim_smul _ f
+
+/-- The reduction step preserves the content of a form. -/
+@[simp] theorem content_reductionStep (f : BinaryQuadraticForm ℤ) :
+    f.reductionStep.content = f.content :=
+  content_smul f _
+
+/-- The reduction step preserves primitivity. -/
+@[simp] theorem isPrimitive_reductionStep (f : BinaryQuadraticForm ℤ) :
+    f.reductionStep.IsPrimitive ↔ f.IsPrimitive :=
+  isPrimitive_smul_iff f _
 
 /-- The first coefficient of `f.reductionStep` is the last coefficient of `f`. -/
 @[simp] theorem reductionStep_a (f : BinaryQuadraticForm ℤ) : f.reductionStep.a = f.c := by
