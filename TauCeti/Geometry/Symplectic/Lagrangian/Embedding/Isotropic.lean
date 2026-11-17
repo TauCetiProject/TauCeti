@@ -134,6 +134,7 @@ theorem IsIsotropicEmbedding.two_mul_finrank_le [Nonempty N] (h : hσ.IsIsotropi
   h.isIsotropicMap.two_mul_finrank_le
     (h.isImmersion.mfderiv_injective (by simp) (Classical.arbitrary N))
 
+omit [FiniteDimensional ℝ E] in
 /-- A coisotropic embedding of a nonempty finite-dimensional manifold has at least half the
 ambient dimension: `dim M ≤ 2 dim N`. -/
 theorem IsCoisotropicEmbedding.finrank_le_two_mul_finrank [FiniteDimensional ℝ F] [Nonempty N]
