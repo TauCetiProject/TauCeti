@@ -399,7 +399,14 @@ jobs:
           if [ -z "$files" ] && [ "$repair_pr" = 0 ]; then
             echo "INFRA=1" >> "$GITHUB_ENV"; echo "::warning::no files / unable to list — cannot determine scope, routing to human"
           elif [ -n "$files" ]; then
-            if echo "$files" | grep -vqE '^TauCeti/|^TauCeti\.lean$|^lake-manifest\.json$|^lean-toolchain$|^docbuild/docs/references\.bib$'; then
+            # The allowed set is TauCetiTools' shared `ci_git.out_of_scope`, the same one
+            # `lake lint` applies locally. If it cannot answer, fail closed to a human.
+            if ! outside=$(printf '%s\n' "$files" | python3 gate/scripts/ci_git.py scope); then
+              outside=""
+              echo "INFRA=1" >> "$GITHUB_ENV"
+              echo "::warning::cannot classify the changed paths — routing to human"
+            fi
+            if [ -n "$outside" ]; then
               if echo "$files" | grep -qE '^lakefile\.(toml|lean)$'; then
                 echo "HUMAN_LAKEFILE=1" >> "$GITHUB_ENV"
               fi
@@ -479,9 +486,9 @@ jobs:
         # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
         # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
         # size here. The combined batch scope uses a complete local Git diff.
-        # The measure is `ci_git.py review-size` on the exact merge base and head. The staging
-        # candidate's retained-member policy calls the same function, so the two checks cannot
-        # disagree. It detects renames like GitHub's PR totals: a moved file counts only its edits.
+        # The measure is `ci_git.py pr-guards` on the exact merge base and head. `lake lint`, queue
+        # admission of self-tested PRs and the staging candidate's retained-member policy call the
+        # same TauCetiTools function, so none of them can disagree. It detects renames like GitHub's PR totals: a moved file counts only its edits.
         # A PR that moves the Lake pins is exempt from the two line caps: its diff is whatever the
         # upstream Mathlib/Lean changes force, so splitting it is not possible without an
         # intermediate bump. Such a PR still has to pass the trusted bump validator before anything
@@ -493,7 +500,7 @@ jobs:
         run: |
           size=""
           if [ "${MERGEBASE_EXACT:-0}" = "1" ]; then
-            size=$(python3 gate/scripts/ci_git.py review-size --checkout pr --base "$SIZE_BASE" --head "$SIZE_HEAD") || size=""
+            size=$(python3 gate/scripts/ci_git.py pr-guards --no-scope --checkout pr --base "$SIZE_BASE" --head "$SIZE_HEAD") || size=""
           fi
           printf '%s\n' "$size" > "$RUNNER_TEMP/review-size.json"
           read -r adds dels files pins too_large < <(printf '%s' "$size" | jq -r \
@@ -509,7 +516,7 @@ jobs:
           fi
           if [ "$too_large" = "true" ]; then
             echo "TOO_LARGE=1" >> "$GITHUB_ENV"
-            echo "::error::This PR is too large to review: +$adds / -$dels lines across $files files (cap: 2000 added lines, 2000 removed lines, 2000 files). We cap diff size to keep review manageable — reviewers, AI and human alike, do far better work on small, focused PRs. Please split this into smaller PRs, one topic each. We are open to raising the cap once there is evidence that review is working well at the current size."
+            echo "::error::This PR is $(printf '%s' "$size" | jq -r '.violations[0]') We cap diff size to keep review manageable — reviewers, AI and human alike, do far better work on small, focused PRs. We are open to raising the cap once there is evidence that review is working well at the current size. Run lake lint to check locally."
             exit 1
           elif [ "$pins" = "true" ]; then
             echo "::notice::PR moves the Lake pins, so the added/removed line caps do not apply"
@@ -530,11 +537,9 @@ jobs:
             echo "::error::could not read the PR's measured new files; failing closed"
             exit 1
           fi
-          long=$(jq -r '.new_files_too_long[] | "\(.[0]) (\(.[1]) lines)"' "$measured")
-          if [ -n "$long" ]; then
+          if [ "$(jq '.new_files_too_long | length' "$measured")" != 0 ]; then
             echo "NEWFILE_TOO_LONG=1" >> "$GITHUB_ENV"
-            echo "::error::New .lean files must be at most 1000 lines; these exceed it. Split them, or grow an existing file (allowed up to 1500):"
-            echo "$long"
+            jq -r '.violations[] | select(contains("new Lean files")) | "::error::" + .' "$measured"
           fi
 
       # Capture B once: both forward-bump policy and ordinary PR integration use this
