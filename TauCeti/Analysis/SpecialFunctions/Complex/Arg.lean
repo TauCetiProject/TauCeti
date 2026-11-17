@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
@@ -184,8 +185,8 @@ theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ 
 /-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
 theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
     t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
-  rw [norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
-    mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+  simpa [NormedSpace.normalize, real_smul, div_eq_inv_mul] using
+    NormedSpace.normalize_smul_of_pos ht z
 
 /-- The power `(z / |z|)^m` of the unit direction is smooth away from the origin. -/
 theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
