@@ -7,14 +7,13 @@ module
 
 public import TauCeti.Algebra.Star.Jordan.Basic
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
-import Mathlib.LinearAlgebra.Matrix.Notation
-import Mathlib.Tactic.NormNum
+import Mathlib.Data.Matrix.Basis
 
 /-!
 # Transpose as a Jordan star automorphism
 
 Matrix transposition preserves adjoints and squares, although it reverses multiplication.
-The two by two matrix units distinguish Jordan star automorphisms from algebra automorphisms.
+Matrix units distinguish Jordan star automorphisms from algebra automorphisms.
 -/
 
 public section
@@ -44,17 +43,32 @@ def transpose (n R : Type*) [Fintype n] [NonUnitalNonAssocCommSemiring R]
     [NonUnitalNonAssocCommSemiring R] [Star R] [Module ℂ R] :
     (transpose n R).toLinearEquiv = Matrix.transposeLinearEquiv n n ℂ R := (rfl)
 
+@[simp] theorem transpose_trans_transpose (n R : Type*) [Fintype n]
+    [NonUnitalNonAssocCommSemiring R] [Star R] [Module ℂ R] :
+    (transpose n R).trans (transpose n R) = refl := by
+  ext x
+  simp
+
 -- Transposition fixes the identity matrix.
 example : transpose (Fin 2) ℂ 1 = 1 := map_one _
 
-/-- Transposition on two by two complex matrices is not multiplicative. -/
-theorem not_forall_transpose_fin_two_mul :
-    ¬ ∀ x y : Matrix (Fin 2) (Fin 2) ℂ,
-      transpose (Fin 2) ℂ (x * y) = transpose (Fin 2) ℂ x * transpose (Fin 2) ℂ y := by
-  -- The matrix units e₁₂ and e₂₁ distinguish the two products.
+/-- Transposition of square matrices over a nontrivial commutative semiring, indexed by a
+type with at least two elements, is not multiplicative. -/
+theorem not_forall_transpose_mul (n R : Type*) [Fintype n] [Nontrivial n]
+    [NonAssocCommSemiring R] [Star R] [Module ℂ R] [Nontrivial R] :
+    ¬ ∀ x y : Matrix n n R, transpose n R (x * y) = transpose n R x * transpose n R y := by
+  classical
+  obtain ⟨i, j, hij⟩ := exists_pair_ne n
   intro h
-  have h00 := congrArg (fun m : Matrix (Fin 2) (Fin 2) ℂ ↦ m 0 0)
-    (h !![0, 1; 0, 0] !![0, 0; 1, 0])
-  norm_num [Matrix.mul_apply, Fin.sum_univ_two, transpose_apply] at h00
+  -- The matrix units at `(i, j)` and `(j, i)` multiply to the unit at `(i, i)` in one order and
+  -- to the unit at `(j, j)` in the other, so the `(i, i)` entries differ.
+  have hii := congrArg (fun m : Matrix n n R ↦ m i i)
+    (h (Matrix.single i j 1) (Matrix.single j i 1))
+  simp [Matrix.transpose_single, hij] at hii
+
+-- The two by two complex instance.
+example : ¬ ∀ x y : Matrix (Fin 2) (Fin 2) ℂ,
+    transpose (Fin 2) ℂ (x * y) = transpose (Fin 2) ℂ x * transpose (Fin 2) ℂ y :=
+  not_forall_transpose_mul (Fin 2) ℂ
 
 end TauCeti.JordanStarEquiv
