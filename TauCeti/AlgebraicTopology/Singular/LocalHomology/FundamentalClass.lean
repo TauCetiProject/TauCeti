@@ -90,6 +90,9 @@ homology isomorphism directly, without requiring Poincaré duality.
   of the pulled-back orientation forward along `f ∘ e` is pushing that of `o` forward along `f`.
 * `TauCeti.HomologicalOrientation.exists_eq_zsmul_fundamentalClass`: on a compact connected
   oriented manifold, every top-dimensional class is a multiple of the fundamental class.
+* `TauCeti.HomologicalOrientation.singularHomologyMap_eq_of_mapFundamentalClass_eq`: maps of a
+  compact connected oriented manifold with the same image of the fundamental class induce the same
+  map on top-dimensional homology.
 
 ## Implementation notes
 
@@ -582,6 +585,18 @@ theorem exists_eq_zsmul_fundamentalClass
     ∃ d : ℤ, γ = d • o.fundamentalClass hn := by
   obtain ⟨d, rfl⟩ := (o.fundamentalClassEquiv hn).surjective γ
   exact ⟨d, fundamentalClassEquiv_apply o hn d⟩
+
+/-- On a compact connected oriented manifold, two maps `f, g : M → X` with `f_*[M] = g_*[M]` induce
+the same map `Hₙ(M; ℤ) → Hₙ(X; ℤ)`, since the fundamental class generates `Hₙ(M; ℤ)`. -/
+theorem singularHomologyMap_eq_of_mapFundamentalClass_eq {X : Type} [TopologicalSpace X]
+    {f g : C(M, X)} (h : o.mapFundamentalClass hn f = o.mapFundamentalClass hn g) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom g) := by
+  ext γ
+  obtain ⟨d, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hn γ
+  exact (map_zsmul _ d _).trans ((congrArg (d • ·) h).trans (map_zsmul _ d _).symm)
 
 /-- **The rational fundamental class generates top homology freely.** For a compact connected
 oriented manifold, rational extension of its integral fundamental-class equivalence gives
