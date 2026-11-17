@@ -556,7 +556,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The Littlewood–Paley cutoff `ψ₀`, as a complex-valued function, satisfies the hypotheses of
 the dispersive estimates for dilated cutoffs; `ψⱼ` is its dilate `ψ₀ (2^{-j} ·)`. -/
-private theorem contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero :
+theorem contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero :
     ContDiff ℝ ∞ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) ∧
       HasCompactSupport (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) ∧
       (0 : E) ∉ tsupport (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) :=

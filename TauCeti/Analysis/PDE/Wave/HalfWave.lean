@@ -24,8 +24,7 @@ are the unitary operators `exp(itω(D))` of `TauCeti.phasePropagator` with the p
 
 This file names `W₊(t) = TauCeti.halfWavePropagator F t`; reversing the phase reverses time, so
 `W₋(t) = W₊(-t)` (`TauCeti.halfWavePropagator_neg`). The group law, unitarity, strong continuity
-and commutation with Fourier multipliers are the general laws of `TauCeti.phasePropagator`; the
-group law, adjoint and commutation are restated here under the half-wave name, and
+and commutation with Fourier multipliers are the general laws of `TauCeti.phasePropagator`, and
 `TauCeti.phaseGroup E F TauCeti.sqrtNegLaplacianSymbol` is the strongly continuous unitary
 half-wave group. Unlike the Schrödinger propagator, `W±(t)` is not bounded from `L¹` to `L^∞`
 for `t ≠ 0`: its dispersive estimate `‖W±(t) P_j f‖_∞ ≲ 2^{jn} (1 + 2^j |t|)^{-(n-1)/2} ‖f‖₁` is
@@ -37,10 +36,10 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
 * `TauCeti.halfWavePropagator`: the propagator `W₊(t) = exp(itD)` on `L²(E, F)`.
 * `TauCeti.coeFn_fourier_halfWavePropagator`: `𝓕 (W₊(t) f) = exp(2πi t ‖·‖) • 𝓕 f`.
 * `TauCeti.halfWavePropagator_neg`: `W₊(-t) = W₋(t)`, the multiplier with phase `-2π ‖·‖`.
-* `TauCeti.halfWavePropagator_add`: the group law `W₊(s + t) = W₊(s) W₊(t)`.
-* `TauCeti.adjoint_halfWavePropagator`: the adjoint of `W₊(t)` is `W₊(-t)`.
-* `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM`: `W₊(t)` commutes with every `L²`
-  Fourier multiplier.
+* `TauCeti.halfWavePropagator_add_apply`, `TauCeti.adjoint_halfWavePropagator` and
+  `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM`: the group law, the adjoint
+  `W₊(t)* = W₊(-t)` and commutation with Fourier multipliers
+  (applied form: `TauCeti.fourierMultiplierCLM_halfWavePropagator_apply`).
 * `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
   away from the origin.
 
@@ -54,7 +53,7 @@ public section
 
 noncomputable section
 
-open scoped FourierTransform ContDiff ENNReal
+open scoped ENNReal FourierTransform ContDiff
 open MeasureTheory Complex Real
 
 namespace TauCeti
@@ -73,6 +72,33 @@ abbrev halfWavePropagator (t : ℝ) :
 theorem halfWavePropagator_def (t : ℝ) :
     halfWavePropagator F t = phasePropagator (E := E) F sqrtNegLaplacianSymbol t :=
   (rfl)
+
+/-- **The group law** `W₊(s + t) = W₊(s) W₊(t)`. -/
+theorem halfWavePropagator_add_apply (s t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    halfWavePropagator F (s + t) f = halfWavePropagator F s (halfWavePropagator F t f) :=
+  phasePropagator_add_apply _ s t f
+
+/-- The adjoint of `W₊(t)` is `W₊(-t)`. -/
+theorem adjoint_halfWavePropagator (t : ℝ) :
+    ContinuousLinearMap.adjoint (halfWavePropagator (E := E) F t) = halfWavePropagator F (-t) :=
+  adjoint_phasePropagator _ t
+
+/-- `W₊(t)` is a contraction on `L²`. -/
+theorem norm_halfWavePropagator_le (t : ℝ) : ‖halfWavePropagator (E := E) F t‖ ≤ 1 :=
+  norm_phasePropagator_le _ t
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
+theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
+    halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
+      Lp.fourierMultiplierCLM F m ∘L halfWavePropagator F t :=
+  phasePropagator_comp_fourierMultiplierCLM _ t m
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier, applied form. -/
+theorem fourierMultiplierCLM_halfWavePropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    Lp.fourierMultiplierCLM F m (halfWavePropagator F t f) =
+      halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) :=
+  (ContinuousLinearMap.ext_iff.1 (halfWavePropagator_comp_fourierMultiplierCLM t m) f).symm
 
 /-- On the Fourier side, `W₊(t)` is pointwise multiplication by `exp(2πi t ‖ξ‖)`, almost
 everywhere. -/
@@ -101,33 +127,5 @@ the phase `-2π ‖·‖`. -/
 theorem halfWavePropagator_neg (t : ℝ) :
     halfWavePropagator F (-t) = phasePropagator (E := E) F (-sqrtNegLaplacianSymbol) t := by
   rw [halfWavePropagator_def, phasePropagator_neg]
-
-/-- The group law `W₊(s + t) = W₊(s) W₊(t)`. -/
-theorem halfWavePropagator_add (s t : ℝ) :
-    halfWavePropagator (E := E) F (s + t) = halfWavePropagator F s ∘L halfWavePropagator F t :=
-  phasePropagator_add sqrtNegLaplacianSymbol s t
-
-/-- The group law `W₊(s + t) f = W₊(s) (W₊(t) f)`, applied form. -/
-theorem halfWavePropagator_add_apply (s t : ℝ) (f : Lp F 2 (volume : Measure E)) :
-    halfWavePropagator F (s + t) f = halfWavePropagator F s (halfWavePropagator F t f) :=
-  phasePropagator_add_apply sqrtNegLaplacianSymbol s t f
-
-/-- The adjoint of `W₊(t)` is `W₊(-t)`. -/
-theorem adjoint_halfWavePropagator (t : ℝ) :
-    ContinuousLinearMap.adjoint (halfWavePropagator (E := E) F t) = halfWavePropagator F (-t) :=
-  adjoint_phasePropagator sqrtNegLaplacianSymbol t
-
-/-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
-theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
-    halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
-      Lp.fourierMultiplierCLM F m ∘L halfWavePropagator F t :=
-  phasePropagator_comp_fourierMultiplierCLM sqrtNegLaplacianSymbol t m
-
-/-- `W₊(t)` commutes with every `L²` Fourier multiplier, applied form. -/
-theorem fourierMultiplierCLM_halfWavePropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
-    (f : Lp F 2 (volume : Measure E)) :
-    Lp.fourierMultiplierCLM F m (halfWavePropagator F t f) =
-      halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) :=
-  (ContinuousLinearMap.ext_iff.1 (halfWavePropagator_comp_fourierMultiplierCLM t m) f).symm
 
 end TauCeti

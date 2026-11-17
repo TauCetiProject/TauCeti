@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
+import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
@@ -19,19 +21,24 @@ cutoff `ψ₀` of `ContDiffBump.littlewoodPaley`. This file proves the Strichart
 frequency-localized half-wave propagators `W₊(t) Pⱼ`, `W₊(t) = exp(itD)`, `D = √(-Δ)`, with
 constants independent of `j`.
 
-A pair `(q, r)` is *wave-admissible* when `2 ≤ r`, `2 < q < ∞` and
+A pair `(q, r)` is *wave-admissible* when `2 < q < ∞` and
 
 `2 / q + (n - 1) / r ≤ (n - 1) / 2`,
 
 the non-endpoint, finite-`q` part of the region of Tao, Theorem 2.6 (the excluded pair
-`(2, ∞)` in dimension `3` has `q = 2`). Admissibility forces `n ≥ 2` and `r > 2`. The regularity
-exponent is the scaling-critical `σ = n / 2 - n / r - 1 / q`. The main estimate is
+`(2, ∞)` in dimension `3` has `q = 2`); it is *sharp* when equality holds. In positive dimension
+admissibility forces `n ≥ 2` and `r > 2`; in dimension `0` the cutoffs, and with them the
+estimates, vanish. The regularity exponent is the scaling-critical `σ = n / 2 - n / r - 1 / q`;
+the power of `2^j` is the one dictated by scaling, since `x ↦ 2^j x` maps `ψ` to its dilate. The
+main estimate is
 
 `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖f‖₂`,
 
 stated, like the Schrödinger estimates of `TauCeti.Analysis.PDE.Schrodinger.Strichartz`, in weak
 form against `G ∈ L^{q'}_t L^{r'}_x`, together with its dual form, the bilinear bound for the
-Duhamel pairings and its retarded restriction to `s < t`.
+Duhamel pairings and its retarded restriction to `s < t`. These are the frequency-localized
+estimates from which the wave Strichartz estimates with data in the homogeneous Sobolev space of
+order `σ` are assembled by Littlewood–Paley summation.
 
 ## The argument
 
@@ -56,6 +63,14 @@ bilinear bound and in `A ^ (1/2)` for the others, which produces the factors `2^
   estimate `‖∫ Pⱼ* W₊(-s) F(s) ds‖₂ ≤ C 2^{jσ} ‖F‖_{L^{q'}_t L^{r'}_x}`.
 * `TauCeti.exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le`: the
   homogeneous estimate, in weak form.
+* `ContDiffBump.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le_of_memLp`:
+  the dispersive estimate for the Littlewood–Paley blocks from `Lᵖ` to `L^q`.
+* `ContDiffBump.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le`,
+  `exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_littlewoodPaley_le`,
+  `ContDiffBump.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le` and
+  `ContDiffBump.exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le`: the four
+  estimates for the Littlewood–Paley blocks along sharp wave-admissible pairs. The symbols `ψⱼ`
+  are real, so `Pⱼ* = Pⱼ`.
 
 ## References
 
@@ -141,6 +156,30 @@ private theorem ofReal_rpow_mul_rpow_two_mul {A c s : ℝ} (hA : 0 ≤ A) (hc : 
 
 variable {ψ : E → ℂ} {q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+include r' in
+/-- In positive dimension `n`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
+`2 < q` has `n ≥ 2` and `r > 2`, so `2 ≤ r`. -/
+private theorem two_le_of_admissible (hq : 2 < q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) : 2 ≤ r := by
+  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
+  have hn : 2 ≤ Module.finrank ℝ E := by
+    by_contra h
+    have h1 : Module.finrank ℝ E = 1 := by omega
+    rw [h1, Nat.cast_one, sub_self, zero_mul, add_zero, zero_div] at hqr
+    linarith
+  have hn' : (1 : ℝ) ≤ Module.finrank ℝ E - 1 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
+    linarith
+  have hρ : (r⁻¹).toReal < 2⁻¹ := by
+    have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
+    linarith [pos_of_mul_pos_right h (by linarith)]
+  rw [← ENNReal.inv_le_inv,
+    ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
+    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
+  exact ENNReal.ofReal_le_ofReal (hρ.le.trans_eq (by simp))
+
 /-- **Interpolated dispersive decay.** Let `(q, r)` be wave-admissible in dimension `n`, and let
 `T` be bounded on `L²` with `‖T‖ ≤ B₁` and `‖T f‖_∞ ≤ C₁ c^n (1 + c |τ|)^(-(n - 1)/2) ‖f‖₁`. Then
 
@@ -184,7 +223,7 @@ private theorem eLpNorm_apply_le_of_eLpNorm_top_le (hq : 2 < q) (hr : 2 ≤ r)
 `U(t) = W₊(t) Pⱼ` decay from `L^{r'}` to `L^r` like `A 2^{2jσ} |s - t| ^ (-2 / q)` along a
 wave-admissible pair, with `A` independent of `j`. -/
 private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (hψ : ContDiff ℝ ∞ ψ)
-    (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) (hq : 2 < q) (hr : 2 ≤ r)
+    (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) (hq : 2 < q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ A : ℝ, 0 < A ∧ ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
@@ -211,8 +250,19 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (hψ : C
     rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
   rw [halfWavePropagator_comp_apply_adjoint, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply,
     ← ContinuousLinearMap.comp_apply]
-  refine eLpNorm_apply_le_of_eLpNorm_top_le hq hr hqr _ (by positivity) (by positivity)
-    (zpow_pos two_pos j) (sub_ne_zero.2 hst) (fun f hf ↦ ?_) ?_ g
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
+  · -- In dimension `0` the symbol of `Pⱼ Pⱼ*` vanishes, and with it the time pairing.
+    have : Subsingleton E := Module.finrank_zero_iff.1 hE
+    have h0 : Lp.fourierMultiplierCLM ℂ m' = 0 := by
+      rw [Lp.fourierMultiplierCLM_of_ae_eq_const (F := ℂ) (c := 0)]
+      · exact zero_smul ℂ (ContinuousLinearMap.id ℂ (Lp ℂ 2 (volume : Measure E)))
+      filter_upwards [hm'] with ξ h
+      rw [h, Subsingleton.elim (((2 : ℝ) ^ j)⁻¹ • ξ) 0, image_eq_zero_of_notMem_tsupport hψ'0]
+    rw [h0, ContinuousLinearMap.comp_zero, zero_apply,
+      eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
+    exact zero_le
+  refine eLpNorm_apply_le_of_eLpNorm_top_le hq (two_le_of_admissible (r' := r') hq hqr hE) hqr _
+    (by positivity) (by positivity) (zpow_pos two_pos j) (sub_ne_zero.2 hst) (fun f hf ↦ ?_) ?_ g
   · -- The `L¹ → L^∞` bound, from the dispersive estimate for dilated cutoffs.
     refine (hC j m' hm' (s - t) f hf).trans ?_
     gcongr ?_ * _
@@ -234,7 +284,7 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (hψ : C
 
 /-- **The bilinear frequency-localized Strichartz estimate for the wave equation.** Let `E` have
 dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and let
-`(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
+`(q, r)` be wave-admissible: `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
 and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C` such
 that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)` and all almost
 everywhere strongly measurable `F, G : ℝ → L²(E)`,
@@ -247,7 +297,7 @@ integral over any part of the `(s, t)` plane, such as the retarded region `s < t
 -/
 theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
-    (hq : 2 < q) (hpq : p.HolderConjugate q) (hr : 2 ≤ r)
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
@@ -260,7 +310,7 @@ theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMul
           eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume *
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨A, hA0, hA⟩ :=
-    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hr hqr
+    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hqr
   obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_adjoint_le (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq
     hpq
@@ -282,7 +332,7 @@ theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMul
 
 /-- **The retarded frequency-localized Strichartz estimate for the wave equation**, in weak form.
 Let `E` have dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and
-let `(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with
+let `(q, r)` be wave-admissible: `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with
 `p` and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C`
 such that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)` and all almost
 everywhere strongly measurable `F, G : ℝ → L²(E)`,
@@ -295,7 +345,7 @@ This is the Duhamel estimate
 against `G`. -/
 theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_fourierMultiplierCLM_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
-    (hq : 2 < q) (hpq : p.HolderConjugate q) (hr : 2 ≤ r)
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
@@ -309,20 +359,13 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_fouri
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨C, hC⟩ :=
     exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le
-      (r' := r') hψ hψc hψ0 hq hpq hr hqr
-  refine ⟨C, fun j m hm F G hF hG ↦ ?_⟩
-  set P := fun s ↦ Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ (star m) (F s))
-  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, ⟪halfWavePropagator ℂ (t - s) (P s), G t⟫_ℂ‖ₑ :=
-        eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖⟪halfWavePropagator ℂ (t - s) (P s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s, ‖⟪halfWavePropagator ℂ (t - s) (P s), G t⟫_ℂ‖ₑ :=
-        lintegral_mono fun t ↦ setLIntegral_le_lintegral _ _
-    _ ≤ _ := hC j m hm F G hF hG
+      (r' := r') hψ hψc hψ0 hq hpq hqr
+  exact ⟨C, fun j m hm F G hF hG ↦
+    (enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm _).trans (hC j m hm F G hF hG)⟩
 
 /-- **The dual frequency-localized Strichartz estimate for the wave equation.** Let `E` have
 dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and let
-`(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
+`(q, r)` be wave-admissible: `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
 and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C` such
 that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)` and every almost
 everywhere strongly measurable `F : ℝ → L²(E)` for which `s ↦ Pⱼ* W₊(-s) F(s)` is integrable,
@@ -330,7 +373,7 @@ everywhere strongly measurable `F : ℝ → L²(E)` for which `s ↦ Pⱼ* W₊(
 `‖∫ Pⱼ* W₊(-s) F(s) ds‖₂ ≤ C 2^{jσ} ‖F‖_{L^p_t L^{r'}_x}`. -/
 theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
-    (hq : 2 < q) (hpq : p.HolderConjugate q) (hr : 2 ≤ r)
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
@@ -342,7 +385,7 @@ theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
             Module.finrank ℝ E * (r⁻¹).toReal - 1 / q)) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
   obtain ⟨A, hA0, hA⟩ :=
-    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hr hqr
+    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hqr
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E))
     (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq hpq
   refine ⟨C * (√A).toNNReal, fun j m hm F hF hPF ↦ ?_⟩
@@ -357,7 +400,7 @@ theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
 
 /-- **The frequency-localized Strichartz estimate for the wave equation**, in weak form. Let `E`
 have dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and let
-`(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
+`(q, r)` be wave-admissible: `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
 and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C` such
 that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)`, every `f ∈ L²(E)` and
 every almost everywhere strongly measurable `G : ℝ → L²(E)` for which `t ↦ Pⱼ* W₊(-t) G(t)` is
@@ -368,7 +411,7 @@ integrable,
 This is `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖f‖₂` tested against `G`. -/
 theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
-    (hq : 2 < q) (hpq : p.HolderConjugate q) (hr : 2 ≤ r)
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2) :
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
@@ -381,7 +424,7 @@ theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le
             Module.finrank ℝ E * (r⁻¹).toReal - 1 / q)) * ‖f‖ₑ *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨A, hA0, hA⟩ :=
-    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hr hqr
+    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hqr
   obtain ⟨C, hC⟩ := exists_enorm_integral_inner_apply_le (𝕜 := ℂ)
     (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq hpq
   refine ⟨C * (√A).toNNReal, fun j m hm f G hG hPG ↦ ?_⟩
@@ -394,3 +437,198 @@ theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le
   ring
 
 end TauCeti
+
+/-! ### The Littlewood–Paley blocks -/
+
+namespace ContDiffBump
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (φ : ContDiffBump (0 : E))
+
+/-- **The dispersive estimate for the frequency-localized half-wave propagator from `Lᵖ` to
+`L^q`.** Let `E` have dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and
+let `Pⱼ` be the `L²` Fourier multiplier with symbol `ψⱼ`. There is `C > 0` such that for every
+`j ∈ ℤ`, every time `t`, all conjugate exponents `p` and `q` with `2 ≤ q ≤ ∞` and every
+`f ∈ L² ∩ Lᵖ`,
+
+`‖W₊(t) Pⱼ f‖_q ≤ (C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2))^(1 - 2/q) ‖f‖_p`.
+
+This interpolates, by the Riesz–Thorin theorem, between the dispersive estimate from `L¹` to
+`L^∞` and the bound `‖W₊(t) Pⱼ‖ ≤ 1` on `L²`. -/
+theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le_of_memLp :
+    ∃ C, 0 < C ∧ ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ (t : ℝ) {p q : ℝ≥0∞}
+      [p.HolderConjugate q], 2 ≤ q → ∀ f : Lp ℂ 2 (volume : Measure E), MemLp f p volume →
+      eLpNorm (halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f)) q volume ≤
+        ENNReal.ofReal ((C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
+          (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) ^ (1 - 2 * (q⁻¹).toReal)) *
+          eLpNorm f p volume := by
+  obtain ⟨C, -, hC⟩ :=
+    φ.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le (F := ℂ)
+  refine ⟨max C 1, zero_lt_one.trans_le (le_max_right _ _), fun j m hm t p q _ hq f hf ↦ ?_⟩
+  set B := max C 1 * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
+    (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)
+  have hB : 0 ≤ B := by positivity
+  have hT : ‖(halfWavePropagator ℂ t).comp (Lp.fourierMultiplierCLM ℂ m)‖ ≤ ((1 : ℝ≥0) : ℝ) :=
+    (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
+      (mul_le_mul (norm_halfWavePropagator_le t) (φ.norm_fourierMultiplierCLM_littlewoodPaley_le hm)
+        (norm_nonneg _) zero_le_one).trans_eq (by simp)
+  have h₀ : ∀ g : Lp ℂ 2 (volume : Measure E), Integrable g →
+      eLpNorm ((halfWavePropagator ℂ t).comp (Lp.fourierMultiplierCLM ℂ m) g) ∞ volume ≤
+        B.toNNReal * eLpNorm g 1 volume := fun g hg ↦ by
+    rw [ENNReal.ofNNReal_toNNReal, ContinuousLinearMap.comp_apply]
+    refine (hC j m hm t g hg).trans (mul_le_mul_left (ENNReal.ofReal_le_ofReal ?_) _)
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_left _ _)
+      (by positivity)) (by positivity)
+  have h := ((halfWavePropagator ℂ t).comp
+    (Lp.fourierMultiplierCLM ℂ m)).eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm h₀ hT hq f hf
+  rwa [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg hB, ENNReal.ofNNReal_toNNReal,
+    ContinuousLinearMap.comp_apply] at h
+
+section Admissible
+
+variable {φ} {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
+
+/-- The Littlewood–Paley symbol `ψⱼ` is the dilate `ψ₀ (2^{-j} ·)`. -/
+private theorem ae_eq_littlewoodPaley_zero_comp_smul {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
+  filter_upwards [hm] with ξ hξ
+  rw [hξ, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j]
+
+variable (φ)
+
+/-- **The bilinear Strichartz estimate for the frequency-localized wave equation.** Let `E` have
+dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the `L²`
+Fourier multiplier with symbol `ψⱼ`. Let `(q, r)` be sharp wave-admissible,
+`2 / q + (n - 1) / r = (n - 1) / 2`, with `2 < q < ∞`, let `p` and `r'` be the Hölder conjugates
+of `q` and `r`, and let `γ = n / 2 - n / r - 1 / q`. There is `C` such that for every `j ∈ ℤ` and
+all almost everywhere strongly measurable `F, G : ℝ → L²(E)`,
+
+`∫∫ |⟪W₊(t - s) Pⱼ Pⱼ F(s), G(t)⟫| ds dt ≤ C 2^{2jγ} ‖F‖_{L^p_t L^{r'}_x} ‖G‖_{L^p_t L^{r'}_x}`.
+
+This is the case `ψ = ψ₀` of
+`TauCeti.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le`. -/
+theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal =
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F G : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F → AEStronglyMeasurable G →
+        ∫⁻ t, ∫⁻ s, ‖⟪halfWavePropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))), G t⟫_ℂ‖ₑ ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (2 * ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹))) *
+            eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume *
+            eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
+  obtain ⟨hψ, hψc, hψ0⟩ := φ.contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero
+  obtain ⟨C, hC⟩ :=
+    exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMultiplierCLM_le
+      (r' := r') hψ hψc hψ0 hq hpq hqr.le
+  refine ⟨C, fun j m hm F G hF hG ↦ ?_⟩
+  simpa only [Lp.star_eq_self_of_ae_eq_ofReal hm, one_div] using
+    hC j m (ae_eq_littlewoodPaley_zero_comp_smul hm) F G hF hG
+
+/-- **The retarded Strichartz estimate for the frequency-localized wave equation**, in weak form.
+Under the hypotheses of
+`ContDiffBump.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le`,
+there is `C` such that for every `j ∈ ℤ` and all almost everywhere strongly measurable
+`F, G : ℝ → L²(E)`,
+
+`|∫ ∫_{s < t} ⟪W₊(t - s) Pⱼ Pⱼ F(s), G(t)⟫ ds dt|`
+`  ≤ C 2^{2jγ} ‖F‖_{L^p_t L^{r'}_x} ‖G‖_{L^p_t L^{r'}_x}`.
+
+This is the Duhamel estimate
+`‖∫_{s < t} W₊(t - s) Pⱼ Pⱼ F(s) ds‖_{L^q_t L^r_x} ≤ C 2^{2jγ} ‖F‖_{L^p_t L^{r'}_x}` tested
+against `G`. -/
+theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_littlewoodPaley_le
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal =
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F G : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F → AEStronglyMeasurable G →
+        ‖∫ t, ∫ s in Set.Iio t, ⟪halfWavePropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))), G t⟫_ℂ‖ₑ ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (2 * ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹))) *
+            eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume *
+            eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
+  obtain ⟨C, hC⟩ :=
+    φ.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le (r' := r')
+      hq hpq hqr
+  exact ⟨C, fun j m hm F G hF hG ↦
+    (enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm _).trans (hC j m hm F G hF hG)⟩
+
+/-- **The dual Strichartz estimate for the frequency-localized wave equation.** Let `E` have
+dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the `L²`
+Fourier multiplier with symbol `ψⱼ`. Let `(q, r)` be sharp wave-admissible,
+`2 / q + (n - 1) / r = (n - 1) / 2`, with `2 < q < ∞`, let `p` and `r'` be the Hölder conjugates
+of `q` and `r`, and let `γ = n / 2 - n / r - 1 / q`. There is `C` such that for every `j ∈ ℤ` and
+every almost everywhere strongly measurable `F : ℝ → L²(E)` for which `s ↦ W₊(-s) Pⱼ F(s)` is
+integrable,
+
+`‖∫ W₊(-s) Pⱼ F(s) ds‖₂ ≤ C 2^{jγ} ‖F‖_{L^p_t L^{r'}_x}`.
+
+This is the case `ψ = ψ₀` of
+`TauCeti.exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le`. -/
+theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le (hq : 2 < q)
+    (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal =
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
+        Integrable (fun s ↦ halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))) →
+        ‖∫ s, halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))‖ₑ ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
+            eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
+  obtain ⟨hψ, hψc, hψ0⟩ := φ.contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero
+  obtain ⟨C, hC⟩ := exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
+    (r' := r') hψ hψc hψ0 hq hpq hqr.le
+  refine ⟨C, fun j m hm F hF hWF ↦ ?_⟩
+  simpa only [Lp.star_eq_self_of_ae_eq_ofReal hm, fourierMultiplierCLM_halfWavePropagator_apply,
+    one_div] using hC j m (ae_eq_littlewoodPaley_zero_comp_smul hm) F hF
+      (by simpa only [Lp.star_eq_self_of_ae_eq_ofReal hm,
+        fourierMultiplierCLM_halfWavePropagator_apply] using hWF)
+
+/-- **The Strichartz estimate for the frequency-localized wave equation**, in weak form. Let `E`
+have dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, and let `Pⱼ` be the
+`L²` Fourier multiplier with symbol `ψⱼ`. Let `(q, r)` be sharp wave-admissible,
+`2 / q + (n - 1) / r = (n - 1) / 2`, with `2 < q < ∞`, let `p` and `r'` be the Hölder conjugates
+of `q` and `r`, and let `γ = n / 2 - n / r - 1 / q`. There is `C` such that for every `j ∈ ℤ`,
+every `f ∈ L²(E)` and every almost everywhere strongly measurable `G : ℝ → L²(E)` for which
+`t ↦ W₊(-t) Pⱼ G(t)` is integrable,
+
+`|∫ ⟪W₊(t) Pⱼ f, G(t)⟫ dt| ≤ C 2^{jγ} ‖f‖₂ ‖G‖_{L^p_t L^{r'}_x}`.
+
+This is `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖f‖₂` tested against `G`, the case `ψ = ψ₀` of
+`TauCeti.exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le`. -/
+theorem exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le (hq : 2 < q)
+    (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal =
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ (f : Lp ℂ 2 (volume : Measure E)) (G : ℝ → Lp ℂ 2 (volume : Measure E)),
+        AEStronglyMeasurable G →
+        Integrable (fun t ↦ halfWavePropagator ℂ (-t) (Lp.fourierMultiplierCLM ℂ m (G t))) →
+        ‖∫ t, ⟪halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f), G t⟫_ℂ‖ₑ ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) * ‖f‖ₑ *
+            eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
+  obtain ⟨hψ, hψc, hψ0⟩ := φ.contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero
+  obtain ⟨C, hC⟩ := exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le
+    (r' := r') hψ hψc hψ0 hq hpq hqr.le
+  refine ⟨C, fun j m hm f G hG hWG ↦ ?_⟩
+  simpa only [one_div] using hC j m (ae_eq_littlewoodPaley_zero_comp_smul hm) f G hG
+    (by simpa only [Lp.star_eq_self_of_ae_eq_ofReal hm,
+      fourierMultiplierCLM_halfWavePropagator_apply] using hWG)
+
+end Admissible
+
+end ContDiffBump
