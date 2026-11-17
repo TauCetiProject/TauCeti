@@ -223,8 +223,7 @@ theorem exists_etale_of_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two
       (f.stalkMap z).hom.FormallyUnramified) :
     ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) :=
   f.exists_etale_of_formallyUnramified_stalk_codimOne_of_purityHolds x hx hdim hdim₁
-    (fun _ _ _ h₂ hle ↦ TauCeti.IsLocalRing.purityHolds_of_ringKrullDim_eq_two
-      (le_antisymm (hle.trans hdim₂) h₂)) hunram
+    (TauCeti.IsLocalRing.purityHolds_of_two_le_of_le hdim₂) hunram
 
 variable (f : X ⟶ Y)
 
@@ -277,8 +276,7 @@ theorem ringKrullDim_stalk_eq_one_of_maximal_ramificationLocus_of_ringKrullDim_l
     (hdim₂ : ringKrullDim (Y.presheaf.stalk (f z)) ≤ 2) :
     ringKrullDim (X.presheaf.stalk z) = 1 :=
   f.ringKrullDim_stalk_eq_one_of_maximal_ramificationLocus_of_purityHolds hR hz hmax hqf
-    fun _ _ _ h₂ hle ↦ TauCeti.IsLocalRing.purityHolds_of_ringKrullDim_eq_two
-      (le_antisymm (hle.trans hdim₂) h₂)
+    (TauCeti.IsLocalRing.purityHolds_of_two_le_of_le hdim₂)
 
 /-- **Purity of the branch locus as a locus, from purity for regular local rings.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type and locally
@@ -314,8 +312,7 @@ theorem ringKrullDim_stalk_eq_one_of_maximal_branchLocus_of_ringKrullDim_le_two
     (hdim₂ : ringKrullDim (Y.presheaf.stalk y) ≤ 2) :
     ringKrullDim (Y.presheaf.stalk y) = 1 :=
   f.ringKrullDim_stalk_eq_one_of_maximal_branchLocus_of_purityHolds hR hy hmax
-    fun _ _ _ h₂ hle ↦ TauCeti.IsLocalRing.purityHolds_of_ringKrullDim_eq_two
-      (le_antisymm (hle.trans hdim₂) h₂)
+    (TauCeti.IsLocalRing.purityHolds_of_two_le_of_le hdim₂)
 
 /-- **Étaleness is detected in codimension one, from purity for regular local rings.** Let
 `f : X ⟶ Y` be a dominant morphism, locally of finite type and locally quasi-finite, from a normal
@@ -357,7 +354,6 @@ theorem etale_iff_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two
     Etale f ↔ ∀ x : X, ringKrullDim (X.presheaf.stalk x) = 1 →
       (f.stalkMap x).hom.FormallyUnramified :=
   f.etale_iff_formallyUnramified_stalk_codimOne_of_purityHolds hgen
-    fun y _ _ _ h₂ hle ↦ TauCeti.IsLocalRing.purityHolds_of_ringKrullDim_eq_two
-      (le_antisymm (hle.trans (hdim₂ y)) h₂)
+    fun y ↦ TauCeti.IsLocalRing.purityHolds_of_two_le_of_le (hdim₂ y)
 
 end AlgebraicGeometry.Scheme.Hom
