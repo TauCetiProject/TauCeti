@@ -379,12 +379,7 @@ variable (hF : finrank ℝ F = n) [CompactSpace M] [CompactSpace N] [Preconnecte
 compact oriented `n`-manifolds with `N` preconnected, `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`. -/
 theorem mapFundamentalClass_eq_degree_smul (f : C(M, N)) :
     o.mapFundamentalClass hE f = o.degree o' hE f • o'.fundamentalClass hF := by
-  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set N))
-  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) := inferInstance
-  refine ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1 ?_
+  refine (singularHomologyπ_compl_univ_bijective N (ModuleCat.of ℤ (ULift.{0} ℤ)) n).1 ?_
   have h := o.localHomologyMap_fundamentalClassOn_preimage o' hE hF f.continuous.isProperMap
     isCompact_univ
   rw [← o.localHomologyRestriction_fundamentalClassOn_of_subset hE isCompact_univ _
