@@ -101,10 +101,12 @@ lemma cyclesRestrict_cyclesMap [U.Over (Spec (.of k))] [LocallyOfFiniteType (U �
     j.isOpenEmbedding.injective.preimage_image, finsum_mem_singleton,
     Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks, Nat.cast_one, mul_one]
 
-/-- Restriction of cycles along a quasi-compact open immersion is surjective: a cycle on `U` is the
-restriction of its pushforward along `j`, for the structure over `k` that `U` inherits from `X`. -/
-lemma cyclesRestrict_surjective (j : U ⟶ X) [IsOpenImmersion j] [QuasiCompact j] {n : ℤ} :
+/-- Restriction of cycles along an open immersion is surjective: a cycle on `U` is the restriction
+of its pushforward along `j` (which is quasi-compact, as `X` is locally Noetherian), for the
+structure over `k` that `U` inherits from `X`. -/
+lemma cyclesRestrict_surjective (j : U ⟶ X) [IsOpenImmersion j] {n : ℤ} :
     Function.Surjective (cyclesRestrict k j (n := n)) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   let : U.Over (Spec (.of k)) := ⟨j ≫ X ↘ Spec (.of k)⟩
   have : LocallyOfFiniteType (U ↘ Spec (.of k)) :=
     inferInstanceAs (LocallyOfFiniteType (j ≫ X ↘ Spec (.of k)))

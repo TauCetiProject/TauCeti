@@ -10,8 +10,8 @@ import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.Chow.DivisorClass
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
@@ -29,21 +29,26 @@ Proposition 1.8; [Stacks, Lemma 42.19.3](https://stacks.math.columbia.edu/tag/02
 cycle-level sequence is `Chow.range_cyclesPushforward_eq_ker_cyclesRestrict`; what is added here is
 the behaviour of rational equivalence under restriction to `U` and under closure in `X`.
 
-* `Chow.RatEquivFamily.restrict k j F`: the family `(W_a ∩ U, r_a|_{W_a ∩ U})` on `U` obtained by
-  intersecting the members of a family on `X` with `U`, discarding those disjoint from `U`. Its
-  cycle is the restriction of the cycle of `F` (`Chow.RatEquivFamily.cycle_restrict`), since
-  orders of vanishing are local.
-* `Chow.RatEquivFamily.closure k j G`: the family on `X` of the closures in `X` of the members of a
-  family `G` on `U`, with the same rational functions. These are the scheme-theoretic images
-  `Scheme.Hom.image` of the immersions `W_b ⟶ U ⟶ X`, which contain `W_b` as a dense open
-  subscheme, and they form a locally finite family because `j` is quasi-compact. Its cycle
-  restricts to the cycle of `G` (`Chow.RatEquivFamily.comap_cycle_closure`).
+* `Chow.cyclesRestrict_mem_ratEquiv`: restriction of cycles to `U` preserves rational
+  equivalence.
 * `Chow.ChowGroup.restrict k j`: the restriction `CH_n(X) →+ CH_n(U)`, with
   `Chow.ChowGroup.restrict_cycleClass`, `Chow.ChowGroup.restrict_id`,
   `Chow.ChowGroup.restrict_comp` and `Chow.ChowGroup.restrict_surjective`.
 * `Chow.ChowGroup.exact_pushforward_restrict`: the **localization sequence**: the sequence
   `CH_n(Z) → CH_n(X) → CH_n(U)` is exact; with `Chow.ChowGroup.restrict_surjective` this is the
   exactness of `CH_n(Z) → CH_n(X) → CH_n(U) → 0`.
+
+## Implementation notes
+
+Two private constructions on families of rational functions carry the proofs:
+
+* the restriction `(W_a ∩ U, r_a|_{W_a ∩ U})` to `U` of a family `(W_a, r_a)` on `X`, obtained by
+  intersecting the members with `U` and discarding those disjoint from `U`. Its cycle is the
+  restriction of the cycle of the family, since orders of vanishing are local;
+* the closure in `X` of a family `(W_b, r_b)` on `U`: the scheme-theoretic images
+  `Scheme.Hom.image` of the immersions `W_b ⟶ U ⟶ X`, which contain `W_b` as a dense open
+  subscheme, with the same rational functions. They form a locally finite family because `j` is
+  quasi-compact, and the cycle of this family restricts to the cycle of the original one.
 -/
 
 public section
@@ -73,7 +78,7 @@ private lemma isIntegral_pullback (a : F.ι) [Nonempty ↥(pullback (F.i a) j)] 
 /-- The restriction of a family to an open subscheme `j : U ⟶ X`: the members `W_a` meeting `U`,
 intersected with `U` (the pullbacks of `i_a` along `j`), with the restrictions of the rational
 functions. -/
-noncomputable def restrict : RatEquivFamily U n where
+private noncomputable def restrict : RatEquivFamily U n where
   ι := {a : F.ι // Nonempty ↥(pullback (F.i a) j)}
   W a := pullback (F.i a.1) j
   i a := pullback.snd (F.i a.1) j
@@ -90,14 +95,12 @@ noncomputable def restrict : RatEquivFamily U n where
   r a :=
     haveI : Nonempty ↥(pullback (F.i a.1) j) := a.2
     haveI := isIntegral_pullback j F a.1
-    haveI := Scheme.Hom.isDominant_of_isOpenImmersion (pullback.fst (F.i a.1) j)
+    haveI := (pullback.fst (F.i a.1) j).isDominant_of_isOpenMap
+      (pullback.fst (F.i a.1) j).isOpenEmbedding.isOpenMap
     Units.map (pullback.fst (F.i a.1) j).functionFieldMap.hom (F.r a.1)
   locallyFinite := by
-    refine ((F.locallyFinite.preimage_continuous j.continuous).comp_injective
-      (Subtype.val_injective (p := fun a ↦ Nonempty ↥(pullback (F.i a) j)))).subset fun a ↦ ?_
-    rintro _ ⟨p, rfl⟩
-    exact ⟨pullback.fst (F.i a.1) j p, by
-      rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]⟩
+    simp_rw [Scheme.Pullback.range_snd]
+    exact (F.locallyFinite.preimage_continuous j.continuous).comp_injective Subtype.val_injective
 
 variable {j F} in
 /-- On `U`, the summands of the restricted family are the restrictions of the summands. -/
@@ -108,21 +111,22 @@ private lemma component_restrict_apply [IsLocallyNoetherian X] [IsLocallyNoether
   · obtain ⟨p, rfl⟩ := hu
     have : Nonempty ↥(pullback (F.i a.1) j) := a.2
     have := isIntegral_pullback j F a.1
-    have := Scheme.Hom.isDominant_of_isOpenImmersion (pullback.fst (F.i a.1) j)
+    have := (pullback.fst (F.i a.1) j).isDominant_of_isOpenMap
+      (pullback.fst (F.i a.1) j).isOpenEmbedding.isOpenMap
     have h : j (pullback.snd (F.i a.1) j p) = F.i a.1 (pullback.fst (F.i a.1) j p) := by
       rw [← Scheme.Hom.comp_apply, ← pullback.condition, Scheme.Hom.comp_apply]
     refine ((F.restrict k j).component_apply a p).trans ?_
     rw [h, component_apply]
+    simp only [restrict, Units.coe_map, MonoidHom.coe_ofClass]
     exact Scheme.ord_functionFieldMap (pullback.fst (F.i a.1) j) _ p
   · rw [(F.restrict k j).component_apply_eq_zero_of_notMem_range a hu, eq_comm]
-    refine F.component_apply_eq_zero_of_notMem_range a.1 fun ⟨w, hw⟩ ↦ hu ?_
-    obtain ⟨p, -, hp⟩ := Scheme.Pullback.exists_preimage_pullback w u hw
-    exact ⟨p, hp⟩
+    rw [Scheme.Pullback.range_snd, Set.mem_preimage] at hu
+    exact F.component_apply_eq_zero_of_notMem_range a.1 hu
 
 /-- **Restriction of a rational equivalence.** The cycle of the restriction of a family to an open
 subscheme `j : U ⟶ X` is the restriction of its cycle: `(Σ_a (i_a)_* div r_a)|_U` is
 `Σ_a (W_a ∩ U ⟶ U)_* div (r_a|_{W_a ∩ U})`. -/
-lemma cycle_restrict [IsLocallyNoetherian X] [IsLocallyNoetherian U] :
+private lemma cycle_restrict [IsLocallyNoetherian X] [IsLocallyNoetherian U] :
     (F.restrict k j).cycle =
       Function.locallyFinsupp.comap j j.continuous j.isOpenEmbedding.injective F.cycle := by
   ext u
@@ -134,49 +138,47 @@ lemma cycle_restrict [IsLocallyNoetherian X] [IsLocallyNoetherian U] :
   rw [finsum_eq_if]
   split_ifs with ha
   · rfl
-  · refine (F.component_apply_eq_zero_of_notMem_range a fun ⟨w, hw⟩ ↦ ha ?_).symm
-    obtain ⟨p, -⟩ := Scheme.Pullback.exists_preimage_pullback w u hw
-    exact ⟨p⟩
+  · rw [not_nonempty_iff, Scheme.isEmpty_pullback_iff] at ha
+    exact (F.component_apply_eq_zero_of_notMem_range a (ha.notMem_of_mem_right ⟨u, rfl⟩)).symm
 
 end Restrict
 
 section Closure
 
-variable (j : U ⟶ X) [IsOpenImmersion j] [IsLocallyNoetherian X] (G : RatEquivFamily U n)
+variable (j : U ⟶ X) [IsOpenImmersion j] (G : RatEquivFamily U n)
 
 /-- The closure in `X` of a member `W_b` of a family on `U` is supported on the closure of `W_b`. -/
-private lemma range_imageι_comp (b : G.ι) :
+private lemma range_imageι_comp [IsLocallyNoetherian X] (b : G.ι) :
     Set.range (G.i b ≫ j).imageι = closure (j '' Set.range (G.i b)) := by
   rw [Scheme.Hom.range_imageι, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp]
 
 /-- The closure in `X` of a family on an open subscheme `j : U ⟶ X`: the scheme-theoretic images
 `V_b` of the immersions `W_b ⟶ U ⟶ X`, which contain `W_b` as a dense open subscheme, with the
 rational functions of the family, transported along the isomorphism `κ(V_b) ≅ κ(W_b)`. -/
-noncomputable def closure : RatEquivFamily X n where
-  ι := G.ι
-  W b := (G.i b ≫ j).image
-  i b := (G.i b ≫ j).imageι
-  genericPoint_mem b := by
-    rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (G.i b ≫ j).imageι,
-      ← genericPoint_eq_of_isOpenImmersion (G.i b ≫ j).toImage, ← Scheme.Hom.comp_apply,
-      Scheme.Hom.toImage_imageι, Scheme.Hom.comp_apply, height_apply_of_isOpenImmersion k j,
-      Scheme.Hom.height_apply_eq_height]
-    exact mem_pointsOfDimension.mp (G.genericPoint_mem b)
-  r b := Units.map (inv (G.i b ≫ j).toImage.functionFieldMap).hom (G.r b)
-  locallyFinite := by
-    simp_rw [range_imageι_comp]
-    refine LocallyFinite.closure fun x ↦ ?_
-    obtain ⟨_, ⟨A, hA, rfl⟩, hxA, -⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-    refine ⟨A, A.isOpen.mem_nhds hxA, ?_⟩
-    refine (G.locallyFinite.finite_nonempty_inter_compact
-      (j.isCompact_preimage hA.isCompact)).subset ?_
-    rintro b ⟨_, ⟨y, hy, rfl⟩, hyA⟩
-    exact ⟨y, hy, hyA⟩
+private noncomputable def closure : RatEquivFamily X n :=
+  haveI : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  { ι := G.ι
+    W b := (G.i b ≫ j).image
+    i b := (G.i b ≫ j).imageι
+    genericPoint_mem b := by
+      rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (G.i b ≫ j).imageι,
+        ← genericPoint_eq_of_isOpenImmersion (G.i b ≫ j).toImage, ← Scheme.Hom.comp_apply,
+        Scheme.Hom.toImage_imageι, Scheme.Hom.comp_apply, height_apply_of_isOpenImmersion k j,
+        Scheme.Hom.height_apply_eq_height]
+      exact mem_pointsOfDimension.mp (G.genericPoint_mem b)
+    r b := Units.map (inv (G.i b ≫ j).toImage.functionFieldMap).hom (G.r b)
+    locallyFinite := by
+      simp_rw [range_imageι_comp]
+      refine LocallyFinite.closure fun x ↦ ?_
+      obtain ⟨A, hA, hxA, hK⟩ := j.exists_isOpen_mem_isCompact_preimage x
+      refine ⟨A, hA.mem_nhds hxA, ?_⟩
+      simpa only [Set.image_inter_nonempty_iff] using
+        G.locallyFinite.finite_nonempty_inter_compact hK }
 
 variable {G} in
 /-- On `U`, the summands of the closure of a family are the summands of the family. -/
-private lemma component_closure_apply [IsLocallyNoetherian U] (b : G.ι) (u : U) :
+private lemma component_closure_apply [IsLocallyNoetherian X] [IsLocallyNoetherian U] (b : G.ι)
+    (u : U) :
     (G.closure k j).component b (j u) = G.component b u := by
   by_cases hu : u ∈ Set.range (G.i b)
   · obtain ⟨v, rfl⟩ := hu
@@ -188,11 +190,7 @@ private lemma component_closure_apply [IsLocallyNoetherian U] (b : G.ι) (u : U)
     refine ((G.closure k j).component_apply b _).trans ?_
     rw [component_apply]
     refine (Scheme.ord_functionFieldMap (G.i b ≫ j).toImage _ v).symm.trans ?_
-    congr 1
-    -- unfold the rational function of `G.closure k j` to the transported function `(f^*)⁻¹ r_b`
-    change (G.i b ≫ j).toImage.functionFieldMap
-      ((inv (G.i b ≫ j).toImage.functionFieldMap) (G.r b : (G.W b).functionField)) = _
-    simp
+    simp [closure]
   · rw [component_apply_eq_zero_of_notMem_range _ _ hu]
     refine (G.closure k j).component_apply_eq_zero_of_notMem_range b ?_
     -- the members of `G.closure k j` are indexed by `G.ι`, but `rw` does not see through the index
@@ -205,7 +203,7 @@ private lemma component_closure_apply [IsLocallyNoetherian U] (b : G.ι) (u : U)
 
 /-- **Closure of a rational equivalence.** The cycle of the closure in `X` of a family on an open
 subscheme `j : U ⟶ X` restricts on `U` to the cycle of the family. -/
-lemma comap_cycle_closure [IsLocallyNoetherian U] :
+private lemma comap_cycle_closure [IsLocallyNoetherian X] [IsLocallyNoetherian U] :
     Function.locallyFinsupp.comap j j.continuous j.isOpenEmbedding.injective
       (G.closure k j).cycle = G.cycle := by
   ext u

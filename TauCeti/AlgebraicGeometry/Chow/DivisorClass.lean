@@ -157,10 +157,7 @@ lemma cycle_mem_cyclesOfDimension [IsLocallyNoetherian X] {n : ℤ} (F : RatEqui
   obtain ⟨a, ha⟩ : ∃ a, F.component a x ≠ 0 := by
     by_contra! h
     exact hx (finsum_eq_zero_of_forall_eq_zero h)
-  by_cases hxa : x ∈ Set.range (F.i a)
-  swap
-  · exact absurd (F.component_apply_eq_zero_of_notMem_range a hxa) ha
-  obtain ⟨y, rfl⟩ := hxa
+  obtain ⟨y, rfl⟩ := F.support_component_subset a ha
   rw [component_apply] at ha
   have hy : coheight y = 1 := by
     by_contra hy
