@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Function.Piecewise
 public import TauCeti.Data.Set.Countable
 
 /-!
-# Measurability of stopped values at countable-range times
+# Measurability of stopped values
 
 For a process `u` and a random time `τ : Ω → WithTop ι`, Mathlib's `stoppedValue u τ` is the value
 `u (τ ω) ω`, with an arbitrary index used where `τ ω = ⊤`. Mathlib proves that it is measurable
@@ -34,6 +34,12 @@ Even for uncountable time, a stopping time with countable range permits strongly
 gluing, without any topology on time and without a separability assumption or any algebraic
 structure on the values. Capping such a time at each deterministic horizon shows that a strongly
 adapted process remains strongly adapted after stopping, including on a raw filtration.
+
+For everywhere-continuous processes with coordinatewise strongly measurable evaluations on a
+second-countable metrizable ordered Borel time domain, evaluating `stoppedValue` at any measurable
+random time yields a strongly measurable map
+(`MeasureTheory.stronglyMeasurable_stoppedValue_of_continuous`), with no filtration, stopping-time,
+or Borel state-space assumption.
 -/
 
 public section
@@ -200,5 +206,18 @@ theorem StronglyAdapted.stoppedProcess_of_countable_range
     ((isStoppingTime_const ℱ t).min hτ) hct).mono
       (((isStoppingTime_const ℱ t).min hτ).measurableSpace_le_of_le_const
         (fun _ ↦ min_le_left _ _))
+
+/-- Evaluating an everywhere-continuous, coordinatewise strongly measurable process at a measurable
+random time yields a strongly measurable random variable. -/
+theorem stronglyMeasurable_stoppedValue_of_continuous {ι Ω E : Type*}
+    [LinearOrder ι] [Nonempty ι] [TopologicalSpace ι] [OrderTopology ι]
+    [TopologicalSpace.MetrizableSpace ι] [SecondCountableTopology ι]
+    [MeasurableSpace ι] [BorelSpace ι] [TopologicalSpace E]
+    [TopologicalSpace.PseudoMetrizableSpace E] {_ : MeasurableSpace Ω}
+    {X : ι → Ω → E} {τ : Ω → WithTop ι}
+    (hX : ∀ t, StronglyMeasurable (X t)) (hc : ∀ ω, Continuous (X · ω)) (hτ : Measurable τ) :
+    StronglyMeasurable (stoppedValue X τ) :=
+  (stronglyMeasurable_uncurry_of_continuous_of_stronglyMeasurable hc hX).comp_measurable
+    (hτ.untopA.prodMk measurable_id)
 
 end MeasureTheory
