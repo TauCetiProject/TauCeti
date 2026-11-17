@@ -197,25 +197,22 @@ theorem universalGSpaceCellularRepresentationHom_comp {K : Type u} [Group K]
     (ψ.comp φ).universalGSpaceCellularRepresentationHom (k := k) n =
       φ.universalGSpaceCellularRepresentationHom n ≫
         (_root_.Rep.resFunctor φ).map (ψ.universalGSpaceCellularRepresentationHom n) := by
-  -- Rewrite under `(_root_.Rep.resFunctor φ).map` before `simp` projects it to `Rep.resMap φ`.
-  rw [universalGSpaceCellularRepresentationHom, universalGSpaceCellularRepresentationHom,
-    universalGSpaceCellularRepresentationHom,
-    cellularActionRepresentationHom_comp univ isCellular_universalGSpaceCellularTranslation
-      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-      univ isCellular_universalGSpaceCellularTranslation
-      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-      φ φ.isCellular_universalGSpaceCellularMap
-      φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k
-      univ isCellular_universalGSpaceCellularTranslation
-      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-      ψ ψ.isCellular_universalGSpaceCellularMap
-      ψ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
-      (ψ.comp φ).isCellular_universalGSpaceCellularMap
-      (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
-      (universalGSpaceCellularMap_comp ψ φ) n,
-    (_root_.Rep.resFunctor φ).map_comp, (_root_.Rep.resFunctor φ).map_comp,
-    eqToHom_map, eqToHom_map, eqToHom_map, eqToHom_map, eqToHom_map]
-  simp [Category.assoc]
+  refine _root_.Rep.hom_ext <| Representation.IntertwiningMap.ext ?_
+  have hcell :
+      cellularChainGroupMap univ univ (ψ.comp φ).isCellular_universalGSpaceCellularMap
+          (ModuleCat.of k k) n =
+        cellularChainGroupMap univ univ
+          (IsCellular.comp univ univ φ.isCellular_universalGSpaceCellularMap
+            ψ.isCellular_universalGSpaceCellularMap) (ModuleCat.of k k) n := by
+    refine congrFun ?_ n
+    congr 1
+    exact universalGSpaceCellularMap_comp ψ φ
+  simpa only [universalGSpaceCellularRepresentationHom_hom_toLinearMap, _root_.Rep.hom_comp,
+    Representation.IntertwiningMap.comp_toLinearMap, _root_.Rep.resMap_hom_toLinearMap,
+    ModuleCat.hom_comp, hcell] using
+    congrArg ModuleCat.Hom.hom
+      (cellularChainGroupMap_comp univ univ φ.isCellular_universalGSpaceCellularMap
+        univ ψ.isCellular_universalGSpaceCellularMap (ModuleCat.of k k) n)
 
 /-- The equivariant chain map on geometric cellular chains of Milnor's join induced by a group
 homomorphism `φ : G →* H`. -/
@@ -264,24 +261,12 @@ theorem universalGSpaceCellularComplexMap_comp {K : Type u} [Group K]
       φ.universalGSpaceCellularComplexMap ≫
         ((_root_.Rep.resFunctor φ).mapHomologicalComplex _).map
           ψ.universalGSpaceCellularComplexMap := by
-  rw [universalGSpaceCellularComplexMap, universalGSpaceCellularComplexMap,
-    universalGSpaceCellularComplexMap,
-    cellularActionComplexMap_comp univ isCellular_universalGSpaceCellularTranslation
-      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-      univ isCellular_universalGSpaceCellularTranslation
-      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-      φ φ.isCellular_universalGSpaceCellularMap
-      φ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap k
-      univ isCellular_universalGSpaceCellularTranslation
-      universalGSpaceCellularTranslation_one universalGSpaceCellularTranslation_mul
-      ψ ψ.isCellular_universalGSpaceCellularMap
-      ψ.universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
-      (ψ.comp φ).isCellular_universalGSpaceCellularMap
-      (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap
-      (universalGSpaceCellularMap_comp ψ φ)]
-  simp only [Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp]
-  exact congrArg (eqToHom _ ≫ ·) (Category.assoc _ _ _)
+  ext n : 1
+  -- Rewrite under `(_root_.Rep.resFunctor φ).map` before `simp` projects it to `Rep.resMap φ`.
+  rw [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+    universalGSpaceCellularComplexMap_f ψ, (_root_.Rep.resFunctor φ).map_comp,
+    (_root_.Rep.resFunctor φ).map_comp, eqToHom_map, eqToHom_map]
+  simp
 
 /-- Forgetting the group actions intertwines `universalGSpaceCellularComplexMap` with the
 module-level geometric cellular chain map. -/
