@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder
 
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -36,7 +37,7 @@ spectral angle sum (`Matrix.UnitaryGroup.exp_maslovIndex_mul_det_mul_exp_spectra
 At the identity the graph frame is a positive multiple of a real positive definite matrix and
 `U Uᵀ = 1`, so this value is a positive real number. At a matrix `B`, the number
 `e^{-πi s(W)} det (1 - W)` is a nonnegative real number for the unitary `W = U Uᵀ`
-(`Matrix.zero_le_exp_neg_spectralAngleSum_mul_det_one_sub`), and
+(`Matrix.exp_neg_spectralAngleSum_mul_det_one_sub_nonneg`), and
 `det (1 - U Uᵀ) = det U det (conj U - U)` (`Matrix.UnitaryGroup.det_one_sub_souriau`). For the
 straightened graph frame `T Γ(B)` the difference `conj (T Γ(B)) - T Γ(B)` is `i √2 J (B - 1)`
 (`TauCeti.map_star_diagonalStraightening_mul_graphFrame_sub`), and the real orthonormalization
@@ -61,29 +62,18 @@ namespace TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The imaginary part of the straightened graph frame: for every real matrix `A` on
-`ℝ^{n ⊕ n}`, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`, where `T` is the diagonal straightening
-and `Γ(A)` the graph frame. So the straightened graph meets the real points nontrivially, that
-is, the graph of `A` meets the diagonal, exactly when `A` has the eigenvalue `1`. -/
-theorem map_star_diagonalStraightening_mul_graphFrame_sub (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    (diagonalStraightening n * graphFrame A).map star - diagonalStraightening n * graphFrame A =
-      (Complex.I * ((√2 : ℝ) : ℂ)) • (J n ℝ * (A - 1)).map ((↑) : ℝ → ℂ) := by
-  conv_rhs => rw [← fromBlocks_toBlocks (A - 1), J, fromBlocks_multiply]
-  rw [diagonalStraightening_def, graphFrame_def, Matrix.smul_mul, fromBlocks_multiply]
-  ext (i | i) (j | j) <;>
-  simp [Matrix.one_apply, Complex.ext_iff, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;>
-  split_ifs <;> simp <;> ring
-
 namespace GLSymplectic
+
+/-- The endpoint value `det U e^{-πi s(U Uᵀ)}` of the unitary graph frame `U` of `A`. -/
+private noncomputable def frameValue (A : GLSymplectic n ℝ) : ℂ :=
+  (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
+    exp (-(↑(Real.pi * spectralAngleSum
+      (souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) * Complex.I))
 
 /-- At the identity, `det U e^{-πi s(U Uᵀ)}` is a positive real number for the unitary graph
 frame `U`. -/
-private theorem exists_pos_det_mul_exp_spectralAngleSum_one :
-    ∃ r : ℝ, 0 < r ∧
-      (graphUnitaryFrame (1 : GLSymplectic n ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
-        exp (-(↑(Real.pi * spectralAngleSum
-          (souriau (graphUnitaryFrame (1 : GLSymplectic n ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) *
-            Complex.I)) = r := by
+private theorem exists_pos_frameValue_one :
+    ∃ r : ℝ, 0 < r ∧ frameValue (1 : GLSymplectic n ℝ) = r := by
   obtain ⟨P, hP, hU⟩ := exists_posDef_coe_graphUnitaryFrame (1 : GLSymplectic n ℝ)
   refine ⟨√2 ^ Fintype.card (n ⊕ n) * P.det, by have := hP.det_pos; positivity, ?_⟩
   have hs : spectralAngleSum
@@ -91,45 +81,52 @@ private theorem exists_pos_det_mul_exp_spectralAngleSum_one :
     rw [souriau_graphUnitaryFrame_one, OneMemClass.coe_one, ← diagonal_one,
       spectralAngleSum_diagonal]
     simp
-  -- `M.map (↑)` is `Complex.ofRealHom.mapMatrix M`, so its determinant is `↑M.det`.
-  have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) : (M.map ((↑) : ℝ → ℂ)).det = M.det :=
-    (Complex.ofRealHom.map_det M).symm
-  rw [hs, mul_zero, ofReal_zero, zero_mul, neg_zero, exp_zero, mul_one, hU, OneMemClass.coe_one,
-    Units.val_one, diagonalStraightening_mul_graphFrame_one, det_mul, hmap, hmap, det_smul, det_one,
-    mul_one, ofReal_mul, ofReal_pow]
+  rw [frameValue, hs, hU, OneMemClass.coe_one, Units.val_one,
+    diagonalStraightening_mul_graphFrame_one, det_mul, det_map_ofReal, det_map_ofReal]
+  simp
+
+/-- The determinant of `(i √2) J M` for a real matrix `M` on `ℝ^{n ⊕ n}` is `(-2) ^ n det M`. -/
+private theorem det_I_mul_sqrt_two_smul_map_J_mul (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    ((Complex.I * ((√2 : ℝ) : ℂ)) • (J n ℝ * M).map ((↑) : ℝ → ℂ)).det =
+      ↑((-2) ^ Fintype.card n * M.det) := by
+  have h : (Complex.I * ((√2 : ℝ) : ℂ)) ^ 2 = -2 := by
+    rw [mul_pow, I_sq, ← ofReal_pow, Real.sq_sqrt zero_le_two]
+    push_cast
+    ring
+  rw [det_smul, det_map_ofReal, det_mul, det_J, one_mul, Fintype.card_sum, ← two_mul, pow_mul, h]
+  push_cast
+  ring
 
 /-- At a symplectic matrix `A`, the number `det U e^{-πi s(U Uᵀ)}` for the unitary graph frame `U`,
 times `(-2) ^ n det (1 - A)` and a positive real number `d`, is a nonnegative real number. -/
-private theorem exists_pos_zero_le_det_mul_exp_spectralAngleSum_mul (A : GLSymplectic n ℝ) :
+private theorem exists_pos_frameValue_mul_nonneg (A : GLSymplectic n ℝ) :
     ∃ d : ℝ, 0 < d ∧
-      0 ≤ (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
-        exp (-(↑(Real.pi * spectralAngleSum
-          (souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) * Complex.I)) *
+      0 ≤ frameValue A *
         ↑((-2) ^ Fintype.card n *
           (1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det * d) := by
   obtain ⟨P, hP, hU⟩ := exists_posDef_coe_graphUnitaryFrame A
   refine ⟨P.det, hP.det_pos, ?_⟩
   set B := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  have hstar : (star : ℂ → ℂ) = ⇑(starRingEnd ℂ) := funext fun z => (starRingEnd_apply z).symm
-  -- `M.map (↑)` is `Complex.ofRealHom.mapMatrix M`, so its determinant is `↑M.det`.
-  have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) : (M.map ((↑) : ℝ → ℂ)).det = M.det :=
-    (Complex.ofRealHom.map_det M).symm
-  have hP' : (P.map ((↑) : ℝ → ℂ)).map star = P.map ((↑) : ℝ → ℂ) := by
+  set T := diagonalStraightening n * graphFrame B
+  -- `star` on `ℂ` is the ring hom `starRingEnd ℂ`, so it commutes with matrix multiplication,
+  -- and it fixes the real factor `P`.
+  have hmul : (T * P.map ((↑) : ℝ → ℂ)).map star = T.map star * P.map ((↑) : ℝ → ℂ) := by
+    refine (Matrix.map_mul (f := starRingEnd ℂ)).trans (congrArg (T.map star * ·) ?_)
     rw [Matrix.map_map]
     exact congrArg P.map (funext fun x => conj_ofReal x)
   -- The imaginary part of the frame is `i √2 J (B - 1)` times the real factor `P`.
   have hdet : ((graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).map star -
       (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ)).det =
         ↑((-2) ^ Fintype.card n * (1 - B).det * P.det) := by
-    rw [hU, hstar, Matrix.map_mul, ← hstar, hP', ← Matrix.sub_mul,
-      map_star_diagonalStraightening_mul_graphFrame_sub, det_mul, det_smul, hmap, hmap, det_mul,
-      det_J, one_mul, ← neg_sub, det_neg, Fintype.card_sum, ← two_mul, pow_mul, pow_mul, mul_pow,
-      I_sq, ← ofReal_pow, Real.sq_sqrt zero_le_two]
+    rw [hU, hmul, ← Matrix.sub_mul, map_star_diagonalStraightening_mul_graphFrame_sub, det_mul,
+      det_I_mul_sqrt_two_smul_map_J_mul, det_map_ofReal, ← neg_sub, det_neg, Fintype.card_sum,
+      ← two_mul, pow_mul]
     push_cast
     ring
-  have h := zero_le_exp_neg_spectralAngleSum_mul_det_one_sub (souriau (graphUnitaryFrame A)).2
+  have h := exp_neg_spectralAngleSum_mul_det_one_sub_nonneg (souriau (graphUnitaryFrame A)).2
   rw [det_one_sub_souriau, hdet] at h
   convert h using 1
+  rw [frameValue]
   ring
 
 /-- A nonzero complex number `p d` with `0 ≤ p d` is a positive real number. -/
@@ -175,43 +172,16 @@ private theorem eq_sign_mul_of_mul_eq {z pA pB : ℂ} {dA dB : ℝ} (hz : ‖z�
 
 /-- Along a path `γ` of symplectic matrices from `A` to `B`, `e^{πi CZ(γ)}` carries the endpoint
 value `det U e^{-πi s(U Uᵀ)}` of the unitary graph frame at `B` to the one at `A`. -/
-private theorem exp_conleyZehnderIndex_mul_det_mul_exp {A B : GLSymplectic n ℝ} (γ : Path A B) :
-    exp (↑(Real.pi * conleyZehnderIndex γ) * Complex.I) *
-        ((graphUnitaryFrame B : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
-          exp (-(↑(Real.pi * spectralAngleSum
-            (souriau (graphUnitaryFrame B) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) * Complex.I))) =
-      (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
-        exp (-(↑(Real.pi * spectralAngleSum
-          (souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) * Complex.I)) := by
-  rw [← exp_maslovIndex_mul_det_mul_exp_spectralAngleSum (γ.map continuous_graphUnitaryFrame),
+private theorem exp_conleyZehnderIndex_mul_frameValue {A B : GLSymplectic n ℝ} (γ : Path A B) :
+    exp (↑(Real.pi * conleyZehnderIndex γ) * Complex.I) * frameValue B = frameValue A := by
+  rw [frameValue, frameValue,
+    ← exp_maslovIndex_mul_det_mul_exp_spectralAngleSum (γ.map continuous_graphUnitaryFrame),
     ← mul_assoc, ← exp_add, conleyZehnderIndex_def, mul_neg, ofReal_neg, neg_mul, neg_add_cancel,
     exp_zero, one_mul]
 
 /-- The endpoint value `det U e^{-πi s(U Uᵀ)}` of a unitary graph frame does not vanish. -/
-private theorem det_mul_exp_spectralAngleSum_ne_zero (A : GLSymplectic n ℝ) :
-    (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
-        exp (-(↑(Real.pi * spectralAngleSum
-          (souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) * Complex.I)) ≠ 0 :=
+private theorem frameValue_ne_zero (A : GLSymplectic n ℝ) : frameValue A ≠ 0 :=
   mul_ne_zero (UnitaryGroup.det_isUnit _).ne_zero (exp_ne_zero _)
-
-/-- If `e^{πi x}` is an integer `u`, then `x` is an integer `k` with `(-1) ^ k = u`. -/
-private theorem exists_int_eq_of_exp_eq {x : ℝ} {u : ℤ}
-    (h : exp (↑(Real.pi * x) * Complex.I) = u) : ∃ k : ℤ, x = k ∧ (k.negOnePow : ℤ) = u := by
-  have hsin : Real.sin (Real.pi * x) = 0 := by
-    rw [← exp_ofReal_mul_I_im, h, intCast_im]
-  obtain ⟨k, hk⟩ := Real.sin_eq_zero_iff.1 hsin
-  have hx : x = k := by
-    have := Real.pi_pos.ne'
-    field_simp at hk
-    linarith
-  refine ⟨k, hx, ?_⟩
-  have h2 : exp (↑(Real.pi * x) * Complex.I) = (k.negOnePow : ℤ) := by
-    rw [hx, show (↑(Real.pi * (k : ℝ)) : ℂ) * Complex.I = k * (Real.pi * Complex.I) by
-      push_cast; ring, exp_int_mul, exp_pi_mul_I]
-    rcases Int.even_or_odd k with hk | hk
-    · simp [Int.negOnePow_even _ hk, hk.neg_one_zpow]
-    · simp [Int.negOnePow_odd _ hk, hk.neg_one_zpow]
-  exact_mod_cast h2.symm.trans h
 
 /-- **The parity of the Conley–Zehnder index.** For a path `γ` of symplectic matrices from `A` to
 `B`, both without the eigenvalue `1`, `e^{πi CZ(γ)} = sign (det (1 - A) det (1 - B))`. So the index
@@ -223,19 +193,17 @@ theorem exp_conleyZehnderIndex {A B : GLSymplectic n ℝ} (γ : Path A B)
     exp (↑(Real.pi * conleyZehnderIndex γ) * Complex.I) =
       (SignType.sign ((1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det *
         (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) : ℂ) := by
-  obtain ⟨dA, hdA, hA'⟩ := exists_pos_zero_le_det_mul_exp_spectralAngleSum_mul A
-  obtain ⟨dB, hdB, hB'⟩ := exists_pos_zero_le_det_mul_exp_spectralAngleSum_mul B
+  set a := (1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det
+  set b := (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det
+  obtain ⟨dA, hdA, hA'⟩ := exists_pos_frameValue_mul_nonneg A
+  obtain ⟨dB, hdB, hB'⟩ := exists_pos_frameValue_mul_nonneg B
   have h2 : ((-2 : ℝ) ^ Fintype.card n) ≠ 0 := pow_ne_zero _ (by norm_num)
-  rw [eq_sign_mul_of_mul_eq (norm_exp_ofReal_mul_I _) (det_mul_exp_spectralAngleSum_ne_zero A)
+  rw [eq_sign_mul_of_mul_eq (norm_exp_ofReal_mul_I _) (frameValue_ne_zero A)
     (mul_ne_zero (mul_ne_zero h2 hA) hdA.ne') (mul_ne_zero (mul_ne_zero h2 hB) hdB.ne') hA' hB'
-    (exp_conleyZehnderIndex_mul_det_mul_exp γ)]
+    (exp_conleyZehnderIndex_mul_frameValue γ)]
   congr 1
-  rw [show (-2 : ℝ) ^ Fintype.card n *
-        (1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det * dA *
-      ((-2) ^ Fintype.card n * (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det * dB) =
-      ((-2) ^ Fintype.card n) ^ 2 * (dA * dB) *
-        ((1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det *
-          (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) by ring,
+  rw [show (-2 : ℝ) ^ Fintype.card n * a * dA * ((-2) ^ Fintype.card n * b * dB) =
+      ((-2) ^ Fintype.card n) ^ 2 * (dA * dB) * (a * b) by ring,
     sign_mul, sign_pos (by positivity), one_mul]
 
 /-- **The parity of the Conley–Zehnder index, from the identity.** For a path `γ` of symplectic
@@ -248,20 +216,15 @@ theorem exp_conleyZehnderIndex_of_one {B : GLSymplectic n ℝ} (γ : Path 1 B)
     exp (↑(Real.pi * conleyZehnderIndex γ) * Complex.I) =
       (-1) ^ Fintype.card n *
         (SignType.sign (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det : ℂ) := by
-  obtain ⟨r, hr, hr'⟩ := exists_pos_det_mul_exp_spectralAngleSum_one (n := n)
-  obtain ⟨dB, hdB, hB'⟩ := exists_pos_zero_le_det_mul_exp_spectralAngleSum_mul B
+  obtain ⟨r, hr, hr'⟩ := exists_pos_frameValue_one (n := n)
+  obtain ⟨dB, hdB, hB'⟩ := exists_pos_frameValue_mul_nonneg B
   have h2 : ((-2 : ℝ) ^ Fintype.card n) ≠ 0 := pow_ne_zero _ (by norm_num)
-  have h1 : 0 ≤ (graphUnitaryFrame (1 : GLSymplectic n ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).det *
-      exp (-(↑(Real.pi * spectralAngleSum
-        (souriau (graphUnitaryFrame (1 : GLSymplectic n ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℂ)) *
-          Complex.I)) * ((1 : ℝ) : ℂ) := by
+  have h1 : 0 ≤ frameValue (1 : GLSymplectic n ℝ) * ((1 : ℝ) : ℂ) := by
     rw [hr', ofReal_one, mul_one]
     exact zero_le_real.2 hr.le
-  rw [eq_sign_mul_of_mul_eq (norm_exp_ofReal_mul_I _) (det_mul_exp_spectralAngleSum_ne_zero 1)
-    one_ne_zero (mul_ne_zero (mul_ne_zero h2 hB) hdB.ne') h1 hB'
-    (exp_conleyZehnderIndex_mul_det_mul_exp γ), one_mul, sign_mul, sign_mul, sign_pos hdB,
-    mul_one, sign_pow, sign_neg (by norm_num : (-2 : ℝ) < 0), SignType.coe_mul, SignType.coe_pow,
-    SignType.coe_neg, SignType.coe_one]
+  rw [eq_sign_mul_of_mul_eq (norm_exp_ofReal_mul_I _) (frameValue_ne_zero 1) one_ne_zero
+    (mul_ne_zero (mul_ne_zero h2 hB) hdB.ne') h1 hB' (exp_conleyZehnderIndex_mul_frameValue γ)]
+  simp [sign_mul, sign_pow, sign_pos hdB]
 
 /-- **The parity of the Conley–Zehnder index**, integer form. For a path `γ` of symplectic
 matrices from `A` to `B`, both without the eigenvalue `1`, the index is an integer `k` with
@@ -272,7 +235,7 @@ theorem exists_int_conleyZehnderIndex_eq {A B : GLSymplectic n ℝ} (γ : Path A
     ∃ k : ℤ, conleyZehnderIndex γ = k ∧
       (k.negOnePow : ℤ) = SignType.sign ((1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det *
         (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) :=
-  exists_int_eq_of_exp_eq <| (exp_conleyZehnderIndex γ hA hB).trans <| by
+  Complex.exists_int_eq_of_exp_pi_mul_I_eq <| (exp_conleyZehnderIndex γ hA hB).trans <| by
     rcases SignType.sign ((1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det *
       (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) with _ | _ | _ <;> simp
 
@@ -284,8 +247,9 @@ theorem exists_int_conleyZehnderIndex_eq_of_one {B : GLSymplectic n ℝ} (γ : P
     ∃ k : ℤ, conleyZehnderIndex γ = k ∧
       (((Fintype.card n : ℤ) - k).negOnePow : ℤ) =
         SignType.sign (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det := by
-  obtain ⟨k, hk, hsign⟩ := exists_int_eq_of_exp_eq (u := (Fintype.card n : ℤ).negOnePow *
-    SignType.sign (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det)
+  obtain ⟨k, hk, hsign⟩ := Complex.exists_int_eq_of_exp_pi_mul_I_eq
+    (u := (Fintype.card n : ℤ).negOnePow *
+      SignType.sign (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det)
     ((exp_conleyZehnderIndex_of_one γ hB).trans <| by
       rcases SignType.sign (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det
         with _ | _ | _ <;> simp)

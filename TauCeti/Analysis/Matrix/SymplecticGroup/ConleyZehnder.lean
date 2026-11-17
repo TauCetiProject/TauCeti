@@ -71,6 +71,8 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 
 ## Main results
 
+* `TauCeti.map_star_diagonalStraightening_mul_graphFrame_sub`: the imaginary part of the
+  straightened graph frame, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
@@ -173,6 +175,19 @@ of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
 theorem realImage_diagonalStraightening_mul_graphFrame_one :
     (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
   rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
+
+/-- The imaginary part of the straightened graph frame: for every real matrix `A` on
+`ℝ^{n ⊕ n}`, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`, where `T` is the diagonal straightening
+and `Γ(A)` the graph frame. So the straightened graph meets the real points nontrivially, that
+is, the graph of `A` meets the diagonal, exactly when `A` has the eigenvalue `1`. -/
+theorem map_star_diagonalStraightening_mul_graphFrame_sub (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (diagonalStraightening n * graphFrame A).map star - diagonalStraightening n * graphFrame A =
+      (Complex.I * ((√2 : ℝ) : ℂ)) • (J n ℝ * (A - 1)).map ((↑) : ℝ → ℂ) := by
+  conv_rhs => rw [← fromBlocks_toBlocks (A - 1), J, fromBlocks_multiply]
+  rw [diagonalStraightening_def, graphFrame_def, Matrix.smul_mul, fromBlocks_multiply]
+  ext (i | i) (j | j) <;>
+  simp [Matrix.one_apply, Complex.ext_iff, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;>
+  split_ifs <;> simp <;> ring
 
 namespace GLSymplectic
 

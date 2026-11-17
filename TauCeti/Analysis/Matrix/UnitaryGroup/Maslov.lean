@@ -90,7 +90,7 @@ The index modulo `2` depends only on the endpoint frames: `e^{πi μ(γ)}` is th
 values of `U ↦ det U e^{-πi s(U Uᵀ)}` at the two ends
 (`Matrix.UnitaryGroup.exp_maslovIndex_mul_det_mul_exp_spectralAngleSum`), because `t ↦ det (γ t)`
 is a continuous square root of `det (γ t γ tᵀ)`. For a unitary `W`, `e^{-πi s(W)} det (1 - W)` is a
-nonnegative real number (`Matrix.zero_le_exp_neg_spectralAngleSum_mul_det_one_sub`), and
+nonnegative real number (`Matrix.exp_neg_spectralAngleSum_mul_det_one_sub_nonneg`), and
 `det (1 - U Uᵀ) = det U det (conj U - U)` (`Matrix.UnitaryGroup.det_one_sub_souriau`). So at a
 frame `U` of a Lagrangian transverse to `ℝⁿ`, `det U e^{-πi s(U Uᵀ)}` is a positive multiple of
 `det (conj U - U)⁻¹`. This is how `TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Parity`
@@ -219,7 +219,7 @@ theorem det_eq_neg_one_pow_mul_exp_spectralAngleSum {W : Matrix n n ℂ}
 /-- For `z` on the unit circle, `e^{-πi o(z)} (1 - z)` is a nonnegative real number, where `o` is
 the angle offset: writing `-z = e^{iα}` with `-π < α ≤ π`, it is `e^{-iα/2} (1 + e^{iα}) =
 2 cos (α / 2)`. -/
-private theorem zero_le_exp_angleOffset_mul_one_sub {z : ℂ} (hz : ‖z‖ = 1) :
+private theorem exp_angleOffset_mul_one_sub_nonneg {z : ℂ} (hz : ‖z‖ = 1) :
     0 ≤ exp (-(↑(Real.pi * angleOffset z) * Complex.I)) * (1 - z) := by
   by_cases h1 : z = 1
   · simp [h1]
@@ -241,14 +241,14 @@ private theorem zero_le_exp_angleOffset_mul_one_sub {z : ℂ} (hz : ‖z‖ = 1)
   · linarith [neg_pi_lt_arg (-z)]
   · linarith [arg_le_pi (-z)]
 
-/-- The multiset form of `Matrix.zero_le_exp_neg_spectralAngleSum_mul_det_one_sub`. -/
-private theorem zero_le_exp_sum_angleOffset_mul_prod_one_sub {s : Multiset ℂ}
+/-- The multiset form of `Matrix.exp_neg_spectralAngleSum_mul_det_one_sub_nonneg`. -/
+private theorem exp_sum_angleOffset_mul_prod_one_sub_nonneg {s : Multiset ℂ}
     (hs : ∀ z ∈ s, ‖z‖ = 1) :
     0 ≤ exp (-(↑(Real.pi * (s.map angleOffset).sum) * Complex.I)) * (s.map (1 - ·)).prod := by
   induction s using Multiset.induction_on with
   | empty => simp
   | cons a s ih =>
-    have h := mul_nonneg (zero_le_exp_angleOffset_mul_one_sub (hs a (Multiset.mem_cons_self a s)))
+    have h := mul_nonneg (exp_angleOffset_mul_one_sub_nonneg (hs a (Multiset.mem_cons_self a s)))
       (ih fun z hz => hs z (Multiset.mem_cons_of_mem hz))
     rw [Multiset.map_cons, Multiset.sum_cons, Multiset.map_cons, Multiset.prod_cons, mul_add,
       ofReal_add, add_mul, neg_add, exp_add]
@@ -260,12 +260,12 @@ open scoped Matrix.Norms.L2Operator in
 it is the product, over the eigenvalues `λ = -e^{iα} ≠ 1` of `W` with `-π < α < π`, of
 `e^{-iα/2} (1 - λ) = 2 cos (α / 2)`. Thus `e^{-πi s(W)}` is a positive multiple of
 `det (1 - W)⁻¹` when `1` is not an eigenvalue of `W`. -/
-theorem zero_le_exp_neg_spectralAngleSum_mul_det_one_sub {W : Matrix n n ℂ}
+theorem exp_neg_spectralAngleSum_mul_det_one_sub_nonneg {W : Matrix n n ℂ}
     (hW : W ∈ unitaryGroup n ℂ) :
     0 ≤ exp (-(↑(Real.pi * spectralAngleSum W) * Complex.I)) * (1 - W).det := by
   rw [← diagonal_one, ← scalar_apply, ← eval_charpoly,
     (IsAlgClosed.splits _).eval_eq_prod_roots_of_monic (charpoly_monic W), spectralAngleSum]
-  exact zero_le_exp_sum_angleOffset_mul_prod_one_sub fun z hz =>
+  exact exp_sum_angleOffset_mul_prod_one_sub_nonneg fun z hz =>
     spectrum.norm_eq_one_of_unitary hW (mem_spectrum_of_isRoot_charpoly (isRoot_of_mem_roots hz))
 
 open scoped Matrix.Norms.L2Operator in
@@ -420,16 +420,12 @@ theorem exp_maslovIndex_mul_det_mul_exp_spectralAngleSum {U V : unitaryGroup n �
   have hμ : Real.pi * maslovIndex γ = Circle.angleChange δ - Real.pi * (sV - sU) := by
     rw [maslovIndex, hδ, ← hsU, ← hsV]
     field_simp
-  have harg : (↑(Circle.angleChange δ - Real.pi * (sV - sU)) : ℂ) * Complex.I =
-      ↑(Circle.angleChange δ) * Complex.I + -(↑(Real.pi * sV) * Complex.I) +
-        ↑(Real.pi * sU) * Complex.I := by
-    push_cast
-    ring
-  have hcancel := exp_add (↑(Real.pi * sU) * Complex.I) (-(↑(Real.pi * sU) * Complex.I))
-  rw [add_neg_cancel, exp_zero] at hcancel
-  rw [hμ, ← hexp, harg, exp_add, exp_add]
-  linear_combination -(exp (↑(Circle.angleChange δ) * Complex.I) * (U : Matrix n n ℂ).det *
-    exp (-(↑(Real.pi * sV) * Complex.I))) * hcancel
+  -- Both sides are `det U` times one exponential, whose exponents agree by `hμ`.
+  rw [← hexp, mul_left_comm, ← exp_add, mul_comm _ (U : Matrix n n ℂ).det, mul_assoc, ← exp_add,
+    hμ]
+  congr 2
+  push_cast
+  ring
 
 /-- **Homotopy invariance.** Paths of frames that are homotopic relative to their endpoints have
 the same Maslov index. -/
