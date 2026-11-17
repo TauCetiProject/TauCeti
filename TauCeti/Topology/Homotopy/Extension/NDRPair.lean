@@ -61,6 +61,8 @@ it extends by the identity to all of `X`, and takes `min 1 (2 f)` as control fun
 * `TauCeti.NDRPair.prod`: the product of two NDR pairs.
 * `TauCeti.NDRPair.ofHomotopyRel`: NDR data from a deformation of a neighbourhood `U ⊇ A` onto
   `A`, relative to `A`, and a function vanishing exactly on `A` that is less than one only on `U`.
+* `TauCeti.hasHomotopyExtensionProperty_singleton_unitInterval`: every singleton `{t₀}` in `I` has
+  the homotopy extension property.
 
 ## References
 
@@ -587,5 +589,22 @@ theorem nonempty_ndrPair_iff : Nonempty (NDRPair A) ↔ IsClosed A ∧ HasHomoto
   ⟨fun ⟨N⟩ ↦ ⟨N.isClosed, N.hasHomotopyExtensionProperty⟩, fun ⟨hA, h⟩ ↦
     let ⟨_, hr, hr'⟩ := h.exists_retraction
     ⟨NDRPair.ofRetraction hr hr' hA⟩⟩
+
+/-- Explicit NDR data for a singleton `{t₀} ⊆ I`: control `x ↦ |x - t₀|` and straight-line
+deformation `(s, x) ↦ (1 - s) x + s t₀`. -/
+private noncomputable def ndrPairSingletonUnitInterval (t₀ : I) : NDRPair ({t₀} : Set I) where
+  control := ⟨fun x ↦ ⟨|(x : ℝ) - t₀|, abs_nonneg _,
+    abs_sub_le_iff.2 ⟨by linarith [x.2.2, t₀.2.1], by linarith [t₀.2.2, x.2.1]⟩⟩, by fun_prop⟩
+  control_eq_zero_iff x := by
+    simp [← Subtype.coe_inj, sub_eq_zero]
+  deformation := ⟨fun p ↦ Icc.convexComb p.2 t₀ p.1, by fun_prop⟩
+  deformation_zero := by simp
+  deformation_of_mem s x hx := by simp [mem_singleton_iff.1 hx]
+  deformation_one_mem := by simp
+
+/-- Every singleton `{t₀}` in the unit interval `I` has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_singleton_unitInterval (t₀ : I) :
+    HasHomotopyExtensionProperty ({t₀} : Set I) :=
+  (ndrPairSingletonUnitInterval t₀).hasHomotopyExtensionProperty
 
 end TauCeti
