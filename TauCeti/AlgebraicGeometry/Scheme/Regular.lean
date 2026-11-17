@@ -6,55 +6,109 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
+public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
+import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
+import TauCeti.RingTheory.Ideal.Quotient.Colon
+import TauCeti.RingTheory.SerreCondition.Normal
 
 /-!
 # Rational functions without poles are regular
 
 On a locally Noetherian integral scheme a regular function has nonnegative order at every point
 where it is defined (`TauCeti.AlgebraicGeometry.Scheme.ord_germToFunctionField_nonneg`). This file
-proves the converse for a scheme of dimension at most one whose codimension-one local rings on an
-open subset `U` are discrete valuation rings: a rational function with no poles on `U` is the germ
-of a regular function on `U`.
+proves the converse (*algebraic Hartogs' principle*) in two settings:
+
+1. On a nonempty open subset `U` of dimension at most one whose codimension-one local rings are
+   discrete valuation rings, a rational function with no poles on `U` is the germ of a regular
+   function on `U`.
+2. On any locally Noetherian normal integral scheme `X`, each local ring `𝒪_{X,x}` satisfies
+   Serre's condition `(S_2)` (`TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed`): for any
+   nonzerodivisor `b ∈ 𝒪_{X,x}`, every associated prime of `𝒪_{X,x} ⧸ (b)` has height one and
+   comes from a codimension-one generization `η ⤳ x` whose local ring `𝒪_{X,η}` is a discrete
+   valuation ring (`IsNormalScheme.isDiscreteValuationRing_stalk`). Consequently, a rational
+   function with nonnegative order at every codimension-one point of `U` is regular on `U`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.exists_algebraMap_stalk_eq_of_ord_nonneg`: at a
-  codimension-one point whose local ring is a discrete valuation ring, a rational function of
-  nonnegative order lies in that local ring;
-* `TauCeti.AlgebraicGeometry.Scheme.exists_algebraMap_stalk_eq_of_coheight_eq_zero`: at a point
-  with no proper generization the local ring is already the whole function field;
-* `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_ord_nonneg`: a rational
-  function with nonnegative order at every codimension-one point of `U` is the germ at the generic
-  point of a section of `𝒪_X` over `U`;
-* `TauCeti.AlgebraicGeometry.Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero`: a nonzero
-  rational function with *zero* order at every codimension-one point of `U` is the germ of a unit
-  of `Γ(X, U)`.
+* `TauCeti.AlgebraicGeometry.uniqueFactorizationMonoid_stalk_of_forall_coheight_le_one` and
+  `TauCeti.AlgebraicGeometry.IsNormalScheme.of_forall_coheight_le_one`: a scheme of dimension at
+  most one whose local rings are domains and whose codimension-one local rings are discrete
+  valuation rings has factorial local rings and is normal.
 
-The third statement is the one-dimensional case of algebraic Hartogs' principle, and it is the
-input that identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf. The last
-one applies it to a function and to its inverse; it is the local comparison used to glue the
-local equations of a locally principal Weil divisor into a Cartier divisor.
+In the namespace `TauCeti.AlgebraicGeometry.Scheme`:
 
-The argument follows Hartshorne, *Algebraic Geometry*, II.6.3A and Proposition II.6.11, in the
-dimension-one case where the intersection of the local rings can be taken over the points of `U`
-themselves. The local step is Mathlib's `IsDiscreteValuationRing.exists_lift_of_le_one` together
-with `Ring.ordFrac_eq_valuation_inv`, and the global step, that a rational function lying in every
-local ring of `U` is regular on `U`, is
-`TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_forall_mem_range`.
+* `exists_algebraMap_stalk_eq_of_ord_nonneg`: at a codimension-one point whose local ring is a
+  discrete valuation ring, a rational function of nonnegative order lies in that local ring;
+* `exists_algebraMap_stalk_eq_of_coheight_eq_zero`: at a point with no proper generization the
+  local ring is already the whole function field;
+* `exists_germToFunctionField_eq_of_ord_nonneg`: a rational function with nonnegative order at
+  every codimension-one point of a one-dimensional open `U` is the germ at the generic point of a
+  section of `𝒪_X` over `U`;
+* `exists_unit_germToFunctionField_eq_of_ord_eq_zero`: a nonzero rational function with *zero*
+  order at every codimension-one point of `U` is the germ of a unit of `Γ(X, U)`;
+* `exists_algebraMap_stalk_eq_of_forall_specializes_ord_nonneg`,
+  `exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme`, and
+  `exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme`: algebraic Hartogs'
+  principle on locally Noetherian normal integral schemes of arbitrary dimension.
+
+The dimension-one case identifies the sheaf `𝒪_X(0)` of the zero divisor with the structure sheaf
+and glues the local equations of a locally principal Weil divisor into a Cartier divisor; the
+normal case proves injectivity of the Cartier-to-Weil homomorphism in arbitrary dimension.
+
+## References
+
+* [Stacks Project, Lemma 10.157.6 (031T)](https://stacks.math.columbia.edu/tag/031T) (algebraic
+  Hartogs' principle on normal Noetherian domains).
+* R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.3A and Proposition 6.11.
+* The associated-prime localization step in
+  `TauCeti.AlgebraicGeometry.Scheme.exists_algebraMap_stalk_eq_of_forall_specializes_ord_nonneg`
+  adapts `TauCeti.isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two`, which itself
+  adapts `Pcf.Stacks.isIntegrallyClosed_of_isRegularRing` from T. Dupuy, T. Tucker, and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),
+  `lean/Pcf/Stacks/Common/RegularNormal.lean`.
 -/
 
 public section
 
 open AlgebraicGeometry CategoryTheory Opposite Order TopologicalSpace
-open scoped WithZero
+open scoped WithZero nonZeroDivisors
 
 namespace TauCeti
 
 namespace AlgebraicGeometry
 
 universe u
+
+/-- On a scheme of dimension at most one whose local rings are domains and whose codimension-one
+local rings are discrete valuation rings, every local ring is a unique factorization domain: a
+field in codimension zero and a discrete valuation ring in codimension one. -/
+theorem uniqueFactorizationMonoid_stalk_of_forall_coheight_le_one {X : Scheme.{u}}
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [hDVR : ∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+    (hX : ∀ x : X, coheight x ≤ 1) (x : X) :
+    UniqueFactorizationMonoid (X.presheaf.stalk x) := by
+  rcases eq_or_lt_of_le (hX x) with hx | hx
+  · have := hDVR ⟨x, hx⟩
+    infer_instance
+  · have hdim : Ring.KrullDimLE 0 (X.presheaf.stalk x) :=
+      krullDimLE_of_coheight_le (Order.lt_one_iff.mp hx).le
+    let : Field (X.presheaf.stalk x) :=
+      (Ring.isField_iff_maximal_bot.mpr
+        (Ring.krullDimLE_zero_iff.mp hdim ⊥ Ideal.isPrime_bot)).toField
+    infer_instance
+
+/-- A scheme of dimension at most one whose local rings are domains and whose codimension-one local
+rings are discrete valuation rings is normal. -/
+theorem IsNormalScheme.of_forall_coheight_le_one {X : Scheme.{u}}
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+    (hX : ∀ x : X, coheight x ≤ 1) :
+    IsNormalScheme X := by
+  have := uniqueFactorizationMonoid_stalk_of_forall_coheight_le_one hX
+  infer_instance
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
 
@@ -114,6 +168,24 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
     exact exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨y, hy'⟩ hy)
   · exact exists_algebraMap_stalk_eq_of_coheight_eq_zero (Order.lt_one_iff.mp hy') f
 
+/-- If every rational function with nonnegative order at all codimension-one points of `U` lifts to
+a regular section over `U`, then any rational unit with zero order on `U` lifts to a unit of
+`Γ(X, U)`. -/
+private theorem exists_unit_germToFunctionField_eq_of_forall_ord_nonneg
+    {U : X.Opens} [Nonempty U]
+    (hreg : ∀ g : X.functionField,
+      (∀ y : CodimensionOnePoint X, (y : X) ∈ U → 0 ≤ X.ord g y) →
+        ∃ a : Γ(X, U), X.germToFunctionField U a = g)
+    {f : X.functionFieldˣ}
+    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) := by
+  obtain ⟨a, ha⟩ := hreg (f : X.functionField) fun y hy ↦ (hf y hy).ge
+  obtain ⟨b, hb⟩ := hreg ((f⁻¹ : X.functionFieldˣ) : X.functionField) fun y hy ↦ by
+    rw [Units.val_inv_eq_inv_val, _root_.AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
+  have hab : a * b = 1 := X.germToFunctionField_injective U <| by
+    rw [map_mul, ha, hb, map_one, Units.mul_inv]
+  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
+
 /-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
 integral scheme, let `U` be a nonempty open subset of dimension at most one whose codimension-one
 local rings are discrete valuation rings. A nonzero rational function whose order vanishes at
@@ -126,16 +198,81 @@ theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
       IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
     (hU : ∀ y ∈ U, coheight y ≤ 1) {f : X.functionFieldˣ}
     (hf : ∀ (y : CodimensionOnePoint X), (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
-    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) := by
-  obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
-    (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
-  obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
-    (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
-      rw [Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
-  have hab : a * b = 1 := by
-    refine X.germToFunctionField_injective U ?_
-    rw [map_mul, ha, hb, map_one, Units.mul_inv]
-  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) :=
+  exists_unit_germToFunctionField_eq_of_forall_ord_nonneg
+    (fun _ ↦ exists_germToFunctionField_eq_of_ord_nonneg hDVR hU) hf
+
+section Hartogs
+
+variable [IsNormalScheme X]
+
+/-- **Local algebraic Hartogs' principle.** On a locally Noetherian normal integral scheme, a
+rational function whose order is nonnegative at every codimension-one generization of `x` belongs
+to the local ring `𝒪_{X,x}`. Stacks, Lemma 10.157.6 (031T); Hartshorne, Proposition II.6.3A. -/
+@[stacks 031T]
+theorem exists_algebraMap_stalk_eq_of_forall_specializes_ord_nonneg {x : X} {f : X.functionField}
+    (hf : ∀ η : CodimensionOnePoint X, (η : X) ⤳ x → 0 ≤ X.ord f η) :
+    ∃ g : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField g = f := by
+  set R := X.presheaf.stalk x
+  have hS : Module.SatisfiesSerreS 2 R R :=
+    TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed fun p _ ↦
+      ⟨IsLocalization.isDomain_localization p.primeCompl_le_nonZeroDivisors,
+        isIntegrallyClosed_of_isLocalization _ p.primeCompl p.primeCompl_le_nonZeroDivisors⟩
+  obtain ⟨⟨a, ⟨b, hb⟩⟩, hf'⟩ := IsLocalization.mk'_surjective R⁰ f
+  dsimp only at hf'
+  subst hf'
+  by_cases hab : a ∈ Ideal.span {b}
+  · obtain ⟨g, rfl⟩ := Ideal.mem_span_singleton'.mp hab
+    exact ⟨g, IsLocalization.eq_mk'_iff_mul_eq.mpr (by rw [← map_mul, mul_comm])⟩
+  exfalso
+  -- An associated prime `P` of `R ⧸ (b)` containing `((b) : a)` has height one by `(S_2)`.
+  obtain ⟨P, hPass, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing R
+    (Ideal.Quotient.mk (Ideal.span {b}) a) (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem])
+  have := hPass.isPrime
+  have hP1 := hS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton hb hPass
+  obtain ⟨η, hη, hηx, hcomap⟩ := exists_comap_stalkSpecializes_maximalIdeal_eq P
+  rw [hP1] at hη
+  have : IsDiscreteValuationRing (X.presheaf.stalk η) :=
+    IsNormalScheme.isDiscreteValuationRing_stalk η hη
+  obtain ⟨y, hy⟩ := exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨η, hη⟩ hηx)
+  -- Then `a ∈ (b) 𝒪_{X,η}` inside the localization `𝒪_{X,η} = R_P`, contradicting `s ∉ P`.
+  let := (X.presheaf.stalkSpecializes hηx).hom.toAlgebra
+  have : IsLocalization.AtPrime (X.presheaf.stalk η) P :=
+    hcomap ▸ isLocalization_stalkSpecializes hηx
+  have hmul : y * (X.presheaf.stalkSpecializes hηx).hom b =
+      (X.presheaf.stalkSpecializes hηx).hom a :=
+    IsFractionRing.injective (X.presheaf.stalk η) X.functionField <| by
+      rw [map_mul, hy, algebraMap_stalkSpecializes hηx, algebraMap_stalkSpecializes hηx,
+        IsLocalization.mk'_spec]
+  have hmem : algebraMap R (X.presheaf.stalk η) a ∈
+      (Ideal.span {b}).map (algebraMap R (X.presheaf.stalk η)) := by
+    rw [Ideal.map_span, Set.image_singleton]
+    exact Ideal.mem_span_singleton'.mpr ⟨y, hmul⟩
+  obtain ⟨s, hs, hsa⟩ :=
+    (IsLocalization.algebraMap_mem_map_algebraMap_iff P.primeCompl (X.presheaf.stalk η) _ _).mp hmem
+  exact hs (hle (TauCeti.Ideal.Quotient.mem_colon_singleton_mk.mpr hsa))
+
+/-- **Algebraic Hartogs' principle.** On a locally Noetherian normal integral scheme, a rational
+function whose order of vanishing is nonnegative at every codimension-one point of a nonempty open
+subset `U` is regular on `U`. -/
+theorem exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme {U : X.Opens} [Nonempty U]
+    {f : X.functionField} (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → 0 ≤ X.ord f y) :
+    ∃ a : Γ(X, U), X.germToFunctionField U a = f :=
+  exists_germToFunctionField_eq_of_forall_mem_range fun _ hx ↦
+    exists_algebraMap_stalk_eq_of_forall_specializes_ord_nonneg fun η hηx ↦
+      hf η (hηx.mem_open U.isOpen hx)
+
+/-- On a locally Noetherian normal integral scheme, a nonzero rational function whose order of
+vanishing is zero at every codimension-one point of a nonempty open subset `U` is a regular unit
+on `U`. -/
+theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme {U : X.Opens}
+    [Nonempty U] {f : X.functionFieldˣ}
+    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
+    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) :=
+  exists_unit_germToFunctionField_eq_of_forall_ord_nonneg
+    (fun _ ↦ exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme) hf
+
+end Hartogs
 
 end Scheme
 

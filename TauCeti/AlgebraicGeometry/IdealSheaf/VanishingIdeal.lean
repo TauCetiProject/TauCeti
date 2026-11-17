@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 
 /-!
@@ -33,6 +34,11 @@ discrete valuation ring.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
+* `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`: pulling back the vanishing ideal
+  sheaf of a closed subset along an open immersion gives the vanishing ideal sheaf of its preimage,
+  with point-closure specializations
+  `comap_vanishingIdeal_closure_singleton_of_isOpenImmersion` and
+  `comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range`.
 
 ## References
 
@@ -42,13 +48,13 @@ discrete valuation ring.
 
 public section
 
-open TopologicalSpace
+open CategoryTheory TopologicalSpace
 
 universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X : Scheme.{u}}
+variable {U X : Scheme.{u}}
 
 /-- The reduced induced closed subscheme structure on a closed subset is reduced. -/
 instance isReduced_subscheme_vanishingIdeal (Z : Closeds X) :
@@ -106,5 +112,48 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
+
+/-- Pulling back the vanishing ideal sheaf of a closed subset `Z` along an open immersion `j` gives
+the vanishing ideal sheaf of the preimage `j ⁻¹' Z`. -/
+theorem comap_vanishingIdeal_of_isOpenImmersion (Z : Closeds X) (j : U ⟶ X) [IsOpenImmersion j] :
+    (vanishingIdeal Z).comap j = vanishingIdeal (Z.preimage j.continuous) := by
+  have hRad : ((vanishingIdeal Z).comap j).radical = (vanishingIdeal Z).comap j := by
+    ext V : 2
+    rw [radical_ideal, ideal_comap_of_isOpenImmersion]
+    refine Ideal.IsRadical.radical (Ideal.IsRadical.comap _ ?_)
+    rw [vanishingIdeal_ideal]
+    exact PrimeSpectrum.isRadical_vanishingIdeal _
+  have hSup : ((vanishingIdeal Z).comap j).support = Z.preimage j.continuous := by
+    rw [support_comap]
+    congr 1
+  rw [← hRad, ← vanishingIdeal_support, hSup]
+
+/-- Along an open immersion `j : U ⟶ X`, the vanishing ideal sheaf of `closure {j u}` pulls back to
+the vanishing ideal sheaf of `closure {u}`. -/
+theorem comap_vanishingIdeal_closure_singleton_of_isOpenImmersion (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) :
+    (vanishingIdeal ⟨closure {j u}, isClosed_closure⟩).comap j =
+      vanishingIdeal ⟨closure {u}, isClosed_closure⟩ := by
+  rw [comap_vanishingIdeal_of_isOpenImmersion]
+  congr 1
+  ext1
+  simp only [Closeds.coe_preimage, Closeds.coe_mk]
+  rw [j.isOpenEmbedding.isOpenMap.preimage_closure_eq_closure_preimage j.continuous]
+  congr 1
+  ext w
+  simp [j.isOpenEmbedding.injective.eq_iff]
+
+/-- Along an open immersion `j : U ⟶ X`, the vanishing ideal sheaf of `closure {x}` for a point
+`x ∉ Set.range j` pulls back to the unit ideal sheaf on `U`. -/
+theorem comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range (j : U ⟶ X)
+    [IsOpenImmersion j] {x : X} (hx : x ∉ Set.range j) :
+    (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).comap j = ⊤ := by
+  rw [comap_vanishingIdeal_of_isOpenImmersion, ← vanishingIdeal_bot (X := U)]
+  congr 1
+  ext1
+  simp only [Closeds.coe_preimage, Closeds.coe_mk, Closeds.coe_bot]
+  rw [j.isOpenEmbedding.isOpenMap.preimage_closure_eq_closure_preimage j.continuous]
+  have hpre : j ⁻¹' {x} = ∅ := Set.eq_empty_of_forall_notMem fun v hv ↦ hx ⟨v, hv⟩
+  simp [hpre]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
