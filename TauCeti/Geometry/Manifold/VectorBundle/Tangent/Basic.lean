@@ -851,6 +851,14 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
     rfl
 
+/-- If a map `Ψ` between open subsets is the restriction of a map `Φ` of the ambient manifolds,
+`Φ ∘ val = val ∘ Ψ`, then the differentials of `Ψ` and of `Φ` agree at every point of the source
+subset. -/
+theorem mfderiv_apply_of_comp_subtype_val_eq {U : Opens N} {V : Opens M} {Φ : N → M}
+    {Ψ : U → V} (h : Φ ∘ (Subtype.val : U → N) = (Subtype.val : V → M) ∘ Ψ) (x : U)
+    (v : TangentSpace J x) : mfderiv J I Ψ x v = mfderiv J I Φ (x : N) v := by
+  rw [← mfderiv_subtype_val_comp_apply, ← h, mfderiv_comp_subtype_val_apply]
+
 end RestrictOpen
 
 /-- If a map `f` between open submanifolds is the restriction of a map `A` of the ambient

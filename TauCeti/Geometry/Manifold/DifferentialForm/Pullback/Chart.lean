@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 
 /-!
@@ -25,6 +26,12 @@ manifold; conversely, evaluating a form `φ` on the chart source agrees with eva
 Near time `t`, the pullback along a family of maps which sends `y` into the chart at `y` at time `t`
 is the flat pullback along the family read in the chart at `y`
 (`TauCeti.RoughForm.eventuallyEq_mpullback_compContinuousLinearMap`).
+Over a boundaryless source model, a form vanishing at `f x` with zero first jet there, in the
+sense that its coordinate expression has zero derivative at the chart point, pulls back along a
+`C¹` map `f` to a form vanishing at `x` with zero first jet
+(`TauCeti.RoughForm.hasFDerivAt_inChartAt_mpullback`): the coordinate expression of the pullback
+is the coordinate expression of the form, which vanishes to first order, composed with the bounded
+derivative of the coordinate expression of `f`.
 -/
 
 public section
@@ -169,6 +176,61 @@ theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless] [IsManif
     I.range_eq_univ, fderivWithin_univ]
   -- The two coordinate expressions of `ψᵤ` differ only by unfolding `Function.comp`.
   rfl
+
+/-- **Pullback preserves a zero first jet.** Over a boundaryless source model, let `ω` be a form
+which vanishes at `f x` and whose coordinate expression in the preferred chart at `f x` has zero
+derivative at the chart point, and let `f` be `C¹` at `x`. Then the coordinate expression of the
+pullback `f^* ω` in the preferred chart at `x` has zero derivative at the chart point; the
+pullback also vanishes at `x`, so its whole first jet vanishes there. -/
+theorem hasFDerivAt_inChartAt_mpullback [I.Boundaryless] [IsManifold I' 1 M']
+    {ω : RoughForm I' M' F k} {f : M → M'} {x : M} (hf : ContMDiffAt I I' 1 f x)
+    (hω : HasFDerivAt (ω.inChartAt (f x)) (0 : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I' (f x) (f x)))
+    (hωx : ω (f x) = 0) :
+    HasFDerivAt ((mpullback I I' f ω).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I x x) := by
+  set ψ := extChartAt I' (f x) ∘ f ∘ (extChartAt I x).symm
+  -- The coordinate expression `ψ` of `f` is `C¹` at the chart point, with continuous derivative.
+  have hψ : ContDiffAt ℝ 1 ψ (extChartAt I x x) := by
+    have h := (contMDiffAt_iff.1 hf).2
+    rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
+  have hD : ContinuousAt (fderiv ℝ ψ) (extChartAt I x x) :=
+    (hψ.fderiv_right (m := 0) le_rfl).continuousAt
+  have hψx : ψ (extChartAt I x x) = extChartAt I' (f x) (f x) := by
+    simp only [ψ, Function.comp_apply, extChartAt_to_inv]
+  -- Near the chart point, the pullback is the coordinate expression of `ω` composed with `ψ`,
+  -- precomposed with the derivative of `ψ`.
+  have hsym : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
+    simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) x).tendsto
+  have hf' := hsym.eventually ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf)
+  have hsrc := hsym.eventually (hf.continuousAt.preimage_mem_nhds
+    (extChartAt_source_mem_nhds (I := I') (f x)))
+  have heq : (mpullback I I' f ω).inChartAt x =ᶠ[𝓝 (extChartAt I x x)]
+      fun z ↦ (ω.inChartAt (f x) (ψ z)).compContinuousLinearMap (fderiv ℝ ψ z) := by
+    filter_upwards [extChartAt_target_mem_nhds (I := I) x, hf', hsrc] with z hz hfz hsz
+    rw [inChartAt_mpullback_eq_compContinuousLinearMap ω x (f x) hz
+      (hfz.mdifferentiableAt one_ne_zero) hsz, I.range_eq_univ, fderivWithin_univ]
+    -- The two coordinate expressions of `f` differ only by unfolding `Function.comp`.
+    rfl
+  -- The coordinate expression of `ω` along `ψ` vanishes to first order at the chart point, and the
+  -- pullback is bounded by it, since the derivative of `ψ` is bounded near the chart point.
+  have hωψ : HasFDerivAt (fun z ↦ ω.inChartAt (f x) (ψ z)) (0 : E →L[ℝ] E' [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I x x) := by
+    have h := (hψx ▸ hω).comp (extChartAt I x x) (hψ.differentiableAt one_ne_zero).hasFDerivAt
+    rwa [ContinuousLinearMap.zero_comp] at h
+  have hωψx : ω.inChartAt (f x) (ψ (extChartAt I x x)) = 0 := by
+    rw [hψx, inChartAt_extChartAt_self, hωx]
+    rfl
+  have hbound : ∀ᶠ z in 𝓝 (extChartAt I x x),
+      ‖fderiv ℝ ψ z‖ ≤ ‖fderiv ℝ ψ (extChartAt I x x)‖ + 1 :=
+    hD.norm.eventually (ge_mem_nhds (lt_add_one _))
+  refine Asymptotics.IsBigO.hasFDerivAt_zero ?_ hωψ hωψx
+  refine Asymptotics.IsBigO.congr' ?_ heq.symm EventuallyEq.rfl
+  refine Asymptotics.IsBigO.of_bound ((‖fderiv ℝ ψ (extChartAt I x x)‖ + 1) ^ k) ?_
+  filter_upwards [hbound] with z hz
+  refine (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  rw [Fintype.card_fin, mul_comm]
+  gcongr
 
 end TauCeti.RoughForm
 

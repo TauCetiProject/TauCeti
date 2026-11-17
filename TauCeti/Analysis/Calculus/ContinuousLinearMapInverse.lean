@@ -37,6 +37,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
   `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
+* `ContinuousAt.eventually_forall_norm_le_mul_norm_apply`: a continuous family of continuous
+  linear maps is uniformly bounded below near a point where it is invertible.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
@@ -177,6 +179,31 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
+
+/-- **A continuous family is bounded below near an invertible value.** If a family `B` of
+continuous linear maps is continuous at `x₀`, where it is a continuous linear equivalence `e`, then
+near `x₀` it satisfies the uniform lower bound `‖v‖ ≤ 2 ‖e⁻¹‖ ‖B x v‖`: there `e⁻¹ ∘ B x` is
+within `1 / 2` of the identity. No completeness is needed. -/
+theorem ContinuousAt.eventually_forall_norm_le_mul_norm_apply {X : Type*} [TopologicalSpace X]
+    {B : X → E →L[𝕜] F} {x₀ : X} (hB : ContinuousAt B x₀) (e : E ≃L[𝕜] F) (he : B x₀ = e) :
+    ∀ᶠ x in 𝓝 x₀, ∀ v, ‖v‖ ≤ 2 * ‖(e.symm : F →L[𝕜] E)‖ * ‖B x v‖ := by
+  set K : X → E →L[𝕜] E := fun x ↦ (e.symm : F →L[𝕜] E).comp (B x)
+  have hK : ContinuousAt K x₀ :=
+    (compL 𝕜 E F E e.symm).continuous.continuousAt.comp hB
+  have hK₀ : K x₀ = ContinuousLinearMap.id 𝕜 E := by
+    ext v
+    simp [K, he]
+  filter_upwards [hK.eventually (Metric.ball_mem_nhds (K x₀) (by norm_num : (0 : ℝ) < 1 / 2))]
+    with x hx v
+  rw [dist_eq_norm, hK₀] at hx
+  -- `‖v‖ ≤ ‖K x v‖ + ‖K x - 1‖ ‖v‖ ≤ ‖e⁻¹‖ ‖B x v‖ + ‖v‖ / 2`.
+  have h1 : ‖v‖ ≤ ‖K x v‖ + 1 / 2 * ‖v‖ :=
+    calc ‖v‖ = ‖K x v - (K x - ContinuousLinearMap.id 𝕜 E) v‖ := by simp
+      _ ≤ ‖K x v‖ + ‖K x - ContinuousLinearMap.id 𝕜 E‖ * ‖v‖ :=
+        (norm_sub_le _ _).trans (by gcongr; exact le_opNorm _ _)
+      _ ≤ ‖K x v‖ + 1 / 2 * ‖v‖ := by gcongr
+  have h2 : ‖K x v‖ ≤ ‖(e.symm : F →L[𝕜] E)‖ * ‖B x v‖ := le_opNorm (e.symm : F →L[𝕜] E) (B x v)
+  linarith
 
 end Perturbation
 

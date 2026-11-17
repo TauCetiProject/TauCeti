@@ -25,6 +25,8 @@ scalar functions recover both functions as differentiable.
   derivative is surjective.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
+* `Asymptotics.IsBigO.hasFDerivAt_zero`: if `f = O(g)` near `x` and `g` vanishes at `x` with zero
+  derivative, then `f` vanishes at `x` with zero derivative.
 -/
 
 public section
@@ -81,3 +83,22 @@ theorem differentiableAt_and_of_differentiableAt_comb {F G : E → 𝕜} {a b c 
     exact (hA.const_mul _).add (hB.const_mul _)
 
 end TauCeti
+
+namespace Asymptotics.IsBigO
+
+open scoped Topology
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {f : E → F} {g : E → G} {x : E}
+
+/-- **Vanishing to first order is inherited by dominated functions.** If `f = O(g)` near `x`, and
+`g` vanishes at `x` with zero derivative there, then so does `f`. -/
+theorem hasFDerivAt_zero (h : f =O[𝓝 x] g) (hg : HasFDerivAt g (0 : E →L[𝕜] G) x)
+    (hgx : g x = 0) : HasFDerivAt f (0 : E →L[𝕜] F) x := by
+  have hfx : f x = 0 := h.eq_zero_imp.self_of_nhds hgx
+  rw [hasFDerivAt_iff_isLittleO] at hg ⊢
+  simp only [hfx, hgx, sub_zero, zero_apply] at hg ⊢
+  exact h.trans_isLittleO hg
+
+end Asymptotics.IsBigO
