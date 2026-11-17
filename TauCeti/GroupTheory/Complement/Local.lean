@@ -72,14 +72,17 @@ theorem map {f : G →* G'} (hf : Function.Injective f) :
   · rw [← map_inf _ _ f hf, h.inf_eq_bot, map_bot]
   · rw [← map_sup, h.sup_eq]
 
+/-- When `N` is normal in `H`, a local complement of `N` in `H` normalizes `N`. -/
+theorem right_le_normalizer [(N.subgroupOf H).Normal] : K ≤ normalizer N :=
+  h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le)
+
 /-- Restrict a local complement to an intermediate subgroup containing the normal subgroup. -/
 theorem restrict [(N.subgroupOf H).Normal] (hNL : N ≤ L) (hLH : L ≤ H) :
     N.IsLocalComplement (K ⊓ L) L := by
   constructor
   · exact disjoint_iff.mp (h.disjoint.mono_right inf_le_left)
   · rw [inf_comm K L, sup_comm,
-      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _
-        (h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le))) hNL,
+      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _ h.right_le_normalizer) hNL,
       sup_comm K N, h.sup_eq, inf_eq_left.mpr hLH]
 
 end IsLocalComplement
@@ -404,5 +407,36 @@ theorem IsLocalComplement.leftProjection_conj_smul (h : N.IsLocalComplement K H)
   exact (h.leftProjection_eq_iff x _).mp rfl
 
 end Conjugation
+
+section GlobalComparison
+
+/-- Viewing a local complement in `⊤` globally preserves the product decomposition. -/
+@[simp]
+theorem IsLocalComplement.equiv_top [N.Normal] (h : N.IsLocalComplement K ⊤)
+    (x : (⊤ : Subgroup G)) :
+    h.equiv x = (isLocalComplement_top_iff.mp h).equiv x := by
+  have h' := isLocalComplement_top_iff.mp h
+  have hx : x = ⟨((h'.equiv x).1 : G) * (h'.equiv x).2, mem_top _⟩ :=
+    Subtype.ext (h'.equiv_fst_mul_equiv_snd x).symm
+  conv_lhs => rw [hx]
+  exact h.equiv_mul (h'.equiv x).1 (h'.equiv x).2
+
+/-- The left projection of a local complement in `⊤` is the first component of
+`IsComplement.equiv`. -/
+@[simp]
+theorem IsLocalComplement.leftProjection_top [N.Normal] (h : N.IsLocalComplement K ⊤)
+    (x : (⊤ : Subgroup G)) :
+    h.leftProjection x = ((isLocalComplement_top_iff.mp h).equiv x).1 := by
+  rw [IsLocalComplement.leftProjection_apply, h.equiv_top]
+
+/-- The right projection of a local complement in `⊤` is the second component of
+`IsComplement.equiv`. -/
+@[simp]
+theorem IsLocalComplement.rightProjection_top [N.Normal] (h : N.IsLocalComplement K ⊤)
+    (x : (⊤ : Subgroup G)) :
+    h.rightProjection x = ((isLocalComplement_top_iff.mp h).equiv x).2 := by
+  rw [IsLocalComplement.rightProjection_apply, h.equiv_top]
+
+end GlobalComparison
 
 end Subgroup
