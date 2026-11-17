@@ -16,6 +16,11 @@ is with `a ≫ s = s'`, induces a morphism of points `pointSmallEtale s' ⟶ poi
 the small étale site (`AlgebraicGeometry.Scheme.pointSmallEtaleHom`): a lift `t` of `s` to an
 étale `S`-scheme goes to the lift `a ≫ t` of `s'`. This construction is functorial in `a`.
 
+Through `CategoryTheory.GrothendieckTopology.Point.Hom.sheafFiber`, these morphisms induce natural
+comparison maps between the stalks of étale sheaves at `s` and at `s'`. In particular the
+automorphisms of a geometric point act on the stalks there, which gives the Galois action on
+stalks of étale sheaves on a field.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.pointSmallEtaleHom a h`: the morphism of points of the small étale
@@ -24,7 +29,8 @@ the small étale site (`AlgebraicGeometry.Scheme.pointSmallEtaleHom`): a lift `t
 ## Main results
 
 * `AlgebraicGeometry.Scheme.pointSmallEtaleHom_id`,
-  `AlgebraicGeometry.Scheme.pointSmallEtaleHom_comp`: functoriality in the geometric point.
+  `AlgebraicGeometry.Scheme.pointSmallEtaleHom_comp`: functoriality in morphisms of geometric
+  points.
 -/
 
 public section
@@ -75,8 +81,8 @@ theorem pointSmallEtaleHom_id (s : Spec (.of Ω) ⟶ S) (h : 𝟙 _ ≫ s = s) :
   simp only [pointSmallEtaleHom_hom_app_left, GrothendieckTopology.Point.id_hom, NatTrans.id_app,
     ConcreteCategory.id_apply, Category.id_comp]
 
-/-- The morphism of points induced by a composite of geometric points is the composite of the
-induced morphisms. -/
+/-- The morphism of points induced by a composite of morphisms of geometric points is the
+composite of the induced morphisms. -/
 theorem pointSmallEtaleHom_comp {s : Spec (.of Ω) ⟶ S} {s' : Spec (.of Ω') ⟶ S}
     {s'' : Spec (.of Ω'') ⟶ S} (a : Spec (.of Ω'') ⟶ Spec (.of Ω'))
     (b : Spec (.of Ω') ⟶ Spec (.of Ω)) (ha : a ≫ s' = s'') (hb : b ≫ s = s')
