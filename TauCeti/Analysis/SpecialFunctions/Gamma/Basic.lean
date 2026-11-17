@@ -57,6 +57,10 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Real.pi_div_factorial_le_neg_one_pow_mul_Gamma`, `Real.neg_one_pow_mul_Gamma_pos`,
+  `Real.ne_neg_natCast_of_mem_Ioo` — on the negative unit interval `(−(m + 1), −m)`,
+  points avoid `−ℕ` and `Real.Gamma` has sign `(−1) ^ (m + 1)` with
+  `π / (m + 1)! ≤ (−1) ^ (m + 1) * Γ(x)`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -275,6 +279,71 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+/-- On the negative unit interval `(−(m + 1), −m)`, real Gamma has sign `(−1) ^ (m + 1)` and
+satisfies `π / (m + 1)! ≤ (−1) ^ (m + 1) * Γ(x)`. -/
+theorem pi_div_factorial_le_neg_one_pow_mul_Gamma {m : ℕ} {x : ℝ}
+    (hx₁ : -((m + 1 : ℕ) : ℝ) < x) (hx₂ : x < -(m : ℝ)) :
+    Real.pi / ((m + 1)! : ℝ) ≤ (-1 : ℝ) ^ (m + 1) * Gamma x := by
+  have hΓ1_pos : 0 < Gamma (1 - x) := Gamma_pos_of_pos (by linarith [m.cast_nonneg (α := ℝ)])
+  have hΓ1_le : Gamma (1 - x) ≤ ((m + 1)! : ℝ) := by
+    cases m with
+    | zero =>
+      have hconv := convexOn_Gamma.2 (Set.mem_Ioi.mpr zero_lt_one) (Set.mem_Ioi.mpr two_pos)
+        (by push_cast at hx₁; linarith : 0 ≤ 2 - (1 - x))
+        (by simpa using hx₂.le : 0 ≤ (1 - x) - 1) (by ring)
+      have hy : (2 - (1 - x)) • (1 : ℝ) + ((1 - x) - 1) • (2 : ℝ) = 1 - x := by
+        simp only [smul_eq_mul]; ring
+      rw [hy, smul_eq_mul, smul_eq_mul, Gamma_one, Gamma_two] at hconv
+      norm_num; linarith
+    | succ k =>
+      have h2 : (2 : ℝ) ≤ 1 - x := by
+        push_cast at hx₂ ⊢; linarith [k.cast_nonneg (α := ℝ)]
+      have hle : 1 - x ≤ ((k + 1 + 1 : ℕ) : ℝ) + 1 := by push_cast at hx₁ ⊢; linarith
+      have hmono := Gamma_strictMonoOn_Ici.monotoneOn (Set.mem_Ici.mpr h2)
+        (Set.mem_Ici.mpr (le_trans h2 hle)) hle
+      rwa [Gamma_nat_eq_factorial] at hmono
+  have hsin_shift : 0 < sin (Real.pi * (x + (m + 1 : ℕ))) :=
+    sin_pos_of_pos_of_lt_pi (mul_pos Real.pi_pos (by push_cast at hx₁ ⊢; linarith))
+      (by
+        calc Real.pi * (x + (m + 1 : ℕ))
+            < Real.pi * 1 := by gcongr; push_cast at hx₂ ⊢; linarith
+          _ = Real.pi := mul_one _)
+  have hsin_eq :
+      sin (Real.pi * (x + (m + 1 : ℕ))) = (-1 : ℝ) ^ (m + 1) * sin (Real.pi * x) := by
+    rw [mul_add, mul_comm Real.pi ((m + 1 : ℕ) : ℝ), sin_add_nat_mul_pi]
+  have hprod : ((-1 : ℝ) ^ (m + 1) * Gamma x) * Gamma (1 - x) =
+      Real.pi / sin (Real.pi * (x + (m + 1 : ℕ))) := by
+    rw [mul_assoc, Gamma_mul_Gamma_one_sub x, hsin_eq, div_mul_eq_div_div]
+    simp only [div_eq_mul_inv, ← inv_pow, inv_neg, inv_one]; ring
+  have hGamma_eq : (-1 : ℝ) ^ (m + 1) * Gamma x =
+      Real.pi / (sin (Real.pi * (x + (m + 1 : ℕ))) * Gamma (1 - x)) := by
+    rw [eq_div_iff (mul_pos hsin_shift hΓ1_pos).ne']
+    calc ((-1 : ℝ) ^ (m + 1) * Gamma x) * (sin (Real.pi * (x + (m + 1 : ℕ))) * Gamma (1 - x))
+        = (((-1 : ℝ) ^ (m + 1) * Gamma x) * Gamma (1 - x)) *
+            sin (Real.pi * (x + (m + 1 : ℕ))) := by ring
+      _ = Real.pi := by rw [hprod, div_mul_cancel₀ _ hsin_shift.ne']
+  rw [hGamma_eq]
+  refine div_le_div_of_nonneg_left Real.pi_pos.le (mul_pos hsin_shift hΓ1_pos) ?_
+  simpa only [one_mul] using mul_le_mul (sin_le_one _) hΓ1_le hΓ1_pos.le zero_le_one
+
+/-- On the negative unit interval `(−(m + 1), −m)`, real Gamma has sign `(−1) ^ (m + 1)`. -/
+theorem neg_one_pow_mul_Gamma_pos {m : ℕ} {x : ℝ}
+    (hx₁ : -((m + 1 : ℕ) : ℝ) < x) (hx₂ : x < -(m : ℝ)) :
+    0 < (-1 : ℝ) ^ (m + 1) * Gamma x :=
+  (div_pos Real.pi_pos (by positivity)).trans_le
+    (pi_div_factorial_le_neg_one_pow_mul_Gamma hx₁ hx₂)
+
+/-- A real number strictly between consecutive negative integers `−(m + 1)` and `−m` is not a
+nonpositive integer. -/
+theorem ne_neg_natCast_of_mem_Ioo {m : ℕ} {x : ℝ}
+    (hx : x ∈ Set.Ioo (-((m + 1 : ℕ) : ℝ)) (-(m : ℝ))) (k : ℕ) :
+    x ≠ -(k : ℝ) := by
+  intro hk
+  rw [hk] at hx
+  have h1 : m < k := Nat.cast_lt.mp (by linarith [hx.2] : (m : ℝ) < k)
+  have h2 : k < m + 1 := Nat.cast_lt.mp (by linarith [hx.1] : (k : ℝ) < (m + 1 : ℕ))
+  omega
 
 end Real
 

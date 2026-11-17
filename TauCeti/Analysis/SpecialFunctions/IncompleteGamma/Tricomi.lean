@@ -34,10 +34,14 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
   `γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt` (DLMF 8.2.7), for `0 < Re a`;
 * `Complex.tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one` — the
   recurrence `γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)` in the parameter (DLMF §8.8);
-* `Complex.tricomiIncompleteGamma_zero_right`, `tricomiIncompleteGamma_neg_natCast`,
-  `tricomiIncompleteGamma_zero_left`, `tricomiIncompleteGamma_one_left` — the special values
-  `γ*(a, 0) = 1 / Γ(a + 1)` (DLMF 8.4.2), `γ*(−n, z) = zⁿ` (DLMF 8.4.12), `γ*(0, z) = 1` and
-  `γ*(1, z) = (1 − e^{−z}) / z` for `z ≠ 0`;
+* `Complex.tricomiIncompleteGamma_zero_right`, `tricomiIncompleteGamma_zero_right_eq_zero_iff`,
+  `tricomiIncompleteGamma_neg_natCast`, `tricomiIncompleteGamma_zero_left`,
+  `tricomiIncompleteGamma_one_left` — the special values `γ*(a, 0) = 1 / Γ(a + 1)` (DLMF 8.4.2,
+  vanishing precisely at `a = −n` for `n ≥ 1`, DLMF §8.13(iii)(c)), `γ*(−n, z) = zⁿ`
+  (DLMF 8.4.12), `γ*(0, z) = 1` and `γ*(1, z) = (1 − e^{−z}) / z` for `z ≠ 0`;
+* `Complex.tricomiIncompleteGamma_conj`, `tricomiIncompleteGamma_ofReal_im`,
+  `tricomiIncompleteGamma_ofReal_eq_zero_iff` — Schwarz reflection
+  `γ*(conj a, conj z) = conj (γ*(a, z))`, so `γ*(a, x)` is real for real `a` and `x`;
 * `Complex.hasDerivAt_tricomiIncompleteGamma` — `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`, so that
   `γ*(a, ·)` is entire (`differentiable_tricomiIncompleteGamma`);
 * `Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
@@ -62,7 +66,7 @@ public section
 noncomputable section
 
 open Complex Filter Finset Set MeasureTheory
-open scoped Nat Topology Interval
+open scoped ComplexConjugate Nat Topology Interval
 
 namespace Complex
 
@@ -106,6 +110,17 @@ theorem tricomiIncompleteGamma_zero_right (a : ℂ) :
     tricomiIncompleteGamma a 0 = (Gamma (a + 1))⁻¹ := by
   simp [tricomiIncompleteGamma_def]
 
+/-- The parameter zeros of Tricomi's function at `z = 0` (DLMF §8.13(iii)(c)):
+`γ*(a, 0) = 0` if and only if `a = −n` for a positive integer `n ≥ 1`. -/
+theorem tricomiIncompleteGamma_zero_right_eq_zero_iff (a : ℂ) :
+    tricomiIncompleteGamma a 0 = 0 ↔ ∃ n : ℕ, 1 ≤ n ∧ a = -(n : ℂ) := by
+  rw [tricomiIncompleteGamma_zero_right, inv_eq_zero, Complex.Gamma_eq_zero_iff]
+  constructor
+  · rintro ⟨m, hm⟩
+    exact ⟨m + 1, Nat.succ_pos m, by push_cast; linear_combination hm⟩
+  · rintro ⟨n, hn, rfl⟩
+    exact ⟨n - 1, by rw [Nat.cast_sub hn]; push_cast; ring⟩
+
 /-- At `a = 0`, Tricomi's function is identically `1`. -/
 @[simp]
 theorem tricomiIncompleteGamma_zero_left (z : ℂ) : tricomiIncompleteGamma 0 z = 1 := by
@@ -137,6 +152,28 @@ theorem tricomiIncompleteGamma_one_left {z : ℂ} (hz : z ≠ 0) :
   rw [tricomiIncompleteGamma_zero_left, zero_add, Gamma_one, div_one] at h
   rw [eq_div_iff hz]
   linear_combination -h
+
+/-- Schwarz reflection for Tricomi's function: `γ*(conj a, conj z) = conj (γ*(a, z))`. -/
+theorem tricomiIncompleteGamma_conj (a z : ℂ) :
+    tricomiIncompleteGamma (conj a) (conj z) = conj (tricomiIncompleteGamma a z) := by
+  have h := Complex.conjCLE.toContinuousLinearMap.hasSum (hasSum_tricomiIncompleteGamma a z)
+  refine (hasSum_tricomiIncompleteGamma (conj a) (conj z)).unique ?_
+  refine h.congr_fun fun k => ?_
+  simp only [ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply, map_div₀, map_mul, map_pow,
+    ← Complex.exp_conj, map_neg, ← Complex.Gamma_conj, map_add, map_natCast, map_one]
+
+/-- Tricomi's function is real-valued for real parameter and real argument. -/
+@[simp]
+theorem tricomiIncompleteGamma_ofReal_im (a x : ℝ) :
+    (tricomiIncompleteGamma a x).im = 0 := by
+  rw [← Complex.conj_eq_iff_im, ← tricomiIncompleteGamma_conj, conj_ofReal, conj_ofReal]
+
+/-- For real parameter and real argument, Tricomi's function vanishes if and only if its real part
+vanishes. -/
+theorem tricomiIncompleteGamma_ofReal_eq_zero_iff (a x : ℝ) :
+    tricomiIncompleteGamma a x = 0 ↔ (tricomiIncompleteGamma a x).re = 0 := by
+  rw [Complex.ext_iff]
+  simp
 
 /-! ### Differentiability in the argument -/
 

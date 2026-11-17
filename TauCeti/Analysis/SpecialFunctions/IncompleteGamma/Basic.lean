@@ -33,8 +33,9 @@ the parameter range.
 
 * `TauCeti.lowerIncompleteGamma_eq_integral` and `TauCeti.regularizedGamma_eq_div` — the
   characteristic descriptions replacing the clamped definitions;
-* `TauCeti.intervalIntegrable_rpow_mul_exp_neg` — convergence of Euler's integrand on an interval,
-  including at the singularity `0` for `s < 1`;
+* `TauCeti.intervalIntegrable_rpow_mul_exp_neg`, `TauCeti.integrableOn_rpow_mul_exp_neg_Ioi` —
+  convergence of Euler's integrand on finite intervals (including at `0` for `s < 1`) and on
+  half-lines `(x, ∞)` for `x > 0` and all real exponents;
 * `TauCeti.continuous_lowerIncompleteGamma`, `TauCeti.continuous_regularizedGamma` — continuity on
   all of `ℝ`, in particular at `x = 0`, where for `s < 1` the integrand blows up;
 * `TauCeti.lowerIncompleteGamma_monotone`, `TauCeti.regularizedGamma_monotone` — monotonicity,
@@ -105,6 +106,25 @@ theorem intervalIntegrable_rpow_mul_exp_neg {p : ℝ} (hp : -1 < p) (a b : ℝ) 
     IntervalIntegrable (fun t : ℝ => t ^ p * Real.exp (-t)) volume a b :=
   (intervalIntegral.intervalIntegrable_rpow' hp).mul_continuousOn
     (Real.continuous_exp.comp continuous_neg).continuousOn
+
+/-- Euler's integrand `t ^ p * exp (-t)` is integrable on `(x, ∞)` for every `p : ℝ` and
+`0 < x`. -/
+theorem integrableOn_rpow_mul_exp_neg_Ioi (p : ℝ) {x : ℝ} (hx : 0 < x) :
+    IntegrableOn (fun t : ℝ => t ^ p * Real.exp (-t)) (Ioi x) := by
+  rcases le_or_gt p 0 with hp | hp
+  · refine ((integrableOn_exp_neg_Ioi x).const_mul (x ^ p)).mono'
+      (ContinuousOn.aestronglyMeasurable
+        (ContinuousOn.mul (fun t ht => (Real.continuousAt_rpow_const t p
+          (Or.inl (lt_trans hx ht).ne')).continuousWithinAt)
+          (Real.continuous_exp.comp continuous_neg).continuousOn) measurableSet_Ioi) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (Real.rpow_nonneg (lt_trans hx ht).le _)
+      (Real.exp_pos _).le)]
+    exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos hx ht.out.le hp)
+      (Real.exp_pos _).le
+  · refine ((Real.GammaIntegral_convergent (by linarith : 0 < p + 1)).mono_set
+      (Ioi_subset_Ioi hx.le)).congr_fun (fun t _ => ?_) measurableSet_Ioi
+    simp only [add_sub_cancel_right, mul_comm]
 
 /-! ### The definitions -/
 
