@@ -150,25 +150,28 @@ def toTopBoundary (n : SimplexCategory) : Set (toTop.{u}.obj n) := (toTopInterio
   simp only [toTopBoundary, mem_toTopInterior_iff, Set.mem_compl_iff, not_forall, not_lt]
   exact exists_congr fun i ↦ ⟨fun h ↦ le_antisymm h (t.down.nonneg i), fun h ↦ h.le⟩
 
-/-- The relative boundary of every topological simplex is closed. -/
-theorem isClosed_toTopBoundary (n : SimplexCategory) : IsClosed (toTopBoundary.{u} n) := by
-  rw [show toTopBoundary.{u} n = ⋃ i : Fin (n.len + 1), {t | t.down.weights i = 0} by ext; simp]
-  exact isClosed_iUnion_of_finite fun i ↦ isClosed_eq ((continuous_apply i).comp
-    ((StdSimplex.isEmbedding_toFun_comp_weights ℝ _).continuous.comp continuous_uliftDown))
-    continuous_const
-
-/-- The open interior of every topological simplex is open. -/
-theorem isOpen_toTopInterior (n : SimplexCategory) : IsOpen (toTopInterior.{u} n) :=
-  compl_toTopBoundary n ▸ (isClosed_toTopBoundary n).isOpen_compl
-
 /-- The relative boundary of `Δⁿ⁺¹` is the union of the images of its faces `δ i`. -/
 theorem toTopBoundary_eq_iUnion_range_δ (n : ℕ) :
     toTopBoundary.{u} ⦋n + 1⦌ = ⋃ i : Fin (n + 2), Set.range (toTop.{u}.map (δ i)) := by
   ext t; rw [mem_toTopBoundary_iff, Set.mem_iUnion]
   refine exists_congr fun i ↦ ?_
-  rw [mem_range_toTop_map_iff, show Set.range (δ i).toOrderHom = {i}ᶜ from Fin.range_succAbove i]
-  exact ⟨fun hi j hj ↦ (Set.notMem_compl_iff.mp hj : j = i) ▸ hi,
-    fun h ↦ h i (Set.notMem_compl_iff.mpr rfl)⟩
+  have hrange : Set.range (δ i).toOrderHom = {i}ᶜ := by
+    simp only [δ, mkHom, Hom.toOrderHom_mk, OrderEmbedding.toOrderHom_coe,
+      Fin.coe_succAboveOrderEmb, Fin.range_succAbove]
+  rw [mem_range_toTop_map_iff, hrange]
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff, not_not, forall_eq]
+
+/-- The relative boundary of every topological simplex is closed. -/
+theorem isClosed_toTopBoundary (n : SimplexCategory) : IsClosed (toTopBoundary.{u} n) := by
+  rcases n with ⟨_ | m⟩
+  · rw [toTopBoundary_zero]; exact isClosed_empty
+  · rw [toTopBoundary_eq_iUnion_range_δ]
+    exact isClosed_iUnion_of_finite fun i ↦
+      (isClosedEmbedding_toTop_map_of_mono (δ i)).isClosed_range
+
+/-- The open interior of every topological simplex is open. -/
+theorem isOpen_toTopInterior (n : SimplexCategory) : IsOpen (toTopInterior.{u} n) :=
+  compl_toTopBoundary n ▸ (isClosed_toTopBoundary n).isOpen_compl
 
 /-- Any morphism from a strictly lower-dimensional simplex lands in the relative boundary. -/
 theorem toTop_map_mem_toTopBoundary_of_len_lt {m n : SimplexCategory} (f : m ⟶ n)
@@ -187,9 +190,11 @@ theorem exists_mono_toTop_map_mem_toTopInterior {n : ℕ} (t : toTop.{u}.obj ⦋
   obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero t.down.support_weights_nonempty.card_pos.ne'
   let e := S.orderEmbOfFin hk
   let μ : ⦋k⦌ ⟶ ⦋n⦌ := mkHom e.toOrderHom
+  have hrange : Set.range μ.toOrderHom = (S : Set _) := by
+    simp only [μ, e, mkHom, Hom.toOrderHom_mk, OrderEmbedding.toOrderHom_coe,
+      Finset.range_orderEmbOfFin]
   obtain ⟨u, hu⟩ : t ∈ Set.range (toTop.{u}.map μ) := by
-    rw [mem_range_toTop_map_iff, show Set.range μ.toOrderHom = (S : Set _) from
-      S.range_orderEmbOfFin hk]
+    rw [mem_range_toTop_map_iff, hrange]
     exact fun _ ↦ Finsupp.notMem_support_iff.mp
   refine ⟨k, μ, mono_iff_injective.mpr e.injective, u, mem_toTopInterior_iff_support_eq_univ.mpr <|
     Finset.eq_univ_of_card _ ?_, hu⟩

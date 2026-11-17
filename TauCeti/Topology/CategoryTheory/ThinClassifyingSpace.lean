@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton
 public import TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict
-public import TauCeti.Topology.CategoryTheory.ComposableArrows
-public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.Topology.CategoryTheory.Latching
 import Mathlib.Topology.GDelta.MetrizableSpace
 import Mathlib.Topology.Metrizable.Urysohn
