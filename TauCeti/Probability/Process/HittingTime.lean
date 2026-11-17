@@ -71,7 +71,7 @@ theorem exists_hittingAfter_eq_of_isRightContinuous (hs : IsClosed s)
       (eventually_nhdsWithin_of_forall fun _ hv ↦ hv.2)
 
 /-- At a finite closed-set entrance of a right-continuous path, the path lies in the target set. -/
-theorem hittingAfter_mem_of_isRightContinuous_of_ne_top (hs : IsClosed s)
+theorem hittingAfter_mem_set_of_isRightContinuous_of_ne_top (hs : IsClosed s)
     (hX : IsRightContinuous (X · ω)) (hfinite : hittingAfter X s a ω ≠ ⊤) :
     X (hittingAfter X s a ω).untopA ω ∈ s := by
   have : Nonempty ι := ⟨a⟩

@@ -16,10 +16,12 @@ import TauCeti.Topology.Order.LeftRight
 # Countable descriptions of open-set and level hits
 
 For any right-continuous path on a conditionally complete, densely ordered linear order with the
-order topology and no top element, the first hit of an open set from any starting time `a` can be
-computed using any dense family of sampling times. When the time axis is also second-countable,
-this makes open-set hitting times ambient-measurable for everywhere right-continuous processes and
-almost-everywhere measurable under almost-sure right-continuity.
+order topology, the first hit of an open set from any starting time `a` can be computed using any
+dense cofinal family of sampling times (in particular, any dense family when there is no top
+element; when a maximum element exists, a dense family is cofinal precisely when it contains that
+maximum). When the time axis is also second-countable, a countable dense cofinal family exists for
+any starting time `a`, making open-set hitting times ambient-measurable for everywhere
+right-continuous processes and almost-everywhere measurable under almost-sure right-continuity.
 
 For a continuous real path on nonnegative time, the first hit of a closed upper level is the
 supremum of the first strict hits of levels approaching it from below. Each strict hit can in
@@ -65,15 +67,16 @@ namespace IsRightContinuous
 
 open scoped Classical in
 /-- Hits of an open set from a starting time `a` by a right-continuous path on a conditionally
-complete, densely ordered linear order without maximum element can be computed from any dense
-family of sampling times. In particular, a countable dense family suffices. -/
-theorem hittingAfter_eq_iInf_of_isOpen {ι Ω E κ : Type*} [ConditionallyCompleteLinearOrder ι]
-    [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [NoMaxOrder ι] [TopologicalSpace E]
-    {X : ι → Ω → E} {ω : Ω} (hf : IsRightContinuous (fun t ↦ X t ω)) {U : Set E}
-    (hU : IsOpen U) {d : κ → ι} (hd : DenseRange d) (a : ι) :
+complete, densely ordered linear order can be computed from any dense, cofinal family of sampling
+times. Cofinality is necessary when the time axis has a maximum element `m`, since right-continuity
+at `m` is vacuous and a hit occurring only at `m` would otherwise be missed. -/
+theorem hittingAfter_eq_iInf_of_isOpen_of_isCofinal {ι Ω E κ : Type*}
+    [ConditionallyCompleteLinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
+    [TopologicalSpace E] {X : ι → Ω → E} {ω : Ω} (hf : IsRightContinuous (fun t ↦ X t ω))
+    {U : Set E} (hU : IsOpen U) {d : κ → ι} (hd : DenseRange d) (hcf : IsCofinal (range d))
+    (a : ι) :
     hittingAfter X U a ω =
       ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤ := by
-  classical
   have : Nonempty ι := ⟨a⟩
   have : Nonempty κ := hd.nonempty
   have hbdd :
@@ -84,6 +87,15 @@ theorem hittingAfter_eq_iInf_of_isOpen {ι Ω E κ : Type*} [ConditionallyComple
       split_ifs with hk
       · exact WithTop.coe_le_coe.2 hk.1
       · exact le_top⟩
+  have hle {k : κ} (hak : a ≤ d k) (hUk : X (d k) ω ∈ U) :
+      (⨅ j, if a ≤ d j ∧ X (d j) ω ∈ U then (d j : WithTop ι) else ⊤) ≤ (d k : WithTop ι) :=
+    (ciInf_le hbdd k).trans_eq (ite_eq_left ⟨hak, hUk⟩)
+  have hpush {t v : ι} (hat : a ≤ t) (htU : X t ω ∈ U) (htv : t < v) :
+      ∃ k, a ≤ d k ∧ X (d k) ω ∈ U ∧ d k < v := by
+    have := nhdsGT_neBot_of_exists_gt ⟨v, htv⟩
+    obtain ⟨_, ⟨k, rfl⟩, hk, hUk⟩ :=
+      Dense.exists_mem_Ioo_apply_mem hd htv (hf t) (hU.mem_nhds htU)
+    exact ⟨k, hat.trans hk.1.le, hUk, hk.2⟩
   apply le_antisymm
   · refine le_ciInf fun k ↦ ?_
     split_ifs with hk
@@ -93,15 +105,35 @@ theorem hittingAfter_eq_iInf_of_isOpen {ι Ω E κ : Type*} [ConditionallyComple
     have hex : ∃ t, a ≤ t ∧ X t ω ∈ U := by
       by_contra h
       exact hb.ne_top (hittingAfter_eq_top_iff.mpr (by simpa using h))
-    obtain ⟨v, hlt, hvb⟩ := WithTop.lt_iff_exists_coe_btwn.1 hb
-    simp only [hittingAfter_def, hex, ↓reduceIte, WithTop.coe_lt_coe] at hlt
-    obtain ⟨t, ht, htv⟩ := exists_lt_of_csInf_lt (s := {t | a ≤ t ∧ X t ω ∈ U}) hex hlt
-    obtain ⟨_, ⟨k, rfl⟩, hk, hUk⟩ :=
-      Dense.exists_mem_Ioo_apply_mem hd htv (hf t) (hU.mem_nhds ht.2)
-    have hsample : (⨅ j, if a ≤ d j ∧ X (d j) ω ∈ U then (d j : WithTop ι) else ⊤) ≤
-        (d k : WithTop ι) :=
-      (ciInf_le hbdd k).trans_eq (ite_eq_left ⟨ht.1.trans hk.1.le, hUk⟩)
-    exact hsample.trans_lt ((WithTop.coe_lt_coe.2 hk.2).trans hvb)
+    cases b with
+    | top =>
+      obtain ⟨t, hat, htU⟩ := hex
+      obtain ⟨_, ⟨k, rfl⟩, htk⟩ := hcf t
+      rcases htk.eq_or_lt with rfl | htk
+      · exact (hle hat htU).trans_lt (WithTop.coe_lt_top _)
+      · obtain ⟨k', hak', hUk', -⟩ := hpush hat htU htk
+        exact (hle hak' hUk').trans_lt (WithTop.coe_lt_top _)
+    | coe v =>
+      simp only [hittingAfter_def, hex, ↓reduceIte, WithTop.coe_lt_coe] at hb
+      obtain ⟨t, ⟨hat, htU⟩, htv⟩ := exists_lt_of_csInf_lt (s := {t | a ≤ t ∧ X t ω ∈ U}) hex hb
+      obtain ⟨k, hak, hUk, hkv⟩ := hpush hat htU htv
+      exact (hle hak hUk).trans_lt (WithTop.coe_lt_coe.2 hkv)
+
+open scoped Classical in
+/-- Hits of an open set from a starting time `a` by a right-continuous path on a conditionally
+complete, densely ordered linear order without maximum element can be computed from any dense
+family of sampling times. In particular, a countable dense family suffices. See
+`hittingAfter_eq_iInf_of_isOpen_of_isCofinal` for the general version without `[NoMaxOrder ι]`. -/
+theorem hittingAfter_eq_iInf_of_isOpen {ι Ω E κ : Type*} [ConditionallyCompleteLinearOrder ι]
+    [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [NoMaxOrder ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {ω : Ω} (hf : IsRightContinuous (fun t ↦ X t ω)) {U : Set E}
+    (hU : IsOpen U) {d : κ → ι} (hd : DenseRange d) (a : ι) :
+    hittingAfter X U a ω =
+      ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤ :=
+  hf.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd (fun x ↦
+    let ⟨y, hxy⟩ := exists_gt x
+    let ⟨k, hk⟩ := hd.exists_mem_open isOpen_Ioi ⟨y, hxy⟩
+    ⟨d k, mem_range_self k, hk.le⟩) a
 
 end IsRightContinuous
 
@@ -165,7 +197,7 @@ namespace TauCeti.Probability
 section Open
 
 variable {ι Ω E : Type*} [ConditionallyCompleteLinearOrder ι] [TopologicalSpace ι]
-  [OrderTopology ι] [DenselyOrdered ι] [NoMaxOrder ι] [SecondCountableTopology ι]
+  [OrderTopology ι] [DenselyOrdered ι] [SecondCountableTopology ι]
   {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
   {X : ι → Ω → E}
 
@@ -177,15 +209,23 @@ theorem exists_measurable_eq_hittingAfter_of_isOpen (hX : ∀ t, Measurable (X t
       ∀ ω, IsRightContinuous (fun t ↦ X t ω) → τ ω = hittingAfter X U a ω := by
   classical
   have : Nonempty ι := ⟨a⟩
-  let d : ℕ → ι := TopologicalSpace.denseSeq ι
-  refine ⟨fun ω ↦ ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤, ?_, ?_⟩
-  · exact Measurable.iInf fun k ↦ by
+  have hmeas (d : ℕ → ι) :
+      Measurable (fun ω ↦ ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤) :=
+    Measurable.iInf fun k ↦ by
       by_cases hk : a ≤ d k
       · simpa only [hk, true_and] using
           measurable_const.ite (hX (d k) hU.measurableSet) measurable_const
       · simpa only [hk, false_and, ↓reduceIte] using measurable_const
-  · intro ω hω
-    exact (hω.hittingAfter_eq_iInf_of_isOpen hU (TopologicalSpace.denseRange_denseSeq ι) a).symm
+  by_cases h : ∃ m : ι, IsMax m
+  · obtain ⟨m, hm⟩ := h
+    let d : ℕ → ι := fun n ↦ Nat.casesOn n m (TopologicalSpace.denseSeq ι)
+    have hd : DenseRange d := (TopologicalSpace.denseRange_denseSeq ι).mono
+      (by rintro _ ⟨n, rfl⟩; exact ⟨n + 1, rfl⟩)
+    have hcf : IsCofinal (range d) := fun x ↦ ⟨m, ⟨0, rfl⟩, hm.isTop x⟩
+    exact ⟨_, hmeas d, fun ω hω ↦ (hω.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd hcf a).symm⟩
+  · have : NoMaxOrder ι := ⟨fun x ↦ not_isMax_iff.mp fun hx ↦ h ⟨x, hx⟩⟩
+    exact ⟨_, hmeas (TopologicalSpace.denseSeq ι), fun ω hω ↦
+      (hω.hittingAfter_eq_iInf_of_isOpen hU (TopologicalSpace.denseRange_denseSeq ι) a).symm⟩
 
 /-- Open-set hits of an everywhere right-continuous process with measurable evaluations are
 ambient-measurable. -/
