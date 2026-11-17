@@ -8,20 +8,17 @@ module
 public import TauCeti.Statistics.Experiments.Mixture
 public import TauCeti.Statistics.Sufficiency.Basic
 
-import Mathlib.Probability.Kernel.Composition.WithDensity
 import Mathlib.Probability.Kernel.CondDistrib
-import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Kernel.Disintegration.Map
 
 /-!
 # The Neyman–Fisher factorization theorem and minimal sufficiency of the likelihood ratio
 
 This file proves the Halmos–Savage / Neyman–Fisher factorization theorem for dominated parametric
-families and deduces the minimal sufficiency of the likelihood ratio for countable families:
+families and deduces the minimal sufficiency of the likelihood ratio for countable families,
+building on the generic two-measure disintegration/density lemmas in
+`TauCeti.Probability.Kernel.Disintegration.Map`:
 
-* `TauCeti.eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd`: if `P ≪ L` share a
-  disintegrating kernel `K` given `T`, then `P = L.withDensity ((P.map T).rnDeriv (L.map T) ∘ T)`.
-* `TauCeti.map_prodMk_withDensity_comp_eq_compProd`: tilting a measure `L` by a measurable density
-  `q ∘ T` preserves any disintegrating kernel `K` given `T`.
 * `TauCeti.IsSufficientStatistic.exists_factorization`: forward factorization (no standard Borel
   assumption needed).
 * `TauCeti.isSufficientStatistic_of_exists_factorization`: converse factorization on a nonempty
@@ -50,47 +47,6 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {Θ X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
-
-/-! ### Two-measure disintegration and density lemmas -/
-
-/-- If `P ≪ L` share a disintegrating kernel `K` given a measurable map `T`, then `P` has
-`L`-density `((P.map T).rnDeriv (L.map T)) ∘ T`. -/
-theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [SFinite L]
-    {T : X → S} (hT : Measurable T) [(P.map T).HaveLebesgueDecomposition (L.map T)]
-    {K : Kernel S X} [IsSFiniteKernel K] (hPL : P ≪ L)
-    (hP : P.map (fun x ↦ (T x, x)) = P.map T ⊗ₘ K)
-    (hL : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K) :
-    P = L.withDensity ((P.map T).rnDeriv (L.map T) ∘ T) := by
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
-  let q : S → ℝ≥0∞ := (P.map T).rnDeriv (L.map T)
-  have hq : Measurable q := Measure.measurable_rnDeriv _ _
-  have hjoint : P.map (fun x ↦ (T x, x)) =
-      (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) := by
-    calc P.map (fun x ↦ (T x, x))
-      _ = P.map T ⊗ₘ K := hP
-      _ = (L.map T).withDensity q ⊗ₘ K := by
-          rw [Measure.withDensity_rnDeriv_eq (P.map T) (L.map T) (hPL.map hT)]
-      _ = (L.map T ⊗ₘ K).withDensity (fun p ↦ q p.1) := Measure.withDensity_compProd hq
-      _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) := by rw [hL]
-      _ = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) :=
-          (Measure.map_withDensity_comp hpair (hq.comp measurable_fst)).symm
-  have hsnd := congrArg (Measure.map Prod.snd) hjoint
-  rw [Measure.map_map measurable_snd hpair, Measure.map_map measurable_snd hpair] at hsnd
-  simpa [Function.comp_def] using hsnd
-
-/-- Reweighting a measure `L` by a measurable density `q ∘ T` factoring through `T` preserves any
-disintegrating kernel `K` given `T`. -/
-theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} [SFinite L] {T : X → S}
-    (hT : Measurable T) {K : Kernel S X} [IsSFiniteKernel K]
-    (hL : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K) {q : S → ℝ≥0∞} (hq : Measurable q) :
-    (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) = (L.withDensity (q ∘ T)).map T ⊗ₘ K := by
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
-  calc (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x))
-    _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) :=
-        Measure.map_withDensity_comp hpair (hq.comp measurable_fst)
-    _ = (L.map T ⊗ₘ K).withDensity (fun p ↦ q p.1) := by rw [hL]
-    _ = (L.map T).withDensity q ⊗ₘ K := (Measure.withDensity_compProd hq).symm
-    _ = (L.withDensity (q ∘ T)).map T ⊗ₘ K := by rw [← Measure.map_withDensity_comp hT hq]
 
 /-! ### The Neyman–Fisher factorization theorem -/
 
@@ -139,6 +95,64 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
     exact (ENNReal.ofReal_toReal hx.ne).symm
   exact (hf θ).ae_eq (hPL_dens.trans hh_dens)
 
+/-- A countable mixture of measures with factorized `ℝ≥0∞`-valued densities `g θ (T x) * h x`
+has factorized density `(∑' n, mixtureWeight n * g (θs n) (T x)) * h x`. -/
+private theorem countableMixture_withDensity_factorized {P : Θ → Measure X} {μ : Measure X}
+    {T : X → S} (hT : Measurable T) {g : Θ → S → ℝ≥0∞} (hg : ∀ θ, Measurable (g θ))
+    {h : X → ℝ≥0∞} (hh : Measurable h)
+    (hP : ∀ θ, P θ = μ.withDensity (fun x ↦ g θ (T x) * h x)) (θs : ℕ → Θ) :
+    countableMixture P θs =
+      μ.withDensity (fun x ↦ (∑' n, mixtureWeight n * g (θs n) (T x)) * h x) := by
+  have hPeq : P = fun θ ↦ μ.withDensity (fun x ↦ g θ (T x) * h x) := funext hP
+  rw [hPeq, countableMixture_withDensity μ (fun θ x ↦ g θ (T x) * h x)
+    (fun θ ↦ ((hg θ).comp hT).mul hh) θs]
+  congr 1 with x
+  simp_rw [← mul_assoc]
+  exact ENNReal.tsum_mul_right
+
+/-- If `P ≪ L` where `L` is finite and `P`, `L` have factorized `ℝ≥0∞`-valued densities
+`g (T x) * h x` and `G (T x) * h x` with respect to `μ`, then `P` has `L`-density
+`(fun s ↦ g s / G s) ∘ T`. -/
+private theorem eq_withDensity_div_of_factorized {P L μ : Measure X} [IsFiniteMeasure L]
+    {T : X → S} (hT : Measurable T) {g G : S → ℝ≥0∞} (hg : Measurable g)
+    (hG : Measurable G) {h : X → ℝ≥0∞} (hh : Measurable h) (hPL : P ≪ L)
+    (hP : P = μ.withDensity (fun x ↦ g (T x) * h x))
+    (hL : L = μ.withDensity (fun x ↦ G (T x) * h x)) :
+    P = L.withDensity ((fun s ↦ g s / G s) ∘ T) := by
+  have hLm : Measurable fun x ↦ G (T x) * h x := (hG.comp hT).mul hh
+  have hPm : Measurable fun x ↦ g (T x) * h x := (hg.comp hT).mul hh
+  -- Finiteness of `L` ensures `G (T x) * h x < ∞` `μ`-almost everywhere.
+  have hLlt : ∀ᵐ x ∂μ, G (T x) * h x < ∞ := by
+    refine ae_lt_top hLm ?_
+    have huniv : ∫⁻ x, G (T x) * h x ∂μ = L univ := by
+      rw [hL, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    rw [huniv]
+    exact measure_ne_top _ _
+  -- `G ∘ T` is nonzero `L`-a.e., hence `P`-a.e., so `G (T x) = 0` forces `g (T x) * h x = 0`
+  -- `μ`-a.e.
+  have hZ : ∀ᵐ x ∂μ, G (T x) = 0 → g (T x) * h x = 0 := by
+    have hLG : ∀ᵐ x ∂L, G (T x) ≠ 0 := by
+      rw [hL, ae_withDensity_iff hLm]
+      exact ae_of_all _ fun _ hx ↦ left_ne_zero_of_mul hx
+    have hPG : ∀ᵐ x ∂P, G (T x) ≠ 0 := hPL.ae_le hLG
+    rw [hP, ae_withDensity_iff hPm] at hPG
+    exact hPG.mono fun _ hx hG0 ↦ not_not.mp fun hne ↦ hx hne hG0
+  have hq : Measurable fun s ↦ g s / G s := hg.div hG
+  rw [hP, hL, ← withDensity_mul _ hLm (hq.comp hT)]
+  refine withDensity_congr_ae ?_
+  filter_upwards [hLlt, hZ] with x hxlt hxZ
+  simp only [Pi.mul_apply, Function.comp_apply]
+  by_cases hh0 : h x = 0
+  · simp [hh0]
+  · by_cases hG0 : G (T x) = 0
+    · rw [hxZ hG0, hG0, zero_mul, zero_mul]
+    · have hGtop : G (T x) ≠ ∞ := by
+        intro htop
+        rw [htop, ENNReal.top_mul hh0] at hxlt
+        exact lt_irrefl _ hxlt
+      rw [mul_comm (G (T x)), mul_assoc, mul_comm (G (T x)),
+        ENNReal.div_mul_cancel hG0 hGtop, mul_comm]
+
 /-- Converse direction of the factorization theorem: on a nonempty standard Borel space `X`, if
 the densities of a nonempty family of probability measures with respect to an s-finite measure `μ`
 factor through a measurable statistic `T`, then `T` is sufficient. -/
@@ -149,86 +163,33 @@ theorem isSufficientStatistic_of_exists_factorization [StandardBorelSpace X] [No
     (hg : ∀ θ, Measurable (g θ) ∧ ∀ s, 0 ≤ g θ s) (hhm : Measurable h)
     (hfac : ∀ θ, ∀ᵐ x ∂μ, f θ x = g θ (T x) * h x) :
     IsSufficientStatistic P T := by
+  -- Step 1: pick a Halmos–Savage dominating mixture `L` and take `K = condDistrib id T L`.
   obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ f hf
   let L : Measure X := countableMixture P θs
   let K : Kernel S X := condDistrib id T L
   have hLdis : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K :=
     (compProd_map_condDistrib hT.aemeasurable aemeasurable_id).symm
+  -- Step 2: compute the factorized `ℝ≥0∞`-densities of each `P θ` and of `L`.
   let G : S → ℝ≥0∞ := fun s ↦ ∑' n, mixtureWeight n * ENNReal.ofReal (g (θs n) s)
   have hGm : Measurable G :=
     Measurable.tsum fun n ↦ measurable_const.mul (hg (θs n)).1.ennreal_ofReal
-  have hLhm : Measurable fun x ↦ G (T x) * ENNReal.ofReal (h x) :=
-    (hGm.comp hT).mul hhm.ennreal_ofReal
   have hP_wd : ∀ θ, P θ = μ.withDensity
-      (fun x ↦ ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x)) := by
-    intro θ
+      (fun x ↦ ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x)) := fun θ ↦ by
     rw [(hf θ).eq_withDensity]
     refine withDensity_congr_ae ?_
     filter_upwards [hfac θ] with x hx
     rw [hx, ENNReal.ofReal_mul ((hg θ).2 (T x))]
-  have hL_wd : L = μ.withDensity (fun x ↦ G (T x) * ENNReal.ofReal (h x)) := by
-    have hPeq : P = fun θ ↦ μ.withDensity
-        (fun x ↦ ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x)) := funext hP_wd
-    dsimp only [L]
-    rw [hPeq, countableMixture_withDensity μ
-      (fun θ x ↦ ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x))
-      (fun θ ↦ ((hg θ).1.comp hT).ennreal_ofReal.mul hhm.ennreal_ofReal) θs]
-    congr 1 with x
-    simp_rw [← mul_assoc]
-    exact ENNReal.tsum_mul_right
-  have hLlt : ∀ᵐ x ∂μ, G (T x) * ENNReal.ofReal (h x) < ∞ := by
-    refine ae_lt_top hLhm ?_
-    have huniv : ∫⁻ x, G (T x) * ENNReal.ofReal (h x) ∂μ = L univ := by
-      rw [hL_wd, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-    rw [huniv]
-    exact measure_ne_top _ _
+  have hL_wd : L = μ.withDensity (fun x ↦ G (T x) * ENNReal.ofReal (h x)) :=
+    countableMixture_withDensity_factorized hT (fun θ ↦ (hg θ).1.ennreal_ofReal)
+      hhm.ennreal_ofReal hP_wd θs
+  -- Step 3: express each `P θ` as a `T`-measurable tilt of `L`, preserving the disintegration `K`.
   rw [isSufficientStatistic_def]
   refine ⟨hT, K, inferInstance, fun θ ↦ ?_⟩
-  let q : S → ℝ≥0∞ := fun s ↦ ENNReal.ofReal (g θ s) / G s
-  have hqm : Measurable q := (hg θ).1.ennreal_ofReal.div hGm
-  have hghm : Measurable fun x ↦ ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x) :=
-    ((hg θ).1.comp hT).ennreal_ofReal.mul hhm.ennreal_ofReal
-  have hZ : ∀ᵐ x ∂μ,
-      G (T x) = 0 → ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x) = 0 := by
-    let Z : Set X :=
-      {x | G (T x) = 0} ∩ {x | 0 < ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x)}
-    have hZm : MeasurableSet Z :=
-      ((hGm.comp hT) (measurableSet_singleton 0)).inter (measurableSet_lt measurable_const hghm)
-    have hLZ : L Z = 0 := by
-      rw [hL_wd, withDensity_apply _ hZm]
-      refine (setLIntegral_congr_fun hZm (g := fun _ ↦ 0) fun x hx ↦ ?_).trans lintegral_zero
-      rw [hx.1, zero_mul]
-    have hPZ : P θ Z = 0 := hdom θ hLZ
-    rw [hP_wd θ, withDensity_apply _ hZm, lintegral_eq_zero_iff hghm] at hPZ
-    have hμZ : μ Z = 0 := by
-      have hsub : Z ⊆ {x | ¬ (ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x) = 0)} :=
-        fun _ hx ↦ hx.2.ne'
-      have hnull :
-          μ.restrict Z {x | ¬ (ENNReal.ofReal (g θ (T x)) * ENNReal.ofReal (h x) = 0)} = 0 :=
-        ae_iff.mp hPZ
-      rw [Measure.restrict_apply' hZm] at hnull
-      exact measure_mono_null (subset_inter hsub Subset.rfl) hnull
-    rw [ae_iff]
-    refine measure_mono_null (fun x hx ↦ ?_) hμZ
-    obtain ⟨hG0, hne⟩ := not_imp.mp hx
-    exact ⟨hG0, pos_iff_ne_zero.mpr hne⟩
-  have hP_eq : P θ = L.withDensity (q ∘ T) := by
-    rw [hP_wd θ, hL_wd, ← withDensity_mul _ hLhm (hqm.comp hT)]
-    refine withDensity_congr_ae ?_
-    filter_upwards [hLlt, hZ] with x hxlt hxZ
-    simp only [Pi.mul_apply, Function.comp_apply, q]
-    by_cases hh0 : ENNReal.ofReal (h x) = 0
-    · simp [hh0]
-    · by_cases hG0 : G (T x) = 0
-      · rw [hxZ hG0, hG0, zero_mul, zero_mul]
-      · have hGtop : G (T x) ≠ ∞ := by
-          intro htop
-          rw [htop, ENNReal.top_mul hh0] at hxlt
-          exact lt_irrefl _ hxlt
-        rw [mul_comm (G (T x)), mul_assoc, mul_comm (G (T x)),
-          ENNReal.div_mul_cancel hG0 hGtop, mul_comm]
+  have hP_eq : P θ = L.withDensity ((fun s ↦ ENNReal.ofReal (g θ s) / G s) ∘ T) :=
+    eq_withDensity_div_of_factorized hT (hg θ).1.ennreal_ofReal hGm hhm.ennreal_ofReal
+      (hdom θ) (hP_wd θ) hL_wd
   rw [hP_eq]
-  exact map_prodMk_withDensity_comp_eq_compProd hT hLdis hqm
+  exact map_prodMk_withDensity_comp_eq_compProd hT hLdis ((hg θ).1.ennreal_ofReal.div hGm)
 
 /-- **The Neyman–Fisher factorization theorem** (Pfanzagl, Theorem 1.2.10 with Corollary 1.3.11;
 Schervish, Theorem 2.21): for a nonempty family of probability measures with real densities `f θ`

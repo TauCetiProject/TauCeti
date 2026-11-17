@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Measure.WithDensity
 
-import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Density
@@ -28,7 +27,8 @@ It develops the characteristic API for `HasDensity`:
   reusing `TauCeti.Probability.integral_withDensity_ofReal` and
   `TauCeti.Probability.integrable_withDensity_ofReal_iff`), together with integrability and unit
   integral of densities of finite and probability measures;
-* almost-everywhere congruence, uniqueness for σ-finite measures, identification with
+* almost-everywhere congruence, uniqueness for σ-finite measures (reusing
+  `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`), identification with
   the Radon–Nikodym derivative, chaining of densities, and pushforward along a map through which
   the density factors (reusing `MeasureTheory.Measure.map_withDensity_comp`).
 
@@ -121,15 +121,13 @@ theorem HasDensity.lintegral_eq (h : HasDensity P μ f) (g : X → ℝ≥0∞) :
   rw [h.eq_withDensity,
     lintegral_withDensity_eq_lintegral_mul_non_measurable _ h.measurable.ennreal_ofReal
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) g]
-  rfl
+  simp only [Pi.mul_apply]
 
-/-- A measurable set is `P`-null if and only if its intersection with `{x | 0 < f x}` is
-`μ`-null. -/
-theorem HasDensity.measure_eq_zero_iff (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
+/-- A set is `P`-null if and only if its intersection with `{x | 0 < f x}` is `μ`-null. -/
+theorem HasDensity.measure_eq_zero_iff (h : HasDensity P μ f) {s : Set X} :
     P s = 0 ↔ μ (s ∩ {x | 0 < f x}) = 0 := by
-  rw [h.apply hs, lintegral_eq_zero_iff h.measurable.ennreal_ofReal]
-  simp only [Filter.EventuallyEq, Pi.zero_apply, ENNReal.ofReal_eq_zero, ae_iff, not_le]
-  rw [Measure.restrict_apply' hs, inter_comm]
+  rw [h.eq_withDensity, withDensity_apply_eq_zero h.measurable.ennreal_ofReal, inter_comm]
+  simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
 
 section Bochner
 
@@ -188,30 +186,14 @@ reference measure. (In particular, this holds whenever `P` is finite, or wheneve
 via `HasDensity.sigmaFinite`.) -/
 theorem HasDensity.ae_eq [SigmaFinite P] (h₁ : HasDensity P μ f) (h₂ : HasDensity P μ g) :
     f =ᵐ[μ] g := by
-  have hae_n : ∀ n, (fun x ↦ ENNReal.ofReal (f x)) =ᵐ[μ.restrict (spanningSets P n)]
-      fun x ↦ ENNReal.ofReal (g x) := fun n ↦ by
-    have hs : MeasurableSet (spanningSets P n) := measurableSet_spanningSets P n
-    have heq : (μ.restrict (spanningSets P n)).withDensity (fun x ↦ ENNReal.ofReal (f x)) =
-        (μ.restrict (spanningSets P n)).withDensity (fun x ↦ ENNReal.ofReal (g x)) := by
-      rw [← restrict_withDensity hs, ← restrict_withDensity hs, ← h₁.eq_withDensity,
-        ← h₂.eq_withDensity]
-    have hfin : ∫⁻ x, ENNReal.ofReal (f x) ∂μ.restrict (spanningSets P n) ≠ ∞ := by
-      rw [← h₁.apply hs]
-      exact (measure_spanningSets_lt_top P n).ne
-    exact (withDensity_eq_iff h₁.measurable.ennreal_ofReal.aemeasurable
-      h₂.measurable.ennreal_ofReal.aemeasurable hfin).mp heq
-  have hae : (fun x ↦ ENNReal.ofReal (f x)) =ᵐ[μ] fun x ↦ ENNReal.ofReal (g x) := by
-    rw [Filter.EventuallyEq, ae_iff]
-    have hcov : {x | ¬ENNReal.ofReal (f x) = ENNReal.ofReal (g x)} =
-        ⋃ n, {x | ¬ENNReal.ofReal (f x) = ENNReal.ofReal (g x)} ∩ spanningSets P n := by
-      rw [← inter_iUnion, iUnion_spanningSets, inter_univ]
-    rw [hcov]
-    refine measure_iUnion_null fun n ↦ ?_
-    have h0 := ae_iff.mp (hae_n n)
-    rwa [Measure.restrict_apply' (measurableSet_spanningSets P n)] at h0
+  have : SigmaFinite (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) := by
+    rwa [← h₁.eq_withDensity]
+  have hae : (fun x ↦ ENNReal.ofReal (f x)) =ᵐ[μ] fun x ↦ ENNReal.ofReal (g x) :=
+    (withDensity_eq_iff_of_sigmaFinite_withDensity h₁.measurable.ennreal_ofReal.aemeasurable
+      h₂.measurable.ennreal_ofReal.aemeasurable).mp
+      (h₁.eq_withDensity.symm.trans h₂.eq_withDensity)
   filter_upwards [hae, h₁.ae_nonneg, h₂.ae_nonneg] with x hxeq hfx hgx
-  have := congrArg ENNReal.toReal hxeq
-  simpa [ENNReal.toReal_ofReal hfx, ENNReal.toReal_ofReal hgx] using this
+  exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hxeq
 
 /-- The Radon–Nikodym derivative of a measure with real density `f` with respect to a σ-finite
 reference measure agrees almost everywhere with `ENNReal.ofReal ∘ f`. -/
