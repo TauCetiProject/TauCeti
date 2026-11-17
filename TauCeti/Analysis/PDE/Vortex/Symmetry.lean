@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.AtInfinity
@@ -39,6 +39,9 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 `u^(-m)` restores it, so a rotation followed by this constant gauge preserves the limit `c` of
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
+
+Both actions preserve `Cⁿ` fields (`TauCeti.Vortex.contDiff_translateField`,
+`TauCeti.Vortex.contDiff_rotateField`).
 
 These are identities of smooth differential expressions; their Sobolev completions, and the
 induced action on the divisor of a vortex, are not treated here.
@@ -93,6 +96,11 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
     translateField a (translateField b x) = translateField (a + b) x := by
   funext z
   simp [add_assoc]
+
+/-- Translations preserve `Cⁿ` fields. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
@@ -217,8 +225,6 @@ theorem tendsto_sectionValue_translateField {x : ℂ → EuclideanSpace ℝ (Fin
     (isCompact_singleton : IsCompact ({-a} : Set ℂ)).compl_mem_cocompact] with z hz hza
   have hz0 : z ≠ 0 := by simpa using hz
   have hza0 : z + a ≠ 0 := fun h ↦ hza (by simpa using eq_neg_of_add_eq_zero_left h)
-  have h₁ : z / (‖z‖ : ℂ) ≠ 0 := by simp [hz0]
-  have h₂ : (z + a) / (‖z + a‖ : ℂ) ≠ 0 := by simp [hza0]
   have h₃ : (‖z‖ : ℂ) ≠ 0 := by simpa using hz0
   have h₄ : (‖z + a‖ : ℂ) ≠ 0 := by simpa using hza0
   rw [sectionValue_translateField, mul_assoc, ← inv_pow, ← inv_pow, ← mul_pow]
@@ -275,6 +281,18 @@ theorem rotateField_translateField (u : Circle) (a : ℂ) (x : ℂ → Euclidean
     rw [mul_add, mul_inv_cancel_left₀ (Circle.coe_ne_zero u)]
   ext z i
   fin_cases i <;> simp [h]
+
+/-- Rotations preserve `Cⁿ` fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    (contDiff_euclidean.1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · simpa using (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · simpa using hc 2
+  · simpa using hc 3
 
 /-- The action of a rotation on the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator: the
 gauge-fixing and curvature rows are transported, and the complex `∂bar` row is transported

@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
@@ -68,6 +69,18 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable {A : Type v} [Group A] [TopologicalSpace A] [IsTopologicalGroup A]
   [CompactSpace A]
 
+omit [IsTopologicalGroup G] [IsTopologicalGroup A] in
+/-- **The projection of a closed surjective relation is a quotient map.** If `A` is compact, a
+closed subgroup `H` of `A × G` whose projection to `G` is surjective has a quotient-map projection
+`H → G`: it is the restriction to `H` of the closed map `A × G → G`. -/
+private theorem isQuotientMap_snd_subtype (H : Subgroup (A × G))
+    (hclosed : IsClosed (H : Set (A × G))) (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ H) :
+    Topology.IsQuotientMap ((MonoidHom.snd A G).comp H.subtype) :=
+  (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtype_val).isQuotientMap
+    (continuous_snd.comp continuous_subtype_val) fun g ↦ by
+      obtain ⟨a, ha⟩ := hsurj g
+      exact ⟨⟨(a, g), ha⟩, rfl⟩
+
 /-- A surjective closed relation admits a continuous selection in each finite quotient. -/
 private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutions p G)
     (hA : IsProP p A) (H : Subgroup (A × G)) (hclosed : IsClosed (H : Set (A × G)))
@@ -75,19 +88,13 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     ∃ δ : G →ₜ* A ⧸ U.toSubgroup,
       ∀ g : G, ∃ a : A, (a, g) ∈ H ∧ QuotientGroup.mk' U.toSubgroup a = δ g := by
   classical
-  -- Stage 1: the projection `s : H → G` is surjective and, as `A` is compact, a closed map,
-  -- hence a quotient map.
+  -- Stage 1: the projection `s : H → G` is a quotient map (`isQuotientMap_snd_subtype`).
   let s : H →* G := (MonoidHom.snd A G).comp H.subtype
   have hs_apply (x : H) : s x = (x : A × G).2 := by
     simp only [s, MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.coe_snd]
-  have hs : Function.Surjective s := by
-    intro g
-    obtain ⟨a, ha⟩ := hsurj g
-    exact ⟨⟨(a, g), ha⟩, hs_apply _⟩
-  have hscont : Continuous s := continuous_snd.comp continuous_subtype_val
-  have hsquot : Topology.IsQuotientMap s :=
-    (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtype_val).isQuotientMap
-      hscont hs
+  have hsquot : Topology.IsQuotientMap s := isQuotientMap_snd_subtype H hclosed hsurj
+  have hs : Function.Surjective s := hsquot.surjective
+  have hscont : Continuous s := hsquot.continuous
   -- Stage 2: reduce the first coordinate modulo `U`, giving `t : H → A ⧸ U` with range
   -- `t.range`, and quotient `t.range` further by the image `K` of `ker s`; the composite
   -- `π : H → t.range ⧸ K` is continuous into a finite discrete group.
@@ -103,28 +110,23 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     exact (QuotientGroup.eq_one_iff (τ h)).mpr (Subgroup.mem_map.mpr ⟨h, hh, rfl⟩)
   -- Stage 3: `π` kills `ker s`, so it descends along the quotient map `s` to a continuous
   -- `β : G → t.range ⧸ K`.
-  let β := s.liftOfSurjective hs ⟨π, hle⟩
-  have hβ (h : H) : β (s h) = π h := by
-    simp only [β, MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
   have hπcont : Continuous π :=
     QuotientGroup.continuous_mk.comp
       ((QuotientGroup.continuous_mk.comp
         (continuous_fst.comp continuous_subtype_val)).subtype_mk _)
-  have hβcont : Continuous β := hsquot.continuous_iff.mpr <| by
-    have heq : (β : G → _) ∘ s = π := funext hβ
-    rw [heq]
-    exact hπcont
+  let β := ContinuousMonoidHom.liftOfIsQuotientMap ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle
+  have hβ (h : H) : β (s h) = π h :=
+    ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle h
   -- Stage 4: `K` is a `p`-group inside the `p`-group `A ⧸ U`, so `HasPGroupSolutions` lifts `β`
   -- through `t.range ↠ t.range ⧸ K` to `γ : G → t.range`; `δ` is `γ` followed by the inclusion.
   obtain ⟨γ, hγ, hγβ⟩ := hG.exists_comp_eq (QuotientGroup.mk' K)
     (QuotientGroup.mk'_surjective K)
-    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β
-    ((MonoidHom.continuous_iff_isOpen_ker _).mp hβcont)
+    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β.toMonoidHom
+    ((MonoidHom.continuous_iff_isOpen_ker _).mp β.continuous)
   let δ : G →ₜ* A ⧸ U.toSubgroup :=
     ⟨t.range.subtype.comp γ,
       continuous_subtype_val.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
-  refine ⟨δ, ?_⟩
-  intro g
+  refine ⟨δ, fun g ↦ ?_⟩
   -- Stage 5: over `g`, pick `h ∈ H` with `s h = g`; then `τ h` and `γ g` agree modulo
   -- `K = τ (ker s)`, so correcting `h` by an element of `ker s` gives a point of `H` over `g`
   -- whose first coordinate reduces to `δ g`.

@@ -22,12 +22,15 @@ This file sets up that action and its fundamental domains:
 
 * `archNorm y = ∏_w y_w ^ mult w` is the norm of a parameter, so that a complex place counts
   twice. It is the determinant of the quadratic form `x ↦ ∑_w y_w |x_w|²` on the mixed space.
+  The parameter `(mult w ^ 2)_w` has norm `16 ^ r₂` (`archNorm_mult_sq`).
 * `unitScale u y` is the action `y_w ↦ |u|_w² y_w` of a unit. It preserves the norm
   (`archNorm_unitScale`), and its kernel on parameters with nonzero coordinates is the torsion
   (`unitScale_eq_self_iff`).
 * `normOneSurface K` is the hypersurface `S = {y > 0 | N(y) = 1}` on which the units act.
   Coordinatewise inversion and translation by a point of `S` give the self-homeomorphisms
-  `surfaceInv` and `surfaceMul`.
+  `surfaceInv` and `surfaceMul`. A bounded set of parameters meets `S` inside a box `[C⁻¹, C]`
+  (`exists_forall_mem_Icc_of_isBounded`), so a bounded subset of `S` stays uniformly away from
+  the coordinate hyperplanes (`exists_pos_le_of_isBounded_normOneSurface`).
 * `IsUnitFundamentalDomain K D` says that `D` is a bounded measurable subset of `S` meeting every
   unit orbit, and meeting the orbit of each of its points exactly in the torsion translates.
 * `unitFundamentalDomain K` is the set of points of `S` whose coordinatewise square root lies in
@@ -151,6 +154,16 @@ theorem archNorm_smul (c : ℝ) (y : realSpace K) :
     archNorm (c • y) = c ^ Module.finrank ℚ K * archNorm y := by
   simp [archNorm_apply, mul_pow, prod_mul_distrib, prod_pow_eq_pow_sum, sum_mult_eq]
 
+variable (K) in
+/-- The norm of `(mult w ^ 2)_w` is `16 ^ r₂`: a complex place contributes `(2 ^ 2) ^ 2`. -/
+theorem archNorm_mult_sq :
+    archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) = 16 ^ nrComplexPlaces K := by
+  classical
+  rw [archNorm_apply, prod_eq_prod_mul_prod]
+  simp only [mult_isReal, mult_isComplex, Nat.cast_one, one_pow, Finset.prod_const_one, one_mul,
+    Finset.prod_const, Finset.card_univ, nrComplexPlaces]
+  norm_num
+
 @[fun_prop]
 theorem continuous_archNorm : Continuous (archNorm : realSpace K → ℝ) :=
   (continuous_finsetProd univ fun w _ ↦ (continuous_apply w).pow (mult w)).congr
@@ -262,24 +275,53 @@ theorem surfaceMul_symm (c : normOneSurface K) :
 /-- A point of the norm-one hypersurface with coordinates at most `C` has inverse coordinates at
 most `C ^ [K : ℚ]`: the other coordinates cannot make up for a small one. -/
 theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K)
-    {C : ℝ} (hC : 1 ≤ C) (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
+    {C : ℝ} (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
     (y w)⁻¹ ≤ C ^ Module.finrank ℚ K := by
   classical
-  have h1 : 1 ≤ C ^ Module.finrank ℚ K := one_le_pow₀ hC
+  -- the coordinatewise bound `y v ≤ C` bounds every partial product
+  have hbound (s : Finset (InfinitePlace K)) : ∏ v ∈ s, y v ^ mult v ≤ ∏ v ∈ s, C ^ mult v :=
+    prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
+      fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+  -- the full product is the norm `1`, so `1 ≤ C ^ [K : ℚ]`
+  have h1 : 1 ≤ C ^ Module.finrank ℚ K := by
+    have h := hbound univ
+    rwa [← archNorm_apply, hy.2, prod_pow_eq_pow_sum, sum_mult_eq] at h
+  have hC : 1 ≤ C :=
+    (one_le_pow_iff_of_nonneg ((hy.1 w).le.trans (hyC w)) Module.finrank_pos.ne').1 h1
   have hmul := mul_prod_erase univ (fun v ↦ y v ^ mult v) (mem_univ w)
   rw [← archNorm_apply, hy.2] at hmul
   have hpow : (y w)⁻¹ ^ mult w ≤ C ^ Module.finrank ℚ K := by
     rw [inv_pow, inv_eq_of_mul_eq_one_right hmul, ← sum_mult_eq, ← prod_pow_eq_pow_sum]
     calc ∏ v ∈ univ.erase w, y v ^ mult v
-        ≤ ∏ v ∈ univ.erase w, C ^ mult v :=
-          prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
-            fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+        ≤ ∏ v ∈ univ.erase w, C ^ mult v := hbound _
       _ ≤ C ^ mult w * ∏ v ∈ univ.erase w, C ^ mult v :=
           le_mul_of_one_le_left (prod_nonneg fun v _ ↦ by positivity) (one_le_pow₀ hC)
       _ = ∏ v, C ^ mult v := mul_prod_erase univ (fun v ↦ C ^ mult v) (mem_univ w)
   rcases le_or_gt (y w)⁻¹ 1 with h | h
   · exact h.trans h1
   · exact (le_self_pow₀ h.le mult_ne_zero).trans hpow
+
+/-- A bounded set of parameters meets the norm-one hypersurface inside a box `[C⁻¹, C]`: on `S` an
+upper bound on the coordinates is also a positive lower bound. -/
+theorem exists_forall_mem_Icc_of_isBounded {D : Set (realSpace K)} (hD : IsBounded D) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ y ∈ D, y ∈ normOneSurface K → ∀ w, y w ∈ Set.Icc C⁻¹ C := by
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hD
+  have hC' : 1 ≤ max C 1 := le_max_right _ _
+  refine ⟨max C 1 ^ Module.finrank ℚ K, one_le_pow₀ hC', fun y hy hyS w ↦ ⟨?_, ?_⟩⟩
+  · have hle (v : InfinitePlace K) : y v ≤ max C 1 :=
+      (Real.le_norm_self _).trans ((norm_le_pi_norm y v).trans ((hC y hy).trans (le_max_left _ _)))
+    rw [inv_le_comm₀ (by positivity) (hyS.1 w)]
+    exact inv_le_pow_finrank_of_mem_normOneSurface hyS hle w
+  · exact (Real.le_norm_self _).trans ((norm_le_pi_norm y w).trans ((hC y hy).trans
+      ((le_max_left _ _).trans (le_self_pow₀ hC' Module.finrank_pos.ne'))))
+
+/-- A bounded subset of the norm-one surface stays uniformly away from every coordinate
+hyperplane. This makes Gaussian estimates uniform on unit fundamental domains. -/
+theorem exists_pos_le_of_isBounded_normOneSurface {D : Set (realSpace K)}
+    (hD : IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ b > 0, ∀ x ∈ D, ∀ w, b ≤ x w := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  exact ⟨C⁻¹, inv_pos.mpr (zero_lt_one.trans_le hC1), fun x hx w ↦ (hC x hx (hS hx) w).1⟩
 
 /-! ### Unit fundamental domains -/
 
@@ -377,16 +419,13 @@ theorem inv (hD : IsUnitFundamentalDomain K D) : IsUnitFundamentalDomain K D⁻�
   measurableSet := hD.measurableSet.preimage <|
     Measurable.of_eval fun w ↦ (measurable_pi_apply w).inv
   isBounded := by
-    obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hD.isBounded
-    set C' := max C 1
-    refine isBounded_iff_forall_norm_le.mpr ⟨C' ^ Module.finrank ℚ K, fun y hy ↦ ?_⟩
+    obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD.isBounded
+    refine isBounded_iff_forall_norm_le.mpr ⟨C, fun y hy ↦ ?_⟩
     have hy' : y⁻¹ ∈ normOneSurface K := hD.subset hy
-    have hpos : ∀ w, 0 < y w := fun w ↦ inv_pos.mp (hy'.1 w)
-    refine (pi_norm_le_iff_of_nonneg (pow_nonneg (by positivity) _)).mpr fun w ↦ ?_
-    rw [Real.norm_of_nonneg (hpos w).le, ← inv_inv (y w)]
-    refine inv_le_pow_finrank_of_mem_normOneSurface hy' (le_max_right _ _) (fun v ↦ ?_) w
-    exact (Real.le_norm_self _).trans ((norm_le_pi_norm y⁻¹ v).trans
-      ((hC _ hy).trans (le_max_left _ _)))
+    refine (pi_norm_le_iff_of_nonneg (zero_le_one.trans hC1)).mpr fun w ↦ ?_
+    have hpos : 0 < y w := inv_pos.mp (hy'.1 w)
+    rw [Real.norm_of_nonneg hpos.le]
+    exact (inv_le_inv₀ (zero_lt_one.trans_le hC1) hpos).mp (hC _ hy hy' w).1
   exists_unitScale_mem y hy := by
     obtain ⟨u, hu⟩ := hD.exists_unitScale_mem _ (inv_mem_normOneSurface hy)
     refine ⟨u⁻¹, ?_⟩

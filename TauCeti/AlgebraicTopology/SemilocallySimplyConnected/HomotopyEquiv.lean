@@ -32,21 +32,22 @@ contractible but not locally path-connected.
 
 public section
 
-namespace TauCeti
+namespace ContinuousMap.HomotopyEquiv
 
+open TauCeti
 open scoped ContinuousMap
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- **A space homotopy equivalent to a semilocally simply connected space is semilocally simply
 connected.** -/
-theorem _root_.ContinuousMap.HomotopyEquiv.semilocallySimplyConnectedSpace
+theorem semilocallySimplyConnectedSpace
     [SemilocallySimplyConnectedSpace Y] (e : X ≃ₕ Y) : SemilocallySimplyConnectedSpace X :=
   .of_map_injective e.toFun fun x ↦ (e.fundamentalGroup_map_bijective x).injective
 
 /-- **Semilocal simple connectivity is a homotopy invariant.** -/
-theorem _root_.ContinuousMap.HomotopyEquiv.semilocallySimplyConnectedSpace_iff (e : X ≃ₕ Y) :
+theorem semilocallySimplyConnectedSpace_iff (e : X ≃ₕ Y) :
     SemilocallySimplyConnectedSpace X ↔ SemilocallySimplyConnectedSpace Y :=
   ⟨fun _ ↦ e.symm.semilocallySimplyConnectedSpace, fun _ ↦ e.semilocallySimplyConnectedSpace⟩
 
-end TauCeti
+end ContinuousMap.HomotopyEquiv

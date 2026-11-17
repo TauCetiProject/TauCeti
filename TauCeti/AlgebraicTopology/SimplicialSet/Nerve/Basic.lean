@@ -15,12 +15,18 @@ An `n`-simplex of the nerve `CategoryTheory.nerve C` of a category is a string
 `F : ComposableArrows C n` of composable arrows. For positions `i ≤ j` its arrow from the `i`-th
 to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij` (defined in
 `TauCeti.CategoryTheory.ComposableArrows.Basic`), and the simplicial operators of the nerve
-reindex these arrows (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`).
+reindex these arrows (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`, stated for the
+nerve, together with its effect on objects and vertices, as `CategoryTheory.nerve.totalArrow_map`,
+`CategoryTheory.nerve.map_obj` and `CategoryTheory.nerve.map_const`).
 
 An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its
 `i`-th arrow is an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
 `CategoryTheory.nerve.range_σ_eq_preimage`). This generalizes, and adapts the proof of, Mathlib's
 `PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
+
+Prepending an arrow `b` to a string commutes with deleting any vertex but the first two, and
+deleting the second vertex composes `b` with the first arrow of the string
+(`CategoryTheory.nerve.δ_succ_precomp`).
 
 A `3`-simplex of the nerve is a sequence of three composable morphisms `ComposableArrows.mk₃ f g h`.
 Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are composites of
@@ -33,6 +39,9 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
   `i`-th degeneracy of its `i`-th face.
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
+* `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
+* `CategoryTheory.nerve.map_obj`, `CategoryTheory.nerve.totalArrow_map`,
+  `CategoryTheory.nerve.map_const`: the objects, arrows and vertices of a reindexed simplex.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
 -/
@@ -117,6 +126,53 @@ theorem range_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
       (fun s : ComposableArrows C (n + 1) ↦ s.totalArrow i.castSucc i.succ i.castSucc_le_succ) ⁻¹'
         Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) :=
   Set.ext fun s ↦ mem_range_σ_iff s i
+
+/-- Deleting a vertex other than the first one from a string with a prepended arrow `b` deletes
+the corresponding vertex of the original string. If that vertex was the first one, the prepended
+arrow is composed with the deleted arrow, so in all cases `b` is followed by the arrow from the
+first vertex to the new second vertex. -/
+theorem δ_succ_precomp {n : ℕ} (j : Fin (n + 2)) (σ : ComposableArrows C (n + 1)) {y : C}
+    (b : y ⟶ σ.left) :
+    (nerve C).δ j.succ (σ.precomp b) =
+      ((nerve C).δ j σ).precomp (b ≫ σ.map (homOfLE (Fin.zero_le (j.succAbove 0)))) := by
+  refine ComposableArrows.ext_succ_of_totalArrow
+    ((nerve C).δ_comp_δ_apply (Fin.zero_le j) (σ.precomp b)) ?_
+  -- The face reindexes along `j.succ.succAbove`, which fixes `0` and sends `1` to the
+  -- successor of `j.succAbove 0`.
+  refine ((σ.precomp b).totalArrow_whiskerLeft _ 0 1 (Fin.zero_le _)).trans ?_
+  -- The reindexing functor acts on objects by `j.succ.succAbove` by definition (as in
+  -- `nerve.δ_obj`); `simp` only unfolds it into forgetful functors, so `change` states this.
+  change (σ.precomp b).totalArrow (j.succ.succAbove 0) (j.succ.succAbove 1) _ = _
+  simp only [Fin.succ_succAbove_zero, Fin.succ_succAbove_one,
+    ComposableArrows.totalArrow_precomp_zero_succ]
+  -- By definition of `precomp`, the first arrow of the right-hand side is the prepended one.
+  rw [ComposableArrows.totalArrow_def]
+  rfl
+
+section Map
+
+/-! The nerve reindexes a string along `f : ⦋m⦌ ⟶ ⦋n⦌` by whiskering with the functor
+`SimplexCategory.toCat.map f`, which acts on objects by `f.toOrderHom`. The lemmas below state
+this once, for objects, arrows and vertices. -/
+
+/-- Reindexing a simplex of the nerve along `f` reindexes its objects along `f`. -/
+lemma map_obj {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows C n) (i : Fin (m + 1)) :
+    ((nerve C).map f.op s).obj i = s.obj (f.toOrderHom i) :=
+  rfl
+
+/-- Reindexing a simplex of the nerve along `f` reindexes its arrows along `f`. -/
+lemma totalArrow_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows C n) (i j : Fin (m + 1))
+    (hij : i ≤ j) :
+    ((nerve C).map f.op s).totalArrow i j hij =
+      s.totalArrow (f.toOrderHom i) (f.toOrderHom j) (f.toOrderHom.monotone hij) :=
+  s.totalArrow_whiskerLeft _ i j hij
+
+/-- The `i`-th vertex of a simplex `s` of the nerve is the `0`-simplex given by `s.obj i`. -/
+lemma map_const {n : ℕ} (s : ComposableArrows C n) (i : Fin (n + 1)) :
+    (nerve C).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op s = nerveEquiv.symm (s.obj i) :=
+  ComposableArrows.ext₀ rfl
+
+end Map
 
 section Faces
 

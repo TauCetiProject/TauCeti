@@ -83,8 +83,10 @@ private theorem partialCycleMap_eq_of_coe_eq {j : Fin n} {z : ℍ} (hz : P.verte
         (σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j)) ∧
       ((σ.partialCycleMap j m')⁻¹ • P.carrier =ᶠ[𝓝 y]
         (σ.partialCycleMap j m')⁻¹ • P.vertexSector (σ.next^[m'] j)) :=
-    (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m).eventuallyEq_nhds.and
-      (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m').eventuallyEq_nhds
+    (Filter.Eventually.eventually_nhds
+        (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m)).and
+      (Filter.Eventually.eventually_nhds
+        (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m'))
   obtain ⟨w, hwx, ⟨hm, hm'⟩, hwz⟩ := ((frequently_orientedAngle_eq z
     (geodesicLine (rayToward z (P.vertex (j - 1))) 1) ((-x : ℝ) : Real.Angle)).and_eventually
       ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin)).exists
@@ -155,7 +157,7 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
     rintro rfl
     exact hN.not_gt hS1
   -- the direction just past `2π` lies inside the sectors of tile `M` and of the first tile
-  set ε := min (S (M + 1) - 2 * π) (S 1) / 2 with hε
+  set ε := min (S (M + 1) - 2 * π) (S 1) / 2
   have hε₀ : 0 < ε := half_pos (lt_min (by linarith) (hmono (by omega : 0 < 1)))
   have hεN : ε < S (M + 1) - 2 * π :=
     (half_lt_self (lt_min (by linarith) (hmono (by omega : 0 < 1)))).trans_le (min_le_left _ _)
@@ -168,34 +170,15 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
   rw [partialCycleMap_zero] at hone
   -- so tile `M` is `P` itself, reached after exactly one full turn
   obtain ⟨hjM, hSM⟩ := σ.next_iterate_eq_and_coe_sum_eq_zero hz hone
-  obtain ⟨k, hk⟩ := Real.Angle.coe_eq_zero_iff.1 hSM
-  have hSM₀ : 0 < S M := by simpa [hS] using hmono (Nat.pos_of_ne_zero hM₀)
-  have hk' : (k : ℝ) * (2 * π) = S M := by
-    rw [← zsmul_eq_mul]
-    exact hk
-  have hk₁ : k = 1 := by
-    have h₀ : (0 : ℝ) < k := by
-      by_contra h
-      nlinarith [Real.pi_pos]
-    have h₁ : (k : ℝ) ≤ 1 := by
-      by_contra h
-      nlinarith [Real.pi_pos]
-    have : 0 < k := by exact_mod_cast h₀
-    have : k ≤ 1 := by exact_mod_cast h₁
-    omega
-  rw [hk₁, Int.cast_one, one_mul] at hk'
-  -- tile `M` returns to vertex `j`, so `M` is a whole number `t` of circuits
-  obtain ⟨t, rfl⟩ := Function.IsPeriodicPt.minimalPeriod_dvd hjM
-  have hSt : t * σ.cycleAngleSum j = 2 * π := by
-    rw [← σ.sum_range_mul_cycleLength_interiorAngle, mul_comm t, cycleLength_def]
-    exact hk'.symm
-  have ht : (t : ℝ) ≠ 0 := by
-    rintro ht
-    rw [ht, zero_mul] at hSt
-    linarith [Real.pi_pos]
-  rw [σ.orderOf_cycleMap_of_cycleAngleSum hz (t := t)
-    (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]
-  exact hSt
+  -- `Real.Angle` is by definition `AddCircle (2 * π)`, so `hSM` is an equality in that circle;
+  -- the sum lies in `(0, 2π]`, a fundamental domain, so it equals `2π`.
+  have : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+  have hsum : S M = 2 * π := by
+    refine (AddCircle.coe_eq_coe_iff_of_mem_Ioc (a := 0) (p := 2 * π)
+      ⟨by simpa [hS] using hmono (Nat.pos_of_ne_zero hM₀), by rwa [zero_add]⟩
+      ⟨by positivity, by rw [zero_add]⟩).1 ?_
+    exact hSM.trans Real.Angle.coe_two_pi.symm
+  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi hjM hsum
 
 /-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
 has finite order. -/

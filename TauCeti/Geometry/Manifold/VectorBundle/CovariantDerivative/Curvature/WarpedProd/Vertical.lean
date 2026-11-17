@@ -25,7 +25,8 @@ Consequently a vertical two-plane has sectional curvature
 not its rescaling by `f²`. These formulas supply the vertical components needed when tracing
 warped-product curvature. No completeness or curvature assumption on either factor is needed.
 The tensor formula includes dependent and zero vectors; the sectional formula requires an
-independent pair. The warping function need only be nonzero at the point evaluated.
+independent pair. The warping function is not assumed nonzero: where it vanishes there are no
+vertical vectors.
 
 ## References
 
@@ -196,7 +197,7 @@ constant-curvature tensor with coefficient `|grad f|²`, and has no horizontal c
 All inner products on the right use the original metric of `N`. -/
 theorem IsWarpedProduct.tangentSpaceProdEquiv_curvatureTensor_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u v w : TangentSpace J p.2) :
+    (p : M × N) (u v w : TangentSpace J p.2) :
     tangentSpaceProdEquiv (I := I) (J := J) p
       ((leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
         ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (0, u))
@@ -204,6 +205,11 @@ theorem IsWarpedProduct.tangentSpaceProdEquiv_curvatureTensor_vertical
         ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (0, w))) =
       (0, (leviCivitaConnection J N).curvatureTensor p.2 u v w -
         ‖mgradient I f p.1‖ ^ 2 • (inner ℝ v w • u - inner ℝ u w • v)) := by
+  rcases eq_or_ne (f p.1) 0 with hf₀ | hf₀
+  · obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ u
+    obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ v
+    obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ w
+    simp only [Prod.mk_zero_zero, map_zero, smul_zero, sub_self]
   -- Smooth fibre fields realize arbitrary vectors without choosing product coordinates.
   obtain ⟨U, hU, rfl⟩ := exists_contMDiff_section_eq J F ∞ u
   obtain ⟨V, hV, rfl⟩ := exists_contMDiff_section_eq J F ∞ v
@@ -225,7 +231,7 @@ fibre metric. Independence is essential: the totalized sectional quotient is zer
 dependent pairs, whereas the displayed correction need not be. -/
 theorem IsWarpedProduct.sectionalCurvature_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u v : TangentSpace J p.2)
+    (p : M × N) (u v : TangentSpace J p.2)
     (huv : LinearIndependent ℝ ![u, v]) :
     (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection (I.prod J)) p
@@ -234,6 +240,9 @@ theorem IsWarpedProduct.sectionalCurvature_vertical
       ((leviCivitaConnection J N).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection J) p.2 u v - ‖mgradient I f p.1‖ ^ 2) /
           f p.1 ^ 2 := by
+  have hf₀ : f p.1 ≠ 0 := fun h0 ↦ by
+    have := huv.ne_zero 0
+    exact this (by simpa using h.eq_zero_of_warping_eq_zero h0 u)
   let e := tangentSpaceProdEquiv (I := I) (J := J) p
   have hi (a b : TangentSpace J p.2) :
       inner ℝ (e.symm (0, a)) (e.symm (0, b)) = f p.1 ^ 2 * inner ℝ a b := by
@@ -245,7 +254,7 @@ theorem IsWarpedProduct.sectionalCurvature_vertical
     ring
   have hD := Matrix.det_gram_ne_zero_iff_linearIndependent.mpr huv
   rw [sectionalCurvature_apply, sectionalCurvature_apply, hgram,
-    h.inner_eq, h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p hf₀]
+    h.inner_eq, h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p]
   simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, zero_add,
     inner_sub_left, real_inner_smul_left]
   have hdet : inner ℝ v v * inner ℝ u u - inner ℝ u v * inner ℝ v u =

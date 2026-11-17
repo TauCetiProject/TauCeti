@@ -87,6 +87,12 @@ namespace TLDiagram
 
 variable {n m n' m' : ℕ}
 
+/-- There is a diagram `n → m` exactly when the total number `n + m` of boundary points is
+even. -/
+theorem nonempty_iff : Nonempty (TLDiagram n m) ↔ Even (n + m) :=
+  ⟨fun ⟨x⟩ => PlanarMatching.nonempty_iff.mp ⟨x.matching⟩,
+    fun h => ⟨⟨(PlanarMatching.nonempty_iff.mpr h).some, 0⟩⟩⟩
+
 /-- Relabelling the matching of a diagram along an equivalence of planar matchings, keeping the
 circles. Every operation of this file is of this form. -/
 private def congrMatching (e : PlanarMatching (n + m) ≃ PlanarMatching (n' + m')) :
@@ -223,6 +229,13 @@ theorem matching_verticalReflect (x : TLDiagram n m) :
     (verticalReflect n m x).matching =
       PlanarMatching.cast (Nat.add_comm n m) (PlanarMatching.reflect (n + m) x.matching) := (rfl)
 
+/-- Vertical reflection sends a partner to its reflected boundary label. -/
+theorem coe_verticalReflect_matching_val_apply (D : TLDiagram n m) (i : Fin (m + n)) :
+    ((verticalReflect n m D).matching.1.val i : ℕ) =
+      n + m - 1 - (D.matching.1.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
+  simp [matching_verticalReflect, PlanarMatching.coe_cast_apply,
+    PlanarMatching.coe_reflect_apply, PerfectMatching.congr_val, Fin.rev, Nat.sub_sub, Nat.add_comm]
+
 @[simp]
 theorem circles_verticalReflect (x : TLDiagram n m) :
     (verticalReflect n m x).circles = x.circles := (rfl)
@@ -338,7 +351,10 @@ top point `2n - 1 - i`, so the matching is the fully nested `TauCeti.PlanarMatch
 def id (n : ℕ) : TLDiagram n n :=
   ⟨PlanarMatching.nested n, 0⟩
 
+/-- The matching of the identity diagram is the fully nested one. -/
 @[simp]
+theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n := (rfl)
+
 theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
   PlanarMatching.nested_val n
 

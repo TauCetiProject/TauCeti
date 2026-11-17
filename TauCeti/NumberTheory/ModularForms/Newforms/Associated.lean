@@ -23,10 +23,10 @@ The existence of `g` is the theorem
 `Newform.exists_newform_comp_unitsMap_eq_and_eigenvalue_eq_of_forall_heckeTCuspNat_eq_smul`
 of `Newforms/Decomposition.lean`.
 Uniqueness is `HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq` of
-`Newforms/StrongMultiplicityOne.lean`, a form of cross-level strong multiplicity one (Miyake,
-Theorem 4.6.19): two newforms whose nebentypes induce the same character at level `N` induce the
-same character at the least common multiple of their levels, since reduction from `N` to that
-multiple is onto on units. The span statement then follows from the spanning theorem
+`Newforms/StrongMultiplicityOne/Basic.lean`, a form of cross-level strong multiplicity one
+(Miyake, Theorem 4.6.19): two newforms whose nebentypes induce the same character at level `N`
+induce the same character at the least common multiple of their levels, since reduction from `N`
+to that multiple is onto on units. The span statement then follows from the spanning theorem
 `HeckeRing.GL2.Newform.mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul`: the level-raised
 newforms spanning `F` with nebentypus inducing `χ` are level-raises of `g`, and the others lie in
 nebentypus spaces meeting `S_k(N, χ)` only in `0`.

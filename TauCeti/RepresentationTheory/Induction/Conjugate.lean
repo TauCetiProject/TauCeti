@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Skeletal
+public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.RepresentationTheory.Induction.Restriction
 
@@ -22,9 +23,9 @@ This is the representation occurring in the summands of the Mackey decomposition
 
 The conjugation convention itself, that `MulAut.conj s • H` is `sHs⁻¹` and so that the membership
 proof `conjRep` needs is `s⁻¹xs ∈ H`, is pinned in `TauCeti.Algebra.Group.Subgroup.Pointwise` as
-`TauCeti.mem_conj_smul`, together with the laws `TauCeti.conj_one_smul` and
-`TauCeti.conj_mul_smul` making conjugation an action of `G` on the subgroups of `G`; the coherence
-below transports the representations along them.
+`TauCeti.mem_conj_smul`.  The laws `TauCeti.conj_one_smul` and `TauCeti.conj_mul_smul` of
+`TauCeti.Algebra.Group.Action.End` make conjugation an action of `G` on the subgroups of `G`; the
+coherence below transports the representations along them.
 
 The file also records the coherence making `s ↦ {}^s(-)` an action: conjugating by `1` does
 nothing and `{}^{st} A = {}^s({}^t A)`.  Neither statement is literally an equation between

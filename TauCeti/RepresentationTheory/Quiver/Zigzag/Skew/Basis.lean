@@ -130,6 +130,8 @@ private theorem pathScale_eq_one (s : IncidentChoice G) (x : Quiver.TotalPath (D
     (hx : ∀ d : G.Dart, x ≠ dartBacktrack G d) : pathScale k G c s x = 1 := by
   rw [pathScale, dite_eq_right (not_exists.mpr hx)]
 
+section Basis
+
 variable [hV : Finite V]
 
 /-- The value on a path of the rescaling below: the path scaled by its path scale. -/
@@ -688,6 +690,8 @@ theorem skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_eq_zero {i j : V}
     k G c (fun p => (Submodule.mem_bot k).mpr
       (skewZigzagMk_ofPath_eq_zero_of_not_adj k G c hij h p)) z
 
+end Basis
+
 /-! ### The dimension and the comparison with the ordinary quotient -/
 
 /-- **The dimension of a skew-zigzag relation quotient.** A finite simple graph with no isolated
@@ -710,6 +714,10 @@ theorem finrank_skewZigzagQuotient_of_preconnected [Nontrivial k] [Fintype V] [N
   finrank_skewZigzagQuotient k G c fun i =>
     SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
 
+section Equiv
+
+variable [Finite V] (t : ∀ i : V, {j : V // G.Adj i j})
+
 /-- **A skew-zigzag relation quotient is a linear twist of the ordinary one**: the linear
 isomorphism matching the two vertex, arrow and volume bases. This constructs an isomorphism of the
 underlying modules only; no algebra equivalence is constructed here. -/
@@ -723,5 +731,7 @@ theorem skewZigzagQuotientLinearEquiv_skewZigzagBasisFun (b : ZigzagBasisIndex G
       = zigzagBasisFun k G b := by
   rw [← skewZigzagBasis_apply, skewZigzagQuotientLinearEquiv, Module.Basis.equiv_apply,
     Equiv.refl_apply, zigzagBasis_apply]
+
+end Equiv
 
 end TauCeti

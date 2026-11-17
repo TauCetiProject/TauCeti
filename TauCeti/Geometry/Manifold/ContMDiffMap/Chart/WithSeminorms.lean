@@ -80,6 +80,14 @@ theorem polynormableSpace_manifoldWeakWhitney :
     PolynormableSpace 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
   withSeminorms_manifoldWeakWhitney.toPolynormableSpace
 
+/-- Every compact chart `C^k` seminorm is continuous for the native weak Whitney topology. -/
+theorem continuous_chartCkSeminorm (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
+    Continuous (chartCkSeminorm (I := I) (F := F) x K k hk) := by
+  have := isTopologicalAddGroup_manifoldWeakWhitney (I := I) (M := M) (F := F) (n := n)
+  exact Seminorm.continuous_of_forall fun r hr ↦
+    ball_chartCkSeminorm_mem_nhds x K k hk 0 hr
+
 end ContMDiffMap
 
 namespace TauCeti

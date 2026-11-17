@@ -102,8 +102,7 @@ private abbrev cocharacter (a : Fin m) : ULift.{u} (Fin m) → ℤ :=
 private lemma character_sub_mem {a b : Fin m} (hab : a ≤ b) :
     character.{u} a - character b ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _)) := by
-  refine AddSubmonoid.sub_mem_of_consecutive_sub_mem_fin _ _
-    (fun a b h => AddSubmonoid.subset_closure ?_) hab
+  refine sub_mem_of_consecutive_sub_mem_fin _ (fun a b h => AddSubmonoid.subset_closure ?_) hab
   refine ⟨_, diagonalSimpleRootIndex_mem a, ?_⟩
   have ha : (a : ℕ) + 1 < m := h ▸ b.isLt
   have hb : (⟨a + 1, ha⟩ : Fin m) = b := Fin.ext h
@@ -113,7 +112,7 @@ private lemma character_sub_mem {a b : Fin m} (hab : a ≤ b) :
 private lemma character_add_mem (a b : Fin m) :
     character.{u} a + character b ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).root '' (diagonalSimpleSupport m : Set _)) := by
-  refine AddSubmonoid.add_mem_of_consecutive_sub_mem_fin _ _ (fun a b h => ?_) (fun c hc => ?_) a b
+  refine add_mem_of_consecutive_sub_mem_fin _ (fun a b h => ?_) (fun c hc => ?_) a b
   · exact character_sub_mem (Fin.le_def.2 (by omega))
   · refine AddSubmonoid.subset_closure ⟨_, diagonalSimpleRootIndex_mem c, ?_⟩
     rw [diagonalSimpleRootIndex_of_not_lt c (by omega), diagonalRootDatum_root_positiveLong,
@@ -122,8 +121,7 @@ private lemma character_add_mem (a b : Fin m) :
 private lemma cocharacter_sub_mem {a b : Fin m} (hab : a ≤ b) :
     cocharacter.{u} a - cocharacter b ∈ AddSubmonoid.closure
       ((diagonalRootDatum.{u} m).coroot '' (diagonalSimpleSupport m : Set _)) := by
-  refine AddSubmonoid.sub_mem_of_consecutive_sub_mem_fin _ _
-    (fun a b h => AddSubmonoid.subset_closure ?_) hab
+  refine sub_mem_of_consecutive_sub_mem_fin _ (fun a b h => AddSubmonoid.subset_closure ?_) hab
   refine ⟨_, diagonalSimpleRootIndex_mem a, ?_⟩
   have ha : (a : ℕ) + 1 < m := h ▸ b.isLt
   have hb : (⟨a + 1, ha⟩ : Fin m) = b := Fin.ext h

@@ -75,7 +75,7 @@ private theorem totalVariationOn_mul_add_le_of_contDiff (hu : ContDiff ℝ 1 u)
     hw.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv
   rw [hL (w := u * v) (hu.mul hv), hL (w := u + v - u * v) ((hu.add hv).sub (hu.mul hv)), hL hu,
     hL hv,
-    ← lintegral_add_left ((hu.continuous_fderiv one_ne_zero).measurable.enorm)]
+    ← lintegral_add_left ((hu.continuous_fderiv one_ne_zero).measurable.eNorm)]
   refine (le_lintegral_add _ _).trans (lintegral_mono fun x => ?_)
   have hdu := hu.differentiable one_ne_zero x
   have hdv := hv.differentiable one_ne_zero x
@@ -117,9 +117,10 @@ private theorem totalVariationOn_mul_add_le_liminf_normed_convolution {Ω' : Ope
       (hF : ∀ n x, ‖F n x - f x‖ₑ ≤ ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ)
       {K : Set E} (hK : IsCompact K) :
       Tendsto (fun n => ∫⁻ x in K, ‖F n x - f x‖ₑ ∂μ) atTop (𝓝 0) :=
-    tendsto_lintegral_zero_of_le_add (μ := μ.restrict K) (fun n x => hF n x)
-      (fun n => ((hsmooth hu n).continuous.aestronglyMeasurable.sub
-        hu.aestronglyMeasurable).restrict.enorm) (hlim hu hK) (hlim hv hK)
+    tendsto_lintegral_zero_of_le_add (μ := μ.restrict K)
+      (.of_forall fun n => .of_forall (hF n))
+      (.of_forall fun n => ((hsmooth hu n).continuous.aestronglyMeasurable.sub
+        hu.aestronglyMeasurable).restrict.eNorm) (hlim hu hK) (hlim hv hK)
   have hmem := ContDiffBump.normed_convolution_mem_Icc (μ := μ) (G := E)
   have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
     hw.continuous.locallyIntegrable.locallyIntegrableOn _
@@ -176,9 +177,8 @@ theorem totalVariationOn_mul_add_totalVariationOn_add_sub_mul_le
     totalVariationOn μ Ω (u * v) + totalVariationOn μ Ω (u + v - u * v) ≤
       totalVariationOn μ Ω u + totalVariationOn μ Ω v := by
   -- Pass to representatives that are locally integrable and everywhere `[0, 1]`-valued.
-  have hΩ : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
-  obtain ⟨u', hu', hu'01, hu'u⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hΩ hu hu01
-  obtain ⟨v', hv', hv'01, hv'v⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hΩ hv hv01
+  obtain ⟨u', hu', hu'01, hu'u⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hu hu01
+  obtain ⟨v', hv', hv'01, hv'v⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hv hv01
   rw [← totalVariationOn_congr_ae (hu'u.mul hv'v),
     ← totalVariationOn_congr_ae ((hu'u.add hv'v).sub (hu'u.mul hv'v)),
     ← totalVariationOn_congr_ae hu'u, ← totalVariationOn_congr_ae hv'v,

@@ -64,6 +64,9 @@ function.
   natural value on every negative root.
 * `TauCeti.sum_root_eq_sum_posRootsFinset` splits a sum over all roots into its positive-root
   terms and their negatives.
+* `TauCeti.inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots` regroups `(1 / 4)` times a sum
+  over all weights of `chi h • c chi`, for an odd function `c` of the weight, as `(1 / 2)` times
+  the sum over the positive roots.
 * `TauCeti.borelSubalgebra_eq_sup`: the Borel subalgebra is the join `H ⊔ n⁺`.
 * `TauCeti.le_borelSubalgebra` and `TauCeti.positiveNilradical_le_borelSubalgebra` are the two
   inclusions `H ≤ 𝔟` and `n⁺ ≤ 𝔟`.
@@ -308,6 +311,58 @@ theorem sum_root_eq_sum_posRootsFinset {A : Type*} [AddCommMonoid A] (f : H.root
     exact ⟨fun hi ↦ neg_mem_posRoots_of_mem_negRoots b hi,
       fun hi ↦ by simpa using neg_mem_negRoots_of_mem_posRoots b hi⟩
   rw [← hunion, Finset.sum_union hdisj, hswap, Finset.sum_add_distrib]
+
+/-- Regrouping a weighted sum over all weights, for an odd function `c` of the weight, as a sum
+over the positive roots: the weights outside the roots contribute zero, and the terms at a root and
+its negative agree. -/
+theorem inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots
+    {A : Type*} [AddCommGroup A] [Module K A] (c : Weight K H L → A)
+    (hcneg : ∀ chi : Weight K H L, c (-chi) = -c chi)
+    (h : H) :
+    (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi =
+      (2 : K)⁻¹ • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+        ((a : Weight K H L) h • c (a : Weight K H L)) := by
+  classical
+  rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
+  have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
+    refine Finset.sum_eq_zero fun chi hchi ↦ ?_
+    have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
+      (Finset.mem_sdiff.mp hchi).2)
+    rw [hz.eq]
+    simp
+  rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
+    sum_root_eq_sum_posRootsFinset b]
+  have hpair : ∀ a : H.root,
+      ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
+        c ((-a : H.root) : Weight K H L)) =
+        (2 : K) • ((a : Weight K H L) h • c a) := by
+    intro a
+    -- `val_neg_root` is the named interface exposing the definitional compatibility between
+    -- root-subtype negation and weight negation; evaluation compatibility follows from it.
+    have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) :=
+      IsKilling.val_neg_root
+    have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) := by
+      exact congrArg (fun chi : Weight K H L ↦ chi h) hneg_coe
+    rw [hneg_apply, hneg_coe, hcneg]
+    simp only [smul_neg]
+    module
+  have hsum :
+      ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+          ((a : Weight K H L) h • c (a : Weight K H L) +
+            ((-a : H.root) : Weight K H L) h •
+              c ((-a : H.root) : Weight K H L)) =
+        (2 : K) • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+          ((a : Weight K H L) h • c (a : Weight K H L)) := by
+    rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
+  calc
+    _ = (4 : K)⁻¹ • ((2 : K) •
+        ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) b,
+          ((a : Weight K H L) h • c (a : Weight K H L))) :=
+      congrArg ((4 : K)⁻¹ • ·) hsum
+    _ = _ := by
+      rw [smul_smul]
+      congr 1
+      norm_num
 
 /-- The positive roots are a special closed set of roots: heights add, and a positive root never
 has a positive negative. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.CommRing
+public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -232,3 +232,41 @@ theorem weight_lt_of_mem_support_sub_weightInitialForm (p : MvPolynomial σ A)
 end CommRing
 
 end MvPolynomial
+
+namespace MonomialOrder
+
+open MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- If every other term has strictly smaller weight than the leading exponent, the weight
+initial is exactly the monomial-order leading term. No positivity of the weights is required. -/
+theorem weightInitialForm_eq_leadingTerm (m : MonomialOrder σ) (w : σ → ℕ)
+    (f : MvPolynomial σ R)
+    (h : ∀ a ∈ f.support, a ≠ m.degree f →
+      Finsupp.weight w a < Finsupp.weight w (m.degree f)) :
+    weightInitialForm w f = m.leadingTerm f := by
+  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hdeg : f.weightedTotalDegree w = Finsupp.weight w (m.degree f) := by
+    apply le_antisymm (Finset.sup_le fun a ha ↦ ?_)
+      (le_weightedTotalDegree w (m.degree_mem_support hf))
+    by_cases heq : a = m.degree f
+    · simp [heq]
+    · exact (h a ha heq).le
+  ext a
+  rw [coeff_weightInitialForm, hdeg, leadingTerm, coeff_monomial]
+  by_cases ha : a = m.degree f
+  · subst a
+    simp [leadingCoeff]
+  · have hzero : Finsupp.weight w a = Finsupp.weight w (m.degree f) → f.coeff a = 0 := by
+      intro heq
+      by_contra hn
+      exact (ne_of_lt (h a (mem_support_iff.2 hn) ha)) heq
+    simp only [Ne.symm ha, ↓reduceIte]
+    split_ifs with heq
+    · exact hzero heq
+    · rfl
+
+end MonomialOrder

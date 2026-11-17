@@ -108,7 +108,7 @@ theorem exists_rightInverse_of_isQuotientMap_of_discreteTopology_ker
     (f : E →L[K] F) (hf : IsQuotientMap f)
     [DiscreteTopology f.ker] :
     ∃ s : F →L[K] E, Function.RightInverse s f :=
-  f.exists_rightInverse_of_isQuotientMap_of_closedComplemented_ker hf
+  (f.exists_rightInverse_iff_closedComplemented_ker hf).mpr
     (Submodule.ClosedComplemented.of_discreteTopology f.ker)
 
 end ContinuousLinearMap

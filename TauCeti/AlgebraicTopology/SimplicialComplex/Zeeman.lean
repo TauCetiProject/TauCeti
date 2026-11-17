@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Triangulation
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Cylinder.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Product
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
@@ -24,10 +25,16 @@ The standard one-simplex is provided as a nontrivial witness.  Its realization i
 the homeomorphism with Mathlib's convex standard simplex, so the predicate is exercised without
 assuming the desired Zeeman conclusion.
 
-The universe-polymorphic proposition `TauCeti.ZeemanConjecture` asserts that the ordered
-simplicial cylinder is collapsible for every finite contractible complex of dimension at most two.
-The conjecture remains open; the full simplex on a finite linearly ordered type with a greatest
-element supplies a family where its conclusion follows from the cylinder's cone structure.
+The universe-polymorphic proposition `TauCeti.ZeemanConjecture` asserts that the PL polyhedron
+of the cylinder admits a collapsible triangulation for every finite contractible complex of
+dimension at most two. The ordered staircase cylinder fixes the PL product, not the triangulation
+in which the collapse must occur. Requiring this particular staircase triangulation to collapse
+would impose an additional condition not present in the polyhedral conjecture.
+
+The conjecture remains open. The standard one-simplex supplies a nontrivial check: its ordered
+cylinder is already simplicially collapsible, so no change of triangulation is needed there.
+The polyhedral formulation follows Rourke–Sanderson, *Introduction to Piecewise-Linear Topology*,
+Chapter 3, p. 39, and Zeeman, *On the dunce hat*, Topology 2 (1964), 341–358.
 
 ## Main definitions
 
@@ -115,24 +122,26 @@ end AbstractSimplicialComplex
 
 namespace TauCeti
 
-/-- **Zeeman's conjecture**: the ordered simplicial cylinder on every finite contractible
-complex of dimension at most two is collapsible.
+/-- **Zeeman's conjecture**: the PL cylinder on every finite contractible complex of dimension
+at most two admits a collapsible triangulation.
 
-The cylinder uses the staircase triangulation fixed by `AbstractSimplicialComplex.orderedCylinder`.
-Its collapse is taken after forgetting to a pre-abstract simplicial complex, since collapse can
-remove vertices. -/
+The staircase complex `AbstractSimplicialComplex.orderedCylinder` represents the PL product.
+The collapsible triangulation may be a different complex, PL homeomorphic to that product;
+it is not required to be the staircase complex itself. -/
 def ZeemanConjecture.{u} : Prop :=
   ∀ (ι : Type u) [LinearOrder ι] (K : AbstractSimplicialComplex ι),
     K.Contractible2Complex →
-      PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex
+      PreAbstractSimplicialComplex.HasCollapsibleTriangulation.{u}
+        K.orderedCylinder.toPreAbstractSimplicialComplex
 
 namespace ZeemanConjecture
 
-/-- A proof of Zeeman's conjecture makes the ordered cylinder on any contractible two-complex
-collapsible. -/
-theorem collapsible_orderedCylinder {ι : Type u} [LinearOrder ι] (h : ZeemanConjecture.{u})
-    (K : AbstractSimplicialComplex ι) (hK : K.Contractible2Complex) :
-    PreAbstractSimplicialComplex.Collapsible K.orderedCylinder.toPreAbstractSimplicialComplex :=
+/-- A proof of Zeeman's conjecture supplies a collapsible PL triangulation of the cylinder
+on any contractible two-complex. -/
+theorem hasCollapsibleTriangulation_orderedCylinder {ι : Type u} [LinearOrder ι]
+    (h : ZeemanConjecture.{u}) (K : AbstractSimplicialComplex ι) (hK : K.Contractible2Complex) :
+    PreAbstractSimplicialComplex.HasCollapsibleTriangulation.{u}
+      K.orderedCylinder.toPreAbstractSimplicialComplex :=
   h ι K hK
 
 end ZeemanConjecture
@@ -142,12 +151,14 @@ theorem zeemanConjecture_iff :
     ZeemanConjecture.{u} ↔
       ∀ (ι : Type u) [LinearOrder ι] (K : AbstractSimplicialComplex ι),
         K.Contractible2Complex →
-          PreAbstractSimplicialComplex.Collapsible
-            K.orderedCylinder.toPreAbstractSimplicialComplex :=
-  by
-    constructor
-    · intro h ι _ K hK
-      exact h.collapsible_orderedCylinder K hK
-    · exact fun h => h
+          PreAbstractSimplicialComplex.HasCollapsibleTriangulation.{u}
+            K.orderedCylinder.toPreAbstractSimplicialComplex := Iff.rfl
+
+/-- The cylinder on the standard one-simplex satisfies the conclusion of Zeeman's conjecture
+without changing its staircase triangulation. Its polyhedron is a square. -/
+theorem hasCollapsibleTriangulation_orderedCylinder_standardOneSimplex :
+    PreAbstractSimplicialComplex.HasCollapsibleTriangulation.{0}
+      (⊤ : AbstractSimplicialComplex (Fin 2)).orderedCylinder.toPreAbstractSimplicialComplex :=
+  AbstractSimplicialComplex.collapsible_orderedCylinder_top.hasCollapsibleTriangulation
 
 end TauCeti

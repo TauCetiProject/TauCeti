@@ -15,11 +15,13 @@ public import Mathlib.Data.Fintype.Sum
 Mathlib's `Quiver.Symmetrify` doubles a quiver by adjoining a formal reverse to every arrow,
 with the same vertices as the original quiver. This file transfers finiteness and decidable
 equality to the doubled vertex type, supplies finite arrow types from those of the original
-quiver, and records that the inclusion is bijective on vertices. These facts let path-algebra
-constructions on the doubled quiver reuse the original finite vertex and arrow data.
+quiver, counts them, and records that the inclusion is bijective on vertices. These facts let
+path-algebra constructions on the doubled quiver reuse the original finite vertex and arrow data.
 
 ## Main results
 
+* `TauCeti.card_symmetrify_hom`: the doubled quiver has as many arrows from `i` to `j` as `Q`
+  has from `i` to `j` and from `j` to `i` together.
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
 * `TauCeti.symmetrify_of_obj_bijective`: the doubling inclusion is bijective on vertices.
 -/
@@ -48,6 +50,8 @@ instance instFintypeSymmetrify (Q : Type u) [Fintype Q] : Fintype (Symmetrify Q)
 direction, so there are finitely many whenever `Q` has finitely many between each pair. -/
 instance instFintypeSymmetrifyHom (Q : Type u) [Quiver.{v} Q] [∀ i j : Q, Fintype (i ⟶ j)]
     (x y : Symmetrify Q) : Fintype (x ⟶ y) :=
+  -- `show Q from _` retypes the vertices as vertices of `Q`, so that the instance search finds
+  -- the hom-set instances of `Q`.
   inferInstanceAs (Fintype (((show Q from x) ⟶ (show Q from y)) ⊕
     ((show Q from y) ⟶ (show Q from x))))
 
@@ -61,9 +65,9 @@ theorem card_symmetrify_hom (Q : Type u) [Quiver.{v} Q] [∀ i j : Q, Fintype (i
   Fintype.card_sum (α := i ⟶ j) (β := j ⟶ i)
 
 /-- The inclusion `Quiver.Symmetrify.of` of a quiver in its doubled quiver is the identity on
-vertices.  Deliberately not a `simp` lemma: the two vertex types are definitionally equal, so
-rewriting `Quiver.Symmetrify.of` away erases the only record of which of the two quiver structures
-a vertex was meant to carry. -/
+vertices. Mathlib's simp lemma `Quiver.Symmetrify.of_obj` states this with right-hand side `id x`;
+this `id`-free form rewrites a vertex of the doubled quiver directly to the underlying vertex of `Q`
+in `rw` and `simp only`. -/
 theorem symmetrify_of_obj {Q : Type u} [Quiver.{v} Q] (x : Q) :
     (Symmetrify.of (V := Q)).obj x = x := rfl
 

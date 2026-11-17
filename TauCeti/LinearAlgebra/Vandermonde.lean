@@ -176,21 +176,8 @@ theorem factorial_mul_sum_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ)
   classical
   -- Multilinearity of the determinant in the rows, used in every row at once: a term of the
   -- expansion is a choice of one summand in each row, so the terms are indexed by the box.
-  have hbox : (Matrix.of fun i j : Fin n =>
-        ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t).det
-      = ∑ y ∈ Fintype.piFinset fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1),
-          (Matrix.of fun i j : Fin n => (descPochhammer ℤ (j : ℕ)).eval (y i)).det := by
-    have key := (Matrix.detRowAlternating (R := ℤ) (n := Fin n)).toMultilinearMap.map_sum_finset
-      (A := fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
-      (g := fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t)
-    have hrow : (fun i : Fin n => ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1),
-          fun j : Fin n => (descPochhammer ℤ (j : ℕ)).eval t)
-        = fun i j : Fin n =>
-          ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t := by
-      funext i j
-      exact Finset.sum_apply j _ _
-    rw [hrow] at key
-    exact key
+  have hbox := Matrix.det_of_sum_rows (fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
+    fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t
   have hsum : (∑ y ∈ Finset.Icc (fun i : Fin n => x i.castSucc) (fun i : Fin n => x i.succ - 1),
       (Matrix.vandermonde y).det)
       = (Matrix.of fun i j : Fin n =>
@@ -328,6 +315,15 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
   -- A power of `-1` is a unit even when the coefficient ring has zero divisors.
   apply ((isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)).mul_right_inj.mp
   simpa only [Finset.mul_sum, mul_left_comm] using key
+
+/-- Over a domain, the matrix of falling factorials `(descPochhammer R i).eval (x j)` has nonzero
+determinant at pairwise distinct nodes. -/
+theorem det_descPochhammer_eval_ne_zero {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
+    {x : Fin n → R} (hx : Function.Injective x) :
+    (Matrix.of fun i j : Fin n => (descPochhammer R (i : ℕ)).eval (x j)).det ≠ 0 := by
+  have hv := Matrix.det_vandermonde_ne_zero_iff.mpr hx
+  rw [det_vandermonde_eq_det_descPochhammer, ← Matrix.det_transpose] at hv
+  exact hv
 
 /-! ### Integrality of weighted Vandermonde determinants -/
 

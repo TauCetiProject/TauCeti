@@ -118,6 +118,16 @@ theorem mem_hardySubmodule_iff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
       exact hardySubmodule.smul_mem _ (fourierBasis_mem_hardySubmodule k)
     · simp [fourierBasis_repr, hf n (by omega)]
 
+/-- Multiplication by a Fourier monomial `e_m` with `m ≥ 0` preserves Hardy space. -/
+theorem fourierLp_natCast_smul_mem_hardySubmodule (m : ℕ)
+    {f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))} (hf : f ∈ hardySubmodule) :
+    (fourierLp (T := 1) ∞ (m : ℤ) • f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) ∈
+      hardySubmodule := by
+  rw [mem_hardySubmodule_iff] at hf ⊢
+  intro n hn
+  rw [fourierCoeff_fourierLp_smul]
+  exact hf _ (by omega)
+
 /-- The nonnegative Fourier modes, viewed in their closed span. -/
 private def hardyMode (n : ℕ) : HardySpace :=
   ⟨fourierBasis (T := 1) (n : ℤ), fourierBasis_mem_hardySubmodule n⟩
@@ -162,6 +172,36 @@ theorem coe_hardyBasis (n : ℕ) :
     (hardyBasis n : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) =
       fourierBasis (T := 1) (n : ℤ) := by
   rw [hardyBasis_apply, coe_hardyMode]
+
+/-- Every Hardy basis vector has unit norm.
+
+Not `@[simp]`, because `simp` already reduces the left-hand side via `coe_hardyBasis`,
+`coe_fourierBasis`, and `norm_fourierLp`. -/
+theorem norm_hardyBasis (n : ℕ) : ‖hardyBasis n‖ = 1 :=
+  hardyBasis.orthonormal.1 n
+
+/-- Every Hardy basis vector is nonzero. -/
+@[simp]
+theorem hardyBasis_ne_zero (n : ℕ) : hardyBasis n ≠ 0 :=
+  hardyBasis.orthonormal.ne_zero n
+
+/-- Orthogonal projection onto the line `ℂ ∙ hardyBasis m` fixes `hardyBasis m` and annihilates
+every other Hardy basis vector. -/
+theorem span_hardyBasis_starProjection_hardyBasis (m n : ℕ) :
+    (ℂ ∙ hardyBasis m).starProjection (hardyBasis n) = if n = m then hardyBasis m else 0 := by
+  rw [Submodule.starProjection_unit_singleton ℂ (norm_hardyBasis m),
+    orthonormal_iff_ite.mp hardyBasis.orthonormal m n]
+  rcases eq_or_ne n m with rfl | h
+  · simp
+  · simp [h, h.symm]
+
+/-- Orthogonal projection onto the line `ℂ ∙ hardyBasis m` has finite rank. -/
+theorem hasFiniteRange_span_hardyBasis_starProjection (m : ℕ) :
+    (((ℂ ∙ hardyBasis m).starProjection : HardySpace →L[ℂ] HardySpace) :
+      HardySpace →ₗ[ℂ] HardySpace).HasFiniteRange := by
+  refine hardyBasis.hasFiniteRange_of_apply_eq_zero _ {m} fun k hk => ?_
+  rw [Finset.mem_singleton] at hk
+  rw [span_hardyBasis_starProjection_hardyBasis, ite_eq_right hk]
 
 /-- Hardy coordinates are the ordinary nonnegative Fourier coefficients. -/
 theorem hardyBasis_repr (f : HardySpace) (n : ℕ) :

@@ -39,6 +39,8 @@ matrix past `J`.
   is negative transpose.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
+* `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
+  scalar, over every commutative ring.
 * `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
 * `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
@@ -153,6 +155,60 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
       fromBlocks_apply₁₂,
     fromBlocks_apply₂₁, fromBlocks_apply₂₂]
   grind
+
+/-- The long root vector `E_(i, n + i)` lies in `sp l R`. -/
+theorem single_inl_inr_mem_sp (i : l) :
+    single (Sum.inl i) (Sum.inr i) (1 : R) ∈ LieAlgebra.Symplectic.sp l R := by
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨fun a b ↦ ?_, fun a b ↦ ?_, fun a b ↦ ?_⟩ <;> grind
+
+/-- The long root vector `E_(n + i, i)` lies in `sp l R`. -/
+theorem single_inr_inl_mem_sp (i : l) :
+    single (Sum.inr i) (Sum.inl i) (1 : R) ∈ LieAlgebra.Symplectic.sp l R := by
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨fun a b ↦ ?_, fun a b ↦ ?_, fun a b ↦ ?_⟩ <;> grind
+
+/-- The Levi element `E_(i, j) - E_(n + j, n + i)` lies in `sp l R`. -/
+theorem single_inl_inl_sub_single_inr_inr_mem_sp (i j : l) :
+    single (Sum.inl i) (Sum.inl j) (1 : R) - single (Sum.inr j) (Sum.inr i) 1 ∈
+      LieAlgebra.Symplectic.sp l R := by
+  rw [mem_symplecticLieAlgebra_iff]
+  refine ⟨fun a b ↦ ?_, fun a b ↦ ?_, fun a b ↦ ?_⟩ <;> grind [Matrix.sub_apply]
+
+/-- **A matrix commuting with the symplectic Lie algebra is scalar**, over every commutative
+ring: commuting with the long root vectors `E_(i, n + i)` and `E_(n + i, i)` kills the
+off-diagonal entries and pairs `i` with `n + i`, and commuting with `E_(i, j) - E_(n + j, n + i)`
+compares the diagonal entries at `i` and `j`. -/
+theorem mem_range_scalar_of_commute_sp (M : Matrix (l ⊕ l) (l ⊕ l) R)
+    (hM : ∀ X ∈ LieAlgebra.Symplectic.sp l R, Commute M X) :
+    M ∈ Set.range (scalar (l ⊕ l)) := by
+  cases isEmpty_or_nonempty l with
+  | inl _ => exact ⟨0, by ext a; exact isEmptyElim a⟩
+  | inr h =>
+  obtain ⟨z⟩ := h
+  -- Commuting with the long root vectors makes `M` diagonal, with equal entries at `i` and
+  -- `n + i`.
+  have hp (i : l) := (hM _ (single_inl_inr_mem_sp (R := R) i)).symm
+  have hn (i : l) := (hM _ (single_inr_inl_mem_sp (R := R) i)).symm
+  have hoff (a b : l ⊕ l) (hab : a ≠ b) : M a b = 0 := by
+    cases b with
+    | inl i => exact col_eq_zero_of_commute_single (hp i) hab
+    | inr i => exact col_eq_zero_of_commute_single (hn i) hab
+  -- Commuting with a Levi element compares the diagonal entries at `i` and `j`.
+  have hd (i : l) : M (Sum.inl i) (Sum.inl i) = M (Sum.inl z) (Sum.inl z) := by
+    have he := congrArg (fun N : Matrix (l ⊕ l) (l ⊕ l) R ↦ N (Sum.inl i) (Sum.inl z))
+      (hM _ (single_inl_inl_sub_single_inr_inr_mem_sp (R := R) i z)).eq
+    simpa [mul_sub, sub_mul, mul_apply, single_apply, Finset.sum_ite_eq', Finset.sum_ite_eq]
+      using he
+  refine ⟨M (Sum.inl z) (Sum.inl z), ?_⟩
+  ext a b
+  by_cases hab : a = b
+  · subst b
+    rw [scalar_apply, diagonal_apply_eq]
+    cases a with
+    | inl i => exact (hd i).symm
+    | inr i => exact ((diag_eq_of_commute_single (hp i)).symm.trans (hd i)).symm
+  · simp [scalar_apply, diagonal_apply_ne _ hab, hoff a b hab]
 
 end Matrix
 

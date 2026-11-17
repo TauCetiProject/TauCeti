@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Jet
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.CompTime
+import TauCeti.Analysis.Calculus.ContDiff.BilinearJet
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -63,7 +64,7 @@ theorem scalarCurvature_compTime_of_eq_add {ψ : ℝ → ℝ} (hφ : ContDiff �
     contMDiff_id.prodMap (contDiff_id.add contDiff_const).contMDiff
   have hinv (q : M × ℝ) :
       (mfderiv (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (Prod.map id (· + c) : M × ℝ → M × ℝ) q).IsInvertible :=
-    TauCeti.Manifold.isInvertible_mfderiv_prodMap_id (by fun_prop) (by simp)
+    TauCeti.Manifold.isInvertible_mfderiv_prodMap_id (by simp)
   have heq : G.compTime hψ = (G.compTime hφ).pullback _ hc fun q ↦ (hinv q).injective := by
     ext q v w
     have hd (u : TangentSpace (I.prod 𝓘(ℝ)) q) :
@@ -113,27 +114,6 @@ theorem continuousAt_scalarCurvature_compTime_affine [I.Boundaryless] (q₀ : �
     ((hC.comp hA.contDiffOn fun r (hr : r ∈ V) ↦
       (⟨hr.2.1, trivial⟩ : A r ∈ T ×ˢ univ)).clm_apply contDiffOn_const).clm_apply
       contDiffOn_const
-  -- The first derivatives of the coefficients in the chart variable, and their equality with
-  -- those of the metrics `compTime`.
-  let D (i j k) : (ℝ × ℝ) × (E × ℝ) → ℝ := fun r ↦ fderiv ℝ (fun z ↦ F i j (r.1, z)) r.2 (b k)
-  have hD (i j k) {r} (hr : r ∈ V) : ContDiffAt ℝ 1 (D i j k) r := by
-    refine (ContDiffAt.fderiv (f := fun (r : (ℝ × ℝ) × (E × ℝ)) z ↦ F i j (r.1, z))
-      (g := Prod.snd) ?_ contDiffAt_snd (m := 1) (n := ∞) (by norm_cast)).clm_apply
-      contDiffAt_const
-    exact ((hF i j).contDiffAt (hV.mem_nhds hr)).comp _ (by fun_prop)
-  have hd₁ (i j) {r : (ℝ × ℝ) × (E × ℝ)} (hr : r ∈ V) :
-      fderiv ℝ (fun z ↦ (G.compTime (hφ r.1)).toNondegenerateMetric.chartMetric
-        (x₀, 0) z (b i) (b j)) r.2 = fderiv ℝ (fun z ↦ F i j (r.1, z)) r.2 := by
-    refine Filter.EventuallyEq.fderiv_eq ?_
-    filter_upwards [(hT.prod isOpen_univ).mem_nhds hr.2] with z hz
-    rw [hK r.1 hz]
-  have hd₂ (i j k) {r : (ℝ × ℝ) × (E × ℝ)} (hr : r ∈ V) :
-      fderiv ℝ (fun z ↦ fderiv ℝ (fun z' ↦
-        (G.compTime (hφ r.1)).toNondegenerateMetric.chartMetric (x₀, 0) z' (b i) (b j))
-        z (b k)) r.2 = fderiv ℝ (fun z ↦ D i j k (r.1, z)) r.2 := by
-    refine Filter.EventuallyEq.fderiv_eq ?_
-    filter_upwards [(hT.prod isOpen_univ).mem_nhds hr.2] with z hz
-    rw [hd₁ i j (r := (r.1, z)) ⟨trivial, hz⟩]
   have hw₀ : (q₀, extChartAt (I.prod 𝓘(ℝ)) (x₀, (0 : ℝ)) (x₀, 0)) ∈ V :=
     ⟨trivial, htarget ▸ mem_extChartAt_target (x₀, (0 : ℝ))⟩
   have hint :
@@ -143,33 +123,12 @@ theorem continuousAt_scalarCurvature_compTime_affine [I.Boundaryless] (q₀ : �
     trivial
   -- It remains to check the continuity of the Gram matrix and of its first and second
   -- derivatives, which near `(q₀, (x₀, 0))` are those of the coefficients `F i j`.
-  have hcont := TauCeti.Manifold.continuousAt_scalarCurvature_of_continuousAt_chartMetric b
-    (fun q ↦ G.compTime (hφ q)) (p₀ := q₀) hint ?_ ?_ ?_
-  · exact ContinuousAt.comp (f := fun r : (ℝ × ℝ) × M ↦ (r.1, (r.2, (0 : ℝ)))) (x := (q₀, x₀))
-      hcont (by fun_prop)
-  · refine ContinuousAt.congr (f := fun r ↦ Matrix.of fun i j ↦ F i j r) ?_
-      (Filter.eventually_of_mem (hV.mem_nhds hw₀) fun r hr ↦ ?_)
-    · refine continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
-      exact (hF i j).continuousOn.continuousAt (hV.mem_nhds hw₀)
-    · ext i j
-      simp [LinearMap.toMatrix₂_apply, hK r.1 hr.2, F]
-  · refine ContinuousAt.congr (f := fun r k i j ↦ D i j k r) ?_
-      (Filter.eventually_of_mem (hV.mem_nhds hw₀) fun r hr ↦ ?_)
-    · refine continuousAt_pi.2 fun k ↦ continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
-      exact (hD i j k hw₀).continuousAt
-    · funext k i j
-      simp only [D, hd₁ i j hr]
-  · refine ContinuousAt.congr
-      (f := fun r m k i j ↦ fderiv ℝ (fun z ↦ D i j k (r.1, z)) r.2 (b m)) ?_
-      (Filter.eventually_of_mem (hV.mem_nhds hw₀) fun r hr ↦ ?_)
-    · refine continuousAt_pi.2 fun m ↦ continuousAt_pi.2 fun k ↦ continuousAt_pi.2 fun i ↦
-        continuousAt_pi.2 fun j ↦ ?_
-      refine (ContDiffAt.fderiv (f := fun (r : (ℝ × ℝ) × (E × ℝ)) z ↦ D i j k (r.1, z))
-        (g := Prod.snd) ?_ contDiffAt_snd (m := 0) (n := 1) (by norm_num)).continuousAt.clm_apply
-        continuousAt_const
-      exact (hD i j k hw₀).comp
-        (f := fun rz : ((ℝ × ℝ) × (E × ℝ)) × (E × ℝ) ↦ (rz.1.1, rz.2)) _ (by fun_prop)
-    · funext m k i j
-      simp only [hd₂ i j k hr]
+  obtain ⟨h₀, h₁, h₂⟩ := Module.Basis.continuousAt_jets_of_eqOn_contDiffOn b
+    (fun q z ↦ (G.compTime (hφ q)).toNondegenerateMetric.chartMetric (x₀, 0) z) F hV hw₀
+    (fun i j ↦ (hF i j).of_le (by norm_cast))
+    fun r hr i j ↦ by simp only [F, hK r.1 hr.2]
+  exact ContinuousAt.comp (f := fun r : (ℝ × ℝ) × M ↦ (r.1, (r.2, (0 : ℝ)))) (x := (q₀, x₀))
+    (TauCeti.Manifold.continuousAt_scalarCurvature_of_continuousAt_chartMetric b
+      (fun q ↦ G.compTime (hφ q)) (p₀ := q₀) hint h₀ h₁ h₂) (by fun_prop)
 
 end Bundle.ContMDiffRiemannianMetric

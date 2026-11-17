@@ -43,7 +43,7 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {f : M → ℝ}
 
 /-- A compact band of a Morse function contains only finitely many critical values, so there is

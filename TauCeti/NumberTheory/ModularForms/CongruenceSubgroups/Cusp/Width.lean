@@ -30,7 +30,7 @@ map from level `N` to level one.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup Function
+open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup
 open scoped MatrixGroups
 
 namespace TauCeti
@@ -68,28 +68,12 @@ theorem cuspTranslationOrbitWidth_Gamma0 (N : ℕ) [NeZero N] (γ : SL(2, ℤ)) 
         𝒮ℒ ⧸ ((Gamma0 N).map (mapGL ℝ)).subgroupOf 𝒮ℒ)⟧ :
           CuspTranslationOrbit ((Gamma0 N).map (mapGL ℝ))) =
       N / Nat.gcd N ((γ 1 0).natAbs ^ 2) := by
-  rw [cuspTranslationOrbitWidth_mk]
   have hc : (γ⁻¹ 1 0).natAbs = (γ 1 0).natAbs := by
     simp
-  have hperiod (m : ℕ) :
-      minimalPeriod (TSL • ·)
-        (QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) :
-          𝒮ℒ ⧸ ((Gamma0 N).map (mapGL ℝ)).subgroupOf 𝒮ℒ) ∣ m ↔
-        N / Nat.gcd N ((γ 1 0).natAbs ^ 2) ∣ m := by
-    rw [minimalPeriod_TSL_dvd_iff]
-    have hconj :
-        (((((mapGL ℝ).rangeRestrict γ)⁻¹ * TSL ^ m *
-            (mapGL ℝ).rangeRestrict γ) : 𝒮ℒ) : GL (Fin 2) ℝ) =
-          mapGL ℝ (γ⁻¹ * ModularGroup.T ^ (m : ℤ) * γ) := by
-      have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
-          mapGL ℝ (ModularGroup.T ^ (m : ℤ)) := by
-        rw [← zpow_natCast, coe_TSL_zpow, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-      simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict,
-        map_inv, hT, map_mul]
-    rw [hconj, Subgroup.mem_map_iff_mem mapGL_injective]
-    simpa only [inv_inv, hc, Int.natCast_dvd_natCast] using
-      conj_T_zpow_mem_Gamma0_iff_width_dvd N γ⁻¹ (m : ℤ)
-  exact Nat.dvd_antisymm ((hperiod _).mpr dvd_rfl) ((hperiod _).mp dvd_rfl)
+  refine Nat.dvd_right_iff_eq.mp fun m ↦ ?_
+  rw [cuspTranslationOrbitWidth_mk_dvd_iff, ← zpow_natCast]
+  simpa only [inv_inv, hc, Int.natCast_dvd_natCast] using
+    conj_T_zpow_mem_Gamma0_iff_width_dvd N γ⁻¹ (m : ℤ)
 
 end ModularForm
 

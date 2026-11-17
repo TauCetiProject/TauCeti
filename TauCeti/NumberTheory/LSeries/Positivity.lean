@@ -12,10 +12,11 @@ public import Mathlib.NumberTheory.LSeries.Convergence
 # Dirichlet series with nonnegative coefficients at a real point
 
 At a real point `sigma`, the terms of a Dirichlet series with nonnegative coefficients are
-themselves nonnegative reals. Each term therefore equals its own norm, plain summability at `sigma`
-is already absolute summability, and the value of the series is the sum of the norms of its terms.
-These are the facts that turn a bound on the value `LSeries a sigma` into a bound on
-`∑' n, ‖LSeries.term a sigma n‖`, which is the shape a comparison or truncation argument needs.
+themselves nonnegative reals. Each term therefore equals its own norm, and the value of the series
+is the sum of the norms of its terms. This is the fact that turns a bound on the value
+`LSeries a sigma` into a bound on `∑' n, ‖LSeries.term a sigma n‖`, which is the shape a comparison
+or truncation argument needs. (Summability of that norm series needs no positivity: in `ℂ`, plain
+summability is already absolute summability, by Mathlib's `summable_norm_iff`.)
 
 Mathlib's `Mathlib/NumberTheory/LSeries/Positivity.lean` records the positivity of the *values* of
 such a series under the assumption that the first coefficient is positive. Here we only ask that
@@ -27,8 +28,6 @@ abscissa of absolute convergence.
 
 * `TauCeti.LSeries.term_eq_ofReal_norm_of_nonneg`: a nonnegative coefficient makes the term at a
   real point equal to its own norm.
-* `TauCeti.LSeries.summable_norm_term_of_nonneg`: for nonnegative coefficients, summability at a
-  real point is absolute summability.
 * `TauCeti.LSeries.LSeries_eq_ofReal_tsum_norm_of_nonneg`: for nonnegative coefficients, the value
   at a real point is the sum of the norms of the terms.
 * `TauCeti.LSeries.positive_of_exists_pos_of_summable`: for nonnegative coefficients, one of which
@@ -49,13 +48,6 @@ variable {a : ℕ → ℂ}
 theorem term_eq_ofReal_norm_of_nonneg {n : ℕ} (ha : 0 ≤ a n) (sigma : ℝ) :
     _root_.LSeries.term a (sigma : ℂ) n = (‖_root_.LSeries.term a (sigma : ℂ) n‖ : ℂ) :=
   Complex.eq_coe_norm_of_nonneg (_root_.LSeries.term_nonneg ha sigma)
-
-/-- For nonnegative coefficients, summability at a real point is absolute summability. -/
-theorem summable_norm_term_of_nonneg (ha : 0 ≤ a) {sigma : ℝ}
-    (h : LSeriesSummable a sigma) :
-    Summable fun n : ℕ ↦ ‖_root_.LSeries.term a (sigma : ℂ) n‖ := by
-  rw [← Complex.summable_ofReal]
-  exact h.congr fun n ↦ term_eq_ofReal_norm_of_nonneg (ha n) sigma
 
 /-- For nonnegative coefficients, the value of the Dirichlet series at a real point is the sum of
 the norms of its terms. -/

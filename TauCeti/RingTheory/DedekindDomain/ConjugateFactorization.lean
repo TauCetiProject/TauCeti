@@ -96,7 +96,8 @@ theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ 
         have h2 := Multiset.count_eq_one_of_mem T'.nodup haT'
         omega
       exact absurd (Multiset.nodup_iff_count_le_one.1 S.nodup a) (by omega)
-    refine isInvolutionTransversal_of_cover hinvol hTS (fun a ha h => hdisj _ h ?_) fun a ha => ?_
+    refine isInvolutionTransversal_of_cover (fun a ha => hinvol a (hTS ha)) hTS
+      (fun a ha h => hdisj _ h ?_) fun a ha => ?_
     · exact Finset.mem_image.2 ⟨a, ha, rfl⟩
     · have : a ∈ T.val + T'.val := hsum ▸ ha
       rcases Multiset.mem_add.1 this with h' | h'

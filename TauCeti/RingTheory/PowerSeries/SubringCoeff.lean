@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Subring.Basic
-public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.RingTheory.PowerSeries.Expand
 
 /-!
-# Dividing power series with coefficients in a subring
+# Power series with coefficients in a subring: division and expansion
 
 Let `R` be a subring of a ring `S`, and let `D` be a power series over `S` with coefficients in
 `R` whose first nonzero coefficient, in degree `m`, is `1`; that is, `D = Xᵐ u` with `u(0) = 1`.
@@ -23,12 +23,19 @@ A power series lies in the image of `PowerSeries.map f` exactly when each of its
 lies in the range of `f` (`PowerSeries.mem_map_range`), so the same division statement applies
 to images of power series over another ring.
 
+Substituting `Xᵖ` for `X` (`PowerSeries.expand`) only spreads the coefficients out and inserts
+zeros, so it neither creates nor destroys coefficients in `R`
+(`PowerSeries.forall_coeff_expand_mem_iff`). This is how integrality of a `q`-expansion is
+unchanged when it is read in a power of `q`, for instance at a multiple of the cusp width.
+
 ## Main results
 
 * `PowerSeries.mem_map_range`: the range of `PowerSeries.map f` consists of the power series whose
   coefficients all lie in the range of `f`.
 * `PowerSeries.coeff_mem_of_coeff_mul_mem`: if `F * D` and `D = Xᵐ u`, `u(0) = 1`, have
   coefficients in `R`, then so does `F`.
+* `PowerSeries.forall_coeff_expand_mem_iff`: `expand p φ` has coefficients in `R` if and only if
+  `φ` does.
 -/
 
 public section
@@ -65,5 +72,17 @@ theorem coeff_mem_of_coeff_mul_mem {m : ℕ} {F D : S⟦X⟧} (hD : ∀ i < m, c
   · exact absurd (Prod.ext heq (by omega)) hpne
   · rw [hD _ (by omega), mul_zero]
     exact R.zero_mem
+
+/-- **Expansion preserves and reflects coefficients in a subring.** The coefficients of
+`expand p φ`, the power series `φ` with `Xᵖ` substituted for `X`, all lie in a subring `R` if and
+only if those of `φ` do. -/
+@[simp]
+theorem forall_coeff_expand_mem_iff {S : Type*} [CommRing S] {R : Subring S} {p : ℕ}
+    (hp : p ≠ 0) {φ : S⟦X⟧} : (∀ n, coeff n (expand p hp φ) ∈ R) ↔ ∀ n, coeff n φ ∈ R := by
+  refine ⟨fun h n ↦ by simpa using h (p * n), fun h n ↦ ?_⟩
+  rw [coeff_expand]
+  split_ifs
+  · exact h _
+  · exact R.zero_mem
 
 end PowerSeries

@@ -313,7 +313,7 @@ theorem IsPseudoIsomorphism.exists_reverse [IsNoetherianRing A] [Module.Finite A
     ∃ g : N →ₗ[A] M, IsPseudoIsomorphism g := by
   have := hf.finite_iff.mpr ‹Module.Finite A N›
   obtain ⟨γ, hker, hcoker, hγ⟩ := hf.exists_mem_annihilator_notMem hN
-  obtain ⟨g, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
+  obtain ⟨g, -, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
   refine ⟨g, .of_bijective_localizedModule_map fun 𝔭 h𝔭 ↦ ?_⟩
   have hfloc := hf.bijective_localizedModule_map 𝔭 h𝔭
   by_cases hmem : 𝔭 ∈ Module.support A N
@@ -345,15 +345,9 @@ Iwasawa algebra `O⟦T⟧` of a complete discrete valuation ring `O` with finite
 is a pseudo-isomorphism iff its kernel and cokernel are finite. -/
 theorem isPseudoIsomorphism_iff_finite [IsLocalRing A] [IsNoetherianRing A]
     [Finite (IsLocalRing.ResidueField A)] (hdim : ringKrullDim A = 2) {f : M →ₗ[A] N} :
-    IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) := by
-  -- A pseudo-null module is finitely generated, and so is a finite one.
-  refine ⟨fun hf ↦ ?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  · have := hf.1.finite
-    have := hf.2.finite
-    exact ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩
-  · have : Module.Finite A (LinearMap.ker f) := .of_finite
-    have : Module.Finite A (N ⧸ LinearMap.range f) := .of_finite
-    exact ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩
+    IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) :=
+  ⟨fun hf ↦ ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩,
+    fun ⟨h₁, h₂⟩ ↦ ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩⟩
 
 section EulerQuotient
 

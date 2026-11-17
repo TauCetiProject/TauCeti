@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
-public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
+public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -54,7 +54,7 @@ top degree is determined by those restrictions
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
-`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair`. With coefficients `Hom(C(-; R), M)` for
+`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic`. With coefficients `Hom(C(-; R), M)` for
 `k`-modules `R` and `M`, `R` projective, this gives the two facts about a trivializable bundle that
 the gluing uses: `Hⁿ(E, E₀) = 0` for `n < r`
 (`Bundle.Trivialization.isZero_singularCohomology_thomPair`), and a class of `Hʳ(E, E₀)`, for
@@ -358,6 +358,17 @@ theorem fiberThomPairOverMap_comp_thomPairOverIso_hom {b : B} (hb : b ∈ W) :
     ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
     prodThomPairFiberMap_fst_apply, continuousLinearEquivAt_apply]
 
+/-- The inverse form of `Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom`: on
+the fibre over `b ∈ W`, the identification of the Thom pair of `W × F` with `(E|_W, E₀|_W)` is the
+inverse of the isomorphism of fibre pairs given by the trivialization at `b`. -/
+@[reassoc]
+theorem prodThomPairFiberMap_comp_thomPairOverIso_inv (b : W) :
+    prodThomPairFiberMap F b ≫ (e.thomPairOverIso 𝕜 hW).inv =
+      (e.continuousLinearEquivAt 𝕜 b (hW b.2)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E b.2 := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.2]
+
 include hW in
 /-- **Local classes over a trivializing set.** For `W` contained in the base set of a linear
 trivialization, every class `g ∈ Hⁿ(F, F ∖ {0})` pulls back, along the trivialization followed by
@@ -372,17 +383,11 @@ theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} 
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) n u =
         TopPair.singularCohomologyMap
           (e.continuousLinearEquivAt 𝕜 b (hW hb)).complZeroPairIso.hom n g := by
-  -- The projection `(W × F, W × (F ∖ {0})) ⟶ (F, F ∖ {0})` onto the fibre pair.
-  let proj : prodThomPair W F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
-    TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
-  have hproj (w : W) : prodThomPairFiberMap F w ≫ proj = 𝟙 _ :=
-    TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
-      -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-      erw [CategoryTheory.comp_apply, prodThomPairFiberMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-      rfl)
-  refine ⟨TopPair.singularCohomologyMap ((e.thomPairOverIso 𝕜 hW).hom ≫ proj) n g, fun b hb ↦ ?_⟩
+  refine ⟨TopPair.singularCohomologyMap ((e.thomPairOverIso 𝕜 hW).hom ≫ prodThomPairSnd W F) n g,
+    fun b hb ↦ ?_⟩
   rw [← TopPair.singularCohomologyMap_comp_apply,
-    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc 𝕜 hW hb, hproj, Category.comp_id]
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc 𝕜 hW hb,
+    prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
 
 end ThomPairOverFiber
 
@@ -405,18 +410,14 @@ theorem singularCohomology_thomPairOver_ext
     (h : ∀ b (hb : b ∈ W), TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ u =
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ v) : u = v := by
   let φ := e.thomPairOverIso ℝ hW
-  have hφ (b : W) : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
   -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
   have hφu (w : (thomPairOver F E W).singularCohomology R' K M' (finrank ℝ F)) :
       TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ w) = w := by
     simp [← TopPair.singularCohomologyMap_comp_apply]
   refine (hφu u).symm.trans ((congrArg _ (singularCohomology_prodThomPair_ext fun b ↦ ?_)).trans
     (hφu v))
-  simp only [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  simp only [← TopPair.singularCohomologyMap_comp_apply, φ,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b]
   simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
 
 end ThomPairOverExt

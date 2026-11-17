@@ -28,6 +28,8 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 ## Main definitions
 
 * `TauCeti.NovikovSeries.supported R N s`: the Novikov series supported in the set `s`.
+* `TauCeti.NovikovSeries.supportedSubalgebra S R N s`: the subalgebra of series supported in an
+  additive submonoid or subgroup `s`.
 * `TauCeti.NovikovSeries.gradeBy R N f i`: the Novikov series of degree `i` for the degree
   function `f`.
 
@@ -63,7 +65,7 @@ namespace TauCeti
 
 namespace NovikovSeries
 
-variable {R H ι : Type*}
+variable {S R H ι : Type*}
 
 section Semiring
 
@@ -85,6 +87,46 @@ def supported (s : Set H) : Submodule R (NovikovSeries R H N) where
 theorem mem_supported {s : Set H} {a : NovikovSeries R H N} :
     a ∈ supported R N s ↔ a.support ⊆ s :=
   Iff.rfl
+
+end AddZeroClass
+
+section AddMonoid
+
+variable [CommSemiring S] [Algebra S R] [AddMonoid H] {N : H →+ ℝ}
+    {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
+
+variable (S R N) in
+/-- The subalgebra of Novikov series supported in the additive submonoid or subgroup `s`. -/
+def supportedSubalgebra (s : M) : Subalgebra S (NovikovSeries R H N) where
+  carrier := {a | a.support ⊆ s}
+  add_mem' ha hb := (support_add_subset _ _).trans (Set.union_subset ha hb)
+  mul_mem' ha hb h hh := by
+    obtain ⟨a, ha', b, hb', rfl⟩ := support_mul_subset _ _ hh
+    exact add_mem (ha ha') (hb hb')
+  algebraMap_mem' r h hh := by
+    rw [algebraMap_apply] at hh
+    exact (Set.mem_singleton_iff.1 (support_single_subset 0 (algebraMap S R r) hh)) ▸
+      zero_mem s
+
+variable (S R N) in
+/-- The carrier of `supportedSubalgebra S R N s` consists of series supported in `s`. -/
+@[simp]
+theorem coe_supportedSubalgebra (s : M) :
+    (supportedSubalgebra S R N s : Set (NovikovSeries R H N)) = {a | a.support ⊆ (s : Set H)} := by
+  rfl
+
+variable (S R N) in
+/-- A series lies in `supportedSubalgebra S R N s` exactly when its support lies in `s`. -/
+@[simp]
+theorem mem_supportedSubalgebra {s : M} {a : NovikovSeries R H N} :
+    a ∈ supportedSubalgebra S R N s ↔ a.support ⊆ s :=
+  Iff.rfl
+
+end AddMonoid
+
+section AddZeroClass
+
+variable [AddZeroClass H] {N : H →+ ℝ}
 
 variable (R N) in
 /-- The Novikov series of degree `i` for the degree function `f`: those whose support lies in
@@ -124,9 +166,8 @@ theorem iSupIndep_gradeBy (f : H → ι) : iSupIndep (gradeBy R N f) := by
 
 /-- A homogeneous series is finitely supported if the period is bounded above on its fibre. -/
 theorem finite_support_of_mem_gradeBy {f : H → ι} {i : ι} (hf : BddAbove (N '' (f ⁻¹' {i})))
-    {a : NovikovSeries R H N} (ha : a ∈ gradeBy R N f i) : a.support.Finite := by
-  obtain ⟨C, hC⟩ := hf
-  exact (a.finite_le C).subset fun h hh => ⟨mem_support.1 hh, hC ⟨h, ha hh, rfl⟩⟩
+    {a : NovikovSeries R H N} (ha : a ∈ gradeBy R N f i) : a.support.Finite :=
+  finite_support_of_bddAbove_image (hf.mono (image_mono ha))
 
 /-- A finitely supported series is a finite sum of homogeneous series. -/
 theorem ofFinsupp_mem_iSup_gradeBy (f : H → ι) (x : H →₀ R) :

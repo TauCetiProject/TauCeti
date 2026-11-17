@@ -41,8 +41,8 @@ theorem fixedField_frobenius_fiber_card_of_generator (σ : L ≃ₐ[K] L)
           (ConjClasses.mk σ.toFixedFieldAlgEquiv)} = 1 := by
   have : IsCyclic (L ≃ₐ[K] L) :=
     isCyclic_iff_exists_zpowers_eq_top.mpr ⟨σ, hσ⟩
-  have hcenter : σ ∈ Subgroup.center (L ≃ₐ[K] L) :=
-    Subgroup.mem_center_iff.mpr fun τ ↦ IsCyclic.commGroup.mul_comm τ σ
+  have hcenter : σ ∈ Submonoid.center (L ≃ₐ[K] L) :=
+    Submonoid.mem_center_iff.mpr fun τ ↦ IsCyclic.commGroup.mul_comm τ σ
   have hcard : Nat.card (ConjClasses.mk σ).carrier = 1 :=
     ConjClasses.ncard_carrier_mk_of_mem_center hcenter
   rw [fixedField_frobenius_fiber_card (ConjClasses.mk σ) σ

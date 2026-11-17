@@ -13,11 +13,11 @@ public import Mathlib.Data.Finset.Powerset
 public import TauCeti.Algebra.GroupWithZero.Indicator
 
 /-!
-# Splitting sums over the subsets of a finite set
+# Splitting products and sums over the subsets of a finite set
 
-A sum over all subsets of a finite set `s` with at least two elements splits into four parts:
-the empty set, the singletons, the subsets with at least two elements other than `s`, and `s`
-itself. This is the bookkeeping behind expansions of the form
+A product (or sum) over all subsets of a finite set `s` with at least two elements splits into four
+parts: the empty set, the singletons, the subsets with at least two elements other than `s`, and
+`s` itself. This is the bookkeeping behind expansions of the form
 `∏_{i ∈ s} (1 + x_i) = ∑_{S ⊆ s} ∏_{i ∈ S} x_i`, where the four parts are the constant term, the
 linear terms, the mixed terms, and the top-degree term.
 
@@ -31,7 +31,8 @@ which commutes pairwise everywhere.
 
 ## Main results
 
-* `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
+* `TauCeti.prod_powerset_eq_mul_prod_singleton_mul_prod_filter_mul`,
+  `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
 * `Finset.prod_powersetCard_succ_insert`, `Finset.sum_powersetCard_succ_insert`: splitting over
   the `n + 1`-element subsets of `insert a s`.
 * `Finset.sum_noncommProd_powersetCard_eq_indicator`: sums of noncommutative products over
@@ -115,41 +116,33 @@ namespace TauCeti
 
 open Finset
 
-/-- **A sum over the subsets of a finite set `s` with at least two elements splits into four
+/-- **A product over the subsets of a finite set `s` with at least two elements splits into four
 parts**: the empty set, the singletons, the subsets with at least two elements other than `s`, and
 `s` itself. -/
-theorem sum_powerset_eq_add_sum_singleton_add_sum_filter_add {α M : Type*} [DecidableEq α]
-    [AddCommMonoid M] {s : Finset α} (hs : 1 < s.card) (f : Finset α → M) :
-    ∑ S ∈ s.powerset, f S = f ∅ + ∑ a ∈ s, f {a} +
-      ∑ S ∈ s.powerset.filter (fun S : Finset α ↦ 1 < S.card ∧ S ≠ s), f S + f s := by
-  rw [← add_sum_erase _ _ (mem_powerset.2 (empty_subset s)),
-    ← add_sum_erase (s.powerset.erase ∅) _
+@[to_additive /-- **A sum over the subsets of a finite set `s` with at least two elements splits
+into four parts**: the empty set, the singletons, the subsets with at least two elements other than
+`s`, and `s` itself. -/]
+theorem prod_powerset_eq_mul_prod_singleton_mul_prod_filter_mul {α M : Type*} [DecidableEq α]
+    [CommMonoid M] {s : Finset α} (hs : 1 < s.card) (f : Finset α → M) :
+    ∏ S ∈ s.powerset, f S = f ∅ * (∏ a ∈ s, f {a}) *
+      (∏ S ∈ s.powerset.filter (fun S : Finset α ↦ 1 < S.card ∧ S ≠ s), f S) * f s := by
+  rw [← mul_prod_erase _ _ (mem_powerset.2 (empty_subset s)),
+    ← mul_prod_erase (s.powerset.erase ∅) _
       (mem_erase.2 ⟨(card_pos.1 (by omega)).ne_empty, mem_powerset_self s⟩),
-    ← sum_filter_add_sum_filter_not ((s.powerset.erase ∅).erase s) fun S ↦ S.card = 1]
+    ← prod_filter_mul_prod_filter_not ((s.powerset.erase ∅).erase s) fun S ↦ S.card = 1]
   -- The subsets of cardinality one are the singletons of elements of `s`.
   have hsing : ((s.powerset.erase ∅).erase s).filter (fun S : Finset α ↦ S.card = 1) =
       s.image fun a : α ↦ ({a} : Finset α) := by
     ext S
     simp only [mem_filter, mem_erase, mem_powerset, mem_image, card_eq_one]
-    constructor
-    · rintro ⟨⟨-, -, hS⟩, a, rfl⟩
-      exact ⟨a, singleton_subset_iff.1 hS, rfl⟩
-    · rintro ⟨a, ha, rfl⟩
-      refine ⟨⟨fun h ↦ ?_, singleton_ne_empty a, singleton_subset_iff.2 ha⟩, a, rfl⟩
-      have hcard := congrArg Finset.card h
-      rw [card_singleton] at hcard
-      omega
+    grind
   -- The remaining nonempty proper subsets are those with at least two elements.
   have hbig : ((s.powerset.erase ∅).erase s).filter (fun S : Finset α ↦ ¬ S.card = 1) =
       s.powerset.filter fun S : Finset α ↦ 1 < S.card ∧ S ≠ s := by
     ext S
     simp only [mem_filter, mem_erase, mem_powerset, ← nonempty_iff_ne_empty, ← card_pos]
-    constructor
-    · rintro ⟨⟨hs, hpos, hsub⟩, h1⟩
-      exact ⟨hsub, by omega, hs⟩
-    · rintro ⟨hsub, h1, hs⟩
-      exact ⟨⟨hs, by omega, hsub⟩, by omega⟩
-  rw [hsing, hbig, sum_image fun _ _ _ _ h ↦ singleton_inj.1 h]
+    grind
+  rw [hsing, hbig, prod_image fun _ _ _ _ h ↦ singleton_inj.1 h]
   ac_rfl
 
 end TauCeti

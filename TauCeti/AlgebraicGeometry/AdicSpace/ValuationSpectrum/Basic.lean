@@ -535,6 +535,20 @@ lemma quotientMk_comap_range :
   Set.ext fun _ ↦ ⟨fun ⟨w, hw⟩ ↦ hw ▸ self_le_supp_comap 𝔞 w,
     fun h ↦ ⟨quotientLift 𝔞 h, comap_quotientLift 𝔞 h⟩⟩
 
+/-- For a surjective ring map `φ`, the range of `comap φ` is `{v ∈ Spv A | ker φ ≤ supp v}`. -/
+lemma range_comap_of_surjective {B : Type*} [CommRing B] {φ : A →+* B}
+    (hφ : Function.Surjective φ) :
+    Set.range (comap φ) = {v : Spv A | RingHom.ker φ ≤ v.supp} := by
+  let e := RingHom.quotientKerEquivOfSurjective hφ
+  have he : (e.symm : B →+* A ⧸ RingHom.ker φ).comp φ = Ideal.Quotient.mk (RingHom.ker φ) :=
+    RingHom.ext fun a ↦ e.injective (by simp [e])
+  have hid : (e : A ⧸ RingHom.ker φ →+* B).comp e.symm = RingHom.id B :=
+    e.toRingHom_comp_symm_toRingHom
+  have hsurj : Function.Surjective (comap (e.symm : B →+* A ⧸ RingHom.ker φ)) := fun w ↦
+    ⟨comap (e : A ⧸ RingHom.ker φ →+* B) w, by rw [comap_comap, hid, comap_id, id]⟩
+  rw [← quotientMk_comap_range, ← he, comap_comp, Set.range_comp, hsurj.range_eq,
+    Set.image_univ]
+
 /-- `comap (mk 𝔞) : Spv (A ⧸ 𝔞) → Spv A` is a topological embedding. -/
 lemma isEmbedding_comap_quotientMk :
     Topology.IsEmbedding (comap (Ideal.Quotient.mk 𝔞)) where

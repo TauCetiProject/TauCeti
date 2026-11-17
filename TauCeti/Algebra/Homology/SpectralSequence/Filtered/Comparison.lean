@@ -69,13 +69,13 @@ functors of finite increasing filtrations `F` of `K` and `G` of `L` (`F_a = G_a 
 of some page `r ≥ 2`, then `α.app ⊤` induces isomorphisms in cohomology. -/
 theorem isIso_homologyMap_of_isIso_spectralSequence_page (F : ℤ → Subobject K)
     (hF : Monotone F) (G : ℤ → Subobject L) (hG : Monotone G)
-    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) {a b : ℤ} (hab : a ≤ b)
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) {a b : ℤ}
     (hFa : F a = ⊥) (hGa : G a = ⊥) (hFb : F b = ⊤) (hGb : G b = ⊤) (r : ℤ) (hr : 2 ≤ r)
     (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological
       (spectralObjectMap α)).hom r hr).f pq)) (n : ℤ) :
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) :=
   isIso_homologyMap_app_top_of_isIso_abutment α n <|
-    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab n
+    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) n
     (fun m i _ _ hi => isZero_spectralObject_H_bot F hF i m
       ((F i).isZero_homology_of_eq_bot (le_bot_iff.mp (hFa ▸ hF hi)) m))
     (fun m i _ _ hi => isZero_spectralObject_H_bot G hG i m

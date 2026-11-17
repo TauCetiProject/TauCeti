@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Coset.Enumeration
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.Eleven
 
 /-!
-# Recognition of the presented group of `M₁₁`
+# Recognition and simplicity of the presented group of `M₁₁`
 
 The classification list carries the Mathieu group `M₁₁` as the group `SporadicName.M11.Group`
 defined by the transcribed presentation
@@ -28,7 +28,7 @@ the relators also shows `b ^ 11 = 1`. Hence `[G : ⟨b⟩] ≤ 720` and `|⟨b�
 The bound is derived from the two relators alone. Comparing it with the order of the canonical
 permutation model upgrades `TauCeti.Sporadic.M11.presentationHom` to an explicit multiplicative
 equivalence with that model, and proves that the presented group has exactly `7920` elements.
-This recognition does not establish simplicity of either group.
+Since the model is simple (`TauCeti.Sporadic.isSimpleGroup_M11`), so is the presented group.
 
 The certificate was produced outside Lean by a Felsch-style enumeration with preferred
 definitions, which tracks the power of `b` attached to every edge, and was then pruned to the
@@ -40,6 +40,7 @@ steps that change the table; only its replay is trusted.
 * `TauCeti.SporadicName.natCard_group_M11_le`: it has at most `7920` elements.
 * `TauCeti.Sporadic.M11.presentationEquiv`: recognition by the canonical presentation map.
 * `TauCeti.SporadicName.natCard_group_M11`: the presented group has `7920` elements.
+* `TauCeti.SporadicName.isSimpleGroup_group_M11`: the presented group is simple.
 
 ## References
 
@@ -293,5 +294,9 @@ namespace TauCeti.SporadicName
 /-- The group defined by the transcribed presentation of `M₁₁` has exactly `7920` elements. -/
 theorem natCard_group_M11 : Nat.card M11.Group = 7920 :=
   (Nat.card_congr Sporadic.M11.presentationEquiv.toEquiv).trans Sporadic.card_M11
+
+/-- **The presented group of `M₁₁` is simple.** -/
+instance isSimpleGroup_group_M11 : IsSimpleGroup M11.Group :=
+  Sporadic.M11.presentationEquiv.isSimpleGroup
 
 end TauCeti.SporadicName

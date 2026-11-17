@@ -120,6 +120,13 @@ open MonoidalCategory
 /-- The categorical tensor product uses the balanced DG bimodule tensor product. -/
 theorem tensorObj_eq : M ⊗ N = tensorObj M N := (rfl)
 
+/-- The categorical tensor product retains the balanced tensor grading. -/
+theorem tensorObj_grading : (M ⊗ N).grading = (tensorObj M N).grading := (rfl)
+
+/-- The categorical tensor product retains the balanced tensor differential. -/
+theorem tensorObj_differential :
+    (M ⊗ N).differential = (tensorObj M N).differential := (rfl)
+
 /-- The categorical unit is the lifted regular DG bimodule. -/
 theorem tensorUnit_eq :
     𝟙_ (DGBimoduleCat.{uR, uA, uA, uA} hA hA) = tensorUnit.{uA} hA := (rfl)

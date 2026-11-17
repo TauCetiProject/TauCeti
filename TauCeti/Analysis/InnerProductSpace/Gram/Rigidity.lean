@@ -52,19 +52,14 @@ theorem ker_eq_of_inner_self_eq {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
 /-- The canonical range isometry induced by equal pullback inner products, sending `S x`
 to `T x`. -/
 def rangeEquivOfInnerEq {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
-    (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) : S.range ≃ₗᵢ[𝕜] T.range := by
-  let e := S.quotKerEquivRange.symm.trans
-    ((Submodule.quotEquivOfEq _ _ (ker_eq_of_inner_self_eq fun x => h x x)).trans
-      T.quotKerEquivRange)
-  have he (x : M) : e ⟨S x, LinearMap.mem_range_self S x⟩ =
-      ⟨T x, LinearMap.mem_range_self T x⟩ := by
-    apply Subtype.ext
-    simp only [e, LinearEquiv.trans_apply, LinearMap.quotKerEquivRange_symm_apply_image,
-      Submodule.mkQ_apply, Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivRange_apply_mk]
-  exact e.isometryOfInner fun x y => by
-    obtain ⟨_, x, rfl⟩ := x
-    obtain ⟨_, y, rfl⟩ := y
-    simpa only [he, Submodule.coe_inner] using (h x y).symm
+    (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) : S.range ≃ₗᵢ[𝕜] T.range :=
+  (S.quotKerEquivRange.symm ≪≫ₗ
+      Submodule.quotEquivOfEq _ _ (ker_eq_of_inner_self_eq fun x => h x x) ≪≫ₗ
+      T.quotKerEquivRange).isometryOfInner <| by
+    rintro ⟨_, hx⟩ ⟨_, hy⟩
+    obtain ⟨x, rfl⟩ := LinearMap.mem_range.1 hx
+    obtain ⟨y, rfl⟩ := LinearMap.mem_range.1 hy
+    simpa using (h x y).symm
 
 /-- The range isometry sends each image under the first map to the corresponding image
 under the second map. -/
@@ -72,11 +67,8 @@ under the second map. -/
 theorem rangeEquivOfInnerEq_apply {S : M →ₗ[𝕜] E} {T : M →ₗ[𝕜] F}
     (h : ∀ x y, ⟪S x, S y⟫_𝕜 = ⟪T x, T y⟫_𝕜) (x : M) :
     rangeEquivOfInnerEq h ⟨S x, LinearMap.mem_range_self S x⟩ =
-      ⟨T x, LinearMap.mem_range_self T x⟩ := by
-  apply Subtype.ext
-  simp only [rangeEquivOfInnerEq, LinearEquiv.coe_isometryOfInner, LinearEquiv.trans_apply,
-    LinearMap.quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply,
-    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivRange_apply_mk]
+      ⟨T x, LinearMap.mem_range_self T x⟩ :=
+  Subtype.ext <| by simp [rangeEquivOfInnerEq]
 
 /-- A range isometry is uniquely determined by its values on the images of the common
 source. -/
@@ -104,19 +96,12 @@ theorem spanEquivOfInnerEq_apply {v : ι → E} {w : ι → F}
     (h : ∀ i j, ⟪v i, v j⟫_𝕜 = ⟪w i, w j⟫_𝕜) (i : ι) :
     spanEquivOfInnerEq h ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩ =
       ⟨w i, Submodule.subset_span (Set.mem_range_self i)⟩ := by
-  classical
   apply Subtype.ext
-  rw [spanEquivOfInnerEq, LinearIsometryEquiv.trans_apply,
-    LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_ofEq_apply]
-  have hcast :
-      LinearIsometryEquiv.ofEq _ _ (Finsupp.range_linearCombination (v := v) 𝕜).symm
-        ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩ =
-      ⟨Finsupp.linearCombination 𝕜 v (Finsupp.single i 1),
-        LinearMap.mem_range_self _ _⟩ := by
-    apply Subtype.ext
-    simp only [LinearIsometryEquiv.coe_ofEq_apply, Finsupp.linearCombination_single, one_smul]
-  rw [hcast, rangeEquivOfInnerEq_apply]
-  simp
+  simp only [spanEquivOfInnerEq, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.coe_ofEq_apply]
+  convert congrArg Subtype.val (rangeEquivOfInnerEq_apply
+    (fun a b => Finsupp.inner_linearCombination_eq_of_inner_eq a b h) (Finsupp.single i 1))
+    using 2 <;> simp [Subtype.ext_iff]
 
 /-- The canonical span isometry is the unique linear isometric equivalence sending the
 first family to the second. -/
@@ -125,42 +110,31 @@ theorem eq_spanEquivOfInnerEq {v : ι → E} {w : ι → F}
     {e : Submodule.span 𝕜 (Set.range v) ≃ₗᵢ[𝕜] Submodule.span 𝕜 (Set.range w)}
     (he : ∀ i, (e ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩ : F) = w i) :
     e = spanEquivOfInnerEq h := by
-  have hv : Submodule.span 𝕜 (Set.range fun i =>
-      (⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩ :
-        Submodule.span 𝕜 (Set.range v))) = ⊤ :=
-    (Submodule.span_range_subtype_eq_top_iff _ _).mpr rfl
-  apply LinearIsometryEquiv.toLinearEquiv_injective
-  apply LinearEquiv.toLinearMap_injective
-  apply LinearMap.ext_on_range hv
-  intro i
-  apply Subtype.ext
-  simpa only [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-    spanEquivOfInnerEq_apply, Subtype.coe_mk] using he i
+  have hv := (Submodule.span_range_subtype_eq_top_iff _
+    fun i => Submodule.subset_span (R := 𝕜) (Set.mem_range_self (f := v) i)).mpr rfl
+  refine LinearIsometryEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective <|
+    LinearMap.ext_on_range hv fun i => Subtype.ext ?_
+  simpa using he i
 
 /-- Equal Gram data for two families in a finite-dimensional space can be realized by an
 ambient linear isometric equivalence. The indexing type need not be finite. -/
 theorem exists_linearIsometryEquiv_of_inner_eq [FiniteDimensional 𝕜 E] {v w : ι → E}
     (h : ∀ i j, ⟪v i, v j⟫_𝕜 = ⟪w i, w j⟫_𝕜) :
     ∃ e : E ≃ₗᵢ[𝕜] E, ∀ i, e (v i) = w i := by
-  let L : Submodule.span 𝕜 (Set.range v) →ₗᵢ[𝕜] E :=
-    (Submodule.span 𝕜 (Set.range w)).subtypeₗᵢ.comp
-    (spanEquivOfInnerEq h).toLinearIsometry
-  let U : E →ₗᵢ[𝕜] E := LinearIsometry.extend L
-  refine ⟨U.toLinearIsometryEquiv rfl, fun i => ?_⟩
-  have he := LinearIsometry.extend_apply L
-    ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
-  simpa [U, L] using he
+  let L :=
+    (Submodule.span 𝕜 (Set.range w)).subtypeₗᵢ.comp (spanEquivOfInnerEq h).toLinearIsometry
+  refine ⟨L.extend.toLinearIsometryEquiv rfl, fun i => ?_⟩
+  simpa [L] using L.extend_apply ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
 
 /-- Equal Gram matrices characterize ambient isometric equivalence of families in a
 finite-dimensional real or complex inner-product space. The index type may be infinite. -/
 theorem gram_eq_iff_exists_linearIsometryEquiv [FiniteDimensional 𝕜 E]
     {v w : ι → E} : Matrix.gram 𝕜 v = Matrix.gram 𝕜 w ↔
       ∃ e : E ≃ₗᵢ[𝕜] E, ∀ i, e (v i) = w i := by
-  constructor
-  · intro h
-    exact exists_linearIsometryEquiv_of_inner_eq fun i j => congrArg (fun A => A i j) h
-  · rintro ⟨e, he⟩
-    ext i j
-    simpa only [Matrix.gram_apply, ← he] using (e.inner_map_map (v i) (v j)).symm
+  refine ⟨fun h => exists_linearIsometryEquiv_of_inner_eq fun i j => by
+    simpa [Matrix.gram_apply] using congrFun₂ h i j, ?_⟩
+  rintro ⟨e, he⟩
+  ext i j
+  simp [Matrix.gram_apply, ← he]
 
 end TauCeti

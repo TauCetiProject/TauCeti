@@ -49,9 +49,7 @@ noncomputable def cliffordCrossedSystem (s : (groupExtension A).Section) (hs : s
     CrossedSystem k (End A) (Quotient A) where
   action q := commutantAction (s q)
   factor q r := factorSetFun s (q, r)
-  action_one := by simp [hs]
   factor_one_left q := s.factorSetFun_one_left hs q
-  factor_one_right q := s.factorSetFun_one_right hs q
   action_mul q r f := by
     rw [commutantAction_section_mul]
     simp [mul_assoc]

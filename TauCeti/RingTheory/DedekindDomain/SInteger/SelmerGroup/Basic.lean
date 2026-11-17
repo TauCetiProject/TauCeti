@@ -80,14 +80,14 @@ Dirichlet's unit theorem.
 ## References
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-`EllipticCurves` roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this
-follows. The names differ: the substrate that source keeps in its own `FractionalIdeal` file is
-already here as `TauCeti.AlgebraicGeometry.WeilDivisor.nthRootClass` and its neighbours, and the
-`S`-integer dictionary is already here under `IsDedekindDomain.integer*`, so only the Selmer layer
-itself is adapted, and it is named after Mathlib's `selmerGroup` API rather than after the source.
-Following this repository's convention for adapted material, the upstream authorship is credited
-here rather than in the copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this follows. The names
+differ: the substrate that source keeps in its own `FractionalIdeal` file is already here as
+`TauCeti.AlgebraicGeometry.WeilDivisor.nthRootClass` and its neighbours, and the `S`-integer
+dictionary is already here under `IsDedekindDomain.integer*`, so only the Selmer layer itself is
+adapted, and it is named after Mathlib's `selmerGroup` API rather than after the source. Following
+this repository's convention for adapted material, the upstream authorship is credited here rather
+than in the copyright header.
 -/
 
 public section
@@ -309,7 +309,7 @@ theorem range_toClassGroup [NeZero n] : (toClassGroup K S n).range =
     refine ⟨fromUnitsNDivisible K S n ⟨x, hmem⟩, ?_⟩
     rw [toClassGroup_fromUnitsNDivisible, nthRootClass_apply]
     congr 1
-    refine units_eq_of_forall_count_eq _ _ fun v ↦ ?_
+    refine FractionalIdeal.units_ext_count fun v ↦ ?_
     rw [count_nthRootHom, coe_unitsNDivisibleToNDivisible, coe_toPrincipalIdeal, hcount v,
       Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr (NeZero.ne n))]
 

@@ -57,9 +57,16 @@ theorem map_prod_castLE {n k : ℕ} (hk : k ≤ n) (s : Fin n → R) :
     v (∏ j : Fin k, s (Fin.castLE hk j)) = TauCeti.prefixSum k fun i ↦ v (s i) := by
   rw [map_prod, TauCeti.prefixSum_eq_sum_castLE hk]
 
+section Ring
+
+/-- A sign `(-1) ^ k` has valuation zero. -/
+theorem map_neg_one_pow {R : Type*} [Ring R] (v : AddValuation R Γ₀) (k : ℕ) :
+    v ((-1) ^ k) = 0 := by
+  rw [v.map_pow, v.map_neg, v.map_one, smul_zero]
+
 /-- For an additive valuation which is nonnegative on the whole ring, units have valuation `0`. -/
-theorem map_eq_zero_of_isUnit {v : AddValuation R Γ₀} (hv : ∀ x, 0 ≤ v x) {u : R} (hu : IsUnit u) :
-    v u = 0 := by
+theorem map_eq_zero_of_isUnit {R : Type*} [Ring R] {v : AddValuation R Γ₀}
+    (hv : ∀ x, 0 ≤ v x) {u : R} (hu : IsUnit u) : v u = 0 := by
   obtain ⟨w, hw⟩ := hu.exists_right_inv
   have h := congrArg v hw
   rw [v.map_mul, v.map_one] at h
@@ -67,18 +74,11 @@ theorem map_eq_zero_of_isUnit {v : AddValuation R Γ₀} (hv : ∀ x, 0 ≤ v x)
 
 /-- For an additive valuation which is nonnegative on the whole ring, a divisor has at most the
 valuation of its multiples. -/
-theorem map_le_map_of_dvd {v : AddValuation R Γ₀} (hv : ∀ x, 0 ≤ v x) {a b : R} (h : a ∣ b) :
-    v a ≤ v b := by
+theorem map_le_map_of_dvd {R : Type*} [Ring R] {v : AddValuation R Γ₀}
+    (hv : ∀ x, 0 ≤ v x) {a b : R} (h : a ∣ b) : v a ≤ v b := by
   obtain ⟨c, rfl⟩ := h
   rw [v.map_mul]
   exact le_add_of_nonneg_right (hv c)
-
-section Ring
-
-/-- A sign `(-1) ^ k` has valuation zero. -/
-theorem map_neg_one_pow {R : Type*} [Ring R] (v : AddValuation R Γ₀) (k : ℕ) :
-    v ((-1) ^ k) = 0 := by
-  rw [v.map_pow, v.map_neg, v.map_one, smul_zero]
 
 variable {R Γ : Type*} [Ring R] [AddCancelCommMonoid Γ] [LinearOrder Γ] [IsOrderedAddMonoid Γ]
   [IntCast Γ] {v : AddValuation R (WithTop Γ)}

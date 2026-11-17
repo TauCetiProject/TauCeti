@@ -17,7 +17,8 @@ For open subsets `U ≤ W` of a manifold, a rough form on `W` restricts to `U` b
 inclusion `TopologicalSpace.Opens.inclusion`. The differential of that inclusion is the identity of
 the model space, so restriction does not change the values of the form
 (`TauCeti.mpullback_inclusion_apply`), and the charts of `U` are restrictions of those of `W`, so
-the coordinate expressions agree near every point of `U`.
+the coordinate expressions agree near every point of `U`. The same holds for restriction from `M`
+itself (`TauCeti.mpullback_subtype_val_apply`).
 
 Consequently regularity of forms is local (`TauCeti.contMDiffAt_mpullback_inclusion_iff`): a form
 on `W` is `C^n` as soon as its restrictions to the members of an open cover of `W` are
@@ -65,6 +66,15 @@ theorem mpullback_inclusion_apply {U W : Opens M} (h : U ≤ W) (γ : RoughForm 
   ext v
   rw [mpullback_apply]
   simp only [Manifold.mfderiv_inclusion_apply]
+  rfl
+
+/-- Restricting a form on `M` to an open subset does not change its value at any point. -/
+@[simp]
+theorem mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : U) :
+    mpullback I I (Subtype.val : U → M) γ x = γ x := by
+  ext v
+  simp only [mpullback_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    Manifold.tangentSpaceOpenEquiv_apply]
   rfl
 
 /-- The extension by zero of a rough form on an open subset `U` to an open subset `W`: it agrees
@@ -315,12 +325,11 @@ theorem contMDiffAt_mpullback_inclusion_iff {U W : Opens M} (h : U ≤ W) {n : W
   have hpt : extChartAt I x x ∈ range I := mem_range_self _
   refine ⟨fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_,
     fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_⟩
-  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
-    rw [preimage_univ, univ_inter] at hc
+  · have hc := RoughForm.contDiffWithinAt_range_inChartAt_of_contMDiffAt _ hx
     rw [extChartAt_inclusion_self]
     exact hc.congr_of_eventuallyEq heq.symm (heq.self_of_nhdsWithin hpt).symm
-  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
-    rw [preimage_univ, univ_inter, extChartAt_inclusion_self] at hc
+  · have hc := RoughForm.contDiffWithinAt_range_inChartAt_of_contMDiffAt _ hx
+    rw [extChartAt_inclusion_self] at hc
     exact hc.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hpt)
 
 /-- A form on an open subset `W` is `C^n` when its restrictions to the members of a family of open

@@ -21,6 +21,10 @@ If `R → S` is moreover faithfully flat, compatible elements over `S` and the b
 ring at its maximal ideal. Without faithful flatness, the image criterion does not assert
 that arbitrarily prescribed local lifts can be realized simultaneously.
 
+`IsBaseChange.mem_range_iff_locally_mem_range` gives the corresponding membership criterion
+for any map exhibiting a flat base change, rather than only for the canonical map
+into a tensor product.
+
 The Amitsur differential of a locally liftable element is ideal-power torsion. Base change
 identifies that torsion with the original torsion, and the multiplication retraction kills
 the differential. The element's class in the cokernel of `M → S ⊗ M` then vanishes both
@@ -183,3 +187,49 @@ theorem existsUnique_formalGlueing_lift (y : S ⊗[R] M)
   rw [IsLocalizedModule.map_apply, hm, hz]
 
 end TensorProduct
+
+namespace IsBaseChange
+
+variable {R S M N : Type*} [CommRing R] [CommRing S] [Algebra R S]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module S N]
+  [IsScalarTower R S N] [Module.Flat R S] {G : Finset R} {f : M →ₗ[R] N}
+
+/-- A module model inside its flat base change is determined by its localizations
+away from the ideal defining the formal neighbourhood. The map `f` need not be the canonical
+map to a tensor product. -/
+theorem mem_range_iff_locally_mem_range (hf : IsBaseChange S f)
+    (hI : Function.Bijective (Ideal.quotientMap
+      ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map)) (y : N) :
+    y ∈ LinearMap.range f ↔ ∀ g ∈ G,
+      LocalizedModule.mkLinearMap (.powers g) N y ∈ LinearMap.range
+        (IsLocalizedModule.map (.powers g) (LocalizedModule.mkLinearMap (.powers g) M)
+          (LocalizedModule.mkLinearMap (.powers g) N) f) := by
+  let e := hf.equiv.restrictScalars R
+  have he : e.toLinearMap ∘ₗ TensorProduct.mk R S M 1 = f := by
+    ext m
+    simp [e, IsBaseChange.equiv_tmul]
+  constructor
+  · rintro ⟨m, rfl⟩ g _
+    exact ⟨LocalizedModule.mkLinearMap (.powers g) M m, IsLocalizedModule.map_apply ..⟩
+  · intro hy
+    have hlocal : ∀ g ∈ G,
+        LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M) (hf.equiv.symm y) ∈
+          LinearMap.range (IsLocalizedModule.map (.powers g)
+            (LocalizedModule.mkLinearMap (.powers g) M)
+            (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M))
+            (TensorProduct.mk R S M 1)) := by
+      intro g hg
+      obtain ⟨z, hz⟩ := hy g hg
+      refine ⟨z, ?_⟩
+      apply IsLocalizedModule.map_injective (.powers g)
+        (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M))
+        (LocalizedModule.mkLinearMap (.powers g) N) e.toLinearMap e.injective
+      rw [← LinearMap.comp_apply, ← IsLocalizedModule.map_comp', he, hz,
+        IsLocalizedModule.map_apply]
+      simp [e]
+    obtain ⟨m, hm⟩ := (TensorProduct.mem_range_mk_one_iff_locally_mem_range
+      (hf.equiv.symm y) hI).mpr hlocal
+    exact ⟨m, by simpa [IsBaseChange.equiv_tmul] using congr(hf.equiv $hm)⟩
+
+end IsBaseChange

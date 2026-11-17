@@ -18,9 +18,9 @@ so is the induced map on double loop spaces (`TauCeti.IsHurewiczFibration.loopMa
 is the case of loops of the relative lifting property for the open box
 (`TauCeti.IsHurewiczFibration.exists_lift_openBox`).
 
-The statement is for the fixed-interval loop space.  The analogous statement for Moore loops,
-through the comparison of Moore loops with fixed-interval loops, is not proved here: lifting a
-Moore loop of length zero requires a lift that is constant over constant paths.
+The statement is for the fixed-interval loop space.  The analogous statement for Moore loops
+fails at the loops of length zero, and holds over the Moore loops of positive length; both are in
+`TauCeti.Topology.PathSpace.Moore.LoopFibration`.
 
 ## Main results
 

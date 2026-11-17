@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.MapCLM
-public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
+public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 
 /-!
 # Bounded diagonal operators on sequence spaces

@@ -178,7 +178,7 @@ theorem coe_algebraicAnalyticConeOrbitDiffeomorph (n : ℕ∞ω) :
     letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
     ⇑(algebraicAnalyticConeOrbitDiffeomorph hΦ σ e n) =
       algebraicAnalyticConeOrbitHomeomorph hΦ σ := by
-  simp only [algebraicAnalyticConeOrbitDiffeomorph, coe_diffeomorphOfBijective]
+  simp only [algebraicAnalyticConeOrbitDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
 
 /-- The inverse orbit diffeomorphism has the inverse restricted comparison as its map. -/
 @[simp]

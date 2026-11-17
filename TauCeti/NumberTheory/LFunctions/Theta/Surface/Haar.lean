@@ -22,11 +22,13 @@ the measures of that decomposition:
   `TauCeti.multHaar = dt / t` of `(0, ∞)`; it is Lebesgue measure on the positive orthant with
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
-  (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
+  (`map_archHaar_mul_left`), coordinatewise inversion (`map_archHaar_inv`) and the action of the
+  units (`map_archHaar_unitScale`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
-  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite. Neukirch's canonical surface measure
-  is `2 ^ r₂` times `surfaceHaar K`.
+  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and a bounded set of parameters
+  meets `S` in a set of finite mass (`surfaceHaar_preimage_lt_top`). Neukirch's canonical surface
+  measure is `2 ^ r₂` times `surfaceHaar K`.
 * `archHaar_eq_map`: `dy / y` is the image of the product measure `d*x × dt / t` under
   `(x, t) ↦ x t^(1/n)`. The corresponding rectangle-mass formula is
   `archHaar_surfacePart_preimage_inter`, allowing any measurable radial shell.
@@ -66,8 +68,12 @@ times this one. -/
 def archHaar : Measure (realSpace K) :=
   Measure.pi fun _ ↦ multHaar
 
+variable (K) in
+/-- The defining formula of `dy / y`, as the product over the infinite places of `dt / t`. -/
+theorem archHaar_def : archHaar K = Measure.pi fun _ ↦ multHaar := (rfl)
+
 instance : SigmaFinite (archHaar K) := by
-  unfold archHaar
+  rw [archHaar_def]
   infer_instance
 
 /-- `dy / y` is Lebesgue measure on the positive orthant with density `∏_w y_w⁻¹`. -/
@@ -123,6 +129,15 @@ theorem map_archHaar_inv : (archHaar K).map Inv.inv = archHaar K := by
     exact Pi.inv_apply y w
   rw [hinv, archHaar, pi_map_pi fun _ ↦ measurable_inv.aemeasurable]
   simp_rw [map_multHaar_inv]
+
+/-- The action `y_w ↦ |u|_w² y_w` of a unit on the parameters is an independent positive
+dilation at each place, so it preserves `dy / y`. -/
+theorem map_archHaar_unitScale (u : (𝓞 K)ˣ) : (archHaar K).map (unitScale u) = archHaar K := by
+  have hscale : unitScale u = ((fun w : InfinitePlace K ↦ w (u : K) ^ 2) * ·) := by
+    ext y w
+    simp [unitScale_apply]
+  rw [hscale]
+  exact map_archHaar_mul_left fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
 
 /-! ### The Haar measure of the norm-one hypersurface -/
 
@@ -207,6 +222,18 @@ instance : SigmaFinite (surfaceHaar K) :=
       finite := surfaceHaar_surfaceBox_lt_top
       spanning := iUnion_surfaceBox }
 
+/-- A bounded set of parameters meets `S` in a set of finite `d*x`-mass: on `S` an upper bound on
+the coordinates is also a positive lower bound. -/
+theorem surfaceHaar_preimage_lt_top {D : Set (realSpace K)} (hD : Bornology.IsBounded D) :
+    surfaceHaar K (Subtype.val ⁻¹' D) < ∞ := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  obtain ⟨k, hk⟩ := exists_nat_ge C
+  have hCk : C ≤ k + 1 := hk.trans (le_add_of_nonneg_right zero_le_one)
+  refine (measure_mono (show Subtype.val ⁻¹' D ⊆ surfaceBox k from fun x hx w _ ↦ ?_)).trans_lt
+    (surfaceHaar_surfaceBox_lt_top k)
+  obtain ⟨h1, h2⟩ := hC x hx x.property w
+  exact ⟨(inv_anti₀ (zero_lt_one.trans_le hC1) hCk).trans h1, h2.trans hCk⟩
+
 /-! ### The decomposition `dy / y = d*x × dt / t` -/
 
 open scoped Classical in
@@ -245,7 +272,7 @@ private theorem toSurface_smul {c : ℝ} (hc : 0 < c) (y : realSpace K) :
     forall_congr' fun w ↦ (mul_pos_iff_of_pos_left hc)
   by_cases hy : ∀ w, 0 < y w
   · exact Subtype.ext <| by rw [toSurface_of_pos (hpos.mpr hy), toSurface_of_pos hy,
-      surfacePart_smul hc (archNorm_pos hy).le]
+      surfacePart_smul hc]
   · have hcy : ¬∀ w, 0 < c * y w := hpos.not.mpr hy
     simp [toSurface, hy, hcy]
 
@@ -292,7 +319,7 @@ private theorem map_normImage_mul_left {A : Set (normOneSurface K)} (hA : Measur
 private theorem normImage_Icc_one_exp_one {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
     normImage K A (Icc 1 (Real.exp 1)) = surfaceHaar K A := by
   rw [normImage_apply A measurableSet_Icc, surfaceHaar_apply hA]
-  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEq.refl _ _))
+  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEqSet.refl _ _))
 
 /-- For a measurable `A ⊆ S` of finite `d*x`-mass and a measurable set of norms `B`, the
 `dy / y`-mass of the parameters with surface part in `A` and norm in `B` is
@@ -331,7 +358,12 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
     archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' B) =
       surfaceHaar K A * multHaar B := by
   rw [← archHaar_toSurface_preimage_inter hA hB]
-  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEq.refl _ _))
+  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEqSet.refl _ _))
+
+/-- Radial scaling is measurable in the surface point and the radial parameter. -/
+theorem measurable_surfaceScale_prod :
+    Measurable fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 :=
+  continuous_surfaceScale.measurable.comp (measurable_subtype_coe.prodMap measurable_id)
 
 /-- **The decomposition `dy / y = d*x × dt / t`** (Neukirch VII §5): the multiplicative Haar measure
 of the archimedean parameters is the image of the product of `surfaceHaar K` and `dt / t` under
@@ -341,14 +373,12 @@ theorem archHaar_eq_map :
       fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 := by
   have hΨ : Measurable fun y : realSpace K ↦ (toSurface y, archNorm y) :=
     measurable_toSurface.prodMk continuous_archNorm.measurable
-  have hΦ : Measurable fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 :=
-    continuous_surfaceScale.measurable.comp (measurable_subtype_coe.prodMap measurable_id)
   have hprod : (surfaceHaar K).prod multHaar =
       (archHaar K).map fun y ↦ (toSurface y, archNorm y) :=
     prod_eq fun s t hs ht ↦ by
       rw [map_apply hΨ (hs.prod ht), mk_preimage_prod,
         archHaar_toSurface_preimage_inter hs ht]
-  rw [hprod, map_map hΦ hΨ]
+  rw [hprod, map_map measurable_surfaceScale_prod hΨ]
   conv_lhs => rw [← map_id (μ := archHaar K)]
   refine map_congr ?_
   filter_upwards [ae_archHaar_pos] with y hy

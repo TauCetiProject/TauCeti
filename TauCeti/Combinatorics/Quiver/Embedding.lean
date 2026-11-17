@@ -40,13 +40,10 @@ variable {Q' : Type v'} [Quiver.{w'} Q'] {Q : Type v} [Quiver.{w} Q] (φ : Quive
 theorem ext {ψ : QuiverEmbedding Q' Q} (h_obj : ∀ u, φ.obj u = ψ.obj u)
     (h_map : ∀ (u u' : Q') (a : u ⟶ u'),
       φ.map a = Eq.recOn (h_obj u').symm (Eq.recOn (h_obj u).symm (ψ.map a))) : φ = ψ := by
-  have h : φ.toPrefunctor = ψ.toPrefunctor := Prefunctor.ext h_obj h_map
-  cases φ with
-  | mk φ hp ha =>
-    cases ψ with
-    | mk ψ hp' ha' =>
-      cases h
-      rfl
+  cases φ
+  cases ψ
+  congr
+  exact Prefunctor.ext h_obj h_map
 
 /-- The vertices of `Q'` over a vertex `v` of `Q`. There is at most one, since `φ` is injective
 on vertices. -/

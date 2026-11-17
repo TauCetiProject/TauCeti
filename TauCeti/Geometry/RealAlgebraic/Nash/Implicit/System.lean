@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Nash.Graph
 public import TauCeti.Analysis.Analytic.Inverse
+import TauCeti.Analysis.Analytic.Constructions
 
 /-!
 # Nash implicit functions for finite systems
@@ -47,12 +48,7 @@ private theorem analyticAt_implicit_system
     AnalyticAt ℝ (fun p : (σ → ℝ) × (τ → ℝ) ↦ F (Sum.elim p.1 p.2)) u := by
   have haF : AnalyticAt ℝ F (Sum.elim u.1 u.2) :=
     AnalyticAt.pi fun i ↦ (hF i).analyticAt
-  apply haF.comp_of_eq (f := fun p : (σ → ℝ) × (τ → ℝ) ↦ Sum.elim p.1 p.2) _ rfl
-  apply AnalyticAt.pi
-  intro i
-  cases i with
-  | inl i => exact (analyticAt_pi_iff.mp analyticAt_fst) i
-  | inr i => exact (analyticAt_pi_iff.mp analyticAt_snd) i
+  exact haF.comp_of_eq analyticAt_sumElim rfl
 
 omit [Fintype ρ] in
 /-- A locally unique continuous solution of a finite Nash system has a semialgebraic graph on a

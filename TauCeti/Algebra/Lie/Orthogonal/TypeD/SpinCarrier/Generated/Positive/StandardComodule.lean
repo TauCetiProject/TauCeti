@@ -165,6 +165,7 @@ private theorem stable_of_raising_closed (s : Set (Fin (dimension n)))
   · intro i
     apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have ha : a ∉ s := by
       intro ha
       by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab

@@ -23,9 +23,13 @@ theory.  In particular, if `s ⊆ c ⊆ t` and `t` strong deformation retracts o
 of pairs `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular homology
 (`TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`), and if `t` strong
 deformation retracts onto `s` the relative homology of `(t, s)` vanishes
-(`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`).  In the absolute
+(`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`), as it does whenever a homotopy
+from the identity into `s` keeps `s` inside `s`
+(`TopPair.isZero_singularHomology_ofSubset_of_homotopy`).  In the absolute
 case, a homotopy equivalence of spaces induces an isomorphism on singular homology
-(`ContinuousMap.HomotopyEquiv.singularHomologyIso`).
+(`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map of pairs which is a
+homotopy equivalence on both spaces induces isomorphisms on relative singular homology
+(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`).
 
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
 compatibility of the two simplicial homotopies over the inclusion of the subspace descends the
@@ -163,6 +167,20 @@ theorem isZero_singularHomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t
   rw [h]
   exact hx
 
+/-- **A pair whose ambient space deforms into its subspace has no relative homology.** If a
+homotopy from the identity of `X` to a map `ρ` with values in `S` keeps `S` inside `S` at every
+time, the relative singular homology of `(X, S)` vanishes in every degree. Unlike
+`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`, the homotopy need not fix `S`. -/
+theorem isZero_singularHomology_ofSubset_of_homotopy {X : TopCat.{w}} {S : Set X} {ρ : X ⟶ X}
+    (H : (TopCat.Hom.hom (𝟙 X)).Homotopy ρ.hom)
+    (hS : ∀ (τ : unitInterval) (x : X), x ∈ S → H (τ, x) ∈ S) (hρ : ∀ x, ρ x ∈ S) (R : C)
+    (n : ℕ) : IsZero ((ofSubset S).singularHomology R n) := by
+  refine isZero_singularHomology_of_homotopy (f := ofSubsetMap ρ fun x _ ↦ hρ x) ?_
+    (TopCat.ofHom ⟨fun x ↦ ⟨ρ x, hρ x⟩, by fun_prop⟩)
+    (by ext x; exact (ofSubsetMap_fst_apply ρ _ x).symm) R n
+  rw [← ofSubsetMap_id (B := S) fun _ hx ↦ hx]
+  exact ofSubsetHomotopy H hS
+
 end TopPair
 
 namespace ContinuousMap.HomotopyEquiv
@@ -199,7 +217,35 @@ lemma singularHomologyIso_inv (n : ℕ) :
     (e.singularHomologyIso R n).inv =
       ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom e.invFun) := (rfl)
 
+/-- A homotopy equivalence induces isomorphisms on the homology of the singular simplicial sets,
+in the form `SSet.homologyMap (TopCat.toSSet.map _)` used for the homology of pairs. -/
+theorem isIso_homologyMap (n : ℕ) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom e.toFun)) R n) :=
+  -- `((singularHomologyFunctor C n).obj R).map` is `SSet.homologyMap ∘ TopCat.toSSet.map` by
+  -- definition.
+  (e.singularHomologyIso R n).isIso_hom
+
 end ContinuousMap.HomotopyEquiv
+
+namespace TopPair
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+
+/-- **A homotopy equivalence of pairs induces isomorphisms on relative singular homology.** A map
+of pairs `f : (X, A) ⟶ (X', A')` whose maps of spaces `X → X'` and `A → A'` are homotopy
+equivalences induces isomorphisms `Hₙ(X, A) ≅ Hₙ(X', A')`, by the five lemma. -/
+theorem isIso_singularHomologyMap_of_homotopyEquiv {P P' : TopPair.{w}} (f : P ⟶ P')
+    (e₁ : ContinuousMap.HomotopyEquiv P.fst P'.fst) (e₂ : ContinuousMap.HomotopyEquiv P.snd P'.snd)
+    (h₁ : Hom.fst f = TopCat.ofHom e₁.toFun) (h₂ : Hom.snd f = TopCat.ofHom e₂.toFun) (R : C)
+    (n : ℕ) : IsIso (P.singularHomologyMap f R n) := by
+  have hfst (m : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R m) :=
+    h₁ ▸ e₁.isIso_homologyMap R m
+  have hsnd (m : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m) :=
+    h₂ ▸ e₂.isIso_homologyMap R m
+  exact isIso_singularHomologyMap_of_isIso R f n (hfst n) (hsnd n) (fun m _ ↦ hfst m)
+    fun m _ ↦ hsnd m
+
+end TopPair
 
 namespace ContinuousMap
 
@@ -214,6 +260,14 @@ theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
   congrArg ModuleCat.Hom.hom
     (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
       (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+
+/-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
+theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {s : C(Y, Z)} {r : C(Z, Y)} (H : (r.comp s).Homotopic (.id Y)) :
+    Function.Injective (singularHomologyMap k n s) :=
+  Function.LeftInverse.injective (g := singularHomologyMap k n r) fun y ↦ by
+    rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic k n H,
+      singularHomologyMap_id]
 
 /-- A homotopy equivalence induces a bijection on singular homology. -/
 theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}

@@ -25,7 +25,12 @@ sections are continuous (`ContinuousAt.add_section`, `ContinuousAt.smul_section`
 `ContinuousAt.sum_section`, `Continuous.finsum_section_of_locallyFinite`; for global scalar
 multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
-continuous section (`ContinuousOn.smul_section_of_tsupport`).
+continuous section (`ContinuousOn.smul_section_of_tsupport`). For global continuity of
+fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`.
+
+A linear trivialization reconstructs a section from arbitrary model coordinates by
+`Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
+set. This construction is purely topological and requires no manifold structure.
 
 The main result, `TauCeti.exists_continuous_section_forall_mem_convex_of_local`, is the bundle form
 of `exists_continuous_forall_mem_convex_of_local`: over a normal paracompact base, if convex
@@ -73,6 +78,55 @@ theorem continuousOn_section_iff {a : Set B} (ha : a ⊆ e.baseSet) :
 
 end Bundle.Trivialization
 
+section MovingBase
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+
+variable {Y : Type*} [TopologicalSpace Y] {b : Y → B} {s t : ∀ y, E (b y)}
+  {u : Set Y} {y₀ : Y}
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of maps into a vector bundle over a common, possibly varying, base map,
+both continuous at a point within a set, is continuous there. -/
+theorem ContinuousWithinAt.add_totalSpace
+    (hs : ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y)) u y₀)
+    (ht : ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (t y)) u y₀) :
+    ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) u y₀ := by
+  rw [FiberBundle.continuousWithinAt_totalSpace] at hs ht ⊢
+  let e := trivializationAt F E (b y₀)
+  have hy₀ : b y₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E (b y₀)
+  refine ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq ?_
+    ((e.linear 𝕜 hy₀).map_add (s y₀) (t y₀))⟩
+  filter_upwards [hs.1.eventually (e.open_baseSet.mem_nhds hy₀)] with y hy
+  exact (e.linear 𝕜 hy).map_add (s y) (t y)
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of maps into a vector bundle over a common, possibly varying, base map,
+both continuous at a point, is continuous there. -/
+theorem ContinuousAt.add_totalSpace
+    (hs : ContinuousAt (fun y ↦ TotalSpace.mk' F (b y) (s y)) y₀)
+    (ht : ContinuousAt (fun y ↦ TotalSpace.mk' F (b y) (t y)) y₀) :
+    ContinuousAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) y₀ := by
+  rw [← continuousWithinAt_univ] at hs ht ⊢
+  exact hs.add_totalSpace 𝕜 ht
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of continuous maps into a vector bundle over a common, possibly
+varying, base map is continuous. -/
+theorem Continuous.add_totalSpace
+    (hs : Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y)))
+    (ht : Continuous (fun y ↦ TotalSpace.mk' F (b y) (t y))) :
+    Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) :=
+  continuous_iff_continuousAt.2 fun _ ↦ hs.continuousAt.add_totalSpace 𝕜 ht.continuousAt
+
+end MovingBase
+
 section Operations
 
 variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
@@ -87,24 +141,16 @@ include 𝕜 in
 theorem ContinuousWithinAt.add_section
     (hs : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x)) u x₀)
     (ht : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (t x)) u x₀) :
-    ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) u x₀ := by
-  rw [FiberBundle.continuousWithinAt_section] at hs ht ⊢
-  -- The coordinates in the preferred trivialization at `x₀` are linear near `x₀`.
-  set e := trivializationAt F E x₀
-  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E x₀
-  have hlin {x} (hx : x ∈ e.baseSet) := (e.linear 𝕜 hx).map_add (s x) (t x)
-  refine (hs.add ht).congr_of_eventuallyEq ?_ (hlin hx₀)
-  filter_upwards [mem_nhdsWithin_of_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with x hx
-  exact hlin hx
+    ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) u x₀ :=
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 variable (𝕜) in
 include 𝕜 in
 /-- The sum of two sections continuous at a point is continuous there. -/
 theorem ContinuousAt.add_section (hs : ContinuousAt (fun x ↦ TotalSpace.mk' F x (s x)) x₀)
     (ht : ContinuousAt (fun x ↦ TotalSpace.mk' F x (t x)) x₀) :
-    ContinuousAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) x₀ := by
-  simp_rw [← continuousWithinAt_univ] at hs ht ⊢
-  exact hs.add_section 𝕜 ht
+    ContinuousAt (fun x ↦ TotalSpace.mk' F x (s x + t x)) x₀ :=
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 variable (𝕜) in
 include 𝕜 in
@@ -120,7 +166,7 @@ include 𝕜 in
 theorem Continuous.add_section (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
     (ht : Continuous fun x ↦ TotalSpace.mk' F x (t x)) :
     Continuous fun x ↦ TotalSpace.mk' F x (s x + t x) :=
-  continuous_iff_continuousAt.mpr fun _ ↦ hs.continuousAt.add_section 𝕜 ht.continuousAt
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 /-- The product of a scalar function and a section, both continuous at a point within a set, is
 continuous there. -/
@@ -231,3 +277,35 @@ theorem exists_continuous_section_forall_mem_convex_of_local (t : ∀ x, Set (E 
     exact hst i x (interior_subset (hρ i (subset_closure hi)))
 
 end TauCeti
+
+namespace Bundle.Trivialization
+
+variable {𝕜 M F : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V]
+  (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)) [e.IsLinear 𝕜]
+
+/-- Reconstruct a section from its model coordinates in a chosen frame. -/
+noncomputable def sectionFromCoordinates (A : M → F) (x : M) : V x := e.symmL 𝕜 x (A x)
+
+/-- Evaluate the reconstructed section through the native inverse frame map. -/
+@[simp]
+theorem sectionFromCoordinates_apply (A : M → F) (x : M) :
+    sectionFromCoordinates (𝕜 := 𝕜) e A x = e.symmL 𝕜 x (A x) := by rfl
+
+/-- Reading the reconstructed section in the same frame recovers the model field. -/
+theorem continuousLinearMapAt_sectionFromCoordinates (A : M → F) {x : M}
+    (hx : x ∈ e.baseSet) :
+    e.continuousLinearMapAt 𝕜 x (sectionFromCoordinates (𝕜 := 𝕜) e A x) = A x := by
+  rw [sectionFromCoordinates_apply, e.continuousLinearMapAt_symmL hx]
+
+/-- Reconstructing the coordinates of a section recovers it on the frame domain. -/
+theorem sectionFromCoordinates_continuousLinearMapAt (s : ∀ x, V x) {x : M}
+    (hx : x ∈ e.baseSet) :
+    sectionFromCoordinates (𝕜 := 𝕜) e (fun y ↦ e.continuousLinearMapAt 𝕜 y (s y)) x = s x := by
+  rw [sectionFromCoordinates_apply, e.symmL_continuousLinearMapAt hx]
+
+
+end Bundle.Trivialization

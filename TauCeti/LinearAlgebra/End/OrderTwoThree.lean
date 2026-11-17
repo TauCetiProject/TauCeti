@@ -76,7 +76,7 @@ The ring identities are proved in an arbitrary ring and then applied in `Module.
 acyclicity hypothesis is stated as `Disjoint (ker (1 + σ)) (ker (1 + υ + υ ^ 2))`. The existence
 half of Lemma 3 for arbitrary idempotents is
 `TauCeti.End.exists_mem_sup_apply_sub_mem_of_isIdempotentElem`, and the exactness step for
-arbitrary commuting endomorphisms is `TauCeti.End.mem_inf_ker_sup_inf_ker_of_mem_sup`.
+arbitrary commuting endomorphisms is `TauCeti.End.mem_inf_ker_sup_inf_ker_iff`.
 
 ## References
 
@@ -247,10 +247,9 @@ theorem mem_sup_range_one_add_mul_one_sub [Invertible (2 : R)] [Invertible (3 : 
     ⟨.add_right (.one_right _) h', .add_right (.add_right (.one_right _) h') (h'.pow_right 2)⟩
   refine sup_le_sup ((inf_ker_one_sub_le_map_one_add _).trans_eq (range_comp _ _).symm)
     ((inf_ker_one_sub_le_map_one_add_add_sq _).trans_eq (range_comp _ _).symm) <|
-    mem_inf_ker_sup_inf_ker_of_mem_sup (hc hσσ').1
-    (hc hσυ').2 (hc hυσ').1 (hc hυυ').2 hacyc
-    (range_one_sub_le_ker_one_add hσ') (range_one_sub_le_ker_one_add_add_sq hυ') hξ
-    (range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ) (range_one_add_le_ker_one_sub hσ hυ'ξ)
+    (mem_inf_ker_sup_inf_ker_iff (hc hσσ').1 (hc hσυ').2 (hc hυσ').1 (hc hυυ').2 hacyc
+      (range_one_sub_le_ker_one_add hσ') (range_one_sub_le_ker_one_add_add_sq hυ')).2
+      ⟨hξ, range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ, range_one_add_le_ker_one_sub hσ hυ'ξ⟩
 
 end Semiring
 

@@ -35,6 +35,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
+* `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
+  `(-1) ^ C(m + 1, 2) * (-1) ^ m = (-1) ^ C(m, 2)`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
@@ -63,13 +65,13 @@ namespace Nat
 /-- The sum of `N.choose 2` and the `N`th triangular number is `N ^ 2`. -/
 theorem choose_two_add_mul_succ_div_two (N : ℕ) :
     N.choose 2 + N * (N + 1) / 2 = N * N := by
-  rw [Nat.choose_two_right]
+  rw [choose_two_right]
   apply Nat.mul_right_cancel (by norm_num : 0 < 2)
-  rw [Nat.add_mul, Nat.div_mul_cancel (Nat.even_mul_pred_self N).two_dvd,
-    Nat.div_mul_cancel (Nat.even_mul_succ_self N).two_dvd]
+  rw [add_mul, Nat.div_mul_cancel (even_mul_pred_self N).two_dvd,
+    Nat.div_mul_cancel (even_mul_succ_self N).two_dvd]
   by_cases hN : N = 0
   · simp [hN]
-  · rw [← Nat.mul_add]
+  · rw [← mul_add]
     have hsum : N - 1 + (N + 1) = 2 * N := by omega
     rw [hsum]
     ring
@@ -80,17 +82,17 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
   | zero => simp
   | succ n ih =>
       have h1 : (m + (n + 1)).choose 2 = (m + n).choose 1 + (m + n).choose 2 := by
-        rw [← Nat.add_assoc]
-        exact Nat.choose_succ_succ (m + n) 1
-      have h2 : (n + 1).choose 2 = n.choose 1 + n.choose 2 := Nat.choose_succ_succ n 1
-      rw [h1, h2, ih, Nat.choose_one_right, Nat.choose_one_right]
+        rw [← add_assoc]
+        exact choose_succ_succ (m + n) 1
+      have h2 : (n + 1).choose 2 = n.choose 1 + n.choose 2 := choose_succ_succ n 1
+      rw [h1, h2, ih, choose_one_right, choose_one_right]
       ring
 
 /-- `g³ - g = (2g + 2) · C(g, 2)`. -/
 theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
     g ^ 3 - g = (2 * g + 2) * g.choose 2 := by
   have h2 : g.choose 2 * 2 = g * (g - 1) := by
-    rw [Nat.choose_two_right, Nat.div_mul_cancel g.even_mul_pred_self.two_dvd]
+    rw [choose_two_right, Nat.div_mul_cancel g.even_mul_pred_self.two_dvd]
   rcases g with _ | g
   · simp
   · rw [Nat.add_sub_cancel] at h2
@@ -103,21 +105,28 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
 /-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
 first and `1` to the second. -/
 theorem even_choose_two_iff (m : ℕ) : Even (m.choose 2) ↔ Even (m / 2) := by
-  induction m using Nat.twoStepInduction with
+  induction m using twoStepInduction with
   | zero => decide
   | one => decide
   | more m ih _ =>
     have h : (m + 2).choose 2 = m.choose 2 + 2 * m + 1 := by
-      rw [add_choose_two, Nat.choose_self]
+      rw [add_choose_two, choose_self]
       ring
     rw [h, show (m + 2) / 2 = m / 2 + 1 by omega]
-    simp [Nat.even_add_one, parity_simps, ih]
+    simp [even_add_one, parity_simps, ih]
 
 /-- The sign `(-1) ^ C(m, 2)` of the order-reversing permutation of `m` letters is
 `(-1) ^ ⌊m / 2⌋`. -/
 theorem neg_one_pow_choose_two {R : Type*} [Monoid R] [HasDistribNeg R] (m : ℕ) :
     (-1 : R) ^ m.choose 2 = (-1) ^ (m / 2) :=
   neg_one_pow_congr (even_choose_two_iff m)
+
+/-- Raising `m` to `m + 1` multiplies the sign `(-1) ^ C(m, 2)` by `(-1) ^ m`, since
+`C(m + 1, 2) = C(m, 2) + m`; equivalently `(-1) ^ C(m + 1, 2) * (-1) ^ m = (-1) ^ C(m, 2)`. -/
+theorem neg_one_pow_succ_choose_two_mul_neg_one_pow {R : Type*} [Monoid R] [HasDistribNeg R]
+    (m : ℕ) : (-1 : R) ^ (m + 1).choose 2 * (-1) ^ m = (-1) ^ m.choose 2 := by
+  rw [choose_succ_succ', choose_one_right, add_comm, pow_add, mul_assoc, ← pow_add,
+    Even.neg_one_pow ⟨m, rfl⟩, mul_one]
 
 /-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
 theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
@@ -127,7 +136,7 @@ theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
   have h := sum_range_choose (n + 1)
   rw [sum_range_succ, sum_range_succ'] at h
   rw [Nat.add_sub_cancel, ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range]
-  simp only [Nat.add_sub_cancel, Nat.add_comm 1]
+  simp only [Nat.add_sub_cancel, add_comm 1]
   simp at h
   omega
 
@@ -140,7 +149,7 @@ ordered `m`-tuple of distinct elements of that subset. The hypothesis `m ≤ i` 
 theorem descFactorial_mul_choose {m i : ℕ} (hmi : m ≤ i) (A : ℕ) :
     i.descFactorial m * A.choose i = A.descFactorial m * (A - m).choose (i - m) := by
   rw [descFactorial_eq_factorial_mul_choose, descFactorial_eq_factorial_mul_choose,
-    Nat.mul_assoc, Nat.mul_assoc, Nat.mul_comm (i.choose m) (A.choose i), choose_mul hmi]
+    mul_assoc, mul_assoc, mul_comm (i.choose m) (A.choose i), choose_mul hmi]
 
 /-- **A rising factorial absorbed into a multiset coefficient:**
 `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`, where `n⁽ᵐ⁾` is the rising
@@ -150,12 +159,12 @@ No hypothesis is needed: for `r = 0` both sides vanish unless `k = m = 0`. -/
 theorem add_ascFactorial_mul_multichoose (r m k : ℕ) :
     (r + k).ascFactorial m * r.multichoose k = r.ascFactorial m * (r + m).multichoose k := by
   -- Multiplying by `k !` turns both sides into `r⁽ᵏ⁺ᵐ⁾`, since `k ! * multichoose r k = r⁽ᵏ⁾`.
-  apply Nat.eq_of_mul_eq_mul_left (Nat.factorial_pos k)
+  apply Nat.eq_of_mul_eq_mul_left (factorial_pos k)
   calc k ! * ((r + k).ascFactorial m * r.multichoose k)
       = r.ascFactorial k * (r + k).ascFactorial m := by
         rw [ascFactorial_eq_factorial_mul_choose' r k, multichoose_eq]; ring
     _ = r.ascFactorial m * (r + m).ascFactorial k := by
-      rw [ascFactorial_mul_ascFactorial, ascFactorial_mul_ascFactorial, Nat.add_comm k m]
+      rw [ascFactorial_mul_ascFactorial, ascFactorial_mul_ascFactorial, add_comm k m]
     _ = k ! * (r.ascFactorial m * (r + m).multichoose k) := by
       rw [ascFactorial_eq_factorial_mul_choose' (r + m) k, multichoose_eq]; ring
 
@@ -174,24 +183,24 @@ theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r
     intro i hi hni
     simp only [mem_range] at hi
     simp only [mem_Ico, not_and, not_lt] at hni
-    simp [Nat.descFactorial_eq_zero_iff_lt.2 (by omega : i < m)]
+    simp [descFactorial_eq_zero_iff_lt.2 (by omega : i < m)]
   -- After shifting the index by `m`, the weight becomes the constant `(A)ₘ` and what is left
   -- is the unweighted convolution of `A - m` with `B`.
   have key : ∑ i ∈ range (r + 1), i.descFactorial m * (A.choose i * B.choose (r - i)) =
       A.descFactorial m * (A - m + B).choose (r - m) := by
     have hrange : r + 1 - m = r - m + 1 := by omega
-    rw [← Finset.sum_subset hsub hvanish, Finset.sum_Ico_eq_sum_range,
-      hrange, Nat.add_choose_eq, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-        (fun i j ↦ (A - m).choose i * B.choose j) (r - m), Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [← sum_subset hsub hvanish, sum_Ico_eq_sum_range,
+      hrange, add_choose_eq, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+        (fun i j ↦ (A - m).choose i * B.choose j) (r - m), mul_sum]
+    refine sum_congr rfl fun i _ => ?_
     have hri : r - (m + i) = r - m - i := by omega
-    rw [hri, ← Nat.mul_assoc, Nat.descFactorial_mul_choose (Nat.le_add_right m i) A,
-      Nat.add_sub_cancel_left, Nat.mul_assoc]
+    rw [hri, ← mul_assoc, descFactorial_mul_choose (le_add_right m i) A,
+      Nat.add_sub_cancel_left, mul_assoc]
   -- The two ways of subtracting `m` agree unless `A < m`, where `(A)ₘ` is zero anyway.
   rcases le_or_gt m A with hmA | hmA
   · have hsub_add : A + B - m = A - m + B := by omega
     rwa [hsub_add]
-  · rw [Nat.descFactorial_eq_zero_iff_lt.2 hmA] at key ⊢
+  · rw [descFactorial_eq_zero_iff_lt.2 hmA] at key ⊢
     simpa using key
 
 /-- **Choosing from two blocks at once.** Choosing an `i`-element block of `i + j` objects, then
@@ -201,11 +210,17 @@ unselected elements lie in the complement:
 `C(i + j, i) * C(i, r) * C(j, s) = C(i + j, r + s) * C(r + s, r) * C(i + j - (r + s), j - s)`.
 
 In particular `C(i + j, r + s)` divides `C(i + j, i) * C(i, r) * C(j, s)`. -/
-theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hr : r ≤ i) (hs : s ≤ j) :
+theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hs : s ≤ j) :
     (i + j).choose i * i.choose r * j.choose s =
       (i + j).choose (r + s) * (r + s).choose r * (i + j - (r + s)).choose (j - s) := by
-  rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), Nat.mul_assoc,
-    choose_mul hs, ← Nat.mul_assoc, choose_mul (Nat.le_add_right r s),
+  rcases le_or_gt r i with hr | hr
+  swap
+  · rw [choose_eq_zero_of_lt hr, mul_zero, zero_mul]
+    rcases le_or_gt (r + s) (i + j) with h | h
+    · rw [choose_eq_zero_of_lt (by omega : i + j - (r + s) < j - s), mul_zero]
+    · rw [choose_eq_zero_of_lt h, zero_mul, zero_mul]
+  rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), mul_assoc,
+    choose_mul hs, ← mul_assoc, choose_mul (le_add_right r s),
     Nat.add_sub_cancel_left, Nat.sub_sub]
 
 /-- Membership in the set of `k ≤ n` with `p ∤ n choose k` only depends on the divisibility:

@@ -49,8 +49,6 @@ diagrams in all.
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -278,7 +276,7 @@ theorem throughPerm_apply (hD : ∀ x, D.IsThrough x) (i : Fin k) :
 @[simp]
 theorem permToBrauer_throughPerm (hD : ∀ x, D.IsThrough x) :
     permToBrauer (throughPerm D hD) = D := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rw [permToBrauer_val_inl, throughPerm_apply, Sum.inr_getRight]
   · obtain ⟨m, hm⟩ : ∃ m, D.val (Sum.inr j) = Sum.inl m :=

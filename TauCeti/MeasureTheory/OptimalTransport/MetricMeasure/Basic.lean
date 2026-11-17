@@ -64,23 +64,20 @@ instance instIsLocallyFiniteMeasureReference (M : MetricMeasureSpace X) :
 def support (M : MetricMeasureSpace X) : Set X := M.reference.support
 
 /-- The support of a metric-measure space is the support of its reference measure. -/
-theorem support_def (M : MetricMeasureSpace X) : M.support = M.reference.support := by
-  unfold support
-  rfl
+theorem support_def (M : MetricMeasureSpace X) : M.support = M.reference.support := (rfl)
 
 /-- A point belongs to the support exactly when every neighborhood has positive reference mass. -/
 theorem mem_support_iff (M : MetricMeasureSpace X) (x : X) :
-    x ∈ M.support ↔ ∀ U ∈ nhds x, 0 < M.reference U := by
-  rw [support_def]
-  exact Measure.mem_support_iff_forall x
+    x ∈ M.support ↔ ∀ U ∈ nhds x, 0 < M.reference U :=
+  Measure.mem_support_iff_forall x
 
+/-- The support of a metric-measure space is closed. -/
 theorem isClosed_support (M : MetricMeasureSpace X) : IsClosed M.support :=
   Measure.isClosed_support
 
 /-- A closed support inherits completeness from the ambient complete metric space. -/
-instance instCompleteSpaceSupport (M : MetricMeasureSpace X) : CompleteSpace M.support := by
-  let : IsClosed M.support := M.isClosed_support
-  infer_instance
+instance instCompleteSpaceSupport (M : MetricMeasureSpace X) : CompleteSpace M.support :=
+  M.isClosed_support.isComplete.completeSpace_coe
 
 /-- The reference measure is concentrated on its support. -/
 theorem measure_compl_support (M : MetricMeasureSpace X) :
@@ -93,9 +90,7 @@ noncomputable def supportMeasure (M : MetricMeasureSpace X) : Measure M.support 
 
 /-- The measure on the support is the comap of the reference measure along inclusion. -/
 theorem supportMeasure_def (M : MetricMeasureSpace X) :
-    M.supportMeasure = M.reference.comap Subtype.val := by
-  unfold supportMeasure
-  rfl
+    M.supportMeasure = M.reference.comap Subtype.val := (rfl)
 
 /-- The mass of a set in the support is the reference mass of its image in the carrier. -/
 theorem supportMeasure_apply (M : MetricMeasureSpace X) (s : Set M.support) :
@@ -105,55 +100,36 @@ theorem supportMeasure_apply (M : MetricMeasureSpace X) (s : Set M.support) :
 /-- Inclusion of the support pushes its restricted measure back to the original measure. -/
 theorem map_supportMeasure (M : MetricMeasureSpace X) :
     (M.supportMeasure).map (Subtype.val : M.support → X) = M.reference := by
-  rw [supportMeasure, map_comap_subtype_coe M.isClosed_support.measurableSet]
+  rw [supportMeasure_def, map_comap_subtype_coe M.isClosed_support.measurableSet]
   exact Measure.restrict_eq_self_of_ae_mem M.reference.support_mem_ae
 
 /-- Restrict the reference measure to its support, with the inherited metric and Borel
 structures. This removes points that the reference measure does not see. -/
 noncomputable def supportSpace (M : MetricMeasureSpace X) : MetricMeasureSpace M.support where
   reference := M.supportMeasure
-  finite_bounded := by
-    intro s hs
-    rw [supportMeasure, comap_subtype_coe_apply M.isClosed_support.measurableSet]
+  finite_bounded s hs := by
+    rw [supportMeasure_apply]
     exact M.finite_bounded _ (isometry_subtype_coe.lipschitzWith.isBounded_image hs)
 
 @[simp]
 theorem reference_supportSpace (M : MetricMeasureSpace X) :
     M.supportSpace.reference = M.supportMeasure := (rfl)
 
-/-- The restricted reference measure gives positive mass to every neighborhood of every
-point in the support. -/
-theorem support_supportMeasure (M : MetricMeasureSpace X) :
-    (M.supportMeasure).support = Set.univ := by
-  apply Set.eq_univ_iff_forall.mpr
-  intro x
-  rw [Measure.mem_support_iff_forall]
-  intro U hU
-  obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.mp hU
-  obtain ⟨O, hO, hVO⟩ := isOpen_induced_iff.mp hV
-  have hxO : (x : X) ∈ O := by
-    have : x ∈ Subtype.val ⁻¹' O := hVO.symm ▸ hxV
-    exact this
-  have hμO : 0 < M.reference O :=
-    (Measure.mem_support_iff_forall (x : X)).mp x.property O (hO.mem_nhds hxO)
-  have hμinter : M.reference (O ∩ M.support) = M.reference O := by
-    simpa only [Set.sdiff_compl] using
-      (measure_sdiff_null (s := O) M.measure_compl_support)
-  have hVpos : 0 < M.supportMeasure V := by
-    rw [supportMeasure, comap_subtype_coe_apply M.isClosed_support.measurableSet, ← hVO,
-      Subtype.image_preimage_coe, Set.inter_comm, hμinter]
-    exact hμO
-  exact hVpos.trans_le (measure_mono hVU)
-
 /-- The reduced measure is positive on every nonempty open subset of its carrier. -/
 instance instIsOpenPosMeasureSupportMeasure (M : MetricMeasureSpace X) :
     M.supportMeasure.IsOpenPosMeasure where
-  open_pos := by
-    intro U hU ⟨x, hx⟩
-    have hx' : x ∈ M.supportMeasure.support := by
-      rw [M.support_supportMeasure]
-      trivial
-    exact ((Measure.mem_support_iff_forall x).mp hx' U (hU.mem_nhds hx)).ne'
+  open_pos U hU := by
+    rintro ⟨x, hx⟩
+    obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU
+    rw [supportMeasure_apply, Subtype.image_preimage_coe, Set.inter_comm,
+      measure_inter_conull M.measure_compl_support]
+    exact ((M.mem_support_iff x).mp x.2 O (hO.mem_nhds hx)).ne'
+
+/-- The reduced measure has full support: every point of the support of the reference
+measure lies in the support of its restriction. -/
+theorem support_supportMeasure (M : MetricMeasureSpace X) :
+    (M.supportMeasure).support = Set.univ :=
+  Measure.support_eq_univ
 
 /-- The support reduction has full topological support. -/
 theorem support_supportSpace (M : MetricMeasureSpace X) :
@@ -196,13 +172,14 @@ theorem ext {f g : MeasurePreservingIsometry M N} (h : ∀ x, f x = g x) : f = g
   DFunLike.ext f g h
 
 /-- Identity is a measure-preserving isometry. -/
-def refl (M : MetricMeasureSpace X) : MeasurePreservingIsometry M M where
-  toFun := id
+def id (M : MetricMeasureSpace X) : MeasurePreservingIsometry M M where
+  toFun := _root_.id
   isometry := isometry_id
   measurePreserving := MeasurePreserving.id M.reference
 
 @[simp]
-theorem refl_apply (M : MetricMeasureSpace X) (x : X) : refl M x = x := (rfl)
+theorem id_apply (M : MetricMeasureSpace X) (x : X) : MeasurePreservingIsometry.id M x = x :=
+  (rfl)
 
 /-- Composition of measure-preserving isometries. -/
 def comp (g : MeasurePreservingIsometry N P) (f : MeasurePreservingIsometry M N) :

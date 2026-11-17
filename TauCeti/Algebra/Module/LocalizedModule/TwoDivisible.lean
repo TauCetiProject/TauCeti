@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.LocalizedModule.Away
-public import Mathlib.Algebra.CharP.Two
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
-public import Mathlib.Data.ZMod.Basic
+public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
+public import TauCeti.Algebra.Module.ZMod.TensorProduct
 
 /-!
 # Uniquely two-divisible abelian groups
 
 An abelian group is uniquely two-divisible when multiplication by two is a bijection. Such a group
-carries a module structure over `ℤ[1/2]`, and its tensor product with `ZMod 2` vanishes.
+carries a module structure over `ℤ[1/2]`, and its tensor product with `ZMod 2` vanishes; the
+latter needs only two-divisibility (`TauCeti.subsingleton_zmod_tensorProduct_iff`).
 
 These are the algebraic consequences of mod-two acyclicity used in the Whitehead-tower proof of
 the mod-two Hurewicz theorem.
@@ -26,8 +25,6 @@ the mod-two Hurewicz theorem.
 
 ## Main results
 
-* `Function.Surjective.subsingleton_zmod_two_tensorProduct`: tensoring with `ZMod 2` kills any
-  abelian group on which multiplication by two is surjective; it only needs two-divisibility.
 * `TauCeti.IsUniquelyTwoDivisible.subsingleton_zmod_two_tensorProduct`: tensoring a uniquely
   two-divisible group with `ZMod 2` gives the zero group.
 * `TauCeti.IsUniquelyTwoDivisible.subsingleton_tensorProduct_zmod_two`: the same conclusion with
@@ -41,33 +38,6 @@ the mod-two Hurewicz theorem.
 public section
 
 noncomputable section
-
-namespace Function.Surjective
-
-variable {G : Type*} [AddCommGroup G]
-
-/-- Tensoring an abelian group on which multiplication by two is surjective with `ZMod 2` over `ℤ`
-gives the zero group. -/
-theorem subsingleton_zmod_two_tensorProduct
-    (h : Function.Surjective fun x : G ↦ (2 : ℤ) • x) :
-    Subsingleton (TensorProduct ℤ (ZMod 2) G) := by
-  rw [subsingleton_iff_forall_eq 0]
-  intro z
-  induction z using TensorProduct.inductionOn with
-  | tmul x y =>
-      obtain ⟨y, rfl⟩ := h y
-      rw [← TensorProduct.smul_tmul, CharTwo.two_zsmul, TensorProduct.zero_tmul]
-  | add x y hx hy => simp only [hx, hy, add_zero]
-
-/-- Tensoring an abelian group on which multiplication by two is surjective with `ZMod 2` over `ℤ`
-gives the zero group, with that group as the left tensor factor. -/
-theorem subsingleton_tensorProduct_zmod_two
-    (h : Function.Surjective fun x : G ↦ (2 : ℤ) • x) :
-    Subsingleton (TensorProduct ℤ G (ZMod 2)) := by
-  let _ := h.subsingleton_zmod_two_tensorProduct
-  exact (TensorProduct.comm ℤ G (ZMod 2)).toEquiv.injective.subsingleton
-
-end Function.Surjective
 
 namespace TauCeti
 
@@ -107,14 +77,16 @@ def localizationAwayTwoModule (h : IsUniquelyTwoDivisible G) :
 /-- Tensoring a uniquely two-divisible abelian group with `ZMod 2` over `ℤ` gives the zero
 group. -/
 theorem subsingleton_zmod_two_tensorProduct (h : IsUniquelyTwoDivisible G) :
-    Subsingleton (TensorProduct ℤ (ZMod 2) G) :=
-  Function.Surjective.subsingleton_zmod_two_tensorProduct h.2
+    Subsingleton (TensorProduct ℤ (ZMod 2) G) := by
+  rw [subsingleton_zmod_tensorProduct_iff, Nat.cast_ofNat]
+  exact h.2
 
 /-- Tensoring a uniquely two-divisible abelian group with `ZMod 2` over `ℤ` gives the zero group,
 with the uniquely two-divisible group as the left tensor factor. -/
 theorem subsingleton_tensorProduct_zmod_two (h : IsUniquelyTwoDivisible G) :
-    Subsingleton (TensorProduct ℤ G (ZMod 2)) :=
-  Function.Surjective.subsingleton_tensorProduct_zmod_two h.2
+    Subsingleton (TensorProduct ℤ G (ZMod 2)) := by
+  rw [subsingleton_tensorProduct_zmod_iff, Nat.cast_ofNat]
+  exact h.2
 
 end IsUniquelyTwoDivisible
 

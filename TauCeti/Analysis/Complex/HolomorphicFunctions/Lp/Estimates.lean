@@ -10,9 +10,9 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Local integral and L² bounds for holomorphic functions
@@ -43,7 +43,7 @@ theorem norm_le_ball_integral {f : ℂ → F} (hf : DifferentiableOn ℂ f U)
   have hh : HarmonicOnNhd f (closedBall x r) := fun y hy ↦
     (hf.analyticAt (U.isOpen.mem_nhds (hball hy))).harmonicAt
   have hpos : 0 < volume.real (ball x r) :=
-    ENNReal.toReal_pos (measure_ball_pos volume x hr).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos volume x hr
   have heq := hh.setIntegral_ball_eq (μ := volume)
   calc
     ‖f x‖ = (volume.real (ball x r))⁻¹ * ‖∫ y in ball x r, f y‖ := by
@@ -87,8 +87,8 @@ theorem norm_le_Lp_norm {u : Lp F 2 (volume.restrict (U : Set ℂ))}
   rw [ENNReal.toReal_mul, ← Lp.norm_def] at hone
   have hint : ∫ y in ball x r, ‖f y‖ =
       (eLpNorm f 1 (volume.restrict (ball x r))).toReal := by
-    rw [eLpNorm_one_eq_lintegral_enorm hfm]
-    exact integral_norm_eq_lintegral_enorm hfm
+    rw [eLpNorm_one_eq_lintegral_eNorm hfm]
+    exact integral_norm_eq_lintegral_eNorm hfm
   refine (norm_le_ball_integral hf hr hball).trans ?_
   rw [hint, mul_assoc]
   exact mul_le_mul_of_nonneg_left (by simpa [mul_comm] using hone) (by positivity)

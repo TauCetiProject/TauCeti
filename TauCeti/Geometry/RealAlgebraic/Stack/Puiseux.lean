@@ -69,11 +69,6 @@ theorem exists_delineation_on_hyperplane {n a : ℕ}
     filter_upwards [hψ.continuousAt.tendsto.eventually hP, hreal] with b hb hFb
     exact hFb.symm.trans hb
   -- The splitting determines both the degree and every coefficient of the real family.
-  have hmonic : ∀ᶠ b in 𝓝 b₀, (F b).Monic := by
-    filter_upwards [hsplit] with b hb
-    apply monic_of_injective (algebraMap ℝ ℂ).injective
-    rw [hb]
-    exact monic_prod_X_sub_C _ _
   have hdeg : ∀ᶠ b in 𝓝 b₀, (F b).natDegree = n := by
     filter_upwards [hsplit] with b hb
     rw [← natDegree_map_eq_of_injective (algebraMap ℝ ℂ).injective, hb,
@@ -87,9 +82,8 @@ theorem exists_delineation_on_hyperplane {n a : ℕ}
           (continuousAt_pi.2 fun i ↦ (hb i).continuousAt)
     refine hc.congr (hbs.mono fun c hc ↦ ?_)
     simp only [← hc, coeff_map, Complex.coe_algebraMap, Complex.ofReal_re]
-  obtain ⟨ε, hε, hεU, D, hD⟩ := exists_delineation_ball_of_isRoot_iff hcoeff
-    (hmonic.mono fun _ h ↦ h.ne_zero) hdeg (hU.mem_nhds hbU) (fun i ↦ (hs i).continuousOn)
-    hmono hroots hmult
+  obtain ⟨ε, hε, hεU, D, hD⟩ := exists_delineation_ball_of_isRoot_iff hcoeff hdeg
+    (hU.mem_nhds hbU) (fun i ↦ (hs i).continuousOn) hmono hroots hmult
   refine ⟨ε, hε, D, fun i ↦ ?_⟩
   obtain ⟨j, hj⟩ := hD i
   exact ⟨s j, (hs j).mono hεU, hj⟩

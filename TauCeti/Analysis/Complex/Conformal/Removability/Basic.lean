@@ -30,9 +30,7 @@ boundary integral vanish, and the shared axis edge cancels when the two halves a
 arbitrary line is reduced to the real axis by the affine chart `w ↦ p + (q - p) * w`, which is a
 biholomorphism of `ℂ` carrying `ℝ` onto the line through `p` and `q`.
 
-The results are stated for scalar-valued functions `F : ℂ → ℂ`, the generality at which the
-conformal-mapping development uses them, even though the Morera argument and its Mathlib inputs
-also support Banach-valued functions.
+The results hold for functions `F : ℂ → E` valued in any complex Banach space `E`.
 
 ## Main results
 
@@ -65,51 +63,24 @@ namespace TauCeti
 open Complex Set intervalIntegral MeasureTheory
 open scoped Interval
 
-variable {Ω : Set ℂ} {F : ℂ → ℂ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set ℂ} {F : ℂ → E}
 
-/-- A rectangle whose open interior avoids the real axis has a vanishing boundary integral for
-any function continuous on a domain `Ω` containing the (closed) rectangle and holomorphic on the
-part of `Ω` off the real axis. This is the per-rectangle input to Morera's theorem; it is applied
-both to axis-avoiding rectangles directly and to the two axis-bounded halves of a straddling
+/-- A rectangle whose open imaginary range avoids `0` has a vanishing boundary integral for any
+function continuous on a domain `Ω` containing the (closed) rectangle and holomorphic on the part
+of `Ω` off the real axis. This is the per-rectangle input to Morera's theorem; it is applied both
+to axis-avoiding rectangles directly and to the two axis-bounded halves of a straddling
 rectangle. -/
 private lemma boundaryIntegral_eq_zero_off_axis
     (hcont : ContinuousOn F Ω) (hdiff : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | z.im ≠ 0}))
-    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω)
-    (haxis : (0 : ℝ) ∉ Set.Ioo (min z.im w.im) (max z.im w.im)) :
+    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω) (haxis : (0 : ℝ) ∉ uIoo z.im w.im) :
     ((∫ x : ℝ in z.re..w.re, F (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, F (x + w.im * I)) +
         I • (∫ y : ℝ in z.im..w.im, F (w.re + y * I)) -
         I • (∫ y : ℝ in z.im..w.im, F (z.re + y * I))) = 0 := by
   refine integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn F z w
     (hcont.mono hsub) (hdiff.mono fun p hp => ?_)
-  rw [Complex.mem_reProdIm] at hp
-  refine ⟨hsub ?_, ?_⟩
-  · rw [Complex.Rectangle, Complex.mem_reProdIm]
-    refine ⟨?_, ?_⟩
-    · rw [Ioo_min_max] at hp; exact uIoo_subset_uIcc_self hp.1
-    · rw [Ioo_min_max] at hp; exact uIoo_subset_uIcc_self hp.2
-  · exact fun h0 => haxis (h0 ▸ hp.2)
-
-/-- A rectangle with a horizontal edge *on* the real axis — one of its imaginary coordinates is `0`
-— has a vanishing boundary integral. This is `boundaryIntegral_eq_zero_off_axis` in the case where
-the axis meets an edge rather than being avoided outright: an endpoint at `0` still keeps `0` out of
-the *open* imaginary interior. It is the form applied to the two axis-bounded halves of a straddling
-rectangle. -/
-private lemma boundaryIntegral_eq_zero_of_edge_on_axis
-    (hcont : ContinuousOn F Ω) (hdiff : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | z.im ≠ 0}))
-    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω) (haxis : z.im = 0 ∨ w.im = 0) :
-    ((∫ x : ℝ in z.re..w.re, F (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, F (x + w.im * I)) +
-        I • (∫ y : ℝ in z.im..w.im, F (w.re + y * I)) -
-        I • (∫ y : ℝ in z.im..w.im, F (z.re + y * I))) = 0 := by
-  refine boundaryIntegral_eq_zero_off_axis hcont hdiff hsub fun hm => ?_
-  -- One imaginary coordinate being `0` puts `0` on the boundary of the imaginary interval, not
-  -- inside its open interior `Ioo (min …) (max …)`.
-  rcases haxis with h | h <;> rw [h] at hm
-  · rcases le_total (0 : ℝ) w.im with hw | hw
-    · rw [min_eq_left hw] at hm; exact lt_irrefl (0 : ℝ) hm.1
-    · rw [max_eq_left hw] at hm; exact lt_irrefl (0 : ℝ) hm.2
-  · rcases le_total z.im 0 with hz | hz
-    · rw [max_eq_right hz] at hm; exact lt_irrefl (0 : ℝ) hm.2
-    · rw [min_eq_right hz] at hm; exact lt_irrefl (0 : ℝ) hm.1
+  rw [Complex.mem_reProdIm, Ioo_min_max, Ioo_min_max] at hp
+  exact ⟨hsub (Complex.mem_reProdIm.mpr ⟨uIoo_subset_uIcc_self hp.1, uIoo_subset_uIcc_self hp.2⟩),
+    fun h0 => haxis (h0 ▸ hp.2)⟩
 
 /-- The integral of `F` along a vertical edge of the rectangle — the edge with fixed real part `a`
 — splits at the real axis: the interval integral over `[[z.im, w.im]]` equals the sum of the
@@ -133,40 +104,33 @@ private lemma vertical_edge_split_at_zero
 
 /-- A rectangle that *straddles* the real axis — `0` lies strictly inside its imaginary range — has
 a vanishing boundary integral: split it at the axis into a lower and an upper half, each an
-axis-bounded rectangle handled by `boundaryIntegral_eq_zero_of_edge_on_axis`, and recombine, the
-shared axis edge cancelling. Same hypotheses as `boundaryIntegral_eq_zero_off_axis`, but with `0`
-in the open imaginary interior instead of outside it. -/
+axis-bounded rectangle handled by `boundaryIntegral_eq_zero_off_axis`, and recombine, the shared
+axis edge cancelling. -/
 private lemma boundaryIntegral_eq_zero_of_straddling
     (hcont : ContinuousOn F Ω) (hdiff : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | z.im ≠ 0}))
-    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω)
-    (hstr : (0 : ℝ) ∈ Set.Ioo (min z.im w.im) (max z.im w.im)) :
+    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω) (hstr : (0 : ℝ) ∈ uIoo z.im w.im) :
     ((∫ x : ℝ in z.re..w.re, F (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, F (x + w.im * I)) +
         I • (∫ y : ℝ in z.im..w.im, F (w.re + y * I)) -
         I • (∫ y : ℝ in z.im..w.im, F (z.re + y * I))) = 0 := by
-  have h0mem : (0 : ℝ) ∈ [[z.im, w.im]] := by
-    rw [← Icc_min_max]; exact Ioo_subset_Icc_self hstr
-  -- Split each vertical edge at the axis into its part below and its part above.
-  have splitVw := vertical_edge_split_at_zero hcont hsub h0mem right_mem_uIcc
-  have splitVz := vertical_edge_split_at_zero hcont hsub h0mem left_mem_uIcc
+  have h0mem : (0 : ℝ) ∈ [[z.im, w.im]] := uIoo_subset_uIcc_self hstr
   -- The lower half `[z, ↑w.re]` and the upper half `[↑z.re, w]`, each bounded by the axis.
-  have hsubR1 : Complex.Rectangle z (↑w.re : ℂ) ⊆ Ω := by
-    refine fun p hp => hsub ?_
-    rw [Complex.Rectangle, Complex.mem_reProdIm] at hp ⊢
-    simp only [Complex.ofReal_re, Complex.ofReal_im] at hp
-    exact ⟨hp.1, uIcc_subset_uIcc left_mem_uIcc h0mem hp.2⟩
-  have hsubR2 : Complex.Rectangle (↑z.re : ℂ) w ⊆ Ω := by
-    refine fun p hp => hsub ?_
-    rw [Complex.Rectangle, Complex.mem_reProdIm] at hp ⊢
-    simp only [Complex.ofReal_re, Complex.ofReal_im] at hp
-    exact ⟨hp.1, uIcc_subset_uIcc h0mem right_mem_uIcc hp.2⟩
-  have R1 := boundaryIntegral_eq_zero_of_edge_on_axis hcont hdiff hsubR1
-    (Or.inr (Complex.ofReal_im w.re))
-  have R2 := boundaryIntegral_eq_zero_of_edge_on_axis hcont hdiff hsubR2
-    (Or.inl (Complex.ofReal_im z.re))
+  have R1 := boundaryIntegral_eq_zero_off_axis hcont hdiff (z := z) (w := w.re)
+    (fun p hp => hsub <| by
+      simp only [Complex.Rectangle, Complex.mem_reProdIm, Complex.ofReal_re,
+        Complex.ofReal_im] at hp ⊢
+      exact ⟨hp.1, uIcc_subset_uIcc left_mem_uIcc h0mem hp.2⟩) (by simp)
+  have R2 := boundaryIntegral_eq_zero_off_axis hcont hdiff (z := z.re) (w := w)
+    (fun p hp => hsub <| by
+      simp only [Complex.Rectangle, Complex.mem_reProdIm, Complex.ofReal_re,
+        Complex.ofReal_im] at hp ⊢
+      exact ⟨hp.1, uIcc_subset_uIcc h0mem right_mem_uIcc hp.2⟩) (by simp)
   simp only [Complex.ofReal_re, Complex.ofReal_im] at R1 R2
-  rw [splitVw, splitVz, smul_add, smul_add]
-  simp only [smul_eq_mul] at R1 R2 ⊢
-  linear_combination R1 + R2
+  -- Split each vertical edge at the axis into its part below and its part above.
+  rw [vertical_edge_split_at_zero hcont hsub h0mem right_mem_uIcc,
+    vertical_edge_split_at_zero hcont hsub h0mem left_mem_uIcc, smul_add, smul_add]
+  linear_combination (norm := module) R1 + R2
+
+variable [CompleteSpace E]
 
 /-- **Painlevé removability of the real axis.** A function continuous on an open set `Ω ⊆ ℂ` and
 holomorphic on the part of `Ω` off the real axis is holomorphic on all of `Ω`.
@@ -181,7 +145,7 @@ theorem differentiableOn_of_continuousOn_of_differentiableOn_im_ne_zero
   refine (isConservativeOn_and_continuousOn_iff_isDifferentiableOn hΩ).mp ⟨?_, hcont⟩
   intro z w hsub
   rw [← add_eq_zero_iff_eq_neg, wedgeIntegral_add_wedgeIntegral_eq]
-  by_cases hstr : (0 : ℝ) ∈ Set.Ioo (min z.im w.im) (max z.im w.im)
+  by_cases hstr : (0 : ℝ) ∈ uIoo z.im w.im
   · exact boundaryIntegral_eq_zero_of_straddling hcont hdiff hsub hstr
   · exact boundaryIntegral_eq_zero_off_axis hcont hdiff hsub hstr
 
@@ -194,32 +158,14 @@ theorem differentiableOn_of_continuousOn_of_differentiableOn_im_pos_of_different
     (hpos : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | 0 < z.im}))
     (hneg : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | z.im < 0})) :
     DifferentiableOn ℂ F Ω := by
-  apply differentiableOn_of_continuousOn_of_differentiableOn_im_ne_zero hΩ hcont
-  have hoffAxis :
-      Ω ∩ {z : ℂ | z.im ≠ 0} =
-        (Ω ∩ {z : ℂ | 0 < z.im}) ∪ (Ω ∩ {z : ℂ | z.im < 0}) := by
+  refine differentiableOn_of_continuousOn_of_differentiableOn_im_ne_zero hΩ hcont ?_
+  have hoffAxis : Ω ∩ {z : ℂ | z.im ≠ 0} = Ω ∩ {z | 0 < z.im} ∪ Ω ∩ {z | z.im < 0} := by
     ext z
-    simp only [mem_inter_iff, mem_ofPred_eq, mem_union]
-    constructor
-    · rintro ⟨hz, him⟩
-      rcases lt_or_gt_of_ne him with h | h
-      · exact Or.inr ⟨hz, h⟩
-      · exact Or.inl ⟨hz, h⟩
-    · rintro (⟨hz, h⟩ | ⟨hz, h⟩)
-      · exact ⟨hz, ne_of_gt h⟩
-      · exact ⟨hz, ne_of_lt h⟩
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_union, ne_iff_lt_or_gt]
+    tauto
   rw [hoffAxis]
-  exact hpos.union_of_isOpen hneg
-    (hΩ.inter (isOpen_lt continuous_const Complex.continuous_im))
-    (hΩ.inter (isOpen_lt Complex.continuous_im continuous_const))
-
-/-- Membership in the line through two points, in the "base point plus real multiple of the
-direction" form used by the affine chart below. -/
-lemma mem_range_lineMap_iff {p q z : ℂ} :
-    z ∈ Set.range (AffineMap.lineMap (k := ℝ) p q) ↔ ∃ t : ℝ, z = p + t * (q - p) := by
-  simp only [Set.mem_range, AffineMap.lineMap_apply, vsub_eq_sub, vadd_eq_add,
-    Complex.real_smul, eq_comm (a := z)]
-  exact exists_congr fun t => by rw [add_comm]
+  exact hpos.union_of_isOpen hneg (hΩ.inter (isOpen_lt continuous_const continuous_im))
+    (hΩ.inter (isOpen_lt continuous_im continuous_const))
 
 private theorem
     differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_range_lineMap_of_ne
@@ -229,8 +175,7 @@ private theorem
     DifferentiableOn ℂ F Ω := by
   have hd : q - p ≠ 0 := sub_ne_zero.mpr hpq.symm
   have hφdiff : Differentiable ℂ (fun w : ℂ => p + (q - p) * w) := by fun_prop
-  have hψdiff : Differentiable ℂ (fun z : ℂ => (z - p) / (q - p)) :=
-    (differentiable_id.sub_const p).div_const _
+  have hψdiff : Differentiable ℂ (fun z : ℂ => (z - p) / (q - p)) := by fun_prop
   -- `w ↦ p + (q - p) * w` is a biholomorphism of `ℂ`, with inverse `z ↦ (z - p) / (q - p)`.
   have hφinv : ∀ z : ℂ, p + (q - p) * ((z - p) / (q - p)) = z := fun z => by
     rw [mul_div_cancel₀ _ hd]; ring
@@ -241,9 +186,10 @@ private theorem
     refine differentiableOn_of_continuousOn_of_differentiableOn_im_ne_zero hΩ'open
       (hcont.comp hφdiff.continuous.continuousOn fun w hw => hw) ?_
     refine hdiff.comp hφdiff.differentiableOn fun w hw => ⟨hw.1, fun hmem => hw.2 ?_⟩
-    obtain ⟨t, ht⟩ := mem_range_lineMap_iff.mp (hS hmem)
-    -- `p + (q - p) * w = p + t * (q - p)` forces `w = t`, hence `w.im = 0`.
-    have hwt : (q - p) * w = (q - p) * (t : ℂ) := by linear_combination ht
+    obtain ⟨t, ht⟩ := hS hmem
+    rw [AffineMap.lineMap_apply_module', Complex.real_smul] at ht
+    -- `t * (q - p) + p = p + (q - p) * w` forces `w = t`, hence `w.im = 0`.
+    have hwt : (q - p) * w = (q - p) * (t : ℂ) := by linear_combination -ht
     simp [mul_left_cancel₀ hd hwt]
   -- Transport back along the inverse chart.
   refine (key.comp hψdiff.differentiableOn fun z hz => ?_).congr fun z _ => ?_
@@ -266,9 +212,8 @@ theorem differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_rang
   · subst q
     refine differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_range_lineMap_of_ne
       (p := p) (q := p + 1) (by simp) (fun z hz => ?_) hΩ hcont hdiff
-    obtain ⟨t, ht⟩ := mem_range_lineMap_iff.mp (hS hz)
-    refine mem_range_lineMap_iff.mpr ⟨0, ?_⟩
-    simpa using ht
+    obtain ⟨t, rfl⟩ := hS hz
+    exact ⟨0, by simp⟩
   · exact differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_range_lineMap_of_ne
       hpq hS hΩ hcont hdiff
 
@@ -280,9 +225,9 @@ theorem differentiableOn_of_continuousOn_of_differentiableOn_diff_im_eq {c : ℝ
     DifferentiableOn ℂ F Ω := by
   refine differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_range_lineMap
     (p := c * I) (q := 1 + c * I) (fun z hz => ?_) hΩ hcont hdiff
-  refine mem_range_lineMap_iff.mpr ⟨z.re, ?_⟩
-  simp only [add_sub_cancel_right, mul_one]
-  exact Complex.ext (by simp) (by simpa using hz)
+  rw [mem_ofPred_eq] at hz
+  exact ⟨z.re, Complex.ext (by simp [AffineMap.lineMap_apply_module'])
+    (by simp [AffineMap.lineMap_apply_module', hz])⟩
 
 /-- **Painlevé removability across a vertical line.** A function continuous on an open set
 `Ω ⊆ ℂ` and holomorphic off the vertical line `{z | z.re = c}` is holomorphic on all of `Ω`. -/
@@ -292,8 +237,8 @@ theorem differentiableOn_of_continuousOn_of_differentiableOn_diff_re_eq {c : ℝ
     DifferentiableOn ℂ F Ω := by
   refine differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_range_lineMap
     (p := (c : ℂ)) (q := (c : ℂ) + I) (fun z hz => ?_) hΩ hcont hdiff
-  refine mem_range_lineMap_iff.mpr ⟨z.im, ?_⟩
-  simp only [add_sub_cancel_left]
-  exact Complex.ext (by simpa using hz) (by simp)
+  rw [mem_ofPred_eq] at hz
+  exact ⟨z.im, Complex.ext (by simp [AffineMap.lineMap_apply_module', hz])
+    (by simp [AffineMap.lineMap_apply_module'])⟩
 
 end TauCeti

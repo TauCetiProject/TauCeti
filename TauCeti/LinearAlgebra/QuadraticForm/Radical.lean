@@ -49,8 +49,8 @@ regular case.
   into a zero map and a map with trivial radical has finrank equal to the radical.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
-* `QuadraticMap.nondegenerate_of_isCompl`: a quadratic map vanishing on two complementary
-  submodules which its polar form pairs perfectly is nondegenerate.
+* `QuadraticMap.nondegenerate_of_isCompl`: a quadratic map vanishing on a submodule complementary
+  to another, which its polar form pairs perfectly, is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
@@ -82,12 +82,15 @@ regular case.
 * `QuadraticMap.Anisotropic.radical_eq_bot`: an anisotropic quadratic map has trivial radical.
 * `QuadraticMap.Anisotropic.nondegenerate`: an anisotropic quadratic map is nondegenerate when
   `2` is invertible.
+* `QuadraticForm.anisotropic_of_finrank_le_one`: a nondegenerate quadratic form on a space of
+  dimension at most one is anisotropic.
 * `LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip`: the polar form of the quadratic form of a
   symmetric bilinear form `B` is `2 • B`.
 * `LinearMap.BilinForm.radical_toQuadraticMap`: the radical of the quadratic form of a symmetric
   bilinear form `B` equals the kernel of `B`.
-* `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, the
-  quadratic form of a nondegenerate symmetric bilinear form is nondegenerate.
+* `LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff`,
+  `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, a
+  symmetric bilinear form is nondegenerate exactly when its quadratic form is.
 * `QuadraticMap.radical_zero_prod`: the radical of the orthogonal sum of a zero form with `Q`.
 * `QuadraticMap.radical_lift_radical`, `QuadraticMap.nondegenerate_lift_radical`: the regular
   part has trivial radical, so it is nondegenerate when `2` is invertible.
@@ -187,12 +190,12 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   nontriviality R
   simp only [rank_subsingleton', zero_le]
 
-/-- A quadratic map vanishing on two complementary submodules `A` and `B` is nondegenerate when
-its polar form pairs them perfectly: no nonzero vector of `A` is polar orthogonal to all of `B`,
-and no nonzero vector of `B` is polar orthogonal to all of `A`. This holds in every
+/-- A quadratic map vanishing on a submodule `B` complementary to a submodule `A` is nondegenerate
+when its polar form pairs them perfectly: no nonzero vector of `A` is polar orthogonal to all of
+`B`, and no nonzero vector of `B` is polar orthogonal to all of `A`. This holds in every
 characteristic. -/
 theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
-    (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A) (hB : Q.IsTotallyIsotropic B)
+    (hAB : IsCompl A B) (hB : Q.IsTotallyIsotropic B)
     (hAB_sep : ∀ a ∈ A, (∀ b ∈ B, polar Q a b = 0) → a = 0)
     (hBA_sep : ∀ b ∈ B, (∀ a ∈ A, polar Q a b = 0) → b = 0) : Q.Nondegenerate := by
   refine nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.ker_eq_bot'.mpr fun x hx ↦ ?_)
@@ -201,8 +204,8 @@ theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
     simpa only [polarBilin_apply_apply, LinearMap.zero_apply] using LinearMap.congr_fun hx y
   have ha0 : a = 0 := hAB_sep a ha fun b' hb' ↦ by
     simpa only [polar_add_left, hB.polar_eq_zero hb hb', add_zero] using hx' b'
-  have hb0 : b = 0 := hBA_sep b hb fun a' ha' ↦ by
-    simpa only [polar_add_left, hA.polar_eq_zero ha ha', zero_add, polar_comm Q b a'] using hx' a'
+  have hb0 : b = 0 := hBA_sep b hb fun a' _ ↦ by
+    simpa only [ha0, zero_add, polar_comm Q b a', polar_zero_left] using hx' a'
   simp [ha0, hb0]
 
 /-- The polar orthogonal complement of a complement to the radical is the radical. -/
@@ -584,13 +587,14 @@ end QuadraticMap.Nondegenerate
 
 namespace QuadraticMap
 
-variable {K : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {K : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 /-- A nondegenerate quadratic space of dimension at least two has an anisotropic vector
 orthogonal to any given anisotropic vector. -/
 theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hrank : 2 ≤ Module.finrank K V) {y : V}
     (hy : Q y ≠ 0) : ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let B : LinearMap.BilinForm K V := Q.polarBilin
   let W : Submodule K V := B.orthogonal (K ∙ y)
@@ -618,6 +622,30 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
       Nat.cast_ofNat, mul_ne_zero_iff_left (NeZero.ne (2 : K))] using hz'
 
+/-- A nondegenerate quadratic space of dimension at least three has an anisotropic vector
+orthogonal to any given vector, isotropic or not. -/
+theorem exists_orthogonal_anisotropic_of_three_le_finrank [NeZero (2 : K)]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hrank : 3 ≤ Module.finrank K V) (y : V) :
+    ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let B : LinearMap.BilinForm K V := Q.polarBilin
+  have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
+  by_contra! h
+  -- Otherwise the complement `y^⊥` is totally isotropic, so it lies in `y^⊥⊥ = K ∙ y`.
+  have hW : Q.IsTotallyIsotropic (B.orthogonal (K ∙ y)) :=
+    QuadraticMap.isTotallyIsotropic_iff.mpr fun w hw ↦ h w
+      (QuadraticMap.isOrtho_polarBilin.mp (hw y (Submodule.mem_span_singleton_self y))).symm
+  have hle : B.orthogonal (K ∙ y) ≤ K ∙ y := by
+    refine le_trans (fun w hw z hz ↦ ?_)
+      (B.orthogonal_orthogonal hB Q.isSymm_polarBilin.isRefl (K ∙ y)).le
+    exact hW.polar_eq_zero hz hw
+  have hy := finrank_span_le_card (R := K) ({y} : Set V)
+  have hmono := Submodule.finrank_mono hle
+  rw [B.finrank_orthogonal hB] at hmono
+  simp only [Set.toFinset_singleton, Finset.card_singleton] at hy
+  omega
+
 end QuadraticMap
 
 namespace QuadraticMap.Anisotropic
@@ -638,6 +666,31 @@ theorem nondegenerate [Invertible (2 : R)] {Q : QuadraticMap R M P}
 
 end QuadraticMap.Anisotropic
 
+namespace QuadraticForm
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A regular quadratic form on a space of dimension at most one is anisotropic. -/
+theorem anisotropic_of_finrank_le_one (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : Q.Anisotropic := by
+  obtain ⟨v, hv⟩ := finrank_le_one_iff.mp hV
+  intro x hx
+  obtain ⟨c, rfl⟩ := hv x
+  by_contra hc
+  have hc0 : c ≠ 0 := fun h => hc (by simp [h])
+  have hQv : Q v = 0 := by
+    rw [QuadraticMap.map_smul] at hx
+    simpa [hc0] using hx
+  have hrad : c • v ∈ Q.radical := by
+    rw [QuadraticMap.mem_radical_iff']
+    refine ⟨by simp [QuadraticMap.map_smul, hQv], fun n => ?_⟩
+    obtain ⟨d, rfl⟩ := hv n
+    simp [← add_smul, QuadraticMap.map_smul, hQv]
+  rw [hQ.radical_eq_bot, Submodule.mem_bot] at hrad
+  exact hc hrad
+
+end QuadraticForm
+
 namespace LinearMap
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup N] [Module R M] [Module R N]
@@ -657,16 +710,23 @@ theorem BilinForm.radical_toQuadraticMap [Invertible (2 : R)] (B : LinearMap.Bil
   rw [QuadraticMap.radical_eq_ker_associated,
     QuadraticMap.associated_left_inverse (S := R) hB.eq]
 
+/-- Over a ring in which `2` is invertible, a symmetric bilinear form is nondegenerate exactly
+when its quadratic form is: the associated bilinear form of the quadratic form is the form itself.
+-/
+theorem BilinForm.nondegenerate_toQuadraticMap_iff [Invertible (2 : R)]
+    {B : LinearMap.BilinForm R M} (hB : B.IsSymm) :
+    B.toQuadraticMap.Nondegenerate ↔ B.Nondegenerate := by
+  rw [← QuadraticMap.nondegenerate_associated_iff,
+    QuadraticMap.associated_left_inverse' R (BilinForm.isSymm_iff_flip.1 hB)]
+
 /-- **Nondegeneracy passes from a symmetric bilinear form to its quadratic form** over a ring in
 which `2` is invertible. Some hypothesis on `2` is needed: a quadratic form is a finer invariant
 than its polar form, and it is the bilinear form, not the polar form `2 • B`, that is assumed
 nondegenerate here. -/
 theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearMap.BilinForm R M}
     (hB : B.Nondegenerate) (hflip : LinearMap.flip B = B) :
-    (BilinMap.toQuadraticMap B).Nondegenerate := by
-  rw [← QuadraticMap.nondegenerate_associated_iff,
-    QuadraticMap.associated_left_inverse' R hflip]
-  exact hB
+    (BilinMap.toQuadraticMap B).Nondegenerate :=
+  (nondegenerate_toQuadraticMap_iff (BilinForm.isSymm_iff_flip.2 hflip)).2 hB
 
 end LinearMap
 
@@ -688,10 +748,13 @@ theorem nondegenerate_of_span_singleton_eq_top {Q : QuadraticForm R V} {v : V}
   have hc : c = 0 := by simpa [(isUnit_of_invertible (2 : R)).ne_zero, hv] using hpolar
   rw [hc, zero_smul]
 
+omit [Invertible (2 : R)] in
 /-- The form `x ↦ a x²` on `R` is nondegenerate for `a ≠ 0`. -/
 theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
-    (a • QuadraticMap.sq : QuadraticForm R R).Nondegenerate :=
-  nondegenerate_of_span_singleton_eq_top (v := 1) (by simp) (by simpa using ha)
+    (a • QuadraticMap.sq : QuadraticForm R R).Nondegenerate := by
+  refine ⟨eq_bot_iff.mpr fun x hx ↦ ?_, (Submodule.rank_le _).trans_eq (by simp)⟩
+  have h := hx.1
+  simpa [ha] using h
 
 end TauCeti
 

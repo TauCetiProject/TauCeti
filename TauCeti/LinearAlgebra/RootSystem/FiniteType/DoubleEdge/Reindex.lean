@@ -157,17 +157,16 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
     (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
     ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
       ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
-  obtain ⟨iso⟩ := IsTree.nonempty_iso_pathGraph_of_degree_le_two
-    (h.isTree_diagramGraph hconn) hdeg
+  obtain ⟨iso⟩ := (h.isTree_diagramGraph hconn).nonempty_iso_pathGraph_of_degree_le_two hdeg
   have hvu_ne : v ≠ u := by
     rintro rfl
     rw [h.apply_self] at hvu
     omega
   have hadj : (diagramGraph A).Adj u v :=
     (h.diagramGraph_adj_iff.mpr ⟨hvu_ne, by simp [hvu]⟩).symm
-  rcases (adj_iff_of_iso_pathGraph iso u v).mp hadj with horder | horder
+  rcases (iso.adj_iff_of_pathGraph u v).mp hadj with horder | horder
   · exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h iso.toEquiv
-      (adj_iff_of_iso_pathGraph iso) horder hvu hsimple
+      iso.adj_iff_of_pathGraph horder hvu hsimple
   · let iso' : diagramGraph A ≃g pathGraph (Fintype.card B) :=
       iso.trans (pathGraphRevIso (Fintype.card B))
     have horder' : (iso' u : ℕ) + 1 = (iso' v : ℕ) := by
@@ -176,7 +175,7 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
       have _ := (iso v).isLt
       omega
     exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h iso'.toEquiv
-      (adj_iff_of_iso_pathGraph iso') horder' hvu hsimple
+      iso'.adj_iff_of_pathGraph horder' hvu hsimple
 
 /-! ## A path carries at most one multiple edge -/
 
@@ -190,7 +189,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A
     {r : ℕ} (hr : r + 1 < n) (har : a < r) :
     A (k.symm ⟨r, by omega⟩) (k.symm ⟨r + 1, hr⟩) *
       A (k.symm ⟨r + 1, hr⟩) (k.symm ⟨r, by omega⟩) = 1 := by
-  have hk := adj_iff_of_iso_pathGraph k
+  have hk := k.adj_iff_of_pathGraph
   -- Strong induction on the distance from `a`: the intervening edges are single by induction.
   -- Thus the two-multiple-edge exclusion applies to the subpath from `a` through `r + 1`.
   induction r using Nat.strong_induction_on with
@@ -286,7 +285,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph (h : IsFiniteType A)
   -- positions `min (k i) (k j)` and `min (k i) (k j) + 1`. Trichotomy on the two positions: the
   -- previous lemma settles the edges beyond the multiple edge, the reversed numbering turns the
   -- edges before it into that case, and the remaining case is the excluded coincidence.
-  have hpath := (adj_iff_of_iso_pathGraph k i j).mp hij
+  have hpath := (k.adj_iff_of_pathGraph i j).mp hij
   rcases lt_trichotomy (k u : ℕ) (min (k i : ℕ) (k j : ℕ)) with hlt | heq | hgt
   · exact apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min h k huv hfirst hpath hlt
   · exfalso
@@ -309,7 +308,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph (h : IsFiniteType A)
       have := (k j).isLt
       omega
     refine apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min h k' huv' ?_
-      ((adj_iff_of_iso_pathGraph k' i j).mp hij) hlt'
+      ((k'.adj_iff_of_pathGraph i j).mp hij) hlt'
     rw [mul_comm]
     exact hfirst
 
@@ -349,9 +348,8 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [
     rcases hmem with hc | hc | hc | hc <;> omega
   have hprod : A u v * A v u = 2 := by rw [hAuv_eq, hvu]; norm_num
   have hprod' : A v u * A u v = 2 := by rw [mul_comm]; exact hprod
-  obtain ⟨k⟩ := IsTree.nonempty_iso_pathGraph_of_degree_le_two
-    (h.isTree_diagramGraph hconn') hdeg
-  have hpath := (adj_iff_of_iso_pathGraph k u v).mp hadj
+  obtain ⟨k⟩ := (h.isTree_diagramGraph hconn').nonempty_iso_pathGraph_of_degree_le_two hdeg
+  have hpath := (k.adj_iff_of_pathGraph u v).mp hadj
   -- Every edge other than `u -- v` is single.
   have hsingle : ∀ {i j : B}, (diagramGraph A).Adj i j →
       ¬ ((i = u ∧ j = v) ∨ (i = v ∧ j = u)) → A i j * A j i = 1 := by

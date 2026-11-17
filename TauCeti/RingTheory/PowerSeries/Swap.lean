@@ -54,19 +54,15 @@ coefficient of `uᵃ vᵇ` in `swap G` is the coefficient of `uᵇ vᵃ` in `G`.
 noncomputable def swap : R⟦X⟧⟦X⟧ →+* R⟦X⟧⟦X⟧ where
   toFun G := mk fun b ↦ mk fun a ↦ coeff b (coeff a G)
   map_one' := by
-    refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
+    ext b a
     simp only [coeff_mk, coeff_one]
     split_ifs <;> simp_all
   map_mul' G H := by
-    refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
+    ext b a
     simp only [coeff_mk, coeff_mul, map_sum]
     exact Finset.sum_comm
-  map_zero' := by
-    refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-    simp
-  map_add' G H := by
-    refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-    simp
+  map_zero' := by ext; simp
+  map_add' G H := by ext; simp
 
 /-- The coefficient of `uᵃ vᵇ` in `swap G` is the coefficient of `uᵇ vᵃ` in `G`. -/
 @[simp]
@@ -111,9 +107,10 @@ theorem coeff_constantCoeff_swap (G : R⟦X⟧⟦X⟧) (a : ℕ) :
 @[simp]
 theorem coeff_swap_derivative {R : Type*} [CommSemiring R] (G : R⟦X⟧⟦X⟧) (N : ℕ) :
     coeff N (swap (d⁄dX G)) = d⁄dX (coeff N (swap G)) := by
-  refine PowerSeries.ext fun a ↦ ?_
-  rw [coeff_coeff_swap, coeff_derivative, coeff_derivative, coeff_coeff_swap,
-    ← map_natCast (C (R := R)), ← map_one (C (R := R)), ← map_add, coeff_mul_C]
+  ext a
+  simp only [coeff_coeff_swap, coeff_derivative]
+  -- the factor `a + 1` is a natural number cast into `R⟦X⟧`, which `coeff N` passes through
+  exact_mod_cast coeff_mul_natCast
 
 end PowerSeries
 
@@ -121,13 +118,15 @@ open scoped Polynomial PowerSeries
 
 namespace Polynomial
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- The ring homomorphism `R⟦X⟧[X] →+* R[X]⟦X⟧` exchanging the two variables: a polynomial in
 `X` whose coefficients are power series in `t` is sent to the power series in `t` whose
 coefficients are polynomials in `X`. -/
 noncomputable def swapPowerSeries : R⟦X⟧[X] →+* R[X]⟦X⟧ :=
-  eval₂RingHom (PowerSeries.map C) (PowerSeries.C X)
+  -- `X` is central in `R[X]`, so the evaluation is multiplicative even when `R` is not commutative
+  eval₂RingHom' (PowerSeries.map C) (PowerSeries.C X) fun a ↦
+    (commute_iff_eq _ _).mpr <| PowerSeries.ext fun n ↦ by simp [(commute_X _).eq]
 
 /-- `swapPowerSeries` sends a constant polynomial with coefficient `a : R⟦t⟧` to the same
 power series in `t` with constant polynomial coefficients. -/
@@ -148,7 +147,7 @@ theorem coeff_coeff_swapPowerSeries (Q : R⟦X⟧[X]) (k i : ℕ) :
   induction Q using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | monomial n a =>
-    simp only [swapPowerSeries, coe_eval₂RingHom, eval₂_monomial, ← map_pow,
+    simp only [swapPowerSeries, eval₂RingHom'_apply, eval₂_monomial, ← map_pow,
       PowerSeries.coeff_mul_C, PowerSeries.coeff_map, coeff_C_mul_X_pow, coeff_monomial]
     split_ifs <;> simp_all
 
@@ -174,23 +173,22 @@ theorem coeff_swapPowerSeries_mem_degreeLT {Q : R⟦X⟧[X]} {n : ℕ}
   intro i hi
   simp [hQ i hi]
 
-section Ring
-
-variable {S : Type*} [CommSemiring S]
-
-/-- A power series `F` over `R[X]` whose constant coefficient is monic of degree `d` and whose
-other coefficients have degree `< d` comes from a monic polynomial over `R⟦X⟧` of degree `d`
-reducing to `g` modulo `t`. -/
-theorem exists_monic_swapPowerSeries_eq [Nontrivial S] {g : S[X]} (hg : g.Monic)
-    {F : S[X]⟦X⟧} (hF₀ : PowerSeries.constantCoeff F = g)
-    (hF : ∀ k, 1 ≤ k → PowerSeries.coeff k F ∈ degreeLT S g.natDegree) :
-    ∃ G : S⟦X⟧[X], G.Monic ∧ G.natDegree = g.natDegree ∧
+/-- A power series `F` over `R[X]` whose constant coefficient is a monic polynomial `g` and whose
+other coefficients have degree `< g.natDegree` is the image under `swapPowerSeries` of a monic
+polynomial over `R⟦t⟧` of degree `g.natDegree` reducing to `g` modulo `t`. -/
+theorem exists_monic_swapPowerSeries_eq {g : R[X]} (hg : g.Monic)
+    {F : R[X]⟦X⟧} (hF₀ : PowerSeries.constantCoeff F = g)
+    (hF : ∀ k, 1 ≤ k → PowerSeries.coeff k F ∈ degreeLT R g.natDegree) :
+    ∃ G : R⟦X⟧[X], G.Monic ∧ G.natDegree = g.natDegree ∧
       G.map PowerSeries.constantCoeff = g ∧ swapPowerSeries G = F := by
-  suffices ∃ G : S⟦X⟧[X], G.Monic ∧ swapPowerSeries G = F by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨1, monic_one, by rw [Subsingleton.elim g 1, natDegree_one, natDegree_one],
+      Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  suffices ∃ G : R⟦X⟧[X], G.Monic ∧ swapPowerSeries G = F by
     obtain ⟨G, hG, rfl⟩ := this
     rw [constantCoeff_swapPowerSeries] at hF₀
     exact ⟨G, hG, by rw [← hF₀, hG.natDegree_map], hF₀, rfl⟩
-  let a : ℕ → S⟦X⟧ := fun i ↦ PowerSeries.mk fun k ↦ (PowerSeries.coeff k F).coeff i
+  let a : ℕ → R⟦X⟧ := fun i ↦ PowerSeries.mk fun k ↦ (PowerSeries.coeff k F).coeff i
   have hdeg : (∑ i : Fin g.natDegree, C (a i) * X ^ (i : ℕ)).degree < (g.natDegree : WithBot ℕ) :=
     degree_sum_fin_lt _
   refine ⟨X ^ g.natDegree + ∑ i : Fin g.natDegree, C (a i) * X ^ (i : ℕ),
@@ -213,7 +211,5 @@ theorem exists_monic_swapPowerSeries_eq [Nontrivial S] {g : S[X]} (hg : g.Monic)
     · rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, hF₀, coeff_eq_zero_of_natDegree_lt hi]
     · exact (coeff_eq_zero_of_degree_lt ((mem_degreeLT.mp
         (hF k (Nat.one_le_iff_ne_zero.mpr hk))).trans (by exact_mod_cast hi))).symm
-
-end Ring
 
 end Polynomial

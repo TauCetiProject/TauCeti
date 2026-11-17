@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # The idele norm of a number field
@@ -49,6 +50,8 @@ class group.
 * `TauCeti.GlobalNumberFields.coe_ideleNorm_ofAdicCompletion`,
   `TauCeti.GlobalNumberFields.coe_ideleNorm_ofCompletion`: on an idele concentrated at one place
   the idele norm is the normalized absolute value at that place.
+* `TauCeti.GlobalNumberFields.coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one`: an idele
+  concentrated at a finite place `v` with a uniformizer as coordinate has idele norm `N(v)⁻¹`.
 * `TauCeti.GlobalNumberFields.continuous_ideleNorm`: the idele norm is continuous, because the
   finite factors are locally constant on the idele group.
 * `TauCeti.GlobalNumberFields.ideleNorm_ideleNormSection`: the section is right inverse to the
@@ -214,6 +217,51 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofCompletion
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     rfl
 
+/-- The infinite coordinates of a product of ideles, one concentrated at each place of a finite set
+`T` of infinite places: the prescribed unit at a place of `T`, and `1` elsewhere. -/
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_prod_ofCompletion
+    [DecidableEq (InfinitePlace K)] (w' : InfinitePlace K)
+    (T : Finset (InfinitePlace K)) (u : ∀ w : InfinitePlace K, w.Completionˣ) :
+    w'.ideleInfiniteCoord (∏ w ∈ T, IdeleGroup.ofCompletion R K w (u w)) =
+      if w' ∈ T then u w' else 1 := by
+  rw [map_prod]
+  split_ifs with hw'
+  · rw [Finset.prod_eq_single_of_mem w' hw' fun w _ hw ↦
+      w'.ideleInfiniteCoord_ofCompletion_of_ne hw.symm (u w)]
+    exact w'.ideleInfiniteCoord_ofCompletion_self (u w')
+  · exact Finset.prod_eq_one fun w hw ↦
+      w'.ideleInfiniteCoord_ofCompletion_of_ne (ne_of_mem_of_not_mem hw hw').symm (u w)
+
+/-- **Splitting an idele coordinatewise**: for a finite set `S` of finite places and a finite set
+`T` of infinite places, an idele `x` is a product `z * y` where `y` has the coordinates of `x` at
+the places in `S` and `T` and is trivial elsewhere, while `z` is trivial at those places and has
+the coordinates of `x` elsewhere. -/
+theorem NumberField.IdeleGroup.exists_mul_eq_coord_ite
+    [DecidableEq (HeightOneSpectrum R)] [DecidableEq (InfinitePlace K)] (x : IdeleGroup R K)
+    (S : Finset (HeightOneSpectrum R)) (T : Finset (InfinitePlace K)) :
+    ∃ y z : IdeleGroup R K, z * y = x ∧
+      (∀ v, v.ideleFiniteCoord y = if v ∈ S then v.ideleFiniteCoord x else 1) ∧
+      (∀ v, v.ideleFiniteCoord z = if v ∈ S then 1 else v.ideleFiniteCoord x) ∧
+      (∀ w, w.ideleInfiniteCoord y = if w ∈ T then w.ideleInfiniteCoord x else 1) ∧
+      (∀ w, w.ideleInfiniteCoord z = if w ∈ T then 1 else w.ideleInfiniteCoord x) := by
+  set y : IdeleGroup R K :=
+    (∏ v ∈ S, IdeleGroup.ofAdicCompletion R K v (v.ideleFiniteCoord x)) *
+      ∏ w ∈ T, IdeleGroup.ofCompletion R K w (w.ideleInfiniteCoord x) with hy
+  have hyf (v : HeightOneSpectrum R) :
+      v.ideleFiniteCoord y = if v ∈ S then v.ideleFiniteCoord x else 1 := by
+    rw [hy, map_mul, v.ideleFiniteCoord_prod_ofAdicCompletion, map_prod]
+    simp [HeightOneSpectrum.ideleFiniteCoord_ofCompletion]
+  have hyi (w : InfinitePlace K) :
+      w.ideleInfiniteCoord y = if w ∈ T then w.ideleInfiniteCoord x else 1 := by
+    rw [hy, map_mul, w.ideleInfiniteCoord_prod_ofCompletion, map_prod]
+    simp
+  refine ⟨y, y⁻¹ * x, (mul_comm _ _).trans (mul_inv_cancel_left y x), hyf, fun v ↦ ?_, hyi,
+    fun w ↦ ?_⟩
+  · rw [map_mul, map_inv, hyf]
+    split_ifs <;> simp
+  · rw [map_mul, map_inv, hyi]
+    split_ifs <;> simp
+
 /-- **An idele is the product of its archimedean components and its finite component**: the
 ideles concentrated at the infinite places, carrying the infinite coordinates of `x`, times the
 idele with the finite component of `x` and trivial infinite components. -/
@@ -349,6 +397,15 @@ theorem coe_ideleNorm_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
   rw [coe_ideleNorm, finprod_eq_single _ v fun v' hv' ↦ by
     simp [v'.ideleFiniteCoord_ofAdicCompletion_of_ne hv']]
   simp
+
+/-- An idele concentrated at one finite place `v`, with a uniformizer of `K_v` as `v`-adic
+coordinate, has idele norm `N(v)⁻¹`. -/
+theorem coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one (v : HeightOneSpectrum (𝓞 K))
+    {u : (v.adicCompletion K)ˣ} (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
+    ((ideleNorm (IdeleGroup.ofAdicCompletion (𝓞 K) K v u) : ℝ≥0) : ℝ) =
+      (v.asIdeal.absNorm : ℝ)⁻¹ := by
+  rw [coe_ideleNorm_ofAdicCompletion, FinitePlace.norm_adicCompletion_eq_absNorm_zpow v u.ne_zero,
+    hu, WithZero.log_exp, zpow_neg_one]
 
 /-- On an idele concentrated at one infinite place `w`, the idele norm is the normalized absolute
 value of the `w`-coordinate. -/

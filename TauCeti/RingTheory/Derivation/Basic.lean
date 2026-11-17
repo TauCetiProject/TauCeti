@@ -19,7 +19,8 @@ does not apply that lemma to it. This file adds the literal form `Derivation.map
 derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
 
 A derivation differentiates a finite product termwise: `D (∏ i ∈ s, f i)` is the sum over
-`j ∈ s` of `D (f j)` times the product of the other factors.
+`j ∈ s` of `D (f j)` times the product of the other factors. In particular, a derivation `δ`
+with `δ tⱼ = δᵢⱼ` sends a monomial `∏ⱼ tⱼ ^ βⱼ` to `βᵢ ∏ⱼ tⱼ ^ (β - eᵢ)ⱼ`.
 
 Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
 linear combinations. On products they satisfy the general Leibniz rule
@@ -33,6 +34,8 @@ unit, without factoring it.
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
 * `Derivation.leibniz_prod`: the Leibniz rule for finite products.
+* `Derivation.apply_prod_pow_of_apply_eq`: a derivation dual to the `i`-th coordinate
+  differentiates a monomial in the coordinates by lowering its `i`-th exponent.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
@@ -65,6 +68,25 @@ theorem leibniz_prod {ι : Type*} [DecidableEq ι] (s : Finset ι) (f : ι → A
     refine Finset.sum_congr rfl fun j hj => ?_
     rw [Finset.erase_insert_of_ne (ne_of_mem_of_not_mem hj ha).symm,
       Finset.prod_insert fun h => ha (Finset.mem_of_mem_erase h), smul_smul]
+
+/-- A derivation dual to the `i`-th coordinate differentiates a monomial `∏ⱼ tⱼ ^ βⱼ` in the
+coordinates to `βᵢ ∏ⱼ tⱼ ^ (β - eᵢ)ⱼ`. -/
+theorem apply_prod_pow_of_apply_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (δ : Derivation R A A) {t : ι → A} {i : ι} (ht : ∀ j, δ (t j) = if j = i then 1 else 0)
+    (β : ι → ℕ) :
+    δ (∏ j, t j ^ β j) = β i • ∏ j, t j ^ (β - Pi.single i 1 : ι → ℕ) j := by
+  have hrest : δ (∏ j ∈ Finset.univ.erase i, t j ^ β j) = 0 :=
+    Finset.prod_induction _ (fun a ↦ δ a = 0) (fun a b ha hb ↦ by simp [leibniz, ha, hb])
+      (by simp) fun j hj ↦ by simp [leibniz_pow, ht, Finset.ne_of_mem_erase hj]
+  have hcongr : ∏ j ∈ Finset.univ.erase i, t j ^ (β - Pi.single i 1 : ι → ℕ) j =
+      ∏ j ∈ Finset.univ.erase i, t j ^ β j :=
+    Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i),
+    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), hcongr, leibniz, hrest,
+    leibniz_pow, ht]
+  simp only [ite_true, smul_eq_mul, mul_one, nsmul_eq_mul, Pi.sub_apply,
+    Pi.single_eq_same]
+  ring
 
 /-- Iterated differentiation commutes with finite scalar linear combinations. -/
 theorem iterate_sum_smul {ι : Type*} (D : Derivation R A A) (m : ℕ) (s : Finset ι)

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
-public import TauCeti.Combinatorics.Graph.Orientation.Basic
+public import TauCeti.Combinatorics.Graph.Orientation.Indegree
 public import TauCeti.Combinatorics.Network.Walk
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
@@ -16,8 +16,10 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
 Orienting the edges of `Graph.ofSimpleGraph H` is equivalent to choosing one dart from each
 reversed pair in `H`. The comparison retains the ordered endpoints of each edge and identifies
-the associated directed walks and strong connectivity. It lets results about multigraph
-orientations specialize to the existing `DoubledQuiver.Orientation` interface.
+the associated directed walks and strong connectivity. Edges correspond to selected darts, so the
+indegree and outdegree of a vertex count the selected darts ending and starting there. It lets
+results about multigraph orientations specialize to the existing `DoubledQuiver.Orientation`
+interface.
 
 The simple-graph side uses `TauCeti.DoubledQuiver.Orientation` and its
 `OrientedQuiver.homEquiv` to describe the selected arrows.
@@ -69,7 +71,7 @@ private theorem tail_head_eq_or_eq_symm (o : (Graph.ofSimpleGraph H).Orientation
 def toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation) :
     DoubledQuiver.Orientation H where
   carrier := {d | (o.tail ⟨d.edge, d.edge_mem⟩).1 = d.fst}
-  symm_mem_iff_not_mem d := by
+  symm_mem_iff_notMem d := by
     have he := o.tail_head_eq_or_eq_symm d
     -- Reduce membership in the carrier being defined; its membership lemma is not available yet.
     change (o.tail ⟨d.symm.edge, d.symm.edge_mem⟩).1 = d.symm.fst ↔
@@ -95,20 +97,30 @@ theorem head_eq_of_mem_toDartOrientation (o : (Graph.ofSimpleGraph H).Orientatio
   · exact h.2
   · exact (d.fst_ne_snd (ht.symm.trans h.1)).elim
 
+/-- The dart given by the ordered ends of an edge is selected. -/
+theorem dart_mem_toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation)
+    (e : (Graph.ofSimpleGraph H).edgeSet) : o.dart e ∈ o.toDartOrientation := by
+  have hed : (⟨(o.dart e).edge, (o.dart e).edge_mem⟩ : (Graph.ofSimpleGraph H).edgeSet) = e :=
+    Subtype.ext (o.dart_edge e)
+  rw [mem_toDartOrientation_iff, hed, dart_fst]
+
+/-- A selected dart is the dart given by the ordered ends of its edge. -/
+theorem dart_of_mem_toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation) {d : H.Dart}
+    (hd : d ∈ o.toDartOrientation) : o.dart ⟨d.edge, d.edge_mem⟩ = d :=
+  SimpleGraph.Dart.ext _ _ (Prod.ext ((o.mem_toDartOrientation_iff d).1 hd)
+    (o.head_eq_of_mem_toDartOrientation hd))
+
 /-- Two edge orientations inducing the same dart choices coincide. -/
 theorem toDartOrientation_injective :
     Function.Injective (toDartOrientation (H := H)) := by
   intro o p h
-  apply ext_of_tail
+  apply ext
   intro e
   let d := o.dart e
   have hed : (⟨d.edge, d.edge_mem⟩ : (Graph.ofSimpleGraph H).edgeSet) = e := by
     apply Subtype.ext
     exact o.dart_edge e
-  have hd : d ∈ o.toDartOrientation := by
-    rw [mem_toDartOrientation_iff, hed]
-    exact (o.dart_fst e).symm
-  have hp := (p.mem_toDartOrientation_iff d).1 (h ▸ hd)
+  have hp := (p.mem_toDartOrientation_iff d).1 (h ▸ o.dart_mem_toDartOrientation e)
   apply Subtype.ext
   simpa only [hed] using (o.dart_fst e).symm.trans hp.symm
 
@@ -123,7 +135,7 @@ noncomputable def ofDartOrientation (o : DoubledQuiver.Orientation H) :
     let d : H.Dart := ⟨(x, y), hxy⟩
     by_cases hd : d ∈ o
     · exact ⟨d, hd, he⟩
-    · exact ⟨d.symm, (o.symm_mem_iff_not_mem d).2 hd,
+    · exact ⟨d.symm, (o.symm_mem_iff_notMem d).2 hd,
         (SimpleGraph.Dart.edge_symm d).trans he⟩
   exact
     { tail := fun e ↦ ⟨(hex e).choose.fst, Set.mem_univ _⟩
@@ -145,7 +157,7 @@ theorem dart_ofDartOrientation (o : DoubledQuiver.Orientation H) {d : H.Dart} (h
   obtain h | h := (SimpleGraph.dart_edge_eq_iff _ d).mp
     ((ofDartOrientation o).dart_edge ⟨d.edge, d.edge_mem⟩)
   · exact h
-  · exact ((o.symm_mem_iff_not_mem d).1 (h ▸ hc) hd).elim
+  · exact ((o.symm_mem_iff_notMem d).1 (h ▸ hc) hd).elim
 
 /-- The recovered tail of a selected dart's edge is its first endpoint. -/
 @[simp]
@@ -172,7 +184,7 @@ theorem toDartOrientation_ofDartOrientation (o : DoubledQuiver.Orientation H) :
   obtain h | h := (SimpleGraph.dart_edge_eq_iff c d).mp he
   · have ht : ((ofDartOrientation o).tail e).1 = d.fst := congrArg (fun d : H.Dart ↦ d.fst) h
     exact iff_of_true ht (h ▸ hc)
-  · have hn : d ∉ o := (o.symm_mem_iff_not_mem d).1 (h ▸ hc)
+  · have hn : d ∉ o := (o.symm_mem_iff_notMem d).1 (h ▸ hc)
     have ht : ((ofDartOrientation o).tail e).1 = d.snd := congrArg (fun d : H.Dart ↦ d.fst) h
     rw [mem_toDartOrientation_iff]
     exact iff_of_false (fun htail ↦ d.snd_ne_fst (ht.symm.trans htail)) hn
@@ -474,5 +486,66 @@ theorem isStronglyConnected_orientedQuiver_iff (o : (Graph.ofSimpleGraph H).Orie
     obtain ⟨x, rfl⟩ := o.orientedVertexEquiv.surjective x
     obtain ⟨y, rfl⟩ := o.orientedVertexEquiv.surjective y
     exact (o.nonempty_oriented_path_iff x y).2 (h x y)
+
+section Indegree
+
+/-- The edges of a simple graph correspond to the darts selected by an orientation, each edge
+going to the dart given by its ordered ends. -/
+def edgeSetEquivToDartOrientation (o : (Graph.ofSimpleGraph H).Orientation) :
+    (Graph.ofSimpleGraph H).edgeSet ≃ {d : H.Dart // d ∈ o.toDartOrientation} where
+  toFun e := ⟨o.dart e, o.dart_mem_toDartOrientation e⟩
+  invFun d := ⟨d.1.edge, d.1.edge_mem⟩
+  left_inv e := Subtype.ext (o.dart_edge e)
+  right_inv d := Subtype.ext (o.dart_of_mem_toDartOrientation d.2)
+
+@[simp]
+theorem coe_edgeSetEquivToDartOrientation_apply (o : (Graph.ofSimpleGraph H).Orientation)
+    (e : (Graph.ofSimpleGraph H).edgeSet) :
+    (o.edgeSetEquivToDartOrientation e : H.Dart) = o.dart e :=
+  (rfl)
+
+@[simp]
+theorem coe_edgeSetEquivToDartOrientation_symm_apply (o : (Graph.ofSimpleGraph H).Orientation)
+    (d : {d : H.Dart // d ∈ o.toDartOrientation}) :
+    (o.edgeSetEquivToDartOrientation.symm d : Sym2 V) = d.1.edge :=
+  (rfl)
+
+variable [Fintype (Graph.ofSimpleGraph H).edgeSet]
+
+/-- The indegree of a vertex is the number of selected darts ending there. -/
+theorem indegree_eq_natCard (o : (Graph.ofSimpleGraph H).Orientation)
+    (v : (Graph.ofSimpleGraph H).vertexSet) :
+    o.indegree v = Nat.card {d : H.Dart // d ∈ o.toDartOrientation ∧ d.snd = v.1} := by
+  classical
+  rw [indegree_def, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  refine Nat.card_congr ((o.edgeSetEquivToDartOrientation.subtypeEquiv fun e ↦ ?_).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ fun d : H.Dart ↦ d.snd = v.1))
+  simp [Subtype.ext_iff]
+
+/-- The outdegree of a vertex is the number of selected darts starting there. -/
+theorem outdegree_eq_natCard (o : (Graph.ofSimpleGraph H).Orientation)
+    (v : (Graph.ofSimpleGraph H).vertexSet) :
+    o.outdegree v = Nat.card {d : H.Dart // d ∈ o.toDartOrientation ∧ d.fst = v.1} := by
+  classical
+  rw [outdegree_def, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  refine Nat.card_congr ((o.edgeSetEquivToDartOrientation.subtypeEquiv fun e ↦ ?_).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ fun d : H.Dart ↦ d.fst = v.1))
+  simp [Subtype.ext_iff]
+
+/-- Under the orientation built from a dart orientation, the indegree of a vertex is the number of
+chosen darts ending there. -/
+theorem indegree_ofDartOrientation (o : DoubledQuiver.Orientation H)
+    (v : (Graph.ofSimpleGraph H).vertexSet) :
+    (ofDartOrientation o).indegree v = Nat.card {d : H.Dart // d ∈ o ∧ d.snd = v.1} := by
+  rw [indegree_eq_natCard, toDartOrientation_ofDartOrientation]
+
+/-- Under the orientation built from a dart orientation, the outdegree of a vertex is the number
+of chosen darts starting there. -/
+theorem outdegree_ofDartOrientation (o : DoubledQuiver.Orientation H)
+    (v : (Graph.ofSimpleGraph H).vertexSet) :
+    (ofDartOrientation o).outdegree v = Nat.card {d : H.Dart // d ∈ o ∧ d.fst = v.1} := by
+  rw [outdegree_eq_natCard, toDartOrientation_ofDartOrientation]
+
+end Indegree
 
 end Graph.Orientation

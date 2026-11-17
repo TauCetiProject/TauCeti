@@ -20,8 +20,8 @@ of the skeleta under a continuous map into the complex absorb every compact set
 
 These are the compact-support statements used to pass from skeletal homology to homology
 of the whole pair. They do not require local finiteness of the CW structure. The key weak-topology
-criterion is that a subset disjoint from the base and meeting each open cell in a finite set
-is closed and discrete.
+criterion is that a subset meeting each open cell in a finite set is closed (respectively
+discrete) as soon as its intersection with the base is.
 
 ## References
 
@@ -37,63 +37,57 @@ namespace TauCeti
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D S : Set X}
   [RelCWComplex C D]
 
-/-- A subset of a relative CW complex disjoint from its base is closed if it meets each open
-cell in a finite set. -/
-lemma isClosed_of_finite_inter_openCell (hSC : S ⊆ C) (hSD : Disjoint S D)
-    (hS : ∀ n (i : cell C n), (S ∩ openCell n i).Finite) : IsClosed S := by
-  refine isClosed_of_isClosed_inter_openCell_or_isClosed_inter_closedCell hSC ?_
-    (fun n _ i ↦ Or.inl (hS n i).isClosed)
-  simpa only [Set.disjoint_iff_inter_eq_empty.1 hSD] using isClosed_empty
+/-- A subset of a relative CW complex is closed if it meets each open cell in a finite set and
+meets the base in a closed set. -/
+lemma isClosed_of_finite_inter_openCell (hSC : S ⊆ C) (hSD : IsClosed (S ∩ D))
+    (hS : ∀ n (i : cell C n), (S ∩ openCell n i).Finite) : IsClosed S :=
+  isClosed_of_isClosed_inter_openCell_or_isClosed_inter_closedCell hSC hSD
+    fun n _ i ↦ Or.inl (hS n i).isClosed
 
-/-- A subset of a relative CW complex disjoint from its base is discrete if it meets each open
-cell in a finite set. -/
-lemma isDiscrete_of_finite_inter_openCell (hSC : S ⊆ C) (hSD : Disjoint S D)
+/-- A subset of a relative CW complex is discrete if it meets each open cell in a finite set and
+meets the base in a discrete set. -/
+lemma isDiscrete_of_finite_inter_openCell (hSC : S ⊆ C) (hSD : IsDiscrete (S ∩ D))
     (hS : ∀ n (i : cell C n), (S ∩ openCell n i).Finite) : IsDiscrete S := by
   refine isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hTS ↦ ?_
-  exact ⟨T, isClosed_of_finite_inter_openCell (hTS.trans hSC) (hSD.mono_left hTS)
-    (fun n i ↦ (hS n i).subset (inter_subset_inter_left _ hTS)),
-    inter_eq_left.2 hTS⟩
+  obtain ⟨U, hU, hUT⟩ :=
+    isDiscrete_iff_forall_mem_exists_isClosed.1 hSD (T ∩ D) (inter_subset_inter_left _ hTS)
+  -- The part of `T` off the base is closed by the previous lemma; on the base, `U` cuts out `T`.
+  have hTD : IsClosed (T \ D) :=
+    isClosed_of_finite_inter_openCell (sdiff_subset.trans (hTS.trans hSC))
+      (by simpa only [sdiff_inter_self] using isClosed_empty)
+      fun n i ↦ (hS n i).subset (inter_subset_inter_left _ (sdiff_subset.trans hTS))
+  refine ⟨U ∩ D ∪ T \ D, (hU.inter (isClosedBase C)).union hTD, ?_⟩
+  ext x
+  have hx := Set.ext_iff.1 hUT x
+  have := @hTS x
+  simp only [mem_union, mem_inter_iff, mem_sdiff] at hx ⊢
+  tauto
 
 /-- A compact subset of the ambient space meets only finitely many relative open cells.
 There is no local-finiteness or dimension assumption, and the base is excluded from the cell
 indexing. -/
 theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCompact K) :
     {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}.Finite := by
-  classical
   let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
-  choose x hx using fun a : A ↦ a.2
-  have hxK (a : A) : x a ∈ K := (hx a).1
-  have hxO (a : A) : x a ∈ openCell a.1.1 a.1.2 := (hx a).2
-  have hxinj : Function.Injective x := by
-    intro a b hab
-    by_contra h
-    exact (disjoint_openCell_of_ne (Subtype.val_injective.ne h)).ne_of_mem
-      (hxO a) (hxO b) hab
-  have hSD : Disjoint (range x) D := by
-    rw [Set.disjoint_left]
-    rintro _ ⟨a, rfl⟩ hxD
-    exact Set.disjoint_left.1 (disjointBase a.1.1 a.1.2) (hxO a) hxD
+  -- Pick a point `x a` of `K` in each open cell `a` that `K` meets.
+  choose x hxK hxO using fun a : A ↦ a.2
+  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.1 = ⟨m, j⟩ :=
+    eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨x a, hxO a, h⟩)
+  have hxinj : Function.Injective x := fun a b hab ↦ Subtype.ext (hx (hab ▸ hxO b))
+  have hSC : range x ⊆ C := range_subset_iff.2 fun a ↦ openCell_subset_complex _ _ (hxO a)
+  have hSD : (range x ∩ D).Finite := finite_empty.subset <| by
+    rintro _ ⟨⟨a, rfl⟩, hD⟩
+    exact disjoint_left.1 (disjointBase _ _) (hxO a) hD
   have hS (n : ℕ) (i : cell C n) : (range x ∩ openCell n i).Finite := by
-    by_cases h : (K ∩ openCell n i).Nonempty
-    · let a : A := ⟨⟨n, i⟩, h⟩
-      refine (finite_singleton (x a)).subset ?_
-      rintro y ⟨⟨b, rfl⟩, hbi⟩
-      have hba : b = a := by
-        apply Subtype.ext
-        by_contra hne
-        exact Set.disjoint_left.1 (disjoint_openCell_of_ne hne) (hxO b) hbi
-      simp only [hba, mem_singleton_iff]
-    · refine finite_empty.subset ?_
-      rintro y ⟨⟨a, rfl⟩, hai⟩
-      exact (h ⟨x a, hxK a, hai⟩).elim
-  have hSC : range x ⊆ C := by
-    rintro _ ⟨a, rfl⟩
-    exact openCell_subset_complex _ _ (hxO a)
-  have hclosed := isClosed_of_finite_inter_openCell hSC hSD hS
-  have hdiscrete := isDiscrete_of_finite_inter_openCell hSC hSD hS
+    refine Set.Subsingleton.finite ?_
+    rintro _ ⟨⟨a, rfl⟩, ha⟩ _ ⟨⟨b, rfl⟩, hb⟩
+    exact congrArg x (Subtype.ext ((hx ha).trans (hx hb).symm))
+  -- So the chosen points form a closed discrete subset of the compact set `K`.
   have hcompact : IsCompact (range x) :=
-    hK.of_isClosed_subset hclosed (by rintro _ ⟨a, rfl⟩; exact hxK a)
-  have : Finite A := (Set.finite_range_iff hxinj).1 (hcompact.finite hdiscrete)
+    hK.of_isClosed_subset (isClosed_of_finite_inter_openCell hSC hSD.isClosed hS)
+      (range_subset_iff.2 hxK)
+  have : Finite A := (finite_range_iff hxinj).1
+    (hcompact.finite (isDiscrete_of_finite_inter_openCell hSC hSD.isDiscrete hS))
   exact Set.toFinite A
 
 /-- Every compact subset of a relative CW complex is contained in a skeleton of finite
@@ -101,18 +95,16 @@ relative dimension. The skeleton contains the entire base, so no restriction on 
 needed. -/
 theorem exists_subset_skeletonLT_of_isCompact {K : Set X} (hK : IsCompact K) (hKC : K ⊆ C) :
     ∃ n : ℕ, K ⊆ (skeletonLT C (n : ℕ∞) : Set X) := by
-  classical
-  let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
-  have hA : A.Finite := finite_setOf_nonempty_inter_openCell_of_isCompact (C := C) hK
-  refine ⟨hA.toFinset.sup Sigma.fst + 1, fun x hx ↦ ?_⟩
+  obtain ⟨N, hN⟩ :=
+    ((finite_setOf_nonempty_inter_openCell_of_isCompact (C := C) hK).image Sigma.fst).bddAbove
+  refine ⟨N + 1, fun x hx ↦ ?_⟩
   have hxC := hKC hx
   rw [← union_iUnion_openCell_eq_complex (C := C)] at hxC
   rcases hxC with hxD | hxC
   · exact (skeletonLT C _).base_subset hxD
   · obtain ⟨m, i, hxi⟩ := by simpa only [mem_iUnion] using hxC
     refine mem_skeletonLT_iff.2 (Or.inr ⟨m, ?_, i, hxi⟩)
-    have hmem : (⟨m, i⟩ : Σ n, cell C n) ∈ hA.toFinset := hA.mem_toFinset.2 ⟨x, hx, hxi⟩
-    exact_mod_cast Nat.lt_succ_of_le (Finset.le_sup (f := Sigma.fst) hmem)
+    exact_mod_cast Nat.lt_succ_of_le (hN ⟨⟨m, i⟩, ⟨x, hx, hxi⟩, rfl⟩)
 
 /-- **The skeletal filtration absorbs compact sets.** If `f` is continuous with values in the
 complex `C`, every compact subset of `E` lies in the preimage of some skeleton, since its image is
@@ -123,8 +115,7 @@ lemma exists_subset_preimageSkeleton_of_isCompact {E : Type*} [TopologicalSpace 
   obtain ⟨n, hn⟩ := exists_subset_skeletonLT_of_isCompact (hK.image hf)
     ((Set.image_subset_range f K).trans hfC)
   refine ⟨n, fun x hx ↦ ?_⟩
-  rw [mem_preimageSkeleton_iff]
-  exact skeletonLT_mono (by exact_mod_cast (by lia : n ≤ ((n : ℤ) + 1).toNat))
-    (hn (Set.mem_image_of_mem f hx))
+  rw [preimageSkeleton_natCast]
+  exact skeletonLT_mono le_self_add (hn (mem_image_of_mem f hx))
 
 end TauCeti

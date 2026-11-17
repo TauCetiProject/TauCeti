@@ -740,7 +740,7 @@ theorem arrowTensorDerivation_vertexIdempotent_mul_mul (i j : Q) (z : 𝒜) :
   rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
 
 variable {M : Type*} [AddCommGroup M] [Module (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
-  [Module k M] [IsScalarTower k (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
+  [Module k M]
 
 /-- **The universal property of the universal derivation.** A `k`-linear derivation `D` of the path
 algebra into a bimodule `M` which kills the vertex idempotents factors through `∂`: the bimodule map
@@ -762,19 +762,31 @@ theorem arrowTensorLift_arrowTensorDerivation (D : 𝒜 →ₗ[k] M)
           rw [← mul_smul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul,
             arrowTensorIdempotent_def]
       _ = D (ofArrow b) := by rw [← hr, ← hl]
-  -- Both sides are `k`-linear in `x`, so they agree as linear maps, compared on the paths.
-  have key : (arrowTensorLift k Q (fun b ↦ D (ofArrow b.2.2))).restrictScalars k ∘ₗ
-      arrowTensorDerivation k Q = D := by
-    refine (pathAlgebraBasis k Q).ext fun q ↦ ?_
-    obtain ⟨s, t, q⟩ := q
-    simp only [coe_pathAlgebraBasis, LinearMap.comp_apply, LinearMap.restrictScalars_apply]
+  -- The derivation `D` is automatically `k`-linear for the action of `k` through `𝒜ᵉ`.
+  have hD₁ : D 1 = 0 := by
+    have h := hD 1 1
+    simp only [mul_one, op_one, ← Algebra.TensorProduct.one_def, one_smul] at h
+    exact add_eq_left.1 h.symm
+  have hsmul (c : k) (y : 𝒜) : D (c • y) = algebraMap k 𝒜ᵉ c • D y := by
+    have h := hD (c • (1 : 𝒜)) y
+    rw [map_smul, hD₁, smul_zero, smul_zero, add_zero, smul_mul_assoc, one_mul] at h
+    rw [h, Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_eq_smul_one]
+  -- Both sides are additive and `k`-homogeneous in `x`, so it suffices to compare them on paths.
+  have hx : x ∈ Submodule.span k (Set.range (pathAlgebraBasis k Q)) := by
+    rw [(pathAlgebraBasis k Q).span_eq]
+    trivial
+  refine Submodule.span_induction ?_ ?_ (fun x y _ _ hx hy ↦ ?_) (fun c x _ hx ↦ ?_) hx
+  · rintro _ ⟨⟨s, t, q⟩, rfl⟩
+    simp only [coe_pathAlgebraBasis]
     induction q with
     | nil => rw [← vertexIdempotent_eq_ofPath, arrowTensorDerivation_vertexIdempotent, map_zero,
         hD₀]
     | @cons t t' q c ih =>
       rw [← ofArrow_mul_ofPath, arrowTensorDerivation_mul, map_add, map_smul, map_smul, ih,
         arrowTensorLift_arrowTensorDerivation_ofArrow, hDb, hD]
-  exact LinearMap.congr_fun key x
+  · rw [map_zero, map_zero, map_zero]
+  · rw [map_add, map_add, map_add, hx, hy]
+  · rw [map_smul, ← algebraMap_smul 𝒜ᵉ c, map_smul, hx, hsmul]
 
 end PathAlgebra
 

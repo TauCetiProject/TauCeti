@@ -122,7 +122,7 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) →
-      0 ≤ k → 0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      0 ≤ k → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
         W1p.value u x ≤ k + D * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι *
           R ^ (-(Fintype.card ι : ℝ) / 2) *
@@ -130,7 +130,9 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
   obtain ⟨D, hD, hmain⟩ :=
     exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_caccioppoli (mu := mu)
   refine ⟨D * (4 * (1 + 2 * (2 * Lam / lam) ^ 2)) ^ Fintype.card ι, by positivity, ?_⟩
-  intro Omega a b c beta gamma u k x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hk hR hball
+  intro Omega a b c beta gamma u k x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hk hball
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   have hU : (⟨Metric.ball x₀ R, Metric.isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ≤ Omega :=
     hball
   have hmono : mu.restrict (Metric.ball x₀ R) ≤ mu.restrict Omega :=
@@ -183,7 +185,7 @@ theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
       (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
       (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = 0) →
-      0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
         |W1p.value u x| ≤ D * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι *
           R ^ (-(Fintype.card ι : ℝ) / 2) *
@@ -192,14 +194,16 @@ theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
     exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
       (lam := lam) (Lam := Lam)
   refine ⟨D, hD, ?_⟩
-  intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hR hball
+  intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hball
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (-u) (v : W1p mu Omega 2) = 0 := fun v => by
     rw [energyFormH1_neg_left, hu v, neg_zero]
   exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le (by positivity) hball
     (by simpa only [zero_add, sub_zero] using
-      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu v).le) le_rfl hR hball)
+      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu v).le) le_rfl hball)
     (by simpa only [zero_add, sub_zero] using
-      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu' v).le) le_rfl hR hball)
+      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu' v).le) le_rfl hball)
 
 end PDE
 

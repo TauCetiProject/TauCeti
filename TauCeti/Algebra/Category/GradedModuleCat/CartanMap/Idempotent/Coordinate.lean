@@ -180,7 +180,7 @@ theorem coeff_gradedIdempotentCoordinate_gradedCartanMap_ofIdeal_span_singleton
             gradedFiniteProjectiveModules_ofIdeal_span_singleton hf hI⟩))).coeff p =
       Module.finrank k ↥(cornerSubmodule k e f ⊓ 𝒜 p) := by
   rw [gradedCartanMap_of, gradedIdempotentCoordinate_of]
-  exact GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton he he₀ hf hI p
+  exact GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton he₀ hI p
 
 /-- **The graded Cartan matrix in idempotent coordinates.** Let `bM` be a basis of
 `G₀^gr(mod A)` dual to the idempotent coordinates of degree-zero idempotents `eᵢ`, in the sense

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Rigid
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Balanced
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Functor.Basic
 
 /-!
@@ -38,6 +39,9 @@ the half-braiding induced on `Xᘁ` is, at `Uᘁ`, the mate of `β U`
 * `CategoryTheory.Center.pivotalCategory`: the pivotal structure on the centre of a pivotal
   category, whose components are those of `C` (`CategoryTheory.Center.pivotalIsoApp_hom_f` and
   `CategoryTheory.Center.pivotalIsoApp_inv_f`);
+* `CategoryTheory.Center.balancedOfBraidedPivotal_twist_inv_app_f`: the inverse of the twist
+  `TauCeti.balancedOfBraidedPivotal (Center C)` induced by the braiding and the pivotal structure
+  of the centre, computed in `C` from the half-braiding and the pivotal pairing;
 * `CategoryTheory.Center.isPivotal_forget`: the forgetful functor from the centre is pivotal, so
   that `CategoryTheory.Center.leftTrace_f` and `CategoryTheory.Center.rightTrace_f` compute the
   traces of the centre in `C`;
@@ -148,6 +152,22 @@ theorem pivotalIsoApp_inv_f (X : Center C) : (pivotalIsoApp X).inv.f = (pivotalI
   have h := congrArg Hom.f (pivotalIsoApp X).inv_hom_id
   simp only [comp_f, id_f, pivotalIsoApp_hom_f] at h
   exact (Iso.comp_hom_eq_id _).1 h
+
+/-- The inverse twist of the centre of a pivotal category is computed in `C`: at `X` it inserts
+the coevaluation `𝟙_ C ⟶ X.1ᘁ ⊗ X.1` of the pivotal pairing, moves `X.1` past `X.1ᘁ` with the
+half-braiding of `X`, and contracts `X.1` against `X.1ᘁ`. -/
+theorem balancedOfBraidedPivotal_twist_inv_app_f (X : Center C) :
+    ((balancedOfBraidedPivotal (Center C)).twist.inv.app X).f =
+      (ρ_ X.1).inv ≫ X.1 ◁ @ExactPairing.coevaluation C _ _ X.1ᘁ X.1 (pivotalExactPairing X.1) ≫
+        (α_ X.1 X.1ᘁ X.1).inv ≫ (X.2.β X.1ᘁ).hom ▷ X.1 ≫ ε_ X.1 X.1ᘁ ▷ X.1 ≫ (λ_ X.1).hom := by
+  rw [balancedOfBraidedPivotal_twist_inv_app, comp_f, pivotalIsoApp_inv_f,
+    pivotalExactPairing_coevaluation]
+  -- Rewriting with `drinfeldIso_hom_f` directly would leave a composite through the object
+  -- `(Xᘁᘁ).1` rather than `X.1ᘁᘁ`, which `simp` cannot reassociate; the congruence avoids this.
+  refine (congrArg (· ≫ (pivotalIsoApp X.1).inv) (drinfeldIso_hom_f X)).trans ?_
+  -- Slide the inverse pivotal isomorphism from the end of the loop to the coevaluation.
+  simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc,
+    associator_inv_naturality_right_assoc, whisker_exchange_assoc, leftUnitor_naturality]
 
 /-- The forgetful functor from the centre of a pivotal category is a pivotal functor. -/
 instance isPivotal_forget : (forget C).IsPivotal :=

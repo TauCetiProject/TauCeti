@@ -403,7 +403,7 @@ theorem natCard_stabilizer_triangleGroup (hp : P.interiorAngle 0 = p.angle)
     (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) {i : Fin 3} {z : ℍ}
     (hz : P.vertex i = .inl z) :
     Nat.card (stabilizer P.triangleGroup z) = (![p, q, r] i).order := by
-  obtain ⟨k, h₀, h₁, hlf, hdisj⟩ :=
+  obtain ⟨k, h₀, h₁, _, hdisj⟩ :=
     exists_rotate_locallyFinite_and_disjoint_doubleTriangle hp hq hr
   have hi := interiorAngle_eq_pi_div_order hp hq hr i
   have hm := P.ne_zero_of_interiorAngle_eq_pi_div (by simp [hz]) hi

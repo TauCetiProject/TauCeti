@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Artinian.Defs
 public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleComposite
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
-import TauCeti.CategoryTheory.Preadditive.KrullSchmidt
+import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Decomposition
 import TauCeti.CategoryTheory.Preadditive.Radical.Nilpotent
 import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.Jacobson.Semiprimary

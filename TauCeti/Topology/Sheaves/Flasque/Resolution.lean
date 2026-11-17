@@ -32,6 +32,8 @@ argument.
 * `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque`: `RⁿΓ(F) ≅ Hⁿ(Γ(K))` for a flasque
   resolution `K` of `F`, characterized through any injective resolution and comparison map by
   `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap`.
+* `CategoryTheory.Sheaf.rightDerivedΓIsoOfIsFlasque`: the natural isomorphism for a functorial
+  flasque resolution.
 
 ## References
 
@@ -107,5 +109,32 @@ lemma rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap (n : ℕ) (I : Inject
           (I.isoRightDerivedObj (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)) n).hom :=
   Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap _ _ _ _ _ ι
     (fun n ↦ isFlasque_iff.mpr (hK n)) n I φ hφ
+
+/-- A functorial flasque resolution computes the native right derived functors of global
+sections, naturally in the sheaf. No injectivity of the terms of the resolution is assumed. -/
+noncomputable def rightDerivedΓIsoOfIsFlasque
+    (K : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤
+      CochainComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) ℕ)
+    (ι : single₀ _ ⟶ K) [∀ F, QuasiIso (ι.app F)]
+    (hK : ∀ F n, TopCat.Presheaf.IsFlasque ((K.obj F).X n).obj) (n : ℕ) :
+    (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerived n ≅
+      K ⋙ (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _ ⋙
+        HomologicalComplex.homologyFunctor _ _ n :=
+  Functor.rightDerivedIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (isFlasque X _) (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) isFlasque_X₃
+    shortExact_map_Γ_of_isFlasque K ι (fun F n ↦ isFlasque_iff.mpr (hK F n)) n
+
+/-- Each component of the functorial flasque comparison is the comparison for that resolution.
+-/
+@[simp]
+lemma rightDerivedΓIsoOfIsFlasque_app
+    (K : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤
+      CochainComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) ℕ)
+    (ι : single₀ _ ⟶ K) [∀ F, QuasiIso (ι.app F)]
+    (hK : ∀ F n, TopCat.Presheaf.IsFlasque ((K.obj F).X n).obj) (n : ℕ)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (rightDerivedΓIsoOfIsFlasque K ι hK n).app F =
+      rightDerivedΓObjIsoOfIsFlasque (ι.app F) (hK F) n := by
+  simp [rightDerivedΓIsoOfIsFlasque, rightDerivedΓObjIsoOfIsFlasque]
 
 end CategoryTheory.Sheaf

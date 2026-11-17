@@ -177,7 +177,7 @@ in its orthogonal complement, in the nondegenerate module of glue words of order
 theorem natCard_glueSubgroup_le (r : RootfulNiemeierType) :
     Nat.card r.glueSubgroup ≤ r.glueOrder := by
   have hA := DynkinType.isNondegenerate_pi_glueAlphabet r.componentType
-    r.isSimplyLaced_componentType r.valid_componentType
+    r.isSimplyLaced_componentType
   have hmul := FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement _ hA
     r.glueSubgroup
   have hle := AddSubgroup.card_le_of_le
@@ -340,7 +340,7 @@ square of its order `|H|` is the order of the module of glue words. -/
 theorem isLagrangian_glueSubgroup (r : RootfulNiemeierType) :
     r.glueModule.IsLagrangian r.glueSubgroup :=
   r.isIsotropic_glueSubgroup.isLagrangian_of_card_sq_eq _
-    (DynkinType.isNondegenerate_pi_glueAlphabet _ _ r.valid_componentType)
+    (DynkinType.isNondegenerate_pi_glueAlphabet _ _)
     (by rw [natCard_glueSubgroup, glueOrder_sq_eq_natCard_glueModule])
 
 /-- **Every nonzero word of the glue subgroup of every row has glue minimum `μ(w) ≥ 4`.** -/

@@ -20,7 +20,7 @@ opens is equivariant, and the basic open of an invariant section is invariant.
 
 For an invariant affine open `U`, the action on `Γ(X, U)` is the one whose affine invariant quotient
 `Spec Γ(X, U)ᴳ` is a chart of the quotient of `X` by `G`, constructed in
-`TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Glued`.
+`TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Glued.Basic`.
 
 ## Main definitions
 

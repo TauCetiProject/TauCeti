@@ -27,7 +27,7 @@ variable {R ι : Type*} [Ring R] [Finite ι]
 
 /-- A multilinear map killing a submodule in each slot takes the same value on tuples
 representing the same quotient classes. -/
-theorem apply_eq_of_mkQ_eq (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i))
+theorem apply_eq_of_mkQ_eq (f : MultilinearMap (RingHom.id R) M P) (N : ∀ i, Submodule R (M i))
     (hf : ∀ [DecidableEq ι] (m : ∀ i, M i) (i : ι) (x : M i),
       x ∈ N i → f (Function.update m i x) = 0)
     {a b : ∀ i, M i} (h : ∀ i, (N i).mkQ (a i) = (N i).mkQ (b i)) : f a = f b := by
@@ -45,7 +45,7 @@ theorem apply_eq_of_mkQ_eq (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M
       hf (s.piecewise (a - b) b) i (a i - b i) (hab i)
   · simp
 
-private theorem apply_update_out_eq (f : MultilinearMap R M P)
+private theorem apply_update_out_eq (f : MultilinearMap (RingHom.id R) M P)
     (N : ∀ i, Submodule R (M i))
     (hf : ∀ [DecidableEq ι] (m : ∀ i, M i) (i : ι) (x : M i),
       x ∈ N i → f (Function.update m i x) = 0)
@@ -61,10 +61,10 @@ private theorem apply_update_out_eq (f : MultilinearMap R M P)
 
 /-- Descend a multilinear map to a family of quotient modules. The hypothesis requires
 vanishing when any one coordinate belongs to its prescribed submodule. -/
-noncomputable def liftQ (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i))
+noncomputable def liftQ (f : MultilinearMap (RingHom.id R) M P) (N : ∀ i, Submodule R (M i))
     (hf : ∀ [DecidableEq ι] (m : ∀ i, M i) (i : ι) (x : M i),
       x ∈ N i → f (Function.update m i x) = 0) :
-    MultilinearMap R (fun i ↦ M i ⧸ N i) P where
+    MultilinearMap (RingHom.id R) (fun i ↦ M i ⧸ N i) P where
   toFun m := f (fun i ↦ (m i).out)
   map_update_add' m i x y := by
     classical
@@ -80,7 +80,7 @@ noncomputable def liftQ (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i)
 
 /-- Evaluation of the descended multilinear map on quotient classes. -/
 @[simp]
-theorem liftQ_apply (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i))
+theorem liftQ_apply (f : MultilinearMap (RingHom.id R) M P) (N : ∀ i, Submodule R (M i))
     (hf : ∀ [DecidableEq ι] (m : ∀ i, M i) (i : ι) (x : M i),
       x ∈ N i → f (Function.update m i x) = 0) (m : ∀ i, M i) :
     f.liftQ N hf (fun i ↦ Submodule.Quotient.mk (m i)) = f m := by
@@ -90,10 +90,10 @@ theorem liftQ_apply (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i))
   exact Submodule.Quotient.mk_out _
 
 /-- A descended multilinear map is uniquely determined by evaluation on quotient classes. -/
-theorem liftQ_unique (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i))
+theorem liftQ_unique (f : MultilinearMap (RingHom.id R) M P) (N : ∀ i, Submodule R (M i))
     (hf : ∀ [DecidableEq ι] (m : ∀ i, M i) (i : ι) (x : M i),
       x ∈ N i → f (Function.update m i x) = 0)
-    (g : MultilinearMap R (fun i ↦ M i ⧸ N i) P)
+    (g : MultilinearMap (RingHom.id R) (fun i ↦ M i ⧸ N i) P)
     (hg : g.compLinearMap (fun i ↦ (N i).mkQ) = f) : g = f.liftQ N hf := by
   apply compLinearMap_injective (fun i ↦ (N i).mkQ) (fun i ↦ (N i).mkQ_surjective)
   ext m

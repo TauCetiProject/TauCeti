@@ -301,6 +301,51 @@ namespace TauCeti.PrincipalBundle
 
 variable [ContMDiffFiberBundle n G P IB IG] [ContMDiffMul IG n G] {b : B}
 
+omit [Group G] [ContMDiffMul IG n G] [(b : B) → MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
+/-- The tangent-level computation behind `mfderiv_smul_aux`, for abstract maps. Let `O : G → T`
+have the left inverse `ψ`, let `O ∘ ψ = F ∘ (b, s)` and `F ∘ (proj, s) = id` near `x₀ = O g₀`, and
+let `proj ∘ O` be constant. Then the derivative of `ψ` at `x₀` is a left inverse of the derivative
+of `O` at `g₀`, and a right inverse on the kernel of the derivative of `proj` at `x₀`. -/
+private theorem mfderiv_vertical_aux {proj : ManifoldTotalSpace G P → B}
+    {s ψ : ManifoldTotalSpace G P → G} {F : B × G → ManifoldTotalSpace G P}
+    {O : G → ManifoldTotalSpace G P} {x₀ : ManifoldTotalSpace G P} {g₀ : G}
+    (hprojO : proj ∘ O = fun _ ↦ b) (hψO' : ∀ g, ψ (O g) = g)
+    (hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x))
+    (hFid : F ∘ (fun x ↦ (proj x, s x)) =ᶠ[𝓝 x₀] id) (hxO : O g₀ = x₀)
+    (hproj : MDifferentiableAt (IB.prod IG) IB proj x₀)
+    (hsD : MDifferentiableAt (IB.prod IG) IG s x₀) (hψ : MDifferentiableAt (IB.prod IG) IG ψ x₀)
+    (hO : MDifferentiableAt IG (IB.prod IG) O g₀)
+    (hF : MDifferentiableAt (IB.prod IG) (IB.prod IG) F (b, s x₀)) :
+    (∀ ξ, mfderiv (IB.prod IG) IB proj x₀ (mfderiv IG (IB.prod IG) O g₀ ξ) = 0) ∧
+    ∃ L : TangentSpace (IB.prod IG) x₀ →L[𝕜] TangentSpace IG g₀,
+      (∀ ξ, L (mfderiv IG (IB.prod IG) O g₀ ξ) = ξ) ∧
+      ∀ w, mfderiv (IB.prod IG) IB proj x₀ w = 0 → mfderiv IG (IB.prod IG) O g₀ (L w) = w := by
+  refine ⟨fun ξ ↦ ?_, mfderiv (IB.prod IG) IG ψ x₀, fun ξ ↦ ?_, fun w hw ↦ ?_⟩
+  · have := mfderiv_comp_apply_of_eq g₀ hproj hO hxO ξ
+    rw [hprojO, mfderiv_const] at this
+    exact this.symm
+  · have := mfderiv_comp_apply_of_eq g₀ hψ hO hxO ξ
+    rw [show ψ ∘ O = id from funext hψO', mfderiv_id] at this
+    exact this.symm
+  · -- Differentiate `O ∘ ψ = F ∘ (b, s)` and `F ∘ (π, s) = id` at `x₀`.
+    have hproj₀ : proj x₀ = b := hxO ▸ congrFun hprojO g₀
+    have h₁ := mfderiv_comp_apply_of_eq x₀ hO hψ (hxO ▸ hψO' g₀) w
+    rw [hOψ, mfderiv_comp_apply_of_eq (f := fun x ↦ (b, s x)) x₀ hF
+      (mdifferentiableAt_const.prodMk hsD) rfl, mfderiv_prodMk mdifferentiableAt_const hsD,
+      mfderiv_const] at h₁
+    have h₂ := mfderiv_comp_apply_of_eq (f := fun x ↦ (proj x, s x)) x₀ hF
+      (hproj.prodMk hsD) (by rw [hproj₀]) w
+    rw [hFid.mfderiv_eq, mfderiv_id, ContinuousLinearMap.comp_id, mfderiv_prodMk hproj hsD] at h₂
+    -- `tangentSpaceCast` identifies the tangent spaces at the equal points `x₀` and
+    -- `F (proj x₀, s x₀)`, and is the identity on vectors.
+    change w = _ at h₂
+    -- The two expressions differ only in the base component, which vanishes for vertical `w`.
+    have h₃ : (ContinuousLinearMap.prod 0 (mfderiv (IB.prod IG) IG s x₀)) w =
+        ((mfderiv (IB.prod IG) IB proj x₀).prod (mfderiv (IB.prod IG) IG s x₀)) w :=
+      Prod.ext hw.symm rfl
+    exact h₁.symm.trans
+      ((congrArg (mfderiv (IB.prod IG) (IB.prod IG) F (b, s x₀)) h₃).trans h₂.symm)
+
 /-- Tangent-level properties of the orbit map `g ↦ p • g` through a point `p` of the fibre over
 `b`, at `g₀`. Its derivative is killed by the derivative of the projection, and it has a
 continuous linear left inverse that is also a right inverse on the kernel of the derivative of the
@@ -342,10 +387,8 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
   have hψO' (g : G) : ψ (O g) = g := by
     simp only [ψ, s, O, Φ, Homeomorph.symm_apply_apply, e.snd_apply_smul hb p g,
       inv_mul_cancel_left]
-  have hψO : ψ ∘ O = id := funext hψO'
   have hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x) := funext fun x ↦ by
     rw [Function.comp_apply, Function.comp_apply, ← hFO, mul_inv_cancel_left]
-  have hproj₀ : proj x₀ = b := congrFun hprojO g₀
   have hFid : F ∘ (fun x ↦ (proj x, s x)) =ᶠ[𝓝 x₀] id := by
     have hx₀ : x₀ ∈ Φ.symm ⁻¹' e.source := by
       simpa only [mem_preimage, x₀, Φ, Homeomorph.symm_apply_apply] using e.mem_source.2 hb
@@ -367,30 +410,7 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
   have hF : MDifferentiableAt (IB.prod IG) (IB.prod IG) F (b, s x₀) :=
     (((ManifoldTotalSpace.contMDiffOn_trivialization_symm e).contMDiffAt
       (e.open_target.mem_nhds (e.mem_target.2 hb))).mdifferentiableAt hn)
-  refine ⟨fun ξ ↦ ?_, mfderiv (IB.prod IG) IG ψ x₀, fun ξ ↦ ?_, fun w hw ↦ ?_⟩
-  · have := mfderiv_comp_apply_of_eq g₀ hproj hO rfl ξ
-    rw [hprojO, mfderiv_const] at this
-    exact this.symm
-  · have := mfderiv_comp_apply_of_eq g₀ hψ hO rfl ξ
-    rw [hψO, mfderiv_id] at this
-    exact this.symm
-  · -- Differentiate `O ∘ ψ = F ∘ (b, s)` and `F ∘ (π, s) = id` at `x₀`.
-    have h₁ := mfderiv_comp_apply_of_eq x₀ hO hψ (hψO' g₀) w
-    rw [hOψ, mfderiv_comp_apply_of_eq (f := fun x ↦ (b, s x)) x₀ hF
-      (mdifferentiableAt_const.prodMk hsD) rfl, mfderiv_prodMk mdifferentiableAt_const hsD,
-      mfderiv_const] at h₁
-    have h₂ := mfderiv_comp_apply_of_eq (f := fun x ↦ (proj x, s x)) x₀ hF
-      (hproj.prodMk hsD) (by rw [hproj₀]) w
-    rw [hFid.mfderiv_eq, mfderiv_id, ContinuousLinearMap.comp_id, mfderiv_prodMk hproj hsD] at h₂
-    -- `tangentSpaceCast` identifies the tangent spaces at the equal points `x₀` and
-    -- `F (proj x₀, s x₀)`, and is the identity on vectors.
-    change w = _ at h₂
-    -- The two expressions differ only in the base component, which vanishes for vertical `w`.
-    have h₃ : (ContinuousLinearMap.prod 0 (mfderiv (IB.prod IG) IG s x₀)) w =
-        ((mfderiv (IB.prod IG) IB proj x₀).prod (mfderiv (IB.prod IG) IG s x₀)) w :=
-      Prod.ext hw.symm rfl
-    exact h₁.symm.trans
-      ((congrArg (mfderiv (IB.prod IG) (IB.prod IG) F (b, s x₀)) h₃).trans h₂.symm)
+  exact mfderiv_vertical_aux hprojO hψO' hOψ hFid rfl hproj hsD hψ hO hF
 
 variable (IB IG) in
 /-- **The orbit maps of a principal bundle have injective derivative.** For a point `p` of the

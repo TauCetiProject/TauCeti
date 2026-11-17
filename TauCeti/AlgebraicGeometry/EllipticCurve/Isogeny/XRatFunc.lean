@@ -45,6 +45,8 @@ point with `x`-coordinate `r(x₀)`. This is what makes `φ` a morphism of degre
 * `TauCeti.Isogeny.degree_eq_max_natDegree_xRatFunc`: `deg φ` is the degree of `r`.
 * `TauCeti.Isogeny.natDegree_denom_lt_natDegree_num_xRatFunc`: the numerator of `r` has larger
   degree than its denominator, as `x ∘ φ` has a pole at infinity.
+* `TauCeti.Isogeny.degree_eq_natDegree_num_xRatFunc`: hence `deg φ` is the degree of the numerator
+  of `r`.
 * `TauCeti.Isogeny.pointMap_ofIsogeny_some_eq_zero_iff`: `φ` sends `(x₀, y₀)` to the point at
   infinity exactly when the denominator of `r` vanishes at `x₀`.
 * `TauCeti.Isogeny.xCoord_pointMap_ofIsogeny_some`: otherwise the image has `x`-coordinate `r(x₀)`.
@@ -176,6 +178,13 @@ theorem natDegree_denom_lt_natDegree_num_xRatFunc (φ : Isogeny W₁ W₂) :
   rw [infinityPlace_algebraMap_ratFunc _ h0, ← WithZero.exp_zero, WithZero.exp_lt_exp,
     RatFunc.intDegree] at h
   omega
+
+/-- **The degree of an isogeny is the degree of the numerator of its `x`-coordinate**, since the
+numerator of `φ.xRatFunc` has larger degree than its denominator. -/
+theorem degree_eq_natDegree_num_xRatFunc (φ : Isogeny W₁ W₂) :
+    φ.degree = φ.xRatFunc.num.natDegree := by
+  rw [degree_eq_max_natDegree_xRatFunc,
+    max_eq_left (natDegree_denom_lt_natDegree_num_xRatFunc φ).le]
 
 /-! ### The action on points -/
 

@@ -28,7 +28,7 @@ together with its exact domain of summability.
 * `Real.neg_log_one_sub_rpow_sub_le_div`: for `2 ≤ y` and `0 < s`, it is at most
   `y ^ (-2s) / (2 (1 - 2 ^ (-s)))`.
 * `Real.neg_log_one_sub_rpow_sub_le`: for `2 ≤ y` and `1 ≤ s`, it is at most `y⁻²`.
-* `Real.neg_log_one_sub_le_add_two_mul_sq`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most
+* `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
 * `Real.neg_log_one_sub_nonneg`: `0 ≤ -log (1 - x)` for `0 ≤ x ≤ 1`.
@@ -117,17 +117,16 @@ theorem neg_log_one_sub_rpow_sub_le {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) :
     _ = y ^ (-(2 * s)) := by rw [pow_two, ← rpow_add hy0, ← two_mul, mul_neg]
     _ ≤ y ^ (-(2 : ℝ)) := rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
 
-/-- For `0 ≤ x ≤ 1/2`, `-log (1 - x) ≤ x + 2 x ^ 2`. -/
-theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 1 / 2) :
+/-- For `x ≤ 1/2`, `-log (1 - x) ≤ x + 2 x ^ 2`. -/
+theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :
     -log (1 - x) ≤ x + 2 * x ^ 2 := by
-  -- The first-order Taylor estimate `|x + log (1 - x)| ≤ x ^ 2 / (1 - x)`.
-  have h := abs_log_sub_add_sum_range_le (x := x) (by rw [abs_of_nonneg hx0]; linarith) 1
-  simp only [Finset.range_one, Finset.sum_singleton, zero_add, pow_one, Nat.cast_zero, div_one,
-    abs_of_nonneg hx0] at h
-  have h' : x ^ 2 / (1 - x) ≤ 2 * x ^ 2 := by
-    rw [div_le_iff₀ (by linarith)]
-    nlinarith [sq_nonneg x]
-  linarith [(abs_le.mp h).1]
+  have h1 : 0 < 1 - x := by linarith
+  -- `-log (1 - x) = log (1 - x)⁻¹ ≤ (1 - x)⁻¹ - 1 = x / (1 - x)`.
+  have h := log_le_sub_one_of_pos (inv_pos.2 h1)
+  rw [log_inv, inv_eq_one_div, div_sub_one h1.ne'] at h
+  refine h.trans ?_
+  rw [div_le_iff₀ h1]
+  nlinarith [mul_nonneg (sq_nonneg x) (by linarith : 0 ≤ 1 - 2 * x)]
 
 /-- For `0 < x < 1`, the logarithm `log (1 - x)` is negative. -/
 theorem log_one_sub_neg {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) : log (1 - x) < 0 :=

@@ -43,6 +43,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
+* `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_volumeForm_apply_ne_zero`: a two-form is
   nondegenerate exactly when its volume form vanishes nowhere.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_ne_zero`: the volume form of a
@@ -88,6 +89,14 @@ def volumeForm (σ : SmoothTwoForm I M) (n : ℕ) : SmoothForm I M ℝ (2 * n) :
 theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).1 x = ((n.factorial : ℝ)⁻¹) • (σ.1 x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
+
+/-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
+@[simp]
+theorem volumeForm_smul (c : ℝ) (σ : SmoothTwoForm I M) (n : ℕ) :
+    (c • σ).volumeForm n = c ^ n • σ.volumeForm n := by
+  refine Subtype.ext (funext fun x ↦ ?_)
+  rw [Submodule.coe_smul, Pi.smul_apply, volumeForm_apply, volumeForm_apply, Submodule.coe_smul,
+    Pi.smul_apply, ContinuousAlternatingMap.wedgePow_smul, smul_comm]
 
 /-- **The symplectic volume form takes the value `1` on Darboux bases.** For a Darboux basis
 `(q₁, p₁, …, qₙ, pₙ)` of the tangent space at `x`, listed in this interleaved order,
@@ -159,6 +168,22 @@ theorem IsNondegenerate.orientationAt_volumeOrientation [FiniteDimensional ℝ E
   rw [← hb.orientation_reindex hn (Nat.mul_comm n 2), eq_comm,
     h.orientation_eq_orientationAt_volumeOrientation_iff hn, h.volumeForm_apply_reindex hb]
   exact one_pos
+
+/-- **Pullback of the symplectic volume form.** If a map `f` pulls the two-form `τ` back to `σ`,
+then it pulls the volume form `τⁿ / n!` back to `σⁿ / n!`. -/
+theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.1 = σ.1) :
+    mpullback I J f (τ.volumeForm n).1 = (σ.volumeForm n).1 := by
+  ext x v
+  have hx : σ.1 x = (τ.1 (f x)).compContinuousLinearMap (mfderiv I J f x) := by
+    ext w
+    rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  rw [mpullback_apply, volumeForm_apply, volumeForm_apply, hx,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
 
 end SmoothTwoForm
 

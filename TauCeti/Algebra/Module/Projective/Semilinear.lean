@@ -24,6 +24,8 @@ homomorphism of possibly noncommutative rings preserves projectivity: an `S`-lin
 
 * `Module.projective_lifting_property_semilinear`: semilinear maps out of a projective module lift
   along surjective linear maps.
+* `Module.exists_surjective_projective_ker_of_semilinearEquiv`: a presentation with projective
+  kernel transports along a semilinear equivalence.
 -/
 
 public section
@@ -47,5 +49,35 @@ theorem projective_lifting_property_semilinear [Module.Projective R P] (F : M �
     ({ g.toAddMonoidHom with map_smul' := g.map_smulₛₗ } : P →ₗ[R] N) hF
   exact ⟨{ h.toAddMonoidHom with map_smul' := h.map_smul },
     LinearMap.ext fun p ↦ LinearMap.congr_fun hh p⟩
+
+/-- **A presentation with projective kernel transports along a semilinear equivalence.** Let
+`Φ : R ≃+* R'` be a ring isomorphism and `e : M ≃ₛₗ[Φ] M'` a `Φ`-semilinear equivalence. If `M'` is
+a quotient `(ι → R') → M'` by a projective kernel, then so is `M` as a quotient of
+`ι → R`. -/
+theorem exists_surjective_projective_ker_of_semilinearEquiv {R R' : Type*} [Semiring R]
+    [Semiring R'] {M M' : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid M']
+    [Module R' M'] (Φ : R ≃+* R') [RingHomInvPair (Φ : R →+* R') (Φ.symm : R' →+* R)]
+    [RingHomInvPair (Φ.symm : R' →+* R) (Φ : R →+* R')] (e : M ≃ₛₗ[(Φ : R →+* R')] M') {ι : Type*}
+    (f' : (ι → R') →ₗ[R'] M') (hf' : Function.Surjective f')
+    (hker : Module.Projective R' (LinearMap.ker f')) :
+    ∃ f : (ι → R) →ₗ[R] M, Function.Surjective f ∧ Module.Projective R (LinearMap.ker f) := by
+  let PΦ : (ι → R) ≃ₛₗ[(Φ : R →+* R')] (ι → R') :=
+    { toFun v i := Φ (v i)
+      invFun v i := Φ.symm (v i)
+      map_add' _ _ := funext fun _ ↦ map_add Φ _ _
+      map_smul' _ _ := funext fun _ ↦ map_mul Φ _ _
+      left_inv _ := funext fun _ ↦ Φ.symm_apply_apply _
+      right_inv _ := funext fun _ ↦ Φ.apply_symm_apply _ }
+  let f : (ι → R) →ₗ[R] M := e.symm.toLinearMap.comp (f'.comp PΦ.toLinearMap)
+  have hker' : (LinearMap.ker f).map (PΦ : (ι → R) →ₛₗ[(Φ : R →+* R')] (ι → R')) =
+      LinearMap.ker f' := by
+    ext v
+    rw [Submodule.mem_map_equiv, LinearMap.mem_ker, LinearMap.mem_ker]
+    -- Unfold the local definitions of `f` and of the inverse of `PΦ`.
+    change e.symm (f' (PΦ (PΦ.symm v))) = 0 ↔ _
+    rw [LinearEquiv.apply_symm_apply, LinearEquiv.map_eq_zero_iff]
+  exact ⟨f, e.symm.surjective.comp (hf'.comp PΦ.surjective),
+    .of_equiv (σ := (Φ.symm : R' →+* R)) (σ' := (Φ : R →+* R'))
+      (PΦ.ofSubmodules _ _ hker').symm⟩
 
 end Module

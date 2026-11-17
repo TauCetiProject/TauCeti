@@ -27,7 +27,9 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    # Keep unbounded/long-running research and maintenance off the hosted
+    # capacity shared by small automation and roadmap merge builds.
+    runs-on: ubuntu-24.04
     outputs:
       outcome: ${{ steps.lint.outputs.outcome }}
       sha: ${{ steps.lint.outputs.sha }}
@@ -54,10 +56,10 @@ jobs:
           fetch-depth: 100
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -100,8 +102,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -168,12 +173,6 @@ jobs:
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
 
-      - name: Save verified Lake archive records before building
-        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
-
-      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
-      # The build globs every TauCeti/ module directly, so nothing depends on a root that
-      # re-exports the library.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;

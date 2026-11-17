@@ -78,7 +78,7 @@ variable {ι : Type*}
 
 /-- A completed function regular at `P'` and vanishing there to order `e(P' ∣ P)` is a multiple of
 a uniformizer of `P`: it lies in `𝔪̂_P • 𝒪̂_{P'}`. -/
-private theorem mem_maximalIdeal_smul_top_of_mem_filtration {z : P'.completionPlace.integers}
+theorem mem_maximalIdeal_smul_top_of_mem_filtration {z : P'.completionPlace.integers}
     (hz : (z : P'.Completion) ∈ P'.completionPlace.filtration (ramificationIdx F P')) :
     letI := P.completionIntegersExtensionAlgebra P' hP
     z ∈ (maximalIdeal P.completionPlace.integers • ⊤ :
@@ -124,10 +124,6 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   have := Fintype.ofFinite ι
   subst hP
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-  have : IsLocalHom (algebraMap (P'.restrict k F).completionPlace.integers
-      P'.completionPlace.integers) := by
-    rw [algebraMap_completionIntegersExtensionAlgebra]
-    infer_instance
   have : IsHausdorff (maximalIdeal (P'.restrict k F).completionPlace.integers)
       P'.completionPlace.integers :=
     .of_map (map_maximalIdeal_le (algebraMap _ P'.completionPlace.integers))
@@ -135,8 +131,7 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   refine surjective_of_mkQ_comp_surjective
     (I := maximalIdeal (P'.restrict k F).completionPlace.integers) fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-  obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem
-    (a := 0) (b := ramificationIdx F P') (by positivity)
+  obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem (ramificationIdx F P')
     ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
   obtain ⟨c, hc⟩ := exists_sub_sum_mem_filtration k F P' u hu (y := y₀) (by simpa using ht)
     (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.2)
@@ -247,8 +242,7 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
       c i / c i₀ - (P'.restrict k F).completionEmbedding d ∈
         (P'.restrict k F).completionPlace.filtration 1 := by
     intro i
-    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem
-      (a := 0) (b := 1) zero_le_one
+    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem 1
       ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
     exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.2⟩, hd⟩
   choose d hd using happrox

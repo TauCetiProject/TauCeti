@@ -25,6 +25,8 @@ These are the inequalities satisfied at the contact points of John's position; s
   `re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖` for all `x`.
 * `ContinuousLinearMap.norm_inner_le_norm_mul_norm_apply`: under the same hypotheses,
   `‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖`.
+* `ContinuousLinearMap.norm_comp_id_sub_smul_le`: the perturbation estimate behind John's
+  theorem, bounding the norm of `S ∘ (1 - δ H)` for a contraction `S` and small `δ > 0`.
 
 ## References
 
@@ -101,5 +103,40 @@ theorem norm_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤
   have h := S.re_inner_le_norm_mul_norm_apply hS hu (conj c • x)
   rwa [inner_smul_left, conj_conj, ← hcz, ofReal_re, map_smul, norm_smul, norm_conj, hc,
     one_mul] at h
+
+open RCLike in
+/-- The perturbation estimate behind John's theorem: if a contraction `S` has norm at most `1 - r`
+on the unit vectors `x` with `re ⟪x, H x⟫ ≤ s`, then `S ∘ (1 - δ H)` has norm at most
+`1 - δ s / 2` for small `δ > 0`. Near the remaining unit vectors `1 - δ H` itself shrinks the norm,
+since `‖x - δ H x‖² = 1 - 2 δ re ⟪x, H x⟫ + δ² ‖H x‖²`. -/
+theorem norm_comp_id_sub_smul_le {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) (H : E →L[𝕜] E)
+    {s r δ : ℝ} (hδ : 0 < δ) (hc : 0 < 1 - δ * (s / 2))
+    (hr : ∀ x, ‖x‖ = 1 → re ⟪x, H x⟫ ≤ s → ‖S x‖ ≤ 1 - r)
+    (h₁ : δ * ‖H‖ ^ 2 < s) (h₂ : δ * (‖H‖ + s / 2) < r) :
+    ‖S.comp (ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H)‖ ≤ 1 - δ * (s / 2) := by
+  refine ContinuousLinearMap.opNorm_le_of_unit_norm hc.le fun x hx ↦ ?_
+  have hHx : ‖H x‖ ≤ ‖H‖ := by simpa [hx] using H.le_opNorm x
+  rw [ContinuousLinearMap.comp_apply, _root_.sub_apply, ContinuousLinearMap.id_apply,
+    _root_.smul_apply]
+  by_cases hxs : re ⟪x, H x⟫ ≤ s
+  · have hSHx : ‖S (H x)‖ ≤ ‖H‖ := by
+      simpa using (S.le_of_opNorm_le hS (H x)).trans (by simpa using hHx)
+    calc ‖S (x - (δ : 𝕜) • H x)‖ = ‖S x - (δ : 𝕜) • S (H x)‖ := by simp
+      _ ≤ ‖S x‖ + δ * ‖S (H x)‖ := by
+        refine (norm_sub_le _ _).trans ?_
+        rw [norm_smul, norm_ofReal, abs_of_pos hδ]
+      _ ≤ (1 - r) + δ * ‖H‖ := by gcongr; exact hr x hx hxs
+      _ ≤ 1 - δ * (s / 2) := by nlinarith
+  · rw [not_le] at hxs
+    have hsq : ‖x - (δ : 𝕜) • H x‖ ^ 2 ≤ (1 - δ * (s / 2)) ^ 2 := by
+      rw [norm_sub_sq (𝕜 := 𝕜), inner_smul_right, re_ofReal_mul, norm_smul, norm_ofReal,
+        abs_of_pos hδ, hx, mul_pow]
+      have : δ ^ 2 * ‖H x‖ ^ 2 ≤ δ ^ 2 * ‖H‖ ^ 2 := by gcongr
+      have h₃ : δ * s < δ * re ⟪x, H x⟫ := mul_lt_mul_of_pos_left hxs hδ
+      have h₄ : δ * (δ * ‖H‖ ^ 2) < δ * s := mul_lt_mul_of_pos_left h₁ hδ
+      nlinarith [sq_nonneg (δ * (s / 2))]
+    calc ‖S (x - (δ : 𝕜) • H x)‖ ≤ ‖x - (δ : 𝕜) • H x‖ := by
+          simpa using S.le_of_opNorm_le hS (x - (δ : 𝕜) • H x)
+      _ ≤ 1 - δ * (s / 2) := (pow_le_pow_iff_left₀ (norm_nonneg _) hc.le two_ne_zero).1 hsq
 
 end ContinuousLinearMap

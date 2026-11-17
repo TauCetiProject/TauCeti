@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import Mathlib.Analysis.Normed.Group.Quotient
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -39,8 +41,10 @@ the compact perturbations of Fredholm modules.
   submodule of its kernel is compact.
 * `IsCompactOperator.totallyBounded_image_closedBall`: a compact operator maps closed balls to
   totally bounded sets.
-* `isCompactOperator_of_totallyBounded_image_closedBall`: conversely, a linear map into a complete
-  Hausdorff space that maps a closed ball of positive radius to a totally bounded set is compact.
+* `ContinuousLinearMap.exists_finiteDimensional_quotient_norm_le`: a compact operator becomes
+  arbitrarily small after quotienting its target by a finite-dimensional subspace.
+* `isCompactOperator_iff_totallyBounded_image_closedBall`: a linear map into a complete space is
+  compact exactly when it maps a closed ball of positive radius to a totally bounded set.
 -/
 
 public section
@@ -56,41 +60,38 @@ variable {R : Type*} [Semiring R] {M : Type*} [TopologicalSpace M] [AddCommMonoi
 
 /-- A bounded operator times a compact operator is compact. -/
 theorem mul_left {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
-    IsCompactOperator (S * T) := by
-  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
-  exact hT.clm_comp S
+    IsCompactOperator (S * T) :=
+  hT.clm_comp S
 
 /-- A compact operator times a bounded operator is compact. -/
 theorem mul_right {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
-    IsCompactOperator (T * S) := by
-  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
-  exact hT.comp_clm S
+    IsCompactOperator (T * S) :=
+  hT.comp_clm S
 
 end Mul
 
-variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-variable {K : X →ₗ[𝕜] Y}
+variable {𝕜₁ 𝕜₂ X Y : Type*} [NontriviallyNormedField 𝕜₁] [SeminormedRing 𝕜₂]
+  {σ₁₂ : 𝕜₁ →+* 𝕜₂} [SeminormedAddCommGroup X] [NormedSpace 𝕜₁ X] [AddCommMonoid Y]
+  [Module 𝕜₂ Y] {K : X →ₛₗ[σ₁₂] Y}
 variable {R : ℝ} {u : ℕ → X}
 
 /-- A compact operator sends a bounded sequence to a sequence with a convergent subsequence. -/
-theorem exists_subseq_tendsto (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) :
+theorem exists_subseq_tendsto [TopologicalSpace Y] [ContinuousConstSMul 𝕜₂ Y]
+    [FirstCountableTopology Y] (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) :
     ∃ (y : Y) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => K (u (ψ k))) atTop (𝓝 y) := by
   obtain ⟨S, hS, hSsub⟩ := hK.image_closedBall_subset_compact R
   obtain ⟨y, -, ψ, hψ, hψy⟩ :=
     hS.tendsto_subseq fun n => hSsub ⟨u n, by simpa using hu n, rfl⟩
   exact ⟨y, ψ, hψ, hψy⟩
 
-/-- A compact operator cannot keep the images of a bounded sequence pairwise separated: two
-distinct indices always have images within any prescribed positive distance. -/
-theorem exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) {ε : ℝ}
-    (hε : 0 < ε) : ∃ m n, m ≠ n ∧ dist (K (u m)) (K (u n)) < ε := by
+/-- A compact operator cannot keep the images of a bounded sequence pairwise separated: some
+two indices `m < n` always have images within any prescribed positive distance. -/
+theorem exists_dist_lt_of_norm_le [PseudoMetricSpace Y] [ContinuousConstSMul 𝕜₂ Y]
+    (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) {ε : ℝ} (hε : 0 < ε) :
+    ∃ m n, m < n ∧ dist (K (u m)) (K (u n)) < ε := by
   obtain ⟨y, ψ, hψ, hψy⟩ := hK.exists_subseq_tendsto hu
-  have hcauchy := hψy.cauchySeq
-  rw [Metric.cauchySeq_iff'] at hcauchy
-  obtain ⟨N, hN⟩ := hcauchy ε hε
-  exact ⟨ψ (N + 1), ψ N, by simp [hψ.injective.eq_iff], hN (N + 1) (Nat.le_succ N)⟩
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 hψy.cauchySeq ε hε
+  exact ⟨ψ N, ψ (N + 1), hψ N.lt_succ_self, dist_comm (K (u (ψ N))) _ ▸ hN _ N.le_succ⟩
 
 section Quotient
 
@@ -158,14 +159,50 @@ theorem IsCompactOperator.totallyBounded_image_closedBall (hf : IsCompactOperato
   obtain ⟨K, hK, hfK⟩ := hf.image_closedBall_subset_compact r
   exact hK.totallyBounded.subset hfK
 
-/-- A linear map into a complete Hausdorff space that maps a closed ball of positive radius to a
-totally bounded set is a compact operator. -/
-theorem isCompactOperator_of_totallyBounded_image_closedBall [T2Space M₂] [CompleteSpace M₂]
-    {r : ℝ} (hr : 0 < r) (hf : TotallyBounded (f '' Metric.closedBall 0 r)) :
-    IsCompactOperator f :=
-  (isCompactOperator_iff_isCompact_closure_image_closedBall f hr).mpr <|
-    hf.closure.isCompact_of_isClosed isClosed_closure
+/-- A linear map into a complete space is a compact operator exactly when it maps a closed ball of
+positive radius to a totally bounded set. -/
+theorem isCompactOperator_iff_totallyBounded_image_closedBall [CompleteSpace M₂]
+    (f : M₁ →ₛₗ[σ₁₂] M₂) {r : ℝ} (hr : 0 < r) :
+    IsCompactOperator f ↔ TotallyBounded (f '' Metric.closedBall 0 r) :=
+  ⟨fun hf ↦ hf.totallyBounded_image_closedBall r, fun hf ↦
+    (isCompactOperator_iff_image_closedBall_subset_compact f hr).mpr
+      ⟨_, hf.closure.isCompact_of_isClosed isClosed_closure, subset_closure⟩⟩
 
 end TotallyBounded
+
+namespace ContinuousLinearMap
+
+open Metric Set
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A compact operator becomes arbitrarily small after quotienting its target by a
+finite-dimensional subspace. No finite-rank approximation hypothesis is required. -/
+theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
+    (hK : IsCompactOperator K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ W : Submodule 𝕜 F, FiniteDimensional 𝕜 W ∧ ‖W.mkQL.comp K‖ ≤ ε := by
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  have hc₀ : 0 < ‖c‖ := one_pos.trans hc
+  -- Cover a compact set containing the image of the unit ball by finitely many balls of
+  -- radius `ε / ‖c‖`; their centres span `W`.
+  obtain ⟨C, hC, hKC⟩ := hK.image_closedBall_subset_compact 1
+  obtain ⟨s, -, hs, hcover⟩ := hC.finite_cover_balls (div_pos hε hc₀)
+  refine ⟨Submodule.span 𝕜 s, FiniteDimensional.span_of_finite 𝕜 hs, ?_⟩
+  refine opNorm_le_of_shell one_pos hε.le hc fun x hx₁ hx₂ ↦ ?_
+  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 <| hcover <| hKC <|
+    mem_image_of_mem K (mem_closedBall_zero_iff.2 hx₂.le)
+  have hqy : (Submodule.Quotient.mk y : F ⧸ Submodule.span 𝕜 s) = 0 := by
+    simpa using Submodule.subset_span hy
+  calc
+    ‖(Submodule.span 𝕜 s).mkQL.comp K x‖ = ‖(Submodule.span 𝕜 s).mkQL (K x - y)‖ := by
+      simp [hqy]
+    _ ≤ ‖K x - y‖ := Submodule.Quotient.norm_mk_le _ _
+    _ ≤ ε / ‖c‖ := (mem_ball_iff_norm.1 hxy).le
+    _ = ε * (1 / ‖c‖) := by ring
+    _ ≤ ε * ‖x‖ := by gcongr
+
+end ContinuousLinearMap
 
 end

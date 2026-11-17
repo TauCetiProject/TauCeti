@@ -44,7 +44,7 @@ variable {B F E H X W G : Type*} [TopologicalSpace B]
   [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
   [TopologicalSpace G] {J : ModelWithCorners ℝ W G}
   [TopologicalSpace X] [ChartedSpace G X] [IsManifold J ∞ X]
-  [T2Space X] [NormalSpace X] [SigmaCompactSpace X]
+  [T2Space X] [SigmaCompactSpace X]
 
 /-- Closed disc images in smooth bundle coordinates admit a global regular defining function.
 The three sign loci are exactly the closed disc, open disc, and sphere images, respectively.

@@ -33,6 +33,9 @@ letters.
   that is monotone on `s` is noncrossing exactly when the partition is.
 * `TauCeti.NoncrossingPartition.exists_comap_eq_iff` — a noncrossing partition of `s` is a
   pullback exactly when it is coarser than the partition `σ_f` of `s` into the fibres of `f`.
+* `TauCeti.NoncrossingPartition.mem_part_union_part_of_sup_comap_bot_eq_top` — if `f` identifies
+  only two adjacent positions `i ≤ j` of `s` and `π ⊔ σ_f = 1`, then `s` is the union of the parts
+  of `π` through `i` and `j`.
 
 ## References
 
@@ -121,5 +124,52 @@ theorem exists_comap_eq_iff {hf : MonotoneOn f s} {π : NoncrossingPartition s} 
   rw [coe_comap, coe_bot] at h'
   obtain ⟨P, hP⟩ := Finpartition.exists_comap_eq_iff.2 h'
   exact ⟨⟨P, (Finpartition.isNoncrossing_comap_iff hf).1 (hP ▸ π.2)⟩, Subtype.ext hP⟩
+
+/-- Let `f` be monotone on `s` and identify no two positions other than `i ≤ j`, which are adjacent
+in `s`. If the join in `NC(s)` of `π` with the partition `σ_f` into the fibres of `f` is `1`, then
+`s` is the union of the parts of `π` through `i` and `j`: merging these two parts gives a
+noncrossing partition above `π` and `σ_f`. -/
+theorem mem_part_union_part_of_sup_comap_bot_eq_top (hf : MonotoneOn f s) {i j : α}
+    (hi : i ∈ s) (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z)
+    (hfeq : ∀ {u v}, u ∈ s → v ∈ s → f u = f v → u ≠ v → (u = i ∨ u = j) ∧ (v = i ∨ v = j))
+    {π : NoncrossingPartition s} (hπ : π ⊔ comap hf ⊥ = ⊤) {z : α}
+    (hz : z ∈ s) :
+    z ∈ π.1.part i ∪ π.1.part j := by
+  have hpair : {i, j} ⊆ s := fun u hu => by
+    rcases mem_insert.1 hu with rfl | hu
+    exacts [hi, (mem_singleton.1 hu) ▸ hj]
+  have hji : (Finpartition.pairPartition s i j hpair).part j =
+      (Finpartition.pairPartition s i j hpair).part i :=
+    ((Finpartition.pairPartition s i j hpair).mem_part_iff_part_eq_part hj hi).1 (by
+      rw [Finpartition.part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self j))
+  -- The fibres of `f` lie in the parts of `pairPartition s i j`.
+  have hσ : comap hf ⊥ ≤ (⟨Finpartition.pairPartition s i j hpair,
+      Finpartition.isNoncrossing_pairPartition hpair⟩ : NoncrossingPartition s) := by
+    refine Finpartition.le_iff_forall_part_subset.2 fun x w hw => ?_
+    by_cases hxs : x ∈ s
+    swap
+    · rw [Finpartition.part_eq_empty _ |>.2 hxs] at hw
+      exact absurd hw (notMem_empty _)
+    rw [coe_comap, coe_bot, Finpartition.part_comap_bot hxs] at hw
+    obtain ⟨hws, hwx⟩ := mem_filter.1 hw
+    rcases eq_or_ne w x with rfl | hne
+    · exact Finpartition.mem_part_self _ |>.2 hws
+    obtain ⟨hw', hx'⟩ := hfeq hws hxs hwx hne
+    have hmem : ∀ {u}, u = i ∨ u = j →
+        u ∈ (Finpartition.pairPartition s i j hpair).part i := by
+      rintro u (rfl | rfl)
+      · rw [Finpartition.part_pairPartition]; exact mem_insert_self _ _
+      · rw [Finpartition.part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self _)
+    have hxi : (Finpartition.pairPartition s i j hpair).part x =
+        (Finpartition.pairPartition s i j hpair).part i := by
+      rcases hx' with rfl | rfl
+      · rfl
+      · exact hji
+    rw [hxi]
+    exact hmem hw'
+  have htop := top_le_iff.1 (hπ ▸ sup_le_sup_left hσ π)
+  have hu := (sup_pairPartition_eq_top_iff hpair hij hadj π).1 htop
+  rw [hu]
+  exact hz
 
 end TauCeti.NoncrossingPartition

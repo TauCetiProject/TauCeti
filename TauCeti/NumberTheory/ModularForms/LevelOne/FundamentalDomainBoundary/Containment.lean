@@ -58,11 +58,10 @@ lemma sqrt_three_div_two_lt_one : Real.sqrt 3 / 2 < 1 := by
 -- `@[simp]` branch selectors already rewrite `fdBoundary` applications to the segment
 -- functions, so these left-hand sides are not in simp normal form.
 
-/-- Every point of the boundary contour has imaginary part at least `√3/2`, provided the
-height parameter clears the corner row. -/
-lemma sqrt_three_div_two_le_im_fdBoundary (hH : Real.sqrt 3 / 2 ≤ H)
-    (ht : t ∈ Icc (0 : ℝ) 5) : Real.sqrt 3 / 2 ≤ (fdBoundary H t).im := by
-  obtain ⟨_, _⟩ := ht
+/-- Every point of the boundary contour, at any parameter, has imaginary part at least `√3/2`,
+provided the height parameter clears the corner row. -/
+lemma sqrt_three_div_two_le_im_fdBoundary (hH : Real.sqrt 3 / 2 ≤ H) :
+    Real.sqrt 3 / 2 ≤ (fdBoundary H t).im := by
   rcases le_or_gt t 1 with h1 | h1
   · rw [im_fdBoundary_of_le_one h1]
     nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - t)
@@ -132,14 +131,12 @@ lemma im_fdBoundary_le (hH : 1 ≤ H) (ht : t ∈ Icc (0 : ℝ) 5) :
           (by linarith : (0 : ℝ) ≤ H - Real.sqrt 3 / 2)]
       · rw [im_fdBoundary_of_gt_four h4]
 
-/-- The boundary contour stays outside the open unit disc: the verticals and the ceiling
-clear it by height and offset, and the arc lies on the unit circle. -/
-lemma one_le_norm_fdBoundary (hH : 1 ≤ H) (ht : t ∈ Icc (0 : ℝ) 5) :
-    1 ≤ ‖fdBoundary H t‖ := by
-  obtain ⟨ht0, ht5⟩ := ht
+/-- The boundary contour stays outside the open unit disc, at any parameter: the verticals and the
+ceiling clear it by height and offset, and the arc lies on the unit circle. -/
+lemma one_le_norm_fdBoundary (hH : 1 ≤ H) : 1 ≤ ‖fdBoundary H t‖ := by
   have hsq : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
   have h32 : Real.sqrt 3 / 2 ≤ 1 := sqrt_three_div_two_lt_one.le
-  have him := sqrt_three_div_two_le_im_fdBoundary (h32.trans hH) ⟨ht0, ht5⟩
+  have him := sqrt_three_div_two_le_im_fdBoundary (t := t) (h32.trans hH)
   have hnn := norm_nonneg (fdBoundary H t)
   rcases le_or_gt t 1 with h1 | h1
   · have h1' : 1 ≤ ‖fdBoundary H t‖ ^ 2 := by
@@ -164,8 +161,8 @@ lemma fdBoundary_mem_coe_truncatedFundamentalDomain (hH : 1 ≤ H) {t : ℝ}
   have h32 : Real.sqrt 3 / 2 ≤ 1 := sqrt_three_div_two_lt_one.le
   rw [ModularGroup.coe_truncatedFundamentalDomain, Set.mem_ofPred_eq]
   refine ⟨?_, im_fdBoundary_le hH ht, abs_re_fdBoundary_le_half ht.2,
-    one_le_norm_fdBoundary hH ht⟩
-  have := sqrt_three_div_two_le_im_fdBoundary (h32.trans hH) ht
+    one_le_norm_fdBoundary hH⟩
+  have := sqrt_three_div_two_le_im_fdBoundary (t := t) (h32.trans hH)
   nlinarith [Real.sqrt_nonneg 3]
 
 end ModularForm

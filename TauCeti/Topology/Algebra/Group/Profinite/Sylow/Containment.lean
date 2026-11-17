@@ -94,8 +94,6 @@ theorem IsProP.exists_le_map_conj (hQ : IsProP p Q) (hP : IsProPSylow p P) :
     exact Subgroup.map_mono hg
   have ht_directed : Directed (· ⊇ ·) t := fun U V ↦
     ⟨U ⊓ V, ht_mono inf_le_left, ht_mono inf_le_right⟩
-  let _ : Nonempty (OpenNormalSubgroup G) :=
-    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
   obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
     ht_directed ht_nonempty (fun U ↦ (ht_closed U).isCompact) ht_closed
   -- A conjugate of a Sylow pro-`p` subgroup is closed, so it is the infimum of its joins with

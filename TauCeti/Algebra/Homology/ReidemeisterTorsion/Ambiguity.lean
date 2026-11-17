@@ -181,7 +181,7 @@ theorem mk_monomial (g : G) : mk m (m g) = 1 := by
 
 /-- The sign/monomial ambiguity preserves the zero pattern in every ring image, in particular
 in each field component of a total quotient ring. -/
-theorem map_eq_zero_iff_of_mk_eq_mk {B : Type*} [Ring B] (f : A →+* B) {a b : A}
+theorem map_eq_zero_iff_of_mk_eq_mk {B : Type*} [Semiring B] (f : A →+* B) {a b : A}
     (h : mk m a = mk m b) : f a = 0 ↔ f b = 0 := by
   obtain ⟨u, _, rfl⟩ := (mk_eq_mk_iff_exists_unit m).1 h
   rw [map_mul]

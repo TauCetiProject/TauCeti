@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Equiv
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Real coordinate slices of complex-domain functions
@@ -20,30 +21,25 @@ public section
 
 namespace HasFDerivAt
 
+variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [ContinuousAdd F]
+  [ContinuousSMul ℝ F] {P : ℂ → F} {L : ℂ →L[ℝ] F} {z : ℂ}
+
 /-- A real Fréchet derivative gives the derivative of the horizontal coordinate slice. -/
-theorem hasDerivAt_re_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
-    (hP : HasFDerivAt P L z) :
+theorem hasDerivAt_re_slice (hP : HasFDerivAt P L z) :
     HasDerivAt (fun x : ℝ ↦ P ⟨x, z.im⟩) (L 1) z.re := by
-  have hp := Complex.equivRealProdCLM.symm.hasFDerivAt (x := (z.re, z.im)) |>.comp_hasDerivAt z.re
-    ((hasDerivAt_id z.re).prodMk (hasDerivAt_const z.re z.im))
-  convert hP.comp_hasDerivAt z.re hp using 1
-  · ext x
-    apply congrArg P
-    simp only [Function.comp_apply, id_eq, Complex.equivRealProdCLM_symm_apply]
-    apply Complex.ext <;> simp
-  · simp [Complex.equivRealProdCLM_symm_apply]
+  have h : HasDerivAt (fun x : ℝ ↦ (⟨x, z.im⟩ : ℂ)) 1 z.re := by
+    simpa [Complex.mk_eq_add_mul_I] using
+      (Complex.ofRealCLM.hasDerivAt (x := z.re)).add_const (z.im * Complex.I)
+  simpa [hasDerivAt_iff_hasFDerivAt, ContinuousLinearMap.comp_toSpanSingleton, Function.comp_def]
+    using HasFDerivAt.comp z.re hP h.hasFDerivAt
 
 /-- A real Fréchet derivative gives the derivative of the vertical coordinate slice. -/
-theorem hasDerivAt_im_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
-    (hP : HasFDerivAt P L z) :
+theorem hasDerivAt_im_slice (hP : HasFDerivAt P L z) :
     HasDerivAt (fun y : ℝ ↦ P ⟨z.re, y⟩) (L Complex.I) z.im := by
-  have hp := Complex.equivRealProdCLM.symm.hasFDerivAt (x := (z.re, z.im)) |>.comp_hasDerivAt z.im
-    ((hasDerivAt_const z.im z.re).prodMk (hasDerivAt_id z.im))
-  convert hP.comp_hasDerivAt z.im hp using 1
-  · ext y
-    apply congrArg P
-    simp only [Function.comp_apply, Complex.equivRealProdCLM_symm_apply]
-    apply Complex.ext <;> simp
-  · simp [Complex.equivRealProdCLM_symm_apply]
+  have h : HasDerivAt (fun y : ℝ ↦ (⟨z.re, y⟩ : ℂ)) Complex.I z.im := by
+    simpa [Complex.mk_eq_add_mul_I] using
+      ((Complex.ofRealCLM.hasDerivAt (x := z.im)).mul_const Complex.I).const_add (z.re : ℂ)
+  simpa [hasDerivAt_iff_hasFDerivAt, ContinuousLinearMap.comp_toSpanSingleton, Function.comp_def]
+    using HasFDerivAt.comp z.im hP h.hasFDerivAt
 
 end HasFDerivAt

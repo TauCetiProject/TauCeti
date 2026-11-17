@@ -9,6 +9,13 @@ public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Submodule
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import Mathlib.Analysis.LocallyConvex.HahnBanach
 
 /-!
 # Integral manifolds of a distribution
@@ -23,7 +30,10 @@ This file provides both the unbundled predicate `TauCeti.IsIntegralManifold` for
 immersion and `TauCeti.IntegralManifold`, which packages a `k`-dimensional source manifold and its
 parametrization.  The rank theorem shows that, for regularity `n ≠ 0`, the dimension of any
 finite-dimensional source equals the rank of the distribution at any image point; it is not extra
-data hidden in the definition.
+data hidden in the definition. For regularity at least one, integral immersions of a
+finite-dimensional constant distribution have partial-diffeomorphism charts into its direction
+subspace near interior source points. These charts give local changes of parameter between
+interior source points with the same ambient image, intertwining the two integral immersions.
 
 ## Main definitions
 
@@ -37,10 +47,21 @@ data hidden in the definition.
   dimension equals the rank of the distribution at any image point.
 * `TauCeti.isIntegralManifold_id`: the identity is an integral manifold of the full tangent
   distribution.
+* `TauCeti.IsIntegralManifold.comp_isLocalDiffeomorph` and
+  `TauCeti.IsIntegralManifold.comp_subtypeVal`: precomposition with a local diffeomorphism and
+  restriction to a nonempty open subset preserve `IsIntegralManifold` for `n ≠ 0`.
+* `TauCeti.IsIntegralManifold.eventually_sub_mem`: an integral immersion, of regularity at least
+  one, of a finite-dimensional constant distribution locally stays in one affine plaque, including
+  at boundary source points.
+* `TauCeti.IsIntegralManifold.exists_plaque_chart`: a local chart in an affine plaque with the
+  prescribed ambient inclusion.
+* `TauCeti.IsIntegralManifold.exists_plaque_transition`: a local change of integral parameters
+  intertwining their ambient maps.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 19.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 19,
+  Proposition 19.16 (Local Structure of Integral Manifolds), p. 500.
 -/
 
 public section
@@ -48,7 +69,7 @@ public section
 noncomputable section
 
 open Function
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 universe u v
 
@@ -127,6 +148,23 @@ theorem isIntegralManifold_id [IsManifold I n M] [Nonempty M] :
   rw [mfderiv_id]
   exact LinearMap.range_id
 
+/-- Precomposing an integral manifold of regularity `n ≠ 0` with a `C^n` local diffeomorphism of a
+nonempty `C^n` manifold with the same source model gives an integral manifold. -/
+theorem IsIntegralManifold.comp_isLocalDiffeomorph
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace H' N'] [IsManifold J n N'] [Nonempty N']
+    {g : N' → N} (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (hg : IsLocalDiffeomorph J J n g) :
+    IsIntegralManifold J n D (f ∘ g) :=
+  ⟨inferInstance, isImmersion_comp_isLocalDiffeomorph hg hf.isImmersion,
+    fun y ↦ ((hg y).range_mfderiv_comp hn).trans (hf.range_mfderiv (g y))⟩
+
+/-- Restricting an integral manifold of regularity `n ≠ 0` of a `C^n` manifold to a nonempty open
+subset gives an integral manifold. -/
+theorem IsIntegralManifold.comp_subtypeVal [IsManifold J n N]
+    {U : TopologicalSpace.Opens N} [Nonempty U]
+    (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) :
+    IsIntegralManifold J n D (f ∘ (Subtype.val : U → N)) :=
+  hf.comp_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val
+
 end Unbundled
 
 section Bundled
@@ -178,5 +216,87 @@ theorem contMDiff_map (N : IntegralManifold (I := I) n D k) :
 end IntegralManifold
 
 end Bundled
+
+section AffinePlaques
+
+open Set Filter
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J n N]
+  {W : Submodule ℝ E} [FiniteDimensional ℝ W] {f : N → E} {x : N} {s : Set N}
+
+/-- An integral immersion, of regularity at least one, of a finite-dimensional constant
+distribution locally stays in one affine plaque. -/
+theorem IsIntegralManifold.eventually_sub_mem
+    (hf : IsIntegralManifold (I := 𝓘(ℝ, E)) J n (fun _ : E ↦ W) f)
+    (hn : 1 ≤ n) : ∀ᶠ z in 𝓝 x, f z - f x ∈ W := by
+  let _ : IsManifold J 1 N := .of_le hn
+  obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional W
+  let q : E →L[ℝ] E := ContinuousLinearMap.id ℝ E - W.subtypeL.comp p
+  have hq (v : E) : q v = v - (p v : E) := by simp [q]
+  have hqzero (v : E) (hv : v ∈ W) : q v = 0 := by
+    rw [hq]
+    exact sub_eq_zero.mpr (congrArg Subtype.val (hp ⟨v, hv⟩)).symm
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hfD := hf.contMDiff.mdifferentiable hn0
+  have hqD : MDifferentiable J 𝓘(ℝ, E) (fun z ↦ q (f z)) :=
+    q.mdifferentiable.comp hfD
+  have hzero (z : N) : mfderiv J 𝓘(ℝ, E) (fun z ↦ q (f z)) z = 0 := by
+    have hd : HasMFDerivAt J 𝓘(ℝ, E) (fun z ↦ q (f z)) z
+        (q.comp (mfderiv J 𝓘(ℝ, E) f z)) :=
+      q.hasMFDerivAt.comp z (hfD z).hasMFDerivAt
+    rw [hd.mfderiv]
+    ext v
+    apply hqzero
+    rw [← hf.range_mfderiv z]
+    exact ⟨v, rfl⟩
+  have hconst := hqD.mdifferentiableOn.eventuallyEq_const_of_mfderiv_eq_zero
+    isOpen_univ (fun z _ ↦ hzero z) (mem_univ x)
+  filter_upwards [hconst] with z hz
+  have hsub : q (f z - f x) = 0 := by rw [map_sub, hz, sub_self]
+  rw [hq] at hsub
+  rw [sub_eq_zero.mp hsub]
+  exact (p (f z - f x)).property
+
+/-- An integral immersion of a finite-dimensional constant distribution has a partial-diffeomorphism
+chart into its direction subspace at every interior source point. The chart sends the point to zero
+and identifies the immersion with translation of the subtype inclusion. Its source lies inside
+the specified open neighborhood. -/
+theorem IsIntegralManifold.exists_plaque_chart
+    (hf : IsIntegralManifold (I := 𝓘(ℝ, E)) J n (fun _ : E ↦ W) f)
+    (hn : 1 ≤ n) (hx : J.IsInteriorPoint x) (hs : IsOpen s) (hxs : x ∈ s) :
+    ∃ e : PartialDiffeomorph J 𝓘(ℝ, W) N W n,
+      x ∈ e.source ∧ e x = 0 ∧ e.source ⊆ s ∧
+        ∀ y ∈ e.source, f y = f x + (e y : E) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  exact ContMDiffOn.exists_plaque_chart hf.contMDiff.contMDiffOn hs hxs hn hx
+    (hf.isImmersion.mfderiv_injective hn0 x) (hf.range_mfderiv x)
+    (hf.eventually_sub_mem hn)
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ F' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K n P]
+  {g : P → E} {y : P}
+
+/-- Two integral immersions of the same finite-dimensional constant distribution, through the same
+ambient point, are related near interior source points by a partial diffeomorphism intertwining
+their ambient maps. -/
+theorem IsIntegralManifold.exists_plaque_transition
+    (hf : IsIntegralManifold (I := 𝓘(ℝ, E)) J n (fun _ : E ↦ W) f)
+    (hg : IsIntegralManifold (I := 𝓘(ℝ, E)) K n (fun _ : E ↦ W) g)
+    (hn : 1 ≤ n) (hx : J.IsInteriorPoint x) (hy : K.IsInteriorPoint y)
+    (hfg : f x = g y) :
+    ∃ e : PartialDiffeomorph J K N P n,
+      x ∈ e.source ∧ e x = y ∧ ∀ z ∈ e.source, f z = g (e z) := by
+  obtain ⟨c, hxc, hc0, _, hfc⟩ := hf.exists_plaque_chart hn hx isOpen_univ (mem_univ x)
+  obtain ⟨d, hyd, hd0, _, hgd⟩ := hg.exists_plaque_chart hn hy isOpen_univ (mem_univ y)
+  obtain ⟨e, hxe, hex, hec, hed, he⟩ :=
+    c.exists_transition d hxc hyd (hc0.trans hd0.symm)
+  refine ⟨e, hxe, hex, ?_⟩
+  intro z hz
+  rw [hfc z (hec hz), hgd (e z) (hed hz), hfg, he z hz]
+
+end AffinePlaques
 
 end TauCeti

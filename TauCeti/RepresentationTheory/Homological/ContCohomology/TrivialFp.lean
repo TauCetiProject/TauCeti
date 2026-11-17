@@ -148,7 +148,7 @@ variable (p : ℕ) {G H : Type u} [Group G] [Monoid H]
 @[simp]
 theorem res_trivialFp_hom (φ : H →* G) :
     TopRep.res φ (trivialFp p G) = trivialFp p H :=
-  res_trivial (ZMod p) G (ULift.{u} (ZMod p)) φ
+  congrArg TopRep.of (ContRepresentation.restrict_trivial (ZMod p) G (ULift.{u} (ZMod p)) φ)
 
 /-- The transport to trivial coefficients along a homomorphism leaves coefficient values
 unchanged. -/

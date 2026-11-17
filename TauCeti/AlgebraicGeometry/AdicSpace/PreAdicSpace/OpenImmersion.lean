@@ -606,6 +606,101 @@ theorem prop_restrictPreimage_of_forall_exists_le (P : MorphismProperty PreAdicS
 
 end Hom
 
+/-- The chart square: restricting `q` over `R` and mapping into `Y` through the chart `v`
+agrees with mapping the restricted source chart `u` through `f`. -/
+theorem restrictPreimage_comp_eq_of_chart {f : X ⟶ Y} {U : Opens X} {V : Opens Y}
+    {XA YA : PreAdicSpace.{u}} (eU : X.restrict U.isOpenEmbedding ≅ XA)
+    (eV : Y.restrict V.isOpenEmbedding ≅ YA) {q : XA ⟶ YA}
+    (hfac : X.ofRestrict U.isOpenEmbedding ≫ f =
+      eU.hom ≫ q ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding) (R : Opens YA) :
+    q.restrictPreimage R ≫ YA.ofRestrict R.isOpenEmbedding ≫ eV.inv ≫
+        Y.ofRestrict V.isOpenEmbedding =
+      (XA.ofRestrict ((Opens.map q.base).obj R).isOpenEmbedding ≫ eU.inv ≫
+        X.ofRestrict U.isOpenEmbedding) ≫ f := by
+  rw [Hom.restrictPreimage_ofRestrict_assoc]
+  simp only [hfac, Category.assoc, Iso.inv_hom_id_assoc]
+
+/-- **Restricting a morphism that factors through an isomorphism over an open.** Let
+`f : X ⟶ Y`, let `V ⊆ Y` be open, and suppose `f` restricts over `V` to `q : Z' ⟶ Z`, up to the
+isomorphisms `eU : f⁻¹(V) ≅ Z'` and `eV : V ≅ Z`. For an open `R ⊆ Z`, let `v : R ⟶ Y` and
+`u : q⁻¹(R) ⟶ X` be the open immersions induced by the isomorphisms. Then the image of `u`
+is the preimage under `f` of the image of `v`. -/
+theorem range_restrictPreimage_comp_eq_preimage_range {f : X ⟶ Y} {V : Opens Y}
+    {Z Z' : PreAdicSpace.{u}} {eV : Y.restrict V.isOpenEmbedding ≅ Z}
+    {eU : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding ≅ Z'} {q : Z' ⟶ Z}
+    (hfac : X.ofRestrict _ ≫ f = eU.hom ≫ q ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding)
+    (R : Opens Z) :
+    let v := Z.ofRestrict R.isOpenEmbedding ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding
+    let u := Z'.ofRestrict ((Opens.map q.base).obj R).isOpenEmbedding ≫ eU.inv ≫
+      X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding
+    Set.range u.base = f.base ⁻¹' Set.range v.base := by
+  intro v u
+  have w : q.restrictPreimage R ≫ v = u ≫ f := restrictPreimage_comp_eq_of_chart eU eV hfac R
+  have : IsOpenImmersion eV.inv := @IsOpenImmersion.of_isIso _ _ eV.inv eV.isIso_inv
+  have hinj := (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).isOpenEmbedding.injective
+  ext x
+  constructor
+  · rintro ⟨z, rfl⟩
+    exact ⟨(q.restrictPreimage R).base z, congrArg (fun g ↦ g.base z) w⟩
+  · rintro ⟨r, hr⟩
+    -- `f x` lies in `V`; the point of `Z'` over `x` maps to the point `r` of `R`
+    have hxV : f.base x ∈ V := Eq.mpr (congrArg (· ∈ V) hr.symm) (eV.inv.base r.1).2
+    let x' : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding := ⟨x, Opens.mem_map.mpr hxV⟩
+    have hfx : (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base (q.base (eU.hom.base x')) =
+        (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base r.1 :=
+      (congrArg (fun g ↦ g.base x') hfac).symm.trans hr.symm
+    have hzR : eU.hom.base x' ∈ (Opens.map q.base).obj R :=
+      Opens.mem_map.mpr (Eq.mpr (congrArg (· ∈ R) (hinj hfx)) r.2)
+    exact ⟨⟨eU.hom.base x', hzR⟩, congrArg (fun g ↦ (g.base x').1) eU.hom_inv_id⟩
+
+/-- The open of `Y` cut out by `W` inside the chart `V` has the same image as the chart
+restricted over the pullback of `W`. -/
+theorem range_restrict_chart_target_eq {V W : Opens Y} {YA : PreAdicSpace.{u}}
+    (eV : Y.restrict V.isOpenEmbedding ≅ YA) :
+    Set.range (((Y.restrict W.isOpenEmbedding).ofRestrict
+        ((Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj V).isOpenEmbedding ≫
+        Y.ofRestrict W.isOpenEmbedding).base) =
+      Set.range ((YA.ofRestrict ((Opens.map eV.inv.base).obj
+        ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)).isOpenEmbedding ≫
+        eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base) := by
+  ext y
+  constructor
+  · rintro ⟨⟨⟨y, hyW⟩, hyV⟩, rfl⟩
+    have hi := congrArg (fun g ↦ g.base ⟨y, hyV⟩) eV.hom_inv_id
+    refine ⟨⟨eV.hom.base ⟨y, hyV⟩, ?_⟩, ?_⟩
+    · exact Opens.mem_map.mpr (Opens.mem_map.mpr (hi.symm ▸ hyW))
+    · exact congrArg Subtype.val hi
+  · rintro ⟨r, rfl⟩
+    exact ⟨⟨⟨_, Opens.mem_map.mp (Opens.mem_map.mp r.2)⟩, (eV.inv.base r.1).2⟩, rfl⟩
+
+/-- The source analogue of `range_restrict_chart_target_eq`, for a chart square `hfac`. -/
+theorem range_restrict_chart_source_eq {f : X ⟶ Y} {W : Opens Y} {U : Opens X}
+    {V : Opens Y} {XA YA : PreAdicSpace.{u}} (eU : X.restrict U.isOpenEmbedding ≅ XA)
+    (eV : Y.restrict V.isOpenEmbedding ≅ YA) {q : XA ⟶ YA}
+    (hfac : X.ofRestrict U.isOpenEmbedding ≫ f =
+      eU.hom ≫ q ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding) :
+    Set.range (((X.restrict ((Opens.map f.base).obj W).isOpenEmbedding).ofRestrict
+        ((Opens.map (X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding).base).obj
+          U).isOpenEmbedding ≫ X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding).base) =
+      Set.range ((XA.ofRestrict ((Opens.map q.base).obj ((Opens.map eV.inv.base).obj
+        ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W))).isOpenEmbedding ≫
+        eU.inv ≫ X.ofRestrict U.isOpenEmbedding).base) := by
+  have w := restrictPreimage_comp_eq_of_chart eU eV hfac
+    ((Opens.map eV.inv.base).obj ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W))
+  ext z
+  constructor
+  · rintro ⟨⟨⟨z, hzW⟩, hzU⟩, rfl⟩
+    let z' : X.restrict U.isOpenEmbedding := ⟨z, hzU⟩
+    have hz : eU.hom.base z' ∈ (Opens.map q.base).obj ((Opens.map eV.inv.base).obj
+        ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)) := by
+      have hw := congrArg (fun g ↦ g.base z') hfac
+      exact Opens.mem_map.mpr (Opens.mem_map.mpr (Opens.mem_map.mpr (hw ▸ hzW)))
+    exact ⟨⟨eU.hom.base z', hz⟩, congrArg (fun g ↦ (g.base z').1) eU.hom_inv_id⟩
+  · rintro ⟨r, rfl⟩
+    have hw := congrArg (fun g ↦ g.base r) w
+    exact ⟨⟨⟨_, Opens.mem_map.mpr (hw ▸ Opens.mem_map.mp (Opens.mem_map.mp
+      ((q.restrictPreimage _).base r).2))⟩, (eU.inv.base r.1).2⟩, rfl⟩
+
 end PreAdicSpace
 
 end TauCeti

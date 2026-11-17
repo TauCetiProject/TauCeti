@@ -35,6 +35,53 @@ namespace TauCeti
 
 variable {σ : Type*} {f : (σ → ℝ) → ℝ} {s : Set (σ → ℝ)}
 
+/-- Quantifier elimination for the epsilon-delta estimate: if the condition on the coordinates
+(x, candidate derivative, epsilon, delta, increment, lower value, upper value) is semialgebraic,
+so is the estimate on `(x, candidate derivative)`. -/
+private theorem isSemialgebraic_setOf_derivative_estimate_of_matrix (v : σ → ℝ)
+    {R : Set ((((σ ⊕ Unit) ⊕ Unit) ⊕ Unit) ⊕ Fin 3 → ℝ)} (hR : IsSemialgebraic R)
+    (hRdef : ∀ z, z ∈ R ↔
+      (0 < z (.inr 0) ∧ z (.inr 0) < z (.inl (.inr ())) ∧
+        (fun i ↦ z (.inl (.inl (.inl (.inl i))))) ∈ s ∧
+        f (fun i ↦ z (.inl (.inl (.inl (.inl i))))) = z (.inr 1) ∧
+        (fun i ↦ z (.inl (.inl (.inl (.inl i)))) + z (.inr 0) * v i) ∈ s ∧
+        f (fun i ↦ z (.inl (.inl (.inl (.inl i)))) + z (.inr 0) * v i) = z (.inr 2)) →
+      -z (.inl (.inl (.inr ()))) * z (.inr 0) <
+          z (.inr 2) - z (.inr 1) - z (.inr 0) * z (.inl (.inl (.inl (.inr ())))) ∧
+        z (.inr 2) - z (.inr 1) - z (.inr 0) * z (.inl (.inl (.inl (.inr ())))) <
+          z (.inl (.inl (.inr ()))) * z (.inr 0)) :
+    IsSemialgebraic {z : σ ⊕ Unit → ℝ | ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
+      ∀ t a b : ℝ, 0 < t → t < δ → z ∘ Sum.inl ∈ s → f (z ∘ Sum.inl) = a →
+        (z ∘ Sum.inl) + t • v ∈ s → f ((z ∘ Sum.inl) + t • v) = b →
+          -ε * t < b - a - t * z (.inr ()) ∧ b - a - t * z (.inr ()) < ε * t} := by
+  -- Eliminate the value/increment triple, then delta, then epsilon.
+  let := FirstOrder.Ring.compatibleRingOfRing ℝ
+  let := FirstOrder.Language.orderStructure ℝ
+  have hAll := hR.definable.forall_of_finite.isSemialgebraic
+  have hDelta := ((isSemialgebraic_eval_pos
+    (X (.inr ()) : MvPolynomial (((σ ⊕ Unit) ⊕ Unit) ⊕ Unit) ℝ)).inter hAll).definable
+    |>.exists_of_finite.isSemialgebraic
+  have hEps := ((isSemialgebraic_eval_pos
+    (X (.inr ()) : MvPolynomial ((σ ⊕ Unit) ⊕ Unit) ℝ)).compl.union hDelta).definable
+    |>.forall_of_finite.isSemialgebraic
+  -- Convert finite coordinate blocks back to the scalar quantifiers of the estimate.
+  convert hEps using 1
+  ext z
+  simp only [hRdef, mem_ofPred_eq, mem_union, mem_compl_iff, eval_X, mem_inter_iff,
+    Sum.elim_inl, Sum.elim_inr]
+  constructor
+  · intro h ε
+    by_cases hε : 0 < ε ()
+    · obtain ⟨δ, hδ, hbound⟩ := h (ε ()) hε
+      refine Or.inr ⟨fun _ ↦ δ, hδ, fun w hw ↦ ?_⟩
+      obtain ⟨ht, htδ, hx, ha, hy, hb⟩ := hw
+      exact hbound (w 0) (w 1) (w 2) ht htδ hx ha hy hb
+    · exact Or.inl hε
+  · intro h ε hε
+    obtain ⟨δ, hδ, hbound⟩ := (h (fun _ ↦ ε)).resolve_left (not_not.mpr hε)
+    refine ⟨δ (), hδ, fun t a b ht htδ hx ha hy hb ↦ ?_⟩
+    exact hbound ![t, a, b] ⟨ht, htδ, hx, ha, hy, hb⟩
+
 -- The particular ordered-ring formula used below. Its auxiliary value variables
 -- let us substitute the graph of f without introducing function symbols.
 private theorem isSemialgebraic_setOf_derivative_estimate
@@ -81,34 +128,9 @@ private theorem isSemialgebraic_setOf_derivative_estimate
     ext z
     simp only [R, mem_ofPred_eq, mem_union, mem_compl_iff, mem_inter_iff]
     tauto
-  -- Eliminate the value/increment triple, then delta, then epsilon.
-  let := FirstOrder.Ring.compatibleRingOfRing ℝ
-  let := FirstOrder.Language.orderStructure ℝ
-  have hAll := hR.definable.forall_of_finite.isSemialgebraic
-  have hDelta := ((isSemialgebraic_eval_pos
-    (X (.inr ()) : MvPolynomial (((σ ⊕ Unit) ⊕ Unit) ⊕ Unit) ℝ)).inter hAll).definable
-    |>.exists_of_finite.isSemialgebraic
-  have hEps := ((isSemialgebraic_eval_pos
-    (X (.inr ()) : MvPolynomial ((σ ⊕ Unit) ⊕ Unit) ℝ)).compl.union hDelta).definable
-    |>.forall_of_finite.isSemialgebraic
-  -- Convert finite coordinate blocks back to the scalar quantifiers of the estimate.
-  convert hEps using 1
-  ext z
-  simp only [R, xP, yP, dP, eP, rP, tP, aP, bP, mem_ofPred_eq, mem_union,
-    mem_compl_iff, eval_X, mem_inter_iff, eval_add, eval_mul, eval_C, map_sub, map_neg,
-    Sum.elim_inl, Sum.elim_inr]
-  constructor
-  · intro h ε
-    by_cases hε : 0 < ε ()
-    · obtain ⟨δ, hδ, hbound⟩ := h (ε ()) hε
-      refine Or.inr ⟨fun _ ↦ δ, hδ, fun w hw ↦ ?_⟩
-      obtain ⟨ht, htδ, hx, ha, hy, hb⟩ := hw
-      exact hbound (w 0) (w 1) (w 2) ht htδ hx ha hy hb
-    · exact Or.inl hε
-  · intro h ε hε
-    obtain ⟨δ, hδ, hbound⟩ := (h (fun _ ↦ ε)).resolve_left (not_not.mpr hε)
-    refine ⟨δ (), hδ, fun t a b ht htδ hx ha hy hb ↦ ?_⟩
-    exact hbound ![t, a, b] ⟨ht, htδ, hx, ha, hy, hb⟩
+  refine isSemialgebraic_setOf_derivative_estimate_of_matrix v hR fun z ↦ ?_
+  simp only [R, xP, yP, dP, eP, rP, tP, aP, bP, mem_ofPred_eq, eval_X, eval_add, eval_mul,
+    eval_C, map_sub, map_neg]
 
 /-- A differentiable semialgebraic function on an open domain has a semialgebraic
 scalar directional derivative in each fixed direction. -/

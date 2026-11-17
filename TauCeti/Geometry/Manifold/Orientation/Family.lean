@@ -58,8 +58,7 @@ theorem isLocallyConstant_isOrientationPreservingAt
     (hD : ∀ p, (mfderiv I J (fun y => F (p, y)) x).IsInvertible) :
     IsLocallyConstant (fun p => IsOrientationPreservingAt o o' (fun y => F (p, y)) x) := by
   classical
-  rw [IsLocallyConstant.iff_eventually_eq]
-  intro a
+  refine IsLocallyConstant.iff_eventually_eq _ |>.2 fun a => ?_
   let f : P → N := fun p => F (p, x)
   let D (p : P) := (hD p).choose
   have hDc (p : P) : (D p : TangentSpace I x →L[ℝ] TangentSpace J (f p)) =
@@ -75,23 +74,8 @@ theorem isLocallyConstant_isOrientationPreservingAt
   have hread (p : P) (hp : f p ∈ e'.baseSet) :
       IsOrientationPreservingAt o o' (fun y => F (p, y)) x ↔
         _root_.Orientation.map ι (T p hp).toLinearEquiv η =
-          e'.mapOrientation ι hp (o'.orientationAt (f p)) := by
-    rw [isOrientationPreservingAt_iff_of_coe_eq o o' _ x (D p) (hDc p)]
-    have hmap : _root_.Orientation.map ι (T p hp).toLinearEquiv η =
-        e'.mapOrientation ι hp (_root_.Orientation.map ι (D p).toLinearEquiv
-          (o.orientationAt x)) := by
-      -- A trivialization's continuous equivalence is the continuous wrapper of its
-      -- linear equivalence; identify the wrappers before cancelling orientation transport.
-      have he : (e.continuousLinearEquivAt ℝ x hx).toLinearEquiv =
-          e.linearEquivAt ℝ x hx := rfl
-      have he' : (e'.continuousLinearEquivAt ℝ (f p) hp).toLinearEquiv =
-          e'.linearEquivAt ℝ (f p) hp := rfl
-      simp only [T, η, ContinuousLinearEquiv.trans_toLinearEquiv,
-        _root_.Orientation.map_trans, Trivialization.mapOrientation_apply,
-        ContinuousLinearEquiv.toLinearEquiv_symm, he, he',
-        ← _root_.Orientation.map_symm, Equiv.symm_apply_apply]
-    rw [hmap]
-    exact (e'.mapOrientation ι hp).injective.eq_iff.symm
+          e'.mapOrientation ι hp (o'.orientationAt (f p)) :=
+    isOrientationPreservingAt_iff_map_eq o o' _ x (f a) (D p) (hDc p) hx hp
   -- The slice derivatives vary continuously when read in the fixed trivializations.
   let c := inTangentCoordinates I J (fun _ : P => x) f
     (fun p => mfderiv I J (fun y => F (p, y)) x) a
@@ -120,17 +104,11 @@ theorem isLocallyConstant_isOrientationPreservingAt
   have ho := o'.toVectorBundleOrientation.eventually_mapOrientation_eq o'.card_eq e' ha
   simp only [toVectorBundleOrientation_apply] at ho
   filter_upwards [hpos, hbase, (hf.tendsto a).eventually ho] with p hpos hp hop
-  have hfix : _root_.Orientation.map ι ((T p hp).trans (T a ha).symm).toLinearEquiv η = η := by
-    apply (_root_.Orientation.map_eq_iff_det_pos η _ o.card_eq).mpr
-    convert hpos using 2
-    ext v
-    simp [K, hcT p hp]
-  have hmaps : _root_.Orientation.map ι (T p hp).toLinearEquiv η =
-      _root_.Orientation.map ι (T a ha).toLinearEquiv η := by
-    rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans,
-      ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
-      Equiv.symm_apply_eq] at hfix
-    exact hfix
+  have hmaps := _root_.Orientation.map_eq_map_of_det_pos η (T p hp).toLinearEquiv
+    (T a ha).toLinearEquiv o.card_eq (by
+      convert hpos using 2
+      ext v
+      simp [K, hcT p hp])
   apply propext
   rw [hread p hp, hread a ha, hmaps, hop hp]
 

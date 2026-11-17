@@ -204,7 +204,8 @@ theorem Equivalent.unitValueSet_eq
   rw [mem_unitValueSet, mem_unitValueSet]
   exact e.represents_iff a
 
-/-- A value represented by each factor is represented by their product. -/
+/-- The sum of a value represented by the first factor and a value represented by the second is
+represented by their orthogonal sum. -/
 theorem Represents.prod
     {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
     [Module R M₁] [Module R M₂] [Module R P]
@@ -333,6 +334,21 @@ theorem represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
+
+/-- Over a field, a quadratic form `Q` with trivial radical represents `-c` as soon as, if `Q` is
+anisotropic, `c` lies in the square class of some nonzero `c₀` that is the negative of a value
+of `Q`. -/
+theorem _root_.QuadraticForm.represents_neg_of_forall_anisotropic (Q : QuadraticForm K V)
+    (hQ : Q.radical = ⊥) (c : K)
+    (h : Q.Anisotropic → ∃ c₀ y, c₀ ≠ 0 ∧ c₀ = -Q y ∧ IsSquare (c / c₀)) :
+    Represents Q (-c) := by
+  by_cases han : Q.Anisotropic
+  · obtain ⟨c₀, y, hc₀, hxy, hsq⟩ := h han
+    have hrep : Represents Q (-c₀) :=
+      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
+    refine hrep.of_isSquare_div (neg_ne_zero.mpr hc₀) ?_
+    simpa [neg_div_neg_eq] using hsq
+  · exact represents_of_radical_eq_bot_of_not_anisotropic _ hQ han _
 
 /-- If the orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero
 space is isotropic, then some nonzero value of the first form is the negative of a value of the

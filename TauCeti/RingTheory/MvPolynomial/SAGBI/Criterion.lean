@@ -72,7 +72,7 @@ variable {σ ι : Type*} {m : MonomialOrder σ}
 
 section CommSemiring
 
-variable {R : Type*} [CommSemiring R] [Nontrivial R] {c : ι → MvPolynomial σ R}
+variable {R : Type*} [CommSemiring R] {c : ι → MvPolynomial σ R}
 
 /-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
 `P` satisfies `A w ≼ δ` and the coefficient of `X^δ` in `aeval c P` vanishes, then the part of `P`
@@ -137,41 +137,21 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     have huv : A (u j) = A (v j) := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
     exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
       (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
-  -- The part `P₀` of `P` of weight `δ` lies in the toric ideal: `P₀ = ∑ j, g₀ j * β j`.
-  obtain ⟨g₀, hg₀⟩ := Finsupp.mem_ideal_span_range_iff_exists_finsupp.1
-    (hJ ▸ weightedHomogeneousComponent_mem_toricIdeal hc hPδ hδ)
-  -- Taking weight-`δ` parts, `P₀ = ∑ j, h j * β j` for the components `h j` of weight
-  -- `δ - A (u j)` of the `g₀ j`.
-  set h : J → MvPolynomial ι R := fun j ↦
-    if A (u j) ≤ δ then weightedHomogeneousComponent a (δ - A (u j)) (g₀ j) else 0
-  have hh (j : J) (hj : h j ≠ 0) : j ∈ g₀.support :=
-    Finsupp.mem_support_iff.2 fun h0 ↦ hj (by simp [h, h0])
-  have hhA (j : J) (x : ι →₀ ℕ) (hx : x ∈ (h j).support) : A x + A (u j) = δ := by
-    have hle : A (u j) ≤ δ := by
-      by_contra hle
-      simp [h, hle] at hx
-    simp only [h, hle, ite_true] at hx
-    rw [← hA, weightedHomogeneousComponent_isWeightedHomogeneous _ _ (mem_support_iff.1 hx),
-      tsub_add_cancel_of_le hle]
-  set g := Finsupp.onFinset g₀.support h hh
-  have hsum (F : J → MvPolynomial ι R) :
-      (g.sum fun j q ↦ q * F j) = ∑ j ∈ g₀.support, h j * F j := by
-    rw [Finsupp.sum_of_support_subset _ Finsupp.support_onFinset_subset _ fun _ _ ↦ zero_mul _]
-    simp only [Finsupp.onFinset_apply]
-  have hgP₀ : ∑ j ∈ g₀.support, h j * (monomial (u j) 1 - monomial (v j) 1) =
-      weightedHomogeneousComponent a δ P := by
-    conv_rhs => rw [← weightedHomogeneousComponent_eq_self
-      (weightedHomogeneousComponent_isWeightedHomogeneous δ P), ← hg₀, Finsupp.sum, map_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [(hβ j).weightedHomogeneousComponent_mul_right]
-    split_ifs <;> simp [h, *]
-  refine ⟨g, fun j x hx ↦ hhA j x (by simpa only [g, Finsupp.onFinset_apply] using hx),
-    fun w hw ↦ ?_⟩
-  -- `P - ∑ j, h j * (β j - Q j) = (P - P₀) + ∑ j, h j * Q j`.
+  -- The part `P₀` of `P` of weight `δ` lies in the toric ideal, so `P₀ = ∑ j, g j * β j` for some
+  -- `g j` all of whose exponents `x` satisfy `A x + A (u j) = δ`.
+  obtain ⟨g, hgP₀, hgA⟩ := exists_finsupp_sum_mul_eq_weightedHomogeneousComponent hβ
+    (hJ ▸ weightedHomogeneousComponent_mem_toricIdeal hc hPδ hδ) δ
+  rw [weightedHomogeneousComponent_eq_self
+    (weightedHomogeneousComponent_isWeightedHomogeneous _ _)] at hgP₀
+  refine ⟨g, fun j x hx ↦ by rw [← hA]; exact hgA j x hx, fun w hw ↦ ?_⟩
+  -- `P - ∑ j, g j * (β j - Q j) = (P - P₀) + ∑ j, g j * Q j`.
   have heq : P - (g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1 - Q j)) =
-      P - weightedHomogeneousComponent a δ P + ∑ j ∈ g₀.support, h j * Q j := by
-    rw [hsum, ← hgP₀]
-    simp_rw [mul_sub, Finset.sum_sub_distrib]
+      P - weightedHomogeneousComponent a δ P + g.sum fun j q ↦ q * Q j := by
+    have hsub : (g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1 - Q j)) =
+        (g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1)) - g.sum fun j q ↦ q * Q j := by
+      rw [← Finsupp.sum_sub]
+      simp only [mul_sub]
+    rw [hsub, hgP₀]
     ring
   rw [heq] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
@@ -179,10 +159,10 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
     have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
     exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
-  -- An exponent of `h j * Q j` is a sum `x + y` with `A x + A (u j) = δ` and `A y ≺ A (u j)`.
+  -- An exponent of `g j * Q j` is a sum `x + y` with `A x + A (u j) = δ` and `A y ≺ A (u j)`.
   obtain ⟨j, -, hj⟩ := Finset.mem_biUnion.1 (support_sum hw)
   obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hj)
-  rw [map_add, ← hhA j x hx, map_add, map_add]
+  rw [map_add, ← hgA j x hx, hA, map_add, map_add]
   exact add_lt_add_right (hQ j y hy) _
 
 end CommRing
@@ -247,7 +227,7 @@ private theorem degree_aeval_mem_closure (hc : ∀ i, m.Monic (c i)) {u v : J �
     exact ih _ (hlt w₀ hw₀) (A w₀) (by rwa [hP']) hmax rfl
   · -- Otherwise the leading exponent of `aeval c P` is `δ`, a value of `A`.
     have hdeg : m.degree (aeval c P) = δ := m.toSyn.injective <|
-      le_antisymm (degree_aeval_le_of_forall_le hc hPδ) (m.le_degree (mem_support_iff.2 htop))
+      le_antisymm (degree_aeval_le_of_forall_le hPδ) (m.le_degree (mem_support_iff.2 htop))
     rw [coeff_aeval_of_forall_le hc hPδ] at htop
     obtain ⟨w, hw, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero htop
     rw [hdeg, ← (Finset.mem_filter.1 hw).2]

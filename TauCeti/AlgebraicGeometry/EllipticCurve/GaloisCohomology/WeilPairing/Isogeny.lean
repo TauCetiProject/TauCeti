@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 
 import TauCeti.Algebra.Module.ZMod.Dual
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.KernelWeilPairing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
@@ -39,6 +40,11 @@ Selmer groups `Sel_φ` and `Sel_φ̂` are compared in Cassels' proof of the isog
 Birch–Swinnerton-Dyer quotient; local Tate duality for it is
 `TauCeti.Isogeny.localTateKerWeilPairing_bijective`.
 
+The coefficient pairing commutes with every field extension. Its values are compared in the
+ambient separable closure, with the images of the two kernel points specified explicitly to
+avoid casts across the degree and dual-isogeny base-change equalities. This supplies the
+coefficient-level localization identity for cup products along the isogeny Weil pairing.
+
 ## Main definitions
 
 * `TauCeti.Isogeny.kerCoeffWeilPairing`: the pairing `e_φ : E₁(Kˢ)[φ] × E₂(Kˢ)[φ̂] → μ_n`.
@@ -53,6 +59,7 @@ Birch–Swinnerton-Dyer quotient; local Tate duality for it is
 * `TauCeti.Isogeny.kerCoeffWeilPairing_torsionCoeffToDualKerCoeff`: `e_φ(P, φ R) = e_n(P, R)`, and
   `TauCeti.Isogeny.kerCoeffWeilPairing_unique`: this determines `e_φ`.
 * `TauCeti.Isogeny.kerCoeffWeilPairing_smul`: `e_φ` is Galois-equivariant.
+* `TauCeti.Isogeny.coe_kerCoeffWeilPairing_baseChange`: `e_φ` commutes with field extension.
 * `TauCeti.Isogeny.kerCoeffWeilPairing_nondegenerate_left` and
   `TauCeti.Isogeny.kerCoeffWeilPairing_nondegenerate_right`: `e_φ` is nondegenerate.
 * `TauCeti.Isogeny.natCard_kerCoeff_dual`: `E₂(Kˢ)[φ̂]` and `E₁(Kˢ)[φ]` have the same order.
@@ -72,7 +79,7 @@ the first argument, for `φ` and for `φ̂`, bounds the order of each kernel by 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.8 and X.4.
 * J. W. S. Cassels, *Arithmetic on curves of genus 1. VIII. On conjectures of Birch and
   Swinnerton-Dyer*, J. reine angew. Math. 217 (1965), 180–199.
-* J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed., I, §2.
+* J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed., I, §§2 and 4.
 -/
 
 public section
@@ -182,6 +189,40 @@ theorem kerCoeffWeilPairing_unique
   obtain ⟨R, rfl⟩ := φ.torsionCoeffToDualKerCoeff_surjective Q
   exact (he P R).trans (φ.kerCoeffWeilPairing_torsionCoeffToDualKerCoeff hn P R).symm
 
+/-- The isogeny Weil pairing commutes with every field extension. The hypotheses specify
+only the underlying images of the two kernel points; the values are compared in the ambient
+separable closure, so no casts between degree-indexed roots of unity are needed. -/
+theorem coe_kerCoeffWeilPairing_baseChange {L : Type*} [Field L] [Algebra K L]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (hnL : IsUnit ((φ.baseChange L).degree : L))
+    (P : (ofIsogeny φ).KerCoeff) (Q : (ofIsogeny φ.dual).KerCoeff)
+    (P' : (ofIsogeny (φ.baseChange L)).KerCoeff)
+    (Q' : (ofIsogeny (φ.baseChange L).dual).KerCoeff)
+    (hP : (P' : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ P)
+    (hQ : (Q' : (W₂⁄L).PointCoeff) = W₂.pointCoeffBaseChange τ Q) :
+    ((φ.baseChange L).kerCoeffWeilPairing hnL P' Q').toMul.val.val =
+      τ ((φ.kerCoeffWeilPairing hn P Q).toMul.val.val) := by
+  classical
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+  obtain ⟨R, rfl⟩ := φ.torsionCoeffToDualKerCoeff_surjective Q
+  have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
+  -- Reindex only the torsion level, retaining the ordinary coordinate base-change map.
+  let R' : (W₁⁄L).TorsionCoeff (φ.baseChange L).degree :=
+    ⟨W₁.pointCoeffBaseChange τ R, by
+      simpa only [hd, coe_torsionCoeffBaseChange] using
+        (W₁.torsionCoeffBaseChange τ φ.degree R).2⟩
+  have hR' : (R' : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ R := rfl
+  have hQ' : (φ.baseChange L).torsionCoeffToDualKerCoeff R' = Q' := by
+    apply Subtype.ext
+    rw [coe_torsionCoeffToDualKerCoeff, hR', pointCoeffMap_baseChange_pointCoeffBaseChange,
+      hQ, coe_torsionCoeffToDualKerCoeff]
+  rw [← hQ', kerCoeffWeilPairing_torsionCoeffToDualKerCoeff,
+    kerCoeffWeilPairing_torsionCoeffToDualKerCoeff]
+  exact W₁.coe_torsionCoeffWeilPairing_baseChange hn τ _ hnL hd
+    (φ.kerCoeffToTorsionCoeff P) R
+    ((φ.baseChange L).kerCoeffToTorsionCoeff P') R'
+    (by simpa only [coe_kerCoeffToTorsionCoeff] using hP) hR'
+
 /-- **The isogeny Weil pairing is Galois-equivariant**: `e_φ(σ P, σ Q) = σ (e_φ(P, Q))` for every
 `σ ∈ G_K`. -/
 @[simp]
@@ -276,6 +317,15 @@ def kerCoeffWeilDual : (ofIsogeny φ.dual).KerCoeff →+[AbsoluteGaloisGroup K]
 theorem toAddMonoidHom_kerCoeffWeilDual (Q : (ofIsogeny φ.dual).KerCoeff) :
     (φ.kerCoeffWeilDual hn Q).toAddMonoidHom = (φ.kerCoeffWeilPairing hn).flip Q := (rfl)
 
+/-- The Weil dual of the projection `E₁[n] → E₂[φ̂]` is restriction of characters along
+`E₁[φ] → E₁[n]`. -/
+theorem kerCoeffWeilDual_comp_torsionCoeffToDualKerCoeff :
+    (φ.kerCoeffWeilDual hn).comp φ.torsionCoeffToDualKerCoeff =
+      (InternalHom.precomp (AbsoluteGaloisGroup K) φ.kerCoeffToTorsionCoeff).comp
+        (W₁.torsionCoeffWeilDual φ.degree hn) := by
+  ext R P
+  simp [InternalHom.toAddMonoidHom_precomp]
+
 /-- **Duality of the kernels of an isogeny and of its dual as Galois modules**: every character
 `E₁(Kˢ)[φ] → μ_n` is `P ↦ e_φ(P, Q)` for a unique `Q ∈ E₂(Kˢ)[φ̂]`. -/
 theorem kerCoeffWeilDual_bijective : Function.Bijective (φ.kerCoeffWeilDual hn) := by
@@ -336,6 +386,40 @@ theorem kerH1WeilPairing_eq_explicitCup11
       InternalHom.evalPairing_apply, toAddMonoidHom_kerCoeffWeilDual]) a b
   simpa only [explicitCoeff2_id, explicitCoeff1_id, AddMonoidHom.id_apply,
     kerH1WeilPairing_eq_dualityMap1, dualityMap1_eq_explicitCup11] using h.symm
+
+private theorem explicitCoeff1_kerCoeffWeilDual_torsionCoeffToDualKerCoeff
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    explicitCoeff1 _ _ (φ.kerCoeffWeilDual hn) continuous_of_discreteTopology
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      explicitCoeff1 _ _ (InternalHom.precomp (AbsoluteGaloisGroup K)
+        φ.kerCoeffToTorsionCoeff) continuous_of_discreteTopology
+        (explicitCoeff1 _ _ (W₁.torsionCoeffWeilDual φ.degree hn)
+          continuous_of_discreteTopology b) := by
+  have h := congrArg (fun f ↦ explicitCoeff1 _ _ f continuous_of_discreteTopology b)
+    (φ.kerCoeffWeilDual_comp_torsionCoeffToDualKerCoeff hn)
+  rw [explicitCoeff1_comp _ _ φ.torsionCoeffToDualKerCoeff (φ.kerCoeffWeilDual hn)
+      continuous_of_discreteTopology continuous_of_discreteTopology,
+    explicitCoeff1_comp _ _ (W₁.torsionCoeffWeilDual φ.degree hn)
+      (InternalHom.precomp (AbsoluteGaloisGroup K) φ.kerCoeffToTorsionCoeff)
+      continuous_of_discreteTopology continuous_of_discreteTopology,
+    AddMonoidHom.comp_apply, AddMonoidHom.comp_apply] at h
+  exact h
+
+/-- The isogeny Weil cup product with a class projected from degree-torsion is the
+multiplication Weil cup product with the first class included into degree-torsion. -/
+theorem kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    φ.kerH1WeilPairing hn a
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      W₁.torsionH1WeilPairing φ.degree hn
+        (explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology a) b := by
+  have := hn.neZero_natCast
+  rw [kerH1WeilPairing_eq_dualityMap1, torsionH1WeilPairing_eq_dualityMap1,
+    dualityMap1_explicitCoeff1]
+  exact congrArg (dualityMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
+    (KummerCoeff K φ.degree) a)
+    (φ.explicitCoeff1_kerCoeffWeilDual_torsionCoeffToDualKerCoeff hn b)
 
 end TauCeti.Isogeny
 

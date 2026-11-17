@@ -37,7 +37,7 @@ noncomputable section
 /-- Add fixed-degree effective divisors.  The degree index records additivity of degree. -/
 abbrev add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     EffectiveDivisorOfDegree X (d + e) :=
-  ⟨(D : WeilDivisor X) + E, D.isEffective.add E.isEffective, by
+  ⟨(D : WeilDivisor X) + E, add_nonneg D.coe_nonneg E.coe_nonneg, by
     simp [degree_add, D.degree_eq, E.degree_eq]⟩
 
 /-- The underlying Weil divisor of a fixed-degree sum is the sum of the underlying divisors. -/

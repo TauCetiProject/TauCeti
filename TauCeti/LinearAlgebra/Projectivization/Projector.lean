@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Trace.Idempotent
@@ -50,6 +52,11 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   the projector map sends the standard affine open `{x_i ≠ 0}` onto the matrices of the locus with
   nonzero `i`-th diagonal entry, and the standard affine chart at `i` reads the coordinates of a
   line off its projector `A` as the ratios `A (i.succAbove k) i / A i i`.
+* `Projectivization.projector_apply_self_nonneg` and
+  `Projectivization.projector_apply_self_pos_iff`: the diagonal entries of a projector are
+  nonnegative, and the `i`-th one is positive exactly on the standard affine open `{x_i ≠ 0}`.
+* `Projectivization.exists_projector_eq_vecMulVec`: the projector of a real line is the outer
+  product `x xᵀ` of a unit vector.
 
 ## References
 
@@ -235,6 +242,21 @@ theorem projector_apply_self_eq_zero_iff {p : ℙ K (ι → K)} {i : ι} :
   induction p using ind with
   | h x hx => simp [rankOneProjector_apply, dotProduct_self_eq_zero.not.mpr hx]
 
+/-- Over an ordered field the diagonal entries `x_i² / ‖x‖²` of the projector of a line are
+nonnegative. -/
+theorem projector_apply_self_nonneg (p : ℙ K (ι → K)) (i : ι) : 0 ≤ projector p i i := by
+  induction p using ind with
+  | h x hx =>
+    rw [projector_mk, rankOneProjector_apply]
+    exact div_nonneg (mul_self_nonneg _) (dotProduct_self_nonneg x)
+
+/-- Over an ordered field the `i`-th diagonal entry `x_i² / ‖x‖²` of the projector of a line is
+positive exactly when the line lies in the standard affine open `{x_i ≠ 0}`. -/
+@[simp]
+theorem projector_apply_self_pos_iff {p : ℙ K (ι → K)} {i : ι} :
+    0 < projector p i i ↔ p ∈ affineOpen i := by
+  rw [(projector_apply_self_nonneg p i).lt_iff_ne', Ne, projector_apply_self_eq_zero_iff, not_not]
+
 /-- Over an ordered field the projector map sends the standard affine open `{x_i ≠ 0}` onto the
 matrices of the projector locus with nonzero `i`-th diagonal entry. -/
 theorem image_projector_affineOpen (i : ι) :
@@ -261,5 +283,21 @@ theorem affineChart_eq_projector_div {n : ℕ} (i : Fin (n + 1)) (p : ℙ K (Fin
     rcases eq_or_ne (x i) 0 with hi | hi
     · simp [hi]
     · field_simp
+
+/-- The projector of a real line is the outer product `x xᵀ` of some vector `x` with
+`x ⬝ᵥ x = 1`. -/
+theorem exists_projector_eq_vecMulVec (p : ℙ ℝ (ι → ℝ)) :
+    ∃ x : ι → ℝ, x ⬝ᵥ x = 1 ∧ projector p = Matrix.vecMulVec x x := by
+  induction p using Projectivization.ind with | h v hv => ?_
+  have hs : 0 < v ⬝ᵥ v :=
+    lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (v i))
+      (Ne.symm (dotProduct_self_eq_zero.not.mpr hv))
+  have hc : (√(v ⬝ᵥ v))⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_pos.2 hs).ne'
+  have h1 : ((√(v ⬝ᵥ v))⁻¹ • v) ⬝ᵥ ((√(v ⬝ᵥ v))⁻¹ • v) = 1 := by
+    simp only [dotProduct_smul, smul_dotProduct, smul_eq_mul]
+    field_simp
+    exact (Real.sq_sqrt hs.le).symm
+  refine ⟨_, h1, ?_⟩
+  rw [projector_mk, ← rankOneProjector_smul hc v, rankOneProjector_def, h1, inv_one, one_smul]
 
 end Projectivization

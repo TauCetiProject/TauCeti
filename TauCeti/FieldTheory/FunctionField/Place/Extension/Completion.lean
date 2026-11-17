@@ -148,7 +148,7 @@ theorem ramificationGroup_eq_comap_completionDecompositionHom (i : ℕ) :
       mem_maximalIdeal_pow_iff_coe_mem_filtration, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       completionIntegersEmbedding_apply, completionEmbedding_mem_filtration_iff]
   · -- approximate `y` to order `n` by a function in the valuation ring of `P`
-    obtain ⟨x, hx⟩ := P.exists_filtration_sub_completionEmbedding_mem (Nat.cast_nonneg n)
+    obtain ⟨x, hx⟩ := P.exists_filtration_sub_completionEmbedding_mem n
       ⟨y, P.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
     refine ⟨⟨x, P.mem_filtration_zero_iff.mp x.2⟩, ?_⟩
     rw [mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,

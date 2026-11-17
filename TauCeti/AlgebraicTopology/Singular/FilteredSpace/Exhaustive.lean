@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
+import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
 # Exhaustive filtrations of a space
@@ -91,14 +92,8 @@ theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
     obtain ⟨q, y, hy⟩ := Concrete.isColimit_exists_rep _ hc
       ((((TopCat.toSSet.obj Y).chainComplex M).extendXIso _ hn).hom x)
     -- Transport the preimage `y` from degree `n` to degree `m = -n` of the extended complexes.
-    have hext {K L : ChainComplex (ModuleCat.{w} k) ℕ} (φ : K ⟶ L)
-        (x : (L.extend ComplexShape.embeddingDownNat).X m)
-        (h : (L.extendXIso _ hn).hom x ∈ LinearMap.range (φ.f n).hom) :
-        x ∈ LinearMap.range ((extendMap φ ComplexShape.embeddingDownNat).f m).hom := by
-      obtain ⟨y, hy⟩ := h
-      exact ⟨(K.extendXIso _ hn).inv y, by rw [extendMap_f _ _ hn]; simp [hy]⟩
-    obtain ⟨z, rfl⟩ := hext
-      (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M) x ⟨y, hy⟩
+    obtain ⟨z, rfl⟩ := (mem_range_extendMap_f_iff _
+      (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M) hn x).2 ⟨y, hy⟩
     refine ⟨q, (singularChainFiltrationIso M X q).inv.f m z, ?_⟩
     rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
       ← singularChainFiltrationIso_hom_comp_singularChainFiltrationι, Iso.inv_hom_id_assoc,

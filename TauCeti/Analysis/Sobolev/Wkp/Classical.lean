@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.Morse.Linearization
+import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Classical derivatives of smooth Sobolev representatives
@@ -17,7 +21,12 @@ representatives satisfy the integrability hypotheses of classical higher-order c
 Conversely, a function that is `Cᵏ` on the domain and whose classical derivatives through order
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
-(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`).
+(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`). On a domain in `ℝⁿ`, the weak
+Hessian of a `W^{2,p}` function with a `C²` representative `f` has entries `∂ᵢ∂ⱼf` almost
+everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`). Consequently,
+for `u ∈ W^{2,p}(U)` and a function `w` that is `C²` near the closure of a bounded open `Ω ⊆ U`,
+`w - u` is an element of `W^{2,p}(Ω)` with weak Hessian `∇²w - ∇²u`
+(`TauCeti.Wkp.exists_value_ae_eq_sub_of_contDiffOn`).
 
 The weak-to-classical identification uses `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`; the norm
 comparison uses Mathlib's `norm_iteratedFDeriv_fderiv` and the Riesz isometry. These are the
@@ -238,20 +247,17 @@ theorem Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn :
   | 0, u, f, hf, hu => by
       rw [Finset.sum_range_one, ← norm_value_eq_lpNorm_of_contDiffOn 0 u hf hu, value_zero]
   | 1, u, f, hf, hu => by
-      have h := W1p.norm_le_norm_value_add_norm_gradient u
+      have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 u
       rw [Finset.sum_range_succ, Finset.sum_range_one,
         ← norm_value_eq_lpNorm_of_contDiffOn 1 u hf hu, value_one,
         ← norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf hu, iteratedGradient_zero]
-      exact h
+      simpa only [lowerOrder_zero, iteratedGradient_zero] using h
   | k + 2, u, f, hf, hu => by
       have hlow := norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn (k + 1) (lowerOrder (k + 1) u)
         (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2)))
         (by simpa only [value_succ] using hu)
       have hhigh := norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k + 1) u hf hu
-      have hsq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      have hle : ‖u‖ ≤ ‖lowerOrder (k + 1) u‖ + ‖iteratedGradient (k + 1) u‖ :=
-        le_of_pow_le_pow_left₀ two_ne_zero (by positivity) (by
-          nlinarith [norm_nonneg (lowerOrder (k + 1) u), norm_nonneg (iteratedGradient (k + 1) u)])
+      have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (k + 1) u
       rw [Finset.sum_range_succ _ (k + 2)]
       linarith
 
@@ -297,7 +303,6 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
           (.of_forall fun x => (norm_iteratedGradientChain f (k + 1) x).symm)
       have hweak : HasWeakFDerivOn mu Omega (iteratedGradient k u) (hD.toLp _) :=
         ((hasWeakFDerivOn_of_differentiableOn
-          (hs.continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet)
           (hc'.locallyIntegrableOn Omega.isOpen.measurableSet)
           fun x hx => (hs.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt
             (by simp)).congr_ae
@@ -306,6 +311,70 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
 
+/-- **A `Cᵏ` function is a Sobolev function on compactly contained subdomains.** If `f` is `Cᵏ` on
+an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `f` represents an element of
+`W^{k,p}(Ω)`: its derivatives through order `k` are continuous on `K`, hence bounded on `Ω`. -/
+theorem Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (k : ℕ) {f : E → ℝ} {U K : Set E}
+    (hU : IsOpen U) (hf : ContDiffOn ℝ k f U) (hK : IsCompact K) (hΩK : (Omega : Set E) ⊆ K)
+    (hKU : K ⊆ U) :
+    ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f :=
+  exists_value_ae_eq_of_contDiffOn k (hf.mono (hΩK.trans hKU)) fun i hi =>
+    ((ContinuousOn.continuousOn_iteratedFDeriv hf hU (by exact_mod_cast hi)).mono
+      hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p
+
 end Sobolev
+
+section Euclidean
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- **The weak Hessian of a `C²` representative in coordinates.** If `u ∈ W^{2,p}(Ω)` on a domain
+`Ω ⊆ ℝⁿ` has a representative `f` that is `C²` on `Ω`, then the entries `(D²u eⱼ)ᵢ` of its weak
+Hessian are the second partial derivatives `∂ᵢ∂ⱼf` almost everywhere on `Ω`. -/
+theorem Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn (u : Wkp mu Omega p 2)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : ContDiffOn ℝ 2 f Omega)
+    (hu : (value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] f) :
+    ∀ᵐ x ∂mu.restrict Omega, ∀ i j : ι,
+      iteratedGradient 1 u x (EuclideanSpace.single j 1) i =
+        fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  filter_upwards [iteratedGradient_ae_eq_of_contDiffOn 1 u hf hu,
+    ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ i j
+  rw [hx, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
+    hessianOperator_single_apply (hf.contDiffAt (Omega.isOpen.mem_nhds hxΩ))]
+
+/-- **A `C²` function minus a strong function.** Let `u ∈ W^{2,p}(U)` have the representative
+`ū`, let `Ω ⊆ U` be open and bounded, and let `w` be `C²` on an open set containing the closure of
+`Ω`. Then `w - ū` represents an element `V` of `W^{2,p}(Ω)` whose weak Hessian is `∇²w - ∇²u`
+almost everywhere on `Ω`. -/
+theorem Wkp.exists_value_ae_eq_sub_of_contDiffOn {U : Opens (EuclideanSpace ℝ ι)}
+    (hΩU : Omega ≤ U) (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (u : Wkp mu U p 2) {ū w : EuclideanSpace ℝ ι → ℝ}
+    (hū : (value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict U] ū)
+    {W : Set (EuclideanSpace ℝ ι)} (hW : IsOpen W) (hw : ContDiffOn ℝ 2 w W)
+    (hΩW : closure (Omega : Set (EuclideanSpace ℝ ι)) ⊆ W) :
+    ∃ V : Wkp mu Omega p 2,
+      (value 2 V : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] (fun y ↦ w y - ū y) ∧
+      ∀ᵐ y ∂mu.restrict Omega, ∀ i j : ι,
+        iteratedGradient 1 V y (EuclideanSpace.single j 1) i =
+          fderiv ℝ (fderiv ℝ w) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
+            iteratedGradient 1 u y (EuclideanSpace.single j 1) i := by
+  obtain ⟨V, hV⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (p := p)
+    (Omega := Omega) 2 hW hw hΩ.isCompact_closure subset_closure hΩW
+  refine ⟨V - restrictL hΩU 2 u, ?_, ?_⟩
+  · rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+    filter_upwards [Lp.coeFn_sub (value 2 V) (value 2 (restrictL hΩU 2 u)), hV,
+      value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
+      with y h1 h2 h3 h4
+    rw [h1, Pi.sub_apply, h2, h3, h4]
+  · rw [← iteratedGradientL_apply, map_sub, iteratedGradientL_apply, iteratedGradientL_apply]
+    filter_upwards [Lp.coeFn_sub (iteratedGradient 1 V)
+        (iteratedGradient 1 (restrictL hΩU 2 u)),
+      iteratedGradient_one_single_apply_ae_eq_of_contDiffOn V (hw.mono (subset_closure.trans hΩW))
+        hV,
+      iteratedGradient_restrictL_ae hΩU 1 u] with y h1 h2 h3 i j
+    rw [h1, Pi.sub_apply, sub_apply, PiLp.sub_apply, h2, h3]
+
+end Euclidean
 
 end TauCeti

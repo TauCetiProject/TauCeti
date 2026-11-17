@@ -95,7 +95,8 @@ section LieDimension
 variable {k : Type u} [Field k] {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
   [Algebra.FiniteType k H]
 
-/-- A smooth closed subgroup of a finite-type affine group has the dimension of its Lie algebra,
+omit [Algebra.FiniteType k H] in
+/-- A smooth closed subgroup of an affine group has the dimension of its Lie algebra,
 viewed inside the Lie algebra of the ambient group. -/
 theorem ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth (I : HopfIdeal k H)
     [Algebra.Smooth k (H ⧸ I.toIdeal)] :

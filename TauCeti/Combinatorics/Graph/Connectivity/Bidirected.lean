@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
-public import TauCeti.Combinatorics.Network.Connectivity
+public import TauCeti.Combinatorics.Network.Connectivity.Basic
 
 /-!
 # Connectivity of the bidirected arrow family of a multigraph

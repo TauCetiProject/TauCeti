@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Realization
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
+
+import TauCeti.MeasureTheory.Measure.LevyProkhorovMetric
 
 /-!
 # Density of graph plans among couplings
@@ -69,7 +70,7 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
   classical
   let u : ℕ → X := TopologicalSpace.denseSeq X
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
-  let r : ℝ := ε * ε / 32
+  let r : ℝ := ε / 4
   have hr : 0 < r := by dsimp [r]; positivity
   have hidx : ∀ x : X, ∃ i, dist x (u i) < r :=
     fun x ↦ Metric.denseRange_iff.1 hu x r hr
@@ -84,34 +85,17 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
   obtain ⟨T, hT, hqmap⟩ := hπ.exists_measurePreserving_map_graphPlan_eq hq
   have hmap : π.map F = (graphPlan T μ).map F := by
     have hu' : Measurable (Prod.map u (id : Y → Y)) :=
-      (Measurable.of_discrete).prodMap measurable_id
-    have hcomp : (Prod.map u (id : Y → Y)) ∘ (Prod.map q id) = F := by
-      funext z
-      rfl
-    calc
-      π.map F = (π.map (Prod.map q id)).map (Prod.map u id) := by
-        rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-      _ = ((graphPlan T μ).map (Prod.map q id)).map (Prod.map u id) := by
-        rw [hqmap]
-      _ = (graphPlan T μ).map F := by
-        rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-  have hleft : wassersteinEDist 1 π (π.map F) ≤ ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
-  have hright : wassersteinEDist 1 (graphPlan T μ) ((graphPlan T μ).map F) ≤
-      ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le (graphPlan T μ) hF.aemeasurable
-      (Filter.Eventually.of_forall hdist)
-  have hrbound : ENNReal.ofReal r < ENNReal.ofReal (ε / 4) * ENNReal.ofReal (ε / 4) := by
-    rw [← ENNReal.ofReal_mul (by positivity : 0 ≤ ε / 4)]
-    exact (ENNReal.ofReal_lt_ofReal_iff (by positivity : 0 < ε / 4 * (ε / 4))).2
-      (by dsimp [r]; nlinarith [sq_pos_of_pos hε])
+      Measurable.of_discrete.prodMap measurable_id
+    have hq' := hq.prodMap (measurable_id : Measurable (id : Y → Y))
+    have hcomp : (Prod.map u (id : Y → Y)) ∘ (Prod.map q id) = F := rfl
+    simpa only [Measure.map_map hu' hq', hcomp] using
+      congrArg (Measure.map (Prod.map u (id : Y → Y))) hqmap.symm
   have hdistleft : levyProkhorovEDist π (π.map F) ≤ ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-      (by norm_num : (1 : ℝ≥0∞) ≤ 1) (hleft.trans_lt hrbound)
+    π.levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable (Filter.Eventually.of_forall hdist)
   have hdistright : levyProkhorovEDist (graphPlan T μ) ((graphPlan T μ).map F) ≤
       ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-      (by norm_num : (1 : ℝ≥0∞) ≤ 1) (hright.trans_lt hrbound)
+    (graphPlan T μ).levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable
+      (Filter.Eventually.of_forall hdist)
   refine ⟨T, hT, ?_⟩
   calc
     levyProkhorovEDist π (graphPlan T μ) ≤

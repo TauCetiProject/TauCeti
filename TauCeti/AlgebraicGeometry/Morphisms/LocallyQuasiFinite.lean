@@ -178,13 +178,17 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt {X Y : Scheme.{u}} (f 
     IsLocalization.AtPrime.ringKrullDim_eq_height (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal,
     Ideal.height_eq_height_of_quasiFiniteAt (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal q]
 
-/-- A locally quasi-finite dominant morphism `f : X ⟶ Y` of integral schemes, locally of finite
-type, onto a normal scheme preserves the dimension of every local ring:
-`dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed. -/
+/-- A locally quasi-finite dominant morphism `f : X ⟶ Y`, locally of finite type, from an integral
+scheme onto a normal scheme preserves the dimension of every local ring:
+`dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed, and `Y` is integral
+for free, being reduced and the dominant image of an irreducible scheme. -/
 theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsIntegral X] [IsIntegral Y] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
+    [IsIntegral X] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
     [TauCeti.AlgebraicGeometry.IsNormalScheme Y] (x : X) :
-    ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) :=
-  f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
+    ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) := by
+  -- `Y` is reduced, being normal, and irreducible, being the dominant image of `X`.
+  have := f.irreducibleSpace_of_isDominant
+  have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
+  exact f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
 
 end AlgebraicGeometry

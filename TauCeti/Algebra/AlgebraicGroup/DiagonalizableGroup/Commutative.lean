@@ -95,8 +95,9 @@ This holds over an algebraically closed field, for a group of finite type. -/
 theorem torusCommHopfAlgProperty_of_isSemisimplePoint
     (hss : ∀ g : WithConv (H →ₐ[k] k), HopfAlgebra.IsSemisimplePoint g) :
     torusCommHopfAlgProperty k H :=
-  torusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top H
-    (HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint k H hss)
+  splitTorusCommHopfAlgProperty.torus k H
+    (splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top H
+      (HopfAlgebra.groupLikeSetSpan_eq_top_of_isSemisimplePoint k H hss))
 
 end
 

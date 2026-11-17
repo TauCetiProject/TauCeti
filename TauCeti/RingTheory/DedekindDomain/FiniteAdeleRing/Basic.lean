@@ -326,6 +326,14 @@ theorem algebraMap_mem_integralAdeles_iff (x : K) :
   rw [← sIntegralAdeles_empty, algebraMap_mem_sIntegralAdeles_iff, Set.mem_integer_empty_iff,
     RingHom.mem_range]
 
+/-- Subtracting the diagonal image of `x + y`, for `y ∈ R`, from a finite adele that is integral
+after subtracting the diagonal image of `x` keeps it integral. -/
+theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R K} {x : K}
+    (hx : f - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K) (y : R) :
+    f - algebraMap K (FiniteAdeleRing R K) (x + algebraMap R K y) ∈ integralAdeles R K := by
+  rw [map_add, ← IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), sub_add_eq_sub_sub]
+  exact sub_mem hx ((integralAdeles R K).algebraMap_mem y)
+
 end IsDedekindDomain.FiniteAdeleRing
 
 /-! ### Strong approximation -/

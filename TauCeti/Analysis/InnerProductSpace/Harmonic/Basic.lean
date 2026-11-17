@@ -24,22 +24,18 @@ public section
 namespace InnerProductSpace
 
 variable {E F ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ι → E → F} {x : E} {s : Set E}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ι → E → F} {u : Finset ι} {x : E}
+  {s : Set E}
 
 /-- A finite sum of functions harmonic at `x` is harmonic at `x`. -/
-theorem HarmonicAt.sum (u : Finset ι) (h : ∀ i ∈ u, HarmonicAt (f i) x) :
+theorem HarmonicAt.sum (h : ∀ i ∈ u, HarmonicAt (f i) x) :
     HarmonicAt (fun y => ∑ i ∈ u, f i y) x := by
-  classical
-  induction u using Finset.induction_on with
-  | empty => simp
-  | insert j u hj ih =>
-    simp only [Finset.sum_insert hj]
-    exact (h j (Finset.mem_insert_self j u)).add
-      (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
+  rw [← Finset.sum_fn]
+  exact Finset.sum_induction _ (HarmonicAt · x) (fun _ _ => .add) (harmonicAt_const 0) h
 
 /-- A finite sum of functions harmonic on a neighborhood of `s` is harmonic there. -/
-theorem HarmonicOnNhd.sum (u : Finset ι) (h : ∀ i ∈ u, HarmonicOnNhd (f i) s) :
+theorem HarmonicOnNhd.sum (h : ∀ i ∈ u, HarmonicOnNhd (f i) s) :
     HarmonicOnNhd (fun y => ∑ i ∈ u, f i y) s :=
-  fun x hx => HarmonicAt.sum u fun i hi => h i hi x hx
+  fun x hx => HarmonicAt.sum fun i hi => h i hi x hx
 
 end InnerProductSpace

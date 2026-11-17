@@ -26,7 +26,7 @@ The main results are:
   finite support;
 * `WeilDivisor.OrderSystem.ofScheme`: the resulting order system, whose generic
   `OrderSystem.principalDivisor` is the scheme-theoretic principal divisor;
-* `SchemeWeilDivisor.isEffective_add_principalDivisor_iff`: the coefficientwise criterion for a
+* `SchemeWeilDivisor.add_principalDivisor_nonneg_iff`: the coefficientwise criterion for a
   divisor plus a principal divisor to be effective.
 
 This file completes the global step left open by
@@ -109,14 +109,13 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 /-- A divisor plus a principal divisor is effective exactly when the corresponding rational
 function has order at least the negative of the divisor coefficient at every codimension-one
 point. -/
-lemma isEffective_add_principalDivisor_iff
+lemma add_principalDivisor_nonneg_iff
     (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ) :
-    WeilDivisor.IsEffective
-        (D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ↔
+    0 ≤ D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g ↔
       ∀ x : CodimensionOnePoint X,
         -WeilDivisor.coeff D x ≤
           X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
-  rw [WeilDivisor.isEffective_iff]
+  rw [WeilDivisor.nonneg_iff]
   apply forall_congr'
   intro x
   rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,

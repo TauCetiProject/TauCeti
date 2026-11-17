@@ -24,6 +24,8 @@ Let `F` be the free pro-`p` group on a set `X` and `r ∈ F` a relator presentin
 * `TauCeti.demushkinRelatorCharacter`: the character of a Demushkin relator, the canonical
   character of the presented group read on the free pro-`p` group.
 * `TauCeti.demushkinRelatorCharacter_mem_ker`: the relator lies in the kernel of its character.
+* `TauCeti.demushkinRelatorCharacter_isCrossedHom_eq_zero`: every continuous crossed homomorphism
+  for the character of a relator in the Frattini subgroup kills the relator.
 * `TauCeti.demushkinRelatorCharacter_apply_equiv_symm`: the character of a relator read along an
   isomorphism of free pro-`p` groups carrying it to another relator.
 
@@ -64,6 +66,17 @@ theorem range_demushkinRelatorCharacter (hr : IsDemushkin p (presentedProP p X {
 theorem demushkinRelatorCharacter_mem_ker (hr : IsDemushkin p (presentedProP p X {r})) :
     r ∈ (demushkinRelatorCharacter hr : freeProP p X →* ℤ_[p]ˣ).ker := by
   simp [presentedProP.mk_relator r (Set.mem_singleton r)]
+
+/-- **Crossed homomorphisms for the character of a Demushkin relator kill the relator**: if the
+relator lies in the Frattini subgroup, every continuous crossed homomorphism for its character
+vanishes on it. -/
+theorem demushkinRelatorCharacter_isCrossedHom_eq_zero [Finite X]
+    (hr : IsDemushkin p (presentedProP p X {r})) (hΦ : r ∈ proPFrattini p (freeProP p X))
+    {D : freeProP p X → ℤ_[p]} (hDc : Continuous D)
+    (hD : IsCrossedHom (demushkinRelatorCharacter hr) D) : D r = 0 :=
+  (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
+    (Set.singleton_subset_iff.2 hΦ) _).1 (hasPrescriptionProperty_demushkinCharacter hr) D hDc
+    hD _ rfl
 
 /-- **The character of a Demushkin relator along an isomorphism.** If a continuous isomorphism
 `e : F_X ≃ F_Y` of free pro-`p` groups carries `r` to `r'`, the character of `r` takes on `e⁻¹(y)`

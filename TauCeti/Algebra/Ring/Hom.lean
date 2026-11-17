@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Commute
-public import Mathlib.Data.Set.Operations
+public import Mathlib.Algebra.Ring.Equiv
 import Mathlib.Data.Nat.Cast.Basic
-import Mathlib.Data.Set.Function
 
 /-!
-# Multiplicative maps into rings
+# Multiplicative maps, ring homomorphisms, and ring equivalences
 
 The element `-1` squares to `1`. A multiplicative map into a ring without zero divisors
 therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
@@ -22,32 +21,34 @@ A ring homomorphism fixes natural number casts, so it preserves membership state
 controls denominators under ring endomorphisms that preserve a subring, as in integrality arguments
 for Hazewinkel's functional equation.
 
-A ring homomorphism applied entrywise to a scalar multiple `c • v` of a family gives
-`f c • (f ∘ v)`.
+A ring equivalence `e : R ≃+* S` transports polynomial equations in both directions by applying
+`e` and `e.symm`. In particular, it preserves solvability of the binary quadratic norm equation
+`b = x² - a y²`, which transports Hilbert symbols and local and global quadratic norm equations
+along field and completion isomorphisms.
 
 ## Main results
 
-* `MonoidHom.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
-
-* `RingHom.comp_smul`: `f ∘ (c • v) = f c • (f ∘ v)`.
+* `RingEquiv.exists_eq_sq_sub_mul_sq_map_iff`: a ring equivalence preserves solvability of
+  `b = x² - a y²`.
 -/
 
 public section
 
-namespace MonoidHom
+namespace TauCeti
 
 /-- A multiplicative map into a ring without zero divisors sends `-1` to `1` or `-1`.
 Only distributive negation and a multiplicative identity are required in the source; the target
 ring need not be associative. -/
-theorem map_neg_one_eq_one_or_eq_neg_one {M R : Type*} [MulOneClass M] [HasDistribNeg M]
-    [NonAssocRing R] [NoZeroDivisors R] (f : M →* R) :
+theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDistribNeg M]
+    [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
 
-end MonoidHom
+end TauCeti
 
 namespace Set.MapsTo
 
@@ -68,12 +69,18 @@ theorem natCast_pow_mul_apply_mem {R S F : Type*} [Semiring R] [Semiring S]
 
 end Set.MapsTo
 
-namespace RingHom
+namespace RingEquiv
 
-variable {R S ι : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+-- Not `@[simp]`: the left-hand side is headed by `Exists`, which would index under a wildcard key.
+/-- A ring isomorphism preserves solvability of the binary quadratic norm equation
+`b = x² - a y²`. -/
+theorem exists_eq_sq_sub_mul_sq_map_iff {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S)
+    (a b : R) :
+    (∃ x y : S, e b = x ^ 2 - e a * y ^ 2) ↔ ∃ x y : R, b = x ^ 2 - a * y ^ 2 := by
+  constructor
+  · rintro ⟨x, y, h⟩
+    exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+  · rintro ⟨x, y, h⟩
+    exact ⟨e x, e y, by simp [h]⟩
 
-/-- A ring homomorphism applied entrywise to `c • v` gives `f c • (f ∘ v)`. -/
-theorem comp_smul (f : R →+* S) (c : R) (v : ι → R) : f ∘ (c • v) = f c • (f ∘ v) :=
-  funext fun _ ↦ map_mul f _ _
-
-end RingHom
+end RingEquiv

@@ -508,7 +508,7 @@ private theorem Valid.identify {st : State} (hv : Valid x h parents st) {a b : �
   have key : pt x parents (st.root st.n a).1 = pt x parents (st.root st.n b).1 *
       h ^ ((st.root st.n b).2 + d - (st.root st.n a).2) := by
     rw [hv.root st.n a, hv.mul_zpow_root b d] at H
-    exact eq_mul_zpow_sub_of_mul_zpow_eq H
+    exact eq_mul_zpow_sub_iff_mul_zpow_eq.2 H
   unfold State.identify
   simp only
   split_ifs with h₁ h₂
@@ -529,7 +529,7 @@ private theorem Valid.addOne {st : State} (hv : Valid x h parents st) {t j q : �
   split
   · exact hv.setEdge hq
   · next s f hs =>
-    exact hv.identify (eq_mul_zpow_sub_of_mul_zpow_eq ((hv.edge t j s f hs).symm.trans hq))
+    exact hv.identify (eq_mul_zpow_sub_iff_mul_zpow_eq.2 ((hv.edge t j s f hs).symm.trans hq))
 
 private theorem Valid.add {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
     (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
@@ -565,7 +565,7 @@ private theorem Valid.transfer {st : State} (hv : Valid x h parents st) (p : ℕ
     · next q e hqe =>
       have H := hs.edge t p q e hqe
       rw [hp, ← mul_assoc] at H
-      exact hs.add (eq_mul_zpow_sub_of_mul_zpow_eq H)
+      exact hs.add (eq_mul_zpow_sub_iff_mul_zpow_eq.2 H)
 
 private theorem Valid.withPending {st : State} (hv : Valid x h parents st) (ps : List ℕ) :
     Valid x h parents { st with pending := ps } :=
@@ -610,7 +610,7 @@ private theorem Valid.close {st : State} (hv : Valid x h parents st) {i : ℕ} {
     · exact hv
     · next j E hw =>
       rw [wordValue_cons, mul_assoc, hv.walk i u hw, ← mul_assoc] at H
-      exact hv.add (eq_mul_zpow_sub_of_mul_zpow_eq H)
+      exact hv.add (eq_mul_zpow_sub_iff_mul_zpow_eq.2 H)
 
 private theorem Valid.define {st : State} (hv : Valid x h parents st) :
     Valid x h parents (st.define (2 * n)) := by

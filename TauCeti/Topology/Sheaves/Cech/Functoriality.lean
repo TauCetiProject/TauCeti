@@ -17,6 +17,11 @@ The target uses its own point-neighborhood cover system, not the inverse images 
 cofinal system on `Y` (which need not be cofinal on `X`). The map is characterized on
 every small open cover and is natural in the coefficient morphism.
 
+When `f` is inducing and surjective, for instance a homeomorphism, every open cover of `X` is the
+inverse image of an open cover of `Y`. So if moreover the coefficient morphism is an isomorphism,
+the pullback is an epimorphism (`TopCat.Hom.epi_cechCohomologyPullback`): Čech cohomology, and its
+vanishing, transports along homeomorphisms.
+
 Specializing to the inclusion of an open subspace gives restriction on Čech cohomology.
 These constructions require no separation, compactness, or sheaf condition.
 
@@ -127,6 +132,45 @@ theorem cechCohomologyPullback_naturality {P' : Y.Presheaf A} {Q' : X.Presheaf A
   exact (congrArg (HomologicalComplex.homologyMap (cechComplexPullback f U.opens α) n ≫ ·)
     ((TauCeti.Topology.toCechCohomology A n (fun i ↦ (Opens.map f).obj (U.opens i))
       (U.isOpenCover.comap f.hom)).naturality γ)).trans (Category.assoc _ _ _).symm
+
+/-- **Pullback along an inducing surjection is onto.** If `f` is inducing and surjective, for
+instance a homeomorphism, and the coefficient morphism `P ⟶ f_* Q` is an isomorphism, then the
+pullback map on Čech cohomology is an epimorphism. In particular the Čech cohomology of `Q` on `X`
+vanishes as soon as that of `P` on `Y` does. -/
+theorem epi_cechCohomologyPullback [IsIso α] (hf : Topology.IsInducing f)
+    (hs : Function.Surjective f) : Epi (cechCohomologyPullback f n α) := by
+  constructor
+  intro Z g₁ g₂ hg
+  refine cechCohomology_obj_hom_ext fun V ↦ ?_
+  rw [← toCechCohomology_opens A n V]
+  -- every member of `V` is the inverse image of an open subset of `Y`
+  choose U hU using fun i ↦ hf.isOpen_iff.1 (V.opens i).isOpen
+  let U' (i : X) : Opens Y := ⟨U i, (hU i).1⟩
+  have hU' : IsOpenCover U' := .of_sets (fun i ↦ (hU i).1) <| Set.eq_univ_of_forall fun y ↦ by
+    obtain ⟨x, rfl⟩ := hs y
+    obtain ⟨i, hi⟩ := V.isOpenCover.exists_mem x
+    exact Set.mem_iUnion.2 ⟨i, ((hU i).2.symm ▸ hi : x ∈ f ⁻¹' U i)⟩
+  let φ : FormalCoproduct.mk X (fun i ↦ (Opens.map f).obj (U' i)) ⟶ V.toFormalCoproduct :=
+    ⟨id, fun i ↦ homOfLE (Opens.ext (hU i).2).le⟩
+  -- the cover proof produced by `IsOpenCover.comap` is stated for `Opens.comap`
+  have hV' : IsOpenCover fun i ↦ (Opens.map f).obj (U' i) := hU'.comap f.hom
+  have e₁ : HomologicalComplex.homologyMap (cechComplexPullback f U' α) n ≫
+      (TauCeti.Topology.toCechCohomology A n _ hV').app Q =
+      (TauCeti.Topology.toCechCohomology A n U' hU').app P ≫ cechCohomologyPullback f n α :=
+    (toCechCohomology_app_comp_cechCohomologyPullback f n α U' hU').symm
+  have e₂ : (TauCeti.Topology.toCechCohomology A n V.opens V.isOpenCover).app Q =
+      (cechComplexHomologyMap A n φ).app Q ≫ (TauCeti.Topology.toCechCohomology A n _ hV').app Q :=
+    (NatTrans.congr_app
+      (cechComplexHomologyMap_comp_toCechCohomology A n φ V.isOpenCover hV') Q).symm
+  have key : (TauCeti.Topology.toCechCohomology A n _ hV').app Q ≫ g₁ =
+      (TauCeti.Topology.toCechCohomology A n _ hV').app Q ≫ g₂ := by
+    -- the source of `toCechCohomology` is a wrapped homology object, so the steps are terms
+    refine (cancel_epi (HomologicalComplex.homologyMap (cechComplexPullback f U' α) n)).1 ?_
+    exact (Category.assoc _ _ _).symm.trans <| (e₁ =≫ g₁).trans <| (Category.assoc _ _ _).trans <|
+      (_ ≫= hg).trans <| (Category.assoc _ _ _).symm.trans <| (e₁ =≫ g₂).symm.trans <|
+        Category.assoc _ _ _
+  exact (e₂ =≫ g₁).trans <| (Category.assoc _ _ _).trans <| (_ ≫= key).trans <|
+    (Category.assoc _ _ _).symm.trans (e₂ =≫ g₂).symm
 
 end TopCat.Hom
 

@@ -52,7 +52,7 @@ lengths, so equal counts give the same residue degrees, counted with multiplicit
 * `TauCeti.natCard_fixedBy_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction`: in characteristic
   zero, equivalent permutation representations of `D` have orbit spaces with equal fixed-point
   counts under `D ⧸ I`.
-* `TauCeti.natCard_fixedBy_orbitRelQuotient_eq`: for a finite group `D`, equal fixed-point counts
+* `TauCeti.natCard_fixedBy_orbitRelQuotient_eq`: equal fixed-point counts
   on `X` and `Y` give equal fixed-point counts on the `I`-orbit spaces.
 
 ## References
@@ -124,10 +124,10 @@ theorem natCard_fixedBy_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction (k : T
     Nat.card (fixedBy (orbitRel.Quotient I X) d) = Nat.card (fixedBy (orbitRel.Quotient I Y) d) :=
   natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction k (h.map (·.ofMulActionOrbitRelQuotient I)) d
 
-/-- **Equal fixed-point counts pass to orbit spaces.** For a finite group `D` acting on finite
-types `X` and `Y` such that every element of `D` fixes as many points of `X` as of `Y`, and for a
+/-- **Equal fixed-point counts pass to orbit spaces.** For a group `D` acting on finite types `X`
+and `Y` such that every element of `D` fixes as many points of `X` as of `Y`, and for a
 normal subgroup `I` of `D`, every element of `D ⧸ I` fixes as many `I`-orbits of `X` as of `Y`. -/
-theorem natCard_fixedBy_orbitRelQuotient_eq [Finite D]
+theorem natCard_fixedBy_orbitRelQuotient_eq
     (h : ∀ d : D, Nat.card (fixedBy X d) = Nat.card (fixedBy Y d)) (I : Subgroup D) [I.Normal]
     (d : D ⧸ I) :
     Nat.card (fixedBy (orbitRel.Quotient I X) d) = Nat.card (fixedBy (orbitRel.Quotient I Y) d) :=

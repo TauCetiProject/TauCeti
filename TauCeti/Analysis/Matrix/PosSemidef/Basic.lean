@@ -17,11 +17,7 @@ together with the resulting estimate for *Hankel* matrices: a sequence bounded a
 matrix `(m, n) ↦ a (m + n)` is positive semidefinite cannot increase at the first step.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
-but do not depend on Tau Ceti's positive-definite-function theory.
-
-They supply the matrix prerequisites for Part C of the `OneParameterSemigroups` roadmap, including
-the positive-definite-function/kernel correspondence and the GNS/Kolmogorov decomposition. No
-Mathlib code is vendored.
+but do not depend on Tau Ceti's positive-definite-function theory. No Mathlib code is vendored.
 
 ## Main declarations
 

@@ -97,65 +97,72 @@ theorem reduction_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x
     reduction v (some x y h) = ⟦![0, 1, 0]⟧ := by
   simp [reduction, hx.not_ge]
 
+/-- The integral case of `reduction_some_eq_mk`: when `x` is integral, so is `y`, `Z` must be the
+unit, and `(X : Y : Z) = Z • (x : y : 1)`. -/
+private lemma reduction_some_eq_mk_of_valuation_le_one {x y : F} (h : W.Nonsingular x y)
+    {X Y Z : v.valuationSubring} (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z)
+    (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) (hx : v x ≤ 1) :
+    reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
+  have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
+  set a : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
+  set b : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩
+  have hXa : X = a * Z := Subtype.ext hX
+  have hYb : Y = b * Z := Subtype.ext hY
+  have hZ : IsUnit Z := by
+    rcases hu with hX' | hY' | hZ'
+    · exact isUnit_of_mul_isUnit_right (hXa ▸ hX')
+    · exact isUnit_of_mul_isUnit_right (hYb ▸ hY')
+    · exact hZ'
+  rw [reduction_some_of_valuation_le_one v h hx, hXa, hYb, map_mul, map_mul,
+    ← Projective.smul_eq _ (hZ.map (residue v.valuationSubring))]
+  congr 1
+  ext i
+  fin_cases i <;> simp [mul_comm, a, b]
+
+/-- The pole case of `reduction_some_eq_mk`: when `x` has a pole, `X` and `Z` lie in the maximal
+ideal, `Y` is the unit, and `(X : Y : Z)` reduces to `res Y • (0 : 1 : 0)`. -/
+private lemma reduction_some_eq_mk_of_one_lt {x y : F} (h : W.Nonsingular x y)
+    {X Y Z : v.valuationSubring} (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z)
+    (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) (hx : 1 < v x) :
+    reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
+  have hint := Valuation.valuationSubring.integers v
+  have hle := hint.map_le_one
+  rw [reduction_some_of_one_lt v h hx]
+  have hxy := valuation_x_lt_valuation_y v h.left hx
+  have hY1 : v (Y : F) ≤ 1 := hle Y
+  have hZ1 : v (Z : F) < 1 := by
+    by_contra hZ
+    rw [not_lt] at hZ
+    rw [hY, map_mul] at hY1
+    exact absurd hY1 (not_le.mpr (lt_of_lt_of_le (hx.trans hxy) (le_mul_of_one_le_right' hZ)))
+  have hX1 : v (X : F) < 1 := by
+    rw [hX, map_mul]
+    rcases eq_or_ne (v (Z : F)) 0 with h0 | h0
+    · rw [h0, mul_zero]; exact zero_lt_one
+    · refine lt_of_lt_of_le ?_ hY1
+      rw [hY, map_mul]
+      exact mul_lt_mul_of_pos_right hxy (zero_lt_iff.mpr h0)
+  have hYu : IsUnit Y := by
+    rcases hu with hX' | hY' | hZ'
+    · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hX') hX1.ne
+    · exact hY'
+    · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hZ') hZ1.ne
+  rw [(residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hX1),
+    (residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hZ1),
+    ← Projective.smul_eq _ (hYu.map (residue v.valuationSubring))]
+  congr 1
+  ext i
+  fin_cases i <;> simp
+
 /-- **Reduction is computed by any primitive representative.** If `(X : Y : Z)`, with coordinates
 in the valuation ring and at least one of them a unit, represents the affine point `(x, y)`, then
 the point reduces to `(res X : res Y : res Z)`. -/
 theorem reduction_some_eq_mk {x y : F} (h : W.Nonsingular x y) {X Y Z : v.valuationSubring}
     (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z) (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) :
     reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
-  have hle : ∀ a : v.valuationSubring, v a ≤ 1 := fun a ↦ (v.mem_valuationSubring_iff _).mp a.2
-  have isUnit_iff : ∀ {a : v.valuationSubring}, IsUnit a ↔ v a = 1 :=
-    (Valuation.valuationSubring.integers v).isUnit_iff_valuation_eq_one
   rcases le_or_gt (v x) 1 with hx | hx
-  · -- `x` and `y` are integral, so `Z` must be the unit and `(X : Y : Z) = Z • (x : y : 1)`.
-    have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
-    set a : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
-    set b : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩
-    have hXa : X = a * Z := Subtype.ext hX
-    have hYb : Y = b * Z := Subtype.ext hY
-    have hZ : IsUnit Z := by
-      by_contra hZ
-      have hZ1 : v Z < 1 := lt_of_le_of_ne (hle Z) (isUnit_iff.not.mp hZ)
-      have hlt : ∀ c : v.valuationSubring, v (c * Z : v.valuationSubring) < 1 := fun c ↦ by
-        rw [Subring.coe_mul, map_mul]
-        exact lt_of_le_of_lt (mul_le_of_le_one_left' (hle c)) hZ1
-      rcases hu with hX' | hY' | hZ'
-      · exact (hlt a).ne (hXa ▸ isUnit_iff.mp hX')
-      · exact (hlt b).ne (hYb ▸ isUnit_iff.mp hY')
-      · exact hZ hZ'
-    rw [reduction_some_of_valuation_le_one v h hx, hXa, hYb, map_mul, map_mul,
-      ← Projective.smul_eq _ (hZ.map (residue v.valuationSubring))]
-    congr 1
-    ext i
-    fin_cases i <;> simp [mul_comm, a, b]
-  · -- `x` has a pole, so `X` and `Z` lie in the maximal ideal, `Y` is the unit, and
-    -- `(X : Y : Z)` reduces to `res Y • (0 : 1 : 0)`.
-    rw [reduction_some_of_one_lt v h hx]
-    have hxy := valuation_x_lt_valuation_y v h.left hx
-    have hY1 : v (Y : F) ≤ 1 := hle Y
-    have hZ1 : v (Z : F) < 1 := by
-      by_contra hZ
-      rw [not_lt] at hZ
-      rw [hY, map_mul] at hY1
-      exact absurd hY1 (not_le.mpr (lt_of_lt_of_le (hx.trans hxy) (le_mul_of_one_le_right' hZ)))
-    have hX1 : v (X : F) < 1 := by
-      rw [hX, map_mul]
-      rcases eq_or_ne (v (Z : F)) 0 with h0 | h0
-      · rw [h0, mul_zero]; exact zero_lt_one
-      · refine lt_of_lt_of_le ?_ hY1
-        rw [hY, map_mul]
-        exact mul_lt_mul_of_pos_right hxy (zero_lt_iff.mpr h0)
-    have hYu : IsUnit Y := by
-      rcases hu with hX' | hY' | hZ'
-      · exact absurd (isUnit_iff.mp hX') hX1.ne
-      · exact hY'
-      · exact absurd (isUnit_iff.mp hZ') hZ1.ne
-    rw [(residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hX1),
-      (residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hZ1),
-      ← Projective.smul_eq _ (hYu.map (residue v.valuationSubring))]
-    congr 1
-    ext i
-    fin_cases i <;> simp
+  · exact reduction_some_eq_mk_of_valuation_le_one v h hX hY hu hx
+  · exact reduction_some_eq_mk_of_one_lt v h hX hY hu hx
 
 /-- **Every point has a primitive integral representative.** A point of `W(F)` is the class of a
 solution of the projective equation of the integral model whose coordinates lie in the valuation

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.Probability.UniformOn
-public import TauCeti.MeasureTheory.Measure.TotalVariation
+public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.MarkovChain.Period
 

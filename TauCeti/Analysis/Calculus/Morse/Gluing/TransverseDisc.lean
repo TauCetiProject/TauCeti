@@ -159,7 +159,8 @@ and graphs `g`, `k` in the entrance and exit faces such that:
 
 * the closure of the entrance/exit pairs `splitGluingPairs ε r₀ g k` of unbroken orbits is a
   closed interval, with the gluing coordinate `‖y‖ / ε` of the entrance point as inverse
-  coordinate and the broken pair `((x₀, 0), (0, y₀))` at parameter zero;
+  coordinate and the broken pair `((x₀, 0), (0, y₀))` at parameter zero, and this broken pair is
+  the only point the closure adds;
 * every such pair consists of the entry point of the orbit through `ψ z` for some `z ∈ U` and the
   exit point of the orbit through `χ z'` for some `z' ∈ V`;
 * conversely, for `z` and `z'` near `0`, if the orbit through `ψ z` enters the box off the stable
@@ -182,6 +183,8 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
         (∀ p, (e.symm p : ℝ) = ‖p.val.1.snd‖ / ε) ∧
         (e ⟨0, left_mem_Icc.2 hr₀.le⟩).val =
           (WithLp.toLp 2 (x₀, 0), WithLp.toLp 2 (0, y₀))) ∧
+      closure (splitGluingPairs ε r₀ g k) =
+        insert (WithLp.toLp 2 (x₀, 0), WithLp.toLp 2 (0, y₀)) (splitGluingPairs ε r₀ g k) ∧
       (∀ p ∈ splitGluingPairs ε r₀ g k,
         (∃ z ∈ U, splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z) = p.1) ∧
         ∃ z ∈ V, splitQuadraticFlow (splitExitTime ε (χ z)) (χ z) = p.2) ∧
@@ -201,7 +204,7 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
   obtain ⟨δ₂, hδ₂, K₂, k, hk, hk₀, hkpts, hkexh⟩ :=
     exists_splitQuadraticFlow_splitExitTime_eq_graph hχ hχ' hχ₀ hy₀ hε hV
   -- Choose the gluing radius inside both graph domains and below the contraction threshold.
-  set r₀ : ℝ := min 1 (min (min δ₁ δ₂ / ε) (1 / ((K₂ : ℝ) * K₁ + 1))) with hr₀def
+  set r₀ : ℝ := min 1 (min (min δ₁ δ₂ / ε) (1 / ((K₂ : ℝ) * K₁ + 1)))
   have hK₀ : (0 : ℝ) ≤ K₂ * K₁ := by positivity
   have hr₀ : 0 < r₀ := lt_min one_pos (lt_min (div_pos (lt_min hδ₁ hδ₂) hε) (by positivity))
   have hr₀₁ : r₀ ≤ 1 := min_le_left _ _
@@ -219,7 +222,9 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
   have hkε : ∀ x ∈ closedBall (0 : Eₛ) (r₀ * ε), ‖k x‖ = ε := fun x hx ↦ (hkpts x (hball₂ hx)).1
   obtain ⟨e, he, he₀⟩ := exists_homeomorph_closure_splitGluingPairs (hg.mono hball₁) hgε
     (hk.mono hball₂) hkε hε hr₀ hr₀₁ hK
-  refine ⟨r₀, hr₀, g, k, ⟨e, he, by rw [he₀, hg₀, hk₀]⟩, ?_, ?_⟩
+  refine ⟨r₀, hr₀, g, k, ⟨e, he, by rw [he₀, hg₀, hk₀]⟩, ?_, ?_, ?_⟩
+  · rw [closure_splitGluingPairs (hg.mono hball₁) hgε (hk.mono hball₂) hkε hε hr₀ hr₀₁ hK, hg₀,
+      hk₀]
   · intro p hp
     obtain ⟨hsrc, hsnd, hfst, hpass, hexit⟩ := mem_splitGluingPairs.1 hp
     have hy : p.1.snd ∈ closedBall (0 : Eᵤ) δ₁ := hball₁ (mem_closedBall_zero_iff.2 hsnd)
@@ -233,18 +238,10 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
       apply WithLp.ofLp_injective <;> ext <;> simp [hfst, hexit]
   · -- The entry points of orbits through `ψ z` approach `(x₀, 0)`, hence eventually lie in the
     -- part of the entrance graph used by the gluing pairs.
-    have hfst : ∀ᶠ z in 𝓝 (0 : F), (ψ z).fst ≠ 0 :=
-      ((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).eventually_ne
-        (by simpa [hψ₀, ← norm_pos_iff, hx₀] using hε)
-    have hcont : ContinuousAt (fun z ↦ (‖(ψ z).fst‖ / ε) • (ψ z).snd) 0 :=
-      ((((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt).norm.div_const
-        ε).smul ((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt))
-    have hsmall : ∀ᶠ z in 𝓝 (0 : F), ‖(‖(ψ z).fst‖ / ε) • (ψ z).snd‖ ≤ r₀ * ε := by
-      have h := hcont.tendsto
-      simp only [hψ₀] at h
-      simp at h
-      simpa [dist_zero_right] using
-        h.eventually (closedBall_mem_nhds 0 (by positivity : 0 < r₀ * ε))
+    obtain ⟨hfst, hsmall⟩ := eventually_ne_zero_and_norm_rescale_smul_le
+      ((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt)
+      ((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.continuousAt.comp hψ.continuousAt)
+      (by simpa [hψ₀] using hx₀) (by simp [hψ₀]) hε hr₀
     refine ((hgexh.and (hfst.and hsmall)).prod_nhds hkexh).mono ?_
     rintro ⟨z, z'⟩ ⟨⟨hzg, hz₀, hzs⟩, hz'k⟩ hne hpass
     have hflow := splitQuadraticFlow_splitEntryTime hε hz₀

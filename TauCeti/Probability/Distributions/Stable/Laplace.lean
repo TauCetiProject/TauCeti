@@ -9,10 +9,12 @@ public import TauCeti.Probability.Distributions.Stable.IntegrableExpMul
 import TauCeti.MeasureTheory.Measure.FiniteMeasure.UniformIntegrable
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
+import TauCeti.Probability.Distributions.Stable.LaplaceIntegral
 import TauCeti.Probability.Distributions.Stable.Operations
+import TauCeti.Probability.Distributions.Stable.Transforms
 
 /-!
-# Passage to the limiting Laplace transform of stable laws
+# Laplace transforms of totally skewed stable laws
 
 For totally skewed non-Gaussian stable laws, the moment-generating functions of the compensated
 compound-Poisson approximations converge to that of the standardized stable law on the allowed
@@ -22,8 +24,13 @@ limit, including at shape one.
 
 The resulting moment-generating function is the exponential of the absolutely convergent real
 compensated Lévy integral. Affine transport evaluates this integral at the scaled parameter and
-adds the location term to the cumulant-generating function. These identities separate passage
-to the limiting transform from evaluation of the integral in closed form.
+adds the location term to the cumulant-generating function.
+
+Evaluating the compensated integral gives closed forms in Nolan's `S₀` parameterization.
+Away from shape one, and also at the Gaussian shape two, the cumulant-generating function is
+`d * t - (s * |t|) ^ α / cos (π * α / 2)`; at shape one it is
+`d * t - 2 / π * β * s * t * log |t|`. Here `d` is the `S₁` location `stableS1Location α β s m`:
+the sine compensation of the Lévy integral contributes exactly the `S₀`-to-`S₁` location shift.
 
 ## References
 
@@ -74,7 +81,7 @@ theorem tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow
       (ae_of_all _ fun x ↦ (exp_pos _).le)]
     simpa only [C, ENNReal.ofReal, mgf, id_eq] using ENNReal.ofReal_le_ofReal
       (mgf_stableCompensatedPoissonMeasure_le (ε := (2 : ℝ)⁻¹ ^ n)
-        hα hβ.le (by positivity) hae)
+        (by positivity) hae)
   have hlin := tendsto_lintegral_of_sq_bound (g := g) (by fun_prop)
     ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds atTop).1 hlim) hsq
   -- Transfer the extended integrals first, then use finiteness to pass to real transforms.
@@ -108,7 +115,7 @@ private theorem mgf_id_stableMeasure_one_zero_eq_exp_integral
       (𝓝 (exp (∫ x, exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β))) := by
     convert hlim using 1
     funext n
-    exact mgf_stableCompensatedPoissonMeasure hα hβ.le (by positivity)
+    exact mgf_stableCompensatedPoissonMeasure (by positivity)
       (ae_mul_nonpos_stableLevyMeasure hβ ht)
   exact tendsto_nhds_unique
     (tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow hα hβ ht) hmgf
@@ -120,18 +127,14 @@ theorem mgf_id_stableMeasure_eq_exp_integral
     mgf id (stableMeasure α β s m) t =
       exp (m * t + ∫ x, exp ((s * t) * x) - 1 - (s * t) * sin x
         ∂stableLevyMeasure α β) := by
-  rcases eq_zero_or_pos s with rfl | hs
+  rcases eq_zero_or_pos s with rfl | _
   · rw [stableMeasure_zero_scale ⟨hα.1, hα.2.le⟩ hβ.le, mgf_dirac']
     simp [mul_comm]
-  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) =
-      stableMeasure α β s m := by
-    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
-      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
     exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
-  rw [← hmap, mgf_id_map_affine, mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
+  rw [← stableMeasure_one_zero_map_affine, mgf_id_map_affine,
+    mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
     ← exp_add]
 
 /-- The cumulant-generating function on the allowed half-line is the real compensated Lévy
@@ -142,5 +145,60 @@ theorem cgf_id_stableMeasure_eq_integral
       m * t + ∫ x, exp ((s * t) * x) - 1 - (s * t) * sin x
         ∂stableLevyMeasure α β := by
   rw [cgf, mgf_id_stableMeasure_eq_exp_integral hα hβ s m ht, log_exp]
+
+/-- Away from shape one, the moment-generating function of a totally skewed stable law on its
+allowed half-line, in terms of the `S₁` location. This includes zero scale, `t = 0`, and the
+Gaussian shape two. -/
+theorem mgf_id_stableMeasure_of_ne_one (hα : α ∈ Ioc 0 2) (hα1 : α ≠ 1) (hβ : |β| = 1)
+    (s : ℝ≥0) (m : ℝ) (ht : β * t ≤ 0) :
+    mgf id (stableMeasure α β s m) t =
+      exp (stableS1Location α β s m * t - (s * |t|) ^ α / cos (π * α / 2)) := by
+  rcases hα.2.eq_or_lt with rfl | hα2
+  · rw [mgf_id_stableMeasure_two hβ.le, stableS1Location_of_ne_one hα1,
+      show π * 2 / 2 = π by ring, tan_pi, cos_pi, rpow_two, mul_pow, sq_abs]
+    congr 1
+    ring
+  have hst : β * (s * t) ≤ 0 := by
+    rw [mul_left_comm]
+    exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+  rw [mgf_id_stableMeasure_eq_exp_integral ⟨hα.1, hα2⟩ hβ s m ht,
+    integral_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure_of_ne_one ⟨hα.1, hα2⟩ hα1 hβ hst,
+    stableS1Location_of_ne_one hα1, abs_mul, NNReal.abs_eq]
+  congr 1
+  ring
+
+/-- Away from shape one, the cumulant-generating function of a totally skewed stable law on its
+allowed half-line, in terms of the `S₁` location. -/
+theorem cgf_id_stableMeasure_of_ne_one (hα : α ∈ Ioc 0 2) (hα1 : α ≠ 1) (hβ : |β| = 1)
+    (s : ℝ≥0) (m : ℝ) (ht : β * t ≤ 0) :
+    cgf id (stableMeasure α β s m) t =
+      stableS1Location α β s m * t - (s * |t|) ^ α / cos (π * α / 2) := by
+  rw [cgf, mgf_id_stableMeasure_of_ne_one hα hα1 hβ s m ht, log_exp]
+
+/-- At shape one, the moment-generating function of a totally skewed stable law on its allowed
+half-line, in terms of the `S₁` location. This includes zero scale and `t = 0`. -/
+theorem mgf_id_stableMeasure_one (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ) (ht : β * t ≤ 0) :
+    mgf id (stableMeasure 1 β s m) t =
+      exp (stableS1Location 1 β s m * t - 2 / π * β * s * t * log |t|) := by
+  have hst : β * (s * t) ≤ 0 := by
+    rw [mul_left_comm]
+    exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+  rw [mgf_id_stableMeasure_eq_exp_integral (by norm_num) hβ s m ht,
+    integral_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure_one hβ hst,
+    stableS1Location_one]
+  congr 1
+  rcases eq_zero_or_pos s with rfl | hs
+  · simp
+  rcases eq_or_ne t 0 with rfl | ht0
+  · simp
+  rw [abs_mul, NNReal.abs_eq, log_mul (NNReal.coe_pos.mpr hs).ne' (abs_ne_zero.mpr ht0)]
+  ring
+
+/-- At shape one, the cumulant-generating function of a totally skewed stable law on its allowed
+half-line, in terms of the `S₁` location. -/
+theorem cgf_id_stableMeasure_one (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ) (ht : β * t ≤ 0) :
+    cgf id (stableMeasure 1 β s m) t =
+      stableS1Location 1 β s m * t - 2 / π * β * s * t * log |t| := by
+  rw [cgf, mgf_id_stableMeasure_one hβ s m ht, log_exp]
 
 end TauCeti.Probability

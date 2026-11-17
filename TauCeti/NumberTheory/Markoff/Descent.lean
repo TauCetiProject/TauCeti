@@ -73,12 +73,17 @@ private lemma eq_one_and_eq_one_of_markoff_root {a b : ℤ} (h : a ^ 2 + 2 * b ^
   subst ha1
   exact ⟨rfl, by nlinarith⟩
 
-/-- The other root `3ab - c` of a positive Markoff triple is positive. -/
+/-- The other root `3ab - c` of a Markoff triple with `0 < c` is positive. -/
 theorem three_mul_mul_sub_pos_of_markoff (h : a ^ 2 + b ^ 2 + c ^ 2 = 3 * a * b * c)
-    (ha : 0 < a) (hc : 0 < c) : 0 < 3 * a * b - c := by
+    (hc : 0 < c) : 0 < 3 * a * b - c := by
   have hmul : c * (3 * a * b - c) = a ^ 2 + b ^ 2 := by linear_combination -h
-  have : 0 < c * (3 * a * b - c) := by rw [hmul]; positivity
-  exact pos_of_mul_pos_right this hc.le
+  have hab : 0 < a ^ 2 + b ^ 2 := by
+    by_contra hle
+    have ha : a = 0 := by nlinarith [sq_nonneg a, sq_nonneg b]
+    have hb : b = 0 := by nlinarith [sq_nonneg a, sq_nonneg b]
+    subst ha hb
+    nlinarith
+  exact pos_of_mul_pos_right (hmul ▸ hab) hc.le
 
 /-- In an increasing positive Markoff triple `a ≤ b ≤ c` other than `(1, 1, 1)`, the last
 coordinate is strictly largest. -/

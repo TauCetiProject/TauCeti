@@ -40,12 +40,16 @@ that `A ∈ C` imply `Hₙ₊₁(K(A, 1)) ∈ C`.
   (`TauCeti.isTorsion_classifyingSpace_singularHomology`): a torsion abelian group is locally
   finite.
 * For the class `AddCommGrpCat.isKilledBySomePower d` it holds for finite `A`
-  (`TauCeti.isKilledBySomePower_classifyingSpace_singularHomology`): the order of `A` then divides
-  a power of `d`.
+  (`TauCeti.isKilledBySomePower_classifyingSpace_singularHomology_of_finite`): the order of `A`
+  then divides a power of `d`. Over a hereditary ring such as `ℤ` it holds for every `A`, since
+  the exponent of `A` kills the positive-degree homology of `K(A, 1)`; this is proved in
+  `TauCeti.AlgebraicTopology.ClassifyingSpace.Exponent`.
 
 If the order of every element of `A` is a unit of `k`, then the positive-degree `k`-homology of
 `K(A, 1)` vanishes
-(`TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf`); for
+(`TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf`), as does
+the positive-degree group homology of `A` with trivial coefficients `k`
+(`TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`); for
 instance the positive-degree mod-two homology of `K(A, 1)` vanishes for every abelian group `A`
 all of whose elements have odd order.
 
@@ -60,8 +64,10 @@ all of whose elements have odd order.
   `Hₙ₊₁(BG; k) = 0` for locally finite `G` when the order of every element is a unit of `k`.
 * `TauCeti.isTorsion_classifyingSpace_singularHomology`: if `A` is a torsion abelian group, so is
   `Hₙ₊₁(K(A, 1); k)`.
-* `TauCeti.isKilledBySomePower_classifyingSpace_singularHomology`: if a finite abelian group `A`
-  is annihilated by some power of `d`, so is `Hₙ₊₁(K(A, 1); k)`.
+* `TauCeti.isKilledBySomePower_classifyingSpace_singularHomology_of_finite`: if a finite abelian
+  group `A` is annihilated by some power of `d`, so is `Hₙ₊₁(K(A, 1); k)`.
+* `TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`: `Hₙ₊₁(A, k) = 0` when the
+  order of every element of the abelian group `A` is a unit of `k`.
 * `TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf`:
   `Hₙ₊₁(K(A, 1); k) = 0` when the order of every element of `A` is a unit of `k`.
 
@@ -141,6 +147,21 @@ theorem isTorsion_classifyingSpace_singularHomology {A : AddCommGrpCat.{u}}
   have := Group.isLocallyFinite_multiplicative_iff.2 ((AddCommGrpCat.prop_isTorsion_iff A).1 hA)
   (AddCommGrpCat.prop_isTorsion_iff _).2 (isAddTorsion_classifyingSpace_singularHomology k n)
 
+/-- **An abelian group whose element orders are invertible in `k` is `k`-acyclic.** If the order
+of every element of an abelian group `A` is a unit of `k`, then the positive-degree group homology
+of `A` with trivial coefficients `k` vanishes. Over a nonzero ring the hypothesis forces `A` to be
+a torsion group. -/
+theorem subsingleton_groupHomology_of_forall_isUnit_addOrderOf
+    {A : Type u} [AddCommGroup A] (h : ∀ a : A, IsUnit (addOrderOf a : k)) (n : ℕ) :
+    Subsingleton (groupHomology (Rep.trivial k (Multiplicative A) k) (n + 1)) := by
+  cases subsingleton_or_nontrivial k
+  · exact Module.subsingleton k _
+  -- over a nonzero ring the orders are nonzero, so `A` is torsion, hence locally finite
+  have := Group.isLocallyFinite_multiplicative_iff.2 fun a ↦
+    not_not.1 <| addOrderOf_eq_zero_iff.not.1 fun h0 ↦ (h a).ne_zero (by rw [h0, Nat.cast_zero])
+  exact groupHomology.subsingleton_of_forall_isUnit_orderOf _
+    (fun g ↦ orderOf_ofAdd_eq_addOrderOf g.toAdd ▸ h g.toAdd) n
+
 /-- **`K(A, 1)` is `k`-acyclic when the orders of the elements of `A` are invertible in `k`.** If
 the order of every element of an abelian group `A` is a unit of `k`, then the positive-degree
 `k`-homology of the Eilenberg--MacLane space `K(A, 1) = B(Multiplicative A)` vanishes:
@@ -148,21 +169,16 @@ the order of every element of an abelian group `A` is a unit of `k`, then the po
 theorem subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf
     {A : Type u} [AddCommGroup A] (h : ∀ a : A, IsUnit (addOrderOf a : k)) (n : ℕ) :
     Subsingleton (((singularChains k).obj
-      (TopCat.of (classifyingSpace (Multiplicative A)))).homology (n + 1)) := by
-  cases subsingleton_or_nontrivial k
-  · exact Module.subsingleton k _
-  -- over a nonzero ring the orders are nonzero, so `A` is torsion, hence locally finite
-  have := Group.isLocallyFinite_multiplicative_iff.2 fun a ↦
-    not_not.1 <| addOrderOf_eq_zero_iff.not.1 fun h0 ↦ (h a).ne_zero (by rw [h0, Nat.cast_zero])
-  exact subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_orderOf k
-    (fun g ↦ orderOf_ofAdd_eq_addOrderOf g.toAdd ▸ h g.toAdd) n
+      (TopCat.of (classifyingSpace (Multiplicative A)))).homology (n + 1)) :=
+  have := subsingleton_groupHomology_of_forall_isUnit_addOrderOf k h n
+  (classifyingSpaceSingularHomologyIsoGroupHomology k _ (n + 1)).toLinearEquiv.toEquiv.subsingleton
 
 /-- **Serre's `K(A, 1)` axiom for the groups annihilated by a power of `d`, for finite `A`.** If a
 finite abelian group `A` is annihilated by some power of `d`, then so is the positive-degree
 homology of the Eilenberg--MacLane space `K(A, 1) = B(Multiplicative A)`, with coefficients in
 any commutative ring. -/
-theorem isKilledBySomePower_classifyingSpace_singularHomology {d : ℕ} {A : AddCommGrpCat.{u}}
-    [Finite A] (hA : AddCommGrpCat.isKilledBySomePower d A) (n : ℕ) :
+theorem isKilledBySomePower_classifyingSpace_singularHomology_of_finite {d : ℕ}
+    {A : AddCommGrpCat.{u}} [Finite A] (hA : AddCommGrpCat.isKilledBySomePower d A) (n : ℕ) :
     AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of
       (((singularChains k).obj (TopCat.of (classifyingSpace (Multiplicative A)))).homology
         (n + 1))) := by

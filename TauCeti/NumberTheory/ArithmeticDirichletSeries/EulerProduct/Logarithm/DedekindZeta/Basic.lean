@@ -79,7 +79,7 @@ theorem summable_neg_log_one_sub_absNorm_rpow {s : ℝ} (hs : 1 < s) :
   -- On `[0, 1/2]`, `x + 2 x ^ 2 ≤ 2 x`.
   have hx0 : 0 ≤ (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) := by positivity
   have hx := P.absNorm_rpow_neg_le_half hs.le
-  nlinarith [Real.neg_log_one_sub_le_add_two_mul_sq hx0 hx]
+  nlinarith [Real.neg_log_one_sub_le_add_two_mul_sq hx]
 
 /-- **The real Euler product of the Dedekind zeta function in exponential form.** For real
 `s > 1`, `ζ_K(s)` is the exponential of the convergent real sum

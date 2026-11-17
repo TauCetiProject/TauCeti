@@ -68,6 +68,6 @@ theorem map_smul_uniformOn_univ {G α : Type*} [Group G] [Finite G]
       _ = 1 := by simp [μ]
   apply Measure.ext_of_singleton
   intro b
-  rw [hmass, hatom, uniformOn_univ_apply_singleton]
+  rw [hmass, hatom, uniformOn_univ, Measure.count_singleton, one_div]
 
 end TauCeti.Probability

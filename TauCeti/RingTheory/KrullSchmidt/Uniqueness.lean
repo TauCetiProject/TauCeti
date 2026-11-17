@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Logic.Equiv.Option
 public import TauCeti.RingTheory.KrullSchmidt.Exchange
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
@@ -32,8 +33,8 @@ finite length ensures finite index types and supplies locality through Fitting's
 ## Main results
 
 * `TauCeti.exists_equiv_linearEquiv_of_isLocalRing_end`: **the Krull-Schmidt theorem** in Azumaya's
-  generality, for a first family whose summands have local endomorphism rings and a second family
-  of indecomposable summands.
+  generality, for a first family whose summands have local endomorphism rings and a finite second
+  family of indecomposable summands.
 * `TauCeti.exists_equiv_linearEquiv_of_iSupIndep`: the same for two families of indecomposable
   submodules of a module of finite length; finiteness of the index types follows automatically.
 * `TauCeti.exists_equiv_linearEquiv_of_finset`: the same in the `Finset` and `DirectSum.IsInternal`
@@ -53,9 +54,11 @@ instance pair `[IsNoetherian A M] [IsArtinian A M]` on the results indexed by a 
 `IsFiniteLength A M` spelling on the `Finset` results. Independence and nontriviality of the
 summands imply that both index types are finite, by Noetherianity of the ambient module.
 
-The induction is on `Nat.card` of the first index type, and it changes the ambient module: the
-recursive call is made on `↥(⨆ j ≠ j₀, Q j)`. That is why it is packaged as a private auxiliary
-statement quantifying over the module as well, rather than run inside the theorem below.
+The induction is on `Nat.card κ`, the cardinality of the index type of the second family `Q`
+(this is why only `κ` needs to be `Finite` in the auxiliary statement), and it changes the ambient
+module: the recursive call is made on `↥(⨆ j ≠ j₀, Q j)`. That is why it is packaged as a private
+auxiliary statement quantifying over the module as well, rather than run inside the theorem
+below.
 Restricting a decomposition to the submodule it spans is Mathlib's
 `DirectSum.isInternal_biSup_submodule_of_iSupIndep`; transporting one along a linear equivalence is
 Mathlib's `LinearMap.iSupIndep_map` and `Submodule.map_iSup`, and transporting
@@ -83,26 +86,35 @@ ambient module universally quantified because the inductive step passes to a pro
 it. -/
 private theorem exists_equiv_linearEquiv_aux :
     ∀ (n : ℕ) {M : Type v} [AddCommGroup M] [Module A M]
-      {ι : Type w} {κ : Type x} [Finite ι] [Finite κ] {P : ι → Submodule A M}
-      {Q : κ → Submodule A M}, Nat.card ι = n → iSupIndep P → ⨆ i, P i = ⊤ →
+      {ι : Type w} {κ : Type x} [Finite κ] {P : ι → Submodule A M}
+      {Q : κ → Submodule A M}, Nat.card κ = n → iSupIndep P → ⨆ i, P i = ⊤ →
       (∀ i, IsLocalRing (Module.End A (P i))) → iSupIndep Q → ⨆ j, Q j = ⊤ →
       (∀ j, IsIndecomposableModule A (Q j)) →
       ∃ e : ι ≃ κ, ∀ i, Nonempty (P i ≃ₗ[A] Q (e i)) := by
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-  intro M _ _ ι κ _ _ P Q hcard hP hPt hPloc hQ hQt hQind
+  intro M _ _ ι κ _ P Q hcard hP hPt hPloc hQ hQt hQind
   classical
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  rcases isEmpty_or_nonempty κ with hκ | ⟨⟨j₁⟩⟩
   · -- With no summands the module is trivial, so the other decomposition is empty too.
-    have hbot : (⊤ : Submodule A M) = ⊥ := by rw [← hPt, iSup_of_empty]
-    have : IsEmpty κ := by
-      refine ⟨fun j ↦ ?_⟩
-      refine Submodule.nontrivial_iff_ne_bot.mp (hQind j).nontrivial ?_
-      simpa [hbot] using (le_top : Q j ≤ ⊤)
+    have hbot : (⊤ : Submodule A M) = ⊥ := by rw [← hQt, iSup_of_empty]
+    have : IsEmpty ι := by
+      refine ⟨fun i ↦ ?_⟩
+      have := (hPloc i).toNontrivial
+      have : Subsingleton (P i) :=
+        Submodule.subsingleton_iff_eq_bot.mpr (eq_bot_iff.mpr (hbot ▸ le_top))
+      exact not_subsingleton (Module.End A (P i)) inferInstance
     exact ⟨Equiv.equivOfIsEmpty ι κ, fun i ↦ isEmptyElim i⟩
+  -- The module is nontrivial, so the first decomposition is nonempty.
+  obtain ⟨i₀⟩ : Nonempty ι := by
+    by_contra hι
+    rw [not_nonempty_iff] at hι
+    have hbot : (⊤ : Submodule A M) = ⊥ := by rw [← hPt, iSup_of_empty]
+    refine Submodule.nontrivial_iff_ne_bot.mp (hQind j₁).nontrivial ?_
+    simpa [hbot] using (le_top : Q j₁ ≤ ⊤)
   -- The summand `P i₀` is complemented by the other `P`s.
-  set s : Set ι := {i | i ≠ i₀} with hs
+  set s : Set ι := {i | i ≠ i₀}
   set S : Submodule A M := ⨆ i ∈ s, P i
   have hcomplP : IsCompl (P i₀) S := hP.isCompl_biSup_ne hPt i₀
   -- Exchange it for a summand of the second decomposition; its endomorphism ring is local, which is
@@ -131,34 +143,24 @@ private theorem exists_equiv_linearEquiv_aux :
   have hQQ' : ∀ j : t, Nonempty (Q' j ≃ₗ[A] Q j) := fun j ↦
     ⟨Submodule.comapSubtypeEquivOfLe (hQle j)⟩
   -- The inductive hypothesis, on one fewer summand.
-  obtain ⟨e', he'⟩ := ih (Nat.card s)
-    (hcard ▸ Finite.card_subtype_lt (p := fun i ↦ i ∈ s) (x := i₀) (by simp [hs]))
+  obtain ⟨e', he'⟩ := ih (Nat.card t)
+    (hcard ▸ Finite.card_subtype_lt (p := fun j ↦ j ∈ t) (x := j₀) (by simp [t]))
     (M := T) (ι := s) (κ := t) (P := P') (Q := Q') rfl
     (LinearMap.iSupIndep_map (φ : S →ₗ[A] T) φ.injective hPi)
     (by rw [← Submodule.map_iSup, Submodule.map_eq_top_iff]; exact hPs)
     (fun i ↦ have := hPloc i; (hPP' i).some.conjRingEquiv.isLocalRing) hQi hQs
     (fun j ↦ (hQind j).of_linearEquiv (hQQ' j).some.symm)
   -- Extend the matching by `i₀ ↦ j₀`.
-  refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans
-    ((Equiv.optionCongr e').trans (Equiv.optionSubtypeNe j₀)), fun i ↦ ?_⟩
-  rcases eq_or_ne i i₀ with rfl | hi
-  · refine ⟨?_⟩
-    have hnone : ((Equiv.optionSubtypeNe i).symm.trans
-        ((Equiv.optionCongr e').trans (Equiv.optionSubtypeNe j₀))) i = j₀ := by
-      rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_self]
-      rfl
-    rw [hnone]
-    exact e₀
-  · rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_of_ne hi,
-      Equiv.optionCongr_apply, Option.map_some, Equiv.optionSubtypeNe_some]
-    exact ⟨(hPP' ⟨i, hi⟩).some ≪≫ₗ (he' ⟨i, hi⟩).some ≪≫ₗ (hQQ' (e' ⟨i, hi⟩)).some⟩
+  exact Equiv.exists_equiv_forall_of_equiv_subtype_ne
+    (R := fun i j ↦ Nonempty (P i ≃ₗ[A] Q j)) e' ⟨e₀⟩ fun i ↦
+    ⟨(hPP' i).some ≪≫ₗ (he' i).some ≪≫ₗ (hQQ' (e' i)).some⟩
 
 /-! ### The Krull-Schmidt theorem -/
 
 variable {M : Type v} [AddCommGroup M] [Module A M]
 
 /-- **The Krull-Schmidt theorem**, in Azumaya's generality: if a module is the internal direct sum
-of a finite family of submodules with local endomorphism rings, and also of a finite family of
+of a family of submodules with local endomorphism rings, and also of a finite family of
 indecomposable submodules, then the two families are matched by a bijection of their index sets
 under which corresponding summands are isomorphic.
 
@@ -166,12 +168,12 @@ Each summand of the first family is automatically indecomposable, by
 `TauCeti.isIndecomposableModule_of_isLocalRing_end`; for a module of finite length the converse
 holds too, which is `TauCeti.exists_equiv_linearEquiv_of_iSupIndep` below. -/
 theorem exists_equiv_linearEquiv_of_isLocalRing_end
-    {ι : Type w} {κ : Type x} [Finite ι] [Finite κ] {P : ι → Submodule A M}
+    {ι : Type w} {κ : Type x} [Finite κ] {P : ι → Submodule A M}
     {Q : κ → Submodule A M} (hP : iSupIndep P) (hPt : ⨆ i, P i = ⊤)
     (hPloc : ∀ i, IsLocalRing (Module.End A (P i))) (hQ : iSupIndep Q) (hQt : ⨆ j, Q j = ⊤)
     (hQind : ∀ j, IsIndecomposableModule A (Q j)) :
     ∃ e : ι ≃ κ, ∀ i, Nonempty (P i ≃ₗ[A] Q (e i)) :=
-  exists_equiv_linearEquiv_aux (Nat.card ι) rfl hP hPt hPloc hQ hQt hQind
+  exists_equiv_linearEquiv_aux (Nat.card κ) rfl hP hPt hPloc hQ hQt hQind
 
 /-- **The Krull-Schmidt theorem.** Two decompositions of a module of finite length into
 indecomposable submodules are matched by a bijection of their index sets under which corresponding
@@ -189,8 +191,6 @@ theorem exists_equiv_linearEquiv_of_iSupIndep [IsNoetherian A M] [IsArtinian A M
     (hPind : ∀ i, IsIndecomposableModule A (P i)) (hQ : iSupIndep Q) (hQt : ⨆ j, Q j = ⊤)
     (hQind : ∀ j, IsIndecomposableModule A (Q j)) :
     ∃ e : ι ≃ κ, ∀ i, Nonempty (P i ≃ₗ[A] Q (e i)) := by
-  have : Finite ι := WellFoundedGT.finite_of_iSupIndep hP
-    fun i ↦ Submodule.nontrivial_iff_ne_bot.mp (hPind i).nontrivial
   have : Finite κ := WellFoundedGT.finite_of_iSupIndep hQ
     fun j ↦ Submodule.nontrivial_iff_ne_bot.mp (hQind j).nontrivial
   exact exists_equiv_linearEquiv_of_isLocalRing_end hP hPt

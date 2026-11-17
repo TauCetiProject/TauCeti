@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction

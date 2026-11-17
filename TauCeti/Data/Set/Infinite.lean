@@ -8,13 +8,17 @@ module
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Basic.Countable.Defs
 import Mathlib.Data.Set.Piecewise
+import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
-# Injections into infinite sets of countable indices
+# Injections into infinite sets
 
 An infinite subset of a countable type admits a self-injection that fixes any prescribed finite
 subset of the target. This lets us reindex a countable sequence or an array axis into an infinite
 coordinate subset while leaving distinguished coordinates unchanged.
+
+A set is infinite exactly when it contains injective tuples of every finite length
+(`Set.forall_exists_injective_iff_infinite`).
 -/
 
 public section
@@ -41,3 +45,21 @@ theorem exists_injective_into_eqOn_of_finite {ι : Type*} [Countable ι]
     · simpa [hk] using (hg k).1
 
 end Set.Infinite
+
+namespace Set
+
+/-- A set contains injective tuples of every finite length exactly when it is infinite. -/
+theorem forall_exists_injective_iff_infinite {α : Type*} (s : Set α) :
+    (∀ n : ℕ, ∃ y : Fin n → α, Function.Injective y ∧ ∀ i, y i ∈ s) ↔ s.Infinite := by
+  refine ⟨fun h hs => ?_, fun hs n => ?_⟩
+  · have := hs.to_subtype
+    obtain ⟨y, hy, hys⟩ := h (Nat.card s + 1)
+    have hle := Nat.card_le_card_of_injective (fun i => (⟨y i, hys i⟩ : s))
+      fun i j hij => hy (congrArg Subtype.val hij)
+    simp at hle
+  · exact ⟨fun i => (hs.natEmbedding s i : α),
+      fun i j hij => Fin.val_injective ((hs.natEmbedding s).injective
+        (Subtype.val_injective hij)),
+      fun i => (hs.natEmbedding s i).2⟩
+
+end Set

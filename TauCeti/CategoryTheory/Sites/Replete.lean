@@ -23,7 +23,8 @@ products of abelian sheaves and of sheaves of modules satisfy Mathlib's `Countab
 The transfer uses the functor `sheafCompose J (forget A) : Sheaf J A ⥤ Sheaf J (Type w)`, which
 preserves the limits that `forget A` preserves
 (`CategoryTheory.Sheaf.preservesLimitsOfShape_sheafCompose`) and preserves and reflects
-epimorphisms (`CategoryTheory.Sheaf.epi_sheafCompose_forget_map_iff`).
+epimorphisms (`CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget`,
+`CategoryTheory.Functor.epi_map_iff_epi`).
 
 ## References
 
@@ -40,7 +41,6 @@ open CategoryTheory Limits
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) [IsReplete (Sheaf J (Type w))]
-  [HasSheafify J (Type w)]
 
 /-- **Sheaves on a replete topos form a replete category.** If the topos `Sheaf J (Type w)` is
 replete, then so is the category of sheaves with values in a concrete category `A` whose forgetful

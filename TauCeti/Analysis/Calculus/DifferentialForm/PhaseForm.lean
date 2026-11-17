@@ -16,8 +16,9 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 For a differentiable function `α : E → ℂ` on a real normed space, the **phase form**
 `Im (α⁻¹ dα)` is a real one-form. Away from the zeros of `α` it is the differential of a local
 branch of `arg α`. This file proves that it is as regular as `dα` away from the zeros of `α`
-(`TauCeti.contDiffAt_phaseForm`), that it is closed there (`TauCeti.extDeriv_phaseForm`), and
-that it is additive under products (`TauCeti.phaseForm_mul`).
+(`TauCeti.contDiffAt_phaseForm`), that it is closed there (`TauCeti.extDeriv_phaseForm`), that it
+is natural under pullback (`TauCeti.phaseForm_comp`), and that it is additive under products
+(`TauCeti.phaseForm_mul`).
 
 ## Main definitions
 
@@ -99,6 +100,15 @@ theorem extDeriv_phaseForm (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0) :
   rw [← sub_im, coe_zero, Pi.zero_apply]
   convert zero_im using 2
   ring
+
+/-- The phase form is natural under pullback: the phase form of `α ∘ f` at `y` is the pullback by
+`f` of the phase form of `α` at `f y`. This holds also at the zeros of `α ∘ f`, where both sides
+vanish. -/
+theorem phaseForm_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : F → E} {y : F}
+    (hα : DifferentiableAt ℝ α (f y)) (hf : DifferentiableAt ℝ f y) :
+    phaseForm (α ∘ f) y = (phaseForm α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
+  ext v
+  simp [fderiv_comp y hα hf]
 
 /-- The phase form of a product of functions that do not vanish at `x` is the sum of their
 phase forms. -/

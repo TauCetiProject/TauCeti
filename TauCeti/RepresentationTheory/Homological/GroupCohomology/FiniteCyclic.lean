@@ -335,7 +335,7 @@ private theorem carryCochain_mem_cocycles₂ (a : A) (ha : A.ρ g a = a) :
     (Representation.mem_invariants_iff_of_forall_mem_zpowers A.ρ g hg a).2 ha x
   rw [mem_cocycles₂_iff]
   intro x y z
-  have h := TauCeti.Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
+  have h := Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
     (cyclicLog_lt g hg z)
   simp only [carryCochain_apply, cyclicLog_mul]
   split_ifs at h ⊢ <;> simp_all
@@ -540,7 +540,6 @@ theorem groupCohomologyπEven_two :
 /-- **The periodicity class in degree `2` is the class of the carry cocycle**: an element `a`
 fixed by the generator `g` is sent to the class of `(gⁱ, gʲ) ↦ a` if `i + j ≥ n`, and `0`
 otherwise. -/
-@[simp]
 theorem groupCohomologyπEven_two_apply
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
     groupCohomologyπEven A g hg 2 even_two x = H2π A (carryCocycle A g hg x) := by
@@ -586,7 +585,6 @@ theorem groupCohomologyπOdd_one :
 
 /-- **The odd-degree class in degree `1` is the class of the partial norm cocycle**: an element
 `a` killed by the norm is sent to the class of `gⁱ ↦ a + g a + ⋯ + gⁱ⁻¹ a`, for `0 ≤ i < n`. -/
-@[simp]
 theorem groupCohomologyπOdd_one_apply (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) :
     groupCohomologyπOdd A g hg 1 odd_one x = H1π A (partialNormCocycle A g hg x) := by
   rw [groupCohomologyπOdd_one, ConcreteCategory.comp_apply, ModuleCat.ofHom_apply]

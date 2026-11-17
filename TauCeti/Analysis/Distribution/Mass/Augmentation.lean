@@ -81,7 +81,7 @@ theorem enorm_augmentation_le_mass_add_comp_extDerivCLM_mul {k : ℕ} {𝓕 𝓖
     funext ω
     simp [A]
   have hsum : dsupport A ⊆ dsupport T ∪ dsupport B :=
-    hA ▸ dsupport_add_subset T B
+    hA ▸ dsupport_add_subset ⇑T ⇑B
   have hsumc : IsCompact (dsupport A) :=
     (hT.union hBc).of_isClosed_subset isClosed_dsupport hsum
   have hsumΩ : dsupport A ⊆ Ω := hsum.trans (union_subset hTΩ hBΩ)
@@ -119,8 +119,9 @@ theorem mass_mul_apply_finZero_le_mass_add_comp_extDerivCLM {𝓖 : Type*}
   have hTx : dsupport T ⊆ {x} := by
     rw [hpoint]
     simpa [ℓ] using (dsupport_apply_apply_subset (Ω := Ω) (n := ⊤) (x := x) ℓ)
-  have hTc : IsCompact (dsupport T) :=
-    isCompact_singleton.of_isClosed_subset isClosed_dsupport hTx
+  have hTc : IsCompact (dsupport T) := by
+    rw [hpoint]
+    simpa [ℓ] using (isCompact_dsupport_apply_apply (Ω := Ω) (n := ⊤) x ℓ)
   have hTΩ : dsupport T ⊆ Ω := hTx.trans (singleton_subset_iff.2 hx)
   let c := ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) (1 : ℝ)
   have hc : ‖c‖ₑ = 1 := by simp [c, ← ofReal_norm]

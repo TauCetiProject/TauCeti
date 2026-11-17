@@ -138,6 +138,32 @@ theorem norm_trajectoryOperator_le (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omeg
     _ ≤ ‖u‖ + ‖A‖ * ‖u‖ := add_le_add hd hA
     _ = (1 + ‖A‖) * ‖u‖ := by ring
 
+/-- The weak derivative of a path is controlled by its image under the trajectory operator and
+its `Lᵖ` norm: `‖u'‖ ≤ ‖u' + A u‖ + ‖A‖ ‖u‖`. -/
+theorem norm_weakFDeriv_le_norm_trajectoryOperator_add (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega))
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    ‖weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ ≤
+      ‖trajectoryOperator A u‖ +
+        ‖A‖ * ‖prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ := by
+  let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
+  let w := weakFDeriv base u
+  -- On `ℝ →L[ℝ] F`, evaluation at `1` is an isometry, so it preserves the `Lᵖ` norm.
+  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ := by
+    rw [Lp.norm_def, Lp.norm_def]
+    congr 1
+    refine (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_).symm
+    filter_upwards [(ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp w] with s hs
+    rw [hs, ContinuousLinearMap.apply_apply]
+    exact (ContinuousLinearMap.toSpanSingletonLIE ℝ F).symm.norm_map (w s)
+  have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u)‖ ≤
+      ‖A‖ * ‖prev base u‖ :=
+    (ContinuousLinearMap.norm_holder_apply_apply_le _ _ _).trans
+      (by gcongr; exact mul_le_of_le_one_left (norm_nonneg _) ContinuousLinearMap.norm_id_le)
+  have hT := trajectoryOperator_apply A u
+  rw [hw, show (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w = trajectoryOperator A u -
+    (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u) from eq_sub_of_add_eq hT.symm]
+  exact (norm_sub_le _ _).trans (by gcongr)
+
 /-- Subtracting two trajectory operators cancels the derivative part and leaves multiplication
 by the difference of their coefficients. -/
 lemma trajectoryOperator_sub (A B : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :

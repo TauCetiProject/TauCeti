@@ -73,9 +73,6 @@ private lemma relativePicardPresheaf_map_abelClass {T T' : (Over S)ᵒᵖ} (φ :
     ((relativeEffectiveCartierSubfunctor f).toFunctor.map φ D).2).isEffectiveCartier
   rw [abelClass, abelClass, relativePicardPresheaf_map_mk, LineBundleClass.pullback_inv,
     Scheme.IdealSheafData.IsEffectiveCartier.pullback_mk_toInvertibleSheaf hD hD']
-  -- Both sides are the class of the ideal sheaf of the pulled-back divisor; they differ only in
-  -- the proof that this divisor is effective Cartier.
-  rfl
 
 /-- **The Abel map** `D ↦ 𝒪(D)` of a morphism of schemes `f : X ⟶ S`: the natural transformation
 from the functor of relative effective Cartier divisors on the base changes `X_T = T ×_S X` to the

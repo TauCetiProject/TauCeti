@@ -88,8 +88,7 @@ theorem forall_mem_newtonSlopes_eq_of_irreducible (hb : 1 < b)
   refine (forall_mem_newtonSlopes_eq_iff_norm_coeff_mul_rpow_pow_le hb hv).mpr
     ⟨?_, fun n => ?_⟩ <;> rw [trailingCoeff, htr, pow_zero, mul_one]
   · exact hconst
-  · exact norm_coeff_mul_pow_le_norm_coeff_zero_of_irreducible hf
-      (Real.rpow_pos_of_pos hb0 m).le hconst n
+  · exact norm_coeff_mul_pow_le_norm_coeff_zero_of_irreducible hf hconst n
 
 end Polynomial
 

@@ -22,11 +22,13 @@ when `u` solves the regularized scalar equation
 
 (`TauCeti.Vortex.equation_amplitudeField_eq_zero_iff`,
 `TauCeti.Vortex.tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log`, for `C²` amplitudes
-`u`). Bringing an arbitrary vortex with zero divisor `P` into this form is a gauge choice that is
-not treated here. For `m ≥ 1` the solution `u` grows like `-m log |z|`, so it is not square
-integrable on `ℂ` and in particular does not lie in the unweighted space `H¹(ℂ)`. Following
-Taubes, this file subtracts an explicit smooth background with the same growth. Here the
-background is
+`u`). Conversely, every smooth vortex with this end framing and zero divisor `P` is a framed gauge
+transform of such an amplitude field
+(`TauCeti.Vortex.exists_framedGaugeGroup_smul_amplitudeField_eq`, in
+`TauCeti.Analysis.PDE.Vortex.AmplitudeForm`). For `m ≥ 1` the solution `u` grows like
+`-m log |z|`, so it is not square integrable on `ℂ` and in particular does not lie in the
+unweighted space `H¹(ℂ)`. Following Taubes, this file subtracts an explicit smooth background with
+the same growth. Here the background is
 
 `u₀ = -log (1 + |P|²) / 2`    (`TauCeti.Vortex.backgroundAmplitude`),
 
@@ -37,7 +39,8 @@ correction `w`:
 
   `Δw = (exp(2w) h - 1) / 8 + g`,    `h = |P|² / (1 + |P|²)`,    `g = 2 |P'|² / (1 + |P|²)²`;
 
-  here `g = -Δu₀` and `h = exp(2u₀) |P|²` is the squared modulus of the background section;
+  here `g = -Δu₀` and `h = exp(2u₀) |P|²` (`TauCeti.Vortex.backgroundWeight`) is the squared
+  modulus of the background section;
 * if `m ≥ 1`, then for every `w` the reconstructed section has the degree-`m` end framing
   exactly when `w → 0` at infinity.
 
@@ -97,6 +100,45 @@ theorem exp_two_mul_backgroundAmplitude (f : ℂ → ℂ) (z : ℂ) :
   rw [backgroundAmplitude_apply, mul_div_cancel₀ _ two_ne_zero, Real.exp_neg,
     Real.exp_log (by positivity)]
 
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` of the reduced vortex equation, equal to
+`exp (2u₀) ‖f‖²` for the background amplitude `u₀`. -/
+def backgroundWeight (f : ℂ → ℂ) (z : ℂ) : ℝ :=
+  ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2)
+
+/-- The defining formula of `TauCeti.Vortex.backgroundWeight`. -/
+theorem backgroundWeight_def (f : ℂ → ℂ) (z : ℂ) :
+    backgroundWeight f z = ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) := (rfl)
+
+/-- `h = exp (2u₀) ‖f‖²`: the coefficient `TauCeti.Vortex.backgroundWeight` is the squared modulus
+of the background section. -/
+theorem exp_two_mul_backgroundAmplitude_mul_sq_norm (f : ℂ → ℂ) (z : ℂ) :
+    Real.exp (2 * backgroundAmplitude f z) * ‖f z‖ ^ 2 = backgroundWeight f z := by
+  rw [exp_two_mul_backgroundAmplitude, backgroundWeight_def, inv_mul_eq_div]
+
+theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWeight f z := by
+  rw [backgroundWeight_def]
+  positivity
+
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is less than one: its defect `1 - h` is
+`(1 + ‖f‖²)⁻¹`. -/
+theorem backgroundWeight_lt_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f z < 1 := by
+  rw [backgroundWeight_def, div_lt_one (by positivity)]
+  exact lt_one_add _
+
+theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
+  have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
+    funext (backgroundWeight_def f)
+  rw [hh]
+  exact (hf.norm.pow 2).div (continuous_const.add (hf.norm.pow 2)) fun z ↦ by positivity
+
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is as smooth as `f`. -/
+theorem contDiff_backgroundWeight {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n (backgroundWeight f) := by
+  have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
+    funext (backgroundWeight_def f)
+  rw [hh]
+  exact (hf.norm_sq ℝ).div (contDiff_const.add (hf.norm_sq ℝ)) fun z ↦ by positivity
+
 /-- The background amplitude is as smooth as `f`, including at the zeros of `f`. -/
 theorem contDiff_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
     ContDiff ℝ n (backgroundAmplitude f) := by
@@ -125,19 +167,20 @@ theorem laplacian_backgroundAmplitude (hf : AnalyticAt ℂ f z) :
 /-- **Reduction of the scalar vortex equation to the background.** For a holomorphic `f`, the
 amplitude `u₀ + w` solves the regularized scalar equation `Δu = (exp (2u) ‖f‖² - 1) / 8` at `z`
 exactly when `w` solves the reduced equation
-`Δw = (exp (2w) h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` at `z`, where `h = ‖f‖² / (1 + ‖f‖²)`. -/
+`Δw = (exp (2w) h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` at `z`, where `h = ‖f‖² / (1 + ‖f‖²)`
+(`TauCeti.Vortex.backgroundWeight`). -/
 theorem laplacian_backgroundAmplitude_add_eq_iff {w : ℂ → ℝ} (hf : AnalyticAt ℂ f z)
     (hw : ContDiffAt ℝ 2 w z) :
     Δ (fun z ↦ backgroundAmplitude f z + w z) z =
         (Real.exp (2 * (backgroundAmplitude f z + w z)) * ‖f z‖ ^ 2 - 1) / 8 ↔
-      Δ w z = (Real.exp (2 * w z) * (‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2)) - 1) / 8 +
+      Δ w z = (Real.exp (2 * w z) * backgroundWeight f z - 1) / 8 +
         2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 := by
   have hbg : ContDiffAt ℝ 2 (backgroundAmplitude f) z :=
     contDiffAt_backgroundAmplitude (hf.contDiffAt.restrict_scalars ℝ)
   have hexp : Real.exp (2 * (backgroundAmplitude f z + w z)) * ‖f z‖ ^ 2 =
-      Real.exp (2 * w z) * (‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2)) := by
-    rw [mul_add, Real.exp_add, exp_two_mul_backgroundAmplitude]
-    field_simp
+      Real.exp (2 * w z) * backgroundWeight f z := by
+    rw [mul_add, Real.exp_add, mul_right_comm, exp_two_mul_backgroundAmplitude_mul_sq_norm,
+      mul_comm]
   rw [← Pi.add_def, hbg.laplacian_add hw, laplacian_backgroundAmplitude hf, hexp]
   constructor <;> intro h <;> linarith
 
@@ -146,7 +189,7 @@ equation at `z` exactly when `w` solves the reduced equation at `z`. -/
 theorem equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff {w : ℂ → ℝ}
     (hf : AnalyticAt ℂ f z) (hw : ContDiffAt ℝ 2 w z) :
     equation (amplitudeField (fun z ↦ backgroundAmplitude f z + w z) f) z = 0 ↔
-      Δ w z = (Real.exp (2 * w z) * (‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2)) - 1) / 8 +
+      Δ w z = (Real.exp (2 * w z) * backgroundWeight f z - 1) / 8 +
         2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 := by
   have hbg : ContDiffAt ℝ 2 (backgroundAmplitude f) z :=
     contDiffAt_backgroundAmplitude (hf.contDiffAt.restrict_scalars ℝ)
@@ -174,7 +217,6 @@ theorem tendsto_backgroundAmplitude_add_natDegree_mul_log {P : Polynomial ℂ} (
   simp only [Real.log_one, zero_div] at hlog
   refine hlog.congr' ?_
   filter_upwards [hz] with z hz
-  have hz' : 0 < ‖z‖ := norm_pos_iff.mpr hz
   have hsplit : (‖z‖ ^ (2 * m))⁻¹ + ‖P.eval z / z ^ m‖ ^ 2 =
       (1 + ‖P.eval z‖ ^ 2) / ‖z‖ ^ (2 * m) := by
     rw [norm_div, norm_pow, div_pow, ← pow_mul, mul_comm m 2]

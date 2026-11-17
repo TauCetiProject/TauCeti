@@ -29,9 +29,8 @@ group in the general linear group.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
 
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it supplies the ring-general generation step used to
-identify the explicit full-weight type `A` carrier on field and integral points.
+This is the ring-general generation step used to identify the explicit full-weight type `A`
+carrier on field and integral points.
 -/
 
 public section

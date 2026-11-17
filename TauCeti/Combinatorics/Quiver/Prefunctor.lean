@@ -43,12 +43,12 @@ bijectivity on vertices, and the transport of the zigzag relations in
 `TauCeti/RepresentationTheory/Quiver/Zigzag/Isomorphism.lean`, which is stated in terms of path
 lengths.
 `Prefunctor.cast_mapPath_mapPath` gives the inverse laws for path transport along isomorphisms of
-bounded networks in `TauCeti/Combinatorics/Network/Isomorphism.lean`.
+bounded networks in `TauCeti/Combinatorics/Network/Isomorphism/Basic.lean`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Prefunctor
 
 universe u u' u'' v v' v''
 
@@ -57,7 +57,7 @@ variable {Q : Type u} {R : Type u'} {S : Type u''} [Quiver.{v} Q] [Quiver.{v'} R
 /-- **Pushing a path along a prefunctor preserves its length**: the image path traverses the image
 of each arrow of the original, in order. -/
 @[simp]
-theorem _root_.Prefunctor.length_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.Path a b) :
+theorem length_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.Path a b) :
     (φ.mapPath p).length = p.length := by
   induction p with
   | nil => rfl
@@ -66,14 +66,14 @@ theorem _root_.Prefunctor.length_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.P
 
 /-- The vertices of a path pushed along a prefunctor are the images of its vertices, in order. -/
 @[simp]
-theorem _root_.Prefunctor.vertices_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.Path a b) :
+theorem vertices_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.Path a b) :
     (φ.mapPath p).vertices = p.vertices.map φ.obj := by
   induction p with
   | nil => rfl
   | cons p e ih => simp [ih]
 
 /-- **Mutually inverse prefunctors are bijective on vertices.** -/
-theorem _root_.Prefunctor.obj_bijective_of_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q)
+theorem obj_bijective_of_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q)
     (hφψ : φ.comp ψ = Prefunctor.id Q) (hψφ : ψ.comp φ = Prefunctor.id R) :
     Function.Bijective φ.obj :=
   Function.bijective_iff_has_inverse.mpr
@@ -83,13 +83,13 @@ theorem _root_.Prefunctor.obj_bijective_of_comp_eq_id (φ : Q ⥤q R) (ψ : R �
 /-- **One-sided inverse pairs of prefunctors compose**: if `ψ` is a right inverse of `φ` and `ψ'`
 one of `φ'`, then `ψ' ⋙q ψ` is a right inverse of `φ ⋙q φ'`. Applying this to a mutually inverse
 pair in each order gives both inverse laws for the composite pair. -/
-theorem _root_.Prefunctor.comp_comp_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q) (φ' : R ⥤q S)
+theorem comp_comp_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q) (φ' : R ⥤q S)
     (ψ' : S ⥤q R) (hφψ : φ.comp ψ = Prefunctor.id Q) (hφψ' : φ'.comp ψ' = Prefunctor.id R) :
     (φ.comp φ').comp (ψ'.comp ψ) = Prefunctor.id Q := by
   rw [Prefunctor.comp_assoc, ← Prefunctor.comp_assoc φ' ψ' ψ, hφψ', Prefunctor.id_comp, hφψ]
 
 /-- Equal prefunctors map a path equally after casting along the induced endpoint equalities. -/
-theorem _root_.Prefunctor.cast_mapPath_eq_of_eq {φ ψ : Q ⥤q R} (h : φ = ψ)
+theorem cast_mapPath_eq_of_eq {φ ψ : Q ⥤q R} (h : φ = ψ)
     {a b : Q} (p : Quiver.Path a b) :
     (φ.mapPath p).cast
       (congrArg (fun ξ : Q ⥤q R ↦ ξ.obj a) h)
@@ -99,7 +99,7 @@ theorem _root_.Prefunctor.cast_mapPath_eq_of_eq {φ ψ : Q ⥤q R} (h : φ = ψ)
 
 /-- **A prefunctor that undoes another on vertices and arrows undoes it on paths**: pushing a path
 along `φ` and then `ψ` returns the original path once its endpoints are transported back. -/
-theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
+theorem cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
     (hobj : ∀ a, ψ.obj (φ.obj a) = a)
     (hmap : ∀ {a b} (e : a ⟶ b), (ψ.map (φ.map e)).cast (hobj a) (hobj b) = e)
     {a b : Q} (p : Quiver.Path a b) :
@@ -117,36 +117,36 @@ theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
 
 /-- The map on total spaces of arrows induced by a prefunctor, sending `f : a ⟶ b` to
 `φ.map f : φ.obj a ⟶ φ.obj b`. -/
-@[expose] def _root_.Prefunctor.mapTotal (φ : Q ⥤q R) (f : Quiver.Total Q) : Quiver.Total R :=
+@[expose] def mapTotal (φ : Q ⥤q R) (f : Quiver.Total Q) : Quiver.Total R :=
   ⟨φ.obj f.left, φ.obj f.right, φ.map f.hom⟩
 
 /-- The image of a total arrow given by its components is given by their images. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_mk (φ : Q ⥤q R) {a b : Q} (f : a ⟶ b) :
+theorem mapTotal_mk (φ : Q ⥤q R) {a b : Q} (f : a ⟶ b) :
     φ.mapTotal ⟨a, b, f⟩ = ⟨φ.obj a, φ.obj b, φ.map f⟩ := (rfl)
 
 /-- The source of the image of a total arrow is the image of its source. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_left (φ : Q ⥤q R) (f : Quiver.Total Q) :
+theorem mapTotal_left (φ : Q ⥤q R) (f : Quiver.Total Q) :
     (φ.mapTotal f).left = φ.obj f.left := (rfl)
 
 /-- The target of the image of a total arrow is the image of its target. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_right (φ : Q ⥤q R) (f : Quiver.Total Q) :
+theorem mapTotal_right (φ : Q ⥤q R) (f : Quiver.Total Q) :
     (φ.mapTotal f).right = φ.obj f.right := (rfl)
 
 /-- The arrow underlying the image of a total arrow is the image of its arrow. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_hom (φ : Q ⥤q R) (f : Quiver.Total Q) :
+theorem mapTotal_hom (φ : Q ⥤q R) (f : Quiver.Total Q) :
     (φ.mapTotal f).hom = φ.map f.hom := (rfl)
 
 /-- The identity prefunctor induces the identity on total arrows. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_id : (𝟭q Q).mapTotal = id := (rfl)
+theorem mapTotal_id : (𝟭q Q).mapTotal = _root_.id := (rfl)
 
 /-- A composite of prefunctors induces the composite of the maps on total arrows. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_comp (φ : Q ⥤q R) (ψ : R ⥤q S) :
+theorem mapTotal_comp (φ : Q ⥤q R) (ψ : R ⥤q S) :
     (φ ⋙q ψ).mapTotal = ψ.mapTotal ∘ φ.mapTotal := (rfl)
 
-end TauCeti
+end Prefunctor

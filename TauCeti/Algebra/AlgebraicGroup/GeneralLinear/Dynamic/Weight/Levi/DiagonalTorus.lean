@@ -47,7 +47,8 @@ private theorem weightLeviDefiningHopfIdeal_le_ker_diagonalTorusCoordinateMap
   apply weightLeviDefiningHopfIdeal_toIdeal_le_ker R w
   intro i j hij
   have hne : i ≠ j := fun h ↦ hij (congrArg w h)
-  simpa only [hne, ↓reduceIte, BialgHom.coe_toAlgHom] using
+  simpa only [hne, ↓reduceIte, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    BialgHom.coe_toAlgHom] using
     diagonalTorusCoordinateMap_X (R := R) (N := N) i j
 
 /-- Restriction from a weight Levi to the diagonal torus. The construction exists for every

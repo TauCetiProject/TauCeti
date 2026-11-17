@@ -81,7 +81,7 @@ theorem coe_analyticConeOrbitTorusDiffeomorph (n : ℕ∞ω) :
     let := complexTorusChartedSpace e
     ⇑(Φ.analyticConeOrbitTorusDiffeomorph hΦ σ e n) =
       Φ.analyticConeOrbitTorusHomeomorph hΦ σ := by
-  simp only [analyticConeOrbitTorusDiffeomorph, coe_diffeomorphOfBijective]
+  simp only [analyticConeOrbitTorusDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
 
 /-- The inverse orbit biholomorphism has the inverse quotient-torus homeomorphism as its map. -/
 @[simp]

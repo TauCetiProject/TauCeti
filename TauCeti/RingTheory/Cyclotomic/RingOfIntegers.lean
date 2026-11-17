@@ -147,8 +147,8 @@ theorem exists_ringOfIntegers_equiv_integralPowerBasis (e : ℕ) [NeZero e] :
   have : IsCyclotomicExtension {e} ℚ (CyclotomicField e ℚ) :=
     CyclotomicField.isCyclotomicExtension e ℚ
   intro hζ
-  obtain ⟨ι, hι⟩ := hζ.exists_algHom_apply_eq (cyclotomic.irreducible_rat (NeZero.pos e))
-    (isPrimitiveRoot_complexRoot (e := e))
+  obtain ⟨ι, hι, -⟩ := hζ.existsUnique_algHom_apply_eq
+    (cyclotomic.irreducible_rat (NeZero.pos e)) (isPrimitiveRoot_complexRoot (e := e))
   exact ⟨hζ.cyclotomicEquivRingOfIntegers, ι, hι,
     by rw [hζ.cyclotomicEquivRingOfIntegers_zeta]; exact RingOfIntegers.map_mk _ _,
     hζ.map_cyclotomicEquivRingOfIntegers_eq_complexEmbedding hι,

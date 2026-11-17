@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Charpoly
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.LinearAlgebra.End.Adjoin
+import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Nebentypus
 
 /-!
 # The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over the character field
@@ -208,7 +209,7 @@ theorem heckeTCuspNewCharFieldCharacter_injective :
     Function.Injective (heckeTCuspNewCharFieldCharacter (k := k) (χ := χ)) := by
   intro f g h
   apply Subtype.ext
-  refine Newform.eq_of_forall_notMem_qExpansion_coeff_eq (f.2.trans g.2.symm) (S := ∅) ?_
+  refine Newform.eq_of_forall_notMem_qExpansion_coeff_eq (S := ∅) ?_
   intro n _ _
   simpa only [heckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd] using
     DFunLike.congr_fun h ⟨heckeTCuspNewCharEnd k χ n,

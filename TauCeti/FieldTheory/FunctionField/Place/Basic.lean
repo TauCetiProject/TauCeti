@@ -319,6 +319,27 @@ theorem ord_algebraMap (c : k) : P.ord (algebraMap k F c) = 0 := by
 theorem algebraMap_mem_integers (c : k) : algebraMap k F c ∈ P.integers :=
   P.mem_integers_iff.mpr (IsTrivialOn.valuation_algebraMap_le_one P.valuation c)
 
+/-- **`k[x]` lies in the valuation ring of `P` exactly when `x` has no pole at `P`**: the
+criterion selecting the places on the finite chart of `x`. Its additive form is obtained from
+`TauCeti.Place.mem_integers_iff_ord_nonneg`. -/
+theorem adjoin_le_integers_iff {x : F} :
+    (∀ y ∈ Algebra.adjoin k ({x} : Set F), y ∈ P.integers) ↔ x ∈ P.integers :=
+  ⟨fun h ↦ h x (Algebra.self_mem_adjoin_singleton k x), fun hx _ hy ↦
+    Algebra.adjoin_le (S := Subalgebra.mk P.integers.toSubring.toSubsemiring
+      P.algebraMap_mem_integers) (Set.singleton_subset_iff.mpr (by simpa using hx)) hy⟩
+
+/-- **Polynomials in a regular element are regular**: if `a` is regular at `P` and equals the image
+of `X` under a `k`-algebra structure of `k[X]` on `F`, then the image of every polynomial is
+regular at `P`. -/
+theorem algebraMap_polynomial_mem_integers [Algebra (Polynomial k) F]
+    [IsScalarTower k (Polynomial k) F] {a : F} (ha : a ∈ P.integers)
+    (haX : a = algebraMap (Polynomial k) F Polynomial.X) (r : Polynomial k) :
+    algebraMap (Polynomial k) F r ∈ P.integers := by
+  have h : algebraMap (Polynomial k) F r = Polynomial.aeval a r := by
+    rw [haX, Polynomial.aeval_algebraMap_apply, Polynomial.aeval_X_left_apply]
+  rw [h]
+  exact P.adjoin_le_integers_iff.mpr ha _ (Polynomial.aeval_mem_adjoin_singleton k a)
+
 /-- Every nonzero element algebraic over the constants has valuation one. This is the
 contrapositive of Mathlib's `Valuation.transcendental_of_ne_one`. -/
 theorem valuation_eq_one_of_isAlgebraic {f : F} (hf : IsAlgebraic k f) (hf0 : f ≠ 0) :
@@ -344,6 +365,13 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
   · exact zero_mem _
   · exact P.mem_integers_iff.mpr
       (le_of_eq (P.valuation_eq_one_of_isAlgebraic (mem_algebraicClosure_iff.mp hf) hf0))
+
+/-- **An algebraic function is regular at every place**: the set of places at which `x` is regular
+is all of them. -/
+theorem setOf_mem_integers_eq_univ_of_isAlgebraic {x : F} (hx : IsAlgebraic k x) :
+    {P : Place k F | x ∈ P.integers} = Set.univ :=
+  Set.eq_univ_of_forall fun P ↦
+    P.mem_integers_of_mem_algebraicClosure (mem_algebraicClosure_iff.mpr hx)
 
 /-- **A function agrees with at most one constant to first order**: if `f - a` and `f - b` both
 vanish at `P` for constants `a` and `b`, then `a = b`, the difference `b - a` being a constant
@@ -387,6 +415,12 @@ theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P
 
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
   Valuation.exists_isUniformizer_of_surjective P.valuation P.valuation_surjective
+
+/-- A uniformizer of a place is irreducible in its valuation ring. -/
+theorem irreducible_of_isUniformizer {t : P.integers}
+    (ht : P.valuation.IsUniformizer (t : F)) : Irreducible t := by
+  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer]
+  exact ht.is_generator
 
 theorem isUnit_iff_valuation_eq_one {x : P.integers} : IsUnit x ↔ P.valuation (x : F) = 1 :=
   Valuation.Integers.isUnit_iff_valuation_eq_one (Valuation.valuationSubring.integers P.valuation)

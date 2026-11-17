@@ -29,6 +29,7 @@ sphere monoid of symmetric sequences, it is the function spectrum.
 ## Main definitions
 
 * `Mod.tensorLeft M`: the functor `K ↦ M ⊗ K` from `C` to left `A`-modules.
+* `Mod.tensorRight K`: the functor `M ↦ M ⊗ K` on left `A`-modules.
 * `Mod.ihom M`: the functor `N ↦ Hom_A(M, N)` from left `A`-modules to `C`, with the inclusion
   `Mod.ihomι M N : Hom_A(M, N) ⟶ [M, N]` and the factorization `Mod.ihomLift`.
 * `Mod.ihomAdjunction M : Mod.tensorLeft M ⊣ Mod.ihom M`.
@@ -90,6 +91,17 @@ abbrev tensorLeft (M : Mod C A) : C ⥤ Mod C A where
 @[simp]
 lemma tensorLeft_smul (M : Mod C A) (K : C) :
     ((tensorLeft M).obj K).mod.smul = (α_ A M.X K).inv ≫ γ[A, M.X] ▷ K := (rfl)
+
+/-- Tensor a module on the right by an object, retaining its action on the left factor. -/
+abbrev tensorRight (V : C) : Mod C A ⥤ Mod C A where
+  obj M := (Mod.tensorLeft M).obj V
+  map {M N} f := Hom.mk' (M := (Mod.tensorLeft M).obj V)
+    (N := (Mod.tensorLeft N).obj V) (f.hom ▷ V) (by
+    simp only [tensorLeft_smul, selfLeftAction_actionHomRight, Category.assoc]
+    rw [associator_inv_naturality_middle_assoc, ← comp_whiskerRight,
+      IsModHom.smul_hom, comp_whiskerRight, selfLeftAction_actionHomRight])
+  map_id M := by ext; simp
+  map_comp f g := by ext; simp
 
 /-- Tensoring a module with the unit object gives back the module: the right unitor
 `M ⊗ 𝟙 ≅ M` is `A`-linear. -/

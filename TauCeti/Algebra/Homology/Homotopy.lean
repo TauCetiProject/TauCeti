@@ -66,6 +66,9 @@ maps agree after passing to a stable category that kills that term.
 
 `Homotopy.acyclic` says that a contractible complex, one whose identity is null-homotopic, is
 acyclic.
+
+`Homotopy.f_eq_of_dFrom_eq_zero_of_dTo_eq_zero` says that homotopic maps agree in a degree `i`
+where the differential out of the source and the differential into the target vanish.
 -/
 
 @[expose] public section
@@ -124,6 +127,13 @@ lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C]
   rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
   simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
     h.homologyMap_eq i
+
+/-- Homotopic maps agree in a degree `i` where the differential out of `Kⁱ` and the differential
+into `Lⁱ` vanish. -/
+lemma f_eq_of_dFrom_eq_zero_of_dTo_eq_zero {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {K L : HomologicalComplex C c} {g₁ g₂ : K ⟶ L}
+    (h : Homotopy g₁ g₂) {i : ι} (hK : K.dFrom i = 0) (hL : L.dTo i = 0) : g₁.f i = g₂.f i := by
+  simpa [dNext_eq_dFrom_fromNext, prevD_eq_toPrev_dTo, hK, hL] using h.comm i
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}
@@ -318,6 +328,19 @@ theorem comm_succ_apply (h : Homotopy e e') (n : ℕ) (x : P.X (n + 1)) :
   rw [dNext_succ_chainComplex, prevD_chainComplex] at hc
   simpa [add_assoc] using congrArg (fun φ : P.X (n + 1) ⟶ Q.X (n + 1) ↦ φ x) hc
 
+/-- On a cycle, the difference of homotopic maps is the boundary of the homotopy. -/
+theorem d_hom_apply_of_d_eq_zero (h : Homotopy e e') {n : ℕ} (x : P.X n)
+    (hx : P.d n (n - 1) x = 0) :
+    Q.d (n + 1) n (h.hom n (n + 1) x) = e.f n x - e'.f n x := by
+  cases n with
+  | zero =>
+    exact eq_sub_iff_add_eq.mpr (h.comm_zero_apply x).symm
+  | succ n =>
+    have hx' : P.d (n + 1) n x = 0 := by simpa using hx
+    have hc := h.comm_succ_apply n x
+    rw [hx', map_zero, zero_add] at hc
+    exact eq_sub_iff_add_eq.mpr hc.symm
+
 end Homotopy
 
 end ModuleCat
@@ -349,8 +372,8 @@ lemma nonempty_homotopy_mkHomToSingle_zero_iff (K : CochainComplex C ℤ) {i j :
 
 open HomComplex in
 /-- **Null-homotopic chain maps from an object in one degree**: a chain map `χ` from `X` placed
-in degree `p` to `K` is null-homotopic if and only if its component `X ⟶ Kᵖ` factors through the
-differential `Kᵠ ⟶ Kᵖ`, where `q + 1 = p`. -/
+in degree `p` to `K` is null-homotopic if and only if its component `X ⟶ K^p` factors through the
+differential `K^q ⟶ K^p`, where `q + 1 = p`. -/
 lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p q : ℤ}
     (hqp : q + 1 = p) (χ : (singleFunctor C p).obj X ⟶ K) :
     Nonempty (Homotopy χ 0) ↔

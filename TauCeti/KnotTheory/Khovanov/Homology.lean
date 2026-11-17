@@ -7,7 +7,6 @@ module
 
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.EulerCharacteristic
-public import TauCeti.KnotTheory.Khovanov.Resolution.Support
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -21,7 +20,8 @@ support, uniformly in the coefficient ring, including the zero ring and the empt
 
 `khovanovHomologyBracketIso` compares the normalized groups with bracket homology at the
 translated bidegree. It uses the signed native-shift comparison, not an unsigned identification
-of differentials. No Reidemeister invariance is asserted here.
+of differentials. `khovanovHomologyIsoCubeComplexHomology` is the same comparison for any code
+equal to the underlying code and any equal indices. No Reidemeister invariance is asserted here.
 
 ## References
 
@@ -66,6 +66,19 @@ def khovanovHomologyBracketIso (i j : ℤ) :
     (CochainComplex.ShiftSequence.shiftIso (ModuleCat.{u} R)
       D.negativeCrossingCount i (i + D.negativeCrossingCount) (by omega)).app _
 
+/-- `Khⁱʲ(D; R)` is the cohomology of the cube complex of any code `Q` equal to the underlying code
+of `D`, at any cube height `a = i + n₋` and bracket quantum degree `k = j - n₊ + 2n₋`. This is
+`khovanovHomologyBracketIso` with the code and the indices replaced by equal ones, as needed for
+the resolutions of a crossing, which are the underlying codes of oriented codes only up to
+equality. -/
+def khovanovHomologyIsoCubeComplexHomology {Q : PDCode n} (hQ : Q.IsPlanar)
+    (hDQ : D.toPDCode = Q) (i j : ℤ) {k a : ℤ}
+    (hk : k = j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
+    (ha : a = i + D.negativeCrossingCount) :
+    D.khovanovHomology hD R i j ≅ ((Q.resolutionCube hQ R k).cubeComplex).homology a :=
+  D.khovanovHomologyBracketIso hD R i j ≪≫
+    eqToIso (by subst hDQ hk ha; rw [PDCode.khovanovBracket_apply])
+
 /-- Every term of the normalized complex is free, without a nontriviality assumption on `R`. -/
 instance (i j : ℤ) : Module.Free R ((D.khovanovComplex hD R j).X i) := by
   rw [khovanovComplex_X, ← PDCode.khovanovBracket_apply]
@@ -90,21 +103,6 @@ theorem isZero_khovanovHomology_of_cochain_notMem_Icc {i : ℤ}
     IsZero (D.khovanovHomology hD R i j) :=
   (D.khovanovComplex hD R j).isZero_homology_of_notMem_Icc
     (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
-
-/-- The normalized chain groups vanish outside the translated extreme-resolution quantum
-interval. Circle counts include all crossing-free components. -/
-theorem isZero_khovanovComplex_X_of_quantum_notMem_Icc {j : ℤ}
-    (hj : j ∉ Set.Icc
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
-        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
-        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ))) (i : ℤ) :
-    IsZero ((D.khovanovComplex hD R j).X i) := by
-  rw [khovanovComplex_X, ← PDCode.khovanovBracket_apply]
-  apply D.toPDCode.isZero_khovanovBracket_X_of_quantum_notMem_Icc hD R
-  intro h
-  rcases h with ⟨hl, hu⟩
-  exact hj ⟨by omega, by omega⟩
 
 /-- The entire normalized quantum-component complex vanishes outside the same interval. -/
 theorem isZero_khovanovComplex_of_quantum_notMem_Icc {j : ℤ}
@@ -138,18 +136,8 @@ theorem finite_quantumSupport_khovanovComplex :
 
 /-- Khovanov cohomology is supported in a finite rectangle in the two gradings jointly. -/
 theorem finite_bigradedSupport_khovanovHomology :
-    {p : ℤ × ℤ | ¬ IsZero (D.khovanovHomology hD R p.1 p.2)}.Finite := by
-  refine ((Set.finite_Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount).prod
-    (Set.finite_Icc
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
-        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
-        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ)))).subset ?_
-  rintro ⟨i, j⟩ h
-  constructor
-  · by_contra hi
-    exact h (D.isZero_khovanovHomology_of_cochain_notMem_Icc hD R hi j)
-  · by_contra hj
-    exact h (D.isZero_khovanovHomology_of_quantum_notMem_Icc hD R hj i)
+    {p : ℤ × ℤ | ¬ IsZero (D.khovanovHomology hD R p.1 p.2)}.Finite :=
+  (D.finite_bigradedSupport_khovanovComplex hD R).subset fun _ hp hX ↦
+    hp (ExactAt.of_isZero hX).isZero_homology
 
 end TauCeti.OrientedPDCode

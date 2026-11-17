@@ -116,12 +116,13 @@ theorem functionAlgEquiv_delta [DecidableEq G] (g : G) :
   ext h
   simp [delta, ← MonoidAlgebra.basis_apply, Finsupp.single_apply, Pi.single_apply]
 
+omit [Finite G] in
 /-- The indicator function of `g` takes the value `1` at `g` and `0` elsewhere. This is the
 simp-normal form of its values. -/
 @[simp]
 theorem ofConv_delta_single [DecidableEq G] (g h : G) :
     (delta R G g).ofConv (MonoidAlgebra.single h 1) = if h = g then 1 else 0 := by
-  rw [← functionAlgEquiv_apply, functionAlgEquiv_delta, Pi.single_apply]
+  simp [delta, ← MonoidAlgebra.basis_apply, Finsupp.single_apply]
 
 section Monoid
 
@@ -141,6 +142,7 @@ theorem counit_apply (f : coordinateRing R G) :
   rw [ConvolutionDual.counit_apply, functionAlgEquiv_apply]
   rw [MonoidAlgebra.one_def]
 
+omit [Finite G] in
 /-- The indicator function of `g` takes the value `1` at the identity exactly when `g = 1`. This is
 the simp-normal form of its counit. -/
 @[simp]

@@ -214,6 +214,21 @@ private theorem isConj_alternatingGroupFiveFiveCycle_or_sq_of_cycleType
           rw [alternatingGroupFivePowerConjugator_conj_sq]
         _ = g := hπ
 
+/-- The centralizer in `S₅` of the five-cycle `(0 1 2 3 4)` lies in `A₅`. -/
+private theorem centralizer_alternatingGroupFiveFiveCycle_le :
+    Subgroup.centralizer {(alternatingGroupFiveFiveCycle : Equiv.Perm (Fin 5))} ≤
+      alternatingGroup (Fin 5) := by
+  rw [Equiv.Perm.centralizer_le_alternating_iff]
+  rw [cycleType_alternatingGroupFiveFiveCycle]
+  refine ⟨?_, by norm_num, ?_⟩
+  · intro c hc
+    simp only [Multiset.mem_singleton] at hc
+    subst c
+    exact ⟨2, by norm_num⟩
+  intro i
+  rw [Multiset.count_singleton]
+  split <;> omega
+
 private theorem not_isConj_alternatingGroupFiveFiveCycle_sq :
     ¬IsConj alternatingGroupFiveFiveCycle (alternatingGroupFiveFiveCycle ^ 2) := by
   intro h
@@ -251,20 +266,8 @@ private theorem not_isConj_alternatingGroupFiveFiveCycle_sq :
   have hcentral : alternatingGroupFivePowerConjugator * (q : Equiv.Perm (Fin 5)) ∈
       Subgroup.centralizer {(alternatingGroupFiveFiveCycle : Equiv.Perm (Fin 5))} :=
     Subgroup.mem_centralizer_singleton_iff.mpr hcomm
-  have hcentralEven : Subgroup.centralizer
-      {(alternatingGroupFiveFiveCycle : Equiv.Perm (Fin 5))} ≤
-      alternatingGroup (Fin 5) := by
-    rw [Equiv.Perm.centralizer_le_alternating_iff]
-    rw [cycleType_alternatingGroupFiveFiveCycle]
-    refine ⟨?_, by norm_num, ?_⟩
-    · intro c hc
-      simp only [Multiset.mem_singleton] at hc
-      subst c
-      exact ⟨2, by norm_num⟩
-    intro i
-    rw [Multiset.count_singleton]
-    split <;> omega
-  have heven := Equiv.Perm.mem_alternatingGroup.mp (hcentralEven hcentral)
+  have heven := Equiv.Perm.mem_alternatingGroup.mp
+    (centralizer_alternatingGroupFiveFiveCycle_le hcentral)
   have hodd : Equiv.Perm.sign
       (alternatingGroupFivePowerConjugator * (q : Equiv.Perm (Fin 5))) = -1 := by
     rw [map_mul, sign_alternatingGroupFivePowerConjugator,
@@ -342,7 +345,91 @@ theorem numClasses_alternatingGroupFiveClassData :
     alternatingGroupFiveClassData.numClasses = 5 := by
   rfl
 
+/-- The representative numbered `i` is the `i`-th entry of the numbering above. -/
+@[simp]
+theorem rep_alternatingGroupFiveClassData (i : Fin alternatingGroupFiveClassData.numClasses) :
+    alternatingGroupFiveClassData.rep i =
+      ![1, alternatingGroupFiveDoubleTransposition, alternatingGroupFiveThreeCycle,
+        alternatingGroupFiveFiveCycle, alternatingGroupFiveFiveCycle ^ 2]
+        (i.cast numClasses_alternatingGroupFiveClassData) := by
+  fin_cases i <;> rfl
+
 local instance fact_prime_five_alternatingGroupFive : Fact (Nat.Prime 5) := ⟨by decide⟩
+
+/-- The class of the identity in `A₅` has size `1`. -/
+private theorem card_classFinset_zero_alternatingGroupFiveClassData :
+    (alternatingGroupFiveClassData.classFinset ⟨0, by simp⟩).card = 1 := by
+  rw [alternatingGroupFiveClassData.card_classFinset,
+    alternatingGroupFiveClassData.classOf_eq_mk]
+  rw [show alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 by simp]
+  exact ConjClasses.ncard_carrier_mk_of_mem_center (one_mem _)
+
+/-- A class whose representative has cycle type `c`, and which contains every element of cycle
+type `c`, is the finset of elements of cycle type `c`. -/
+private theorem classFinset_eq_filter_cycleType (j : Fin alternatingGroupFiveClassData.numClasses)
+    (c : Multiset ℕ) (hc : (alternatingGroupFiveClassData.rep j : Equiv.Perm (Fin 5)).cycleType = c)
+    (hconj : ∀ g : A5, (g : Equiv.Perm (Fin 5)).cycleType = c →
+      IsConj (alternatingGroupFiveClassData.rep j) g) :
+    alternatingGroupFiveClassData.classFinset j =
+      ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = c} : Finset A5) := by
+  ext g
+  rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  exact ⟨fun h => (Equiv.Perm.isConj_iff_cycleType_eq.mp
+    ((alternatingGroup (Fin 5)).subtype.map_isConj h)).symm.trans hc, hconj g⟩
+
+/-- The class of the double transpositions in `A₅` has size `15`. -/
+private theorem card_classFinset_one_alternatingGroupFiveClassData :
+    (alternatingGroupFiveClassData.classFinset ⟨1, by simp⟩).card = 15 := by
+  have hfinset := classFinset_eq_filter_cycleType ⟨1, by simp⟩ {2, 2}
+    (by simp) fun g hg => by
+      simpa using isConj_alternatingGroupFiveDoubleTransposition_of_cycleType hg
+  rw [hfinset, AlternatingGroup.card_of_cycleType]
+  rw [ite_eq_left (by decide)]
+  decide
+
+/-- The class of the three-cycles in `A₅` has size `20`. -/
+private theorem card_classFinset_two_alternatingGroupFiveClassData :
+    (alternatingGroupFiveClassData.classFinset ⟨2, by simp⟩).card = 20 := by
+  have hfinset := classFinset_eq_filter_cycleType ⟨2, by simp⟩ {3}
+    (by simp) fun g hg => by
+      simpa using alternatingGroup.isThreeCycle_isConj (by norm_num)
+        cycleType_alternatingGroupFiveThreeCycle hg
+  rw [hfinset, AlternatingGroup.card_of_cycleType_singleton (by omega) (by simp)]
+  rw [ite_eq_left (by decide)]
+  decide
+
+/-- Each of the two classes of five-cycles in `A₅` has at most twelve elements. -/
+private theorem card_classFinset_le_twelve_alternatingGroupFiveClassData
+    (j : Fin alternatingGroupFiveClassData.numClasses)
+    (hj : j = ⟨3, by simp⟩ ∨ j = ⟨4, by simp⟩) :
+    (alternatingGroupFiveClassData.classFinset j).card ≤ 12 := by
+  have horder : orderOf alternatingGroupFiveFiveCycle = 5 := by
+    apply orderOf_eq_prime <;> decide
+  have hrep_three : alternatingGroupFiveClassData.rep ⟨3, by simp⟩ =
+      alternatingGroupFiveFiveCycle := by simp
+  have hrep_four : alternatingGroupFiveClassData.rep ⟨4, by simp⟩ =
+      alternatingGroupFiveFiveCycle ^ 2 := by simp
+  have hrepOrder : orderOf (alternatingGroupFiveClassData.rep j) = 5 := by
+    rcases hj with rfl | rfl
+    · rw [hrep_three]
+      exact horder
+    · rw [hrep_four]
+      rw [orderOf_pow, horder]
+      norm_num
+  have hmem : alternatingGroupFiveClassData.rep j ∈
+      (alternatingGroupFiveClassData.classOf j).carrier := by
+    simpa only [alternatingGroupFiveClassData.classOf_eq_mk] using
+      (ConjClasses.mem_carrier_mk : alternatingGroupFiveClassData.rep j ∈
+        (ConjClasses.mk (alternatingGroupFiveClassData.rep j)).carrier)
+  have hdvd := (alternatingGroupFiveClassData.classOf j).card_carrier_mul_orderOf_dvd
+    (alternatingGroupFiveClassData.rep j) hmem
+  rw [← alternatingGroupFiveClassData.card_classFinset, hrepOrder,
+    nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin] at hdvd
+  norm_num [Nat.factorial] at hdvd
+  have hmul_le : (alternatingGroupFiveClassData.classFinset j).card * 5 ≤ 60 :=
+    Nat.le_of_dvd (by norm_num) hdvd
+  omega
 
 /-- The five numbered conjugacy classes of `A₅` have sizes `1`, `15`, `20`, `12`, and `12`. -/
 @[simp]
@@ -352,75 +439,10 @@ theorem card_classFinset_alternatingGroupFiveClassData
       ![1, 15, 20, 12, 12]
         (finCongr numClasses_alternatingGroupFiveClassData i) := by
   have hnum := numClasses_alternatingGroupFiveClassData
-  have hzero : (alternatingGroupFiveClassData.classFinset ⟨0, by omega⟩).card = 1 := by
-    rw [alternatingGroupFiveClassData.card_classFinset,
-      alternatingGroupFiveClassData.classOf_eq_mk]
-    -- `ClassData.rep` is executable list lookup; the first entry is definitionally `1`.
-    rw [show alternatingGroupFiveClassData.rep ⟨0, by omega⟩ = 1 by rfl]
-    exact ConjClasses.ncard_carrier_mk_of_mem_center (Subgroup.one_mem _)
-  have hone : (alternatingGroupFiveClassData.classFinset ⟨1, by omega⟩).card = 15 := by
-    have hfinset : alternatingGroupFiveClassData.classFinset ⟨1, by omega⟩ =
-        ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = {2, 2}} : Finset A5) := by
-      ext g
-      rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      constructor
-      · intro h
-        exact Equiv.Perm.isConj_iff_cycleType_eq.mp
-          ((alternatingGroup (Fin 5)).subtype.map_isConj h) |>.symm.trans
-            cycleType_alternatingGroupFiveDoubleTransposition
-      · exact isConj_alternatingGroupFiveDoubleTransposition_of_cycleType
-    rw [hfinset, AlternatingGroup.card_of_cycleType]
-    rw [ite_eq_left (by decide)]
-    decide
-  have htwo : (alternatingGroupFiveClassData.classFinset ⟨2, by omega⟩).card = 20 := by
-    have hfinset : alternatingGroupFiveClassData.classFinset ⟨2, by omega⟩ =
-        ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = {3}} : Finset A5) := by
-      ext g
-      rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      constructor
-      · intro h
-        exact Equiv.Perm.isConj_iff_cycleType_eq.mp
-          ((alternatingGroup (Fin 5)).subtype.map_isConj h) |>.symm.trans
-            cycleType_alternatingGroupFiveThreeCycle
-      · intro h
-        exact alternatingGroup.isThreeCycle_isConj (by norm_num)
-          cycleType_alternatingGroupFiveThreeCycle h
-    rw [hfinset, AlternatingGroup.card_of_cycleType_singleton (by omega) (by simp)]
-    rw [ite_eq_left (by decide)]
-    decide
-  have hle (j : Fin alternatingGroupFiveClassData.numClasses)
-      (hj : j = ⟨3, by omega⟩ ∨ j = ⟨4, by omega⟩) :
-      (alternatingGroupFiveClassData.classFinset j).card ≤ 12 := by
-    have horder : orderOf alternatingGroupFiveFiveCycle = 5 := by
-      apply orderOf_eq_prime <;> decide
-    have hrep_three : alternatingGroupFiveClassData.rep ⟨3, by omega⟩ =
-        alternatingGroupFiveFiveCycle := by
-      rfl
-    have hrep_four : alternatingGroupFiveClassData.rep ⟨4, by omega⟩ =
-        alternatingGroupFiveFiveCycle ^ 2 := by
-      rfl
-    have hrepOrder : orderOf (alternatingGroupFiveClassData.rep j) = 5 := by
-      rcases hj with rfl | rfl
-      · rw [hrep_three]
-        exact horder
-      · rw [hrep_four]
-        rw [orderOf_pow, horder]
-        norm_num
-    have hmem : alternatingGroupFiveClassData.rep j ∈
-        (alternatingGroupFiveClassData.classOf j).carrier := by
-      simpa only [alternatingGroupFiveClassData.classOf_eq_mk] using
-        (ConjClasses.mem_carrier_mk : alternatingGroupFiveClassData.rep j ∈
-          (ConjClasses.mk (alternatingGroupFiveClassData.rep j)).carrier)
-    have hdvd := (alternatingGroupFiveClassData.classOf j).card_carrier_mul_orderOf_dvd
-      (alternatingGroupFiveClassData.rep j) hmem
-    rw [← alternatingGroupFiveClassData.card_classFinset, hrepOrder,
-      nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin] at hdvd
-    norm_num [Nat.factorial] at hdvd
-    have hmul_le : (alternatingGroupFiveClassData.classFinset j).card * 5 ≤ 60 :=
-      Nat.le_of_dvd (by norm_num) hdvd
-    omega
+  have hzero := card_classFinset_zero_alternatingGroupFiveClassData
+  have hone := card_classFinset_one_alternatingGroupFiveClassData
+  have htwo := card_classFinset_two_alternatingGroupFiveClassData
+  have hle := card_classFinset_le_twelve_alternatingGroupFiveClassData
   have hsum := alternatingGroupFiveClassData.sum_card_classFinset
   have hcard : Fintype.card (alternatingGroup (Fin 5)) = 60 := by
     rw [← Nat.card_eq_fintype_card, nat_card_alternatingGroup,

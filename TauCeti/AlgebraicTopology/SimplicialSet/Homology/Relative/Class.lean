@@ -19,7 +19,7 @@ For a pair of simplicial sets `Q` (a monomorphism `Q.left ⟶ Q.right`), a `1`-s
 in `R`. This file computes its image under the connecting morphism, the difference
 `[v₁] - [v₀]` of the classes of its endpoints (`SSetPair.relClass₁_homologyδ`); proves that the
 class is natural in maps of pairs (`SSetPair.relClass₁_homologyMap`); and identifies it with the
-image of the absolute class `TauCeti.SSet.ιHomology₁` (in `SimplicialSet/Homology/One.lean`) when
+image of the absolute class `SSet.ιHomology₁` (in `SimplicialSet/Homology/One.lean`) when
 the two faces agree (`SSetPair.ιHomology₁_homologyπ`). The computation of the connecting morphism
 is `ShortComplex.ShortExact.δ_eq` for the short exact sequence of chain complexes of the pair.
 
@@ -113,8 +113,8 @@ lemma relClass₁_homologyMap {Q' : SSetPair.{w}} (f : Q ⟶ Q') :
 /-- The relative class of a `1`-simplex whose two faces agree is the image of its absolute
 class. -/
 lemma ιHomology₁_homologyπ (h : Q.right.δ 0 s = Q.right.δ 1 s) :
-    TauCeti.SSet.ιHomology₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
-  rw [TauCeti.SSet.ιHomology₁_eq, relClass₁, Category.assoc, SSetPair.homologyπ,
+    SSet.ιHomology₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
+  rw [SSet.ιHomology₁_def, relClass₁, Category.assoc, SSetPair.homologyπ,
     HomologicalComplex.homologyπ_naturality, ← Category.assoc,
     HomologicalComplex.liftCycles_comp_cyclesMap]
 
@@ -127,7 +127,7 @@ classes of its two vertices in the subcomplex. -/
 @[reassoc (attr := simp)]
 lemma relClass₁_homologyδ :
     relClass₁ R Q s v₀ v₁ h₀ h₁ ≫ Q.homologyδ R 1 0 =
-      TauCeti.SSet.ιHomology₀ R v₁ - TauCeti.SSet.ιHomology₀ R v₀ := by
+      SSet.ιHomology₀ R v₁ - SSet.ιHomology₀ R v₀ := by
   have hx₁ : (Q.left.ιChainComplex (R := R) v₁ - Q.left.ιChainComplex v₀) ≫
       (SSet.chainComplexMap Q.hom R).f 0 =
         Q.right.ιChainComplex s ≫ (Q.right.chainComplex R).d 1 0 := by
@@ -139,7 +139,7 @@ lemma relClass₁_homologyδ :
     (Q.right.ιChainComplex s) rfl _ hx₁ 0 (by simp)
   rw [relClass₁, Category.assoc]
   refine this.trans ?_
-  rw [TauCeti.SSet.ιHomology₀_eq, TauCeti.SSet.ιHomology₀_eq, ← Preadditive.sub_comp]
+  rw [SSet.ιHomology₀_def, SSet.ιHomology₀_def, ← Preadditive.sub_comp]
   congr 1
   rw [← cancel_mono ((Q.left.chainComplex R).iCycles 0)]
   simp

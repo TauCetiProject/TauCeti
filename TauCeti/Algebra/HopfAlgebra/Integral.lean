@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Basic
+public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 
 /-!
 # Invariant integrals on Hopf algebras
@@ -110,6 +111,19 @@ theorem IsRightInvariantIntegral.strong_invariance (hh : h.IsRightInvariantInteg
     rw [← hfg, mul_assoc, LinearMap.id_mul_antipode, mul_one]
   have := congrArg (fun u : WithConv (H →ₗ[R] H) ↦ u.ofConv b) hf
   simpa [f, g, rb.convMul_apply, Algebra.algebraMap_eq_smul_one] using this
+
+open HopfAlgebra TauCeti in
+/-- Reconstruction from the coproduct of a normalized left integral. The coproduct
+representation is arbitrary; no basis or inverse antipode is chosen. -/
+theorem IsRightInvariantIntegral.sum_apply_mul_smul_antipode {φ : H →ₗ[R] R}
+    (hφ : φ.IsRightInvariantIntegral) {t : H} (ht : t ∈ leftIntegral R H)
+    (htφ : φ t = 1) {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
+    ∑ i ∈ r.index, φ (x * r.left i) • antipode R (r.right i) = x := by
+  classical
+  have hxt (y : H) : φ (y * t) = counit (R := R) y := by
+    simp [(mem_leftIntegral_iff.mp ht) y, htφ]
+  rw [← hφ.strong_invariance (ℛ R x) r]
+  simpa only [hxt] using sum_counit_smul (ℛ R x)
 
 /-- Strong left invariance, with the antipode moved across the integral. -/
 theorem IsLeftInvariantIntegral.strong_invariance (hh : h.IsLeftInvariantIntegral)

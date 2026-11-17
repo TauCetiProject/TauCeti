@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # The residue degree of an extension of local fields, and `e · f = [L : K]`
@@ -38,6 +39,10 @@ side, and conversely.
 
 * `TauCeti.primesOver_maximalIdeal_eq_singleton`: `𝓂[L]` is the unique prime of `𝒪[L]`
   above `𝓂[K]`.
+* `TauCeti.inertiaDegree_eq_of_algEquiv`, `TauCeti.ramificationIndex_eq_of_algEquiv`,
+  `TauCeti.wildRamificationExponent_eq_of_algEquiv`, and
+  `TauCeti.tameRamificationIndex_eq_of_algEquiv`: residue degree, ramification index, wild
+  ramification exponent, and tame index are invariant under `K`-algebra equivalence.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
@@ -88,6 +93,16 @@ cardinalities here are genuine. -/
 theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
 
+variable (K L) in
+/-- The residue degree is unchanged by an equivalence of extensions over the base field. -/
+theorem inertiaDegree_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    inertiaDegree K L = inertiaDegree K M := by
+  have := finite_of_valuativeExtension K M
+  rw [inertiaDegree_def, inertiaDegree_def]
+  exact (IsLocalRing.ResidueField.mapAlgEquiv' e.integerRingEquiv).toLinearEquiv.finrank_eq
+
 /-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
 cardinalities of the residue fields of `K` and `L`. -/
 theorem pow_natCard_residueField_pow_eq_self {R : Type*} [Monoid R] {z : R} {g : ℕ}
@@ -121,6 +136,33 @@ theorem ramificationIndex_mul_inertiaDegree :
   symm
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
+
+variable (K L) in
+/-- The ramification index is unchanged by an equivalence of extensions over the base field. -/
+theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    ramificationIndex K L = ramificationIndex K M := by
+  apply Nat.eq_of_mul_eq_mul_right (inertiaDegree_pos (K := K) (L := L))
+  rw [ramificationIndex_mul_inertiaDegree K L, inertiaDegree_eq_of_algEquiv K L M e,
+    ramificationIndex_mul_inertiaDegree K M]
+  exact e.toLinearEquiv.finrank_eq
+
+variable (K L) in
+/-- The wild ramification exponent is an invariant of the extension up to algebra equivalence. -/
+theorem wildRamificationExponent_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    wildRamificationExponent K L = wildRamificationExponent K M := by
+  simp only [wildRamificationExponent_def, ramificationIndex_eq_of_algEquiv K L M e]
+
+variable (K L) in
+/-- The tame ramification index is an invariant of the extension up to algebra equivalence. -/
+theorem tameRamificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    tameRamificationIndex K L = tameRamificationIndex K M := by
+  simp only [tameRamificationIndex_eq_ordCompl, ramificationIndex_eq_of_algEquiv K L M e]
 
 /-- **Denominators of base-normalised valuations divide the degree.** If `α` has valuation
 `v_K(x) / q`, in lowest terms, for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`: it

@@ -194,7 +194,7 @@ theorem orientationSign_comp (hg : MDifferentiableAt J K g (f x))
         orientationSign_of_isOrientationReversingAt hrf, neg_one_mul, neg_neg]
   · rw [orientationSign_of_not_isInvertible fun h ↦
       hinv (isInvertible_mfderiv_of_isInvertible_mfderiv_comp
-        (o.card_eq.symm.trans o'.card_eq) (o'.card_eq.symm.trans o''.card_eq) hg hf h)]
+        (o'.card_eq.symm.trans o''.card_eq) hg hf h)]
     rcases not_and_or.1 hinv with h | h
     · rw [orientationSign_of_not_isInvertible h, mul_zero]
     · rw [orientationSign_of_not_isInvertible h, zero_mul]

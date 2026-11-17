@@ -111,13 +111,10 @@ connected, so its homotopy groups at any two points are isomorphic. -/
 theorem of_basepoint (h : IsEilenbergMacLaneSpace G n X x) (x' : X) :
     IsEilenbergMacLaneSpace G n X x' := by
   have := h.pathConnectedSpace
-  refine .mk h.pathConnectedSpace (fun k hk0 hk ↦ ?_) ?_
-  · have : NeZero k := ⟨hk0⟩
-    have := h.subsingleton_homotopyGroup hk
-    obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin k) (x := x) (y := x')
-    exact φ.toEquiv.subsingleton_congr.mp inferInstance
-  · obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin n) (x := x') (y := x)
-    exact h.nonempty_homotopyGroupMulEquiv.map φ.trans
+  refine .mk h.pathConnectedSpace (fun _ _ hk ↦
+    subsingleton_homotopyGroup_of_pathConnectedSpace (h.subsingleton_homotopyGroup hk)) ?_
+  obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin n) (x := x') (y := x)
+  exact h.nonempty_homotopyGroupMulEquiv.map φ.trans
 
 /-- Transporting the target group along an isomorphism preserves the `K(G, n)` property. -/
 theorem of_mulEquiv (h : IsEilenbergMacLaneSpace G n X x) (e : G ≃* H) :
@@ -133,7 +130,7 @@ theorem prod (h₁ : IsEilenbergMacLaneSpace G₁ n X₁ x₁) (h₂ : IsEilenbe
     IsEilenbergMacLaneSpace (G₁ × G₂) n (X₁ × X₂) (x₁, x₂) := by
   have := h₁.pathConnectedSpace
   have := h₂.pathConnectedSpace
-  refine .mk inferInstance (fun k hk0 hk ↦ ?_) ?_
+  refine .mk inferInstance (fun k _ hk ↦ ?_) ?_
   · have := h₁.subsingleton_homotopyGroup hk
     have := h₂.subsingleton_homotopyGroup hk
     exact (HomotopyGroup.prodEquiv (N := Fin k) x₁ x₂).subsingleton_congr.mpr inferInstance
@@ -148,7 +145,7 @@ variable {ι : Type w} {G' : ι → Type u} {Z : ι → Type v}
 theorem pi (h : ∀ i, IsEilenbergMacLaneSpace (G' i) n (Z i) (z i)) :
     IsEilenbergMacLaneSpace (∀ i, G' i) n (∀ i, Z i) z := by
   have := fun i ↦ (h i).pathConnectedSpace
-  refine .mk inferInstance (fun k hk0 hk ↦ ?_) ?_
+  refine .mk inferInstance (fun k _ hk ↦ ?_) ?_
   · have := fun i ↦ (h i).subsingleton_homotopyGroup hk
     exact inferInstance
   · exact ⟨(HomotopyGroup.piMulEquiv z).trans

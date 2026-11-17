@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.Norm.Quadratic
+import Mathlib.RingTheory.Valuation.Integral
 
 /-!
 # Unit norms of a quadratic extension in an integral basis
@@ -54,20 +55,24 @@ open ValuativeRel IsLocalRing TauCeti
 
 namespace TauCeti
 
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-  [Algebra.IsQuadraticExtension K L]
+variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
+  [Algebra K L] [ValuativeExtension K L] [Algebra.IsQuadraticExtension K L]
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 open Polynomial in
-/-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `s ≠ 0` and
-`t, c ∈ 𝒪[K]`, then `(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
+/-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `t, c ∈ 𝒪[K]`, then
+`(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
 theorem exists_integerRing_eq_div_of_sq_eq {x : L} {a b s : K} {t c : 𝒪[K]}
-    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a) (hs : s ≠ 0)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a)
     (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) :
     ∃ ω : 𝒪[L], (ω : L) = (x - algebraMap K L b) / algebraMap K L s ∧
       Algebra.trace K L (ω : L) = -(t : K) ∧ Algebra.norm K (ω : L) = c := by
+  have hs : s ≠ 0 := by
+    rintro rfl
+    have hab : a = b ^ 2 := by linear_combination -hbc
+    rw [hab, map_pow] at hx2
+    rcases sq_eq_sq_iff_eq_or_eq_neg.1 hx2 with h | h
+    · exact hx ⟨b, h.symm⟩
+    · exact hx ⟨-b, by rw [map_neg, h]⟩
   set y := (x - algebraMap K L b) / algebraMap K L s
   have hy : y = algebraMap K L (-b / s) + algebraMap K L s⁻¹ * x := by
     simp only [y, map_div₀, map_neg, map_inv₀]
@@ -91,8 +96,8 @@ theorem exists_integerRing_eq_div_of_sq_eq {x : L} {a b s : K} {t c : 𝒪[K]}
         IsScalarTower.algebraMap_apply 𝒪[K] K L, Algebra.algebraMap_ofSubsemiring_apply]
       rw [map_neg] at hsq
       linear_combination hsq
-  exact ⟨⟨y, (Valuation.Integers.isIntegral_iff_valuation_le_one
-    (Valuation.integer.integers (valuation K)) _).1 hint⟩, rfl, htr, hn⟩
+  exact ⟨⟨y, (Valuation.integer.integers (valuation L)).mem_of_integral hint.tower_top⟩,
+    rfl, htr, hn⟩
 
 end TauCeti
 

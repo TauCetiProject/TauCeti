@@ -31,19 +31,35 @@ Mathlib's `SimplyConnectedSpace` is phrased with based paths; this file supplies
 for free loops parametrised by the circle, which is how circles are compared in conditions such as
 simple connectivity at infinity.
 
+After rotating the circle, a continuous `p`-periodic curve `γ : ℝ → X` is contractible, as a map
+`ℝ ⧸ pℤ → X`, exactly when the loop it traces over a period `[s, s + p]` (`Function.Periodic.loop`)
+is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`).
+
 Null-homotopy of a loop does not depend on its constant speed: a null-homotopic loop
 `g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
 `t ↦ g (t * a)` on `AddCircle (T / |a|)` (`ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`).
 
+In the other direction, the circle with one point removed contracts in the circle: lifting its
+points to the open interval of length `p` above it, they move linearly to its midpoint
+(`AddCircle.nullhomotopic_subtypeVal_compl_singleton`). So any subset of a torus on which every
+coordinate avoids a point of its circle has nullhomotopic inclusion.
+
 ## Main declarations
 
+* `ContinuousMap.toLoop`: a continuous map `f : C(AddCircle p, X)` read as a based loop at `f 0`
+  via `AddCircle.ofUnitInterval p`.
 * `ContinuousMap.nullhomotopic_iff_homotopic_refl`: a map from a circle `AddCircle p` with
   `0 < p` is null-homotopic exactly when its based loop `t ↦ f (t * p)` is homotopic to the
   constant loop.
 * `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
   circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
+* `Function.Periodic.loop`: the loop traced by a continuous periodic curve over one period.
+* `Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`: a continuous periodic curve is
+  contractible exactly when its loop over a period is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
+* `AddCircle.nullhomotopic_subtypeVal_compl_singleton`: the circle with a point removed contracts
+  in the circle.
 -/
 
 public section
@@ -57,11 +73,18 @@ namespace ContinuousMap
 
 variable {p : ℝ} {X : Type*} [TopologicalSpace X]
 
-/-- A map from the circle read as a based loop at the image of `0`. -/
-private def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
+/-- A continuous map from the circle `AddCircle p` read as a based loop at `f 0` via
+`AddCircle.ofUnitInterval p`. -/
+def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
   toContinuousMap := f.comp (AddCircle.ofUnitInterval p)
   source' := by simp
   target' := by simp [AddCircle.coe_period]
+
+/-- Evaluation of `f.toLoop` at `t ∈ [0, 1]`. -/
+@[simp]
+theorem toLoop_apply (f : C(AddCircle p, X)) (t : I) :
+    f.toLoop t = f (((t : ℝ) * p : ℝ) : AddCircle p) := by
+  simp [toLoop]
 
 /-- **A circle map is null-homotopic exactly when its based loop is.** Let `γ` be the based loop
 `t ↦ f (t * p)` of `f : AddCircle p → X`, `0 < p`. A homotopy of `γ` to the constant loop relative
@@ -118,16 +141,91 @@ theorem Nullhomotopic.exists_addCircle_comp_mul {T a : ℝ} (hT : T ≠ 0) (ha :
     ⟨_, (AddCircle.homeomorphAddCircle (T / |a|) T (div_ne_zero hT (abs_ne_zero.2 ha))
       hT).continuous⟩
   have he (t : ℝ) : e t = ((t * |a| : ℝ) : AddCircle T) := by
-    rw [ContinuousMap.coe_mk, AddCircle.homeomorphAddCircle_apply_mk, inv_div,
+    rw [coe_mk, AddCircle.homeomorphAddCircle_apply_mk, inv_div,
       div_mul_cancel₀ _ hT]
   rcases ha.lt_or_gt with ha' | ha'
   · -- Backwards: compose further with the reflection of the circle.
     let n : C(AddCircle T, AddCircle T) := ⟨Neg.neg, continuous_neg⟩
     have hn (x : AddCircle T) : n x = -x := rfl
     refine ⟨g.comp (n.comp e), hg.comp_left _, fun t ↦ ?_⟩
-    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, he, hn, ← AddCircle.coe_neg,
+    rw [comp_apply, comp_apply, he, hn, ← AddCircle.coe_neg,
       abs_of_neg ha', mul_neg, neg_neg]
   · refine ⟨g.comp e, hg.comp_left _, fun t ↦ ?_⟩
-    rw [ContinuousMap.comp_apply, he, abs_of_pos ha']
+    rw [comp_apply, he, abs_of_pos ha']
 
 end ContinuousMap
+
+namespace Function.Periodic
+
+variable {p : ℝ} {X : Type*} [TopologicalSpace X] {γ : ℝ → X}
+
+/-- The loop at `γ s` traced by a continuous `p`-periodic curve `γ` over the period `[s, s + p]`:
+`t ↦ γ (s + t * p)` on the unit interval. -/
+def loop (hp : Periodic γ p) (hγ : Continuous γ) (s : ℝ) : Path (γ s) (γ s) where
+  toFun t := γ (s + t * p)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp [hp s]
+
+@[simp]
+theorem loop_apply (hp : Periodic γ p) (hγ : Continuous γ) (s : ℝ) (t : I) :
+    hp.loop hγ s t = γ (s + t * p) :=
+  (rfl)
+
+/-- **A periodic curve is contractible exactly when its loop over a period is.** For `0 < p`, the
+map `ℝ ⧸ pℤ → X` induced by a continuous `p`-periodic curve `γ` is null-homotopic exactly when
+the loop traced by `γ` over the period `[s, s + p]` is null-homotopic relative to its endpoints,
+for any initial time `s`. -/
+theorem exists_nullhomotopic_iff_loop_homotopic_refl [Fact (0 < p)] (hp : Periodic γ p)
+    (hγ : Continuous γ) (s : ℝ) :
+    (∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t) ↔
+      (hp.loop hγ s).Homotopic (Path.refl (γ s)) := by
+  -- Rotating the circle by `s` turns `g` into a map whose based loop is `hp.loop hγ s`.
+  let r (u : ℝ) : C(AddCircle p, AddCircle p) :=
+    ⟨(· + (u : AddCircle p)), continuous_id.add continuous_const⟩
+  have hr (u : ℝ) (θ : AddCircle p) : r u θ = θ + u := rfl
+  have hrot (g : C(AddCircle p, X)) : (g.comp (r s)).Nullhomotopic → g.Nullhomotopic := by
+    intro h
+    have hg : (g.comp (r s)).comp (r (-s)) = g := by
+      ext θ
+      simp [r]
+    exact hg ▸ h.comp_left (r (-s))
+  have key (g : C(AddCircle p, X)) (hg : ∀ t : ℝ, g t = γ t) :
+      (g.comp (r s)).Nullhomotopic ↔ (hp.loop hγ s).Homotopic (Path.refl (γ s)) :=
+    (g.comp (r s)).nullhomotopic_iff_homotopic_refl _ fun t ↦ by
+      rw [loop_apply, ContinuousMap.comp_apply, hr, AddCircle.ofUnitInterval_apply,
+        ← AddCircle.coe_add, hg, add_comm]
+  constructor
+  · rintro ⟨g, hg, hgγ⟩
+    exact (key g hgγ).1 (hg.comp_left (r s))
+  · intro h
+    let g : C(AddCircle p, X) := ⟨hp.lift, hγ.quotient_liftOn' _⟩
+    have hgγ (t : ℝ) : g t = γ t := hp.lift_coe t
+    exact ⟨g, hrot g ((key g hgγ).2 h), hgγ⟩
+
+end Function.Periodic
+
+namespace AddCircle
+
+variable {p : ℝ} [Fact (0 < p)]
+
+/-- **The circle with a point removed contracts in the circle.** The inclusion of the complement
+of a point `c` of `AddCircle p` is nullhomotopic: lifting to the interval `(a, a + p)` above it,
+where `a` represents `c`, the points move linearly to the midpoint of that interval. -/
+theorem nullhomotopic_subtypeVal_compl_singleton (c : AddCircle p) :
+    (ContinuousMap.subtypeVal ({c}ᶜ : Set (AddCircle p))).Nullhomotopic := by
+  obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective c
+  have hL : Continuous fun x : ({(a : AddCircle p)}ᶜ : Set (AddCircle p)) ↦
+      (equivIco p a x : ℝ) :=
+    continuous_iff_continuousAt.2 fun x ↦ continuous_subtype_val.continuousAt.comp
+      ((continuousAt_equivIco p a x.2).comp continuous_subtype_val.continuousAt)
+  refine ⟨((a + p / 2 : ℝ) : AddCircle p), ⟨{
+    toFun := fun q ↦ ((((1 : ℝ) - q.1) * equivIco p a q.2 + q.1 * (a + p / 2) : ℝ) : AddCircle p)
+    continuous_toFun := continuous_quotient_mk'.comp
+      (((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
+        (hL.comp continuous_snd)).add
+        ((continuous_subtype_val.comp continuous_fst).mul continuous_const))
+    map_zero_left := fun x ↦ by simp
+    map_one_left := fun x ↦ by simp }⟩⟩
+
+end AddCircle

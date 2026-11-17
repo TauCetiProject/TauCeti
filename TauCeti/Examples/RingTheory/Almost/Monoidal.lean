@@ -18,7 +18,10 @@ These examples test the localized symmetric monoidal structure on `TauCeti.Almos
 * the tensor unit is `V^a`, isomorphic to `m^a`, and `M^a ⊗ N^a ≅ (M ⊗[V] N)^a`;
 * `(V ⧸ m)^a ⊗ X` is zero for every almost module `X`, while `ℤ^a ⊗ ℤ^a` is not zero for the
   classical setup `(ℤ, ℤ)`;
-* the tensor product of almost modules is `V`-linear and right exact.
+* the tensor product of almost modules is `V`-linear and right exact;
+* almost elements are lax monoidal with almost-isomorphic comparisons, `M ↦ M_!` preserves tensor
+  products, and its unit comparison `(V^a)_! → V` is an isomorphism for the classical setup but
+  not for the zero setup over `ℤ`.
 
 ## References
 
@@ -118,3 +121,39 @@ example (S : BasicSetup V) (X : Module S) {Y Z : Module S} (ε : V) (f : Y ⟶ Z
 example (S : BasicSetup V) (X : Module S) :
     PreservesFiniteColimits (tensorLeft X) ∧ PreservesFiniteColimits (tensorRight X) :=
   ⟨inferInstance, inferInstance⟩
+
+/-! ### Almost elements and the left adjoint `M ↦ M_!` -/
+
+open Functor.LaxMonoidal Functor.OplaxMonoidal in
+-- The unit comparison `V → (𝟙_)_*` of almost elements is an almost isomorphism, but for the zero
+-- setup over `ℤ` it is not injective: its target is zero.
+example : (zero ℤ).IsAlmostIso (ε (elements (zero ℤ))).hom ∧
+    ¬ Function.Injective (ε (elements (zero ℤ))).hom := by
+  refine ⟨isAlmostIso_elements_ε _, fun h ↦ one_ne_zero (α := ℤ) (@h 1 0 ?_)⟩
+  exact (isZero_of_ideal_eq_bot _ zero_ideal _).eq_of_tgt _ _
+
+-- The tensor comparison `(M ⊗ N)_! → M_! ⊗[V] N_!` of `M ↦ M_!` is an isomorphism for every
+-- setup, even though its unit comparison need not be.
+example (S : BasicSetup V) (M N : Module S) : IsIso (Functor.OplaxMonoidal.δ (shriek S) M N) :=
+  inferInstance
+
+-- Positive control: for the classical setup the unit comparison `(V^a)_! → V` is an isomorphism.
+example : IsIso (Functor.OplaxMonoidal.η (shriek (classical V))) :=
+  (isIso_shriek_η_iff _).mpr classical_ideal
+
+-- Negative control: for the zero setup over `ℤ`, `(ℤ^a)_! = 0`, so the unit comparison
+-- `(ℤ^a)_! → ℤ` is not an isomorphism.
+example : ¬ IsIso (Functor.OplaxMonoidal.η (shriek (zero ℤ))) := by
+  rw [isIso_shriek_η_iff, zero_ideal]
+  exact bot_ne_top
+
+-- The same holds for every setup with a proper ideal, for instance the maximal ideal of a
+-- valuation ring that is not finitely generated.
+example (S : BasicSetup V) (hS : S.ideal ≠ ⊤) :
+    ¬ IsIso (Functor.OplaxMonoidal.η (shriek S)) :=
+  fun h ↦ hS ((isIso_shriek_η_iff S).mp h)
+
+-- A tensor product with a firm module is firm, whatever the other factor.
+example (S : BasicSetup V) (P : Type*) [AddCommGroup P] [Module V P] :
+    S.IsFirm (P ⊗[V] S.tilde) :=
+  S.isFirm_tilde.tensorProduct P

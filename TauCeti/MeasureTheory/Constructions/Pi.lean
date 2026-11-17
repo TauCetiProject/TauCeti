@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
 /-!
 # Coordinate projections of finite product measures
@@ -18,6 +19,10 @@ measures.
 assignment on `κ` to the coordinates in the image of `e` has the corresponding product law on
 `ι`. This is the finite-family form of the fact that a subfamily of independent coordinates is
 still independent.
+
+**Splitting off the first coordinate.** `MeasurableEquiv.piFinSuccAbove` at `0` is `Fin.cons` in
+the reverse direction; composing a measurable function with `Fin.cons` is measurable on the product
+of the head and the tail.
 
 **Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
 of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
@@ -85,6 +90,7 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
   preserving;
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
   measure preserving;
+* `TauCeti.measurePreserving_update_prod_pi` — a one-coordinate refresh is measure preserving;
 * `TauCeti.measurePreserving_update_update` — the two-coordinate refresh is measure
   preserving;
 * `TauCeti.finThreeArrow` and `TauCeti.finFourArrow`, with
@@ -123,6 +129,21 @@ open scoped ENNReal
 namespace TauCeti
 
 open ProbabilityTheory
+
+/-- The inverse of `MeasurableEquiv.piFinSuccAbove` at `0` on a constant family is `Fin.cons`. -/
+theorem _root_.MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons {β : Type*}
+    [MeasurableSpace β] {n : ℕ} (a : β) (w : Fin n → β) :
+    (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm (a, w) = Fin.cons a w := by
+  simp [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero]
+
+/-- Composing a measurable function on `Fin (n + 1) → β` with `Fin.cons` is measurable on the
+product of the head and the tail. -/
+theorem _root_.Measurable.comp_finCons {β γ : Type*} [MeasurableSpace β] [MeasurableSpace γ] {n : ℕ}
+    {F : (Fin (n + 1) → β) → γ} (hF : Measurable F) :
+    Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
+  convert hF.comp (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm.measurable
+    using 1
+  exact funext fun p => congrArg F (MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons ..).symm
 
 /-- Restricting a finite product-distributed assignment along an embedding of index types is
 measure preserving. The target product uses exactly the marginals selected by the embedding. -/
@@ -233,6 +254,39 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
     (MeasurePreserving.id (Measure.pi fun j : {i : ι // i ≠ i₀} => μ j))).comp
     (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
 
+/-- Resampling one probability coordinate of a product sample from an independent draw of that
+coordinate's law preserves the product measure. -/
+theorem measurePreserving_update_prod_pi (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)]
+    (i : ι) [IsProbabilityMeasure (μ i)] :
+    MeasurePreserving (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
+      ((Measure.pi μ).prod (μ i)) (Measure.pi μ) := by
+  refine ⟨measurable_update', ?_⟩
+  refine (Measure.pi_eq fun s hs => ?_).symm
+  rw [Measure.map_apply measurable_update' (MeasurableSet.univ_pi hs)]
+  have hpre : (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2) ⁻¹' (Set.univ.pi s) =
+      (Set.univ.pi (Function.update s i Set.univ)) ×ˢ s i := by
+    ext ⟨x, y⟩
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Set.mem_prod]
+    constructor
+    · intro h
+      refine ⟨fun j => ?_, by simpa using h i⟩
+      by_cases hj : j = i
+      · subst hj; simp
+      · simpa [Function.update_of_ne hj] using h j
+    · rintro ⟨h1, h2⟩ j
+      by_cases hj : j = i
+      · subst hj; simpa using h2
+      · simpa [Function.update_of_ne hj] using h1 j
+  rw [hpre, Measure.prod_prod, Measure.pi_pi,
+    ← Finset.mul_prod_erase Finset.univ (fun j => μ j (s j)) (Finset.mem_univ i),
+    ← Finset.mul_prod_erase Finset.univ (fun j => μ j (Function.update s i Set.univ j))
+      (Finset.mem_univ i)]
+  have h1 : ∏ j ∈ Finset.univ.erase i, μ j (Function.update s i Set.univ j) =
+      ∏ j ∈ Finset.univ.erase i, μ j (s j) :=
+    Finset.prod_congr rfl fun j hj => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hj)]
+  rw [h1]
+  simp [mul_comm]
+
 /-- Overwriting the two distinct coordinates `a` and `b` of a product-distributed assignment by an
 independent pair leaves the product law unchanged. -/
 theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
@@ -243,40 +297,11 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
       ((Measure.pi μ).prod ((μ a).prod (μ b))) (Measure.pi μ) := by
   let s : Finset ι := {a}
   let t : Finset ι := {b}
-  have hdis : Disjoint s t := by simp [s, t, hab]
+  have hdis : Disjoint s t := Finset.disjoint_singleton.2 hab
   let p : ι → Prop := fun i => i ∈ s ∪ t
   let splitEquiv := MeasurableEquiv.piEquivPiSubtypeProd α p
-  let unionEquiv := MeasurableEquiv.piFinsetUnion α hdis
   let singleA := (MeasurableEquiv.piUnique fun i : s => α i).symm
   let singleB := (MeasurableEquiv.piUnique fun i : t => α i).symm
-  have singleA_apply (u : α a) : singleA u ⟨a, by simp [s]⟩ = u := by
-    simp only [singleA, MeasurableEquiv.piUnique_symm_apply]
-    unfold uniqueElim
-    rfl
-  have singleB_apply (v : α b) : singleB v ⟨b, by simp [t]⟩ = v := by
-    simp only [singleB, MeasurableEquiv.piUnique_symm_apply]
-    unfold uniqueElim
-    rfl
-  -- `MeasurableEquiv.piFinsetUnion` is by definition `Equiv.piFinsetUnion` carrying the
-  -- measurability proofs, and Mathlib states the componentwise lemmas
-  -- `Equiv.piFinsetUnion_left`/`_right` only for the bare equivalence. Bridge the two once here,
-  -- so that neither case below unfolds the measurable-equivalence wrapper again.
-  have unionEquiv_coe (w : ((i : s) → α i) × ((i : t) → α i)) :
-      unionEquiv w = Equiv.piFinsetUnion α hdis w := rfl
-  have unionEquiv_a (u : α a) (v : α b) (ha : a ∈ s ∪ t) :
-      unionEquiv (singleA u, singleB v) ⟨a, ha⟩ = u := by
-    rw [unionEquiv_coe, Equiv.piFinsetUnion_left α hdis (by simp [s]) ha]
-    exact singleA_apply u
-  have unionEquiv_b (u : α a) (v : α b) (hb : b ∈ s ∪ t) :
-      unionEquiv (singleA u, singleB v) ⟨b, hb⟩ = v := by
-    rw [unionEquiv_coe, Equiv.piFinsetUnion_right α hdis (by simp [t]) hb]
-    exact singleB_apply v
-  have splitEquiv_symm_apply (x : ∀ i : Subtype p, α i)
-      (y : ∀ i : {i // ¬p i}, α i) (i : ι) :
-      splitEquiv.symm (x, y) i = if hi : p i then x ⟨i, hi⟩ else y ⟨i, hi⟩ :=
-    Equiv.piEquivPiSubtypeProd_symm_apply p α (x, y) i
-  have splitEquiv_snd_apply (z : ∀ i, α i) (i : ι) (hi : ¬p i) :
-      (splitEquiv z).2 ⟨i, hi⟩ = z i := rfl
   have hsplit := measurePreserving_piEquivPiSubtypeProd μ p
   have hsingleA : MeasurePreserving singleA (μ a) (Measure.pi fun i : s => μ i) := by
     simpa [singleA, s] using MeasurePreserving.symm
@@ -312,27 +337,15 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
       (congrArg (fun m => m.prod (Measure.pi fun i : {i // ¬p i} => μ i)) hpi)
   have hrefresh := (MeasurePreserving.symm splitEquiv hsplit).comp hcombine'
   refine hrefresh.congr (by fun_prop) (ae_of_all _ fun w => ?_)
-  funext i
-  -- `MeasurePreserving.comp` stores this composite function definitionally; expose it once, then
-  -- use the application lemmas above for all measurable-equivalence wrappers.
+  -- `MeasurePreserving.comp` stores the composite function definitionally, so the pointwise
+  -- statement of the helper applies as it stands.
   change splitEquiv.symm
-      (unionEquiv (singleA w.2.1, singleB w.2.2), (splitEquiv w.1).2) i =
-    update (update w.1 a w.2.1) b w.2.2 i
-  rw [splitEquiv_symm_apply]
-  by_cases hia : i = a
-  · subst i
-    simp only [p, s, t, Finset.mem_union, Finset.mem_singleton, true_or, dite_true]
-    rw [unionEquiv_a]
-    simp [hab]
-  · by_cases hib : i = b
-    · subst i
-      rw [update_self]
-      simp only [p, s, t, Finset.mem_union, Finset.mem_singleton, or_true, dite_true]
-      rw [unionEquiv_b]
-    · simp only [p, s, t, Finset.mem_union, Finset.mem_singleton, hia, hib, false_or,
-        dite_false]
-      rw [splitEquiv_snd_apply]
-      rw [update_of_ne hib, update_of_ne hia]
+      (MeasurableEquiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2),
+        (splitEquiv w.1).2) = update (update w.1 a w.2.1) b w.2.2
+  rw [Function.update_eq_updateFinset, Function.update_eq_updateFinset,
+    Function.updateFinset_updateFinset hdis]
+  exact Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset (s ∪ t) w.1
+    (Equiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2))
 
 section FinArrow
 

@@ -291,6 +291,32 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT
         rw [lastT_mul_lastT_mul, map_add, map_smul, smul_eq_mul]
     _ = _ := by rw [extend_incl_mul_lastT_mul_incl z hφ]
 
+/-- The pairing `(a, b) ↦ ψ (a * T * b * T)` is symmetric when one argument lies in the stage
+`m + 1`, where `T` is the last generator. -/
+private theorem extend_extend_mul_lastT_mul_incl_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
+    (hφ' : ∀ x y, extend z φ (x * y) = extend z φ (y * x)) (a : stage R q (m + 2))
+    (c : stage R q (m + 1)) :
+    extend z (extend z φ)
+        (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c) *
+          lastT q (m + 1)) =
+      extend z (extend z φ)
+        (incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1) * incl q (m + 2) a *
+          lastT q (m + 1)) := by
+  calc extend z (extend z φ) (incl q (m + 2) a * lastT q (m + 1) *
+          incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1))
+      = extend z (extend z φ) (incl q (m + 2) (incl q (m + 1) c) *
+          (incl q (m + 2) a * lastT q (m + 1) * lastT q (m + 1))) := by
+        rw [mul_assoc _ (incl q (m + 2) (incl q (m + 1) c)), ← (commute_lastT c).eq,
+          ← mul_assoc, extend_incl_mul_comm z hφ']
+    _ = (((q : R) - ↑q⁻¹) * z + 1) * extend z φ (incl q (m + 1) c * a) := by
+        rw [← mul_assoc, ← mul_assoc, ← map_mul, extend_incl_mul_lastT_mul_lastT z hφ']
+    _ = extend z (extend z φ)
+          (lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c * a) * lastT q (m + 1)) :=
+        (extend_extend_lastT_mul_incl_mul_lastT z hφ hφ' _).symm
+    _ = extend z (extend z φ) (incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1) *
+          incl q (m + 2) a * lastT q (m + 1)) := by
+        rw [map_mul (incl q (m + 2)), ← mul_assoc (lastT q (m + 1)), (commute_lastT c).eq]
+
 /-- The pairing `(a, b) ↦ ψ (a * T * b * T)` on the stage `m + 2`, where `ψ` is the second
 extension of `φ` and `T` the last generator, is symmetric. -/
 private theorem extend_extend_mul_lastT_mul_mul_lastT_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
@@ -310,23 +336,9 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT_comm (hφ : ∀ x y, φ (x
   have hG : ∀ a b, G a b =
       ψ (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b * lastT q (m + 1)) :=
     fun _ _ ↦ rfl
-  -- The pairing is symmetric when one argument lies in the stage `m + 1`.
-  have hA : ∀ a c, G a (incl q (m + 1) c) = G (incl q (m + 1) c) a := by
-    intro a c
+  have hA : ∀ a c, G a (incl q (m + 1) c) = G (incl q (m + 1) c) a := fun a c ↦ by
     rw [hG, hG]
-    calc ψ (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c) *
-            lastT q (m + 1))
-        = ψ (incl q (m + 2) (incl q (m + 1) c) *
-            (incl q (m + 2) a * lastT q (m + 1) * lastT q (m + 1))) := by
-          rw [mul_assoc _ (incl q (m + 2) (incl q (m + 1) c)), ← (commute_lastT c).eq,
-            ← mul_assoc, extend_incl_mul_comm z hφ']
-      _ = (((q : R) - ↑q⁻¹) * z + 1) * extend z φ (incl q (m + 1) c * a) := by
-          rw [← mul_assoc, ← mul_assoc, ← map_mul, extend_incl_mul_lastT_mul_lastT z hφ']
-      _ = ψ (lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c * a) * lastT q (m + 1)) :=
-          (extend_extend_lastT_mul_incl_mul_lastT z hφ hφ' _).symm
-      _ = ψ (incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1) * incl q (m + 2) a *
-            lastT q (m + 1)) := by
-          rw [map_mul (incl q (m + 2)), ← mul_assoc (lastT q (m + 1)), (commute_lastT c).eq]
+    exact extend_extend_mul_lastT_mul_incl_comm z hφ hφ' a c
   -- The pairing is symmetric on the products `c * T' * d`.
   have hB : ∀ c d c' d', G (incl q (m + 1) c' * lastT q m * incl q (m + 1) d')
       (incl q (m + 1) c * lastT q m * incl q (m + 1) d) =

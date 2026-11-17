@@ -43,6 +43,8 @@ them by open sets of almost the same measure.
 * `Distribution.massMeasure`: the mass measure `‖T‖`.
 * `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
   sets and its total mass.
+* `Distribution.lintegral_massMeasure_le_mul_mass`: a function bounded by `L` has integral at most
+  `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
 
@@ -89,7 +91,7 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
       rw [← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (hψφ i x)
     · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hψW i h)]
-  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact enorm_sum_le _ _
+  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact eNorm_sum_le _ _
     _ ≤ ∑ i : s, localMass T (W i) * c i := Finset.sum_le_sum fun i _ =>
         enorm_apply_le_localMass_mul_of_forall_enorm_le T (hψW i) (hψc i)
     _ ≤ ∑ i, localMass T (W i) * c i := by
@@ -167,7 +169,7 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
         simp only [setLIntegral_const, mul_comm]
     _ ≤ ∑ j : Fin N, ∫⁻ x in levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by
         refine Finset.sum_le_sum fun j _ => setLIntegral_mono
-          (hφc.enorm.measurable.add measurable_const) fun x hx => ?_
+          (hφc.eNorm.measurable.add measurable_const) fun x hx => ?_
         rw [← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _) (by positivity)]
         exact ENNReal.ofReal_le_ofReal (by linarith [(mem_levelSet hε hx).1])
     _ = ∫⁻ x in ⋃ j : Fin N, levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by
@@ -177,6 +179,31 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
     _ ≤ ∫⁻ x, ‖φ x‖ₑ ∂μ + ENNReal.ofReal (2 * ε) * μ ((↑) ⁻¹' W) := by
         rw [lintegral_add_right _ measurable_const, setLIntegral_const]
         exact add_le_add (setLIntegral_le_lintegral _ _) le_rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- The sets used to dominate `T φ`: a set `W` containing the support, truncated to where
+`‖φ‖ < ε`, and, for each level set of index `j < N`, the points of `W` in a given set `G j`
+containing that level set where `‖φ‖ < (j + 2) * ε`, cover the support of `φ`. The cover is open
+when `W` and every `G j` are open. -/
+private theorem tsupport_subset_iUnion_levelSetCover (φ : 𝓓^{n}(Ω, F)) {W : Set E}
+    (hφW : tsupport φ ⊆ W) {ε : ℝ} (hε : 0 < ε) {N : ℕ} (hN : ⌈‖(φ : E →ᵇ F)‖ / ε⌉₊ ≤ N)
+    {G : Fin N → Set Ω} (hEG : ∀ j : Fin N, levelSet φ ε j ⊆ G j) :
+    tsupport φ ⊆ ⋃ i : Option (Fin N), i.elim (W ∩ {y | ‖φ y‖ < ε})
+      fun j => (↑) '' G j ∩ W ∩ {y | ‖φ y‖ < (j + 2) * ε} := by
+  intro y hy
+  by_cases hyε : ‖φ y‖ < ε
+  · exact mem_iUnion.2 ⟨none, hφW hy, hyε⟩
+  -- Otherwise `y` lies in the level set of index `⌈‖φ y‖ / ε⌉₊ - 1`.
+  have hpos : 0 < ⌈‖φ y‖ / ε⌉₊ := Nat.ceil_pos.2 (div_pos (hε.trans_le (not_lt.1 hyε)) hε)
+  have hN' : ⌈‖φ y‖ / ε⌉₊ ≤ N := hN.trans' <| Nat.ceil_mono <| div_le_div_of_nonneg_right
+    (BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) y) hε.le
+  let j : Fin N := ⟨⌈‖φ y‖ / ε⌉₊ - 1, by omega⟩
+  have hx : (⟨y, φ.tsupport_subset hy⟩ : Ω) ∈ levelSet φ ε j :=
+    ⟨hy, (Nat.sub_add_cancel hpos).symm⟩
+  refine mem_iUnion.2 ⟨some j, ⟨⟨_, hEG j hx, rfl⟩, hφW hy⟩, ?_⟩
+  have h := (mem_levelSet hε hx).2
+  rw [mem_ofPred_eq]
+  linarith
 
 section Measure
 
@@ -229,6 +256,12 @@ theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU :
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
   simpa using massMeasure_preimage_coe hT isOpen_univ
 
+/-- A function bounded by `L` on `Ω` has integral at most `L M(T)` against the mass measure. -/
+theorem lintegral_massMeasure_le_mul_mass (hT : HasLocallyFiniteMass T) {f : Ω → ℝ≥0∞}
+    {L : ℝ≥0∞} (hf : ∀ x, f x ≤ L) : ∫⁻ x, f x ∂massMeasure T ≤ L * mass T := by
+  calc ∫⁻ x, f x ∂massMeasure T ≤ ∫⁻ _, L ∂massMeasure T := lintegral_mono hf
+    _ = L * mass T := by rw [lintegral_const, massMeasure_univ hT]
+
 /-- The level-set estimate behind the domination: if `W` is an open neighbourhood of the support
 of `φ` of finite mass `M`, then `‖T φ‖ ≤ ∫ ‖φ‖ d‖T‖ + ε * (3 * M + 1)` for every `ε > 0`. -/
 private theorem enorm_apply_le_lintegral_add_mul (hT : HasLocallyFiniteMass T)
@@ -264,21 +297,8 @@ private theorem enorm_apply_le_lintegral_add_mul (hT : HasLocallyFiniteMass T)
     rcases i with _ | j
     · exact ENNReal.ofReal_le_ofReal hy.2.le
     · exact ENNReal.ofReal_le_ofReal hy.2.le
-  have hcover : tsupport φ ⊆ ⋃ i, V i := by
-    intro y hy
-    by_cases hyε : ‖φ y‖ < ε
-    · exact mem_iUnion.2 ⟨none, hφW hy, hyε⟩
-    -- Otherwise `y` lies in the level set of index `⌈‖φ y‖ / ε⌉₊ - 1`.
-    have hpos : 0 < ⌈‖φ y‖ / ε⌉₊ := Nat.ceil_pos.2 (div_pos (hε.trans_le (not_lt.1 hyε)) hε)
-    have hN : ⌈‖φ y‖ / ε⌉₊ ≤ N := Nat.ceil_mono <| div_le_div_of_nonneg_right
-      (BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) y) hε.le
-    let j : Fin N := ⟨⌈‖φ y‖ / ε⌉₊ - 1, by omega⟩
-    have hx : (⟨y, φ.tsupport_subset hy⟩ : Ω) ∈ levelSet φ ε j :=
-      ⟨hy, (Nat.sub_add_cancel hpos).symm⟩
-    refine mem_iUnion.2 ⟨some j, ⟨⟨_, hEG j hx, rfl⟩, hφW hy⟩, ?_⟩
-    have h := (mem_levelSet hε hx).2
-    rw [mem_ofPred_eq]
-    linarith
+  have hcover : tsupport φ ⊆ ⋃ i, V i :=
+    tsupport_subset_iUnion_levelSetCover φ hφW hε le_rfl hEG
   have hMW : M = localMass T W := massMeasure_preimage_coe hT hW
   calc ‖T φ‖ₑ ≤ ∑ i, localMass T (V i) * b i := enorm_apply_le_sum_localMass_mul T hVo hcover hVb
     _ = localMass T (W ∩ {y | ‖φ y‖ < ε}) * ENNReal.ofReal ε +

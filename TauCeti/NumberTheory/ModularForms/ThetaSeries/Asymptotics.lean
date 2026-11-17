@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import TauCeti.Algebra.Module.ZLattice.GaussSum
 public import TauCeti.Algebra.Module.ZLattice.Scaling
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
+import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
@@ -106,7 +107,8 @@ theorem tendsto_pow_mul_thetaCoset_comap_S (hk : finrank ℝ E = 2 * k) (v : E) 
   have hF : Tendsto F atImInfty (𝓝 1) := by
     classical
     have h := tendsto_tsum_mul_thetaTerm_atImInfty (dual L) 0
-      (fun m ↦ cexp (2 * π * I * (⟪v, (m : E)⟫ : ℝ))) fun m ↦ by simp [Complex.norm_exp]
+      (fun m ↦ cexp (2 * π * I * (⟪v, (m : E)⟫ : ℝ))) (fun m ↦ by simp [Complex.norm_exp])
+      (ZLattice.summable_exp_neg_mul_norm_add_sq (dual L) (c := π * 1) (by positivity) 0)
     simpa only [zero_add, ZeroMemClass.coe_eq_zero, tsum_ite_eq, ZeroMemClass.coe_zero,
       inner_zero_right, ofReal_zero, mul_zero, exp_zero] using h
   -- With `τ = -1/ε`, the inversion law gives `ε^k θ_{v+L}(ε) = i^k (covol L)⁻¹ F τ`.
@@ -175,12 +177,12 @@ theorem thetaCoset_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (�
 
 omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **Splitting a theta series at the cusp `a / c` over an intermediate lattice.** Let `L` be even,
-`a ∈ ℤ`, `c` a positive integer and `M` a lattice with `cL ≤ M ≤ L^∨`. If `g` is a function on
+`a ∈ ℤ`, `c` a natural number and `M` a lattice with `cL ≤ M ≤ L^∨`. If `g` is a function on
 `M / cL` taking the value `e(a ‖v‖² / (2c))` at the class of each `v ∈ M`, then
 `Θ_M(a/c + τ) = ∑_{y ∈ M/cL} g(y) θ_{y+cL}(τ)`: since `⟪M, L⟫ ⊆ ℤ` and `L` is even, the factor
 `exp (π i ‖x‖² a / c)` is constant on each class `y + cL`. -/
 theorem thetaSeries_vadd_eq_sum_of_le (hL : IsEven L) {M : Submodule ℤ E} [DiscreteTopology M]
-    {c : ℕ} [NeZero c] (hcM : (c : ℝ) • L ≤ M) (hM : M ≤ dual L)
+    {c : ℕ} (hcM : (c : ℝ) • L ≤ M) (hM : M ≤ dual L)
     [Fintype (M ⧸ ((c : ℝ) • L).submoduleOf M)] (a : ℤ) {g : M ⧸ ((c : ℝ) • L).submoduleOf M → ℂ}
     (hg : ∀ v : M, g (Submodule.Quotient.mk v) =
       cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ))) (τ : ℍ) :
@@ -188,15 +190,19 @@ theorem thetaSeries_vadd_eq_sum_of_le (hL : IsEven L) {M : Submodule ℤ E} [Dis
       ∑ y, g y * thetaCoset ((c : ℝ) • L) ((Quotient.out y : M) : E) τ := by
   rw [← (hasSum_thetaCoset_out M hcM _).tsum_eq, tsum_fintype]
   refine Finset.sum_congr rfl fun y _ ↦ ?_
-  have hc : (c : ℝ) ≠ 0 := NeZero.ne _
   rw [thetaCoset_vadd_eq_mul _ _ (fun w hw ↦ ?_)]
   · congr 1
     conv_rhs => rw [← Submodule.Quotient.mk_out y]
     rw [hg]
     congr 1
+    rcases eq_or_ne c 0 with rfl | hc
+    · simp
     push_cast
     field_simp
-  · -- For `w = c u`, `(‖γ + w‖² - ‖γ‖²) a / c = 2 a ⟪γ, u⟫ + a c ‖u‖²`, an even integer.
+  · rcases eq_or_ne c 0 with rfl | hc
+    · exact ⟨0, by simp⟩
+    have hc : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
+    -- For `w = c u`, `(‖γ + w‖² - ‖γ‖²) a / c = 2 a ⟪γ, u⟫ + a c ‖u‖²`, an even integer.
     obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hw
     obtain ⟨i, hi⟩ := mem_dual.mp (hM (Quotient.out y).2) _ hu
     obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hu
@@ -219,10 +225,10 @@ theorem thetaSeries_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Splitting the theta series of the dual lattice at the cusp `b / a`.** For an even lattice
-`L`, `b ∈ ℤ` and a positive integer `a`,
+`L`, `b ∈ ℤ` and a natural number `a`,
 `Θ_{L^∨}(b/a + τ) = ∑_{y ∈ L^∨/aL} e(b ‖y‖² / (2a)) θ_{y+aL}(τ)`: on each class `y + aL` the factor
 `exp (π i ‖x‖² b / a)` is the dual Gauss summand of `y`. -/
-theorem thetaSeries_dual_vadd_eq_sum (hL : IsEven L) (b : ℤ) (a : ℕ) [NeZero a]
+theorem thetaSeries_dual_vadd_eq_sum (hL : IsEven L) (b : ℤ) (a : ℕ)
     [Fintype (dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))] (τ : ℍ) :
     thetaSeries (dual L) (((b : ℝ) / a) +ᵥ τ) =
       ∑ y : dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L),
@@ -240,7 +246,7 @@ the value `e(a ‖v‖² / (2c))` at the class of each `v ∈ M`, then
 `ε^k Θ_M(a/c + ε) → i^k (∑_{y ∈ M/cL} g(y)) / (c^{2k} covol L)` as `ε → 0` with
 `im (-1/ε) → ∞`. -/
 theorem tendsto_pow_mul_thetaSeries_vadd_comap_S_of_le (hk : finrank ℝ E = 2 * k)
-    {M : Submodule ℤ E} [DiscreteTopology M] {c : ℕ} [NeZero c] (hcM : (c : ℝ) • L ≤ M)
+    {M : Submodule ℤ E} {c : ℕ} [NeZero c] (hcM : (c : ℝ) • L ≤ M)
     (hM : M ≤ dual L)
     [Fintype (M ⧸ ((c : ℝ) • L).submoduleOf M)] (a : ℤ) {g : M ⧸ ((c : ℝ) • L).submoduleOf M → ℂ}
     (hg : ∀ v : M, g (Submodule.Quotient.mk v) =
@@ -248,6 +254,8 @@ theorem tendsto_pow_mul_thetaSeries_vadd_comap_S_of_le (hk : finrank ℝ E = 2 *
     Tendsto (fun ε : ℍ ↦ (ε : ℂ) ^ k * thetaSeries M (((a : ℝ) / c) +ᵥ ε))
       (comap (ModularGroup.S • ·) atImInfty)
       (𝓝 (I ^ k * (∑ y, g y) / ((c : ℂ) ^ (2 * k) * covolume L))) := by
+  have : DiscreteTopology M :=
+    DiscreteTopology.of_subset (inferInstanceAs (DiscreteTopology (dual L))) hM
   have h := tendsto_finsetSum (Finset.univ (α := M ⧸ ((c : ℝ) • L).submoduleOf M)) fun y _ ↦
     (tendsto_pow_mul_thetaCoset_comap_S ((c : ℝ) • L) hk ((Quotient.out y : M) : E)).const_mul
       (g y)

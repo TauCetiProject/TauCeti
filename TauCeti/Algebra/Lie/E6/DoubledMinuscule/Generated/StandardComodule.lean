@@ -101,7 +101,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
-    matrixWeight R definingIdeal_def i B q
+    matrixWeight R i B q
   -- The point functor's component uses the indexed presentation of the same points.
   erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h

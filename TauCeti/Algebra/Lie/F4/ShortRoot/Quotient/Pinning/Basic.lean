@@ -33,6 +33,12 @@ namespace TauCeti.F4ShortRoot
 @[expose] def isogenyExponent : Fin 4 ⊕ Fin 4 → ℕ :=
   Sum.elim ![1, 1, 2, 2] ![1, 1, 2, 2]
 
+/-- A negative simple root has the same special-isogeny parameter exponent as its positive
+counterpart. -/
+theorem isogenyExponent_inr (j : Fin 4) :
+    isogenyExponent (.inr j) = isogenyExponent (.inl j) :=
+  rfl
+
 /-- Each special-isogeny parameter exponent is one or two. -/
 theorem isogenyExponent_eq_one_or_two (k : Fin 4 ⊕ Fin 4) :
     isogenyExponent k = 1 ∨ isogenyExponent k = 2 := by
@@ -190,6 +196,16 @@ noncomputable def f4ShortRootIdealDividedSquareColumn
     f4ShortRootIdealDividedSquareColumn k a =
       f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis a) := by
   rfl
+
+/-- The ideal divided-square column vanishes when the ambient divided square of the basis vector
+does. -/
+theorem f4ShortRootIdealDividedSquareColumn_eq_zero
+    (k : Fin 4 ⊕ Fin 4) (a : Fin 26)
+    (h : f4ModularDividedAdjointSquare k
+      (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) = 0) :
+    f4ShortRootIdealDividedSquareColumn k a = 0 := by
+  simp only [f4ShortRootIdealDividedSquareColumn_apply]
+  exact Subtype.ext ((f4ModularDividedAdjointSquare_basis k a).symm.trans h)
 
 /-- The ideal's first-order canonical column is the corresponding sparse root-matrix column. -/
 theorem f4ShortRootIdealFirstColumn_eq

@@ -79,7 +79,7 @@ the source punctured at its preimage. -/
 theorem finiteCWType_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥Sᶜ] :
     FiniteCWType ↥(f ⁻¹' S)ᶜ :=
   (f.isCoveringMap_restrictPreimage_compl hS).finiteCWType fun y ↦
-    ((finite_fiber_restrictPreimage_iff f Sᶜ y).2 (f.finite_fiber y)).to_subtype
+    (Sᶜ.finite_preimage_restrictPreimage_iff.2 (by simpa using f.finite_fiber y)).to_subtype
 
 variable [PreconnectedSpace Y]
 
@@ -90,7 +90,8 @@ theorem eulerChar_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥S�
     haveI := f.finiteCWType_compl_preimage hS
     eulerChar ↥(f ⁻¹' S)ᶜ = degree f * eulerChar ↥Sᶜ :=
   eulerChar_eq_mul_of_isCoveringMap (f.isCoveringMap_restrictPreimage_compl hS)
-    (fun y ↦ ((finite_fiber_restrictPreimage_iff f Sᶜ y).2 (f.finite_fiber y)).to_subtype)
+    (fun y ↦
+      (Sᶜ.finite_preimage_restrictPreimage_iff.2 (by simpa using f.finite_fiber y)).to_subtype)
     fun y ↦ by
       rw [Nat.card_coe_set_eq, f.ncard_fiber_restrictPreimage_compl hS]
 

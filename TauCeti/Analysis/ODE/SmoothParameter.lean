@@ -27,6 +27,8 @@ norm therefore suffices: no globally smooth extension or smooth bump function is
   base parameter and state. Each path stays in that domain and satisfies the Picard equation,
   the ODE at interior times, and its right-hand version at the initial endpoint.
 * `ODE.exists_contDiffAt_picard_solution`: the finite-order germ version.
+* `TauCeti.ODE.exists_lipschitzOnWith_eventually_path_mem`: a Lipschitz set around the base state
+  that contains all nearby paths of a family continuous in the parameter.
 
 ## References
 
@@ -251,3 +253,34 @@ theorem exists_contDiffAt_picard_solution [CompleteSpace E] [CompleteSpace F]
   exact (hprop p hp).2
 
 end ODE
+
+namespace TauCeti
+
+variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- For a field that is `C^1` at `(p₀, x₀)` and a family of paths in `[0, 1]` that is continuous at
+`p₀` with constant value `x₀` there, there are a Lipschitz set `S` around `x₀` and a neighbourhood
+`P` of `p₀` such that `F (p, ·)` is Lipschitz on `S` for `p ∈ P`, and nearby paths stay in `S`. -/
+theorem ODE.exists_lipschitzOnWith_eventually_path_mem
+    {F : E × V → V} {p₀ : E} {x₀ : V} (hF : ContDiffAt ℝ 1 F (p₀, x₀))
+    {γ : E → C(Icc (0 : ℝ) 1, V)} (hγ : ContinuousAt γ p₀)
+    (hγ₀ : γ p₀ = ContinuousMap.const _ x₀) :
+    ∃ (K : NNReal) (S : Set V) (P : Set E), S ∈ 𝓝 x₀ ∧ P ∈ 𝓝 p₀ ∧
+      (∀ p ∈ P, LipschitzOnWith K (fun y => F (p, y)) S) ∧
+      ∀ᶠ p in 𝓝 p₀, ∀ t : Icc (0 : ℝ) 1, γ p t ∈ S := by
+  obtain ⟨K, W, hW, hFlip⟩ := hF.exists_lipschitzOnWith
+  rw [nhds_prod_eq] at hW
+  obtain ⟨P, hP, S, hS, hPS⟩ := Filter.mem_prod_iff.mp hW
+  have hfixed (p : E) (hp : p ∈ P) : LipschitzOnWith K (fun y => F (p, y)) S := by
+    intro y hy z hz
+    have h := hFlip (x := (p, y)) (y := (p, z)) (hPS ⟨hp, hy⟩) (hPS ⟨hp, hz⟩)
+    simpa only [Prod.edist_eq, edist_self, zero_max] using h
+  obtain ⟨U, hUS, hUopen, hUcenter⟩ := mem_nhds_iff.mp hS
+  refine ⟨K, S, P, hS, hP, hfixed, ?_⟩
+  filter_upwards [hγ.eventually
+    (ContinuousMap.eventually_mapsTo isCompact_univ hUopen fun t _ ↦ by
+      simpa [hγ₀] using hUcenter)] with p hp t
+  exact hUS (hp (Set.mem_univ t))
+
+end TauCeti

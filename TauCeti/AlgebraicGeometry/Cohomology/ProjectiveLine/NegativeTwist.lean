@@ -78,7 +78,7 @@ private noncomputable def overlapSection (m : ℕ) (c : 𝒜 m) :
       Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1)) :=
   Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.1
     ((coord R 0 * coord R 1) ^ (m + 1)) c.2 (coord_mul_coord_pow_mem R (m + 1)) _
-    (inf_le_basicOpen_coord_mul_coord_pow R m.succ_pos)
+    (inf_le_basicOpen_coord_mul_coord_pow R)
 
 private theorem smul_overlapSection (m : ℕ) (r : R) (c : 𝒜 m) :
     baseRingToGlobalSections R (projectiveLine R) r • overlapSection R m c =
@@ -123,7 +123,7 @@ private theorem exists_sub_overlapSection_mem_range (m : ℕ)
           (Proj.twistingSheaf 𝒜 _).presheaf.map (homOfLE h₀).op t₀ -
             (Proj.twistingSheaf 𝒜 _).presheaf.map (homOfLE h₁).op t₁ by
     obtain ⟨c, t₀, t₁, ht⟩ := h _ (Proj.basicOpen_mul _ _ _) inf_le_left inf_le_right
-      (inf_le_basicOpen_coord_mul_coord_pow R m.succ_pos) s
+      (inf_le_basicOpen_coord_mul_coord_pow R) s
     refine ⟨c, (t₀, t₁), ?_⟩
     rw [mayerVietorisSectionsDifferenceLinear_apply, mayerVietorisSectionsDifference_apply]
     exact ht.symm
@@ -182,7 +182,7 @@ private theorem eq_zero_of_overlapSection_mem_range (m : ℕ) {c : 𝒜 m}
     (hW.trans fun x hx hxs ↦ (x.isPrime.mem_or_mem hxs).elim
       (fun h₀ ↦ hx.1 (x.isPrime.mem_of_pow_mem _ h₀))
       (fun h₁ ↦ hx.2 (x.isPrime.mem_of_pow_mem _ h₁)))
-    (hW.trans (inf_le_basicOpen_coord_mul_coord_pow R m.succ_pos))).mp
+    (hW.trans (inf_le_basicOpen_coord_mul_coord_pow R))).mp
     (Proj.twistingSheaf.ext fun x ↦ by
       -- both sides are the values at `x` of the fractions, by `const_apply`
       exact (Localization.sub_mk ..).symm.trans (congrArg (fun t ↦ t.1 ⟨x.1, hW x.2⟩) ht))
@@ -220,7 +220,7 @@ theorem cohomologyOneTwistingSheafLinearEquiv_symm_apply (m : ℕ) (c : 𝒜 m) 
       mayerVietorisBoundaryLinear _ _ _ (basicOpen_coord_sup_eq_top R)
         (Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.1
           ((coord R 0 * coord R 1) ^ (m + 1)) c.2 (coord_mul_coord_pow_mem R (m + 1)) _
-          (inf_le_basicOpen_coord_mul_coord_pow R m.succ_pos)) :=
+          (inf_le_basicOpen_coord_mul_coord_pow R)) :=
   (rfl)
 
 /-- **For `n ≤ -2`, the first cohomology of `𝒪(n)` on the projective line is a free module**,

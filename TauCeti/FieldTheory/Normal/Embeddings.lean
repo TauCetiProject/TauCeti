@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.Algebra.GroupAction.AlgHom
 public import TauCeti.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Embeddings into a normal extension, and the action on them
@@ -32,6 +33,14 @@ identity, so the action has trivial kernel.
 `L →ₐ[F] M` exists, there are exactly `[L : F]` of them. All three hypotheses are needed: without
 separability the count drops, and without normality the minimal polynomials need not split in `M`.
 
+*Orbit maps.* If the subgroup fixing an intermediate field `K` fixes a point `x` of any
+`Gal(M / F)`-set, an embedding of `K` into a normal `M` determines a point in the orbit of `x`.
+This gives the surjection `G / Gal(M / K) → G / Stab(x)`, with fibres of cardinality
+`[Stab(x) : Gal(M / K)]`. When `K / F` is separable, its degree is the orbit cardinality times
+this relative index, so every finite separable field of definition bounds the orbit size.
+The construction combines `fixingSubgroupQuotientEquivAlgHom` with Mathlib's
+`MulAction.orbitEquivQuotientStabilizer` to identify embeddings and orbit points with cosets.
+
 ## Main results
 
 * `AlgHom.liftNormal_equivFieldRange_apply`: lifting the isomorphism between two embedded
@@ -48,6 +57,12 @@ separability the count drops, and without normality the minimal polynomials need
 * `TauCeti.FieldTheory.faithfulSMul_of_normalClosure_eq_top`: equivalently, the action is
   faithful. Injectivity of the permutation representation is then Mathlib's
   `smul_left_injective'`.
+* `TauCeti.FieldTheory.embeddingToOrbit`: embeddings of a field whose fixing subgroup fixes a point
+  surject onto that point's orbit, with equivariance and a characteristic restriction equation.
+* `TauCeti.FieldTheory.card_fiber_embeddingToOrbit`: each fibre has cardinality the relative
+  index of the fixing subgroup in the stabilizer.
+* `TauCeti.FieldTheory.finrank_eq_card_orbit_mul_relIndex`: for separable `K / F` in a normal
+  ambient extension the field degree is the orbit cardinality times that relative index.
 * `AlgHom.card_of_normal`: for `L / F` finite separable and `M / F` normal admitting an embedding
   of `L`, there are exactly `[L : F]` embeddings.
 
@@ -184,6 +199,115 @@ theorem fixingSubgroupQuotientEquivAlgHom_mk [Normal F M] (φ : L →ₐ[F] M) (
     fixingSubgroupQuotientEquivAlgHom φ (QuotientGroup.mk g) = g.toAlgHom.comp φ := by
   rw [fixingSubgroupQuotientEquivAlgHom, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
     TauCeti.quotientStabilizerEquiv_mk, AlgEquiv.smul_algHom_def]
+
+section Orbit
+
+variable {X : Type*} [MulAction (M ≃ₐ[F] M) X] {K : IntermediateField F M} {x : X}
+
+/-- Identify the field range of the inclusion once for the quotient construction and its fibres. -/
+private theorem fixingSubgroup_fieldRange_val_le
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) :
+    K.val.fieldRange.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x := by
+  simpa only [IntermediateField.fieldRange_val] using h
+
+/-- An embedding of `K` determines a point in the orbit of `x` whenever every automorphism
+fixing `K` also fixes `x`. The restriction of `g` maps to `g • x`. -/
+noncomputable def embeddingToOrbit [Normal F M]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x)
+    (φ : K →ₐ[F] M) : MulAction.orbit (M ≃ₐ[F] M) x :=
+  (MulAction.orbitEquivQuotientStabilizer (M ≃ₐ[F] M) x).symm
+    (Subgroup.quotientMapOfLE (fixingSubgroup_fieldRange_val_le h)
+      ((fixingSubgroupQuotientEquivAlgHom K.val).symm φ))
+
+/-- The embedding obtained by restricting `g` maps to `g • x`. -/
+@[simp]
+theorem embeddingToOrbit_comp_val [Normal F M]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) (g : M ≃ₐ[F] M) :
+    (embeddingToOrbit h (g.toAlgHom.comp K.val) : X) = g • x := by
+  rw [embeddingToOrbit, ← fixingSubgroupQuotientEquivAlgHom_mk K.val g,
+    Equiv.symm_apply_apply, Subgroup.quotientMapOfLE_apply_mk,
+    MulAction.orbitEquivQuotientStabilizer_symm_apply]
+
+/-- Every point in the orbit is obtained from an embedding of `K`. -/
+theorem embeddingToOrbit_surjective [Normal F M]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) :
+    Function.Surjective (embeddingToOrbit h) := by
+  rintro ⟨y, g, rfl⟩
+  exact ⟨g.toAlgHom.comp K.val, Subtype.ext (embeddingToOrbit_comp_val h g)⟩
+
+/-- Postcomposition of embeddings corresponds to the action on the orbit. -/
+theorem embeddingToOrbit_smul [Normal F M]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x)
+    (g : M ≃ₐ[F] M) (φ : K →ₐ[F] M) :
+    (embeddingToOrbit h (g • φ) : X) = g • (embeddingToOrbit h φ : X) := by
+  obtain ⟨a, rfl⟩ := MulAction.exists_smul_eq (M ≃ₐ[F] M) K.val φ
+  rw [← mul_smul, AlgEquiv.smul_algHom_def, embeddingToOrbit_comp_val,
+    AlgEquiv.smul_algHom_def, embeddingToOrbit_comp_val, mul_smul]
+
+/-- Restrictions of two automorphisms give the same orbit point exactly when the automorphisms
+have the same left coset of the stabilizer. -/
+theorem embeddingToOrbit_eq_iff [Normal F M]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) (g a : M ≃ₐ[F] M) :
+    embeddingToOrbit h (g.toAlgHom.comp K.val) =
+        embeddingToOrbit h (a.toAlgHom.comp K.val) ↔
+      (QuotientGroup.mk g : (M ≃ₐ[F] M) ⧸ MulAction.stabilizer (M ≃ₐ[F] M) x) =
+        QuotientGroup.mk a := by
+  rw [Subtype.ext_iff, embeddingToOrbit_comp_val, embeddingToOrbit_comp_val,
+    QuotientGroup.eq, MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff]
+  exact eq_comm
+
+/-- Every fibre has cardinality the relative index of the fixing subgroup in the stabilizer.
+Infinite fibres have `Nat.card` zero, and neither subgroup needs to be normal. -/
+theorem card_fiber_embeddingToOrbit [Normal F M]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x)
+    (y : MulAction.orbit (M ≃ₐ[F] M) x) :
+    Nat.card {φ : K →ₐ[F] M // embeddingToOrbit h φ = y} =
+      K.fixingSubgroup.relIndex (MulAction.stabilizer (M ≃ₐ[F] M) x) := by
+  let e := fixingSubgroupQuotientEquivAlgHom K.val
+  let o := MulAction.orbitEquivQuotientStabilizer (M ≃ₐ[F] M) x
+  have hf (φ) : embeddingToOrbit h φ = y ↔
+      Subgroup.quotientMapOfLE (fixingSubgroup_fieldRange_val_le h) (e.symm φ) = o y := by
+    simp only [embeddingToOrbit, e, Equiv.symm_apply_eq, o]
+  rw [Nat.card_congr (e.symm.subtypeEquiv
+      (q := fun q ↦ Subgroup.quotientMapOfLE (fixingSubgroup_fieldRange_val_le h) q = o y) hf),
+    Subgroup.card_fiber_quotientMapOfLE, IntermediateField.fieldRange_val]
+
+/-- For separable `K / F` in a normal ambient extension, the degree of `K` is the orbit
+cardinality times the relative index of its fixing subgroup in the stabilizer. This natural-number
+identity includes infinite degrees and orbits. Separability is essential to identify degree with
+fixing-subgroup index; it is needed only for `K`, not for the ambient extension. -/
+theorem finrank_eq_card_orbit_mul_relIndex [Normal F M] [Algebra.IsSeparable F K]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) :
+    Module.finrank F K = Nat.card (MulAction.orbit (M ≃ₐ[F] M) x) *
+      K.fixingSubgroup.relIndex (MulAction.stabilizer (M ≃ₐ[F] M) x) := by
+  let E := normalClosure F K M
+  have hle : K ≤ E := by
+    simpa only [fieldRange_val] using K.val.fieldRange_le_normalClosure
+  let K' := restrict hle
+  have hind : Module.finrank F K = K.fixingSubgroup.index := by
+    rw [(restrictAlgEquiv hle).toLinearEquiv.finrank_eq,
+      finrank_eq_fixingSubgroup_index, ← K'.map_fixingSubgroup_index M]
+    congr 2
+    exact lift_restrict hle
+  rw [hind, Nat.card_coe_set_eq, ← MulAction.index_stabilizer, mul_comm]
+  exact (Subgroup.relIndex_mul_index h).symm
+
+/-- The orbit cardinality divides the degree of every separable intermediate field whose fixing
+subgroup fixes the point, in a normal ambient extension. -/
+theorem card_orbit_dvd_finrank [Normal F M] [Algebra.IsSeparable F K]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) :
+    Nat.card (MulAction.orbit (M ≃ₐ[F] M) x) ∣ Module.finrank F K := by
+  rw [finrank_eq_card_orbit_mul_relIndex h]
+  exact dvd_mul_right _ _
+
+/-- A finite separable intermediate field whose fixing subgroup fixes the point bounds the
+orbit cardinality by its degree, in a normal ambient extension. -/
+theorem card_orbit_le_finrank [Normal F M] [Algebra.IsSeparable F K] [FiniteDimensional F K]
+    (h : K.fixingSubgroup ≤ MulAction.stabilizer (M ≃ₐ[F] M) x) :
+    Nat.card (MulAction.orbit (M ≃ₐ[F] M) x) ≤ Module.finrank F K :=
+  Nat.le_of_dvd Module.finrank_pos (card_orbit_dvd_finrank h)
+
+end Orbit
 
 end TauCeti.FieldTheory
 

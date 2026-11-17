@@ -25,6 +25,8 @@ divisor sums with pullback.
 
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_mul`: `(I * J).comap f = I.comap f * J.comap f`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_pow`: `(I ^ n).comap f = I.comap f ^ n`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.pow_le_map_pow`: if `J.comap f ≤ I`, then
+  `J ^ n ≤ (I ^ n).map f`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_prod`: the inverse image of a finite product is
   the product of the inverse images.
 * `AlgebraicGeometry.Scheme.IdealSheafData.compl_support_comap`: the complement of the support of
@@ -119,6 +121,12 @@ theorem comap_pow (I : Y.IdealSheafData) (f : X ⟶ Y) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n hn => rw [pow_succ, pow_succ, comap_mul, hn]
+
+/-- If `J.comap f ≤ I`, i.e. `f` carries `V(I)` into `V(J)` scheme-theoretically, then
+`J ^ n ≤ (I ^ n).map f`, so `f` carries `V(I ^ n)` into `V(J ^ n)`. -/
+theorem pow_le_map_pow {I : X.IdealSheafData} {J : Y.IdealSheafData} {f : X ⟶ Y}
+    (hf : J.comap f ≤ I) (n : ℕ) : J ^ n ≤ (I ^ n).map f :=
+  le_map_iff_comap_le.mpr ((comap_pow J f n).trans_le (pow_le_pow_left₀ bot_le hf n))
 
 /-- The inverse image of a finite product of ideal sheaves is the product of the inverse images.
 When the ideals involved define effective Cartier divisors, this is the corresponding identity

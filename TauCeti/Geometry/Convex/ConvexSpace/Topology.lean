@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Maps and homeomorphisms between standard simplices
@@ -15,14 +16,18 @@ An equivalence of vertex types induces `Equiv.stdSimplexHomeomorph`, preserving
 barycentric weights under reindexing. No finiteness assumption on the vertex types is needed.
 
 An affine map `Convexity.StdSimplex.affineMapMk v` out of a standard simplex is determined by the
-images `v m` of the vertices. When the target is a standard simplex on a finite type, its
-weights are the bilinear expressions `∑ m, w.weights m * (v m).weights n`, so the map is
-continuous; `Convexity.StdSimplex.continuousAffineMapMk` bundles it as a continuous map. This
-makes affine simplices, such as the simplices of a barycentric subdivision,
-available as continuous maps between topological standard simplices.
+images `v m` of the vertices. When the source has finitely many vertices and the target is a
+standard simplex, the weights of the image of `w` are the bilinear expressions
+`∑ m, w.weights m * (v m).weights n`. Every affine map between standard simplices is continuous,
+with no finiteness assumption on the vertex types; `Convexity.StdSimplex.continuousAffineMapMk`
+bundles it as a continuous map. This makes affine simplices, such as the simplices of a
+barycentric subdivision, available as continuous maps between topological standard simplices.
 
-A standard simplex on a finite type is Hausdorff (`Convexity.StdSimplex.t2Space`), so continuous
-surjections onto it from compact spaces are quotient maps.
+The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuously on a point `x`
+of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
+
+A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
+continuous surjections onto it from compact spaces are quotient maps.
 -/
 
 public section
@@ -71,33 +76,51 @@ lemma _root_.Equiv.coe_stdSimplexHomeomorph (e : M ≃ N) :
 lemma _root_.Equiv.stdSimplexHomeomorph_symm (e : M ≃ N) :
     (e.stdSimplexHomeomorph (R := R)).symm = e.symm.stdSimplexHomeomorph := (rfl)
 
-/-- An affine map from a standard simplex to a standard simplex on a finite type is
-continuous. -/
-lemma continuous_affineMapMk [Finite N] (v : M → StdSimplex R N) :
+/-- An affine map between standard simplices is continuous. -/
+lemma continuous_affineMapMk (v : M → StdSimplex R N) :
     Continuous (affineMapMk (R := R) v) := by
+  classical
   rw [continuous_iff]
   intro ι _ g
   have := Fintype.ofFinite ι
-  have hcomp : ⇑(affineMapMk (R := R) v) ∘ map g = affineMapMk (v ∘ g) := by
+  -- The finitely many vertices `v (g i)` are supported in a finite set `S` of vertices of the
+  -- target, so the restricted map factors through the finite standard simplex on `S`.
+  let S : Finset N := Finset.univ.biUnion fun i ↦ (v (g i)).weights.support
+  have hS (i : ι) : v (g i) ∈ Set.range (map ((↑) : S → N)) := by
+    refine (mem_range_map_iff _ _).2 fun n hn ↦ by_contra fun h ↦ hn ⟨⟨n, ?_⟩, rfl⟩
+    exact Finset.mem_biUnion.2 ⟨i, Finset.mem_univ _, Finsupp.mem_support_iff.2 h⟩
+  choose u hu using hS
+  have hcomp : ⇑(affineMapMk (R := R) v) ∘ map g = map (↑) ∘ affineMapMk u := by
     funext w
-    simp [affineMapMk_apply]
-  rw [hcomp, (isEmbedding_toFun_comp_weights R N).continuous_iff, continuous_pi_iff]
+    simp [affineMapMk_apply, map_iConvexComb, hu]
+  rw [hcomp]
+  refine (continuous_map R _).comp ?_
+  rw [(isEmbedding_toFun_comp_weights R S).continuous_iff, continuous_pi_iff]
   intro n
   simp only [Function.comp_def, weights_affineMapMk_apply]
   fun_prop
 
-/-- The affine map with vertices `v` from a standard simplex to a standard simplex on a finite
-type, as a continuous map. -/
-noncomputable def continuousAffineMapMk [Finite N] (v : M → StdSimplex R N) :
+/-- The affine map with vertices `v` between standard simplices, as a continuous map. -/
+noncomputable def continuousAffineMapMk (v : M → StdSimplex R N) :
     C(StdSimplex R M, StdSimplex R N) :=
   ⟨affineMapMk v, continuous_affineMapMk v⟩
 
 @[simp]
-lemma continuousAffineMapMk_apply [Finite N] (v : M → StdSimplex R N) (w : StdSimplex R M) :
+lemma continuousAffineMapMk_apply (v : M → StdSimplex R N) (w : StdSimplex R M) :
     continuousAffineMapMk v w = affineMapMk v w := (rfl)
 
-/-- A standard simplex on a finite type is Hausdorff, being embedded in `N → R` by its weights. -/
-instance t2Space [T2Space R] [Finite N] : T2Space (StdSimplex R N) :=
-  (isEmbedding_toFun_comp_weights R N).t2Space
+/-- The prefix sums of the weights of a continuously varying point of a standard simplex on
+`Fin n` vary continuously. -/
+@[fun_prop]
+lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
+    {f : Z → StdSimplex R (Fin n)} (hf : Continuous f) (N : ℕ) :
+    Continuous fun z ↦ TauCeti.prefixSum N (f z).weights := by
+  simp only [TauCeti.prefixSum_def]
+  exact continuous_finsetSum _ fun j _ ↦ (continuous_weights_apply R j).comp hf
+
+/-- A standard simplex over a Hausdorff ring is Hausdorff. -/
+instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=
+  .of_injective_continuous (f := fun t : StdSimplex R N ↦ ⇑t.weights)
+    (fun _ _ h ↦ ext (DFunLike.coe_injective h)) (continuous_pi (continuous_weights_apply R))
 
 end Convexity.StdSimplex

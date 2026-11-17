@@ -69,12 +69,6 @@ attribute [local instance high] Algebra.toModule
 
 variable (t : DynkinType) (ht : t.Valid)
 
-private theorem lie_lieBasis_h_rootGenerator_inr_neg (i q : Fin t.rank) :
-    ⁅(t.lieBasis ht).h q, (t.lieBasis ht).rootGenerator (.inr i)⁆ =
-      -((t.rootGeneratorWeight ht (.inl i) q : ℚ) • (t.lieBasis ht).rootGenerator (.inr i)) := by
-  rw [t.lie_lieBasis_h_rootGenerator ht (.inr i) q, rootGeneratorWeight_inr,
-    rootGeneratorWeight_inl, Int.cast_neg, neg_smul]
-
 /-! ## Lattice-automorphism Gauss factorizations -/
 
 /-- **Opposite-simple-root Gauss factorization on Geck lattice automorphisms (raising times

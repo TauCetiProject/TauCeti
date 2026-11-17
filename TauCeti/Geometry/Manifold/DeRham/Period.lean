@@ -156,6 +156,13 @@ theorem pathClassIntegral_refl (x : M) :
     simpa using e.symm
   · exact pathClassIntegral_undef h _
 
+/-- Casting the endpoints of a path class does not change the integral. -/
+@[simp]
+theorem pathClassIntegral_cast (γ : Path.Homotopic.Quotient x y) {x' y' : M} (hx : x' = x)
+    (hy : y' = y) : pathClassIntegral φ (γ.cast hx hy) = pathClassIntegral φ γ := by
+  subst hx hy
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl]
+
 /-- The integral along a concatenation of paths is the sum of the integrals. -/
 @[simp]
 theorem pathClassIntegral_trans (γ : Path.Homotopic.Quotient x y)
@@ -236,6 +243,14 @@ theorem pathClassIntegral_mk_eq_pathIntegral (hφ : IsSmoothForm I 1 φ)
     abel
   rw [pathClassIntegral_mk_eq_sub hφ hclosed hΓ fun t ↦ PrimitiveSpace.proj_graph (γ t)]
   simp [Γ]
+
+/-- Paths which agree pointwise have the same integral, even when their endpoints are written
+differently. -/
+theorem pathClassIntegral_mk_eq_of_apply_eq {x' y' : M} (γ : Path x y) (γ' : Path x' y')
+    (h : ∀ t, γ t = γ' t) : pathClassIntegral φ (.mk γ) = pathClassIntegral φ (.mk γ') := by
+  obtain rfl : x = x' := by simpa using h 0
+  obtain rfl : y = y' := by simpa using h 1
+  rw [Path.ext (funext h)]
 
 /-! ### Linearity in the form -/
 

@@ -125,20 +125,13 @@ private theorem existsUnique_jumpCoefficient
       ∀ v : W1p0 volume Omega 2,
         energyFormH1 (jumpCoefficient n) 0 0 u (v : W1p volume Omega 2) = 0 := by
   obtain ⟨R, hball⟩ := hb.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
-  have hzero : ∀ v : W1p0 volume Omega 2, ∫ x in Omega,
-      (0 : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) x *
-        W1p.value (v : W1p volume Omega 2) x = 0 := fun v => by
-    refine integral_eq_zero_of_ae ?_
-    filter_upwards [Lp.coeFn_zero ℝ 2
-      (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))] with x hx
-    rw [Pi.zero_apply, hx, Pi.zero_apply, zero_mul]
   have hexu :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (b := 0) (c := 0) (uniformlyEllipticOn_jumpCoefficient _)
       stronglyMeasurable_jumpCoefficient.aestronglyMeasurable aestronglyMeasurable_const
       aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
       (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 g
-  simpa only [hzero] using hexu
+  simpa only [zero_apply] using hexu
 
 /-- **De Giorgi's theorem on an equation with a discontinuous coefficient.** There is
 `α ∈ (0, 1]`, depending only on the dimension, such that the following holds on every bounded

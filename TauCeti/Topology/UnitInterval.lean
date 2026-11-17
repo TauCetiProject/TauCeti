@@ -20,6 +20,10 @@ We give its closed form and continuity in the step size. Step sizes tending to a
 along a filter reach the endpoint after a single number of steps, eventually along the filter;
 for positive step sizes continuous at a parameter, this number is valid throughout a
 neighbourhood, which permits locally finite compositions without a global positive lower bound.
+
+Finally, `unitInterval.abs_coe_le_one` and `Set.abs_projIcc_le` bound the absolute value of a
+point of the unit interval by `1`, and that of the projection onto a symmetric interval
+`[-a, a]` by `a`. These are the side conditions for scaling by a factor `b` with `|b| ≤ 1`.
 -/
 
 -- Ported from https://github.com/leanprover-community/mathlib4/pull/44183.
@@ -54,9 +58,22 @@ theorem t_castSucc_le_succ {n : ℕ} (part : Partition n) (i : Fin n) :
 
 end Partition
 
+/-- A point of the unit interval has absolute value at most one. -/
+theorem abs_coe_le_one (t : I) : |(t : ℝ)| ≤ 1 :=
+  (abs_of_nonneg t.2.1).trans_le t.2.2
+
 end unitInterval
 
 open Filter Set Topology
+
+namespace Set
+
+/-- The projection onto a symmetric interval `[-a, a]` has absolute value at most `a`. -/
+theorem abs_projIcc_le {α : Type*} [AddCommGroup α] [LinearOrder α] [IsOrderedAddMonoid α]
+    {a : α} (h : -a ≤ a) (x : α) : |(projIcc (-a) a h x : α)| ≤ a :=
+  abs_le.2 (projIcc (-a) a h x).2
+
+end Set
 
 namespace Set.Icc
 

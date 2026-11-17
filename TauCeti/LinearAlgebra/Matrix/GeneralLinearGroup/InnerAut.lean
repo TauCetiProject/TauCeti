@@ -240,6 +240,22 @@ theorem innerAut_surjective (K : Type*) [CommSemiring K] [IsLocalRing K] :
 
 end Matrix.GeneralLinearGroup
 
+namespace AlgEquiv
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+open Matrix.GeneralLinearGroup in
+/-- Two algebra isomorphisms from an algebra onto a matrix algebra over a local semiring, in
+particular over a field, differ by conjugation by an invertible matrix (Skolem–Noether). -/
+theorem exists_forall_eq_mul_mul_inv {K : Type*} [CommSemiring K] [IsLocalRing K] {A : Type*}
+    [Semiring A] [Algebra K A] (e e' : A ≃ₐ[K] Matrix n n K) :
+    ∃ g : GL n K, ∀ x : A,
+      e' x = (g : Matrix n n K) * e x * (g⁻¹ : GL n K) := by
+  obtain ⟨g, hg⟩ := innerAut_surjective K (e.symm.trans e')
+  exact ⟨g, fun x => by simpa using (congrArg (fun τ => τ (e x)) hg).symm⟩
+
+end AlgEquiv
+
 namespace Matrix.ProjGenLinGroup
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]

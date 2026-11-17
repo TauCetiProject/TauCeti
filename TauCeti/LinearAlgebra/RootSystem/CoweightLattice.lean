@@ -355,7 +355,7 @@ lemma sub_mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
     obtain ⟨i, rfl⟩ := hw
     simpa using hrefl i hx
   | one => simp
-  | mul w₁ w₂ hw₁ hw₂ h₁ h₂ =>
+  | mul w₁ w₂ _ hw₂ h₁ h₂ =>
     have h := add_mem (h₁ (P.mem_coweightLattice_of_mem_closure_range_coreflection hw₂ hx))
       (h₂ hx)
     rwa [sub_add_sub_cancel] at h

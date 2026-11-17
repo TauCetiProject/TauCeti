@@ -354,7 +354,6 @@ theorem contMDiffOn_complexProjectiveZeroLocusSliceChart_symm (r : ℕ∞ω) :
   have hinv : ContDiffAt ℂ r
       ((implicitChart hp hL hi hrank).symm ∘ (coordEquiv hp hL hi hrank).symm) v :=
     (hΦ.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem _ _ hvt hvs
-      ((contDiff_eqns p i (r := 1)).differentiable one_ne_zero _).hasFDerivAt
       (contDiff_eqns p i).contDiffAt).comp v (coordEquiv hp hL hi hrank).symm.contDiff.contDiffAt
   rw [coe_complexProjectiveZeroLocusSliceChart_symm]
   exact ((contMDiff_affineChart_symm i r _).comp v hinv.contMDiffAt).contMDiffWithinAt

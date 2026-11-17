@@ -47,7 +47,7 @@ namespace TauCeti
 
 universe v u
 
-variable (R : Type v) [Ring R] {V : Type u} [Category.{v} V] [Preadditive V] [Linear R V]
+variable (R : Type*) [Ring R] {V : Type u} [Category.{v} V] [Preadditive V] [Linear R V]
 
 /-- The **normalized identification** of the cochains of degree `n + (s - r)` from `K` to `L`
 with the cochains of degree `n` from `K⟦r⟧` to `L⟦s⟧`, assembled from Mathlib's right and left
@@ -80,11 +80,14 @@ theorem cochainShiftLinearEquiv_v (K L : CochainComplex V ℤ) (r s n : ℤ)
 
 /-- The normalized identification intertwines the differential `δ` of cochains between the
 shifted complexes with `(-1)^(s - r) δ` on cochains between the unshifted ones. -/
-theorem δ_cochainShiftLinearEquiv (K L : CochainComplex V ℤ) (r s n m : ℤ) (hnm : n + 1 = m)
+theorem δ_cochainShiftLinearEquiv (K L : CochainComplex V ℤ) (r s n m : ℤ)
     (z : Cochain K L (n + (s - r))) :
     δ n m (cochainShiftLinearEquiv R K L r s n z) =
       cochainShiftLinearEquiv R K L r s m
         ((s - r).negOnePow • δ (n + (s - r)) (m + (s - r)) z) := by
+  by_cases hnm : n + 1 = m
+  swap
+  · rw [δ_shape _ _ hnm, δ_shape _ _ (by omega), smul_zero, map_zero]
   subst hnm
   simp only [cochainShiftLinearEquiv, LinearEquiv.trans_apply,
     DistribMulAction.toLinearEquiv_apply, Cochain.rightShiftLinearEquiv_apply,

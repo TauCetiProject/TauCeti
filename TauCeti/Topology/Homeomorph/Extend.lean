@@ -14,7 +14,7 @@ public import Mathlib.Topology.Homeomorph.Defs
 
 Let `j : Y → X` be an open embedding. A continuous family of self-maps of `Y` which fixes the
 points of `j ⁻¹' V`, for an open neighbourhood `V` of the complement of the range of `j`, extends
-by the identity to a continuous family of self-maps of `X`.
+by the identity to a continuous family of self-maps of `X` which fixes every point of `V`.
 
 Let `χ : Z → Y` be an open embedding, for instance a chart onto an open subset of `Y`, and let `Λ`
 be a homeomorphism of `Z` that moves only points lying over a closed subset `C` of `Y` contained in
@@ -38,35 +38,29 @@ open Set Filter Topology
 namespace Topology.IsOpenEmbedding
 
 /-- **A family of self-maps of an open piece extends by the identity.** Let `j : Y → X` be an open
-embedding and `G : Z × Y → Y` a continuous family of self-maps of `Y`. If the points outside the
-range of `j` have an open neighbourhood `V` such that every `G z` fixes the points of `j ⁻¹' V`,
-then the family transported along `j` extends by the identity to a continuous family of self-maps
-of `X`. -/
+embedding and `G : Z × Y → Y` a continuous family of self-maps of `Y`. If `V` is an open set
+containing the points outside the range of `j` and every `G z` fixes the points of `j ⁻¹' V`, then
+the family transported along `j` extends to a continuous family of self-maps of `X` that fixes
+every point of `V`. -/
 theorem exists_continuousMap_extend_id {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     {j : Y → X} (hj : IsOpenEmbedding j) {Z : Type*} [TopologicalSpace Z]
     {V : Set X} (hV : IsOpen V) (hjV : (range j)ᶜ ⊆ V) (G : C(Z × Y, Y))
     (hG : ∀ z y, j y ∈ V → G (z, y) = y) :
-    ∃ Φ : C(Z × X, X), (∀ z y, Φ (z, j y) = j (G (z, y))) ∧ ∀ z, ∀ x ∉ range j, Φ (z, x) = x := by
-  classical
-  let Φ : Z × X → X := fun p ↦ if hp : p.2 ∈ range j then j (G (p.1, hp.choose)) else p.2
-  have hΦj (z : Z) (y : Y) : Φ (z, j y) = j (G (z, y)) := by
-    have hy : j y ∈ range j := mem_range_self y
-    simp only [Φ, dite_eq_left hy, hj.injective hy.choose_spec]
+    ∃ Φ : C(Z × X, X), (∀ z y, Φ (z, j y) = j (G (z, y))) ∧ ∀ z, ∀ x ∈ V, Φ (z, x) = x := by
+  let Φ : Z × X → X := fun p ↦ Function.extend j (fun y ↦ j (G (p.1, y))) id p.2
+  have hΦj (z : Z) (y : Y) : Φ (z, j y) = j (G (z, y)) := hj.injective.extend_apply _ _ y
   -- `Φ` is the identity on `V`.
   have hΦV (z : Z) (x : X) (hx : x ∈ V) : Φ (z, x) = x := by
     by_cases hxj : x ∈ range j
     · obtain ⟨y, rfl⟩ := hxj
       rw [hΦj, hG z y hx]
-    · exact dite_eq_right hxj
-  refine ⟨⟨Φ, continuous_iff_continuousAt.2 fun p ↦ ?_⟩, hΦj, fun z x hx ↦ dite_eq_right hx⟩
-  obtain ⟨z, x⟩ := p
+    · exact Function.extend_apply' _ _ _ hxj
+  refine ⟨⟨Φ, continuous_iff_continuousAt.2 fun ⟨z, x⟩ ↦ ?_⟩, hΦj, hΦV⟩
   by_cases hxj : x ∈ range j
   · -- Over the open range of `j`, `Φ` is the transported family.
     obtain ⟨y, rfl⟩ := hxj
-    have hj' : IsOpenEmbedding (Prod.map id j : Z × Y → Z × X) := .prodMap .id hj
     have hcomp : Φ ∘ Prod.map id j = j ∘ G := funext fun q ↦ hΦj q.1 q.2
-    refine (hj'.isInducing.continuousAt_iff'
-      (hj'.isOpen_range.mem_nhds (mem_range_self (z, y)))).1 ?_
+    refine ((IsOpenEmbedding.id.prodMap hj).continuousAt_iff (x := (z, y))).1 ?_
     rw [hcomp]
     exact (hj.continuous.comp G.continuous).continuousAt
   · -- Near a point outside the range of `j`, `Φ` is the identity.
@@ -88,13 +82,9 @@ theorem exists_homeomorph_extend (hχ : IsOpenEmbedding χ) (Λ : Z ≃ₜ Z) (h
       ∃ f : C(Y, Y), (∀ z, f (χ z) = χ (Φ z)) ∧ ∀ y ∉ C, f y = y := by
     obtain ⟨F, hFχ, hF⟩ := hχ.exists_continuousMap_extend_id hC.isOpen_compl
       (fun _ hy h => hy (hCχ h)) ⟨fun p : Unit × Z => Φ p.2, Φ.continuous.comp continuous_snd⟩
-      fun _ z hz => hΦ z hz
-    refine ⟨⟨fun y => F ((), y), F.continuous.comp (.prodMk continuous_const continuous_id)⟩,
-      fun z => hFχ () z, fun y hy => ?_⟩
-    by_cases hyχ : y ∈ range χ
-    · obtain ⟨z, rfl⟩ := hyχ
-      exact (hFχ () z).trans (congrArg χ (hΦ z hy))
-    · exact hF () y hyχ
+      fun _ => hΦ
+    exact ⟨⟨fun y => F ((), y), F.continuous.comp (.prodMk continuous_const continuous_id)⟩,
+      hFχ (), hF ()⟩
   obtain ⟨f, hfχ, hf⟩ := hext Λ hΛ
   obtain ⟨g, hgχ, hg⟩ := hext Λ.symm hΛs
   -- The two extensions fix `C`'s complement, and they are mutually inverse on the image of `χ`.

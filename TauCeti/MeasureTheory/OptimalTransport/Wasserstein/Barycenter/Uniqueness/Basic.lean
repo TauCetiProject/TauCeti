@@ -78,9 +78,9 @@ theorem subsingleton_frechetBarycenters (hp : p ≠ ∞) {P : Measure (Wasserste
     simp_rw [frechetPower_def, edist_comm z]
   intro ν₀ h₀ ν₁ h₁
   obtain ⟨hR₀, hmin₀⟩ := (isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp
-    (hm ν₀).aemeasurable fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₀)
+    fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₀)
   obtain ⟨-, hmin₁⟩ := (isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp
-    (hm ν₁).aemeasurable fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₁)
+    fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₁)
   have hF₀ : frechetPower p P ν₀ ≠ ∞ := by
     rw [← frechetRadius_rpow_eq_frechetPower hp0 hp (hm ν₀).aemeasurable]
     exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hR₀
@@ -95,7 +95,7 @@ theorem subsingleton_frechetBarycenters (hp : p ≠ ∞) {P : Measure (Wasserste
     fun m ↦ 2⁻¹ * edist m ν₀ ^ p.toReal + 2⁻¹ * edist m ν₁ ^ p.toReal
   have hgf (m : WassersteinSpace p X) : g m ≤ f m := by
     simp only [g, f, edist_def, hν]
-    exact wassersteinEDist_smul_add_smul_rpow_le measurable_edist hp0 hp
+    exact wassersteinEDist_smul_add_smul_rpow_le measurable_edist
       ENNReal.inv_two_add_inv_two _ _ _
   have hintf : ∫⁻ m, f m ∂P = frechetPower p P ν₀ := by
     rw [lintegral_add_left ((hm' ν₀).const_mul _), lintegral_const_mul _ (hm' ν₀),

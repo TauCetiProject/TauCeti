@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
-public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+public import TauCeti.RepresentationTheory.SymmetricAlgebra.FaithfulImage
 
 /-!
 # The Galois group of a symmetric algebra over its invariants
@@ -118,13 +118,9 @@ theorem isGalois_fractionRing_symmetricAlgebraInvariants :
     IsGalois (FractionRing ρ.symmetricAlgebraInvariants)
       (FractionRing (SymmetricAlgebra R M)) := by
   let Q := G ⧸ MonoidHom.ker ρ
-  let ρ' : Representation R Q M := QuotientGroup.lift _ ρ le_rfl
-  have hρ' : Function.Injective ρ' := by
-    rw [← MonoidHom.ker_eq_bot_iff, QuotientGroup.ker_lift, QuotientGroup.map_mk'_self]
-  have h : ρ'.symmetricAlgebraInvariants = ρ.symmetricAlgebraInvariants :=
-    Subalgebra.ext fun _ ↦ by
-      simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_apply]
-      exact QuotientGroup.mk_surjective.forall
+  let ρ' : Representation R Q M := ρ.ofQuotient ρ.ker
+  have hρ' : Function.Injective ρ' := (ρ.injective_ofQuotient_iff ρ.ker).mpr rfl
+  have h := ρ.symmetricAlgebraInvariants_ofQuotient ρ.ker
   rw [← h]
   let := ρ'.symmetricAlgebraMulSemiringAction
   let := IsFractionRing.mulSemiringAction Q (SymmetricAlgebra R M)

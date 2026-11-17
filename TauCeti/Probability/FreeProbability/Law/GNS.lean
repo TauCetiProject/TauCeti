@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.Law.Basic
-public import TauCeti.Analysis.CStarAlgebra.GNS
+public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.DiagonalMeasure
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 

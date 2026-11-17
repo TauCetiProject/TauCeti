@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The positive-definite cone in the space of all square matrices
@@ -29,6 +30,11 @@ unit sphere and persists under small perturbations.
 For real matrices the cone is measurable ambiently, being the intersection of the closed
 Hermitian condition with the open set of `isOpen_setOfPred_re_dotProduct_pos`.
 
+Inverse segments between continuously varying positive-definite endpoints depend continuously
+on the endpoints and the segment parameter. On a compact family, their entries have a common
+bound. These inverse-segment arguments are adapted from the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
+
 ## Main declarations
 
 * `TauCeti.convex_setOfPred_posDef` — the positive-definite matrices form a convex set;
@@ -37,7 +43,10 @@ Hermitian condition with the open set of `isOpen_setOfPred_re_dotProduct_pos`.
 * `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite real matrices form a
   measurable set.
 * `Matrix.isOpen_setOfPred_posDef_selfAdjoint` — the positive-definite cone is open in the
-  Hermitian subspace over `ℝ` or `ℂ`.
+  Hermitian subspace over `ℝ` or `ℂ`;
+* `TauCeti.continuousAt_inv_segment` and `TauCeti.continuous_inv_segment_pairs` — continuity
+  of inverse segments with positive-definite endpoints;
+* `TauCeti.exists_uniform_inv_segment_apply_bound` — a common entry bound on compact fields.
 -/
 
 public section
@@ -122,3 +131,68 @@ theorem isOpen_setOfPred_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
       RCLike.pos_iff.mpr ⟨hA x hx, hAH.im_star_dotProduct_mulVec_self x⟩
 
 end Matrix
+
+/-- Every real convex combination of positive-definite matrices is positive definite. -/
+theorem Matrix.PosDef.one_sub_smul_add_smul {ι R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [AddLeftMono R] [Algebra ℝ R] [StarModule ℝ R] [PosSMulStrictMono ℝ R]
+    {A B : Matrix ι ι R} (hA : A.PosDef) (hB : B.PosDef) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
+    ((1 - t) • A + t • B).PosDef :=
+  TauCeti.convex_setOfPred_posDef hA hB (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
+
+namespace TauCeti
+
+open Set
+open scoped Matrix.Norms.Elementwise NNReal
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- Inversion is continuous along a continuously varying segment with positive-definite
+endpoints, at every parameter in the unit interval. -/
+theorem continuousAt_inv_segment {X : Type*} [TopologicalSpace X]
+    {P Q : X → Matrix ι ι ℝ} {t : X → ℝ} {x : X}
+    (hP : ContinuousAt P x) (hQ : ContinuousAt Q x) (ht : ContinuousAt t x)
+    (hp : (P x).PosDef) (hq : (Q x).PosDef) (hx : t x ∈ Icc 0 1) :
+    ContinuousAt (fun y => ((1 - t y) • P y + t y • Q y)⁻¹) x := by
+  have hc : ContinuousAt (fun y => (1 - t y) • P y + t y • Q y) x := by fun_prop
+  exact hc.matrix_inv (hp.one_sub_smul_add_smul hq hx).det_pos.ne'
+
+section CompactPositiveFields
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- The inverse segment depends continuously on both endpoints in a positive-definite field
+and on the unit-interval parameter. -/
+theorem continuous_inv_segment_pairs {s : Set X} (H : X → Matrix ι ι ℝ)
+    (hH : ContinuousOn H s) (hpos : ∀ x ∈ s, (H x).PosDef) :
+    Continuous (fun z : (s × s) × Icc (0 : ℝ) 1 =>
+      ((1 - (z.2 : ℝ)) • H z.1.1 + (z.2 : ℝ) • H z.1.2)⁻¹) := by
+  rw [continuous_iff_continuousAt]
+  intro z
+  exact continuousAt_inv_segment
+    (hH.domRestrict.comp (continuous_fst.comp continuous_fst)).continuousAt
+    (hH.domRestrict.comp (continuous_snd.comp continuous_fst)).continuousAt
+    (continuous_subtype_val.comp continuous_snd).continuousAt
+    (hpos z.1.1 z.1.1.property) (hpos z.1.2 z.1.2.property) z.2.property
+
+/-- Inverse segments between all pairs in a compact positive-definite field have a common
+strictly positive entry bound. -/
+theorem exists_uniform_inv_segment_apply_bound (H : X → Matrix ι ι ℝ) {s : Set X} (hs : IsCompact s)
+    (hH : ContinuousOn H s) (hpos : ∀ x ∈ s, (H x).PosDef) :
+    ∃ L : ℝ≥0,
+      0 < L ∧
+        ∀ x ∈ s, ∀ y ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, ∀ i j, |((1 - t) • H x + t • H y)⁻¹ i j| ≤ L := by
+  let : CompactSpace s := isCompact_iff_compactSpace.mp hs
+  have hcompact := isCompact_range (continuous_inv_segment_pairs H hH hpos)
+  obtain ⟨R, hR⟩ := hcompact.isBounded.exists_norm_le
+  let L : ℝ≥0 := (max R 0 + 1).toNNReal
+  have hL : (L : ℝ) = max R 0 + 1 := Real.coe_toNNReal _ (by positivity)
+  have hLpos : (0 : ℝ) < (L : ℝ) := by rw [hL]; positivity
+  refine ⟨L, by exact_mod_cast hLpos, ?_⟩
+  intro x hx y hy t ht i j
+  have hcap := hR _ ⟨((⟨x, hx⟩, ⟨y, hy⟩), ⟨t, ht⟩), rfl⟩
+  rw [← Real.norm_eq_abs, hL]
+  exact Matrix.norm_apply_le_norm _ |>.trans (hcap.trans (by linarith [le_max_left R 0]))
+
+end CompactPositiveFields
+
+end TauCeti

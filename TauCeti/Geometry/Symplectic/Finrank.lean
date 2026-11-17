@@ -34,6 +34,9 @@ assumption.
   under the induced complex structure.
 * `TauCeti.AlmostComplexStructure.finrank_real_eq_two_mul_complexFinrank`: the real dimension is
   twice the complex dimension, `finrank ℝ V = 2 * J.complexFinrank`.
+* `TauCeti.AlmostComplexStructure.exists_linearEquiv_I_smul`: an almost complex structure on a
+  finite-dimensional real module is the transport of multiplication by `i` from any complex vector
+  space of half the dimension.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
   almost complex structure is even.
 * `TauCeti.AlmostComplexStructure.even_finrank_of_forall_mem`: a `J`-invariant subspace has even
@@ -89,6 +92,24 @@ theorem finrank_real_eq_two_mul_complexFinrank (J : AlmostComplexStructure V) :
   rw [J.complexFinrank_def]
   exact finrank_real_eq_two_mul_finrank_complex
 
+/-- If `finrank ℝ V = 2 * finrank ℂ G` for a finite-dimensional complex vector space `G`, the
+almost complex structure `J` is the transport of multiplication by `i` on `G` by a real linear
+isomorphism: `(V, J)` and `G` are isomorphic complex vector spaces. -/
+theorem exists_linearEquiv_I_smul [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)
+    {G : Type*} [AddCommGroup G] [Module ℂ G] [Module ℝ G] [IsScalarTower ℝ ℂ G]
+    [FiniteDimensional ℂ G] (hG : Module.finrank ℝ V = 2 * Module.finrank ℂ G) :
+    ∃ φ : G ≃ₗ[ℝ] V, ∀ z, φ (Complex.I • z) = J (φ z) := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  have : FiniteDimensional ℂ V := .of_restrictScalars_finite ℝ ℂ V
+  have hrank : Module.finrank ℂ G = Module.finrank ℂ V := by
+    have := J.finrank_real_eq_two_mul_complexFinrank
+    rw [J.complexFinrank_def] at this
+    omega
+  let ψ : G ≃ₗ[ℂ] V := LinearEquiv.ofFinrankEq G V hrank
+  exact ⟨ψ.restrictScalars ℝ, fun z ↦ by
+    simpa only [LinearEquiv.restrictScalars_apply, map_smul] using J.complexModule_I_smul (ψ z)⟩
+
 /-- The real dimension of a module carrying an almost complex structure is even. -/
 theorem even_finrank_real (J : AlmostComplexStructure V) :
     Even (Module.finrank ℝ V) := by
@@ -112,13 +133,14 @@ theorem even_finrank_genEigenspace_zero_of_anticommute (J : AlmostComplexStructu
   J.even_finrank_of_forall_mem fun _ hv ↦ by
     simpa using Module.End.mapsTo_genEigenspace_neg_of_anticommute h 0 k hv
 
-/-- A maximal totally real subspace `L` of a finite-dimensional almost complex module has real
-dimension equal to the complex dimension of the ambient module: `L` is "half-dimensional".
+/-- A maximal totally real subspace `L` of an almost complex module has real dimension equal to
+the complex dimension of the ambient module: `L` is "half-dimensional". (An infinite-dimensional
+module has both dimensions `0`, since `L` and `J L` span it.)
 
 For a Heegaard diagram of genus `g`, this is the statement that the totally real tori `T_α`,
 `T_β` are `g`-dimensional inside the `g`-complex-dimensional symmetric product `Sym^g(Σ)`
 (Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2). -/
-theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal [FiniteDimensional ℝ V]
+theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal
     {J : AlmostComplexStructure V} {L : Submodule ℝ V}
     (hL : IsMaximalTotallyReal J.toLinearMap L) :
     Module.finrank ℝ L = J.complexFinrank := by

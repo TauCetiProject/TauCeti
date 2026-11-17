@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Reflection
-public import TauCeti.Algebra.Module.Basic
 public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.LinearAlgebra.Reflection
 
 /-!
@@ -61,8 +61,9 @@ of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.Strin
 * `TauCeti.PLPath.exists_listMinHeight_eq`, `TauCeti.PLPath.listMinHeight_le_apply_sum_take`:
   the minimal height of a presentation is the minimum of the heights of its vertices.
 * `TauCeti.PLPath.minHeight_ofSegments`, `TauCeti.PLPath.minHeight_mul`,
-  `TauCeti.PLPath.minHeight_reverse`: the minimal height is independent of the presentation, and
-  its behaviour under concatenation and reversal.
+  `TauCeti.PLPath.minHeight_reverse`, `TauCeti.PLPath.minHeight_straight_neg_mul_straight`: the
+  minimal height is independent of the presentation, and its behaviour under concatenation,
+  reversal, and back-and-forth straight excursions.
 * `TauCeti.PLPath.reflectRecords_append`: capped reflection `TauCeti.PLPath.reflectRecords` of a
   concatenation.
 * `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
@@ -111,7 +112,7 @@ def listMinHeight : List V → 𝕜
   | [] => 0
   | v :: l => min 0 (f v + listMinHeight l)
 
-variable {f} {v w : V} {l l₁ l₂ : List V}
+variable {f}
 
 @[simp]
 theorem listMinHeight_nil : listMinHeight f ([] : List V) = 0 :=
@@ -231,7 +232,7 @@ variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 section MinHeight
 
-variable {f : Dual 𝕜 V} {l l₁ l₂ : List V}
+variable {f : Dual 𝕜 V} {l₁ l₂ : List V}
 
 theorem listMinHeight_consMerge (v : V) (l : List V) :
     listMinHeight f (consMerge 𝕜 v l) = listMinHeight f (v :: l) := by
@@ -302,12 +303,15 @@ theorem minHeight_le_apply_endpoint (p : PLPath 𝕜 V) : p.minHeight f ≤ f p.
   rw [minHeight_def, endpoint_def]
   exact listMinHeight_le_apply_sum _
 
+/-- The minimal height of a concatenation `p * q` is the smaller of the minimal height of `p` and
+the endpoint height of `p` plus the minimal height of `q`. -/
 @[simp]
 theorem minHeight_mul (p q : PLPath 𝕜 V) :
     (p * q).minHeight f = min (p.minHeight f) (f p.endpoint + q.minHeight f) := by
   rw [← ofSegments_segments p, ← ofSegments_segments q, ← ofSegments_append]
   simp only [minHeight_ofSegments, endpoint_ofSegments, listMinHeight_append]
 
+/-- The minimal height of the reversed path is its minimal height minus its endpoint height. -/
 @[simp]
 theorem minHeight_reverse (p : PLPath 𝕜 V) :
     p.reverse.minHeight f = p.minHeight f - f p.endpoint := by
@@ -316,6 +320,11 @@ theorem minHeight_reverse (p : PLPath 𝕜 V) :
 @[simp]
 theorem minHeight_straight (v : V) : (straight 𝕜 v).minHeight f = min 0 (f v) := by
   simp [straight_def]
+
+/-- An excursion along `-v` followed by `v` has minimum height `min 0 (-f v)`. -/
+theorem minHeight_straight_neg_mul_straight (v : V) :
+    (straight 𝕜 (-v) * straight 𝕜 v).minHeight f = min 0 (-f v) := by
+  simp [← min_add_add_left]
 
 end MinHeight
 
@@ -664,7 +673,6 @@ private theorem normalize_reflectRecords_cons_cons (hvw : SameRay 𝕜 v w) (c :
   rcases eq_or_ne v 0 with rfl | hv
   · simp [reflectRecords_zero_cons]
   obtain ⟨μ, hμ, rfl⟩ := hvw.exists_nonneg_left hv
-  have hl := listMinHeight_nonpos (f := f) l
   have hvμ : v + μ • v = (1 + μ) • v := by module
   have hfμ : f (μ • v) = μ * f v := by simp
   rw [hvμ]

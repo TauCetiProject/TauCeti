@@ -3,7 +3,8 @@
   "use strict";
   var root = document.querySelector("[data-operations]");
   if (!root) return;
-  var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = 15000;
+  var pollInterval = 5000;
+  var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = pollInterval;
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistories = new Map(), historyGeneration = 0, historyMetric = "busy_slots";
   var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
@@ -28,6 +29,11 @@
   function badges(values) { var node = el("div", undefined, "ops-badges"); values.forEach(function (v) { node.append(el("span", v)); }); return node; }
   function heading(text) { return el("h3", text); }
   function empty(text) { return note(text, "ops-empty"); }
+  function taskBuild(container, progress) {
+    var b = progress && progress.build;
+    if (!b) return;
+    container.append(note("Reported " + b.stage + " build tasks " + b.completed_tasks + " / " + b.total_tasks + " · sampled " + age(b.sampled_at) + " (" + freshness(b.sampled_at,60) + ") · log output " + age(b.log_updated_at) + " · " + (b.last_progress_at ? "last observed count increase " + age(b.last_progress_at) : "count increase unobserved (first sample or reset)") + ". Log output alone does not establish build progress."));
+  }
   function route() {
     var parts = location.hash.slice(1).split("?"), params = new URLSearchParams(parts[1] || location.search);
     var inferred = params.has("pr") || params.has("batch") ? "queue" : params.has("host") || params.has("run") ? "runners" : "now";
@@ -64,25 +70,76 @@
     }
     return result;
   }
+  function duration(value) {
+    var seconds = (Date.now() - Date.parse(value)) / 1000;
+    return !Number.isFinite(seconds) ? "unknown" : seconds < -5 ? "clock ahead" : seconds < 60 ? Math.max(0, Math.floor(seconds)) + "s" : seconds < 3600 ? Math.floor(seconds / 60) + "m" : Math.floor(seconds / 3600) + "h " + Math.floor(seconds % 3600 / 60) + "m";
+  }
+  function poolName(pool) { return pool === "github" ? "GitHub" : pool === "namespace" ? "Namespace" : pool; }
   function poolSummary(container) {
-    container.append(heading("Observed runner pools"));
-    if (!data.jobs) { container.append(empty("Job observations unavailable; pool activity is unknown.")); return; }
-    var groups = new Map();
-    jobs.forEach(function (j) {
-      if (!j.active) return;
-      var label = j.pool === "github" ? "GitHub · " + platform(j) : j.pool;
-      var group = groups.get(label) || {running:0,queued:0,buildRunning:0,buildQueued:0,oldest:null};
-      var running = j.status === "in_progress" && j.assigned, build = ["pr_build","staging_build","other_build"].includes(j.job_class);
-      if (running) { group.running++; if (build) group.buildRunning++; }
-      else { group.queued++; if (build) group.buildQueued++; if (Number.isFinite(Date.parse(j.created_at)) && (!group.oldest || Date.parse(j.created_at)<Date.parse(group.oldest))) group.oldest=j.created_at; }
-      groups.set(label,group);
+    var section = el("section", undefined, "ops-activity"), top = el("div", undefined, "ops-section-heading");
+    append(top, heading("Runner activity"), link("Inspect jobs →", "#runners?jobs=1" + (route().params.get("scope") === "all" ? "" : "&class=builds"))); section.append(top);
+    var all = route().params.get("scope") === "all", toggle = el("nav", undefined, "ops-scope"); toggle.setAttribute("aria-label", "Activity scope");
+    [false, true].forEach(function (value) { var a = link(value ? "All jobs" : "Builds", "#" + route().tab + (value ? "?scope=all" : "")); if (value === all) a.setAttribute("aria-current", "true"); toggle.append(a); });
+    section.append(toggle);
+    var activity = data.jobs && data.jobs.pool_activity, groups = new Map();
+    (activity && activity.pools || []).forEach(function (p) { groups.set(p.pool, p[all ? "all" : "builds"]); });
+    // Before the publisher supports activity, active counts are explicitly a sample.
+    if (!activity) jobs.filter(function(j) { return j.active && (all || ["pr_build", "staging_build", "other_build"].includes(j.job_class)); }).forEach(function(j) {
+      var g = groups.get(j.pool) || {running:0,waiting:0}; var running = j.status === "in_progress" && j.assigned;
+      g[running ? "running" : "waiting"]++; var field = running ? "oldest_running" : "oldest_waiting", stamp = running ? "started_at" : "created_at";
+      if (!g[field] || Date.parse(j[stamp]) < Date.parse(g[field][stamp])) g[field] = j;
+      groups.set(j.pool, g);
     });
-    if (!groups.size) { container.append(empty("No active jobs in the retained observations. Source coverage is shown with the job table.")); return; }
-    var scroll=el("div",undefined,"ops-scroll"), table=el("table",undefined,"ops-table ops-pools"), body=el("tbody");
-    append(table,append(el("thead"),append(el("tr"),el("th","Pool"),el("th","Running / queued"),el("th","Build-only running / queued"),el("th","Oldest queued job age"))));
-    Array.from(groups.entries()).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(entry){var g=entry[1];body.append(append(el("tr"),el("td",entry[0]),el("td",g.running+" / "+g.queued),el("td",g.buildRunning+" / "+g.buildQueued),el("td",g.oldest?age(g.oldest):"none observed")));});
-    table.append(body);scroll.append(table);container.append(scroll);
-    container.append(note("Queued jobs are counted once; workflows without observed jobs are separate. Build-only counts sandboxed verification jobs. Counts describe retained observations"+(data.jobs.truncated || data.jobs.coverage === "partial" ? " and may be lower bounds." : ".")));
+    (data.hosts && data.hosts.pools || []).forEach(function(p) { if (!groups.has(p.id)) groups.set(p.id, null); });
+    (data.hosts && data.hosts.hosts || []).forEach(function(h) { if (!groups.has(h.alias)) groups.set(h.alias, null); });
+    var coverage = activity && activity.coverage, partial = !activity || coverage === "partial";
+    section.append(note(!activity ? "Completion history unavailable. Active counts are a bounded sample." : coverage === "unavailable" ? "Completion history unavailable." : (partial ? "Partial observations · counts may be incomplete or stale. " : "") + "Completions through " + timestamp(activity.through) + ".", coverage !== "retained_observations" ? "ops-note ops-warning" : "ops-note"));
+    if (!groups.size) { section.append(empty("Runner activity unavailable.")); container.append(section); return; }
+    var table = el("table", undefined, "ops-table ops-pools"), body = el("tbody"); table.setAttribute("role","table"); body.setAttribute("role","rowgroup");
+    var titles = ["Pool", "Running", "Waiting", "Oldest running", "Oldest waiting", "Last completion", "1 hour", "3 hours", "24 hours"];
+    var head = el("tr"); titles.forEach(function(t) { var th = el("th", t); th.scope = "col"; th.setAttribute("role","columnheader"); if(t === "Waiting") th.title = "Includes queued jobs and concurrency or environment holds"; head.append(th); });
+    head.setAttribute("role","row"); var tableHead = append(el("thead"), head); tableHead.setAttribute("role","rowgroup"); table.append(tableHead);
+    Array.from(groups.entries()).sort(function(a,b) { return a[0].localeCompare(b[0]); }).forEach(function(entry) {
+      var pool = entry[0], g = entry[1], row = el("tr"); row.setAttribute("role","row");
+      function cell(index, value) { var td = el("td"); td.setAttribute("role","cell"); td.dataset.label = titles[index]; if (typeof value === "string") td.textContent = value; else if (value) td.append(value); row.append(td); return td; }
+      cell(0, link(poolName(pool), "#runners?jobs=1&pool=" + encodeURIComponent(pool) + (all ? "" : "&class=builds")));
+      if (!g || coverage === "unavailable") { row.className = "ops-unobserved"; var unknown = cell(1, "Unknown · no activity observations"); unknown.colSpan = 8; body.append(row); return; }
+      cell(1, (partial ? "~" : "") + g.running); cell(2, (partial ? "~" : "") + g.waiting);
+      ["oldest_running", "oldest_waiting"].forEach(function(field,index) { var j = g && g[field], stamp = field === "oldest_running" ? "started_at" : "created_at"; var td = cell(index + 3, j ? link(duration(j[stamp]),j.url) : partial ? "unknown" : "none"); if (j) { td.title = j.name + " · " + timestamp(j[stamp]); td.querySelector("a").dataset.focusKey = pool + "-" + field; td.querySelector("a").setAttribute("aria-label", titles[index+3] + " · " + poolName(pool) + " · " + j.name + " · " + duration(j[stamp])); } });
+      var last = g && g.latest_completion, lastCell = cell(5, last ? link(age(last.completed_at),last.url) : g && activity && !partial ? "none observed" : "unknown");
+      if (last) { lastCell.append(el("small", last.conclusion || "outcome unknown", "ops-outcome " + (last.conclusion === "success" ? "ops-success" : ["failure","timed_out"].includes(last.conclusion) ? "ops-failure" : "ops-muted"))); lastCell.title = last.name + " · " + timestamp(last.completed_at); lastCell.querySelector("a").dataset.focusKey = pool + "-last"; lastCell.querySelector("a").setAttribute("aria-label", "Last completion · " + poolName(pool) + " · " + last.name + " · " + age(last.completed_at) + " · " + (last.conclusion || "unknown outcome")); }
+      [3600,10800,86400].forEach(function(seconds,index) {
+        var w = g && (g.windows || []).find(function(w) { return w.seconds === seconds; }), td = cell(index + 6, w ? String(w.finished) : "—");
+        if (w) {
+          td.textContent = "";
+          var outcomes = w.success + " passed · " + w.failure + " failed · " + w.cancelled + " cancelled · " + w.skipped + " skipped · " + w.other + " other";
+          var detail = el("details", undefined, "ops-completions"); detail.dataset.key = "completion-" + pool + "-" + seconds;
+          var total = el("summary", (partial ? "~" : "") + w.finished); total.setAttribute("aria-label", titles[index+6] + " · " + poolName(pool) + " · " + w.finished + " completed; show outcomes");
+          append(detail,total,el("p",outcomes,"ops-outcome")); td.append(detail);
+          if (w.failure || w.cancelled) td.append(el("small", [w.failure ? w.failure + " failed" : "",w.cancelled ? w.cancelled + " cancelled" : ""].filter(Boolean).join(" · "), "ops-outcome" + (w.failure ? " ops-failure" : "")));
+        }
+      });
+      body.append(row);
+    });
+    table.append(body); section.append(table);
+    section.append(note("1 / 3 / 24-hour totals include failures and cancellations and end at the last whole minute. Select a total for outcomes.", "ops-caption"));
+    container.append(section);
+  }
+  function queueBrief(container) {
+    var queue = data.queue, card = el("section", undefined, "ops-queue-brief");
+    var top = el("div", undefined, "ops-section-heading"); append(top, heading("Merge queue"), link("Queue details →", "#queue")); card.append(top);
+    if (!queue) { card.append(empty("Queue observations unavailable.")); container.append(card); return; }
+    var head = (queue.batches || []).find(function(b) { return b.state === "head"; }), counts = queue.counts || {};
+    if (head) {
+      var attempt = head.latest_attempt, task = (head.active_tasks || [])[0], job = attempt && jobs.find(function(j) { return j.run_id === attempt.run_id && j.run_attempt === attempt.run_attempt && j.job_class === "staging_build"; });
+      var state = task ? (task.kind === "prepare" || task.kind === "pre_rebase" ? "Preparing" : "Repairing") : (job && job.status === "in_progress" && job.assigned || attempt && attempt.status === "in_progress") ? "Building" : attempt && attempt.status === "completed" ? (attempt.conclusion || attempt.outcome || "CI completed") : "Waiting for CI";
+      var line = el("div", undefined, "ops-headline"); append(line, link("Head " + head.id, batchURL(head.id)), el("strong", head.size + " PRs"), el("span", state, "ops-state")); card.append(line);
+      var progress = task && task.progress && task.progress.build;
+      card.append(note(progress && Number.isFinite(progress.completed_tasks) && Number.isFinite(progress.total_tasks) ? progress.stage + " · " + progress.completed_tasks.toLocaleString() + " / " + progress.total_tasks.toLocaleString() + " build tasks · sampled " + age(progress.sampled_at) : job ? poolName(job.pool) + " · " + job.status.replaceAll("_", " ") + " · " + (job.status === "in_progress" && job.assigned ? "running " + duration(job.started_at) : job.active ? "waiting " + duration(job.created_at) : "finished " + age(job.completed_at)) : "CI assignment unobserved for this candidate."));
+    } else card.append(note("No head observed."));
+    card.append(note((counts.waiting ?? "unknown") + " waiting inputs · " + (queue.batches || []).filter(function(b) { return b.state === "open"; }).length + " open successors · " + (queue.workers || []).length + " repair workers", "ops-caption"));
+    (queue.conditions || []).forEach(function(c) { card.append(note(c.kind.replaceAll("_", " ") + (c.batch_id ? " · batch " + c.batch_id : ""),"ops-warning ops-note")); });
+    var source = sourceNote("queue"); source.classList.add("ops-caption"); card.append(source); container.append(card);
   }
   function queueSummary(container) {
     var queue = data.queue; container.append(sourceNote("queue"));
@@ -102,7 +159,7 @@
           attempt.url ? link("Run " + attempt.run_id + " / attempt " + (attempt.run_attempt || "unknown"), attempt.url) : note("No run has been bound yet."),
           note(job ? "Build provider " + job.pool + (host ? " · host " + host.host.alias + " · VM " + host.slot.instance_id : " · assigned host unknown") + " · " + job.status : "Assigned provider/job details have not been joined for this exact run attempt."));
       }
-      (head.active_tasks || []).forEach(function (task) { container.append(note("Open " + task.kind + " task " + task.id + " · " + (task.progress && task.progress.state || "worker phase unknown"))); });
+      (head.active_tasks || []).forEach(function (task) { container.append(note("Open " + task.kind + " task " + task.id + " · " + (task.progress && task.progress.state || "worker phase unknown") + " · phase recorded " + age(task.progress && task.progress.observed_at))); taskBuild(container, task.progress); });
       if (head.first_dispatch_at) container.append(note("Head first dispatched " + age(head.first_dispatch_at) + "."));
       var claims = (queue.claims || []).filter(function (c) { return c.batch_id === head.id; });
       container.append(note(claims.length ? claims.map(function (c) { return c.operation + " by " + c.worker + " · lease expires " + timestamp(c.expires_at); }).join("; ") : "No active operation claim was observed on the head."));
@@ -177,6 +234,7 @@
       if (i.progress && i.progress.coverage === "observed") {
         var p = i.progress;
         row.append(note("Worker phase " + p.state + " · observed " + age(p.observed_at) + " · " + p.providers.join(", ") + " / " + p.models.join(", ") + " · recorded cost subtotal $" + p.cost.recorded_usd.toFixed(2) + " (" + p.cost.recorded_attempts + " known attempts; " + p.cost.unknown_attempts + " missing estimates)"));
+        taskBuild(row, p);
         var tokenLabels = {input_tokens:"input", cached_input_tokens:"cached input", output_tokens:"output", reasoning_output_tokens:"reasoning output", total_tokens:"total"};
         row.append(note("Recorded tokens · " + (p.usage ? Object.keys(tokenLabels).map(function (key) { var u=p.usage[key]; return tokenLabels[key] + ": " + (u && u.recorded_attempts ? u.recorded_tokens + " recorded (" + u.recorded_attempts + " known attempts; " + u.unknown_attempts + " missing)" : "unknown"); }).join(" · ") : "unavailable") + ". Live or unretained attempts may be absent."));
       }
@@ -255,19 +313,34 @@
     return null;
   }
   function runnerView() {
-    view.append(sourceNote("hosts"));
-    poolSummary(view);
+    if (route().params.has("jobs") || route().params.has("run")) { view.append(link("← Runner activity", "#runners")); jobsView(view); return; }
+    if (!route().params.has("host")) poolSummary(view);
+    var selected = route().params.get("host"), hosts = data.hosts && data.hosts.hosts || [];
+    if (selected) view.append(link("← All runners", "#runners"));
+    if (!selected) {
+      view.append(heading("Dedicated hosts"), note("Host reports count guests and worker processes; the activity table counts GitHub jobs.", "ops-caption"));
+      var table = el("table", undefined, "ops-table ops-hosts"), body = el("tbody"); table.setAttribute("role","table"); body.setAttribute("role","rowgroup");
+      table.append(append(el("thead"), append(el("tr"), el("th", "Host"), el("th", "Telemetry"), el("th", "CI guests"), el("th", "Workers"), el("th", "CPU idle"), el("th", "RAM available"))));
+      hosts.forEach(function(h) {
+        var row = el("tr"), r = h.resources || {}, known = !!h.observed_at, current = known && h.connected && freshness(h.observed_at,60) === "observed"; row.setAttribute("role","row"); if(!current) row.classList.add("ops-stale");
+        var values = [link(h.alias, "#runners?host=" + encodeURIComponent(h.machine_id)), known ? (h.connected ? freshness(h.observed_at,60) : "disconnected") + " · " + age(h.observed_at) : "not reporting", current ? String((h.slots || []).filter(function(s) { return s.busy; }).length) + " busy / " + (h.slots || []).length + " observed" : "unknown", current ? String((h.workers || []).filter(function(w) { return w.alive; }).length) + " alive" : "unknown", !current || h.cpu_idle_fraction === null || h.cpu_idle_fraction === undefined ? "unknown" : Math.round(h.cpu_idle_fraction * 100) + "%", !current || r.memory_available === null || r.memory_available === undefined ? "unknown" : (r.memory_available / 1073741824).toFixed(1) + " GiB"];
+        if (!current) { row.classList.add("ops-unobserved"); var name = el("td"), missing = el("td", values[1] + " · host metrics unavailable"); missing.colSpan = 5; name.setAttribute("role","cell"); missing.setAttribute("role","cell"); name.append(values[0]); row.append(name,missing); body.append(row); return; }
+        values.forEach(function(v,index) { var td = el("td"); td.setAttribute("role","cell"); td.dataset.label = ["Host","Telemetry","CI guests","Workers","CPU idle","RAM available"][index]; if (typeof v === "string") td.textContent = v; else td.append(v); row.append(td); }); body.append(row);
+      });
+      table.append(body); view.append(hosts.length ? table : empty("No host telemetry published. Job activity remains independent."));
+    }
+    var capacity = el("details", undefined, "ops-diagnostics"); capacity.append(el("summary", "Source coverage and organisation capacity cache")); capacity.append(sourceNote("jobs"), sourceNote("hosts"));
     var contexts = (data.hosts && data.hosts.hosts || []).filter(function (h) { return h.capacity_context && h.capacity_context.coverage === "observed" && h.capacity_context.observed_at; }).sort(function (a,b) { return Date.parse(b.capacity_context.observed_at)-Date.parse(a.capacity_context.observed_at); });
-    view.append(heading("Shared capacity cache"));
+
     if (contexts.length) {
       var context = contexts[0].capacity_context, counts = context.running_jobs;
-      view.append(note("All organisation workflow jobs · observed " + age(context.observed_at) + " · " + freshness(context.observed_at,300) + (context.observer_error ? " · cache observer error; last known counts" : "")));
-      view.append(note("Running · GitHub " + (counts.github ?? "unknown") + " · Namespace " + (counts.namespace ?? "unknown") + " · self-hosted " + (counts["self-hosted"] ?? "unknown") + ". These cache totals have a different scope from the installation-visible job table and do not establish free slots."));
-    } else view.append(note("Shared capacity cache unavailable. No observation establishes spare cloud capacity."));
+      capacity.append(note("All organisation workflow jobs · observed " + age(context.observed_at) + " · " + freshness(context.observed_at,300) + (context.observer_error ? " · cache observer error; last known counts" : "")));
+      capacity.append(note("Running · GitHub " + (counts.github ?? "unknown") + " · Namespace " + (counts.namespace ?? "unknown") + " · self-hosted " + (counts["self-hosted"] ?? "unknown") + ". These cache totals have a different scope from the installation-visible job table and do not establish free slots."));
+    } else capacity.append(note("Shared capacity cache unavailable. No observation establishes spare cloud capacity."));
     if (data.hosts) (data.hosts.pools || []).filter(function (p) { return !p.machine_id; }).forEach(function (p) {
-      append(view, heading(p.label), note(p.id === "namespace" ? "Installation-visible jobs only. Requested profiles do not establish account-wide workloads, billed usage or physical utilization." : "Physical resource metrics unavailable. Job lifecycle is observed through GitHub."));
+      append(capacity, heading(p.label), note(p.id === "namespace" ? "Installation-visible jobs only. Requested profiles do not establish account-wide workloads, billed usage or physical utilization." : "Physical resource metrics unavailable. Job lifecycle is observed through GitHub."));
     });
-    if (data.hosts) (data.hosts.hosts || []).filter(function (h) { return !route().params.get("host") || route().params.get("host") === h.machine_id || route().params.get("host") === h.alias; }).forEach(function (h) {
+    if (data.hosts) (data.hosts.hosts || []).filter(function (h) { return route().params.get("host") === h.machine_id || route().params.get("host") === h.alias; }).forEach(function (h) {
       var card = el("article", undefined, "ops-host"); card.id = "host-" + h.machine_id;
       append(card, heading(h.alias), note("Permanent host " + h.machine_id + " · controller " + (h.source_revision || "unknown")), badges([freshness(h.observed_at, 60), "facts " + age(h.observed_at), "stream " + (h.connected ? age(h.transport_at) : "disconnected") ]));
       if (h.slots_truncated || h.workers_truncated) card.append(note("Host slot/worker details are truncated.", "ops-warning"));
@@ -289,7 +362,7 @@
       (h.workers || []).forEach(function (w) { card.append(note("Worker " + w.id + " · " + w.state + " · " + (w.alive ? "reported alive" : "not marked alive") + " · heartbeat " + age(w.observed_at) + " · " + freshness(w.observed_at, 60))); });
       if (!(h.slots || []).length) card.append(note("No slots in this observation. This does not establish available capacity.")); view.append(card);
     });
-    jobsView(view);
+    view.append(capacity);
   }
   function jobsView(container) {
     container.append(sourceNote("jobs")); if (!data.jobs) return;
@@ -297,30 +370,37 @@
     var counts = data.jobs.counts;
     if (data.jobs.truncated || data.jobs.coverage === "partial" || (data.jobs.partition_errors || []).length) container.append(note("Job inventory is partial; counts describe retained observations and may be lower bounds.", "ops-warning"));
     append(container, heading("CI jobs"), badges([counts.running + " running", counts.queued_jobs + " queued jobs", counts.pending_workflows + " workflows awaiting observed jobs"]));
-    var filters = el("div", undefined, "ops-filters"), pools = ["all"].concat(Array.from(new Set(jobs.map(function (j) { return j.pool; }))));
-    append(filters, select("Pool", pools, poolFilter, function (v) { poolFilter = v; jobPage = 0; render(); }), select("State", ["all", "active", "completed", "queued", "in_progress"], statusFilter, function (v) { statusFilter = v; jobPage = 0; render(); }), select("Class", ["all", "pr_build", "staging_build", "other_build", "control", "maintenance", "other"], classFilter, function (v) { classFilter = v; jobPage = 0; render(); })); container.append(filters);
+    var completed = data.jobs.recent_completed;
+    function validWindow(value) { return value && Number.isSafeInteger(value.limit) && value.limit > 0 && Number.isSafeInteger(value.returned) && value.returned >= 0 && value.returned <= value.limit && typeof value.truncated === "boolean"; }
+    if (completed && validWindow(completed.builds) && validWindow(completed.other)) {
+      function describeWindow(label, value) { return label + ": " + value.returned + " shown from a window of up to " + value.limit + (value.truncated ? "; additional results omitted." : "."); }
+      container.append(note(describeWindow("Recent completed builds", completed.builds) + " " + describeWindow("Other completed jobs", completed.other), completed.builds.truncated || completed.other.truncated ? "ops-warning" : "ops-note"));
+    }
+    var filters = el("div", undefined, "ops-filters"), pools = ["all"].concat(Array.from(new Set(jobs.map(function (j) { return j.pool; }).concat(poolFilter === "all" ? [] : [poolFilter]))));
+    append(filters, select("Pool", pools, poolFilter, function (v) { poolFilter = v; jobPage = 0; history.replaceState(null, "", "#runners?jobs=1" + (v === "all" ? "" : "&pool=" + encodeURIComponent(v))); render(); }), select("State", ["all", "active", "completed", "queued", "in_progress"], statusFilter, function (v) { statusFilter = v; jobPage = 0; render(); }), select("Class", ["all", "builds", "pr_build", "staging_build", "other_build", "control", "maintenance", "other"], classFilter, function (v) { classFilter = v; jobPage = 0; render(); })); container.append(filters);
     function options(key) { return ["all"].concat(Array.from(new Set(jobs.map(function (j) { return key(j) || "unknown"; }))).sort()); }
-    append(filters,
+    var extraFilters = el("details", undefined, "ops-diagnostics"), extraBody = el("div", undefined, "ops-filters"); extraFilters.append(el("summary", "More job filters"), extraBody); container.append(extraFilters);
+    append(extraBody,
       select("Repository", options(function (j) { return j.repository; }), repoFilter, function (v) { repoFilter = v; jobPage = 0; render(); }),
       select("Workflow", options(function (j) { return j.workflow; }), workflowFilter, function (v) { workflowFilter = v; jobPage = 0; render(); }),
       select("Requested OS / architecture", options(platform), platformFilter, function (v) { platformFilter = v; jobPage = 0; render(); }),
       select("Assigned host", options(function (j) { var h = hostFor(j); return h ? h.host.alias : "unresolved"; }), hostFilter, function (v) { hostFilter = v; jobPage = 0; render(); }),
       select("Job age", [{value:"all",label:"all"},{value:"1800",label:"at least 30 min"},{value:"3600",label:"at least 1 hour"}], ageFilter, function (v) { ageFilter = v; jobPage = 0; render(); }));
     var deep = route().params;
-    var filtered = jobs.filter(function (j) { var host = hostFor(j); return (!deep.get("repo") || deep.get("repo") === j.repository) && (repoFilter === "all" || j.repository === repoFilter) && (workflowFilter === "all" || (j.workflow || "unknown") === workflowFilter) && (platformFilter === "all" || platform(j) === platformFilter) && (hostFilter === "all" || (host ? host.host.alias : "unresolved") === hostFilter) && (ageFilter === "all" || (Date.now() - Date.parse(j.created_at)) / 1000 >= Number(ageFilter)) && (!deep.get("run") || deep.get("run") === j.run_id) && (!deep.get("attempt") || deep.get("attempt") === String(j.run_attempt)) && (!deep.get("job") || deep.get("job") === j.id) && (poolFilter === "all" || j.pool === poolFilter) && (statusFilter === "all" || (statusFilter === "active" ? j.active : j.status === statusFilter)) && (classFilter === "all" || j.job_class === classFilter); });
-    filtered.slice(jobPage * 100, (jobPage + 1) * 100).forEach(function (j) {
-      var row = el("article", undefined, "ops-job"), host = hostFor(j), current = (j.steps || []).find(function (s) { return s.started_at && !s.completed_at; }), progress = j.progress || {};
-      append(row, link(j.repository + " · " + j.name + " · run " + j.run_id + " / " + j.run_attempt + " / job " + j.id, j.url), badges([j.pool, platform(j), j.status + (j.conclusion ? " / " + j.conclusion : ""), j.job_class]),
-        note(host ? "Host " + host.host.alias + " · slot " + host.slot.slot + " · VM " + host.slot.instance_id + " (joined by " + host.evidence + ")" : "Runner " + (j.runner_name || "unassigned") + " · host association unknown"),
-        note("Phase: " + (progress.phase || (current && current.name) || (j.status === "queued" ? "waiting for runner / job start" : "unknown")) + " · progress " + (progress.coverage || "unsupported") + (progress.last_progress_at ? " · last change " + age(progress.last_progress_at) : "")));
-      if (host && host.slot.compiler) {
-        var c = host.slot.compiler;
-        row.append(note("This VM's compiler observer " + freshness(c.observed_at, 15) + " · " + (c.waiting_now === null ? "unknown" : c.waiting_now) + " waiting · " + (c.running_now === null ? "unknown" : c.running_now) + " running · oldest admission wait " + (c.oldest_wait === null ? "unknown" : Math.round(c.oldest_wait) + "s")));
-      }
-      if (progress.completed_modules !== null && progress.completed_modules !== undefined) row.append(note(progress.completed_modules + " completed modules · " + (progress.active_compilers === null ? "unknown" : progress.active_compilers) + " active compilers · CPU " + (progress.cpu_seconds === null ? "unknown" : progress.cpu_seconds + "s") + " · reporter " + freshness(progress.heartbeat_at, 45)));
-      if (j.queue_binding) append(row, link("Queue batch " + j.queue_binding.batch_id + " · version " + j.queue_binding.version, batchURL(j.queue_binding.batch_id)), note("Queue-bound candidate " + j.queue_binding.candidate.slice(0, 12) + " · exact run and attempt"));
-      if (j.reported_candidate) row.append(note("Run-reported candidate " + j.reported_candidate.slice(0, 12) + " · " + j.candidate_binding + ". Queue verdicts remain authoritative.")); container.append(row);
-    });
+    var filtered = jobs.filter(function (j) { var host = hostFor(j); return (!deep.get("repo") || deep.get("repo") === j.repository) && (repoFilter === "all" || j.repository === repoFilter) && (workflowFilter === "all" || (j.workflow || "unknown") === workflowFilter) && (platformFilter === "all" || platform(j) === platformFilter) && (hostFilter === "all" || (host ? host.host.alias : "unresolved") === hostFilter) && (ageFilter === "all" || (Date.now() - Date.parse(j.created_at)) / 1000 >= Number(ageFilter)) && (!deep.get("run") || deep.get("run") === j.run_id) && (!deep.get("attempt") || deep.get("attempt") === String(j.run_attempt)) && (!deep.get("job") || deep.get("job") === j.id) && (poolFilter === "all" || j.pool === poolFilter) && (statusFilter === "all" || (statusFilter === "active" ? j.active : j.status === statusFilter)) && (classFilter === "all" || (classFilter === "builds" ? ["pr_build","staging_build","other_build"].includes(j.job_class) : j.job_class === classFilter)); });
+    var table = el("table", undefined, "ops-table ops-jobs"), body = el("tbody");
+    table.append(append(el("thead"), append(el("tr"), el("th", "Job"), el("th", "Pool / host"), el("th", "State"), el("th", "Age / progress"))));
+    filtered.slice(jobPage * 100, (jobPage + 1) * 100).forEach(function(j) {
+      var row = el("tr"), host = hostFor(j), progress = j.progress || {}, name = el("td"), provider = el("td"), state = el("td"), ageCell = el("td");
+      append(name, link(j.name,j.url), el("small", j.repository + " · run " + j.run_id + " / " + j.run_attempt, "ops-outcome"));
+      provider.textContent = poolName(j.pool) + (host ? " · " + host.host.alias + " · slot " + host.slot.slot : "");
+      state.textContent = j.conclusion || j.status;
+      ageCell.textContent = j.active ? duration(j.status === "in_progress" && j.assigned ? j.started_at : j.created_at) : age(j.completed_at);
+      if (progress.phase) ageCell.append(el("small", progress.phase, "ops-outcome"));
+      if (progress.completed_modules !== null && progress.completed_modules !== undefined) ageCell.append(el("small", progress.completed_modules + " completed modules", "ops-outcome"));
+      if (j.queue_binding) name.append(link("Batch " + j.queue_binding.batch_id, batchURL(j.queue_binding.batch_id)));
+      append(row,name,provider,state,ageCell); body.append(row);
+    }); table.append(body); container.append(append(el("div",undefined,"ops-scroll"),table));
     pager(container, jobPage, filtered.length, function (n) { jobPage = n; render(); });
     (data.jobs.observer.inventory || []).forEach(function (i) { container.append(note(i.repository + " · inventory confirmed through " + (i.confirmed_through ? timestamp(i.confirmed_through * 1000) : "unknown"))); });
     if (workflows.length) { container.append(heading("Workflows without observed active jobs")); workflows.slice(0, 20).forEach(function (w) { container.append(link(w.repository + " · run " + w.run_id + " / " + w.run_attempt + " · " + w.status, w.url)); }); }
@@ -416,22 +496,32 @@
   }
   function render() {
     var active = route().tab;
+    var focused = document.activeElement, focusKey = focused && view.contains(focused) ? {key:focused.dataset.focusKey, tag:focused.tagName, href:focused.getAttribute("href"), label:focused.getAttribute("aria-label"), text:focused.textContent} : null;
     var editing = document.activeElement && root.contains(document.activeElement) && document.activeElement.tagName === "INPUT";
     var editingState = editing ? { value: document.activeElement.value, start: document.activeElement.selectionStart, end: document.activeElement.selectionEnd } : null;
+    var opened = Array.from(view.querySelectorAll("details[open]")).map(function(d) { return d.dataset.key || d.querySelector("summary")?.textContent; });
     view.replaceChildren();
     root.querySelectorAll("[data-ops-tab]").forEach(function (tab) { if (tab.dataset.opsTab === active) tab.setAttribute("aria-current", "page"); else tab.removeAttribute("aria-current"); });
     var state = manifest ? freshness(manifest.generated_at, 90) : "unavailable";
-    health.textContent = "Operations publisher " + state + (manifest ? " · published " + age(manifest.generated_at) : "") + (disconnected ? " · fetch failed; last successful observations retained" : "") + ".";
+    health.textContent = (state === "observed" ? "Updated " : "Updates " + state + " · last received ") + (manifest ? age(manifest.generated_at) : "unknown") + (disconnected ? " · fetch failed; last successful observations retained" : "") + ".";
     health.className = "ops-status" + (disconnected || state !== "observed" ? " ops-warning" : "");
+    var announcement = root.querySelector("[data-ops-announcement]"), announcementText = disconnected ? "Updates failed; showing last received observations." : state === "observed" ? "Updates current." : "Updates " + state + ".";
+    if (announcement && announcement.textContent !== announcementText) announcement.textContent = announcementText;
     if (errorText) view.append(note(errorText, "ops-warning"));
-    if (active === "now") { queueSummary(view); poolSummary(view); jobsView(view); }
+    if (active === "now") { queueBrief(view); poolSummary(view); }
     else if (active === "queue") queueView(); else if (active === "runners") runnerView(); else historyView();
+    view.querySelectorAll("details").forEach(function(d) { if (opened.includes(d.dataset.key || d.querySelector("summary")?.textContent)) d.open = true; });
+    if (focusKey && !editingState) {
+      var control = Array.from(view.querySelectorAll("a,button,select,summary")).find(function(c) { return c.tagName === focusKey.tag && (focusKey.key ? c.dataset.focusKey === focusKey.key : focusKey.href ? c.getAttribute("href") === focusKey.href : focusKey.label ? c.getAttribute("aria-label") === focusKey.label : c.textContent === focusKey.text); });
+      if (control) control.focus({preventScroll:true});
+    }
     if (editingState) {
       var restored = root.querySelector('input[type="search"]');
       if (restored) { restored.value = editingState.value; restored.focus({ preventScroll: true }); restored.setSelectionRange(editingState.start, editingState.end); }
     }
   }
   async function navigate() {
+    poolFilter = route().params.get("pool") || "all"; classFilter = route().params.get("class") || "all"; jobPage = 0;
     render(); var params = route().params, batch = params.get("batch"), pr = params.get("pr");
     if (route().tab === "history" && data.host_history && data.host_history.hosts.length) await loadHostHistory(selectedHistoryHost || data.host_history.hosts[0].machine_id);
     if (pr && data.queue) await lookup(pr);
@@ -461,6 +551,10 @@
             if (entry[0] === "queue" && data.queue) { value.loaded_waiting = data.queue.loaded_waiting; value.waiting_observed_at = data.queue.waiting_observed_at; }
             data[entry[0]] = value; manifest.domains[entry[0]] = entry[1]; render();
             if (entry[0] === "queue" && route().tab === "queue" && route().params.get("pr")) await lookup(route().params.get("pr"));
+            if (entry[0] === "queue" && route().tab === "queue") {
+              var batchID = route().params.get("batch") || selectedBatch || (value.batches.find(function (b) { return b.state === "head"; }) || value.batches[0] || {}).id;
+              if (batchID && /^\d+$/.test(batchID)) await loadBatch(batchID);
+            }
             if (entry[0] === "queue" && value.waiting_pages) {
               try { value.loaded_waiting = await records(value.waiting_pages); value.waiting_observed_at = value.observed_at; value.waiting_error = false; }
               catch (_) { value.waiting_error = true; }
@@ -472,9 +566,8 @@
         // Slow or failed domains retain their own facts without delaying healthy ones.
         etag = changes.filter(Boolean).length === Object.values(next.domains).filter(function (d) { return d.url; }).length ? response.headers.get("etag") : null;
         if (route().tab === "history" && data.host_history && data.host_history.hosts.length) await loadHostHistory(selectedHistoryHost || data.host_history.hosts[0].machine_id);
-        if (detail && selectedBatch && data.queue && route().tab === "queue") await loadBatch(selectedBatch);
       }
-      disconnected = false; delay = 15000; render();
+      disconnected = false; delay = pollInterval; render();
       if (data.queue && route().tab === "queue" && !detail) await navigate();
     } catch (_) { disconnected = true; delay = Math.min(60000, delay * 2); render(); }
     polling = false;

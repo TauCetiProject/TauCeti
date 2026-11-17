@@ -61,7 +61,7 @@ theorem e7Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 56) :
   · intro h
     induction h with
     | refl => simp
-    | @tail b c h hbc ih =>
+    | @tail b c _ hbc ih =>
       obtain ⟨i, hi, rfl⟩ := (e7MinusculeRaisingStep_iff _ _).mp hbc
       have hroot : α i ∈ posRootCone P e7SimplyConnectedBase := by
         simpa only [e7SimplyConnectedRootDatum_root] using

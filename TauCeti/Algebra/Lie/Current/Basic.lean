@@ -27,8 +27,8 @@ currents of a perfect Lie algebra are perfect.
 Every current has a finite lower bound. The coefficient, order and truncation API
 also applies to any coefficient module, without a Lie structure.
 
-When `L` is free, coefficients determine a current, and membership in an order
-submodule is equivalent to vanishing of all lower coefficients. These descriptions
+When `L` is free, coefficients determine a current. For any coefficient module, membership
+in an order submodule is equivalent to vanishing of all lower coefficients. These descriptions
 make the filtration independent of a choice of basis. No finite-dimensionality is
 needed for these statements: in infinite dimension, the tensor product still only
 contains finite sums of scalar series times vectors. It need not contain every
@@ -180,23 +180,6 @@ theorem coeff_eq_zero_of_mem_orderSubmodule {N n : ℤ} {u : currentAlgebra R L}
   | add u v _ _ hu hv => simp [hu, hv]
   | smul r u _ hu => simp [hu]
 
-/-- Vanishing of lower coefficients characterizes order for a free coefficient module. -/
-theorem mem_orderSubmodule_iff [Module.Free R L] (N : ℤ) (u : currentAlgebra R L) :
-    u ∈ orderSubmodule R L N ↔ ∀ n < N, coeff R L n u = 0 := by
-  classical
-  refine ⟨fun hu n hn ↦ coeff_eq_zero_of_mem_orderSubmodule R L hu hn, fun hu ↦ ?_⟩
-  let b := Module.Free.chooseBasis R L
-  let e := TensorProduct.equivFinsuppOfBasisRight (M := R⸨X⸩) b
-  rw [← e.symm_apply_apply u, TensorProduct.equivFinsuppOfBasisRight_symm_apply]
-  apply Submodule.sum_mem
-  intro i hi
-  apply tmul_mem_orderSubmodule
-  rw [HahnSeries.le_orderTop_iff_forall]
-  intro n hn
-  rw [HahnModule.coeff_equivFinsuppOfBasisRight, HahnModule.coeff_tensorProductToHahnModule,
-    hu n (by exact_mod_cast hn)]
-  simp
-
 /-- Increasing the required order makes the order submodule smaller. -/
 theorem orderSubmodule_antitone : Antitone (orderSubmodule R L) := by
   intro M N hMN
@@ -256,6 +239,47 @@ def trunc (N : ℤ) : currentAlgebra R L →ₗ[R] R[T;T⁻¹] ⊗[R] L :=
 @[simp]
 theorem trunc_tmul (N : ℤ) (f : R⸨X⸩) (x : L) :
     trunc R L N (f ⊗ₜ x) = _root_.LaurentSeries.trunc N f ⊗ₜ x := (rfl)
+
+/-- Truncation retains exactly the coefficients strictly below its cutoff, in the standard
+monomial coordinates on polynomial currents over any coefficient module. -/
+@[simp]
+theorem equivFinsuppOfBasisLeft_trunc (N n : ℤ) (u : currentAlgebra R L) :
+    TensorProduct.equivFinsuppOfBasisLeft (AddMonoidAlgebra.basis ℤ R)
+      (trunc R L N u) n = if n < N then coeff R L n u else 0 := by
+  classical
+  have hrepr (p : R[T;T⁻¹]) : (AddMonoidAlgebra.basis ℤ R).repr p = p.coeff := rfl
+  induction u using TensorProduct.inductionOn with
+  | tmul f x =>
+    simp only [trunc_tmul, TensorProduct.equivFinsuppOfBasisLeft_apply_tmul_apply,
+      hrepr, coeff_tmul]
+    by_cases hn : n < N <;> simp [hn]
+  | add u v hu hv => by_cases hn : n < N <;> simp [hu, hv, hn]
+
+/-- Including a polynomial truncation back into formal currents changes the current only in
+orders at least the cutoff, for any coefficient module. -/
+theorem rTensor_toLaurentSeries_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
+    (IsScalarTower.toAlgHom R R[T;T⁻¹] R⸨X⸩).toLinearMap.rTensor L (trunc R L N u) - u ∈
+      orderSubmodule R L N := by
+  induction u using TensorProduct.inductionOn with
+  | tmul f x =>
+    rw [trunc_tmul, LinearMap.rTensor_tmul, ← TensorProduct.sub_tmul]
+    exact tmul_mem_orderSubmodule R L N
+      (_root_.LaurentSeries.le_orderTop_sub_toLaurentSeries_trunc N f) x
+  | add u v hu hv =>
+    simpa only [map_add, add_sub_add_comm] using (orderSubmodule R L N).add_mem hu hv
+
+/-- Vanishing of lower coefficients characterizes order for any coefficient module. -/
+theorem mem_orderSubmodule_iff (N : ℤ) (u : currentAlgebra R L) :
+    u ∈ orderSubmodule R L N ↔ ∀ n < N, coeff R L n u = 0 := by
+  classical
+  refine ⟨fun hu n hn ↦ coeff_eq_zero_of_mem_orderSubmodule R L hu hn, fun hu ↦ ?_⟩
+  have ht : trunc R L N u = 0 :=
+    (TensorProduct.equivFinsuppOfBasisLeft (AddMonoidAlgebra.basis ℤ R)).injective <| by
+      ext n
+      rw [equivFinsuppOfBasisLeft_trunc, map_zero, Finsupp.zero_apply, ite_eq_right_iff]
+      exact hu n
+  simpa [ht] using (orderSubmodule R L N).neg_mem
+    (rTensor_toLaurentSeries_trunc_sub_mem_orderSubmodule R L N u)
 
 /-- Polynomial currents of order below `N`, spanned by the modes `t^m ⊗ x` with `m < N`. For
 `N = 0` these are the negative currents `t⁻¹ L[t⁻¹]`. -/
@@ -386,10 +410,7 @@ theorem derivedSeries_one_eq_top (hL : LieAlgebra.derivedSeries R L 1 = ⊤) :
 
 /-- The inclusion of polynomial currents into formal currents. -/
 def ofLoop : LieAlgebra.loopAlgebra R ℤ L →ₗ⁅R⁆ currentAlgebra R L :=
-  LieAlgebra.ExtendScalars.map
-    { toRingHom := LaurentPolynomial.toLaurentSeries
-      commutes' := fun r ↦ by
-        simp [HahnSeries.algebraMap_apply] } LieHom.id
+  LieAlgebra.ExtendScalars.map (IsScalarTower.toAlgHom R R[T;T⁻¹] R⸨X⸩) LieHom.id
 
 @[simp]
 theorem ofLoop_tmul (p : R[T;T⁻¹]) (x : L) :
@@ -421,23 +442,16 @@ theorem ofLoop_injective : Function.Injective (ofLoop R L) := by
 theorem toFinsupp_trunc (N n : ℤ) (u : currentAlgebra R L) :
     LieAlgebra.LoopAlgebra.toFinsupp R ℤ L (trunc R L N u) n =
       if n < N then coeff R L n u else 0 := by
-  rw [← coeff_ofLoop]
-  induction u using TensorProduct.inductionOn with
-  | tmul f x =>
-    by_cases hn : n < N <;> simp [hn]
-  | add u v hu hv =>
-    by_cases hn : n < N <;> simp [hu, hv, hn]
+  -- Mathlib's polymorphic coordinate map uses classical decidable equality on its index type.
+  have hdec : (fun a b : ℤ ↦ Classical.propDecidable (a = b)) = Int.instDecidableEq :=
+    Subsingleton.elim _ _
+  rw [LieAlgebra.LoopAlgebra.toFinsupp, hdec]
+  exact equivFinsuppOfBasisLeft_trunc R L N n u
 
 /-- The truncation error has order at least the cutoff, without a freeness assumption. -/
 theorem ofLoop_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
-    ofLoop R L (trunc R L N u) - u ∈ orderSubmodule R L N := by
-  induction u using TensorProduct.inductionOn with
-  | tmul f x =>
-    rw [trunc_tmul, ofLoop_tmul, ← TensorProduct.sub_tmul]
-    exact tmul_mem_orderSubmodule R L N
-      (_root_.LaurentSeries.le_orderTop_sub_toLaurentSeries_trunc N f) x
-  | add u v hu hv =>
-    simpa only [map_add, add_sub_add_comm] using (orderSubmodule R L N).add_mem hu hv
+    ofLoop R L (trunc R L N u) - u ∈ orderSubmodule R L N :=
+  rTensor_toLaurentSeries_trunc_sub_mem_orderSubmodule R L N u
 
 /-- Truncating a current preserves every lower order bound, including when the cutoff lies
 below that bound. No freeness of the coefficient module is needed. -/

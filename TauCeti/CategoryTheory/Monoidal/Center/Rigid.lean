@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.CategoryTheory.Monoidal.Center.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Drinfeld
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
@@ -56,7 +57,9 @@ category.
   right dual functor of the centre are those of `C`, as are the comparisons
   `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` and `(𝟙_ (Center C))ᘁ ≅ 𝟙_ (Center C)` they are built from;
 * `CategoryTheory.Center.forget_mapRightDualIso`: the comparison of the forgetful functor with
-  right duals is the identity.
+  right duals is the identity;
+* `CategoryTheory.Center.drinfeldIso_hom_f`: the Drinfeld isomorphism `X ≅ Xᘁᘁ` of the centre,
+  computed in `C` from the half-braiding of `X` at `X.1ᘁ`.
 
 ## References
 
@@ -474,6 +477,19 @@ theorem forget_mapRightDualIso (X : Center C) :
   have h : 𝟙 X.1ᘁ ▷ X.1 ≫ ε_ X.1 X.1ᘁ = ε_ X.1 X.1ᘁ := by simp
   exact (Category.id_comp _).trans ((Category.comp_id _).trans ((evaluation_f (X := X)).trans
     h.symm))
+
+/-- The Drinfeld isomorphism `X ≅ Xᘁᘁ` of an object `X` of the centre is computed in `C`: it
+inserts the coevaluation of `X.1ᘁ`, moves `X.1` past `X.1ᘁ` with the half-braiding of `X`, and
+contracts `X.1` against `X.1ᘁ`. -/
+theorem drinfeldIso_hom_f (X : Center C) :
+    (drinfeldIso X).hom.f = (ρ_ X.1).inv ≫ X.1 ◁ η_ (X.1ᘁ : C) ((X.1ᘁ : C)ᘁ : C) ≫
+      (α_ X.1 X.1ᘁ ((X.1ᘁ : C)ᘁ : C)).inv ≫ (X.2.β X.1ᘁ).hom ▷ ((X.1ᘁ : C)ᘁ : C) ≫
+        ε_ X.1 X.1ᘁ ▷ ((X.1ᘁ : C)ᘁ : C) ≫ (λ_ ((X.1ᘁ : C)ᘁ : C)).hom := by
+  rw [drinfeldIso_hom_eq]
+  simp only [rightDual_fst, comp_f, rightUnitor_inv_f, whiskerLeft_f, coevaluation_f,
+    associator_inv_f, whiskerRight_f, braiding_hom_f', evaluation_f, leftUnitor_hom_f]
+  -- The two sides differ only in how the objects `(Xᘁᘁ).1` and `X.1ᘁᘁ` are written.
+  rfl
 
 end Center
 

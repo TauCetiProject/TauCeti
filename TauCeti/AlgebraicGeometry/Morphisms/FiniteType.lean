@@ -18,7 +18,12 @@ on closed points is exactly the closed-point part of its full topological image.
 
 The file also records the affine charts of a morphism `X ⟶ Spec A` locally of finite type:
 every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `A`
-(`Scheme.Hom.exists_isOpenImmersion_finiteType`).
+(`Scheme.Hom.exists_isOpenImmersion_finiteType`), and the sections over every affine open are of
+finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`). The structure morphism
+`Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type exactly when `B` is of finite type
+over `k` (`LocallyOfFiniteType.Spec_algebraMap_iff`, a case of `LocallyOfFiniteType.SpecMap_iff`
+for any ring map), and it is registered as an instance in the finite-type case
+(`LocallyOfFiniteType.Spec_algebraMap`).
 
 This complements Mathlib's `Scheme.Hom.closedPoints_subset_preimage_closedPoints` with the
 lifting direction, needed to compare rational and topological orbit images.
@@ -52,6 +57,37 @@ theorem exists_isOpenImmersion_finiteType (x : X) :
   exact ⟨R, g, inferInstance, y, φ, hφ, rfl,
     (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ inferInstance)⟩
 
+/-- On an affine open `U` of the source of a morphism `f : X ⟶ Spec A` locally of finite type,
+the ring map `A ⟶ Γ(X, U)` induced by `f` is of finite type. -/
+theorem finiteType_ΓSpecIso_inv_comp_appLE {U : X.Opens} (hU : IsAffineOpen U) :
+    ((Scheme.ΓSpecIso A).inv ≫ f.appLE ⊤ U le_top).hom.FiniteType :=
+  (f.finiteType_appLE (isAffineOpen_top _) hU le_top).comp
+    (.of_surjective _ (Scheme.ΓSpecIso A).symm.commRingCatIsoToRingEquiv.surjective)
+
+/-- The morphism `Spec S ⟶ Spec R` induced by a ring map `f : R ⟶ S` is locally of finite type
+if and only if `f` is of finite type. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.LocallyOfFiniteType.SpecMap_iff {R S : CommRingCat.{u}}
+    (f : R ⟶ S) : LocallyOfFiniteType (Spec.map f) ↔ f.hom.FiniteType :=
+  HasRingHomProperty.Spec_iff
+
+/-- The structure morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type if
+and only if `B` is of finite type over `k`. -/
+-- `high` priority: `Spec.algebraMap` is reducible, so `SpecMap_iff` would otherwise fire first
+-- and leave `(algebraMap k B).FiniteType` rather than `Algebra.FiniteType k B`.
+@[simp high]
+theorem _root_.AlgebraicGeometry.LocallyOfFiniteType.Spec_algebraMap_iff {k B : Type u}
+    [CommRing k] [CommRing B] [Algebra k B] :
+    LocallyOfFiniteType (Spec.algebraMap k B) ↔ Algebra.FiniteType k B :=
+  (LocallyOfFiniteType.SpecMap_iff _).trans RingHom.finiteType_algebraMap
+
+/-- The structure morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` of finite type is locally of
+finite type. -/
+instance _root_.AlgebraicGeometry.LocallyOfFiniteType.Spec_algebraMap {k B : Type u}
+    [CommRing k] [CommRing B] [Algebra k B] [Algebra.FiniteType k B] :
+    LocallyOfFiniteType (Spec.algebraMap k B) :=
+  LocallyOfFiniteType.Spec_algebraMap_iff.mpr inferInstance
+
 end Chart
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFiniteType f] [JacobsonSpace Y]
@@ -66,7 +102,8 @@ theorem image_closedPoints_eq_range_inter_closedPoints :
   · rintro ⟨x, hx, rfl⟩
     exact ⟨⟨x, rfl⟩, f.closedPoints_subset_preimage_closedPoints hx⟩
   · rintro ⟨hyf, hy⟩
-    obtain ⟨x, hx, rfl⟩ := f.continuous.exists_isClosed_singleton_of_mem_range hy hyf
+    obtain ⟨x, hx, rfl⟩ := f.continuous.exists_isClosed_singleton_of_mem_range
+      (IsClosed.isLocallyClosed hy) hyf
     exact ⟨x, hx, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom

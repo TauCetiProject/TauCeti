@@ -95,6 +95,39 @@ variable {w : J → ℝ≥0} {μ : J → Measure (EuclideanSpace ℝ ι)} {S : M
   {γ : Measure (J → EuclideanSpace ℝ ι)}
 
 open scoped Classical in
+/-- **Averaging the Fenchel–Young bounds.** Let `W` be the centred weighted mean of the coordinates
+`x j - m j` (that is, `‖W x‖ ^ 2 = ∑ j, w j * ⟪x j - m j, W x⟫`), and suppose the matrices `A j`
+satisfy the quadratic Fenchel–Young bound for each `j` and average to the identity (in the form of
+the quadratic and trace identities `hquad` and `htrace`). Then
+`𝔼 ‖W‖ ^ 2 ≤ (𝔼 ‖W‖ ^ 2 + tr S) / 2`. -/
+private lemma integral_norm_sq_le_average_of_fenchelYoung {m : J → EuclideanSpace ℝ ι}
+    {W : (J → EuclideanSpace ℝ ι) → EuclideanSpace ℝ ι} {A : J → Matrix ι ι ℝ}
+    (hFY : ∀ j, ∫ x, ⟪x j - m j, W x⟫ ∂γ ≤
+      (∫ x, ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ + (A j * S).trace) / 2)
+    (hint : ∀ j, Integrable (fun x ↦ ⟪x j - m j, W x⟫) γ)
+    (hAint : ∀ j, Integrable (fun x ↦ ⟪(A j).toEuclideanLin (W x), W x⟫) γ)
+    (hsq : ∀ x, ‖W x‖ ^ 2 = ∑ j, (w j : ℝ) * ⟪x j - m j, W x⟫)
+    (hquad : ∀ x, ∑ j, (w j : ℝ) * ⟪(A j).toEuclideanLin (W x), W x⟫ = ‖W x‖ ^ 2)
+    (htrace : ∑ j, (w j : ℝ) * (A j * S).trace = S.trace) :
+    ∫ x, ‖W x‖ ^ 2 ∂γ ≤ (∫ x, ‖W x‖ ^ 2 ∂γ + S.trace) / 2 := by
+  calc ∫ x, ‖W x‖ ^ 2 ∂γ = ∑ j, (w j : ℝ) * ∫ x, ⟪x j - m j, W x⟫ ∂γ := by
+        simp only [hsq]
+        rw [integral_finsetSum _ fun j _ ↦ (hint j).const_mul _]
+        simp only [integral_const_mul]
+    _ ≤ ∑ j, (w j : ℝ) *
+          ((∫ x, ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ + (A j * S).trace) / 2) :=
+        Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_left (hFY j) (w j).coe_nonneg
+    _ = (∑ j, ∫ x, (w j : ℝ) * ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ +
+          ∑ j, (w j : ℝ) * (A j * S).trace) / 2 := by
+        rw [← Finset.sum_add_distrib, Finset.sum_div]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [integral_const_mul]
+        ring
+    _ = (∫ x, ‖W x‖ ^ 2 ∂γ + S.trace) / 2 := by
+        rw [← integral_finsetSum _ fun j _ ↦ (hAint j).const_mul _, htrace]
+        simp only [hquad]
+
+open scoped Classical in
 /-- **The variance of the weighted mean of a multi-coupling.** Let `μ j` be probability laws on
 `ℝⁿ` with finite second moments, means `m j` and covariance matrices `C j`, let `w j` be
 nonnegative weights, and let the positive-definite matrix `S` solve
@@ -148,23 +181,7 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
     simpa only [Finset.sum_mul, Matrix.smul_mul, Matrix.one_mul, Matrix.trace_sum,
       Matrix.trace_smul, smul_eq_mul] using
       congrArg (fun M : Matrix ι ι ℝ ↦ (M * S).trace) hAone
-  have hle : ∫ x, ‖W x‖ ^ 2 ∂γ ≤ (∫ x, ‖W x‖ ^ 2 ∂γ + S.trace) / 2 := by
-    calc ∫ x, ‖W x‖ ^ 2 ∂γ = ∑ j, (w j : ℝ) * ∫ x, ⟪x j - m j, W x⟫ ∂γ := by
-          simp only [hsq]
-          rw [integral_finsetSum _ fun j _ ↦ (hint j).const_mul _]
-          simp only [integral_const_mul]
-      _ ≤ ∑ j, (w j : ℝ) *
-            ((∫ x, ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ + (A j * S).trace) / 2) :=
-          Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_left (hFY j) (w j).coe_nonneg
-      _ = (∑ j, ∫ x, (w j : ℝ) * ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ +
-            ∑ j, (w j : ℝ) * (A j * S).trace) / 2 := by
-          rw [← Finset.sum_add_distrib, Finset.sum_div]
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [integral_const_mul]
-          ring
-      _ = (∫ x, ‖W x‖ ^ 2 ∂γ + S.trace) / 2 := by
-          rw [← integral_finsetSum _ fun j _ ↦ (hAint j).const_mul _, htrace]
-          simp only [hquad]
+  have hle := integral_norm_sq_le_average_of_fenchelYoung hFY hint hAint hsq hquad htrace
   linarith
 
 section Gaussian

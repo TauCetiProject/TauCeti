@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
+
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # Scalar extensions of modules
@@ -40,6 +43,10 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 * `TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
+* `TensorProduct.exists_rTensor_section`, `TensorProduct.exists_smul_linearMap_eq_self`: after
+  tensoring over `R` with a division ring `Q` that is an `R`-algebra, a surjection has an
+  `R`-linear section, and after tensoring with any `R`-algebra `Q`, multiplication by an element
+  whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
 -/
@@ -222,7 +229,7 @@ variable [AddCommMonoid M] [Module R M]
 
 /-- The unit pure tensors are the `R`-span of the base change of any basis. -/
 theorem _root_.Module.Basis.range_mk_one_eq_span {ι : Type*} (b : Basis ι R M) :
-    LinearMap.range (TensorProduct.mk R K M 1) =
+    LinearMap.range (mk R K M 1) =
       Submodule.span R (Set.range (b.baseChange K)) := by
   rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
   exact congrArg (Submodule.span R)
@@ -237,7 +244,7 @@ variable [Module.Flat R M]
 variable (R K M) in
 /-- A flat module is canonically isomorphic to the module of unit pure tensors in its scalar
 extension along a faithful algebra. -/
-noncomputable def unitTmulEquiv : M ≃ₗ[R] LinearMap.range (TensorProduct.mk R K M 1) :=
+noncomputable def unitTmulEquiv : M ≃ₗ[R] LinearMap.range (mk R K M 1) :=
   LinearEquiv.ofInjective _ (Module.Flat.tensorProduct_mk_injective R M K)
 
 /-- The unit-tensor equivalence sends a vector to its unit pure tensor. This equation
@@ -245,12 +252,12 @@ characterizes the equivalence. -/
 @[simp]
 theorem coe_unitTmulEquiv_apply (m : M) :
     (unitTmulEquiv R K M m : K ⊗[R] M) = 1 ⊗ₜ[R] m := by
-  rw [unitTmulEquiv, LinearEquiv.ofInjective_apply, TensorProduct.mk_apply]
+  rw [unitTmulEquiv, LinearEquiv.ofInjective_apply, mk_apply]
 
 /-- The inverse unit-tensor equivalence recovers a vector from its unit pure tensor. -/
 @[simp]
 theorem unitTmulEquiv_symm_tmul (m : M)
-    (h : (1 : K) ⊗ₜ[R] m ∈ LinearMap.range (TensorProduct.mk R K M 1)) :
+    (h : (1 : K) ⊗ₜ[R] m ∈ LinearMap.range (mk R K M 1)) :
     (unitTmulEquiv R K M).symm ⟨1 ⊗ₜ[R] m, h⟩ = m := by
   apply (unitTmulEquiv R K M).injective
   rw [LinearEquiv.apply_symm_apply]
@@ -260,9 +267,56 @@ end Flat
 
 /-- The module of unit pure tensors is free whenever the original module is free. -/
 instance free_range_mk_one [Module.Free R M] :
-    Module.Free R (LinearMap.range (TensorProduct.mk R K M 1)) :=
+    Module.Free R (LinearMap.range (mk R K M 1)) :=
   Module.Free.of_equiv (unitTmulEquiv R K M)
 
 end CommSemiring
+
+end TensorProduct
+
+namespace TensorProduct
+
+section FieldSections
+
+variable {R : Type*} [CommSemiring R] (Q : Type*) [DivisionRing Q] [Algebra R Q]
+
+/-- A surjection of `R`-modules has an `R`-linear section after tensoring with a division ring `Q`
+over `R`, because `P ⊗[R] Q` is a free `Q`-module. -/
+theorem exists_rTensor_section {N P : Type*} [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] {g : N →ₗ[R] P} (hg : Function.Surjective g) :
+    ∃ s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q,
+      ∀ x, AlgebraTensorModule.rTensor R Q g (s x) = x := by
+  obtain ⟨s₀, hs₀⟩ := Module.projective_lifting_property
+    (AlgebraTensorModule.lTensor Q Q g) LinearMap.id
+    (LinearMap.lTensor_surjective Q hg)
+  refine ⟨(TensorProduct.comm R Q N).toLinearMap ∘ₗ
+    s₀.restrictScalars R ∘ₗ (TensorProduct.comm R P Q).toLinearMap, fun x ↦ ?_⟩
+  have hcomm (y : Q ⊗[R] N) : AlgebraTensorModule.rTensor R Q g
+      (TensorProduct.comm R Q N y) = TensorProduct.comm R Q P
+        (AlgebraTensorModule.lTensor Q Q g y) :=
+    LinearMap.rTensor_comm (g : N →ₗ[R] P) y
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, hcomm,
+    LinearMap.restrictScalars_apply, ← LinearMap.comp_apply, hs₀, LinearMap.id_apply,
+    LinearEquiv.coe_coe, comm_comm]
+
+end FieldSections
+
+section Invertible
+
+variable {R : Type*} [CommSemiring R] (Q : Type*) [Semiring Q] [Algebra R Q]
+
+/-- If the image of `n : R` in `Q` is a unit, multiplication by `n` on `P ⊗[R] Q`
+has an `R`-linear right inverse. -/
+theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
+    {n : R} (hn : IsUnit (algebraMap R Q n)) :
+    ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, n • u x = x := by
+  refine ⟨(LinearMap.mulLeft R (↑hn.unit⁻¹ : Q)).lTensor P, fun x ↦ ?_⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul p q =>
+    rw [LinearMap.lTensor_tmul, smul_tmul', smul_tmul,
+      LinearMap.mulLeft_apply, _root_.Algebra.smul_def, ← mul_assoc, hn.mul_val_inv, one_mul]
+  | add x y hx hy => simp_all
+
+end Invertible
 
 end TensorProduct

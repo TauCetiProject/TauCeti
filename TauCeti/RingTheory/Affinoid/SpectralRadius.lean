@@ -61,7 +61,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 ultrametric algebra norm on an affinoid algebra, `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
 theorem supSeminorm_le_norm_pow_rpow (hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) := by
-  rw [← Real.pow_rpow_inv_natCast (supSeminorm_nonneg f) hn, ← hA.supSeminorm_pow f hn, one_div]
+  rw [← Real.pow_rpow_inv_natCast (supSeminorm_nonneg f) hn, ← supSeminorm_pow f hn, one_div]
   exact Real.rpow_le_rpow (supSeminorm_nonneg _) (hA.supSeminorm_le_norm _) (by positivity)
 
 /-- **Norms of powers grow at most like the supremum seminorm.** For every complete ultrametric
@@ -73,7 +73,7 @@ theorem exists_norm_pow_le_mul_supSeminorm_pow (hA : IsAffinoidAlgebra K A) {f :
   obtain ⟨c, hc⟩ := h f hf
   set r := supSeminorm K f
   have hcr : ‖(c : K)‖⁻¹ = r ^ m := by
-    rw [hA.supSeminorm_smul, hA.supSeminorm_pow f (by omega)] at hc
+    rw [supSeminorm_smul, supSeminorm_pow f (by omega)] at hc
     exact inv_eq_of_mul_eq_one_right hc
   -- The element `c • f ^ m` has supremum seminorm one, so its powers are norm-bounded.
   have hu : Huber.IsPowerBounded ((c : K) • f ^ m) :=

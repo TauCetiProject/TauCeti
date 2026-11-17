@@ -149,6 +149,17 @@ theorem dirichletLift_equivToUnitHom (f : Newform N k) :
   rw [dirichletLift_def]
   exact MulChar.equivToUnitHom.apply_symm_apply f.χ
 
+/-- The zero-extended nebentypus, read on units through `MulChar.toUnitHom`, is the character of
+the newform. -/
+theorem dirichletLift_toUnitHom (f : Newform N k) : f.dirichletLift.toUnitHom = f.χ := by
+  rw [MulChar.toUnitHom_eq, dirichletLift_equivToUnitHom]
+
+/-- Raising the level of the zero-extended nebentypus along `N ∣ L` gives, on units, the character
+of the newform composed with reduction modulo `N`. -/
+theorem changeLevel_dirichletLift_toUnitHom {L : ℕ} (f : Newform N k) (h : N ∣ L) :
+    (DirichletCharacter.changeLevel h f.dirichletLift).toUnitHom = f.χ.comp (ZMod.unitsMap h) := by
+  rw [DirichletCharacter.changeLevel_toUnitHom, dirichletLift_toUnitHom]
+
 /-- The zero-extended nebentypus vanishes at indices not coprime to the level. -/
 @[simp]
 theorem dirichletLift_apply_eq_zero (f : Newform N k) (n : ℕ) (hn : ¬ n.Coprime N) :

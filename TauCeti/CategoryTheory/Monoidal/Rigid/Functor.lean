@@ -52,6 +52,12 @@ back to the image of that of `Y` (`CategoryTheory.Functor.isIso_map_dualTensorIh
 restriction of sheaves of modules to the members of a cover, this is how the dual-tensor
 comparison, and hence dualizability, is checked locally.
 
+A strong monoidal functor `F` *sends a self-duality* `ExactPairing g g` to a self-duality
+`ExactPairing V V` along an isomorphism `e : F.obj g ≅ V` when the coevaluation and evaluation of
+`V` are the images of those of `g`, transported along `e` and the comparisons of `F`
+(`TauCeti.SendsSelfDuality`). This is the condition in universal properties of monoidal
+categories presented by self-dual generators.
+
 The dual transfers are the forward counterparts of Mathlib's
 `CategoryTheory.hasLeftDualOfEquivalence` and `CategoryTheory.hasRightDualOfEquivalence` in
 `Mathlib.CategoryTheory.Monoidal.Rigid.OfEquivalence`, which pull duals back along a monoidal
@@ -86,7 +92,9 @@ equivalence.
   a strong monoidal functor is invertible at an object with a left dual;
 * `CategoryTheory.Functor.map_dualTensorIhom_app_comp_ihomComparison` and
   `CategoryTheory.Functor.isIso_map_dualTensorIhom_app`: the dual-tensor comparison under a
-  strong monoidal functor.
+  strong monoidal functor;
+* `TauCeti.SendsSelfDuality`: a strong monoidal functor sends one self-duality to another
+  along an isomorphism.
 -/
 
 public section
@@ -183,7 +191,7 @@ variable (F)
 /-- The canonical isomorphism `F.obj Xᘁ ≅ (F.obj X)ᘁ` between the image of the right dual of `X`
 under a strong monoidal functor and the right dual of `F.obj X`: both are right duals of
 `F.obj X`, the first through the image pairing `F.mapExactPairing X Xᘁ`. -/
-noncomputable def mapRightDualIso (X : C) [HasRightDual X] [hFX : HasRightDual (F.obj X)] :
+noncomputable def mapRightDualIso (X : C) [HasRightDual X] [_hFX : HasRightDual (F.obj X)] :
     F.obj Xᘁ ≅ (F.obj X)ᘁ :=
   rightDualIso (F.mapExactPairing X Xᘁ) HasRightDual.exact
 
@@ -194,7 +202,7 @@ evaluation of `(X, Xᘁ)`. This characterizes `F.mapRightDualIso X`, by
 `CategoryTheory.ExactPairing.rightHom_ext`. -/
 @[reassoc]
 theorem mapRightDualIso_hom_whiskerRight_evaluation (X : C) [HasRightDual X]
-    [hFX : HasRightDual (F.obj X)] :
+    [_hFX : HasRightDual (F.obj X)] :
     (F.mapRightDualIso X).hom ▷ F.obj X ≫ ε_ (F.obj X) (F.obj X)ᘁ =
       μ F Xᘁ X ≫ F.map (ε_ X Xᘁ) ≫ η F :=
   ExactPairing.rightDualIso_hom_whiskerRight_evaluation _ _
@@ -235,10 +243,10 @@ is the identity. Only `X` needs a right dual; it is passed explicitly as the rig
 `(𝟭 C).obj X`, which instance search does not unfold to `X`. -/
 @[simp]
 theorem mapRightDualIso_id (X : C) [hX : HasRightDual X] :
-    (𝟭 C).mapRightDualIso X (hFX := hX) = Iso.refl _ := by
+    (𝟭 C).mapRightDualIso X (_hFX := hX) = Iso.refl _ := by
   ext
   refine ExactPairing.rightHom_ext (X := X) (Y := Xᘁ) ?_
-  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := 𝟭 C) X (hFX := hX)).trans ?_
+  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := 𝟭 C) X (_hFX := hX)).trans ?_
   simp
 
 /-- For a composite `F ⋙ G`, the comparison between the image of a dual and the dual of an image
@@ -249,11 +257,11 @@ dual of `(F ⋙ G).obj X`, which instance search does not unfold. -/
 theorem mapRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
     (G : D ⥤ E) [G.Monoidal] (X : C) [HasRightDual X] [HasRightDual (F.obj X)]
     [hGFX : HasRightDual (G.obj (F.obj X))] :
-    (F ⋙ G).mapRightDualIso X (hFX := hGFX) =
+    (F ⋙ G).mapRightDualIso X (_hFX := hGFX) =
       G.mapIso (F.mapRightDualIso X) ≪≫ G.mapRightDualIso (F.obj X) := by
   ext
   refine ExactPairing.rightHom_ext (X := G.obj (F.obj X)) (Y := (G.obj (F.obj X))ᘁ) ?_
-  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := F ⋙ G) X (hFX := hGFX)).trans ?_
+  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := F ⋙ G) X (_hFX := hGFX)).trans ?_
   -- Unfold the objects of the composite, so that the evaluation identities of `F` and `G` apply.
   dsimp only [Functor.comp_obj, Iso.trans_hom, Functor.mapIso_hom]
   rw [comp_whiskerRight_assoc, mapRightDualIso_hom_whiskerRight_evaluation, μ_natural_left_assoc,
@@ -321,6 +329,27 @@ theorem isIso_map_dualTensorIhom_app (Y Z : C) [Closed Y] [Closed (F.obj Y)]
   exact IsIso.of_isIso_comp_right _ ((F.ihomComparison Y).app Z)
 
 end CategoryTheory.Functor
+
+/-! ### Sending a self-duality along an isomorphism -/
+
+namespace TauCeti
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+  {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-- A strong monoidal functor `F : D ⥤ C` *sends the self-duality of `g` to the self-duality of
+`V` along `e : F.obj g ≅ V`* when the coevaluation and the evaluation of `V` are the images under
+`F` of those of `g`, composed with the unit and tensor comparisons of `F` and with `e`. -/
+structure SendsSelfDuality {g : D} [ExactPairing g g] (F : D ⥤ C) [F.Monoidal] (V : C)
+    [ExactPairing V V] (e : F.obj g ≅ V) : Prop where
+  /-- The coevaluation of `g` is sent to the coevaluation of `V`. -/
+  coevaluation : ε F ≫ F.map (η_ g g) = η_ V V ≫ (e.inv ⊗ₘ e.inv) ≫ μ F g g
+  /-- The evaluation of `g` is sent to the evaluation of `V`. -/
+  evaluation : (e.inv ⊗ₘ e.inv) ≫ μ F g g ≫ F.map (ε_ g g) ≫ η F = ε_ V V
+
+end TauCeti
 
 /-! ### Naturality of the dual comparison in the functor -/
 

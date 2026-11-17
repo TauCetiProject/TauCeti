@@ -31,8 +31,8 @@ uniqueness clause for the restrictions along
 `UniformSpace.Completion.coeRingHom`.
 
 At the trivial weight family `Tᵢ = {1}` the domain is the completed restricted power-series
-algebra `TauCeti.Huber.restrictedMvPowerSeriesCompletion k A`, which the roadmap writes
-`A⟨X₁,…,Xₖ⟩` for an arbitrary Tate ring, so this is that algebra's universal property. It is
+algebra `TauCeti.Huber.restrictedMvPowerSeriesCompletion k A`, written `A⟨X₁,…,Xₖ⟩` for an
+arbitrary Tate ring, so this is that algebra's universal property. It is
 stated for a general weight family because nothing in the argument uses triviality.
 
 Into a complete Hausdorff linearly topologised ring, such as an adic ring, the completed
@@ -204,7 +204,7 @@ end UniversalProperty
 
 section LinearTopology
 
-variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
   [IsLinearTopology B B] [CompleteSpace B] [T2Space B]
 
 /-- **The universal property of `A⟨X₁, …, Xₖ⟩` for linearly topologised targets.** A continuous
@@ -218,6 +218,7 @@ theorem existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isL
       ∀ i, ψ ((weightedX _ isWeightFamily_one_weight i :
         weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
           restrictedMvPowerSeriesCompletion k A) = b i := by
+  have := IsLinearTopology.isTopologicalRing (R := B)
   have := IsLinearTopology.nonarchimedeanRing B
   simpa only [algebraMap_completion_weightedRestrictedSubring_apply] using
     existsUnique_continuous_ringHom_completion_weightedRestrictedSubring isWeightFamily_one_weight

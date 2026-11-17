@@ -101,7 +101,7 @@ theorem isLatticeWord_readingWord_iff (T : SkewSemistandardYoungTableau inner ou
     omega
   · refine fun h => List.isLatticeWord_iff.mpr fun p hp k => ?_
     rw [← T.flatMap_range_rowReadingWord le_rfl] at hp
-    obtain ⟨x, q, hq, rfl⟩ := List.exists_eq_flatMap_range_append hp
+    obtain ⟨x, -, q, hq, rfl⟩ := List.exists_eq_flatMap_range_append hp
     rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
       count_flatMap_range_rowReadingWord]
     have h₁ := hq.count_le (k + 1)
@@ -132,8 +132,7 @@ theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.1 i j ≤ i := b
     YoungDiagram.mem_iff_lt_rowLen, YoungDiagram.mem_iff_lt_rowLen, not_lt] at hc
   have hlt : inner.rowLen i < outer.rowLen i := by omega
   have hlast : (i, outer.rowLen i - 1) ∈ outer := YoungDiagram.mem_iff_lt_rowLen.mpr (by omega)
-  refine (T.1.row_weak_of_le (by omega)
-    (YoungDiagram.mem_iff_lt_rowLen.not.mpr (by omega)) hlast).trans ?_
+  refine (T.1.row_weak_of_le (by omega) hlast).trans ?_
   -- The letters read before row `i` are all smaller than `i`.
   have hsmall : ∀ x ∈ (List.range i).flatMap T.1.rowReadingWord, x < i := by
     intro x hx

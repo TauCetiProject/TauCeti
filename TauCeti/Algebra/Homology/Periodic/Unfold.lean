@@ -86,7 +86,7 @@ instance : (unfoldFunctor C n).Faithful where
   map_injective {K L} f g h := by
     ext j
     obtain ⟨i, rfl⟩ := ZMod.intCast_surjective j
-    exact congrArg (fun k ↦ k.f i) h
+    exact congr_hom h i
 
 /-- The three-term complexes computing unfolded and cyclic homology agree, naturally in
 chain maps. The outer terms are transported along the integer-cast identities. -/
@@ -97,15 +97,10 @@ private noncomputable def unfoldShortComplexIso (i : ℤ) :
   NatIso.ofComponents (fun K ↦ ShortComplex.isoMk
     (K.XIsoOfEq (by simp)) (Iso.refl _) (K.XIsoOfEq (by simp))
     (by
-      -- Normalize the consecutive integer differential before transporting its endpoints.
-      dsimp only [Functor.comp_obj, shortComplexFunctor', unfoldFunctor,
-        CochainComplex.of, CochainComplex.of.d, XIsoOfEq]
-      simp)
-    (by
-      dsimp only [Functor.comp_obj, shortComplexFunctor', unfoldFunctor,
-        CochainComplex.of, CochainComplex.of.d, XIsoOfEq]
-      simp)) (fun f ↦ by
-        ext <;> simp [shortComplexFunctor', ShortComplex.isoMk, XIsoOfEq_hom_naturality])
+      simp [shortComplexFunctor',
+        unfoldFunctor_obj_d_of_add_one_eq C n K (Int.sub_add_cancel i 1)])
+    (by simp [shortComplexFunctor'])) (fun f ↦ by
+        ext <;> simp [shortComplexFunctor', XIsoOfEq_hom_naturality])
 
 /-- Compare the canonical short complexes, allowing homology to be assumed locally. -/
 private noncomputable def unfoldCanonicalShortComplexIso (i : ℤ) :
@@ -117,7 +112,7 @@ private noncomputable def unfoldCanonicalShortComplexIso (i : ℤ) :
     (natIsoSc' C (ComplexShape.up (ZMod n))
       ((i : ZMod n) - 1) (i : ZMod n) ((i : ZMod n) + 1) (by simp) (by simp)).symm
 
-/-- Homology at a cyclic degree supplies homology at each integer degree above it. -/
+/-- Homology at a cyclic degree supplies homology at each integer degree lying over it. -/
 instance (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (i : ℤ)
     [K.HasHomology (i : ZMod n)] : ((unfoldFunctor C n).obj K).HasHomology i :=
   ShortComplex.hasHomology_of_iso ((unfoldCanonicalShortComplexIso C n i).app K).symm
@@ -167,12 +162,7 @@ theorem unfoldFunctor_quasiIso_iff
     [∀ j, K.HasHomology j] [∀ j, L.HasHomology j] :
     QuasiIso ((unfoldFunctor C n).map f) ↔ QuasiIso f := by
   simp only [quasiIso_iff, unfoldFunctor_quasiIsoAt_iff]
-  constructor
-  · intro h j
-    obtain ⟨i, rfl⟩ := ZMod.intCast_surjective j
-    exact h i
-  · intro h i
-    exact h (i : ZMod n)
+  exact (ZMod.intCast_surjective.forall (p := fun j ↦ QuasiIsoAt f j)).symm
 
 end
 
@@ -202,21 +192,13 @@ noncomputable def unfoldPeriodic (h : Homotopy f g) :
   hom i j := if j + 1 = i then h.hom (i : ZMod n) (j : ZMod n) else 0
   zero i j hij := ite_eq_right hij
   comm i := by
-    have hi_next : (ComplexShape.up ℤ).Rel i (i + 1) := by simp
-    have hi_prev : (ComplexShape.up ℤ).Rel (i - 1) i := by simp
-    have hn : (ComplexShape.up (ZMod n)).Rel (i : ZMod n) ((i + 1 : ℤ) : ZMod n) := by simp
-    have hp : (ComplexShape.up (ZMod n)).Rel ((i - 1 : ℤ) : ZMod n) (i : ZMod n) := by simp
-    have hom_next : (if i + 1 = i + 1 then
-        h.hom ((i + 1 : ℤ) : ZMod n) (i : ZMod n) else 0) =
-        h.hom ((i + 1 : ℤ) : ZMod n) (i : ZMod n) := ite_eq_left rfl
-    have hom_prev : (if (i - 1) + 1 = i then
-        h.hom (i : ZMod n) ((i - 1 : ℤ) : ZMod n) else 0) =
-        h.hom (i : ZMod n) ((i - 1 : ℤ) : ZMod n) := ite_eq_left (Int.sub_add_cancel i 1)
-    rw [dNext_eq _ hi_next, prevD_eq _ hi_prev, hom_next, hom_prev]
-    simp only [TauCeti.PeriodicComplex.unfoldFunctor_map_f,
-      TauCeti.PeriodicComplex.unfoldFunctor_obj_d,
-      TauCeti.PeriodicComplex.unfoldFunctor_obj_d_of_add_one_eq C n L (Int.sub_add_cancel i 1)]
-    simpa only [dNext_eq _ hn, prevD_eq _ hp] using h.comm (i : ZMod n)
+    rw [dNext_eq _ (ComplexShape.up_mk i (i + 1) rfl),
+      prevD_eq _ (ComplexShape.up_mk (i - 1) i (Int.sub_add_cancel i 1))]
+    simpa [TauCeti.PeriodicComplex.unfoldFunctor_obj_d_of_add_one_eq C n L
+        (Int.sub_add_cancel i 1),
+      dNext_eq _ (ComplexShape.up_mk (i : ZMod n) ((i + 1 : ℤ) : ZMod n) (by simp)),
+      prevD_eq _ (ComplexShape.up_mk ((i - 1 : ℤ) : ZMod n) (i : ZMod n) (by simp))]
+      using h.comm (i : ZMod n)
 
 /-- The consecutive component of an unfolded homotopy is the original cyclic component. -/
 @[simp]

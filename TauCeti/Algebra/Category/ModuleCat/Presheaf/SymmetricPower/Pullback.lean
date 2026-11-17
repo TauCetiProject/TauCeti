@@ -135,7 +135,7 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
       ((ModuleCat.restrictScalars (α.app U).hom).obj (M.obj (F.op.obj U))) x]
     erw [SymmetricAlgebra.mapₛₗ_ι]
     rfl
-  · exact TauCeti.SymmetricAlgebra.ι_injective _ _
+  · exact SymmetricAlgebra.ι_injective _ _
 
 /-- Pushforward along an isomorphism of coefficient presheaves preserves symmetric powers
 sectionwise. -/

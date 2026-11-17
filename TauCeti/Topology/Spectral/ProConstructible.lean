@@ -364,7 +364,7 @@ theorem IsProConstructible.closure_eq_setOfPred_specializes (hs : IsProConstruct
     by_contra! h
     -- Each `x ∈ s` lies outside some quasi-compact open neighbourhood `U x` of `y`.
     have hU (x : X) (hx : x ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U :=
-      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (h x hx)
+      PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 (h x hx)
     choose! U hUo hUc hyU hxU using hU
     -- The complements of the `U x` are open for the constructible topology and cover `s`.
     obtain ⟨t, hts, htfin, hcover⟩ := (IsClosed.isCompact hs).elim_finite_subcover_image

@@ -37,8 +37,9 @@ hypothesis of the compression lemma for CW complexes.
 
 * `TauCeti.ballRadialDen`, `TauCeti.ballRadialProjection`: the shared radial denominator and
   projection in ambient coordinates, also used for the bottom-and-sides deformation of cubes.
-* `TauCeti.ballRadialProjection_spec`, `TauCeti.ballRadialProjection_eq_self`: the projection
-  lands on the bottom and sides and fixes that subspace.
+* `TauCeti.ballRadialProjection_spec`, `TauCeti.ballRadialProjection_eq_self`,
+  `TauCeti.ballRadialProjection_fst_le`: the projection lands on the bottom and sides, fixes that
+  subspace and does not raise heights.
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
 * `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
@@ -133,6 +134,19 @@ theorem ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     · right
       rw [mem_sphere_zero_iff_norm, hnorm, max_eq_right h, div_self]
       simpa [max_eq_right h] using hd.ne'
+
+/-- The radial projection away from height `2` does not raise the height of a point of the
+cylinder. -/
+theorem ballRadialProjection_fst_le (p : I × closedBall (0 : E) 1) :
+    (ballRadialProjection p).1 ≤ p.1 := by
+  have hd := ballRadialProjection_den_pos p
+  have ht1 := p.1.2.2
+  have hn1 := mem_closedBall_zero_iff.1 p.2.2
+  have hdle : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) ≤ 2 :=
+    max_le (by linarith [p.1.2.1]) (by linarith)
+  simp only [ballRadialProjection, ballRadialDen]
+  rw [sub_le_comm, le_div_iff₀ hd]
+  nlinarith
 
 /-- The radial projection fixes the bottom face of the cylinder and the part of the cylinder
 lying over the sphere. -/

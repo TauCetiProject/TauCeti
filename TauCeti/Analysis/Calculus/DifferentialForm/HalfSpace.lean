@@ -22,11 +22,11 @@ noncomputable section
 
 open MeasureTheory Set
 
-namespace TauCeti
+namespace ContDiffOn
 
 /-- Flat half-space Stokes for a compactly supported form that is `C¹` only on the half-space.
 The actual exterior derivative and boundary coefficient are both integrable. -/
-theorem _root_.ContDiffOn.integral_extDerivWithin_coordinate_halfSpace {n : ℕ}
+theorem integral_extDerivWithin_coordinate_halfSpace {n : ℕ}
     {ω : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ}
     (hω : ContDiffOn ℝ 1 ω {x | 0 ≤ x 0}) (hc : HasCompactSupport ω) :
     IntegrableOn (fun x ↦ extDerivWithin ω {y | 0 ≤ y 0} x (Pi.basisFun ℝ (Fin (n + 1))))
@@ -63,4 +63,4 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_coordinate_halfSpace {n : ℕ}
   · rw [← setIntegral_congr_fun hHm hD]
     simpa only [hb] using hresult.2.2
 
-end TauCeti
+end ContDiffOn

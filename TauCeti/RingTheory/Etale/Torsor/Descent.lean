@@ -67,7 +67,7 @@ theorem of_baseChange (A' : Type*) [CommRing A'] [Algebra A A'] [Module.Faithful
   have := h.finite
   have := h.faithfullyFlat
   exact ⟨.of_etale_tensorProduct_of_faithfullyFlat A',
-    .of_finite_tensorProduct_of_faithfullyFlat A', .of_tensorProduct A A' B,
+    .of_finite_tensorProduct_of_faithfullyFlat A', .of_faithfullyFlat_tensorProduct A B A',
     (MulSemiringAction.bijective_tensorToPi_baseChange_iff A').mp h.bijective_tensorToPi⟩
 
 /-- A `G`-algebra that becomes isomorphic to the trivial torsor `G → A'` after a faithfully flat

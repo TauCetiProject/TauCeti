@@ -315,6 +315,19 @@ theorem isLagrangianImmersion_iff [FiniteDimensional ℝ E] [Nonempty N] :
     ?_⟩⟩
   exact hL.two_mul_finrank (himm.mfderiv_injective (by simp) (Classical.arbitrary N))
 
+/-- A smooth immersion is Lagrangian exactly when its pulled-back two-form vanishes and
+its source has half the ambient dimension. This includes empty sources. -/
+theorem isLagrangianImmersion_iff_mpullback_eq_zero [FiniteDimensional ℝ E]
+    [IsManifold J ∞ N] (hf : IsImmersion J I ∞ f) :
+    hσ.IsLagrangianImmersion J f ↔
+      SmoothForm.mpullback f hf.contMDiff σ = 0 ∧ 2 * finrank ℝ E' = finrank ℝ E := by
+  constructor
+  · intro h
+    exact ⟨(isIsotropicMap_iff_mpullback_eq_zero hf.contMDiff).mp h.isIsotropicMap,
+      h.two_mul_finrank⟩
+  · rintro ⟨h, hdim⟩
+    exact ⟨hf, (isIsotropicMap_iff_mpullback_eq_zero hf.contMDiff).mpr h, hdim⟩
+
 end IsNondegenerate
 
 end SmoothTwoForm

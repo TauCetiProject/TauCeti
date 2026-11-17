@@ -169,14 +169,13 @@ theorem filledHull_eq_self
   exact hu ((mem_filledHull_iff.mp hx).subset
     (h.subset_connectedComponentIn (mem_compl hxK) subset_rfl))
 
-/-- **An open set with preconnected frontier has no holes**, in a preconnected, locally connected
-space: if the complement of `K` is unbounded, filling `K` changes nothing. The complement is then
-preconnected (`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`), so this is
+/-- **An open set with preconnected frontier has no holes**, in a preconnected space: if the
+complement of `K` is unbounded, filling `K` changes nothing. The complement is then preconnected
+(`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`), so this is
 `TauCeti.filledHull_eq_self`. A bounded open set of the plane whose frontier is a Jordan curve is
 the basic example. -/
-theorem filledHull_eq_self_of_isPreconnected_frontier [LocallyConnectedSpace E]
-    [PreconnectedSpace E] (hK : IsOpen K) (hf : IsPreconnected (frontier K))
-    (hu : ¬ IsBounded Kᶜ) : filledHull K = K :=
+theorem filledHull_eq_self_of_isPreconnected_frontier [PreconnectedSpace E] (hK : IsOpen K)
+    (hf : IsPreconnected (frontier K)) (hu : ¬ IsBounded Kᶜ) : filledHull K = K :=
   filledHull_eq_self (isPreconnected_compl_of_isPreconnected_frontier hK hf) hu
 
 /-- **A preconnected set that a set cuts off from infinity lies in its filled hull.** If `S` is
@@ -259,7 +258,7 @@ theorem IsCompact.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
   · -- Otherwise the component lies outside `L`, so it is clopen and contains a component of `X`.
     exfalso
     have hcomp : connectedComponent y ⊆ closure C :=
-      ((TauCeti.isClopen_connectedComponentIn_compl hK.isClosed hL.isClosed hKL hyL
+      ((TauCeti.isClopen_connectedComponentIn_compl hK.isClosed hKL hyL
         hCfr).connectedComponent_subset hyC).trans subset_closure
     exact hX y (hy.of_isClosed_subset isClosed_connectedComponent hcomp)
 

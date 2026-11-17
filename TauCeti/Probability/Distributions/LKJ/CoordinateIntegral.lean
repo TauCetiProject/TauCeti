@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PartialCorrelation
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Correlation
 public import TauCeti.Probability.Distributions.LKJ.Normalizer
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -21,6 +22,15 @@ coordinates in that column, and their common symmetric-beta shape is
 `eta + (k - 1) / 2`. Fubini's theorem therefore gives one beta factor for each coordinate;
 grouping by columns recovers the defining product for the LKJ normalizer.
 
+Changing variables to partial correlations, where the determinant and the Jacobian both factor
+into powers of the residual variances `1 - z ^ 2`, turns the integral of `det R ^ (η - 1)` over
+the positive-definite correlation matrices into this product integral. So for `0 < η`
+
+`∫ x in posDefCorrelationRegion p, det (correlationMatrix p x) ^ (η - 1) = lkjNormalizer p η`,
+
+both in strictly lower correlation coordinates and against the reference measure
+`TauCeti.correlationLebesgue p`.
+
 ## Main declarations
 
 * `TauCeti.Probability.lkjPartialCorrelationShape` — the beta shape attached to a strict lower
@@ -30,7 +40,17 @@ grouping by columns recovers the defining product for the LKJ normalizer.
 * `TauCeti.Probability.integrableOn_lkjPartialCorrelationKernel` and
   `TauCeti.Probability.lkjPartialCorrelationKernel_nonneg` — its integrability and nonnegativity
   on the open cube;
+* `TauCeti.Probability.prod_beta_lkjPartialCorrelationShape` — the LKJ normalizer as a product of
+  one beta factor per coordinate;
 * `TauCeti.Probability.integral_lkjPartialCorrelationKernel` — its integral over the open cube.
+* `TauCeti.Probability.prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel` — on the open
+  cube, the Jacobian times the determinant power is the product kernel.
+* `TauCeti.Probability.setIntegral_rpow_det_posDefCorrelationRegion`,
+  `TauCeti.Probability.integrableOn_rpow_det_posDefCorrelationRegion` — the normalizing integral
+  in correlation coordinates.
+* `TauCeti.Probability.setIntegral_rpow_det_correlationLebesgue`,
+  `TauCeti.Probability.integrableOn_rpow_det_correlationLebesgue` — the same integral against
+  `TauCeti.correlationLebesgue p`.
 
 ## References
 
@@ -60,6 +80,15 @@ theorem lkjPartialCorrelationShape_def (p : ℕ) (η : ℝ) (ij : strictLowerTri
     lkjPartialCorrelationShape p η ij =
       η + (((p - 1 - ij.1.2.val : ℕ) : ℝ) - 1) / 2 := by
   rfl
+
+/-- The shape of a partial-correlation coordinate in zero-based column `j` is
+`η + (p - j - 2) / 2`, with the dimension and column cast to the reals before subtraction. -/
+theorem lkjPartialCorrelationShape_eq (p : ℕ) (η : ℝ) (ij : strictLowerTriangle p) :
+    lkjPartialCorrelationShape p η ij = η + ((p : ℝ) - ij.1.2.val - 2) / 2 := by
+  have hcol : ij.1.2.val + 1 < p := by omega
+  rw [lkjPartialCorrelationShape_def, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
+  push_cast
+  ring
 
 /-- The product of the unnormalized symmetric-beta kernels in partial-correlation coordinates.
 
@@ -106,7 +135,9 @@ theorem integrableOn_lkjPartialCorrelationKernel {p : ℕ} {η : ℝ} (hη : 0 <
   exact Integrable.fintype_prod fun ij ↦
     integrableOn_Ioo_one_sub_sq_rpow (lkjPartialCorrelationShape_pos hη ij)
 
-private theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
+/-- The LKJ normalizer has one factor `B(1 / 2, a)` for each partial-correlation coordinate,
+where `a` is its column-dependent shape. -/
+theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
     (∏ ij : strictLowerTriangle p, beta (1 / 2) (lkjPartialCorrelationShape p η ij)) =
       lkjNormalizer p η := by
   unfold lkjPartialCorrelationShape
@@ -145,5 +176,93 @@ theorem integral_lkjPartialCorrelationKernel {p : ℕ} {η : ℝ} (hη : 0 < η)
       fun x : ℝ ↦ (1 - x ^ 2) ^ (lkjPartialCorrelationShape p η ij - 1))]
   simp_rw [integral_Ioo_one_sub_sq_rpow (lkjPartialCorrelationShape_pos hη _)]
   exact prod_beta_lkjPartialCorrelationShape p η
+
+/-! ### The normalizing integral -/
+
+variable {p : ℕ} {η : ℝ}
+
+/-- On the open cube the Jacobian-weighted power of the determinant is the LKJ
+partial-correlation kernel: both factor into one-dimensional powers of the residual variances
+`1 - z ij ^ 2`. -/
+theorem prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+    (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+        (correlationMatrix p (correlationCoordinatesOfPartialCorrelation z) :
+          Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) =
+      lkjPartialCorrelationKernel p η z := by
+  have hpos (ij : strictLowerTriangle p) : 0 < 1 - z ij ^ 2 :=
+    sub_pos.2 ((sq_lt_one_iff_abs_lt_one _).2 (hz ij))
+  rw [coe_correlationMatrix_correlationCoordinatesOfPartialCorrelation fun ij ↦ (hz ij).le,
+    det_partialCorrelationGram fun ij ↦ (hz ij).le,
+    ← Real.finsetProd_rpow _ _ (fun ij _ ↦ (hpos ij).le), smul_eq_mul, ← Finset.prod_mul_distrib,
+    lkjPartialCorrelationKernel_def]
+  refine Finset.prod_congr rfl fun ij _ ↦ ?_
+  have hcol : ij.1.2.val + 1 < p := by omega
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (hpos ij).le,
+    ← Real.rpow_add (hpos ij), lkjPartialCorrelationShape_def,
+    show p - ij.1.2.1 - 2 = p - 1 - ij.1.2.1 - 1 by omega,
+    Nat.cast_sub (show 1 ≤ p - 1 - ij.1.2.1 by omega), Nat.cast_one]
+  congr 1
+  ring
+
+/-- The open partial-correlation cube as a product of open intervals. -/
+private theorem partialCorrelationCube_eq_pi :
+    {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} = univ.pi fun _ ↦ Ioo (-1) 1 := by
+  ext z
+  simp [abs_lt]
+
+private theorem measurableSet_partialCorrelationCube :
+    MeasurableSet {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} := by
+  rw [partialCorrelationCube_eq_pi]
+  exact .univ_pi fun _ ↦ measurableSet_Ioo
+
+variable (p) in
+/-- For positive shape `η`, the power `det R ^ (η - 1)` of the determinant of a correlation
+matrix is integrable over the positive-definite correlation region. -/
+theorem integrableOn_rpow_det_posDefCorrelationRegion (hη : 0 < η) :
+    IntegrableOn (fun x ↦ (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1))
+      (posDefCorrelationRegion p) := by
+  rw [← integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff,
+    integrableOn_congr_fun
+      (fun z hz ↦ prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel hz)
+      measurableSet_partialCorrelationCube, partialCorrelationCube_eq_pi]
+  exact integrableOn_lkjPartialCorrelationKernel hη
+
+variable (p) in
+/-- **The LKJ normalizing constant as an integral.** For positive shape `η`, the integral of
+`det R ^ (η - 1)` over the coordinates of the positive-definite correlation matrices is
+`lkjNormalizer p η`. -/
+theorem setIntegral_rpow_det_posDefCorrelationRegion (hη : 0 < η) :
+    ∫ x in posDefCorrelationRegion p,
+        (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) =
+      lkjNormalizer p η := by
+  rw [← setIntegral_comp_correlationCoordinatesOfPartialCorrelation,
+    setIntegral_congr_fun measurableSet_partialCorrelationCube
+      fun z hz ↦ prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel hz,
+    partialCorrelationCube_eq_pi]
+  exact integral_lkjPartialCorrelationKernel hη
+
+variable (p) in
+/-- For positive shape `η`, the power `det R ^ (η - 1)` is integrable over the positive-definite
+correlation matrices with respect to the reference measure `TauCeti.correlationLebesgue p`. -/
+theorem integrableOn_rpow_det_correlationLebesgue (hη : 0 < η) :
+    IntegrableOn (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (R : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1))
+      {R | (R : Matrix (Fin p) (Fin p) ℝ).PosDef} (correlationLebesgue p) :=
+  ((measurePreserving_correlationMatrix p).integrableOn_comp_preimage
+    (measurableEmbedding_correlationMatrix p)).1 <| by
+      rw [preimage_correlationMatrix_setOf_posDef]
+      exact integrableOn_rpow_det_posDefCorrelationRegion p hη
+
+variable (p) in
+/-- For positive shape `η`, the integral of `det R ^ (η - 1)` over the positive-definite
+correlation matrices with respect to `TauCeti.correlationLebesgue p` is `lkjNormalizer p η`. -/
+theorem setIntegral_rpow_det_correlationLebesgue (hη : 0 < η) :
+    ∫ R in {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (R : Matrix (Fin p) (Fin p) ℝ).PosDef},
+      (R : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) ∂correlationLebesgue p = lkjNormalizer p η := by
+  rw [← (measurePreserving_correlationMatrix p).setIntegral_preimage_emb
+    (measurableEmbedding_correlationMatrix p), preimage_correlationMatrix_setOf_posDef]
+  exact setIntegral_rpow_det_posDefCorrelationRegion p hη
 
 end TauCeti.Probability

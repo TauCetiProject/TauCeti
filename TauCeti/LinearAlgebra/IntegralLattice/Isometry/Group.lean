@@ -386,8 +386,8 @@ open scoped Pointwise
 
 /-- A self-isometry of a lattice, as an element of the isometry group of its rational form. -/
 noncomputable def toIsometryGroup (L : IntegralLattice V) :
-    Isometry L L →* isometryGroup L.form where
-  toFun g := (isometryGroupEquivIsometryEquiv L.form).symm g.toIsometryEquiv
+    Isometry L L →* L.form.isometryGroup where
+  toFun g := (L.form.isometryGroupEquivIsometryEquiv).symm g.toIsometryEquiv
   map_one' := Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
   map_mul' g h := Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
 
@@ -402,10 +402,10 @@ theorem toIsometryGroup_injective (L : IntegralLattice V) :
 
 /-- A rational isometry of `L` which, together with its inverse, maps the carrier into itself is an
 isometry of `L`. -/
-noncomputable def ofIsometryGroup (G : isometryGroup L.form)
+noncomputable def ofIsometryGroup (G : L.form.isometryGroup)
     (h : ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier)
     (h' : ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V).symm x ∈ L.carrier) : Isometry L L where
-  toIsometryEquiv := isometryGroupEquivIsometryEquiv L.form G
+  toIsometryEquiv := L.form.isometryGroupEquivIsometryEquiv G
   map_carrier := by
     apply le_antisymm
     · rintro _ ⟨x, hx, rfl⟩
@@ -414,12 +414,12 @@ noncomputable def ofIsometryGroup (G : isometryGroup L.form)
       exact ⟨_, h' x hx, by simp⟩
 
 @[simp]
-theorem ofIsometryGroup_apply (G : isometryGroup L.form) (h h') (x : V) :
+theorem ofIsometryGroup_apply (G : L.form.isometryGroup) (h h') (x : V) :
     ofIsometryGroup G h h' x = (G : V ≃ₗ[ℚ] V) x := by
   simp [ofIsometryGroup, ← Isometry.coe_toIsometryEquiv]
 
 @[simp]
-theorem toIsometryGroup_ofIsometryGroup (G : isometryGroup L.form) (h h') :
+theorem toIsometryGroup_ofIsometryGroup (G : L.form.isometryGroup) (h h') :
     toIsometryGroup L (ofIsometryGroup G h h') = G :=
   Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
 
@@ -430,7 +430,7 @@ theorem ofIsometryGroup_toIsometryGroup (g : Isometry L L) (h h') :
 
 /-- A rational isometry of `L` comes from a self-isometry of `L` exactly when it preserves
 membership in the carrier. -/
-theorem mem_range_toIsometryGroup_iff {G : isometryGroup L.form} :
+theorem mem_range_toIsometryGroup_iff {G : L.form.isometryGroup} :
     G ∈ (toIsometryGroup L).range ↔ ∀ x, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier := by
   refine ⟨?_, fun h ↦ ⟨ofIsometryGroup G (fun x hx ↦ (h x).mpr hx) fun x hx ↦ (h _).mp ?_,
     toIsometryGroup_ofIsometryGroup G _ _⟩⟩
@@ -440,7 +440,7 @@ theorem mem_range_toIsometryGroup_iff {G : isometryGroup L.form} :
 
 /-- A subgroup of rational isometries of `L` each mapping the carrier into itself consists of
 self-isometries of `L`. -/
-theorem le_range_toIsometryGroup {H : Subgroup (isometryGroup L.form)}
+theorem le_range_toIsometryGroup {H : Subgroup (L.form.isometryGroup)}
     (hH : ∀ G ∈ H, ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier) :
     H ≤ (toIsometryGroup L).range := fun G hG ↦
   mem_range_toIsometryGroup_iff.mpr fun x ↦ ⟨fun hx ↦ by

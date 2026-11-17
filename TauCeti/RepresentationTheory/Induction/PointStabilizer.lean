@@ -74,13 +74,6 @@ the characters are computed, carry no such constraint.
 
 ## References
 
-This is the "Permutation characters and fixed points" worked example of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: "For `G = S₄` and `H` a point
-stabilizer `S₃`, `Ind_H^G(trivial)` is the natural permutation representation on `4` points; its
-character at `g` is the number of fixed points of `g`, and `⟨Ind_H^G 1, Ind_H^G 1⟩ = #(H \ G / H) =
-2`, the two double cosets being the diagonal and off-diagonal `H`-orbits on the four points, so it
-splits as `trivial ⊕ (standard 3-dimensional)`."
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, §2.3 and §7.3.
 -/
 

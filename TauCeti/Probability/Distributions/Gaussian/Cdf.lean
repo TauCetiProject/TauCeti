@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Erf
+public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
@@ -18,9 +18,6 @@ import TauCeti.Probability.Cdf.Density
 This file computes `ProbabilityTheory.cdf (gaussianReal m v)` in closed form.  For a nonzero
 variance the answer is `(1 + erf ((x - m) / √(2 * v))) / 2`, and at the singular boundary
 `v = 0` the law is a Dirac mass, with the step-function cdf.
-
-These are the Gaussian entries of the closed-form cdf target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2.
 
 The computation goes through the interval integral of `gaussianPDFReal`, which is an affine
 change of variables away from the integral defining `TauCeti.Real.erf`; the improper integral
@@ -63,6 +60,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   standard Gaussian cdf.
 * `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal` — a lower bound
   for the upper tail to the right of the mean, by the density at a later point.
+* `TauCeti.Probability.gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi` — the corresponding
+  lower bound for the upper tail of the absolute value of a standard Gaussian.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -293,11 +292,7 @@ theorem hasDerivAt_measureReal_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) {l r : 
 function. -/
 theorem measureReal_Ioi_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     (gaussianReal m v).real (Ioi x) = Real.erfc ((x - m) / √(2 * (v : ℝ))) / 2 := by
-  have h : (gaussianReal m v).real (Iic x) = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-    rw [← cdf_eq_real]
-    exact cdf_gaussianReal_eq m hv x
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, h, Real.erfc_def]
-  simp only [probReal_univ]
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_gaussianReal_eq m hv x, Real.erfc_def]
   ring
 
 /-- The upper tail of a Gaussian law with nonzero variance is a value of the standard Gaussian
@@ -321,9 +316,12 @@ theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
-its right end. -/
-theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0) (hs : m ≤ s)
-    (ht : 0 ≤ t) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+its right end (for `t < 0` the left side is nonpositive and the bound is trivial). -/
+theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0)
+    (hs : m ≤ s) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+  rcases lt_or_ge t 0 with ht | ht
+  · exact (mul_nonpos_of_nonpos_of_nonneg ht.le (gaussianPDFReal_nonneg m v _)).trans
+      measureReal_nonneg
   rcases eq_or_ne v 0 with rfl | hv
   · rw [gaussianPDFReal_zero_var, Pi.zero_apply, mul_zero]
     exact measureReal_nonneg
@@ -339,6 +337,15 @@ theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v
         rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
           (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
     _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
+
+/-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the
+standard Gaussian density at `s + 1`. -/
+theorem gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi {s : ℝ} (hs : 0 ≤ s) :
+    gaussianPDFReal 0 1 (s + 1) ≤ ((gaussianReal 0 1).map fun x => |x|).real (Ioi s) := by
+  have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs (t := 1)
+  rw [one_mul] at h
+  rw [map_measureReal_apply continuous_abs.measurable measurableSet_Ioi]
+  exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

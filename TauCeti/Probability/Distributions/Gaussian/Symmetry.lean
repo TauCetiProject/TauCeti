@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
 public import TauCeti.MeasureTheory.Integral.OddSymmetric
+public import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
 # Symmetry of Gaussian measures
@@ -15,6 +16,9 @@ A centered Gaussian measure on a real separable Banach space is invariant under 
 Consequently, an odd function of a Gaussian vector centered at its mean has integral zero.
 This applies in particular to odd products of centered linear observables, without assuming
 independence or a nonsingular covariance.
+The standard real Gaussian product law is also invariant under planar reflections, and centered
+real Gaussian laws and their independent products are invariant under multiplication by
+deterministic scalars of unit modulus.
 -/
 
 public section
@@ -63,3 +67,52 @@ theorem integral_comp_sub_eq_zero_of_odd (μ : Measure E) [IsGaussian μ]
     _ = 0 := integral_eq_zero_of_odd hf
 
 end ProbabilityTheory.IsGaussian
+
+namespace TauCeti.Probability
+
+open ProbabilityTheory Real
+
+/-- The standard Gaussian product law is invariant under reflection across a line. -/
+theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
+    MeasurePreserving
+      (fun p : ℝ × ℝ => (cos θ * p.1 + sin θ * p.2, sin θ * p.1 - cos θ * p.2))
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1))
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) := by
+  have hrot : MeasurePreserving (ContinuousLinearMap.rotation θ : ℝ × ℝ →L[ℝ] ℝ × ℝ)
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1))
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) :=
+    ⟨by fun_prop, IsGaussian.map_rotation_eq_self (μ := gaussianReal 0 1)
+      (by simp [integral_id_gaussianReal]) _⟩
+  have hneg : MeasurePreserving (fun x : ℝ => -x) (gaussianReal 0 1) (gaussianReal 0 1) :=
+    ⟨by fun_prop, by simp⟩
+  convert ((MeasurePreserving.id (gaussianReal 0 1)).prod hneg).comp hrot using 1
+  funext p
+  simp [ContinuousLinearMap.rotation_apply, sub_eq_add_neg, add_comm]
+
+end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open scoped NNReal
+
+/-- Multiplying a centered real Gaussian random variable by a scalar of unit modulus preserves its
+law. -/
+theorem HasLaw.gaussianReal_const_mul_of_abs_eq_one {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) P)
+    {c : ℝ} (hc : |c| = 1) :
+    HasLaw (fun ω ↦ c * X ω) (gaussianReal 0 v) P := by
+  have hc2 : NNReal.mk (c ^ 2) (sq_nonneg c) = 1 :=
+    NNReal.eq (by simp [← sq_abs, hc])
+  simpa [hc2] using gaussianReal_const_mul hX c
+
+/-- Multiplying independent centered real Gaussian random variables by deterministic signs `η i`
+with `|η i| = 1` preserves their joint product law. -/
+theorem iIndepFun.hasLaw_pi_mul_gaussianReal_of_abs_eq_one {Ω ι : Type*} [MeasurableSpace Ω]
+    [Fintype ι] {P : Measure Ω} {g : ι → Ω → ℝ} {σ : ι → ℝ≥0}
+    (hindep : iIndepFun g P) (hlaw : ∀ i, HasLaw (g i) (gaussianReal 0 (σ i)) P)
+    {η : ι → ℝ} (hη : ∀ i, |η i| = 1) :
+    HasLaw (fun ω i ↦ η i * g i ω) (Measure.pi fun i ↦ gaussianReal 0 (σ i)) P :=
+  (hindep.comp (fun i x ↦ η i * x) fun _ ↦ by fun_prop).hasLaw_pi fun i ↦
+    (hlaw i).gaussianReal_const_mul_of_abs_eq_one (hη i)
+
+end ProbabilityTheory

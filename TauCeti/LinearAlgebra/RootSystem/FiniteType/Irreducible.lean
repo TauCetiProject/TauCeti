@@ -143,14 +143,14 @@ section
 variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic]
 
-omit [P.IsCrystallographic] in
+omit [P.IsCrystallographic] [CharZero K] in
 /-- **A submodule invariant under the simple reflections and containing no simple root is
 trivial.** If `q` is invariant under the reflection at each element of the base's support and
 misses the root there, then `q = ⊥`.
 
 Invariance is asked at the support only, not under every reflection of `P`. -/
 theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem
-    [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
+    [NeZero (2 : K)] [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
     (hinv : ∀ i : b.support, q ∈ Module.End.invtSubmodule (P.reflection i))
     (h : ∀ i : b.support, P.root i ∉ q) : q = ⊥ := by
   -- Missing every simple root puts `q` inside all the simple coroot kernels; the coweight basis

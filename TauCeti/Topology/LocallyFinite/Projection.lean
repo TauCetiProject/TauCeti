@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.LocallyFinite.Basic
 public import Mathlib.Topology.Compactness.Compact
+import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
 # Locally finite projected families
@@ -20,6 +21,11 @@ in a bounded vertical strip: enclose the strip in a compact interval first. Proj
 such a fibre bound need not preserve local finiteness. This is the projected-family argument in
 S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
 Pisa (3) 18 (1964), 449–474, §4, step II.
+
+Dually, when the graphs over `s` of a family of functions form a locally finite family, the
+compact fibre over a point of `s` meets only finitely many of the graphs: only finitely many of the
+functions take values in a given compact set at each point of `s`
+(`LocallyFinite.finite_setOf_apply_mem`, `LocallyFinite.finite_range_apply_inter`).
 -/
 
 public section
@@ -43,5 +49,22 @@ theorem image_fst_of_subset {s : ι → Set (X × Y)} (hs : LocallyFinite s) {K 
   refine ⟨V, hV, hfin.subset ?_⟩
   rintro i ⟨y, ⟨p, hp, rfl⟩, hy⟩
   exact ⟨p, hp, hVW ⟨hy, subset_of_mem_nhdsSet hW' (hsub i hp)⟩⟩
+
+/-- If the graphs over `s` of a family of functions form a locally finite family, then at each
+point of `s` only finitely many of the functions take values in a given compact set. -/
+theorem finite_setOf_apply_mem {f : ι → X → Y} {s : Set X}
+    (hlf : LocallyFinite fun i ↦ s.graphOn (f i)) {x : X} (hx : x ∈ s) {K : Set Y}
+    (hK : IsCompact K) : {i | f i x ∈ K}.Finite :=
+  (hlf.finite_nonempty_inter_compact (isCompact_singleton.prod hK)).subset
+    fun i hi ↦ ⟨(x, f i x), ⟨x, hx, rfl⟩, rfl, hi⟩
+
+/-- If the graphs over `s` of a family of functions form a locally finite family, then at each
+point of `s` the functions take only finitely many distinct values in a given compact set. -/
+theorem finite_range_apply_inter {f : ι → X → Y} {s : Set X}
+    (hlf : LocallyFinite fun i ↦ s.graphOn (f i)) {x : X} (hx : x ∈ s) {K : Set Y}
+    (hK : IsCompact K) : (range (fun i ↦ f i x) ∩ K).Finite :=
+  ((hlf.finite_setOf_apply_mem hx hK).image fun i ↦ f i x).subset <| by
+    rintro _ ⟨⟨i, rfl⟩, hi⟩
+    exact ⟨i, hi, rfl⟩
 
 end LocallyFinite

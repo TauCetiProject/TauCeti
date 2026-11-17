@@ -235,7 +235,7 @@ theorem isTateTerminal_map_iff {S : Type*} [CommRing S] (f : R →+* S)
 
 /-- At a stopping symbol other than `Iₙ` with `m` components, `ϖ^(m+1)` divides the
 discriminant. This is the bound that makes the algorithmic Ogg exponent at least `2` there. -/
-theorem IsTateTerminal.pow_componentCount_add_one_dvd_Δ [IsDomain R] (hϖ : Prime ϖ)
+theorem IsTateTerminal.pow_componentCount_add_one_dvd_Δ (hϖ : Prime ϖ)
     {s : ReductionSymbol} (h : W.IsTateTerminal ϖ s) (hs : ∀ n, s ≠ .I n) :
     ϖ ^ (s.componentCount + 1) ∣ W.Δ := by
   match s, h with
@@ -370,7 +370,7 @@ theorem IsTateTerminal.prime_and_not_dvd_of_IVStar (hϖ : (Ideal.span {ϖ}).IsPr
 
 /-- **Tate's algorithm stops at a symbol other than `I₀` exactly when `ϖ` divides the
 discriminant.** -/
-theorem IsTateTerminal.dvd_Δ_iff [IsDomain R] (hϖ : Prime ϖ) {s : ReductionSymbol}
+theorem IsTateTerminal.dvd_Δ_iff {s : ReductionSymbol}
     (h : W.IsTateTerminal ϖ s) : ϖ ∣ W.Δ ↔ s ≠ .I 0 := by
   refine ⟨fun hΔ hs ↦ (isTateTerminal_I_zero.1 (hs ▸ h)) hΔ, fun hs ↦ ?_⟩
   by_cases hI : ∃ n, s = .I n
@@ -379,7 +379,9 @@ theorem IsTateTerminal.dvd_Δ_iff [IsDomain R] (hϖ : Prime ϖ) {s : ReductionSy
     | zero => exact absurd rfl hs
     | succ n => exact (dvd_pow_self ϖ n.succ_ne_zero).trans (isTateTerminal_I_add_one.1 h).2.2.2.2.1
   · simp only [not_exists] at hI
-    exact (dvd_pow_self ϖ (Nat.succ_ne_zero _)).trans (h.pow_componentCount_add_one_dvd_Δ hϖ hI)
+    obtain ⟨hb₂, h₃, h₄, h₆⟩ := h.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hI
+    exact (dvd_pow_self ϖ two_ne_zero).trans
+      (W.sq_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆ ϖ hb₂ h₃ h₄ h₆)
 
 end CommRing
 
@@ -425,7 +427,7 @@ theorem IsTateTerminal.two_le_algorithmicOggExponent (hϖ : Irreducible ϖ) {s :
   have key := addVal_le_iff_dvd.2 (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
   rw [hϖ.addVal_pow, hn] at key
   have : s.componentCount + 1 ≤ n := by exact_mod_cast key
-  rw [ReductionSymbol.algorithmicOggExponent_eq]
+  rw [ReductionSymbol.algorithmicOggExponent_def]
   omega
 
 /-! ### Termination -/

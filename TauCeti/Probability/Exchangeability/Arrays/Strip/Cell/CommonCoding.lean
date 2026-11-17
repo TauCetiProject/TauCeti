@@ -220,16 +220,9 @@ private theorem map_prod_cellCoding_eq
   have hψ : Measurable fun y : H → α => (cellContextOfStrips (α := α) e f i j y, y) :=
     hΦ.prodMk measurable_id
   set κ := condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ
-  -- Conditionally on its context, the cell forgets the rest of the crossing strips, so the joint
-  -- law of the context, the strips and the cell disintegrates through the context kernel.
-  have hjoint : ρ.map (fun x => ((cellContext e f i j x, H.domRestrict x), x (i, j))) =
-      (ρ.map fun x => (cellContext e f i j x, H.domRestrict x)) ⊗ₘ κ.prodMkRight (H → α) := by
-    refine (condDistrib_ae_eq_iff_measure_eq_compProd
-      (((measurable_cellContext e f i j).prodMk hZ).aemeasurable)
-      (measurable_pi_apply (i, j)).aemeasurable _).1 ?_
-    exact (condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight (measurable_pi_apply (i, j)) hZ
-      (measurable_cellContext e f i j)).1
-      (hρ.condIndepFun_cell_crossingStrips he hf hi hj).symm
+  -- Conditionally on its context, the cell forgets the rest of the crossing strips.
+  have hjoint := CondIndepFun.map_prod_eq_compProd_prodMkRight (measurable_pi_apply (i, j)) hZ
+    (measurable_cellContext e f i j) (hρ.condIndepFun_cell_crossingStrips he hf hi hj).symm
   -- One uniform variable realizes that kernel, uniformly in the context.
   have hcode : ((ρ.map fun x => (cellContext e f i j x, H.domRestrict x)).prod
       (volume : Measure I)).map (fun q => (q.1, g q.1.1 q.2)) =
@@ -294,22 +287,7 @@ theorem SeparatelyExchangeable.exists_common_visibleCells_coding
               fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p))) =
           ρ.map fun x => (H.domRestrict x, fun p : F => x p.1.1) := by
   intro H V
-  rcases Set.eq_empty_or_nonempty V with hV | ⟨⟨i₀, j₀⟩, hi₀, hj₀⟩
-  · -- If the hidden rows or the hidden columns exhaust their index set, there is no visible cell:
-    -- every finite family is then empty and the claim only compares the law of the crossing
-    -- strips with itself, so any measurable constant coding serves.
-    have : IsEmpty V := Set.isEmpty_coe_sort.2 hV
-    refine ⟨fun _ _ => Classical.arbitrary α, measurable_const, fun F => ?_⟩
-    have : IsEmpty F := ⟨fun p => isEmptyElim p.1⟩
-    have hstrips : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => x p.1.1) :=
-      (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p => measurable_pi_apply p.1.1)
-    have hfactor : (fun q : (ℕ × ℕ → α) × (F → I) =>
-          (H.domRestrict q.1, fun _ : F => Classical.arbitrary α)) =
-        (fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => x p.1.1)) ∘ Prod.fst :=
-      funext fun q => Prod.ext rfl (Subsingleton.elim _ _)
-    rw [hfactor, ← Measure.map_map hstrips measurable_fst, Measure.map_fst_prod]
-    simp
-  obtain ⟨g, hg, hgmap⟩ := hρ.exists_common_cell_coding e f hi₀ hj₀
+  obtain ⟨g, hg, hgmap⟩ := hρ.exists_common_cell_coding e f
   refine ⟨g, hg, fun F => ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   -- Distinct visible cells are conditionally independent given the crossing strips.

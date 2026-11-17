@@ -69,19 +69,19 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N]
 
-/-- A diffeomorphism `ψ` of cotangent bundles pulling `λ_N` back to `λ_M` and covering a
-differentiable map `f` of the bases sends a covector `p` at `x` to a covector `q` at `f x` with
-`q (df_x v) = p v` for every tangent vector `v` at `x`. -/
+/-- A diffeomorphism `ψ` of cotangent bundles pulling `λ_N` back to `λ_M` and covering a map
+`f` of the bases (automatically smooth) sends a covector `p` at `x` to a covector `q` at `f x`
+with `q (df_x v) = p v` for every tangent vector `v` at `x`. -/
 private theorem snd_apply_mfderiv_of_proj_apply_eq
     (ψ : CotangentBundle I M ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), J.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
       CotangentBundle J N)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff (liouvilleForm J N) = liouvilleForm I M)
-    {f : M → N} (hf : MDifferentiable I J f) (hproj : ∀ z, (ψ z).proj = f z.proj)
+    {f : M → N} (hproj : ∀ z, (ψ z).proj = f z.proj)
     (z : CotangentBundle I M) (v : TangentSpace I z.proj) :
     (ψ z).2 (mfderiv I J f z.proj v) = z.2 v := by
   obtain ⟨w, rfl⟩ := Bundle.mfderiv_proj_surjective (IB := I) z v
   have h := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.1 z fun _ ↦ w) hψ
-  simpa only [mpullback_liouvilleForm_apply_of_proj_apply_eq ψ.contMDiff hproj z (hf z.proj),
+  simpa only [mpullback_liouvilleForm_apply_of_proj_apply_eq ψ.contMDiff hproj z,
     liouvilleForm_apply] using h
 
 section Base
@@ -155,7 +155,7 @@ private theorem cotangent_baseDiffeomorph
     CotangentBundle.ext ((proj_cotangent h z).trans (hproj z).symm) fun v ↦ ?_
   -- Both covectors evaluate `v = dh_x ((dh_x)⁻¹ v)` as `z` evaluates `(dh_x)⁻¹ v`.
   exact (cotangent_snd_apply h z v).trans
-    ((snd_apply_mfderiv_of_proj_apply_eq ψ hψ (h.mdifferentiable (by simp)) hproj z _).symm.trans
+    ((snd_apply_mfderiv_of_proj_apply_eq ψ hψ hproj z _).symm.trans
       (congrArg (ψ z).2 (h.mfderiv_apply_mfderiv_symm_apply (by simp) z.proj v)))
 
 /-- **Liouville-preserving diffeomorphisms of cotangent bundles are cotangent lifts.** On

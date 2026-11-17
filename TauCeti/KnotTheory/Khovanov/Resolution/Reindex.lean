@@ -129,7 +129,7 @@ theorem isCubeReindexCompatible :
   simp only [Category.assoc]
   -- Both sides now reindex circle tensors and apply a saddle map, in the two orders.
   rw [resolutionCubeIso_hom_comp_resolutionCubeι,
-    D'.resolutionCube_map_homOfLE_comp_resolutionCubeι hD' R j ha' hT _ hst' hc'
+    D'.resolutionCube_map_homOfLE_comp_resolutionCubeι hD' R j hT _ hst' hc'
       (hD'.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst' hc'),
     D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j ha,
     resolutionCubeIso_hom_comp_resolutionCubeι_assoc]

@@ -36,18 +36,18 @@ variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 
 /-- The Koszul swap relation on homogeneous generators of the tensor algebra. -/
-inductive signedSwapRel (G : InternalGrading R V) :
+inductive signedSwapRel (G : InternalGrading R V ℤ) :
     TensorAlgebra R V → TensorAlgebra R V → Prop where
   | swap (p q : ℤ) (x y : V) (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
       signedSwapRel G (TensorAlgebra.ι R x * TensorAlgebra.ι R y)
         (((p * q).negOnePow : ℤ) • (TensorAlgebra.ι R y * TensorAlgebra.ι R x))
 
 /-- The tensor algebra modulo signed swaps of homogeneous generators. -/
-abbrev SignedSym (G : InternalGrading R V) := RingQuot (signedSwapRel G)
+abbrev SignedSym (G : InternalGrading R V ℤ) := RingQuot (signedSwapRel G)
 
 namespace SignedSym
 
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- The quotient map from the tensor algebra. -/
 abbrev quotient : TensorAlgebra R V →ₐ[R] SignedSym G :=
@@ -63,6 +63,13 @@ def generator : V →ₗ[R] SignedSym G :=
 
 @[simp]
 theorem quotient_ι (x : V) : quotient G (TensorAlgebra.ι R x) = generator G x := (rfl)
+
+/-- The class of a tensor word is the product of its generators in the same order. -/
+theorem quotient_tprod {n : ℕ} (x : Fin n → V) :
+    quotient G (TensorAlgebra.tprod R V n x) =
+      (List.ofFn fun i => generator G (x i)).prod := by
+  simp only [TensorAlgebra.tprod_apply, map_list_prod, List.map_ofFn,
+    Function.comp_def, quotient_ι]
 
 /-- Homogeneous generators supercommute with the Koszul sign. -/
 theorem generator_mul_generator {p q : ℤ} {x y : V}
@@ -86,15 +93,15 @@ theorem induction {P : SignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
-variable {A : Type w} [Ring A] [Algebra R A]
-
 /-- Algebra maps out of the signed symmetric algebra are determined by their generators. -/
 @[ext 1200]
-theorem hom_ext {f g : SignedSym G →ₐ[R] A}
+theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : SignedSym G →ₐ[R] A}
     (h : ∀ x, f (generator G x) = g (generator G x)) : f = g := by
   apply RingQuot.ringQuot_ext'
   apply TensorAlgebra.hom_ext
   exact LinearMap.ext h
+
+variable {A : Type w} [Ring A] [Algebra R A]
 
 /-- Extend a linear map whose homogeneous images obey signed commutativity. No grading on the
 receiving algebra is required: the relation is tested on the images of generators. -/
@@ -112,6 +119,13 @@ theorem lift_generator (f : V →ₗ[R] A) (hf) (x : V) :
   rw [← quotient_ι]
   exact (RingQuot.liftAlgHom_mkAlgHom_apply R _ _ _).trans
     (TensorAlgebra.lift_ι_apply f x)
+
+/-- The extension to the signed quotient agrees with the tensor-algebra extension on every
+tensor representative. -/
+@[simp]
+theorem lift_quotient (f : V →ₗ[R] A) (hf) (x : TensorAlgebra R V) :
+    lift G f hf (quotient G x) = TensorAlgebra.lift R f x :=
+  RingQuot.liftAlgHom_mkAlgHom_apply R _ _ x
 
 /-- The extension is unique. -/
 theorem lift_unique (f : V →ₗ[R] A) (hf) (g : SignedSym G →ₐ[R] A)
@@ -153,26 +167,10 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (SignedSym G)) :
 instance [Nontrivial R] : Nontrivial (SignedSym G) :=
   (algebraMap_injective G).nontrivial
 
-/-- Odd homogeneous generators square to their own negatives, over any coefficient ring. -/
-theorem generator_sq_eq_neg {p : ℤ} {x : V} (hx : x ∈ G.piece p) (hp : Odd p) :
-    generator G x ^ 2 = -(generator G x ^ 2) := by
-  simpa only [pow_two, Int.negOnePow_mul_self, Int.negOnePow_odd _ hp,
-    Units.val_neg, Units.val_one, neg_smul, one_smul] using
-    generator_mul_generator G hx hx
-
-/-- Odd homogeneous generators have square zero when 2 is invertible (in particular over ℚ). -/
-theorem generator_sq_eq_zero [Invertible (2 : R)] {p : ℤ} {x : V}
-    (hx : x ∈ G.piece p) (hp : Odd p) : generator G x ^ 2 = 0 := by
-  have h : (2 : R) • (generator G x ^ 2) = 0 := by
-    rw [two_smul]
-    exact eq_neg_iff_add_eq_zero.mp (generator_sq_eq_neg G hx hp)
-  have := congrArg (fun a : SignedSym G => (⅟(2 : R)) • a) h
-  simpa only [invOf_smul_smul, smul_zero] using this
-
 section Map
 
 variable {W : Type*} [AddCommGroup W] [Module R W]
-variable (H : InternalGrading R W)
+variable (H : InternalGrading R W ℤ)
 
 /-- A degree-preserving linear map induces a map of signed symmetric algebras. -/
 def map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
@@ -196,7 +194,7 @@ theorem map_id : map G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
 variable {U : Type*} [AddCommGroup U] [Module R U]
 
 /-- The induced algebra maps respect composition. -/
-theorem map_comp (K : InternalGrading R U) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
+theorem map_comp (K : InternalGrading R U ℤ) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
     (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
     map G K (g.comp f) (by simpa using hg.comp hf) =
@@ -236,7 +234,7 @@ theorem congr_symm (e : V ≃ₗ[R] W) (he) :
   simp
 
 /-- The induced algebra equivalences respect composition. -/
-theorem congr_trans (K : InternalGrading R U) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
+theorem congr_trans (K : InternalGrading R U ℤ) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
     (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
     (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
     congr G K (e.trans f) (by simpa using hf.comp he) =

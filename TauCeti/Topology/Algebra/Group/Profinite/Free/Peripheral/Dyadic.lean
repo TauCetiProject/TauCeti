@@ -163,8 +163,8 @@ theorem exists_peripheralPowerAutomorphism_two_opposite (hF : IsProP 2 F)
       φ (periphT e * periphP e)⁻¹ =
         cC'⁻¹ * hF.padicPow (periphT e * periphP e)⁻¹ u * cC' := by
   obtain ⟨φ, cP, cT, cC, hcP, hP, hT, hC⟩ := exists_peripheralPowerAutomorphism_two hF e u
-  have hC' := map_conj_eq_conj_of_map_eq_conj φ (hF.padicPow · u) (hF.conj_padicPow · · u) hC
-    (periphP e)⁻¹
+  have hC' := map_conj_eq_conj_of_map_eq_conj φ (hF.padicPow · u)
+    (hF.conj_padicPow (periphP e)⁻¹ _ u) hC
   rw [inv_inv, ← periphT_mul_periphP_inv] at hC'
   exact ⟨φ, cP, cT, cC, hcP, hP, hT, hC, hC'⟩
 

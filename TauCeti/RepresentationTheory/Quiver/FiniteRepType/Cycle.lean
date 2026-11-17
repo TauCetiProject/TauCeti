@@ -232,7 +232,7 @@ private theorem cycleApp_first_root_mul (f : cycleRep k x r ⟶ cycleRep k x r)
 private theorem cycleApp_eq_mulRight (f : cycleRep k x r ⟶ cycleRep k x r) (a : CycleVertex x) :
     cycleApp f a = LinearMap.mulRight k (cycleApp f ⟨0⟩ 1) := by
   rw [cycleApp_eq_first hx f a]
-  exact AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (r + 1)) (cycleApp_first_root_mul hx f)
+  exact AdjoinRoot.eq_mulRight_of_root_mul (cycleApp_first_root_mul hx f)
 
 omit hx in
 /-- `cycleRep k x r` is finite-dimensional: its vertex spaces are `k[X]/(Xʳ⁺¹)`. -/

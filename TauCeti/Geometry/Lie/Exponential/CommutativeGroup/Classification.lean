@@ -120,13 +120,14 @@ end Module.Basis
 
 namespace TauCeti
 
-omit [IsTopologicalGroup G] in
+omit [T2Space G] [IsTopologicalGroup G] in
 include I in
 /-- A compact connected commutative finite-dimensional real Lie group is a product of circles,
 with one factor for every dimension of its manifold model. -/
 theorem nonempty_continuousMulEquiv_pi_circle :
     Nonempty (G ≃ₜ* (Fin (Module.finrank ℝ E) → Circle)) := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let L := (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
   let _ : Module.Free ℤ L := ZLattice.module_free ℝ L
   let _ : Module.Finite ℤ L := ZLattice.module_finite ℝ L

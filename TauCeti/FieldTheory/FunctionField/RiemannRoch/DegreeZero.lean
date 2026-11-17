@@ -64,8 +64,8 @@ theorem riemannRochSpace_ne_bot_iff_divisorClass_eq_zero_of_degree_eq_zero
         rw [WeilDivisor.weightedDegree_apply]
         rw [Divisor.degree_apply] at hD
         exact hD)
-  simpa only [Set.nonempty_def, WeilDivisor.OrderSystem.mem_completeLinearSystem,
-    WeilDivisor.isEffective_iff_zero_le] using hcriterion
+  simpa only [Set.nonempty_def, WeilDivisor.OrderSystem.mem_completeLinearSystem]
+    using hcriterion
 
 /-- A degree-zero divisor has a nonzero Riemann–Roch space exactly when it is principal
 (Stichtenoth, Corollary 1.4.12(c)). -/

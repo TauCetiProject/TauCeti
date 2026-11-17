@@ -25,7 +25,7 @@ module that is injective as a module is an injective object of `FGModuleCat R`.
 
 public section
 
-namespace TauCeti
+namespace FGModuleCat
 
 open CategoryTheory
 
@@ -35,7 +35,7 @@ variable {R : Type u} [Ring R]
 
 /-- The inclusion of finitely generated modules into all modules preserves monomorphisms: a
 monomorphism of finitely generated modules is an injective linear map. -/
-instance _root_.FGModuleCat.forget₂_preservesMonomorphisms :
+instance forget₂_preservesMonomorphisms :
     (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms where
   preserves {A B} f _ := by
     refine (ModuleCat.mono_iff_injective _).mpr <|
@@ -50,9 +50,9 @@ instance _root_.FGModuleCat.forget₂_preservesMonomorphisms :
     simpa [i] using congr(($hi).hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩)
 
 /-- A finitely generated injective module is an injective object of `FGModuleCat R`. -/
-theorem _root_.FGModuleCat.injective_of_moduleInjective (X : FGModuleCat.{v} R)
+theorem injective_of_moduleInjective (X : FGModuleCat.{v} R)
     [Module.Injective R X] : Injective X :=
   (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).injective_of_map_injective
     ((Module.injective_iff_injective_object R X).mp inferInstance)
 
-end TauCeti
+end FGModuleCat

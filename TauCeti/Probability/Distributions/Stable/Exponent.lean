@@ -239,24 +239,13 @@ theorem continuousAt_stableCharacteristicExponent_zero {α : ℝ} (hα : 0 < α)
     · simpa [mul_assoc] using stableCharacteristicExponent_one β u
   · have hrpow : ContinuousAt (fun u : ℝ ↦ |u| ^ α) 0 := by
       exact continuous_abs.continuousAt.rpow_const (Or.inr hα.le)
-    have hsignpow : Tendsto (fun u : ℝ ↦ Real.sign u * |u| ^ α) (𝓝 0) (𝓝 0) := by
-      apply tendsto_zero_iff_norm_tendsto_zero.mpr
-      refine squeeze_zero (g := fun u : ℝ ↦ ‖|u| ^ α‖)
-        (fun u ↦ norm_nonneg (Real.sign u * |u| ^ α)) ?_ ?_
-      · intro u
-        rcases Real.sign_apply_eq u with h | h | h
-        · rw [h]
-          simp only [norm_mul, norm_eq_abs, abs_neg, abs_one, one_mul]
-          exact le_rfl
-        · rw [h]
-          simp only [zero_mul, norm_zero]
-          exact norm_nonneg _
-        · rw [h]
-          simp only [norm_eq_abs, one_mul]
-          exact le_rfl
-      · simpa only [abs_zero, Real.zero_rpow hα.ne', norm_zero] using hrpow.norm.tendsto
     have hsignpow' : ContinuousAt (fun u : ℝ ↦ Real.sign u * |u| ^ α) 0 := by
-      simpa only [ContinuousAt, Real.sign_zero, zero_mul] using hsignpow
+      have hsign : Tendsto (fun u : ℝ ↦ Real.sign u * |u| ^ α) (𝓝 0) (𝓝 0) := by
+        refine tendsto_zero_iff_norm_tendsto_zero.mpr (squeeze_zero (g := fun u : ℝ ↦ ‖|u| ^ α‖)
+          (fun u ↦ norm_nonneg _) (fun u ↦ ?_) ?_)
+        · rcases Real.sign_apply_eq u with h | h | h <;> simp [h]
+        · simpa only [abs_zero, Real.zero_rpow hα.ne', norm_zero] using hrpow.norm.tendsto
+      simpa only [ContinuousAt, Real.sign_zero, zero_mul] using hsign
     have him : ContinuousAt
         (fun u : ℝ ↦ β * Real.tan (π * α / 2) *
           (Real.sign u * |u| ^ α - u)) 0 :=

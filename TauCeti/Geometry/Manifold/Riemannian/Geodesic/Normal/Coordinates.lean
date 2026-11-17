@@ -111,6 +111,7 @@ variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
+omit [I.Boundaryless] [T2Space M] in
 /-- **The normal coordinate field at `exp_p v`** is the differential of the exponential map at `v`
 applied to `w`. -/
 @[simp] theorem normalCoordinateField_riemannianExp (h : IsNormalDomain I M p U) (hv : v ∈ U)
@@ -124,6 +125,7 @@ applied to `w`. -/
     (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp hv)
     (h.mfderiv_riemannianExp_comp_mfderiv_riemannianLog hv)) _
 
+omit [I.Boundaryless] [T2Space M] in
 /-- Normal coordinate fields associated to independent tangent vectors remain linearly independent
 on the normal neighbourhood. -/
 theorem linearIndependent_normalCoordinateField (h : IsNormalDomain I M p U)
@@ -141,6 +143,7 @@ theorem linearIndependent_normalCoordinateField (h : IsNormalDomain I M p U)
   have h0 := h.normalCoordinateField_riemannianExp h.zero_mem w
   rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at h0
 
+omit [I.Boundaryless] [T2Space M] in
 /-- **The normal coordinate fields are smooth** on the normal neighbourhood. -/
 theorem contMDiffOn_normalCoordinateField (h : IsNormalDomain I M p U) (w : TangentSpace I p) :
     CMDiff[riemannianExp I M p '' U] ∞ (T% (normalCoordinateField I M p U w)) := by
@@ -149,6 +152,7 @@ theorem contMDiffOn_normalCoordinateField (h : IsNormalDomain I M p U) (w : Tang
     (h.contMDiffOn_riemannianLog.contMDiffAt (h.isOpen_image.mem_nhds hq))
     (h.isInvertible_mfderiv_riemannianLog hq) (by simp)).contMDiffWithinAt
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The normal coordinate fields are differentiable at every point of the normal
 neighbourhood. -/
 theorem mdifferentiableAt_normalCoordinateField (h : IsNormalDomain I M p U)
@@ -157,23 +161,32 @@ theorem mdifferentiableAt_normalCoordinateField (h : IsNormalDomain I M p U)
   ((h.contMDiffOn_normalCoordinateField w).contMDiffAt
     (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp)
 
+omit [I.Boundaryless] [T2Space M] in
 /-- **The coordinate lines of normal coordinates.**  The curve `s ↦ exp_p (v + s • w)` has the
 normal coordinate field `X_w` as its velocity, as long as it stays in the normal domain. -/
 theorem curveVelocity_riemannianExp_add_smul_eq_normalCoordinateField
     (h : IsNormalDomain I M p U) {u : ℝ} (hu : v + u • w ∈ U) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (v + s • w)) u =
       normalCoordinateField I M p U w (riemannianExp I M p (v + u • w)) := by
-  rw [curveVelocity_riemannianExp_add_smul (h.subset_expDomain hu),
-    h.normalCoordinateField_riemannianExp hu]
+  have hg : HasDerivAt (fun s : ℝ ↦ v + s • w) w u := by
+    simpa using (hasDerivAt_id u).smul_const w |>.const_add v
+  rw [h.normalCoordinateField_riemannianExp hu]
+  exact ((h.isLocalDiffeomorphOn ⟨_, hu⟩).mdifferentiableAt (by simp)).curveVelocity_comp_mfderiv hg
 
+omit [I.Boundaryless] [T2Space M] in
 /-- **Radial geodesics in normal coordinates.**  The radial geodesic `s ↦ exp_p (s • v)` has the
 normal coordinate field `X_v` as its velocity, as long as it stays in the normal domain. -/
 theorem curveVelocity_riemannianExp_smul_eq_normalCoordinateField
     (h : IsNormalDomain I M p U) {t : ℝ} (ht : t • v ∈ U) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (s • v)) t =
       normalCoordinateField I M p U v (riemannianExp I M p (t • v)) := by
-  rw [curveVelocity_riemannianExp_smul (h.subset_expDomain ht),
-    h.normalCoordinateField_riemannianExp ht]
+  have h' := h.curveVelocity_riemannianExp_add_smul_eq_normalCoordinateField (v := 0) (w := v)
+    (u := t) (by simpa only [zero_add] using ht)
+  have hcurve : (fun s : ℝ ↦ riemannianExp I M p (0 + s • v)) =
+      fun s : ℝ ↦ riemannianExp I M p (s • v) := by
+    funext s
+    rw [zero_add]
+  rwa [hcurve, zero_add] at h'
 
 omit [I.Boundaryless] [T2Space M] in
 /-- A path in `T_p M` through the origin stays in the normal domain near the origin. -/

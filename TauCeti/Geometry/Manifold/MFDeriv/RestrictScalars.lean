@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.RestrictScalars
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 
 /-!
 # Restricting the scalars of manifold derivatives
@@ -30,8 +33,16 @@ The main example is a holomorphic map between complex manifolds modelled on `�
 Likewise, the tangent coordinate changes of a complex manifold, regarded as a real manifold, are
 its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 
+The fibrewise linear equivalence identifies the native self-model tangent spaces over the two
+fields and intertwines their manifold and vector-valued derivatives.
+
 ## Main results
 
+* `TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv` and its `_apply`/`_symm_apply` formulas:
+  the comparison into the native smaller-field self-model tangent fibre.
+* `MDifferentiableAt.mfderiv_restrictScalarsSelf_apply` and
+  `MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply`: derivative comparison through this
+  fibre equivalence.
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
   `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability over
   `𝕜'` implies differentiability over `𝕜`.
@@ -42,8 +53,10 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
-* `MDifferentiableAt.injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
-  an immersion for the models over `𝕜`.
+* `TauCeti.injective_mfderiv_restrictScalars`,
+  `MDifferentiableAt.injective_mvfderiv_restrictScalars_iff`: an immersion for the models over
+  `𝕜'` is an immersion for the models over `𝕜`, and for a differentiable vector-valued map
+  injectivity of `mvfderiv` over `𝕜` and over `𝕜'` are equivalent.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
   (`TauCeti.tangentCoordChange_smul`), and so is the derivative of the inverse of a chart
@@ -186,21 +199,43 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
 
-/-- At a point where `f` is differentiable for the models over `𝕜'`, if its derivative over `𝕜'`
-is injective then so is its derivative over the smaller field `𝕜`. For instance, a holomorphic
-immersion between complex manifolds is a real immersion. -/
-theorem MDifferentiableAt.injective_mfderiv_restrictScalars
-    (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x)
+namespace TauCeti
+
+/-- If the derivative of `f` at `x` over `𝕜'` is injective, then so is its derivative over the
+smaller field `𝕜`. For instance, a holomorphic immersion between complex manifolds is a real
+immersion. Where `f` is not differentiable over `𝕜'` its derivative over `𝕜'` is `0`, and
+injectivity of that derivative forces the tangent space to be trivial. -/
+theorem injective_mfderiv_restrictScalars
     (hinj : Function.Injective (mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x)) :
     Function.Injective (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') f x) := by
-  intro v w hvw
+  by_cases h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x
+  · intro v w hvw
+    have hv := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) v
+    have hw := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) w
+    -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
+    -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
+    exact hinj (hv.symm.trans (hvw ▸ hw))
+  · rw [mfderiv_zero_of_not_mdifferentiableAt h] at hinj
+    intro v w _
+    exact hinj (a₁ := v) (a₂ := w) rfl
+
+/-- At a point where a vector-valued map `g : M → E'` is differentiable for the models over `𝕜'`,
+its vector-valued derivative over the smaller field `𝕜` is injective if and only if its
+vector-valued derivative over `𝕜'` is injective. For instance, a holomorphic map into a complex
+normed space is a real immersion at `x` exactly when it is a complex immersion there. -/
+theorem _root_.MDifferentiableAt.injective_mvfderiv_restrictScalars_iff {g : M → E'}
+    (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') g x) :
+    Function.Injective (mvfderiv 𝓘(𝕜, E) g x) ↔ Function.Injective (mvfderiv 𝓘(𝕜', E) g x) := by
+  rw [mvfderiv, mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (g x)).injective.of_comp_iff,
+    (NormedSpace.fromTangentSpace (𝕜 := 𝕜') (g x)).injective.of_comp_iff]
+  refine ⟨fun hinj v w hvw ↦ ?_, injective_mfderiv_restrictScalars 𝕜⟩
   have hv := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) v
   have hw := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) w
   -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
   -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
-  exact hinj (hv.symm.trans (hvw ▸ hw))
-
-namespace TauCeti
+  exact hinj (hv.trans (hvw ▸ hw.symm))
 
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
 `𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
@@ -229,12 +264,13 @@ theorem tangentCoordChange_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘
 `𝕜'`-linear: it is a tangent coordinate change. For instance, on a complex manifold, regarded as
 a real manifold, the real derivative of the inverse of a chart commutes with multiplication by
 `i`. -/
-theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M]
+theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M]
     {z : E} (hz : z ∈ (extChartAt 𝓘(𝕜, E) x).target) (c : 𝕜') (w : E) :
     mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z
         ((c • ContinuousLinearMap.id 𝕜 E) w) =
       (c • ContinuousLinearMap.id 𝕜 E)
         (mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z w) := by
+  have : IsManifold 𝓘(𝕜, E) 1 M := IsManifold.restrictScalars 𝕜 (𝕜' := 𝕜') inferInstance
   have hy : (extChartAt 𝓘(𝕜, E) x).symm z ∈ (chartAt E x).source := by
     simpa only [extChartAt_source] using (extChartAt 𝓘(𝕜, E) x).map_target hz
   rw [← (extChartAt 𝓘(𝕜, E) x).right_inv hz, ← TangentBundle.symmL_trivializationAt hy,
@@ -242,3 +278,88 @@ theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsMa
   exact tangentCoordChange_smul 𝕜 (𝕜' := 𝕜') ⟨hy, mem_chart_source E _⟩ c w
 
 end TauCeti
+
+noncomputable section
+
+namespace TauCeti
+
+variable (R : Type*) {A : Type*}
+  [NontriviallyNormedField R] [NontriviallyNormedField A] [NormedAlgebra R A]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace A E] [NormedSpace R E]
+  [IsScalarTower R A E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+
+/-- Scalar restriction identifies a self-model tangent fibre with the native self-model
+fibre over the smaller field. -/
+def tangentSpaceRestrictScalarsSelfLinearEquiv (x : M) :
+    RestrictScalars R A (TangentSpace 𝓘(A, E) x) ≃ₗ[R] TangentSpace 𝓘(R, E) x where
+  toFun v := (tangentSpaceCastModel 𝓘(R, E) x).symm
+    (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
+  invFun v := (RestrictScalars.addEquiv R A _).symm
+    ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v))
+  left_inv v := by simp
+  right_inv v := by simp
+  map_add' v w := by simp only [map_add]
+  map_smul' c v := by
+    simp only [RestrictScalars.addEquiv_map_smul, map_smul, RingHom.id_apply, algebraMap_smul]
+
+/-- Native self-model scalar restriction preserves preferred tangent coordinates. -/
+@[simp]
+theorem tangentSpaceRestrictScalarsSelfLinearEquiv_apply (x : M)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    tangentSpaceRestrictScalarsSelfLinearEquiv R x v = (tangentSpaceCastModel 𝓘(R, E) x).symm
+      (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v)) := by
+  rfl
+
+/-- The inverse native self-model comparison preserves preferred tangent coordinates. -/
+@[simp]
+theorem tangentSpaceRestrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : TangentSpace 𝓘(R, E) x) :
+    (tangentSpaceRestrictScalarsSelfLinearEquiv R (A := A) x).symm v =
+      (RestrictScalars.addEquiv R A _).symm
+        ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v)) := by
+  rfl
+
+end TauCeti
+
+namespace MDifferentiableAt
+
+variable (R : Type*) {A : Type*}
+  [NontriviallyNormedField R] [NontriviallyNormedField A] [NormedAlgebra R A]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace A E] [NormedSpace R E]
+  [IsScalarTower R A E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace A F] [NormedSpace R F]
+  [IsScalarTower R A F] {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+
+/-- The native self-model fibre comparison intertwines derivatives over the two fields. -/
+theorem mfderiv_restrictScalarsSelf_apply {f : M → N} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R (f x)
+        ((RestrictScalars.addEquiv R A _).symm
+          (mfderiv 𝓘(A, E) 𝓘(A, F) f x (RestrictScalars.addEquiv R A _ v))) =
+      mfderiv 𝓘(R, E) 𝓘(R, F) f x
+        (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x v) := by
+  have h := DFunLike.congr_fun (hf.mfderiv_restrictScalars R)
+    (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
+  apply (tangentSpaceCastModel 𝓘(R, F) (f x)).injective
+  simp only [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
+  exact h.symm
+
+/-- Vector-valued derivatives agree through the native self-model fibre comparison. -/
+theorem mvfderiv_restrictScalarsSelf_apply {f : M → F} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    mvfderiv 𝓘(R, E) f x (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x v) =
+      mvfderiv 𝓘(A, E) f x (RestrictScalars.addEquiv R A _ v) := by
+  -- For a vector-space target, the model cast is the standard tangent-space identification.
+  have h := congrArg (tangentSpaceCastModel 𝓘(R, F) (f x))
+    (hf.mfderiv_restrictScalarsSelf_apply R v)
+  simp only [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply,
+    AddEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply] at h
+  simp only [mvfderiv, NormedSpace.fromTangentSpace,
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply]
+  rw [ContinuousLinearMap.comp_apply]
+  exact h.symm
+
+end MDifferentiableAt

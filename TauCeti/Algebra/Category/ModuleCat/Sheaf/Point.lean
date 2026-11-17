@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Category.Grp.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.CategoryTheory.Triangulated.Adjunction
 public import TauCeti.Algebra.Homology.DerivedCategory.Equivalence
 
 /-!
@@ -207,17 +206,17 @@ noncomputable instance : (derivedEquivalence.{u, v, w₁, w₂} R).functor.CommS
 instance : (derivedEquivalence.{u, v, w₁, w₂} R).functor.IsTriangulated :=
   inferInstanceAs ((equivalence.{u, v} R).mapDerivedCategory.{w₁, w₂}.functor.IsTriangulated)
 
-/-- The inverse derived equivalence has the shift structure compatible with the adjunction. -/
+/-- The inverse derived equivalence commutes with every integer shift. -/
 noncomputable instance : (derivedEquivalence.{u, v, w₁, w₂} R).inverse.CommShift ℤ :=
-  (derivedEquivalence.{u, v, w₁, w₂} R).commShiftInverse ℤ
+  inferInstanceAs ((equivalence.{u, v} R).mapDerivedCategory.{w₁, w₂}.inverse.CommShift ℤ)
 
 /-- The unit and counit of the derived equivalence commute with integer shifts. -/
 instance : (derivedEquivalence.{u, v, w₁, w₂} R).CommShift ℤ :=
-  (derivedEquivalence.{u, v, w₁, w₂} R).commShift_of_functor ℤ
+  inferInstanceAs ((equivalence.{u, v} R).mapDerivedCategory.{w₁, w₂}.CommShift ℤ)
 
 /-- Both directions of the point-site derived equivalence preserve distinguished triangles. -/
 instance : (derivedEquivalence.{u, v, w₁, w₂} R).IsTriangulated :=
-  Equivalence.IsTriangulated.mk' _ inferInstance
+  inferInstanceAs ((equivalence.{u, v} R).mapDerivedCategory.{w₁, w₂}.IsTriangulated)
 
 end Derived
 
