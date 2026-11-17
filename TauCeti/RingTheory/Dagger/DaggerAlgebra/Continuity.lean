@@ -628,7 +628,7 @@ theorem supSeminorm_le_norm (a : A) :
     letI := residueNormedCommRing K A
     supSeminorm K a ≤ ‖a‖ := by
   let := residueNormedCommRing K A
-  simpa only [supSeminorm_algEquiv, norm_residueAlgEquiv] using
+  simpa only [AlgEquiv.supSeminorm_eq, norm_residueAlgEquiv] using
     washnitzerAlgebra.supSeminorm_quotient_le_norm (residueAlgEquiv K A a)
 
 /-- **Power-bounded elements of a dagger algebra.** In the canonical residue-norm topology on `A`,
