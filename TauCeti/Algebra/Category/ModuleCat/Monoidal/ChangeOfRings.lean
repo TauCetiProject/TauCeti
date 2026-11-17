@@ -18,6 +18,10 @@ For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of s
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
 `A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). This computes `Tor` over `A` by a
 projective resolution over `P` after a flat extension of scalars.
+
+Taking `M = P` identifies `extendScalars f ⋙ restrictScalars f` with
+`tensorLeft ((restrictScalars f).obj (of P P))` (`ModuleCat.extendScalarsCompRestrictScalarsIso`),
+reducing homology and quasi-isomorphism preservation of scalar extension to left tensoring by `P`.
 -/
 
 public section
@@ -88,5 +92,45 @@ theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : M
         (TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) m x) =
       TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m ((1 : P) ⊗ₜ[A, f] x) :=
   (rfl)
+
+/-- Extension of scalars followed by restriction of scalars along `f : A →+* P` is naturally
+isomorphic to tensoring on the left with `P` viewed as an `A`-module via `f`. -/
+noncomputable def extendScalarsCompRestrictScalarsIso :
+    extendScalars.{u, u, u} f ⋙ restrictScalars.{u} f ≅
+      tensorLeft ((restrictScalars f).obj (of P P)) :=
+  Functor.isoWhiskerLeft (extendScalars f)
+      ((Functor.leftUnitor (restrictScalars f)).symm ≪≫
+        Functor.isoWhiskerRight (leftUnitorNatIso (ModuleCat.{u} P)).symm (restrictScalars f)) ≪≫
+    extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))
+
+/-- The forward map of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
+@[simp]
+theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A) (s : P) (x : X) :
+    (Hom.hom : ((restrictScalars f).obj ((extendScalars f).obj X) ⟶
+        (restrictScalars f).obj (of P P) ⊗ X) → _)
+        ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x) =
+      TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) s x := by
+  -- Exclude `OplaxMonoidal.left_unitality` so `(λ_ ((extendScalars f).obj X)).inv` is not
+  -- expanded into oplax monoidal coherence maps before `leftUnitor_inv_apply` evaluates it, and
+  -- instantiate `restrictScalars.map_apply` and `leftUnitor_inv_apply` since their
+  -- `ConcreteCategory.hom` heads do not match `Hom.hom` at `simp`'s `reducible` transparency.
+  simp [extendScalarsCompRestrictScalarsIso, Function.comp_def,
+    -Functor.OplaxMonoidal.left_unitality,
+    restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).inv (s ⊗ₜ[A, f] x),
+    MonoidalCategory.leftUnitor_inv_apply (M := (extendScalars f).obj X) (s ⊗ₜ[A, f] x)]
+
+/-- The inverse of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
+@[simp]
+theorem extendScalarsCompRestrictScalarsIso_inv_app_tmul
+    (X : ModuleCat.{u} A) (s : (restrictScalars f).obj (of P P)) (x : X) :
+    (Hom.hom : ((restrictScalars f).obj (of P P) ⊗ X ⟶
+        (restrictScalars f).obj ((extendScalars f).obj X)) → _)
+        ((extendScalarsCompRestrictScalarsIso f).inv.app X)
+        (TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) s x) =
+      (s : P) ⊗ₜ[A, f] x := by
+  let e := (extendScalarsCompRestrictScalarsIso f).app X
+  exact (congrArg (Hom.hom e.inv)
+    (extendScalarsCompRestrictScalarsIso_hom_app_tmul f X (s : P) x).symm).trans
+    (ModuleCat.inv_hom_apply e ((s : P) ⊗ₜ[A, f] x))
 
 end ModuleCat
