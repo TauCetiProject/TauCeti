@@ -171,8 +171,7 @@ theorem tendsto_integral_sq_smallJumpFactor_zero
 
 /-- Limiting small-jump factors concentrate weakly at zero as their cutoffs shrink. -/
 theorem tendsto_smallJumpFactor_dirac
-    (hα : α ∈ Ioo 0 2) {ι : Type*} {L : Filter ι}
-    [L.IsCountablyGenerated] {r : ι → ℝ}
+    (hα : α ∈ Ioo 0 2) {ι : Type*} {L : Filter ι} {r : ι → ℝ}
     (hlim : Tendsto r L (𝓝[>] 0)) {μ : ι → ProbabilityMeasure ℝ}
     (hμ : ∀ i, (μ i : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β (r i) =
       stableMeasure α β 1 0) :
