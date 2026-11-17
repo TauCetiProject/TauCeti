@@ -78,6 +78,34 @@ theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ)
         exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _))
     _ = _ := integral_mul_const _ _
 
+/-- **A kernel of integral zero converts Hölder continuity into decay.** If `∫ K = 0`, the
+convolution integral `∫ K z • f (w - z)` of an `α`-Hölder function with constant `H` is at most
+`H` times the `α`-th moment `∫ ‖z‖ ^ α ‖K z‖` of the kernel. No boundedness of `f` is needed. -/
+theorem norm_integral_kernel_smul_sub_le_of_integral_eq_zero (hK : Integrable K μ)
+    (hK0 : ∫ z, K z ∂μ = 0) {H α : ℝ≥0} (hKα : Integrable (fun z ↦ ‖z‖ ^ (α : ℝ) * ‖K z‖) μ)
+    (hf : HolderWith H α f) (hfc : Continuous f) (w : E) :
+    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ H * ∫ z, ‖z‖ ^ (α : ℝ) * ‖K z‖ ∂μ := by
+  have hbound : ∀ z, ‖K z • (f (w - z) - f w)‖ ≤ H * (‖z‖ ^ (α : ℝ) * ‖K z‖) := fun z ↦ by
+    rw [norm_smul, ← dist_eq_norm, mul_comm]
+    calc dist (f (w - z)) (f w) * ‖K z‖ ≤ (H * ‖z‖ ^ (α : ℝ)) * ‖K z‖ := by
+          gcongr
+          simpa using hf.dist_le (w - z) w
+      _ = H * (‖z‖ ^ (α : ℝ) * ‖K z‖) := mul_assoc _ _ _
+  have hint : Integrable (fun z ↦ K z • (f (w - z) - f w)) μ :=
+    (hKα.const_mul H).mono'
+      (hK.aestronglyMeasurable.smul
+        ((hfc.comp (continuous_const.sub continuous_id)).sub continuous_const).aestronglyMeasurable)
+      (ae_of_all _ hbound)
+  -- Subtracting the constant `f w` costs nothing, since `K` has integral zero.
+  have hsub : ∫ z, K z • f (w - z) ∂μ = ∫ z, K z • (f (w - z) - f w) ∂μ := by
+    by_cases hF : CompleteSpace F
+    · have h := integral_add hint (hK.smul_const (f w))
+      simp only [← smul_add, sub_add_cancel] at h
+      rw [h, integral_smul_const, hK0, zero_smul, add_zero]
+    · simp only [integral_of_not_completeSpace hF]
+  rw [hsub, ← integral_const_mul]
+  exact norm_integral_le_of_norm_le (hKα.const_mul H) (ae_of_all _ hbound)
+
 /-- An integrable scalar kernel preserves a Hölder exponent and multiplies its constant by
 its `L¹` norm. No boundedness is needed: the Hölder condition makes any two translates of the
 integrand differ by an integrable function, so either every convolution integral is

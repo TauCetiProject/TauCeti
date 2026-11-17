@@ -39,8 +39,9 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
 * `TauCeti.support_fourier_comp_smul`: dilating a function by `c` dilates the support of its
   Fourier transform by `c`.
-* `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies the
-  `k`-th moment of the inverse Fourier transform by `|c| ^ k`.
+* `TauCeti.integral_rpow_mul_norm_fourierInv_comp_smul`,
+  `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies each
+  moment `∫ ‖y‖ ^ α ‖𝓕⁻ f y‖` of the inverse Fourier transform by `|c| ^ α`.
 * `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
   Fourier transform.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: dilation rescales the `Lʳ` norm of the inverse
@@ -133,22 +134,29 @@ theorem fourierInv_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕⁻ (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕⁻ f (c⁻¹ • y) := by
   simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f, smul_neg]
 
+/-- Dilating a function by `c` multiplies the `α`-th moment of the norm of its inverse Fourier
+transform by `|c| ^ α`: `∫ ‖y‖ ^ α ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ α ∫ ‖y‖ ^ α ‖𝓕⁻ f y‖`. -/
+theorem integral_rpow_mul_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (α : ℝ) :
+    ∫ y, ‖y‖ ^ α * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ α * ∫ y, ‖y‖ ^ α * ‖𝓕⁻ f y‖ := by
+  set g : E → ℝ := fun y ↦ ‖y‖ ^ α * ‖𝓕⁻ f y‖
+  have hy (y : E) : ‖y‖ ^ α * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ =
+      (|c ^ finrank ℝ E|⁻¹ * |c| ^ α) * g (c⁻¹ • y) := by
+    have hy' : ‖y‖ ^ α = |c| ^ α * ‖c⁻¹ • y‖ ^ α := by
+      rw [← Real.mul_rpow (abs_nonneg c) (norm_nonneg _), norm_smul, norm_inv, Real.norm_eq_abs,
+        mul_inv_cancel_left₀ (abs_ne_zero.2 hc)]
+    rw [fourierInv_comp_smul f, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs, hy']
+    ring
+  simp_rw [hy]
+  rw [integral_const_mul, Measure.integral_comp_inv_smul volume g, smul_eq_mul,
+    mul_comm _ (|c| ^ α), mul_assoc, ← mul_assoc _ |c ^ finrank ℝ E|,
+    inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
+
 /-- Dilating a function by `c` multiplies the `k`-th moment of its inverse Fourier transform by
 `|c| ^ k`: `∫ ‖y‖ ^ k ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ k ∫ ‖y‖ ^ k ‖𝓕⁻ f y‖`. -/
 theorem integral_norm_pow_mul_norm_fourierInv_comp_smul (f : E → F) (k : ℕ) {c : ℝ}
     (hc : c ≠ 0) :
     ∫ y, ‖y‖ ^ k * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ k * ∫ y, ‖y‖ ^ k * ‖𝓕⁻ f y‖ := by
-  have hc' : |c ^ finrank ℝ E| ≠ 0 := abs_ne_zero.2 (pow_ne_zero _ hc)
-  have hck : |c| ^ k ≠ 0 := pow_ne_zero _ (abs_ne_zero.2 hc)
-  have h (y : E) : ‖y‖ ^ k * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ =
-      (|c ^ finrank ℝ E|⁻¹ * |c| ^ k) * (‖c⁻¹ • y‖ ^ k * ‖𝓕⁻ f (c⁻¹ • y)‖) := by
-    simp only [fourierInv_comp_smul f, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs, mul_pow,
-      inv_pow]
-    field_simp
-  simp_rw [h]
-  rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖y‖ ^ k * ‖𝓕⁻ f y‖),
-    smul_eq_mul]
-  field_simp
+  simpa only [Real.rpow_natCast] using integral_rpow_mul_norm_fourierInv_comp_smul f hc k
 
 /-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
 `∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
