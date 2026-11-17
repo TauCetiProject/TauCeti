@@ -42,7 +42,7 @@ theorem count_extended_prime (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
       if v = w.under R then (v.asIdeal.ramificationIdx' w.asIdeal : ℤ) else 0 := by
   classical
   have hmap : v.asIdeal.map (algebraMap R B) ≠ ⊥ := Ideal.map_ne_bot_of_ne_bot v.ne_bot
-  rw [extended_coeIdeal_eq_map, count_coe L w hmap,
+  rw [extended_coeIdeal_eq_map, count_coeIdeal L w hmap,
     Ideal.count_associates_factors_eq hmap w.isPrime w.ne_bot,
     ← Ideal.IsDedekindDomain.ramificationIdx'_eq_normalizedFactors_count hmap w.isPrime w.ne_bot]
   split_ifs with h

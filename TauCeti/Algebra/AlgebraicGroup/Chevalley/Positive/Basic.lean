@@ -70,6 +70,16 @@ theorem positiveSubgroup_eq_closure (A : CommAlgCat.{v} ℤ) :
     kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
 
+/-- The positive lattice subgroup is the join of the positive root subgroup ranges. -/
+theorem positiveSubgroup_eq_iSup (A : CommAlgCat.{v} ℤ) :
+    D.positiveSubgroup A =
+      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ A).range := by
+  simp only [positiveSubgroup, kostantSubsystemSubgroup_eq_iSup,
+    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
+
 /-- A subgroup contains the positive subgroup exactly when it contains each positive root
 subgroup. -/
 theorem positiveSubgroup_le_iff {A : CommAlgCat.{v} ℤ}
@@ -220,16 +230,18 @@ theorem rootSubgroupPoints_mem_positivePoints (A : Type v) [CommRing A] {γ : Fi
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.positivePoints A :=
   (D.positivePoints_le_iff.mp le_rfl) γ hγ u
 
-/-- The positive point subgroup is the supremum of the ranges of the positive root maps. -/
+/-- The positive point subgroup is the join of the positive root subgroup ranges. -/
 theorem positivePoints_eq_iSup (A : Type v) [CommRing A] :
     D.positivePoints A =
       ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
         (D.rootSubgroupPoints γ A).range := by
-  refine le_antisymm (D.positivePoints_le_iff.mpr fun γ hγ u =>
-    Subgroup.mem_iSup_of_mem γ (Subgroup.mem_iSup_of_mem hγ ⟨u, rfl⟩)) ?_
-  refine iSup₂_le fun γ hγ => ?_
-  rintro _ ⟨u, rfl⟩
-  exact D.rootSubgroupPoints_mem_positivePoints A hγ u
+  apply le_antisymm
+  · apply D.positivePoints_le_iff.mpr
+    intro γ hγ u
+    exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u, rfl⟩
+  · refine iSup_le fun γ => iSup_le fun hγ => ?_
+    rintro _ ⟨u, rfl⟩
+    exact D.rootSubgroupPoints_mem_positivePoints A hγ u
 
 /-- The positive point subgroup is nilpotent over every commutative ring. -/
 theorem isNilpotent_positivePoints (A : Type v) [CommRing A] :

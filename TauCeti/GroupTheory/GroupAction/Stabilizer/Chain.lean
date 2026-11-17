@@ -40,6 +40,8 @@ membership in it to computations of orbits of explicit permutations.
 ## Main declarations
 
 * `Subgroup.stabilizerChain`: the stabilizer chain of a subgroup along a sequence of points.
+* `Subgroup.eq_of_forall_smul_eq_of_stabilizerChain_eq_bot`: over a base, an element of the
+  subgroup is determined by its values at the base points.
 * `Subgroup.prod_ncard_orbit_mul_card_stabilizerChain`: the stabilizer-chain order formula.
 * `Subgroup.prod_ncard_orbit_stabilizerChain_eq_card`: the order formula along a base.
 * `Subgroup.mem_iff_inv_mul_mem_stabilizerChain`: any sift decides membership.
@@ -107,6 +109,17 @@ theorem stabilizerChain_antitone : Antitone (H.stabilizerChain b) := fun _ _ hij
 theorem stabilizerChain_mono {H K : Subgroup G} (b : ℕ → α) (h : H ≤ K) (i : ℕ) :
     H.stabilizerChain b i ≤ K.stabilizerChain b i :=
   inf_le_inf_right _ h
+
+/-- Over a base, an element of `H` is determined by its values at the base points: two elements
+of `H` that agree at each of `b 0, …, b (k - 1)` are equal. -/
+theorem eq_of_forall_smul_eq_of_stabilizerChain_eq_bot {k : ℕ}
+    (hk : H.stabilizerChain b k = ⊥) {g h : G} (hg : g ∈ H) (hh : h ∈ H)
+    (hgh : ∀ j < k, g • b j = h • b j) : g = h := by
+  have hmem : h⁻¹ * g ∈ H.stabilizerChain b k :=
+    (H.mem_stabilizerChain_iff b).mpr ⟨H.mul_mem (H.inv_mem hh) hg, fun j hj ↦ by
+      rw [mul_smul, hgh j hj, inv_smul_smul]⟩
+  rw [hk, Subgroup.mem_bot, inv_mul_eq_one] at hmem
+  exact hmem.symm
 
 /-! ### The order formula -/
 

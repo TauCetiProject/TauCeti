@@ -49,11 +49,15 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
+  by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
   multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a free module every alternating form is
+  `B - B.flip` for some form `B`, in every characteristic.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
   torsion-free values sees each argument only modulo elements of finite additive order.
@@ -146,6 +150,20 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
   ext x y
   simp
 
+/-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
+form. -/
+theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a)
+    (h : ∀ x y, a ∣ B x y) : ∃ C : LinearMap.BilinForm R M, a • C = B := by
+  -- `B` factors through multiplication by `a`, an injective endomorphism of `R` whose range
+  -- contains every value of `B`.
+  have hi : Function.Injective (DistribSMul.toLinearMap R R a) :=
+    fun r s hrs ↦ ha (by simpa using hrs)
+  refine ⟨B.codRestrict₂ _ hi fun x y ↦ ?_, LinearMap.ext₂ fun x y ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := h x y
+    exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
+  · simpa using B.codRestrict₂_apply _ hi _ x y
+
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm.IsRefl
@@ -183,6 +201,34 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
   ring
 
 end LinearMap.BilinForm.IsSymm
+
+namespace LinearMap.BilinForm.IsAlt
+
+/-- **Every alternating form on a free module is `B - B.flip` for some form `B`**, in every
+characteristic and in any rank: order a basis and take for `B` the strictly upper triangular part
+of the alternating form in that basis. -/
+theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+    ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
+  classical
+  let b := Module.Free.chooseBasis R M
+  let : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
+  let B : LinearMap.BilinForm R M :=
+    b.constr R fun i => b.constr R fun j => if i < j then A (b i) (b j) else 0
+  have key (i j) : B (b i) (b j) = if i < j then A (b i) (b j) else 0 := by
+    simp [B, Module.Basis.constr_basis]
+  refine ⟨B, LinearMap.BilinForm.ext_basis b fun i j => ?_⟩
+  simp only [LinearMap.sub_apply, LinearMap.BilinForm.flip_apply, key]
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [h, h.not_gt]
+  · simp [hA.self_eq_zero]
+  · -- polarization: `A (b i + b j) (b i + b j) = 0` gives `A (b i) (b j) = -A (b j) (b i)`
+    have h0 := hA.self_eq_zero (b i + b j)
+    simp only [map_add, LinearMap.add_apply, hA.self_eq_zero, zero_add, add_zero] at h0
+    simp only [h, h.not_gt, ↓reduceIte, zero_sub]
+    linear_combination -h0
+
+end LinearMap.BilinForm.IsAlt
 
 namespace LinearMap
 
