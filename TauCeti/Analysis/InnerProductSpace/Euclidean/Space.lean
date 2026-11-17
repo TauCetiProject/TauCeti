@@ -21,7 +21,10 @@ The lemma `TauCeti.finrank_real_euclideanSpace_complex` and the instance
 This is the form of the hypothesis `Fact (finrank ℝ E = n + 1)` under which
 Mathlib puts a manifold structure on the unit sphere of `E`
 (`EuclideanSpace.instChartedSpaceSphere`), so instance search finds the sphere of `ℂᵏ⁺¹`, and its
-quotients, to be manifolds of dimension `2k + 1`.
+quotients, to be manifolds of dimension `2k + 1`. Likewise,
+`TauCeti.instFactCardEqFinrankEuclideanSpace` records `Fintype.card ι = Module.finrank 𝕜
+(EuclideanSpace 𝕜 ι)` as a `Fact` for rank-indexed APIs such as
+`TauCeti.OrthonormalFrameBundle.orientedFrames`.
 
 The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify it `ℝ`-linearly with
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
@@ -49,6 +52,12 @@ and quotients of the sphere, are found to be manifolds of dimension `2k + 1`. -/
 instance factFinrankEuclideanSpaceComplex (k : ℕ) :
     Fact (Module.finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = 2 * k + 1 + 1) :=
   ⟨finrank_real_euclideanSpace_complex k⟩
+
+/-- The cardinality of `ι` equals the dimension of `EuclideanSpace 𝕜 ι`, recorded as a `Fact` for
+rank-indexed APIs such as `TauCeti.OrthonormalFrameBundle.orientedFrames`. -/
+instance instFactCardEqFinrankEuclideanSpace (𝕜 ι : Type*) [RCLike 𝕜] [Fintype ι] :
+    Fact (Fintype.card ι = Module.finrank 𝕜 (EuclideanSpace 𝕜 ι)) :=
+  ⟨(finrank_euclideanSpace (𝕜 := 𝕜) (ι := ι)).symm⟩
 
 /-- The real coordinates of `ℂⁱ`, as a continuous `ℝ`-linear isomorphism onto `ℝᵐ` for `m = 2i`:
 coordinate `j + i * a` of the image of `v` is the real part of `vⱼ` for `a = 0` and its imaginary
