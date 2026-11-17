@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Analysis.Analytic.Within
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.Tactic.Positivity
 
@@ -18,8 +19,9 @@ is the integral of the kernel `im z / ((x - re z)² + (im z)²)`.
 This kernel is positive in the upper half-plane, so the imaginary part of the transform
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
 away from the real axis, the continuity of the kernel there, the Lipschitz bound
-`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
-affine covariance under pushforward. No moment assumptions are needed.
+`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, the
+analyticity of the transform off the real axis with the analogous bounds for its derivative, and
+prove affine covariance under pushforward. No moment assumptions are needed.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -61,6 +63,12 @@ theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (reso
   continuous_iff_continuousAt.2 fun x ↦
     (spectrum.hasDerivAt_resolvent_const_left (mem_resolventSet_real hz x)).continuousAt
 
+/-- A complex number off the real axis is not the image of a real number. -/
+theorem notMem_algebraMap_image_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) (s : Set ℝ) :
+    z ∉ algebraMap ℝ ℂ '' s := by
+  rintro ⟨x, _, hx⟩
+  exact hz (by simpa using (congrArg Complex.im hx).symm)
+
 end Complex
 
 namespace MeasureTheory
@@ -85,10 +93,8 @@ variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
-    Integrable (resolvent (R := ℝ) z) μ := by
-  apply integrable_resolvent
-  rintro ⟨x, _, hx⟩
-  exact hz (by simpa using (congrArg Complex.im hx).symm)
+    Integrable (resolvent (R := ℝ) z) μ :=
+  integrable_resolvent (Complex.notMem_algebraMap_image_of_im_ne_zero hz _)
 
 /-- The imaginary part of the transform is the integral of the kernel
 `z.im / ((x - z.re)² + z.im²)`, which is the Poisson kernel without the factor `π⁻¹`
@@ -126,6 +132,58 @@ theorem norm_resolventTransform_sub_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im 
   gcongr
   · exact Complex.norm_resolvent_real_le z x hz
   · exact Complex.norm_resolvent_real_le w x hw
+
+/-- Off the real axis the transform of a finite measure is complex differentiable, with
+derivative `∫ (x - z)⁻² dμ`. -/
+theorem hasDerivAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
+    HasDerivAt (resolventTransform μ) (∫ x, resolvent z x ^ 2 ∂μ) z :=
+  hasDerivAt_resolventTransform z (Complex.notMem_algebraMap_image_of_im_ne_zero hz _)
+
+/-- Off the real axis the transform of a finite measure is analytic. -/
+theorem analyticOnNhd_resolventTransform :
+    AnalyticOnNhd ℂ (resolventTransform μ) {z : ℂ | z.im ≠ 0} :=
+  (isClosed_eq continuous_im continuous_const).isOpen_compl.analyticOn_iff_analyticOnNhd.1
+    (analyticOn_resolventTransform.mono fun _ hz ↦
+      Complex.notMem_algebraMap_image_of_im_ne_zero hz _)
+
+/-- The derivative of the transform of a finite measure off the real axis is
+`∫ (x - z)⁻² dμ`. -/
+theorem deriv_resolventTransform {z : ℂ} (hz : z.im ≠ 0) :
+    deriv (resolventTransform μ) z = ∫ x, resolvent z x ^ 2 ∂μ :=
+  (hasDerivAt_resolventTransform_of_im_ne_zero hz).deriv
+
+/-- A uniform bound for the derivative of the transform of a finite measure away from the real
+axis: `‖m_μ'(z)‖ ≤ μ(ℝ) / (Im z)²`. -/
+theorem norm_deriv_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
+    ‖deriv (resolventTransform μ) z‖ ≤ |z.im|⁻¹ ^ 2 * μ.real Set.univ := by
+  rw [deriv_resolventTransform hz]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  rw [norm_pow]
+  gcongr
+  exact Complex.norm_resolvent_real_le z x hz
+
+/-- The derivative of the transform of a finite measure is Lipschitz away from the real axis:
+`‖m_μ'(z) - m_μ'(w)‖ ≤ ‖z - w‖ (|Im z|⁻¹ + |Im w|⁻¹) / (|Im z| |Im w|) · μ(ℝ)`. -/
+theorem norm_deriv_resolventTransform_sub_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0) :
+    ‖deriv (resolventTransform μ) z - deriv (resolventTransform μ) w‖ ≤
+      ‖z - w‖ * (|z.im|⁻¹ * |w.im|⁻¹ * (|z.im|⁻¹ + |w.im|⁻¹)) * μ.real Set.univ := by
+  have hint {u : ℂ} (hu : u.im ≠ 0) : Integrable (fun x ↦ resolvent (R := ℝ) u x ^ 2) μ :=
+    .of_bound ((Complex.continuous_resolvent_real hu).pow 2).aestronglyMeasurable (|u.im|⁻¹ ^ 2)
+      (ae_of_all _ fun x ↦ by
+        rw [norm_pow]
+        gcongr
+        exact Complex.norm_resolvent_real_le u x hu)
+  rw [deriv_resolventTransform hz, deriv_resolventTransform hw, ← integral_sub (hint hz) (hint hw)]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  have hzx := Complex.norm_resolvent_real_le z x hz
+  have hwx := Complex.norm_resolvent_real_le w x hw
+  rw [sq_sub_sq, spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hz x)
+    (Complex.mem_resolventSet_real hw x), norm_mul, norm_mul, norm_mul]
+  calc ‖resolvent z x + resolvent w x‖ * (‖resolvent z x‖ * ‖z - w‖ * ‖resolvent w x‖)
+      ≤ (|z.im|⁻¹ + |w.im|⁻¹) * (|z.im|⁻¹ * ‖z - w‖ * |w.im|⁻¹) := by
+        gcongr
+        exact (norm_add_le _ _).trans (add_le_add hzx hwx)
+    _ = _ := by ring
 
 /-- A nonzero finite measure has strictly positive imaginary transform in the upper half-plane. -/
 theorem im_resolventTransform_pos (hμ : μ ≠ 0) {z : ℂ} (hz : 0 < z.im) :
