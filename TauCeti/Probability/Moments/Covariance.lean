@@ -26,8 +26,9 @@ totalized coordinate by coordinate.
 * `TauCeti.covMatrix` is the matrix of coordinate covariances of a measure.
 * `TauCeti.covarianceBilin_eq_covMatrix` identifies the matrix and bilinear-form views of
   covariance when the measure has a finite second moment.
-* `TauCeti.posSemidef_covMatrix` proves that covariance matrices are positive semidefinite under
-  the same moment hypotheses.
+* `TauCeti.posSemidef_covMatrix` and `TauCeti.posSemidef_covMatrix_map` prove that covariance
+  matrices of finite measures and laws of random vectors are positive semidefinite under the same
+  moment hypotheses.
 * `TauCeti.integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix` computes the mean
   of a quadratic form of the centred variable as a trace against the covariance matrix.
 * `TauCeti.integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map` is the same
@@ -126,15 +127,28 @@ theorem posSemidef_covMatrix [Fintype ι]
   rw [covarianceBilin_eq_covMatrix μ hμ x x] at hnonneg
   simpa only [RCLike.re_to_real, real_inner_comm] using hnonneg
 
+/-- If `X` is square-integrable, the identity is square-integrable under its pushforward law
+`P.map X`. -/
+private lemma memLp_id_map [Fintype ι] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) :
+    MemLp id 2 (P.map X) :=
+  (memLp_map_measure_iff aestronglyMeasurable_id hX.aestronglyMeasurable.aemeasurable).2 hX
+
+/-- The covariance matrix of the law of a square-integrable random vector on a finite measure
+space is positive semidefinite. -/
+theorem posSemidef_covMatrix_map [Fintype ι] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsFiniteMeasure P] {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) :
+    (covMatrix (P.map X)).PosSemidef :=
+  posSemidef_covMatrix _ (memLp_id_map hX)
+
 /-- Pushing forward a real measure along `u ↦ u • v` yields the rank-one covariance matrix
 `Var[id; μ] • Matrix.vecMulVec v v`. -/
 @[simp]
 theorem covMatrix_map_smul_const (μ : Measure ℝ) (v : EuclideanSpace ℝ ι) :
     covMatrix (μ.map (fun u : ℝ ↦ u • v)) = Var[id; μ] • Matrix.vecMulVec v v := by
   have hm : Measurable (fun u : ℝ ↦ u • v) := by
-    have hfun : (fun u : ℝ ↦ u • v) = fun u ↦ WithLp.toLp 2 (fun i ↦ u * v i) := by
-      ext u i; simp only [PiLp.smul_apply, smul_eq_mul]
-    rw [hfun]; fun_prop
+    simpa only [Function.comp_def, id_eq, WithLp.toLp_smul, WithLp.toLp_ofLp] using
+      (WithLp.measurable_toLp 2 (ι → ℝ)).comp (measurable_id.smul_const (WithLp.ofLp v))
   ext i j
   simp only [covMatrix_apply, Matrix.smul_apply, Matrix.vecMulVec_apply, smul_eq_mul]
   rw [covariance_map_fun (by fun_prop) (by fun_prop) hm.aemeasurable]
@@ -167,10 +181,8 @@ theorem covariance_inner_eq_inner_covMatrix_map [Fintype ι] [DecidableEq ι]
     {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) (x y : EuclideanSpace ℝ ι) :
     cov[fun ω ↦ ⟪x, X ω⟫, fun ω ↦ ⟪y, X ω⟫; P] =
       ⟪x, (covMatrix (P.map X)).toEuclideanLin y⟫ := by
-  have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
-  have hmap : MemLp id 2 (P.map X) := (memLp_map_measure_iff aestronglyMeasurable_id hXm).2 hX
-  rw [← covariance_inner_eq_inner_covMatrix _ hmap,
-    covariance_map_fun (by fun_prop) (by fun_prop) hXm]
+  rw [← covariance_inner_eq_inner_covMatrix _ (memLp_id_map hX),
+    covariance_map_fun (by fun_prop) (by fun_prop) hX.aestronglyMeasurable.aemeasurable]
 
 /-- For a square-integrable random vector `X` on a finite measure space, the variance of the
 scalar projection `ω ↦ ⟪x, X ω⟫` is `⟪x, (covMatrix (P.map X)).toEuclideanLin x⟫`. -/
@@ -221,10 +233,9 @@ theorem integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map [F
     ∫ ω, ⟪B.toEuclideanLin (X ω - ∫ ω', X ω' ∂P), X ω - ∫ ω', X ω' ∂P⟫ ∂P =
       (B * covMatrix (P.map X)).trace := by
   have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
-  have hmap : MemLp id 2 (P.map X) := (memLp_map_measure_iff aestronglyMeasurable_id hXm).2 hX
   have hmean : ∫ y, y ∂(P.map X) = ∫ ω', X ω' ∂P := integral_map hXm aestronglyMeasurable_id
-  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ hmap, hmean,
-    integral_map hXm (by fun_prop)]
+  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ (memLp_id_map hX),
+    hmean, integral_map hXm (by fun_prop)]
 
 /-- The second moment of a Euclidean-valued probability measure about a point `c` is the squared
 distance from its mean to `c` plus the trace of its covariance matrix. -/

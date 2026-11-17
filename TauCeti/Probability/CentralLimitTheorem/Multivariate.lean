@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Probability.CentralLimitTheorem
-import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.ProductMeasure
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
@@ -17,14 +16,14 @@ import TauCeti.MeasureTheory.Function.TendstoInDistribution
 import TauCeti.Probability.CentralLimitTheorem.Lindeberg
 import TauCeti.Probability.CramerWold
 import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # Multivariate Lindeberg–Feller and central limit theorems
 
 This file establishes central limit theorems for random vectors taking values in a
 finite-dimensional Euclidean space `EuclideanSpace ℝ κ`, allowing singular limiting covariance
-matrices throughout and imposing no global measurability hypotheses beyond square-integrability
-(or almost-everywhere measurability when moments are deduced from asymptotic bounds).
+matrices throughout and imposing no global measurability hypotheses beyond square-integrability.
 
 ## Main results
 
@@ -33,9 +32,6 @@ matrices throughout and imposing no global measurability hypotheses beyond squar
   vectors whose row covariance matrices converge to `S` and whose norms satisfy the Lindeberg
   condition `∑ i, ∫_{ε < ‖Y n i‖} ‖Y n i‖² → 0`. Positive semidefiniteness of `S` is derived
   automatically as a closed-cone limit of the row covariance matrices.
-* `TauCeti.tendstoInDistribution_sum_of_norm_le_eventually`: multivariate Lindeberg–Feller under
-  asymptotic uniform norm negligibility (`∀ δ > 0, ∀ᶠ n, ∀ i, ‖Y n i‖ ≤ δ` a.e.), deriving
-  eventual square-integrability from almost-everywhere measurability and the norm bound.
 * `TauCeti.tendstoInDistribution_sum_smul_of_tendsto_vecMulVec`: multivariate central limit theorem
   for weighted sums `∑ i, ξ n i • w n i` of row-wise independent centred scalar shocks sharing a
   square-integrable law `ν` with deterministic vector weights whose Gram matrices
@@ -50,9 +46,9 @@ matrices throughout and imposing no global measurability hypotheses beyond squar
 ## Implementation notes
 
 Via the varying-space Cramér–Wold theorem
-`TauCeti.tendstoInDistribution_iff_tendstoInDistribution_inner`, both main theorems reduce to one
-dimension along every projection `z ↦ ⟪z, t⟫`. In each direction `t`, Cauchy–Schwarz transfers the
-Euclidean Lindeberg condition to the scalar Lindeberg condition at threshold `δ` via radius
+`TauCeti.tendstoInDistribution_iff_forall_tendstoInDistribution_inner`, both main theorems reduce to
+one dimension along every projection `z ↦ ⟪z, t⟫`. In each direction `t`, Cauchy–Schwarz transfers
+the Euclidean Lindeberg condition to the scalar Lindeberg condition at threshold `δ` via radius
 `δ / (2 ‖t‖)`, `TauCeti.variance_inner_eq_inner_covMatrix_map` identifies the projected variance as
 `⟪t, (covMatrix …).toEuclideanLin t⟫`, and `ProbabilityTheory.HasLaw.inner_multivariateGaussian`
 identifies the projected Gaussian limit even when `S` is singular (`⟪t, S.toEuclideanLin t⟫ = 0`).
@@ -145,12 +141,10 @@ theorem tendstoInDistribution_sum_of_lindeberg [DecidableEq κ]
       (fun n ↦ ∑ i, ∫ ω in {ω | ε < ‖Y n i ω‖}, ‖Y n i ω‖ ^ 2 ∂(μ n)) atTop (𝓝 0))
     (hZ : HasLaw Z (multivariateGaussian 0 S) μ') :
     TendstoInDistribution (fun n ω ↦ ∑ i, Y n i ω) atTop Z μ μ' := by
-  have hS : S.PosSemidef := by
-    refine isClosed_setOfPred_posSemidef.mem_of_tendsto hcov (.of_forall fun n ↦ ?_)
-    refine (Matrix.PosSemidef.addSubmonoid κ ℝ).sum_mem fun i _ ↦ ?_
-    have hm : AEMeasurable (Y n i) (μ n) := (hL2 n i).aestronglyMeasurable.aemeasurable
-    exact posSemidef_covMatrix _ ((memLp_map_measure_iff aestronglyMeasurable_id hm).2 (hL2 n i))
-  refine tendstoInDistribution_iff_tendstoInDistribution_inner.2 fun t ↦ ?_
+  have hS : S.PosSemidef :=
+    isClosed_setOfPred_posSemidef.mem_of_tendsto hcov (.of_forall fun n ↦
+      (Matrix.PosSemidef.addSubmonoid κ ℝ).sum_mem fun i _ ↦ posSemidef_covMatrix_map (hL2 n i))
+  refine tendstoInDistribution_iff_forall_tendstoInDistribution_inner.2 fun t ↦ ?_
   simp_rw [sum_inner]
   have hZt : HasLaw (fun ω' ↦ ⟪Z ω', t⟫)
       (gaussianReal 0 (⟪t, S.toEuclideanLin t⟫).toNNReal) μ' := by
@@ -169,70 +163,14 @@ theorem tendstoInDistribution_sum_of_lindeberg [DecidableEq κ]
       (Matrix.isPositive_toEuclideanLin_iff.mpr hS).2 t
   rw [Real.coe_toNNReal _ hSt_nn]
   have hquad_cont : Continuous (fun A : Matrix κ κ ℝ ↦ ⟪t, A.toEuclideanLin t⟫) := by
-    simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial, Matrix.toLpLin_apply,
-      Matrix.mulVec, dotProduct]
-    fun_prop
+    simp_rw [Matrix.toLpLin_apply]
+    exact continuous_const.inner
+      ((PiLp.continuous_toLp 2 _).comp (continuous_id.matrix_mulVec continuous_const))
   refine (hquad_cont.tendsto S |>.comp hcov).congr' (.of_forall fun n ↦ ?_)
   dsimp only [Function.comp_def]
   rw [map_sum, LinearMap.sum_apply, inner_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simpa only [real_inner_comm t] using (variance_inner_eq_inner_covMatrix_map (hL2 n i) t).symm
-
-/-- **Multivariate Lindeberg–Feller theorem under asymptotic uniform norm negligibility.** If
-row-wise independent, centred, almost-everywhere measurable random vectors `Y n i` satisfy
-`∀ δ > 0, ∀ᶠ n in atTop, ∀ i, ∀ᵐ ω ∂(μ n), ‖Y n i ω‖ ≤ δ` and their row covariance matrices
-converge to `S`, then `∑ i, Y n i` converges in distribution to `multivariateGaussian 0 S`. -/
-theorem tendstoInDistribution_sum_of_norm_le_eventually [DecidableEq κ]
-    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {μ : (n : ℕ) → Measure (Ω n)}
-    [∀ n, IsProbabilityMeasure (μ n)]
-    {ι : ℕ → Type*} [∀ n, Fintype (ι n)]
-    {Y : (n : ℕ) → ι n → Ω n → EuclideanSpace ℝ κ}
-    {S : Matrix κ κ ℝ}
-    {Ω' : Type*} [MeasurableSpace Ω'] {μ' : Measure Ω'} [IsProbabilityMeasure μ']
-    {Z : Ω' → EuclideanSpace ℝ κ}
-    (hindep : ∀ n, iIndepFun (Y n) (μ n))
-    (hm : ∀ n i, AEMeasurable (Y n i) (μ n))
-    (hmean : ∀ n i, ∫ ω, Y n i ω ∂(μ n) = 0)
-    (hcov : Tendsto (fun n ↦ ∑ i, covMatrix ((μ n).map (Y n i))) atTop (𝓝 S))
-    (hbound : ∀ δ > 0, ∀ᶠ n in atTop, ∀ i, ∀ᵐ ω ∂(μ n), ‖Y n i ω‖ ≤ δ)
-    (hZ : HasLaw Z (multivariateGaussian 0 S) μ') :
-    TendstoInDistribution (fun n ω ↦ ∑ i, Y n i ω) atTop Z μ μ' := by
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hbound 1 one_pos)
-  let Y' : (n : ℕ) → ι n → Ω n → EuclideanSpace ℝ κ :=
-    fun n i ↦ if N ≤ n then Y n i else 0
-  have hY'_indep (n : ℕ) : iIndepFun (Y' n) (μ n) := by
-    dsimp only [Y']; split_ifs
-    · exact hindep n
-    · exact (hindep n).comp (fun _ _ ↦ 0) fun _ ↦ measurable_const
-  have hY'_L2 (n : ℕ) (i : ι n) : MemLp (Y' n i) 2 (μ n) := by
-    dsimp only [Y']; split_ifs with hn
-    · exact MemLp.of_bound (hm n i).aestronglyMeasurable 1 (hN n hn i)
-    · exact MemLp.zero
-  have hY'_mean (n : ℕ) (i : ι n) : ∫ ω, Y' n i ω ∂(μ n) = 0 := by
-    dsimp only [Y']; split_ifs
-    · exact hmean n i
-    · exact integral_zero _ _
-  have hY'_cov : Tendsto (fun n ↦ ∑ i, covMatrix ((μ n).map (Y' n i))) atTop (𝓝 S) := by
-    refine hcov.congr' ?_
-    filter_upwards [eventually_ge_atTop N] with n hn
-    simp [Y', hn]
-  have hY'_lind (ε : ℝ) (hε : 0 < ε) : Tendsto
-      (fun n ↦ ∑ i, ∫ ω in {ω | ε < ‖Y' n i ω‖}, ‖Y' n i ω‖ ^ 2 ∂(μ n)) atTop (𝓝 0) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hbound ε hε, eventually_ge_atTop N] with n hεn hn
-    symm
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have hs : NullMeasurableSet {ω | ε < ‖Y' n i ω‖} (μ n) :=
-      nullMeasurableSet_lt aemeasurable_const (hY'_L2 n i).aestronglyMeasurable.norm.aemeasurable
-    rw [← integral_indicator₀ hs]
-    refine integral_eq_zero_of_ae ((hεn i).mono fun ω hω ↦ ?_)
-    simp only [Y', hn, ↓reduceIte]
-    exact Set.indicator_of_notMem (not_lt.mpr hω) _
-  have hclt := tendstoInDistribution_sum_of_lindeberg hY'_indep hY'_L2 hY'_mean hY'_cov hY'_lind hZ
-  refine hclt.congr' (fun n ↦ Finset.aemeasurable_fun_sum _ fun i _ ↦ hm n i) ?_
-    Filter.EventuallyEq.rfl
-  filter_upwards [eventually_ge_atTop N] with n hn
-  exact .of_forall fun ω ↦ by simp [Y', hn]
 
 /-- Single-summand upper-tail bound for a weighted scalar shock `ξ • w` when `‖w‖ ≤ ε / R`. -/
 private theorem setIntegral_norm_smul_sq_le
@@ -243,9 +181,7 @@ private theorem setIntegral_norm_smul_sq_le
     ∫ ω in {ω | ε < ‖ξ₀ ω • w₀‖}, ‖ξ₀ ω • w₀‖ ^ 2 ∂μ₀ ≤
       ‖w₀‖ ^ 2 * ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν := by
   have hξm : AEMeasurable ξ₀ μ₀ := hlaw.aemeasurable
-  have hξ2 : Integrable (fun ω ↦ ξ₀ ω ^ 2) μ₀ :=
-    ((memLp_map_measure_iff aestronglyMeasurable_id hξm).1
-      (by rwa [hlaw.map_eq])).integrable_sq
+  have hξ2 : Integrable (fun ω ↦ ξ₀ ω ^ 2) μ₀ := (hlaw.memLp hL2).integrable_sq
   have hs : NullMeasurableSet {ω | ε < ‖ξ₀ ω • w₀‖} μ₀ :=
     nullMeasurableSet_lt aemeasurable_const (by fun_prop)
   have hmap_ind : ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν =
@@ -284,13 +220,11 @@ private theorem tendsto_sum_setIntegral_norm_smul_sq
       atTop (𝓝 0) := by
   have htail := hL2.tendsto_integral_indicator_sq_atTop
   have htrace : Tendsto (fun n ↦ ∑ i, ‖w n i‖ ^ 2) atTop (𝓝 Q.trace) := by
-    have hcont : Continuous (fun A : Matrix κ κ ℝ ↦ A.trace) := by
-      simp only [Matrix.trace, Matrix.diag_apply]; fun_prop
-    refine (hcont.tendsto Q |>.comp hgram).congr fun n ↦ ?_
-    simp_rw [EuclideanSpace.real_norm_sq_eq]
-    simp only [Function.comp_def, Matrix.trace, Matrix.diag_apply, Matrix.sum_apply,
-      Matrix.vecMulVec_apply, sq]
-    exact Finset.sum_comm
+    have hcont : Continuous (fun A : Matrix κ κ ℝ ↦ A.trace) := continuous_id.matrix_trace
+    refine ((hcont.tendsto Q).comp hgram).congr fun n ↦ ?_
+    simp only [Function.comp_def, Matrix.trace_sum, Matrix.trace_vecMulVec]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
   rw [Metric.tendsto_nhds]
   intro η hη
   set M : ℝ := |Q.trace| + 1
@@ -338,9 +272,7 @@ theorem tendstoInDistribution_sum_smul_of_tendsto_vecMulVec [DecidableEq κ]
     (hmax : ∀ δ > 0, ∀ᶠ n in atTop, ∀ i, ‖w n i‖ ≤ δ)
     (hZ : HasLaw Z (multivariateGaussian 0 (Var[id; ν] • Q)) μ') :
     TendstoInDistribution (fun n ω ↦ ∑ i, ξ n i ω • w n i) atTop Z μ μ' := by
-  have hξL2 (n : ℕ) (i : ι n) : MemLp (ξ n i) 2 (μ n) :=
-    (memLp_map_measure_iff aestronglyMeasurable_id (hlaw n i).aemeasurable).1
-      (by rwa [(hlaw n i).map_eq])
+  have hξL2 (n : ℕ) (i : ι n) : MemLp (ξ n i) 2 (μ n) := (hlaw n i).memLp hL2
   refine tendstoInDistribution_sum_of_lindeberg
     (Y := fun n i ω ↦ ξ n i ω • w n i)
     (fun n ↦ (hindep n).comp (fun i u ↦ u • w n i)
@@ -367,6 +299,24 @@ theorem tendstoInDistribution_sum_smul_of_tendsto_vecMulVec [DecidableEq κ]
 
 end Lindeberg
 
+/-- Transfer convergence in distribution along pushforwards of the underlying sample spaces. -/
+private theorem tendstoInDistribution_of_map_eq
+    {Ω₁ Ω₂ : ℕ → Type*} [∀ n, MeasurableSpace (Ω₁ n)] [∀ n, MeasurableSpace (Ω₂ n)]
+    {μ₁ : (n : ℕ) → Measure (Ω₁ n)} [∀ n, IsProbabilityMeasure (μ₁ n)]
+    {μ₂ : (n : ℕ) → Measure (Ω₂ n)} [∀ n, IsProbabilityMeasure (μ₂ n)]
+    {E Ω' : Type*} [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [MeasurableSpace Ω'] {μ' : Measure Ω'} [IsProbabilityMeasure μ']
+    {f : (n : ℕ) → Ω₁ n → Ω₂ n} {X : (n : ℕ) → Ω₁ n → E} {T : (n : ℕ) → Ω₂ n → E} {Z : Ω' → E}
+    (hf : ∀ n, AEMeasurable (f n) (μ₁ n)) (hmap : ∀ n, (μ₁ n).map (f n) = μ₂ n)
+    (hT : ∀ n, AEMeasurable (T n) (μ₂ n)) (hcomp : ∀ n ω, X n ω = T n (f n ω))
+    (h : TendstoInDistribution X atTop Z μ₁ μ') :
+    TendstoInDistribution T atTop Z μ₂ μ' := by
+  refine ⟨hT, h.aemeasurable_limit,
+    h.tendsto.congr fun n ↦ ProbabilityMeasure.toMeasure_injective ?_⟩
+  simp only [ProbabilityMeasure.coe_mk]
+  rw [← hmap n, AEMeasurable.map_map_of_aemeasurable (by rw [hmap n]; exact hT n) (hf n)]
+  exact Measure.map_congr (.of_forall (hcomp n))
+
 section CentralLimitTheorem
 
 variable {κ : Type*} [Fintype κ] [DecidableEq κ]
@@ -388,10 +338,8 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_euclidean
     TendstoInDistribution
       (fun (n : ℕ) ω ↦ (√(n : ℝ))⁻¹ • ∑ i ∈ Finset.range n, (X i ω - ∫ ω', X 0 ω' ∂μ))
       atTop Z (fun _ ↦ μ) μ' := by
-  have hX0m : AEMeasurable (X 0) μ := hL2.aestronglyMeasurable.aemeasurable
-  have hS : (covMatrix (μ.map (X 0))).PosSemidef :=
-    posSemidef_covMatrix _ ((memLp_map_measure_iff aestronglyMeasurable_id hX0m).2 hL2)
-  refine tendstoInDistribution_iff_tendstoInDistribution_inner.2 fun t ↦ ?_
+  have hS : (covMatrix (μ.map (X 0))).PosSemidef := posSemidef_covMatrix_map hL2
+  refine tendstoInDistribution_iff_forall_tendstoInDistribution_inner.2 fun t ↦ ?_
   set U : ℕ → Ω → ℝ := fun i ω ↦ ⟪t, X i ω⟫
   have hU_var : Var[U 0; μ] = ⟪t, (covMatrix (μ.map (X 0))).toEuclideanLin t⟫ :=
     variance_inner_eq_inner_covMatrix_map hL2 t
@@ -429,53 +377,36 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_pi
       (fun (n : ℕ) (x : Fin n → α) ↦ (√(n : ℝ))⁻¹ • ∑ i : Fin n, (s (x i) - ∫ a, s a ∂P))
       atTop Z (fun n ↦ Measure.pi fun _ : Fin n ↦ P) μ' := by
   let Q : Measure (ℕ → α) := Measure.infinitePi fun _ : ℕ ↦ P
-  let s' : α → EuclideanSpace ℝ κ := hs.aestronglyMeasurable.mk s
-  have hs'_meas : Measurable s' := hs.aestronglyMeasurable.stronglyMeasurable_mk.measurable
-  have hs_ae : s =ᵐ[P] s' := hs.aestronglyMeasurable.ae_eq_mk
-  have hQ_eval (i : ℕ) : Q.map (fun ω : ℕ → α ↦ ω i) = P := Measure.infinitePi_map_eval _ i
-  have hX_ae (i : ℕ) : (fun ω : ℕ → α ↦ s' (ω i)) =ᵐ[Q] (fun ω ↦ s (ω i)) :=
-    (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ P) i).quasiMeasurePreserving.ae_eq_comp
-      hs_ae.symm
+  -- Realize `s (ω i)` as an i.i.d. sequence on the countable product `(ℕ → α, Q)`.
+  have heval (i : ℕ) : MeasurePreserving (fun ω : ℕ → α ↦ ω i) Q P :=
+    measurePreserving_eval_infinitePi (fun _ : ℕ ↦ P) i
+  have hsm (i : ℕ) : AEMeasurable s (Q.map fun ω : ℕ → α ↦ ω i) := by
+    rw [(heval i).map_eq]; exact hs.aestronglyMeasurable.aemeasurable
   have hindep : iIndepFun (fun i (ω : ℕ → α) ↦ s (ω i)) Q :=
-    (iIndepFun_infinitePi (P := fun _ : ℕ ↦ P) fun _ ↦ hs'_meas).congr hX_ae
-  have hX_meas (i : ℕ) : AEMeasurable (fun ω : ℕ → α ↦ s (ω i)) Q :=
-    (hs'_meas.comp (measurable_pi_apply i)).aemeasurable.congr (hX_ae i)
-  have hX_map (i : ℕ) : Q.map (fun ω : ℕ → α ↦ s (ω i)) = P.map s := by
-    rw [← hQ_eval i, AEMeasurable.map_map_of_aemeasurable
-      (by rw [hQ_eval i]; exact hs.aestronglyMeasurable.aemeasurable)
-      (by fun_prop : Measurable _).aemeasurable, Function.comp_def]
+    (TauCeti.Probability.iIndepFun_eval_infinitePi _).comp₀ (fun _ ↦ s)
+      (fun i ↦ (measurable_pi_apply i).aemeasurable) hsm
   have hident (i : ℕ) : IdentDistrib (fun ω : ℕ → α ↦ s (ω i)) (fun ω ↦ s (ω 0)) Q Q :=
-    ⟨hX_meas i, hX_meas 0, by rw [hX_map i, hX_map 0]⟩
-  have hX0_L2 : MemLp (fun ω : ℕ → α ↦ s (ω 0)) 2 Q :=
-    (memLp_map_measure_iff (by rw [hQ_eval 0]; exact hs.aestronglyMeasurable)
-      (by fun_prop : Measurable _).aemeasurable).1 (by rwa [hQ_eval 0])
-  have hZ' : HasLaw Z (multivariateGaussian 0 (covMatrix (Q.map fun ω ↦ s (ω 0)))) μ' := by
-    rwa [hX_map 0]
-  have hseq := tendstoInDistribution_inv_sqrt_smul_sum_sub_euclidean hident hindep hX0_L2 hZ'
+    (P.identDistrib_eval_infinitePi i 0).comp_of_aemeasurable (hsm i)
+  have hX0_map : Q.map (fun ω : ℕ → α ↦ s (ω 0)) = P.map s := by
+    rw [← (heval 0).map_eq,
+      AEMeasurable.map_map_of_aemeasurable (hsm 0) (measurable_pi_apply 0).aemeasurable,
+      Function.comp_def]
+  have hseq := tendstoInDistribution_inv_sqrt_smul_sum_sub_euclidean hident hindep
+    (hs.comp_measurePreserving (heval 0)) (hX0_map ▸ hZ)
+  -- Transfer convergence in distribution from `(ℕ → α, Q)` to `(Fin n → α, Measure.pi …)`.
   have hmean : ∫ ω', s (ω' 0) ∂Q = ∫ a, s a ∂P := by
-    rw [← hQ_eval 0, integral_map (by fun_prop : Measurable _).aemeasurable
-      (by rw [hQ_eval 0]; exact hs.aestronglyMeasurable)]
-  have hTn_meas (n : ℕ) : AEMeasurable
-      (fun x : Fin n → α ↦ (√(n : ℝ))⁻¹ • ∑ i : Fin n, (s (x i) - ∫ a, s a ∂P))
-      (Measure.pi fun _ : Fin n ↦ P) := by
-    have hcoord (i : Fin n) : AEMeasurable (fun x : Fin n → α ↦ s (x i))
-        (Measure.pi fun _ : Fin n ↦ P) :=
-      hs.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving
-        (Measure.quasiMeasurePreserving_eval (fun _ : Fin n ↦ P) i)
-    have hsum := Finset.aemeasurable_fun_sum Finset.univ
-      fun i _ ↦ (hcoord i).sub_const (∫ a, s a ∂P)
-    fun_prop
-  refine ⟨hTn_meas, hZ.aemeasurable,
-    hseq.tendsto.congr fun n ↦ ProbabilityMeasure.toMeasure_injective ?_⟩
-  simp only [ProbabilityMeasure.coe_mk]
-  have hr : Q.map (fun (ω : ℕ → α) (i : Fin n) ↦ ω i) = Measure.pi fun _ : Fin n ↦ P := by
-    rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective, Measure.infinitePi_eq_pi]
-  rw [← hr, AEMeasurable.map_map_of_aemeasurable (by rw [hr]; exact hTn_meas n)
-    (by fun_prop : Measurable _).aemeasurable]
-  congr 1
-  funext ω
-  dsimp only [Function.comp_def]
-  rw [hmean, Fin.sum_univ_eq_sum_range (fun k ↦ s (ω k) - ∫ a, s a ∂P)]
+    rw [← (heval 0).map_eq, integral_map (measurable_pi_apply 0).aemeasurable
+      (by rw [(heval 0).map_eq]; exact hs.aestronglyMeasurable)]
+  refine tendstoInDistribution_of_map_eq (f := fun n (ω : ℕ → α) (i : Fin n) ↦ ω i)
+    (fun n ↦ (Measurable.of_eval fun i : Fin n ↦ measurable_pi_apply (i : ℕ)).aemeasurable)
+    (fun n ↦ by rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective,
+      Measure.infinitePi_eq_pi])
+    (fun n ↦ ?_)
+    (fun n ω ↦ by rw [hmean, Fin.sum_univ_eq_sum_range (fun k ↦ s (ω k) - ∫ a, s a ∂P)]) hseq
+  have hsum := Finset.aemeasurable_fun_sum Finset.univ fun i : Fin n ↦ fun _ ↦
+    (hs.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving
+      (Measure.quasiMeasurePreserving_eval (fun _ : Fin n ↦ P) i)).sub_const (∫ a, s a ∂P)
+  fun_prop
 
 end CentralLimitTheorem
 
