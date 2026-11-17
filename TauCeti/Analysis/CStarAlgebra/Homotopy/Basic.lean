@@ -138,6 +138,44 @@ noncomputable def trans (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ�
   eval_zero a := Path.source _
   eval_one a := Path.target _
 
+/-- Pointwise evaluation of a concatenated homotopy across the unit interval. -/
+theorem trans_toHom_apply (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) (t : I) :
+    (H₀.trans H₁).toHom a t =
+      if h : (t : ℝ) ≤ 1 / 2 then
+        H₀.toHom a ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2 (mem_Icc.mpr ⟨nonneg t, h⟩)⟩
+      else
+        H₁.toHom a ⟨2 * t - 1,
+          two_mul_sub_one_mem_iff.2 (mem_Icc.mpr ⟨(not_le.1 h).le, le_one t⟩)⟩ :=
+  Path.trans_apply (Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a))
+    (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)) t
+
+/-- On the first half `t ≤ 2⁻¹`, `H₀.trans H₁` evaluates `H₀` at `2 * t` (stated with `2⁻¹` for
+`simp` normal form). -/
+@[simp]
+theorem trans_toHom_apply_of_le_half (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) {t : I}
+    (ht : (t : ℝ) ≤ 2⁻¹) :
+    (H₀.trans H₁).toHom a t =
+      H₀.toHom a ⟨2 * t, (mul_pos_mem_iff zero_lt_two).2
+        (mem_Icc.mpr ⟨nonneg t, (one_div (2 : ℝ)).symm ▸ ht⟩)⟩ := by
+  rw [trans_toHom_apply, dite_eq_left ((one_div (2 : ℝ)).symm ▸ ht)]
+
+/-- On the second half `2⁻¹ ≤ t`, `H₀.trans H₁` evaluates `H₁` at `2 * t - 1` (stated with `2⁻¹`
+for `simp` normal form). -/
+@[simp]
+theorem trans_toHom_apply_of_half_le (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) (a : A) {t : I}
+    (ht : 2⁻¹ ≤ (t : ℝ)) :
+    (H₀.trans H₁).toHom a t =
+      H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
+        (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := by
+  let γ₀ := Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)
+  let γ₁ := Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a)
+  calc
+    (H₀.trans H₁).toHom a t = (γ₀.trans γ₁).extend t :=
+      (Path.extend_apply (γ₀.trans γ₁) t.2).symm
+    _ = γ₁.extend (2 * t - 1) := Path.extend_trans_of_half_le γ₀ γ₁ ((one_div (2 : ℝ)).symm ▸ ht)
+    _ = H₁.toHom a ⟨2 * t - 1, two_mul_sub_one_mem_iff.2
+          (mem_Icc.mpr ⟨(one_div (2 : ℝ)).symm ▸ ht, le_one t⟩)⟩ := Path.extend_apply γ₁ _
+
 /-- Precompose a homotopy `H : Homotopy φ₀ φ₁` on the right with `ψ : C →⋆ₙₐ[𝕜] A`. -/
 def compRight {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C] [Star C]
     (H : Homotopy φ₀ φ₁) (ψ : C →⋆ₙₐ[𝕜] A) : Homotopy (φ₀.comp ψ) (φ₁.comp ψ) where

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.ContinuousMap
 public import TauCeti.Analysis.CStarAlgebra.Homotopy.Basic
 public import TauCeti.Analysis.CStarAlgebra.Quotient
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Star
 public import TauCeti.Topology.Homeomorph.Interval
 public import TauCeti.Topology.UnitInterval.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -23,11 +23,6 @@ equipped with the supremum norm and pointwise `⋆`-algebra operations (Blackada
 
 ## Main declarations
 
-* `ZeroAtInftyContinuousMap.equivKerEvalOfNotMemRangeIff` and
-  `ZeroAtInftyContinuousMap.equivKerContinuousMapEvalOfNotMemRangeIff`: for an open embedding
-  `e : X → Y` whose image complement is a singleton `{y₀}`, extension by zero identifies `C₀(X, A)`
-  isometrically with the kernel ideal of evaluation at `y₀` in `C₀(Y, A)` (and in `C(Y, A)` when
-  `Y` is compact).
 * `TauCeti.CStarCone` and `TauCeti.CStarSuspension`: `C₀((0, 1], A)` and `C₀((0, 1), A)`.
 * `TauCeti.CStarCone.toPath` and `TauCeti.CStarCone.equivKerEvalZero`: isometric `⋆`-embedding into
   `C(unitInterval, A)` and `⋆`-isomorphism onto the kernel of evaluation at `0`, together with the
@@ -56,86 +51,6 @@ public section
 
 open Filter Set Topology unitInterval
 open scoped CStarAlgebra ZeroAtInfty
-
-namespace ZeroAtInftyContinuousMap
-
-section KerEval
-
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [R1Space Y]
-  {e : X → Y} {y₀ : Y}
-
-/-- When an open embedding `e : X → Y` into an `R₁` space misses only a single point `y₀`,
-extension by zero identifies `C₀(X, A)` with `TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)`.
--/
-noncomputable def equivKerEvalOfNotMemRangeIff (A : Type*) [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) :
-    C₀(X, A) ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀) where
-  toFun f := ⟨extendByZero he f, by
-    rw [TwoSidedIdeal.mem_ker, evalNonUnitalStarAlgHom_apply]
-    exact extendByZero_apply_of_notMem he f ((hcompl y₀).mpr rfl)⟩
-  invFun g := restrictOfEqZero he.isEmbedding (g : C₀(Y, A)) fun y hy => by
-    rw [(hcompl y).mp hy]
-    have hg := (TwoSidedIdeal.mem_ker (evalNonUnitalStarAlgHom ℂ A y₀)).mp g.2
-    rwa [evalNonUnitalStarAlgHom_apply] at hg
-  left_inv f := restrictOfEqZero_extendByZero he f
-  right_inv g := Subtype.ext (extendByZero_restrictOfEqZero he (g : C₀(Y, A)) _)
-  map_mul' f₁ f₂ := Subtype.ext (extendByZero_mul he f₁ f₂)
-  map_add' f₁ f₂ := Subtype.ext (extendByZero_add he f₁ f₂)
-  map_smul' c f := Subtype.ext (extendByZero_smul he c f)
-  map_star' f := Subtype.ext (extendByZero_star he f)
-
-@[simp]
-theorem coe_equivKerEvalOfNotMemRangeIff_apply {A : Type*} [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) (f : C₀(X, A)) :
-    ((equivKerEvalOfNotMemRangeIff A he hcompl f :
-      TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) : C₀(Y, A)) = extendByZero he f := (rfl)
-
-/-- Compact-codomain variant of `equivKerEvalOfNotMemRangeIff` landing in the kernel of
-`ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀` inside `C(Y, A)`. -/
-noncomputable def equivKerContinuousMapEvalOfNotMemRangeIff [CompactSpace Y]
-    (A : Type*) [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) :
-    C₀(X, A) ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀) where
-  toFun f := ⟨(extendByZero he f : C(Y, A)), by
-    rw [TwoSidedIdeal.mem_ker, ContinuousMap.evalNonUnitalStarAlgHom_apply]
-    exact extendByZero_apply_of_notMem he f ((hcompl y₀).mpr rfl)⟩
-  invFun g := restrictOfEqZero he.isEmbedding
-    (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty (g : C(Y, A))) fun y hy => by
-      rw [(hcompl y).mp hy]
-      simpa using (TwoSidedIdeal.mem_ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)).mp g.2
-  left_inv f := restrictOfEqZero_extendByZero he f
-  right_inv g := Subtype.ext <| ContinuousMap.ext fun y =>
-    DFunLike.congr_fun (extendByZero_restrictOfEqZero he
-      (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty (g : C(Y, A))) _) y
-  map_mul' f g := Subtype.ext <| ContinuousMap.ext fun y =>
-    DFunLike.congr_fun (extendByZero_mul he f g) y
-  map_add' f g := Subtype.ext <| ContinuousMap.ext fun y =>
-    DFunLike.congr_fun (extendByZero_add he f g) y
-  map_smul' c f := Subtype.ext <| ContinuousMap.ext fun y =>
-    DFunLike.congr_fun (extendByZero_smul he c f) y
-  map_star' f := Subtype.ext <| ContinuousMap.ext fun y =>
-    DFunLike.congr_fun (extendByZero_star he f) y
-
-@[simp]
-theorem coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply [CompactSpace Y]
-    {A : Type*} [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) (f : C₀(X, A)) :
-    ((equivKerContinuousMapEvalOfNotMemRangeIff A he hcompl f :
-      TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) : C(Y, A)) =
-      (extendByZero he f : C(Y, A)) := (rfl)
-
-@[simp]
-theorem equivKerContinuousMapEvalOfNotMemRangeIff_symm_apply [CompactSpace Y]
-    {A : Type*} [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀)
-    (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) (x : X) :
-    (equivKerContinuousMapEvalOfNotMemRangeIff A he hcompl).symm g x = (g : C(Y, A)) (e x) :=
-  restrictOfEqZero_apply he.isEmbedding
-    (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty (g : C(Y, A))) _ x
-
-end KerEval
-
-end ZeroAtInftyContinuousMap
 
 namespace TauCeti
 
