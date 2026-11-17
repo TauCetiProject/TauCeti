@@ -299,12 +299,7 @@ private theorem newtonSlopeMultiplicity_tprod_of_ne_zero {ι : Type*} {α : ι �
   obtain ⟨l, j, hface⟩ := hFent.exists_isFiniteFace_newtonPolygon v hb hv hF0 σ
   have hfd := _root_.PowerSeries.isDistinguished_of_isFiniteFace v hb hv (hFent.isRestricted _)
     hface
-  have hPeq : ∏ i ∈ s, (1 - Polynomial.C (α i)⁻¹ * Polynomial.X) =
-      Polynomial.C (∏ i ∈ s, (-α i)⁻¹) * ∏ i ∈ s, (Polynomial.X - Polynomial.C (α i)) := by
-    have hfac : ∀ i ∈ s, 1 - Polynomial.C (α i)⁻¹ * Polynomial.X =
-        Polynomial.C (-α i)⁻¹ * (Polynomial.X - Polynomial.C (α i)) := fun i _ ↦ by
-      simp [mul_sub, ← Polynomial.C_mul, hα0 i, inv_neg, neg_add_eq_sub]
-    rw [Finset.prod_congr rfl hfac, Finset.prod_mul_distrib, map_prod]
+  have hPeq := Polynomial.prod_one_sub_C_inv_mul_X_eq_C_mul_prod_X_sub_C s fun i _ ↦ hα0 i
   have hc0 : ∏ i ∈ s, (-α i)⁻¹ ≠ 0 :=
     Finset.prod_ne_zero_iff.mpr fun i _ ↦ inv_ne_zero (neg_ne_zero.mpr (hα0 i))
   have hPsplits : (∏ i ∈ s, (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)).Splits := by
@@ -340,7 +335,8 @@ theorem newtonSlopeMultiplicity_tprod_polynomialHom_one_sub_C_inv_mul_X {ι : Ty
   have hsupp : Function.mulSupport φ ⊆ S := by
     intro i hi
     by_contra h0
-    exact hi (by simp [φ, show α i = 0 from not_not.mp h0])
+    have hα0 : α i = 0 := not_not.mp h0
+    exact hi (by simp [φ, hα0])
   rw [← tprod_subtype_eq_of_mulSupport_subset hsupp,
     newtonSlopeMultiplicity_tprod_of_ne_zero v hb hv
       (hα.comp Subtype.val_injective.tendsto_cofinite) (fun j : S ↦ j.2) σ]

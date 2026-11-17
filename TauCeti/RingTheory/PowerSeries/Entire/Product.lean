@@ -222,39 +222,6 @@ section NormedField
 universe u
 variable {K : Type u} [NormedField K] [IsUltrametricDist K]
 
-omit [IsUltrametricDist K] in
-/-- Over a field, a finite product of factors `1 - αᵢ⁻¹ X` with nonzero `αᵢ` is a nonzero scalar
-multiple of `∏ (X - αᵢ)`. -/
-private theorem prod_one_sub_C_inv_mul_X_eq {ι : Type*} (s : Finset ι) {α : ι → K}
-    (hα0 : ∀ i ∈ s, α i ≠ 0) :
-    ∏ i ∈ s, (1 - Polynomial.C (α i)⁻¹ * Polynomial.X) =
-      Polynomial.C (∏ i ∈ s, (-α i)⁻¹) * ∏ i ∈ s, (Polynomial.X - Polynomial.C (α i)) := by
-  have hfac : ∀ i ∈ s, 1 - Polynomial.C (α i)⁻¹ * Polynomial.X =
-      Polynomial.C (-α i)⁻¹ * (Polynomial.X - Polynomial.C (α i)) := fun i hi ↦ by
-    simp [mul_sub, ← Polynomial.C_mul, hα0 i hi, inv_neg, neg_add_eq_sub]
-  rw [Finset.prod_congr rfl hfac, Finset.prod_mul_distrib, map_prod]
-
-omit [IsUltrametricDist K] in
-/-- At radius `0`, any series with constant coefficient `1` is its own normalised disc preparation
-in degree `0` with polynomial factor `1`. -/
-private theorem isDiscPreparation_zero {f : K⟦X⟧} (hf : f.IsRestricted 0)
-    (hf0 : _root_.PowerSeries.constantCoeff f = 1) :
-    TauCeti.PowerSeries.IsDiscPreparation 0 0 f 1 f := by
-  have hgf : f.gaussNorm norm 0 = 1 := by
-    rw [TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_]
-    · simp [hf0]
-    · rcases eq_or_ne m 0 with rfl | hm
-      · rfl
-      · simp [zero_pow hm, hf0]
-  have hgf1 : (f - 1).gaussNorm norm 0 = 0 := by
-    rw [TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_]
-    · simp [hf0]
-    · rcases eq_or_ne m 0 with rfl | hm
-      · rfl
-      · simp [zero_pow hm, hf0]
-  refine ⟨⟨by simp [hf0, hgf], fun n hn ↦ by simp [zero_pow hn.ne', hgf]⟩,
-    Polynomial.natDegree_one, AddMonoidAlgebra.coeff_one_zero, hf, hf0, by linarith, by simp⟩
-
 /-- A finite product of factors `1 - αᵢ⁻¹ X` over nonzero roots `αᵢ` lying in `{‖x‖ ≤ r}` (`r > 0`)
 has degree `s.card` and is distinguished of degree `s.card` at `r`. -/
 private theorem isDistinguished_prod_one_sub_C_inv_mul_X {ι : Type*} (s : Finset ι) {α : ι → K}
@@ -265,7 +232,7 @@ private theorem isDistinguished_prod_one_sub_C_inv_mul_X {ι : Type*} (s : Finse
   classical
   have hc0 : ∏ i ∈ s, (-α i)⁻¹ ≠ 0 :=
     Finset.prod_ne_zero_iff.mpr fun i hi ↦ inv_ne_zero (neg_ne_zero.mpr (hα0 i hi))
-  have hPeq := prod_one_sub_C_inv_mul_X_eq s hα0
+  have hPeq := Polynomial.prod_one_sub_C_inv_mul_X_eq_C_mul_prod_X_sub_C s hα0
   have hQmon : ∀ i ∈ s, (Polynomial.X - Polynomial.C (α i)).Monic :=
     fun i _ ↦ Polynomial.monic_X_sub_C (α i)
   refine ⟨?_, ?_⟩
@@ -329,12 +296,13 @@ theorem isDiscPreparation_tprod_polynomialHom_one_sub_C_inv_mul_X [CompleteSpace
         (1 - Polynomial.C (α i)⁻¹ * Polynomial.X) :
           _root_.PowerSeries.IsEntire.subring K) : K⟦X⟧) := by
   classical
+  set F : _root_.PowerSeries.IsEntire.subring K :=
+    ∏' i, _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)
+  set U : _root_.PowerSeries.IsEntire.subring K :=
+    ∏' i : ↑((s : Set ι)ᶜ),
+      _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)
   let φ : ι → _root_.PowerSeries.IsEntire.subring K := fun i ↦
     _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)
-  set F : _root_.PowerSeries.IsEntire.subring K := ∏' i, φ i
-  set U : _root_.PowerSeries.IsEntire.subring K := ∏' i : ↑((s : Set ι)ᶜ), φ i
-  change TauCeti.PowerSeries.IsDiscPreparation r s.card (F : K⟦X⟧)
-    (∏ i ∈ s, (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)) (U : K⟦X⟧)
   have hmU : Multipliable (fun j : ↑((s : Set ι)ᶜ) ↦ φ j) :=
     multipliable_polynomialHom_one_sub_C_inv_mul_X
       (hα.comp Subtype.val_injective.tendsto_cofinite)
@@ -349,7 +317,7 @@ theorem isDiscPreparation_tprod_polynomialHom_one_sub_C_inv_mul_X [CompleteSpace
       (norm_pos_iff.mpr (hα0 i)).not_ge ((hs i).mp hi)
     have hUF : (U : K⟦X⟧) = (F : K⟦X⟧) := by simpa [hs0, Polynomial.coe_one] using hmul.symm
     rw [hUF, hs0, Finset.card_empty, Finset.prod_empty]
-    exact isDiscPreparation_zero ((_root_.PowerSeries.IsEntire.mem_subring.mp F.2).isRestricted 0)
+    exact TauCeti.PowerSeries.isDiscPreparation_zero
       (constantCoeff_tprod_polynomialHom_one_sub_C_mul_X _)
   · obtain ⟨hPdeg, hPdist⟩ := isDistinguished_prod_one_sub_C_inv_mul_X s (fun i _ ↦ hα0 i) hr0
       fun i hi ↦ (hs i).mp hi
@@ -404,7 +372,8 @@ theorem order_taylor_tprod_polynomialHom_one_sub_C_inv_mul_X [CompleteSpace K]
   have hFent : (F : K⟦X⟧).IsEntire := _root_.PowerSeries.IsEntire.mem_subring.mp F.2
   have hdisc := isDiscPreparation_tprod_polynomialHom_one_sub_C_inv_mul_X hα hα0 hr0.le hs
   rw [(hFent.isRestricted r).order_taylor_eq_count_zeroMultiset hr0 hF0 hx,
-    hdisc.zeroMultiset_eq_roots_map hr0, prod_one_sub_C_inv_mul_X_eq s fun i _ ↦ hα0 i,
+    hdisc.zeroMultiset_eq_roots_map hr0,
+    Polynomial.prod_one_sub_C_inv_mul_X_eq_C_mul_prod_X_sub_C s fun i _ ↦ hα0 i,
     Polynomial.map_mul, Polynomial.map_C, Polynomial.map_prod]
   have hc0 : algebraMap K L (∏ i ∈ s, (-α i)⁻¹) ≠ 0 :=
     (map_ne_zero _).mpr
