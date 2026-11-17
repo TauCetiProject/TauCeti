@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 import TauCeti.Algebra.CharP.Two
 
 /-!
-# Linear maps between finitely generated abelian groups of equal rank
+# Homomorphisms of finitely generated abelian groups
 
 An injective `ℤ`-linear map `f : M → N` into a finitely generated abelian group of the same
 rank has image of finite index `c`, so `c • y` lies in the image of `f` for every `y : N`.
@@ -27,7 +27,9 @@ the determinant of `f` in any bases of `M` and `N` indexed by the same finite ty
 non-injective `f` has image of infinite index (index `0`) and determinant `0`.
 
 A homomorphism from a free abelian group of finite rank `r` is determined freely by its values on
-a basis, so there are `|A| ^ r` homomorphisms to an abelian group `A`.
+a basis, so there are `|A| ^ r` homomorphisms to an abelian group `A`. In particular a free
+abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a nonzero `ι` and any
+`χ` other than `0` and `ι`, they are `0`, `ι`, `χ` and `χ + ι`.
 
 ## Main results
 
