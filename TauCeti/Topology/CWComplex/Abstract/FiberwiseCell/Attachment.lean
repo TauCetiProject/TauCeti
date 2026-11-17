@@ -840,6 +840,24 @@ variable [LocallyCompactSpace P] (α : ∀ i, C(P × TopCat.diskBoundary.{u} (k 
   (e : C(Z, A))
   (he : ∀ i p s, α i (p, s) = e (a (Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i s)))
 
+omit [LocallyCompactSpace P] in
+/-- The cells of `(P × A) ∪_α ⨆ᵢ (P × D^{k i})`, curried in `P`, send the point `w` of the `i`-th
+disc to the family over `P` of the points `w` of the `i`-th cell. -/
+private theorem sigmaDesc_curry_fiberwiseCellAttachmentCell_apply (i : ι)
+    (w : TopCat.disk.{u} (k i)) (p : P) :
+    (Sigma.desc (f := fun i ↦ TopCat.disk.{u} (k i)) fun i ↦ TopCat.ofHom
+        ((fiberwiseCellAttachmentCell α i).hom.comp ContinuousMap.prodSwap).curry)
+        (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w) p =
+      fiberwiseCellAttachmentCell α i (p, w) := by
+  have hd := ConcreteCategory.congr_hom (Sigma.ι_comp_desc (f := fun i ↦ TopCat.disk.{u} (k i))
+      (fun i ↦ TopCat.ofHom ((fiberwiseCellAttachmentCell α i).hom.comp
+        ContinuousMap.prodSwap).curry) i) w
+  rw [ConcreteCategory.comp_apply] at hd
+  rw [hd]
+  -- The disc is not syntactically `TopCat.of _`, so `hom_ofHom` does not fire; unfold by `change`.
+  change ((fiberwiseCellAttachmentCell α i).hom.comp ContinuousMap.prodSwap).curry w p = _
+  simp only [ContinuousMap.curry_apply, ContinuousMap.comp_apply, ContinuousMap.prodSwap_apply]
+
 /-- The map `X → C(P, (P × A) ∪_α ⨆ᵢ (P × D^{k i}))` sending a point of the attachment
 `X = Z ∪_a ⨆ᵢ D^{k i}` to the family over `P` of the corresponding points. -/
 private def fiberwiseCellAttachmentOfProdCurry
@@ -852,13 +870,9 @@ private def fiberwiseCellAttachmentOfProdCurry
       ((fiberwiseCellAttachmentCell α i).hom.comp ContinuousMap.prodSwap).curry)
     (Sigma.hom_ext _ _ fun i ↦ by
       ext s p
-      have hd := ConcreteCategory.congr_hom (Sigma.ι_comp_desc
-          (f := fun i ↦ TopCat.disk.{u} (k i)) (fun i ↦ TopCat.ofHom
-            ((fiberwiseCellAttachmentCell α i).hom.comp ContinuousMap.prodSwap).curry) i)
-        (TopCat.diskBoundaryInclusion (k i) s)
-      rw [ConcreteCategory.comp_apply] at hd
       rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-        ConcreteCategory.comp_apply, Sigma.ι_map_apply, hd]
+        ConcreteCategory.comp_apply, Sigma.ι_map_apply,
+        sigmaDesc_curry_fiberwiseCellAttachmentCell_apply]
       have h := fiberwiseCellAttachmentCell_diskBoundaryInclusion α i p s
       rw [he] at h
       exact h.symm)
@@ -891,15 +905,9 @@ theorem fiberwiseCellAttachmentOfProd_apply_inr (p : P) (i : ι) (w : TopCat.dis
     fiberwiseCellAttachmentOfProd α hX e he
         (p, j' (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w)) =
       fiberwiseCellAttachmentCell α i (p, w) := by
-  have hd := ConcreteCategory.congr_hom (Sigma.ι_comp_desc (f := fun i ↦ TopCat.disk.{u} (k i))
-      (fun i ↦ TopCat.ofHom ((fiberwiseCellAttachmentCell α i).hom.comp
-        ContinuousMap.prodSwap).curry) i) w
-  rw [ConcreteCategory.comp_apply] at hd
   rw [fiberwiseCellAttachmentOfProd_apply, fiberwiseCellAttachmentOfProdCurry,
-    ← ConcreteCategory.comp_apply, IsPushout.inr_desc, hd]
-  -- The disc is not syntactically `TopCat.of _`, so `hom_ofHom` does not fire; unfold by `change`.
-  change ((fiberwiseCellAttachmentCell α i).hom.comp ContinuousMap.prodSwap).curry w p = _
-  simp only [ContinuousMap.curry_apply, ContinuousMap.comp_apply, ContinuousMap.prodSwap_apply]
+    ← ConcreteCategory.comp_apply, IsPushout.inr_desc,
+    sigmaDesc_curry_fiberwiseCellAttachmentCell_apply]
 
 /-- The map `P × X → (P × A) ∪_α ⨆ᵢ (P × D^{k i})` lies over `P`. -/
 @[simp]

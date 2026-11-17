@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
-public import TauCeti.Geometry.Manifold.Morse.Cell.Parametric
+public import TauCeti.Geometry.Manifold.Morse.Cell.Family.Comparison
 
 /-!
 # Composing reattachment maps of compact families of Morse charts
@@ -39,15 +39,16 @@ left homotopy inverse transfers along it
 Consequently, for three families `ψ₀`, `ψ₁`, `ψ₂` and fiberwise reattachment maps `E₀₁`, `E₁₂`,
 `E₀₂` between their cell attachments, built from any self-maps of the discs and homotopies of
 characteristic maps, `E₀₁ ∘ E₁₂` is homotopic to `E₀₂` relative to `P × M_{c-ε}` through maps
-over `P` (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamily`). This is the
-composition law of Milnor's comparison maps for compact families of charts.
+over `P`
+(`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment_morseFamily`).
+This is the composition law of Milnor's comparison maps for compact families of charts.
 
 ## Main results
 
 * `TauCeti.exists_homotopyRel_comp_fiberwiseCellComparison_id_morseFamily`: the comparison map
   of a compact family of Morse charts has a left homotopy inverse over the parameter space.
-* `TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamily`: **the composition law
-  of Milnor's comparison maps over a compact parameter space.**
+* `TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment_morseFamily`:
+  **the composition law of Milnor's comparison maps over a compact parameter space.**
 
 ## References
 
@@ -99,7 +100,10 @@ private theorem exists_leftInverse_fiberwiseCellComparison_const [LocallyCompact
   -- Milnor's cell attachment theorem gives a left inverse of the comparison map of `φ`.
   obtain ⟨g', hg', -⟩ :=
     exists_morseCellAttachment_deformation hfs φ hφ k hk hε hballφ hfφ hcompact hcrit
-  -- It is a left inverse over `P` of the comparison map of the constant family.
+  -- It is a left inverse over `P` of the comparison map of the constant family. The apply lemmas
+  -- below are used as terms: `hballφ'` and `hfφ` speak of `(φ i).target` and `φ i`, which agree
+  -- with those of `(φ i).toOpenPartialHomeomorph` only after unfolding `toOpenPartialHomeomorph`,
+  -- so `simp` and `rw` cannot instantiate them on these goals.
   let e : C({x | f x ≤ c - ε}, {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
     ⟨fun x ↦ ⟨⟨x, le_trans x.2 (by linarith : c - ε ≤ c + ε)⟩, x.2⟩, by fun_prop⟩
   have he (i : ι) (p : P) (s : TopCat.diskBoundary.{u} (k i)) :
@@ -235,8 +239,8 @@ characteristic maps keeping the boundary spheres in `M_{c-ε}`. Then `E₀₁ �
 `E₀₂` relative to `P × M_{c-ε}` through maps over `P`. Since `0 < ε`, the homotopies `K` force the
 maps `h` to preserve the boundary spheres
 (`TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseFamilyCharacteristicMap`). -/
-theorem exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamily [CompactSpace P]
-    [LocallyCompactSpace P] [Finite ι] (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment_morseFamily
+    [CompactSpace P] [LocallyCompactSpace P] [Finite ι] (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
     (ψ₀ ψ₁ ψ₂ : P → ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
     (φ : ι → PartialDiffeomorph Iₘ 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
     (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source)) (k : ι → ℕ) (hk : ∀ i, k i ≤ n)
