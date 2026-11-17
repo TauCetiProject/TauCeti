@@ -38,17 +38,16 @@ theorem cons_add_cons [AddZeroClass M] (x y : M) (s t : Fin n →₀ M) :
   ext i
   cases i using Fin.cases <;> simp
 
-/-- Pushing forward along `Fin.succ` prepends `0` at coordinate `0`. -/
+/-- Pushing forward along `Fin.succ` prepends `0` at coordinate `0`. Not tagged `@[simp]` because
+rewriting `mapDomain Fin.succ` to `cons 0` shadows `Finsupp.degree_mapDomain`,
+`Finsupp.sum_mapDomain_index_addMonoidHom`, and `MvPolynomial.coeff_rename_mapDomain`, and is
+non-confluent with `Finsupp.mapDomain_single`. -/
 theorem mapDomain_finSucc [AddCommMonoid M] (s : Fin n →₀ M) :
     s.mapDomain Fin.succ = cons 0 s := by
   ext k
   cases k using Fin.cases with
-  | zero =>
-    rw [cons_zero, mapDomain_of_notMem_range]
-    rintro ⟨i, hi⟩
-    exact Fin.succ_ne_zero i hi
-  | succ i =>
-    rw [cons_succ, mapDomain_apply_of_injective (Fin.succ_injective n)]
+  | zero => exact (mapDomain_of_notMem_range s 0 (by simp)).trans (cons_zero 0 s).symm
+  | succ i => rw [cons_succ, mapDomain_apply_of_injective (Fin.succ_injective n)]
 
 /-- Componentwise comparison of `Finsupp.cons` compares heads and tails separately. -/
 @[simp]

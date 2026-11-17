@@ -13,12 +13,9 @@ import TauCeti.Data.Finsupp.MapDomain
 /-!
 # Order-preservation lemmas for graded lexicographic order (`DegLex`)
 
-Pushing forward natural-valued finitely supported functions along a strictly monotone map of
-indices preserves total degree and preserves and reflects the strict lexicographic order, so it
-preserves and reflects the strict graded lexicographic order `DegLex`
-(`Finsupp.toDegLex_mapDomain_lt_iff`). Specializing to an order isomorphism gives
-`Finsupp.toDegLex_equivMapDomain_lt_iff`, and specializing to `Fin.succ` gives
-`Finsupp.toDegLex_cons_zero_lt_iff`.
+Pushing forward natural-valued finitely supported functions along a strictly monotone map preserves
+and reflects `DegLex` (`Finsupp.toDegLex_mapDomain_lt_iff`), specializing to order isomorphisms
+(`Finsupp.toDegLex_equivMapDomain_lt_iff`) and `Fin.succ` (`Finsupp.toDegLex_cons_zero_lt_iff`).
 -/
 
 public section
@@ -44,8 +41,7 @@ theorem toDegLex_equivMapDomain_lt_iff {σ τ : Type*} [LinearOrder σ] [Preorde
 
 /-- Prepending `0` at coordinate `0` preserves and reflects the strict graded lexicographic order
 `DegLex`. -/
-@[simp]
-theorem toDegLex_cons_zero_lt_iff {n : ℕ} {α' β' : Fin n →₀ ℕ} :
+@[simp] theorem toDegLex_cons_zero_lt_iff {n : ℕ} {α' β' : Fin n →₀ ℕ} :
     toDegLex (cons 0 α') < toDegLex (cons 0 β') ↔ toDegLex α' < toDegLex β' := by
   rw [← mapDomain_finSucc, ← mapDomain_finSucc, toDegLex_mapDomain_lt_iff Fin.strictMono_succ]
 

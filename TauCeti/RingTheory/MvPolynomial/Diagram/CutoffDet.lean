@@ -14,23 +14,18 @@ import TauCeti.Data.Finsupp.Weight
 /-!
 # Homogeneous diagram division endomorphisms and finite-jet cutoff determinants
 
-For an upward-closed diagram `D : Set (σ →₀ ℕ)` on a finite linearly ordered variable set `σ` and
-homogeneous polynomials `H : D.diagramVertices → MvPolynomial σ A` of degrees `v.1.degree` over a
-commutative semiring `A`, `D.diagramDivisionEnd H hH ℓ` is the `A`-linear endomorphism of
-`homogeneousSubmodule σ A ℓ` sending each monomial basis vector to the corresponding member of
-`D.diagramSpanSet H ℓ`. When `A` satisfies `OrzechProperty A` (in particular, over any commutative
-ring `A`), spanning in degree `ℓ`, bijectivity of `D.diagramDivisionEnd H hH ℓ`, and unique
-homogeneous supported division in degree `ℓ` are equivalent
+For an upward-closed diagram `D : Set (σ →₀ ℕ)` on a finite linearly ordered `σ` and homogeneous
+polynomials `H : D.diagramVertices → MvPolynomial σ A` of degrees `v.1.degree`,
+`D.diagramDivisionEnd H hH ℓ` sends each monomial basis vector of `homogeneousSubmodule σ A ℓ` to
+the corresponding member of `D.diagramSpanSet H ℓ`. Over a semiring with `OrzechProperty A`,
+spanning, bijectivity, and unique homogeneous supported division in degree `ℓ` are equivalent
 (`Set.bijective_diagramDivisionEnd_iff_span_eq`,
 `Set.existsUnique_homogeneous_division_iff_span_eq`). Over a commutative ring `A`, Cramer's rule
-further identifies these with invertibility of `LinearMap.det (D.diagramDivisionEnd H hH ℓ)`
-(`Set.isUnit_det_diagramDivisionEnd_iff_span_eq`).
-
-For an upward-closed monotone diagram `D` over a commutative ring `A`,
-`Set.span_diagramSpanSet_eq_of_le` implies that these hold in *every* degree `ℓ : ℕ` if and only if
-the finite-jet determinant product `D.diagramCutoffDet H hH` across `ℓ ≤ D.diagramCutoff` is a unit
-(`Set.isUnit_diagramCutoffDet_iff_forall_span_eq`), hence after any ring homomorphism inverting
-`D.diagramCutoffDet H hH` (`Set.existsUnique_homogeneous_division_of_isUnit_map_diagramCutoffDet`).
+identifies these with invertibility of `LinearMap.det (D.diagramDivisionEnd H hH ℓ)`
+(`Set.isUnit_det_diagramDivisionEnd_iff_span_eq`), and for monotone `D`,
+`Set.span_diagramSpanSet_eq_of_le` shows they hold in *every* degree iff `D.diagramCutoffDet H hH`
+is a unit (`Set.isUnit_diagramCutoffDet_iff_forall_span_eq`), hence after any homomorphism
+inverting it (`Set.existsUnique_homogeneous_division_of_isUnit_map_diagramCutoffDet`).
 
 ## References
 
@@ -50,8 +45,7 @@ section CommSemiring
 variable {σ A : Type*} [Finite σ] [LinearOrder σ] [CommSemiring A]
 
 private noncomputable instance fintypeDegreeEqSubtype (ℓ : ℕ) :
-    Fintype {δ : σ →₀ ℕ // δ.degree = ℓ} :=
-  Fintype.ofFinite _
+    Fintype {δ : σ →₀ ℕ // δ.degree = ℓ} := Fintype.ofFinite _
 
 open scoped Classical in
 /-- The `A`-linear endomorphism of `homogeneousSubmodule σ A ℓ` associated to `D` and `H`, sending
@@ -63,17 +57,11 @@ noncomputable def diagramDivisionEnd (D : Set (σ →₀ ℕ))
     homogeneousSubmodule σ A ℓ →ₗ[A] homogeneousSubmodule σ A ℓ :=
   (TauCeti.homogeneousMonomialBasis ℓ).constr A fun s ↦
     if h : ∃ v : D.diagramVertices, s.1 ∈ D.diagramCell v.1 then
-      ⟨monomial (s.1 - h.choose.1) 1 * H h.choose, by
-        have hle : h.choose.1 ≤ s.1 := le_of_mem_diagramCell h.choose_spec
-        have hdeg : (s.1 - h.choose.1).degree + h.choose.1.degree = ℓ := by
-          rw [← map_add, tsub_add_cancel_of_le hle, s.2]
-        have hhom : (monomial (s.1 - h.choose.1) (1 : A) * H h.choose).IsHomogeneous
-            ((s.1 - h.choose.1).degree + h.choose.1.degree) :=
-          (isHomogeneous_monomial 1 (by simp [Finsupp.degree_apply])).mul (hH h.choose)
-        rw [hdeg] at hhom
-        exact (mem_homogeneousSubmodule ℓ _).mpr hhom⟩
-    else
-      TauCeti.homogeneousMonomialBasis ℓ s
+      ⟨monomial (s.1 - h.choose.1) 1 * H h.choose, (mem_homogeneousSubmodule ℓ _).mpr <|
+        (show (s.1 - h.choose.1).degree + h.choose.1.degree = ℓ by
+          rw [← map_add, tsub_add_cancel_of_le (le_of_mem_diagramCell h.choose_spec), s.2]) ▸
+          (isHomogeneous_monomial 1 (by simp [Finsupp.degree_apply])).mul (hH h.choose)⟩
+    else TauCeti.homogeneousMonomialBasis ℓ s
 
 theorem coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell
     {D : Set (σ →₀ ℕ)} {H : D.diagramVertices → MvPolynomial σ A}
@@ -83,9 +71,8 @@ theorem coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell
       monomial (s.1 - v.1) 1 * H v := by
   classical
   have hex : ∃ w : D.diagramVertices, s.1 ∈ D.diagramCell w.1 := ⟨v, hs⟩
-  have hchoose : hex.choose = v :=
-    Subtype.ext (eq_of_mem_diagramCell hex.choose.2 v.2 hex.choose_spec hs)
-  simp only [diagramDivisionEnd, Module.Basis.constr_basis, hex, ↓reduceDIte, hchoose]
+  simp only [diagramDivisionEnd, Module.Basis.constr_basis, hex, ↓reduceDIte,
+    Subtype.ext (eq_of_mem_diagramCell hex.choose.2 v.2 hex.choose_spec hs)]
 
 theorem diagramDivisionEnd_homogeneousMonomialBasis_of_notMem_diagramCell
     {D : Set (σ →₀ ℕ)} {H : D.diagramVertices → MvPolynomial σ A}
@@ -94,8 +81,8 @@ theorem diagramDivisionEnd_homogeneousMonomialBasis_of_notMem_diagramCell
     D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ s) =
       TauCeti.homogeneousMonomialBasis ℓ s := by
   classical
-  have hex : ¬ ∃ w : D.diagramVertices, s.1 ∈ D.diagramCell w.1 := fun ⟨w, hw⟩ ↦ hs w hw
-  simp only [diagramDivisionEnd, Module.Basis.constr_basis, hex, ↓reduceDIte]
+  simp only [diagramDivisionEnd, Module.Basis.constr_basis,
+    show ¬ ∃ w : D.diagramVertices, s.1 ∈ D.diagramCell w.1 from fun ⟨w, hw⟩ ↦ hs w hw, ↓reduceDIte]
 
 /-- For an upward-closed diagram `D`, `D.diagramDivisionEnd H hH ℓ` fixes every monomial basis
 vector whose exponent lies outside `D`. -/
@@ -109,8 +96,8 @@ theorem diagramDivisionEnd_homogeneousMonomialBasis_of_notMem {D : Set (σ →�
     fun v ↦ notMem_diagramCell_of_notMem hD_up v.2 hs
 
 /-- For the empty diagram `D = ∅`, `diagramDivisionEnd` is the identity endomorphism. -/
-@[simp]
-theorem diagramDivisionEnd_empty (H : (∅ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A)
+@[simp] theorem diagramDivisionEnd_empty
+    (H : (∅ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A)
     (hH : ∀ v, (H v).IsHomogeneous v.1.degree) (ℓ : ℕ) :
     (∅ : Set (σ →₀ ℕ)).diagramDivisionEnd H hH ℓ = LinearMap.id :=
   (TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ).ext fun s ↦ by
@@ -125,33 +112,27 @@ theorem map_range_diagramDivisionEnd_eq_span {D : Set (σ →₀ ℕ)} (hD_up : 
     (LinearMap.range (D.diagramDivisionEnd H hH ℓ)).map (homogeneousSubmodule σ A ℓ).subtype =
       Submodule.span A (D.diagramSpanSet H ℓ) := by
   let b := TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ
-  have hset : (fun s ↦ (D.diagramDivisionEnd H hH ℓ (b s) : MvPolynomial σ A)) '' Set.univ =
-      D.diagramSpanSet H ℓ := by
-    ext p
-    simp only [mem_image, mem_univ, true_and, mem_diagramSpanSet_iff]
-    constructor
-    · rintro ⟨s, rfl⟩
-      by_cases hsD : s.1 ∈ D
-      · obtain ⟨v, hv, _⟩ := existsUnique_mem_diagramCell_of_mem hD_up hsD
-        rw [coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v hv]
-        refine Or.inl ⟨v, s.1 - v.1, tsub_mem_diagramBox_of_mem_diagramCell hv, ?_, rfl⟩
-        rw [← map_add, add_tsub_cancel_of_le (le_of_mem_diagramCell hv), s.2]
-      · rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH hsD,
-          TauCeti.coe_homogeneousMonomialBasis]
-        exact Or.inr ⟨s.1, hsD, s.2, rfl⟩
-    · rintro (⟨v, β, hβ, hdeg, rfl⟩ | ⟨γ, hγ, hdeg, rfl⟩)
-      · let s : {δ : σ →₀ ℕ // δ.degree = ℓ} := ⟨v.1 + β, by rw [map_add, hdeg]⟩
-        refine ⟨s, ?_⟩
-        rw [coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v
-          (add_mem_diagramCell_iff.mpr hβ)]
-        simp [s]
-      · let s : {δ : σ →₀ ℕ // δ.degree = ℓ} := ⟨γ, hdeg⟩
-        refine ⟨s, ?_⟩
-        rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH hγ,
-          TauCeti.coe_homogeneousMonomialBasis]
   rw [← LinearMap.range_comp, LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span,
     ← Set.range_comp, ← Set.image_univ]
-  exact congrArg (Submodule.span A) hset
+  refine congrArg (Submodule.span A) (Set.ext fun p ↦ ?_)
+  simp only [mem_image, mem_univ, true_and, Function.comp_apply, LinearMap.coe_comp,
+    Submodule.coe_subtype, mem_diagramSpanSet_iff]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨s, rfl⟩
+    by_cases hsD : s.1 ∈ D
+    · obtain ⟨v, hv, _⟩ := existsUnique_mem_diagramCell_of_mem hD_up hsD
+      rw [coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v hv]
+      exact Or.inl ⟨v, s.1 - v.1, tsub_mem_diagramBox_of_mem_diagramCell hv,
+        by rw [← map_add, add_tsub_cancel_of_le (le_of_mem_diagramCell hv), s.2], rfl⟩
+    · rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH hsD,
+        TauCeti.coe_homogeneousMonomialBasis]; exact Or.inr ⟨s.1, hsD, s.2, rfl⟩
+  · rintro (⟨v, β, hβ, hdeg, rfl⟩ | ⟨γ, hγ, hdeg, rfl⟩)
+    · exact ⟨⟨v.1 + β, by rw [map_add, hdeg]⟩, by
+        simpa using coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v
+          (s := ⟨v.1 + β, by rw [map_add, hdeg]⟩) (add_mem_diagramCell_iff.mpr hβ)⟩
+    · exact ⟨⟨γ, hdeg⟩, by
+        rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH hγ,
+          TauCeti.coe_homogeneousMonomialBasis]⟩
 
 /-- For an upward-closed diagram `D`, `D.diagramDivisionEnd H hH ℓ` is surjective if and only if
 `D.diagramSpanSet H ℓ` spans `homogeneousSubmodule σ A ℓ`. -/
@@ -179,17 +160,15 @@ private theorem diagramToQR_fst_mem {D : Set (σ →₀ ℕ)} {ℓ : ℕ} (P : h
     (D.diagramToQR P).1 v ∈
       restrictSupport A {β ∈ D.diagramBox v.1 | v.1.degree + β.degree = ℓ} := by
   classical
-  rw [diagramToQR]
   refine Submodule.sum_mem _ fun s hs ↦ (mem_restrictSupport_iff A).mpr fun β hβ ↦ ?_
-  have hsc : s.1 ∈ D.diagramCell v.1 := (Finset.mem_filter.mp hs).2
   rcases Finset.mem_singleton.mp (support_monomial_subset (Finset.mem_coe.mp hβ)) with rfl
-  exact ⟨tsub_mem_diagramBox_of_mem_diagramCell hsc, by
-    rw [← map_add, add_tsub_cancel_of_le (le_of_mem_diagramCell hsc), s.2]⟩
+  have hsc := (Finset.mem_filter.mp hs).2
+  exact ⟨tsub_mem_diagramBox_of_mem_diagramCell hsc,
+    by rw [← map_add, add_tsub_cancel_of_le (le_of_mem_diagramCell hsc), s.2]⟩
 
 private theorem diagramToQR_snd_mem {D : Set (σ →₀ ℕ)} {ℓ : ℕ} (P : homogeneousSubmodule σ A ℓ) :
     (D.diagramToQR P).2 ∈ restrictSupport A {γ | γ ∉ D ∧ γ.degree = ℓ} := by
   classical
-  rw [diagramToQR]
   refine Submodule.sum_mem _ fun s hs ↦ (mem_restrictSupport_iff A).mpr fun γ hγ ↦ ?_
   rcases Finset.mem_singleton.mp (support_monomial_subset (Finset.mem_coe.mp hγ)) with rfl
   exact ⟨(Finset.mem_filter.mp hs).2, s.2⟩
@@ -199,29 +178,20 @@ private theorem diagramToQR_coeff_cell {D : Set (σ →₀ ℕ)} {ℓ : ℕ}
     (s : {δ : σ →₀ ℕ // δ.degree = ℓ}) (hs : s.1 ∈ D.diagramCell v.1) :
     P.1.coeff s.1 = ((D.diagramToQR P).1 v).coeff (s.1 - v.1) := by
   classical
-  rw [diagramToQR]
-  simp only [coeff_sum]
-  rw [Finset.sum_eq_single s]
+  rw [diagramToQR, coeff_sum, Finset.sum_eq_single s (fun s' hs' hne ↦ ?_)
+    (fun h ↦ absurd (Finset.mem_filter.mpr ⟨Finset.mem_univ s, hs⟩) h)]
   · simp
-  · intro s' hs' hne
-    have hs'c : s'.1 ∈ D.diagramCell v.1 := (Finset.mem_filter.mp hs').2
-    have hne' : s'.1 - v.1 ≠ s.1 - v.1 := fun heq ↦ hne (Subtype.ext <| by
-      rw [← add_tsub_cancel_of_le (le_of_mem_diagramCell hs'c), heq,
-        add_tsub_cancel_of_le (le_of_mem_diagramCell hs)])
-    simp [coeff_monomial, hne']
-  · exact fun habs ↦ absurd (Finset.mem_filter.mpr ⟨Finset.mem_univ s, hs⟩) habs
+  · simp [coeff_monomial, show s'.1 - v.1 ≠ s.1 - v.1 from fun heq ↦ hne (Subtype.ext <| by
+      rw [← add_tsub_cancel_of_le (le_of_mem_diagramCell (Finset.mem_filter.mp hs').2), heq,
+        add_tsub_cancel_of_le (le_of_mem_diagramCell hs)])]
 
 private theorem diagramToQR_coeff_rem {D : Set (σ →₀ ℕ)} {ℓ : ℕ}
     (P : homogeneousSubmodule σ A ℓ) (s : {δ : σ →₀ ℕ // δ.degree = ℓ}) (hs : s.1 ∉ D) :
     P.1.coeff s.1 = (D.diagramToQR P).2.coeff s.1 := by
   classical
-  rw [diagramToQR]
-  simp only [coeff_sum]
-  rw [Finset.sum_eq_single s]
-  · simp
-  · intro s' _ hne
-    simp [coeff_monomial, Subtype.coe_ne_coe.mpr hne]
-  · exact fun habs ↦ absurd (Finset.mem_filter.mpr ⟨Finset.mem_univ s, hs⟩) habs
+  rw [diagramToQR, coeff_sum, Finset.sum_eq_single s
+    (fun s' _ hne ↦ by simp [coeff_monomial, Subtype.coe_ne_coe.mpr hne])
+    (fun h ↦ absurd (Finset.mem_filter.mpr ⟨Finset.mem_univ s, hs⟩) h)]; simp
 
 private theorem coe_diagramDivisionEnd_eq_diagramToQR {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.1.degree)
@@ -237,27 +207,23 @@ private theorem coe_diagramDivisionEnd_eq_diagramToQR {D : Set (σ →₀ ℕ)} 
     (fun s : {δ : σ →₀ ℕ // δ.degree = ℓ} ↦ s.1 ∈ D)]
   congr 1
   · have hpart : Finset.univ.filter (fun s : {δ : σ →₀ ℕ // δ.degree = ℓ} ↦ s.1 ∈ D) =
-        Finset.univ.biUnion (fun v : D.diagramVertices ↦
-          Finset.univ.filter (fun s : {δ : σ →₀ ℕ // δ.degree = ℓ} ↦
-            s.1 ∈ D.diagramCell v.1)) := by
-      ext s
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_biUnion]
+        Finset.univ.biUnion fun v : D.diagramVertices ↦
+          Finset.univ.filter (fun s ↦ s.1 ∈ D.diagramCell v.1) := by
+      ext s; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_biUnion]
       exact ⟨fun hs ↦ let ⟨v, hv, _⟩ := existsUnique_mem_diagramCell_of_mem hD_up hs; ⟨v, hv⟩,
         fun ⟨v, hv⟩ ↦ diagramCell_subset hD_up v.2 hv⟩
     rw [hpart, Finset.sum_biUnion]
-    · refine Finset.sum_congr rfl fun v _ ↦ ?_
-      simp only [diagramToQR, Finset.sum_mul]
-      refine Finset.sum_congr rfl fun s hs ↦ ?_
-      rw [coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v
-        (Finset.mem_filter.mp hs).2, ← smul_mul_assoc, smul_monomial, smul_eq_mul, mul_one]
-    · intro v₁ _ v₂ _ hne
-      exact Finset.disjoint_left.mpr fun s hs₁ hs₂ ↦
-        hne (Subtype.ext (eq_of_mem_diagramCell v₁.2 v₂.2
-          (Finset.mem_filter.mp hs₁).2 (Finset.mem_filter.mp hs₂).2))
-  · simp only [diagramToQR]
-    refine Finset.sum_congr rfl fun s hs ↦ ?_
-    rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH (Finset.mem_filter.mp hs).2,
-      TauCeti.coe_homogeneousMonomialBasis, smul_monomial, smul_eq_mul, mul_one]
+    · exact Finset.sum_congr rfl fun v _ ↦ by
+        simp only [diagramToQR, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun s hs ↦ by
+          rw [coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v
+            (Finset.mem_filter.mp hs).2, ← smul_mul_assoc, smul_monomial, smul_eq_mul, mul_one]
+    · exact fun v₁ _ v₂ _ hne ↦ Finset.disjoint_left.mpr fun s h₁ h₂ ↦ hne (Subtype.ext
+        (eq_of_mem_diagramCell v₁.2 v₂.2 (Finset.mem_filter.mp h₁).2 (Finset.mem_filter.mp h₂).2))
+  · exact Finset.sum_congr rfl fun s hs ↦ by
+      rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH
+        (Finset.mem_filter.mp hs).2, TauCeti.coe_homogeneousMonomialBasis, smul_monomial,
+        smul_eq_mul, mul_one]
 
 open scoped Classical in
 private noncomputable def diagramFromQR (D : Set (σ →₀ ℕ)) (ℓ : ℕ)
@@ -273,7 +239,7 @@ private theorem diagramToQR_injective {D : Set (σ →₀ ℕ)} (hD_up : IsUpper
     P₁ = P₂ := by
   refine (TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ).repr.injective
     (Finsupp.ext fun s ↦ ?_)
-  rw [TauCeti.homogeneousMonomialBasis_repr_apply, TauCeti.homogeneousMonomialBasis_repr_apply]
+  simp only [TauCeti.homogeneousMonomialBasis_repr_apply]
   by_cases hsD : s.1 ∈ D
   · obtain ⟨v, hv, _⟩ := existsUnique_mem_diagramCell_of_mem hD_up hsD
     rw [diagramToQR_coeff_cell P₁ v s hv, diagramToQR_coeff_cell P₂ v s hv, heq]
@@ -285,29 +251,25 @@ private theorem diagramToQR_diagramFromQR {D : Set (σ →₀ ℕ)} (hD_up : IsU
     (hR : qr.2 ∈ restrictSupport A {γ | γ ∉ D ∧ γ.degree = ℓ}) :
     D.diagramToQR (D.diagramFromQR ℓ qr) = qr := by
   classical
+  have hcoeff (s : {δ : σ →₀ ℕ // δ.degree = ℓ}) : (D.diagramFromQR ℓ qr).1.coeff s.1 =
+      if h : ∃ v : D.diagramVertices, s.1 ∈ D.diagramCell v.1 then
+        (qr.1 h.choose).coeff (s.1 - h.choose.1)
+      else qr.2.coeff s.1 := by
+    rw [← TauCeti.homogeneousMonomialBasis_repr_apply ℓ _ s, diagramFromQR,
+      LinearEquiv.apply_symm_apply, Finsupp.coe_equivFunOnFinite_symm]
   refine Prod.ext (funext fun v ↦ (eq_of_mem_restrictSupport_of_coeff_eq (hQ v)
-    (diagramToQR_fst_mem (D.diagramFromQR ℓ qr) v) fun β hβ ↦ ?_).symm)
-    (eq_of_mem_restrictSupport_of_coeff_eq hR (diagramToQR_snd_mem (D.diagramFromQR ℓ qr))
-      fun γ hγ ↦ ?_).symm
+    (diagramToQR_fst_mem _ v) fun β hβ ↦ ?_).symm)
+    (eq_of_mem_restrictSupport_of_coeff_eq hR (diagramToQR_snd_mem _) fun γ hγ ↦ ?_).symm
   · let s : {δ : σ →₀ ℕ // δ.degree = ℓ} := ⟨v.1 + β, by rw [map_add, hβ.2]⟩
     have hs : s.1 ∈ D.diagramCell v.1 := add_mem_diagramCell_iff.mpr hβ.1
     have hex : ∃ w : D.diagramVertices, s.1 ∈ D.diagramCell w.1 := ⟨v, hs⟩
-    have hchoose : hex.choose = v :=
-      Subtype.ext (eq_of_mem_diagramCell hex.choose.2 v.2 hex.choose_spec hs)
-    have h₁ : (D.diagramFromQR ℓ qr).1.coeff s.1 = (qr.1 v).coeff β := by
-      rw [← TauCeti.homogeneousMonomialBasis_repr_apply ℓ _ s, diagramFromQR,
-        LinearEquiv.apply_symm_apply, Finsupp.coe_equivFunOnFinite_symm]
-      simp only [hex, ↓reduceDIte, hchoose, s, add_tsub_cancel_left]
-    simpa only [s, add_tsub_cancel_left] using
-      h₁.symm.trans (diagramToQR_coeff_cell (D.diagramFromQR ℓ qr) v s hs)
-  · let s : {δ : σ →₀ ℕ // δ.degree = ℓ} := ⟨γ, hγ.2⟩
-    have hex : ¬ ∃ w : D.diagramVertices, s.1 ∈ D.diagramCell w.1 :=
+    simpa only [s, add_tsub_cancel_left, hex, ↓reduceDIte,
+      Subtype.ext (eq_of_mem_diagramCell hex.choose.2 v.2 hex.choose_spec hs)] using
+      (hcoeff s).symm.trans (diagramToQR_coeff_cell _ v s hs)
+  · have hex : ¬ ∃ w : D.diagramVertices, γ ∈ D.diagramCell w.1 :=
       fun ⟨w, hw⟩ ↦ notMem_diagramCell_of_notMem hD_up w.2 hγ.1 hw
-    have h₁ : (D.diagramFromQR ℓ qr).1.coeff s.1 = qr.2.coeff γ := by
-      rw [← TauCeti.homogeneousMonomialBasis_repr_apply ℓ _ s, diagramFromQR,
-        LinearEquiv.apply_symm_apply, Finsupp.coe_equivFunOnFinite_symm]
-      simp only [hex, ↓reduceDIte, s]
-    exact h₁.symm.trans (diagramToQR_coeff_rem (D.diagramFromQR ℓ qr) s hγ.1)
+    simpa only [hex, ↓reduceDIte] using
+      (hcoeff ⟨γ, hγ.2⟩).symm.trans (diagramToQR_coeff_rem _ ⟨γ, hγ.2⟩ hγ.1)
 
 /-- `diagramDivisionEnd` commutes with changing coefficients along any ring homomorphism
 `φ : A →+* B`. -/
@@ -318,21 +280,18 @@ theorem mapHomogeneousSubmodule_diagramDivisionEnd {B : Type*} [CommSemiring B] 
     TauCeti.mapHomogeneousSubmodule φ ℓ (D.diagramDivisionEnd H hH ℓ P) =
       D.diagramDivisionEnd (fun v ↦ MvPolynomial.map φ (H v)) (fun v ↦ (hH v).map φ) ℓ
         (TauCeti.mapHomogeneousSubmodule φ ℓ P) := by
-  rw [← (TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ).sum_repr P,
-    map_sum, map_sum, map_sum, map_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  simp only [LinearMap.map_smulₛₗ, TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis]
-  congr 1; apply Subtype.ext
   classical
+  rw [← (TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ).sum_repr P]
+  simp only [map_sum, LinearMap.map_smulₛₗ,
+    TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis]
+  refine Finset.sum_congr rfl fun s _ ↦ congrArg _ (Subtype.ext ?_)
   by_cases hex : ∃ v : D.diagramVertices, s.1 ∈ D.diagramCell v.1
   · obtain ⟨v, hv⟩ := hex
-    rw [TauCeti.coe_mapHomogeneousSubmodule_apply,
-      coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH v hv,
+    simp only [TauCeti.coe_mapHomogeneousSubmodule_apply,
       coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell _ v hv,
       map_mul, map_monomial, map_one]
   · have hnot : ∀ v : D.diagramVertices, s.1 ∉ D.diagramCell v.1 := fun v hv ↦ hex ⟨v, hv⟩
-    rw [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem_diagramCell hH hnot,
-      diagramDivisionEnd_homogeneousMonomialBasis_of_notMem_diagramCell _ hnot,
+    simp only [diagramDivisionEnd_homogeneousMonomialBasis_of_notMem_diagramCell _ hnot,
       TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis]
 
 end CommSemiring
@@ -365,31 +324,24 @@ theorem existsUnique_homogeneous_division_iff_span_eq {D : Set (σ →₀ ℕ)} 
         ∑ v, qr.1 v * H v + qr.2 = G) ↔
       Submodule.span A (D.diagramSpanSet H ℓ) = homogeneousSubmodule σ A ℓ := by
   rw [← bijective_diagramDivisionEnd_iff_span_eq hD_up hH]
-  constructor
-  · intro hdiv
-    refine ⟨fun P₁ P₂ hP ↦ diagramToQR_injective hD_up ?_, fun G ↦ ?_⟩
-    · obtain ⟨_, _, huniq⟩ := hdiv (D.diagramDivisionEnd H hH ℓ P₁)
-        (D.diagramDivisionEnd H hH ℓ P₁).2
-      have h₁ := (coe_diagramDivisionEnd_eq_diagramToQR hD_up hH P₁).symm
-      have h₂ : ∑ v, (D.diagramToQR P₂).1 v * H v + (D.diagramToQR P₂).2 =
-          (D.diagramDivisionEnd H hH ℓ P₁ : MvPolynomial σ A) := by
-        rw [hP, coe_diagramDivisionEnd_eq_diagramToQR hD_up hH P₂]
-      exact (huniq _ ⟨diagramToQR_fst_mem P₁, diagramToQR_snd_mem P₁, h₁⟩).trans
-        (huniq _ ⟨diagramToQR_fst_mem P₂, diagramToQR_snd_mem P₂, h₂⟩).symm
-    · obtain ⟨qr, ⟨hQ, hR, hsum⟩, _⟩ := hdiv G.1 G.2
-      refine ⟨D.diagramFromQR ℓ qr, Subtype.ext ?_⟩
+  refine ⟨fun hdiv ↦ ⟨fun P₁ P₂ hP ↦ diagramToQR_injective hD_up ?_, fun G ↦ ?_⟩,
+    fun hbij G hG ↦ ?_⟩
+  · obtain ⟨_, _, huniq⟩ := hdiv _ (D.diagramDivisionEnd H hH ℓ P₁).2
+    exact (huniq _ ⟨diagramToQR_fst_mem P₁, diagramToQR_snd_mem P₁,
+        (coe_diagramDivisionEnd_eq_diagramToQR hD_up hH P₁).symm⟩).trans
+      (huniq _ ⟨diagramToQR_fst_mem P₂, diagramToQR_snd_mem P₂,
+        by rw [hP, coe_diagramDivisionEnd_eq_diagramToQR hD_up hH P₂]⟩).symm
+  · obtain ⟨qr, ⟨hQ, hR, hsum⟩, _⟩ := hdiv G.1 G.2
+    exact ⟨D.diagramFromQR ℓ qr, Subtype.ext <| by
       rw [coe_diagramDivisionEnd_eq_diagramToQR hD_up hH,
-        diagramToQR_diagramFromQR hD_up hQ hR, hsum]
-  · intro hbij G hG
-    obtain ⟨P, hP⟩ := hbij.2 ⟨G, hG⟩
-    refine ⟨D.diagramToQR P, ⟨diagramToQR_fst_mem P, diagramToQR_snd_mem P, ?_⟩,
-      fun qr ⟨hQ, hR, hsum⟩ ↦ ?_⟩
-    · rw [← coe_diagramDivisionEnd_eq_diagramToQR hD_up hH P, hP]
-    · have hend : D.diagramDivisionEnd H hH ℓ (D.diagramFromQR ℓ qr) = ⟨G, hG⟩ := Subtype.ext <| by
-        rw [coe_diagramDivisionEnd_eq_diagramToQR hD_up hH,
-          diagramToQR_diagramFromQR hD_up hQ hR, hsum]
-      exact (diagramToQR_diagramFromQR hD_up hQ hR).symm.trans
-        (congrArg D.diagramToQR (hbij.1 (hend.trans hP.symm)))
+        diagramToQR_diagramFromQR hD_up hQ hR, hsum]⟩
+  · obtain ⟨P, hP⟩ := hbij.2 ⟨G, hG⟩
+    exact ⟨D.diagramToQR P, ⟨diagramToQR_fst_mem P, diagramToQR_snd_mem P,
+      by rw [← coe_diagramDivisionEnd_eq_diagramToQR hD_up hH P, hP]⟩,
+      fun qr ⟨hQ, hR, hsum⟩ ↦ (diagramToQR_diagramFromQR hD_up hQ hR).symm.trans
+        (congrArg D.diagramToQR (hbij.1 (Eq.trans (Subtype.ext <| by
+          rw [coe_diagramDivisionEnd_eq_diagramToQR hD_up hH,
+            diagramToQR_diagramFromQR hD_up hQ hR, hsum]) hP.symm)))⟩
 
 end Orzech
 
@@ -418,16 +370,15 @@ theorem map_det_diagramDivisionEnd {B : Type*} [CommRing B] (φ : A →+* B)
         (D.diagramDivisionEnd (fun v ↦ MvPolynomial.map φ (H v)) (fun v ↦ (hH v).map φ) ℓ) := by
   classical
   let bA := TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ
-  let bB := TauCeti.homogeneousMonomialBasis (σ := σ) (R := B) ℓ
-  rw [← LinearMap.det_toMatrix bA, ← LinearMap.det_toMatrix bB, RingHom.map_det]
+  rw [← LinearMap.det_toMatrix bA,
+    ← LinearMap.det_toMatrix (TauCeti.homogeneousMonomialBasis (σ := σ) (R := B) ℓ),
+    RingHom.map_det]
   congr 1; ext s t
-  rw [RingHom.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply,
-    LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply,
-    TauCeti.homogeneousMonomialBasis_repr_apply]
-  have hcomm := mapHomogeneousSubmodule_diagramDivisionEnd φ hH ℓ (bA t)
-  rw [TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis] at hcomm
-  simpa [TauCeti.coe_mapHomogeneousSubmodule_apply, coeff_map] using
-    congrArg (fun x : homogeneousSubmodule σ B ℓ ↦ x.1.coeff s.1) hcomm
+  simpa [bA, LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply,
+    TauCeti.coe_mapHomogeneousSubmodule_apply,
+    TauCeti.mapHomogeneousSubmodule_homogeneousMonomialBasis, coeff_map] using
+    congrArg (fun x : homogeneousSubmodule σ B ℓ ↦ x.1.coeff s.1)
+      (mapHomogeneousSubmodule_diagramDivisionEnd φ hH ℓ (bA t))
 
 /-- The finite-jet determinant product across degrees `ℓ ≤ D.diagramCutoff` controlling
 homogeneous supported division in *all* degrees for a monotone upward-closed diagram `D`
@@ -437,42 +388,32 @@ noncomputable def diagramCutoffDet (D : Set (σ →₀ ℕ))
   ∏ ℓ ∈ Finset.range (D.diagramCutoff + 1), LinearMap.det (D.diagramDivisionEnd H hH ℓ)
 
 theorem diagramCutoffDet_def (D : Set (σ →₀ ℕ)) (H : D.diagramVertices → MvPolynomial σ A)
-    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
-    D.diagramCutoffDet H hH =
-      ∏ ℓ ∈ Finset.range (D.diagramCutoff + 1), LinearMap.det (D.diagramDivisionEnd H hH ℓ) :=
-  (rfl)
+    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) : D.diagramCutoffDet H hH =
+      ∏ ℓ ∈ Finset.range (D.diagramCutoff + 1), LinearMap.det (D.diagramDivisionEnd H hH ℓ) := (rfl)
 
 /-- For the empty diagram `D = ∅`, `diagramCutoffDet` equals `1`. -/
-@[simp]
-theorem diagramCutoffDet_empty (H : (∅ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A)
+@[simp] theorem diagramCutoffDet_empty
+    (H : (∅ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A)
     (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
-    (∅ : Set (σ →₀ ℕ)).diagramCutoffDet H hH = 1 := by
-  simp [diagramCutoffDet_def]
+    (∅ : Set (σ →₀ ℕ)).diagramCutoffDet H hH = 1 := by simp [diagramCutoffDet_def]
 
 /-- For `D = Set.univ`, `diagramCutoffDet` equals the constant coefficient of `H ⟨0, _⟩`. -/
-@[simp]
-theorem diagramCutoffDet_univ
+@[simp] theorem diagramCutoffDet_univ
     (H : (Set.univ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A)
     (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
     (Set.univ : Set (σ →₀ ℕ)).diagramCutoffDet H hH = constantCoeff (H ⟨0, by simp⟩) := by
   let : Unique {δ : σ →₀ ℕ // δ.degree = 0} :=
-    { default := ⟨0, by simp⟩
-      uniq := fun s ↦ Subtype.ext (by simpa [Finsupp.degree_eq_zero_iff] using s.2) }
-  let b := TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) 0
+    ⟨⟨0, by simp⟩, fun s ↦ Subtype.ext (by simpa [Finsupp.degree_eq_zero_iff] using s.2)⟩
   have h0 : (default : {δ : σ →₀ ℕ // δ.degree = 0}).1 = 0 := rfl
   rw [diagramCutoffDet_def, diagramCutoff_univ, Finset.range_one, Finset.prod_singleton,
-    ← LinearMap.det_toMatrix b, Matrix.det_unique, LinearMap.toMatrix_apply,
-    TauCeti.homogeneousMonomialBasis_repr_apply]
-  have hcell : (default : {δ : σ →₀ ℕ // δ.degree = 0}).1 ∈
-      (Set.univ : Set (σ →₀ ℕ)).diagramCell 0 := by
-    rw [h0]; simp
-  rw [coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH ⟨0, by simp⟩ hcell, h0]
-  simp [constantCoeff_eq]
+    ← LinearMap.det_toMatrix (TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) 0),
+    Matrix.det_unique, LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply,
+    coe_diagramDivisionEnd_homogeneousMonomialBasis_of_mem_diagramCell hH ⟨0, by simp⟩
+      (by rw [h0]; simp), h0]; simp [constantCoeff_eq]
 
 theorem map_diagramCutoffDet {B : Type*} [CommRing B] (φ : A →+* B)
     {D : Set (σ →₀ ℕ)} {H : D.diagramVertices → MvPolynomial σ A}
-    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
-    φ (D.diagramCutoffDet H hH) =
+    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) : φ (D.diagramCutoffDet H hH) =
       D.diagramCutoffDet (fun v ↦ MvPolynomial.map φ (H v)) (fun v ↦ (hH v).map φ) := by
   simp [diagramCutoffDet_def, map_prod, map_det_diagramDivisionEnd]
 
@@ -484,14 +425,13 @@ theorem isUnit_diagramCutoffDet_iff_forall_span_eq {D : Set (σ →₀ ℕ)}
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
     IsUnit (D.diagramCutoffDet H hH) ↔
       ∀ ℓ : ℕ, Submodule.span A (D.diagramSpanSet H ℓ) = homogeneousSubmodule σ A ℓ := by
+  have hiff (ℓ : ℕ) := isUnit_det_diagramDivisionEnd_iff_span_eq (ℓ := ℓ) hD_up hH
   rw [diagramCutoffDet_def, IsUnit.prod_iff]
-  refine ⟨fun h ℓ ↦ ?_, fun h ℓ _ ↦ (isUnit_det_diagramDivisionEnd_iff_span_eq hD_up hH).mpr (h ℓ)⟩
+  refine ⟨fun h ℓ ↦ ?_, fun h ℓ _ ↦ (hiff ℓ).mpr (h ℓ)⟩
   by_cases hle : ℓ ≤ D.diagramCutoff
-  · exact (isUnit_det_diagramDivisionEnd_iff_span_eq hD_up hH).mp
-      (h ℓ (Finset.mem_range.mpr (Nat.lt_succ_of_le hle)))
+  · exact (hiff ℓ).mp (h ℓ (Finset.mem_range.mpr (Nat.lt_succ_of_le hle)))
   · exact span_diagramSpanSet_eq_of_le hD_up hD_mono hH le_rfl
-      ((isUnit_det_diagramDivisionEnd_iff_span_eq hD_up hH).mp
-        (h D.diagramCutoff (Finset.mem_range.mpr (Nat.lt_succ_self _))))
+      ((hiff _).mp (h D.diagramCutoff (Finset.mem_range.mpr (Nat.lt_succ_self _))))
       (Nat.le_of_not_ge hle)
 
 /-- For an upward-closed monotone diagram `D`, `D.diagramCutoffDet H hH` is a unit in `A` if and
@@ -520,10 +460,9 @@ theorem existsUnique_homogeneous_division_of_isUnit_map_diagramCutoffDet
     ∃! qr : (D.diagramVertices → MvPolynomial σ B) × MvPolynomial σ B,
       (∀ v, qr.1 v ∈ restrictSupport B {β ∈ D.diagramBox v.1 | v.1.degree + β.degree = ℓ}) ∧
       qr.2 ∈ restrictSupport B {γ | γ ∉ D ∧ γ.degree = ℓ} ∧
-      ∑ v, qr.1 v * MvPolynomial.map φ (H v) + qr.2 = G := by
-  rw [map_diagramCutoffDet] at hunit
-  exact (isUnit_diagramCutoffDet_iff_forall_existsUnique_division hD_up hD_mono
-    (fun v ↦ (hH v).map φ)).mp hunit ℓ G hG
+      ∑ v, qr.1 v * MvPolynomial.map φ (H v) + qr.2 = G :=
+  (isUnit_diagramCutoffDet_iff_forall_existsUnique_division hD_up hD_mono
+    (fun v ↦ (hH v).map φ)).mp (map_diagramCutoffDet φ hH ▸ hunit) ℓ G hG
 
 end CommRing
 
