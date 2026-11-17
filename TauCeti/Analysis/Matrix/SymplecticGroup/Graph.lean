@@ -236,6 +236,7 @@ noncomputable def graphFrameLin (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     simp
 
 /-- The graph frame map applies the graph frame to `x` viewed as a complex vector. -/
+@[simp]
 theorem graphFrameLin_apply (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → ℝ) :
     graphFrameLin A x = WithLp.toLp 2 (graphFrame A *ᵥ fun k ↦ (x k : ℂ)) :=
   (rfl)

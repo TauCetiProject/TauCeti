@@ -132,8 +132,8 @@ theorem conleyZehnderIndex_map_conj (P : GLSymplectic n ℝ) {A B : GLSymplectic
         (δ s : GL (n ⊕ n) ℝ) * (γ x : GL (n ⊕ n) ℝ) * (δ s : GL (n ⊕ n) ℝ)⁻¹ := by
       rw [ContinuousMap.Homotopy.evalAt_apply, hF_apply, Subgroup.coe_mul, Subgroup.coe_mul,
         Subgroup.coe_inv]
-    rw [hF]
-    exact finrank_eigenspace_toLin'_conj (δ s : GL (n ⊕ n) ℝ) (γ x : GL (n ⊕ n) ℝ) 1
+    rw [hF, Units.val_mul, Units.val_mul]
+    exact finrank_eigenspace_toLin'_conj (δ s : GL (n ⊕ n) ℝ) _ 1
   have h := conleyZehnderIndex_eq_of_homotopic (Path.Homotopic.map_trans_evalAt F Path.id)
   rw [conleyZehnderIndex_trans, conleyZehnderIndex_trans, hedge, hedge, add_zero, zero_add] at h
   -- Along `Path.id`, the two maps are `γ` and its conjugate, with endpoints written differently.

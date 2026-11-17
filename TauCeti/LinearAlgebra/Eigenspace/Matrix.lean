@@ -52,12 +52,14 @@ variable {R : Type*} [CommRing R]
 
 /-- **Conjugate matrices have eigenspaces of the same dimension**: `P` maps the eigenspace of `X`
 at `μ` onto that of `P X P⁻¹`. -/
-theorem finrank_eigenspace_toLin'_conj (P X : GL n R) (μ : R) :
-    Module.finrank R (Module.End.eigenspace (toLin' ((P * X * P⁻¹ : GL n R) : Matrix n n R)) μ) =
-      Module.finrank R (Module.End.eigenspace (toLin' (X : Matrix n n R)) μ) := by
+theorem finrank_eigenspace_toLin'_conj (P : GL n R) (X : Matrix n n R) (μ : R) :
+    Module.finrank R
+        (Module.End.eigenspace (toLin' ((P : Matrix n n R) * X * ((P⁻¹ : GL n R) : Matrix n n R)))
+          μ) =
+      Module.finrank R (Module.End.eigenspace (toLin' X) μ) := by
   let e := LinearMap.GeneralLinearGroup.toLinearEquiv (GeneralLinearGroup.toLin P)
   have h := TauCeti.eigenspace_eq_comap_of_intertwine (e := e)
-    (f := toLin' (X : Matrix n n R)) (g := toLin' ((P * X * P⁻¹ : GL n R) : Matrix n n R))
+    (f := toLin' X) (g := toLin' ((P : Matrix n n R) * X * ((P⁻¹ : GL n R) : Matrix n n R)))
     (fun x ↦ by simp [e, mulVec_mulVec, Matrix.mul_assoc]) μ
   rw [h, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
 
