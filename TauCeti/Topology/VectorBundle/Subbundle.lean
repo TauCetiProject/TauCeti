@@ -292,6 +292,18 @@ theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).
   simp only [trivOperator, FunLike.coe_sum, Finset.sum_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, ← h, map_sum, map_smul]
 
+/-- A functional `c` on the model fibre that kills the frame read in the trivialization at `y₀`
+vanishes on `V y` once pulled back through that trivialization. -/
+theorem apply_continuousLinearMapAt_eq_zero (hX : IsSubbundleFrameOn F V X U) {y₀ y : B}
+    (hyU : y ∈ U) (hy : y ∈ (trivializationAt F E y₀).baseSet) {c : F →L[𝕜] 𝕜}
+    (hc : c ∘L trivOperator 𝕜 F X y₀ y = 0) {v : E y} (hv : v ∈ V y) :
+    c ((trivializationAt F E y₀).continuousLinearMapAt 𝕜 y v) = 0 := by
+  rw [← hX.span_eq hyU] at hv
+  obtain ⟨a, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hv
+  rw [(trivializationAt F E y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy,
+    ← trivOperator_apply hy]
+  exact DFunLike.congr_fun hc a
+
 omit [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] in
 /-- A family of sections `X i` of `E` that are continuous at `y₀`, read in the trivialization of
 `E` at `y₀`, is an operator `c ↦ ∑ i, c i • X i` depending continuously on the base point at

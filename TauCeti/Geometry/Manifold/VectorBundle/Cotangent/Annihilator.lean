@@ -30,13 +30,15 @@ dimension `k + r` form a `C^n` vector subbundle of rank `r` of the cotangent bun
   linearly independent at every point of a neighbourhood, which span the annihilators there
   (`TauCeti.IsContMDiffDistribution.exists_annihilatorSpace_frame`); so `D` is locally the common
   kernel of `r` independent `C^n` covector fields
-  (`TauCeti.IsContMDiffDistribution.exists_local_coframe`). The coframe is built in one
+  (`TauCeti.IsContMDiffDistribution.exists_local_annihilating_coframe`). The coframe is built in one
   tangent-bundle trivialization: if `A y : 𝕜ᵏ → E` is the coordinate operator of a local frame of
   `D`, then for a fixed complement `Q ≅ 𝕜ʳ` of the range of `A x` the quotient coordinates
   `E → Q` along the range of `A y` are, near `x`, `r` independent covectors depending smoothly on
   `y` and vanishing on the frame
-  (`ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero`). The corank-one case is
-  `TauCeti.IsContMDiffDistribution.exists_local_annihilator`.
+  (`ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero`). This adapts the chart
+  construction of conormal frames (`chartConormalFrame` in
+  `TauCeti/Geometry/Manifold/VectorBundle/Cotangent/Conormal/Subbundle.lean`). The corank-one case
+  is `TauCeti.IsContMDiffDistribution.exists_local_annihilator`.
 * **The annihilator bundle.** By the smooth local frame criterion
   `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`, the annihilators, with the
   subspace topology of `T*M`, are a `C^n` vector bundle with fibre `Fin r → 𝕜`
@@ -85,6 +87,10 @@ variable (I) in
 def annihilatorSpace (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) (x : M) :
     Submodule 𝕜 (TangentSpace I x →L[𝕜] 𝕜) :=
   StrongDual.polarSubmodule 𝕜 (D x)
+
+/-- The annihilator of `D` at `x` is the polar `StrongDual.polarSubmodule` of `D x`. -/
+theorem annihilatorSpace_def (x : M) :
+    annihilatorSpace I D x = StrongDual.polarSubmodule 𝕜 (D x) := (rfl)
 
 /-- A covector lies in the annihilator of `D` at `x` when it vanishes on `D x`. -/
 @[simp]
@@ -159,6 +165,21 @@ theorem annihilatorInclusion_proj (z : TotalSpace P fun x ↦ annihilatorSpace I
 theorem annihilatorInclusion_snd (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
     (annihilatorInclusion I D P z).2 = (z.2 : TangentSpace I z.proj →L[𝕜] 𝕜) := (rfl)
 
+theorem annihilatorInclusion_apply (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
+    annihilatorInclusion I D P z = ⟨z.proj, z.2⟩ := (rfl)
+
+@[simp]
+theorem annihilatorInclusion_mk' (x : M) (p : annihilatorSpace I D x) :
+    annihilatorInclusion I D P (TotalSpace.mk' P x p) =
+      TotalSpace.mk' (E →L[𝕜] 𝕜) x (p : TangentSpace I x →L[𝕜] 𝕜) := (rfl)
+
+/-- `annihilatorInclusion` sends the zero covector in the annihilator over `x` to the zero covector
+in `T*M` over `x`. -/
+@[simp]
+theorem annihilatorInclusion_zeroSection (x : M) :
+    annihilatorInclusion I D P (zeroSection P (fun x ↦ annihilatorSpace I D x) x) =
+      zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x := (rfl)
+
 /-- The image of the annihilator inclusion consists of the covectors annihilating `D` at their
 base points. -/
 @[simp]
@@ -221,7 +242,6 @@ theorem exists_annihilatorSpace_frame (hD : IsContMDiffDistribution I n k D)
   obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
   let e := trivializationAt E (TangentSpace I) x
   have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  let A := IsSubbundleFrameOn.trivOperator 𝕜 E X x
   -- Smooth covectors `c j y` of the model space, independent and annihilating the frame.
   obtain ⟨U, hUS, hU, hxU, c, hc, hcU⟩ :=
     ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero
@@ -230,25 +250,15 @@ theorem exists_annihilatorSpace_frame (hD : IsContMDiffDistribution I n k D)
   -- Pull them back through the trivialization.
   let α : Fin r → Π y : M, TangentSpace I y →L[𝕜] 𝕜 :=
     fun j y ↦ c j y ∘L e.continuousLinearMapAt 𝕜 y
-  have hαmem {y : M} (hy : y ∈ U) (j : Fin r) : α j y ∈ annihilatorSpace I D y := by
-    rw [mem_annihilatorSpace_iff_le_ker, ← hX.span_eq (hUS hy).1]
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨i, rfl⟩
-    have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) (hUS hy).2
-      (Pi.single i (1 : 𝕜))
-    have heval : α j y (X i y) = c j y (e ⟨y, X i y⟩).2 :=
-      congrArg (c j y) (e.continuousLinearMapAt_apply_of_mem 𝕜 (hUS hy).2 (X i y))
-    have hzero : α j y (X i y) = 0 := by
-      rw [heval]
-      simpa [A, hAi, e] using
-        congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) ((hcU y hy).2 j)
-    exact hzero
-  have hαind {y : M} (hy : y ∈ U) : LinearIndependent 𝕜 (α · y) := by
-    refine Fintype.linearIndependent_iff.mpr fun μ hμ ↦
-      Fintype.linearIndependent_iff.mp (hcU y hy).1 μ ?_
-    ext v
-    simpa [α, e.continuousLinearMapAt_symmL (hUS hy).2] using
-      DFunLike.congr_fun hμ (e.symmL 𝕜 y v)
+  have hαmem {y : M} (hy : y ∈ U) (j : Fin r) : α j y ∈ annihilatorSpace I D y :=
+    mem_annihilatorSpace_iff.mpr fun _ hv ↦
+      hX.isSubbundleFrameOn.apply_continuousLinearMapAt_eq_zero (hUS hy).1 (hUS hy).2
+        ((hcU y hy).2 j) hv
+  -- Pulling back through the trivialization is linear and injective.
+  have hαind {y : M} (hy : y ∈ U) : LinearIndependent 𝕜 (α · y) :=
+    Fintype.linearIndependent_iff.mpr fun μ hμ ↦ Fintype.linearIndependent_iff.mp (hcU y hy).1 μ
+      (e.injective_comp_continuousLinearMapAt 𝕜 (hUS hy).2 (by
+        simpa [α, ContinuousLinearMap.finsetSum_comp, ContinuousLinearMap.smul_comp] using hμ))
   refine ⟨U, hU, hxU, α, fun j ↦ contMDiffOn_mk_comp_continuousLinearMapAt x
     (fun _ hy ↦ (hUS hy).2) (hc j), fun y hy ↦ ⟨hαind hy, ?_⟩⟩
   -- `r` independent covectors of the `r`-dimensional annihilator span it.
@@ -262,8 +272,8 @@ theorem exists_annihilatorSpace_frame (hD : IsContMDiffDistribution I n k D)
 /-- **Local annihilating coframes.** A `C^n` distribution of rank `k` on a manifold of dimension
 `k + r` is, near every point, the common kernel of `r` covector fields of class `C^n` which are
 linearly independent at every point of the neighbourhood. -/
-theorem exists_local_coframe (hD : IsContMDiffDistribution I n k D) (hk : k + r = finrank 𝕜 E)
-    (x : M) :
+theorem exists_local_annihilating_coframe (hD : IsContMDiffDistribution I n k D)
+    (hk : k + r = finrank 𝕜 E) (x : M) :
     ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ α : Fin r → Π y : M, TangentSpace I y →L[𝕜] 𝕜,
       (∀ j, ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
         (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α j y)) U) ∧
@@ -279,6 +289,17 @@ theorem exists_local_coframe (hD : IsContMDiffDistribution I n k D) (hk : k + r 
   | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
   | smul _ _ _ h₁ => simp [h₁]
 
+/-- The annihilators of a `C^n` distribution of rank `k` on a manifold of dimension `k + r` have
+`C^n` local frames of size `r` near every point, as a family of subspaces of `T*M`. -/
+theorem hasLocalContMDiffSubbundleFrames_annihilatorSpace (hD : IsContMDiffDistribution I n k D)
+    (hk : k + r = finrank 𝕜 E) :
+    HasLocalContMDiffSubbundleFrames I n (E →L[𝕜] 𝕜) (Fin r)
+      (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (annihilatorSpace I D) :=
+  hasLocalContMDiffSubbundleFrames_iff.mpr fun x ↦ by
+    obtain ⟨U, hU, hx, α, hα, hαU⟩ := hD.exists_annihilatorSpace_frame hk x
+    exact ⟨U, hU, hx, α, ⟨fun j ↦ (hα j).continuousOn, fun hy ↦ (hαU _ hy).1,
+      fun hy ↦ (hαU _ hy).2⟩, hα⟩
+
 end Frame
 
 /-! ### The annihilator bundle -/
@@ -288,18 +309,6 @@ section VectorBundle
 variable [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] [IsManifold I 1 M]
   [IsManifold I (n + 1) M]
 
-/-- The annihilators of a `C^n` distribution of rank `k` on a manifold of dimension `k + r` have
-`C^n` local frames of size `r` near every point, as a family of subspaces of `T*M`. -/
-theorem hasLocalContMDiffSubbundleFrames_annihilatorSpace (hD : IsContMDiffDistribution I n k D)
-    (hk : k + r = finrank 𝕜 E) :
-    HasLocalContMDiffSubbundleFrames I n (E →L[𝕜] 𝕜) (Fin r)
-      (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (annihilatorSpace I D) :=
-  have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
-  hasLocalContMDiffSubbundleFrames_iff.mpr fun x ↦ by
-    obtain ⟨U, hU, hx, α, hα, hαU⟩ := hD.exists_annihilatorSpace_frame hk x
-    exact ⟨U, hU, hx, α, ⟨fun j ↦ (hα j).continuousOn, fun hy ↦ (hαU _ hy).1,
-      fun hy ↦ (hαU _ hy).2⟩, hα⟩
-
 /-- **The annihilator bundle.** The annihilators of a `C^n` distribution of rank `k` on a manifold
 of dimension `k + r` form a fibre bundle with fibre `Fin r → 𝕜`, with the topology of a subspace
 of `T*M`. Its trivializations are those of the `C^n` local frames of the annihilators
@@ -308,6 +317,7 @@ which chooses a local frame at every point. -/
 @[instance_reducible]
 def annihilatorFiberBundle (hD : IsContMDiffDistribution I n k D) (hk : k + r = finrank 𝕜 E) :
     FiberBundle (Fin r → 𝕜) fun x ↦ annihilatorSpace I D x :=
+  have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
   (hD.hasLocalContMDiffSubbundleFrames_annihilatorSpace hk).fiberBundle
 
 /-- **The annihilator bundle is a vector bundle**: its local frame trivializations are linear,
@@ -316,6 +326,7 @@ theorem annihilatorVectorBundle (hD : IsContMDiffDistribution I n k D)
     (hk : k + r = finrank 𝕜 E) :
     letI := hD.annihilatorFiberBundle hk
     VectorBundle 𝕜 (Fin r → 𝕜) fun x ↦ annihilatorSpace I D x :=
+  have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
   (hD.hasLocalContMDiffSubbundleFrames_annihilatorSpace hk).vectorBundle
 
 /-- **The annihilator bundle is a `C^n` vector bundle**, a `C^n` subbundle of rank `r` of the
@@ -325,6 +336,7 @@ theorem annihilatorContMDiffVectorBundle (hD : IsContMDiffDistribution I n k D)
     letI := hD.annihilatorFiberBundle hk
     letI := hD.annihilatorVectorBundle hk
     ContMDiffVectorBundle n (Fin r → 𝕜) (fun x ↦ annihilatorSpace I D x) I :=
+  have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   (hD.hasLocalContMDiffSubbundleFrames_annihilatorSpace hk).contMDiffVectorBundle
 
@@ -334,6 +346,7 @@ theorem contMDiff_annihilatorInclusion (hD : IsContMDiffDistribution I n k D)
     letI := hD.annihilatorFiberBundle hk
     ContMDiff (I.prod 𝓘(𝕜, Fin r → 𝕜)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
       (annihilatorInclusion I D (Fin r → 𝕜)) :=
+  have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   (hD.hasLocalContMDiffSubbundleFrames_annihilatorSpace hk).contMDiff_totalSpace_inclusion
 

@@ -28,7 +28,9 @@ The same coordinates give smooth local frames of annihilators: if the family con
 injections of `𝕜ᵏ` into a space of dimension `k + r`, the coordinates of the quotient coordinate
 operators in a basis of the complement are `r` covectors depending `C^n` on the parameter, linearly
 independent and annihilating the range at every point
-(`ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero`).
+(`ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero`). This adapts the chart
+construction of conormal frames (`chartConormalFrame` in
+`TauCeti/Geometry/Manifold/VectorBundle/Cotangent/Conormal/Subbundle.lean`).
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24.

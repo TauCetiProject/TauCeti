@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Topology.VectorBundle.Trivialization
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
@@ -144,28 +145,11 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
     simpa [a'] using ha
   · intro y hy
     have hcy : c y ≠ 0 := (hUc y hy).2
-    have hαy : α y ≠ 0 := by
-      intro hz
-      apply hcy
-      ext v
-      have := congrArg (fun f : TangentSpace I y →L[𝕜] 𝕜 ↦ f (e.symmL 𝕜 y v)) hz
-      simpa [α, e.continuousLinearMapAt_symmL (hUS hy).2] using this
-    refine ⟨hαy, ?_⟩
-    -- The frame spans `D y` and is annihilated by `α y`.
-    rw [← hX.span_eq (hUS hy).1]
-    apply Submodule.span_le.mpr
-    rintro _ ⟨i, rfl⟩
-    have hzero : c y ∘L A y = 0 :=
-      a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hUc y hy).1
-    have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) (hUS hy).2
-      (Pi.single i (1 : 𝕜))
-    have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=
-      congrArg (c y) (e.continuousLinearMapAt_apply_of_mem 𝕜 (hUS hy).2 (X i y))
-    have hzeroi : α y (X i y) = 0 := by
-      rw [heval]
-      simpa [A, hAi, e] using
-        congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
-    exact hzeroi
+    have hαy : α y ≠ 0 := fun hz ↦ hcy (e.injective_comp_continuousLinearMapAt 𝕜 (hUS hy).2
+      (hz.trans (ContinuousLinearMap.zero_comp _).symm))
+    -- `α y` is annihilated by the frame, which spans `D y`.
+    exact ⟨hαy, fun v hv ↦ hX.isSubbundleFrameOn.apply_continuousLinearMapAt_eq_zero (hUS hy).1
+      (hUS hy).2 (a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hUc y hy).1) hv⟩
 
 omit [FiniteDimensional 𝕜 E] in
 /-- A `C^n` hyperplane distribution is locally the kernel of a nowhere-zero `C^n` covector
