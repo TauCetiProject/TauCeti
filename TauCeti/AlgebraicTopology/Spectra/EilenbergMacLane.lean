@@ -578,23 +578,11 @@ lemma eilenbergMacLaneModSemilinearMap_hom (φ : R →+* S) (g : M →ₛₗ[φ]
 lemma eilenbergMacLaneModuleMap_hom {φ : R →+* S} (g : M →ₛₗ[φ] Q) :
     (eilenbergMacLaneModuleMap g).hom =
       (SymmetricSequence.eilenbergMacLaneModuleSemilinearMap φ g).hom := by
-  let f := SymmetricSequence.sphereToEilenbergMacLane R
-  let f' := SymmetricSequence.sphereToEilenbergMacLane S
-  let u := SymmetricSequence.eilenbergMacLaneModuleSemilinearMap φ g
-  let c := (Mod.comapRegularModComapIso f f' (SymmetricSequence.eilenbergMacLaneMap φ)
-    (SymmetricSequence.sphereToEilenbergMacLane_comp_eilenbergMacLaneMap φ)).hom.app
-    (SymmetricSequence.eilenbergMacLaneModule S Q)
-  have hu : (((Mod.comapRegularMod f).map u).hom).hom = u.hom :=
-    (congrArg Mod.Hom.hom (Mod.comapRegularMod_map_hom f u)).trans (Mod.comap_map_hom f u)
-  have hc : c.hom.hom = 𝟙 (SymmetricSequence.eilenbergMacLaneModule S Q).X :=
-    Mod.comapRegularModComapIso_hom_app_hom_hom f f' (SymmetricSequence.eilenbergMacLaneMap φ)
-      (SymmetricSequence.sphereToEilenbergMacLane_comp_eilenbergMacLaneMap φ)
-      (SymmetricSequence.eilenbergMacLaneModule S Q)
-  have h₁ := (congrArg Mod.Hom.hom (eilenbergMacLaneModSemilinearMap_hom φ g)).symm
-  have h₂ := congrArg Mod.Hom.hom (Mod.comp_hom' ((Mod.comapRegularMod f).map u) c)
-  have h₃ := Mod.comp_hom' (((Mod.comapRegularMod f).map u).hom) c.hom
-  have h₄ := (hu =≫ c.hom.hom).trans (u.hom ≫= hc)
-  exact h₁.trans (h₂.trans (h₃.trans (h₄.trans (Category.comp_id u.hom))))
+  dsimp only [eilenbergMacLaneModuleMap, eilenbergMacLaneModSemilinearMap, eilenbergMacLaneMod,
+    eilenbergMacLaneMap]
+  rw [Mod.comp_hom', Mod.comp_hom', Mod.comapRegularMod_map_hom, Mod.comap_map_hom,
+    Mod.comapRegularModComapIso_hom_app_hom_hom]
+  exact Category.comp_id _
 
 @[simp]
 lemma eilenbergMacLaneModuleMap_id :
@@ -676,45 +664,23 @@ lemma eilenbergMacLaneModSelfIso_inv_hom :
 lemma eilenbergMacLaneModuleSelfIso_hom_hom :
     (eilenbergMacLaneModuleSelfIso R).hom.hom =
       (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).hom.hom := by
-  let f := SymmetricSequence.sphereToEilenbergMacLane R
-  let e := SymmetricSequence.eilenbergMacLaneModuleSelfIso R
-  let i₁ := (Mod.comapRegularMod f).mapIso e
-  let i₂ := Mod.comapRegularModRegularIso f
-  have hi₁ : i₁.hom.hom.hom = e.hom.hom :=
-    (congrArg (fun k ↦ k.hom.hom) (Functor.mapIso_hom (Mod.comapRegularMod f) e)).trans
-      ((congrArg Mod.Hom.hom (Mod.comapRegularMod_map_hom f e.hom)).trans
-        (Mod.comap_map_hom f e.hom))
-  have hi₂ : i₂.hom.hom.hom = 𝟙 (SymmetricSequence.eilenbergMacLane R) :=
-    (congrArg Mod.Hom.hom (Mod.comapRegularModRegularIso_hom_hom f)).trans
-      (Mod.id_hom' (Mod.comapRegular f))
-  have h₁ := (congrArg Mod.Hom.hom (eilenbergMacLaneModSelfIso_hom_hom R)).symm
-  have h₂ := congrArg (fun k ↦ k.hom.hom) (Iso.trans_hom i₁ i₂)
-  have h₃ := congrArg Mod.Hom.hom (Mod.comp_hom' i₁.hom i₂.hom)
-  have h₄ := Mod.comp_hom' i₁.hom.hom i₂.hom.hom
-  have h₅ := (hi₁ =≫ i₂.hom.hom.hom).trans (e.hom.hom ≫= hi₂)
-  exact h₁.trans (h₂.trans (h₃.trans (h₄.trans (h₅.trans (Category.comp_id e.hom.hom)))))
+  rw [← eilenbergMacLaneModSelfIso_hom_hom]
+  dsimp only [eilenbergMacLaneModSelfIso, eilenbergMacLaneMod]
+  rw [Iso.trans_hom, Mod.comp_hom', Mod.comp_hom', Functor.mapIso_hom,
+    Mod.comapRegularMod_map_hom, Mod.comap_map_hom, Mod.comapRegularModRegularIso_hom_hom,
+    Mod.id_hom']
+  exact Category.comp_id _
 
 @[simp]
 lemma eilenbergMacLaneModuleSelfIso_inv_hom :
     (eilenbergMacLaneModuleSelfIso R).inv.hom =
       (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).inv.hom := by
-  let f := SymmetricSequence.sphereToEilenbergMacLane R
-  let e := SymmetricSequence.eilenbergMacLaneModuleSelfIso R
-  let i₁ := (Mod.comapRegularMod f).mapIso e
-  let i₂ := Mod.comapRegularModRegularIso f
-  have hi₁ : i₁.inv.hom.hom = e.inv.hom :=
-    (congrArg (fun k ↦ k.hom.hom) (Functor.mapIso_inv (Mod.comapRegularMod f) e)).trans
-      ((congrArg Mod.Hom.hom (Mod.comapRegularMod_map_hom f e.inv)).trans
-        (Mod.comap_map_hom f e.inv))
-  have hi₂ : i₂.inv.hom.hom = 𝟙 (SymmetricSequence.eilenbergMacLane R) :=
-    (congrArg Mod.Hom.hom (Mod.comapRegularModRegularIso_inv_hom f)).trans
-      (Mod.id_hom' (Mod.comapRegular f))
-  have h₁ := (congrArg Mod.Hom.hom (eilenbergMacLaneModSelfIso_inv_hom R)).symm
-  have h₂ := congrArg (fun k ↦ k.hom.hom) (Iso.trans_inv i₁ i₂)
-  have h₃ := congrArg Mod.Hom.hom (Mod.comp_hom' i₂.inv i₁.inv)
-  have h₄ := Mod.comp_hom' i₂.inv.hom i₁.inv.hom
-  have h₅ := (hi₂ =≫ i₁.inv.hom.hom).trans (𝟙 (SymmetricSequence.eilenbergMacLane R) ≫= hi₁)
-  exact h₁.trans (h₂.trans (h₃.trans (h₄.trans (h₅.trans (Category.id_comp e.inv.hom)))))
+  rw [← eilenbergMacLaneModSelfIso_inv_hom]
+  dsimp only [eilenbergMacLaneModSelfIso, eilenbergMacLaneMod]
+  rw [Iso.trans_inv, Mod.comp_hom', Mod.comp_hom', Functor.mapIso_inv,
+    Mod.comapRegularMod_map_hom, Mod.comap_map_hom, Mod.comapRegularModRegularIso_inv_hom,
+    Mod.id_hom']
+  exact Category.id_comp _
 
 variable {R} in
 /-- Under `eilenbergMacLaneModuleSelfIso`, the semilinear spectrum map induced by `φ : R →+* S`
