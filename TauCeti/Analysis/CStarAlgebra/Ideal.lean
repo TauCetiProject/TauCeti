@@ -225,18 +225,6 @@ noncomputable instance nonUnitalCommCStarAlgebra {A : Type*}
     NonUnitalCommCStarAlgebra I where
   mul_comm x y := Subtype.ext (mul_comm (x : A) (y : A))
 
-instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
-  .of_nonneg_iff' add_le_add_right fun x => by
-    refine ⟨fun hx => ?_, ?_⟩
-    · have hxA : 0 ≤ (x : A) := by simpa [← Subtype.coe_le_coe] using hx
-      refine ⟨⟨CFC.sqrt (x : A), I.mem_toNonUnitalStarSubalgebra.mp <|
-        cfcₙ_nnreal_mem (𝕜 := ℂ) NNReal.sqrt (I.mem_toNonUnitalStarSubalgebra.mpr x.2)⟩,
-        Subtype.ext ?_⟩
-      simp only [MulMemClass.coe_mul, I.coe_star]
-      rw [(CFC.sqrt_nonneg (x : A)).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self (x : A)]
-    · rintro ⟨s, hs⟩
-      simpa [← Subtype.coe_le_coe] using congrArg ((↑) : I → A) hs ▸ star_mul_self_nonneg (s : A)
-
 /-- The canonical isometric ⋆-algebra monomorphism from a closed two-sided ideal `I` into `A`. -/
 def starAlgHom : I →⋆ₙₐ[ℂ] A where
   toFun x := x
@@ -304,6 +292,29 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I := by
+  have : StarOrderedRing I.toNonUnitalStarSubalgebra :=
+    Subtype.starOrderedRing I.toNonUnitalStarSubalgebra
+  let e := I.toNonUnitalStarSubalgebraEquiv
+  have hmap : (AddSubmonoid.closure (Set.range fun s : I => star s * s)).map
+      e.toAddEquiv.toAddMonoidHom =
+      AddSubmonoid.closure (Set.range fun s : I.toNonUnitalStarSubalgebra => star s * s) := by
+    rw [AddMonoidHom.map_mclosure]
+    refine congrArg AddSubmonoid.closure ?_
+    calc (e.toAddEquiv.toAddMonoidHom : I → _) '' Set.range (fun s : I => star s * s)
+        = Set.range (fun s : I => e (star s * s)) := (Set.range_comp _ _).symm
+      _ = Set.range (fun s : I => star (e s) * e s) := by simp only [map_mul, map_star]
+      _ = Set.range (fun t : I.toNonUnitalStarSubalgebra => star t * t) :=
+          e.surjective.range_comp (fun t => star t * t)
+  refine ⟨fun x y => ?_⟩
+  have hle : x ≤ y ↔ e x ≤ e y := by
+    simp only [← Subtype.coe_le_coe, e, I.coe_toNonUnitalStarSubalgebraEquiv_apply]
+  rw [hle, StarOrderedRing.le_iff, (EquivLike.surjective e).exists]
+  refine exists_congr fun p => and_congr ?_ ?_
+  · rw [← hmap, AddSubmonoid.mem_map]
+    exact ⟨fun ⟨q, hq, hqp⟩ => e.injective hqp ▸ hq, fun hp => ⟨p, hp, rfl⟩⟩
+  · rw [← map_add e x p, (EquivLike.injective e).eq_iff]
 
 end CStarAlgebra
 

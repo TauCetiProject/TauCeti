@@ -385,35 +385,17 @@ unit of `A`. -/
 private theorem isIncreasingApproximateUnit_resolventApprox_of_dense_mul_left {h : A} (hh : 0 ≤ h)
     (hdense : Dense (Set.range fun x : A => h * x)) :
     (atTop.map (resolventApprox h)).IsIncreasingApproximateUnit := by
-  have hright : ∀ a : A, Tendsto (· * a) (atTop.map (resolventApprox h)) (𝓝 a) := by
-    intro a
-    rw [tendsto_map'_iff, Metric.tendsto_nhds]
-    intro ε hε
-    obtain ⟨_, hball, ⟨x, rfl⟩⟩ := Metric.dense_iff.mp hdense a (ε / 3) (by positivity)
-    have hax : ‖h * x - a‖ < ε / 3 := by simpa [Metric.mem_ball, dist_eq_norm] using hball
-    have hlim : Tendsto (fun n : ℕ => ((n : ℝ) + 1)⁻¹ * ‖x‖) atTop (𝓝 0) := by
-      simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat.mul_const ‖x‖
-    filter_upwards [(Metric.tendsto_nhds.mp hlim (ε / 3) (by positivity))] with n hn
-    have hnx : ‖resolventApprox h n * (h * x) - h * x‖ < ε / 3 := by
-      rw [← mul_assoc, ← sub_mul]
-      refine (norm_mul_le _ _).trans_lt ((mul_le_mul_of_nonneg_right
-        (norm_resolventApprox_mul_self_sub_le hh n) (norm_nonneg x)).trans_lt ?_)
-      simpa [dist_zero_right, Real.norm_of_nonneg (by positivity : 0 ≤ ((n : ℝ) + 1)⁻¹ * ‖x‖)]
-        using hn
-    rw [dist_eq_norm]
-    calc ‖resolventApprox h n * a - a‖
-        = ‖resolventApprox h n * (a - h * x) + (resolventApprox h n * (h * x) - h * x) +
-            (h * x - a)‖ := by congr 1; noncomm_ring
-      _ ≤ ‖resolventApprox h n * (a - h * x)‖ + ‖resolventApprox h n * (h * x) - h * x‖ +
-            ‖h * x - a‖ := norm_add₃_le
-      _ ≤ 1 * ‖a - h * x‖ + ‖resolventApprox h n * (h * x) - h * x‖ + ‖h * x - a‖ := by
-        gcongr
-        exact (norm_mul_le _ _).trans
-          (mul_le_mul_of_nonneg_right (norm_resolventApprox_lt_one hh n).le (norm_nonneg _))
-      _ < ε := by rw [one_mul, norm_sub_rev a (h * x)]; linarith
-  exact Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right hright
+  refine Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right_of_dense hdense ?_
     (eventually_map.mpr (.of_forall (resolventApprox_nonneg hh)))
     (eventually_map.mpr (.of_forall fun n => (norm_resolventApprox_lt_one hh n).le))
+  rintro _ ⟨x, rfl⟩
+  rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
+  have hlim : Tendsto (fun n : ℕ => ((n : ℝ) + 1)⁻¹ * ‖x‖) atTop (𝓝 0) := by
+    simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat.mul_const ‖x‖
+  refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
+  rw [Function.comp_apply, ← mul_assoc, ← sub_mul]
+  exact (norm_mul_le _ _).trans
+    (mul_le_mul_of_nonneg_right (norm_resolventApprox_mul_self_sub_le hh n) (norm_nonneg x))
 
 /-- Squaring `resolventApprox h` preserves the approximate unit property when `0 ≤ h`. -/
 private theorem isApproximateUnit_resolventApprox_mul_self {h : A} (hh : 0 ≤ h)

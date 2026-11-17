@@ -11,7 +11,9 @@ public import TauCeti.Topology.ApproximateUnit
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.CStarAlgebra.Hom
-import TauCeti.Analysis.Normed.Module.Convex
+import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
+import TauCeti.Analysis.Normed.Ring.Convex
 
 /-!
 # Increasing approximate units: subnets, convexification, transport and estimates
@@ -25,9 +27,10 @@ to a proper subfilter (`Filter.IsIncreasingApproximateUnit.mono`), restricting
 `CStarAlgebra.approximateUnit` to the open unit ball
 (`TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball`), or replacing every member of the filter
 by its real convex hull (`Filter.IsIncreasingApproximateUnit.lift'_convexHull`) also preserves
-`Filter.IsIncreasingApproximateUnit`, and `Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right`
+`Filter.IsIncreasingApproximateUnit`. `Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right`
 constructs an increasing approximate unit from right-multiplication convergence of nonnegative
-contractions.
+contractions, and `Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right_of_dense` weakens the
+check to any dense subset.
 
 Along any approximate unit of a C⋆-algebra, two-sided compression `e * a * e` converges in norm to
 `a`, `Filter.IsApproximateUnit.tendsto_mul_mul`, and an approximate unit of `B` mapped into `A` by
@@ -75,19 +78,6 @@ theorem tendsto_mul_mul {A : Type*} [NonUnitalCStarAlgebra A] {l : Filter A}
     (hl : l.IsApproximateUnit) (a : A) :
     Tendsto (fun e => e * a * e) l (𝓝 a) :=
   tendsto_mul_mul_of_tendsto hl.tendsto_mul_right hl.tendsto_mul_left a
-
-private theorem map_star {B : Type*} [TopologicalSpace B] [NonUnitalSemiring B] [StarRing B]
-    [ContinuousStar B] {l : Filter B} (hl : l.IsApproximateUnit) :
-    (l.map star).IsApproximateUnit where
-  tendsto_mul_left b := by
-    rw [tendsto_map'_iff]
-    simpa [Function.comp_def, star_mul, star_star] using
-      (continuous_star.tendsto (star b)).comp (hl.tendsto_mul_right (star b))
-  tendsto_mul_right b := by
-    rw [tendsto_map'_iff]
-    simpa [Function.comp_def, star_mul, star_star] using
-      (continuous_star.tendsto (star b)).comp (hl.tendsto_mul_left (star b))
-  neBot := hl.neBot.map star
 
 /-- Along any approximate unit `l` of `B` mapped into `A` by a star-algebra homomorphism `f`, right
 multiplication `a * f e` converges to `a` whenever `star a * a` lies in the range of `f`. In
@@ -230,15 +220,22 @@ theorem of_tendsto_mul_right {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder
   eventually_nonneg := hnonneg
   eventually_norm := hnorm
 
+/-- An eventually nonnegative, eventually contractive proper filter `l` is an increasing
+approximate unit as soon as `e * x → x` along `l` for every `x` in a dense set `s`. -/
+theorem of_tendsto_mul_right_of_dense {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {l : Filter A} [l.NeBot] {s : Set A} (hs : Dense s)
+    (hright : ∀ x ∈ s, Tendsto (· * x) l (𝓝 x))
+    (hnonneg : ∀ᶠ x in l, 0 ≤ x) (hnorm : ∀ᶠ x in l, ‖x‖ ≤ 1) :
+    l.IsIncreasingApproximateUnit :=
+  of_tendsto_mul_right (fun a => TauCeti.tendsto_mul_right_of_dense hnorm hs hright a)
+    hnonneg hnorm
+
 /-- Convexification of an increasing approximate unit: replacing every member of `l` by its real
 convex hull yields a coarser increasing approximate unit. -/
 theorem lift'_convexHull {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] {l : Filter A} (hl : l.IsIncreasingApproximateUnit) :
     (l.lift' (convexHull ℝ)).IsIncreasingApproximateUnit where
-  tendsto_mul_left a :=
-    Filter.Tendsto.lift'_convexHull (f := LinearMap.mulLeft ℝ a) (hl.tendsto_mul_left a)
-  tendsto_mul_right a :=
-    Filter.Tendsto.lift'_convexHull (f := LinearMap.mulRight ℝ a) (hl.tendsto_mul_right a)
+  toIsApproximateUnit := hl.toIsApproximateUnit.lift'_convexHull
   eventually_nonneg :=
     eventually_of_mem (mem_lift' hl.eventually_nonneg)
       fun _ hx => convexHull_min subset_rfl (convex_Ici (0 : A)) hx
@@ -246,10 +243,6 @@ theorem lift'_convexHull {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
     refine eventually_of_mem (mem_lift' hl.closedBall_mem) fun x hx => ?_
     have hmem := convexHull_min subset_rfl (convex_closedBall (0 : A) 1) hx
     simpa [Metric.mem_closedBall, dist_zero_right] using hmem
-  neBot := by
-    have := hl.neBot
-    exact (lift'_neBot_iff fun _ _ hst => convexHull_mono hst).mpr
-      fun _ hs => (nonempty_of_mem hs).convexHull
 
 /-- Transporting a filter along a star-algebra equivalence preserves increasing approximate units
 in both directions. -/

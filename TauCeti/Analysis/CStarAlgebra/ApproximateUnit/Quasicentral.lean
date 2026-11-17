@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Ideal
+import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Quasicentral approximate units in closed ideals of C⋆-algebras
@@ -28,12 +29,12 @@ operator K-theory. Naive functional-calculus roots of a single positive element 
 quasicentral (for instance, on `K(ℓ²)` a rank-one perturbation can obstruct asymptotic commutation
 with a shift), so convex averaging of approximate units is essential.
 
+General transport lemmas for asymptotic centrality (preservation under real convexification and
+under continuous surjective nonunital ring homomorphisms) live in
+`TauCeti.Analysis.Normed.Ring.Convex` and `TauCeti.Topology.Algebra.Ring.Basic`.
+
 ## Main results
 
-* `TauCeti.CStarAlgebra.tendsto_commutator_lift'_convexHull` and
-  `TauCeti.CStarAlgebra.tendsto_commutator_map_of_surjective`: asymptotic centrality is preserved
-  by real convexification `l.lift' (convexHull ℝ)` and by composing `f : S → A` with a continuous
-  surjective nonunital ring homomorphism `π : A → B`.
 * `NonUnitalStarSubalgebra.exists_quasicentral_isIncreasingApproximateUnit` and
   `TwoSidedIdeal.exists_quasicentral_isIncreasingApproximateUnit`: **Arveson's theorem** producing
   a quasicentral increasing approximate unit that eventually strictly contracts and dominates any
@@ -56,49 +57,11 @@ public section
 open Filter Topology
 open scoped CStarAlgebra
 
-namespace TauCeti.CStarAlgebra
-
-/-- Real convexification `l.lift' (convexHull ℝ)` preserves asymptotic centrality of any `S`-linear
-map (compatible with `ℝ`-scalars) into a nonunital seminormed ring over `ℝ`. -/
-theorem tendsto_commutator_lift'_convexHull {B A S F : Type*} [Semiring S]
-    [AddCommMonoid B] [Module ℝ B] [Module S B]
-    [NonUnitalSeminormedRing A] [NormedSpace ℝ A] [Module S A]
-    [IsScalarTower ℝ A A] [SMulCommClass ℝ A A] [LinearMap.CompatibleSMul B A ℝ S]
-    [FunLike F B A] [LinearMapClass F S B A]
-    {l : Filter B} (f : F) {a : A}
-    (h : Tendsto (fun e => f e * a - a * f e) l (𝓝 0)) :
-    Tendsto (fun e => f e * a - a * f e) (l.lift' (convexHull ℝ)) (𝓝 0) :=
-  Filter.Tendsto.lift'_convexHull
-    (f := (LinearMap.mulRight ℝ a - LinearMap.mulLeft ℝ a).comp
-      ((f : B →ₗ[S] A).restrictScalars ℝ)) h
-
-/-- Composing a map `f : S → A` with a continuous surjective nonunital ring homomorphism
-`π : A → B` between topological nonunital rings preserves asymptotic centrality along `l`. -/
-theorem tendsto_commutator_map_of_surjective {S A B G : Type*}
-    [TopologicalSpace A] [NonUnitalRing A] [TopologicalSpace B] [NonUnitalRing B]
-    [FunLike G A B] [NonUnitalRingHomClass G A B]
-    {l : Filter S} (f : S → A) (π : G) (hπ_cont : Continuous π) (hπ_surj : Function.Surjective π)
-    (h : ∀ a : A, Tendsto (fun e => f e * a - a * f e) l (𝓝 0)) (b : B) :
-    Tendsto (fun e => π (f e) * b - b * π (f e)) l (𝓝 0) := by
-  obtain ⟨a, rfl⟩ := hπ_surj b
-  have hlim := (hπ_cont.tendsto 0).comp (h a)
-  rw [map_zero] at hlim
-  exact hlim.congr fun e => by simp [map_sub, map_mul]
-
-end TauCeti.CStarAlgebra
-
 namespace NonUnitalStarSubalgebra
 
 section Arveson
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-private theorem norm_commutator_le {w a : A} (hw : ‖w‖ ≤ 1) : ‖w * a - a * w‖ ≤ 2 * ‖a‖ :=
-  calc ‖w * a - a * w‖ ≤ ‖w * a‖ + ‖a * w‖ := norm_sub_le _ _
-    _ ≤ ‖w‖ * ‖a‖ + ‖a‖ * ‖w‖ := add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
-    _ ≤ 1 * ‖a‖ + ‖a‖ * 1 := add_le_add (mul_le_mul_of_nonneg_right hw (norm_nonneg a))
-        (mul_le_mul_of_nonneg_left hw (norm_nonneg a))
-    _ = 2 * ‖a‖ := by ring
 
 /-- Off-diagonal inner-product estimate in Arveson's averaging argument: if `p` right-approximates
 `star d₁` within `δ` and `w₂` right-approximates both `p` and `p * a` within `δ`, then
@@ -111,8 +74,10 @@ private theorem norm_star_commutator_mul_le {w₁ w₂ p a : A}
     ‖star (w₁ * a - a * w₁) * (w₂ * a - a * w₂)‖ ≤ 2 * ‖a‖ * (‖a‖ + 2) * δ := by
   let d₁ : A := w₁ * a - a * w₁
   let d₂ : A := w₂ * a - a * w₂
-  have hd₁ : ‖star d₁‖ ≤ 2 * ‖a‖ := (norm_star d₁).trans_le (norm_commutator_le hw₁)
-  have hd₂ : ‖d₂‖ ≤ 2 * ‖a‖ := norm_commutator_le hw₂
+  have hd₁ : ‖star d₁‖ ≤ 2 * ‖a‖ := (norm_star d₁).trans_le <|
+    (TauCeti.norm_commutator_le w₁ a).trans (by nlinarith [norm_nonneg a])
+  have hd₂ : ‖d₂‖ ≤ 2 * ‖a‖ :=
+    (TauCeti.norm_commutator_le w₂ a).trans (by nlinarith [norm_nonneg a])
   have hid : star d₁ * d₂ =
       (star d₁ - star d₁ * p) * d₂ + star d₁ * ((p * w₂ - p) * a - ((p * a) * w₂ - p * a)) := by
     dsimp only [d₂]
@@ -145,7 +110,8 @@ private theorem norm_star_commutator_pair_le {N : ℕ} {w p : Fin N → A} {a : 
     exact hle.trans (by gcongr)
   · simp only [↓reduceIte, CStarRing.norm_star_mul_self, ← sq]
     have hdj : ‖w j * a - a * w j‖ ≤ 2 * M :=
-      (norm_commutator_le (hw j)).trans (mul_le_mul_of_nonneg_left haM zero_le_two)
+      (TauCeti.norm_commutator_le (w j) a).trans
+        (by nlinarith [hw j, norm_nonneg a, norm_nonneg (w j)])
     calc ‖w j * a - a * w j‖ ^ 2
         ≤ (2 * M) ^ 2 := sq_le_sq' (by linarith [norm_nonneg (w j * a - a * w j)]) hdj
       _ = 4 * M ^ 2 := by ring
@@ -270,29 +236,6 @@ private theorem exists_quasicentral_chain (S : NonUnitalStarSubalgebra ℂ A) [I
     · refine j.lastCases (fun hlt => ((Fin.le_last _).not_gt hlt).elim) (fun j₀ hj₀ => ?_) hj
       simpa using hcross j₀ k₀ (Fin.castSucc_lt_castSucc_iff.mp hj₀)
 
-/-- Averaging `N > 0` strict contractions above `u₀` preserves the lower bound `u₀ ≤ ·` and the
-strict norm bound `‖·‖ < 1`. -/
-private theorem cesaro_le_and_norm_lt_one {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B]
-    [StarOrderedRing B] {N : ℕ} (hN : 0 < (N : ℝ)) {u₀ : B} {w : Fin N → B}
-    (hw : ∀ k, u₀ ≤ w k ∧ ‖w k‖ < 1) :
-    u₀ ≤ (N : ℝ)⁻¹ • ∑ k : Fin N, w k ∧ ‖(N : ℝ)⁻¹ • ∑ k : Fin N, w k‖ < 1 := by
-  have hFin : Nonempty (Fin N) :=
-    Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero (Nat.cast_ne_zero.mp hN.ne'))
-  refine ⟨?_, ?_⟩
-  · have hsum : (N : ℝ) • u₀ ≤ ∑ k : Fin N, w k := by
-      simpa [Finset.sum_const, Nat.cast_smul_eq_nsmul ℝ] using
-        Finset.sum_le_sum fun k (_ : k ∈ Finset.univ) => (hw k).1
-    have hsmul := smul_le_smul_of_nonneg_left hsum (inv_nonneg.mpr hN.le)
-    rwa [inv_smul_smul₀ hN.ne'] at hsmul
-  · calc ‖(N : ℝ)⁻¹ • ∑ k : Fin N, w k‖ ≤ (N : ℝ)⁻¹ * ∑ k : Fin N, ‖w k‖ := by
-          rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-          exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
-      _ < (N : ℝ)⁻¹ * ∑ _k : Fin N, (1 : ℝ) :=
-          mul_lt_mul_of_pos_left
-            (Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun k _ => (hw k).2)
-            (inv_pos.mpr hN)
-      _ = 1 := by simp [inv_mul_cancel₀ hN.ne']
-
 /-- Quantitative finite-family Arveson lemma: for any `u₀ ∈ S` (`0 ≤ u₀`, `‖u₀‖ < 1`), finite
 families `f : Fin m → A` and `g : Fin l → S`, and `ε > 0`, some `e ∈ S` with `u₀ ≤ e` and `‖e‖ < 1`
 simultaneously left-approximates `g` and commutes with `f` up to `ε`. -/
@@ -307,28 +250,30 @@ private theorem exists_quasicentral_fin_approx (S : NonUnitalStarSubalgebra ℂ 
   have hM : 1 ≤ M := le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ => norm_nonneg _)
   obtain ⟨N, hN⟩ := exists_nat_gt (8 * M ^ 2 / ε ^ 2)
   have hN_pos : 0 < (N : ℝ) := lt_trans (by positivity) hN
-  have hFin : Nonempty (Fin N) :=
-    Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero (Nat.cast_ne_zero.mp hN_pos.ne'))
   let δ : ℝ := ε ^ 2 / (8 * M * (M + 2))
   obtain ⟨w, p, hw_u₀, hw_G, hp_F, hcross⟩ :=
     exists_quasicentral_chain S hmul hu₀ hu₀_norm f g (show 0 < δ by positivity) hε N
   let e : S := (N : ℝ)⁻¹ • ∑ k : Fin N, w k
-  obtain ⟨he_u₀, he_norm⟩ := cesaro_le_and_norm_lt_one hN_pos hw_u₀
+  have he_sum : e = ∑ k : Fin N, (N : ℝ)⁻¹ • w k := Finset.smul_sum
+  have hsum_w : ∑ _k : Fin N, (N : ℝ)⁻¹ = 1 := by simp [mul_inv_cancel₀ hN_pos.ne']
+  have he_u₀ : u₀ ≤ e := by
+    rw [he_sum]
+    exact (convex_Ici u₀).sum_mem (fun _ _ => by positivity) hsum_w fun k _ => (hw_u₀ k).1
+  have he_norm : ‖e‖ < 1 := by
+    have hmem : e ∈ Metric.ball (0 : S) 1 := by
+      rw [he_sum]
+      exact (convex_ball (0 : S) 1).sum_mem (fun _ _ => by positivity) hsum_w fun k _ => by
+        simpa [Metric.mem_ball, dist_zero_right] using (hw_u₀ k).2
+    simpa [Metric.mem_ball, dist_zero_right] using hmem
   refine ⟨e, he_u₀, he_norm, fun i => ?_, fun i => ?_⟩
-  · have hrewrite : e * g i - g i = (N : ℝ)⁻¹ • ∑ k : Fin N, (w k * g i - g i) := by
-      dsimp only [e]
-      rw [smul_mul_assoc, Finset.sum_mul, Finset.sum_sub_distrib, Finset.sum_const,
-        Finset.card_univ, Fintype.card_fin, ← Nat.cast_smul_eq_nsmul ℝ, smul_sub,
-        inv_smul_smul₀ hN_pos.ne']
-    rw [hrewrite, norm_smul, Real.norm_of_nonneg (by positivity)]
-    calc (N : ℝ)⁻¹ * ‖∑ k : Fin N, (w k * g i - g i)‖
-        ≤ (N : ℝ)⁻¹ * ∑ k : Fin N, ‖w k * g i - g i‖ :=
-          mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
-      _ < (N : ℝ)⁻¹ * ∑ _k : Fin N, ε :=
-          mul_lt_mul_of_pos_left
-            (Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun k _ => hw_G k i)
-            (inv_pos.mpr hN_pos)
-      _ = ε := by simp [inv_mul_cancel_left₀ hN_pos.ne']
+  · have hmem : e * g i - g i ∈ Metric.ball (0 : S) ε := by
+      have hrewrite : e * g i - g i = ∑ k : Fin N, (N : ℝ)⁻¹ • (w k * g i - g i) := by
+        simp only [smul_sub, ← smul_mul_assoc, Finset.sum_sub_distrib, ← Finset.sum_mul,
+          ← Finset.sum_smul, ← he_sum, hsum_w, one_smul]
+      rw [hrewrite]
+      exact (convex_ball (0 : S) ε).sum_mem (fun _ _ => by positivity) hsum_w fun k _ => by
+        simpa [Metric.mem_ball, dist_zero_right] using hw_G k i
+    simpa [Metric.mem_ball, dist_zero_right] using hmem
   · have hfiM : ‖f i‖ ≤ M :=
       (Finset.single_le_sum (f := fun j => ‖f j‖) (fun _ _ => norm_nonneg _)
         (Finset.mem_univ i)).trans (by dsimp only [M]; linarith)
@@ -415,76 +360,6 @@ theorem exists_quasicentral_approx (S : NonUnitalStarSubalgebra ℂ A) [IsClosed
   obtain ⟨e, ⟨he_u₀, he_norm⟩, he_g, he_f⟩ := ((hstrict u₀ hu₀ hu₀_norm).and (hg.and hf)).exists
   exact ⟨e, he_u₀, he_norm, he_g, he_f⟩
 
-/-- Criterion for a sequence of nonnegative contractions in a separable C⋆-algebra `B` to form an
-increasing approximate unit: it suffices to left-approximate the first `n + 1` elements of
-`TopologicalSpace.denseSeq B` within `1 / (n + 1)`. -/
-private theorem isIncreasingApproximateUnit_of_denseSeq {B : Type*} [NonUnitalCStarAlgebra B]
-    [PartialOrder B] [StarOrderedRing B] [TopologicalSpace.SeparableSpace B]
-    {u : ℕ → B} (hu_nonneg : ∀ n, 0 ≤ u n) (hu_norm : ∀ n, ‖u n‖ ≤ 1)
-    (hu_dense : ∀ n, ∀ k ≤ n,
-      ‖u n * TopologicalSpace.denseSeq B k - TopologicalSpace.denseSeq B k‖ <
-        1 / ((n : ℝ) + 1)) :
-    (atTop.map u).IsIncreasingApproximateUnit := by
-  have hright (x : B) : Tendsto (· * x) (atTop.map u) (𝓝 x) := by
-    rw [tendsto_map'_iff, Metric.tendsto_atTop]
-    intro ε hε
-    obtain ⟨k, hk⟩ := Metric.denseRange_iff.mp (TopologicalSpace.denseRange_denseSeq B) x
-      (ε / 3) (by positivity)
-    obtain ⟨N, hN⟩ := eventually_atTop.mp
-      (tendsto_one_div_add_atTop_nhds_zero_nat.eventually (gt_mem_nhds (by positivity : 0 < ε / 3)))
-    refine ⟨max k N, fun n hn => ?_⟩
-    have hnε : 1 / ((n : ℝ) + 1) < ε / 3 := hN n (le_of_max_le_right hn)
-    have h1 : dist (u n * x) (u n * TopologicalSpace.denseSeq B k) < ε / 3 := by
-      rw [dist_eq_norm, ← mul_sub]
-      exact (norm_mul_le _ _).trans_lt
-        ((mul_le_of_le_one_left (norm_nonneg _) (hu_norm n)).trans_lt (by rwa [← dist_eq_norm]))
-    have h2 : dist (u n * TopologicalSpace.denseSeq B k)
-        (TopologicalSpace.denseSeq B k) < ε / 3 := by
-      rw [dist_eq_norm]
-      exact (hu_dense n k (le_of_max_le_left hn)).trans hnε
-    calc dist (u n * x) x
-        ≤ dist (u n * x) (u n * TopologicalSpace.denseSeq B k) +
-            dist (u n * TopologicalSpace.denseSeq B k) (TopologicalSpace.denseSeq B k) +
-            dist (TopologicalSpace.denseSeq B k) x := dist_triangle4 _ _ _ _
-      _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add h1 h2) (by rwa [dist_comm])
-      _ = ε := by ring
-  have : (atTop.map u).NeBot := map_neBot
-  exact Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right hright
-    (eventually_map.mpr (Eventually.of_forall hu_nonneg))
-    (eventually_map.mpr (Eventually.of_forall hu_norm))
-
-/-- If a contractive sequence `v : ℕ → B` in a separable C⋆-algebra commutes within `1 / (n + 1)`
-with the first `n + 1` terms of `denseSeq B`, then `v n * a - a * v n → 0` for every `a : B`. -/
-private theorem tendsto_commutator_of_denseSeq {B : Type*} [NonUnitalCStarAlgebra B]
-    [TopologicalSpace.SeparableSpace B] {v : ℕ → B} (hv_norm : ∀ n, ‖v n‖ ≤ 1)
-    (hv_comm : ∀ n, ∀ k ≤ n,
-      ‖v n * TopologicalSpace.denseSeq B k - TopologicalSpace.denseSeq B k * v n‖ <
-        1 / ((n : ℝ) + 1))
-    (a : B) : Tendsto (fun n => v n * a - a * v n) atTop (𝓝 0) := by
-  let fSeq : ℕ → B := TopologicalSpace.denseSeq B
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  simp only [sub_zero, Metric.tendsto_atTop]
-  intro ε hε
-  obtain ⟨k, hk⟩ := Metric.denseRange_iff.mp (TopologicalSpace.denseRange_denseSeq B) a
-    (ε / 3) (by positivity)
-  obtain ⟨N, hN⟩ := eventually_atTop.mp
-    (tendsto_one_div_add_atTop_nhds_zero_nat.eventually (gt_mem_nhds (by positivity : 0 < ε / 3)))
-  refine ⟨max k N, fun n hn => ?_⟩
-  have hnε : 1 / ((n : ℝ) + 1) < ε / 3 := hN n (le_of_max_le_right hn)
-  have hdiff : (v n * a - a * v n) - (v n * fSeq k - fSeq k * v n) =
-      v n * (a - fSeq k) - (a - fSeq k) * v n := by noncomm_ring
-  have ha_dist : ‖a - fSeq k‖ < ε / 3 := by rwa [← dist_eq_norm]
-  have hpert : ‖v n * (a - fSeq k) - (a - fSeq k) * v n‖ < 2 * (ε / 3) :=
-    (norm_commutator_le (hv_norm n)).trans_lt (by linarith)
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
-  calc ‖v n * a - a * v n‖
-      ≤ ‖v n * fSeq k - fSeq k * v n‖ +
-          ‖(v n * a - a * v n) - (v n * fSeq k - fSeq k * v n)‖ := norm_le_insert' _ _
-    _ < ε / 3 + 2 * (ε / 3) := by
-        rw [hdiff]
-        exact add_lt_add ((hv_comm n k (le_of_max_le_left hn)).trans hnε) hpert
-    _ = ε := by ring
-
 /-- Separable sequential form of Arveson's theorem for closed star ideals: when `A` is separable,
 `S` admits a monotone sequence `u : ℕ → S` of nonnegative strict contractions forming a
 quasicentral increasing approximate unit of `S`. -/
@@ -496,29 +371,52 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       ∀ a : A, Tendsto (fun n => (u n : A) * a - a * (u n : A)) atTop (𝓝 0) := by
   let gSeq : ℕ → S := TopologicalSpace.denseSeq S
   let fSeq : ℕ → A := TopologicalSpace.denseSeq A
-  let step : ℕ → {e : S // 0 ≤ e ∧ ‖e‖ < 1} →
-      {e' : S // 0 ≤ e' ∧ ‖e'‖ < 1} := fun n ⟨u₀, hu₀_0, hu₀_1⟩ => by
-    let h := exists_quasicentral_approx S hmul hu₀_0 hu₀_1
-      (fun i : Fin (n + 1) => fSeq i) (fun i : Fin (n + 1) => gSeq i)
-      (Nat.one_div_pos_of_nat (n := n))
-    exact ⟨h.choose, hu₀_0.trans h.choose_spec.1, h.choose_spec.2.1⟩
-  let recSeq : ℕ → {e : S // 0 ≤ e ∧ ‖e‖ < 1} := fun n => Nat.rec ⟨0, le_rfl, by simp⟩ step n
+  let Elem := {e : S // 0 ≤ e ∧ ‖e‖ < 1}
+  let stepEx (n : ℕ) (x : Elem) := exists_quasicentral_approx S hmul x.2.1 x.2.2
+    (fun i : Fin (n + 1) => fSeq i) (fun i : Fin (n + 1) => gSeq i)
+    (Nat.one_div_pos_of_nat (n := n))
+  let step (n : ℕ) (x : Elem) : Elem :=
+    ⟨(stepEx n x).choose, x.2.1.trans (stepEx n x).choose_spec.1, (stepEx n x).choose_spec.2.1⟩
+  have hstep_spec (n : ℕ) (x : Elem) : x.1 ≤ (step n x).1 ∧
+      (∀ k ≤ n, ‖(step n x).1 * gSeq k - gSeq k‖ < 1 / ((n : ℝ) + 1)) ∧
+      (∀ k ≤ n, ‖((step n x).1 : A) * fSeq k - fSeq k * ((step n x).1 : A)‖ <
+        1 / ((n : ℝ) + 1)) := by
+    have hval : (step n x).1 = (stepEx n x).choose := rfl
+    rw [hval]
+    have h := (stepEx n x).choose_spec
+    exact ⟨h.1, fun k hk => h.2.2.1 ⟨k, Nat.lt_succ_of_le hk⟩,
+      fun k hk => h.2.2.2 ⟨k, Nat.lt_succ_of_le hk⟩⟩
+  let recSeq : ℕ → Elem := Nat.rec ⟨0, le_rfl, by simp⟩ step
+  have hrec_succ (n : ℕ) : recSeq (n + 1) = step n (recSeq n) := rfl
   let u : ℕ → S := fun n => (recSeq (n + 1)).1
   have hu_step (n : ℕ) : (recSeq n).1 ≤ u n ∧
-      (∀ k, k ≤ n → ‖u n * gSeq k - gSeq k‖ < 1 / ((n : ℝ) + 1)) ∧
-      (∀ k, k ≤ n → ‖(u n : A) * fSeq k - fSeq k * (u n : A)‖ < 1 / ((n : ℝ) + 1)) := by
-    have hspec := (exists_quasicentral_approx S hmul (recSeq n).2.1 (recSeq n).2.2
-      (fun i : Fin (n + 1) => fSeq i) (fun i : Fin (n + 1) => gSeq i)
-      (Nat.one_div_pos_of_nat (n := n))).choose_spec
-    exact ⟨hspec.1, fun k hk => hspec.2.2.1 ⟨k, Nat.lt_succ_of_le hk⟩,
-      fun k hk => hspec.2.2.2 ⟨k, Nat.lt_succ_of_le hk⟩⟩
-  have hu_nonneg (n : ℕ) : 0 ≤ u n := (recSeq (n + 1)).2.1
-  have hu_norm (n : ℕ) : ‖u n‖ < 1 := (recSeq (n + 1)).2.2
-  exact ⟨u, monotone_nat_of_le_succ fun n => (hu_step (n + 1)).1, hu_nonneg, hu_norm,
-    isIncreasingApproximateUnit_of_denseSeq hu_nonneg (fun n => (hu_norm n).le)
-      (fun n k hk => (hu_step n).2.1 k hk),
-    tendsto_commutator_of_denseSeq (fun n => (hu_norm n).le)
-      (fun n k hk => (hu_step n).2.2 k hk)⟩
+      (∀ k ≤ n, ‖u n * gSeq k - gSeq k‖ < 1 / ((n : ℝ) + 1)) ∧
+      (∀ k ≤ n, ‖(u n : A) * fSeq k - fSeq k * (u n : A)‖ < 1 / ((n : ℝ) + 1)) := by
+    have hu_eq : u n = (step n (recSeq n)).1 := congrArg Subtype.val (hrec_succ n)
+    rw [hu_eq]
+    exact hstep_spec n (recSeq n)
+  have hu_approx : (atTop.map u).IsIncreasingApproximateUnit := by
+    refine Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right_of_dense
+      (TopologicalSpace.denseRange_denseSeq S) ?_
+      (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).2.1))
+      (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).2.2.le))
+    rintro _ ⟨k, rfl⟩
+    rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
+    exact squeeze_zero' (.of_forall fun _ => norm_nonneg _)
+      (eventually_atTop.mpr ⟨k, fun n hn => ((hu_step n).2.1 k hn).le⟩)
+      tendsto_one_div_add_atTop_nhds_zero_nat
+  have hu_comm (a : A) : Tendsto (fun n => (u n : A) * a - a * (u n : A)) atTop (𝓝 0) := by
+    refine tendsto_map'_iff.mp <| TauCeti.tendsto_commutator_of_dense (C := 1)
+      (eventually_map.mpr (.of_forall fun n => by simpa using (recSeq (n + 1)).2.2.le))
+      (TopologicalSpace.denseRange_denseSeq A) ?_ a
+    rintro _ ⟨k, rfl⟩
+    rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
+    simp only [Function.comp_def, sub_zero]
+    exact squeeze_zero' (.of_forall fun _ => norm_nonneg _)
+      (eventually_atTop.mpr ⟨k, fun n hn => ((hu_step n).2.2 k hn).le⟩)
+      tendsto_one_div_add_atTop_nhds_zero_nat
+  exact ⟨u, monotone_nat_of_le_succ fun n => (hu_step (n + 1)).1,
+    fun n => (recSeq (n + 1)).2.1, fun n => (recSeq (n + 1)).2.2, hu_approx, hu_comm⟩
 
 end Arveson
 
