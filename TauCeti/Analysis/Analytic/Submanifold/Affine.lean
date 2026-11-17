@@ -139,7 +139,7 @@ theorem isAnalyticSubmanifold_intrinsicInterior_convexHull_pi_single
 analytic submanifold. -/
 theorem isAnalyticSubmanifold_openStdSimplex [NeZero m] :
     IsAnalyticSubmanifold (m - 1) (openStdSimplex ℝ (Fin m)) := by
-  rw [← intrinsicInterior_range_stdSimplex_weights, ← convexHull_range_pi_single, ← image_univ]
+  rw [← intrinsicInterior_range_toFun_comp_weights, ← convexHull_range_pi_single, ← image_univ]
   simpa using isAnalyticSubmanifold_intrinsicInterior_convexHull_pi_single
     (t := (Finset.univ : Finset (Fin m))) Finset.univ_nonempty
 
@@ -152,7 +152,7 @@ theorem isAnalyticSubmanifold_openStdSimplexFacet [Nontrivial (Fin m)] (i : Fin 
   have hcard : (Finset.univ.erase i).card - 1 = m - 2 := by
     rw [Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_fin]
     omega
-  rw [← intrinsicInterior_facet_stdSimplex_weights, ← convexHull_pi_single_compl_singleton,
+  rw [← intrinsicInterior_facet_range_toFun_comp_weights, ← convexHull_pi_single_compl_singleton,
     ← hcard]
   have hcoe : ((Finset.univ.erase i : Finset (Fin m)) : Set (Fin m)) = {i}ᶜ := by
     ext k

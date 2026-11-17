@@ -27,7 +27,7 @@ that every open simplex `intrinsicInterior ℝ (convexHull ℝ (range p))` is se
 
 ## Main results
 
-* `TauCeti.isSemialgebraic_range_stdSimplex_weights`, `TauCeti.isSemialgebraic_openStdSimplex`,
+* `TauCeti.isSemialgebraic_range_toFun_comp_weights`, `TauCeti.isSemialgebraic_openStdSimplex`,
   `TauCeti.isSemialgebraic_openStdSimplexFacet`, `TauCeti.isSemialgebraic_stdSimplexBoundary`: the
   standard simplex and its open part, open facets, and relative boundary are semialgebraic.
 * `AffineIndependent.isSemialgebraic_intrinsicInterior_convexHull`: open simplices in `σ → ℝ` are
@@ -52,7 +52,7 @@ namespace TauCeti
 variable {σ R : Type*} [CommRing R] [LinearOrder R]
 
 /-- The closed standard simplex of weight vectors in `σ → R` (`Finite σ`) is semialgebraic. -/
-theorem isSemialgebraic_range_stdSimplex_weights [Finite σ] :
+theorem isSemialgebraic_range_toFun_comp_weights [Finite σ] :
     IsSemialgebraic (range fun s : StdSimplex R σ => ⇑s.weights) := by
   cases nonempty_fintype σ
   have h : (range fun s : StdSimplex R σ => ⇑s.weights) =
@@ -72,7 +72,7 @@ theorem isSemialgebraic_openStdSimplex [Finite σ] :
     ext x
     simp
   rw [h]
-  exact isSemialgebraic_range_stdSimplex_weights.inter
+  exact isSemialgebraic_range_toFun_comp_weights.inter
     (.iInter fun i => isSemialgebraic_eval_pos (X i))
 
 /-- Each open facet `openStdSimplexFacet R i` of the standard simplex in `σ → R` (`Finite σ`) is
@@ -85,7 +85,7 @@ theorem isSemialgebraic_openStdSimplexFacet [Finite σ] (i : σ) :
     ext y
     simp
   rw [h]
-  exact isSemialgebraic_range_stdSimplex_weights.inter
+  exact isSemialgebraic_range_toFun_comp_weights.inter
     ((isSemialgebraic_eval_eq_zero (X i)).inter
       (.iInter fun j => isSemialgebraic_eval_pos (X j.1)))
 
@@ -108,7 +108,7 @@ theorem TauCeti.isSemialgebraic_stdSimplexBoundary :
     ext x
     simp
   rw [h]
-  exact TauCeti.isSemialgebraic_range_stdSimplex_weights.inter
+  exact TauCeti.isSemialgebraic_range_toFun_comp_weights.inter
     (.iUnion fun i => TauCeti.isSemialgebraic_eval_eq_zero (X i))
 
 /-- **Open simplices are semialgebraic.** The intrinsic interior of the convex hull of a finite

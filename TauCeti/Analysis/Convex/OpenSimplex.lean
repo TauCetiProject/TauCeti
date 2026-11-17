@@ -33,8 +33,8 @@ a set `t` of coordinate vertices `Pi.single i 1` with the points of that face wh
 `t` are strictly positive (`TauCeti.intrinsicInterior_convexHull_pi_single`), and in particular
 identifies the intrinsic interior of the standard simplex with `TauCeti.openStdSimplex ℝ ι` and the
 intrinsic interior of each facet opposite a vertex `i` with `TauCeti.openStdSimplexFacet ℝ i`
-(`TauCeti.intrinsicInterior_range_stdSimplex_weights`,
-`TauCeti.intrinsicInterior_facet_stdSimplex_weights`).
+(`TauCeti.intrinsicInterior_range_toFun_comp_weights`,
+`TauCeti.intrinsicInterior_facet_range_toFun_comp_weights`).
 
 So the open simplices of the faces of a simplex partition it, which is what makes the open
 simplices of a geometric simplicial complex disjoint
@@ -58,9 +58,9 @@ space need not be finite-dimensional.
 * `AffineIndependent.exists_affineMap_barycentricCoord`: global affine barycentric coordinate map
   inverting `w ↦ ∑ i, w i • p i` on closed and open simplices.
 * `TauCeti.intrinsicInterior_convexHull_pi_single`,
-  `TauCeti.intrinsicInterior_range_stdSimplex_weights`,
-  `TauCeti.intrinsicInterior_facet_stdSimplex_weights`: coordinate descriptions of the intrinsic
-  interiors of coordinate faces, the standard simplex, and its facets.
+  `TauCeti.intrinsicInterior_range_toFun_comp_weights`,
+  `TauCeti.intrinsicInterior_facet_range_toFun_comp_weights`: coordinate descriptions of the
+  intrinsic interiors of coordinate faces, the standard simplex, and its facets.
 
 ## References
 
@@ -248,7 +248,7 @@ theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
 
 omit [DecidableEq ι] in
 /-- The intrinsic interior of the standard simplex is `TauCeti.openStdSimplex ℝ ι`. -/
-theorem intrinsicInterior_range_stdSimplex_weights :
+theorem intrinsicInterior_range_toFun_comp_weights :
     intrinsicInterior ℝ (range fun s : StdSimplex ℝ ι => ⇑s.weights) = openStdSimplex ℝ ι := by
   classical
   rw [← convexHull_range_pi_single, ← image_univ, intrinsicInterior_convexHull_pi_single]
@@ -258,7 +258,7 @@ theorem intrinsicInterior_range_stdSimplex_weights :
 omit [DecidableEq ι] in
 /-- The intrinsic interior of the facet of the standard simplex opposite `i` is
 `TauCeti.openStdSimplexFacet ℝ i`. -/
-theorem intrinsicInterior_facet_stdSimplex_weights (i : ι) :
+theorem intrinsicInterior_facet_range_toFun_comp_weights (i : ι) :
     intrinsicInterior ℝ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | y i = 0} =
       openStdSimplexFacet ℝ i := by
   classical
