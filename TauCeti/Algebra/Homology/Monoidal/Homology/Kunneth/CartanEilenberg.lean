@@ -56,36 +56,28 @@ variable {R : Type u} [CommRing R] (K L : ChainComplex (ModuleCat.{u} R) ℕ)
 
 namespace ChainComplex.cartanEilenbergResolution
 
-/-- Tensoring with `K` keeps the composite `kernels (p + 1) ⟶ Q.X p ⟶ kernels p` zero. -/
-@[reassoc (attr := simp)]
-lemma whiskerLeft_rowι_rowπ (p : ℕ) : K ◁ rowι L p ≫ K ◁ rowπ L p = 0 := by
-  rw [← MonoidalCategory.whiskerLeft_comp, rowι_rowπ, HomologicalComplex.whiskerLeft_zero]
-
 /-- Tensoring with a complex of flat modules keeps the sequences
 `0 ⟶ kernels (p + 1) ⟶ Q.X p ⟶ kernels p ⟶ 0` of the Cartan–Eilenberg resolution short exact. -/
 lemma shortExact_whiskerLeft_row [∀ p, Module.Flat R (K.X p)] (p : ℕ) :
-    (ShortComplex.mk _ _ (whiskerLeft_rowι_rowπ K L p)).ShortExact := by
-  have := HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits K
+    (HomologicalComplex.tensorLeftShortComplex K
+      (ShortComplex.mk _ _ (rowι_rowπ L p))).ShortExact :=
+  HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits K
     (shortExact_row L p)
     fun n ↦ (Finset.antidiagonal n).finite_toSet.subset fun x hx ↦ by simpa using hx
-  convert this using 2
 
 end ChainComplex.cartanEilenbergResolution
 
 namespace HomologicalComplex
 
+-- The body is exposed so that the statements of `kunnethBicomplex_d` and of the lemmas below,
+-- whose types mention `K ⊗ Q.X p` where the bicomplex has `(kunnethBicomplex K L).X p`, elaborate.
 /-- **The Künneth bicomplex.** Its column `p` is `K ⊗ Q.X p`, where `Q` is the Cartan–Eilenberg
-resolution of `L`, and its horizontal differentials are induced by those of `Q`. Its body is
-exposed so that the statements of `kunnethBicomplex_d` and of the lemmas below, whose types
-mention `K ⊗ Q.X p` where the bicomplex has `(kunnethBicomplex K L).X p`, elaborate. -/
+resolution of `L`, and its horizontal differentials are induced by those of `Q`: it is `Q` with
+`tensorLeft K` applied to every row. -/
 @[expose]
 def kunnethBicomplex : HomologicalComplex₂ (ModuleCat.{u} R) (ComplexShape.down ℕ)
-    (ComplexShape.down ℕ) where
-  X p := K ⊗ (cartanEilenbergResolution L).X p
-  d p p' := K ◁ (cartanEilenbergResolution L).d p p'
-  shape p p' h := by rw [(cartanEilenbergResolution L).shape _ _ h, whiskerLeft_zero]
-  d_comp_d' p p' p'' _ _ := by
-    rw [← MonoidalCategory.whiskerLeft_comp, HomologicalComplex.d_comp_d, whiskerLeft_zero]
+    (ComplexShape.down ℕ) :=
+  ((tensorLeft K).mapHomologicalComplex _).obj (cartanEilenbergResolution L)
 
 /-- The column `p` of the Künneth bicomplex is `K ⊗ Q.X p`. -/
 @[simp]
@@ -165,10 +157,12 @@ lemma quasiIso_kunnethBicomplex_row (n : ℕ) :
       ((K ⊗ kernels L 0).X n)).symm ⟨(K ◁ rowπ L 0).f n,
         kunnethBicomplex_row_d_comp_whiskerLeft_rowπ_f K L n⟩) := by
   let X := ((HomologicalComplex.eval _ _ n).mapHomologicalComplex _).obj (kunnethBicomplex K L)
-  let ι (p : ℕ) : (K ⊗ kernels L (p + 1)).X n ⟶ X.X p := (K ◁ rowι L p).f n
-  let ε (p : ℕ) : X.X p ⟶ (K ⊗ kernels L p).X n := (K ◁ rowπ L p).f n
+  let S (p : ℕ) :=
+    HomologicalComplex.tensorLeftShortComplex K (ShortComplex.mk _ _ (rowι_rowπ L p))
+  let ι (p : ℕ) : (K ⊗ kernels L (p + 1)).X n ⟶ X.X p := (S p).f.f n
+  let ε (p : ℕ) : X.X p ⟶ (K ⊗ kernels L p).X n := (S p).g.f n
   have w (p : ℕ) : ι p ≫ ε p = 0 := by
-    have := congr_hom (whiskerLeft_rowι_rowπ K L p) n
+    have := congr_hom (S p).zero n
     rw [comp_f, zero_f] at this
     exact this
   -- the short complex `ι p, ε p` is by definition the degree `n` part of
@@ -176,7 +170,7 @@ lemma quasiIso_kunnethBicomplex_row (n : ℕ) :
   have hS (p : ℕ) : (ShortComplex.mk _ _ (w p)).ShortExact :=
     (shortExact_iff_degreewise_shortExact _).1 (shortExact_whiskerLeft_row K L p) n
   have hd (p : ℕ) : X.d (p + 1) p = ε (p + 1) ≫ ι p := by
-    dsimp only [X, ι, ε]
+    dsimp only [X, ι, ε, S]
     rw [Functor.mapHomologicalComplex_obj_d, eval_map, kunnethBicomplex_d, d_succ,
       MonoidalCategory.whiskerLeft_comp, comp_f]
     -- the two sides differ only in how the middle object `X.X p` is written

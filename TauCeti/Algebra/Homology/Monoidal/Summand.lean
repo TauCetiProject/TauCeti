@@ -38,7 +38,7 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
   on a homogeneous summand.
 * `HomologicalComplex.whiskerLeft_zero` and `HomologicalComplex.zero_whiskerRight`: whiskering the
-  zero morphism gives zero.
+  zero morphism gives zero, so `tensorLeft X` and `tensorRight X` preserve zero morphisms.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
 * `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
@@ -135,6 +135,21 @@ lemma whiskerLeft_zero (X : HomologicalComplex C c) {Y Z : HomologicalComplex C 
 lemma zero_whiskerRight {X Y : HomologicalComplex C c} (Z : HomologicalComplex C c) :
     (0 : X ⟶ Y) ▷ Z = 0 :=
   zero_tensorHom _
+
+section
+
+variable [∀ X₁, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Left tensoring with a homological complex preserves zero morphisms. -/
+instance (X : HomologicalComplex C c) : (tensorLeft X).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ whiskerLeft_zero X⟩
+
+/-- Right tensoring with a homological complex preserves zero morphisms. -/
+instance (X : HomologicalComplex C c) : (tensorRight X).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ zero_whiskerRight X⟩
+
+end
 
 /-- Left whiskering of homological complexes, restricted to a homogeneous summand, is left
 whiskering of the summand. -/
