@@ -49,6 +49,8 @@ This gives continuity of quotient-range coordinates for families of valid splitt
   set or at a point where the family is invertible nearby, without completeness.
 * `Continuous.clm_inverse`: inversion is continuous along a continuous family
   of invertible operators between seminormed spaces, with no completeness assumption.
+* `ContinuousWithinAt.continuousLinearEquiv_symm`: the inverses of a family of continuous linear
+  equivalences continuous within a set at a point are continuous there, without completeness.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
 -/
@@ -159,6 +161,17 @@ theorem Continuous.clm_inverse {X E F : Type*} [TopologicalSpace X]
     Continuous (fun x => (f x).inverse) :=
   continuous_iff_continuousAt.mpr fun _ =>
     hf.continuousAt.clm_inverse_of_eventually_isInvertible (.of_forall h)
+
+/-- The inverses of a family of continuous linear equivalences, continuous within a set at a
+point, are continuous within that set at that point, without completeness of either space. -/
+theorem ContinuousWithinAt.continuousLinearEquiv_symm {X E F : Type*} [TopologicalSpace X]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {e : X → E ≃L[𝕜] F} {s : Set X} {x₀ : X}
+    (he : ContinuousWithinAt (fun x ↦ (e x : E →L[𝕜] F)) s x₀) :
+    ContinuousWithinAt (fun x ↦ ((e x).symm : F →L[𝕜] E)) s x₀ := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    he.clm_inverse_of_eventually_isInvertible ContinuousLinearMap.isInvertible_equiv
+      (.of_forall fun _ ↦ ContinuousLinearMap.isInvertible_equiv)
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
   {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]

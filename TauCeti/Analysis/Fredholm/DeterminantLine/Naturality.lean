@@ -83,14 +83,8 @@ theorem IsDetLineCoherentWithinAt.detLineCongr (hv : IsDetLineCoherentWithinAt T
   have hS_eq (x : X) : S x = (e₂ x : F →L[ℝ] F') ∘L T x ∘L ((e₁ x).symm : E' →L[ℝ] E) := by
     ext u
     simpa using LinearMap.congr_fun (h x) ((e₁ x).symm u)
-  have he₁' : ContinuousWithinAt (fun x ↦ ((e₁ x).symm : E' →L[ℝ] E)) s x₀ := by
-    simpa only [ContinuousLinearMap.inverse_equiv] using
-      he₁.clm_inverse_of_eventually_isInvertible ContinuousLinearMap.isInvertible_equiv
-        (.of_forall fun _ ↦ ContinuousLinearMap.isInvertible_equiv)
-  have he₂' : ContinuousWithinAt (fun x ↦ ((e₂ x).symm : F' →L[ℝ] F)) s x₀ := by
-    simpa only [ContinuousLinearMap.inverse_equiv] using
-      he₂.clm_inverse_of_eventually_isInvertible ContinuousLinearMap.isInvertible_equiv
-        (.of_forall fun _ ↦ ContinuousLinearMap.isInvertible_equiv)
+  have he₁' := he₁.continuousLinearEquiv_symm
+  have he₂' := he₂.continuousLinearEquiv_symm
   have hS : ContinuousWithinAt S s x₀ := by
     simpa only [← hS_eq] using he₂.clm_comp (hT.clm_comp he₁')
   have hFS : IsFredholm (S x₀) :=
