@@ -8,9 +8,11 @@ module
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.MeasureTheory.Function.Piecewise
 public import TauCeti.Data.Set.Countable
+public import TauCeti.Probability.Process.StoppingApproximation
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 
 /-!
-# Measurability of stopped values at countable-range times
+# Measurability of stopped values
 
 For a process `u` and a random time `τ : Ω → WithTop ι`, Mathlib's `stoppedValue u τ` is the value
 `u (τ ω) ω`, with an arbitrary index used where `τ ω = ⊤`. Mathlib proves that it is measurable
@@ -33,6 +35,10 @@ in an arbitrary measurable space.
 Even for uncountable time, a countable-range stopping time gives a measurable stopped value
 whenever each coordinate is measurable
 (`MeasureTheory.IsStoppingTime.measurable_stoppedValue_of_countable_range`).
+For nonnegative real time and pseudo-metrizable Borel targets, upward dyadic approximation
+also gives almost-everywhere measurability when the paths are almost surely right-continuous
+at the finite stopped time (`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue`), without
+adaptation or a finite-measure assumption.
 
 Even for uncountable time, a stopping time with countable range permits strongly measurable
 gluing, without any topology on time and without a separability assumption or any algebraic
@@ -42,7 +48,8 @@ adapted process remains strongly adapted after stopping, including on a raw filt
 
 public section
 
-open Filter
+open Filter Set
+open scoped NNReal Topology
 
 namespace MeasureTheory
 
@@ -133,6 +140,27 @@ theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder 
   ext ω
   rw [IndexedPartition.piecewise_apply]
   exact stoppedValue_eq_partition ω
+
+/-- A process with measurable coordinates evaluated at a stopping time is almost everywhere
+measurable if its paths are almost surely right-continuous at the finite stopped time.
+No adaptation, finiteness of the stopping time, or usual conditions on the filtration are needed. -/
+theorem IsStoppingTime.aemeasurable_stoppedValue
+    {P : Measure Ω} {ℱ : Filtration ℝ≥0 m} {τ : Ω → WithTop ℝ≥0} {U : ℝ≥0 → Ω → β}
+    [TopologicalSpace β] [TopologicalSpace.PseudoMetrizableSpace β] [BorelSpace β]
+    (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (U s))
+    (hrc : ∀ᵐ ω ∂P, τ ω ≠ ⊤ →
+      ContinuousWithinAt (fun u => U u ω) (Ici (τ ω).untopA) (τ ω).untopA) :
+    AEMeasurable (stoppedValue U τ) P := by
+  apply aemeasurable_of_tendsto_metrizable_ae'
+    (f := fun n => stoppedValue U (fun ω => TauCeti.dyadicCeilTime n (τ ω)))
+    (fun n => ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm).aemeasurable)
+  filter_upwards [hrc] with ω hω
+  by_cases hfin : τ ω = ⊤
+  · simpa only [stoppedValue, hfin, TauCeti.dyadicCeilTime_top] using
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => U (⊤ : WithTop ℝ≥0).untopA ω)
+        atTop (𝓝 (U (⊤ : WithTop ℝ≥0).untopA ω)))
+  · exact TauCeti.tendsto_stoppedValue_dyadicCeilTime U τ ω hfin (hω hfin)
 
 section CountableTime
 

@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.StoppingApproximation
 public import TauCeti.Probability.Process.StoppedValue
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import TauCeti.MeasureTheory.Integral.Indicator
 
 /-!
@@ -18,9 +16,7 @@ law independently of a filtration through `s`. The same event identity holds at 
 stopping times in any partially ordered index type. For nonnegative real time and discrete-valued
 `U` almost surely right-continuous at the stopping time, it holds on the event of finiteness,
 by upward dyadic approximation. No usual-conditions
-assumption on the filtration is needed. In pseudo-metrizable Borel spaces, the same
-approximation also gives almost-everywhere measurability of the stopped value, without
-adaptation or a finite-measure assumption.
+assumption on the filtration is needed.
 
 The process `U` need not be adapted: for example, `U s` can be the increment over a fixed
 duration after `s`. The deterministic conditional-law identity is an explicit hypothesis,
@@ -90,26 +86,6 @@ theorem measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
 end CountableRange
 
 variable {ℱ : Filtration ℝ≥0 mΩ} {τ : Ω → WithTop ℝ≥0} {U : ℝ≥0 → Ω → β}
-
-/-- A process with measurable coordinates evaluated at a stopping time is almost everywhere
-measurable if its paths are almost surely right-continuous at the finite stopped time.
-No adaptation, finiteness of the stopping time, or usual conditions on the filtration are needed. -/
-theorem aemeasurable_stoppedValue [TopologicalSpace β] [TopologicalSpace.PseudoMetrizableSpace β]
-    [BorelSpace β]
-    (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (U s))
-    (hrc : ∀ᵐ ω ∂P, τ ω ≠ ⊤ →
-      ContinuousWithinAt (fun u => U u ω) (Ici (τ ω).untopA) (τ ω).untopA) :
-    AEMeasurable (stoppedValue U τ) P := by
-  apply aemeasurable_of_tendsto_metrizable_ae'
-    (f := fun n => stoppedValue U (fun ω => TauCeti.dyadicCeilTime n (τ ω)))
-    (fun n => ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
-      (TauCeti.countable_range_dyadicCeilTime τ n) hm).aemeasurable)
-  filter_upwards [hrc] with ω hω
-  by_cases hfin : τ ω = ⊤
-  · simpa only [stoppedValue, hfin, TauCeti.dyadicCeilTime_top] using
-      (tendsto_const_nhds : Tendsto (fun _ : ℕ => U (⊤ : WithTop ℝ≥0).untopA ω)
-        atTop (𝓝 (U (⊤ : WithTop ℝ≥0).untopA ω)))
-  · exact TauCeti.tendsto_stoppedValue_dyadicCeilTime U τ ω hfin (hω hfin)
 
 /-- For discrete-valued, almost surely right-continuous variables, a deterministic fixed
 conditional law passes to any stopping time, on its finite-time event. Neither adaptation of
