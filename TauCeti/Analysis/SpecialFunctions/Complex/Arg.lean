@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -54,8 +54,7 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`: on the slit plane, `|arg z| < π`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
-* `Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`: on the unit circle, `|arg z| ≤ (π / 2) ‖z - 1‖`
-  when `0 ≤ re z`.
+* `Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`: on the unit circle, `|arg z| ≤ (π / 2) ‖z - 1‖`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
@@ -206,25 +205,23 @@ theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ 
   rw [exp_mem_slitPlane, (toIocMod_eq_self _).2 ⟨h₁, by linarith [pi_pos]⟩]
   exact h₂.ne
 
-/-- **The argument near one on the unit circle.** A unit complex number `z` with `0 ≤ re z` has
-`|arg z| ≤ (π / 2) ‖z - 1‖`: its argument lies in `[-π / 2, π / 2]`, where Jordan's inequality
-gives `|arg z| ≤ (π / 2) |sin (arg z)| = (π / 2) |im z|`. -/
-theorem abs_arg_le_pi_div_two_mul_norm_sub_one {z : ℂ} (hz : ‖z‖ = 1) (hre : 0 ≤ z.re) :
+/-- **The argument near one on the unit circle.** A unit complex number `z` has
+`|arg z| ≤ (π / 2) ‖z - 1‖`: writing `z = exp (i θ)` with `θ = arg z`, `‖z - 1‖ = 2 |sin (θ / 2)|`
+and Jordan's inequality gives `|θ| / 2 ≤ (π / 2) sin (|θ| / 2)`. -/
+theorem abs_arg_le_pi_div_two_mul_norm_sub_one {z : ℂ} (hz : ‖z‖ = 1) :
     |arg z| ≤ π / 2 * ‖z - 1‖ := by
-  have hθ : |arg z| ≤ π / 2 := abs_arg_le_pi_div_two_iff.2 hre
-  have hsin : |Real.sin (arg z)| = |z.im| := by rw [sin_arg, hz, div_one]
-  have him : |z.im| ≤ ‖z - 1‖ := by simpa using abs_im_le_norm (z - 1)
-  -- Jordan's inequality `(2 / π) |θ| ≤ sin |θ| = |sin θ|` for `|θ| ≤ π / 2`.
-  have hj : 2 / π * |arg z| ≤ |z.im| := by
-    rw [← hsin]
-    refine (Real.mul_le_sin (abs_nonneg _) hθ).trans ?_
-    rcases le_total 0 (arg z) with h | h
-    · rw [abs_of_nonneg h]
-      exact le_abs_self _
-    · rw [abs_of_nonpos h, Real.sin_neg]
+  have hz' : ‖z - 1‖ = 2 * |Real.sin (arg z / 2)| := by
+    conv_lhs => rw [← norm_mul_exp_arg_mul_I z, hz, ofReal_one, one_mul, mul_comm]
+    rw [norm_exp_I_mul_ofReal_sub_one, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs, abs_two]
+  have hj := TauCeti.le_pi_div_two_mul_sin (θ := |arg z| / 2) (by positivity)
+    (by linarith [abs_arg_le_pi z])
+  have hsin : Real.sin (|arg z| / 2) ≤ |Real.sin (arg z / 2)| := by
+    rcases abs_cases (arg z) with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h]
+    · exact le_abs_self _
+    · rw [neg_div, Real.sin_neg]
       exact neg_le_abs _
-  calc |arg z| = π / 2 * (2 / π * |arg z|) := by field_simp
-    _ ≤ π / 2 * ‖z - 1‖ := by gcongr; exact hj.trans him
+  rw [hz']
+  nlinarith [pi_pos]
 
 /-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
 logarithm. -/

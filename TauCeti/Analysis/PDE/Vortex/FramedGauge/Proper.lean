@@ -22,10 +22,12 @@ Framed degree-`m` plane vortex fields form the affine space `A_m^k = x_m + H^k(�
 This file proves, for an integer `k ≥ 3`, that a gauge carrying one field of `A_m^k` to another
 depends continuously on the pair of fields: if `xᵢ → x` and `yᵢ → y` in `A_m^k`, and
 `uᵢ, u ∈ G_(k+1)` satisfy `uᵢ · xᵢ = yᵢ` and `u · x = y`, then `uᵢ → u` in `G_(k+1)`
-(`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_gaugeTransform_eq`). Together with the closedness of
-the orbit relation
+(`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_gaugeTransform_eq`). Together with the limit
+theorem for gauge equivalences
 (`TauCeti.Vortex.exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly`),
-the gauges converge whenever the fields do
+which also gives the closedness of the orbit relation
+(`TauCeti.Vortex.SobolevFieldSpace.isClosed_setOf_exists_gaugeTransform_eq`), the gauges converge
+whenever the fields do
 (`TauCeti.Vortex.SobolevFieldSpace.exists_gaugeTransform_eq_and_tendsto`). This is the sequential
 form of the properness of the action of `G_(k+1)` on `A_m^k`, the property of the action that the
 quotient `A_m^k / G_(k+1)` needs besides a slice.
@@ -109,12 +111,8 @@ private theorem arg_spec (hk : 1 < k) {u : ℂ → Circle} (huG : u ∈ sobolevG
   have hdφ (z : ℂ) : fderiv ℝ φ z = gaugeForm u z := by
     rw [← gaugeForm_exp (hφ.differentiable one_ne_zero z), hexp]
   have hbound (z : ℂ) : ‖(φ z : ℂ)‖ ≤ π / 2 * ‖(u z : ℂ) - 1‖ := by
-    have hre : 0 ≤ (u z : ℂ).re := by
-      have := (abs_re_le_norm ((u z : ℂ) - 1)).trans (hw z).le
-      rw [sub_re, one_re] at this
-      linarith [neg_abs_le ((u z : ℂ).re - 1)]
     rw [norm_real, Real.norm_eq_abs]
-    exact abs_arg_le_pi_div_two_mul_norm_sub_one (Circle.norm_coe _) hre
+    exact abs_arg_le_pi_div_two_mul_norm_sub_one (Circle.norm_coe _)
   -- The phase lies in `L²`, since `u - 1` does.
   obtain ⟨g, hg, -⟩ := exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup huG
   have hL2 : MemLp φ 2 volume :=
@@ -265,81 +263,9 @@ private theorem norm_coe_sub_coe_le {u v : ℂ → Circle} {x x' y y' : ℂ → 
   nlinarith [norm_nonneg (sectionValue x' z - sectionValue x z),
     norm_nonneg (sectionValue y' z - sectionValue y z)]
 
-/-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
-private theorem coe_inv_mul_sub_one (a b : Circle) :
-    ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
-  have ha : ((a⁻¹ : Circle) : ℂ) * a = 1 := by
-    rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-  rw [Circle.coe_mul]
-  linear_combination ha
-
-/-- The difference of two sections is bounded by the differences of the section coordinates. -/
-private theorem norm_sectionValue_sub_le (x x' : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ‖sectionValue x' z - sectionValue x z‖ ≤ 2 * (|x' z 2 - x z 2| + |x' z 3 - x z 3|) := by
-  rw [← sectionValue_sub, sectionValue_apply, norm_mul, show ‖(2 : ℂ)‖ = 2 by norm_num]
-  gcongr
-  refine (norm_add_le _ _).trans ?_
-  simp only [Pi.sub_apply, PiLp.sub_apply, ofReal_sub, norm_mul, norm_I, mul_one]
-  rw [← ofReal_sub, ← ofReal_sub, norm_real, norm_real, Real.norm_eq_abs, Real.norm_eq_abs]
-
 namespace SobolevFieldSpace
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ}
-
-/-- **Convergence in `A_m^s` gives `L²` convergence of the coordinates**, for `s ≥ 0`: if fields
-`xᵢ → x` in `A_m^s`, then each coordinate `xᵢ(z)ⱼ - x(z)ⱼ` tends to zero in `L²`. -/
-theorem tendsto_eLpNorm_sub_of_tendsto {s : ℝ} (h : 0 ≤ s) {ι : Type*} {l : Filter ι}
-    {xs : ι → SobolevFieldSpace f m s} {x : SobolevFieldSpace f m s} (hx : Tendsto xs l (𝓝 x))
-    (j : Fin 4) : Tendsto (fun i ↦ eLpNorm (fun z ↦ xs i z j - x z j) 2 volume) l (𝓝 0) := by
-  set T : ι → Lp ℂ 2 (volume : Measure ℂ) := fun i ↦
-    (inclusion h (subRef (xs i) j - subRef x j)).toLp
-  have hT : Tendsto T l (𝓝 0) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    have hsub := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_iff.1 hx j)
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_) hsub
-    rw [sub_zero, norm_toLp_eq]
-    exact norm_inclusion_apply_le h _
-  have hae (i : ι) : (T i : ℂ → ℂ) =ᵐ[volume] fun z ↦ ((xs i z j - x z j : ℝ) : ℂ) := by
-    filter_upwards [coeFn_toLp_inclusion_subRef h (xs i) j, coeFn_toLp_inclusion_subRef h x j,
-      Lp.coeFn_sub (inclusion h (subRef (xs i) j)).toLp (inclusion h (subRef x j)).toLp]
-      with z h₁ h₂ h₃
-    simp only [T, map_sub, toLp_sub, h₃, Pi.sub_apply, h₁, h₂]
-    push_cast
-    ring
-  have hlim := ((continuous_eNorm.tendsto 0).comp hT)
-  rw [eNorm_zero] at hlim
-  refine hlim.congr fun i ↦ ?_
-  simp only [Function.comp_apply, Lp.eNorm_def]
-  rw [eLpNorm_congr_ae (hae i)]
-  have hc : Continuous fun z ↦ xs i z j - x z j :=
-    ((EuclideanSpace.proj j).continuous.comp (xs i).continuous).sub
-      ((EuclideanSpace.proj j).continuous.comp x.continuous)
-  exact eLpNorm_congr_norm_ae (continuous_ofReal.comp hc).aestronglyMeasurable
-    hc.aestronglyMeasurable (Eventually.of_forall fun z ↦ by rw [norm_real])
-
-/-- **The set where the section is small is compact.** For `s > 1` and `c < 1`, the points where
-the section of a field of `A_m^s` has modulus at most `c` form a compact set, since `|α| → 1` at
-infinity. -/
-theorem isCompact_setOf_norm_sectionValue_le {s : ℝ} (hs : 1 < s) (x : SobolevFieldSpace f m s)
-    {c : ℝ} (hc : c < 1) : IsCompact {z | ‖sectionValue x z‖ ≤ c} := by
-  have hαc : Continuous fun z ↦ sectionValue x z := by
-    simp only [sectionValue_apply]
-    exact continuous_const.mul ((continuous_ofReal.comp
-      ((EuclideanSpace.proj (2 : Fin 4)).continuous.comp x.continuous)).add
-      ((continuous_ofReal.comp
-        ((EuclideanSpace.proj (3 : Fin 4)).continuous.comp x.continuous)).mul continuous_const))
-  have hev : ∀ᶠ z in cocompact ℂ, c < ‖sectionValue x z‖ := by
-    rcases lt_or_ge c 0 with hc0 | hc0
-    · exact Eventually.of_forall fun z ↦ hc0.trans_le (norm_nonneg _)
-    filter_upwards [(tendsto_normSq_of_mem_framedFieldSpace hs x.mem_framedFieldSpace
-      x.continuous).eventually (lt_mem_nhds (by nlinarith : c ^ 2 < 1))] with z hz
-    rw [← sq_norm_sectionValue] at hz
-    nlinarith [norm_nonneg (sectionValue x z)]
-  obtain ⟨t, ht, hts⟩ := mem_cocompact.1 hev
-  refine ht.of_isClosed_subset (isClosed_le hαc.norm continuous_const) fun z hz ↦ ?_
-  by_contra hzt
-  have h1 : c < ‖sectionValue x z‖ := hts hzt
-  exact absurd hz (not_le.2 h1)
 
 section Convergence
 
@@ -351,6 +277,26 @@ private theorem two_lt_add_one (hk : 2 < k) : (2 : ℝ) < (k : ℝ) + 1 := by
   have : (2 : ℝ) < k := by exact_mod_cast hk
   linarith
 
+/-- A gauge of `G_(k+1)`, `k ≥ 2`, is continuous as a complex function. -/
+private theorem continuous_coe_toSubgroup (hk : 2 < k) (w : SobolevTopologicalGaugeGroup hs) :
+    Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) :=
+  (differentiable_of_mem_sobolevGaugeGroup (two_lt_add_one hk) (toSubgroup hs w).2).continuous
+
+/-- The limit theorem for gauge equivalences between convergent fields of `A_m^k`: gauges carrying
+`xᵢ` to `yᵢ` converge locally uniformly to a Sobolev gauge carrying `x` to `y`. -/
+private theorem exists_mem_sobolevGaugeGroup_and_tendstoLocallyUniformly (hk : 2 < k) [l.NeBot]
+    (hxy : ∀ i, gaugeTransform (toSubgroup hs (us i) : ℂ → Circle) (xs i) = ys i)
+    (hx : Tendsto xs l (𝓝 x)) (hy : Tendsto ys l (𝓝 y)) :
+    ∃ v ∈ sobolevGaugeGroup hs, gaugeTransform v x = y ∧
+      TendstoLocallyUniformly (fun i z ↦ ((toSubgroup hs (us i) : ℂ → Circle) z : ℂ))
+        (fun z ↦ (v z : ℂ)) l := by
+  have hk1 : (1 : ℝ) < k := by exact_mod_cast (by omega : 1 < k)
+  exact exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly hk
+    (fun i ↦ differentiable_of_mem_sobolevGaugeGroup (two_lt_add_one hk) (toSubgroup hs (us i)).2)
+    hxy (tendstoUniformly_of_tendsto hk1 hx).tendstoLocallyUniformly
+    (tendstoUniformly_of_tendsto hk1 hy).tendstoLocallyUniformly
+    x.continuous y.continuous x.mem_framedFieldSpace y.mem_framedFieldSpace
+
 /-- Gauges between convergent fields converge locally uniformly to the gauge between the limits. -/
 private theorem tendstoLocallyUniformly_of_gaugeTransform_eq (hk : 2 < k) [l.NeBot]
     (hxy : ∀ i, gaugeTransform (toSubgroup hs (us i) : ℂ → Circle) (xs i) = ys i)
@@ -358,14 +304,8 @@ private theorem tendstoLocallyUniformly_of_gaugeTransform_eq (hk : 2 < k) [l.NeB
     (hx : Tendsto xs l (𝓝 x)) (hy : Tendsto ys l (𝓝 y)) :
     TendstoLocallyUniformly (fun i z ↦ ((toSubgroup hs (us i) : ℂ → Circle) z : ℂ))
       (fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ)) l := by
-  have hk1 : (1 : ℝ) < k := by exact_mod_cast (by omega : 1 < k)
-  have h2 := two_lt_add_one hk
   obtain ⟨v, hvG, hv, hconv⟩ :=
-    exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly hk
-      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (toSubgroup hs (us i)).2) hxy
-      (tendstoUniformly_of_tendsto hk1 hx).tendstoLocallyUniformly
-      (tendstoUniformly_of_tendsto hk1 hy).tendstoLocallyUniformly
-      x.continuous y.continuous x.mem_framedFieldSpace y.mem_framedFieldSpace
+    exists_mem_sobolevGaugeGroup_and_tendstoLocallyUniformly hk hxy hx hy
   -- The limit is `u`, since the action of `G_(k+1)` on `A_m^k` is free.
   have : Fact (1 < k) := ⟨by omega⟩
   have hvu : (⟨v, hvG⟩ : sobolevGaugeGroup hs) = toSubgroup hs u :=
@@ -381,8 +321,11 @@ private theorem norm_sub_le_of_gaugeTransform_eq
     ‖((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z‖ ≤
       4 * (|xs i z 2 - x z 2| + |xs i z 3 - x z 3| +
         (|ys i z 2 - y z 2| + |ys i z 3 - y z 3|)) := by
+  have hx := norm_sectionValue_le_two_mul_abs_add_abs (⇑(xs i) - ⇑x) z
+  have hy := norm_sectionValue_le_two_mul_abs_add_abs (⇑(ys i) - ⇑y) z
+  simp only [sectionValue_sub, Pi.sub_apply, PiLp.sub_apply] at hx hy
   refine (norm_coe_sub_coe_le huxy (hxy i) (not_le.1 hz).le).trans ?_
-  linarith [norm_sectionValue_sub_le x (xs i) z, norm_sectionValue_sub_le y (ys i) z]
+  linarith
 
 /-- Gauges between convergent fields converge uniformly on the whole plane. -/
 private theorem tendstoUniformly_of_gaugeTransform_eq (hk : 2 < k) [l.NeBot]
@@ -418,22 +361,18 @@ private theorem tendsto_eLpNorm_coord (hx : Tendsto xs l (𝓝 x)) (hy : Tendsto
     Tendsto (fun i ↦ eLpNorm (fun z ↦ 4 * (|xs i z 2 - x z 2| + |xs i z 3 - x z 3| +
       (|ys i z 2 - y z 2| + |ys i z 3 - y z 3|))) 2 volume) l (𝓝 0) := by
   have hk0 : (0 : ℝ) ≤ k := Nat.cast_nonneg k
-  have hcd (a b : SobolevFieldSpace f m k) (j : Fin 4) : Continuous fun z ↦ a z j - b z j :=
-    ((EuclideanSpace.proj j).continuous.comp a.continuous).sub
-      ((EuclideanSpace.proj j).continuous.comp b.continuous)
   have habs (a b : SobolevFieldSpace f m k) (j : Fin 4) :
       eLpNorm (fun z ↦ |a z j - b z j|) 2 volume = eLpNorm (fun z ↦ a z j - b z j) 2 volume := by
-    simpa only [Real.norm_eq_abs] using eLpNorm_norm _ (hcd a b j).aestronglyMeasurable
+    simpa only [Real.norm_eq_abs] using
+      eLpNorm_norm _ (continuous_apply_sub a b j).aestronglyMeasurable
   have hS := ENNReal.Tendsto.const_mul (((tendsto_eLpNorm_sub_of_tendsto hk0 hx 2).add
     (tendsto_eLpNorm_sub_of_tendsto hk0 hx 3)).add ((tendsto_eLpNorm_sub_of_tendsto hk0 hy 2).add
       (tendsto_eLpNorm_sub_of_tendsto hk0 hy 3))) (Or.inr (by norm_num : (4 : ℝ≥0∞) ≠ ∞))
   simp only [add_zero, mul_zero] at hS
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hS (fun _ ↦ bot_le)
     fun i ↦ ?_
-  rw [show (fun z ↦ 4 * (|xs i z 2 - x z 2| + |xs i z 3 - x z 3| +
-      (|ys i z 2 - y z 2| + |ys i z 3 - y z 3|))) = (4 : ℝ) • fun z ↦ |xs i z 2 - x z 2| +
-        |xs i z 3 - x z 3| + (|ys i z 2 - y z 2| + |ys i z 3 - y z 3|) from rfl, eLpNorm_const_smul,
-    Real.eNorm_eq_ofReal (by norm_num), ENNReal.ofReal_ofNat]
+  simp_rw [← smul_eq_mul (a := (4 : ℝ))]
+  rw [← Pi.smul_def, eLpNorm_const_smul, Real.eNorm_eq_ofReal (by norm_num), ENNReal.ofReal_ofNat]
   gcongr
   refine (eLpNorm_add_le one_le_two).trans (add_le_add ?_ ?_)
   · rw [← habs (xs i) x 2, ← habs (xs i) x 3]
@@ -450,7 +389,6 @@ private theorem tendsto_eLpNorm_of_gaugeTransform_eq (hk : 2 < k) [l.NeBot]
       ((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z) 2 volume)
       l (𝓝 0) := by
   have hk1 : (1 : ℝ) < k := by exact_mod_cast (by omega : 1 < k)
-  have h2 := two_lt_add_one hk
   have hK := isCompact_setOf_norm_sectionValue_le hk1 x (by norm_num : (1 : ℝ) / 2 < 1)
   set K := {z | ‖sectionValue x z‖ ≤ 1 / 2}
   set G : ι → ℂ → ℝ := fun i z ↦ 4 *
@@ -458,8 +396,7 @@ private theorem tendsto_eLpNorm_of_gaugeTransform_eq (hk : 2 < k) [l.NeBot]
   set D : ι → ℂ → ℂ := fun i z ↦
     ((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z
   have hDc (i : ι) : Continuous (D i) :=
-    (differentiable_of_mem_sobolevGaugeGroup h2 (toSubgroup hs (us i)).2).continuous.sub
-      (differentiable_of_mem_sobolevGaugeGroup h2 (toSubgroup hs u).2).continuous
+    (continuous_coe_toSubgroup hk (us i)).sub (continuous_coe_toSubgroup hk u)
   -- Off `K` the gauges are controlled by the sections; on `K` they converge uniformly.
   have hG : Tendsto (fun i ↦ eLpNorm (G i) 2 volume) l (𝓝 0) := tendsto_eLpNorm_coord hx hy
   have hDK : Tendsto (fun i ↦ eLpNorm (K.indicator (D i)) 2 volume) l (𝓝 0) := by
@@ -574,7 +511,7 @@ theorem tendsto_of_gaugeTransform_eq (hk : 2 < k)
       ((((toSubgroup hs u : ℂ → Circle) z)⁻¹ : Circle) : ℂ) *
         (((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z) := by
     rw [map_mul, map_inv, Subgroup.coe_mul, Subgroup.coe_inv, Pi.mul_apply, Pi.inv_apply,
-      coe_inv_mul_sub_one]
+      Circle.coe_inv_mul_sub_one]
   have hunif := tendstoUniformly_of_gaugeTransform_eq hk hxy huxy hx hy
   have hL2 := tendsto_eLpNorm_of_gaugeTransform_eq hk hxy huxy hx hy
   obtain ⟨g, hg, hg₀⟩ := exists_tendsto_gaugeForm_inv_mul hk hxy huxy hx hy
@@ -587,17 +524,16 @@ theorem tendsto_of_gaugeTransform_eq (hk : 2 < k)
         dist_comm]
       exact hi z
     · refine hL2.congr fun i ↦ eLpNorm_congr_norm_ae ?_ ?_ (Eventually.of_forall fun z ↦ ?_)
-      · exact ((differentiable_of_mem_sobolevGaugeGroup (two_lt_add_one hk)
-          (toSubgroup hs (us i)).2).continuous.sub (differentiable_of_mem_sobolevGaugeGroup
-            (two_lt_add_one hk) (toSubgroup hs u).2).continuous).aestronglyMeasurable
-      · exact ((differentiable_of_mem_sobolevGaugeGroup (two_lt_add_one hk)
-          (toSubgroup hs (u⁻¹ * us i)).2).continuous.sub continuous_const).aestronglyMeasurable
+      · exact ((continuous_coe_toSubgroup hk (us i)).sub
+          (continuous_coe_toSubgroup hk u)).aestronglyMeasurable
+      · exact ((continuous_coe_toSubgroup hk (u⁻¹ * us i)).sub
+          continuous_const).aestronglyMeasurable
       · rw [hwn, norm_mul, Circle.norm_coe, one_mul]
   simpa using (tendsto_const_nhds (x := u)).mul hw
 
 end Convergence
 
-/-- **The Sobolev gauge group acts properly on `A_m^k`**, `k ≥ 3`: if fields `xᵢ → x` and
+/-- **Sequential properness of the action of `G_(k+1)` on `A_m^k`**, `k ≥ 3`: if fields `xᵢ → x` and
 `yᵢ → y` converge in `A_m^k` and `uᵢ · xᵢ = yᵢ` for Sobolev gauges `uᵢ ∈ G_(k+1)`, then the gauges
 converge in `G_(k+1)` to a gauge `u` with `u · x = y`. -/
 theorem exists_gaugeTransform_eq_and_tendsto (hk : 2 < k) {ι : Type*} {l : Filter ι} [l.NeBot]
@@ -607,14 +543,7 @@ theorem exists_gaugeTransform_eq_and_tendsto (hk : 2 < k) {ι : Type*} {l : Filt
     (hx : Tendsto xs l (𝓝 x)) (hy : Tendsto ys l (𝓝 y)) :
     ∃ u : SobolevTopologicalGaugeGroup hs,
       gaugeTransform (toSubgroup hs u : ℂ → Circle) x = y ∧ Tendsto us l (𝓝 u) := by
-  have hk1 : (1 : ℝ) < k := by exact_mod_cast (by omega : 1 < k)
-  have h2 := two_lt_add_one hk
-  obtain ⟨v, hvG, hv, -⟩ :=
-    exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniformly hk
-      (fun i ↦ differentiable_of_mem_sobolevGaugeGroup h2 (toSubgroup hs (us i)).2) hxy
-      (tendstoUniformly_of_tendsto hk1 hx).tendstoLocallyUniformly
-      (tendstoUniformly_of_tendsto hk1 hy).tendstoLocallyUniformly
-      x.continuous y.continuous x.mem_framedFieldSpace y.mem_framedFieldSpace
+  obtain ⟨v, hvG, hv, -⟩ := exists_mem_sobolevGaugeGroup_and_tendstoLocallyUniformly hk hxy hx hy
   refine ⟨(toSubgroup hs).symm ⟨v, hvG⟩, ?_, tendsto_of_gaugeTransform_eq hk hxy ?_ hx hy⟩ <;>
     simpa using hv
 
