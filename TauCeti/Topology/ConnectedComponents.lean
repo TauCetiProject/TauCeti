@@ -35,6 +35,8 @@ space by them.
   point of the quotient, as an open set; these open sets partition the space.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
+* `TauCeti.frontier_connectedComponentIn_subset_compl_interior`: in a locally connected space, a
+  connected component of any set has its frontier outside the interior of that set.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
 * `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
@@ -219,6 +221,17 @@ theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : 
   rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
   have hts : t ⊆ s := (subset_sUnion_of_mem ht).trans hsub
   exact connectedComponentIn_eq ((hc t ht).subset_connectedComponentIn hx hts hy)
+
+/-- **The frontier of a connected component of any set misses its interior.** In a locally
+connected space, no interior point of `F` lies on the frontier of a connected component of `F`. -/
+theorem frontier_connectedComponentIn_subset_compl_interior [LocallyConnectedSpace X] {F : Set X}
+    (x : X) : frontier (connectedComponentIn F x) ⊆ (interior F)ᶜ := by
+  intro y hy hyF
+  have hny : connectedComponentIn F y ∈ 𝓝 y :=
+    connectedComponentIn_mem_nhds (mem_interior_iff_mem_nhds.mp hyF)
+  obtain ⟨w, hwy, hwx⟩ := mem_closure_iff_nhds.mp hy.1 _ hny
+  rw [connectedComponentIn_eq hwy, ← connectedComponentIn_eq hwx] at hny
+  exact hy.2 (mem_interior_iff_mem_nhds.mpr hny)
 
 /-- **The frontier of a connected component of an open set misses the set.** Equivalently,
 `frontier (connectedComponentIn F x) ∩ F = ∅`: the component is clopen in `F`. -/
