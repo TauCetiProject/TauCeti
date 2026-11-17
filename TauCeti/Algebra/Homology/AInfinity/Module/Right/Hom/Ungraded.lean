@@ -78,6 +78,8 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
 * `TauCeti.UngradedAInfinityRightModuleHom.comp_id`,
   `TauCeti.UngradedAInfinityRightModuleHom.id_comp` and
   `TauCeti.UngradedAInfinityRightModuleHom.comp_assoc`: the identity and associativity laws.
+* `TauCeti.UngradedAInfinityRightModuleHom.add_comp` and
+  `TauCeti.UngradedAInfinityRightModuleHom.comp_add`: composition is additive in each argument.
 * `TauCeti.UngradedAInfinityRightModuleHom.ofLinearMap_comp_ofLinearMap`: the composite of strict
   morphisms is strict.
 * `TauCeti.UngradedAInfinityRightModuleHom.comp_map_eq_zero`: the components of a composite of
@@ -763,6 +765,21 @@ theorem comp_assoc [CharP R 2] {Q : Type*} [AddCommGroup Q] [Module R Q]
   simp only [segOp_comp, zero_add, map_sum, Nat.sub_sub]
   rw [sum_range_succ_sum_range_succ_comm]
   simp only [Nat.add_sub_cancel_left]
+
+/-- Composition distributes over the sum of the morphisms composed after. -/
+@[simp]
+theorem add_comp [CharP R 2] (g₁ g₂ : UngradedAInfinityRightModuleHom Mm' Mm'') :
+    (g₁ + g₂).comp f = g₁.comp f + g₂.comp f := by
+  ext n a m
+  simp only [comp_map_apply, add_map, _root_.add_apply, LinearMap.add_apply, sum_add_distrib]
+
+/-- Composition distributes over the sum of the morphisms composed first. -/
+@[simp]
+theorem comp_add [CharP R 2] (f₁ f₂ : UngradedAInfinityRightModuleHom Mm Mm') :
+    g.comp (f₁ + f₂) = g.comp f₁ + g.comp f₂ := by
+  ext n a m
+  simp only [comp_map_apply, add_map, _root_.add_apply, LinearMap.add_apply, map_add,
+    sum_add_distrib]
 
 end Comp
 
