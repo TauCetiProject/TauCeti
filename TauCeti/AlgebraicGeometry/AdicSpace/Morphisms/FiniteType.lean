@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Discrete
 
 import Mathlib.RingTheory.RingHom.FiniteType
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
-import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
@@ -78,28 +78,9 @@ open CategoryTheory TopologicalSpace Topology
 
 namespace TauCeti
 
-open Huber Huber.PairOfDefinition ValuationSpectrum
+open Huber ValuationSpectrum
 
 universe u
-
-namespace PreAdicSpace
-
-/-- The canonical Huber-pair morphism `C.pair → (C.rationalLocalization T s hT).pair` attached to a
-rational localisation of a complete affinoid open is topologically of finite type. -/
-theorem CompleteAffinoidOpen.isTopologicallyFiniteType_rationalLocalizationHom
-    {Y : PreAdicSpace.{u}} (C : CompleteAffinoidOpen Y) (T : Finset C.Ring) (s : C.Ring)
-    (hT : IsOpen (Ideal.span (T : Set C.Ring) : Set C.Ring)) :
-    (C.rationalLocalizationHom T s hT).IsTopologicallyFiniteType := by
-  let L := Localization.Away s
-  have hden := C.pairOfDefinition.hasDenominatorPower_of_isOpen_span T s L hT
-  let _ := C.pairOfDefinition.locUniformSpace T s L hden
-  have _ := C.pairOfDefinition.isUniformAddGroup_locUniformSpace T s L hden
-  have _ := C.pairOfDefinition.isTopologicalRing_locUniformSpace T s L hden
-  have _ := C.pairOfDefinition.isHuberRing_completion_locTopology T s L hden
-  exact C.pairOfDefinition.isTopologicallyFiniteType_toCompletionLocHom C.pair C.le_plus T s L hden
-    (Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT)
-
-end PreAdicSpace
 
 namespace AdicSpace
 
@@ -195,13 +176,11 @@ theorem LocallyOfFiniteType.exists_complete_openImmersion_chart {f : X ⟶ Y}
     (hf : LocallyOfFiniteType f) (x : X.obj) :
     ∃ (CY : CompleteAffinoidOpen Y.obj) (CX : CompleteAffinoidOpen X.obj)
       (φ : Pair.Hom CY.pair CX.pair) (_ : φ.IsTopologicallyFiniteType) (b₀ : CX.space),
-      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom := by
-  refine PreAdicSpace.chartLocally.exists_complete_openImmersion_chart
-    (fun P _ P' _ φ hφ ↦ ?_) Y.property.isSheafy ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
-  dsimp only
-  exact P.isTopologicallyFiniteType_completionLocPairMap _ _ _ _ _ _ P' _ _ φ _ _ _ _ rfl
-    (fun _ ht ↦ Finset.mem_image_of_mem _ ht) hφ
-    (Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) (by simp))
+      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom :=
+  PreAdicSpace.chartLocally.exists_complete_openImmersion_chart
+    (fun P hP hsheafA P' hP' hsheafB φ hφ ↦
+      isTopologicallyFiniteType_ofCompletionMap P hP hsheafA P' hP' hsheafB φ hφ)
+    Y.property.isSheafy ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
 
 /-- **Open-immersion chart criterion for `LocallyOfFiniteType`**: a morphism `f : X ⟶ Y` of adic
 spaces is locally of finite type if every point `x ∈ X` is covered by a complete affinoid
@@ -345,36 +324,14 @@ theorem locallyOfFiniteType_comapOfPresentation {A : Type u} [CommRing A] [Topol
       (presentationLimitPresheaf P' T.plus))
     (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType) :
     LocallyOfFiniteType (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
-  rw [locallyOfFiniteType_iff, comapOfPresentation_hom]
-  have hT1 : IsOpen (Ideal.span (({1} : Finset B) : Set B) : Set B) := by simp
-  let L' := Localization.Away (1 : B)
-  have hden := P'.hasDenominatorPower_denom_one ({1} : Finset B) L'
-  let _ := P'.locUniformSpace ({1} : Finset B) 1 L' hden
-  have _ := P'.isUniformAddGroup_locUniformSpace ({1} : Finset B) 1 L' hden
-  have _ := P'.isTopologicalRing_locUniformSpace ({1} : Finset B) 1 L' hden
-  have _ := P'.isHuberRing_completion_locTopology ({1} : Finset B) 1 L' hden
-  let T₁ := P'.rationalLocalizationPair T hT ({1} : Finset B) 1 L' hden
-  let P'₁ := P'.completionLocalization ({1} : Finset B) 1 L' hden
-  have hT₁ : P'₁.ringOfDefinition ≤ T₁.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring T.plus hT _ _ L' hden
-  have hsheaf₁ :=
-    isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' T hT ({1} : Finset B) 1 L' hden
-      hT1 hsheafT
-  obtain ⟨eB, heB⟩ :=
-    exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P' hT
-      ({1} : Finset B) 1 L' hden hT1 (fun y ↦ by rw [rationalSubset_singleton_one]; exact y.2)
-      hsheaf₁
-  have hcomp_tft := P'.isTopologicallyFiniteType_toCompletionLocHom_comp T hT ({1} : Finset B) 1 L'
-    hden φ hφ (Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT1)
-  have h1 : PreAdicSpace.LocallyOfFiniteType
-      (eB.hom ≫ presentationLimitPreAdicSpacePairComap P P' hS hT hsheafT φ) := by
-    rw [heB, ← presentationLimitPreAdicSpacePairComap_def P' P'₁ hT hT₁ hsheaf₁,
-      ← presentationLimitPreAdicSpacePairComap_comp P P' P'₁ hS hT hT₁ hsheafT hsheaf₁,
-      presentationLimitPreAdicSpacePairComap_def]
-    exact ValuationSpectrum.locallyOfFiniteType_presentationLimitPreAdicSpaceComap P P'₁ hS hT₁
-      hsheaf₁ _ hcomp_tft
-  rwa [MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u}] at h1
+  refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦
+    ⟨ofCompletion P hS hsheafS, ofCompletion P' hT hsheafT,
+      ofCompletionMap P hS hsheafS P' hT hsheafT φ,
+      isTopologicallyFiniteType_ofCompletionMap P hS hsheafS P' hT hsheafT φ hφ,
+      (ofCompletionIso P' hT hsheafT).inv.base x,
+      ofCompletion_hom_base_ofCompletionIso_inv P' hT hsheafT x, ?_⟩
+  rw [comapOfPresentation_hom]
+  exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ
 
 /-- Comparing `LocallyOfFiniteType` on `comapOfPair` with `comapOfPresentation` via the canonical
 isomorphisms `ofPairIsoOfPresentation`. -/

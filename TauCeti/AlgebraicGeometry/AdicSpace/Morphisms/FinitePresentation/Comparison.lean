@@ -9,10 +9,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.AnalyticLocus
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FinitePresentation.Cancel
 
 import Mathlib.RingTheory.RingHom.FinitePresentation
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.BaseChange
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
-import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
-import TauCeti.RingTheory.Huber.LocalizationTopology.Noetherian
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 
 /-!
@@ -76,7 +74,7 @@ open CategoryTheory TopologicalSpace Topology
 
 namespace TauCeti.AdicSpace
 
-open Huber Huber.PairOfDefinition PreAdicSpace ValuationSpectrum CompleteAffinoidOpen
+open Huber PreAdicSpace ValuationSpectrum CompleteAffinoidOpen
 
 universe u
 
@@ -205,85 +203,26 @@ theorem locallyOfFinitePresentation_comapOfPresentation {A B : Type u} [CommRing
     (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType)
     (hfp : DiscreteTopology A → φ.toRingHom.FinitePresentation) :
     LocallyOfFinitePresentation (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
-  classical
-  have hT1 : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A) := by simp
-  have hT1_ins : IsOpen (Ideal.span (insert (1 : A) (({1} : Finset A) : Set A)) : Set A) :=
-    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT1
-  let T' : Finset B := ({1} : Finset A).image φ.toRingHom
-  let s' : B := φ.toRingHom 1
-  have hT1' : IsOpen (Ideal.span (T' : Set B) : Set B) := by simp [T']
-  have hT1'_ins : IsOpen (Ideal.span (insert s' (T' : Set B)) : Set B) :=
-    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT1'
-  let L := Localization.Away (1 : A)
-  let L' := Localization.Away s'
-  have hden := P.hasDenominatorPower_denom_one ({1} : Finset A) L
-  have hden' := P'.hasDenominatorPower_of_isOpen_span T' s' L' hT1'
-  let _ := P.locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isTopologicalRing_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isHuberRing_completion_locTopology ({1} : Finset A) 1 L hden
-  have _ := P.isHuberStandard_completion_locTopology_of_isHuberStandard hT1_ins L hden
-  let _ := P'.locUniformSpace T' s' L' hden'
-  have _ := P'.isUniformAddGroup_locUniformSpace T' s' L' hden'
-  have _ := P'.isTopologicalRing_locUniformSpace T' s' L' hden'
-  have _ := P'.isHuberRing_completion_locTopology T' s' L' hden'
-  let S₁ := P.rationalLocalizationPair S hS ({1} : Finset A) 1 L hden
-  let P₁ := P.completionLocalization ({1} : Finset A) 1 L hden
-  let T₁ := P'.rationalLocalizationPair T hT T' s' L' hden'
-  let P'₁ := P'.completionLocalization T' s' L' hden'
-  have hS₁ : P₁.ringOfDefinition ≤ S₁.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact P.completionLocalization_ringOfDefinition_le_completedPlusSubring S.plus hS _ _ L hden
-  have hT₁ : P'₁.ringOfDefinition ≤ T₁.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring T.plus hT _ _ L' hden'
-  have hsheafS₁ :=
-    isSheaf_presentationLimitPresheaf_rationalLocalizationPair P S hS ({1} : Finset A) 1 L hden
-      hT1 hsheafS
-  have hsheafT₁ :=
-    isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' T hT T' s' L' hden' hT1' hsheafT
-  let φ₁ := P.completionLocPairMap S hS ({1} : Finset A) 1 L hden P' T hT φ T' s' L' hden' rfl
-    (fun _ ht ↦ Finset.mem_image_of_mem _ ht)
+  let CY := ofCompletion P hS hsheafS
+  let CX := ofCompletion P' hT hsheafT
+  let φ₁ := ofCompletionMap P hS hsheafS P' hT hsheafT φ
+  have hιA := isTopologicallyFiniteType_toCompletionHom P hS hsheafS
+  have : IsHuberStandard CY.Ring :=
+    .of_isTopologicallyFiniteType hιA.isTopologicallyFiniteType_toRingHom
   have hφ₁ : φ₁.IsTopologicallyFiniteType :=
-    P.isTopologicallyFiniteType_completionLocPairMap S hS ({1} : Finset A) 1 L hden P' T hT φ T'
-      s' L' hden' rfl (fun _ ht ↦ Finset.mem_image_of_mem _ ht) hφ hT1'_ins
-  have hfp₁ : DiscreteTopology (UniformSpace.Completion L) → φ₁.toRingHom.FinitePresentation := by
-    dsimp only [φ₁]
-    rw [toRingHom_completionLocPairMap]
-    exact P.finitePresentation_completionLocMap_of_discreteTopology ({1} : Finset A) 1 hT1_ins L
-      hden P' hφ.isTopologicallyFiniteType_toRingHom hfp T' s' L' hden' rfl
-      (fun _ ht ↦ Finset.mem_image_of_mem _ ht) hT1'_ins
-  obtain ⟨eA, heA⟩ :=
-    exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P hS
-      ({1} : Finset A) 1 L hden hT1 (fun y ↦ by rw [rationalSubset_singleton_one]; exact y.2)
-      hsheafS₁
-  obtain ⟨eB, heB⟩ :=
-    exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P' hT T' s' L'
-      hden' hT1' (fun y ↦ by
-        simp only [T', s', Finset.image_singleton, map_one, rationalSubset_singleton_one]
-        exact y.2) hsheafT₁
-  have hcomm := presentationLimitPreAdicSpaceComap_completionLocPairMap_comp P P' hS hT φ hsheafT
-    ({1} : Finset A) 1 L hden L' hden' hsheafS₁ hsheafT₁
-  let CY : CompleteAffinoidOpen (ofPresentation S P hS hsheafS).obj :=
-    { Ring := UniformSpace.Completion L, pair := S₁, pairOfDefinition := P₁, le_plus := hS₁,
-      isSheaf := hsheafS₁, hom := eA.hom,
-      isOpenImmersion := PreAdicSpace.IsOpenImmersion.of_isIso eA.hom }
-  let CX : CompleteAffinoidOpen (ofPresentation T P' hT hsheafT).obj :=
-    { Ring := UniformSpace.Completion L', pair := T₁, pairOfDefinition := P'₁, le_plus := hT₁,
-      isSheaf := hsheafT₁, hom := eB.hom,
-      isOpenImmersion := PreAdicSpace.IsOpenImmersion.of_isIso eB.hom }
+    isTopologicallyFiniteType_ofCompletionMap P hS hsheafS P' hT hsheafT φ hφ
+  have hfp₁ : DiscreteTopology CY.Ring → φ₁.toRingHom.FinitePresentation := fun _ ↦
+    hιA.isTopologicallyFiniteType_toRingHom.finitePresentation_of_comp
+      hφ₁.isTopologicallyFiniteType_toRingHom fun hDiscA ↦ by
+        have : DiscreteTopology B := hφ.isTopologicallyFiniteType_toRingHom.discreteTopology
+        rw [← Pair.Hom.toRingHom_comp, ofCompletionMap_comp_toCompletionHom,
+          Pair.Hom.toRingHom_comp]
+        exact (finitePresentation_toCompletionHom P' hT hsheafT).comp (hfp hDiscA)
   refine (locallyOfFinitePresentation_iff _).mpr fun x ↦
-    locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁ (b₀ := eB.inv.base x)
-      ?_ ?_
-  · have hx :=
-      congrArg (fun m : (ofPresentation T P' hT hsheafT).obj ⟶ _ ↦ m.base x) eB.inv_hom_id
-    rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply] at hx
-    exact hx.trans (by simp)
-  · rw [← heA, ← heB] at hcomm
-    dsimp only [CY, CX, pairComap]
-    rw [comapOfPresentation_hom, presentationLimitPreAdicSpacePairComap_def,
-      presentationLimitPreAdicSpacePairComap_def]
-    exact hcomm
+    locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁
+      (ofCompletion_hom_base_ofCompletionIso_inv P' hT hsheafT x) ?_
+  rw [comapOfPresentation_hom]
+  exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ
 
 /-- Comparing `LocallyOfFinitePresentation` on `comapOfPair` with `comapOfPresentation` via the
 canonical isomorphisms `ofPairIsoOfPresentation`. -/

@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteTy
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Comap
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart
 import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
@@ -295,14 +295,12 @@ private theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
         eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
           φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
           T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
-          eV.inv ≫ Y.obj.ofRestrict _ := by
-  refine PreAdicSpace.chartLocally.exists_complete_chart (fun P _ P' _ φ hφ ↦ ?_)
+          eV.inv ≫ Y.obj.ofRestrict _ :=
+  PreAdicSpace.chartLocally.exists_complete_chart
+    (fun P hP hsheafA P' hP' hsheafB φ hφ ↦
+      CompleteAffinoidOpen.isTopologicallyFiniteType_toRingHom_ofCompletionMap P hP hsheafA P' hP'
+        hsheafB φ hφ)
     Y.property.isSheafy ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf) x
-  dsimp only
-  rw [toRingHom_completionLocPairMap]
-  exact P.isTopologicallyFiniteType_completionLocMap _ _ _ _ P' hφ _ _ _ _ rfl
-    (fun _ ht ↦ Finset.mem_image_of_mem _ ht)
-    (Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) (by simp))
 
 -- When a morphism `f : Spa(D, D⁺) ⟶ Spa(A, A⁺)` of complete Hausdorff affinoid pre-adic spaces
 -- has global-sections homomorphism topologically of finite type and lands inside an open immersion
