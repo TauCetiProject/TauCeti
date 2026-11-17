@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Topology.Closure
 
 /-!
@@ -51,7 +52,9 @@ applied to the excision map.
 Combined with the long exact sequence of the triple `(X, A, A ∩ B)`, excision shows that when the
 interiors of `A` and `B` cover `X`, a morphism into `Hₙ(X, A ∩ B)` is determined by its images in
 `Hₙ(X, A)` and `Hₙ(X, B)` (`TopPair.singularHomology_inter_hom_ext`): a morphism vanishing in
-`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`.
+`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`. Dually, a class of
+`Hₙ(X, U)` vanishing in `Hₙ(X, U ∪ V)`, for open `U` and `V`, comes from `Hₙ(V, V ∩ U)`
+(`TopPair.exists_singularHomologyMap_excisionMap_eq`).
 
 ## References
 
@@ -438,5 +441,78 @@ theorem singularHomology_inter_hom_ext (h : interior U ∪ interior V = Set.univ
   rw [← hl, hl₀, zero_comp]
 
 end Inter
+
+section Union
+
+open TauCeti
+
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ) {X : TopCat.{w}} {U V : Set X}
+
+/-- The inclusion of pairs `(V, V ∩ U) ⟶ (U ∪ V, U)`, into the inner pair of the triple
+`(X, U ∪ V, U)`. -/
+private def interPairToUnion (h : U ⊆ U ∪ V) :
+    interPair V U ⟶ TopTriple.innerPair.obj (TopTriple.ofSubset h) :=
+  ofHom (TopCat.ofHom ⟨fun x ↦ ⟨x.1, Or.inr x.2⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩) (by ext; rfl)
+
+private lemma interPairToUnion_comp_innerToTotal (h : U ⊆ U ∪ V) :
+    interPairToUnion h ≫ TopTriple.innerToTotal.app (TopTriple.ofSubset h) = excisionMap V U := by
+  ext x : 2
+  · exact Subtype.ext (excisionMap_snd_apply V U x).symm
+  · exact (excisionMap_fst_apply V U x).symm
+
+/-- **A class vanishing modulo a larger open set comes from the excised pair.** For open subsets
+`U` and `V` of `X`, a class of `Hₙ(X, U)` whose image in `Hₙ(X, U ∪ V)` vanishes is the image of
+a class of `Hₙ(V, V ∩ U)` under the excision map `(V, V ∩ U) ⟶ (X, U)`. By the long exact
+sequence of the triple `(X, U ∪ V, U)` it comes from `Hₙ(U ∪ V, U)`, which excision identifies with
+`Hₙ(V, V ∩ U)`. As for `TopPair.singularHomology_inter_hom_ext`, the inclusion `h` is an argument,
+so that the map of pairs in the hypothesis matches that of the caller. -/
+theorem exists_singularHomologyMap_excisionMap_eq (hU : IsOpen U) (hV : IsOpen V)
+    (h : Set.MapsTo (𝟙 X) U (U ∪ V)) (n : ℕ)
+    {y : ((ofSubset U).singularHomology R n : ModuleCat.{w} Λ)}
+    (hy : (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) h) R n).hom y = 0) :
+    ∃ z : ((interPair V U).singularHomology R n : ModuleCat.{w} Λ),
+      (TopPair.singularHomologyMap (excisionMap V U) R n).hom z = y := by
+  have hUV : U ⊆ U ∪ V := Set.subset_union_left
+  let T := TopTriple.ofSubset hUV
+  -- The inclusion `(V, V ∩ U) ⟶ (U ∪ V, U)` is an excision: `U ∪ V` is covered by the open sets
+  -- over `U` and over `V`.
+  have hexc : IsIso (TopPair.singularHomologyMap (interPairToUnion hUV) R n) :=
+    isIso_singularHomologyMap_of_open_cover R (interPairToUnion hUV)
+      ((IsEmbedding.subtypeVal.of_comp_iff (f := fun x : V ↦ (⟨x.1, Or.inr x.2⟩ : ↥(U ∪ V)))).1
+        IsEmbedding.subtypeVal)
+      (fun x ⟨u, hu⟩ ↦
+        ⟨⟨x, Set.mem_preimage.2 ((congrArg Subtype.val hu : u.1 = x.1) ▸ u.2)⟩, rfl⟩)
+      (fun b : Bool ↦ bif b then (Subtype.val ⁻¹' U : Set ↥(U ∪ V)) else Subtype.val ⁻¹' V)
+      (fun b ↦ by cases b <;> exact continuous_subtype_val.isOpen_preimage _ ‹_›)
+      (Set.eq_univ_of_forall fun x ↦ by
+        rcases x.2 with hx | hx
+        · exact Set.mem_iUnion.2 ⟨true, hx⟩
+        · exact Set.mem_iUnion.2 ⟨false, hx⟩)
+      (fun b ↦ by
+        cases b
+        · exact Or.inr fun x hx ↦ ⟨⟨x.1, hx⟩, rfl⟩
+        · exact Or.inl fun x hx ↦ ⟨⟨x.1, hx⟩, rfl⟩) n
+  -- By exactness of the triple at `Hₙ(X, U)`, `y` comes from `Hₙ(U ∪ V, U)`.
+  have hy' : (TopPair.singularHomologyMap (TopTriple.totalToOuter.app T) R n).hom y = 0 := by
+    rw [TopTriple.totalToOuter_app_ofSubset]
+    exact hy
+  obtain ⟨y₁, hy₁⟩ := (ShortComplex.moduleCat_exact_iff _).1
+    (T.singularHomology_exact_total R n) y hy'
+  have key : TopPair.singularHomologyMap (excisionMap V U) R n =
+      TopPair.singularHomologyMap (interPairToUnion hUV) R n ≫
+        TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n := by
+    rw [← singularHomologyMap_comp, interPairToUnion_comp_innerToTotal]
+    -- The two sides differ only in the target pair, `(X, U)` or the total pair of the triple,
+    -- which agree definitionally.
+    rfl
+  refine ⟨(inv (TopPair.singularHomologyMap (interPairToUnion hUV) R n)).hom y₁, ?_⟩
+  rw [key]
+  -- A composite in `ModuleCat` is applied by applying its factors in turn.
+  refine (congrArg (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n).hom ?_).trans
+    hy₁
+  exact ConcreteCategory.congr_hom (IsIso.inv_hom_id _) y₁
+
+end Union
 
 end TopPair

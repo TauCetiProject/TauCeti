@@ -188,6 +188,16 @@ theorem livesOverFundamentalClass_iff (p : E → M) (b : M) {k : ℕ}
     LivesOverFundamentalClass R p b α ↔ (fiberLocalization R p b k).hom α ≠ 0 :=
   Iff.rfl
 
+/-- Living over the fundamental class only depends on the fibre: for maps `p : E → M` and
+`p' : E → M'` with `p⁻¹(b) = p'⁻¹(b')`, a class lives over the fundamental class at `b` for `p`
+exactly when it does at `b'` for `p'`. -/
+theorem livesOverFundamentalClass_congr {M' : Type w} {p : E → M} {p' : E → M'} {b : M} {b' : M'}
+    (h : p ⁻¹' {b} = p' ⁻¹' {b'}) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    LivesOverFundamentalClass R p b α ↔ LivesOverFundamentalClass R p' b' α := by
+  rw [livesOverFundamentalClass_iff, livesOverFundamentalClass_iff, fiberLocalization,
+    fiberLocalization, h]
+
 /-- The zero class does not live over the fundamental class. -/
 @[simp]
 theorem not_livesOverFundamentalClass_zero (p : E → M) (b : M) (k : ℕ) :
