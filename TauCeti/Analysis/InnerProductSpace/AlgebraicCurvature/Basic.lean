@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
 # Algebraic curvature tensors
@@ -49,8 +50,9 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
-* `TauCeti.FourTensor.ofLinearMap₄`: on a finite-dimensional space, the four-tensor of a curried
-  four-linear form.
+* `TauCeti.FourTensor.ofLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄`, and
+  `TauCeti.FourTensor.toLinearMap₄Equiv`: currying four-tensors into four-fold linear forms and the
+  finite-dimensional linear equivalence between them.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
@@ -282,6 +284,31 @@ private theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
     ricciSlice r u v x y = r ![x, u, y, v] :=
   (rfl)
 
+/-- Curry a continuous four-tensor into a four-fold linear map. -/
+def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ where
+  toFun r := LinearMap.mk₂ ℝ
+    (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
+      (fun _ _ _ ↦ apply_add_third ..)
+      (fun t _ _ ↦ by simpa only [smul_eq_mul] using apply_smul_third r u v _ _ t)
+      (fun _ _ _ ↦ apply_add_fourth ..)
+      (fun t _ _ ↦ by simpa only [smul_eq_mul] using apply_smul_fourth r u v _ _ t))
+    (fun _ _ _ ↦ by ext; exact apply_add_first ..)
+    (fun t _ _ ↦ by ext; simpa [smul_eq_mul] using apply_smul_first r _ _ _ _ t)
+    (fun _ _ _ ↦ by ext; exact apply_add_second ..)
+    (fun t _ _ ↦ by ext; simpa [smul_eq_mul] using apply_smul_second r _ _ _ _ t)
+  map_add' _ _ := by ext; rfl
+  map_smul' _ _ := by ext; rfl
+
+/-- Evaluation of `toLinearMap₄ r` on four vectors. -/
+@[simp] theorem toLinearMap₄_apply (r : FourTensor V) (u v z w : V) :
+    toLinearMap₄ r u v z w = r ![u, v, z, w] := (rfl)
+
+/-- Currying a four-tensor into a four-fold linear map is injective. -/
+theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
+  ext m
+  rw [← FinVec.etaExpand_eq m]
+  exact congr($h (m 0) (m 1) (m 2) (m 3))
+
 end NormedSpace
 
 section FiniteDimensional
@@ -306,6 +333,38 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
     ofLinearMap₄ T m = T (m 0) (m 1) (m 2) (m 3) :=
   (rfl)
 
+/-- Currying and uncurrying a four-tensor recovers the original four-tensor. -/
+@[simp] theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) :
+    ofLinearMap₄ (toLinearMap₄ r) = r := by
+  ext m; rw [ofLinearMap₄_apply, toLinearMap₄_apply]; exact congrArg r (FinVec.etaExpand_eq m)
+
+/-- Uncurrying and currying a four-fold linear form recovers the original form. -/
+@[simp] theorem toLinearMap₄_ofLinearMap₄ (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
+    toLinearMap₄ (ofLinearMap₄ T) = T := by ext; rfl
+
+/-- On a finite-dimensional space, currying identifies `FourTensor V` with four-fold linear maps,
+inverse to `ofLinearMap₄`. -/
+def toLinearMap₄Equiv : FourTensor V ≃ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
+  { toLinearMap₄ with
+    invFun := ofLinearMap₄, left_inv := ofLinearMap₄_toLinearMap₄,
+    right_inv := toLinearMap₄_ofLinearMap₄ }
+
+/-- Applying `toLinearMap₄Equiv` agrees with `toLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_apply (r : FourTensor V) :
+    toLinearMap₄Equiv r = toLinearMap₄ r := (rfl)
+
+/-- The underlying linear map of `toLinearMap₄Equiv` is `toLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_toLinearMap :
+    (toLinearMap₄Equiv (V := V)).toLinearMap = toLinearMap₄ := (rfl)
+
+/-- The inverse of `toLinearMap₄Equiv` is `ofLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_symm_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
+    toLinearMap₄Equiv.symm T = ofLinearMap₄ T := (rfl)
+
+/-- The inverse of `toLinearMap₄Equiv` as a linear map is `ofLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_symm_toLinearMap :
+    (toLinearMap₄Equiv (V := V)).symm.toLinearMap = ofLinearMap₄ := (rfl)
+
 /-- The Kulkarni–Nomizu product of two bilinear forms as a four-tensor, in the curvature
 convention `r(u, v, z, w) = g(R(u, v)w, z)`:
 `(h ⊙ k)(u, v, z, w) = h(u, z) k(v, w) + h(v, w) k(u, z) - h(u, w) k(v, z) - h(v, z) k(u, w)`.
@@ -329,14 +388,25 @@ theorem kulkarniNomizu_apply_eq (h k : BilinForm ℝ V) (u v z w : V) :
     kulkarniNomizu h k ![u, v, z, w] = LinearMap.BilinForm.kulkarniNomizu h k u v w z := by
   rw [kulkarniNomizu_apply, LinearMap.BilinForm.kulkarniNomizu_apply]
 
+/-- The Kulkarni–Nomizu four-tensor is antisymmetric in its first pair of arguments. -/
+theorem kulkarniNomizu_antisymm_first (h k : BilinForm ℝ V) (u v z w : V) :
+    kulkarniNomizu h k ![u, v, z, w] = -kulkarniNomizu h k ![v, u, z, w] := by
+  simp only [kulkarniNomizu_apply_eq]
+  exact LinearMap.BilinForm.kulkarniNomizu_antisymm_first h k u v w z
+
+/-- The Kulkarni–Nomizu four-tensor is antisymmetric in its last pair of arguments. -/
+theorem kulkarniNomizu_antisymm_last (h k : BilinForm ℝ V) (u v z w : V) :
+    kulkarniNomizu h k ![u, v, z, w] = -kulkarniNomizu h k ![u, v, w, z] := by
+  simp only [kulkarniNomizu_apply_eq]
+  exact LinearMap.BilinForm.kulkarniNomizu_antisymm_last h k u v w z
+
 /-- The Kulkarni–Nomizu product of two symmetric bilinear forms is an algebraic curvature
 tensor. -/
 theorem isAlgebraicCurvature_kulkarniNomizu {h k : BilinForm ℝ V} (hh : h.IsSymm)
     (hk : k.IsSymm) : IsAlgebraicCurvature (kulkarniNomizu h k) := by
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
+  refine ⟨kulkarniNomizu_antisymm_first h k, kulkarniNomizu_antisymm_last h k,
+    fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
     simp only [kulkarniNomizu_apply_eq]
-  · exact LinearMap.BilinForm.kulkarniNomizu_antisymm_first h k u v w z
-  · exact LinearMap.BilinForm.kulkarniNomizu_antisymm_last h k u v w z
   · rw [hh.kulkarniNomizu_swap_pairs hk, LinearMap.BilinForm.kulkarniNomizu_antisymm_first,
       LinearMap.BilinForm.kulkarniNomizu_antisymm_last, neg_neg]
   · have := hh.kulkarniNomizu_cyclic_eq_zero hk u v z w
@@ -378,12 +448,16 @@ theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalB
     (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
   bilinFormTrace_eq_sum (ricciSlice r u v) b
 
-/-- The Ricci contraction of an algebraic curvature tensor is symmetric. -/
-theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
-    (ricci r).IsSymm := by
+/-- The Ricci contraction of a four-tensor symmetric under pair interchange is symmetric. -/
+theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
+    (h : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) : (ricci r).IsSymm := by
   refine ⟨fun u v ↦ ?_⟩
   simp only [ricci_apply_orthonormalBasis (stdOrthonormalBasis ℝ V)]
-  exact Finset.sum_congr rfl fun i _ ↦ (hr.swap_pairs _ _ _ _).symm
+  exact Finset.sum_congr rfl fun i _ ↦ (h _ _ _ _).symm
+
+/-- The Ricci contraction of an algebraic curvature tensor is symmetric. -/
+theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
+    (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
 
 /-- The Ricci contraction is equivariant under linear isometric equivalences: the Ricci contraction
 of the pullback of `r` by `e` is the pullback of the Ricci contraction of `r`. -/
