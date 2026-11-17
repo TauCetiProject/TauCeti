@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.LinearAlgebra.Determinant.Prod
@@ -320,10 +321,6 @@ private theorem exchangeMap_of_le_norm (hy : 8 ≤ ‖Complex.equivRealProdCLM.s
 section Datum
 
 variable {M : Type*} {H : Puncture → ℝ → M → ℝ}
-
-/-- `2 exp (2π)` exceeds `14`. -/
-private theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * Real.exp (2 * π) := by
-  nlinarith [Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), Real.two_le_pi]
 
 /-- **The member `c` of the family is the pullback of the pair-of-pants datum along `Φ_c`.** -/
 private theorem perturbationPullback_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (v y : ℝ × ℝ)
