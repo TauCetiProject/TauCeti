@@ -148,12 +148,9 @@ theorem isElliptic_adjoint_comp_extDeriv_zero :
 `(⋀ᵏ E)_ℂ → (⋀ᵏ⁺¹ E)_ℂ → (⋀ᵏ⁺² E)_ℂ`, both maps given by `i ξ ∧ ·`, is exact for `ξ ≠ 0`. -/
 theorem exact_extDeriv (k : ℕ) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     Function.Exact ((extDeriv X E k).coefficient (x, ξ))
-      ((extDeriv X E (k + 1)).coefficient (x, ξ)) := by
-  have hBA := congrFun (congrArg coefficient (extDeriv_comp_extDeriv (X := X) (E := E) k)) (x, ξ)
-  rw [coefficient_comp, coefficient_zero, Pi.zero_apply] at hBA
-  rw [ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian _ _ hBA,
-    ← coefficient_hodgeLaplacian]
-  exact isElliptic_iff.1 (isElliptic_hodgeLaplacian_extDeriv k) x ξ hξ
+      ((extDeriv X E (k + 1)).coefficient (x, ξ)) :=
+  exact_of_isElliptic_hodgeLaplacian (extDeriv X E k) (extDeriv X E (k + 1))
+    (extDeriv_comp_extDeriv k) (isElliptic_hodgeLaplacian_extDeriv k) hξ
 
 /-- On functions, the symbol `i ξ` of the exterior derivative is injective at every nonzero
 covector: the de Rham symbol sequence `0 → ℂ → E_ℂ` is exact there. -/
