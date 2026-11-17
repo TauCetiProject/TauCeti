@@ -205,7 +205,7 @@ private theorem exists_basis_stabilizerHopfIdeal_eq_of_isBorelOverAlgClosed
   let _ : Comodule k (G ⧸ B.toIdeal) M :=
     Comodule.Corestrict (CommHopfAlgCat.mkQuotient G.obj B).hom.toCoalgHom
   obtain ⟨LQ, hLQ⟩ :=
-    (Comodule.stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict L B).mp hB_eq.le
+    (L.stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict B).mp hB_eq.le
   have hdimLQ : Module.finrank k LQ = 1 := by
     rwa [← Subcomodule.finrank_toSubmodule, hLQ]
   obtain ⟨n, b, htri, hb0⟩ :=

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
 /-!
 # Evaluations of elements of a symmetric algebra
@@ -45,6 +46,8 @@ time.
 * `Module.Basis.lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis`: dually, an element of
   `S(M*)`, a polynomial function on `M`, is a polynomial in the coordinates of a finite basis of
   `M`, and its value at `x : M` is that polynomial evaluated at the coordinates of `x`.
+* `SymmetricAlgebra.lift_eval_map_dualMap`: pulling back a polynomial function along `f.dualMap`
+  and evaluating at `v` agrees with evaluating at `f v`.
 * `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
   linear forms, the evaluations of an element of `S(M)` are the values of a polynomial.
 * `TauCeti.SymmetricAlgebra.eq_zero_of_forall_lift_eq_zero`: an element of `S(M)` vanishing at
@@ -86,6 +89,16 @@ theorem lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis [Finite ι] [Decidab
 end Module.Basis
 
 namespace SymmetricAlgebra
+
+/-- Pulling back a polynomial function in `S(W*)` along `f.dualMap` and evaluating at `v : V`
+agrees with evaluating the original polynomial at `f v : W`. -/
+theorem lift_eval_map_dualMap {R V W : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid W] [Module R W] (f : V →ₗ[R] W) (v : V)
+    (s : SymmetricAlgebra R (Module.Dual R W)) :
+    lift (Module.Dual.eval R V v) (map R f.dualMap s) =
+      lift (Module.Dual.eval R W (f v)) s := by
+  rw [lift_map_apply]
+  exact congrArg (fun h ↦ lift h s) (LinearMap.congr_fun (Module.Dual.eval_naturality f) v)
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 

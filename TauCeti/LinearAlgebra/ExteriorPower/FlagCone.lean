@@ -11,10 +11,11 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import Mathlib.LinearAlgebra.Contraction
-import Mathlib.LinearAlgebra.Determinant
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Decomposable
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 import TauCeti.LinearAlgebra.TensorProduct.Segre
 import TauCeti.LinearAlgebra.TensorProduct.Separation
@@ -77,92 +78,12 @@ namespace TauCeti.exteriorPower
 
 universe u v w
 
-section SpanAndBasis
-
-section CommRing
-
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
-
-private theorem comp_subtype_ιMulti_eq_det_smul {n : ℕ} {v : Fin n → M}
-    (hv : LinearIndependent R v) {u : Fin n → M}
-    (hu : ∀ i, u i ∈ Submodule.span R (Set.range v)) :
-    _root_.exteriorPower.ιMulti R n u =
-      (Module.Basis.span hv).det (fun i ↦ ⟨u i, hu i⟩) • _root_.exteriorPower.ιMulti R n v := by
-  let W := Submodule.span R (Set.range v)
-  let e : Module.Basis (Fin n) R W := Module.Basis.span hv
-  let f : W [⋀^Fin n]→ₗ[R] ⋀[R]^n M :=
-    (_root_.exteriorPower.ιMulti R n).compLinearMap W.subtype
-  have hf : f = e.det.smulRight (f e) := by
-    refine Module.Basis.ext_alternating e fun i hi ↦ ?_
-    let σ : Equiv.Perm (Fin n) := Equiv.ofBijective i (Finite.injective_iff_bijective.mp hi)
-    have hσ : (fun j ↦ e (i j)) = e ∘ σ := rfl
-    rw [hσ, AlternatingMap.smulRight_apply, AlternatingMap.map_perm, AlternatingMap.map_perm,
-      e.det_self]
-    rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hs | hs <;> simp [hs]
-  have heval := AlternatingMap.congr_fun hf (fun i ↦ ⟨u i, hu i⟩)
-  have hfe : f e = _root_.exteriorPower.ιMulti R n v :=
-    congrArg (_root_.exteriorPower.ιMulti R n) (funext fun i ↦ Module.Basis.coe_span_apply hv i)
-  simpa [f, e, hfe, Function.comp_def] using heval
-
-/-- Two linearly independent `n`-tuples spanning the same submodule have exterior products
-differing by a unit scalar. -/
-theorem exists_units_smul_ιMulti_of_span_eq {n : ℕ} {u v : Fin n → M}
-    (hu : LinearIndependent R u) (hv : LinearIndependent R v)
-    (hspan : Submodule.span R (Set.range u) = Submodule.span R (Set.range v)) :
-    ∃ c : Rˣ, _root_.exteriorPower.ιMulti R n u = c • _root_.exteriorPower.ιMulti R n v := by
-  let W := Submodule.span R (Set.range v)
-  let e : Module.Basis (Fin n) R W := Module.Basis.span hv
-  have huW : ∀ i, u i ∈ W := fun i ↦ hspan.le (Submodule.subset_span ⟨i, rfl⟩)
-  let u' : Fin n → W := fun i ↦ ⟨u i, huW i⟩
-  have hu'_li : LinearIndependent R u' := LinearIndependent.of_comp W.subtype hu
-  have hu'_span : Submodule.span R (Set.range u') = ⊤ := by
-    apply Submodule.map_injective_of_injective W.injective_subtype
-    rw [Submodule.map_span, ← Set.range_comp, Submodule.map_top, Submodule.range_subtype]
-    exact hspan
-  have hunit : IsUnit (e.det u') := (e.is_basis_iff_det).mp ⟨hu'_li, hu'_span⟩
-  exact ⟨hunit.unit, by simpa [Units.smul_def] using comp_subtype_ιMulti_eq_det_smul hv huW⟩
-
-end CommRing
-
-section Field
-
-variable {k : Type u} {M : Type v} [Field k] [AddCommGroup M] [Module k M]
-
-private theorem span_range_le_of_ιMulti_eq_smul {n : ℕ} {u v : Fin n → M} {c : k}
-    (hu : LinearIndependent k u) (hv : LinearIndependent k v) (hc : c ≠ 0)
-    (h : _root_.exteriorPower.ιMulti k n u = c • _root_.exteriorPower.ιMulti k n v) :
-    Submodule.span k (Set.range u) ≤ Submodule.span k (Set.range v) := by
-  rw [Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  have h0 : _root_.ExteriorAlgebra.ι k (u i) *
-      (_root_.exteriorPower.ιMulti k n u : ExteriorAlgebra k M) = 0 :=
-    (mem_span_range_iff_ι_mul_ιMulti_eq_zero hu (u i)).mp (Submodule.subset_span ⟨i, rfl⟩)
-  rw [h, Submodule.coe_smul, mul_smul_comm, smul_eq_zero] at h0
-  exact (mem_span_range_iff_ι_mul_ιMulti_eq_zero hv (u i)).mpr (h0.resolve_left hc)
-
-/-- If the exterior product of `u` is a nonzero scalar multiple of that of a linearly independent
-family `v`, then `u` is linearly independent and spans the same subspace as `v`. -/
-theorem span_range_eq_of_ιMulti_eq_smul {n : ℕ} {u v : Fin n → M} {c : k}
-    (hv : LinearIndependent k v) (hc : c ≠ 0)
-    (h : _root_.exteriorPower.ιMulti k n u = c • _root_.exteriorPower.ιMulti k n v) :
-    LinearIndependent k u ∧ Submodule.span k (Set.range u) = Submodule.span k (Set.range v) := by
-  have hu : LinearIndependent k u := by
-    rw [← _root_.exteriorPower.ιMulti_ne_zero_iff u, h]
-    exact smul_ne_zero hc ((_root_.exteriorPower.ιMulti_ne_zero_iff v).mpr hv)
-  refine ⟨hu, le_antisymm (span_range_le_of_ιMulti_eq_smul hu hv hc h) ?_⟩
-  exact span_range_le_of_ιMulti_eq_smul hv hu (inv_ne_zero hc) (by rw [h, inv_smul_smul₀ hc])
-
-end Field
-
-end SpanAndBasis
-
 section FlagSpace
 
 variable (R : Type u) (M : Type v) [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- Auxiliary bundle carrying `FlagSpace R M d` together with its `R`-module instances. -/
-@[expose]
-def flagSpaceAux : ℕ → Σ (V : Type (max u v)), Σ (_ : AddCommGroup V), Module R V
+private def flagSpaceAux : ℕ → Σ (V : Type (max u v)), Σ (_ : AddCommGroup V), Module R V
   | 0 => ⟨⋀[R]^0 M, inferInstance, inferInstance⟩
   | r + 1 =>
       let _ : AddCommGroup (flagSpaceAux r).1 := (flagSpaceAux r).2.1
@@ -171,25 +92,25 @@ def flagSpaceAux : ℕ → Σ (V : Type (max u v)), Σ (_ : AddCommGroup V), Mod
 
 /-- The iterated exterior-power tensor space `⋀⁰ M ⊗ ⋀¹ M ⊗ ⋯ ⊗ ⋀ᵈ M` hosting the Plücker--Segre
 embedding of `d`-step flags in `M`. -/
-@[expose]
 def FlagSpace (d : ℕ) : Type (max u v) :=
   (flagSpaceAux R M d).1
 
 /-- Additive commutative group structure on `FlagSpace R M d`. -/
-instance instAddCommGroupFlagSpace (d : ℕ) : AddCommGroup (FlagSpace R M d) :=
+@[no_expose] noncomputable instance instAddCommGroupFlagSpace (d : ℕ) :
+    AddCommGroup (FlagSpace R M d) :=
   (flagSpaceAux R M d).2.1
 
 /-- `R`-module structure on `FlagSpace R M d`. -/
-instance instModuleFlagSpace (d : ℕ) : Module R (FlagSpace R M d) :=
+@[no_expose] noncomputable instance instModuleFlagSpace (d : ℕ) : Module R (FlagSpace R M d) :=
   (flagSpaceAux R M d).2.2
 
 /-- Canonical linear equivalence `FlagSpace R M 0 ≃ₗ[R] ⋀[R]^0 M`. -/
-def flagSpaceZeroEquiv : FlagSpace R M 0 ≃ₗ[R] ⋀[R]^0 M :=
+noncomputable def flagSpaceZeroEquiv : FlagSpace R M 0 ≃ₗ[R] ⋀[R]^0 M :=
   LinearEquiv.refl R (⋀[R]^0 M)
 
 /-- Canonical linear equivalence
 `FlagSpace R M (r + 1) ≃ₗ[R] FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M`. -/
-def flagSpaceSuccEquiv (r : ℕ) :
+noncomputable def flagSpaceSuccEquiv (r : ℕ) :
     FlagSpace R M (r + 1) ≃ₗ[R] FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M :=
   LinearEquiv.refl R (FlagSpace R M r ⊗[R] ⋀[R]^(r + 1) M)
 
@@ -392,19 +313,6 @@ theorem mem_homogeneousSubmodule_of_mem_exteriorFlagForms {d : ℕ}
     s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R (FlagSpace R M d)) 2 :=
   hs.1
 
-private theorem lift_eval_map_dualMap {V W : Type*} [AddCommGroup V] [Module R V]
-    [AddCommGroup W] [Module R W] (f : V →ₗ[R] W) (v : V)
-    (s : _root_.SymmetricAlgebra R (Module.Dual R W)) :
-    _root_.SymmetricAlgebra.lift (Module.Dual.eval R V v)
-        (_root_.SymmetricAlgebra.map R f.dualMap s) =
-      _root_.SymmetricAlgebra.lift (Module.Dual.eval R W (f v)) s := by
-  have hhom : (_root_.SymmetricAlgebra.lift (Module.Dual.eval R V v)).comp
-      (_root_.SymmetricAlgebra.map R f.dualMap) =
-      _root_.SymmetricAlgebra.lift (Module.Dual.eval R W (f v)) := by
-    ext φ
-    simp
-  exact AlgHom.congr_fun hhom s
-
 /-- If a linear map `p` sends `exteriorFlagCone` into `exteriorFlagCone`, pulling back along
 `p.dualMap` sends `exteriorFlagForms` into `exteriorFlagForms`. -/
 theorem map_dualMap_mem_exteriorFlagForms {N : Type w} [AddCommGroup N] [Module R N]
@@ -414,7 +322,7 @@ theorem map_dualMap_mem_exteriorFlagForms {N : Type w} [AddCommGroup N] [Module 
     (hs : s ∈ exteriorFlagForms R N d₂) :
     _root_.SymmetricAlgebra.map R p.dualMap s ∈ exteriorFlagForms R M d₁ :=
   ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule p.dualMap hs.1, fun w hw ↦ by
-    rw [lift_eval_map_dualMap]
+    rw [_root_.SymmetricAlgebra.lift_eval_map_dualMap]
     exact hs.2 (p w) (hp w hw)⟩
 
 end ConeDefinitions
@@ -496,14 +404,6 @@ private theorem exists_tmul_of_forall_exteriorFlagForms {r : ℕ} {w : FlagSpace
     ring⟩
   simpa [s, ι, δ, sub_eq_zero] using hw s hs
 
-private theorem ι_mul_ιMulti_eq_zero_of_mem_span {n : ℕ} {v : Fin n → M} {y : M}
-    (hy : y ∈ Submodule.span k (Set.range v)) :
-    _root_.ExteriorAlgebra.ι k y *
-      (_root_.exteriorPower.ιMulti k n v : ExteriorAlgebra k M) = 0 := by
-  by_cases hv : LinearIndependent k v
-  · exact (mem_span_range_iff_ι_mul_ιMulti_eq_zero hv y).mp hy
-  · simp [(_root_.exteriorPower.ιMulti k n).map_linearDependent v hv]
-
 section FiniteDimensional
 
 variable [FiniteDimensional k M]
@@ -536,7 +436,7 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
     ⟨TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
         (bilinearToQuadForm_mem_homogeneousSubmodule B), by
       rintro _ ⟨c, v, rfl⟩
-      rw [lift_eval_map_dualMap, lift_eval_bilinearToQuadForm]
+      rw [_root_.SymmetricAlgebra.lift_eval_map_dualMap, lift_eval_bilinearToQuadForm]
       have hpv : p₂ (c • exteriorFlagVector k (r + 1) v) =
           (c * φ₀ (exteriorFlagVector k r (v ∘ Fin.castSucc))) •
             _root_.exteriorPower.ιMulti k (r + 1) v := by
@@ -546,7 +446,7 @@ private theorem decomposable_of_forall_exteriorFlagForms {r : ℕ}
       rw [_root_.exteriorPower.ιMulti_apply_coe,
         _root_.exteriorPower.ι_contract_mul_ιMulti_eq_zero, map_zero, smul_zero, smul_zero]⟩
   have hval := hw s hs
-  rwa [lift_eval_map_dualMap, hp₂, lift_eval_bilinearToQuadForm] at hval
+  rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₂, lift_eval_bilinearToQuadForm] at hval
 
 private noncomputable def incidenceDual {m : ℕ}
     (η : ⋀[k]^m (Module.Dual k M)) (φ : Module.Dual k (FlagSpace k M m))
@@ -573,12 +473,11 @@ private theorem incidenceDual_exteriorFlagVector_eq_zero {m : ℕ}
       Submodule.span k (Set.range v) :=
     Submodule.span_mono (Set.range_comp_subset_range _ _)
       (_root_.exteriorPower.contract_ιMulti_mem_span η (v ∘ Fin.castSucc))
-  change incidenceDual η φ ξ (exteriorFlagVector k ((m + 1) + 1) v) = 0
   simp only [incidenceDual, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    flagSpaceSuccEquiv_exteriorFlagVector, TensorProduct.lift.tmul, LinearMap.mk₂_apply,
-    TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.lid_tmul, map_smul, smul_mul_assoc]
-  rw [_root_.exteriorPower.ιMulti_apply_coe, ← _root_.exteriorPower.ιMulti_apply_coe,
-    ι_mul_ιMulti_eq_zero_of_mem_span hmem, map_zero, smul_zero]
+    flagSpaceSuccEquiv_exteriorFlagVector (r := m + 1), flagSpaceSuccEquiv_exteriorFlagVector,
+    TensorProduct.lift.tmul, LinearMap.mk₂_apply, TensorProduct.map_tmul, LinearMap.id_apply,
+    TensorProduct.lid_tmul, map_smul, smul_mul_assoc]
+  rw [_root_.exteriorPower.ι_mul_ιMulti_eq_zero_of_mem_span hmem, map_zero, smul_zero]
 
 private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fin r → M}
     {v₀ : Fin (r + 1) → M} (hc₀ : c₀ ≠ 0) (hu : LinearIndependent k u)
@@ -640,17 +539,17 @@ private theorem mem_exteriorFlagCone_succ_of_span_le {r : ℕ} {c₀ : k} {u : F
     rintro _ ⟨i, rfl⟩
     refine i.lastCases ?_ fun i₀ ↦ ?_
     · rw [SetLike.mem_coe]
-      change Fin.snoc (α := fun _ ↦ M) u (v₀ j) (Fin.last r) ∈ _
+      dsimp only [v]
       rw [Fin.snoc_last]
       exact Submodule.subset_span ⟨j, rfl⟩
     · rw [SetLike.mem_coe]
-      change Fin.snoc (α := fun _ ↦ M) u (v₀ j) i₀.castSucc ∈ _
+      dsimp only [v]
       rw [Fin.snoc_castSucc]
       exact hle (Submodule.subset_span ⟨i₀, rfl⟩)
   have hv_span : Submodule.span k (Set.range v) = Submodule.span k (Set.range v₀) :=
     Submodule.eq_of_le_of_finrank_eq hv_le
       (by rw [finrank_span_eq_card hv, finrank_span_eq_card hv₀])
-  obtain ⟨c₁, hc₁⟩ := exists_units_smul_ιMulti_of_span_eq hv₀ hv hv_span.symm
+  obtain ⟨c₁, hc₁⟩ := _root_.exteriorPower.exists_units_smul_ιMulti_of_span_eq hv₀ hv hv_span.symm
   refine ⟨c₀ * c₁, v, ?_⟩
   apply (flagSpaceSuccEquiv k M r).injective
   have hcast : v ∘ Fin.castSucc = u := funext fun x ↦ by simp [v]
@@ -690,7 +589,7 @@ theorem mem_exteriorFlagCone_iff {d : ℕ} (w : FlagSpace k M d) :
       have hval := hw _ (map_dualMap_mem_exteriorFlagForms hp₁_cone hs₀)
       have hp₁w : p₁ ((flagSpaceSuccEquiv k M r).symm (w_r ⊗ₜ[k] θ)) = w_r := by
         simp [p₁, ψ₀, inv_mul_cancel₀ hψ']
-      rwa [lift_eval_map_dualMap, hp₁w] at hval
+      rwa [_root_.SymmetricAlgebra.lift_eval_map_dualMap, hp₁w] at hval
     obtain ⟨c₀, u, rfl⟩ := hw_r_cone
     have hc₀ : c₀ ≠ 0 := fun h ↦ hw_r0 (by simp [h])
     have hu : LinearIndependent k u :=
@@ -729,7 +628,7 @@ private theorem mem_span_prefix_of_exteriorFlagVector_eq_smul {d : ℕ} {u v : F
       exact smul_ne_zero hc (exteriorFlagVector_ne_zero_iff.mpr hv)
     obtain ⟨a, ha₁, ha₂⟩ := TensorProduct.exists_units_smul_of_tmul_eq_tmul h'.symm hne
     refine j.lastCases ?_ fun i ↦ ?_
-    · have hspan := (span_range_eq_of_ιMulti_eq_smul hv a.ne_zero
+    · have hspan := (_root_.exteriorPower.span_range_eq_of_ιMulti_eq_smul hv a.ne_zero
         (by rw [ha₂, Units.smul_def])).2
       have hrange : Set.range (v ∘ Fin.castLE (Fin.last r).isLt) = Set.range v := by
         ext x

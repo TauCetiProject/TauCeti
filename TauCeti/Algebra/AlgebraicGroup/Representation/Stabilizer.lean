@@ -11,10 +11,15 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
+public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.HopfAlgebra.Antipode
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.RingTheory.HopfAlgebra.Quotient
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 import TauCeti.LinearAlgebra.TensorProduct.Separation
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # The stabilizer of a subspace of a representation
@@ -45,6 +50,15 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
   rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
 * `Submodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `W` is a subcomodule.
+* `Submodule.stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict`:
+  `W.stabilizerHopfIdeal H ≤ J` exactly when `W` is a subcomodule under corestriction to
+  `H ⧸ J.toIdeal`.
+* `Submodule.stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff`: recovering
+  `W.stabilizerHopfIdeal H = I` from the point functor on all value algebras.
+* `Submodule.stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff`: recovering equality of two
+  stabilizer Hopf ideals from agreement on all value algebras.
+* `Submodule.stabilizerHopfIdeal_map_transport`: transporting a comodule along a linear equivalence
+  preserves subspace stabilizer Hopf ideals.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
   `W` under the differentiated representation.
 
@@ -59,7 +73,7 @@ public section
 open scoped TensorProduct
 open TauCeti
 
-universe u v w
+universe u v w w₁ w₂
 
 noncomputable section
 
@@ -336,6 +350,86 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
     W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
+/-- A subspace `W` of an `H`-comodule `M` has stabilizer Hopf ideal at most `J` if and only if `W`
+is the underlying submodule of an `(H ⧸ J.toIdeal)`-subcomodule under corestriction. -/
+theorem stabilizerHopfIdeal_le_iff_exists_subcomodule_corestrict
+    (W : Submodule k M) (J : HopfIdeal k H) :
+    W.stabilizerHopfIdeal H ≤ J ↔
+      (letI : Comodule k (H ⧸ J.toIdeal) M :=
+        Comodule.Corestrict
+          (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) J).hom.toCoalgHom
+       ∃ N : Subcomodule k (H ⧸ J.toIdeal) M, N.toSubmodule = W) := by
+  let q := (CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of k H) J).hom
+  let _ : Comodule k (H ⧸ J.toIdeal) M := Comodule.Corestrict q.toCoalgHom
+  have hbot : W.stabilizerHopfIdeal H ≤ J ↔ W.stabilizerHopfIdeal (H ⧸ J.toIdeal) = ⊥ := by
+    rw [Submodule.stabilizerHopfIdeal_le_iff, eq_bot_iff, Submodule.stabilizerHopfIdeal_le_iff]
+    refine forall_congr' fun ψ ↦ forall₂_congr fun w _ ↦ ?_
+    rw [CoalgHom.matrixCoefficient_corestrict, HopfIdeal.mem_bot]
+    exact (CommHopfAlgCat.mkQuotient_eq_zero_iff (_root_.CommHopfAlgCat.of k H) J _).symm
+  rw [hbot, Submodule.stabilizerHopfIdeal_eq_bot_iff]
+  exact ⟨fun h ↦ ⟨Subcomodule.ofSubmodule W h, rfl⟩,
+    by rintro ⟨N, rfl⟩ w hw; exact N.coact_mem hw⟩
+
+/-- A subspace `W` of a comodule has stabilizer Hopf ideal `I` when every `H`-point in the universe
+of `H` lies in the `I`-quotient points subgroup if and only if it stabilizes `W`. -/
+theorem stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff
+    (W : Submodule k M) (I : HopfIdeal k H)
+    (h : ∀ (A : Type v) [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)),
+      g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) I
+          (CommAlgCat.of k A) ↔
+        (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A) :
+    W.stabilizerHopfIdeal H = I := by
+  refine HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
+    (H := _root_.CommHopfAlgCat.of k H) fun A ↦ ?_
+  ext g
+  have hA := h A g
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hA
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hA, ← W.stabilizerHopfIdeal_le_ker_iff g]
+  exact ⟨fun hg _ hx ↦ hg _ hx, fun hg _ hx ↦ hg hx⟩
+
 end Hopf
+
+section Comparison
+
+variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H]
+
+/-- Two subspaces of comodules have the same stabilizer Hopf ideal when every `H`-point in the
+universe of `H` stabilizes the scalar extension of one if and only if it stabilizes that of the
+other. -/
+theorem stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff
+    {M₁ : Type w₁} {M₂ : Type w₂} [AddCommGroup M₁] [Module k M₁] [Comodule k H M₁]
+    [AddCommGroup M₂] [Module k M₂] [Comodule k H M₂]
+    (W₁ : Submodule k M₁) (W₂ : Submodule k M₂)
+    (h : ∀ (A : Type v) [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)),
+      (W₁.baseChange A).map (Comodule.endOfPoint M₁ g.ofConv) = W₁.baseChange A ↔
+        (W₂.baseChange A).map (Comodule.endOfPoint M₂ g.ofConv) = W₂.baseChange A) :
+    W₁.stabilizerHopfIdeal H = W₂.stabilizerHopfIdeal H :=
+  stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff W₁ (W₂.stabilizerHopfIdeal H)
+    fun A _ _ g ↦ by
+      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, h A g,
+        ← W₂.stabilizerHopfIdeal_le_ker_iff g]
+      exact ⟨fun hg _ hx ↦ hg _ hx, fun hg _ hx ↦ hg hx⟩
+
+/-- Transporting a comodule along a linear equivalence preserves subspace stabilizer Hopf ideals. -/
+theorem stabilizerHopfIdeal_map_transport
+    {M : Type w₁} {N : Type w₂} [AddCommGroup M] [Module k M] [Comodule k H M]
+    [AddCommGroup N] [Module k N] (W : Submodule k M) (e : M ≃ₗ[k] N) :
+    (letI : Comodule k H N := Comodule.Transport (R := k) (C := H) e
+     (W.map e.toLinearMap).stabilizerHopfIdeal H) = W.stabilizerHopfIdeal H := by
+  let _ : Comodule k H N := Comodule.Transport (R := k) (C := H) e
+  refine stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff (W.map e.toLinearMap) W
+    fun A _ _ g ↦ ?_
+  have hcomp : Comodule.endOfPoint N g.ofConv ∘ₗ e.toLinearMap.baseChange A =
+      e.toLinearMap.baseChange A ∘ₗ Comodule.endOfPoint M g.ofConv := by
+    simpa only [Comodule.transportToHom_toLinearMap] using
+      (Comodule.baseChange_comp_endOfPoint
+        (Comodule.transportToHom (R := k) (C := H) e) g.ofConv).symm
+  have hinj : Function.Injective (e.toLinearMap.baseChange A) :=
+    (e.baseChange k A).injective
+  rw [Submodule.baseChange_map, ← Submodule.map_comp, hcomp, Submodule.map_comp]
+  exact (Submodule.map_injective_of_injective hinj).eq_iff
+
+end Comparison
 
 end Submodule
