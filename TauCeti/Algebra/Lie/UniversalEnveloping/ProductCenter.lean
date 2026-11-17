@@ -102,6 +102,7 @@ variable (R : Type u) [CommRing R]
 variable (Z : Type v) [LieRing Z] [LieAlgebra R Z] [IsLieAbelian Z]
 variable (S : Type w) [LieRing S] [LieAlgebra R S]
 
+local notation "UZ" => _root_.UniversalEnvelopingAlgebra R Z
 local notation "US" => _root_.UniversalEnvelopingAlgebra R S
 local notation "UP" => _root_.UniversalEnvelopingAlgebra R (Z × S)
 
@@ -135,7 +136,7 @@ theorem productEnveloping_ι (x : Z × S) :
 /-- On the abelian factor inclusion, `productEnveloping` is the inverse abelian comparison
 tensored with one. -/
 @[simp]
-theorem productEnveloping_map_inl (a : _root_.UniversalEnvelopingAlgebra R Z) :
+theorem productEnveloping_map_inl (a : UZ) :
     productEnveloping R Z S (map R (LieHom.inl R Z S) a) =
       (symmetricAlgebraEquiv R Z).symm a ⊗ₜ[R] (1 : US) := by
   rw [productEnveloping, AlgEquiv.trans_apply, prodEquivTensor_map_inl,
