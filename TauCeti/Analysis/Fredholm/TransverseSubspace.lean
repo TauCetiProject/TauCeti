@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.ClosedRange
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.InnerProductSpace.QuotientRange
 import TauCeti.Analysis.Normed.Operator.QuotientRange
 
 /-!
@@ -30,40 +30,43 @@ space and `T₀(V)` is closed. The general restricted-coproduct API for
   (`continuous_coprod_domRestrict`, `isInvertible_coprod_domRestrict`,
   `eventually_nhds_isInvertible_coprod_domRestrict`) live in
   `TauCeti.Analysis.Normed.Operator.QuotientRange`.
+* Hilbert-space orthogonal specializations — the general orthogonal coproduct
+  (`isInvertible_coprod_domRestrict_orthogonal`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal`), the Atiyah–Singer
+  finite-dimensional transverse-subspace lemma
+  (`isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional`), and the
+  closed-range orthogonal-kernel specialization (`isInvertible_coprod_domRestrict_orthogonal_ker`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_ker`) — live in
+  `TauCeti.Analysis.InnerProductSpace.QuotientRange`.
 
-This file specializes that mechanism in two complementary regimes:
+This file specializes that mechanism in the two Fredholm / finite-codimension regimes:
 
 1. **Finite-codimension `V` (`[V.CoFG]`, `[FiniteDimensional 𝕜 W]`)**: invertibility of
    `(T.domRestrict V).coprod W.subtypeL` implies the dimension bounds
    `finrank 𝕜 T.ker ≤ finrank 𝕜 (E ⧸ V)` and `finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 W`, the index
    formula `T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W`, and — when `V` is closed in a
    topological vector space over a complete scalar field — `T.IsFredholm`.
-2. **Hilbert-target transverse coproducts**:
-   * **Finite-dimensional `V`** (Atiyah–Singer I, §6, pp. 519–520): if `V` is finite-dimensional
-     and `Disjoint V T₀.ker`, then `V` and `T₀(V)` are automatically complete, so
-     `(T.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` is invertible at `T₀` and on a neighborhood of
-     `T₀` (`eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional`).
-   * **Finite-codimension `T₀(V)`**: completeness of `V` and `[(V.map T₀).CoFG]` automatically
-     force `T₀(V)` to be closed
-     (`eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG`).
-   * **Closed-range operators between Hilbert spaces**: taking `V = (ker T₀)ᗮ` and `W = ker T₀†`
-     gives neighborhood invertibility of `(T.domRestrict T₀.kerᗮ).coprod (T₀†).ker.subtypeL`
-     (`eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_ker`).
+2. **Finite-codimension image in a Hilbert target (`[(V.map T₀).CoFG]`)**: completeness of `V` and
+   finite codimension of `T₀(V)` automatically force `T₀(V)` to be closed via
+   `ContinuousLinearMap.isClosed_range_of_finite_coker`, yielding basepoint invertibility and
+   neighborhood stability of `(T.domRestrict V).coprod (T₀(V))ᗮ.subtypeL`
+   (`isInvertible_coprod_domRestrict_orthogonal_of_coFG`,
+   `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG`).
 
 ## Main declarations
 
-* `ContinuousLinearMap.finrank_ker_le_of_isInvertible_coprod_domRestrict`,
-  `ContinuousLinearMap.finrank_quotient_range_le_of_isInvertible_coprod_domRestrict`,
-  `ContinuousLinearMap.index_eq_of_isInvertible_coprod_domRestrict`,
-  `ContinuousLinearMap.isFredholm_of_isInvertible_coprod_domRestrict`: defect bounds, index
-  formula, and Fredholmness in the finite-codimension regime.
-* In `ContinuousLinearMap`: `isInvertible_coprod_domRestrict_orthogonal`,
-  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal`,
-  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional`,
-  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG`, and
-  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_ker`:
-  orthogonal, finite-dimensional, finite-codimension, and orthogonal-kernel transverse coproduct
-  stability on Hilbert spaces.
+In `ContinuousLinearMap`:
+
+* `finrank_ker_le_of_isInvertible_coprod_domRestrict`,
+  `finrank_quotient_range_le_of_isInvertible_coprod_domRestrict`,
+  `index_eq_of_isInvertible_coprod_domRestrict`,
+  `isFredholm_of_isInvertible_coprod_domRestrict`: defect bounds, index formula, and Fredholmness
+  in the finite-codimension regime.
+* `isInvertible_coprod_domRestrict_orthogonal_of_coFG`,
+  `eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG`: basepoint invertibility and
+  neighborhood stability of the orthogonal restricted coproduct when `T₀(V)` has finite codimension
+  in a Hilbert space `F`.
 
 ## References
 
@@ -74,10 +77,7 @@ This file specializes that mechanism in two complementary regimes:
 
 public section
 
-noncomputable section
-
-open Filter Function Module Submodule Topology
-open scoped InnerProduct
+open Filter Function Module Topology
 
 namespace ContinuousLinearMap
 
@@ -164,49 +164,13 @@ theorem isFredholm_of_isInvertible_coprod_domRestrict
 
 end FiniteCodimension
 
-/-! ### Hilbert-target transverse coproducts -/
+/-! ### Finite-codimension orthogonal coproducts -/
 
 section HilbertCodomain
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-
-/-- When `V` is complete, `T₀(V)` admits an orthogonal projection in `F`, and `Disjoint V T₀.ker`,
-the Hilbert transverse coproduct `(T₀.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` is invertible. -/
-theorem isInvertible_coprod_domRestrict_orthogonal {T₀ : E →L[𝕜] F} {V : Submodule 𝕜 E}
-    [CompleteSpace V] [(V.map (T₀ : E →ₗ[𝕜] F)).HasOrthogonalProjection]
-    (hdisj : Disjoint V T₀.ker) :
-    ((T₀.domRestrict V).coprod (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL).IsInvertible :=
-  isInvertible_coprod_domRestrict (V.map (T₀ : E →ₗ[𝕜] F)).isCompl_orthogonal hdisj
-
-/-- Under the hypotheses of `isInvertible_coprod_domRestrict_orthogonal`,
-`(T.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` is invertible throughout a neighborhood of `T₀`. -/
-theorem eventually_nhds_isInvertible_coprod_domRestrict_orthogonal {T₀ : E →L[𝕜] F}
-    {V : Submodule 𝕜 E} [CompleteSpace V] [(V.map (T₀ : E →ₗ[𝕜] F)).HasOrthogonalProjection]
-    (hdisj : Disjoint V T₀.ker) :
-    ∀ᶠ T in 𝓝 T₀, ((T.domRestrict V).coprod (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL).IsInvertible :=
-  eventually_nhds_isInvertible_coprod_domRestrict
-    (V.map (T₀ : E →ₗ[𝕜] F)).isCompl_orthogonal hdisj
-
-/-- Basepoint invertibility of `(T₀.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` for a
-finite-dimensional subspace `V` disjoint from `ker T₀`. -/
-theorem isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional {T₀ : E →L[𝕜] F}
-    {V : Submodule 𝕜 E} [FiniteDimensional 𝕜 V] (hdisj : Disjoint V T₀.ker) :
-    ((T₀.domRestrict V).coprod (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL).IsInvertible := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
-  have : FiniteDimensional 𝕜 (V.map (T₀ : E →ₗ[𝕜] F)) := Module.Finite.map V (T₀ : E →ₗ[𝕜] F)
-  have : CompleteSpace (V.map (T₀ : E →ₗ[𝕜] F)) := FiniteDimensional.completeSpace 𝕜 _
-  exact isInvertible_coprod_domRestrict_orthogonal hdisj
-
-/-- **Atiyah–Singer finite-dimensional transverse-subspace lemma.** If `V ≤ E` is
-finite-dimensional and `Disjoint V T₀.ker`, then `(T.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` is
-invertible for every `T` in an operator-norm neighborhood of `T₀`. -/
-theorem eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional
-    {T₀ : E →L[𝕜] F} {V : Submodule 𝕜 E} [FiniteDimensional 𝕜 V] (hdisj : Disjoint V T₀.ker) :
-    ∀ᶠ T in 𝓝 T₀, ((T.domRestrict V).coprod (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL).IsInvertible :=
-  (continuous_coprod_domRestrict V _).tendsto T₀ |>.eventually
-    (isInvertible_coprod_domRestrict_orthogonal_of_finiteDimensional hdisj).eventually_nhds
 
 /-- Basepoint invertibility of `(T₀.domRestrict V).coprod (T₀(V))ᗮ.subtypeL` when `V` is complete,
 `T₀(V)` has finite codimension in `F`, and `Disjoint V T₀.ker` (closedness of `T₀(V)` is
@@ -235,35 +199,4 @@ theorem eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_of_coFG {T₀
 
 end HilbertCodomain
 
-section Hilbert
-
-variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-
-/-- For a closed-range operator `T₀ : E →L[𝕜] F` between Hilbert spaces, the restricted coproduct
-`(T₀.domRestrict T₀.kerᗮ).coprod (T₀†).ker.subtypeL` is invertible. -/
-theorem isInvertible_coprod_domRestrict_orthogonal_ker {T₀ : E →L[𝕜] F}
-    (hT₀ : IsClosed (T₀.range : Set F)) :
-    ((T₀.domRestrict T₀.kerᗮ).coprod (T₀†).ker.subtypeL).IsInvertible := by
-  let : CompleteSpace T₀.range := hT₀.isComplete.completeSpace_coe
-  have hCompl : IsCompl (T₀.kerᗮ.map (T₀ : E →ₗ[𝕜] F)) (T₀†).ker := by
-    rw [LinearMap.map_orthogonal_ker_eq_range, ← T₀.orthogonal_range]
-    exact T₀.range.isCompl_orthogonal
-  exact isInvertible_coprod_domRestrict hCompl T₀.ker.isCompl_orthogonal.symm.disjoint
-
-/-- **Orthogonal-kernel transverse coproduct stability.** For any closed-range operator
-`T₀ : E →L[𝕜] F` between Hilbert spaces (in particular any Fredholm operator via
-`IsFredholm.isClosed_range`), `(T.domRestrict T₀.kerᗮ).coprod (T₀†).ker.subtypeL` remains
-invertible for every `T` in an operator-norm neighborhood of `T₀`. -/
-theorem eventually_nhds_isInvertible_coprod_domRestrict_orthogonal_ker {T₀ : E →L[𝕜] F}
-    (hT₀ : IsClosed (T₀.range : Set F)) :
-    ∀ᶠ T in 𝓝 T₀, ((T.domRestrict T₀.kerᗮ).coprod (T₀†).ker.subtypeL).IsInvertible :=
-  (continuous_coprod_domRestrict T₀.kerᗮ (T₀†).ker).tendsto T₀ |>.eventually
-    (isInvertible_coprod_domRestrict_orthogonal_ker hT₀).eventually_nhds
-
-end Hilbert
-
 end ContinuousLinearMap
-
-end
