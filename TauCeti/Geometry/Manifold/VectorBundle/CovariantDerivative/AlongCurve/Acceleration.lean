@@ -221,6 +221,13 @@ theorem acceleration_comp_const_sub (d t : 𝕜) :
   rw [acceleration_def, hv, alongCurve_const_smul,
     alongCurve_comp_const_sub, neg_smul, one_smul, neg_neg, acceleration_def]
 
+/-- Translating the parameter preserves covariant acceleration without regularity assumptions. -/
+theorem acceleration_comp_add_const (a t : 𝕜) :
+    acceleration cov (fun r ↦ γ (r + a)) t = acceleration cov γ (t + a) := by
+  have hv : curveVelocity I (fun r ↦ γ (r + a)) = fun r ↦ curveVelocity I γ (r + a) :=
+    funext fun r ↦ curveVelocity_comp_add_right (I := I) γ r a
+  rw [acceleration_def, hv, alongCurve_comp_add_const, acceleration_def]
+
 end Basic
 
 section Germ
