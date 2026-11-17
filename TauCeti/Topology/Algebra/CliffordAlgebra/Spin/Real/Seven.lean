@@ -64,12 +64,9 @@ namespace TauCeti
 
 /-- A Spin element `±e_s` of the negative-definite model, for an even support `s`, acts on the
 coordinate vector of index `k` by `-1` when `k ∈ s` and by `1` otherwise. -/
-private theorem spinVectorAction_single_of_coe_eq {g : realCliffordSpinGroup 0 7}
+private theorem spinVectorAction_single_of_isSignedBasis {g : realCliffordSpinGroup 0 7}
     {s : Finset (Fin (0 + 7))} (hs : Even s.card)
-    (hg : (g : CliffordAlgebra (realCliffordForm 0 7)) =
-        basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s ∨
-      (g : CliffordAlgebra (realCliffordForm 0 7)) =
-        -basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s) (k : Fin (0 + 7)) :
+    (hg : IsSignedBasis g s) (k : Fin (0 + 7)) :
     spinVectorAction (realCliffordForm 0 7) g (Pi.single k 1) =
       (if k ∈ s then -1 else 1 : ℝ) • Pi.single k 1 := by
   refine spinVectorAction_eq_of_mul_ι_eq _ g ?_
@@ -109,41 +106,25 @@ private theorem ActsBySign.repr_apply {x : realCliffordSpinGroup 7 0} {s : Finse
     rcases eq_or_ne j k with rfl | hjk
     · rfl
     · simp [hjk]
-  have hw := LinearMap.congr_fun h w
-  rwa [LinearMap.comp_apply, LinearMap.smul_apply, Module.Basis.coord_apply,
-    Module.Basis.coord_apply, smul_eq_mul, LinearEquiv.coe_coe] at hw
+  simpa [-ite_smul] using LinearMap.congr_fun h w
 
 /-- The image in `Spin(7)` of a Spin element `±e_s` of the negative-definite model acts by the
 sign character of `s`, for an even support `s`. -/
 private theorem actsBySign_realCliffordSpinGroupEquivNeg {g : realCliffordSpinGroup 0 7}
     {s : Finset (Fin (0 + 7))} (hs : Even s.card)
-    (hg : (g : CliffordAlgebra (realCliffordForm 0 7)) =
-        basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s ∨
-      (g : CliffordAlgebra (realCliffordForm 0 7)) =
-        -basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s) :
+    (hg : IsSignedBasis g s) :
     ActsBySign (realCliffordSpinGroupEquivNeg 0 7 g) s := fun k ↦ by
   rw [negBasis_apply, spinVectorAction_realCliffordSpinGroupEquivNeg,
-    spinVectorAction_single_of_coe_eq hs hg, map_smul]
+    spinVectorAction_single_of_isSignedBasis hs hg, map_smul]
 
 /-- For every support `s`, the elementary abelian subgroup of `Spin(7)` contains an element acting
 by the sign character of `s`. -/
 private theorem exists_mem_actsBySign {s : Finset (Fin (0 + 7))} (hs : s ∈ spinSevenSupports) :
     ∃ x ∈ realSpinSevenElementaryAbelian, ActsBySign x s := by
-  have heven := even_card_of_mem_spinSevenSupports hs
-  let g : realCliffordSpinGroup 0 7 :=
-    ⟨basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s,
-      basis_mem_spinGroup (isOrthoᵢ_associated_realCliffordForm 0 7) heven <| by
-        simp_rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _),
-          Finset.prod_const, heven.neg_one_pow]⟩
-  have hg : (g : CliffordAlgebra (realCliffordForm 0 7)) =
-        basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s ∨
-      (g : CliffordAlgebra (realCliffordForm 0 7)) =
-        -basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s :=
-    Or.inl rfl
-  refine ⟨_, mem_realSpinSevenElementaryAbelian_iff.2 ?_,
-    actsBySign_realCliffordSpinGroupEquivNeg heven hg⟩
-  rw [MulEquiv.symm_apply_apply]
-  exact mem_realSpinZeroSevenElementaryAbelian_iff.2 ⟨s, hs, hg⟩
+  obtain ⟨g, hg, hgs⟩ := exists_mem_isSignedBasis hs
+  exact ⟨realCliffordSpinGroupEquivNeg 0 7 g,
+    mem_realSpinSevenElementaryAbelian_iff.2 (by rwa [MulEquiv.symm_apply_apply]),
+    actsBySign_realCliffordSpinGroupEquivNeg (even_card_of_mem_spinSevenSupports hs) hgs⟩
 
 /-- A Spin element commuting with the elementary abelian subgroup preserves the line of the first
 transported coordinate vector, the joint `-1`-eigenspace of the three generators. -/
@@ -204,9 +185,9 @@ theorem not_realSpinSevenElementaryAbelian_le_of_le_centralizer
     have hcomm (x : realCliffordSpinGroup 7 0) (hx : x ∈ realSpinSevenElementaryAbelian) :
         Commute t x :=
       (Subgroup.mem_centralizer_iff.1 (hTc htT) x hx).symm
-    have h0' : negBasis.repr (spinVectorAction (realCliffordForm 7 0) t (negBasis 0)) 0 = 0 := h0
+    simp only [hφ] at h0
     have h := spinVectorAction_negBasis_zero_eq_smul hcomm
-    rw [h0', zero_smul, LinearEquiv.map_eq_zero_iff] at h
+    rw [h0, zero_smul, LinearEquiv.map_eq_zero_iff] at h
     exact negBasis.ne_zero 0 h
   -- It takes the value `1` at the identity and `-1` at the generator `e₀e₁e₂e₃`.
   obtain ⟨x, hxE, hx⟩ :=
