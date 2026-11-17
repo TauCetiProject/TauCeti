@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
 import TauCeti.FieldTheory.Kummer.Norm
-import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The Steinberg relation and skew symmetry of the norm-residue symbol
@@ -76,11 +75,9 @@ theorem normResidueSymbol_eq_one_of_add_eq_one {a b : Kˣ} (hab : (a : K) + b = 
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K (Algebra.normUnits K c))
   -- Since `N_{L/K} c ∈ N_{L/K}(Lˣ)`, `Art_K(N_{L/K} c)` acts trivially on `L = K(β)`.
-  have hτ1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 := by
-    have h0 := (localArtinMap_eq_zero_iff K L ι (Algebra.normUnits K c)).2
-      (normUnits_mem_normGroup K L c)
-    rwa [artinMap_restrict K L ι (Algebra.normUnits K c) σ hσ, ofMul_eq_zero,
-      ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff] at h0
+  have hτ1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 :=
+    (restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap K L ι
+      (Algebra.normUnits K c) σ hσ).2 (normUnits_mem_normGroup K L c)
   have hfix : absoluteGaloisGroupRestrictEquiv K σ (ι β) = ι β := by
     rw [← ι.restrictNormalHom_commutes, hτ1, AlgEquiv.one_apply]
   have hspec := normResidueSymbol_spec_separableClosure (Algebra.normUnits K c) b σ hσ (β := ι β)

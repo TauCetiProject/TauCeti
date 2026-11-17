@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Cyclic
-import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
 
 /-!
@@ -113,8 +112,7 @@ theorem normResidueSymbol_eq_one_iff_mem_normGroup_left {L : Type*} [Field L] [A
       have hval : algebraMap K L ((normResidueSymbol K n a b : Kˣ) : K) = 1 :=
         mul_right_cancel₀ hs0 (by simpa using hτ_apply.symm)
       exact Subtype.ext (Units.ext ((algebraMap K L).injective (by simpa using hval)))
-  rw [hsym, ← localArtinMap_eq_zero_iff K L ι a, artinMap_restrict K L ι a σ hσ, ofMul_eq_zero,
-    ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff]
+  exact hsym.trans (restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap K L ι a σ hσ)
 
 /-- **The norm criterion for a simple radical subfield, Artin argument.** For an `n`-th root `β` of
 `b` in an extension `E / K` with `K⟮β⟯` finite over `K` (automatic when `E / K` is algebraic),
@@ -319,8 +317,7 @@ theorem normGroup_kummerField_eq_normResidueOrthogonal {E : Type*} [Field E] [Al
       (K⟮y⟯.val.normGroup_le_normGroup ha)
   · let ι : M →ₐ[K] SeparableClosure K := IsSepClosed.lift
     obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K a)
-    rw [← localArtinMap_eq_zero_iff K M ι a, artinMap_restrict K M ι a σ hσ, ofMul_eq_zero,
-      ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff]
+    rw [← restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap K M ι a σ hσ]
     refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top
       adjoin_pow_eq_algebraMap_kummerField_eq_top ?_
     rintro y ⟨b, hb, hy⟩
