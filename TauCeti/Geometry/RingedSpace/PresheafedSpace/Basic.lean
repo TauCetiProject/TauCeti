@@ -29,6 +29,8 @@ Mathlib's `AlgebraicGeometry.SheafedSpace.epi_of_base_surjective_of_stalk_mono`,
 
 * `AlgebraicGeometry.PresheafedSpace.ext_of_app`: morphisms of presheafed spaces agreeing on the
   underlying map and on sections over every open are equal.
+* `AlgebraicGeometry.PresheafedSpace.comp_c_app_apply`: on sections in a concrete category, the
+  section map of a composite morphism of presheafed spaces is the composite of the section maps.
 * `AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`: a morphism which is
   surjective on points and a monomorphism on sections over every open is an epimorphism.
 -/
@@ -50,6 +52,15 @@ theorem ext_of_app {α β : X ⟶ Y} (w : α.base = β.base)
     (h : ∀ U, α.c.app (op U) ≫ X.presheaf.map (eqToHom congr((Opens.map $w.symm).obj U)).op =
       β.c.app (op U)) : α = β :=
   PresheafedSpace.ext α β w <| TopCat.Presheaf.ext fun U ↦ by simpa using h U
+
+/-- On sections in a concrete category, the section map of a composite morphism of presheafed spaces
+is the composite of the section maps. -/
+theorem comp_c_app_apply {FC : C → C → Type*} {CC : C → Type*}
+    [∀ R S, FunLike (FC R S) (CC R) (CC S)] [ConcreteCategory C FC]
+    {Z : PresheafedSpace.{_, _, w} C} (α : X ⟶ Y) (β : Y ⟶ Z)
+    (U : (Opens Z)ᵒᵖ) (s : ToType (Z.presheaf.obj U)) :
+    (α ≫ β).c.app U s = α.c.app (op ((Opens.map β.base).obj U.unop)) (β.c.app U s) :=
+  (ConcreteCategory.congr_hom (comp_c_app α β U) s).trans (ConcreteCategory.comp_apply _ _ s)
 
 /-- **A morphism of presheafed spaces which is surjective on points and a monomorphism on
 sections is an epimorphism.** -/

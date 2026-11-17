@@ -45,6 +45,8 @@ which apply to contractions of curves, are in `TauCeti.AlgebraicGeometry.Descent
 
 ## Main results
 
+* `AlgebraicGeometry.LocallyRingedSpace.comp_c_app_apply`: on sections, the section map of a
+  composite morphism of locally ringed spaces is the composite of the section maps.
 * `AlgebraicGeometry.LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono`: a morphism of
   locally ringed spaces which is surjective on points and a monomorphism on sections over every
   open is an epimorphism.
@@ -72,6 +74,13 @@ open CategoryTheory Opposite Topology TopologicalSpace
 namespace AlgebraicGeometry
 
 namespace LocallyRingedSpace
+
+/-- On sections over an open, the section map of a composite morphism of locally ringed spaces is
+the composite of the section maps. -/
+theorem comp_c_app_apply {X Y Z : LocallyRingedSpace} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (U : (Opens Z)ᵒᵖ) (s : Z.presheaf.obj U) :
+    (f ≫ g).c.app U s = f.c.app (op ((Opens.map g.base).obj U.unop)) (g.c.app U s) :=
+  PresheafedSpace.comp_c_app_apply f.toHom g.toHom U s
 
 /-- **A morphism of locally ringed spaces which is surjective on points and a monomorphism on
 sections is an epimorphism.** -/

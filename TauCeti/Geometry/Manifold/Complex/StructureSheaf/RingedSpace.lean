@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.AlgHom
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 import Mathlib.Tactic.TFAE
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 /-!
@@ -122,21 +123,6 @@ theorem locallyRingedSpace_hom_ext {W : LocallyRingedSpace}
     α = β :=
   LocallyRingedSpace.Hom.ext' (toPresheafedSpace_hom_ext w h)
 
-private theorem presheafedSpace_comp_c_app_apply
-    {A B C : PresheafedSpace CommRingCat} (φ : A ⟶ B) (ψ : B ⟶ C)
-    (U : Opens C) (s : C.presheaf.obj (op U)) :
-    ((φ ≫ ψ).c.app (op U)).hom s =
-      (φ.c.app (op ((Opens.map ψ.base).obj U))).hom ((ψ.c.app (op U)).hom s) := by
-  rw [PresheafedSpace.comp_c_app]
-  exact CommRingCat.comp_apply (ψ.c.app (op U)) (φ.c.app (op ((Opens.map ψ.base).obj U))) s
-
-private theorem locallyRingedSpace_comp_c_app_apply
-    {A B C : LocallyRingedSpace} (φ : A ⟶ B) (ψ : B ⟶ C)
-    (U : Opens C) (s : C.presheaf.obj (op U)) :
-    ((φ ≫ ψ).c.app (op U)).hom s =
-      (φ.c.app (op ((Opens.map ψ.base).obj U))).hom ((ψ.c.app (op U)).hom s) :=
-  presheafedSpace_comp_c_app_apply φ.toHom ψ.toHom U s
-
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
   {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
   {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] {H'' : Type*} [TopologicalSpace H'']
@@ -158,6 +144,8 @@ private theorem stalkMap_mk_homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω 
   exact (congrArg (fun k ↦ k.hom g) (homOfContMDiff_app I X f hf (op U))).trans
     (CommRingCat.ofHom_apply (precomp I X f hf (op U)) g)
 
+-- Exposed so `.base` reduces definitionally in the dependent types of the `.c` and `.stalkMap`
+-- component lemmas below (`homOfContMDiff` remains unexposed).
 /-- A complex analytic map `f : X → Y` induces a morphism of holomorphic locally ringed spaces. -/
 @[expose]
 def locallyRingedSpaceMap (f : X → Y) (hf : ContMDiff I J ω f) :
@@ -251,8 +239,8 @@ theorem locallyRingedSpaceMap_comp {f : X → Y} (hf : ContMDiff I J ω f)
     have h₃ := locallyRingedSpaceMap_c_app_apply g hg U s ⟨f x.1, x.2⟩
     exact h₁.trans <| h₃.symm.trans <| h₂.symm.trans <|
       congrArg (fun t ↦ toFun I X _ t x)
-        (locallyRingedSpace_comp_c_app_apply (locallyRingedSpaceMap f hf)
-          (locallyRingedSpaceMap g hg) U s).symm
+        (LocallyRingedSpace.comp_c_app_apply (locallyRingedSpaceMap f hf)
+          (locallyRingedSpaceMap g hg) (op U) s).symm
 
 /-- Inclusion of an open subset induces an open immersion of holomorphic locally ringed spaces. -/
 instance instIsOpenImmersionLocallyRingedSpaceMapSubtypeVal (U : Opens X) :
@@ -332,6 +320,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H) [I.Boundaryless]
   (X : Type) [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
 
+-- Exposed so `.hom.base` and `.inv.base` reduce definitionally in the dependent types of the
+-- `.c.app` and `.stalkMap` comparison lemmas below (`smoothSheafIso` remains unexposed).
 /-- On a finite-dimensional boundaryless complex manifold, the holomorphic locally ringed space is
 canonically isomorphic over the identity on `X` to Mathlib's complex-smooth locally ringed space
 `ChartedSpace.locallyRingedSpace I X`. -/
@@ -455,14 +445,14 @@ theorem locallyRingedSpaceMap_comp_smoothLocallyRingedSpaceIso_hom
       (smoothLocallyRingedSpaceIso I X).hom ≫
         ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp)) :=
   locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
-    have hL₁ := locallyRingedSpace_comp_c_app_apply
-      (locallyRingedSpaceMap f hf) (smoothLocallyRingedSpaceIso J Y).hom U s
+    have hL₁ := LocallyRingedSpace.comp_c_app_apply
+      (locallyRingedSpaceMap f hf) (smoothLocallyRingedSpaceIso J Y).hom (op U) s
     have hL₂ := locallyRingedSpaceMap_c_app_apply f hf U
       (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op U)).hom s) ⟨x.1, x.2⟩
     have hL₃ := smoothLocallyRingedSpaceIso_hom_c_app_apply J Y U s ⟨f x.1, x.2⟩
-    have hR₁ := locallyRingedSpace_comp_c_app_apply
+    have hR₁ := LocallyRingedSpace.comp_c_app_apply
       (smoothLocallyRingedSpaceIso I X).hom
-      (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) U s
+      (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) (op U) s
     have hR₂ := smoothLocallyRingedSpaceIso_hom_c_app_apply I X
       ((Opens.map (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).base).obj U)
       (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) x
@@ -674,7 +664,7 @@ theorem comp_c_app_algebraMap {E'' : Type*} [NormedAddCommGroup E''] [NormedSpac
     ((φ ≫ ψ).c.app (op U)).hom (algebraMap ℂ _ c) =
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj
         (op ((Opens.map (φ ≫ ψ).base).obj U))) c :=
-  (presheafedSpace_comp_c_app_apply φ ψ U (algebraMap ℂ _ c)).trans <|
+  (PresheafedSpace.comp_c_app_apply φ ψ (op U) (algebraMap ℂ _ c)).trans <|
     (congrArg _ (hψ U c)).trans (hφ ((Opens.map ψ.base).obj U) c)
 
 end CLinearity
