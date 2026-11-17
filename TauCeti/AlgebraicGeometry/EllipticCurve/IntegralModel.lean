@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Polynomial.IsIntegral
 
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.Field
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Changes of variables between integral models
@@ -20,10 +21,11 @@ elements of `K`. This file shows that when `R` is integrally closed in `K`, as s
 in `R` so do `D.r`, `D.s` and `D.t`, and hence that when `D.u` comes from a unit of `R`, `D` is the
 base change of a `VariableChange R`. Further facts about integral models sit beside it: over a
 domain with fraction field `K` every equation has an integral model, obtained by clearing a common
-denominator of the coefficients; a change of variables whose `u⁻¹`, `r`, `s` and `t` lie in `R`
-preserves integrality, and one defined over `R` acts on the integral model; integrality is
-inherited by a larger ring of a tower; and when `R → K` is injective the integral model is unique,
-and it commutes with base change along a map `R → S` compatible with `K → L`.
+denominator of the coefficients; a change of variables whose `u⁻¹`, `r`, `s` and `t` lie in `R` (or
+whose parameters approximate an integralising one in valuation) preserves integrality, and one
+defined over `R` acts on the integral model; integrality is inherited by a larger ring of a tower;
+and when `R → K` is injective the integral model is unique, and it commutes with base change along
+a map `R → S` compatible with `K → L`.
 
 ## Main results
 
@@ -37,6 +39,10 @@ and it commutes with base change along a map `R → S` compatible with `K → L`
   ring `R` with fraction field `K`.
 * `WeierstrassCurve.isIntegral_smul_of_exists_lift`: a change of variables whose `u⁻¹`, `r`, `s`
   and `t` lie in `R` preserves integrality.
+* `WeierstrassCurve.VariableChange.valuation_mul_inv_r_s_t_le_one` and
+  `WeierstrassCurve.isIntegral_smul_of_valuation_sub_le`: valuation-approximation criteria
+  bounding the translation parameters of `C * D⁻¹` and transferring integrality across close
+  changes of variables.
 * `WeierstrassCurve.isIntegral_baseChange_smul`, `WeierstrassCurve.isIntegral_baseChange_smul_iff`
   and `WeierstrassCurve.integralModel_baseChange_smul`: a change of variables defined over `R`
   preserves integrality in both directions, and acts on the integral model.
@@ -53,9 +59,9 @@ and it commutes with base change along a map `R → S` compatible with `K → L`
   integrality is preserved by base change along a map `R → S` compatible with `K → L`, and the
   integral model of the base change is the image of the integral model.
 
-The integral-closedness hypothesis is what the proof actually consumes. A discrete valuation ring
+The integral-closedness hypothesis is what the descent actually consumes. A discrete valuation ring
 with its fraction field is the intended application and satisfies it through
-`isIntegrallyClosed_iff_isIntegrallyClosedIn`, but no valuation is used anywhere below.
+`isIntegrallyClosed_iff_isIntegrallyClosedIn`, without needing a valuation.
 
 ## How it is proved
 
@@ -75,8 +81,8 @@ The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Reduction.lean`, declaration
 `WeierstrassCurve.exists_variableChange_baseChange_eq_of_smul_eq`, by Kevin Buzzard;
-`exists_smul_isIntegral`, `isIntegral_smul_of_exists_lift`, `IsIntegral.of_isScalarTower` and the
-base-change lemmas are not from that source. The source
+`exists_smul_isIntegral`, `isIntegral_smul_of_exists_lift`, the valuation-approximation lemmas,
+`IsIntegral.of_isScalarTower` and the base-change lemmas are not from that source. The source
 commit is FLT PR #1088, "Quadratic twist to split multiplicative reduction". The mathematics is
 unchanged: the same three polynomials, the same `linear_combination` certificates. Three
 hypotheses are weakened relative to the source, which
@@ -119,7 +125,7 @@ private theorem isIntegral_r_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
       + .C (u₀ ^ 8 * (W₂.integralModel R).b₈ - (W₁.integralModel R).b₈)),
     Polynomial.monic_X_pow_add (by compute_degree!), ?_⟩
   rw [← Polynomial.aeval_def]
-  simp only [map_add, map_sub, map_neg, map_mul, map_pow, map_ofNat, Polynomial.aeval_X,
+  simp only [map_add, map_sub, map_neg, _root_.map_mul, map_pow, map_ofNat, Polynomial.aeval_X,
     Polynomial.aeval_C]
   rw [integralModel_b₄_eq R W₁, integralModel_b₆_eq R W₁, integralModel_b₈_eq R W₁,
     integralModel_b₆_eq R W₂, integralModel_b₈_eq R W₂, hau]
@@ -138,7 +144,7 @@ private theorem isIntegral_s_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
   refine IsIntegral.of_sq_add_mul_add_eq_zero (b := algebraMap R K (W₁.integralModel R).a₁)
     (c := algebraMap R K (u₀ ^ 2 * (W₂.integralModel R).a₂
       - (W₁.integralModel R).a₂ - 3 * rR)) isIntegral_algebraMap isIntegral_algebraMap ?_
-  simp only [map_sub, map_mul, map_pow, map_ofNat]
+  simp only [map_sub, _root_.map_mul, map_pow, map_ofNat]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₂_eq R W₂, hau, hrR]
   linear_combination ha₂
 
@@ -161,7 +167,7 @@ private theorem isIntegral_t_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
       - ((W₁.integralModel R).a₆ + rR * (W₁.integralModel R).a₄
         + rR ^ 2 * (W₁.integralModel R).a₂ + rR ^ 3)))
     isIntegral_algebraMap isIntegral_algebraMap ?_
-  simp only [map_add, map_sub, map_mul, map_pow]
+  simp only [map_add, map_sub, _root_.map_mul, map_pow]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₃_eq R W₁,
     integralModel_a₄_eq R W₁, integralModel_a₆_eq R W₁, integralModel_a₆_eq R W₂, hau, hrR]
   linear_combination ha₆
@@ -361,6 +367,54 @@ theorem integralModel_baseChange [Field L] [Algebra S L] [Algebra K L] [Faithful
   integralModel_eq_of_baseChange_eq (baseChange_map_integralModel hRS W)
 
 end BaseChange
+
+section ValuationApproximation
+
+/-- **The translation parameters of `C * D⁻¹` have valuation at most `1`** as soon as those of `C`
+agree with those of `D` to the orders `w D.u ^ 2`, `w D.u`, and `w D.u ^ 3`, the last corrected by
+`D.s * (C.r - D.r)`. -/
+theorem VariableChange.valuation_mul_inv_r_s_t_le_one {F Γ₀ : Type*} [Field F]
+    [LinearOrderedCommGroupWithZero Γ₀] (w : Valuation F Γ₀) (C D : VariableChange F)
+    (hr : w (C.r - D.r) ≤ w D.u ^ 2)
+    (hs : w (C.s - D.s) ≤ w D.u)
+    (ht : w (C.t - D.t - D.s * (C.r - D.r)) ≤ w D.u ^ 3) :
+    w (C * D⁻¹).r ≤ 1 ∧ w (C * D⁻¹).s ≤ 1 ∧ w (C * D⁻¹).t ≤ 1 := by
+  have hD : 0 < w D.u := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : F) ^ 2 := by
+    rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : F) := by
+    rw [VariableChange.mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : F) ^ 3 := by
+    rw [VariableChange.mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hBr, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 2)).2 hr
+  · rw [hBs, map_div₀]; exact (div_le_one₀ hD).2 hs
+  · rw [hBt, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 3)).2 ht
+
+/-- **Integrality over `S` from valuation approximation of a change of variables.** If `D` carries
+`W` to an equation integral over `S` (where `w.Integers S`), then so does every `C` whose
+translation parameters approximate those of `D` as in
+`VariableChange.valuation_mul_inv_r_s_t_le_one` and whose scaling factor has `w`-valuation at least
+`w D.u`. -/
+theorem isIntegral_smul_of_valuation_sub_le {S F Γ₀ : Type*} [CommRing S] [Field F] [Algebra S F]
+    [LinearOrderedCommGroupWithZero Γ₀] {w : Valuation F Γ₀} (hw : w.Integers S)
+    (W : WeierstrassCurve F) (C D : VariableChange F) [IsIntegral S (D • W)]
+    (hu : w D.u ≤ w C.u)
+    (hr : w (C.r - D.r) ≤ w D.u ^ 2)
+    (hs : w (C.s - D.s) ≤ w D.u)
+    (ht : w (C.t - D.t - D.s * (C.r - D.r)) ≤ w D.u ^ 3) :
+    IsIntegral S (C • W) := by
+  have hBu : (↑(C * D⁻¹).u⁻¹ : F) = (C.u : F)⁻¹ * D.u := by
+    rw [VariableChange.mul_inv_u, mul_inv, inv_inv, Units.val_mul, Units.val_inv_eq_inv_val]
+  obtain ⟨hr', hs', ht'⟩ := VariableChange.valuation_mul_inv_r_s_t_le_one w C D hr hs ht
+  have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
+  rw [hCW]
+  refine isIntegral_smul_of_exists_lift (hw.exists_of_le_one ?_) (hw.exists_of_le_one hr')
+    (hw.exists_of_le_one hs') (hw.exists_of_le_one ht')
+  rw [hBu, map_mul, map_inv₀]
+  exact inv_mul_le_one_of_le₀ hu zero_le
+
+end ValuationApproximation
 
 end WeierstrassCurve
 

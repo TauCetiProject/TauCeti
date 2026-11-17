@@ -53,7 +53,10 @@ valuation ring — is the `v`-adic valuation itself. Without that identification
 * `IsDedekindDomain.HeightOneSpectrum.irreducible_natCast_localizationAtPrime`:
   in particular, a prime number lying in a height-one prime `v` of `ℤ` is irreducible in `ℤ_(v)`;
 * `IsDedekindDomain.HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime`:
-  the valuation of `Oᵥ` as a discrete valuation ring is the `v`-adic valuation.
+  the valuation of `Oᵥ` as a discrete valuation ring is the `v`-adic valuation;
+* `IsDedekindDomain.HeightOneSpectrum.isInteger_adicCompletionIntegers_algebraMap_iff`:
+  an element of `K` maps into `v.adicCompletionIntegers K` inside `v.adicCompletion K` exactly when
+  it comes from `Localization.AtPrime v.asIdeal`.
 -/
 
 public section
@@ -199,6 +202,37 @@ theorem valuation_maximalIdeal_localizationAtPrime (x : K) :
     hleft, hu, one_mul, hright,
     (v.integers_valuation_of_isLocalizationAtPrime
       (Localization.AtPrime v.asIdeal) (K := K)).valuation_unit u]
+
+/-- An element of `K` maps into `v.adicCompletionIntegers K` inside `v.adicCompletion K` exactly
+when it comes from a given localisation `S` of `O` at `v`. -/
+theorem isInteger_adicCompletionIntegers_algebraMap_iff_of_isLocalizationAtPrime
+    (S : Type*) [CommRing S] [Algebra O S] [IsLocalization.AtPrime S v.asIdeal]
+    [Algebra S K] [IsScalarTower O S K] (x : K) :
+    IsLocalization.IsInteger (v.adicCompletionIntegers K)
+        (algebraMap K (v.adicCompletion K) x) ↔
+      IsLocalization.IsInteger S x := by
+  have hv := v.integers_valuation_of_isLocalizationAtPrime S (K := K)
+  have hval : Valued.v (algebraMap K (v.adicCompletion K) x) = v.valuation K x := by
+    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+      Algebra.algebraMap_self_apply]
+  constructor
+  · rintro ⟨y, hy⟩
+    refine hv.exists_of_le_one ?_
+    rw [← hval, ← hy]
+    exact (mem_adicCompletionIntegers O K v).mp y.2
+  · rintro ⟨r, rfl⟩
+    refine ⟨⟨algebraMap K (v.adicCompletion K) (algebraMap S K r), ?_⟩, rfl⟩
+    rw [mem_adicCompletionIntegers, hval]
+    exact hv.map_le_one r
+
+/-- An element of `K` maps into `v.adicCompletionIntegers K` inside `v.adicCompletion K` exactly
+when it comes from `Localization.AtPrime v.asIdeal`. -/
+theorem isInteger_adicCompletionIntegers_algebraMap_iff (x : K) :
+    IsLocalization.IsInteger (v.adicCompletionIntegers K)
+        (algebraMap K (v.adicCompletion K) x) ↔
+      IsLocalization.IsInteger (Localization.AtPrime v.asIdeal) x :=
+  v.isInteger_adicCompletionIntegers_algebraMap_iff_of_isLocalizationAtPrime
+    (Localization.AtPrime v.asIdeal) x
 
 end IsDedekindDomain.HeightOneSpectrum
 
