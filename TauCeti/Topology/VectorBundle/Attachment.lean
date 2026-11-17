@@ -271,7 +271,7 @@ private lemma isClosedEmbedding_fst_sigmaCofanIsColimit_desc [Finite ι]
     IsClosedEmbedding (TopPair.Hom.fst (Cofan.IsColimit.desc
       (TopPair.sigmaCofanIsColimit fun a ↦ gaugeDiscSpherePair (ρ a)) f)) := by
   rw [TopPair.sigmaCofanIsColimit_desc_fst]
-  exact ContinuousMap.isClosedEmbedding_sigma hf hdisj
+  exact ContinuousMap.isClosedEmbedding_sigma hf hdisj (locallyFinite_of_finite _)
 
 /-- The map out of the disjoint union of the disc-sphere pairs which is `f a` on the summand of `a`
 sends a point into `X` only if it lies in the disjoint union of the sphere bundles, when each `f a`
