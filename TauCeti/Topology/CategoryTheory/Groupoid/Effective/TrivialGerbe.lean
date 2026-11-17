@@ -39,6 +39,9 @@ neither a categorical nor a Morita equivalence.
 * `TauCeti.TrivialGerbe.objectHomeomorph`, `TauCeti.TrivialGerbe.arrowHomeomorph`: coordinate
   homeomorphisms `(SingleObj K × Discrete N) ≃ₜ N` and
   `Quiver.Total (SingleObj K × Discrete N) ≃ₜ K × N`.
+* `TauCeti.TrivialGerbe.arrowHomeomorph_id`, `TauCeti.TrivialGerbe.arrowHomeomorph_comp`,
+  `TauCeti.TrivialGerbe.arrowHomeomorph_inverse`: the unit `(1, x)`, the composite `(g * h, x)` of
+  `(h, x)` followed by `(g, x)`, and the inverse `(g⁻¹, x)` in these coordinates.
 * `TauCeti.TrivialGerbe.isLocalHomeomorph_source`, `TauCeti.TrivialGerbe.isLocalHomeomorph_target`,
   `TauCeti.TrivialGerbe.isProperMap_source_target`: étale and properness results.
 * `TauCeti.TrivialGerbe.autMulEquiv`, `TauCeti.TrivialGerbe.ineffectiveArrows_eq_univ`,
@@ -51,6 +54,8 @@ neither a categorical nor a Morita equivalence.
   `TauCeti.TrivialGerbe.isEmpty_faithful_functor_discrete`,
   `TauCeti.TrivialGerbe.isEmpty_equivalence_effectiveQuotient`: for nontrivial `K` and nonempty `N`,
   the trivial gerbe is not categorically equivalent (`≌`) to its effective quotient.
+* `TauCeti.TrivialGerbe.isEmpty_equivalence_of_isThin`: for nontrivial `K` and nonempty `N`, the
+  trivial gerbe is not equivalent to any thin category.
 
 ## References
 
@@ -112,6 +117,22 @@ theorem arrowHomeomorph_symm_apply (p : K × N) :
     (arrowHomeomorph K N).symm p =
       ⟨(SingleObj.star K, ⟨p.2⟩), (SingleObj.star K, ⟨p.2⟩), (p.1, 𝟙 _)⟩ :=
   (arrowHomeomorph K N).injective <| by simp
+
+/-- The unit at `x` is the arrow `(1, x)`. -/
+theorem arrowHomeomorph_id (x : SingleObj K × Discrete N) :
+    arrowHomeomorph K N ⟨x, x, 𝟙 x⟩ = (1, objectHomeomorph K N x) :=
+  (arrowHomeomorph_apply K N _).trans (Prod.ext (SingleObj.id_as_one K x.1) (by simp))
+
+/-- Composing `(h, x)` followed by `(g, x)` gives `(g * h, x)`: categorical composition reverses
+the order of the labels. -/
+theorem arrowHomeomorph_comp (a b : Quiver.Total (SingleObj K × Discrete N))
+    (h : a.right = b.left) :
+    arrowHomeomorph K N (a.comp b h) =
+      ((arrowHomeomorph K N b).1 * (arrowHomeomorph K N a).1, (arrowHomeomorph K N a).2) := by
+  obtain ⟨⟨⟨⟩, x⟩, ⟨⟨⟩, y⟩, f⟩ := a
+  obtain ⟨⟨⟨⟩, y'⟩, ⟨⟨⟩, z⟩, g⟩ := b
+  cases h
+  simp [SingleObj.comp_as_mul]
 
 /-- Every arrow of `SingleObj K × Discrete N` is ineffective. -/
 @[simp]
@@ -175,6 +196,16 @@ theorem nontrivial_aut (x : SingleObj K × Discrete N) [Nontrivial K] : Nontrivi
   (autMulEquiv K N x).symm.toEquiv.nontrivial
 
 variable [TopologicalSpace K] [TopologicalSpace N]
+
+/-- Inverting the arrow `(g, x)` gives `(g⁻¹, x)`. -/
+theorem arrowHomeomorph_inverse (a : Quiver.Total (SingleObj K × Discrete N)) :
+    arrowHomeomorph K N ⟨a.right, a.left, inv a.hom⟩ =
+      ((arrowHomeomorph K N a).1⁻¹, (arrowHomeomorph K N a).2) := by
+  obtain ⟨⟨⟨⟩, x⟩, ⟨⟨⟩, y⟩, f⟩ := a
+  obtain rfl : x = y := Discrete.ext (Discrete.eq_of_hom f.2)
+  have h : (inv f).1 = f.1⁻¹ :=
+    ((CategoryTheory.Prod.fst _ _).map_inv f).trans (SingleObj.inv_as_inv K _)
+  simp only [arrowHomeomorph_apply, h]
 
 omit [TopologicalSpace K] in
 /-- The coarse space of the trivial gerbe `SingleObj K × Discrete N` is homeomorphic to `N`. -/
@@ -372,6 +403,17 @@ theorem isEmpty_faithful_functor_discrete [Nontrivial K] [Nonempty N] :
     hk <| congrArg Prod.fst <| hF.map_injective
       (Subsingleton.elim (F.map ((k₁, 𝟙 (Discrete.mk y)) : x ⟶ x))
         (F.map ((k₂, 𝟙 (Discrete.mk y)) : x ⟶ x)))⟩
+
+omit [TopologicalSpace K] [TopologicalSpace N] in
+/-- When `K` is nontrivial and `N` is nonempty, `SingleObj K × Discrete N` is not equivalent to a
+thin category: an equivalence would make the isotropy group `K` at any object trivial. -/
+theorem isEmpty_equivalence_of_isThin [Nontrivial K] [Nonempty N] {D : Type*} [Category D]
+    [Quiver.IsThin D] : IsEmpty (SingleObj K × Discrete N ≌ D) := by
+  refine ⟨fun e ↦ ?_⟩
+  let x : SingleObj K × Discrete N := (SingleObj.star K, ⟨Classical.arbitrary N⟩)
+  have : Subsingleton (Aut x) :=
+    ⟨fun g h ↦ Aut.ext (Iso.ext (e.functor.map_injective (Subsingleton.elim _ _)))⟩
+  exact not_subsingleton K (autMulEquiv K N x).toEquiv.subsingleton
 
 omit [TopologicalSpace K] [TopologicalSpace N] in
 /-- When `K` is nontrivial and `N` is nonempty, `SingleObj K × Discrete N` is not categorically
