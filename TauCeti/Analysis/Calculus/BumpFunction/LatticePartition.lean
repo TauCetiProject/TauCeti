@@ -369,6 +369,16 @@ theorem summable_one_add_norm_sub_latticePoint_sq_pow_inv (x : EuclideanSpace �
     (one_add_norm_sub_latticePoint_sq_pow_inv_le x)
     (((Equiv.subLeft fun i ↦ ⌊x i⌋).summable_iff.2 summable_latticeWeight).mul_left _)
 
+/-- On the unit ball about `x`, the weights `(1 + ‖y - j‖²)⁻ⁿ` are bounded by a summable family
+of the lattice points `j`. -/
+theorem exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
+    (x : EuclideanSpace ℝ (Fin n)) : ∃ v : (Fin n → ℤ) → ℝ, Summable v ∧
+      ∀ j, ∀ y ∈ Metric.ball x 1, ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤ v j :=
+  ⟨fun j ↦ 4 ^ n * ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹,
+    (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
+    fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one
+      (Metric.mem_ball.1 hy).le j⟩
+
 /-- The lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` are bounded independently of `x`. -/
 theorem tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ (Fin n)) :
     ∑' j : Fin n → ℤ, ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤
