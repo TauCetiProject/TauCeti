@@ -141,9 +141,12 @@ theorem exact_retractIncl_sub_idempotent {i : M →L[R] C₀(J, R)} {r : C₀(J,
     Function.Exact (retractIncl J hS i)
       (ContinuousLinearMap.id S C₀(J, S) -
         (i.comp r).mapCoeffs (algebraMap R S) (exists_norm_algebraMap_le_of_norm_smul_le hS)) := by
+  have hpi : (ContinuousLinearMap.id R C₀(J, R) - i.comp r).comp i = 0 := by
+    rw [ContinuousLinearMap.sub_comp, ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_assoc,
+      hri, ContinuousLinearMap.comp_id]
+    exact sub_self i
   have hex := exact_baseChange_of_split S r (.id R C₀(J, R))
-    (p := ContinuousLinearMap.id R C₀(J, R) - i.comp r) (i := i)
-    (by ext m; simp [show r (i m) = m by simpa using DFunLike.congr_fun hri m]) (fun _ ↦ by simp)
+    (p := ContinuousLinearMap.id R C₀(J, R) - i.comp r) (i := i) hpi (fun _ ↦ by simp)
   let e := zeroAtInftyBaseChange J hS
   have hq : ContinuousLinearMap.id S C₀(J, S) -
         (i.comp r).mapCoeffs (algebraMap R S) (exists_norm_algebraMap_le_of_norm_smul_le hS) =

@@ -477,8 +477,8 @@ theorem zeroAtInftyBaseChange_baseChange [TauCeti.NormedRing.IsTate R]
     zeroAtInftyBaseChange I hS (baseChange S u z) =
       u.mapCoeffs (algebraMap R S) (exists_norm_algebraMap_le_of_norm_smul_le hS)
         (zeroAtInftyBaseChange J hS z) := by
-  rw [zeroAtInftyBaseChange_apply, baseChange_apply, comm_map_apply, zeroAtInftyEquiv_map I hS u]
-  rfl
+  rw [zeroAtInftyBaseChange_apply, baseChange_apply, comm_map_apply, zeroAtInftyEquiv_map I hS u,
+    ← zeroAtInftyBaseChange_apply]
 
 /-- Operator-level intertwining `(zeroAtInftyBaseChange I hS) ∘ (baseChange S u) ∘
 (zeroAtInftyBaseChange J hS)⁻¹ = u.mapCoeffs`. -/
@@ -565,10 +565,14 @@ private theorem apply_finset_sum_le_of_productSeminorm {ι : Type*} (F : Finset 
 
 omit [DiscreteTopology I] in
 private theorem coe_finset_sum {ι : Type*} (F : Finset ι) (f : ι → T₀(S, R, I)) :
-    letI := π.toSeminormedAddCommGroup
-    (∑ i ∈ F, (f i : T̂₀(S, R, I))) = ↑(∑ i ∈ F, f i) :=
-  let _ := π.toSeminormedAddCommGroup
-  (map_sum UniformSpace.Completion.toCompl f F).symm
+    letI := π.toSeminormedAddCommGroup; (∑ i ∈ F, (f i : T̂₀(S, R, I))) = ↑(∑ i ∈ F, f i) :=
+  let _ := π.toSeminormedAddCommGroup; (map_sum UniformSpace.Completion.toCompl f F).symm
+
+-- Bridges `Completion.norm_coe` with `norm := π` on `π.toSeminormedAddCommGroup`.
+omit [DiscreteTopology I] in
+private theorem norm_coe_eq_seminorm (z : T₀(S, R, I)) :
+    letI := π.toSeminormedAddCommGroup; ‖(z : T̂₀(S, R, I))‖ = π z :=
+  let _ := π.toSeminormedAddCommGroup; UniformSpace.Completion.norm_coe z
 
 include hπ in
 private theorem summable_c0CoordTensor [DecidableEq I] (y : C₀(I, S)) :
@@ -582,7 +586,7 @@ private theorem summable_c0CoordTensor [DecidableEq I] (y : C₀(I, S)) :
     (Filter.eventually_cofinite.mp (htend.eventually (gt_mem_nhds (half_pos hε)))).subset
       fun _ hi ↦ not_lt_of_ge hi
   refine ⟨hfin.toFinset, fun F hF ↦ ?_⟩
-  rw [coe_finset_sum π, UniformSpace.Completion.norm_coe]
+  rw [coe_finset_sum π, norm_coe_eq_seminorm π]
   refine (apply_finset_sum_le_of_productSeminorm π hπ F (fun i ↦ y i) (fun i ↦ single i 1)
     (half_pos hε).le fun i hi ↦ ?_).trans_lt (half_lt_self hε)
   have hlt : ‖y i‖ * ‖(1 : R)‖ < ε / 2 :=
@@ -597,7 +601,7 @@ private theorem norm_tsum_c0CoordTensor_le [DecidableEq I] (y : C₀(I, S)) :
   refine le_of_tendsto (continuous_norm.tendsto _ |>.comp (summable_c0CoordTensor π hπ y).hasSum)
     (Eventually.of_forall fun F ↦ ?_)
   dsimp only [Function.comp_apply]
-  rw [coe_finset_sum π, UniformSpace.Completion.norm_coe]
+  rw [coe_finset_sum π, norm_coe_eq_seminorm π]
   refine apply_finset_sum_le_of_productSeminorm π hπ F (fun i ↦ y i) (fun i ↦ single i 1)
     (by positivity) fun i _ ↦ ?_
   rw [norm_single, mul_comm]; exact mul_le_mul_of_nonneg_left (norm_coe_le_norm y i) (norm_nonneg _)
@@ -629,8 +633,7 @@ private theorem hasSum_c0Coord_tmul [DecidableEq I] (s : S) (x : C₀(I, R)) :
   have hx := tendsto_iff_norm_sub_tendsto_zero.mp (hasSum_single x)
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun F ↦ ?_) (by simpa using hx.const_mul ‖s‖)
   rw [sub_zero, coe_finset_sum π, ← UniformSpace.Completion.coe_sub, ← TensorProduct.tmul_sum,
-    ← TensorProduct.tmul_sub, UniformSpace.Completion.norm_coe]
-  change π _ ≤ _; rw [hπ]
+    ← TensorProduct.tmul_sub, norm_coe_eq_seminorm π, hπ]
   exact csInf_le ⟨0, fun _ h' ↦ h'.1⟩
     ⟨by positivity, 1, fun _ ↦ s, fun _ ↦ _, by simp, fun _ ↦ le_rfl⟩
 
@@ -675,6 +678,14 @@ private noncomputable def c0CompletedForwardCLM :
     ⟨c0AlgForward hL hφ, AddMonoidHomClass.continuous_of_bound (c0AlgForward hL hφ) L
       (norm_c0AlgForward_le hL hφ π hπ)⟩
 
+omit [DiscreteTopology I] in
+private theorem c0CompletedForwardCLM_coe (u : T₀(S, R, I)) :
+    letI := π.toSeminormedAddCommGroup
+    c0CompletedForwardCLM hL hφ π hπ hsmul (u : T̂₀(S, R, I)) = c0AlgForward hL hφ u := by
+  let _ := π.toSeminormedAddCommGroup; have _ := IsBoundedSMul.of_norm_smul_le hsmul
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
+  simp [c0CompletedForwardCLM]
+
 /-- **Completed base change of `C₀(I, R)` for a product seminorm.** For a product seminorm `π` on
 `S ⊗[R] C₀(I, R)` making the `S`-action bounded, its separated completion is `S`-linearly
 isomorphic to `C₀(I, S)` via `s ⊗ₜ x ↦ (s * algebraMap R S (x i))ᵢ` (no units in `R` needed). -/
@@ -687,6 +698,8 @@ noncomputable def c0CompletedBaseChangeEquiv :
   letI := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
   let fwd := c0CompletedForwardCLM hL hφ π hπ hsmul
   let inv := c0CompletedInverseCLM π hπ hsmul
+  have hfwd (u : T₀(S, R, I)) : fwd ↑u = c0AlgForward hL hφ u :=
+    c0CompletedForwardCLM_coe hL hφ π hπ hsmul u
   .equivOfInverse fwd inv (fun z ↦ by
     suffices (inv.comp fwd) z = ContinuousLinearMap.id S _ z from this
     refine UniformSpace.Completion.induction_on z
@@ -696,8 +709,7 @@ noncomputable def c0CompletedBaseChangeEquiv :
       have hterm (i : I) :
           (((fwd ↑(s ⊗ₜ[R] x)) i ⊗ₜ[R] single i 1 : T₀(S, R, I)) : T̂₀(S, R, I)) =
             ((s ⊗ₜ[R] single i (x i) : T₀(S, R, I)) : T̂₀(S, R, I)) := by
-        rw [show fwd ↑(s ⊗ₜ[R] x) i = s * algebraMap R S (x i) by
-          simp [fwd, c0CompletedForwardCLM, c0AlgForward_tmul_apply]]
+        rw [hfwd, c0AlgForward_tmul_apply]
         congr 1; rw [mul_comm, ← Algebra.smul_def, TensorProduct.smul_tmul, smul_single_one]
       simpa [inv, c0CompletedInverseCLM, hterm] using (hasSum_c0Coord_tmul π hπ s x).tsum_eq
     | add u v hu hv => rw [UniformSpace.Completion.coe_add, map_add, map_add, hu, hv])
@@ -705,9 +717,13 @@ noncomputable def c0CompletedBaseChangeEquiv :
     have hy := (summable_c0CoordTensor π hπ y).hasSum.mapL fwd
     have hsingle (i : I) :
         fwd ((y i ⊗ₜ[R] single i 1 : T₀(S, R, I)) : T̂₀(S, R, I)) = single i (y i) := by
-      ext j; by_cases hij : j = i <;>
-        simp [fwd, c0CompletedForwardCLM, c0AlgForward_tmul_apply, hij]
+      ext j; by_cases hij : j = i <;> simp [hfwd, c0AlgForward_tmul_apply, hij]
     simp only [hsingle] at hy; exact hy.unique (hasSum_single y))
+
+private theorem c0CompletedBaseChangeEquiv_apply :
+    letI := π.toSeminormedAddCommGroup; ∀ z,
+      c0CompletedBaseChangeEquiv hL hφ π hπ hsmul z = c0CompletedForwardCLM hL hφ π hπ hsmul z :=
+  fun _ ↦ (rfl)
 
 /-- `c0CompletedBaseChangeEquiv` sends `s ⊗ₜ x` to `(s * algebraMap R S (x i))ᵢ`. -/
 @[simp]
@@ -717,7 +733,7 @@ theorem c0CompletedBaseChangeEquiv_coe_tmul_apply (s : S) (x : C₀(I, R)) (i : 
       s * algebraMap R S (x i) := by
   let _ := π.toSeminormedAddCommGroup; have _ := IsBoundedSMul.of_norm_smul_le hsmul
   have _ := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
-  simp [c0CompletedBaseChangeEquiv, c0CompletedForwardCLM, c0AlgForward_tmul_apply]
+  rw [c0CompletedBaseChangeEquiv_apply, c0CompletedForwardCLM_coe, c0AlgForward_tmul_apply]
 
 /-- **Coordinate series of the inverse** `(c0CompletedBaseChangeEquiv ...)⁻¹`: the coordinate
 elementary tensors `y i ⊗ₜ eᵢ` sum unconditionally to `e.symm y`. -/
@@ -750,9 +766,8 @@ theorem norm_c0CompletedBaseChangeEquiv_le :
   refine UniformSpace.Completion.induction_on z
     (isClosed_le (continuous_norm.comp (c0CompletedBaseChangeEquiv hL hφ π hπ hsmul).continuous)
       (continuous_const.mul continuous_norm)) fun u ↦ ?_
-  rw [UniformSpace.Completion.norm_coe]
-  change ‖c0CompletedForwardCLM hL hφ π hπ hsmul ↑u‖ ≤ L * π u
-  simpa [c0CompletedForwardCLM] using norm_c0AlgForward_le hL hφ π hπ u
+  rw [c0CompletedBaseChangeEquiv_apply, c0CompletedForwardCLM_coe, norm_coe_eq_seminorm π]
+  exact norm_c0AlgForward_le hL hφ π hπ u
 
 /-- Inverse norm bound `‖e.symm y‖ ≤ ‖(1 : R)‖ * ‖y‖` on the product-seminorm completion. -/
 theorem norm_c0CompletedBaseChangeEquiv_symm_le_mul (y : C₀(I, S)) :
@@ -762,7 +777,8 @@ theorem norm_c0CompletedBaseChangeEquiv_symm_le_mul (y : C₀(I, S)) :
   let _ := π.toSeminormedAddCommGroup; have _ := IsBoundedSMul.of_norm_smul_le hsmul
   have _ := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
   let _ := Classical.decEq I
-  simpa [c0CompletedBaseChangeEquiv, c0CompletedInverseCLM] using norm_tsum_c0CoordTensor_le π hπ y
+  rw [← (hasSum_c0CompletedBaseChangeEquiv_symm hL hφ π hπ hsmul y).tsum_eq]
+  exact norm_tsum_c0CoordTensor_le π hπ y
 
 include hL hφ hπ in
 /-- **Product-seminorm completion realises ring-scalar `C₀` extension (`c0_completedBaseChange`).**
@@ -817,15 +833,19 @@ theorem completedTensorEquivProductSeminormCompletion_toCompletion
 
 end ProductEquiv
 
+section ProductIsometry
+
+variable [IsUltrametricDist S] [CompleteSpace S] [NormOneClass R]
+  (hφ : ∀ r : R, ‖algebraMap R S r‖ ≤ ‖r‖)
+  (π : AddGroupSeminorm T₀(S, R, I))
+  (hπ : ∀ z : T₀(S, R, I), π z = sInf {c : ℝ | 0 ≤ c ∧
+    ∃ (n : ℕ) (s : Fin n → S) (x : Fin n → C₀(I, R)),
+      z = ∑ i, s i ⊗ₜ[R] x i ∧ ∀ i, ‖s i‖ * ‖x i‖ ≤ c})
+  (hsmul : ∀ (s : S) (z : T₀(S, R, I)), π (s • z) ≤ ‖s‖ * π z)
+
 /-- **Contractive `C₀` completed base change is an isometry.** When `‖algebraMap R S r‖ ≤ ‖r‖` and
 `[NormOneClass R]`, `c0CompletedBaseChangeEquiv` upgrades to an isometric equivalence. -/
-noncomputable def c0CompletedBaseChangeIsometry [IsUltrametricDist S] [CompleteSpace S]
-    [NormOneClass R] (hφ : ∀ r : R, ‖algebraMap R S r‖ ≤ ‖r‖)
-    (π : AddGroupSeminorm T₀(S, R, I))
-    (hπ : ∀ z : T₀(S, R, I), π z = sInf {c : ℝ | 0 ≤ c ∧
-      ∃ (n : ℕ) (s : Fin n → S) (x : Fin n → C₀(I, R)),
-        z = ∑ i, s i ⊗ₜ[R] x i ∧ ∀ i, ‖s i‖ * ‖x i‖ ≤ c})
-    (hsmul : ∀ (s : S) (z : T₀(S, R, I)), π (s • z) ≤ ‖s‖ * π z) :
+noncomputable def c0CompletedBaseChangeIsometry :
     letI := π.toSeminormedAddCommGroup; letI := IsBoundedSMul.of_norm_smul_le hsmul
     letI := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
     T̂₀(S, R, I) ≃ₗᵢ[S] C₀(I, S) :=
@@ -836,9 +856,37 @@ noncomputable def c0CompletedBaseChangeIsometry [IsUltrametricDist S] [CompleteS
   { e.toLinearEquiv with
     norm_map' := fun z ↦ le_antisymm
       (by simpa [e] using norm_c0CompletedBaseChangeEquiv_le zero_le_one hφ1 π hπ hsmul z)
-      (by
-        simpa [e] using
-          norm_c0CompletedBaseChangeEquiv_symm_le_mul zero_le_one hφ1 π hπ hsmul (e z)) }
+      (by simpa [e] using
+        norm_c0CompletedBaseChangeEquiv_symm_le_mul zero_le_one hφ1 π hπ hsmul (e z)) }
+
+/-- `c0CompletedBaseChangeIsometry` sends `s ⊗ₜ x` to `(s * algebraMap R S (x i))ᵢ`. -/
+@[simp]
+theorem c0CompletedBaseChangeIsometry_coe_tmul_apply (s : S) (x : C₀(I, R)) (i : I) :
+    letI := π.toSeminormedAddCommGroup
+    c0CompletedBaseChangeIsometry hφ π hπ hsmul
+      ((s ⊗ₜ[R] x : T₀(S, R, I)) : T̂₀(S, R, I)) i = s * algebraMap R S (x i) := by
+  let _ := π.toSeminormedAddCommGroup; have _ := IsBoundedSMul.of_norm_smul_le hsmul
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
+  simp [c0CompletedBaseChangeIsometry]
+
+/-- `c0CompletedBaseChangeIsometry` agrees as a continuous linear equivalence with
+`c0CompletedBaseChangeEquiv` for any continuity constant `L ≥ 0`. -/
+theorem c0CompletedBaseChangeIsometry_toContinuousLinearEquiv
+    {L : ℝ} (hL : 0 ≤ L) (hφ' : ∀ r : R, ‖algebraMap R S r‖ ≤ L * ‖r‖) :
+    letI := π.toSeminormedAddCommGroup; letI := IsBoundedSMul.of_norm_smul_le hsmul
+    letI := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
+    (c0CompletedBaseChangeIsometry hφ π hπ hsmul).toContinuousLinearEquiv =
+      c0CompletedBaseChangeEquiv hL hφ' π hπ hsmul := by
+  let _ := π.toSeminormedAddCommGroup; have _ := IsBoundedSMul.of_norm_smul_le hsmul
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul S T₀(S, R, I)
+  refine DFunLike.ext _ _ fun z ↦ UniformSpace.Completion.induction_on z
+    (isClosed_eq (c0CompletedBaseChangeIsometry hφ π hπ hsmul).toContinuousLinearEquiv.continuous
+      (c0CompletedBaseChangeEquiv hL hφ' π hπ hsmul).continuous) fun u ↦ ?_
+  induction u using TensorProduct.inductionOn with
+  | tmul s x => ext i; simp [LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  | add u v hu hv => rw [UniformSpace.Completion.coe_add, map_add, map_add, hu, hv]
+
+end ProductIsometry
 
 end ProductSeminorm
 

@@ -100,6 +100,12 @@ local instance laurentRankOne : (Valued.v : Valuation S₀(p) ℤᵐ⁰).RankOne
       simpa using _root_.LaurentSeries.valuation_X_pow (ZMod p) 1
     exact ⟨_, by rw [h]; exact WithZero.exp_ne_zero, by rw [h]; simp⟩
 
+private theorem laurentRankOne_hom :
+    Valuation.RankOne.hom (Valued.v : Valuation S₀(p) ℤᵐ⁰) =
+      (WithZeroMulInt.toNNReal (Nat.cast_ne_zero.mpr hp.out.ne_zero)).comp
+        MonoidWithZeroHom.ValueGroup₀.embedding :=
+  (rfl)
+
 open scoped Valued
 
 /-- The uniformizer `X` in `(ZMod p)⸨X⸩`. -/
@@ -110,11 +116,10 @@ theorem norm_varX : ‖varX p‖ = (p : ℝ)⁻¹ := by
   have hp0 : (p : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
   have hv : Valued.v (varX p) = WithZero.exp (-1 : ℤ) := by
     simpa using _root_.LaurentSeries.valuation_X_pow (ZMod p) 1
-  rw [Valued.toNormedField.norm_def]
-  exact congrArg ((↑) : ℝ≥0 → ℝ) <| (show ((WithZeroMulInt.toNNReal hp0).comp
-      MonoidWithZeroHom.ValueGroup₀.embedding) (Valued.v.restrict (varX p)) = (p : ℝ≥0)⁻¹ by
-    rw [MonoidWithZeroHom.comp_apply, Valuation.embedding_restrict, hv,
-      WithZeroMulInt.toNNReal_neg_apply hp0 WithZero.exp_ne_zero, WithZero.log_exp, zpow_neg_one])
+  rw [Valued.toNormedField.norm_def, laurentRankOne_hom p, MonoidWithZeroHom.comp_apply,
+    Valuation.embedding_restrict, hv,
+    WithZeroMulInt.toNNReal_neg_apply hp0 WithZero.exp_ne_zero, WithZero.log_exp, zpow_neg_one]
+  simp
 
 theorem varX_ne_zero : varX p ≠ 0 := by
   rw [← norm_ne_zero_iff, norm_varX p]; exact inv_ne_zero (Nat.cast_ne_zero.mpr hp.out.ne_zero)
@@ -256,7 +261,7 @@ theorem retractIncl_comp_retractProj_idemSnd (n : ℕ) :
       .id S₀(p) C₀(Fin n, S₀(p)) := by
   rw [CompletedTensor.retractIncl_comp_retractProj, idempIncl_comp_idempRetr,
     ContinuousLinearMap.mapCoeffs_smul, ContinuousLinearMap.mapCoeffs_one]
-  have he : algebraMap R₀(p) S₀(p) e₀(p) = 1 := rfl
+  have he : algebraMap R₀(p) S₀(p) e₀(p) = 1 := by simp [algebraMap_snd_apply, idemSnd]
   rw [he, one_smul, ContinuousLinearMap.one_def]
 
 /-- **Tensor extension of `e Rⁿ` is `Sⁿ`** (for every `n : ℕ`, including `n = 0`). -/
