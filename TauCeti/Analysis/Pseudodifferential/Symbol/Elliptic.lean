@@ -82,11 +82,10 @@ variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCo
 /-- A symbol `a` of order `m` is *elliptic above the radius `R`* if at every frequency `ξ` with
 `R ≤ ‖ξ‖` its value `a(x, ξ)` is an invertible continuous linear map, with
 `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` for all positions `x` in each compact set, where
-`⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`. -/
+`⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`; that is, `a` is elliptic on the set of points `(x, ξ)` with
+`R ≤ ‖ξ‖`. -/
 def IsEllipticAbove (a : Symbol n V W m) (R : ℝ) : Prop :=
-  ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C : ℝ, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ →
-    (a.coefficient (x, ξ)).IsInvertible ∧
-      ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)
+  a.IsEllipticOn {p | R ≤ ‖p.2‖}
 
 /-- A symbol `a` of order `m` is *uniformly elliptic above the radius `R`* if at every frequency
 `ξ` with `R ≤ ‖ξ‖` its value `a(x, ξ)` is an invertible continuous linear map, with
@@ -99,7 +98,8 @@ theorem isEllipticAbove_iff {a : Symbol n V W m} :
     a.IsEllipticAbove R ↔ ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C : ℝ, ∀ x ∈ K, ∀ ξ,
       R ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible ∧
         ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) :=
-  Iff.rfl
+  isEllipticOn_iff.trans <| forall₂_congr fun _ _ => exists_congr fun _ =>
+    ⟨fun h x hx ξ hξ => h (x, ξ) hξ hx, fun h p hp hpK => h p.1 hpK p.2 hp⟩
 
 theorem isUniformlyEllipticAbove_iff {a : Symbol n V W m} :
     a.IsUniformlyEllipticAbove R ↔ ∃ C : ℝ, ∀ x ξ, R ≤ ‖ξ‖ →
@@ -111,22 +111,19 @@ theorem isUniformlyEllipticAbove_iff {a : Symbol n V W m} :
 `R`. -/
 theorem IsEllipticAbove.isInvertible {a : Symbol n V W m} (ha : a.IsEllipticAbove R)
     (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : R ≤ ‖ξ‖) :
-    (a.coefficient (x, ξ)).IsInvertible := by
-  obtain ⟨C, hC⟩ := ha {x} isCompact_singleton
-  exact (hC x rfl ξ hξ).1
+    (a.coefficient (x, ξ)).IsInvertible :=
+  IsEllipticOn.isInvertible ha (p := (x, ξ)) hξ
 
 /-- Ellipticity above a radius implies ellipticity above every larger radius. -/
 theorem IsEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsEllipticAbove R) (h : R ≤ R') :
     a.IsEllipticAbove R' :=
-  fun K hK => (ha K hK).imp fun _ hC x hx ξ hξ => hC x hx ξ (h.trans hξ)
+  IsEllipticOn.mono ha fun _ hp => h.trans hp
 
 /-- Ellipticity on the set of points with frequency of norm at least `R` is ellipticity above the
 radius `R`. -/
 theorem isEllipticOn_iff_isEllipticAbove {a : Symbol n V W m} :
-    a.IsEllipticOn {p | R ≤ ‖p.2‖} ↔ a.IsEllipticAbove R := by
-  rw [isEllipticOn_iff, isEllipticAbove_iff]
-  exact forall₂_congr fun _ _ => exists_congr fun _ =>
-    ⟨fun h x hx ξ hξ => h (x, ξ) hξ hx, fun h p hp hpK => h p.1 hpK p.2 hp⟩
+    a.IsEllipticOn {p | R ≤ ‖p.2‖} ↔ a.IsEllipticAbove R :=
+  Iff.rfl
 
 /-- Uniform ellipticity above a radius implies uniform ellipticity above every larger radius. -/
 theorem IsUniformlyEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsUniformlyEllipticAbove R)
@@ -136,7 +133,7 @@ theorem IsUniformlyEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsUniformlyEl
 /-- A uniformly elliptic symbol is elliptic. -/
 theorem IsUniformlyEllipticAbove.isEllipticAbove {a : Symbol n V W m}
     (ha : a.IsUniformlyEllipticAbove R) : a.IsEllipticAbove R :=
-  fun _ _ => ha.imp fun _ hC x _ ξ hξ => hC x ξ hξ
+  isEllipticAbove_iff.2 fun _ _ => ha.imp fun _ hC x _ ξ hξ => hC x ξ hξ
 
 /-- An invertible constant symbol is uniformly elliptic above every radius. -/
 theorem isUniformlyEllipticAbove_const {T : V →L[ℂ] W} (hT : T.IsInvertible) (R : ℝ) :
@@ -166,9 +163,9 @@ private theorem isInvertible_comp_and_norm_inverse_le {b : W →L[ℂ] U} {a : V
 theorem IsEllipticAbove.comp {b : Symbol n W U m'} {a : Symbol n V W m}
     (hb : b.IsEllipticAbove R') (ha : a.IsEllipticAbove R) :
     (b.comp a).IsEllipticAbove (max R' R) := by
-  intro K hK
-  obtain ⟨C, hC⟩ := hb K hK
-  obtain ⟨D, hD⟩ := ha K hK
+  refine isEllipticAbove_iff.2 fun K hK => ?_
+  obtain ⟨C, hC⟩ := isEllipticAbove_iff.1 hb K hK
+  obtain ⟨D, hD⟩ := isEllipticAbove_iff.1 ha K hK
   refine ⟨D * C, fun x hx ξ hξ => ?_⟩
   rw [coefficient_comp]
   exact isInvertible_comp_and_norm_inverse_le (hC x hx ξ ((le_max_left _ _).trans hξ))
@@ -193,7 +190,7 @@ theorem IsEllipticAbove.exists_norm_inverse_le {a : Symbol n V W m} (ha : a.IsEl
     (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
     ∃ C, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) :=
-  (ha K hK).imp fun _ hC x hx ξ hξ => (hC x hx ξ hξ).2
+  (isEllipticAbove_iff.1 ha K hK).imp fun _ hC x hx ξ hξ => (hC x hx ξ hξ).2
 
 /-- The uniform inverse bound of a symbol uniformly elliptic above `R`, in the form required by
 `TauCeti.Symbol.IsUniform.cutoffInverse` when `R = |t|`. -/
@@ -268,7 +265,8 @@ theorem isEllipticAbove_of_comp_eq_id {a : Symbol n V W m} {b : Symbol n W V (-m
     (h : ∀ x ξ, R ≤ ‖ξ‖ → b.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V ∧
       a.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = .id ℂ W) :
     a.IsEllipticAbove R := by
-  refine fun K hK => (b.exists_norm_coefficient_le K hK).imp fun C hC x hx ξ hξ => ?_
+  refine isEllipticAbove_iff.2 fun K hK =>
+    (b.exists_norm_coefficient_le K hK).imp fun C hC x hx ξ hξ => ?_
   obtain ⟨h₁, h₂⟩ := h x ξ hξ
   refine ⟨.of_inverse h₂ h₁, ?_⟩
   rw [ContinuousLinearMap.inverse_eq h₂ h₁]

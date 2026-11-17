@@ -244,11 +244,11 @@ private theorem abs_le_norm_of_one_le_norm_inv_smul {R : ℝ} {ξ : CoordinateSp
 
 variable (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
 
-private theorem wordBounds_cutoff (S : Set (CoordinateSpace n × CoordinateSpace n)) (k : ℕ) :
-    WordBounds S 0 k fun p => χ (R⁻¹ • p.2) :=
-  wordBounds_of_mixedDeriv (χ.contDiff_comp_inv_smul_snd R) (T := univ)
-    (fun α β => (χ.exists_bound_mixedDeriv_comp_inv_smul_snd R α β).imp fun _ h x _ ξ => h x ξ)
-    (fun _ _ => mem_univ _) k
+/-- The rescaled cutoff `χ(ξ / R)` vanishes at the frequencies `‖ξ‖ < |R|`. -/
+private theorem cutoff_eq_zero_of_norm_lt_abs {ξ : CoordinateSpace n} (h : ‖ξ‖ < |R|) :
+    χ (R⁻¹ • ξ) = 0 :=
+  χ.apply_eq_zero_of_norm_le_one <| le_of_not_gt fun h' =>
+    (h.trans_le (abs_le_norm_of_one_le_norm_inv_smul h'.le)).false
 
 end Cutoff
 
@@ -340,20 +340,75 @@ namespace Symbol
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-/-- The cut-off inverse is smooth: it vanishes near the points with `‖ξ / R‖ < 1`, and elsewhere
-the symbol is invertible. -/
+section ClosedSet
+
+variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] (B : F →L[ℝ] (W →L[ℂ] V) →L[ℝ] G) (a : Symbol n V W m)
+  {S : Set (CoordinateSpace n × CoordinateSpace n)} {f : CoordinateSpace n × CoordinateSpace n → F}
+
+/-- A bilinear expression `B (f p) a(p)⁻¹` is smooth if `f` is smooth and vanishes outside a closed
+set on which `a` is invertible. -/
+private theorem contDiff_bilinear_inverse (hf : ContDiff ℝ ∞ f) (hS : IsClosed S)
+    (hfS : ∀ p ∉ S, f p = 0) (hinv : ∀ p ∈ S, (a.coefficient p).IsInvertible) :
+    ContDiff ℝ ∞ fun p => B (f p) (a.coefficient p).inverse := by
+  refine contDiff_iff_contDiffAt.2 fun p => ?_
+  by_cases hp : p ∈ S
+  · exact (contDiffAt_const.clm_apply hf.contDiffAt).clm_apply
+      (a.contDiff_coefficient.contDiffAt.clm_inverse (hinv p hp))
+  · refine (contDiffAt_const (c := (0 : G))).congr_of_eventuallyEq ?_
+    filter_upwards [hS.isOpen_compl.mem_nhds hp] with q hq
+    simp [hfS q hq]
+
+/-- The estimates of `B (f p) a(p)⁻¹` at the positions of a set `T`, from the estimates of order
+`μ` of `f` and of order `m` of `a` there, if `f` vanishes outside a closed set `S` on which `a` is
+invertible, with `‖a(p)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` at the points of `S` with position in `T`. -/
+private theorem exists_bound_bilinear_inverse {μ : ℝ} (hf : ContDiff ℝ ∞ f) (hS : IsClosed S)
+    (hfS : ∀ p ∉ S, f p = 0) (hinv : ∀ p ∈ S, (a.coefficient p).IsInvertible)
+    {T : Set (CoordinateSpace n)} (hfT : ∀ α β : List (Fin n), ∃ C, ∀ x ∈ T, ∀ ξ,
+      ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2))
+    (haT : ∀ α β : List (Fin n), ∃ C, ∀ x ∈ T, ∀ ξ,
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))
+    (hC : ∃ C, ∀ p ∈ S, p.1 ∈ T →
+      ‖(a.coefficient p).inverse‖ ≤ C * (1 + ‖p.2‖ ^ 2) ^ (-m / 2)) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ T, ∀ ξ,
+      ‖mixedDeriv α β (fun p => B (f p) (a.coefficient p).inverse) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((μ + -m - β.length) / 2) := by
+  -- The estimates along words on the points of `S` with position in `T`, by the Leibniz rule.
+  let ST : Set (CoordinateSpace n × CoordinateSpace n) := {p | p ∈ S ∧ p.1 ∈ T}
+  have hinvST (p) (hp : p ∈ ST) : (a.coefficient p).IsInvertible := hinv p hp.1
+  have hb := WordBounds.bilinear B (isOpen_setOf_isInvertible a) hinvST hf.contDiffOn
+    (contDiffOn_inverse a) (wordBounds_of_mixedDeriv hf hfT (fun _ (hp : _ ∈ ST) => hp.2) _)
+    (wordBounds_inverse a (fun _ (hp : _ ∈ ST) => hp.2) haT hinvST
+      (hC.imp fun _ h p (hp : p ∈ ST) => h p hp.1 hp.2) (α.map Sum.inl ++ β.map Sum.inr).length)
+  obtain ⟨C, hC⟩ := hb _ le_rfl
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  rw [mixedDeriv_eq_iteratedFDerivAlong α β ((contDiff_bilinear_inverse B a hf hS hfS
+    hinv).of_le (by exact_mod_cast le_top))]
+  by_cases hp : (x, ξ) ∈ S
+  · have h := hC (x, ξ) ⟨hp, hx⟩
+    simp only [List.map_append, List.map_map, Function.comp_def, mixedDirection_inl,
+      mixedDirection_inr, ← mixedDirections_def] at h
+    have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
+      simp [freqLetters, Function.comp_def]
+    rw [hβ] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero, norm_zero]
+    · positivity
+    filter_upwards [hS.isOpen_compl.mem_nhds hp] with q hq
+    simp [hfS q hq]
+
+end ClosedSet
+
+/-- The cut-off inverse is smooth: it vanishes outside the closed set of frequencies
+`|R| ≤ ‖ξ‖`, on which the symbol is invertible. -/
 private theorem contDiff_cutoffInverse (a : Symbol n V W m)
     (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
     (hinv : ∀ x ξ, |R| ≤ ‖ξ‖ → (a.coefficient (x, ξ)).IsInvertible) :
     ContDiff ℝ ∞ fun p => χ (R⁻¹ • p.2) • (a.coefficient p).inverse := by
-  refine contDiff_iff_contDiffAt.2 fun p => ?_
-  by_cases hp : ‖R⁻¹ • p.2‖ < 1
-  · exact contDiffAt_const.congr_of_eventuallyEq
-      (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse) hp)
-  · have hq : (a.coefficient p).IsInvertible :=
-      hinv p.1 p.2 (abs_le_norm_of_one_le_norm_inv_smul (not_lt.1 hp))
-    exact (χ.contDiff_comp_inv_smul_snd R).contDiffAt.smul
-      (a.contDiff_coefficient.contDiffAt.clm_inverse hq)
+  simpa only [ContinuousLinearMap.lsmul_apply] using
+    contDiff_bilinear_inverse (ContinuousLinearMap.lsmul ℝ ℝ) a (S := {p | |R| ≤ ‖p.2‖})
+      (χ.contDiff_comp_inv_smul_snd R) (isClosed_le continuous_const continuous_snd.norm)
+      (fun p hp => cutoff_eq_zero_of_norm_lt_abs χ R (not_le.1 hp)) fun p hp => hinv p.1 p.2 hp
 
 /-- The estimates of the cut-off inverse at the positions of a set `T`, from those of the symbol
 and of its inverse there. -/
@@ -367,29 +422,12 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
     ∃ C, 0 ≤ C ∧ ∀ x ∈ T, ∀ ξ,
       ‖mixedDeriv α β (fun p => χ (R⁻¹ • p.2) • (a.coefficient p).inverse) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((-m - β.length) / 2) := by
-  have hSU : {p : CoordinateSpace n × CoordinateSpace n | p.1 ∈ T ∧ |R| ≤ ‖p.2‖} ⊆
-      {p | (a.coefficient p).IsInvertible} := fun p hp => hinv p.1 p.2 hp.2
-  have hb := WordBounds.bilinear (ContinuousLinearMap.lsmul ℝ ℝ) (isOpen_setOf_isInvertible a)
-    hSU (χ.contDiff_comp_inv_smul_snd R).contDiffOn (contDiffOn_inverse a)
-    (wordBounds_cutoff χ R _ (α.map Sum.inl ++ β.map Sum.inr).length)
-    (wordBounds_inverse a (S := {p | p.1 ∈ T ∧ |R| ≤ ‖p.2‖}) (fun _ hp => hp.1) ha
-      (fun p hp => hinv p.1 p.2 hp.2) (hC.imp fun _ h p hp => h p.1 hp.1 p.2 hp.2) _)
-  obtain ⟨C, hC⟩ := hb _ le_rfl
-  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rw [mixedDeriv_eq_iteratedFDerivAlong α β
-    ((contDiff_cutoffInverse a χ R hinv).of_le (by exact_mod_cast le_top))]
-  by_cases hξ : ‖R⁻¹ • ξ‖ < 1
-  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero
-      (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse)
-        (p := (x, ξ)) hξ), norm_zero]
-    positivity
-  · have h := hC (x, ξ) ⟨hx, abs_le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
-    simp only [ContinuousLinearMap.lsmul_apply, zero_add, List.map_append, List.map_map,
-      Function.comp_def, mixedDirection_inl, mixedDirection_inr, ← mixedDirections_def] at h
-    have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
-      simp [freqLetters, Function.comp_def]
-    rw [hβ] at h
-    exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+  simpa only [ContinuousLinearMap.lsmul_apply, zero_add] using
+    exists_bound_bilinear_inverse (ContinuousLinearMap.lsmul ℝ ℝ) a (S := {p | |R| ≤ ‖p.2‖})
+      (μ := 0) (χ.contDiff_comp_inv_smul_snd R) (isClosed_le continuous_const continuous_snd.norm)
+      (fun p hp => cutoff_eq_zero_of_norm_lt_abs χ R (not_le.1 hp)) (fun p hp => hinv p.1 p.2 hp)
+      (fun α β => (χ.exists_bound_mixedDeriv_comp_inv_smul_snd R α β).imp fun _ h x _ ξ => h x ξ)
+      ha (hC.imp fun _ h p hp hpT => h p.1 hpT p.2 hp) α β
 
 /-- The cut-off inverse `χ(ξ / R) a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at
 all frequencies `|R| ≤ ‖ξ‖`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there for a constant `C` depending on
@@ -536,63 +574,6 @@ theorem IsEllipticOn.closure {a : Symbol n V W m} (ha : a.IsEllipticOn S) :
   rw [div_le_iff₀ (by linarith)]
   nlinarith [mul_nonneg hC0 hwp.le]
 
-section ClosedSet
-
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
-  [NormedSpace ℝ G] (B : F →L[ℝ] (W →L[ℂ] V) →L[ℝ] G) (a : Symbol n V W m)
-  {f : CoordinateSpace n × CoordinateSpace n → F}
-
-/-- A bilinear expression `B (f p) a(p)⁻¹` is smooth if `f` is smooth and vanishes outside a closed
-set on which `a` is invertible. -/
-private theorem contDiff_bilinear_inverse (hf : ContDiff ℝ ∞ f) (hS : IsClosed S)
-    (hfS : ∀ p ∉ S, f p = 0) (hinv : ∀ p ∈ S, (a.coefficient p).IsInvertible) :
-    ContDiff ℝ ∞ fun p => B (f p) (a.coefficient p).inverse := by
-  refine contDiff_iff_contDiffAt.2 fun p => ?_
-  by_cases hp : p ∈ S
-  · exact (contDiffAt_const.clm_apply hf.contDiffAt).clm_apply
-      (a.contDiff_coefficient.contDiffAt.clm_inverse (hinv p hp))
-  · refine (contDiffAt_const (c := (0 : G))).congr_of_eventuallyEq ?_
-    filter_upwards [hS.isOpen_compl.mem_nhds hp] with q hq
-    simp [hfS q hq]
-
-/-- The estimates of `B (f p) a(p)⁻¹` at the positions of a compact set `K`, from the estimates
-of order `μ` of `f` there, if `f` vanishes outside a closed set on which `a` is elliptic. -/
-private theorem exists_bound_bilinear_inverse {μ : ℝ} (hf : ContDiff ℝ ∞ f) (hS : IsClosed S)
-    (hfS : ∀ p ∉ S, f p = 0) (ha : a.IsEllipticOn S) {K : Set (CoordinateSpace n)}
-    (hK : IsCompact K) (hfK : ∀ α β : List (Fin n), ∃ C, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2)) (α β : List (Fin n)) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (fun p => B (f p) (a.coefficient p).inverse) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((μ + -m - β.length) / 2) := by
-  obtain ⟨C₀, hC₀⟩ := ha K hK
-  -- The estimates along words on the points of `S` with position in `K`, by the Leibniz rule.
-  let SK : Set (CoordinateSpace n × CoordinateSpace n) := {p | p ∈ S ∧ p.1 ∈ K}
-  have hinv (p) (hp : p ∈ SK) : (a.coefficient p).IsInvertible := (hC₀ p hp.1 hp.2).1
-  have hb := WordBounds.bilinear B (isOpen_setOf_isInvertible a) hinv hf.contDiffOn
-    (contDiffOn_inverse a) (wordBounds_of_mixedDeriv hf hfK (fun _ (hp : _ ∈ SK) => hp.2) _)
-    (wordBounds_inverse a (fun _ (hp : _ ∈ SK) => hp.2)
-      (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2)
-      hinv ⟨C₀, fun p (hp : p ∈ SK) => (hC₀ p hp.1 hp.2).2⟩
-      (α.map Sum.inl ++ β.map Sum.inr).length)
-  obtain ⟨C, hC⟩ := hb _ le_rfl
-  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rw [mixedDeriv_eq_iteratedFDerivAlong α β ((contDiff_bilinear_inverse B a hf hS hfS
-    fun _ hp => ha.isInvertible hp).of_le (by exact_mod_cast le_top))]
-  by_cases hp : (x, ξ) ∈ S
-  · have h := hC (x, ξ) ⟨hp, hx⟩
-    simp only [List.map_append, List.map_map, Function.comp_def, mixedDirection_inl,
-      mixedDirection_inr, ← mixedDirections_def] at h
-    have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
-      simp [freqLetters, Function.comp_def]
-    rw [hβ] at h
-    exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
-  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero, norm_zero]
-    · positivity
-    filter_upwards [hS.isOpen_compl.mem_nhds hp] with q hq
-    simp [hfS q hq]
-
-end ClosedSet
-
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {μ : ℝ}
 
 /-- The symbol `r(x, ξ) a(x, ξ)⁻¹` of order `μ - m`, for a symbol `r` of order `μ` vanishing
@@ -604,8 +585,11 @@ def compInverse (r : Symbol n V U μ) (a : Symbol n V W m) (hr : ∀ p ∉ S, r.
     isClosed_closure (fun p hp => hr p fun h => hp (subset_closure h))
     fun _ hp => ha.closure.isInvertible hp
   exists_bound K hK := exists_bound_bilinear_inverse (compR W V U) a r.contDiff_coefficient
-    isClosed_closure (fun p hp => hr p fun h => hp (subset_closure h)) ha.closure hK
-    fun α β => (r.exists_bound K hK α β).imp fun _ h => h.2
+    isClosed_closure (fun p hp => hr p fun h => hp (subset_closure h))
+    (fun _ hp => ha.closure.isInvertible hp)
+    (fun α β => (r.exists_bound K hK α β).imp fun _ h => h.2)
+    (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2)
+    ((ha.closure K hK).imp fun _ h p hp hpK => (h p hp hpK).2)
 
 /-- The symbol `a(x, ξ)⁻¹ r(x, ξ)` of order `μ - m`, for a symbol `r` of order `μ` vanishing
 outside a set `S` on which the symbol `a` of order `m` is elliptic. Outside `S` it is `0`. -/
@@ -617,8 +601,11 @@ def inverseComp (a : Symbol n V W m) (r : Symbol n U W μ) (hr : ∀ p ∉ S, r.
     fun _ hp => ha.closure.isInvertible hp
   exists_bound K hK := by
     obtain h := exists_bound_bilinear_inverse (compR U W V).flip a r.contDiff_coefficient
-      isClosed_closure (fun p hp => hr p fun h => hp (subset_closure h)) ha.closure hK
-      fun α β => (r.exists_bound K hK α β).imp fun _ h => h.2
+      isClosed_closure (fun p hp => hr p fun h => hp (subset_closure h))
+      (fun _ hp => ha.closure.isInvertible hp)
+      (fun α β => (r.exists_bound K hK α β).imp fun _ h => h.2)
+      (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2)
+      ((ha.closure K hK).imp fun _ h p hp hpK => (h p hp hpK).2)
     exact fun α β => (h α β).imp fun _ ⟨hC0, hC⟩ => ⟨hC0, fun x hx ξ => by
       rw [add_comm (-m) μ]
       exact hC x hx ξ⟩
@@ -638,8 +625,8 @@ theorem coefficient_compInverse_of_notMem {p : CoordinateSpace n × CoordinateSp
     (hp : p ∉ S) : (r.compInverse a hr ha).coefficient p = 0 := by
   simp [hr p hp]
 
-/-- **`r a⁻¹` inverts `a` on the right up to `r`**: `(r a⁻¹) a = r` at every point. -/
-theorem coefficient_compInverse_comp (p : CoordinateSpace n × CoordinateSpace n) :
+/-- **`r a⁻¹` inverts `a` on the left up to `r`**: `(r a⁻¹) a = r` at every point. -/
+theorem coefficient_compInverse_comp_coefficient (p : CoordinateSpace n × CoordinateSpace n) :
     ((r.compInverse a hr ha).coefficient p).comp (a.coefficient p) = r.coefficient p := by
   by_cases hp : p ∈ S
   · simp [ContinuousLinearMap.comp_assoc, (ha.isInvertible hp).inverse_comp_self]
@@ -662,8 +649,8 @@ theorem coefficient_inverseComp_of_notMem {p : CoordinateSpace n × CoordinateSp
     (hp : p ∉ S) : (a.inverseComp r hr ha).coefficient p = 0 := by
   simp [hr p hp]
 
-/-- **`a⁻¹ r` inverts `a` on the left up to `r`**: `a (a⁻¹ r) = r` at every point. -/
-theorem coefficient_comp_inverseComp (p : CoordinateSpace n × CoordinateSpace n) :
+/-- **`a⁻¹ r` inverts `a` on the right up to `r`**: `a (a⁻¹ r) = r` at every point. -/
+theorem coefficient_comp_coefficient_inverseComp (p : CoordinateSpace n × CoordinateSpace n) :
     (a.coefficient p).comp ((a.inverseComp r hr ha).coefficient p) = r.coefficient p := by
   by_cases hp : p ∈ S
   · simp [← ContinuousLinearMap.comp_assoc, (ha.isInvertible hp).self_comp_inverse]

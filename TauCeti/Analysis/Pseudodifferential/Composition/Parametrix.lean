@@ -620,8 +620,8 @@ theorem IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left {a : Symbol n V W m}
           (r - b.sharpTerm a N).coefficient + (0 : Symbol n V V (-m + m - (N + 1 : ℕ))).coefficient
           := by
         funext p
-        simp only [d, coefficient_comp, coefficient_inclusion, coefficient_compInverse_comp,
-          coefficient_zero, add_zero]
+        simp only [d, coefficient_comp, coefficient_inclusion,
+          coefficient_compInverse_comp_coefficient, coefficient_zero, add_zero]
       refine ⟨d, ⟨_, coefficient_sub_sum_sharpTerm_left_succ hr hd⟩, fun p hp ↦ ?_⟩
       simp only [d, coefficient_add, coefficient_inclusion, Pi.add_apply, hb p hp, zero_add]
       exact coefficient_compInverse_of_notMem _ _ _ _ hp)
@@ -659,8 +659,8 @@ theorem IsEllipticOn.exists_isAsymptoticSum_sharpTerm_right {a : Symbol n V W m}
           (r - a.sharpTerm b N).coefficient + (0 : Symbol n W W (m + -m - (N + 1 : ℕ))).coefficient
           := by
         funext p
-        simp only [d, coefficient_comp, coefficient_inclusion, coefficient_comp_inverseComp,
-          coefficient_zero, add_zero]
+        simp only [d, coefficient_comp, coefficient_inclusion,
+          coefficient_comp_coefficient_inverseComp, coefficient_zero, add_zero]
       refine ⟨d, ⟨_, coefficient_sub_sum_sharpTerm_right_succ hr hd⟩, fun p hp ↦ ?_⟩
       simp only [d, coefficient_add, coefficient_inclusion, Pi.add_apply, hb p hp, zero_add]
       exact coefficient_inverseComp_of_notMem _ _ _ _ hp)
