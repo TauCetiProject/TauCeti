@@ -42,6 +42,9 @@ change `X ×_k Spec K`, over `Spec K`.
 * `AlgebraicGeometry.Scheme.Hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop`: any morphism
   `p : X ⟶ Spec R` factors through `X.toSpecΓ` followed by `Spec.map` of
   `(ΓSpecIso R).inv ≫ p.appTop`.
+* `TauCeti.AlgebraicGeometry.tensorProductChart`: affine charts `Spec A ⟶ X` and `Spec B ⟶ Y`
+  over an affine chart `Spec C ⟶ Z` give an affine chart `Spec (A ⊗[C] B)` of a fibre product of
+  `X ⟶ Z ⟵ Y`.
 -/
 
 public section
@@ -183,6 +186,40 @@ theorem exists_pullbackSpecIso_of_isPushout (R B T : Type u)
   dsimp only [eSpec, Iso.trans_inv, Over.comp_left]
   rw [Category.assoc]
   exact congrArg (Y'.left.toSpecΓ ≫ ·) hproj
+
+section TensorProductChart
+
+variable {X Y Z P : Scheme.{u}} {g₁ : X ⟶ Z} {g₂ : Y ⟶ Z} {p₁ : P ⟶ X} {p₂ : P ⟶ Y}
+  (hP : IsPullback p₁ p₂ g₁ g₂) {A B C : Type u} [CommRing A] [CommRing B] [CommRing C]
+  [Algebra C A] [Algebra C B] {iA : Spec (.of A) ⟶ X} {iB : Spec (.of B) ⟶ Y}
+  {iC : Spec (.of C) ⟶ Z}
+  (hA : Spec.map (CommRingCat.ofHom (algebraMap C A)) ≫ iC = iA ≫ g₁)
+  (hB : Spec.map (CommRingCat.ofHom (algebraMap C B)) ≫ iC = iB ≫ g₂)
+
+/-- The affine chart `Spec (A ⊗[C] B) ⟶ P` of a fibre product `P` of `X ⟶ Z ⟵ Y`, built from
+affine charts `Spec A ⟶ X` and `Spec B ⟶ Y` lying over an affine chart `Spec C ⟶ Z`. -/
+noncomputable def tensorProductChart : Spec (.of (A ⊗[C] B)) ⟶ P :=
+  (pullbackSpecIso C A B).inv ≫ pullback.map _ _ _ _ iA iB iC hA hB ≫ hP.isoPullback.inv
+
+/-- The tensor-product chart of a fibre product of open charts is an open chart. -/
+instance [IsOpenImmersion iA] [IsOpenImmersion iB] [IsOpenImmersion iC] :
+    IsOpenImmersion (tensorProductChart hP hA hB) := by
+  unfold tensorProductChart
+  infer_instance
+
+/-- The first projection of the tensor-product chart is the chart of `X` on the left factor. -/
+@[reassoc (attr := simp)]
+theorem tensorProductChart_fst : tensorProductChart hP hA hB ≫ p₁ =
+    Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iA := by
+  simp [tensorProductChart]
+
+/-- The second projection of the tensor-product chart is the chart of `Y` on the right factor. -/
+@[reassoc (attr := simp)]
+theorem tensorProductChart_snd : tensorProductChart hP hA hB ≫ p₂ = Spec.map (CommRingCat.ofHom
+    (Algebra.TensorProduct.includeRight (R := C) (A := A) (B := B)).toRingHom) ≫ iB := by
+  simp [tensorProductChart]
+
+end TensorProductChart
 
 end AlgebraicGeometry
 
