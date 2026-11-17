@@ -218,7 +218,7 @@ theorem ker_mfderiv_le_ker_iff (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
   rw [hσ.ker_mfderiv_eq_span_hamiltonianVectorField hx (h.poissonBracket_eq_zero · · x)
     h.two_mul_card_eq_finrank, Submodule.span_le, Set.range_subset_iff]
   simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    hσ.poissonBracket_eq_neg_mvfderiv, neg_eq_zero]
+    σ.poissonBracket_eq_neg_mvfderiv, neg_eq_zero]
 
 /-- A Hamiltonian `f` of which every integral `F_i` is a first integral has, at each regular
 point `x`, a differential vanishing on the kernel of `dF_x`. -/
