@@ -75,33 +75,22 @@ theorem tendstoInMeasure_sum_sub_mul_sub_sub_deriv_mul_sq [IsFiniteMeasure P]
       ∑ i ∈ range (k n),
         deriv h (X (π n i) ω) * (X (π n (i + 1)) ω - X (π n i) ω) ^ 2)
       atTop (fun _ ↦ 0) := by
-  have hh_cont : Continuous h := hh.continuous
-  have hh'_cont : Continuous (deriv h) := hh.continuous_deriv_one
-  have hh_deriv : ∀ z, HasDerivAt h (deriv h z) z :=
-    fun z ↦ (hh.differentiable one_ne_zero).differentiableAt.hasDerivAt
   have hm (n : ℕ) : AEStronglyMeasurable (fun ω ↦
       (∑ i ∈ range (k n),
         (h (X (π n (i + 1)) ω) - h (X (π n i) ω)) * (X (π n (i + 1)) ω - X (π n i) ω)) -
       ∑ i ∈ range (k n),
         deriv h (X (π n i) ω) * (X (π n (i + 1)) ω - X (π n i) ω) ^ 2) P := by
-    have h₁ : AEStronglyMeasurable (fun ω ↦ ∑ i ∈ range (k n),
-        (h (X (π n (i + 1)) ω) - h (X (π n i) ω)) * (X (π n (i + 1)) ω - X (π n i) ω)) P := by
-      refine Finset.aestronglyMeasurable_fun_sum (range (k n)) fun i hi ↦ ?_
-      have hi' := mem_range.1 hi
-      have h0 := hXmeas n i hi'.le
-      have h1 := hXmeas n (i + 1) hi'
-      simpa only [Pi.mul_def, Pi.sub_def] using
-        ((hh_cont.comp_aestronglyMeasurable h1).sub
-          (hh_cont.comp_aestronglyMeasurable h0)).mul (h1.sub h0)
-    have h₂ : AEStronglyMeasurable (fun ω ↦ ∑ i ∈ range (k n),
-        deriv h (X (π n i) ω) * (X (π n (i + 1)) ω - X (π n i) ω) ^ 2) P := by
-      refine Finset.aestronglyMeasurable_fun_sum (range (k n)) fun i hi ↦ ?_
-      have hi' := mem_range.1 hi
-      have h0 := hXmeas n i hi'.le
-      have h1 := hXmeas n (i + 1) hi'
-      simpa only [Pi.mul_def, Pi.pow_def, Pi.sub_def] using
-        (hh'_cont.comp_aestronglyMeasurable h0).mul ((h1.sub h0).pow 2)
-    simpa only [Pi.sub_def] using h₁.sub h₂
+    have : Continuous h := hh.continuous
+    have : Continuous (deriv h) := hh.continuous_deriv_one
+    refine AEStronglyMeasurable.sub
+      (Finset.aestronglyMeasurable_fun_sum _ fun i hi ↦ ?_)
+      (Finset.aestronglyMeasurable_fun_sum _ fun i hi ↦ ?_)
+    · have := hXmeas n i (mem_range.1 hi).le
+      have := hXmeas n (i + 1) (mem_range.1 hi)
+      fun_prop
+    · have := hXmeas n i (mem_range.1 hi).le
+      have := hXmeas n (i + 1) (mem_range.1 hi)
+      fun_prop
   refine tendstoInMeasure_of_tendsto_of_continuousOn hs
     (ι := fun n ↦ Fin (k n))
     (u := fun n i ↦ π n i) (v := fun n i ↦ π n ((i : ℕ) + 1))
@@ -110,7 +99,8 @@ theorem tendstoInMeasure_sum_sub_mul_sub_sub_deriv_mul_sq [IsFiniteMeasure P]
   intro ω idx L R d hLR hd_le hd hQ
   exact TauCeti.tendsto_sum_sub_mul_sub_sub_deriv_mul_sq
     (x := fun j i ↦ X (π (idx j) i) ω) (n := fun j ↦ k (idx j)) (δ := d)
-    (fun z _ ↦ (hh_deriv z).hasDerivWithinAt) hh'_cont.continuousOn
+    (fun z _ ↦ (hh.differentiable_one z).hasDerivAt.hasDerivWithinAt)
+    hh.continuous_deriv_one.continuousOn
     (Eventually.of_forall fun j i hi ↦ hLR _ (hmem (idx j) i hi))
     (Eventually.of_forall fun j i hi ↦ hd_le j ⟨i, hi⟩)
     hd hQ.isBoundedUnder_le
@@ -135,30 +125,19 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_sub [IsFiniteMeasure P]
         (h (X (π n i) ω) + h (X (π n (i + 1)) ω)) / 2 * (X (π n (i + 1)) ω - X (π n i) ω)) -
       (H (X (π n (k n)) ω) - H (X (π n 0) ω)))
       atTop (fun _ ↦ 0) := by
-  have hh_cont : Continuous h := hh.continuous
-  have hh'_cont : Continuous (deriv h) := hh.continuous_deriv_one
-  have hH_cont : Continuous H := continuous_iff_continuousAt.2 fun y ↦ (hH y).continuousAt
-  have hh_deriv : ∀ z, HasDerivAt h (deriv h z) z :=
-    fun z ↦ (hh.differentiable one_ne_zero).differentiableAt.hasDerivAt
   have hm (n : ℕ) : AEStronglyMeasurable (fun ω ↦
       (∑ i ∈ range (k n),
         (h (X (π n i) ω) + h (X (π n (i + 1)) ω)) / 2 * (X (π n (i + 1)) ω - X (π n i) ω)) -
       (H (X (π n (k n)) ω) - H (X (π n 0) ω))) P := by
-    have h₁ : AEStronglyMeasurable (fun ω ↦ ∑ i ∈ range (k n),
-        (h (X (π n i) ω) + h (X (π n (i + 1)) ω)) / 2 * (X (π n (i + 1)) ω - X (π n i) ω)) P := by
-      refine Finset.aestronglyMeasurable_fun_sum (range (k n)) fun i hi ↦ ?_
-      have hi' := mem_range.1 hi
-      have h0 := hXmeas n i hi'.le
-      have h1 := hXmeas n (i + 1) hi'
-      simpa only [div_eq_mul_inv, Pi.mul_def, Pi.add_def, Pi.sub_def] using
-        (((hh_cont.comp_aestronglyMeasurable h0).add
-          (hh_cont.comp_aestronglyMeasurable h1)).mul_const (2 : ℝ)⁻¹).mul (h1.sub h0)
-    have h₂ : AEStronglyMeasurable
-        (fun ω ↦ H (X (π n (k n)) ω) - H (X (π n 0) ω)) P := by
-      simpa only [Pi.sub_def] using
-        (hH_cont.comp_aestronglyMeasurable (hXmeas n (k n) le_rfl)).sub
-          (hH_cont.comp_aestronglyMeasurable (hXmeas n 0 (Nat.zero_le _)))
-    simpa only [Pi.sub_def] using h₁.sub h₂
+    have : Continuous h := hh.continuous
+    have : Continuous H := continuous_iff_continuousAt.2 fun y ↦ (hH y).continuousAt
+    have := hXmeas n (k n) le_rfl
+    have := hXmeas n 0 (Nat.zero_le _)
+    refine AEStronglyMeasurable.sub
+      (Finset.aestronglyMeasurable_fun_sum _ fun i hi ↦ ?_) (by fun_prop)
+    have := hXmeas n i (mem_range.1 hi).le
+    have := hXmeas n (i + 1) (mem_range.1 hi)
+    fun_prop
   refine tendstoInMeasure_of_tendsto_of_continuousOn hs
     (ι := fun n ↦ Fin (k n))
     (u := fun n i ↦ π n i) (v := fun n i ↦ π n ((i : ℕ) + 1))
@@ -168,7 +147,8 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_sub [IsFiniteMeasure P]
   exact TauCeti.tendsto_sum_half_add_mul_sub_sub
     (x := fun j i ↦ X (π (idx j) i) ω) (n := fun j ↦ k (idx j)) (δ := d)
     (fun z _ ↦ (hH z).hasDerivWithinAt)
-    (fun z _ ↦ (hh_deriv z).hasDerivWithinAt) hh'_cont.continuousOn
+    (fun z _ ↦ (hh.differentiable_one z).hasDerivAt.hasDerivWithinAt)
+    hh.continuous_deriv_one.continuousOn
     (Eventually.of_forall fun j i hi ↦ hLR _ (hmem (idx j) i hi))
     (Eventually.of_forall fun j i hi ↦ hd_le j ⟨i, hi⟩)
     hd hQ.isBoundedUnder_le
@@ -225,27 +205,18 @@ theorem tendstoInMeasure_sum_midpoint_sub_half_add_sub_half_deriv [IsFiniteMeasu
         1 / 2 * deriv h (X (x n i) ω) *
           ((X (z n i) ω - X (x n i) ω) ^ 2 - (X (y n i) ω - X (z n i) ω) ^ 2)))
       atTop (fun _ ↦ 0) := by
-  have hh_cont : Continuous h := hh.continuous
-  have hh'_cont : Continuous (deriv h) := hh.continuous_deriv_one
-  have hh_deriv : ∀ u, HasDerivAt h (deriv h u) u :=
-    fun u ↦ (hh.differentiable one_ne_zero).differentiableAt.hasDerivAt
   have hm (n : ℕ) : AEStronglyMeasurable (fun ω ↦ ∑ i ∈ range (k n),
       (h (X (z n i) ω) * (X (y n i) ω - X (x n i) ω) -
         (h (X (x n i) ω) + h (X (y n i) ω)) / 2 * (X (y n i) ω - X (x n i) ω) -
         1 / 2 * deriv h (X (x n i) ω) *
           ((X (z n i) ω - X (x n i) ω) ^ 2 - (X (y n i) ω - X (z n i) ω) ^ 2))) P := by
-    refine Finset.aestronglyMeasurable_fun_sum (range (k n)) fun i hi ↦ ?_
-    have hi' := mem_range.1 hi
-    have hxm := hxmeas n i hi'
-    have hzm := hzmeas n i hi'
-    have hym := hymeas n i hi'
-    have hterm₁ := (hh_cont.comp_aestronglyMeasurable hzm).mul (hym.sub hxm)
-    have hterm₂ := (((hh_cont.comp_aestronglyMeasurable hxm).add
-      (hh_cont.comp_aestronglyMeasurable hym)).mul_const (2 : ℝ)⁻¹).mul (hym.sub hxm)
-    have hterm₃ := ((hh'_cont.comp_aestronglyMeasurable hxm).const_mul ((1 : ℝ) / 2)).mul
-      (((hzm.sub hxm).pow 2).sub ((hym.sub hzm).pow 2))
-    simpa only [div_eq_mul_inv, Pi.sub_def, Pi.mul_def, Pi.add_def, Pi.pow_def] using
-      (hterm₁.sub hterm₂).sub hterm₃
+    have : Continuous h := hh.continuous
+    have : Continuous (deriv h) := hh.continuous_deriv_one
+    refine Finset.aestronglyMeasurable_fun_sum _ fun i hi ↦ ?_
+    have := hxmeas n i (mem_range.1 hi)
+    have := hzmeas n i (mem_range.1 hi)
+    have := hymeas n i (mem_range.1 hi)
+    fun_prop
   refine tendstoInMeasure_of_tendsto_of_continuousOn hs
     (ι := fun n ↦ Fin (k n) ⊕ Fin (k n))
     (u := fun n ↦ Sum.elim (fun i ↦ x n i) (fun i ↦ z n i))
@@ -261,7 +232,8 @@ theorem tendstoInMeasure_sum_midpoint_sub_half_add_sub_half_deriv [IsFiniteMeasu
     (z := fun j i ↦ X (z (idx j) i) ω)
     (y := fun j i ↦ X (y (idx j) i) ω)
     (δ := d)
-    (fun u _ ↦ (hh_deriv u).hasDerivWithinAt) hh'_cont.continuousOn
+    (fun u _ ↦ (hh.differentiable_one u).hasDerivAt.hasDerivWithinAt)
+    hh.continuous_deriv_one.continuousOn
     (Eventually.of_forall fun j i hi ↦ hLR _ (hx (idx j) i hi))
     (Eventually.of_forall fun j i hi ↦ hLR _ (hz (idx j) i hi))
     (Eventually.of_forall fun j i hi ↦ hLR _ (hy (idx j) i hi))

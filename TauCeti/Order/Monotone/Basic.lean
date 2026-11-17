@@ -10,6 +10,7 @@ public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
 public import Mathlib.Order.Nat
 public import Mathlib.Order.SetNotation
+public import TauCeti.Data.Stream.Init
 import Mathlib.Order.Interval.Set.OrdConnected
 import Mathlib.Order.SuccPred.Nat
 
@@ -21,16 +22,16 @@ the new value lies strictly between the values at the points of `s` on either si
 (`StrictMonoOn.update`). For instance, a crossing time may be moved along a parameter interval
 containing no other crossing time without changing the order of the crossings.
 
-Interleaving two sequences `a` and `c` as `a 0, c 0, a 1, c 1, …, a n` produces a monotone
-sequence on `Iic (2 * n)` whenever `a i ≤ c i ≤ a (i + 1)` for every `i < n`
-(`TauCeti.monotoneOn_even_odd_Iic`).
+Interleaving two sequences `a` and `c` as `TauCeti.interleave a c`, namely
+`a 0, c 0, a 1, c 1, …, a n`, produces a monotone sequence on `Iic (2 * n)` whenever
+`a i ≤ c i ≤ a (i + 1)` for every `i < n` (`TauCeti.monotoneOn_interleave_Iic`).
 
 ## Main results
 
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
-* `TauCeti.monotoneOn_even_odd_Iic`: interleaving `a` at even indices and `c` at odd indices is
-  monotone on `Iic (2 * n)` when `a i ≤ c i` and `c i ≤ a (i + 1)` for `i < n`.
+* `TauCeti.monotoneOn_interleave_Iic`: `TauCeti.interleave a c` is monotone on `Iic (2 * n)` when
+  `a i ≤ c i` and `c i ≤ a (i + 1)` for `i < n`.
 -/
 
 public section
@@ -56,20 +57,18 @@ theorem StrictMonoOn.update {α β : Type*} [Preorder α] [Preorder β] [Decidab
   rw [update_of_ne hxa, update_of_ne hya]
   exact hf ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
 
-/-- Interleaving `a 0, c 0, a 1, c 1, …, a n` produces a monotone sequence on `{0, …, 2 * n}`
-whenever `a i ≤ c i` and `c i ≤ a (i + 1)` for every `i < n`. -/
-theorem TauCeti.monotoneOn_even_odd_Iic {α : Type*} [Preorder α] {n : ℕ} {a c : ℕ → α}
+/-- Interleaving `a 0, c 0, a 1, c 1, …, a n` via `TauCeti.interleave a c` produces a monotone
+sequence on `{0, …, 2 * n}` whenever `a i ≤ c i` and `c i ≤ a (i + 1)` for every `i < n`. -/
+theorem TauCeti.monotoneOn_interleave_Iic {α : Type*} [Preorder α] {n : ℕ} {a c : ℕ → α}
     (hac : ∀ i < n, a i ≤ c i ∧ c i ≤ a (i + 1)) :
-    MonotoneOn (fun j ↦ if j % 2 = 0 then a (j / 2) else c (j / 2)) (Iic (2 * n)) := by
+    MonotoneOn (TauCeti.interleave a c) (Iic (2 * n)) := by
   refine monotoneOn_of_le_add_one ordConnected_Iic fun j _ _ hj ↦ ?_
-  have hi : j / 2 < n := by
-    have : j < 2 * n := Nat.lt_of_succ_le hj
-    omega
-  obtain ⟨h₁, h₂⟩ := hac (j / 2) hi
-  rcases Nat.mod_two_eq_zero_or_one j with hmod | hmod
-  · have hdiv1 : (j + 1) / 2 = j / 2 := by omega
-    have hmod1 : (j + 1) % 2 = 1 := by omega
-    simpa only [hmod, hmod1, Nat.one_ne_zero, ↓reduceIte, hdiv1] using h₁
-  · have hdiv1 : (j + 1) / 2 = j / 2 + 1 := by omega
-    have hmod1 : (j + 1) % 2 = 0 := by omega
-    simpa only [hmod, Nat.one_ne_zero, hmod1, ↓reduceIte, hdiv1] using h₂
+  have hjlt : j < 2 * n := Nat.lt_of_succ_le hj
+  set i := j / 2
+  by_cases hmod : j % 2 = 0
+  · rw [show j = 2 * i by omega]
+    simpa using (hac i (by omega)).1
+  · have h1 : j = 2 * i + 1 := by omega
+    have h2 : j + 1 = 2 * (i + 1) := by omega
+    rw [h2, h1]
+    simpa using (hac i (by omega)).2

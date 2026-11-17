@@ -22,7 +22,10 @@ uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter.
+squared deviations required only eventually along the filter. Likewise, convergence in measure
+can be localized off a family of exceptional sets whose measures have infimum zero, and any
+convergent deterministic family converges in measure as constant functions, again without
+measurability or finiteness hypotheses.
 
 Pairing, post-composition with uniformly continuous maps, uniform group operations, and
 uniformly continuous constant scalar multiplication preserve convergence in measure along
@@ -43,6 +46,11 @@ whenever the transformed functions are eventually almost everywhere strongly mea
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `TauCeti.tendstoInMeasure_of_iInf_measure_eq_zero`: localize convergence in measure off a family
+  of exceptional sets whose infimum measure vanishes (`⨅ m, μ (F m) = 0`), without measurability
+  or finiteness assumptions.
+* `Filter.Tendsto.tendstoInMeasure_const`: a convergent deterministic family converges in measure
+  as constant functions, without finiteness or measurability assumptions.
 * `UniformContinuous.comp_tendstoInMeasure`: post-composing with a uniformly continuous map
   preserves convergence in measure without finiteness or measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
@@ -132,7 +140,50 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
   simp_rw [not_le]
 
+/-- **Localization of convergence in measure.** If a family of exceptional sets `F m` satisfies
+`⨅ m, μ (F m) = 0`, and for each `m` a localized family `f_loc m` converges in measure to `g_loc m`
+along `l` while dominating `edist (f k x) (g x)` almost everywhere off `F m` eventually along `l`,
+then `f` converges in measure to `g` along `l`. No measurability of `F m` or finiteness of `μ` is
+needed. -/
+theorem tendstoInMeasure_of_iInf_measure_eq_zero {E' : Type*} {κ : Sort*} [EDist E] [EDist E']
+    {f : ι → α → E} {g : α → E} {F : κ → Set α}
+    {f_loc : κ → ι → α → E'} {g_loc : κ → α → E'}
+    (hF : ⨅ m, μ (F m) = 0)
+    (hlim : ∀ m, TendstoInMeasure μ (f_loc m) l (g_loc m))
+    (hle : ∀ m, ∀ᶠ k in l, ∀ᵐ x ∂μ, x ∉ F m →
+      edist (f k x) (g x) ≤ edist (f_loc m k x) (g_loc m x)) :
+    TendstoInMeasure μ f l g := by
+  intro ε hε
+  refine ENNReal.tendsto_nhds_zero.2 fun η hη ↦ ?_
+  have hη2 : 0 < η / 2 := ENNReal.half_pos hη.ne'
+  obtain ⟨m, hm⟩ : ∃ m, μ (F m) < η / 2 := iInf_lt_iff.1 (hF.symm ▸ hη2)
+  filter_upwards [ENNReal.tendsto_nhds_zero.1 (hlim m ε hε) (η / 2) hη2, hle m] with k hkm hlek
+  have hsub :
+      ({x | ε ≤ edist (f k x) (g x)} : Set α) ≤ᵐ[μ]
+        ({x | ε ≤ edist (f_loc m k x) (g_loc m x)} ∪ F m : Set α) := by
+    filter_upwards [hlek] with x hx hmem
+    by_cases hxF : x ∈ F m
+    · exact Or.inr hxF
+    · exact Or.inl (hmem.trans (hx hxF))
+  calc
+    μ {x | ε ≤ edist (f k x) (g x)}
+        ≤ μ ({x | ε ≤ edist (f_loc m k x) (g_loc m x)} ∪ F m) := measure_mono_ae hsub
+    _ ≤ μ {x | ε ≤ edist (f_loc m k x) (g_loc m x)} + μ (F m) := measure_union_le _ _
+    _ ≤ η / 2 + η / 2 := add_le_add hkm hm.le
+    _ = η := ENNReal.add_halves η
+
 end TauCeti
+
+/-- A convergent deterministic family converges in measure as constant functions, with no finiteness
+assumption on the measure and no measurability assumption. -/
+theorem Filter.Tendsto.tendstoInMeasure_const {α ι E : Type*} {_ : MeasurableSpace α}
+    {μ : MeasureTheory.Measure α} [PseudoEMetricSpace E] {l : Filter ι} {c : ι → E} {b : E}
+    (hc : Filter.Tendsto c l (nhds b)) :
+    MeasureTheory.TendstoInMeasure μ (fun k _ ↦ c k) l (fun _ ↦ b) := by
+  intro ε hε
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [EMetric.tendsto_nhds.1 hc ε hε] with k hk
+  simp [hk.not_ge]
 
 /-- Post-composing with a uniformly continuous map preserves convergence in measure, with no
 finiteness assumption on the measure and no measurability assumption on the functions. -/
