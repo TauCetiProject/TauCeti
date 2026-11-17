@@ -216,11 +216,11 @@ theorem cyclicQuotientRingHomMap_mkQ (φ : F) (x : R) :
       (commutatorSubmodule ℤ S).mkQ (φ x) := by rfl
 
 @[simp]
-theorem cyclicQuotientRingHomMap_id {R : Type*} [NonAssocRing R] :
-    cyclicQuotientRingHomMap (RingHom.id R) = LinearMap.id := by ext x; rfl
+theorem cyclicQuotientRingHomMap_id {R : Type*} [NonUnitalNonAssocRing R] :
+    cyclicQuotientRingHomMap (NonUnitalRingHom.id R) = LinearMap.id := by ext x; rfl
 
-theorem cyclicQuotientRingHomMap_comp {R S T : Type*} [NonAssocRing R] [NonAssocRing S]
-    [NonAssocRing T] (ψ : S →+* T) (φ : R →+* S) :
+theorem cyclicQuotientRingHomMap_comp {R S T : Type*} [NonUnitalNonAssocRing R]
+    [NonUnitalNonAssocRing S] [NonUnitalNonAssocRing T] (ψ : S →ₙ+* T) (φ : R →ₙ+* S) :
     cyclicQuotientRingHomMap (ψ.comp φ) =
       (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by ext x; rfl
 

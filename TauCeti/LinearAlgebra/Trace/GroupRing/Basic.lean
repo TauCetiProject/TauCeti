@@ -282,14 +282,15 @@ theorem hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract (H : Subgroup G)
             π (Pi.single k 1))) k).coeff q.out⁻¹) := by
   classical
   let _ : Module Λ[H] Λ[G] := (mapDomainRingHom Λ H.subtype).toModule
+  have hsmul (c : Λ[H]) (v : Fin r → Λ[G]) :
+      c • v = mapDomainRingHom Λ H.subtype c • v := by
+    ext k; rw [Pi.smul_apply, Pi.smul_apply, RingHom.toModule_smul, smul_eq_mul]
   let i_H : P →ₗ[Λ[H]] Fin r → Λ[G] :=
     { toFun := i, map_add' := map_add i,
-      map_smul' := fun c p ↦ by rw [RingHom.id_apply, hP, map_smul]; ext k; rfl }
+      map_smul' := fun c p ↦ by rw [RingHom.id_apply, hP, map_smul, hsmul] }
   let π_H : (Fin r → Λ[G]) →ₗ[Λ[H]] P :=
     { toFun := π, map_add' := map_add π,
-      map_smul' := fun c v ↦ by
-        rw [RingHom.id_apply, show c • v = mapDomainRingHom Λ H.subtype c • v from rfl,
-          map_smul, hP] }
+      map_smul' := fun c v ↦ by rw [RingHom.id_apply, hsmul, map_smul, hP] }
   let bPi : Module.Basis ((_ : Fin r) × (G ⧸ H.subtype.range)) Λ[H] (Fin r → Λ[G]) :=
     Pi.basis fun _ ↦ TauCeti.MonoidAlgebra.basisCosets Λ H.subtype H.subtype_injective
   rw [hattoriStallingsGroupTrace_apply,
@@ -316,12 +317,12 @@ theorem hattoriStallingsGroupTrace_eq_index_nsmul (H : Subgroup G)
     have : Finite (G ⧸ H.subtype.range) := by rw [Subgroup.range_subtype]; infer_instance
     let _ : Fintype (G ⧸ H.subtype.range) := Fintype.ofFinite _
     obtain ⟨r, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective Λ[G] P
+    have hcard : Fintype.card (G ⧸ H.subtype.range) = H.index := by
+      rw [← Nat.card_eq_fintype_card, Subgroup.range_subtype, Subgroup.index]
     rw [hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract H hP π i hπi u_H,
       hattoriStallingsGroupTrace_apply,
       hattoriStallingsTrace_eq_of_retract (Pi.basisFun Λ[G] (Fin r)) i π hπi,
-      Module.Basis.hattoriStallingsTrace_apply, cyclicCoeffOne_mkQ, ← map_nsmul,
-      ← show Fintype.card (G ⧸ H.subtype.range) = H.index by
-        rw [← Nat.card_eq_fintype_card, Subgroup.range_subtype, Subgroup.index]]
+      Module.Basis.hattoriStallingsTrace_apply, cyclicCoeffOne_mkQ, ← map_nsmul, ← hcard]
     congr 1; simp only [coeff_sum, Finsupp.finsetSum_apply, Finset.smul_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     have hq (q : G ⧸ H.subtype.range) :
@@ -372,8 +373,9 @@ theorem hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocu
         (bΛ.repr ((i_Λ ∘ₗ φ ∘ₗ π_Λ) (bΛ ⟨k, g⟩))) ⟨k, g⟩ = yk.coeff ((σ g)⁻¹ * g) := by
       have hπ : π_Λ (bΛ ⟨k, g⟩) = MonoidAlgebra.single g (1 : Λ) • π (Pi.single k 1) := by
         rw [← map_smul π, ← Pi.single_smul', smul_eq_mul, mul_one]; simp [π_Λ, bΛ]
-      rw [show ∀ v, (bΛ.repr v) ⟨k, g⟩ = (v k).coeff g from fun v ↦ by simp [bΛ],
-        comp_apply, comp_apply, hπ, restrictScalars_apply, himg, coeff_single_mul_apply, one_mul]
+      have hrepr (v : Fin r → Λ[G]) : (bΛ.repr v) ⟨k, g⟩ = (v k).coeff g := by simp [bΛ]
+      rw [hrepr, comp_apply, comp_apply, hπ, restrictScalars_apply, himg, coeff_single_mul_apply,
+        one_mul]
     have hRHS (q : G ⧸ Z.subtype.range) :
         (i (φ_Z ((MonoidAlgebra.single q.out⁻¹ (1 : Λ) : Λ[G]) •
             π (Pi.single k 1))) k).coeff q.out⁻¹ = yk.coeff ((σ q.out⁻¹)⁻¹ * q.out⁻¹) := by
