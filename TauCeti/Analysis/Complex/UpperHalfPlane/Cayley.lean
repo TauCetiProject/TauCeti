@@ -494,6 +494,8 @@ theorem inverseCayleyCoord_def (w : ℂ) :
 /-- The Cayley transform recovers every unit-circle point other than `1`. -/
 theorem cayley_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) (h1 : w ≠ 1) :
     ((inverseCayleyCoord w : ℂ) - I) / ((inverseCayleyCoord w : ℂ) + I) = w := by
+  -- Expose `surjOn`'s target set so the pair elaborates as set-difference membership:
+  -- closed-ball membership is `‖w‖ ≤ 1`, and exclusion from `{1}` reduces to `w ≠ 1`.
   obtain ⟨z, hz, hzw⟩ := TauCeti.bijOn_sub_I_div_add_I_im_nonneg.surjOn
     (show w ∈ Metric.closedBall 0 1 \ {1} from
       ⟨mem_closedBall_zero_iff.mpr hw.le, h1⟩)
