@@ -81,7 +81,7 @@ variable (R : Type*) [CommRing R]
 of `uᵃ vᵇ` being `coeff a (coeff b _)`. That coefficient is `-2 σ₁(a)` when `a = b`, and otherwise
 `d = |a - b|` when `d` divides `min a b` (equivalently `a`, or `b`) and `0` when it does not. With
 `q = u v` this is the expansion of `∑_{n ∈ ℤ} qⁿu / (1 - qⁿu)² - 2 s₁(q)` on `|q| < |u| < 1`. -/
-noncomputable def tateFormalX : R⟦X⟧⟦X⟧ :=
+def tateFormalX : R⟦X⟧⟦X⟧ :=
   mk fun b ↦ mk fun a ↦
     if a = b then -2 * (σ 1 a : R) else if a.dist b ∣ min a b then (a.dist b : R) else 0
 
@@ -90,7 +90,7 @@ of `uᵃ vᵇ` being `coeff a (coeff b _)`. That coefficient is `σ₁(a)` when 
 `d = |a - b|`, it is `0` unless `d` divides `min a b`, in which case it is `d (d - 1) / 2` when
 `b < a` and `-d (d + 1) / 2` when `a < b`. With `q = u v` this is the expansion of
 `∑_{n ∈ ℤ} (qⁿu)² / (1 - qⁿu)³ + s₁(q)` on `|q| < |u| < 1`. -/
-noncomputable def tateFormalY : R⟦X⟧⟦X⟧ :=
+def tateFormalY : R⟦X⟧⟦X⟧ :=
   mk fun b ↦ mk fun a ↦
     if a = b then (σ 1 a : R) else if a.dist b ∣ min a b then
       (if b < a then ((a.dist b).choose 2 : R) else -((a.dist b + 1).choose 2 : R)) else 0
@@ -589,8 +589,9 @@ absolute value larger than `N`, and the symmetry in `u` and `v` moves the coeffi
 vanish because `F(2) = 0`.
 
 This is a formal counterpart of the non-archimedean Liouville theorem in Tate, *A review of
-non-Archimedean elliptic functions*: an analytic function on `Kˣ` invariant under `u ↦ q u` is
-constant. -/
+non-Archimedean elliptic functions*: over a complete non-archimedean field `K` and for `q ∈ Kˣ`
+with `|q| < 1`, a holomorphic function on `Kˣ`, that is, a Laurent series converging on all of
+`Kˣ`, which is invariant under `u ↦ q u` is constant. -/
 private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSeries.swap G = G)
     {f : (Polynomial ℚ)⟦X⟧} (hj : toLaurent G = map psi (C wP * f)) : G = 0 := by
   set L : ℕ → LaurentPolynomial ℚ := fun N ↦ symmHom (coeff N (C wP * f)) with hLdef
