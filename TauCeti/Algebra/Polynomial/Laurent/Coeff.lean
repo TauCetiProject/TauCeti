@@ -18,6 +18,8 @@ every coefficient of nonnegative exponent. These hold over an arbitrary semiring
 ## Main results
 
 * `LaurentPolynomial.coeff_T_mul`: `(T n * f).coeff d = f.coeff (d - n)`.
+* `LaurentPolynomial.T_mul_eq_self_iff`: a nonzero Laurent polynomial is fixed by multiplication
+  by `T n` only for `n = 0`.
 * `LaurentPolynomial.coeff_C_mul` and `LaurentPolynomial.coeff_natCast_mul`: constants scale
   coefficients.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
@@ -39,6 +41,31 @@ moves `T n` to the right with `LaurentPolynomial.T_mul`. -/
 theorem coeff_T_mul (n : ℤ) (f : R[T;T⁻¹]) (d : ℤ) : (T n * f).coeff d = f.coeff (d - n) := by
   simpa only [T, one_mul, sub_eq_add_neg, add_comm] using
     AddMonoidAlgebra.coeff_single_mul_apply f (1 : R) n d
+
+/-- A Laurent polynomial is fixed by left multiplication by `T n` only when `n = 0` or it is
+zero: otherwise its coefficients repeat with period `n`, and its support would be infinite. -/
+theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 ∨ f = 0 := by
+  refine ⟨fun h => or_iff_not_imp_right.mpr fun hf => ?_, ?_⟩
+  · by_contra hn
+    obtain ⟨d, hd⟩ : ∃ d, f.coeff d ≠ 0 := by
+      by_contra! h'
+      exact hf (LaurentPolynomial.ext fun a => by simp [h' a])
+    have hper (k : ℕ) : f.coeff (d - k * n) = f.coeff d := by
+      induction k with
+      | zero => simp
+      | succ k ih =>
+        rw [← ih]
+        conv_rhs => rw [← h, coeff_T_mul]
+        congr 1
+        push_cast
+        ring
+    have hinj : Function.Injective fun k : ℕ => d - k * n := fun k l hkl => by
+      have := mul_right_cancel₀ hn (sub_right_injective hkl)
+      exact_mod_cast this
+    exact Set.infinite_of_injective_forall_mem hinj
+      (fun k => Finsupp.mem_support_iff.mpr (by rw [hper k]; exact hd))
+      f.coeff.support.finite_toSet
+  · rintro (rfl | rfl) <;> simp [T_zero]
 
 /-- Left multiplication by a constant scales every coefficient. -/
 @[simp]

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.AlexanderGrading
+public import TauCeti.LowDimTopology.Heegaard.KnotEulerCharacteristic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.Qify
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -51,16 +52,24 @@ multiples of the whole surface. Hence:
   `-1`, with this normalization. The bigon `B_z` joins the generators of Alexander gradings `1`
   and `0` with `n_z - n_w = 1`, and is not counted.
 
-All gradings here are relative: the values `1`, `0`, `-1` are determined only up to an overall
-shift, and `A(x₂) = 0` is a choice. The canonical absolute Alexander grading of knot Floer
-homology, fixed by the symmetry of `HFK̂` (equivalently, by the Seifert class), is not formalized
-here; with it, these are the gradings of the knot Floer homology of the trefoil, whose graded
-Euler characteristic is its Alexander polynomial `t - 1 + t⁻¹`.
+The relative gradings are determined only up to an overall shift. The Maslov gradings `0`, `-2`,
+`-1` and the Alexander gradings `1`, `-1`, `0` of `x₀`, `x₁`, `x₂` are integer lifts of them,
+a knot grading in the sense of `TauCeti.HeegaardRegionSystem.IsKnotGrading`
+(`TauCeti.HeegaardRegionSystem.isKnotGrading_trefoil`). Their graded Euler characteristic
+`∑ₓ (-1)^{M(x)} T^{A(x)}` is `T - 1 + T⁻¹`, the symmetrized Alexander polynomial of the trefoil
+(`TauCeti.HeegaardRegionSystem.knotEulerChar_trefoil`); forgetting the Maslov parity would give
+`T + 1 + T⁻¹` instead. Since it is symmetric, these are the only Alexander gradings of a knot
+grading of this diagram with symmetric graded Euler characteristic
+(`TauCeti.HeegaardRegionSystem.eq_trefoilAlexanderGrading_of_isKnotGrading`). The identification
+of this symmetric normalization with the one by a Seifert surface, and of the Maslov normalization
+with the absolute grading of `HF̂(S³)`, is not formalized here.
 
 ## Main definitions
 
 * `TauCeti.HeegaardRegionSystem.trefoil`: the diagram, with its basepoints in given regions.
 * `TauCeti.HeegaardRegionSystem.trefoilGenerator`: its three generators.
+* `TauCeti.HeegaardRegionSystem.trefoilMaslovGrading` and
+  `TauCeti.HeegaardRegionSystem.trefoilAlexanderGrading`: their integer gradings.
 
 ## Main results
 
@@ -82,6 +91,11 @@ Euler characteristic is its Alexander polynomial `t - 1 + t⁻¹`.
 * `TauCeti.HeegaardRegionSystem.hatDomains_trefoil` and
   `TauCeti.HeegaardRegionSystem.hatDifferential_trefoil`: the hat knot Floer differential
   vanishes.
+* `TauCeti.HeegaardRegionSystem.isKnotGrading_trefoil`: integer Maslov and Alexander gradings.
+* `TauCeti.HeegaardRegionSystem.knotEulerChar_trefoil`: the graded Euler characteristic is
+  `T - 1 + T⁻¹`.
+* `TauCeti.HeegaardRegionSystem.eq_trefoilAlexanderGrading_of_isKnotGrading`: the symmetric
+  Alexander grading is unique.
 
 ## References
 
@@ -397,6 +411,100 @@ diagram has the three generators `x₀`, `x₂`, `x₁`, in the relative Alexand
 theorem hatDifferential_trefoil (χ : Fin 3 → ℤ) : (trefoil ![1, 2]).hatDifferential χ = 0 :=
   hatDifferential_eq_zero_iff.mpr fun x y =>
     hatCoefficient_eq_zero_of_hatDomains_eq_empty (hatDomains_trefoil χ x y)
+
+/-! ### Integer knot gradings and the graded Euler characteristic -/
+
+section KnotEulerCharacteristic
+
+open LaurentPolynomial
+
+/-- Every two generators of `trefoil b` are joined by a domain. -/
+theorem exists_isDomainBetween_trefoil (x y : (trefoil b).Generator) :
+    ∃ D, (trefoil b).IsDomainBetween x y D := by
+  rw [← trefoilGenerator_snd_zero x, ← trefoilGenerator_snd_zero y]
+  generalize ((x.2 0 : Fin 3)) = a
+  generalize ((y.2 0 : Fin 3)) = c
+  simp_rw [isDomainBetween_trefoil_iff]
+  exact ⟨![0, (if a = 1 then 1 else 0) - (if c = 1 then 1 else 0),
+    (if a = 0 then 1 else 0) - (if c = 0 then 1 else 0)], by simp⟩
+
+/-- The Maslov grading of the generators `x₀`, `x₁`, `x₂` of the doubly pointed trefoil
+diagram: `0`, `-2` and `-1`. -/
+def trefoilMaslovGrading (x : (trefoil ![1, 2]).Generator) : ℤ :=
+  ![0, -2, -1] ((trefoil ![1, 2]).point x 0)
+
+/-- The Alexander grading of the generators `x₀`, `x₁`, `x₂` of the doubly pointed trefoil
+diagram: `1`, `-1` and `0`. -/
+def trefoilAlexanderGrading (x : (trefoil ![1, 2]).Generator) : ℤ :=
+  ![1, -1, 0] ((trefoil ![1, 2]).point x 0)
+
+@[simp]
+theorem trefoilMaslovGrading_trefoilGenerator (a : Fin 3) :
+    trefoilMaslovGrading (trefoilGenerator _ a) = ![0, -2, -1] a := by
+  simp [trefoilMaslovGrading]
+
+@[simp]
+theorem trefoilAlexanderGrading_trefoilGenerator (a : Fin 3) :
+    trefoilAlexanderGrading (trefoilGenerator _ a) = ![1, -1, 0] a := by
+  simp [trefoilAlexanderGrading]
+
+/-- **The integer gradings of the trefoil diagram.** With `w` in `B_w` and `z` in `B_z`, the
+Maslov gradings `0`, `-2`, `-1` and the Alexander gradings `1`, `-1`, `0` of `x₀`, `x₁`, `x₂`
+form a knot grading. In the order `x₀`, `x₂`, `x₁` of decreasing Alexander grading, the Maslov
+grading drops by one at each step. -/
+theorem isKnotGrading_trefoil :
+    (trefoil ![1, 2]).IsKnotGrading 1 0 1 trefoilMaslovGrading trefoilAlexanderGrading where
+  maslov_sub_maslov {x y D} hD := by
+    rw [← trefoilGenerator_snd_zero x, ← trefoilGenerator_snd_zero y] at hD ⊢
+    generalize ((x.2 0 : Fin 3)) = a at hD ⊢
+    generalize ((y.2 0 : Fin 3)) = c at hD ⊢
+    obtain ⟨h0, h1⟩ := (isDomainBetween_trefoil_iff a c D).mp hD
+    qify at h0 h1
+    fin_cases a <;> fin_cases c <;>
+      norm_num +decide [trefoilMaslovGrading, maslovIndex_apply, eulerMeasure_apply,
+        generatorPointMeasure_apply, pointMeasure_apply, Fin.sum_univ_three,
+        neg_one_fin_three] at h0 h1 ⊢ <;>
+      linarith
+  alexander_sub_alexander {x y D} hD := by
+    rw [← trefoilGenerator_snd_zero x, ← trefoilGenerator_snd_zero y] at hD ⊢
+    generalize ((x.2 0 : Fin 3)) = a at hD ⊢
+    generalize ((y.2 0 : Fin 3)) = c at hD ⊢
+    obtain ⟨h0, h1⟩ := (isDomainBetween_trefoil_iff a c D).mp hD
+    fin_cases a <;> fin_cases c <;> simp at h0 h1 ⊢ <;> omega
+
+/-- **The graded Euler characteristic of the trefoil diagram is `T - 1 + T⁻¹`**, the symmetrized
+Alexander polynomial of the trefoil. -/
+theorem knotEulerChar_trefoil :
+    (trefoil ![1, 2]).knotEulerChar trefoilMaslovGrading trefoilAlexanderGrading =
+      T 1 - 1 + T (-1) := by
+  let e : Fin 3 ≃ (trefoil ![1, 2]).Generator :=
+    ⟨trefoilGenerator _, fun x => x.2 0, fun a => by
+      simpa only [HeegaardIntersectionSystem.point_apply] using
+        trefoilGenerator_point (b := ![1, 2]) a 0,
+      trefoilGenerator_snd_zero⟩
+  rw [knotEulerChar_def, ← e.sum_comp, Fin.sum_univ_three]
+  simp [e, Int.negOnePow_def]
+  abel
+
+/-- **The symmetric Alexander grading of the trefoil diagram.** Every knot grading of the trefoil
+diagram whose graded Euler characteristic is symmetric under `T ↦ T⁻¹` has the Alexander gradings
+`1`, `-1`, `0` of `x₀`, `x₁`, `x₂`. -/
+theorem eq_trefoilAlexanderGrading_of_isKnotGrading {M A : (trefoil ![1, 2]).Generator → ℤ}
+    (h : (trefoil ![1, 2]).IsKnotGrading 1 0 1 M A)
+    (hs : LaurentPolynomial.invert ((trefoil ![1, 2]).knotEulerChar M A) =
+      (trefoil ![1, 2]).knotEulerChar M A) :
+    A = trefoilAlexanderGrading := by
+  refine isKnotGrading_trefoil.alexander_eq_of_invert_knotEulerChar_eq h
+    exists_isDomainBetween_trefoil ?_ ?_ hs
+  · rw [knotEulerChar_trefoil]
+    intro h
+    have h0 := congrArg (fun p : ℤ[T;T⁻¹] => p.coeff 0) h
+    simp at h0
+  · rw [knotEulerChar_trefoil]
+    simp only [map_add, map_sub, invert_T, map_one, neg_neg]
+    abel
+
+end KnotEulerCharacteristic
 
 end HeegaardRegionSystem
 
