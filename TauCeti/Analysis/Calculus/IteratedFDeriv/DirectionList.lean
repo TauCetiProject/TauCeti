@@ -266,13 +266,6 @@ theorem iteratedFDerivAlong_comp_of_hasFDerivAt {φ : G → E} {L : G →L[𝕜]
       iteratedFDerivAlong_cons_apply, h.fderiv]
     rfl
 
-private theorem contDiffAt_open {f : E → F} {x : E} {m : ℕ∞ω}
-    (hf : ContDiffAt 𝕜 n f x) (hm : m ≤ n) (hm_ne : m ≠ ∞) :
-    ∃ s, IsOpen s ∧ x ∈ s ∧ ContDiffOn 𝕜 m f s := by
-  obtain ⟨u, hu, hfu⟩ := (hf.of_le hm).contDiffOn le_rfl (by simp [hm_ne])
-  obtain ⟨s, hsu, hs, hx⟩ := mem_nhds_iff.1 hu
-  exact ⟨s, hs, hx, hfu.mono hsu⟩
-
 /-- At a point `x` where `f` is `C^n` with `(v :: w :: vs).length ≤ n`, differentiating
 `iteratedFDerivAlong 𝕜 vs f` in direction `w` followed by direction `v` equals its second
 derivative applied to `v` and `w`. -/
@@ -280,7 +273,8 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_cons_cons_apply {f : E → F} {x :
     (hf : ContDiffAt 𝕜 n f x) (v w : E) (vs : List E) (hvs : (v :: w :: vs).length ≤ n) :
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f x =
       fderiv 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x v w := by
-  obtain ⟨s, hs, hx, hfs⟩ := contDiffAt_open hf hvs (by simp)
+  obtain ⟨s, hs, hx, hfs⟩ := hf.contDiffOn' hvs (by simp)
+  rw [Set.insert_eq_of_mem (Set.mem_univ _), Set.univ_inter] at hfs
   have h2 : ContDiffOn 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) s := hfs.iteratedFDerivAlong hs vs
     (by simp only [List.length_cons]; push_cast; exact le_of_eq (by ring))
   have hd : DifferentiableAt 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x :=
@@ -309,7 +303,8 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_swap_apply {f : E → F} {x : E}
   rw [hf.iteratedFDerivAlong_cons_cons_apply _ _ _ hlen,
     hf.iteratedFDerivAlong_cons_cons_apply _ _ _ (by simpa using hlen)]
   obtain ⟨m, hm, hmn, hm_ne⟩ := exist_minSmoothness_le_ne_infty hvs
-  obtain ⟨s, hs, hx, hfs⟩ := contDiffAt_open hf hmn hm_ne
+  obtain ⟨s, hs, hx, hfs⟩ := hf.contDiffOn' hmn (by simp [hm_ne])
+  rw [Set.insert_eq_of_mem (Set.mem_univ _), Set.univ_inter] at hfs
   have h2 : ContDiffOn 𝕜 (minSmoothness 𝕜 2) (iteratedFDerivAlong 𝕜 vs f) s :=
     hfs.iteratedFDerivAlong hs vs (le_of_eq_of_le
       (by rw [← minSmoothness_add]; congr 1; simp only [List.length_cons]; push_cast; ring) hm)
@@ -330,7 +325,8 @@ theorem _root_.List.Perm.iteratedFDerivAlong_eq_of_contDiffAt {vs ws : List E}
     (hvs : minSmoothness 𝕜 vs.length ≤ n) :
     iteratedFDerivAlong 𝕜 vs f x = iteratedFDerivAlong 𝕜 ws f x := by
   obtain ⟨m, hm, hmn, hm_ne⟩ := exist_minSmoothness_le_ne_infty hvs
-  obtain ⟨s, hs, hx, hfs⟩ := contDiffAt_open hf hmn hm_ne
+  obtain ⟨s, hs, hx, hfs⟩ := hf.contDiffOn' hmn (by simp [hm_ne])
+  rw [Set.insert_eq_of_mem (Set.mem_univ _), Set.univ_inter] at hfs
   suffices ∀ y ∈ s, minSmoothness 𝕜 vs.length ≤ m →
       iteratedFDerivAlong 𝕜 vs f y = iteratedFDerivAlong 𝕜 ws f y from this x hx hm
   clear hvs hm hmn hf
@@ -361,7 +357,8 @@ theorem _root_.List.Perm.iteratedFDerivAlong_eq [IsRCLikeNormedField 𝕜] {vs w
 theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {x : E} {k : ℕ}
     (hf : ContDiffAt 𝕜 n f x) (hk : k ≤ n) (m : Fin k → E) :
     iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m := by
-  obtain ⟨s, hs, hx, hfs⟩ := contDiffAt_open hf hk (by simp)
+  obtain ⟨s, hs, hx, hfs⟩ := hf.contDiffOn' hk (by simp)
+  rw [Set.insert_eq_of_mem (Set.mem_univ _), Set.univ_inter] at hfs
   suffices ∀ {j : ℕ}, (j : ℕ∞ω) ≤ k → ∀ (u : Fin j → E), ∀ y ∈ s,
       iteratedFDerivAlong 𝕜 (List.ofFn u) f y = iteratedFDeriv 𝕜 j f y u from this le_rfl m x hx
   intro j

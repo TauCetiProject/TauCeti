@@ -504,15 +504,6 @@ theorem taylorComp_sub_taylorComp_of_eq_lt_left {q₁ q₂ : FormalMultilinearSe
     compAlongOrderedFinpartition_atomic]
   exact ContinuousMultilinearMap.ext fun _ ↦ by simp
 
-private theorem apply_comp_perm_of_two_le {A B : Type*} {m : ℕ} (f : ∀ k, (Fin k → A) → B)
-    (hf : ∀ k, 2 ≤ k → k ≤ m → ∀ u (π : Equiv.Perm (Fin k)), f k (u ∘ π) = f k u)
-    {k : ℕ} (hk : k ≤ m) (u : Fin k → A) (π : Equiv.Perm (Fin k)) : f k (u ∘ π) = f k u := by
-  by_cases hk2 : 2 ≤ k
-  · exact hf k hk2 hk u π
-  · have : Subsingleton (Fin k) := ⟨fun a b ↦ Fin.ext (by omega)⟩
-    rw [Subsingleton.elim π 1]
-    rfl
-
 /-- Faà di Bruno composition preserves slot symmetry: if every coefficient of `q` and `p` in orders
 `2` through `m` is invariant under slot permutations, then `(q.taylorComp p) m` is invariant under
 slot permutations. -/
@@ -546,9 +537,15 @@ theorem taylorComp_comp_perm (q : FormalMultilinearSeries 𝕜 F G)
     have hfun : (v ∘ σ) ∘ (OrderedFinpartition.permEquiv σ c).emb i = (v ∘ c.emb (π i)) ∘ τ :=
       funext fun j ↦ congrArg v (hmem j).choose_spec.symm
     rw [hfun]
-    exact apply_comp_perm_of_two_le (fun k ↦ (p k ·)) hp (c.partSize_le (π i)) _ τ
+    by_cases h2 : 2 ≤ c.partSize (π i)
+    · exact hp _ h2 (c.partSize_le (π i)) _ τ
+    · have : Subsingleton (Fin (c.partSize (π i))) := ⟨fun _ _ ↦ Fin.ext (by omega)⟩
+      rw [Equiv.Perm.coe_subsingleton τ]; rfl
   rw [houter]
-  exact apply_comp_perm_of_two_le (fun k ↦ (q k ·)) hq c.length_le _ π
+  by_cases h2 : 2 ≤ c.length
+  · exact hq _ h2 c.length_le _ π
+  · have : Subsingleton (Fin c.length) := ⟨fun _ _ ↦ Fin.ext (by omega)⟩
+    rw [Equiv.Perm.coe_subsingleton π]; rfl
 
 private noncomputable def curryLeftSeries (p : FormalMultilinearSeries 𝕜 E F) (e : E) :
     FormalMultilinearSeries 𝕜 E F :=
@@ -570,49 +567,34 @@ private theorem taylorCompDeriv_add (q : FormalMultilinearSeries 𝕜 F G)
   funext fun _ ↦ ContinuousMultilinearMap.ext fun _ ↦ by
     simp [taylorCompDeriv, sum_apply, map_add, Finset.sum_add_distrib]
 
-private theorem hasFDerivAt_line (p dp : FormalMultilinearSeries 𝕜 E F) (k : ℕ) :
-    HasFDerivAt (fun t : 𝕜 ↦ p k + t • dp k)
-      ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (dp k)) 0 :=
-  (((ContinuousLinearMap.id 𝕜 𝕜).smulRight (dp k)).hasFDerivAt (x := 0)).const_add (p k)
-
-private theorem eq_of_hasFDerivAt_smulRight {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    {f₁ f₂ : 𝕜 → V} {v₁ v₂ : V}
-    (h₁ : HasFDerivAt f₁ ((ContinuousLinearMap.id 𝕜 𝕜).smulRight v₁) 0)
-    (h₂ : HasFDerivAt f₂ ((ContinuousLinearMap.id 𝕜 𝕜).smulRight v₂) 0)
-    (hf : f₁ = f₂) : v₁ = v₂ := by
-  rw [hf] at h₁
-  simpa using congrArg (fun L : 𝕜 →L[𝕜] V ↦ L 1) (h₁.unique h₂)
-
-private theorem hasFDerivAt_taylorComp_right (q : FormalMultilinearSeries 𝕜 F G)
+private theorem hasDerivAt_taylorComp_right (q : FormalMultilinearSeries 𝕜 F G)
     {p : 𝕜 → FormalMultilinearSeries 𝕜 E F} {dp : FormalMultilinearSeries 𝕜 E F} (m : ℕ)
-    (hp : ∀ k, HasFDerivAt (fun t ↦ p t k) ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (dp k)) 0) :
-    HasFDerivAt (fun t ↦ q.taylorComp (p t) m)
-      ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (taylorCompDeriv q (p 0) dp m)) 0 := by
+    (hp : ∀ k, HasDerivAt (fun t ↦ p t k) (dp k) 0) :
+    HasDerivAt (fun t ↦ q.taylorComp (p t) m) (taylorCompDeriv q (p 0) dp m) 0 := by
   classical
   have hsum := HasFDerivAt.fun_sum (u := Finset.univ) fun (c : OrderedFinpartition m) _ ↦
     HasFDerivAt.linear_multilinear_comp (hasFDerivAt_const (q c.length) (0 : 𝕜))
-      (fun i ↦ hp (c.partSize i)) (c.compAlongOrderedFinpartitionL 𝕜 E F G)
-  refine (HasFDerivAt.congr_of_eventuallyEq hsum
-    (Filter.Eventually.of_forall fun _ ↦ by
-      simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition])).congr_fderiv ?_
+      (fun i ↦ (hp (c.partSize i)).hasFDerivAt) (c.compAlongOrderedFinpartitionL 𝕜 E F G)
+  refine (hsum.congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ by
+    simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition])).hasDerivAt.congr_deriv
+      ?_
   ext v
-  simp [taylorCompDeriv, sum_apply, Finset.smul_sum]
+  simp [taylorCompDeriv, sum_apply]
 
-private theorem hasFDerivAt_taylorComp_left
+private theorem hasDerivAt_taylorComp_left
     {q : 𝕜 → FormalMultilinearSeries 𝕜 F G} {dq : FormalMultilinearSeries 𝕜 F G}
     (p : FormalMultilinearSeries 𝕜 E F) (m : ℕ)
-    (hq : ∀ k, HasFDerivAt (fun t ↦ q t k) ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (dq k)) 0) :
-    HasFDerivAt (fun t ↦ (q t).taylorComp p m)
-      ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (dq.taylorComp p m)) 0 := by
+    (hq : ∀ k, HasDerivAt (fun t ↦ q t k) (dq k) 0) :
+    HasDerivAt (fun t ↦ (q t).taylorComp p m) (dq.taylorComp p m) 0 := by
   classical
   have hsum := HasFDerivAt.fun_sum (u := Finset.univ) fun (c : OrderedFinpartition m) _ ↦
     ((c.compAlongOrderedFinpartitionL 𝕜 E F G).flipMultilinear
-      (fun i ↦ p (c.partSize i))).hasFDerivAt.comp (0 : 𝕜) (hq c.length)
-  refine (HasFDerivAt.congr_of_eventuallyEq hsum
-    (Filter.Eventually.of_forall fun _ ↦ by
-      simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition])).congr_fderiv ?_
+      (fun i ↦ p (c.partSize i))).hasFDerivAt.comp (0 : 𝕜) (hq c.length).hasFDerivAt
+  refine (hsum.congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ by
+    simp [FormalMultilinearSeries.taylorComp, compAlongOrderedFinpartition])).hasDerivAt.congr_deriv
+      ?_
   ext v
-  simp [FormalMultilinearSeries.taylorComp, sum_apply, Finset.smul_sum]
+  simp [FormalMultilinearSeries.taylorComp, sum_apply]
 
 private theorem taylorCompDeriv_taylorComp_left
     {r : FormalMultilinearSeries 𝕜 G H} {q : FormalMultilinearSeries 𝕜 F G}
@@ -623,10 +605,13 @@ private theorem taylorCompDeriv_taylorComp_left
       taylorCompDeriv r (q.taylorComp p) (taylorCompDeriv q p dp) m := by
   let P : 𝕜 → FormalMultilinearSeries 𝕜 E F := fun t k ↦ p k + t • dp k
   have hP0 : P 0 = p := funext fun k ↦ by simp [P]
-  have hQ (k : ℕ) := by simpa [hP0] using hasFDerivAt_taylorComp_right q k (hasFDerivAt_line p dp)
-  exact eq_of_hasFDerivAt_smulRight
-    (by simpa [hP0] using hasFDerivAt_taylorComp_right (r.taylorComp q) m (hasFDerivAt_line p dp))
-    (by simpa [hP0] using hasFDerivAt_taylorComp_right r m hQ) (funext fun t ↦ ih (P t))
+  have hP (k : ℕ) : HasDerivAt (fun t ↦ P t k) (dp k) 0 := by
+    simpa only [one_smul] using ((hasDerivAt_id' (0 : 𝕜)).smul_const (dp k)).const_add (p k)
+  have hQ (k : ℕ) := by simpa only [hP0] using hasDerivAt_taylorComp_right q k hP
+  have h1 := hasDerivAt_taylorComp_right (r.taylorComp q) m hP
+  have h2 := hasDerivAt_taylorComp_right r m hQ
+  rw [hP0] at h1 h2
+  exact (h1.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ (ih (P t)).symm)).unique h2
 
 private theorem taylorCompDeriv_taylorComp_right
     {r : FormalMultilinearSeries 𝕜 G H} {q : FormalMultilinearSeries 𝕜 F G}
@@ -637,11 +622,13 @@ private theorem taylorCompDeriv_taylorComp_right
       taylorCompDeriv r (q.taylorComp p) (dq.taylorComp p) m := by
   let Q : 𝕜 → FormalMultilinearSeries 𝕜 F G := fun t k ↦ q k + t • dq k
   have hQ0 : Q 0 = q := funext fun k ↦ by simp [Q]
-  have hRQ (k : ℕ) := by simpa [hQ0] using hasFDerivAt_taylorComp_right r k (hasFDerivAt_line q dq)
-  exact eq_of_hasFDerivAt_smulRight (hasFDerivAt_taylorComp_left p m hRQ)
-    (by simpa [hQ0] using hasFDerivAt_taylorComp_right r m fun k ↦
-      hasFDerivAt_taylorComp_left p k (hasFDerivAt_line q dq))
-    (funext fun t ↦ ih (Q t))
+  have hQ (k : ℕ) : HasDerivAt (fun t ↦ Q t k) (dq k) 0 := by
+    simpa only [one_smul] using ((hasDerivAt_id' (0 : 𝕜)).smul_const (dq k)).const_add (q k)
+  have hRQ (k : ℕ) := by simpa only [hQ0] using hasDerivAt_taylorComp_right r k hQ
+  have h1 := hasDerivAt_taylorComp_left p m hRQ
+  have h2 := hasDerivAt_taylorComp_right r m fun k ↦ hasDerivAt_taylorComp_left p k hQ
+  rw [hQ0] at h2
+  exact (h1.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ (ih (Q t)).symm)).unique h2
 
 /-- Left-currying a Taylor composite splits into left-currying the outer series and
 differentiating the inner series (`taylorCompDeriv`). The partition-extension term matching via

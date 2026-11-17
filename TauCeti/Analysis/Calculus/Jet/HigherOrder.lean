@@ -255,12 +255,14 @@ theorem jetCoordChange_iteratedFDeriv {r : ℕ} {h : E' → E} {g : E' × F → 
   have hi_le : i.val ≤ r := Nat.le_of_lt_succ i.isLt
   have hsh : ContDiffAt 𝕜 r (s ∘ h) x := hs.comp x hh
   have hgraph : ContDiffAt 𝕜 r (fun y ↦ (y, (s ∘ h) y)) x := contDiffAt_id.prodMk hsh
-  rw [jetCoordChange_apply, show (fun y ↦ g (y, s (h y))) = g ∘ fun y ↦ (y, (s ∘ h) y) from rfl,
+  have hcomp : (fun y ↦ g (y, s (h y))) = g ∘ fun y ↦ (y, (s ∘ h) y) :=
+    funext fun _ ↦ by simp only [Function.comp_apply]
+  rw [jetCoordChange_apply, hcomp,
     iteratedFDeriv_comp (f := fun y ↦ (y, (s ∘ h) y)) hg hgraph (Nat.cast_le.mpr hi_le)]
-  refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ by
-    rw [TauCeti.ftaylorSeries_apply, TauCeti.ftaylorSeries_apply, Function.comp_apply,
-      show iteratedFDeriv 𝕜 ((0 : Fin (r + 1)).val) s (h x) 0 = s (h x) from
-        iteratedFDeriv_zero_apply _]) fun k _ hk ↦ ?_
+  refine FormalMultilinearSeries.taylorComp_congr (fun k _ ↦ by
+    rw [Function.comp_apply]
+    exact congrArg (fun z ↦ ftaylorSeries 𝕜 g (x, z) k) (iteratedFDeriv_zero_apply _))
+    fun k _ hk ↦ ?_
   have hk_r : (k : ℕ∞ω) ≤ r := Nat.cast_le.mpr (hk.trans hi_le)
   refine (congrArg₂ ContinuousMultilinearMap.prod
     (congrFun (TauCeti.ftaylorSeries_id x).symm k) ?_).trans
@@ -342,9 +344,10 @@ private theorem jetCoordChange_comp_rhs {r : ℕ} {h : E' → E} {k : E'' → E'
   have hψ : ContDiffAt 𝕜 r ψ (y, j 0 0) :=
     (hk.comp (y, j 0 0) contDiffAt_fst).prodMk contDiffAt_snd
   have hgψ : ContDiffAt 𝕜 r (g ∘ ψ) (y, j 0 0) := hg.comp (y, j 0 0) hψ
-  rw [jetCoordChange_apply,
-    show (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) = l ∘ fun p ↦ (p.1, (g ∘ ψ) p) from rfl,
-    jetCoordChangeCompSeries, hl.ftaylorSeries_comp_taylorComp (f := fun p ↦ (p.1, (g ∘ ψ) p))
+  have hcomp : (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) = l ∘ fun p ↦ (p.1, (g ∘ ψ) p) :=
+    funext fun _ ↦ by simp only [ψ, Function.comp_apply]
+  rw [jetCoordChange_apply, hcomp, jetCoordChangeCompSeries,
+    hl.ftaylorSeries_comp_taylorComp (f := fun p ↦ (p.1, (g ∘ ψ) p))
       (contDiffAt_fst.prodMk hgψ) Q (Nat.cast_le.mpr hi_le)]
   refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) fun m _ hm ↦ ?_
   rw [contDiffAt_fst.ftaylorSeries_prodMk_taylorComp hgψ Q (Nat.cast_le.mpr (hm.trans hi_le)),
