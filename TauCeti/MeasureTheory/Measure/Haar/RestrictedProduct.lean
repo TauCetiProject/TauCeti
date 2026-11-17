@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Constructions.BorelSpace.RestrictedProduct
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InfinitePi
+import TauCeti.MeasureTheory.Measure.Subtype
 import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 
 /-!
@@ -25,8 +26,8 @@ Let `ι` be a countable index type, `G i` be second-countable locally compact to
 with open reference subgroups `B i`, and `μ i` be left Haar measures on `G i` such that
 `μ i (B i) = 1` for all but finitely many `i`. Because an open subgroup of finite Haar measure in
 a locally compact topological group is automatically compact
-(`TauCeti.isCompact_of_isOpen_of_isMulLeftInvariant`), cofinitely many `B i` are compact, so the
-restricted product `Πʳ i, [G i, B i]` is a second-countable locally compact topological group.
+(`TauCeti.isCompact_subgroup_of_isOpen_of_measure_ne_top`), cofinitely many `B i` are compact, so
+the restricted product `Πʳ i, [G i, B i]` is a second-countable locally compact topological group.
 
 This file constructs the canonical restricted product Haar measure `TauCeti.restrictedHaar μ hμ`
 (and its additive counterpart `TauCeti.restrictedAddHaar μ hμ`) and establishes its characterizing
@@ -80,44 +81,16 @@ namespace TauCeti
 
 universe u v w
 
-/-! ### Compactness of open subgroups of finite Haar measure -/
+/-! ### Local compactness from finite-measure open subgroups -/
 
 section OpenSubgroupCompact
-
-/-- An open subgroup of finite left-invariant open-positive measure in a locally compact
-topological group is compact. -/
-@[to_additive /-- An open additive subgroup of finite left-invariant open-positive measure in a
-locally compact topological additive group is compact. -/]
-theorem isCompact_of_isOpen_of_isMulLeftInvariant {G S : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-    [SetLike S G] [SubgroupClass S G] {B : S} (hBo : IsOpen (B : Set G)) {μ : Measure G}
-    [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant] (hμ : μ (B : Set G) ≠ ∞) :
-    IsCompact (B : Set G) := by
-  have : IsTopologicalGroup B := isTopologicalGroup_induced (SubgroupClass.subtype B)
-  have : LocallyCompactSpace B := hBo.locallyCompactSpace
-  have hemb : MeasurableEmbedding ((↑) : B → G) :=
-    MeasurableEmbedding.subtype_coe hBo.measurableSet
-  have : (μ.comap ((↑) : B → G)).IsMulLeftInvariant :=
-    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype B) hemb
-  have : (μ.comap ((↑) : B → G)).IsOpenPosMeasure :=
-    Measure.IsOpenPosMeasure.comap μ hBo.isOpenEmbedding_subtypeVal
-  rw [isCompact_iff_compactSpace]
-  by_contra hnc
-  rw [not_compactSpace_iff] at hnc
-  have huniv : μ.comap ((↑) : B → G) Set.univ = ∞ :=
-    measure_univ_of_isMulLeftInvariant _
-  have hrange : ((↑) : B → G) '' Set.univ = (B : Set G) := by
-    ext x
-    simp
-  rw [hemb.comap_apply, hrange] at huniv
-  exact hμ huniv
 
 /-- If cofinitely many open reference subgroups `B i` have finite measure under local left-invariant
 open-positive measures `μ i`, then the restricted product `Πʳ i, [G i, B i]` is locally compact. -/
 @[to_additive /-- If cofinitely many open reference additive subgroups `B i` have finite measure
 under local left-invariant open-positive measures `μ i`, then the restricted product
 `Πʳ i, [G i, B i]` is locally compact. -/]
-theorem locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant {ι : Type u}
+theorem locallyCompactSpace_restrictedProduct_of_measure_ne_top_of_group {ι : Type u}
     {G : ι → Type v} {H : ι → Type w} [∀ i, Group (G i)] [∀ i, SetLike (H i) (G i)]
     [∀ i, SubgroupClass (H i) (G i)] [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)]
     [∀ i, LocallyCompactSpace (G i)] [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)]
@@ -126,39 +99,58 @@ theorem locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant {ι : Type u
     (hμ : ∀ᶠ i in cofinite, μ i (B i) ≠ ∞) :
     LocallyCompactSpace (Πʳ i, [G i, B i]) :=
   RestrictedProduct.locallyCompactSpace_of_group G <|
-    hμ.mono fun i hi ↦ isCompact_of_isOpen_of_isMulLeftInvariant (hBo.out i) hi
+    hμ.mono fun i hi ↦ isCompact_subgroup_of_isOpen_of_measure_ne_top (hBo.out i) hi
+
+@[to_additive locallyCompactSpace_of_eventually_eq_one_of_addGroup]
+private theorem locallyCompactSpace_of_eventually_eq_one {ι : Type u}
+    {G : ι → Type v} {H : ι → Type w} [∀ i, Group (G i)] [∀ i, SetLike (H i) (G i)]
+    [∀ i, SubgroupClass (H i) (G i)] [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)]
+    [∀ i, LocallyCompactSpace (G i)] [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)]
+    {B : ∀ i, H i} [Fact (∀ i, IsOpen (B i : Set (G i)))]
+    (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsOpenPosMeasure] [∀ i, (μ i).IsMulLeftInvariant]
+    (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) :
+    LocallyCompactSpace (Πʳ i, [G i, B i]) :=
+  locallyCompactSpace_restrictedProduct_of_measure_ne_top_of_group μ
+    (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
 
 end OpenSubgroupCompact
 
-/-! ### Auxiliary subtype and test-box lemmas -/
+/-! ### Auxiliary finset, finprod, and test-box lemmas -/
 
 section Auxiliary
 
-/-- On an open subset `B'` of measure `1`, the pullback `μ'.comap (↑)` is a probability measure. -/
-private theorem isProbabilityMeasure_comap_subtype {X S' : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [SetLike S' X] {B' : S'}
-    (hB' : IsOpen (B' : Set X)) {μ' : Measure X} (hμ' : μ' (B' : Set X) = 1) :
-    IsProbabilityMeasure (μ'.comap ((↑) : B' → X)) :=
-  ⟨by
-    have hemb : MeasurableEmbedding ((↑) : B' → X) :=
-      MeasurableEmbedding.subtype_coe hB'.measurableSet
-    have hrange : ((↑) : B' → X) '' Set.univ = (B' : Set X) := by
-      ext x
-      simp
-    rw [hemb.comap_apply, hrange, hμ']⟩
+/-- The finite set of indices where `μ i (B i) ≠ 1`. -/
+private noncomputable def nonUnitFinset {ι : Type u} {G : ι → Type v} {H : ι → Type w}
+    [∀ i, SetLike (H i) (G i)] [∀ i, MeasurableSpace (G i)] {B : ∀ i, H i}
+    (μ : ∀ i, Measure (G i)) (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) : Finset ι :=
+  (mem_cofinite.mp hμ).toFinset
 
-/-- Pulling back a measure to an open subobject evaluates a subset `E ⊆ U` to `ρ E`. -/
-private theorem comap_subtype_preimage_eq {X S' : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [SetLike S' X] (ρ : Measure X)
-    {U : S'} (hUo : IsOpen (U : Set X)) {E : Set X} (hEU : E ⊆ (U : Set X)) :
-    ρ.comap ((↑) : U → X) (((↑) : U → X) ⁻¹' E) = ρ E := by
-  have hemb : MeasurableEmbedding ((↑) : U → X) :=
-    MeasurableEmbedding.subtype_coe hUo.measurableSet
-  have himg : ((↑) : U → X) '' (((↑) : U → X) ⁻¹' E) = E := by
-    ext x
-    simp only [Set.mem_image, Set.mem_preimage]
-    exact ⟨fun ⟨_, hyE, hyx⟩ ↦ hyx ▸ hyE, fun hxE ↦ ⟨⟨x, hEU hxE⟩, hxE, rfl⟩⟩
-  rw [hemb.comap_apply, himg]
+private theorem apply_eq_one_of_notMem_nonUnitFinset {ι : Type u} {G : ι → Type v}
+    {H : ι → Type w} [∀ i, SetLike (H i) (G i)] [∀ i, MeasurableSpace (G i)] {B : ∀ i, H i}
+    (μ : ∀ i, Measure (G i)) (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1)
+    (i : ι) (hi : i ∉ nonUnitFinset (B := B) μ hμ) :
+    μ i (B i) = 1 := by
+  simpa [nonUnitFinset, Set.Finite.mem_toFinset] using hi
+
+private theorem nonUnitFinset_subset {ι : Type u} {G : ι → Type v} {H : ι → Type w}
+    [∀ i, SetLike (H i) (G i)] [∀ i, MeasurableSpace (G i)] {B : ∀ i, H i}
+    (μ : ∀ i, Measure (G i)) (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) {S : Finset ι}
+    (hS : ∀ i ∉ S, μ i (B i) = 1) :
+    nonUnitFinset (B := B) μ hμ ⊆ S := fun i hi ↦ by
+  by_contra hiS
+  have hne : μ i (B i) ≠ 1 := by simpa [nonUnitFinset, Set.Finite.mem_toFinset] using hi
+  exact hne (hS i hiS)
+
+/-- When `C i = B i` and `μ i (B i) = 1` outside `S`, the infinite product of local masses reduces
+to the finite product over `S`. -/
+private theorem finprod_measure_eq_prod {ι : Type u} {G : ι → Type v} {H : ι → Type w}
+    [∀ i, SetLike (H i) (G i)] [∀ i, MeasurableSpace (G i)] {B : ∀ i, H i}
+    (μ : ∀ i, Measure (G i)) (S : Finset ι) (hS : ∀ i ∉ S, μ i (B i) = 1)
+    {C : ∀ i, Set (G i)} (hCS : ∀ i ∉ S, C i = (B i : Set (G i))) :
+    ∏ᶠ i, μ i (C i) = ∏ i ∈ S, μ i (C i) :=
+  finprod_eq_prod_of_mulSupport_subset (fun i ↦ μ i (C i)) fun i hi ↦ by
+    by_contra hiS
+    exact hi (by dsimp only; rw [hCS i hiS, hS i hiS])
 
 /-- Existence of a measurable box agreeing with `B i` outside `S` whose finite product of local
 masses is strictly positive and finite. -/
@@ -181,11 +173,9 @@ private theorem exists_test_box {ι : Type u} {G : ι → Type v} {H : ι → Ty
     (measure_mono interior_subset).trans_lt (hK_comp i).measure_lt_top
   let C : ∀ i, Set (G i) := fun i ↦ if i ∈ S then U i else (B i : Set (G i))
   have hCS : ∀ i ∉ S, C i = (B i : Set (G i)) := fun i hi ↦ by simp [C, hi]
-  have hprod : ∏ᶠ i, μ i (C i) = ∏ i ∈ S, μ i (U i) := by
-    rw [finprod_eq_prod_of_mulSupport_subset (fun i ↦ μ i (C i)) fun i hi ↦ by
-      by_contra hiS
-      exact hi (by dsimp only; rw [hCS i hiS, hS i hiS])]
-    exact Finset.prod_congr rfl fun i hi ↦ by simp [C, hi]
+  have hprod : ∏ᶠ i, μ i (C i) = ∏ i ∈ S, μ i (U i) :=
+    (finprod_measure_eq_prod (B := B) μ S hS hCS).trans <|
+      Finset.prod_congr rfl fun i hi ↦ by simp [C, hi]
   refine ⟨C, fun i ↦ ?_, hCS, ?_, ?_⟩
   · by_cases hi : i ∈ S
     · simpa [C, hi] using isOpen_interior.measurableSet
@@ -202,13 +192,10 @@ end Auxiliary
 section RestrictedHaar
 
 variable {ι : Type u} {G : ι → Type v} {H : ι → Type w}
-variable [Countable ι]
 variable [∀ i, Group (G i)] [∀ i, SetLike (H i) (G i)] [∀ i, SubgroupClass (H i) (G i)]
-variable [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)]
-variable [∀ i, LocallyCompactSpace (G i)] [∀ i, SecondCountableTopology (G i)]
-variable [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)]
+variable [∀ i, TopologicalSpace (G i)] [∀ i, MeasurableSpace (G i)]
 variable {B : ∀ i, H i} [hBo : Fact (∀ i, IsOpen (B i : Set (G i)))]
-variable [MeasurableSpace (Πʳ i, [G i, B i])] [BorelSpace (Πʳ i, [G i, B i])]
+variable [MeasurableSpace (Πʳ i, [G i, B i])]
 
 /-- The product measure on the level open subgroup `U_S` induced from `Measure.pi` on `S` and
 `Measure.infinitePi` of the subspace measures on `B j` for `j ∉ S`. -/
@@ -219,6 +206,20 @@ private noncomputable def levelProductMeasure (μ : ∀ i, Measure (G i)) (S : F
     (Measure.infinitePi fun j : {i // i ∉ S} ↦
       (μ j.1).comap ((↑) : B j.1 → G j.1))).map
     (levelOpenSubgroupEquiv B S fun i _ ↦ hBo.out i)
+
+@[to_additive levelAddProductMeasure_def]
+private theorem levelProductMeasure_def (μ : ∀ i, Measure (G i)) (S : Finset ι) :
+    levelProductMeasure (B := B) μ S =
+      ((Measure.pi fun i : S ↦ μ i.1).prod
+        (Measure.infinitePi fun j : {i // i ∉ S} ↦
+          (μ j.1).comap ((↑) : B j.1 → G j.1))).map
+        (levelOpenSubgroupEquiv B S fun i _ ↦ hBo.out i) :=
+  rfl
+
+variable [Countable ι]
+variable [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
+variable [∀ i, SecondCountableTopology (G i)] [∀ i, BorelSpace (G i)]
+variable [BorelSpace (Πʳ i, [G i, B i])]
 
 /-- Whenever `μ i (B i) = 1` for all `i ∉ S`, the level product measure on `U_S` is a Haar
 measure. -/
@@ -231,13 +232,11 @@ private theorem isHaarMeasure_levelProductMeasure (μ : ∀ i, Measure (G i))
   have (j : {i // i ∉ S}) : SecondCountableTopology (B j.1) :=
     TopologicalSpace.secondCountableTopology_induced (B j.1) (G j.1) (↑)
   have (j : {i // i ∉ S}) : IsProbabilityMeasure ((μ j.1).comap ((↑) : B j.1 → G j.1)) :=
-    isProbabilityMeasure_comap_subtype (hBo.out j.1) (hS j.1 j.2)
-  have (j : {i // i ∉ S}) : ((μ j.1).comap ((↑) : B j.1 → G j.1)).IsMulLeftInvariant :=
-    Measure.IsMulLeftInvariant.comap (μ j.1) (f := SubgroupClass.subtype (B j.1))
-      (MeasurableEmbedding.subtype_coe (hBo.out j.1).measurableSet)
+    (μ j.1).isProbabilityMeasure_comap_subtype_coe
+      (hBo.out j.1).measurableSet.nullMeasurableSet (hS j.1 j.2)
   have (j : {i // i ∉ S}) : ((μ j.1).comap ((↑) : B j.1 → G j.1)).IsOpenPosMeasure :=
     Measure.IsOpenPosMeasure.comap (μ j.1) (hBo.out j.1).isOpenEmbedding_subtypeVal
-  unfold levelProductMeasure
+  rw [levelProductMeasure_def]
   infer_instance
 
 /-- Evaluating the level product measure on a Borel box `{x | ∀ i, x i ∈ C i}` with `C i = B i`
@@ -252,15 +251,15 @@ private theorem levelProductMeasure_box (μ : ∀ i, Measure (G i)) [∀ i, (μ 
   have (j : {i // i ∉ S}) : SecondCountableTopology (B j.1) :=
     TopologicalSpace.secondCountableTopology_induced (B j.1) (G j.1) (↑)
   have (j : {i // i ∉ S}) : IsProbabilityMeasure ((μ j.1).comap ((↑) : B j.1 → G j.1)) :=
-    isProbabilityMeasure_comap_subtype (hBo.out j.1) (hS j.1 j.2)
+    (μ j.1).isProbabilityMeasure_comap_subtype_coe
+      (hBo.out j.1).measurableSet.nullMeasurableSet (hS j.1 j.2)
   have hE : MeasurableSet
       (((↑) : levelOpenSubgroup B S (fun i _ ↦ hBo.out i) → Πʳ i, [G i, B i]) ⁻¹'
         {x | ∀ i, x i ∈ C i}) :=
     measurable_subtype_coe (measurableSet_restrictedProduct_box hC)
   have he : Measurable (levelOpenSubgroupEquiv B S fun i _ ↦ hBo.out i) :=
     (levelOpenSubgroupEquiv B S fun i _ ↦ hBo.out i).continuous.measurable
-  unfold levelProductMeasure
-  rw [Measure.map_apply he hE, ← Set.preimage_comp,
+  rw [levelProductMeasure_def, Measure.map_apply he hE, ← Set.preimage_comp,
     preimage_coe_comp_levelOpenSubgroupEquiv_box]
   have htail : (Set.univ.pi fun j : {i // i ∉ S} ↦ ((↑) : B j.1 → G j.1) ⁻¹' C j.1) = Set.univ := by
     ext y
@@ -269,11 +268,7 @@ private theorem levelProductMeasure_box (μ : ∀ i, Measure (G i)) [∀ i, (μ 
     rw [hCS j.1 j.2]
     exact (y j).2
   rw [htail, Measure.prod_prod, Measure.pi_pi, measure_univ, mul_one,
-    Finset.prod_coe_sort S fun i ↦ μ i (C i)]
-  symm
-  refine finprod_eq_prod_of_mulSupport_subset (fun i ↦ μ i (C i)) fun i hi ↦ ?_
-  by_contra hiS
-  exact hi (by dsimp only; rw [hCS i hiS, hS i hiS])
+    Finset.prod_coe_sort S fun i ↦ μ i (C i), finprod_measure_eq_prod (B := B) μ S hS hCS]
 
 /-- **Restricted product of Haar measures.** Given local left Haar measures `μ i` on
 second-countable locally compact groups `G i` with open subgroups `B i` such that `μ i (B i) = 1`
@@ -288,16 +283,27 @@ is the unique left additive Haar measure on `Πʳ i, [G i, B i]` whose mass on e
 noncomputable def restrictedHaar (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
     (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) : Measure (Πʳ i, [G i, B i]) :=
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
-  let S₀ : Finset ι := (mem_cofinite.mp hμ).toFinset
-  have hS₀ : ∀ i ∉ S₀, μ i (B i) = 1 := fun i hi ↦ by
-    simpa [S₀, Set.Finite.mem_toFinset] using hi
+    locallyCompactSpace_of_eventually_eq_one μ hμ
+  let S₀ : Finset ι := nonUnitFinset (B := B) μ hμ
   let U₀ : OpenSubgroup (Πʳ i, [G i, B i]) := levelOpenSubgroup B S₀ fun i _ ↦ hBo.out i
-  let μ₀ : Measure (Πʳ i, [G i, B i]) := Measure.haar
-  let m₀ : Measure U₀ := levelProductMeasure (B := B) μ S₀
-  have : m₀.IsHaarMeasure := isHaarMeasure_levelProductMeasure (B := B) μ S₀ hS₀
-  Measure.haarScalarFactor m₀ (μ₀.comap ((↑) : U₀ → Πʳ i, [G i, B i])) • μ₀
+  have : (levelProductMeasure (B := B) μ S₀).IsHaarMeasure :=
+    isHaarMeasure_levelProductMeasure (B := B) μ S₀
+      (apply_eq_one_of_notMem_nonUnitFinset (B := B) μ hμ)
+  Measure.haarScalarFactor (levelProductMeasure (B := B) μ S₀)
+      ((Measure.haar : Measure (Πʳ i, [G i, B i])).comap ((↑) : U₀ → Πʳ i, [G i, B i])) •
+    (Measure.haar : Measure (Πʳ i, [G i, B i]))
+
+@[to_additive]
+private theorem restrictedHaar_eq_smul (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
+    (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) [LocallyCompactSpace (Πʳ i, [G i, B i])]
+    [(levelProductMeasure (B := B) μ (nonUnitFinset (B := B) μ hμ)).IsHaarMeasure] :
+    restrictedHaar (B := B) μ hμ =
+      Measure.haarScalarFactor (levelProductMeasure (B := B) μ (nonUnitFinset (B := B) μ hμ))
+          ((Measure.haar : Measure (Πʳ i, [G i, B i])).comap
+            ((↑) : levelOpenSubgroup B (nonUnitFinset (B := B) μ hμ) (fun i _ ↦ hBo.out i) →
+              Πʳ i, [G i, B i])) •
+        (Measure.haar : Measure (Πʳ i, [G i, B i])) :=
+  rfl
 
 /-- `restrictedHaar μ hμ` is a left Haar measure on `Πʳ i, [G i, B i]`. -/
 @[to_additive /-- `restrictedAddHaar μ hμ` is a left additive Haar measure on
@@ -306,20 +312,13 @@ instance instIsHaarMeasureRestrictedHaar (μ : ∀ i, Measure (G i)) [∀ i, (μ
     (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) :
     (restrictedHaar (B := B) μ hμ).IsHaarMeasure := by
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
-  let S₀ : Finset ι := (mem_cofinite.mp hμ).toFinset
-  have hS₀ : ∀ i ∉ S₀, μ i (B i) = 1 := fun i hi ↦ by
-    simpa [S₀, Set.Finite.mem_toFinset] using hi
-  let U₀ : OpenSubgroup (Πʳ i, [G i, B i]) := levelOpenSubgroup B S₀ fun i _ ↦ hBo.out i
-  let μ₀ : Measure (Πʳ i, [G i, B i]) := Measure.haar
-  let m₀ : Measure U₀ := levelProductMeasure (B := B) μ S₀
-  have : m₀.IsHaarMeasure := isHaarMeasure_levelProductMeasure (B := B) μ S₀ hS₀
-  have hc : Measure.haarScalarFactor m₀ (μ₀.comap ((↑) : U₀ → Πʳ i, [G i, B i])) ≠ 0 :=
+    locallyCompactSpace_of_eventually_eq_one μ hμ
+  have : (levelProductMeasure (B := B) μ (nonUnitFinset (B := B) μ hμ)).IsHaarMeasure :=
+    isHaarMeasure_levelProductMeasure (B := B) μ _
+      (apply_eq_one_of_notMem_nonUnitFinset (B := B) μ hμ)
+  rw [restrictedHaar_eq_smul (B := B) μ hμ]
+  exact Measure.IsHaarMeasure.nnreal_smul Measure.haar
     (Measure.haarScalarFactor_pos_of_isHaarMeasure _ _).ne'
-  unfold restrictedHaar
-  dsimp only
-  exact Measure.IsHaarMeasure.nnreal_smul μ₀ hc
 
 /-- On the minimal level open subgroup `U_{S₀}`, the pullback of `restrictedHaar` equals the level
 product measure. -/
@@ -327,30 +326,23 @@ product measure. -/
 private theorem restrictedHaar_comap_minimal (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
     (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) :
     (restrictedHaar (B := B) μ hμ).comap
-        ((↑) : levelOpenSubgroup B (mem_cofinite.mp hμ).toFinset (fun i _ ↦ hBo.out i) →
+        ((↑) : levelOpenSubgroup B (nonUnitFinset (B := B) μ hμ) (fun i _ ↦ hBo.out i) →
           Πʳ i, [G i, B i]) =
-      levelProductMeasure (B := B) μ (mem_cofinite.mp hμ).toFinset := by
+      levelProductMeasure (B := B) μ (nonUnitFinset (B := B) μ hμ) := by
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
-  let S₀ : Finset ι := (mem_cofinite.mp hμ).toFinset
-  have hS₀ : ∀ i ∉ S₀, μ i (B i) = 1 := fun i hi ↦ by
-    simpa [S₀, Set.Finite.mem_toFinset] using hi
-  let U₀ : OpenSubgroup (Πʳ i, [G i, B i]) := levelOpenSubgroup B S₀ fun i _ ↦ hBo.out i
+    locallyCompactSpace_of_eventually_eq_one μ hμ
+  let U₀ : OpenSubgroup (Πʳ i, [G i, B i]) :=
+    levelOpenSubgroup B (nonUnitFinset (B := B) μ hμ) fun i _ ↦ hBo.out i
   have : SecondCountableTopology U₀ :=
     TopologicalSpace.secondCountableTopology_induced U₀ (Πʳ i, [G i, B i]) (↑)
-  let μ₀ : Measure (Πʳ i, [G i, B i]) := Measure.haar
-  let m₀ : Measure U₀ := levelProductMeasure (B := B) μ S₀
-  have : m₀.IsHaarMeasure := isHaarMeasure_levelProductMeasure (B := B) μ S₀ hS₀
-  have hsmul : ((Measure.haarScalarFactor m₀ (μ₀.comap ((↑) : U₀ → Πʳ i, [G i, B i])) : ℝ≥0) •
-      μ₀).comap ((↑) : U₀ → Πʳ i, [G i, B i]) =
-      Measure.haarScalarFactor m₀ (μ₀.comap ((↑) : U₀ → Πʳ i, [G i, B i])) •
-        μ₀.comap ((↑) : U₀ → Πʳ i, [G i, B i]) :=
-    Measure.comap_smul (f := ((↑) : U₀ → Πʳ i, [G i, B i])) (μ := μ₀) _
-  unfold restrictedHaar
-  dsimp only
-  exact hsmul.trans
-    (Measure.isMulLeftInvariant_eq_smul m₀ (μ₀.comap ((↑) : U₀ → Πʳ i, [G i, B i]))).symm
+  have : (levelProductMeasure (B := B) μ (nonUnitFinset (B := B) μ hμ)).IsHaarMeasure :=
+    isHaarMeasure_levelProductMeasure (B := B) μ _
+      (apply_eq_one_of_notMem_nonUnitFinset (B := B) μ hμ)
+  rw [restrictedHaar_eq_smul (B := B) μ hμ]
+  exact (Measure.comap_smul (f := ((↑) : U₀ → Πʳ i, [G i, B i])) (μ := Measure.haar) _).trans
+    (Measure.isMulLeftInvariant_eq_smul
+      (levelProductMeasure (B := B) μ (nonUnitFinset (B := B) μ hμ))
+      ((Measure.haar : Measure (Πʳ i, [G i, B i])).comap ((↑) : U₀ → Πʳ i, [G i, B i]))).symm
 
 /-- **Level product decomposition.** For every finite set `S : Finset ι` such that `μ i (B i) = 1`
 for all `i ∉ S`, pulling `restrictedHaar μ hμ` back to the level open subgroup
@@ -370,15 +362,10 @@ theorem restrictedHaar_comap_levelOpenSubgroup (μ : ∀ i, Measure (G i)) [∀ 
           (μ j.1).comap ((↑) : B j.1 → G j.1))).map
         (levelOpenSubgroupEquiv B S fun i _ ↦ hBo.out i) := by
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
-  let S₀ : Finset ι := (mem_cofinite.mp hμ).toFinset
-  have hS₀ : ∀ i ∉ S₀, μ i (B i) = 1 := fun i hi ↦ by
-    simpa [S₀, Set.Finite.mem_toFinset] using hi
-  have hS₀S : S₀ ⊆ S := fun i hi ↦ by
-    by_contra hiS
-    have hne : μ i (B i) ≠ 1 := by simpa [S₀, Set.Finite.mem_toFinset] using hi
-    exact hne (hS i hiS)
+    locallyCompactSpace_of_eventually_eq_one μ hμ
+  let S₀ : Finset ι := nonUnitFinset (B := B) μ hμ
+  have hS₀ : ∀ i ∉ S₀, μ i (B i) = 1 := apply_eq_one_of_notMem_nonUnitFinset (B := B) μ hμ
+  have hS₀S : S₀ ⊆ S := nonUnitFinset_subset (B := B) μ hμ hS
   let U₀ : OpenSubgroup (Πʳ i, [G i, B i]) := levelOpenSubgroup B S₀ fun i _ ↦ hBo.out i
   let U : OpenSubgroup (Πʳ i, [G i, B i]) := levelOpenSubgroup B S fun i _ ↦ hBo.out i
   have : SecondCountableTopology U :=
@@ -395,10 +382,18 @@ theorem restrictedHaar_comap_levelOpenSubgroup (μ : ∀ i, Measure (G i)) [∀ 
       simpa only [hCS₀ i hi, SetLike.mem_coe] using hx i
   have hEU : E ⊆ (U : Set (Πʳ i, [G i, B i])) :=
     hEU₀.trans (levelOpenSubgroup_mono B hS₀S (fun i _ ↦ hBo.out i) (fun i _ ↦ hBo.out i))
+  have hUemb : MeasurableEmbedding ((↑) : U → Πʳ i, [G i, B i]) :=
+    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
+  have hU₀emb : MeasurableEmbedding ((↑) : U₀ → Πʳ i, [G i, B i]) :=
+    MeasurableEmbedding.subtype_coe U₀.isOpen.measurableSet
+  have hν_U : ν.comap ((↑) : U → Πʳ i, [G i, B i]) (((↑) : U → _) ⁻¹' E) = ν E := by
+    rw [hUemb.comap_preimage, Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq,
+      Set.inter_eq_left.mpr hEU]
+  have hν_U₀ : ν.comap ((↑) : U₀ → Πʳ i, [G i, B i]) (((↑) : U₀ → _) ⁻¹' E) = ν E := by
+    rw [hU₀emb.comap_preimage, Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq,
+      Set.inter_eq_left.mpr hEU₀]
   have hν_eq : ν.comap ((↑) : U → Πʳ i, [G i, B i]) (((↑) : U → _) ⁻¹' E) = ∏ᶠ i, μ i (C i) := by
-    rw [comap_subtype_preimage_eq ν U.isOpen hEU,
-      ← comap_subtype_preimage_eq ν U₀.isOpen hEU₀,
-      restrictedHaar_comap_minimal (B := B) μ hμ,
+    rw [hν_U, ← hν_U₀, restrictedHaar_comap_minimal (B := B) μ hμ,
       levelProductMeasure_box (B := B) μ S₀ hS₀ hC hCS₀]
   have hm_eq : m (((↑) : U → _) ⁻¹' E) = ∏ᶠ i, μ i (C i) :=
     levelProductMeasure_box (B := B) μ S hS hC hCS
@@ -426,12 +421,15 @@ theorem restrictedHaar_box (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeas
   have hEU : E ⊆ (U : Set (Πʳ i, [G i, B i])) := fun x hx ↦
     (mem_levelOpenSubgroup B S (fun i _ ↦ hBo.out i) x).mpr fun i hi ↦ by
       simpa only [hCS i hi, SetLike.mem_coe] using hx i
+  have hUemb : MeasurableEmbedding ((↑) : U → Πʳ i, [G i, B i]) :=
+    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
   calc restrictedHaar (B := B) μ hμ E
-      = (restrictedHaar (B := B) μ hμ).comap ((↑) : U → Πʳ i, [G i, B i]) (((↑) : U → _) ⁻¹' E) :=
-        (comap_subtype_preimage_eq (restrictedHaar (B := B) μ hμ) U.isOpen hEU).symm
+      = (restrictedHaar (B := B) μ hμ).comap ((↑) : U → Πʳ i, [G i, B i])
+          (((↑) : U → _) ⁻¹' E) := by
+        rw [hUemb.comap_preimage, Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq,
+          Set.inter_eq_left.mpr hEU]
     _ = levelProductMeasure (B := B) μ S (((↑) : U → _) ⁻¹' E) := by
-        rw [restrictedHaar_comap_levelOpenSubgroup (B := B) μ hμ S hS]
-        rfl
+        rw [restrictedHaar_comap_levelOpenSubgroup (B := B) μ hμ S hS, ← levelProductMeasure_def]
     _ = ∏ᶠ i, μ i (C i) := levelProductMeasure_box (B := B) μ S hS hC hCS
 
 /-- **Uniqueness of the restricted product Haar measure.** Any σ-finite left-invariant measure on
@@ -447,12 +445,10 @@ theorem eq_restrictedHaar_of_box (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHa
       ν {x | ∀ i, x i ∈ C i} = ∏ᶠ i, μ i (C i)) :
     ν = restrictedHaar (B := B) μ hμ := by
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
-  let S₀ : Finset ι := (mem_cofinite.mp hμ).toFinset
-  have hS₀ : ∀ i ∉ S₀, μ i (B i) = 1 := fun i hi ↦ by
-    simpa [S₀, Set.Finite.mem_toFinset] using hi
-  obtain ⟨C, hC, hCS₀, hpos, htop⟩ := exists_test_box (B := B) hBo.out μ S₀ hS₀
+    locallyCompactSpace_of_eventually_eq_one μ hμ
+  let S₀ : Finset ι := nonUnitFinset (B := B) μ hμ
+  obtain ⟨C, hC, hCS₀, hpos, htop⟩ :=
+    exists_test_box (B := B) hBo.out μ S₀ (apply_eq_one_of_notMem_nonUnitFinset (B := B) μ hμ)
   have hCB : ∀ᶠ i in cofinite, C i = (B i : Set (G i)) := by
     filter_upwards [S₀.finite_toSet.compl_mem_cofinite] with i hi
     exact hCS₀ i hi
@@ -481,8 +477,7 @@ theorem exists_unique_restrictedHaar (μ : ∀ i, Measure (G i)) [∀ i, (μ i).
         (∀ᶠ i in cofinite, C i = (B i : Set (G i))) →
         ν {x | ∀ i, x i ∈ C i} = ∏ᶠ i, μ i (C i) := by
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
+    locallyCompactSpace_of_eventually_eq_one μ hμ
   exact ⟨restrictedHaar (B := B) μ hμ,
     ⟨inferInstance, fun _ hC hCB ↦ restrictedHaar_box (B := B) μ hμ hC hCB⟩,
     fun _ ⟨_, hbox⟩ ↦ eq_restrictedHaar_of_box (B := B) μ hμ hbox⟩
@@ -496,8 +491,7 @@ instance instIsMulRightInvariantRestrictedHaar (μ : ∀ i, Measure (G i)) [∀ 
     (restrictedHaar (B := B) μ hμ).IsMulRightInvariant where
   map_mul_right_eq_self g := by
     have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-      locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-        (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
+      locallyCompactSpace_of_eventually_eq_one μ hμ
     refine eq_restrictedHaar_of_box (B := B) μ hμ fun C hC hCB ↦ ?_
     rw [Measure.map_apply (measurable_mul_const g) (measurableSet_restrictedProduct_box hC)]
     have hpre : (· * g) ⁻¹' {x : Πʳ i, [G i, B i] | ∀ i, x i ∈ C i} =
@@ -520,8 +514,7 @@ instance instIsInvInvariantRestrictedHaar (μ : ∀ i, Measure (G i)) [∀ i, (�
     [∀ i, (μ i).IsInvInvariant] (hμ : ∀ᶠ i in cofinite, μ i (B i) = 1) :
     (restrictedHaar (B := B) μ hμ).IsInvInvariant := by
   have : LocallyCompactSpace (Πʳ i, [G i, B i]) :=
-    locallyCompactSpace_restrictedProduct_of_isMulLeftInvariant μ
-      (hμ.mono fun _ hi ↦ hi ▸ ENNReal.one_ne_top)
+    locallyCompactSpace_of_eventually_eq_one μ hμ
   have (i : ι) : (μ i).IsMulRightInvariant := by
     rw [← Measure.inv_eq_self (μ i)]
     infer_instance

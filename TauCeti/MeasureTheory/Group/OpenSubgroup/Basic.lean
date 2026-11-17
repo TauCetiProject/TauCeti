@@ -33,7 +33,10 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
   `H` is moreover σ-compact and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on
   a non-σ-compact group does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and
   the modular character of `H` agrees with the restriction of the modular character of `G`
-  (`OpenSubgroup.modularCharacter_eq`).
+  (`OpenSubgroup.modularCharacter_eq`). Conversely, any open subgroup of finite left-invariant
+  open-positive measure in a locally compact group is automatically compact
+  (`TauCeti.isCompact_subgroup_of_isOpen_of_measure_ne_top`, and additively
+  `TauCeti.isCompact_addSubgroup_of_isOpen_of_measure_ne_top`).
 * **Translated-coset calculations:** For a measurable subgroup `H`, left translation `u ↦ g * u`
   from `(H, μ.comap (↑))` onto `(G, μ.restrict (g • H))` is a measure-preserving measurable
   embedding, identifying set integrals, lower Lebesgue integrals, `IntegrableOn`, and `Lᵖ` seminorms
@@ -49,8 +52,10 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 ## Main statements
 
 * `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
-  `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`:
-  Haar, regularity, and modular-character inheritance on open subgroups.
+  `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`,
+  `TauCeti.isCompact_subgroup_of_isOpen_of_measure_ne_top`:
+  Haar, regularity, modular-character inheritance, and automatic compactness of finite-measure
+  open subgroups.
 * `MeasureTheory.setIntegral_leftCoset_eq_comap`,
   `MeasureTheory.integral_mul_left_comap_eq_of_inv_mul_mem`,
   `MeasureTheory.setIntegral_rightCoset_eq_modularCharacter_smul_comap`,
@@ -160,6 +165,34 @@ theorem modularCharacter_eq {G : Type*} [Group G] [TopologicalSpace G] [IsTopolo
 end ModularCharacter
 
 end OpenSubgroup
+
+namespace TauCeti
+
+/-- An open subgroup of finite left-invariant open-positive measure in a locally compact
+topological group is compact. -/
+@[to_additive /-- An open additive subgroup of finite left-invariant open-positive measure in a
+locally compact topological additive group is compact. -/]
+theorem isCompact_subgroup_of_isOpen_of_measure_ne_top {G S : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+    [SetLike S G] [SubgroupClass S G] {B : S} (hBo : IsOpen (B : Set G)) {μ : Measure G}
+    [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant] (hμ : μ (B : Set G) ≠ ∞) :
+    IsCompact (B : Set G) := by
+  have : IsTopologicalGroup B := isTopologicalGroup_induced (SubgroupClass.subtype B)
+  have : LocallyCompactSpace B := hBo.locallyCompactSpace
+  have : (μ.comap ((↑) : B → G)).IsOpenPosMeasure :=
+    Measure.IsOpenPosMeasure.comap μ hBo.isOpenEmbedding_subtypeVal
+  rw [isCompact_iff_compactSpace]
+  by_contra hnc
+  rw [not_compactSpace_iff] at hnc
+  have huniv : μ.comap ((↑) : B → G) Set.univ = ∞ :=
+    measure_univ_of_isMulLeftInvariant _
+  have hemb : MeasurableEmbedding ((↑) : B → G) :=
+    MeasurableEmbedding.subtype_coe hBo.measurableSet
+  rw [hemb.comap_apply, Set.image_univ, Subtype.range_coe_subtype,
+    SetLike.setOfPred_mem_eq] at huniv
+  exact hμ huniv
+
+end TauCeti
 
 /-! ### Translated-coset calculations -/
 

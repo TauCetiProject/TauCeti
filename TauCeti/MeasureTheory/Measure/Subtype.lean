@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Regular
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 import TauCeti.MeasureTheory.Measure.Comap
 
@@ -25,6 +26,8 @@ of `μ.comap (↑)`:
   or injectivity assumption on `f` (`MeasureTheory.Measure.comap_preimage_le`).
 * For `s ⊆ t` with `t` measurable, pulling back from `α` to `t` and then along
   `Set.inclusion hst` to `s` recovers the direct pullback to `s`.
+* Pulling a measure back to a null-measurable subset `s` of measure `1` yields a probability
+  measure on `s` (`MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`).
 * Local finiteness and finiteness on compact sets pass from `μ` to `μ.comap (Subtype.val)` for
   every subtype `Subtype p`, with no measurability or separation assumptions; in particular, if `s`
   is σ-compact and `μ` is finite on compacts, `μ.comap ((↑) : s → α)` is σ-finite
@@ -39,6 +42,8 @@ of `μ.comap (↑)`:
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`: pulling `μ` back to a
+  null-measurable subset `s` with `μ s = 1` gives a probability measure.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
@@ -80,6 +85,16 @@ theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) 
     (μ : Measure α) :
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
   (MeasurableEmbedding.subtype_coe ht).comap_comap (Set.inclusion hst) μ
+
+/-- Pulling a measure `μ` back to a null-measurable subset `s` of measure `1` yields a probability
+measure on `s`. -/
+theorem isProbabilityMeasure_comap_subtype_coe (μ : Measure α) {s : Set α}
+    (hs : NullMeasurableSet s μ) (hμ : μ s = 1) :
+    IsProbabilityMeasure (μ.comap ((↑) : s → α)) :=
+  ⟨(comap_apply₀ ((↑) : s → α) μ Subtype.coe_injective
+      (fun _ ↦ MeasurableSet.nullMeasurableSet_subtype_coe hs)
+      MeasurableSet.univ.nullMeasurableSet).trans <| by
+    rw [image_univ, Subtype.range_coe, hμ]⟩
 
 end Measurable
 

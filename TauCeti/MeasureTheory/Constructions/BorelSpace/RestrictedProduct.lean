@@ -60,36 +60,19 @@ theorem measurableSet_restrictedProduct_box_of_eventually_eq
   let S : Finset ι := (mem_cofinite.mp (hCA.and hA)).toFinset
   have hS : ∀ i ∉ S, C i = A i ∧ IsOpen (A i) := fun i hi ↦ by
     simpa [S, Set.Finite.mem_toFinset] using hi
-  -- Outside `S`, both `C i = A i` and `IsOpen (A i)` hold, so the tail constraint is open;
-  -- on `S`, only finitely many measurable coordinate preimages remain.
-  let D : ∀ i, Set (R i) := fun i ↦ if i ∈ S then Set.univ else A i
-  have hD : ∀ i, IsOpen (D i) := fun i ↦ by
-    by_cases hi : i ∈ S
-    · simp [D, hi]
-    · simpa [D, hi] using (hS i hi).2
-  have hAD : ∀ᶠ i in cofinite, A i ⊆ D i := by
-    filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
-    have hi' : i ∉ S := hi
-    simp [D, hi']
-  have hopen : IsOpen {x : Πʳ i, [R i, A i] | ∀ i, x i ∈ D i} :=
-    isOpen_restrictedProduct_box hD hAD
+  -- Outside `S`, both `C i = A i` and `IsOpen (A i)` hold, so the tail constraint is an open
+  -- finset box; on `S`, only finitely many measurable coordinate preimages remain.
   have heq : {x : Πʳ i, [R i, A i] | ∀ i, x i ∈ C i} =
-      {x : Πʳ i, [R i, A i] | ∀ i, x i ∈ D i} ∩
+      {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ Set.univ) ∧ ∀ i ∉ S, x i ∈ A i} ∩
         ⋂ i ∈ S, (fun x : Πʳ j, [R j, A j] ↦ x i) ⁻¹' C i := by
     ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter, Set.mem_preimage, D]
-    constructor
-    · intro hx
-      refine ⟨fun i ↦ ?_, fun i _ ↦ hx i⟩
-      by_cases hi : i ∈ S
-      · simp [hi]
-      · simpa [hi, (hS i hi).1] using hx i
-    · rintro ⟨h1, h2⟩ i
-      by_cases hi : i ∈ S
-      · exact h2 i hi
-      · simpa [hi, (hS i hi).1] using h1 i
+    simp only [Set.mem_ofPred_eq, Set.mem_univ, Set.mem_inter_iff, Set.mem_iInter,
+      Set.mem_preimage]
+    exact ⟨fun hx ↦ ⟨⟨fun _ ↦ trivial, fun i hi ↦ (hS i hi).1 ▸ hx i⟩, fun i _ ↦ hx i⟩,
+      fun ⟨⟨_, h1⟩, h2⟩ i ↦ if hi : i ∈ S then h2 i hi else (hS i hi).1.symm ▸ h1 i hi⟩
   rw [heq]
-  exact hopen.measurableSet.inter
+  exact (isOpen_restrictedProduct_finset_box S (fun i hi ↦ (hS i hi).2)
+    (fun _ ↦ isOpen_univ)).measurableSet.inter
     (MeasurableSet.biInter S.countable_toSet fun i _ ↦
       (RestrictedProduct.continuous_eval i).measurable (hC i))
 

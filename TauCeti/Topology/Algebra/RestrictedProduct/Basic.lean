@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 public import Mathlib.Topology.Algebra.OpenSubgroup
+-- Proof-only: box openness in the restricted-product topology.
+import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 
 /-!
 # Integral subgroups of restricted products
@@ -148,19 +150,9 @@ finitely many indices. -/
 theorem isOpen_integralSubgroupOf_of_eventually_le (U V : ∀ i, Subgroup (G i))
     (hV : ∀ i, IsOpen (V i : Set (G i))) (hUV : ∀ᶠ i in cofinite, U i ≤ V i) :
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  simp_rw +instances [RestrictedProduct.topologicalSpace_eq_iSup cofinite, isOpen_iSup_iff,
-    isOpen_coinduced]
-  intro T hT
-  -- For a point of the restricted product relative to `𝓟 T`, membership in `V i` is automatic
-  -- at the indices of `{i | U i ≤ V i} ∩ T`; only finitely many conditions remain.
-  have hfin : ({i | U i ≤ V i} ∩ T)ᶜ.Finite := mem_cofinite.mp (hUV.and (le_principal_iff.mp hT))
-  convert (isOpen_set_pi hfin fun i _ ↦ hV i).preimage RestrictedProduct.continuous_coe using 1
-  ext y
-  simp only [Set.mem_preimage, SetLike.mem_coe, mem_integralSubgroupOf, Set.mem_pi]
-  refine ⟨fun h i _ ↦ h i, fun h i ↦ ?_⟩
-  by_cases hi : i ∈ {i | U i ≤ V i} ∩ T
-  · exact hi.1 (y.2 hi.2)
-  · exact h i hi
+  convert isOpen_restrictedProduct_box hV hUV using 1
+  ext x
+  simp
 
 /-- Compactness when every `V i` is compact and lies in the reference subgroup `U i` at all but
 finitely many indices. -/

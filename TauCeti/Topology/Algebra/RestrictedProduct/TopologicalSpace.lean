@@ -21,11 +21,12 @@ cofinite filter: outside finitely many indices), the restricted-product topology
 product topology.
 
 Over the cofinite filter, boxes `{x | ∀ i, x i ∈ C i}` with open factors containing `A i` at all
-but finitely many indices are open (`isOpen_restrictedProduct_box`). When every reference set
-`A i` is open, boxes built from local bases (`isTopologicalBasis_restrictedProduct_boxes`) or
-open factors eventually equal to `A i` (`isTopologicalBasis_restrictedProduct_open_boxes`) form a
-topological basis; in particular, a restricted product of countably many second-countable spaces
-relative to open reference sets is second countable (`secondCountableTopology_restrictedProduct`).
+but finitely many indices are open (`isOpen_restrictedProduct_box`, and in finset form
+`isOpen_restrictedProduct_finset_box`). When every reference set `A i` is open, boxes built from
+topological bases of the factors (`isTopologicalBasis_restrictedProduct_boxes`) or open factors
+eventually equal to `A i` (`isTopologicalBasis_restrictedProduct_open_boxes`) form a topological
+basis; in particular, a restricted product of countably many second-countable spaces relative to
+open reference sets is second countable (`secondCountableTopology_restrictedProduct`).
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -233,24 +234,29 @@ theorem isOpen_restrictedProduct_box {C : ∀ i, Set (R i)} (hC : ∀ i, IsOpen 
   · exact hi.1 (y.2 hi.2)
   · exact h i hi
 
-private theorem isOpen_restrictedProduct_finset_box (hA : ∀ i, IsOpen (A i))
-    (S : Finset ι) {U : ∀ i : S, Set (R i)} (hU : ∀ i, IsOpen (U i)) :
-    IsOpen {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} := by
-  classical
-  let C : ∀ i, Set (R i) := fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i
-  have hC : ∀ i, IsOpen (C i) := fun i ↦ by
-    by_cases hi : i ∈ S
-    · simpa [C, hi] using hU ⟨i, hi⟩
-    · simpa [C, hi] using hA i
-  have hAC : ∀ᶠ i in cofinite, A i ⊆ C i := by
-    filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
-    have hi' : i ∉ S := hi
-    simp [C, hi']
-  convert isOpen_restrictedProduct_box hC hAC using 1
+omit [∀ i, TopologicalSpace (R i)] in
+private theorem restrictedProduct_finset_box_eq [DecidableEq ι] (S : Finset ι)
+    (U : ∀ i : S, Set (R i)) :
+    {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} =
+      {x : Πʳ i, [R i, A i] | ∀ i, x i ∈ if hi : i ∈ S then U ⟨i, hi⟩ else A i} := by
   ext x
-  simp only [Set.mem_ofPred_eq, C]
+  simp only [Set.mem_ofPred_eq]
   exact ⟨fun h i ↦ by split_ifs with hi; exacts [h.1 ⟨i, hi⟩, h.2 i hi],
     fun h ↦ ⟨fun i ↦ by simpa [i.2] using h i.1, fun i hi ↦ by simpa [hi] using h i⟩⟩
+
+/-- A box restricting finitely many coordinates `i ∈ S` to open sets `U i` and the remaining
+coordinates to open reference sets `A i` is open in `Πʳ i, [R i, A i]`. -/
+theorem isOpen_restrictedProduct_finset_box (S : Finset ι) (hA : ∀ i ∉ S, IsOpen (A i))
+    {U : ∀ i : S, Set (R i)} (hU : ∀ i, IsOpen (U i)) :
+    IsOpen {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} := by
+  classical
+  rw [restrictedProduct_finset_box_eq]
+  refine isOpen_restrictedProduct_box (fun i ↦ ?_) ?_
+  · split_ifs with hi
+    exacts [hU ⟨i, hi⟩, hA i hi]
+  · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
+    have hi' : i ∉ S := hi
+    simp [hi']
 
 /-- Given a topological basis `b i` on each factor `R i` and open reference sets `A i`, the boxes
 restricting finitely many coordinates to elements of `b i` and the remaining coordinates to `A i`
@@ -265,7 +271,7 @@ theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ i, IsOpen (A i))
   classical
   refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
   · rintro _ ⟨S, U, hU, rfl⟩
-    exact isOpen_restrictedProduct_finset_box hA S fun i ↦ (hb i.1).isOpen (hU i)
+    exact isOpen_restrictedProduct_finset_box S (fun i _ ↦ hA i) fun i ↦ (hb i.1).isOpen (hU i)
   · intro x V hxV hV
     -- Work inside the principal stage determined by the indices where `x i ∈ A i`.
     set T₀ : Set ι := {i | x i ∈ A i}
@@ -328,17 +334,14 @@ theorem isTopologicalBasis_restrictedProduct_open_boxes (hA : ∀ i, IsOpen (A i
     · exact hi ▸ h.2 i hi
     · exact h.1 ⟨i, (Set.Finite.mem_toFinset _).mpr hi⟩
   · rintro ⟨S, U, hU, rfl⟩
-    refine ⟨fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i, fun i ↦ ?_, ?_, ?_⟩
-    · by_cases hi : i ∈ S
-      · simpa [hi] using hU ⟨i, hi⟩
-      · simpa [hi] using hA i
+    refine ⟨fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i, fun i ↦ ?_, ?_,
+      restrictedProduct_finset_box_eq S U⟩
+    · dsimp only
+      split_ifs with hi
+      exacts [hU ⟨i, hi⟩, hA i]
     · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
       have hi' : i ∉ S := hi
       simp [hi']
-    · ext x
-      simp only [Set.mem_ofPred_eq]
-      exact ⟨fun h i ↦ by split_ifs with hi; exacts [h.1 ⟨i, hi⟩, h.2 i hi],
-        fun h ↦ ⟨fun i ↦ by simpa [i.2] using h i.1, fun i hi ↦ by simpa [hi] using h i⟩⟩
 
 /-- A restricted product of countably many second-countable spaces relative to open reference sets
 is second countable. -/
