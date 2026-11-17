@@ -114,10 +114,7 @@ theorem eq_zero_of_mem_orthogonal_of_nonneg (hQ : Q.Nondegenerate) {P : Submodul
     (hx : x ∈ LinearMap.BilinForm.orthogonal Q.polarBilin P) (hx0 : 0 ≤ Q x) : x = 0 := by
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   have hQx : Q x = 0 := le_antisymm (apply_nonpos_of_mem_orthogonal hP hsig hx) hx0
-  have hPnd : (Q.restrict P).Nondegenerate := by
-    rw [nondegenerate_iff_radical_eq_bot, Submodule.eq_bot_iff]
-    exact fun p hp ↦ hP.anisotropic p ((QuadraticMap.mem_radical_iff'.mp hp).1)
-  have hcompl := Nondegenerate.isCompl_orthogonal hPnd
+  have hcompl := Nondegenerate.isCompl_orthogonal hP.anisotropic.nondegenerate
   -- The polar functional of `x` vanishes on `P` by assumption, and on its complement because
   -- `s ↦ Q (x + s • n) = s * polar Q x n + s ^ 2 * Q n` is nowhere positive.
   have hpolar (z : M) : polar Q x z = 0 := by
@@ -157,8 +154,7 @@ theorem eq_zero_of_polar_eq_zero_of_nonneg (hQ : Q.Nondegenerate) (hsig : sigPos
   · rwa [finrank_span_singleton hy0]
   · refine LinearMap.BilinForm.mem_orthogonal_iff.mpr fun w hw ↦ ?_
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
-    change polar Q (c • y) x = 0
-    rw [polar_smul_left, polar_comm, hxy, smul_zero]
+    rw [polarBilin_apply_apply, polar_smul_left, polar_comm, hxy, smul_zero]
 
 /-- **The sign of a pairing with a causal vector is constant on each half of the positive cone.**
 Let `Q` be nondegenerate with positive index of inertia at most one, and let `x ≠ 0` satisfy

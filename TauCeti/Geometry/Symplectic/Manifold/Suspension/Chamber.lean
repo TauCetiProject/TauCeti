@@ -177,7 +177,9 @@ theorem sign_baseChange_tmul_two_smul_sub_apply {𝕜 : Type*} [Field 𝕜] [Lin
   have hsymm : Bk.IsSymm := BilinForm.isSymm_iff.mpr <| BilinForm.IsSymm.baseChange 𝕜 <|
     BilinForm.isSymm_iff.mp (BilinForm.isSymm_of_isOfFinAddOrder_span (hvt.trans htv.symm) hspan)
   have hpolar (x z : 𝕜 ⊗[ℤ] H) : QuadraticMap.polar Q x z = 2 * Bk x z := by
-    rw [LinearMap.BilinMap.polar_toQuadraticMap, hsymm.eq z x, two_mul]
+    have hflip : LinearMap.flip Bk = Bk := LinearMap.ext₂ fun x z ↦ hsymm.eq z x
+    simpa using
+      LinearMap.congr_fun₂ (LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip hflip) x z
   have hone (x z : H) : Bk ((1 : 𝕜) ⊗ₜ x) ((1 : 𝕜) ⊗ₜ z) = B x z := by
     simp [Bk]
   have hl := isOfFinAddOrder_two_smul_sub_sub he hκ
