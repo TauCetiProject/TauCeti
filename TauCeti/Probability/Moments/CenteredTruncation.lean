@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Moments.Variance
-public import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
-public import Mathlib.Probability.IdentDistrib
+public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
 
 /-!
@@ -71,7 +70,7 @@ variable {X P}
 @[fun_prop] theorem _root_.Measurable.centeredTruncation [MeasurableSpace E] [BorelSpace E]
     (hX : Measurable X) (R : ℝ≥0) :
     Measurable (centeredTruncation X P R) :=
-  (hX.indicator (measurableSet_le hX.norm measurable_const)).sub_const _
+  (hX.indicator_setOf_norm_le R).sub_const _
 
 /-- Centered truncation preserves strong measurability almost everywhere. -/
 theorem _root_.MeasureTheory.AEStronglyMeasurable.centeredTruncation
@@ -185,19 +184,6 @@ variable {Ω Ω' E : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
   [BorelSpace E]
   {P : Measure Ω} {Q : Measure Ω'} {X : Ω → E} {Y : Ω' → E}
 
-omit [NormedSpace ℝ E] in
-/-- The cut-off map keeping a point on the closed norm ball of radius `R` is measurable. -/
-private theorem measurable_indicator_norm_le (R : ℝ≥0) :
-    Measurable ({z : E | ‖z‖ ≤ R}.indicator id) :=
-  measurable_id.indicator (measurableSet_le measurable_norm measurable_const)
-
-/-- Equal laws give equal truncated integrals, hence equal centering constants. -/
-private theorem IdentDistrib.integral_indicator_norm_le_eq (h : IdentDistrib X Y P Q)
-    (R : ℝ≥0) :
-    ∫ ω, {ω | ‖X ω‖ ≤ R}.indicator X ω ∂P = ∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q := by
-  simpa only [Function.comp_def, Set.indicator_apply, Set.mem_ofPred_eq, id_eq] using
-    (h.comp (measurable_indicator_norm_le R)).integral_eq
-
 /-- Equal laws preserve the joint law of a variable and its centered truncation.
 In particular, approximation errors are identically distributed. -/
 theorem IdentDistrib.prodMk_centeredTruncation (h : IdentDistrib X Y P Q) (R : ℝ≥0) :
@@ -205,11 +191,11 @@ theorem IdentDistrib.prodMk_centeredTruncation (h : IdentDistrib X Y P Q) (R : �
       (fun ω ↦ (Y ω, centeredTruncation Y Q R ω)) P Q := by
   let T : E → E := {z | ‖z‖ ≤ R}.indicator id
   simp only [centeredTruncation]
-  rw [h.integral_indicator_norm_le_eq R]
+  rw [h.integral_indicator_setOf_norm_le_eq R]
   simpa only [Function.comp_def, T,
     Set.indicator_apply, Set.mem_ofPred_eq, id_eq] using
     h.comp (u := fun z ↦ (z, T z - ∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q))
-      (measurable_id.prodMk ((measurable_indicator_norm_le R).sub_const _))
+      (measurable_id.prodMk ((measurable_id.indicator_setOf_norm_le R).sub_const _))
 
 /-- Equal laws preserve the law of the error of centered truncation, even for different
 source measures. -/
@@ -226,7 +212,7 @@ theorem IdentDistrib.sub_centeredTruncation (h : IdentDistrib X Y P Q) (R : ℝ�
     ext z
     by_cases hz : ‖z‖ ≤ R <;> simp [T, indicator, hz, not_lt.mpr, not_le.mp]
   simp only [centeredTruncation]
-  rw [h.integral_indicator_norm_le_eq R]
+  rw [h.integral_indicator_setOf_norm_le_eq R]
   simpa only [Function.comp_def, T, Set.indicator_apply, Set.mem_ofPred_eq, id_eq] using h.comp hg
 
 /-- Applying centered truncation separately to independent coordinates preserves independence.
@@ -236,7 +222,8 @@ theorem iIndepFun.centeredTruncation {ι : Type*} {X : ι → Ω → E}
     iIndepFun (fun i ↦ centeredTruncation (X i) P (R i)) P := by
   let g (i : ι) (z : E) := {z | ‖z‖ ≤ R i}.indicator id z -
     ∫ ω, {ω | ‖X i ω‖ ≤ R i}.indicator (X i) ω ∂P
-  have hg (i : ι) : Measurable (g i) := (measurable_indicator_norm_le (R i)).sub_const _
+  have hg (i : ι) : Measurable (g i) :=
+    (measurable_id.indicator_setOf_norm_le (R i)).sub_const _
   simpa only [Function.comp_def, g, centeredTruncation_def, Set.indicator_apply,
     Set.mem_ofPred_eq, id_eq]
     using h.comp g hg

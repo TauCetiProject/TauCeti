@@ -25,7 +25,8 @@ norm tend to zero. This supplies bounded approximations without requiring the un
 to be finite. For `p = 2` this says that the discarded second absolute moment
 `E[‖X‖²; R < ‖X‖]` tends to zero as the cutoff `R` tends to infinity
 (`MeasureTheory.MemLp.tendsto_integral_indicator_norm_sq`). The cut-off function is bounded by
-the level itself (`TauCeti.norm_indicator_setOf_norm_le_le`).
+the level itself (`TauCeti.norm_indicator_setOf_norm_le_le`), and is measurable when the original
+function is (`Measurable.indicator_setOf_norm_le`).
 -/
 
 public section
@@ -80,6 +81,14 @@ theorem AEStronglyMeasurable.ite_norm_le
     AEStronglyMeasurable (fun x ↦ if ‖f x‖ ≤ R then f x else 0) P := by
   exact (hf.indicator₀ (hf.norm.nullMeasurableSet_le aestronglyMeasurable_const)).congr
     (Filter.Eventually.of_forall fun x ↦ Set.indicator_apply _ _ x)
+
+/-- Keeping a measurable function only where its norm is at most a real level `R` gives a
+measurable function. -/
+theorem _root_.Measurable.indicator_setOf_norm_le
+    {E : Type*} [SeminormedAddGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] {f : Ω → E}
+    (hf : Measurable f) (R : ℝ) :
+    Measurable ({x | ‖f x‖ ≤ R}.indicator f) :=
+  hf.indicator (measurableSet_le (continuous_norm.measurable.comp hf) measurable_const)
 
 /-- Cutting off an `Lᵖ` function at a real norm level preserves `Lᵖ` membership,
 including for infinite measures and arbitrary exponents. -/
