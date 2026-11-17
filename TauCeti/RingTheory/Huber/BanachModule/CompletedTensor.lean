@@ -76,7 +76,8 @@ products with a finite projective factor can be computed with the algebraic tens
 * `TauCeti.Huber.BanachModule.CompletedTensor.continuous_tmul`: `(v, w) ↦ v ⊗ w` is continuous,
   and `dense_span_range_tmul`: the elementary tensors span a dense submodule.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lift_tmul` and `ext`: the universal property.
-* `TauCeti.Huber.BanachModule.CompletedTensor.map_tmul`, `map_id`, `map_comp`: functoriality.
+* `TauCeti.Huber.BanachModule.CompletedTensor.map_tmul`, `map_toCompletion`, `map_id`, `map_comp`:
+  functoriality.
 * `TauCeti.Huber.BanachModule.CompletedTensor.prodLeft`: completed tensoring in the first
   variable preserves binary products, with component formulas `prodLeft_apply` and
   `prodLeft_symm_apply`.
@@ -394,6 +395,15 @@ noncomputable def map (f : V →L[A] V') (g : W →L[A] W') :
 theorem map_tmul (f : V →L[A] V') (g : W →L[A] W') (v : V) (w : W) :
     map f g (tmul A V W v w) = tmul A V' W' (f v) (g w) := by
   simp [map]
+
+/-- `f ⊗̂ g` extends `TensorProduct.map f.toLinearMap g.toLinearMap` from `V ⊗[A] W`. -/
+@[simp]
+theorem map_toCompletion (f : V →L[A] V') (g : W →L[A] W') (x : V ⊗[A] W) :
+    map f g (toCompletion A V W x) =
+      toCompletion A V' W' (TensorProduct.map f.toLinearMap g.toLinearMap x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul v w => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The completed tensor product of identities is the identity. -/
 @[simp]
