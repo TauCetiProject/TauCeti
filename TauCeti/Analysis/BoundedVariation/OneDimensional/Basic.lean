@@ -5,19 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.MeasureTheory.VectorMeasure.IntegrationByParts
 public import Mathlib.MeasureTheory.VectorMeasure.BoundedVariation
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import Mathlib.Analysis.BoundedVariation
+import TauCeti.MeasureTheory.VectorMeasure.Integral
 
 /-!
 # Classical bounded variation and the distributional derivative
 
 For a Banach-valued function of bounded variation on the real line, Mathlib's
 `BoundedVariationOn.vectorMeasure` is its distributional derivative: integrating the
-function against the derivative of a compactly supported `C¹` test function is the negative
-of the integral of the test function against that measure. Values at individual jumps do not
-matter; the measure records the difference between the right and left limits.
+function against the derivative of a compactly supported `C¹` test function (real- or
+`RCLike`-valued) is the negative of the integral of the test function against that measure. Values
+at individual jumps do not matter; the measure records the difference between the right and left
+limits.
 
 For real-valued functions we also bound the dual total variation on any open set by the
 variation of this measure there. In particular classical global bounded variation implies
@@ -69,6 +72,61 @@ theorem integral_deriv_smul_eq_neg_integral_vectorMeasure
     integral_sub hprod (hdφ.smul_const _),
     integral_smul_const, hzero, zero_smul, sub_zero] at h
   exact h
+
+/-- Integration by parts for a globally bounded-variation function against an `RCLike`-valued
+compactly supported `C¹` test function, paired via `ContinuousLinearMap.lsmul ℝ 𝕜`. Neither
+continuity nor global integrability of `f` is assumed. -/
+theorem integral_deriv_smul_eq_neg_integral_lsmul
+    {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
+    (hf : BoundedVariationOn f univ) {φ : ℝ → 𝕜}
+    (hφ : ContDiff ℝ 1 φ) (hcφ : HasCompactSupport φ) :
+    ∫ x, deriv φ x • f x =
+      -∫ᵛ x, φ x ∂[ContinuousLinearMap.lsmul ℝ 𝕜; hf.vectorMeasure] := by
+  let reφ : ℝ → ℝ := fun x ↦ RCLike.re (φ x)
+  let imφ : ℝ → ℝ := fun x ↦ RCLike.im (φ x)
+  have hre_cd : ContDiff ℝ 1 reφ := (RCLike.reCLM (K := 𝕜)).contDiff.comp hφ
+  have him_cd : ContDiff ℝ 1 imφ := (RCLike.imCLM (K := 𝕜)).contDiff.comp hφ
+  have hre_cs : HasCompactSupport reφ := hcφ.comp_left (RCLike.reCLM (K := 𝕜)).map_zero
+  have him_cs : HasCompactSupport imφ := hcφ.comp_left (RCLike.imCLM (K := 𝕜)).map_zero
+  have hre_deriv (x : ℝ) : deriv reφ x = RCLike.re (deriv φ x) :=
+    ((RCLike.reCLM (K := 𝕜)).hasFDerivAt.comp_hasDerivAt x
+      (hφ.differentiable one_ne_zero x).hasDerivAt).deriv
+  have him_deriv (x : ℝ) : deriv imφ x = RCLike.im (deriv φ x) :=
+    ((RCLike.imCLM (K := 𝕜)).hasFDerivAt.comp_hasDerivAt x
+      (hφ.differentiable one_ne_zero x).hasDerivAt).deriv
+  have hre_prod : Integrable (fun x ↦ deriv reφ x • f x) := by
+    have hd : Integrable (deriv reφ) :=
+      (hre_cd.continuous_deriv le_rfl).integrable_of_hasCompactSupport hre_cs.deriv
+    simpa only [Pi.smul_def'] using hd.smul_of_top_left hf.memLp_top
+  have him_prod : Integrable (fun x ↦ deriv imφ x • f x) := by
+    have hd : Integrable (deriv imφ) :=
+      (him_cd.continuous_deriv le_rfl).integrable_of_hasCompactSupport him_cs.deriv
+    simpa only [Pi.smul_def'] using hd.smul_of_top_left hf.memLp_top
+  have hsplit_lhs (x : ℝ) :
+      deriv φ x • f x = deriv reφ x • f x + (RCLike.I : 𝕜) • (deriv imφ x • f x) := by
+    rw [hre_deriv, him_deriv]
+    conv_lhs => rw [← RCLike.re_add_im (deriv φ x)]
+    rw [add_smul, mul_comm, mul_smul]
+    simp only [← RCLike.real_smul_eq_coe_smul]
+  have hφ_int : hf.vectorMeasure.Integrable φ :=
+    hφ.continuous.integrable_of_hasCompactSupport hcφ
+  have him_smul : Integrable (fun x ↦ (RCLike.I : 𝕜) • (deriv imφ x • f x)) :=
+    him_prod.smul (RCLike.I : 𝕜)
+  calc
+    ∫ x, deriv φ x • f x
+      = ∫ x, (deriv reφ x • f x + (RCLike.I : 𝕜) • (deriv imφ x • f x)) := by
+          congr 1 with x; exact hsplit_lhs x
+    _ = (∫ x, deriv reφ x • f x) + (RCLike.I : 𝕜) • (∫ x, deriv imφ x • f x) := by
+          rw [integral_add hre_prod him_smul, integral_smul]
+    _ = (-∫ᵛ x, reφ x ∂•hf.vectorMeasure) +
+          (RCLike.I : 𝕜) • (-∫ᵛ x, imφ x ∂•hf.vectorMeasure) := by
+          rw [hf.integral_deriv_smul_eq_neg_integral_vectorMeasure hre_cd hre_cs,
+            hf.integral_deriv_smul_eq_neg_integral_vectorMeasure him_cd him_cs]
+    _ = -((∫ᵛ x, reφ x ∂•hf.vectorMeasure) +
+          (RCLike.I : 𝕜) • (∫ᵛ x, imφ x ∂•hf.vectorMeasure)) := by
+          rw [smul_neg, neg_add]
+    _ = -∫ᵛ x, φ x ∂[ContinuousLinearMap.lsmul ℝ 𝕜; hf.vectorMeasure] := by
+          rw [VectorMeasure.integral_lsmul_eq_re_add_I_smul_im hφ_int]
 
 /-- On any open subset of the line, distributional total variation is bounded by the
 variation of the classical derivative measure. No global integrability is required. -/
