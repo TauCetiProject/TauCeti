@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 
 /-!
 # The star operation on `Lp`
@@ -18,6 +19,11 @@ conjugate-linear. Thus `Lp R p μ` is a star additive monoid and a star module f
 conjugation of classes of functions; these laws are part of the C⋆-algebra structure of `L∞`.
 Over any `RCLike` field, a class almost everywhere equal to a real-valued function is fixed by
 `star` (`MeasureTheory.Lp.star_eq_self_of_ae_eq_ofReal`).
+
+In addition, over any normed field `𝕜` with a norm-preserving additive star involution and a normed
+`𝕜`-space `E`, pointwise scalar multiplication by `star ∘ f` preserves `MemLp` membership whenever
+`u : α → E` is almost-everywhere strongly measurable, without requiring any measurability
+hypothesis on `f` (`MeasureTheory.memLp_star_smul_of_memLp`, `MeasureTheory.memLp_star_smul_iff`).
 -/
 
 public section
@@ -57,3 +63,35 @@ theorem star_eq_self_of_ae_eq_ofReal [RCLike 𝕜] {f : Lp 𝕜 p μ} {u : α �
   simp [h₁, h₂]
 
 end MeasureTheory.Lp
+
+namespace MeasureTheory
+
+section StarSMul
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [StarAddMonoid 𝕜] [NormedStarGroup 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- Over a normed field `𝕜` with a norm-preserving additive star involution, if `u : α → E` is
+almost-everywhere strongly measurable and `t ↦ f t • u t` belongs to `MemLp · p μ`, then
+`t ↦ star (f t) • u t` also belongs to `MemLp · p μ` (with no measurability hypothesis on `f`). -/
+theorem memLp_star_smul_of_memLp {p : ℝ≥0∞} {f : α → 𝕜} {u : α → E}
+    (hu : AEStronglyMeasurable u μ) (hfu : MemLp (fun t ↦ f t • u t) p μ) :
+    MemLp (fun t ↦ star (f t) • u t) p μ := by
+  refine hfu.of_le_mul (c := 1)
+    (aestronglyMeasurable_star_smul_of_aestronglyMeasurable hu hfu.aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun t ↦ ?_)
+  rw [one_mul, norm_smul, norm_smul, norm_star]
+
+/-- Over a normed field `𝕜` with a norm-preserving additive star involution, for an
+almost-everywhere strongly measurable vector function `u : α → E`, `t ↦ star (f t) • u t`
+belongs to `MemLp · p μ` if and only if `t ↦ f t • u t` does. -/
+theorem memLp_star_smul_iff {p : ℝ≥0∞} {f : α → 𝕜} {u : α → E}
+    (hu : AEStronglyMeasurable u μ) :
+    MemLp (fun t ↦ star (f t) • u t) p μ ↔ MemLp (fun t ↦ f t • u t) p μ :=
+  ⟨fun h ↦ by
+      simpa only [Pi.star_apply, star_star] using memLp_star_smul_of_memLp (f := star f) hu h,
+    memLp_star_smul_of_memLp hu⟩
+
+end StarSMul
+
+end MeasureTheory
