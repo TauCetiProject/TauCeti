@@ -18,19 +18,17 @@ concurrency:
 
 jobs:
   python-tests:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f8e04a89d7f4406bbac9af986091f832c9be9c0a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f8e04a89d7f4406bbac9af986091f832c9be9c0a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -45,6 +43,7 @@ jobs:
             scripts/test_dependency_warm.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_pick_runner.py \
+            scripts/test_nightly_verify.py \
             scripts/test_finalize_batch.py \
             scripts/test_bors_staging_identity.py \
             scripts/test_workflow_pins.py \
@@ -66,10 +65,10 @@ jobs:
           cp tauceti.toml staging-contracts/tauceti.toml
 
       - name: Prepare the deployed staging tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: staging-contracts
 
       - name: Check staging lint scope with the deployed implementation
@@ -91,19 +90,17 @@ jobs:
           python3 scripts/test_stack_checkpoint_restore.py
 
   lean-fixtures:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f8e04a89d7f4406bbac9af986091f832c9be9c0a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f8e04a89d7f4406bbac9af986091f832c9be9c0a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Install the native checkout fixture sandbox
         run: |
@@ -154,7 +151,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiTools
-          ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
+          ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           path: staging-cache-tools
           sparse-checkout: |
             tauceti_tools/assets/scripts/bulk-unpack-cache.py
@@ -168,19 +165,17 @@ jobs:
           python3 staging-cache-tools/tauceti_tools/assets/scripts/test_bulk_unpack_cache.py --integration
 
   header-fixtures:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f8e04a89d7f4406bbac9af986091f832c9be9c0a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f8e04a89d7f4406bbac9af986091f832c9be9c0a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:

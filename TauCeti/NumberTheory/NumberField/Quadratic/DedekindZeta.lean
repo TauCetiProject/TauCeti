@@ -11,8 +11,10 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Tactic.NormNum.RealSqrt
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta
 import TauCeti.NumberTheory.LSeries.ZetaMul
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
@@ -73,6 +75,10 @@ the real number `2π h / (w √|D|)`; since `w ≥ 2`, this gives the lower boun
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_eq_neg_three`,
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_eq_neg_four` and
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_ne`.
+* `TauCeti.NumberField.classNumber_le_card_units_mul_sqrt_mul_one_add_log`: the upper bound
+  `h ≤ w √|D| (1 + log |D|) / (2π)`, from `‖L(1, χ_D)‖ ≤ 1 + log |D|`
+  (`DirichletCharacter.norm_LFunction_one_le_one_add_log`), with the specialization
+  `TauCeti.NumberField.classNumber_le_sqrt_mul_one_add_log_of_discr_ne`.
 
 ## References
 
@@ -238,10 +244,7 @@ theorem dedekindZeta_residue_eq_LFunction_one :
     (fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
       (Int.castRingHom ℂ)
   -- As `s → 1⁺`, `(s - 1) ζ(s) → 1` and `L(s, χ) → L(1, χ)`, while `(s - 1) ζ_K(s) → ρ`.
-  have hζ : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * riemannZeta s) (𝓝[>] 1) (𝓝 1) :=
-    riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun s hs ↦ by simpa using (Set.mem_Ioi.mp hs).ne')
+  have hζ := TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT
   have hL : Tendsto (fun s : ℝ ↦ χ.LFunction s) (𝓝[>] 1) (𝓝 (χ.LFunction 1)) :=
     (((DirichletCharacter.differentiable_LFunction (χ := χ)
       (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)).continuous.comp
@@ -364,6 +367,33 @@ theorem classNumber_eq_LFunction_one_of_discr_ne (h3 : discr K ≠ -3) (h4 : dis
   rw [classNumber_eq_card_units_mul_LFunction_one hK,
     Units.card_units_of_isTotallyComplex_of_discr hK]
   simp only [h3, h4, ↓reduceIte]
+  push_cast
+  field_simp
+
+/-- **An upper bound for the class number of an imaginary quadratic field.** If `K` is imaginary
+quadratic of discriminant `D`, then `h ≤ w √|D| (1 + log |D|) / (2π)`, where `h` is the class
+number of `K` and `w` is the number of units of `𝓞 K`. -/
+theorem classNumber_le_card_units_mul_sqrt_mul_one_add_log :
+    (classNumber K : ℝ) ≤
+      Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)| * (1 + Real.log |(discr K : ℝ)|) / (2 * π) := by
+  have hL := DirichletCharacter.norm_LFunction_one_le_one_add_log _
+    (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)
+  have h := congrArg norm (classNumber_eq_card_units_mul_LFunction_one hK)
+  rw [Nat.cast_natAbs, Int.cast_abs] at hL
+  simp only [Complex.norm_natCast, norm_div, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg (Real.sqrt_nonneg _), Complex.norm_ofNat, abs_of_pos Real.pi_pos] at h
+  rw [h]
+  gcongr
+
+/-- **An upper bound for the class number away from `D = -3, -4`.** An imaginary quadratic field
+of any other discriminant `D` has two units, so `h ≤ √|D| (1 + log |D|) / π`. -/
+theorem classNumber_le_sqrt_mul_one_add_log_of_discr_ne (h3 : discr K ≠ -3)
+    (h4 : discr K ≠ -4) :
+    (classNumber K : ℝ) ≤ √|(discr K : ℝ)| * (1 + Real.log |(discr K : ℝ)|) / π := by
+  have h := classNumber_le_card_units_mul_sqrt_mul_one_add_log hK
+  rw [Units.card_units_of_isTotallyComplex_of_discr hK] at h
+  simp only [h3, h4, ↓reduceIte] at h
+  convert h using 1
   push_cast
   field_simp
 

@@ -21,6 +21,7 @@ so restriction formulas can be transported through the composition isomorphisms 
 public section
 
 open CategoryTheory MonoidalCategory
+open SheafOfModules (pushforwardLaxMonoidal pushforward_μ_app_tmul)
 
 noncomputable section
 

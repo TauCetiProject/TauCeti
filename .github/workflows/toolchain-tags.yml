@@ -72,10 +72,10 @@ jobs:
           # for over an hour and this checkout is a snapshot from before it.
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f8e04a89d7f4406bbac9af986091f832c9be9c0a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f8e04a89d7f4406bbac9af986091f832c9be9c0a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Wait for CI, then report to Zulip if anything changed
         env:
