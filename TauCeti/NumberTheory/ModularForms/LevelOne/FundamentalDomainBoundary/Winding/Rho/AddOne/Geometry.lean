@@ -156,7 +156,7 @@ below the corner row, where `H - √3/2 < 0` makes the signed bound vacuous. -/
 theorem norm_fdBoundary_sub_rho_add_one_segment5 (ht : t ∈ Icc (4 : ℝ) 5) :
     |H - Real.sqrt 3 / 2| ≤ ‖fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)‖ := by
   have him : (fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im = H - Real.sqrt 3 / 2 := by
-    rw [Complex.sub_im, im_fdBoundarySegment5 H ht, rho_add_one_im]
+    rw [Complex.sub_im, im_fdBoundary_of_four_le ht.1, rho_add_one_im]
   have h1 : |(fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im| ≤
       ‖fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)‖ := Complex.abs_im_le_norm _
   exact him ▸ h1
@@ -280,7 +280,7 @@ theorem eq_one_of_fdBoundary_eq_rho_add_one (hH : H ≠ Real.sqrt 3 / 2) (ht : t
         rw [h0] at this
         norm_num at this
       · have him := congrArg Complex.im (norm_eq_zero.mp h0)
-        rw [Complex.sub_im, im_fdBoundarySegment5 H ⟨h4.le, ht.2⟩, rho_add_one_im,
+        rw [Complex.sub_im, im_fdBoundary_of_four_le h4.le, rho_add_one_im,
           Complex.zero_im] at him
         exact absurd (by linarith) hH
 

@@ -263,11 +263,11 @@ private lemma fdBoundary_ne_arc (hH : 1 < H) (hre : |w.re| < 1 / 2)
     · exact hts (injOn_fdBoundary_arc H ⟨h1.le, h3⟩ ⟨ht₀.1.le, ht₀.2.le⟩
         (heq.trans hw.symm))
     · rcases le_or_gt t 4 with h4 | h4
-      · have hr := re_fdBoundary_of_le_four (H := H) h3 h4
+      · have hr := re_fdBoundarySegment4 H ⟨h3.le, h4⟩
         rw [heq] at hr
         rw [hr] at hre
         norm_num at hre
-      · have hi := im_fdBoundary_of_gt_four (H := H) h4
+      · have hi := im_fdBoundary_of_four_le (H := H) h4.le
         rw [heq] at hi
         have him1 : w.im ≤ 1 := by
           rw [← hw]
@@ -384,7 +384,7 @@ private lemma lt_norm_sub_arc_of_far_right (ht₀ : t₀ ∈ Ioo (1 : ℝ) 3)
           exact le_abs_self _
         _ ≤ ‖fdBoundary H s - w‖ := Complex.abs_re_le_norm _
     · have hi : (fdBoundary H s - w).im = H - w.im := by
-        rw [Complex.sub_im, im_fdBoundarySegment5 H ⟨h4.le, hs.2.le⟩]
+        rw [Complex.sub_im, im_fdBoundary_of_four_le (H := H) h4.le]
       calc ε < H - w.im := by linarith
         _ ≤ |(fdBoundary H s - w).im| := by rw [hi]; exact le_abs_self _
         _ ≤ ‖fdBoundary H s - w‖ := Complex.abs_im_le_norm _

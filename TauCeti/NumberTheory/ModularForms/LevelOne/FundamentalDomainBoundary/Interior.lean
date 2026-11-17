@@ -55,9 +55,9 @@ coordinate, the arc by the norm. -/
 theorem fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt (hre : |w.re| < 1 / 2)
     (hnorm : 1 < ‖w‖) (him : w.im < H) : ∀ t ∈ Icc (0 : ℝ) 5, fdBoundary H t ≠ w := by
   obtain ⟨hx₁, hx₂⟩ := abs_lt.mp hre
-  intro t ht h_eq
+  intro t _ h_eq
   rcases le_or_gt t 1 with h1 | h1
-  · have := re_fdBoundarySegment1 H ⟨ht.1, h1⟩
+  · have := re_fdBoundary_of_le_one (H := H) h1
     rw [h_eq] at this
     linarith
   · rcases le_or_gt t 3 with h3 | h3
@@ -69,7 +69,7 @@ theorem fdBoundary_ne_of_abs_re_lt_half_of_one_lt_norm_of_im_lt (hre : |w.re| < 
       · have := re_fdBoundarySegment4 H ⟨h3.le, h4⟩
         rw [h_eq] at this
         linarith
-      · have := im_fdBoundarySegment5 H ⟨h4.le, ht.2⟩
+      · have := im_fdBoundary_of_four_le (H := H) h4.le
         rw [h_eq] at this
         linarith
 

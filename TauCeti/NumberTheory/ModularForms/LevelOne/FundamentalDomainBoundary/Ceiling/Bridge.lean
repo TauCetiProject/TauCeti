@@ -140,7 +140,7 @@ theorem not_exists_norm_fdBoundary_sub_le_of_mem_Icc_four_five {H ε : ℝ} {S :
     ¬ ∃ s ∈ S, ‖fdBoundary H t - s‖ ≤ ε := by
   rintro ⟨s, hs, hle⟩
   have himle : |(fdBoundary H t - s).im| ≤ ‖fdBoundary H t - s‖ := Complex.abs_im_le_norm _
-  rw [Complex.sub_im, im_fdBoundarySegment5 H ht] at himle
+  rw [Complex.sub_im, im_fdBoundary_of_four_le ht.1] at himle
   have : H - s.im ≤ ε := (le_abs_self _).trans (himle.trans hle)
   linarith [hlt s hs]
 
