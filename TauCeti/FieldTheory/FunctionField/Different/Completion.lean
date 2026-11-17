@@ -13,6 +13,7 @@ import TauCeti.FieldTheory.FunctionField.Different.Complementary
 import TauCeti.FieldTheory.FunctionField.Different.Localization
 import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
 import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.Basic
+import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 import TauCeti.RingTheory.DedekindDomain.Different.Semilocal
 
 /-!
@@ -120,13 +121,9 @@ theorem sum_trace_mul_smul_completionEmbedding_eq {ι : Type*} [Fintype ι] (b y
   have hP₀ : P₀'.restrict k F = P := (P'.restrict_restrictScalars (k := k) (F := F)).trans hP
   let w₀ : {Q' : Place k F' // Q'.restrict k F = P} := ⟨P₀', hP₀⟩
   let _ (w : {Q' : Place k F' // Q'.restrict k F = P}) : Field w.1.Completion := inferInstance
-  have h₀ := TauCeti.sum_trace_mul_smul_of_semilocal
-    (completionSemilocalEquiv k F' P) (fun w ↦ w.1.completionEmbedding.toRingHom)
-    (fun a x w ↦ by
-      rw [completionSemilocalEquiv_tmul, algebraMap_completionExtensionAlgebra_subtype,
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe])
+  have h₀ := (completionSemilocalEquiv k F' P).sum_trace_mul_smul_eq
     b y h w₀ ((P'.completionRestrictScalarsRingEquiv k).symm z)
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h₀
+  simp only [completionSemilocalEquiv_tmul, map_one, one_mul] at h₀
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionExtensionAlgebra P₀' hP₀
   let e := P.completionExtensionRestrictScalarsEquiv P' hP
@@ -163,8 +160,8 @@ private theorem completionEmbedding_mem_traceDual {d : F'}
   have hP₀ : P₀'.restrict k F = P := (P'.restrict_restrictScalars (k := k) (F := F)).trans hP
   let w₀ : {Q' : Place k F' // Q'.restrict k F = P} := ⟨P₀', hP₀⟩
   let _ (w : {Q' : Place k F' // Q'.restrict k F = P}) : Field w.1.Completion := inferInstance
-  have h₀ := TauCeti.mem_traceDual_one_of_semilocal
-    (completionSemilocalEquiv k F' P) (completionIntegersSemilocalEquiv k F' P)
+  have h₀ := (completionSemilocalEquiv k F' P).mem_traceDual_one_of_semilocal
+    (completionIntegersSemilocalEquiv k F' P)
     (fun w ↦ w.1.completionEmbedding.toRingHom)
     (fun w ↦ P.integralClosureToCompletionIntegers w.1 w.2)
     (fun a x w ↦ by
@@ -218,8 +215,8 @@ theorem span_traceDual_one_eq_traceDual_one_completionIntegers :
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionIntegersExtensionAlgebra P' hP
   have := P.isScalarTower_completionIntegersExtensionAlgebra P' hP
-  exact TauCeti.span_traceDual_one_eq_traceDual_one_of_forall
-    P'.completionEmbedding.toRingHom (P.integralClosureToCompletionIntegers P' hP)
+  exact P'.completionEmbedding.toRingHom.span_traceDual_one_eq_traceDual_one_of_forall
+    (P.integralClosureToCompletionIntegers P' hP)
     (fun x ↦ by
       rw [ValuationSubring.algebraMap_apply, Subalgebra.algebraMap_apply,
         P.coe_integralClosureToCompletionIntegers P' hP, AlgHom.toRingHom_eq_coe,
@@ -249,8 +246,8 @@ theorem extended_dual_one_eq_dual_one_completionIntegers :
   have := P.finiteDimensional_completion P' hP
   have := P.isIntegralClosure_completionIntegers P' hP
   have := P.isSeparable_completion P' hP
-  exact TauCeti.extended_dual_one_eq_dual_one_of_span_eq
-    P'.completionEmbedding.toRingHom (P.integralClosureToCompletionIntegers P' hP)
+  exact P'.completionEmbedding.toRingHom.extended_dual_one_eq_dual_one_of_span_eq
+    (P.integralClosureToCompletionIntegers P' hP)
     (P.integralClosureToCompletionIntegers_injective P' hP)
     (fun x ↦ by
       rw [ValuationSubring.algebraMap_apply, Subalgebra.algebraMap_apply,
@@ -276,10 +273,10 @@ theorem map_differentIdeal_eq_differentIdeal_completionIntegers :
   have := P.finiteDimensional_completion P' hP
   have := P.isIntegralClosure_completionIntegers P' hP
   have := P.isSeparable_completion P' hP
-  exact TauCeti.map_differentIdeal_eq_differentIdeal_of_extended_eq
-    (P.integralClosureToCompletionIntegers P' hP)
-    (P.integralClosureToCompletionIntegers_injective P' hP)
-    (P.extended_dual_one_eq_dual_one_completionIntegers P' hP)
+  exact (P.integralClosureToCompletionIntegers P' hP)
+    |>.map_differentIdeal_eq_differentIdeal_of_extended_eq
+      (P.integralClosureToCompletionIntegers_injective P' hP)
+      (P.extended_dual_one_eq_dual_one_completionIntegers P' hP)
 
 /-- **Extending the different ideal of an integral closure to the completion.** If `C` is the
 integral closure in `F'` of a Dedekind `F`-model `B` and `P'` is finite on `C`, then extending
@@ -539,7 +536,7 @@ theorem differentIdeal_completionIntegersSemilocal :
         (completionIntegersSemilocalEquiv k' F' P) =
       Ideal.pi fun w ↦
         differentIdeal P.completionPlace.integers w.1.completionPlace.integers :=
-  TauCeti.map_differentIdeal_semilocal (completionIntegersSemilocalEquiv k' F' P)
+  (completionIntegersSemilocalEquiv k' F' P).map_differentIdeal_semilocal
     (fun w ↦ P.integralClosureToCompletionIntegers w.1 w.2)
     (fun a x w ↦ by
       rw [completionIntegersSemilocalEquiv_tmul,

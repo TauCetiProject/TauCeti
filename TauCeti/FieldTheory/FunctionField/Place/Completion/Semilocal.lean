@@ -1070,8 +1070,7 @@ theorem trace_completionSemilocalEquiv_symm_single_mul
     Algebra.trace P.Completion (P.Completion ⊗[F] F')
         ((completionSemilocalEquiv k' F' P).symm (Pi.single w z) * (1 ⊗ₜ x)) =
       Algebra.trace P.Completion w.1.Completion (z * w.1.completionEmbedding x) := by
-  simpa using Algebra.trace_symm_single_mul_of_algEquiv
-    (completionSemilocalEquiv k' F' P) w z (1 ⊗ₜ x)
+  simpa using (completionSemilocalEquiv k' F' P).trace_symm_single_mul w z (1 ⊗ₜ x)
 
 variable {k' F' P} in
 /-- Each completed factor in the semilocal decomposition of a finite separable extension is

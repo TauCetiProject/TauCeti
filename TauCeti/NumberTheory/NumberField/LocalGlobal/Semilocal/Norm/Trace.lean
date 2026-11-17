@@ -115,9 +115,8 @@ theorem trace_semilocalEquiv_symm_single_mul
           {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) z) * (1 ⊗ₜ x)) =
       Algebra.trace (v.adicCompletion K) (w.adicCompletion L)
         (z * algebraMap L (w.adicCompletion L) x) := by
-  simpa [semilocalEquiv_tmul] using Algebra.trace_symm_single_mul_of_algEquiv
-    (semilocalEquiv L v) (⟨w, inferInstance⟩ :
-      {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) z (1 ⊗ₜ x)
+  simpa [semilocalEquiv_tmul] using (semilocalEquiv L v).trace_symm_single_mul
+    (⟨w, inferInstance⟩ : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) z (1 ⊗ₜ x)
 
 attribute [local instance] Fintype.ofFinite in
 /-- The trace of a number-field element is the sum of its traces in the completions above `v`. -/

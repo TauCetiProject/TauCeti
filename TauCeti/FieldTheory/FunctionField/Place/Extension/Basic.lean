@@ -293,16 +293,10 @@ theorem constantsEquiv_symm_apply (Q : Place k' F') :
 theorem valuation_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).valuation = Q.valuation := (rfl)
 
-theorem valuation_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).valuation = Q.valuation := by simp
-
 @[simp]
 theorem integers_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).integers = Q.integers :=
   SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv]
-
-theorem integers_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).integers = Q.integers := by simp
 
 end Constants
 
