@@ -157,25 +157,6 @@ theorem diagonalStraightening_mem_unitaryGroup :
     conjTranspose_smul, smul_mul_smul, straightening_mul_conjTranspose]
   simp [smul_smul, ← mul_inv, sqrt_two_mul_sqrt_two]
 
-/-- The diagonal straightening of the graph frame of the identity, whose columns span the
-diagonal, is the real matrix `√2 • 1`. -/
-private theorem diagonalStraightening_mul_graphFrame_one :
-    diagonalStraightening n * graphFrame 1 =
-      ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
-  have h : graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      (fromBlocks (1 : Matrix n n ℂ) 1 (Complex.I • 1) (-(Complex.I • 1)))ᴴ := by
-    rw [← realify_one (𝕜 := ℂ) (ι := n), graphFrame_realify, fromBlocks_conjTranspose]
-    simp
-  rw [h, diagonalStraightening_def, Matrix.smul_mul, straightening_mul_conjTranspose,
-    map_ofReal_sqrt_two_smul_one]
-  simp [smul_smul, inv_sqrt_two]
-
-/-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
-of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
-theorem realImage_diagonalStraightening_mul_graphFrame_one :
-    (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
-  rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
-
 /-- **The straightened graph frame.** The diagonal straightening `T` times the graph frame of a
 real matrix `A` is `(1/√2) ((1 + A) + i J (1 - A))`: its real and imaginary parts are
 `(1 + A) / √2` and `J (1 - A) / √2`. -/
@@ -200,6 +181,22 @@ theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ
       Matrix.sub_mulVec, -Matrix.mulVec_mulVec]
   · ring
   · linear_combination (-(x (.inr i) : ℂ) - ((A *ᵥ x) (.inr i) : ℂ)) * I_sq
+
+/-- The diagonal straightening of the graph frame of the identity, whose columns span the
+diagonal, is the real matrix `√2 • 1`. -/
+private theorem diagonalStraightening_mul_graphFrame_one :
+    diagonalStraightening n * graphFrame 1 =
+      ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
+  rw [diagonalStraightening_mul_graphFrame, sub_self, Matrix.mul_zero, ← two_smul ℝ 1,
+    map_ofReal_sqrt_two_smul_one]
+  ext i j
+  by_cases hij : i = j <;> simp [hij, inv_sqrt_two]
+
+/-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
+of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
+theorem realImage_diagonalStraightening_mul_graphFrame_one :
+    (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
+  rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
 
 namespace GLSymplectic
 
@@ -251,8 +248,8 @@ theorem coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
         (((graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ *
           graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map Complex.re ^
             (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
-  change diagonalStraightening n * (realOrthonormalize (graphFrameUnit A) : Matrix _ _ ℂ) = _
-  rw [coe_realOrthonormalize, coe_graphFrameUnit, Matrix.mul_assoc]
+  rw [graphUnitaryFrame, Subtype.coe_mk, coe_realOrthonormalize, coe_graphFrameUnit,
+    Matrix.mul_assoc]
 
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
