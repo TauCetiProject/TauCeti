@@ -32,8 +32,8 @@ a connected punctured spectrum.
 
 * `TauCeti.FiniteEtaleScheme.faithful_pullback_of_preconnectedSpace`: base change to a nonempty
   scheme over a connected base is faithful.
-* `TauCeti.FiniteEtaleScheme.reflectsIsomorphisms_pullback`: base change to a nonempty scheme
-  over a connected base reflects isomorphisms.
+* `TauCeti.FiniteEtaleScheme.reflectsIsomorphisms_pullback_of_preconnectedSpace`: base change to a
+  nonempty scheme over a connected base reflects isomorphisms.
 
 ## References
 
@@ -59,7 +59,8 @@ instance faithful_pullback_of_preconnectedSpace : (pullback f).Faithful := by
 
 /-- Base change of finite étale schemes to a nonempty scheme over a connected base reflects
 isomorphisms. -/
-instance reflectsIsomorphisms_pullback : (pullback f).ReflectsIsomorphisms := by
+instance reflectsIsomorphisms_pullback_of_preconnectedSpace :
+    (pullback f).ReflectsIsomorphisms := by
   obtain ⟨t⟩ := ‹Nonempty T›
   have := reflectsIsomorphisms_of_iso (pullbackCompFiberIso f (T.fromSpecAlgebraicClosure t)).symm
   exact reflectsIsomorphisms_of_comp (pullback f) (fiber (T.fromSpecAlgebraicClosure t))
