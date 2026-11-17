@@ -50,47 +50,6 @@ namespace TauCeti
 
 universe u w w'
 
-section PushforwardSubdomain
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type u} [CommRing A] [Algebra K A]
-
-namespace AffinoidSubdomain
-
-/-- Push an affinoid subdomain of `Sp U.sections` forward along `U.toSections` to an affinoid
-subdomain of `Sp A` contained in `U`. -/
-noncomputable def mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    (W : AffinoidSubdomain K U.sections) : AffinoidSubdomain K A :=
-  ofMap (U.isAffinoidSubdomainMap.comp hA W.isAffinoidSubdomainMap)
-
-@[simp]
-theorem coe_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    (W : AffinoidSubdomain K U.sections) :
-    (U.mapSubdomain hA W : Set (MaximalSpectrum A)) =
-      U.isAffinoidAlgebra.maximalSpectrumComap U.toSections ''
-        (W : Set (MaximalSpectrum U.sections)) :=
-  coe_ofMap _
-
-theorem mapSubdomain_le (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    (W : AffinoidSubdomain K U.sections) : U.mapSubdomain hA W ≤ U := by
-  rw [← SetLike.coe_subset_coe, coe_mapSubdomain]
-  exact (Set.image_subset_range _ _).trans
-    U.isAffinoidSubdomainMap.range_maximalSpectrumComap_subset
-
-/-- Pushing forward a cover of `Sp U.sections` gives a family covering `U`. -/
-theorem sUnion_image_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
-    {Q : Set (AffinoidSubdomain K U.sections)}
-    (hQ : ⋃₀ ((fun W : AffinoidSubdomain K U.sections ↦
-      (W : Set (MaximalSpectrum U.sections))) '' Q) = Set.univ) :
-    ⋃₀ ((fun Z : AffinoidSubdomain K A ↦ (Z : Set (MaximalSpectrum A))) ''
-      (U.mapSubdomain hA '' Q)) = (U : Set (MaximalSpectrum A)) := by
-  rw [← U.isAffinoidSubdomainMap.range_maximalSpectrumComap hA, ← Set.image_univ, ← hQ]
-  simp [Set.image_image, Set.sUnion_image, Set.image_iUnion]
-
-end AffinoidSubdomain
-
-end PushforwardSubdomain
-
 section TestRefined
 
 variable (K : Type*) [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
@@ -213,6 +172,22 @@ theorem preimage {B : Type u} [CommRing B] [Algebra K B] (hB : IsAffinoidAlgebra
   refine ⟨_, ⟨V, hV, rfl⟩, ?_⟩
   rwa [← Set.preimage_comp, ← IsAffinoidAlgebra.maximalSpectrumComap_comp hB hC]
 
+/-- Intersecting two affinoid-test refined families gives an affinoid-test refined family on the
+intersection. -/
+theorem image2_inter {U₁ U₂ : Set (MaximalSpectrum A)}
+    {ℱ₁ ℱ₂ : Set (Set (MaximalSpectrum A))}
+    (h₁ : IsAffinoidTestRefined K U₁ ℱ₁) (h₂ : IsAffinoidTestRefined K U₂ ℱ₂) :
+    IsAffinoidTestRefined K (U₁ ∩ U₂) (Set.image2 (· ∩ ·) ℱ₁ ℱ₂) := by
+  have hbi : IsAffinoidTestRefined K (U₁ ∩ U₂) (⋃ V ∈ ℱ₁, (fun W ↦ W ∩ V) '' ℱ₂) :=
+    (h₁.anti Set.inter_subset_left).biUnion fun V _ ↦
+      (h₂.inter V).anti (Set.inter_subset_inter Set.inter_subset_right Set.Subset.rfl)
+  have himg : (⋃ V ∈ ℱ₁, (fun W ↦ W ∩ V) '' ℱ₂) = Set.image2 (· ∩ ·) ℱ₁ ℱ₂ := by
+    ext s
+    simp only [Set.mem_iUnion, Set.mem_image, Set.mem_image2, exists_prop]
+    exact ⟨fun ⟨V, hV, W, hW, h⟩ ↦ ⟨V, hV, W, hW, (Set.inter_comm V W).trans h⟩,
+      fun ⟨V, hV, W, hW, h⟩ ↦ ⟨V, hV, W, hW, (Set.inter_comm W V).trans h⟩⟩
+  exact himg ▸ hbi
+
 end IsAffinoidTestRefined
 
 end TestRefined
@@ -248,12 +223,27 @@ theorem ext {U V : StrongAdmissibleOpen K A} (h : ∀ x, x ∈ U ↔ x ∈ V) : 
 instance : PartialOrder (StrongAdmissibleOpen K A) := .ofSetLike _
 
 @[simp]
+theorem carrier_eq_coe (U : StrongAdmissibleOpen K A) :
+    U.carrier = (U : Set (MaximalSpectrum A)) := (rfl)
+
+@[simp]
 theorem coe_mk (U : Set (MaximalSpectrum A)) (hU) :
     (⟨U, hU⟩ : StrongAdmissibleOpen K A) = U := (rfl)
 
 @[simp]
 theorem mem_mk (U : Set (MaximalSpectrum A)) (hU) (x : MaximalSpectrum A) :
     x ∈ (⟨U, hU⟩ : StrongAdmissibleOpen K A) ↔ x ∈ U := Iff.rfl
+
+/-- Every strong-admissible open admits an affinoid-test refined cover by affinoid subdomains,
+stated in terms of its coerced set of classical points. -/
+theorem exists_affinoidSubdomain_cover (U : StrongAdmissibleOpen K A) :
+    ∃ S : Set (AffinoidSubdomain K A),
+      ⋃₀ ((fun V : AffinoidSubdomain K A ↦ (V : Set (MaximalSpectrum A))) '' S) =
+        (U : Set (MaximalSpectrum A)) ∧
+      IsAffinoidTestRefined K (U : Set (MaximalSpectrum A))
+        ((fun V : AffinoidSubdomain K A ↦ (V : Set (MaximalSpectrum A))) '' S) := by
+  rw [← carrier_eq_coe]
+  exact U.exists_affinoid_cover
 
 /-- The order embedding of strong-admissible opens into subsets of `MaximalSpectrum A`. -/
 def setEmbedding : StrongAdmissibleOpen K A ↪o Set (MaximalSpectrum A) :=
@@ -262,6 +252,35 @@ def setEmbedding : StrongAdmissibleOpen K A ↪o Set (MaximalSpectrum A) :=
 @[simp]
 theorem setEmbedding_apply (U : StrongAdmissibleOpen K A) :
     setEmbedding U = (U : Set (MaximalSpectrum A)) := (rfl)
+
+/-- A subset of `Sp A` covered by strong-admissible opens whose union is `V` and which are
+affinoid-test refined on `V` is itself strong-admissible open. -/
+theorem mem_range_of_testRefined {V : Set (MaximalSpectrum A)}
+    {S : Set (StrongAdmissibleOpen K A)}
+    (hSu : ⋃₀ ((fun W : StrongAdmissibleOpen K A ↦ (W : Set (MaximalSpectrum A))) '' S) = V)
+    (hS : IsAffinoidTestRefined K V
+      ((fun W : StrongAdmissibleOpen K A ↦ (W : Set (MaximalSpectrum A))) '' S)) :
+    V ∈ Set.range (setEmbedding (K := K) (A := A)) := by
+  classical
+  choose T hTu hT using fun W : StrongAdmissibleOpen K A ↦ W.exists_affinoidSubdomain_cover
+  let 𝒯 (s : Set (MaximalSpectrum A)) : Set (Set (MaximalSpectrum A)) :=
+    if hs : ∃ W ∈ S, (W : Set (MaximalSpectrum A)) = s then (↑) '' T hs.choose else ∅
+  have h𝒯 : ∀ s ∈ ((↑) : StrongAdmissibleOpen K A → Set (MaximalSpectrum A)) '' S,
+      IsAffinoidTestRefined K (V ∩ s) (𝒯 s) := by
+    rintro _ ⟨W, hW, rfl⟩
+    have hex : ∃ W' ∈ S, (W' : Set (MaximalSpectrum A)) = W := ⟨W, hW, rfl⟩
+    have hWV : (W : Set (MaximalSpectrum A)) ⊆ V := hSu ▸ Set.subset_sUnion_of_mem ⟨W, hW, rfl⟩
+    simp only [𝒯, hex, ↓reduceDIte, SetLike.coe_injective hex.choose_spec.2,
+      Set.inter_eq_right.mpr hWV]
+    exact hT W
+  refine ⟨⟨V, ⋃ W ∈ S, T W, ?_, (hS.biUnion h𝒯).of_refinement fun s hs ↦ ?_⟩, by simp⟩
+  · simp only [Set.image_iUnion, Set.sUnion_iUnion]
+    exact (Set.iUnion₂_congr fun W _ ↦ hTu W).trans ((Set.sUnion_image _ _).symm.trans hSu)
+  · obtain ⟨_, ⟨W, hW, rfl⟩, hs'⟩ := Set.mem_iUnion₂.mp hs
+    have hex : ∃ W' ∈ S, (W' : Set (MaximalSpectrum A)) = W := ⟨W, hW, rfl⟩
+    simp only [𝒯, hex, ↓reduceDIte, SetLike.coe_injective hex.choose_spec.2] at hs'
+    obtain ⟨P, hPT, rfl⟩ := hs'
+    exact ⟨P, ⟨P, Set.mem_biUnion hW hPT, rfl⟩, Set.Subset.rfl⟩
 
 private theorem strongCovers_trans {U : StrongAdmissibleOpen K A}
     {S : Set (StrongAdmissibleOpen K A)}
@@ -309,8 +328,10 @@ theorem mem_toStrongAdmissibleOpen (U : AffinoidSubdomain K A) (x : MaximalSpect
     x ∈ U.toStrongAdmissibleOpen ↔ x ∈ U := Iff.rfl
 
 theorem toStrongAdmissibleOpen_injective :
-    Function.Injective (@toStrongAdmissibleOpen K _ _ _ A _ _) :=
-  fun _ _ h ↦ SetLike.coe_injective (congrArg StrongAdmissibleOpen.carrier h)
+    Function.Injective (@toStrongAdmissibleOpen K _ _ _ A _ _) := fun _ _ h ↦
+  SetLike.coe_injective <| by
+    simpa only [coe_toStrongAdmissibleOpen] using
+      congrArg ((↑) : StrongAdmissibleOpen K A → Set (MaximalSpectrum A)) h
 
 @[simp]
 theorem toStrongAdmissibleOpen_le_iff {U V : AffinoidSubdomain K A} :
@@ -378,33 +399,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   {A B C : Type u} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
   [CommRing C] [Algebra K C]
 
-namespace IsAffinoidTestRefined
-
-/-- Intersecting two affinoid-test refined families gives an affinoid-test refined family on the
-intersection. -/
-theorem image2_inter {U₁ U₂ : Set (MaximalSpectrum A)}
-    {ℱ₁ ℱ₂ : Set (Set (MaximalSpectrum A))}
-    (h₁ : IsAffinoidTestRefined K U₁ ℱ₁) (h₂ : IsAffinoidTestRefined K U₂ ℱ₂) :
-    IsAffinoidTestRefined K (U₁ ∩ U₂) (Set.image2 (· ∩ ·) ℱ₁ ℱ₂) := by
-  intro D _ _ hD φ hφ
-  have : Fact (IsAffinoidAlgebra K D) := ⟨hD⟩
-  obtain ⟨R₁, hfin₁, hRuniv₁, hR₁⟩ := h₁ hD φ (hφ.trans Set.inter_subset_left)
-  obtain ⟨R₂, hfin₂, hRuniv₂, hR₂⟩ := h₂ hD φ (hφ.trans Set.inter_subset_right)
-  refine ⟨Set.image2 (· ⊓ ·) R₁ R₂, hfin₁.image2 _ hfin₂, ?_, ?_⟩
-  · ext y
-    obtain ⟨_, ⟨W₁, hW₁, rfl⟩, hy₁⟩ := hRuniv₁ ▸ Set.mem_univ y
-    obtain ⟨_, ⟨W₂, hW₂, rfl⟩, hy₂⟩ := hRuniv₂ ▸ Set.mem_univ y
-    exact ⟨fun _ ↦ Set.mem_univ y, fun _ ↦
-      ⟨_, ⟨W₁ ⊓ W₂, Set.mem_image2_of_mem hW₁ hW₂, rfl⟩,
-        (AffinoidSubdomain.mem_inf W₁ W₂ y).mpr ⟨hy₁, hy₂⟩⟩⟩
-  · rintro _ ⟨W₁, hW₁, W₂, hW₂, rfl⟩
-    obtain ⟨V₁, hV₁, hWV₁⟩ := hR₁ W₁ hW₁
-    obtain ⟨V₂, hV₂, hWV₂⟩ := hR₂ W₂ hW₂
-    exact ⟨V₁ ∩ V₂, Set.mem_image2_of_mem hV₁ hV₂,
-      (AffinoidSubdomain.coe_inf W₁ W₂).le.trans (Set.inter_subset_inter hWV₁ hWV₂)⟩
-
-end IsAffinoidTestRefined
-
 namespace StrongAdmissibleOpen
 
 section Site
@@ -414,8 +408,8 @@ variable [hA : Fact (IsAffinoidAlgebra K A)]
 /-- Strong-admissible opens are closed under finite intersections. -/
 noncomputable instance : SemilatticeInf (StrongAdmissibleOpen K A) where
   inf U₁ U₂ := ⟨(U₁ : Set (MaximalSpectrum A)) ∩ U₂, by
-    obtain ⟨S₁, hS₁u, hS₁⟩ := U₁.exists_affinoid_cover
-    obtain ⟨S₂, hS₂u, hS₂⟩ := U₂.exists_affinoid_cover
+    obtain ⟨S₁, hS₁u, hS₁⟩ := U₁.exists_affinoidSubdomain_cover
+    obtain ⟨S₂, hS₂u, hS₂⟩ := U₂.exists_affinoidSubdomain_cover
     have himg : ((↑) : AffinoidSubdomain K A → Set (MaximalSpectrum A)) ''
         Set.image2 (· ⊓ ·) S₁ S₂ = Set.image2 (· ∩ ·) ((↑) '' S₁) ((↑) '' S₂) := Set.ext fun _ ↦
       ⟨by rintro ⟨_, ⟨a, ha, b, hb, rfl⟩, rfl⟩
@@ -423,7 +417,6 @@ noncomputable instance : SemilatticeInf (StrongAdmissibleOpen K A) where
        by rintro ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
           exact ⟨a ⊓ b, Set.mem_image2_of_mem ha hb, AffinoidSubdomain.coe_inf a b⟩⟩
     refine ⟨Set.image2 (· ⊓ ·) S₁ S₂, ?_, himg ▸ hS₁.image2_inter hS₂⟩
-    change _ = U₁.carrier ∩ U₂.carrier
     rw [himg, ← hS₁u, ← hS₂u]
     ext x; simp only [Set.mem_sUnion, Set.mem_image2, Set.mem_inter_iff]
     exact ⟨fun ⟨_, ⟨a, ha, b, hb, rfl⟩, hxa, hxb⟩ ↦ ⟨⟨a, ha, hxa⟩, ⟨b, hb, hxb⟩⟩,
@@ -521,9 +514,7 @@ theorem exists_covers_toStrongAdmissibleOpen (V : StrongAdmissibleOpen K A) :
     ∃ S : Set (AffinoidSubdomain K A),
       strongGTopology.Covers V (AffinoidSubdomain.toStrongAdmissibleOpen '' S) ∧
         ⋃₀ ((fun U : AffinoidSubdomain K A ↦ (U : Set (MaximalSpectrum A))) '' S) = V := by
-  obtain ⟨S, hSu, hS⟩ := V.exists_affinoid_cover
-  change _ = (V : Set (MaximalSpectrum A)) at hSu
-  change IsAffinoidTestRefined K (V : Set (MaximalSpectrum A)) _ at hS
+  obtain ⟨S, hSu, hS⟩ := V.exists_affinoidSubdomain_cover
   refine ⟨S, ⟨?_, ?_⟩, hSu⟩
   · rintro _ ⟨U, hU, rfl⟩
     exact SetLike.coe_subset_coe.mp (hSu ▸ Set.subset_sUnion_of_mem ⟨U, hU, rfl⟩)
@@ -581,36 +572,6 @@ theorem sheafEquivWeakStrong_inverse :
 
 end SheafEquiv
 
-omit hA in
-/-- A subset of `Sp A` covered by strong-admissible opens whose union is `V` and which are
-affinoid-test refined on `V` is itself strong-admissible open. -/
-theorem mem_range_of_testRefined {V : Set (MaximalSpectrum A)}
-    {S : Set (StrongAdmissibleOpen K A)}
-    (hSu : ⋃₀ ((fun W : StrongAdmissibleOpen K A ↦ (W : Set (MaximalSpectrum A))) '' S) = V)
-    (hS : IsAffinoidTestRefined K V
-      ((fun W : StrongAdmissibleOpen K A ↦ (W : Set (MaximalSpectrum A))) '' S)) :
-    V ∈ Set.range (setEmbedding (K := K) (A := A)) := by
-  classical
-  choose T hTu hT using fun W : StrongAdmissibleOpen K A ↦ W.exists_affinoid_cover
-  let 𝒯 (s : Set (MaximalSpectrum A)) : Set (Set (MaximalSpectrum A)) :=
-    if hs : ∃ W ∈ S, (W : Set (MaximalSpectrum A)) = s then (↑) '' T hs.choose else ∅
-  have h𝒯 : ∀ s ∈ ((↑) : StrongAdmissibleOpen K A → Set (MaximalSpectrum A)) '' S,
-      IsAffinoidTestRefined K (V ∩ s) (𝒯 s) := by
-    rintro _ ⟨W, hW, rfl⟩
-    have hex : ∃ W' ∈ S, (W' : Set (MaximalSpectrum A)) = W := ⟨W, hW, rfl⟩
-    have hWV : (W : Set (MaximalSpectrum A)) ⊆ V := hSu ▸ Set.subset_sUnion_of_mem ⟨W, hW, rfl⟩
-    simp only [𝒯, hex, ↓reduceDIte, SetLike.coe_injective hex.choose_spec.2,
-      Set.inter_eq_right.mpr hWV]
-    exact hT W
-  refine ⟨⟨V, ⋃ W ∈ S, T W, ?_, (hS.biUnion h𝒯).of_refinement fun s hs ↦ ?_⟩, rfl⟩
-  · simp only [Set.image_iUnion, Set.sUnion_iUnion]
-    exact (Set.iUnion₂_congr fun W _ ↦ hTu W).trans ((Set.sUnion_image _ _).symm.trans hSu)
-  · obtain ⟨_, ⟨W, hW, rfl⟩, hs'⟩ := Set.mem_iUnion₂.mp hs
-    have hex : ∃ W' ∈ S, (W' : Set (MaximalSpectrum A)) = W := ⟨W, hW, rfl⟩
-    simp only [𝒯, hex, ↓reduceDIte, SetLike.coe_injective hex.choose_spec.2] at hs'
-    obtain ⟨P, hPT, rfl⟩ := hs'
-    exact ⟨P, ⟨P, Set.mem_biUnion hW hPT, rfl⟩, Set.Subset.rfl⟩
-
 /-- **(G0)–(G2) completeness of the strong affinoid G-topology** [BGR, §9.1.4, Proposition 2]. -/
 theorem saturated_strongGTopology :
     (strongGTopology (K := K) (A := A)).Saturated where
@@ -649,13 +610,12 @@ noncomputable def comap (U : StrongAdmissibleOpen K A) (φ : A →ₐ[K] B) :
     StrongAdmissibleOpen K B where
   carrier := hB.out.maximalSpectrumComap φ ⁻¹' U
   exists_affinoid_cover := by
-    obtain ⟨S, hSu, hS⟩ := U.exists_affinoid_cover
+    obtain ⟨S, hSu, hS⟩ := U.exists_affinoidSubdomain_cover
     have himg : ((↑) : AffinoidSubdomain K B → Set (MaximalSpectrum B)) ''
         ((fun V : AffinoidSubdomain K A ↦ V.comap φ) '' S) =
         (fun s ↦ hB.out.maximalSpectrumComap φ ⁻¹' s) '' ((↑) '' S) := by
       simp only [Set.image_image, AffinoidSubdomain.coe_comap]
     refine ⟨(fun V : AffinoidSubdomain K A ↦ V.comap φ) '' S, ?_, himg ▸ hS.preimage hB.out φ⟩
-    change _ = hB.out.maximalSpectrumComap φ ⁻¹' U.carrier
     rw [himg, ← hSu]; ext x; simp
 
 @[simp]
@@ -770,7 +730,7 @@ theorem exists_continuousMap_of_slightlyFiner
        by rintro ⟨W, hW, rfl⟩; obtain ⟨U, hUW⟩ := hS₀weak W hW
           rw [AffinoidSubdomain.setEmbedding_apply] at hUW; exact ⟨U, ⟨W, hW, hUW⟩, hUW⟩⟩
     exact ⟨⟨ι E hE.out V, S, (congrArg Set.sUnion himg).trans ((G E hE.out).union_eq hS₀),
-      himg ▸ isAffinoidTestRefined_of_slightlyFiner G hfiner hmap hE.out hS₀⟩, rfl⟩
+      himg ▸ isAffinoidTestRefined_of_slightlyFiner G hfiner hmap hE.out hS₀⟩, coe_mk _ _⟩
   classical
   choose ψ hψ using hadm
   refine ⟨⟨id, ψ, fun V ↦ by rw [setEmbedding_apply, hψ V, Set.preimage_id],
@@ -778,8 +738,10 @@ theorem exists_continuousMap_of_slightlyFiner
   · rintro _ ⟨W, hW, rfl⟩
     rw [← SetLike.coe_subset_coe, hψ W, hψ V]
     exact (ι E hE.out).monotone ((G E hE.out).subset hS₀ W hW)
-  · rw [hψ V, show ((↑) : StrongAdmissibleOpen K E → Set _) '' (ψ '' S₀) = ι E hE.out '' S₀ by
-      simp only [Set.image_image, hψ]]
+  · have himg : ((↑) : StrongAdmissibleOpen K E → Set (MaximalSpectrum E)) '' (ψ '' S₀) =
+        ι E hE.out '' S₀ := by
+      simp only [Set.image_image, hψ]
+    rw [hψ V, himg]
     exact isAffinoidTestRefined_of_slightlyFiner G hfiner hmap hE.out hS₀
 
 end UniversalProperty

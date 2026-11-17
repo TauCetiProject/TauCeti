@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.StrongSite.Basic
-public import TauCeti.RingTheory.Affinoid.Subdomain.Cover
+public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Subdomain
 public import TauCeti.RingTheory.Spectrum.Maximal.Topology
 
-import TauCeti.RingTheory.Affinoid.QuotientNorm
+import TauCeti.RingTheory.Affinoid.Subdomain.Cover
 
 /-!
 # Zariski open covers and idempotents on the strong affinoid site
@@ -17,8 +17,6 @@ import TauCeti.RingTheory.Affinoid.QuotientNorm
 Following [BGR, §9.1.4, Corollaries 7 and 8], the strong classical affinoid G-topology on
 `Sp A = MaximalSpectrum A` is finer than the Zariski topology:
 
-* Every rational domain `R(f/g)` with `(g, f₁, …, fₘ) = ⊤` is an `AffinoidSubdomain` with no chosen
-  norm on `A` (`AffinoidSubdomain.rational`).
 * Every principal Zariski open `D(f) = MaximalSpectrum.basicOpen f` is exhausted by the rational
   domains `R(ϖⁿ / f)` for `0 < ‖ϖ‖ < 1` (`isAffinoidTestRefined_basicOpen_rationalDomain`), making
   `D(f)` strong-admissible open (`StrongAdmissibleOpen.basicOpen`).
@@ -115,26 +113,6 @@ section Zariski
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type u} [CommRing A] [Algebra K A]
 
-namespace AffinoidSubdomain
-
-/-- Any rational domain `R(f/g)` with `Ideal.span (insert g (Set.range f)) = ⊤` is an affinoid
-subdomain of `Sp A`, with no chosen norm on `A`. -/
-noncomputable def rational (hA : IsAffinoidAlgebra K A) {m : ℕ} {g : A} {f : Fin m → A}
-    (h : Ideal.span (insert g (Set.range f)) = ⊤) : AffinoidSubdomain K A :=
-  let _ := hA.residueNormedCommRing; let _ := hA.residueNormedAlgebra
-  have := hA.isUltrametricDist_residueNormedCommRing; have := hA.completeSpace_residueNormedCommRing
-  ofMap (RationalFraction.isAffinoidSubdomainMap hA h)
-
-@[simp]
-theorem coe_rational (hA : IsAffinoidAlgebra K A) {m : ℕ} {g : A} {f : Fin m → A}
-    (h : Ideal.span (insert g (Set.range f)) = ⊤) :
-    (rational hA h : Set (MaximalSpectrum A)) = rationalDomain K g f := by
-  let _ := hA.residueNormedCommRing; let _ := hA.residueNormedAlgebra
-  have := hA.isUltrametricDist_residueNormedCommRing; have := hA.completeSpace_residueNormedCommRing
-  exact coe_ofMap _
-
-end AffinoidSubdomain
-
 /-- A principal Zariski open `D(f)` is exhausted by the rational domains `R(ϖⁿ / f)` for any
 `‖ϖ‖ < 1`. -/
 theorem basicOpen_eq_iUnion_rationalDomain (hA : IsAffinoidAlgebra K A) (f : A)
@@ -204,14 +182,11 @@ theorem isAffinoidTestRefined_opens_of_subset {U : Set (MaximalSpectrum A)}
     rw [MaximalSpectrum.mem_basicOpen, IsAffinoidAlgebra.maximalSpectrumComap_asIdeal,
       Ideal.mem_comap] at hxg'
     exact hxg' (hle (Ideal.subset_span ⟨g, W, hW, hgW, rfl⟩))
-  obtain ⟨c, hcP, hc1⟩ := Submodule.mem_span_set.mp (hspan.ge (Submodule.mem_top : (1 : B) ∈ ⊤))
-  let F : Finset B := c.support
+  obtain ⟨F, hFP, hFtop⟩ := (Ideal.span_eq_top_iff_finite P).mp hspan
   let h : Fin F.card → B := fun i ↦ (F.equivFin.symm i).1
   have hrange : Set.range h = (F : Set B) := Set.ext fun b ↦
     ⟨fun ⟨i, hi⟩ ↦ hi ▸ (F.equivFin.symm i).2, fun hb ↦ ⟨F.equivFin ⟨b, hb⟩, by simp [h]⟩⟩
-  have htop : Ideal.span (Set.range h) = ⊤ := (Ideal.eq_top_iff_one _).mpr <| by
-    rw [hrange, ← hc1, Finsupp.sum]
-    exact sum_mem fun b hb ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span hb)
+  have htop : Ideal.span (Set.range h) = ⊤ := hrange.symm ▸ hFtop
   have htop_ins (i : Fin F.card) : Ideal.span (insert (h i) (Set.range h)) = ⊤ := by
     simpa only [Set.insert_eq_of_mem (Set.mem_range_self i)] using htop
   refine ⟨Set.range fun i ↦ AffinoidSubdomain.rational hB (htop_ins i), Set.finite_range _, ?_, ?_⟩
@@ -219,7 +194,7 @@ theorem isAffinoidTestRefined_opens_of_subset {U : Set (MaximalSpectrum A)}
     simpa only [Function.comp_def, AffinoidSubdomain.coe_rational] using
       (hB.iUnion_rationalDomain_self_eq_univ_iff h).mpr htop
   · rintro _ ⟨i, rfl⟩
-    obtain ⟨g, W, hW, hgW, hg_eq⟩ := hcP (F.equivFin.symm i).2
+    obtain ⟨g, W, hW, hgW, hg_eq⟩ := hFP (F.equivFin.symm i).2
     refine ⟨W, ⟨W, hW, rfl⟩, fun y hy ↦ hgW ?_⟩
     rw [AffinoidSubdomain.coe_rational, mem_rationalDomain] at hy
     rw [SetLike.mem_coe, MaximalSpectrum.mem_basicOpen,
@@ -270,9 +245,7 @@ private theorem exists_affinoid_cover_opens (hA : IsAffinoidAlgebra K A)
   obtain ⟨W, hWU⟩ := mem_range_of_testRefined hSu
     (himg ▸ isAffinoidTestRefined_opens_of_subset (himg ▸ hSu.ge))
   rw [setEmbedding_apply] at hWU
-  obtain ⟨T, hTu, hT⟩ := W.exists_affinoid_cover
-  change _ = (W : Set (MaximalSpectrum A)) at hTu
-  change IsAffinoidTestRefined K (W : Set (MaximalSpectrum A)) _ at hT
+  obtain ⟨T, hTu, hT⟩ := W.exists_affinoidSubdomain_cover
   exact ⟨T, hTu.trans hWU, hWU ▸ hT⟩
 
 section Site
@@ -320,12 +293,13 @@ theorem covers_ofIsIdempotentElem {e : A} (he : IsIdempotentElem e) :
       ← Opens.coe_sup, MaximalSpectrum.basicOpen_sup_basicOpen_one_sub]
   have h := (zariskiContinuousMap (K := K) (A := A)).covers_comap hcov
   rw [GTopology.ContinuousMap.comap_top, zariskiContinuousMap_comap, Set.image_pair] at h
-  rwa [show ofOpens (K := K) (MaximalSpectrum.basicOpen e) =
-      (AffinoidSubdomain.ofIsIdempotentElem hA.out he).toStrongAdmissibleOpen from
-      SetLike.coe_injective (by simp),
-    show ofOpens (K := K) (MaximalSpectrum.basicOpen (1 - e)) =
-      (AffinoidSubdomain.ofIsIdempotentElem hA.out he.one_sub).toStrongAdmissibleOpen from
-      SetLike.coe_injective (by simp)] at h
+  have he_eq : ofOpens (K := K) (MaximalSpectrum.basicOpen e) =
+      (AffinoidSubdomain.ofIsIdempotentElem hA.out he).toStrongAdmissibleOpen :=
+    SetLike.coe_injective (by simp)
+  have h1e_eq : ofOpens (K := K) (MaximalSpectrum.basicOpen (1 - e)) =
+      (AffinoidSubdomain.ofIsIdempotentElem hA.out he.one_sub).toStrongAdmissibleOpen :=
+    SetLike.coe_injective (by simp)
+  rwa [he_eq, h1e_eq] at h
 
 end Site
 

@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.StrongSite.Zariski
+public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.StrongSite.Basic
+public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Subdomain
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.SupSeminorm
-public import TauCeti.RingTheory.Affinoid.Subdomain.Laurent
 
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.RingTheory.Affinoid.MaximumModulus
-import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 
@@ -27,8 +26,6 @@ unitCircle}` covers `Sp K⟨X⟩` set-theoretically without being strong-admissi
 
 ## Main definitions
 
-* `TauCeti.AffinoidSubdomain.laurent`, `TauCeti.AffinoidSubdomain.eqOne`,
-  `TauCeti.AffinoidSubdomain.closedSublevelPow`: Laurent domains, `{|f| = 1}`, and `{|f|ⁿ ≤ ‖ϖ‖}`.
 * `TauCeti.StrongAdmissibleOpen.ltOne`: the strict sublevel open `{x ∈ Sp A : |f(x)| < 1}`.
 * `TauCeti.MvPowerSeries.openUnitDisc`, `TauCeti.MvPowerSeries.closedSubdisc`,
   `TauCeti.MvPowerSeries.unitCircle`: the open unit disc, closed subdiscs, and unit circle.
@@ -59,47 +56,6 @@ section Sublevel
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type u} [CommRing A] [Algebra K A]
 
-namespace AffinoidSubdomain
-
-/-- Any Laurent domain `L(f, g⁻¹)` is an affinoid subdomain of `Sp A`, with no chosen norm on
-`A`. -/
-noncomputable def laurent (hA : IsAffinoidAlgebra K A) {r s : ℕ} (f : Fin r → A)
-    (g : Fin s → A) : AffinoidSubdomain K A :=
-  let _ := hA.residueNormedCommRing; let _ := hA.residueNormedAlgebra
-  have := hA.isUltrametricDist_residueNormedCommRing; have := hA.completeSpace_residueNormedCommRing
-  ofMap (LaurentFraction.isAffinoidSubdomainMap hA (f := f) (g := g))
-
-@[simp]
-theorem coe_laurent (hA : IsAffinoidAlgebra K A) {r s : ℕ} (f : Fin r → A) (g : Fin s → A) :
-    (laurent hA f g : Set (MaximalSpectrum A)) = laurentDomain K f g := by
-  let _ := hA.residueNormedCommRing; let _ := hA.residueNormedAlgebra
-  have := hA.isUltrametricDist_residueNormedCommRing; have := hA.completeSpace_residueNormedCommRing
-  exact coe_ofMap _
-
-/-- The unit-sphere locus `{x ∈ Sp A : |f(x)| = 1}` as the Laurent subdomain `L(f, f⁻¹)`. -/
-noncomputable def eqOne (hA : IsAffinoidAlgebra K A) (f : A) : AffinoidSubdomain K A :=
-  laurent hA (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f)
-
-@[simp]
-theorem coe_eqOne (hA : IsAffinoidAlgebra K A) (f : A) :
-    (eqOne hA f : Set (MaximalSpectrum A)) = {x | pointNorm K x f = 1} := by
-  ext x; simp [eqOne, le_antisymm_iff]
-
-/-- The closed rational sublevel subdomain `R(fⁿ / ϖ) = {x ∈ Sp A : |f(x)|ⁿ ≤ ‖ϖ‖}` for `ϖ ≠ 0`. -/
-noncomputable def closedSublevelPow (hA : IsAffinoidAlgebra K A) (f : A) {ϖ : K} (hϖ : ϖ ≠ 0)
-    (n : ℕ) : AffinoidSubdomain K A :=
-  rational hA (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Set.mem_insert _ _))
-    ((Ne.isUnit hϖ).map (algebraMap K A)) :
-    Ideal.span (insert (algebraMap K A ϖ) (Set.range (fun _ : Fin 1 ↦ f ^ n))) = ⊤)
-
-@[simp]
-theorem coe_closedSublevelPow (hA : IsAffinoidAlgebra K A) (f : A) {ϖ : K} (hϖ : ϖ ≠ 0) (n : ℕ) :
-    (closedSublevelPow hA f hϖ n : Set (MaximalSpectrum A)) =
-      {x | pointNorm K x f ^ n ≤ ‖ϖ‖} := by
-  ext x; simp [closedSublevelPow, hϖ, x.pointNorm_pow]
-
-end AffinoidSubdomain
-
 omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- For any `0 < ‖ϖ‖ < 1`, the strict sublevel locus `{|f| < 1}` is the union over `n ≥ 1` of the
 closed sublevel sets `{|f|ⁿ ≤ ‖ϖ‖}`. -/
@@ -113,8 +69,8 @@ theorem ltOne_eq_biUnion_closedSublevelPow (f : A) {ϖ : K} (hϖ₀ : 0 < ‖ϖ�
   exact ⟨m + 1, Nat.succ_pos m,
     (pow_le_pow_of_le_one (pointNorm_nonneg f) hx.le (Nat.le_succ m)).trans hm.le⟩
 
-/-- For any `0 < ‖ϖ‖`, the closed sublevel exhaustion `{|f|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`) of `{|f| < 1}` is
-affinoid-test refined. -/
+/-- For any `0 < ‖ϖ‖`, the family of closed sublevel sets `{|f|ⁿ ≤ ‖ϖ‖}` (`n ≥ 1`) is affinoid-test
+refined on `{|f| < 1}`. -/
 theorem isAffinoidTestRefined_ltOne (f : A) {ϖ : K} (hϖ₀ : 0 < ‖ϖ‖) :
     IsAffinoidTestRefined K {x : MaximalSpectrum A | pointNorm K x f < 1}
       ((fun n : ℕ ↦ {x : MaximalSpectrum A | pointNorm K x f ^ n ≤ ‖ϖ‖}) '' {n : ℕ | 1 ≤ n}) := by
@@ -166,8 +122,8 @@ theorem covers_ltOne_closedSublevelPow [hA : Fact (IsAffinoidAlgebra K A)] (f : 
   · rintro _ ⟨n, _, rfl⟩ x hx
     rw [← SetLike.mem_coe, AffinoidSubdomain.coe_toStrongAdmissibleOpen,
       AffinoidSubdomain.coe_closedSublevelPow, Set.mem_ofPred] at hx
-    exact lt_of_pow_lt_pow_left₀ n zero_le_one
-      (show pointNorm K x f ^ n < 1 ^ n by simpa using hx.trans_lt hϖ₁)
+    have hpow : pointNorm K x f ^ n < 1 ^ n := by simpa using hx.trans_lt hϖ₁
+    exact lt_of_pow_lt_pow_left₀ n zero_le_one hpow
   · simp only [Set.image_image, AffinoidSubdomain.coe_toStrongAdmissibleOpen,
       AffinoidSubdomain.coe_closedSublevelPow, coe_ltOne]
     exact isAffinoidTestRefined_ltOne f hϖ₀
@@ -179,10 +135,6 @@ end Sublevel
 namespace MvPowerSeries
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-instance instFactIsAffinoidAlgebraTate {σ : Type*} [Finite σ] :
-    Fact (IsAffinoidAlgebra K (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) :=
-  ⟨isAffinoidAlgebra_tate⟩
 
 local notation "T₁" => IsRestricted.subring (R := K) (fun _ : Fin 1 ↦ 1)
 
@@ -322,7 +274,10 @@ theorem not_covers_openUnitDisc_unitCircle :
   obtain ⟨V, hVmem, hWV⟩ := hRref W hWR
   rw [IsAffinoidAlgebra.maximalSpectrumComap_id, Set.preimage_id] at hWV
   have hWsub : (W : Set (MaximalSpectrum T₁)) ⊆ (openUnitDisc (K := K) : Set _) := by
-    rcases (by simpa using hVmem : V = _ ∨ V = _) with rfl | rfl
+    have hVeq : V = (openUnitDisc (K := K) : Set _) ∨
+        V = (unitCircle (K := K) : Set _) := by
+      simpa using hVmem
+    rcases hVeq with rfl | rfl
     · exact hWV
     · exact False.elim (hxlt.ne (by simpa using hWV hxW))
   have hxle := hr W (Finset.mem_filter.mpr ⟨hfin.mem_toFinset.mpr hWR, hWsub⟩) x hxW

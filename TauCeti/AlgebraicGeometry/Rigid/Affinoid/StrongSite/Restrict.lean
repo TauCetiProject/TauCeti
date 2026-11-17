@@ -37,10 +37,6 @@ section Pushforward
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A B : Type u} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
 
-instance AffinoidSubdomain.instFactIsAffinoidAlgebraSections (U : AffinoidSubdomain K A) :
-    Fact (IsAffinoidAlgebra K U.sections) :=
-  ⟨U.isAffinoidAlgebra⟩
-
 namespace IsAffinoidSubdomainMap
 
 /-- Pushing forward along the classical point map of an affinoid subdomain representation preserves
@@ -76,9 +72,7 @@ noncomputable def mapStrongAdmissibleOpen (hA : IsAffinoidAlgebra K A)
     (W : StrongAdmissibleOpen K B) : StrongAdmissibleOpen K A where
   carrier := hφ.isAffinoidAlgebra.maximalSpectrumComap φ '' W
   exists_affinoid_cover := by
-    obtain ⟨S, hSu, hS⟩ := W.exists_affinoid_cover
-    change _ = (W : Set (MaximalSpectrum B)) at hSu
-    change IsAffinoidTestRefined K (W : Set (MaximalSpectrum B)) _ at hS
+    obtain ⟨S, hSu, hS⟩ := W.exists_affinoidSubdomain_cover
     let S' := (fun V : AffinoidSubdomain K B ↦
       AffinoidSubdomain.ofMap (hφ.comp hA V.isAffinoidSubdomainMap)) '' S
     have himg : ((↑) : AffinoidSubdomain K A → Set (MaximalSpectrum A)) '' S' =
@@ -172,10 +166,11 @@ noncomputable def strongRestrictTo :
     simp only [GTopology.restrictEmbedding_apply, StrongAdmissibleOpen.setEmbedding_apply,
       coe_strongAdmissibleOpenOrderIso_apply, coe_mapStrongAdmissibleOpen, Set.mem_preimage]
     refine ⟨fun ⟨y, hyW, hyx⟩ ↦ ?_, fun hxW ↦ ⟨_, hxW, ?_⟩⟩
-    · convert hyW using 1
-      apply (hφ.maximalSpectrumEquiv hA.out).injective
-      exact (Equiv.apply_symm_apply _ x).trans
-        (Subtype.ext ((hφ.coe_maximalSpectrumEquiv hA.out y).trans hyx)).symm
+    · have hxy : (hφ.maximalSpectrumEquiv hA.out).symm x = y :=
+        (hφ.maximalSpectrumEquiv hA.out).injective <|
+          (Equiv.apply_symm_apply _ x).trans
+            (Subtype.ext ((hφ.coe_maximalSpectrumEquiv hA.out y).trans hyx)).symm
+      rwa [hxy]
     · rw [← hφ.coe_maximalSpectrumEquiv hA.out, Equiv.apply_symm_apply]
   covers_comap {W S} hS := by
     rw [StrongAdmissibleOpen.strongGTopology_covers_iff] at hS
