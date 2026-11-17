@@ -9,6 +9,7 @@ public import Mathlib.Probability.ProductMeasure
 -- Non-public: independence of disjoint coordinate blocks is used only inside the proof.
 import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.Probability.Independence.DisjointBlocks
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # Splitting an infinite product measure into factors
@@ -28,7 +29,9 @@ two independent pieces:
 For an arbitrary index type `ι` and a decidable predicate `p : ι → Prop`, the measurable
 equivalence `MeasurableEquiv.piEquivPiSubtypeProd X p` splits `Measure.infinitePi μ` into the
 binary product of the infinite product measures on `{i // p i}` and `{i // ¬ p i}`, giving the
-infinite-product analogue of `MeasureTheory.measurePreserving_piEquivPiSubtypeProd`.
+infinite-product analogue of `MeasureTheory.measurePreserving_piEquivPiSubtypeProd`. This follows
+directly from `TauCeti.Probability.infinitePi_map_pair_domRestrict` applied to `{i | p i}` and
+its complement.
 
 ## Main results
 
@@ -84,28 +87,20 @@ end MeasureTheory
 `p : ι → Prop`, the equivalence `MeasurableEquiv.piEquivPiSubtypeProd X p` sends
 `Measure.infinitePi μ` to the binary product of the infinite product measures over `{i // p i}`
 and `{i // ¬ p i}`. This is the infinite-product analogue of
-`MeasureTheory.measurePreserving_piEquivPiSubtypeProd`. -/
+`MeasureTheory.measurePreserving_piEquivPiSubtypeProd`, derived from
+`TauCeti.Probability.infinitePi_map_pair_domRestrict`. -/
 theorem measurePreserving_infinitePi_piEquivPiSubtypeProd {ι : Type*} {X : ι → Type*}
     [∀ i, MeasurableSpace (X i)] (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (μ i)]
     (p : ι → Prop) [DecidablePred p] :
     MeasurePreserving (MeasurableEquiv.piEquivPiSubtypeProd X p) (Measure.infinitePi μ)
       ((Measure.infinitePi fun i : Subtype p => μ i).prod
-        (Measure.infinitePi fun i : {i // ¬ p i} => μ i)) := by
-  set e := (MeasurableEquiv.piEquivPiSubtypeProd X p).symm
-  refine MeasurePreserving.symm e ⟨e.measurable, Measure.eq_infinitePi μ fun s t ht => ?_⟩
-  have hpre : e ⁻¹' ((s : Set ι).pi t) =
-      ((s.subtype p : Set (Subtype p)).pi fun i => t i) ×ˢ
-        ((s.subtype (fun i => ¬ p i) : Set {i // ¬ p i}).pi fun i => t i) := by
-    ext ⟨f, g⟩
-    simp only [e, Set.mem_preimage, Set.mem_pi, Finset.mem_coe, Set.mem_prod, Finset.mem_subtype,
-      Subtype.forall, ← forall_and]
-    refine forall_congr' fun i => ?_
-    by_cases hi : p i <;> simp [hi]
-  rw [e.map_apply, hpre, Measure.prod_prod,
-    Measure.infinitePi_pi (μ := fun i : Subtype p => μ i) (fun i _ => ht i.1),
-    Measure.infinitePi_pi (μ := fun i : {i // ¬ p i} => μ i) (fun i _ => ht i.1),
-    Finset.prod_subtype_eq_prod_filter (f := fun i => μ i (t i)),
-    Finset.prod_subtype_eq_prod_filter (f := fun i => μ i (t i)),
-    Finset.prod_filter_mul_prod_filter_not]
+        (Measure.infinitePi fun i : {i // ¬ p i} => μ i)) :=
+  ⟨(MeasurableEquiv.piEquivPiSubtypeProd X p).measurable, by
+    have hdisj : Disjoint {i | p i} {i | ¬ p i} := Set.disjoint_left.2 fun _ hp hnp => hnp hp
+    have hfun : ⇑(MeasurableEquiv.piEquivPiSubtypeProd X p) =
+        fun x => ({i | p i}.domRestrict x, {i | ¬ p i}.domRestrict x) := by
+      ext x i <;> rfl
+    rw [hfun]
+    exact TauCeti.Probability.infinitePi_map_pair_domRestrict μ hdisj⟩
 
 end TauCeti

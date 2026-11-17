@@ -11,8 +11,10 @@ public import Mathlib.Probability.ProductMeasure
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Pi
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import TauCeti.MeasureTheory.Measure.PiWithDensity
+import TauCeti.Probability.Kernel.Composition.RadonNikodym
 import TauCeti.Probability.ProductMeasure
 
 /-!
@@ -295,19 +297,11 @@ theorem hellingerAffinity_le_sqrt_mul (P Q : Measure X) [IsFiniteMeasure P] [IsF
   have hQ : Q ≪ P + Q := Measure.AbsolutelyContinuous.rfl.add_right' P
   rw [hellingerAffinity_def]
   simp_rw [Real.sqrt_mul ENNReal.toReal_nonneg]
-  have h2 : ENNReal.ofReal 2 = 2 := by norm_num
-  have hcs := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := P + Q) Real.HolderConjugate.two_two
-    (ae_of_all _ fun _ => Real.sqrt_nonneg _) (ae_of_all _ fun _ => Real.sqrt_nonneg _)
-    (h2.symm ▸ memLp_two_sqrt_rnDeriv P (P + Q))
-    (h2.symm ▸ memLp_two_sqrt_rnDeriv Q (P + Q))
-  have hpow (R : Measure X) [IsFiniteMeasure R] (hR : R ≪ P + Q) :
-      (∫ x, √(R.rnDeriv (P + Q) x).toReal ^ (2 : ℝ) ∂(P + Q)) ^ (1 / (2 : ℝ)) =
-        √(R.real Set.univ) := by
-    have hsq : ∀ x, √(R.rnDeriv (P + Q) x).toReal ^ (2 : ℝ) = (R.rnDeriv (P + Q) x).toReal :=
-      fun x => by rw [Real.rpow_two, Real.sq_sqrt ENNReal.toReal_nonneg]
-    simp_rw [hsq, Measure.integral_toReal_rnDeriv hR, ← Real.sqrt_eq_rpow]
-  rw [hpow P hP, hpow Q hQ, ← Real.sqrt_mul measureReal_nonneg] at hcs
-  exact hcs
+  have hcs := TauCeti.sq_integral_mul_le_integral_sq_mul_integral_sq
+    (memLp_two_sqrt_rnDeriv P (P + Q)) (memLp_two_sqrt_rnDeriv Q (P + Q))
+  simp_rw [Real.sq_sqrt ENNReal.toReal_nonneg, Measure.integral_toReal_rnDeriv hP,
+    Measure.integral_toReal_rnDeriv hQ] at hcs
+  exact Real.le_sqrt_of_sq_le hcs
 
 /-- The Hellinger affinity of two probability measures is at most `1`. -/
 theorem hellingerAffinity_le_one (P Q : Measure X) [IsProbabilityMeasure P]
@@ -353,7 +347,8 @@ theorem hellingerAffinity_eq_zero_iff (P Q : Measure X) [IsFiniteMeasure P] [IsF
       filter_upwards [ae_restrict_of_ae h, ae_restrict_of_ae (Measure.rnDeriv_lt_top P (P + Q)),
         ae_restrict_of_ae (Measure.rnDeriv_lt_top Q (P + Q)), ae_restrict_mem hs.compl] with
         x hx hPtop hQtop hxne
-      have hx' : √((P.rnDeriv (P + Q) x).toReal * (Q.rnDeriv (P + Q) x).toReal) = 0 := hx
+      have hx' : √((P.rnDeriv (P + Q) x).toReal * (Q.rnDeriv (P + Q) x).toReal) = 0 := by
+        simpa only [Pi.zero_apply] using hx
       rw [Real.sqrt_eq_zero (mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)] at hx'
       rcases mul_eq_zero.1 hx' with hP0 | hQ0
       · exact False.elim (hxne ((ENNReal.toReal_eq_zero_iff _).1 hP0 |>.resolve_right hPtop.ne))
@@ -392,8 +387,10 @@ theorem hellingerAffinity_eq_half_add_iff (P Q : Measure X) [IsFiniteMeasure P]
     have hrn : P.rnDeriv (P + Q) =ᵐ[P + Q] Q.rnDeriv (P + Q) := by
       filter_upwards [h, Measure.rnDeriv_lt_top P (P + Q), Measure.rnDeriv_lt_top Q (P + Q)] with
         x hx hPtop hQtop
+      have hx' : (√(P.rnDeriv (P + Q) x).toReal - √(Q.rnDeriv (P + Q) x).toReal) ^ 2 = 0 := by
+        simpa only [Pi.zero_apply] using hx
       have hsq : √(P.rnDeriv (P + Q) x).toReal = √(Q.rnDeriv (P + Q) x).toReal :=
-        sub_eq_zero.1 (sq_eq_zero_iff.1 hx)
+        sub_eq_zero.1 (sq_eq_zero_iff.1 hx')
       have htoReal : (P.rnDeriv (P + Q) x).toReal = (Q.rnDeriv (P + Q) x).toReal := by
         rw [← Real.sq_sqrt ENNReal.toReal_nonneg, hsq, Real.sq_sqrt ENNReal.toReal_nonneg]
       exact (ENNReal.toReal_eq_toReal_iff' hPtop.ne hQtop.ne).1 htoReal
@@ -429,14 +426,8 @@ theorem sqrt_sqHellinger_triangle (P Q R : Measure X) [IsProbabilityMeasure P]
   have hu : MemLp u 2 μ := (memLp_two_sqrt_rnDeriv P μ).sub (memLp_two_sqrt_rnDeriv Q μ)
   have hv : MemLp v 2 μ := (memLp_two_sqrt_rnDeriv Q μ).sub (memLp_two_sqrt_rnDeriv R μ)
   have hcs : ∫ x, u x * v x ∂μ ≤ √(∫ x, u x ^ 2 ∂μ) * √(∫ x, v x ^ 2 ∂μ) := by
-    have h2 : ENNReal.ofReal 2 = 2 := by norm_num
-    have hholder := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two
-      (h2.symm ▸ hu) (h2.symm ▸ hv)
-    have hle : ∫ x, u x * v x ∂μ ≤ ∫ x, ‖u x‖ * ‖v x‖ ∂μ := by
-      refine integral_mono (hu.integrable_mul hv) (hu.norm.integrable_mul hv.norm) fun x => ?_
-      simpa [Real.norm_eq_abs, abs_mul] using le_abs_self (u x * v x)
-    refine hle.trans (hholder.trans_eq ?_)
-    simp_rw [Real.rpow_two, Real.norm_eq_abs, sq_abs, ← Real.sqrt_eq_rpow]
+    rw [← Real.sqrt_mul (integral_nonneg fun _ => sq_nonneg _)]
+    exact Real.le_sqrt_of_sq_le (TauCeti.sq_integral_mul_le_integral_sq_mul_integral_sq hu hv)
   have hPR : sqHellinger P R = ∫ x, u x ^ 2 ∂μ + 2 * ∫ x, u x * v x ∂μ + ∫ x, v x ^ 2 ∂μ := by
     rw [sqHellinger_eq_integral P R μ hPμ hRμ]
     have hsplit : ∀ x, (√(P.rnDeriv μ x).toReal - √(R.rnDeriv μ x).toReal) ^ 2 =
@@ -488,27 +479,20 @@ theorem hellingerAffinity_prod (P Q : Measure X) (P' Q' : Measure Y) [SigmaFinit
   have hQμ : Q ≪ μ := Measure.AbsolutelyContinuous.rfl.add_right' P
   have hP'μ' : P' ≪ μ' := Measure.AbsolutelyContinuous.rfl.add_right Q'
   have hQ'μ' : Q' ≪ μ' := Measure.AbsolutelyContinuous.rfl.add_right' P'
-  have hPP' : P.prod P' = (μ.prod μ').withDensity fun z => P.rnDeriv μ z.1 * P'.rnDeriv μ' z.2 := by
-    rw [← prod_withDensity (Measure.measurable_rnDeriv P μ)
-      (Measure.measurable_rnDeriv P' μ'), Measure.withDensity_rnDeriv_eq P μ hPμ,
-      Measure.withDensity_rnDeriv_eq P' μ' hP'μ']
-  have hQQ' : Q.prod Q' = (μ.prod μ').withDensity fun z => Q.rnDeriv μ z.1 * Q'.rnDeriv μ' z.2 := by
-    rw [← prod_withDensity (Measure.measurable_rnDeriv Q μ)
-      (Measure.measurable_rnDeriv Q' μ'), Measure.withDensity_rnDeriv_eq Q μ hQμ,
-      Measure.withDensity_rnDeriv_eq Q' μ' hQ'μ']
-  rw [hellingerAffinity_eq_integral (P.prod P') (Q.prod Q') (μ.prod μ')
-      (.inl (hPP' ▸ withDensity_absolutelyContinuous _ _)),
+  have hrn (R : Measure X) (R' : Measure Y) [SigmaFinite R] [SigmaFinite R']
+      (hR : R ≪ μ) (hR' : R' ≪ μ') :
+      (R.prod R').rnDeriv (μ.prod μ') =ᵐ[μ.prod μ']
+        fun z => R.rnDeriv μ z.1 * R'.rnDeriv μ' z.2 := by
+    have hwd : R.prod R' =
+        (μ.prod μ').withDensity fun z => R.rnDeriv μ z.1 * R'.rnDeriv μ' z.2 := by
+      rw [← prod_withDensity (Measure.measurable_rnDeriv R μ) (Measure.measurable_rnDeriv R' μ'),
+        Measure.withDensity_rnDeriv_eq R μ hR, Measure.withDensity_rnDeriv_eq R' μ' hR']
+    rw [hwd]
+    exact Measure.rnDeriv_withDensity (μ.prod μ') (by fun_prop)
+  rw [hellingerAffinity_eq_integral (P.prod P') (Q.prod Q') (μ.prod μ') (.inl (hPμ.prod hP'μ')),
     hellingerAffinity_def, hellingerAffinity_def, ← integral_prod_mul]
   refine integral_congr_ae ?_
-  have hrnP : (P.prod P').rnDeriv (μ.prod μ') =ᵐ[μ.prod μ']
-      fun z => P.rnDeriv μ z.1 * P'.rnDeriv μ' z.2 := by
-    rw [hPP']
-    exact Measure.rnDeriv_withDensity (μ.prod μ') (by fun_prop)
-  have hrnQ : (Q.prod Q').rnDeriv (μ.prod μ') =ᵐ[μ.prod μ']
-      fun z => Q.rnDeriv μ z.1 * Q'.rnDeriv μ' z.2 := by
-    rw [hQQ']
-    exact Measure.rnDeriv_withDensity (μ.prod μ') (by fun_prop)
-  filter_upwards [hrnP, hrnQ] with z hzP hzQ
+  filter_upwards [hrn P P' hPμ hP'μ', hrn Q Q' hQμ hQ'μ'] with z hzP hzQ
   rw [hzP, hzQ, ENNReal.toReal_mul, ENNReal.toReal_mul]
   have hmul : (P.rnDeriv μ z.1).toReal * (P'.rnDeriv μ' z.2).toReal *
       ((Q.rnDeriv μ z.1).toReal * (Q'.rnDeriv μ' z.2).toReal) =
@@ -526,36 +510,23 @@ theorem hellingerAffinity_pi {ι : Type*} [Fintype ι] {Z : ι → Type*}
   let μ : ∀ i, Measure (Z i) := fun i => P i + Q i
   have hPμ (i : ι) : P i ≪ μ i := Measure.AbsolutelyContinuous.rfl.add_right (Q i)
   have hQμ (i : ι) : Q i ≪ μ i := Measure.AbsolutelyContinuous.rfl.add_right' (P i)
-  have hpiP : Measure.pi P =
-      (Measure.pi μ).withDensity fun x => ∏ i, (P i).rnDeriv (μ i) (x i) := by
-    have hwd (i : ι) : (μ i).withDensity ((P i).rnDeriv (μ i)) = P i :=
-      Measure.withDensity_rnDeriv_eq (P i) (μ i) (hPμ i)
-    let (i : ι) : SigmaFinite ((μ i).withDensity ((P i).rnDeriv (μ i))) := by
-      rw [hwd]; infer_instance
-    nth_rw 1 [← funext hwd]
-    exact TauCeti.pi_withDensity μ fun i => Measure.measurable_rnDeriv (P i) (μ i)
-  have hpiQ : Measure.pi Q =
-      (Measure.pi μ).withDensity fun x => ∏ i, (Q i).rnDeriv (μ i) (x i) := by
-    have hwd (i : ι) : (μ i).withDensity ((Q i).rnDeriv (μ i)) = Q i :=
-      Measure.withDensity_rnDeriv_eq (Q i) (μ i) (hQμ i)
-    let (i : ι) : SigmaFinite ((μ i).withDensity ((Q i).rnDeriv (μ i))) := by
-      rw [hwd]; infer_instance
-    nth_rw 1 [← funext hwd]
-    exact TauCeti.pi_withDensity μ fun i => Measure.measurable_rnDeriv (Q i) (μ i)
+  have hrn (R : ∀ i, Measure (Z i)) [∀ i, SigmaFinite (R i)] (hR : ∀ i, R i ≪ μ i) :
+      (Measure.pi R).rnDeriv (Measure.pi μ) =ᵐ[Measure.pi μ]
+        fun x => ∏ i, (R i).rnDeriv (μ i) (x i) := by
+    have hwd (i : ι) : (μ i).withDensity ((R i).rnDeriv (μ i)) = R i :=
+      Measure.withDensity_rnDeriv_eq (R i) (μ i) (hR i)
+    have hpi : Measure.pi R =
+        (Measure.pi μ).withDensity fun x => ∏ i, (R i).rnDeriv (μ i) (x i) := by
+      nth_rw 1 [← funext hwd]
+      exact TauCeti.pi_withDensity μ fun i => Measure.measurable_rnDeriv (R i) (μ i)
+    rw [hpi]
+    exact Measure.rnDeriv_withDensity (Measure.pi μ) (by fun_prop)
   rw [hellingerAffinity_eq_integral (Measure.pi P) (Measure.pi Q) (Measure.pi μ)
       (.inl (Measure.AbsolutelyContinuous.pi hPμ))]
   simp_rw [hellingerAffinity_def]
   rw [← integral_fintype_prod_eq_prod]
   refine integral_congr_ae ?_
-  have hrnP : (Measure.pi P).rnDeriv (Measure.pi μ) =ᵐ[Measure.pi μ]
-      fun x => ∏ i, (P i).rnDeriv (μ i) (x i) := by
-    rw [hpiP]
-    exact Measure.rnDeriv_withDensity (Measure.pi μ) (by fun_prop)
-  have hrnQ : (Measure.pi Q).rnDeriv (Measure.pi μ) =ᵐ[Measure.pi μ]
-      fun x => ∏ i, (Q i).rnDeriv (μ i) (x i) := by
-    rw [hpiQ]
-    exact Measure.rnDeriv_withDensity (Measure.pi μ) (by fun_prop)
-  filter_upwards [hrnP, hrnQ] with x hxP hxQ
+  filter_upwards [hrn P hPμ, hrn Q hQμ] with x hxP hxQ
   rw [hxP, hxQ, ENNReal.toReal_prod, ENNReal.toReal_prod, ← Finset.prod_mul_distrib]
   refine (Real.sqrt_eq_iff_eq_sq (Finset.prod_nonneg fun _ _ =>
     mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
@@ -596,139 +567,6 @@ theorem hellingerAffinity_infinitePi {ι : Type*} {Z : ι → Type*} [∀ i, Mea
 
 /-! ### Data processing inequality -/
 
-private theorem ae_compProd_rnDeriv_eq_zero_of_rnDeriv_comp_eq_zero
-    (P Q : Measure X) [IsFiniteMeasure P] [IsFiniteMeasure Q]
-    (κ : Kernel X Y) [IsMarkovKernel κ] :
-    ∀ᵐ z ∂((P + Q) ⊗ₘ κ),
-      ((κ ∘ₘ P).rnDeriv (κ ∘ₘ (P + Q)) z.2).toReal = 0 → P.rnDeriv (P + Q) z.1 = 0 := by
-  set ν := P + Q
-  set μ := κ ∘ₘ ν
-  set S : Set Y := {y | ((κ ∘ₘ P).rnDeriv μ y).toReal = 0}
-  have hS : MeasurableSet S :=
-    ((Measure.measurable_rnDeriv (κ ∘ₘ P) μ).ennreal_toReal) (measurableSet_singleton 0)
-  have hPν : P ≪ ν := Measure.AbsolutelyContinuous.rfl.add_right Q
-  have hμ : μ = κ ∘ₘ P + κ ∘ₘ Q := Measure.comp_add
-  have hκPμ : κ ∘ₘ P ≪ μ := hμ ▸ Measure.AbsolutelyContinuous.rfl.add_right _
-  have hκPS : (κ ∘ₘ P) S = 0 := by
-    rw [← Measure.withDensity_rnDeriv_eq (κ ∘ₘ P) μ hκPμ, withDensity_apply _ hS,
-      lintegral_eq_zero_iff (Measure.measurable_rnDeriv (κ ∘ₘ P) μ)]
-    filter_upwards [ae_restrict_of_ae (Measure.rnDeriv_lt_top (κ ∘ₘ P) μ),
-      ae_restrict_mem hS] with y hytop hy0
-    exact (ENNReal.toReal_eq_zero_iff _).1 hy0 |>.resolve_right hytop.ne
-  have hm_ind : Measurable (fun z : X × Y => (Set.univ ×ˢ S).indicator
-      (fun w : X × Y => P.rnDeriv ν w.1) z) :=
-    ((Measure.measurable_rnDeriv P ν).comp measurable_fst).indicator (MeasurableSet.univ.prod hS)
-  have hlint :
-      ∫⁻ z, (Set.univ ×ˢ S).indicator (fun w : X × Y => P.rnDeriv ν w.1) z ∂(ν ⊗ₘ κ) = 0 := by
-    rw [Measure.lintegral_compProd hm_ind]
-    have hinner : ∀ x, ∫⁻ y, (Set.univ ×ˢ S).indicator (fun w : X × Y => P.rnDeriv ν w.1)
-        (x, y) ∂κ x = P.rnDeriv ν x * κ x S := fun x => by
-      have hind : (fun y => (Set.univ ×ˢ S).indicator (fun w : X × Y => P.rnDeriv ν w.1) (x, y)) =
-          S.indicator (fun _ => P.rnDeriv ν x) := by
-        ext y; by_cases hy : y ∈ S <;> simp [hy]
-      rw [hind, lintegral_indicator hS, setLIntegral_const]
-    simp_rw [hinner]
-    rw [lintegral_rnDeriv_mul hPν (κ.measurable_coe hS).aemeasurable,
-      ← Measure.bind_apply hS κ.aemeasurable]
-    exact hκPS
-  filter_upwards [(lintegral_eq_zero_iff hm_ind).1 hlint] with z hz hzS
-  have hmem : z ∈ Set.univ ×ˢ S := ⟨trivial, hzS⟩
-  simpa [Set.indicator_of_mem hmem] using hz
-
-private theorem lintegral_compProd_mul_rnDeriv_eq (P Q : Measure X) [IsFiniteMeasure P]
-    [IsFiniteMeasure Q] (κ : Kernel X Y) [IsMarkovKernel κ] {f : Y → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ z, f z.2 * P.rnDeriv (P + Q) z.1 ∂((P + Q) ⊗ₘ κ) =
-      ∫⁻ y, (κ ∘ₘ P).rnDeriv (κ ∘ₘ (P + Q)) y * f y ∂(κ ∘ₘ (P + Q)) := by
-  have hPν : P ≪ P + Q := Measure.AbsolutelyContinuous.rfl.add_right Q
-  have hκPμ : κ ∘ₘ P ≪ κ ∘ₘ (P + Q) := by
-    rw [Measure.comp_add]
-    exact Measure.AbsolutelyContinuous.rfl.add_right _
-  have hm : Measurable (fun z : X × Y => f z.2 * P.rnDeriv (P + Q) z.1) :=
-    (hf.comp measurable_snd).mul ((Measure.measurable_rnDeriv P (P + Q)).comp measurable_fst)
-  rw [Measure.lintegral_compProd hm]
-  simp_rw [mul_comm (f _), lintegral_const_mul _ hf]
-  rw [lintegral_rnDeriv_mul hPν hf.lintegral_kernel.aemeasurable,
-    ← Measure.lintegral_bind κ.aemeasurable hf.aemeasurable,
-    ← lintegral_rnDeriv_mul hκPμ hf.aemeasurable]
-
-private theorem lintegral_weighted_rnDeriv_le (P Q : Measure X) [IsFiniteMeasure P]
-    [IsFiniteMeasure Q] (κ : Kernel X Y) [IsMarkovKernel κ] :
-    let μ := κ ∘ₘ (P + Q)
-    let p' : Y → ℝ := fun y => ((κ ∘ₘ P).rnDeriv μ y).toReal
-    let q' : Y → ℝ := fun y => ((κ ∘ₘ Q).rnDeriv μ y).toReal
-    let A : Set Y := {y | 0 < p' y ∧ 0 < q' y}
-    ∫⁻ y, ((κ ∘ₘ P).rnDeriv μ y * A.indicator (fun y => ENNReal.ofReal (√(q' y / p' y) / 2)) y +
-        (κ ∘ₘ Q).rnDeriv μ y * A.indicator (fun y => ENNReal.ofReal (√(p' y / q' y) / 2)) y) ∂μ ≤
-      ENNReal.ofReal (hellingerAffinity (κ ∘ₘ P) (κ ∘ₘ Q)) := by
-  intro μ p' q' A
-  have hμ : μ = κ ∘ₘ P + κ ∘ₘ Q := Measure.comp_add
-  rw [hellingerAffinity_def, ← hμ, ofReal_integral_eq_lintegral_ofReal
-    (integrable_sqrt_rnDeriv_mul (κ ∘ₘ P) (κ ∘ₘ Q) μ) (ae_of_all _ fun _ => Real.sqrt_nonneg _)]
-  refine lintegral_mono_ae ?_
-  filter_upwards [Measure.rnDeriv_lt_top (κ ∘ₘ P) μ, Measure.rnDeriv_lt_top (κ ∘ₘ Q) μ] with
-    y hPtop hQtop
-  by_cases hy : y ∈ A
-  · rw [Set.indicator_of_mem hy, Set.indicator_of_mem hy]
-    nth_rw 1 [← ENNReal.ofReal_toReal hPtop.ne, ← ENNReal.ofReal_toReal hQtop.ne]
-    rw [← ENNReal.ofReal_mul ENNReal.toReal_nonneg, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg,
-      ← ENNReal.ofReal_add (by positivity) (by positivity)]
-    refine ENNReal.ofReal_le_ofReal (le_of_eq ?_)
-    have hsp : 0 < √(p' y) := Real.sqrt_pos.2 hy.1
-    have hsq : 0 < √(q' y) := Real.sqrt_pos.2 hy.2
-    rw [Real.sqrt_div hy.2.le, Real.sqrt_div hy.1.le, Real.sqrt_mul hy.1.le]
-    field_simp [hsp.ne', hsq.ne']
-    nlinarith [Real.sq_sqrt hy.1.le, Real.sq_sqrt hy.2.le]
-  · simp [Set.indicator_of_notMem hy]
-
-private theorem ae_compProd_ofReal_sqrt_le (P Q : Measure X) [IsFiniteMeasure P]
-    [IsFiniteMeasure Q] (κ : Kernel X Y) [IsMarkovKernel κ] :
-    let ν := P + Q
-    let μ := κ ∘ₘ ν
-    let p' : Y → ℝ := fun y => ((κ ∘ₘ P).rnDeriv μ y).toReal
-    let q' : Y → ℝ := fun y => ((κ ∘ₘ Q).rnDeriv μ y).toReal
-    let A : Set Y := {y | 0 < p' y ∧ 0 < q' y}
-    ∀ᵐ z ∂(ν ⊗ₘ κ),
-      ENNReal.ofReal (√((P.rnDeriv ν z.1).toReal * (Q.rnDeriv ν z.1).toReal)) ≤
-        A.indicator (fun y => ENNReal.ofReal (√(q' y / p' y) / 2)) z.2 * P.rnDeriv ν z.1 +
-        A.indicator (fun y => ENNReal.ofReal (√(p' y / q' y) / 2)) z.2 * Q.rnDeriv ν z.1 := by
-  intro ν μ p' q' A
-  have hfst : (ν ⊗ₘ κ).map Prod.fst = ν := Measure.fst_compProd ν κ
-  have htop (R : Measure X) [IsFiniteMeasure R] : ∀ᵐ z ∂(ν ⊗ₘ κ), R.rnDeriv ν z.1 ≠ ∞ :=
-    ae_of_ae_map (f := (Prod.fst : X × Y → X)) measurable_fst.aemeasurable (by
-      rw [hfst]; exact Measure.rnDeriv_ne_top R ν)
-  have hQzero : ∀ᵐ z ∂(ν ⊗ₘ κ), q' z.2 = 0 → Q.rnDeriv ν z.1 = 0 := by
-    simpa only [ν, μ, q', add_comm Q P] using
-      ae_compProd_rnDeriv_eq_zero_of_rnDeriv_comp_eq_zero Q P κ
-  filter_upwards [ae_compProd_rnDeriv_eq_zero_of_rnDeriv_comp_eq_zero P Q κ, hQzero,
-    htop P, htop Q] with z hzP hzQ hPne hQne
-  by_cases hzA : z.2 ∈ A
-  · rw [Set.indicator_of_mem hzA, Set.indicator_of_mem hzA]
-    nth_rw 2 [← ENNReal.ofReal_toReal hPne]
-    nth_rw 2 [← ENNReal.ofReal_toReal hQne]
-    rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity),
-      ← ENNReal.ofReal_add (by positivity) (by positivity)]
-    refine ENNReal.ofReal_le_ofReal ?_
-    have hsp : 0 < √(p' z.2) := Real.sqrt_pos.2 hzA.1
-    have hsq : 0 < √(q' z.2) := Real.sqrt_pos.2 hzA.2
-    rw [Real.sqrt_div hzA.2.le, Real.sqrt_div hzA.1.le, Real.sqrt_mul ENNReal.toReal_nonneg]
-    have h0 := sq_nonneg (√(q' z.2) * √(P.rnDeriv ν z.1).toReal -
-      √(p' z.2) * √(Q.rnDeriv ν z.1).toReal)
-    rw [sub_sq, mul_pow, mul_pow, Real.sq_sqrt hzA.2.le, Real.sq_sqrt hzA.1.le,
-      Real.sq_sqrt ENNReal.toReal_nonneg, Real.sq_sqrt ENNReal.toReal_nonneg] at h0
-    field_simp [hsp.ne', hsq.ne']
-    rw [Real.sq_sqrt hzA.1.le, Real.sq_sqrt hzA.2.le]
-    nlinarith [h0]
-  · have h0 : p' z.2 = 0 ∨ q' z.2 = 0 := by
-      by_contra h
-      push Not at h
-      exact hzA ⟨lt_of_le_of_ne ENNReal.toReal_nonneg h.1.symm,
-        lt_of_le_of_ne ENNReal.toReal_nonneg h.2.symm⟩
-    rcases h0 with hp0 | hq0
-    · have hPz : P.rnDeriv ν z.1 = 0 := hzP hp0
-      simp [hPz]
-    · have hQz : Q.rnDeriv ν z.1 = 0 := hzQ hq0
-      simp [hQz]
-
 /-- **Data processing inequality for Hellinger affinity.** Pushing two finite measures forward
 through a Markov kernel does not decrease their Hellinger affinity. -/
 theorem hellingerAffinity_le_comp (P Q : Measure X) [IsFiniteMeasure P] [IsFiniteMeasure Q]
@@ -736,14 +574,13 @@ theorem hellingerAffinity_le_comp (P Q : Measure X) [IsFiniteMeasure P] [IsFinit
     hellingerAffinity P Q ≤ hellingerAffinity (κ ∘ₘ P) (κ ∘ₘ Q) := by
   set ν := P + Q
   set μ := κ ∘ₘ ν
+  have hμ : μ = κ ∘ₘ P + κ ∘ₘ Q := Measure.comp_add
+  have hPν : P ≪ ν := Measure.AbsolutelyContinuous.rfl.add_right Q
+  have hQν : Q ≪ ν := Measure.AbsolutelyContinuous.rfl.add_right' P
   set p' : Y → ℝ := fun y => ((κ ∘ₘ P).rnDeriv μ y).toReal
   set q' : Y → ℝ := fun y => ((κ ∘ₘ Q).rnDeriv μ y).toReal
-  set A : Set Y := {y | 0 < p' y ∧ 0 < q' y}
-  have hA : MeasurableSet A :=
-    ((Measure.measurable_rnDeriv (κ ∘ₘ P) μ).ennreal_toReal measurableSet_Ioi).inter
-      ((Measure.measurable_rnDeriv (κ ∘ₘ Q) μ).ennreal_toReal measurableSet_Ioi)
-  set f₁ : Y → ℝ≥0∞ := A.indicator fun y => ENNReal.ofReal (√(q' y / p' y) / 2)
-  set f₂ : Y → ℝ≥0∞ := A.indicator fun y => ENNReal.ofReal (√(p' y / q' y) / 2)
+  set f₁ : Y → ℝ≥0∞ := fun y => ENNReal.ofReal (√(q' y / p' y) / 2)
+  set f₂ : Y → ℝ≥0∞ := fun y => ENNReal.ofReal (√(p' y / q' y) / 2)
   have hf₁ : Measurable f₁ := by fun_prop
   have hf₂ : Measurable f₂ := by fun_prop
   have hLHS : ENNReal.ofReal (hellingerAffinity P Q) =
@@ -752,22 +589,80 @@ theorem hellingerAffinity_le_comp (P Q : Measure X) [IsFiniteMeasure P] [IsFinit
     simp_rw [lintegral_const, measure_univ, mul_one]
     rw [hellingerAffinity_def, ofReal_integral_eq_lintegral_ofReal
       (integrable_sqrt_rnDeriv_mul P Q ν) (ae_of_all _ fun _ => Real.sqrt_nonneg _)]
-  have hm1 : Measurable (fun z : X × Y => f₁ z.2 * P.rnDeriv ν z.1) :=
-    (hf₁.comp measurable_snd).mul ((Measure.measurable_rnDeriv P ν).comp measurable_fst)
+  have hfst : (ν ⊗ₘ κ).map Prod.fst = ν := Measure.fst_compProd ν κ
+  have hsnd : (ν ⊗ₘ κ).map Prod.snd = μ := Measure.snd_compProd ν κ
+  have htop_fst (R : Measure X) [IsFiniteMeasure R] : ∀ᵐ z ∂(ν ⊗ₘ κ), R.rnDeriv ν z.1 ≠ ∞ :=
+    ae_of_ae_map measurable_fst.aemeasurable (by rw [hfst]; exact Measure.rnDeriv_ne_top R ν)
+  have htop_snd (R : Measure X) [IsFiniteMeasure R] :
+      ∀ᵐ z ∂(ν ⊗ₘ κ), (κ ∘ₘ R).rnDeriv μ z.2 ≠ ∞ :=
+    ae_of_ae_map measurable_snd.aemeasurable (by rw [hsnd]; exact Measure.rnDeriv_ne_top (κ ∘ₘ R) μ)
+  have hbound : ∀ᵐ z ∂(ν ⊗ₘ κ),
+      ENNReal.ofReal (√((P.rnDeriv ν z.1).toReal * (Q.rnDeriv ν z.1).toReal)) ≤
+        P.rnDeriv ν z.1 * f₁ z.2 + Q.rnDeriv ν z.1 * f₂ z.2 := by
+    filter_upwards [Measure.ae_compProd_rnDeriv_eq_zero_of_rnDeriv_comp_eq_zero P ν κ,
+      Measure.ae_compProd_rnDeriv_eq_zero_of_rnDeriv_comp_eq_zero Q ν κ,
+      htop_fst P, htop_fst Q, htop_snd P, htop_snd Q] with z hzP hzQ hPne hQne hPne' hQne'
+    by_cases hp0 : (κ ∘ₘ P).rnDeriv μ z.2 = 0
+    · simp [hzP hp0]
+    by_cases hq0 : (κ ∘ₘ Q).rnDeriv μ z.2 = 0
+    · simp [hzQ hq0]
+    have hp : 0 < p' z.2 := ENNReal.toReal_pos hp0 hPne'
+    have hq : 0 < q' z.2 := ENNReal.toReal_pos hq0 hQne'
+    simp only [f₁, f₂]
+    nth_rw 2 [← ENNReal.ofReal_toReal hPne]
+    nth_rw 2 [← ENNReal.ofReal_toReal hQne]
+    rw [← ENNReal.ofReal_mul ENNReal.toReal_nonneg, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+      ← ENNReal.ofReal_add (by positivity) (by positivity)]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have hsp : 0 < √(p' z.2) := Real.sqrt_pos.2 hp
+    have hsq : 0 < √(q' z.2) := Real.sqrt_pos.2 hq
+    rw [Real.sqrt_div hq.le, Real.sqrt_div hp.le, Real.sqrt_mul ENNReal.toReal_nonneg]
+    have h0 := sq_nonneg (√(q' z.2) * √(P.rnDeriv ν z.1).toReal -
+      √(p' z.2) * √(Q.rnDeriv ν z.1).toReal)
+    rw [sub_sq, mul_pow, mul_pow, Real.sq_sqrt hq.le, Real.sq_sqrt hp.le,
+      Real.sq_sqrt ENNReal.toReal_nonneg, Real.sq_sqrt ENNReal.toReal_nonneg] at h0
+    field_simp [hsp.ne', hsq.ne']
+    rw [Real.sq_sqrt hp.le, Real.sq_sqrt hq.le]
+    nlinarith [h0]
+  have hRHS : ∫⁻ y, ((κ ∘ₘ P).rnDeriv μ y * f₁ y + (κ ∘ₘ Q).rnDeriv μ y * f₂ y) ∂μ =
+      ENNReal.ofReal (hellingerAffinity (κ ∘ₘ P) (κ ∘ₘ Q)) := by
+    rw [hellingerAffinity_def, ← hμ, ofReal_integral_eq_lintegral_ofReal
+      (integrable_sqrt_rnDeriv_mul (κ ∘ₘ P) (κ ∘ₘ Q) μ) (ae_of_all _ fun _ => Real.sqrt_nonneg _)]
+    refine lintegral_congr_ae ?_
+    filter_upwards [Measure.rnDeriv_ne_top (κ ∘ₘ P) μ, Measure.rnDeriv_ne_top (κ ∘ₘ Q) μ] with
+      y hPne hQne
+    by_cases hp0 : (κ ∘ₘ P).rnDeriv μ y = 0
+    · simp [f₁, f₂, p', hp0]
+    by_cases hq0 : (κ ∘ₘ Q).rnDeriv μ y = 0
+    · simp [f₁, f₂, q', hq0]
+    have hp : 0 < p' y := ENNReal.toReal_pos hp0 hPne
+    have hq : 0 < q' y := ENNReal.toReal_pos hq0 hQne
+    simp only [f₁, f₂]
+    nth_rw 1 [← ENNReal.ofReal_toReal hPne, ← ENNReal.ofReal_toReal hQne]
+    rw [← ENNReal.ofReal_mul ENNReal.toReal_nonneg, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+      ← ENNReal.ofReal_add (by positivity) (by positivity)]
+    congr 1
+    have hsp : 0 < √(p' y) := Real.sqrt_pos.2 hp
+    have hsq : 0 < √(q' y) := Real.sqrt_pos.2 hq
+    rw [Real.sqrt_div hq.le, Real.sqrt_div hp.le, Real.sqrt_mul hp.le]
+    field_simp [hsp.ne', hsq.ne']
+    nlinarith [Real.sq_sqrt hp.le, Real.sq_sqrt hq.le]
+  have hm1 : Measurable (fun z : X × Y => P.rnDeriv ν z.1 * f₁ z.2) :=
+    ((Measure.measurable_rnDeriv P ν).comp measurable_fst).mul (hf₁.comp measurable_snd)
   have hm1' : Measurable (fun y : Y => (κ ∘ₘ P).rnDeriv μ y * f₁ y) :=
     (Measure.measurable_rnDeriv (κ ∘ₘ P) μ).mul hf₁
-  have hQterm : ∫⁻ z, f₂ z.2 * Q.rnDeriv ν z.1 ∂(ν ⊗ₘ κ) =
-      ∫⁻ y, (κ ∘ₘ Q).rnDeriv μ y * f₂ y ∂μ := by
-    simpa only [ν, μ, add_comm Q P] using lintegral_compProd_mul_rnDeriv_eq Q P κ hf₂
   rw [← ENNReal.ofReal_le_ofReal_iff (hellingerAffinity_nonneg _ _), hLHS]
   calc ∫⁻ z, ENNReal.ofReal (√((P.rnDeriv ν z.1).toReal * (Q.rnDeriv ν z.1).toReal)) ∂(ν ⊗ₘ κ)
-      ≤ ∫⁻ z, (f₁ z.2 * P.rnDeriv ν z.1 + f₂ z.2 * Q.rnDeriv ν z.1) ∂(ν ⊗ₘ κ) :=
-        lintegral_mono_ae (ae_compProd_ofReal_sqrt_le P Q κ)
+      ≤ ∫⁻ z, (P.rnDeriv ν z.1 * f₁ z.2 + Q.rnDeriv ν z.1 * f₂ z.2) ∂(ν ⊗ₘ κ) :=
+        lintegral_mono_ae hbound
     _ = ∫⁻ y, ((κ ∘ₘ P).rnDeriv μ y * f₁ y + (κ ∘ₘ Q).rnDeriv μ y * f₂ y) ∂μ := by
-        rw [lintegral_add_left hm1, lintegral_compProd_mul_rnDeriv_eq P Q κ hf₁, hQterm,
+        rw [lintegral_add_left hm1,
+          Measure.lintegral_compProd_rnDeriv_mul_eq_lintegral_rnDeriv_comp P ν κ hPν
+            hf₁.aemeasurable,
+          Measure.lintegral_compProd_rnDeriv_mul_eq_lintegral_rnDeriv_comp Q ν κ hQν
+            hf₂.aemeasurable,
           ← lintegral_add_left hm1']
-    _ ≤ ENNReal.ofReal (hellingerAffinity (κ ∘ₘ P) (κ ∘ₘ Q)) :=
-        lintegral_weighted_rnDeriv_le P Q κ
+    _ = ENNReal.ofReal (hellingerAffinity (κ ∘ₘ P) (κ ∘ₘ Q)) := hRHS
 
 /-- **Data processing inequality for squared Hellinger distance.** Pushing two finite measures
 forward through a Markov kernel does not increase their squared Hellinger distance. -/

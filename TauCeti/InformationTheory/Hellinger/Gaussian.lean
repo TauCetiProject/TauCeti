@@ -38,36 +38,32 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 private theorem sqrt_mul_gaussianPDFReal (a b : ℝ) {v₁ v₂ : ℝ≥0} (hv₁ : v₁ ≠ 0) (hv₂ : v₂ ≠ 0)
-    (x : ℝ) :
-    let m : ℝ := ((v₂ : ℝ) * a + (v₁ : ℝ) * b) / ((v₁ : ℝ) + v₂)
-    let w : ℝ≥0 := ⟨2 * (v₁ : ℝ) * v₂ / ((v₁ : ℝ) + v₂), by positivity⟩
+    {m : ℝ} {w : ℝ≥0} (hm : m = ((v₂ : ℝ) * a + (v₁ : ℝ) * b) / ((v₁ : ℝ) + v₂))
+    (hw_val : (w : ℝ) = 2 * (v₁ : ℝ) * v₂ / ((v₁ : ℝ) + v₂)) (x : ℝ) :
     √(gaussianPDFReal a v₁ x * gaussianPDFReal b v₂ x) =
       √(2 * √((v₁ : ℝ) * v₂) / ((v₁ : ℝ) + v₂)) *
         Real.exp (-(a - b) ^ 2 / (4 * ((v₁ : ℝ) + v₂))) *
         gaussianPDFReal m w x := by
-  intro m w
   have hv₁' : (0 : ℝ) < v₁ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv₁)
   have hv₂' : (0 : ℝ) < v₂ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv₂)
   have hsum : (0 : ℝ) < (v₁ : ℝ) + v₂ := add_pos hv₁' hv₂'
-  have hw_val : (w : ℝ) = 2 * (v₁ : ℝ) * v₂ / ((v₁ : ℝ) + v₂) := NNReal.coe_mk _ _
   have hw : (0 : ℝ) < w := by rw [hw_val]; positivity
   have hpref : √((√(2 * π * v₁))⁻¹ * (√(2 * π * v₂))⁻¹) =
       √(2 * √((v₁ : ℝ) * v₂) / ((v₁ : ℝ) + v₂)) * (√(2 * π * w))⁻¹ := by
-    rw [← sq_eq_sq₀ (by positivity) (by positivity), Real.sq_sqrt (by positivity), mul_pow,
-      Real.sq_sqrt (by positivity), inv_pow, Real.sq_sqrt (by positivity), ← mul_inv,
-      ← Real.sqrt_mul (by positivity)]
-    have hprod : 2 * π * v₁ * (2 * π * v₂) = (2 * π) ^ 2 * ((v₁ : ℝ) * v₂) := by ring
-    rw [hprod, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (by positivity), hw_val]
-    have hsqrt_ne : √((v₁ : ℝ) * v₂) ≠ 0 := (Real.sqrt_pos.2 (mul_pos hv₁' hv₂')).ne'
-    field_simp [hsum.ne', hv₁'.ne', hv₂'.ne', hsqrt_ne, pi_ne_zero]
-    linarith [Real.sq_sqrt (mul_nonneg hv₁'.le hv₂'.le)]
+    refine (sq_eq_sq₀ (by positivity) (by positivity)).1 ?_
+    rw [Real.sq_sqrt (by positivity), mul_pow, Real.sq_sqrt (by positivity), inv_pow,
+      Real.sq_sqrt (by positivity), hw_val]
+    field_simp
+    refine (sq_eq_sq₀ (by positivity) (by positivity)).1 ?_
+    simp only [mul_pow]
+    rw [Real.sq_sqrt (by positivity), Real.sq_sqrt (by positivity), Real.sq_sqrt (by positivity)]
+    ring
   have hexp : √(Real.exp (-(x - a) ^ 2 / (2 * v₁)) * Real.exp (-(x - b) ^ 2 / (2 * v₂))) =
       Real.exp (-(a - b) ^ 2 / (4 * ((v₁ : ℝ) + v₂))) * Real.exp (-(x - m) ^ 2 / (2 * w)) := by
     rw [← Real.exp_add, ← Real.exp_add, Real.sqrt_eq_iff_eq_sq (Real.exp_nonneg _)
       (Real.exp_nonneg _), ← Real.exp_nat_mul]
     congr 1
-    rw [hw_val]
-    dsimp only [m]
+    rw [hm, hw_val]
     field_simp [hv₁'.ne', hv₂'.ne', hsum.ne']
     ring
   rw [gaussianPDFReal, gaussianPDFReal, gaussianPDFReal]
@@ -99,13 +95,13 @@ theorem hellingerAffinity_gaussianReal (a b : ℝ) {v₁ v₂ : ℝ≥0} (hv : v
   · subst hv₂; simp
   let m : ℝ := ((v₂ : ℝ) * a + (v₁ : ℝ) * b) / ((v₁ : ℝ) + v₂)
   let w : ℝ≥0 := ⟨2 * (v₁ : ℝ) * v₂ / ((v₁ : ℝ) + v₂), by positivity⟩
+  have hw_val : (w : ℝ) = 2 * (v₁ : ℝ) * v₂ / ((v₁ : ℝ) + v₂) := NNReal.coe_mk _ _
   have hw : w ≠ 0 := by
     have : (0 : ℝ) < v₁ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv₁)
     have : (0 : ℝ) < v₂ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv₂)
-    have hw_val : (w : ℝ) = 2 * (v₁ : ℝ) * v₂ / ((v₁ : ℝ) + v₂) := NNReal.coe_mk _ _
     have hpos : (0 : ℝ) < (w : ℝ) := by rw [hw_val]; positivity
     exact NNReal.coe_ne_zero.1 hpos.ne'
-  simp_rw [sqrt_mul_gaussianPDFReal a b hv₁ hv₂]
+  simp_rw [sqrt_mul_gaussianPDFReal a b hv₁ hv₂ (rfl : m = _) hw_val]
   rw [integral_const_mul, integral_gaussianPDFReal_eq_one m hw, mul_one]
 
 /-- **Hellinger affinity of two real Gaussian laws with common nonzero variance.**
