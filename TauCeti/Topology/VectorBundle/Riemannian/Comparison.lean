@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Riemannian
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.VectorBundle.Bilinear
 import TauCeti.Topology.VectorBundle.Hom
 
@@ -38,10 +39,10 @@ point uses `IsCompact.exists_pos_forall_mul_norm_sq_le` on the finite-dimensiona
 
 ## Main results
 
-* `ContinuousWithinAt.exists_eventually_norm_le_bundle` and
-  `IsCompact.exists_bound_of_continuousOn_bundle`: a continuous family of bilinear maps on the
-  fibres of two continuous Riemannian bundles has locally bounded operator norm, and bounded
-  operator norm on a compact set.
+* `ContinuousWithinAt.exists_eventually_norm_le_bilinear_bundle` and
+  `IsCompact.exists_bound_of_continuousOn_bilinear_bundle`: a continuous family of bilinear maps
+  on the fibres of two continuous Riemannian bundles has locally bounded operator norm, and
+  bounded operator norm on a compact set.
 * `ContinuousWithinAt.exists_pos_eventually_mul_norm_sq_le_bundle` and
   `IsCompact.exists_pos_forall_mul_norm_sq_le_bundle`: a continuous family of positive definite
   bilinear forms on finite-dimensional fibres is locally uniformly coercive, and uniformly
@@ -60,20 +61,6 @@ variable
   {B : Type*} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
-
-/-- A property of a constant that holds near each point of a compact set `K`, within `K`, and is
-preserved when the constant grows in a directed order, holds on all of `K` for one constant. -/
-private theorem IsCompact.exists_forall_of_forall_exists_eventually {X : Type*}
-    [TopologicalSpace X] {α : Type*} [Preorder α] [IsDirected α (· ≤ ·)] [Nonempty α] {K : Set X}
-    (hK : IsCompact K) {p : α → X → Prop} (hp : ∀ ⦃a b⦄, a ≤ b → ∀ ⦃y⦄, p a y → p b y)
-    (h : ∀ y ∈ K, ∃ a, ∀ᶠ z in 𝓝[K] y, p a z) : ∃ a, ∀ y ∈ K, p a y := by
-  refine hK.induction_on (p := fun t ↦ ∃ a, ∀ y ∈ t, p a y)
-    ⟨Classical.arbitrary α, fun _ h ↦ h.elim⟩ (fun _ _ hst ⟨a, ha⟩ ↦ ⟨a, fun y hy ↦ ha y (hst hy)⟩)
-    (fun _ _ ⟨a, ha⟩ ⟨b, hb⟩ ↦ ?_) fun y hy ↦ ?_
-  · obtain ⟨c, hac, hbc⟩ := directed_of (· ≤ ·) a b
-    exact ⟨c, fun y hy ↦ hy.elim (fun hy ↦ hp hac (ha y hy)) fun hy ↦ hp hbc (hb y hy)⟩
-  · obtain ⟨a, ha⟩ := h y hy
-    exact ⟨_, ha, a, fun _ h ↦ h⟩
 
 section Norm
 
@@ -96,7 +83,7 @@ variable
 /-- **Local boundedness of a continuous family of bilinear maps.** For continuous Riemannian
 bundles `E₁` and `E₂`, a family of bilinear maps `E₁ × E₂ → G` on the fibres over a map `b`,
 continuous within `s` at `y₀`, has operator norm bounded on a neighbourhood of `y₀` within `s`. -/
-theorem ContinuousWithinAt.exists_eventually_norm_le_bundle {s : Set X} {y₀ : X}
+theorem ContinuousWithinAt.exists_eventually_norm_le_bilinear_bundle {s : Set X} {y₀ : X}
     (hφ : ContinuousWithinAt (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] G)
       (E := fun x ↦ E₁ x →L[ℝ] E₂ x →L[ℝ] G) (b y) (φ y)) s y₀) :
     ∃ C, ∀ᶠ y in 𝓝[s] y₀, ‖φ y‖ ≤ C := by
@@ -129,12 +116,13 @@ theorem ContinuousWithinAt.exists_eventually_norm_le_bundle {s : Set X} {y₀ : 
 /-- **A continuous family of bilinear maps is bounded on a compact set.** For continuous
 Riemannian bundles `E₁` and `E₂`, a family of bilinear maps `E₁ × E₂ → G` on the fibres over a map
 `b`, continuous on a compact set `K`, has operator norm bounded on `K`. -/
-theorem IsCompact.exists_bound_of_continuousOn_bundle {K : Set X} (hK : IsCompact K)
+theorem IsCompact.exists_bound_of_continuousOn_bilinear_bundle {K : Set X} (hK : IsCompact K)
     (hφ : ContinuousOn (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] G)
       (E := fun x ↦ E₁ x →L[ℝ] E₂ x →L[ℝ] G) (b y) (φ y)) K) :
     ∃ C, ∀ y ∈ K, ‖φ y‖ ≤ C :=
-  hK.exists_forall_of_forall_exists_eventually (p := fun C y ↦ ‖φ y‖ ≤ C)
-    (fun _ _ hab _ h ↦ h.trans hab) fun y hy ↦ (hφ y hy).exists_eventually_norm_le_bundle
+  hK.exists_forall_of_forall_exists_eventually (r := (· ≤ ·)) (p := fun C y ↦ ‖φ y‖ ≤ C)
+    (fun _ _ hab _ h ↦ h.trans hab) fun y hy ↦
+      (hφ y hy).exists_eventually_norm_le_bilinear_bundle
 
 end Bound
 
@@ -195,13 +183,13 @@ theorem IsCompact.exists_pos_forall_mul_norm_sq_le_bundle {K : Set X} (hK : IsCo
       (E := fun x ↦ E x →L[ℝ] E x →L[ℝ] ℝ) (b y) (φ y)) K)
     (hpos : ∀ y ∈ K, ∀ v, v ≠ 0 → 0 < φ y v v) :
     ∃ c > 0, ∀ y ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ φ y v v := by
-  -- Positive constants are ordered by `≥`, since a smaller constant gives a weaker bound.
-  obtain ⟨c, hc⟩ := hK.exists_forall_of_forall_exists_eventually (α := (Ioi (0 : ℝ))ᵒᵈ)
-    (p := fun c y ↦ ∀ v, ((OrderDual.ofDual c : Ioi (0 : ℝ)) : ℝ) * ‖v‖ ^ 2 ≤ φ y v v)
-    (fun _ _ hab _ h v ↦ le_trans (by gcongr; exact hab) (h v)) fun y hy ↦ by
+  -- Positive constants are directed by `≥`, since a smaller constant gives a weaker bound.
+  obtain ⟨⟨c, hc₀⟩, hc⟩ := hK.exists_forall_of_forall_exists_eventually (α := Ioi (0 : ℝ))
+    (r := (· ≥ ·)) (p := fun c y ↦ ∀ v, (c : ℝ) * ‖v‖ ^ 2 ≤ φ y v v)
+    (fun _ _ hab _ h v ↦ le_trans (by gcongr) (h v)) fun y hy ↦ by
       obtain ⟨c, hc, hle⟩ := (hφ y hy).exists_pos_eventually_mul_norm_sq_le_bundle (hpos y hy)
-      exact ⟨OrderDual.toDual ⟨c, hc⟩, hle⟩
-  exact ⟨_, (OrderDual.ofDual c).2, hc⟩
+      exact ⟨⟨c, hc⟩, hle⟩
+  exact ⟨c, hc₀, hc⟩
 
 end Norm
 
@@ -228,7 +216,8 @@ theorem exists_inner_le_mul_inner (g g₀ : ContinuousRiemannianMetric F E) {K :
     e.toHomeomorph.isInducing.continuousConstSMul id (map_smul e _ _)
   let _ : RiemannianBundle E := ⟨g₀.toRiemannianMetric⟩
   obtain ⟨C, hC⟩ :=
-    hK.exists_bound_of_continuousOn_bundle (b := id) (φ := g.inner) g.continuous.continuousOn
+    hK.exists_bound_of_continuousOn_bilinear_bundle (b := id) (φ := g.inner)
+      g.continuous.continuousOn
   refine ⟨max C 1, by positivity, fun x hx v ↦ ?_⟩
   -- The squared norm of `v` for the installed metric is `g₀.inner x v v`.
   have hv : ‖v‖ ^ 2 = g₀.inner x v v := (real_inner_self_eq_norm_sq v).symm
