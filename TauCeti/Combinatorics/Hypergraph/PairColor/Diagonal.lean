@@ -10,6 +10,7 @@ public import TauCeti.Order.Partition.Finpartition
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Order.Partition.Equipartition
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import TauCeti.Order.Partition.Equipartition
 
 /-!
 # Cleaning up diagonal pair blocks
@@ -255,13 +256,6 @@ theorem card_fillDiagonal_colorOfPair_ne_le_of_isEquipartition (hP : P.IsEquipar
       (S.colorOfPair p.1 p.2).map some} ≤ Fintype.card V * (Fintype.card V / #P.parts) := by
   classical
   rw [S.card_fillDiagonal_colorOfPair_ne P]
-  calc ∑ A ∈ P.parts, #A * (#A - 1)
-      ≤ ∑ A ∈ P.parts, #A * (Fintype.card V / #P.parts) := by
-        refine sum_le_sum fun A hA ↦ Nat.mul_le_mul_left #A ?_
-        have hle := hP.card_part_le_average_add_one hA
-        rw [card_univ] at hle
-        exact Nat.sub_le_of_le_add hle
-    _ = (∑ A ∈ P.parts, #A) * (Fintype.card V / #P.parts) := (sum_mul _ _ _).symm
-    _ = Fintype.card V * (Fintype.card V / #P.parts) := by rw [P.sum_card_parts, card_univ]
+  simpa only [card_univ] using hP.sum_card_mul_sub_one_le
 
 end TauCeti.PairColorSystem

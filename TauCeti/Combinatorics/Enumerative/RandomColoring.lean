@@ -35,6 +35,9 @@ sets in which every color has nearly the same density on every large rectangle.
   points of a test set with a given color, under the product of a `PMF`.
 * `TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`: a coloring of `ι` whose color counts
   on every test set are within `a` of their means.
+* `TauCeti.two_mul_two_pow_mul_two_pow_add_mul_exp_lt` and
+  `TauCeti.two_mul_two_pow_mul_two_pow_mul_exp_lt`: exponential union bounds for families of
+  subrectangles of `s ×ˢ t` (with `r` optional auxiliary test sets).
 
 ## Implementation notes
 
@@ -213,5 +216,80 @@ theorem exists_forall_abs_card_filter_sub_mul_card_lt [Fintype κ] {p : κ → �
     · obtain ⟨he, hc⟩ := mem_filter.1 he
       exact ⟨⟨e, hU he⟩, mem_filter.2 ⟨mem_subtype.2 he, by simpa [hU he] using hc⟩, rfl⟩
   simpa [hcount, hcard] using hy i c
+
+omit [DecidableEq κ] in
+/-- **Exponential union bound for rectangle tests.** If `card κ + r + 1 ≤ η ^ 2 * #s` and
+`card κ + r + 1 ≤ η ^ 2 * #t`, then twice `2 ^ #s * 2 ^ #t + r` times `card κ` times
+`exp (-2 (η (#s #t))² / (#s #t))` is strictly less than `1`. -/
+theorem two_mul_two_pow_mul_two_pow_add_mul_exp_lt {α β : Type*} [Fintype κ] [Nonempty κ]
+    {η : ℝ} {r : ℕ} {s : Finset α} {t : Finset β}
+    (hs : (Fintype.card κ + r + 1 : ℝ) ≤ η ^ 2 * #s)
+    (ht : (Fintype.card κ + r + 1 : ℝ) ≤ η ^ 2 * #t) :
+    2 * (2 ^ #s * 2 ^ #t + r : ℕ) * Fintype.card κ *
+      exp (-2 * (η * (#s * #t : ℕ)) ^ 2 / (#s * #t : ℕ)) < 1 := by
+  have hs_pos : (0 : ℝ) < #s := by
+    by_contra! h
+    linarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h,
+      Nat.cast_nonneg (α := ℝ) (Fintype.card κ), Nat.cast_nonneg (α := ℝ) r]
+  have ht_pos : (0 : ℝ) < #t := by
+    by_contra! h
+    linarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h,
+      Nat.cast_nonneg (α := ℝ) (Fintype.card κ), Nat.cast_nonneg (α := ℝ) r]
+  have hs1 : (1 : ℝ) ≤ #s := Nat.one_le_cast.2 (Nat.cast_pos.1 hs_pos)
+  have ht1 : (1 : ℝ) ≤ #t := Nat.one_le_cast.2 (Nat.cast_pos.1 ht_pos)
+  have hK1 : (1 : ℝ) ≤ Fintype.card κ := Nat.one_le_cast.2 Fintype.card_pos
+  -- Bound each factor in `2 * (2 ^ #s * 2 ^ #t + r) * card κ` by an exponential.
+  have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
+  have hr_exp : (r + 1 : ℝ) ≤ exp r := add_one_le_exp (r : ℝ)
+  have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
+    (pow_le_pow_left₀ (by norm_num) h2 k).trans_eq (by rw [← exp_nat_mul, mul_one])
+  have hpow_pos : 0 < 2 ^ #s * 2 ^ #t := Nat.mul_pos (by positivity) (by positivity)
+  have hr_le : 2 ^ #s * 2 ^ #t + r ≤ (r + 1) * (2 ^ #s * 2 ^ #t) := by
+    rw [add_one_mul, add_comm]
+    exact Nat.add_le_add_right (Nat.le_mul_of_pos_right r hpow_pos) _
+  have hpref : ((2 ^ #s * 2 ^ #t + r : ℕ) : ℝ) ≤ exp r * (exp #s * exp #t) := by
+    calc ((2 ^ #s * 2 ^ #t + r : ℕ) : ℝ)
+        ≤ (((r + 1) * (2 ^ #s * 2 ^ #t) : ℕ) : ℝ) := by exact_mod_cast hr_le
+      _ = (r + 1 : ℝ) * ((2 : ℝ) ^ #s * (2 : ℝ) ^ #t) := by push_cast; ring
+      _ ≤ exp r * (exp #s * exp #t) := by gcongr <;> exact hpow _
+  have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ - 1) := by
+    linarith [add_one_le_exp ((Fintype.card κ : ℝ) - 1)]
+  have hst_ne : ((#s * #t : ℕ) : ℝ) ≠ 0 := by
+    rw [Nat.cast_mul]
+    exact mul_ne_zero hs_pos.ne' ht_pos.ne'
+  have hexp : -2 * (η * (#s * #t : ℕ)) ^ 2 / ((#s * #t : ℕ) : ℝ) = -2 * (η ^ 2 * #s) * #t := by
+    calc -2 * (η * (#s * #t : ℕ)) ^ 2 / ((#s * #t : ℕ) : ℝ)
+        = (-2 * η ^ 2 * (#s * #t : ℕ)) * (#s * #t : ℕ) / (#s * #t : ℕ) := by ring
+      _ = -2 * η ^ 2 * (#s * #t : ℕ) := mul_div_cancel_right₀ _ hst_ne
+      _ = -2 * (η ^ 2 * #s) * #t := by push_cast; ring
+  calc 2 * ((2 ^ #s * 2 ^ #t + r : ℕ) : ℝ) * Fintype.card κ *
+        exp (-2 * (η * (#s * #t : ℕ)) ^ 2 / (#s * #t : ℕ))
+      ≤ exp 1 * (exp r * (exp #s * exp #t)) * exp (Fintype.card κ - 1) *
+          exp (-2 * (η ^ 2 * #s) * #t) := by
+        rw [hexp]
+        gcongr
+    _ = exp (#s + #t + Fintype.card κ + r - 2 * (η ^ 2 * #s) * #t) := by
+        simp only [← exp_add]
+        ring_nf
+    _ < 1 := by
+        rw [exp_lt_one_iff, sub_neg]
+        have hprod : (1 : ℝ) ≤ (Fintype.card κ + r) * (#s + #t - 1) := by
+          simpa using mul_le_mul (by linarith : (1 : ℝ) ≤ Fintype.card κ + r)
+            (by linarith : (1 : ℝ) ≤ #s + #t - 1) zero_le_one (by linarith)
+        linarith [mul_le_mul_of_nonneg_right hs ht_pos.le,
+          mul_le_mul_of_nonneg_right ht hs_pos.le]
+
+omit [DecidableEq κ] in
+/-- Specialization of `TauCeti.two_mul_two_pow_mul_two_pow_add_mul_exp_lt` to `r = 0`: when
+`card κ + 1 ≤ η ^ 2 * #s` and `card κ + 1 ≤ η ^ 2 * #t`, the union bound over all `2 ^ (#s + #t)`
+subrectangles of `s ×ˢ t` succeeds at deviation `η * (#s * #t)`. -/
+theorem two_mul_two_pow_mul_two_pow_mul_exp_lt {α β : Type*} [Fintype κ] [Nonempty κ]
+    {η : ℝ} {s : Finset α} {t : Finset β}
+    (hs : (Fintype.card κ + 1 : ℝ) ≤ η ^ 2 * #s)
+    (ht : (Fintype.card κ + 1 : ℝ) ≤ η ^ 2 * #t) :
+    2 * (2 ^ #s * 2 ^ #t : ℕ) * Fintype.card κ *
+      exp (-2 * (η * (#s * #t : ℕ)) ^ 2 / (#s * #t : ℕ)) < 1 := by
+  simpa using two_mul_two_pow_mul_two_pow_add_mul_exp_lt (r := 0) (by simpa using hs)
+    (by simpa using ht)
 
 end TauCeti
