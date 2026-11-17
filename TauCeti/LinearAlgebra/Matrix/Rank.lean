@@ -35,8 +35,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
-* `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
-  over a field with independent rows.
+* `Matrix.finrank_ker_mulVecLin` and `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the
+  kernel dimension of a matrix over a field (in general, and with independent rows).
 * `Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero`: for an independent family `x` orthogonal
   to the independent rows of a matrix `A`, with complementary sizes, the kernel of `A` is the span
   of `x`.
@@ -193,14 +193,20 @@ end LinearIndependent
 
 section KernelDimension
 
+/-- **Rank-nullity for a matrix over a field.** The kernel of `A.mulVecLin` has dimension equal to
+its number of columns minus its rank. -/
+theorem finrank_ker_mulVecLin {K m ι : Type*} [Field K] [Fintype ι] (A : Matrix m ι K) :
+    Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - A.rank := by
+  have h := A.mulVecLin.finrank_range_add_finrank_ker
+  rw [← rank, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
 /-- The kernel of a matrix over a field with independent rows has dimension equal to its
 number of columns minus its number of rows. -/
 theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field K]
     [Fintype m] [Fintype ι] {A : Matrix m ι K} (hA : LinearIndependent K A.row) :
     Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
-  have h := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [← rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
-  omega
+  rw [finrank_ker_mulVecLin, hA.rank_matrix]
 
 /-- Let `x : m → ι → K` be a linearly independent family of vectors, and `A` a matrix with
 linearly independent rows, with `#m + #n = #ι` where `n` indexes the rows of `A`, such that every
