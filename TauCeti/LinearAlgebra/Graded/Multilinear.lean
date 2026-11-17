@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+import TauCeti.LinearAlgebra.Multilinear.Basic
 
 /-!
 # Homogeneous multilinear maps
@@ -37,6 +38,8 @@ their unsigned degree calculations, which underlie signed substitution for DG an
 * `MultilinearMap.IsHomogeneous.domDomCongrLinearEquiv'`: reindexing the inputs along an
   equivalence preserves the degree, which turns a sigma-indexed composite into one of any
   equivalent arity.
+* `MultilinearMap.IsHomogeneous.domDomCongr`: non-dependent specialization using
+  `MultilinearMap.domDomCongr`.
 * `LinearMap.IsHomogeneous.compMultilinearMap`: postcomposing by a homogeneous linear map adds
   its degree.
 
@@ -175,17 +178,14 @@ theorem IsHomogeneous.domDomCongrLinearEquiv' {κ' : Type*} [Fintype κ']
 index types via `MultilinearMap.domDomCongr` preserves its degree. -/
 @[grind .]
 theorem IsHomogeneous.domDomCongr {κ' : Type*} [Fintype κ']
-    {M₀ : Type uM} {σM₀ : Type*} [AddCommMonoid M₀] [Module R M₀] [SetLike σM₀ M₀]
+    {M₀ : Type uM} {σM₀ : κ → Type*} [AddCommMonoid M₀] [Module R M₀]
+    [∀ i, SetLike (σM₀ i) M₀]
     (σ : κ ≃ κ') {f : MultilinearMap (RingHom.id R) (fun _ : κ ↦ M₀) N}
-    {𝒜 : (i : κ) → ι → σM₀} {ℬ : ι → σN} {q : ι}
+    {𝒜 : (i : κ) → ι → σM₀ i} {ℬ : ι → σN} {q : ι}
     (hf : IsHomogeneous f 𝒜 ℬ q) :
     IsHomogeneous (f.domDomCongr σ) (fun i ↦ 𝒜 (σ.symm i)) ℬ q := by
-  intro d x hx
-  have hdeg : ∑ i, d (σ i) = ∑ i, d i := Fintype.sum_equiv σ _ _ fun _ ↦ rfl
-  have h := hf.map_mem (fun i ↦ d (σ i)) (fun i ↦ x (σ i)) fun i ↦ by
-    simpa only [Equiv.symm_apply_apply] using hx (σ i)
-  rw [hdeg] at h
-  simpa only [_root_.MultilinearMap.domDomCongr_apply] using h
+  rw [← _root_.MultilinearMap.domDomCongrLinearEquiv'_eq_domDomCongr (S := ℕ) f σ]
+  exact hf.domDomCongrLinearEquiv' σ
 
 end Semiring
 
