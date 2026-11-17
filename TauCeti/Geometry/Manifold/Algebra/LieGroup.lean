@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Comap
+public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Lie groups covered by local diffeomorphisms
@@ -19,7 +23,9 @@ which are `C^n`; inversion on `G'` is the descent of inversion on `G`. This cove
 groups by discrete normal subgroups, such as tori `E ⧸ L` and circles `AddCircle p`.
 
 The charts of a Lie group can also be pulled back along a locally homeomorphic homomorphism
-from a topological group, giving the source a Lie-group structure over the same model.
+from a topological group, giving the source a Lie-group structure over the same model, or
+transported along a `C^n` diffeomorphism of model spaces via `ChartedSpace.comp` (in particular,
+re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on `EuclideanSpace 𝕜 (Fin d)`).
 
 This file also proves that the integer power maps of a `C^n` Lie group are `C^n`, and packages
 inversion as a `C^n` diffeomorphism.
@@ -32,6 +38,11 @@ inversion as a `C^n` diffeomorphism.
   `IsLocalHomeomorph.lieAddGroup_chartedSpaceComap`: Lie-group structures for pulled-back charts.
 * `ContinuousMulEquiv.lieGroup_pullbackChartedSpace` transfers the Lie-group structure
   to the charts pulled back along a continuous group isomorphism.
+* `Diffeomorph.lieGroup_chartedSpaceComp`, `Diffeomorph.lieAddGroup_chartedSpaceComp`:
+  transporting a Lie-group structure along a `C^n` diffeomorphism of models.
+* `TauCeti.exists_chartedSpace_euclideanSpace_lieGroup`,
+  `TauCeti.exists_chartedSpace_euclideanSpace_lieAddGroup`: re-modelling a finite-dimensional
+  `C^n` Lie group over `ℝ` or `ℂ` on `EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))`.
 * `TauCeti.contMDiff_zpow`, `TauCeti.contMDiff_zsmul`: integer powers, and integer multiples, in
   a Lie group are `C^n`.
 * `TauCeti.Lie.invDiffeomorph`, `TauCeti.Lie.negDiffeomorph`: inversion, and negation, in a Lie
@@ -138,6 +149,61 @@ theorem ContinuousMulEquiv.lieGroup_pullbackChartedSpace (e : A ≃ₜ* B) :
     (hφ ▸ φ.symm.isLocalDiffeomorph) e.symm.surjective
 
 end Pullback
+
+section ModelTransport
+
+/-- Changing the model space of a `C^n` Lie group along a `C^n` diffeomorphism of models
+`Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` Lie group over `I'` for the composite charts
+`ChartedSpace.comp H' H G`. -/
+@[to_additive /-- Changing the model space of a `C^n` additive Lie group along a `C^n`
+diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` additive Lie group over `I'`
+for the composite charts `ChartedSpace.comp H' H G`. -/]
+theorem Diffeomorph.lieGroup_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (G : Type*)
+    [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I n G] :
+    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+    letI := ChartedSpace.comp H' H G
+    LieGroup I' n G := by
+  let _ := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+  let _ := ChartedSpace.comp H' H G
+  let _ : IsManifold I' n G := Φ.isManifold_chartedSpaceComp G
+  have hid : ContMDiff I' I n (id : G → G) :=
+    (Φ.contMDiff_chartedSpaceComp_iff (I'' := I') (f := (id : G → G))).mp (contMDiff_id (I := I'))
+  exact
+    { contMDiff_mul :=
+        (Φ.contMDiff_chartedSpaceComp_iff (I'' := I'.prod I')
+          (f := fun p : G × G ↦ p.1 * p.2)).mpr
+          ((hid.comp contMDiff_fst).mul (hid.comp contMDiff_snd))
+      contMDiff_inv :=
+        (Φ.contMDiff_chartedSpaceComp_iff (I'' := I') (f := fun g : G ↦ g⁻¹)).mpr
+          ((contMDiff_inv I n).comp hid) }
+
+/-- Every `C^n` Lie group modelled on a finite-dimensional normed space `E` over `𝕜` (`ℝ` or `ℂ`)
+carries a `C^n` Lie-group structure (for the same topology) modelled on
+`EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))`. -/
+@[to_additive /-- Every `C^n` additive Lie group modelled on a finite-dimensional normed space `E`
+over `𝕜` (`ℝ` or `ℂ`) carries a `C^n` additive Lie-group structure (for the same topology)
+modelled on `EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))`. -/]
+theorem TauCeti.exists_chartedSpace_euclideanSpace_lieGroup
+    {𝕜 : Type*} [RCLike 𝕜] {n : ℕ∞ω}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    (G : Type*) [TopologicalSpace G] [ChartedSpace E G] [Group G] [LieGroup 𝓘(𝕜, E) n G] :
+    ∃ atlas : ChartedSpace (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) G,
+      letI := atlas
+      LieGroup 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) n G := by
+  let ψLin : E ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)) :=
+    (Module.finBasis 𝕜 E).equivFun.trans
+      (EuclideanSpace.equiv (Fin (Module.finrank 𝕜 E)) 𝕜).symm.toLinearEquiv
+  let Φ : Diffeomorph 𝓘(𝕜, E) 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E
+      (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) n :=
+    { toEquiv := ψLin.toContinuousLinearEquiv.toEquiv
+      contMDiff_toFun := ψLin.toContinuousLinearEquiv.contDiff.contMDiff
+      contMDiff_invFun := ψLin.toContinuousLinearEquiv.symm.contDiff.contMDiff }
+  have hlie := Φ.lieGroup_chartedSpaceComp G
+  let _ : ChartedSpace (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E :=
+    Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+  exact ⟨ChartedSpace.comp (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E G, hlie⟩
+
+end ModelTransport
 
 namespace TauCeti
 
