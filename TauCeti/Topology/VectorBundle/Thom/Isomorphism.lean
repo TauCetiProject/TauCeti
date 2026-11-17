@@ -10,8 +10,9 @@ public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.PullbackCup
-import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.PullbackCup
+import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Isomorphism
 import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
+import TauCeti.Topology.VectorBundle.Thom.Class
 
 /-!
 # The Thom isomorphism in cohomology
@@ -28,8 +29,8 @@ relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients 
 
 This file sets up `TauCeti.thomMap` and proves the **Thom isomorphism** (Milnor–Stasheff, Theorem
 10.4; Hatcher, Theorem 4D.10) over any commutative ring `K` with `K`-module coefficients `M`
-whenever `B` admits a finite trivializing open cover (extended to arbitrary bases over a field in
-`TauCeti.Topology.VectorBundle.Thom.Homology`):
+for every finite rank `r = finrank ℝ F ≥ 0` whenever `B` admits a finite trivializing open cover
+(extended to arbitrary bases over a field in `TauCeti.Topology.VectorBundle.Thom.Homology`):
 
 1. **Basic properties**: `TauCeti.thomMap` is `K`-bilinear, sends `1 ∈ H⁰(B; K)` to `u`
    (`TauCeti.thomMap_one`), is natural (`TauCeti.thomMap_naturality`, `TauCeti.thomMap_pullback`),
@@ -37,14 +38,17 @@ whenever `B` admits a finite trivializing open cover (extended to arbitrary base
    the fibre restriction of `u` (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`).
 2. **Local and finite-union isomorphisms**: an `ℝ`-linear trivialization identifies `(E|_W, E₀|_W)`
    with `(W × F, W × (F ∖ {0}))` (`Bundle.Trivialization.thomPairOverIso`), reducing
-   `Bundle.Trivialization.bijective_pullbackCupRestrict_thomPair` to
+   `Bundle.Trivialization.bijective_pullbackCupRestrict_thomPair` (and its global-Thom-class
+   specialization `TauCeti.IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet`) to
    `TauCeti.bijective_pullbackCup_prodThomPair`; Mayer–Vietoris induction
    (`TopCat.bijective_pullbackCupRestrict_union`) with below-rank vanishing
    (`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`) gives
    `TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion` over finite open trivializing unions.
-3. **Global Thom equivalences** `Hᵖ(B; M) ≃ₗ[K] Hᵐ(E, E₀; M)` (`p + finrank ℝ F = m`) for any
-   `TauCeti.IsThomClass`: `Bundle.Trivialization.thomEquiv`, `TauCeti.thomEquivOfBiUnionEqUniv`,
-   `TauCeti.thomEquivOfIUnionEqUniv`, and `TauCeti.thomEquivOfCompactSpace`.
+3. **Global Thom isomorphisms and equivalences** `Hᵖ(B; M) ≃ₗ[K] Hᵐ(E, E₀; M)`
+   (`p + finrank ℝ F = m`) for any `TauCeti.IsThomClass`:
+   `TauCeti.IsThomClass.bijective_thomMap_of_baseSet_eq_univ`, `Bundle.Trivialization.thomEquiv`,
+   `TauCeti.thomEquivOfBiUnionEqUniv`, `TauCeti.thomEquivOfIUnionEqUniv`, and
+   `TauCeti.thomEquivOfCompactSpace`.
 
 ## Main definitions and results
 
@@ -54,8 +58,9 @@ whenever `B` admits a finite trivializing open cover (extended to arbitrary base
 * `TauCeti.thomMap_singularCup`: linearity over the cohomology of the base.
 * `TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`: the restriction to a fibre.
 * `Bundle.Trivialization.bijective_pullbackCupRestrict_thomPair`,
+  `TauCeti.IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet`,
   `TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`: local and finite-union bijectivity.
-* `Bundle.Trivialization.bijective_thomMap`, `Bundle.Trivialization.thomEquiv`,
+* `TauCeti.IsThomClass.bijective_thomMap_of_baseSet_eq_univ`, `Bundle.Trivialization.thomEquiv`,
   `TauCeti.bijective_thomMap_of_biUnion_eq_univ`, `TauCeti.thomEquivOfBiUnionEqUniv`,
   `TauCeti.bijective_thomMap_of_iUnion_eq_univ`, `TauCeti.thomEquivOfIUnionEqUniv`,
   `TauCeti.bijective_thomMap_of_compactSpace`, `TauCeti.thomEquivOfCompactSpace`: global Thom
@@ -179,25 +184,26 @@ theorem thomMap_singularCup {n p q r m s : ℕ} (h : p + n = m) (hqp : q + p = r
   rw [thomMap_apply, thomMap_apply, ← TopCat.singularCup_naturality]
   exact TopPair.singularCup_assoc K (thomPair F E) (by monoidal) (by monoidal) hqp hrn h hqm _ _ _
 
-/-- Rewriting `thomMap` via `TopCat.ofHom ⟨π F E, _⟩` for `TopCat.pullbackCupRestrict`. -/
-theorem thomMap_eq_pullbackCup_proj {n p m : ℕ} (h : p + n = m)
+/-- Bijectivity of `TopCat.pullbackCupRestrict` along `TauCeti.thomPairProj` over `W` is
+equivalent to bijectivity of `TopPair.pullbackCup` on `TauCeti.thomPairOver F E W`. -/
+theorem bijective_pullbackCupRestrict_thomPairProj_iff (W : Set B) {n p m : ℕ} (h : p + n = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    thomMap F E M n p m h u =
-      (TopPair.ofSubset (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)).pullbackCup M
-        (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩) n p m h u :=
-  congrArg (fun g ↦ (thomPair F E).pullbackCup M g n p m h u) (thomPairProj_def F E)
-
-/-- `TopCat.pullbackCupRestrict` over `W` is `TopPair.pullbackCup` on `thomPairOver F E W`. -/
-theorem pullbackCupRestrict_thomPair (W : Set B) {n p m : ℕ} (h : p + n = m)
-    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    TopCat.pullbackCupRestrict (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
-        (zeroSectionCompl F E) M W n p m h u =
-      (thomPairOver F E W).pullbackCup M (thomPairOverProj F E W) n p m h
+    Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E)
+        (zeroSectionCompl F E) M W n p m h u) ↔
+      Function.Bijective ((thomPairOver F E W).pullbackCup M (thomPairOverProj F E W) n p m h
         (TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
-          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u) := by
-  rw [thomPairOverProj_def]
-  exact TopCat.pullbackCupRestrict_apply
-    (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩) (zeroSectionCompl F E) M W h u
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u)) := by
+  suffices ∀ π' : TopCat.of (TotalSpace F E) ⟶ TopCat.of B, π' = thomPairProj F E →
+      (Function.Bijective (TopCat.pullbackCupRestrict π' (zeroSectionCompl F E) M W n p m h u) ↔
+        Function.Bijective ((thomPairOver F E W).pullbackCup M (thomPairOverProj F E W) n p m h
+          (TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
+            (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u))) from
+    this _ rfl
+  intro π' hπ'
+  rw [thomPairProj_def] at hπ'
+  subst hπ'
+  rw [TopCat.pullbackCupRestrict_apply, thomPairOverProj_def]
+  rfl
 
 end TauCeti
 
@@ -218,11 +224,10 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
     (hW : W ⊆ e.baseSet) (p m : ℕ) (h : p + finrank ℝ F = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : ∀ b ∈ W, Submodule.span K
-      {(TopPair.singularCohomologyMap (fiberThomPairMap F E b) (finrank ℝ F) u)} = ⊤) :
-    Function.Bijective (TopCat.pullbackCupRestrict
-      (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
+      {TopPair.singularCohomologyMap (fiberThomPairMap F E b) (finrank ℝ F) u} = ⊤) :
+    Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E)
       (zeroSectionCompl F E) M W (finrank ℝ F) p m h u) := by
-  rw [pullbackCupRestrict_thomPair]
+  rw [bijective_pullbackCupRestrict_thomPairProj_iff]
   set u_W := TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
     (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) (finrank ℝ F) u
   let φ := e.thomPairOverIso ℝ hW
@@ -233,39 +238,76 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
       thomPairOverProj F E W ≫ 𝟙 (TopCat.of W) :=
     (e.thomPairOverIso_hom_fst_comp_prodThomPairProj ℝ hW).trans (Category.comp_id _).symm
   rw [← hu_W, TopPair.bijective_pullbackCup_iff_of_isIso φ.hom (𝟙 (TopCat.of W)) hproj h u_prod]
-  refine bijective_pullbackCup_prodThomPair M p m h fun b ↦ ?_
-  have h₁ : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
-    exact (e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2).symm
-  have hfib : prodThomPairFiberMap F b ≫ φ.inv ≫ TopCat.restrictPreimagePairMap
-      (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W =
-      (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairMap F E b.1 := by
-    rw [← Category.assoc, h₁, Category.assoc, fiberThomPairOverMap_comp_restrictPreimagePairMap]
+  refine bijective_pullbackCup_prodThomPair M u_prod (fun b ↦ ?_) h
   have hu_prod : TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F) u_prod =
       TopPair.singularCohomologyMap
         (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.inv (finrank ℝ F)
         (TopPair.singularCohomologyMap (fiberThomPairMap F E b.1) (finrank ℝ F) u) := by
-    dsimp only [u_prod, u_W]
-    rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
-      Category.assoc, hfib, TopPair.singularCohomologyMap_comp_apply]
+    dsimp only [u_prod, u_W, φ]
+    rw [← TopPair.singularCohomologyMap_comp_apply,
+      e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
+      TopPair.singularCohomologyMap_comp_apply,
+      ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.2),
+      fiberThomPairOverMap_comp_restrictPreimagePairMap]
   rw [hu_prod]
   exact ((((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
     (finrank ℝ F)).mapIso
       (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.symm.op).toLinearEquiv
     ).span_singleton_apply_eq_top_iff).2 (hu b.1 b.2)
 
-/-- **The Thom isomorphism for a globally trivializable bundle**: if `e.baseSet = univ` and `u` is
-a Thom class of `E`, then `thomMap` is bijective from `Hᵖ(B; M)` to `Hᵐ(E, E₀; M)`. -/
-theorem bijective_thomMap (he : e.baseSet = univ) (p m : ℕ) (h : p + finrank ℝ F = m)
-    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hu : IsThomClass F E u) :
-    Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
+end Bundle.Trivialization
+
+namespace TauCeti
+
+section Isomorphism
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
+
+/-- **The Thom isomorphism over a trivializing set.** Let `E` be a real vector bundle of finite
+rank `r = finrank ℝ F ≥ 0`, let `u ∈ Hʳ(E, E₀; K)` be a Thom class, and let `W` be contained
+in the base set of a linear trivialization `e`. Then for every `K`-module `M` and every degree `p`,
+the Thom map of the restriction of `u` to the Thom pair `(E|_W, E₀|_W)` of the restriction of the
+bundle to `W`, `Hᵖ(W; M) ⟶ Hᵖ⁺ʳ(E|_W, E₀|_W; M)`, `a ↦ π^*a ⌣ u|`
+(`TopCat.pullbackCupRestrict`), is bijective. These are the sets over which the Mayer–Vietoris
+step `TopCat.bijective_pullbackCupRestrict_union` starts. -/
+theorem IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F)}
+    (hu : IsThomClass F E u) (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) {p m : ℕ} (h : p + finrank ℝ F = m) :
+    Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E) (zeroSectionCompl F E) M W
+      _ p m h u) := by
   obtain ⟨_, hu⟩ := isThomClass_iff.1 hu
-  rw [thomMap_eq_pullbackCup_proj, ← TopCat.bijective_pullbackCupRestrict_univ_iff]
-  exact e.bijective_pullbackCupRestrict_thomPair M he.symm.subset p m h fun b _ ↦ hu b
+  exact e.bijective_pullbackCupRestrict_thomPair M hW p m h fun b _ ↦ hu b
+
+/-- **The Thom isomorphism for a trivializable bundle.** For a real vector bundle `E` with a linear
+trivialization over its whole base, the Thom map `Hᵖ(B; M) ⟶ Hᵖ⁺ʳ(E, E₀; M)`, `a ↦ π^*a ⌣ u`, of
+every Thom class `u` is bijective, for every `K`-module `M` and every degree `p`. -/
+theorem IsThomClass.bijective_thomMap_of_baseSet_eq_univ
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F)}
+    (hu : IsThomClass F E u) (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] (he : e.baseSet = Set.univ) {p m : ℕ} (h : p + finrank ℝ F = m) :
+    Function.Bijective (thomMap F E M _ p m h u) := by
+  rw [thomMap_def]
+  exact (TopCat.bijective_pullbackCupRestrict_univ_iff _ _ M h u).1
+    (hu.bijective_pullbackCupRestrict_of_subset_baseSet M e he.ge h)
+
+end Isomorphism
+
+end TauCeti
+
+namespace Bundle.Trivialization
+
+open TauCeti
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear ℝ] {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
 
 /-- **The Thom isomorphism for a trivializable bundle** as `Hᵖ(B; M) ≃ₗ[K] Hᵐ(E, E₀; M)`. -/
 def thomEquiv (he : e.baseSet = univ) (p m : ℕ) (h : p + finrank ℝ F = m := by lia)
@@ -273,7 +315,7 @@ def thomEquiv (he : e.baseSet = univ) (p m : ℕ) (h : p + finrank ℝ F = m := 
     (hu : IsThomClass F E u) :
     (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p ≃ₗ[K]
       (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
-  LinearEquiv.ofBijective _ (e.bijective_thomMap M he p m h hu)
+  LinearEquiv.ofBijective _ (hu.bijective_thomMap_of_baseSet_eq_univ M e he h)
 
 /-- `Bundle.Trivialization.thomEquiv` applies `TauCeti.thomMap`. -/
 @[simp]
@@ -293,6 +335,25 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
 
+/-- Helper transporting `TauCeti.isZero_singularCohomology_thomPairOver_biUnion` along
+`TauCeti.thomPairProj_def`. -/
+private theorem isZero_singularCohomology_thomPairProj_biUnion [FiniteDimensional ℝ F] {ι : Type*}
+    (s : Finset ι) {W : ι → Set B} (hWo : ∀ i ∈ s, IsOpen (W i))
+    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W i ⊆ e.baseSet)
+    {j : ℕ} (hj : j < finrank ℝ F) :
+    IsZero ((TopPair.ofInclusion (inter_subset_left :
+      thomPairProj F E ⁻¹' (⋃ i ∈ s, W i) ∩ zeroSectionCompl F E ⊆
+        thomPairProj F E ⁻¹' (⋃ i ∈ s, W i))).singularCohomology (ModuleCat.of K K) K M j) := by
+  suffices ∀ π' : TopCat.of (TotalSpace F E) ⟶ TopCat.of B, π' = thomPairProj F E →
+      IsZero ((TopPair.ofInclusion (inter_subset_left :
+        π' ⁻¹' (⋃ i ∈ s, W i) ∩ zeroSectionCompl F E ⊆
+          π' ⁻¹' (⋃ i ∈ s, W i))).singularCohomology (ModuleCat.of K K) K M j) from
+    this _ rfl
+  intro π' hπ'
+  rw [thomPairProj_def] at hπ'
+  subst hπ'
+  exact isZero_singularCohomology_thomPairOver_biUnion (ModuleCat.of K K) M s hWo hWe hj
+
 /-- **Thom isomorphism over a finite union of trivializing open sets**: if each `W i` (`i ∈ s`) is
 open and contained in an `ℝ`-linear trivialization's base set, and `u ∈ Hʳ(E, E₀; K)` restricts to
 a generator on every fibre over `⋃ i ∈ s, W i`, then `TopCat.pullbackCupRestrict` is bijective. -/
@@ -302,9 +363,8 @@ theorem bijective_pullbackCupRestrict_thomPair_biUnion [FiniteDimensional ℝ F]
     (p m : ℕ) (h : p + finrank ℝ F = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : ∀ b ∈ ⋃ i ∈ s, W i, Submodule.span K
-      {(TopPair.singularCohomologyMap (fiberThomPairMap F E b) (finrank ℝ F) u)} = ⊤) :
-    Function.Bijective (TopCat.pullbackCupRestrict
-      (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
+      {TopPair.singularCohomologyMap (fiberThomPairMap F E b) (finrank ℝ F) u} = ⊤) :
+    Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E)
       (zeroSectionCompl F E) M (⋃ i ∈ s, W i) (finrank ℝ F) p m h u) := by
   classical
   induction s using Finset.induction_on generalizing W p m with
@@ -319,8 +379,7 @@ theorem bijective_pullbackCupRestrict_thomPair_biUnion [FiniteDimensional ℝ F]
     have hWi (i : ι) (hi : i ∈ s) :
         ∃ (e' : Trivialization F (π F E)) (_ : e'.IsLinear ℝ), W a ∩ W i ⊆ e'.baseSet :=
       let ⟨e', he', hi'⟩ := hWe i (hs i hi); ⟨e', he', inter_subset_right.trans hi'⟩
-    refine TopCat.bijective_pullbackCupRestrict_union
-      (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩) (zeroSectionCompl F E) M
+    refine TopCat.bijective_pullbackCupRestrict_union (thomPairProj F E) (zeroSectionCompl F E) M
       (hWo a ha) (isOpen_biUnion fun i hi ↦ hWo i (hs i hi)) u
       (fun q _ ↦ e.bijective_pullbackCupRestrict_thomPair M he q _ rfl
         fun b hb ↦ hu b (mem_iUnion₂.2 ⟨a, ha, hb⟩))
@@ -331,7 +390,7 @@ theorem bijective_pullbackCupRestrict_thomPair_biUnion [FiniteDimensional ℝ F]
       exact ih (W := fun i ↦ W a ∩ W i) (fun i hi ↦ (hWo a ha).inter (hWo i (hs i hi))) hWi q _ rfl
         fun b hb ↦ let ⟨_, _, hbi⟩ := mem_iUnion₂.1 hb; hu b (mem_iUnion₂.2 ⟨a, ha, hbi.1⟩)
     · rw [inter_iUnion₂]
-      exact isZero_singularCohomology_thomPairOver_biUnion (ModuleCat.of K K) M s
+      exact isZero_singularCohomology_thomPairProj_biUnion M s
         (fun i hi ↦ (hWo a ha).inter (hWo i (hs i hi))) hWi (by omega)
 
 /-- **The Thom isomorphism over a finite open trivializing cover** (`Finset`-indexed). -/
@@ -343,7 +402,9 @@ theorem bijective_thomMap_of_biUnion_eq_univ {ι : Type*} (s : Finset ι) {W : �
     (hu : IsThomClass F E u) :
     Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
   obtain ⟨_, hu⟩ := isThomClass_iff.1 hu
-  rw [thomMap_eq_pullbackCup_proj, ← TopCat.bijective_pullbackCupRestrict_univ_iff, ← hW]
+  rw [thomMap_def]
+  refine (TopCat.bijective_pullbackCupRestrict_univ_iff _ _ M h u).1 ?_
+  rw [← hW]
   exact bijective_pullbackCupRestrict_thomPair_biUnion M s hWo hWe p m h fun b _ ↦ hu b
 
 /-- **The Thom isomorphism over a finite open trivializing cover** (`Finset`-indexed), bundled as

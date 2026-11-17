@@ -247,10 +247,9 @@ omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
 private theorem bijective_homologyThomMapOver_iff (W : Set B) {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     Function.Bijective (homologyThomMapOver (ModuleCat.of K K) W n p m h u).hom ↔
-      Function.Bijective (TopCat.pullbackCupRestrict
-        (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
+      Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E)
         (zeroSectionCompl F E) (ModuleCat.of K K) W n p m (by omega) u) := by
-  rw [pullbackCupRestrict_thomPair]
+  rw [bijective_pullbackCupRestrict_thomPairProj_iff]
   exact (thomPairOver F E W).bijective_pushforwardCap_iff (thomPairOverProj F E W) h _
 
 private theorem isIso_homologyThomMapOver_finiteTrivializingUnion {p m : ℕ}
