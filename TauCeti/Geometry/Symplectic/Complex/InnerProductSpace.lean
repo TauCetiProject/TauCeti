@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Analysis.InnerProductSpace.ReInner
 
 /-!
 # The complex inner product of an orthogonal complex structure
@@ -17,8 +18,11 @@ The construction preserves the original norm and real scalar action. It is a nam
 structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
-real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`.
+real inner product, `TauCeti.AlmostComplexStructure.inner_apply_self` supplies the orthogonality
+`⟪J v, v⟫ = 0`, and
+`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply` records
+that multiplication by `i` preserves a compatible real inner product on a complex inner product
+space.
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -28,7 +32,7 @@ public section
 
 namespace TauCeti.AlmostComplexStructure
 
-open scoped RealInnerProductSpace
+open scoped InnerProductSpace RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
@@ -128,5 +132,13 @@ lemma complexInnerProductSpace_inner (J : AlmostComplexStructure V)
     inner ℂ v w = (inner ℝ v w : ℂ) + Complex.I * (inner ℝ (J v) w : ℂ) := by
   let := J.complexInnerProductSpace hJ
   apply Complex.ext <;> simp <;> rfl
+
+/-- Multiplication by `i` preserves the compatible real inner product on a complex inner product
+space. -/
+theorem real_inner_ofComplexModule_apply_ofComplexModule_apply
+    {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℂ E]
+    [IsScalarTower ℝ ℂ E] (v w : E) :
+    ⟪ofComplexModule E v, ofComplexModule E w⟫_ℝ = ⟪v, w⟫_ℝ := by
+  simp [real_inner_eq_re_inner_of_norm (𝕜 := ℂ), inner_smul_left, inner_smul_right]
 
 end TauCeti.AlmostComplexStructure

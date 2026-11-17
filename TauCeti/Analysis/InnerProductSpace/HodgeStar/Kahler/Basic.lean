@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
@@ -22,10 +23,11 @@ Let `V` be a finite-dimensional real inner product space and `J` an almost compl
 `V` that is orthogonal, `⟪J v, J w⟫ = ⟪v, w⟫`. Its **Kähler form** `ω(v, w) = ⟪J v, w⟫`, so that
 `⟪v, w⟫ = ω(v, J w)`, is identified through the inner product with the two-vector
 `TauCeti.AlmostComplexStructure.kahlerForm J ∈ ⋀² V`, characterized by
-`⟪ω, u ∧ w⟫ = ⟪J u, w⟫`, and `‖ω‖² = dim V / 2`. In dimension four, in a unitary frame
-`e₁, e₂ = J e₁, e₃, e₄ = J e₃`, it is `ω = e₁ ∧ e₂ + e₃ ∧ e₄`. The endomorphism `J` acts on
-two-forms as a derivation `D_J (u ∧ w) = J u ∧ w + u ∧ J w` (`exteriorPower.lieMap 2 J`),
-which is skew-adjoint and kills `ω`.
+`⟪ω, u ∧ w⟫ = ⟪J u, w⟫` (more generally `(⟪J u, w⟫ - ⟪J w, u⟫) / 2` without orthogonality), and
+`‖ω‖² = dim V / 2`. In any adapted orthonormal basis `(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})`, `J` is
+orthogonal and `ω = ∑ j, b_{2j} ∧ b_{2j+1}` (in dimension four, `ω = e₁ ∧ e₂ + e₃ ∧ e₄`). The
+endomorphism `J` acts on two-forms as a derivation `D_J (u ∧ w) = J u ∧ w + u ∧ J w`
+(`exteriorPower.lieMap 2 J`), which is skew-adjoint and kills `ω`.
 
 Conversely, if a two-vector `F` and an almost complex structure `J` satisfy
 `⟪u, v⟫ = ⟪F, u ∧ J v⟫`, then `J` is the contraction `u ↦ u ⌟ F`
@@ -56,6 +58,8 @@ computations at `e₀` hold at every unit vector.
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
+* `inner_kahlerForm_ιMulti_eq_inv_two_mul_sub`: `⟪ω, u ∧ w⟫ = (⟪J u, w⟫ - ⟪J w, u⟫) / 2` for any
+  almost complex structure `J`.
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
@@ -70,6 +74,10 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
   two-vector (`kahlerForm_eq_of_inner_eq`).
+* `twoVectorContraction_kahlerForm`: for an orthogonal `J`, `twoVectorContraction J.kahlerForm`
+  recovers `J.toLinearMap`.
+* `inner_apply_apply_of_adapted` and `kahlerForm_eq_sum_of_adapted`: in any adapted orthonormal
+  basis in dimension `2 * n`, `J` is orthogonal and `ω = ∑ j, b_{2j} ∧ b_{2j+1}`.
 * `repr_apply`: the coordinates of `J v` in a unitary frame.
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
@@ -117,6 +125,19 @@ def kahlerForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V :=
 theorem kahlerForm_def (J : AlmostComplexStructure V) :
     J.kahlerForm = (2⁻¹ : ℝ) • ∑ i,
       ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)] := (rfl)
+
+/-- For any almost complex structure `J` (not necessarily orthogonal), pairing `J.kahlerForm` with
+`u ∧ w` evaluates the skew-symmetrization `(⟪J u, w⟫ - ⟪J w, u⟫) / 2`. -/
+theorem inner_kahlerForm_ιMulti_eq_inv_two_mul_sub (J : AlmostComplexStructure V) (u w : V) :
+    ⟪J.kahlerForm, ιMulti ℝ 2 ![u, w]⟫ = (2⁻¹ : ℝ) * (⟪J u, w⟫ - ⟪J w, u⟫) := by
+  have hsum (x y : V) :
+      ∑ i, ⟪stdOrthonormalBasis ℝ V i, x⟫ * ⟪J (stdOrthonormalBasis ℝ V i), y⟫ = ⟪J x, y⟫ := by
+    calc ∑ i, ⟪stdOrthonormalBasis ℝ V i, x⟫ * ⟪J (stdOrthonormalBasis ℝ V i), y⟫
+        = ⟪J (∑ i, ⟪stdOrthonormalBasis ℝ V i, x⟫ • stdOrthonormalBasis ℝ V i), y⟫ := by
+          simp only [map_sum, map_smul, sum_inner, real_inner_smul_left]
+      _ = ⟪J x, y⟫ := by rw [(stdOrthonormalBasis ℝ V).sum_repr' x]
+  simp only [kahlerForm, real_inner_smul_left, sum_inner, inner_ιMulti_two,
+    Finset.sum_sub_distrib, hsum]
 
 /-! ### The derivation action of `J` on two-vectors -/
 
@@ -166,17 +187,8 @@ theorem inner_apply_left (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
 @[simp]
 theorem inner_kahlerForm_ιMulti (u w : V) :
     ⟪J.kahlerForm, ιMulti ℝ 2 ![u, w]⟫ = ⟪J u, w⟫ := by
-  -- Expanding in the orthonormal basis `b`, each sum is `±⟪J u, w⟫`.
-  have hsum (x y : V) : ∑ i, ⟪stdOrthonormalBasis ℝ V i, x⟫ *
-      ⟪J (stdOrthonormalBasis ℝ V i), y⟫ = ⟪J x, y⟫ := by
-    rw [inner_apply_left hJ x, ← (stdOrthonormalBasis ℝ V).sum_inner_mul_inner x (J y),
-      ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [inner_apply_left hJ, real_inner_comm x]
-    ring
-  simp only [kahlerForm, real_inner_smul_left, sum_inner, inner_ιMulti_two,
-    Finset.sum_sub_distrib, hsum]
-  rw [inner_apply_left hJ w u, real_inner_comm w (J u)]
+  rw [inner_kahlerForm_ιMulti_eq_inv_two_mul_sub, inner_apply_left hJ w u,
+    real_inner_comm w (J u)]
   ring
 
 /-- `⟪ω, ω⟫ = dim V / 2`: in a unitary frame `ω = e₁ ∧ e₂ + e₃ ∧ e₄ + ⋯` is a sum of
@@ -300,6 +312,69 @@ theorem kahlerForm_eq_of_inner_eq : J.kahlerForm = F := by
 
 end Contraction
 
+/-- For an orthogonal almost complex structure `J`, the skew-adjoint contraction of its Kähler
+two-vector is `J` itself. -/
+theorem twoVectorContraction_kahlerForm {J : AlmostComplexStructure V}
+    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) :
+    twoVectorContraction J.kahlerForm = J.toLinearMap :=
+  (toLinearMap_eq_twoVectorContraction fun u w ↦ by
+    rw [inner_kahlerForm_ιMulti hJ, hJ]).symm
+
+/-! ### Adapted orthonormal bases in arbitrary even dimension -/
+
+section Adapted
+
+omit [FiniteDimensional ℝ V] in
+/-- An almost complex structure admitting an adapted orthonormal basis
+`(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})` is orthogonal. -/
+theorem inner_apply_apply_of_adapted {J : AlmostComplexStructure V} {n : ℕ}
+    (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
+    (hb : ∀ j : Fin n, b ⟨2 * (j : ℕ) + 1, by omega⟩ = J (b ⟨2 * (j : ℕ), by omega⟩))
+    (u w : V) : ⟪J u, J w⟫ = ⟪u, w⟫ := by
+  let b₀ : OrthonormalBasis (Fin n × Fin 2) ℝ V := b.reindex (complexRealIndexEquiv n).symm
+  have hb_even (j : Fin n) : J (b₀ (j, 0)) = b₀ (j, 1) := by
+    simp only [b₀, OrthonormalBasis.coe_reindex, Equiv.symm_symm, Function.comp_apply,
+      complexRealIndexEquiv_zero, complexRealIndexEquiv_one]
+    exact (hb j).symm
+  have hb_odd (j : Fin n) : J (b₀ (j, 1)) = -b₀ (j, 0) := by
+    rw [← hb_even j, J.apply_apply]
+  have hbasis (i₁ i₂ : Fin n × Fin 2) : ⟪J (b₀ i₁), J (b₀ i₂)⟫ = ⟪b₀ i₁, b₀ i₂⟫ := by
+    rcases i₁ with ⟨a, p⟩
+    rcases i₂ with ⟨c, q⟩
+    fin_cases p <;> fin_cases q <;>
+      simp [hb_even, hb_odd, orthonormal_iff_ite.mp b₀.orthonormal]
+  conv_lhs => rw [← b₀.sum_repr' u, ← b₀.sum_repr' w]
+  conv_rhs => rw [← b₀.sum_repr' u, ← b₀.sum_repr' w]
+  simp only [map_sum, map_smul, sum_inner, inner_sum, real_inner_smul_left,
+    real_inner_smul_right, hbasis]
+
+/-- In any adapted orthonormal basis `(b₀, J b₀, …, b_{2n-2}, J b_{2n-2})`, the Kähler two-vector
+decomposes as `∑ j, b_{2j} ∧ b_{2j+1}`. -/
+theorem kahlerForm_eq_sum_of_adapted {J : AlmostComplexStructure V} {n : ℕ}
+    (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
+    (hb : ∀ j : Fin n, b ⟨2 * (j : ℕ) + 1, by omega⟩ = J (b ⟨2 * (j : ℕ), by omega⟩)) :
+    J.kahlerForm = ∑ j : Fin n,
+      ιMulti ℝ 2 ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] := by
+  have hJ := inner_apply_apply_of_adapted b hb
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [inner_kahlerForm_ιMulti hJ, sum_inner]
+  have hexpand (x : V) : x = ∑ j : Fin n,
+      (⟪b ⟨2 * (j : ℕ), by omega⟩, x⟫ • b ⟨2 * (j : ℕ), by omega⟩ +
+        ⟪b ⟨2 * (j : ℕ) + 1, by omega⟩, x⟫ • b ⟨2 * (j : ℕ) + 1, by omega⟩) := by
+    conv_lhs => rw [← b.sum_repr' x]
+    rw [← Equiv.sum_comp (complexRealIndexEquiv n), Fintype.sum_prod_type]
+    simp [Fin.sum_univ_two, complexRealIndexEquiv_zero, complexRealIndexEquiv_one]
+  conv_lhs => rw [hexpand u]
+  simp only [map_sum, map_add, map_smul, sum_inner, inner_add_left, real_inner_smul_left,
+    inner_ιMulti_two]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hodd : J (b ⟨2 * (j : ℕ) + 1, by omega⟩) = -b ⟨2 * (j : ℕ), by omega⟩ := by
+    rw [hb j, J.apply_apply]
+  rw [← hb j, hodd, inner_neg_left]
+  ring
+
+end Adapted
+
 /-! ### Dimension four -/
 
 section Frame
@@ -326,23 +401,15 @@ omit [FiniteDimensional ℝ V] in
 include h₀ h₂ in
 /-- An almost complex structure with a unitary frame, `J e₀ = e₁` and `J e₂ = e₃` for an
 orthonormal basis `e`, is orthogonal. -/
-theorem inner_apply_apply_of_orthonormalBasis (v w : V) : ⟪J v, J w⟫ = ⟪v, w⟫ := by
-  simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four, repr_apply h₀ h₂,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-    Matrix.head_cons, Matrix.tail_cons]
-  ring
+theorem inner_apply_apply_of_orthonormalBasis (v w : V) : ⟪J v, J w⟫ = ⟪v, w⟫ :=
+  inner_apply_apply_of_adapted (n := 2) e (fun k ↦ by fin_cases k <;> simp [h₀, h₂]) v w
 
 include h₀ h₂ in
 /-- In a unitary frame the Kähler two-vector is `ω = e₀ ∧ e₁ + e₂ ∧ e₃`. -/
 theorem kahlerForm_eq_ιMulti_add_ιMulti :
     J.kahlerForm = ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3] := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [inner_kahlerForm_ιMulti (inner_apply_apply_of_orthonormalBasis h₀ h₂), inner_add_left,
-    inner_ιMulti_two, inner_ιMulti_two]
-  simp only [← e.repr_apply_apply, e.inner_eq_sum_repr (J _), conj_trivial, Fin.sum_univ_four,
-    repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
-  ring
+  simpa [Fin.sum_univ_two] using
+    kahlerForm_eq_sum_of_adapted (n := 2) e (fun k ↦ by fin_cases k <;> simp [h₀, h₂])
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o)

@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
+public import TauCeti.LinearAlgebra.Complex.Orientation
+import TauCeti.Analysis.InnerProductSpace.ReInner
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -27,7 +29,9 @@ symplectic orientation `ω.orientation`
 The construction takes a complex orthonormal basis for the Hermitian metric induced by `J`,
 then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real coordinate
 immediately before its imaginary coordinate. Both constructions preserve the original norm
-and real scalar action.
+and real scalar action. Conversely, for any complex-orthonormal family `u` in a complex inner
+product space with compatible real inner product, its underlying real family
+`TauCeti.complexToRealFamily u` is real-orthonormal (`TauCeti.orthonormal_complexToRealFamily`).
 
 Conversely, every even-dimensional real inner product space carries an orthogonal almost complex
 structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`. In dimension
@@ -49,6 +53,8 @@ form
   existence of oriented unitary frames and completion of a unit vector in dimension four.
 * `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
   an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+* `TauCeti.orthonormal_complexToRealFamily`: the underlying real family `(u₀, i • u₀, …)` of a
+  complex-orthonormal family is real-orthonormal.
 
 ## References
 
@@ -268,3 +274,22 @@ theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ 
   exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
 
 end OrthonormalBasis
+
+namespace TauCeti
+
+/-- The underlying real family `(u₀, i • u₀, …)` of a complex-orthonormal family is
+real-orthonormal for any compatible real inner product. -/
+theorem orthonormal_complexToRealFamily {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [InnerProductSpace ℂ E] {r : ℕ} {u : Fin r → E}
+    (hu : Orthonormal ℂ u) : Orthonormal ℝ (complexToRealFamily u) := by
+  rw [orthonormal_iff_ite]
+  intro i j
+  obtain ⟨⟨a, p⟩, rfl⟩ := (complexRealIndexEquiv r).surjective i
+  obtain ⟨⟨b, q⟩, rfl⟩ := (complexRealIndexEquiv r).surjective j
+  simp only [complexToRealFamily_complexRealIndexEquiv, real_inner_eq_re_inner_of_norm (𝕜 := ℂ),
+    inner_smul_left, inner_smul_right, (complexRealIndexEquiv r).injective.eq_iff, Prod.mk.injEq]
+  rcases eq_or_ne a b with rfl | hab
+  · fin_cases p <;> fin_cases q <;> simp [hu.1 a]
+  · simp [hab, hu.2 hab]
+
+end TauCeti

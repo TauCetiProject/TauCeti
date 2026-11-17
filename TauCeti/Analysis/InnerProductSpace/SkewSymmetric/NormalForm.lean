@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.Analysis.InnerProductSpace.Spectrum
-import TauCeti.Algebra.BigOperators.Ring.SquareZero
 import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
 # Real normal form of skew-adjoint endomorphisms and Pfaffian powers of two-vectors
@@ -26,10 +26,9 @@ orthonormal basis `(p₀, q₀, …, p_{r-1}, q_{r-1})` and nonnegative scalars 
 `A pⱼ = μⱼ qⱼ` and `A qⱼ = -μⱼ pⱼ` (`LinearMap.exists_orthonormalBasis_skew_normalForm`).
 
 Applying this normal form to the skew-adjoint contraction `TauCeti.twoVectorContraction F` of a
-two-vector `F ∈ ⋀² E` writes `F = ∑ⱼ μⱼ (pⱼ ∧ qⱼ)` in that orthonormal basis. Because elements of
-`⋀² E` are central in the exterior algebra and each decomposable two-vector squares to zero, the
-multinomial theorem for square-zero elements evaluates the divided `r`-th exterior power:
-`(r!)⁻¹ Fʳ = (∏ⱼ μⱼ) (p₀ ∧ q₀ ∧ ⋯ ∧ p_{r-1} ∧ q_{r-1})`
+two-vector `F ∈ ⋀² E` writes `F = ∑ⱼ μⱼ (pⱼ ∧ qⱼ)` in that orthonormal basis. Applying the divided
+exterior power formula (`exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_two`) then evaluates
+`(r!)⁻¹ • exteriorPower.pow F r = (∏ⱼ μⱼ) • (p₀ ∧ q₀ ∧ ⋯ ∧ p_{r-1} ∧ q_{r-1})`
 (`TauCeti.exists_orthonormalBasis_twoVector_normalForm`).
 
 ## Main results
@@ -39,9 +38,6 @@ multinomial theorem for square-zero elements evaluates the divided `r`-th exteri
   and a unit vector in its kernel.
 * `LinearMap.exists_orthonormalBasis_skew_normalForm`: the real block-diagonal normal form of a
   skew-adjoint endomorphism in even dimension `2 * r`.
-* `TauCeti.ExteriorAlgebra.noncommProd_univ_smul_ιMulti_two` and
-  `TauCeti.ExteriorAlgebra.pow_sum_smul_ιMulti_two`: exterior products and `r`-th powers of sums
-  of weighted decomposable two-vectors.
 * `TauCeti.twoVector_eq_sum_of_skew_normalForm`: a two-vector whose contraction is in normal form
   decomposes as `∑ⱼ μⱼ (pⱼ ∧ qⱼ)`.
 * `TauCeti.exists_orthonormalBasis_twoVector_normalForm`: simultaneous normal form and Pfaffian
@@ -98,7 +94,7 @@ private theorem exists_skew_invariant_plane {r : ℕ} (hdim : finrank ℝ E = 2 
       A p = c • q ∧ A q = -(c • p) := by
   let S : E →ₗ[ℝ] E := -(A.comp A)
   have hS : S.IsSymmetric := fun x y ↦ by
-    change ⟪-(A (A x)), y⟫ = ⟪x, -(A (A y))⟫
+    simp only [S, LinearMap.neg_apply, LinearMap.comp_apply]
     rw [inner_neg_left, inner_neg_right, hA (A x) y, hA x (A y), neg_neg]
   let e := hS.eigenvectorBasis rfl
   let i₀ : Fin (finrank ℝ E) := ⟨0, by omega⟩
@@ -252,96 +248,6 @@ end LinearMap
 
 namespace TauCeti
 
-/-! ### Exterior powers of sums of weighted decomposable two-vectors -/
-
-namespace ExteriorAlgebra
-
-section WeightedTwoVectors
-
-open scoped Function
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- Any two weighted decomposable two-vectors commute in the exterior algebra. -/
-theorem commute_smul_ιMulti_two (a b : R) (u₁ w₁ u₂ w₂ : M) :
-    Commute (a • _root_.ExteriorAlgebra.ιMulti R 2 ![u₁, w₁])
-      (b • _root_.ExteriorAlgebra.ιMulti R 2 ![u₂, w₂]) := by
-  have hmem : a • _root_.ExteriorAlgebra.ιMulti R 2 ![u₁, w₁] ∈ ⋀[R]^2 M :=
-    Submodule.smul_mem _ _ (exteriorPower.ιMulti R 2 ![u₁, w₁]).2
-  exact Subalgebra.mem_center_iff.mp (mem_center_of_mem_of_even hmem even_two) _ |>.symm
-
-/-- Every weighted decomposable two-vector squares to zero in the exterior algebra. -/
-theorem smul_ιMulti_two_mul_self (a : R) (u w : M) :
-    (a • _root_.ExteriorAlgebra.ιMulti R 2 ![u, w]) *
-        (a • _root_.ExteriorAlgebra.ιMulti R 2 ![u, w]) = 0 := by
-  rw [smul_mul_smul_comm, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
-  have h0 : _root_.ExteriorAlgebra.ιMulti R (2 + 2) (Fin.append ![u, w] ![u, w]) = 0 :=
-    (_root_.ExteriorAlgebra.ιMulti R 4).map_eq_zero_of_eq _ (i := 0) (j := 2) rfl (by decide)
-  rw [h0, smul_zero]
-
-/-- The noncommutative product of `r` weighted consecutive pairs `μ j • (v_{2j} ∧ v_{2j+1})` in
-the exterior algebra is `(∏ j, μ j) • (v₀ ∧ ⋯ ∧ v_{2r-1})`. -/
-theorem noncommProd_univ_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) → M)
-    (hcomm : ((Finset.univ : Finset (Fin r)) : Set (Fin r)).Pairwise
-      (Commute on fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
-        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩])) :
-    (Finset.univ : Finset (Fin r)).noncommProd
-        (fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
-          ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) hcomm =
-      (∏ j : Fin r, μ j) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v := by
-  have huniv_eq : (Finset.univ : Finset (Fin r)) = (List.finRange r).toFinset := by
-    ext j; simp
-  refine ((Finset.noncommProd_congr huniv_eq (fun _ _ ↦ rfl) hcomm).trans
-    (Finset.noncommProd_toFinset _ _ _ (List.nodup_finRange r))).trans ?_
-  clear huniv_eq hcomm
-  induction r with
-  | zero =>
-    simp [_root_.ExteriorAlgebra.ιMulti_zero_apply]
-  | succ r ih =>
-    let v' : Fin (2 * r) → M := fun i ↦ v ⟨(i : ℕ), by omega⟩
-    rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-      List.map_singleton, List.prod_singleton]
-    have hih := ih (μ ∘ Fin.castSucc) v'
-    rw [show ((List.finRange r).map ((fun j : Fin (r + 1) ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
-        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) ∘ Fin.castSucc)).prod =
-        (∏ j : Fin r, μ j.castSucc) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v' from hih]
-    rw [Fin.prod_univ_castSucc, smul_mul_smul_comm, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
-    congr 1
-    apply congrArg (_root_.ExteriorAlgebra.ιMulti R (2 * (r + 1)))
-    ext i
-    by_cases hi : (i : ℕ) < 2 * r
-    · have hcast : i = Fin.castAdd 2 ⟨(i : ℕ), hi⟩ := Fin.ext rfl
-      rw [hcast, Fin.append_left]
-      rfl
-    · have hcast : i = Fin.natAdd (2 * r) ⟨(i : ℕ) - 2 * r, by omega⟩ := Fin.ext (by simp; omega)
-      rw [hcast, Fin.append_right]
-      have hidx : (i : ℕ) - 2 * r = 0 ∨ (i : ℕ) - 2 * r = 1 := by omega
-      rcases hidx with h0 | h1
-      · simp [h0]; rfl
-      · simp [h1]; rfl
-
-/-- The `r`-th exterior power of a sum of `r` weighted decomposable two-vectors is `r!` times the
-product of the weights times the `2r`-fold wedge product of the frame. -/
-theorem pow_sum_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) → M) :
-    (∑ j : Fin r, μ j • _root_.ExteriorAlgebra.ιMulti R 2
-        ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) ^ r =
-      r.factorial • ((∏ j : Fin r, μ j) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v) := by
-  have hcomm : Pairwise (Commute on fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
-      ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) :=
-    fun _ _ _ ↦ commute_smul_ιMulti_two _ _ _ _ _ _
-  rw [Finset.sum_pow_of_pairwise_commute_of_mul_self_eq_zero Finset.univ _ hcomm
-    (fun j _ ↦ smul_ιMulti_two_mul_self _ _ _) r]
-  have hpow : (Finset.univ : Finset (Fin r)).powersetCard r = {Finset.univ} := by
-    ext t
-    simp only [Finset.mem_powersetCard, Finset.subset_univ, true_and, Finset.mem_singleton]
-    exact ⟨fun ht ↦ Finset.eq_univ_of_card t (by simpa using ht),
-      fun ht ↦ by simp [ht]⟩
-  rw [hpow, Finset.sum_singleton, noncommProd_univ_smul_ιMulti_two]
-
-end WeightedTwoVectors
-
-end ExteriorAlgebra
-
 /-! ### Normal form and Pfaffian divided power of a two-vector -/
 
 section TwoVectorNormalForm
@@ -385,36 +291,24 @@ theorem exists_orthonormalBasis_twoVector_normalForm {r : ℕ}
         -(μ j • b ⟨2 * (j : ℕ), by omega⟩)) ∧
       F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2
         ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] ∧
-      (r.factorial : ℝ)⁻¹ •
-          (⟨(F : _root_.ExteriorAlgebra ℝ E) ^ r, by
-            simpa [pow_mul] using Submodule.pow_mem_pow _ F.2 r⟩ : ⋀[ℝ]^(2 * r) E) =
+      (r.factorial : ℝ)⁻¹ • exteriorPower.pow F r =
         (∏ j : Fin r, μ j) • exteriorPower.ιMulti ℝ (2 * r) b := by
   obtain ⟨b₀, μ, hμ, h0, h1⟩ := (twoVectorContraction F).exists_orthonormalBasis_skew_normalForm
     hdim (inner_twoVectorContraction_apply_left F)
-  let e : Fin r × Fin 2 ≃ Fin (2 * r) := finProdFinEquiv.trans (finCongr (Nat.mul_comm r 2))
-  let b : OrthonormalBasis (Fin (2 * r)) ℝ E := b₀.reindex e
-  have he0 (j : Fin r) : e (j, 0) = ⟨2 * (j : ℕ), by omega⟩ :=
-    Fin.ext (by simp [e, Nat.mul_comm])
-  have he1 (j : Fin r) : e (j, 1) = ⟨2 * (j : ℕ) + 1, by omega⟩ :=
-    Fin.ext (by simp [e, Nat.mul_comm, Nat.add_comm])
+  let b : OrthonormalBasis (Fin (2 * r)) ℝ E := b₀.reindex (complexRealIndexEquiv r)
   have hb0 (j : Fin r) : b ⟨2 * (j : ℕ), by omega⟩ = b₀ (j, 0) := by
-    rw [← he0 j]; simp [b]
+    rw [← complexRealIndexEquiv_zero r j]
+    simp only [b, OrthonormalBasis.coe_reindex, Function.comp_apply, Equiv.symm_apply_apply]
   have hb1 (j : Fin r) : b ⟨2 * (j : ℕ) + 1, by omega⟩ = b₀ (j, 1) := by
-    rw [← he1 j]; simp [b]
+    rw [← complexRealIndexEquiv_one r j]
+    simp only [b, OrthonormalBasis.coe_reindex, Function.comp_apply, Equiv.symm_apply_apply]
   have hF : F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2
       ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] := by
     simpa only [hb0, hb1] using twoVector_eq_sum_of_skew_normalForm F b₀ μ h0 h1
   refine ⟨b, μ, hμ, fun j ↦ by simpa only [hb0, hb1] using h0 j,
     fun j ↦ by simpa only [hb0, hb1] using h1 j, hF, ?_⟩
-  apply Subtype.ext
-  have hcoe : (F : _root_.ExteriorAlgebra ℝ E) =
-      ∑ j : Fin r, μ j • _root_.ExteriorAlgebra.ιMulti ℝ 2
-        ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] := by
-    conv_lhs => rw [hF]
-    simp
-  simp only [SetLike.val_smul, hcoe, ExteriorAlgebra.pow_sum_smul_ιMulti_two,
-    exteriorPower.ιMulti_apply_coe, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
-  rw [inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero r))]
+  rw [hF]
+  exact exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_two μ b
 
 end TwoVectorNormalForm
 

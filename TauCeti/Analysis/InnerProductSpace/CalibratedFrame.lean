@@ -7,10 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
-import Mathlib.LinearAlgebra.Determinant
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Calibrated frames for real alternating forms
@@ -27,7 +26,7 @@ This file develops the linear-algebraic invariance and characterization API of c
   between `φ` and `-φ`; even permutations preserve calibration.
 * Pullback along any linear isometry `f : E →ₗᵢ[ℝ] F` preserves calibrated frames.
 * Right multiplication of a frame by a special orthogonal matrix `g ∈ SO(ι)` preserves calibrated
-  frames, via the general matrix-action formula `φ (fun i ↦ ∑ j, A i j • v j) = A.det • φ v`.
+  frames, via the matrix-action formula `ContinuousAlternatingMap.map_sum_smul`.
 * On a finite-dimensional real inner product space, a unit `k`-vector `η : ⋀[ℝ]^k E` induces the
   form `alternatingFormEquiv E k η` whose calibrated frames are precisely the orthonormal frames
   with `v₁ ∧ ⋯ ∧ vₖ = η`. In particular, a unit decomposable form `e₁* ∧ ⋯ ∧ eₖ*` calibrates
@@ -40,8 +39,6 @@ This file develops the linear-algebraic invariance and characterization API of c
 
 ## Main results
 
-* `AlternatingMap.map_sum_smul` and `ContinuousAlternatingMap.map_sum_smul`: action of a square
-  matrix on a frame multiplies an alternating map by its determinant.
 * `TauCeti.IsCalibratedFrame.one_le_norm`, `TauCeti.IsCalibratedFrame.norm_eq_one`: comass lower
   bound and equality from a calibrated frame.
 * `TauCeti.isCalibratedFrame_comp_linearIsometry_iff`: invariance under linear isometries.
@@ -60,44 +57,6 @@ This file develops the linear-algebraic invariance and characterization API of c
 public section
 
 open scoped RealInnerProductSpace Matrix
-
-/-! ### Action of a square matrix on alternating maps -/
-
-namespace AlternatingMap
-
-variable {R M N ι : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [Fintype ι] [DecidableEq ι]
-
-/-- Applying an alternating map to linear combinations of a frame `v` with coefficients given by
-the rows of a square matrix `A` multiplies `f v` by `A.det`. -/
-theorem map_sum_smul (f : M [⋀^ι]→ₗ[R] N) (A : Matrix ι ι R) (v : ι → M) :
-    f (fun i ↦ ∑ j, A i j • v j) = A.det • f v := by
-  let L : (ι → R) →ₗ[R] M := Fintype.linearCombination R v
-  have hL : L ∘ Pi.basisFun R ι = v := by
-    ext j
-    simp [L]
-  have h := DFunLike.congr_fun ((f.compLinearMap L).eq_basis_det_smulRight (Pi.basisFun R ι))
-    (fun i ↦ A i)
-  rw [AlternatingMap.compLinearMap_apply, AlternatingMap.compLinearMap_apply,
-    AlternatingMap.smulRight_apply, Pi.basisFun_det_apply] at h
-  simpa [L, hL, Function.comp_def, Fintype.linearCombination_apply,
-    show Matrix.of (fun i ↦ A i) = A from rfl] using h
-
-end AlternatingMap
-
-namespace ContinuousAlternatingMap
-
-variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Fintype ι] [DecidableEq ι]
-
-/-- Applying a continuous alternating map to linear combinations of a frame `v` with coefficients
-given by the rows of a square matrix `A` multiplies `φ v` by `A.det`. -/
-theorem map_sum_smul (φ : E [⋀^ι]→L[𝕜] F) (A : Matrix ι ι 𝕜) (v : ι → E) :
-    φ (fun i ↦ ∑ j, A i j • v j) = A.det • φ v :=
-  φ.toAlternatingMap.map_sum_smul A v
-
-end ContinuousAlternatingMap
 
 /-! ### Calibrated frames -/
 

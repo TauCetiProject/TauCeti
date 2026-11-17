@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Top-degree continuous alternating forms
@@ -15,9 +16,12 @@ Top-degree scalar-valued continuous alternating forms over a commutative ring ar
 by their basis coefficient, which vanishes only for the zero form. Pullback by a continuous
 linear endomorphism multiplies that coefficient by its determinant. Pullback along a continuous
 linear map `A : E → F` multiplies it by the determinant of `C⁻¹ ∘ A` for any continuous linear
-equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. Above the
-top degree, continuous alternating maps on a finite-dimensional space over a division ring vanish.
-No compatibility between the topology and the module structure is required for those statements.
+equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. More
+generally, evaluating any continuous alternating map `φ : E [⋀^ι]→L[R] F` on linear combinations
+given by the rows of a square matrix `A` multiplies `φ v` by `A.det`
+(`ContinuousAlternatingMap.map_sum_smul`). Above the top degree, continuous alternating maps on a
+finite-dimensional space over a division ring vanish. No compatibility between the topology and the
+module structure is required for those statements.
 -/
 
 public section
@@ -74,6 +78,19 @@ omit [Fintype ι] [DecidableEq ι] in
 theorem map_basis_ne_zero_iff [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E) :
     ω b ≠ 0 ↔ ω ≠ 0 :=
   not_congr (ω.map_basis_eq_zero_iff b)
+
+section MatrixAction
+
+variable {R E F ι : Type*} [CommRing R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
+  [AddCommGroup F] [Module R F] [TopologicalSpace F] [Fintype ι] [DecidableEq ι]
+
+/-- Applying a continuous alternating map to linear combinations of a frame `v` with coefficients
+given by the rows of a square matrix `A` multiplies `φ v` by `A.det`. -/
+theorem map_sum_smul (φ : E [⋀^ι]→L[R] F) (A : Matrix ι ι R) (v : ι → E) :
+    φ (fun i ↦ ∑ j, A i j • v j) = A.det • φ v :=
+  φ.toAlternatingMap.map_sum_smul A v
+
+end MatrixAction
 
 section AboveTopDegree
 
