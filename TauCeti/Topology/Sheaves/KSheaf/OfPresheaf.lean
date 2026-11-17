@@ -178,6 +178,11 @@ noncomputable def isTerminalToKPresheafObjBot {P : Presheaf C X} (hP : P.IsSheaf
   (Sheaf.isTerminalOfEmpty ⟨P, hP⟩).ofIso <| ((P.isColimitKGermCocone ⊥).coconePointUniqueUpToIso
     (colimitOfDiagramTerminal Compacts.isInitialBotOpensOpenNhdsBot.op _)).symm
 
+/-- A compact set whose interior contains `K`, as a compact neighbourhood of `K`. -/
+private abbrev compactNhdsOfSubsetInterior {K : Compacts X} (L : Compacts X)
+    (h : (K : Set X) ⊆ interior L) : K.compactNhds :=
+  Compacts.compactNhdsMkOfOpens L ⟨interior L, isOpen_interior⟩ h interior_subset
+
 section Types
 
 variable (P : Presheaf (Type w) X)
@@ -210,8 +215,7 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
   refine Types.FilteredColimit.isColimitOf' _ _ (fun x ↦ ?_) fun L x y hxy ↦ ?_
   · obtain ⟨U, hKU, s, rfl⟩ := P.exists_kGerm_apply_eq x
     obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between K.isCompact U.isOpen hKU
-    refine ⟨op (Compacts.compactNhdsMkOfOpens ⟨L, hL⟩ ⟨interior L, isOpen_interior⟩ hKL
-      interior_subset), P.kGerm ⟨L, hL⟩ U hLU s, ?_⟩
+    refine ⟨op (compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL), P.kGerm ⟨L, hL⟩ U hLU s, ?_⟩
     exact (P.kGerm_toKPresheaf_map_apply
       (opHomOfLE (show K ≤ ⟨L, hL⟩ from hKL.trans interior_subset)) U hLU s).symm
   · obtain ⟨U, hLU, s, rfl⟩ := P.exists_kGerm_apply_eq x
@@ -222,8 +226,8 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
     obtain ⟨L', hL', hKL', hL'W⟩ := exists_compact_between K.isCompact (W ⊓ V').isOpen
       (subset_inter hKW hKV')
     have hL'L : (L' : Set X) ⊆ L.unop.1 := fun x hx ↦ hV'L (hL'W hx).2
-    refine ⟨op (Compacts.compactNhdsMkOfOpens ⟨L', hL'⟩ ⟨interior L', isOpen_interior⟩ hKL'
-      interior_subset), (homOfLE (show _ ≤ L.unop from hL'L)).op, ?_⟩
+    refine ⟨op (compactNhdsOfSubsetInterior ⟨L', hL'⟩ hKL'),
+      (homOfLE (show _ ≤ L.unop from hL'L)).op, ?_⟩
     have hL'W' : (L' : Set X) ⊆ W := fun x hx ↦ (hL'W hx).1
     let f : op L.unop.1 ⟶ op ⟨L', hL'⟩ := (homOfLE (show _ ≤ L.unop.1 from hL'L)).op
     calc _ = P.kGerm ⟨L', hL'⟩ U (hL'L.trans hLU) s := P.kGerm_toKPresheaf_map_apply f U hLU s
@@ -356,11 +360,13 @@ theorem toKPresheaf_hom_ext_of_preservesColimits {K : Compacts X} {Z : D}
 noncomputable def toKPresheafCompIso : P.toKPresheaf ⋙ G ≅ toKPresheaf (P ⋙ G) :=
   NatIso.ofComponents (fun K ↦ preservesColimitIso G (P.openNhdsDiagram K.unop)) fun {K L} f ↦
     P.toKPresheaf_hom_ext_of_preservesColimits G fun U hU ↦ by
-      rw [Functor.comp_map, ← G.map_comp_assoc,
-        P.kGerm_toKPresheaf_map (K := K.unop) (L := L.unop) f]
-      exact (ι_preservesColimitIso_hom G (P.openNhdsDiagram L.unop) _).trans
-        ((kGerm_toKPresheaf_map (P ⋙ G) (K := K.unop) (L := L.unop) f U hU).symm.trans
-          (ι_preservesColimitIso_hom_assoc G (P.openNhdsDiagram K.unop) _ _).symm)
+      -- Both composites send the image under `G` of a germ of `P` along `K` to the germ of
+      -- `P ⋙ G` along `L`.
+      rw [Functor.comp_map, ← G.map_comp_assoc, kGerm_toKPresheaf_map]
+      calc _ = kGerm (P ⋙ G) L.unop U _ := ι_preservesColimitIso_hom G _ _
+        _ = kGerm (P ⋙ G) K.unop U hU ≫ (toKPresheaf (P ⋙ G)).map f :=
+          (kGerm_toKPresheaf_map _ f U hU).symm
+        _ = _ := (ι_preservesColimitIso_hom_assoc G (P.openNhdsDiagram K.unop) _ _).symm
 
 theorem toKPresheafCompIso_hom_app (K : Compacts X) :
     (P.toKPresheafCompIso G).hom.app (op K) = (preservesColimitIso G (P.openNhdsDiagram K)).hom :=
@@ -403,8 +409,7 @@ theorem IsSheaf.isKSheaf_toKPresheaf [T2Space X] [LocallyCompactSpace X]
       (h.isPullback sq)
   · have : Nonempty K.compactNhds := by
       obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
-      exact ⟨Compacts.compactNhdsMkOfOpens ⟨L, hL⟩ ⟨interior L, isOpen_interior⟩ hKL
-        interior_subset⟩
+      exact ⟨compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
     have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     exact ⟨isColimitOfReflects (forget C) (h.nonempty_isColimit_coconeOfCompacts K).some⟩
