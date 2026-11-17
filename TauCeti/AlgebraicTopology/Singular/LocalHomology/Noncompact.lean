@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.HasGroupoid
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
 import TauCeti.AlgebraicTopology.Singular.DirectedUnion
+import TauCeti.Geometry.Manifold.ChartedSpace.FiniteDimension
 
 /-!
 # Singular homology of noncompact manifolds
@@ -49,9 +50,8 @@ therefore in `Hₙ(M)` (`TauCeti.isZero_singularHomology_of_forall_not_isCompact
 `TauCeti.isZero_singularHomology_of_noncompactSpace`).
 
 Both the coefficient ring `Λ` and the model normed space `E` may live in universes independent of
-`M`: charts are composed with a continuous linear equivalence onto
-`EuclideanSpace ℝ (ULift (Fin n))` in the universe of `M`, and module coefficients are restricted
-along `ULift ℤ →+* Λ`, which preserves singular homology
+`M`: `ChartedSpace.ofFinrankEq` re-charts `M` on `ULift (Fin n) → ℝ` in the universe of `M`, and
+module coefficients are restricted along `ULift ℤ →+* Λ`, which preserves singular homology
 (`CategoryTheory.Functor.singularHomologyFunctorObjCompIso`).
 
 ## Main definitions and results
@@ -303,21 +303,6 @@ universe `w` of `M`. -/
 private abbrev uliftIntRingHom (Λ : Type*) [Ring Λ] : ULift.{w} ℤ →+* Λ :=
   (Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom
 
-omit [T2Space M] in
-/-- Re-charts `M` on `EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ E)))` in the universe `w` of `M`,
-reducing topological-manifold statements with an arbitrary model space `E` to the same-universe
-case. -/
-private lemma exists_chartedSpace_ulift {P : Prop}
-    (h : ∀ (E' : Type w) [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-      [ChartedSpace E' M], finrank ℝ E' = finrank ℝ E → P) : P := by
-  let E' := EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ E)))
-  have hEE' : finrank ℝ E = finrank ℝ E' :=
-    (finrank_euclideanSpace_ulift_fin.{w} (finrank ℝ E)).symm
-  let L : E ≃L[ℝ] E' := ContinuousLinearEquiv.ofFinrankEq hEE'
-  let := L.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  let := ChartedSpace.comp E' E M
-  exact h E' hEE'.symm
-
 /-- **Injectivity of relatively compact open-subset homology on a manifold.** On a Hausdorff
 topological `n`-manifold `M` without boundary, the inclusion `U ↪ M` of an open subset with compact
 closure induces a monomorphism `Hₖ(U; N) ⟶ Hₖ(M; N)` in every degree `k ≥ n`. -/
@@ -326,10 +311,11 @@ theorem mono_singularHomologyMap_subtype_of_isCompact_closure
     (hk : finrank ℝ E ≤ k) :
     Mono (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
       (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)))) :=
-  exists_chartedSpace_ulift (E := E) (M := M) fun E' _ _ _ _ hE' ↦
-    (ModuleCat.restrictScalars.{w} (uliftIntRingHom Λ)).mono_singularHomologyFunctor_map_of_mono
-      N _ k (mono_singularHomologyMap_subtype_of_isCompact_closure_aux (E := E') _ hU hcpt
-        (hE' ▸ hk))
+  let _ : ChartedSpace (ULift.{w} (Fin (finrank ℝ E)) → ℝ) M :=
+    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) (by simp)
+  (ModuleCat.restrictScalars.{w} (uliftIntRingHom Λ)).mono_singularHomologyFunctor_map_of_mono
+    N _ k (mono_singularHomologyMap_subtype_of_isCompact_closure_aux
+      (E := ULift.{w} (Fin (finrank ℝ E)) → ℝ) _ hU hcpt (by simpa using hk))
 
 /-- **Singular homology of a manifold vanishes above its dimension.** For any Hausdorff space `M`
 charted on a real normed space `E` of finite dimension `n`, `Hₖ(M; N) = 0` for `k > n`, without
@@ -337,10 +323,12 @@ assuming compactness or second countability of `M`. This is the `k > n` part of 
 Proposition 3.29. -/
 theorem isZero_singularHomology_of_finrank_lt {k : ℕ} (hk : finrank ℝ E < k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (TopCat.of M)) :=
-  exists_chartedSpace_ulift (E := E) (M := M) fun E' _ _ _ _ hE' ↦
-    ((ModuleCat.restrictScalars.{w} (uliftIntRingHom Λ)).isZero_singularHomologyFunctor_obj_iff
-      N k (TopCat.of M)).mp
-      (isZero_singularHomology_of_finrank_lt_aux (E := E') _ (hE' ▸ hk))
+  let _ : ChartedSpace (ULift.{w} (Fin (finrank ℝ E)) → ℝ) M :=
+    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) (by simp)
+  ((ModuleCat.restrictScalars.{w} (uliftIntRingHom Λ)).isZero_singularHomologyFunctor_obj_iff
+    N k (TopCat.of M)).mp
+    (isZero_singularHomology_of_finrank_lt_aux
+      (E := ULift.{w} (Fin (finrank ℝ E)) → ℝ) _ (by simpa using hk))
 
 /-- **Top-dimensional singular homology vanishes when no path component is compact.** For a
 Hausdorff space `M` charted on a real normed space `E` of finite dimension `n`, if no path component
@@ -348,11 +336,12 @@ of `M` is compact, then `Hₖ(M; N) = 0` for every `k ≥ n`. This is Hatcher's 
 theorem isZero_singularHomology_of_forall_not_isCompact_pathComponent
     (hnc : ∀ x : M, ¬ IsCompact (pathComponent x)) {k : ℕ} (hk : finrank ℝ E ≤ k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (TopCat.of M)) :=
-  exists_chartedSpace_ulift (E := E) (M := M) fun E' _ _ _ _ hE' ↦
-    ((ModuleCat.restrictScalars.{w} (uliftIntRingHom Λ)).isZero_singularHomologyFunctor_obj_iff
-      N k (TopCat.of M)).mp
-      (isZero_singularHomology_of_forall_not_isCompact_pathComponent_aux (E := E') _ hnc
-        (hE' ▸ hk))
+  let _ : ChartedSpace (ULift.{w} (Fin (finrank ℝ E)) → ℝ) M :=
+    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) (by simp)
+  ((ModuleCat.restrictScalars.{w} (uliftIntRingHom Λ)).isZero_singularHomologyFunctor_obj_iff
+    N k (TopCat.of M)).mp
+    (isZero_singularHomology_of_forall_not_isCompact_pathComponent_aux
+      (E := ULift.{w} (Fin (finrank ℝ E)) → ℝ) _ hnc (by simpa using hk))
 
 /-- **Top-dimensional singular homology of a connected noncompact manifold vanishes.** For a
 preconnected noncompact Hausdorff space `M` charted on a real normed space `E` of finite dimension

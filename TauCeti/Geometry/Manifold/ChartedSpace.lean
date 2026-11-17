@@ -19,7 +19,8 @@ between charted spaces, and how punctured neighbourhoods are carried by the inve
 are the facts needed to read a local notion of one variable (meromorphy, orders, ...) on a
 charted space in its preferred charts and to check that it is well behaved. Some global properties
 of the model space also pass to the charted space: having no isolated points, and, for a Lindelöf
-charted space, second countability.
+charted space, second countability. Charts can also be transported to a homeomorphic model space by
+postcomposing with a homeomorphism (`ChartedSpace.transHomeomorph`).
 
 ## Main results
 
@@ -38,6 +39,9 @@ charted space, second countability.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
+* `ChartedSpace.transHomeomorph`: the charted-space structure obtained by postcomposing every chart
+  with a homeomorphism `e : H ≃ₜ H'` of model spaces, together with its chart, atlas, identity,
+  composition, and inverse laws.
 -/
 
 public section
@@ -137,3 +141,72 @@ theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace
   obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
     fun x ↦ chart_source_mem_nhds H x
   exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
+
+namespace ChartedSpace
+
+section TransHomeomorph
+
+variable {H H' H'' X : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace H'']
+  [TopologicalSpace X]
+
+/-- The charted-space structure on `X` obtained by postcomposing every `H`-valued chart with a
+homeomorphism `e : H ≃ₜ H'` of model spaces. -/
+@[expose, instance_reducible]
+def transHomeomorph [ChartedSpace H X] (e : H ≃ₜ H') : ChartedSpace H' X where
+  atlas := (·.transHomeomorph e) '' atlas H X
+  chartAt x := (chartAt H x).transHomeomorph e
+  mem_chart_source x := mem_chart_source H x
+  chart_mem_atlas x := ⟨chartAt H x, chart_mem_atlas H x, rfl⟩
+
+/-- In `ChartedSpace.transHomeomorph e`, the preferred chart at `x` is the original chart at `x`
+postcomposed with `e`. -/
+@[simp, mfld_simps]
+theorem transHomeomorph_chartAt [ChartedSpace H X] (e : H ≃ₜ H') (x : X) :
+    letI := transHomeomorph (X := X) e
+    chartAt H' x = (chartAt H x).transHomeomorph e :=
+  (rfl)
+
+/-- In `ChartedSpace.transHomeomorph e`, the atlas consists of the original charts postcomposed
+with `e`. -/
+@[simp, mfld_simps]
+theorem transHomeomorph_atlas [ChartedSpace H X] (e : H ≃ₜ H') :
+    letI := transHomeomorph (X := X) e
+    atlas H' X = (·.transHomeomorph e) '' atlas H X :=
+  (rfl)
+
+/-- Postcomposing charts with the identity homeomorphism leaves the charted-space structure
+unchanged. -/
+theorem transHomeomorph_refl [ChartedSpace H X] :
+    transHomeomorph (X := X) (Homeomorph.refl H) = ‹ChartedSpace H X› := by
+  ext1
+  · simp [transHomeomorph_atlas, OpenPartialHomeomorph.transHomeomorph_eq_trans]
+  · funext x
+    simp [OpenPartialHomeomorph.transHomeomorph_eq_trans]
+
+/-- Postcomposing charts successively with `e₁ : H ≃ₜ H'` and `e₂ : H' ≃ₜ H''` agrees with
+postcomposing with `e₁.trans e₂`. -/
+theorem transHomeomorph_trans [ChartedSpace H X] (e₁ : H ≃ₜ H') (e₂ : H' ≃ₜ H'') :
+    (letI := transHomeomorph (X := X) e₁; transHomeomorph (X := X) e₂) =
+      transHomeomorph (X := X) (e₁.trans e₂) := by
+  ext1
+  · simp [transHomeomorph_atlas, Set.image_image]
+  · funext x
+    exact OpenPartialHomeomorph.transHomeomorph_transHomeomorph (chartAt H x) e₁ e₂
+
+/-- Postcomposing charts with `e` and then with `e.symm` returns the original charted-space
+structure. -/
+theorem transHomeomorph_transHomeomorph_symm [ChartedSpace H X] (e : H ≃ₜ H') :
+    (letI := transHomeomorph (X := X) e; transHomeomorph (X := X) e.symm) =
+      ‹ChartedSpace H X› := by
+  rw [transHomeomorph_trans, Homeomorph.self_trans_symm, transHomeomorph_refl]
+
+/-- Postcomposing charts with `e.symm` and then with `e` returns the original charted-space
+structure. -/
+theorem transHomeomorph_symm_transHomeomorph [ChartedSpace H' X] (e : H ≃ₜ H') :
+    (letI := transHomeomorph (X := X) e.symm; transHomeomorph (X := X) e) =
+      ‹ChartedSpace H' X› := by
+  rw [transHomeomorph_trans, Homeomorph.symm_trans_self, transHomeomorph_refl]
+
+end TransHomeomorph
+
+end ChartedSpace
