@@ -196,10 +196,11 @@ theorem isHomogeneous_gradeInvolution :
 theorem decompose_gradeInvolution (a : A) (i : ZMod 2) :
     (DirectSum.decompose 𝒜 (gradeInvolution 𝒜 a) i : A) =
       ((-1 : ℤˣ) ^ i) • (DirectSum.decompose 𝒜 a i : A) := by
-  have h := DirectSum.map_decompose_shift 𝒜 𝒜 (gradeInvolution 𝒜).toAddMonoidHom id
-    Function.injective_id (fun j x hx ↦ gradeInvolution_mem hx) i a
-  change gradeInvolution 𝒜 (DirectSum.decompose 𝒜 a i : A) =
-    (DirectSum.decompose 𝒜 (gradeInvolution 𝒜 a) i : A) at h
+  have h := DirectSum.map_decompose_shift 𝒜 𝒜 (gradeInvolution 𝒜).toLinearMap.toAddMonoidHom id
+    Function.injective_id (fun _ _ hx ↦ by
+      simpa only [LinearMap.toAddMonoidHom_coe, AlgEquiv.toLinearMap_apply, id_eq] using
+        gradeInvolution_mem hx) i a
+  simp only [LinearMap.toAddMonoidHom_coe, AlgEquiv.toLinearMap_apply, id_eq] at h
   rw [← h, gradeInvolution_apply_of_mem (DirectSum.decompose 𝒜 a i).2]
 
 -- Not `@[simp]`: `GradedAlgebra.proj_apply` is `@[simp]`, so `simp` normalizes the LHS via

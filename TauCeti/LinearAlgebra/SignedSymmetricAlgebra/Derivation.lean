@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
-import Mathlib.Data.Matrix.Basic
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.Module.GradedModule.KoszulTwist.Algebra
 
@@ -29,15 +29,24 @@ supercommutative algebra, such as the contact homology differential, to a check 
 The extension is constructed through the universal property of `A(V)`: the matrices
 `[[a, 0], [d a, σ a]]`, where `σ` is the grade involution `a ↦ (-1) ^ |a| • a`, multiply as
 `a + ε d a` in the dual numbers over `A(V)` with one odd generator `ε`. The signed Leibniz rule
-for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`.
+for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`. This lower-triangular matrix
+construction is factored out (`TauCeti.triangularDerivationMap`, `TauCeti.triangularDerivation`)
+so that both the integer-graded presentation here and the parity-only presentation in
+`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Derivation` share it.
 
 ## Main definitions
 
+* `TauCeti.triangularDerivationMap` and `TauCeti.triangularDerivation`: the lower-triangular
+  `2 × 2` matrix map `x ↦ !![g x, 0; δ x, σ (g x)]` and lower-left entry extraction for building
+  `σ`-twisted derivations from algebra homomorphisms into `2 × 2` matrices.
 * `TauCeti.SignedSym.liftDerivation`: the odd derivation extending a degree-one assignment on
   generators.
 
 ## Main results
 
+* `TauCeti.triangularDerivationMap_mul_eq_smul_mul` and `TauCeti.triangularDerivation_mul`:
+  signed commutation for lower-triangular derivation matrices and the `σ`-twisted Leibniz rule for
+  the lower-left entry of a lower-triangular matrix representation.
 * `TauCeti.SignedSym.liftDerivation_mul`: the signed Leibniz rule.
 * `TauCeti.SignedSym.isHomogeneous_liftDerivation`: the extension raises degree by one.
 * `TauCeti.SignedSym.eq_liftDerivation` and `TauCeti.SignedSym.existsUnique_odd_extension`:
@@ -55,7 +64,94 @@ for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`.
 
 public section
 
-namespace TauCeti.SignedSym
+namespace TauCeti
+
+/-! ### Lower-triangular matrix construction of twisted derivations -/
+
+section TriangularDerivation
+
+variable {R A : Type*} [CommSemiring R]
+
+/-- The lower-triangular `2 × 2` matrix map `x ↦ !![g x, 0; δ x, σ (g x)]` used to extend a
+generator assignment `δ` to a `σ`-twisted derivation along a generator map `g`. -/
+def triangularDerivationMap {V : Type*} [AddCommMonoid V] [Module R V] [Semiring A] [Algebra R A]
+    (g : V →ₗ[R] A) (σ : A →ₐ[R] A) (δ : V →ₗ[R] A) :
+    V →ₗ[R] Matrix (Fin 2) (Fin 2) A where
+  toFun x := !![g x, 0; δ x, σ (g x)]
+  map_add' x y := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  map_smul' r x := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+
+/-- Evaluation of `triangularDerivationMap` at a generator. -/
+@[simp]
+theorem triangularDerivationMap_apply {V : Type*} [AddCommMonoid V] [Module R V]
+    [Semiring A] [Algebra R A] (g : V →ₗ[R] A) (σ : A →ₐ[R] A) (δ : V →ₗ[R] A) (x : V) :
+    triangularDerivationMap g σ δ x = !![g x, 0; δ x, σ (g x)] := (rfl)
+
+/-- Lower-triangular derivation matrices satisfy the same signed commutation relation as `g x` and
+`g y` whenever `δ x` and `δ y` satisfy the shifted signed commutation relations with `g y` and
+`g x` and `σ` scales `g x` and `g y` by the corresponding signs. -/
+theorem triangularDerivationMap_mul_eq_smul_mul {V : Type*} [AddCommMonoid V] [Module R V]
+    [Ring A] [Algebra R A] (g : V →ₗ[R] A) (σ : A →ₐ[R] A) (δ : V →ₗ[R] A)
+    {x y : V} {s₁ s₂ c : ℤˣ}
+    (hgg : g x * g y = c • (g y * g x))
+    (hdg : δ x * g y = (c * s₂) • (g y * δ x))
+    (hgd : g x * δ y = (c * s₁) • (δ y * g x))
+    (hσx : σ (g x) = s₁ • g x)
+    (hσy : σ (g y) = s₂ • g y) :
+    triangularDerivationMap g σ δ x * triangularDerivationMap g σ δ y =
+      c • (triangularDerivationMap g σ δ y * triangularDerivationMap g σ δ x) := by
+  ext i j
+  fin_cases i <;> fin_cases j
+  · simpa [Matrix.mul_apply] using hgg
+  · simp [Matrix.mul_apply]
+  · have h10 : δ x * g y + σ (g x) * δ y = c • (δ y * g x + σ (g y) * δ x) := by
+      rw [hσx, hσy, smul_mul_assoc, smul_mul_assoc, hdg, hgd, ← mul_smul,
+        mul_left_comm, Int.units_mul_self, mul_one, mul_smul, add_comm, ← smul_add]
+    simpa [Matrix.mul_apply, Fin.sum_univ_two] using h10
+  · have h11 : σ (g x) * σ (g y) = c • (σ (g y) * σ (g x)) := by
+      rw [← map_mul σ, ← map_mul σ, hgg, Units.smul_def, Units.smul_def, map_zsmul]
+    simpa [Matrix.mul_apply, Fin.sum_univ_two] using h11
+
+/-- The lower-left `(1, 0)` entry of a `2 × 2` matrix-valued algebra map `Φ : A →ₐ[R] Mat₂(A)`.
+When `Φ` is lower-triangular with diagonal `(x, σ x)` on algebra generators, this linear map is a
+`σ`-twisted derivation (`triangularDerivation_mul`). -/
+def triangularDerivation [Semiring A] [Algebra R A]
+    (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) : A →ₗ[R] A :=
+  Matrix.entryLinearMap R A (1 : Fin 2) (0 : Fin 2) ∘ₗ Φ.toLinearMap
+
+/-- Evaluation of `triangularDerivation` as the lower-left matrix entry. -/
+@[simp]
+theorem triangularDerivation_apply [Semiring A] [Algebra R A]
+    (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (a : A) :
+    triangularDerivation Φ a = Φ a 1 0 := (rfl)
+
+/-- **Twisted Leibniz rule for a lower-triangular matrix representation**: if
+`Φ : A →ₐ[R] Mat₂(A)` acts as `x ↦ !![x, 0; _, σ x]` on an algebra generating set `s` of `A`,
+then its lower-left entry satisfies `d (a * b) = d a * b + σ a * d b`. -/
+theorem triangularDerivation_mul [Semiring A] [Algebra R A]
+    (σ : A →ₐ[R] A) {Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A} {s : Set A}
+    (hs : Algebra.adjoin R s = ⊤)
+    (hgen : ∀ x ∈ s, Φ x 0 0 = x ∧ Φ x 0 1 = 0 ∧ Φ x 1 1 = σ x) (a b : A) :
+    triangularDerivation Φ (a * b) =
+      triangularDerivation Φ a * b + σ a * triangularDerivation Φ b := by
+  have hdiag : ∀ c : A, Φ c 0 0 = c ∧ Φ c 0 1 = 0 ∧ Φ c 1 1 = σ c := by
+    intro c
+    have hc : c ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
+    induction hc using Algebra.adjoin_induction with
+    | mem x hx => exact hgen x hx
+    | algebraMap r => simp [Matrix.algebraMap_matrix_apply]
+    | add x y _ _ hx hy => simp [hx.1, hx.2.1, hx.2.2, hy.1, hy.2.1, hy.2.2]
+    | mul x y _ _ hx hy =>
+      simp [Matrix.mul_apply, Fin.sum_univ_two, hx.1, hx.2.1, hx.2.2, hy.1, hy.2.1, hy.2.2]
+  simp [Matrix.mul_apply, Fin.sum_univ_two, (hdiag a).2.2, (hdiag b).1]
+
+end TriangularDerivation
+
+namespace SignedSym
 
 universe u v
 
@@ -121,95 +217,43 @@ section Lift
 variable (δ : V →ₗ[R] SignedSym G)
 
 /-- The grade involution `a ↦ (-1) ^ |a| • a` of `A(V)`. -/
-private noncomputable def twist : SignedSym G ≃ₐ[R] SignedSym G :=
-  InternalGrading.koszulTwistAlgEquiv (signedSymPiece G) 1
+private noncomputable def twist : SignedSym G →ₐ[R] SignedSym G :=
+  (InternalGrading.koszulTwistAlgEquiv (signedSymPiece G) 1).toAlgHom
 
 private theorem twist_of_mem {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) :
     twist (G := G) a = p.negOnePow • a := by
   simpa [twist] using InternalGrading.koszulTwistAlgEquiv_apply_of_mem (signedSymPiece G) 1 ha
 
-/-- The Koszul sign identity behind the lower left entry of a product of triangular matrices:
-for `a`, `b` of degrees `p`, `q` and `a'`, `b'` of degrees `p + 1`, `q + 1`,
-`a' * b + σ a * b' = (-1) ^ (p * q) • (b' * a + σ b * a')`. -/
-private theorem mul_add_twist_mul_comm {p q : ℤ} {a b a' b' : SignedSym G}
-    (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q)
-    (ha' : a' ∈ signedSymPiece G (p + 1)) (hb' : b' ∈ signedSymPiece G (q + 1)) :
-    a' * b + twist a * b' = ((p * q).negOnePow : ℤ) • (b' * a + twist b * a') := by
-  have h₁ : ((p + 1) * q).negOnePow = (p * q).negOnePow * q.negOnePow := by
-    rw [← Int.negOnePow_add]; congr 1; ring
-  have h₂ : p.negOnePow * (p * (q + 1)).negOnePow = (p * q).negOnePow := by
-    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]; exact ⟨p, by ring⟩
-  rw [twist_of_mem ha, twist_of_mem hb, smul_mul_assoc, smul_mul_assoc,
-    mul_eq_negOnePow_smul_mul G ha' hb, mul_eq_negOnePow_smul_mul G ha hb', h₁, ← h₂]
-  simp only [Units.smul_def, Units.val_mul, mul_smul]
-  module
-
-/-- The lower triangular matrix `[[x, 0], [δ x, σ x]]` attached to a generator `x`. -/
-private noncomputable def triangular : V →ₗ[R] Matrix (Fin 2) (Fin 2) (SignedSym G) where
-  toFun x := !![generator G x, 0; δ x, twist (generator G x)]
-  map_add' x y := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  map_smul' r x := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-
 variable {δ}
 variable (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1)
-
-include hδ in
-/-- The triangular matrices of homogeneous generators obey the Koszul relation. -/
-private theorem triangular_mul_triangular {p q : ℤ} {x y : V}
-    (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
-    triangular δ x * triangular δ y =
-      ((p * q).negOnePow : ℤ) • (triangular δ y * triangular δ x) := by
-  have hgx := generator_mem_signedSymPiece G hx
-  have hgy := generator_mem_signedSymPiece G hy
-  have hdx := hδ.map_mem hx
-  have hdy := hδ.map_mem hy
-  ext i j
-  fin_cases i <;> fin_cases j
-  · simpa [triangular, Matrix.mul_apply] using mul_eq_negOnePow_smul_mul G hgx hgy
-  · simp [triangular, Matrix.mul_apply]
-  · simpa [triangular, Matrix.mul_apply, Fin.sum_univ_two] using
-      mul_add_twist_mul_comm hgx hgy hdx hdy
-  · have key : twist (generator G x) * twist (generator G y) =
-        ((p * q).negOnePow : ℤ) • (twist (generator G y) * twist (generator G x)) := by
-      rw [← map_mul (twist (G := G)), ← map_mul (twist (G := G)),
-        generator_mul_generator G hx hy, map_zsmul]
-    simpa [triangular, Matrix.mul_apply, Fin.sum_univ_two] using key
-
-/-- The algebra map `a ↦ [[a, 0], [d a, σ a]]` whose lower left entry is the extension. -/
-private noncomputable def triangularLift :
-    SignedSym G →ₐ[R] Matrix (Fin 2) (Fin 2) (SignedSym G) :=
-  lift G (triangular δ) fun _ _ _ _ hx hy => triangular_mul_triangular hδ hx hy
-
-/-- The diagonal and upper right entries of `triangularLift` are `a`, `σ a` and `0`. -/
-private theorem triangularLift_apply (a : SignedSym G) :
-    triangularLift hδ a 0 0 = a ∧ triangularLift hδ a 0 1 = 0 ∧
-      triangularLift hδ a 1 1 = twist a := by
-  induction a using SignedSym.induction with
-  | algebraMap r => simp [Matrix.algebraMap_matrix_apply]
-  | generator x => simp [triangularLift, triangular]
-  | mul a b ha hb =>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, ha.1, ha.2.1, ha.2.2, hb.1, hb.2.1, hb.2.2]
-  | add a b ha hb => simp [ha.1, ha.2.1, ha.2.2, hb.1, hb.2.1, hb.2.2]
 
 variable (δ) in
 /-- The odd derivation of `A(V)` extending a degree-one linear map `δ : V → A(V)`. It satisfies
 the signed Leibniz rule `TauCeti.SignedSym.liftDerivation_mul`, raises degree by one, and is the
 unique such extension of `δ` (`TauCeti.SignedSym.eq_liftDerivation`). -/
 noncomputable def liftDerivation : SignedSym G →ₗ[R] SignedSym G :=
-  Matrix.entryLinearMap R (SignedSym G) (1 : Fin 2) (0 : Fin 2) ∘ₗ
-    (triangularLift hδ).toLinearMap
-
-private theorem liftDerivation_apply (a : SignedSym G) :
-    liftDerivation δ hδ a = triangularLift hδ a 1 0 := (rfl)
+  triangularDerivation <|
+    lift G (triangularDerivationMap (generator G) twist δ) fun p q x y hx hy ↦ by
+      have hgx := generator_mem_signedSymPiece G hx
+      have hgy := generator_mem_signedSymPiece G hy
+      simpa only [Units.smul_def] using
+        triangularDerivationMap_mul_eq_smul_mul (generator G) twist δ
+          (s₁ := p.negOnePow) (s₂ := q.negOnePow) (c := (p * q).negOnePow)
+          (by simpa [Units.smul_def] using generator_mul_generator G hx hy)
+          (by
+            rw [show (p * q).negOnePow * q.negOnePow = ((p + 1) * q).negOnePow by
+              rw [add_mul, one_mul, Int.negOnePow_add]]
+            simpa [Units.smul_def] using mul_eq_negOnePow_smul_mul G (hδ.map_mem hx) hgy)
+          (by
+            rw [show (p * q).negOnePow * p.negOnePow = (p * (q + 1)).negOnePow by
+              rw [mul_add, mul_one, Int.negOnePow_add]]
+            simpa [Units.smul_def] using mul_eq_negOnePow_smul_mul G hgx (hδ.map_mem hy))
+          (twist_of_mem hgx) (twist_of_mem hgy)
 
 /-- The odd derivation extends the assignment on generators. -/
 @[simp]
 theorem liftDerivation_generator (x : V) : liftDerivation δ hδ (generator G x) = δ x := by
-  simp [liftDerivation_apply, triangularLift, triangular]
+  simp [liftDerivation]
 
 /-- **The signed Leibniz rule**: for a left factor of degree `p`,
 `d (a * b) = d a * b + (-1) ^ p • (a * d b)`. -/
@@ -217,9 +261,11 @@ theorem liftDerivation_mul {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiec
     (b : SignedSym G) :
     liftDerivation δ hδ (a * b) =
       liftDerivation δ hδ a * b + p.negOnePow • (a * liftDerivation δ hδ b) := by
-  simp only [liftDerivation_apply, map_mul, Matrix.mul_apply, Fin.sum_univ_two,
-    (triangularLift_apply hδ a).2.2, (triangularLift_apply hδ b).1, twist_of_mem ha]
-  rw [Units.smul_def, Units.smul_def, smul_mul_assoc]
+  have htop : Algebra.adjoin R (Set.range (generator G)) = ⊤ :=
+    top_unique fun x _ ↦ SignedSym.induction G (algebraMap_mem _)
+      (fun m ↦ Algebra.subset_adjoin ⟨m, rfl⟩) (fun _ _ ↦ mul_mem) (fun _ _ ↦ add_mem) x
+  rw [liftDerivation, triangularDerivation_mul twist htop (by rintro _ ⟨x, rfl⟩; simp),
+    twist_of_mem ha, smul_mul_assoc]
 
 /-- The odd derivation annihilates the coefficients. -/
 @[simp]
@@ -306,4 +352,6 @@ theorem isDGAlgebra_liftDerivation_iff {δ : V →ₗ[R] SignedSym G}
       sq_zero := fun a => LinearMap.congr_fun hsq a
       leibniz := fun ha b => liftDerivation_mul hδ ha b }
 
-end TauCeti.SignedSym
+end SignedSym
+
+end TauCeti
