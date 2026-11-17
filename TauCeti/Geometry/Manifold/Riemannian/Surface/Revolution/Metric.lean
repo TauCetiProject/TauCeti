@@ -84,6 +84,40 @@ theorem hasDerivAt_profileSpeedSq {f g : ℝ → ℝ} {v : ℝ}
   norm_num
   ring
 
+/-- The first fundamental form is symmetric, independently of profile regularity. -/
+theorem metric_isSymm (f g : ℝ → ℝ) (p : ℝ × ℝ) :
+    (metric f g p).toBilinForm.IsSymm := by
+  apply ContinuousLinearMap.isSymm_toBilinForm_iff.mpr
+  intro w z
+  simp only [metric_apply]
+  ring
+
+/-- The profile-speed coefficient has the regularity of the profile derivatives. -/
+theorem contDiffAt_profileSpeedSq {f g : ℝ → ℝ} {n : ℕ∞ω} {v : ℝ}
+    (hf : ContDiffAt ℝ n (deriv f) v) (hg : ContDiffAt ℝ n (deriv g) v) :
+    ContDiffAt ℝ n (profileSpeedSq f g) v := by
+  have heq : profileSpeedSq f g = fun t ↦ deriv f t ^ 2 + deriv g t ^ 2 :=
+    funext (profileSpeedSq_def f g)
+  rw [heq]
+  exact (hf.pow 2).add (hg.pow 2)
+
+/-- The metric has the regularity of the radius and the profile derivatives. -/
+theorem contDiffAt_metric {f g : ℝ → ℝ} {n : ℕ∞ω} {p : ℝ × ℝ}
+    (hf : ContDiffAt ℝ n f p.2) (hff : ContDiffAt ℝ n (deriv f) p.2)
+    (hgg : ContDiffAt ℝ n (deriv g) p.2) : ContDiffAt ℝ n (metric f g) p := by
+  let : NormedSpace ℝ ((ℝ × ℝ) →L[ℝ] (ℝ × ℝ) →L[ℝ] ℝ) := inferInstance
+  exact ((hf.comp p contDiffAt_snd).pow 2 |>.smul contDiffAt_const).add
+    (((contDiffAt_profileSpeedSq hff hgg).comp p contDiffAt_snd).smul contDiffAt_const)
+
+/-- The metric is differentiable whenever the radius and profile derivatives are. -/
+theorem differentiableAt_metric {f g : ℝ → ℝ} {p : ℝ × ℝ}
+    (hf : DifferentiableAt ℝ f p.2) (hff : DifferentiableAt ℝ (deriv f) p.2)
+    (hgg : DifferentiableAt ℝ (deriv g) p.2) : DifferentiableAt ℝ (metric f g) p := by
+  let : NormedSpace ℝ ((ℝ × ℝ) →L[ℝ] (ℝ × ℝ) →L[ℝ] ℝ) := inferInstance
+  exact ((hf.comp p differentiableAt_snd).pow 2 |>.smul_const angularForm).add
+    (((hasDerivAt_profileSpeedSq hff hgg).differentiableAt.comp p differentiableAt_snd).smul_const
+      meridionalForm)
+
 /-- The differential of the actual first fundamental form, including its profile-speed
 derivative. -/
 theorem fderiv_metric {f g : ℝ → ℝ} {p : ℝ × ℝ}

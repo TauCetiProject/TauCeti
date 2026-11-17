@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Surface.Revolution.Domain
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Opens
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Revolution.Clairaut
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 
 /-!
 # Geodesics and Clairaut's theorem for surfaces of revolution
@@ -40,23 +41,70 @@ open TauCeti.Manifold
 local notation "P" => ℝ × ℝ
 local notation "IP" => 𝓘(ℝ, P)
 
+/-- Differentiating a curve on a revolution surface differentiates the parametrization
+on its coordinate velocity. -/
+theorem derivWithin_parametrization_subtype {f g : ℝ → ℝ} {U : Opens P}
+    {γ : ℝ → U} {s : Set ℝ} {t : ℝ}
+    (hf : DifferentiableAt ℝ f (γ t).val.2) (hg : DifferentiableAt ℝ g (γ t).val.2)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ) IP γ s t) (hs : UniqueDiffWithinAt ℝ s t) :
+    derivWithin (fun r ↦ parametrization f g (γ r).val) s t =
+      fderiv ℝ (parametrization f g) (γ t).val
+        (derivWithin (fun r ↦ (γ r).val) s t) := by
+  have hc : DifferentiableWithinAt ℝ (fun r ↦ (γ r).val) s t :=
+    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero |>.comp_mdifferentiableWithinAt t hγ)
+      |>.differentiableWithinAt
+  exact ((differentiableAt_parametrization hf hg).hasFDerivAt.comp_hasDerivWithinAt t
+    hc.hasDerivWithinAt).derivWithin hs
+
+section Speed
+
+variable {f g : ℝ → ℝ} {U : Opens P}
+  [RiemannianBundle (fun p : U ↦ TangentSpace IP p)]
+  (hmetric : ∀ (p : U) (w z : TangentSpace IP p), inner ℝ w z =
+    metric f g p.val
+      (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p w))
+      (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p z)))
+
+include hmetric
+
+/-- The Euclidean speed of the immersed curve equals its native Riemannian speed. -/
+theorem norm_derivWithin_parametrization_eq {γ : ℝ → U} {s : Set ℝ} {t : ℝ}
+    (hf : DifferentiableAt ℝ f (γ t).val.2) (hg : DifferentiableAt ℝ g (γ t).val.2)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ) IP γ s t) (hs : UniqueDiffWithinAt ℝ s t) :
+    ‖derivWithin (fun r ↦ parametrization f g (γ r).val) s t‖ =
+      ‖curveVelocityWithin IP γ s t‖ := by
+  rw [derivWithin_parametrization_subtype hf hg hγ hs,
+    norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
+    inner_curveVelocityWithin_self_eq_metric hmetric hγ hs, metric_eq_inner_fderiv hf hg]
+
+/-- At unit native speed and nonnegative radius, the radius-angle quantity is the
+coordinate angular momentum. -/
+theorem radius_mul_cos_angle_eq_angularMomentum {γ : ℝ → U} {s : Set ℝ} {t : ℝ}
+    (hf : DifferentiableAt ℝ f (γ t).val.2) (hg : DifferentiableAt ℝ g (γ t).val.2)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ) IP γ s t) (hs : UniqueDiffWithinAt ℝ s t)
+    (hr : 0 ≤ f (γ t).val.2) (hw : ‖curveVelocityWithin IP γ s t‖ = 1) :
+    f (γ t).val.2 * Real.cos (InnerProductGeometry.angle
+      (derivWithin (fun r ↦ parametrization f g (γ r).val) s t)
+      (fderiv ℝ (parametrization f g) (γ t).val (1, 0))) =
+        angularMomentum f (γ t).val.2 (derivWithin (fun r ↦ (γ r).val) s t).1 := by
+  have hv := norm_derivWithin_parametrization_eq hmetric hf hg hγ hs
+  rw [derivWithin_parametrization_subtype hf hg hγ hs] at hv ⊢
+  simpa only [angularMomentum_def] using
+    radius_mul_cos_angle_eq_sq_mul_fst hf hg hr (hv.trans hw)
+
+end Speed
+
 section NativeMetric
 
 variable {f g : ℝ → ℝ} {U : Opens P}
   [RiemannianBundle (fun p : U ↦ TangentSpace IP p)]
-  [IsContMDiffRiemannianBundle IP ∞ P (fun p : U ↦ TangentSpace IP p)]
+  [IsContMDiffRiemannianBundle IP 1 P (fun p : U ↦ TangentSpace IP p)]
   (hmetric : ∀ (p : U) (w z : TangentSpace IP p), inner ℝ w z =
     metric f g p.val
       (NormedSpace.fromTangentSpace p.val (Manifold.tangentSpaceOpenEquiv (I := IP) p w))
       (NormedSpace.fromTangentSpace p.val (Manifold.tangentSpaceOpenEquiv (I := IP) p z)))
   (hf : ∀ p : U, ContDiffAt ℝ 2 f p.val.2)
   (hg : ∀ p : U, ContDiffAt ℝ 2 g p.val.2)
-
--- The global downgrade instance times out in typeclass search for this tangent bundle.
--- Supply it locally without raising the typeclass-search or elaboration heartbeat limits.
-local instance (priority := 10000) :
-    IsContMDiffRiemannianBundle IP 1 P (fun p : U ↦ TangentSpace IP p) :=
-  IsContMDiffRiemannianBundle.of_le (n := ∞) (by norm_num)
 
 include hmetric hf hg
 
@@ -143,16 +191,9 @@ theorem abs_radius_mul_speed_mul_cos_angle_eq_of_isGeodesicCurveOn
         Real.cos (InnerProductGeometry.angle
           (derivWithin (fun r ↦ parametrization f g (γ r).val) s b)
           (fderiv ℝ (parametrization f g) (γ b).val (1, 0))) := by
-  have hv (t : ℝ) (ht : t ∈ s) :
-      derivWithin (fun r ↦ parametrization f g (γ r).val) s t =
-        fderiv ℝ (parametrization f g) (γ t).val
-          (derivWithin (fun r ↦ (γ r).val) s t) := by
-    have hct : DifferentiableWithinAt ℝ (fun r ↦ (γ r).val) s t :=
-      (contMDiff_subtype_val.comp_contMDiffOn hγ.contMDiffOn).contDiffOn.differentiableOn
-        (by norm_num) t ht
-    exact ((differentiableAt_parametrization ((hf (γ t)).differentiableAt (by norm_num))
-      ((hg (γ t)).differentiableAt (by norm_num))).hasFDerivAt.comp_hasDerivWithinAt t
-        hct.hasDerivWithinAt).derivWithin (hγ.uniqueDiffOn t ht)
+  have hv (t : ℝ) (ht : t ∈ s) := derivWithin_parametrization_subtype
+    ((hf (γ t)).differentiableAt (by norm_num)) ((hg (γ t)).differentiableAt (by norm_num))
+    (hγ.mdifferentiableOn t ht) (hγ.uniqueDiffOn t ht)
   rw [hv a ha, hv b hb,
     abs_radius_mul_norm_mul_cos_angle_eq_sq_mul_fst
       ((hf (γ a)).differentiableAt (by norm_num)) ((hg (γ a)).differentiableAt (by norm_num)),
@@ -160,25 +201,56 @@ theorem abs_radius_mul_speed_mul_cos_angle_eq_of_isGeodesicCurveOn
       ((hf (γ b)).differentiableAt (by norm_num)) ((hg (γ b)).differentiableAt (by norm_num))]
   simpa only [angularMomentum_def] using angularMomentum_eq hmetric hf hg hc hγ ha hb
 
+/-- Clairaut's radius-angle quantity is constant on a connected native geodesic whose
+speed is one at a single parameter, provided the endpoint radii are nonnegative. -/
+theorem radius_mul_cos_angle_eq_of_isGeodesicCurveOn
+    {γ : ℝ → U} {s : Set ℝ} (hc : IsPreconnected s) (hγ : IsGeodesicCurveOn IP γ s)
+    {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s)
+    (hra : 0 ≤ f (γ a).val.2) (hrb : 0 ≤ f (γ b).val.2)
+    (hw : ‖curveVelocityWithin IP γ s a‖ = 1) :
+    f (γ a).val.2 * Real.cos (InnerProductGeometry.angle
+        (derivWithin (fun r ↦ parametrization f g (γ r).val) s a)
+        (fderiv ℝ (parametrization f g) (γ a).val (1, 0))) =
+      f (γ b).val.2 * Real.cos (InnerProductGeometry.angle
+        (derivWithin (fun r ↦ parametrization f g (γ r).val) s b)
+        (fderiv ℝ (parametrization f g) (γ b).val (1, 0))) := by
+  have hw' : ‖curveVelocityWithin IP γ s b‖ = 1 :=
+    (hγ.norm_curveVelocityWithin_eq hc hb ha).trans hw
+  rw [radius_mul_cos_angle_eq_angularMomentum hmetric
+      ((hf (γ a)).differentiableAt (by norm_num)) ((hg (γ a)).differentiableAt (by norm_num))
+      (hγ.mdifferentiableOn a ha) (hγ.uniqueDiffOn a ha) hra hw,
+    radius_mul_cos_angle_eq_angularMomentum hmetric
+      ((hf (γ b)).differentiableAt (by norm_num)) ((hg (γ b)).differentiableAt (by norm_num))
+      (hγ.mdifferentiableOn b hb) (hγ.uniqueDiffOn b hb) hrb hw']
+  exact angularMomentum_eq hmetric hf hg hc hγ ha hb
+
 end NativeMetric
 
 /-- Clairaut's theorem for the explicitly constructed induced metric, with all geometric
 structure supplied by the regular revolution parametrization itself. -/
-theorem angularMomentum_eq_of_isGeodesicCurveOn_riemannianMetric {f g : ℝ → ℝ} (U : Opens P)
-    (hf : ∀ p : U, ContDiffAt ℝ ∞ f p.val.2)
-    (hg : ∀ p : U, ContDiffAt ℝ ∞ g p.val.2)
+theorem angularMomentum_eq_of_isGeodesicCurveOn_riemannianMetric {f g : ℝ → ℝ}
+    {n : ℕ∞ω} (hn : 1 ≤ n) (U : Opens P)
+    (hf : ∀ p : U, ContDiffAt ℝ (n + 1) f p.val.2)
+    (hg : ∀ p : U, ContDiffAt ℝ (n + 1) g p.val.2)
     (hr : ∀ p : U, f p.val.2 ≠ 0)
     (hreg : ∀ p : U, 0 < profileSpeedSq f g p.val.2)
     {γ : ℝ → U} {s : Set ℝ} (hc : IsPreconnected s)
     (hγ : letI : RiemannianBundle (fun p : U ↦ TangentSpace IP p) :=
-      ⟨(riemannianMetric (n := ∞) U hf hg hr hreg).toRiemannianMetric⟩
+      ⟨(riemannianMetric (n := n) U hf hg hr hreg).toRiemannianMetric⟩
+      letI : IsContMDiffRiemannianBundle IP 1 P (fun p : U ↦ TangentSpace IP p) :=
+        IsContMDiffRiemannianBundle.of_le hn
       IsGeodesicCurveOn IP γ s)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     angularMomentum f (γ a).val.2 (derivWithin (fun r ↦ (γ r).val) s a).1 =
       angularMomentum f (γ b).val.2 (derivWithin (fun r ↦ (γ r).val) s b).1 := by
   let : RiemannianBundle (fun p : U ↦ TangentSpace IP p) :=
-    ⟨(riemannianMetric (n := ∞) U hf hg hr hreg).toRiemannianMetric⟩
-  exact angularMomentum_eq (riemannianMetric_inner (n := ∞) U hf hg hr hreg)
-    (fun p ↦ (hf p).of_le (by norm_num)) (fun p ↦ (hg p).of_le (by norm_num)) hc hγ ha hb
+    ⟨(riemannianMetric (n := n) U hf hg hr hreg).toRiemannianMetric⟩
+  let : IsContMDiffRiemannianBundle IP 1 P (fun p : U ↦ TangentSpace IP p) :=
+    IsContMDiffRiemannianBundle.of_le hn
+  have hn₂ : (2 : ℕ∞ω) ≤ n + 1 := calc
+    _ = (1 : ℕ∞ω) + 1 := by norm_num
+    _ ≤ n + 1 := add_le_add hn (le_refl 1)
+  exact angularMomentum_eq (riemannianMetric_inner (n := n) U hf hg hr hreg)
+    (fun p ↦ (hf p).of_le hn₂) (fun p ↦ (hg p).of_le hn₂) hc hγ ha hb
 
 end TauCeti.SurfaceOfRevolution

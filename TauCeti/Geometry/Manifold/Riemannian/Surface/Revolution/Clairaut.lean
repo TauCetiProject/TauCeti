@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Revolution.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Pow
-public import Mathlib.Analysis.Calculus.MeanValue
+public import TauCeti.Analysis.Calculus.MeanValue
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 
 /-!
@@ -81,11 +81,7 @@ theorem angularMomentum_eq_of_derivWithin_add_eq_zero {f ω v : ℝ → ℝ} {s 
   have hd (t : ℝ) (ht : t ∈ s) :=
     hasDerivWithinAt_angularMomentum_of_add_eq_zero (hf t ht) (hω t ht).hasDerivWithinAt
       (hv t ht).hasDerivWithinAt (heq t ht)
-  have hbound := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (C := 0)
-    hd (fun _ _ ↦ by simp) hc.ordConnected.convex ha hb
-  have hz : ‖angularMomentum f (v b) (ω b) - angularMomentum f (v a) (ω a)‖ ≤ 0 := by
-    simpa only [zero_mul] using hbound
-  exact (sub_eq_zero.mp (norm_le_zero_iff.mp hz)).symm
+  exact hc.eq_of_hasDerivWithinAt_zero hd ha hb
 
 /-- The angle-speed form of Clairaut's quantity, valid for either sign of the profile
 radius and including zero velocity. -/

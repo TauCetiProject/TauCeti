@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Frame
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Restriction
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
@@ -31,9 +30,6 @@ Fréchet derivatives, giving the comparison with `christoffelSecondKind`. Its me
 the coordinate form `Dg(u)(v, w) = g(Γ(u, v), w) + g(v, Γ(u, w))` of metric compatibility, valid
 for every compatible connection. No extension of the chart metric to an open model domain is
 assumed in the within-derivative formula.
-
-The open-subset coordinate comparison is adapted from Yangyang Li's formalization in
-[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/tree/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Revolution).
 
 ## Main definitions and results
 
@@ -283,38 +279,5 @@ theorem IsLeviCivitaConnection.christoffelSymbol_eventuallyEq [Finite ι]
     Basis.coord_apply]
 
 end Coordinates
-
-section OpenModel
-
-open TopologicalSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {U : Opens E} {ι : Type*} [Fintype ι]
-
-local notation "IP" => 𝓘(ℝ, E)
-
-/-- On an open subset of a normed space, the Christoffel map of a Levi-Civita connection
-agrees with the second-kind Christoffel map of its coordinate metric. The connection takes
-the field argument before the direction argument. -/
-theorem IsLeviCivitaConnection.christoffelMap_opens_apply_eq_christoffelSecondKind
-    {g : ContMDiffNondegenerateMetric (I := IP) (M := U)}
-    {cov : CovariantDerivative IP E (fun p : U ↦ TangentSpace IP p)}
-    (h : g.IsLeviCivitaConnection cov) (b : Basis ι ℝ E)
-    {G : E → E →L[ℝ] E →L[ℝ] ℝ}
-    (hmetric : ∀ (p : U) (w z : TangentSpace IP p), g p w z =
-      G p.val
-        (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p w))
-        (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p z)))
-    (p : U) (w z : E) :
-    christoffelMap b (cov.isCovariantDerivativeOn
-        (s := (trivializationAt E (TangentSpace IP) p).baseSet)) p w z =
-      christoffelSecondKind G p.val z w := by
-  rw [h.christoffelMap_apply_eq_christoffelSecondKind b
-    (mem_extChartAt_source p) (by simp) w z, Opens.extChartAt_opens_apply]
-  have heq := g.chartMetric_eventuallyEq_of_opens hmetric p
-  rw [christoffelSecondKind_def, christoffelSecondKind_def,
-    heq.eq_of_nhds, heq.fderiv_eq]
-
-end OpenModel
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetric

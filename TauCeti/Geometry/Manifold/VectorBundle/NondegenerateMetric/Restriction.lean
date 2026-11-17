@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.LocalIsometry
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Nondegenerate metrics on open submanifolds
@@ -28,9 +27,6 @@ the same way at every point of their intersection.
 
 For the metric of a smooth Riemannian bundle, restriction agrees with the restriction of the
 Riemannian bundle to `U`.
-
-The open-subset coordinate comparison is adapted from Yangyang Li's formalization in
-[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/tree/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Revolution).
 
 ## Main definitions and results
 
@@ -190,56 +186,5 @@ theorem IsLeviCivitaConnection.tangentSpaceOpenEquiv_apply_mpullback_eq {V : Ope
   linarith
 
 end LeviCivita
-
-section OpenModel
-
-open Filter Set
-open scoped Topology
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Opens E}
-
-local notation "IP" => 𝓘(ℝ, E)
-
-/-- On an open subset of a normed space, a metric given by a coordinate field has that
-field as its chart metric near each point. -/
-theorem chartMetric_eventuallyEq_of_opens
-    (g : ContMDiffNondegenerateMetric (I := IP) (M := U))
-    {G : E → E →L[ℝ] E →L[ℝ] ℝ}
-    (hmetric : ∀ (p : U) (w z : TangentSpace IP p), g p w z =
-      G p.val
-        (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p w))
-        (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p z)))
-    (p : U) : g.chartMetric p =ᶠ[𝓝 p.val] G := by
-  let c := extChartAt IP p
-  have hinv : Tendsto c.symm (𝓝 p.val) (𝓝 p) := by
-    have h := (continuousAt_extChartAt_symm (I := IP) p).tendsto
-    rwa [extChartAt_to_inv, Opens.extChartAt_opens_apply] at h
-  filter_upwards [hinv.eventually
-    (Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := IP) p),
-    (by simpa only [c, Opens.extChartAt_opens_apply] using
-      extChartAt_target_mem_nhds (I := IP) p)] with z hframe hz
-  apply ContinuousLinearMap.ext
-  intro w
-  apply ContinuousLinearMap.ext
-  intro q
-  rw [Manifold.ContMDiffNondegenerateMetric.chartMetric_apply
-      g hz,
-    hmetric]
-  have hzval : ((c.symm z : U) : E) = z := by
-    simpa only [c, Opens.extChartAt_opens_apply] using c.right_inv hz
-  have hb := TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz
-  rw [← (trivializationAt E (TangentSpace IP : U → Type _) p).symmL_apply
-      (R := ℝ) hb w,
-    ← (trivializationAt E (TangentSpace IP : U → Type _) p).symmL_apply
-      (R := ℝ) hb q,
-    hframe w, hframe q]
-  have hid (a b r : E) : NormedSpace.fromTangentSpace b
-      ((trivializationAt E (TangentSpace IP) a).symmL ℝ b r) = r := by
-    rw [TangentBundle.symmL_model_space]
-    -- On the model space, fromTangentSpace and the identity linear map reduce to identity.
-    rfl
-  rw [hid, hid, hzval]
-
-end OpenModel
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetric
