@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Sphere.Connected
 public import TauCeti.Topology.Grassmannian.SphereBundle.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+import Mathlib.Topology.Separation.Connected
 import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
 import TauCeti.Geometry.Manifold.Degree.Homological
 import TauCeti.Geometry.Manifold.Instances.EuclideanProd
@@ -333,30 +334,8 @@ section SecondProof
 
 attribute [local instance] finrank_real_complex_fact'
 
-open scoped RealInnerProductSpace
-
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
-
-include m in
-omit [FiniteDimensional ℝ E] in
-/-- A sphere of positive dimension contains a point distinct from both `x₀` and `-x₀`, obtained
-from a unit vector orthogonal to `x₀`. -/
-private theorem exists_sphere_ne_and_ne_neg (x₀ : sphere (0 : E) 1) :
-    ∃ q : sphere (0 : E) 1, q ≠ x₀ ∧ q ≠ -x₀ := by
-  have : Nontrivial (ℝ ∙ (x₀ : E))ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by
-    rw [(fact_finrank_orthogonal_span_singleton_coe_sphere (n := m) x₀).out]
-    omega)
-  obtain ⟨v, hv⟩ :=
-    (NormedSpace.sphere_nonempty (x := (0 : (ℝ ∙ (x₀ : E))ᗮ)) (r := 1)).2 zero_le_one
-  let q : sphere (0 : E) 1 := ⟨v, mem_sphere_zero_iff_norm.2 (mem_sphere_zero_iff_norm.1 hv)⟩
-  have hin : ⟪(x₀ : E), (q : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.2
-  refine ⟨q, fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [h, real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x₀, one_pow] at hin
-    exact zero_ne_one hin.symm
-  · rw [h, coe_neg_sphere, inner_neg_right, real_inner_self_eq_norm_sq,
-      norm_eq_of_mem_sphere x₀, one_pow] at hin
-    linarith
 
 namespace HomologicalOrientation
 
@@ -370,7 +349,11 @@ theorem isCoveredByDiffeomorphisms_sphere_of_even
     (hm : Even m) (r : ℕ∞ω) (x₀ : sphere (0 : E) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin r x₀ 2 := by
   have : ConnectedSpace (sphere (0 : E) 1) := connectedSpace_sphere (m + 1)
-  obtain ⟨q, hqx, hqx'⟩ := exists_sphere_ne_and_ne_neg (m := m) x₀
+  have : Infinite (sphere (0 : E) 1) :=
+    have : Nontrivial (sphere (0 : E) 1) := ⟨⟨x₀, -x₀, ne_neg_of_mem_unit_sphere ℝ x₀⟩⟩
+    PreconnectedSpace.infinite
+  obtain ⟨q, hq⟩ := (Set.toFinite ({x₀, -x₀} : Set (sphere (0 : E) 1))).infinite_compl.nonempty
+  obtain ⟨hqx, hqx'⟩ := not_or.1 hq
   -- Choose a reference orientation of `E` and orient `Sᵐ⁺¹` and `Sᵐ × S¹`.
   let oE : _root_.Orientation ℝ E (Fin (m + 1 + 1)) :=
     (finBasisOfFinrankEq ℝ E Fact.out).orientation
