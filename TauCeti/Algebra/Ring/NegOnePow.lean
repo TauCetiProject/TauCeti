@@ -138,6 +138,12 @@ theorem _root_.Int.negOnePow_mul_succ_div_two_succ (k : ℤ) :
   have h : (k + 1) * (k + 1 + 1) = k * (k + 1) + (k + 1) * 2 := by ring
   rw [h, Int.add_mul_ediv_right _ _ (by decide), Int.negOnePow_add, mul_comm]
 
+/-- Multiplying the sign of the triangular number `(k + 1)(k + 2)/2` by `(-1)^(k + 1)` gives the
+sign of the previous triangular number `k(k + 1)/2`, in all integer degrees. -/
+theorem _root_.Int.negOnePow_mul_succ_div_two_succ_mul (k : ℤ) :
+    ((k + 1) * (k + 1 + 1) / 2).negOnePow * (k + 1).negOnePow = (k * (k + 1) / 2).negOnePow := by
+  rw [Int.negOnePow_mul_succ_div_two_succ, mul_comm, ← mul_assoc, Int.units_mul_self, one_mul]
+
 /-- The product of an integer and one minus that integer is even, so its sign is one. -/
 @[simp]
 theorem _root_.Int.negOnePow_mul_one_sub (n : ℤ) :
