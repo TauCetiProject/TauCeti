@@ -420,6 +420,25 @@ theorem coe_lieModuleHomEquiv_symm
     ⇑((lieModuleHomEquiv hM hN).symm g) = ⇑g :=
   (rfl)
 
+/-- **The central character dictionary.** If every Lie module endomorphism of `M` that commutes
+with all others is a scalar, and `R` acts faithfully, then the structure map from `R` to the centre
+of the commutant `End_{U(L)}(M)` is bijective. This is the hypothesis of
+`TauCeti.centralCharacterOfBijectiveAlgebraMap`. It holds for absolutely irreducible modules, all
+of whose endomorphisms are scalars, and also for modules whose commutant is a central division
+algebra, such as the quaternionic real irreducible modules. -/
+theorem bijective_algebraMap_center_end_of_forall_exists_smul [LieModule R L M] [FaithfulSMul R M]
+    (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆)
+    (h : ∀ f : M →ₗ⁅R,L⁆ M, (∀ g : M →ₗ⁅R,L⁆ M, f.comp g = g.comp f) →
+      ∃ c : R, ∀ m, f m = c • m) :
+    Function.Bijective (algebraMap R (Subalgebra.center R (Module.End U M))) := by
+  refine ⟨fun _ _ hab => eq_of_smul_eq_smul (α := M) fun m => ?_, fun f => ?_⟩
+  · simpa using LinearMap.congr_fun (congrArg Subtype.val hab) m
+  · obtain ⟨c, hc⟩ := h ((lieModuleHomEquiv hM hM).symm f) fun g => by
+      ext m
+      simpa using (LinearMap.congr_fun
+        (Subalgebra.mem_center_iff.mp f.2 (lieModuleHomEquiv hM hM g)) m).symm
+    exact ⟨c, Subtype.ext <| LinearMap.ext fun m => by simpa using (hc m).symm⟩
+
 /-! #### Equivalences -/
 
 section Equiv

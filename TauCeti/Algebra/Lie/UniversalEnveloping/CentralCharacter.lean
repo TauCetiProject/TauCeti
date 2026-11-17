@@ -21,11 +21,13 @@ module endomorphisms `End_L(M)`. The image lies in the centre of the commutant
 this centre is a field, but it need not consist of scalars: on the real circle rotation module
 `ℝ²` of the abelian Lie algebra `ℝ`, the central generator acts by a rotation `J` with `J² = -1`.
 
-When every Lie module endomorphism of a nonzero module `M` is a scalar, as for an absolutely
-irreducible finite-dimensional module, the centre acts by scalars, and reading off the scalar is a
-`K`-algebra homomorphism `Z(U(L)) →ₐ[K] K`
-(`TauCeti.UniversalEnvelopingAlgebra.scalarCentralCharacter`). This applies over any field, in
-particular to real absolutely irreducible modules.
+When `R` acts faithfully on `M` and every Lie module endomorphism of `M` commuting with all others
+is a scalar, the centre acts by scalars, and reading off the scalar is an `R`-algebra homomorphism
+`Z(U(L)) →ₐ[R] R` (`TauCeti.UniversalEnvelopingAlgebra.centralCharacterOfForallExistsSmul`). Over a
+field this covers absolutely irreducible finite-dimensional modules, whose endomorphisms are all
+scalars, and also modules whose commutant is a central division algebra, as for the quaternionic
+real irreducible modules. The hypothesis is turned into the bijectivity of `R → Z(End_{U(L)}(M))` by
+`TauCeti.UniversalEnvelopingAlgebra.bijective_algebraMap_center_end_of_forall_exists_smul`.
 
 Over an algebraically closed field `K`, Schur's lemma makes
 every endomorphism of a finite-dimensional irreducible module a scalar. The centre then acts by
@@ -41,19 +43,21 @@ not from Schur's lemma.
 
 ## Main definitions
 
-* `TauCeti.UniversalEnvelopingAlgebra.scalarCentralCharacter`: the central character of a nonzero
-  module all of whose Lie module endomorphisms are scalars, over any field.
+* `TauCeti.UniversalEnvelopingAlgebra.centralCharacterOfForallExistsSmul`: the central character
+  of a faithful module all of whose central Lie module endomorphisms are scalars.
 * `TauCeti.UniversalEnvelopingAlgebra.centralCharacter`: the central character of a
   finite-dimensional irreducible module over an algebraically closed field.
 
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.representation_eq_scalarCentralCharacter_smul`: a central
-  element acts by its central character, which is its eigenvalue on any nonzero vector
-  (`scalarCentralCharacter_eq_of_ne_zero_of_representation_eq_smul`).
-* `TauCeti.UniversalEnvelopingAlgebra.centralCharacter_eq_scalarCentralCharacter`: over an
-  algebraically closed field the two constructions agree.
-
+* `TauCeti.UniversalEnvelopingAlgebra.representation_eq_centralCharacterOfForallExistsSmul_smul`:
+  a central element acts by its central character, which is the only scalar doing so
+  (`centralCharacterOfForallExistsSmul_eq_of_representation_eq_smul`) and its eigenvalue on any
+  nonzero vector (`centralCharacterOfForallExistsSmul_eq_of_ne_zero_of_representation_eq_smul`).
+  Equivalent modules have the same central character
+  (`centralCharacterOfForallExistsSmul_congr`).
+* `TauCeti.UniversalEnvelopingAlgebra.centralCharacter_eq_centralCharacterOfForallExistsSmul`: over
+  an algebraically closed field the two constructions agree.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_eq_centralCharacter_smul`: a central element
   acts by its central character.
 * `TauCeti.UniversalEnvelopingAlgebra.centralCharacter_eq_of_ne_zero_of_representation_eq_smul`:
@@ -81,61 +85,76 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra
 
 section Scalar
 
-variable (K : Type u) (L : Type v) (M : Type w)
-variable [Field K] [LieRing L] [LieAlgebra K L]
-  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+variable (R : Type u) (L : Type v) (M : Type w)
+variable [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M] [FaithfulSMul R M]
 
 attribute [local instance] asModule isScalarTower_asModule
 
-/-- If every Lie module endomorphism of a nonzero module is a scalar, then the structure map from
-`K` to the `U(L)`-linear endomorphisms is bijective. -/
-private theorem algebraMap_end_bijective_of_forall_exists_smul [Nontrivial M]
-    (h : ∀ f : M →ₗ⁅K,L⁆ M, ∃ c : K, ∀ m, f m = c • m) :
-    Function.Bijective (algebraMap K (Module.End (U K L) M)) := by
-  refine ⟨fun a b hab => ?_, fun f => ?_⟩
-  · obtain ⟨m, hm⟩ := exists_ne (0 : M)
-    exact smul_left_injective K hm (by simpa using LinearMap.congr_fun hab m)
-  · obtain ⟨c, hc⟩ := h ((lieModuleHomEquiv (asModule_ι_smul K L M) (asModule_ι_smul K L M)).symm f)
-    exact ⟨c, LinearMap.ext fun m => by simpa using (hc m).symm⟩
+/-- **The central character** of a faithful Lie module all of whose central Lie module
+endomorphisms are scalars: a central element of `U(L)` then acts by a scalar, and taking that
+scalar is an `R`-algebra homomorphism `Z(U(L)) →ₐ[R] R`.
 
-/-- **The central character** of a nonzero Lie module all of whose Lie module endomorphisms are
-scalars, over any field: a central element of `U(L)` then acts by a scalar, and taking that scalar
-is a `K`-algebra homomorphism `Z(U(L)) →ₐ[K] K`.
-
-For a finite-dimensional irreducible module the hypothesis says that the module is absolutely
-irreducible. It holds over an algebraically closed field by Schur's lemma, where this is
+For a finite-dimensional irreducible module over a field the hypothesis holds when the module is
+absolutely irreducible, and more generally when its commutant is a central division algebra. It
+holds over an algebraically closed field by Schur's lemma, where this is
 `TauCeti.UniversalEnvelopingAlgebra.centralCharacter`, but fails for the real circle rotation
 module, on which the centre acts through `ℂ`. -/
-noncomputable def scalarCentralCharacter [Nontrivial M]
-    (h : ∀ f : M →ₗ⁅K,L⁆ M, ∃ c : K, ∀ m, f m = c • m) :
-    Subalgebra.center K (U K L) →ₐ[K] K :=
-  centralCharacterOfBijective K (U K L) M (algebraMap_end_bijective_of_forall_exists_smul K L M h)
+noncomputable def centralCharacterOfForallExistsSmul
+    (h : ∀ f : M →ₗ⁅R,L⁆ M, (∀ g : M →ₗ⁅R,L⁆ M, f.comp g = g.comp f) →
+      ∃ c : R, ∀ m, f m = c • m) :
+    Subalgebra.center R (U R L) →ₐ[R] R :=
+  centralCharacterOfBijectiveAlgebraMap R (U R L) M
+    (bijective_algebraMap_center_end_of_forall_exists_smul (asModule_ι_smul R L M) h)
 
-variable [Nontrivial M] (h : ∀ f : M →ₗ⁅K,L⁆ M, ∃ c : K, ∀ m, f m = c • m)
+variable (h : ∀ f : M →ₗ⁅R,L⁆ M, (∀ g : M →ₗ⁅R,L⁆ M, f.comp g = g.comp f) →
+  ∃ c : R, ∀ m, f m = c • m)
 
 /-- **A central element acts by its central character.** -/
-@[simp]
-theorem representation_eq_scalarCentralCharacter_smul (z : Subalgebra.center K (U K L)) (m : M) :
-    representation K L M (z : U K L) m = scalarCentralCharacter K L M h z • m :=
-  (asModule_smul_def K L M (z : U K L) m).symm.trans
-    (smul_eq_centralCharacterOfBijective_smul K (U K L) M _ z m)
+theorem representation_eq_centralCharacterOfForallExistsSmul_smul
+    (z : Subalgebra.center R (U R L)) (m : M) :
+    representation R L M (z : U R L) m = centralCharacterOfForallExistsSmul R L M h z • m :=
+  (asModule_smul_def R L M (z : U R L) m).symm.trans
+    (smul_eq_centralCharacterOfBijectiveAlgebraMap_smul R (U R L) M _ z m)
 
-variable {K L M h}
+variable {R L M h}
+
+/-- The central character is the unique scalar by which a central element acts. -/
+theorem centralCharacterOfForallExistsSmul_eq_of_representation_eq_smul
+    {z : Subalgebra.center R (U R L)} {c : R}
+    (hc : ∀ m : M, representation R L M (z : U R L) m = c • m) :
+    centralCharacterOfForallExistsSmul R L M h z = c :=
+  centralCharacterOfBijectiveAlgebraMap_eq_of_smul_eq fun m =>
+    (asModule_smul_def R L M (z : U R L) m).trans (hc m)
 
 /-- The central character is the eigenvalue of a central element on any nonzero vector. -/
-theorem scalarCentralCharacter_eq_of_ne_zero_of_representation_eq_smul
-    {z : Subalgebra.center K (U K L)} {c : K} {m : M} (hm : m ≠ 0)
-    (hc : representation K L M (z : U K L) m = c • m) :
-    scalarCentralCharacter K L M h z = c :=
-  smul_left_injective K hm
-    ((representation_eq_scalarCentralCharacter_smul K L M h z m).symm.trans hc)
+theorem centralCharacterOfForallExistsSmul_eq_of_ne_zero_of_representation_eq_smul
+    [IsCancelMulZero R] [Module.IsTorsionFree R M]
+    {z : Subalgebra.center R (U R L)} {c : R} {m : M} (hm : m ≠ 0)
+    (hc : representation R L M (z : U R L) m = c • m) :
+    centralCharacterOfForallExistsSmul R L M h z = c :=
+  centralCharacterOfBijectiveAlgebraMap_eq_of_ne_zero_of_smul_eq hm
+    ((asModule_smul_def R L M (z : U R L) m).trans hc)
 
-variable (K L M h) in
+variable (R L M h) in
 /-- The whole module is the centre eigenspace of its central character. -/
 @[simp]
-theorem centerEigenspace_scalarCentralCharacter :
-    centerEigenspace K L M (scalarCentralCharacter K L M h) = ⊤ :=
-  centerEigenspace_eq_top_iff.2 (representation_eq_scalarCentralCharacter_smul K L M h)
+theorem centerEigenspace_centralCharacterOfForallExistsSmul :
+    centerEigenspace R L M (centralCharacterOfForallExistsSmul R L M h) = ⊤ :=
+  centerEigenspace_eq_top_iff.2 (representation_eq_centralCharacterOfForallExistsSmul_smul R L M h)
+
+/-- **Equivalent modules have the same central character.** -/
+theorem centralCharacterOfForallExistsSmul_congr {N : Type x} [AddCommGroup N] [Module R N]
+    [LieRingModule L N] [LieModule R L N] [FaithfulSMul R N]
+    {hN : ∀ f : N →ₗ⁅R,L⁆ N, (∀ g : N →ₗ⁅R,L⁆ N, f.comp g = g.comp f) →
+      ∃ c : R, ∀ n, f n = c • n}
+    (e : M ≃ₗ⁅R,L⁆ N) :
+    centralCharacterOfForallExistsSmul R L M h = centralCharacterOfForallExistsSmul R L N hN := by
+  ext z
+  refine (centralCharacterOfForallExistsSmul_eq_of_representation_eq_smul fun n => ?_).symm
+  have hm := map_representation R L M N (e : M →ₗ⁅R,L⁆ N) (z : U R L) (e.symm n)
+  rw [representation_eq_centralCharacterOfForallExistsSmul_smul R L M h, map_smul] at hm
+  simpa using hm.symm
 
 end Scalar
 
@@ -197,14 +216,12 @@ theorem centralCharacter_congr {N : Type x} [AddCommGroup N] [Module K N] [LieRi
   simpa using h.symm
 
 /-- Over an algebraically closed field, the central character of a finite-dimensional irreducible
-module is its central character as a module with scalar endomorphisms. -/
-theorem centralCharacter_eq_scalarCentralCharacter [Nontrivial M]
-    (h : ∀ f : M →ₗ⁅K,L⁆ M, ∃ c : K, ∀ m, f m = c • m) :
-    centralCharacter K L M = scalarCentralCharacter K L M h := by
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  ext z
-  exact (scalarCentralCharacter_eq_of_ne_zero_of_representation_eq_smul hm
-    (representation_eq_centralCharacter_smul K L M z m)).symm
+module is its central character as a module with scalar central endomorphisms. -/
+theorem centralCharacter_eq_centralCharacterOfForallExistsSmul [FaithfulSMul K M]
+    (h : ∀ f : M →ₗ⁅K,L⁆ M, (∀ g : M →ₗ⁅K,L⁆ M, f.comp g = g.comp f) →
+      ∃ c : K, ∀ m, f m = c • m) :
+    centralCharacter K L M = centralCharacterOfForallExistsSmul K L M h :=
+  centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap K (U K L) M _
 
 end IsAlgClosed
 
