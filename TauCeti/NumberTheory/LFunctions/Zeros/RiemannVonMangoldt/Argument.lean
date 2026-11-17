@@ -120,9 +120,9 @@ theorem riemannZetaSPath_ne_one (hT : T ≠ 0) (t : ℝ) : riemannZetaSPath T t 
     have := congrArg im h
     simp [hT] at this
 
-/-- If `ζ` has no zero on `[1/2, 1) + iT`, it has no zero along the path on `[0, 2]`. -/
+/-- If `ζ` has no zero on `[1/2, 1) + iT`, it has no zero along the path at parameters `t ≤ 2`. -/
 theorem riemannZeta_riemannZetaSPath_ne_zero
-    (hT : ∀ σ ∈ Ico (1 / 2 : ℝ) 1, riemannZeta (σ + T * I) ≠ 0) (ht : t ∈ Icc (0 : ℝ) 2) :
+    (hT : ∀ σ ∈ Ico (1 / 2 : ℝ) 1, riemannZeta (σ + T * I) ≠ 0) (ht : t ≤ 2) :
     riemannZeta (riemannZetaSPath T t) ≠ 0 := by
   rcases le_total t 1 with h1 | h1
   · rw [riemannZetaSPath_of_le_one h1]
@@ -130,7 +130,7 @@ theorem riemannZeta_riemannZetaSPath_ne_zero
   · rw [riemannZetaSPath_of_one_le h1]
     by_cases hσ : 1 ≤ 2 - 3 / 2 * (t - 1)
     · exact riemannZeta_ne_zero_of_one_le_re (by simpa using hσ)
-    · have h := hT (2 - 3 / 2 * (t - 1)) ⟨by linarith [ht.2], not_le.mp hσ⟩
+    · have h := hT (2 - 3 / 2 * (t - 1)) ⟨by linarith, not_le.mp hσ⟩
       push_cast at h
       exact h
 
@@ -216,7 +216,7 @@ theorem riemannZetaS_eq_sub_div_pi
   rw [riemannZetaS_def, TauCeti.Contour.integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
     (isPiecewiseC1On_riemannZetaSPath T)
     (fun t _ ↦ analyticOn_riemannZeta _ (riemannZetaSPath_ne_one hT0 t))
-    (fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT (hu ▸ ht)) (hu ▸ hθ) (hu ▸ hlift)]
+    (fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT (hu ▸ ht).2) (hu ▸ hθ) (hu ▸ hlift)]
   simp [div_eq_inv_mul]
 
 /-- **`S(T)` from the argument of `ζ` started at `ζ(2)`.** If `T ≠ 0` and `ζ` has no zero at height
@@ -232,7 +232,7 @@ theorem exists_riemannZetaS_eq_div_pi (hT0 : T ≠ 0)
     (analyticOn_riemannZeta _ (riemannZetaSPath_ne_one hT0 t)).continuousAt.comp_continuousWithinAt
       (((isPiecewiseC1On_riemannZetaSPath T).continuousOn.mono (by simp)) t ht)
   obtain ⟨θ, hθ, hlift⟩ := TauCeti.Contour.exists_continuousOn_eq_norm_mul_exp hc
-    fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT ht
+    fun t ht ↦ riemannZeta_riemannZetaSPath_ne_zero hT ht.2
   -- `ζ(2)` is a positive real, so `exp (i θ 0) = 1`.
   have h0 : exp (I * θ 0) = 1 := by
     have h := hlift 0 (by simp)
