@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.Basic
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Measure-preserving pullbacks commute with pointwise isometries on `L^p`
@@ -18,7 +18,7 @@ rigid motion of the domain together with a rotation of the values acts on `L^p` 
 composite.
 
 This lemma has its own file because it needs both `TauCeti.MeasureTheory.Function.Lp.Basic` and
-`TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv`, neither of which imports the other.
+`TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv`, neither of which imports the other.
 
 ## Main declarations
 

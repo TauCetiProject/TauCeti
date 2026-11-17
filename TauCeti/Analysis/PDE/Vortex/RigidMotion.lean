@@ -13,7 +13,7 @@ import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingCompLp
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.CompLp
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
