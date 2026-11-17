@@ -124,6 +124,11 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
   `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
   `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
+* `OpenPartialHomeomorph.extend_modelWithCornersSelf`,
+  `OpenPartialHomeomorph.isOpen_extend_target_inter_preimage`,
+  `OpenPartialHomeomorph.mem_interior_extend_target_inter_preimage`, and
+  `OpenPartialHomeomorph.continuousOn_extend_comp_symm`: topological properties of extended
+  charts and coordinate expressions.
 -/
 
 public section
@@ -1226,6 +1231,45 @@ end TopologicalSpace.Opens
 open scoped ContDiff
 
 namespace OpenPartialHomeomorph
+
+section Extend
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
+
+/-- Criterion for `z ∈ interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U)` via `𝓝`. -/
+theorem mem_interior_extend_target_inter_preimage (φ : OpenPartialHomeomorph M H) {U : Set M}
+    {z : E} (hzt : (φ.extend I).target ∈ 𝓝 z) (hU : U ∈ 𝓝 ((φ.extend I).symm z)) :
+    z ∈ interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) :=
+  mem_interior_iff_mem_nhds.2
+    (Filter.inter_mem hzt
+      (((φ.continuousOn_extend_symm (I := I)).continuousAt hzt).preimage_mem_nhds hU))
+
+/-- Extending `φ : OpenPartialHomeomorph M E` by `𝓘(𝕜, E)` gives `φ.toPartialEquiv`. -/
+theorem extend_modelWithCornersSelf (φ : OpenPartialHomeomorph M E) :
+    φ.extend 𝓘(𝕜, E) = φ.toPartialEquiv := by
+  rw [OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv, PartialEquiv.trans_refl]
+
+/-- Openness of `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` for boundaryless `I` and
+open `U`. -/
+theorem isOpen_extend_target_inter_preimage [I.Boundaryless] (φ : OpenPartialHomeomorph M H)
+    {U : Set M} (hU : IsOpen U) :
+    IsOpen ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) :=
+  (φ.continuousOn_extend_symm (I := I)).isOpen_inter_preimage (φ.isOpen_extend_target (I := I)) hU
+
+/-- Continuity of `ψ.extend I' ∘ u ∘ (φ.extend I).symm` on subsets of the chart overlap domain. -/
+theorem continuousOn_extend_comp_symm {𝕜' E' H' N : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAddCommGroup E'] [NormedSpace 𝕜' E'] [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜' E' H'} [TopologicalSpace N]
+    (φ : OpenPartialHomeomorph M H) (ψ : OpenPartialHomeomorph N H') {u : M → N} {s : Set M}
+    (hc : ContinuousOn u s)
+    {W : Set E} (hW : W ⊆ (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :
+    ContinuousOn (ψ.extend I' ∘ u ∘ (φ.extend I).symm) W :=
+  ((ψ.continuousOn_extend (I := I')).mono ψ.extend_source.ge).comp
+    (hc.comp ((φ.continuousOn_extend_symm (I := I)).mono (hW.trans Set.inter_subset_left))
+      fun _ hw ↦ (hW hw).2.1) fun _ hw ↦ (hW hw).2.2
+
+end Extend
 
 section ExtendTrans
 
