@@ -13,7 +13,6 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -46,10 +45,9 @@ blocks: for `N` derivatives of `g` bounded by `G`,
   costs `2^j`. Repeating this `N` times gains `2^{N (j - k)}`.
 * For `j = k` the multiplication and the block are bounded on `Lᵖ`.
 
-Summing over `u = ∑ₖ Δₖ u` with `N > |s|`, the weighted blocks `2^{js} Δⱼ (g u)` are controlled by
-`∑ₖ r^{|j - k|} 2^{ks} ‖Δₖ u‖_p` with `r = 2^{|s| - N} < 1`. Grouping the terms by the offset
-`d = k - j ∈ ℤ` gives a series in `ℓ^q(ℕ, Lᵖ)` whose `d`-th term has norm `O(r^{|d|} ‖u‖)`. It
-converges absolutely, and its sum is the sequence of weighted blocks of `g u`.
+Applying the off-diagonal boundedness criterion
+`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_offDiagonal_decay` with `N > |s|` yields
+boundedness on `B^s_{p,q}` uniformly in `1 ≤ p, q ≤ ∞`.
 
 ## Main declarations
 
@@ -332,63 +330,16 @@ theorem BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le (φ : ContDiffBump 
       (∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) →
       ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (u : BesovSpace F φ s p q),
       ∃ v : BesovSpace F φ s p q, v.toDistr = smulLeftCLM F g u.toDistr ∧ ‖v‖ ≤ C * G * ‖u‖ := by
-  -- With `N > |s|`, the weighted interaction `2^{js} 2^{-N |j - k|} 2^{-ks}` of the blocks `j`
-  -- and `k` is at most `r^{|j - k|}` with `r = 2^{|s| - N} < 1`, and the weighted blocks of
-  -- `g u` are the row sums of a matrix with geometric decay away from the diagonal.
-  set r : ℝ := 2 ^ (|s| - N)
-  have hr0 : 0 ≤ r := by positivity
-  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
   obtain ⟨K, hK, hblock⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le (F := F) φ N
-  refine ⟨K * ∑' d : ℤ, r ^ d.natAbs, by positivity, fun {g G} hg hgG {p q} _ _ u ↦ ?_⟩
+  have hr1 : (2 : ℝ) ^ (|s| - N) < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  refine ⟨K * ((1 + (2 : ℝ) ^ (|s| - N)) / (1 - (2 : ℝ) ^ (|s| - N))),
+    by have := sub_pos.2 hr1; positivity, fun {g G} hg hgG {p q} _ _ u ↦ ?_⟩
   obtain ⟨hG, -⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  set c : ℕ → ℂ := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)
-  -- `Δⱼ (g Δₖ u)` is an `Lᵖ` function `v j k`, and `2^{js} v j k` is dominated by
-  -- `K G r^{|k - j|}` times the weighted block `2^{ks} Δₖ u`.
-  choose v hv hvn using fun j k ↦
-    hblock hg hgG j k u.toDistr (u.block k) (u.coe_block k).symm
-  have hentry (j k : ℕ) :
-      ‖c j • v j k‖ ≤ K * G * r ^ ((k : ℤ) - j).natAbs * ‖u.weightedBlocks k‖ := by
-    have hexp : s * j + -(N * |(j : ℝ) - k|) ≤ (|s| - N) * |(j : ℝ) - k| + s * k := by
-      have := (le_abs_self (s * (j - k))).trans_eq (abs_mul s ((j : ℝ) - k))
-      nlinarith
-    have hr : r ^ ((k : ℤ) - j).natAbs = (2 : ℝ) ^ ((|s| - N) * |(j : ℝ) - k|) := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, Nat.cast_natAbs, Int.cast_abs,
-        abs_sub_comm, Int.cast_sub, Int.cast_natCast, Int.cast_natCast]
-    rw [norm_smul, Complex.norm_of_nonneg (by positivity), u.norm_weightedBlocks_apply k, hr]
-    calc (2 : ℝ) ^ (s * j) * ‖v j k‖
-        ≤ (2 : ℝ) ^ (s * j) * (K * G * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖u.block k‖) := by
-          gcongr
-          exact hvn j k
-      _ = K * G * (2 : ℝ) ^ (s * j + -(N * |(j : ℝ) - k|)) * ‖u.block k‖ := by
-          rw [Real.rpow_add two_pos]
-          ring
-      _ ≤ K * G * (2 : ℝ) ^ ((|s| - N) * |(j : ℝ) - k| + s * k) * ‖u.block k‖ := by
-          gcongr
-          exact one_le_two
-      _ = _ := by
-          rw [Real.rpow_add two_pos]
-          ring
-  have hsum : Summable fun d : ℤ ↦ r ^ d.natAbs :=
-    summable_int_iff_summable_nat_and_neg.2
-      ⟨by simpa using summable_geometric_of_lt_one hr0 hr1,
-        by simpa using summable_geometric_of_lt_one hr0 hr1⟩
-  obtain ⟨W, hWj, hWn⟩ := lp.exists_hasSum_and_norm_le_of_summable u.weightedBlocks
-    (fun d ↦ by positivity) hsum (by positivity) (fun j k ↦ c j • v j k) hentry
-  -- The tempered distribution of `W j` is `2^{js} Δⱼ (g u)`, the limit of
-  -- `2^{js} Δⱼ (g ∑_{k < n} Δₖ u)`.
-  have hW (j : ℕ) : (W j : 𝓢'(E, F)) = c j • littlewoodPaleyBlock F φ j
-      (smulLeftCLM F g u.toDistr) := by
-    have h₁ := ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto _).comp
-      (hWj j).tendsto_sum_nat
-    have h₂ := ((c j • (littlewoodPaleyBlock F φ j ∘L smulLeftCLM F g)).continuous.tendsto _).comp
-      (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
-    refine tendsto_nhds_unique h₁ (h₂.congr fun n ↦ ?_)
-    simp only [Function.comp_apply, map_sum, map_smul, smul_apply,
-      ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply]
-    simp_rw [← u.coe_block, hv]
-  refine ⟨⟨smulLeftCLM F g u.toDistr, W, hW⟩, rfl, ?_⟩
-  rw [← norm_weightedBlocks, ← u.norm_weightedBlocks]
-  exact hWn.trans_eq (by ring)
+  obtain ⟨v, hv, hvn⟩ := BesovSpace.exists_toDistr_eq_and_norm_le_of_offDiagonal_decay hN
+    (mul_nonneg hK hG) (smulLeftCLM F g) u
+    fun j k ↦ hblock hg hgG j k u.toDistr (u.block k) (u.coe_block k).symm
+  exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 end TauCeti
 
