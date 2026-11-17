@@ -119,7 +119,8 @@ def adjoinBaseChangeTensorLift (α : Ω) :
 theorem adjoinBaseChangeTensorLift_tmul (α : Ω) (x : K⟮α⟯) (l : L) :
     adjoinBaseChangeTensorLift K L α (x ⊗ₜ[K] l) =
       adjoinBaseChange K L α x * algebraMap L L⟮α⟯ l := by
-  rfl
+  let := (adjoinBaseChange K L α).toAlgebra
+  exact Algebra.TensorProduct.lift_tmul _ _ (fun _ _ ↦ .all _ _) x l
 
 /-- If `α` is algebraic over `L`, multiplication maps `K(α) ⊗[K] L` onto `L(α)`. -/
 theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsAlgebraic L α) :

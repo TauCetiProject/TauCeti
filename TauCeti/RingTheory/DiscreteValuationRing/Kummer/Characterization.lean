@@ -18,7 +18,6 @@ import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.Separable.BaseChange
 import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Localization
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
-import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.Localization.AtPrime
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Localization.Tower
@@ -145,7 +144,8 @@ private theorem ramificationIdx_eq_one_and_isSeparable_at_maximal
     TauCeti.IsDiscreteValuationRing.exists_unit_mul_pow_ramificationIdx_localization
       hπ P hπB_loc hϖ
   have he_A : IsUnit (P.ramificationIdx A : A) :=
-    TauCeti.IsLocalRing.isUnit_natCast_quotient_maximalIdeal_iff.mp (htame P).2
+    (Ideal.Quotient.mk_surjective (I := maximalIdeal A)).isLocalHom.map_nonunit _
+      (by simpa only [map_natCast] using (htame P).2)
   have he_B : IsUnit (P.ramificationIdx A : B_loc) := by simpa using he_A.map (algebraMap A B_loc)
   obtain ⟨d, hd_eq⟩ := hdvd P
   have hd : d ≠ 0 := right_ne_zero_of_mul (hd_eq ▸ hn)
@@ -353,7 +353,8 @@ private theorem exists_kummer_witness_of_dvd {Ω : Type u} [Field Ω] [IsSepClos
   have : IsScalarTower K L Ω := .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower A L Ω := .of_algebraMap_eq fun _ ↦ rfl
   have hn_A : IsUnit (n : A) :=
-    TauCeti.IsLocalRing.isUnit_natCast_quotient_maximalIdeal_iff.mp hn_unit
+    (Ideal.Quotient.mk_surjective (I := maximalIdeal A)).isLocalHom.map_nonunit _
+      (by simpa only [map_natCast] using hn_unit)
   have : NeZero (n : Ω) := ⟨hn_A.natCast_ne_zero_of_algebra⟩
   obtain ⟨α, hα⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap A Ω π) n
   have : IsScalarTower A K L⟮α⟯ := .to₁₂₄ A K L L⟮α⟯
@@ -468,7 +469,8 @@ theorem isTamelyRamifiedWRT_iff_exists_adjoin_root (Ω : Type*) [Field Ω] [IsSe
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨e₀, he₀_pos, he₀_unit, hdvd⟩ := h.exists_ramificationIdx_dvd K
     have he₀_A : IsUnit (e₀ : A) :=
-      TauCeti.IsLocalRing.isUnit_natCast_quotient_maximalIdeal_iff.mp he₀_unit
+      (Ideal.Quotient.mk_surjective (I := maximalIdeal A)).isLocalHom.map_nonunit _
+        (by simpa only [map_natCast] using he₀_unit)
     have : NeZero (e₀ : Ω) := ⟨he₀_A.natCast_ne_zero_of_algebra⟩
     obtain ⟨α, hα⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap A Ω π) e₀
     exact ⟨e₀, α, he₀_pos, he₀_unit, hα,

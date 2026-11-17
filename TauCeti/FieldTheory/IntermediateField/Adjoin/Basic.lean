@@ -97,16 +97,16 @@ def adjoinAlgHom (F : Type*) {L Ω : Type*} [Field F] [Field L] [Field Ω]
 theorem coe_adjoinAlgHom (F : Type*) {L Ω : Type*} [Field F] [Field L] [Field Ω]
     [Algebra F Ω] [Algebra L Ω] {E : IntermediateField L Ω} [Algebra F E]
     [IsScalarTower F E Ω] {s : Set Ω} (hs : s ⊆ E) (z : adjoin F s) :
-    (adjoinAlgHom F hs z : Ω) = z := by
-  rfl
+    (adjoinAlgHom F hs z : Ω) = z :=
+  (rfl)
 
 /-- For a singleton set `{x}`, `adjoinAlgHom` sends the distinguished generator of `F⟮x⟯` to `x`. -/
 @[simp]
 theorem adjoinAlgHom_gen (F : Type*) {L Ω : Type*} [Field F] [Field L] [Field Ω]
     [Algebra F Ω] [Algebra L Ω] {E : IntermediateField L Ω} [Algebra F E]
     [IsScalarTower F E Ω] {x : Ω} (hs : ({x} : Set Ω) ⊆ E) :
-    adjoinAlgHom F hs (AdjoinSimple.gen F x) = ⟨x, hs rfl⟩ := by
-  rfl
+    adjoinAlgHom F hs (AdjoinSimple.gen F x) = ⟨x, hs rfl⟩ :=
+  (rfl)
 
 end TauCeti.IntermediateField
 
