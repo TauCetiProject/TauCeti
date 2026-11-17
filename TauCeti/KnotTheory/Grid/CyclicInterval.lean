@@ -943,10 +943,11 @@ theorem ite_mem_cIco_finRotate_eq {s α β : Fin n} (hαβ : α ≠ β) :
     simp only [hband.mpr hs', hsα, hs, ite_true, ite_false]
     omega
 
-/-- **Stepping across a half-open arc.** Moving from `s` to its cyclic successor enters the
-half-open arc from `a` to `b` exactly when the successor is `a`, and leaves it exactly when the
-successor is `b`. On a grid, with `a` and `b` naming rows of squares and `s` a row of squares, the
-step is the horizontal grid line between the rows `s` and `finRotate n s`. -/
+/-- **Stepping across a half-open arc.** For distinct endpoints, moving from `s` to its cyclic
+successor enters the half-open arc from `a` to `b` exactly when the successor is `a`, and leaves
+it exactly when the successor is `b`; for `a = b` the arc is empty and both sides vanish. On a
+grid, with `a` and `b` naming rows of squares and `s` a row of squares, the step is the
+horizontal grid line between the rows `s` and `finRotate n s`. -/
 theorem ite_mem_cIco_finRotate_sub_ite_mem_cIco (a b s : Fin n) :
     ((if finRotate n s ∈ cIco a b then 1 else 0 : ℤ) - if s ∈ cIco a b then 1 else 0) =
       (if finRotate n s = a then 1 else 0 : ℤ) - if finRotate n s = b then 1 else 0 := by

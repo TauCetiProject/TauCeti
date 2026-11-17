@@ -33,7 +33,7 @@ vertical circles upwards, so the square above the arc of the horizontal circle s
 `(c, r)` is on its right. Every region is a square, a disk with a corner at each of the four grid
 points around it. With Euler characteristic `1` for every region the four quarter corners cancel
 it, and the Euler measure of every domain is `0`
-(`TauCeti.GridDiagram.heegaardRegionSystem_eulerMeasure_one`).
+(`TauCeti.GridDiagram.heegaardRegionSystem_eulerMeasure_const_one_eq_zero`).
 
 * **Generators.** A generator, one intersection point on each horizontal and each vertical
   circle, is a grid state (`TauCeti.GridDiagram.gridStateEquivGenerator`).
@@ -89,6 +89,7 @@ every other square. -/
 noncomputable def domain (R : GridRectangle n) : Fin n × Fin n → ℤ :=
   Set.indicator R.coveredSquares 1
 
+@[simp]
 theorem domain_apply (R : GridRectangle n) (q : Fin n × Fin n) :
     R.domain q = if q ∈ R.coveredSquares then 1 else 0 := by
   simp only [domain, Set.indicator_apply, Finset.mem_coe, Pi.one_apply]
@@ -205,7 +206,8 @@ theorem heegaardRegionSystem_basepoint_inr (c : Fin n) :
 /-- Every region of a grid diagram is a square, so the Euler measure vanishes when every region
 has Euler characteristic `1`. -/
 @[simp]
-theorem heegaardRegionSystem_eulerMeasure_one : G.heegaardRegionSystem.eulerMeasure 1 = 0 := by
+theorem heegaardRegionSystem_eulerMeasure_const_one_eq_zero :
+    G.heegaardRegionSystem.eulerMeasure 1 = 0 := by
   refine AddMonoidHom.ext fun D => ?_
   rw [AddMonoidHom.zero_apply]
   have hsum : ∀ e : Equiv.Perm (Fin n × Fin n), ∑ p, (D (e p) : ℚ) = ∑ p, (D p : ℚ) :=
@@ -239,6 +241,7 @@ def gridStateEquivGenerator : GridState n ≃ G.heegaardRegionSystem.Generator w
     exact Prod.ext (g.2 i).2.2.symm (g.2 i).2.1.symm
 
 /-- The generator of a grid state chooses the point `(x⁻¹ r, r)` on the horizontal circle `r`. -/
+@[simp 1100]
 theorem point_gridStateEquivGenerator (x : GridState n) (i : Fin n) :
     G.heegaardRegionSystem.point (G.gridStateEquivGenerator x) i = (x.toPerm.symm i, i) :=
   HeegaardIntersectionSystem.point_apply _ _ _
@@ -248,11 +251,7 @@ matched with. -/
 @[simp]
 theorem gridStateEquivGenerator_symm_toPerm (g : G.heegaardRegionSystem.Generator) :
     (G.gridStateEquivGenerator.symm g).toPerm = (G.heegaardRegionSystem.betaEquiv g).symm := by
-  have h : G.heegaardRegionSystem.betaEquiv g = g.1 := Equiv.ext fun i => by
-    rw [HeegaardIntersectionSystem.betaEquiv_apply, HeegaardIntersectionSystem.point_apply,
-      HeegaardIntersectionSystem.beta_coe]
-  rw [h]
-  rfl
+  simp [gridStateEquivGenerator, HeegaardIntersectionSystem.betaEquiv_eq_fst]
 
 /-- The generator of a grid state matches the horizontal circle `r` with the vertical circle
 `x⁻¹ r`. -/
@@ -265,6 +264,7 @@ theorem betaEquiv_gridStateEquivGenerator (x : GridState n) :
 
 /-- The `0`-chain of the generator of a grid state is the indicator of its occupied grid
 points. -/
+@[simp 1100]
 theorem generatorChain_gridStateEquivGenerator (x : GridState n) (p : Fin n × Fin n) :
     G.heegaardRegionSystem.generatorChain (G.gridStateEquivGenerator x) p =
       if p ∈ x.pointSet then 1 else 0 := by
@@ -451,7 +451,7 @@ theorem maslovIndex_domain (R : GridRectangleBetween x y) :
     G.heegaardRegionSystem.maslovIndex 1 (G.gridStateEquivGenerator x)
         (G.gridStateEquivGenerator y) R.toGridRectangle.domain =
       1 + 2 * #(x.pointSet ∩ R.toGridRectangle.interior) := by
-  rw [HeegaardRegionSystem.maslovIndex_apply, heegaardRegionSystem_eulerMeasure_one,
+  rw [HeegaardRegionSystem.maslovIndex_apply, heegaardRegionSystem_eulerMeasure_const_one_eq_zero,
     AddMonoidHom.zero_apply, generatorPointMeasure_domain_source,
     generatorPointMeasure_domain_target]
   ring
@@ -523,7 +523,7 @@ theorem sum_domain_basepoint_inr_sub_sum_domain_basepoint_inl (R : GridRectangle
   rw [sum_domain_basepoint_inl, sum_domain_basepoint_inr,
     G.alexander_sub_alexander_eq_card_sub_card R]
   push_cast
-  rfl
+  ring
 
 /-- The domain of an empty rectangle covering no marking is counted by the hat differential of
 the multi-pointed Heegaard diagram of a grid diagram: it is a nonnegative domain of Maslov index

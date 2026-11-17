@@ -39,15 +39,17 @@ variable {α β : Type*}
 theorem prodCongrLeft_const_zpow (σ : Perm α) (k : ℤ) :
     (Equiv.prodCongrLeft fun _ : β => σ) ^ k = Equiv.prodCongrLeft fun _ : β => σ ^ k :=
   (map_zpow ({ toFun := fun σ : Perm α => (Equiv.prodCongrLeft fun _ : β => σ : Perm (α × β))
-               map_one' := rfl
-               map_mul' := fun _ _ => rfl } : Perm α →* Perm (α × β)) σ k).symm
+               map_one' := Equiv.ext fun ⟨_, _⟩ => by simp [Equiv.prodCongrLeft_apply]
+               map_mul' := fun _ _ => Equiv.ext fun ⟨_, _⟩ => by
+                 simp [Equiv.prodCongrLeft_apply] } : Perm α →* Perm (α × β)) σ k).symm
 
 /-- The powers of a permutation of the second factor of a product act on that factor. -/
 theorem prodCongrRight_const_zpow (τ : Perm β) (k : ℤ) :
     (Equiv.prodCongrRight fun _ : α => τ) ^ k = Equiv.prodCongrRight fun _ : α => τ ^ k :=
   (map_zpow ({ toFun := fun τ : Perm β => (Equiv.prodCongrRight fun _ : α => τ : Perm (α × β))
-               map_one' := rfl
-               map_mul' := fun _ _ => rfl } : Perm β →* Perm (α × β)) τ k).symm
+               map_one' := Equiv.ext fun ⟨_, _⟩ => by simp [Equiv.prodCongrRight_apply]
+               map_mul' := fun _ _ => Equiv.ext fun ⟨_, _⟩ => by
+                 simp [Equiv.prodCongrRight_apply] } : Perm β →* Perm (α × β)) τ k).symm
 
 /-- Two points share a cycle of a permutation of the first factor exactly when their first
 coordinates share a cycle and their second coordinates agree. -/
