@@ -14,7 +14,8 @@ The quotient `z₂ / z₁` of two points of an open half-plane through the origi
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
 four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
-the right half-plane, so this applies to quotients of nearly equal points. A relative
+the right half-plane, so this applies to quotients of nearly equal points; correspondingly, the
+closed ball around `1` of radius `r` lies in the slit plane iff `r < 1`. A relative
 displacement smaller than the distance to a pole also gives a slit-plane quotient; in particular
 `1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. So does `b / a` when the triangle inequality
 `‖a - b‖ ≤ ‖a‖ + ‖b‖` is strict, the symmetric form of Rouché's hypothesis. A product of two
@@ -41,6 +42,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 
 ## Main declarations
 
+* `Complex.closedBall_one_subset_slitPlane_iff`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
@@ -378,6 +380,15 @@ theorem isConnected_setOf_one_sub_pow_mem_slitPlane {m : ℕ} (hm : 0 < m) :
   have h0 : (0 : ℂ) ∈ {z : ℂ | 1 - z ^ m ∈ slitPlane} := by
     simp [zero_pow hm.ne', one_mem_slitPlane]
   exact ((starConvex_zero_setOf_one_sub_pow_mem_slitPlane m).isPathConnected h0).isConnected
+
+/-- A closed ball centered at `1` lies in the slit plane iff its radius is strictly less than
+`1`. -/
+@[simp]
+theorem closedBall_one_subset_slitPlane_iff {r : ℝ} :
+    Metric.closedBall (1 : ℂ) r ⊆ slitPlane ↔ r < 1 := by
+  refine ⟨fun h => lt_of_not_ge fun hr => zero_notMem_slitPlane (h ?_),
+    fun hr => (Metric.closedBall_subset_ball hr).trans ball_one_subset_slitPlane⟩
+  simpa [Metric.mem_closedBall] using hr
 
 end Complex
 
