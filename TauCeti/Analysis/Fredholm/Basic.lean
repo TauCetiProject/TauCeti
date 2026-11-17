@@ -39,8 +39,6 @@ intended throughout.
   `NontriviallyNormedField`, without completeness or separation assumptions.
 * `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
   Fredholm operator of index zero is invertible.
-* `ContinuousLinearMap.isFredholm_of_isUnit`: a unit of the ring of continuous linear
-  endomorphisms is Fredholm.
 * `ContinuousLinearMap.isFredholm_iff_of_comp_eq`: operators conjugate under continuous linear
   equivalences are simultaneously Fredholm.
 * `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
@@ -177,11 +175,6 @@ lemma IsFredholm.isInvertible_of_injective_of_index_eq_zero {T : E →L[𝕜] F}
   have := hT.finite_coker
   exact isInvertible_iff_isFredholm_and_bijective.2
     ⟨hT, T.bijective_of_injective_of_index_eq_zero hinj h0⟩
-
-/-- An operator that is a unit of the ring of continuous linear endomorphisms is Fredholm. -/
-lemma isFredholm_of_isUnit {T : E →L[𝕜] E} (hT : IsUnit T) : IsFredholm T := by
-  obtain ⟨w, rfl⟩ := hT
-  exact (ContinuousLinearEquiv.unitsEquiv 𝕜 E w).isFredholm
 
 section RestrictScalars
 

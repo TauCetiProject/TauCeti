@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Spectral.Projection
 public import TauCeti.Analysis.InnerProductSpace.Spectral.FiniteRank
-import TauCeti.Analysis.Fredholm.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Algebra.Indicator
 
 /-!
@@ -708,7 +708,8 @@ theorem spectralFlow_eq_zero_of_forall_zero_notMem_spectrum {a b : ℝ} (hab : a
     (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
     (h0 : ∀ t ∈ Icc a b, (0 : ℝ) ∉ spectrum ℝ (A t)) : spectralFlow A a b = 0 := by
   have hF (t : ℝ) (ht : t ∈ Icc a b) : (A t).IsFredholm :=
-    ContinuousLinearMap.isFredholm_of_isUnit ((spectrum.zero_notMem_iff ℝ).1 (h0 t ht))
+    (ContinuousLinearMap.isInvertible_iff_isUnit.2
+      ((spectrum.zero_notMem_iff ℝ).1 (h0 t ht))).isFredholm
   -- Since `0` and the cut stay out of the spectrum, every local count vanishes.
   have hp : IsSpectralFlowPotential A a b 0 := by
     intro s t c has hst htb hc
