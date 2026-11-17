@@ -60,15 +60,8 @@ theorem laurentToRatFunc_T (n : ℤ) :
 @[simp]
 theorem laurentToRatFunc_toLaurent (p : K[X]) :
     laurentToRatFunc K p.toLaurent = algebraMap K[X] (RatFunc K) p := by
-  induction p using Polynomial.induction_on with
-  | C c =>
-    rw [Polynomial.toLaurent_C, AlgHom.apply_laurentPolynomial_C, RatFunc.algebraMap_C,
-      RatFunc.algebraMap_eq_C]
-  | add p q hp hq => simp [map_add, hp, hq]
-  | monomial n c _ =>
-    rw [map_mul, map_pow, Polynomial.toLaurent_C, Polynomial.toLaurent_X, map_mul, map_pow,
-      AlgHom.apply_laurentPolynomial_C, laurentToRatFunc_T, zpow_one, map_mul, map_pow,
-      RatFunc.algebraMap_C, RatFunc.algebraMap_eq_C, RatFunc.algebraMap_X]
+  rw [laurentToRatFunc, laurentEval_eq_eval₂, LaurentPolynomial.eval₂_toLaurent, Units.val_mk0,
+    ← Polynomial.aeval_def, RatFunc.aeval_X_left_eq_algebraMap]
 
 /-- Equipped with `laurentToRatFunc K`, `RatFunc K` is a fraction field of `K[T;T⁻¹]`. -/
 theorem isFractionRing_ratFunc_of_laurent :

@@ -7,14 +7,11 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
-import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.Algebra.Polynomial.Laurent.PrincipalIdealRing
 import TauCeti.Algebra.Polynomial.Laurent.RatFunc
 import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
-import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
-import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
-import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.XPowSubCX
+import TauCeti.FieldTheory.FunctionField.Radical.TwoPlaces
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.Etale.Connected
@@ -55,18 +52,12 @@ fraction field `L`).
 Every place of `F / K` other than `0` (`X = 0`) and `∞` is finite on `K[T;T⁻¹]`, since `X` and
 `X⁻¹` have order zero there; a place `P'` of `L / K` above it is therefore finite on `A`, and
 étaleness of `A` over `K[T;T⁻¹]` gives `e(P' ∣ P) = 1`. In characteristic zero every place is tame,
-so the Hurwitz genus formula (`TauCeti.hurwitz_genus_formula_ratFunc`) reads
-`2g(L) - 2 = -2n + ∑_{P' ∣ 0}(e - 1) + ∑_{P' ∣ ∞}(e - 1)`. Because `0` and `∞` each have at least
-one extension to `L` and the ramification indices in each fibre add up to at most `n`, both sums
-are at most `n - 1`; hence `g(L) = 0`, and there are unique places `Q₀ ∣ 0` and `Q_∞ ∣ ∞`, both of
-ramification index `n`.
-
-By Riemann–Roch in genus zero, the degree-zero divisor `Q_∞ - Q₀` has a nonzero section `z`, whose
-principal divisor is `Q₀ - Q_∞`. Then `z ^ n / X` has order zero at every place of `L`, hence lies
-in `Kˣ`; rescaling `z` by an `n`-th root in `K` produces `y ∈ L` with `y ^ n = T`. Integrality
-places `y` in `A`, giving a `K[T;T⁻¹]`-algebra map `K[T;T⁻¹][Y] / (Y ^ n - T) → A` that induces an
-isomorphism on generic fibres and, because smooth base change commutes with integral closure, is
-bijective on `A`.
+so `TauCeti.exists_pow_eq_X_of_unramified_outside_zero_infty` (which combines Hurwitz's genus
+formula and Riemann–Roch for tame extensions unramified outside two rational places; see
+`TauCeti/FieldTheory/FunctionField/Radical/TwoPlaces.lean`) produces `y ∈ L` with `y ^ n = T`.
+Integrality places `y` in `A`, giving a `K[T;T⁻¹]`-algebra map `K[T;T⁻¹][Y] / (Y ^ n - T) → A`
+that induces an isomorphism on generic fibres and, by smooth base-change descent
+(`AlgHom.bijective_of_bijective_tensorProduct`), is bijective on `A`.
 
 ## Main declarations
 
@@ -87,7 +78,7 @@ bijective on `A`.
 public section
 
 open Polynomial
-open scoped LaurentPolynomial TensorProduct IntermediateField
+open scoped LaurentPolynomial TensorProduct
 
 namespace TauCeti
 
@@ -123,8 +114,6 @@ theorem isDomain_standardTameCover_laurentPolynomial_T (K : Type*) [Field K] {n 
 
 section Classification
 
-open AlgebraicGeometry
-
 /-- Every place of `RatFunc K` other than `X = 0` and `∞` is finite on `K[T;T⁻¹]`. -/
 private theorem laurentToRatFunc_mem_integers_of_ne {K : Type*} [Field K]
     {P : Place K (RatFunc K)}
@@ -141,171 +130,6 @@ private theorem laurentToRatFunc_mem_integers_of_ne {K : Type*} [Field K]
   | C_mul_T m c =>
     rw [map_mul, AlgHom.apply_laurentPolynomial_C, laurentToRatFunc_T]
     exact mul_mem (P.algebraMap_mem_integers c) (hXpow m)
-
-/-- **Hurwitz constraint for covers of `ℙ¹ \ {0, ∞}`.** In characteristic zero over an
-algebraically closed field `K`, any finite extension `L / RatFunc K` unramified outside `0` and
-`∞` has genus zero and unique totally ramified places `Q₀ ∣ 0` and `Q_∞ ∣ ∞`. -/
-private theorem genus_eq_zero_and_unique_places_of_unramified_outside_zero_infty
-    {K L : Type*} [Field K] [IsAlgClosed K] [CharZero K] [Field L] [Algebra K L]
-    [Algebra (RatFunc K) L] [IsScalarTower K (RatFunc K) L] [FiniteDimensional (RatFunc K) L]
-    (hunram : ∀ P' : Place K L,
-      P'.restrict K (RatFunc K) ≠ Place.adicOfIrreducible (irreducible_X (R := K)) →
-      P'.restrict K (RatFunc K) ≠ Place.infty K → Place.ramificationIdx (RatFunc K) P' = 1) :
-    genus K L = 0 ∧
-      ∃ Q₀ Qinf : Place K L,
-        (∀ Q : Place K L,
-          Q.restrict K (RatFunc K) = Place.adicOfIrreducible (irreducible_X (R := K)) ↔ Q = Q₀) ∧
-        (∀ Q : Place K L, Q.restrict K (RatFunc K) = Place.infty K ↔ Q = Qinf) ∧
-        Place.ramificationIdx (RatFunc K) Q₀ = Module.finrank (RatFunc K) L ∧
-        Place.ramificationIdx (RatFunc K) Qinf = Module.finrank (RatFunc K) L := by
-  classical
-  have : CharZero (RatFunc K) :=
-    charZero_of_injective_algebraMap (algebraMap K (RatFunc K)).injective
-  have hL : IsFunctionField K L := isFunctionField_iff_functionField.mpr inferInstance
-  set P₀ : Place K (RatFunc K) := Place.adicOfIrreducible (irreducible_X (R := K))
-  set Pinf : Place K (RatFunc K) := Place.infty K
-  have hP0_ne_inf : P₀ ≠ Pinf := fun h ↦ by
-    have h1 : P₀.ord (RatFunc.X : RatFunc K) = 1 := Place.ord_adicOfIrreducible_X_self
-    rw [h, Place.ord_infty, RatFunc.intDegree_X] at h1
-    omega
-  obtain ⟨Q₀₀, hQ₀₀⟩ := Place.restrict_surjective_of_finiteDimensional
-    (IsFunctionField.ratFunc K) hL P₀
-  obtain ⟨Qinf₀, hQinf₀⟩ := Place.restrict_surjective_of_finiteDimensional
-    (IsFunctionField.ratFunc K) hL Pinf
-  have hexL : IsIntegrallyClosedIn K L :=
-    Q₀₀.isIntegrallyClosedIn_of_degree_eq_one
-      (Q₀₀.degree_eq_one_of_isAlgClosed_of_isFunctionField hL)
-  set n : ℕ := Module.finrank (RatFunc K) L
-  let S₀ : Finset (Place K L) := (Place.finite_setOf_restrict_eq K (RatFunc K) P₀).toFinset
-  let Sinf : Finset (Place K L) := (Place.finite_setOf_restrict_eq K (RatFunc K) Pinf).toFinset
-  have hmemS₀ : ∀ P', P' ∈ S₀ ↔ P'.restrict K (RatFunc K) = P₀ := fun _ ↦ Set.Finite.mem_toFinset _
-  have hmemSinf : ∀ P', P' ∈ Sinf ↔ P'.restrict K (RatFunc K) = Pinf :=
-    fun _ ↦ Set.Finite.mem_toFinset _
-  have hdisj : Disjoint S₀ Sinf := Finset.disjoint_left.mpr fun P' h1 h2 ↦
-    hP0_ne_inf (((hmemS₀ P').mp h1).symm.trans ((hmemSinf P').mp h2))
-  have hcard₀ : 1 ≤ S₀.card := Finset.card_pos.mpr ⟨Q₀₀, (hmemS₀ Q₀₀).mpr hQ₀₀⟩
-  have hcardinf : 1 ≤ Sinf.card := Finset.card_pos.mpr ⟨Qinf₀, (hmemSinf Qinf₀).mpr hQinf₀⟩
-  have hsum_le (P : Place K (RatFunc K)) (S : Finset (Place K L))
-      (hS : ∀ P' ∈ S, P'.restrict K (RatFunc K) = P) :
-      ∑ P' ∈ S, Place.ramificationIdx (RatFunc K) P' ≤ n :=
-    le_trans (Finset.sum_le_sum fun P' _ ↦
-      Nat.le_mul_of_pos_right _ (Place.one_le_relativeDegree K (RatFunc K) P'))
-      (Place.sum_ramificationIdx_mul_relativeDegree_le_finrank K (RatFunc K) P S hS)
-  have hsum₀ := hsum_le P₀ S₀ fun P' h ↦ (hmemS₀ P').mp h
-  have hsuminf := hsum_le Pinf Sinf fun P' h ↦ (hmemSinf P').mp h
-  let Ddiff := Divisor.tameDifferent K L (IsFunctionField.ratFunc K)
-  have hco : ∀ P' : Place K L, Ddiff P' = (Place.ramificationIdx (RatFunc K) P' : ℤ) - 1 :=
-    fun P' ↦ Divisor.coeff_tameDifferent K L (IsFunctionField.ratFunc K) P'
-  have hsupp : Ddiff.support ⊆ S₀ ∪ Sinf := fun P' hP' ↦ by
-    rw [Finset.mem_union, hmemS₀, hmemSinf]
-    by_contra! hne
-    exact Finsupp.mem_support_iff.mp hP' (by rw [hco, hunram P' hne.1 hne.2]; norm_num)
-  have hdeg_diff : Divisor.degree Ddiff =
-      ((∑ P' ∈ S₀, Place.ramificationIdx (RatFunc K) P' : ℕ) : ℤ) - S₀.card +
-        (((∑ P' ∈ Sinf, Place.ramificationIdx (RatFunc K) P' : ℕ) : ℤ) - Sinf.card) := by
-    rw [Divisor.degree_apply_of_isAlgClosed hL Ddiff,
-      Finset.sum_subset hsupp (fun _ _ hnot ↦ Finsupp.notMem_support_iff.mp hnot),
-      Finset.sum_congr rfl fun P' _ ↦ hco P']
-    simp [Finset.sum_union hdisj, Finset.sum_sub_distrib, Nat.cast_sum]
-  have hhurwitz : 2 * (genus K L : ℤ) - 2 = -2 * (n : ℤ) + Divisor.degree Ddiff := by
-    have htame : Ddiff = Divisor.different K L (IsFunctionField.ratFunc K) :=
-      (Divisor.tameDifferent_eq_different_iff K L (IsFunctionField.ratFunc K)).mpr
-        (fun P' ↦ Place.isTame_of_charZero K (RatFunc K) P')
-    rw [htame]
-    exact hurwitz_genus_formula_ratFunc hexL
-  have hcard₀_eq : S₀.card = 1 := by omega
-  have hcardinf_eq : Sinf.card = 1 := by omega
-  obtain ⟨Q₀, hS₀_eq⟩ := Finset.card_eq_one.mp hcard₀_eq
-  obtain ⟨Qinf, hSinf_eq⟩ := Finset.card_eq_one.mp hcardinf_eq
-  refine ⟨by omega, Q₀, Qinf,
-    fun Q ↦ by rw [← hmemS₀, hS₀_eq, Finset.mem_singleton],
-    fun Q ↦ by rw [← hmemSinf, hSinf_eq, Finset.mem_singleton], ?_, ?_⟩
-  · have : ∑ P' ∈ S₀, Place.ramificationIdx (RatFunc K) P' = n := by omega
-    simpa [hS₀_eq] using this
-  · have : ∑ P' ∈ Sinf, Place.ramificationIdx (RatFunc K) P' = n := by omega
-    simpa [hSinf_eq] using this
-
-/-- **Riemann–Roch extraction of an `n`-th root of `X`.** Given a genus-zero extension
-`L / RatFunc K` over an algebraically closed field `K` with unique totally ramified places
-`Q₀ ∣ 0` and `Q_∞ ∣ ∞`, the divisor `Q_∞ - Q₀` yields a section `z` whose `n`-th power is a
-nonzero scalar multiple of `RatFunc.X`; rescaling in `K` produces `y ∈ L` with `y ^ n = X`. -/
-private theorem exists_pow_eq_X_of_genus_zero_unique_places
-    {K L : Type*} [Field K] [IsAlgClosed K] [Field L] [Algebra K L]
-    [Algebra (RatFunc K) L] [IsScalarTower K (RatFunc K) L] [FiniteDimensional (RatFunc K) L]
-    (hgenus : genus K L = 0) {Q₀ Qinf : Place K L}
-    (hQ₀ : ∀ Q : Place K L,
-      Q.restrict K (RatFunc K) = Place.adicOfIrreducible (irreducible_X (R := K)) ↔ Q = Q₀)
-    (hQinf : ∀ Q : Place K L, Q.restrict K (RatFunc K) = Place.infty K ↔ Q = Qinf)
-    (hQ₀_ram : Place.ramificationIdx (RatFunc K) Q₀ = Module.finrank (RatFunc K) L)
-    (hQinf_ram : Place.ramificationIdx (RatFunc K) Qinf = Module.finrank (RatFunc K) L) :
-    ∃ y : L, y ^ Module.finrank (RatFunc K) L = algebraMap (RatFunc K) L RatFunc.X := by
-  have hL : IsFunctionField K L := isFunctionField_iff_functionField.mpr inferInstance
-  have hexL : IsIntegrallyClosedIn K L :=
-    Q₀.isIntegrallyClosedIn_of_degree_eq_one (Q₀.degree_eq_one_of_isAlgClosed_of_isFunctionField hL)
-  set n : ℕ := Module.finrank (RatFunc K) L
-  have hn_pos : 0 < n := Module.finrank_pos
-  have hQ_ne : Q₀ ≠ Qinf := fun h ↦ by
-    have h1 : (Q₀.restrict K (RatFunc K)).ord (RatFunc.X : RatFunc K) = 1 := by
-      rw [(hQ₀ Q₀).mpr rfl]; exact Place.ord_adicOfIrreducible_X_self
-    rw [h, (hQinf Qinf).mpr rfl, Place.ord_infty, RatFunc.intDegree_X] at h1
-    omega
-  -- Riemann–Roch on `Qinf - Q₀` produces `z ∈ Lˣ` with `(z) = Q₀ - Qinf`.
-  let D : Divisor K L := WeilDivisor.ofPoint Qinf - WeilDivisor.ofPoint Q₀
-  have hdegD : Divisor.degree D = 0 := by
-    rw [Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint,
-      Qinf.degree_eq_one_of_isAlgClosed_of_isFunctionField hL,
-      Q₀.degree_eq_one_of_isAlgClosed_of_isFunctionField hL, sub_self]
-  have hdimD : (Divisor.dim D : ℤ) = 1 := by
-    have := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hL hexL
-      (D := D) (by rw [hgenus, hdegD]; norm_num)
-    omega
-  obtain ⟨z, hzD, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hL D).mp (by omega))
-  have hE_zero : Divisor.principal hL (Units.mk0 z hz0) + D = 0 :=
-    (Divisor.eq_of_le_of_degree_eq hL ((mem_riemannRochSpace_units_iff hL).mp hzD)
-      (by simp [hdegD])).symm
-  have hprin_z : Divisor.principal hL (Units.mk0 z hz0) =
-      WeilDivisor.ofPoint Q₀ - WeilDivisor.ofPoint Qinf := by
-    simpa [D, sub_eq_add_neg, add_comm] using eq_neg_of_add_eq_zero_left hE_zero
-  -- Compare `z ^ n` with `RatFunc.X`: their quotient `u` has no poles, hence lies in `Kˣ`.
-  let uX : Lˣ := Units.map (algebraMap (RatFunc K) L).toMonoidHom
-    (Units.mk0 RatFunc.X RatFunc.X_ne_zero)
-  have huX_val : (uX : L) = algebraMap (RatFunc K) L RatFunc.X := by simp [uX]
-  let u : Lˣ := Units.mk0 z hz0 ^ n * uX⁻¹
-  have hu_ord : ∀ Q : Place K L, Q.ord (u : L) = 0 := fun Q ↦ by
-    have hzn : Q.ord ((Units.mk0 z hz0 ^ n : Lˣ) : L) =
-        (n : ℤ) * (Divisor.principal hL (Units.mk0 z hz0)).coeff Q := by
-      rw [Units.val_pow_eq_pow_val, Q.ord_pow, ← Divisor.coeff_principal]
-    rw [Units.val_mul, Q.ord_mul (Units.ne_zero _) (Units.ne_zero _), Units.val_inv_eq_inv_val,
-      Q.ord_inv, hzn, huX_val, Place.ord_algebraMap_restrict (k := K), hprin_z]
-    rcases eq_or_ne Q Q₀ with rfl | h0
-    · rw [(hQ₀ Q).mpr rfl, Place.ord_adicOfIrreducible_X_self]
-      simp [hQ_ne, hQ₀_ram]
-    · rcases eq_or_ne Q Qinf with rfl | hi
-      · rw [(hQinf Q).mpr rfl, Place.ord_infty, RatFunc.intDegree_X]
-        simp [Ne.symm hQ_ne, hQinf_ram]
-      · simp [h0, hi, Place.ord_X_eq_zero_of_ne (mt (hQ₀ Q).mp h0) (mt (hQinf Q).mp hi)]
-  have hu_poles : Divisor.poles hL u = 0 := WeilDivisor.ext fun Q ↦ by
-    rw [Divisor.coeff_poles, hu_ord Q, WeilDivisor.coeff_zero]; norm_num
-  have hu_alg : IsAlgebraic K (u : L) := by
-    by_contra htr
-    have htr' : Transcendental K (u : L) := htr
-    have : FiniteDimensional K⟮(u : L)⟯ L := hL.finiteDimensional_adjoin htr'
-    have hdeg := Divisor.degree_poles hL u htr'
-    rw [hu_poles, Divisor.degree_zero] at hdeg
-    have : 0 < Module.finrank K⟮(u : L)⟯ L := Module.finrank_pos
-    omega
-  obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hexL (u : L) hu_alg
-  have hc0 : c ≠ 0 := fun h ↦ u.ne_zero (hc ▸ h ▸ map_zero _)
-  obtain ⟨d, hd⟩ := IsAlgClosed.exists_root (X ^ n - C c)
-    (by rw [degree_X_pow_sub_C hn_pos]; exact_mod_cast hn_pos.ne')
-  have hdn : d ^ n = c := sub_eq_zero.mp (by simpa using hd)
-  refine ⟨algebraMap K L d⁻¹ * z, ?_⟩
-  have hzu : z ^ n = (u : L) * algebraMap (RatFunc K) L RatFunc.X := by
-    rw [← huX_val, Units.val_mul, mul_assoc, Units.inv_mul, mul_one,
-      Units.val_pow_eq_pow_val, Units.val_mk0]
-  rw [mul_pow, ← map_pow, inv_pow, hdn, hzu, ← hc, ← mul_assoc, ← map_mul, inv_mul_cancel₀ hc0,
-    map_one, one_mul]
 
 /-- Over an algebraically closed field `K` of characteristic zero, the function field
 `L = RatFunc K ⊗[K[T;T⁻¹]] A` of a connected finite étale `K[T;T⁻¹]`-algebra `A` contains an `n`-th
@@ -351,36 +175,9 @@ private theorem exists_pow_eq_X_of_etale_laurentPolynomial (K A : Type*) [Field 
     rw [Place.ramificationIdx_eq_ramificationIdx_center (R := K[T;T⁻¹]) K F P' hA]
     exact (Ideal.isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField
       (R := K[T;T⁻¹]) (P'.center hA).asIdeal |>.mp inferInstance).1
-  obtain ⟨hgenus, Q₀, Qinf, hQ₀, hQinf, hQ₀_ram, hQinf_ram⟩ :=
-    genus_eq_zero_and_unique_places_of_unramified_outside_zero_infty hunram
-  exact exists_pow_eq_X_of_genus_zero_unique_places hgenus hQ₀ hQinf hQ₀_ram hQinf_ram
-
-/-- If `R` is integrally closed in `F`, `B` is smooth over `R`, `A` is integral and flat over `R`,
-and `ψ : B →ₐ[R] A` induces a bijection on `F`-fibres, then `ψ` is bijective. -/
-private theorem bijective_of_bijective_tensorProduct {R F B A : Type*} [CommRing R] [CommRing F]
-    [Algebra R F] [IsIntegrallyClosedIn R F] [CommRing B] [Algebra R B] [Algebra.Smooth R B]
-    [CommRing A] [Algebra R A] [Module.Flat R A] [Algebra.IsIntegral R A]
-    (ψ : B →ₐ[R] A) (hψF : Function.Bijective (Algebra.TensorProduct.map (AlgHom.id F F) ψ)) :
-    Function.Bijective ψ := by
-  have hinjRF : Function.Injective (algebraMap R F) := (isIntegrallyClosedIn_iff.mp ‹_›).1
-  have hinjBL : Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] F ⊗[R] B) :=
-    Algebra.TensorProduct.includeRight_injective hinjRF
-  have hinjAL : Function.Injective (Algebra.TensorProduct.includeRight : A →ₐ[R] F ⊗[R] A) :=
-    Algebra.TensorProduct.includeRight_injective hinjRF
-  refine ⟨fun b₁ b₂ hb ↦ hinjBL (hψF.1 ?_), fun x ↦ ?_⟩
-  · rw [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul, hb]
-  · let eFL : F ⊗[R] B ≃ₐ[F] F ⊗[R] A := AlgEquiv.ofBijective _ hψF
-    have hxint : IsIntegral R (eFL.symm (1 ⊗ₜ x)) :=
-      ((Algebra.IsIntegral.isIntegral (R := R) x).map
-        (Algebra.TensorProduct.includeRight : A →ₐ[R] F ⊗[R] A)).map
-          (eFL.symm.toAlgHom.restrictScalars R)
-    obtain ⟨b, hb⟩ := hxint.exists_includeRight_eq
-    refine ⟨b, hinjAL ?_⟩
-    rw [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.includeRight_apply]
-    have hmap : eFL (1 ⊗ₜ b) = 1 ⊗ₜ ψ b := by
-      rw [AlgEquiv.ofBijective_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply]
-    rw [← hmap, ← Algebra.TensorProduct.includeRight_apply, hb, eFL.apply_symm_apply]
+  have : CharZero F := charZero_of_injective_algebraMap (algebraMap K F).injective
+  exact exists_pow_eq_X_of_unramified_outside_zero_infty
+    (fun P' ↦ Place.isTame_of_charZero K F P') hunram
 
 /-- **Classification of connected finite étale algebras over `K[T;T⁻¹]`.** Over an algebraically
 closed field `K` of characteristic zero, every connected finite étale `K[T;T⁻¹]`-algebra `A` is
@@ -443,7 +240,7 @@ theorem exists_algEquiv_standardTameCover_of_etale (K A : Type*) [Field K] [IsAl
         (algebraMap K K[T;T⁻¹])
   have : Algebra.Etale K[T;T⁻¹] B :=
     standardTameCover_etale (LaurentPolynomial.isUnit_T 1) hn_unit
-  exact ⟨n, hn, ⟨AlgEquiv.ofBijective ψ (bijective_of_bijective_tensorProduct ψ hψF_bij)⟩⟩
+  exact ⟨n, hn, ⟨AlgEquiv.ofBijective ψ (ψ.bijective_of_bijective_tensorProduct hinjAL hψF_bij)⟩⟩
 
 /-- **Classification of finite étale algebras over `K[T;T⁻¹]`.** Over an algebraically closed field
 `K` of characteristic zero, every finite étale `K[T;T⁻¹]`-algebra is a finite product of Kummer
