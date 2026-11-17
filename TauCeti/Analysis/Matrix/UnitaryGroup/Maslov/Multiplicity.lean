@@ -152,7 +152,7 @@ intersection `U ℝⁿ ∩ ℝⁿ` of the Lagrangian `U ℝⁿ` with `ℝⁿ`. -
 theorem rootMultiplicity_one_charpoly_souriau (U : unitaryGroup n ℂ) :
     (souriau U : Matrix n n ℂ).charpoly.rootMultiplicity 1 =
       finrank ℝ ((U : Matrix n n ℂ).realImage ⊓ realSubspace n : Submodule ℝ _) := by
-  rw [rootMultiplicity_charpoly_eq_finrank_eigenspace, eigenspace_toEuclideanLin_souriau_one,
+  rw [rootMultiplicity_charpoly_of_isStarNormal, eigenspace_toEuclideanLin_souriau_one,
     (isMaximalTotallyReal_realSubspace.isTotallyReal.mono inf_le_right).finrank_span_complex]
 
 /-- **The zero axiom.** A path of unitary frames along which the intersections `γ t ℝⁿ ∩ ℝⁿ` of the
