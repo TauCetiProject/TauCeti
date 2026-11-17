@@ -202,20 +202,20 @@ include hf in
 theorem linearForwardTimes_pullback (y : M) :
     hX.linearForwardTimes (φ.pullback hf) y = hX'.linearForwardTimes φ (σ y) := by
   ext T
-  simp only [mem_linearForwardTimes, flow_apply_diffeomorph hX hX' hσX,
-    MorseChart.pullback_linearFlow, Homeomorph.transOpenPartialHomeomorph_source,
-    Homeomorph.transOpenPartialHomeomorph_target, Homeomorph.transOpenPartialHomeomorph_apply,
-    Diffeomorph.coe_toHomeomorph, comp_apply, mem_preimage]
+  rw [mem_linearForwardTimes, mem_linearForwardTimes, MorseChart.pullback_source,
+    MorseChart.pullback_target, MorseChart.coe_pullback_toChart, MorseChart.pullback_coord,
+    MorseChart.pullback_linearFlow]
+  simp only [flow_apply_diffeomorph hX hX' hσX, comp_apply, mem_preimage]
 
 include hf in
 /-- The times of linear backward flow of `y` in the pullback of `φ` are those of `σ y` in `φ`. -/
 theorem linearBackwardTimes_pullback (y : M) :
     hX.linearBackwardTimes (φ.pullback hf) y = hX'.linearBackwardTimes φ (σ y) := by
   ext T
-  simp only [mem_linearBackwardTimes, flow_apply_diffeomorph hX hX' hσX,
-    MorseChart.pullback_linearFlow, Homeomorph.transOpenPartialHomeomorph_source,
-    Homeomorph.transOpenPartialHomeomorph_target, Homeomorph.transOpenPartialHomeomorph_apply,
-    Diffeomorph.coe_toHomeomorph, comp_apply, mem_preimage]
+  rw [mem_linearBackwardTimes, mem_linearBackwardTimes, MorseChart.pullback_source,
+    MorseChart.pullback_target, MorseChart.coe_pullback_toChart, MorseChart.pullback_coord,
+    MorseChart.pullback_linearFlow]
+  simp only [flow_apply_diffeomorph hX hX' hσX, comp_apply, mem_preimage]
 
 /-- In the pullback of a chart, the chart composed with the time-`t` map of the flow of `X` is the
 chart composed with the time-`t` map of the flow of `X'`, composed with `σ`. -/
