@@ -467,13 +467,12 @@ theorem nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle [T2
                 ⋃ j, Θ j '' (h.isNondegenerateCriticalSubmanifold j).negativeDiscBundle hn
                   (P j) (g j).toRiemannianMetric ε)).singularHomology R n) := by
   have := h.finite
-  have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
+  have := h.nonempty
+  have := h.compactSpace
   refine SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle
     (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
     (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
-    (fun j ↦ j.2) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he)) hac hcb
+    (fun j ↦ j.2) (h.pairwise_disjoint_range.comp_of_injective Subtype.val_injective) hac hcb
     (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hxb⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j)
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.

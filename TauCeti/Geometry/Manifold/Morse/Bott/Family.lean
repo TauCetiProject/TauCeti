@@ -42,7 +42,8 @@ each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
 many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
-(`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
+(`TauCeti.IsMorseBottFamily.isClosed_range`), so on a compact manifold each piece is compact
+(`TauCeti.IsMorseBottFamily.compactSpace`). The function takes a single value on each piece
 (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level lies on a
 piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_mem_criticalPoints`) and on a
 compact manifold `f` has finitely many critical values
@@ -182,6 +183,10 @@ theorem isClosed_range [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := b
   obtain ⟨s⟩ := h.nonempty a
   rw [h.range_eq_connectedComponentIn a s]
   exact (isClosed_criticalPoints (h.contMDiff.of_le (by simp))).connectedComponentIn
+
+/-- On a compact manifold each piece is compact, as a closed embedded submanifold. -/
+theorem compactSpace [CompactSpace M] [IsManifold I 1 M] (a : ι) : CompactSpace (S a) :=
+  (Topology.IsClosedEmbedding.mk (i a).isEmbedding (h.isClosed_range a)).compactSpace
 
 /-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
 locally constant, and the piece is connected because its image is a connected component of the

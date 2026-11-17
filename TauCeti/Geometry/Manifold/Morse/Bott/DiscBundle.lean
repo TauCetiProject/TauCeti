@@ -764,14 +764,13 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
               ⋃ a, Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
                 (g a).toRiemannianMetric ε}) := by
   have := h.finite
-  have (a : ι) : Nonempty (S a) := h.nonempty a
-  have (a : ι) : CompactSpace (S a) :=
-    (Topology.IsClosedEmbedding.mk (i a).isEmbedding (h.isClosed_range a)).compactSpace
+  have := h.nonempty
+  have := h.compactSpace
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     SmoothEmbedding.exists_sublevel_union_iUnion_negativeDiscBundle_deformation
       (ι := {a // ∀ s, f (i a s) = c}) (S := fun a ↦ S a) (P := fun a ↦ P a) (J := fun a ↦ J a)
       (i := fun a ↦ i a) hn (fun a ↦ h.isNondegenerateCriticalSubmanifold a) h.contMDiff
-      (fun a ↦ a.2) (fun a b hab ↦ h.pairwise_disjoint_range fun he ↦ hab (Subtype.ext he))
+      (fun a ↦ a.2) (h.pairwise_disjoint_range.comp_of_injective Subtype.val_injective)
       (fun a ↦ hdim a) (fun a ↦ g a)
   refine ⟨Θ, hΘz, hΘi, hΘf, ?_⟩
   -- Some `ε₁ > 0` separates `c` from the other critical values, of which there are finitely many.
