@@ -37,38 +37,6 @@ section Semiring
 variable {k R : Type*} [CommSemiring k] [Semiring R] [Algebra k R]
   {σ : R →ₐ[k] R} {δ : SigmaDerivation σ}
 
-/-- Right multiplication of `a Xⁿ` by `X` raises its degree by one. -/
-theorem monomial_mul_X (n : ℕ) (a : R) :
-    monomial (σ := σ) (δ := δ) n a * X = monomial (n + 1) a := by
-  rw [← C_mul_X_pow_eq_monomial, mul_assoc, ← pow_succ, C_mul_X_pow_eq_monomial]
-
-/-- Right multiplication by `X` clears the constant left coefficient. -/
-@[simp]
-theorem coeff_mul_X_zero (p : OreExtension σ δ) : coeff (p * X) 0 = 0 := by
-  induction p using induction_on with
-  | zero => simp
-  | add n a p _ _ ih => simp [add_mul, monomial_mul_X, coeff_monomial, ih]
-
-/-- Right multiplication by `X` shifts left coefficients upward by one. -/
-@[simp]
-theorem coeff_mul_X_succ (p : OreExtension σ δ) (n : ℕ) :
-    coeff (p * X) (n + 1) = coeff p n := by
-  induction p using induction_on with
-  | zero => simp
-  | add m a p _ _ ih => simp [add_mul, monomial_mul_X, coeff_monomial, ih]
-
-/-- Right multiplication by `Xᵐ` shifts left coefficients upward by `m`. -/
-@[simp]
-theorem coeff_mul_X_pow_add (p : OreExtension σ δ) (n m : ℕ) :
-    coeff (p * X ^ m) (n + m) = coeff p n := by
-  induction m with
-  | zero => simp
-  | succ m ih => rw [pow_succ, ← mul_assoc, ← Nat.add_assoc, coeff_mul_X_succ, ih]
-
-/-- Left scalar multiplication by `R` associates with multiplication in `R[X; σ, δ]`. -/
-instance instIsScalarTowerSelf : IsScalarTower R (OreExtension σ δ) (OreExtension σ δ) where
-  smul_assoc a p q := by rw [smul_eq_C_mul, smul_eq_C_mul, smul_eq_mul, smul_eq_mul, mul_assoc]
-
 /-- **The coefficientwise left ideal** `{p | ∀ n, coeff p n ∈ I}` of `R[X; σ, δ]` associated to a
 `(σ, δ)`-invariant left ideal `I` of `R`. -/
 def coeffLeftIdeal (I : Submodule R R) (hσ : Set.MapsTo σ I I) (hδ : Set.MapsTo δ I I) :

@@ -65,30 +65,8 @@ variable (Φ hΦ hΦs a) in
 /-- **The shifted degree element** `D' = d̂ - i(D) ∈ Û'` associated to `D ∈ Û`. -/
 def shiftedDegreeElement (D : Û) : Û' := d̂ - i D
 
-variable {D : CompletedEnveloping Φ hΦ hΦs a}
-
-local notation "D'" => shiftedDegreeElement Φ hΦ hΦs a D
-
-theorem completedDegreeDerivation_eq_zero_of_commutator
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) :
-    (δ₁ : Module.End R Û) D = 0 := by rw [← hD D, sub_self]
-
-theorem commute_completedDegreeElement_completedToExtended
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) : Commute d̂ (i D) := by
-  rw [Commute, SemiconjBy, ← sub_eq_zero, completedDegreeElement_mul_completedToExtended_sub_mul,
-    completedDegreeDerivation_eq_zero_of_commutator hD, map_zero]
-
-/-- **Centrality of the shifted degree element** `D' = d̂ - i(D)` when `[D, x] = δ₁(x)`. -/
-theorem shiftedDegreeElement_mem_center
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) : D' ∈ Subalgebra.center R Û' := by
-  rw [mem_center_extendedCompletedEnveloping_iff]
-  refine ⟨(Commute.refl d̂).sub_right (commute_completedDegreeElement_completedToExtended hD),
-    fun x ↦ Commute.symm ?_⟩
-  rw [Commute, SemiconjBy, shiftedDegreeElement, ← sub_eq_zero,
-    show (d̂ - i D) * i x - i x * (d̂ - i D) = (d̂ * i x - i x * d̂) - (i D * i x - i x * i D) by
-      rw [mul_sub, sub_mul]; abel,
-    completedDegreeElement_mul_completedToExtended_sub_mul, ← map_mul, ← map_mul, ← map_sub, hD x,
-    sub_self]
+variable (Φ hΦ hΦs a) in
+theorem shiftedDegreeElement_def (D : Û) : shiftedDegreeElement Φ hΦ hΦs a D = d̂ - i D := (rfl)
 
 local notation "Î" => completedOrderLeftIdeal Φ hΦ hΦs a
 local notation "Î'" => completedExtendedOrderLeftIdeal Φ hΦ hΦs a
@@ -99,68 +77,106 @@ local notation "PS₀" => PowerSeries.coeffTendstoZeroSubalgebra R Û
 local notation "C₀" => PowerSeries.coeffTendstoZeroCAlgHom R Û
 local notation "X₀" => PowerSeries.coeffTendstoZeroX R Û
 
-theorem mul_mem_completedOrderLeftIdeal_of_commutator
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) {n : ℕ} {x : Û} (hx : x ∈ Î n) :
-    x * D ∈ Î n := by
-  rw [show x * D = D * x - (D * x - x * D) by abel, hD x]
-  exact sub_mem (Submodule.smul_mem _ D hx)
-    (vectorFieldCompletedEnvelopingDerivation_mem_completedOrderLeftIdeal Φ hΦ hΦs a
-      (HahnSeries.single 1 1) HahnSeries.orderTop_single_le hx)
-
-theorem mul_pow_mem_completedOrderLeftIdeal_of_commutator
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) {n : ℕ} {x : Û} (hx : x ∈ Î n)
-    (k : ℕ) : x * D ^ k ∈ Î n :=
-  Nat.rec (by simpa using hx) (fun k ih ↦ by
-    rw [pow_succ, ← mul_assoc]; exact mul_mem_completedOrderLeftIdeal_of_commutator hD ih) k
-
 private theorem mul_term_mem {n : ℕ} {x y : Û} (hy : ∀ z ∈ Î n, z * y ∈ Î n) (hx : x ∈ Î n)
     (k c : ℕ) : x * y ^ k * (c : Û) ∈ Î n := by
   rw [← (Nat.cast_commute c _).eq]
   exact Submodule.smul_mem _ (c : Û) (Nat.rec (by simpa using hx) (fun k ih ↦ by
     rw [pow_succ, ← mul_assoc]; exact hy _ ih) k)
+private theorem exists_coeff_mem (w : Û') (n : ℕ) : ∃ M, ∀ m ≥ M, coeff̂ m w ∈ Î n :=
+  eventually_atTop.1 (((hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).tendsto_right_iff.1
+    (tendsto_completedDegreeCoeff_atTop Φ hΦ hΦs a w)) n trivial)
+private def seriesCoeff (D : Û) (w : Û') (j : ℕ) : Û :=
+  ∑' k, coeff̂ (j + k) w * D ^ k * (j + k).choose j
+private theorem limπ_sum_coeff_eq (w : Û') (n M : ℕ) (hM : ∀ m ≥ M, coeff̂ m w ∈ Î n) :
+    (eTower).limπ n (∑ m ∈ Finset.range M, i (coeff̂ m w) * d̂ ^ m) = (eTower).limπ n w := by
+  conv_rhs => rw [← tsum_completedDegreeCoeff_mul_completedDegreeElement_pow Φ hΦ hΦs a w]
+  rw [ModuleTower.limπ_tsum_eq_sum _ (summable_completedToExtended_mul_completedDegreeElement_pow
+    Φ hΦ hΦs a (tendsto_completedDegreeCoeff_atTop Φ hΦ hΦs a w)) n (Finset.range M), map_sum]
+  intro m hm; rw [← mem_completedExtendedOrderLeftIdeal]
+  exact mul_completedDegreeElement_pow_mem_completedExtendedOrderLeftIdeal
+    (completedToExtended_mem_completedExtendedOrderLeftIdeal_iff.2
+      (hM m (Nat.le_of_not_lt (Finset.mem_range.not.1 hm)))) m
+
+variable {D : CompletedEnveloping Φ hΦ hΦs a}
+  (hD : ∀ x : CompletedEnveloping Φ hΦ hΦs a,
+    D * x - x * D = (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) :
+      Module.End R (CompletedEnveloping Φ hΦ hΦs a)) x)
+include hD
+
+local notation "D'" => shiftedDegreeElement Φ hΦ hΦs a D
+
+theorem completedDegreeDerivation_eq_zero_of_commutator :
+    (δ₁ : Module.End R Û) D = 0 := by rw [← hD D, sub_self]
+
+theorem commute_completedDegreeElement_completedToExtended : Commute d̂ (i D) := by
+  rw [Commute, SemiconjBy, ← sub_eq_zero, completedDegreeElement_mul_completedToExtended_sub_mul,
+    completedDegreeDerivation_eq_zero_of_commutator hD, map_zero]
+
+/-- **Centrality of the shifted degree element** `D' = d̂ - i(D)` when `[D, x] = δ₁(x)`. -/
+theorem shiftedDegreeElement_mem_center : D' ∈ Subalgebra.center R Û' := by
+  rw [mem_center_extendedCompletedEnveloping_iff]
+  refine ⟨(Commute.refl d̂).sub_right (commute_completedDegreeElement_completedToExtended hD),
+    fun x ↦ Commute.symm ?_⟩
+  have hcomm : (d̂ - i D) * i x - i x * (d̂ - i D) =
+      (d̂ * i x - i x * d̂) - (i D * i x - i x * i D) := by rw [mul_sub, sub_mul]; abel
+  rw [Commute, SemiconjBy, shiftedDegreeElement_def, ← sub_eq_zero, hcomm,
+    completedDegreeElement_mul_completedToExtended_sub_mul, ← map_mul, ← map_mul, ← map_sub, hD x,
+    sub_self]
+
+theorem mul_mem_completedOrderLeftIdeal_of_commutator {n : ℕ} {x : Û} (hx : x ∈ Î n) :
+    x * D ∈ Î n := by
+  have hxD : x * D = D * x - (D * x - x * D) := by abel
+  rw [hxD, hD x]
+  exact sub_mem (Submodule.smul_mem _ D hx)
+    (vectorFieldCompletedEnvelopingDerivation_mem_completedOrderLeftIdeal Φ hΦ hΦs a
+      (HahnSeries.single 1 1) HahnSeries.orderTop_single_le hx)
+
+theorem mul_pow_mem_completedOrderLeftIdeal_of_commutator {n : ℕ} {x : Û} (hx : x ∈ Î n) (k : ℕ) :
+    x * D ^ k ∈ Î n :=
+  Nat.rec (by simpa using hx) (fun k ih ↦ by
+    rw [pow_succ, ← mul_assoc]; exact mul_mem_completedOrderLeftIdeal_of_commutator hD ih) k
 
 /-- Binomial expansion of `i(u) * (D')^j` in the basis of right powers of `d̂`. -/
-theorem completedToExtended_mul_shiftedDegreeElement_pow
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) (u : Û) (j : ℕ) :
+theorem completedToExtended_mul_shiftedDegreeElement_pow (u : Û) (j : ℕ) :
     i u * D' ^ j = ∑ r ∈ Finset.range (j + 1), i (u * (-D) ^ (j - r) * j.choose r) * d̂ ^ r := by
   have hc : Commute d̂ (i (-D)) :=
     (map_neg i D).symm ▸ (commute_completedDegreeElement_completedToExtended hD).neg_right
-  rw [show D' = d̂ + i (-D) by rw [shiftedDegreeElement, map_neg, sub_eq_add_neg],
-    hc.add_pow, Finset.mul_sum]; refine Finset.sum_congr rfl fun r _ ↦ ?_
+  have hD' : D' = d̂ + i (-D) := by rw [shiftedDegreeElement_def, map_neg, sub_eq_add_neg]
+  rw [hD', hc.add_pow, Finset.mul_sum]; refine Finset.sum_congr rfl fun r _ ↦ ?_
   have hcr : Commute (d̂ ^ r) (i ((-D) ^ (j - r) * j.choose r)) := by
     rw [map_mul, map_pow, map_natCast]
     exact ((hc.pow_left r).pow_right (j - r)).mul_right ((Nat.cast_commute _ _).symm)
   rw [mul_assoc (d̂ ^ r), ← map_pow, ← map_natCast i, ← map_mul, hcr.eq, ← mul_assoc, ← map_mul,
     ← mul_assoc]
 
-@[simp] theorem completedDegreeCoeff_completedToExtended_mul_shiftedDegreeElement_pow
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) (k : ℕ) (u : Û) (j : ℕ) :
-    coeff̂ k (i u * D' ^ j) = if k ≤ j then u * (-D) ^ (j - k) * j.choose k else 0 := by
+@[simp]
+theorem completedDegreeCoeff_completedToExtended_mul_shiftedDegreeElement_pow (k : ℕ) (u : Û)
+    (j : ℕ) : coeff̂ k (i u * D' ^ j) = if k ≤ j then u * (-D) ^ (j - k) * j.choose k else 0 := by
   rw [completedToExtended_mul_shiftedDegreeElement_pow hD, map_sum]
   simp only [completedDegreeCoeff_completedToExtended_mul_pow, Finset.sum_ite_eq',
     Finset.mem_range, Nat.lt_succ_iff]
 
 /-- Inverse binomial expansion of `i(u) * d̂^m` in powers of `D' = d̂ - i(D)`. -/
-theorem completedToExtended_mul_completedDegreeElement_pow_eq_sum_shiftedDegreeElement
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) (u : Û) (m : ℕ) :
+theorem completedToExtended_mul_completedDegreeElement_pow_eq_sum_shiftedDegreeElement (u : Û)
+    (m : ℕ) :
     i u * d̂ ^ m = ∑ j ∈ Finset.range (m + 1), i (u * D ^ (m - j) * m.choose j) * D' ^ j := by
   have hz := shiftedDegreeElement_mem_center hD
   have hc : Commute D' (i D) := (Subalgebra.mem_center_iff.1 hz (i D)).symm
-  rw [show d̂ = D' + i D from (sub_add_cancel d̂ (i D)).symm, hc.add_pow, Finset.mul_sum]
+  have hd : d̂ = D' + i D := by rw [shiftedDegreeElement_def, sub_add_cancel]
+  rw [hd, hc.add_pow, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hcj := (Subalgebra.mem_center_iff.1 (pow_mem hz j) (i (D ^ (m - j) * m.choose j))).symm
   rw [mul_assoc (D' ^ j), ← map_pow, ← map_natCast i, ← map_mul, hcj, ← mul_assoc, ← map_mul,
     ← mul_assoc]
 
-private abbrev DegImpl (D : Û) : Prop := ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x
-private def evalShifted (hD : DegImpl D) : PS₀ →ₐ[R] Û' :=
+private def evalShifted : PS₀ →ₐ[R] Û' :=
   PowerSeries.coeffTendstoZeroEval (continuous_completedToExtended Φ hΦ hΦs a)
     (shiftedDegreeElement_mem_center hD)
-private theorem mul_shifted_pow_mem (hD : DegImpl D) {n : ℕ} {u : Û} (hu : u ∈ Î n) (j : ℕ) :
+private theorem mul_shifted_pow_mem {n : ℕ} {u : Û} (hu : u ∈ Î n) (j : ℕ) :
     i u * D' ^ j ∈ Î' n := by
   rw [Subalgebra.mem_center_iff.1 (pow_mem (shiftedDegreeElement_mem_center hD) j) (i u)]
   exact Submodule.smul_mem _ _ (completedToExtended_mem_completedExtendedOrderLeftIdeal_iff.2 hu)
-private theorem limπ_eval_eq_sum (hD : DegImpl D) (f : PS₀) (n J : ℕ)
+private theorem limπ_eval_eq_sum (f : PS₀) (n J : ℕ)
     (hJ : ∀ j ≥ J, PowerSeries.coeff j (f : Û⟦X⟧) ∈ Î n) :
     (eTower).limπ n (evalShifted hD f) =
       (eTower).limπ n (∑ j ∈ Finset.range J, i (PowerSeries.coeff j (f : Û⟦X⟧)) * D' ^ j) := by
@@ -171,7 +187,7 @@ private theorem limπ_eval_eq_sum (hD : DegImpl D) (f : PS₀) (n J : ℕ)
   intro j hj; rw [← mem_completedExtendedOrderLeftIdeal]
   exact mul_shifted_pow_mem hD (hJ j (Nat.le_of_not_lt (Finset.mem_range.not.1 hj))) j
 
-private theorem eval_mem_iff (hD : DegImpl D) {n : ℕ} {f : PS₀} :
+private theorem eval_mem_iff {n : ℕ} {f : PS₀} :
     evalShifted hD f ∈ Î' n ↔ ∀ j, PowerSeries.coeff j (f : Û⟦X⟧) ∈ Î n := by
   refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
   · obtain ⟨J, hJ⟩ := eventually_atTop.1
@@ -203,18 +219,14 @@ private theorem eval_mem_iff (hD : DegImpl D) {n : ℕ} {f : PS₀} :
   · rw [mem_completedExtendedOrderLeftIdeal, limπ_eval_eq_sum hD f n 0 (fun j _ ↦ hf j),
       Finset.range_zero, Finset.sum_empty, map_zero]
 
-private theorem exists_coeff_mem (w : Û') (n : ℕ) : ∃ M, ∀ m ≥ M, coeff̂ m w ∈ Î n :=
-  eventually_atTop.1 (((hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).tendsto_right_iff.1
-    (tendsto_completedDegreeCoeff_atTop Φ hΦ hΦs a w)) n trivial)
-private theorem summable_term (hD : DegImpl D) (w : Û') (j : ℕ) :
+private theorem summable_term (w : Û') (j : ℕ) :
     Summable fun k ↦ coeff̂ (j + k) w * D ^ k * (j + k).choose j := by
   rw [ModuleTower.summable_iff_forall_eventually_limπ_eq_zero]; intro n; rw [Nat.cofinite_eq_atTop]
   obtain ⟨M, hM⟩ := exists_coeff_mem w n
   filter_upwards [eventually_ge_atTop M] with k hk; rw [← mem_completedOrderLeftIdeal]
   exact mul_term_mem (fun _ ↦ mul_mem_completedOrderLeftIdeal_of_commutator hD)
     (hM (j + k) (by omega)) k ((j + k).choose j)
-private theorem limπ_tsum_term (hD : DegImpl D) (w : Û') (j n M : ℕ)
-    (hM : ∀ m ≥ M, coeff̂ m w ∈ Î n) :
+private theorem limπ_tsum_term (w : Û') (j n M : ℕ) (hM : ∀ m ≥ M, coeff̂ m w ∈ Î n) :
     (oTower).limπ n (∑' k, coeff̂ (j + k) w * D ^ k * (j + k).choose j) =
       (oTower).limπ n
         (∑ k ∈ Finset.range (M - j), coeff̂ (j + k) w * D ^ k * (j + k).choose j) := by
@@ -223,32 +235,18 @@ private theorem limπ_tsum_term (hD : DegImpl D) (w : Û') (j n M : ℕ)
   have hk' : M - j ≤ k := Nat.le_of_not_lt (Finset.mem_range.not.1 hk)
   exact mul_term_mem (fun _ ↦ mul_mem_completedOrderLeftIdeal_of_commutator hD)
     (hM (j + k) (by omega)) k ((j + k).choose j)
-
-private def seriesCoeff (D : Û) (w : Û') (j : ℕ) : Û :=
-  ∑' k, coeff̂ (j + k) w * D ^ k * (j + k).choose j
-private theorem tendsto_seriesCoeff (hD : DegImpl D) (w : Û') :
-    Tendsto (seriesCoeff D w) atTop (𝓝 0) := by
+private theorem tendsto_seriesCoeff (w : Û') : Tendsto (seriesCoeff D w) atTop (𝓝 0) := by
   rw [(hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).tendsto_right_iff]; rintro n -
   obtain ⟨M, hM⟩ := exists_coeff_mem w n; filter_upwards [eventually_ge_atTop M] with j hj
   rw [SetLike.mem_coe, mem_completedOrderLeftIdeal, seriesCoeff, limπ_tsum_term hD w j n M hM,
     Nat.sub_eq_zero_of_le hj, Finset.range_zero, Finset.sum_empty, map_zero]
-private def invEvalFun (hD : DegImpl D) (w : Û') : PS₀ :=
+private def invEvalFun (w : Û') : PS₀ :=
   ⟨PowerSeries.mk (seriesCoeff D w), PowerSeries.mem_coeffTendstoZeroSubalgebra_iff.2
     (by simpa only [PowerSeries.coeff_mk] using tendsto_seriesCoeff hD w)⟩
-private theorem coeff_invEvalFun (hD : DegImpl D) (w : Û') (j : ℕ) :
+private theorem coeff_invEvalFun (w : Û') (j : ℕ) :
     PowerSeries.coeff j (invEvalFun hD w : Û⟦X⟧) = seriesCoeff D w j := by
   rw [invEvalFun]; exact PowerSeries.coeff_mk j (seriesCoeff D w)
-private theorem limπ_sum_coeff_eq (w : Û') (n M : ℕ) (hM : ∀ m ≥ M, coeff̂ m w ∈ Î n) :
-    (eTower).limπ n (∑ m ∈ Finset.range M, i (coeff̂ m w) * d̂ ^ m) = (eTower).limπ n w := by
-  conv_rhs => rw [← tsum_completedDegreeCoeff_mul_completedDegreeElement_pow Φ hΦ hΦs a w]
-  rw [ModuleTower.limπ_tsum_eq_sum _ (summable_completedToExtended_mul_completedDegreeElement_pow
-    Φ hΦ hΦs a (tendsto_completedDegreeCoeff_atTop Φ hΦ hΦs a w)) n (Finset.range M), map_sum]
-  intro m hm; rw [← mem_completedExtendedOrderLeftIdeal]
-  exact mul_completedDegreeElement_pow_mem_completedExtendedOrderLeftIdeal
-    (completedToExtended_mem_completedExtendedOrderLeftIdeal_iff.2
-      (hM m (Nat.le_of_not_lt (Finset.mem_range.not.1 hm)))) m
-private theorem limπ_eval_trunc (hD : DegImpl D) (w : Û') (n M : ℕ)
-    (hM : ∀ m ≥ M, coeff̂ m w ∈ Î n) :
+private theorem limπ_eval_trunc (w : Û') (n M : ℕ) (hM : ∀ m ≥ M, coeff̂ m w ∈ Î n) :
     (eTower).limπ n (∑ j ∈ Finset.range M,
         i (PowerSeries.coeff j (invEvalFun hD w : Û⟦X⟧)) * D' ^ j) =
       (eTower).limπ n (∑ j ∈ Finset.range M, ∑ k ∈ Finset.range (M - j),
@@ -266,8 +264,7 @@ private theorem limπ_eval_trunc (hD : DegImpl D) (w : Û') (n M : ℕ)
     rw [coeff_invEvalFun, map_sub, sub_mul, map_sum, Finset.sum_mul]
   rw [hmul]; exact mul_shifted_pow_mem hD hdiff j
 
-private theorem eval_invEvalFun (hD : DegImpl D) (w : Û') :
-    evalShifted hD (invEvalFun hD w) = w := by
+private theorem eval_invEvalFun (w : Û') : evalShifted hD (invEvalFun hD w) = w := by
   refine ModuleTower.lim_ext _ fun n ↦ ?_
   obtain ⟨M, hM⟩ := exists_coeff_mem w n
   have hfM : ∀ j ≥ M, PowerSeries.coeff j (invEvalFun hD w : Û⟦X⟧) ∈ Î n := fun j hj ↦ by
@@ -286,8 +283,7 @@ private theorem eval_invEvalFun (hD : DegImpl D) (w : Û') :
   rw [hdiag]; exact limπ_sum_coeff_eq w n M hM
 
 /-- **Restricted formal power series decomposition** `PS₀ ≃ₐ[R] Û'` via `C x ↦ i(x)`, `X ↦ D'`. -/
-def extendedCompletedRestrictedEquiv
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) : PS₀ ≃ₐ[R] Û' :=
+def extendedCompletedRestrictedEquiv : PS₀ ≃ₐ[R] Û' :=
   AlgEquiv.ofBijective (evalShifted hD)
     ⟨(injective_iff_map_eq_zero _).2 fun f hf ↦ Subtype.ext <| PowerSeries.ext fun j ↦ by
         rw [Subalgebra.coe_zero, map_zero]; refine ModuleTower.lim_ext _ fun n ↦ ?_
@@ -295,44 +291,37 @@ def extendedCompletedRestrictedEquiv
         exact (eval_mem_iff hD).1 (hf ▸ zero_mem (Î' n)) j,
       fun w ↦ ⟨invEvalFun hD w, eval_invEvalFun hD w⟩⟩
 
-theorem extendedCompletedRestrictedEquiv_apply
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) (f : PS₀) :
+theorem extendedCompletedRestrictedEquiv_apply (f : PS₀) :
     extendedCompletedRestrictedEquiv hD f = ∑' n, i (PowerSeries.coeff n (f : Û⟦X⟧)) * D' ^ n :=
   PowerSeries.coeffTendstoZeroEval_apply _ _ f
 
 @[simp]
-theorem extendedCompletedRestrictedEquiv_C
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) (x : Û) :
+theorem extendedCompletedRestrictedEquiv_C (x : Û) :
     extendedCompletedRestrictedEquiv hD (C₀ x) = i x :=
   PowerSeries.coeffTendstoZeroEval_C _ _ x
 
 @[simp]
-theorem extendedCompletedRestrictedEquiv_X
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) :
-    extendedCompletedRestrictedEquiv hD X₀ = D' :=
+theorem extendedCompletedRestrictedEquiv_X : extendedCompletedRestrictedEquiv hD X₀ = D' :=
   PowerSeries.coeffTendstoZeroEval_X _ _
 
 @[simp]
-theorem extendedCompletedRestrictedEquiv_symm_completedToExtended
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) (x : Û) :
+theorem extendedCompletedRestrictedEquiv_symm_completedToExtended (x : Û) :
     (extendedCompletedRestrictedEquiv hD).symm (i x) = C₀ x :=
   AlgEquiv.symm_apply_eq _ |>.2 (extendedCompletedRestrictedEquiv_C hD x).symm
 
 @[simp]
-theorem extendedCompletedRestrictedEquiv_symm_shiftedDegreeElement
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) :
+theorem extendedCompletedRestrictedEquiv_symm_shiftedDegreeElement :
     (extendedCompletedRestrictedEquiv hD).symm D' = X₀ :=
   AlgEquiv.symm_apply_eq _ |>.2 (extendedCompletedRestrictedEquiv_X hD).symm
 
-theorem extendedCompletedRestrictedEquiv_mem_completedExtendedOrderLeftIdeal_iff
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) {n : ℕ} {f : PS₀} :
+/-- `extendedCompletedRestrictedEquiv hD f ∈ Î'_n` iff every coefficient of `f` lies in `Î_n`. -/
+theorem extendedCompletedRestrictedEquiv_mem_completedExtendedOrderLeftIdeal_iff {n : ℕ} {f : PS₀} :
     extendedCompletedRestrictedEquiv hD f ∈ Î' n ↔ ∀ j, PowerSeries.coeff j (f : Û⟦X⟧) ∈ Î n :=
   eval_mem_iff hD
 
 /-- **The image of `Û` and the scalar polynomials in `D'` intersect only in `R`.** -/
 @[simp]
-theorem range_completedToExtended_inf_adjoin_shiftedDegreeElement
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x) :
+theorem range_completedToExtended_inf_adjoin_shiftedDegreeElement :
     (i).range ⊓ Algebra.adjoin R {D'} = ⊥ := by
   let e := extendedCompletedRestrictedEquiv hD
   rw [eq_bot_iff]; rintro w ⟨hx, hw⟩; rcases (AlgHom.mem_range _).1 hx with ⟨x, rfl⟩
@@ -349,7 +338,6 @@ theorem range_completedToExtended_inf_adjoin_shiftedDegreeElement
 
 /-- **Center reduction from `Û'` to `Û`.** If `Z(Û') ≤ R[D']`, then `Z(Û) = ⊥`. -/
 theorem center_completedEnveloping_eq_bot_of_center_extended_le_adjoin
-    (hD : ∀ x : Û, D * x - x * D = (δ₁ : Module.End R Û) x)
     (hZ : Subalgebra.center R Û' ≤ Algebra.adjoin R {D'}) : Subalgebra.center R Û = ⊥ := by
   let e := extendedCompletedRestrictedEquiv hD
   refine PowerSeries.center_eq_bot_of_center_coeffTendstoZeroSubalgebra_le_adjoin fun f hf ↦ ?_

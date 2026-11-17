@@ -66,6 +66,12 @@ theorem ker_toLimQuotients_extendedOrderLeftIdeal :
 instance : Ring Û' :=
   ModuleTower.limRing (exists_forall_mul_mem_extendedOrderLeftIdeal_natCast Φ hΦ hΦs a)
 
+variable {Φ hΦ hΦs a} in
+private theorem extendedLimπ_mul (x y : Û') (n : ℕ) : (eTower).limπ n (x * y) = ModuleTower.limSmul
+    (ModuleTower.smoothModules_quotients_obj
+      (exists_forall_mul_mem_extendedOrderLeftIdeal_natCast Φ hΦ hΦs a) n)
+    x ((eTower).limπ n y) := ModuleTower.limπ_limMul _ x y n
+
 instance : Algebra R Û' where
   smul r x := algebraMap R UK' r • x
   algebraMap :=
@@ -157,7 +163,6 @@ private def completedToExtendedFun : Û → Û' :=
   ModuleTower.limQuotientsMap oAnti eAnti
     (toExtendedEnveloping Φ hΦ hΦs a).toRingHom.toSemilinearMap
     (fun n ↦ ⟨n, orderLeftIdeal_le_comap_toExtendedEnveloping Φ hΦ hΦs a n⟩)
-
 private theorem completedToExtendedFun_toCompletedEnveloping (x : UK) :
     completedToExtendedFun Φ hΦ hΦs a (toCompletedEnveloping Φ hΦ hΦs a x) =
       ι' (toExtendedEnveloping Φ hΦ hΦs a x) := by
@@ -210,15 +215,16 @@ theorem completedToExtended_mem_completedExtendedOrderLeftIdeal_iff {n : ℕ} {x
 /-- **The completed degree element** `d̂ ∈ Û'`, image of `d = t d/dt`. -/
 def completedDegreeElement : Û' := ι' (CentralQuotient.ι _ a (degreeElement Φ hΦ hΦs))
 
+theorem completedDegreeElement_def : completedDegreeElement Φ hΦ hΦs a =
+    ι' (CentralQuotient.ι _ a (degreeElement Φ hΦ hΦs)) := (rfl)
+
 local notation "d̂" => completedDegreeElement Φ hΦ hΦs a
 
 variable {Φ hΦ hΦs a} in
 theorem mul_completedDegreeElement_mem_completedExtendedOrderLeftIdeal {n : ℕ} {w : Û'}
     (hw : w ∈ Î' n) : w * d̂ ∈ Î' n := by
   rw [mem_completedExtendedOrderLeftIdeal] at hw ⊢
-  change (eTower).limπ n
-    (ModuleTower.limMul (exists_forall_mul_mem_extendedOrderLeftIdeal_natCast Φ hΦ hΦs a) w d̂) = 0
-  rw [completedDegreeElement, ModuleTower.limπ_limMul, limπ_toExtendedCompletedEnveloping,
+  rw [extendedLimπ_mul, completedDegreeElement_def, limπ_toExtendedCompletedEnveloping,
     ModuleTower.limSmul_quotientsπ
       (exists_forall_mul_mem_extendedOrderLeftIdeal_natCast Φ hΦ hΦs a) (m := n)
       (fun _ hc' ↦ mul_ι_degreeElement_mem_extendedOrderLeftIdeal hc') (b := 0)
@@ -243,7 +249,7 @@ theorem completedDegreeElement_mul_completedToExtended_sub_mul (x : Û) :
   induction x using (denseRange_toCompletedEnveloping Φ hΦ hΦs a).induction_on with
   | hp => exact isClosed_eq ((continuous_const.mul hi).sub (hi.mul continuous_const)) (hi.comp hδ)
   | ih b =>
-    rw [completedToExtended_toCompletedEnveloping, completedDegreeElement, ← map_mul, ← map_mul,
+    rw [completedToExtended_toCompletedEnveloping, completedDegreeElement_def, ← map_mul, ← map_mul,
       ← map_sub, ι_degreeElement_mul_sub_mul, coe_toCompletedEnveloping,
       vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
       completedToExtended_toCompletedEnveloping]
@@ -273,51 +279,36 @@ theorem topologicalClosure_adjoin_insert_completedDegreeElement_range_completedT
     simpa using (denseRange_toExtendedCompletedEnveloping Φ hΦ hΦs a).closure_range
   exact eq_top_iff.2 (htop ▸ Subalgebra.topologicalClosure_mono hle)
 
+private def quotientsStageEquiv {A : Type*} [Ring A] {J : ℕ → Submodule A A}
+    (hJ : Antitone J) (n : ℕ) : (ModuleTower.quotients J hJ).obj (Opposite.op n) ≃ₗ[A] A ⧸ J n :=
+  ModuleTower.quotientsLiftEquiv J hJ n (J n).mkQ (Submodule.ker_mkQ _) (Submodule.mkQ_surjective _)
+private theorem quotientsStageEquiv_transition {A : Type*} [Ring A] {J : ℕ → Submodule A A}
+    (hJ : Antitone J) (n : ℕ) (q : (ModuleTower.quotients J hJ).obj (Opposite.op (n + 1))) :
+    quotientsStageEquiv hJ n ((ModuleTower.quotients J hJ).transition n q) =
+      Submodule.factor (hJ (Nat.le_succ n)) (quotientsStageEquiv hJ (n + 1) q) := by
+  obtain ⟨x, rfl⟩ := ModuleTower.quotientsπ_surjective J hJ (n + 1) q
+  simp [quotientsStageEquiv, Submodule.mkQ_apply]
+private def stageDegreeCoeffMap (j n : ℕ) :
+    (UK' ⧸ extendedOrderLeftIdeal Φ hΦ hΦs a n) →ₗ[R] (UK ⧸ orderLeftIdeal Φ hΦ hΦs a n) :=
+  (Finsupp.lapply j).comp (extendedOrderQuotientFinsuppEquiv Φ hΦ hΦs a n).toLinearMap
 private def stageDegreeCoeff (j n : ℕ) (q : (eTower).obj (Opposite.op n)) :
     (oTower).obj (Opposite.op n) :=
-  ModuleTower.quotientsπ _ oAnti n
-    ((eOre (ModuleTower.quotientsπ_surjective _ _ n q).choose).coeff j)
-
+  (quotientsStageEquiv oAnti n).symm
+    (stageDegreeCoeffMap Φ hΦ hΦs a j n (quotientsStageEquiv eAnti n q))
 private theorem stageDegreeCoeff_quotientsπ (j n : ℕ) (x : UK') :
     stageDegreeCoeff Φ hΦ hΦs a j n (ModuleTower.quotientsπ _ eAnti n x) =
       ModuleTower.quotientsπ _ oAnti n ((eOre x).coeff j) := by
-  let q := ModuleTower.quotientsπ _ eAnti n x
-  have hy := (ModuleTower.quotientsπ_surjective _ _ n q).choose_spec
-  rw [ModuleTower.quotientsπ_eq_quotientsπ_iff, mem_extendedOrderLeftIdeal_iff_coeff] at hy
-  rw [stageDegreeCoeff, ModuleTower.quotientsπ_eq_quotientsπ_iff, ← OreExtension.coeff_sub,
-    ← map_sub]; exact hy j
-
-private theorem stageDegreeCoeff_add (j n : ℕ) (q₁ q₂ : (eTower).obj (Opposite.op n)) :
-    stageDegreeCoeff Φ hΦ hΦs a j n (q₁ + q₂) =
-      stageDegreeCoeff Φ hΦ hΦs a j n q₁ + stageDegreeCoeff Φ hΦ hΦs a j n q₂ := by
-  obtain ⟨x₁, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ n q₁
-  obtain ⟨x₂, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ n q₂
-  rw [← map_add, stageDegreeCoeff_quotientsπ, stageDegreeCoeff_quotientsπ,
-    stageDegreeCoeff_quotientsπ, map_add, OreExtension.coeff_add, map_add]
-
-private theorem stageDegreeCoeff_algebraMap_smul (j n : ℕ) (r : R)
-    (q : (eTower).obj (Opposite.op n)) :
-    stageDegreeCoeff Φ hΦ hΦs a j n (algebraMap R UK' r • q) =
-      algebraMap R UK r • stageDegreeCoeff Φ hΦ hΦs a j n q := by
-  obtain ⟨x, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ n q
-  rw [← map_smul, smul_eq_mul, ← (toExtendedEnveloping Φ hΦ hΦs a).commutes r,
-    stageDegreeCoeff_quotientsπ, stageDegreeCoeff_quotientsπ, map_mul,
-    extendedEnvelopingOreEquiv_toExtendedEnveloping, OreExtension.coeff_C_mul, ← smul_eq_mul,
-    map_smul]
-
-private theorem eq_zero_iff_forall_stageDegreeCoeff (n : ℕ) (q : (eTower).obj (Opposite.op n)) :
-    q = 0 ↔ ∀ j, stageDegreeCoeff Φ hΦ hΦs a j n q = 0 := by
-  obtain ⟨x, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ n q
-  simp only [stageDegreeCoeff_quotientsπ, ModuleTower.quotientsπ_eq_zero_iff,
-    mem_extendedOrderLeftIdeal_iff_coeff]
-
+  simp [stageDegreeCoeff, stageDegreeCoeffMap, quotientsStageEquiv, LinearEquiv.symm_apply_eq,
+    Submodule.mkQ_apply]
 private theorem transition_stageDegreeCoeff (j n : ℕ) (q : (eTower).obj (Opposite.op (n + 1))) :
     (oTower).transition n (stageDegreeCoeff Φ hΦ hΦs a j (n + 1) q) =
       stageDegreeCoeff Φ hΦ hΦs a j n ((eTower).transition n q) := by
-  obtain ⟨x, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ (n + 1) q
-  rw [stageDegreeCoeff_quotientsπ, ModuleTower.transition_quotientsπ,
-    ModuleTower.transition_quotientsπ, stageDegreeCoeff_quotientsπ]
-
+  apply (quotientsStageEquiv oAnti n).injective
+  simp only [stageDegreeCoeff, stageDegreeCoeffMap, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Finsupp.lapply_apply, quotientsStageEquiv_transition,
+    LinearEquiv.apply_symm_apply]
+  exact (extendedOrderQuotientFinsuppEquiv_factor_apply Φ hΦ hΦs a
+    (Nat.cast_le.2 (Nat.le_succ n)) (quotientsStageEquiv eAnti (n + 1) q) j).symm
 private def completedDegreeCoeffAux (j : ℕ) (w : Û') : Û :=
   ⟨fun n ↦ stageDegreeCoeff Φ hΦ hΦs a j n ((eTower).limπ n w), (oTower).mem_lim.2 fun n ↦ by
     rw [transition_stageDegreeCoeff, ← LinearMap.comp_apply, ModuleTower.transition_comp_limπ]⟩
@@ -326,12 +317,12 @@ private def completedDegreeCoeffAux (j : ℕ) (w : Û') : Û :=
 def completedDegreeCoeff (j : ℕ) : Û' →ₗ[R] Û where
   toFun := completedDegreeCoeffAux Φ hΦ hΦs a j
   map_add' _ _ := ModuleTower.lim_ext _ fun n ↦ by
-    simp only [map_add, completedDegreeCoeffAux, ModuleTower.limπ_apply, stageDegreeCoeff_add]
+    simp only [map_add, completedDegreeCoeffAux, ModuleTower.limπ_apply, stageDegreeCoeff]
   map_smul' r w := ModuleTower.lim_ext _ fun n ↦ by
     rw [RingHom.id_apply, ← algebraMap_smul UK' r w,
       ← algebraMap_smul UK r (completedDegreeCoeffAux Φ hΦ hΦs a j w)]
-    simp only [map_smul, completedDegreeCoeffAux, ModuleTower.limπ_apply,
-      stageDegreeCoeff_algebraMap_smul]
+    simp only [map_smul, completedDegreeCoeffAux, ModuleTower.limπ_apply, stageDegreeCoeff]
+    rw [algebraMap_smul UK' r, map_smul, ← algebraMap_smul UK r, map_smul]
 
 private theorem limπ_completedDegreeCoeff (j n : ℕ) (w : Û') :
     (oTower).limπ n (completedDegreeCoeff Φ hΦ hΦs a j w) =
@@ -355,10 +346,14 @@ theorem completedDegreeCoeff_toExtendedCompletedEnveloping (j : ℕ) (x : UK') :
     completedDegreeCoeff_toLimQuotients]
 
 variable {Φ hΦ hΦs a} in
+/-- An element of `Û'` lies in `Î'_n` iff all of its completed `d̂`-coefficients lie in `Î_n`. -/
 theorem mem_completedExtendedOrderLeftIdeal_iff_forall_completedDegreeCoeff {n : ℕ} {w : Û'} :
     w ∈ Î' n ↔ ∀ j, coeff̂ j w ∈ completedOrderLeftIdeal Φ hΦ hΦs a n := by
-  simp only [mem_completedExtendedOrderLeftIdeal, eq_zero_iff_forall_stageDegreeCoeff,
-    mem_completedOrderLeftIdeal, limπ_completedDegreeCoeff]
+  rw [mem_completedExtendedOrderLeftIdeal, ← (quotientsStageEquiv eAnti n).map_eq_zero_iff,
+    ← (extendedOrderQuotientFinsuppEquiv Φ hΦ hΦs a n).map_eq_zero_iff, Finsupp.ext_iff]
+  simp only [mem_completedOrderLeftIdeal, limπ_completedDegreeCoeff, stageDegreeCoeff,
+    stageDegreeCoeffMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Finsupp.lapply_apply,
+    LinearEquiv.map_eq_zero_iff, Finsupp.zero_apply]
 
 theorem ext_completedDegreeCoeff {w₁ w₂ : Û'} (h : ∀ j, coeff̂ j w₁ = coeff̂ j w₂) : w₁ = w₂ := by
   rw [← sub_eq_zero]; refine ModuleTower.lim_ext _ fun n ↦ ?_
@@ -482,21 +477,25 @@ local notation "I'Φ" => extendedOrderLeftIdeal Φ hΦ hΦs a
 local notation "antiΨ" => extendedOrderLeftIdeal_natCast_antitone Ψ hΨ hΨs b
 local notation "antiΦ" => extendedOrderLeftIdeal_natCast_antitone Φ hΦ hΦs a
 
-private def extendedCompletedEnvelopingMapFun (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) : Û'Ψ → Û'Φ :=
-  ModuleTower.limQuotientsMap antiΨ antiΦ g.toRingHom.toSemilinearMap hg
+section
+variable (g : CentralQuotient R (toExtendedResidueExtension Ψ hΨ hΨs
+      (centralElement (twoCocycleOfBilinear R L Ψ hΨ hΨs))) b →ₐ[R]
+    CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs
+      (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs))) a)
+  (hg : ∀ n : ℕ, ∃ m : ℕ, extendedOrderLeftIdeal Ψ hΨ hΨs b m ≤
+    (extendedOrderLeftIdeal Φ hΦ hΦs a n).comap g.toRingHom.toSemilinearMap)
+include g hg
 
-private theorem extendedCompletedEnvelopingMapFun_toExtendedCompletedEnveloping
-    (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) (x : UK'Ψ) :
+private def extendedCompletedEnvelopingMapFun : Û'Ψ → Û'Φ :=
+  ModuleTower.limQuotientsMap antiΨ antiΦ g.toRingHom.toSemilinearMap hg
+private theorem extendedCompletedEnvelopingMapFun_toExtendedCompletedEnveloping (x : UK'Ψ) :
     extendedCompletedEnvelopingMapFun g hg (toExtendedCompletedEnveloping Ψ hΨ hΨs b x) =
       toExtendedCompletedEnveloping Φ hΦ hΦs a (g x) := by
   rw [extendedCompletedEnvelopingMapFun, coe_toExtendedCompletedEnveloping,
     coe_toExtendedCompletedEnveloping, ModuleTower.limQuotientsMap_toLimQuotients]; rfl
 
 /-- **Functoriality of the completed extended enveloping algebra.** -/
-def extendedCompletedEnvelopingMap (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) : Û'Ψ →ₐ[R] Û'Φ where
+def extendedCompletedEnvelopingMap : Û'Ψ →ₐ[R] Û'Φ where
   toFun := extendedCompletedEnvelopingMapFun g hg
   map_one' := by
     rw [← map_one (toExtendedCompletedEnveloping Ψ hΨ hΨs b),
@@ -509,22 +508,20 @@ def extendedCompletedEnvelopingMap (g : UK'Ψ →ₐ[R] UK'Φ)
     rw [← (toExtendedCompletedEnveloping Ψ hΨ hΨs b).commutes r,
       extendedCompletedEnvelopingMapFun_toExtendedCompletedEnveloping, g.commutes r,
       (toExtendedCompletedEnveloping Φ hΦ hΦs a).commutes r]
+private theorem coe_extendedCompletedEnvelopingMap :
+    ⇑(extendedCompletedEnvelopingMap g hg) = extendedCompletedEnvelopingMapFun g hg := rfl
 
 @[simp]
-theorem extendedCompletedEnvelopingMap_toLimQuotients (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) (x : UK'Ψ) :
+theorem extendedCompletedEnvelopingMap_toLimQuotients (x : UK'Ψ) :
     extendedCompletedEnvelopingMap g hg (ModuleTower.toLimQuotients _ antiΨ x) =
       ModuleTower.toLimQuotients _ antiΦ (g x) :=
   ModuleTower.limQuotientsMap_toLimQuotients _ _ _ _ x
 
-theorem continuous_extendedCompletedEnvelopingMap (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) :
+theorem continuous_extendedCompletedEnvelopingMap :
     Continuous (extendedCompletedEnvelopingMap g hg) :=
   ModuleTower.continuous_limQuotientsMap _ _ _ _
 
-theorem eq_extendedCompletedEnvelopingMap (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap)
-    {φ : Û'Ψ →ₐ[R] Û'Φ} (hφ : Continuous φ)
+theorem eq_extendedCompletedEnvelopingMap {φ : Û'Ψ →ₐ[R] Û'Φ} (hφ : Continuous φ)
     (h : ∀ x, φ (toExtendedCompletedEnveloping Ψ hΨ hΨs b x) =
       toExtendedCompletedEnveloping Φ hΦ hΦs a (g x)) :
     φ = extendedCompletedEnvelopingMap g hg :=
@@ -533,19 +530,16 @@ theorem eq_extendedCompletedEnvelopingMap (g : UK'Ψ →ₐ[R] UK'Φ)
       have hx := h x
       rw [coe_toExtendedCompletedEnveloping, coe_toExtendedCompletedEnveloping] at hx; exact hx
 
-theorem extendedCompletedEnvelopingMap_mem_completedExtendedOrderLeftIdeal (g : UK'Ψ →ₐ[R] UK'Φ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) {n m : ℕ}
+theorem extendedCompletedEnvelopingMap_mem_completedExtendedOrderLeftIdeal {n m : ℕ}
     (hm : I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap) {w : Û'Ψ}
     (hw : w ∈ completedExtendedOrderLeftIdeal Ψ hΨ hΨs b m) :
     extendedCompletedEnvelopingMap g hg w ∈ completedExtendedOrderLeftIdeal Φ hΦ hΦs a n := by
   rw [mem_completedExtendedOrderLeftIdeal] at hw ⊢
-  change (extendedOrderQuotientTower Φ hΦ hΦs a).limπ n
-    (ModuleTower.limQuotientsMap _ _ g.toRingHom.toSemilinearMap hg w) = 0
-  rw [ModuleTower.limπ_limQuotientsMap _ _ _ _ hm (b := 0) (by rw [map_zero, hw]),
+  rw [coe_extendedCompletedEnvelopingMap, extendedCompletedEnvelopingMapFun,
+    ModuleTower.limπ_limQuotientsMap _ _ _ _ hm (b := 0) (by rw [map_zero, hw]),
     map_zero, map_zero]
 
-private theorem map_comp_eq_id (g : UK'Ψ →ₐ[R] UK'Φ) (g' : UK'Φ →ₐ[R] UK'Ψ)
-    (hg : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap g.toRingHom.toSemilinearMap)
+private theorem map_comp_eq_id (g' : UK'Φ →ₐ[R] UK'Ψ)
     (hg' : ∀ n : ℕ, ∃ m : ℕ, I'Φ m ≤ (I'Ψ n).comap g'.toRingHom.toSemilinearMap)
     (h : ∀ x, g (g' x) = x) :
     (extendedCompletedEnvelopingMap g hg).comp (extendedCompletedEnvelopingMap g' hg') =
@@ -560,43 +554,41 @@ private theorem map_comp_eq_id (g : UK'Ψ →ₐ[R] UK'Φ) (g' : UK'Φ →ₐ[R]
   rw [AlgHom.comp_apply, coe_toExtendedCompletedEnveloping,
     extendedCompletedEnvelopingMap_toLimQuotients,
     extendedCompletedEnvelopingMap_toLimQuotients, h, AlgHom.id_apply]
+end
+
+variable (e : CentralQuotient R (toExtendedResidueExtension Ψ hΨ hΨs
+      (centralElement (twoCocycleOfBilinear R L Ψ hΨ hΨs))) b ≃ₐ[R]
+    CentralQuotient R (toExtendedResidueExtension Φ hΦ hΦs
+      (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs))) a)
+  (he : ∀ n : ℕ, ∃ m : ℕ, extendedOrderLeftIdeal Ψ hΨ hΨs b m ≤
+    (extendedOrderLeftIdeal Φ hΦ hΦs a n).comap e.toAlgHom.toRingHom.toSemilinearMap)
+  (he' : ∀ n : ℕ, ∃ m : ℕ, extendedOrderLeftIdeal Φ hΦ hΦs a m ≤
+    (extendedOrderLeftIdeal Ψ hΨ hΨs b n).comap e.symm.toAlgHom.toRingHom.toSemilinearMap)
+include e he he'
 
 /-- **Isomorphisms of completed extended enveloping algebras.** -/
-def extendedCompletedEnvelopingEquiv (e : UK'Ψ ≃ₐ[R] UK'Φ)
-    (he : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap e.toAlgHom.toRingHom.toSemilinearMap)
-    (he' : ∀ n : ℕ, ∃ m : ℕ, I'Φ m ≤ (I'Ψ n).comap e.symm.toAlgHom.toRingHom.toSemilinearMap) :
-    Û'Ψ ≃ₐ[R] Û'Φ :=
+def extendedCompletedEnvelopingEquiv : Û'Ψ ≃ₐ[R] Û'Φ :=
   AlgEquiv.ofAlgHom (extendedCompletedEnvelopingMap e.toAlgHom he)
     (extendedCompletedEnvelopingMap e.symm.toAlgHom he')
-    (map_comp_eq_id _ _ he he' e.apply_symm_apply) (map_comp_eq_id _ _ he' he e.symm_apply_apply)
+    (map_comp_eq_id _ he _ he' e.apply_symm_apply) (map_comp_eq_id _ he' _ he e.symm_apply_apply)
 
 @[simp]
-theorem extendedCompletedEnvelopingEquiv_toLimQuotients (e : UK'Ψ ≃ₐ[R] UK'Φ)
-    (he : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap e.toAlgHom.toRingHom.toSemilinearMap)
-    (he' : ∀ n : ℕ, ∃ m : ℕ, I'Φ m ≤ (I'Ψ n).comap e.symm.toAlgHom.toRingHom.toSemilinearMap)
-    (x : UK'Ψ) :
+theorem extendedCompletedEnvelopingEquiv_toLimQuotients (x : UK'Ψ) :
     extendedCompletedEnvelopingEquiv e he he' (ModuleTower.toLimQuotients _ antiΨ x) =
       ModuleTower.toLimQuotients _ antiΦ (e x) :=
   extendedCompletedEnvelopingMap_toLimQuotients e.toAlgHom he x
 
 @[simp]
-theorem extendedCompletedEnvelopingEquiv_symm_toLimQuotients (e : UK'Ψ ≃ₐ[R] UK'Φ)
-    (he : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap e.toAlgHom.toRingHom.toSemilinearMap)
-    (he' : ∀ n : ℕ, ∃ m : ℕ, I'Φ m ≤ (I'Ψ n).comap e.symm.toAlgHom.toRingHom.toSemilinearMap)
-    (x : UK'Φ) :
+theorem extendedCompletedEnvelopingEquiv_symm_toLimQuotients (x : UK'Φ) :
     (extendedCompletedEnvelopingEquiv e he he').symm (ModuleTower.toLimQuotients _ antiΦ x) =
       ModuleTower.toLimQuotients _ antiΨ (e.symm x) :=
   extendedCompletedEnvelopingMap_toLimQuotients e.symm.toAlgHom he' x
 
-theorem continuous_extendedCompletedEnvelopingEquiv (e : UK'Ψ ≃ₐ[R] UK'Φ)
-    (he : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap e.toAlgHom.toRingHom.toSemilinearMap)
-    (he' : ∀ n : ℕ, ∃ m : ℕ, I'Φ m ≤ (I'Ψ n).comap e.symm.toAlgHom.toRingHom.toSemilinearMap) :
+theorem continuous_extendedCompletedEnvelopingEquiv :
     Continuous (extendedCompletedEnvelopingEquiv e he he') :=
   continuous_extendedCompletedEnvelopingMap e.toAlgHom he
 
-theorem continuous_extendedCompletedEnvelopingEquiv_symm (e : UK'Ψ ≃ₐ[R] UK'Φ)
-    (he : ∀ n : ℕ, ∃ m : ℕ, I'Ψ m ≤ (I'Φ n).comap e.toAlgHom.toRingHom.toSemilinearMap)
-    (he' : ∀ n : ℕ, ∃ m : ℕ, I'Φ m ≤ (I'Ψ n).comap e.symm.toAlgHom.toRingHom.toSemilinearMap) :
+theorem continuous_extendedCompletedEnvelopingEquiv_symm :
     Continuous (extendedCompletedEnvelopingEquiv e he he').symm :=
   continuous_extendedCompletedEnvelopingMap e.symm.toAlgHom he'
 
@@ -618,14 +610,16 @@ local notation "anti1" => extendedOrderLeftIdeal_natCast_antitone Ψ hΨ hΨs 1
 local notation "antik" => extendedOrderLeftIdeal_natCast_antitone Φ hΦ hΦs k
 
 private theorem le_comap_eL (h : Ψ = k • Φ) (n : ℕ) : extendedOrderLeftIdeal Ψ hΨ hΨs 1 n ≤
-    (extendedOrderLeftIdeal Φ hΦ hΦs k n).comap (eL h).toAlgHom.toRingHom.toSemilinearMap := by
-  intro x hx; rw [Submodule.mem_comap]; change eL h x ∈ _
-  exact (extendedLevelEnvelopingEquiv_mem_extendedOrderLeftIdeal_iff h).2 hx
-
+    (extendedOrderLeftIdeal Φ hΦ hΦs k n).comap (eL h).toAlgHom.toRingHom.toSemilinearMap :=
+  fun _ hx ↦ by
+    rw [Submodule.mem_comap, RingHom.coe_toSemilinearMap, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, AlgEquiv.coe_toAlgHom]
+    exact (extendedLevelEnvelopingEquiv_mem_extendedOrderLeftIdeal_iff h).2 hx
 private theorem le_comap_eL_symm (h : Ψ = k • Φ) (n : ℕ) : extendedOrderLeftIdeal Φ hΦ hΦs k n ≤
     (extendedOrderLeftIdeal Ψ hΨ hΨs 1 n).comap (eL h).symm.toAlgHom.toRingHom.toSemilinearMap :=
-  fun x hx ↦ by
-    rw [Submodule.mem_comap]; change (eL h).symm x ∈ _
+  fun _ hx ↦ by
+    rw [Submodule.mem_comap, RingHom.coe_toSemilinearMap, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, AlgEquiv.coe_toAlgHom]
     rwa [← extendedLevelEnvelopingEquiv_mem_extendedOrderLeftIdeal_iff h, AlgEquiv.apply_symm_apply]
 
 /-- **The completed level comparison for the extended affine algebra** at `(Ψ, 1)` and `(Φ, k)`. -/
@@ -651,8 +645,7 @@ theorem continuous_extendedLevelCompletedEnvelopingEquiv (h : Ψ = k • Φ) : C
   continuous_extendedCompletedEnvelopingEquiv _ _ _
 
 theorem continuous_extendedLevelCompletedEnvelopingEquiv_symm (h : Ψ = k • Φ) :
-    Continuous (eLC h).symm :=
-  continuous_extendedCompletedEnvelopingEquiv_symm _ _ _
+    Continuous (eLC h).symm := continuous_extendedCompletedEnvelopingEquiv_symm _ _ _
 
 @[simp]
 theorem extendedLevelCompletedEnvelopingEquiv_completedToExtended (h : Ψ = k • Φ)

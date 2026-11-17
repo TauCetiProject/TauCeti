@@ -12,14 +12,16 @@ public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
+import TauCeti.RingTheory.PowerSeries.Center
+
 /-!
 # Restricted formal power series over a left-linearly topologized ring
 
 Over a topological ring `A` with a left-linear topology (`IsLinearTopology A A`), formal power
 series `f ∈ A⟦X⟧` with `coeff n f → 0` are closed under Cauchy multiplication
 (`PowerSeries.tendsto_coeff_mul_atTop_nhds_zero`), forming `PowerSeries.coeffTendstoZeroSubring A`
-and `PowerSeries.coeffTendstoZeroSubalgebra R A`. Centrality in both `A⟦X⟧` and the restricted
-subalgebra is coefficientwise centrality in `A`, constants and `R[X]` intersect in `⊥`
+and `PowerSeries.coeffTendstoZeroSubalgebra R A`. Centrality in the restricted subalgebra is
+coefficientwise centrality in `A`, constants and `R[X]` intersect in `⊥`
 (`PowerSeries.range_coeffTendstoZeroCAlgHom_inf_adjoin_X`), and restricted series can be evaluated
 at central elements of complete Hausdorff left-linearly topologized algebras
 (`PowerSeries.coeffTendstoZeroEval`).
@@ -36,23 +38,6 @@ open Filter
 open scoped Topology
 
 namespace PowerSeries
-
-section Center
-
-variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-
-/-- A formal power series in `A⟦X⟧` is central if and only if each coefficient is central in `A`. -/
-theorem mem_center_iff {f : A⟦X⟧} :
-    f ∈ Subalgebra.center R A⟦X⟧ ↔ ∀ n, coeff n f ∈ Subalgebra.center R A := by
-  refine ⟨fun hf n ↦ Subalgebra.mem_center_iff.2 fun a ↦ ?_,
-    fun hf ↦ Subalgebra.mem_center_iff.2 fun g ↦ ?_⟩
-  · simpa only [coeff_C_mul, coeff_mul_C] using
-      congrArg (coeff n) (Subalgebra.mem_center_iff.1 hf (C a))
-  · ext n
-    rw [coeff_mul, coeff_mul, ← Finset.Nat.sum_antidiagonal_swap]
-    exact Finset.sum_congr rfl fun p _ ↦ Subalgebra.mem_center_iff.1 (hf p.1) (coeff p.2 g)
-
-end Center
 
 section Semiring
 
@@ -74,7 +59,8 @@ theorem tendsto_coeff_monomial_atTop_nhds_zero (d : ℕ) (a : A) :
 theorem tendsto_coeff_X_atTop_nhds_zero :
     Tendsto (fun n ↦ coeff n (X : A⟦X⟧)) atTop (𝓝 0) :=
   tendsto_const_nhds.congr' <| by
-    filter_upwards [eventually_ge_atTop 2] with n hn; simp [coeff_X, show n ≠ 1 by omega]
+    filter_upwards [eventually_ge_atTop 2] with n hn
+    simp [coeff_X, Nat.ne_of_gt (Nat.lt_of_succ_le hn)]
 
 end Semiring
 
@@ -91,10 +77,10 @@ theorem tendsto_coeff_mul_atTop_nhds_zero [IsTopologicalRing A] [IsLinearTopolog
   rintro J (hJ : (J : Set A) ∈ 𝓝 0)
   obtain ⟨L, hL⟩ := eventually_atTop.1 (hg hJ)
   have hfin : ∀ᶠ k in atTop, ∀ l ∈ Finset.range L, coeff k f * coeff l g ∈ J :=
-    (Finset.range L).eventually_all.2 fun l _ ↦ hf <|
-      (show ContinuousAt (fun x : A ↦ x * coeff l g) 0 from
-        (continuous_id.mul continuous_const).continuousAt).preimage_mem_nhds
-        (by simpa only [zero_mul] using hJ)
+    (Finset.range L).eventually_all.2 fun l _ ↦ by
+      have hmul : ContinuousAt (fun x : A ↦ x * coeff l g) 0 :=
+        (continuous_id.mul continuous_const).continuousAt
+      exact hf (hmul.preimage_mem_nhds (by simpa only [zero_mul] using hJ))
   obtain ⟨K, hK⟩ := eventually_atTop.1 hfin
   refine eventually_atTop.2 ⟨K + L, fun n hn ↦ ?_⟩
   rw [coeff_mul]
@@ -109,11 +95,11 @@ variable (A) in
 noncomputable def coeffTendstoZeroSubring [IsTopologicalRing A] [IsLinearTopology A A] :
     Subring A⟦X⟧ where
   carrier := {f | Tendsto (fun n ↦ coeff n f) atTop (𝓝 0)}
-  zero_mem' := by change Tendsto _ _ _; simpa only [map_zero] using tendsto_const_nhds
+  zero_mem' := by simpa only [Set.mem_ofPred_eq, map_zero] using tendsto_const_nhds
   one_mem' := by
-    change Tendsto _ _ _; simpa only [← map_one C] using tendsto_coeff_C_atTop_nhds_zero (1 : A)
-  add_mem' hf hg := by change Tendsto _ _ _; simpa only [map_add, add_zero] using hf.add hg
-  neg_mem' hf := by change Tendsto _ _ _; simpa only [map_neg, neg_zero] using hf.neg
+    simpa only [Set.mem_ofPred_eq, ← map_one C] using tendsto_coeff_C_atTop_nhds_zero (1 : A)
+  add_mem' hf hg := by simpa only [Set.mem_ofPred_eq, map_add, add_zero] using hf.add hg
+  neg_mem' hf := by simpa only [Set.mem_ofPred_eq, map_neg, neg_zero] using hf.neg
   mul_mem' hf hg := tendsto_coeff_mul_atTop_nhds_zero hf hg
 
 variable [IsTopologicalRing A] [IsLinearTopology A A]
