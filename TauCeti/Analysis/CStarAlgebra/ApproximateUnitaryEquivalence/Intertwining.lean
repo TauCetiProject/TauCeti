@@ -169,15 +169,23 @@ theorem exists_starAlgEquiv_of_forall_finset_approx [TopologicalSpace.SeparableS
 
 /-- If `g ∘ f` is approximately unitarily equivalent to the identity, then so is the composite
 of `g` with any unitary conjugate of `f`: postcomposition with `g`, which preserves the unit,
-preserves the approximate unitary equivalence of `f` with its conjugate. -/
-private theorem approximatelyUnitarilyEquivalent_comp_conj {D E : Type*} [CStarAlgebra D]
+preserves the approximate unitary equivalence of `f` with its conjugate. The conclusion is
+stated in the finite-set form of `approximatelyUnitarilyEquivalent_def`. -/
+private theorem exists_norm_comp_conj_sub_lt {D E : Type*} [CStarAlgebra D]
     [CStarAlgebra E] {f : D →⋆ₙₐ[ℂ] E} {g : E →⋆ₙₐ[ℂ] D}
     (h : ApproximatelyUnitarilyEquivalent (g.comp f) (NonUnitalStarAlgHom.id ℂ D))
-    (w : unitary E) : ApproximatelyUnitarilyEquivalent
-      (g.comp ((Unitary.conjStarAlgAut ℂ E w).toNonUnitalStarAlgHom.comp f))
-      (NonUnitalStarAlgHom.id ℂ D) :=
-  ((ApproximatelyUnitarilyEquivalent.of_unitary w fun _ ↦ rfl).postcomp_of_map_one g
-    h.map_one_of_comp).symm.trans h
+    (w : unitary E) (F : Finset D) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ v : unitary D, ∀ a ∈ F,
+      ‖(v : D) * g ((w : E) * f a * star (w : E)) * star (v : D) - a‖ < δ := by
+  have hw : ApproximatelyUnitarilyEquivalent f
+      ((Unitary.conjStarAlgAut ℂ E w).toNonUnitalStarAlgHom.comp f) :=
+    .of_unitary w fun a ↦ by
+      simp only [NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+        Unitary.conjStarAlgAut_apply]
+  simpa only [NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+    Unitary.conjStarAlgAut_apply, Unitary.coe_star, NonUnitalStarAlgHom.coe_id, id_eq] using
+    (approximatelyUnitarilyEquivalent_def _ _).mp
+      ((hw.postcomp_of_map_one g h.map_one_of_comp).symm.trans h) F δ hδ
 
 /-- **Elliott's approximate intertwining theorem.** Let `A` and `B` be separable unital
 C⋆-algebras and `φ : A → B`, `ψ : B → A` be `⋆`-homomorphisms such that `ψ ∘ φ` is
@@ -200,16 +208,8 @@ theorem elliott_intertwining {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
   have hΨ (v : unitary A) (y : B) : Ψ v y = v * ψ y * star (v : A) := by simp [Ψ]
   -- Conjugating one map keeps the composite approximately unitarily equivalent to the identity.
   obtain ⟨w, θ, hθ⟩ := exists_starAlgEquiv_of_forall_finset_approx Φ Ψ
-    (fun w F δ hδ ↦ by
-      simpa only [hΦ, hΨ, NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
-        Unitary.conjStarAlgAut_apply, NonUnitalStarAlgHom.coe_id, id_eq] using
-        (approximatelyUnitarilyEquivalent_def _ _).mp
-          (approximatelyUnitarilyEquivalent_comp_conj hψφ w) F δ hδ)
-    (fun v G δ hδ ↦ by
-      simpa only [hΦ, hΨ, NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
-        Unitary.conjStarAlgAut_apply, NonUnitalStarAlgHom.coe_id, id_eq] using
-        (approximatelyUnitarilyEquivalent_def _ _).mp
-          (approximatelyUnitarilyEquivalent_comp_conj hφψ v) G δ hδ)
+    (fun w F δ hδ ↦ by simpa only [hΦ, hΨ] using exists_norm_comp_conj_sub_lt hψφ w F δ hδ)
+    (fun v G δ hδ ↦ by simpa only [hΦ, hΨ] using exists_norm_comp_conj_sub_lt hφψ v G δ hδ)
   exact ⟨θ, (ApproximatelyUnitarilyEquivalent.of_tendsto (l := atTop) w fun x ↦ by
     simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_apply, hΦ] using hθ x).symm⟩
 
