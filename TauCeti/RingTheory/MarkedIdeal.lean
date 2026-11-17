@@ -74,6 +74,9 @@ namespace MarkedIdeal
 
 variable {R : Type*} [CommRing R]
 
+/-- The mark of a marked ideal is nonzero. -/
+instance (P : MarkedIdeal R) : NeZero P.mark := ⟨P.mark_pos.ne'⟩
+
 /-- The cosupport of a marked ideal `(I, d)`: the primes at which `I` has local order at
 least `d`. -/
 def cosupport (P : MarkedIdeal R) : Set (PrimeSpectrum R) :=
@@ -195,13 +198,16 @@ theorem sum_comm : P.sum Q = Q.sum P := by
   · simp [sup_comm]
   · simp [mul_comm]
 
+/-- The cosupport of the marked sum of `(I, a)` and `(J, b)` is the intersection of the
+cosupports of the rescalings `(Iᵇ, b a)` and `(Jᵃ, a b)`. -/
+theorem cosupport_sum_eq_inter_cosupport_pow :
+    (P.sum Q).cosupport = (P.pow Q.mark).cosupport ∩ (Q.pow P.mark).cosupport :=
+  cosupport_eq_inter_of_ideal_eq_sup (by simp) (by simp [mul_comm]) (by simp)
+
 /-- The cosupport of a marked sum contains the intersection of the cosupports. -/
 theorem cosupport_inter_subset_cosupport_sum :
     P.cosupport ∩ Q.cosupport ⊆ (P.sum Q).cosupport := by
-  have : NeZero P.mark := ⟨P.mark_pos.ne'⟩
-  have : NeZero Q.mark := ⟨Q.mark_pos.ne'⟩
-  rw [cosupport_eq_inter_of_ideal_eq_sup (S := P.sum Q) (A := P.pow Q.mark)
-    (B := Q.pow P.mark) rfl (mul_comm _ _) rfl]
+  rw [cosupport_sum_eq_inter_cosupport_pow]
   exact Set.inter_subset_inter (P.cosupport_subset_cosupport_pow _)
     (Q.cosupport_subset_cosupport_pow _)
 
@@ -211,10 +217,7 @@ lies in both cosupports. -/
 theorem mem_cosupport_sum_iff (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     p ∈ (P.sum Q).cosupport ↔ p ∈ P.cosupport ∧ p ∈ Q.cosupport := by
-  have : NeZero P.mark := ⟨P.mark_pos.ne'⟩
-  have : NeZero Q.mark := ⟨Q.mark_pos.ne'⟩
-  rw [cosupport_eq_inter_of_ideal_eq_sup (S := P.sum Q) (A := P.pow Q.mark)
-    (B := Q.pow P.mark) rfl (mul_comm _ _) rfl, Set.mem_inter_iff, mem_cosupport_pow_iff,
+  rw [cosupport_sum_eq_inter_cosupport_pow, Set.mem_inter_iff, mem_cosupport_pow_iff,
     mem_cosupport_pow_iff]
 
 /-- **The cosupport of a marked sum.** Over a regular ring, the cosupport of `(Iᵇ + Jᵃ, a b)` is
