@@ -32,11 +32,12 @@ external morphisms `A ⟶ D` and global sections `𝟙_ _ ⟶ hom A D`, all of w
 fibrewise with their operator-level counterparts through `homFiberEquiv`.
 
 The construction distributes over Whitney sums in both arguments (`whitneySumHomIso` and
-`homWhitneySumIso`), commutes strictly with base change (`pullback_hom`, `pullback_tensorObj`), and
-is identified on total spaces with Mathlib's Hom bundle (`homTotalSpaceHomeomorph`). Over a
-complete scalar field, where dual cores are defined via `ContinuousLinearEquiv.piRing`, the
-canonical contraction `A.dual ⊗ D ≅ hom A D` (`dualTensorIsoHom`) has the identity coordinate
-matrix on every fibre, and `hom A (𝟙_ _) ≅ A.dual` (`homUnitIsoDual`).
+`homWhitneySumIso`), commutes strictly with base change (`pullback_hom`, `pullbackMap_homHom`,
+`pullbackMap_homEv`, `pullbackMap_homCoev`), and is identified on total spaces with Mathlib's Hom
+bundle (`homTotalSpaceHomeomorph`). Over a complete scalar field, where dual cores are defined via
+`ContinuousLinearEquiv.piRing`, the canonical contraction `A.dual ⊗ D ≅ hom A D`
+(`dualTensorIsoHom`) has the identity coordinate matrix on every fibre, and
+`hom A (𝟙_ _) ≅ A.dual` (`homUnitIsoDual`).
 
 For the Hom bundle and its transition functions see Milnor–Stasheff, *Characteristic Classes*, §3,
 and Atiyah, *K-Theory*, §1.2.
@@ -634,19 +635,9 @@ universe u v w
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
   {X : Type u} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- Pulling back commutes strictly with the monoidal tensor product of finite-rank cores. -/
-@[simp] theorem pullback_tensorObj (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    (A ⊗ D).pullback f = A.pullback f ⊗ D.pullback f := (rfl)
-
 /-- Pulling back commutes strictly with internal Hom cores. -/
 @[simp] theorem pullback_hom (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (hom A D).pullback f = hom (A.pullback f) (D.pullback f) := (rfl)
-
-/-- Pulling back commutes with the monoidal tensor product of bundle morphisms. -/
-@[simp] theorem pullbackMap_tensorHom_monoidal {A A' D D' : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ A') (b : D ⟶ D') (f : C(X, Y)) :
-    pullbackMap (a ⊗ₘ b) f = pullbackMap a f ⊗ₘ pullbackMap b f :=
-  pullbackMap_tensorHom a b f
 
 /-- Pulling back commutes with `homHom` on bundle morphisms. -/
 @[simp] theorem pullbackMap_homHom {A A' D D' : FiniteRankBundleCore 𝕜 Y}
