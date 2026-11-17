@@ -113,13 +113,13 @@ theorem orientationTwoEvenPadic_of (i : Fin n) :
 /-- The orientation takes `x₂` to its marked value `v`. -/
 theorem orientationTwoEvenPadic_presentedProPGen_one (hn : 1 < n) :
     orientationTwoEvenPadic α q n v u (presentedProPGen 2 n _ 1) = v := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoEvenPadic_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoEvenPadic_of]
   simp
 
 /-- The orientation takes `x₄` to its marked value `u`. -/
 theorem orientationTwoEvenPadic_presentedProPGen_three (hn : 3 < n) :
     orientationTwoEvenPadic α q n v u (presentedProPGen 2 n _ 3) = u := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoEvenPadic_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoEvenPadic_of]
   simp
 
 /-- The orientation is trivial on every generator other than `x₂` and `x₄`. -/

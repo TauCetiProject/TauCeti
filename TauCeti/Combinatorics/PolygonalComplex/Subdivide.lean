@@ -721,10 +721,10 @@ abbrev subdivide : SurfaceModel.{u, v, w} where
     · exact S.hasSurfaceLink_subdivide_none a (S.linkDegree_eq_one_or_two a)
     · exact (S.hasSurfaceLink v).subdivide a
 
-/-- Subdividing an edge of a surface model does not change its Euler characteristic. -/
-@[simp] theorem eulerChar_subdivide :
-    -- Stated for `S.toPolygonalComplex.subdivide a`, the form to which `simp` reduces the
-    -- complex underlying `S.subdivide a`: stated for the latter, `simp` does not find the lemma.
+/-- Subdividing an edge of a surface model does not change its Euler characteristic. This is not a
+`simp` lemma: `simp` already proves it by `PolygonalComplex.eulerChar_subdivide`, finding the
+finiteness instances of a surface model. -/
+theorem eulerChar_subdivide :
     (S.toPolygonalComplex.subdivide a).eulerChar = S.eulerChar := by
   have : Finite S.graph.GeomEdge := Finite.of_surjective _ S.graph.toGeomEdge_surjective
   exact PolygonalComplex.eulerChar_subdivide _ a

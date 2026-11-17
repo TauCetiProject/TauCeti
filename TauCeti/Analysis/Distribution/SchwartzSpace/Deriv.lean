@@ -14,6 +14,8 @@ import TauCeti.Analysis.Distribution.TemperateGrowth
 
 Directional derivatives of a Schwartz function commute, since its second derivative is symmetric,
 and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`).
+Near a point where a Schwartz function is constant, its line derivatives vanish
+(`SchwartzMap.lineDerivOp_eventuallyEq_zero`).
 The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
 the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
@@ -97,6 +99,15 @@ theorem lineDerivOp_compSubConstCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace �
   ext x
   rw [lineDerivOp_apply_eq_fderiv, funext (compSubConstCLM_apply f a), fderiv_comp_sub,
     compSubConstCLM_apply, lineDerivOp_apply_eq_fderiv]
+
+open scoped Topology in
+/-- A Schwartz function that is constant near a point has line derivatives vanishing near that
+point. -/
+theorem lineDerivOp_eventuallyEq_zero {f : 𝓢(V, F)} {x : V} {c : F}
+    (hf : ⇑f =ᶠ[𝓝 x] fun _ ↦ c) (v : V) : ⇑(∂_{v} f : 𝓢(V, F)) =ᶠ[𝓝 x] fun _ ↦ 0 := by
+  filter_upwards [hf.eventually_nhds] with y hy
+  rw [lineDerivOp_apply_eq_fderiv, Filter.EventuallyEq.fderiv_eq (f := fun _ ↦ c) hy,
+    fderiv_const_apply, zero_apply]
 
 /-- A coordinate partial derivative of a Schwartz function with values in Euclidean space is a
 coordinate of its line derivative. -/
