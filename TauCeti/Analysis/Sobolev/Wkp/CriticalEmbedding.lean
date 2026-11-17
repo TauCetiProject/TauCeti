@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Analysis.Sobolev.Wkp.Density
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+public import TauCeti.Analysis.Sobolev.Wkp.ZeroAtInfty
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
 
@@ -36,7 +36,8 @@ test function `φ`, the pointwise bound together with
 test functions converging to `u` in `W^{k,1}` is therefore uniformly Cauchy, and converges in the
 complete space `C₀(E)` to a function `g`. Along a subsequence the test functions also converge to
 `u` almost everywhere, so `g` represents `u`. Two continuous functions that agree almost everywhere
-are equal, so the representative is unique and depends linearly on `u`.
+are equal, so the representative is unique and depends linearly on `u`. This last step does not
+depend on `k`, `p` or the dimension, and is `TauCeti.Wkp.toZeroAtInftyOfExists`.
 
 ## Main declarations
 
@@ -44,6 +45,8 @@ are equal, so the representative is unique and depends linearly on `u`.
   `dim E ≤ k`.
 * `TauCeti.Wkp.value_ae_eq_toZeroAtInftyOne`, `TauCeti.Wkp.toZeroAtInftyOne_eq_iff`: the embedding
   sends a Sobolev function to its unique continuous representative.
+* `TauCeti.Wkp.coe_toZeroAtInftyOne_ofTestFunctionₗ`: the embedding sends a test function to
+  itself.
 * `TauCeti.Wkp.norm_toZeroAtInftyOne_le`: the bound `sup_x |u(x)| ≤ ‖u‖_{W^{k,1}}`.
 * `TauCeti.Wkp.toZeroAtInftyOne_injective`: the continuous representative determines the Sobolev
   function.
@@ -124,81 +127,49 @@ private theorem exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le (hk : finrank 
     rw [map_sub, ← dist_eq_norm]
     exact hN i hi j hj
   obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete hcauchy
-  refine ⟨g, ?_, le_of_tendsto_of_tendsto' hg.norm hDφ.norm fun j => hnorm (φ j)⟩
-  -- Along a subsequence, the values converge almost everywhere to the value of `u`.
-  have hval : Tendsto (fun j => value k (D (φ j))) atTop (𝓝 (value k u)) := by
-    simpa only [Function.comp_def, valueL_apply] using ((valueL k).continuous.tendsto u).comp hDφ
-  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hval).exists_seq_tendsto_ae
-  have hrep : ∀ᵐ x ∂(volume : Measure E), ∀ i, value k (D (φ (ns i))) x = φ (ns i) x := by
-    refine ae_all_iff.2 fun i => ?_
+  refine ⟨g, value_ae_eq_of_tendsto hDφ (fun j => ?_) hg,
+    le_of_tendsto_of_tendsto' hg.norm hDφ.norm fun j => hnorm (φ j)⟩
+  have h : ∀ᵐ x ∂(volume : Measure E), value k (D (φ j)) x = φ j x := by
     simpa only [D, value_ofTestFunctionₗ, Opens.coe_top, Measure.restrict_univ] using
-      testFunctionLp_apply_ae (mu := (volume : Measure E)) 1 (φ (ns i))
-  replace hns : ∀ᵐ x ∂(volume : Measure E),
-      Tendsto (fun i => value k (D (φ (ns i))) x) atTop (𝓝 (value k u x)) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hns
-  filter_upwards [hns, hrep] with x hx hxrep
-  -- Convergence in `C₀` is uniform, so it implies convergence at `x`.
-  have heval : Tendsto (fun i => G (φ (ns i)) x) atTop (𝓝 (g x)) :=
-    (((continuous_apply x).comp (BoundedContinuousFunction.continuous_coe.comp
-      ZeroAtInftyContinuousMap.isometry_toBCF.continuous)).tendsto g).comp
-        (hg.comp hmono.tendsto_atTop)
-  exact tendsto_nhds_unique (hx.congr hxrep) heval
-
-/-- Two continuous representatives of the same Sobolev function coincide. -/
-private theorem eq_of_value_ae_eq {u : Wkp (volume : Measure E) ⊤ 1 k} {g g' : C₀(E, ℝ)}
-    (hg : value k u =ᵐ[volume] g) (hg' : value k u =ᵐ[volume] g') : g = g' :=
-  ZeroAtInftyContinuousMap.ext <| congrFun <|
-    (Continuous.ae_eq_iff_eq (volume : Measure E) g.continuous g'.continuous).mp
-      (hg.symm.trans hg')
-
-/-- The continuous representative of a Sobolev function, as a linear map. -/
-private def toZeroAtInftyOneₗ (hk : finrank ℝ E ≤ k) :
-    Wkp (volume : Measure E) ⊤ 1 k →ₗ[ℝ] C₀(E, ℝ) where
-  toFun u := (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).choose
-  map_add' u v := by
-    refine eq_of_value_ae_eq (u := u + v)
-      (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk (u + v)).choose_spec.1 ?_
-    have hadd : ⇑(value k u + value k v) =ᵐ[volume] ⇑(value k u) + ⇑(value k v) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value k u) (value k v)
-    filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).choose_spec.1,
-      (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk v).choose_spec.1, hadd]
-      with x hu hv hadd
-    rw [value_add, hadd, Pi.add_apply, hu, hv, _root_.add_apply]
-  map_smul' c u := by
-    refine eq_of_value_ae_eq (u := c • u)
-      (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk (c • u)).choose_spec.1 ?_
-    have hsmul : ⇑(c • value k u) =ᵐ[volume] c • ⇑(value k u) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_smul c (value k u)
-    filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).choose_spec.1, hsmul]
-      with x hu hsmul
-    rw [value_smul, hsmul, Pi.smul_apply, hu, RingHom.id_apply, _root_.smul_apply]
+      testFunctionLp_apply_ae (mu := (volume : Measure E)) 1 (φ j)
+  exact h
 
 /-- **The critical Sobolev embedding `W^{k,1}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)`** for `dim E ≤ k`: the bounded
 linear map sending a function in the whole-space weak-derivative Sobolev space `W^{k,1}` to its
 unique representative that is continuous and vanishes at infinity. Its boundedness is the estimate
 `sup_x |u(x)| ≤ ‖u‖_{W^{k,1}}` (`TauCeti.Wkp.norm_toZeroAtInftyOne_le`). -/
 def toZeroAtInftyOne (hk : finrank ℝ E ≤ k) : Wkp (volume : Measure E) ⊤ 1 k →L[ℝ] C₀(E, ℝ) :=
-  (toZeroAtInftyOneₗ hk).mkContinuous 1 fun u => by
-    rw [one_mul]
-    exact (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).choose_spec.2
+  toZeroAtInftyOfExists fun u => (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).imp
+    fun _ hg => hg.1
 
 /-- The Sobolev embedding sends a Sobolev function to a representative of its value. -/
 theorem value_ae_eq_toZeroAtInftyOne (hk : finrank ℝ E ≤ k)
     (u : Wkp (volume : Measure E) ⊤ 1 k) :
     value k u =ᵐ[volume] toZeroAtInftyOne hk u :=
-  (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).choose_spec.1
+  value_ae_eq_toZeroAtInftyOfExists _ u
 
 /-- The Sobolev embedding of `u` is the only function in `C₀` representing the value of `u`. -/
 theorem toZeroAtInftyOne_eq_iff (hk : finrank ℝ E ≤ k) (u : Wkp (volume : Measure E) ⊤ 1 k)
     (g : C₀(E, ℝ)) :
     toZeroAtInftyOne hk u = g ↔ value k u =ᵐ[volume] g :=
-  ⟨fun h => h ▸ value_ae_eq_toZeroAtInftyOne hk u,
-    fun h => eq_of_value_ae_eq (value_ae_eq_toZeroAtInftyOne hk u) h⟩
+  toZeroAtInftyOfExists_eq_iff _ u g
+
+/-- The Sobolev embedding sends a test function to itself. -/
+@[simp]
+theorem coe_toZeroAtInftyOne_ofTestFunctionₗ (hk : finrank ℝ E ≤ k) (φ : 𝓓((⊤ : Opens E), ℝ)) :
+    ⇑(toZeroAtInftyOne hk (ofTestFunctionₗ k φ)) = φ := by
+  let G : C₀(E, ℝ) := ⟨⟨φ, φ.continuous⟩, φ.hasCompactSupport.is_zero_at_infty⟩
+  have h : ∀ᵐ x ∂(volume : Measure E),
+      value k (ofTestFunctionₗ (mu := volume) (p := 1) k φ) x = φ x := by
+    simpa only [value_ofTestFunctionₗ, Opens.coe_top, Measure.restrict_univ] using
+      testFunctionLp_apply_ae (mu := (volume : Measure E)) 1 φ
+  exact congrArg DFunLike.coe ((toZeroAtInftyOne_eq_iff hk _ G).2 h)
 
 /-- **The critical Sobolev inequality** `sup_x |u(x)| ≤ ‖u‖_{W^{k,1}}` for `dim E ≤ k`. -/
 theorem norm_toZeroAtInftyOne_le (hk : finrank ℝ E ≤ k) (u : Wkp (volume : Measure E) ⊤ 1 k) :
-    ‖toZeroAtInftyOne hk u‖ ≤ ‖u‖ :=
-  (exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u).choose_spec.2
+    ‖toZeroAtInftyOne hk u‖ ≤ ‖u‖ := by
+  obtain ⟨g, hg, hgu⟩ := exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le hk u
+  rwa [(toZeroAtInftyOne_eq_iff hk u g).2 hg]
 
 /-- The Sobolev embedding has operator norm at most `1`. -/
 theorem opNorm_toZeroAtInftyOne_le (hk : finrank ℝ E ≤ k) :
@@ -210,15 +181,8 @@ theorem opNorm_toZeroAtInftyOne_le (hk : finrank ℝ E ≤ k) :
 /-- The Sobolev embedding is injective: the continuous representative determines the Sobolev
 function. -/
 theorem toZeroAtInftyOne_injective (hk : finrank ℝ E ≤ k) :
-    Function.Injective (toZeroAtInftyOne (E := E) hk) := by
-  intro u v huv
-  apply ext k
-  apply Lp.ext
-  have hae : value k u =ᵐ[volume] value k v := by
-    filter_upwards [value_ae_eq_toZeroAtInftyOne hk u, value_ae_eq_toZeroAtInftyOne hk v]
-      with x hu hv
-    rw [hu, hv, huv]
-  simpa only [Opens.coe_top, Measure.restrict_univ] using hae
+    Function.Injective (toZeroAtInftyOne (E := E) hk) :=
+  toZeroAtInftyOfExists_injective _
 
 end Wkp
 

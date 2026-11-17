@@ -57,6 +57,8 @@ at infinity on that line. Iterating over the `n` coordinates bounds `|u x|` by t
   inequality for integrable `C¹` functions.
 * `HasCompactSupport.eNorm_le_lintegral_iteratedFDeriv`: the bound `‖u x‖ ≤ ∫ ‖Dⁿu‖` for
   compactly supported `Cⁿ` functions on a space of dimension `n`.
+* `HasCompactSupport.eNorm_le_lmarginal_iteratedFDeriv`: its iterated form over a finite set of
+  coordinates, along vectors of norm at most one.
 
 ## References
 
@@ -131,7 +133,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 `L y` for coordinates `y : ι → ℝ` along vectors `L (Pi.single i 1)` of norm at most one. Then for
 every finite set `s` of coordinates, the value of a compactly supported `C^#s` function `u` at
 `L y` is bounded by the integral of `‖D^#s u‖` over the coordinates in `s`. -/
-private theorem eNorm_le_lmarginal_iteratedFDeriv {E ι : Type*} [NormedAddCommGroup E]
+theorem HasCompactSupport.eNorm_le_lmarginal_iteratedFDeriv {E ι : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [Finite ι] [DecidableEq ι] (L : (ι → ℝ) ≃L[ℝ] E)
     (hL : ∀ i, ‖L (Pi.single i 1)‖ ≤ 1) (s : Finset ι) {u : E → F}
     (hu : ContDiff ℝ #s u) (h'u : HasCompactSupport u) (y : ι → ℝ) :
@@ -185,7 +187,7 @@ theorem HasCompactSupport.eNorm_le_lintegral_iteratedFDeriv {E : Type*} [NormedA
   have hmp : MeasurePreserving L :=
     b.measurePreserving_repr_symm.comp (PiLp.volume_preserving_toLp _)
   obtain ⟨y, rfl⟩ := L.surjective x
-  have h := eNorm_le_lmarginal_iteratedFDeriv L hL univ (by simpa using hu) h'u y
+  have h := h'u.eNorm_le_lmarginal_iteratedFDeriv L hL univ (by simpa using hu) y
   rw [lmarginal_univ, card_univ, Fintype.card_fin, ← volume_pi] at h
   exact h.trans_eq (hmp.lintegral_comp_emb L.toHomeomorph.measurableEmbedding
     fun w ↦ ‖iteratedFDeriv ℝ (finrank ℝ E) u w‖ₑ)
