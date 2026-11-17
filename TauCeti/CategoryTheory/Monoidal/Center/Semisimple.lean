@@ -140,7 +140,6 @@ theorem forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_coun
   rw [← hsum]
   let u : Z.1 ⟶ inductionObj Z.1 := ((forgetInductionAdjunction k C).unit.app Z).f
   let c : inductionObj Z.1 ⟶ Z.1 := ((inductionForgetAdjunction k C).counit.app Z).f
-  change u ≫ c = _
   calc u ≫ c
       = u ≫ (∑ S : SimpleClasses C,
           biproduct.π (inductionSummand Z.1) S ≫ biproduct.ι (inductionSummand Z.1) S) ≫ c := by

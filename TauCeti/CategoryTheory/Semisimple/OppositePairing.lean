@@ -161,7 +161,8 @@ theorem simpleOppositeExactPairing_coevaluation_of_iso_unit {X : C} [Simple X] (
   have hs : s ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
     have hmate : (u.hom)ᘁ ▷ X ≫ ε_ X Xᘁ = (λ_ X).hom ≫ u.hom := by
       rw [rightAdjointMate_comp_evaluation]
-      change 𝟙_ C ◁ u.hom ≫ ε_ (𝟙_ C) (𝟙_ C) = _
+      -- `hasRightDualUnit` gives `(𝟙_ C)ᘁ = 𝟙_ C` with pairing `exactPairingUnit`.
+      dsimp only [HasRightDual.rightDual, hasRightDualUnit]
       rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
     rw [Category.assoc, tensorHom_def', Category.assoc, hmate, ← Category.assoc,
       ← leftUnitor_inv_naturality, Category.assoc, Iso.inv_hom_id_assoc, u.inv_hom_id]

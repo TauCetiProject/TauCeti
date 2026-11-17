@@ -256,7 +256,8 @@ private theorem rightAdjointMate_whiskerRight_comp_inductionMate (S : SimpleClas
         ε_ (SimpleClasses.classOf (𝟙_ C)).repr _ =
       (λ_ (SimpleClasses.classOf (𝟙_ C)).repr).hom ≫ u₀.hom := by
     rw [rightAdjointMate_comp_evaluation]
-    change 𝟙_ C ◁ u₀.hom ≫ ε_ (𝟙_ C) (𝟙_ C) = _
+    -- `hasRightDualUnit` gives `(𝟙_ C)ᘁ = 𝟙_ C` with pairing `exactPairingUnit`.
+    dsimp only [HasRightDual.rightDual, hasRightDualUnit]
     rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
   calc ((u₀.hom)ᘁ ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ▷ S.repr ≫
           ε_ S.repr S.reprᘁ
@@ -332,12 +333,11 @@ private theorem unitL_naturality {X X' : C} (f : X ⟶ X') :
     simp [tensorHom_def]
   have hmid : (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ)) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷
         (SimpleClasses.classOf (𝟙_ C)).reprᘁ =
-      (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 ((𝟙_ C)ᘁ : C))) ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ (u₀.hom)ᘁ)) := by
+      (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C))) ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ (u₀.hom)ᘁ)) := by
     rw [h1, tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
       tensorHom_comp_tensorHom, tensorHom_comp_tensorHom]; simp
   have hunitor : f ≫ (λ_ X').inv ≫ 𝟙_ C ◁ (ρ_ X').inv =
-      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 ((𝟙_ C)ᘁ : C))) := by
-    change _ = (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C)))
+      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C))) := by
     simp only [tensorHom_def]; monoidal
   dsimp only [unitL]
   simp only [Category.assoc, biproduct.ι_map]
