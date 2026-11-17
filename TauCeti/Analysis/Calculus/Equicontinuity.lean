@@ -10,10 +10,10 @@ public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Topology.Sequences
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Equicontinuity from bounds on derivatives
@@ -35,7 +35,8 @@ Iterating the `C¹` statement gives **Arzelà–Ascoli in `Cᵏ`**
 (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv`): if the derivatives of
 order at most `k + 1` of the `uₙ` are bounded on each compact subset of `Ω`, uniformly in `n`,
 then along a subsequence the `uₙ` converge to a `Cᵏ` map together with their derivatives of order
-at most `k`, locally uniformly on `Ω`.
+at most `k`, locally uniformly on `Ω`. Locally uniform convergence of the derivatives of order `0`
+is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`).
 -/
 
 public section
@@ -44,6 +45,18 @@ open Filter Metric Set Topology
 open scoped NNReal
 
 namespace TauCeti
+
+/-- Locally uniform convergence of the derivatives of order `0` is locally uniform convergence of
+the maps themselves. -/
+theorem tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff {𝕜 E F ι : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {u : ι → E → F} {v : E → F} {l : Filter ι} {s : Set E} :
+    TendstoLocallyUniformlyOn (fun n ↦ iteratedFDeriv 𝕜 0 (u n)) (iteratedFDeriv 𝕜 0 v) l s ↔
+      TendstoLocallyUniformlyOn u v l s := by
+  let e := continuousMultilinearCurryFin0 𝕜 E F
+  simp only [iteratedFDeriv_zero_eq_comp]
+  refine ⟨fun h ↦ ?_, e.symm.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn⟩
+  simpa [Function.comp_def, e] using e.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn h
 
 variable {E F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Set E} {u : ι → E → F}
@@ -90,25 +103,9 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_fderiv [FiniteDimensional �
     (hlim : ∀ x ∈ Ω, Tendsto (fun n ↦ u n x) atTop (𝓝 (v x))) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ContDiffOn ℝ 1 v Ω ∧
       TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop Ω := by
-  classical
-  let : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let U : ℕ → C(Ω, E →L[ℝ] F) := fun n ↦
-    ⟨Ω.domRestrict (fderiv ℝ (u n)), (hequi.continuousOn n).domRestrict⟩
-  have hcompact : IsCompact (closure (range U)) :=
-    ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-      ((equicontinuous_restrict_iff _).mpr hequi) fun x ↦
-        ⟨closedBall 0 (hbd x x.2).choose, isCompact_closedBall _ _,
-          fun n ↦ mem_closedBall_zero_iff.2 ((hbd x x.2).choose_spec n)⟩
-  obtain ⟨a, -, φ, hφ, hlimU⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ subset_closure (mem_range_self n))
-  -- Extend the limit of the derivatives by zero off `Ω`.
-  let G : E → E →L[ℝ] F := fun z ↦ if hz : z ∈ Ω then a ⟨z, hz⟩ else 0
-  have hG : G ∘ (Subtype.val : Ω → E) = fun x : Ω ↦ a x := by
-    funext x
-    simp [G, x.2]
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) G atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hG]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlimU
+  obtain ⟨φ, hφ, G, hconv⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hΩ fun x hx ↦
+    let ⟨M, hM⟩ := hbd x hx
+    ⟨closedBall 0 M, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 (hM n)⟩
   -- The limit of the derivatives is the derivative of the limit.
   have hderiv : ∀ x ∈ Ω, HasFDerivAt v (G x) x := fun x hx ↦
     hasFDerivAt_of_tendstoLocallyUniformlyOn hΩ hconv
@@ -121,14 +118,6 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_fderiv [FiniteDimensional �
   exact (contDiffOn_succ_iff_fderiv_of_isOpen (n := 0) hΩ).2
     ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt, by simp,
       contDiffOn_zero.2 (hGc.congr hfd)⟩
-
-omit [ProperSpace E] in
-/-- A map `C^(k+1)` on an open set has differentiable derivatives of order at most `k` there. -/
-private theorem differentiableOn_iteratedFDeriv_of_contDiffOn (hΩ : IsOpen Ω) {f : E → F}
-    {k m : ℕ} (hf : ContDiffOn ℝ (k + 1) f Ω) (hm : m ≤ k) :
-    DifferentiableOn ℝ (iteratedFDeriv ℝ m f) Ω :=
-  (hf.differentiableOn_iteratedFDerivWithin (by exact_mod_cast Nat.lt_succ_of_le hm)
-    hΩ.uniqueDiffOn).congr fun _ hx ↦ (iteratedFDerivWithin_of_isOpen m hΩ hx).symm
 
 /-- The case `k = 0` of `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv`. -/
 private theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_zero
@@ -145,32 +134,12 @@ private theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_zero
       (fun n ↦ (hu n).differentiableOn (by simp)) fun K hK hKΩ ↦
         let ⟨M, hM⟩ := hbd K hK hKΩ
         ⟨M, fun n x hx ↦ by simpa [norm_iteratedFDeriv_one] using hM n 1 le_rfl x hx⟩
-  have hbd₀ (x : Ω) : ∃ M, ∀ n, ‖u n x‖ ≤ M :=
-    let ⟨M, hM⟩ := hbd {(x : E)} isCompact_singleton (singleton_subset_iff.2 x.2)
-    ⟨M, fun n ↦ by simpa [norm_iteratedFDeriv_zero] using hM n 0 (Nat.zero_le _) x rfl⟩
-  classical
-  let : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let U : ℕ → C(Ω, F) := fun n ↦ ⟨Ω.domRestrict (u n), (hequi.continuousOn n).domRestrict⟩
-  have hcompact : IsCompact (closure (range U)) :=
-    ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-      ((equicontinuous_restrict_iff _).mpr hequi) fun x ↦
-        ⟨closedBall 0 (hbd₀ x).choose, isCompact_closedBall _ _,
-          fun n ↦ mem_closedBall_zero_iff.2 ((hbd₀ x).choose_spec n)⟩
-  obtain ⟨a, -, φ, hφ, hlimU⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ subset_closure (mem_range_self n))
-  -- Extend the limit by zero off `Ω`.
-  let v : E → F := fun z ↦ if hz : z ∈ Ω then a ⟨z, hz⟩ else 0
-  have hv : Ω.domRestrict v = a := by
-    funext x
-    simp [v, Set.domRestrict, x.2]
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe]
-    exact (ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlimU).congr_right
-      (fun x ↦ congrFun hv.symm x)
-  refine ⟨φ, hφ, v, by rw [continuousOn_iff_continuous_domRestrict, hv]; exact a.continuous, ?_⟩
-  simp only [iteratedFDeriv_zero_eq_comp]
-  exact (continuousMultilinearCurryFin0 ℝ E F).symm.isometry.uniformContinuous
-    |>.comp_tendstoLocallyUniformlyOn hconv
+  obtain ⟨φ, hφ, v, hconv⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hΩ fun x hx ↦
+    let ⟨M, hM⟩ := hbd {x} isCompact_singleton (singleton_subset_iff.2 hx)
+    ⟨closedBall 0 M, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 <| by
+      simpa [norm_iteratedFDeriv_zero] using hM n 0 (Nat.zero_le _) x rfl⟩
+  exact ⟨φ, hφ, v, hconv.continuousOn (Eventually.of_forall fun n ↦
+    hequi.continuousOn (φ n)).frequently, tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.2 hconv⟩
 
 /-- The inductive step of `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv`:
 if the derivatives of order `k` of the `uₙ` converge to those of a `Cᵏ` map `v`, and the
@@ -198,11 +167,12 @@ private theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_succ
     simp only [hfd]
     refine e.isometry.isUniformInducing.equicontinuousOn_iff.1 ?_
     refine equicontinuousOn_of_forall_isCompact_norm_fderiv_le hΩ
-      (fun n ↦ differentiableOn_iteratedFDeriv_of_contDiffOn hΩ (hu n) le_rfl) fun K hK hKΩ ↦ ?_
+      (fun n ↦ (hu n).differentiableOn_iteratedFDeriv_of_isOpen (by norm_cast; omega) hΩ)
+      fun K hK hKΩ ↦ ?_
     obtain ⟨M, hM⟩ := hbd K hK hKΩ
     exact ⟨M, fun n x hx ↦ by rw [norm_fderiv_iteratedFDeriv]; exact hM n (k + 2) le_rfl x hx⟩
   obtain ⟨ψ, hψ, hvk, hconvk⟩ := exists_strictMono_tendstoLocallyUniformlyOn_fderiv hΩ
-    (fun n ↦ differentiableOn_iteratedFDeriv_of_contDiffOn hΩ (hu n) (by omega)) hequi
+    (fun n ↦ (hu n).differentiableOn_iteratedFDeriv_of_isOpen (by norm_cast; omega) hΩ) hequi
     (fun x hx ↦
       let ⟨M, hM⟩ := hbd {x} isCompact_singleton (singleton_subset_iff.2 hx)
       ⟨M, fun n ↦ by rw [norm_fderiv_iteratedFDeriv]; exact hM n (k + 1) (by omega) x rfl⟩)
@@ -254,9 +224,7 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv [FiniteDimens
         ⟨M, fun n ↦ hM (φ n)⟩) hv (hconv k le_rfl)
     refine ⟨φ ∘ ψ, hφ.comp hψ, v, hv', fun j hj ↦ ?_⟩
     rcases (show j ≤ k ∨ j = k + 1 by omega) with hj | rfl
-    · exact fun U hU x hx ↦
-        let ⟨t, ht, H⟩ := hconv j hj U hU x hx
-        ⟨t, ht, hψ.tendsto_atTop.eventually H⟩
+    · exact (hconv j hj).comp_tendsto hψ.tendsto_atTop
     · exact hlast
 
 end TauCeti

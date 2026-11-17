@@ -74,6 +74,8 @@ term is split by the constant-coefficient Cartan formula
   set whose segments from `x₀` miss `tsupport ω`.
 * `StarConvex.contDiffOn_poincareHomotopy`, `TauCeti.contDiff_poincareHomotopy`: it preserves
   `C^r` regularity.
+* `TauCeti.poincareHomotopy_eq_constOfIsEmpty`, `TauCeti.contDiff_poincareHomotopy_apply_zero`:
+  on a `1`-form it gives a function `x ↦ (K ω)(x) ()`, as smooth as the form.
 * `StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`,
   `TauCeti.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`: the homotopy formula.
 * `StarConvex.poincareHomotopy_extDerivWithin_eq_sub`,
@@ -840,6 +842,22 @@ namespace TauCeti
 theorem contDiff_poincareHomotopy {r : ℕ∞} (x₀ : E) {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
     (hω : ContDiff ℝ r ω) : ContDiff ℝ r (poincareHomotopy x₀ ω) :=
   contDiffOn_univ.1 ((starConvex_univ x₀).contDiffOn_poincareHomotopy isOpen_univ hω.contDiffOn)
+
+/-- The Poincaré homotopy operator of a `1`-form is a function: the `0`-form `K ω` is determined by
+its value `(K ω)(x) ()` on the empty family. -/
+theorem poincareHomotopy_eq_constOfIsEmpty (x₀ : E) (ω : E → E [⋀^Fin 1]→L[ℝ] F) :
+    poincareHomotopy x₀ ω =
+      fun x ↦ ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) (poincareHomotopy x₀ ω x 0) := by
+  funext x
+  ext v
+  rw [Subsingleton.elim v 0, ContinuousAlternatingMap.constOfIsEmpty_apply]
+
+/-- The function `x ↦ (K ω)(x) ()` given by the Poincaré homotopy operator of a `1`-form `ω` that
+is `C^r` on all of `E` is `C^r`. -/
+theorem contDiff_poincareHomotopy_apply_zero {r : ℕ∞} (x₀ : E) {ω : E → E [⋀^Fin 1]→L[ℝ] F}
+    (hω : ContDiff ℝ r ω) : ContDiff ℝ r fun x ↦ poincareHomotopy x₀ ω x 0 :=
+  (ContinuousAlternatingMap.apply ℝ E F (0 : Fin 0 → E)).contDiff.comp
+    (contDiff_poincareHomotopy x₀ hω)
 
 variable [CompleteSpace F]
 

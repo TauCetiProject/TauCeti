@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # The radial gauge of an abelian Higgs pair and compactness modulo gauge
@@ -52,10 +53,11 @@ This radial, or exponential, gauge gives **compactness modulo gauge**
 (`TauCeti.SeibergWitten.exists_strictMono_tendstoLocallyUniformlyOn_radialConnection`): for a
 sequence of pairs on a finite-dimensional space whose curvatures have derivatives of order at most
 `k + 1` bounded on a ball about `x₀`, and whose sections satisfy `|α| ≤ C` and `|∇_b α| ≤ C` there,
-a subsequence of the radial gauge pairs converges on the ball: the connections in `Cᵏ` and the
-sections locally uniformly. Taubes's analysis supplies such bounds for the large-parameter
-Seiberg–Witten fields rescaled by `r^(-1/2)` about a point, and this is the step that extracts
-their limits modulo gauge. Convergence of the sections in `Cᵏ` would need bounds on their higher
+a subsequence of the radial gauge pairs converges on the ball: the connections in `Cᵏ_loc`, that
+is with their derivatives of order at most `k` locally uniformly on the ball, and the sections
+locally uniformly. Taubes's analysis supplies such bounds for the large-parameter Seiberg–Witten
+fields rescaled by `r^(-1/2)` about a point, and this is the step that extracts their limits modulo
+gauge. Convergence of the sections in `Cᵏ` would need bounds on their higher
 covariant derivatives, which are not treated here.
 
 ## Main definitions
@@ -137,20 +139,6 @@ theorem radialConnection_apply_sub_self (x₀ : E) (b : E → E [⋀^Fin 1]→L[
       curryLeft_apply_apply, (extDeriv b _).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp)
         (by decide), smul_zero]
   · rw [intervalIntegral.integral_undef hint, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-
-/-- A zero-form is determined by its value on the empty family. -/
-private theorem poincareHomotopy_eq_constOfIsEmpty (x₀ : E) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) :
-    poincareHomotopy x₀ b = fun x ↦ constOfIsEmpty ℝ E (Fin 0) (poincareHomotopy x₀ b x 0) := by
-  funext x
-  ext v
-  rw [Subsingleton.elim v 0, constOfIsEmpty_apply]
-
-/-- The phase `x ↦ (K b)(x)` of the radial gauge is as smooth as `b`. -/
-private theorem contDiff_poincareHomotopy_apply_zero {r : ℕ∞} (x₀ : E) (hb : ContDiff ℝ r b) :
-    ContDiff ℝ r fun x ↦ poincareHomotopy x₀ b x 0 := by
-  simpa only [Function.comp_def, ContinuousAlternatingMap.apply_apply] using
-    (ContinuousAlternatingMap.apply ℝ E ℝ (0 : Fin 0 → E)).contDiff.comp
-      (contDiff_poincareHomotopy x₀ hb)
 
 /-- The radial gauge is as smooth as the connection form. -/
 theorem contDiff_radialGauge {r : ℕ∞} (x₀ : E) (hb : ContDiff ℝ r b) :
@@ -241,7 +229,9 @@ theorem norm_fderiv_radialGauge_mul_le (x₀ : E) (hb : ContDiff ℝ 1 b)
         ((ofSubsingletonLIE (0 : Fin 1)).symm (radialConnection x₀ b x)).smulRight
           (I * (radialGauge x₀ b * α) x) := by
     ext v
-    simp [covariantDeriv_apply, ofSubsingletonLIE_symm_apply]
+    simp only [Pi.mul_apply, _root_.sub_apply, covariantDeriv_apply,
+      ContinuousLinearMap.smulRight_apply, ofSubsingletonLIE_symm_apply,
+      ofSubsingleton_symm_apply_apply, real_smul]
     ring
   rw [hβ]
   refine (norm_sub_le _ _).trans (add_le_add (le_of_eq ?_) (le_of_eq ?_))
@@ -340,15 +330,8 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_radialConnection [FiniteDime
                 ((hα (φ n)).differentiable one_ne_zero x)
           _ ≤ C + M * C := add_le_add (hcov (φ n) x (hK hx))
               (mul_le_mul hb'x (hαC (φ n) x (hK hx)) (norm_nonneg _) hM0)⟩
-  refine ⟨φ ∘ ψ, hφ.comp hψ, b', α', hb', contDiffOn_zero.1 hα',
-    fun j hj U hU x hx ↦ ?_, ?_⟩
-  · obtain ⟨t, ht, H⟩ := hconv j hj U hU x hx
-    exact ⟨t, ht, hψ.tendsto_atTop.eventually H⟩
-  · -- Convergence of the zeroth derivatives is convergence of the sections.
-    have h := (continuousMultilinearCurryFin0 ℝ E ℂ).isometry.uniformContinuous
-      |>.comp_tendstoLocallyUniformlyOn (hconvα 0 le_rfl)
-    simp only [iteratedFDeriv_zero_eq_comp, Function.comp_def,
-      LinearIsometryEquiv.apply_symm_apply] at h
-    exact h.congr fun n x _ ↦ rfl
+  exact ⟨φ ∘ ψ, hφ.comp hψ, b', α', hb', contDiffOn_zero.1 hα',
+    fun j hj ↦ (hconv j hj).comp_tendsto hψ.tendsto_atTop,
+    tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconvα 0 le_rfl)⟩
 
 end TauCeti.SeibergWitten
