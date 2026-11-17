@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
@@ -345,27 +344,12 @@ private lemma inr_inner_unitization_smul {E : Type*} [AddCommGroup E] [Module �
       inner_op_smul_left, inner_op_smul_right, smul_add, smul_smul, mul_add, mul_smul_comm,
       mul_assoc]
 
-/-- Inverse-square-root conjugation bound: if `b` is strictly positive and conjugating `p` by
-`√(b⁻¹)` is bounded above by the scalar `c`, then `p ≤ c • b`. -/
-private lemma le_smul_of_conjSqrt_ringInverse_le {B : Type*} [PartialOrder B] [Ring B]
-    [StarRing B] [TopologicalSpace B] [StarOrderedRing B] [Algebra ℝ B]
-    [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
-    [IsSemitopologicalRing B] [T2Space B]
-    {b p : B} {c : ℝ} (hb : IsStrictlyPositive b)
-    (h : CFC.conjSqrt b⁻¹ʳ p ≤ algebraMap ℝ B c) :
-    p ≤ c • b := by
-  calc p = CFC.conjSqrt b (CFC.conjSqrt b⁻¹ʳ p) :=
-        (CFC.conjSqrt_conjSqrt_ringInverse b p hb).symm
-    _ ≤ CFC.conjSqrt b (algebraMap ℝ B c) := CFC.conjSqrt_le_conjSqrt h
-    _ = c • b := by
-        rw [Algebra.algebraMap_eq_smul_one, map_smul, CFC.conjSqrt_one b hb.nonneg]
-
 /-- Regularized Paschke estimate: for any strictly positive majorant `b ≥ ⟪x, x⟫_A` in
 `Unitization ℂ A`, we have `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • b`.
 
 The proof normalizes `x` by `v = √(b⁻¹)`, forming `y = v • x` in the unit ball of `E`;
 boundedness of `T` then bounds `v ⟪T x, T x⟫_A v = ⟪T y, T y⟫_A` by `‖T‖ ^ 2`, and
-`le_smul_of_conjSqrt_ringInverse_le` conjugates back by `√b`. -/
+`CFC.conjSqrt_ringInverse_le_algebraMap_iff` conjugates back by `√b`. -/
 private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℂ E] [SMul A E] [CStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F]
     [SMul A F] [CStarModule A F] (T : E →L[ℂ] F)
@@ -405,7 +389,7 @@ private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedA
   have hvpv_le : CFC.conjSqrt b⁻¹ʳ p ≤ algebraMap ℝ (Unitization ℂ A) (‖T‖ ^ 2) :=
     (CStarAlgebra.norm_le_iff_le_algebraMap _ (sq_nonneg ‖T‖) hvpv_nonneg).mp hvpv_norm
   -- Conjugate back by `√b` to recover `p ≤ ‖T‖² • b`.
-  exact le_smul_of_conjSqrt_ringInverse_le hb hvpv_le
+  exact (CFC.conjSqrt_ringInverse_le_algebraMap_iff hb).mp hvpv_le
 
 /-- Paschke's inequality for bounded `A`-linear operators between Hilbert C⋆-modules:
 `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`, with no adjointability or completeness assumptions
