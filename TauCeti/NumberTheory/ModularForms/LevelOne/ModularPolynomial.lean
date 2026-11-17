@@ -12,6 +12,8 @@ import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.Analysis.Complex.UpperHalfPlane.Quadratic
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
 import TauCeti.RingTheory.HahnSeries.Map
 import TauCeti.RingTheory.HahnSeries.Multiplication
@@ -28,9 +30,9 @@ over the primitive upper-triangular matrices `(a b; 0 d)` of determinant `n` wit
 `0 ≤ b < d` (`FixedDetMatrices.primitiveReps n`). Each coefficient of `X ^ k` is a holomorphic
 `SL(2, ℤ)`-invariant function on the upper half-plane. This file proves that these coefficients
 are meromorphic at the cusp with integer Laurent `q`-coefficients, descends the polynomial to a
-monic integral bivariate polynomial `Φ_n(X, Y) ∈ ℤ[Y][X]`, computes the leading coefficient of the
-diagonal specialization `Φ_n(X, X)` when `n` is not a square, and deduces that `j(τ)` is an
-algebraic integer at every imaginary quadratic point `τ ∈ ℍ`.
+monic integral bivariate polynomial `Φ_n(X, Y) ∈ ℤ[Y][X]`, proves that the leading coefficient of
+the diagonal specialization `Φ_n(X, X)` is `±1` when `n` is not a square, and deduces that `j(τ)`
+is an algebraic integer at every imaginary quadratic point `τ ∈ ℍ`.
 
 The integrality of the `q`-coefficients follows the classical cyclotomic Galois argument. In the
 ramified parameter `q_{1/n} = exp(2 π i τ / n)`, the factor `j((a τ + b) / d)` has Laurent
@@ -93,45 +95,6 @@ open scoped MatrixGroups Manifold LaurentSeries
 
 namespace TauCeti.UpperHalfPlane
 
-private theorem periodic_vadd_posReal_inv_smul {f : ℍ → ℂ}
-    (hfper : Function.Periodic (f ∘ ofComplex) 1) (b : ℕ) (d : ℕ+) :
-    Function.Periodic
-      ((fun τ : ℍ ↦
-        f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr (Nat.cast_pos.mpr d.pos)⟩ : {y : ℝ // 0 < y}) •
-          ((b : ℝ) +ᵥ τ))) ∘ ofComplex) (d : ℕ) := by
-  have hd : 0 < ((d : ℕ) : ℝ) := Nat.cast_pos.mpr d.pos
-  let x : {y : ℝ // 0 < y} := ⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd⟩
-  refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
-  have hEq : x • ((b : ℝ) +ᵥ (((d : ℕ) : ℝ) +ᵥ τ)) = (1 : ℝ) +ᵥ (x • ((b : ℝ) +ᵥ τ)) := by
-    ext
-    simp only [coe_pos_real_smul, coe_vadd, Complex.real_smul, x]
-    push_cast
-    field_simp [Nat.cast_ne_zero.mpr d.ne_zero]
-    ring
-  have hw := hfper ↑(x • ((b : ℝ) +ᵥ τ))
-  have hadd : (↑(x • ((b : ℝ) +ᵥ τ)) : ℂ) + 1 = ↑((1 : ℝ) +ᵥ (x • ((b : ℝ) +ᵥ τ))) := by
-    simp [coe_vadd, add_comm]
-  rw [Function.comp_apply, Function.comp_apply, hadd, ofComplex_apply, ofComplex_apply] at hw
-  simpa only [x, hEq] using hw
-
-private theorem periodic_pnat_smul_of_periodic {ψ : ℍ → ℂ} {d : ℝ}
-    (hψ : Function.Periodic (ψ ∘ ofComplex) d) (a : ℕ+) :
-    Function.Periodic
-      ((fun τ : ℍ ↦ ψ ((⟨((a : ℕ) : ℝ), Nat.cast_pos.mpr a.pos⟩ : {y : ℝ // 0 < y}) • τ)) ∘
-        ofComplex) d := by
-  let x : {y : ℝ // 0 < y} := ⟨((a : ℕ) : ℝ), Nat.cast_pos.mpr a.pos⟩
-  refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
-  have hEq : x • (d +ᵥ τ) = ((a : ℕ) * d) +ᵥ (x • τ) := by
-    ext
-    simp only [coe_pos_real_smul, coe_vadd, Complex.real_smul, x]
-    push_cast
-    ring
-  have hw := (hψ.nat_mul a) ↑(x • τ)
-  have hadd : (↑(x • τ) : ℂ) + (a : ℕ) * (d : ℂ) = ↑(((a : ℕ) * d) +ᵥ (x • τ)) := by
-    simp [coe_vadd, add_comm]
-  rw [Function.comp_apply, Function.comp_apply, hadd, ofComplex_apply, ofComplex_apply] at hw
-  simpa only [x, hEq] using hw
-
 private theorem apply_one_one_pos_of_mem_reps {n : ℕ} [NeZero n]
     {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ FixedDetMatrices.reps (n : ℤ)) :
     0 < A.1 1 1 := by
@@ -180,8 +143,9 @@ private theorem meromorphicAt_cuspFunction_vadd_posReal_inv_smul {f : ℍ → �
   have hd_real : 0 < ((d : ℕ) : ℝ) := Nat.cast_pos.mpr d.pos
   have hψ₁_per : Function.Periodic
       ((fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd_real⟩ : {y : ℝ // 0 < y}) • τ)) ∘
-        ofComplex) (d : ℕ) := by
-    simpa using periodic_vadd_posReal_inv_smul hfper 0 d
+        ofComplex) (((d : ℕ) : ℝ) : ℂ) :=
+    (periodic_comp_pos_real_smul_comp_ofComplex_iff _).mpr <| by
+      simpa [inv_mul_cancel₀ hd_real.ne'] using hfper
   have hψ₁_mer : MeromorphicAt
       (cuspFunction (d : ℕ) fun τ ↦
         f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd_real⟩ : {y : ℝ // 0 < y}) • τ)) 0 := by
@@ -202,17 +166,26 @@ theorem meromorphicAt_cuspFunction_toGLReal_smul {n : ℕ} [NeZero n] {f : ℍ �
   have hprod : (a : ℕ) * (d : ℕ) = n := by
     simpa [Int.natAbs_mul, a, d, Nat.toPNat] using
       congrArg Int.natAbs (FixedDetMatrices.apply_zero_zero_mul_apply_one_one hA.1)
-  have hψ₂_per := periodic_vadd_posReal_inv_smul hfper b d
+  have hd_real : 0 < ((d : ℕ) : ℝ) := Nat.cast_pos.mpr d.pos
+  have hψ₁_per : Function.Periodic
+      ((fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd_real⟩ : {y : ℝ // 0 < y}) • τ)) ∘
+        ofComplex) (((d : ℕ) : ℝ) : ℂ) :=
+    (periodic_comp_pos_real_smul_comp_ofComplex_iff _).mpr <| by
+      simpa [inv_mul_cancel₀ hd_real.ne'] using hfper
+  have hψ₂_per : Function.Periodic
+      ((fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd_real⟩ : {y : ℝ // 0 < y}) • ((b : ℝ) +ᵥ τ))) ∘
+        ofComplex) (((d : ℕ) : ℝ) : ℂ) :=
+    (periodic_comp_vadd_comp_ofComplex_iff (b : ℝ)).mpr hψ₁_per
   have hψ₃_mer := (meromorphicAt_cuspFunction_pnat_smul_iff hψ₂_per a).mpr
     (meromorphicAt_cuspFunction_vadd_posReal_inv_smul hfper hf b d)
   have hEq : (fun τ ↦ f (FixedDetMatrices.toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
-      fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr (Nat.cast_pos.mpr d.pos)⟩ : {y : ℝ // 0 < y}) •
+      fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd_real⟩ : {y : ℝ // 0 < y}) •
         ((b : ℝ) +ᵥ ((⟨((a : ℕ) : ℝ), Nat.cast_pos.mpr a.pos⟩ : {y : ℝ // 0 < y}) • τ))) :=
     funext fun τ ↦ congrArg f (toGLReal_smul_eq_posReal_vadd_smul hA τ)
   have hn_real : (n : ℝ) = (a : ℕ) * ((d : ℕ) : ℝ) := by exact_mod_cast hprod.symm
   rw [hEq, hn_real]
   exact (meromorphicAt_cuspFunction_pnat_mul_iff
-    (periodic_pnat_smul_of_periodic hψ₂_per a) a).mpr hψ₃_mer
+    (periodic_comp_pos_real_smul_nat_comp_ofComplex hψ₂_per a.pos) a).mpr hψ₃_mer
 
 /-- **The Laurent `q_{1/n}`-expansion of `τ ↦ f (A • τ)`** for an upper-triangular representative
 `A = (a b; 0 d) ∈ FixedDetMatrices.reps n`: substituting `q ↦ ζ_n^{a b} q_{1/n}^{a^2}` into the
@@ -236,12 +209,14 @@ theorem laurentQExpansion_toGLReal_smul {n : ℕ} [NeZero n] {f : ℍ → ℂ}
       congrArg Int.natAbs (FixedDetMatrices.apply_zero_zero_mul_apply_one_one hA.1)
   have hd_real : 0 < ((d : ℕ) : ℝ) := Nat.cast_pos.mpr d.pos
   let ψ₁ : ℍ → ℂ := fun τ ↦ f ((⟨((d : ℕ) : ℝ)⁻¹, inv_pos.mpr hd_real⟩ : {y : ℝ // 0 < y}) • τ)
-  have hψ₁_per : Function.Periodic (ψ₁ ∘ ofComplex) (d : ℕ) := by
-    simpa [ψ₁] using periodic_vadd_posReal_inv_smul hfper 0 d
+  have hψ₁_per : Function.Periodic (ψ₁ ∘ ofComplex) (((d : ℕ) : ℝ) : ℂ) :=
+    (periodic_comp_pos_real_smul_comp_ofComplex_iff _).mpr <| by
+      simpa [inv_mul_cancel₀ hd_real.ne'] using hfper
   have hψ₁_q : laurentQExpansion (d : ℕ) ψ₁ = laurentQExpansion 1 f := by
     simpa [mul_one] using laurentQExpansion_posReal_mul zero_lt_one hd_real f
   let ψ₂ : ℍ → ℂ := fun τ ↦ ψ₁ ((b : ℝ) +ᵥ τ)
-  have hψ₂_per := periodic_vadd_posReal_inv_smul hfper b d
+  have hψ₂_per : Function.Periodic (ψ₂ ∘ ofComplex) (((d : ℕ) : ℝ) : ℂ) :=
+    (periodic_comp_vadd_comp_ofComplex_iff (b : ℝ)).mpr hψ₁_per
   have hψ₂_mer : MeromorphicAt (cuspFunction (d : ℕ) ψ₂) 0 :=
     meromorphicAt_cuspFunction_vadd_posReal_inv_smul hfper hf b d
   have hψ₃_mer := (meromorphicAt_cuspFunction_pnat_smul_iff hψ₂_per a).mpr hψ₂_mer
@@ -261,7 +236,8 @@ theorem laurentQExpansion_toGLReal_smul {n : ℕ} [NeZero n] {f : ℍ → ℂ}
     rw [← hprodC]; ring
   have hn_real : (n : ℝ) = (a : ℕ) * ((d : ℕ) : ℝ) := by exact_mod_cast hprod.symm
   rw [hEq, hn_real,
-    laurentQExpansion_pnat_mul (periodic_pnat_smul_of_periodic hψ₂_per a) hψ₃_mer a,
+    laurentQExpansion_pnat_mul (periodic_comp_pos_real_smul_nat_comp_ofComplex hψ₂_per a.pos)
+      hψ₃_mer a,
     laurentQExpansion_pnat_smul hd_real hψ₂_per hψ₂_mer a,
     laurentQExpansion_vadd hd_real hψ₁_per b, hψ₁_q,
     LaurentSeries.expand_expand (R := ℂ), hu]
@@ -431,26 +407,20 @@ private theorem map_val_factorSeriesAux (n : ℕ) [NeZero n] (jZ : LaurentSeries
           (Units.mk0 (Complex.exp (2 * Real.pi * Complex.I / n) ^ (a * b))
             (pow_ne_zero _ (Complex.exp_ne_zero _)))
           (HahnSeries.mapRingHom (Int.castRingHom ℂ) jZ)) := by
-  set d : ℕ+ := (a ^ 2).toPNat (pow_pos ha 2)
-  have hmax : (max (a ^ 2) 1).toPNat (by positivity) = d :=
+  have hmax : (max (a ^ 2) 1).toPNat (by positivity) = (a ^ 2).toPNat (pow_pos ha 2) :=
     PNat.eq (max_eq_left (pow_pos ha 2))
-  rw [factorSeriesAux, hmax]
-  ext m
-  by_cases hm : ((d : ℕ) : ℤ) ∣ m
-  · obtain ⟨r, rfl⟩ := hm
-    rw [HahnSeries.coeff_mapRingHom,
-      LaurentSeries.coeff_expand_mul (R := cycField n) d,
-      LaurentSeries.coeff_expand_mul (R := ℂ) d,
-      TauCeti.LaurentSeries.coeff_rescale (R := cycField n),
-      TauCeti.LaurentSeries.coeff_rescale (R := ℂ),
-      HahnSeries.coeff_mapRingHom, Int.coe_castRingHom, map_mul, map_intCast,
-      Units.val_zpow_eq_zpow_val, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val,
-      map_zpow₀, map_pow]
+  have hu : Units.map (cycField n).val.toRingHom.toMonoidHom (cycUnit n ^ (a * b)) =
+      Units.mk0 (Complex.exp (2 * Real.pi * Complex.I / n) ^ (a * b))
+        (pow_ne_zero _ (Complex.exp_ne_zero _)) := by
+    apply Units.ext
+    rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      Units.val_pow_eq_pow_val, Units.val_mk0, map_pow]
     simp [cycUnit, cycZeta]
-  · rw [HahnSeries.coeff_mapRingHom,
-      LaurentSeries.coeff_expand_of_not_dvd (R := cycField n) d _ hm,
-      LaurentSeries.coeff_expand_of_not_dvd (R := ℂ) d _ hm,
-      map_zero]
+  rw [factorSeriesAux, hmax, LaurentSeries.mapRingHom_expand,
+    TauCeti.LaurentSeries.mapRingHom_rescale, ← RingHom.comp_apply,
+    ← HahnSeries.mapRingHom_comp,
+    RingHom.ext_int ((cycField n).val.toRingHom.comp (Int.castRingHom (cycField n)))
+      (Int.castRingHom ℂ), hu]
 
 private theorem map_val_factorSeries {n : ℕ} [NeZero n] {jZ : LaurentSeries ℤ}
     (hjZ : HahnSeries.mapRingHom (Int.castRingHom ℂ) jZ = UpperHalfPlane.laurentQExpansion 1 j)
@@ -516,27 +486,19 @@ private theorem map_aut_factorSeriesAux {n : ℕ} [NeZero n] (jZ : LaurentSeries
       (n : ℤ) * q + ((a * b' : ℕ) : ℤ)) :
     HahnSeries.mapRingHom (σ : cycField n →+* cycField n) (factorSeriesAux n jZ a b) =
       factorSeriesAux n jZ a b' := by
-  set d : ℕ+ := (max (a ^ 2) 1).toPNat (by positivity)
-  rw [factorSeriesAux, factorSeriesAux]
-  ext m : 2
-  by_cases hm : ((d : ℕ) : ℤ) ∣ m
-  · obtain ⟨r, rfl⟩ := hm
-    rw [HahnSeries.coeff_mapRingHom,
-      LaurentSeries.coeff_expand_mul (R := cycField n) d,
-      LaurentSeries.coeff_expand_mul (R := cycField n) d,
-      TauCeti.LaurentSeries.coeff_rescale (R := cycField n),
-      TauCeti.LaurentSeries.coeff_rescale (R := cycField n),
-      HahnSeries.coeff_mapRingHom, RingHom.coe_coe, Int.coe_castRingHom, map_mul, map_intCast]
-    dsimp only
-    refine congrArg (· * (jZ.coeff r : cycField n)) ?_
-    rw [← _root_.zpow_natCast, ← _root_.zpow_mul, ← _root_.zpow_natCast, ← _root_.zpow_mul,
-      aut_apply_cycUnit_zpow]
+  have hu : Units.map (σ : cycField n →+* cycField n).toMonoidHom (cycUnit n ^ (a * b)) =
+      cycUnit n ^ (a * b') := by
+    apply Units.ext
+    rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, RingHom.coe_coe,
+      ← _root_.zpow_natCast, aut_apply_cycUnit_zpow, ← _root_.zpow_natCast (cycUnit n) (a * b')]
     apply congrArg Units.val
     rw [zpow_eq_zpow_iff_modEq, orderOf_cycUnit, Int.modEq_iff_dvd]
-    exact ⟨-q * r, by linear_combination -r * hcong⟩
-  · rw [HahnSeries.coeff_mapRingHom,
-      LaurentSeries.coeff_expand_of_not_dvd (R := cycField n) d _ hm,
-      LaurentSeries.coeff_expand_of_not_dvd (R := cycField n) d _ hm, map_zero]
+    exact ⟨-q, by linear_combination -hcong⟩
+  rw [factorSeriesAux, factorSeriesAux, LaurentSeries.mapRingHom_expand,
+    TauCeti.LaurentSeries.mapRingHom_rescale, ← RingHom.comp_apply,
+    ← HahnSeries.mapRingHom_comp,
+    RingHom.ext_int ((σ : cycField n →+* cycField n).comp (Int.castRingHom (cycField n)))
+      (Int.castRingHom (cycField n)), hu]
 
 private theorem map_aut_factorSeries {n : ℕ} [NeZero n] (jZ : LaurentSeries ℤ)
     (σ : cycField n ≃ₐ[ℚ] cycField n) {A : FixedDetMatrix (Fin 2) ℤ n}
@@ -933,30 +895,6 @@ end Diagonal
 
 section Integrality
 
-private theorem disc_pos_of_quadratic {τ : ℍ} {a b c : ℤ} (ha : 0 < a)
-    (hτ : (a : ℂ) * (τ : ℂ) ^ 2 + b * τ + c = 0) :
-    0 < 4 * a * c - b ^ 2 := by
-  set z : ℂ := 2 * (a : ℂ) * (τ : ℂ) + b
-  have hz_sq : z ^ 2 + ((4 * a * c - b ^ 2 : ℤ) : ℂ) = 0 := by
-    push_cast
-    linear_combination 4 * (a : ℂ) * hτ
-  have hz_im : 0 < z.im := by
-    have him : z.im = 2 * (a : ℝ) * τ.im := by simp [z]
-    rw [him]
-    exact mul_pos (mul_pos zero_lt_two (Int.cast_pos.mpr ha)) τ.im_pos
-  have hz_re : z.re = 0 := by
-    have him0 : (z ^ 2 + ((4 * a * c - b ^ 2 : ℤ) : ℂ)).im = 0 := by rw [hz_sq]; simp
-    have hsq_im : (z ^ 2).im = 2 * z.re * z.im := by
-      rw [sq, Complex.mul_im]; ring
-    simp only [Complex.add_im, Complex.intCast_im, add_zero, hsq_im] at him0
-    nlinarith
-  have hre0 : (z ^ 2 + ((4 * a * c - b ^ 2 : ℤ) : ℂ)).re = 0 := by rw [hz_sq]; simp
-  have hsq_re : (z ^ 2).re = -z.im ^ 2 := by
-    rw [sq, Complex.mul_re, hz_re]; ring
-  simp only [Complex.add_re, Complex.intCast_re, hsq_re] at hre0
-  have hpos_real : (0 : ℝ) < ((4 * a * c - b ^ 2 : ℤ) : ℝ) := by nlinarith
-  exact_mod_cast hpos_real
-
 private theorem exists_primitive_pos_quadratic {τ : ℍ} {a b c : ℤ} (ha : a ≠ 0)
     (hτ : (a : ℂ) * (τ : ℂ) ^ 2 + b * τ + c = 0) :
     ∃ w : Fin 3 → ℤ, TauCeti.IsPrimitive w ∧ 0 < w 0 ∧
@@ -1010,7 +948,13 @@ private theorem exists_fixedDetMatrix_smul_eq {τ : ℍ} {w : Fin 3 → ℤ}
       ∃ M : FixedDetMatrix (Fin 2) ℤ n,
         TauCeti.IsPrimitive M.1 ∧ toGLReal (NeZero.ne (n : ℤ)) M • τ = τ := by
   set a' := w 0; set b' := w 1; set c' := w 2
-  have hD : 1 ≤ 4 * a' * c' - b' ^ 2 := disc_pos_of_quadratic ha' hquad
+  have hD : 1 ≤ 4 * a' * c' - b' ^ 2 := by
+    have hdisc : discrim (a' : ℝ) b' c' < 0 :=
+      τ.discrim_lt_zero_of_quadratic (Int.cast_ne_zero.mpr ha'.ne') (by simpa using hquad)
+    rw [discrim] at hdisc
+    have hlt : (0 : ℝ) < ((4 * a' * c' - b' ^ 2 : ℤ) : ℝ) := by push_cast; linarith
+    have hpos : (0 : ℤ) < 4 * a' * c' - b' ^ 2 := by exact_mod_cast hlt
+    omega
   obtain ⟨hm_pos, hn_not_sq⟩ := quad_det_pos_and_not_isSquare hD
   set t : ℤ := |b'| + (4 * a' * c' - b' ^ 2)
   set m : ℤ := t ^ 2 - b' * t + a' * c'

@@ -37,6 +37,8 @@ Rescaling an expanded series `f (X ^ d)` by `a` is expansion of the series resca
 * `TauCeti.LaurentSeries.orderTop_rescale`, `TauCeti.LaurentSeries.order_rescale`, and
   `TauCeti.LaurentSeries.leadingCoeff_rescale`: rescaling preserves the order and multiplies the
   leading coefficient by `a ^ f.order`.
+* `TauCeti.LaurentSeries.map_rescale` and `TauCeti.LaurentSeries.mapRingHom_rescale`:
+  coefficientwise multiplicative maps and ring homomorphisms commute with rescaling.
 -/
 
 public section
@@ -140,5 +142,20 @@ theorem order_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).order = f.order :
 theorem leadingCoeff_rescale (a : Rˣ) (f : R⸨X⸩) :
     (rescale a f).leadingCoeff = ↑(a ^ f.order) * f.leadingCoeff := by
   rw [leadingCoeff_eq, leadingCoeff_eq, order_rescale, coeff_rescale]
+
+/-- Coefficientwise multiplicative zero-preserving maps commute with rescaling by a unit:
+mapping `f (a X)` along `φ` gives `(f.map φ) (φ a * X)`. -/
+theorem map_rescale {S : Type*} [CommSemiring S] {F : Type*} [FunLike F R S]
+    [MonoidWithZeroHomClass F R S] (φ : F) (a : Rˣ) (f : R⸨X⸩) :
+    (rescale a f).map φ = rescale (Units.map (φ : R →* S) a) (f.map φ) := by
+  ext n
+  rw [HahnSeries.map_coeff, coeff_rescale, coeff_rescale, HahnSeries.map_coeff, map_mul,
+    ← map_zpow (Units.map (φ : R →* S)) a n, Units.coe_map, MonoidHom.coe_ofClass]
+
+/-- Applying a ring homomorphism coefficientwise commutes with rescaling by a unit:
+mapping `f (a X)` along `φ` gives `(mapRingHom φ f) (φ a * X)`. -/
+theorem mapRingHom_rescale {S : Type*} [CommSemiring S] (φ : R →+* S) (a : Rˣ) (f : R⸨X⸩) :
+    mapRingHom φ (rescale a f) = rescale (Units.map φ.toMonoidHom a) (mapRingHom φ f) := by
+  rw [mapRingHom_apply, mapRingHom_apply, RingHom.toMonoidHom_eq_coe, map_rescale]
 
 end TauCeti.LaurentSeries

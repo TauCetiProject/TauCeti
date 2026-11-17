@@ -10,10 +10,9 @@ public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.RingTheory.LaurentSeries.Rescale
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.TaylorSeries
-import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.LaurentSeries.Basic
 
@@ -69,15 +68,13 @@ expansion here of the function read in the scaling coordinate of the cusp.
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_pnat_mul_iff`, and
   `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul`: meromorphy at `0` is preserved and reflected
   between periods `h` and `d * h`, and the expansion at period `d * h` substitutes `q ^ d` for `q`.
-* `TauCeti.UpperHalfPlane.laurentQExpansion_posReal_mul` and
-  `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_smul`: scaling the argument by positive reals and
-  by positive integers.
-* `TauCeti.UpperHalfPlane.cuspFunction_vadd_eventuallyEq_nhds`,
-  `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_vadd`,
-  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_vadd_iff`,
-  `TauCeti.UpperHalfPlane.qExpansion_vadd`, and
-  `TauCeti.UpperHalfPlane.laurentQExpansion_vadd`: translating the argument by `s : ℝ` rescales `q`
-  by `exp (2 π i s / h)`.
+* `TauCeti.UpperHalfPlane.laurentQExpansion_posReal_mul`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_pnat_smul_iff`, and
+  `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_smul`: scaling the period by a positive real `x`
+  with the argument scaled by `x⁻¹`, and scaling the argument by a positive integer.
+* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_vadd_iff` and
+  `TauCeti.UpperHalfPlane.laurentQExpansion_vadd`: translating the argument by `s : ℝ` preserves
+  and reflects cusp meromorphy and rescales `q` by `exp (2 π i s / h)`.
 * `TauCeti.Subgroup.CuspDatum.laurentQExpansion_eq_upperHalfPlane_laurentQExpansion`: agreement
   with the Laurent expansion at a cusp of a Fuchsian group.
 
@@ -707,39 +704,6 @@ theorem laurentQExpansion_pnat_mul (hfper : Periodic (f ∘ ofComplex) h)
     laurentQExpansion_eq_of_analyticAt_qParam_pow_mul hh han, map_mul, LaurentSeries.expand_single,
     LaurentSeries.expand_coe, mul_neg, Nat.cast_mul]
 
-/-- Off `q = 0` and inside the unit disc, scaling the period by a positive real `x` and the
-argument by `x⁻¹` leaves the cusp function unchanged. -/
-theorem cuspFunction_posReal_mul_eventuallyEq_nhdsNE (hh : 0 < h) {x : ℝ} (hx : 0 < x)
-    (f : ℍ → ℂ) :
-    cuspFunction (x * h) (fun τ ↦ f ((⟨x⁻¹, inv_pos.mpr hx⟩ : {y : ℝ // 0 < y}) • τ)) =ᶠ[𝓝[≠] 0]
-      cuspFunction h f := by
-  have hxh : 0 < x * h := mul_pos hx hh
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
-  have him := Periodic.im_invQParam_pos_of_norm_lt_one hh (mem_ball_zero_iff.mp hqn) hq
-  have him' := Periodic.im_invQParam_pos_of_norm_lt_one hxh (mem_ball_zero_iff.mp hqn) hq
-  rw [cuspFunction_of_ne_zero hq, cuspFunction_of_ne_zero hq]
-  congr 1
-  ext
-  rw [coe_pos_real_smul, ofComplex_apply_of_im_pos him, ofComplex_apply_of_im_pos him']
-  simp only [Complex.real_smul, Periodic.invQParam, Complex.ofReal_mul, Complex.ofReal_inv]
-  field_simp [Complex.ofReal_ne_zero.mpr hx.ne']
-
-/-- Scaling the period by a positive real `x` and the argument by `x⁻¹` preserves and reflects
-meromorphy of the cusp function at `0`. -/
-theorem meromorphicAt_cuspFunction_posReal_mul_iff {x : ℝ} (hx : 0 < x) (f : ℍ → ℂ) :
-    MeromorphicAt
-      (cuspFunction (x * h) (fun τ ↦ f ((⟨x⁻¹, inv_pos.mpr hx⟩ : {y : ℝ // 0 < y}) • τ))) 0 ↔
-      MeromorphicAt (cuspFunction h f) 0 := by
-  rcases le_or_gt h 0 with hh | hh
-  · exact iff_of_true
-      ((analyticAt_const.congr (cuspFunction_eventuallyEq_const_of_nonpos
-        (mul_nonpos_of_nonneg_of_nonpos hx.le hh) _).symm).meromorphicAt)
-      ((analyticAt_const.congr (cuspFunction_eventuallyEq_const_of_nonpos hh f).symm).meromorphicAt)
-  · have heq := cuspFunction_posReal_mul_eventuallyEq_nhdsNE hh hx f
-    exact ⟨fun H ↦ H.congr heq, fun H ↦ H.congr heq.symm⟩
-
 /-- Scaling the period by a positive real `x` and the argument by `x⁻¹` leaves the Laurent
 `q`-expansion unchanged. -/
 theorem laurentQExpansion_posReal_mul (hh : 0 < h) {x : ℝ} (hx : 0 < x) (f : ℍ → ℂ) :
@@ -770,23 +734,6 @@ theorem laurentQExpansion_posReal_mul (hh : 0 < h) {x : ℝ} (hx : 0 < x) (f : �
   rw [_root_.UpperHalfPlane.qExpansion_coeff, _root_.UpperHalfPlane.qExpansion_coeff,
     hfg_nhds.iteratedDeriv_eq]
 
-private theorem periodic_pnat_smul_div_of_periodic (hfper : Periodic (f ∘ ofComplex) h)
-    (d : ℕ+) :
-    Periodic
-      ((fun τ : ℍ ↦ f ((⟨(d : ℝ), Nat.cast_pos.mpr d.pos⟩ : {y : ℝ // 0 < y}) • τ)) ∘
-        ofComplex) ↑(h / (d : ℝ)) := by
-  let x : {y : ℝ // 0 < y} := ⟨(d : ℝ), Nat.cast_pos.mpr d.pos⟩
-  refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
-  have hEq : x • ((h / (d : ℝ)) +ᵥ τ) = h +ᵥ (x • τ) := by
-    ext
-    simp only [coe_pos_real_smul, coe_vadd, Complex.real_smul, x]
-    push_cast
-    field_simp [Nat.cast_ne_zero.mpr d.ne_zero]
-  have hw := hfper ↑(x • τ)
-  rw [Function.comp_apply, Function.comp_apply, add_comm (↑(x • τ) : ℂ) h, ← coe_vadd,
-    ofComplex_apply, ofComplex_apply] at hw
-  simpa only [x, hEq] using hw
-
 /-- For an `h`-periodic function, scaling the argument by a positive integer `d` preserves and
 reflects meromorphy of the cusp function at `0`. -/
 theorem meromorphicAt_cuspFunction_pnat_smul_iff (hfper : Periodic (f ∘ ofComplex) h) (d : ℕ+) :
@@ -804,8 +751,10 @@ theorem meromorphicAt_cuspFunction_pnat_smul_iff (hfper : Periodic (f ∘ ofComp
   have hmul : ((d : ℕ) : ℝ) * (h / (d : ℝ)) = h := mul_div_cancel₀ h hd_pos.ne'
   have hxmul : x * x_inv = 1 := Subtype.ext (mul_inv_cancel₀ hd_pos.ne')
   have hgx : (fun τ : ℍ ↦ g (x_inv • τ)) = f := funext fun τ ↦ by simp [g, ← mul_smul, hxmul]
+  have hgper : Periodic (g ∘ ofComplex) ↑(h / (d : ℝ)) :=
+    (periodic_comp_pos_real_smul_div_comp_ofComplex_iff x).mpr hfper
   conv_lhs => rw [← hmul]
-  rw [meromorphicAt_cuspFunction_pnat_mul_iff (periodic_pnat_smul_div_of_periodic hfper d) d]
+  rw [meromorphicAt_cuspFunction_pnat_mul_iff hgper d]
   have hiff := (meromorphicAt_cuspFunction_posReal_mul_iff (h := h / (d : ℝ)) hd_pos g).symm
   rwa [hmul, hgx] at hiff
 
@@ -823,6 +772,8 @@ theorem laurentQExpansion_pnat_smul (hh : 0 < h) (hfper : Periodic (f ∘ ofComp
   have hmul : ((d : ℕ) : ℝ) * (h / (d : ℝ)) = h := mul_div_cancel₀ h hd_pos.ne'
   have hxmul : x * x_inv = 1 := Subtype.ext (mul_inv_cancel₀ hd_pos.ne')
   have hgx : (fun τ : ℍ ↦ g (x_inv • τ)) = f := funext fun τ ↦ by simp [g, ← mul_smul, hxmul]
+  have hgper : Periodic (g ∘ ofComplex) ↑(h / (d : ℝ)) :=
+    (periodic_comp_pos_real_smul_div_comp_ofComplex_iff x).mpr hfper
   have hgm : MeromorphicAt (cuspFunction (h / (d : ℝ)) g) 0 := by
     have hiff := meromorphicAt_cuspFunction_posReal_mul_iff (h := h / (d : ℝ)) hd_pos g
     rw [hmul, hgx] at hiff
@@ -831,57 +782,7 @@ theorem laurentQExpansion_pnat_smul (hh : 0 < h) (hfper : Periodic (f ∘ ofComp
     have heq := (laurentQExpansion_posReal_mul (div_pos hh hd_pos) hd_pos g).symm
     rwa [hmul, hgx] at heq
   conv_lhs => rw [← hmul]
-  rw [laurentQExpansion_pnat_mul (periodic_pnat_smul_div_of_periodic hfper d) hgm d, hgeq]
-
-/-- Off `q = 0`, translating the argument of an `h`-periodic function by `s : ℝ` multiplies the
-argument of its cusp function by `exp (2 π i s / h)`. -/
-theorem cuspFunction_vadd_eventuallyEq_nhdsNE (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
-    (s : ℝ) :
-    cuspFunction h (fun τ ↦ f (s +ᵥ τ)) =ᶠ[𝓝[≠] 0]
-      fun q ↦ cuspFunction h f (Complex.exp (2 * Real.pi * Complex.I * s / h) * q) := by
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
-  have him := Periodic.im_invQParam_pos_of_norm_lt_one hh (mem_ball_zero_iff.mp hqn) hq
-  let τ : ℍ := ⟨Periodic.invQParam h q, him⟩
-  have hqτ : 𝕢 h (s +ᵥ τ) = Complex.exp (2 * Real.pi * Complex.I * s / h) * q := by
-    rw [← Periodic.qParam_right_inv hh.ne' hq]
-    simp only [Periodic.qParam, coe_vadd, τ]
-    rw [mul_add, add_div, Complex.exp_add]
-  rw [cuspFunction_of_ne_zero hq, ofComplex_apply_of_im_pos him,
-    ← eq_cuspFunction (s +ᵥ τ) hh.ne' hfper, hqτ]
-
-/-- Near `q = 0`, translating the argument of an `h`-periodic function by `s : ℝ` multiplies the
-argument of its cusp function by `exp (2 π i s / h)`. -/
-theorem cuspFunction_vadd_eventuallyEq_nhds (hh : 0 < h)
-    (hfper : Periodic (f ∘ ofComplex) h) (s : ℝ) :
-    cuspFunction h (fun τ ↦ f (s +ᵥ τ)) =ᶠ[𝓝 0]
-      fun q ↦ cuspFunction h f (Complex.exp (2 * Real.pi * Complex.I * s / h) * q) := by
-  let u : ℂ := Complex.exp (2 * Real.pi * Complex.I * s / h)
-  have hu : u ≠ 0 := Complex.exp_ne_zero _
-  have hne := cuspFunction_vadd_eventuallyEq_nhdsNE hh hfper s
-  have h0 : cuspFunction h (fun τ ↦ f (s +ᵥ τ)) 0 = cuspFunction h f (u * 0) := by
-    simp only [mul_zero, _root_.UpperHalfPlane.cuspFunction, Periodic.cuspFunction,
-      Function.update_self, limUnder]
-    refine congrArg lim ?_
-    have hcongr : (((fun τ ↦ f (s +ᵥ τ)) ∘ ofComplex) ∘ Periodic.invQParam h) =ᶠ[𝓝[≠] 0]
-        (((f ∘ ofComplex) ∘ Periodic.invQParam h) ∘ Homeomorph.mulLeft₀ u hu) := by
-      filter_upwards [hne, self_mem_nhdsWithin] with q hq hq0
-      simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq0
-      have huq0 : u * q ≠ 0 := mul_ne_zero hu hq0
-      simpa [cuspFunction_of_ne_zero hq0, cuspFunction_of_ne_zero huq0, u] using hq
-    rw [Filter.map_congr hcongr, ← Filter.map_map,
-      (Homeomorph.mulLeft₀ u hu).map_punctured_nhds_eq 0]
-    simp
-  exact eventuallyEq_nhds_of_eventuallyEq_nhdsNE hne h0
-
-/-- If the cusp function of an `h`-periodic function with `0 < h` is analytic at `0`, then so is
-the cusp function of its translate `τ ↦ f (s +ᵥ τ)`. -/
-theorem analyticAt_cuspFunction_vadd (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
-    (hf : AnalyticAt ℂ (cuspFunction h f) 0) (s : ℝ) :
-    AnalyticAt ℂ (cuspFunction h (fun τ ↦ f (s +ᵥ τ))) 0 :=
-  (hf.comp_of_eq (analyticAt_const.mul analyticAt_id) (mul_zero _)).congr
-    (cuspFunction_vadd_eventuallyEq_nhds hh hfper s).symm
+  rw [laurentQExpansion_pnat_mul hgper hgm d, hgeq]
 
 private theorem analyticAt_cuspFunction_qParam_pow_mul_vadd (hh : 0 < h)
     (hfper : Periodic (f ∘ ofComplex) h) (hf : MeromorphicAt (cuspFunction h f) 0) (s : ℝ) :
@@ -916,27 +817,10 @@ theorem meromorphicAt_cuspFunction_vadd_iff (hfper : Periodic (f ∘ ofComplex) 
       ((analyticAt_const.congr (cuspFunction_eventuallyEq_const_of_nonpos hh f).symm).meromorphicAt)
   refine ⟨fun hm ↦ ?_, fun hf ↦ meromorphicAt_cuspFunction_of_analyticAt_qParam_pow_mul
     (analyticAt_cuspFunction_qParam_pow_mul_vadd hh hfper hf s)⟩
-  have hper' : Periodic ((fun τ ↦ f (s +ᵥ τ)) ∘ ofComplex) h := by
-    refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
-    have hw := hfper ↑(s +ᵥ τ)
-    rw [Function.comp_apply, Function.comp_apply, add_comm (↑(s +ᵥ τ) : ℂ) h, ← coe_vadd,
-      ofComplex_apply, ofComplex_apply] at hw
-    simpa [vadd_vadd, add_comm] using hw
+  have hper' : Periodic ((fun τ ↦ f (s +ᵥ τ)) ∘ ofComplex) h :=
+    (periodic_comp_vadd_comp_ofComplex_iff s).mpr hfper
   simpa [vadd_vadd] using meromorphicAt_cuspFunction_of_analyticAt_qParam_pow_mul
     (analyticAt_cuspFunction_qParam_pow_mul_vadd hh hper' hm (-s))
-
-/-- **The `q`-expansion under translation of the argument.** For an `h`-periodic function with
-`0 < h`, translating the argument by `s : ℝ` rescales the `q`-expansion by `exp (2 π i s / h)`. -/
-theorem qExpansion_vadd (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h) (s : ℝ) :
-    qExpansion h (fun τ ↦ f (s +ᵥ τ)) =
-      PowerSeries.rescale (Complex.exp (2 * Real.pi * Complex.I * s / h)) (qExpansion h f) := by
-  ext n
-  rw [_root_.UpperHalfPlane.qExpansion_coeff,
-    (cuspFunction_vadd_eventuallyEq_nhds hh hfper s).iteratedDeriv_eq,
-    TauCeti.iteratedDeriv_comp_mul_left, PowerSeries.coeff_rescale,
-    _root_.UpperHalfPlane.qExpansion_coeff]
-  simp only [mul_zero, smul_eq_mul]
-  ring
 
 /-- **The Laurent `q`-expansion under translation of the argument.** For an `h`-periodic function
 with `0 < h`, translating the argument by `s : ℝ` rescales the variable `q` by
@@ -983,8 +867,7 @@ theorem laurentQExpansion_vadd (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) 
       simp [cuspPoleOrder, meromorphicOrderAt_of_not_meromorphicAt hf']
     simp only [laurentQExpansion, hk, hk', pow_zero, one_mul, CharP.cast_eq_zero, neg_zero,
       HahnSeries.single_zero_one]
-    rw [qExpansion_vadd hh hfper s, TauCeti.LaurentSeries.rescale_coe]
-    rfl
+    rw [qExpansion_vadd hh hfper s, TauCeti.LaurentSeries.rescale_coe, Units.val_mk0]
 
 end TauCeti.UpperHalfPlane
 
