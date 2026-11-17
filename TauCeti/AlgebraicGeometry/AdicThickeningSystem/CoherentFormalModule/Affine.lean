@@ -16,11 +16,15 @@ Let `R` be a commutative ring and `J` an ideal of `R`. Via the canonical identif
 modules on the formal completion `(Spec R)/V(J)` correspond to coherent formal modules on `spf J`.
 
 Transporting the section-tower functors along `specIso J` yields:
-* `specSectionsTower J` and `specFiniteSectionsTower J`: the additive, fully faithful global-section
-  tower functors on `CoherentFormalModule ((Spec R).formalCompletion V(J))` for any commutative
-  ring `R`, which form an equivalence when `R` is Noetherian
-  (`isEquivalence_specFiniteSectionsTower`) and fail to be essentially surjective without
-  Noetherianity even for `J = ⊥` (`not_essSurj_specFiniteSectionsTower_mvPolynomial`).
+* `specSectionsTower J`: the additive, fully faithful global-section tower functor into all
+  `ModuleTower R` for any commutative ring `R`.
+* `specFiniteSectionsTower J`: its lift to `FiniteAdicSystem J`, which is additive and fully
+  faithful for any commutative ring `R`, is an equivalence if and only if every quotient
+  `R ⧸ J ^ (n + 1)` is Noetherian (`isEquivalence_specFiniteSectionsTower`,
+  `isEquivalence_specFiniteSectionsTower_iff`) — in particular when `J` is finitely generated and
+  `R ⧸ J` is Noetherian (`isEquivalence_specFiniteSectionsTower_of_fg`), or when `R` is
+  Noetherian — and fails to be essentially surjective without Noetherianity even for `J = ⊥`
+  (`not_essSurj_specFiniteSectionsTower_mvPolynomial`).
 * `coherentFormalModuleEquivSpecSelf`: when `R` is Noetherian and `J`-adically complete, coherent
   formal modules on `(Spec R)/V(J)` are equivalent to finite `R`-modules (`FGModuleCat R`), with
   inverse functor `specFiniteSectionsLim J` taking the inverse limit of levelwise global sections.
@@ -106,13 +110,35 @@ instance (J : Ideal R) : (specFiniteSectionsTower J).Faithful :=
   inferInstanceAs (CoherentFormalModule.pullback (specIso J).inv ⋙
     CoherentFormalModule.finiteSectionsTower J).Faithful
 
-/-- Over a Noetherian ring `R`, taking levelwise global sections identifies coherent formal modules
-on `(Spec R)/V(J)` with `J`-adic systems of `R`-modules having finite first term, without any
-`J`-adic completeness assumption on `R`. -/
-instance isEquivalence_specFiniteSectionsTower (J : Ideal R) [IsNoetherianRing R] :
+/-- When every quotient `R ⧸ J ^ (n + 1)` is Noetherian — in particular when `R` is Noetherian —
+taking levelwise global sections identifies coherent formal modules on `(Spec R)/V(J)` with
+`J`-adic systems of `R`-modules having finite first term, without any `J`-adic completeness
+assumption on `R`. -/
+instance isEquivalence_specFiniteSectionsTower (J : Ideal R)
+    [∀ n, IsNoetherianRing (R ⧸ J ^ (n + 1))] :
     (specFiniteSectionsTower J).IsEquivalence :=
   inferInstanceAs (CoherentFormalModule.pullback (specIso J).inv ⋙
     CoherentFormalModule.finiteSectionsTower J).IsEquivalence
+
+/-- Taking levelwise global sections identifies coherent formal modules on `(Spec R)/V(J)` with
+finite `J`-adic systems if and only if every quotient `R ⧸ J ^ (n + 1)` is Noetherian. -/
+theorem isEquivalence_specFiniteSectionsTower_iff (J : Ideal R) :
+    (specFiniteSectionsTower J).IsEquivalence ↔ ∀ n, IsNoetherianRing (R ⧸ J ^ (n + 1)) := by
+  refine ⟨fun h ↦ (CoherentFormalModule.essSurj_finiteSectionsTower_iff J).1 ⟨fun F ↦ ?_⟩,
+    fun h ↦ @isEquivalence_specFiniteSectionsTower _ _ J h⟩
+  have := h
+  obtain ⟨M, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage (F := specFiniteSectionsTower J) F
+  exact ⟨(CoherentFormalModule.pullback (specIso J).inv).obj M, ⟨e⟩⟩
+
+/-- When `J` is finitely generated and `R ⧸ J` is Noetherian, taking levelwise global sections
+identifies coherent formal modules on `(Spec R)/V(J)` with finite `J`-adic systems, without any
+`J`-adic completeness or global Noetherianity assumption on `R`. -/
+theorem isEquivalence_specFiniteSectionsTower_of_fg (J : Ideal R) (fg : J.FG)
+    [IsNoetherianRing (R ⧸ J)] :
+    (specFiniteSectionsTower J).IsEquivalence :=
+  have : ∀ n, IsNoetherianRing (R ⧸ J ^ (n + 1)) := fun n ↦
+    Ideal.isNoetherianRing_quotient_pow_of_fg J fg (n + 1)
+  inferInstance
 
 /-- **Essential surjectivity of `specFiniteSectionsTower` fails without Noetherianity.** Over
 `MvPolynomial ℕ k` (`k` nontrivial), `specFiniteSectionsTower ⊥` is not essentially surjective. -/

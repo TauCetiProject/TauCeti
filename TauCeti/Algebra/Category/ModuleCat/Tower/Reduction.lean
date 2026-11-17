@@ -486,18 +486,14 @@ noncomputable def finiteReductionEquiv [IsNoetherianRing A] [IsAdicComplete I A]
     fun {F G} f ↦ (isFiniteAdicSystem I).hom_ext <| NatTrans.ext <| funext fun ⟨n⟩ ↦ by
       have := ((isFiniteAdicSystem_iff I _).1 F.property).2
       have := ((isFiniteAdicSystem_iff I _).1 G.property).2
-      change (reductionMap I (limMap f.hom)).app (op n) ≫
-          (((isFiniteAdicSystem_iff I _).1 G.property).1.reductionLimIso.hom.app (op n)) =
-        (((isFiniteAdicSystem_iff I _).1 F.property).1.reductionLimIso.hom.app (op n)) ≫
-          f.hom.app (op n)
+      dsimp [ObjectProperty.isoMk, ObjectProperty.lift, finiteReduction, finiteLim,
+        reductionFunctor, limFunctor]
       ext x
       simp
   functor_unitIso_comp M := (isFiniteAdicSystem I).hom_ext <| NatTrans.ext <| funext fun ⟨n⟩ ↦ by
     have : IsAdicComplete I M := IsAdicComplete.of_finite I M
-    simp only [NatIso.ofComponents_hom_app]
-    change (reductionMap I (toLimReduction I M)).app (op n) ≫
-        (isAdicSystem_reduction I M).reductionLimIso.hom.app (op n) =
-      𝟙 ((reduction I M).obj (op n))
+    dsimp [NatIso.ofComponents, ObjectProperty.isoMk, ObjectProperty.lift, finiteReduction,
+      finiteLim, reductionFunctor, limFunctor]
     ext x
     simp
 

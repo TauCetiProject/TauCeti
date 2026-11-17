@@ -30,6 +30,8 @@ rings and to finitely generated ideals with Noetherian quotient.
   finitely generated and `R ⧸ I` Noetherian is Noetherian.
 * `Ideal.isNoetherianRing_adicCompletion_of_fg`: the completion along a finitely generated ideal
   `I` is Noetherian when `R ⧸ I` is.
+* `Ideal.isNoetherianRing_quotient_pow_of_fg`: every quotient `R ⧸ I ^ n` is Noetherian when `I`
+  is finitely generated and `R ⧸ I` is Noetherian.
 * `Ideal.isNoetherianRing_adicCompletion`: the adic completion of a Noetherian ring is Noetherian.
 * `IsLocalRing.isNoetherianRing_adicCompletion_of_fg`: the completion of a local ring with
   finitely generated maximal ideal is Noetherian.
@@ -210,6 +212,14 @@ theorem isNoetherianRing_adicCompletion_of_fg (hI : I.FG) [IsNoetherianRing (R �
         (RingHom.quotientKerEquivOfSurjective (AdicCompletion.evalOneₐ_surjective I))).symm
   exact Ideal.isNoetherianRing_of_isAdicComplete
     (I.map (algebraMap R (AdicCompletion I R))) (hI.map _)
+
+/-- If `I` is finitely generated and `R ⧸ I` is Noetherian, then every quotient `R ⧸ I ^ n` is
+Noetherian, as a quotient of the Noetherian adic completion `AdicCompletion I R`. -/
+theorem isNoetherianRing_quotient_pow_of_fg (hI : I.FG) [IsNoetherianRing (R ⧸ I)] (n : ℕ) :
+    IsNoetherianRing (R ⧸ I ^ n) :=
+  have := isNoetherianRing_adicCompletion_of_fg I hI
+  isNoetherianRing_of_surjective (AdicCompletion I R) (R ⧸ I ^ n)
+    (AdicCompletion.evalₐ I n).toRingHom (AdicCompletion.surjective_evalₐ I n)
 
 /-- The adic completion of a Noetherian ring along any ideal is Noetherian. -/
 instance isNoetherianRing_adicCompletion [IsNoetherianRing R] :
