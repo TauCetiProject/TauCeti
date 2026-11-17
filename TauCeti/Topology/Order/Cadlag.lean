@@ -20,15 +20,19 @@ For a càdlàg path into a regular space, the strict left limit `Function.leftLi
 right at `x` to `f x` (`IsCadlag.tendsto_nhdsGT_leftLim`). Consequently, the first time at which a
 càdlàg path or its left limit enters a closed set is attained whenever such a time exists
 (`IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag`). On a compact initial interval `[⊥, T]`, crossing
-a level `ε` in value or left limit is equivalent to the supremum of values and left limits reaching
-`ε`, and in a second-countable order topology a single countable subset of `[⊥, T]` realizes that
-supremum through function values alone (`IsCadlag.exists_countable_subset_Iic_biSup_eq`).
+a level `ε` in value or left limit for a càdlàg function into a densely ordered complete linear
+order is equivalent to the supremum of values and left limits reaching `ε`
+(`IsCadlag.exists_le_or_le_leftLim_iff_le_sup_biSup`). In a second-countable order topology, a
+single countable subset of `(-∞, T]` realizes that supremum through function values alone
+(`IsCadlag.exists_countable_subset_Iic_biSup_eq`).
 
-For a càdlàg path into a pseudometric space and `ε > 0`, `TauCeti.oscillationExit f ε` starts at
-`⊥` and recursively records the first strictly later time at which either the path or its left
-limit deviates by at least `ε` from the sampled value at the previous time, taking the value `⊤`
-when no further `ε`-deviation occurs. Between consecutive times the path stays strictly within `ε`
-of the left-endpoint value, and existence of left limits prevents infinitely many `ε`-exits from
+For any path `f` into a pseudometric space and threshold `ε : ℝ`,
+`TauCeti.oscillationExitAfter f ε u` takes the infimum of times strictly after `u` at which `f` or
+its left limit deviates by at least `ε` from `f u.untopA` (or `⊤` when no such time exists), and
+`TauCeti.oscillationExit f ε` iterates this operation from `⊥`. For a càdlàg path in an order
+topology and `ε > 0`, each finite exit time lies strictly after the previous one and attains the
+`ε`-deviation threshold; between consecutive times the path stays strictly within `ε` of the
+left-endpoint value, and existence of left limits prevents infinitely many `ε`-exits from
 accumulating below any finite horizon (`IsCadlag.tendsto_oscillationExit_top`).
 
 ## References
@@ -224,15 +228,21 @@ section OscillationExit
 
 variable {X E : Type*} [ConditionallyCompleteLinearOrderBot X] [PseudoMetricSpace E]
 
-/-- The first time strictly after `u` at which a path `f` or its strict left limit deviates by at
-least `ε` from `f u`, or `⊤` when `u = ⊤` or no such deviation occurs. -/
+/-- The infimum of times `t` strictly after `u` at which `f t` or its strict left limit
+`f.leftLim t` lies at distance at least `ε` from `f u.untopA`, or `⊤` when no such time exists
+(in particular when `u = ⊤`). For arbitrary `f` and `ε`, this infimum need neither lie strictly
+after `u` nor attain the threshold; for a càdlàg path in an order topology with `ε > 0`, it
+advances strictly whenever `u ≠ ⊤` (`IsCadlag.lt_oscillationExitAfter`), and any finite value
+attains the `ε`-deviation threshold in value or strict left limit
+(`IsCadlag.mem_of_oscillationExitAfter_eq_coe`). -/
 noncomputable def oscillationExitAfter (f : X → E) (ε : ℝ) (u : WithTop X) : WithTop X :=
   open Classical in
   let A := {t : X | u < (t : WithTop X) ∧
     (ε ≤ dist (f t) (f u.untopA) ∨ ε ≤ dist (f.leftLim t) (f u.untopA))}
   if A.Nonempty then ↑(sInf A) else ⊤
 
-/-- The sequence of iterated `ε`-oscillation exit times of a path `f`, starting at `⊥`. -/
+/-- Iterated `ε`-oscillation exit times of a path `f`, obtained by iterating
+`oscillationExitAfter f ε` starting from `⊥`. -/
 noncomputable def oscillationExit (f : X → E) (ε : ℝ) : ℕ → WithTop X
   | 0 => (⊥ : X)
   | n + 1 => oscillationExitAfter f ε (oscillationExit f ε n)
@@ -282,8 +292,8 @@ theorem eq_of_mem_Ico_oscillationExit {f : X → E} {ε : ℝ} {t : X} {m n : �
   · exact absurd
       (hn.2.trans_le ((oscillationExit_mono f ε (Nat.succ_le_of_lt hgt)).trans hm.1)) (lt_irrefl _)
 
-/-- The oscillation exit time after `u` is `⊤` if and only if no strictly later time reaches `ε`
-in value or left limit. -/
+/-- `oscillationExitAfter f ε u` equals `⊤` if and only if no strictly later time reaches
+distance `ε` from `f u.untopA` in value or strict left limit. -/
 theorem oscillationExitAfter_eq_top_iff {f : X → E} {ε : ℝ} {u : WithTop X} :
     oscillationExitAfter f ε u = ⊤ ↔
       ∀ t : X, u < (t : WithTop X) →
@@ -298,8 +308,8 @@ theorem oscillationExitAfter_eq_top_iff {f : X → E} {ε : ℝ} {u : WithTop X}
       Set.mem_ofPred_eq, not_and, not_or, not_le] at hne
     exact ⟨fun _ => hne, fun _ => rfl⟩
 
-/-- Strictly before the next `ε`-oscillation exit, the path remains within distance `ε` of its
-value at `u`. -/
+/-- For `ε > 0`, at any time `t` with `u ≤ t` strictly before `oscillationExitAfter f ε u`,
+the path remains within strict distance `ε` of `f u.untopA`. -/
 theorem dist_lt_of_lt_oscillationExitAfter {f : X → E} {ε : ℝ} (hε : 0 < ε)
     {u : WithTop X} {t : X} (hut : u ≤ (t : WithTop X))
     (hlt : (t : WithTop X) < oscillationExitAfter f ε u) :

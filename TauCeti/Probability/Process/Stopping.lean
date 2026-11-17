@@ -121,7 +121,8 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
 
 /-- Stopping preserves the càdlàg property of a path globally, without any measurability or
 stopping-time assumption on the random time. At an infinite time the path is unchanged, and at a
-finite time `u` it freezes at `X u ω` on `[u, ∞)` while preserving left limits everywhere. -/
+finite time `u` it freezes at `X u ω` on `[u, ∞)` while retaining the existence of left limits
+everywhere. -/
 theorem IsCadlag.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
     {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
