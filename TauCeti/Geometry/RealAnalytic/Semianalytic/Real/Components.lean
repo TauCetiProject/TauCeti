@@ -87,11 +87,30 @@ theorem IsSemianalytic.locallyFinite_connectedComponentIn_real {s : Set ℝ}
     (hs.semianalyticAt x).exists_Ioo_finite_image_connectedComponentIn (V := univ) univ_mem
   exact ⟨Ioo a b, Ioo_mem_nhds hx.1 hx.2, hfin⟩
 
+/-- Only finitely many global connected components meet a compact set if the subset of the
+real line is semianalytic at every point of that compact set. No semianalyticity away from
+the compact set is required. -/
+theorem _root_.IsCompact.finite_image_connectedComponentIn_inter_real {s K : Set ℝ}
+    (hK : IsCompact K) (hs : ∀ x ∈ K, SemianalyticAt s x) :
+    (_root_.connectedComponentIn s '' (s ∩ K)).Finite := by
+  have hlocal : ∀ x ∈ K, ∃ U ∈ 𝓝 x,
+      (_root_.connectedComponentIn s '' (s ∩ U)).Finite := by
+    intro x hx
+    obtain ⟨a, b, hab, _, hfin⟩ :=
+      (hs x hx).exists_Ioo_finite_image_connectedComponentIn (V := univ) univ_mem
+    exact ⟨Ioo a b, Ioo_mem_nhds hab.1 hab.2, hfin⟩
+  choose U hU hfin using hlocal
+  obtain ⟨F, hF⟩ := hK.elim_nhds_subcover' U hU
+  refine (F.finite_toSet.biUnion fun x _ => hfin x x.2).subset ?_
+  rintro _ ⟨y, ⟨hys, hyK⟩, rfl⟩
+  obtain ⟨x, hx, hyU⟩ := mem_iUnion₂.1 (hF hyK)
+  exact mem_iUnion₂.2 ⟨x, hx, mem_image_of_mem _ ⟨hys, hyU⟩⟩
+
 /-- Only finitely many global connected components of a semianalytic subset of the real
 line meet a given compact set. The components themselves need not be bounded or closed. -/
 theorem IsSemianalytic.finite_image_connectedComponentIn_inter_real {s K : Set ℝ}
     (hs : IsSemianalytic s) (hK : IsCompact K) :
     (_root_.connectedComponentIn s '' (s ∩ K)).Finite :=
-  hs.locallyFinite_connectedComponentIn_real.finite_image_connectedComponentIn_inter hK
+  hK.finite_image_connectedComponentIn_inter_real (fun x _ => hs.semianalyticAt x)
 
 end TauCeti
