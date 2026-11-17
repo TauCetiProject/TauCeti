@@ -580,13 +580,6 @@ theorem isStarProjection_singleCorner [Fintype n] [DecidableEq n] [Semiring R]
   · rw [isSelfAdjoint_iff]
     exact singleCorner_injective (R := R) i (by rw [map_star, h.isSelfAdjoint.star_eq])
 
-/-- Entrywise formula for `CStarMatrix.toOneByOne`. -/
-@[simp]
-theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A] [Module R A]
-    (a : A) (i j : n) :
-    toOneByOne n R A a i j = a :=
-  (rfl)
-
 /-- Reindexing along identity equivalences on both sides is the identity map. -/
 @[simp]
 theorem reindexₗ_refl_refl [Semiring R] [AddCommMonoid A] [Module R A] (M : CStarMatrix m n A) :

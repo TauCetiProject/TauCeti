@@ -93,6 +93,8 @@ All in the namespace `TauCeti.PDE`.
   counterpart with `R^(1 - n/q) ‖F‖_{L^q(B_R)} / λ`.
 * `exists_ae_abs_value_le_mul_add_of_memLp_add_divergence`: local boundedness for the datum
   `f + ∂ᵢFⁱ`, with both terms.
+* `exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_add_divergence`: De Giorgi's interior
+  oscillation estimate for the datum `f + ∂ᵢFⁱ`, with the same two terms.
 * `exists_holderOnWith_preciseRepresentative_of_memLp` and
   `exists_holderOnWith_preciseRepresentative_of_memLp_divergence`: **De Giorgi's theorem with a
   right-hand side**, the Hölder continuity of the precise representative.
@@ -954,6 +956,143 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp_add_divergence [Nonempty ι] {la
   · rw [Real.rpow_zero, mul_one]
   · rw [Real.rpow_zero, one_mul]
 
+omit [DecidableEq ι] in
+/-- The smaller Morrey gain `min (2 - n/r) (1 - n/q)` of `f ∈ Lʳ` and `F ∈ L^q` is positive. -/
+private theorem min_sub_div_pos {r q : ℝ≥0} (hrn : (Fintype.card ι : ℝ) < 2 * r)
+    (hqn : (Fintype.card ι : ℝ) < q) :
+    0 < min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q) := by
+  have hr0 : (0 : ℝ) < r := by linarith only [hrn, (Nat.cast_nonneg _ : (0 : ℝ) ≤ Fintype.card ι)]
+  have hq0 : (0 : ℝ) < q := (Nat.cast_nonneg _).trans_lt hqn
+  exact lt_min (sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn])))
+    (sub_pos.2 ((div_lt_one hq0).2 hqn))
+
+/-- The splitting `TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence`
+on every ball `B(x₀, ρ)` with `ρ ≤ R` inside a set `S` carrying `f` and `F`, bounded through the
+norms of `f` and `F` on `S` and the power `ρ^γ` of the smaller Morrey gain
+`γ = min (2 - n/r) (1 - n/q)`: the comparison hypothesis of
+`TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le` and
+`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le`. -/
+private theorem exists_forall_exists_ae_abs_sub_le_of_memLp_add_divergence [Nonempty ι]
+    {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) (hq : 2 < (q : ℝ))
+    (hqn : (Fintype.card ι : ℝ) < q) :
+    ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {f : EuclideanSpace ℝ ι → ℝ}
+      {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} {S : Set (EuclideanSpace ℝ ι)},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      MemLp f r (mu.restrict S) → MemLp F q (mu.restrict S) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
+      ball x₀ R ⊆ S → S ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ ρ, 0 < ρ → ρ ≤ R → ∃ g : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+        (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+          energyFormH1 a 0 0 g (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) = 0) ∧
+        ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x - W1p.value g x| ≤
+          ρ ^ min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q) *
+            (K * (R ^ (2 - (Fintype.card ι : ℝ) / r -
+                  min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)) *
+                (eLpNorm f r (mu.restrict S)).toReal +
+              R ^ (1 - (Fintype.card ι : ℝ) / q -
+                  min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)) *
+                (eLpNorm F q (mu.restrict S)).toReal) / lam) := by
+  obtain ⟨K, hK, hsplit⟩ :=
+    exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence (mu := mu) hr hrn hq hqn
+  refine ⟨K, hK, fun {Omega a lam Lam f F u x₀ R S} h ha hf hF hu hball hS ρ hρ hρR => ?_⟩
+  have hρS : ball x₀ ρ ⊆ S := (ball_subset_ball hρR).trans hball
+  obtain ⟨g, hg, hug⟩ := hsplit h ha (hf.mono_measure (Measure.restrict_mono hρS le_rfl))
+    (hF.mono_measure (Measure.restrict_mono hρS le_rfl)) hu hρ (hρS.trans hS)
+  refine ⟨g, hg, ?_⟩
+  have hfρ : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
+      (eLpNorm f r (mu.restrict S)).toReal :=
+    lpNorm_mono_measure hf (Measure.restrict_mono hρS le_rfl)
+  have hFρ : (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal ≤
+      (eLpNorm F q (mu.restrict S)).toReal :=
+    lpNorm_mono_measure hF (Measure.restrict_mono hρS le_rfl)
+  -- `ρ^δ ≤ R^(δ - γ) ρ^γ` for both gains `δ ≥ γ`.
+  set γ := min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)
+  have hpow : ∀ δ, γ ≤ δ → ρ ^ δ ≤ R ^ (δ - γ) * ρ ^ γ := fun δ hδ =>
+    calc ρ ^ δ = ρ ^ (δ - γ) * ρ ^ γ := by rw [← Real.rpow_add hρ, sub_add_cancel]
+      _ ≤ R ^ (δ - γ) * ρ ^ γ := by gcongr
+  have h₁ := hpow _ (min_le_left _ _)
+  have h₂ := hpow _ (min_le_right _ _)
+  have := h.pos
+  have hR : 0 < R := hρ.trans_le hρR
+  filter_upwards [hug] with x hx
+  refine hx.trans ?_
+  calc _ ≤ K * (R ^ (2 - (Fintype.card ι : ℝ) / r - γ) * ρ ^ γ *
+          (eLpNorm f r (mu.restrict S)).toReal + R ^ (1 - (Fintype.card ι : ℝ) / q - γ) *
+            ρ ^ γ * (eLpNorm F q (mu.restrict S)).toReal) / lam := by gcongr
+    _ = _ := by ring
+
+omit [DecidableEq ι] in
+/-- The bound of `TauCeti.PDE.exists_forall_exists_ae_abs_sub_le_of_memLp_add_divergence` at
+`ρ = R`: the factors `R^(δ - γ)` recombine with `R^γ` into the Morrey gains. -/
+private theorem rpow_min_mul_eq {r q : ℝ≥0} {K R lam A₁ A₂ : ℝ} (hR : 0 < R) :
+    R ^ min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q) *
+      (K * (R ^ (2 - (Fintype.card ι : ℝ) / r -
+            min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)) * A₁ +
+          R ^ (1 - (Fintype.card ι : ℝ) / q -
+            min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)) * A₂) / lam) =
+    K * ((R ^ (2 - (Fintype.card ι : ℝ) / r) * A₁ +
+      R ^ (1 - (Fintype.card ι : ℝ) / q) * A₂) / lam) := by
+  set γ := min (2 - (Fintype.card ι : ℝ) / r) (1 - (Fintype.card ι : ℝ) / q)
+  have hpow : ∀ δ, R ^ (δ - γ) * R ^ γ = R ^ δ := fun δ => by
+    rw [← Real.rpow_add hR, sub_add_cancel]
+  calc _ = K * (R ^ (2 - (Fintype.card ι : ℝ) / r - γ) * R ^ γ * A₁ +
+        R ^ (1 - (Fintype.card ι : ℝ) / q - γ) * R ^ γ * A₂) / lam := by ring
+    _ = _ := by rw [hpow, hpow]; ring
+
+/-- **De Giorgi's interior oscillation estimate with a right-hand side `f + ∂ᵢFⁱ`.** Let `n ≥ 1`
+be the dimension, let `r > 1` with `r > n/2`, and let `q > 2` with `q > n`. There are
+`α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, `n`, `r`, `q` and the normalization of
+`mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with
+constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with
+`f ∈ Lʳ(B(x₀, R))` and `F ∈ L^q(B(x₀, R); ℝⁿ)`. If `B(x₀, R) ⊆ Ω` and `0 < s ≤ R/2`, then
+almost everywhere on `B(x₀, s)` the function `u` takes values in an interval of length
+
+`C (s / R)^α (R^(-n/2) ‖u‖_{L²(B(x₀, R))} +`
+`(R^(2 - n/r) ‖f‖_{Lʳ(B(x₀, R))} + R^(1 - n/q) ‖F‖_{L^q(B(x₀, R))}) / λ)`. -/
+theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_add_divergence [Nonempty ι]
+    {lam Lam : ℝ} {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
+    (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
+    ∃ α C : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {f : EuclideanSpace ℝ ι → ℝ}
+      {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R s : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      MemLp f r (mu.restrict (ball x₀ R)) → MemLp F q (mu.restrict (ball x₀ R)) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
+      0 < s → s ≤ R / 2 → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∃ m' : ℝ, ∀ᵐ x ∂mu.restrict (ball x₀ s), W1p.value u x ∈ Icc m' (m' + C * (s / R) ^ α *
+        (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
+          (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
+            R ^ (1 - (Fintype.card ι : ℝ) / q) *
+              (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam)) := by
+  obtain ⟨K, -, hcmp⟩ :=
+    exists_forall_exists_ae_abs_sub_le_of_memLp_add_divergence (mu := mu) hr hrn hq hqn
+  obtain ⟨α, C, hα, hα1, hC, hosc⟩ :=
+    exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
+      (Lam := Lam) (min_sub_div_pos hrn hqn)
+  refine ⟨α, C * max 1 K, hα, hα1, by positivity, ?_⟩
+  intro Omega a f F u x₀ R s h ha hf hF hu hs hsR hball
+  have hR : 0 < R := by linarith only [hs, hsR]
+  obtain ⟨m', hm'⟩ := hosc h ha (hcmp h ha hf hF hu subset_rfl hball) hs hsR hball
+  refine ⟨m', ?_⟩
+  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
+  set P := (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
+    R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam
+  have hlen : C * (s / R) ^ α * (Q + K * P) ≤ C * max 1 K * (s / R) ^ α * (Q + P) :=
+    (mul_le_mul_of_nonneg_left (add_mul_le_max_mul_add (by positivity)
+      (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
+  filter_upwards [hm'] with x hx
+  rw [rpow_min_mul_eq hR] at hx
+  exact ⟨hx.1, hx.2.trans (by linarith only [hlen])⟩
+
 /-- **De Giorgi's theorem with a right-hand side `f + ∂ᵢFⁱ`.** Let `n ≥ 1` be the dimension, let
 `r > 1` with `r > n/2`, and let `q > 2` with `q > n`. There are `α ∈ (0, 1]` and `C > 0`,
 depending only on `λ`, `Λ`, `n`, `r`, `q` and the normalization of the additive Haar measure `mu`,
@@ -989,55 +1128,19 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence [Nonem
               R ^ (1 - (Fintype.card ι : ℝ) / q) *
                 (eLpNorm F q (mu.restrict Omega)).toReal) / lam)).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  set γ₁ : ℝ := 2 - n / r
-  set γ₂ : ℝ := 1 - n / q
-  set γ : ℝ := min γ₁ γ₂
-  have hγ : 0 < γ :=
-    lt_min (sub_pos.2 ((div_lt_iff₀ (by exact_mod_cast zero_lt_one.trans hr)).2
-      (by linarith only [hrn]))) (sub_pos.2 ((div_lt_one (two_pos.trans hq)).2 hqn))
-  obtain ⟨K₀, hK₀, hsplit⟩ :=
-    exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence (mu := mu) hr hrn hq hqn
+  obtain ⟨Ks, -, hcmp⟩ :=
+    exists_forall_exists_ae_abs_sub_le_of_memLp_add_divergence (mu := mu) hr hrn hq hqn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
     exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) hγ
-  refine ⟨α, C * max 1 K₀, hα, hα1, by positivity, fun {Omega a f F u K R} h ha hf hF hu hR hRK =>
-    ?_⟩
-  have hlam := h.pos
-  set Nf := (eLpNorm f r (mu.restrict Omega)).toReal
-  set NF := (eLpNorm F q (mu.restrict Omega)).toReal
-  -- On `B(x, ρ)`, `x ∈ K`, `ρ ≤ R`, the error is at most `ρ^γ A`, as `ρ^γᵢ ≤ ρ^γ R^(γᵢ - γ)`.
-  refine (hhol (A := K₀ * (R ^ (γ₁ - γ) * Nf + R ^ (γ₂ - γ) * NF) / lam) h ha
-    (fun x hx ρ hρ hρR => ?_) hR hRK).mono_const ?_
-  · have hballρ : ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (ball_subset_ball hρR).trans
-      ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
-    have hle : mu.restrict (ball x ρ) ≤ mu.restrict Omega := Measure.restrict_mono hballρ le_rfl
-    obtain ⟨g, hg, hug⟩ := hsplit h ha (hf.mono_measure hle) (hF.mono_measure hle) hu hρ hballρ
-    refine ⟨g, hg, hug.mono fun y hy => hy.trans ?_⟩
-    have hpow : ∀ γ', γ ≤ γ' → ρ ^ γ' ≤ ρ ^ γ * R ^ (γ' - γ) := fun γ' hγ' => by
-      rw [show ρ ^ γ' = ρ ^ γ * ρ ^ (γ' - γ) by rw [← Real.rpow_add hρ, add_sub_cancel]]
-      gcongr
-    have hNf : (eLpNorm f r (mu.restrict (ball x ρ))).toReal ≤ Nf :=
-      ENNReal.toReal_mono hf.eLpNorm_ne_top (eLpNorm_mono_measure _ hle)
-    have hNF : (eLpNorm F q (mu.restrict (ball x ρ))).toReal ≤ NF :=
-      ENNReal.toReal_mono hF.eLpNorm_ne_top (eLpNorm_mono_measure _ hle)
-    calc _ ≤ K₀ * (ρ ^ γ * R ^ (γ₁ - γ) * Nf + ρ ^ γ * R ^ (γ₂ - γ) * NF) / lam := by
-          gcongr
-          exacts [hpow _ (min_le_left _ _), hpow _ (min_le_right _ _)]
-      _ = ρ ^ γ * (K₀ * (R ^ (γ₁ - γ) * Nf + R ^ (γ₂ - γ) * NF) / lam) := by ring
-  · -- `R^γ A = K₀ P` and `C (Q + K₀ P) ≤ C max 1 K₀ (Q + P)`.
-    refine Real.toNNReal_le_toNNReal ?_
-    have hRγ : ∀ γ' : ℝ, R ^ γ * R ^ (γ' - γ) = R ^ γ' := fun γ' => by
-      rw [← Real.rpow_add hR, add_sub_cancel]
-    have hmax := add_mul_le_max_mul_add (K := K₀)
-      (by positivity : 0 ≤ R ^ (-n / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu))
-      (by positivity : 0 ≤ (R ^ γ₁ * Nf + R ^ γ₂ * NF) / lam)
-    have hA : R ^ γ * (K₀ * (R ^ (γ₁ - γ) * Nf + R ^ (γ₂ - γ) * NF) / lam) =
-        K₀ * ((R ^ γ₁ * Nf + R ^ γ₂ * NF) / lam) := by
-      rw [← hRγ γ₁, ← hRγ γ₂]
-      ring
-    grw [hA, hmax]
-    exact le_of_eq (by ring)
+      (Lam := Lam) (min_sub_div_pos hrn hqn)
+  refine ⟨α, C * max 1 Ks, hα, hα1, by positivity, ?_⟩
+  intro Omega a f F u K R h ha hf hF hu hR hRK
+  refine (hhol h ha (fun x hx => hcmp h ha hf hF hu
+    ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
+    subset_rfl) hR hRK).mono_const (Real.toNNReal_le_toNNReal ?_)
+  rw [rpow_min_mul_eq hR]
+  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_mul_add (by positivity)
+    (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
 
 /-! ### Continuity for a locally integrable right-hand side -/
 
