@@ -25,7 +25,7 @@ Because Mathlib's `Complex.Gamma` vanishes at nonpositive integers, the power se
 `∑ⱼ (-1) ^ j * (z / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))` converges absolutely to
 `Complex.besselJ ν z` for every `ν, z : ℂ` without exception, including at `z = 0`. Combining the
 factorial series for natural orders with the Fourier-series expansion
-`Complex.hasSum_integral_exp_mul_cos_mul_exp_natCast` of `θ ↦ e^{w cos θ}` on `[-π, π]` from
+`Complex.hasSum_integral_exp_mul_cos_mul_exp` of `θ ↦ e^{w cos θ}` on `[-π, π]` from
 `TauCeti.Analysis.SpecialFunctions.Integrals.Basic` yields
 `∫_{-π}^π e^{i z cos θ} e^{i n θ} dθ = 2π i^n J_n(z)` for all `n : ℤ`, its period-shift form on
 `[a, a + 2π]`, and the order-zero Bessel integral `J_0(z) = (2π)⁻¹ ∫_0^{2π} e^{i z cos θ} dθ`. The
@@ -88,6 +88,8 @@ theorem analyticAt_besselJ_zero_left (z : ℂ) : AnalyticAt ℂ (besselJ 0) z :=
 
 private theorem besselJ_series_term_zero (ν : ℂ) {j : ℕ} (hj : j ≠ 0) :
     (-1 : ℂ) ^ j * (0 : ℂ) ^ (2 * j + ν) / (j ! * Gamma (j + ν + 1)) = 0 := by
+  -- If the exponent `2 j + ν` vanishes with `j ≥ 1`, then `j + ν + 1 = 1 - j ≤ 0`, where
+  -- `Complex.Gamma` vanishes.
   by_cases h : (2 : ℂ) * j + ν = 0
   · have harg : (j : ℂ) + ν + 1 = -((j - 1 : ℕ) : ℂ) := by
       rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hj), Nat.cast_one]
@@ -107,9 +109,8 @@ private theorem besselJ_series_term_eq_mul_regularizedHGFunCoeff (ν : ℂ) {z :
   ring
 
 /-- **Power series of `J_ν(z)`** (DLMF 10.2.2): for every complex order `ν` and argument `z`,
-`besselJ ν z = ∑ⱼ (-1) ^ j * (z / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`. At `z = 0` with `ν ≠ 0`,
-any term whose exponent `2 j + ν` vanishes has `j ≥ 1` and `j + ν + 1 = 1 - j ≤ 0`, where
-`Complex.Gamma` vanishes. -/
+`besselJ ν z = ∑ⱼ (-1) ^ j * (z / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`, including at `z = 0`
+(since `Complex.Gamma` is totalized to `0` at nonpositive integers). -/
 theorem hasSum_besselJ (ν z : ℂ) :
     HasSum (fun j : ℕ => (-1 : ℂ) ^ j * (z / 2) ^ (2 * j + ν) / (j ! * Gamma (j + ν + 1)))
       (besselJ ν z) := by
@@ -155,37 +156,25 @@ theorem hasSum_besselJ_zero_left (z : ℂ) :
 
 /-! ### Hansen–Bessel circle integrals and the order-zero Bessel integral -/
 
-private theorem integral_exp_I_mul_cos_mul_exp_natCast (z : ℂ) (n : ℕ) :
-    ∫ θ in -π..π, exp (I * z * Real.cos θ) * exp (n * θ * I) =
-      2 * π * I ^ n * besselJ n z := by
-  refine (hasSum_integral_exp_mul_cos_mul_exp_natCast (I * z) n).unique ?_
-  refine ((hasSum_besselJ_natCast n z).mul_left (2 * (π : ℂ) * I ^ n)).congr_fun fun j => ?_
-  have hIpow : I ^ (2 * j + n) = (-1 : ℂ) ^ j * I ^ n := by
-    rw [pow_add, pow_mul, I_sq]
-  rw [mul_div_assoc, mul_pow, hIpow]
-  ring
-
 /-- **Hansen–Bessel circle integral**: for every `z : ℂ` and `n : ℤ`,
 `∫_{-π}^π e^{i z cos θ} e^{i n θ} dθ = 2π i^n J_n(z)`. -/
 theorem integral_exp_I_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
     ∫ θ in -π..π, exp (I * z * Real.cos θ) * exp (n * θ * I) =
       2 * π * I ^ n * besselJ n z := by
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · simpa using integral_exp_I_mul_cos_mul_exp_natCast z m
-  · have h := intervalIntegral.integral_comp_neg (a := -π) (b := π)
-      (fun θ : ℝ => exp (I * z * Real.cos θ) * exp (m * θ * I))
-    rw [neg_neg, integral_exp_I_mul_cos_mul_exp_natCast] at h
-    have hI : I ^ (-m : ℤ) * (-1 : ℂ) ^ (m : ℤ) = I ^ m := by
-      rw [zpow_neg, zpow_natCast, zpow_natCast, ← inv_pow, inv_I, ← mul_pow]
+  have hsymm : I ^ n * besselJ n z = I ^ n.natAbs * besselJ n.natAbs z := by
+    obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+    · simp
+    · rw [Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, besselJ_neg_int, Int.cast_natCast,
+        zpow_neg, zpow_natCast, zpow_natCast, ← inv_pow, inv_I, ← mul_assoc, ← mul_pow]
       simp
-    have hrhs : 2 * (π : ℂ) * I ^ (-m : ℤ) * besselJ ((-m : ℤ) : ℂ) z =
-        2 * (π : ℂ) * I ^ m * besselJ m z := by
-      rw [Int.cast_neg, besselJ_neg_int, Int.cast_natCast]
-      linear_combination 2 * (π : ℂ) * besselJ m z * hI
-    rw [hrhs, ← h]
-    refine intervalIntegral.integral_congr fun θ _ => ?_
-    simp only [Real.cos_neg, ofReal_neg, Int.cast_neg, Int.cast_natCast]
-    ring_nf
+  rw [mul_assoc (2 * (π : ℂ)), hsymm, ← mul_assoc]
+  refine (hasSum_integral_exp_mul_cos_mul_exp (I * z) n).unique ?_
+  refine ((hasSum_besselJ_natCast n.natAbs z).mul_left
+    (2 * (π : ℂ) * I ^ n.natAbs)).congr_fun fun j => ?_
+  have hIpow : I ^ (2 * j + n.natAbs) = (-1 : ℂ) ^ j * I ^ n.natAbs := by
+    rw [pow_add, pow_mul, I_sq]
+  rw [mul_div_assoc, mul_pow, hIpow]
+  ring
 
 /-- **Hansen–Bessel circle integral over any period `[a, a + 2π]`**:
 `∫_a^{a + 2π} e^{i z cos θ} e^{i n θ} dθ = 2π i^n J_n(z)`. -/

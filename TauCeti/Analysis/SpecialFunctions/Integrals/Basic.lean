@@ -55,10 +55,11 @@ Interval integrals of elementary functions in closed form or as series, continui
   over an interval is a difference of arctangents.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
-* `Complex.hasSum_integral_exp_mul_cos_mul_exp`,
-  `Complex.hasSum_integral_exp_mul_cos_mul_exp_natCast`: `∫ θ in -π..π, e^{w cos θ} exp (n θ i)`
-  as the sum of the termwise integrals of the exponential series of `e^{w cos θ}` for `w : ℂ`, and
-  its closed-form series `∑ⱼ 2π (w / 2) ^ (2 j + n) / (j! (j + n)!)` for natural `n`.
+* `Complex.hasSum_pow_div_factorial_mul_integral_cos_pow_mul_exp`,
+  `Complex.hasSum_integral_exp_mul_cos_mul_exp`: `∫ θ in -π..π, e^{w cos θ} exp (n θ i)` for
+  `w : ℂ` and `n : ℤ` as the termwise integral series
+  `∑ₖ (wᵏ / k!) ∫ θ in -π..π, cosᵏ θ exp (n θ i)` and its closed-form series
+  `∑ⱼ 2π (w / 2) ^ (2 j + |n|) / (j! (j + |n|)!)`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
   from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
@@ -471,9 +472,9 @@ end Real
 
 namespace Complex
 
-/-- Termwise integration of the exponential series `e^{w cos θ} = ∑ₖ wᵏ cosᵏ θ / k!` against the
-Fourier character `e^{i n θ}` over `[-π, π]`, for any complex parameter `w`. -/
-theorem hasSum_integral_exp_mul_cos_mul_exp (w : ℂ) (n : ℤ) :
+/-- For any `w : ℂ` and `n : ℤ`, `∫_{-π}^π e^{w cos θ} e^{i n θ} dθ` equals the series
+`∑ₖ (wᵏ / k!) ∫_{-π}^π cosᵏ θ e^{i n θ} dθ`. -/
+theorem hasSum_pow_div_factorial_mul_integral_cos_pow_mul_exp (w : ℂ) (n : ℤ) :
     HasSum (fun k : ℕ => w ^ k / k ! *
         ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * exp (n * θ * I))
       (∫ θ in -Real.pi..Real.pi, exp (w * Real.cos θ) * exp (n * θ * I)) := by
@@ -498,33 +499,47 @@ theorem hasSum_integral_exp_mul_cos_mul_exp (w : ℂ) (n : ℤ) :
     rw [mul_pow]
     ring
 
-/-- For any `w : ℂ` and `n : ℕ`, the Fourier integral `∫_{-π}^π e^{w cos θ} e^{i n θ} dθ` expands
-as the power series `∑ⱼ 2π (w / 2) ^ (2 j + n) / (j! (j + n)!)`. -/
-theorem hasSum_integral_exp_mul_cos_mul_exp_natCast (w : ℂ) (n : ℕ) :
-    HasSum (fun j : ℕ => 2 * (Real.pi : ℂ) * ((w / 2) ^ (2 * j + n) / (j ! * (j + n)!)))
+/-- For any `w : ℂ` and `n : ℤ`, the Fourier integral `∫_{-π}^π e^{w cos θ} e^{i n θ} dθ` expands
+as the power series `∑ⱼ 2π (w / 2) ^ (2 j + |n|) / (j! (j + |n|)!)`. -/
+theorem hasSum_integral_exp_mul_cos_mul_exp (w : ℂ) (n : ℤ) :
+    HasSum (fun j : ℕ =>
+        2 * (Real.pi : ℂ) * ((w / 2) ^ (2 * j + n.natAbs) / (j ! * (j + n.natAbs)!)))
       (∫ θ in -Real.pi..Real.pi, exp (w * Real.cos θ) * exp (n * θ * I)) := by
   -- Integrate `e^{w cos θ} = ∑ₖ wᵏ cosᵏ θ / k!` termwise and expand `cosᵏ θ` into characters via
-  -- `TauCeti.integral_cos_pow_mul_cexp`; orthogonality leaves only `k = 2 j + n`, `m = j`.
-  have h := hasSum_integral_exp_mul_cos_mul_exp w (n : ℤ)
+  -- `TauCeti.integral_cos_pow_mul_cexp`; orthogonality leaves only `k = 2 j + |n|`,
+  -- with `m = j` when `n ≥ 0` and `m = j + |n|` when `n < 0`.
+  have h := hasSum_pow_div_factorial_mul_integral_cos_pow_mul_exp w n
   simp_rw [TauCeti.integral_cos_pow_mul_cexp] at h
-  simp only [Int.cast_natCast] at h
-  have hz : ∀ k ∉ Set.range (fun j : ℕ => 2 * j + n),
+  have hz : ∀ k ∉ Set.range (fun j : ℕ => 2 * j + n.natAbs),
       w ^ k / k ! * (∑ m ∈ Finset.range (k + 1), (1 / 2 : ℂ) ^ k * k.choose m *
         if 2 * (m : ℤ) - k + n = 0 then 2 * (Real.pi : ℂ) else 0) = 0 := by
     intro k hk
-    refine mul_eq_zero_of_right _ (Finset.sum_eq_zero fun m _ => ?_)
-    rw [ite_eq_right fun hm => hk ⟨m, by dsimp only; omega⟩, mul_zero]
-  have hinj : Function.Injective fun j : ℕ => 2 * j + n := fun a b hab => by simpa using hab
+    refine mul_eq_zero_of_right _ (Finset.sum_eq_zero fun m hm => ?_)
+    have hmk : m ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
+    rw [ite_eq_right fun hm' => hk (if hn : 0 ≤ n then ⟨m, by dsimp only; omega⟩
+      else ⟨k - m, by dsimp only; omega⟩), mul_zero]
+  have hinj : Function.Injective fun j : ℕ => 2 * j + n.natAbs :=
+    fun a b hab => by simpa using hab
   rw [← hinj.hasSum_iff hz] at h
   refine h.congr_fun fun j => ?_
   symm
   dsimp only [Function.comp_apply]
-  rw [Finset.sum_eq_single j (fun m _ hm => by rw [ite_eq_right (by omega), mul_zero])
-    (fun hj => absurd (Finset.mem_range.mpr (by omega)) hj), ite_eq_left (by push_cast; ring)]
-  have hfac := Nat.choose_mul_factorial_mul_factorial (by omega : j ≤ 2 * j + n)
-  have hsub : 2 * j + n - j = j + n := by omega
-  rw [hsub] at hfac
-  have hc : ((2 * j + n).choose j : ℂ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
+  set m₀ : ℕ := if 0 ≤ n then j else j + n.natAbs
+  have hm₀_eq : 2 * (m₀ : ℤ) - ((2 * j + n.natAbs : ℕ) : ℤ) + n = 0 := by
+    by_cases hn : 0 ≤ n <;> simp only [m₀, hn, ↓reduceIte] <;> omega
+  have hm₀_le : m₀ ≤ 2 * j + n.natAbs := by
+    by_cases hn : 0 ≤ n <;> simp only [m₀, hn, ↓reduceIte] <;> omega
+  rw [Finset.sum_eq_single m₀
+    (fun m _ hm => by rw [ite_eq_right (by omega), mul_zero])
+    (fun hj => absurd (Finset.mem_range.mpr (by omega)) hj), ite_eq_left hm₀_eq]
+  have hfac := Nat.choose_mul_factorial_mul_factorial hm₀_le
+  have hmul : m₀ ! * (2 * j + n.natAbs - m₀)! = j ! * (j + n.natAbs)! := by
+    by_cases hn : 0 ≤ n <;> simp only [m₀, hn, ↓reduceIte]
+    · congr 2; omega
+    · rw [mul_comm]; congr 2; omega
+  rw [mul_assoc, hmul] at hfac
+  have hc : ((2 * j + n.natAbs).choose m₀ : ℂ) ≠ 0 := by
+    exact_mod_cast (Nat.choose_pos hm₀_le).ne'
   rw [← hfac]
   push_cast
   field_simp
