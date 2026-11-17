@@ -34,7 +34,8 @@ of a space vanishes in a degree exactly when its integral homology is a torsion 
 
 ## Main declarations
 
-* `TauCeti.singularHomologyTensorIso`: `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` for a flat `R`-algebra `S`.
+* `TauCeti.singularHomologyTensorIso`: `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` for a flat `R`-algebra `S`,
+  natural in `X` (`TauCeti.singularHomologyTensorIso_hom_naturality`).
 * `TauCeti.isTorsion'_singularChains_homology_iff`: `Hₙ(X; R)` is `M`-torsion exactly when
   `Hₙ(X; M⁻¹R)` vanishes; `TauCeti.isTorsion'_singularChains_int_homology_iff` is the case
   `R = ℤ`.
@@ -71,10 +72,53 @@ def singularHomologyTensorIso [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
   have : (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).PreservesHomology := {}
   (ModuleCat.extendScalarsAlgebraMapIso _).symm ≪≫
     (Functor.singularHomologyFunctorObjCompIso
-      (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n).app X ≪≫
+      (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n ≪≫
     -- Extension of scalars, a monoidal functor, carries the unit `R` to the unit `S`.
-    ((singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
+    (singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
       (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u, u, u} (algebraMap R S))).symm).app X
+
+/-- The identification `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` is natural in the space `X`. -/
+@[reassoc]
+theorem singularHomologyTensorIso_hom_naturality [Module.Flat R S] {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (n : ℕ) :
+    ModuleCat.ofHom ((HomologicalComplex.homologyMap ((singularChains R).map f) n).hom.baseChange
+        S) ≫ (singularHomologyTensorIso R S Y n).hom =
+      (singularHomologyTensorIso R S X n).hom ≫
+        HomologicalComplex.homologyMap ((singularChains S).map f) n := by
+  have : PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
+    ModuleCat.preservesFiniteLimits_extendScalars_of_flat
+      (RingHom.flat_algebraMap_iff.2 inferInstance)
+  have : (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).PreservesHomology := {}
+  -- Extension of scalars `S ⊗[R] -` is natural in the module.
+  have h {M N : ModuleCat.{u} R} (g : M ⟶ N) :
+      ModuleCat.ofHom (g.hom.baseChange S) ≫ (ModuleCat.extendScalarsAlgebraMapIso N).inv =
+        (ModuleCat.extendScalarsAlgebraMapIso M).inv ≫
+          (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).map g := by
+    ext : 1
+    refine LinearMap.ext fun t ↦ ?_
+    induction t using TensorProduct.inductionOn with
+    | tmul s x =>
+      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+        LinearMap.baseChange_tmul]
+      rw [ModuleCat.extendScalarsAlgebraMapIso_inv_tmul,
+        ModuleCat.extendScalarsAlgebraMapIso_inv_tmul]
+      exact (ModuleCat.ExtendScalars.map_tmul (algebraMap R S) g s x).symm
+    | add _ _ h₁ h₂ => simp_all
+  -- After `S ⊗[R] -`, the isomorphism is the component of a natural isomorphism in the space.
+  let η := Functor.singularHomologyFunctorObjCompIso
+      (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n ≪≫
+    (singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
+      (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u, u, u} (algebraMap R S))).symm
+  have e (Z : TopCat.{u}) : (singularHomologyTensorIso R S Z n).hom =
+      (ModuleCat.extendScalarsAlgebraMapIso _).inv ≫ η.hom.app Z :=
+    rfl
+  rw [e, e]
+  -- The statement names homology of singular chains, while `η` is stated with the singular homology
+  -- functors; these objects agree only up to unfolding, so `rw` and `simp` cannot reassociate the
+  -- goal, and the steps are chained explicitly.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ η.hom.app Y) (h _)).trans <|
+    (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (η.hom.naturality f)).trans (Category.assoc _ _ _).symm
 
 /-- For a flat `R`-algebra `S`, the homology with coefficients in `S` vanishes exactly when the
 extension of scalars of the homology with coefficients in `R` does. -/
