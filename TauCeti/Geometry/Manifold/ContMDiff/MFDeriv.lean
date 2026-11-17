@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -39,6 +40,8 @@ its regularity at a point also loses one derivative.
   of a jointly `C^n` family is jointly `C^m` when `m + i ≤ n`.
 * `ContMDiff.contMDiff_tangentMap_family`: the tangent maps of a jointly `C^m` family of maps
   between manifolds form a jointly `C^n` map when `n + 1 ≤ m`.
+* `TauCeti.exists_contMDiffAt_and_mvfderiv_eq_one`: for any nonzero tangent vector `v` at `x` on a
+  `C^n` manifold (`1 ≤ n`), there exists a local `C^n` scalar function `g` with `dg_x(v) = 1`.
 
 Applying the differential of a `C^(n+1)` map to a `C^n` tangent section gives a `C^n`
 tangent field along the map (`ContMDiffAt.mfderiv_apply_sectionAlong`).
@@ -234,3 +237,34 @@ theorem ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 1 M] {n : WithTo
   fun x ↦ (hf x).contMDiffAt_totalSpaceMk_mvfderiv
 
 end VectorValued
+
+namespace TauCeti
+
+/-- **Existence of a local transverse function.** For any nonzero tangent vector `v` at `x` on a
+`C^n` manifold (`1 ≤ n`), there exists a function `g : M → 𝕜`, `C^n` at `x`, with `dg_x(v) = 1`.
+No finite-dimensionality or boundarylessness hypothesis is needed. -/
+theorem exists_contMDiffAt_and_mvfderiv_eq_one {𝕜 : Type*} [RCLike 𝕜]
+    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+    {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+    {n : ℕ∞ω} (hn : 1 ≤ n) [IsManifold I n M] {x : M} {v : TangentSpace I x} (hv : v ≠ 0) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v = 1 := by
+  have : IsManifold I 1 M := IsManifold.of_le hn
+  -- `TangentSpace I x` is definitionally the model space `E`, which carries the norm for
+  -- Hahn–Banach.
+  let w : E := v
+  have hw : ‖w‖ ≠ 0 := norm_ne_zero_iff.2 hv
+  obtain ⟨φ, -, hφ⟩ := exists_dual_vector 𝕜 w hw
+  let ℓ : E →L[𝕜] 𝕜 := (‖w‖ : 𝕜)⁻¹ • φ
+  refine ⟨ℓ ∘ extChartAt I x,
+    ℓ.contDiff.contMDiff.contMDiffAt.comp x contMDiffAt_extChartAt, ?_⟩
+  have hmd : MDifferentiableAt I 𝓘(𝕜, E) (extChartAt I x) x :=
+    (contMDiffAt_extChartAt (I := I) (n := 1) (x := x)).mdifferentiableAt one_ne_zero
+  rw [ℓ.mvfderiv_comp_apply hmd]
+  have hchart : mvfderiv I (extChartAt I x) x v = w := by
+    rw [mvfderiv, mfderiv_extChartAt_self]
+    rfl
+  rw [hchart]
+  have hw𝕜 : (‖w‖ : 𝕜) ≠ 0 := by exact_mod_cast hw
+  simp [ℓ, hφ, inv_mul_cancel₀ hw𝕜]
+
+end TauCeti
