@@ -44,8 +44,7 @@ the linear coefficient `deriv (polylog n) 0 = 1` in every integer weight.
   `r < 1` and locally uniform convergence on `ball 0 1`.
 * `TauCeti.Polylog.hasFPowerSeriesOnBall_polylog`: formal power series representation at `0` on the
   open unit ball.
-* `TauCeti.Polylog.hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow`,
-  `TauCeti.Polylog.hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow_add_one`,
+* `TauCeti.Polylog.hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow_add_one`,
   `TauCeti.Polylog.hasDerivAt_polylog_tsum`, `TauCeti.Polylog.hasSum_deriv_polylog`,
   `TauCeti.Polylog.deriv_polylog_eq_tsum`, `TauCeti.Polylog.hasDerivAt_polylog_add_one_tsum`,
   `TauCeti.Polylog.hasSum_deriv_polylog_add_one`, and
@@ -183,14 +182,6 @@ theorem hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow_add_one (n : ℤ) {
       | succ k => exact ⟨k, rfl⟩
   rw [← hderiv]
   exact (hf.analyticAt_of_mem (mem_eball_zero_iff.mpr hz')).differentiableAt.hasDerivAt
-
-/-- On the open unit disc `‖z‖ < 1`, the power series
-`w ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1) ^ n` has complex derivative
-`∑' k : ℕ, z ^ k / (k + 1) ^ (n - 1)`. -/
-theorem hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
-    HasDerivAt (fun w : ℂ ↦ ∑' k : ℕ, w ^ (k + 1) / ((k : ℂ) + 1) ^ n)
-      (∑' k : ℕ, z ^ k / ((k : ℂ) + 1) ^ (n - 1)) z := by
-  simpa using hasDerivAt_tsum_pow_add_one_div_natCast_add_one_zpow_add_one (n - 1) hz
 
 /-- Radial integral of a single Taylor term of `-Complex.log (1 - t z)` against
 `(-Real.log t) ^ k / t`. -/
