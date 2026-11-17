@@ -380,6 +380,12 @@ theorem toPath_one : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
   ext t
   simp [toPath_apply]
 
+/-- Normalizing the reversal of a Moore loop gives the reversal of its normalization. -/
+@[simp]
+theorem toPath_symm (γ : MooreLoopSpace X x) : γ.symm.toPath = γ.toPath.symm := by
+  ext s
+  simp [unitInterval.toNNReal_symm, mul_tsub]
+
 /-- A loop on the unit interval at `x`, as a Moore loop of length one. -/
 def _root_.Path.toMooreLoop (p : Path x x) : MooreLoopSpace X x :=
   ⟨p.toMoorePath, Path.source_toMoorePath p, Path.target_toMoorePath p⟩
