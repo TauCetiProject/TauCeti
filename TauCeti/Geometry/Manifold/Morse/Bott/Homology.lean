@@ -93,172 +93,6 @@ universe u v w
 
 namespace TauCeti
 
-namespace SmoothEmbedding
-
-section Submanifold
-
-variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I ∞ M] {E' H' S P : Type*} [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
-  [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
-  (hn : (∞ : ℕ∞ω) ≠ 0)
-
-namespace IsNondegenerateCriticalSubmanifold
-
-omit [FiniteDimensional ℝ E'] [IsManifold J ∞ S] [NormedAddCommGroup P] [NormedSpace ℝ P]
-  [FiniteDimensional ℝ P] in
-/-- The image of the negative disc bundle under a map `Θ` putting `f` in the Morse–Bott normal
-form `f (Θ v) = c + ½ Hessₛ (v, v)` lies in the critical sublevel `{f ≤ c}`, since the normal
-Hessian is negative definite on the negative normal spaces. -/
-private theorem image_negativeDiscBundle_subset_sublevel
-    (h : i.IsNondegenerateCriticalSubmanifold f) {c ε : ℝ}
-    {g : RiemannianMetric fun s ↦ i.NormalSpace s hn}
-    {Θ : TotalSpace P (fun s ↦ i.NormalSpace s hn) → M}
-    (hΘf : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) :
-    Θ '' h.negativeDiscBundle hn P g ε ⊆ {y | f y ≤ c} := by
-  rintro _ ⟨x, hx, rfl⟩
-  have hle : h.normalHessian hn x.proj x.2 x.2 ≤ 0 := by
-    rcases eq_or_ne x.2 0 with h0 | h0
-    · simp [h0]
-    · exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn _
-        (IsCriticalSubmanifold.mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx) h0).le
-  rw [mem_ofPred_eq, hΘf x hx]
-  linarith
-
-/-- **The relative homology across the level of a Morse–Bott submanifold is carried by its
-negative disc bundle.** Let `i : S → M` be a nondegenerate critical submanifold of a smooth
-function `f` on a Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `S`
-nonempty and `f = c` along `i`, and let `g` be a smooth fibre metric on its normal bundle.
-
-Then there is a smooth partial diffeomorphism `Θ` from the total space of the normal bundle to
-`M`, defined on a neighbourhood of the zero section and sending it to `i`, which puts `f` in the
-Morse–Bott normal form `f (Θ v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` with the following
-property. Let `0 < ε < ε₀` be such that the band `f⁻¹[c - ε, c + ε]` is compact and all its
-critical points lie on `i`. Then the negative disc bundle `D_ε` relative to `g` lies in the source
-of `Θ`, the set `{f ≤ c - ε} ∪ Θ(D_ε)` lies in `{f ≤ c + ε}`, and the inclusion of pairs
-`({f ≤ c - ε} ∪ Θ(D_ε), {f ≤ c - ε}) ⟶ ({f ≤ c + ε}, {f ≤ c - ε})` induces isomorphisms on
-relative singular homology, in every degree and for every coefficient object. Such an `ε` exists
-only when `S` is compact, since the image of `i` is then the closed set of critical points of the
-compact band. -/
-theorem exists_isIso_singularHomologyMap_negativeDiscBundle [T2Space M]
-    [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
-    (hc : ∀ s, f (i s) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
-    (g : letI := i.normalSpaceFiberBundle hn hdim
-      letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
-    letI := i.normalSpaceFiberBundle hn hdim
-    letI := i.normalSpaceVectorBundle hn hdim
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
-      (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) ∧
-      ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
-        criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ range i →
-        h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆ Θ.source ∧
-        ∃ hA : {y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆
-            {y | f y ≤ c + ε},
-          ∀ {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Preadditive A]
-            [CategoryWithHomology A] (R : A) (n : ℕ),
-            IsIso ((TopPair.ofInclusion (X := TopCat.of M) (subset_union_left :
-                {y | f y ≤ c - ε} ⊆
-                  {y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g.toRiemannianMetric ε)
-              ).singularHomologyMap (TopPair.ofInclusionMap (Y := TopCat.of M) _
-                (sublevel_mono f (a := c - ε) (b := c + ε) (by linarith))
-                (ContinuousMap.inclusion hA) fun _ hx ↦ hx) R n) := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  by_cases hS : CompactSpace S
-  swap
-  · -- If `S` is not compact, no `ε` satisfies the hypotheses, and only the normal form remains.
-    obtain ⟨Θ, hΘz, hΘi, -, hΘf⟩ := h.exists_morseBott_partialDiffeomorph_normalBundle hn
-      (k := ⊤) (by simp) hdim isOpen_univ (subset_univ _) (hfs.contMDiffOn.of_le (by simp))
-    refine ⟨Θ, hΘz, hΘi, fun x hx ↦ by rw [hΘf x hx, hc], 1, one_pos,
-      fun ε hε _ hcompact hcrit ↦ ?_⟩
-    exact (hS (h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc
-      (hfs.of_le (by simp)) hc (by linarith) (by linarith) hcompact hcrit)).elim
-  obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
-    h.exists_sublevel_union_negativeDiscBundle_deformation hn hfs hc hdim g
-  refine ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
-  set D := h.negativeDiscBundle hn P g.toRiemannianMetric ε
-  obtain ⟨hD, r, -, ⟨G⟩⟩ := hmain ε ⟨hε, hεε₀⟩ hcompact hcrit
-  -- The disc bundle lies in the critical sublevel.
-  have hA : {y | f y ≤ c - ε} ∪ Θ '' D ⊆ {y | f y ≤ c + ε} :=
-    union_subset (sublevel_mono f (by linarith)) <|
-      (h.image_negativeDiscBundle_subset_sublevel hn fun x hx ↦ hΘf x (hD hx)).trans
-        (sublevel_mono f (by linarith))
-  -- The deformation retracts `{f ≤ c + ε}` onto `{f ≤ c - ε} ∪ Θ(D_ε)`, fixing it pointwise.
-  refine ⟨hD, hA, fun {A} _ _ _ _ R n ↦
-    TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel (X := TopCat.of M)
-      subset_union_left hA ((ContinuousMap.inclusion inter_subset_right).comp r)
-      (G.cast (ContinuousMap.ext fun _ ↦ rfl) rfl) R n⟩
-
-/-- **The relative homology of a critical band of a Morse–Bott submanifold.** Let `i : S → M` be
-a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff, second-countable,
-finite-dimensional, boundaryless manifold, with `S` nonempty and `f = c` along `i`, and let `g`
-be a smooth fibre metric on its normal bundle. Let `a < c < b` be such that the band `f⁻¹[a, b]`
-is compact and all its critical points lie on `i`; then `S` is compact.
-
-Then there is a smooth partial diffeomorphism `Θ` from the total space of the normal bundle to
-`M`, defined on a neighbourhood of the zero section and sending it to `i`, which puts `f` in the
-Morse–Bott normal form `f (Θ v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` such that for every
-`0 < ε < ε₀` the negative disc bundle `D_ε` relative to `g` lies in the source of `Θ` and the
-relative singular homology `Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to
-`Hₙ({f ≤ c - ε} ∪ Θ(D_ε), {f ≤ c - ε})`, in every degree and for every coefficient object. -/
-theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscBundle [T2Space M]
-    [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
-    (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
-    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
-    (g : letI := i.normalSpaceFiberBundle hn hdim
-      letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
-    letI := i.normalSpaceFiberBundle hn hdim
-    letI := i.normalSpaceVectorBundle hn hdim
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
-      (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) ∧
-      ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
-        h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆ Θ.source ∧
-        ∀ {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) (n : ℕ),
-          Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
-            (TopPair.ofInclusion (X := TopCat.of M) (subset_union_left :
-              {y | f y ≤ c - ε} ⊆
-                {y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g.toRiemannianMetric ε)
-              ).singularHomology R n) := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
-    h.exists_isIso_singularHomologyMap_negativeDiscBundle hn hfs hc hdim g
-  refine ⟨Θ, hΘz, hΘi, hΘf, min ε₀ (min (c - a) (b - c)),
-    lt_min hε₀ (lt_min (by linarith) (by linarith)), fun ε hε ↦ ?_⟩
-  obtain ⟨hε0, hεm⟩ := hε
-  have hε₁ : ε < ε₀ := hεm.trans_le (min_le_left _ _)
-  have hεa : ε < c - a := hεm.trans_le ((min_le_right _ _).trans (min_le_left _ _))
-  have hεb : ε < b - c := hεm.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b := Icc_subset_Icc (by linarith) (by linarith)
-  have hcompact' : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous) (preimage_mono hε')
-  -- Every critical point of the band lies on the submanifold, hence on the level `c`.
-  have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
-    obtain ⟨s, rfl⟩ := hcrit ⟨hx, hfx⟩
-    exact hc s
-  obtain ⟨hD, _, hiso⟩ := hmain ε hε0 hε₁ hcompact' fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
-  refine ⟨hD, fun {A} _ _ _ R n ↦ ⟨singularHomologySublevelPairIsoOfCriticalValue hfs hac hcb
-    (by linarith : c - ε < c) (by linarith : c < c + ε) hcompact hcompact' hlev
-    (fun x hx hfx ↦ hlev x hx (hε' hfx)) R n ≪≫ (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
-
-end IsNondegenerateCriticalSubmanifold
-
-end Submanifold
-
-end SmoothEmbedding
-
 section Family
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -328,13 +162,20 @@ theorem SmoothEmbedding.exists_isIso_singularHomologyMap_iUnion_negativeDiscBund
     exists_sublevel_union_iUnion_negativeDiscBundle_deformation hn h hfs hc hd hdim g
   refine ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
   obtain ⟨hD, r, -, ⟨G⟩⟩ := hmain ε ⟨hε, hεε₀⟩ hcompact hcrit
-  -- Each disc bundle lies in the critical sublevel.
+  -- Each disc bundle lies in the critical sublevel, since the normal Hessian is negative on the
+  -- negative normal spaces.
   have hA : {y | f y ≤ c - ε} ∪
       ⋃ j, Θ j '' (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε ⊆
-        {y | f y ≤ c + ε} :=
-    union_subset (sublevel_mono f (by linarith)) <| iUnion_subset fun j ↦
-      ((h j).image_negativeDiscBundle_subset_sublevel hn fun x hx ↦ hΘf j x (hD j hx)).trans
-        (sublevel_mono f (by linarith))
+        {y | f y ≤ c + ε} := by
+    refine union_subset (sublevel_mono f (by linarith)) <| iUnion_subset fun j ↦ ?_
+    rintro _ ⟨x, hx, rfl⟩
+    have hle : (h j).normalHessian hn x.proj x.2 x.2 ≤ 0 := by
+      rcases eq_or_ne x.2 0 with h0 | h0
+      · simp [h0]
+      · exact ((h j).normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn _
+          (IsCriticalSubmanifold.mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx) h0).le
+    rw [mem_ofPred_eq, hΘf j x (hD j hx)]
+    linarith
   -- The deformation retracts `{f ≤ c + ε}` onto `{f ≤ c - ε} ∪ ⋃ j, Θ j (D j ε)`, fixing it
   -- pointwise.
   refine ⟨hD, hA, fun {A} _ _ _ _ R n ↦
@@ -471,10 +312,143 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_iUnion_nega
     (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hfx⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j)
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.
-  obtain ⟨j, s, rfl⟩ := mem_iUnion.1 (h.criticalPoints_subset_iUnion_range hx)
-  exact mem_iUnion.2 ⟨⟨j, fun s' ↦ (h.subsingleton_image_range hn j (mem_image_of_mem f
-    (mem_range_self s')) (mem_image_of_mem f (mem_range_self s))).trans (hcrit _ hx hfx)⟩, s, rfl⟩
+  exact h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)
 
 end Family
+
+namespace SmoothEmbedding
+
+section Submanifold
+
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] {E' H' S P : Type*} [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
+  [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
+  (hn : (∞ : ℕ∞ω) ≠ 0)
+
+
+namespace IsNondegenerateCriticalSubmanifold
+
+/-- **The relative homology across the level of a Morse–Bott submanifold is carried by its
+negative disc bundle.** Let `i : S → M` be a nondegenerate critical submanifold of a smooth
+function `f` on a Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `S`
+nonempty and `f = c` along `i`, and let `g` be a smooth fibre metric on its normal bundle.
+
+Then there is a smooth partial diffeomorphism `Θ` from the total space of the normal bundle to
+`M`, defined on a neighbourhood of the zero section and sending it to `i`, which puts `f` in the
+Morse–Bott normal form `f (Θ v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` with the following
+property. Let `0 < ε < ε₀` be such that the band `f⁻¹[c - ε, c + ε]` is compact and all its
+critical points lie on `i`. Then the negative disc bundle `D_ε` relative to `g` lies in the source
+of `Θ`, the set `{f ≤ c - ε} ∪ Θ(D_ε)` lies in `{f ≤ c + ε}`, and the inclusion of pairs
+`({f ≤ c - ε} ∪ Θ(D_ε), {f ≤ c - ε}) ⟶ ({f ≤ c + ε}, {f ≤ c - ε})` induces isomorphisms on
+relative singular homology, in every degree and for every coefficient object. Such an `ε` exists
+only when `S` is compact, since the image of `i` is then the closed set of critical points of the
+compact band. -/
+theorem exists_isIso_singularHomologyMap_negativeDiscBundle [T2Space M]
+    [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+      (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) ∧
+      ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
+        criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ range i →
+        h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆ Θ.source ∧
+        ∃ hA : {y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆
+            {y | f y ≤ c + ε},
+          ∀ {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Preadditive A]
+            [CategoryWithHomology A] (R : A) (n : ℕ),
+            IsIso ((TopPair.ofInclusion (X := TopCat.of M) (subset_union_left :
+                {y | f y ≤ c - ε} ⊆
+                  {y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g.toRiemannianMetric ε)
+              ).singularHomologyMap (TopPair.ofInclusionMap (Y := TopCat.of M) _
+                (sublevel_mono f (a := c - ε) (b := c + ε) (by linarith))
+                (ContinuousMap.inclusion hA) fun _ hx ↦ hx) R n) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  by_cases hS : CompactSpace S
+  swap
+  · -- If `S` is not compact, no `ε` satisfies the hypotheses, and only the normal form remains.
+    obtain ⟨Θ, hΘz, hΘi, -, hΘf⟩ := h.exists_morseBott_partialDiffeomorph_normalBundle hn
+      (k := ⊤) (by simp) hdim isOpen_univ (subset_univ _) (hfs.contMDiffOn.of_le (by simp))
+    refine ⟨Θ, hΘz, hΘi, fun x hx ↦ by rw [hΘf x hx, hc], 1, one_pos,
+      fun ε hε _ hcompact hcrit ↦ ?_⟩
+    exact (hS (h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc
+      (hfs.of_le (by simp)) hc (by linarith) (by linarith) hcompact hcrit)).elim
+  obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
+    exists_isIso_singularHomologyMap_iUnion_negativeDiscBundle (ι := Unit) (S := fun _ ↦ S)
+      (P := fun _ ↦ P) (J := fun _ ↦ J) (i := fun _ ↦ i) hn (fun _ ↦ h) hfs (fun _ ↦ hc)
+      Subsingleton.pairwise (fun _ ↦ hdim) (fun _ ↦ g)
+  refine ⟨Θ (), hΘz (), hΘi (), hΘf (), ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
+  have hmain := hmain ε hε hεε₀ hcompact (by rwa [iUnion_const])
+  rw [show (⋃ a, Θ a '' h.negativeDiscBundle hn P g.toRiemannianMetric ε) =
+    Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from
+      Set.ext fun _ ↦ by simp only [mem_iUnion, Unique.exists_iff]] at hmain
+  exact ⟨hmain.1 (), hmain.2⟩
+
+/-- **The relative homology of a critical band of a Morse–Bott submanifold.** Let `i : S → M` be
+a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff, second-countable,
+finite-dimensional, boundaryless manifold, with `S` nonempty and `f = c` along `i`, and let `g`
+be a smooth fibre metric on its normal bundle. Let `a < c < b` be such that the band `f⁻¹[a, b]`
+is compact and all its critical points lie on `i`; then `S` is compact.
+
+Then there is a smooth partial diffeomorphism `Θ` from the total space of the normal bundle to
+`M`, defined on a neighbourhood of the zero section and sending it to `i`, which puts `f` in the
+Morse–Bott normal form `f (Θ v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` such that for every
+`0 < ε < ε₀` the negative disc bundle `D_ε` relative to `g` lies in the source of `Θ` and the
+relative singular homology `Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to
+`Hₙ({f ≤ c - ε} ∪ Θ(D_ε), {f ≤ c - ε})`, in every degree and for every coefficient object. -/
+theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscBundle [T2Space M]
+    [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+      (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) ∧
+      ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
+        h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆ Θ.source ∧
+        ∀ {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) (n : ℕ),
+          Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
+            (TopPair.ofInclusion (X := TopCat.of M) (subset_union_left :
+              {y | f y ≤ c - ε} ⊆
+                {y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g.toRiemannianMetric ε)
+              ).singularHomology R n) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
+    hc hac.le hcb.le hcompact hcrit
+  obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
+    nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle (ι := Unit)
+      (S := fun _ ↦ S) (P := fun _ ↦ P) (J := fun _ ↦ J) (i := fun _ ↦ i) hn (fun _ ↦ h) hfs
+      (fun _ ↦ hc) Subsingleton.pairwise hac hcb hcompact (by rwa [iUnion_const])
+      (fun _ ↦ hdim) (fun _ ↦ g)
+  refine ⟨Θ (), hΘz (), hΘi (), hΘf (), ε₀, hε₀, fun ε hε ↦ ?_⟩
+  have hmain := hmain ε hε
+  rw [show (⋃ a, Θ a '' h.negativeDiscBundle hn P g.toRiemannianMetric ε) =
+    Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from
+      Set.ext fun _ ↦ by simp only [mem_iUnion, Unique.exists_iff]] at hmain
+  exact ⟨hmain.1 (), hmain.2⟩
+
+end IsNondegenerateCriticalSubmanifold
+
+end Submanifold
+
+end SmoothEmbedding
 
 end TauCeti
