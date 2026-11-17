@@ -202,20 +202,6 @@ end Attachment
 
 section ThomSpace
 
-/-- Every point of a one-point space lies in its skeleta of positive dimension, for the discrete
-CW structure. -/
-private theorem mem_skeletonLT_punit {n : ℕ} (hn : n ≠ 0) (x : PUnit.{u + 1}) :
-    x ∈ (skeletonLT (univ : Set PUnit.{u + 1}) n : Set PUnit.{u + 1}) := by
-  obtain ⟨m, k, hx⟩ : ∃ m, ∃ k : cell (univ : Set PUnit.{u + 1}) m, x ∈ openCell m k := by
-    simpa using
-      (CWComplex.iUnion_openCell_eq_complex (C := (univ : Set PUnit.{u + 1}))).symm.subset
-        (mem_univ x)
-  cases m with
-  | zero =>
-    exact RelCWComplex.mem_skeletonLT_iff.2
-      (.inr ⟨0, by exact_mod_cast Nat.pos_of_ne_zero hn, k, hx⟩)
-  | succ m => exact isEmptyElim k
-
 /-- Collapsing the sphere bundle to a point is cellular: the part in `S(E)` of the boundary of an
 `n`-cell of `D(E)` is mapped into the skeleton of dimension `n` of the point. -/
 private theorem const_mem_skeletonLT_of_mem_cellFrontier (n : ℕ)
@@ -229,7 +215,8 @@ private theorem const_mem_skeletonLT_of_mem_cellFrontier (n : ℕ)
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [cellFrontier_zero_eq_empty] at hx
     exact hx.elim
-  · exact mem_skeletonLT_punit hn.ne' _
+  · rw [skeletonLT_univ_eq_univ_of_ne_zero hn.ne']
+    exact mem_univ _
 
 /-- **The Thom space of a bundle over a CW complex is a CW complex.** If `B` is a CW complex, the
 Thom space `Th(E) = D(E)/S(E)` is a CW complex with one `0`-cell, the basepoint, and one
@@ -267,6 +254,7 @@ theorem thomSpaceCWComplex_map_inl {n : ℕ} (c : cell (univ : Set PUnit.{u + 1}
 /-- The characteristic map of the cell of the Thom space over an `m`-cell of `B` is the
 characteristic map of the corresponding cell of the disc bundle, followed by the collapse map
 `D(E) → Th(E)`. -/
+@[simp]
 theorem thomSpaceCWComplex_map_inr {n : ℕ}
     (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
     (x : closedBall (0 : Fin n → ℝ) 1) :
