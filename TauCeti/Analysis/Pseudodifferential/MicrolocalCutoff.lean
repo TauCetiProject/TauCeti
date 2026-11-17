@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Normalize
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # Microlocal cutoffs
@@ -29,7 +31,8 @@ classical symbol `c` of order `0` that is the identity near every point of `K ×
 of norm greater than `2`, whose principal symbol is the identity on `K × (F \ {0})`, and which
 vanishes outside `L × G` for a compact `L ⊆ U` and a closed cone `G` with `G \ {0} ⊆ Γ`. Since
 `L × G` is again a compact set of positions times a closed cone, cutoffs can be nested: a second
-cutoff can be chosen to be the identity near the region where the first one does not vanish.
+cutoff can be chosen to be the identity near every point of `L × G` at frequencies of norm greater
+than `2`.
 
 A cutoff that is the identity near the region where a symbol `b` lives does not change `b` at the
 level of operators, up to smoothing operators: `Op(c) Op(b)` and `Op(b) Op(c)` are `Op(b)` modulo
@@ -120,16 +123,6 @@ namespace Symbol
 
 variable {m : ℝ} {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
 
-/-- A function equal near `(x, ξ)` to a constant has constant frequency slice at `x` near `ξ` and
-constant position slice at `ξ` near `x`. -/
-private theorem eventuallyEq_slices {A : Type*} {f : CoordinateSpace n × CoordinateSpace n → A}
-    {x ξ : CoordinateSpace n} {T : A} (h : f =ᶠ[𝓝 (x, ξ)] fun _ ↦ T) :
-    (fun η ↦ f (x, η)) =ᶠ[𝓝 ξ] (fun _ ↦ f (x, ξ)) ∧
-      (fun y ↦ f (y, ξ)) =ᶠ[𝓝 x] fun _ ↦ f (x, ξ) := by
-  rw [h.self_of_nhds]
-  exact ⟨h.comp_tendsto ((continuous_const.prodMk continuous_id).tendsto ξ),
-    h.comp_tendsto ((continuous_id.prodMk continuous_const).tendsto x)⟩
-
 /-- **A cutoff equal to the identity where `b` lives is a left identity for `b`.** Let `b` have
 compact spatial support, and let `c` be a symbol of order `0` such that at every `(x, ξ)` with
 `‖ξ‖ ≥ R` either `b` vanishes near `(x, ξ)` or `c` is the identity near `(x, ξ)`. Then
@@ -140,8 +133,7 @@ theorem isSmoothing_sharp_sub_of_eventuallyEq_id_left [CompleteSpace W] {c : Sym
       c.coefficient =ᶠ[𝓝 (x, ξ)] fun _ ↦ ContinuousLinearMap.id ℂ W) :
     (c.sharp b hb - inclusion (zero_add m).ge b).IsSmoothing := by
   have h₁ := isSmoothing_sharp_sub_comp_of_eventuallyEq hb R fun x ξ hξ ↦
-    (h x ξ hξ).elim (fun hb ↦ Or.inr (eventuallyEq_slices hb).2)
-      fun hc ↦ Or.inl (eventuallyEq_slices hc).1
+    (h x ξ hξ).elim (fun hb ↦ Or.inr hb.prodMk_left_nhds) fun hc ↦ Or.inl hc.prodMk_right_nhds
   have h₂ : (c.comp b - inclusion (zero_add m).ge b).IsSmoothing :=
     isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
       rcases h x ξ hξ with hb | hc
@@ -159,8 +151,7 @@ theorem isSmoothing_sharp_sub_of_eventuallyEq_id_right [CompleteSpace V] [Comple
       c.coefficient =ᶠ[𝓝 (x, ξ)] fun _ ↦ ContinuousLinearMap.id ℂ V) :
     (b.sharp c hc - inclusion (add_zero m).ge b).IsSmoothing := by
   have h₁ := isSmoothing_sharp_sub_comp_of_eventuallyEq hc R fun x ξ hξ ↦
-    (h x ξ hξ).elim (fun hb ↦ Or.inl (eventuallyEq_slices hb).1)
-      fun hc ↦ Or.inr (eventuallyEq_slices hc).2
+    (h x ξ hξ).elim (fun hb ↦ Or.inl hb.prodMk_right_nhds) fun hc ↦ Or.inr hc.prodMk_left_nhds
   have h₂ : (b.comp c - inclusion (add_zero m).ge b).IsSmoothing :=
     isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
       rcases h x ξ hξ with hb | hc
@@ -174,8 +165,7 @@ namespace ClassicalSymbol
 
 /-- **Existence of microlocal cutoffs.** Let `K` be a compact set inside an open set `U` of
 positions, and `F` a closed cone inside an open cone `Γ` of frequencies, in the sense that every
-nonzero `ξ ∈ F` lies in `Γ`. There is a classical symbol `c` of order `0`, of the form
-`χ(ξ) φ(x) ψ(ξ / ‖ξ‖) • id`, such that
+nonzero `ξ ∈ F` lies in `Γ`. There is a classical symbol `c` of order `0` such that
 
 * `c` is the identity near every `(x, ξ) ∈ K × F` with `‖ξ‖ > 2`;
 * its principal symbol is the identity at every `(x, ξ) ∈ K × F` with `ξ ≠ 0`;
@@ -226,8 +216,7 @@ theorem exists_microlocalCutoff {K U F Γ : Set (CoordinateSpace n)} (hK : IsCom
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
     have hnorm : Tendsto (fun p : CoordinateSpace n × CoordinateSpace n ↦
         NormedSpace.normalize p.2) (𝓝 (x, ξ)) (𝓝 (NormedSpace.normalize ξ)) :=
-      (NormedSpace.contDiffAt_normalize (n := 0) hξ0).continuousAt.tendsto.comp
-        (continuous_snd.tendsto (x, ξ))
+      (continuous_snd.tendsto (x, ξ)).normalize hξ0
     filter_upwards [continuous_fst.tendsto (x, ξ) |>.eventually (hφ1 x hx),
       hnorm.eventually (hψ1 _ (hdir ξ hξF hξ0)),
       (isOpen_lt continuous_const (continuous_norm.comp continuous_snd)).mem_nhds hξ]

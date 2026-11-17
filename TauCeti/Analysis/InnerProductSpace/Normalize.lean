@@ -22,10 +22,6 @@ that are positively homogeneous of degree zero, such as the angular cutoffs of m
 
 * `NormedSpace.contDiffAt_normalize`: `normalize` is smooth at every nonzero vector.
 * `NormedSpace.contDiffOn_normalize`: `normalize` is smooth on the complement of the origin.
-* `NormedSpace.continuousOn_normalize`: on any real normed space, `normalize` is continuous on the
-  complement of the origin.
-* `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
-  over a closed set `S` of directions is closed.
 -/
 
 public section
@@ -33,23 +29,6 @@ public section
 open scoped ContDiff
 
 namespace NormedSpace
-
-/-- The normalization `x ↦ ‖x‖⁻¹ • x` is continuous on the complement of the origin of a real
-normed space. -/
-theorem continuousOn_normalize {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] :
-    ContinuousOn (normalize : F → F) {x | x ≠ 0} :=
-  (continuous_norm.continuousOn.inv₀ fun _ hx ↦ norm_ne_zero_iff.2 hx).smul continuousOn_id
-
-/-- The cone over a closed set `S` of directions, the set of vectors that are zero or whose
-normalization lies in `S`, is closed. -/
-theorem isClosed_setOf_eq_zero_or_normalize_mem {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {S : Set F} (hS : IsClosed S) :
-    IsClosed {x : F | x = 0 ∨ normalize x ∈ S} := by
-  have : {x : F | x = 0 ∨ normalize x ∈ S}ᶜ = {x | x ≠ 0} ∩ normalize ⁻¹' Sᶜ := by
-    ext x
-    simp [not_or]
-  rw [← isOpen_compl_iff, this]
-  exact continuousOn_normalize.isOpen_inter_preimage isOpen_ne hS.isOpen_compl
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : WithTop ℕ∞}
 
