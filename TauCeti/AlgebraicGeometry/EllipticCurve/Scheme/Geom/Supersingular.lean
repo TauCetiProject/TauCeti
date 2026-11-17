@@ -74,6 +74,11 @@ Weierstrass equation it is supersingularity in the sense of `WeierstrassCurve.Is
 def IsSupersingular (p : ℕ) (E : EllipticCurveGeom (Spec (.of K))) : Prop :=
   ConnectedSpace (E.torsion p).X.left
 
+/-- An elliptic curve `E` over a field is supersingular at `p` exactly when `E[p]` is connected. -/
+theorem isSupersingular_iff {p : ℕ} {E : EllipticCurveGeom (Spec (.of K))} :
+    E.IsSupersingular p ↔ ConnectedSpace (E.torsion p).X.left :=
+  Iff.rfl
+
 variable {Ω : Type u} [Field Ω] [IsAlgClosed Ω] [Algebra K Ω] {E : EllipticCurveGeom (Spec (.of K))}
   {E' : EllipticCurveGeom (Spec (.of Ω))} {g : E'.carrier ⟶ E.carrier}
 
@@ -90,19 +95,14 @@ theorem isSupersingular_iff_of_isPullback
   have : IsFinite (E.torsion p).X.hom := E.isFinite_torsion_hom (by exact_mod_cast hp)
   have hs : (1 : 𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion p).X).left ≫ (E.torsion p).X.hom = 𝟙 _ :=
     Over.w _
-  unfold IsSupersingular
-  rw [Scheme.Hom.connectedSpace_iff_forall_eq_comp_of_isAlgClosed (Ω := Ω) _ hs]
+  rw [isSupersingular_iff,
+    Scheme.Hom.connectedSpace_iff_forall_eq_comp_of_isAlgClosed (Ω := Ω) _ hs]
   set q := Spec.map (CommRingCat.ofHom (algebraMap K Ω))
   -- `E'[p]` is the base change of `E[p]` along `q`, through `t`
   set t := torsionMap p hg h0
   have ht : IsPullback t (E'.torsion p).X.hom (E.torsion p).X.hom q := isPullback_torsionMap p hg h0
   -- `t` carries the zero point of `E'[p]` to the zero point of `E[p]`
-  have h1 : (1 : 𝟙_ (Over (Spec (.of Ω))) ⟶ (E'.torsion p).X).left ≫ t =
-      q ≫ (1 : 𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion p).X).left := by
-    rw [← cancel_mono (E.torsionι p).left, Category.assoc, torsionMap_torsionι,
-      ← Over.comp_left_assoc, Category.assoc, ← Over.comp_left, MonObj.one_comp, MonObj.one_comp,
-      hom_one_left, hom_one_left]
-    simp [h0]
+  have h1 := one_left_torsionMap (p : ℤ) hg h0
   refine ⟨fun h y ↦ Over.OverMorphism.ext (ht.hom_ext ?_ ?_), fun h a ha ↦ ?_⟩
   · rw [h1]
     exact h _ (by rw [Category.assoc, ht.w, ← Category.assoc, Over.w y]; simp)
@@ -110,7 +110,7 @@ theorem isSupersingular_iff_of_isPullback
   · -- `a` is the image under `t` of the point of `E'[p]` it defines, which is zero
     have hy := h (Over.homMk (ht.lift a (𝟙 _) (by simpa using ha)) (by simp))
     rw [← h1, ← ht.lift_fst a (𝟙 _) (by simpa using ha), ← hy]
-    rfl
+    simp [t]
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
