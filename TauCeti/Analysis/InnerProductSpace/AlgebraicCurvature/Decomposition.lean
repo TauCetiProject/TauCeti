@@ -25,14 +25,16 @@ where:
   in every dimension, agrees with `r - schouten r ⊙ g` whenever `n ≠ 2`, and vanishes identically
   in dimensions `n ≤ 3`.
 
-The three linear maps `scalarPart`, `tracelessRicciPart`, and `weyl` on `FourTensor V` are
-mutually orthogonal idempotents in every dimension. On the exterior square `⋀[ℝ]^2 V`, the
-corresponding bivector curvature operator decomposes in the Böhm–Wilking form
+On all of `FourTensor V`, the three linear maps `scalarPart`, `tracelessRicciPart`, and `weyl` are
+idempotent and mutually annihilating (`P ∘ Q = 0` for distinct `P, Q`) in every dimension, and the
+bivector curvature operator decomposes in the Böhm–Wilking form
 
 `curvatureOperator r = (Scal(r) / (n (n - 1))) • (id ∧ id) + (2 / (n - 2)) • (Ric₀End(r) ∧ id) + W`,
 
-whose three summands are pairwise orthogonal with respect to the Hilbert–Schmidt trace pairing
-`(A, B) ↦ tr(A ∘ B)`.
+where `W = curvatureOperator (weyl r)`. Restricted to algebraic curvature tensors, the three
+projections preserve `algebraicCurvatureSubmodule V`, and the three summands of
+`curvatureOperator r` are symmetric and pairwise orthogonal with respect to the Hilbert–Schmidt
+trace pairing `(A, B) ↦ tr(A ∘ B)`.
 
 ## Main definitions
 
@@ -55,8 +57,12 @@ whose three summands are pairwise orthogonal with respect to the Hilbert–Schmi
 * `TauCeti.FourTensor.IsAlgebraicCurvature.ricci_weyl` and
   `TauCeti.FourTensor.IsAlgebraicCurvature.scalar_weyl`: the Weyl component of an algebraic
   curvature tensor is trace-free in every dimension.
-* `TauCeti.FourTensor.curvatureOperator_eq_add`: the Böhm–Wilking bivector operator decomposition,
-  together with Hilbert–Schmidt orthogonality of its three summands.
+* `TauCeti.FourTensor.curvatureOperator_eq_add`: the Böhm–Wilking bivector operator decomposition
+  on `FourTensor V`.
+* `TauCeti.FourTensor.IsAlgebraicCurvature.trace_curvatureOperator_weyl_comp_scalarPart`,
+  `TauCeti.FourTensor.IsAlgebraicCurvature.trace_curvatureOperator_weyl_comp_tracelessRicciPart`,
+  and `TauCeti.FourTensor.trace_curvatureOperator_tracelessRicciPart_comp_scalarPart`: pairwise
+  Hilbert–Schmidt orthogonality of the three summands for algebraic curvature tensors.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.weyl_eq_zero_of_finrank_le_three` and
   `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureOperator_eq_of_finrank_eq_three`: vanishing of
   the Weyl tensor in dimensions `≤ 3` and the resulting three-dimensional curvature formula.

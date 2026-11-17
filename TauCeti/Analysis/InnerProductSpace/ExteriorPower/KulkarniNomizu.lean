@@ -73,7 +73,7 @@ theorem inner_wedgeEnd_left (f g : E →ₗ[ℝ] F) (x : ⋀[ℝ]^2 E) (y : ⋀[
     ring
   exact LinearMap.congr_fun₂ hbil x y
 
-/-- The Hilbert–Schmidt adjoint of `f ∧ g` on `⋀[ℝ]^2` is `f* ∧ g*`. -/
+/-- The adjoint of `f ∧ g` on `⋀[ℝ]^2` is `f* ∧ g*`. -/
 @[simp]
 theorem adjoint_wedgeEnd (f g : E →ₗ[ℝ] F) :
     (wedgeEnd f g).adjoint = wedgeEnd f.adjoint g.adjoint := by

@@ -467,7 +467,7 @@ theorem IsAlgebraicCurvature.scalar_eq_two_mul_trace_curvatureOperator {r : Four
     scalar r = 2 * LinearMap.trace ℝ (⋀[ℝ]^2 V) (curvatureOperator r) :=
   FourTensor.scalar_eq_two_mul_trace_curvatureOperator hr.antisymm_first hr.antisymm_last
 
-/-- Twice the Hilbert–Schmidt pairing of `curvatureOperator r` with `A ∧ id` equals the contraction
+/-- Twice the trace pairing `tr(curvatureOperator r ∘ (A ∧ id))` equals the contraction
 of `ricci r` against `A` in any orthonormal basis. -/
 theorem two_mul_trace_curvatureOperator_comp_wedgeEnd_id {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {r : FourTensor V}
