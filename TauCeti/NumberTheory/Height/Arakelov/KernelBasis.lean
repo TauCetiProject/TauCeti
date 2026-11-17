@@ -15,6 +15,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PlaceDecomposi
 import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Estimates
 import TauCeti.LinearAlgebra.Matrix.Rank
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
 
@@ -247,38 +248,6 @@ end Extraction
 
 section UnitBallCube
 
-/-- An `m`-dimensional hypercube `[-1/√m, 1/√m]^m` (`0 < m`) lies in the closed Euclidean unit ball
-of `ℝ^m`, giving the Gamma-free lower bound `(2 / √m) ^ m ≤ ω_m`. -/
-private theorem two_div_sqrt_pow_le_volume_real_unitBall {m : ℕ} (hm : 0 < m) :
-    (2 / √(m : ℝ)) ^ m ≤ volume.real (ball (0 : EuclideanSpace ℝ (Fin m)) 1) := by
-  have hm_pos : (0 : ℝ) < m := Nat.cast_pos.2 hm
-  set r : ℝ := (√(m : ℝ))⁻¹
-  let C : Set (Fin m → ℝ) := univ.pi fun _ : Fin m ↦ Icc (-r) r
-  have hsub : C ⊆ (@WithLp.toLp 2 (Fin m → ℝ)) ⁻¹' closedBall (0 : EuclideanSpace ℝ (Fin m)) 1 := by
-    intro x hx
-    rw [mem_preimage, mem_closedBall_zero_iff]
-    have hsq : ‖WithLp.toLp 2 x‖ ^ 2 ≤ 1 := by
-      rw [PiLp.norm_sq_eq_of_L2]
-      refine (Finset.sum_le_sum fun i _ ↦ ?_).trans_eq ?_ (b := ∑ _ : Fin m, r ^ 2)
-      · simpa [Real.norm_eq_abs, sq_abs] using
-          pow_le_pow_left₀ (abs_nonneg _) (abs_le.2 (hx i (mem_univ i))) 2
-      · simp [r, inv_pow, Real.sq_sqrt hm_pos.le, mul_inv_cancel₀ hm_pos.ne']
-    exact (abs_le_of_sq_le_sq' (by simpa using hsq) zero_le_one).2
-  have : Nonempty (Fin m) := ⟨⟨0, hm⟩⟩
-  have hnonneg : 0 ≤ 2 / √(m : ℝ) := by positivity
-  have hC_vol : volume C = ENNReal.ofReal ((2 / √(m : ℝ)) ^ m) := by
-    have hr2 : r - -r = 2 / √(m : ℝ) := by simp [r]; ring
-    rw [volume_pi_pi]
-    simp_rw [Real.volume_Icc, hr2]
-    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, ← ENNReal.ofReal_pow hnonneg]
-  have hle : volume C ≤ volume (ball (0 : EuclideanSpace ℝ (Fin m)) 1) :=
-    (measure_mono hsub).trans_eq <| by
-      rw [(PiLp.volume_preserving_toLp (Fin m)).measure_preimage
-        measurableSet_closedBall.nullMeasurableSet, Measure.addHaar_closedBall_eq_addHaar_ball]
-  rw [hC_vol] at hle
-  simpa [ENNReal.toReal_ofReal (pow_nonneg hnonneg m), measureReal_def] using
-    ENNReal.toReal_mono measure_ball_lt_top.ne hle
-
 /-- Across all archimedean places of `K`, the unit-ball volume factor is bounded by `√k ^ k`. -/
 private theorem unitBall_factor_rpow_le_sqrt_pow (K : Type*) [Field K] [NumberField K] (k : ℕ) :
     (((2 : ℝ) ^ k / volume.real (ball (0 : EuclideanSpace ℝ (Fin k)) 1)) ^ nrRealPlaces K *
@@ -294,14 +263,19 @@ private theorem unitBall_factor_rpow_le_sqrt_pow (K : Type*) [Field K] [NumberFi
     ENNReal.toReal_pos (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne
   have hreal :
       (2 : ℝ) ^ k / volume.real (ball (0 : EuclideanSpace ℝ (Fin k)) 1) ≤ √(k : ℝ) ^ k := by
-    have h1 := two_div_sqrt_pow_le_volume_real_unitBall hk
-    rw [div_pow] at h1
+    have : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
+    have h1 := EuclideanSpace.two_mul_div_sqrt_card_pow_le_volume_real_ball
+      (0 : EuclideanSpace ℝ (Fin k)) zero_le_one
+    rw [mul_one, Fintype.card_fin, div_pow] at h1
     exact (div_le_iff₀ (hω_pos k)).2
       (((div_le_iff₀ (pow_pos hsqrt_pos k)).1 h1).trans_eq (mul_comm _ _))
   have hcomplex :
       (2 : ℝ) ^ k / volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * k))) 1) ≤
         √(k : ℝ) ^ (2 * k) := by
-    have h2 := two_div_sqrt_pow_le_volume_real_unitBall (Nat.mul_pos two_pos hk)
+    have : Nonempty (Fin (2 * k)) := ⟨⟨0, Nat.mul_pos two_pos hk⟩⟩
+    have h2 := EuclideanSpace.two_mul_div_sqrt_card_pow_le_volume_real_ball
+      (0 : EuclideanSpace ℝ (Fin (2 * k))) zero_le_one
+    rw [mul_one, Fintype.card_fin] at h2
     have hlhs : (2 / √((2 * k : ℕ) : ℝ)) ^ (2 * k) = (2 : ℝ) ^ k / √(k : ℝ) ^ (2 * k) := by
       rw [pow_mul, pow_mul (√(k : ℝ)) 2 k, Real.sq_sqrt hk_pos.le, ← div_pow]
       congr 1
@@ -349,9 +323,8 @@ private theorem prod_successiveMin_rpow_inv_le {ι : Type*} [Fintype ι] [Linear
   have hD : D = r₁ + 2 * r₂ := (card_add_two_mul_card_eq_rank (K := K)).symm
   have htwo :
       (2 : ℝ) ^ (D * k) * ((2⁻¹ : ℝ) ^ r₂) ^ k = (2 : ℝ) ^ (r₁ * k) * (2 : ℝ) ^ (r₂ * k) := by
-    rw [hD, add_mul, pow_add, ← pow_mul (2⁻¹ : ℝ),
-      show 2 * r₂ * k = r₂ * k + r₂ * k by ring, pow_add (2 : ℝ) (r₂ * k), mul_assoc, mul_assoc,
-      ← mul_pow, mul_inv_cancel₀ two_ne_zero, one_pow, mul_one]
+    rw [hD, add_mul, pow_add, ← pow_mul (2⁻¹ : ℝ), two_mul r₂, add_mul, pow_add (2 : ℝ) (r₂ * k),
+      mul_assoc, mul_assoc, ← mul_pow, mul_inv_cancel₀ two_ne_zero, one_pow, mul_one]
   have hprod_min : ∏ m, ZLattice.successiveMin W.integerLattice B m ≤
       c * √|(discr K : ℝ)| ^ k * W.subspaceHeight ^ D := by
     refine le_of_mul_le_mul_right ?_ hV_pos
@@ -469,13 +442,6 @@ section NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Finite m] [Fintype ι]
 
-omit [Finite m] in
-private theorem finrank_ker_mulVecLin_eq (A : Matrix m ι K) :
-    finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - A.rank := by
-  have h := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [← Matrix.rank, Module.finrank_fintype_fun_eq_card] at h
-  omega
-
 /-- Hodge duality identifies the height of `ker A` with the height of the row space of `A`, without
 any rank assumption on `A`. -/
 theorem subspaceHeight_ker_mulVecLin [LinearOrder ι] (A : Matrix m ι K) :
@@ -501,7 +467,7 @@ private theorem exists_ker_basis_of_subspace (A : Matrix m ι K) (f : (ι → K)
       (∀ j, A *ᵥ (fun i ↦ (x j i : K)) = 0) ∧
       ∏ j, f (fun i ↦ (x j i : K)) ≤ C := by
   obtain ⟨z, hz_li, hz_span, hz_mem, hz_le⟩ := h
-  have hfin := finrank_ker_mulVecLin_eq A
+  have hfin := A.finrank_ker_mulVecLin
   set e := finCongr hfin
   have hrange : (Set.range fun j i ↦ (z (e.symm j) i : K)) = Set.range fun j i ↦ (z j i : K) := by
     ext; simp [e.symm.surjective.exists]
@@ -614,9 +580,8 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le_rat {A : Matri
       fun l _ ↦ ?_).trans hx_le⟩
   have : Nonempty ι := Fintype.card_pos_iff.1 (Nat.pos_of_ne_zero fun h0 ↦ by
     have := l.isLt; omega)
-  change absoluteProjectiveTupleHeight (((↑) : ℤ → ℚ) ∘ x l) ≤ _
-  rw [absoluteProjectiveTupleHeight_eq, finrank_self, Nat.cast_one, inv_one, Real.rpow_one,
-    Rat.mulHeight_eq_max_abs_of_gcd_eq_one (hx_gcd l)]
+  rw [← Function.comp_def ((↑) : ℤ → ℚ) (x l), absoluteProjectiveTupleHeight_eq, finrank_self,
+    Nat.cast_one, inv_one, Real.rpow_one, Rat.mulHeight_eq_max_abs_of_gcd_eq_one (hx_gcd l)]
   obtain ⟨i, hi⟩ := exists_eq_ciSup_of_finite (f := fun i ↦ |x l i|)
   rw [← hi]
   simpa only [Int.cast_abs, ← Int.norm_eq_abs] using norm_le_pi_norm (x l) i

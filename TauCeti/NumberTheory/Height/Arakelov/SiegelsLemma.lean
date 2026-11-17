@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.KernelBasis
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Bounds
 
 /-!
@@ -77,25 +78,6 @@ private theorem exists_le_rpow_inv_of_prod_le {k : ℕ} (hk : 0 < k) {f : Fin k 
   rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
     Real.rpow_inv_natCast_pow hB.le hk.ne'] at hprod
   exact hprod.not_ge hle
-
-/-- Extracting a maximal linearly independent subfamily bounds the subspace height of the span of
-any finite family of nonzero vectors by the product of their Euclidean heights. -/
-private theorem subspaceHeight_span_range_le_prod {K m ι : Type*} [Field K] [NumberField K]
-    [Fintype m] [Finite ι] [LinearOrder ι] {v : m → ι → K} (hv : ∀ i, v i ≠ 0) :
-    Submodule.subspaceHeight (Submodule.span K (Set.range v)) ≤ ∏ i, height2 (v i) := by
-  classical
-  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K v
-  have : Finite κ := Finite.of_injective a ha
-  let _ := Fintype.ofFinite κ
-  let e : Fin (Fintype.card κ) ≃ κ := (Fintype.equivFin κ).symm
-  have hrange : Set.range (v ∘ a ∘ e) = Set.range (v ∘ a) := by ext; simp [e.surjective.exists]
-  rw [← hspan, ← hrange]
-  refine (Submodule.subspaceHeight_le_prod (hli.comp e e.injective)).trans ?_
-  let emb : Fin (Fintype.card κ) ↪ m := e.toEmbedding.trans ⟨a, ha⟩
-  change ∏ x, height2 (v (emb x)) ≤ _
-  rw [← Finset.prod_map Finset.univ emb fun i ↦ height2 (v i)]
-  exact Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
-    (fun i _ ↦ height2_nonneg (v i)) fun i _ _ ↦ one_le_height2_of_ne_zero (hv i)
 
 namespace Submodule
 
@@ -237,9 +219,7 @@ private theorem exists_ker_ne_zero_of_subspace {A : Matrix m ι K} (hA : A.rank 
       (LinearMap.ker A.mulVecLin).subspaceHeight =
         (Submodule.span K (Set.range A.row)).subspaceHeight → B = C) :
     ∃ x : ι → 𝓞 K, x ≠ 0 ∧ A *ᵥ (fun j ↦ (x j : K)) = 0 ∧ f (fun j ↦ (x j : K)) ≤ C := by
-  have hfin : finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - A.rank := by
-    have hrk := A.mulVecLin.finrank_range_add_finrank_ker
-    rw [← Matrix.rank, Module.finrank_fintype_fun_eq_card] at hrk; omega
+  have hfin := A.finrank_ker_mulVecLin
   have hW : LinearMap.ker A.mulVecLin ≠ ⊥ := fun hbot ↦ by
     have : finrank K (LinearMap.ker A.mulVecLin) = 0 := by simp [hbot]
     omega
@@ -335,7 +315,7 @@ theorem exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt [Fintype m] [Fintype
     rw [← Nat.cast_sub hm.le]; positivity
   have hrpow := (Real.rpow_le_rpow_of_exponent_le (Submodule.one_le_subspaceHeight U) hexp).trans
     (Real.rpow_le_rpow (Submodule.subspaceHeight_pos U).le
-      (subspaceHeight_span_range_le_prod hA) hpos_exp)
+      (Submodule.subspaceHeight_span_range_le_prod hA) hpos_exp)
   exact mul_le_mul (mul_le_mul_of_nonneg_right hsqrt (by positivity)) hrpow
     (Real.rpow_nonneg (Submodule.subspaceHeight_pos U).le _) (by positivity)
 

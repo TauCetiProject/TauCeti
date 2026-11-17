@@ -228,15 +228,16 @@ example (K : Type*) [Field K] [NumberField K] {θ : 𝓞 K}
         obtain ⟨i, rfl⟩ := e.surjective l; fin_cases i; exact hl.symm⟩
     rw [hset, hz_span]
   have hx_le : absoluteProjectiveTupleHeight (fun j ↦ (x j : K)) ≤ 2 * √(2 / Real.pi) := by
-    rw [show absoluteProjectiveTupleHeight (fun j ↦ (x j : K)) =
-        ∏ l, absoluteProjectiveTupleHeight (fun j ↦ (z l j : K)) by
+    have hprod_eq : absoluteProjectiveTupleHeight (fun j ↦ (x j : K)) =
+        ∏ l, absoluteProjectiveTupleHeight (fun j ↦ (z l j : K)) := by
       rw [← e.prod_comp (fun l ↦ absoluteProjectiveTupleHeight fun j ↦ (z l j : K)),
-        Fin.prod_univ_one]]
+        Fin.prod_univ_one]
+    rw [hprod_eq]
     refine hz_le.trans_eq ?_
     rw [hnull, hr₂, hdeg, hdiscr, hH_row]
     have h4 : |((-4 : ℤ) : ℝ)| ^ (((1 : ℕ) : ℝ) / (2 * (2 : ℕ))) = √2 := by
-      rw [show |((-4 : ℤ) : ℝ)| = (2 : ℝ) ^ 2 by norm_num, ← Real.rpow_natCast (2 : ℝ) 2,
-        ← Real.rpow_mul zero_le_two, Real.sqrt_eq_rpow]
+      have h4_eq : |((-4 : ℤ) : ℝ)| = (2 : ℝ) ^ 2 := by norm_num
+      rw [h4_eq, ← Real.rpow_natCast (2 : ℝ) 2, ← Real.rpow_mul zero_le_two, Real.sqrt_eq_rpow]
       congr 1; norm_num
     have hpi : (2 / Real.pi) ^ (((1 : ℕ) * (1 : ℕ) : ℝ) / (2 : ℕ)) = √(2 / Real.pi) := by
       rw [Real.sqrt_eq_rpow]; congr 1; norm_num
