@@ -11,10 +11,9 @@ public import Mathlib.Topology.Convenient.ContinuousMapGeneratedBy
 # `X`-continuous maps on `X`-generated domains
 
 This file supplements Mathlib's `Mathlib.Topology.Convenient.ContinuousMapGeneratedBy` with basic
-API for `Topology.ContinuousGeneratedBy` and `Topology.ContinuousMapGeneratedBy`:
+API for `Topology.ContinuousMapGeneratedBy`:
 
-* `Topology.continuousGeneratedBy_iff_continuous`: on an `X`-generated domain, `X`-continuity
-  coincides with ordinary continuity.
+* `Topology.ContinuousMapGeneratedBy.coe_mk`: coercion simp lemma for `ContinuousMapGeneratedBy.mk`.
 * `Topology.ContinuousMapGeneratedBy.toContinuousMap`: bundles an `X`-continuous map out of an
   `X`-generated domain as an ordinary `ContinuousMap`.
 
@@ -26,45 +25,22 @@ API for `Topology.ContinuousGeneratedBy` and `Topology.ContinuousMapGeneratedBy`
 
 public section
 
-namespace Topology
+namespace Topology.ContinuousMapGeneratedBy
 
-/-- On an `X`-generated domain, `X`-continuity is ordinary continuity. -/
-@[simp]
-theorem continuousGeneratedBy_iff_continuous {ι : Type*} {X : ι → Type*}
-    [∀ i, TopologicalSpace (X i)] {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    [IsGeneratedBy X Y] (g : Y → Z) :
-    ContinuousGeneratedBy X g ↔ Continuous g :=
-  (IsGeneratedBy.continuous_iff X g).symm
+variable {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
+  {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
 
-namespace ContinuousMapGeneratedBy
-
-@[simp]
-theorem coe_mk {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
-    {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    (f : Y → Z) (hf : ContinuousGeneratedBy X f) :
-    ⇑(ContinuousMapGeneratedBy.mk f hf) = f :=
-  (rfl)
+@[simp] theorem coe_mk (f : Y → Z) (hf : ContinuousGeneratedBy X f) :
+    ⇑(ContinuousMapGeneratedBy.mk f hf) = f := (rfl)
 
 /-- On an `X`-generated domain `Y`, an `X`-continuous map `Y → Z` is an ordinary continuous map. -/
-def toContinuousMap {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
-    {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] [IsGeneratedBy X Y]
-    (g : ContinuousMapGeneratedBy X Y Z) : C(Y, Z) :=
-  ⟨g, (continuousGeneratedBy_iff_continuous g).1 g.prop⟩
+def toContinuousMap [IsGeneratedBy X Y] (g : ContinuousMapGeneratedBy X Y Z) : C(Y, Z) :=
+  ⟨g, (IsGeneratedBy.continuous_iff X g).2 g.prop⟩
 
-@[simp]
-theorem toContinuousMap_apply {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
-    {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] [IsGeneratedBy X Y]
-    (g : ContinuousMapGeneratedBy X Y Z) (y : Y) :
-    g.toContinuousMap y = g y :=
-  (rfl)
+@[simp] theorem toContinuousMap_apply [IsGeneratedBy X Y]
+    (g : ContinuousMapGeneratedBy X Y Z) (y : Y) : g.toContinuousMap y = g y := (rfl)
 
-@[simp]
-theorem coe_toContinuousMap {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
-    {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] [IsGeneratedBy X Y]
-    (g : ContinuousMapGeneratedBy X Y Z) :
-    ⇑g.toContinuousMap = g :=
-  (rfl)
+@[simp] theorem coe_toContinuousMap [IsGeneratedBy X Y]
+    (g : ContinuousMapGeneratedBy X Y Z) : ⇑g.toContinuousMap = g := (rfl)
 
-end ContinuousMapGeneratedBy
-
-end Topology
+end Topology.ContinuousMapGeneratedBy

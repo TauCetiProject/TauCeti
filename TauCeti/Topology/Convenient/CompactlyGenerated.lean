@@ -84,40 +84,40 @@ def ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2 (Y : Type v) (Z : Type 
     let ⟨S, L, f, hLc, hf⟩ := hKc.exists_compHaus_isCompact_image_eq
     ⟨1, fun _ ↦ S, fun _ ↦ L, fun _ ↦ f, fun _ ↦ hLc, by simpa [Set.iUnion_const] using hf⟩
 
-@[simp]
-theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_apply {Y : Type v} {Z : Type w}
-    [TopologicalSpace Y] [TopologicalSpace Z] [Small.{u} Y] [T2Space Y]
-    [UCompactlyGeneratedSpace.{u} Y]
+section
+
+variable {Y : Type v} {Z : Type w} [TopologicalSpace Y] [TopologicalSpace Z]
+  [Small.{u} Y] [T2Space Y] [UCompactlyGeneratedSpace.{u} Y]
+
+@[simp] theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_apply
     (g : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z) :
     homeomorphContinuousMapOfT2 Y Z g = g.toContinuousMap :=
   homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_apply _ g
 
-@[simp]
-theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_symm_apply {Y : Type v} {Z : Type w}
-    [TopologicalSpace Y] [TopologicalSpace Z] [Small.{u} Y] [T2Space Y]
-    [UCompactlyGeneratedSpace.{u} Y] (g : C(Y, Z)) :
+@[simp] theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_symm_apply (g : C(Y, Z)) :
     (homeomorphContinuousMapOfT2 Y Z).symm g =
       g.toContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) :=
   homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_symm_apply _ g
+
+end
 
 end Topology
 
 namespace TauCeti
 
+variable (X : Type v) (Y : Type w) [TopologicalSpace X] [TopologicalSpace Y]
+  [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y]
+
 /-- If `X` and `Y` are `u`-compactly generated and `Y` is locally compact, then the ordinary
 product `X × Y` is `u`-compactly generated. -/
-theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right (X : Type v) (Y : Type w)
-    [TopologicalSpace X] [TopologicalSpace Y]
-    [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y] [LocallyCompactSpace Y] :
+theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right [LocallyCompactSpace Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
   (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
     (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right X Y)
 
 /-- If `X` and `Y` are `u`-compactly generated and `X` is locally compact, then the ordinary
 product `X × Y` is `u`-compactly generated. -/
-theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left (X : Type v) (Y : Type w)
-    [TopologicalSpace X] [TopologicalSpace Y]
-    [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y] [LocallyCompactSpace X] :
+theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompactSpace X] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
   (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
     (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left X Y)

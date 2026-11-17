@@ -41,8 +41,7 @@ universe u v w
 /-- Every `u`-small Hausdorff compact subset is homeomorphic to a compact Hausdorff space in
 `Type u`. -/
 theorem IsCompact.exists_compHaus_homeomorph {Y : Type w} [TopologicalSpace Y] {K : Set Y}
-    (hK : IsCompact K) [T2Space K] [Small.{u} K] :
-    ∃ S : CompHaus.{u}, Nonempty (S ≃ₜ K) := by
+    (hK : IsCompact K) [T2Space K] [Small.{u} K] : ∃ S : CompHaus.{u}, Nonempty (S ≃ₜ K) := by
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   let e := Shrink.homeomorph.{u} K
   have : CompactSpace (Shrink.{u} K) := e.compactSpace
@@ -57,20 +56,19 @@ theorem IsCompact.exists_compHaus_isCompact_image_eq {Y : Type w} [TopologicalSp
   obtain ⟨S, ⟨e⟩⟩ := hK.exists_compHaus_homeomorph.{u}
   refine ⟨S, Set.univ, ⟨Subtype.val ∘ e, continuous_subtype_val.comp e.continuous⟩,
     isCompact_univ, ?_⟩
-  ext x
-  simpa using (e.surjective.exists (p := fun z : K ↦ (z : Y) = x)).symm
+  ext x; simpa using (e.surjective.exists (p := fun z : K ↦ (z : Y) = x)).symm
 
 namespace Homeomorph
 
+variable {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+
 /-- Compact generation with test spaces in `Type u` transfers along homeomorphisms. -/
-theorem uCompactlyGeneratedSpace {X : Type v} {Y : Type w}
-    [TopologicalSpace X] [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} X] (e : X ≃ₜ Y) :
+theorem uCompactlyGeneratedSpace [UCompactlyGeneratedSpace.{u} X] (e : X ≃ₜ Y) :
     UCompactlyGeneratedSpace.{u} Y :=
   uCompactlyGeneratedSpace_of_coinduced e.continuous e.isQuotientMap.eq_coinduced
 
 /-- Homeomorphic spaces are `u`-compactly generated for the same universes `u`. -/
-theorem uCompactlyGeneratedSpace_iff {X : Type v} {Y : Type w}
-    [TopologicalSpace X] [TopologicalSpace Y] (e : X ≃ₜ Y) :
+theorem uCompactlyGeneratedSpace_iff (e : X ≃ₜ Y) :
     UCompactlyGeneratedSpace.{u} X ↔ UCompactlyGeneratedSpace.{u} Y :=
   ⟨fun _ ↦ e.uCompactlyGeneratedSpace, fun _ ↦ e.symm.uCompactlyGeneratedSpace⟩
 
@@ -99,7 +97,6 @@ instance (priority := 100) uCompactlyGeneratedSpace_of_compactlyCoherentSpace {X
   obtain ⟨S, ⟨e⟩⟩ := hK.exists_compHaus_homeomorph.{u}
   convert (hs S ⟨Subtype.val ∘ e, continuous_subtype_val.comp e.continuous⟩).preimage
     e.symm.continuous
-  ext x
-  simp
+  ext x; simp
 
 end TauCeti
