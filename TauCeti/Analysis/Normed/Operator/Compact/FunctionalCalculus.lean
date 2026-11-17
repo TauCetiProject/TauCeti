@@ -48,6 +48,6 @@ theorem cfc_apply_of_apply_eq_smul {T : H →L[ℂ] H} (hT : IsCompactOperator T
       ContinuousLinearMap.algebraMap_apply, Complex.coe_algebraMap]
   rw [← ContinuousLinearMap.smul_def, ← halg] at hx ⊢
   exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f hx
-    (hf.div_sub_of_eventually_eq (hT.eventually_mem_spectrum_real_imp_eq hμ)) hT'
+    (hf.sub_div_sub_of_eventually_imp_eq (hT.eventually_mem_spectrum_real_imp_eq hμ)) hT'
 
 end IsCompactOperator

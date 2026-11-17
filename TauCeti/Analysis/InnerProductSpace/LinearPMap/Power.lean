@@ -41,7 +41,7 @@ the mode `exp(i k x)` by `(1 + k²)^{-1/2}`, which is `1` at `k = 0`.
 ## Main definitions and results
 
 * `LinearPMap.negPow`: the negative power `A^{-s}`, a positive (`LinearPMap.negPow_nonneg`),
-  injective (`LinearPMap.injective_negPow`) bounded operator, with `A^{-0} = 1`
+  injective (`LinearPMap.negPow_injective`) bounded operator, with `A^{-0} = 1`
   (`LinearPMap.negPow_zero`), `A^{-1} = G` (`LinearPMap.negPow_one`) and the semigroup law
   `A^{-(s + t)} = A^{-s} A^{-t}` (`LinearPMap.negPow_add`). It is compact for every `s > 0`
   (`LinearPMap.isCompactOperator_negPow`).
@@ -81,7 +81,9 @@ variable (A) in
 compact resolvent: the power `G ^ s` of its Green operator `G` in the continuous functional
 calculus. When `A` is strictly positive, `G = A⁻¹`, and `A^{-s}` acts on an eigenvector of `A`
 for the eigenvalue `λ` as multiplication by `λ^{-s}` (`LinearPMap.negPow_apply_of_apply_eq_smul`).
-The identity power `A^{-0}` is the identity operator (`LinearPMap.negPow_zero`). -/
+When `A` has nonnegative quadratic form, the identity power `A^{-0}` is the identity operator
+(`LinearPMap.negPow_zero`). The definition is meaningful only for such `A`: otherwise `G` is not
+positive and `A^{-s}` is the junk value `0`. -/
 def negPow (s : ℝ≥0) : H →L[ℂ] H :=
   A.greenOperator hA h ^ (s : ℝ)
 
@@ -144,14 +146,14 @@ theorem negPow_apply_of_apply_eq_smul (s : ℝ≥0) (u : A.domain) {lam : ℝ} (
   rw [Real.inv_rpow hlam.le, Real.rpow_neg hlam.le]
 
 /-- The negative powers of a strictly positive operator are injective. -/
-theorem injective_negPow (hker : A.ker = ⊥) (s : ℝ≥0) : Function.Injective (A.negPow hA h s) := by
+theorem negPow_injective (hker : A.ker = ⊥) (s : ℝ≥0) : Function.Injective (A.negPow hA h s) := by
   obtain ⟨n, hn⟩ := exists_nat_ge s
   -- `A^{-n} = A^{-(n - s)} A^{-s}` and `A^{-n} = G ^ n` is injective.
   have hfac : A.negPow hA h n = A.negPow hA h (n - s) * A.negPow hA h s := by
     rw [← negPow_add hpos, tsub_add_cancel_of_le hn]
   have hinj : Function.Injective (A.negPow hA h n) := by
     rw [negPow_natCast hpos, FunLike.coe_pow_eq_iterate]
-    exact (A.injective_greenOperator hA h hker).iterate n
+    exact (A.greenOperator_injective hA h hker).iterate n
   rw [hfac, ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp] at hinj
   exact hinj.of_comp
 
@@ -228,12 +230,12 @@ include hpos hker
 /-- `A^s A^{-s} = 1`. -/
 theorem posPow_negPow (s : ℝ≥0) (f : H) :
     A.posPow hA h s ⟨A.negPow hA h s f, negPow_mem_posPow_domain s f⟩ = f :=
-  ContinuousLinearMap.inverse_toPMap_top_apply _ (injective_negPow hpos hker s) f
+  ContinuousLinearMap.inverse_toPMap_top_apply _ (negPow_injective hpos hker s) f
 
 /-- `A^{-s} A^s = 1` on the domain of `A^s`. -/
 theorem negPow_posPow (s : ℝ≥0) (u : (A.posPow hA h s).domain) :
     A.negPow hA h s (A.posPow hA h s u) = u :=
-  ContinuousLinearMap.apply_inverse_toPMap_top _ (injective_negPow hpos hker s) u
+  ContinuousLinearMap.apply_inverse_toPMap_top _ (negPow_injective hpos hker s) u
 
 /-- If `A^{-s} f = v`, then `v` lies in the domain of `A^s` and `A^s v = f`. -/
 theorem posPow_apply_of_negPow_apply_eq {s : ℝ≥0} {f v : H} (hv : A.negPow hA h s f = v) :
@@ -241,8 +243,7 @@ theorem posPow_apply_of_negPow_apply_eq {s : ℝ≥0} {f v : H} (hv : A.negPow h
   subst hv
   exact ⟨negPow_mem_posPow_domain s f, posPow_negPow hpos hker s f⟩
 
-/-- `A^s` is the unique operator on the range of `A^{-s}` inverting it: `A^s u = f` exactly when
-`u = A^{-s} f`. -/
+/-- `A^s u = f` exactly when `u = A^{-s} f`. -/
 theorem posPow_apply_eq_iff (s : ℝ≥0) (u : (A.posPow hA h s).domain) (f : H) :
     A.posPow hA h s u = f ↔ (u : H) = A.negPow hA h s f := by
   constructor
@@ -255,7 +256,7 @@ theorem posPow_apply_eq_iff (s : ℝ≥0) (u : (A.posPow hA h s).domain) (f : H)
 /-- The positive powers are self-adjoint. -/
 theorem isSelfAdjoint_posPow (s : ℝ≥0) : IsSelfAdjoint (A.posPow hA h s) :=
   ContinuousLinearMap.isSelfAdjoint_inverse_toPMap_top _ (isSelfAdjoint_negPow s)
-    (injective_negPow hpos hker s)
+    (negPow_injective hpos hker s)
 
 /-- **The identity power.** `A^0` is defined everywhere and is the identity. -/
 theorem posPow_zero : A.posPow hA h 0 = (LinearMap.id : H →ₗ[ℂ] H).toPMap ⊤ := by
@@ -282,9 +283,8 @@ theorem posPow_apply_of_apply_eq_smul (s : ℝ≥0) (u : A.domain) {lam : ℝ} (
       A.posPow hA h s ⟨u, hu'⟩ = ((lam ^ (s : ℝ) : ℝ) : ℂ) • (u : H) := by
   -- `u = A^{-s} (λ^s u)`.
   have hneg : A.negPow hA h s (((lam ^ (s : ℝ) : ℝ) : ℂ) • (u : H)) = u := by
-    rw [ContinuousLinearMap.map_smul, negPow_apply_of_apply_eq_smul hpos s u hlam hu, smul_smul,
-      ← Complex.ofReal_mul, ← Real.rpow_add hlam, add_neg_cancel, Real.rpow_zero,
-      Complex.ofReal_one, one_smul]
+    rw [ContinuousLinearMap.map_smul, negPow_apply_of_apply_eq_smul hpos s u hlam hu]
+    simp [smul_smul, ← Real.rpow_add hlam]
   exact posPow_apply_of_negPow_apply_eq hpos hker hneg
 
 end PosPow
@@ -311,9 +311,8 @@ theorem posPow_apply_of_commute (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u
     ∃ hu : U u ∈ (A.posPow hA h s).domain,
       A.posPow hA h s ⟨U u, hu⟩ = U (A.posPow hA h s u) := by
   have hneg : A.negPow hA h s (U (A.posPow hA h s u)) = U u := by
-    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
-      (commute_negPow hUdom hUA hker s).eq, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.comp_apply, negPow_posPow hpos hker]
+    simpa [negPow_posPow hpos hker] using
+      congr($((commute_negPow (hA := hA) (h := h) hUdom hUA hker s).eq) (A.posPow hA h s u))
   exact posPow_apply_of_negPow_apply_eq hpos hker hneg
 
 end Commute

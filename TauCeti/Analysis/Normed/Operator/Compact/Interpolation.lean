@@ -113,14 +113,13 @@ theorem of_adjoint_comp_self {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGrou
     (T₀ := ((T.adjoint ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E)) hT (ContinuousLinearMap.id 𝕜 E)
     (T := (T : E →ₗ[𝕜] F)) (C := 1) (θ := 1 / 2) (by norm_num) (by norm_num) fun x => ?_
   have hsq : ‖T x‖ ^ 2 ≤ ‖T.adjoint (T x)‖ * ‖x‖ := by
-    rw [@norm_sq_eq_re_inner 𝕜, ← ContinuousLinearMap.adjoint_inner_left]
+    rw [ContinuousLinearMap.apply_norm_sq_eq_inner_adjoint_left]
     exact (RCLike.re_le_norm _).trans (norm_inner_le_norm _ _)
-  have h12 : (1 : ℝ) - 1 / 2 = 1 / 2 := by norm_num
-  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearMap.id_apply, one_mul, h12]
-  rw [← Real.mul_rpow (norm_nonneg _) (norm_nonneg _), ← Real.sqrt_eq_rpow,
-    ← Real.sqrt_sq (norm_nonneg (T x))]
-  exact Real.sqrt_le_sqrt hsq
+  -- The interpolation inequality `‖T x‖ ≤ ‖T† T x‖ ^ (1 / 2) ‖x‖ ^ (1 / 2)`.
+  have hle : ‖T x‖ ≤ ‖T.adjoint (T x)‖ ^ (1 / 2 : ℝ) * ‖x‖ ^ (1 / 2 : ℝ) := by
+    rw [← Real.mul_rpow (norm_nonneg _) (norm_nonneg _), ← Real.sqrt_eq_rpow]
+    exact Real.le_sqrt_of_sq_le hsq
+  norm_num [hle]
 
 section Lp
 

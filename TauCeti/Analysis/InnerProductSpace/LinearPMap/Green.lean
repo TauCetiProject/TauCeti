@@ -40,7 +40,7 @@ multiplication by `μ⁻¹`. If `ker A = H` then `G = 0`.
 * `LinearPMap.greenOperator`: the Green operator, with `LinearPMap.apply_greenOperator`,
   `LinearPMap.greenOperator_apply_apply`, `LinearPMap.isSelfAdjoint_greenOperator`,
   `LinearPMap.isCompactOperator_greenOperator` and `LinearPMap.norm_greenOperator_le`.
-* `LinearPMap.greenOperator_nonneg`, `LinearPMap.injective_greenOperator` and
+* `LinearPMap.greenOperator_nonneg`, `LinearPMap.greenOperator_injective` and
   `LinearPMap.commute_greenOperator`: for a strictly positive `A`, with `0 ≤ re ⟪A u, u⟫` and
   `ker A = 0`, the Green operator is a positive injective inverse of `A`, commuting with every
   bounded operator that commutes with `A`.
@@ -385,7 +385,7 @@ theorem greenOperator_apply_apply_of_ker_eq_bot (hker : A.ker = ⊥) (u : A.doma
     sub_zero]
 
 /-- If `ker A = 0`, the Green operator is injective. -/
-theorem injective_greenOperator (hker : A.ker = ⊥) :
+theorem greenOperator_injective (hker : A.ker = ⊥) :
     Function.Injective (A.greenOperator hA h) := by
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot, ker_greenOperator, hker]
 
