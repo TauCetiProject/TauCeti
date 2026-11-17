@@ -74,14 +74,12 @@ theorem analyticGenus_def :
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) :=
   (rfl)
 
-variable [IsManifold 𝓘(ℂ) 1 X]
-
 /-- The analytic genus is the dimension of the first cohomology of the divisor sheaf `𝒪(0)`. -/
 theorem analyticGenus_eq_finrank_divisorCechCohomology :
     analyticGenus X = Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) :=
   (divisorCechCohomologyZeroIso X 1).toLinearEquiv.finrank_eq.symm
 
-variable [CompactSpace X] [T2Space X] [ConnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [T2Space X] [ConnectedSpace X]
   [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
   (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
