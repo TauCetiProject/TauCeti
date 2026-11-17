@@ -151,6 +151,13 @@ def restIndex (S : ShuffleMask k l) (p : Fin (k + l)) : ℕ := #{x ∈ S.1ᶜ | 
 theorem restIndex_def (S : ShuffleMask k l) (p : Fin (k + l)) :
     S.restIndex p = #{x ∈ S.1ᶜ | x < p} := (rfl)
 
+/-- Before position `0` there are no rest positions. -/
+@[simp]
+theorem restIndex_zero [NeZero (k + l)] (S : ShuffleMask k l) :
+    S.restIndex (0 : Fin (k + l)) = 0 := by
+  rw [restIndex_def]
+  simp
+
 /-- A selected position does not change the number of rest positions before it. -/
 theorem restIndex_of_mem {S : ShuffleMask k l} {a b : Fin (k + l)} (hab : (b : ℕ) = a + 1)
     (ha : a ∈ S.1) : S.restIndex b = S.restIndex a := by
