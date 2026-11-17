@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
@@ -41,8 +42,9 @@ into good primes; this is the engine behind both
   the good ideals;
 * `TauCeti.MultiplicativeIdealWeight.ext_heightOneSpectrum`: a weight is determined by its
   values at the height-one primes;
-* `TauCeti.MultiplicativeIdealWeight.ofBadPrimes`, the pointwise `CommMonoid` structure (whose
-  unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrictAway`,
+* `TauCeti.MultiplicativeIdealWeight.ofBadPrimes`,
+  `TauCeti.MultiplicativeIdealWeight.ofIntegralIdealsAway`, the pointwise `CommMonoid` structure
+  (whose unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrictAway`,
   `TauCeti.MultiplicativeIdealWeight.conj` (the `star` of a `StarMul` structure, so Mathlib's `star`
   lemmas apply to it) and `TauCeti.MultiplicativeIdealWeight.normTwist`: the constructors and
   operations;
@@ -327,6 +329,104 @@ theorem badPrimes_pow (χ : MultiplicativeIdealWeight K) {n : ℕ} (hn : n ≠ 0
 theorem isGood_one_iff {I : Ideal (𝓞 K)} :
     (1 : MultiplicativeIdealWeight K).IsGood I ↔ I ≠ ⊥ := by
   simp only [IsGood, badPrimes_one, Ideal.isPrimeTo_empty]
+
+open scoped Classical in
+/-- **Extension by zero of a character on `integralIdealsAway S`**: extend a homomorphism
+`f : integralIdealsAway S →* ℂˣ` by zero on all ideals not prime to `S`, producing a completely
+multiplicative ideal weight whose bad primes are precisely `S`. -/
+noncomputable def ofIntegralIdealsAway (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (f : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S →* ℂˣ) :
+    MultiplicativeIdealWeight K where
+  toMonoidWithZeroHom :=
+    { toFun I :=
+        if h : Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K))) then
+          (f ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr h⟩ : ℂ)
+        else 0
+      map_zero' := by simp
+      map_one' := by
+        simp only [Ideal.one_eq_top, Ideal.isPrimeTo_top, dite_true]
+        have htop : (⟨⊤, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
+            Ideal.isPrimeTo_top⟩ :
+              NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S) = 1 :=
+          Subtype.ext Ideal.one_eq_top.symm
+        rw [htop, map_one, Units.val_one]
+      map_mul' I J := by
+        by_cases h : Ideal.IsPrimeTo (I * J) (S : Set (HeightOneSpectrum (𝓞 K)))
+        · obtain ⟨hI, hJ⟩ := Ideal.isPrimeTo_mul_iff.mp h
+          simp only [h, hI, hJ, dite_true]
+          exact_mod_cast map_mul f
+            ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr hI⟩
+            ⟨J, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr hJ⟩
+        · rcases not_and_or.mp (fun hc ↦ h (Ideal.isPrimeTo_mul_iff.mpr hc)) with h' | h' <;>
+            simp [h, h'] }
+  finite_setOf_apply_eq_zero := by
+    convert S.finite_toSet using 1
+    ext 𝔭
+    simp
+
+open scoped Classical in
+/-- Defining equation of `TauCeti.MultiplicativeIdealWeight.ofIntegralIdealsAway`. -/
+theorem ofIntegralIdealsAway_apply {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (f : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S →* ℂˣ) (I : Ideal (𝓞 K)) :
+    ofIntegralIdealsAway S f I =
+      if h : Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K))) then
+        (f ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr h⟩ : ℂ)
+      else 0 :=
+  (rfl)
+
+/-- On an ideal prime to `S`, `ofIntegralIdealsAway S f` evaluates `f`. -/
+@[simp]
+theorem ofIntegralIdealsAway_apply_of_isPrimeTo {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (f : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S →* ℂˣ) {I : Ideal (𝓞 K)}
+    (hI : Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K)))) :
+    ofIntegralIdealsAway S f I =
+      (f ⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr hI⟩ : ℂ) := by
+  classical
+  simp [ofIntegralIdealsAway_apply, hI]
+
+/-- On an ideal not prime to `S`, `ofIntegralIdealsAway S f` vanishes. -/
+@[simp]
+theorem ofIntegralIdealsAway_apply_of_not_isPrimeTo {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (f : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S →* ℂˣ) {I : Ideal (𝓞 K)}
+    (hI : ¬ Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K)))) :
+    ofIntegralIdealsAway S f I = 0 := by
+  classical
+  simp [ofIntegralIdealsAway_apply, hI]
+
+/-- The bad primes of `ofIntegralIdealsAway S f` are precisely `S`. -/
+@[simp]
+theorem badPrimes_ofIntegralIdealsAway {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (f : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S →* ℂˣ) :
+    (ofIntegralIdealsAway S f).badPrimes = S := by
+  classical
+  ext 𝔭
+  simp [badPrimes, ofIntegralIdealsAway_apply]
+
+/-- Extending the trivial homomorphism away from `S` gives the indicator weight `ofBadPrimes S`. -/
+@[simp]
+theorem ofIntegralIdealsAway_one (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    ofIntegralIdealsAway S 1 = ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet := by
+  ext I
+  by_cases hI : Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K))) <;> simp [hI]
+
+/-- Pointwise multiplication of homomorphisms away from `S` commutes with extension by zero. -/
+@[simp]
+theorem ofIntegralIdealsAway_mul {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (f g : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S →* ℂˣ) :
+    ofIntegralIdealsAway S (f * g) =
+      ofIntegralIdealsAway S f * ofIntegralIdealsAway S g := by
+  ext I
+  by_cases hI : Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K))) <;> simp [hI]
+
+/-- Extension by zero is injective on homomorphisms out of `integralIdealsAway S`. -/
+theorem ofIntegralIdealsAway_injective (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    Function.Injective (ofIntegralIdealsAway (K := K) S) := by
+  intro f g h
+  ext I
+  have hI : Ideal.IsPrimeTo (I : Ideal (𝓞 K)) (S : Set (HeightOneSpectrum (𝓞 K))) :=
+    NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mp I.2
+  have hval := congrArg (fun w : MultiplicativeIdealWeight K ↦ w (I : Ideal (𝓞 K))) h
+  simpa only [ofIntegralIdealsAway_apply_of_isPrimeTo (hI := hI)] using hval
 
 /-- **Restriction away from a finite set of primes**: `χ` is left unchanged on the ideals prime
 to `S` and set to `0` on the others. -/
