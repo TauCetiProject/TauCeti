@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
@@ -12,7 +14,8 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 # Singular chain complexes
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
-simplicial sets, and the singular homology functor to the simplicial homology map it induces.
+simplicial sets, and the singular homology functor to the simplicial homology map it induces,
+also applied to a class (`TauCeti.singularHomologyFunctor_obj_map_hom_apply`).
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
@@ -54,6 +57,17 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     (f : X ⟶ Y) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
+
+/-- The map of the singular homology functor applied to a class `μ` typed in `SSet.homology` of
+the singular simplicial set, rewritten as the simplicial homology map. The left side applies a
+map out of the homology functor's object to `μ`, which agrees with `SSet.homology` only after
+unfolding; the right side is well typed as stated, so later rewrites can match it syntactically. -/
+theorem singularHomologyFunctor_obj_map_hom_apply {Λ : Type*} [Ring Λ] (L : ModuleCat.{w} Λ)
+    {X Y : TopCat.{w}} (f : X ⟶ Y) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj X).homology L k : ModuleCat.{w} Λ)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj L).map f).hom μ =
+      (SSet.homologyMap (TopCat.toSSet.map f) L k).hom μ :=
+  (rfl)
 
 /-- Mathlib's identification of the singular chains of a totally disconnected space with the
 alternating constant complex sends the summand of a singular vertex to the summand of the point
