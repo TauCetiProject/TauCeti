@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
-public import TauCeti.MeasureTheory.Measure.Count.Basic
 import TauCeti.Data.Fintype.Card.Embedding
+import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # Uniform sampling with and without replacement
@@ -38,7 +38,6 @@ estimate is the classical union bound over unordered coordinate pairs, using
 
 ## Main results
 
-* `MeasurableEquiv.map_uniformOn` transports `uniformOn` along measurable equivalences;
 * `uniformOn_not_injective_le`, `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`, and
   their `.real` companions bound the uniform-measure mass of collisions;
 * `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
@@ -67,17 +66,6 @@ open scoped ENNReal
 namespace TauCeti
 
 namespace Probability
-
-/-- A measurable equivalence pushes a uniform measure forward to the uniform measure on the image
-set, without any finiteness or measurable-singleton assumption. -/
-theorem _root_.MeasurableEquiv.map_uniformOn {α β : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] (e : α ≃ᵐ β) (s : Set α) :
-    (uniformOn s).map e = uniformOn (e '' s) := by
-  ext t ht
-  have hcount (u : Set α) : Measure.count (e '' u) = Measure.count u := by
-    rw [← e.map_count, e.map_apply, Set.preimage_image_eq _ e.injective]
-  rw [e.map_apply, uniformOn, uniformOn, cond_apply' (e.measurable ht), cond_apply' ht,
-    ← Set.image_inter_preimage, hcount, hcount]
 
 /-- The real-valued mass of an event under a uniform measure is the ratio of its cardinality to
 the cardinality of the sampling set. This also covers the zero measure when the sampling set is

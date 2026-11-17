@@ -10,6 +10,7 @@ public import Mathlib.Probability.UniformOn
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Cdf
+import TauCeti.MeasureTheory.Measure.Count.Basic
 
 /-!
 # Uniform measures on finite types
@@ -35,6 +36,8 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
   label masses and cumulative masses are proportions of inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
+* `MeasurableEquiv.map_uniformOn`: a measurable equivalence pushes a uniform law to
+  the uniform law on its image, without finiteness or measurable-singleton assumptions.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
 -/
@@ -237,6 +240,21 @@ theorem map_uniformOn_univ (e : α ≃ β) :
       (uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ), Measure.map_zero]
 
 end Equiv
+
+namespace MeasurableEquiv
+
+/-- A measurable equivalence pushes a uniform measure forward to the uniform measure on the image
+set, without any finiteness or measurable-singleton assumption. -/
+theorem map_uniformOn {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (e : α ≃ᵐ β) (s : Set α) :
+    (uniformOn s).map e = uniformOn (e '' s) := by
+  ext t ht
+  have hcount (u : Set α) : Measure.count (e '' u) = Measure.count u := by
+    rw [← e.map_count, e.map_apply, Set.preimage_image_eq _ e.injective]
+  rw [e.map_apply, uniformOn, uniformOn, cond_apply' (e.measurable ht), cond_apply' ht,
+    ← Set.image_inter_preimage, hcount, hcount]
+
+end MeasurableEquiv
 
 namespace TauCeti.Probability
 
