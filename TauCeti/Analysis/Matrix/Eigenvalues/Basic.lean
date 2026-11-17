@@ -148,11 +148,6 @@ theorem IsHermitian.eigenvalues₀_congr (hA : A.IsHermitian) (hB : B.IsHermitia
     hA.eigenvalues₀ = hB.eigenvalues₀ := by
   subst h; rfl
 
-/-- Equal Hermitian matrices have equal matrix-indexed eigenvalue lists. -/
-theorem IsHermitian.eigenvalues_congr (hA : A.IsHermitian) (hB : B.IsHermitian) (h : A = B) :
-    hA.eigenvalues = hB.eigenvalues := by
-  subst h; rfl
-
 /-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
 corresponding matrix-indexed eigenvalue. -/
 @[simp]

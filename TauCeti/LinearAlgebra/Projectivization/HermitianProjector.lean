@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Projector
 
 import Mathlib.LinearAlgebra.Matrix.Action
+import TauCeti.Analysis.Matrix.DotProduct
 
 /-!
 # The Hermitian projector of a line
@@ -90,6 +91,13 @@ def rankOneHermitianProjector (x : ι → K) : Matrix ι ι K :=
 theorem rankOneHermitianProjector_def (x : ι → K) :
     rankOneHermitianProjector x = (star x ⬝ᵥ x)⁻¹ • vecMulVec x (star x) :=
   (rfl)
+
+/-- Over an `RCLike` field `𝕜`, the Hermitian projector can be written using real scalar
+multiplication by `(RCLike.re (star x ⬝ᵥ x))⁻¹`. -/
+theorem rankOneHermitianProjector_eq_real_smul {𝕜 : Type*} [RCLike 𝕜] (x : ι → 𝕜) :
+    rankOneHermitianProjector x = (RCLike.re (star x ⬝ᵥ x))⁻¹ • vecMulVec x (star x) := by
+  rw [rankOneHermitianProjector_def, RCLike.real_smul_eq_coe_smul (K := 𝕜),
+    RCLike.ofReal_inv, Matrix.ofReal_re_dotProduct_star_self]
 
 theorem rankOneHermitianProjector_apply (x : ι → K) (i j : ι) :
     rankOneHermitianProjector x i j = x i * star (x j) / (star x ⬝ᵥ x) := by

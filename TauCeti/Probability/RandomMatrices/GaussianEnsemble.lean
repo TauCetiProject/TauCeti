@@ -30,9 +30,9 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 
 ## Main results
 
-* `TauCeti.Probability.isHermitian_gaussianEnsemble`,
-  `TauCeti.Probability.isSymm_gaussianEnsemble_of_eq_one`, and
-  `TauCeti.Probability.isSymm_gaussianEnsemble_one`: Hermitian and (`β = 1`) symmetric structure.
+* `TauCeti.Probability.isHermitian_gaussianEnsemble` and
+  `TauCeti.Probability.isSymm_gaussianEnsemble_of_eq_one`: Hermitian and (`β = 1`) symmetric
+  structure.
 * `TauCeti.Probability.gaussianEnsemble_add`, `TauCeti.Probability.gaussianEnsemble_smul`,
   `TauCeti.Probability.gaussianEnsemble_sum`, and
   `TauCeti.Probability.gaussianEnsemble_eq_sum_single`: real-linearity and coordinate basis
@@ -390,11 +390,6 @@ theorem isSymm_gaussianEnsemble_of_eq_one {β n : ℕ} (hβ : β = 1) (g : Fin n
   · simp [hβ]
   · simp [hβ, hji, hji.ne, hji.not_gt, hji.ne']
 
-/-- `gaussianEnsemble 1 n g` is symmetric for every array `g`. -/
-theorem isSymm_gaussianEnsemble_one (n : ℕ) (g : Fin n × Fin n → ℝ) :
-    (gaussianEnsemble 1 n g).IsSymm :=
-  isSymm_gaussianEnsemble_of_eq_one rfl g
-
 /-- Continuous `ℝ`-linear map bundling `gaussianEnsemble β n` into the real topological submodule
 `selfAdjoint (Matrix (Fin n) (Fin n) ℂ)`. -/
 def gaussianEnsembleSelfAdjointCLM (β n : ℕ) :
@@ -633,7 +628,8 @@ theorem sum_trace_mul_gaussianEnsemble_single_mul_of_ne_one {β n : ℕ} (hβ : 
       ∑ p : Fin n × Fin n,
         gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k) =
       (n : ℂ)⁻¹ * (X i j * Y j i) := by
-    simp [sum_gaussianEnsemble_single_apply_mul_of_ne_one hβ, ite_and]
+    simp only [sum_gaussianEnsemble_single_apply_mul_of_ne_one hβ, ite_and, mul_ite, mul_zero,
+      Finset.sum_ite_irrel, Finset.sum_const_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
     ring
   simp_rw [hinner, ← Finset.mul_sum, ← Matrix.trace_mul_eq_sum]
 
@@ -649,8 +645,9 @@ theorem sum_trace_mul_gaussianEnsemble_single_mul_of_eq_one {β n : ℕ} (hβ : 
       ∑ p : Fin n × Fin n,
         gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k) =
       (n : ℂ)⁻¹ * (X i j * Y j i + X i j * Y i j) := by
-    simp [sum_gaussianEnsemble_single_apply_mul_of_eq_one hβ, mul_add, Finset.sum_add_distrib,
-      ite_and]
+    simp only [sum_gaussianEnsemble_single_apply_mul_of_eq_one hβ, mul_add, mul_ite, mul_one,
+      mul_zero, Finset.sum_add_distrib, ite_and, Finset.sum_ite_irrel, Finset.sum_const_zero,
+      Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
     ring
   simp_rw [hinner, ← Finset.mul_sum, Finset.sum_add_distrib]
   simp [Matrix.trace_mul_eq_sum, transpose_apply]

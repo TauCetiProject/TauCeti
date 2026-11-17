@@ -50,6 +50,7 @@ To state or use the normed Fréchet and directional calculus declarations in thi
   deterministic coordinate-gradient inner-product and coordinate half-Laplacian identities in
   Fréchet form.
 * `TauCeti.Probability.hasDerivAt_eigenvalues₀_add_gaussianEnsemble`,
+  `TauCeti.Probability.deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv`,
   `TauCeti.Probability.iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble`,
   `TauCeti.Probability.sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_ne_one`,
   `TauCeti.Probability.sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_eq_one`,
@@ -89,6 +90,22 @@ private theorem coe_shiftEnsembleSelfAdjoint (β n : ℕ) {A : Matrix (Fin n) (F
       A + gaussianEnsemble β n g' := by
   simp [shiftEnsembleSelfAdjoint]
 
+@[simp]
+private theorem shiftEnsembleSelfAdjoint_eigenvalues₀ {β n : ℕ}
+    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g' : Fin n × Fin n → ℝ) :
+    (shiftEnsembleSelfAdjoint β n hA g').2.isHermitian.eigenvalues₀ =
+      (hA.add (isHermitian_gaussianEnsemble β n g')).eigenvalues₀ :=
+  (shiftEnsembleSelfAdjoint β n hA g').2.isHermitian.eigenvalues₀_congr
+    (hA.add (isHermitian_gaussianEnsemble β n g')) (by simp)
+
+@[simp]
+private theorem shiftEnsembleSelfAdjoint_eigenprojector₀ {β n : ℕ}
+    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g' : Fin n × Fin n → ℝ) :
+    (shiftEnsembleSelfAdjoint β n hA g').2.isHermitian.eigenprojector₀ =
+      (hA.add (isHermitian_gaussianEnsemble β n g')).eigenprojector₀ :=
+  (shiftEnsembleSelfAdjoint β n hA g').2.isHermitian.eigenprojector₀_congr
+    (hA.add (isHermitian_gaussianEnsemble β n g')) (by simp)
+
 private theorem hasStrictFDerivAt_shiftEnsembleSelfAdjoint (β n : ℕ)
     {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g : Fin n × Fin n → ℝ) :
     HasStrictFDerivAt (shiftEnsembleSelfAdjoint β n hA)
@@ -107,9 +124,7 @@ private theorem eigenvalues₀_add_gaussianEnsemble_comp_eq {β n : ℕ}
         (hA.add (isHermitian_gaussianEnsemble β n g')).eigenvalues₀ k) =
       (fun X : selfAdjoint (Matrix (Fin n) (Fin n) ℂ) ↦ X.2.isHermitian.eigenvalues₀ k) ∘
         shiftEnsembleSelfAdjoint β n hA :=
-  funext fun g' ↦ congrFun
-    ((hA.add (isHermitian_gaussianEnsemble β n g')).eigenvalues₀_congr
-      (shiftEnsembleSelfAdjoint β n hA g').2.isHermitian (by simp)) k
+  funext fun g' ↦ by simp
 
 private theorem forall_eigenvalues₀_selfAdjoint_ne {β n : ℕ}
     {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) {g : Fin n × Fin n → ℝ}
@@ -119,9 +134,7 @@ private theorem forall_eigenvalues₀_selfAdjoint_ne {β n : ℕ}
     ∀ j ≠ k,
       (shiftEnsembleSelfAdjoint β n hA g).2.isHermitian.eigenvalues₀ j ≠
         (shiftEnsembleSelfAdjoint β n hA g).2.isHermitian.eigenvalues₀ k := by
-  have h := (shiftEnsembleSelfAdjoint β n hA g).2.isHermitian.eigenvalues₀_congr
-    (hA.add (isHermitian_gaussianEnsemble β n g)) (by simp)
-  simpa only [h] using hk
+  simpa using hk
 
 /-- At any `g` where `λₖ(A + gaussianEnsemble β n g)` is simple,
 `g' ↦ (A + gaussianEnsemble β n g').eigenvalues₀ k` is `C^r` for every `r : ℕ∞ω`. -/
@@ -155,11 +168,8 @@ theorem hasStrictFDerivAt_eigenvalues₀_add_gaussianEnsemble {β n : ℕ}
   rw [eigenvalues₀_add_gaussianEnsemble_comp_eq hA k]
   refine ((hasStrictFDerivAt_eigenvalues₀ (forall_eigenvalues₀_selfAdjoint_ne hA hk)).comp g
     (hasStrictFDerivAt_shiftEnsembleSelfAdjoint β n hA g)).congr_fderiv ?_
-  have hP := congrFun
-    ((shiftEnsembleSelfAdjoint β n hA g).2.isHermitian.eigenprojector₀_congr
-      (hA.add (isHermitian_gaussianEnsemble β n g)) (by simp)) k
   ext v
-  simp [hP]
+  simp
 
 /-- Applied Fréchet derivative of `g' ↦ (A + gaussianEnsemble β n g').eigenvalues₀ k` at `g` in
 direction `v`. -/
@@ -200,11 +210,6 @@ theorem fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_apply {β n : ℕ}
       (contDiffAt_eigenvalues₀ hkΦ) (contDiff_shiftEnsembleSelfAdjoint β n hA).contDiffAt v w,
     hDΦ, fderiv_const_apply, zero_apply, zero_apply,
     map_zero, add_zero, fderiv_fderiv_eigenvalues₀_apply hkΦ]
-  have heig := (shiftEnsembleSelfAdjoint β n hA g).2.isHermitian.eigenvalues₀_congr
-    (hA.add (isHermitian_gaussianEnsemble β n g)) (by simp)
-  have hproj := (shiftEnsembleSelfAdjoint β n hA g).2.isHermitian.eigenprojector₀_congr
-    (hA.add (isHermitian_gaussianEnsemble β n g)) (by simp)
-  rw [heig, hproj]
   simp
 
 /-- **GUE coordinate-gradient inner product** (Fréchet form): for `β ≠ 1`, Hermitian `A`, and
@@ -256,7 +261,9 @@ theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_eq_one {β 
   rw [sum_re_trace_mul_gaussianEnsemble_single_mul_of_eq_one hβ (hH.isHermitian_eigenprojector₀ k)
     (hH.isHermitian_eigenprojector₀ m), hPm_symm.eq]
   by_cases hkm : k = m
-  · subst hkm; simp [hH.eigenprojector₀_mul_self, hH.trace_eigenprojector₀]; ring
+  · subst hkm
+    simp only [hH.eigenprojector₀_mul_self, hH.trace_eigenprojector₀, Complex.one_re, ↓reduceIte]
+    ring
   · simp [hkm, hH.eigenprojector₀_mul_of_ne hkm]
 
 /-- Deterministic coordinate-gradient inner-product identity (Fréchet form) at simple sorted
@@ -345,6 +352,20 @@ theorem hasDerivAt_eigenvalues₀_add_gaussianEnsemble {β n : ℕ}
     (0 : ℝ) (((hasDerivAt_id (0 : ℝ)).smul_const v).const_add g) (by simp)).congr_deriv
     (by simp))
 
+/-- The directional ray derivative of `t ↦ (A + gaussianEnsemble β n (g + t • v)).eigenvalues₀ k`
+at `t = 0` equals the applied Fréchet derivative at `g` in direction `v`. -/
+theorem deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv {β n : ℕ}
+    {A : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (g v : Fin n × Fin n → ℝ)
+    {k : Fin (Fintype.card (Fin n))}
+    (hk : ∀ j ≠ k, (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ j ≠
+      (hA.add (isHermitian_gaussianEnsemble β n g)).eigenvalues₀ k) :
+    deriv (fun t : ℝ ↦
+        (hA.add (isHermitian_gaussianEnsemble β n (g + t • v))).eigenvalues₀ k) 0 =
+      fderiv ℝ (fun g' : Fin n × Fin n → ℝ ↦
+        (hA.add (isHermitian_gaussianEnsemble β n g')).eigenvalues₀ k) g v := by
+  rw [(hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g v hk).deriv,
+    fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g v hk]
+
 /-- Directional second derivative of `t ↦ (A + gaussianEnsemble β n (g + t • v)).eigenvalues₀ k` at
 `0`. -/
 theorem iteratedDeriv_two_eigenvalues₀_add_gaussianEnsemble {β n : ℕ}
@@ -389,10 +410,8 @@ theorem sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_ne_one {β n : ℕ}
         deriv (fun t : ℝ ↦
           (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ m) 0 =
       if k = m then (n : ℝ)⁻¹ else 0 := by
-  simp_rw [(hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hk).deriv,
-    (hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hm).deriv,
-    ← fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hk,
-    ← fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hm]
+  simp_rw [deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hk,
+    deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hm]
   exact sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_ne_one hβ hA g hk hm
 
 /-- **GOE coordinate-gradient inner product** (1D coordinate-ray form): for `β = 1`, Hermitian
@@ -411,10 +430,8 @@ theorem sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul_of_eq_one {β n : ℕ}
         deriv (fun t : ℝ ↦
           (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ m) 0 =
       if k = m then 2 * (n : ℝ)⁻¹ else 0 := by
-  simp_rw [(hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hk).deriv,
-    (hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hm).deriv,
-    ← fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hk,
-    ← fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hm]
+  simp_rw [deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hk,
+    deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hm]
   exact sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul_of_eq_one hβ hA hA_symm g hk hm
 
 /-- Deterministic coordinate-gradient inner-product identity (1D coordinate-ray form) at simple
@@ -435,10 +452,8 @@ theorem sum_deriv_eigenvalues₀_add_gaussianEnsemble_mul {β n : ℕ}
         deriv (fun t : ℝ ↦
           (hA.add (isHermitian_gaussianEnsemble β n (g + t • Pi.single p 1))).eigenvalues₀ m) 0 =
       if k = m then 2 / ((β : ℝ) * n) else 0 := by
-  simp_rw [(hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hk).deriv,
-    (hasDerivAt_eigenvalues₀_add_gaussianEnsemble hA g (Pi.single _ 1) hm).deriv,
-    ← fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hk,
-    ← fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hm]
+  simp_rw [deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hk,
+    deriv_eigenvalues₀_add_gaussianEnsemble_eq_fderiv hA g (Pi.single _ 1) hm]
   exact sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul hA hβ g hk hm
 
 /-- Deterministic coordinate half-Laplacian identity (1D coordinate-ray form) at a simple sorted
