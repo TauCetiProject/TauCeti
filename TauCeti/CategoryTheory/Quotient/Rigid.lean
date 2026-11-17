@@ -26,9 +26,10 @@ The per-object dual instances use the caller's dual of the underlying object `X.
 need a dual only on the corresponding side, not rigidity of the whole source category.
 
 The right-dual comparison of the quotient functor is the identity.
-For a right rigid source, the right-dual tensor comparison and unit dual identification
-descend, as do the tensor and unit comparisons of the double-right-dual functor (`μ`, `δ`, `ε`,
-`η`). These equations supply the comparison data for descent of pivotal structures. The bidual
+The right-dual tensor comparison descends whenever the two objects and their tensor product
+have chosen right duals. For a right rigid source, the unit dual identification descends, as do
+the tensor and unit comparisons of the double-right-dual functor (`μ`, `δ`, `ε`, `η`). These
+equations supply the comparison data for descent of pivotal structures. The bidual
 comparison of the quotient functor is the identity, and factoring a strong monoidal functor
 through the quotient retains its dual and bidual comparisons.
 
@@ -86,6 +87,11 @@ noncomputable instance instHasLeftDualObj (X : C) [HasLeftDual X] :
 noncomputable instance instHasRightDualObj (X : C) [HasRightDual X] :
     HasRightDual ((functor r).obj X) :=
   inferInstanceAs (HasRightDual (Quotient.mk X : Quotient r))
+
+/-- The tensor of two image objects has the descended right dual of their source tensor. -/
+noncomputable instance instHasRightDualTensorObj (X Y : C) [HasRightDual (X ⊗ Y)] :
+    HasRightDual ((functor r).obj X ⊗ (functor r).obj Y) :=
+  inferInstanceAs (HasRightDual (Quotient.mk (X ⊗ Y) : Quotient r))
 
 /-- The left dual in the quotient is the class of the chosen left dual in the source. -/
 theorem leftDual_eq (X : Quotient r) [HasLeftDual X.as] :
@@ -250,8 +256,11 @@ theorem functor_mapDoubleRightDualIso_inv (X : C) :
       𝟙 ((((functor r).obj X : Quotient r)ᘁ : Quotient r)ᘁ) := by
   exact congrArg Iso.inv (functor_mapDoubleRightDualIso (r := r) X)
 
+end RightRigid
+
 /-- The tensor comparison of the right dual descends to the quotient. -/
-theorem rightDualTensorIso_hom_obj (X Y : C) :
+theorem rightDualTensorIso_hom_obj (X Y : C) [HasRightDual X] [HasRightDual Y]
+    [HasRightDual (X ⊗ Y)] :
     (rightDualTensorIso ((functor r).obj X) ((functor r).obj Y)).hom =
       (functor r).map (rightDualTensorIso X Y).hom := by
   exact congrArg Iso.hom (rightDualIso_eq_mapIso (r := r)
@@ -278,12 +287,17 @@ theorem rightDualTensorIso_hom_obj (X Y : C) :
       exact hQ.trans hC.symm))
 
 /-- The inverse tensor comparison of the right dual also descends. -/
-theorem rightDualTensorIso_inv_obj (X Y : C) :
+theorem rightDualTensorIso_inv_obj (X Y : C) [HasRightDual X] [HasRightDual Y]
+    [HasRightDual (X ⊗ Y)] :
     (rightDualTensorIso ((functor r).obj X) ((functor r).obj Y)).inv =
       (functor r).map (rightDualTensorIso X Y).inv := by
   have h : rightDualTensorIso ((functor r).obj X) ((functor r).obj Y) =
       (functor r).mapIso (rightDualTensorIso X Y) := Iso.ext (rightDualTensorIso_hom_obj X Y)
   exact congrArg Iso.inv h
+
+section RightRigid
+
+variable [RightRigidCategory C]
 
 /-- The tensorator of the double right dual is the class of its original tensorator. -/
 theorem doubleRightDualFunctor_μ_obj (X Y : C) :
