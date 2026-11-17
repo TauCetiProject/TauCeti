@@ -16,7 +16,6 @@ import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.RestrictScalars
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 
@@ -635,21 +634,8 @@ theorem hasWeakMFDerivOn_model_iff {u : ℂ → F}
 
 section Biholomorph
 
-variable {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y] {n : ℕ∞ω}
-
-private theorem trans_mem_maximalAtlas_of_biholomorph {Z W : Type*} [TopologicalSpace Z]
-    [ChartedSpace ℂ Z] [TopologicalSpace W] [ChartedSpace ℂ W] [IsManifold 𝓘(ℂ) 1 W]
-    (f : W ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ Z) (hn : 1 ≤ n) {φ : OpenPartialHomeomorph Z ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 Z) :
-    f.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 W := by
-  have heq : f.toHomeomorph.toOpenPartialHomeomorph.toPartialEquiv =
-      (f.toPartialDiffeomorph.ofLE (m := 1) hn).toOpenPartialHomeomorph.toPartialEquiv :=
-    ((f.toPartialDiffeomorph.ofLE_toPartialEquiv hn).trans
-      f.toPartialDiffeomorph_toPartialEquiv).symm
-  rw [OpenPartialHomeomorph.toPartialEquiv_injective heq]
-  exact (f.toPartialDiffeomorph.ofLE (m := 1) hn).trans_mem_maximalAtlas hφ
-
-variable [IsManifold 𝓘(ℂ) 1 X] (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n)
+variable {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y] {n : ℕ∞ω} [IsManifold 𝓘(ℂ) 1 X]
+  (e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (hn : 1 ≤ n)
 include hn
 
 /-- Precomposing `u : X → M` with a biholomorphism `e : Y ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ X` (`1 ≤ n`). -/
@@ -665,7 +651,7 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOn_comp_diffeomorph (hu : HasWeakMFDeri
     (by rw [hJ]; exact maximalAtlas_subset_real) hn
     (fun _ hφ ↦ by
       rw [Diffeomorph.restrictScalars_symm, Diffeomorph.restrictScalars_toHomeomorph]
-      exact trans_mem_maximalAtlas_of_biholomorph e.symm hn hφ) hu
+      exact e.symm.trans_mem_maximalAtlas hn hφ) hu
   rwa [Diffeomorph.coe_restrictScalars] at h
 
 /-- Global precomposition with a biholomorphism (`1 ≤ n`). -/
@@ -689,10 +675,10 @@ theorem _root_.Diffeomorph.hasWeakMFDerivOn_comp_diffeomorph_iff [IsManifold �
     (by rw [hJ]; exact maximalAtlas_subset_real) (by rw [hJ]; exact maximalAtlas_subset_real) hn
     (fun _ hφ ↦ by
       rw [Diffeomorph.restrictScalars_symm, Diffeomorph.restrictScalars_toHomeomorph]
-      exact trans_mem_maximalAtlas_of_biholomorph e.symm hn hφ)
+      exact e.symm.trans_mem_maximalAtlas hn hφ)
     (fun _ hφ ↦ by
       rw [Diffeomorph.restrictScalars_toHomeomorph]
-      exact trans_mem_maximalAtlas_of_biholomorph e hn hφ)
+      exact e.trans_mem_maximalAtlas hn hφ)
   rwa [Diffeomorph.coe_restrictScalars] at h
 
 /-- Global biholomorphism precomposition equivalence for `HasWeakMFDeriv` (`1 ≤ n`). -/
