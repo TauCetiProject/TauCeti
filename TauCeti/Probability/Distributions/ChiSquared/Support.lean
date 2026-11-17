@@ -13,9 +13,10 @@ public import TauCeti.MeasureTheory.Measure.Dirac
 # Support of chi-squared laws
 
 Positive-degree chi-squared laws have topological support `[0, ∞)`. At degree zero the support is
-the singleton zero; negative degrees give empty support. In particular, every open right half-line
-`(c, ∞)` has positive measure and positive real probability when the degree is positive. This also
-describes the components used in Poisson mixtures of chi-squared laws.
+the singleton zero; negative degrees give empty support. This also describes the components used
+in Poisson mixtures of chi-squared laws.
+
+In particular, every open right half-line `(c, ∞)` has positive measure when the degree is positive.
 -/
 
 public section

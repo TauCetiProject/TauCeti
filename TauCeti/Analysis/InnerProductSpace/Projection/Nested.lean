@@ -11,26 +11,11 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 /-!
 # Orthogonal projections onto nested subspaces
 
-When `U ≤ V` are subspaces of an inner product space `E` that admit orthogonal projections, the
-orthogonal complement of `U` inside `V`, namely `V ⊓ Uᗮ`, also admits an orthogonal projection
-without any completeness assumption on `E`. Its projection equals the difference
-`V.starProjection - U.starProjection`, the squared residual splits orthogonally as
+When `U ≤ V` admit orthogonal projections, `V ⊓ Uᗮ` also admits an orthogonal projection (without
+completeness of `E`), with `(V ⊓ Uᗮ).starProjection = V.starProjection - U.starProjection`,
 `‖x - U.starProjection x‖ ^ 2 = ‖x - V.starProjection x‖ ^ 2 + ‖(V ⊓ Uᗮ).starProjection x‖ ^ 2`,
-and when `V` is finite-dimensional,
-`Module.finrank 𝕜 ↥(V ⊓ Uᗮ) = Module.finrank 𝕜 V - Module.finrank 𝕜 U`.
-
-## Main results
-
-* `Submodule.hasOrthogonalProjection_inf_orthogonal_of_le`: `V ⊓ Uᗮ` admits an orthogonal
-  projection whenever `U ≤ V` and both `U` and `V` do.
-* `Submodule.sup_inf_orthogonal_of_le`: `U ⊔ (V ⊓ Uᗮ) = V` when `U ≤ V` and `U` admits an
-  orthogonal projection.
-* `Submodule.starProjection_inf_orthogonal_of_le`:
-  `(V ⊓ Uᗮ).starProjection = V.starProjection - U.starProjection`.
-* `Submodule.starProjection_inf_orthogonal_apply_of_le`: pointwise form of the difference.
-* `Submodule.norm_sub_starProjection_sq_of_le`: orthogonal Pythagorean split of the squared
-  residual along `V` and `V ⊓ Uᗮ`.
-* `Submodule.finrank_inf_orthogonal_of_le`: dimension formula for `V ⊓ Uᗮ`.
+and `Module.finrank 𝕜 ↥(V ⊓ Uᗮ) = Module.finrank 𝕜 V - Module.finrank 𝕜 U` when `V` is
+finite-dimensional.
 -/
 
 public section
@@ -52,29 +37,27 @@ theorem starProjection_sub_mem_inf_orthogonal_of_le [U.HasOrthogonalProjection]
   refine ⟨V.sub_mem (V.starProjection_apply_mem x) (h (U.starProjection_apply_mem x)),
     (Submodule.mem_orthogonal U _).2 fun u hu ↦ ?_⟩
   rw [inner_sub_right, ← U.inner_starProjection_left_eq_right,
-    ← V.inner_starProjection_left_eq_right,
-    Submodule.starProjection_eq_self_iff.mpr hu,
+    ← V.inner_starProjection_left_eq_right, Submodule.starProjection_eq_self_iff.mpr hu,
     Submodule.starProjection_eq_self_iff.mpr (h hu), sub_self]
+
+private theorem inner_sub_starProjection_sub_eq_zero [U.HasOrthogonalProjection]
+    [V.HasOrthogonalProjection] (x : E) {w : E} (hw : w ∈ V ⊓ Uᗮ) :
+    ⟪x - (V.starProjection x - U.starProjection x), w⟫_𝕜 = 0 := by
+  have hsplit : x - (V.starProjection x - U.starProjection x) =
+      (x - V.starProjection x) + U.starProjection x := by abel
+  rw [hsplit, inner_add_left, V.starProjection_inner_eq_zero x w hw.1,
+    (Submodule.mem_orthogonal U w).mp hw.2 (U.starProjection x) (U.starProjection_apply_mem x),
+    add_zero]
 
 /-- When `U ≤ V` and both admit orthogonal projections, `V ⊓ Uᗮ` also admits an orthogonal
 projection, without requiring completeness of `E`. -/
 theorem hasOrthogonalProjection_inf_orthogonal_of_le [U.HasOrthogonalProjection]
     [V.HasOrthogonalProjection] (h : U ≤ V) :
     (V ⊓ Uᗮ).HasOrthogonalProjection where
-  exists_orthogonal x := by
-    refine ⟨V.starProjection x - U.starProjection x,
-      starProjection_sub_mem_inf_orthogonal_of_le h x,
-      (Submodule.mem_orthogonal (V ⊓ Uᗮ) _).2 fun w hw ↦ ?_⟩
-    have hsplit : x - (V.starProjection x - U.starProjection x) =
-        (x - V.starProjection x) + U.starProjection x := by abel
-    rw [hsplit, inner_add_right]
-    have h1 : ⟪w, x - V.starProjection x⟫_𝕜 = 0 :=
-      (Submodule.mem_orthogonal V _).mp (V.sub_starProjection_mem_orthogonal x) w hw.1
-    have h2 : ⟪w, U.starProjection x⟫_𝕜 = 0 := by
-      rw [← inner_conj_symm]
-      simp [(Submodule.mem_orthogonal U _).mp hw.2 (U.starProjection x)
-        (U.starProjection_apply_mem x)]
-    rw [h1, h2, add_zero]
+  exists_orthogonal x := ⟨V.starProjection x - U.starProjection x,
+    starProjection_sub_mem_inf_orthogonal_of_le h x,
+    (Submodule.mem_orthogonal (V ⊓ Uᗮ) _).2 fun w hw ↦ by
+      rw [← inner_conj_symm, inner_sub_starProjection_sub_eq_zero x hw, map_zero]⟩
 
 /-- Orthogonal modular law: for `U ≤ V` with `U` admitting an orthogonal projection,
 `U ⊔ (V ⊓ Uᗮ) = V`. -/
@@ -89,42 +72,31 @@ theorem sup_inf_orthogonal_of_le [U.HasOrthogonalProjection] (h : U ≤ V) :
 difference `V.starProjection x - U.starProjection x`. -/
 theorem starProjection_inf_orthogonal_apply_of_le [U.HasOrthogonalProjection]
     [V.HasOrthogonalProjection] [(V ⊓ Uᗮ).HasOrthogonalProjection] (h : U ≤ V) (x : E) :
-    (V ⊓ Uᗮ).starProjection x = V.starProjection x - U.starProjection x := by
-  refine (V ⊓ Uᗮ).eq_starProjection_of_mem_of_inner_eq_zero
-    (starProjection_sub_mem_inf_orthogonal_of_le h x) fun w hw ↦ ?_
-  have hsplit : x - (V.starProjection x - U.starProjection x) =
-      (x - V.starProjection x) + U.starProjection x := by abel
-  rw [hsplit, inner_add_left]
-  have h1 : ⟪x - V.starProjection x, w⟫_𝕜 = 0 :=
-    V.starProjection_inner_eq_zero x w hw.1
-  have h2 : ⟪U.starProjection x, w⟫_𝕜 = 0 :=
-    (Submodule.mem_orthogonal U w).mp hw.2 (U.starProjection x) (U.starProjection_apply_mem x)
-  rw [h1, h2, add_zero]
+    (V ⊓ Uᗮ).starProjection x = V.starProjection x - U.starProjection x :=
+  (V ⊓ Uᗮ).eq_starProjection_of_mem_of_inner_eq_zero
+    (starProjection_sub_mem_inf_orthogonal_of_le h x) fun _ hw ↦
+    inner_sub_starProjection_sub_eq_zero x hw
 
-/-- For nested subspaces `U ≤ V`, the orthogonal projection onto `V ⊓ Uᗮ` is
-`V.starProjection - U.starProjection`. -/
+/-- For `U ≤ V`, `(V ⊓ Uᗮ).starProjection = V.starProjection - U.starProjection`. -/
 theorem starProjection_inf_orthogonal_of_le [U.HasOrthogonalProjection]
     [V.HasOrthogonalProjection] [(V ⊓ Uᗮ).HasOrthogonalProjection] (h : U ≤ V) :
     (V ⊓ Uᗮ).starProjection = V.starProjection - U.starProjection :=
   ContinuousLinearMap.ext (starProjection_inf_orthogonal_apply_of_le h)
 
-/-- For nested subspaces `U ≤ V`, the squared residual `‖x - U.starProjection x‖ ^ 2` splits
-orthogonally into `‖x - V.starProjection x‖ ^ 2 + ‖(V ⊓ Uᗮ).starProjection x‖ ^ 2`. -/
+/-- For nested subspaces `U ≤ V`, `‖x - U.starProjection x‖ ^ 2` splits orthogonally into
+`‖x - V.starProjection x‖ ^ 2 + ‖(V ⊓ Uᗮ).starProjection x‖ ^ 2`. -/
 theorem norm_sub_starProjection_sq_of_le [U.HasOrthogonalProjection]
     [V.HasOrthogonalProjection] [(V ⊓ Uᗮ).HasOrthogonalProjection] (h : U ≤ V) (x : E) :
     ‖x - U.starProjection x‖ ^ 2 =
       ‖x - V.starProjection x‖ ^ 2 + ‖(V ⊓ Uᗮ).starProjection x‖ ^ 2 := by
-  have hsum : x - U.starProjection x =
-      (x - V.starProjection x) + (V ⊓ Uᗮ).starProjection x := by
-    rw [starProjection_inf_orthogonal_apply_of_le h x]
-    abel
-  have hortho : ⟪x - V.starProjection x, (V ⊓ Uᗮ).starProjection x⟫_𝕜 = 0 :=
-    V.starProjection_inner_eq_zero x _ ((V ⊓ Uᗮ).starProjection_apply_mem x).1
+  have hsum : x - U.starProjection x = (x - V.starProjection x) + (V ⊓ Uᗮ).starProjection x := by
+    rw [starProjection_inf_orthogonal_apply_of_le h x]; abel
   rw [hsum, sq, sq, sq]
-  exact norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ hortho
+  exact norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _
+    (V.starProjection_inner_eq_zero x _ ((V ⊓ Uᗮ).starProjection_apply_mem x).1)
 
-/-- For nested subspaces `U ≤ V` with `V` finite-dimensional, the dimension of `V ⊓ Uᗮ` is
-`Module.finrank 𝕜 V - Module.finrank 𝕜 U`. -/
+/-- For nested subspaces `U ≤ V` with `V` finite-dimensional,
+`Module.finrank 𝕜 ↥(V ⊓ Uᗮ) = Module.finrank 𝕜 V - Module.finrank 𝕜 U`. -/
 theorem finrank_inf_orthogonal_of_le [FiniteDimensional 𝕜 V] (h : U ≤ V) :
     Module.finrank 𝕜 ↥(V ⊓ Uᗮ) = Module.finrank 𝕜 V - Module.finrank 𝕜 U := by
   have : FiniteDimensional 𝕜 U := Submodule.finiteDimensional_of_le h
