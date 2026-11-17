@@ -17,8 +17,9 @@ bracket of vector fields `VectorField.mlieBracket`, is a Lie algebroid,
 `TauCeti.LieAlgebroid.tangent`. Its Leibniz rule is the product rule
 `VectorField.mlieBracket_smul_right` of the bracket of vector fields, and its Jacobi identity is
 `VectorField.leibniz_identity_mlieBracket`. Over a Hausdorff base, every Lie algebroid whose
-underlying bundle is a smooth vector bundle maps to it by its anchor
-(`TauCeti.LieAlgebroid.anchor_bracket`).
+underlying bundle is a smooth vector bundle maps to it by its anchor as a Lie algebra homomorphism
+on sections (`TauCeti.LieAlgebroid.anchorLieHom`, via `TauCeti.LieAlgebroid.anchorLieHomOfBracket`
+and `TauCeti.LieAlgebroid.anchor_bracket`).
 -/
 
 public section
@@ -72,11 +73,72 @@ def tangent : LieAlgebroid I E (TangentSpace I : M → Type _) where
 theorem tangent_anchor_apply (x : M) (v : TangentSpace I x) : (tangent I M).anchor x v = v :=
   (rfl)
 
-@[simp]
-theorem tangent_bracket_apply (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (x : M) :
-    (tangent I M).bracket X Y x = mlieBracket I X Y x :=
-  (rfl)
+@[simp] theorem tangent_bracket_apply (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (x : M) :
+    (tangent I M).bracket X Y x = mlieBracket I X Y x := (rfl)
 
+/-- `anchorDeriv` on the tangent Lie algebroid intertwines the section bracket with the commutator
+of directional derivatives, without requiring `T2Space M`. -/
+theorem tangent_anchorDeriv_bracket
+    (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; ℝ⟯) :
+    (tangent I M).anchorDeriv ((tangent I M).bracket X Y) f =
+      (tangent I M).anchorDeriv X ((tangent I M).anchorDeriv Y f) -
+        (tangent I M).anchorDeriv Y ((tangent I M).anchorDeriv X f) := by
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
+  have hZf (Z : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+      ⇑((tangent I M).anchorDeriv Z f) = fun y ↦ mvfderiv I f y (Z y) := funext fun _ ↦ by simp
+  ext x; simp only [anchorDeriv_apply, tangent_anchor_apply, tangent_bracket_apply,
+    ContMDiffMap.coe_sub, Pi.sub_apply, hZf]
+  exact _root_.mvfderiv_mlieBracket f.contMDiff.contMDiffAt (by simp)
+    (X.contMDiff.mdifferentiableAt (by simp)) (Y.contMDiff.mdifferentiableAt (by simp))
+
+section AnchorLieHom
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V] (A : LieAlgebroid I F V)
+
+section OfBracket
+variable (h : ∀ a b, A.anchorField (A.bracket a b) =
+  (tangent I M).bracket (A.anchorField a) (A.anchorField b))
+
+/-- Given that `A.anchorField` intertwines `A.bracket` with the tangent bracket, the anchor applied
+to sections is a Lie algebra homomorphism `A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections`. -/
+def anchorLieHomOfBracket : A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections :=
+  { (((tangent I M).sectionsEquiv.symm.restrictScalars ℝ).toLinearMap.comp <|
+      (A.anchorField.restrictScalars ℝ).comp (A.sectionsEquiv.restrictScalars ℝ).toLinearMap) with
+    map_lie' {_ _} := (tangent I M).sectionsEquiv.injective (by simp [h]) }
+
+@[simp] theorem sectionsEquiv_anchorLieHomOfBracket (s : A.Sections) :
+    (tangent I M).sectionsEquiv (A.anchorLieHomOfBracket h s) =
+      A.anchorField (A.sectionsEquiv s) := by
+  rw [← LieHom.coe_toLinearMap]; simp [anchorLieHomOfBracket]
+
+@[simp] theorem anchorLieHomOfBracket_smul (f : C^∞⟮I, M; ℝ⟯) (s : A.Sections) :
+    A.anchorLieHomOfBracket h (f • s) = f • A.anchorLieHomOfBracket h s :=
+  (tangent I M).sectionsEquiv.injective (by simp)
+
+@[simp] theorem anchorLieHomOfBracket_lie [T2Space M] [ContMDiffVectorBundle ∞ F V I]
+    (s : A.Sections) (f : C^∞⟮I, M; ℝ⟯) : ⁅A.anchorLieHomOfBracket h s, f⁆ = ⁅s, f⁆ := by
+  rw [Sections.lie_def, Sections.lie_def, sectionsEquiv_anchorLieHomOfBracket]; ext x; simp
+
+end OfBracket
+
+variable [T2Space M] [ContMDiffVectorBundle ∞ F V I]
+
+/-- Over a Hausdorff base, the anchor of any Lie algebroid on a smooth vector bundle induces a Lie
+algebra homomorphism `A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections` intertwining anchor actions. -/
+def anchorLieHom : A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections :=
+  A.anchorLieHomOfBracket fun a b ↦ ContMDiffSection.ext fun x ↦ by simp [A.anchor_bracket]
+
+@[simp] theorem sectionsEquiv_anchorLieHom (s : A.Sections) :
+    (tangent I M).sectionsEquiv (A.anchorLieHom s) = A.anchorField (A.sectionsEquiv s) :=
+  A.sectionsEquiv_anchorLieHomOfBracket _ s
+
+@[simp] theorem anchorLieHom_smul (f : C^∞⟮I, M; ℝ⟯) (s : A.Sections) :
+    A.anchorLieHom (f • s) = f • A.anchorLieHom s := A.anchorLieHomOfBracket_smul _ f s
+
+@[simp] theorem anchorLieHom_lie (s : A.Sections) (f : C^∞⟮I, M; ℝ⟯) :
+    ⁅A.anchorLieHom s, f⁆ = ⁅s, f⁆ := A.anchorLieHomOfBracket_lie _ s f
+
+end AnchorLieHom
 end LieAlgebroid
-
 end TauCeti
