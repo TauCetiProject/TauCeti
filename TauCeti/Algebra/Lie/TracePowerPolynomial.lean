@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.LinearAlgebra.Trace.Nilpotent
 import TauCeti.RingTheory.Derivation.Matrix
@@ -59,6 +60,9 @@ restriction theorem and of the Harish-Chandra isomorphism.
   `tr (ρ_M(x) ^ m)`.
 * `TauCeti.tracePowerPolynomial_mem_homogeneousSubmodule`: it is homogeneous of degree `m`.
 * `TauCeti.tracePowerPolynomial_mem_lieInvariants`: it is invariant under the coadjoint action.
+* `TauCeti.map_genericActionMatrix_pow_card_eq_zero`: without additive torsion, a ring
+  homomorphism killing the trace-power polynomials of degrees `1, …, d = rank M` sends the generic
+  action matrix to a matrix whose `d`-th power vanishes.
 * `TauCeti.isNilpotent_toEnd_of_forall_lift_eval_eq_zero`: over a field of characteristic zero, if
   every invariant polynomial function with zero constant term vanishes at `x`, then `x` acts
   nilpotently on every finite-dimensional module, by the trace criterion.
@@ -256,6 +260,19 @@ theorem tracePowerPolynomial_mem_lieInvariants (m : ℕ) :
     (B := -(LinearMap.toMatrix c c (LieModule.toEnd R L M y)).map (algebraMap R S)) ?_ m
   rw [map_lieModuleDerivation_genericActionMatrix, neg_mul, mul_neg, sub_neg_eq_add,
     neg_add_eq_sub]
+
+/-- **The generic action matrix is nilpotent where the trace-power polynomials vanish.** Let `c` be
+a basis of `M` of size `d`, and let `φ : S(L*) → B` be a ring homomorphism into a commutative ring
+without additive torsion which kills the trace-power polynomials of degrees `1, …, d`. Then the
+image of the generic action matrix satisfies `(φ A) ^ d = 0`. -/
+theorem map_genericActionMatrix_pow_card_eq_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
+    {B : Type*} [CommRing B] [IsAddTorsionFree B] (φ : S →+* B) (c : Basis κ R M)
+    (hφ : ∀ j, 0 < j → j ≤ Fintype.card κ → φ (tracePowerPolynomial R L M j) = 0) :
+    (genericActionMatrix R L c).map φ ^ Fintype.card κ = 0 := by
+  refine Matrix.pow_card_eq_zero_of_trace_pow_eq_zero fun j hj hjκ ↦ ?_
+  rw [← Matrix.map_pow, ← AddMonoidHom.map_trace φ,
+    ← tracePowerPolynomial_eq_trace_pow_genericActionMatrix c]
+  exact hφ j hj hjκ
 
 end TracePowerPolynomial
 
