@@ -177,7 +177,7 @@ theorem hopfSphere2_surjective : Function.Surjective hopfSphere2 := by
       Complex.norm_real, Real.norm_eq_abs, sq_abs,
       cos_sq_add_sin_sq]
   refine ⟨⟨_, mem_sphere_zero_iff_norm.2 hv⟩, Subtype.ext ?_⟩
-  change hopfVector _ _ = _
+  rw [coe_hopfSphere2_apply, ← hopfVector]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [hopfVector_ofReal_mul_conj _ _ hz]
   ext i

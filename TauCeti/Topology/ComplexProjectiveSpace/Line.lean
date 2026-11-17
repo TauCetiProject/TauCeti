@@ -224,7 +224,9 @@ theorem lineSphereFamily_bijective (f : finiteOrthonormalFrame ℂ 2 2) :
     exact (congrArg norm hx).trans (norm_eq_of_mem_sphere y)
   refine ⟨hopfSphere2 ⟨x, hx1⟩, ?_⟩
   rw [lineSphereFamily_apply_hopfSphere2 f _ _ (coe_lineVector f _)]
-  exact congrArg (mk 1) (Subtype.ext (by simpa [lineVector] using hx))
+  refine congrArg (mk 1) (Subtype.ext ?_)
+  rw [coe_lineVector]
+  simpa [Orthonormal.synthesisMapIsometry_apply, Fin.sum_univ_two] using hx
 
 /-- **The family of two-spheres through a point.** For a unit vector `u = f₀` of `ℂⁿ⁺¹`, the unit
 vectors `w` of the complex orthogonal complement of `u` parametrize the unit tangent vectors of
