@@ -38,11 +38,6 @@ open scoped BigOperators
 
 namespace TauCeti
 
-/-- For a nonempty finite index type `ι`, the Euclidean unit sphere `S ⊂ ℝ^ι` is nonempty. -/
-instance {ι : Type*} [Fintype ι] [Nonempty ι] :
-    Nonempty (sphere (0 : EuclideanSpace ℝ ι) 1) :=
-  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-
 variable (R : Type*) [Semiring R] [TopologicalSpace R] [Algebra ℝ R] [ContinuousSMul ℝ R]
   {ι : Type*} [Fintype ι]
 

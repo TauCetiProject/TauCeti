@@ -89,34 +89,6 @@ variable {ι : Type*} [Fintype ι]
   {S : Type*} [CommRing S] [TopologicalSpace S] [IsTopologicalRing S]
   [Algebra ℝ S] [ContinuousSMul ℝ S]
 
-/-- Coordinatewise post-composition of tangent sections along a continuous `ℝ`-algebra
-homomorphism `φ : R →ₐ[ℝ] S`, as a semilinear map over `(φ : R →+* S).compLeftContinuous _ hφ`. -/
-def tangentSectionsMapSemilinear (φ : R →ₐ[ℝ] S) (hφ : Continuous φ) :
-    tangentSections ι R →ₛₗ[
-      (φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ]
-      tangentSections ι S where
-  toFun v :=
-    ⟨fun i ↦ (φ : R →+* S).compLeftContinuous _ hφ (v.1 i), by
-      rw [mem_tangentSections_iff, dotProduct]
-      have hv : ∑ i : ι, sphereCoord R i * v.1 i = 0 :=
-        mem_tangentSections_iff.mp v.2
-      have hmap := congrArg ((φ : R →+* S).compLeftContinuous _ hφ) hv
-      simpa only [map_sum, map_mul, compLeftContinuous_sphereCoord, map_zero] using hmap⟩
-  map_add' v w := by
-    refine Subtype.ext (funext fun i ↦ ?_)
-    exact map_add _ _ _
-  map_smul' c v := by
-    refine Subtype.ext (funext fun i ↦ ?_)
-    exact map_mul _ _ _
-
-@[simp]
-theorem coe_tangentSectionsMapSemilinear_apply (φ : R →ₐ[ℝ] S) (hφ : Continuous φ)
-    (v : tangentSections ι R) :
-    (tangentSectionsMapSemilinear φ hφ v :
-      ι → C(sphere (0 : EuclideanSpace ℝ ι) 1, S)) =
-      fun i ↦ (φ : R →+* S).compLeftContinuous _ hφ (v.1 i) :=
-  (rfl)
-
 /-- **Balanced scalar extension of continuous tangent sections.** For a continuous `ℝ`-algebra
 homomorphism `φ : R →ₐ[ℝ] S` with induced ring homomorphism
 `f = (φ : R →+* S).compLeftContinuous _ hφ : C(S_ι, R) →+* C(S_ι, S)`, the balanced tensor product
@@ -127,24 +99,18 @@ def tangentSectionsExtendEquiv (φ : R →ₐ[ℝ] S) (hφ : Continuous φ) :
       ((φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ)
       (tangentSections ι R) ≃ₗ[C(sphere (0 : EuclideanSpace ℝ ι) 1, S)]
       tangentSections ι S :=
-  LinearEquiv.ofBijective (BalancedExtension.lift (tangentSectionsMapSemilinear φ hφ)) <| by
-    classical
-    let f := (φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ
-    let e₁ : tangentSections ι R ≃ₗ[C(sphere (0 : EuclideanSpace ℝ ι) 1, R)]
-        LinearMap.range (sphereTangentProjMatrix ι R).vecMulLinear :=
-      LinearEquiv.ofEq _ _ (range_vecMulLinear_sphereTangentProjMatrix (ι := ι) (R := R)).symm
-    let e₂ : LinearMap.range ((sphereTangentProjMatrix ι R).map f).vecMulLinear ≃ₗ[
-        C(sphere (0 : EuclideanSpace ℝ ι) 1, S)] tangentSections ι S :=
-      LinearEquiv.ofEq _ _ <| by
-        rw [map_sphereTangentProjMatrix, range_vecMulLinear_sphereTangentProjMatrix]
-    let eqv := (BalancedExtension.congr f e₁).trans
-      ((BalancedExtension.rangeVecMulLinearEquiv f
-        (isIdempotentElem_sphereTangentProjMatrix (ι := ι) (R := R))).trans e₂)
-    have heq : BalancedExtension.lift (tangentSectionsMapSemilinear φ hφ) = eqv.toLinearMap := by
-      refine BalancedExtension.hom_ext fun v ↦ Subtype.ext (funext fun i ↦ ?_)
-      simp [eqv, e₁, e₂, f]
-    rw [heq]
-    exact eqv.bijective
+  letI := Classical.decEq ι
+  let f := (φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ
+  let e₁ : tangentSections ι R ≃ₗ[C(sphere (0 : EuclideanSpace ℝ ι) 1, R)]
+      LinearMap.range (sphereTangentProjMatrix ι R).vecMulLinear :=
+    LinearEquiv.ofEq _ _ (range_vecMulLinear_sphereTangentProjMatrix (ι := ι) (R := R)).symm
+  let e₂ : LinearMap.range ((sphereTangentProjMatrix ι R).map f).vecMulLinear ≃ₗ[
+      C(sphere (0 : EuclideanSpace ℝ ι) 1, S)] tangentSections ι S :=
+    LinearEquiv.ofEq _ _ <| by
+      rw [map_sphereTangentProjMatrix, range_vecMulLinear_sphereTangentProjMatrix]
+  (BalancedExtension.congr f e₁).trans
+    ((BalancedExtension.rangeVecMulLinearEquiv f
+      (isIdempotentElem_sphereTangentProjMatrix (ι := ι) (R := R))).trans e₂)
 
 @[simp]
 theorem coe_tangentSectionsExtendEquiv_tmul (φ : R →ₐ[ℝ] S) (hφ : Continuous φ)
@@ -154,29 +120,28 @@ theorem coe_tangentSectionsExtendEquiv_tmul (φ : R →ₐ[ℝ] S) (hφ : Contin
         ((φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ) c v) :
       ι → C(sphere (0 : EuclideanSpace ℝ ι) 1, S)) =
       fun i ↦ c * (φ : R →+* S).compLeftContinuous _ hφ (v.1 i) := by
-  ext i x
-  simp [tangentSectionsExtendEquiv]
+  simp only [tangentSectionsExtendEquiv, LinearEquiv.trans_apply, BalancedExtension.congr_tmul,
+    LinearEquiv.coe_ofEq_apply, BalancedExtension.coe_rangeVecMulLinearEquiv_tmul]
 
 /-- Explicit formula for the inverse of `tangentSectionsExtendEquiv` through the rows of the
 orthogonal-projection matrix `1 - x xᵀ`: a tangent field `w` over `S` maps to
 `∑ i, wᵢ ⊗ (1 - x xᵀ)ᵢ`. -/
-theorem tangentSectionsExtendEquiv_symm_apply [DecidableEq ι] (φ : R →ₐ[ℝ] S) (hφ : Continuous φ)
-    (w : tangentSections ι S) :
+theorem tangentSectionsExtendEquiv_symm_apply [inst : DecidableEq ι] (φ : R →ₐ[ℝ] S)
+    (hφ : Continuous φ) (w : tangentSections ι S) :
     (tangentSectionsExtendEquiv φ hφ).symm w =
       ∑ i : ι, BalancedExtension.tmul
         ((φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ)
         (w.1 i)
         ⟨sphereTangentProjMatrix ι R i, by
           rw [← range_vecMulLinear_sphereTangentProjMatrix]
-          exact ⟨Pi.single i 1, single_one_vecMul _ _⟩⟩ := by
-  rw [LinearEquiv.symm_apply_eq]
-  refine Subtype.ext (funext fun j ↦ ?_)
-  have hw : w.1 ᵥ* sphereTangentProjMatrix ι S = w.1 := by
-    rw [vecMul_sphereTangentProjMatrix, mem_tangentSections_iff.mp w.2, zero_smul, sub_zero]
-  have hwj := congrFun hw j
-  simp only [map_sum, Submodule.coe_sum, Finset.sum_apply, coe_tangentSectionsExtendEquiv_tmul]
-  rw [← hwj, vecMul_apply_eq_sum, ← map_sphereTangentProjMatrix φ hφ]
-  simp only [Matrix.map_apply]
+          exact Matrix.row_mem_range_vecMulLinear _ i⟩ := by
+  obtain rfl : inst = Classical.decEq ι := Subsingleton.elim _ _
+  simp only [tangentSectionsExtendEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    LinearEquiv.ofEq_symm, BalancedExtension.congr_symm,
+    BalancedExtension.rangeVecMulLinearEquiv_symm_apply, map_sum, BalancedExtension.congr_tmul,
+    LinearEquiv.coe_ofEq_apply]
+  exact Finset.sum_congr rfl fun i _ ↦
+    congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
 
 variable (ι) in
 /-- **Balanced complexification of continuous tangent sections.** Extending scalars along the

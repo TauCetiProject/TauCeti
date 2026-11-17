@@ -9,11 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
-# Connectedness of spheres
+# Nonemptiness and connectedness of spheres
 
-Spheres in real normed spaces of dimension at least two are connected. In particular, the unit
-sphere in `EuclideanSpace ℝ (Fin m)` is connected for `m ≥ 2`.
-`TauCeti.connectedSpace_sphere` and `TauCeti.connectedSpace_euclideanSphere` supply the
+The unit sphere in `EuclideanSpace ℝ ι` is nonempty whenever `ι` is finite and nonempty
+(`TauCeti.instNonemptyEuclideanSphere`), and spheres in real normed spaces of dimension at least two
+are connected. In particular, the unit sphere in `EuclideanSpace ℝ (Fin m)` is connected for
+`m ≥ 2`. `TauCeti.connectedSpace_sphere` and `TauCeti.connectedSpace_euclideanSphere` supply the
 connected-space instances used by covering-space, separation and orientation arguments on spheres,
 independently of their manifold structure.
 -/
@@ -24,6 +25,11 @@ namespace TauCeti
 
 open Metric Module
 open scoped EuclideanSpace
+
+/-- For a nonempty finite index type `ι`, the unit sphere of `EuclideanSpace ℝ ι` is nonempty. -/
+instance instNonemptyEuclideanSphere {ι : Type*} [Fintype ι] [Nonempty ι] :
+    Nonempty (sphere (0 : EuclideanSpace ℝ ι) 1) :=
+  (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]

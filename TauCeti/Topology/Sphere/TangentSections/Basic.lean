@@ -7,10 +7,12 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+public import TauCeti.Geometry.Sphere.Connected
 public import TauCeti.Topology.Sphere.Coord
 
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Geometry.Manifold.Degree.HairyBall
+import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
 # Continuous tangent sections on Euclidean spheres and failure of projective cancellation
@@ -198,10 +200,10 @@ theorem sphereTangentProjMatrix_mulVec_sphereCoord :
 `(1 - x xᵀ)² = 1 - 2 x xᵀ + x (xᵀ x) xᵀ = 1 - x xᵀ`. -/
 theorem isIdempotentElem_sphereTangentProjMatrix :
     IsIdempotentElem (sphereTangentProjMatrix ι R) := by
-  rw [IsIdempotentElem, ext_iff_mulVec]
-  intro v
-  simp only [← mulVec_mulVec, sphereTangentProjMatrix_mulVec, mulVec_sub, mulVec_smul,
-    dotProduct_sphereCoord_self, one_smul, sub_self, smul_zero, sub_zero]
+  simpa only [IsIdempotentElem, sphereTangentProjMatrix_def, sub_zero, one_smul, zero_smul,
+    add_zero] using
+    one_sub_vecMulVec_mul_self (0 : C(sphere (0 : EuclideanSpace ℝ ι) 1, R))
+      (u := sphereCoord R) (v := sphereCoord R) (by rw [dotProduct_sphereCoord_self, zero_add])
 
 theorem sphereTangentProjMatrix_mulVec_eq_self_iff
     {v : ι → C(sphere (0 : EuclideanSpace ℝ ι) 1, R)} :
