@@ -32,7 +32,7 @@ defining the real-linear equivalence `gaugeFixedKernelEquivPrincipalPart :
 gaugeFixedKernel x ≃ₗ[ℝ] (Multiset.ToType D → ℂ)` and producing a smooth kernel element realizing
 any prescribed principal-part tuple (`exists_contDiff_mem_gaugeFixedKernel_principalPart_eq`). The
 comparison with the weak `L²` and Sobolev `H^s` kernels of `L_x` is proved in
-`TauCeti.Analysis.PDE.Vortex.Kernel.Weak`; no Fredholm operator bundle is constructed here.
+`TauCeti.Analysis.PDE.Vortex.WeakKernel`; no Fredholm operator bundle is constructed here.
 
 ## Main declarations
 

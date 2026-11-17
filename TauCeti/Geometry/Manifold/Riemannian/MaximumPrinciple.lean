@@ -35,6 +35,8 @@ uniqueness mechanism for the curvature equation of conformal metrics on closed s
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin`: the sign of `Δ` at local extrema.
+* `TauCeti.Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax`: `Δ f + k Δ g ≤ 0` at a local
+  maximum of `f + k g`.
 * `TauCeti.Manifold.le_of_le_laplaceBeltrami_of_laplaceBeltrami_le`: the comparison principle.
 
 ## References
@@ -79,6 +81,20 @@ theorem laplaceBeltrami_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x
     (hmax : IsLocalMax f x) : laplaceBeltrami I f x ≤ 0 := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
   exact Finset.sum_nonpos fun i _ ↦ hessian_self_nonpos_of_isLocalMax hf hmax _
+
+/-- At a local maximum of `f + k g`, with `f` and `g` both `C²`, on a boundaryless Riemannian
+manifold, `Δ f + k Δ g ≤ 0`. -/
+theorem laplaceBeltrami_add_mul_nonpos_of_isLocalMax {g : M → ℝ} {k : ℝ}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x)
+    (hmax : IsLocalMax (fun y ↦ f y + k * g y) x) :
+    laplaceBeltrami I f x + k * laplaceBeltrami I g x ≤ 0 := by
+  have hkg : ContMDiffAt I 𝓘(ℝ) 2 (k • g) x := by
+    simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hg
+  -- The pointwise function `y ↦ f y + k * g y` is `f + k • g`.
+  have hfg : (fun y ↦ f y + k * g y) = f + k • g := rfl
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (hf.add hkg) (hfg ▸ hmax)
+  rwa [laplaceBeltrami_add_of_contMDiffAt I hf hkg,
+    laplaceBeltrami_smul_of_contMDiffAt I k hg] at hΔ
 
 /-- At a local minimum of a `C²` function on a boundaryless Riemannian manifold, the Hessian is
 positive semidefinite. -/
