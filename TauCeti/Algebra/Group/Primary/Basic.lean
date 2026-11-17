@@ -20,7 +20,7 @@ This file records foundational properties of Mathlib's `CommGroup.primaryCompone
 * Compatibility with binary products (`CommGroup.primaryComponent_prod`,
   `CommGroup.primaryComponentProdMulEquiv`, and their additive counterparts).
 * Identification of the `n`-primary component of an `n`-group with the whole group
-  (`IsPGroup.primaryComponent_eq_top`, `IsPGroup.primaryComponentEquiv`, and additive counterparts).
+  (`IsPGroup.primaryComponentEquiv` and its additive counterpart).
 * Every `n`-primary component is an `n`-group (`AddCommGroup.primaryComponent.isAddPGroup`), and
   the `p`-primary component of a `q`-group is trivial whenever `p` and `q` are coprime
   (`CommGroup.primaryComponent.subsingleton_of_isPGroup_of_coprime` and its additive counterpart).
@@ -85,20 +85,14 @@ theorem MulEquiv.coe_primaryComponent_symm_apply {G H : Type*} [CommGroup G] [Co
     ((e.primaryComponent n).symm y : G) = e.symm y := by
   simp [MulEquiv.primaryComponent]
 
-/-- The `n`-primary component of an `n`-group is the whole group. -/
-@[to_additive /-- The `n`-primary component of an additive `n`-group is the whole group. -/]
-theorem IsPGroup.primaryComponent_eq_top {G : Type*} [CommGroup G] {n : ℕ}
-    (hG : IsPGroup n G) :
-    CommGroup.primaryComponent G n = ⊤ :=
-  (Subgroup.eq_top_iff' _).mpr hG
-
 /-- The `n`-primary component of an `n`-group is isomorphic to the group itself. -/
 @[to_additive /-- The `n`-primary component of an additive `n`-group is isomorphic to the group
 itself. -/]
 def IsPGroup.primaryComponentEquiv {G : Type*} [CommGroup G] {n : ℕ}
     (hG : IsPGroup n G) :
     CommGroup.primaryComponent G n ≃* G :=
-  (MulEquiv.subgroupCongr hG.primaryComponent_eq_top).trans Subgroup.topEquiv
+  (MulEquiv.subgroupCongr ((Subgroup.eq_top_iff' (CommGroup.primaryComponent G n)).mpr hG)).trans
+    Subgroup.topEquiv
 
 /-- `IsPGroup.primaryComponentEquiv` acts as the subtype coercion. -/
 @[to_additive (attr := simp)
@@ -177,18 +171,6 @@ theorem coe_primaryComponentProdMulEquiv_symm_apply (G H : Type*) [CommGroup G] 
   rw [primaryComponentProdMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.subgroupCongr_symm_apply]
   rfl
 
-/-- If `G` is a `q`-group and `p` is coprime to `q`, then the `p`-primary component of `G` is
-trivial. -/
-@[to_additive
-  /-- If `G` is an additive `q`-group and `p` is coprime to `q`, then the `p`-primary component
-  of `G` is trivial. -/]
-theorem primaryComponent.subsingleton_of_isPGroup_of_coprime {G : Type*} [CommGroup G]
-    {p q : ℕ} (hG : IsPGroup q G) (hpq : p.Coprime q) :
-    Subsingleton (CommGroup.primaryComponent G p) := by
-  have hp : IsPGroup p (CommGroup.primaryComponent G p) := fun x ↦
-    x.property.imp fun _ hk ↦ Subtype.ext <| by simpa using hk
-  exact hp.subsingleton_of_coprime (hG.to_subgroup _) hpq
-
 end CommGroup
 
 namespace AddCommGroup
@@ -200,4 +182,24 @@ theorem primaryComponent.isAddPGroup (A : Type*) [AddCommGroup A] (n : ℕ) :
   obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
   exact ⟨k, Subtype.ext hk⟩
 
+/-- If `G` is an additive `q`-group and `p` is coprime to `q`, then the `p`-primary component of
+`G` is trivial. -/
+theorem primaryComponent.subsingleton_of_isAddPGroup_of_coprime {G : Type*} [AddCommGroup G]
+    {p q : ℕ} (hG : IsAddPGroup q G) (hpq : p.Coprime q) :
+    Subsingleton (AddCommGroup.primaryComponent G p) :=
+  (primaryComponent.isAddPGroup G p).subsingleton_of_coprime (hG.to_addSubgroup _) hpq
+
 end AddCommGroup
+
+namespace CommGroup
+
+/-- If `G` is a `q`-group and `p` is coprime to `q`, then the `p`-primary component of `G` is
+trivial. -/
+@[to_additive existing]
+theorem primaryComponent.subsingleton_of_isPGroup_of_coprime {G : Type*} [CommGroup G]
+    {p q : ℕ} (hG : IsPGroup q G) (hpq : p.Coprime q) :
+    Subsingleton (CommGroup.primaryComponent G p) :=
+  (CommGroup.primaryComponent.isPGroup (G := G) (p := p)).subsingleton_of_coprime
+    (hG.to_subgroup _) hpq
+
+end CommGroup

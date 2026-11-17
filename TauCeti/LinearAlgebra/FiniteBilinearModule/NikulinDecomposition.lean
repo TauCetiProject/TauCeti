@@ -893,6 +893,40 @@ theorem NikulinDecomposition.hasCyclicTwoSummand_of_mem {A : FiniteQuadraticModu
           (dyadicCyclic 1 θ).quadratic
           (orthogonalSumNikulinGenerators gs₂).quadratic)))
 
+/-- A module with a cyclic order-two dyadic summand has an element `x` with `2 • x = 0` and
+`q(x) + q(x) ≠ 0`. -/
+theorem HasCyclicTwoSummand.exists_two_nsmul_eq_zero_and_quadratic_add_self_ne_zero
+    {A : FiniteQuadraticModule.{u}} (hA : HasCyclicTwoSummand A) :
+    ∃ x : A, 2 • x = 0 ∧ A.quadratic x + A.quadratic x ≠ 0 := by
+  obtain ⟨θ, A', hθ, ⟨f⟩⟩ := hA
+  let e : dyadicCyclic 1 θ := (1 : ZMod (2 ^ 1))
+  have h2 : (2 : ℕ) • (e, (0 : A')) = 0 := Prod.ext (ZMod.natCast_self 2) (nsmul_zero 2)
+  refine ⟨f.symm (e, 0), by rw [← map_nsmul, h2, map_zero], ?_⟩
+  rw [f.symm.map_app, prod_quadratic, map_zero, add_zero]
+  exact dyadicCyclic_one_quadratic_add_self_ne_zero hθ
+
+/-- Every nondegenerate `q_θ^{(2)}(2)` (`θ` odd) has a cyclic order-two dyadic summand. -/
+theorem hasCyclicTwoSummand_dyadicCyclic_one {θ : ℤ} (hθ : Odd θ) :
+    HasCyclicTwoSummand (dyadicCyclic 1 θ) :=
+  ⟨θ, orthogonalSumNikulinGenerators [], hθ,
+    ⟨(QuadraticMap.IsometryEquiv.uniqueProd _ _).symm.trans (.prodComm _ _)⟩⟩
+
+/-- For every `k`, `u^{(2)}(2^k)` has no cyclic order-two dyadic summand. -/
+theorem not_hasCyclicTwoSummand_dyadicU (k : ℕ) : ¬ HasCyclicTwoSummand (dyadicU k) := by
+  intro h
+  obtain ⟨⟨a, b⟩, hx2, hq⟩ := h.exists_two_nsmul_eq_zero_and_quadratic_add_self_ne_zero
+  have ha : a + a = 0 := congrArg Prod.fst ((two_nsmul _).symm.trans (hx2 : (2 : ℕ) • (a, b) = 0))
+  exact hq (by rw [dyadicU_quadratic (k := k) (a, b), ← map_add, ← add_mul, ha, zero_mul, map_zero])
+
+/-- For every `k`, `v^{(2)}(2^k)` has no cyclic order-two dyadic summand. -/
+theorem not_hasCyclicTwoSummand_dyadicV (k : ℕ) : ¬ HasCyclicTwoSummand (dyadicV k) := by
+  intro h
+  obtain ⟨⟨a, b⟩, hx2, hq⟩ := h.exists_two_nsmul_eq_zero_and_quadratic_add_self_ne_zero
+  have h2 := Prod.mk.inj ((two_nsmul (a, b)).symm.trans (hx2 : (2 : ℕ) • (a, b) = 0))
+  have hsum : (a ^ 2 + a * b + b ^ 2) + (a ^ 2 + a * b + b ^ 2) = 0 := by
+    linear_combination (a + b) * h2.1 + b * h2.2
+  exact hq (by rw [dyadicV_quadratic (k := k) (a, b), ← map_add, hsum, map_zero])
+
 /-! ## Non-uniqueness of decompositions -/
 
 /-- Standard single-generator decomposition `[q_θ^{(2)}(2)]` of `dyadicCyclic 1 θ` (`θ` odd). -/
