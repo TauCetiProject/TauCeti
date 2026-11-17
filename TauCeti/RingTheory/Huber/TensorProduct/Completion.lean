@@ -25,8 +25,11 @@ import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 the tensor topology along adic structure maps. It is a complete Hausdorff Huber ring.
 Its two coprojections represent compatible continuous ring maps into complete Hausdorff
 nonarchimedean commutative rings, with no adicness condition on these outgoing maps, and
-likewise extend pairs of continuous derivations into complete Hausdorff nonarchimedean modules
-(`TauCeti.Huber.CompletedTensor.liftDerivation`).
+likewise uniquely extend pairs of continuous derivations into complete Hausdorff nonarchimedean
+modules (`TauCeti.Huber.CompletedTensor.liftDerivation`,
+`TauCeti.Huber.CompletedTensor.derivation_ext`,
+`TauCeti.Huber.CompletedTensor.eq_liftDerivation`,
+`TauCeti.Huber.CompletedTensor.existsUnique_liftDerivation`).
 
 This module constructs the ring and its continuous universal property. Rings of integral
 elements are additional data and are not part of this ring-level construction; the closure of
@@ -309,6 +312,23 @@ theorem hom_ext {S : Type*} [Semiring S] [TopologicalSpace S] [T2Space S]
   apply Completion.ringHom_ext_of_continuous hf hg
   exact Algebra.TensorProduct.ringHom_ext hB hC
 
+/-- Continuous `A`-derivations out of the completed tensor ring into a Hausdorff space are
+determined by their values on the two coprojections. -/
+theorem derivation_ext {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [T2Space M]
+    [Module A M] [Module (CompletedTensor A B C) M]
+    {d₁ d₂ : Derivation A (CompletedTensor A B C) M}
+    (hd₁ : Continuous d₁) (hd₂ : Continuous d₂)
+    (hB : ∀ b : B, d₁ (inl A B C b) = d₂ (inl A B C b))
+    (hC : ∀ c : C, d₁ (inr A B C c) = d₂ (inr A B C c)) : d₁ = d₂ := by
+  refine Derivation.coe_injective <|
+    (denseRange_toCompletion A B C).equalizer hd₁ hd₂ <| funext fun x ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul b c =>
+    simp only [Function.comp_apply, toCompletion_tmul, Derivation.leibniz, hB, hC]
+  | add x y hx hy =>
+    simp only [Function.comp_apply, map_add] at hx hy ⊢
+    rw [hx, hy]
+
 section OpenQuotient
 
 variable {A' B' C' : Type*} [CommRing A'] [CommRing B'] [CommRing C'] [Algebra A' B']
@@ -571,6 +591,37 @@ noncomputable def liftDerivation
     (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) (c : C) :
     liftDerivation dB dC hdB hdC hcont hinl hinr (inr A B C c) = dC c :=
   (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.2.2 c
+
+/-- A continuous `A`-derivation on `B ⊗̂_A C` agreeing with `dB` on `inl` and with `dC` on `inr`
+equals `liftDerivation`. -/
+theorem eq_liftDerivation
+    (dB : Derivation A B M) (dC : Derivation A C M)
+    (hdB : Continuous dB) (hdC : Continuous dC)
+    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
+    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
+    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R)
+    {d : Derivation A (CompletedTensor A B C) M} (hd : Continuous d)
+    (hB : ∀ b, d (inl A B C b) = dB b) (hC : ∀ c, d (inr A B C c) = dC c) :
+    d = liftDerivation dB dC hdB hdC hcont hinl hinr :=
+  derivation_ext hd (continuous_liftDerivation dB dC hdB hdC hcont hinl hinr)
+    (fun b ↦ (hB b).trans (liftDerivation_inl dB dC hdB hdC hcont hinl hinr b).symm)
+    (fun c ↦ (hC c).trans (liftDerivation_inr dB dC hdB hdC hcont hinl hinr c).symm)
+
+/-- There is a unique continuous `A`-derivation on `B ⊗̂_A C` extending a pair of continuous
+`A`-derivations on `B` and `C`. -/
+theorem existsUnique_liftDerivation
+    (dB : Derivation A B M) (dC : Derivation A C M)
+    (hdB : Continuous dB) (hdC : Continuous dC)
+    (hcont : Continuous (algebraMap (CompletedTensor A B C) R))
+    (hinl : (algebraMap (CompletedTensor A B C) R).comp (inl A B C) = algebraMap B R)
+    (hinr : (algebraMap (CompletedTensor A B C) R).comp (inr A B C) = algebraMap C R) :
+    ∃! d : Derivation A (CompletedTensor A B C) M,
+      Continuous d ∧ (∀ b, d (inl A B C b) = dB b) ∧ (∀ c, d (inr A B C c) = dC c) :=
+  ⟨liftDerivation dB dC hdB hdC hcont hinl hinr,
+    ⟨continuous_liftDerivation dB dC hdB hdC hcont hinl hinr,
+      liftDerivation_inl dB dC hdB hdC hcont hinl hinr,
+      liftDerivation_inr dB dC hdB hdC hcont hinl hinr⟩,
+    fun _ ⟨hd, hB, hC⟩ ↦ eq_liftDerivation dB dC hdB hdC hcont hinl hinr hd hB hC⟩
 
 end LiftDerivation
 

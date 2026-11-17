@@ -487,11 +487,8 @@ theorem exact_kerCotangentToTensor_mapBaseChange [IsNoetherianType B]
   let : TopologicalSpace Q := moduleTopology C Q
   have : IsModuleTopology C Q := ⟨rfl⟩
   let : IsTopologicalAddGroup Q := IsModuleTopology.isTopologicalAddGroup C Q
-  have : ContinuousSMul B Q := ⟨by
-    have h : (fun p : B × Q ↦ p.1 • p.2) = fun p ↦ algebraMap B C p.1 • p.2 := by
-      ext ⟨b, q⟩; exact (algebraMap_smul C b q).symm
-    rw [h]
-    exact (hBC.continuous.comp continuous_fst).smul continuous_snd⟩
+  have : ContinuousSMul B C := continuousSMul_of_algebraMap B C hBC.continuous
+  have : ContinuousSMul B Q := IsScalarTower.continuousSMul C
   obtain ⟨δC, hδC_eq⟩ := conormalQuotientDerivation hBC.surjective L fun x hx ↦
     ⟨(RingHom.ker (algebraMap B C)).toCotangent ⟨x, hx⟩,
       kerCotangentToTensor_toCotangent A B C ⟨x, hx⟩⟩
@@ -545,11 +542,9 @@ private noncomputable def baseChangeDerivation
     IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology (A := B') (M := M)
   haveI : IsScalarTower A B B' := IsScalarTower.of_algebraMap_eq fun a ↦ by simp [B']
   haveI : IsScalarTower A A' B' := IsScalarTower.of_algebraMap_eq fun a ↦ by simp [B']
-  have : ContinuousSMul B M := ⟨by
-    have h : (fun p : B × M ↦ p.1 • p.2) = fun p ↦ inl A B A' p.1 • p.2 := by
-      ext ⟨b, m⟩; rw [← algebraMap_leftAlgebra, algebraMap_smul]
-    rw [h]
-    exact ((continuous_inl A B A').comp continuous_fst).smul continuous_snd⟩
+  have : ContinuousSMul B B' :=
+    continuousSMul_of_algebraMap B B' (by rw [algebraMap_leftAlgebra]; exact continuous_inl A B A')
+  have : ContinuousSMul B M := IsScalarTower.continuousSMul B'
   let dB : Derivation A B M :=
     (TensorProduct.mk B B' (ContinuousKaehlerDifferential A B) 1).compDer (D A B)
   have hdB : Continuous dB :=
