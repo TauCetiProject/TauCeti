@@ -159,7 +159,8 @@ private theorem F_le_F {s s' : ℝ} (hs : 0 < s) (hss' : s ≤ s') : F s' ≤ F 
 /-- `F(r²) = √(-log r)`. -/
 private theorem F_sq (r : ℝ) : F (r ^ 2) = √(-Real.log r) := by
   simp only [F, M, Real.log_pow]
-  ring_nf
+  congr 1
+  ring
 
 /-! ### The harmonic quadratic factor -/
 
@@ -347,8 +348,9 @@ private theorem tendsto_laplacianQuadraticSqrtNegLog_zero {e : Fin 2 → E}
       1 / (4 * -Real.log ‖y‖ * √(-Real.log ‖y‖)) :=
     add_nonneg (div_nonneg (by positivity) (by positivity))
       (div_nonneg zero_le_one (mul_nonneg (by linarith) (Real.sqrt_nonneg _)))
-  rw [Function.comp_apply, laplacianQuadraticSqrtNegLog, norm_mul, norm_neg, Real.norm_eq_abs,
-    Real.norm_eq_abs, abs_of_nonneg hg0]
+  simp only [Function.comp_apply, laplacianQuadraticSqrtNegLog, norm_mul, norm_neg,
+    Real.norm_eq_abs]
+  rw [abs_of_nonneg hg0]
   exact mul_le_of_le_one_left (by positivity) hq
 
 /-- The Laplacian `TauCeti.PDE.laplacianQuadraticSqrtNegLog e` is continuous on the unit ball,

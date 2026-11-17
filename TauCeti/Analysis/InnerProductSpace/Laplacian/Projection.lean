@@ -81,9 +81,9 @@ theorem laplacian_inner_sq (v x : E) : Δ (fun y : E ↦ ⟪v, y⟫ ^ 2) x = 2 *
   have h : (fun y : E ↦ ⟪v, y⟫ ^ 2) = (‖v‖ ^ 2) • fun y ↦ ‖P y‖ ^ 2 := by
     funext y
     have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
-    rw [Pi.smul_apply, smul_eq_mul, Submodule.starProjection_singleton ℝ y, norm_smul,
-      Real.norm_eq_abs, mul_pow, sq_abs, RCLike.ofReal_real_eq_id, id]
+    simp [P, Submodule.starProjection_singleton, norm_smul]
     field_simp
+    exact (sq_abs _).symm
   rw [h, laplacian_smul _ (P.contDiff.norm_sq ℝ).contDiffAt,
     Submodule.laplacian_norm_starProjection_sq, finrank_span_singleton hv, smul_eq_mul]
   push_cast
