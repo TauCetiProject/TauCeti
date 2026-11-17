@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
-public import TauCeti.Analysis.Complex.VerticalStrip
+public import TauCeti.Analysis.Complex.VerticalStrip.Basic
+public import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # The complex interpolation method
@@ -42,6 +44,13 @@ admissible functions through their boundary traces:
   norms, with image the values `F θ` of admissible functions
   (`ComplexMethodSpace.exists_toSum_eq_iff`), and each such `F` bounds the norm of `F θ` by the
   norm of its traces (`ComplexMethodSpace.norm_le_of_toSum_eq`);
+* `CompatibleCouple.isStripFunction_stripGaussian_smul`: multiplying a bounded holomorphic
+  function with boundary values `f₀ t ∈ X₀`, `f₁ t ∈ X₁` by the Gaussian factor
+  `exp (δ (z - θ)²)` (`Complex.HadamardThreeLines.stripGaussian`), `δ > 0`, gives an admissible
+  function with traces `Complex.HadamardThreeLines.stripGaussianSMul`; the factor is removed in
+  the limit `δ → 0` (`Real.le_of_forall_pos_le_exp_mul`). The Gaussian-damped traces lie in
+  `stripTraces` (`CompatibleCouple.stripGaussianSMul_mem_stripTraces`) and evaluate at `θ` to the
+  undamped value (`CompatibleCouple.stripEval_stripGaussianSMul`);
 * `ComplexMethodSpace.ofInter`: the intersection embeds with `‖x‖_θ ≤ ‖x‖_{X₀ ∩ X₁}`
   (`ComplexMethodSpace.norm_ofInter_le`), using the admissible functions `exp (δ (z - θ)²) x`
   with `δ → 0`;
@@ -94,7 +103,7 @@ admissible functions through their boundary traces:
 public noncomputable section
 
 open Complex Complex.HadamardThreeLines Filter Set Topology
-open scoped ZeroAtInfty
+open scoped BoundedContinuousFunction ZeroAtInfty
 
 namespace TauCeti
 
@@ -537,95 +546,91 @@ end ComplexMethodSpace
 
 section Inter
 
-/-- The Gaussian factor `exp (δ (z - θ)²)`, equal to one at `θ` and decaying along vertical
-lines. -/
-private def gaussian (δ θ : ℝ) (z : ℂ) : ℂ :=
-  exp (δ * (z - θ) ^ 2)
+section StripGaussianSMul
 
-private theorem differentiable_gaussian (δ θ : ℝ) : Differentiable ℂ (gaussian δ θ) := by
-  unfold gaussian
-  fun_prop
+variable {Φ : ℂ → C.SumSpace} {f₀ : ℝ →ᵇ X₀} {f₁ : ℝ →ᵇ X₁}
 
-private theorem norm_gaussian (δ θ : ℝ) (z : ℂ) :
-    ‖gaussian δ θ z‖ = Real.exp (δ * ((z.re - θ) ^ 2 - z.im ^ 2)) := by
-  rw [gaussian, norm_exp]
-  congr 1
-  simp [sq]
+variable {C} in
+/-- **Gaussian damping of a bounded holomorphic function.** Let `Φ` be holomorphic on the strip,
+continuous and bounded on its closure, with values `f₀ t ∈ X₀` on the line `re z = 0` and
+`f₁ t ∈ X₁` on the line `re z = 1` for bounded continuous `f₀`, `f₁`. For `δ > 0` the function
+`exp (δ (z - θ)²) Φ z` is admissible, with the damped boundary values as traces. -/
+theorem isStripFunction_stripGaussian_smul {δ : ℝ} (hδ : 0 < δ) (θ : ℝ)
+    (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1))
+    (hb : Bornology.IsBounded (Φ '' verticalClosedStrip 0 1))
+    (h₀ : ∀ t : ℝ, Φ (t * I) = C.fstToSum (f₀ t))
+    (h₁ : ∀ t : ℝ, Φ (1 + t * I) = C.sndToSum (f₁ t)) :
+    C.IsStripFunction (fun z => stripGaussian δ θ z • Φ z)
+      (stripGaussianSMul hδ θ 0 f₀, stripGaussianSMul hδ θ 1 f₁) where
+  diffContOnCl := (differentiable_stripGaussian δ θ).diffContOnCl.smul hΦ
+  isBounded := by
+    obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hb
+    refine isBounded_iff_forall_norm_le.2 ⟨Real.exp (δ * (|θ| + 1) ^ 2) * M, ?_⟩
+    rintro _ ⟨z, hz, rfl⟩
+    rw [norm_smul]
+    exact mul_le_mul (norm_stripGaussian_le hδ.le θ hz) (hM _ (mem_image_of_mem Φ hz))
+      (norm_nonneg _) (Real.exp_pos _).le
+  apply_mul_I t := by simp [h₀]
+  apply_one_add_mul_I t := by simp [h₁]
 
-private theorem norm_gaussian_le {δ : ℝ} (hδ : 0 ≤ δ) (θ : ℝ) {z : ℂ} (hz : z.re ∈ Icc 0 1) :
-    ‖gaussian δ θ z‖ ≤ Real.exp (δ * (|θ| + 1) ^ 2) := by
-  rw [norm_gaussian]
-  refine Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left ?_ hδ)
-  have h : (z.re - θ) ^ 2 ≤ (|θ| + 1) ^ 2 :=
-    sq_le_sq' (by linarith [hz.1, le_abs_self θ]) (by linarith [hz.2, neg_abs_le θ])
-  nlinarith [sq_nonneg z.im]
+variable {C} in
+/-- The Gaussian-damped traces of a bounded holomorphic function are the traces of an admissible
+function. -/
+theorem stripGaussianSMul_mem_stripTraces {δ : ℝ} (hδ : 0 < δ) (θ : ℝ)
+    (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1))
+    (hb : Bornology.IsBounded (Φ '' verticalClosedStrip 0 1))
+    (h₀ : ∀ t : ℝ, Φ (t * I) = C.fstToSum (f₀ t))
+    (h₁ : ∀ t : ℝ, Φ (1 + t * I) = C.sndToSum (f₁ t)) :
+    (stripGaussianSMul hδ θ 0 f₀, stripGaussianSMul hδ θ 1 f₁) ∈ C.stripTraces :=
+  mem_stripTraces_iff.2 ⟨_, isStripFunction_stripGaussian_smul hδ θ hΦ hb h₀ h₁⟩
 
-private theorem tendsto_norm_gaussian {δ : ℝ} (hδ : 0 < δ) (θ a : ℝ) :
-    Tendsto (fun t : ℝ => ‖gaussian δ θ (a + t * I)‖) (cocompact ℝ) (𝓝 0) := by
-  have hsq : Tendsto (fun t : ℝ => t ^ 2) (cocompact ℝ) atTop :=
-    ((tendsto_pow_atTop two_ne_zero).comp (tendsto_norm_cocompact_atTop (E := ℝ))).congr
-      fun t => by simp
-  have h : Tendsto (fun t : ℝ => δ * ((a - θ) ^ 2 - t ^ 2)) (cocompact ℝ) atBot :=
-    ((tendsto_atBot_add_const_left _ ((a - θ) ^ 2)
-      (tendsto_neg_atTop_atBot.comp hsq)).const_mul_atBot hδ).congr fun t => by
-        simp [sub_eq_add_neg]
-  have heq : (fun t : ℝ => ‖gaussian δ θ (a + t * I)‖) =
-      Real.exp ∘ fun t => δ * ((a - θ) ^ 2 - t ^ 2) := by
-    funext t
-    simp [norm_gaussian]
-  rw [heq]
-  exact Real.tendsto_exp_atBot.comp h
+variable {C} in
+/-- For `0 ≤ θ ≤ 1`, the Gaussian-damped traces of `Φ` evaluate at `θ` to `Φ θ`. -/
+theorem stripEval_stripGaussianSMul {δ : ℝ} (hδ : 0 < δ) {θ : ℝ} (hθ : θ ∈ Icc 0 1)
+    (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1))
+    (hb : Bornology.IsBounded (Φ '' verticalClosedStrip 0 1))
+    (h₀ : ∀ t : ℝ, Φ (t * I) = C.fstToSum (f₀ t))
+    (h₁ : ∀ t : ℝ, Φ (1 + t * I) = C.sndToSum (f₁ t)) :
+    C.stripEval θ ⟨_, stripGaussianSMul_mem_stripTraces hδ θ hΦ hb h₀ h₁⟩ = Φ θ := by
+  rw [stripEval_apply, stripFunction_eq (isStripFunction_stripGaussian_smul hδ θ hΦ hb h₀ h₁)
+    (by simpa using hθ)]
+  simp
 
-/-- The boundary traces of the admissible function `exp (δ (z - θ)²) x`, for `x` in the
+end StripGaussianSMul
+
+/-- The traces of the admissible function `exp (δ (z - θ)²) x` of an element `x` of the
 intersection. -/
 private def gaussianTrace {δ : ℝ} (hδ : 0 < δ) (θ : ℝ) (x : C.inter) :
     C₀(ℝ, X₀) × C₀(ℝ, X₁) :=
-  (⟨⟨fun t => gaussian δ θ (t * I) • C.interFst x,
-      ((differentiable_gaussian δ θ).continuous.comp (by fun_prop)).smul continuous_const⟩,
-      squeeze_zero_norm (fun t => (norm_smul _ _).le)
-        (by simpa using (tendsto_norm_gaussian hδ θ 0).mul_const ‖C.interFst x‖)⟩,
-    ⟨⟨fun t => gaussian δ θ (1 + t * I) • C.interSnd x,
-      ((differentiable_gaussian δ θ).continuous.comp (by fun_prop)).smul continuous_const⟩,
-      squeeze_zero_norm (fun t => (norm_smul _ _).le)
-        (by simpa using (tendsto_norm_gaussian hδ θ 1).mul_const ‖C.interSnd x‖)⟩)
+  (stripGaussianSMul hδ θ 0 (.const ℝ (C.interFst x)),
+    stripGaussianSMul hδ θ 1 (.const ℝ (C.interSnd x)))
 
-private theorem isStripFunction_gaussian {δ : ℝ} (hδ : 0 < δ) (θ : ℝ) (x : C.inter) :
-    C.IsStripFunction (fun z => gaussian δ θ z • C.fstToSum (C.interFst x))
-      (C.gaussianTrace hδ θ x) where
-  diffContOnCl := ((differentiable_gaussian δ θ).smul_const _).diffContOnCl
-  isBounded := by
-    refine isBounded_iff_forall_norm_le.2
-      ⟨Real.exp (δ * (|θ| + 1) ^ 2) * ‖C.fstToSum (C.interFst x)‖, ?_⟩
-    rintro _ ⟨z, hz, rfl⟩
-    rw [norm_smul]
-    exact mul_le_mul_of_nonneg_right (norm_gaussian_le hδ.le θ hz) (norm_nonneg _)
-  apply_mul_I t := by simp [gaussianTrace]
-  apply_one_add_mul_I t := by
-    simpa [gaussianTrace] using congrArg (gaussian δ θ (1 + t * I) • ·) (C.fstToSum_interFst x)
+omit [T1Space V] in
+private theorem isBounded_image_const (x : C.inter) :
+    Bornology.IsBounded ((fun _ : ℂ => C.fstToSum (C.interFst x)) '' verticalClosedStrip 0 1) :=
+  isBounded_iff_forall_norm_le.2 ⟨_, by rintro _ ⟨z, -, rfl⟩; rfl⟩
 
 private theorem gaussianTrace_mem {δ : ℝ} (hδ : 0 < δ) (θ : ℝ) (x : C.inter) :
     C.gaussianTrace hδ θ x ∈ C.stripTraces :=
-  ⟨_, C.isStripFunction_gaussian hδ θ x⟩
+  stripGaussianSMul_mem_stripTraces hδ θ diffContOnCl_const (C.isBounded_image_const x)
+    (fun _ => rfl) fun _ => C.fstToSum_interFst x
 
 omit [ContinuousAdd V] [T1Space V] in
 private theorem norm_gaussianTrace_le {δ : ℝ} (hδ : 0 < δ) (θ : ℝ) (x : C.inter) :
-    ‖C.gaussianTrace hδ θ x‖ ≤ Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖ := by
-  refine norm_prod_le_iff.2 ⟨(ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_,
-    (ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_⟩
-  · refine (norm_smul _ _).trans_le (mul_le_mul (norm_gaussian_le hδ.le θ ?_)
-      (C.norm_interFst_le x) (norm_nonneg _) (Real.exp_pos _).le)
-    simp
-  · refine (norm_smul _ _).trans_le (mul_le_mul (norm_gaussian_le hδ.le θ ?_)
-      (C.norm_interSnd_le x) (norm_nonneg _) (Real.exp_pos _).le)
-    simp
+    ‖C.gaussianTrace hδ θ x‖ ≤ Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖ :=
+  norm_prod_le_iff.2
+    ⟨(norm_stripGaussianSMul_le hδ θ (by simp) _).trans (mul_le_mul_of_nonneg_left
+      ((BoundedContinuousFunction.norm_const_le _).trans (C.norm_interFst_le x)) (by positivity)),
+    (norm_stripGaussianSMul_le hδ θ (by simp) _).trans (mul_le_mul_of_nonneg_left
+      ((BoundedContinuousFunction.norm_const_le _).trans (C.norm_interSnd_le x)) (by positivity))⟩
 
 private theorem stripEval_gaussianTrace {δ : ℝ} (hδ : 0 < δ) {θ : ℝ} (hθ : θ ∈ Icc 0 1)
     (x : C.inter) :
     C.stripEval θ ⟨C.gaussianTrace hδ θ x, C.gaussianTrace_mem hδ θ x⟩ =
-      C.fstToSum (C.interFst x) := by
-  rw [stripEval_apply, stripFunction_eq (C.isStripFunction_gaussian hδ θ x)
-    (by simpa using hθ)]
-  simp [gaussian]
+      C.fstToSum (C.interFst x) :=
+  stripEval_stripGaussianSMul (Φ := fun _ => C.fstToSum (C.interFst x)) hδ hθ
+    diffContOnCl_const (C.isBounded_image_const x)
+    (fun _ => rfl) fun _ => C.fstToSum_interFst x
 
 namespace ComplexMethodSpace
 
@@ -646,7 +651,7 @@ def ofInter : C.inter →L[ℂ] C.ComplexMethodSpace θ :=
       map_smul' c x := by
         rw [RingHom.id_apply, ← map_smul]
         congr 1
-        ext t <;> simp [gaussianTrace, smul_comm (gaussian 1 θ _) c] }
+        ext t <;> simp [gaussianTrace, smul_comm (stripGaussian 1 θ _) c] }
     (Real.exp (1 * (|θ| + 1) ^ 2)) fun x =>
       (norm_mk_le _).trans (C.norm_gaussianTrace_le one_pos θ x)
 
@@ -665,13 +670,9 @@ theorem toSum_ofInter {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) :
 /-- For `0 ≤ θ ≤ 1`, the intersection embeds into `[X₀, X₁]_θ` without increasing norms:
 `‖x‖_θ ≤ max ‖x‖_{X₀} ‖x‖_{X₁}`. -/
 theorem norm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) : ‖ofInter θ x‖ ≤ ‖x‖ := by
-  have key (δ : ℝ) (hδ : 0 < δ) : ‖ofInter θ x‖ ≤ Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖ := by
-    rw [ofInter_eq_mk hδ hθ]
-    exact (norm_mk_le _).trans (C.norm_gaussianTrace_le hδ θ x)
-  have hlim : Tendsto (fun δ : ℝ => Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖) (𝓝[>] 0) (𝓝 ‖x‖) := by
-    have : Continuous fun δ : ℝ => Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖ := by fun_prop
-    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
+  refine Real.le_of_forall_pos_le_exp_mul (c := (|θ| + 1) ^ 2) fun δ hδ => ?_
+  rw [ofInter_eq_mk hδ hθ]
+  exact (norm_mk_le _).trans (C.norm_gaussianTrace_le hδ θ x)
 
 /-- For `0 ≤ θ ≤ 1`, the inclusion of the intersection into `[X₀, X₁]_θ` has operator norm at
 most one. -/
