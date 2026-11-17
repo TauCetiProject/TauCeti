@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded
+public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Basic
 
 /-!
 # The Banach space `CB(A, B)` of completely bounded maps
