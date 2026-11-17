@@ -127,7 +127,7 @@ variable [DecidableEq I]
 skew derivative `Lᵢ`. -/
 private def removeMatrix (χ : I → I → R) (i : I) :
     FreeAlgebra R I →ₐ[R] Matrix (Fin 2) (Fin 2) (FreeAlgebra R I) :=
-  lift R fun j => !![χ i j • ι R j, if j = i then 1 else 0; 0, ι R j]
+  lift R fun j => !![χ i j • ι R j, if i = j then 1 else 0; 0, ι R j]
 
 private theorem removeMatrix_shape (χ : I → I → R) (i : I) (x : FreeAlgebra R I) :
     removeMatrix χ i x 0 0 = freeHalfScale (χ i) x ∧ removeMatrix χ i x 1 0 = 0 ∧
@@ -149,7 +149,7 @@ def freeRemove (χ : I → I → R) (i : I) : SigmaDerivation (freeHalfScale (χ
 variable (χ : I → I → R)
 
 @[simp]
-theorem freeRemove_ι (i j : I) : freeRemove χ i (ι R j) = if j = i then 1 else 0 := by
+theorem freeRemove_ι (i j : I) : freeRemove χ i (ι R j) = if i = j then 1 else 0 := by
   simp [freeRemove, removeMatrix]
 
 @[simp]
@@ -161,7 +161,7 @@ theorem freeRemove_algebraMap (i : I) (r : R) :
 `Lᵢ (θⱼ x) = δᵢⱼ x + χ i j θⱼ Lᵢ x`. -/
 theorem freeRemove_ι_mul (i j : I) (x : FreeAlgebra R I) :
     freeRemove χ i (ι R j * x) =
-      (if j = i then x else 0) + χ i j • (ι R j * freeRemove χ i x) := by
+      (if i = j then x else 0) + χ i j • (ι R j * freeRemove χ i x) := by
   rw [SigmaDerivation.leibniz, freeHalfScale_ι, freeRemove_ι, smul_mul_assoc, add_comm]
   split_ifs <;> simp
 
@@ -187,9 +187,8 @@ theorem freeRemove_ι_pow_succ (i : I) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ' _ (n + 1), freeRemove_ι_mul, ih, mul_smul_comm, smul_smul, ← pow_succ',
-      Finset.sum_range_succ' _ (n + 1), Finset.mul_sum, add_smul, pow_zero, one_smul, add_comm]
-    simp [pow_succ']
+    rw [pow_succ', freeRemove_ι_mul, ih, Finset.sum_range_succ' _ (n + 1)]
+    simp [smul_smul, Finset.mul_sum, add_smul, ← pow_succ', add_comm]
 
 /-! ### The right skew derivative -/
 
@@ -199,7 +198,7 @@ by word reversal: `Rᵢ θⱼ = δᵢⱼ` and, on homogeneous elements,
 def freeRemoveRight (i : I) : FreeAlgebra R I →ₗ[R] FreeAlgebra R I where
   toFun x := star (freeRemove χ i (star x))
   map_add' x y := by simp
-  map_smul' r x := by simp [FreeAlgebra.star_smul]
+  map_smul' r x := by simp
 
 theorem freeRemoveRight_eq_star (i : I) (x : FreeAlgebra R I) :
     freeRemoveRight χ i x = star (freeRemove χ i (star x)) :=
@@ -211,7 +210,7 @@ theorem freeRemove_star (i : I) (x : FreeAlgebra R I) :
   rw [freeRemoveRight_eq_star, star_star]
 
 @[simp]
-theorem freeRemoveRight_ι (i j : I) : freeRemoveRight χ i (ι R j) = if j = i then 1 else 0 := by
+theorem freeRemoveRight_ι (i j : I) : freeRemoveRight χ i (ι R j) = if i = j then 1 else 0 := by
   rw [freeRemoveRight_eq_star, star_ι, freeRemove_ι]
   split_ifs <;> simp
 
@@ -235,7 +234,7 @@ theorem freeRemoveRight_mul (i : I) (x y : FreeAlgebra R I) :
 `Rᵢ (x θⱼ) = δᵢⱼ x + χ i j Rᵢ x θⱼ`. -/
 theorem freeRemoveRight_mul_ι (i j : I) (x : FreeAlgebra R I) :
     freeRemoveRight χ i (x * ι R j) =
-      (if j = i then x else 0) + χ i j • (freeRemoveRight χ i x * ι R j) := by
+      (if i = j then x else 0) + χ i j • (freeRemoveRight χ i x * ι R j) := by
   rw [freeRemoveRight_mul, freeRemoveRight_ι, freeHalfScale_ι, mul_smul_comm]
   split_ifs <;> simp
 

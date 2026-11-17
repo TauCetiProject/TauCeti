@@ -41,6 +41,7 @@ modulo `J`, the basic tool for showing that an element of `f` vanishes.
 
 * `TauCeti.freePairing_ι_mul_left`, `TauCeti.freePairing_mul_ι_left`: `B(θᵢ y, z) = B(y, Lᵢ z)` and
   `B(y θᵢ, z) = B(y, Rᵢ z)`.
+* `TauCeti.eq_freePairing_iff`: `B` is the unique bilinear form with these two properties.
 * `TauCeti.freePairing_ι_ι`: the generators are orthonormal.
 * `TauCeti.freePairing_freeRemove_left`: `B(Lᵢ x, y) = B(x, θᵢ y)`.
 * `TauCeti.isSymm_freePairing`: `B` is symmetric when `χ` is.
@@ -112,6 +113,7 @@ theorem freePairing_algebraMap_left (r : R) (z : FreeAlgebra R I) :
   simp [Algebra.algebraMap_eq_smul_one]
 
 /-- **The defining recursion of the form**: `B(θᵢ y, z) = B(y, Lᵢ z)`. -/
+@[simp]
 theorem freePairing_ι_mul_left (i : I) (y z : FreeAlgebra R I) :
     freePairing χ (ι R i * y) z = freePairing χ y (freeRemove χ i z) := by
   simp [freePairing_mul_left, removeAction]
@@ -127,12 +129,24 @@ theorem freePairing_one_right (x : FreeAlgebra R I) : freePairing χ x 1 = algeb
   | one => simp
   | smul r a ha => simp [ha]
   | add a b ha hb => simp [ha, hb]
-  | ι_mul i a _ => simp [freePairing_ι_mul_left]
+  | ι_mul i a _ => simp
+
+/-- **Uniqueness of the form**: `freePairing χ` is the only bilinear form `B` with
+`B(1, z) = ε(z)` and `B(θᵢ y, z) = B(y, Lᵢ z)`. -/
+theorem eq_freePairing_iff {B : LinearMap.BilinForm R (FreeAlgebra R I)} :
+    B = freePairing χ ↔
+      (∀ z, B 1 z = algebraMapInv z) ∧ ∀ i y z, B (ι R i * y) z = B y (freeRemove χ i z) := by
+  refine ⟨by rintro rfl; simp, fun ⟨one, ι_mul⟩ => LinearMap.ext₂ fun x z => ?_⟩
+  induction x using FreeAlgebra.induction_ι_mul generalizing z with
+  | one => simp [one]
+  | smul r a ha => simp [ha]
+  | add a b ha hb => simp [ha, hb]
+  | ι_mul i a ha => simp [ι_mul, ha]
 
 /-- The simple generators are orthonormal: `B(θᵢ, θⱼ) = δᵢⱼ`. -/
 theorem freePairing_ι_ι (i j : I) :
     freePairing χ (ι R i) (ι R j) = if i = j then 1 else 0 := by
-  simp only [freePairing_ι_left, freeRemove_ι, eq_comm (a := j)]
+  simp only [freePairing_ι_left, freeRemove_ι]
   split_ifs <;> simp
 
 /-- **Adjunction of the left skew derivative and left multiplication**:
@@ -144,13 +158,7 @@ theorem freePairing_freeRemove_left {i : I} (hχ : ∀ j, χ i j = χ j i) (x y 
   | smul r a ha => simp [ha]
   | add a b ha hb => simp [ha, hb]
   | ι_mul j a ha =>
-    rw [freeRemove_ι_mul, freePairing_ι_mul_left, freeRemove_ι_mul, map_add, map_add, map_smul,
-      map_smul, LinearMap.add_apply, LinearMap.smul_apply, freePairing_ι_mul_left, ← ha, hχ j]
-    split_ifs with h₁ h₂ h₂
-    · rfl
-    · exact absurd h₁.symm h₂
-    · exact absurd h₂.symm h₁
-    · simp
+    simp [freeRemove_ι_mul, ← ha, hχ j, apply_ite, ite_apply, eq_comm (a := j)]
 
 /-- The operator by which a word acts in `removeAction` commutes with `Rᵢ` when `χ` is symmetric
 at `i`. -/
@@ -197,16 +205,14 @@ theorem freePairing_freeHalfScale_left (c : I → R) (x z : FreeAlgebra R I) :
   | smul r a ha => simp [ha]
   | add a b ha hb => simp [ha, hb]
   | ι_mul i a ha =>
-    rw [map_mul, freeHalfScale_ι, smul_mul_assoc, map_smul, LinearMap.smul_apply,
-      freePairing_ι_mul_left, ha, freePairing_ι_mul_left, freeRemove_freeHalfScale, map_smul]
+    simp [ha, freeRemove_freeHalfScale]
 
 /-- The form is invariant under word reversal, when `χ` is symmetric. -/
 theorem freePairing_star_star (hχ : ∀ i j, χ i j = χ j i) (x z : FreeAlgebra R I) :
     freePairing χ (star x) (star z) = freePairing χ x z := by
   induction x using FreeAlgebra.induction_ι_mul generalizing z with
   | one => simp
-  | smul r a ha =>
-    rw [FreeAlgebra.star_smul, map_smul, map_smul, LinearMap.smul_apply, LinearMap.smul_apply, ha]
+  | smul r a ha => simp [ha]
   | add a b ha hb => simp [ha, hb]
   | ι_mul i a ha =>
     rw [star_mul, star_ι, freePairing_mul_ι_left χ (hχ i), freeRemoveRight_eq_star, star_star,
@@ -220,8 +226,8 @@ theorem freePairing_ι_pow_ι_pow (i : I) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ', freePairing_ι_mul_left, ← pow_succ', freeRemove_ι_pow_succ, map_smul, ih,
-      Finset.prod_range_succ, smul_eq_mul, mul_comm]
+    rw [pow_succ', freePairing_ι_mul_left, ← pow_succ', freeRemove_ι_pow_succ]
+    simp [ih, Finset.prod_range_succ, mul_comm]
 
 /-! ### The radical -/
 

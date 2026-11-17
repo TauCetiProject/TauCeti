@@ -24,6 +24,7 @@ namespace FreeAlgebra
 variable {R X : Type*} [CommSemiring R]
 
 /-- Word reversal commutes with scalar multiplication. -/
+@[simp]
 protected theorem star_smul (r : R) (a : FreeAlgebra R X) : star (r • a) = r • star a := by
   rw [Algebra.smul_def, star_mul, star_algebraMap, ← Algebra.commutes, Algebra.smul_def]
 
