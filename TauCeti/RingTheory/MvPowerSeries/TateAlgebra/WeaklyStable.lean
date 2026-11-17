@@ -16,6 +16,7 @@ import TauCeti.Analysis.Normed.Module.Bases.CountableType
 import TauCeti.Analysis.Normed.Module.Dual.Bounded
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FrobeniusRoot
@@ -260,12 +261,9 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
   -- Step 4: Construct separating spectrally bounded `F`-linear functionals on `M`.
   have hι_clear (y : M) (s : nonZeroDivisors T) (a : Fin m → T)
       (ha : ∀ j, algebraMap T F (a j) = (s : T) • b.repr y j) :
-      algebraMap T' F' (∑ j, Ψ (a j) * rootG j) = algebraMap T' F' (Ψ s) * ι y := by
-    rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have haj := by simpa only [Algebra.smul_def] using ha j
-    rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
-      ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
+      algebraMap T' F' (∑ j, Ψ (a j) * rootG j) = algebraMap T' F' (Ψ s) * ι y :=
+    b.map_sum_mul_eq_map_mul_apply (algebraMap T' F') ι (hι_alg s)
+      (fun j ↦ by rw [← Algebra.smul_def, ← ha j, hι_alg]) hι_b
   refine Module.Dual.exists_bound_of_forall_exists_ne_zero ψ (spectralNorm F M) fun x₀ hx₀ ↦ ?_
   obtain ⟨s₀, hs₀⟩ :=
     IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T) (b.repr x₀)

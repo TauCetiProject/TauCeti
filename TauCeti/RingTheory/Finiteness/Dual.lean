@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.LinearAlgebra.Dual.DoubleDual
 
-import Mathlib.Algebra.Module.LocalizedModule.Basic
-import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.Localization.Integer
 
 /-!
@@ -25,22 +23,19 @@ Let `R` be a Noetherian integral domain with fraction field `K` and let `V` be a
 `Module.Dual.eval R N` into the double dual is injective ([bosch-guntzer-remmert], §4.1,
 Proposition 4).
 
-The forward direction needs neither Noetherianity of `R` nor an ambient finite-dimensional vector
-space: for any finitely generated torsion-free `R`-module `M` over an integral domain `R`, clearing
-a common denominator of the values of a `FractionRing R`-linear functional on the localized module
-`LocalizedModule (nonZeroDivisors R) M` across a finite generating set produces a separating
-`R`-linear functional on `M`. Conversely, if `Module.Dual R N` separates points and `V` is
-finite-dimensional over `K`, any functional `φ : N →ₗ[R] R` that is nonzero at `x₀ ∈ N` has
-finitely generated image (as `R` is Noetherian) while the `K`-span of `ker φ` avoids `x₀` (clearing
-denominators in `K = Frac(R)`), lowering the `K`-dimension and concluding by induction.
+The forward direction is `TauCeti.Module.Dual.injective_eval_of_finite` (in
+`TauCeti.LinearAlgebra.Dual.DoubleDual`), which holds for any finitely generated torsion-free
+`R`-module over an integral domain `R` without Noetherianity or an ambient vector space. Conversely,
+if `Module.Dual R N` separates points and `V` is finite-dimensional over `K`, any functional
+`φ : N →ₗ[R] R` that is nonzero at `x₀ ∈ N` has finitely generated image (as `R` is Noetherian)
+while the `K`-span of `ker φ` avoids `x₀` (clearing denominators in `K = Frac(R)`), lowering the
+`K`-dimension and concluding by induction.
 
 In particular, the integral closure `C` of a Noetherian domain `R` in a module-finite `K`-algebra
 `L` is a finite `R`-module if and only if `Module.Dual.eval R C` is injective.
 
 ## Main results
 
-* `TauCeti.Module.Dual.injective_eval_of_finite`: over any integral domain `R`, a finitely
-  generated torsion-free `R`-module has injective double-dual evaluation.
 * `Submodule.fg_of_forall_exists_dual_ne_zero`: over a Noetherian domain `R` with fraction field
   `K`, an `R`-submodule of a finite-dimensional `K`-vector space whose `R`-dual separates points is
   finitely generated.
@@ -58,43 +53,6 @@ In particular, the integral closure `C` of a Noetherian domain `R` in a module-f
 -/
 
 public section
-
-namespace TauCeti.Module.Dual
-
-/-- Over an integral domain `R`, `Module.Dual.eval R M` is injective for any finitely generated
-torsion-free `R`-module `M` (without requiring `IsNoetherianRing R`). -/
-theorem injective_eval_of_finite {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M]
-    [Module R M] [Module.Finite R M] [Module.IsTorsionFree R M] :
-    Function.Injective (Module.Dual.eval R M) := by
-  classical
-  let K := FractionRing R
-  let V := LocalizedModule (nonZeroDivisors R) M
-  let f : M →ₗ[R] V := LocalizedModule.mkLinearMap (nonZeroDivisors R) M
-  have hf : Function.Injective f :=
-    (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) f).mpr fun c ↦
-      (IsRegular.of_ne_zero (nonZeroDivisors.ne_zero c.2)).isSMulRegular
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
-  refine injective_eval_iff.mpr fun x hx ↦ ?_
-  obtain ⟨ψ, hψx⟩ := Module.Projective.exists_dual_ne_zero K ((map_ne_zero_iff f hf).mpr hx)
-  obtain ⟨d, hd⟩ :=
-    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) (fun y : s ↦ ψ (f y.1))
-  have hmem : ∀ m : M, (d : R) • ψ (f m) ∈ LinearMap.range (Algebra.linearMap R K) := by
-    suffices ⊤ ≤ (LinearMap.range (Algebra.linearMap R K)).comap
-        ((d : R) • (ψ.restrictScalars R).comp f) from fun m ↦ this trivial
-    rw [← hs, Submodule.span_le]
-    exact fun m hm ↦ hd ⟨m, hm⟩
-  let φ : Module.Dual R M :=
-    ((d : R) • (ψ.restrictScalars R).comp f).codRestrictOfInjective
-      (Algebra.linearMap R K) (IsFractionRing.injective R K) hmem
-  refine ⟨φ, fun hφ0 ↦ ?_⟩
-  have hmap : algebraMap R K (φ x) = algebraMap R K (d : R) * ψ (f x) := by
-    simpa [φ, Algebra.smul_def] using
-      LinearMap.codRestrictOfInjective_comp_apply ((d : R) • (ψ.restrictScalars R).comp f)
-        (Algebra.linearMap R K) (IsFractionRing.injective R K) hmem x
-  exact mul_ne_zero (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2) hψx
-    (by rwa [hφ0, map_zero, eq_comm] at hmap)
-
-end TauCeti.Module.Dual
 
 section Noetherian
 

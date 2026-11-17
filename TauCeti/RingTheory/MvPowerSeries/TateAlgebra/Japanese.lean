@@ -10,9 +10,9 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 import Mathlib.Data.Finsupp.Encodable
 import Mathlib.FieldTheory.KummerPolynomial
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Analysis.Normed.Module.Bases.CountableType
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.RingTheory.Finiteness.Dual
 import TauCeti.RingTheory.IntegralClosure.PurelyInseparable
 import TauCeti.RingTheory.MvPowerSeries.Convolution
@@ -53,14 +53,13 @@ inseparable extension `M / F` (`F = GaussFractionField σ K c`) of exponent `e`,
 3. Clearing denominators of the `b`-coordinates of `y` in `M` and applying
    `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem` confines all coefficients of `ζ(y)` to a single
    countably generated `K`-submodule `E ⊆ K'` independent of `y`.
-4. Bounded `K`-linear functionals separate points of `E` (by
-   `Submodule.separatingDual_span_of_countable` when `K` is nontrivially normed, and by boundedness
-   of all algebraic linear functionals when the norm on `K` is trivial), so the `q`-adic
-   component-dual maps `TauCeti.MvPowerSeries.IsRestrictedFamily.toSubringDualOfBound` produce
-   `T`-linear functionals `integralClosure T M →ₗ[T] T` separating every nonzero element from `0`.
-   The dual-evaluation criterion `TauCeti.IsIntegralClosure.finite_iff_injective_dual_eval`
-   ([bosch-guntzer-remmert], §4.1, Proposition 4) then shows that `integralClosure T M` is a finite
-   `T`-module.
+4. Bounded `K`-linear functionals separate points of `E`
+   (`Submodule.exists_bounded_dual_ne_zero_span_of_countable`, handling both trivial and nontrivial
+   norms on `K`), so the `q`-adic component-dual maps
+   `TauCeti.MvPowerSeries.IsRestrictedFamily.toSubringDualOfBound` produce `T`-linear functionals
+   `integralClosure T M →ₗ[T] T` separating every nonzero element from `0`. The dual-evaluation
+   criterion `TauCeti.IsIntegralClosure.finite_iff_injective_dual_eval` ([bosch-guntzer-remmert],
+   §4.1, Proposition 4) then shows that `integralClosure T M` is a finite `T`-module.
 
 ## Main results
 
@@ -96,27 +95,6 @@ end Empty
 section PurelyInseparableHelpers
 
 variable {σ : Type*} {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-/-- On any countably generated `K`-submodule `E` of `FrobeniusRoot K p e` over a complete
-ultrametric normed field `K` (whether trivially or nontrivially normed), bounded `K`-linear
-functionals separate points of `E`. -/
-private theorem exists_bounded_dual_ne_zero_frobeniusRoot [CompleteSpace K] (p : ℕ) [ExpChar K p]
-    (e : ℕ) {S : Set (FrobeniusRoot K p e)} (hS : S.Countable) (x : Submodule.span K S)
-    (hx : x ≠ 0) :
-    ∃ (φ : Submodule.span K S →ₗ[K] K) (C : ℝ), (∀ y, ‖φ y‖ ≤ C * ‖y‖) ∧ φ x ≠ 0 := by
-  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨⟨_, rfl⟩⟩
-  · obtain ⟨φ, hφx⟩ := Module.Projective.exists_dual_ne_zero K hx
-    refine ⟨φ, 1, fun y ↦ ?_, hφx⟩
-    rcases eq_or_ne y 0 with rfl | hy
-    · simp
-    · have hval : FrobeniusRoot.val K p e (y : FrobeniusRoot K p e) ≠ 0 :=
-        (map_ne_zero_iff _ (RingHom.injective _)).mpr (Subtype.coe_ne_coe.mpr hy)
-      rw [← Submodule.norm_coe, FrobeniusRoot.norm_def,
-        NormedDivisionRing.norm_eq_one_iff_ne_zero_of_discrete.mpr hval, Real.one_rpow, mul_one]
-      exact NormedDivisionRing.norm_le_one_of_discrete (φ y)
-  · have : SeparatingDual K (Submodule.span K S) := Submodule.separatingDual_span_of_countable hS
-    obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) hx
-    exact ⟨f_dual.toLinearMap, ‖f_dual‖, f_dual.le_opNorm, hf_ne⟩
 
 /-- Since `T = K{X / c}` is integrally closed, extracting formal `p ^ e`-th roots of `y ^ p ^ e ∈ T`
 gives an injective `T`-semilinear map `ζ : integralClosure T M → (FrobeniusRoot K p e){X / r}`
@@ -204,11 +182,9 @@ private theorem coeff_mem_of_algebraMap_eq_apply
   choose a ha using fun j : Fin m ↦ hs (b.repr y j) (Finset.mem_image_of_mem _ (by simp))
   have hclear : ∑ j, Ψ (a j) * rootG j = Ψ s * z :=
     IsFractionRing.injective (IsRestricted.subring (R := K') r) (GaussFractionField σ K' r) <| by
-      rw [map_mul, hz, map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      have haj := by simpa only [Algebra.smul_def] using ha j
-      rw [map_mul, ← hι_alg (a j), haj, map_mul, map_mul, hι_alg s, ← hι_b j, mul_assoc,
-        ← map_mul ι, ← Algebra.smul_def (b.repr y j) (b j)]
+      rw [map_mul, hz]
+      exact b.map_sum_mul_eq_map_mul_apply (algebraMap _ _) ι (hι_alg s)
+        (fun j ↦ by rw [← Algebra.smul_def, ← ha j, hι_alg]) hι_b
   have hexp_ne : _root_.MvPowerSeries.expand (p ^ e) hq ((s : T) : _root_.MvPowerSeries σ K) ≠ 0 :=
     fun h0 ↦ hΨ_inj.ne (nonZeroDivisors.ne_zero s.2) <| by
       rw [Ψ.map_zero]
@@ -278,7 +254,8 @@ private theorem finite_integralClosure_isRestricted_subring_of_isPurelyInseparab
     (TauCeti.Module.Dual.injective_eval_iff.mpr fun y₀ hy₀ ↦ ?_)
   obtain ⟨ν, hν, φ, _, hφ, hπ_ne⟩ :=
     exists_toSubringDualOfBound_restrictedExpandComponentFamily_ne_zero hq hr E
-      (exists_bounded_dual_ne_zero_frobeniusRoot p e (Set.countable_range _))
+      (fun _ hx ↦ Submodule.exists_bounded_dual_ne_zero_span_of_countable
+        (Set.countable_range _) hx)
       (hζ_ne hy₀) (hζ_mem y₀)
   let π := IsRestrictedFamily.toSubringDualOfBound (c := c) φ hφ
   have h_iso (a : K) : ‖algebraMap K K' a‖ ≤ 1 * ‖a‖ := by
