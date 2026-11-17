@@ -260,12 +260,12 @@ open scoped ENNReal in
 inclusion `SchwartzMap.toLpCLM`. In particular it is a closed subspace: sums and scalar multiples
 of `Lᵖ` limits of Schwartz functions are again such limits. -/
 theorem closure_range_toLp_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
     [SecondCountableTopologyEither E F] {μ : Measure E} [μ.HasTemperateGrowth] (p : ℝ≥0∞)
     [Fact (1 ≤ p)] :
     closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p μ) =
-      ((LinearMap.range (toLpCLM ℂ F p μ).toLinearMap).topologicalClosure : Set (Lp F p μ)) := by
-  have hcoe : ⇑(toLpCLM ℂ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
+      ((LinearMap.range (toLpCLM ℝ F p μ).toLinearMap).topologicalClosure : Set (Lp F p μ)) := by
+  have hcoe : ⇑(toLpCLM ℝ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
   rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
 
 end SchwartzMap

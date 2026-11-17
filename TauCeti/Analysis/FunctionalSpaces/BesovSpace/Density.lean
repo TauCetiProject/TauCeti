@@ -147,11 +147,7 @@ the decay `2^{js} ‖Δⱼ u‖_p → 0` (`TauCeti.BesovSpace.mem_littleBesov_if
 theorem mem_closure_range_toBesovSpaceCLM_iff (hq : q ≠ ∞) {u : BesovSpace F φ s p q} :
     u ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q)) ↔
       ∀ j, u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p) := by
-  refine ⟨fun hu j ↦ ?_, fun hblock ↦ ?_⟩
-  · refine map_mem_closure (f := fun x : BesovSpace F φ s p q ↦ x.block j) (continuous_block j)
-      hu ?_
-    rintro _ ⟨f, rfl⟩
-    exact ⟨_, (block_toBesovSpaceCLM f j).symm⟩
+  refine ⟨block_mem_closure_of_mem_closure_range_toBesovSpaceCLM, fun hblock ↦ ?_⟩
   obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
   -- Each low-frequency cut-off is a limit of Schwartz functions in `B^s_{p,q}`.
   have hmem (m : ℕ) : ∃ v ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q)),
@@ -161,11 +157,9 @@ theorem mem_closure_range_toBesovSpaceCLM_iff (hq : q ≠ ∞) {u : BesovSpace F
     have hxl := mem_littleBesov_of_toDistr_eq hx (lowPass_mem_closure_range_toLp hblock m)
       fun k hk ↦ hL u m k hk
     rw [← SetLike.mem_coe, coe_littleBesov] at hxl
-    refine ⟨inclusionOfLT F φ p ∞ q (lt_add_one s) x,
-      map_mem_closure (inclusionOfLT F φ p ∞ q (lt_add_one s)).continuous hxl ?_,
+    exact ⟨inclusionOfLT F φ p ∞ q (lt_add_one s) x,
+      map_mem_closure_range_toBesovSpaceCLM _ (toDistr_inclusionOfLT _) hxl,
       by rw [toDistr_inclusionOfLT, hx]⟩
-    rintro _ ⟨f, rfl⟩
-    exact ⟨f, ext (by simp only [toDistr_inclusionOfLT, SchwartzMap.toDistr_toBesovSpaceCLM])⟩
   choose v hvS hv using hmem
   exact isClosed_closure.mem_of_tendsto (tendsto_of_toDistr_eq_lowPass hq hv)
     (Eventually.of_forall hvS)
@@ -183,7 +177,8 @@ variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p
 /-- **The Schwartz functions are dense in `B^s_{p,q}` for `p, q < ∞`.** -/
 theorem denseRange_toBesovSpaceCLM (hp : p ≠ ∞) (hq : q ≠ ∞) :
     DenseRange (toBesovSpaceCLM F φ s p q) := fun u ↦
-  (BesovSpace.mem_closure_range_toBesovSpaceCLM_iff hq).2 fun j ↦
-    denseRange_toLpCLM (F := F) (μ := (volume : Measure E)) hp (u.block j)
+  (BesovSpace.mem_closure_range_toBesovSpaceCLM_iff hq).2 fun j ↦ by
+    simpa only [← toLpCLM_apply (𝕜 := ℝ)] using
+      denseRange_toLpCLM (F := F) (μ := (volume : Measure E)) hp (u.block j)
 
 end SchwartzMap

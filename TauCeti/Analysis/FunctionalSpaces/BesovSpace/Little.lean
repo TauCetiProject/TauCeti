@@ -64,6 +64,10 @@ constant, depending on `M`, times `‖S_{N+1} u - g‖_p`.
   blocks alone.
 * `TauCeti.BesovSpace.mem_littleBesov_of_toDistr_eq`: an `Lᵖ` limit of Schwartz functions whose
   blocks vanish from some index on lies in `b^s_{p,∞}`.
+* `TauCeti.BesovSpace.block_mem_closure_of_mem_closure_range_toBesovSpaceCLM` and
+  `TauCeti.BesovSpace.map_mem_closure_range_toBesovSpaceCLM`: the first half of the argument and
+  the stability under the embeddings, for the closure of the Schwartz functions in any
+  `B^s_{p,q}`.
 * `TauCeti.BesovSpace.map_mem_littleBesov`: the embeddings of the Besov scale preserve the little
   spaces; in particular `TauCeti.BesovSpace.bumpEquiv_mem_littleBesov_iff` (independence of the
   bump function), `TauCeti.BesovSpace.inclusion_mem_littleBesov`,
@@ -159,14 +163,22 @@ theorem tendsto_rpow_mul_norm_block_of_mem_littleBesov {u : BesovSpace F φ s p 
     _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hf.le) hv
     _ = ε := add_halves ε
 
+/-- **The blocks of a limit of Schwartz functions in `B^s_{p,q}` are limits of Schwartz functions
+in `Lᵖ`.** -/
+theorem block_mem_closure_of_mem_closure_range_toBesovSpaceCLM {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {u : BesovSpace F φ s p q}
+    (hu : u ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q))) (j : ℕ) :
+    u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p) := by
+  refine map_mem_closure (f := fun x : BesovSpace F φ s p q ↦ x.block j) (continuous_block j) hu ?_
+  rintro _ ⟨f, rfl⟩
+  exact ⟨_, (block_toBesovSpaceCLM f j).symm⟩
+
 /-- **The blocks of an element of `b^s_{p,∞}` are limits of Schwartz functions in `Lᵖ`.** -/
 theorem block_mem_closure_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
     (hu : u ∈ littleBesov F φ s p) (j : ℕ) :
     u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p) := by
   rw [← SetLike.mem_coe, coe_littleBesov] at hu
-  refine map_mem_closure (f := fun x : BesovSpace F φ s p ∞ ↦ x.block j) (continuous_block j) hu ?_
-  rintro _ ⟨f, rfl⟩
-  exact ⟨_, (block_toBesovSpaceCLM f j).symm⟩
+  exact block_mem_closure_of_mem_closure_range_toBesovSpaceCLM hu j
 
 /-- **Truncation.** If the weighted blocks of `u` tend to zero, then `u` is within `ε` of the
 low-pass truncation `S_{N+1} u = ∑_{j ≤ N} Δⱼ u` (`TauCeti.BesovSpace.lowPass`) for some `N`: away
@@ -282,15 +294,25 @@ theorem mem_littleBesov_iff_tendsto (hp : p ≠ ∞) {u : BesovSpace F φ s p �
 
 /-! ### The little Besov spaces under the embeddings of the Besov scale -/
 
+/-- A continuous linear map between Besov spaces that keeps the underlying tempered distribution
+maps limits of Schwartz functions to limits of Schwartz functions. -/
+theorem map_mem_closure_range_toBesovSpaceCLM {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {φ' : ContDiffBump (0 : E)} {s' : ℝ} {p' q' : ℝ≥0∞} [Fact (1 ≤ p')] [Fact (1 ≤ q')]
+    (T : BesovSpace F φ s p q →L[ℂ] BesovSpace F φ' s' p' q') (hT : ∀ u, (T u).toDistr = u.toDistr)
+    {u : BesovSpace F φ s p q}
+    (hu : u ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q))) :
+    T u ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ' s' p' q')) := by
+  refine map_mem_closure T.continuous hu ?_
+  rintro _ ⟨f, rfl⟩
+  exact ⟨f, ext (by simp only [hT, SchwartzMap.toDistr_toBesovSpaceCLM])⟩
+
 /-- A continuous linear map between spaces `B^s_{p,∞}` that keeps the underlying tempered
 distribution maps the little Besov space into the little Besov space. -/
 theorem map_mem_littleBesov {φ' : ContDiffBump (0 : E)} {s' : ℝ} {p' : ℝ≥0∞} [Fact (1 ≤ p')]
     (T : BesovSpace F φ s p ∞ →L[ℂ] BesovSpace F φ' s' p' ∞) (hT : ∀ u, (T u).toDistr = u.toDistr)
     {u : BesovSpace F φ s p ∞} (hu : u ∈ littleBesov F φ s p) : T u ∈ littleBesov F φ' s' p' := by
   rw [← SetLike.mem_coe, coe_littleBesov] at hu ⊢
-  refine map_mem_closure T.continuous hu ?_
-  rintro _ ⟨f, rfl⟩
-  exact ⟨f, ext (by simp only [hT, SchwartzMap.toDistr_toBesovSpaceCLM])⟩
+  exact map_mem_closure_range_toBesovSpaceCLM T hT hu
 
 /-- **The little Besov space does not depend on the bump function.** -/
 @[simp]
