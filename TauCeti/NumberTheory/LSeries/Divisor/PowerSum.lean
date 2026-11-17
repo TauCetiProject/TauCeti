@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Convolution
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Complex
+import TauCeti.NumberTheory.LSeries.RiemannZeta
 
 /-!
 # The Dirichlet series of the divisor power sum `σ_ν`
@@ -83,7 +84,7 @@ theorem LSeries_sigmaC {ν s : ℂ} (hs : max 1 (1 + ν.re) < s.re) :
 
 /-- Reflection of the exponent in the terms of the series:
 `σ_ν(n) n ^ {-s} = σ_{-ν}(n) n ^ {-(s - ν)}`. -/
-theorem term_sigmaC (ν s : ℂ) (n : ℕ) :
+theorem term_sigmaC_eq_term_sigmaC_neg (ν s : ℂ) (n : ℕ) :
     term ↗(sigmaC ν) s n = term ↗(sigmaC (-ν)) (s - ν) n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
@@ -91,15 +92,6 @@ theorem term_sigmaC (ν s : ℂ) (n : ℕ) :
   rw [term_of_ne_zero hn, term_of_ne_zero hn, sigmaC_eq_cpow_mul_sigmaC_neg ν n,
     Complex.cpow_sub _ _ hn']
   rw [div_div_eq_mul_div, mul_comm]
-
-/-- `(x - 1) ζ(x) → 1` as the real variable `x` tends to `1` from the right. -/
-private theorem tendsto_sub_one_mul_riemannZeta :
-    Tendsto (fun x : ℝ ↦ ((x : ℂ) - 1) * riemannZeta x) (𝓝[>] 1) (𝓝 1) := by
-  refine riemannZeta_residue_one.comp (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    ?_ ?_)
-  · exact (Complex.continuous_ofReal.tendsto' 1 1 (by simp)).mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact fun h ↦ (ne_of_gt (Set.mem_Ioi.mp hx)) (by exact_mod_cast Set.mem_singleton_iff.mp h)
 
 /-- For `Re ν ≤ 0`, the series of `σ_ν` does not converge absolutely at `s = 1`. -/
 private theorem not_LSeriesSummable_sigmaC_one {ν : ℂ} (hν : ν.re ≤ 0) :
@@ -122,7 +114,7 @@ private theorem not_LSeriesSummable_sigmaC_one {ν : ℂ} (hν : ν.re ≤ 0) :
     (Continuous.tendsto' (f := fun x : ℝ ↦ (x - 1) * C) (by fun_prop) 1 0 (by simp)).mono_left
       nhdsWithin_le_nhds
   have hres : Tendsto (fun x : ℝ ↦ ‖((x : ℂ) - 1) * riemannZeta x‖) (𝓝[>] 1) (𝓝 1) := by
-    simpa using tendsto_sub_one_mul_riemannZeta.norm
+    simpa using TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT.norm
   rcases eq_or_ne ν 0 with rfl | hν0
   · -- For `ν = 0`, `((x - 1) ζ(x)) ^ 2 → 1` while it is at most `(x - 1) ^ 2 C`.
     have hzero' : Tendsto (fun x : ℝ ↦ (x - 1) * ((x - 1) * C)) (𝓝[>] 1) (𝓝 0) :=
@@ -152,7 +144,7 @@ theorem not_LSeriesSummable_sigmaC (ν : ℂ) :
   · rw [max_eq_left (by linarith)]
     exact_mod_cast not_LSeriesSummable_sigmaC_one hν
   · intro h
-    rw [LSeriesSummable, funext (term_sigmaC ν _), ← LSeriesSummable] at h
+    rw [LSeriesSummable, funext (term_sigmaC_eq_term_sigmaC_neg ν _), ← LSeriesSummable] at h
     exact not_LSeriesSummable_sigmaC_one (by simpa using hν.le)
       (h.of_re_le_re (by simp [max_eq_right (by linarith : 1 ≤ 1 + ν.re)]))
 

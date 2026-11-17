@@ -80,7 +80,7 @@ namespace ArithmeticFunction
 open scoped ArithmeticFunction.zeta ArithmeticFunction.sigma
 
 /-- The arithmetic function `n ↦ n ^ ν` with complex exponent `ν`, with value `0` at `0`. -/
-@[expose] noncomputable def cpow (ν : ℂ) : ArithmeticFunction ℂ :=
+noncomputable def cpow (ν : ℂ) : ArithmeticFunction ℂ :=
   ⟨fun n ↦ if n = 0 then 0 else (n : ℂ) ^ ν, by simp⟩
 
 /-- Away from `0`, `cpow ν n` is the complex power `n ^ ν`. -/
@@ -99,18 +99,17 @@ theorem isMultiplicative_cpow (ν : ℂ) : IsMultiplicative (cpow ν) := by
 
 /-- The divisor power sum `σ_ν(n) = ∑_{d ∣ n} d ^ ν` with complex exponent `ν`. Its value at `0`
 is the empty sum `0`. -/
-@[expose] noncomputable def sigmaC (ν : ℂ) : ArithmeticFunction ℂ :=
+noncomputable def sigmaC (ν : ℂ) : ArithmeticFunction ℂ :=
   ⟨fun n ↦ ∑ d ∈ n.divisors, (d : ℂ) ^ ν, by simp⟩
 
 /-- `σ_ν(n)` is the sum of `d ^ ν` over the divisors `d` of `n`. -/
-@[simp]
 theorem sigmaC_apply (ν : ℂ) (n : ℕ) : sigmaC ν n = ∑ d ∈ n.divisors, (d : ℂ) ^ ν :=
-  rfl
+  (rfl)
 
 /-- At a natural exponent `k`, `σ_k` is the cast of Mathlib's `ArithmeticFunction.sigma k`. -/
 theorem sigmaC_natCast (k : ℕ) : sigmaC k = (σ k : ArithmeticFunction ℂ) := by
   ext n
-  simp [sigma_apply]
+  simp [sigmaC_apply, sigma_apply]
 
 /-- `σ_ν` is the Dirichlet convolution of `ζ` with `n ↦ n ^ ν`. -/
 theorem sigmaC_eq_zeta_mul_cpow (ν : ℂ) : sigmaC ν = (ζ : ArithmeticFunction ℂ) * cpow ν := by
@@ -125,11 +124,12 @@ theorem isMultiplicative_sigmaC (ν : ℂ) : IsMultiplicative (sigmaC ν) :=
 /-- The value of `σ_ν` at a prime power: `σ_ν(p ^ a) = ∑_{j ≤ a} p ^ {jν}`. -/
 theorem sigmaC_apply_prime_pow (ν : ℂ) {p : ℕ} (hp : p.Prime) (a : ℕ) :
     sigmaC ν (p ^ a) = ∑ j ∈ Finset.range (a + 1), ((p : ℂ) ^ ν) ^ j := by
-  simp [Nat.divisors_prime_pow hp, ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul]
+  simp [sigmaC_apply, Nat.divisors_prime_pow hp, ← Complex.natCast_cpow_natCast_mul,
+    Complex.cpow_nat_mul]
 
 /-- Reflection of the exponent: `σ_ν(n) = n ^ ν σ_{-ν}(n)`, including at `n = 0`. -/
 theorem sigmaC_eq_cpow_mul_sigmaC_neg (ν : ℂ) (n : ℕ) :
     sigmaC ν n = (n : ℂ) ^ ν * sigmaC (-ν) n := by
-  simpa using Nat.sum_divisors_cpow_neg n (-ν)
+  simpa [sigmaC_apply] using Nat.sum_divisors_cpow_neg n (-ν)
 
 end ArithmeticFunction
