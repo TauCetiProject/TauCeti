@@ -73,6 +73,8 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
   `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
   are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_zero_one`: the endpoint embedding
+  `B^0_{p,1} ⊆ Lᵖ` with `‖f‖_p ≤ ‖u‖`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos`: for `s > 0` an element of
   `B^s_{p,q}` is an `Lᵖ` function, the sum of its blocks, with norm at most `(1 - 2^{-s})⁻¹ ‖u‖`.
 * `TemperedDistribution.MemBesov.of_bump` and `TauCeti.BesovSpace.bumpEquiv`: the Besov space does
@@ -973,6 +975,24 @@ theorem exists_toDistr_eq_and_norm_le_of_pos (hs : 0 < s) (u : BesovSpace F φ s
           mul_comm]
 
 end Inclusion
+
+section PositiveSmoothness
+
+/-- **The endpoint embedding `B^0_{p,1} ⊆ Lᵖ`.** Every `u ∈ B^0_{p,1}` is the tempered distribution
+of an `Lᵖ` function `f` with `‖f‖_p ≤ ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_zero_one (u : BesovSpace F φ 0 p 1) :
+    ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ ‖u‖ := by
+  -- The `B^0_{p,1}` norm is `∑ⱼ ‖Δⱼ u‖_p`, so the series `f = ∑ⱼ Δⱼ u` converges absolutely in
+  -- `Lᵖ`, and it represents `u` by the Littlewood–Paley reconstruction `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
+  have hnorm : HasSum (fun j ↦ ‖u.block j‖) ‖u‖ := by
+    simpa using hasSum_norm ENNReal.one_ne_top u
+  have hsum := hnorm.summable.of_norm
+  refine ⟨∑' j, u.block j, tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u.toDistr) ?_,
+    tsum_of_norm_bounded hnorm fun _ ↦ le_rfl⟩
+  simpa [Function.comp_def] using (hsum.hasSum.map (Lp.toTemperedDistributionCLM F volume p)
+    (ContinuousLinearMap.continuous _)).tendsto_sum_nat
+
+end PositiveSmoothness
 
 section BandLimited
 
