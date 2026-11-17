@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -26,6 +27,10 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
   real digamma is the derivative of `log ∘ Gamma`.
 * `Real.digamma_one`, `Real.digamma_apply_add_one`, `Real.digamma_apply_add_nat`: the value
   `ψ(1) = -γ` and the recurrence `ψ(x + 1) = ψ(x) + 1 / x` with its iterates.
+* `Real.differentiableAt_digamma`, `Real.deriv_digamma_nonneg`,
+  `Real.deriv_digamma_apply_add_one`, `Real.deriv_digamma_apply_add_nat`: differentiability of
+  real digamma off `-ℕ`, nonnegativity of its derivative on `(0, ∞)`, and the trigamma recurrence
+  `ψ'(x + n) = ψ'(x) - ∑_{k < n} (x + k)⁻²`.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
 * `Real.monotoneOn_digamma`: digamma is monotone on the positive real axis, being the derivative
   of the convex function `log ∘ Gamma`.
@@ -170,6 +175,64 @@ theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
     digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)
   exact (convexOn_log_Gamma.monotoneOn_deriv fun x hx ↦
     differentiableAt_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)).congr hd.symm
+
+/-- Real digamma is differentiable at every regular real point (away from `0, -1, -2, ...`). -/
+theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    DifferentiableAt ℝ digamma x := by
+  have hΓ : AnalyticAt ℂ Complex.Gamma (x : ℂ) :=
+    Complex.analyticAt_Gamma (Complex.ofReal_ne_neg_nat hx)
+  have hψ : DifferentiableAt ℂ Complex.digamma (x : ℂ) := by
+    have hne : Complex.Gamma (x : ℂ) ≠ 0 := Complex.Gamma_ne_zero (Complex.ofReal_ne_neg_nat hx)
+    have h := (hΓ.deriv.div hΓ hne).differentiableAt
+    have hfun : deriv Complex.Gamma / Complex.Gamma = Complex.digamma :=
+      funext fun s ↦ by rw [Pi.div_apply, Complex.digamma_def, logDeriv_apply]
+    rwa [hfun] at h
+  have hre : (fun y : ℝ ↦ (Complex.digamma (y : ℂ)).re) = digamma :=
+    funext fun y ↦ by rw [Complex.digamma_ofReal, Complex.ofReal_re]
+  rw [← hre]
+  exact Complex.reCLM.differentiableAt.comp x (hψ.hasDerivAt.comp_ofReal).differentiableAt
+
+/-- The derivative of real digamma is nonnegative on the positive real axis. -/
+theorem deriv_digamma_nonneg {x : ℝ} (hx : 0 < x) : 0 ≤ deriv digamma x := by
+  rw [← derivWithin_of_isOpen isOpen_Ioi hx]
+  exact monotoneOn_digamma.derivWithin_nonneg
+
+/-- The derivative of real digamma satisfies the shift recurrence
+`ψ'(x + 1) = ψ'(x) - (x ^ 2)⁻¹` at every regular real point. -/
+theorem deriv_digamma_apply_add_one {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    deriv digamma (x + 1) = deriv digamma x - (x ^ 2)⁻¹ := by
+  have hx0 : x ≠ 0 := by simpa using hx 0
+  have hx1 : ∀ m : ℕ, x + 1 ≠ -(m : ℝ) := fun m hm ↦
+    hx (m + 1) (by push_cast; linarith)
+  have hopen : ∀ᶠ y : ℝ in 𝓝 x, ∀ m : ℕ, y ≠ -(m : ℝ) := by
+    have hcont : Continuous (fun y : ℝ ↦ (Complex.Gamma (y : ℂ))⁻¹) :=
+      Complex.differentiable_one_div_Gamma.continuous.comp Complex.continuous_ofReal
+    have hne : (Complex.Gamma (x : ℂ))⁻¹ ≠ 0 :=
+      inv_ne_zero (Complex.Gamma_ne_zero (Complex.ofReal_ne_neg_nat hx))
+    filter_upwards [hcont.continuousAt.eventually_ne hne] with y hy m hm
+    apply hy
+    rw [hm, Complex.ofReal_neg, Complex.ofReal_natCast, Complex.Gamma_neg_nat_eq_zero, inv_zero]
+  have heq : (fun y : ℝ ↦ digamma (y + 1)) =ᶠ[𝓝 x] fun y : ℝ ↦ digamma y + y⁻¹ := by
+    filter_upwards [hopen] with y hy
+    rw [digamma_apply_add_one hy, one_div]
+  have hL : HasDerivAt (fun y : ℝ ↦ digamma (y + 1)) (deriv digamma (x + 1)) x := by
+    simpa only [Function.comp_def, mul_one] using
+      (differentiableAt_digamma hx1).hasDerivAt.comp x ((hasDerivAt_id' x).add_const 1)
+  have hR : HasDerivAt (fun y : ℝ ↦ digamma y + y⁻¹) (deriv digamma x + -(x ^ 2)⁻¹) x :=
+    (differentiableAt_digamma hx).hasDerivAt.add (hasDerivAt_inv hx0)
+  rw [sub_eq_add_neg, (hR.congr_of_eventuallyEq heq).unique hL]
+
+/-- The derivative of real digamma satisfies the iterated shift recurrence
+`ψ'(x + n) = ψ'(x) - ∑_{k < n} (x + k)⁻²` at every regular real point. -/
+theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n : ℕ) :
+    deriv digamma (x + n) = deriv digamma x - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hxn : ∀ m : ℕ, x + n ≠ -(m : ℝ) := fun m hm ↦
+      hx (m + n) (by push_cast; linarith)
+    rw [Nat.cast_succ, ← add_assoc, deriv_digamma_apply_add_one hxn, ih, Finset.sum_range_succ]
+    ring
 
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
 theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by

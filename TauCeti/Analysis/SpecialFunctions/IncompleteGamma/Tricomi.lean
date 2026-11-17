@@ -42,7 +42,9 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
   `γ*(a, ·)` is entire (`differentiable_tricomiIncompleteGamma`);
 * `Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
 * `Complex.tricomiIncompleteGamma_ode` — the differential equation
-  `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14).
+  `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14);
+* `Complex.tricomiIncompleteGamma_conj`, `Complex.tricomiIncompleteGamma_ofReal_im` — Schwarz
+  reflection `γ*(conj a, conj z) = conj (γ*(a, z))` and reality for real arguments.
 
 ## Implementation
 
@@ -62,7 +64,7 @@ public section
 noncomputable section
 
 open Complex Filter Finset Set MeasureTheory
-open scoped Nat Topology Interval
+open scoped ComplexConjugate Nat Topology Interval
 
 namespace Complex
 
@@ -86,6 +88,23 @@ theorem hasSum_tricomiIncompleteGamma (a z : ℂ) :
     (cexp (-z))).congr_fun fun k => ?_
   rw [regularizedHGFunCoeff_one_singleton, add_right_comm, div_eq_mul_inv]
   ring
+
+/-- Tricomi's function commutes with complex conjugation:
+`γ*(conj a, conj z) = conj (γ*(a, z))`. -/
+theorem tricomiIncompleteGamma_conj (a z : ℂ) :
+    tricomiIncompleteGamma (conj a) (conj z) = conj (tricomiIncompleteGamma a z) := by
+  refine (hasSum_tricomiIncompleteGamma (conj a) (conj z)).unique ?_
+  have h := (hasSum_tricomiIncompleteGamma a z).map (starRingEnd ℂ).toAddMonoidHom continuous_conj
+  refine h.congr_fun fun k => ?_
+  simp [← Complex.exp_conj, ← Complex.Gamma_conj]
+
+/-- Tricomi's function is real-valued for real parameter and real argument. -/
+@[simp]
+theorem tricomiIncompleteGamma_ofReal_im (a x : ℝ) :
+    (tricomiIncompleteGamma a x).im = 0 := by
+  have h := tricomiIncompleteGamma_conj (a : ℂ) (x : ℂ)
+  rw [conj_ofReal, conj_ofReal, eq_comm, conj_eq_iff_im] at h
+  exact h
 
 /-- The recurrence of Tricomi's function in its parameter (DLMF §8.8):
 `γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)`. -/

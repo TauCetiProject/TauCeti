@@ -51,6 +51,7 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `Real.neg_one_pow_mul_Gamma_pos` — on `(-(m + 1), -m)`, `Real.Gamma` has sign `(-1)^(m + 1)`.
 * `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
@@ -225,6 +226,27 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
   · refine Eventually.of_forall fun n => ?_
     simp only [Pi.div_apply]
     rw [show (n : ℝ) + 1 + (a - 1) = n + a by ring, show (n : ℝ) + 1 + (b - 1) = n + b by ring]
+
+/-- On each negative unit interval `(-(m + 1), -m)`, `Real.Gamma` has constant sign `(-1)^(m + 1)`:
+`0 < (-1)^(m + 1) * Γ(x)`. -/
+theorem neg_one_pow_mul_Gamma_pos {m : ℕ} {x : ℝ} (h₁ : -((m : ℝ) + 1) < x) (h₂ : x < -(m : ℝ)) :
+    0 < (-1 : ℝ) ^ (m + 1) * Gamma x := by
+  induction m generalizing x with
+  | zero =>
+    have hx0 : x < 0 := by simpa using h₂
+    have hx1 : 0 < x + 1 := by simp only [Nat.cast_zero, zero_add] at h₁; linarith
+    have hG := Gamma_pos_of_pos hx1
+    rw [Gamma_add_one hx0.ne] at hG
+    have hG' : 0 < (-x) * (-Gamma x) := by linarith
+    simpa using pos_of_mul_pos_right hG' (by linarith)
+  | succ m ih =>
+    have hx0 : x < 0 := by linarith [Nat.cast_nonneg (α := ℝ) (m + 1)]
+    have hih := ih (x := x + 1) (by push_cast at h₁ ⊢; linarith) (by push_cast at h₂ ⊢; linarith)
+    rw [Gamma_add_one hx0.ne] at hih
+    have heq : (-1 : ℝ) ^ (m + 1) * (x * Gamma x) = (-x) * ((-1 : ℝ) ^ (m + 1 + 1) * Gamma x) := by
+      rw [pow_succ]; ring
+    rw [heq] at hih
+    exact pos_of_mul_pos_right hih (by linarith)
 
 end Real
 
