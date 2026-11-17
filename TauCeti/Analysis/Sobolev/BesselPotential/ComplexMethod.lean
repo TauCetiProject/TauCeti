@@ -117,7 +117,7 @@ private def besselLine (s₀ s₁ θ r a : ℝ) (f : 𝓢(E, H)) : ℝ →ᵇ H^
   .ofNormedAddCommGroup (fun t ↦ besselShift s₀ s₁ θ r f (a + t * I))
     ((differentiable_besselShift s₀ s₁ θ r f).continuous.comp (by fun_prop))
     ‖toBesselPotentialSpaceCLM (r + (θ - a) * (s₁ - s₀)) 2 f‖ fun t ↦ by
-      rw [norm_besselShift, add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero]
+      rw [norm_besselShift, show ((a : ℂ) + t * I).re = a by simp]
 
 private theorem norm_besselLine_le (s₀ s₁ θ r a : ℝ) (f : 𝓢(E, H)) :
     ‖besselLine s₀ s₁ θ r a f‖ ≤ ‖toBesselPotentialSpaceCLM (r + (θ - a) * (s₁ - s₀)) 2 f‖ :=
@@ -236,8 +236,9 @@ private theorem sumSpaceEmbed_toSum_besselPotentialSpaceToComplexMethod (hθ : �
       (ComplexMethodSpace.toSum.comp (besselPotentialSpaceToComplexMethod E H s₀ s₁ hθ))).continuous
       continuous_toDistr) fun f ↦ ?_
   rw [besselPotentialSpaceToComplexMethod_toBesselPotentialSpaceCLM,
-    toSum_schwartzToComplexMethod, sumSpaceEmbed_fstToSum, besselPotentialSpace_embed₀_apply,
-    toDistr_toBesselPotentialSpaceCLM, toDistr_toBesselPotentialSpaceCLM]
+    toSum_schwartzToComplexMethod]
+  simp [sumSpaceEmbed_fstToSum, besselPotentialSpace_embed₀_apply,
+    toDistr_toBesselPotentialSpaceCLM]
 
 /-- The inclusion `H^{s_θ} ⊆ [H^{s₀}, H^{s₁}]_θ` does not increase norms:
 `‖u‖_{[H^{s₀}, H^{s₁}]_θ} ≤ ‖u‖_{H^{s_θ}}`. -/
