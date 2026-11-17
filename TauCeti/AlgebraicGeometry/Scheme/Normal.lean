@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 
+import Mathlib.RingTheory.Polynomial.RationalRoot
+
 /-!
 # Normal schemes
 
@@ -49,6 +51,10 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
+* `TauCeti.AlgebraicGeometry.uniqueFactorizationMonoid_stalk_of_isOpenImmersion`: open immersions
+  preserve factoriality of local rings.
+* `TauCeti.AlgebraicGeometry.IsNormalScheme.of_uniqueFactorizationMonoid_stalk`: a scheme whose
+  local rings are unique factorization domains is normal (a local instance where needed).
 
 ## References
 
@@ -209,6 +215,21 @@ theorem IsNormalScheme.isDiscreteValuationRing_stalk [IsLocallyNoetherian X] [Is
     rw [ringKrullDim_stalk_eq_coheight]
     simp [hx]
   exact IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
+
+/-- Transferring factorial local rings along an open immersion `j : U ⟶ X`. -/
+theorem uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] (u : U) :
+    UniqueFactorizationMonoid (U.presheaf.stalk u) :=
+  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
+    inferInstance
+
+/-- A scheme whose local rings are unique factorization domains is normal. Not a global
+instance: `IsNormalScheme.isDomain_stalk` would then send every `IsDomain` search on a stalk
+through a search for factorial stalks, which times out (for instance on function fields). -/
+theorem IsNormalScheme.of_uniqueFactorizationMonoid_stalk
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] : IsNormalScheme X :=
+  isNormalScheme_iff_forall_stalk.mpr fun _ ↦ ⟨inferInstance, inferInstance⟩
 
 end AlgebraicGeometry
 
