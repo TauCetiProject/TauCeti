@@ -299,20 +299,37 @@ theorem Martingale.mul_left_of_eq_zero [SigmaFiniteFiltration μ ℱ] {a : Ω �
 
 /-- Conditioning an increment restricted to an event known at its starting date truncates
 the increment to the conditioning date, with zero increment before its start. -/
-theorem Martingale.condExp_indicator_sub [SigmaFiniteFiltration μ ℱ]
-    (hX : Martingale X ℱ μ) {s t : ι} (hst : s ≤ t) {A : Set Ω}
+theorem Martingale.condExp_indicator_sub (hX : Martingale X ℱ μ) {s t : ι} (hst : s ≤ t) {A : Set Ω}
     (hA : MeasurableSet[ℱ s] A) (S : ι) :
     μ[A.indicator (X t - X s) | ℱ S] =ᵐ[μ]
       A.indicator (X (max s (min t S)) - X s) := by
-  have hM := (hX.const_min t).sub (hX.const_min s)
-  have hcond (u : ι) : μ[X t - X s | ℱ u] =ᵐ[μ]
-      X (min t u) - X (min s u) := by
-    simpa only [Pi.sub_apply, min_eq_left (le_max_left t u),
-      min_eq_left (hst.trans (le_max_left t u))] using
-      hM.condExp_ae_eq (le_max_right t u)
+  have hcond (u : ι) [SigmaFinite (μ.trim (ℱ.le u))] :
+      μ[X t - X s | ℱ u] =ᵐ[μ] X (min t u) - X (min s u) := by
+    have heval (v : ι) : μ[X v | ℱ u] =ᵐ[μ] X (min v u) := by
+      rcases le_total v u with hvu | huv
+      · rw [min_eq_left hvu, condExp_of_stronglyMeasurable (ℱ.le u)
+          ((hX.stronglyMeasurable v).mono (ℱ.mono hvu)) (hX.integrable v)]
+      · simpa only [min_eq_right huv] using hX.condExp_ae_eq huv
+    exact (condExp_sub (hX.integrable t) (hX.integrable s) _).trans
+      ((heval t).sub (heval s))
   have hint := (hX.integrable t).sub (hX.integrable s)
+  by_cases hμS : SigmaFinite (μ.trim (ℱ.le S))
+  swap
+  · rw [condExp_of_not_sigmaFinite (ℱ.le S) hμS]
+    by_cases hsS : s ≤ S
+    · have hzero (u : ι) (hu : u ≤ S) : X u =ᵐ[μ] 0 := by
+        have hμu : ¬SigmaFinite (μ.trim (ℱ.le u)) :=
+          fun _ ↦ hμS (sigmaFiniteTrim_mono (ℱ.le S) (ℱ.mono hu))
+        simpa only [condExp_of_not_sigmaFinite (ℱ.le u) hμu] using
+          (hX.condExp_ae_eq (le_refl u)).symm
+      simpa only [sub_zero, Set.indicator_zero'] using
+        ((hzero _ (max_le hsS (min_le_right t S))).sub (hzero s hsS)).indicator.symm
+    · simp [min_eq_right ((le_of_not_ge hsS).trans hst),
+        max_eq_left (le_of_not_ge hsS)]
   by_cases hSs : S ≤ s
-  · have hzero : μ[A.indicator (X t - X s) | ℱ s] =ᵐ[μ] 0 := by
+  · have : SigmaFinite (μ.trim (ℱ.le s)) :=
+      sigmaFiniteTrim_mono (ℱ.le s) (ℱ.mono hSs)
+    have hzero : μ[A.indicator (X t - X s) | ℱ s] =ᵐ[μ] 0 := by
       simpa only [min_eq_right hst, min_self, sub_self, Set.indicator_zero'] using
         (condExp_indicator hint hA).trans (hcond s).indicator
     calc

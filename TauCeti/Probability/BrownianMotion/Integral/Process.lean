@@ -63,9 +63,8 @@ theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
   let C : Lp ℝ 2 P →L[ℝ] Lp ℝ 2 P :=
     (lpMeas ℝ ℝ (ℱ S) 2 P).subtypeL.comp (condExpL2 ℝ ℝ (ℱ.le S))
   have hC (u : Lp ℝ 2 P) : C u =ᵐ[P] P[u | ℱ S] := by
-    have hh := (Lp.memLp u).condExpL2_ae_eq_condExp (𝕜 := ℝ) (ℱ.le S)
-    rw [Lp.toLp_coeFn] at hh
-    exact hh
+    simpa only [C, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      Lp.toLp_coeFn] using (Lp.memLp u).condExpL2_ae_eq_condExp (𝕜 := ℝ) (ℱ.le S)
   -- It suffices to compare these maps on the dense predictable rectangles.
   have hmaps : C.comp (hW.l2Integral T).toContinuousLinearMap =
       (hW.l2Integral S).toContinuousLinearMap.comp R := by
@@ -84,7 +83,7 @@ theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     refine (hC (hW.l2Integral T u)).trans ?_
     have hterminal := hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod_of_le hst.le ht hA 1
     have hshort := hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod S s t hA 1
-    simp only [Set.indicator, ite_mul, one_mul, zero_mul] at hterminal hshort
+    simp only [← Pi.sub_apply, ← Set.indicator_mul_left, one_mul] at hterminal hshort
     exact (condExp_congr_ae hterminal).trans
       ((hW.martingale.condExp_indicator_sub hst.le hA S).trans hshort.symm)
   have hg : R f = g := Lp.ext ((hR f).trans hfg.symm)
