@@ -118,6 +118,13 @@ namespace MorseChart
 
 variable {x : M} (φ : MorseChart E f x)
 
+/-- An orientation of the space of coordinates of negative weight of a Morse chart, indexed by the
+Morse index: the orientation of a basis. It serves wherever some orientation is needed and the
+result does not depend on which. -/
+noncomputable def negativeOrientation :
+    Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) :=
+  (Module.finBasisOfFinrankEq ℝ _ φ.finrank_negativeWeight_fun).orientation
+
 /-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
 chart at `q`, against which the signs of the trajectories from a critical point `p` of index
 `ind q + 1` to `q` are measured: the standard orientation of `ℝ` followed by `oq`, indexed by

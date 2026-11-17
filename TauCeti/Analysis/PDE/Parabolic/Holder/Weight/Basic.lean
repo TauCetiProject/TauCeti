@@ -56,7 +56,7 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
   weighted map `exp (ℓ x) • v(x, t)`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanWeightedFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanWeightedZerothOrderCoeff`: the coefficients `b_w` and
-  `c_w` of the conjugated operator, with the norm bounds
+  `c_w` of the conjugated operator, linear in `a`, `b`, `c`, with the norm bounds
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedZerothOrderCoeff_le` and their uniform
   forms `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le_of_le` and
@@ -218,16 +218,47 @@ theorem euclideanWeightedZerothOrderCoeff_apply (p : slab (E := EuclideanSpace �
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff]
 
-/-- **Bound on the conjugated first-order coefficients.**
+/-- Linearity of the conjugated first-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, for a
+fixed weight. -/
+@[simp]
+theorem euclideanWeightedFirstOrderCoeff_sub
+    (a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) (i : ι) :
+    euclideanWeightedFirstOrderCoeff (a - a') (b - b') dℓ i =
+      euclideanWeightedFirstOrderCoeff a b dℓ i - euclideanWeightedFirstOrderCoeff a' b' dℓ i :=
+  HolderSpace.ext fun p ↦ by
+    simp only [euclideanWeightedFirstOrderCoeff_apply, HolderSpace.sub_apply, Pi.sub_apply,
+      sub_mul, add_mul, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+    ring
+
+/-- Linearity of the conjugated zeroth-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, `c`,
+for a fixed weight. -/
+@[simp]
+theorem euclideanWeightedZerothOrderCoeff_sub
+    (a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanWeightedZerothOrderCoeff (a - a') (b - b') (c - c') dℓ d2ℓ =
+      euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ -
+        euclideanWeightedZerothOrderCoeff a' b' c' dℓ d2ℓ :=
+  HolderSpace.ext fun p ↦ by
+    simp only [euclideanWeightedZerothOrderCoeff_apply, HolderSpace.sub_apply, Pi.sub_apply,
+      sub_mul, Finset.sum_sub_distrib]
+    ring
+
+variable (a b c dℓ d2ℓ) in
+/-- **Bound on the conjugated first-order coefficient.**
 `‖b_wⁱ‖ ≤ ‖bⁱ‖ + ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖`. -/
 theorem norm_euclideanWeightedFirstOrderCoeff_le (i : ι) :
-    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤ ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
+    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤
+      ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
   refine (norm_add_le _ _).trans (add_le_add le_rfl ((norm_sum_le _ _).trans
     (Finset.sum_le_sum fun j _ ↦ (norm_mul_le _ _).trans ?_)))
   gcongr
   · exact norm_add_le _ _
   · exact HolderSpace.norm_compSlabSpaceL_apply_le _
 
+variable (a b c dℓ d2ℓ) in
 /-- **Bound on the conjugated zeroth-order coefficient.**
 `‖c_w‖ ≤ ‖c‖ + ∑ᵢⱼ ‖aⁱʲ‖ (‖∂ᵢ∂ⱼℓ‖ + ‖∂ᵢℓ‖ ‖∂ⱼℓ‖) + ∑ᵢ ‖bⁱ‖ ‖∂ᵢℓ‖`. -/
 theorem norm_euclideanWeightedZerothOrderCoeff_le :

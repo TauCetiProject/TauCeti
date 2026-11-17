@@ -12,7 +12,9 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
 
-The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. We differentiate it along
+The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. For the cylindrical datum
+`K = H_t dt` and `J_t` independent of `s` it commutes with translations in `s`
+(`floerOperator_comp_sub`). We differentiate it along
 jointly `C²` families of maps and Hamiltonians and differentiable families of endomorphisms.
 The formula includes the target derivative of `J`, both Hamiltonian linearizations, and the
 independent parameter variations of `K` and `J`. Domain dependence of the coefficients is
@@ -79,6 +81,15 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
   rw [floerOperator_def, ω.isComplexLinearMap_perturbedFDeriv_iff]
   -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
+
+/-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
+structure `J_t` independent of `s`, the Floer operator of the translate `w ↦ f(w - (R, 0))` at `z`
+is the Floer operator of `f` at `z - (R, 0)`. -/
+theorem floerOperator_comp_sub (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ)
+    (f : ℝ × ℝ → V) (R : ℝ) (z : ℝ × ℝ) :
+    ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (fun w ↦ f (w - (R, 0))) z =
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) f (z - (R, 0)) := by
+  simp only [floerOperator_def, fderiv_comp_sub, Prod.snd_sub, sub_zero]
 
 /-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
 endomorphism fields, the coordinate Floer operator has derivative `Y(u)(∂t u - X_Kt)` at every

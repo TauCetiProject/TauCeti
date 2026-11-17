@@ -151,7 +151,7 @@ def restrictToConstantsRestrictScalarsIso :
 lemma restrictToConstantsRestrictScalarsIso_hom_app_hom_app_apply
     (M : SheafOfModules.{u} (locallyConstantRingCatSheaf X S)) (U : (Opens X)ᵒᵖ)
     (m : M.val.obj U) :
-    dsimp% only [Functor.comp_obj]
+    dsimp% only [Functor.comp_obj, sheafCompose_obj_obj]
       (((restrictToConstantsRestrictScalarsIso X φ).hom.app M).hom.app U m = m) :=
   (rfl)
 
@@ -160,7 +160,7 @@ lemma restrictToConstantsRestrictScalarsIso_hom_app_hom_app_apply
 lemma restrictToConstantsRestrictScalarsIso_inv_app_hom_app_apply
     (M : SheafOfModules.{u} (locallyConstantRingCatSheaf X S)) (U : (Opens X)ᵒᵖ)
     (m : M.val.obj U) :
-    dsimp% only [Functor.comp_obj]
+    dsimp% only [Functor.comp_obj, sheafCompose_obj_obj]
       (((restrictToConstantsRestrictScalarsIso X φ).inv.app M).hom.app U m = m) :=
   (rfl)
 

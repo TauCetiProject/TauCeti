@@ -66,7 +66,8 @@ distance.
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
   temporal seminorm of the spatial gradient.
 * `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
-  Hölder field on a slab.
+  Hölder field on a slab, with `TauCeti.HolderSpace.norm_compSlabSpaceL_apply_le`: this does not
+  increase the norm.
 
 ## References
 
@@ -382,10 +383,16 @@ theorem compSlabSpaceL_apply (f : HolderSpace α E Y) (p : slab (E := E) a b) :
     compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
   compLipschitzL_apply _ _ _
 
-/-- Viewing a Hölder field on space as a time-independent field on a slab does not increase its
-norm. -/
+/-- Viewing a Hölder field on space as a time-independent field on a slab does not increase the
+Hölder-space norm. -/
+theorem norm_compSlabSpaceL_le_one :
+    ‖(compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y)‖ ≤ 1 :=
+  norm_compLipschitzL_le_one _
+
+/-- The Hölder-space norm of a time-independent field on a slab is at most that of the field on
+space. -/
 theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
     ‖(compSlabSpaceL f : HolderSpace α (slab (E := E) a b) Y)‖ ≤ ‖f‖ :=
-  ((compLipschitzL _ _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f).trans_eq (one_mul _)
+  (compSlabSpaceL.le_of_opNorm_le norm_compSlabSpaceL_le_one f).trans_eq (one_mul _)
 
 end TauCeti.HolderSpace
