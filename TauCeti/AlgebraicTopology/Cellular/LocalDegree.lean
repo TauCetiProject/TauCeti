@@ -58,6 +58,10 @@ local homology is constant along convex sets in a chart
 * `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton` and
   `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne`:
   the local homology at `x` reads off the coefficient of `i` in the cellular chain group.
+* `TauCeti.singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul` and
+  `TauCeti.cellularChainBasis_repr_eq_inv_cellLocalClass`: the coordinate of any cellular `n`-chain
+  in `TauCeti.cellularChainBasis` at `i` is read off in local homology at `x` via
+  `TauCeti.cellLocalClass`.
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
@@ -636,6 +640,39 @@ lemma singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne
       hx hj]
   rfl
 
+/-- In the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at a point `x` of the open `n`-cell `i`, any cellular
+`n`-chain `v` maps to its `i`-coordinate in `TauCeti.cellularChainBasis` times the local class of
+`i` at `x`. -/
+lemma singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
+    (v : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
+    TopPair.singularHomologyMap
+        (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
+        (ModuleCat.of R R) n v =
+      ((cellularChainBasis C R n).repr v i) • cellLocalClass C (ModuleCat.of R R) x hx 1 := by
+  conv_lhs => rw [← (cellularChainBasis C R n).linearCombination_repr v]
+  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single i]
+  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self]
+  · intro l _ hl
+    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
+      hx hl, smul_zero]
+  · intro hi
+    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
+
+/-- The `i`-coordinate of a cellular `n`-chain `v` in `TauCeti.cellularChainBasis` is the
+coordinate, with respect to `TauCeti.cellLocalClass` at any point `x` of `openCell n i`, of the
+image of `v` in the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})`. -/
+lemma cellularChainBasis_repr_eq_inv_cellLocalClass {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
+    (v : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
+    (cellularChainBasis C R n).repr v i =
+      inv (cellLocalClass C (ModuleCat.of R R) x hx)
+        (TopPair.singularHomologyMap
+          (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
+          (ModuleCat.of R R) n v) := by
+  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx v, map_smul,
+    ← ModuleCat.comp_apply, IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one]
+
 /-- **Incidence numbers are local degrees of attaching maps.** Send the reduced fundamental class
 of the boundary sphere of an `(n + 1)`-cell `j` through its attaching map into `Hₙ(Xⁿ)`, and then
 into the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at a point `x` of the open `n`-cell `i`. The result is
@@ -658,16 +695,8 @@ theorem singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul {i : cell 
   -- The two presentations of the `n`-skeleton agree only up to unfolding, so `hπ` is used as a
   -- term rather than rewritten.
   refine hπ.symm.trans ?_
-  rw [← (cellularChainBasis C R n).linearCombination_repr (skeletonPairπ C (ModuleCat.of R R) n a),
-    ← cellularBoundaryColumn_eq_attaching, Finsupp.linearCombination_apply, map_finsuppSum,
-    Finsupp.sum, Finset.sum_eq_single i]
-  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self,
-      cellularBoundaryColumn_apply]
-  · intro l _ hl
-    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
-      hx hl, smul_zero]
-  · intro hi
-    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
+  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx,
+    ← cellularBoundaryColumn_eq_attaching, cellularBoundaryColumn_apply]
 
 /-- **The incidence numbers are the local degrees of the attaching maps.** For a point `x` of
 the open `n`-cell `i` and an `(n + 1)`-cell `j`, the incidence coefficient of `i` in the cellular
