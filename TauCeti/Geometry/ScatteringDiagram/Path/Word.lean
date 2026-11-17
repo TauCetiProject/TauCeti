@@ -157,7 +157,7 @@ theorem crossingEventWord_eq_one_of_signedCrossingEvent_eq_empty (ν : ι → V 
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : x ⟶ y) (t : ℝ) (ht : signedCrossingEvent ν x y t = ∅) :
     crossingEventWord ν hdisj e t = 1 := by
-  unfold crossingEventWord
+  rw [crossingEventWord_def]
   exact (Finset.noncommProd_congr ht (fun _ _ => rfl) _).trans (Finset.noncommProd_empty _ _)
 
 /-- If no wall is crossed at parameter `t`, `crossingEventWord` is `1`. -/
@@ -185,7 +185,7 @@ theorem crossingEventWord_of_mem_crossings (ν : ι → V →ₗ[ℝ] ℝ)
     simp only [Finset.mem_singleton]
     exact ⟨fun ha => subsingleton_signedCrossingEvent ν e hdisj t ha hmem,
       fun ha => ha ▸ hmem⟩
-  unfold crossingEventWord
+  rw [crossingEventWord_def]
   simp only [hsing, Finset.noncommProd_singleton]
 
 /-- Every duplicate-free enumeration of the signed crossing event computes `crossingEventWord`. -/
@@ -196,7 +196,7 @@ theorem crossingEventWord_eq_prod (ν : ι → V →ₗ[ℝ] ℝ)
     crossingEventWord ν hdisj e t = (l.map fun a => FreeGroup.of a.1 ^ a.2).prod := by
   classical
   have hs : l.toFinset = signedCrossingEvent ν x y t := by ext a; simpa using hm a
-  unfold crossingEventWord
+  rw [crossingEventWord_def]
   exact (Finset.noncommProd_congr hs.symm (fun _ _ => rfl) _).trans
     (Finset.noncommProd_toFinset l _ _ hl)
 
@@ -207,6 +207,7 @@ theorem crossingEventWord_reverse (ν : ι → V →ₗ[ℝ] ℝ)
     (e : x ⟶ y) (t : ℝ) :
     crossingEventWord ν hdisj (Quiver.reverse e) t =
       (crossingEventWord ν hdisj e (1 - t))⁻¹ := by
+  rw [crossingEventWord_def, crossingEventWord_def]
   let S := signedCrossingEvent ν x y (1 - t)
   let f : ι × ℤ → FreeGroup ι := fun a => FreeGroup.of a.1 ^ a.2
   let emb := (Equiv.prodCongr (Equiv.refl ι) (Equiv.neg ℤ)).toEmbedding
@@ -215,13 +216,12 @@ theorem crossingEventWord_reverse (ν : ι → V →ₗ[ℝ] ℝ)
     rw [← signedCrossingEvent_swap ν hν e t]
     exact signedCrossingEvent_pairwise_of_disjoint ν (Quiver.reverse e) hdisj f t
   calc
-    _ = (S.map emb).noncommProd f hc' :=
+    (signedCrossingEvent ν y x t).noncommProd f _ = (S.map emb).noncommProd f hc' :=
       Finset.noncommProd_congr (signedCrossingEvent_swap ν hν e t) (fun _ _ => rfl) _
     _ = S.noncommProd (fun a => f (emb a)) _ := Finset.noncommProd_map S emb f hc'
-    _ = _ := by
-      simpa only [f, emb, Equiv.toEmbedding_apply, Equiv.prodCongr_apply, Prod.map_fst,
-        Prod.map_snd, Equiv.refl_apply, Equiv.neg_apply, zpow_neg, crossingEventWord, S] using
-        Finset.noncommProd_inv S f hc
+    _ = S.noncommProd (fun a => (f a)⁻¹) (fun _ ha _ hb hab => (hc ha hb hab).inv_inv) :=
+      Finset.noncommProd_congr rfl (fun a _ => by simp [f, emb]) _
+    _ = (S.noncommProd f hc)⁻¹ := Finset.noncommProd_inv S f hc
 
 /-- Lifting `crossingEventWord` along any coplanar-commuting label assignment recovers
 `crossingEventProduct`. -/
@@ -314,7 +314,7 @@ theorem segmentCrossingWord_reverse (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (hν : ∀ i, LinearMap.ker (ν i) = (affineSpan ℝ (W i)).direction) (e : x ⟶ y) :
     segmentCrossingWord ν hdisj (Quiver.reverse e) = (segmentCrossingWord ν hdisj e)⁻¹ := by
-  simp only [segmentCrossingWord, orderedCrossingTimes_reverse, List.map_reverse,
+  simp only [segmentCrossingWord_def, orderedCrossingTimes_reverse, List.map_reverse,
     List.reverse_reverse, List.map_map, Function.comp_def,
     crossingEventWord_reverse ν hdisj hν, sub_sub_cancel, List.prod_inv_reverse]
 
@@ -428,14 +428,14 @@ theorem crossingWord_eq_unop_weight (ν : ι → V →ₗ[ℝ] ℝ)
 theorem crossingWord_nil (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j))) :
     (Quiver.Path.nil : AdmissiblePLPath x x).crossingWord ν hdisj = 1 := by
-  simp only [crossingWord, weight_nil, MulOpposite.unop_one]
+  simp only [crossingWord_eq_unop_weight, weight_nil, MulOpposite.unop_one]
 
 @[simp]
 theorem crossingWord_cons (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (p : AdmissiblePLPath x y) (e : y ⟶ z) :
     (p.cons e).crossingWord ν hdisj = segmentCrossingWord ν hdisj e * p.crossingWord ν hdisj := by
-  simp only [crossingWord, weight_cons, MulOpposite.unop_mul, MulOpposite.unop_op]
+  simp only [crossingWord_eq_unop_weight, weight_cons, MulOpposite.unop_mul, MulOpposite.unop_op]
 
 @[simp]
 theorem crossingWord_toPath (ν : ι → V →ₗ[ℝ] ℝ)
@@ -451,7 +451,7 @@ theorem crossingWord_comp (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
     (p.comp q).crossingWord ν hdisj = q.crossingWord ν hdisj * p.crossingWord ν hdisj := by
-  simp only [crossingWord, weight_comp, MulOpposite.unop_mul]
+  simp only [crossingWord_eq_unop_weight, weight_comp, MulOpposite.unop_mul]
 
 /-- Express `crossingWord` directly from the ordered list of signed crossing events. -/
 theorem crossingWord_eq_prod_signedCrossingEvents (ν : ι → V →ₗ[ℝ] ℝ)

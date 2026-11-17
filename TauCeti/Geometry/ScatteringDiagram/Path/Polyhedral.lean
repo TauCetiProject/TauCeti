@@ -117,13 +117,11 @@ theorem IsWallCoorientation.exists_ne_zero_eq_smul {C C' : FinitePolyhedralCompl
     Submodule.eq_of_le_of_finrank_eq hdir (by omega)
   have hker : LinearMap.ker (ν' w') = LinearMap.ker (ν w) := by
     rw [hν'.ker_eq w', hν.ker_eq w, hdir_eq]
-  obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp (hν.ne_zero w)
-  replace hv : ν w v ≠ 0 := by simpa using hv
-  have hv' : ν' w' v ≠ 0 := fun hz => hv (LinearMap.mem_ker.mp (hker ▸ LinearMap.mem_ker.mpr hz))
-  refine ⟨ν' w' v / ν w v, div_ne_zero hv' hv, ?_⟩
-  exact Module.Dual.eq_of_ker_eq_of_apply_eq v
-    (hker.trans (LinearMap.ker_smul (ν w) _ (div_ne_zero hv' hv)).symm)
-    (by simp [div_mul_cancel₀ _ hv]) hv'
+  obtain ⟨v, hv⟩ := (LinearMap.surjective_iff_ne_zero.mpr (hν.ne_zero w)) 1
+  have hv' : ν' w' v ≠ 0 := fun hz =>
+    one_ne_zero (hv ▸ LinearMap.mem_ker.mp (hker ▸ LinearMap.mem_ker.mpr hz))
+  exact ⟨ν' w' v, hv', Module.Dual.eq_of_ker_eq_of_apply_eq v
+    (hker.trans (LinearMap.ker_smul (ν w) _ hv').symm) (by simp [hv]) hv'⟩
 
 /-- The crossing word in `FreeGroup C.walls` of an admissible polygonal path for `C`. -/
 def crossingWord (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
@@ -255,7 +253,7 @@ theorem wallWordMap_of_subset_pos {C' C : FinitePolyhedralComplex h}
     {w' : C'.walls} {w : C.walls} (hw : (w' : Set V) ⊆ (w : Set V))
     {c : ℝ} (hc : 0 < c) (hνc : ν' w' = c • ν w) :
     C'.wallWordMap C ν' ν w' = FreeGroup.of w := by
-  unfold wallWordMap
+  rw [wallWordMap_def]
   split_ifs with hex hpos
   · exact congrArg FreeGroup.of (C.eq_of_wall_subset hex.choose_spec hw)
   · exfalso
@@ -269,16 +267,11 @@ theorem wallWordMap_of_subset_neg {C' C : FinitePolyhedralComplex h}
     {w' : C'.walls} {w : C.walls} (hνw : ν w ≠ 0) (hw : (w' : Set V) ⊆ (w : Set V))
     {c : ℝ} (hc : c < 0) (hνc : ν' w' = c • ν w) :
     C'.wallWordMap C ν' ν w' = (FreeGroup.of w)⁻¹ := by
-  unfold wallWordMap
+  rw [wallWordMap_def]
   split_ifs with hex hpos
   · exfalso
     obtain ⟨c', hc', hνc'⟩ := C.eq_of_wall_subset hex.choose_spec hw ▸ hpos
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hνw
-    replace hv : ν w v ≠ 0 := by simpa using hv
-    have hmul : c * ν w v = c' * ν w v := by
-      simpa [LinearMap.smul_apply, smul_eq_mul] using
-        LinearMap.congr_fun (hνc.symm.trans hνc') v
-    linarith [mul_right_cancel₀ hv hmul]
+    linarith [smul_left_injective ℝ hνw (hνc.symm.trans hνc')]
   · exact congrArg (fun u => (FreeGroup.of u)⁻¹) (C.eq_of_wall_subset hex.choose_spec hw)
   · exact (hex ⟨w, hw⟩).elim
 
@@ -288,7 +281,7 @@ theorem wallWordMap_of_forall_not_subset {C' C : FinitePolyhedralComplex h}
     (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ)
     {w' : C'.walls} (hw : ∀ w : C.walls, ¬ (w' : Set V) ⊆ (w : Set V)) :
     C'.wallWordMap C ν' ν w' = 1 := by
-  simp [wallWordMap, hw]
+  simp [wallWordMap_def, hw]
 
 namespace IsSubdivision
 
