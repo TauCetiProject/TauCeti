@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.Bialgebra.TensorProduct
 import TauCeti.RingTheory.FilteredAlgebra.Exp.Map
+import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Exp
 
 /-!
 # Completed bialgebra structure on graded universal enveloping algebras
@@ -586,19 +587,10 @@ theorem completedCoproduct_completedExp (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
       ((degreeFiltration ℒ d hneg).tensorProduct R
         (degreeFiltration ℒ d hneg)).completedExp
           ⟨completedCoproduct ℒ d hneg x,
-            completedCoproduct_mem_completionIdeal ℒ d hneg x.property⟩ := by
-  let 𝓕 := degreeFiltration ℒ d hneg
-  let 𝒯 := 𝓕.tensorProduct R 𝓕
-  have h := 𝓕.mapCompletion_completedExp 𝒯 (Bialgebra.comulAlgHom R U).toRingHom id monotone_id
-    (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1))
+            completedCoproduct_mem_completionIdeal ℒ d hneg x.property⟩ :=
+  (degreeFiltration ℒ d hneg).mapCompletionₐ_completedExp _ (Bialgebra.comulAlgHom R U)
+    id monotone_id (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1))
     (degreeFiltration_le_comap_comulAlgHom ℒ d hneg 1) x
-  have happ (y : 𝓕.completion) :
-      𝓕.mapCompletion 𝒯 (Bialgebra.comulAlgHom R U).toRingHom id monotone_id
-        (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1)) y =
-        completedCoproduct ℒ d hneg y :=
-    (RingHom.congr_fun (𝓕.coe_mapCompletionₐ 𝒯 (Bialgebra.comulAlgHom R U) id monotone_id
-      (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1))) y).symm
-  simpa only [happ] using h
 
 /-- Over a commutative `ℚ`-algebra, the completed exponential of an element of the first
 completion ideal is completed grouplike if and only if that element is completed primitive. -/
@@ -619,47 +611,8 @@ theorem isCompletedGroupLike_completedExp_iff (hneg : ∀ n, d n < 0 → ℒ n =
     have h0 := completedCounit_eq_zero_of_mem_completionIdeal_one ℒ d hneg
       (𝓕.completedExp_sub_one_mem x)
     rwa [map_sub, map_one, sub_eq_zero] at h0
-  have hLeftEq : (𝓕.includeLeftCompletion R 𝓕).toRingHom =
-      𝓕.mapCompletion 𝒯 (Algebra.TensorProduct.includeLeft : U →ₐ[R] U ⊗[R] U).toRingHom
-        id monotone_id (fun k => 𝓕.ideal_le_comap_includeLeft R 𝓕 (k + 1)) := by
-    refine 𝒯.hom_ext fun k => RingHom.ext fun y => ?_
-    obtain ⟨u, hu⟩ := Ideal.Quotient.mk_surjective (𝓕.projection k y)
-    simp [𝒯, ← hu]
-  have hRightEq : (𝓕.includeRightCompletion R 𝓕).toRingHom =
-      𝓕.mapCompletion 𝒯 (Algebra.TensorProduct.includeRight : U →ₐ[R] U ⊗[R] U).toRingHom
-        id monotone_id (fun k => 𝓕.ideal_le_comap_includeRight R 𝓕 (k + 1)) := by
-    refine 𝒯.hom_ext fun k => RingHom.ext fun y => ?_
-    obtain ⟨u, hu⟩ := Ideal.Quotient.mk_surjective (𝓕.projection k y)
-    simp [𝒯, ← hu]
-  have hL : 𝓕.includeLeftCompletion R 𝓕 (𝓕.completedExp x) = 𝒯.completedExp bL := by
-    have h := 𝓕.mapCompletion_completedExp 𝒯
-      (Algebra.TensorProduct.includeLeft : U →ₐ[R] U ⊗[R] U).toRingHom id monotone_id
-      (fun k => 𝓕.ideal_le_comap_includeLeft R 𝓕 (k + 1))
-      (𝓕.ideal_le_comap_includeLeft R 𝓕 1) x
-    have happ (y : 𝓕.completion) :
-        𝓕.mapCompletion 𝒯 (Algebra.TensorProduct.includeLeft : U →ₐ[R] U ⊗[R] U).toRingHom
-          id monotone_id (fun k => 𝓕.ideal_le_comap_includeLeft R 𝓕 (k + 1)) y =
-          𝓕.includeLeftCompletion R 𝓕 y :=
-      (RingHom.congr_fun hLeftEq y).symm
-    simpa only [happ] using h
-  have hR : 𝓕.includeRightCompletion R 𝓕 (𝓕.completedExp x) = 𝒯.completedExp bR := by
-    have h := 𝓕.mapCompletion_completedExp 𝒯
-      (Algebra.TensorProduct.includeRight : U →ₐ[R] U ⊗[R] U).toRingHom id monotone_id
-      (fun k => 𝓕.ideal_le_comap_includeRight R 𝓕 (k + 1))
-      (𝓕.ideal_le_comap_includeRight R 𝓕 1) x
-    have happ (y : 𝓕.completion) :
-        𝓕.mapCompletion 𝒯 (Algebra.TensorProduct.includeRight : U →ₐ[R] U ⊗[R] U).toRingHom
-          id monotone_id (fun k => 𝓕.ideal_le_comap_includeRight R 𝓕 (k + 1)) y =
-          𝓕.includeRightCompletion R 𝓕 y :=
-      (RingHom.congr_fun hRightEq y).symm
-    simpa only [happ] using h
-  have hcomm := 𝓕.commute_includeLeftCompletion_includeRightCompletion R 𝓕
-    (x : completedEnveloping ℒ d hneg) x
-  have hself : 𝓕.completedTensor R 𝓕 (𝓕.completedExp x) (𝓕.completedExp x) =
-      𝒯.completedExp (bL + bR) := by
-    rw [TauCeti.AlgFiltration.completedTensor_apply, hL, hR, ← 𝒯.completedExp_add bL bR hcomm]
   rw [isCompletedGroupLike_iff, isCompletedPrimitive_iff_includeCompletion, hcounit,
-    completedCoproduct_completedExp, hself]
+    completedCoproduct_completedExp, 𝓕.completedTensor_completedExp R 𝓕 x x]
   simp only [true_and]
   refine ⟨fun h => ?_, fun h => congrArg 𝒯.completedExp (Subtype.ext h)⟩
   have hlog : 𝒯.completedLog ⟨𝒯.completedExp a, 𝒯.completedExp_sub_one_mem a⟩ =
