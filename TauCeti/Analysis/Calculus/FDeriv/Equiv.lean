@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
-public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import Mathlib.Topology.Sets.Opens
 
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -45,6 +45,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
+  linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
@@ -159,6 +161,25 @@ theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.sou
     (fderiv 𝕜 e y).inverse = fderiv 𝕜 e.symm (e y) :=
   ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- Postcomposing charts `φ` and `χ` with continuous linear equivalences `L_E` and `L_F` conjugates
+the Fréchet derivative of `χ ∘ f ∘ φ.symm`. -/
+theorem hasFDerivAt_transHomeomorph_iff {M N G₁ G₂ : Type*} [TopologicalSpace M]
+    [TopologicalSpace N] [NormedAddCommGroup G₁] [NormedSpace 𝕜 G₁] [NormedAddCommGroup G₂]
+    [NormedSpace 𝕜 G₂] (φ : OpenPartialHomeomorph M E) (χ : OpenPartialHomeomorph N F)
+    (L_E : E ≃L[𝕜] G₁) (L_F : F ≃L[𝕜] G₂) {f : M → N} {x : M} {f' : E →L[𝕜] F} :
+    HasFDerivAt
+        ((χ.transHomeomorph L_F.toHomeomorph) ∘ f ∘ (φ.transHomeomorph L_E.toHomeomorph).symm)
+        (L_F.toContinuousLinearMap ∘L f' ∘L L_E.symm.toContinuousLinearMap)
+        ((φ.transHomeomorph L_E.toHomeomorph) x) ↔
+      HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ x) := by
+  have hcomp :
+      (χ.transHomeomorph L_F.toHomeomorph) ∘ f ∘ (φ.transHomeomorph L_E.toHomeomorph).symm =
+        L_F ∘ (χ ∘ f ∘ φ.symm) ∘ L_E.symm := by
+    ext z
+    simp
+  rw [hcomp, L_F.comp_hasFDerivAt_iff, L_E.symm.comp_right_hasFDerivAt_iff]
+  simp
 
 end OpenPartialHomeomorph
 
