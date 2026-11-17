@@ -27,7 +27,9 @@ inverse tensor comparison at the transported factors.
   `inv (δ F M N) ≫ F.map φ` along equalities `M = M'`, `N = N'` and `P = P'` gives
   `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the transport of `φ`;
 * `CategoryTheory.Functor.inv_δ_comp_map_eqToHom`: transporting `inv (δ F a b)` along `a = a'`
-  and `b = b'`.
+  and `b = b'`;
+* `CategoryTheory.Functor.map_comp_eq_of_eqToHom_conjugate_tensor`: reflecting a commuting square
+  between `eqToHom`-conjugated binary morphisms along an oplax monoidal functor with invertible `δ`.
 -/
 
 public section
@@ -78,5 +80,39 @@ theorem inv_δ_comp_map_eqToHom {D : Type*} [Category* D] [MonoidalCategory D] (
       eqToHom (by rw [ha, hb]) ≫ CategoryTheory.inv (OplaxMonoidal.δ F a' b') := by
   subst ha hb
   simp
+
+/-- For an oplax monoidal functor `F` with invertible tensor comparison `δ`, a commuting square
+between `eqToHom`-conjugated images of binary morphisms `mB : B₁ ⊗ B₂ ⟶ B₃` and
+`mA : A₁ ⊗ A₂ ⟶ A₃` reflects to `F.map (mB ≫ f₃) = F.map ((f₁ ⊗ₘ f₂) ≫ mA)`. -/
+theorem map_comp_eq_of_eqToHom_conjugate_tensor {D : Type*} [Category* D] [MonoidalCategory D]
+    (F : C ⥤ D) [F.OplaxMonoidal]
+    {B₁ B₂ B₃ A₁ A₂ A₃ : C}
+    [IsIso (OplaxMonoidal.δ F B₁ B₂)] [IsIso (OplaxMonoidal.δ F A₁ A₂)]
+    {B₁' B₂' B₃' A₁' A₂' A₃' : D}
+    {hB₁ : B₁' = F.obj B₁} {hB₂ : B₂' = F.obj B₂} {hB₃ : B₃' = F.obj B₃}
+    {hA₁ : A₁' = F.obj A₁} {hA₂ : A₂' = F.obj A₂} {hA₃ : F.obj A₃ = A₃'}
+    {mB : B₁ ⊗ B₂ ⟶ B₃} {mA : A₁ ⊗ A₂ ⟶ A₃}
+    {f₁ : B₁ ⟶ A₁} {f₂ : B₂ ⟶ A₂} {f₃ : B₃ ⟶ A₃}
+    {μB : B₁' ⊗ B₂' ⟶ B₃'} {μA : A₁' ⊗ A₂' ⟶ A₃'}
+    {ψ₁ : B₁' ⟶ A₁'} {ψ₂ : B₂' ⟶ A₂'} {ψ₃ : B₃' ⟶ A₃'}
+    (hμB : μB = (eqToHom hB₁ ⊗ₘ eqToHom hB₂) ≫
+      CategoryTheory.inv (OplaxMonoidal.δ F B₁ B₂) ≫ F.map mB ≫ eqToHom hB₃.symm)
+    (hμA : μA = (eqToHom hA₁ ⊗ₘ eqToHom hA₂) ≫
+      CategoryTheory.inv (OplaxMonoidal.δ F A₁ A₂) ≫ F.map mA ≫ eqToHom hA₃)
+    (hψ₁ : ψ₁ = eqToHom hB₁ ≫ F.map f₁ ≫ eqToHom hA₁.symm)
+    (hψ₂ : ψ₂ = eqToHom hB₂ ≫ F.map f₂ ≫ eqToHom hA₂.symm)
+    (hψ₃ : ψ₃ = eqToHom hB₃ ≫ F.map f₃ ≫ eqToHom hA₃)
+    (hmul : μB ≫ ψ₃ = (ψ₁ ⊗ₘ ψ₂) ≫ μA) :
+    F.map (mB ≫ f₃) = F.map ((f₁ ⊗ₘ f₂) ≫ mA) := by
+  subst hB₁ hB₂ hB₃ hA₁ hA₂ hA₃
+  rw [hμB, hμA, hψ₁, hψ₂, hψ₃] at hmul
+  simp only [eqToHom_refl, id_tensorHom_id, Category.id_comp, Category.comp_id,
+    Category.assoc] at hmul
+  rw [← Functor.map_comp] at hmul
+  have hδ : (F.map f₁ ⊗ₘ F.map f₂) ≫ CategoryTheory.inv (OplaxMonoidal.δ F A₁ A₂) =
+      CategoryTheory.inv (OplaxMonoidal.δ F B₁ B₂) ≫ F.map (f₁ ⊗ₘ f₂) := by
+    rw [IsIso.comp_inv_eq, Category.assoc, ← OplaxMonoidal.δ_natural, IsIso.inv_hom_id_assoc]
+  rw [reassoc_of% hδ, ← Functor.map_comp] at hmul
+  exact (cancel_epi (CategoryTheory.inv (OplaxMonoidal.δ F B₁ B₂))).mp hmul
 
 end CategoryTheory.Functor

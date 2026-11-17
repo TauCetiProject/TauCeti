@@ -43,6 +43,11 @@ and avoid exposing the definitional equality of the objects being transported.
 * `CategoryTheory.Functor.map_homOfLE_eq` and `CategoryTheory.Functor.unop_map_homOfLE_eq`: a
   functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to the
   identifications of the endpoints.
+* `CategoryTheory.Functor.eqToHom_conjugate_map_eqToHom_conjugate`: transporting `F.map` of a
+  conjugated morphism back along the induced object equalities recovers the conjugate of `F.map`.
+* `CategoryTheory.Functor.map_comp_eq_of_eqToHom_conjugate`: a commuting triangle of conjugated
+  images under a functor `F` after an epimorphism yields equality of the corresponding images under
+  `F`.
 -/
 
 public section
@@ -191,5 +196,36 @@ theorem unop_map_homOfLE_eq {α D : Type*} [Preorder α] [Category* D] (G : α �
           eqToHom (congrArg (fun j ↦ Opposite.unop (G.obj j)) ha).symm := by
   subst ha hb
   simp
+
+/-- Transporting `F.map` of a conjugated morphism back along the induced object equalities
+recovers the conjugate of `F.map u`. -/
+theorem eqToHom_conjugate_map_eqToHom_conjugate {C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {A₁ A₂ B₁ B₂ : C} {P Q : D}
+    (hA : A₁ = A₂) (hB : B₁ = B₂) (hP : P = F.obj A₁) (hQ : Q = F.obj B₁)
+    (hP' : P = F.obj A₂) (hQ' : Q = F.obj B₂) (u : A₁ ⟶ B₁) :
+    eqToHom hP' ≫ F.map (eqToHom hA.symm ≫ u ≫ eqToHom hB) ≫ eqToHom hQ'.symm =
+      eqToHom hP ≫ F.map u ≫ eqToHom hQ.symm := by
+  subst hA hB hP hQ
+  simp
+
+/-- Given an epimorphism `u : J ⟶ F.obj I` and morphisms whose images under `F` are conjugated
+by `eqToHom`s into a commuting triangle `ηB ≫ ψ = ηA`, the functor `F` identifies `eB ≫ f`
+with `eA`. -/
+theorem map_comp_eq_of_eqToHom_conjugate {C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {I B A : C} {J B' A' : D}
+    {hB : B' = F.obj B} {hA : F.obj A = A'}
+    {u : J ⟶ F.obj I} [Epi u]
+    {eB : I ⟶ B} {eA : I ⟶ A} {f : B ⟶ A}
+    {ηB : J ⟶ B'} {ηA : J ⟶ A'} {ψ : B' ⟶ A'}
+    (hηB : ηB = u ≫ F.map eB ≫ eqToHom hB.symm)
+    (hηA : ηA = u ≫ F.map eA ≫ eqToHom hA)
+    (hψ : ψ = eqToHom hB ≫ F.map f ≫ eqToHom hA)
+    (h : ηB ≫ ψ = ηA) :
+    F.map (eB ≫ f) = F.map eA := by
+  subst hB hA
+  rw [hηB, hηA, hψ] at h
+  simp only [eqToHom_refl, Category.comp_id, Category.id_comp, Category.assoc,
+    ← Functor.map_comp] at h
+  exact (cancel_epi u).mp h
 
 end CategoryTheory.Functor
