@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Module.Dual.Submodule
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Analysis.Normed.Operator.Basic
@@ -28,7 +29,9 @@ in `E`.
 This file proves the unconditional identities `ker T* = (range T)ᗮ`,
 `range T* ≤ (ker T)ᗮ` and, when functionals separate points of `F`, `ker T = (range T*)_⊥`.
 For a bounded operator between Banach spaces it then proves the **closed-range theorem**:
-`range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`.
+`range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ` and the
+bidual adjoint of `(ker T).subtypeL` identifies `(ker T)**` isometrically with `ker T**`
+(`ContinuousLinearMap.kerBidualEquivKerPrecompPrecomp`).
 It also proves that a bounded map between Banach spaces is bijective iff its transpose is.
 
 If `T` has closed range of finite codimension, every functional vanishing on `range T` is
@@ -48,6 +51,8 @@ into `ℓ²` has dense proper range, while its adjoint is surjective.
 * `ContinuousLinearMap.ker_eq_orthogonalBilin_range_precomp`: `ker T = (range T*)_⊥`.
 * `ContinuousLinearMap.range_precomp_eq_orthogonalBilin_ker`: if `range T` is closed, then
   `range T* = (ker T)ᗮ`.
+* `ContinuousLinearMap.kerBidualEquivKerPrecompPrecomp`: if `range T` is closed, then
+  `(ker T)** ≃ₗᵢ[𝕜] ker T**` via the bidual adjoint of `(ker T).subtypeL`.
 * `ContinuousLinearMap.surjective_of_norm_le_norm_comp`: a map whose adjoint is bounded below
   is surjective.
 * `ContinuousLinearMap.isClosed_range_precomp_iff`: the closed-range theorem.
@@ -110,6 +115,11 @@ variable [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup
+  ContinuousLinearMap.strongBidualNormedSpace
+
 /-- **Closed-range theorem, range of the adjoint.** If a bounded operator between Banach
 spaces has closed range, then the range of its adjoint is exactly the annihilator of its
 kernel. -/
@@ -143,6 +153,49 @@ theorem isClosed_range_precomp_of_isClosed_range (T : E →L[𝕜] F)
   rw [Submodule.toLinearMap_subtypeL, Submodule.range_subtype] at h
   rw [T.range_precomp_eq_orthogonalBilin_ker hT, ← h]
   exact isClosed_ker _
+
+/-- If a bounded operator `T : E →L[𝕜] F` between Banach spaces has closed range, then the kernel
+of its bidual adjoint `T**` equals the range of the bidual adjoint of `T.ker.subtypeL`. -/
+theorem ker_precomp_precomp_eq_range_precomp_precomp_subtypeL (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) :
+    (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker =
+      (precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) :
+        StrongDual 𝕜 (StrongDual 𝕜 T.ker) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)).range := by
+  rw [(precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker_precomp_eq_orthogonalBilin_range,
+    T.range_precomp_eq_orthogonalBilin_ker hT, T.ker.range_precomp_precomp_subtypeL]
+
+/-- For a bounded operator `T : E →L[𝕜] F` between Banach spaces with closed range, the bidual
+adjoint of `T.ker.subtypeL` identifies the bidual of `ker T` isometrically with `ker T**`. -/
+noncomputable def kerBidualEquivKerPrecompPrecomp (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) :
+    StrongDual 𝕜 (StrongDual 𝕜 T.ker) ≃ₗᵢ[𝕜]
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker :=
+  T.ker.bidualEquivDoubleAnnihilator.trans <| LinearIsometryEquiv.ofEq _ _ <|
+    T.ker.range_precomp_precomp_subtypeL.symm.trans
+      (T.ker_precomp_precomp_eq_range_precomp_precomp_subtypeL hT).symm
+
+/-- Forgetting the kernel subtype of `T.kerBidualEquivKerPrecompPrecomp hT` recovers the bidual
+adjoint of `T.ker.subtypeL`. -/
+@[simp]
+theorem coe_kerBidualEquivKerPrecompPrecomp_apply (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F)) (Φ : StrongDual 𝕜 (StrongDual 𝕜 T.ker)) :
+    (T.kerBidualEquivKerPrecompPrecomp hT Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) =
+      precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) Φ := by
+  simp [kerBidualEquivKerPrecompPrecomp]
+
+/-- Evaluating the inverse of `T.kerBidualEquivKerPrecompPrecomp hT` on the restriction of an
+ambient functional gives the evaluation of the element of `ker T**` on that functional. -/
+@[simp]
+theorem kerBidualEquivKerPrecompPrecomp_symm_apply_comp_subtypeL (T : E →L[𝕜] F)
+    (hT : IsClosed (T.range : Set F))
+    (Ψ : (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+      StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker)
+    (f : StrongDual 𝕜 E) :
+    (T.kerBidualEquivKerPrecompPrecomp hT).symm Ψ (f.comp T.ker.subtypeL) =
+      (Ψ : StrongDual 𝕜 (StrongDual 𝕜 E)) f := by
+  simp [kerBidualEquivKerPrecompPrecomp]
 
 end HahnBanach
 
