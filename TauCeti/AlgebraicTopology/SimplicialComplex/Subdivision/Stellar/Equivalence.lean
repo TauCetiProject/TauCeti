@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
 import Mathlib.Logic.Equiv.Fintype
-import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 
 /-!
 # Stellar equivalence of simplicial complexes
@@ -379,30 +378,6 @@ private def embedFinsetInr {α : Type*} [DecidableEq α] (S : Finset α)
   ((Equiv.sumCompl (· ∈ (S : Set α))).symm.toEmbedding.trans
     (e.sumMap (.subtype _))).trans (Equiv.sumComm ℕ α).toEmbedding
 
-private theorem subset_of_mem_stellarSubdivision {α : Type*} [DecidableEq α]
-    {X : PreAbstractSimplicialComplex α} {σ τ : Finset α} {v : α} {s : Set α}
-    (hXs : ∀ ρ ∈ X, (ρ : Set α) ⊆ s) (hvs : v ∈ s)
-    (hτ : τ ∈ stellarSubdivision X σ v) : (τ : Set α) ⊆ s := by
-  rcases mem_stellarSubdivision_iff.mp hτ with ⟨-, hτX, -⟩ | ⟨hvτ, -, hτX⟩
-  · exact hXs τ hτX
-  · rw [← Finset.insert_erase hvτ, Finset.coe_insert]
-    exact Set.insert_subset hvs
-      ((Finset.coe_subset.mpr Finset.subset_union_left).trans (hXs _ hτX))
-
-private theorem restrict_stellarSubdivision {α : Type*} [DecidableEq α]
-    {X : PreAbstractSimplicialComplex α} {σ : Finset α} {v : α} {s : Set α}
-    [DecidablePred (· ∈ s)] [DecidableEq s]
-    (hXs : ∀ τ ∈ X, (τ : Set α) ⊆ s) (hσs : (σ : Set α) ⊆ s) (hvs : v ∈ s) :
-    (stellarSubdivision X σ v).restrict s =
-      stellarSubdivision (X.restrict s) (σ.subtype (· ∈ s)) ⟨v, hvs⟩ := by
-  have hσ' : (σ.subtype (· ∈ s)).image Subtype.val = σ := by
-    simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
-      Finset.subtype_map_of_mem hσs
-  rw [← map_inj_of_injective Subtype.val Subtype.val_injective,
-    map_val_restrict (fun _ hτ => subset_of_mem_stellarSubdivision hXs hvs hτ),
-    map_stellarSubdivision Subtype.val Subtype.val_injective,
-    map_val_restrict hXs, hσ']
-
 private theorem stellarEquivalent_restrict_of_subset {α : Type*}
     {X Y : PreAbstractSimplicialComplex α} {s t : Set α} [DecidableEq s] [DecidableEq t]
     (he : StellarEquivalent (X.restrict s) (Y.restrict s))
@@ -426,7 +401,7 @@ private theorem exists_restrict_stellarEquivalent {α : Type*} [DecidableEq α]
         simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
           Finset.subtype_map_of_mem (hXs σ hσ)
       refine ⟨S, hXs, fun _ hτ => subset_of_mem_stellarSubdivision hXs hvS hτ, ?_⟩
-      rw [restrict_stellarSubdivision hXs (hXs σ hσ) hvS]
+      rw [restrict_stellarSubdivision (hXs σ hσ) hvS]
       exact stellarEquivalent_stellarSubdivision (by rwa [mem_restrict_iff, hσ'])
         (by rwa [mem_restrict_iff, Finset.image_singleton])
   | refl X =>
@@ -498,10 +473,12 @@ private theorem singleNatEquiv_toNatModel_of_map {α β : Type*} [DecidableEq α
   let fU : (faceUnion hA : Set α) ↪ (S : Set β) :=
     ⟨fun x => ⟨f x.1, hS {f x.1} (singleton_mem_map_iff.mpr ⟨x.1, (mem_faceUnion hA).mp x.2, rfl⟩)
       (by simp)⟩, fun _ _ hxy => Subtype.ext (hf (congrArg Subtype.val hxy))⟩
+  have hfU : Subtype.val ∘ ⇑fU = f ∘ Subtype.val := by
+    ext x
+    simp [fU]
   have hmap : (A.restrict (faceUnion hA : Set α)).map fU = (A.map f).restrict (S : Set β) := by
-    rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map, map_val_restrict hS]
-    change (A.restrict _).map (f ∘ Subtype.val) = _
-    rw [← map_map, map_val_restrict fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hA hτ)]
+    rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map, map_val_restrict hS,
+      hfU, ← map_map, map_val_restrict fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hA hτ)]
   obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (A.restrict (faceUnion hA : Set α))
     (natEmbed (faceUnion hA)) (fU.trans j)
   exact ⟨p₁, p₂, by rw [toNatModel, hp, Function.Embedding.coe_trans, ← map_map, hmap]⟩
