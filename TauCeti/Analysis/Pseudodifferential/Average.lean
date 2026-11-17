@@ -37,13 +37,18 @@ transported input `e ∘ u ∘ A⁻¹` gives the transported output `f ∘ Op(a)
 coordinates formula of `TauCeti.Symbol.quantizeSchwartzValue_compProdMap_symm_adjointEquiv` with the
 change of coefficient spaces `TauCeti.quantizeSchwartzValue_arrowCongr`. Transport is functorial
 (`TauCeti.Symbol.transport_transport`), so a group homomorphism into the linear symmetries gives
-an action of the group on symbols (`TauCeti.Symbol.transport_mul`).
+an action of the group on symbols (`TauCeti.Symbol.transport_mul`). As a linear change of
+variables followed by a change of coefficients (`TauCeti.Symbol.transport_eq_map_compProdMap`),
+transport preserves smoothing symbols, uniform estimates and compact spatial support
+(`TauCeti.Symbol.IsSmoothing.transport`, `TauCeti.Symbol.IsUniform.transport`,
+`TauCeti.Symbol.HasCompactSpatialSupport.transport`), and its mixed derivatives are those of `a`
+with the variables changed and the coefficients conjugated (`TauCeti.Symbol.mixedDeriv_transport`).
 
 ## Averaging
 
-Now let `G` be a compact topological group with a finite measure `μ`, typically the normalized
-Haar measure, and let `ρ`, `σ_V`, `σ_W` be continuous in the operator norm. The **average**
-(`TauCeti.Symbol.average`) of a symbol `a` of order `m` is the symbol of order `m`
+Now let `G` be a compact group with continuous inversion and a finite measure `μ`, typically the
+normalized Haar measure, and let `ρ`, `σ_V`, `σ_W` be continuous in the operator norm. The
+**average** (`TauCeti.Symbol.average`) of a symbol `a` of order `m` is the symbol of order `m`
 
 `ā (x, ξ) = ∫ σ_W(g) a(ρ(g)⁻¹ x, ρ(g)ᵀ ξ) σ_V(g)⁻¹ dμ(g)`.
 
@@ -113,9 +118,17 @@ theorem coefficient_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n
       e.arrowCongr f (a.coefficient (A.symm p.1, A.adjointEquiv p.2)) := by
   simp [transport]
 
+/-- Transport is the linear change of variables `(y, η) ↦ (A⁻¹ y, Aᵀ η)` followed by the change
+`T ↦ f ∘ T ∘ e⁻¹` of coefficients. -/
+theorem transport_eq_map_compProdMap (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) :
+    transport A e f a = (compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+      A.adjointEquiv a).map ((e.arrowCongr f).toContinuousLinearMap.restrictScalars ℝ) :=
+  Symbol.ext (funext fun _ ↦ by simp)
+
 /-- The mixed derivatives of a transported symbol are the transported mixed derivatives of the
 symbol with the positions and frequencies changed. -/
-private theorem mixedDeriv_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+theorem mixedDeriv_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
     (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) (α β : List (Fin n))
     (x ξ : CoordinateSpace n) :
     mixedDeriv α β (transport A e f a).coefficient x ξ =
@@ -149,19 +162,46 @@ theorem transport_transport (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n
   Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by
     simp [← ContinuousLinearEquiv.comp_coe, ContinuousLinearMap.adjoint_comp])
 
-/-- Transporting along the identity automorphisms leaves a symbol unchanged. In
-`ContinuousLinearEquiv.automorphismGroup` the identity is `refl`. -/
+/-- Transporting along the identity automorphisms leaves a symbol unchanged. -/
 @[simp]
-theorem transport_one (a : Symbol n V W m) : transport 1 1 1 a = a :=
-  transport_refl a
+theorem transport_one (a : Symbol n V W m) : transport 1 1 1 a = a := by
+  simp only [ContinuousLinearEquiv.one_eq_refl, transport_refl]
 
 /-- For automorphisms, transport turns products into composites, so a group homomorphism into the
-linear symmetries gives an action on symbols. In `ContinuousLinearEquiv.automorphismGroup` the
-product `A * B` is the composite `B.trans A`. -/
+linear symmetries gives an action on symbols. -/
 theorem transport_mul (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e e' : V ≃L[ℂ] V)
     (f f' : W ≃L[ℂ] W) (a : Symbol n V W m) :
-    transport (A * B) (e * e') (f * f') a = transport A e f (transport B e' f' a) :=
-  (transport_transport A B e' e f' f a).symm
+    transport (A * B) (e * e') (f * f') a = transport A e f (transport B e' f' a) := by
+  simp only [ContinuousLinearEquiv.mul_eq_trans, transport_transport]
+
+/-- Transport commutes with the inclusion of symbol classes. -/
+@[simp]
+theorem transport_inclusion {m' : ℝ} (h : m ≤ m') (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') (a : Symbol n V W m) :
+    transport A e f (inclusion h a) = inclusion h (transport A e f a) :=
+  Symbol.ext (funext fun _ ↦ by simp)
+
+/-- Transport preserves smoothing symbols. -/
+theorem IsSmoothing.transport {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') :
+    (transport A e f a).IsSmoothing := by
+  rw [transport_eq_map_compProdMap]
+  exact (ha.compProdMap _ _).map _
+
+/-- Transport preserves estimates uniform in the position. -/
+theorem IsUniform.transport {a : Symbol n V W m} (ha : a.IsUniform)
+    (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') :
+    (transport A e f a).IsUniform := by
+  rw [transport_eq_map_compProdMap]
+  exact (ha.compProdMap _ _).map _
+
+/-- Transport preserves compact spatial support: if `a` vanishes outside `K`, its transport
+vanishes outside `A K`. -/
+theorem HasCompactSpatialSupport.transport {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (e : V ≃L[ℂ] V') (f : W ≃L[ℂ] W') : (transport A e f a).HasCompactSpatialSupport := by
+  rw [transport_eq_map_compProdMap]
+  exact (ha.compProdMap A.symm A.adjointEquiv).map _
 
 /-- **Quantization of a transported symbol.** Quantizing the transported symbol on the transported
 input `e ∘ u ∘ A⁻¹` gives the transported output: at `A x` it is `f (Op(a) u x)`. So
@@ -209,19 +249,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
   (hρ : Continuous fun g ↦ (ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n))
   (hσV : Continuous fun g ↦ (σV g : V →L[ℂ] V)) (hσW : Continuous fun g ↦ (σW g : W →L[ℂ] W))
 
-include hρ in
-private theorem continuous_adjointEquiv :
-    Continuous fun g ↦ ((ρ g).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n) := by
-  simp_rw [ContinuousLinearEquiv.coe_adjointEquiv]
-  exact ContinuousLinearMap.adjoint.continuous.comp hρ
-
-variable [IsTopologicalGroup G]
-
-include hρ in
-private theorem continuous_adjointEquiv_symm :
-    Continuous fun g ↦ ((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) := by
-  simp_rw [ContinuousLinearEquiv.adjointEquiv_symm, ContinuousLinearEquiv.coe_adjointEquiv]
-  exact ContinuousLinearMap.adjoint.continuous.comp (ρ.continuous_coe_symm hρ)
+variable [ContinuousInv G]
 
 include hρ hσV hσW in
 /-- The spatial jets of the conjugates of a symbol are jointly continuous in the group element and
@@ -250,7 +278,7 @@ private theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : �
   have hκ : Continuous κ := by
     refine Continuous.prodMk ?_ ((σV.continuous_coe_symm hσV).prodMk hσW)
     exact (ContinuousLinearMap.prodMapL ℝ _ _ _ _).continuous.comp
-      ((ρ.continuous_coe_symm hρ).prodMk (continuous_adjointEquiv ρ hρ))
+      ((ρ.continuous_coe_symm hρ).prodMk (ContinuousLinearEquiv.continuous_coe_adjointEquiv hρ))
   have hcoeff (g : G) : (transport (ρ g) (σV g) (σW g) a).coefficient = fun p ↦ F (κ g, p) :=
     funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp [F, κ, Prod.map]
   simp_rw [hcoeff]
@@ -277,8 +305,13 @@ private theorem exists_bound_transport_of_forall_mem (a : Symbol n V W m)
     obtain ⟨c, hc⟩ := (isCompact_range hφ).bddAbove
     exact ⟨c, fun g ↦ hc ⟨g, rfl⟩⟩
   obtain ⟨c₁, hc₁⟩ := hbdd (ρ.continuous_coe_symm hρ).norm
-  obtain ⟨c₂, hc₂⟩ := hbdd (continuous_adjointEquiv ρ hρ).norm
-  obtain ⟨c₃, hc₃⟩ := hbdd (continuous_adjointEquiv_symm ρ hρ).norm
+  obtain ⟨c₂, hc₂⟩ := hbdd (ContinuousLinearEquiv.continuous_coe_adjointEquiv hρ).norm
+  have hρ' : Continuous fun g ↦
+      ((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) := by
+    simpa only [ContinuousLinearEquiv.adjointEquiv_symm] using
+      ContinuousLinearEquiv.continuous_coe_adjointEquiv (f := fun g ↦ (ρ g).symm)
+        (ρ.continuous_coe_symm hρ)
+  obtain ⟨c₃, hc₃⟩ := hbdd hρ'.norm
   obtain ⟨d, hd⟩ := hbdd (hσW.norm.mul (σV.continuous_coe_symm hσV).norm)
   obtain ⟨B, hB, hB'⟩ := exists_bound_comp_prodMap a.contDiff_coefficient (max c₁ (max c₂ c₃)) C α β
   refine ⟨max d 0 * B, by positivity, fun g x hx ξ ↦ ?_⟩
@@ -310,14 +343,12 @@ private theorem exists_bound_transport (a : Symbol n V W m) (K : Set (Coordinate
   have hcont : Continuous fun z : G × CoordinateSpace n ↦ (ρ z.1) z.2 :=
     (hρ.comp continuous_fst).clm_apply continuous_snd
   have hS : IsCompact S := (isCompact_univ.prod hK).image hcont
-  -- The identity of `ContinuousLinearEquiv.automorphismGroup` is `refl`.
-  have hKS : K ⊆ S := fun x hx ↦ ⟨(1, x), ⟨Set.mem_univ _, hx⟩, congrArg (· x) (map_one ρ)⟩
+  have hKS : K ⊆ S := fun x hx ↦ ⟨(1, x), ⟨Set.mem_univ _, hx⟩,
+    by simp [ContinuousLinearEquiv.one_eq_refl]⟩
   have hSinv : ∀ g, ∀ x ∈ S, (ρ g).symm x ∈ S := by
     rintro g _ ⟨⟨h, y⟩, ⟨-, hy⟩, rfl⟩
-    refine ⟨(g⁻¹ * h, y), ⟨Set.mem_univ _, hy⟩, ?_⟩
-    simp only [map_mul, map_inv]
-    -- In `ContinuousLinearEquiv.automorphismGroup`, `(ρ g)⁻¹ * ρ h` is `ρ h`, then `(ρ g).symm`.
-    rfl
+    exact ⟨(g⁻¹ * h, y), ⟨Set.mem_univ _, hy⟩,
+      by simp [ContinuousLinearEquiv.mul_eq_trans, ContinuousLinearEquiv.inv_eq_symm]⟩
   choose C _ hC using fun α' β' ↦ a.exists_bound S hS α' β'
   obtain ⟨B, hB, hB'⟩ := exists_bound_transport_of_forall_mem ρ σV σW hρ hσV hσW a hSinv C hC α β
   exact ⟨B, hB, fun g x hx ξ ↦ hB' g x (hKS hx) ξ⟩
@@ -337,20 +368,12 @@ def average : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
     (continuous_iteratedFDeriv_transport ρ σV σW hρ hσV hσW a)
     (fun K hK α β ↦ exists_bound_transport ρ σV σW hρ hσV hσW a K hK α β)
   map_add' a b := by
-    refine Symbol.ext (funext fun p ↦ ?_)
-    have hi (c : Symbol n V W m) :
-        Integrable (fun g ↦ (transport (ρ g) (σV g) (σW g) c).coefficient p) μ := by
-      have h := (continuous_iteratedFDeriv_transport ρ σV σW hρ hσV hσW c 0).eval
-        (continuous_const (y := (0 : Fin 0 → CoordinateSpace n × CoordinateSpace n)))
-      simp only [iteratedFDeriv_zero_apply] at h
-      exact (h.comp (continuous_id.prodMk (continuous_const (y := p))))
-        |>.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-    simp only [coefficient_integral, map_add, coefficient_add, Pi.add_apply]
-    exact MeasureTheory.integral_add (hi a) (hi b)
+    simp only [map_add]
+    exact Symbol.integral_add μ _ _ (continuous_iteratedFDeriv_transport ρ σV σW hρ hσV hσW a)
+      (continuous_iteratedFDeriv_transport ρ σV σW hρ hσV hσW b)
   map_smul' c a := by
-    refine Symbol.ext (funext fun p ↦ ?_)
-    simp only [coefficient_integral, map_smul, coefficient_smul, Pi.smul_apply, RingHom.id_apply]
-    exact MeasureTheory.integral_smul c _
+    simp only [map_smul, RingHom.id_apply]
+    exact Symbol.integral_smul μ c _ (continuous_iteratedFDeriv_transport ρ σV σW hρ hσV hσW a)
 
 /-- The coefficient of the average is the integral of the coefficients of the conjugates. -/
 @[simp]
@@ -419,6 +442,12 @@ theorem average_average [IsProbabilityMeasure μ] [MeasurableMul G] [μ.IsMulLef
     average ρ σV σW hρ hσV hσW μ (average ρ σV σW hρ hσV hσW μ a) =
       average ρ σV σW hρ hσV hσW μ a :=
   average_eq_self ρ σV σW hρ hσV hσW μ fun g ↦ transport_average ρ σV σW hρ hσV hσW μ g a
+
+/-- Averaging commutes with the inclusion of symbol classes. -/
+@[simp]
+theorem average_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
+    average ρ σV σW hρ hσV hσW μ (inclusion h a) = inclusion h (average ρ σV σW hρ hσV hσW μ a) :=
+  Symbol.ext (funext fun _ ↦ by simp)
 
 /-- The average of a smoothing symbol is smoothing. -/
 theorem IsSmoothing.average {a : Symbol n V W m} (ha : a.IsSmoothing) :
