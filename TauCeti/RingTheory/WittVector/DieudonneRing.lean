@@ -35,7 +35,7 @@ Since `p` is a non-zero-divisor on `W`, this ring is spanned freely as a left `W
   `TauCeti.DieudonneRing.subring` (`TauCeti.DieudonneRing.mem_subring`,
   `TauCeti.DieudonneRing.val_mem`, `TauCeti.DieudonneRing.mk`).
 * `TauCeti.DieudonneRing.basis`: the basis `n ↦ Fⁿ` (`n ≥ 0`), `n ↦ V⁻ⁿ` (`n ≤ 0`) of `E` as a
-  free left `W`-module.
+  free left `W`-module; `TauCeti.DieudonneRing.coeff_val` reads its coordinates off `val`.
 * `TauCeti.DieudonneRing.lift`: the universal property: a ring homomorphism `g : W → R` with
   elements `f v : R` satisfying the defining relations extends uniquely
   (`TauCeti.DieudonneRing.ringHom_ext`) to a ring homomorphism `E → R`.
@@ -75,7 +75,8 @@ abbrev SkewLaurent := SkewMonoidAlgebra (𝕎 k) (Multiplicative ℤ)
 
 variable {p k}
 
-private lemma smul_eq_zpow (a : Multiplicative ℤ) (ξ : 𝕎 k) :
+/-- In `TauCeti.DieudonneRing.frobeniusZPowAction`, `ofAdd n` acts by `σⁿ`. -/
+theorem frobeniusZPowAction_smul_def (a : Multiplicative ℤ) (ξ : 𝕎 k) :
     a • ξ = (frobeniusEquiv p k ^ a.toAdd) ξ :=
   rfl
 
@@ -96,7 +97,7 @@ def subring : Subring (SkewLaurent p k) where
     split_ifs with h
     · subst h
       have h := mul_dvd_mul (hf b) (zpow_frobeniusEquiv_dvd b.toAdd (hg c))
-      rw [← pow_add, ← smul_eq_zpow] at h
+      rw [← pow_add, ← frobeniusZPowAction_smul_def] at h
       refine (pow_dvd_pow _ ?_).trans h
       simp only [toAdd_mul]
       omega
@@ -158,6 +159,10 @@ def val : DieudonneRing p k →+* SkewLaurent p k :=
 theorem val_injective : Function.Injective (val : DieudonneRing p k → SkewLaurent p k) :=
   Subtype.val_injective
 
+@[simp]
+theorem val_inj {x y : DieudonneRing p k} : val x = val y ↔ x = y :=
+  val_injective.eq_iff
+
 /-- An element of the Dieudonné ring from a skew Laurent polynomial in the subring. -/
 def mk (x : SkewLaurent p k) (hx : x ∈ subring p k) : DieudonneRing p k :=
   (⟨x, hx⟩ : subring p k)
@@ -168,6 +173,10 @@ theorem val_mk (x : SkewLaurent p k) (hx : x ∈ subring p k) : val (mk x hx) = 
 
 theorem val_mem (x : DieudonneRing p k) : val x ∈ subring p k :=
   Subtype.prop (p := (· ∈ subring p k)) x
+
+@[simp]
+theorem mk_val (x : DieudonneRing p k) : mk (val x) (val_mem x) = x :=
+  val_injective (val_mk _ _)
 
 variable (p k) in
 /-- The Witt vectors `𝕎 k` as the scalars of the Dieudonné ring. -/
@@ -214,13 +223,14 @@ private lemma frobenius_frobeniusEquiv_inv (ξ : 𝕎 k) :
 /-- `F ξ = σ(ξ) F`. -/
 theorem F_mul_C (ξ : 𝕎 k) : F p k * C p k ξ = C p k (frobenius ξ) * F p k := by
   apply val_injective
-  simp [smul_eq_zpow]
+  simp [frobeniusZPowAction_smul_def]
 
 /-- `V σ(ξ) = ξ V`. -/
 theorem V_mul_C_frobenius (ξ : 𝕎 k) : V p k * C p k (frobenius ξ) = C p k ξ * V p k := by
   apply val_injective
-  simp only [map_mul, val_V, val_C, SkewMonoidAlgebra.single_mul_single, smul_eq_zpow,
-    toAdd_ofAdd, zpow_neg, zpow_one, frobeniusEquiv_inv_frobenius, one_mul, one_smul, mul_comm]
+  simp only [map_mul, val_V, val_C, SkewMonoidAlgebra.single_mul_single,
+    frobeniusZPowAction_smul_def, toAdd_ofAdd, zpow_neg, zpow_one, frobeniusEquiv_inv_frobenius,
+    one_mul, one_smul, mul_comm]
 
 /-- `F V = p`. -/
 @[simp]
@@ -229,7 +239,7 @@ theorem F_mul_V : F p k * V p k = p := by
   rw [map_mul, map_natCast, val_F, val_V, SkewMonoidAlgebra.single_mul_single,
     ← SkewMonoidAlgebra.single_nat]
   congr 1
-  simp [smul_eq_zpow]
+  simp [frobeniusZPowAction_smul_def]
 
 /-- `V F = p`. -/
 @[simp]
@@ -260,6 +270,15 @@ private lemma zpowFV_neg_natCast (f v : R) (n : ℕ) : zpowFV f v (-n) = v ^ n :
   · obtain rfl : n = 0 := by omega
     simp
   · simp
+
+private lemma zpowFV_zero (f v : R) : zpowFV f v 0 = 1 := by
+  simpa using zpowFV_natCast f v 0
+
+private lemma zpowFV_one (f v : R) : zpowFV f v 1 = f := by
+  simpa using zpowFV_natCast f v 1
+
+private lemma zpowFV_neg_one (f v : R) : zpowFV f v (-1) = v := by
+  simpa using zpowFV_neg_natCast f v 1
 
 private lemma map_zpowFV {S : Type*} [Ring S] (g : R →+* S) (f v : R) (n : ℤ) :
     g (zpowFV f v n) = zpowFV (g f) (g v) n := by
@@ -315,19 +334,21 @@ private lemma pow_mul_map {g : 𝕎 k →+* R} {f : R}
   induction n generalizing ξ with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, mul_assoc, hF, ← mul_assoc, ih, mul_assoc, ← pow_succ,
-      pow_succ (frobeniusEquiv p k : RingAut (𝕎 k)), RingAut.mul_apply,
-      WittVector.frobeniusEquiv_apply]
+    simp only [pow_succ, ← mul_assoc]
+    rw [mul_assoc, hF, ← mul_assoc, ih]
+    simp [mul_assoc]
 
 private lemma pow_mul_map' {g : 𝕎 k →+* R} {v : R}
     (hV : ∀ ξ : 𝕎 k, v * g (frobenius ξ) = g ξ * v) (n : ℕ) (ξ : 𝕎 k) :
     v ^ n * g ξ = g (((frobeniusEquiv p k : RingAut (𝕎 k))⁻¹ ^ n) ξ) * v ^ n := by
+  have hV' (ξ : 𝕎 k) : v * g ξ = g ((frobeniusEquiv p k)⁻¹ ξ) * v := by
+    rw [← hV, frobenius_frobeniusEquiv_inv]
   induction n generalizing ξ with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, mul_assoc, ← frobenius_frobeniusEquiv_inv ξ, hV, ← mul_assoc, ih, mul_assoc,
-      ← pow_succ, pow_succ (frobeniusEquiv p k : RingAut (𝕎 k))⁻¹, RingAut.mul_apply,
-      frobenius_frobeniusEquiv_inv]
+    simp only [pow_succ, ← mul_assoc]
+    rw [mul_assoc, hV', ← mul_assoc, ih]
+    simp [mul_assoc]
 
 private lemma zpowFV_mul_map {g : 𝕎 k →+* R} {f v : R}
     (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius ξ) * f)
@@ -369,24 +390,26 @@ instance : IsScalarTower (𝕎 k) (DieudonneRing p k) (DieudonneRing p k) :=
 private def word (n : ℤ) : DieudonneRing p k :=
   zpowFV (F p k) (V p k) n
 
-private lemma val_F_pow (n : ℕ) :
+/-- The product of two basis words: `wₘ (η wₙ) = (σᵐ(η) pᵉ) wₘ₊ₙ`, with `e = wordExp m n`. -/
+private lemma word_mul_smul_word (m n : ℤ) (η : 𝕎 k) :
+    (word m : DieudonneRing p k) * (η • word n) =
+      (((frobeniusEquiv p k : RingAut (𝕎 k)) ^ m) η * (p : 𝕎 k) ^ wordExp m n) •
+        word (m + n) := by
+  rw [smul_def, smul_def, word, word, word]
+  exact zpowFV_mul_map_mul_zpowFV F_mul_C V_mul_C_frobenius F_mul_V V_mul_F m n η
+
+theorem val_F_pow (n : ℕ) :
     val (F p k ^ n) = SkewMonoidAlgebra.single (Multiplicative.ofAdd (n : ℤ)) 1 := by
   induction n with
-  | zero => rw [pow_zero, map_one, Nat.cast_zero, ofAdd_zero, SkewMonoidAlgebra.one_def]
-  | succ n ih =>
-    rw [pow_succ, map_mul, ih, val_F, SkewMonoidAlgebra.single_mul_single, smul_one, mul_one,
-      ← ofAdd_add, Nat.cast_succ]
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih, ← ofAdd_add]
 
-private lemma val_V_pow (n : ℕ) :
+theorem val_V_pow (n : ℕ) :
     val (V p k ^ n) =
       SkewMonoidAlgebra.single (Multiplicative.ofAdd (-(n : ℤ))) ((p : 𝕎 k) ^ n) := by
   induction n with
-  | zero =>
-    rw [pow_zero, pow_zero, map_one, Nat.cast_zero, neg_zero, ofAdd_zero,
-      SkewMonoidAlgebra.one_def]
-  | succ n ih =>
-    rw [pow_succ, map_mul, ih, val_V, SkewMonoidAlgebra.single_mul_single, smul_eq_zpow,
-      map_natCast, ← pow_succ, ← ofAdd_add, Nat.cast_succ, neg_add]
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih, frobeniusZPowAction_smul_def, mul_comm]
 
 private lemma val_smul_word (ξ : 𝕎 k) (n : ℤ) :
     val (ξ • word n) =
@@ -459,6 +482,22 @@ theorem basis_neg_natCast (n : ℕ) : basis p k (-n) = V p k ^ n := by
 theorem basis_zero : basis p k 0 = 1 := by
   simpa using basis_natCast (p := p) (k := k) 0
 
+@[simp]
+theorem basis_one : basis p k 1 = F p k := by
+  simpa using basis_natCast (p := p) (k := k) 1
+
+@[simp]
+theorem basis_neg_one : basis p k (-1) = V p k := by
+  simpa using basis_neg_natCast (p := p) (k := k) 1
+
+/-- The coefficient of `Fⁿ` in the image of `x` in `𝕎 k [F, F⁻¹; σ]` is the `n`-th coordinate of
+`x` in `TauCeti.DieudonneRing.basis`, times `p⁻ⁿ` when `n ≤ 0`. -/
+theorem coeff_val (x : DieudonneRing p k) (n : ℤ) :
+    (val x).coeff (Multiplicative.ofAdd n) = (basis p k).repr x n * (p : 𝕎 k) ^ (-n).toNat := by
+  have h : ⇑(basis p k) = word := funext basis_eq_word
+  conv_lhs => rw [← (basis p k).linearCombination_repr x, h]
+  exact coeff_val_linearCombination _ n
+
 instance : Module.Free (𝕎 k) (DieudonneRing p k) :=
   .of_basis (basis p k)
 
@@ -486,6 +525,10 @@ private lemma liftAddHom_smul_basis (g : 𝕎 k →+* R) (f v : R) (ξ : 𝕎 k)
     liftAddHom g f v (ξ • basis p k n) = g ξ * zpowFV f v n := by
   simp [liftAddHom]
 
+private lemma liftAddHom_smul_word (g : 𝕎 k →+* R) (f v : R) (ξ : 𝕎 k) (n : ℤ) :
+    liftAddHom g f v (ξ • word n) = g ξ * zpowFV f v n := by
+  rw [← basis_eq_word, liftAddHom_smul_basis]
+
 private lemma liftAddHom_smul (g : 𝕎 k →+* R) (f v : R) (ξ : 𝕎 k) (x : DieudonneRing p k) :
     liftAddHom g f v (ξ • x) = g ξ * liftAddHom g f v x := by
   have := addHom_ext (a := (liftAddHom g f v).comp (DistribSMul.toAddMonoidHom _ ξ))
@@ -501,11 +544,9 @@ private lemma liftAddHom_word_mul (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius
     liftAddHom g f v (word m * y) = zpowFV f v m * liftAddHom g f v y := by
   have := addHom_ext (a := (liftAddHom g f v).comp (AddMonoidHom.mulLeft (word m)))
     (b := (AddMonoidHom.mulLeft (zpowFV f v m)).comp (liftAddHom g f v)) fun η n ↦ by
-      simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft,
-        liftAddHom_smul_basis]
-      rw [basis_eq_word, smul_def, word, word,
-        zpowFV_mul_map_mul_zpowFV F_mul_C V_mul_C_frobenius F_mul_V V_mul_F, ← smul_def, ← word,
-        ← basis_eq_word, liftAddHom_smul_basis, zpowFV_mul_map_mul_zpowFV hF hV hfv hvf]
+      simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft]
+      rw [basis_eq_word, word_mul_smul_word, liftAddHom_smul_word, liftAddHom_smul_word,
+        zpowFV_mul_map_mul_zpowFV hF hV hfv hvf]
   exact DFunLike.congr_fun this y
 
 private lemma liftAddHom_mul (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius ξ) * f)
@@ -528,7 +569,7 @@ def lift (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius ξ) * f)
     (hV : ∀ ξ : 𝕎 k, v * g (frobenius ξ) = g ξ * v) (hfv : f * v = p) (hvf : v * f = p) :
     DieudonneRing p k →+* R where
   __ := liftAddHom g f v
-  map_one' := by simpa [zpowFV] using liftAddHom_smul_basis g f v 1 0
+  map_one' := by simpa [zpowFV_zero] using liftAddHom_smul_basis g f v 1 0
   map_mul' := liftAddHom_mul hF hV hfv hvf
 
 variable (hF : ∀ ξ : WittVector p k, f * g ξ = g (frobenius ξ) * f)
@@ -540,15 +581,15 @@ private lemma lift_apply (x : DieudonneRing p k) :
 
 @[simp]
 theorem lift_C (ξ : 𝕎 k) : lift g f v hF hV hfv hvf (C p k ξ) = g ξ := by
-  simpa [lift_apply, smul_def, zpowFV] using liftAddHom_smul_basis g f v ξ 0
+  simpa [lift_apply, smul_def, zpowFV_zero] using liftAddHom_smul_basis g f v ξ 0
 
 @[simp]
 theorem lift_F : lift g f v hF hV hfv hvf (F p k) = f := by
-  simpa [lift_apply, basis_eq_word, word, zpowFV] using liftAddHom_smul_basis g f v 1 1
+  simpa [lift_apply, zpowFV_one] using liftAddHom_smul_basis g f v 1 1
 
 @[simp]
 theorem lift_V : lift g f v hF hV hfv hvf (V p k) = v := by
-  simpa [lift_apply, basis_eq_word, word, zpowFV] using liftAddHom_smul_basis g f v 1 (-1)
+  simpa [lift_apply, zpowFV_neg_one] using liftAddHom_smul_basis g f v 1 (-1)
 
 theorem lift_comp_C : (lift g f v hF hV hfv hvf).comp (C p k) = g :=
   RingHom.ext (lift_C hF hV hfv hvf)
