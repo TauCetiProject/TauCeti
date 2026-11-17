@@ -237,8 +237,8 @@ noncomputable def ofRepresentatives : CoefficientSystem 𝕂 R where
     exact congrArg Subtype.val h
   normalizer_scale_normalizer_mul H H' := by
     have hg := (hrep (H.scale (hrep H').exists.choose)).exists.choose_spec
-    rw [scale_scale] at hg
-    exact congrArg Subtype.val ((hrep H).unique (y₁ := _ * _) hg (hrep H).exists.choose_spec)
+    rw [scale_scale, ← Subgroup.coe_mul] at hg
+    simpa using congrArg Subtype.val ((hrep H).unique hg (hrep H).exists.choose_spec)
 
 variable {φ G S hrev hrep}
 
@@ -428,7 +428,7 @@ the scalar system: realizing the coefficients forgets the normalization. -/
 def toTrivial (h : ∀ H, c.toScalar (c.normalizer H) = 1) : Hom c (trivial R) where
   toMonoidWithZeroHom := c.toScalar
   toScalar_comp := MonoidWithZeroHom.id_comp _
-  normalizer_map H := Units.ext (h H).symm
+  normalizer_map H := Units.ext (by simp [h])
 
 @[simp] theorem toTrivial_apply (h : ∀ H, c.toScalar (c.normalizer H) = 1) (a : 𝕂) :
     toTrivial c h a = c.toScalar a :=
