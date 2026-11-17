@@ -456,16 +456,8 @@ theorem defect_movedNorm_singleEdge {u v : V} (huv : u ≠ v) {t : Equiv.Perm α
       coe_injective <| by
         rw [SimpleGraph.coe_edgeFinset, coe_singleton, SimpleGraph.edgeSet_edge_of_ne huv]
     rw [this, card_singleton]
-  have hdeg (w : V) : (SimpleGraph.edge u v).degree w ≤ 1 := by
-    have hsub : (SimpleGraph.edge u v).neighborFinset w ⊆
-        if w = u then {v} else if w = v then {u} else ∅ := fun x hx ↦ by
-      rw [SimpleGraph.mem_neighborFinset, SimpleGraph.edge_adj] at hx
-      rcases hx.1 with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · simp
-      · simp [huv.symm]
-    rw [← SimpleGraph.card_neighborFinset_eq_degree]
-    refine (card_le_card hsub).trans ?_
-    split_ifs <;> simp
+  have hdeg (w : V) : (SimpleGraph.edge u v).degree w ≤ 1 :=
+    ((SimpleGraph.edge u v).degree_le_card_edgeFinset (v := w)).trans_eq hcard
   rw [← SimpleGraph.edge_toCochain u v ht.mul_self,
     (SimpleGraph.edge u v).defect_movedNorm_toCochain ht,
     (SimpleGraph.edge u v).card_oddTriangleFinset_of_degree_le_one hdeg, hcard, mul_one]
@@ -581,11 +573,8 @@ noncomputable def simpleGraphEquivPermFinTwo (V : Type*) [Fintype V] :
     ext u v
     by_cases h : G.Adj u v <;> simp [h]
   right_inv α := by
-    have hswap := (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self
-    refine Cochain.ext fun u v _ ↦ ?_
-    rcases (α u v).eq_one_or_swap_fin_two with h | h
-    · rw [SimpleGraph.toCochain_apply_of_not_adj hswap (show ¬ α u v ≠ 1 by simp [h]), h]
-    · rw [SimpleGraph.toCochain_apply_of_adj hswap (show α u v ≠ 1 by rw [h]; decide), h]
+    ext u v _
+    rcases (α u v).eq_one_or_swap_fin_two with h | h <;> simp [h]
 
 /-- `TauCeti.simpleGraphEquivPermFinTwo` agrees with `SimpleGraph.toCochain` at `Equiv.swap 0 1`. -/
 theorem simpleGraphEquivPermFinTwo_eq_toCochain {V : Type*} [Fintype V] (G : SimpleGraph V) :

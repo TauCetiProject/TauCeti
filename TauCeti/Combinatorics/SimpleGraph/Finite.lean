@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
 public import Mathlib.Order.Sym2
+import TauCeti.Order.Sym2
 
 /-!
 # Finite simple graphs
@@ -118,18 +119,15 @@ end Interval
 
 section Ordered
 
-private theorem sym2_inf_sup_eq [LinearOrder V] (e : Sym2 V) : s(e.inf, e.sup) = e :=
-  (Sym2.sortEquiv_symm_apply (Sym2.sortEquiv e)).symm.trans (Sym2.sortEquiv.symm_apply_apply e)
-
 /-- When the vertex type is linearly ordered, `Sym2.sortEquiv` identifies the edges of `G` with the
 strictly increasing adjacent vertex pairs. -/
 def edgeSetEquivLtAdj [LinearOrder V] (G : SimpleGraph V) :
     G.edgeSet ≃ {p : V × V // p.1 < p.2 ∧ G.Adj p.1 p.2} where
   toFun e :=
-    have hadj : G.Adj e.1.inf e.1.sup := G.mem_edgeSet.mp ((sym2_inf_sup_eq e.1).symm ▸ e.2)
+    have hadj : G.Adj e.1.inf e.1.sup := G.mem_edgeSet.mp (e.1.mk_inf_sup.symm ▸ e.2)
     ⟨(e.1.inf, e.1.sup), lt_of_le_of_ne (Sym2.inf_le_sup e.1) hadj.ne, hadj⟩
   invFun p := ⟨s(p.1.1, p.1.2), G.mem_edgeSet.mpr p.2.2⟩
-  left_inv e := Subtype.ext (sym2_inf_sup_eq e.1)
+  left_inv e := Subtype.ext e.1.mk_inf_sup
   right_inv p := Subtype.ext (by simp [p.2.1.le])
 
 /-- `SimpleGraph.edgeSetEquivLtAdj` sends an edge `e` to `(e.inf, e.sup)`. -/
