@@ -20,6 +20,8 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   disc, which is nontrivial.
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
   (`Complex.UnitDisc.isCompact_setOf_norm_le`).
+* The inclusion of the open unit disc into `ℂ` is an open embedding
+  (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff.
 * The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space,
   homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
   (`Complex.UnitClosedDisc.homeomorphClosedBall`).
@@ -59,6 +61,14 @@ lemma isCompact_setOf_norm_le {ρ : ℝ} (hρ : ρ < 1) : IsCompact {z : 𝔻 | 
   convert isEmbedding_coe.isInducing.isCompact_preimage' (isCompact_closedBall (0 : ℂ) ρ) _
   · simp
   · exact fun w hw => ⟨mk w ((mem_closedBall_zero_iff.1 hw).trans_lt hρ), rfl⟩
+
+/-- The inclusion of the open unit disc into `ℂ` is an open embedding. -/
+theorem isOpenEmbedding_coe : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
+  isOpen_ball.isOpenEmbedding_subtypeVal
+
+/-- The open unit disc is Hausdorff. -/
+instance instT2Space : T2Space 𝔻 :=
+  isEmbedding_coe.t2Space
 
 /-- Circle rotations act jointly continuously on the bundled open unit disc. -/
 instance instContinuousSMulCircle : ContinuousSMul Circle 𝔻 :=

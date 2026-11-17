@@ -6,18 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
-public import Mathlib.Geometry.Manifold.HasGroupoid
 public import Mathlib.Topology.ContinuousMap.Basic
 
 /-!
-# The open unit disc as a manifold, and its round subdiscs
-
-The open unit disc `𝔻` is an open subset of `ℂ`, so it is a Hausdorff space with a single chart,
-its inclusion into `ℂ` (`Complex.UnitDisc.instChartedSpace`). This is the structure needed to
-speak of homological orientations of `𝔻` and of degrees of proper self-maps of `𝔻`.
+# Round subdiscs of the open unit disc
 
 A round disc `B(c, r)` with `‖c‖ + r ≤ 1` lies in `𝔻`, and the affine map `z ↦ c + r z`
-parametrizes it by `𝔻` (`Complex.UnitDisc.subdisc`). These maps compose like affine maps
+parametrizes it by `𝔻` (`Complex.UnitDisc.subdisc`), with inverse `w ↦ (w - c) / r`
+(`Complex.UnitDisc.coe_subdisc_sub_div`). These maps compose like affine maps
 (`Complex.UnitDisc.subdisc_comp_subdisc`). If a compact subset `K` of `𝔻` meets no point of the
 circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends into `K` form a compact set
 (`Complex.UnitDisc.isCompact_subdisc_preimage`): they are the rescaled points of `K` inside the
@@ -34,19 +30,6 @@ open Metric Set Topology
 open scoped Complex.UnitDisc
 
 namespace Complex.UnitDisc
-
-/-- The inclusion of the open unit disc into `ℂ` is an open embedding. -/
-theorem isOpenEmbedding_coe : IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
-  isOpen_ball.isOpenEmbedding_subtypeVal
-
-/-- The open unit disc is Hausdorff. -/
-instance instT2Space : T2Space 𝔻 :=
-  isEmbedding_coe.t2Space
-
-/-- The open unit disc is a manifold modelled on `ℂ`, with the inclusion into `ℂ` as its single
-chart. -/
-instance instChartedSpace : ChartedSpace ℂ 𝔻 :=
-  isOpenEmbedding_coe.singletonChartedSpace
 
 /-- If `‖c‖ + r ≤ 1` and `r > 0`, then `c + r z` lies in the open unit disc for every `z ∈ 𝔻`. -/
 theorem norm_add_mul_lt_one {c : ℂ} {r : ℝ} (hc : ‖c‖ + r ≤ 1) (hr : 0 < r) (z : 𝔻) :
@@ -85,18 +68,18 @@ theorem coe_subdisc_apply (z : 𝔻) : (subdisc c r hc hr z : ℂ) = c + r * z :
 theorem mem_range_subdisc {w : 𝔻} : w ∈ range (subdisc c r hc hr) ↔ (w : ℂ) ∈ ball c r := by
   constructor
   · rintro ⟨z, rfl⟩
-    rw [coe_subdisc_apply, mem_ball, dist_eq_norm, add_sub_cancel_left, norm_mul,
-      Complex.norm_real, Real.norm_of_nonneg hr.le]
-    simpa using mul_lt_mul_of_pos_left z.norm_lt_one hr
+    simpa [dist_eq_norm, abs_of_pos hr] using mul_lt_mul_of_pos_left z.norm_lt_one hr
   · intro hw
     have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
     have hz : ‖((w : ℂ) - c) / r‖ < 1 := by
-      rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr, ← dist_eq_norm]
-      exact hw
+      simpa [abs_of_pos hr, div_lt_one hr, ← dist_eq_norm] using hw
     refine ⟨mk _ hz, coe_injective ?_⟩
-    rw [coe_subdisc_apply, coe_mk]
-    field_simp
-    ring
+    simp [mul_div_cancel₀ _ hr0]
+
+/-- The round subdisc map `subdisc c r` is inverted by `w ↦ (w - c) / r`. -/
+theorem coe_subdisc_sub_div (z : 𝔻) : ((subdisc c r hc hr z : ℂ) - c) / r = z := by
+  have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
+  simp [mul_div_cancel_left₀ _ hr0]
 
 /-- Round subdisc maps compose like the affine maps they are:
 `subdisc c r ∘ subdisc c' r' = subdisc (c + r c') (r r')`. -/
@@ -113,21 +96,14 @@ part of `K` inside `B(c, r)`. -/
 theorem image_coe_subdisc_preimage (K : Set 𝔻) :
     (↑) '' (subdisc c r hc hr ⁻¹' K) =
       (fun w : ℂ ↦ (w - c) / r) '' ((↑) '' K ∩ ball c r) := by
-  have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
   ext z
   constructor
   · rintro ⟨z, hz, rfl⟩
-    refine ⟨subdisc c r hc hr z, ⟨⟨_, hz, rfl⟩, mem_range_subdisc.1 ⟨z, rfl⟩⟩, ?_⟩
-    rw [coe_subdisc_apply]
-    field_simp
-    ring
+    exact ⟨subdisc c r hc hr z, ⟨⟨_, hz, rfl⟩, mem_range_subdisc.1 ⟨z, rfl⟩⟩,
+      coe_subdisc_sub_div z⟩
   · rintro ⟨w, ⟨⟨w, hw, rfl⟩, hwb⟩, rfl⟩
-    obtain ⟨z, hz⟩ := (mem_range_subdisc (hc := hc) (hr := hr)).2 hwb
-    subst hz
-    refine ⟨z, hw, ?_⟩
-    rw [coe_subdisc_apply]
-    field_simp
-    ring
+    obtain ⟨z, rfl⟩ := (mem_range_subdisc (hc := hc) (hr := hr)).2 hwb
+    exact ⟨z, hw, (coe_subdisc_sub_div z).symm⟩
 
 /-- If a compact set `K` of the unit disc has no point on the circle `‖z - c‖ = r`, then the
 points of `𝔻` that `subdisc c r` sends into `K` form a compact set. -/

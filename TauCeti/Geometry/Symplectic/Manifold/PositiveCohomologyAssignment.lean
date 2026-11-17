@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
+public import TauCeti.Analysis.Complex.UnitDisc.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ComplexDifferentiable
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
@@ -38,8 +39,9 @@ arbitrary orientation-preserving embeddings.
 The integers of a positive cohomology assignment are local. If `z` is an isolated point of
 `σ⁻¹(Z)`, the integer of `σ` restricted to a small round disc about `z` does not depend on the
 radius (`TauCeti.PositiveCohomologyAssignment.charge_comp_subdisc_eq_of_le`); this is the
-**local charge** `TauCeti.PositiveCohomologyAssignment.localCharge` of `σ` at `z`, and it vanishes
-off `σ⁻¹(Z)`. When `σ⁻¹(Z)` is finite, `I(σ)` is the sum of the local charges over `σ⁻¹(Z)`
+**local charge** `TauCeti.PositiveCohomologyAssignment.localCharge` of `σ` at `z`, and, when
+`σ⁻¹(Z)` is compact, it vanishes off `σ⁻¹(Z)`. When `σ⁻¹(Z)` is finite, `I(σ)` is the sum of
+the local charges over `σ⁻¹(Z)`
 (`TauCeti.PositiveCohomologyAssignment.charge_eq_sum_localCharge`). For a `J`-holomorphic disc
 that is constant near none of the points of a finite `σ⁻¹(Z)`, every local charge is positive
 (`TauCeti.PositiveCohomologyAssignment.localCharge_pos`), so `I(σ)` bounds the number of points of
@@ -164,11 +166,11 @@ private theorem norm_sub_ne_of_pairwise_disjoint {ι : Type*} {σ : C(𝔻, Y)} 
   rw [closure_ball _ (hr i).ne'] at hd
   exact Set.disjoint_left.1 hd (mem_closedBall_iff_norm.2 hzi.le) hj
 
-/-- If `σ⁻¹(Z)` meets the disc `B(c, r')` at most in its centre, the integers of `σ` on the round
-subdiscs `B(c, r)` and `B(c, r')` agree for `0 < r ≤ r'`. -/
+/-- If every point of `σ⁻¹(Z)` in the disc `B(c, r')` lies in the smaller disc `B(c, r)`, the
+integers of `σ` on the round subdiscs `B(c, r)` and `B(c, r')` agree for `0 < r ≤ r'`. -/
 theorem charge_comp_subdisc_eq_of_le {σ : C(𝔻, Y)} {c : ℂ} {r r' : ℝ} (hc : ‖c‖ + r ≤ 1)
     (hc' : ‖c‖ + r' ≤ 1) (hr : 0 < r) (hrr' : r ≤ r')
-    (hiso : ∀ z, σ z ∈ Z → (z : ℂ) ∈ ball c r' → (z : ℂ) = c)
+    (hsub : ∀ z, σ z ∈ Z → (z : ℂ) ∈ ball c r' → (z : ℂ) ∈ ball c r)
     (h : IsCompact ((σ.comp (subdisc c r hc hr)) ⁻¹' Z))
     (h' : IsCompact ((σ.comp (subdisc c r' hc' (hr.trans_le hrr'))) ⁻¹' Z)) :
     A.charge _ h = A.charge _ h' := by
@@ -190,23 +192,36 @@ theorem charge_comp_subdisc_eq_of_le {σ : C(𝔻, Y)} {c : ℂ} {r r' : ℝ} (h
   have hcov : ∀ z, τ z ∈ Z → ∃ _ : Unit, (z : ℂ) ∈ ball 0 (r / r') := by
     intro z hz
     refine ⟨(), ?_⟩
-    have hmem := hiso _ hz (mem_range_subdisc.1 ⟨z, rfl⟩)
-    rw [coe_subdisc_apply, add_eq_left, mul_eq_zero, Complex.ofReal_eq_zero] at hmem
-    rw [hmem.resolve_left hr'.ne', mem_ball, dist_self]
-    exact hpos
+    have hmem := hsub _ hz (mem_range_subdisc.1 ⟨z, rfl⟩)
+    rw [mem_ball_zero_iff, lt_div_iff₀ hr']
+    simpa [dist_eq_norm, abs_of_pos hr', mul_comm] using hmem
   have h'' : IsCompact ((τ.comp (subdisc 0 (r / r') h0 hpos)) ⁻¹' Z) := heq ▸ h
   rw [A.charge_eq_sum τ h' (fun _ ↦ 0) (fun _ ↦ r / r') (fun _ ↦ h0) (fun _ ↦ hpos)
     (Subsingleton.pairwise) hcov (fun _ ↦ h''), Fintype.sum_unique]
   exact (A.charge_congr heq _ _).symm
 
+/-- If `σ⁻¹(Z)` is compact and meets the disc `B(z, R)` only in `z`, then the restriction of `σ`
+to the round subdisc `B(z, r)` has compact preimage of `Z` for every `0 < r < R`: no point of
+`σ⁻¹(Z)` lies on the circle `‖w - z‖ = r`. -/
+theorem isCompact_preimage_comp_subdisc_of_isolated {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z))
+    {z : 𝔻} {r R : ℝ} (hc : ‖(z : ℂ)‖ + r ≤ 1) (hr : 0 < r) (hrR : r < R)
+    (hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) R → w = z) :
+    IsCompact ((σ.comp (subdisc z r hc hr)) ⁻¹' Z) := by
+  refine isCompact_preimage_comp_subdisc hσ hc hr fun w hw hwr ↦ ?_
+  have hwz := hiso w hw (by rwa [mem_ball, dist_eq_norm, hwr])
+  rw [hwz, sub_self, norm_zero] at hwr
+  exact hr.ne hwr
+
 /-! ### Local charges -/
 
 open Classical in
-/-- The **local charge** of a disc `σ` at `z ∈ 𝔻`: the eventual value, as the radius `r` tends to
-`0`, of the integer of `σ` on the round disc `B(z, r)`, with value `0` for a radius at which that
-disc is not defined or the restriction of `σ` does not have compact preimage of `Z`. At an isolated
-point of `σ⁻¹(Z)` it is the integer of `σ` on every small enough round disc about `z`
-(`TauCeti.PositiveCohomologyAssignment.localCharge_eq_charge_comp_subdisc`). -/
+/-- The **local charge** of a disc `σ` at `z ∈ 𝔻`: the limit, as the radius `r` tends to `0`, of
+the integer of `σ` on the round disc `B(z, r)`, with value `0` for a radius at which that disc is
+not defined or the restriction of `σ` does not have compact preimage of `Z`. It is meaningful when
+these integers are eventually constant, which holds at an isolated point of a compact `σ⁻¹(Z)`:
+there it is the integer of `σ` on every small enough round disc about `z`
+(`TauCeti.PositiveCohomologyAssignment.localCharge_eq_charge_comp_subdisc`). Otherwise, for
+instance at a non-isolated point of `σ⁻¹(Z)`, it is an unspecified junk value. -/
 def localCharge (σ : C(𝔻, Y)) (z : 𝔻) : ℤ :=
   limUnder (𝓝[>] (0 : ℝ)) fun r ↦
     if h : ∃ (hc : ‖(z : ℂ)‖ + r ≤ 1) (hr : 0 < r),
@@ -222,19 +237,14 @@ theorem localCharge_eq_charge_comp_subdisc {σ : C(𝔻, Y)} (hσ : IsCompact (�
     (hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) R → w = z)
     (h : IsCompact ((σ.comp (subdisc z r hc hr)) ⁻¹' Z)) :
     A.localCharge σ z = A.charge _ h := by
-  -- Every point of `σ⁻¹(Z)` on a circle `‖w - z‖ = r'` with `r' < R` is `z`, which is not on it.
-  have hadm : ∀ r', 0 < r' → r' < R → ∀ w, σ w ∈ Z → ‖(w : ℂ) - z‖ ≠ r' := by
-    intro r' hr' hr'R w hw hwr
-    have hwz := hiso w hw (by rw [mem_ball, dist_eq_norm, hwr]; exact hr'R)
-    rw [hwz, sub_self, norm_zero] at hwr
-    exact hr'.ne hwr
   refine Tendsto.limUnder_eq (tendsto_const_nhds.congr' ?_)
   filter_upwards [Ioc_mem_nhdsGT hr] with r' ⟨hr', hr'r⟩
   have hc' : ‖(z : ℂ)‖ + r' ≤ 1 := by linarith
-  have h' := isCompact_preimage_comp_subdisc hσ hc' hr' (hadm r' hr' (hr'r.trans_lt hrR))
+  have h' := isCompact_preimage_comp_subdisc_of_isolated hσ hc' hr' (hr'r.trans_lt hrR) hiso
   rw [dite_eq_left ⟨hc', hr', h'⟩]
   refine (A.charge_comp_subdisc_eq_of_le hc' hc hr' hr'r (fun w hw hwb ↦ ?_) _ h).symm
   rw [hiso w hw (ball_subset_ball hrR.le hwb)]
+  exact mem_ball_self hr'
 
 /-- The local charge vanishes at points that `σ` does not send into `Z`. -/
 theorem localCharge_eq_zero {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {z : 𝔻} (hz : σ z ∉ Z) :
@@ -247,26 +257,12 @@ theorem localCharge_eq_zero {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {z
   obtain ⟨ε, hε, hεK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl _ hzK
   have hmiss : ∀ w, σ w ∈ Z → (w : ℂ) ∉ ball (z : ℂ) ε := fun w hw hwb ↦ hεK hwb ⟨w, hw, rfl⟩
   obtain ⟨r, hr, hrε, hc⟩ := exists_pos_lt_and_norm_add_le_one z hε
-  have hadm : ∀ w, σ w ∈ Z → ‖(w : ℂ) - z‖ ≠ r := fun w hw hwr ↦
-    hmiss w hw (by rw [mem_ball, dist_eq_norm, hwr]; exact hrε)
-  rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrε (fun w hw hwb ↦ (hmiss w hw hwb).elim)
-    (isCompact_preimage_comp_subdisc hσ hc hr hadm)]
+  have hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) ε → w = z :=
+    fun w hw hwb ↦ (hmiss w hw hwb).elim
+  rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrε hiso
+    (isCompact_preimage_comp_subdisc_of_isolated hσ hc hr hrε hiso)]
   refine A.charge_eq_zero _ _ fun w hw ↦ hmiss _ hw ?_
   exact ball_subset_ball hrε.le (mem_range_subdisc.1 ⟨w, rfl⟩)
-
-/-- A point of a finite set `s` of the unit disc is isolated in `s`. -/
-private theorem exists_pos_forall_mem_ball_eq (s : Finset 𝔻) (z : 𝔻) :
-    ∃ R > 0, ∀ w ∈ s, (w : ℂ) ∈ ball (z : ℂ) R → w = z := by
-  have hev : ∀ᶠ R in 𝓝[>] (0 : ℝ), R ∈ Ioi 0 ∧ ∀ w ∈ s, w ≠ z → R < dist (w : ℂ) z := by
-    refine eventually_mem_nhdsWithin.and ((Finset.eventually_all s).2 fun w _ ↦ ?_)
-    by_cases hwz : w = z
-    · exact Eventually.of_forall fun _ h ↦ (h hwz).elim
-    · have hd : 0 < dist (w : ℂ) z := dist_pos.2 fun h ↦ hwz (coe_injective h)
-      exact ((eventually_lt_nhds hd).filter_mono nhdsWithin_le_nhds).mono fun _ h _ ↦ h
-  obtain ⟨R, hR, hRs⟩ := hev.exists
-  refine ⟨R, mem_Ioi.1 hR, fun w hw hwb ↦ ?_⟩
-  by_contra hwz
-  exact (hRs w hw hwz).not_gt (mem_ball.1 hwb)
 
 /-- **Additivity of local charges.** If `σ⁻¹(Z)` is the finite set `s`, the integer of `σ` is the
 sum of its local charges at the points of `s`. -/
@@ -322,12 +318,7 @@ theorem localCharge_pos {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) (u : �
     (hnc : ∀ ε > 0, ∃ w : 𝔻, dist (w : ℂ) z < ε ∧ σ w ≠ σ z) :
     0 < A.localCharge σ z := by
   obtain ⟨r, hr, hrR, hc⟩ := exists_pos_lt_and_norm_add_le_one z hR
-  have hadm : ∀ w, σ w ∈ Z → ‖(w : ℂ) - z‖ ≠ r := by
-    intro w hw hwr
-    have hwz := hiso w hw (by rw [mem_ball, dist_eq_norm, hwr]; exact hrR)
-    rw [hwz, sub_self, norm_zero] at hwr
-    exact hr.ne hwr
-  have h := isCompact_preimage_comp_subdisc hσ hc hr hadm
+  have h := isCompact_preimage_comp_subdisc_of_isolated hσ hc hr hrR hiso
   rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrR hiso h]
   set s := subdisc (z : ℂ) r hc hr
   have hs0 : s 0 = z := coe_injective (by simp [s])
@@ -354,9 +345,13 @@ theorem card_le_charge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)) (u : ℂ 
     (s.card : ℤ) ≤ A.charge σ h := by
   rw [A.charge_eq_sum_localCharge h s hs, Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
   refine Finset.sum_le_sum fun z hz ↦ ?_
-  obtain ⟨R, hR, hRs⟩ := exists_pos_forall_mem_ball_eq s z
-  exact A.localCharge_pos h u hu hhol ((hs z).2 hz) hR
-    (fun w hw hwb ↦ hRs w ((hs w).1 hw) hwb) (hnc z hz)
+  -- The other points of the finite set `s` form a closed set missing `z`.
+  classical
+  have hK : IsClosed (((↑) : 𝔻 → ℂ) '' ↑(s.erase z)) := ((s.erase z).finite_toSet.image _).isClosed
+  obtain ⟨R, hR, hRs⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) (by simp)
+  refine A.localCharge_pos h u hu hhol ((hs z).2 hz) hR (fun w hw hwb ↦ ?_) (hnc z hz)
+  by_contra hwz
+  exact hRs hwb ⟨w, Finset.mem_erase.2 ⟨hwz, (hs w).1 hw⟩, rfl⟩
 
 /-- Under the hypotheses of `TauCeti.PositiveCohomologyAssignment.card_le_charge`, the integer of
 `σ` vanishes exactly when `σ` misses `Z`. -/
