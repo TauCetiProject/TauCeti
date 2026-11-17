@@ -35,11 +35,12 @@ that two distinct faces share at most one edge, and that exactly six faces conta
 through Mathlib's `arrowAddAction`. The rotation `ρ(x, y) = (-y, x - y)` (`latticeRotation`) of
 order three acts on edges and faces, preserving colours and cycling the directions.
 
-This is Layer 1, item 1.1 of the TauCetiRoadmap roadmap `DimerModelsAndLozengeTilings`, following
-the lattice of Aggarwal (2023), Section 1.2.
+Lozenge tilings are unions of pairs of adjacent faces of this lattice, so these definitions are the
+combinatorial setting for lozenge tilings and the dimer model on the dual hexagonal graph. The
+conventions follow Aggarwal (2023), Section 1.2.
 -/
 
-@[expose] public section
+public section
 
 open scoped Pointwise
 
@@ -49,7 +50,7 @@ namespace TauCeti
 
 /-- The positive directions `e₁ = (1,0)`, `e₂ = (0,1)`, `e₃ = (1,1)` of the triangular lattice on
 `ℤ × ℤ`. The direction `k ∈ {1, 2, 3}` is stored as the index `k - 1 : Fin 3`. -/
-def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
+@[expose] def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
 
 /-- The direction `e₁ = (1, 0)`. -/
 @[simp] theorem latticeDir_zero : latticeDir 0 = (1, 0) := rfl
@@ -59,7 +60,7 @@ def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
 @[simp] theorem latticeDir_two : latticeDir 2 = (1, 1) := rfl
 
 /-- The rotation `ρ(x, y) = (-y, x - y)` of the triangular lattice, of order three. -/
-def latticeRotation : ℤ × ℤ ≃+ ℤ × ℤ where
+@[expose] def latticeRotation : ℤ × ℤ ≃+ ℤ × ℤ where
   toFun u := (-u.2, u.1 - u.2)
   invFun u := (u.2 - u.1, -u.1)
   left_inv u := by ext <;> simp
@@ -106,7 +107,7 @@ namespace TriEdge
 def target (e : TriEdge) : ℤ × ℤ := e.v + latticeDir e.k
 
 /-- `ℤ²` acts on edges by translation, `w +ᵥ (v, k) = (w + v, k)`. -/
-instance : AddAction (ℤ × ℤ) TriEdge where
+instance instAddActionTriEdge : AddAction (ℤ × ℤ) TriEdge where
   vadd w e := ⟨w + e.v, e.k⟩
   zero_vadd e := TriEdge.ext (zero_add e.v) rfl
   add_vadd w w' e := TriEdge.ext (add_assoc w w' e.v) rfl
@@ -122,14 +123,14 @@ instance : AddAction (ℤ × ℤ) TriEdge where
   simp [target, add_assoc]
 
 /-- Translations act freely on edges. -/
-instance : IsCancelVAdd (ℤ × ℤ) TriEdge where
+instance instIsCancelVAddTriEdge : IsCancelVAdd (ℤ × ℤ) TriEdge where
   left_cancel' w e e' h :=
     TriEdge.ext (by simpa using congrArg TriEdge.v h) (by simpa using congrArg TriEdge.k h)
   right_cancel' w w' e h := by simpa using congrArg TriEdge.v h
 
 /-- The rotation `ρ` on edges: the image of the segment from `v` to `v + e_k` is the segment
 between `ρ v` and `ρ (v + e_k)`, which has direction `k + 1`. -/
-def rotate (e : TriEdge) : TriEdge :=
+@[expose] def rotate (e : TriEdge) : TriEdge :=
   ⟨latticeRotation e.v - ![0, (1, 1), (1, 0)] e.k, e.k + 1⟩
 
 /-- `ρ` sends direction `k` to direction `k + 1`. -/
@@ -189,7 +190,7 @@ def edges (f : TriFace) : Finset TriEdge :=
   else {⟨f.v, 1⟩, ⟨f.v + (0, 1), 0⟩, ⟨f.v, 2⟩}
 
 /-- `ℤ²` acts on faces by translation, `w +ᵥ W(v) = W(w + v)` and `w +ᵥ B(v) = B(w + v)`. -/
-instance : AddAction (ℤ × ℤ) TriFace where
+instance instAddActionTriFace : AddAction (ℤ × ℤ) TriFace where
   vadd w f := ⟨w + f.v, f.isWhite⟩
   zero_vadd f := TriFace.ext (zero_add f.v) rfl
   add_vadd w w' f := TriFace.ext (add_assoc w w' f.v) rfl
@@ -201,13 +202,13 @@ instance : AddAction (ℤ × ℤ) TriFace where
 @[simp] theorem vadd_isWhite (w : ℤ × ℤ) (f : TriFace) : (w +ᵥ f).isWhite = f.isWhite := rfl
 
 /-- Translations act freely on faces. -/
-instance : IsCancelVAdd (ℤ × ℤ) TriFace where
+instance instIsCancelVAddTriFace : IsCancelVAdd (ℤ × ℤ) TriFace where
   left_cancel' w f f' h :=
     TriFace.ext (by simpa using congrArg TriFace.v h) (by simpa using congrArg TriFace.isWhite h)
   right_cancel' w w' f h := by simpa using congrArg TriFace.v h
 
 /-- The rotation `ρ` on faces: `W(v) ↦ W(ρ v - e₁)` and `B(v) ↦ B(ρ v - e₃)`. -/
-def rotate (f : TriFace) : TriFace :=
+@[expose] def rotate (f : TriFace) : TriFace :=
   ⟨latticeRotation f.v - if f.isWhite then (1, 0) else (1, 1), f.isWhite⟩
 
 /-- The rotation preserves colours. -/
@@ -250,11 +251,11 @@ namespace TriEdge
 
 /-- The white face containing an edge: `W(v)` for `(v, 1)`, `W(v - e₁)` for `(v, 2)` and `W(v)`
 for `(v, 3)`. -/
-def whiteFace (e : TriEdge) : TriFace := ⟨e.v - ![0, (1, 0), 0] e.k, true⟩
+@[expose] def whiteFace (e : TriEdge) : TriFace := ⟨e.v - ![0, (1, 0), 0] e.k, true⟩
 
 /-- The black face containing an edge: `B(v - e₂)` for `(v, 1)`, `B(v)` for `(v, 2)` and `B(v)`
 for `(v, 3)`. -/
-def blackFace (e : TriEdge) : TriFace := ⟨e.v - ![(0, 1), 0, 0] e.k, false⟩
+@[expose] def blackFace (e : TriEdge) : TriFace := ⟨e.v - ![(0, 1), 0, 0] e.k, false⟩
 
 /-- The white face of an edge is white. -/
 @[simp] theorem whiteFace_isWhite (e : TriEdge) : e.whiteFace.isWhite = true := rfl
@@ -325,7 +326,7 @@ theorem card_edges (f : TriFace) : f.edges.card = 3 := by
   obtain ⟨⟨a, b⟩, _ | _⟩ := f <;> simp [edges, TriEdge.ext_iff]
 
 /-- The edge of direction `k` of a face. -/
-def edge (f : TriFace) (k : Fin 3) : TriEdge :=
+@[expose] def edge (f : TriFace) (k : Fin 3) : TriEdge :=
   ⟨f.v + (if f.isWhite then ![0, (1, 0), 0] else ![(0, 1), 0, 0]) k, k⟩
 
 /-- The edge of direction `k` of a face has direction `k`. -/
@@ -337,7 +338,7 @@ theorem mem_edges_iff_eq_edge (f : TriFace) (e : TriEdge) : e ∈ f.edges ↔ e 
     simp [edges, edge, TriEdge.ext_iff, Prod.ext_iff]
 
 /-- The edge of direction `k` of a face is one of its edges. -/
-theorem edge_mem_edges (f : TriFace) (k : Fin 3) : f.edge k ∈ f.edges :=
+@[simp] theorem edge_mem_edges (f : TriFace) (k : Fin 3) : f.edge k ∈ f.edges :=
   (mem_edges_iff_eq_edge f _).2 rfl
 
 /-- Every face has exactly one edge of each direction. -/
@@ -375,10 +376,10 @@ end TriFace
 /-! ### Configurations -/
 
 /-- `ℤ²` acts on configurations by `(w +ᵥ ω) e = ω (-w +ᵥ e)` (Mathlib's `arrowAddAction`). -/
-instance : AddAction (ℤ × ℤ) (TriEdge → Bool) := arrowAddAction
+instance instAddActionConfiguration : AddAction (ℤ × ℤ) (TriEdge → Bool) := arrowAddAction
 
 /-- The value of a translated configuration at an edge. -/
-theorem vadd_configuration_apply (w : ℤ × ℤ) (ω : TriEdge → Bool) (e : TriEdge) :
+@[simp] theorem vadd_configuration_apply (w : ℤ × ℤ) (ω : TriEdge → Bool) (e : TriEdge) :
     (w +ᵥ ω) e = ω (-w +ᵥ e) := rfl
 
 /-- The edge set of `w +ᵥ ω` is the translate by `w` of the edge set of `ω`. -/

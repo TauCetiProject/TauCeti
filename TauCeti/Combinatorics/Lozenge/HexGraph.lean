@@ -25,10 +25,12 @@ onto the edge set of `hexGraph`. Translations (`hexGraphTranslate`) and the rota
 (`hexGraphRotate`) act by graph automorphisms, and the six faces at a vertex form a `6`-cycle
 (`isCycle_hexCycleAt`).
 
-This is Layer 1, item 1.2 of the TauCetiRoadmap roadmap `DimerModelsAndLozengeTilings`.
+A lozenge tiling of a region is the same as a perfect matching (a dimer covering) of the
+corresponding subgraph of `hexGraph`, which is how the dimer model enters the study of lozenge
+tilings.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -103,17 +105,18 @@ def TriFace.neighbors (f : TriFace) : Finset TriFace :=
   else {⟨f.v, true⟩, ⟨f.v - (1, 0), true⟩, ⟨f.v + (0, 1), true⟩}
 
 /-- The neighbours of a face are the faces adjacent to it. -/
-theorem TriFace.mem_neighbors {f g : TriFace} : g ∈ f.neighbors ↔ hexGraph.Adj f g := by
+@[simp] theorem TriFace.mem_neighbors {f g : TriFace} : g ∈ f.neighbors ↔ hexGraph.Adj f g := by
   obtain ⟨v, _ | _⟩ := f
   · simp [neighbors, hexGraph_adj_black]
   · simp [neighbors, hexGraph_adj_white]
 
 /-- The dual hexagonal graph is locally finite. -/
-instance : hexGraph.LocallyFinite := fun f =>
+instance instLocallyFiniteHexGraph : hexGraph.LocallyFinite := fun f =>
   Fintype.ofFinset f.neighbors fun _ => TriFace.mem_neighbors
 
 /-- The neighbour finset of a face is `TriFace.neighbors`. -/
-theorem hexGraph_neighborFinset (f : TriFace) : hexGraph.neighborFinset f = f.neighbors := by
+@[simp] theorem hexGraph_neighborFinset (f : TriFace) :
+    hexGraph.neighborFinset f = f.neighbors := by
   ext g
   simp [TriFace.mem_neighbors]
 
@@ -144,7 +147,7 @@ theorem existsUnique_mem_edges_of_hexGraph_adj {f g : TriFace} (h : hexGraph.Adj
 
 /-- Sending an edge of the triangular lattice to the pair of its white and black faces is a
 bijection from `TriEdge` onto the edge set of `hexGraph`. -/
-noncomputable def TriEdge.equivHexGraphEdgeSet : TriEdge ≃ hexGraph.edgeSet :=
+@[expose] noncomputable def TriEdge.equivHexGraphEdgeSet : TriEdge ≃ hexGraph.edgeSet :=
   Equiv.ofBijective (fun e => ⟨s(e.whiteFace, e.blackFace), e.hexGraph_adj⟩) <| by
     constructor
     · intro e e' h
@@ -165,7 +168,7 @@ noncomputable def TriEdge.equivHexGraphEdgeSet : TriEdge ≃ hexGraph.edgeSet :=
     (e.equivHexGraphEdgeSet : Sym2 TriFace) = s(e.whiteFace, e.blackFace) := rfl
 
 /-- Translation by `w` is an automorphism of `hexGraph`. -/
-def hexGraphTranslate (w : ℤ × ℤ) : hexGraph ≃g hexGraph where
+@[expose] def hexGraphTranslate (w : ℤ × ℤ) : hexGraph ≃g hexGraph where
   toEquiv := AddAction.toPerm w
   map_rel_iff' {f g} := by
     simp only [AddAction.toPerm_apply, hexGraph_adj, ne_eq, vadd_left_cancel_iff]
@@ -180,14 +183,14 @@ def hexGraphTranslate (w : ℤ × ℤ) : hexGraph ≃g hexGraph where
     hexGraphTranslate w f = w +ᵥ f := rfl
 
 /-- The rotation `ρ` of order three, as a permutation of the faces. -/
-def TriFace.rotateEquiv : TriFace ≃ TriFace where
+@[expose] def TriFace.rotateEquiv : TriFace ≃ TriFace where
   toFun := rotate
   invFun f := f.rotate.rotate
   left_inv := rotate_rotate_rotate
   right_inv := rotate_rotate_rotate
 
 /-- The rotation `ρ` is an automorphism of `hexGraph`. -/
-def hexGraphRotate : hexGraph ≃g hexGraph where
+@[expose] def hexGraphRotate : hexGraph ≃g hexGraph where
   toEquiv := TriFace.rotateEquiv
   map_rel_iff' {f g} := by
     simp only [TriFace.rotateEquiv, Equiv.coe_fn_mk, hexGraph_adj, ne_eq,
@@ -203,7 +206,7 @@ def hexGraphRotate : hexGraph ≃g hexGraph where
 
 /-- The closed walk `W(u) – B(u) – W(u - e₁) – B(u - e₃) – W(u - e₃) – B(u - e₂) – W(u)` through
 the six faces at the vertex `u`, across the six edges at `u`. -/
-def hexCycleAt (u : ℤ × ℤ) : hexGraph.Walk ⟨u, true⟩ ⟨u, true⟩ :=
+@[expose] def hexCycleAt (u : ℤ × ℤ) : hexGraph.Walk ⟨u, true⟩ ⟨u, true⟩ :=
   have h₁ : hexGraph.Adj ⟨u, true⟩ ⟨u, false⟩ := (hexGraph_adj_white u _).2 (Or.inl rfl)
   have h₂ : hexGraph.Adj ⟨u, false⟩ ⟨u - (1, 0), true⟩ :=
     (hexGraph_adj_black u _).2 (Or.inr (Or.inl rfl))
