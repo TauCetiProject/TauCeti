@@ -135,8 +135,9 @@ theorem isCoveringMapOn_of_equivariant_trivialization (hρ : IsCoveringMap ρ)
       rw [hproj, hσ_proj]
       exact hpW.2
     rw [t.preimageHomeomorph_apply hWt]
-    refine Prod.ext (Subtype.ext (hproj p.1)) ?_
-    change (t (φ p.1)).2 = c y * ρ g
+    simp only [Set.restrictPreimage_coe, shift, c, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk,
+      Prod.mk.injEq]
+    refine ⟨Subtype.ext (hproj p.1), ?_⟩
     rw [hp_eq, hequiv, ht (ρ g) (φ (σ y)) hq_mem]
   rw [hlocal]
   exact ((((IsCoveringMap.id.prodMap hρ).homeomorph_comp shift).homeomorph_comp

@@ -197,22 +197,6 @@ theorem ncard_preimage_toFrame_singleton (s : SpinStructure F E n)
       s.toFrame_eq_toFrame_iff (p := q) (q := p)
   rw [hset, ncard_pair (s.op_negOne_smul_ne_self p).symm]
 
-/-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` is finite-dimensional. -/
-theorem finiteDimensional_fiber (s : SpinStructure F E n) (x : X) :
-    FiniteDimensional ℝ (E x) := by
-  obtain ⟨p⟩ := s.nonempty_P x
-  have hproj : (s.toFrame ⟨x, p⟩).proj = x := s.proj_toFrame ⟨x, p⟩
-  exact hproj ▸ (s.toFrame ⟨x, p⟩).frame.toLinearEquiv.finiteDimensional
-
-/-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` has dimension `n`. -/
-theorem finrank_fiber (s : SpinStructure F E n) (x : X) :
-    Module.finrank ℝ (E x) = n := by
-  obtain ⟨p⟩ := s.nonempty_P x
-  have hproj : (s.toFrame ⟨x, p⟩).proj = x := s.proj_toFrame ⟨x, p⟩
-  have h := (s.toFrame ⟨x, p⟩).frame.toLinearEquiv.finrank_eq
-  rw [hproj, finrank_euclideanSpace_fin] at h
-  exact h.symm
-
 /-- Acting on `P` by `Spin(n)` preserves the induced point in the orientation double cover. -/
 theorem toOrientationCover_toFrame_op_smul (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (g : realCliffordSpinGroupZero n)
@@ -519,23 +503,6 @@ variable {X : Type*} [TopologicalSpace X]
   [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
   [FiberBundle F E] [VectorBundle ℝ F E]
   {n : ℕ} [NeZero n]
-
-/-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
-`n` is finite-dimensional. -/
-theorem finiteDimensional_model [Nonempty X] (s : SpinStructure F E n) :
-    FiniteDimensional ℝ F := by
-  obtain ⟨x⟩ := ‹Nonempty X›
-  have := s.finiteDimensional_fiber x
-  exact ((trivializationAt F E x).linearEquivAt ℝ x
-    (FiberBundle.mem_baseSet_trivializationAt' x)).finiteDimensional
-
-/-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
-`n` has dimension `n`. -/
-theorem finrank_model [Nonempty X] (s : SpinStructure F E n) :
-    Module.finrank ℝ F = n := by
-  obtain ⟨x⟩ := ‹Nonempty X›
-  rw [← ((trivializationAt F E x).linearEquivAt ℝ x
-    (FiberBundle.mem_baseSet_trivializationAt' x)).finrank_eq, s.finrank_fiber x]
 
 /-- The **orientation of a vector bundle induced by a Spin structure** `s` and a model orientation
 `o` of `EuclideanSpace ℝ (Fin n)`: at each base point `x`, every point of `s.P x` transports `o`

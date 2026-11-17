@@ -115,6 +115,41 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
 instance nonempty_P (s : SpinStructure F E n) (x : X) : Nonempty (s.P x) :=
   ⟨(FiberBundle.homeomorphAt (realCliffordSpinGroupZero n) s.P x).symm 1⟩
 
+/-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` is finite-dimensional. -/
+theorem finiteDimensional_fiber (s : SpinStructure F E n) (x : X) :
+    FiniteDimensional ℝ (E x) := by
+  obtain ⟨p⟩ := s.nonempty_P x
+  have hproj : (s.toFrame ⟨x, p⟩).proj = x := s.proj_toFrame ⟨x, p⟩
+  exact hproj ▸ (s.toFrame ⟨x, p⟩).frame.toLinearEquiv.finiteDimensional
+
+/-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` has dimension `n`. -/
+theorem finrank_fiber (s : SpinStructure F E n) (x : X) :
+    Module.finrank ℝ (E x) = n := by
+  obtain ⟨p⟩ := s.nonempty_P x
+  have hproj : (s.toFrame ⟨x, p⟩).proj = x := s.proj_toFrame ⟨x, p⟩
+  have h := (s.toFrame ⟨x, p⟩).frame.toLinearEquiv.finrank_eq
+  rw [hproj, finrank_euclideanSpace_fin] at h
+  exact h.symm
+
+/-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
+`n` is finite-dimensional. -/
+theorem finiteDimensional_model [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiberBundle F E] [VectorBundle ℝ F E] [Nonempty X] (s : SpinStructure F E n) :
+    FiniteDimensional ℝ F := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have := s.finiteDimensional_fiber x
+  exact ((trivializationAt F E x).linearEquivAt ℝ x
+    (FiberBundle.mem_baseSet_trivializationAt' x)).finiteDimensional
+
+/-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
+`n` has dimension `n`. -/
+theorem finrank_model [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiberBundle F E] [VectorBundle ℝ F E] [Nonempty X] (s : SpinStructure F E n) :
+    Module.finrank ℝ F = n := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  rw [← ((trivializationAt F E x).linearEquivAt ℝ x
+    (FiberBundle.mem_baseSet_trivializationAt' x)).finrank_eq, s.finrank_fiber x]
+
 /-! ### Equivalences -/
 
 /-- An **equivalence of Spin structures** `s ≃ t` on the same bundle: a family of bijections
