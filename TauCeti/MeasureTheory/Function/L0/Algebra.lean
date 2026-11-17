@@ -12,8 +12,8 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 public import Mathlib.Algebra.Ring.TransferInstance
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # Algebraic operations on random variables
@@ -818,38 +818,6 @@ instance instIsUniformAddGroup [AddGroup E] [IsUniformAddGroup E] :
       (f.1 - f.2) (g.1 - g.2) hη.le
     linarith
 
-/-- Pointwise bounded-gauge estimate for a binary `K`-Lipschitz map with `1 ≤ K`: the gauge
-distance of outputs is bounded by `K` times the sum of the component gauge distances. -/
-private theorem dist_div_one_add_le_of_lipschitzWith_prod {E₁ E₂ F : Type*}
-    [PseudoMetricSpace E₁] [PseudoMetricSpace E₂] [PseudoMetricSpace F]
-    {K : ℝ≥0} {f : E₁ × E₂ → F} (hf : LipschitzWith K f) (hK1 : 1 ≤ K)
-    (p q : E₁ × E₂) :
-    dist (f p) (f q) / (1 + dist (f p) (f q)) ≤
-      (K : ℝ) * (dist p.1 q.1 / (1 + dist p.1 q.1)) +
-        (K : ℝ) * (dist p.2 q.2 / (1 + dist p.2 q.2)) := by
-  have hK1' : (1 : ℝ) ≤ K := by exact_mod_cast hK1
-  have hlip : dist (f p) (f q) ≤ (K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2 := by
-    calc dist (f p) (f q)
-        ≤ (K : ℝ) * max (dist p.1 q.1) (dist p.2 q.2) := by
-            simpa only [Prod.dist_eq] using hf.dist_le_mul p q
-      _ ≤ (K : ℝ) * (dist p.1 q.1 + dist p.2 q.2) :=
-          mul_le_mul_of_nonneg_left
-            (max_le (le_add_of_nonneg_right dist_nonneg) (le_add_of_nonneg_left dist_nonneg))
-            K.coe_nonneg
-      _ = (K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2 := by ring
-  calc dist (f p) (f q) / (1 + dist (f p) (f q))
-      ≤ ((K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2) /
-          (1 + ((K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2)) :=
-        div_one_add_mono dist_nonneg hlip
-    _ ≤ (K : ℝ) * dist p.1 q.1 / (1 + (K : ℝ) * dist p.1 q.1) +
-          (K : ℝ) * dist p.2 q.2 / (1 + (K : ℝ) * dist p.2 q.2) :=
-        div_one_add_add_le (mul_nonneg K.coe_nonneg dist_nonneg)
-          (mul_nonneg K.coe_nonneg dist_nonneg)
-    _ ≤ (K : ℝ) * (dist p.1 q.1 / (1 + dist p.1 q.1)) +
-          (K : ℝ) * (dist p.2 q.2 / (1 + dist p.2 q.2)) :=
-        add_le_add (mul_div_one_add_mul_le hK1' dist_nonneg)
-          (mul_div_one_add_mul_le hK1' dist_nonneg)
-
 /-- On a finite measure space, addition on `L0 E μ` is Lipschitz whenever addition on `E` is
 Lipschitz. -/
 instance instLipschitzAdd [AddMonoid E] [LipschitzAdd E] : LipschitzAdd (L0 E μ) where
@@ -865,7 +833,7 @@ instance instLipschitzAdd [AddMonoid E] [LipschitzAdd E] : LipschitzAdd (L0 E μ
             (K : ℝ) * (dist (p.2 x) (q.2 x) / (1 + dist (p.2 x) (q.2 x))) := by
       filter_upwards [coeFn_add p.1 p.2, coeFn_add q.1 q.2] with x hpx hqx
       rw [hpx, hqx, Pi.add_apply, Pi.add_apply]
-      exact dist_div_one_add_le_of_lipschitzWith_prod hlip hK1 (p.1 x, p.2 x) (q.1 x, q.2 x)
+      exact hlip.dist_div_one_add_dist_prod_le hK1 (p.1 x, p.2 x) (q.1 x, q.2 x)
     have hint₁ := (integrable_dist_div_one_add_dist p.1 q.1).const_mul (K : ℝ)
     have hint₂ := (integrable_dist_div_one_add_dist p.2 q.2).const_mul (K : ℝ)
     calc dist (p.1 + p.2) (q.1 + q.2)
