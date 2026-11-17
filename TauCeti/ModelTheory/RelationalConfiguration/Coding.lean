@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
+public import TauCeti.ModelTheory.Infinitary.IndexCoding
 
 /-!
 # The query code of a configuration
 
 When each arity has countably many relation symbols, the atoms over `ℕ` are countable, and
 reading a configuration along `Encodable.decode` for `Encodable.ofCountable` gives its **query
-code**, a sequence of Booleans padded with `false` where decoding fails. The query code is a
+code**, a sequence of Booleans padded with `false` where decoding fails: the padding
+`TauCeti.IndexCoding.pad` of its coordinates along `TauCeti.IndexCoding.ofEncodableWith`. The
+query code is a
 closed embedding of the coding space into Cantor space `ℕ → Bool`. The decoder need not be
 injective on the indices where it succeeds, so the range is the set of sequences that are `false`
 where decoding fails and agree at any two indices decoding to the same atom.
@@ -48,35 +51,39 @@ variable [∀ n, Countable (L.Relations n)]
 `Encodable.ofCountable` returns at `n`, and `false` where decoding fails. It embeds the coding space
 into Cantor space (`isClosedEmbedding_queryCode`). -/
 noncomputable def queryCode (c : RelationalConfiguration L ℕ) : ℕ → Bool :=
-  letI : Encodable (Atom L ℕ) := Encodable.ofCountable _
-  fun n => (Encodable.decode n : Option (Atom L ℕ)).elim false c.eval
+  (IndexCoding.ofEncodableWith (Encodable.ofCountable (Atom L ℕ))).pad false c.eval
+
+/-- The query code is the padding of the coordinates along the coding of `Encodable.ofCountable`. -/
+theorem queryCode_def (c : RelationalConfiguration L ℕ) :
+    queryCode c =
+      (IndexCoding.ofEncodableWith (Encodable.ofCountable (Atom L ℕ))).pad false c.eval :=
+  (rfl)
 
 /-- The query code reads, at `n`, the atom decoded at `n`, and is `false` where decoding fails. -/
 theorem queryCode_apply (c : RelationalConfiguration L ℕ) (n : ℕ) :
     queryCode c n =
-      (@Encodable.decode (Atom L ℕ) (Encodable.ofCountable _) n).elim false c.eval := (rfl)
+      (@Encodable.decode (Atom L ℕ) (Encodable.ofCountable _) n).elim false c.eval := by
+  rw [queryCode_def, IndexCoding.pad_apply, IndexCoding.ofEncodableWith_decode]
 
 /-- The query code reads the atom `a` at its index `Encodable.encode a`. -/
 @[simp]
 theorem queryCode_encode (c : RelationalConfiguration L ℕ) (a : Atom L ℕ) :
     queryCode c (@Encodable.encode (Atom L ℕ) (Encodable.ofCountable _) a) = c.eval a := by
-  let : Encodable (Atom L ℕ) := Encodable.ofCountable _
-  rw [queryCode_apply, Encodable.encodek]
-  rfl
+  rw [queryCode_def, ← IndexCoding.ofEncodableWith_encode, IndexCoding.pad_encode]
 
 /-- The query code is `false` at the indices where decoding fails. -/
 theorem queryCode_of_decode_eq_none (c : RelationalConfiguration L ℕ) {n : ℕ}
     (hn : @Encodable.decode (Atom L ℕ) (Encodable.ofCountable _) n = none) :
     queryCode c n = false := by
-  rw [queryCode_apply, hn]
-  rfl
+  rw [queryCode_def, IndexCoding.pad_of_decode_none]
+  rwa [IndexCoding.ofEncodableWith_decode]
 
 /-- The query code is `c.eval a` at an index decoding to `a`. -/
 theorem queryCode_of_decode_eq_some (c : RelationalConfiguration L ℕ) {n : ℕ} {a : Atom L ℕ}
     (hn : @Encodable.decode (Atom L ℕ) (Encodable.ofCountable _) n = some a) :
     queryCode c n = c.eval a := by
-  rw [queryCode_apply, hn]
-  rfl
+  rw [queryCode_def, IndexCoding.pad_of_decode_some]
+  rwa [IndexCoding.ofEncodableWith_decode]
 
 /-- The query code is continuous: each coordinate reads one atom or is constantly `false`. -/
 @[fun_prop]
