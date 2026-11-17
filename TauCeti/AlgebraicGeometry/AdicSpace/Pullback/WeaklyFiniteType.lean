@@ -52,19 +52,23 @@ Given *any* pullback square `IsPullback p q f g` in `AdicSpace` with `f : X ⟶ 
 chart `U ⊆ X`, `V ⊆ S` of `f` at `p(z)` and a stably sheafy affinoid open `W ⊆ g⁻¹(V)` of `Y` at
 `q(z)`. Both `Z|_{p⁻¹(U) ∩ q⁻¹(W)}` (`isPullback_restrict_inf_of_isPullback`) and
 `Spa((C, C⁺) ⊗̂_A (B, B⁺))` are pullbacks of the restricted cospan `(X|_U ⟶ S, Y|_W ⟶ S)`, so
-uniqueness of pullbacks (`IsPullback.isoIsPullback`) identifies `q` locally with `Spa(inr)` and `p`
-locally with `Spa(inl)`. From the ring- and pair-level base-change theorems
+uniqueness of pullbacks (`IsPullback.isoIsPullback`) identifies `q` locally with `Spa(inr)`. From
+the ring- and pair-level base-change theorems
 (`TauCeti.Huber.CompletedTensor.isTopologicallyFiniteType_inr`,
 `TauCeti.Huber.Pair.completedTensor.isPlusWeaklyFiniteType_inr`,
-`TauCeti.Huber.Pair.completedTensor.isTopologicallyFiniteType_inr`,
-`TauCeti.Huber.CompletedTensor.isAdicHom_inl`), this yields base-change stability of:
+`TauCeti.Huber.Pair.completedTensor.isTopologicallyFiniteType_inr`), this yields base-change
+stability of:
 
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType`,
-* `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType`,
-* `TauCeti.PreAdicSpace.LocallyOfFiniteType` (along adic base change),
-* `TauCeti.AdicSpace.IsAdic` (along base change locally of weakly finite type), and
-* `TauCeti.AdicSpace.IsLocallyStablySheafy`, `TauCeti.AdicSpace.IsLocallyNoetherian`, and
-  `TauCeti.AdicSpace.IsLocallyHuberStandard` on the fibre product.
+* `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType`, and
+* `TauCeti.PreAdicSpace.LocallyOfFiniteType` (along adic base change).
+
+Base-change stability of `TauCeti.AdicSpace.IsAdic` along morphisms locally of weakly finite type
+then follows directly from `LocallyOfWeaklyFiniteType.of_isPullback` via composition
+(`IsAdic.isMultiplicative`) and cancellation (`IsAdic.of_comp`). Permanence of
+`TauCeti.AdicSpace.IsLocallyStablySheafy`, `TauCeti.AdicSpace.IsLocallyNoetherian`, and
+`TauCeti.AdicSpace.IsLocallyHuberStandard` on the fibre product likewise follows immediately from
+`LocallyOfWeaklyFiniteType.of_isPullback`.
 
 ## Main results
 
@@ -427,110 +431,10 @@ section BaseChange
 
 variable {Z X Y S : AdicSpace.{u}}
 
-/-- Local completed-tensor chart data around a point `z` of a pullback `Z` in `AdicSpace`. -/
-private structure CompletedTensorChart
-    (Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop)
-    (p : Z ⟶ X) (q : Z ⟶ Y) (z : Z.obj) : Type (u + 1) where
-  O : Opens Z.obj
-  hzO : z ∈ O
-  U : Opens X.obj
-  hOU : O ≤ (Opens.map p.hom.base).obj U
-  W : Opens Y.obj
-  hOW : O ≤ (Opens.map q.hom.base).obj W
-  A : Type u
-  B : Type u
-  C : Type u
-  [commRingA : CommRing A]
-  [uniformSpaceA : UniformSpace A]
-  [isUniformAddGroupA : IsUniformAddGroup A]
-  [isTopologicalRingA : IsTopologicalRing A]
-  [completeSpaceA : CompleteSpace A]
-  [t2SpaceA : T2Space A]
-  [isHuberRingA : IsHuberRing A]
-  [commRingB : CommRing B]
-  [uniformSpaceB : UniformSpace B]
-  [isUniformAddGroupB : IsUniformAddGroup B]
-  [isTopologicalRingB : IsTopologicalRing B]
-  [completeSpaceB : CompleteSpace B]
-  [t2SpaceB : T2Space B]
-  [isHuberRingB : IsHuberRing B]
-  [commRingC : CommRing C]
-  [uniformSpaceC : UniformSpace C]
-  [isUniformAddGroupC : IsUniformAddGroup C]
-  [isTopologicalRingC : IsTopologicalRing C]
-  [completeSpaceC : CompleteSpace C]
-  [t2SpaceC : T2Space C]
-  [isHuberRingC : IsHuberRing C]
-  [algebraAC : Algebra A C]
-  [algebraAB : Algebra A B]
-  [isAdicHomAC : IsAdicHom (algebraMap A C)]
-  [isAdicHomAB : IsAdicHom (algebraMap A B)]
-  SA : Pair A
-  TB : Pair B
-  PB : PairOfDefinition B
-  hPB : PB.ringOfDefinition ≤ TB.plus
-  UC : Pair C
-  PC : PairOfDefinition C
-  hPC : PC.ringOfDefinition ≤ UC.plus
-  φ : Pair.Hom SA UC
-  hφQ : Q φ
-  hplus : SA.plus ≤ TB.plus.comap (algebraMap A B)
-  hφA : φ.toRingHom = algebraMap A C
-  PE : PairOfDefinition (CompletedTensor A C B)
-  hPE : PE.ringOfDefinition ≤ (UC.completedTensor A TB).plus
-  hsheafE : Presheaf.IsSheaf
-    (Opens.grothendieckTopology ↥(spa (UC.completedTensor A TB).plus))
-    (presentationLimitPresheaf PE (UC.completedTensor A TB).plus)
-  eO : Z.obj.restrict O.isOpenEmbedding ≅
-    presentationLimitPreAdicSpace PE (UC.completedTensor A TB).plus
-      (UC.completedTensor A TB).isRingOfIntegralElements.isPowerBounded_of_mem hPE
-  eU₀ : X.obj.restrict U.isOpenEmbedding ≅
-    presentationLimitPreAdicSpace PC UC.plus
-      UC.isRingOfIntegralElements.isPowerBounded_of_mem hPC
-  eW₀ : Y.obj.restrict W.isOpenEmbedding ≅
-    presentationLimitPreAdicSpace PB TB.plus
-      TB.isRingOfIntegralElements.isPowerBounded_of_mem hPB
-  hfac_q : Z.obj.ofRestrict O.isOpenEmbedding ≫ q.hom =
-    eO.hom ≫ presentationLimitPreAdicSpaceComap
-      (Pair.completedTensor.inr A UC TB).toRingHom
-      (Pair.completedTensor.inr A UC TB).continuous_toRingHom
-      (Pair.completedTensor.inr A UC TB).map_mem_plus
-      TB.isRingOfIntegralElements.isPowerBounded_of_mem
-      (UC.completedTensor A TB).isRingOfIntegralElements.isPowerBounded_of_mem hPB hPE
-      hsheafE ≫ eW₀.inv ≫ Y.obj.ofRestrict W.isOpenEmbedding
-  hfac_p : Z.obj.ofRestrict O.isOpenEmbedding ≫ p.hom =
-    eO.hom ≫ presentationLimitPreAdicSpaceComap
-      (Pair.completedTensor.inl A UC TB).toRingHom
-      (Pair.completedTensor.inl A UC TB).continuous_toRingHom
-      (Pair.completedTensor.inl A UC TB).map_mem_plus
-      UC.isRingOfIntegralElements.isPowerBounded_of_mem
-      (UC.completedTensor A TB).isRingOfIntegralElements.isPowerBounded_of_mem hPC hPE
-      hsheafE ≫ eU₀.inv ≫ X.obj.ofRestrict U.isOpenEmbedding
-
-attribute [local instance]
-  CompletedTensorChart.commRingA CompletedTensorChart.uniformSpaceA
-  CompletedTensorChart.isUniformAddGroupA CompletedTensorChart.isTopologicalRingA
-  CompletedTensorChart.completeSpaceA CompletedTensorChart.t2SpaceA
-  CompletedTensorChart.isHuberRingA
-  CompletedTensorChart.commRingB CompletedTensorChart.uniformSpaceB
-  CompletedTensorChart.isUniformAddGroupB CompletedTensorChart.isTopologicalRingB
-  CompletedTensorChart.completeSpaceB CompletedTensorChart.t2SpaceB
-  CompletedTensorChart.isHuberRingB
-  CompletedTensorChart.commRingC CompletedTensorChart.uniformSpaceC
-  CompletedTensorChart.isUniformAddGroupC CompletedTensorChart.isTopologicalRingC
-  CompletedTensorChart.completeSpaceC CompletedTensorChart.t2SpaceC
-  CompletedTensorChart.isHuberRingC
-  CompletedTensorChart.algebraAC CompletedTensorChart.algebraAB
-  CompletedTensorChart.isAdicHomAC CompletedTensorChart.isAdicHomAB
-
-/-- Pointwise completed-tensor chart identification on a pullback square `IsPullback p q f g` in
-`AdicSpace`: when `f` satisfies `chartLocally Q` (for a right-cancellative property `Q` implying
-topological finite type on rings), `g` is adic, and `Y` is locally stably sheafy, every point `z` of
-`Z` lies in an open `O = p⁻¹(U) ∩ q⁻¹(W)` isomorphic to `Spa((C, C⁺) ⊗̂_A (B, B⁺))` under which `q`
-is induced by `Pair.completedTensor.inr` and `p` is induced by `Pair.completedTensor.inl`. -/
-private theorem nonempty_completedTensorChart_of_isPullback
+/-- Parametric base-change stability of `chartLocally Q` along adic morphisms out of locally stably
+sheafy adic spaces whenever `Q` implies topological finite type on rings, cancels on the right, and
+passes to `Pair.completedTensor.inr`. -/
+private theorem chartLocally_of_isPullback
     (Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
       {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
       {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop)
@@ -547,10 +451,23 @@ private theorem nonempty_completedTensorChart_of_isPullback
       [IsTopologicalRing C] [CompleteSpace C] [T2Space C] [IsHuberRing C] {UC : Pair C}
       {ιA : Pair.Hom SA SA₁} {φ₁ : Pair.Hom SA₁ UC},
       Q (φ₁.comp ιA) → Q φ₁)
+    (hQbc : ∀ {A B C : Type u}
+      [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+      [CompleteSpace A] [T2Space A] [IsHuberRing A]
+      [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+      [CompleteSpace B] [T2Space B] [IsHuberRing B]
+      [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
+      [CompleteSpace C] [T2Space C] [IsHuberRing C]
+      [Algebra A C] [Algebra A B] [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap A B)]
+      {SA : Pair A} {UC : Pair C} {TB : Pair B} {φ : Pair.Hom SA UC},
+      SA.plus ≤ TB.plus.comap (algebraMap A B) →
+      Q φ → φ.toRingHom = algebraMap A C →
+      Q (Pair.completedTensor.inr A UC TB))
     {p : Z ⟶ X} {q : Z ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S}
     (hs : IsPullback p q f g) (hf : chartLocally Q f.hom)
-    (hg : IsAdic g) (hY : Y.IsLocallyStablySheafy) (z : Z.obj) :
-    Nonempty (CompletedTensorChart Q p q z) := by
+    (hg : IsAdic g) (hY : Y.IsLocallyStablySheafy) :
+    chartLocally Q q.hom := by
+  refine (chartLocally_iff q.hom).mpr fun z ↦ ?_
   -- 1. Choose a complete Hausdorff chart `(U, V)` of `f` around `p(z)`.
   obtain ⟨U, hzpU, V, hUV, A, _, _, _, _, _, _, _, SA, PA, hPA,
     C, _, _, _, _, _, _, _, UC, PC, hPC, φ, hφQ, hsheafC, eU₀, eV₀, hfac_f⟩ :=
@@ -619,87 +536,15 @@ private theorem nonempty_completedTensorChart_of_isPullback
   have hpull_Z := isPullback_restrict_inf_of_isPullback hs U W
   let eO : Z.restrict O ≅ ofPresentation WE PE hPE hsheafE :=
     hpull_Z.isoIsPullback _ _ hpull_aff
-  have heO_p : Z.ofRestrict O ≫ p = eO.hom ≫ πC ≫ eU.inv ≫ X.ofRestrict U := by
-    have hcomp := congrArg (· ≫ X.ofRestrict U) (hpull_Z.isoIsPullback_hom_fst _ _ hpull_aff)
-    simpa only [Category.assoc, liftRestrict_ofRestrict] using hcomp.symm
   have heO_q : Z.ofRestrict O ≫ q = eO.hom ≫ πB ≫ eW.inv ≫ Y.ofRestrict W := by
     have hcomp := congrArg (· ≫ Y.ofRestrict W) (hpull_Z.isoIsPullback_hom_snd _ _ hpull_aff)
     simpa only [Category.assoc, liftRestrict_ofRestrict] using hcomp.symm
-  exact ⟨{
-    O := O
-    hzO := hzO
-    U := U
-    hOU := inf_le_left
-    W := W
-    hOW := inf_le_right
-    A := A
-    B := B
-    C := C
-    SA := SA
-    TB := TB
-    PB := PB
-    hPB := hPB
-    UC := UC
-    PC := PC
-    hPC := hPC
-    φ := φ
-    hφQ := hφQ
-    hplus := hplus
-    hφA := hφA
-    PE := PE
-    hPE := hPE
-    hsheafE := hsheafE
-    eO := (ObjectProperty.ι PreAdicSpace.isAdic).mapIso eO
-    eU₀ := eU₀
-    eW₀ := eW₀
-    hfac_q := ofRestrict_comp_hom_of_comapOfPresentation PB PE hPB hPE hsheafB hsheafE _ eO eW₀
-      heO_q
-    hfac_p := ofRestrict_comp_hom_of_comapOfPresentation PC PE hPC hPE hsheafC hsheafE _ eO eU₀
-      heO_p }⟩
-
-/-- Parametric base-change stability of `chartLocally Q` along adic morphisms out of locally stably
-sheafy adic spaces whenever `Q` implies topological finite type on rings, cancels on the right, and
-passes to `Pair.completedTensor.inr`. -/
-private theorem chartLocally_of_isPullback
-    (Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop)
-    (hQtft : ∀ {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
-      [IsTopologicalRing A] [CompleteSpace A] [T2Space A] [IsHuberRing A] {SA : Pair A}
-      {C : Type u} [CommRing C] [UniformSpace C] [IsUniformAddGroup C]
-      [IsTopologicalRing C] [CompleteSpace C] [T2Space C] [IsHuberRing C] {UC : Pair C}
-      {φ : Pair.Hom SA UC}, Q φ → IsTopologicallyFiniteType φ.toRingHom)
-    (hQcomp : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {SA : Pair A}
-      {A₁ : Type u} [CommRing A₁] [UniformSpace A₁] [IsUniformAddGroup A₁]
-      [IsTopologicalRing A₁] [CompleteSpace A₁] [T2Space A₁] [IsHuberRing A₁] {SA₁ : Pair A₁}
-      {C : Type u} [CommRing C] [UniformSpace C] [IsUniformAddGroup C]
-      [IsTopologicalRing C] [CompleteSpace C] [T2Space C] [IsHuberRing C] {UC : Pair C}
-      {ιA : Pair.Hom SA SA₁} {φ₁ : Pair.Hom SA₁ UC},
-      Q (φ₁.comp ιA) → Q φ₁)
-    (hQbc : ∀ {A B C : Type u}
-      [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-      [CompleteSpace A] [T2Space A] [IsHuberRing A]
-      [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
-      [CompleteSpace B] [T2Space B] [IsHuberRing B]
-      [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
-      [CompleteSpace C] [T2Space C] [IsHuberRing C]
-      [Algebra A C] [Algebra A B] [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap A B)]
-      {SA : Pair A} {UC : Pair C} {TB : Pair B} {φ : Pair.Hom SA UC},
-      SA.plus ≤ TB.plus.comap (algebraMap A B) →
-      Q φ → φ.toRingHom = algebraMap A C →
-      Q (Pair.completedTensor.inr A UC TB))
-    {p : Z ⟶ X} {q : Z ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S}
-    (hs : IsPullback p q f g) (hf : chartLocally Q f.hom)
-    (hg : IsAdic g) (hY : Y.IsLocallyStablySheafy) :
-    chartLocally Q q.hom := by
-  refine (chartLocally_iff q.hom).mpr fun z ↦ ?_
-  obtain ⟨c⟩ := nonempty_completedTensorChart_of_isPullback Q hQtft hQcomp hs hf hg hY z
-  exact ⟨c.O, c.hzO, c.W, c.hOW, c.B, inferInstance, inferInstance, inferInstance, inferInstance,
-    c.TB, c.PB, c.hPB, CompletedTensor c.A c.C c.B, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, c.UC.completedTensor c.A c.TB,
-    c.PE, c.hPE, Pair.completedTensor.inr c.A c.UC c.TB, hQbc c.hplus c.hφQ c.hφA, c.hsheafE,
-    c.eO, c.eW₀, c.hfac_q⟩
+  exact ⟨O, hzO, W, inf_le_right, B, inferInstance, inferInstance, inferInstance, inferInstance,
+    TB, PB, hPB, CompletedTensor A C B, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance, WE, PE, hPE,
+    Pair.completedTensor.inr A UC TB, hQbc hplus hφQ hφA, hsheafE,
+    (ObjectProperty.ι PreAdicSpace.isAdic).mapIso eO, eW₀,
+    ofRestrict_comp_hom_of_comapOfPresentation PB PE hPB hPE hsheafB hsheafE _ eO eW₀ heO_q⟩
 
 /-- **Base-change stability of `LocallyOfWeaklyFiniteType`** (Huber 1996, Corollary 1.2.3(iii)(a);
 Wedhorn, Remark 8.57(1)): in any pullback square `IsPullback p q f g` in `AdicSpace`, if `f : X ⟶ S`
@@ -817,20 +662,9 @@ square `IsPullback p q f g` in `AdicSpace`, if `f : X ⟶ S` is locally of weakl
 theorem IsAdic.of_isPullback_of_locallyOfWeaklyFiniteType {p : Z ⟶ X} {q : Z ⟶ Y} {f : X ⟶ S}
     {g : Y ⟶ S} (hs : IsPullback p q f g) (hf : LocallyOfWeaklyFiniteType f) (hg : IsAdic g)
     (hY : Y.IsLocallyStablySheafy) : IsAdic p := by
-  refine (isAdic_iff_chartLocally p).mpr <| (chartLocally_iff p.hom).mpr fun z ↦ ?_
-  obtain ⟨c⟩ :=
-    nonempty_completedTensorChart_of_isPullback
-      (fun φ ↦ IsTopologicallyFiniteType φ.toRingHom)
-      (fun hφ ↦ hφ)
-      (fun h ↦ Pair.Hom.isTopologicallyFiniteType_toRingHom_of_comp h)
-      hs ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf) hg hY z
-  have hinl : IsAdicHom (Pair.completedTensor.inl c.A c.UC c.TB).toRingHom := by
-    rw [Pair.completedTensor.toRingHom_inl]
-    exact CompletedTensor.isAdicHom_inl c.A c.C c.B
-  exact ⟨c.O, c.hzO, c.U, c.hOU, c.C, inferInstance, inferInstance, inferInstance, inferInstance,
-    c.UC, c.PC, c.hPC, CompletedTensor c.A c.C c.B, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, c.UC.completedTensor c.A c.TB,
-    c.PE, c.hPE, Pair.completedTensor.inl c.A c.UC c.TB, hinl, c.hsheafE, c.eO, c.eU₀, c.hfac_p⟩
+  apply IsAdic.of_comp (g := f)
+  rw [hs.w]
+  exact IsAdic.isMultiplicative.comp_mem _ _ (hf.of_isPullback hs hg hY).isAdic hg
 
 /-- Symmetric form of `IsAdic.of_isPullback_of_locallyOfWeaklyFiniteType`: if `f : X ⟶ S` is adic,
 `g : Y ⟶ S` is locally of weakly finite type, and `X` is locally stably sheafy, then `q : Z ⟶ Y` is

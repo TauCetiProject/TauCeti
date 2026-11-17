@@ -309,12 +309,13 @@ theorem exists_complete_chart_of_chartLocally
         (Set.range fun t : ({1} : Finset A) ↦ (Localization.divBy (t : A) 1 : L))).toSubring ≤
         T.plus.comap f₀ := by
       rw [Algebra.adjoin_eq_ring_closure, Subring.closure_le]
-      rintro _ (⟨⟨a, ha⟩, rfl⟩ | ⟨⟨t, ht⟩, rfl⟩)
+      rintro _ (⟨a, rfl⟩ | ⟨⟨t, ht⟩, rfl⟩)
       · rw [SetLike.mem_coe, Subring.mem_comap]
-        change g (UniformSpace.Completion.coeRingHom (algebraMap A L a)) ∈ T.plus
-        rw [UniformSpace.Completion.coe_coeRingHom,
+        dsimp only [f₀]
+        rw [RingHom.comp_apply, IsScalarTower.algebraMap_apply S.plus A L,
+          Algebra.algebraMap_ofSubsemiring_apply, UniformSpace.Completion.coe_coeRingHom,
           ← P.toCompletionLoc_apply ({1} : Finset A) 1 L hden, ← RingHom.comp_apply, hge]
-        exact φ.map_mem_plus a ha
+        exact φ.map_mem_plus a.1 a.2
       · rw [SetLike.mem_coe, Subring.mem_comap]
         dsimp only
         have ht1 : (t : A) = 1 := Finset.mem_singleton.mp ht
