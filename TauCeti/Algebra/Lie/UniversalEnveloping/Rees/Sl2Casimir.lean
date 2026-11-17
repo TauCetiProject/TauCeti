@@ -81,9 +81,22 @@ noncomputable def reesSl2Casimir (h e f : L) : reesAlgebra R L :=
   reesGenerator R L h ^ 2 + 2 * reesParameter R L * reesGenerator R L h +
     4 * reesGenerator R L f * reesGenerator R L e
 
+/-- Defining polynomial expression for `reesSl2Casimir`. -/
+theorem reesSl2Casimir_def (h e f : L) :
+    reesSl2Casimir R L h e f =
+      reesGenerator R L h ^ 2 + 2 * reesParameter R L * reesGenerator R L h +
+        4 * reesGenerator R L f * reesGenerator R L e :=
+  (rfl)
+
 /-- The classical quadratic Casimir symbol `ι(h)² + 4 * ι(e) * ι(f)` in `SymmetricAlgebra R L`. -/
 noncomputable def sl2CasimirSymbol (h e f : L) : SymmetricAlgebra R L :=
   SymmetricAlgebra.ι R L h ^ 2 + 4 * SymmetricAlgebra.ι R L e * SymmetricAlgebra.ι R L f
+
+/-- Defining polynomial expression for `sl2CasimirSymbol`. -/
+theorem sl2CasimirSymbol_def (h e f : L) :
+    sl2CasimirSymbol R L h e f =
+      SymmetricAlgebra.ι R L h ^ 2 + 4 * SymmetricAlgebra.ι R L e * SymmetricAlgebra.ι R L f :=
+  (rfl)
 
 @[simp]
 theorem evalOne_reesSl2Casimir (h e f : L) :
