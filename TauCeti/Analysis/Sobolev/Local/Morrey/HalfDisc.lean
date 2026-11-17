@@ -40,8 +40,11 @@ is in `W^{k+1,p}_loc` of a neighbourhood of `U`, and the interior higher-order M
 together with its derivatives up to order `k`, including on the real axis, because `U` lies in the
 closure of the upper half `Ω ∩ {0 < im}`, where two continuous representatives agree. For every
 `p`, the derivatives of a `Cᵏ` representative up to the axis lie in the half-disc classes of the
-corresponding lower orders, with `Lᵖ` bounds reaching the axis; this is the form in which
-regularity up to the boundary is iterated.
+corresponding lower orders, with `Lᵖ` bounds reaching the axis: apply
+`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn` and
+`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn` with
+`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`. This is the form in which regularity up to the
+boundary is iterated.
 
 The converse fails: `z ↦ √(Im z)` is continuous on the closed half-disc and in `W^{1,p}_loc` of
 the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`), but not in
@@ -66,10 +69,6 @@ the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`)
   compact subsets of `Ω ∩ {0 ≤ im}`.
 * `TauCeti.eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq`: `Cᵏ` representatives up to the
   axis have the same derivatives of order at most `k` on `Ω ∩ {0 ≤ im}`.
-* `TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn_inter_setOf_im_nonneg` and
-  `TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn_inter_setOf_im_nonneg`: the derivatives of a
-  `Cᵏ` representative up to the axis are weak derivatives and lie in the half-disc classes of the
-  lower orders.
 
 ## References
 
@@ -271,57 +270,6 @@ section Higher
 variable {k : ℕ} {g g₁ g₂ : ℂ → F}
 
 omit [FiniteDimensional ℝ F] in
-/-- **The derivative of a `C¹` representative up to the real axis is a weak derivative.** If `g` is
-`C¹` on an open set containing `Ω ∩ {0 ≤ im}` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with
-`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)`, then `fderiv ℝ g` is a weak derivative of `u` on the
-upper half `Ω ∩ {0 < im}` and lies in `MemWkpLoc p (Ω ∩ {0 ≤ im}) k`, with `Lᵖ` bounds reaching the
-real axis. -/
-theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn_inter_setOf_im_nonneg
-    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) {V : Set ℂ}
-    (hUV : (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V) (hg : ContDiffOn ℝ 1 g V)
-    (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g) :
-    HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u (fderiv ℝ g) ∧
-      MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k (fderiv ℝ g) := by
-  have := hu.completeSpace
-  rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)] at hug
-  have hg' : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g
-      (fderiv ℝ g) :=
-    (hg.mono fun z hz => hUV (interior_subset hz)).hasWeakFDerivOn_fderiv
-  obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv
-  refine ⟨hg'.congr_ae hug.symm, hDk.congr_ae ?_⟩
-  rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
-  exact (hD.congr_ae hug).ae_eq hg'
-
-omit [FiniteDimensional ℝ F] in
-/-- **Iterated derivatives of a `Cᵏ` representative up to the real axis.** If `g` is `Cᵏ` on an
-open set containing `Ω ∩ {0 ≤ im}` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with
-`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + m)`, then `iteratedFDeriv ℝ k g` lies in
-`MemWkpLoc p (Ω ∩ {0 ≤ im}) m`. No restriction on `p` is needed. -/
-theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn_inter_setOf_im_nonneg {m : ℕ}
-    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + m) u) {V : Set ℂ} (hV : IsOpen V)
-    (hUV : (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V) (hg : ContDiffOn ℝ k g V)
-    (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g) :
-    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) m (iteratedFDeriv ℝ k g) := by
-  induction k generalizing F with
-  | zero =>
-    rw [iteratedFDeriv_zero_eq_comp]
-    exact (continuousMultilinearCurryFin0 ℝ ℂ F).symm.toContinuousLinearEquiv.comp_memWkpLoc_iff.2
-      ((Nat.zero_add m ▸ hu).congr_ae hug)
-  | succ k ih =>
-    rw [Nat.add_right_comm] at hu
-    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn_inter_setOf_im_nonneg hUV
-      (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
-    have h := ih hDk (hg.fderiv_of_isOpen hV (by push_cast; rfl)) (Filter.EventuallyEq.refl _ _)
-    have heq : iteratedFDeriv ℝ (k + 1) g =
-        fun z => (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm
-          (iteratedFDeriv ℝ k (fderiv ℝ g) z) := by
-      ext1 z
-      exact iteratedFDeriv_succ_eq_comp_right
-    rw [heq]
-    exact (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm.toContinuousLinearEquiv
-      |>.comp_memWkpLoc_iff.2 h
-
-omit [FiniteDimensional ℝ F] in
 /-- **Representatives up to the real axis are unique, with their derivatives.** If `g₁` and `g₂`
 are `Cᵏ` on open sets containing `Ω ∩ {0 ≤ im}` and agree almost everywhere on `Ω ∩ {0 ≤ im}`, then
 their derivatives of every order `i ≤ k` agree at every point of `Ω ∩ {0 ≤ im}`, including the
@@ -332,24 +280,10 @@ theorem eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq {V₁ V₂ : Set ℂ}
     (hg₂ : ContDiffOn ℝ k g₂ V₂) (h : g₁ =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g₂)
     {i : ℕ} (hi : i ≤ k) :
     EqOn (iteratedFDeriv ℝ i g₁) (iteratedFDeriv ℝ i g₂) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
-  set O := V₁ ∩ V₂ ∩ (Ω : Set ℂ)
-  have hO : IsOpen O := (hV₁.inter hV₂).inter Ω.isOpen
-  set W := O ∩ {z : ℂ | 0 < z.im}
-  have hW : IsOpen W := hO.inter (isOpen_lt continuous_const continuous_im)
-  have hWU : W ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz =>
-    ⟨hz.1.2, le_of_lt (show (0 : ℝ) < z.im from hz.2)⟩
-  -- On the open set `W` the two maps are continuous and equal almost everywhere, hence equal, and
-  -- so are their derivatives.
-  have heq : EqOn g₁ g₂ W := Measure.eqOn_open_of_ae_eq
-    (ae_restrict_of_ae_restrict_of_subset hWU h) hW (hg₁.continuousOn.mono fun _ hz => hz.1.1.1)
-    (hg₂.continuousOn.mono fun _ hz => hz.1.1.2)
-  have hD : EqOn (iteratedFDeriv ℝ i g₁) (iteratedFDeriv ℝ i g₂) W := fun z hz =>
-    ((heq.eventuallyEq_of_mem (hW.mem_nhds hz)).iteratedFDeriv ℝ i).eq_of_nhds
-  -- The derivatives are continuous on `Ω ∩ {0 ≤ im}`, which lies in the closure of `W`.
-  have hk : (i : WithTop ℕ∞) ≤ k := by exact_mod_cast hi
-  refine hD.of_subset_closure ((ContinuousOn.continuousOn_iteratedFDeriv hg₁ hV₁ hk).mono hUV₁)
-    ((ContinuousOn.continuousOn_iteratedFDeriv hg₂ hV₂ hk).mono hUV₂) hWU fun z hz => ?_
-  refine hO.inter_closure ⟨⟨⟨hUV₁ hz, hUV₂ hz⟩, hz.1⟩, ?_⟩
+  -- The half-disc lies in the closure of its interior, the upper half `Ω ∩ {0 < im}`.
+  refine eqOn_iteratedFDeriv_of_ae_eq (fun z hz => ?_) hV₁ hV₂ hUV₁ hUV₂ hg₁ hg₂ h hi
+  rw [interior_inter_setOf_im_nonneg Ω.isOpen]
+  refine Ω.isOpen.inter_closure ⟨hz.1, ?_⟩
   rw [Complex.closure_setOfPred_lt_im]
   exact hz.2
 
