@@ -133,6 +133,12 @@ theorem hasseDeriv_comp (k l : ℕ) :
   LinearMap.ext fun f ↦ Subtype.ext <| by
     simpa using LinearMap.congr_fun (PowerSeries.hasseDeriv_comp (R := R) k l) (f : R⟦X⟧)
 
+/-- Applying two Hasse derivatives in turn on an open disc:
+`hasseDeriv k (hasseDeriv l f) = (k + l).choose k • hasseDeriv (k + l) f`. -/
+theorem hasseDeriv_hasseDeriv (k l : ℕ) (f : OnOpenDisc.subring R R₀) :
+    hasseDeriv k (hasseDeriv l f) = (k + l).choose k • hasseDeriv (k + l) f :=
+  LinearMap.congr_fun (hasseDeriv_comp k l) f
+
 /-- **The Leibniz rule for Hasse derivatives on an open disc**, with factors in their original
 order so that `R` need not be commutative. -/
 theorem hasseDeriv_mul (k : ℕ) (f g : OnOpenDisc.subring R R₀) :
