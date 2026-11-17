@@ -670,6 +670,22 @@ theorem rightInvOn_bleisteinInv (g : ℝ → ℝ) (s : Set ℝ) (α : ℝ) :
     RightInvOn (bleisteinInv g s α) (bleisteinCoord g α) (bleisteinCoord g α '' s) :=
   fun _ hw ↦ Function.invFunOn_eq hw
 
+/-- Left-inverse cancellation: `bleisteinInv g s α (bleisteinCoord g α t) = t` whenever
+`bleisteinCoord g α` is injective on `s` and `t ∈ s`. -/
+@[simp]
+theorem bleisteinInv_bleisteinCoord {g : ℝ → ℝ} {s : Set ℝ} {α t : ℝ}
+    (hinj : InjOn (bleisteinCoord g α) s) (ht : t ∈ s) :
+    bleisteinInv g s α (bleisteinCoord g α t) = t :=
+  leftInvOn_bleisteinInv hinj ht
+
+/-- Right-inverse cancellation: `bleisteinCoord g α (bleisteinInv g s α w) = w` whenever
+`w ∈ bleisteinCoord g α '' s`. -/
+@[simp]
+theorem bleisteinCoord_bleisteinInv {g : ℝ → ℝ} {s : Set ℝ} {α w : ℝ}
+    (hw : w ∈ bleisteinCoord g α '' s) :
+    bleisteinCoord g α (bleisteinInv g s α w) = w :=
+  rightInvOn_bleisteinInv g s α hw
+
 /-- `bleisteinInv g s α` maps `bleisteinCoord g α '' s` into `s`. -/
 theorem mapsTo_bleisteinInv (g : ℝ → ℝ) (s : Set ℝ) (α : ℝ) :
     MapsTo (bleisteinInv g s α) (bleisteinCoord g α '' s) s :=
@@ -682,7 +698,7 @@ theorem bleisteinAmplitude_bleisteinCoord {E : Type*} [SMul ℝ E]
     (hinj : InjOn (bleisteinCoord g α) s) (ht : t ∈ s) :
     bleisteinAmplitude lam g q s α (bleisteinCoord g α t) =
       ((t / bleisteinCoord g α t) ^ (lam - 1) / deriv (bleisteinCoord g α) t) • q t := by
-  rw [bleisteinAmplitude_def, leftInvOn_bleisteinInv hinj ht]
+  rw [bleisteinAmplitude_def, bleisteinInv_bleisteinCoord hinj ht]
 
 /-- Strict differentiability of the inverse coordinate `bleisteinInv g s α` at `w(t)` whenever
 `bleisteinCoord g α` is injective on a neighborhood `s` of `t` with nonzero strict derivative `w'`
@@ -711,7 +727,7 @@ theorem deriv_bleisteinInv {g : ℝ → ℝ} {s : Set ℝ} {α w w' : ℝ}
     (hinj : InjOn (bleisteinCoord g α) s) (hd : w' ≠ 0) :
     deriv (bleisteinInv g s α) w =
       (deriv (bleisteinCoord g α) (bleisteinInv g s α w))⁻¹ := by
-  simpa only [rightInvOn_bleisteinInv g s α hw_mem] using
+  simpa only [bleisteinCoord_bleisteinInv hw_mem] using
     deriv_bleisteinInv_bleisteinCoord hs hw hinj hd
 
 /-- DLMF 2.3.30 form of the transformed amplitude in terms of the inverse derivative `dt / dw`:
@@ -761,7 +777,7 @@ theorem contDiffOn_bleisteinInv {g : ℝ → ℝ} {s : Set ℝ} {α : ℝ} {n : 
     (hca.hasStrictFDerivAt hfd hn).eventually_right_inverse
   have heq : bleisteinInv g s α =ᶠ[𝓝 (bleisteinCoord g α t)] hca.localInverse hfd hn := by
     filter_upwards [hmem, hright] with w hws hwr
-    simpa only [hwr] using leftInvOn_bleisteinInv hinj hws
+    simpa only [hwr] using bleisteinInv_bleisteinCoord hinj hws
   exact (hloc.congr_of_eventuallyEq heq).contDiffWithinAt
 
 /-- Continuity of the transformed amplitude `bleisteinAmplitude lam g q s α` on
@@ -791,7 +807,7 @@ theorem continuousOn_bleisteinAmplitude {E : Type*} [NormedAddCommGroup E] [Norm
     hw_deriv_cont.comp hinv_cont hmaps
   refine (hrat.div hden ?_).smul (hq.comp hinv_cont hmaps)
   rintro _ ⟨t, ht, rfl⟩
-  rw [leftInvOn_bleisteinInv hinj ht]
+  rw [bleisteinInv_bleisteinCoord hinj ht]
   exact hd t ht
 
 /-- Pointwise Jacobian cancellation between the transformed integrand at `w = bleisteinCoord g α t`
