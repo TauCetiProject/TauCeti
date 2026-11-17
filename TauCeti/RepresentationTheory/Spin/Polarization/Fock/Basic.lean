@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.ComplexStructure
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
 -- Private: the parity of the real dimension and the structure theorem are used only in the proof
 -- of bijectivity.
@@ -54,6 +55,8 @@ together with the formula for `c(v)`.
   exterior multiplication, and `TauCeti.AlmostComplexStructure.fockAction_ι_coe_W'`: a vector of
   `W'` acts by `1 / √2` times contraction.
 * `TauCeti.AlmostComplexStructure.realFockAction_ι`: a real generator `ι Q v` acts by `c(v)`.
+* `TauCeti.AlmostComplexStructure.liftBaseChange_realFockAction`: the normalized Fock action is
+  the complex-linear extension `CliffordAlgebra.liftBaseChange` of the real one.
 * `TauCeti.AlmostComplexStructure.realFockAction_ι_mul_ι_apply_apply_one`: on the vacuum,
   `c(u) c(J u) 1 = i Q(u)`.
 
@@ -213,6 +216,11 @@ noncomputable def realFockAction :
 theorem realFockAction_apply (a : CliffordAlgebra Q) :
     J.realFockAction hQJ hQ a = J.fockAction hQJ hQ (ofBaseChangeAux ℂ Q a) :=
   (rfl)
+
+/-- The normalized Fock action is the complex-linear extension of the real Fock action. -/
+theorem liftBaseChange_realFockAction :
+    liftBaseChange ℂ Q (J.realFockAction hQJ hQ) = J.fockAction hQJ hQ :=
+  ((eq_liftBaseChange_iff Q _ _).2 fun a ↦ (J.realFockAction_apply hQJ hQ a).symm).symm
 
 /-- In the real Fock action a real generator `ι Q v` acts by the normalized Fock operator
 `c(v)` of `1 ⊗ v`. -/

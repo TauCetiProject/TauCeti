@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 
 /-!
@@ -90,7 +91,7 @@ include hm in
 carries `complexProdTensor` for `-o₁` to `complexProdTensor` for `o₁`. -/
 theorem conjAlgEquiv_complexProdTensor_neg (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) :
     ((((LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-        (map_complexVolume_involutive o₂ hQ₂ ρ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom).comp
+        (ρ₂.involutive_complexVolume o₂ hQ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom).comp
       (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂) =
       complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by
   have hneg : ρ₁ (complexVolume Q₁ (-o₁)) = -ρ₁ (complexVolume Q₁ o₁) := by
@@ -101,7 +102,7 @@ theorem conjAlgEquiv_complexProdTensor_neg (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2
     AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hneg (by rw [neg_mul_neg, hγ])
       (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]),
     AlgHom.conjAlgEquiv_cliffordProdTensor_neg ρ₁ _ hγ hγρ ρ₂
-      (map_complexVolume_involutive o₂ hQ₂ ρ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)]
+      (ρ₂.involutive_complexVolume o₂ hQ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)]
 
 variable [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
 include hm

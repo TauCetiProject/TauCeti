@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Dual
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 
 /-!
@@ -156,11 +157,11 @@ theorem cliffordReverseDual_complexProdTensor_eq_conj_of_odd [Module.Finite ℂ 
     (a : CliffordAlgebra (Q.baseChange ℂ)) :
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).cliffordReverseDual a =
       (((LinearEquiv.ofInvolutive (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂))
-          (map_complexVolume_involutive o₂ hQ₂ ρ₂.cliffordReverseDual)).lTensor (Dual ℂ E)).trans
+          (ρ₂.cliffordReverseDual.involutive_complexVolume o₂ hQ₂)).lTensor (Dual ℂ E)).trans
         (dualDistribEquiv ℂ E F)).conj
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁.cliffordReverseDual ρ₂.cliffordReverseDual a) := by
   let e := ((LinearEquiv.ofInvolutive (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂))
-    (map_complexVolume_involutive o₂ hQ₂ ρ₂.cliffordReverseDual)).lTensor (Dual ℂ E)).trans
+    (ρ₂.cliffordReverseDual.involutive_complexVolume o₂ hQ₂)).lTensor (Dual ℂ E)).trans
     (dualDistribEquiv ℂ E F)
   refine LinearMap.ext fun Φ ↦ ?_
   obtain ⟨z, rfl⟩ := e.surjective Φ

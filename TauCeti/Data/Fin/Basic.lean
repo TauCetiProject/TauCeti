@@ -119,6 +119,14 @@ range, so the value is a `dite` rather than a plain application.
   `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `Fin.last_mul_partialProd`: the last entry times the final partial product of the initial
+  segment is the product of all the entries of a tuple in a commutative monoid.
+* `Fin.apply_last_mul_inv_mul_partialProd_last`: in a group, for a tuple `y` and an element `g`,
+  `y (last n) * (g * partialProd y (last (n + 1)))⁻¹ = (g * partialProd (init y) (last n))⁻¹`,
+  that is, the last entry of `y` cancels on the left of the inverse of `g` times the final partial
+  product.
+* `Fin.partialProd_contractNth_castSucc`: multiplying two adjacent entries of a tuple does not
+  change its final partial product.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.

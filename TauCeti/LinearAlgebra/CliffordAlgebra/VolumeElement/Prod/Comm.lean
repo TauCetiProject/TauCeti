@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 
 /-!
@@ -154,13 +155,13 @@ chiralities `Γ_V` and `Γ_W` intertwines `complexProdTensor` of `V ⊕ W` with 
 `W ⊕ V` along `CliffordAlgebra.withLpProdCommIsometry`. -/
 theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] F) :
     (ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-        (map_complexVolume_involutive o₁ hQ₁ ρ₁) (map_complexVolume_involutive o₂ hQ₂ ρ₂)
+        (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z) =
       complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁
         (map ((withLpProdCommIsometry hQ hQ').toIsometry.baseChange ℂ) a)
         ((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-          (map_complexVolume_involutive o₁ hQ₁ ρ₁)
-          (map_complexVolume_involutive o₂ hQ₂ ρ₂) z) := by
+          (ρ₁.involutive_complexVolume o₁ hQ₁)
+          (ρ₂.involutive_complexVolume o₂ hQ₂) z) := by
   have hdiag : (map (QuadraticMap.IsometryEquiv.prodComm
         (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
         (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
@@ -173,23 +174,23 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
   rw [complexProdTensor_def, complexProdTensor_def, AlgHom.comp_apply, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, ← hdiag_a]
   exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-    (map_complexVolume_involutive o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
+    (ρ₁.involutive_complexVolume o₁ hQ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
     ρ₂ (ρ₂ (complexVolume Q₂ o₂))
-    (map_complexVolume_involutive o₂ hQ₂ ρ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)
+    (ρ₂.involutive_complexVolume o₂ hQ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)
     (equivOfIsometry (complexWithLpProd hQ) a) z
 
 /-- Conjugating `complexProdTensor` of `V ⊕ W` by the Koszul swap gives `complexProdTensor` of
 `W ⊕ V` pulled back along `CliffordAlgebra.withLpProdCommIsometry`. -/
 theorem conjAlgEquiv_complexProdTensor_comm :
     ((((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-        (map_complexVolume_involutive o₁ hQ₁ ρ₁)
-        (map_complexVolume_involutive o₂ hQ₂ ρ₂)).conjAlgEquiv ℂ).toAlgHom).comp
+        (ρ₁.involutive_complexVolume o₁ hQ₁)
+        (ρ₂.involutive_complexVolume o₂ hQ₂)).conjAlgEquiv ℂ).toAlgHom).comp
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) =
       (complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁).comp
         (equivOfIsometry ((withLpProdCommIsometry hQ hQ').baseChange ℂ)).toAlgHom := by
   refine AlgHom.ext fun a ↦ LinearMap.ext fun z ↦ ?_
   let κ := (ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-    (map_complexVolume_involutive o₁ hQ₁ ρ₁) (map_complexVolume_involutive o₂ hQ₂ ρ₂)
+    (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
   simpa [LinearEquiv.conjAlgEquiv_apply, equivOfIsometry_apply, κ] using
     koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂ a (κ.symm z)
 
@@ -204,12 +205,12 @@ theorem koszulComm_complexProdTensor_complexVolume
     (ho' : o'.map (Fin (m + n)) (WithLp.linearEquiv 2 ℝ (W × V)) = o₂.prod o₁ Fact.out Fact.out)
     (z : E ⊗[ℂ] F) :
     (ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-        (map_complexVolume_involutive o₁ hQ₁ ρ₁) (map_complexVolume_involutive o₂ hQ₂ ρ₂)
+        (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) z) =
       complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁ (complexVolume Q' o')
         ((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
-          (map_complexVolume_involutive o₁ hQ₁ ρ₁)
-          (map_complexVolume_involutive o₂ hQ₂ ρ₂) z) := by
+          (ρ₁.involutive_complexVolume o₁ hQ₁)
+          (ρ₂.involutive_complexVolume o₂ hQ₂) z) := by
   rw [koszulComm_complexProdTensor,
     map_withLpProdCommIsometry_complexVolume hQ hQ' o₁ o₂ o o' (hn.mul_right m) ho ho']
 
