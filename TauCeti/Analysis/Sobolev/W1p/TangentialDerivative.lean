@@ -69,9 +69,9 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_mapsTo (hp : p ≠ ∞
     (hΩ : ∀ s : ℝ, MapsTo (· + s • τ) Omega Omega) (u : W1p mu Omega p) (t : ℝ) :
     eLpNorm (fun x ↦ t⁻¹ * (W1p.value u (x + t • τ) - W1p.value u x)) p (mu.restrict Omega)
       ≤ eLpNorm (fun x ↦ ⟪τ, W1p.gradient u x⟫_ℝ) p (mu.restrict Omega) := by
-  refine MeasureTheory.eLpNorm_restrict_le_of_forall_isCompact Omega.isOpen
-    (zero_lt_one.trans_le Fact.out).ne' hp ((Lp.aestronglyMeasurable _).congr
-      (W1p.value_differenceQuotient_ae le_rfl τ t (hΩ t) u)) fun K hKΩ hK =>
+  refine MeasureTheory.eLpNorm_restrict_le_of_forall_isCompact Omega.isOpen hp
+    ((Lp.aestronglyMeasurable _).congr (W1p.value_differenceQuotient_ae le_rfl τ t (hΩ t) u))
+    fun K hKΩ hK =>
     W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le hp u τ t hK subset_rfl fun x hx s _ => ?_
   rw [smul_smul]
   exact hΩ (s * t) (hKΩ hx)

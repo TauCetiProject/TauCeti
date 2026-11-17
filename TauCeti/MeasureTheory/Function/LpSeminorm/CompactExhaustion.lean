@@ -14,7 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 # The `Lᵖ` seminorm on an open set from its compact subsets
 
 In a locally compact, second countable space, an open set `U` is the increasing union of a compact
-exhaustion. For a finite exponent `p ≠ 0` the `Lᵖ` seminorm over `U` is therefore controlled by its
+exhaustion. For a finite exponent `p` the `Lᵖ` seminorm over `U` is therefore controlled by its
 values over the compact subsets of `U`: a bound that holds on every compact `K ⊆ U` holds on `U`
 (`MeasureTheory.eLpNorm_restrict_le_of_forall_isCompact`). Local estimates, which naturally come
 with a compact set, give global ones in this way.
@@ -31,12 +31,14 @@ variable {α ε : Type*} [TopologicalSpace α] [MeasurableSpace α] [LocallyComp
   [SecondCountableTopology α] [TopologicalSpace ε] [ContinuousENorm ε] {μ : Measure α}
 
 /-- **The `Lᵖ` seminorm on an open set is controlled by its compact subsets.** For a finite
-exponent `p ≠ 0`, if the `Lᵖ` seminorm of `f` over every compact subset of an open set `U` is at
+exponent `p`, if the `Lᵖ` seminorm of `f` over every compact subset of an open set `U` is at
 most `C`, then so is its `Lᵖ` seminorm over `U`. -/
 theorem eLpNorm_restrict_le_of_forall_isCompact {U : Set α} (hU : IsOpen U) {f : α → ε}
-    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : AEStronglyMeasurable f (μ.restrict U))
+    {p : ℝ≥0∞} (hp : p ≠ ∞) (hf : AEStronglyMeasurable f (μ.restrict U))
     {C : ℝ≥0∞} (h : ∀ K ⊆ U, IsCompact K → eLpNorm f p (μ.restrict K) ≤ C) :
     eLpNorm f p (μ.restrict U) ≤ C := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp [eLpNorm, hf]
   have := hU.locallyCompactSpace
   -- A compact exhaustion of `U`, as a directed family of compact subsets of `α`.
   let K := CompactExhaustion.choice U

@@ -12,9 +12,9 @@ public import TauCeti.Topology.Instances.ENNReal
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Holder.Interpolation
 
 /-!
 # The `Lᵖ` translation estimate
@@ -65,10 +65,10 @@ for a `C¹` function, and needs no integrability of the function itself.
   with `Lᵖ` derivative.
 * `ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv`: the second-order
   translation estimate, bounding a mixed second difference by the second derivative.
-* `norm_inv_smul_sub_sub_fderiv_le_of_lipschitzWith`: the second-order Taylor bound for the
-  difference quotients of a function with Lipschitz derivative.
+* `Differentiable.tendstoUniformly_inv_smul_comp_add_smul_sub`: difference quotients of a function
+  with uniformly continuous derivative converge uniformly to its directional derivative.
 * `HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv`: difference quotients
-  of a compactly supported `C²` function converge in `Lᵖ` to its directional derivative.
+  of a compactly supported `C¹` function converge in `Lᵖ` to its directional derivative.
 
 ## References
 
@@ -336,29 +336,48 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
         simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul
           (μ := volume.restrict (Icc (0 : ℝ) 1)) (u := fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ) hr
 
-/-- **The second-order Taylor bound for difference quotients.** If `u` is differentiable with an
-`L`-Lipschitz derivative, then for every step `t ≠ 0`
-
-`‖t⁻¹ (u(x + t v) - u(x)) - Du(x) v‖ ≤ L |t| ‖v‖²`. -/
-theorem norm_inv_smul_sub_sub_fderiv_le_of_lipschitzWith (hu : Differentiable ℝ u) {L : NNReal}
-    (hL : LipschitzWith L (fderiv ℝ u)) (x v : E) {t : ℝ} (ht : t ≠ 0) :
-    ‖t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v‖ ≤ L * |t| * ‖v‖ ^ 2 := by
-  -- The mean value inequality for `u - Du(x)` on the ball of radius `|t| ‖v‖` about `x`.
-  have hbound : ∀ y ∈ Metric.closedBall x (|t| * ‖v‖),
-      ‖fderiv ℝ u y - fderiv ℝ u x‖ ≤ L * (|t| * ‖v‖) := fun y hy => by
-    rw [← dist_eq_norm]
-    exact (hL.dist_le_mul y x).trans (by gcongr; exact Metric.mem_closedBall.1 hy)
-  have hmem : x + t • v ∈ Metric.closedBall x (|t| * ‖v‖) := by
-    rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
-  have h := (convex_closedBall x (|t| * ‖v‖)).norm_image_sub_le_of_norm_fderiv_le'
-    (fun y _ => hu y) hbound (Metric.mem_closedBall_self (by positivity)) hmem
-  rw [add_sub_cancel_left, map_smul, norm_smul, Real.norm_eq_abs] at h
+/-- **Difference quotients converge uniformly.** If `u` is differentiable with a uniformly
+continuous derivative, then for every direction `v` the difference quotients
+`t⁻¹ (u(x + t v) - u(x))` converge to `Du(x) v` uniformly in `x` as `t → 0`. -/
+theorem Differentiable.tendstoUniformly_inv_smul_comp_add_smul_sub (hu : Differentiable ℝ u)
+    (huc : UniformContinuous (fderiv ℝ u)) (v : E) :
+    TendstoUniformly (fun (t : ℝ) x => t⁻¹ • (u (x + t • v) - u x)) (fun x => fderiv ℝ u x v)
+      (nhdsWithin 0 {0}ᶜ) := by
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  -- Let `Du` oscillate by less than `η` over distances below `δ`, where `η ‖v‖ < ε`.
+  set η := ε / (‖v‖ + 1)
+  have hη : 0 < η := by positivity
+  have hηε : η * ‖v‖ < ε := by
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith [norm_nonneg v]
+  obtain ⟨δ, hδ, hδη⟩ := Metric.uniformContinuous_iff.1 huc η hη
+  have hlim : Filter.Tendsto (fun t : ℝ => 2 * (|t| * ‖v‖)) (nhds 0) (nhds 0) :=
+    (by fun_prop : Continuous fun t : ℝ => 2 * (|t| * ‖v‖)).tendsto' 0 0 (by simp)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hlim.eventually (gt_mem_nhds hδ))]
+    with t (ht : t ≠ 0) htδ x
+  -- On the ball of radius `|t| ‖v‖` about `x`, `Du` is `0`-Hölder with constant `η`, so the
+  -- Taylor bound controls the linear remainder by `η |t| ‖v‖`.
+  have hH : HolderOnWith ⟨η, hη.le⟩ 0 (fderiv ℝ u) (Metric.closedBall x (|t| * ‖v‖)) :=
+    HolderOnWith.of_dist_le fun y hy z hz => by
+      simp only [NNReal.coe_zero, Real.rpow_zero, mul_one]
+      refine (hδη ?_).le
+      linarith [dist_triangle_right y z x, Metric.mem_closedBall.1 hy, Metric.mem_closedBall.1 hz]
+  have hT := hH.norm_image_sub_sub_le_of_hasFDerivWithinAt (x := x) (w := t • v)
+    (fun y _ => (hu y).hasFDerivAt.hasFDerivWithinAt)
+    ((convex_closedBall x _).segment_subset (Metric.mem_closedBall_self (by positivity))
+      (by rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul,
+        Real.norm_eq_abs]))
+  simp only [NNReal.coe_zero, add_zero, Real.rpow_one, map_smul, norm_smul,
+    Real.norm_eq_abs] at hT
   have hrw : t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v =
       t⁻¹ • (u (x + t • v) - u x - t • fderiv ℝ u x v) := by
     rw [smul_sub (t⁻¹) (u (x + t • v) - u x), smul_smul, inv_mul_cancel₀ ht, one_smul]
-  rw [hrw, norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 ht)]
-  calc ‖u (x + t • v) - u x - t • fderiv ℝ u x v‖ ≤ L * (|t| * ‖v‖) * (|t| * ‖v‖) := h
-    _ = |t| * (L * |t| * ‖v‖ ^ 2) := by ring
+  rw [dist_eq_norm', hrw, norm_smul, norm_inv, Real.norm_eq_abs]
+  refine lt_of_le_of_lt ?_ hηε
+  rw [inv_mul_le_iff₀ (abs_pos.2 ht)]
+  calc _ ≤ η * (|t| * ‖v‖) := hT
+    _ = |t| * (η * ‖v‖) := by ring
 
 end Calculus
 
@@ -544,25 +563,22 @@ theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
     _ = ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := (mul_assoc _ _ _).symm
 
 omit [SFinite mu] [mu.IsAddRightInvariant] in
-/-- **Difference quotients of a smooth compactly supported function converge in `Lᵖ`** to its
-directional derivative: for a compactly supported `C²` function `u`, every direction `v` and
+/-- **Difference quotients of a compactly supported `C¹` function converge in `Lᵖ`** to its
+directional derivative: for a compactly supported `C¹` function `u`, every direction `v` and
 every exponent `p`,
 
 `‖t⁻¹ (u(· + t v) - u) - Du · v‖_p → 0` as `t → 0`.
 
-The second derivative of `u` is bounded, so the error is at most `C |t|` pointwise, and for
+The derivative of `u` is uniformly continuous, so the error tends to zero uniformly, and for
 `|t| ≤ 1` it vanishes off a fixed compact set. -/
 theorem HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv [ProperSpace E]
-    [IsFiniteMeasureOnCompacts mu] (hu : HasCompactSupport u) (hu' : ContDiff ℝ 2 u) (v : E)
+    [IsFiniteMeasureOnCompacts mu] (hu : HasCompactSupport u) (hu' : ContDiff ℝ 1 u) (v : E)
     {p : ℝ≥0∞} :
     Filter.Tendsto (fun t : ℝ => eLpNorm (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v)
       p mu) (nhdsWithin 0 {0}ᶜ) (nhds 0) := by
-  have hd : Differentiable ℝ u := hu'.differentiable (by norm_num)
-  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport (hu.fderiv ℝ)
-    (hu'.fderiv_right (m := 1) (by norm_num)) one_ne_zero
-  have htaylor : ∀ x {t : ℝ}, t ≠ 0 →
-      ‖t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v‖ ≤ L * |t| * ‖v‖ ^ 2 := fun x _ ht =>
-    norm_inv_smul_sub_sub_fderiv_le_of_lipschitzWith hd hL x v ht
+  have hd : Differentiable ℝ u := hu'.differentiable one_ne_zero
+  have hunif := Metric.tendstoUniformly_iff.1 (hd.tendstoUniformly_inv_smul_comp_add_smul_sub
+    ((hu.fderiv ℝ).uniformContinuous_of_continuous (hu'.continuous_fderiv one_ne_zero)) v)
   -- For `|t| ≤ 1` the error vanishes off the `‖v‖`-thickening of the support.
   set K := Metric.cthickening ‖v‖ (tsupport u)
   have hK : IsCompact K := hu.isCompact.cthickening
@@ -577,33 +593,34 @@ theorem HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv 
     rw [image_eq_zero_of_notMem_tsupport h1, image_eq_zero_of_notMem_tsupport h0,
       fderiv_of_notMem_tsupport ℝ h0]
     simp
-  -- The `Lᵖ` norm is at most `L |t| ‖v‖² μ(K)^(1/p)`, which tends to zero.
-  have hlim : Filter.Tendsto
-      (fun t : ℝ => mu K ^ p.toReal⁻¹ * ENNReal.ofReal (L * |t| * ‖v‖ ^ 2))
-      (nhdsWithin 0 {0}ᶜ) (nhds 0) := by
-    have h : Filter.Tendsto (fun t : ℝ => ENNReal.ofReal (L * |t| * ‖v‖ ^ 2)) (nhds 0)
-        (nhds 0) := by
-      have hc : Continuous fun t : ℝ => L * |t| * ‖v‖ ^ 2 := by fun_prop
-      simpa [Function.comp_def] using (ENNReal.continuous_ofReal.comp hc).tendsto 0
-    simpa using ENNReal.Tendsto.const_mul (h.mono_left nhdsWithin_le_nhds)
+  -- Once the error is uniformly below `η`, its `Lᵖ` norm is at most `μ(K)^(1/p) η`.
+  have hLp : ∀ η : ℝ, 0 < η → ∀ᶠ t in nhdsWithin (0 : ℝ) {0}ᶜ,
+      eLpNorm (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v) p mu ≤
+        mu K ^ p.toReal⁻¹ * ENNReal.ofReal η := fun η hη => by
+    filter_upwards [hunif η hη,
+      nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with t hη' ht1
+    have ht1' : |t| ≤ 1 := by simpa [Real.dist_eq] using ht1
+    have hind : (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v) =
+        K.indicator fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v := by
+      ext x
+      by_cases hx : x ∈ K
+      · rw [indicator_of_mem hx]
+      · rw [indicator_of_notMem hx, hvanish x hx t ht1']
+    rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict hK.measurableSet.nullMeasurableSet]
+    have hmeas : Continuous fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v :=
+      (continuous_const.smul ((hd.continuous.comp (by fun_prop)).sub hd.continuous)).sub
+        ((hu'.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+    have h := eLpNorm_le_of_ae_bound (μ := mu.restrict K) (p := p) hmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => (by rw [← dist_eq_norm']; exact (hη' x).le))
+    rwa [Measure.restrict_apply_univ] at h
+  -- The bound `μ(K)^(1/p) η` tends to zero with `η`.
+  have hlim : Filter.Tendsto (fun η : ℝ => mu K ^ p.toReal⁻¹ * ENNReal.ofReal η)
+      (nhdsWithin 0 (Ioi 0)) (nhds 0) := by
+    simpa using ENNReal.Tendsto.const_mul
+      ((ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds)
       (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK.measure_lt_top.ne))
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
-    (Filter.Eventually.of_forall fun _ => bot_le) ?_
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with t ht ht1
-  have ht1' : |t| ≤ 1 := by simpa [Real.dist_eq] using ht1
-  have hind : (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v) =
-      K.indicator fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v := by
-    ext x
-    by_cases hx : x ∈ K
-    · rw [indicator_of_mem hx]
-    · rw [indicator_of_notMem hx, hvanish x hx t ht1']
-  rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict hK.measurableSet.nullMeasurableSet]
-  have hmeas : Continuous fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v :=
-    (continuous_const.smul ((hd.continuous.comp (by fun_prop)).sub hd.continuous)).sub
-      ((hu'.continuous_fderiv (by norm_num)).clm_apply continuous_const)
-  have h := eLpNorm_le_of_ae_bound (μ := mu.restrict K) (p := p) hmeas.aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x => htaylor x ht)
-  rwa [Measure.restrict_apply_univ] at h
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  obtain ⟨η, hηε, hη⟩ := ((hlim.eventually (eventually_le_nhds hε)).and self_mem_nhdsWithin).exists
+  exact (hLp η hη).mono fun t ht => ht.trans hηε
 
 end Translation

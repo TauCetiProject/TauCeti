@@ -400,15 +400,6 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace (hν : ν ≠ 0)
     (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hu
 
 omit [DecidableEq ι] in
-/-- A half-space `{x | c < ⟪x, ν⟫}` is convex. -/
-private theorem convex_of_halfSpace (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ) :
-    Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)) := by
-  have h : (Omega : Set (EuclideanSpace ℝ ι)) = {x | c < innerSL ℝ ν x} := Set.ext fun x => by
-    simp [hΩ x, real_inner_comm]
-  rw [h]
-  exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
-
-omit [DecidableEq ι] in
 /-- The forcing term `g + ∑ᵢⱼ (∂ᵢ∂_τaⁱʲ ∂ⱼu + ∂_τaⁱʲ ∂ᵢ∂ⱼu)` of the equation differentiated along
 `τ` lies in `L²(Ω)` when the first two derivatives of the coefficients are bounded on `Ω`, given
 by the Lipschitz bounds on `a` and on the first derivatives of its entries. Here `∂ᵢ∂ⱼu` is
@@ -436,19 +427,9 @@ private theorem memLp_add_sum_sum_fderiv_mul_inner_gradient
         rw [norm_mul]
         exact mul_le_mul_of_nonneg_right (hcM x hx) (norm_nonneg _))
   -- The entries of `a` are `K`-Lipschitz on `Ω`, and their first derivatives `K'`-Lipschitz.
-  have hentry : ∀ i j, LipschitzOnWith K (fun x => a x i j) Omega := fun i j =>
-    LipschitzOnWith.of_dist_le_mul fun x hx y hy => by
-      have hxy : a x i j - a y i j =
-          (matrixBilinearForm (a x) - matrixBilinearForm (a y)) (b i) (b j) := by
-        simp [b, matrixBilinearForm_apply]
-      rw [Real.dist_eq, hxy, ← Real.norm_eq_abs]
-      calc ‖(matrixBilinearForm (a x) - matrixBilinearForm (a y)) (b i) (b j)‖
-          ≤ ‖matrixBilinearForm (a x) - matrixBilinearForm (a y)‖ * ‖b i‖ * ‖b j‖ :=
-            ContinuousLinearMap.le_opNorm₂ _ _ _
-        _ = dist (matrixBilinearForm (a x)) (matrixBilinearForm (a y)) := by
-            rw [b.orthonormal.1 i, b.orthonormal.1 j, mul_one, mul_one]
-            exact (dist_eq_norm (matrixBilinearForm (a x)) (matrixBilinearForm (a y))).symm
-        _ ≤ K * dist x y := hK.dist_le_mul x hx y hy
+  have hentry : ∀ i j, LipschitzOnWith K (fun x => a x i j) Omega := fun i j => by
+    simpa [b, matrixBilinearForm_apply, b.orthonormal.1 i, b.orthonormal.1 j] using
+      lipschitzOnWith_matrixBilinearForm_apply_apply hK (b i) (b j)
   have hd1 : ∀ i j, ∀ x ∈ Omega, ‖fderiv ℝ (fun y => a y i j) x τ‖ ≤ K * ‖τ‖ :=
     fun i j x hx => (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
       (norm_fderiv_le_of_lipschitzOn ℝ (Omega.isOpen.mem_nhds hx) (hentry i j))
@@ -551,8 +532,9 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
     ∃ (w : W1p0 mu Omega 2) (F : Lp ℝ 2 (mu.restrict Omega)),
       HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value (w : W1p mu Omega 2))
         τ ∧ IsWeakSolutionDirichlet a 0 0 F w :=
-  ha.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo hν (convex_of_halfSpace hΩ)
-    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hsmooth hK' hu hτ hf
+  ha.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo hν
+    (TauCeti.convex_of_halfSpace hΩ) (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK
+    hsmooth hK' hu hτ hf
 
 /-- **Third derivatives with a tangential direction.** Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo`,
@@ -602,8 +584,8 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gra
           HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (w : W1p mu Omega 2) x, y⟫_ℝ)
             G z :=
   ha.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo hν
-    (convex_of_halfSpace hΩ) (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hsmooth
-    hK' hu hτ hf
+    (TauCeti.convex_of_halfSpace hΩ) (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK
+    hsmooth hK' hu hτ hf
 
 end PDE
 
