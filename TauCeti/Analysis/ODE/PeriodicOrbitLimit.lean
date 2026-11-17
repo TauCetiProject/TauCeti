@@ -111,6 +111,18 @@ theorem sliceDefect_def (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ ×
     sliceDefect X u z = fderiv ℝ u z (0, 1) - X z.2 (u z) :=
   (rfl)
 
+/-- The map `(s, t) ↦ x(t)` constant in `s` along a solution of `x' = X(t, x)` has vanishing
+defect. -/
+theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
+    sliceDefect X (fun w : ℝ × ℝ ↦ x w.2) = 0 := by
+  funext z
+  obtain ⟨s, t⟩ := z
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
+      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (X t (x t))).comp
+        (ContinuousLinearMap.snd ℝ ℝ ℝ)) (s, t) :=
+    (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
+  simp [sliceDefect_def, h.fderiv]
+
 /-- The defect of a `C¹` map is continuous on the half-cylinder, for a continuous vector field. -/
 theorem continuousOn_sliceDefect (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hX : Continuous (uncurry X)) : ContinuousOn (sliceDefect X u) (Ioi a ×ˢ univ) :=

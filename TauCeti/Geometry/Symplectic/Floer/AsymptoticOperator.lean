@@ -468,6 +468,15 @@ theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
+/-- For continuous `J_t` and `S_t`, the stationary cylinder operator of a `C¹` map is continuous. -/
+theorem continuous_stationaryCylinderOperator
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
+  have h := hξ.continuous_fderiv one_ne_zero
+  simp only [funext (stationaryCylinderOperator_def J S ξ)]
+  exact (h.clm_apply continuous_const).add (((hJc.comp continuous_snd).clm_apply
+    ((h.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous))))
+
 /-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
 shifts the stationary cylinder operator by `-δ`. -/
 theorem stationaryCylinderOperator_sub_smul (δ : ℝ) (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :

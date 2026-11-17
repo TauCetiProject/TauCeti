@@ -364,15 +364,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
   {ξ : ℝ × ℝ → V}
 
-/-- For continuous `J_t` and `S_t`, the stationary cylinder operator of a `C¹` map is continuous. -/
-private theorem continuous_stationaryCylinderOperator
-    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
-    (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
-  have h := hξ.continuous_fderiv one_ne_zero
-  simp only [funext (stationaryCylinderOperator_def J S ξ)]
-  exact (h.clm_apply continuous_const).add (((hJc.comp continuous_snd).clm_apply
-    ((h.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous))))
-
 omit [FiniteDimensional ℝ V] in
 /-- The stationary cylinder operator vanishes wherever the jet of the map vanishes. -/
 private theorem stationaryCylinderOperator_eq_zero_of_jet_eq_zero {z : ℝ × ℝ} (h : jet ξ z = 0) :
@@ -460,27 +451,6 @@ variable (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
   (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
   (hJx : ∀ t, ω.Compatible (J t (x t)))
 
-include hH hx in
-/-- An orbit of a jointly `C²` Hamiltonian is `C¹`. -/
-private theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField : ContDiff ℝ 1 x := by
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
-  rw [show deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) from funext fun t ↦ (hx t).deriv]
-  exact (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-    (continuous_id.prodMk hxc)
-
-include hx in
-/-- The stationary cylinder over an orbit has vanishing slice defect `∂t u - X_{H_t}(u)`. -/
-private theorem sliceDefect_stationary_eq_zero :
-    sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) (fun w : ℝ × ℝ ↦ x w.2) = 0 := by
-  funext z
-  obtain ⟨s, t⟩ := z
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
-        (ω.hamiltonianVectorField (H t) (x t))).comp (snd ℝ ℝ ℝ)) (s, t) :=
-    (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
-  simp [sliceDefect_def, h.fderiv]
-
 include hX hH hx hJ hJx in
 /-- At the stationary cylinder over a nondegenerate orbit, the coefficients of the linearized Floer
 operator are bounded and satisfy the semi-Fredholm estimate. -/
@@ -492,13 +462,14 @@ private theorem memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationar
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
           (fun w ↦ x w.2)) C T := by
   have hu : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ x w.2 :=
-    (contDiff_one_of_hasDerivAt_hamiltonianVectorField ω hH hx).comp contDiff_snd
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le one_le_two) hx).comp
+      contDiff_snd
   -- The loops of `u` and its slice defect do not depend on `s`, so they converge uniformly.
   have hc (f : ℝ → V) (l : Filter ℝ) : TendstoUniformlyOn (fun (_ : ℝ) t ↦ f t) f l (Icc 0 1) :=
     fun _ hU ↦ Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hU
   have h₀ (l : Filter ℝ) : TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (H t)) (fun w : ℝ × ℝ ↦ x w.2) (s, t)) 0 l (Icc 0 1) := by
-    simpa only [sliceDefect_stationary_eq_zero ω hx, Pi.zero_apply] using hc 0 l
+    simpa only [sliceDefect_comp_snd_eq_zero hx, Pi.zero_apply] using hc 0 l
   exact ⟨ω.memLp_floerJetCoeff hH hJ hu (hc x _) (hc x _) (h₀ _) (h₀ _),
     ω.exists_hasSemiFredholmEstimate_floerJetCoeff hX hH hx hnd hx hnd hJ hJx hJx hu
       (fun z ↦ hJx z.2) (hc x _) (hc x _) (h₀ _) (h₀ _)⟩
