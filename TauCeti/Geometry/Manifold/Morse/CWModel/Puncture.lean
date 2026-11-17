@@ -288,7 +288,7 @@ private theorem finiteCWType_compl_of_innerProductSpace [T2Space M] [CompactSpac
       fun x ↦ (hg_dist x).le
   have hg_fin : (criticalPoints I g).Finite := by
     refine (hg_morse.finite_criticalPoints_inter (hF₀_sub 2)).subset fun x hcrit ↦ ⟨hcrit, ?_⟩
-    change F₀ x ≤ 2
+    simp only [mem_ofPred_eq]
     by_contra! hgt
     have hnts : x ∉ tsupport fun y ↦ g y - F₀ y := fun hts ↦ hgs hts hgt.le
     have hev : (g : U → ℝ) =ᶠ[𝓝 x] F₀ :=

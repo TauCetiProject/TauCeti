@@ -6,22 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Divisor
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.FreeLocus
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
 
 /-!
 # The Riemann--Hurwitz formula for finite-index maps of Fuchsian quotients
 
-Let `Γ ≤ PSL(2, ℝ)` be discrete. Deleting the elliptic orbits and the adjoined cusps from the
-compactified quotient `X(Γ)` leaves the orbit space of the free locus of `Γ`, the points of `ℍ`
-with trivial stabilizer (`Subgroup.CompactifiedQuotient.freeLocusQuotientHomeomorph`, in
-`TauCeti.Analysis.Complex.Fuchsian.Compactification.FreeLocus`). When `X(Γ)` is compact, only
-finitely many points are deleted, so both `X(Γ)` and the free-locus quotient have finite CW type
-(`TauCeti.ComplexManifold.instFiniteCWType`, `Subgroup.finiteCWType_orbitRel_quotient_freeLocus`).
-
-For a discrete `Δ ≤ Γ` of finite index with `X(Δ)` compact, `X(Γ)` is also compact and the map
-`X(Δ) → X(Γ)` is a finite holomorphic map of degree `[Γ : Δ]` ramified only over elliptic orbits
-and cusps of `Γ`. Applying the unconditional topological branched-cover formula
+For a discrete `Δ ≤ Γ` in `PSL(2, ℝ)` of finite index with compactified quotient `X(Δ)` compact,
+`X(Γ)` is also compact and the map `X(Δ) → X(Γ)` is a finite holomorphic map of degree `[Γ : Δ]`
+ramified only over elliptic orbits and cusps of `Γ`. Applying the unconditional topological
+branched-cover formula
 `FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree` gives the
 Riemann--Hurwitz formula for Fuchsian groups in Euler-characteristic form,
 
@@ -33,8 +27,6 @@ characteristics `TauCeti.eulerChar`.
 
 ## Main results
 
-* `Subgroup.finiteCWType_orbitRel_quotient_freeLocus`: when `X(Γ)` is compact, the orbit space of
-  the free locus of `Γ` has finite CW type.
 * `TauCeti.Fuchsian.branchValues_subset_ellipticOrbits_union_cusps`: a finite-index map of
   compactified quotients branches only over elliptic orbits and cusps.
 * `TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`: the
@@ -52,22 +44,9 @@ characteristics `TauCeti.eulerChar`.
 
 public noncomputable section
 
-open Function MulAction Set Topology UpperHalfPlane
+open MulAction Set UpperHalfPlane
 open Subgroup Subgroup.CompactifiedQuotient TauCeti TauCeti.RiemannSurface
-open scoped Manifold MatrixGroups
-
-namespace Subgroup
-
-/-- **The free-locus quotient of a cofinite Fuchsian group has finite CW type.** When `X(Γ)` is
-compact, the orbit space of the free locus of `Γ` is homeomorphic to `X(Γ)` with the finitely many
-elliptic orbits and cusps deleted. -/
-instance finiteCWType_orbitRel_quotient_freeLocus {Γ : Subgroup PSL(2, ℝ)}
-    [DiscreteTopology Γ] [CompactSpace Γ.CompactifiedQuotient] :
-    FiniteCWType (orbitRel.Quotient Γ (freeLocus Γ ℍ)) :=
-  have := (finite_ellipticOrbits_union_cusps (Γ := Γ)).to_subtype
-  (freeLocusQuotientHomeomorph Γ).finiteCWType
-
-end Subgroup
+open scoped MatrixGroups
 
 namespace TauCeti.Fuchsian
 
