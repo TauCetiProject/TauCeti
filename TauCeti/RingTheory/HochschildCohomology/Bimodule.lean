@@ -136,18 +136,24 @@ theorem hochschildBimoduleCoboundaries_le_hochschildBimoduleCocycles [SMulCommCl
 
 variable {R A M} in
 /-- A degree-zero cochain is a cocycle exactly when its value is central. -/
-theorem mem_hochschildBimoduleCocycles_zero_iff (m : M) :
-    MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) m ∈
-        hochschildBimoduleCocycles R A M 0 ↔ ∀ x : A, x • m = op x • m := by
-  rw [mem_hochschildBimoduleCocycles_iff, hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff]
+theorem mem_hochschildBimoduleCocycles_zero_iff (ψ : (Fin 0 → A) →ₘₗ[R] M) :
+    ψ ∈ hochschildBimoduleCocycles R A M 0 ↔ ∀ x : A, x • ψ 0 = op x • ψ 0 := by
+  obtain ⟨m, rfl⟩ := (MultilinearMap.constLinearEquivOfIsEmpty R (RingHom.id R)
+    (fun _ : Fin 0 ↦ A) M).surjective ψ
+  rw [MultilinearMap.constLinearEquivOfIsEmpty_apply, mem_hochschildBimoduleCocycles_iff,
+    hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff, MultilinearMap.constOfIsEmpty_apply,
+    Function.const_apply]
 
 variable {R A M} in
 /-- A degree-one cochain is a cocycle exactly when it is a derivation, satisfying the Leibniz rule
-`f (x y) = x • f y + f x • y`. -/
-theorem mem_hochschildBimoduleCocycles_one_iff (f : A →ₗ[R] M) :
-    MultilinearMap.ofSubsingleton (RingHom.id R) A M 0 f ∈ hochschildBimoduleCocycles R A M 1 ↔
-      ∀ x y : A, f (x * y) = x • f y + op y • f x := by
-  rw [mem_hochschildBimoduleCocycles_iff, hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff]
+`ψ (x y) = x • ψ y + ψ x • y`. -/
+theorem mem_hochschildBimoduleCocycles_one_iff (ψ : (Fin 1 → A) →ₘₗ[R] M) :
+    ψ ∈ hochschildBimoduleCocycles R A M 1 ↔
+      ∀ x y : A, ψ (fun _ ↦ x * y) = x • ψ (fun _ ↦ y) + op y • ψ (fun _ ↦ x) := by
+  obtain ⟨f, rfl⟩ := (MultilinearMap.ofSubsingleton (RingHom.id R) A M (0 : Fin 1)).surjective ψ
+  simp only [mem_hochschildBimoduleCocycles_iff,
+    hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff,
+    MultilinearMap.ofSubsingleton_apply_apply]
 
 variable {R A M} in
 /-- A degree-one cochain is a coboundary exactly when it is an inner derivation
@@ -161,7 +167,8 @@ theorem mem_hochschildBimoduleCoboundaries_one_iff
   · rintro ⟨φ, rfl⟩
     obtain ⟨m, rfl⟩ := (MultilinearMap.constLinearEquivOfIsEmpty R (RingHom.id R)
       (fun _ : Fin 0 ↦ A) M).surjective φ
-    exact ⟨m, fun a ↦ hochschildBimoduleCoboundary_constOfIsEmpty m (fun _ ↦ a)⟩
+    refine ⟨m, fun a ↦ ?_⟩
+    rw [MultilinearMap.constLinearEquivOfIsEmpty_apply, hochschildBimoduleCoboundary_constOfIsEmpty]
   · rintro ⟨m, hm⟩
     refine ⟨MultilinearMap.constOfIsEmpty (RingHom.id R) (fun _ : Fin 0 ↦ A) m, ?_⟩
     ext a
