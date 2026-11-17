@@ -159,6 +159,17 @@ private theorem one_sub_mul_perimeter_add_two_mul_sqrt_mul_volume_le_perimeter {
     (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ hy ↦ hy)
     hτ₀ hτ₁ φ.1 φ.2
 
+/-- Cancelling `ofReal (1 - τ) * a` against `a` in real numbers: for finite `a` and `b`,
+`ofReal (1 - τ) * a + 2 √τ b ≤ a` gives `2 √τ b ≤ τ a`. -/
+private theorem two_mul_sqrt_mul_toReal_le_mul_toReal {τ : ℝ} {a b : ℝ≥0∞} (ha : a ≠ ∞)
+    (hb : b ≠ ∞) (hτ₁ : τ ≤ 1) (h : ENNReal.ofReal (1 - τ) * a + 2 * ENNReal.ofReal √τ * b ≤ a) :
+    2 * √τ * b.toReal ≤ τ * a.toReal := by
+  have h' := ENNReal.toReal_mono ha h
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)] at h'
+  simp only [ENNReal.toReal_mul, ENNReal.toReal_ofReal (sub_nonneg.2 hτ₁),
+    ENNReal.toReal_ofReal (Real.sqrt_nonneg τ), ENNReal.toReal_ofNat] at h'
+  linarith
+
 /-- **Equality in the joint slicing inequality forces interval sections.** Let `s` be a
 null-measurable set of finite volume and finite perimeter and `e` a unit vector. If `P(s)` is at
 most the supremum over test vector fields `φ` on `(ℝ ∙ e)ᗮ` with `‖φ‖ ≤ 1` of
@@ -188,19 +199,11 @@ theorem ae_lineSection_ordConnected_of_perimeter_le_iSup {s : Set E}
   -- In real numbers: `2 √τ |A| ≤ τ P(s)`, so `2 |A| ≤ √τ P(s)` for `0 < τ ≤ 1`.
   have hreal : ∀ τ : ℝ, 0 < τ → τ ≤ 1 →
       (volume A).toReal ≤ √τ * (perimeter volume ⊤ s).toReal / 2 := fun τ hτ₀ hτ₁ ↦ by
-    have h' := ENNReal.toReal_mono hP (hτ τ hτ₀.le hτ₁)
-    rw [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hP)
-        (ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) ENNReal.ofReal_ne_top) hAfin),
-      ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by linarith), ENNReal.toReal_ofReal (Real.sqrt_nonneg _)] at h'
-    have hs₀ : 0 < √τ := Real.sqrt_pos.2 hτ₀
-    have hsq : √τ * √τ = τ := Real.mul_self_sqrt hτ₀.le
-    have h'' : √τ * (2 * (volume A).toReal) ≤ √τ * (√τ * (perimeter volume ⊤ s).toReal) := by
-      rw [← mul_assoc √τ √τ, hsq]
-      norm_num at h'
-      nlinarith
+    have h' := two_mul_sqrt_mul_toReal_le_mul_toReal hP hAfin hτ₁ (hτ τ hτ₀.le hτ₁)
     rw [le_div_iff₀ two_pos]
-    linarith [le_of_mul_le_mul_left h'' hs₀]
+    refine le_of_mul_le_mul_left ?_ (Real.sqrt_pos.2 hτ₀)
+    rw [← mul_assoc √τ √τ, Real.mul_self_sqrt hτ₀.le]
+    linarith
   have hlim : Tendsto (fun τ : ℝ ↦ √τ * (perimeter volume ⊤ s).toReal / 2) (𝓝[>] 0) (𝓝 0) := by
     simpa using ((Real.continuous_sqrt.tendsto 0).mul_const
       (perimeter volume ⊤ s).toReal |>.div_const 2).mono_left nhdsWithin_le_nhds
