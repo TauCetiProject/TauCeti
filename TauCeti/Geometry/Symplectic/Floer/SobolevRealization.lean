@@ -77,6 +77,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
+open StripSobolev (jet jet_apply stripMeasure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -360,6 +361,7 @@ end TauCeti.SymplecticForm
 namespace TauCeti.Floer
 
 open CylinderSobolev
+open StripSobolev (jet jet_apply stripMeasure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
@@ -437,6 +439,7 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
+open StripSobolev (jet jet_apply stripMeasure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
