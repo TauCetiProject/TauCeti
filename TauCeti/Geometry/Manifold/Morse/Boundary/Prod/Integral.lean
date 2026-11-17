@@ -467,9 +467,11 @@ theorem signedMorseBoundaryCoeff_prod_left (hYs : hY.IsMorseSmale) (p : critical
       (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * hY.signedMorseBoundaryCoeff 𝔬' q q' := by
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
   have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p q
   have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q'
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p q'
   by_cases hqq' : manifoldMorseIndex 𝓘(ℝ, E') g q = manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   swap
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hqq', mul_zero]
@@ -511,9 +513,11 @@ theorem signedMorseBoundaryCoeff_prod_right (hXs : hX.IsMorseSmale)
       hX.signedMorseBoundaryCoeff 𝔬 p p' := by
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
   have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p q
   have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p' q
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p' q
   by_cases hpp' : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f p' + 1
   swap
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpp']
@@ -557,9 +561,11 @@ theorem signedMorseBoundaryCoeff_prod_eq_zero_of_ne (hXs : hX.IsMorseSmale)
         ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
           (p', q')) = 0 := by
   have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p q
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p q
   have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
-    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p' q'
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p' q'
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q =
     manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   · refine (signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one hX hY 𝔬 𝔬'
