@@ -7,16 +7,16 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Reflecting a function across the real axis
 
-For `f : ℂ → ℂ`, the reflected function `conj ∘ f ∘ conj` is again holomorphic, meromorphic, and
-has the same order, at the reflected point. Mathlib records the differentiable case as
-`DifferentiableAt.conj_conj`; this file supplies the analytic and meromorphic versions together
-with the invariance of `meromorphicOrderAt`.
+For `f : ℂ → ℂ`, the reflected function `conj ∘ f ∘ conj` is again holomorphic, meromorphic, in
+meromorphic normal form, and has the same order, at the reflected point. Mathlib records the
+differentiable case as `DifferentiableAt.conj_conj`; this file supplies the analytic, meromorphic,
+and normal-form versions together with the invariance of `meromorphicOrderAt`.
 
 These are the statements needed to transport the analytic properties of a completed L-function to
 its dual, whose completed function is the reflection of the original one.
@@ -28,11 +28,13 @@ its dual, whose completed function is the reflection of the original one.
   reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
+* `MeromorphicNFAt.conj_conj`, `TauCeti.meromorphicNFAt_conj_conj_iff`,
+  `MeromorphicNFOn.conj_conj`: reflection preserves meromorphic normal form.
 -/
 
 public section
 
-open ComplexConjugate Filter Topology
+open ComplexConjugate Filter Set Topology
 
 variable {f : ℂ → ℂ} {x : ℂ}
 
@@ -91,3 +93,27 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       ⟨conj ∘ g ∘ conj, analyticAt_conj_conj_iff.2 hg, by simpa using hg0, ?_⟩
     filter_upwards [hconj.eventually hfg] with z hz
     simp [hz]
+
+/-- If `f` is in meromorphic normal form at `x`, then `conj ∘ f ∘ conj` is in meromorphic normal
+form at `conj x`. -/
+theorem MeromorphicNFAt.conj_conj (hf : MeromorphicNFAt f x) :
+    MeromorphicNFAt (conj ∘ f ∘ conj) (conj x) := by
+  rw [meromorphicNFAt_iff_analyticAt_or]
+  rcases meromorphicNFAt_iff_analyticAt_or.mp hf with ha | ⟨hm, ho, hz0⟩
+  · exact Or.inl ha.conj_conj
+  · refine Or.inr ⟨hm.conj_conj, ?_, by simp [hz0]⟩
+    simpa [TauCeti.meromorphicOrderAt_conj_conj] using ho
+
+/-- A function `f` is in meromorphic normal form at `conj x` iff `conj ∘ f ∘ conj` is in
+meromorphic normal form at `x`. -/
+@[simp]
+theorem TauCeti.meromorphicNFAt_conj_conj_iff :
+    MeromorphicNFAt (conj ∘ f ∘ conj) x ↔ MeromorphicNFAt f (conj x) :=
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.conj_conj, fun hf ↦ by
+    simpa using hf.conj_conj⟩
+
+/-- If `f` is in meromorphic normal form on `U`, then `conj ∘ f ∘ conj` is in meromorphic normal
+form on `conj ⁻¹' U`. -/
+theorem MeromorphicNFOn.conj_conj {U : Set ℂ} (hf : MeromorphicNFOn f U) :
+    MeromorphicNFOn (conj ∘ f ∘ conj) (conj ⁻¹' U) :=
+  fun _ hz ↦ TauCeti.meromorphicNFAt_conj_conj_iff.2 (hf hz)
