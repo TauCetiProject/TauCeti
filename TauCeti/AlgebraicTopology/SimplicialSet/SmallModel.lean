@@ -173,7 +173,32 @@ noncomputable def ulift {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
 parameter while preserving the underlying small Kan complex. -/
 @[simp]
 lemma ulift_model {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
-    (M.ulift.{u, v, w}).model = M.model := by rfl
+    (M.ulift.{u, v, w}).model = M.model := (rfl)
+
+/-- The forward comparison map of `M.ulift` is `SSet.uliftFunctor.map M.hom`, conjugated by the
+universe-lift reindexing isomorphisms and transported across `ulift_model`. -/
+@[simp]
+lemma ulift_hom {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
+    (M.ulift.{u, v, w}).hom =
+      eqToHom (congrArg SSet.uliftFunctor.{max v w, u}.obj (ulift_model.{u, v, w} M)) ≫
+        SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model ≫
+          SSet.uliftFunctor.{w, max u v}.map M.hom ≫
+            SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X := by
+  unfold ulift
+  simp only [eqToHom_refl, Category.id_comp]
+
+/-- The backward comparison map of `M.ulift` is `SSet.uliftFunctor.map M.inv`, conjugated by the
+universe-lift reindexing isomorphisms and transported across `ulift_model`. -/
+@[simp]
+lemma ulift_inv {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
+    (M.ulift.{u, v, w}).inv =
+      SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X ≫
+        SSet.uliftFunctor.{w, max u v}.map M.inv ≫
+          SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model ≫
+            eqToHom
+              (congrArg SSet.uliftFunctor.{max v w, u}.obj (ulift_model.{u, v, w} M)).symm := by
+  unfold ulift
+  simp only [eqToHom_refl, Category.comp_id]
 
 /-- Lowering a small space model from a universe lift `uliftFunctor.obj X` back to `X`, keeping the
 same small Kan complex as model. -/
@@ -202,7 +227,33 @@ complex. -/
 @[simp]
 lemma ofUlift_model {X : SSet.{v}}
     (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
-    M.ofUlift.model = M.model := by rfl
+    M.ofUlift.model = M.model := (rfl)
+
+/-- The forward comparison map of `M.ofUlift` is the `SSet.uliftFunctor`-preimage of `M.hom`
+conjugated by the universe-lift reindexing isomorphisms, transported across `ofUlift_model`. -/
+@[simp]
+lemma ofUlift_hom {X : SSet.{v}}
+    (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
+    M.ofUlift.hom =
+      eqToHom (congrArg SSet.uliftFunctor.{v, u}.obj M.ofUlift_model) ≫
+        SSet.uliftFunctor.{w, max u v}.preimage
+          (SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model ≫ M.hom ≫
+            SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X) := by
+  unfold ofUlift
+  simp only [eqToHom_refl, Category.id_comp]
+
+/-- The backward comparison map of `M.ofUlift` is the `SSet.uliftFunctor`-preimage of `M.inv`
+conjugated by the universe-lift reindexing isomorphisms, transported across `ofUlift_model`. -/
+@[simp]
+lemma ofUlift_inv {X : SSet.{v}}
+    (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
+    M.ofUlift.inv =
+      SSet.uliftFunctor.{w, max u v}.preimage
+        (SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X ≫ M.inv ≫
+          SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model) ≫
+        eqToHom (congrArg SSet.uliftFunctor.{v, u}.obj M.ofUlift_model).symm := by
+  unfold ofUlift
+  simp only [eqToHom_refl, Category.comp_id]
 
 end SmallSpaceModel
 
