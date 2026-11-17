@@ -24,10 +24,10 @@ where `a : h_U ⟶ F` is an étale atlas, `b : h_V ⟶ G` is representable by é
 schemes, and `h : U ⟶ V` satisfies `P` (Stacks, Definition 67.22.2 (04RD)).
 
 Stability under base change in `AlgSpace` (`EtaleLocal.of_isPullback`, `EtaleLocal.baseChange`)
-requires only `[P.IsStableUnderBaseChange]`, and stability under composition (`EtaleLocal.comp`,
-`EtaleLocal.isStableUnderComposition`, `EtaleLocal.isMultiplicative`) requires only
-`[P.RespectsLeft @Etale]`, `[P.IsStableUnderBaseChangeAgainst @Etale]`, and
-`[P.IsStableUnderComposition]`.
+requires only `[P.IsStableUnderBaseChange]`. Stability under composition (`EtaleLocal.comp`,
+`EtaleLocal.isStableUnderComposition`) requires only `[P.RespectsLeft @Etale]`,
+`[P.IsStableUnderBaseChangeAgainst @Etale]`, and `[P.IsStableUnderComposition]`; multiplicativity
+(`EtaleLocal.isMultiplicative`) additionally requires identities via `[P.IsMultiplicative]`.
 
 When `P` is étale-local on source and target in the sense of Stacks, Definition 35.32.3 (04QZ) —
 expressed via Mathlib's `[P.IsLocalAtSource Scheme.etalePrecoverage]`,

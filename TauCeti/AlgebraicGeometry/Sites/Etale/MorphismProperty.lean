@@ -7,7 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 public import Mathlib.AlgebraicGeometry.Sites.Etale
-public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import TauCeti.AlgebraicGeometry.Morphisms.RingHomProperties
+public import TauCeti.AlgebraicGeometry.Sites.Fppf.MorphismProperty
+public import TauCeti.AlgebraicGeometry.Sites.MorphismProperty
 import Mathlib.AlgebraicGeometry.Morphisms.Separated
 import Mathlib.RingTheory.Unramified.LocalStructure
 import Mathlib.Tactic.Algebraize
@@ -25,22 +27,27 @@ and surjective on the source (Stacks, Lemma 35.32.6 (04R2)).
 This invariance is what makes étale-local properties of morphisms of algebraic spaces independent
 of the choice of étale charts.
 
+General precoverage locality lemmas (`respectsLeft_of_isLocalAtSource_precoverage`,
+`isStableUnderBaseChangeAgainst_of_isLocalAtTarget_precoverage`,
+`of_isEmpty_of_isLocalAtSource_precoverage`, `of_isPullback_pair_of_isLocalAtSource_precoverage`),
+Zariski open-immersion stability instances (`IsZariskiLocalAtSource.respectsRight_isOpenImmersion`,
+`HasRingHomProperty.respectsRight_isOpenImmersion`), and fppf descent-to-locality instances live in
+`TauCeti.AlgebraicGeometry.Sites.MorphismProperty`,
+`TauCeti.AlgebraicGeometry.Morphisms.Basic`,
+`TauCeti.AlgebraicGeometry.Morphisms.RingHomProperties`,
+`TauCeti.AlgebraicGeometry.Sites.Descent`, and
+`TauCeti.AlgebraicGeometry.Sites.Fppf.MorphismProperty`.
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.zariskiPrecoverage_le_etalePrecoverage` and
   `AlgebraicGeometry.Scheme.etalePrecoverage_le_fppfPrecoverage`: inclusions between the Zariski,
   étale, and fppf precoverages.
-* `AlgebraicGeometry.IsZariskiLocalAtSource.respectsRight_isOpenImmersion`: any multiplicative
-  Zariski-local-at-source property respects postcomposition with open immersions.
-* `CategoryTheory.MorphismProperty.isLocalAtTarget_precoverage_of_descendsAlong`,
-  `CategoryTheory.MorphismProperty.isLocalAtTarget_fppfPrecoverage_of_descendsAlong`, and
-  `CategoryTheory.MorphismProperty.isLocalAtTarget_etalePrecoverage_of_fppfPrecoverage`: descent
-  along `@Surjective ⊓ Q` implies target locality for `Scheme.precoverage Q` (and hence fppf and
-  étale target locality for properties satisfying fppf or fpqc descent).
-* `CategoryTheory.MorphismProperty.respectsLeft_of_isLocalAtSource_precoverage` and
-  `CategoryTheory.MorphismProperty.isStableUnderBaseChangeAgainst_of_isLocalAtTarget_precoverage`:
-  source (resp. target) locality for `Scheme.precoverage Q` implies precomposition (resp. base
-  change) stability along `Q`, specialized as instances for `@Etale`.
+* `CategoryTheory.MorphismProperty.isLocalAtTarget_etalePrecoverage_of_fppfPrecoverage`: target
+  locality for `Scheme.fppfPrecoverage` implies target locality for `Scheme.etalePrecoverage`.
+* `CategoryTheory.MorphismProperty.respectsLeft_etale_of_isLocalAtSource` and
+  `CategoryTheory.MorphismProperty.isStableUnderBaseChangeAgainst_etale_of_isLocalAtTarget`:
+  étale specializations of the general precoverage stability theorems.
 * `CategoryTheory.MorphismProperty.respectsRight_etale_of_isLocal` and
   `CategoryTheory.MorphismProperty.respects_etale_of_isLocal`: if `P` is Zariski-local at the
   source, étale-local at the target, and respects postcomposition with open immersions, then `P`
@@ -54,14 +61,14 @@ of the choice of étale charts.
 ## Implementation notes
 
 The non-trivial half of Stacks, Lemma 35.32.6 (04R2) is stability under postcomposition with an
-étale morphism `e : V ⟶ Y`. Precomposition and base change along a non-surjective `Q`-morphism
-`e : U' ⟶ U` follow directly from `IsLocalAtSource` and `IsLocalAtTarget` by adjoining `𝟙 U` to
-obtain the two-arrow covering `{e, 𝟙 U}`. For postcomposition with an étale `e`, Zariski
-localization using `Algebra.IsEtaleAt.exists_isStandardEtale` reduces to a standard étale morphism,
-which is separated and has bounded geometric fibres. Induction on the fibre bound then factors `e`
-through its open image `O ⊆ Y`, pulls back along the étale covering `e' : V ⟶ O`, and splits
-`V ×_O V` into the clopen diagonal `Δ(V)` and its open complement, on which the fibre bound drops
-by one.
+étale morphism `e : V ⟶ Y`. Precomposition and base change along a non-surjective étale morphism
+`e : U' ⟶ U` follow from the general precoverage results in
+`TauCeti.AlgebraicGeometry.Sites.MorphismProperty` by adjoining `𝟙 U` to obtain the two-arrow
+covering `{e, 𝟙 U}`. For postcomposition with an étale `e`, Zariski localization using
+`Algebra.IsEtaleAt.exists_isStandardEtale` reduces to a standard étale morphism, which is separated
+and has bounded geometric fibres. Induction on the fibre bound then factors `e` through its open
+image `O ⊆ Y`, pulls back along the étale covering `e' : V ⟶ O`, and splits `V ×_O V` into the
+clopen diagonal `Δ(V)` and its open complement, on which the fibre bound drops by one.
 
 ## References
 
@@ -97,33 +104,6 @@ instance AlgebraicGeometry.Etale.respectsLeft_etale :
     MorphismProperty.RespectsLeft @Etale.{u} @Etale.{u} where
   precomp _ _ _ _ := inferInstance
 
-/-- If `P` is Zariski-local at the source and multiplicative, then `P` respects postcomposition
-with open immersions. -/
-instance AlgebraicGeometry.IsZariskiLocalAtSource.respectsRight_isOpenImmersion
-    (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtSource P] [P.IsMultiplicative] :
-    P.RespectsRight @IsOpenImmersion where
-  postcomp i _ _ hf := P.comp_mem _ i hf (IsZariskiLocalAtSource.of_isOpenImmersion i)
-
-/-- Any multiplicative scheme morphism property defined from a ring homomorphism property respects
-postcomposition with open immersions. -/
-instance AlgebraicGeometry.HasRingHomProperty.respectsRight_isOpenImmersion
-    (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
-    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
-    [HasRingHomProperty P Q] [MorphismProperty.IsMultiplicative P] :
-    MorphismProperty.RespectsRight P @IsOpenImmersion :=
-  let P' : MorphismProperty Scheme.{u} := P
-  have : HasRingHomProperty P' Q := ‹_›
-  have : P'.IsMultiplicative := ‹_›
-  IsZariskiLocalAtSource.respectsRight_isOpenImmersion P'
-
-/-- Two-sided open-immersion stability for a raw scheme morphism predicate supplies
-`RespectsRight _ @IsOpenImmersion` at `instances` transparency. -/
-instance AlgebraicGeometry.respectsRight_isOpenImmersion_of_respects
-    (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
-    [MorphismProperty.Respects P @IsOpenImmersion] :
-    MorphismProperty.RespectsRight P @IsOpenImmersion :=
-  ‹MorphismProperty.Respects P @IsOpenImmersion›.toRespectsRight
-
 namespace CategoryTheory.MorphismProperty
 
 /-- A property of scheme morphisms local at the source for the étale precoverage is Zariski-local
@@ -137,82 +117,6 @@ at the target. -/
 theorem isZariskiLocalAtTarget_of_etalePrecoverage (P : MorphismProperty Scheme.{u})
     [P.IsLocalAtTarget Scheme.etalePrecoverage] : IsZariskiLocalAtTarget P :=
   IsLocalAtTarget.of_le Scheme.zariskiPrecoverage_le_etalePrecoverage
-
-/-- If `P` is Zariski-local at the target, stable under base change, and descends along
-`@Surjective ⊓ Q` for a Zariski-local-at-source property `Q`, then `P` is local at the target for
-`Scheme.precoverage Q`. -/
-theorem isLocalAtTarget_precoverage_of_descendsAlong
-    (P Q : MorphismProperty Scheme.{u})
-    [IsZariskiLocalAtTarget P] [P.IsStableUnderBaseChange]
-    [IsZariskiLocalAtSource Q] [P.DescendsAlong (@Surjective ⊓ Q)] :
-    P.IsLocalAtTarget (Scheme.precoverage Q) := by
-  refine IsLocalAtTarget.mk_of_small.{u}
-    (fun _ hf _ ↦ P.pullback_snd _ _ hf) fun {_ Y f} 𝒰 h ↦ ?_
-  let g : (∐ 𝒰.X) ⟶ Y := Sigma.desc 𝒰.f
-  have hsurj : Surjective g := ⟨fun y ↦ by
-    obtain ⟨i, x, hx⟩ := Scheme.Cover.exists_eq 𝒰 y
-    exact ⟨Sigma.ι 𝒰.X i x, by rw [← Scheme.Hom.comp_apply, Sigma.ι_comp_desc, hx]⟩⟩
-  have hQ : Q g := IsZariskiLocalAtSource.sigmaDesc (Scheme.Cover.map_prop 𝒰)
-  refine of_pullback_snd_of_descendsAlong (P := P) (Q := @Surjective ⊓ Q) ⟨hsurj, hQ⟩ ?_
-  have hcov : Presieve.ofArrows 𝒰.X (Sigma.ι 𝒰.X) ∈ Scheme.zariskiPrecoverage (∐ 𝒰.X) :=
-    (Scheme.ofArrows_mem_precoverage_iff _).mpr
-      ⟨fun z ↦ ⟨(sigmaMk 𝒰.X).symm z |>.1, (sigmaMk 𝒰.X).symm z |>.2, by simp [← sigmaMk_mk]⟩,
-       fun _ ↦ inferInstance⟩
-  refine IsLocalAtTarget.of_forall_pullbackSnd hcov ?_
-  rintro _ _ _ ⟨i⟩
-  have sq := (IsPullback.of_hasPullback (pullback.snd f g) (Sigma.ι 𝒰.X i)).paste_horiz
-    (IsPullback.of_hasPullback f g)
-  have hfg : Sigma.ι 𝒰.X i ≫ g = 𝒰.f i := Sigma.ι_comp_desc 𝒰.f i
-  rw [hfg] at sq
-  exact (P.cancel_left_of_respectsIso sq.isoPullback.inv _).mp
-    (by rw [sq.isoPullback_inv_snd]; exact h i)
-
-/-- Any Zariski-local-at-target, base-change-stable scheme morphism property that descends along
-surjective flat morphisms locally of finite presentation is local at the target for
-`Scheme.fppfPrecoverage`. -/
-instance isLocalAtTarget_fppfPrecoverage_of_descendsAlong
-    (P : MorphismProperty Scheme.{u})
-    [IsZariskiLocalAtTarget P] [P.IsStableUnderBaseChange]
-    [P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)] :
-    P.IsLocalAtTarget Scheme.fppfPrecoverage :=
-  let F : MorphismProperty Scheme.{u} := @Flat
-  let L : MorphismProperty Scheme.{u} := @LocallyOfFinitePresentation
-  have : HasRingHomProperty F RingHom.Flat := inferInstanceAs (HasRingHomProperty @Flat _)
-  have : HasRingHomProperty L RingHom.FinitePresentation :=
-    inferInstanceAs (HasRingHomProperty @LocallyOfFinitePresentation _)
-  have hle : (@Surjective ⊓ (F ⊓ L) : MorphismProperty Scheme.{u}) ≤
-      ((@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) : MorphismProperty Scheme.{u}) :=
-    fun _ _ _ ⟨h₁, h₂, h₃⟩ ↦ ⟨⟨h₁, h₂⟩, h₃⟩
-  have : P.DescendsAlong (@Surjective ⊓ (F ⊓ L)) := DescendsAlong.of_le hle
-  isLocalAtTarget_precoverage_of_descendsAlong P (F ⊓ L)
-
-/-- Specializes `isLocalAtTarget_fppfPrecoverage_of_descendsAlong` to scheme morphism predicates
-equipped with `HasRingHomProperty` and fppf descent. -/
-instance _root_.AlgebraicGeometry.HasRingHomProperty.isLocalAtTarget_fppfPrecoverage
-    (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
-    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
-    [HasRingHomProperty P Q] [IsStableUnderBaseChange P]
-    [DescendsAlong P (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)] :
-    IsLocalAtTarget P Scheme.fppfPrecoverage :=
-  let P' : MorphismProperty Scheme.{u} := P
-  have : HasRingHomProperty P' Q := ‹_›
-  have : P'.IsStableUnderBaseChange := ‹_›
-  have : P'.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := ‹_›
-  isLocalAtTarget_fppfPrecoverage_of_descendsAlong P'
-
-/-- Specializes `isLocalAtTarget_fppfPrecoverage_of_descendsAlong` to scheme morphism predicates
-equipped with `HasRingHomProperty` and fpqc descent. -/
-instance _root_.AlgebraicGeometry.HasRingHomProperty.isLocalAtTarget_fppfPrecoverage_of_fpqc
-    (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
-    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
-    [HasRingHomProperty P Q] [IsStableUnderBaseChange P]
-    [DescendsAlong P (@Surjective ⊓ @Flat ⊓ @QuasiCompact)] :
-    IsLocalAtTarget P Scheme.fppfPrecoverage :=
-  let P' : MorphismProperty Scheme.{u} := P
-  have : HasRingHomProperty P' Q := ‹_›
-  have : P'.IsStableUnderBaseChange := ‹_›
-  have : P'.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := ‹_›
-  isLocalAtTarget_fppfPrecoverage_of_descendsAlong P'
 
 /-- Any scheme morphism property local at the target for `Scheme.fppfPrecoverage` is local at the
 target for `Scheme.etalePrecoverage`. -/
@@ -230,49 +134,14 @@ instance isLocalAtTarget_etalePrecoverage_of_fppfPrecoverage'
     IsLocalAtTarget P Scheme.etalePrecoverage :=
   IsLocalAtTarget.of_le Scheme.etalePrecoverage_le_fppfPrecoverage
 
-/-- If `P` is local at the source for `Scheme.precoverage Q`, any morphism out of an empty scheme
-satisfies `P`. -/
-theorem of_isEmpty_of_isLocalAtSource_precoverage {P : MorphismProperty Scheme.{u}}
-    (Q : MorphismProperty Scheme.{u}) [P.IsLocalAtSource (Scheme.precoverage Q)]
-    {U V : Scheme.{u}} (f : U ⟶ V) [IsEmpty U] : P f :=
-  IsLocalAtSource.of_forall_comp (Scheme.bot_mem_precoverage Q U) fun _ _ hg ↦ False.elim hg
-
-/-- Adding the identity arrow turns any `Q`-morphism `e : U' ⟶ U` into a two-arrow `Q`-covering
-presieve of `U`. -/
-private lemma mem_precoverage_ofArrows_id {Q : MorphismProperty Scheme.{u}} [Q.ContainsIdentities]
-    {U' U : Scheme.{u}} (e : U' ⟶ U) (he : Q e) :
-    Presieve.ofArrows (fun b : Bool ↦ cond b U' U)
-      (fun b ↦ match b with | true => e | false => 𝟙 U) ∈ Scheme.precoverage Q U :=
-  (Scheme.ofArrows_mem_precoverage_iff Q).mpr
-    ⟨fun x ↦ ⟨false, x, rfl⟩, by rintro (_ | _); exacts [Q.id_mem U, he]⟩
-
-/-- If `P` is local at the source for `Scheme.precoverage Q` and `Q` contains identities, then `P`
-respects precomposition with `Q`-morphisms. -/
-theorem respectsLeft_of_isLocalAtSource_precoverage (P Q : MorphismProperty Scheme.{u})
-    [Q.ContainsIdentities] [P.IsLocalAtSource (Scheme.precoverage Q)] : P.RespectsLeft Q where
-  precomp e he _ hf :=
-    IsLocalAtSource.comp (mem_precoverage_ofArrows_id e he) e (.mk true) hf
-
-/-- If `P` is local at the target for `Scheme.precoverage Q` and `Q` contains identities, then `P`
-is stable under base change along `Q`-morphisms. -/
-theorem isStableUnderBaseChangeAgainst_of_isLocalAtTarget_precoverage
-    (P Q : MorphismProperty Scheme.{u}) [Q.ContainsIdentities]
-    [P.IsLocalAtTarget (Scheme.precoverage Q)] : P.IsStableUnderBaseChangeAgainst Q where
-  isStableUnderBaseChangeAlong {_ _} e he :=
-    ⟨fun sq hf ↦ (P.cancel_left_of_respectsIso sq.isoPullback.inv _).mp
-      (by rw [sq.isoPullback_inv_snd]; exact
-        IsLocalAtTarget.pullbackSnd (mem_precoverage_ofArrows_id e he) (.mk true) hf)⟩
-
 /-- If `P` is local at the source for `Scheme.etalePrecoverage`, then `P` respects precomposition
 with étale morphisms. -/
 instance respectsLeft_etale_of_isLocalAtSource (P : MorphismProperty Scheme.{u})
-    [P.IsLocalAtSource Scheme.etalePrecoverage] : P.RespectsLeft @Etale where
-  precomp {U' U _} e he _ hf := by
-    have hcov : Presieve.ofArrows (fun b : Bool ↦ cond b U' U)
-        (fun b ↦ match b with | true => e | false => 𝟙 U) ∈ Scheme.etalePrecoverage U :=
-      (Scheme.ofArrows_mem_precoverage_iff _).mpr
-        ⟨fun x ↦ ⟨false, x, rfl⟩, by rintro (_ | _); exacts [inferInstanceAs (Etale (𝟙 U)), he]⟩
-    exact IsLocalAtSource.comp hcov e (.mk true) hf
+    [P.IsLocalAtSource Scheme.etalePrecoverage] : P.RespectsLeft @Etale :=
+  have : MorphismProperty.ContainsIdentities @Etale.{u} :=
+    MorphismProperty.IsMultiplicative.toContainsIdentities
+  have : P.IsLocalAtSource (Scheme.precoverage @Etale) := ‹_›
+  respectsLeft_of_isLocalAtSource_precoverage P @Etale
 
 /-- Specializes `respectsLeft_etale_of_isLocalAtSource` to raw scheme morphism predicates at
 `instances` transparency. -/
@@ -285,14 +154,11 @@ instance respectsLeft_etale_of_isLocalAtSource' (P : ∀ ⦃X Y : Scheme.{u}⦄,
 /-- If `P` is local at the target for `Scheme.etalePrecoverage`, then `P` is stable under base
 change along étale morphisms. -/
 instance isStableUnderBaseChangeAgainst_etale_of_isLocalAtTarget (P : MorphismProperty Scheme.{u})
-    [P.IsLocalAtTarget Scheme.etalePrecoverage] : P.IsStableUnderBaseChangeAgainst @Etale where
-  isStableUnderBaseChangeAlong {U' U} e he := ⟨fun sq hf ↦ by
-    have hcov : Presieve.ofArrows (fun b : Bool ↦ cond b U' U)
-        (fun b ↦ match b with | true => e | false => 𝟙 U) ∈ Scheme.etalePrecoverage U :=
-      (Scheme.ofArrows_mem_precoverage_iff _).mpr
-        ⟨fun x ↦ ⟨false, x, rfl⟩, by rintro (_ | _); exacts [inferInstanceAs (Etale (𝟙 U)), he]⟩
-    exact (P.cancel_left_of_respectsIso sq.isoPullback.inv _).mp
-      (by rw [sq.isoPullback_inv_snd]; exact IsLocalAtTarget.pullbackSnd hcov (.mk true) hf)⟩
+    [P.IsLocalAtTarget Scheme.etalePrecoverage] : P.IsStableUnderBaseChangeAgainst @Etale :=
+  have : MorphismProperty.ContainsIdentities @Etale.{u} :=
+    MorphismProperty.IsMultiplicative.toContainsIdentities
+  have : P.IsLocalAtTarget (Scheme.precoverage @Etale) := ‹_›
+  isStableUnderBaseChangeAgainst_of_isLocalAtTarget_precoverage P @Etale
 
 /-- Specializes `isStableUnderBaseChangeAgainst_etale_of_isLocalAtTarget` to raw scheme morphism
 predicates at `instances` transparency. -/
@@ -456,25 +322,6 @@ private lemma exists_etale_surjective_factorization {V Y : Scheme.{u}} (e : V �
     exact ⟨Finite.of_injective ψ hinj, (Nat.card_le_card_of_injective ψ hinj).trans hcard⟩
   exact ⟨O, e', het, hsep, hsurj, he', hb'⟩
 
-/-- If `Δ : V ⟶ Z` is both an open and a closed immersion, a Zariski-local-at-source property `P`
-holds for `g : X ⟶ Y` once it holds after precomposing with the pullbacks of `Δ` and its open
-complement `W₂` along any `q : X ⟶ Z`. -/
-private lemma of_clopen_pullback_cover {P : MorphismProperty Scheme.{u}}
-    [IsZariskiLocalAtSource P] {V X Y Z : Scheme.{u}} (q : X ⟶ Z) (g : X ⟶ Y) (Δ : V ⟶ Z)
-    [IsOpenImmersion Δ] (W₂ : Z.Opens) (hW₂ : (W₂ : Set ↑Z) = (Set.range Δ)ᶜ)
-    (h₁ : P (pullback.fst q Δ ≫ g)) (h₂ : P (pullback.fst q W₂.ι ≫ g)) : P g := by
-  let 𝒰 : Z.OpenCover := Scheme.Cover.mkOfCovers Bool (fun b ↦ cond b V W₂.toScheme)
-    (fun b ↦ match b with | true => Δ | false => W₂.ι)
-    (fun z ↦ by
-      by_cases hz : z ∈ Set.range Δ
-      · obtain ⟨v, hv⟩ := hz; exact ⟨true, v, hv⟩
-      · exact ⟨false, ⟨z, SetLike.mem_coe.mp (by rw [hW₂]; exact hz)⟩, rfl⟩)
-    (by rintro (_ | _) <;> exact inferInstance)
-  refine IsZariskiLocalAtSource.of_openCover (𝒰.pullback₁ q) ?_
-  rintro (_ | _)
-  · exact h₂
-  · exact h₁
-
 /-- Auxiliary induction on the geometric-fibre bound `d`: if `e : V ⟶ Y` is étale, separated, and
 has geometric fibres of cardinality at most `d`, then `P h` implies `P (h ≫ e)`. -/
 private lemma prop_comp_of_boundedGeometricFibers {P : MorphismProperty Scheme.{u}}
@@ -503,7 +350,8 @@ private lemma prop_comp_of_boundedGeometricFibers {P : MorphismProperty Scheme.{
       let W₂ : (pullback e' e').Opens := ⟨(Set.range Δ)ᶜ, Δ.isClosedMap.isClosed_range.isOpen_compl⟩
       let q : pullback (h ≫ e') e' ⟶ pullback e' e' :=
         pullback.map (h ≫ e') e' e' e' h (𝟙 V) (𝟙 O.toScheme) (by simp) (by simp)
-      refine of_clopen_pullback_cover q (pullback.snd (h ≫ e') e') Δ W₂ rfl ?_ ?_
+      refine IsZariskiLocalAtSource.of_pullback_pair q Δ W₂.ι
+        (fun z ↦ (em (z ∈ Set.range Δ)).imp_right fun hz ↦ W₂.range_ι.ge hz) ?_ ?_
       · have sq₁ := (pullback_lift_diagonal_isPullback h e').flip
         rw [← P.cancel_left_of_respectsIso sq₁.isoPullback.hom, ← Category.assoc,
           sq₁.isoPullback_hom_fst]
