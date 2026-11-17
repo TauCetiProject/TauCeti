@@ -137,15 +137,11 @@ private noncomputable def toRowVectors (N : TypeDStructure d ι X) (M : Type*) [
     [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] :
     BalancedTensorProduct R A M N.inducedModule →ₗ[R] X → M :=
   (BalancedTensorProduct.piRight R A M X).toLinearMap ∘ₗ
-    BalancedTensorProduct.map LinearMap.id (N.inducedModule.subtype.restrictScalars R)
-      (fun _ _ => rfl) fun b ψ => by
-        simp only [LinearMap.restrictScalars_apply, map_smul]
+    BalancedTensorProduct.lTensor R M N.inducedModule.subtype
 
 private theorem toRowVectors_tmul (m : M) (ψ : N.inducedModule) :
-    toRowVectors N M (BalancedTensorProduct.tmul R A m ψ) = fun x => op ((ψ : X → A) x) • m :=
-  (congrArg (BalancedTensorProduct.piRight R A M X)
-    (BalancedTensorProduct.map_tmul _ _ _ _ m ψ)).trans
-      (BalancedTensorProduct.piRight_tmul R A M X m ψ)
+    toRowVectors N M (BalancedTensorProduct.tmul R A m ψ) = fun x => op ((ψ : X → A) x) • m := by
+  simp [toRowVectors]
 
 private theorem toRowVectors_mem (z : BalancedTensorProduct R A M N.inducedModule) :
     toRowVectors N M z ∈ N.boxTensor M := by
@@ -160,29 +156,16 @@ private noncomputable def fromRowVectors (N : TypeDStructure d ι X) (M : Type*)
     [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
     (hι : ∀ s, IsIdempotentElem (ι s)) :
     (X → M) →ₗ[R] BalancedTensorProduct R A M N.inducedModule :=
-  BalancedTensorProduct.map LinearMap.id ((N.inducedProj hι).restrictScalars R)
-      (fun _ _ => rfl) (fun b ψ => by simp only [LinearMap.restrictScalars_apply, map_smul]) ∘ₗ
+  BalancedTensorProduct.lTensor R M (N.inducedProj hι) ∘ₗ
     (BalancedTensorProduct.piRight R A M X).symm.toLinearMap
 
 private theorem fromRowVectors_toRowVectors (hι : ∀ s, IsIdempotentElem (ι s))
     (z : BalancedTensorProduct R A M N.inducedModule) :
     fromRowVectors N M hι (toRowVectors N M z) = z := by
   induction z using BalancedTensorProduct.induction_on with
-  | ht m ψ =>
-    rw [fromRowVectors, toRowVectors, LinearMap.comp_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
-    refine (congrArg _ (BalancedTensorProduct.map_tmul _ _ _ _ m ψ)).trans
-      ((BalancedTensorProduct.map_tmul _ _ _ _ m _).trans ?_)
-    simp
+  -- Cancel `piRight` against its inverse rather than evaluating it on the pure tensor.
+  | ht m ψ => simp [fromRowVectors, toRowVectors, -BalancedTensorProduct.piRight_tmul]
   | ha z z' hz hz' => rw [map_add, map_add, hz, hz']
-
-private theorem toRowVectors_map_inducedProj_tmul (hι : ∀ s, IsIdempotentElem (ι s)) (m : M)
-    (v : X → A) :
-    toRowVectors N M (BalancedTensorProduct.map LinearMap.id ((N.inducedProj hι).restrictScalars R)
-      (fun _ _ => rfl) (fun b ψ => by simp only [LinearMap.restrictScalars_apply, map_smul])
-      (BalancedTensorProduct.tmul R A m v)) = fun x => op (v x * ι (N.idem x)) • m :=
-  (congrArg (toRowVectors N M) (BalancedTensorProduct.map_tmul _ _ _ _ m v)).trans
-    (toRowVectors_tmul m _)
 
 private theorem toRowVectors_fromRowVectors (hι : ∀ s, IsIdempotentElem (ι s)) {φ : X → M}
     (hφ : φ ∈ N.boxTensor M) : toRowVectors N M (fromRowVectors N M hι φ) = φ := by
@@ -190,9 +173,9 @@ private theorem toRowVectors_fromRowVectors (hι : ∀ s, IsIdempotentElem (ι s
   ext y
   rw [fromRowVectors, LinearMap.comp_apply, LinearEquiv.coe_coe,
     BalancedTensorProduct.piRight_symm_apply, map_sum, map_sum]
-  simp only [toRowVectors_map_inducedProj_tmul, Finset.sum_apply, Pi.single_apply, ite_mul,
-    one_mul, zero_mul, apply_ite op, op_zero, ite_smul, zero_smul, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true]
+  simp only [BalancedTensorProduct.lTensor_tmul, toRowVectors_tmul, coe_inducedProj_apply,
+    Finset.sum_apply, Pi.single_apply, ite_mul, one_mul, zero_mul, apply_ite op, op_zero,
+    ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
   exact mem_boxTensor_iff.mp hφ y
 
 variable (N M) in
@@ -259,11 +242,8 @@ theorem coe_balancedTensorEquiv_map_id_right (hι : ∀ s, IsIdempotentElem (ι 
       fun x => f ((balancedTensorEquiv N M hι z : X → M) x) := by
   induction z using BalancedTensorProduct.induction_on with
   | ht m ψ =>
-    have h : BalancedTensorProduct.map f LinearMap.id hf (fun _ _ => rfl)
-        (BalancedTensorProduct.tmul R A m ψ) = BalancedTensorProduct.tmul R A (f m) ψ :=
-      BalancedTensorProduct.map_tmul _ _ _ _ m ψ
     ext x
-    simp [h, hf]
+    simp [hf]
   | ha z z' hz hz' =>
     ext x
     simp only [map_add, Submodule.coe_add, Pi.add_apply, hz, hz']
@@ -273,20 +253,14 @@ theorem coe_balancedTensorEquiv_map_id_right (hι : ∀ s, IsIdempotentElem (ι 
 `φ ↦ φ ⬝ F`. -/
 theorem coe_balancedTensorEquiv_map_inducedHom (hι : ∀ s, IsIdempotentElem (ι s))
     (F : morphisms N N') (z : BalancedTensorProduct R A M N.inducedModule) :
-    (balancedTensorEquiv N' M hι (BalancedTensorProduct.map LinearMap.id
-        ((inducedHom N N' F).restrictScalars R) (fun _ _ => rfl)
-        (fun b φ => by simp only [LinearMap.restrictScalars_apply, map_smul]) z) : X' → M) =
+    (balancedTensorEquiv N' M hι (BalancedTensorProduct.lTensor R M (inducedHom N N' F) z) :
+        X' → M) =
       continuationMap R M (F : Matrix X X' A) (balancedTensorEquiv N M hι z) := by
   induction z using BalancedTensorProduct.induction_on with
   | ht m ψ =>
-    have h : BalancedTensorProduct.map LinearMap.id ((inducedHom N N' F).restrictScalars R)
-        (fun _ _ => rfl) (fun b φ => by simp only [LinearMap.restrictScalars_apply, map_smul])
-        (BalancedTensorProduct.tmul R A m ψ) =
-          BalancedTensorProduct.tmul R A m (inducedHom N N' F ψ) :=
-      BalancedTensorProduct.map_tmul _ _ _ _ m ψ
     ext y
-    simp only [h, coe_balancedTensorEquiv_tmul, coe_inducedHom_apply,
-      continuationMap_apply (R := R) (M := A) (F : Matrix X X' A),
+    simp only [BalancedTensorProduct.lTensor_tmul, coe_balancedTensorEquiv_tmul,
+      coe_inducedHom_apply, continuationMap_apply (R := R) (M := A) (F : Matrix X X' A),
       continuationMap_apply (R := R) (M := M) (F : Matrix X X' A), op_smul_eq_mul, Finset.op_sum,
       Finset.sum_smul, smul_smul, ← op_mul]
   | ha z z' hz hz' => simp only [map_add, Submodule.coe_add, hz, hz']
