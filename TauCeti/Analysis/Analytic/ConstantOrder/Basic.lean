@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Analytic.IntervalIntegral
+import TauCeti.Analysis.Normed.Operator.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -74,20 +75,6 @@ end NontriviallyNormedField
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
-/-- Scaling the distinguished variable by a real `t ∈ [0, 1]` does not increase the norm. -/
-private lemma norm_scaleSnd_le {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    ‖(ContinuousLinearMap.inl 𝕜 E 𝕜).comp (ContinuousLinearMap.fst 𝕜 E 𝕜) +
-      (t : 𝕜) • (ContinuousLinearMap.inr 𝕜 E 𝕜).comp (ContinuousLinearMap.snd 𝕜 E 𝕜)‖ ≤ 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w ↦ ?_
-  have hw : ((ContinuousLinearMap.inl 𝕜 E 𝕜).comp (ContinuousLinearMap.fst 𝕜 E 𝕜) +
-      (t : 𝕜) • (ContinuousLinearMap.inr 𝕜 E 𝕜).comp (ContinuousLinearMap.snd 𝕜 E 𝕜)) w =
-      (w.1, t * w.2) := by
-    ext <;> simp
-  rw [hw, one_mul, Prod.norm_def, Prod.norm_def]
-  refine max_le_max le_rfl ?_
-  rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
-  exact mul_le_of_le_one_left (norm_nonneg _) ht.2
-
 /-- **Hadamard's lemma** in a distinguished variable: a function `G` analytic at `(x₀, y₀)` that
 vanishes on the hyperplane `y = y₀` near `x₀` is `(y - y₀) • H (x, y)` near `(x₀, y₀)`, with `H`
 analytic at `(x₀, y₀)`. -/
@@ -110,7 +97,9 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   have hLc : Continuous L := by
     rw [hL]
     fun_prop
-  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := fun t ht ↦ norm_scaleSnd_le ht
+  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := fun t ht ↦
+    ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le
+      (by rw [RCLike.norm_ofReal, abs_of_nonneg ht.1]; exact ht.2)
   refine ⟨fun z ↦ ∫ t in (0 : ℝ)..1, K ((x₀, y₀) + L t (z - (x₀, y₀))),
     (hKa hG).intervalIntegral_comp hLc.aestronglyMeasurable (.of_forall fun t ht ↦
       hL1 t <| Ioc_subset_Icc_self <| by rwa [uIoc_of_le zero_le_one] at ht), ?_⟩
