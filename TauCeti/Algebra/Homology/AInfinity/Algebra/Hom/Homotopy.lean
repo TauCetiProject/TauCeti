@@ -302,12 +302,15 @@ theorem taylor_refl (f : AInfinityHom AA BB) : (refl f).taylor = 0 := by
 /-- An equality of `A∞` morphisms induces a homotopy with zero bar homotopy. -/
 def ofEq {f g : AInfinityHom AA BB} (h : f = g) : Homotopy f g := h ▸ refl f
 
+/-- The homotopy induced by an equality has zero bar homotopy. -/
 @[simp] theorem barHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
     (ofEq h).barHomotopy = 0 := by cases h; rfl
 
+/-- The homotopy induced by an equality has zero Taylor map. -/
 @[simp] theorem taylor_ofEq {f g : AInfinityHom AA BB} (h : f = g) : (ofEq h).taylor = 0 := by
   cases h; exact taylor_refl f
 
+/-- The homotopy induced by an equality has zero arity-one component. -/
 @[simp] theorem linearHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
     (ofEq h).linearHomotopy = 0 := by cases h; exact linearHomotopy_refl f
 

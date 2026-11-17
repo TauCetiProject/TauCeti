@@ -13,9 +13,24 @@ import Mathlib.Tactic.Abel
 # Bundled A-infinity homotopy equivalences and linear chain-homotopy inverses
 
 Defines bundled two-sided `A∞` homotopy equivalences (`TauCeti.AInfinityHom.HomotopyEquiv`) and
-linear chain-homotopy inverse data (`TauCeti.AInfinityHom.LinearHomotopyInverse`).
+homogeneous chain-homotopy inverse data (`TauCeti.AInfinityHom.LinearHomotopyInverse`) for the
+arity-one component of an `A∞` morphism, together with reflexivity, symmetry, composition, and
+transport along `A∞` homotopies.
+
+## Main definitions
+
+* `TauCeti.AInfinityHom.HomotopyEquiv`: bundled two-sided `A∞` homotopy equivalence.
+* `TauCeti.AInfinityHom.LinearHomotopyInverse`: homogeneous chain-homotopy inverse data for `f₁`.
+* `TauCeti.AInfinityHom.HomotopyEquiv.linearHomotopyInverse`: linear inverse of a `HomotopyEquiv`.
+* `TauCeti.AInfinityHom.LinearHomotopyInverse.comp`: composition of linear inverse data.
+* `TauCeti.AInfinityHom.Homotopy.linearHomotopyInverse`: transport along an `A∞` homotopy.
+
+## Main results
+
+* `TauCeti.AInfinityHom.HomotopyEquiv.isQuasiIso_hom`: every `HomotopyEquiv` is a quasi-isomorphism.
 
 ## References
+
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.4 and 3.7.
 * K. Lefèvre-Hasegawa, *Sur les A-infini catégories*, Chapter 1, Section 1.3.
 -/
@@ -23,15 +38,6 @@ linear chain-homotopy inverse data (`TauCeti.AInfinityHom.LinearHomotopyInverse`
 public section
 namespace TauCeti
 universe uR uA uB uC
-
-/-- Compose homogeneous `ℤ`-graded linear maps, discharging `q + r = s` by `omega`. -/
-theorem LinearMap.IsHomogeneous.compOfEq {R : Type uR} {M N P σM σN σP : Type*} [Semiring R]
-    [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid P] [Module R M] [Module R N] [Module R P]
-    [SetLike σM M] [SetLike σN N] [SetLike σP P] {f : M →ₗ[R] N} {g : N →ₗ[R] P}
-    {𝒜 : ℤ → σM} {ℬ : ℤ → σN} {𝒞 : ℤ → σP} {q r : ℤ}
-    (hg : LinearMap.IsHomogeneous g ℬ 𝒞 r) (hf : LinearMap.IsHomogeneous f 𝒜 ℬ q) (s : ℤ)
-    (h : q + r = s := by omega) : LinearMap.IsHomogeneous (g ∘ₗ f) 𝒜 𝒞 s := h ▸ hg.comp hf
-
 namespace AInfinityHom
 variable {R : Type uR} [CommRing R]
 
@@ -66,39 +72,44 @@ end Refl
 variable {A : Type uA} {B : Type uB} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
   {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
 
+section Symm
+variable (e : HomotopyEquiv AA BB)
+
 /-- Symmetry of `A∞` homotopy equivalences, exchanging `hom` and `inv`. -/
-@[symm] def symm (e : HomotopyEquiv AA BB) : HomotopyEquiv BB AA :=
+@[symm] def symm : HomotopyEquiv BB AA :=
   ⟨e.inv, e.hom, e.homotopyHomCompInv, e.homotopyInvCompHom⟩
 
-@[simp] theorem symm_hom (e : HomotopyEquiv AA BB) : e.symm.hom = e.inv := (rfl)
-@[simp] theorem symm_inv (e : HomotopyEquiv AA BB) : e.symm.inv = e.hom := (rfl)
-@[simp] theorem symm_symm (e : HomotopyEquiv AA BB) : e.symm.symm = e := (rfl)
-@[simp] theorem barHomotopy_symm_homotopyInvCompHom (e : HomotopyEquiv AA BB) :
+@[simp] theorem symm_hom : e.symm.hom = e.inv := (rfl)
+@[simp] theorem symm_inv : e.symm.inv = e.hom := (rfl)
+@[simp] theorem symm_symm : e.symm.symm = e := (rfl)
+@[simp] theorem barHomotopy_symm_homotopyInvCompHom :
     e.symm.homotopyInvCompHom.barHomotopy = e.homotopyHomCompInv.barHomotopy := (rfl)
-@[simp] theorem barHomotopy_symm_homotopyHomCompInv (e : HomotopyEquiv AA BB) :
+@[simp] theorem barHomotopy_symm_homotopyHomCompInv :
     e.symm.homotopyHomCompInv.barHomotopy = e.homotopyInvCompHom.barHomotopy := (rfl)
 
-/-- An `A∞` morphism with bijective linear part packaged as a `HomotopyEquiv`. -/
-noncomputable def ofLinearPartBijective (f : AInfinityHom AA BB)
-    (hf : Function.Bijective f.linearPart) : HomotopyEquiv AA BB :=
-  ⟨f, f.inverse hf, .ofEq (f.inverse_comp_cancel hf), .ofEq (f.comp_inverse_cancel hf)⟩
-
-@[simp] theorem ofLinearPartBijective_hom (f : AInfinityHom AA BB)
-    (hf : Function.Bijective f.linearPart) : (ofLinearPartBijective f hf).hom = f := (rfl)
-@[simp] theorem ofLinearPartBijective_inv (f : AInfinityHom AA BB)
-    (hf : Function.Bijective f.linearPart) : (ofLinearPartBijective f hf).inv = f.inverse hf :=
-  (rfl)
-
 /-- The forward morphism of an `A∞` homotopy equivalence is a quasi-isomorphism. -/
-theorem isQuasiIso_hom (e : HomotopyEquiv AA BB) : e.hom.IsQuasiIso :=
+theorem isQuasiIso_hom : e.hom.IsQuasiIso :=
   (isQuasiIso_def _).2 <| Function.bijective_iff_has_inverse.2 ⟨e.inv.cohomologyMap,
-    fun c ↦ by have h := e.homotopyInvCompHom.cohomologyMap_eq
-               rw [cohomologyMap_comp, cohomologyMap_id] at h; exact DFunLike.congr_fun h c,
-    fun c ↦ by have h := e.homotopyHomCompInv.cohomologyMap_eq
-               rw [cohomologyMap_comp, cohomologyMap_id] at h; exact DFunLike.congr_fun h c⟩
+    fun c ↦ DFunLike.congr_fun (cohomologyMap_comp e.inv e.hom ▸
+      cohomologyMap_id AA ▸ e.homotopyInvCompHom.cohomologyMap_eq) c,
+    fun c ↦ DFunLike.congr_fun (cohomologyMap_comp e.hom e.inv ▸
+      cohomologyMap_id BB ▸ e.homotopyHomCompInv.cohomologyMap_eq) c⟩
 
 /-- The inverse morphism of an `A∞` homotopy equivalence is a quasi-isomorphism. -/
-theorem isQuasiIso_inv (e : HomotopyEquiv AA BB) : e.inv.IsQuasiIso := e.symm.isQuasiIso_hom
+theorem isQuasiIso_inv : e.inv.IsQuasiIso := e.symm.isQuasiIso_hom
+end Symm
+
+section Bijective
+variable (f : AInfinityHom AA BB) (hf : Function.Bijective f.linearPart)
+
+/-- An `A∞` morphism with bijective linear part packaged as a `HomotopyEquiv`. -/
+noncomputable def ofLinearPartBijective : HomotopyEquiv AA BB :=
+  ⟨f, f.inverse hf, .ofEq (f.inverse_comp_cancel hf), .ofEq (f.comp_inverse_cancel hf)⟩
+
+@[simp] theorem ofLinearPartBijective_hom : (ofLinearPartBijective f hf).hom = f := (rfl)
+@[simp] theorem ofLinearPartBijective_inv :
+    (ofLinearPartBijective f hf).inv = f.inverse hf := (rfl)
+end Bijective
 end HomotopyEquiv
 
 /-- Homogeneous chain-homotopy inverse data for the linear part `f₁` of `f : AA ⟶ BB`. -/
@@ -111,43 +122,45 @@ end HomotopyEquiv
   homotopyLeft : A →ₗ[R] A
   /-- The right chain homotopy witnessing `f₁ ∘ inv - id = d_B ∘ h_B + h_B ∘ d_B`. -/
   homotopyRight : B →ₗ[R] B
+  /-- `inv` is homogeneous of internal degree `0`. -/
   isHomogeneous_inv : LinearMap.IsHomogeneous inv BB.grading.piece AA.grading.piece 0
+  /-- `inv` is a chain map intertwining `BB.differential` and `AA.differential`. -/
   differential_comp_inv : AA.differential ∘ₗ inv = inv ∘ₗ BB.differential
+  /-- `homotopyLeft` is homogeneous of internal degree `-1`. -/
   isHomogeneous_homotopyLeft :
     LinearMap.IsHomogeneous homotopyLeft AA.grading.piece AA.grading.piece (-1)
-  inv_comp_linearPart_sub_id :
-    inv ∘ₗ f.linearPart - LinearMap.id =
-      AA.differential ∘ₗ homotopyLeft + homotopyLeft ∘ₗ AA.differential
+  /-- The left chain-homotopy equation `inv ∘ f₁ - id = d_A ∘ h_A + h_A ∘ d_A`. -/
+  inv_comp_linearPart_sub_id : inv ∘ₗ f.linearPart - LinearMap.id =
+    AA.differential ∘ₗ homotopyLeft + homotopyLeft ∘ₗ AA.differential
+  /-- `homotopyRight` is homogeneous of internal degree `-1`. -/
   isHomogeneous_homotopyRight :
     LinearMap.IsHomogeneous homotopyRight BB.grading.piece BB.grading.piece (-1)
-  linearPart_comp_inv_sub_id :
-    f.linearPart ∘ₗ inv - LinearMap.id =
-      BB.differential ∘ₗ homotopyRight + homotopyRight ∘ₗ BB.differential
+  /-- The right chain-homotopy equation `f₁ ∘ inv - id = d_B ∘ h_B + h_B ∘ d_B`. -/
+  linearPart_comp_inv_sub_id : f.linearPart ∘ₗ inv - LinearMap.id =
+    BB.differential ∘ₗ homotopyRight + homotopyRight ∘ₗ BB.differential
 
 namespace HomotopyEquiv
 variable {A : Type uA} {B : Type uB} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
-  {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+  {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} (e : HomotopyEquiv AA BB)
 
 /-- The linear chain-homotopy inverse data of the arity-one maps of a `HomotopyEquiv`. -/
-noncomputable def linearHomotopyInverse (e : HomotopyEquiv AA BB) :
-    LinearHomotopyInverse e.hom where
+noncomputable def linearHomotopyInverse : LinearHomotopyInverse e.hom where
   inv := e.inv.linearPart
   homotopyLeft := e.homotopyInvCompHom.linearHomotopy
   homotopyRight := e.homotopyHomCompInv.linearHomotopy
   isHomogeneous_inv := e.inv.isHomogeneous_linearPart
   differential_comp_inv := e.inv.differential_comp_linearPart
   isHomogeneous_homotopyLeft := e.homotopyInvCompHom.isHomogeneous_linearHomotopy
-  inv_comp_linearPart_sub_id := by
-    simpa [linearPart_comp, linearPart_id] using e.homotopyInvCompHom.linearPart_sub_linearPart_eq
+  inv_comp_linearPart_sub_id := by simpa only [linearPart_comp, linearPart_id] using
+    e.homotopyInvCompHom.linearPart_sub_linearPart_eq
   isHomogeneous_homotopyRight := e.homotopyHomCompInv.isHomogeneous_linearHomotopy
-  linearPart_comp_inv_sub_id := by
-    simpa [linearPart_comp, linearPart_id] using e.homotopyHomCompInv.linearPart_sub_linearPart_eq
+  linearPart_comp_inv_sub_id := by simpa only [linearPart_comp, linearPart_id] using
+    e.homotopyHomCompInv.linearPart_sub_linearPart_eq
 
-@[simp] theorem linearHomotopyInverse_inv (e : HomotopyEquiv AA BB) :
-    e.linearHomotopyInverse.inv = e.inv.linearPart := (rfl)
-@[simp] theorem linearHomotopyInverse_homotopyLeft (e : HomotopyEquiv AA BB) :
+@[simp] theorem linearHomotopyInverse_inv : e.linearHomotopyInverse.inv = e.inv.linearPart := (rfl)
+@[simp] theorem linearHomotopyInverse_homotopyLeft :
     e.linearHomotopyInverse.homotopyLeft = e.homotopyInvCompHom.linearHomotopy := (rfl)
-@[simp] theorem linearHomotopyInverse_homotopyRight (e : HomotopyEquiv AA BB) :
+@[simp] theorem linearHomotopyInverse_homotopyRight :
     e.linearHomotopyInverse.homotopyRight = e.homotopyHomCompInv.linearHomotopy := (rfl)
 end HomotopyEquiv
 
@@ -168,20 +181,21 @@ section Comp
 variable {A : Type uA} {B : Type uB} {C : Type uC} [AddCommGroup A] [Module R A]
   [AddCommGroup B] [Module R B] [AddCommGroup C] [Module R C]
   {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} {CC : AInfinityAlgebra R C}
+  {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
+  (Lg : LinearHomotopyInverse g) (Lf : LinearHomotopyInverse f)
 
 /-- Composition of linear chain-homotopy inverse data along composable `A∞` morphisms. -/
-noncomputable def comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
-    (Lg : LinearHomotopyInverse g) (Lf : LinearHomotopyInverse f) :
-    LinearHomotopyInverse (g.comp f) where
+noncomputable def comp : LinearHomotopyInverse (g.comp f) where
   inv := Lf.inv ∘ₗ Lg.inv
   homotopyLeft := Lf.inv ∘ₗ Lg.homotopyLeft ∘ₗ f.linearPart + Lf.homotopyLeft
   homotopyRight := g.linearPart ∘ₗ Lf.homotopyRight ∘ₗ Lg.inv + Lg.homotopyRight
-  isHomogeneous_inv := Lf.isHomogeneous_inv.compOfEq Lg.isHomogeneous_inv 0
+  isHomogeneous_inv := add_zero (0 : ℤ) ▸ Lf.isHomogeneous_inv.comp Lg.isHomogeneous_inv
   differential_comp_inv := by
     rw [← LinearMap.comp_assoc, Lf.differential_comp_inv, LinearMap.comp_assoc,
       Lg.differential_comp_inv, LinearMap.comp_assoc]
-  isHomogeneous_homotopyLeft := (Lf.isHomogeneous_inv.compOfEq
-    (Lg.isHomogeneous_homotopyLeft.compOfEq f.isHomogeneous_linearPart (-1)) (-1)).add
+  isHomogeneous_homotopyLeft := LinearMap.IsHomogeneous.add
+    (add_zero (-1 : ℤ) ▸ Lf.isHomogeneous_inv.comp
+      (zero_add (-1 : ℤ) ▸ Lg.isHomogeneous_homotopyLeft.comp f.isHomogeneous_linearPart))
     Lf.isHomogeneous_homotopyLeft
   inv_comp_linearPart_sub_id := LinearMap.ext fun a ↦ by
     have hg := congrArg Lf.inv (LinearMap.congr_fun Lg.inv_comp_linearPart_sub_id (f.linearPart a))
@@ -190,10 +204,10 @@ noncomputable def comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
     have hd₂ := LinearMap.congr_fun f.differential_comp_linearPart a
     simp only [linearPart_comp, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
       LinearMap.id_apply, map_sub, map_add] at hg hf hd₁ hd₂ ⊢
-    rw [← sub_add_sub_cancel (Lf.inv (Lg.inv (g.linearPart (f.linearPart a))))
-      (Lf.inv (f.linearPart a)) a, hg, hf, hd₁, ← hd₂]; abel
-  isHomogeneous_homotopyRight := (g.isHomogeneous_linearPart.compOfEq
-    (Lf.isHomogeneous_homotopyRight.compOfEq Lg.isHomogeneous_inv (-1)) (-1)).add
+    rw [← sub_add_sub_cancel _ (Lf.inv (f.linearPart a)) a, hg, hf, hd₁, ← hd₂]; abel
+  isHomogeneous_homotopyRight := LinearMap.IsHomogeneous.add
+    (add_zero (-1 : ℤ) ▸ g.isHomogeneous_linearPart.comp
+      (zero_add (-1 : ℤ) ▸ Lf.isHomogeneous_homotopyRight.comp Lg.isHomogeneous_inv))
     Lg.isHomogeneous_homotopyRight
   linearPart_comp_inv_sub_id := LinearMap.ext fun c ↦ by
     have hf := congrArg g.linearPart (LinearMap.congr_fun Lf.linearPart_comp_inv_sub_id (Lg.inv c))
@@ -202,19 +216,13 @@ noncomputable def comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
     have hd₂ := LinearMap.congr_fun Lg.differential_comp_inv c
     simp only [linearPart_comp, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
       LinearMap.id_apply, map_sub, map_add] at hf hg hd₁ hd₂ ⊢
-    rw [← sub_add_sub_cancel (g.linearPart (f.linearPart (Lf.inv (Lg.inv c))))
-      (g.linearPart (Lg.inv c)) c, hf, hg, hd₁, hd₂]; abel
+    rw [← sub_add_sub_cancel _ (g.linearPart (Lg.inv c)) c, hf, hg, hd₁, hd₂]; abel
 
-@[simp] theorem comp_inv {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
-    (Lg : LinearHomotopyInverse g) (Lf : LinearHomotopyInverse f) :
-    (Lg.comp Lf).inv = Lf.inv ∘ₗ Lg.inv := (rfl)
-@[simp] theorem comp_homotopyLeft {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
-    (Lg : LinearHomotopyInverse g) (Lf : LinearHomotopyInverse f) :
+@[simp] theorem comp_inv : (Lg.comp Lf).inv = Lf.inv ∘ₗ Lg.inv := (rfl)
+@[simp] theorem comp_homotopyLeft :
     (Lg.comp Lf).homotopyLeft = Lf.inv ∘ₗ Lg.homotopyLeft ∘ₗ f.linearPart + Lf.homotopyLeft := (rfl)
-@[simp] theorem comp_homotopyRight {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
-    (Lg : LinearHomotopyInverse g) (Lf : LinearHomotopyInverse f) :
-    (Lg.comp Lf).homotopyRight = g.linearPart ∘ₗ Lf.homotopyRight ∘ₗ Lg.inv + Lg.homotopyRight :=
-  (rfl)
+@[simp] theorem comp_homotopyRight : (Lg.comp Lf).homotopyRight =
+    g.linearPart ∘ₗ Lf.homotopyRight ∘ₗ Lg.inv + Lg.homotopyRight := (rfl)
 end Comp
 
 private noncomputable def ofChainHomotopy {A : Type uA} {B : Type uB} [AddCommGroup A]
@@ -229,7 +237,7 @@ private noncomputable def ofChainHomotopy {A : Type uA} {B : Type uB} [AddCommGr
   isHomogeneous_inv := L.isHomogeneous_inv
   differential_comp_inv := L.differential_comp_inv
   isHomogeneous_homotopyLeft :=
-    L.isHomogeneous_homotopyLeft.sub (L.isHomogeneous_inv.compOfEq hk (-1))
+    L.isHomogeneous_homotopyLeft.sub (add_zero (-1 : ℤ) ▸ L.isHomogeneous_inv.comp hk)
   inv_comp_linearPart_sub_id := LinearMap.ext fun a ↦ by
     have ha := LinearMap.congr_fun L.inv_comp_linearPart_sub_id a
     have hd := LinearMap.congr_fun L.differential_comp_inv (k a)
@@ -237,7 +245,7 @@ private noncomputable def ofChainHomotopy {A : Type uA} {B : Type uB} [AddCommGr
       LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply, map_sub, map_add] at ha hd ⊢
     rw [sub_right_comm, ha, ← hd]; abel
   isHomogeneous_homotopyRight :=
-    L.isHomogeneous_homotopyRight.sub (hk.compOfEq L.isHomogeneous_inv (-1))
+    L.isHomogeneous_homotopyRight.sub (zero_add (-1 : ℤ) ▸ hk.comp L.isHomogeneous_inv)
   linearPart_comp_inv_sub_id := LinearMap.ext fun b ↦ by
     have hb := LinearMap.congr_fun L.linearPart_comp_inv_sub_id b
     have hd := LinearMap.congr_fun L.differential_comp_inv b
@@ -249,31 +257,37 @@ end LinearHomotopyInverse
 namespace Homotopy
 variable {A : Type uA} {B : Type uB} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
   {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} {f f' : AInfinityHom AA BB}
+  (h : Homotopy f f')
 
 /-- Transport `LinearHomotopyInverse` data forward along an `A∞` homotopy `Homotopy f f'`. -/
-noncomputable def linearHomotopyInverse (h : Homotopy f f') (L : LinearHomotopyInverse f) :
-    LinearHomotopyInverse f' :=
+noncomputable def linearHomotopyInverse (L : LinearHomotopyInverse f) : LinearHomotopyInverse f' :=
   LinearHomotopyInverse.ofChainHomotopy h.linearHomotopy h.isHomogeneous_linearHomotopy
     h.linearPart_sub_linearPart_eq L
 
-@[simp] theorem linearHomotopyInverse_inv (h : Homotopy f f') (L : LinearHomotopyInverse f) :
+@[simp] theorem linearHomotopyInverse_inv (L : LinearHomotopyInverse f) :
     (h.linearHomotopyInverse L).inv = L.inv := (rfl)
-@[simp] theorem linearHomotopyInverse_homotopyLeft (h : Homotopy f f')
-    (L : LinearHomotopyInverse f) :
+@[simp] theorem linearHomotopyInverse_homotopyLeft (L : LinearHomotopyInverse f) :
     (h.linearHomotopyInverse L).homotopyLeft = L.homotopyLeft - L.inv ∘ₗ h.linearHomotopy := (rfl)
-@[simp] theorem linearHomotopyInverse_homotopyRight (h : Homotopy f f')
-    (L : LinearHomotopyInverse f) :
+@[simp] theorem linearHomotopyInverse_homotopyRight (L : LinearHomotopyInverse f) :
     (h.linearHomotopyInverse L).homotopyRight = L.homotopyRight - h.linearHomotopy ∘ₗ L.inv := (rfl)
 
 /-- Transport `LinearHomotopyInverse` data backward along an `A∞` homotopy `Homotopy f f'`. -/
-noncomputable def linearHomotopyInverseSymm (h : Homotopy f f') (L : LinearHomotopyInverse f') :
+noncomputable def linearHomotopyInverseSymm (L : LinearHomotopyInverse f') :
     LinearHomotopyInverse f :=
   LinearHomotopyInverse.ofChainHomotopy (-h.linearHomotopy) h.isHomogeneous_linearHomotopy.neg
     (by rw [← neg_sub, h.linearPart_sub_linearPart_eq, neg_add, LinearMap.comp_neg,
       LinearMap.neg_comp]) L
 
-@[simp] theorem linearHomotopyInverseSymm_inv (h : Homotopy f f') (L : LinearHomotopyInverse f') :
+@[simp] theorem linearHomotopyInverseSymm_inv (L : LinearHomotopyInverse f') :
     (h.linearHomotopyInverseSymm L).inv = L.inv := (rfl)
+@[simp] theorem linearHomotopyInverseSymm_homotopyLeft (L : LinearHomotopyInverse f') :
+    (h.linearHomotopyInverseSymm L).homotopyLeft =
+      L.homotopyLeft + L.inv ∘ₗ h.linearHomotopy := by
+  rw [← sub_neg_eq_add, ← LinearMap.comp_neg]; rfl
+@[simp] theorem linearHomotopyInverseSymm_homotopyRight (L : LinearHomotopyInverse f') :
+    (h.linearHomotopyInverseSymm L).homotopyRight =
+      L.homotopyRight + h.linearHomotopy ∘ₗ L.inv := by
+  rw [← sub_neg_eq_add, ← LinearMap.neg_comp]; rfl
 end Homotopy
 end AInfinityHom
 end TauCeti
