@@ -271,23 +271,6 @@ private theorem norm_ofSmooth_rescale_sq
     rw [WithMetric.toWithMetric_ofWithMetric g x] at hg
     dsimp only; rw [hg]; ring
 
-/-- Uniform lower bounds on the conformal volume and Dirichlet weights on compact `M`. -/
-private theorem exists_le_mul_rescale_weights {f : M → ℝ} (hf : Continuous f)
-    (hf_pos : ∀ y, 0 < f y) {a : ℝ} (ha : 0 ≤ a) :
-    ∃ K : ℝ, 0 ≤ K ∧ (∀ y : M, 1 ≤ K * f y ^ a) ∧
-      ∀ y : M, 1 ≤ K * (f y ^ a * (f y)⁻¹) := by
-  have hfN_pos (y : M) : 0 < f y ^ a := Real.rpow_pos_of_pos (hf_pos y) _
-  have hc₀ : Continuous fun y : M ↦ (f y ^ a)⁻¹ :=
-    (hf.rpow_const fun _ ↦ Or.inr ha).inv₀ fun y ↦ (hfN_pos y).ne'
-  let kC : C(M, ℝ) := ⟨_, hc₀.max (hf.mul hc₀)⟩
-  refine ⟨‖kC‖, norm_nonneg _, fun y ↦ ?_, fun y ↦ ?_⟩
-  · exact (inv_mul_cancel₀ (hfN_pos y).ne').symm.trans_le
-      (mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (kC.apply_le_norm y)) (hfN_pos y).le)
-  · have h1 : 1 = (f y * (f y ^ a)⁻¹) * (f y ^ a * (f y)⁻¹) := by
-      field_simp [(hf_pos y).ne', (hfN_pos y).ne']
-    exact h1.trans_le (mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (kC.apply_le_norm y))
-      (mul_nonneg (hfN_pos y).le (inv_nonneg.2 (hf_pos y).le)))
-
 /-- Forward `H¹` norm bound from `WithMetric (g.rescale f hf hf_pos)` to `WithMetric g`. -/
 private theorem exists_norm_ofSmooth_comp_diffeomorphWithMetric_le
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
@@ -296,36 +279,44 @@ private theorem exists_norm_ofSmooth_comp_diffeomorphWithMetric_le
       ‖ofSmooth (compDiffeomorphWithMetricLinear g (g.rescale f hf hf_pos) u)‖ ≤
         C * ‖ofSmooth u‖ := by
   let ĝ := g.rescale f hf hf_pos
-  obtain ⟨K, hK0, hK₁, hK₂⟩ := exists_le_mul_rescale_weights hf.continuous hf_pos
-    (a := (finrank ℝ E : ℝ) / 2) (by positivity)
+  have hc₀ : Continuous fun y : M ↦ f y ^ ((finrank ℝ E : ℝ) / 2) :=
+    hf.continuous.rpow_const fun _ ↦ Or.inr (by positivity)
+  have hc₁ : Continuous fun y : M ↦ f y ^ ((finrank ℝ E : ℝ) / 2) * (f y)⁻¹ :=
+    hc₀.mul (hf.continuous.inv₀ fun y ↦ (hf_pos y).ne')
+  have h0_pos (y : M) : 0 < f y ^ ((finrank ℝ E : ℝ) / 2) := Real.rpow_pos_of_pos (hf_pos y) _
+  have h1_pos (y : M) : 0 < f y ^ ((finrank ℝ E : ℝ) / 2) * (f y)⁻¹ :=
+    mul_pos (h0_pos y) (inv_pos.2 (hf_pos y))
+  let kC : C(M, ℝ) :=
+    ⟨_, (hc₀.inv₀ fun y ↦ (h0_pos y).ne').max (hc₁.inv₀ fun y ↦ (h1_pos y).ne')⟩
+  set K := ‖kC‖
+  have hK0 : 0 ≤ K := norm_nonneg kC
   refine ⟨Real.sqrt K, fun u ↦ ?_⟩
   let ug := compDiffeomorphWithMetricLinear g ĝ u
   let dVg := riemannianVolume I (WithMetric g)
-  have hf_c : Continuous fun x : WithMetric g ↦ f x.ofWithMetric ^ ((finrank ℝ E : ℝ) / 2) :=
-    (hf.continuous.comp WithMetric.continuous_ofWithMetric).rpow_const
-      fun _ ↦ Or.inr (by positivity)
-  have hfi_c : Continuous fun x : WithMetric g ↦ (f x.ofWithMetric)⁻¹ :=
-    (hf.continuous.comp WithMetric.continuous_ofWithMetric).inv₀ fun _ ↦ (hf_pos _).ne'
-  have hug_apply (x : WithMetric g) :
-      u (WithMetric.toWithMetric ĝ x.ofWithMetric) = ug x := by simp [ug]
+  have hug_apply (x : WithMetric g) : u (WithMetric.toWithMetric ĝ x.ofWithMetric) = ug x := by
+    simp [ug]
   have hval : ∫ x, ug x ^ 2 ∂dVg ≤ K * ∫ x, f x.ofWithMetric ^ ((finrank ℝ E : ℝ) / 2) *
       u (WithMetric.toWithMetric ĝ x.ofWithMetric) ^ 2 ∂dVg := by
     simp_rw [hug_apply, ← integral_const_mul]
-    exact integral_mono ((map_continuous ug).pow 2).integrable_of_compactSpace
-      (continuous_const.mul (hf_c.mul ((map_continuous ug).pow 2))).integrable_of_compactSpace
-      fun x ↦ by
-        simpa only [one_mul, mul_assoc] using
-          mul_le_mul_of_nonneg_right (hK₁ x.ofWithMetric) (sq_nonneg _)
+    refine integral_mono ((map_continuous ug).pow 2).integrable_of_compactSpace
+      (continuous_const.mul ((hc₀.comp WithMetric.continuous_ofWithMetric).mul
+        ((map_continuous ug).pow 2))).integrable_of_compactSpace fun x ↦ ?_
+    have hK₁ : 1 ≤ K * f x.ofWithMetric ^ ((finrank ℝ E : ℝ) / 2) :=
+      (inv_mul_cancel₀ (h0_pos _).ne').symm.trans_le
+        (mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (kC.apply_le_norm _)) (h0_pos _).le)
+    simpa only [one_mul, mul_assoc] using mul_le_mul_of_nonneg_right hK₁ (sq_nonneg _)
   have hgrad : ∫ x, ‖mgradient I ug x‖ ^ 2 ∂dVg ≤
       K * ∫ x, (f x.ofWithMetric ^ ((finrank ℝ E : ℝ) / 2) * (f x.ofWithMetric)⁻¹) *
         ‖mgradient I ug x‖ ^ 2 ∂dVg := by
     have hug1 : ContMDiff I 𝓘(ℝ) 1 ug := ug.contMDiff.of_le (by simp)
     rw [← integral_const_mul]
-    exact integral_mono (continuous_norm_sq_mgradient hug1).integrable_of_compactSpace
-      (continuous_const.mul ((hf_c.mul hfi_c).mul
-        (continuous_norm_sq_mgradient hug1))).integrable_of_compactSpace fun x ↦ by
-        simpa only [one_mul, mul_assoc] using
-          mul_le_mul_of_nonneg_right (hK₂ x.ofWithMetric) (sq_nonneg _)
+    refine integral_mono (continuous_norm_sq_mgradient hug1).integrable_of_compactSpace
+      (continuous_const.mul ((hc₁.comp WithMetric.continuous_ofWithMetric).mul
+        (continuous_norm_sq_mgradient hug1))).integrable_of_compactSpace fun x ↦ ?_
+    have hK₂ : 1 ≤ K * (f x.ofWithMetric ^ ((finrank ℝ E : ℝ) / 2) * (f x.ofWithMetric)⁻¹) :=
+      (inv_mul_cancel₀ (h1_pos _).ne').symm.trans_le
+        (mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (kC.apply_le_norm _)) (h1_pos _).le)
+    simpa only [one_mul, mul_assoc] using mul_le_mul_of_nonneg_right hK₂ (sq_nonneg _)
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
   rw [mul_pow, Real.sq_sqrt hK0, norm_ofSmooth_sq, norm_ofSmooth_rescale_sq g hf hf_pos u, mul_add]
   exact add_le_add hval hgrad
