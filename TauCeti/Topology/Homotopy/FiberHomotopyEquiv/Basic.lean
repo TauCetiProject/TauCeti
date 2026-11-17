@@ -41,6 +41,16 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 
 * `ContinuousMap.homotopic_of_fiber`: a homotopy of maps to the total space staying over one point
   is a homotopy of maps into the fiber.
+
+## Implementation notes
+
+The fibres are stated as subtypes `{e // p e = b}`, while the general restriction to preimages
+(`TauCeti.restrictPreimageMap`, `TauCeti.restrictPreimageHomotopyWith`,
+`TauCeti.FiberHomotopyEquiv.restrictPreimage`) is stated over `↥(p ⁻¹' S)`. For `S = {b}` the two
+types are definitionally equal: `↥(p ⁻¹' {b})` is `{e // e ∈ p ⁻¹' {b}}`, and unfolding
+`Set.preimage`, set membership and `Set.singleton` reduces `e ∈ p ⁻¹' {b}` to `p e = b`. The
+fibre declarations (`fiberMap`, `fiberHomotopy`, `FiberHomotopyEquiv.fiber`) and their lemmas use
+this equality to be literally the singleton cases of the general ones, with no transport.
 -/
 
 public section
@@ -75,6 +85,8 @@ theorem apply_of_comp_eq {p : C(E, B)} {q : C(E', B)} {f : C(E, E')} (hf : q.com
   rw [← ContinuousMap.comp_apply, hf, e.2]
 
 /-- The map of fibres over `b` induced by a map `f` over `B`. -/
+-- The body has type `C(p ⁻¹' {b}, q ⁻¹' {b})`, definitionally equal to the stated type; see the
+-- implementation notes in the module docstring.
 def fiberMap {p : C(E, B)} {q : C(E', B)} (f : C(E, E')) (hf : q.comp f = p) (b : B) :
     C({e // p e = b}, {e' // q e' = b}) :=
   restrictPreimageMap {b} hf
