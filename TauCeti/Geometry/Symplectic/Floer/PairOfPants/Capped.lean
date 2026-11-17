@@ -45,7 +45,8 @@ is the single-neck model of the same deformation.
 * It is smooth on `ℂ × M`, jointly with the parameters `a` and `L`
   (`TauCeti.Floer.contMDiff_cappedPerturbation`), and so are its components in the real
   coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
-  `TauCeti.Floer.contDiff_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
+  `TauCeti.Floer.contDiff_cappedPerturbation_apply`), hence differentiable in the target point
+  (`TauCeti.Floer.differentiableAt_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and on a vector space so are its
   components (`TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
@@ -488,6 +489,16 @@ theorem contDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H 
     exact h
   rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
   exact contMDiff_cappedPerturbation_apply hH hHs' a L v
+
+/-- The components of the capped perturbation are differentiable in the target point, for `C¹`
+Hamiltonians on a vector space. -/
+theorem differentiableAt_cappedPerturbation_apply (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (a L : ℝ) (z : ℝ × ℝ) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) y v)
+      x :=
+  ((contDiff_cappedPerturbation_apply hH hHs a L v).differentiable one_ne_zero
+    ).differentiableAt.comp (f := fun y : M ↦ (z, y)) x
+      ((differentiableAt_const _).prodMk differentiableAt_id)
 
 end SmoothNormed
 

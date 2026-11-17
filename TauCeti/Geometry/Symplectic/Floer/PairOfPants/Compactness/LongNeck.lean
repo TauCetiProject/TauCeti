@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Capped
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -91,7 +90,6 @@ open Complex Filter Function MeasureTheory Metric Set Topology
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart realChart_injective
   det_fderiv_realChart_nonneg)
-open scoped Manifold
 
 namespace TauCeti.Floer
 
@@ -121,31 +119,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {J₀ : AlmostComplexStructure V}
   {J : Puncture → ℝ → V → AlmostComplexStructure V}
-
-/-- The capped structure with fixed parameters, read in the real coordinates of the plane, is
-`C²` jointly in the domain and target points. -/
-private theorem contDiff_cappedAlmostComplex_equivRealProdCLM (ω : SymplecticForm V)
-    (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x)) (hJp : ∀ q, Periodic (J q) 1)
-    (hJs : ∀ q, ContDiff ℝ 2 fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (r L : ℝ) :
-    ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ (cappedAlmostComplex h₀ J hJ r L
-      (Complex.equivRealProdCLM.symm p.1) p.2).toLinearMap.toContinuousLinearMap := by
-  have hg : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V))) 2
-      fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, ((r, L), p.2)) :=
-    (Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.prodMk
-      (contMDiff_const.prodMk contDiff_snd.contMDiff)
-  exact ((contMDiff_cappedAlmostComplex h₀ hJp
-    fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg).contDiff
-
-omit [FiniteDimensional ℝ V] in
-/-- The components of the capped perturbation are differentiable in the target point. -/
-private theorem differentiableAt_cappedPerturbation_apply (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (a L : ℝ) (z : ℝ × ℝ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) y v)
-      x :=
-  ((contDiff_cappedPerturbation_apply hH hHs a L v).differentiable one_ne_zero
-    ).differentiableAt.comp (f := fun y : V ↦ (z, y)) x
-      ((differentiableAt_const _).prodMk differentiableAt_id)
 
 /-- **The Floer equation on the PSS plane pieces.** For `R ≥ 2`, let `χ` be the translation
 `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length along the end `q`. At
@@ -279,7 +252,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (J := fun z x ↦ cappedAlmostComplex h₀ J hJ 1 T (equivRealProdCLM.symm z) x)
     (isOpen_thricePuncturedSphereReal.prod isOpen_univ) (hKp 1) (hKp I)
-    (contDiff_cappedAlmostComplex_equivRealProdCLM ω h₀ hJ hJp hJs 1 T).contDiffOn
+    (contDiff_cappedAlmostComplex_equivRealProdCLM h₀ hJp hJs 1 T).contDiffOn
     (isCompact_preimage_truncation T) hK
     (prod_mono (preimage_truncation_subset_thricePuncturedSphereReal T) (subset_univ K))
     fun z _ x _ ↦ tames_cappedAlmostComplex h₀ 1 T _ x
@@ -374,7 +347,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_endShift_subseq_off_fin
     (J := fun z x ↦ cappedAlmostComplex h₀ J hJ 1 0 (equivRealProdCLM.symm z) x) isOpen_univ
     (contDiff_cappedPerturbation_apply hH hHs 1 0 1).contDiffOn
     (contDiff_cappedPerturbation_apply hH hHs 1 0 I).contDiffOn
-    (contDiff_cappedAlmostComplex_equivRealProdCLM ω h₀ hJ hJp hJs 1 0).contDiffOn hD hK
+    (contDiff_cappedAlmostComplex_equivRealProdCLM h₀ hJp hJs 1 0).contDiffOn hD hK
     (subset_univ _) fun z _ x _ ↦ tames_cappedAlmostComplex h₀ 1 0 _ x
   refine ⟨δ, hδ, fun Ω R u A hΩ hΩD hΩq hR2 hu hfl huK hint harea ↦ ?_⟩
   have hHs1 (r : Puncture) : ContDiff ℝ 1 (uncurry (H r)) := (hHs r).of_le (by norm_num)

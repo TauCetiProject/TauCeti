@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Almost complex structures on the capped pair of pants
@@ -58,7 +59,9 @@ structures are (`TauCeti.Floer.tames_cappedAlmostComplex`,
   `L = 0` read through the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q L`, at
   the center of the end and beyond the neck (`TauCeti.Floer.cappedAlmostComplex_endShift`).
 * It is smooth jointly in `r`, `L`, the point `w ∈ ℂ`, including the poles `0` and `1`, and the
-  parameter `x` (`TauCeti.Floer.contMDiff_cappedAlmostComplex`).
+  parameter `x` (`TauCeti.Floer.contMDiff_cappedAlmostComplex`); on a vector space, with fixed
+  `r` and `L`, it is `C^n` in the real coordinates of `ℂ` and the target point
+  (`TauCeti.Floer.contDiff_cappedAlmostComplex_equivRealProdCLM`).
 
 The comparison family is `TauCeti.Floer.cappedComparisonAlmostComplex h₀ J hJ R`, the structure
 with `r = 3R - 1` and the neck length `L = TauCeti.Floer.comparisonNeckLength R` of the family of
@@ -419,6 +422,29 @@ theorem contMDiff_cappedAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
       contMDiffAt_cappedWeight_smul_cayley h₀ hJ hJp hJs q w r L x)
 
 end Smooth
+
+section SmoothNormed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+  {J : Puncture → ℝ → V → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
+
+/-- On a vector space, the capped structure with fixed parameters `r` and `L`, read in the real
+coordinates of `ℂ`, is `C^n` jointly in the domain and target points. -/
+theorem contDiff_cappedAlmostComplex_equivRealProdCLM (h₀ : ω.Compatible J₀) {n : ℕ∞}
+    (hJp : ∀ q, Function.Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (r L : ℝ) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (cappedAlmostComplex h₀ J hJ r L
+      (Complex.equivRealProdCLM.symm p.1) p.2).toLinearMap.toContinuousLinearMap := by
+  have hg : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V))) n
+      fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, ((r, L), p.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.prodMk
+      (contMDiff_const.prodMk contDiff_snd.contMDiff)
+  exact ((contMDiff_cappedAlmostComplex h₀ hJp
+    fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg).contDiff
+
+end SmoothNormed
 
 /-! ### The comparison family -/
 
