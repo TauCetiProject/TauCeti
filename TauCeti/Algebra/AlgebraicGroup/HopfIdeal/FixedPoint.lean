@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Action
+import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Equalizer
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
@@ -60,8 +61,6 @@ namespace TauCeti.CommHopfAlgCat
 section Morphisms
 
 variable {R : Type u} [CommRing R] {H T : _root_.CommHopfAlgCat.{v} R} {ι : Sort w}
-
-private theorem hom_id_eq_bialgHom_id : (𝟙 H : H ⟶ H).hom = BialgHom.id R H := by ext; simp
 
 /-- The **fixed-point Hopf ideal** of endomorphisms `f : ι → (H ⟶ H)` in `CommHopfAlgCat R`. -/
 noncomputable def fixedPointHopfIdeal (f : ι → (H ⟶ H)) : HopfIdeal R H :=

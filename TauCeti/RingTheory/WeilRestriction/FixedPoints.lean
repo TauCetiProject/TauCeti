@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Invariant.ModuleDescent
 public import TauCeti.RingTheory.Smooth.FixedPointIdeal
 public import TauCeti.RingTheory.WeilRestriction.Semilinear
 public import TauCeti.RingTheory.WeilRestriction.Smooth
+import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!

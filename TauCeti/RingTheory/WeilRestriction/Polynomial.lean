@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.GroupRingAction
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.WeilRestriction.FixedPoints
+import TauCeti.RingTheory.TensorProduct.Polynomial
 
 /-!
 # Tame Galois descent of the affine line under Weil restriction
@@ -42,18 +43,7 @@ namespace TauCeti.Algebra.WeilRestriction
 
 variable (A B Γ : Type*) [CommRing A] [CommRing B] [Algebra A B]
   [Group Γ] [MulSemiringAction Γ B] [SMulCommClass Γ A B]
-
-private theorem polyEquivTensor_smul (γ : Γ) (p : B[X]) :
-    polyEquivTensor' A B (MulSemiringAction.toRingAut Γ B[X] γ p) =
-      baseChangeSemilinearAction A B A[X] Γ γ (polyEquivTensor' A B p) := by
-  have hfg : (polyEquivTensor' A B).toAlgHom.toRingHom.comp
-        (MulSemiringAction.toRingAut Γ B[X] γ).toRingHom =
-      (baseChangeSemilinearAction A B A[X] Γ γ).toRingHom.comp
-        (polyEquivTensor' A B).toAlgHom.toRingHom :=
-    Polynomial.ringHom_ext' (by ext; simp) (by simp)
-  exact congr($hfg p)
-
-variable [Module.Finite A B] [Module.Projective A B]
+  [Module.Finite A B] [Module.Projective A B]
   [FaithfulSMul A B] [Algebra.IsInvariant A B Γ]
 
 /-- **Tame descent of the affine line.** Under the hypotheses of
@@ -65,7 +55,7 @@ def fixedPointQuotientPolynomialAlgEquiv (hΓ : IsUnit (Nat.card Γ : A)) :
   (mapFixedPointQuotientAlgEquiv (MulSemiringAction.toAlgAut Γ A B)
     (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp)
     (baseChangeSemilinearAction A B A[X] Γ) (baseChangeSemilinearAction_algebraMap A B A[X] Γ)
-    (polyEquivTensor' A B) (polyEquivTensor_smul A B Γ)).trans
+    (polyEquivTensor' A B) (polyEquivTensor'_toRingAut A B Γ)).trans
     (fixedPointQuotientBaseChangeAlgEquiv A B A[X] Γ hΓ)
 
 /-- On cosets, `fixedPointQuotientPolynomialAlgEquiv` maps via `polyEquivTensor'` and
@@ -123,7 +113,7 @@ theorem one_tmul_fixedPointQuotientPolynomialAlgEquiv_symm
   let f := (mapFixedPointQuotientAlgEquiv (MulSemiringAction.toAlgAut Γ A B)
     (MulSemiringAction.toRingAut Γ B[X]) (fun γ b ↦ by simp)
     (baseChangeSemilinearAction A B A[X] Γ) (baseChangeSemilinearAction_algebraMap A B A[X] Γ)
-    (polyEquivTensor' A B) (polyEquivTensor_smul A B Γ)).symm.toAlgHom
+    (polyEquivTensor' A B) (polyEquivTensor'_toRingAut A B Γ)).symm.toAlgHom
   have hsymm : (fixedPointQuotientPolynomialAlgEquiv A B Γ hΓ).symm p = f q₂ := by
     simp [fixedPointQuotientPolynomialAlgEquiv, q₂, f]
   have hfcomp : f.comp (Ideal.Quotient.mkₐ A I₂) =

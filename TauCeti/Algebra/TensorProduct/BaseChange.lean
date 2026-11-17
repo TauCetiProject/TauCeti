@@ -51,7 +51,8 @@ with passing to the opposite algebra, and composes in stages:
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
 * `TauCeti.Algebra.TensorProduct.baseChangeSemilinearAction`: the semilinear ring-automorphism
-  action `γ • (b ⊗ d) = (γ • b) ⊗ d` of a group acting on `B` by `A`-algebra automorphisms.
+  action `γ • (b ⊗ d) = (γ • b) ⊗ d` of a group acting on `B` by `A`-algebra automorphisms,
+  agreeing pointwise with `TensorProduct.leftHasSMul` (`baseChangeSemilinearAction_eq_smul`).
 
 ## Implementation notes
 
@@ -433,6 +434,16 @@ theorem baseChangeSemilinearAction_algebraMap [CommSemiring B] [Algebra A B]
     baseChangeSemilinearAction A B D Γ γ (algebraMap B (B ⊗[A] D) b) =
       algebraMap B (B ⊗[A] D) (MulSemiringAction.toAlgAut Γ A B γ b) := by
   simp [Algebra.TensorProduct.algebraMap_apply]
+
+/-- `baseChangeSemilinearAction` agrees pointwise with Mathlib's left-factor `Γ`-action
+`TensorProduct.leftHasSMul`. -/
+theorem baseChangeSemilinearAction_eq_smul [Semiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] [SMulCommClass A Γ B]
+    (γ : Γ) (z : B ⊗[A] D) :
+    baseChangeSemilinearAction A B D Γ γ z = γ • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul b d => rw [baseChangeSemilinearAction_tmul, TensorProduct.smul_tmul']
+  | add x y hx hy => simp [hx, hy, smul_add]
 
 end SemilinearAction
 
