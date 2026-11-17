@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import TauCeti.Algebra.Homology.HomologicalComplex.ConnectingMapKernel
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
