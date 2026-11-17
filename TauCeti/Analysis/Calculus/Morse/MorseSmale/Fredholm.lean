@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.LinearizedTransversality
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
+import TauCeti.Analysis.Calculus.Morse.RegularLevel
 import TauCeti.Analysis.Calculus.Morse.Transversality
 
 /-!
@@ -145,13 +146,9 @@ theorem IsMorseSmale.of_forall_ne_of_morseIndex_ne (hfs : ContDiff ℝ 2 f)
   have hu := hp.finrank_span_tangentConeAt_unstableSet hfs hf hy.1
   have hs := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hy.2
   -- The velocity `-∇f y` is a nonzero vector tangent to both `W^u(p)` and `W^s(q)`.
-  have hgy : -∇ f y ≠ 0 := fun h0 ↦ by
-    have hfix := (forall_negativeGradientFlow_eq_self_iff f hf y).2 (neg_eq_zero.1 h0)
-    have hyp : y = p := tendsto_nhds_unique tendsto_const_nhds
-      (by simpa only [hfix] using Flow.mem_unstableSet.1 hy.1)
-    have hyq : y = q := tendsto_nhds_unique tendsto_const_nhds
-      (by simpa only [hfix] using Flow.mem_stableSet.1 hy.2)
-    exact hpq (hyp.symm.trans hyq)
+  have hgy : -∇ f y ≠ 0 :=
+    neg_ne_zero.2 (Flow.gradient_ne_zero_of_mem_unstableSet_inter_stableSet
+      (fun z ↦ (forall_negativeGradientFlow_eq_self_iff f hf z).2) hpq hy)
   have hmemu : -∇ f y ∈
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) :=
     Submodule.subset_span
