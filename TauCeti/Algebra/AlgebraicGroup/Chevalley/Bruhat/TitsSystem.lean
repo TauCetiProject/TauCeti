@@ -85,6 +85,52 @@ private theorem simpleIndex_isPos (i : Fin t.rank) :
     (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
   RootPairing.Base.isPos_of_mem_support (t.support_rationalBase ht ▸ t.simpleIndex_mem_support i)
 
+private theorem exists_mem_borelSubgroup_mul_weylElement_mul_rootSubgroupPoints_mul
+    (i : Fin t.rank) (w : D.weylSubgroup k) {z : D.points k}
+    (hz : z ∈ DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) k 1)
+        (D.borelSubgroup k) (D.borelSubgroup k) *
+      DoubleCoset.doubleCoset (w : D.points k)
+        (D.borelSubgroup k) (D.borelSubgroup k)) :
+    ∃ a : Multiplicative k, ∃ b₁ ∈ D.borelSubgroup k, ∃ b₂ ∈ D.borelSubgroup k,
+      b₁ * (D.weylElement (t.simpleIndex ht i) k 1 *
+        D.rootSubgroupPoints (t.simpleIndex ht i) k a * (w : D.points k)) * b₂ = z := by
+  set n := D.weylElement (t.simpleIndex ht i) k 1
+  obtain ⟨_, hz₁, _, hz₂, rfl⟩ := Set.mem_mul.mp hz
+  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz₁
+  obtain ⟨b₃, hb₃, b₄, hb₄, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz₂
+  obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff k).mp (mul_mem hb₂ hb₃)
+  obtain ⟨v, hv, a, rfl⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints k i u).mp hu
+  have hvB : n * v * n⁻¹ ∈ D.borelSubgroup k :=
+    D.positivePoints_le_borelSubgroup k
+      (D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints k i
+        ((Subgroup.mem_normalizer_iff.mp
+          (D.weylElement_mem_normalizer_positivePoints_diff_singleton k i 1) v).mp hv))
+  have htB : (w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) ∈ D.borelSubgroup k := by
+    simpa using D.weylSubgroup_conj_torusPoints_mem_borelSubgroup k w⁻¹ s
+  refine ⟨a, b₁ * (n * v * n⁻¹), mul_mem hb₁ hvB,
+    ((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k)) * b₄, mul_mem htB hb₄, ?_⟩
+  calc
+    b₁ * (n * v * n⁻¹) * (n * D.rootSubgroupPoints (t.simpleIndex ht i) k a * (w : D.points k)) *
+        (((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k)) * b₄)
+        = b₁ * n * (v * D.rootSubgroupPoints (t.simpleIndex ht i) k a * D.torusPoints k s) *
+            (w : D.points k) * b₄ := by group
+    _ = b₁ * n * (b₂ * b₃) * (w : D.points k) * b₄ := by rw [hs]
+    _ = b₁ * n * b₂ * (b₃ * (w : D.points k) * b₄) := by group
+
+private theorem inv_conj_mem_borelSubgroup_of_mem_range_rootSubgroupPoints
+    (w : D.weylSubgroup k) {γ : Fin t.numRoots} {x : D.points k}
+    (hx : x ∈ (D.rootSubgroupPoints γ k).range)
+    (hpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k w)⁻¹ γ ∈
+      posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    (w : D.points k)⁻¹ * x * (w : D.points k) ∈ D.borelSubgroup k := by
+  obtain ⟨a', ha'⟩ : (w : D.points k)⁻¹ * x * (w : D.points k) ∈
+      (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).weylGroupToPerm
+        (D.weylProjection k w)⁻¹ γ) k).range := by
+    rw [← map_inv (D.weylProjection k) w, ← D.map_range_rootSubgroupPoints_conj k w⁻¹ γ]
+    exact ⟨x, hx, rfl⟩
+  exact ha' ▸ D.positivePoints_le_borelSubgroup k
+    (D.rootSubgroupPoints_mem_positivePoints k hpos a')
+
 /-- **Length-increasing Bruhat multiplication in `D.points k`.** If `αᵢ` is not an inversion of
 `(D.weylProjection k w)⁻¹`, then multiplying the simple double coset `B nᵢ B` with `B w B` stays
 inside the single double coset `B (nᵢ w) B`. -/
@@ -99,45 +145,72 @@ theorem doubleCoset_weylElement_mul_subset_of_notMem_inversions
         (D.borelSubgroup k) (D.borelSubgroup k) ⊆
     DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) k 1 * w)
         (D.borelSubgroup k) (D.borelSubgroup k) := by
-  set n := D.weylElement (t.simpleIndex ht i) k 1
   intro z hz
-  obtain ⟨_, hz₁, _, hz₂, rfl⟩ := Set.mem_mul.mp hz
-  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz₁
-  obtain ⟨b₃, hb₃, b₄, hb₄, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz₂
-  obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff k).mp (mul_mem hb₂ hb₃)
-  obtain ⟨v, hv, a, rfl⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints k i u).mp hu
-  have hvB : n * v * n⁻¹ ∈ D.borelSubgroup k :=
-    D.positivePoints_le_borelSubgroup k
-      (D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints k i
-        ((Subgroup.mem_normalizer_iff.mp
-          (D.weylElement_mem_normalizer_positivePoints_diff_singleton k i 1) v).mp hv))
-  have htB : (w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) ∈ D.borelSubgroup k := by
-    simpa using D.weylSubgroup_conj_torusPoints_mem_borelSubgroup k w⁻¹ s
+  obtain ⟨a, b₁, hb₁, b₂, hb₂, rfl⟩ :=
+    D.exists_mem_borelSubgroup_mul_weylElement_mul_rootSubgroupPoints_mul k i w hz
   have hβpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k w)⁻¹
       (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
     by_contra hnot
     exact hinv ((mem_inversions _ _ _ _).mpr ⟨simpleIndex_isPos i, hnot⟩)
-  obtain ⟨a', ha'⟩ : (w : D.points k)⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) k a *
-      (w : D.points k) ∈ (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (D.weylProjection k w)⁻¹ (t.simpleIndex ht i)) k).range := by
-    rw [← map_inv (D.weylProjection k) w,
-      ← D.map_range_rootSubgroupPoints_conj k w⁻¹ (t.simpleIndex ht i)]
-    exact ⟨_, ⟨a, rfl⟩, rfl⟩
-  have hxB : (w : D.points k)⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) k a *
-      (w : D.points k) ∈ D.borelSubgroup k :=
-    ha' ▸ D.positivePoints_le_borelSubgroup k (D.rootSubgroupPoints_mem_positivePoints k hβpos a')
-  rw [DoubleCoset.mem_doubleCoset]
-  refine ⟨b₁ * (n * v * n⁻¹), mul_mem hb₁ hvB,
-    ((w : D.points k)⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) k a * (w : D.points k)) *
-      ((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k)) * b₄,
-    mul_mem (mul_mem hxB htB) hb₄, ?_⟩
-  calc
-    b₁ * n * b₂ * (b₃ * (w : D.points k) * b₄)
-        = b₁ * n * (b₂ * b₃) * (w : D.points k) * b₄ := by group
-    _ = b₁ * n * (v * D.rootSubgroupPoints (t.simpleIndex ht i) k a * D.torusPoints k s) *
-          (w : D.points k) * b₄ := by rw [← hs]
-    _ = _ := by group
+  have hxB := D.inv_conj_mem_borelSubgroup_of_mem_range_rootSubgroupPoints k w ⟨a, rfl⟩ hβpos
+  refine DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁,
+    ((w : D.points k)⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) k a * (w : D.points k)) * b₂,
+    mul_mem hxB hb₂, by group⟩
+
+private theorem weylElement_mul_rootSubgroupPoints_mul_mem_doubleCoset_of_mem_inversions
+    (i : Fin t.rank) (w : D.weylSubgroup k)
+    (hinv : t.simpleIndex ht i ∈
+      inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (D.weylProjection k w)⁻¹)
+    (u₀ : kˣ) :
+    D.weylElement (t.simpleIndex ht i) k 1 *
+        D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u₀ : k)) * (w : D.points k) ∈
+      DoubleCoset.doubleCoset (w : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) := by
+  set n := D.weylElement (t.simpleIndex ht i) k 1
+  let x := D.rootSubgroupPoints (t.simpleIndex ht i) k
+  -- Use the rank-one exchange identity to absorb `n` and conjugate the trailing factor to `-αᵢ`.
+  have hexch : n * x (ofAdd (u₀ : k)) =
+      x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * D.simpleCorootPoints i k (-u₀⁻¹) *
+        (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹) := by
+    have h := D.weylElement_mul_rootSubgroup_mul_weylElement i k u₀
+    dsimp only at h
+    calc
+      n * x (ofAdd (u₀ : k)) = (n * x (ofAdd (u₀ : k)) * n) * n⁻¹ := by group
+      _ = (x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * D.simpleCorootPoints i k (-u₀⁻¹) * n *
+            x (ofAdd (-((u₀⁻¹ : kˣ) : k)))) * n⁻¹ := by rw [h]
+      _ = _ := by group
+  have hxL : x (ofAdd (-((u₀⁻¹ : kˣ) : k))) ∈ D.borelSubgroup k :=
+    D.positivePoints_le_borelSubgroup k
+      (D.rootSubgroupPoints_mem_positivePoints k (simpleIndex_mem_posRoots i) _)
+  have hhL : D.simpleCorootPoints i k (-u₀⁻¹) ∈ D.borelSubgroup k := by
+    rw [D.simpleCorootPoints_eq_torusPoints]
+    exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩
+  let α_neg := (t.simplyConnectedRootDatum ht).reflectionPerm
+    (t.simpleIndex ht i) (t.simpleIndex ht i)
+  have hβpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k w)⁻¹
+      α_neg ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
+    by_contra hc
+    have hnot : t.simpleIndex ht i ∉
+        inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+          ((D.weylProjection k w)⁻¹ * RootPairing.weylGroup.ofIdx
+            (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) := by
+      rw [mem_inversions_mul_ofIdx_iff_not_mem _ _ _ (simpleIndex_isPos i)]
+      exact not_not.mpr hinv
+    refine hnot ((mem_inversions _ _ _ _).mpr ⟨simpleIndex_isPos i, ?_⟩)
+    simpa only [α_neg, map_mul, Equiv.Perm.mul_apply,
+      RootPairing.weylGroupToPerm_ofIdx_apply] using hc
+  have hy_mem : n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹ ∈
+      (D.rootSubgroupPoints α_neg k).range := by
+    rw [D.weylElement_conj_rootSubgroupPoints]
+    exact ⟨_, rfl⟩
+  have hyB := D.inv_conj_mem_borelSubgroup_of_mem_range_rootSubgroupPoints k w hy_mem hβpos
+  refine DoubleCoset.mem_doubleCoset.mpr
+    ⟨x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * D.simpleCorootPoints i k (-u₀⁻¹), mul_mem hxL hhL,
+      (w : D.points k)⁻¹ * (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹) * (w : D.points k), hyB, ?_⟩
+  rw [hexch]
+  group
 
 /-- **The rank-one Tits multiplication law in `D.points k`.** Over any field, multiplying the
 simple double coset `B nᵢ B` with `B w B` lands in `B (nᵢ w) B ∪ B w B`. -/
@@ -155,102 +228,22 @@ theorem doubleCoset_weylElement_mul_subset_union
   by_cases hinv : t.simpleIndex ht i ∈
       inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
         (D.weylProjection k w)⁻¹
-  · set n := D.weylElement (t.simpleIndex ht i) k 1
-    let x := D.rootSubgroupPoints (t.simpleIndex ht i) k
-    intro z hz
-    obtain ⟨_, hz₁, _, hz₂, rfl⟩ := Set.mem_mul.mp hz
-    obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz₁
-    obtain ⟨b₃, hb₃, b₄, hb₄, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz₂
-    obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff k).mp (mul_mem hb₂ hb₃)
-    obtain ⟨v, hv, a, rfl⟩ :=
-      (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints k i u).mp hu
-    have hvB : n * v * n⁻¹ ∈ D.borelSubgroup k :=
-      D.positivePoints_le_borelSubgroup k
-        (D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints k i
-          ((Subgroup.mem_normalizer_iff.mp
-            (D.weylElement_mem_normalizer_positivePoints_diff_singleton k i 1) v).mp hv))
-    have htB : (w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) ∈ D.borelSubgroup k := by
-      simpa using D.weylSubgroup_conj_torusPoints_mem_borelSubgroup k w⁻¹ s
+  · intro z hz
+    obtain ⟨a, b₁, hb₁, b₂, hb₂, rfl⟩ :=
+      D.exists_mem_borelSubgroup_mul_weylElement_mul_rootSubgroupPoints_mul k i w hz
     by_cases ha : toAdd a = 0
     · have ha1 : a = 1 := toAdd.injective (ha.trans toAdd_one.symm)
-      refine Or.inl (DoubleCoset.mem_doubleCoset.mpr
-        ⟨b₁ * (n * v * n⁻¹), mul_mem hb₁ hvB,
-          ((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k)) * b₄,
-          mul_mem htB hb₄, ?_⟩)
-      calc
-        b₁ * n * b₂ * (b₃ * (w : D.points k) * b₄)
-            = b₁ * n * (b₂ * b₃) * (w : D.points k) * b₄ := by group
-        _ = b₁ * n * (v * x a * D.torusPoints k s) * (w : D.points k) * b₄ := by rw [← hs]
-        _ = b₁ * n * (v * 1 * D.torusPoints k s) * (w : D.points k) * b₄ := by
-              rw [ha1, map_one]
-        _ = _ := by group
-    · -- For a unit root parameter, the rank-one exchange identity absorbs `n` and conjugates the
-      -- trailing root factor to `-αᵢ`, which `(D.weylProjection k w)⁻¹` sends back to `posRoots`.
-      let u₀ : kˣ := Units.mk0 (toAdd a) ha
-      have ha_eq : x a = x (ofAdd (u₀ : k)) := by simp [u₀]
-      have hexch : n * x (ofAdd (u₀ : k)) =
-          x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * D.simpleCorootPoints i k (-u₀⁻¹) *
-            (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹) := by
-        have h := D.weylElement_mul_rootSubgroup_mul_weylElement i k u₀
-        dsimp only at h
-        calc
-          n * x (ofAdd (u₀ : k)) = (n * x (ofAdd (u₀ : k)) * n) * n⁻¹ := by group
-          _ = (x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * D.simpleCorootPoints i k (-u₀⁻¹) * n *
-                x (ofAdd (-((u₀⁻¹ : kˣ) : k)))) * n⁻¹ := by rw [h]
-          _ = _ := by group
-      have hxL : x (ofAdd (-((u₀⁻¹ : kˣ) : k))) ∈ D.borelSubgroup k :=
-        D.positivePoints_le_borelSubgroup k
-          (D.rootSubgroupPoints_mem_positivePoints k (simpleIndex_mem_posRoots i) _)
-      have hhL : D.simpleCorootPoints i k (-u₀⁻¹) ∈ D.borelSubgroup k := by
-        rw [D.simpleCorootPoints_eq_torusPoints]
-        exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩
-      let α_neg := (t.simplyConnectedRootDatum ht).reflectionPerm
-        (t.simpleIndex ht i) (t.simpleIndex ht i)
-      have hβpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k w)⁻¹
-          α_neg ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-        rw [t.posRoots_rationalRootSystem ht, mem_posRoots]
-        by_contra hc
-        have hnot : t.simpleIndex ht i ∉
-            inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-              ((D.weylProjection k w)⁻¹ * RootPairing.weylGroup.ofIdx
-                (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) := by
-          rw [mem_inversions_mul_ofIdx_iff_not_mem _ _ _ (simpleIndex_isPos i)]
-          exact not_not.mpr hinv
-        refine hnot ((mem_inversions _ _ _ _).mpr ⟨simpleIndex_isPos i, ?_⟩)
-        simpa only [α_neg, map_mul, Equiv.Perm.mul_apply,
-          RootPairing.weylGroupToPerm_ofIdx_apply] using hc
-      obtain ⟨a', ha'⟩ : (w : D.points k)⁻¹ * (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹) *
-          (w : D.points k) ∈ (D.rootSubgroupPoints
-            ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k w)⁻¹
-              α_neg) k).range := by
-        rw [← map_inv (D.weylProjection k) w, ← D.map_range_rootSubgroupPoints_conj k w⁻¹ α_neg]
-        refine ⟨n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹, ?_, rfl⟩
-        rw [D.weylElement_conj_rootSubgroupPoints]
-        exact ⟨_, rfl⟩
-      have hyB : (w : D.points k)⁻¹ * (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹) *
-          (w : D.points k) ∈ D.borelSubgroup k :=
-        ha' ▸ D.positivePoints_le_borelSubgroup k
-          (D.rootSubgroupPoints_mem_positivePoints k hβpos a')
+      refine Or.inl (DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, b₂, hb₂, ?_⟩)
+      rw [ha1, map_one, mul_one]
+    · obtain ⟨c₁, hc₁, c₂, hc₂, hc⟩ := DoubleCoset.mem_doubleCoset.mp
+        (D.weylElement_mul_rootSubgroupPoints_mul_mem_doubleCoset_of_mem_inversions
+          k i w hinv (Units.mk0 (toAdd a) ha))
+      have ha_eq : ofAdd ((Units.mk0 (toAdd a) ha : kˣ) : k) = a := by simp
+      rw [ha_eq] at hc
       refine Or.inr (DoubleCoset.mem_doubleCoset.mpr
-        ⟨b₁ * (n * v * n⁻¹) * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) *
-            D.simpleCorootPoints i k (-u₀⁻¹),
-          mul_mem (mul_mem (mul_mem hb₁ hvB) hxL) hhL,
-          ((w : D.points k)⁻¹ * (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹) *
-              (w : D.points k)) *
-            ((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k)) * b₄,
-          mul_mem (mul_mem hyB htB) hb₄, ?_⟩)
-      calc
-        b₁ * n * b₂ * (b₃ * (w : D.points k) * b₄)
-            = b₁ * n * (b₂ * b₃) * (w : D.points k) * b₄ := by group
-        _ = b₁ * n * (v * x a * D.torusPoints k s) * (w : D.points k) * b₄ := by rw [← hs]
-        _ = b₁ * (n * v * n⁻¹) * (n * x (ofAdd (u₀ : k))) * D.torusPoints k s *
-              (w : D.points k) * b₄ := by
-              rw [ha_eq]; group
-        _ = b₁ * (n * v * n⁻¹) *
-              (x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * D.simpleCorootPoints i k (-u₀⁻¹) *
-                (n * x (ofAdd (-((u₀⁻¹ : kˣ) : k))) * n⁻¹)) *
-              D.torusPoints k s * (w : D.points k) * b₄ := by rw [hexch]
-        _ = _ := by group
+        ⟨b₁ * c₁, mul_mem hb₁ hc₁, c₂ * b₂, mul_mem hc₂ hb₂, ?_⟩)
+      rw [hc]
+      group
   · exact (D.doubleCoset_weylElement_mul_subset_of_notMem_inversions k i w hinv).trans
       Set.subset_union_left
 

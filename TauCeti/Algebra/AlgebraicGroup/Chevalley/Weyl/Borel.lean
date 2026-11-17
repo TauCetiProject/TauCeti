@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -136,15 +137,11 @@ theorem positivePoints_inf_weylSubgroup_eq_bot (k : Type v) [Field k] :
     obtain ⟨s, hchar⟩ := exists_torusCharacter_ne (K := K) hwt
     have hcomm := (D.weylProjection_eq_iff k ⟨u, huW⟩ 1).mp hw1 s
     rw [map_one, MulAut.one_apply, ← hcoe, mul_inv_eq_iff_eq_mul] at hcomm
-    have hentry := congrArg (fun M : Matrix.GeneralLinearGroup (Fin D.dim) K =>
-      (M : Matrix (Fin D.dim) (Fin D.dim) K) r q) hcomm
-    simp only [Units.val_mul, diagGL_coe, Matrix.mul_diagonal, Matrix.diagonal_mul] at hentry
-    have hzero : ((torusCharacter s (D.weight q) : K) - (torusCharacter s (D.weight r) : K)) *
-        ((uK : Matrix.GeneralLinearGroup (Fin D.dim) K) :
-          Matrix (Fin D.dim) (Fin D.dim) K) r q = 0 := by
-      rw [sub_mul, mul_comm, hentry, mul_comm, sub_self]
-    exact (mul_eq_zero.mp hzero).resolve_left
-      (sub_ne_zero.mpr fun h => hchar (Units.ext h.symm))
+    have hcommM : Commute (Matrix.diagonal fun j => (torusCharacter s (D.weight j) : K))
+        ((uK : Matrix.GeneralLinearGroup (Fin D.dim) K) : Matrix (Fin D.dim) (Fin D.dim) K) := by
+      simpa only [Commute, SemiconjBy, Units.val_mul, diagGL_coe] using
+        (congrArg Units.val hcomm).symm
+    exact apply_eq_zero_of_commute_diagonal hcommM fun h => hchar (Units.ext h)
 
 /-- Inside the points of a Chevalley datum over any field, the Weyl subgroup meets the positive
 unipotent subgroup trivially. -/
