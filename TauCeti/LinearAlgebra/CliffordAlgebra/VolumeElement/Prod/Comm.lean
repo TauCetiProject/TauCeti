@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.ProdLp.QuadraticForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
@@ -17,17 +18,13 @@ with `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`. Exchanging the summands vi
 `LinearIsometryEquiv.withLpProdComm 2 ℝ V W` preserves the ordered product orientation (`n * m` is
 even) and carries `Γ_(V ⊕ W)` to `Γ_(W ⊕ V)`. On complex Clifford modules `E` and `F`, the Koszul
 swap `Module.End.koszulComm` built from `Γ_V` and `Γ_W` intertwines `complexProdTensor` of `V ⊕ W`
-with that of `W ⊕ V` along `withLpProdComm` and carries the product chirality action on `E ⊗ F` to
-that on `F ⊗ E`.
-
-## Main definitions
-
-* `CliffordAlgebra.withLpProdCommIsometry`: `withLpProdComm` as a quadratic isometry equivalence.
+with that of `W ⊕ V` along `QuadraticMap.IsometryEquiv.withLpProdComm` and carries the product
+chirality action on `E ⊗ F` to that on `F ⊗ E`.
 
 ## Main results
 
 * `CliffordAlgebra.map_withLpProdComm_orientation_of_even` and
-  `CliffordAlgebra.map_withLpProdCommIsometry_complexVolume`: orientation and volume compatibility.
+  `CliffordAlgebra.map_withLpProdComm_complexVolume`: orientation and volume compatibility.
 * `CliffordAlgebra.koszulComm_complexProdTensor`,
   `CliffordAlgebra.conjAlgEquiv_complexProdTensor_comm`, and
   `CliffordAlgebra.koszulComm_complexProdTensor_complexVolume`: Koszul-swap intertwining laws.
@@ -46,38 +43,6 @@ noncomputable section
 open Module Module.End TensorProduct
 
 namespace CliffordAlgebra
-
-section Isometry
-
-variable {V W : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-  [SeminormedAddCommGroup W] [NormedSpace ℝ W]
-  {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W}
-  {Q : QuadraticForm ℝ (WithLp 2 (V × W))} {Q' : QuadraticForm ℝ (WithLp 2 (W × V))}
-  (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-  (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2)
-
-include hQ hQ' in
-/-- `LinearIsometryEquiv.withLpProdComm 2 ℝ V W` as a quadratic isometry equivalence between
-`V ⊕ W` and `W ⊕ V`. -/
-def withLpProdCommIsometry : Q.IsometryEquiv Q' where
-  toLinearEquiv := (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).toLinearEquiv
-  map_app' x := by simp [hQ, hQ', add_comm]
-
-/-- Applying `CliffordAlgebra.withLpProdCommIsometry` swaps the two `L²`-product coordinates. -/
-@[simp]
-theorem withLpProdCommIsometry_apply (x : WithLp 2 (V × W)) :
-    withLpProdCommIsometry hQ hQ' x = LinearIsometryEquiv.withLpProdComm 2 ℝ V W x :=
-  (rfl)
-
-/-- The linear equivalence underlying `CliffordAlgebra.withLpProdCommIsometry` is
-`LinearIsometryEquiv.withLpProdComm`. -/
-@[simp]
-theorem withLpProdCommIsometry_toLinearEquiv :
-    (withLpProdCommIsometry hQ hQ').toLinearEquiv =
-      (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).toLinearEquiv :=
-  (rfl)
-
-end Isometry
 
 section Orientation
 
@@ -120,21 +85,22 @@ variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
   (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
   (o' : Orientation ℝ (WithLp 2 (W × V)) (Fin (m + n)))
 
-/-- When `n * m` is even, `CliffordAlgebra.withLpProdCommIsometry` carries the normalized complex
-volume element of `V ⊕ W` to that of `W ⊕ V`. -/
-theorem map_withLpProdCommIsometry_complexVolume
+/-- When `n * m` is even, `QuadraticMap.IsometryEquiv.withLpProdComm` carries the normalized
+complex volume element of `V ⊕ W` to that of `W ⊕ V`. -/
+theorem map_withLpProdComm_complexVolume
     [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
     [Fact (finrank ℝ (WithLp 2 (W × V)) = m + n)]
     (heven : Even (n * m))
     (ho : o.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)) = o₁.prod o₂ Fact.out Fact.out)
     (ho' : o'.map (Fin (m + n)) (WithLp.linearEquiv 2 ℝ (W × V)) = o₂.prod o₁ Fact.out Fact.out) :
-    map ((withLpProdCommIsometry hQ hQ').toIsometry.baseChange ℂ) (complexVolume Q o) =
+    map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').toIsometry.baseChange ℂ)
+        (complexVolume Q o) =
       complexVolume Q' o' := by
   have := Fact.mk ((LinearIsometryEquiv.withLpProdComm 2 ℝ V W).toLinearEquiv.finrank_eq.symm.trans
     (Fact.out : finrank ℝ (WithLp 2 (V × W)) = n + m))
-  rw [map_complexVolume o (withLpProdCommIsometry hQ hQ')
-      (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).norm_map,
-    withLpProdCommIsometry_toLinearEquiv,
+  rw [map_complexVolume o (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ')
+      (QuadraticMap.IsometryEquiv.norm_withLpProdComm hQ hQ'),
+    QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv,
     map_withLpProdComm_orientation_of_even o₁ o₂ o o' heven ho ho',
     complexVolume_reindex_finCongr]
 
@@ -152,13 +118,13 @@ variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
 
 /-- **Graded symmetry of `CliffordAlgebra.complexProdTensor`**: the Koszul swap built from the
 chiralities `Γ_V` and `Γ_W` intertwines `complexProdTensor` of `V ⊕ W` with `complexProdTensor` of
-`W ⊕ V` along `CliffordAlgebra.withLpProdCommIsometry`. -/
+`W ⊕ V` along `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
 theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] F) :
     (ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
         (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z) =
       complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁
-        (map ((withLpProdCommIsometry hQ hQ').toIsometry.baseChange ℂ) a)
+        (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').toIsometry.baseChange ℂ) a)
         ((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
           (ρ₁.involutive_complexVolume o₁ hQ₁)
           (ρ₂.involutive_complexVolume o₂ hQ₂) z) := by
@@ -166,7 +132,7 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
         (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
         (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
       (equivOfIsometry (complexWithLpProd hQ')).toAlgHom.comp
-        (map ((withLpProdCommIsometry hQ hQ').toIsometry.baseChange ℂ)) :=
+        (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').toIsometry.baseChange ℂ)) :=
     CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
       simp [equivOfIsometry_apply]
   have hdiag_a := DFunLike.congr_fun hdiag a
@@ -180,14 +146,15 @@ theorem koszulComm_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z
     (equivOfIsometry (complexWithLpProd hQ) a) z
 
 /-- Conjugating `complexProdTensor` of `V ⊕ W` by the Koszul swap gives `complexProdTensor` of
-`W ⊕ V` pulled back along `CliffordAlgebra.withLpProdCommIsometry`. -/
+`W ⊕ V` pulled back along `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
 theorem conjAlgEquiv_complexProdTensor_comm :
     ((((ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
         (ρ₁.involutive_complexVolume o₁ hQ₁)
         (ρ₂.involutive_complexVolume o₂ hQ₂)).conjAlgEquiv ℂ).toAlgHom).comp
       (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂) =
       (complexProdTensor hQ' o₂ hQ₂ hm ρ₂ ρ₁).comp
-        (equivOfIsometry ((withLpProdCommIsometry hQ hQ').baseChange ℂ)).toAlgHom := by
+        (equivOfIsometry
+          ((QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ').baseChange ℂ)).toAlgHom := by
   refine AlgHom.ext fun a ↦ LinearMap.ext fun z ↦ ?_
   let κ := (ρ₁ (complexVolume Q₁ o₁)).koszulComm (ρ₂ (complexVolume Q₂ o₂))
     (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
@@ -212,7 +179,7 @@ theorem koszulComm_complexProdTensor_complexVolume
           (ρ₁.involutive_complexVolume o₁ hQ₁)
           (ρ₂.involutive_complexVolume o₂ hQ₂) z) := by
   rw [koszulComm_complexProdTensor,
-    map_withLpProdCommIsometry_complexVolume hQ hQ' o₁ o₂ o o' (hn.mul_right m) ho ho']
+    map_withLpProdComm_complexVolume hQ hQ' o₁ o₂ o o' (hn.mul_right m) ho ho']
 
 end Action
 

@@ -10,9 +10,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
-import Mathlib.Analysis.InnerProductSpace.Spectrum
-import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
+import TauCeti.Analysis.InnerProductSpace.QuadraticForm.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -109,24 +108,6 @@ theorem complexWithLpProd_tmul (z : ℂ) (x : WithLp 2 (V × W)) :
   QuadraticMap.IsometryEquiv.baseChangeProd_tmul _ z x
 
 end WithLpProd
-
-section NormSq
-
-variable {V W : Type*} [SeminormedAddCommGroup V] [Module ℝ V]
-  [SeminormedAddCommGroup W] [Module ℝ W]
-  {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
-  (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-
-include hQ in
-/-- When `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`, an additive quadratic form `Q (v, w) = Q₁ v + Q₂ w` on
-the `L²` product `WithLp 2 (V × W)` satisfies `Q x = -‖x‖²`. -/
-theorem eq_neg_norm_sq_of_withLpProd (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2)
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (x : WithLp 2 (V × W)) :
-    Q x = -‖x‖ ^ 2 := by
-  rw [hQ, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2, ← neg_add]
-  rfl
-
-end NormSq
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
@@ -304,33 +285,13 @@ private theorem complexProdTensor_complexVolume_eq_map_pow (b₁ : OrthonormalBa
   obtain ⟨j, hj⟩ := hn
   omega
 
-omit [FiniteDimensional ℝ V] [Fact (finrank ℝ V = n)]
-  [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)] in
-private theorem exists_orthonormalBasis_isOrthoᵢ (Q₂ : QuadraticForm ℝ W) :
-    ∃ b₂ : OrthonormalBasis (Fin m) ℝ W, (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis := by
-  let T : W →ₗ[ℝ] W := LinearMap.BilinForm.symmCompOfNondegenerate
-    (QuadraticMap.associated Q₂) (innerₗ W) TauCeti.nondegenerate_inner
-  have hT : T.IsSymmetric := fun x y ↦ by
-    rw [← innerₗ_apply_apply, LinearMap.BilinForm.symmCompOfNondegenerate_left_apply,
-      real_inner_comm (T y) x, ← innerₗ_apply_apply,
-      LinearMap.BilinForm.symmCompOfNondegenerate_left_apply]
-    exact (QuadraticForm.associated_isSymm ℝ Q₂).eq x y
-  let b₂ : OrthonormalBasis (Fin m) ℝ W := hT.eigenvectorBasis Fact.out
-  refine ⟨b₂, LinearMap.isOrthoᵢ_def.mpr fun i j hij ↦ ?_⟩
-  have key : ⟪T (b₂ i), b₂ j⟫ = QuadraticMap.associated Q₂ (b₂ i) (b₂ j) := by
-    rw [← innerₗ_apply_apply]
-    exact LinearMap.BilinForm.symmCompOfNondegenerate_left_apply _
-      TauCeti.nondegenerate_inner (b₂ j) (b₂ i)
-  rw [OrthonormalBasis.coe_toBasis, ← key, hT.apply_eigenvectorBasis, real_inner_smul_left,
-    b₂.orthonormal.2 hij, mul_zero]
-
 include hQ₁ in
 private theorem complexProdTensor_complexVolume_eq_map_pow_of_map_eq_prod
     (ho : o.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)) = o₁.prod o₂ Fact.out Fact.out) :
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
       TensorProduct.map (ρ₁ (complexVolume Q₁ o₁) ^ (m + 1)) (ρ₂ (complexVolume Q₂ o₂)) := by
   let b₁ : OrthonormalBasis (Fin n) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
-  obtain ⟨b₂, hQb₂⟩ := exists_orthonormalBasis_isOrthoᵢ (m := m) Q₂
+  obtain ⟨b₂, hQb₂⟩ := Q₂.exists_orthonormalBasis_isOrthoᵢ (n := m) Fact.out
   have hB : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.map (WithLp.linearEquiv 2 ℝ (V × W)) =
       (b₁.toBasis.prod b₂.toBasis).reindex finSumFinEquiv :=
     Basis.eq_of_apply_eq fun k ↦ by
@@ -360,12 +321,9 @@ private theorem complexProdTensor_complexVolume_eq_map_pow_of_map_eq_prod
       generalize ρ₁ (complexVolume Q₁ (-b₁.toBasis.orientation)) ^ m = g
       rw [complexVolume_neg_orientation, complexVolume_eq _ b₁ rfl hQb₁,
         complexVolume_eq _ b₂ rfl hQb₂]
-      have hnegL (f : Module.End ℂ E) (h : Module.End ℂ F) :
-          TensorProduct.map (-f) h = -TensorProduct.map f h :=
-        TensorProduct.ext' fun _ _ ↦ by simp [TensorProduct.neg_tmul]
-      simp only [map_neg, map_smul, neg_mul, hnegL, smul_mul_assoc, TensorProduct.map_smul_left,
-        TensorProduct.map_smul_right, smul_smul, ← pow_add]
-      congr 3; obtain ⟨j, hj⟩ := hn; omega
+      simp only [map_smul, smul_mul_assoc, ← neg_smul, TensorProduct.map_smul_left,
+        TensorProduct.map_smul_right, smul_smul, mul_neg, ← pow_add]
+      rw [neg_smul, show (m + 1) / 2 + (n + 1) / 2 = (n + m + 1) / 2 by obtain ⟨j, hj⟩ := hn; omega]
   rw [ho']
   rcases b₂.toBasis.orientation_eq_or_eq_neg o₂ with rfl | rfl
   · exact hpos
