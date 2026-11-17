@@ -463,31 +463,18 @@ theorem hom_starProjection_ker_apply (x : M) (u w : TangentSpace I x) :
   let P := fun y ↦ (mfderiv I J f y).kerᗮ.starProjection
   let Q := fun y ↦ (mfderiv I J f y).ker.starProjection
   let cov := CovariantDerivative.leviCivitaConnection I M
-  let Y := FiberBundle.extend E w
   have hP := (h.contMDiff_starProjection_orthogonal_ker (n := ∞) (by simp)).mdifferentiableAt
     (by simp) (x := x)
   have hQ := (h.contMDiff_starProjection_ker (n := ∞) (by simp)).mdifferentiableAt
     (by simp) (x := x)
-  have hY : MDiffAt (T% Y) x := FiberBundle.mdifferentiableAt_extend I E w
-  have hsplit : (fun y ↦ Q y (Y y)) = Y - fun y ↦ P y (Y y) := by
-    ext y
-    simp only [P, Q, Submodule.starProjection_orthogonal, sub_apply,
-      ContinuousLinearMap.id_apply, Pi.sub_apply]
-    abel
-  have hQY : cov (fun y ↦ Q y (Y y)) x u =
-      cov Y x u - cov (fun y ↦ P y (Y y)) x u := by
-    rw [hsplit, cov.isCovariantDerivativeOnUniv.sub hY (hP.clm_bundle_apply hY)]
-    rfl
-  have hhomQ := CovariantDerivative.hom_apply cov cov hQ hY u
-  have hhomP := CovariantDerivative.hom_apply cov cov hP hY u
-  simp only [Y, FiberBundle.extend_apply_self] at hhomQ hhomP hQY
-  have hneg : cov.hom cov Q x u w = -cov.hom cov P x u w := by
-    rw [hhomQ, hhomP, hQY]
-    simp only [P, Submodule.starProjection_orthogonal, sub_apply,
-      ContinuousLinearMap.id_apply]
-    abel
+  have hQP : Q + P = fun y ↦ ContinuousLinearMap.id ℝ (TangentSpace I y) := by
+    ext y v
+    simp [P, Q, Submodule.starProjection_orthogonal]
+  have hadd := (cov.hom cov).isCovariantDerivativeOnUniv.add hQ hP
+  rw [hQP, CovariantDerivative.hom_id] at hadd
+  have hneg : cov.hom cov Q x = -cov.hom cov P x := eq_neg_of_add_eq_zero_left hadd.symm
   dsimp only [P, Q, cov] at hneg
-  rw [hneg, h.hom_starProjection_orthogonal_ker_apply, neg_sub]
+  rw [hneg, neg_apply, neg_apply, h.hom_starProjection_orthogonal_ker_apply, neg_sub]
 
 end Projections
 
