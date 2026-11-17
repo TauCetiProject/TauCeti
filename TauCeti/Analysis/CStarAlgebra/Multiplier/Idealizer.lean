@@ -232,8 +232,9 @@ def idealizerToMultiplier (ι : A →⋆ₙₐ[ℂ] D) (hι : Function.Injective
     codRestrictIdealizer_injective hι (by simp [ψ])
   { __ := ψ
     map_one' := h1
-    commutes' c := by change ψ _ = _; rw [Algebra.algebraMap_eq_smul_one, map_smul, h1,
-      Algebra.algebraMap_eq_smul_one] }
+    commutes' c := by
+      rw [NonUnitalAlgHom.toFun_eq_coe, NonUnitalStarAlgHom.coe_toNonUnitalAlgHom,
+        Algebra.algebraMap_eq_smul_one, map_smul, h1, Algebra.algebraMap_eq_smul_one] }
 
 @[simp] theorem map_idealizerToMultiplier_fst {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)
     (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).fst a) = (d : D) * ι a :=

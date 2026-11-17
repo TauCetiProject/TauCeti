@@ -7,23 +7,23 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
-public import TauCeti.Analysis.CStarAlgebra.Multiplier.StrictTopology
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Strict.Topology
 public import TauCeti.Analysis.CStarAlgebra.Representation.Multiplier
-import TauCeti.Analysis.Normed.Module.CohenFactorization.Basic
+import TauCeti.Analysis.CStarAlgebra.Multiplier.Factorization
+import TauCeti.Analysis.CStarAlgebra.Representation.Factorization
 
 /-!
-# Strict continuity and Cohen–Hewitt factorization for multiplier extensions
+# Strict continuity and Lance–Woronowicz theorem for multiplier extensions
 
 This file establishes the strict-topological functoriality of multiplier algebras of C⋆-algebras
 and the global strict-to-strong-star continuity of multiplier extensions of Hilbert-space
 representations, following Lance (*Hilbert C\*-Modules*, Proposition 2.5) and Woronowicz.
 
-Applying Cohen–Hewitt factorization (`exists_apply_eq_of_mem_topologicalClosure_span`) along an
-increasing approximate unit shows `B = φ(A)B = B φ(A)` for nondegenerate `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)`
-(`IsMultiplierNondegenerate.exists_fst_apply_eq`, `exists_snd_apply_eq`) and `H = π(A)H` for
-nondegenerate `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` (`IsNondegenerate.exists_apply_eq`,
-`coe_essentialSubspace_eq_iUnion_range`). Writing `b = (φ a₁).fst y₁` and `b = (φ a₂).snd y₂` turns
-the multiplier extension formulas into global identities on all of `B`, yielding:
+Using Cohen–Hewitt factorization from `TauCeti.Analysis.CStarAlgebra.Multiplier.Factorization`
+(`IsMultiplierNondegenerate.exists_fst_apply_eq`, `exists_snd_apply_eq`) and
+`TauCeti.Analysis.CStarAlgebra.Representation.Factorization`
+(`coe_essentialSubspace_eq_iUnion_range`), writing `b = (φ a₁).fst y₁` and `b = (φ a₂).snd y₂`
+turns the multiplier extension formulas into global identities on all of `B`, yielding:
 * global strict continuity and bounded-ball uniqueness of `φ.extendToMultiplierStrict hφ`
   (`continuous_extendToMultiplierStrict`, `eq_extendToMultiplier_of_continuousOn_norm_le`);
 * the Lance–Woronowicz equivalence between global strict continuity, unit-ball strict continuity,
@@ -50,159 +50,6 @@ noncomputable section
 
 open Filter Topology
 open scoped CStarAlgebra MultiplierAlgebra
-
-/-! ### Cohen–Hewitt factorization for multiplier homomorphisms and representations -/
-
-namespace NonUnitalStarAlgHom
-
-section CohenHewitt
-
-variable {A B H : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-private theorem exists_apply_eq_of_mem_topologicalClosure_span_iUnion {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] (L : A →L[ℂ] E →L[ℂ] E)
-    (hL : ∀ a b z, L (a * b) z = L a (L b z)) {x : E}
-    (hx : x ∈ (Submodule.span ℂ (⋃ a, Set.range (L a))).topologicalClosure) {ε : ℝ} (hε : 0 < ε) :
-    ∃ a y, ‖a‖ ≤ 1 ∧ ‖y - x‖ < ε ∧ L a y = x := by
-  let := CStarAlgebra.spectralOrder A
-  have := CStarAlgebra.spectralOrderedRing A
-  have hl := CStarAlgebra.increasingApproximateUnit A
-  have := hl.neBot
-  have hrange : (Set.range fun p : A × E => L p.1 p.2) = ⋃ a, Set.range (L a) := by
-    ext z; simp [Prod.exists]
-  obtain ⟨a, y, ha, -, hy, hfac⟩ := L.exists_apply_eq_of_mem_topologicalClosure_span hL
-    hl.eventually_norm hl.tendsto_mul_right (by rwa [hrange]) hε
-  exact ⟨a, y, ha, hy, hfac⟩
-
-private theorem coe_topologicalClosure_span_iUnion_range_eq {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] (L : A →L[ℂ] E →L[ℂ] E)
-    (hL : ∀ a b z, L (a * b) z = L a (L b z)) :
-    ((Submodule.span ℂ (⋃ a, Set.range (L a))).topologicalClosure : Set E) =
-      ⋃ a, Set.range (L a) :=
-  Set.Subset.antisymm
-    (fun _ hx => let ⟨a, y, _, _, h⟩ :=
-      exists_apply_eq_of_mem_topologicalClosure_span_iUnion L hL hx one_pos
-      Set.mem_iUnion.2 ⟨a, y, h⟩)
-    fun _ hx => Submodule.le_topologicalClosure _ (Submodule.subset_span hx)
-
-private def fstActionCLM (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) : A →L[ℂ] B →L[ℂ] B :=
-  LinearMap.mkContinuous ⟨⟨fun a => (φ a).fst, fun a b => by simp⟩, fun c a => by simp⟩ 1
-    fun a => by simpa using (φ a).norm_fst_le.trans (norm_apply_le φ a)
-
-private def repActionCLM {K : Type*} [NormedAddCommGroup K] [InnerProductSpace ℂ K]
-    [CompleteSpace K] (π : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)) : A →L[ℂ] K →L[ℂ] K :=
-  LinearMap.mkContinuous ⟨⟨⇑π, map_add π⟩, map_smul π⟩ 1 fun a => by simpa using norm_apply_le π a
-
-/-- By Cohen–Hewitt factorization, for any `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` the closed linear span of the
-elements `(φ a).fst b` already equals the bare set of products `⋃ a, Set.range (φ a).fst`. -/
-theorem coe_topologicalClosure_span_range_fst_eq (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) :
-    ((Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure : Set B) =
-      ⋃ a, Set.range (φ a).fst :=
-  coe_topologicalClosure_span_iUnion_range_eq (fstActionCLM φ) fun a b z => by
-    simp [fstActionCLM, mul_apply_eq_comp]
-
-/-- By Cohen–Hewitt factorization, for any `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` the closed linear span of the
-elements `(φ a).snd b` already equals the bare set of products `⋃ a, Set.range (φ a).snd`. -/
-theorem coe_topologicalClosure_span_range_snd_eq (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) :
-    ((Submodule.span ℂ (⋃ a, Set.range (φ a).snd)).topologicalClosure : Set B) =
-      ⋃ a, Set.range (φ a).snd := by
-  refine Set.Subset.antisymm (fun b hb => ?_) fun b hb =>
-    Submodule.le_topologicalClosure _ (Submodule.subset_span hb)
-  set S := (Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure
-  have hstar : star b ∈ S := by
-    rw [Submodule.topologicalClosure_coe] at hb
-    rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
-    refine (isClosed_closure.preimage continuous_star).closure_subset_iff.2
-      (Submodule.span_le (p := S.comap (starₗᵢ ℂ : B ≃ₗᵢ⋆[ℂ] B).toLinearMap).2 fun z hz => ?_) hb
-    obtain ⟨a, y, rfl⟩ := Set.mem_iUnion.1 hz
-    exact Submodule.le_topologicalClosure _ <|
-      Submodule.subset_span <| Set.mem_iUnion.2 ⟨star a, star y, by simp [map_star]⟩
-  rw [← SetLike.mem_coe, φ.coe_topologicalClosure_span_range_fst_eq] at hstar
-  obtain ⟨a, y, hay⟩ := Set.mem_iUnion.1 hstar
-  exact Set.mem_iUnion.2 ⟨star a, star y, by simpa [map_star] using congrArg star hay⟩
-
-/-- A multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate if and only if every element
-of `B` is of the form `(φ a).fst y` (`B = φ(A)B`). -/
-theorem isMultiplierNondegenerate_iff_iUnion_range_fst_eq_univ {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)} :
-    φ.IsMultiplierNondegenerate ↔ (⋃ a, Set.range (φ a).fst) = Set.univ := by
-  rw [isMultiplierNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
-    ← SetLike.coe_set_eq, φ.coe_topologicalClosure_span_range_fst_eq, Submodule.top_coe]
-
-/-- A multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate if and only if every element
-of `B` is of the form `(φ a).snd y` (`B = B φ(A)`). -/
-theorem isMultiplierNondegenerate_iff_iUnion_range_snd_eq_univ {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)} :
-    φ.IsMultiplierNondegenerate ↔ (⋃ a, Set.range (φ a).snd) = Set.univ := by
-  rw [isMultiplierNondegenerate_iff_dense_snd, Submodule.dense_iff_topologicalClosure_eq_top,
-    ← SetLike.coe_set_eq, φ.coe_topologicalClosure_span_range_snd_eq, Submodule.top_coe]
-
-/-- **Cohen–Hewitt factorization for nondegenerate multiplier homomorphisms (left form).** Every
-`b : B` factors as `b = (φ a).fst y` with `‖a‖ ≤ 1` and `y` arbitrarily close to `b`. -/
-theorem IsMultiplierNondegenerate.exists_fst_apply_eq_of_pos {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)}
-    (hφ : φ.IsMultiplierNondegenerate) (b : B) {ε : ℝ} (hε : 0 < ε) :
-    ∃ a y, ‖a‖ ≤ 1 ∧ ‖y - b‖ < ε ∧ (φ a).fst y = b := by
-  have htop : (Submodule.span ℂ (⋃ a, Set.range (fstActionCLM φ a))).topologicalClosure = ⊤ := by
-    simpa [fstActionCLM] using
-      Submodule.dense_iff_topologicalClosure_eq_top.mp (isMultiplierNondegenerate_iff_dense.mp hφ)
-  exact exists_apply_eq_of_mem_topologicalClosure_span_iUnion (fstActionCLM φ)
-    (fun x y z => by simp [fstActionCLM, mul_apply_eq_comp]) (htop.symm ▸ Submodule.mem_top) hε
-
-/-- Every `b : B` factors as `b = (φ a).fst y` when `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate. -/
-theorem IsMultiplierNondegenerate.exists_fst_apply_eq {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)}
-    (hφ : φ.IsMultiplierNondegenerate) (b : B) : ∃ a y, (φ a).fst y = b :=
-  let ⟨a, y, _, _, h⟩ := hφ.exists_fst_apply_eq_of_pos b one_pos; ⟨a, y, h⟩
-
-/-- **Cohen–Hewitt factorization for nondegenerate multiplier homomorphisms (right form).** Every
-`b : B` factors as `b = (φ a).snd y` with `‖a‖ ≤ 1` and `y` arbitrarily close to `b`. -/
-theorem IsMultiplierNondegenerate.exists_snd_apply_eq_of_pos {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)}
-    (hφ : φ.IsMultiplierNondegenerate) (b : B) {ε : ℝ} (hε : 0 < ε) :
-    ∃ a y, ‖a‖ ≤ 1 ∧ ‖y - b‖ < ε ∧ (φ a).snd y = b := by
-  obtain ⟨a, y, ha, hy, hfac⟩ := hφ.exists_fst_apply_eq_of_pos (star b) hε
-  refine ⟨star a, star y, (norm_star a).trans_le ha, ?_,
-    by simpa [map_star] using congrArg star hfac⟩
-  rwa [show star y - b = star (y - star b) by simp, norm_star]
-
-/-- Every `b : B` factors as `b = (φ a).snd y` when `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate. -/
-theorem IsMultiplierNondegenerate.exists_snd_apply_eq {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)}
-    (hφ : φ.IsMultiplierNondegenerate) (b : B) : ∃ a y, (φ a).snd y = b :=
-  let ⟨a, y, _, _, h⟩ := hφ.exists_snd_apply_eq_of_pos b one_pos; ⟨a, y, h⟩
-
-/-- **Cohen–Hewitt factorization for nondegenerate representations.** Every `ξ : H` factors as
-`ξ = π a η` with `‖a‖ ≤ 1` and `η` arbitrarily close to `ξ`. -/
-theorem IsNondegenerate.exists_apply_eq_of_pos {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hπ : π.IsNondegenerate) (ξ : H) {ε : ℝ} (hε : 0 < ε) :
-    ∃ a η, ‖a‖ ≤ 1 ∧ ‖η - ξ‖ < ε ∧ π a η = ξ := by
-  have htop : (Submodule.span ℂ (⋃ a, Set.range (repActionCLM π a))).topologicalClosure = ⊤ := by
-    simpa [repActionCLM] using
-      Submodule.dense_iff_topologicalClosure_eq_top.mp (isNondegenerate_iff_dense.mp hπ)
-  exact exists_apply_eq_of_mem_topologicalClosure_span_iUnion (repActionCLM π)
-    (fun a b v => by simp [repActionCLM, mul_apply_eq_comp]) (htop.symm ▸ Submodule.mem_top) hε
-
-/-- Every `ξ : H` factors as `ξ = π a η` when `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate. -/
-theorem IsNondegenerate.exists_apply_eq {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hπ : π.IsNondegenerate) (ξ : H) : ∃ a η, π a η = ξ :=
-  let ⟨a, η, _, _, h⟩ := hπ.exists_apply_eq_of_pos ξ one_pos; ⟨a, η, h⟩
-
-/-- By Cohen–Hewitt factorization, `π.essentialSubspace` already equals `⋃ a, Set.range (π a)` as a
-set, without taking linear spans or closures. -/
-theorem coe_essentialSubspace_eq_iUnion_range (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
-    (π.essentialSubspace : Set H) = ⋃ a, Set.range (π a) := by
-  refine Set.Subset.antisymm (fun ξ hξ => ?_)
-    (Set.iUnion_subset fun a => Set.range_subset_iff.2 (π.apply_mem_essentialSubspace a))
-  obtain ⟨a, η, hfac⟩ := π.isNondegenerate_restrictEssentialSubspace.exists_apply_eq ⟨ξ, hξ⟩
-  exact Set.mem_iUnion.2 ⟨a, η, by
-    simpa [π.coe_restrictEssentialSubspace_apply] using congrArg Subtype.val hfac⟩
-
-/-- A Hilbert-space representation `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate if and only if
-every vector in `H` lies in the range of some `π a` (`H = π(A)H`). -/
-theorem isNondegenerate_iff_iUnion_range_eq_univ {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
-    π.IsNondegenerate ↔ (⋃ a, Set.range (π a)) = Set.univ := by
-  rw [π.isNondegenerate_iff_essentialSubspace_eq_top, ← SetLike.coe_set_eq,
-    π.coe_essentialSubspace_eq_iUnion_range, Submodule.top_coe]
-
-end CohenHewitt
-
-end NonUnitalStarAlgHom
 
 /-! ### Strict transport, bounded-ball identity principle, and strict homeomorphisms -/
 
@@ -418,14 +265,12 @@ private theorem exists_approximateUnit_tendsto_nhdsWithin_unitBall :
     ∃ l : Filter A, l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ 1) ∧ (∀ a : A, Tendsto (· * a) l (𝓝 a)) ∧
       Tendsto (DoubleCentralizerStrict.coe ℂ : A → 𝓜ₛ(ℂ, A)) l
         (𝓝[{m : 𝓜ₛ(ℂ, A) | ‖m.toDoubleCentralizer‖ ≤ 1}] 1) := by
-  let := CStarAlgebra.spectralOrder A
-  have := CStarAlgebra.spectralOrderedRing A
-  have hl := CStarAlgebra.increasingApproximateUnit A
-  have := hl.neBot
-  refine ⟨CStarAlgebra.approximateUnit A, hl.neBot, hl.eventually_norm, hl.tendsto_mul_right,
+  let := CStarAlgebra.spectralOrder A; have := CStarAlgebra.spectralOrderedRing A
+  have hl := CStarAlgebra.increasingApproximateUnit A; have := hl.neBot
+  exact ⟨CStarAlgebra.approximateUnit A, hl.neBot, hl.eventually_norm, hl.tendsto_mul_right,
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (DoubleCentralizerStrict.tendsto_coe_one_of_isApproximateUnit hl.toIsApproximateUnit) ?_⟩
-  exact hl.eventually_norm.mono fun e he => by simpa [Set.mem_ofPred] using he
+      (DoubleCentralizerStrict.tendsto_coe_one_of_isApproximateUnit hl.toIsApproximateUnit)
+      (hl.eventually_norm.mono fun e he => by simpa [Set.mem_ofPred] using he)⟩
 
 private theorem isMultiplierNondegenerate_of_continuousOn_unitBall (ψ : 𝓜(ℂ, A) →⋆ₐ[ℂ] 𝓜(ℂ, B))
     (hψ : ContinuousOn (DoubleCentralizerStrict.conjStarAlgHom ψ)
@@ -452,11 +297,10 @@ theorem continuous_conjStarAlgHom_iff_isMultiplierNondegenerate (ψ : 𝓜(ℂ, 
       (ψ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom).IsMultiplierNondegenerate := by
   refine ⟨fun hψ => isMultiplierNondegenerate_of_continuousOn_unitBall ψ hψ.continuousOn,
     fun hφ => ?_⟩
-  have hψ_eq : ψ = (ψ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom).extendToMultiplier hφ :=
-    StarAlgHom.ext <| congrFun ((ψ.toNonUnitalStarAlgHom.comp
-      DoubleCentralizer.coeHom).eq_extendToMultiplier_of_apply_coe hφ ψ fun _ => rfl)
-  exact hψ_eq ▸
-    (ψ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom).continuous_extendToMultiplierStrict hφ
+  let φ := ψ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom
+  have hψ_eq : ψ = φ.extendToMultiplier hφ :=
+    StarAlgHom.ext <| congrFun (φ.eq_extendToMultiplier_of_apply_coe hφ ψ fun _ => rfl)
+  exact hψ_eq ▸ φ.continuous_extendToMultiplierStrict hφ
 
 /-- A unital `⋆`-homomorphism `ψ : 𝓜(ℂ, A) →⋆ₐ[ℂ] 𝓜(ℂ, B)` is globally strictly continuous if and
 only if it is strictly continuous on the closed unit ball of `𝓜ₛ(ℂ, A)`. -/
@@ -609,11 +453,10 @@ theorem continuous_strict_apply_iff_isNondegenerate (ρ : 𝓜(ℂ, A) →⋆ₐ
       (ρ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom).IsNondegenerate := by
   refine ⟨fun hρ => isNondegenerate_of_continuousOn_strict_unitBall ρ fun ξ => (hρ ξ).continuousOn,
     fun hπ ξ => ?_⟩
-  have hρ_eq : ρ = (ρ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom).multiplierExtension hπ :=
-    StarAlgHom.ext <| congrFun ((ρ.toNonUnitalStarAlgHom.comp
-      DoubleCentralizer.coeHom).eq_multiplierExtension_of_apply_coe hπ ρ fun _ => rfl)
-  exact hρ_eq ▸ (ρ.toNonUnitalStarAlgHom.comp
-    DoubleCentralizer.coeHom).continuous_strict_multiplierExtension_apply hπ ξ
+  let π := ρ.toNonUnitalStarAlgHom.comp DoubleCentralizer.coeHom
+  have hρ_eq : ρ = π.multiplierExtension hπ :=
+    StarAlgHom.ext <| congrFun (π.eq_multiplierExtension_of_apply_coe hπ ρ fun _ => rfl)
+  exact hρ_eq ▸ π.continuous_strict_multiplierExtension_apply hπ ξ
 
 /-- A unital representation `ρ : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H)` is globally strictly-to-strongly
 continuous if and only if it is strictly-to-strongly continuous on the closed unit ball of
