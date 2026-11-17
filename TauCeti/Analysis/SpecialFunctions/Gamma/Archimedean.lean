@@ -39,7 +39,7 @@ theorem Gammaℝ_two_mul (s : ℂ) :
   have h2 : (2 : ℂ) ^ (s - 1) * 2 * (2 : ℂ) ^ (-s) = 1 := by
     rw [cpow_sub _ _ two_ne_zero, cpow_one, div_mul_cancel₀ _ two_ne_zero,
       ← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
-  rw [Gammaℝ_def, Gammaℂ_def, h2pi, show -(2 * s) / 2 = -s by ring, show 2 * s / 2 = s by ring]
+  rw [Gammaℝ_def, Gammaℂ_def, h2pi, neg_div, mul_div_cancel_left₀ _ two_ne_zero]
   calc (π : ℂ) ^ (-s) * Gamma s
       = 1 * ((π : ℂ) ^ (-s) * Gamma s) := (one_mul _).symm
     _ = (2 : ℂ) ^ (s - 1) * 2 * (2 : ℂ) ^ (-s) * ((π : ℂ) ^ (-s) * Gamma s) := by rw [h2]

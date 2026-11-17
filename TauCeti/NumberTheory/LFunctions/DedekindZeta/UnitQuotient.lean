@@ -236,9 +236,8 @@ theorem LSeries_rayClassCoeff_one_eq_tsum_fractionalIdeal {c : RayClassGroup (Mo
   have hclass : idealClass (Modulus.one K) ⟨𝔟, Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩ = c ↔
       𝔟 ∈ S := by
     rw [← oneEquivClassGroup.injective.eq_iff, idealClass_apply, oneEquivClassGroup_rayClassMk,
-      hI, eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk_eq_one_iff, Units.val_mul,
-      NumberFieldArithmetic.coe_integralIdealsAwayHom, FractionalIdeal.coeToSubmodule_mul]
-    rfl
+      hI, eq_inv_iff_mul_eq_one, ClassGroup.mk_mul_mk_eq_one_iff]
+    simp [S, NumberFieldArithmetic.coe_integralIdealsAwayHom]
   rw [idealTerm_def, rayClassCoeff_apply_of_isCoprimeTo c hcop]
   by_cases h : 𝔟 ∈ S
   · simp [Set.indicator_of_mem h, hclass.mpr h, Complex.cpow_neg]

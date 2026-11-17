@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.UnitQuotient
-public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.UnitCone
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -305,9 +304,8 @@ theorem mellinKernelFEPair_Λ_div_two_eq_of_one_lt_re {D : Set (realSpace K)}
       Gammaℝ (2 * s) ^ nrComplexPlaces K = Gammaℂ s ^ nrComplexPlaces K := by
     rw [← mul_pow, ← mul_pow, Gammaℝ_two_mul, ← mul_assoc]
     have h2 : (2 : ℂ) * (2 : ℂ) ^ (-s) * (2 : ℂ) ^ (s - 1) = 1 := by
-      nth_rw 1 [← cpow_one (2 : ℂ)]
-      rw [← cpow_add _ _ two_ne_zero, ← cpow_add _ _ two_ne_zero,
-        show (1 : ℂ) + -s + (s - 1) = 0 by ring, cpow_zero]
+      rw [cpow_sub _ _ two_ne_zero, cpow_one, mul_assoc, ← mul_div_assoc,
+        ← cpow_add _ _ two_ne_zero, neg_add_cancel, cpow_zero, mul_one_div_cancel two_ne_zero]
     rw [h2, one_mul]
   rw [hΛ, integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one hD I hs,
     covolume_idealLattice_sq_cpow_div_two,

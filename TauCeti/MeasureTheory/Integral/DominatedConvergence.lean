@@ -286,8 +286,9 @@ theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
     (hF_int : ∀ i, Integrable (F i) μ) (hF_sum : Summable fun i ↦ ∫ a, ‖F i a‖ ∂μ) :
     Integrable (fun a ↦ ∑' i, F i a) μ := by
   refine integrable_tsum (fun i ↦ (hF_int i).aestronglyMeasurable) ?_
-  simp_rw [← eNorm_integral_norm_eq_lintegral_eNorm (hF_int _)]
-  exact ENNReal.tsum_coe_ne_top_iff_summable.2 <| NNReal.summable_coe.1 hF_sum.abs
+  simp_rw [← eNorm_integral_norm_eq_lintegral_eNorm (hF_int _),
+    tsum_eNorm_ne_top_iff_summable_norm, Real.norm_eq_abs]
+  exact hF_sum.abs
 
 end TauCeti
 
