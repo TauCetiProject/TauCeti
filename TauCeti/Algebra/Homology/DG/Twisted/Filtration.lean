@@ -177,13 +177,11 @@ degree `n`. -/
 theorem indexExtend_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : ℤ}
     {f : {x : P // ind x = p} → M}
     (hf : f ∈ twistedTotalGrading ℳ (fun x : {x : P // ind x = p} ↦ ind x) n) :
-    indexExtend R M ind p f ∈ twistedTotalGrading ℳ ind n :=
-  mem_twistedTotalGrading_iff.2 fun x ↦ by
-    by_cases hx : ind x = p
-    · rw [indexExtend_apply_of_eq f hx]
-      exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
-    · rw [indexExtend_apply_of_ne f hx]
-      exact zero_mem _
+    indexExtend R M ind p f ∈ twistedTotalGrading ℳ ind n := by
+  -- `indexExtend` is extension by zero along `Subtype.val`, and the subtype of the set
+  -- `{x | ind x = p}` is definitionally `{x : P // ind x = p}`.
+  unfold indexExtend
+  exact extendByZero_mem_twistedTotalGrading (S := {x | ind x = p}) hf
 
 end IndexExtend
 
