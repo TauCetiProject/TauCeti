@@ -211,7 +211,7 @@ theorem signEquiv_symm_mem_traceRadical_iff (htr : IsMarkovTrace R δ tr)
 /-- Pulling back the trace radical along the sign isomorphism gives the opposite radical. -/
 theorem comap_traceRadical_signEquiv (htr : IsMarkovTrace R δ tr)
     (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ) :
-    Ideal.comap (signEquiv δ n).toRingHom ((tr n).traceRadical (htr.map_mul_comm n)) =
+    Ideal.comap (signEquiv δ n) ((tr n).traceRadical (htr.map_mul_comm n)) =
       (tr' n).traceRadical (htr'.map_mul_comm n) := by
   ext x
   exact htr.signEquiv_mem_traceRadical_iff htr' n x
@@ -219,7 +219,7 @@ theorem comap_traceRadical_signEquiv (htr : IsMarkovTrace R δ tr)
 /-- Pulling back along the inverse sign isomorphism gives the original trace radical. -/
 theorem comap_traceRadical_signEquiv_symm (htr : IsMarkovTrace R δ tr)
     (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ) :
-    Ideal.comap (signEquiv δ n).symm.toRingHom ((tr' n).traceRadical (htr'.map_mul_comm n)) =
+    Ideal.comap (signEquiv δ n).symm ((tr' n).traceRadical (htr'.map_mul_comm n)) =
       (tr n).traceRadical (htr.map_mul_comm n) := by
   ext x
   exact htr.signEquiv_symm_mem_traceRadical_iff htr' n x
@@ -227,19 +227,19 @@ theorem comap_traceRadical_signEquiv_symm (htr : IsMarkovTrace R δ tr)
 /-- The sign isomorphism maps the opposite trace radical onto the original one. -/
 theorem map_traceRadical_signEquiv (htr : IsMarkovTrace R δ tr)
     (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ) :
-    Ideal.map (signEquiv δ n).toRingHom ((tr' n).traceRadical (htr'.map_mul_comm n)) =
+    Ideal.map (signEquiv δ n) ((tr' n).traceRadical (htr'.map_mul_comm n)) =
       (tr n).traceRadical (htr.map_mul_comm n) := by
   rw [← htr.comap_traceRadical_signEquiv htr' n]
-  exact Ideal.map_comap_of_surjective (signEquiv δ n).toRingHom
+  exact Ideal.map_comap_of_surjective (signEquiv δ n)
     (signEquiv δ n).surjective _
 
 /-- The inverse sign isomorphism maps the original trace radical onto the opposite one. -/
 theorem map_traceRadical_signEquiv_symm (htr : IsMarkovTrace R δ tr)
     (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ) :
-    Ideal.map (signEquiv δ n).symm.toRingHom ((tr n).traceRadical (htr.map_mul_comm n)) =
+    Ideal.map (signEquiv δ n).symm ((tr n).traceRadical (htr.map_mul_comm n)) =
       (tr' n).traceRadical (htr'.map_mul_comm n) := by
   rw [← htr.comap_traceRadical_signEquiv_symm htr' n]
-  exact Ideal.map_comap_of_surjective (signEquiv δ n).symm.toRingHom
+  exact Ideal.map_comap_of_surjective (signEquiv δ n).symm
     (signEquiv δ n).symm.surjective _
 
 /-- The sign isomorphism descends to the algebraic quotients by the Markov-trace radicals. -/
