@@ -109,8 +109,8 @@ theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0
       _ = 2 ^ (2 * |p.re|) * ((1 + ‖w‖) ^ (1 / 2 : ℝ)) ^ (2 * |p.re|) := by
           rw [Real.mul_rpow zero_le_two (by positivity), Real.sqrt_eq_rpow]
       _ = 4 ^ |p.re| * (1 + ‖w‖) ^ |p.re| := by
-          rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul zero_le_two,
-            ← Real.rpow_mul (by positivity)]
+          have hfour : (4 : ℝ) = 2 ^ (2 : ℝ) := by norm_num
+          rw [hfour, ← Real.rpow_mul zero_le_two, ← Real.rpow_mul (by positivity)]
           congr 2; ring
   rw [schlafliAmplitude_def, norm_div]
   have hcosh : ‖coshMulArcosh p (1 + w)‖ ≤
@@ -236,8 +236,7 @@ theorem isBigO_cpow_neg_half_mul_schlafliAmplitude_sub_sum (p : ℂ) (N : ℕ) :
         w ^ (-(1 / 2 : ℂ)) * ∑ k ∈ Finset.range N, schlafliAmplitudeCoeff p k * w ^ k := by
       rw [Finset.mul_sum]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [show (k : ℂ) - 1 / 2 = -(1 / 2 : ℂ) + (k : ℂ) by ring, cpow_add _ _ hw0,
-        cpow_natCast]
+      rw [sub_eq_add_neg, cpow_add _ _ hw0, cpow_natCast]
       ring
     have hwn : ‖w ^ (-(1 / 2 : ℂ))‖ = ‖w‖ ^ (-(1 / 2 : ℝ)) := by
       simpa using Complex.norm_cpow_real w (-(1 / 2))
@@ -284,11 +283,10 @@ private theorem sinh_smul_schlafliAmplitude_cosh_sub_one
     congr 1
     rw [Real.sqrt_eq_rpow, ofReal_cpow hτ_pos.le]
     push_cast; rfl
+  have hsq : (Real.cosh u - 1) * (Real.cosh u + 1) = Real.sinh u ^ 2 := by
+    linarith [Real.cosh_sq_sub_sinh_sq u]
   have hprod : Real.sqrt (Real.cosh u - 1) * Real.sqrt (Real.cosh u + 1) = Real.sinh u := by
-    rw [← Real.sqrt_mul hτ_pos.le,
-      show (Real.cosh u - 1) * (Real.cosh u + 1) = Real.sinh u ^ 2 by
-        linarith [Real.cosh_sq_sub_sinh_sq u],
-      Real.sqrt_sq hsh_pos.le]
+    rw [← Real.sqrt_mul hτ_pos.le, hsq, Real.sqrt_sq hsh_pos.le]
   have hs1 : (Real.sqrt (Real.cosh u - 1) : ℂ) ≠ 0 :=
     ofReal_ne_zero.mpr (Real.sqrt_pos.mpr hτ_pos).ne'
   have hs2 : (Real.sqrt (Real.cosh u + 1) : ℂ) ≠ 0 :=
@@ -327,31 +325,35 @@ theorem integral_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi
   exact setIntegral_congr_fun measurableSet_Ioi fun u hu ↦
     sinh_smul_schlafliAmplitude_cosh_sub_one p g hu
 
+private theorem cexp_neg_mul_cosh_mul_cosh_eq (ζ p : ℂ) (u : ℝ) :
+    Complex.exp (-ζ * Real.cosh u) * Complex.cosh (p * u) =
+      Complex.exp (-ζ) *
+        (Complex.cosh (p * u) • Complex.exp (-ζ * ((Real.cosh u - 1 : ℝ) : ℂ))) := by
+  have hexp : -ζ * Real.cosh u = -ζ + -ζ * ((Real.cosh u - 1 : ℝ) : ℂ) := by
+    push_cast; ring
+  rw [hexp, Complex.exp_add, smul_eq_mul]
+  ring
+
 /-- Equivalence of integrability between Schläfli's `cosh`-integral and its Laplace form on
 `(0, ∞)`. -/
 theorem integrableOn_cexp_neg_mul_cosh_mul_cosh_Ioi_iff (ζ p : ℂ) :
     IntegrableOn (fun u : ℝ ↦ Complex.exp (-ζ * Real.cosh u) * Complex.cosh (p * u)) (Ioi 0) ↔
     IntegrableOn (fun τ : ℝ ↦
       Complex.exp (-ζ * τ) * (τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) (Ioi 0) := by
-  have hiff := (integrableOn_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi_iff p
-    (fun τ : ℝ ↦ Complex.exp (-ζ * (1 + (τ : ℂ))))).symm
-  refine (integrableOn_congr_fun (fun u _ ↦ ?_) measurableSet_Ioi).trans
-    (hiff.trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩)
-  · simp only [smul_eq_mul, ofReal_sub, ofReal_one]
-    rw [show (1 : ℂ) + ((Real.cosh u : ℂ) - 1) = Real.cosh u by ring, mul_comm]
-  · refine IntegrableOn.congr_fun (h.const_mul (Complex.exp ζ)) (fun τ _ ↦ ?_) measurableSet_Ioi
-    simp only [smul_eq_mul]
-    rw [show -ζ * (1 + (τ : ℂ)) = -ζ + (-ζ * τ) by ring, Complex.exp_add]
-    calc Complex.exp ζ * ((τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ *
-          (Complex.exp (-ζ) * Complex.exp (-ζ * τ)))
-        = (Complex.exp ζ * Complex.exp (-ζ)) *
-            (Complex.exp (-ζ * τ) * (τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) := by ring
-      _ = Complex.exp (-ζ * τ) * (τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ := by
-          rw [← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul]
-  · refine IntegrableOn.congr_fun (h.const_mul (Complex.exp (-ζ))) (fun τ _ ↦ ?_) measurableSet_Ioi
-    simp only [smul_eq_mul]
-    rw [show -ζ * (1 + (τ : ℂ)) = -ζ + (-ζ * τ) by ring, Complex.exp_add]
-    ring
+  have hmul :
+      IntegrableOn (fun u : ℝ ↦ Complex.exp (-ζ * Real.cosh u) * Complex.cosh (p * u)) (Ioi 0) ↔
+      IntegrableOn (fun u : ℝ ↦
+        Complex.cosh (p * u) • Complex.exp (-ζ * ((Real.cosh u - 1 : ℝ) : ℂ))) (Ioi 0) := by
+    simp_rw [cexp_neg_mul_cosh_mul_cosh_eq]
+    exact integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (Complex.exp_ne_zero (-ζ))) _
+  have hτ :
+      IntegrableOn (fun τ : ℝ ↦
+        ((τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) • Complex.exp (-ζ * (τ : ℂ))) (Ioi 0) ↔
+      IntegrableOn (fun τ : ℝ ↦
+        Complex.exp (-ζ * τ) * (τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) (Ioi 0) :=
+    integrableOn_congr_fun (fun τ _ ↦ by simp only [smul_eq_mul]; ring) measurableSet_Ioi
+  exact hmul.trans ((integrableOn_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi_iff p
+    (fun τ : ℝ ↦ Complex.exp (-ζ * τ))).symm.trans hτ)
 
 /-- The Laplace transformation `τ = cosh u - 1` of Schläfli's integral on `(0, ∞)`:
 `∫₀^∞ e^{-ζ cosh u} cosh(p u) du = e^{-ζ} ∫₀^∞ e^{-ζ τ} τ^{-1/2} schlafliAmplitude p τ dτ`. -/
@@ -359,18 +361,13 @@ theorem integral_cexp_neg_mul_cosh_mul_cosh_eq_cexp_mul_integral_schlafliAmplitu
     (∫ u in Ioi (0 : ℝ), Complex.exp (-ζ * Real.cosh u) * Complex.cosh (p * u)) =
       Complex.exp (-ζ) * ∫ τ in Ioi (0 : ℝ),
         Complex.exp (-ζ * τ) * (τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ := by
-  have heq := (integral_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi p
-    (fun τ : ℝ ↦ Complex.exp (-ζ * (1 + (τ : ℂ))))).symm
-  have hlhs : (∫ u in Ioi (0 : ℝ),
-      Complex.cosh (p * u) • Complex.exp (-ζ * (1 + ((Real.cosh u - 1 : ℝ) : ℂ)))) =
-      ∫ u in Ioi (0 : ℝ), Complex.exp (-ζ * Real.cosh u) * Complex.cosh (p * u) := by
-    refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-    simp only [smul_eq_mul, ofReal_sub, ofReal_one]
-    rw [show (1 : ℂ) + ((Real.cosh u : ℂ) - 1) = Real.cosh u by ring, mul_comm]
-  rw [← hlhs, heq, ← integral_const_mul]
+  simp_rw [cexp_neg_mul_cosh_mul_cosh_eq]
+  rw [integral_const_mul,
+    ← integral_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi p
+      (fun τ : ℝ ↦ Complex.exp (-ζ * (τ : ℂ)))]
+  congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun τ _ ↦ ?_
   simp only [smul_eq_mul]
-  rw [show -ζ * (1 + (τ : ℂ)) = -ζ + (-ζ * τ) by ring, Complex.exp_add]
   ring
 
 private theorem norm_schlafliAmplitude_ofReal_le_exp (p : ℂ) {σ : ℝ} (hσ : 0 < σ) :
@@ -390,7 +387,7 @@ private theorem norm_schlafliAmplitude_ofReal_le_exp (p : ℂ) {σ : ℝ} (hσ :
     have h2 : (1 + τ) ^ |p.re| ≤ M * Real.exp (σ * (1 + τ)) := by
       have hmul := mul_le_mul_of_nonneg_right h1 (Real.exp_pos (σ * (1 + τ))).le
       rwa [mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one] at hmul
-    rw [show σ * (1 + τ) = σ + σ * τ by ring, Real.exp_add] at h2
+    rw [mul_add, mul_one, Real.exp_add] at h2
     calc (1 + τ) ^ |p.re| ≤ M * (Real.exp σ * Real.exp (σ * τ)) := h2
       _ ≤ (M + 1) * (Real.exp σ * Real.exp (σ * τ)) := by gcongr; linarith
       _ = (M + 1) * Real.exp σ * Real.exp (σ * τ) := by ring
@@ -459,7 +456,7 @@ theorem differentiableOn_integral_cexp_neg_mul_cpow_neg_half_mul_schlafliAmplitu
     (F' := fun ζ (τ : ℝ) ↦
       -(τ : ℂ) * (Complex.exp (-ζ * τ) * (τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ))
     (bound := fun τ : ℝ ↦ B * (τ ^ (1 / 2 : ℝ) * Real.exp (-δ * τ)))
-    (Metric.ball_mem_nhds ζ₀ (show 0 < 2 * δ by positivity))
+    (Metric.ball_mem_nhds ζ₀ (mul_pos zero_lt_two hδ0))
     (Eventually.of_forall fun ζ ↦
       (continuousOn_schlafliLaplaceIntegrand ζ p).aestronglyMeasurable measurableSet_Ioi)
     (integrableOn_cexp_neg_mul_cpow_neg_half_mul_schlafliAmplitude_Ioi hζ₀ p)
@@ -473,7 +470,9 @@ theorem differentiableOn_integral_cexp_neg_mul_cpow_neg_half_mul_schlafliAmplitu
     have hτ_pow : τ * τ ^ (-(1 / 2 : ℝ)) = τ ^ (1 / 2 : ℝ) := by
       calc τ * τ ^ (-(1 / 2 : ℝ)) = τ ^ (1 : ℝ) * τ ^ (-(1 / 2 : ℝ)) := by rw [Real.rpow_one]
         _ = τ ^ (1 / 2 : ℝ) := by rw [← Real.rpow_add hτ]; norm_num
-    rw [show (-ζ * (τ : ℂ)).re = -ζ.re * τ by simp, show (-(1 / 2 : ℂ)).re = -(1 / 2 : ℝ) by simp]
+    have hexp_re : (-ζ * (τ : ℂ)).re = -ζ.re * τ := by simp
+    have hpow_re : (-(1 / 2 : ℂ)).re = -(1 / 2 : ℝ) := by simp
+    rw [hexp_re, hpow_re]
     calc τ * (Real.exp (-ζ.re * τ) * τ ^ (-(1 / 2 : ℝ)) * ‖schlafliAmplitude p τ‖)
         = τ ^ (1 / 2 : ℝ) * Real.exp (-ζ.re * τ) * ‖schlafliAmplitude p τ‖ := by
           rw [← hτ_pow]; ring
