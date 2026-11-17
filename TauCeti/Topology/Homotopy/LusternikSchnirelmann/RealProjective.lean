@@ -98,6 +98,10 @@ theorem two_le_lsCupLength_realProjectiveSpace_zmod_two (hN : 2 ≤ N) :
   have hrank := finrank_singularCohomology_of_two_eq_zero (N := N) (k := ZMod 2) (by decide) 1
   rw [ite_eq_left (by omega)] at hrank
   have := Module.nontrivial_of_finrank_pos (R := ZMod 2) (hrank ▸ one_pos)
+  -- `w` lives in cohomology with coefficients `ModuleCat.of (ZMod 2) (ZMod 2)`, where `hrank`
+  -- gives the nontriviality, while the cup product and `lsCupLength` use the monoidal unit
+  -- `𝟙_ (ModuleCat (ZMod 2))`; the two agree by definition in Mathlib's monoidal structure on
+  -- `ModuleCat (ZMod 2)`.
   obtain ⟨w, hw⟩ := exists_ne (0 : (TopCat.of (RealProjectiveSpace N)).singularCohomology
     (ModuleCat.of (ZMod 2) (ZMod 2)) (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) 1)
   exact_mod_cast le_lsCupLength (.cup one_ne_zero rfl w (.single one_ne_zero w))

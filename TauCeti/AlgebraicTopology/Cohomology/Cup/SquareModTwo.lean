@@ -85,7 +85,7 @@ private lemma exists_sub_eq_of_two_smul_eq_zero
   have hdz : (X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ (ZMod 4))).d 1 2 z =
       0 := by
     refine (TauCeti.cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) (toSSet.obj X) 2).injective
-      (funext fun σ ↦ (TauCeti.cochainValuesEquiv_d_comp_one ℤ _ (toSSet.obj X) _ σ).trans ?_)
+      (funext fun σ ↦ (TauCeti.cochainValuesEquiv_d_two_one ℤ _ (toSSet.obj X) _ σ).trans ?_)
     rw [hz, hz, hz]
     exact (ZMod.cast_add_two_mul_cast_sub_add_eq_zero (hx σ) (hy σ)).trans (congrFun (map_zero
       (TauCeti.cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) (toSSet.obj X) 2)) σ).symm
@@ -118,7 +118,7 @@ private lemma exists_sub_eq_of_two_smul_eq_zero
       (ModuleCat.of ℤ (ZMod 2)) |>.iCycles 1 φ) τ) hu
   simp only [TauCeti.ChainComplex.linearYonedaObj_iCycles_toCycles_apply,
     ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply] at hu'
-  refine (TauCeti.cochainValuesEquiv_d_comp_zero ℤ _ (toSSet.obj X) _ τ).symm.trans
+  refine (TauCeti.cochainValuesEquiv_d_one_zero ℤ _ (toSSet.obj X) _ τ).symm.trans
     (hu'.trans ((TauCeti.cochainValuesEquiv_comp ℤ _ _ 1 _ ρ τ).trans ?_))
   rw [HomologicalComplex.iCycles_moduleCatCyclesMk, hz]
   exact ZMod.cast_cast_add_two_mul_cast _ _
@@ -137,33 +137,35 @@ theorem singularCup_self_eq_zero_iff_of_two_smul_eq_zero
   rw [singularCup_homologyπ] at hw
   obtain ⟨y, hy⟩ := (HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _
     (CochainComplex.prev_nat_succ 1) _).1 hw
-  -- The front and back edges of a `2`-simplex.
-  have h₀ : SimplexCategory.subinterval (n := 2) 0 1 (by omega) = SimplexCategory.δ 2 := by
-    ext i; fin_cases i <;> rfl
-  have h₁ : SimplexCategory.subinterval (n := 2) 1 1 (by omega) = SimplexCategory.δ 0 := by
-    ext i; fin_cases i <;> rfl
+  -- The values of cochains with coefficients in the unit `𝟙_ (ModuleCat 𝔽₂)` are read through
+  -- `cochainValuesEquiv` at `ModuleCat.of 𝔽₂ 𝔽₂`, which is that unit by definition in Mathlib's
+  -- monoidal structure on `ModuleCat 𝔽₂`.
   let e := TauCeti.cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X)
   let x := (X.singularCochainComplex (𝟙_ (ModuleCat.{0} (ZMod 2))) (ZMod 2)
     (𝟙_ (ModuleCat.{0} (ZMod 2)))).iCycles 1 a
   -- Read the cocycle condition of `x` and `x ⌣ x = d y` on values, and apply the lifting step.
-  obtain ⟨u, hu⟩ := exists_sub_eq_of_two_smul_eq_zero X h2 (e 1 x) (e 1 y)
-    (fun σ ↦ (TauCeti.cochainValuesEquiv_d_comp_one (ZMod 2) _ (toSSet.obj X) _ σ).symm.trans
-      ((congrArg (fun φ ↦ e 2 φ σ)
-        (TauCeti.ChainComplex.d_comp_linearYonedaObj_iCycles 1 2 a)).trans
-        (congrFun (map_zero (e 2)) σ)))
-    (fun σ ↦ (TauCeti.cochainValuesEquiv_d_comp_one (ZMod 2) _ (toSSet.obj X) _ σ).symm.trans
-      ((congrArg (fun φ ↦ e 2 φ σ) ((TauCeti.ChainComplex.linearYonedaObj_iCycles_toCycles_apply
-        1 2 y).symm.trans (congrArg _ hy))).trans
-        ((congrArg (fun φ ↦ e 2 φ σ)
-          (TauCeti.ChainComplex.iCycles_cupCycles _ _ 1 1 2 rfl a a)).trans
-          ((cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal X (ZMod 2) 1 1 2 rfl _ _
-            σ).trans (by rw [h₀, h₁]; rfl)))))
+  have hx (σ : (toSSet.obj X) _⦋2⦌) : e 1 x ((toSSet.obj X).δ 0 σ) -
+      e 1 x ((toSSet.obj X).δ 1 σ) + e 1 x ((toSSet.obj X).δ 2 σ) = 0 := by
+    refine (TauCeti.cochainValuesEquiv_d_two_one (ZMod 2) _ (toSSet.obj X) _ σ).symm.trans ?_
+    exact (congrArg (fun φ ↦ e 2 φ σ)
+      (TauCeti.ChainComplex.d_comp_linearYonedaObj_iCycles 1 2 a)).trans
+      (congrFun (map_zero (e 2)) σ)
+  -- `d y = x ⌣ x` as cochains.
+  have hdy := (TauCeti.ChainComplex.linearYonedaObj_iCycles_toCycles_apply 1 2 y).symm.trans
+    ((congrArg _ hy).trans (TauCeti.ChainComplex.iCycles_cupCycles _ _ 1 1 2 rfl a a))
+  have hy' (σ : (toSSet.obj X) _⦋2⦌) : e 1 y ((toSSet.obj X).δ 0 σ) -
+      e 1 y ((toSSet.obj X).δ 1 σ) + e 1 y ((toSSet.obj X).δ 2 σ) =
+        e 1 x ((toSSet.obj X).δ 2 σ) * e 1 x ((toSSet.obj X).δ 0 σ) := by
+    refine (TauCeti.cochainValuesEquiv_d_two_one (ZMod 2) _ (toSSet.obj X) _ σ).symm.trans ?_
+    exact (congrArg (fun φ ↦ e 2 φ σ) hdy).trans
+      (cochainValuesEquiv_cupCochain_one_one X (ZMod 2) _ _ σ)
+  obtain ⟨u, hu⟩ := exists_sub_eq_of_two_smul_eq_zero X h2 (e 1 x) (e 1 y) hx hy'
   -- So `x` is the coboundary of the mod-two `0`-cochain with values `u`, and `w = 0`.
   refine (HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ (CochainComplex.prev_nat_succ 0)
     _).2 ⟨(e 0).symm u, HomologicalComplex.moduleCat_iCycles_injective _ 1 ?_⟩
   refine (TauCeti.ChainComplex.linearYonedaObj_iCycles_toCycles_apply 0 1 _).trans
     ((e 1).injective (funext fun τ ↦
-      (TauCeti.cochainValuesEquiv_d_comp_zero (ZMod 2) _ (toSSet.obj X) _ τ).trans ?_))
+      (TauCeti.cochainValuesEquiv_d_one_zero (ZMod 2) _ (toSSet.obj X) _ τ).trans ?_))
   rw [LinearEquiv.apply_symm_apply]
   exact hu τ
 

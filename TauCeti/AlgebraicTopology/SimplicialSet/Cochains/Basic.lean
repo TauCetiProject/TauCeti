@@ -104,7 +104,7 @@ lemma cochainValuesEquiv_d (n : ℕ)
     LinearMap.comp_apply, cochainValuesEquiv_apply]
 
 /-- The value of the coboundary of a `0`-cochain on a `1`-simplex. -/
-lemma cochainValuesEquiv_d_comp_zero (φ : (K.chainComplex (ModuleCat.of k k)).X 0 ⟶ M)
+lemma cochainValuesEquiv_d_one_zero (φ : (K.chainComplex (ModuleCat.of k k)).X 0 ⟶ M)
     (σ : K _⦋1⦌) :
     cochainValuesEquiv k M K 1 ((K.chainComplex (ModuleCat.of k k)).d 1 0 ≫ φ) σ =
       cochainValuesEquiv k M K 0 φ (K.δ 0 σ) - cochainValuesEquiv k M K 0 φ (K.δ 1 σ) := by
@@ -112,7 +112,7 @@ lemma cochainValuesEquiv_d_comp_zero (φ : (K.chainComplex (ModuleCat.of k k)).X
   simp [Fin.sum_univ_two, sub_eq_add_neg]
 
 /-- The value of the coboundary of a `1`-cochain on a `2`-simplex. -/
-lemma cochainValuesEquiv_d_comp_one (φ : (K.chainComplex (ModuleCat.of k k)).X 1 ⟶ M)
+lemma cochainValuesEquiv_d_two_one (φ : (K.chainComplex (ModuleCat.of k k)).X 1 ⟶ M)
     (σ : K _⦋2⦌) :
     cochainValuesEquiv k M K 2 ((K.chainComplex (ModuleCat.of k k)).d 2 1 ≫ φ) σ =
       cochainValuesEquiv k M K 1 φ (K.δ 0 σ) - cochainValuesEquiv k M K 1 φ (K.δ 1 σ) +
