@@ -57,8 +57,7 @@ replace polynomial variables of matching degree.
   `f i ∉ Ideal.span (f '' s)`.
 * `MvPolynomial.IsTriangular.isWeaklyRegular_map` and `MvPolynomial.IsTriangular.isRegular_map`:
   duplicate-free lists of `f i` form weakly regular (and, over nontrivial `R`, regular) sequences.
-* `MvPolynomial.vars_weight_lt_of_isWeightedHomogeneous_of_mem_pow_idealOfVars` and
-  `MvPolynomial.isTriangular_of_isWeightedHomogeneous_sub_mem_sq`: positive-weight decomposable
+* `MvPolynomial.isTriangular_of_isWeightedHomogeneous_sub_mem_sq`: positive-weight decomposable
   perturbations of unit multiples of the variables are triangular.
 -/
 
@@ -331,45 +330,6 @@ end Triangular
 section PositiveWeight
 
 variable {R σ : Type*}
-
-/-- **Positive-weight bound on decomposable monomials.** If every variable has positive weight
-`0 < w i`, and `q` is weighted homogeneous of weight `m` and lies in `idealOfVars σ R ^ 2`, then
-every variable occurring in `q` has weight strictly less than `m`. -/
-theorem vars_weight_lt_of_isWeightedHomogeneous_of_mem_pow_idealOfVars [CommSemiring R]
-    {w : σ → ℕ} (hw : ∀ i, 0 < w i) {q : MvPolynomial σ R} {m : ℕ}
-    (hq : q.IsWeightedHomogeneous w m) (hq2 : q ∈ idealOfVars σ R ^ 2) {j : σ} (hj : j ∈ q.vars) :
-    w j < m := by
-  classical
-  obtain ⟨d, hd, hjd⟩ := (mem_vars_iff_mem_support j).mp hj
-  have hwm : Finsupp.weight w d = m := hq (mem_support_iff.mp hd)
-  have hdeg : 2 ≤ d.degree := (mem_pow_idealOfVars_iff 2 q).mp hq2 d hd
-  have hdj : 1 ≤ d j := Nat.one_le_iff_ne_zero.mpr (Finsupp.mem_support_iff.mp hjd)
-  rw [← hwm, Finsupp.weight_apply, Finsupp.sum]
-  rcases le_or_gt 2 (d j) with hdj2 | hdj1
-  · have hle : d j • w j ≤ ∑ k ∈ d.support, d k • w k :=
-      Finset.single_le_sum (f := fun k ↦ d k • w k) (fun _ _ ↦ Nat.zero_le _) hjd
-    have hlt : w j < d j • w j := by
-      simpa [nsmul_eq_mul] using (Nat.lt_mul_iff_one_lt_left (hw j)).mpr hdj2
-    exact hlt.trans_le hle
-  · have hdj_eq : d j = 1 := by omega
-    -- Since `∑ k ∈ d.support, d k ≥ 2` and `d j = 1`, another variable `k ≠ j` appears in `d`.
-    have hex : ∃ k ∈ d.support.erase j, 0 < d k := by
-      by_contra! h0
-      have hsum : ∑ k ∈ d.support.erase j, d k = 0 :=
-        Finset.sum_eq_zero fun k hk ↦ Nat.le_zero.mp (h0 k hk)
-      have hdeg' : d.degree = d j + ∑ k ∈ d.support.erase j, d k := by
-        rw [Finsupp.degree_apply, ← Finset.add_sum_erase _ _ hjd]
-      omega
-    obtain ⟨k, hk_erase, hdk⟩ := hex
-    have hpair : d j • w j + d k • w k ≤ ∑ l ∈ d.support, d l • w l := by
-      rw [← Finset.add_sum_erase _ _ hjd]
-      exact Nat.add_le_add_left
-        (Finset.single_le_sum (f := fun l ↦ d l • w l) (fun _ _ ↦ Nat.zero_le _) hk_erase) _
-    have hwk : 0 < d k • w k := by
-      simpa [nsmul_eq_mul] using Nat.mul_pos hdk (hw k)
-    calc w j = d j • w j := by simp [hdj_eq]
-      _ < d j • w j + d k • w k := Nat.lt_add_of_pos_right hwk
-      _ ≤ ∑ l ∈ d.support, d l • w l := hpair
 
 /-- **Triangularity from positive weights modulo decomposables.** Let `w : σ → ℕ` assign positive
 weights to all variables. If each `f i` has the form `uᵢ Xᵢ` modulo `idealOfVars σ R ^ 2` for a
