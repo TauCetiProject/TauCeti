@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
 public import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
-public import TauCeti.Analysis.SpecialFunctions.Exponential
+public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Integral
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The Conley–Zehnder index through the symplectic Cayley transform
@@ -27,21 +28,22 @@ The localization axiom of Robbin and Salamon
 (`Matrix.UnitaryGroup.maslovIndex_eq_signature_sub_of_souriau_eq_cayley`) then computes the
 Conley–Zehnder index of every path of symplectic matrices avoiding the eigenvalue `-1`: it is
 minus half the change of the signature of `C`
-(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_sub`). The index of such a path only
-depends on its endpoints.
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two`). The
+index of such a path only depends on its endpoints.
 
 This gives the **normalization of the Conley–Zehnder index**: for every sufficiently small
 nondegenerate symmetric matrix `S`, the path `t ↦ exp (t J S)` has index `-signature(S) / 2`
 (`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`). With the
 convention `ι_{X_H} ω = dH` of the parent file, `exp (t J S)` is the linearized flow of the
 quadratic Hamiltonian `H(x) = xᵀ S x / 2`, so a nondegenerate critical point `p` of a
-`C²`-small Hamiltonian, read as a constant orbit, has index `n - ind_Morse(H, p)`. The rotation
+`C²`-small Hamiltonian, read as a constant orbit, has index `ind_Morse(H, p) - n`. The rotation
 case `S = diag (α, α)` is
 `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`.
 
-For the normalization, write `exp Y - 1 = Y Φ(Y)` with `Φ(Y) = ∫₀¹ exp (u Y) du`
-(`TauCeti.mul_integral_exp_smul`). Along `Y = t J S` this gives
-`C(exp (t J S)) = t b(t)` with `b(t) = S Φ(t J S) (1 + exp (t J S))⁻¹`. For `S` near `0` the
+For the normalization, write `1 - exp Y = -Y Φ(-Y)` with `Φ(a) = (1 - exp (-a)) / a`
+(`mul_oneSubExpNegDivSelf`), which is continuous in `a` (`continuous_oneSubExpNegDivSelf`) and
+equals `1` at `a = 0`. Along `Y = t J S` this gives
+`C(exp (t J S)) = t b(t)` with `b(t) = S Φ(-t J S) (1 + exp (t J S))⁻¹`. For `S` near `0` the
 symmetric matrices `b(t)`, `t ∈ [0, 1]`, are nonsingular, so their signature is constant, and
 `b(0) = S / 2`. The neighbourhood of `0` is not made explicit.
 
@@ -55,8 +57,9 @@ symmetric matrices `b(t)`, `t ∈ [0, 1]`, are nonsingular, so their signature i
   is symmetric.
 * `TauCeti.GLSymplectic.coe_souriau_graphUnitaryFrame_eq_cayley`: the straightened graph of a
   symplectic matrix away from `-1` is the graph of its symplectic Cayley transform.
-* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_sub`: the Conley–Zehnder index of a
-  path avoiding `-1` is minus half the change of the signature of its symplectic Cayley transform.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two`: the
+  Conley–Zehnder index of a path avoiding `-1` is minus half the change of the signature of its
+  symplectic Cayley transform.
 * `TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`: the
   normalization `CZ(exp (t J S)) = -signature(S) / 2` for small nondegenerate symmetric `S`.
 
@@ -127,31 +130,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 open Matrix
 
-/-- **The straightened graph frame.** The diagonal straightening `T` times the graph frame of a
-real matrix `A` is `(1/√2) ((1 + A) + i J (1 - A))`: its real and imaginary parts are
-`(1 + A) / √2` and `J (1 - A) / √2`. -/
-theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    diagonalStraightening n * graphFrame A = ((√2 : ℝ) : ℂ)⁻¹ •
-      ((1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)) := by
-  -- Compare the two matrices on the real basis vectors.
-  refine ext_of_mulVec_single fun j => ?_
-  have hj : (Pi.single j 1 : n ⊕ n → ℂ) = fun k => ((Pi.single j 1 : n ⊕ n → ℝ) k : ℂ) := by
-    ext k
-    by_cases hk : k = j <;> simp [hk]
-  rw [hj]
-  generalize (Pi.single j 1 : n ⊕ n → ℝ) = x
-  have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-      M.map ((↑) : ℝ → ℂ) *ᵥ (fun k => (x k : ℂ)) = fun i => ((M *ᵥ x) i : ℂ) :=
-    funext fun i => (RingHom.map_mulVec ofRealHom M x i).symm
-  rw [← Matrix.mulVec_mulVec, graphFrame_mulVec, diagonalStraightening_def]
-  simp only [Matrix.smul_mulVec, Matrix.add_mulVec, hmap]
-  rw [← Matrix.mulVec_mulVec, J]
-  ext (i | i) <;>
-    simp [Matrix.smul_mulVec, fromBlocks_mulVec, Matrix.neg_mulVec, Matrix.one_mulVec,
-      Matrix.sub_mulVec, -Matrix.mulVec_mulVec]
-  · ring
-  · linear_combination (-(x (.inr i) : ℂ) - ((A *ᵥ x) (.inr i) : ℂ)) * I_sq
-
 /-- The straightened graph frame of `A` is the frame `1 + i C` of the graph of the symplectic
 Cayley transform `C` of `A`, followed by a real change of basis. -/
 private theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
@@ -221,7 +199,8 @@ theorem coe_souriau_graphUnitaryFrame_eq_cayley {A : GLSymplectic n ℝ}
 /-- **The Conley–Zehnder index away from `-1`.** For a path `γ` of symplectic matrices none of
 which has the eigenvalue `-1`, the Conley–Zehnder index is minus half the change of the signature
 of the symplectic Cayley transforms `J (1 - γ t) (1 + γ t)⁻¹`: it depends only on the endpoints. -/
-theorem conleyZehnderIndex_eq_neg_signature_sub {A B : GLSymplectic n ℝ} (γ : Path A B)
+theorem conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two {A B : GLSymplectic n ℝ}
+    (γ : Path A B)
     (hγ : ∀ t, IsUnit (1 + ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) :
     conleyZehnderIndex γ =
       -(signature (symplecticCayley ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) -
@@ -232,8 +211,7 @@ theorem conleyZehnderIndex_eq_neg_signature_sub {A B : GLSymplectic n ℝ} (γ :
   have hc : Continuous fun t => symplecticCayley (m t) := by
     refine continuous_iff_continuousAt.2 fun t => ?_
     have hinv : ContinuousAt (fun t => (1 + m t)⁻¹) t :=
-      (continuousAt_matrix_inv _ (by simpa using NormedRing.inverse_continuousAt (hγ t).unit)).comp
-        (continuous_const.add hmc).continuousAt
+      ((continuous_const.add hmc).continuousAt).matrix_inv (hγ t).ne_zero
     exact ((continuous_const.mul (continuous_const.sub hmc)).continuousAt).mul hinv
   rw [conleyZehnderIndex_def, maslovIndex_eq_signature_sub_of_souriau_eq_cayley _ hc
     (fun t => isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 (γ t).2) (hγ t))
@@ -248,24 +226,12 @@ open scoped Matrix.Norms.Operator
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
-/-- The average `∫₀¹ exp (u Y) du` of the exponential along the segment, so that
-`Y (expAverage Y) = exp Y - 1`. -/
-private noncomputable def expAverage (Y : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    Matrix (n ⊕ n) (n ⊕ n) ℝ :=
-  ∫ u in (0 : ℝ)..1, NormedSpace.exp (u • Y)
-
-private theorem continuous_expAverage : Continuous (expAverage (n := n)) :=
-  continuous_integral_exp_smul
-
-private theorem expAverage_zero : expAverage (0 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = 1 := by
-  simp [expAverage]
-
-/-- For `S` near `0`, both `1 + exp (t J S)` and `∫₀¹ exp (u t J S) du` are invertible for every
-`t ∈ [0, 1]`, by compactness of `[0, 1]`. -/
-private theorem eventually_isUnit_det_one_add_exp_and_expAverage :
+/-- For `S` near `0`, both `1 + exp (t J S)` and `Φ(-t J S) = ∫₀¹ exp (u t J S) du` are invertible
+for every `t ∈ [0, 1]`, by compactness of `[0, 1]`. -/
+private theorem eventually_isUnit_det_one_add_exp_and_oneSubExpNegDivSelf :
     ∀ᶠ S in 𝓝 (0 : Matrix (n ⊕ n) (n ⊕ n) ℝ), ∀ t ∈ Set.Icc (0 : ℝ) 1,
       IsUnit (1 + NormedSpace.exp (t • (J n ℝ * S))).det ∧
-        IsUnit (expAverage (t • (J n ℝ * S))).det := by
+        IsUnit (oneSubExpNegDivSelf ℝ (-(t • (J n ℝ * S)))).det := by
   refine isCompact_Icc.eventually_forall_of_forall_eventually fun t _ => ?_
   have hc : Continuous fun z : Matrix (n ⊕ n) (n ⊕ n) ℝ × ℝ => z.2 • (J n ℝ * z.1) := by
     fun_prop
@@ -273,52 +239,54 @@ private theorem eventually_isUnit_det_one_add_exp_and_expAverage :
       (1 + NormedSpace.exp (z.2 • (J n ℝ * z.1))).det :=
     (continuous_const.add (NormedSpace.exp_continuous.comp hc)).matrix_det
   have hc₂ : Continuous fun z : Matrix (n ⊕ n) (n ⊕ n) ℝ × ℝ =>
-      (expAverage (z.2 • (J n ℝ * z.1))).det :=
-    (continuous_expAverage.comp hc).matrix_det
+      (oneSubExpNegDivSelf ℝ (-(z.2 • (J n ℝ * z.1)))).det :=
+    (continuous_oneSubExpNegDivSelf.comp hc.neg).matrix_det
   have h₁ : (1 + NormedSpace.exp (t • (J n ℝ * 0))).det ≠ 0 := by
     rw [Matrix.mul_zero, smul_zero, NormedSpace.exp_zero, ← two_smul ℝ, det_smul, det_one, mul_one]
     positivity
-  have h₂ : (expAverage (t • (J n ℝ * 0))).det ≠ 0 := by
-    rw [Matrix.mul_zero, smul_zero, expAverage_zero, det_one]
+  have h₂ : (oneSubExpNegDivSelf ℝ (-(t • (J n ℝ * 0)))).det ≠ 0 := by
+    rw [Matrix.mul_zero, smul_zero, neg_zero, oneSubExpNegDivSelf_zero, det_one]
     exact one_ne_zero
   filter_upwards [hc₁.continuousAt.eventually_ne h₁, hc₂.continuousAt.eventually_ne h₂]
     with z hz₁ hz₂
   exact ⟨isUnit_iff_ne_zero.2 hz₁, isUnit_iff_ne_zero.2 hz₂⟩
 
-/-- The symplectic Cayley transform of `exp (t J S)` is
-`t S (∫₀¹ exp (u t J S) du) (1 + exp (t J S))⁻¹`, from `exp Y - 1 = Y ∫₀¹ exp (u Y) du` and
-`J² = -1`. -/
+/-- The symplectic Cayley transform of `exp (t J S)` is `t S Φ(-t J S) (1 + exp (t J S))⁻¹`, from
+`-Y Φ(-Y) = 1 - exp Y` and `J² = -1`. -/
 private theorem symplecticCayley_exp_smul (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) (t : ℝ) :
     symplecticCayley (NormedSpace.exp (t • (J n ℝ * S))) =
-      t • (S * expAverage (t • (J n ℝ * S)) * (1 + NormedSpace.exp (t • (J n ℝ * S)))⁻¹) := by
-  have h₁ : (t • (J n ℝ * S)) * expAverage (t • (J n ℝ * S)) =
-      NormedSpace.exp (t • (J n ℝ * S)) - 1 :=
-    mul_integral_exp_smul _
+      t • (S * oneSubExpNegDivSelf ℝ (-(t • (J n ℝ * S))) *
+        (1 + NormedSpace.exp (t • (J n ℝ * S)))⁻¹) := by
   have hJ : J n ℝ * (1 - NormedSpace.exp (t • (J n ℝ * S))) =
-      t • (S * expAverage (t • (J n ℝ * S))) := by
-    rw [← neg_sub, ← h₁, Matrix.mul_neg, smul_mul_assoc, Matrix.mul_smul, ← Matrix.mul_assoc,
-      ← Matrix.mul_assoc, J_squared]
+      t • (S * oneSubExpNegDivSelf ℝ (-(t • (J n ℝ * S)))) := by
+    have h : -(t • (J n ℝ * S)) * oneSubExpNegDivSelf ℝ (-(t • (J n ℝ * S))) =
+        1 - NormedSpace.exp (-(-(t • (J n ℝ * S)))) :=
+      mul_oneSubExpNegDivSelf _
+    rw [neg_neg] at h
+    rw [← h, ← Matrix.mul_assoc, Matrix.mul_neg, Matrix.mul_smul, ← Matrix.mul_assoc, J_squared]
     simp
   rw [symplecticCayley, hJ, smul_mul_assoc]
 
-/-- If `S` is symmetric and nonsingular, and `1 + exp (t J S)` and `∫₀¹ exp (u t J S) du` are
-invertible for `t ∈ [0, 1]`, then the symplectic Cayley transform of `exp (J S)` has the
-signature of `S`. Along `t ↦ S (∫₀¹ exp (u t J S) du) (1 + exp (t J S))⁻¹`, which is `S / 2` at
+/-- If `S` is symmetric and nonsingular, and `1 + exp (t J S)` and `Φ(-t J S)` are invertible for
+`t ∈ [0, 1]`, then the symplectic Cayley transform of `exp (J S)` has the signature of `S`. Along
+`t ↦ S Φ(-t J S) (1 + exp (t J S))⁻¹`, which is `S / 2` at
 `t = 0` and `C(exp (t J S)) / t` for `t > 0`, the matrices stay symmetric and nonsingular, so the
 signature does not change. -/
 private theorem signature_symplecticCayley_exp {S : Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hSh : S.IsHermitian) (hSdet : IsUnit S.det)
     (hS : ∀ t ∈ Set.Icc (0 : ℝ) 1, IsUnit (1 + NormedSpace.exp (t • (J n ℝ * S))).det ∧
-      IsUnit (expAverage (t • (J n ℝ * S))).det)
+      IsUnit (oneSubExpNegDivSelf ℝ (-(t • (J n ℝ * S)))).det)
     (hsymp : ∀ t ∈ Set.Icc (0 : ℝ) 1, NormedSpace.exp (t • (J n ℝ * S)) ∈ symplecticGroup n ℝ) :
     signature (symplecticCayley (NormedSpace.exp (J n ℝ * S))) = signature S := by
-  set b : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t => S * expAverage ((t : ℝ) • (J n ℝ * S)) *
-    (1 + NormedSpace.exp ((t : ℝ) • (J n ℝ * S)))⁻¹ with hb
+  set b : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t =>
+    S * oneSubExpNegDivSelf ℝ (-((t : ℝ) • (J n ℝ * S))) *
+      (1 + NormedSpace.exp ((t : ℝ) • (J n ℝ * S)))⁻¹ with hb
   have hb₀ : b 0 = (2 : ℝ)⁻¹ • S := by
     have hinv : ((2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ))⁻¹ = (2 : ℝ)⁻¹ • 1 :=
       Matrix.inv_eq_left_inv (by rw [smul_mul_smul, Matrix.mul_one, inv_mul_cancel₀ two_ne_zero,
         one_smul])
-    simp only [hb, Set.Icc.coe_zero, zero_smul, expAverage_zero, NormedSpace.exp_zero,
+    simp only [hb, Set.Icc.coe_zero, zero_smul, neg_zero, oneSubExpNegDivSelf_zero,
+      NormedSpace.exp_zero,
       Matrix.mul_one, ← two_smul ℝ (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ), hinv, Matrix.mul_smul]
   have hbh (t : I) : (b t).IsHermitian := by
     by_cases ht : (t : ℝ) = 0
@@ -336,10 +304,10 @@ private theorem signature_symplecticCayley_exp {S : Matrix (n ⊕ n) (n ⊕ n) �
     have hY : Continuous fun t : I => (t : ℝ) • (J n ℝ * S) :=
       continuous_subtype_val.smul continuous_const
     have hinv : ContinuousAt (fun t : I => (1 + NormedSpace.exp ((t : ℝ) • (J n ℝ * S)))⁻¹) t :=
-      (continuousAt_matrix_inv _ (by simpa using
-        NormedRing.inverse_continuousAt (hS t t.2).1.unit)).comp
-          (continuous_const.add (NormedSpace.exp_continuous.comp hY)).continuousAt
-    exact ((continuous_const.mul (continuous_expAverage.comp hY)).continuousAt).mul hinv
+      ((continuous_const.add (NormedSpace.exp_continuous.comp hY)).continuousAt).matrix_inv
+        (hS t t.2).1.ne_zero
+    exact ((continuous_const.mul (continuous_oneSubExpNegDivSelf.comp hY.neg)).continuousAt).mul
+      hinv
   have hsig (t : I) : (hbh t).signature = signature (b t) :=
     IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hbh t)
   have hloc : IsLocallyConstant fun t => (hbh t).signature :=
@@ -359,7 +327,8 @@ theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two :
         (∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
           NormedSpace.exp ((t : ℝ) • (J n ℝ * S))) →
         conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
-  filter_upwards [eventually_isUnit_det_one_add_exp_and_expAverage] with S hS hSh hSdet A B γ hγ
+  filter_upwards [eventually_isUnit_det_one_add_exp_and_oneSubExpNegDivSelf]
+    with S hS hSh hSdet A B γ hγ
   have hγu : ∀ t : I, IsUnit (1 + ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det :=
     fun t => by rw [hγ t]; exact (hS t t.2).1
   have hsymp : ∀ t ∈ Set.Icc (0 : ℝ) 1,
@@ -371,8 +340,8 @@ theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two :
   have hB : ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = NormedSpace.exp (J n ℝ * S) := by
     rw [← γ.target, hγ 1]
     simp
-  rw [conleyZehnderIndex_eq_neg_signature_sub γ hγu, hA, symplecticCayley_one, signature_zero, hB,
-    signature_symplecticCayley_exp hSh hSdet hS hsymp]
+  rw [conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two γ hγu, hA,
+    symplecticCayley_one, signature_zero, hB, signature_symplecticCayley_exp hSh hSdet hS hsymp]
   simp
 
 end Normalization

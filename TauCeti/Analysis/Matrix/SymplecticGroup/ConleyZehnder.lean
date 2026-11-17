@@ -71,6 +71,8 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 
 ## Main results
 
+* `TauCeti.diagonalStraightening_mul_graphFrame`: the straightened graph frame of a real matrix
+  `A` is `(1/√2) ((1 + A) + i J (1 - A))`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
@@ -173,6 +175,31 @@ of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
 theorem realImage_diagonalStraightening_mul_graphFrame_one :
     (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
   rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
+
+/-- **The straightened graph frame.** The diagonal straightening `T` times the graph frame of a
+real matrix `A` is `(1/√2) ((1 + A) + i J (1 - A))`: its real and imaginary parts are
+`(1 + A) / √2` and `J (1 - A) / √2`. -/
+theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalStraightening n * graphFrame A = ((√2 : ℝ) : ℂ)⁻¹ •
+      ((1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)) := by
+  -- Compare the two matrices on the real basis vectors.
+  refine ext_of_mulVec_single fun j => ?_
+  have hj : (Pi.single j 1 : n ⊕ n → ℂ) = fun k => ((Pi.single j 1 : n ⊕ n → ℝ) k : ℂ) := by
+    ext k
+    by_cases hk : k = j <;> simp [hk]
+  rw [hj]
+  generalize (Pi.single j 1 : n ⊕ n → ℝ) = x
+  have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+      M.map ((↑) : ℝ → ℂ) *ᵥ (fun k => (x k : ℂ)) = fun i => ((M *ᵥ x) i : ℂ) :=
+    funext fun i => (RingHom.map_mulVec ofRealHom M x i).symm
+  rw [← Matrix.mulVec_mulVec, graphFrame_mulVec, diagonalStraightening_def]
+  simp only [Matrix.smul_mulVec, Matrix.add_mulVec, hmap]
+  rw [← Matrix.mulVec_mulVec, J]
+  ext (i | i) <;>
+    simp [Matrix.smul_mulVec, fromBlocks_mulVec, Matrix.neg_mulVec, Matrix.one_mulVec,
+      Matrix.sub_mulVec, -Matrix.mulVec_mulVec]
+  · ring
+  · linear_combination (-(x (.inr i) : ℂ) - ((A *ᵥ x) (.inr i) : ℂ)) * I_sq
 
 namespace GLSymplectic
 
