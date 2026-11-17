@@ -233,8 +233,9 @@ theorem abs_integral_mul_mul_div_mul_sqrt_sub_sq_le {j x η : ℝ} {g : ℝ → 
   have hη : 0 ≤ η := (abs_nonneg _).trans (hg a ⟨le_rfl, hx.1⟩)
   have h := norm_integral_mul_mul_div_mul_sqrt_sub_sq_le hf hfa hderiv hpos hj
     ⟨le_rfl, hx.1.trans hx.2⟩ hx hx.1 hg
-  rw [hfa, zero_sub, Real.sqrt_eq_zero'.2 (neg_nonpos.2 (sq_nonneg j)), zero_div, arctan_zero,
-    mul_zero, sub_zero, Real.norm_eq_abs] at h
+  have hGa : 2 * arctan (√(f a - j ^ 2) / j) = 0 := by
+    simp [hfa, Real.sqrt_eq_zero', sq_nonneg]
+  rw [hGa, sub_zero, Real.norm_eq_abs] at h
   exact h.trans (mul_le_mul_of_nonneg_left
     (by linarith [arctan_lt_pi_div_two (√(f x - j ^ 2) / j)]) hη)
 

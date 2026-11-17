@@ -436,8 +436,9 @@ private theorem abs_integral_turningPoint_le {h j c m : ℝ} (hj : 0 < j) (hc : 
   rw [← intervalIntegral.integral_add_adjacent_intervals hint₁ hint₂,
     intervalIntegral.integral_congr hzero]
   simp only [Pi.zero_apply, intervalIntegral.integral_zero, add_zero]
-  rw [← neg_neg c, ← neg_neg h, ← intervalIntegral.integral_comp_neg, neg_neg, neg_neg,
-    intervalIntegral.integral_congr heq]
+  have hrefl : ∫ z in c..h, I z = ∫ w in (-h)..(-c), I (-w) := by
+    rw [intervalIntegral.integral_comp_neg, neg_neg, neg_neg]
+  rw [hrefl, intervalIntegral.integral_congr heq]
   refine abs_integral_mul_mul_div_mul_sqrt_sub_sq_le hg hga hgderiv hgpos hj hcIcc fun w hw ↦ ?_
   have hden := hgd w hw
   rw [abs_div, abs_of_nonneg (by linarith [hw.1]), abs_of_pos (hm.trans_le hden)]
