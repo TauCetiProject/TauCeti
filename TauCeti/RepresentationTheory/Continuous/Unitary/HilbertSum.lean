@@ -54,8 +54,7 @@ theorem hilbertSum_apply_apply (g : G) (x : lp H 2) (i : ι) :
 /-- The Hilbert direct sum of unitary representations is unitary. -/
 theorem isUnitary_hilbertSum : (hilbertSum π hπ).IsUnitary :=
   (isUnitary_iff_norm_map _).mpr fun g x ↦
-    le_antisymm (lp.norm_mono (by norm_num) fun i ↦ by simp [(hπ i).norm_map])
-      (lp.norm_mono (by norm_num) fun i ↦ by simp [(hπ i).norm_map])
+    lp.norm_eq_of_forall_norm_eq fun i ↦ by simp [(hπ i).norm_map]
 
 /-- The Hilbert direct sum of representations sends the coordinate vector `single i v` to the
 coordinate vector `single i (π i g v)`. -/
