@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 
 /-!
 # Strichartz estimates for the Schrödinger equation
@@ -35,7 +36,9 @@ For every such pair with `2 < q < ∞`, that is every admissible pair other than
 `‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L^{q'}_t L^{r'}_x}`, the homogeneous estimate
 `‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂` in weak form, and the bilinear bound on the Duhamel pairings
 `⟪S(t - s) F(s), G(t)⟫`, whose restriction to `s < t` is the retarded (inhomogeneous) estimate
-`‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q'}_t L^{r'}_x}` in weak form.
+`‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q'}_t L^{r'}_x}` in weak form. Since
+`S(t)` is unitary, the dual estimate also bounds the Duhamel term `∫_0^t S(t - s) F(s) ds` in
+`L^∞_t L²_x`.
 
 ## Main declarations
 
@@ -45,6 +48,8 @@ For every such pair with `2 < q < ∞`, that is every admissible pair other than
   homogeneous estimate on the line at `(4, ∞)`, in weak form.
 * `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`: the dual estimate in every
   dimension.
+* `TauCeti.exists_enorm_setIntegral_schrodingerPropagator_sub_le`: the energy estimate for the
+  Duhamel term in every dimension.
 * `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le`: the homogeneous estimate in
   every dimension, in weak form.
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le`: the bilinear
@@ -269,6 +274,47 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le (hq : 2 < q)
   simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator ℂ) _
     (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le hq hqr hst g) F hF
     (by simpa only [adjoint_phasePropagator] using hSF)
+
+/-- **The energy estimate for the Duhamel term** in every dimension `n`, at a non-endpoint
+admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and `r'` the Hölder conjugates
+of `q` and `r`. There is `C` such that for every almost everywhere strongly measurable
+`F : ℝ → L²(E)` for which `s ↦ S(-s) F(s)` is integrable, every time `t` and every measurable set
+`A` of times,
+
+`‖∫_A S(t - s) F(s) ds‖₂ ≤ C ‖F‖_{L^p_t L^{r'}_x}`.
+
+With `A = (0, t]` this bounds the Duhamel term `∫_0^t S(t - s) F(s) ds` of the inhomogeneous
+equation `i ∂ₜu + Δu = F` in `L^∞_t L²_x`, uniformly in `t`. -/
+theorem exists_enorm_setIntegral_schrodingerPropagator_sub_le (hq : 2 < q)
+    (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
+      Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) → ∀ (t : ℝ) {A : Set ℝ},
+      MeasurableSet A →
+      ‖∫ s in A, schrodingerPropagator ℂ (t - s) (F s)‖ₑ ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
+  obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
+    hqr
+  refine ⟨C, fun F hF hSF t A hA => ?_⟩
+  have hind : (fun s ↦ schrodingerPropagator ℂ (-s) (A.indicator F s)) =
+      A.indicator (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) := by
+    ext1 s
+    by_cases hs : s ∈ A <;> simp [hs]
+  -- `S(t - s) = S(t) S(-s)`, and `S(t)` is unitary.
+  have hrw : ∫ s in A, schrodingerPropagator ℂ (t - s) (F s) =
+      schrodingerPropagator ℂ t (∫ s, schrodingerPropagator ℂ (-s) (A.indicator F s)) := by
+    simp_rw [sub_eq_add_neg, schrodingerPropagator_def, phasePropagator_add_apply,
+      ← schrodingerPropagator_def]
+    rw [hind, integral_indicator hA,
+      ← ContinuousLinearMap.integral_comp_comm _ hSF.integrableOn]
+  rw [hrw, ← ofReal_norm, norm_phasePropagator_apply, ofReal_norm]
+  refine (hC _ (hF.indicator hA) (hind ▸ hSF.indicator hA)).trans ?_
+  gcongr
+  refine eLpNorm_mono_eNorm (AEStronglyMeasurable.aemeasurable_eLpNorm_Lp (hF.indicator hA) .rfl
+    r').aestronglyMeasurable fun s ↦ ?_
+  by_cases hs : s ∈ A
+  · simp [hs]
+  · simp [hs, eLpNorm_congr_ae AEEqFun.coeFn_zero]
 
 /-- **The Strichartz estimate for the Schrödinger equation** in every dimension `n`, in weak
 form, at a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and
