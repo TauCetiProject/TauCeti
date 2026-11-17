@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 public import TauCeti.Statistics.Convergence.BoundedInProbability
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
@@ -24,7 +24,7 @@ method.
 
 ## Main statements
 
-* `TauCeti.tendstoInMeasure_sub_const_of_isBoundedInProbability_smul` — `aₙ (Tₙ - θ) = O_P(1)`
+* `TauCeti.tendstoInMeasure_const_of_isBoundedInProbability_smul_sub` — `aₙ (Tₙ - θ) = O_P(1)`
   with `aₙ → ∞` implies `Tₙ → θ` in probability.
 * `TauCeti.tendstoInMeasure_delta_method_remainder` — the linearization remainder
   `aₙ • (g (Tₙ) - g θ) - D (aₙ • (Tₙ - θ))` converges to `0` in probability whenever
@@ -53,7 +53,7 @@ variable {Ω E F : Type*} [MeasurableSpace Ω]
 
 /-- If `aₙ • (Tₙ - θ)` is bounded in probability for a diverging sequence `aₙ → ∞`, then `Tₙ → θ`
 in probability, under any finite measure and without measurability assumptions. -/
-theorem tendstoInMeasure_sub_const_of_isBoundedInProbability_smul
+theorem tendstoInMeasure_const_of_isBoundedInProbability_smul_sub
     {μ : Measure Ω} [IsFiniteMeasure μ] {a : ℕ → ℝ} {T : ℕ → Ω → E} {θ : E}
     (ha : Tendsto a atTop atTop)
     (hbd : IsBoundedInProbability μ (fun n ω ↦ a n • (T n ω - θ))) :
@@ -83,7 +83,7 @@ theorem tendstoInMeasure_delta_method_remainder
     TendstoInMeasure μ
       (fun n ω ↦ a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ)))
       atTop (fun _ ↦ 0) := by
-  have hT := tendstoInMeasure_sub_const_of_isBoundedInProbability_smul ha hbd
+  have hT := tendstoInMeasure_const_of_isBoundedInProbability_smul_sub ha hbd
   rw [tendstoInMeasure_iff_measureReal_norm]
   intro ε hε
   rw [Metric.tendsto_nhds]

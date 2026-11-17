@@ -103,14 +103,6 @@ theorem IsIndependentIdenticallyDistributed.isProbabilityMeasure
     (h : IsIndependentIdenticallyDistributed μ X P) : IsProbabilityMeasure μ :=
   h.iIndepFun.isProbabilityMeasure
 
-/-- The common law of a nonempty i.i.d. family is a probability measure. -/
-theorem IsIndependentIdenticallyDistributed.isProbabilityMeasure_law [Nonempty ι]
-    (h : IsIndependentIdenticallyDistributed μ X P) : IsProbabilityMeasure P := by
-  have := h.isProbabilityMeasure
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  rw [← h.map_eq i]
-  exact ⟨by rw [Measure.map_apply (h.measurable i) .univ, Set.preimage_univ, measure_univ]⟩
-
 /-- Each coordinate of an i.i.d. family is measure-preserving into the common law `P`. -/
 theorem IsIndependentIdenticallyDistributed.measurePreserving
     (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : MeasurePreserving (X i) μ P :=
@@ -120,6 +112,12 @@ theorem IsIndependentIdenticallyDistributed.measurePreserving
 theorem IsIndependentIdenticallyDistributed.hasLaw
     (h : IsIndependentIdenticallyDistributed μ X P) (i : ι) : HasLaw (X i) P μ :=
   ⟨h.aemeasurable i, h.map_eq i⟩
+
+/-- The common law of a nonempty i.i.d. family is a probability measure. -/
+theorem IsIndependentIdenticallyDistributed.isProbabilityMeasure_law [Nonempty ι]
+    (h : IsIndependentIdenticallyDistributed μ X P) : IsProbabilityMeasure P :=
+  let ⟨i⟩ := ‹Nonempty ι›
+  (h.hasLaw i).isProbabilityMeasure_iff.1 h.isProbabilityMeasure
 
 /-- Distinct coordinates of an i.i.d. family are independent. -/
 theorem IsIndependentIdenticallyDistributed.indepFun

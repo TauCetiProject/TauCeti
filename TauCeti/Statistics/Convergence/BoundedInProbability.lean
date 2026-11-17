@@ -203,7 +203,8 @@ theorem isBoundedInProbability_of_aemeasurable_norm {μ : Measure Ω} [IsFiniteM
   have hsub : {ω | (k : ℝ) + 1 < ‖Z ω‖} ⊆ {ω | (k : ℝ) < ‖Z ω‖} :=
     fun ω hω ↦ Set.mem_ofPred_eq.mpr (by linarith [Set.mem_ofPred_eq.mp hω])
   have hle : μ {ω | (k : ℝ) + 1 < ‖Z ω‖} ≤ ENNReal.ofReal ε := (measure_mono hsub).trans hk.le
-  simpa [measureReal_def, hε.le] using ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+  rw [measureReal_def]
+  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
 
 /-- A sequence converging in measure to a constant is bounded in probability, for any measure and
 with no measurability assumptions. -/
@@ -220,7 +221,8 @@ theorem isBoundedInProbability_of_tendstoInMeasure_const {μ : Measure Ω} {X : 
       simpa only [dist_zero_right] using dist_triangle (X n ω) c 0
     exact Set.mem_ofPred_eq.mpr (by linarith [Set.mem_ofPred_eq.mp hω])
   have hle : μ {ω | ‖c‖ + 1 < ‖X n ω‖} ≤ ENNReal.ofReal ε := (measure_mono hsub).trans hn.le
-  simpa [measureReal_def, hε.le] using ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+  rw [measureReal_def]
+  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
 
 /-- A sequence converging in measure to a limit whose norm is almost-everywhere measurable is
 bounded in probability, under a finite measure. -/
@@ -260,7 +262,8 @@ theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [Measurabl
             (Measure.map_apply_of_aemeasurable (h.forall_aemeasurable n) hopen).symm
       _ ≤ (μ.map (X n)) {y : E | R ≤ nndist (0 : E) y} := measure_mono hsub
       _ ≤ ENNReal.ofReal ε := hn
-  simpa [measureReal_def, hε.le] using ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+  rw [measureReal_def]
+  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
 
 end Basic
 
@@ -287,7 +290,8 @@ theorem isBoundedInProbability_of_isTightMeasureSet_range [OpensMeasurableSpace 
       _ ≤ ⨆ ν ∈ Set.range (fun k ↦ μ.map (X k)), ν {x : E | max r 1 < ‖x‖} :=
             le_biSup (fun ν : Measure E ↦ ν {x : E | max r 1 < ‖x‖}) ⟨n, rfl⟩
       _ ≤ ENNReal.ofReal ε := (hr (max r 1) (le_max_left r 1)).le
-  simpa [measureReal_def, hε.le] using ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+  rw [measureReal_def]
+  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
 
 /-- In a proper normed group with its Borel σ-algebra, the laws of a bounded-in-probability
 sequence of almost-everywhere measurable maps under a finite measure form a tight set. -/

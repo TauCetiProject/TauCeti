@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
+import TauCeti.Statistics.Convergence.BoundedInProbability
 
 /-!
 # Contiguity of sequences of measures
@@ -185,25 +186,21 @@ theorem isContiguous_const_of_absolutelyContinuous {Ω₀ : Type*} [MeasurableSp
   refine isContiguous_of_absolutelyContinuous_of_uniformlyIntegrable
     (Eventually.of_forall fun _ ↦ h) fun ε hε ↦ ?_
   have hlt_top : ∀ᵐ ω ∂Q₀, Q₀.rnDeriv P₀ ω < ∞ := h.ae_le (Measure.rnDeriv_lt_top Q₀ P₀)
-  have hInter_zero : Q₀ (⋂ n : ℕ, {ω | (n : ℝ≥0∞) < Q₀.rnDeriv P₀ ω}) = 0 := by
-    refine measure_mono_null (fun ω hω ↦ ?_) (ae_iff.1 hlt_top)
-    simp only [Set.mem_iInter, Set.mem_ofPred_eq, not_lt, top_le_iff] at hω ⊢
-    by_contra hne
-    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hne
-    exact not_lt_of_gt hn (hω n)
-  have hlim : Tendsto (fun n : ℕ ↦ Q₀ {ω | (n : ℝ≥0∞) < Q₀.rnDeriv P₀ ω}) atTop (𝓝 0) := by
-    have hcont := tendsto_measure_iInter_atTop (μ := Q₀)
-      (s := fun n : ℕ ↦ {ω | (n : ℝ≥0∞) < Q₀.rnDeriv P₀ ω})
-      (fun n ↦
-        (measurableSet_lt measurable_const (Measure.measurable_rnDeriv _ _)).nullMeasurableSet)
-      (fun m n hmn ω hω ↦
-        Set.mem_ofPred_eq.mpr ((Nat.cast_le.2 hmn).trans_lt (Set.mem_ofPred_eq.mp hω)))
-      ⟨0, measure_ne_top _ _⟩
-    simpa [hInter_zero, Function.comp_def] using hcont
-  obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).exists
-  refine ⟨(n : ℝ≥0), Eventually.of_forall fun _ ↦ ?_⟩
-  have hto := ENNReal.toReal_mono ENNReal.ofReal_ne_top hn.le
-  simpa [measureReal_def, hε.le] using hto
+  have hbd := isBoundedInProbability_of_aemeasurable_norm (μ := Q₀)
+    (Z := fun ω ↦ (Q₀.rnDeriv P₀ ω).toReal)
+    ((Measure.measurable_rnDeriv Q₀ P₀).ennreal_toReal.norm.aemeasurable)
+  obtain ⟨C, hC, hC_ev⟩ := isBoundedInProbability_iff.1 hbd ε hε
+  obtain ⟨_, hC_le⟩ := hC_ev.exists
+  let C' : ℝ≥0 := ⟨C, hC.le⟩
+  refine ⟨C', Eventually.of_forall fun _ ↦ ?_⟩
+  have hsub : {ω | (C' : ℝ≥0∞) < Q₀.rnDeriv P₀ ω} ≤ᵐ[Q₀]
+      {ω | C < ‖(Q₀.rnDeriv P₀ ω).toReal‖} := by
+    filter_upwards [hlt_top] with ω hω hlt
+    have hto := ENNReal.toReal_strict_mono hω.ne hlt
+    rw [ENNReal.coe_toReal] at hto
+    rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
+    exact hto
+  exact (ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae hsub)).trans hC_le
 
 end Basic
 
