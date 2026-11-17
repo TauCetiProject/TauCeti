@@ -25,9 +25,11 @@ over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`,
 `A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). This computes `Tor` over `A` by a
 projective resolution over `P` after a flat extension of scalars.
 
-For commutative `A`-algebras `P` and `R`, the functor induced on commutative monoid objects by
-`ModuleCat.extendScalars (algebraMap A P)` agrees with the tensor product `P`-algebra `P ⊗[A] R`
-(`ModuleCat.extendScalarsCommAlgIso`).
+For a morphism `f : R →+* S` of commutative rings, `ModuleCat.extendScalars_ε_apply` and
+`ModuleCat.extendScalars_μ_tmul` record the elementwise action of the monoidal unit and tensorator
+of `ModuleCat.extendScalars f`. For commutative `A`-algebras `P` and `R`, the functor induced on
+commutative monoid objects by `ModuleCat.extendScalars (algebraMap A P)` agrees with the tensor
+product `P`-algebra `P ⊗[A] R` (`ModuleCat.extendScalarsCommAlgIso`).
 -/
 
 public section
@@ -179,11 +181,12 @@ noncomputable def extendScalarsCommAlgIso (P : Type u) [CommRing P] [Algebra A P
           (extendScalarsAlgebraMapIso_inv_tmul R₀ 1 1).symm)
   CommAlgCat.isoMk eAlg
 
+-- Normalize `CommAlgCat.of` carrier projections so `@[simp]` matches after projection reduction.
 /-- `extendScalarsCommAlgIso` sends `p ⊗ r` to `p ⊗ r`. -/
 @[simp]
 theorem extendScalarsCommAlgIso_hom_tmul (P : Type u) [CommRing P] [Algebra A P]
     (R : CommAlgCat.{u} A) (p : P) (r : R) :
-    (extendScalarsCommAlgIso P R).hom (p ⊗ₜ[A] r) = p ⊗ₜ[A, algebraMap A P] r :=
+    dsimp% only (extendScalarsCommAlgIso P R).hom (p ⊗ₜ[A] r) = p ⊗ₜ[A, algebraMap A P] r :=
   (Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply
     (C := CommMonModuleEquivalenceCommAlgebra.functor.obj
       ((extendScalars.{u, u, u} (algebraMap A P)).mapCommMon.obj
@@ -194,7 +197,7 @@ theorem extendScalarsCommAlgIso_hom_tmul (P : Type u) [CommRing P] [Algebra A P]
 @[simp]
 theorem extendScalarsCommAlgIso_inv_tmul (P : Type u) [CommRing P] [Algebra A P]
     (R : CommAlgCat.{u} A) (p : P) (r : R) :
-    (extendScalarsCommAlgIso P R).inv (p ⊗ₜ[A, algebraMap A P] r) = p ⊗ₜ[A] r :=
+    dsimp% only (extendScalarsCommAlgIso P R).inv (p ⊗ₜ[A, algebraMap A P] r) = p ⊗ₜ[A] r :=
   (congrArg (extendScalarsCommAlgIso P R).inv
     (extendScalarsCommAlgIso_hom_tmul P R p r).symm).trans
     (ConcreteCategory.congr_hom (extendScalarsCommAlgIso P R).hom_inv_id (p ⊗ₜ[A] r))

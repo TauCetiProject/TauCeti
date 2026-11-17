@@ -207,10 +207,11 @@ noncomputable def localizedModuleObjIso (M : ModuleCat.{u} R) (T : Submonoid R) 
     (localizedModuleFunctor.{u} T).obj M ≅ of (Localization T) (LocalizedModule T M) :=
   (Shrink.linearEquiv.{u} (Localization T) (LocalizedModule T M)).toModuleIso
 
+-- Normalize `ModuleCat.of` carrier projections so `@[simp]` matches after projection reduction.
 /-- `localizedModuleObjIso` sends the canonical localization image of `m` to `m / 1`. -/
 @[simp]
 theorem localizedModuleObjIso_hom_mkLinearMap (M : ModuleCat.{u} R) (T : Submonoid R) (m : M) :
-    (M.localizedModuleObjIso T).hom (M.localizedModuleMkLinearMap T m) =
+    dsimp% only (M.localizedModuleObjIso T).hom (M.localizedModuleMkLinearMap T m) =
       LocalizedModule.mk m 1 := by
   -- Both `Shrink.linearEquiv` maps come from the same underlying `equivShrink`.
   change Shrink.linearEquiv.{u} (Localization T) (LocalizedModule T M)
@@ -221,7 +222,7 @@ theorem localizedModuleObjIso_hom_mkLinearMap (M : ModuleCat.{u} R) (T : Submono
 `m`. -/
 @[simp]
 theorem localizedModuleObjIso_inv_mk_one (M : ModuleCat.{u} R) (T : Submonoid R) (m : M) :
-    (M.localizedModuleObjIso T).inv (LocalizedModule.mk m 1) =
+    dsimp% only (M.localizedModuleObjIso T).inv (LocalizedModule.mk m 1) =
       M.localizedModuleMkLinearMap T m := by
   rw [← M.localizedModuleObjIso_hom_mkLinearMap T m]
   exact ConcreteCategory.congr_hom (M.localizedModuleObjIso T).hom_inv_id
