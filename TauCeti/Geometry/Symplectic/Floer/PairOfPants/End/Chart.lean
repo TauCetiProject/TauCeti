@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import TauCeti.Geometry.Symplectic.Floer.SignedEnd.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 
 /-!
@@ -706,53 +707,52 @@ theorem injOn_positiveEndChart (q : Puncture) :
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/
-noncomputable def positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
-    (t : ℝ) (x : X) : ℝ :=
-  q.endSign * H q (q.endSign * t) x
+noncomputable def positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture) :
+    ℝ → X → ℝ :=
+  signedHamiltonian q.endSign (H q)
+
+theorem positiveEndHamiltonian_eq_signedHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ)
+    (q : Puncture) : positiveEndHamiltonian H q = signedHamiltonian q.endSign (H q) :=
+  (rfl)
 
 theorem positiveEndHamiltonian_apply {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
     (t : ℝ) (x : X) : positiveEndHamiltonian H q t x = q.endSign * H q (q.endSign * t) x :=
-  (rfl)
+  signedHamiltonian_apply q.endSign (H q) t x
 
 /-- Passing to the positive end chart twice gives back the end Hamiltonian:
 `(H'_q)'(t, x) = ±(±H_q(±(±t), x)) = H_q(t, x)`. -/
 @[simp]
 theorem positiveEndHamiltonian_positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ)
-    (q : Puncture) : positiveEndHamiltonian (positiveEndHamiltonian H) q = H q := by
-  funext t x
-  simp only [positiveEndHamiltonian_apply, endSign_mul_endSign_mul]
+    (q : Puncture) : positiveEndHamiltonian (positiveEndHamiltonian H) q = H q :=
+  signedHamiltonian_signedHamiltonian q.endSign_mul_self (H q)
 
 theorem periodic_positiveEndHamiltonian {X : Type*} {H : Puncture → ℝ → X → ℝ} {q : Puncture}
-    (hH : Periodic (H q) 1) : Periodic (positiveEndHamiltonian H q) 1 := by
-  intro t
-  funext x
-  rcases q.endSign_eq_one_or_eq_neg_one with h | h <;>
-    simp only [positiveEndHamiltonian_apply, h, mul_add, mul_one, one_mul, neg_one_mul,
-      ← sub_eq_add_neg, hH.sub_eq, hH _]
+    (hH : Periodic (H q) 1) : Periodic (positiveEndHamiltonian H q) 1 :=
+  periodic_signedHamiltonian q.endSign_mul_self hH
 
 theorem contDiff_uncurry_positiveEndHamiltonian {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {H : Puncture → ℝ → E → ℝ} {q : Puncture} {n : WithTop ℕ∞}
     (hH : ContDiff ℝ n (uncurry (H q))) : ContDiff ℝ n (uncurry (positiveEndHamiltonian H q)) :=
-  contDiff_const.mul (hH.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
+  contDiff_uncurry_signedHamiltonian q.endSign hH
 
 /-- The positive end Hamiltonian of a `Cⁿ` end Hamiltonian on a manifold is `Cⁿ`. -/
 theorem contMDiff_uncurry_positiveEndHamiltonian {E G M : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M]
     [ChartedSpace G M] {H : Puncture → ℝ → M → ℝ} {q : Puncture} {n : WithTop ℕ∞}
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (H q))) :
-    ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (positiveEndHamiltonian H q)) :=
-  (contDiff_const.mul contDiff_id).contMDiff.comp
+    ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (positiveEndHamiltonian H q)) := by
+  have heq : uncurry (positiveEndHamiltonian H q) =
+      fun p ↦ q.endSign * uncurry (H q) (q.endSign * p.1, p.2) :=
+    funext fun ⟨t, x⟩ ↦ positiveEndHamiltonian_apply H q t x
+  rw [heq]
+  exact (contDiff_const.mul contDiff_id).contMDiff.comp
     (hH.comp (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk
       contMDiff_snd))
 
 /-- A `1`-periodic loop read with the time `±t` of an end is `1`-periodic. -/
 theorem periodic_comp_endSign_mul {α : Type*} {q : Puncture} {x : ℝ → α} (hx : Periodic x 1) :
-    Periodic (fun t ↦ x (q.endSign * t)) 1 := by
-  have h := hx.const_mul q.endSign
-  rw [inv_endSign, mul_one] at h
-  rcases q.endSign_eq_one_or_eq_neg_one with hσ | hσ
-  · simpa only [hσ] using h
-  · simpa only [hσ, neg_neg] using h.neg
+    Periodic (fun t ↦ x (q.endSign * t)) 1 :=
+  periodic_comp_mul_of_mul_self_eq_one q.endSign_mul_self hx
 
 /-- The pullback of a perturbation along the positive end chart is the pullback along the end
 chart at the reflected point, multiplied by the sign of the end. -/

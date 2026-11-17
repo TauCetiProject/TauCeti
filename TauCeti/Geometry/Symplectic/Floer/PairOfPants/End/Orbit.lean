@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
+public import TauCeti.Geometry.Symplectic.Floer.SignedEnd.Orbit
 
 /-!
 # Asymptotic orbits at the ends of a finite-energy Floer pair of pants
@@ -120,19 +121,17 @@ theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
     (t : ℝ) :
     HasDerivAt (fun t ↦ x (q.endSign * t))
       (ω.hamiltonianVectorField (H q t) (x (q.endSign * t))) t := by
-  have h := (hx (q.endSign * t)).scomp t ((hasDerivAt_id' t).const_mul q.endSign)
-  rw [hamiltonianVectorField_positiveEndHamiltonian_endSign_mul, mul_one, Pi.smul_apply,
-    smul_smul, endSign_mul_self, one_smul] at h
-  exact h
+  rw [positiveEndHamiltonian_eq_signedHamiltonian] at hx
+  exact ω.hasDerivAt_comp_mul_of_signedHamiltonian q.endSign_mul_self hx t
 
 /-- Reading an orbit of `H_q` with the time `±t` of the end gives an orbit of the positive end
 Hamiltonian `H'_q`. This is the converse of `hasDerivAt_comp_endSign_mul`. -/
 theorem hasDerivAt_comp_endSign_mul_positiveEndHamiltonian {q : Puncture} {y : ℝ → V}
     (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) (t : ℝ) :
     HasDerivAt (fun t ↦ y (q.endSign * t))
-      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t))) t :=
-  hasDerivAt_comp_endSign_mul (H := positiveEndHamiltonian H)
-    (by simpa only [positiveEndHamiltonian_positiveEndHamiltonian] using hy) t
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t))) t := by
+  rw [positiveEndHamiltonian_eq_signedHamiltonian]
+  exact ω.hasDerivAt_comp_mul_signedHamiltonian q.endSign_mul_self hy t
 
 omit [FiniteDimensional ℝ V] in
 /-- The action of a loop for the positive end Hamiltonian `H'_q` is `±` the action, for `H_q`,
@@ -141,20 +140,8 @@ theorem hamiltonianAction_positiveEndHamiltonian {q : Puncture} (hH : Periodic (
     {x : ℝ → V} (hx : Periodic x 1) :
     ω.hamiltonianAction (positiveEndHamiltonian H q) x =
       q.endSign * ω.hamiltonianAction (H q) (fun t ↦ x (q.endSign * t)) := by
-  rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · have hH' : positiveEndHamiltonian H q = H q := by
-      funext t y
-      simp [positiveEndHamiltonian_apply, h]
-    simp [hH', h]
-  · have hH' : positiveEndHamiltonian H q = fun t y ↦ -H q (-t) y := by
-      funext t y
-      simp [positiveEndHamiltonian_apply, h]
-    have hx' : Periodic (fun t ↦ x (-t)) 1 := by
-      simpa only [h, neg_one_mul] using periodic_comp_endSign_mul (q := q) hx
-    have h' := ω.hamiltonianAction_comp_neg hH hx'
-    simp only [neg_neg] at h'
-    rw [hH', h]
-    simpa using h'
+  rw [positiveEndHamiltonian_eq_signedHamiltonian]
+  exact ω.hamiltonianAction_signedHamiltonian q.endSign_mul_self hH hx
 
 /-! ### The ends of a Floer pair of pants as Floer half-cylinders -/
 

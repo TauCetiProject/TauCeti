@@ -119,39 +119,9 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
     {v : V} (hv : dysonSeriesLeft (fun t ↦ fderiv ℝ
       (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (y (q.endSign * t))) 1 v = v) :
     v = 0 := by
-  set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H q t)) (y t)
-  set S' : ℝ → V →L[ℝ] V := fun t ↦
-    fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (y (q.endSign * t))
-  have hyc : Continuous y := continuous_iff_continuousAt.2 fun t ↦ (hy t).continuousAt
-  have hSc : Continuous S := ω.continuous_fderiv_hamiltonianVectorField_comp hHs hyc
-  have hS'c : Continuous S' := ω.continuous_fderiv_hamiltonianVectorField_comp
-    (contDiff_uncurry_positiveEndHamiltonian hHs) (hyc.comp (continuous_const.mul continuous_id))
-  have hS'p : Periodic S' 1 := fun t ↦ by
-    simp only [S', periodic_positiveEndHamiltonian hH t]
-    exact congrArg _ (periodic_comp_endSign_mul hyper t)
-  -- The linearization in the positive end chart is `S'_{±t} = ±S_t`.
-  have hS' (t : ℝ) : S' (q.endSign * t) = q.endSign • S t := by
-    simp only [S', S, hamiltonianVectorField_positiveEndHamiltonian_endSign_mul,
-      fderiv_const_smul_field, Pi.smul_apply, endSign_mul_endSign_mul]
-  -- The periodic solution `ζ' t = Ψ'(t) v` of `ζ' = S'_t ζ`, read with the time `±t`, is a periodic
-  -- solution of `ζ' = S_t ζ` starting at `v`.
-  set ζ : ℝ → V := fun t ↦ dysonSeriesLeft S' (q.endSign * t) v
-  have hζ (t : ℝ) : HasDerivAt ζ (S t (ζ t)) t := by
-    have h := (hasDerivAt_dysonSeriesLeft_apply hS'c v (q.endSign * t)).scomp t
-      ((hasDerivAt_id' t).const_mul q.endSign)
-    rw [hS', mul_one, smul_apply, smul_smul, endSign_mul_self, one_smul] at h
-    exact h
-  have hζp : Periodic ζ 1 :=
-    periodic_comp_endSign_mul ((periodic_dysonSeriesLeft_apply_iff hS'c hS'p v).2 hv)
-  have hζ0 : ζ 0 = v := by simp [ζ, dysonSeriesLeft_zero]
-  -- So `v` is fixed by the return map `Ψ(1)` of `H_q`, the derivative of the time-one map.
-  have hΨ : dysonSeriesLeft S 1 v = v := by
-    rw [← hζ0, ← eq_dysonSeriesLeft_apply hSc hζ, ← zero_add (1 : ℝ), hζp 0]
-  have hD := (ω.differentiable_timeDependentHamiltonianFlow hL hHs 0 1 (y 0)).hasFDerivAt
-  refine (isNondegenerateFixedPt_iff.1 hnd).2.2 v ?_
-  rw [hD.hasMFDerivAt.mfderiv, fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft ω hL hHs hy]
-  simp only [zero_add, sub_zero]
-  exact hΨ
+  rw [positiveEndHamiltonian_eq_signedHamiltonian] at hv
+  exact ω.eq_zero_of_dysonSeriesLeft_signedHamiltonian_apply_eq_self q.endSign_mul_self hL hHs hH hy
+    hyper hnd hv
 
 /-- Read in the end chart at `(±s, t)`, the distance of the derivative of `u` from that of the
 stationary cylinder of `y` is the distance of the derivative of `u ∘ φ'_q` at `(s, ±t)` from that
@@ -165,16 +135,9 @@ private theorem norm_fderiv_comp_endChart_sub_smulRight (q : Puncture) (u : ℝ 
           (positiveEndHamiltonian H q (q.endSign * t)) (y (q.endSign * (q.endSign * t))))‖ := by
   have hz : q.endSign • ((q.endSign * s, t) : ℝ × ℝ) = (s, q.endSign * t) := by
     simp [← mul_assoc]
-  rw [fderiv_comp_endChart, hz, hamiltonianVectorField_positiveEndHamiltonian_endSign_mul,
-    endSign_mul_endSign_mul]
-  -- The reflection `v ↦ ±v` multiplies both derivatives by the sign of the end.
-  have h : q.endSign • fderiv ℝ (u ∘ positiveEndChart q) (s, q.endSign * t) -
-      (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H q t) (y t)) =
-        q.endSign • (fderiv ℝ (u ∘ positiveEndChart q) (s, q.endSign * t) -
-          (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
-            ((q.endSign • ω.hamiltonianVectorField (H q t)) (y t))) := by
-    ext <;> simp [smul_sub, smul_smul]
-  rw [h, norm_smul, Real.norm_eq_abs, abs_endSign, one_mul]
+  rw [fderiv_comp_endChart, hz, endSign_mul_endSign_mul,
+    positiveEndHamiltonian_eq_signedHamiltonian]
+  exact ω.norm_smul_sub_smulRight_hamiltonianVectorField q.endSign_mul_self _ (H q) (y t) t
 
 /-- **The ends of a Floer pair of pants converge exponentially to nondegenerate orbits.** Let `K`
 be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C²` Hamiltonians `H_q`, and
