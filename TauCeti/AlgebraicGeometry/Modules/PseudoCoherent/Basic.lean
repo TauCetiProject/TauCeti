@@ -38,6 +38,8 @@ sheaves on `Spec R`.
 
 * `AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution.of_quasiIso_map`: exact functors
   carry resolutions to finite free resolutions when they send the terms to finite free modules.
+* `AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution.restrict_of_le`: finite free
+  resolutions on an open restrict to smaller opens.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_iff_exists_isOpenImmersion`: the local
   resolutions may be taken on arbitrary open immersions into `X`.
 * `AlgebraicGeometry.Scheme.Modules.IsPseudoCoherent.restrict`: pseudo-coherence is preserved by
@@ -130,6 +132,14 @@ theorem restrict (h : F.HasFiniteFreeResolution) (f : Y ⟶ X) [IsOpenImmersion 
   refine of_quasiIso_map (restrictFunctor f) π fun n ↦ ?_
   obtain ⟨ι, hι, ⟨e⟩⟩ := hP n
   exact ⟨ι, hι, ⟨(restrictFunctor f).mapIso e ≪≫ restrictFreeIso f ι⟩⟩
+
+/-- A finite free resolution on an open `V` restricts to a finite free resolution on every
+smaller open `W`. -/
+theorem restrict_of_le {V W : X.Opens} (h : (F.restrict V.ι).HasFiniteFreeResolution)
+    (hWV : W ≤ V) : (F.restrict W.ι).HasFiniteFreeResolution :=
+  (h.restrict (X.homOfLE hWV)).of_iso
+    (((restrictFunctorComp (X.homOfLE hWV) V.ι).app F).symm ≪≫
+      (restrictFunctorCongr (X.homOfLE_ι hWV)).app F)
 
 end HasFiniteFreeResolution
 
