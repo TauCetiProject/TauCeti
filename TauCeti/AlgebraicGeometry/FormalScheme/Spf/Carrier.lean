@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Spectrum.Maximal.Topology
+public import Mathlib.Topology.JacobsonSpace
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -24,6 +27,11 @@ identifies it with `Spec (A ⧸ J)` for every ideal of definition `J`, in partic
 `I ^ (n + 1)`. Since the set of open primes is defined from the topology alone, it does not depend
 on the choice of an ideal of definition.
 
+A point of `Spf A` is closed precisely when the corresponding prime ideal is maximal. When an ideal
+of definition lies in the Jacobson radical of `A` — for instance when `A` is adically complete —
+every maximal ideal of `A` is open, so the closed points of `Spf A` are homeomorphic to
+`MaximalSpectrum A`.
+
 For `f ∈ A`, the basic open set `D(f)` of `Spf A` consists of the open primes not containing `f`.
 These form a basis of the topology; `D(g) ⊆ D(f)` holds exactly when `g` lies in the radical of
 `f A + I`, which is the condition under which the completed localisations of an adic ring have a
@@ -33,6 +41,8 @@ exactly when `f` is nilpotent modulo `I`.
 ## Main definitions
 
 * `TauCeti.FormalScheme.Spf.carrier A`: the open prime ideals of `A`, as a subset of `Spec A`.
+* `TauCeti.FormalScheme.Spf.closedPointsHomeomorphMaximalSpectrum`: when every maximal ideal of
+  `A` is open, the homeomorphism between `closedPoints (carrier A)` and `MaximalSpectrum A`.
 * `TauCeti.FormalScheme.Spf.homeomorphSpecQuotient`: for an ideal of definition `J`, the
   homeomorphism of the underlying space of `Spf A` with `Spec (A ⧸ J)`.
 * `TauCeti.FormalScheme.Spf.basicOpen f`: the basic open set `D(f)` of the underlying space.
@@ -46,6 +56,10 @@ exactly when `f` is nilpotent modulo `I`.
 * `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`,
   `TauCeti.FormalScheme.Spf.compactSpace_carrier`: the underlying space is the Zariski closed set
   `V(I)`, hence quasi-compact.
+* `TauCeti.FormalScheme.Spf.isClosed_singleton_iff_isMaximal`,
+  `TauCeti.FormalScheme.Spf.mem_carrier_of_isMaximal`: the closed points of `Spf A` are the open
+  maximal ideals, and every maximal ideal is open when an ideal of definition lies in the Jacobson
+  radical.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
 * `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.exists_basicOpen_le`,
@@ -132,6 +146,95 @@ nonempty. -/
 theorem carrier_nonempty [T1Space A] [Nontrivial A] (hI : IsAdic I) : (carrier A).Nonempty :=
   Set.nonempty_iff_ne_empty.mpr fun h ↦
     not_subsingleton A ((carrier_eq_empty_iff_subsingleton hI).mp h)
+
+section ClosedPoints
+
+/-- A point of `Spf A` is closed in `carrier A` if and only if its prime ideal is maximal. -/
+theorem isClosed_singleton_iff_isMaximal [SeparatelyContinuousAdd A] {p : carrier A} :
+    IsClosed ({p} : Set (carrier A)) ↔ (p : PrimeSpectrum A).asIdeal.IsMaximal := by
+  refine ⟨fun hp ↦ ?_, fun hm ↦ ?_⟩
+  · obtain ⟨m, hm, hpm⟩ := Ideal.exists_le_maximal _ p.1.isPrime.ne_top
+    have hm_open : IsOpen (m : Set A) :=
+      AddSubgroup.isOpen_mono (H₁ := p.1.asIdeal.toAddSubgroup) (H₂ := m.toAddSubgroup) hpm p.2
+    let q : carrier A := ⟨⟨m, hm.isPrime⟩, hm_open⟩
+    have hq : q ∈ closure ({p} : Set (carrier A)) := by
+      rw [IsInducing.subtypeVal.closure_eq_preimage_closure_image, Set.image_singleton,
+        Set.mem_preimage, PrimeSpectrum.closure_singleton, PrimeSpectrum.mem_zeroLocus]
+      exact hpm
+    rw [hp.closure_eq, Set.mem_singleton_iff] at hq
+    exact congrArg (fun x : carrier A ↦ (x : PrimeSpectrum A).asIdeal) hq ▸ hm
+  · have hpre : ({p} : Set (carrier A)) = Subtype.val ⁻¹' {(p : PrimeSpectrum A)} := by
+      ext q
+      simp [Subtype.ext_iff]
+    rw [hpre]
+    exact ((PrimeSpectrum.isClosed_singleton_iff_isMaximal _).mpr hm).preimage
+      continuous_subtype_val
+
+/-- If an ideal of definition `I` lies in the Jacobson radical of `A` (for instance when `A` is
+`I`-adically complete), every maximal ideal of `A` is an open prime and hence a point of
+`Spf A`. -/
+theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hJ : I ≤ Ring.jacobson A)
+    (m : Ideal A) [m.IsMaximal] :
+    (⟨m, Ideal.IsMaximal.isPrime ‹_›⟩ : PrimeSpectrum A) ∈ carrier A :=
+  (mem_carrier_iff_le hI).mpr (hJ.trans (Ring.jacobson_le_of_isMaximal m))
+
+/-- If an ideal of definition `I` lies in the Jacobson radical of `A`, every point of
+`MaximalSpectrum A` lies in `carrier A`. -/
+theorem toPrimeSpectrum_mem_carrier (hI : IsAdic I) (hJ : I ≤ Ring.jacobson A)
+    (m : MaximalSpectrum A) : m.toPrimeSpectrum ∈ carrier A :=
+  mem_carrier_of_isMaximal hI hJ m.asIdeal
+
+private theorem isMaximal_of_mem_closedPoints
+    (h : ∀ m : MaximalSpectrum A, m.toPrimeSpectrum ∈ carrier A)
+    {p : carrier A} (hp : p ∈ closedPoints (carrier A)) :
+    (p : PrimeSpectrum A).asIdeal.IsMaximal := by
+  obtain ⟨m, hm, hpm⟩ := Ideal.exists_le_maximal _ p.1.isPrime.ne_top
+  let q : carrier A := ⟨⟨m, hm.isPrime⟩, h ⟨m, hm⟩⟩
+  have hq : q ∈ closure ({p} : Set (carrier A)) := by
+    rw [IsInducing.subtypeVal.closure_eq_preimage_closure_image, Set.image_singleton,
+      Set.mem_preimage, PrimeSpectrum.closure_singleton, PrimeSpectrum.mem_zeroLocus]
+    exact hpm
+  rw [(mem_closedPoints_iff.mp hp).closure_eq, Set.mem_singleton_iff] at hq
+  exact congrArg (fun x : carrier A ↦ (x : PrimeSpectrum A).asIdeal) hq ▸ hm
+
+private theorem mem_closedPoints_of_isMaximal {p : carrier A}
+    (hp : (p : PrimeSpectrum A).asIdeal.IsMaximal) :
+    p ∈ closedPoints (carrier A) := by
+  have hpre : ({p} : Set (carrier A)) = Subtype.val ⁻¹' {(p : PrimeSpectrum A)} := by
+    ext q
+    simp [Subtype.ext_iff]
+  rw [mem_closedPoints_iff, hpre]
+  exact ((PrimeSpectrum.isClosed_singleton_iff_isMaximal _).mpr hp).preimage
+    continuous_subtype_val
+
+/-- If every maximal ideal of `A` is open (for instance when an ideal of definition lies in the
+Jacobson radical of `A`), the closed points of `Spf A` are homeomorphic to `MaximalSpectrum A`. -/
+def closedPointsHomeomorphMaximalSpectrum
+    (h : ∀ m : MaximalSpectrum A, m.toPrimeSpectrum ∈ carrier A) :
+    closedPoints (carrier A) ≃ₜ MaximalSpectrum A where
+  toFun p := ⟨(p.1 : PrimeSpectrum A).asIdeal, isMaximal_of_mem_closedPoints h p.2⟩
+  invFun m := ⟨⟨m.toPrimeSpectrum, h m⟩, mem_closedPoints_of_isMaximal m.isMaximal⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun :=
+    continuous_induced_rng.mpr (continuous_subtype_val.comp continuous_subtype_val)
+  continuous_invFun :=
+    (MaximalSpectrum.toPrimeSpectrum_continuous.subtype_mk _).subtype_mk _
+
+@[simp]
+theorem closedPointsHomeomorphMaximalSpectrum_apply_asIdeal
+    (h : ∀ m : MaximalSpectrum A, m.toPrimeSpectrum ∈ carrier A)
+    (p : closedPoints (carrier A)) :
+    (closedPointsHomeomorphMaximalSpectrum h p).asIdeal = (p.1 : PrimeSpectrum A).asIdeal :=
+  (rfl)
+
+@[simp]
+theorem closedPointsHomeomorphMaximalSpectrum_symm_apply_asIdeal
+    (h : ∀ m : MaximalSpectrum A, m.toPrimeSpectrum ∈ carrier A) (m : MaximalSpectrum A) :
+    ((closedPointsHomeomorphMaximalSpectrum h).symm m : PrimeSpectrum A).asIdeal = m.asIdeal :=
+  (rfl)
+
+end ClosedPoints
 
 section Quotient
 

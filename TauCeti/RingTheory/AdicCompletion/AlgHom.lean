@@ -33,11 +33,16 @@ at a prime.
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
   `AdicCompletion.congrₐ_refl`, `AdicCompletion.congrₐ_symm` and `AdicCompletion.congrₐ_trans`.
+* `AdicCompletion.mapOfPowLe` and `AdicCompletion.equivOfExistsPowLe`: canonical `R`-algebra
+  maps and isomorphisms `AdicCompletion I R ≃ₐ[R] AdicCompletion J R` when powers of `I` and `J`
+  are mutually cofinal, without requiring finite generation.
 -/
 
 public section
 
 namespace AdicCompletion
+
+section
 
 variable {R S S' S'' : Type*} [CommRing R] [CommRing S] [CommRing S'] [CommRing S'']
   [Algebra R S] [Algebra R S'] [Algebra R S''] {I : Ideal S} {I' : Ideal S'} {I'' : Ideal S''}
@@ -227,5 +232,125 @@ completions. -/
 theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
     (congrₐ e he).symm (of I' S' x) = of I S (e.symm x) :=
   mapₐ_of (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) x
+
+end
+
+section CofinalIdeals
+
+variable {R : Type*} [CommRing R] {I J K : Ideal R}
+
+private theorem mapOfPowLe_aux {a : ℕ} (h : I ^ a ≤ J) {m n : ℕ} (hle : m ≤ n) :
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right hle)).comp
+        ((Ideal.Quotient.factorₐ R ((pow_mul I a n).symm ▸ Ideal.pow_right_mono h n)).comp
+          (evalₐ I (a * n))) =
+      (Ideal.Quotient.factorₐ R ((pow_mul I a m).symm ▸ Ideal.pow_right_mono h m)).comp
+        (evalₐ I (a * m)) := by
+  ext x
+  simp only [AlgHom.comp_apply, ← factor_evalₐ (Nat.mul_le_mul_left a hle) x]
+  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I (a * n) x)
+  simp [← hy]
+
+/-- If `I ^ a ≤ J`, the canonical `R`-algebra homomorphism
+`AdicCompletion I R →ₐ[R] AdicCompletion J R` induced by `R ⧸ I ^ (a * n) → R ⧸ J ^ n`. -/
+noncomputable def mapOfPowLe {a : ℕ} (h : I ^ a ≤ J) :
+    AdicCompletion I R →ₐ[R] AdicCompletion J R :=
+  liftAlgHom J (fun n ↦ (Ideal.Quotient.factorₐ R
+      ((pow_mul I a n).symm ▸ Ideal.pow_right_mono h n)).comp (evalₐ I (a * n)))
+    (mapOfPowLe_aux h)
+
+/-- Modulo `J ^ n`, `mapOfPowLe h` factors through `evalₐ I (a * n)`. -/
+@[simp]
+theorem evalₐ_mapOfPowLe {a : ℕ} (h : I ^ a ≤ J) (n : ℕ) (x : AdicCompletion I R) :
+    evalₐ J n (mapOfPowLe h x) =
+      Ideal.Quotient.factor ((pow_mul I a n).symm ▸ Ideal.pow_right_mono h n)
+        (evalₐ I (a * n) x) :=
+  evalₐ_liftAlgHom _ _ (mapOfPowLe_aux h) _ _
+
+/-- `mapOfPowLe` sends `of I R x` to `of J R x`. -/
+@[simp]
+theorem mapOfPowLe_of {a : ℕ} (h : I ^ a ≤ J) (x : R) :
+    mapOfPowLe h (of I R x) = of J R x :=
+  (mapOfPowLe h).commutes x
+
+/-- The map `mapOfPowLe` is independent of the exponent `a` satisfying `I ^ a ≤ J`. -/
+theorem mapOfPowLe_eq {a b : ℕ} (ha : I ^ a ≤ J) (hb : I ^ b ≤ J) :
+    mapOfPowLe ha = mapOfPowLe hb :=
+  AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
+    simp only [evalₐ_mapOfPowLe]
+    have ha' := factor_evalₐ (Nat.mul_le_mul_right n (le_max_left a b)) x
+    have hb' := factor_evalₐ (Nat.mul_le_mul_right n (le_max_right a b)) x
+    rw [← ha', ← hb']
+    obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I (max a b * n) x)
+    simp [← hy]
+
+/-- Any `mapOfPowLe` from an ideal to itself is the identity. -/
+@[simp]
+theorem mapOfPowLe_self {a : ℕ} (h : I ^ a ≤ I) :
+    mapOfPowLe h = AlgHom.id R (AdicCompletion I R) := by
+  rw [mapOfPowLe_eq h (pow_one I).le]
+  exact AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
+    simp only [evalₐ_mapOfPowLe, AlgHom.id_apply]
+    rw [← factor_evalₐ (one_mul n).le x]
+    obtain ⟨z, hz⟩ := Ideal.Quotient.mk_surjective (evalₐ I n x)
+    simp [← hz]
+
+/-- `mapOfPowLe` is functorial in compositions of power inclusions. -/
+theorem mapOfPowLe_comp {a b : ℕ} (hIJ : I ^ a ≤ J) (hJK : J ^ b ≤ K) :
+    (mapOfPowLe hJK).comp (mapOfPowLe hIJ) =
+      mapOfPowLe (show I ^ (a * b) ≤ K by
+        rw [pow_mul]
+        exact (Ideal.pow_right_mono hIJ b).trans hJK) :=
+  AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
+    simp only [AlgHom.comp_apply, evalₐ_mapOfPowLe]
+    rw [← factor_evalₐ (mul_assoc a b n).ge x]
+    obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I (a * b * n) x)
+    simp [← hy]
+
+/-- If powers of `I` and `J` are mutually cofinal (`∃ a, I ^ a ≤ J` and `∃ b, J ^ b ≤ I`), the
+`I`-adic and `J`-adic completions of `R` are canonically isomorphic as `R`-algebras. -/
+noncomputable def equivOfExistsPowLe (hIJ : ∃ a, I ^ a ≤ J) (hJI : ∃ b, J ^ b ≤ I) :
+    AdicCompletion I R ≃ₐ[R] AdicCompletion J R :=
+  AlgEquiv.ofAlgHom (mapOfPowLe hIJ.choose_spec) (mapOfPowLe hJI.choose_spec)
+    ((mapOfPowLe_comp hJI.choose_spec hIJ.choose_spec).trans (mapOfPowLe_self _))
+    ((mapOfPowLe_comp hIJ.choose_spec hJI.choose_spec).trans (mapOfPowLe_self _))
+
+/-- `equivOfExistsPowLe` sends `of I R x` to `of J R x`. -/
+@[simp]
+theorem equivOfExistsPowLe_of (hIJ : ∃ a, I ^ a ≤ J) (hJI : ∃ b, J ^ b ≤ I) (x : R) :
+    equivOfExistsPowLe hIJ hJI (of I R x) = of J R x :=
+  (equivOfExistsPowLe hIJ hJI).commutes x
+
+/-- `equivOfExistsPowLe` from an ideal to itself is the identity isomorphism. -/
+@[simp]
+theorem equivOfExistsPowLe_self (h : ∃ a, I ^ a ≤ I) :
+    equivOfExistsPowLe h h = AlgEquiv.refl :=
+  AlgEquiv.coe_toAlgHom_injective (mapOfPowLe_self h.choose_spec)
+
+/-- The inverse of `equivOfExistsPowLe hIJ hJI` is `equivOfExistsPowLe hJI hIJ`. -/
+@[simp]
+theorem equivOfExistsPowLe_symm (hIJ : ∃ a, I ^ a ≤ J) (hJI : ∃ b, J ^ b ≤ I) :
+    (equivOfExistsPowLe hIJ hJI).symm = equivOfExistsPowLe hJI hIJ :=
+  AlgEquiv.ext fun _ ↦ rfl
+
+/-- Composition of `equivOfExistsPowLe` is `equivOfExistsPowLe` for the composed inclusions. -/
+@[simp]
+theorem equivOfExistsPowLe_trans (hIJ : ∃ a, I ^ a ≤ J) (hJI : ∃ b, J ^ b ≤ I)
+    (hJK : ∃ c, J ^ c ≤ K) (hKJ : ∃ d, K ^ d ≤ J) :
+    (equivOfExistsPowLe hIJ hJI).trans (equivOfExistsPowLe hJK hKJ) =
+      equivOfExistsPowLe
+        (let ⟨a, ha⟩ := hIJ; let ⟨c, hc⟩ := hJK
+          ⟨a * c, by rw [pow_mul]; exact (Ideal.pow_right_mono ha c).trans hc⟩)
+        (let ⟨d, hd⟩ := hKJ; let ⟨b, hb⟩ := hJI
+          ⟨d * b, by rw [pow_mul]; exact (Ideal.pow_right_mono hd b).trans hb⟩) := by
+  refine AlgEquiv.coe_toAlgHom_injective ?_
+  have hIK : ∃ e, I ^ e ≤ K := by
+    obtain ⟨a, ha⟩ := hIJ
+    obtain ⟨c, hc⟩ := hJK
+    exact ⟨a * c, by rw [pow_mul]; exact (Ideal.pow_right_mono ha c).trans hc⟩
+  change (mapOfPowLe hJK.choose_spec).comp (mapOfPowLe hIJ.choose_spec) =
+    mapOfPowLe hIK.choose_spec
+  exact (mapOfPowLe_comp hIJ.choose_spec hJK.choose_spec).trans (mapOfPowLe_eq _ hIK.choose_spec)
+
+end CofinalIdeals
 
 end AdicCompletion

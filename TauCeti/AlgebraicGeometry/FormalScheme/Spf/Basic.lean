@@ -10,6 +10,8 @@ public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.IdealIndependence
 
+import Mathlib.RingTheory.Henselian
+
 /-!
 # The formal spectrum as a locally ringed space
 
@@ -26,7 +28,8 @@ The comparison of the stalk with the colimit holds because the basic open neighb
 of `p` are cofinal among all open neighbourhoods of `p`. Locality of the stalks holds for the
 structure sheaf built from every ideal of definition, by the comparison
 `TauCeti.FormalScheme.Spf.structureSheafIso` with the structure sheaf built from a finitely
-generated one.
+generated one. Since `A` is complete for its ideal of definition, every maximal ideal of `A` is
+open, so the closed points of `Spf A` are homeomorphic to `MaximalSpectrum A`.
 
 ## Main definitions
 
@@ -38,6 +41,8 @@ generated one.
   locally ringed space.
 * `TauCeti.FormalScheme.Spf.stalkResidueFieldEquiv`: the residue field of `Spf A` at `p` is
   `Frac(A ⧸ p)`.
+* `TauCeti.FormalScheme.Spf.closedPointsHomeomorph`: the closed points of `Spf A` are homeomorphic
+  to `MaximalSpectrum A`.
 
 ## Main results
 
@@ -48,6 +53,8 @@ generated one.
   local rings.
 * `TauCeti.FormalScheme.Spf.stalkResidueFieldEquiv_residue_germ`: the residue field
   isomorphism sends the residue class of `a ∈ A` to the image of `a` in `Frac(A ⧸ p)`.
+* `TauCeti.FormalScheme.Spf.isMaximal_mem_carrier`: every maximal ideal of an adic ring `A` is an
+  open prime, hence a point of `Spf A`.
 
 ## References
 
@@ -199,13 +206,16 @@ namespace Spf
 
 variable {A}
 
+/-- The stalk of `Spf A` at any open prime `p` is a local ring. -/
+instance isLocalRing_stalk (p : carrier A) : IsLocalRing ((Spf A).presheaf.stalk p) :=
+  (Spf A).isLocalRing p
+
 /-- The residue field of `Spf A` at an open prime `p` is the fraction field of `A ⧸ p`
 (EGA I, Ch. I, 10.1.6). -/
 noncomputable def stalkResidueFieldEquiv (p : carrier A) :
     (Spf A).residueField p ≃+* FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
   let e : colimit (completedNeighbourhoodDiagram p) ≅ (Spf A).presheaf.stalk p :=
     completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1
-  haveI := (Spf A).isLocalRing p
   (IsLocalRing.ResidueField.mapEquiv e.commRingCatIsoToRingEquiv).symm.trans (stalkResidueIso p)
 
 /-- The residue field isomorphism sends the residue class of the germ at `p` of the section
@@ -228,6 +238,32 @@ theorem stalkResidueFieldEquiv_residue_germ {p : carrier A} (f : BasicNeighbourh
   -- `stalkResidueIso`, so the residue class of the germ is that of `a` in the colimit
   exact (congrArg (fun x ↦ stalkResidueIso p (IsLocalRing.residue _ x)) h).trans
     (stalkResidueIso_coeff p f a)
+
+/-- Every maximal ideal of an adic ring `A` is an open prime and hence a point of `Spf A`, because
+the ideal of definition lies in the Jacobson radical of the complete ring `A`. -/
+theorem isMaximal_mem_carrier (m : Ideal A) [m.IsMaximal] :
+    (⟨m, Ideal.IsMaximal.isPrime ‹_›⟩ : PrimeSpectrum A) ∈ carrier A := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  exact mem_carrier_of_isMaximal (IsAdicRing.ideal_spec A).2.1 (IsAdicComplete.le_jacobson _) m
+
+variable (A) in
+/-- The closed points of the formal spectrum `Spf A` of an adic ring `A` are homeomorphic to
+`MaximalSpectrum A`. -/
+def closedPointsHomeomorph :
+    closedPoints (carrier A) ≃ₜ MaximalSpectrum A :=
+  have := (IsAdicRing.ideal_spec A).2.2
+  closedPointsHomeomorphMaximalSpectrum
+    (toPrimeSpectrum_mem_carrier (IsAdicRing.ideal_spec A).2.1 (IsAdicComplete.le_jacobson _))
+
+@[simp]
+theorem closedPointsHomeomorph_apply_asIdeal (p : closedPoints (carrier A)) :
+    (closedPointsHomeomorph A p).asIdeal = (p.1 : PrimeSpectrum A).asIdeal :=
+  closedPointsHomeomorphMaximalSpectrum_apply_asIdeal _ p
+
+@[simp]
+theorem closedPointsHomeomorph_symm_apply_asIdeal (m : MaximalSpectrum A) :
+    ((closedPointsHomeomorph A).symm m : PrimeSpectrum A).asIdeal = m.asIdeal :=
+  closedPointsHomeomorphMaximalSpectrum_symm_apply_asIdeal _ m
 
 end Spf
 
