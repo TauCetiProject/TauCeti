@@ -81,15 +81,15 @@ operator of interest.
   `TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`: coherence holds in every kernel chart
   as soon as it holds in one.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
+* `TauCeti.isDetLineCoherentOn_of_detLineChartEquiv_eq`: a family with constant reading in a
+  kernel chart is coherent.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
   families.
 * `TauCeti.detLineOrientationTransport_self`, `TauCeti.detLineOrientationTransport_symm`,
   `TauCeti.detLineOrientationTransport_trans`, `TauCeti.detLineOrientationTransport_neg`,
-  `TauCeti.detLineOrientationTransport_const`,
-  `TauCeti.detLineOrientationTransport_of_forall_eq_const`,
-  `TauCeti.detLineOrientationTransport_congr`, `TauCeti.detLineOrientationTransport_comp`: the laws
-  of orientation transport.
+  `TauCeti.detLineOrientationTransport_const`, `TauCeti.detLineOrientationTransport_congr`,
+  `TauCeti.detLineOrientationTransport_comp`: the laws of orientation transport.
 
 ## References
 
@@ -373,6 +373,33 @@ theorem isDetLineCoherentOn_const {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T�
   obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := hT₀.exists_isOpen_kernelChart
   exact ⟨hv₀, S, hS, G, hG, q, hinv _ hxU, Eventually.of_forall fun _ ↦ ⟨hinv _ hxU, SameRay.rfl⟩⟩
 
+/-- A family of elements of the determinant lines which a kernel chart reads as one fixed nonzero
+element `u` at every point of `s` is coherent on `s`. -/
+theorem isDetLineCoherentOn_of_detLineChartEquiv_eq {Λ G : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} (hT : ContinuousOn T s)
+    (hF : ∀ x ∈ s, IsFredholm (T x)) {u : TauCeti.detLine ℝ G ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ)}
+    (hu : u ≠ 0)
+    (hv : ∀ x ∈ s, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+      detLineChartEquiv (T x) D₂ q h (v x) = u) :
+    IsDetLineCoherentOn T v s := by
+  intro x hx
+  obtain ⟨hx', hxv⟩ := hv x hx
+  obtain ⟨S, hS, G₁, hG₁, q₁, U, -, hxU, hinv⟩ := (hF x hx).exists_isOpen_kernelChart
+  refine ⟨fun h0 ↦ hu (by rw [← hxv, h0, LinearEquiv.map_zero]), S, hS, G₁, hG₁, q₁, hinv _ hxU,
+    ?_⟩
+  -- Near `x`, the transition from the given chart to the kernel chart of `x` is a positive
+  -- multiple of the transition at `x`.
+  filter_upwards [(hT x hx).tendsto.eventually
+      (eventually_detLineChartEquiv_symm_eq_smul (hinv _ hxU) hx'), self_mem_nhdsWithin]
+    with y hcy hy
+  obtain ⟨h, h', c, hc, hcu⟩ := hcy
+  obtain ⟨_, hyv⟩ := hv y hy
+  refine ⟨h, ?_⟩
+  rw [(LinearEquiv.eq_symm_apply (detLineChartEquiv (T y) D₂ q h')).2 hyv,
+    (LinearEquiv.eq_symm_apply (detLineChartEquiv (T x) D₂ q hx')).2 hxv, hcu u]
+  exact SameRay.sameRay_pos_smul_left _ hc
+
 /-- A family which is nonzero at a parameter with Fredholm operator is coherent on the singleton
 of that parameter. -/
 private theorem isDetLineCoherentOn_singleton (hF : IsFredholm (T x₀)) (hv : v x₀ ≠ 0) :
@@ -634,22 +661,6 @@ theorem detLineOrientationTransport_congr {T₀ T₁ : ℝ → E →L[ℝ] F} {a
   rw [hwa, detLineOrientationTransport_rayOfNeZero hT₁ hF₁ hw_coh,
     detLineOrientationTransport_rayOfNeZero hT₀ hF₀ hv, Module.Ray.map_apply, ray_eq_iff]
   simpa only [w, dite_eq_left right_mem_uIcc] using SameRay.rfl
-
-/-- Along a path propositionally equal to `T₀` on `[[a, b]]`, orientation transport is
-`Module.Ray.map` of `LinearMap.detLineOfEq`. -/
-theorem detLineOrientationTransport_of_forall_eq_const (hT : ContinuousOn T (uIcc a b))
-    (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) {T₀ : E →L[ℝ] F}
-    (hconst : ∀ t ∈ uIcc a b, T t = T₀) (o : Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine) :
-    detLineOrientationTransport a b hT hF o =
-      Module.Ray.map (LinearMap.detLineOfEq (congrArg ContinuousLinearMap.toLinearMap
-        ((hconst a left_mem_uIcc).trans (hconst b right_mem_uIcc).symm))) o := by
-  have hFT₀ : IsFredholm T₀ := hconst a left_mem_uIcc ▸ hF a left_mem_uIcc
-  simpa only [Module.Ray.map_detLineOfEq_map_detLineOfEq, LinearMap.detLineOfEq_rfl,
-    Module.Ray.map_refl, Equiv.refl_apply, detLineOrientationTransport_const, id_eq] using
-    detLineOrientationTransport_congr (T₀ := fun _ ↦ T₀) (T₁ := T) continuousOn_const hT
-      (fun _ _ ↦ hFT₀) hF (fun t ht ↦ (hconst t ht).symm)
-      (Module.Ray.map (LinearMap.detLineOfEq
-        (congrArg ContinuousLinearMap.toLinearMap (hconst a left_mem_uIcc))) o)
 
 /-- **Reparametrization law for orientation transport.** For `φ : ℝ → ℝ` continuous on `[[a', b']]`,
 orientation transport for `T ∘ φ` from `a'` to `b'` equals transport for `T` from `φ a'` to `φ b'`.
