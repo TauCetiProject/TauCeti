@@ -211,24 +211,6 @@ namespace TauCeti
 
 variable {ι : Type*} [Finite ι] [DecidableEq ι]
 
-omit [Finite ι] in
-/-- Evaluating a linear combination of standard basis vectors indexed by a subset `t` at coordinate
-`k` recovers the weight at `k` if `k ∈ t`, and `0` otherwise. -/
-private lemma sum_smul_pi_single_apply [Fintype ι] {t : Set ι} [DecidablePred (· ∈ t)]
-    (w : t → ℝ) (k : ι) :
-    (∑ j : t, w j • (Pi.single (j : ι) 1 : ι → ℝ)) k = if hk : k ∈ t then w ⟨k, hk⟩ else 0 := by
-  rw [Finset.sum_apply]
-  split_ifs with hk
-  · rw [Finset.sum_eq_single ⟨k, hk⟩]
-    · simp
-    · intro j _ hjk
-      have hne : (j : ι) ≠ k := fun h => hjk (Subtype.ext h)
-      simp [Pi.single_eq_of_ne' hne]
-    · simp
-  · refine Finset.sum_eq_zero fun j _ => ?_
-    have hjk : (j : ι) ≠ k := fun h => hk (h ▸ j.2)
-    simp [Pi.single_eq_of_ne' hjk]
-
 /-- **Open coordinate faces of the standard simplex.** The intrinsic interior of the face spanned
 by a set `t` of coordinate vertices `Pi.single i 1` consists of the points of that face whose
 coordinates in `t` are strictly positive. -/
@@ -243,8 +225,12 @@ theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
       at hx
     obtain ⟨w, hw0, hw1, rfl⟩ := hx
     intro i hi
-    rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1, sum_smul_pi_single_apply]
-    simpa [hi] using hw0 ⟨i, hi⟩
+    rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1, Finset.sum_apply,
+      Finset.sum_eq_single ⟨i, hi⟩]
+    · simpa using hw0 ⟨i, hi⟩
+    · intro j _ hji
+      simp [Pi.single_eq_of_ne' (fun h => hji (Subtype.ext h))]
+    · simp
   · obtain ⟨_, hsum, hzero⟩ := mem_convexHull_pi_single_iff.1 hx
     rw [Set.image_eq_range, (affineIndependent_pi_single ℝ t).mem_intrinsicInterior_convexHull_iff]
     have hw1 : ∑ j : t, x j.1 = 1 := by
@@ -254,11 +240,11 @@ theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
         hsum]
     refine ⟨fun j => x j.1, fun j => hpos j.1 j.2, hw1, ?_⟩
     rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1]
-    ext k
-    rw [sum_smul_pi_single_apply]
-    split_ifs with hk
-    · rfl
-    · exact (hzero k hk).symm
+    have hsub : ∑ j : t, x j.1 • (Pi.single (j : ι) 1 : ι → ℝ) =
+        ∑ i ∈ univ.filter (· ∈ t), x i • (Pi.single i 1 : ι → ℝ) :=
+      (Finset.sum_subtype _ (fun _ => by simp) (fun i => x i • (Pi.single i 1 : ι → ℝ))).symm
+    rw [hsub, Finset.sum_filter_of_ne fun i _ hxi =>
+      by_contra fun hit => hxi (by simp [hzero i hit]), ← pi_eq_sum_univ']
 
 omit [DecidableEq ι] in
 /-- The intrinsic interior of the standard simplex is `TauCeti.openStdSimplex ℝ ι`. -/

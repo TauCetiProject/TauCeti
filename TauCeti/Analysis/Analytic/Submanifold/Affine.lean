@@ -9,11 +9,10 @@ public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
 public import TauCeti.Analysis.Convex.StdSimplex
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.Topology.Algebra.Module.Basic
 import TauCeti.Analysis.Analytic.Submanifold.Transport
 import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.OpenSimplex
+import TauCeti.Topology.Algebra.Module.SubspaceExchange
 
 /-!
 # Affine subspaces, intrinsic interiors, and open simplices as analytic submanifolds
@@ -23,7 +22,8 @@ submanifold of dimension `Module.finrank 𝕜 W`, every nonempty affine subspace
 submanifold of dimension `Module.finrank 𝕜 A.direction`, and every nonempty intrinsic interior
 `intrinsicInterior 𝕜 s` is an analytic submanifold of dimension `Module.finrank 𝕜 (vectorSpan 𝕜 s)`.
 No completeness assumption on `𝕜` is needed: any linear equivalence of `Fin n → 𝕜` is continuous
-in both directions because `Fin n → 𝕜` carries the product topology (`LinearMap.continuous_on_pi`).
+in both directions because `Fin n → 𝕜` carries the product topology
+(`Submodule.exists_continuousLinearEquiv_preimage_coordSubspace`).
 
 Over `ℝ`, this equips every nonempty open simplex — the intrinsic interior of the convex hull of a
 nonempty finite affinely independent family — with the structure of an analytic submanifold of
@@ -60,69 +60,13 @@ open Set Topology Convexity
 
 section NormedField
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n d : ℕ}
-
-/-- Every linear subspace `W` of `Fin n → 𝕜` is the preimage of the coordinate subspace
-`{y | ∀ i : Fin n, Module.finrank 𝕜 W ≤ i.val → y i = 0}` under a continuous linear equivalence
-of `Fin n → 𝕜`. -/
-private theorem exists_continuousLinearEquiv_preimage_coordSubspace
-    (W : Submodule 𝕜 (Fin n → 𝕜)) :
-    ∃ e : (Fin n → 𝕜) ≃L[𝕜] Fin n → 𝕜,
-      e ⁻¹' {y : Fin n → 𝕜 | ∀ i : Fin n, Module.finrank 𝕜 W ≤ i.val → y i = 0} =
-        (W : Set (Fin n → 𝕜)) := by
-  set d := Module.finrank 𝕜 W
-  have hd : d ≤ n := by simpa using W.finrank_le
-  obtain ⟨Q, hWQ⟩ := W.exists_isCompl
-  have hdimQ : Module.finrank 𝕜 Q = n - d := by
-    have hsum : d + Module.finrank 𝕜 Q = n := by
-      simpa [d] using Submodule.finrank_add_eq_of_isCompl hWQ
-    omega
-  let bW : Module.Basis (Fin d) 𝕜 W := Module.finBasis 𝕜 W
-  let bQ : Module.Basis (Fin (n - d)) 𝕜 Q := Module.finBasisOfFinrankEq 𝕜 Q hdimQ
-  -- Decompose `Fin n → 𝕜` along `W × Q`, placing `W` in the first `d` coordinates and `Q` in the
-  -- remaining `n - d` coordinates.
-  let σ : Fin d ⊕ Fin (n - d) ≃ Fin n :=
-    finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hd))
-  let joinCoords : ((Fin d → 𝕜) × (Fin (n - d) → 𝕜)) ≃ₗ[𝕜] Fin n → 𝕜 :=
-    (LinearEquiv.sumPiEquivProdPi 𝕜 (Fin d) (Fin (n - d)) (fun _ ↦ 𝕜)).symm ≪≫ₗ
-      LinearEquiv.funCongrLeft 𝕜 𝕜 σ.symm
-  let p := Submodule.prodEquivOfIsCompl W Q hWQ
-  let L : (Fin n → 𝕜) ≃ₗ[𝕜] Fin n → 𝕜 :=
-    p.symm ≪≫ₗ (bW.equivFun.prodCongr bQ.equivFun) ≪≫ₗ joinCoords
-  let e : (Fin n → 𝕜) ≃L[𝕜] Fin n → 𝕜 :=
-    { L with
-      continuous_toFun := L.toLinearMap.continuous_on_pi
-      continuous_invFun := L.symm.toLinearMap.continuous_on_pi }
-  refine ⟨e, ?_⟩
-  ext x
-  simp only [mem_preimage, mem_ofPred_eq, SetLike.mem_coe]
-  rw [← σ.forall_congr_right, Sum.forall]
-  have hinl : ∀ j : Fin d, d ≤ (σ (Sum.inl j)).val → e x (σ (Sum.inl j)) = 0 := fun j hj ↦ by
-    have : (σ (Sum.inl j)).val < d := by simp [σ]
-    omega
-  have hinr : (∀ k : Fin (n - d), d ≤ (σ (Sum.inr k)).val → e x (σ (Sum.inr k)) = 0) ↔
-      (p.symm x).2 = 0 := by
-    have hcoord (k : Fin (n - d)) : e x (σ (Sum.inr k)) = bQ.equivFun (p.symm x).2 k := by
-      simp [e, L, joinCoords]
-    simp_rw [show ∀ k : Fin (n - d), d ≤ (σ (Sum.inr k)).val from fun k ↦ by simp [σ],
-      true_implies, hcoord, ← funext_iff, ← Pi.zero_def, ← map_zero bQ.equivFun,
-      bQ.equivFun.injective.eq_iff]
-  rw [and_iff_right hinl, hinr]
-  constructor
-  · intro hxQ
-    have hrepr : x = ((p.symm x).1 : Fin n → 𝕜) + ((p.symm x).2 : Fin n → 𝕜) := by
-      simpa [p] using (p.apply_symm_apply x).symm
-    rw [hrepr, hxQ, ZeroMemClass.coe_zero, add_zero]
-    exact (p.symm x).1.2
-  · intro hxW
-    have hpair : p.symm x = (⟨x, hxW⟩, 0) := p.symm_apply_eq.2 (by simp [p])
-    simp [hpair]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ}
 
 /-- Every linear subspace `W` of `Fin n → 𝕜` is an analytic submanifold of dimension
 `Module.finrank 𝕜 W`. -/
 theorem Submodule.isAnalyticSubmanifold (W : Submodule 𝕜 (Fin n → 𝕜)) :
     TauCeti.IsAnalyticSubmanifold (Module.finrank 𝕜 W) (W : Set (Fin n → 𝕜)) := by
-  obtain ⟨e, he⟩ := exists_continuousLinearEquiv_preimage_coordSubspace W
+  obtain ⟨e, he⟩ := W.exists_continuousLinearEquiv_preimage_coordSubspace
   exact he ▸ (TauCeti.isAnalyticSubmanifold_coordSubspace
     (by simpa using W.finrank_le)).preimage_continuousLinearEquiv e
 
