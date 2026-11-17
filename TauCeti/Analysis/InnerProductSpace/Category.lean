@@ -11,7 +11,6 @@ public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import TauCeti.CategoryTheory.CStar.Basic
 
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.InnerProductSpace.StarOrder
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
@@ -331,10 +330,10 @@ def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L
   invFun f := End.of f
   left_inv _ := rfl
   right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_star' _ := rfl
+  map_mul' a b := by rw [End.mul_asHom, comp_eq_comp, ContinuousLinearMap.mul_def]
+  map_add' a b := End.add_asHom _ _ a b
+  map_smul' r a := End.smul_asHom r a
+  map_star' a := by rw [End.star_asHom, dagger_eq_adjoint, ContinuousLinearMap.star_eq_adjoint]
 
 /-- Applying `endStarAlgEquiv` returns the underlying continuous linear map. -/
 @[simp] theorem endStarAlgEquiv_apply (X : HilbertCat.{u, v} 𝕜) (a : End X) :
@@ -350,27 +349,21 @@ section Complex
 structures agree definitionally with the continuous-linear-map structures. -/
 instance : CStarCategory (HilbertCat.{0, v} ℂ) where
   norm_comp_le' f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
-  norm_self_comp_dagger' := norm_self_comp_dagger
+  norm_sq_le_self_comp_dagger' f := (norm_self_comp_dagger f).ge
   exists_self_comp_dagger_eq {X Y} f := by
-    let T : X →L[ℂ] X := (ContinuousLinearMap.adjoint f).comp f
-    have hpos : 0 ≤ T :=
-      ContinuousLinearMap.nonneg_iff_isPositive.mpr
-        (ContinuousLinearMap.isPositive_adjoint_comp_self f)
-    let g : X →L[ℂ] X := CFC.sqrt T
-    have hsqrt : star g * g = T := by
-      rw [(CFC.sqrt_nonneg T).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self T hpos]
-    exact ⟨g, hsqrt.symm⟩
+    obtain ⟨g, hg⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp
+      (ContinuousLinearMap.nonneg_iff_isPositive.mpr
+        (ContinuousLinearMap.isPositive_adjoint_comp_self f))
+    refine ⟨g, ?_⟩
+    rw [comp_eq_comp, dagger_eq_adjoint, hg, ContinuousLinearMap.mul_def,
+      ContinuousLinearMap.star_eq_adjoint, ← dagger_eq_adjoint, ← comp_eq_comp]
 
 /-- Positivity of an endomorphism in `HilbertCat ℂ` coincides with operator positivity
 `ContinuousLinearMap.IsPositive`. -/
 theorem end_nonneg_iff_isPositive {X : HilbertCat.{0, v} ℂ} {a : End X} :
     0 ≤ a ↔ a.asHom.IsPositive := by
-  have hiff :=
-    (NonUnitalStarAlgHom.map_le_map_iff
-      (f := (endStarAlgEquiv X).toStarAlgHom.toNonUnitalStarAlgHom)
-      (endStarAlgEquiv X).injective (x := 0) (y := a)).symm
-  rw [map_zero] at hiff
-  exact hiff.trans ContinuousLinearMap.nonneg_iff_isPositive
+  rw [← map_le_map_iff (endStarAlgEquiv X), map_zero, endStarAlgEquiv_apply,
+    ContinuousLinearMap.nonneg_iff_isPositive]
 
 end Complex
 

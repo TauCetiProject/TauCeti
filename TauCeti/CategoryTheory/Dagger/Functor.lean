@@ -5,22 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Dagger.Basic
+public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.CategoryTheory.NatIso
+public import TauCeti.CategoryTheory.Dagger.Basic
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Dagger-preserving functors and natural transformations
 
 Preserving a chosen dagger is a property of a native functor. Natural transformations between
 dagger-preserving functors admit a pointwise dagger, and pointwise unitary transformations
-give natural isomorphisms. These constructions require no additive or analytic structure.
+give natural isomorphisms; these constructions require no additive or analytic structure.
+
+When the categories are `R`-linear and the functor is additive and `R`-linear, preserving the
+dagger promotes `Functor.mapEndAlgHom` to a star-algebra homomorphism
+`Functor.mapEndStarAlgHom : End X →⋆ₐ[R] End (F.obj X)` on endomorphisms.
 -/
 
 public section
 
 open CategoryTheory TauCeti
 
-universe v₁ v₂ v₃ u₁ u₂ u₃
+universe w v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace CategoryTheory.Functor
 
@@ -61,6 +67,40 @@ theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
     {X Y : C} (f : X ⟶ Y) : IsUnitary (F.map f) ↔ IsUnitary f := by
   simp only [isUnitary_iff, ← map_dagger, ← Functor.map_comp, ← Functor.map_id,
     F.map_injective.eq_iff]
+
+section StarAlgHom
+
+variable [Preadditive C] [Preadditive D]
+variable (F : C ⥤ D) (R : Type w) [CommSemiring R]
+  [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
+  [F.Additive] [F.Linear R] [F.PreservesDagger]
+
+/-- An additive `R`-linear dagger-preserving functor induces a star-algebra homomorphism on
+endomorphism algebras. -/
+def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
+  __ := F.mapEndAlgHom R X
+  map_star' a := by
+    apply End.ext
+    simpa only [AlgHom.toFun_eq_coe, End.star_asHom, Functor.mapEndAlgHom_asHom] using
+      F.map_dagger a.asHom
+
+/-- Evaluation of the induced endomorphism star-algebra homomorphism on underlying arrows. -/
+@[simp] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
+    (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
+  F.mapEndAlgHom_asHom R X a
+
+/-- Forgetting star-preservation recovers `Functor.mapEndAlgHom`. -/
+@[simp] theorem mapEndStarAlgHom_toAlgHom (X : C) :
+    (F.mapEndStarAlgHom R X).toAlgHom = F.mapEndAlgHom R X :=
+  (rfl)
+
+/-- A faithful additive `R`-linear dagger-preserving functor embeds each endomorphism
+star-algebra. -/
+theorem mapEndStarAlgHom_injective [F.Faithful] (X : C) :
+    Function.Injective (F.mapEndStarAlgHom R X) :=
+  F.mapEndAlgHom_injective R X
+
+end StarAlgHom
 
 end CategoryTheory.Functor
 

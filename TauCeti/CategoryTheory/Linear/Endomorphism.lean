@@ -75,6 +75,12 @@ theorem of_neg (f : X ⟶ X) : End.of (-f) = -End.of f := by
 theorem of_sub (f g : X ⟶ X) : End.of (f - g) = End.of f - End.of g := by
   ext; simp
 
+/-- `End.of` commutes with finite sums. -/
+@[simp]
+theorem of_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ X)) :
+    End.of (∑ i ∈ s, f i) = ∑ i ∈ s, End.of (f i) := by
+  ext; simp
+
 /-- `End.of` commutes with scalar multiplication in an `R`-linear category. -/
 @[simp]
 theorem of_smul {R : Type w} [Semiring R] [Linear R C] (r : R) (f : X ⟶ X) :
