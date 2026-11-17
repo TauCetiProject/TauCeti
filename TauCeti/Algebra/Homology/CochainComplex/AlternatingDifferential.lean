@@ -42,16 +42,11 @@ objects unchanged. It is an abbreviation, so that the API of
 abbrev alternatingDifferential (K : CochainComplex C ℤ) : CochainComplex C ℤ :=
   K.scaleDifferential fun i ↦ (i + 1).negOnePow
 
-/-- The comparison signs `(-1)^(k(k+1)/2)` change by `(-1)^(k+1)` from degree `k` to `k + 1`. -/
-private theorem negOnePow_mul_succ_div_two_succ_mul (k : ℤ) :
-    ((k + 1) * (k + 1 + 1) / 2).negOnePow * (k + 1).negOnePow = (k * (k + 1) / 2).negOnePow := by
-  rw [Int.negOnePow_mul_succ_div_two_succ, mul_comm, ← mul_assoc, Int.units_mul_self, one_mul]
-
 /-- The alternating-differential comparison has degree-`k` component
 `(-1)^(k(k+1)/2)`. No boundedness assumption is needed. -/
 def alternatingDifferentialIso (K : CochainComplex C ℤ) : K ≅ K.alternatingDifferential :=
   (K.scaleDifferentialIso _ (fun k ↦ (k * (k + 1) / 2).negOnePow)
-    negOnePow_mul_succ_div_two_succ_mul).symm
+    Int.negOnePow_mul_succ_div_two_succ_mul).symm
 
 @[simp]
 theorem alternatingDifferentialIso_hom_f (K : CochainComplex C ℤ) (k : ℤ) :
@@ -71,7 +66,7 @@ transported along it. -/
 def alternatingDifferentialNatIso :
     𝟭 (CochainComplex C ℤ) ≅ scaleDifferentialFunctor C fun i ↦ (i + 1).negOnePow :=
   (scaleDifferentialNatIso C _ (fun k ↦ (k * (k + 1) / 2).negOnePow)
-    negOnePow_mul_succ_div_two_succ_mul).symm
+    Int.negOnePow_mul_succ_div_two_succ_mul).symm
 
 @[simp]
 theorem alternatingDifferentialNatIso_hom_app (K : CochainComplex C ℤ) :

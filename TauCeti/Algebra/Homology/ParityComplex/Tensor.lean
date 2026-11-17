@@ -240,11 +240,18 @@ section Parts
 
 /-- The summands of the super tensor product of two complexes with independent parity, graded by
 the pair `(τ₁, τ₂)` of independent parities of the factors: the super tensor product of the parts
-`A τ₁` and `B τ₂`. The body is exposed so that the summands reduce to super tensor products. -/
+`A τ₁` and `B τ₂`. The body is exposed so that the summands reduce to super tensor products, as
+the statements of `TauCeti.ParityComplex.superTensorSummandsIso_hom_apply` and its inverse need. -/
 @[expose]
 noncomputable def superTensorSummands (A B : ParityComplex C) :
     GradedObject (ZMod 2 × ZMod 2) (CochainComplex C ℤ) :=
   fun τ ↦ superTensorObj τ.1 (A τ.1) (B τ.2)
+
+omit [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
+  [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z] in
+@[simp]
+theorem superTensorSummands_apply (A B : ParityComplex C) (τ : ZMod 2 × ZMod 2) :
+    superTensorSummands A B τ = superTensorObj τ.1 (A τ.1) (B τ.2) := (rfl)
 
 /-- The conjugation signs on the summands of the super tensor product. -/
 noncomputable def superTensorSummandsIso (A B : ParityComplex C) :
@@ -252,6 +259,20 @@ noncomputable def superTensorSummandsIso (A B : ParityComplex C) :
       ((GradedObject.mapBifunctor (curriedTensor (CochainComplex C ℤ)) (ZMod 2) (ZMod 2)).obj
         A).obj B :=
   GradedObject.isoMk _ _ fun τ ↦ superTensorObjIsoTensorObj τ.1 (A τ.1) (B τ.2)
+
+/-- On the summand indexed by `τ`, the conjugation signs are the conjugation of
+`superTensorObj τ.1 (A τ.1) (B τ.2)`. -/
+@[simp]
+theorem superTensorSummandsIso_hom_apply (A B : ParityComplex C) (τ : ZMod 2 × ZMod 2) :
+    (superTensorSummandsIso A B).hom τ = (superTensorObjIsoTensorObj τ.1 (A τ.1) (B τ.2)).hom :=
+  (rfl)
+
+/-- On the summand indexed by `τ`, the inverse conjugation signs are the inverse conjugation of
+`superTensorObj τ.1 (A τ.1) (B τ.2)`. -/
+@[simp]
+theorem superTensorSummandsIso_inv_apply (A B : ParityComplex C) (τ : ZMod 2 × ZMod 2) :
+    (superTensorSummandsIso A B).inv τ = (superTensorObjIsoTensorObj τ.1 (A τ.1) (B τ.2)).inv :=
+  (rfl)
 
 instance (A B : ParityComplex C) [GradedObject.HasTensor A B] :
     (superTensorSummands A B).HasMap (fun τ ↦ τ.1 + τ.2) :=

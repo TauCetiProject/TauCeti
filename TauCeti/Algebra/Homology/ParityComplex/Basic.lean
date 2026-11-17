@@ -71,6 +71,9 @@ An exponent computed with `Int.toNat` would instead give `0` there.
 * `TauCeti.ParityComplex.term_parityShift`, `TauCeti.ParityComplex.term_shift` and
   `TauCeti.ParityComplex.term_reindex`: the terms of `Π^k X`, of the native shift and of the raw
   reindexing.
+* `TauCeti.ParityComplex.d_parityShift`, `TauCeti.ParityComplex.d_shift` and
+  `TauCeti.ParityComplex.d_reindex`: the differentials of `Π^k X`, of the native shift, multiplied
+  by `(-1)^k`, and of the raw reindexing.
 * `TauCeti.ParityComplex.parityShiftCompReindexIsoShift`: the raw reindexing after the parity
   change `Π^k` is the native shift, up to the degreewise sign `(-1)^(q k)`.
 
@@ -136,6 +139,14 @@ theorem d_def (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
     X.d q σ = (X.termIso rfl).hom ≫ (X (σ - q)).d q (q + 1) ≫
       (X.termIso (by push_cast; ring)).inv := (rfl)
 
+/-- The differential is the differential, into any degree `q' = q + 1`, of the part of any
+independent parity `τ = σ - q`, under the identifications of terms. -/
+theorem d_eq (X : ParityComplex C) {q q' : ℤ} {σ τ : ZMod 2} (h : σ - q = τ) (hq : q + 1 = q') :
+    X.d q σ = (X.termIso h).hom ≫ (X τ).d q q' ≫
+      eqToHom (by subst h hq; exact (X.term_eq (by push_cast; ring)).symm) := by
+  subst h hq
+  rfl
+
 /-- The differential of a complex with independent parity squares to zero. -/
 @[reassoc (attr := simp)]
 theorem d_comp_d (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
@@ -154,6 +165,13 @@ def termMap {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
 `σ - q`, under the identifications of terms. -/
 theorem termMap_def {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
     termMap f q σ = (X.termIso rfl).hom ≫ (f (σ - q)).f q ≫ (Y.termIso rfl).inv := (rfl)
+
+/-- The component of an even chain map is the component of its part of any independent parity
+`τ = σ - q`, under the identifications of terms. -/
+theorem termMap_eq {X Y : ParityComplex C} (f : X ⟶ Y) {q : ℤ} {σ τ : ZMod 2} (h : σ - q = τ) :
+    termMap f q σ = (X.termIso h).hom ≫ (f τ).f q ≫ (Y.termIso h).inv := by
+  subst h
+  rfl
 
 /-- The component of the identity is the identity. -/
 @[simp]
@@ -200,6 +218,29 @@ theorem parityShift_map_apply (k : ZMod 2) {X Y : ParityComplex C} (f : X ⟶ Y)
 theorem term_parityShift (k : ZMod 2) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
     ((parityShift C k).obj X).term q σ = X.term q (σ + k) := by
   rw [term, term, parityShift_obj_apply, sub_add_eq_add_sub]
+
+/-- The parity change `Π^k` keeps the differential: the differential of `Π^k X` from parity `σ` is
+the differential of `X` from parity `σ + k`. -/
+theorem d_parityShift (k : ZMod 2) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
+    ((parityShift C k).obj X).d q σ =
+      eqToHom (term_parityShift k X q σ) ≫ X.d q (σ + k) ≫
+        eqToHom (by rw [term_parityShift, add_right_comm]) := by
+  rw [d_def, X.d_eq (sub_add_eq_add_sub σ (q : ZMod 2) k).symm rfl]
+  simp [termIso]
+  -- The remaining sides agree since the parts of `Π^k X` are parts of `X` by definition.
+  rfl
+
+/-- The parity change `Π^k` keeps the components of even chain maps: the component of `Π^k f` on
+parity `σ` is the component of `f` on parity `σ + k`. -/
+theorem termMap_parityShift (k : ZMod 2) {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ)
+    (σ : ZMod 2) :
+    termMap ((parityShift C k).map f) q σ =
+      eqToHom (term_parityShift k X q σ) ≫ termMap f q (σ + k) ≫
+        eqToHom (term_parityShift k Y q σ).symm := by
+  rw [termMap_def, termMap_eq f (sub_add_eq_add_sub σ (q : ZMod 2) k).symm]
+  simp [termIso]
+  -- The remaining sides agree since the parts of `Π^k f` are parts of `f` by definition.
+  rfl
 
 /-- The parity change `Π^0` is the identity. -/
 def parityShiftZeroIso : parityShift C 0 ≅ 𝟭 (ParityComplex C) :=
@@ -281,6 +322,31 @@ theorem term_reindex (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
   -- `i ↦ i + k` are the terms of degree `q + k` by definition.
   rfl
 
+/-- The raw reindexing keeps the differential: the differential of the reindexing by `k` from
+degree `q` and parity `σ` is the differential of `X` from degree `q + k` and parity `σ + k`. -/
+theorem d_reindex (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
+    ((reindex C k).obj X).d q σ =
+      eqToHom (term_reindex k X q σ) ≫ X.d (q + k) (σ + k) ≫
+        eqToHom (by rw [term_reindex, add_right_comm q, add_right_comm σ]) := by
+  rw [d_def, X.d_eq (τ := σ - q) (by push_cast; ring) (add_right_comm q k 1)]
+  simp [termIso]
+  -- The remaining sides agree since the differentials of the restriction along `i ↦ i + k`
+  -- are those of degree `q + k` by definition.
+  rfl
+
+/-- The raw reindexing keeps the components of even chain maps: the component of the reindexing
+of `f` by `k` in degree `q` and parity `σ` is the component of `f` in degree `q + k` and parity
+`σ + k`. -/
+theorem termMap_reindex (k : ℤ) {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
+    termMap ((reindex C k).map f) q σ =
+      eqToHom (term_reindex k X q σ) ≫ termMap f (q + k) (σ + k) ≫
+        eqToHom (term_reindex k Y q σ).symm := by
+  rw [termMap_def, termMap_eq f (by push_cast; ring : σ + k - ((q + k : ℤ) : ZMod 2) = σ - q)]
+  simp [termIso]
+  -- The remaining sides agree since the components of the restriction along `i ↦ i + k`
+  -- are those of degree `q + k` by definition.
+  rfl
+
 end General
 
 section Shift
@@ -312,6 +378,33 @@ theorem term_shift (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
     ((shift C k).obj X).term q σ = X.term (q + k) σ := by
   rw [term, term, shift_obj_apply, CochainComplex.shiftFunctor_obj_X', Int.cast_add,
     CharTwo.sub_eq_add, CharTwo.sub_eq_add, add_assoc]
+
+/-- The native shift by `k` multiplies the differential by `(-1)^k`: the differential of the shift
+from degree `q` and parity `σ` is `(-1)^k` times the differential of `X` from degree `q + k` and
+parity `σ`. -/
+theorem d_shift (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
+    ((shift C k).obj X).d q σ =
+      k.negOnePow • (eqToHom (term_shift k X q σ) ≫ X.d (q + k) σ ≫
+        eqToHom (by rw [term_shift, add_right_comm])) := by
+  rw [d_def, X.d_eq (τ := σ - q + k) (by push_cast; rw [← sub_sub, CharTwo.sub_eq_add (σ - q)])
+    (add_right_comm q k 1)]
+  -- The differential of the shift of a cochain complex is the signed differential
+  -- (`CochainComplex.shiftFunctor_obj_d'`), here read on the part `X (σ - q + k)`.
+  simp only [termIso, eqToIso.hom, eqToIso.inv]
+  change eqToHom _ ≫ (k.negOnePow • (X (σ - q + k)).d (q + k) (q + 1 + k)) ≫ eqToHom _ = _
+  simp [Units.smul_def]
+
+/-- The native shift keeps the components of even chain maps: the component of the shift of `f`
+by `k` in degree `q` and parity `σ` is the component of `f` in degree `q + k` and parity `σ`. -/
+theorem termMap_shift (k : ℤ) {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
+    termMap ((shift C k).map f) q σ =
+      eqToHom (term_shift k X q σ) ≫ termMap f (q + k) σ ≫ eqToHom (term_shift k Y q σ).symm := by
+  rw [termMap_def,
+    termMap_eq f (τ := σ - q + k) (by push_cast; rw [← sub_sub, CharTwo.sub_eq_add (σ - q)])]
+  simp [termIso]
+  -- The remaining sides agree since the components of the shift by `k` are those of degree
+  -- `q + k` by definition.
+  rfl
 
 variable (C) in
 /-- **Raw reindexing and the native shift.** Reindexing by `k : ℤ` after the parity change
