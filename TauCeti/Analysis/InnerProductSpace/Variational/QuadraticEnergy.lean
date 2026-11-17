@@ -36,8 +36,7 @@ simplifies to `-ℓ (hB.solutionOfFunctional ℓ)` (the global minimum value whe
   `IsCoercive.isMinOn_quadraticEnergy_toSesqForm_formSolutionMap`: identification for `H`-forcing
   `ContinuousLinearMap.toSesqForm J h`.
 * `IsCoercive.quadraticEnergy_solutionOfFunctional`,
-  `IsCoercive.quadraticEnergy_toDual_solutionOfInner`,
-  `IsCoercive.quadraticEnergy_formSolutionMap`, and
+  `IsCoercive.quadraticEnergy_toDual_solutionOfInner`, and
   `IsCoercive.quadraticEnergy_innerSL_comp_formSolutionMap`: values of `TauCeti.quadraticEnergy` at
   Lax--Milgram solutions.
 
@@ -142,7 +141,8 @@ theorem quadraticEnergy_toDual_solutionOfInner (hB : IsCoercive B) (F : V) :
     solutionOfFunctional_toDual, InnerProductSpace.toDual_apply_apply]
 
 /-- Value of `TauCeti.quadraticEnergy B ((innerSL ℝ h).comp J)` at `hB.formSolutionMap J h`
-(its global minimum value when `B` is symmetric). -/
+(its global minimum value when `B` is symmetric). Stated in `simp`-normal form for
+`ContinuousLinearMap.toSesqForm J h` (`ContinuousLinearMap.toSesqForm_apply_coe`). -/
 @[simp]
 theorem quadraticEnergy_innerSL_comp_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
     TauCeti.quadraticEnergy B ((innerSL ℝ h).comp J) (hB.formSolutionMap J h) =
@@ -150,13 +150,6 @@ theorem quadraticEnergy_innerSL_comp_formSolutionMap (hB : IsCoercive B) (J : V 
   rw [TauCeti.quadraticEnergy_real_apply, hB.apply_formSolutionMap]
   simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply]
   ring
-
-/-- Value of `TauCeti.quadraticEnergy B (ContinuousLinearMap.toSesqForm J h)` at
-`hB.formSolutionMap J h` (its global minimum value when `B` is symmetric). -/
-theorem quadraticEnergy_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
-    TauCeti.quadraticEnergy B (ContinuousLinearMap.toSesqForm J h) (hB.formSolutionMap J h) =
-      -⟪h, J (hB.formSolutionMap J h)⟫_ℝ := by
-  simp
 
 end IsCoercive
 
