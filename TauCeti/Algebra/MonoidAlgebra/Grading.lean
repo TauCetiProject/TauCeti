@@ -32,6 +32,9 @@ infinite fibre, as is the rank of a free module of infinite rank.
   `single m 1` with `f m = i`.
 * `AddMonoidAlgebra.finrank_gradeBy`: the rank of the piece of grade `i` is the number of
   elements of `M` of grade `i`.
+* `AddMonoidAlgebra.coeff_decompose_gradeBy` and
+  `AddMonoidAlgebra.coe_decompose_gradeBy_ne_zero_iff`: the projection onto grade `i` restricts
+  coefficients to `f ⁻¹' {i}`, and is nonzero iff some supported exponent has weight `i`.
 * `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
   homomorphism `f : G →+ ι`, the homogeneous unit degrees are the range of `f`.
 -/
@@ -69,6 +72,46 @@ instance (f : M → ι) (i : ι) : Module.Free R (gradeBy R f i) :=
 theorem finrank_gradeBy [StrongRankCondition R] (f : M → ι) (i : ι) :
     Module.finrank R (gradeBy R f i) = Nat.card (f ⁻¹' {i}) :=
   Module.finrank_eq_nat_card_basis (basisGradeBy R f i)
+
+section Decompose
+
+variable {R} [AddMonoid M] [DecidableEq ι] [AddMonoid ι] (f : M →+ ι)
+
+/-- Projection of `x : R[M]` onto the `i`-th piece of `gradeBy R f` restricts the coefficients of
+`x` to the fibre `f ⁻¹' {i}`. -/
+@[simp]
+theorem coeff_decompose_gradeBy (x : R[M]) (i : ι) (m : M) :
+    (DirectSum.decompose (gradeBy R f) x i : R[M]).coeff m =
+      if f m = i then x.coeff m else 0 := by
+  induction x using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb =>
+    rw [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add]
+    split_ifs with h <;> simp [ha, hb, h]
+  | single g r =>
+    rw [GradesBy.decompose_single]
+    by_cases hgi : f g = i
+    · subst hgi
+      rw [DirectSum.of_eq_same]
+      by_cases hmg : m = g
+      · subst hmg; simp
+      · simp [Ne.symm hmg]
+    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hgi)]
+      by_cases hmg : m = g
+      · subst hmg; simp [hgi]
+      · simp [Ne.symm hmg]
+
+/-- The `i`-th homogeneous component of `x : R[M]` under `gradeBy R f` is nonzero if and only if
+some supported exponent of `x` has weight `i`. -/
+theorem coe_decompose_gradeBy_ne_zero_iff (x : R[M]) (i : ι) :
+    (DirectSum.decompose (gradeBy R f) x i : R[M]) ≠ 0 ↔
+      ∃ m ∈ x.coeff.support, f m = i := by
+  rw [Ne, ← coeff_eq_zero, Finsupp.ext_iff, not_forall]
+  simp only [Finsupp.zero_apply, coeff_decompose_gradeBy, ite_eq_right_iff, Classical.not_imp,
+    ← Finsupp.mem_support_iff]
+  exact ⟨fun ⟨m, hfi, hm⟩ ↦ ⟨m, hm, hfi⟩, fun ⟨m, hm, hfi⟩ ↦ ⟨m, hfi, hm⟩⟩
+
+end Decompose
 
 end AddMonoidAlgebra
 
