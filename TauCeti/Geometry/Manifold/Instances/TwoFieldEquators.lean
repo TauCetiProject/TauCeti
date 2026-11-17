@@ -95,7 +95,8 @@ noncomputable def twoFieldEquatorsChartedSpace :
 theorem simplyConnectedSpace_twoFieldEquators (hn : 2 ≤ n) :
     SimplyConnectedSpace (twoFieldEquators u v) := by
   have := simplyConnectedSpace_sphere_euclideanSpace hn
-  have := simplyConnectedSpace_sphere_of_finrank_eq (E := E) n
+  have := simplyConnectedSpace_sphere_of_lt_finrank (E := E)
+    (by rw [Fact.out (p := finrank ℝ E = n + 3)]; omega) 0 zero_le_one
   exact simplyConnectedSpace_of_exists_trivialization
     (exists_trivialization_twoFieldEquators_sphere (n := n) hu hv huv)
 
@@ -117,7 +118,8 @@ theorem nonempty_homologicalOrientation_twoFieldEquators (hn : 2 ≤ n) (hu : Co
       HomologicalOrientation (twoFieldEquators u v) (EuclideanSpace ℝ (Fin (n + 2 + n)))
         (n + 2 + n)) := by
   have := simplyConnectedSpace_sphere_euclideanSpace hn
-  have := simplyConnectedSpace_sphere_of_finrank_eq (E := E) n
+  have := simplyConnectedSpace_sphere_of_lt_finrank (E := E)
+    (by rw [Fact.out (p := finrank ℝ E = n + 3)]; omega) 0 zero_le_one
   exact nonempty_homologicalOrientation_of_exists_trivialization
     (exists_trivialization_twoFieldEquators_sphere (n := n) hu hv huv)
 
