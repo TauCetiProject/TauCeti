@@ -158,15 +158,10 @@ theorem measure_eval_ne_le (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ�
     simp [sub_eq_zero]
   have hmeas : MeasurableSet {ω | N t ω - N s ω = 0} :=
     ((h.measurable t).sub (h.measurable s)) (measurableSet_singleton 0)
-  have hreal : P.real {ω | N t ω ≠ N s ω} ≤ (α : ℝ) * (t - s : ℝ≥0) := by
-    rw [hset, probReal_compl_eq_one_sub hmeas, h.measureReal_sub_eq_zero hst, ← NNReal.coe_sub hst]
-    linarith [Real.one_sub_le_exp_neg ((α : ℝ) * (t - s : ℝ≥0))]
-  calc
-    P {ω | N t ω ≠ N s ω} = ENNReal.ofReal (P.real {ω | N t ω ≠ N s ω}) :=
-      (ofReal_measureReal (measure_ne_top P _)).symm
-    _ ≤ ENNReal.ofReal ((α : ℝ) * (t - s : ℝ≥0)) := ENNReal.ofReal_le_ofReal hreal
-    _ = (α : ℝ≥0∞) * ((t - s : ℝ≥0) : ℝ≥0∞) := by
-      rw [← NNReal.coe_mul, ENNReal.ofReal_coe_nnreal, ENNReal.coe_mul]
+  rw [← ofReal_measureReal (measure_ne_top P _), ← ENNReal.coe_mul, ENNReal.ofReal_le_coe,
+    hset, probReal_compl_eq_one_sub hmeas, h.measureReal_sub_eq_zero hst, ← NNReal.coe_sub hst,
+    NNReal.coe_mul]
+  linarith [Real.one_sub_le_exp_neg ((α : ℝ) * (t - s : ℝ≥0))]
 
 /-- A Poisson process of rate zero vanishes almost surely at every time. -/
 theorem eval_ae_eq_zero (h : IsFilteredPoissonProcess ℱ 0 N P) (t : ℝ≥0) :

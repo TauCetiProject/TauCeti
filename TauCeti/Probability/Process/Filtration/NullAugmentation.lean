@@ -168,8 +168,9 @@ instance isRightContinuous_nullAugment [LinearOrder ι] [TopologicalSpace ι] [O
 /-- On a first-countable linearly ordered time axis with the order topology, if every event of
 `ℱ.rightCont i` agrees `P`-almost everywhere with an event of `ℱ i`, then `ℱ.nullAugment P` is
 right-continuous. -/
-theorem isRightContinuous_nullAugment_of_rightCont_le [LinearOrder ι] [TopologicalSpace ι]
-    [OrderTopology ι] [FirstCountableTopology ι] {ℱ : Filtration ι m} {P : Measure Ω}
+theorem isRightContinuous_nullAugment_of_rightCont_le_nullAugment [LinearOrder ι]
+    [TopologicalSpace ι] [OrderTopology ι] [FirstCountableTopology ι]
+    {ℱ : Filtration ι m} {P : Measure Ω}
     (h : ∀ i, ℱ.rightCont i ≤ ℱ.nullAugment P i) :
     (ℱ.nullAugment P).IsRightContinuous := by
   constructor

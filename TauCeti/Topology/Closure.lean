@@ -36,6 +36,8 @@ into it.
   `closure B \ B` is not contained in `A ∪ {y₀}` for any `A` disjoint from `B`.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
   it.
+* `Dense.frequently_mem_nhdsWithin`: a dense set occurs frequently in `𝓝[t] x` for any open set
+  `t` whose filter `𝓝[t] x` is nontrivial.
 -/
 
 public section
@@ -85,3 +87,18 @@ theorem mapsTo_of_tendsto_of_isClosed {α ι : Type*} {l : Filter ι} [l.NeBot] 
   fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Filter.Eventually.of_forall fun m ↦ hu m hs)
 
 end TauCeti
+
+/-- A dense set `D` occurs frequently in `𝓝[t] x` whenever `t` is open and `𝓝[t] x` is
+nontrivial. -/
+theorem Dense.frequently_mem_nhdsWithin {X : Type*} [TopologicalSpace X] {D t : Set X}
+    (hD : Dense D) (ht : IsOpen t) {x : X} [h : (𝓝[t] x).NeBot] :
+    ∃ᶠ y in 𝓝[t] x, y ∈ D := by
+  rw [Filter.frequently_iff]
+  intro s hs
+  obtain ⟨u, hu, v, hv, rfl⟩ := Filter.mem_inf_iff.mp hs
+  obtain ⟨w, hwu, hwo, hxw⟩ := mem_nhds_iff.mp hu
+  have hwt : w ∩ t ∈ 𝓝[t] x :=
+    Filter.inter_mem (Filter.mem_inf_of_left (hwo.mem_nhds hxw))
+      (Filter.mem_inf_of_right (Filter.mem_principal_self t))
+  obtain ⟨y, hyw, hyD⟩ := hD.inter_open_nonempty (w ∩ t) (hwo.inter ht) (h.nonempty_of_mem hwt)
+  exact ⟨y, ⟨hwu hyw.1, hv hyw.2⟩, hyD⟩

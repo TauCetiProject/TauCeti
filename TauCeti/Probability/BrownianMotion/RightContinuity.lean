@@ -76,7 +76,7 @@ the completed ambient space of `Filtration.nullAugment`; no completeness of `P` 
 theorem isRightContinuous_nullAugment_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) :
     ((Filtration.natural W hmeas).nullAugment P).IsRightContinuous :=
-  Filtration.isRightContinuous_nullAugment_of_rightCont_le
+  Filtration.isRightContinuous_nullAugment_of_rightCont_le_nullAugment
     (hW.rightCont_natural_le_nullAugment hmeas)
 
 end ProbabilityTheory.IsBrownianReal

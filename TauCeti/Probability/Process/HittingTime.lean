@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Topology.Order.LeftRight
 
 /-!
 # Closed-set hitting times of continuous and right-continuous processes
@@ -63,16 +64,11 @@ theorem exists_hittingAfter_eq_of_isRightContinuous (hs : IsClosed s)
   refine ⟨u₀, by simp [hittingAfter_def, hex, A, u₀], le_csInf hne fun _ hu ↦ hu.1, ?_⟩
   by_cases hmem : u₀ ∈ A
   · exact hmem.2
-  · obtain ⟨w, hw⟩ := hne
-    have hu₀w : u₀ < w := lt_of_le_of_ne (csInf_le hbdd hw) fun h ↦ hmem (h ▸ hw)
-    have hfreq : ∃ᶠ v in 𝓝[>] u₀, X v ω ∈ s := by
-      rw [Filter.frequently_iff]
-      intro U hU
-      obtain ⟨z, hz, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hu₀w).mp hU
-      obtain ⟨v, hvA, hvz⟩ := exists_lt_of_csInf_lt ⟨w, hw⟩ hz
-      have hu₀v : u₀ < v := lt_of_le_of_ne (csInf_le hbdd hvA) fun h ↦ hmem (h ▸ hvA)
-      exact ⟨v, hsub ⟨hu₀v, hvz⟩, hvA.2⟩
-    exact hs.mem_of_frequently_of_tendsto hfreq (hX u₀)
+  · have hA_sub : A ⊆ Ioi u₀ := fun v hv ↦
+      lt_of_le_of_ne (csInf_le hbdd hv) fun h ↦ hmem (h ▸ hv)
+    have : (𝓝[A] u₀).NeBot := mem_closure_iff_nhdsWithin_neBot.mp (csInf_mem_closure hne hbdd)
+    exact hs.mem_of_tendsto ((hX u₀).mono_left (nhdsWithin_mono u₀ hA_sub))
+      (eventually_nhdsWithin_of_forall fun _ hv ↦ hv.2)
 
 /-- At a finite closed-set entrance of a right-continuous path, the path lies in the target set. -/
 theorem hittingAfter_mem_of_isRightContinuous_of_ne_top (hs : IsClosed s)
@@ -189,18 +185,8 @@ theorem Adapted.isStoppingTime_hittingAfter_of_isClopen_of_isRightContinuous
       ext ω
       simp only [mem_ofPred_eq, hs.isClosed.hittingAfter_le_iff_of_isRightContinuous (hrc ω),
         mem_union, mem_preimage, mem_iUnion, exists_prop]
-      constructor
-      · rintro ⟨u, ⟨hau, hut⟩, hus⟩
-        rcases hut.eq_or_lt with rfl | hut
-        · exact Or.inl hus
-        · obtain ⟨u', hu', huu'⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hut).mp
-            ((hrc ω u) (hs.isOpen.mem_nhds hus))
-          obtain ⟨n, hn⟩ := hdense.exists_mem_open isOpen_Ioo (nonempty_Ioo.mpr (lt_min hu' hut))
-          exact Or.inr ⟨n, ⟨hau.trans hn.1.le, (hn.2.trans_le (min_le_right _ _)).le⟩,
-            huu' ⟨hn.1, hn.2.trans_le (min_le_left _ _)⟩⟩
-      · rintro (hts | ⟨n, hqn, hns⟩)
-        · exact ⟨t, ⟨hat, le_rfl⟩, hts⟩
-        · exact ⟨q n, hqn, hns⟩
+      simpa only [mem_range, exists_exists_eq_and] using
+        Dense.exists_mem_Icc_apply_mem_iff_of_isOpen hdense hat (fun u _ ↦ hrc ω u) hs.isOpen
     rw [heq]
     exact (hX t hs.isOpen.measurableSet).union
       (.iUnion fun n ↦ .iUnion fun hqn ↦

@@ -24,21 +24,16 @@ Consequently:
 * `N` remains a filtered Poisson process on `ℱ.rightCont`, on `ℱ.nullAugment P` (under
   `P.completion`), and hence on `(ℱ.ambientNullAugmentation P).rightCont` and
   `(ℱ.nullAugment P).rightCont`, with no path-continuity hypothesis;
-* the entire future increment process `(N (s + v) - N s)_v` is independent of `ℱ.rightCont s`;
+* for any filtration `ℱ`, the entire future increment process `(N (s + v) - N s)_v` is independent
+  of `ℱ.rightCont s` (`indep_comap_shift_rightCont`);
 * both `(Filtration.natural N hmeas).ambientNullAugmentation P` and
   `(Filtration.natural N hmeas).nullAugment P` are already right-continuous.
 
-The usual-augmentation preservation theorems (`rightCont`, `nullAugment`) parallel
-`TauCeti.Probability.IsFilteredPreBrownianReal.rightCont` and `nullAugment` in
-`TauCeti.Probability.BrownianMotion.UsualFiltration` via
-`MeasureTheory.Adapted.indep_comap_sub_rightCont`, and the natural-filtration Blumenthal
-inclusions (`indep_comap_shift_rightCont`, `rightCont_natural_le_nullAugment`,
-`isRightContinuous_nullAugment_natural`) parallel
-`ProbabilityTheory.IsBrownianReal.indep_shift_rightCont_natural`,
-`rightCont_natural_le_nullAugment`, and `isRightContinuous_nullAugment_natural` in
-`TauCeti.Probability.BrownianMotion.RightContinuity` through the shared filtration infrastructure
-in `TauCeti.Probability.Process.Filtration.Natural` and
-`TauCeti.Probability.Process.Filtration.NullAugmentation`.
+See also the analogous Brownian results in `TauCeti.Probability.BrownianMotion.UsualFiltration`
+(`TauCeti.Probability.IsFilteredPreBrownianReal.rightCont`, `nullAugment`) and
+`TauCeti.Probability.BrownianMotion.RightContinuity`
+(`ProbabilityTheory.IsBrownianReal.indep_shift_rightCont_natural`,
+`rightCont_natural_le_nullAugment`, `isRightContinuous_nullAugment_natural`).
 
 ## References
 
@@ -83,8 +78,7 @@ theorem ae_eventually_eval_eq_of_sub_le_two_inv_pow (h : IsFilteredPoissonProces
     (ne_top_of_le_ne_top (by norm_num : (2 : ℝ≥0∞) ≠ ∞) ?_)
   rw [← ENNReal.tsum_geometric_two]
   refine tsum_le_tsum fun n ↦ (ENNReal.coe_le_coe.mpr (hle n)).trans_eq ?_
-  push_cast
-  rfl
+  rw [ENNReal.coe_pow, ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat]
 
 /-- At every fixed time `s`, `N (s + 2⁻ⁿ)` eventually equals `N s` almost surely. -/
 theorem ae_eventually_eval_add_two_inv_pow_eq (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0) :
@@ -167,7 +161,7 @@ right-continuous, without assuming completeness of the original probability spac
 theorem isRightContinuous_nullAugment_natural (h : IsFilteredPoissonProcess ℱ α N P)
     (hmeas : ∀ t, StronglyMeasurable (N t)) :
     ((Filtration.natural N hmeas).nullAugment P).IsRightContinuous :=
-  Filtration.isRightContinuous_nullAugment_of_rightCont_le
+  Filtration.isRightContinuous_nullAugment_of_rightCont_le_nullAugment
     (h.rightCont_natural_le_nullAugment hmeas)
 
 end TauCeti.Probability.IsFilteredPoissonProcess

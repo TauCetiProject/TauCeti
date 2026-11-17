@@ -86,16 +86,10 @@ theorem measure_sub_gt_one_le (h : IsFilteredPoissonProcess ℱ α N P) (s t : �
       rw [Pi.sub_apply] at hn
       simp only [Pi.sub_apply, hn, Nat.floor_natCast, Nat.one_lt_cast]
       omega
-    have hreal : P.real {ω | 1 < N t ω - N s ω} ≤ ((α * (t - s) : ℝ≥0) : ℝ) ^ 2 / 2 := by
-      rw [measureReal_congr hae, hfloor.measureReal_eq (p := fun n ↦ 2 ≤ n) .of_discrete]
-      exact poissonMeasure_real_Ici_two_le (α * (t - s))
-    calc
-      P {ω | 1 < N t ω - N s ω} = ENNReal.ofReal (P.real {ω | 1 < N t ω - N s ω}) :=
-        (ofReal_measureReal (measure_ne_top P _)).symm
-      _ ≤ ENNReal.ofReal (((α * (t - s) : ℝ≥0) : ℝ) ^ 2 / 2) := ENNReal.ofReal_le_ofReal hreal
-      _ = (((α * (t - s)) ^ 2 / 2 : ℝ≥0) : ℝ≥0∞) := by
-        norm_cast
-        exact ENNReal.ofReal_coe_nnreal
+    rw [← ofReal_measureReal (measure_ne_top P _), ENNReal.ofReal_le_coe,
+      measureReal_congr hae, hfloor.measureReal_eq (p := fun n ↦ 2 ≤ n) .of_discrete]
+    simpa only [Ici_def, NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat] using
+      poissonMeasure_real_Ici_two_le (α * (t - s))
   · have hzero : P {ω | 1 < N t ω - N s ω} = 0 := by
       have hae : ∀ᵐ ω ∂P, ¬ (1 < N t ω - N s ω) :=
         (h.ae_le hts).mono fun _ hle hgt ↦ by linarith
@@ -208,11 +202,9 @@ private lemma ae_dyadic_double_cell_le_one (h : IsFilteredPoissonProcess ℱ α 
       push_cast
       simp only [inv_pow]
       field_simp
-    exact le_of_eq <| by
-      norm_cast
-      rw [hnn]
-      push_cast
-      rfl
+    refine le_of_eq ?_
+    rw [← ENNReal.coe_natCast, ← ENNReal.coe_mul, hnn, ENNReal.coe_mul, ENNReal.coe_pow,
+      ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat]
   have hsum : (∑' m, P (bad m)) ≠ ∞ := by
     refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hbad)
     rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric_two]

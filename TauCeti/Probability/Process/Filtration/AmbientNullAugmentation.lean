@@ -154,7 +154,7 @@ namespace MeasureTheory.Filtration
 
 /-- At every time of a partially ordered index set, the right-continuation of the original-space
 null augmentation is the ambient-measurable part of `(ℱ.nullAugment P).rightCont`. -/
-theorem rightCont_ambientNullAugmentation_apply {Ω ι : Type*} {m : MeasurableSpace Ω}
+theorem rightCont_ambientNullAugmentation_apply_eq_inf {Ω ι : Type*} {m : MeasurableSpace Ω}
     [PartialOrder ι] (ℱ : Filtration ι m) (P : Measure Ω) (i : ι) :
     (ℱ.ambientNullAugmentation P).rightCont i = m ⊓ (ℱ.nullAugment P).rightCont i := by
   classical
@@ -181,7 +181,7 @@ theorem rightCont_ambientNullAugmentation {Ω ι : Type*} {m : MeasurableSpace �
     (ℱ.ambientNullAugmentation P).rightCont = ℱ.rightCont.ambientNullAugmentation P := by
   apply Filtration.ext
   funext i
-  rw [rightCont_ambientNullAugmentation_apply, rightCont_nullAugment_apply,
+  rw [rightCont_ambientNullAugmentation_apply_eq_inf, rightCont_nullAugment_apply,
     ambientNullAugmentation_apply]
 
 /-- Original-space null augmentation preserves right-continuity of filtrations on any

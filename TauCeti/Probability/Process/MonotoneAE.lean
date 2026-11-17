@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Filter
 public import Mathlib.Topology.Order.Cadlag
-import Mathlib.Topology.Order.Basic
+import TauCeti.Topology.Closure
 
 /-!
 # Simultaneous almost-sure monotonicity of right-continuous processes
@@ -55,21 +55,19 @@ theorem ae_monotone_of_ae_le_of_isRightContinuous {Ω ι β : Type*} [Measurable
     · exact le_rfl
     · have hle_of_dense {b : ι} (hsb : s < b)
           (hIoo : ∀ i, s < q i → q i < b → X (q i) ω ≤ X b ω) : X s ω ≤ X b ω := by
+        have : (𝓝[>] s).NeBot := nhdsGT_neBot_of_exists_gt ⟨b, hsb⟩
         refine isClosed_Iic.mem_of_frequently_of_tendsto ?_ (hrcω s)
-        rw [Filter.frequently_iff]
-        intro U hU
-        obtain ⟨s', hs', hss'⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hsb).mp hU
-        obtain ⟨i, hi⟩ := hdense.exists_mem_open isOpen_Ioo (nonempty_Ioo.mpr (lt_min hs' hsb))
-        exact ⟨q i, hss' ⟨hi.1, hi.2.trans_le (min_le_left _ _)⟩,
-          hIoo i hi.1 (hi.2.trans_le (min_le_right _ _))⟩
+        refine ((Dense.frequently_mem_nhdsWithin hdense isOpen_Ioi).and_eventually
+          (Ioo_mem_nhdsGT hsb)).mono ?_
+        rintro _ ⟨⟨i, rfl⟩, hx⟩
+        exact hIoo i hx.1 hx.2
       by_cases ht : ∃ t₁, t < t₁
-      · obtain ⟨t₁, htt₁⟩ := ht
+      · have : (𝓝[>] t).NeBot := nhdsGT_neBot_of_exists_gt ht
         refine isClosed_Ici.mem_of_frequently_of_tendsto ?_ (hrcω t)
-        rw [Filter.frequently_iff]
-        intro V hV
-        obtain ⟨t', ht', htt'⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' htt₁).mp hV
-        obtain ⟨j, hj⟩ := hdense.exists_mem_open isOpen_Ioo (nonempty_Ioo.mpr ht')
-        exact ⟨q j, htt' hj, hle_of_dense (hst.trans hj.1) fun i _ hib ↦ hq i j hib.le⟩
+        refine ((Dense.frequently_mem_nhdsWithin hdense isOpen_Ioi).and_eventually
+          self_mem_nhdsWithin).mono ?_
+        rintro _ ⟨⟨j, rfl⟩, hx⟩
+        exact hle_of_dense (hst.trans hx) fun i _ hib ↦ hq i j hib.le
       · exact hle_of_dense hst fun i _ _ ↦ hm t (fun x ↦ not_lt.mp fun htx ↦ ht ⟨x, htx⟩) i
 
 end TauCeti.Probability

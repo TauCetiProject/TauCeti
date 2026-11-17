@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Process.HittingTime
 public import TauCeti.Topology.Order.Cadlag
 import TauCeti.Probability.Process.LevelLocalizer
-import TauCeti.Topology.Order.Monotone
+import TauCeti.Topology.Order.Monotone.Basic
 
 /-!
 # Deterministic simple counting paths
@@ -68,10 +68,8 @@ theorem isCadlag {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) : IsCadlag 
 
 /-- Coercing a simple counting path to `ℝ` preserves the càdlàg property. -/
 theorem isCadlag_real {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) :
-    IsCadlag fun t ↦ (f t : ℝ) := by
-  have hc : Continuous (Nat.cast : ℕ → ℝ) := continuous_of_discreteTopology
-  have hmono : Monotone fun t ↦ (f t : ℝ) := fun _ _ h ↦ Nat.cast_le.mpr (hf.monotone h)
-  exact hmono.isCadlag fun t ↦ hc.continuousAt.tendsto.comp (hf.isRightContinuous t)
+    IsCadlag fun t ↦ (f t : ℝ) :=
+  hf.isCadlag.continuous_comp continuous_of_discreteTopology
 
 /-- A simple counting path is continuous at `0`. -/
 theorem continuousAt_zero {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) : ContinuousAt f 0 :=
@@ -118,26 +116,27 @@ theorem hittingAfter_Ici_pos {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
   isClosed_Ici.lt_hittingAfter_of_isRightContinuous hf.isRightContinuous
     (by simp [hf.apply_zero, hc.ne'])
 
+private lemma exists_Ico_le_add_one {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f)
+    ⦃t : ℝ≥0⦄ (ht : 0 < t) : ∃ s ∈ Ico 0 t, f t ≤ f s + 1 := by
+  obtain ⟨s, hst, hfs⟩ := hf.le_add_one ht
+  exact ⟨s, ⟨zero_le, hst⟩, hfs⟩
+
 /-- At a finite hitting time of `Set.Ici c`, a simple counting path takes the exact value `c`. -/
 theorem apply_untopA_hittingAfter_Ici {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
     (hf : IsSimpleCountingPath (M · ω)) {c : ℕ}
     (hfin : hittingAfter M (Ici c) 0 ω ≠ ⊤) :
-    M (hittingAfter M (Ici c) 0 ω).untopA ω = c := by
-  refine hf.isRightContinuous.apply_untopA_hittingAfter_Ici_of_le_add_one
-    (by simp [hf.apply_zero]) (fun t ht ↦ ?_) hfin
-  obtain ⟨s, hst, hfs⟩ := hf.le_add_one ht
-  exact ⟨s, ⟨zero_le, hst⟩, hfs⟩
+    M (hittingAfter M (Ici c) 0 ω).untopA ω = c :=
+  hf.isRightContinuous.apply_untopA_hittingAfter_Ici_of_le_add_one
+    (by simp [hf.apply_zero]) hf.exists_Ico_le_add_one hfin
 
 /-- Along a simple counting path, any finite hitting time of `Set.Ici c` strictly precedes the
 hitting time of `Set.Ici (c + 1)`. -/
 theorem hittingAfter_Ici_lt_succ {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
     (hf : IsSimpleCountingPath (M · ω)) {c : ℕ}
     (hfin : hittingAfter M (Ici c) 0 ω ≠ ⊤) :
-    hittingAfter M (Ici c) 0 ω < hittingAfter M (Ici (c + 1)) 0 ω := by
-  refine hf.isRightContinuous.hittingAfter_Ici_lt_succ_of_le_add_one
-    (by simp [hf.apply_zero]) (fun t ht ↦ ?_) hfin
-  obtain ⟨s, hst, hfs⟩ := hf.le_add_one ht
-  exact ⟨s, ⟨zero_le, hst⟩, hfs⟩
+    hittingAfter M (Ici c) 0 ω < hittingAfter M (Ici (c + 1)) 0 ω :=
+  hf.isRightContinuous.hittingAfter_Ici_lt_succ_of_le_add_one
+    (by simp [hf.apply_zero]) hf.exists_Ico_le_add_one hfin
 
 /-- Along a simple counting path, any finite hitting time of `Set.Ici c₁` strictly precedes the
 hitting time of `Set.Ici c₂` whenever `c₁ < c₂`. -/

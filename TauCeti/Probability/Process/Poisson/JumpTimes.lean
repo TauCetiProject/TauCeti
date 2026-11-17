@@ -70,7 +70,7 @@ theorem aemeasurable_hittingAfter_Ici
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (M · ω)) (c : ℕ) :
     AEMeasurable (hittingAfter M (Ici c) 0) P :=
   aemeasurable_hittingAfter_of_isOpen_of_isRightContinuous h.measurable_eval_nat hrc
-    (isOpen_discrete (Ici c))
+    (isOpen_discrete (Ici c)) 0
 
 /-- **Poisson–gamma arrival-time duality.** For an almost-surely right-continuous natural-valued
 filtered Poisson process of rate `α`, the `c`-th arrival (`c ≠ 0`) occurs by time `t` with
@@ -162,13 +162,11 @@ theorem hasLaw_untopA_hittingAfter_Ici_gammaMeasure
       eq_empty_of_forall_notMem fun ω hω ↦ hx.not_ge ((NNReal.coe_nonneg _).trans hω)
     rw [hemp, measureReal_empty, regularizedGamma_eq_zero_of_nonpos_right _
       (mul_nonpos_of_nonneg_of_nonpos α.coe_nonneg hx.le)]
-  · let t : ℝ≥0 := ⟨x, hx⟩
-    have htx : x = (t : ℝ) := rfl
-    have hae : (Y ⁻¹' Iic x : Set Ω) =ᵐ[P] {ω | hittingAfter M (Ici c) 0 ω ≤ t} := by
+  · lift x to ℝ≥0 using hx
+    have hae : (Y ⁻¹' Iic (x : ℝ) : Set Ω) =ᵐ[P] {ω | hittingAfter M (Ici c) 0 ω ≤ x} := by
       filter_upwards [h.hittingAfter_Ici_ae_ne_top hα c] with ω hfin
-      simp only [mem_preimage, mem_Iic, Y, htx, NNReal.coe_le_coe, WithTop.untopA_le_iff hfin]
-    rw [measureReal_congr hae, h.measureReal_hittingAfter_Ici_le hrc hc t]
-    rfl
+      simp only [mem_preimage, mem_Iic, Y, NNReal.coe_le_coe, WithTop.untopA_le_iff hfin]
+    rw [measureReal_congr hae, h.measureReal_hittingAfter_Ici_le hrc hc x]
 
 /-- **Exponential law of the first arrival time.** For an almost-surely right-continuous
 natural-valued filtered Poisson process of positive rate `0 < α`, the first arrival time
