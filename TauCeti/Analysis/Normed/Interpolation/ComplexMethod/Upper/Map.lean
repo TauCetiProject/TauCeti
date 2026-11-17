@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Upper.Basic
 import TauCeti.Analysis.Complex.HasPrimitives
-import TauCeti.Analysis.Complex.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!

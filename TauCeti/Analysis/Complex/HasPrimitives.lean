@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Complex.Rectangle
 
 /-!
 # Extending primitives and wedge integrals on product domains
@@ -64,12 +65,6 @@ noncomputable section WedgeIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E}
 
-private theorem dist_le_dist_of_mem_rectangle {u z w : ℂ} (hu : u ∈ Rectangle z w) :
-    dist u z ≤ dist w z := by
-  rw [dist_eq_re_im, dist_eq_re_im]
-  exact Real.sqrt_le_sqrt (add_le_add (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.1))
-    (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.2)))
-
 namespace TauCeti
 
 /-- If `‖f u‖ ≤ M` throughout `Rectangle z w`, then `‖wedgeIntegral z w f‖ ≤ 2 * M * ‖w - z‖`. -/
@@ -103,7 +98,8 @@ theorem norm_wedgeIntegral_le_of_norm_le_mul_norm {C₀ : ℝ} {z w : ℂ}
       ((norm_nonneg _).trans (hf w ⟨right_mem_uIcc, right_mem_uIcc⟩)) (norm_pos_iff.2 hw))
   refine (norm_wedgeIntegral_le_of_norm_le_const (M := C₀ * (‖z‖ + ‖w - z‖)) fun u hu ↦
     (hf u hu).trans <| mul_le_mul_of_nonneg_left ((norm_le_insert' u z).trans <|
-      add_le_add_right (by simpa [dist_eq_norm] using dist_le_dist_of_mem_rectangle hu) _)
+      add_le_add_right (by simpa [dist_eq_norm, norm_sub_rev z w] using
+        dist_le_of_mem_rectangle hu ⟨left_mem_uIcc, left_mem_uIcc⟩) _)
       hC₀).trans_eq (by ring)
 
 end TauCeti
@@ -165,7 +161,8 @@ theorem Complex.IsConservativeOn.continuousOn_wedgeIntegral_of_mem_reProdIm
       refine TauCeti.norm_wedgeIntegral_le_of_norm_le_const fun u hu ↦ ?_
       have huAB : u ∈ A ×ℂ B := ⟨hA.uIcc_subset hz.1 hw.1 hu.1, hB.uIcc_subset hz.2 hw.2 hu.2⟩
       have hudist : ‖f u - f z‖ < 1 := mem_ball_iff_norm.1 <|
-        hball ⟨mem_ball.2 ((dist_le_dist_of_mem_rectangle hu).trans_lt (mem_ball.1 hwδ)), huAB⟩
+        hball ⟨mem_ball.2 ((dist_le_of_mem_rectangle hu ⟨left_mem_uIcc, left_mem_uIcc⟩).trans_lt
+          (dist_comm z w ▸ mem_ball.1 hwδ)), huAB⟩
       linarith [norm_sub_norm_le (f u) (f z)]
     · simpa using (((continuous_id.sub (continuous_const (y := z))).norm.const_mul
         (2 * (‖f z‖ + 1))).tendsto z).mono_left nhdsWithin_le_nhds
