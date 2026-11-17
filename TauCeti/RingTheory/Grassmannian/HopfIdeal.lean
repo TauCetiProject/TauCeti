@@ -315,42 +315,6 @@ end Module.Grassmannian
 
 namespace Module.Grassmannian
 
-/-- Transport two-sided Hopf ideals along a bialgebra equivalence, in the form used by
-`Module.Grassmannian.hopfIdealLocus_eq_bot_iff`. -/
-private theorem exists_isHopfIdeal_map {B K L : Type*} [CommRing B] [Ring K] [Ring L]
-    [HopfAlgebra B K] [HopfAlgebra B L] (e : K ≃ₐc[B] L) {P : Submodule B K}
-    (h : ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B) :
-    ∃ J : Ideal L, J.restrictScalars B = P.map e.toAlgEquiv.toLinearMap ∧ J.IsTwoSided ∧
-      J.IsHopfIdeal B := by
-  obtain ⟨I, rfl, hI, hHopf⟩ := h
-  let := hI
-  let := hHopf
-  have : RingHomSurjective (e.toBialgHom : K →+* L) := ⟨e.surjective⟩
-  let J := (TauCeti.HopfIdeal.ofIsHopfIdeal B I).map e.toBialgHom
-  refine ⟨J.toIdeal, ?_, inferInstance, inferInstance⟩
-  dsimp only [J]
-  rw [TauCeti.HopfIdeal.map_toIdeal, TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
-  ext y
-  rw [Submodule.restrictScalars_mem,
-    Ideal.mem_map_iff_of_surjective (e.toBialgHom : K →+* L) e.surjective]
-  simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply, BialgEquiv.coe_toAlgEquiv,
-    RingHom.coe_coe, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
-    Submodule.restrictScalars_mem]
-
-/-- A bialgebra equivalence preserves and reflects the two-sided Hopf-ideal condition. -/
-private theorem exists_isHopfIdeal_map_iff {B K L : Type*} [CommRing B] [Ring K] [Ring L]
-    [HopfAlgebra B K] [HopfAlgebra B L] (e : K ≃ₐc[B] L) {P : Submodule B K} :
-    (∃ J : Ideal L, J.restrictScalars B = P.map e.toAlgEquiv.toLinearMap ∧ J.IsTwoSided ∧
-      J.IsHopfIdeal B) ↔
-      ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B := by
-  refine ⟨fun h ↦ ?_, exists_isHopfIdeal_map e⟩
-  have hP : (P.map e.toAlgEquiv.toLinearMap).map e.symm.toAlgEquiv.toLinearMap = P := by
-    rw [← Submodule.map_comp]
-    convert Submodule.map_id P
-    ext
-    simp
-  simpa only [hP] using exists_isHopfIdeal_map e.symm h
-
 variable {R R' : Type*} [CommRing R] [CommRing R'] [Algebra R R'] {k : ℕ} {A : Type w}
   [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A] {H : Type v} [Ring H]
   [HopfAlgebra R H]
@@ -365,7 +329,7 @@ private theorem exists_isHopfIdeal_baseChangeEquiv_iff (N : G(k, A ⊗[R'] (R' �
   rw [toSubmodule_baseChangeEquiv,
     ← TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_toLinearEquiv R R' H A]
   simpa only [TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_toAlgEquiv] using
-    exists_isHopfIdeal_map_iff (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R R' H A)
+    (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R R' H A).exists_isHopfIdeal_map_iff
       (P := N.toSubmodule)
 
 /-- **The locus of Hopf ideals is compatible with base change of the Hopf algebra.** For an
