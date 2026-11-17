@@ -124,6 +124,10 @@ systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
 * `TauCeti.ContCohomology.dualityMap1_zmod_bijective_iff`: for a trivial action on `ZMod n`, `α₁`
   is bijective exactly when the cup product of multiplication on `H¹(G, ZMod n)` is a perfect
   pairing.
+* `TauCeti.ContCohomology.natCard_sq_mul_natCard_H1_of_subsingleton`,
+  `compHom_comp_dualityMap1_bijective_of_subsingleton` and
+  `dualityMap1_bijective_of_subsingleton`: the degree-one Euler characteristic and evaluation
+  duality for a subsingleton group `G`.
 
 ## References
 
@@ -1353,5 +1357,57 @@ theorem dualityMap0_zmod_bijective_of_finrank_eq_one [Fact n.Prime]
     (LinearEquiv.ofFinrankEq _ _ (by rw [hrank, Module.finrank_self])).toAddEquiv
 
 end TrivialZMod
+
+section SubsingletonGroup
+
+/-- **Euler characteristic for a trivial group**: for a `G`-module `M` killed by `n ≠ 0` and
+`N ≃+ ZMod n`, `|M|² · |H¹(G, M)| = |H⁰(G, M)| · |H⁰(G, InternalHom G M N)|` (`0 = 0` when `M`
+is infinite). -/
+theorem natCard_sq_mul_natCard_H1_of_subsingleton {G : Type uG} [Group G] [TopologicalSpace G]
+    [Subsingleton G] {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] [ContinuousSMul G M] {N : Type uN} [AddCommGroup N]
+    [DistribMulAction G N] {n : ℕ} [NeZero n] (e : N ≃+ ZMod n) (hM : ∀ m : M, n • m = 0) :
+    Nat.card M ^ 2 * Nat.card (H1 G M) =
+      Nat.card (H0 G M) * Nat.card (H0 G (InternalHom G M N)) := by
+  have h1 : Nat.card (H1 G M) = 1 :=
+    Nat.card_eq_one_iff_unique.mpr ⟨subsingleton_H1_of_subsingleton G M, ⟨0⟩⟩
+  have hH0M : H0 G M = ⊤ :=
+    H0_eq_top_of_smul_eq_self fun g m => by rw [Subsingleton.elim g 1, one_smul]
+  have hH0M' : H0 G (InternalHom G M N) = ⊤ :=
+    H0_eq_top_of_smul_eq_self fun g φ => by rw [Subsingleton.elim g 1, one_smul]
+  rw [h1, mul_one, sq, hH0M, hH0M', Nat.card_congr (AddSubgroup.topEquiv (G := M)).toEquiv,
+    Nat.card_congr (AddSubgroup.topEquiv (G := InternalHom G M N)).toEquiv,
+    InternalHom.natCard_of_addEquiv_zmod e hM]
+
+/-- **Postcomposing `dualityMap1` with any homomorphism out of `H²(G, N)` is bijective** when `G`
+is a subsingleton, for a finite discrete `G`-module `M` and discrete `N`. -/
+theorem compHom_comp_dualityMap1_bijective_of_subsingleton {G : Type uG} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [Subsingleton G] {M : Type uM} [AddCommGroup M]
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
+    [Finite M] {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N] {P : Type*} [AddCommMonoid P]
+    (ι : H2 G N →+ P) :
+    Function.Bijective
+      ((AddMonoidHom.compHom ι :
+          (H1 G (InternalHom G M N) →+ H2 G N) →+ (H1 G (InternalHom G M N) →+ P)).comp
+        (dualityMap1 G M N)) := by
+  have := subsingleton_H1_of_subsingleton G M
+  have := subsingleton_H1_of_subsingleton G (InternalHom G M N)
+  exact ⟨fun x y _ => Subsingleton.elim x y,
+    fun _ => ⟨0, AddMonoidHom.ext fun b => by simp [Subsingleton.elim b 0]⟩⟩
+
+/-- **Degree-one evaluation duality for a trivial group**, for a finite discrete `G`-module `M`
+and discrete `N`. -/
+theorem dualityMap1_bijective_of_subsingleton {G : Type uG} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [Subsingleton G] {M : Type uM} [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M] {N : Type uN}
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
+    [ContinuousSMul G N] : Function.Bijective (dualityMap1 G M N) := by
+  convert compHom_comp_dualityMap1_bijective_of_subsingleton (M := M)
+    (AddMonoidHom.id (H2 G N)) using 1
+  ext a b
+  simp
+
+end SubsingletonGroup
 
 end TauCeti.ContCohomology

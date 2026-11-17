@@ -61,6 +61,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
   `H²`.
 * `TauCeti.ContCohomology.nsmul_H1_eq_zero` and `nsmul_H2_eq_zero`: `H¹(G, M)` and `H²(G, M)`
   are killed by whatever kills the coefficients `M`.
+* `TauCeti.ContCohomology.natCard_nsmul_H1_eq_zero` and `natCard_nsmul_H2_eq_zero`: `H¹(G, M)` and
+  `H²(G, M)` are killed by `Nat.card G`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -946,6 +948,61 @@ theorem nsmul_H2_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H2 G M) : n
     rw [← QuotientAddGroup.mk_nsmul, hc, QuotientAddGroup.mk_zero]
 
 end CohomologyDegree2
+
+section GroupExponent
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+/-- **`H¹(G, M)` is killed by `Nat.card G`.** When `G` is finite, summing the `1`-cocycle identity
+over `G` exhibits `Nat.card G • f` as a `1`-coboundary; when `G` is infinite, `Nat.card G = 0`. -/
+theorem natCard_nsmul_H1_eq_zero (x : H1 G M) : Nat.card G • x = 0 := by
+  cases finite_or_infinite G with
+  | inl _ =>
+    cases nonempty_fintype G
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      rw [← QuotientAddGroup.mk_nsmul, H1pi_eq_zero_iff, mem_B1_iff]
+      refine ⟨-∑ h : G, (f : G → M) h, fun g ↦ ?_⟩
+      have hf := (mem_Z1_iff.mp f.2).2
+      have hshift : (∑ h : G, (f : G → M) (g * h)) = ∑ h : G, (f : G → M) h :=
+        Fintype.sum_bijective _ (Group.mulLeft_bijective g) _ _ fun _ ↦ rfl
+      have hsum : (∑ h : G, (f : G → M) (g * h)) =
+          g • (∑ h : G, (f : G → M) h) + Nat.card G • (f : G → M) g := by
+        simp [hf g, Finset.sum_add_distrib, Finset.smul_sum, Nat.card_eq_fintype_card]
+      have heq := hshift.symm.trans hsum
+      rw [smul_neg, sub_neg_eq_add, AddSubgroup.coe_nsmul, Pi.smul_apply]
+      nth_rw 2 [heq]
+      abel
+  | inr _ => rw [Nat.card_eq_zero_of_infinite, zero_nsmul]
+
+/-- **`H²(G, M)` is killed by `Nat.card G`.** When `G` is finite, summing the `2`-cocycle identity
+over its third argument exhibits `Nat.card G • f` as the `2`-coboundary of a continuous `1`-cochain;
+when `G` is infinite, `Nat.card G = 0`. -/
+theorem natCard_nsmul_H2_eq_zero [ContinuousMul G] (x : H2 G M) : Nat.card G • x = 0 := by
+  cases finite_or_infinite G with
+  | inl _ =>
+    cases nonempty_fintype G
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      rw [← QuotientAddGroup.mk_nsmul, H2pi_eq_zero_iff, mem_B2_iff']
+      refine ⟨∑ k : G, fun u ↦ (f : G × G → M) (u, k), mem_C1_iff.mp <|
+        sum_mem (t := (Finset.univ : Finset G)) fun k _ ↦
+          mem_C1_iff.mpr ((mem_Z2_iff.mp f.2).1.comp (Continuous.prodMk_left k)), fun g h ↦ ?_⟩
+      have hshift : (∑ k : G, (f : G × G → M) (g, h * k)) = ∑ k : G, (f : G × G → M) (g, k) :=
+        Fintype.sum_bijective _ (Group.mulLeft_bijective h) _ _ fun _ ↦ rfl
+      have hsum : (∑ k : G, (f : G × G → M) (g * h, k)) + Nat.card G • (f : G × G → M) (g, h) =
+          g • (∑ k : G, (f : G × G → M) (h, k)) + ∑ k : G, (f : G × G → M) (g, h * k) := by
+        simpa [Finset.sum_add_distrib, Finset.smul_sum, Nat.card_eq_fintype_card] using
+          Finset.sum_congr (s₁ := Finset.univ) rfl fun k _ ↦ (mem_Z2_iff.mp f.2).2 g h k
+      rw [hshift, add_comm] at hsum
+      simp only [Finset.sum_apply, AddSubgroup.coe_nsmul, Pi.smul_apply,
+        eq_sub_iff_add_eq.mpr hsum]
+      abel
+  | inr _ => rw [Nat.card_eq_zero_of_infinite, zero_nsmul]
+
+end GroupExponent
 
 section TrivialGroup
 
