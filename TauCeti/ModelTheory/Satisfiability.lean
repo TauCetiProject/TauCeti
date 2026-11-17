@@ -26,7 +26,7 @@ equivalence `e : L ≃ᴸ L'`, `e.toLHom` is injective and `e.onSentence` is bij
 `e.toLHom.onTheory T` is satisfiable, entails translated bounded formulas, formulas, or sentences,
 or is complete if and only if `T` is (`FirstOrder.Language.LEquiv.isSatisfiable_onTheory_iff`,
 `FirstOrder.Language.LEquiv.toLHom_onTheory_models_onBoundedFormula_iff`,
-`FirstOrder.Language.LEquiv.onTheory_models_onSentence_iff`,
+`FirstOrder.Language.LEquiv.toLHom_onTheory_models_onSentence_iff`,
 `FirstOrder.Language.LEquiv.isComplete_onTheory_iff`).
 
 ## Main results
@@ -42,10 +42,7 @@ or is complete if and only if `T` is (`FirstOrder.Language.LEquiv.isSatisfiable_
 * `FirstOrder.Language.LEquiv.isSatisfiable_onTheory_iff`,
   `FirstOrder.Language.LEquiv.toLHom_onTheory_models_onBoundedFormula_iff`,
   `FirstOrder.Language.LEquiv.toLHom_onTheory_models_onFormula_iff`,
-  `FirstOrder.Language.LEquiv.toLHom_onTheory_models_onSentence_iff`,
-  `FirstOrder.Language.LEquiv.onTheory_models_onBoundedFormula_iff`,
-  `FirstOrder.Language.LEquiv.onTheory_models_onFormula_iff`,
-  `FirstOrder.Language.LEquiv.onTheory_models_onSentence_iff`, and
+  `FirstOrder.Language.LEquiv.toLHom_onTheory_models_onSentence_iff`, and
   `FirstOrder.Language.LEquiv.isComplete_onTheory_iff`: satisfiability, entailment, and
   completeness of first-order theories are invariant under language equivalences.
 -/
@@ -138,24 +135,6 @@ theorem toLHom_onTheory_models_onSentence_iff {T : L.Theory} {φ : L.Sentence} :
     e.toLHom.onTheory T ⊨ᵇ e.toLHom.onSentence φ ↔ T ⊨ᵇ φ :=
   e.toLHom_injective.onTheory_models_onSentence_iff
 
-/-- Transporting a theory and a bounded formula along a language equivalence preserves and reflects
-semantic entailment. -/
-theorem onTheory_models_onBoundedFormula_iff {T : L.Theory} {φ : L.BoundedFormula α n} :
-    e.toLHom.onTheory T ⊨ᵇ e.onBoundedFormula φ ↔ T ⊨ᵇ φ :=
-  e.toLHom_injective.onTheory_models_onBoundedFormula_iff
-
-/-- Transporting a theory and a formula along a language equivalence preserves and reflects
-semantic entailment. -/
-theorem onTheory_models_onFormula_iff {T : L.Theory} {φ : L.Formula α} :
-    e.toLHom.onTheory T ⊨ᵇ e.onFormula φ ↔ T ⊨ᵇ φ :=
-  e.toLHom_injective.onTheory_models_onFormula_iff
-
-/-- Transporting a theory and a sentence along a language equivalence preserves and reflects
-semantic entailment. -/
-theorem onTheory_models_onSentence_iff {T : L.Theory} {φ : L.Sentence} :
-    e.toLHom.onTheory T ⊨ᵇ e.onSentence φ ↔ T ⊨ᵇ φ :=
-  e.toLHom_injective.onTheory_models_onSentence_iff
-
 /-- **Completeness along a language equivalence.** The image of a first-order theory under a
 language equivalence is complete if and only if the original theory is complete. -/
 @[simp]
@@ -163,7 +142,8 @@ theorem isComplete_onTheory_iff {T : L.Theory} :
     (e.toLHom.onTheory T).IsComplete ↔ T.IsComplete := by
   refine and_congr e.isSatisfiable_onTheory_iff ?_
   refine e.onSentence.surjective.forall.trans (forall_congr' fun φ => ?_)
-  rw [← e.onSentence_not, e.onTheory_models_onSentence_iff, e.onTheory_models_onSentence_iff]
+  rw [← e.onSentence_not]
+  simp only [LEquiv.onSentence_apply, toLHom_onTheory_models_onBoundedFormula_iff]
 
 end LEquiv
 
