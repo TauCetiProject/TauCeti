@@ -27,8 +27,8 @@ A module with an exhaustive increasing filtration is free at every prime where a
 subquotients of the filtration are free. No finiteness is assumed, so this applies to modules
 that are not finitely generated over the base, as in the proof of generic freeness in
 `TauCeti.RingTheory.Spectrum.Prime.GenericFreeness`.
-A surjection whose kernel is torsion becomes an isomorphism at every prime where its source is
-free, since non-zero-divisors act injectively on a free module.
+If a surjection has torsion kernel, then its target is free at every prime where its source is
+free.
 
 The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
 prime ideal is nontrivial.
@@ -48,8 +48,10 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   minimal primes.
 * `Module.iInter_freeLocus_subquotient_subset_freeLocus`: a filtered module is free wherever all
   subquotients of the filtration are.
-* `Module.mem_freeLocus_of_surjective_of_isTorsion`: a surjection with torsion kernel maps the
-  free locus of its source into the free locus of its target.
+* `LocalizedModule.map_injective_of_ker_le_torsion`: a linear map with torsion kernel stays
+  injective after localizing, when the localized source is torsion-free.
+* `Module.mem_freeLocus_of_surjective_of_ker_le_torsion`: if a surjection has torsion kernel, the
+  free locus of its source is contained in the free locus of its target.
 * `Module.rankAtStalk_fin_fun`: the free module `R^k` has rank `k` at every prime.
 * `Module.exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage`: the locus where the rank of
   a finitely presented flat module lies in a given set is the basic open set of an idempotent.
@@ -76,6 +78,36 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
 -/
 
 public section
+
+namespace LocalizedModule
+
+/-- A linear map whose kernel consists of torsion elements stays injective after localizing at
+`S`, when the localization of its source is torsion-free over `Localization S`. -/
+theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (S : Submonoid R) (q : M →ₗ[R] N)
+    (htors : LinearMap.ker q ≤ Submodule.torsion R M)
+    [Module.IsTorsionFree (Localization S) (LocalizedModule S M)] :
+    Function.Injective (map S q) := by
+  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  intro y hy
+  induction y using induction_on with
+  | h x s =>
+    simp only [LinearMap.mem_ker, map_mk] at hy
+    rw [← zero_mk (1 : S), mk_eq] at hy
+    obtain ⟨u, hu⟩ := hy
+    simp only [one_smul, smul_zero, Submonoid.smul_def] at hu
+    obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp
+      (htors (show (u : R) • x ∈ LinearMap.ker q by rw [LinearMap.mem_ker, map_smul]; exact hu))
+    -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
+    have hreg : IsRegular (algebraMap R (Localization S) ((b : R) * u)) := by
+      rw [isRegular_iff_mem_nonZeroDivisors, map_mul]
+      exact mul_mem (IsLocalization.nonZeroDivisors_le_comap S _ b.2)
+        (IsLocalization.map_units _ u).mem_nonZeroDivisors
+    have h0 : algebraMap R (Localization S) ((b : R) * u) • mk x s = 0 := by
+      rw [algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx, zero_mk]
+    exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
+
+end LocalizedModule
 
 namespace Module
 
@@ -146,44 +178,16 @@ theorem iInter_freeLocus_subquotient_subset_freeLocus (N : ℕ → Submodule R M
 
 end Filtration
 
-/-- A surjection whose kernel consists of torsion elements is an isomorphism after localizing at
-any prime where its source is free, so its target is free there too. -/
-theorem mem_freeLocus_of_surjective_of_isTorsion {R M N : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] (q : M →ₗ[R] N) (hq : Function.Surjective q)
-    (htors : LinearMap.ker q ≤ Submodule.torsion R M) {p : PrimeSpectrum R}
-    (hp : p ∈ freeLocus R M) : p ∈ freeLocus R N := by
+/-- If `q : M →ₗ[R] N` is surjective with torsion kernel and `M` is free at `p`, then `N` is free
+at `p`. -/
+theorem mem_freeLocus_of_surjective_of_ker_le_torsion {R M N : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (q : M →ₗ[R] N)
+    (hq : Function.Surjective q) (htors : LinearMap.ker q ≤ Submodule.torsion R M)
+    {p : PrimeSpectrum R} (hp : p ∈ freeLocus R M) : p ∈ freeLocus R N := by
   rw [mem_freeLocus] at hp ⊢
-  let φ := LocalizedModule.map p.asIdeal.primeCompl q
-  have hsurj : Function.Surjective φ := by
-    intro y
-    induction y using LocalizedModule.induction_on with
-    | h y s =>
-      obtain ⟨x, rfl⟩ := hq y
-      exact ⟨LocalizedModule.mk x s, by simp [φ, LocalizedModule.map_mk]⟩
-  have hinj : Function.Injective φ := by
-    rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-    intro y hy
-    induction y using LocalizedModule.induction_on with
-    | h x s =>
-      simp only [LinearMap.mem_ker, φ, LocalizedModule.map_mk] at hy
-      rw [← LocalizedModule.zero_mk (1 : p.asIdeal.primeCompl), LocalizedModule.mk_eq] at hy
-      obtain ⟨u, hu⟩ := hy
-      simp only [one_smul, smul_zero, Submonoid.smul_def] at hu
-      obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp
-        (htors (show (u : R) • x ∈ LinearMap.ker q by rw [LinearMap.mem_ker, map_smul]; exact hu))
-      -- The image of `b * u` is a non-zero-divisor of `R_p`, so it acts injectively on the free
-      -- module `M_p`.
-      have hreg : algebraMap R (Localization.AtPrime p.asIdeal) ((b : R) * u) ∈
-          nonZeroDivisors (Localization.AtPrime p.asIdeal) := by
-        rw [map_mul]
-        exact mul_mem (IsLocalization.nonZeroDivisors_le_comap p.asIdeal.primeCompl _ b.2)
-          (IsLocalization.map_units _ u).mem_nonZeroDivisors
-      have h0 : algebraMap R (Localization.AtPrime p.asIdeal) ((b : R) * u) •
-          LocalizedModule.mk x s = 0 := by
-        rw [algebraMap_smul, LocalizedModule.smul'_mk, mul_smul, ← Submonoid.smul_def, hbx,
-          LocalizedModule.zero_mk]
-      exact Module.Flat.isSMulRegular_of_nonZeroDivisors hreg (h0.trans (smul_zero _).symm)
-  exact Module.Free.of_equiv (LinearEquiv.ofBijective φ ⟨hinj, hsurj⟩)
+  exact Module.Free.of_equiv (LinearEquiv.ofBijective _
+    ⟨LocalizedModule.map_injective_of_ker_le_torsion p.asIdeal.primeCompl q htors,
+      LocalizedModule.map_surjective p.asIdeal.primeCompl q hq⟩)
 
 /-- The free module `R^k` has rank `k` at every prime of `R`. -/
 theorem rankAtStalk_fin_fun {R : Type*} [CommRing R] (k : ℕ) (p : PrimeSpectrum R) :

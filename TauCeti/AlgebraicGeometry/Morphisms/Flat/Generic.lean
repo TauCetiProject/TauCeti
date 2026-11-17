@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.RingTheory.Spectrum.Prime.GenericFreeness
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Generic flatness
@@ -19,7 +20,7 @@ initial open set from which flatness of a homogeneous orbit morphism can be prop
 translations.
 
 The argument uses generic freeness (`Module.freeLocus_mem_nhds_of_mem_minimalPrimes`, and
-`Module.freeLocus_mem_nhds_of_mem_minimalPrimes_of_isDomain` over a domain) on a finite affine
+`Module.freeLocus_mem_nhds_bot` over a domain) on a finite affine
 cover of the source above each affine open of the target. Freeness over the base at a prime
 implies flatness of all source stalks above that prime.
 
@@ -122,12 +123,13 @@ theorem exists_dense_open_flat_of_target_spec
 
 /-- A finite-type morphism to the spectrum of a domain is flat over a dense open subset of the
 spectrum. The domain need not be Noetherian. -/
-theorem exists_dense_open_flat_of_target_spec_of_isDomain
+private theorem exists_dense_open_flat_of_target_spec_of_isDomain
     {X : Scheme.{u}} {R : CommRingCat.{u}} [IsDomain R]
     (f : X ⟶ Spec R) [QuasiCompact f] [LocallyOfFiniteType f] :
     ∃ U : (Spec R).Opens, Dense (U : Set (Spec R)) ∧ Flat (f ∣_ U) :=
-  exists_dense_open_flat_of_target_spec_of_freeLocus
-    (fun B _ _ _ _ hp ↦ Module.freeLocus_mem_nhds_of_mem_minimalPrimes_of_isDomain (B := B) B hp) f
+  exists_dense_open_flat_of_target_spec_of_freeLocus (fun B _ _ _ _ hp ↦ by
+    obtain rfl : _ = ⊥ := by simpa [IsDomain.minimalPrimes_eq_singleton_bot] using hp
+    exact Module.freeLocus_mem_nhds_bot (B := B) B) f
 
 /-- Generic flatness transfers along an isomorphism of targets. -/
 private theorem exists_dense_open_flat_of_comp_iso {X Y Z : Scheme.{u}} (f : X ⟶ Y) (e : Y ≅ Z)
@@ -177,7 +179,8 @@ theorem exists_dense_open_flat
   intro x hx
   obtain ⟨A, y, hy, hxy⟩ := Opens.mem_iSup.mp hx
   exact (flat_restrict_iff f (A.1.ι ''ᵁ V A)).mp
-    (flat_restrict_image_of_flat_restrict_restrict f A.1 (V A) (hflat A)) x ⟨y, hy, hxy⟩
+    ((MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
+      (morphismRestrictRestrict f A.1 (V A))).mp (hflat A)) x ⟨y, hy, hxy⟩
 
 /-- **Generic flatness** over an integral base. A finite-type morphism to an integral scheme is
 flat over a dense open subset of its target. The target need not be Noetherian. -/
@@ -195,7 +198,8 @@ theorem exists_dense_open_flat_of_isIntegral
   refine ⟨A.ι ''ᵁ V, (A.ι ''ᵁ V).isOpen.dense ?_, ?_⟩
   · obtain ⟨z, hz⟩ := hV.nonempty
     exact ⟨A.ι z, z, hz, rfl⟩
-  · exact flat_restrict_image_of_flat_restrict_restrict f A V hflat
+  · exact (MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
+      (morphismRestrictRestrict f A V)).mp hflat
 
 end Scheme.Hom
 

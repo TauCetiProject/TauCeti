@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.RingTheory.Polynomial.Basic
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.Algebra.Polynomial.XPow.Span
 public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.Order.CompleteLattice.Basic
@@ -15,6 +13,7 @@ public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
+import TauCeti.LinearAlgebra.Matrix.BaseChange
 import TauCeti.RingTheory.MvPolynomial.SpanUpToTorsion
 
 /-!
@@ -51,9 +50,8 @@ the kernel of `M' → M` is torsion, it vanishes wherever `M'` is free.
   algebra over a reduced Noetherian ring is free over that ring near every minimal prime.
 * `Module.dense_interior_freeLocus_of_finiteType`: such a module is free over the base on a
   dense open subset of its spectrum.
-* `Module.freeLocus_mem_nhds_of_mem_minimalPrimes_of_isDomain`,
-  `Module.dense_interior_freeLocus_of_finiteType_of_isDomain`: the same over a domain, which need
-  not be Noetherian.
+* `Module.freeLocus_mem_nhds_bot`, `Module.dense_interior_freeLocus_of_finiteType_of_isDomain`:
+  the same over a domain, which need not be Noetherian, near its generic point `⊥`.
 
 ## References
 
@@ -64,6 +62,7 @@ the kernel of `M' → M` is torsion, it vanishes wherever `M'` is free.
 public section
 
 open Polynomial Topology
+open scoped TensorProduct
 
 namespace Module
 
@@ -207,35 +206,38 @@ theorem dense_interior_freeLocus_of_finiteType [IsNoetherianRing A] [IsReduced A
     mem_interior_iff_mem_nhds.mpr (freeLocus_mem_nhds_of_mem_minimalPrimes (B := B) M hp)
 
 attribute [local instance] MvPolynomial.algebraMvPolynomial in
-/-- Generic freeness over a domain for a finitely presented module over a polynomial ring. The
-relations have coefficients in a finitely generated subring `R₀` of `A`, which is Noetherian; the
-module is the base change of a module over `MvPolynomial σ R₀`, to which the Noetherian case
-applies. -/
-private theorem freeLocus_quotient_range_mem_nhds_bot [IsDomain A] {σ ι κ : Type*} [Finite σ]
-    [Fintype ι] [Finite κ] (v : ι → κ → MvPolynomial σ A) :
-    freeLocus A ((κ → MvPolynomial σ A) ⧸
-      LinearMap.range (Fintype.linearCombination (MvPolynomial σ A) v)) ∈
-        𝓝 ⟨⊥, Ideal.isPrime_bot⟩ := by
+/-- Over a domain `A`, the cokernel of a finite matrix over `MvPolynomial σ A`, with `σ` finite, is
+free over `A` on a neighbourhood of `(0)`. -/
+private theorem freeLocus_cokernel_mem_nhds_bot [IsDomain A] {σ ι κ : Type*} [Finite σ]
+    [Fintype ι] [Finite κ] (V : Matrix κ ι (MvPolynomial σ A)) :
+    freeLocus A ((κ → MvPolynomial σ A) ⧸ LinearMap.range V.mulVecLin) ∈
+      𝓝 ⟨⊥, Ideal.isPrime_bot⟩ := by
   classical
   have := Fintype.ofFinite κ
-  -- The coefficients of the relations generate a Noetherian subring `R₀` of `A`.
+  -- The coefficients of the entries generate a Noetherian subring `R₀` of `A`.
   let R₀ : Subalgebra ℤ A := Algebra.adjoin ℤ
-    (Finset.univ.biUnion fun i ↦ Finset.univ.biUnion fun k ↦ (v i k).coeffs : Finset A)
+    (Finset.univ.biUnion fun k ↦ Finset.univ.biUnion fun i ↦ (V k i).coeffs : Finset A)
   have : Algebra.FiniteType ℤ R₀ := Algebra.FiniteType.adjoin_of_finite (Finset.finite_toSet _)
   have : IsNoetherianRing R₀ := Algebra.FiniteType.isNoetherianRing ℤ R₀
-  have hv (i : ι) (k : κ) : v i k ∈ Set.range (MvPolynomial.map (algebraMap R₀ A)) := by
+  have hV (k : κ) (i : ι) : V k i ∈ Set.range (MvPolynomial.map (algebraMap R₀ A)) := by
     rw [MvPolynomial.mem_range_map_iff_coeffs_subset]
     intro a ha
     exact ⟨⟨a, Algebra.subset_adjoin <| Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr
-      ⟨i, Finset.mem_univ _, Finset.mem_biUnion.mpr ⟨k, Finset.mem_univ _, ha⟩⟩⟩, rfl⟩
-  choose w hw using hv
-  -- The module is the base change of the cokernel of the lifted relations.
-  obtain ⟨h, hb⟩ := MvPolynomial.exists_isBaseChange_quotient_range_linearCombination w v hw
+      ⟨k, Finset.mem_univ _, Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, ha⟩⟩⟩, rfl⟩
+  choose W hW using hV
+  let W₀ : Matrix κ ι (MvPolynomial σ R₀) := Matrix.of W
+  have hmap : W₀.map (algebraMap (MvPolynomial σ R₀) (MvPolynomial σ A)) = V :=
+    Matrix.ext fun k i ↦ hW k i
+  -- The cokernel of `V` is the base change of the cokernel of `W₀`.
+  let e : A ⊗[R₀] ((κ → MvPolynomial σ R₀) ⧸ LinearMap.range W₀.mulVecLin) ≃ₗ[A]
+      (κ → MvPolynomial σ A) ⧸
+        LinearMap.range (W₀.map (algebraMap (MvPolynomial σ R₀) (MvPolynomial σ A))).mulVecLin :=
+    (Algebra.IsPushout.cancelBaseChange R₀ A (MvPolynomial σ R₀) (MvPolynomial σ A) _).symm ≪≫ₗ
+      (W₀.cokernelBaseChangeEquiv (S := MvPolynomial σ A)).restrictScalars A
   have hbot : (⊥ : Ideal R₀) ∈ minimalPrimes R₀ := by
     rw [IsDomain.minimalPrimes_eq_singleton_bot]; rfl
   have h₀ := freeLocus_mem_nhds_of_mem_minimalPrimes (B := MvPolynomial σ R₀)
-    ((κ → MvPolynomial σ R₀) ⧸
-      LinearMap.range (Fintype.linearCombination (MvPolynomial σ R₀) w)) hbot
+    ((κ → MvPolynomial σ R₀) ⧸ LinearMap.range W₀.mulVecLin) hbot
   have hcomap : PrimeSpectrum.comap (algebraMap R₀ A) ⟨⊥, Ideal.isPrime_bot⟩ =
       ⟨⊥, hbot.1.1⟩ := by
     ext1
@@ -243,27 +245,27 @@ private theorem freeLocus_quotient_range_mem_nhds_bot [IsDomain A] {σ ι κ : T
   refine Filter.mem_of_superset
     ((PrimeSpectrum.continuous_comap (algebraMap R₀ A)).continuousAt.preimage_mem_nhds
       (hcomap ▸ h₀)) fun p hp ↦ ?_
-  rw [← freeLocus_congr hb.equiv]
+  rw [← hmap, ← freeLocus_congr e]
   exact comap_freeLocus_le hp
 
-/-- Generic freeness over a domain for a finite module over a polynomial ring: present the module,
-replace the relations by finitely many of them up to torsion, and apply the finitely presented
-case. -/
+/-- Over a domain `A`, a finite module over `MvPolynomial σ A`, with `σ` finite, is free over `A`
+on a neighbourhood of `(0)`. -/
 private theorem freeLocus_mem_nhds_bot_mvPolynomial [IsDomain A] {σ : Type*} [Finite σ]
     (N : Type*) [AddCommGroup N] [Module (MvPolynomial σ A) N] [Module A N]
     [IsScalarTower A (MvPolynomial σ A) N] [Module.Finite (MvPolynomial σ A) N] :
     freeLocus A N ∈ 𝓝 ⟨⊥, Ideal.isPrime_bot⟩ := by
   classical
+  -- Present `N`, and replace its relations by finitely many of them up to `A`-torsion.
   obtain ⟨t, π, hπ⟩ := Module.Finite.exists_fin' (MvPolynomial σ A) N
   obtain ⟨s, hsK, hs⟩ := (LinearMap.ker π).exists_finset_smul_mem_span_of_isDomain
-  let v : s → Fin t → MvPolynomial σ A := (↑)
-  let f₁ := Fintype.linearCombination (MvPolynomial σ A) v
-  have hrange : LinearMap.range f₁ = Submodule.span _ (s : Set (Fin t → MvPolynomial σ A)) := by
-    rw [Fintype.range_linearCombination, Subtype.range_coe_subtype, Finset.setOfPred_mem]
-  have hle : LinearMap.range f₁ ≤ LinearMap.ker π := hrange ▸ Submodule.span_le.mpr hsK
-  let q := ((LinearMap.range f₁).liftQ π hle).restrictScalars A
-  refine Filter.mem_of_superset (freeLocus_quotient_range_mem_nhds_bot v) fun p hp ↦
-    mem_freeLocus_of_surjective_of_isTorsion q ?_ ?_ hp
+  let V : Matrix (Fin t) s (MvPolynomial σ A) := Matrix.of fun k i ↦ (i : Fin t → _) k
+  have hrange : LinearMap.range V.mulVecLin = Submodule.span _ (s : Set (Fin t → _)) := by
+    rw [Matrix.range_mulVecLin]
+    exact congrArg _ (Subtype.range_coe_subtype.trans Finset.setOfPred_mem)
+  have hle : LinearMap.range V.mulVecLin ≤ LinearMap.ker π := hrange ▸ Submodule.span_le.mpr hsK
+  let q := ((LinearMap.range V.mulVecLin).liftQ π hle).restrictScalars A
+  refine Filter.mem_of_superset (freeLocus_cokernel_mem_nhds_bot V) fun p hp ↦
+    mem_freeLocus_of_surjective_of_ker_le_torsion q ?_ ?_ hp
   · intro y
     obtain ⟨x, rfl⟩ := hπ y
     exact ⟨Submodule.Quotient.mk x, rfl⟩
@@ -276,16 +278,17 @@ private theorem freeLocus_mem_nhds_bot_mvPolynomial [IsDomain A] {σ : Type*} [F
       exact hbx
 
 /-- **Generic freeness over a domain.** Let `A` be a domain, `B` a finitely generated `A`-algebra
-and `M` a finite `B`-module. Then `M` is free over `A` on a neighbourhood of the generic point of
-`Spec A`: there is a nonzero `a : A` such that `M_q` is free over `A_q` for every prime `q` not
+and `M` a finite `B`-module. Then `M` is free over `A` on a neighbourhood of the generic point `⊥`
+of `Spec A`: there is a nonzero `a : A` such that `M_q` is free over `A_q` for every prime `q` not
 containing `a`. Unlike `freeLocus_mem_nhds_of_mem_minimalPrimes`, `A` need not be Noetherian. -/
-theorem freeLocus_mem_nhds_of_mem_minimalPrimes_of_isDomain [IsDomain A]
+theorem freeLocus_mem_nhds_bot [IsDomain A]
     {B : Type*} [CommRing B] [Algebra A B] [Algebra.FiniteType A B]
     (M : Type uM) [AddCommGroup M] [Module A M] [Module B M] [IsScalarTower A B M]
-    [Module.Finite B M] {p : Ideal A} (hp : p ∈ minimalPrimes A) :
-    freeLocus A M ∈ 𝓝 ⟨p, hp.1.1⟩ := by
+    [Module.Finite B M] : freeLocus A M ∈ 𝓝 ⊥ := by
+  have hbot : (⊥ : Ideal A) ∈ minimalPrimes A := by
+    rw [IsDomain.minimalPrimes_eq_singleton_bot]; rfl
   obtain ⟨n, f, hf⟩ := Algebra.FiniteType.iff_quotient_mvPolynomial''.mp ‹Algebra.FiniteType A B›
-  refine freeLocus_mem_nhds_of_surjective f hf (fun N _ _ _ _ _ q hq ↦ ?_) M p hp
+  refine freeLocus_mem_nhds_of_surjective f hf (fun N _ _ _ _ _ q hq ↦ ?_) M ⊥ hbot
   obtain rfl : q = ⊥ := by simpa [IsDomain.minimalPrimes_eq_singleton_bot] using hq
   exact freeLocus_mem_nhds_bot_mvPolynomial (σ := Fin n) N
 
@@ -295,8 +298,8 @@ theorem dense_interior_freeLocus_of_finiteType_of_isDomain [IsDomain A]
     {B : Type*} [CommRing B] [Algebra A B] [Algebra.FiniteType A B]
     (M : Type uM) [AddCommGroup M] [Module A M] [Module B M] [IsScalarTower A B M]
     [Module.Finite B M] : Dense (interior (freeLocus A M)) :=
-  PrimeSpectrum.dense_of_forall_mem_minimalPrimes fun _ hp ↦
-    mem_interior_iff_mem_nhds.mpr
-      (freeLocus_mem_nhds_of_mem_minimalPrimes_of_isDomain (B := B) M hp)
+  PrimeSpectrum.dense_of_forall_mem_minimalPrimes fun p hp ↦ by
+    obtain rfl : p = ⊥ := by simpa [IsDomain.minimalPrimes_eq_singleton_bot] using hp
+    exact mem_interior_iff_mem_nhds.mpr (freeLocus_mem_nhds_bot (B := B) M)
 
 end Module
