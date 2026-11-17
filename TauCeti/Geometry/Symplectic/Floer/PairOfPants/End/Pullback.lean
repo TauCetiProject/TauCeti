@@ -25,7 +25,10 @@ a map `u : S → M` to `u ∘ φ'_q`:
   equation of a half-cylinder for `H'_q` when `u` solves `(du - X_K)^{0,1} = 0`
   (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart`);
 * its energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of
-  `u` over `S` (`TauCeti.SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`);
+  `u` over `S` (`TauCeti.SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`),
+  and more generally, when `u` is only defined near the end, at most its energy over any open set
+  containing the part `±s > a` of the end
+  (`SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen`);
 * at the time `±t` of the end, `X_{H'_q(±t)} = ±X_{H_q(t)}`
   (`TauCeti.SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul`).
 
@@ -147,19 +150,21 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
     (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
 
-/-- **The energy of an end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt` beyond `T₀`
-on each end `q`, for differentiable `H_q`, and let `u` be differentiable on `S`. The energy of
-`u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
-`a ≥ max T₀ 0`, is at most the energy of `u` over `S`. -/
-theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
+/-- **The energy of an end of a Floer solution on an open set.** Let `K` be equal to `H_q(t) dt`
+beyond `T₀` on each end `q`, for differentiable `H_q`, and let `u` be differentiable on an open set
+`U` which contains the part `±s > a` of the end `q`, for some `a ≥ T₀`. The energy of `u ∘ φ'_q`
+for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]` is at most the energy of
+`u` over `U`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
     (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
-    {u : ℝ × ℝ → M} (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u thricePuncturedSphereReal)
-    (q : Puncture) {a : ℝ} (ha₀ : 0 ≤ a) (haT : T₀ ≤ a) :
+    {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u U) (q : Puncture) {a : ℝ} (haT : T₀ ≤ a)
+    (haU : ∀ ζ : ℝ × ℝ, a < ζ.1 → positiveEndChart q ζ ∈ U) :
     ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≤
-      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
@@ -176,14 +181,14 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
         |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
     intro ζ hζ
     have hζT : T₀ ≤ ζ.1 := haT.trans hζ.1.le
-    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) (ha₀.trans_lt hζ.1)
+    have hζU := haU ζ hζ.1
     rw [floerEnergyDensity_def, perturbedMFDeriv_comp_positiveEndChart_eq hKH hH hζT,
       ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
     exact ω.floerEnergyDensity_perturbationPullback
       (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
       ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
-      ((hu _ hS).mdifferentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS))
+      ((hu _ hζU).mdifferentiableAt (hU.mem_nhds hζU))
       (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
       (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
   rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
@@ -191,7 +196,26 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
     (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
   refine lintegral_mono_set ?_
   rintro _ ⟨ζ, hζ, rfl⟩
-  exact positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ.1)
+  exact haU ζ hζ.1
+
+/-- **The energy of an end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt` beyond `T₀`
+on each end `q`, for differentiable `H_q`, and let `u` be differentiable on `S`. The energy of
+`u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
+`a ≥ max T₀ 0`, is at most the energy of `u` over `S`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℝ × ℝ → M} (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u thricePuncturedSphereReal)
+    (q : Puncture) {a : ℝ} (ha₀ : 0 ≤ a) (haT : T₀ ≤ a) :
+    ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≤
+      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) :=
+  setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen hKH hH hHd
+    isOpen_thricePuncturedSphereReal hu q haT fun _ hζ ↦
+      positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ)
 
 
 end SmoothTwoForm
