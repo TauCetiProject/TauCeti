@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Sesquilinear forms with prescribed adjoints

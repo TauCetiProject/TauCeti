@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 
 /-!
 # Compatible Hermitian forms on complexified Clifford modules
@@ -14,9 +14,13 @@ public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 On the complexification of a real Clifford algebra, the adjoint relevant to Hermitian
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
-adjoint on the whole algebra (`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`, and for scalar
-extensions of real actions `CliffordAlgebra.inner_liftBaseChange_eq_conjStar_iff` and
-`CliffordAlgebra.adjoint_liftBaseChange_eq_conjStar_iff`).
+adjoint on the whole algebra (`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`). For a real
+Clifford action `ρ`, this says that its complex-linear extension
+`CliffordAlgebra.liftBaseChange ℂ Q ρ` is a `*`-representation for `conjStar` exactly when
+Clifford multiplication by every real vector is skew-Hermitian
+(`CliffordAlgebra.inner_liftBaseChange_eq_conjStar_iff`, in arbitrary dimension, and
+`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`, in adjoint form on a
+finite-dimensional module).
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -130,7 +134,7 @@ theorem existsUnique_pos_mul_inner_of_surjective [Nontrivial S]
 
 end Hermitian
 
-section LiftBaseChange
+section RealAction
 
 /-- **Criterion for `conjStar`-compatibility of `liftBaseChange`** (in arbitrary dimension): the
 complex-linear extension `liftBaseChange ℂ Q ρ` satisfies
@@ -147,17 +151,20 @@ theorem inner_liftBaseChange_eq_conjStar_iff [SeminormedAddCommGroup S] [InnerPr
   · exact sesqForm_map_eq_map_conjStar (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ)
       (fun v x y ↦ by simpa using h v x y) a x y
 
-/-- **Adjoint criterion for `liftBaseChange`**: on a finite-dimensional complex inner product space,
-`liftBaseChange ℂ Q ρ` is a `*`-representation for `conjStar` if and only if every real vector acts
-skew-adjointly. -/
-theorem adjoint_liftBaseChange_eq_conjStar_iff [NormedAddCommGroup S] [InnerProductSpace ℂ S]
-    [FiniteDimensional ℂ S] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
-    (∀ a : CliffordAlgebra (Q.baseChange ℂ),
-        (liftBaseChange ℂ Q ρ a).adjoint = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
-      ∀ v : V, (ρ (ι Q v)).adjoint = -ρ (ι Q v) := by
-  simpa using adjoint_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ)
+variable [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S}
 
-end LiftBaseChange
+/-- **`*`-representations of the complexified Clifford algebra**: on a finite-dimensional
+Hermitian module, the complex-linear extension `ρ_ℂ` of a real Clifford action satisfies
+`ρ_ℂ(a)* = ρ_ℂ(conjStar a)` for every `a` exactly when Clifford multiplication by every real
+vector is skew-adjoint. -/
+theorem adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff :
+    (∀ a, LinearMap.adjoint (liftBaseChange ℂ Q ρ a) = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
+      ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v) := by
+  simpa only [liftBaseChange_ι_tmul, one_smul] using
+    adjoint_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ)
+
+end RealAction
 
 section Uniqueness
 

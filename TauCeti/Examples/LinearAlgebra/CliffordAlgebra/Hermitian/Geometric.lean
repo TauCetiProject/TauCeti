@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Pauli
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.RealAction
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -30,7 +31,7 @@ together with counterexamples showing that the two clauses of `AlgHom.IsGeometri
 * `TauCeti.nonSkewRealLineClifford` (`TauCeti.not_isGeometricClifford_nonSkewRealLineClifford`): on
   `ℝ` with `Q r = -‖r‖²`, sending `1 : ℝ` to the non-normal square root
   `Matrix.toEuclideanLin !![0, 2; -2⁻¹, 0]` of `-1` on `EuclideanSpace ℂ (Fin 2)` satisfies
-  `Q r = -‖r‖²` (`isGeometricClifford_realLineGeometricClifford.map_eq_neg_norm_sq`), yet fails
+  `Q r = -‖r‖²` (`isGeometricClifford_realLineGeometricClifford.apply_eq_neg_norm_sq`), yet fails
   `IsGeometricClifford` because `1` does not act skew-Hermitianly.
 -/
 
@@ -83,9 +84,9 @@ theorem realLineGeometricClifford_ι_one :
 /-- `TauCeti.realLineGeometricClifford` satisfies `AlgHom.IsGeometricClifford`. -/
 theorem isGeometricClifford_realLineGeometricClifford :
     realLineGeometricClifford.IsGeometricClifford where
-  map_eq_neg_norm_sq r := by
+  apply_eq_neg_norm_sq r := by
     simp [LinearMap.BilinMap.toQuadraticMap_apply, sq]
-  inner_map_ι_left r z w := by
+  inner_map_ι_apply_left r z w := by
     simp only [realLineGeometricClifford_ι, LinearMap.smul_apply, one_apply_eq_self,
       inner_smul_left, inner_smul_right, map_mul, Complex.conj_ofReal, Complex.conj_I]
     ring
@@ -103,7 +104,12 @@ private def euclideanPlaneToRealCliffordZeroTwo :
       realCliffordForm 0 2 where
   toLinearMap := (WithLp.linearEquiv 2 ℝ (Fin 2 → ℝ)).toLinearMap
   map_app' v := by
-    simp [LinearMap.BilinMap.toQuadraticMap_apply, PiLp.norm_sq_eq_of_L2, Fin.sum_univ_two]
+    simp only [WithLp.linearEquiv_apply, LinearEquiv.coe_coe, LinearMap.coe_toAddHom,
+      AddHom.toFun_eq_coe, WithLp.addEquiv_apply, AddEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe,
+      EquivLike.coe_coe, realCliffordForm_zero_two_apply, neg_apply,
+      LinearMap.BilinMap.toQuadraticMap_apply, innerₗ_apply_apply,
+      inner_self_eq_norm_sq_to_K, RCLike.ofReal_real_eq_id, id_eq, PiLp.norm_sq_eq_of_L2,
+      Real.norm_eq_abs, sq_abs, Fin.sum_univ_two]
     ring
 
 @[simp]
@@ -195,8 +201,8 @@ theorem liftBaseChange_pauliPlaneClifford_complexVolume :
         (complexVolume (-LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 2))))
           (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation) =
       -Matrix.toEuclideanLin (pauli ![1, 0, 0]) := by
-  rw [liftBaseChange_complexVolume_eq_of_neg_norm_sq pauliPlaneClifford _
-    isGeometricClifford_pauliPlaneClifford.map_eq_neg_norm_sq (EuclideanSpace.basisFun (Fin 2) ℝ)
+  rw [liftBaseChange_complexVolume_eq_of_neg_norm_sq _ pauliPlaneClifford
+    isGeometricClifford_pauliPlaneClifford.apply_eq_neg_norm_sq (EuclideanSpace.basisFun (Fin 2) ℝ)
     rfl]
   simp only [show (2 + 1) / 2 = 1 from rfl, List.finRange_succ, List.finRange_zero, List.map_cons,
     List.map_nil, List.prod_cons, List.prod_nil, mul_one, pow_one, EuclideanSpace.basisFun_apply,
@@ -258,7 +264,7 @@ theorem nonSkewRealLineClifford_ι (r : ℝ) :
     ← Matrix.toEuclideanLin_eq_toLin_orthonormal]
 
 /-- **Independence of the skew-Hermitian clause**: although its quadratic form satisfies
-`Q r = -‖r‖²` (`isGeometricClifford_realLineGeometricClifford.map_eq_neg_norm_sq`),
+`Q r = -‖r‖²` (`isGeometricClifford_realLineGeometricClifford.apply_eq_neg_norm_sq`),
 `TauCeti.nonSkewRealLineClifford` fails `AlgHom.IsGeometricClifford` because `1` does not act
 skew-Hermitianly. -/
 theorem not_isGeometricClifford_nonSkewRealLineClifford :
@@ -268,7 +274,6 @@ theorem not_isGeometricClifford_nonSkewRealLineClifford :
     ← Matrix.toEuclideanLin_conjTranspose_eq_adjoint, ← map_neg] at hadj
   have hmat := Matrix.toEuclideanLin.injective hadj
   have h01 := congr_fun (congr_fun hmat 0) 1
-  simp at h01
-  norm_num at h01
+  norm_num [Matrix.conjTranspose_apply] at h01
 
 end TauCeti
