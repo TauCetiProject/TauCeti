@@ -126,8 +126,8 @@ private theorem measurable_chordEnd : Measurable χ.chordEnd := by
   have hd : Measurable fun p : ℝ × ℝ ↦ χ p.2 - χ p.1 :=
     ((χ.continuous.comp continuous_snd).sub (χ.continuous.comp continuous_fst)).measurable
   have hu : Measurable fun p : ℝ × ℝ ↦ χ.chordDir p.1 p.2 := by
-    simp only [chordDir_def, NormedSpace.normalize]
-    convert hd.norm.inv.smul hd using 1
+    simp only [chordDir_eq_inv_norm_smul]
+    exact hd.norm.inv.smul hd
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact measurable_snd.prodMk (Measurable.inner ((measurable_deriv χ).comp measurable_snd) hu)
 
@@ -234,14 +234,8 @@ private theorem volume_image_stripIncl (A : Set (ℝ × Ioo (-1 : ℝ) 1)) :
     MeasurableSet.univ.prod measurableSet_Ioo
   have hmp : MeasurePreserving stripIncl (volume.prod (volume.comap Subtype.val))
       (volume.restrict (univ ×ˢ Ioo (-1 : ℝ) 1)) := by
-    rw [stripIncl_eq_prodMap]
-    have := (MeasurePreserving.id (volume : Measure ℝ)).prod
-      (measurePreserving_subtype_coe (μa := (volume : Measure ℝ)) (s := Ioo (-1 : ℝ) 1)
-        measurableSet_Ioo)
-    have e : (volume : Measure ℝ).prod (volume.restrict (Ioo (-1 : ℝ) 1)) =
-        (volume : Measure (ℝ × ℝ)).restrict (univ ×ˢ Ioo (-1 : ℝ) 1) := by
-      rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
-    rwa [e] at this
+    rw [stripIncl_eq_prodMap, Measure.volume_eq_prod]
+    exact measurePreserving_prodMap_subtype_coe _ _ measurableSet_Ioo
   conv_rhs => rw [← measurableEmbedding_stripIncl.injective.preimage_image A]
   rw [hmp.measure_preimage_emb measurableEmbedding_stripIncl, Measure.restrict_apply' hS,
     inter_eq_left.2]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Regular
 
 import TauCeti.MeasureTheory.Measure.Comap
@@ -35,6 +36,8 @@ of `μ.comap (↑)`:
 * `μ.comap ((↑) : s → α)` is finite when `μ s` is, so a locally finite measure pulls back to a
   finite measure on every bounded interval, and a measure charging every nonempty open set pulls
   back to one on every open interval.
+* For a measurable set `s`, `Prod.map id (↑)` carries `μ.prod (ν.comap (↑))` on `α × s` to the
+  restriction of `μ.prod ν` to `univ ×ˢ s`.
 
 ## Main declarations
 
@@ -56,6 +59,8 @@ of `μ.comap (↑)`:
   compactness and `instIsFiniteMeasureOnCompactsComapSubtype`).
 * `MeasureTheory.Measure.instIsOpenPosMeasureComapSubtypeIoo`: the pullback to an open interval of
   a measure charging every nonempty open set charges every nonempty open set.
+* `MeasureTheory.measurePreserving_prodMap_subtype_coe`: the inclusion `α × s → α × β` is
+  measure preserving from `μ.prod (ν.comap (↑))` to `(μ.prod ν).restrict (univ ×ˢ s)`.
 -/
 
 public section
@@ -174,3 +179,24 @@ instance instIsOpenPosMeasureComapSubtypeIoo {α : Type*} [MeasurableSpace α] [
 end Interval
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- For a measurable set `s`, the inclusion `Prod.map id (↑) : α × s → α × β` carries the product
+of `μ` with the pullback of `ν` to `s` to the restriction of `μ.prod ν` to `univ ×ˢ s`. -/
+theorem measurePreserving_prodMap_subtype_coe {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] {s : Set β}
+    (hs : MeasurableSet s) :
+    MeasurePreserving (Prod.map id ((↑) : s → β)) (μ.prod (ν.comap (↑)))
+      ((μ.prod ν).restrict (univ ×ˢ s)) := by
+  have : SFinite (ν.comap ((↑) : s → β)) := by
+    have e : ν.comap ((↑) : s → β) = Measure.sum fun n ↦ (sfiniteSeq ν n).comap (↑) := by
+      ext A hA
+      simp_rw [Measure.sum_apply _ hA, (MeasurableEmbedding.subtype_coe hs).comap_apply,
+        ← Measure.sum_apply_of_countable, sum_sfiniteSeq]
+    rw [e]
+    infer_instance
+  have := (MeasurePreserving.id μ).prod (measurePreserving_subtype_coe (μa := ν) hs)
+  rwa [← Measure.prod_restrict, Measure.restrict_univ]
+
+end MeasureTheory

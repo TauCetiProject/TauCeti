@@ -125,6 +125,10 @@ def chordDir (s t : ℝ) : E :=
 theorem chordDir_def (s t : ℝ) : χ.chordDir s t = NormedSpace.normalize (χ t - χ s) :=
   (rfl)
 
+/-- The chord direction written out: `(χ(t) - χ(s))` scaled by `‖χ(t) - χ(s)‖⁻¹`. -/
+theorem chordDir_eq_inv_norm_smul (s t : ℝ) : χ.chordDir s t = ‖χ t - χ s‖⁻¹ • (χ t - χ s) := by
+  rw [chordDir_def, NormedSpace.normalize]
+
 /-- The chord direction vanishes exactly when the two boundary points coincide. -/
 @[simp]
 theorem chordDir_eq_zero_iff {s t : ℝ} : χ.chordDir s t = 0 ↔ χ t = χ s := by
@@ -150,11 +154,7 @@ theorem differentiableAt_chordDir {p : ℝ × ℝ} (h : χ p.2 ≠ χ p.1) :
     ((χ.differentiableAt p.2).comp p differentiableAt_snd).sub
       ((χ.differentiableAt p.1).comp p differentiableAt_fst)
   have hne : χ p.2 - χ p.1 ≠ 0 := sub_ne_zero.2 h
-  have hu : (fun q : ℝ × ℝ ↦ χ.chordDir q.1 q.2) =
-      (fun q : ℝ × ℝ ↦ ‖χ q.2 - χ q.1‖)⁻¹ • fun q ↦ χ q.2 - χ q.1 := by
-    funext q
-    simp [chordDir_def, NormedSpace.normalize]
-  rw [hu]
+  simp only [chordDir_eq_inv_norm_smul]
   exact ((hd.norm ℝ hne).inv (norm_ne_zero_iff.2 hne)).smul hd
 
 /-- The chord from `χ(s)` to the next collision point of the state `(s, v)` is along its outgoing
