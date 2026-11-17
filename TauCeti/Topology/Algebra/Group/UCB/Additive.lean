@@ -371,7 +371,14 @@ variable {G A B : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGrou
 `addUcb G`. -/
 theorem _root_.TauCeti.compContinuous_mem_addUcb {f : A →ᵇ ℝ} (hf : f ∈ addUcb A) (φ : G →ₜ+ A) :
     f.compContinuous (φ : C(G, A)) ∈ addUcb G := by
-  rw [addUcb_eq_addUcbSubalgebra, mem_addUcbSubalgebra_iff_multiplicative] at hf ⊢
+  rw [addUcb_eq_addUcbSubalgebra, mem_addUcbSubalgebra_iff_multiplicative,
+    ← ucb_eq_ucbSubalgebra] at hf ⊢
+  have hcomp :
+      (f.compContinuous (φ : C(G, A))).compContinuous ⟨Multiplicative.toAdd, continuous_toAdd⟩ =
+        (f.compContinuous ⟨Multiplicative.toAdd, continuous_toAdd⟩).compContinuous
+          (φ.toMultiplicative : C(Multiplicative G, Multiplicative A)) :=
+    BoundedContinuousFunction.ext fun _ => by simp
+  rw [hcomp]
   exact compContinuous_mem_ucb hf φ.toMultiplicative
 
 /-- The pullback `f ↦ f ∘ φ` along a continuous additive homomorphism `φ : G →ₜ+ A`, as a unital
