@@ -33,15 +33,16 @@ finitely many such diffeomorphisms of every constant component
 (`AuxiliaryAut.finite_fixingSubgroup_of_finite_isotropy`), and a constant rational component with
 at most two special points, or a constant elliptic component with none, has infinitely many
 (`AuxiliaryAut.infinite_isotropy_of_encard_specialPoints_le_two`,
-`AuxiliaryAut.infinite_isotropy_of_specialPoints_eq_empty`). Conversely, for every map, if
-every component has finitely many diffeomorphisms fixing its special points then the whole
-automorphism group of the marked curve is finite, and so is the isotropy group
-(`AuxiliaryAut.finite_isotropy_of_forall_finite_fixingSubgroup`). When `u` is constant on every
-component, the two halves combine: the isotropy group is finite exactly when every component has
-finitely many diffeomorphisms fixing its special points
-(`AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`). The sharper converse, which asks nothing
-of the nonconstant pseudoholomorphic components, needs auxiliary marks through injective points
-and is not treated here.
+`AuxiliaryAut.infinite_isotropy_of_specialPoints_eq_empty`). Conversely, for finitely many
+connected components, flag pairs and auxiliary labels, and for every map, if every component has
+finitely many diffeomorphisms fixing its special points then the whole automorphism group of the
+marked curve is finite, and so is the isotropy group
+(`AuxiliaryAut.finite_isotropy_of_forall_finite_fixingSubgroup`). Under the same finiteness and
+connectedness hypotheses, when `u` is constant on every component, the two halves combine: the
+isotropy group is finite exactly when every component has finitely many diffeomorphisms fixing
+its special points (`AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`). The sharper
+converse, which asks nothing of the nonconstant pseudoholomorphic components, needs auxiliary
+marks through injective points and is not treated here.
 
 The maps out of curves with `N` ordered and `R` auxiliary marks form the **map groupoid**
 `(AuxiliaryMarkedCurve.mapFunctor I n N R Y).Elements`: the category of elements of the functor
@@ -67,11 +68,12 @@ are the isotropy groups (`AuxiliaryMarkedCurve.autMulEquivIsotropy`).
 * `NodalGluing.AuxiliaryAut.finite_fixingSubgroup_of_finite_isotropy`: a map with finite isotropy
   group has, on each component where it is constant, finitely many diffeomorphisms fixing the
   special points.
-* `NodalGluing.AuxiliaryAut.finite_isotropy_of_forall_finite_fixingSubgroup`: if every component
-  has finitely many diffeomorphisms fixing the special points, every isotropy group is finite.
-* `NodalGluing.AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`: for a map constant on every
-  component, the isotropy group is finite exactly when every component is pointed stable in this
-  sense.
+* `NodalGluing.AuxiliaryAut.finite_isotropy_of_forall_finite_fixingSubgroup`: for finitely many
+  connected components, flag pairs and auxiliary labels, if every component has finitely many
+  diffeomorphisms fixing the special points, every isotropy group is finite.
+* `NodalGluing.AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`: for finitely many connected
+  components, flag pairs and auxiliary labels, and a map constant on every component, the
+  isotropy group is finite exactly when every component is pointed stable in this sense.
 
 ## References
 
