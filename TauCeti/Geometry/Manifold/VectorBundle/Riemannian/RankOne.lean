@@ -56,9 +56,8 @@ theorem ContMDiffWithinAt.rankOne_bundle
       (fun y ↦ TotalSpace.mk' F (b y) (τ y)) s x) :
     ContMDiffWithinAt IB (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) (b y)
-        (rankOne ℝ (σ y) (τ y))) s x :=
-  -- `rankOne ℝ σ τ` is by definition `(innerSL ℝ τ).smulRight σ`.
-  hτ.innerSL_bundle.clm_bundle_smulRight hσ
+        (rankOne ℝ (σ y) (τ y))) s x := by
+  simpa only [rankOne_def] using hτ.innerSL_bundle.clm_bundle_smulRight hσ
 
 /-- Rank-one maps formed from `C^n` fields along a common base map form a `C^n`
 Hom-bundle field at the same point. -/
