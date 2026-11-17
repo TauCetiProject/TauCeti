@@ -12,6 +12,7 @@ import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Rescale
+import TauCeti.RingTheory.PowerSeries.SubstInv
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -583,11 +584,6 @@ theorem binomialReversion_def (f : A⟦X⟧) (a : Rˣ) (b : R) :
       let P : A⟦X⟧ := X * f₁.binomialPow (-b * (↑a⁻¹ : R))
       let G : A⟦X⟧ := P.substInvOfIsUnit (by simp [P, f₁])
       binomialPow (f₁.subst G) (-(↑a⁻¹ : R)) := (rfl)
-
-private theorem substInvOfIsUnit_congr {P Q : A⟦X⟧} (h : P = Q)
-    (hP : IsUnit (P.coeff 1)) (hQ : IsUnit (Q.coeff 1)) :
-    P.substInvOfIsUnit hP = Q.substInvOfIsUnit hQ := by
-  subst h; rfl
 
 private theorem normalize_eq_self {f : A⟦X⟧} (hf : constantCoeff f = 1) :
     (1 : A⟦X⟧) + X * mk (fun n => coeff (n + 1) f) = f := by

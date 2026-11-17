@@ -34,6 +34,8 @@ form used to change formal parameters.
 * `PowerSeries.map_substInvOfIsUnit`: coefficient maps commute with the explicit construction
   `substInvOfIsUnit` for any series with a unit linear coefficient; it is a compositional inverse
   when the constant coefficient is zero.
+* `PowerSeries.substInvOfIsUnit_congr`: `substInvOfIsUnit` respects equality of the input series,
+  independently of the `IsUnit` proof witnesses.
 -/
 
 public section
@@ -122,5 +124,12 @@ theorem map_substInvOfIsUnit {S : Type*} [CommRing S] (f : R →+* S) {P : R⟦X
   ext n
   simp only [substInvOfIsUnit, substInv, coeff_map, coeff_mk]
   exact map_substInvFun f P n
+
+/-- The explicit construction `substInvOfIsUnit` respects equality of the input series,
+independently of the `IsUnit` proof witnesses. -/
+theorem substInvOfIsUnit_congr {P Q : R⟦X⟧} (h : P = Q)
+    (hP : IsUnit (coeff 1 P)) (hQ : IsUnit (coeff 1 Q)) :
+    P.substInvOfIsUnit hP = Q.substInvOfIsUnit hQ := by
+  subst h; rfl
 
 end PowerSeries
