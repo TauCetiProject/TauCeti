@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors, Chris Birkbeck
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
-import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Localization.Finiteness
-import Mathlib.RingTheory.Localization.Integral
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
@@ -80,12 +77,6 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
 * `TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top`: conversely,
   generators of `L` over the fraction field of `A` generate an `A`-algebra with fraction field
   `L`.
-* `TauCeti.IntermediateField.adjoin_image_coe_eq_top_of_algebra_adjoin_eq_top` and
-  `TauCeti.IntermediateField.adjoin_coe_eq_top_of_algebra_adjoin_eq_top`: algebra generators of
-  `integralClosure A L` over `A` generate an algebraic extension `L` over `K = Frac A`.
-* `TauCeti.IntermediateField.algEquiv_eq_one_of_forall_smul_eq_self` and
-  `TauCeti.IntermediateField.algEquiv_eq_one_of_smul_eq_self`: any `K`-automorphism of an algebraic
-  extension `L / K` fixing a generating set (or single generator) of `integralClosure A L` is `1`.
 * `TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem`: if `β` generates `L`
   over `E` and `β ^ n` lies in `E` for some `n ≠ 0`, then `[L : E] ≤ n`.
 * `TauCeti.IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot`: if `L = K(y)` with `y`
@@ -300,52 +291,6 @@ single-generator case of `TauCeti.IntermediateField.adjoin_image_eq_top_of_algeb
 theorem adjoin_eq_top_of_algebra_adjoin_eq_top {β : S} (h : Algebra.adjoin R {β} = ⊤) :
     IntermediateField.adjoin K {algebraMap S L β} = ⊤ := by
   simpa using adjoin_image_eq_top_of_algebra_adjoin_eq_top (K := K) (L := L) h
-
-section IntegralClosure
-
-variable {A K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra A L]
-  [Algebra K L] [IsScalarTower A K L] [IsFractionRing A K] [Algebra.IsAlgebraic K L]
-
-/-- If a set `s` generates `integralClosure A L` over `A`, where `L` is an algebraic extension of
-the fraction field `K` of `A`, then `s` generates `L` as a field over `K`. -/
-theorem adjoin_image_coe_eq_top_of_algebra_adjoin_eq_top {s : Set (integralClosure A L)}
-    (hadj : Algebra.adjoin A s = ⊤) :
-    IntermediateField.adjoin K ((↑) '' s : Set L) = ⊤ := by
-  have : IsDomain A := Function.Injective.isDomain (algebraMap A K) (IsFractionRing.injective A K)
-  have : Algebra.IsAlgebraic A L := IsFractionRing.comap_isAlgebraic_iff (K := K).mpr ‹_›
-  have : FaithfulSMul A L := .trans A K L
-  have : IsFractionRing (integralClosure A L) L :=
-    integralClosure.isFractionRing_of_algebraic
-      fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff A L).mp
-  have hmap : (algebraMap (integralClosure A L) L : integralClosure A L → L) = Subtype.val := by
-    ext x
-    exact Subalgebra.algebraMap_apply _ x
-  rw [← hmap]
-  exact adjoin_image_eq_top_of_algebra_adjoin_eq_top
-    (R := A) (S := integralClosure A L) (K := K) (L := L) hadj
-
-/-- Single-generator specialization of
-`TauCeti.IntermediateField.adjoin_image_coe_eq_top_of_algebra_adjoin_eq_top`. -/
-theorem adjoin_coe_eq_top_of_algebra_adjoin_eq_top {x : integralClosure A L}
-    (hadj : Algebra.adjoin A {x} = ⊤) :
-    IntermediateField.adjoin K {(x : L)} = ⊤ := by
-  simpa using adjoin_image_coe_eq_top_of_algebra_adjoin_eq_top (K := K) hadj
-
-/-- If `L` is an algebraic extension of the fraction field `K` of `A` and `integralClosure A L` is
-generated over `A` by a set `s`, then any `K`-automorphism fixing every element of `s` is `1`. -/
-theorem algEquiv_eq_one_of_forall_smul_eq_self {s : Set (integralClosure A L)}
-    (hadj : Algebra.adjoin A s = ⊤) {σ : L ≃ₐ[K] L} (hσ : ∀ x ∈ s, σ • x = x) : σ = 1 := by
-  refine algEquiv_eq_one_of_adjoin_eq_top (adjoin_image_coe_eq_top_of_algebra_adjoin_eq_top hadj) ?_
-  rintro _ ⟨x, hx, rfl⟩
-  exact congrArg Subtype.val (hσ x hx)
-
-/-- If `L` is an algebraic extension of the fraction field `K` of `A` and `integralClosure A L` is
-generated over `A` by a single element `x`, then any `K`-automorphism fixing `x` is `1`. -/
-theorem algEquiv_eq_one_of_smul_eq_self {x : integralClosure A L}
-    (hadj : Algebra.adjoin A {x} = ⊤) {σ : L ≃ₐ[K] L} (hσ : σ • x = x) : σ = 1 :=
-  algEquiv_eq_one_of_forall_smul_eq_self hadj fun _ hy ↦ Set.mem_singleton_iff.mp hy ▸ hσ
-
-end IntegralClosure
 
 open Polynomial in
 /-- If `β` generates `L` over `E` and `β ^ n` lies in `E`, for some `n ≠ 0`, then `[L : E] ≤ n`:

@@ -26,9 +26,6 @@ uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive 
   `x ^ deg f = -f(0) g(x)` for a root `x`.
 * `Polynomial.IsEisensteinAt.ne_zero_of_aeval_eq_zero`: such a root is nonzero in an algebra
   with injective structure map.
-* `Polynomial.IsEisensteinAt.map_of_map_maximalIdeal_eq`: Eisenstein polynomials remain Eisenstein
-  along a homomorphism of discrete valuation rings under which `maximalIdeal R` generates
-  `maximalIdeal R'`.
 * `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` and
   `TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible` give Eisenstein polynomials
   from uniformizers.
@@ -123,30 +120,6 @@ theorem ne_zero_of_aeval_eq_zero [FaithfulSMul R S] (hf : f.IsEisensteinAt (maxi
   have hirr := hf.irreducible_coeff_zero (hmo.natDegree_pos.mpr (by rintro rfl; simp at hx))
   rw [← coeff_zero_eq_aeval_zero', map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R S)] at hx
   exact hirr.ne_zero hx
-
-/-- If `f : R[X]` is Eisenstein at `maximalIdeal R` and `maximalIdeal R` generates `maximalIdeal R'`
-along a homomorphism of discrete valuation rings `R → R'`, then `f.map (algebraMap R R')` is
-Eisenstein at `maximalIdeal R'`. -/
-theorem map_of_map_maximalIdeal_eq {R' : Type*} [CommRing R'] [IsDomain R']
-    [IsDiscreteValuationRing R'] [Algebra R R'] {f : R[X]}
-    (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R') :
-    (f.map (algebraMap R R')).IsEisensteinAt (maximalIdeal R') := by
-  have hinj := TauCeti.IsDiscreteValuationRing.algebraMap_injective_of_map_maximalIdeal_eq hmax
-  have hdeg : (f.map (algebraMap R R')).natDegree = f.natDegree :=
-    natDegree_map_eq_of_injective hinj f
-  refine
-    { leading := ?_
-      mem := fun {n} hn ↦ ?_
-      notMem := ?_ }
-  · rw [leadingCoeff_map_of_injective hinj, notMem_maximalIdeal]
-    exact (notMem_maximalIdeal.mp hf.leading).map (algebraMap R R')
-  · rw [coeff_map, ← hmax]
-    exact Ideal.mem_map_of_mem _ (hf.mem (hn.trans_eq hdeg))
-  · rw [coeff_map, TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
-      TauCeti.IsDiscreteValuationRing.addVal_algebraMap_of_map_maximalIdeal_eq hmax,
-      ← TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
-    exact hf.notMem
 
 end Polynomial.IsEisensteinAt
 

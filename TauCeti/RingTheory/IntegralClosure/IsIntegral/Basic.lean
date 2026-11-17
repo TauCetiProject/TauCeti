@@ -43,8 +43,6 @@ without either being an algebra over the other.
   `b ≠ 0`, then `x` is integral over `ℚ`.
 * `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
   with integral coefficients.
-* `TauCeti.isIntegral_of_isUnit_leadingCoeff`: any root of a polynomial whose leading coefficient
-  is a unit is integral.
 -/
 
 public section
@@ -202,12 +200,5 @@ theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRin
         Polynomial.eval₂_mul, Polynomial.eval₂_C, Polynomial.eval₂_X,
         Subalgebra.algebraMap_apply] using sub_eq_zero.mpr hg
   exact isIntegral_trans g (hpow.of_pow hn)
-
-/-- Any root of a polynomial whose leading coefficient is a unit is integral. -/
-theorem isIntegral_of_isUnit_leadingCoeff {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
-    {f : Polynomial R} {x : S} (hlc : IsUnit f.leadingCoeff) (hx : Polynomial.aeval x f = 0) :
-    IsIntegral R x :=
-  ⟨hlc.unit⁻¹ • f, Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hlc, by
-    rw [← Polynomial.aeval_def, Units.smul_def, Polynomial.smul_eq_C_mul, map_mul, hx, mul_zero]⟩
 
 end TauCeti

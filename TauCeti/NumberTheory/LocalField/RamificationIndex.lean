@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Valuation.Orthogonality
 import Mathlib.Algebra.Polynomial.Derivative
 
 /-!
@@ -451,9 +452,44 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
     (hn : n ≤ ramificationIndex K L) (c : Fin n → 𝒪[K]) :
     IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) =
-      ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) :=
-  IsDiscreteValuationRing.addVal_sum_algebraMap_mul_pow_of_irreducible
-    (fun a ↦ addVal_algebraMap a) hϖ hn c
+      ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
+  classical
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hterm (i : Fin n) :
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) =
+        ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
+    rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
+      addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hϖ, nsmul_one]
+  have hdistinct : ∀ i ∈ Finset.univ, ∀ j ∈ Finset.univ, i ≠ j →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠ ⊤ →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) ≠ ⊤ →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠
+        IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) := by
+    intro i _ j _ hij hi0 hj0 hval
+    have hci : c i ≠ 0 := by
+      intro h
+      apply hi0
+      simp [h]
+    have hcj : c j ≠ 0 := by
+      intro h
+      apply hj0
+      simp [h]
+    obtain ⟨ni, ui, hci'⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hci hπ
+    obtain ⟨nj, uj, hcj'⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hcj hπ
+    rw [hterm, hterm, hci', hcj', IsDiscreteValuationRing.addVal_def' ui hπ ni,
+      IsDiscreteValuationRing.addVal_def' uj hπ nj] at hval
+    have hnat : ramificationIndex K L * ni + (i : ℕ) = ramificationIndex K L * nj + (j : ℕ) := by
+      have hval' : ((ramificationIndex K L * ni + (i : ℕ) : ℕ) : ℕ∞) =
+          ramificationIndex K L * nj + (j : ℕ) := by
+        simpa [nsmul_eq_mul] using hval
+      exact_mod_cast hval'
+    have hmod := congrArg (fun m : ℕ ↦ m % ramificationIndex K L) hnat
+    have hijval : (i : ℕ) = (j : ℕ) := by
+      simpa [Nat.add_mod, Nat.mod_eq_of_lt (i.isLt.trans_le hn),
+        Nat.mod_eq_of_lt (j.isLt.trans_le hn)] using hmod
+    exact hij (Fin.ext hijval)
+  rw [AddValuation.map_sum_eq_inf_of_ne _ _ _ hdistinct, Finset.inf_univ_eq_iInf]
+  exact iInf_congr hterm
 
 /-- **Valuation balls in uniformizer coordinates.** For a uniformizer `ϖ` of `L` and `n ≤ e(L/K)`,
 the coefficient vectors `c : Fin n → 𝒪[K]` with `r ≤ v_L(∑ c i ϖ ^ i)` form the box whose `i`-th
