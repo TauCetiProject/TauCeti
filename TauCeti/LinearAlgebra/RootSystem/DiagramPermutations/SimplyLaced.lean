@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Fin
+import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
@@ -54,12 +55,6 @@ namespace TauCeti.DynkinType
 
 /-! ### Type `Aₙ` -/
 
-/-- Off-diagonal `-1` entries of `CartanMatrix.A n` occur precisely at consecutive indices. -/
-private theorem cartanMatrix_A_eq_neg_one_iff {n : ℕ} (i j : Fin n) :
-    CartanMatrix.A n i j = -1 ↔ (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
-  simp only [CartanMatrix.A, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> simp_all
-
 /-- A diagram symmetry of `Aₙ` fixing node `0` fixes every node along the chain. -/
 private theorem eq_one_of_mem_diagramSymmetry_A_of_apply_zero {n : ℕ} {σ : Equiv.Perm (Fin n)}
     (hσ : σ ∈ (A n).diagramSymmetry) (h0 : ∀ h : 0 < n, (σ ⟨0, h⟩ : ℕ) = 0) : σ = 1 := by
@@ -77,8 +72,8 @@ private theorem eq_one_of_mem_diagramSymmetry_A_of_apply_zero {n : ℕ} {σ : Eq
       congrFun₂ (cartanMatrix_A (m + 1) ▸ mem_diagramSymmetry_iff_submatrix.mp hτ) i j
     have hadj (i j : Fin (m + 1)) (hij : i.val + 1 = j.val) :
         (τ i).val + 1 = (τ j).val ∨ (τ j).val + 1 = (τ i).val :=
-      (cartanMatrix_A_eq_neg_one_iff (τ i) (τ j)).mp
-        ((hmat i j).trans ((cartanMatrix_A_eq_neg_one_iff i j).mpr (Or.inl hij)))
+      (CartanMatrix.A_apply_eq_neg_one_iff (τ i) (τ j)).mp
+        ((hmat i j).trans ((CartanMatrix.A_apply_eq_neg_one_iff i j).mpr (Or.inl hij)))
     have hlast : τ (Fin.last m) = Fin.last m := by
       have hr_last : r (Fin.last m) = ⟨0, Nat.succ_pos m⟩ := by
         ext; simp [r, graphPermA_apply]
@@ -103,12 +98,12 @@ private theorem apply_zero_eq_zero_or_sub_one_of_mem_diagramSymmetry_A {n : ℕ}
   let u : Fin n := ⟨(σ ⟨0, by omega⟩ : ℕ) - 1, by omega⟩
   let v : Fin n := ⟨(σ ⟨0, by omega⟩ : ℕ) + 1, by omega⟩
   have hu : CartanMatrix.A n ⟨0, by omega⟩ (σ.symm u) = -1 := by
-    rw [← hmat, Equiv.apply_symm_apply, cartanMatrix_A_eq_neg_one_iff]
+    rw [← hmat, Equiv.apply_symm_apply, CartanMatrix.A_apply_eq_neg_one_iff]
     right; simp [u]; omega
   have hv : CartanMatrix.A n ⟨0, by omega⟩ (σ.symm v) = -1 := by
-    rw [← hmat, Equiv.apply_symm_apply, cartanMatrix_A_eq_neg_one_iff]
+    rw [← hmat, Equiv.apply_symm_apply, CartanMatrix.A_apply_eq_neg_one_iff]
     left; simp [v]
-  rw [cartanMatrix_A_eq_neg_one_iff] at hu hv
+  rw [CartanMatrix.A_apply_eq_neg_one_iff] at hu hv
   simp only at hu hv
   have huv : σ.symm u = σ.symm v := Fin.ext (by omega)
   have : (u : ℕ) = (v : ℕ) := congrArg Fin.val (σ.symm.injective huv)
@@ -173,17 +168,6 @@ theorem mem_diagramSymmetry_D4_iff {σ : Equiv.Perm (Fin 4)} :
       simp only [cartanMatrix_D, hD4, σ.injective.eq_iff, hi1, hj1]
     exact mem_diagramSymmetry_iff.mpr hrev
 
-/-- Off-diagonal `-1` entries of `CartanMatrix.D n` (`4 ≤ n`) connect consecutive stem nodes and
-connect the branch node `n - 3` to the two fork leaves `n - 2` and `n - 1`. -/
-private theorem cartanMatrix_D_eq_neg_one_iff {n : ℕ} (hn : 4 ≤ n) (i j : Fin n) :
-    CartanMatrix.D n i j = -1 ↔
-      ((i : ℕ) + 1 = j ∧ (j : ℕ) + 2 < n) ∨
-      ((j : ℕ) + 1 = i ∧ (i : ℕ) + 2 < n) ∨
-      ((i : ℕ) + 3 = n ∧ ((j : ℕ) + 2 = n ∨ (j : ℕ) + 1 = n)) ∨
-      ((j : ℕ) + 3 = n ∧ ((i : ℕ) + 2 = n ∨ (i : ℕ) + 1 = n)) := by
-  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]
-  (split_ifs <;> simp_all) <;> omega
-
 /-- Every diagram symmetry of `Dₙ` (`4 ≤ n`) fixes the unique branch node `n - 3`, which is the
 only node with three neighbours of entry `-1`. -/
 private theorem apply_branch_eq_of_mem_diagramSymmetry_D {n : ℕ} (hn : 4 ≤ n)
@@ -195,12 +179,12 @@ private theorem apply_branch_eq_of_mem_diagramSymmetry_D {n : ℕ} (hn : 4 ≤ n
   let u₂ : Fin n := ⟨n - 2, by omega⟩
   let u₃ : Fin n := ⟨n - 1, by omega⟩
   have hc₁ : CartanMatrix.D n (σ ⟨n - 3, by omega⟩) (σ u₁) = -1 := by
-    rw [hmat, cartanMatrix_D_eq_neg_one_iff hn]; right; left; simp [u₁]; omega
+    rw [hmat, CartanMatrix.D_apply_eq_neg_one_iff]; right; left; simp [u₁]; omega
   have hc₂ : CartanMatrix.D n (σ ⟨n - 3, by omega⟩) (σ u₂) = -1 := by
-    rw [hmat, cartanMatrix_D_eq_neg_one_iff hn]; right; right; left; simp [u₂]; omega
+    rw [hmat, CartanMatrix.D_apply_eq_neg_one_iff]; right; right; left; simp [u₂]; omega
   have hc₃ : CartanMatrix.D n (σ ⟨n - 3, by omega⟩) (σ u₃) = -1 := by
-    rw [hmat, cartanMatrix_D_eq_neg_one_iff hn]; right; right; left; simp [u₃]; omega
-  rw [cartanMatrix_D_eq_neg_one_iff hn] at hc₁ hc₂ hc₃
+    rw [hmat, CartanMatrix.D_apply_eq_neg_one_iff]; right; right; left; simp [u₃]; omega
+  rw [CartanMatrix.D_apply_eq_neg_one_iff] at hc₁ hc₂ hc₃
   have h12 : (σ u₁ : ℕ) ≠ (σ u₂ : ℕ) := fun h ↦ by
     have := congrArg Fin.val (σ.injective (Fin.ext h)); simp only [u₁, u₂] at this; omega
   have h13 : (σ u₁ : ℕ) ≠ (σ u₃ : ℕ) := fun h ↦ by
@@ -222,8 +206,8 @@ private theorem apply_sub_four_eq_of_mem_diagramSymmetry_D {n : ℕ} (hn : 5 ≤
     congrFun₂ (cartanMatrix_D n ▸ mem_diagramSymmetry_iff_submatrix.mp hσ) i j
   have hbranch := apply_branch_eq_of_mem_diagramSymmetry_D (by omega) hσ
   have hadj : CartanMatrix.D n (σ ⟨n - 3, by omega⟩) (σ ⟨n - 4, by omega⟩) = -1 := by
-    rw [hmat, cartanMatrix_D_eq_neg_one_iff (by omega)]; right; left; simp; omega
-  rw [hbranch, cartanMatrix_D_eq_neg_one_iff (by omega)] at hadj
+    rw [hmat, CartanMatrix.D_apply_eq_neg_one_iff]; right; left; simp; omega
+  rw [hbranch, CartanMatrix.D_apply_eq_neg_one_iff] at hadj
   simp only at hadj
   have hlt := (σ ⟨n - 4, by omega⟩).isLt
   rcases (by omega : (σ ⟨n - 4, by omega⟩ : ℕ) = n - 4 ∨
@@ -232,10 +216,10 @@ private theorem apply_sub_four_eq_of_mem_diagramSymmetry_D {n : ℕ} (hn : 5 ≤
   · exfalso
     let z : Fin n := σ ⟨n - 4, by omega⟩
     have h45 : CartanMatrix.D n ⟨n - 4, by omega⟩ ⟨n - 5, by omega⟩ = -1 := by
-      rw [cartanMatrix_D_eq_neg_one_iff (by omega)]; right; left; simp; omega
+      rw [CartanMatrix.D_apply_eq_neg_one_iff]; right; left; simp; omega
     have hz5 : CartanMatrix.D n z (σ ⟨n - 5, by omega⟩) = -1 := by
       simpa only [z] using (hmat ⟨n - 4, by omega⟩ ⟨n - 5, by omega⟩).trans h45
-    rw [cartanMatrix_D_eq_neg_one_iff (by omega)] at hz5
+    rw [CartanMatrix.D_apply_eq_neg_one_iff] at hz5
     have := (σ ⟨n - 5, by omega⟩).isLt
     have h5br : σ ⟨n - 5, by omega⟩ = σ ⟨n - 3, by omega⟩ := by
       rw [hbranch]; exact Fin.ext (by simp only [z] at hz5 ⊢; omega)
@@ -260,8 +244,8 @@ private theorem apply_stem_eq_of_mem_diagramSymmetry_D {n : ℕ} (hn : 5 ≤ n)
     have ih1' := ih1 (by omega)
     have hadj : CartanMatrix.D n (σ ⟨n - 3 - (d + 1), by omega⟩)
         (σ ⟨n - 3 - (d + 2), by omega⟩) = -1 := by
-      rw [hmat, cartanMatrix_D_eq_neg_one_iff (by omega)]; right; left; simp; omega
-    rw [ih1', cartanMatrix_D_eq_neg_one_iff (by omega)] at hadj
+      rw [hmat, CartanMatrix.D_apply_eq_neg_one_iff]; right; left; simp; omega
+    rw [ih1', CartanMatrix.D_apply_eq_neg_one_iff] at hadj
     simp only at hadj
     have := (σ ⟨n - 3 - (d + 2), by omega⟩).isLt
     have hne : (σ ⟨n - 3 - (d + 2), by omega⟩ : ℕ) ≠ n - 3 - d := fun heq ↦ by
@@ -430,7 +414,7 @@ theorem cartanMatrix_A_even_mid {n : ℕ} (hn : 1 ≤ n) :
     (A (2 * n)).cartanMatrix (⟨n - 1, by omega⟩ : Fin (2 * n))
       (⟨n, by omega⟩ : Fin (2 * n)) = -1 := by
   have h : CartanMatrix.A (2 * n) ⟨n - 1, by omega⟩ ⟨n, by omega⟩ = -1 := by
-    rw [cartanMatrix_A_eq_neg_one_iff]
+    rw [CartanMatrix.A_apply_eq_neg_one_iff]
     left; simp; omega
   simpa only [cartanMatrix_A] using h
 
