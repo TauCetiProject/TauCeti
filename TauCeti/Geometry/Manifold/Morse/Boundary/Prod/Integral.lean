@@ -38,7 +38,9 @@ and those of `Y` with a constant first component
 orientation, transported by the unstable frame, with the direction of the flow followed by the
 orientation at the end. The unstable frames and the normal coordinates of the product are the
 products of those of the factors (`TauCeti.Geometry.Manifold.Morse.Stable.Prod`), so the comparison
-map of the product is built from that of the moving factor and the identity of the constant one:
+map of the product is built from those of the factors
+(`TauCeti.IsAdaptedPseudoGradient.trajectoryComparison_prod`), here that of the moving factor and
+the identity of the constant one:
 
 * along a trajectory of `X` from `p` to `p'`, it is the comparison map of `X` followed by the
   coordinates at `q`, and the sign is that of `X`
@@ -151,6 +153,54 @@ variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] [Finit
   {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z} {hX : IsAdaptedPseudoGradient f X}
   {hY : IsAdaptedPseudoGradient g Y}
 
+section Comparison
+
+variable {p p' : M} {q q' : N} {φp : MorseChart E f p} {φp' : MorseChart E f p'}
+  {ψq : MorseChart E' g q} {ψq' : MorseChart E' g q'}
+  (hφp : ∀ z ∈ φp.toChart.source, φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart z (X z)) =
+    fun i ↦ -(φp.weight i * φp.coord (φp.toChart z) i))
+  (hφp' : ∀ z ∈ φp'.toChart.source, φp'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp'.toChart z (X z)) =
+    fun i ↦ -(φp'.weight i * φp'.coord (φp'.toChart z) i))
+  (hψq : ∀ z ∈ ψq.toChart.source, ψq.coord (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψq.toChart z (Y z)) =
+    fun i ↦ -(ψq.weight i * ψq.coord (ψq.toChart z) i))
+  (hψq' : ∀ z ∈ ψq'.toChart.source, ψq'.coord (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψq'.toChart z (Y z)) =
+    fun i ↦ -(ψq'.weight i * ψq'.coord (ψq'.toChart z) i))
+include hφp hφp' hψq hψq'
+
+/-- **The comparison map of a product.** At a point `(y₁, y₂)` of
+`(W^u(p) ∩ W^s(p')) × (W^u(q) ∩ W^s(q'))`, the comparison map of the product charts sends the pair
+`(a, b)` of coordinates of negative weight to the sum of the derivative components of the
+comparisons of `a` along `X` and of `b` along `Y`, together with the pair of their normal
+coordinate components. -/
+theorem trajectoryComparison_prod (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g) {y₁ : M}
+    {y₂ : N} (hy₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet p')
+    (hy₂ : y₂ ∈ hY.flow.unstableSet q ∩ hY.flow.stableSet q') (a : {i // φp.weight i < 0} → ℝ)
+    (b : {j // ψq.weight j < 0} → ℝ) :
+    (hX.prod hY).trajectoryComparison (φp.prod ψq) (φp'.prod ψq') (y₁, y₂)
+        ((φp.prodNegativeEquiv ψq).symm (a, b)) =
+      ((hX.trajectoryComparison φp φp' y₁ a).1 + (hY.trajectoryComparison ψq ψq' y₂ b).1,
+        (φp'.prodNegativeEquiv ψq').symm
+          ((hX.trajectoryComparison φp φp' y₁ a).2, (hY.trajectoryComparison ψq ψq' y₂ b).2)) := by
+  have hF := unstableFrame_prod_prodNegativeEquiv_symm hφp hψq hf hg hy₁.1 hy₂.1 a b
+  have hC := (hX.prod hY).trajectoryComparison_apply (φp.prod ψq) (φp'.prod ψq') (y₁, y₂)
+    ((φp.prodNegativeEquiv ψq).symm (a, b))
+  refine Prod.ext ?_ ?_
+  · refine (congrArg Prod.fst hC).trans <|
+      (congrArg (mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (y₁, y₂)) hF).trans ?_
+    have hd := mvfderiv_comp_fst_add_comp_snd_apply (p := (y₁, y₂)) (hX.mdifferentiable y₁)
+      (hY.mdifferentiable y₂) (hX.unstableFrame φp y₁ a, hY.unstableFrame ψq y₂ b)
+    rw [← modelWithCornersSelf_prod] at hd
+    refine hd.trans ?_
+    rw [trajectoryComparison_apply, trajectoryComparison_apply]
+  · refine (φp'.prodNegativeEquiv ψq').injective ?_
+    refine (congrArg (fun c ↦ φp'.prodNegativeEquiv ψq' c.2) hC).trans <|
+      (congrArg (fun v ↦ φp'.prodNegativeEquiv ψq'
+        ((hX.prod hY).stableNormal (φp'.prod ψq') (y₁, y₂) v)) hF).trans ?_
+    rw [prodNegativeEquiv_stableNormal_prod hφp' hψq' hy₁.2 hy₂.2, LinearEquiv.apply_symm_apply,
+      trajectoryComparison_apply, trajectoryComparison_apply]
+
+end Comparison
+
 section SecondFactorConstant
 
 variable {p p' : M} {q : N} {φp : MorseChart E f p} {φp' : MorseChart E f p'}
@@ -175,25 +225,10 @@ theorem trajectoryComparison_prod_right (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMo
         ((φp.prodNegativeEquiv ψ).symm (a, b)) =
       ((hX.trajectoryComparison φp φp' y a).1,
         (φp'.prodNegativeEquiv ψ).symm ((hX.trajectoryComparison φp φp' y a).2, b)) := by
-  have hqq := hY.mem_unstableSet_inter_stableSet_self
-    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq)
-  have hF := unstableFrame_prod_prodNegativeEquiv_symm hφp hψ hf hg hy.1 hqq.1 a b
-  have hC := (hX.prod hY).trajectoryComparison_apply (φp.prod ψ) (φp'.prod ψ) (y, q)
-    ((φp.prodNegativeEquiv ψ).symm (a, b))
-  refine Prod.ext ?_ ?_
-  · refine (congrArg Prod.fst hC).trans <|
-      (congrArg (mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (y, q)) hF).trans ?_
-    have hd := mvfderiv_comp_fst_add_comp_snd_apply (p := (y, q)) (hX.mdifferentiable y)
-      (hY.mdifferentiable q) (hX.unstableFrame φp y a, hY.unstableFrame ψ q b)
-    rw [← modelWithCornersSelf_prod, mem_criticalPoints.1 hq, zero_apply] at hd
-    refine hd.trans ((add_zero _).trans ?_)
-    rw [trajectoryComparison_apply]
-  · refine (φp'.prodNegativeEquiv ψ).injective ?_
-    refine (congrArg (fun c ↦ φp'.prodNegativeEquiv ψ c.2) hC).trans <|
-      (congrArg (fun v ↦ φp'.prodNegativeEquiv ψ
-        ((hX.prod hY).stableNormal (φp'.prod ψ) (y, q) v)) hF).trans ?_
-    rw [prodNegativeEquiv_stableNormal_prod hφp' hψ hy.2 hqq.2, LinearEquiv.apply_symm_apply,
-      stableNormal_unstableFrame_self hψ, trajectoryComparison_apply]
+  rw [trajectoryComparison_prod hφp hφp' hψ hψ hf hg hy
+    (hY.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq)) a b,
+    hY.trajectoryComparison_apply ψ ψ q b, mem_criticalPoints.1 hq, zero_apply, add_zero,
+    stableNormal_unstableFrame_self hψ]
 
 /-- **The signs of the trajectories of the first factor.** Along a trajectory of the product from
 `(p, q)` to `(p', q)` through `(y, q)`, with `q` a critical point of `g`, the sign for the product
@@ -267,25 +302,10 @@ theorem trajectoryComparison_prod_left (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMor
         ((φ.prodNegativeEquiv ψq).symm (a, b)) =
       ((hY.trajectoryComparison ψq ψq' w b).1,
         (φ.prodNegativeEquiv ψq').symm (a, (hY.trajectoryComparison ψq ψq' w b).2)) := by
-  have hpp := hX.mem_unstableSet_inter_stableSet_self
-    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp)
-  have hF := unstableFrame_prod_prodNegativeEquiv_symm hφ hψq hf hg hpp.1 hw.1 a b
-  have hC := (hX.prod hY).trajectoryComparison_apply (φ.prod ψq) (φ.prod ψq') (p, w)
-    ((φ.prodNegativeEquiv ψq).symm (a, b))
-  refine Prod.ext ?_ ?_
-  · refine (congrArg Prod.fst hC).trans <|
-      (congrArg (mvfderiv 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (p, w)) hF).trans ?_
-    have hd := mvfderiv_comp_fst_add_comp_snd_apply (p := (p, w)) (hX.mdifferentiable p)
-      (hY.mdifferentiable w) (hX.unstableFrame φ p a, hY.unstableFrame ψq w b)
-    rw [← modelWithCornersSelf_prod, mem_criticalPoints.1 hp, zero_apply] at hd
-    refine hd.trans ((zero_add _).trans ?_)
-    rw [trajectoryComparison_apply]
-  · refine (φ.prodNegativeEquiv ψq').injective ?_
-    refine (congrArg (fun c ↦ φ.prodNegativeEquiv ψq' c.2) hC).trans <|
-      (congrArg (fun v ↦ φ.prodNegativeEquiv ψq'
-        ((hX.prod hY).stableNormal (φ.prod ψq') (p, w) v)) hF).trans ?_
-    rw [prodNegativeEquiv_stableNormal_prod hφ hψq' hpp.2 hw.2, LinearEquiv.apply_symm_apply,
-      stableNormal_unstableFrame_self hφ, trajectoryComparison_apply]
+  rw [trajectoryComparison_prod hφ hφ hψq hψq' hf hg
+    (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp)) hw a b,
+    hX.trajectoryComparison_apply φ φ p a, mem_criticalPoints.1 hp, zero_apply, zero_add,
+    stableNormal_unstableFrame_self hφ]
 
 /-- **The signs of the trajectories of the second factor.** Along a trajectory of the product from
 `(p, q)` to `(p, q')` through `(p, w)`, with `p` a critical point of `f`, the sign for the product
@@ -379,12 +399,14 @@ noncomputable def prod :
     (𝔬'.orientation (criticalPointsCompFstAddCompSndEquiv f g hf hg P).2)
 
 /-- The Morse chart of the product orientation data at `(p, q)` is the product of the charts. -/
+@[simp]
 theorem prod_chart (p : criticalPoints 𝓘(ℝ, E) f) (q : criticalPoints 𝓘(ℝ, E') g) :
     (𝔬.prod 𝔬' hf hg).chart ((criticalPointsCompFstAddCompSndEquiv f g hf hg).symm (p, q)) =
       (𝔬.chart p).prod (𝔬'.chart q) :=
   (rfl)
 
 /-- The orientation of the product orientation data at `(p, q)` is the product orientation. -/
+@[simp]
 theorem prod_orientation (p : criticalPoints 𝓘(ℝ, E) f) (q : criticalPoints 𝓘(ℝ, E') g) :
     (𝔬.prod 𝔬' hf hg).orientation ((criticalPointsCompFstAddCompSndEquiv f g hf hg).symm (p, q)) =
       (𝔬.chart p).prodOrientation (𝔬'.chart q) (𝔬.orientation p) (𝔬'.orientation q) :=

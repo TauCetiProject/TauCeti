@@ -112,6 +112,18 @@ theorem prodNegativeEquiv_symm_apply (a : {j // φ.weight j < 0} → ℝ)
     Equiv.symm_symm]
   rcases φ.prodNegativeWeightEquiv ψ i with j | j <;> rfl
 
+/-- The coordinates of negative weight of `v` in the product chart, split between the two charts. -/
+theorem prodNegativeEquiv_apply (v : {i // (φ.prod ψ).weight i < 0} → ℝ) :
+    φ.prodNegativeEquiv ψ v =
+      (fun j ↦ v ((φ.prodNegativeWeightEquiv ψ).symm (Sum.inl j)),
+        fun j ↦ v ((φ.prodNegativeWeightEquiv ψ).symm (Sum.inr j))) := by
+  refine (φ.prodNegativeEquiv ψ).symm.injective ?_
+  funext i
+  rw [LinearEquiv.symm_apply_apply, prodNegativeEquiv_symm_apply]
+  rcases h : φ.prodNegativeWeightEquiv ψ i with j | j
+  · rw [Sum.elim_inl, ← h, Equiv.symm_apply_apply]
+  · rw [Sum.elim_inr, ← h, Equiv.symm_apply_apply]
+
 /-- The coordinates of negative weight of a vector of `E × E'` in a product of Morse charts are
 those of its two components. -/
 @[simp]
