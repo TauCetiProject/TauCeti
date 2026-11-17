@@ -687,18 +687,6 @@ theorem image_reflectionPerm_self_posRoots :
     simp only [mem_negRoots, mem_posRoots] at hi ⊢
     exact (RootPairing.Base.IsPos.neg_iff_not b i).mpr hi
 
-/-- Root negation exchanges negative and positive roots. -/
-theorem image_reflectionPerm_self_negRoots :
-    (fun i ↦ P.reflectionPerm i i) '' negRoots P b = posRoots P b := by
-  have hinv := reflectionPerm_self_involutive P
-  calc
-    (fun i ↦ P.reflectionPerm i i) '' negRoots P b =
-        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [← compl_posRoots]
-    _ = ((fun i ↦ P.reflectionPerm i i) '' posRoots P b)ᶜ :=
-      Set.image_compl_eq hinv.bijective
-    _ = (negRoots P b)ᶜ := by rw [image_reflectionPerm_self_posRoots]
-    _ = posRoots P b := compl_negRoots P b
-
 /-! ### The number of positive roots -/
 
 /-- A root pairing has equally many positive and negative roots. Root negation gives the bijection
