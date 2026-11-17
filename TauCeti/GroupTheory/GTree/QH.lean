@@ -155,9 +155,9 @@ theorem boundarySubgroup_ne_bot (j : Fin q.boundary) : q.boundarySubgroup j ≠ 
   rw [boundarySubgroup_eq_zpowers, Ne, zpowers_eq_bot]
   simpa using Signed.peripheral_ne_one_of_eulerChar_neg q.eulerChar_neg j
 
-/-- Containment in a conjugate of `⟨pⱼ⟩`, read in `G`: an incident subgroup is carried into the
-conjugate of `⟨pⱼ⟩` by `s` exactly when it lies in the conjugate of the boundary subgroup by the
-element corresponding to `s`. -/
+/-- Containment in a conjugate of `⟨pⱼ⟩`, read in `G`: a subgroup of the vertex stabilizer is
+carried into the conjugate of `⟨pⱼ⟩` by `s` exactly when it lies in the conjugate of the boundary
+subgroup by the element corresponding to `s`. -/
 theorem map_surfaceEquiv_le_map_conj_iff {K : Subgroup (stabilizer G v)} {j : Fin q.boundary}
     {s : Signed q.orientable q.genus q.boundary} :
     K.map q.surfaceEquiv.toMonoidHom ≤
@@ -308,9 +308,10 @@ theorem not_isQH_of_isMulCommutative {ℋ : Set (Subgroup G)} {v : T.V}
 
 /-- A vertex whose stabilizer is contained in a conjugate of a member of `ℋ` is not quadratically
 hanging. -/
-theorem not_isQH_of_stabilizer_le {ℋ : Set (Subgroup G)} {v : T.V} {H : Subgroup G} (hH : H ∈ ℋ)
-    (g : G) (h : stabilizer G v ≤ H.map (MulAut.conj g).toMonoidHom) : ¬T.IsQH ℋ v := fun hv =>
-  hv.ne_top_of_mem_incidentSubgroups (T.map_subgroupOf_mem_incidentSubgroups hH g v)
+theorem not_isQH_of_stabilizer_le_map_conj {ℋ : Set (Subgroup G)} {v : T.V} {H : Subgroup G}
+    (hH : H ∈ ℋ) (g : G) (h : stabilizer G v ≤ H.map (MulAut.conj g).toMonoidHom) :
+    ¬T.IsQH ℋ v := fun hv =>
+  hv.ne_top_of_mem_incidentSubgroups (T.map_conj_subgroupOf_mem_incidentSubgroups hH g v)
     (subgroupOf_eq_top.mpr h)
 
 /-! ### One-vertex trees of surface groups -/

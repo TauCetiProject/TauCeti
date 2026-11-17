@@ -418,8 +418,8 @@ theorem IsEllipticSubgroup.mono {H K : Subgroup G} (hH : T.IsEllipticSubgroup H)
   ext g
   rw [mem_stabilizer_iff, mem_stabilizer_iff, ← rev_smul, T.rev_injective.eq_iff]
 
-/-- The elements fixing two distinct vertices `v` and `w` fix the first dart of the reduced path
-from `v` to `w`, which starts at `v`. -/
+/-- For distinct vertices `v` and `w`, some dart starting at `v` is fixed by every element fixing
+both `v` and `w`. -/
 theorem exists_src_eq_and_stabilizer_inf_le {v w : T.V} (h : v ≠ w) :
     ∃ e : T.E, T.src e = v ∧ stabilizer G v ⊓ stabilizer G w ≤ stabilizer G e := by
   obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced v w
@@ -721,8 +721,8 @@ theorem stabilizer_subgroupOf_mem_incidentSubgroups (ℋ : Set (Subgroup G)) {v 
 
 /-- The intersection of the stabilizer of `v` with a conjugate of a member of `ℋ` is an incident
 subgroup at `v`. -/
-theorem map_subgroupOf_mem_incidentSubgroups {ℋ : Set (Subgroup G)} {H : Subgroup G} (hH : H ∈ ℋ)
-    (g : G) (v : T.V) :
+theorem map_conj_subgroupOf_mem_incidentSubgroups {ℋ : Set (Subgroup G)} {H : Subgroup G}
+    (hH : H ∈ ℋ) (g : G) (v : T.V) :
     (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v) ∈ T.incidentSubgroups ℋ v :=
   mem_incidentSubgroups_iff.mpr (.inr ⟨H, hH, g, rfl⟩)
 
@@ -730,7 +730,7 @@ theorem map_subgroupOf_mem_incidentSubgroups {ℋ : Set (Subgroup G)} {H : Subgr
 `v`. -/
 theorem subgroupOf_mem_incidentSubgroups {ℋ : Set (Subgroup G)} {H : Subgroup G} (hH : H ∈ ℋ)
     (v : T.V) : H.subgroupOf (stabilizer G v) ∈ T.incidentSubgroups ℋ v := by
-  simpa [MulAut.one_def] using T.map_subgroupOf_mem_incidentSubgroups hH 1 v
+  simpa [MulAut.one_def] using T.map_conj_subgroupOf_mem_incidentSubgroups hH 1 v
 
 /-- The incident subgroups grow with the family `ℋ`. -/
 theorem incidentSubgroups_mono {ℋ ℋ' : Set (Subgroup G)} (h : ℋ ⊆ ℋ') (v : T.V) :

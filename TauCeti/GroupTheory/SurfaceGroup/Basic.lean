@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.Tactic.DeriveFintype
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import Mathlib.Tactic.Group
 
 /-!
@@ -65,6 +66,8 @@ surface glued from two pieces along a boundary curve.
 * `TauCeti.SurfaceGroup.Orientable.not_isMulCommutative_of_eulerChar_neg` and
   `TauCeti.SurfaceGroup.Nonorientable.not_isMulCommutative`: the surface groups of compact surfaces
   of negative Euler characteristic are not abelian, and neither is `S⁻(g, m)` for `g ≥ 2`.
+* `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
+  commute only when they are equal.
 
 ## References
 
@@ -418,8 +421,9 @@ abelian. -/
 theorem not_isMulCommutative_of_eulerChar_neg (h : eulerChar g m < 0) :
     ¬IsMulCommutative (Orientable g m) := by
   intro _
-  -- A homomorphism to `Perm (Fin 3)`, given by the universal property, sends two generators to
-  -- noncommuting permutations.
+  -- For `g < 2`, a homomorphism to `Perm (Fin 3)`, given by the universal property, sends two
+  -- generators to noncommuting permutations; for `g ≥ 2`, two generators `cᵢ` already do not
+  -- commute.
   have hne : (swap 0 1 * swap 1 2 : Perm (Fin 3)) ≠ swap 1 2 * swap 0 1 := by decide
   rw [eulerChar_def] at h
   rcases g with _ | _ | g
@@ -542,14 +546,32 @@ theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1}) :
     homEquiv.symm t = lift t.1.1 t.1.2 t.2 := (rfl)
 
+/-- Two generators `cᵢ` and `cⱼ` of the nonorientable surface group `S⁻(g, m)` commute only when
+they are equal. In particular `S⁻(g, m)` is not commutative for `g ≥ 2`. -/
+@[simp]
+theorem commute_c_iff {i j : Fin g} : Commute (c g m i) (c g m j) ↔ i = j := by
+  classical
+  refine ⟨fun h ↦ by_contra fun hij ↦ ?_, fun h ↦ h ▸ .refl _⟩
+  -- Send `cᵢ` and `cⱼ` to two noncommuting reflections of the dihedral group of order `6` and
+  -- every other generator to `1`. Reflections square to `1`, so the relator is killed.
+  let κ : Fin g → DihedralGroup 3 := fun k ↦
+    if k = i then .sr 0 else if k = j then .sr 1 else 1
+  have hκ (k : Fin g) : κ k ^ 2 = 1 := by
+    simp only [κ]
+    split_ifs <;> simp [sq]
+  have := (h.map (lift κ (fun _ ↦ 1) (by simp [nonorientableWord_def, hκ, List.ofFn_const]))).eq
+  have hne : (DihedralGroup.sr 0 : DihedralGroup 3) * .sr 1 ≠ .sr 1 * .sr 0 := by decide
+  exact hne (by simpa [κ, Ne.symm hij] using this)
+
 open Equiv in
 /-- The nonorientable surface group `S⁻(g, m)` is not abelian when the surface has negative
 Euler characteristic or genus at least two. -/
 theorem not_isMulCommutative (h : 2 ≤ g ∨ eulerChar g m < 0) :
     ¬IsMulCommutative (Nonorientable g m) := by
   intro _
-  -- A homomorphism to `Perm (Fin 3)`, given by the universal property, sends two generators to
-  -- noncommuting permutations.
+  -- For `g < 2`, a homomorphism to `Perm (Fin 3)`, given by the universal property, sends two
+  -- generators to noncommuting permutations; for `g ≥ 2`, two generators `cᵢ` already do not
+  -- commute.
   have hne : (swap 0 1 * swap 1 2 : Perm (Fin 3)) ≠ swap 1 2 * swap 0 1 := by decide
   rw [eulerChar_def] at h
   rcases g with _ | _ | g
@@ -568,12 +590,7 @@ theorem not_isMulCommutative (h : 2 ≤ g ∨ eulerChar g m < 0) :
       simp [nonorientableWord_def, List.ofFn_succ, Pi.one_def, pow_two]
     have := congrArg (lift _ _ hw) (mul_comm' (c 1 (m + 2) 0) (peripheral 1 (m + 2) 0))
     exact hne (by simpa using this)
-  · -- `c₁ ↦ (01)`, `c₂ ↦ (12)`
-    have hw : nonorientableWord (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) 1) :
-        Fin (g + 2) → Perm (Fin 3)) (1 : Fin m → Perm (Fin 3)) = 1 := by
-      simp [nonorientableWord_def, List.ofFn_succ, Pi.one_def, pow_two]
-    have := congrArg (lift _ _ hw) (mul_comm' (c (g + 2) m 0) (c (g + 2) m 1))
-    exact hne (by simpa using this)
+  · exact Fin.zero_ne_one (commute_c_iff.mp (mul_comm' (c (g + 2) m 0) (c (g + 2) m 1)))
 
 end Nonorientable
 

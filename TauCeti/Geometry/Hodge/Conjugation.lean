@@ -267,7 +267,7 @@ theorem mem_conjFiltration_iff (ω : Conjugation W) (F : ℤ → Submodule ℂ W
 
 /-- Applying conjugation to a conjugate filtration step recovers the original step. -/
 @[simp]
-theorem conjFiltration_conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
+theorem map_conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
     (ω.conjFiltration F p).map ω.toEquiv.toLinearMap = F p :=
   ω.map_map_eq_self (F p)
 
