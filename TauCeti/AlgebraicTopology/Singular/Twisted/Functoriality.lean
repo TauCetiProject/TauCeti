@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
+import Mathlib.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Functoriality of relative singular homology with local coefficients
@@ -13,13 +14,16 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 A map of topological pairs `f : (X, A) ⟶ (Y, B)` and a local coefficient system `L` on `Y`
 induce maps from the relative twisted chains and homology of `(X, A)` with coefficients in
 `f⁎L` to those of `(Y, B)` with coefficients in `L`.  The construction descends the map on
-ambient twisted chains through the quotient by the subspace chains.
+ambient twisted chains through the quotient by the subspace chains. When the ambient map is
+injective and sends no point outside `A` into `B`, for instance for an inclusion `(X, A) ⟶ (Y, A)`,
+the relative map is injective in every degree (`TopPair.twistedChainComplexMap_f_injective`).
 
 The coefficient system on `A` obtained by first pulling `L` back to `X` and then restricting to
 `A` is canonically isomorphic to the pullback to `A` of the restriction of `L` to `B`.  This
 comparison makes the maps on subspace and ambient chains into a morphism of the short exact
 sequences of a pair.  Consequently the relative map commutes with the connecting morphism in the
-long exact sequence.
+long exact sequence, and by the five lemma it is a quasi-isomorphism when the maps on ambient and
+subspace chains are (`TopPair.quasiIso_twistedChainComplexMap_of_quasiIso`).
 
 Together with `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, this supplies functoriality of
 twisted singular homology for maps of spaces and maps of pairs.
@@ -129,6 +133,31 @@ lemma twistedChainComplexMap_f_twistedChainComplexπ_f_apply {k : ℕ}
     twistedChainComplexπ_comp_twistedChainComplexMap, HomologicalComplex.comp_f,
     ConcreteCategory.comp_apply]
 
+/-- **Relative twisted chains of a subpair inject.** If the ambient component of a map of pairs
+`f : (X, A) ⟶ (Y, B)` is injective and every point of `X` sent into `B` lies in `A`, then `f`
+induces an injective map of relative twisted chains in every degree. For instance, this applies
+to the inclusion `(X, A) ⟶ (Y, A)` for subspaces `A ⊆ X ⊆ Y`. -/
+theorem twistedChainComplexMap_f_injective [Mono (Hom.fst f)]
+    (hf : Hom.fst f ⁻¹' Set.range Q.map ⊆ Set.range P.map) (k : ℕ) :
+    Function.Injective ((twistedChainComplexMap f L).f k).hom := by
+  intro y y' h
+  refine P.twistedChainComplex_ext_coeff _ fun σ hσ ↦ ?_
+  -- The image of `σ` does not lie in `B` either.
+  have hσ' : ¬Set.range (TopCat.simplexMap ((TopCat.toSSet.map (Hom.fst f)).app _ σ)) ⊆
+      Set.range Q.map := fun h' ↦ hσ fun x ⟨p, hp⟩ ↦ hf (h' ⟨p, by
+        rw [TopCat.simplexMap_app, ContinuousMap.comp_apply, hp]⟩)
+  -- So the coefficient on `σ` is the coefficient of the image on the image simplex.
+  have key (z : (P.twistedChainComplex
+      ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).X k) :
+      (P.twistedChainComplexCoeff _ σ hσ).hom z =
+        (Q.twistedChainComplexCoeff L _ hσ').hom (((twistedChainComplexMap f L).f k).hom z) := by
+    obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective _ z
+    rw [twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
+      twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
+      twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
+      LocalCoefficientSystem.twistedChainComplexCoeff_twistedChainComplexMap_f_apply]
+  rw [key, key, h]
+
 /-- Relative maps of pairs commute with a change of coefficients on the target pair. -/
 @[reassoc]
 lemma twistedChainComplexMap_naturality
@@ -199,6 +228,18 @@ lemma twistedChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R P.
     LocalCoefficientSystem.twistedChainComplexMap_id]
   rw [Iso.app_hom]
 
+variable {f} in
+/-- Equal maps of pairs induce the same map of relative twisted chains, after the canonical
+identification of their pulled-back coefficient systems. -/
+lemma twistedChainComplexMap_congr {f' : P ⟶ Q} (h : f = f') :
+    twistedChainComplexMap f L =
+      P.twistedChainComplexCoefficientMap
+          (eqToHom (congrArg (fun g : P ⟶ Q ↦
+            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) ≫
+        twistedChainComplexMap f' L := by
+  subst h
+  simp
+
 variable {S : TopPair.{v}} (g : Q ⟶ S)
   (K : LocalCoefficientSystem.{u, v, max v w} R S.fst)
 
@@ -212,6 +253,24 @@ def fstPullbackCompIso :
     (LocalCoefficientSystem.pullback k.hom).obj K)
       (Hom.fst_comp f g)) ≪≫
     (LocalCoefficientSystem.pullbackCompIso (Hom.fst f).hom (Hom.fst g).hom).app K
+
+/-- The comparison `TopPair.fstPullbackCompIso` is the identity on every fibre. -/
+@[simp]
+lemma fstPullbackCompIso_hom_app (x : FundamentalGroupoid P.fst) :
+    (fstPullbackCompIso f g K).hom.app x = 𝟙 _ := by
+  -- What remains composes an identity with an `eqToHom` between definitionally equal fibres.
+  simp only [fstPullbackCompIso, Iso.trans_hom, NatTrans.comp_app, Iso.app_hom,
+    LocalCoefficientSystem.pullbackCompIso_hom_app_app, eqToIso.hom, eqToHom_app]
+  rfl
+
+/-- The inverse of the comparison `TopPair.fstPullbackCompIso` is the identity on every fibre. -/
+@[simp]
+lemma fstPullbackCompIso_inv_app (x : FundamentalGroupoid P.fst) :
+    (fstPullbackCompIso f g K).inv.app x = 𝟙 _ := by
+  -- What remains composes an identity with an `eqToHom` between definitionally equal fibres.
+  simp only [fstPullbackCompIso, Iso.trans_inv, NatTrans.comp_app, Iso.app_inv,
+    LocalCoefficientSystem.pullbackCompIso_inv_app_app, eqToIso.inv, eqToHom_app]
+  rfl
 
 /-- Maps of relative twisted chain complexes respect composition of maps of pairs, after the
 canonical comparison between pullback along a composite and iterated pullback. -/
@@ -303,6 +362,18 @@ lemma twistedHomologyMap_id
   congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
     (twistedChainComplexMap_id L)
 
+variable {f} in
+/-- Equal maps of pairs induce the same map on relative twisted homology, after the canonical
+identification of their pulled-back coefficient systems. -/
+lemma twistedHomologyMap_congr {f' : P ⟶ Q} (h : f = f') (k : ℕ) :
+    twistedHomologyMap f L k =
+      P.twistedHomologyCoefficientMap
+          (eqToHom (congrArg (fun g : P ⟶ Q ↦
+            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) k ≫
+        twistedHomologyMap f' L k :=
+  (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k) (twistedChainComplexMap_congr L h)).trans
+    (HomologicalComplex.homologyMap_comp _ _ _)
+
 /-- The composition law for maps on relative twisted homology. -/
 @[simp, reassoc]
 lemma twistedHomologyMap_comp (k : ℕ) :
@@ -322,6 +393,27 @@ lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :
           (subspaceSystemPullbackIso f L).hom k ≫
         LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k := by
   rw [twistedSubspaceChainComplexMap, HomologicalComplex.homologyMap_comp]
+
+/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
+map of pairs on the twisted homology of the subspaces, through the comparison of the pulled-back
+coefficient systems, as soon as it holds for the map induced by the subspace component. -/
+lemma homologyMap_twistedChainComplexShortComplexMap_τ₁_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} R)) [Pr.RespectsIso] (k : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k)) :
+    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₁ k) := by
+  rw [twistedChainComplexShortComplexMap_τ₁, homologyMap_twistedSubspaceChainComplexMap,
+    Pr.cancel_left_of_respectsIso]
+  exact h
+
+/-- A property of morphisms of modules holds for the map induced by a map of pairs on the
+twisted homology of the ambient spaces as soon as it holds for the map induced by the ambient
+component. -/
+lemma homologyMap_twistedChainComplexShortComplexMap_τ₂_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} R)) (k : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.fst f) L k)) :
+    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₂ k) := by
+  rw [twistedChainComplexShortComplexMap_τ₂]
+  exact h
 
 /-- The homology maps induced by a map of pairs commute with the inclusions of the subspaces,
 after the canonical comparison of their pulled-back coefficient systems. -/
@@ -357,5 +449,21 @@ lemma twistedHomologyδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
       twistedChainComplexShortComplexMap_τ₃,
       homologyMap_twistedSubspaceChainComplexMap] at hδ
     exact hδ
+
+/-- A map of pairs which induces quasi-isomorphisms on the twisted chains of the ambient spaces
+and of the subspaces induces a quasi-isomorphism on relative twisted chains. -/
+lemma quasiIso_twistedChainComplexMap_of_quasiIso
+    [QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L)]
+    [QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.snd f) (Q.subspaceSystem L))] :
+    QuasiIso (twistedChainComplexMap f L) := by
+  have : QuasiIso (twistedSubspaceChainComplexMap f L) := by
+    rw [twistedSubspaceChainComplexMap_def]
+    infer_instance
+  have := HomologicalComplex.HomologySequence.quasiIso_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (Q.shortExact_twistedChainComplexShortComplex L)
+    (by rw [twistedChainComplexShortComplexMap_τ₁]; infer_instance)
+    (by rw [twistedChainComplexShortComplexMap_τ₂]; infer_instance)
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
 
 end TopPair

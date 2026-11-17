@@ -35,7 +35,8 @@ conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are
 
 The action is **locally free** at `x` when `G_x` is discrete. Since `G_x` is an embedded Lie
 subgroup modelled on its Lie algebra `𝔤_x`, this happens exactly when `𝔤_x = 0`, that is, when
-`ξ ↦ ξ_M(x)` is injective. In particular a free action has trivial isotropy algebras. Through
+`ξ ↦ ξ_M(x)` is injective. In particular a free action has trivial isotropy algebras
+(`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`). Through
 `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff` this is what makes every point
 with discrete stabilizer, at which the form is nondegenerate, a regular point of a moment map.
 
@@ -49,6 +50,8 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
   algebra `𝔤_x`**, transported to left-invariant derivations by evaluation at the identity.
 * `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot`: the stabilizer is discrete
   exactly when the isotropy algebra is trivial.
+* `TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`: a point with trivial stabilizer has
+  trivial isotropy algebra.
 
 ## References
 
@@ -149,5 +152,15 @@ theorem discreteTopology_stabilizer_iff_isotropy_eq_bot [CompleteSpace E'] {x : 
       rwa [LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom, e.apply_symm_apply])
     simpa using congrArg e this
   · exact (LinearEquiv.map_eq_zero_iff e.toLinearEquiv).1 (h _ hX)
+
+/-- **Free points are locally free.** Where the stabilizer of `x` is trivial, so is the isotropy
+algebra `𝔤_x`. -/
+theorem isotropy_eq_bot_of_stabilizer_eq_bot [CompleteSpace E'] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  have : Subsingleton (MulAction.stabilizer G x) := by
+    rw [hx]
+    infer_instance
+  exact discreteTopology_stabilizer_iff_isotropy_eq_bot.1 inferInstance
 
 end TauCeti.Lie

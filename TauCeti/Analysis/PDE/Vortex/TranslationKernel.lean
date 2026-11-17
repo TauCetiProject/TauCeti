@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Energy
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Complex.OperatorNorm
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Covariant translations of a plane vortex
@@ -44,15 +45,21 @@ of `L_x` and its index are not treated here either.
 
 ## Main declarations
 
-* `TauCeti.Vortex.covariantTranslation x v`: the variation `(ι_v F_a, ∇_v α)`.
+* `TauCeti.Vortex.covariantTranslation x v`: the variation `(ι_v F_a, ∇_v α)`, and
+  `TauCeti.Vortex.covariantTranslationLinearMap x`: the real-linear map `v ↦ y_v`.
+* `TauCeti.Vortex.contDiff_covariantTranslation`: `y_v` is `Cⁿ` when `x` is `Cⁿ⁺¹`.
 * `TauCeti.Vortex.sectionValue_covariantTranslation`: its section part is `∇_v α`.
 * `TauCeti.Vortex.gaugeAdjoint_covariantTranslation_of_equation_eq_zero` and
   `TauCeti.Vortex.linearizedEquation_covariantTranslation_of_equation_eq_zero`: `d₀* y_v = 0`
   and `d₁ y_v = 0` at a vortex.
 * `TauCeti.Vortex.gaugeFixedOperator_covariantTranslation_of_equation_eq_zero`: `L_x y_v = 0`.
 * `TauCeti.Vortex.memLp_covariantTranslation`: `y_v ∈ L²`.
-* `TauCeti.Vortex.covariantTranslation_injective`: `v ↦ y_v` is injective when the section
-  has a zero and unit modulus at infinity.
+* `TauCeti.Vortex.covariantTranslation_injective` and
+  `TauCeti.Vortex.finrank_range_covariantTranslationLinearMap`: `v ↦ y_v` is injective when the
+  section has a zero and unit modulus at infinity, so its range has real dimension two.
+* `TauCeti.Vortex.covariantTranslation_mem_gaugeFixedKernel` and
+  `TauCeti.Vortex.range_covariantTranslationLinearMap_le`: at a `C³` vortex with unit-modulus
+  end, the covariant translations lie in `TauCeti.Vortex.gaugeFixedKernel x`.
 
 ## References
 
@@ -126,6 +133,39 @@ theorem covariantTranslation_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (c : 
     covariantTranslation x (c • v) = c • covariantTranslation x v := by
   ext z i
   fin_cases i <;> simp [-Complex.real_smul, map_smul, Complex.smul_re, Complex.smul_im] <;> ring
+
+/-- The covariant translation `v ↦ y_v`, as a real-linear map from tangent vectors to
+variations. -/
+def covariantTranslationLinearMap (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    ℂ →ₗ[ℝ] ℂ → EuclideanSpace ℝ (Fin 4) where
+  toFun := covariantTranslation x
+  map_add' := covariantTranslation_add x
+  map_smul' := covariantTranslation_smul x
+
+/-- The real-linear map `covariantTranslationLinearMap x` is the covariant translation. -/
+@[simp]
+theorem coe_covariantTranslationLinearMap (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    ⇑(covariantTranslationLinearMap x) = covariantTranslation x :=
+  (rfl)
+
+/-- The covariant translation of a `Cⁿ⁺¹` field is `Cⁿ`. -/
+theorem contDiff_covariantTranslation {n : WithTop ℕ∞} (hx : ContDiff ℝ (n + 1) x) (v : ℂ) :
+    ContDiff ℝ n (covariantTranslation x v) := by
+  have hxi (i : Fin 4) : ContDiff ℝ (n + 1) (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hd (i : Fin 4) (u : ℂ) : ContDiff ℝ n (fun z ↦ fderiv ℝ (fun w ↦ x w i) z u) :=
+    ((hxi i).fderiv_right le_rfl).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := (hxi i).of_le le_self_add
+  have h₀ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 0) := by
+    simp only [covariantTranslation_apply_zero, curvature_apply]; fun_prop
+  have h₁ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 1) := by
+    simp only [covariantTranslation_apply_one, curvature_apply]; fun_prop
+  have h₂ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 2) := by
+    simp only [covariantTranslation_apply_two]; fun_prop
+  have h₃ : ContDiff ℝ n (fun z ↦ covariantTranslation x v z 3) := by
+    simp only [covariantTranslation_apply_three]; fun_prop
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
 
 /-- The section part of the covariant translation along `v` is the covariant derivative
 `∇_v α`. -/
@@ -433,5 +473,48 @@ theorem covariantTranslation_injective (hp : Differentiable ℝ (fun w ↦ x w 2
     rw [sub_add_cancel, h] at this
     simpa using this.symm
   exact sub_eq_zero.1 ((covariantTranslation_eq_zero_iff hp hq hlim hz₀).1 hsub)
+
+/-- If the section of `x` has a zero and unit modulus at infinity, then the covariant
+translations span a real two-dimensional space of variations. -/
+theorem finrank_range_covariantTranslationLinearMap (hp : Differentiable ℝ (fun w ↦ x w 2))
+    (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {z₀ : ℂ}
+    (hz₀ : sectionValue x z₀ = 0) :
+    Module.finrank ℝ (LinearMap.range (covariantTranslationLinearMap x)) = 2 := by
+  rw [LinearMap.finrank_range_of_inj (by
+      rw [coe_covariantTranslationLinearMap]
+      exact covariantTranslation_injective hp hq hlim hz₀),
+    Complex.finrank_real_complex]
+
+section Kernel
+
+variable (hx : ContDiff ℝ 3 x) (hsol : ∀ z, equation x z = 0)
+  (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+
+include hx hsol hlim
+
+/-- **Covariant translations lie in the kernel of `L_x`** at a `C³` vortex whose section has
+modulus tending to one at infinity. -/
+theorem covariantTranslation_mem_gaugeFixedKernel (v : ℂ) :
+    covariantTranslation x v ∈ gaugeFixedKernel x := by
+  have hxi (i : Fin 4) : ContDiff ℝ 3 fun w ↦ x w i := contDiff_euclidean.mp hx i
+  refine mem_gaugeFixedKernel.2 ⟨contDiff_covariantTranslation hx v,
+    memLp_covariantTranslation volume ((hxi 0).differentiable (by norm_num))
+      ((hxi 1).differentiable (by norm_num)) ((hxi 2).of_le (by norm_num))
+      ((hxi 3).of_le (by norm_num)) hsol hlim v, fun z ↦ ?_⟩
+  exact gaugeFixedOperator_covariantTranslation_of_equation_eq_zero
+    ((hxi 0).differentiable (by norm_num) z) ((hxi 1).differentiable (by norm_num) z)
+    ((hxi 2).of_le (by norm_num)).contDiffAt ((hxi 3).of_le (by norm_num)).contDiffAt
+    (Eventually.of_forall hsol) v
+
+/-- The covariant translations span a subspace of the kernel of `L_x` at a `C³` vortex whose
+section has modulus tending to one at infinity. -/
+theorem range_covariantTranslationLinearMap_le :
+    LinearMap.range (covariantTranslationLinearMap x) ≤ gaugeFixedKernel x := by
+  rintro _ ⟨v, rfl⟩
+  rw [coe_covariantTranslationLinearMap]
+  exact covariantTranslation_mem_gaugeFixedKernel hx hsol hlim v
+
+end Kernel
 
 end TauCeti.Vortex

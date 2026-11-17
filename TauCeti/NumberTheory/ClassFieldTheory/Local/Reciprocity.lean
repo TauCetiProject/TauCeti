@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer

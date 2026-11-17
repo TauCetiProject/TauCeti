@@ -16,8 +16,9 @@ Let `X` be a complete separable metric space and `1 < p < ∞`. Two laws `μ` an
 `p`-th moment can be joined by several geodesic segments of `P_p (X)`, for two independent
 reasons. Two points of `X` joined by two geodesics give two geodesic segments between the Dirac
 laws at these points. In the plane, the laws `(δ_(0,0) + δ_(1,1)) / 2` and `(δ_(1,0) + δ_(0,1)) / 2`
-have two optimal couplings, matching each point to either of its two neighbours, and their linear
-interpolations are two geodesic segments, although the plane is uniquely geodesic.
+have several optimal couplings, since every coupling of them is optimal; among them are the two that
+match each point to either of its two neighbours, and their linear interpolations are two geodesic
+segments, although the plane is uniquely geodesic.
 
 This file proves that these are the only obstructions. If the optimal coupling `π` of `μ` and `ν`
 for the cost `d ^ p` is unique, and `π`-almost every pair of points is joined by only one geodesic
@@ -58,6 +59,8 @@ geodesic segment of `P₂ (E)` out of `μ` is then McCann's displacement interpo
 
 * L. Ambrosio, N. Gigli and G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
   Probability Measures*, Birkhäuser, 2nd ed. 2008, §7.2.
+* S. Lisini, *Characterization of absolutely continuous curves in Wasserstein spaces*, Calc. Var.
+  Partial Differential Equations 28 (2007), 85--120.
 * R. J. McCann, *A convexity principle for interacting gases*, Adv. Math. 128 (1997), 153--179.
 * C. Villani, *Optimal Transport: Old and New*, Springer 2009, Chapter 7.
 -/

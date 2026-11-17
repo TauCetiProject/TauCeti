@@ -24,10 +24,13 @@ generates the whole algebra. An algebra morphism whose range contains this eleme
 surjective, a criterion used for coordinate morphisms of additive root subgroups.
 
 A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
-generators (`SymmetricAlgebra.ringHom_ext`), even when its target is nonassociative. The `ext`
-tactic reduces equality of these homomorphisms to agreement on scalars and generators.
-The inverse of the universal property `SymmetricAlgebra.lift` restricts an algebra morphism
-to the generators (`SymmetricAlgebra.lift_symm_apply`).
+generators (`SymmetricAlgebra.ringHom_ext`), even when its target is nonassociative, and an
+algebra homomorphism into a possibly noncommutative algebra is determined by its restriction to
+generators (`SymmetricAlgebra.hom_ext`). The `ext` tactic reduces equality to agreement on scalars
+and generators for ring homomorphisms and on generators alone for algebra homomorphisms. A linear
+map into a possibly noncommutative algebra lifts to an algebra homomorphism out of
+`SymmetricAlgebra R M` exactly when its values pairwise commute (`SymmetricAlgebra.liftOfCommute`),
+generalizing `SymmetricAlgebra.lift` and its inverse (`SymmetricAlgebra.lift_symm_apply`).
 -/
 
 public section
@@ -73,12 +76,72 @@ theorem ringHom_ext {A : Type*} [NonAssocSemiring A] {F G : SymmetricAlgebra R M
   | mul a b ha hb => rw [map_mul, map_mul, ha, hb]
   | add a b ha hb => rw [map_add, map_add, ha, hb]
 
+/-- Two algebra homomorphisms out of a symmetric algebra into a (possibly noncommutative) algebra
+agree if they agree on generators. See note [partially-applied ext lemmas]. -/
+@[ext 1100]
+theorem hom_ext {A : Type*} [Semiring A] [Algebra R A] {F G : SymmetricAlgebra R M →ₐ[R] A}
+    (h : F.toLinearMap.comp (ι R M) = G.toLinearMap.comp (ι R M)) : F = G :=
+  AlgHom.toRingHom_injective <| ringHom_ext (by ext; simp) fun m ↦ LinearMap.congr_fun h m
+
 /-- The inverse of `SymmetricAlgebra.lift` restricts an algebra morphism to the generators: it
 sends `H` to the linear map `x ↦ H (ι x)`. -/
 @[simp]
 theorem lift_symm_apply {A : Type*} [CommSemiring A] [Algebra R A]
     (H : SymmetricAlgebra R M →ₐ[R] A) : lift.symm H = H.toLinearMap ∘ₗ ι R M :=
   lift.symm_apply_eq.2 <| by ext; simp
+
+open scoped IsMulCommutative in
+private def liftOfCommuteHom {A : Type*} [Semiring A] [Algebra R A] (f : M →ₗ[R] A)
+    (hf : ∀ x y, Commute (f x) (f y)) : SymmetricAlgebra R M →ₐ[R] A :=
+  let S := Algebra.adjoin R (Set.range f)
+  letI : IsMulCommutative S :=
+    Algebra.isMulCommutative_adjoin R <| by rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩ _; exact hf x y
+  S.val.comp <|
+    lift (A := S) <| f.codRestrict S.toSubmodule fun m ↦
+      Algebra.subset_adjoin (Set.mem_range_self m)
+
+private theorem liftOfCommuteHom_ι {A : Type*} [Semiring A] [Algebra R A] (f : M →ₗ[R] A)
+    (hf : ∀ x y, Commute (f x) (f y)) (m : M) :
+    liftOfCommuteHom f hf (ι R M m) = f m := by
+  simp only [liftOfCommuteHom, AlgHom.comp_apply, Subalgebra.coe_val, lift_ι_apply]
+  exact LinearMap.codRestrict_apply _ _ m
+
+/-- Universal property of `SymmetricAlgebra R M` into a (possibly noncommutative) `R`-algebra `A`:
+`R`-algebra homomorphisms `SymmetricAlgebra R M →ₐ[R] A` correspond bijectively to `R`-linear maps
+`M →ₗ[R] A` with pairwise-commuting values. -/
+def liftOfCommute {A : Type*} [Semiring A] [Algebra R A] :
+    {f : M →ₗ[R] A // ∀ x y, Commute (f x) (f y)} ≃ (SymmetricAlgebra R M →ₐ[R] A) where
+  toFun f := liftOfCommuteHom f.1 f.2
+  invFun F :=
+    ⟨F.toLinearMap.comp (ι R M), fun x y ↦ by
+      simpa only [Commute, SemiconjBy, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+        ← map_mul] using congrArg F (mul_comm (ι R M x) (ι R M y))⟩
+  left_inv f := Subtype.ext <| LinearMap.ext fun m ↦ liftOfCommuteHom_ι f.1 f.2 m
+  right_inv F := by
+    ext m
+    simp [liftOfCommuteHom_ι]
+
+/-- Evaluating `SymmetricAlgebra.liftOfCommute` on a generator returns the underlying linear map. -/
+@[simp]
+theorem liftOfCommute_ι_apply {A : Type*} [Semiring A] [Algebra R A] (f : M →ₗ[R] A)
+    (hf : ∀ x y, Commute (f x) (f y)) (m : M) :
+    liftOfCommute ⟨f, hf⟩ (ι R M m) = f m :=
+  liftOfCommuteHom_ι f hf m
+
+/-- Precomposing `SymmetricAlgebra.liftOfCommute` with `SymmetricAlgebra.ι` recovers the linear
+map. -/
+@[simp]
+theorem liftOfCommute_comp_ι {A : Type*} [Semiring A] [Algebra R A] (f : M →ₗ[R] A)
+    (hf : ∀ x y, Commute (f x) (f y)) :
+    (liftOfCommute ⟨f, hf⟩).toLinearMap.comp (ι R M) = f :=
+  LinearMap.ext <| liftOfCommute_ι_apply f hf
+
+/-- The inverse of `SymmetricAlgebra.liftOfCommute` restricts an algebra morphism to generators. -/
+@[simp]
+theorem coe_liftOfCommute_symm_apply {A : Type*} [Semiring A] [Algebra R A]
+    (F : SymmetricAlgebra R M →ₐ[R] A) :
+    (liftOfCommute.symm F : M →ₗ[R] A) = F.toLinearMap.comp (ι R M) :=
+  (rfl)
 
 end SymmetricAlgebra
 

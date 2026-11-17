@@ -50,6 +50,8 @@ in another universe, such as `Shrink K`.
   `NumberField.InfinitePlace.realEquivOfRingEquiv_symm`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans_apply`,
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans`: functoriality of `realEquivOfRingEquiv`.
+* `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`: an infinite place `w'` equals
+  `equivOfRingEquiv e w` iff `∀ x, w' (e x) = w x`.
 -/
 
 public section
@@ -202,5 +204,12 @@ theorem realEquivOfRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) :
     realEquivOfRingEquiv (e.trans e') =
       (realEquivOfRingEquiv e).trans (realEquivOfRingEquiv e') :=
   Equiv.ext fun w ↦ (realEquivOfRingEquiv_trans_apply e e' w).symm
+
+/-- An infinite place `w'` of `L` equals `equivOfRingEquiv e w` precisely when `e` intertwines `w`
+and `w'` on every element of `K`. -/
+theorem eq_equivOfRingEquiv_iff {e : K ≃+* L} {w : InfinitePlace K} {w' : InfinitePlace L} :
+    w' = equivOfRingEquiv e w ↔ ∀ x, w' (e x) = w x := by
+  refine ⟨fun h x ↦ by subst h; simp, fun h ↦ InfinitePlace.ext _ _ fun y ↦ ?_⟩
+  rw [equivOfRingEquiv_apply, ← h, e.apply_symm_apply]
 
 end NumberField.InfinitePlace
