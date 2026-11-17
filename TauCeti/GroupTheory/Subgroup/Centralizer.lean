@@ -15,10 +15,17 @@ A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` int
 `f` as a homomorphism `C_G(s) →* C_{G'}(t)`; the case `s = {u}`, `t = {f u}` gives a homomorphism
 `C_G(u) →* C_{G'}(f u)`.
 
+A group isomorphism `e : G ≃* G'` carries `C_G(s)` onto `C_{G'}(e(s))`.
+
 ## Main definitions
 
 * `MonoidHom.centralizerMap`: the restriction `C_G(s) →* C_{G'}(t)` of `f : G →* G'`, for
   `t ⊆ f(s)`.
+
+## Main results
+
+* `MulEquiv.map_centralizer`: the image of a centralizer under a group isomorphism is the
+  centralizer of the image.
 -/
 
 public section
@@ -49,3 +56,20 @@ theorem centralizerMap_injective {f : G →* G'} (hf : Function.Injective f) {s 
   fun _ _ hc => Subtype.ext (hf (congrArg Subtype.val hc))
 
 end MonoidHom
+
+namespace MulEquiv
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- **Transport of centralizers.** A group isomorphism carries the centralizer of a set onto the
+centralizer of its image. -/
+@[to_additive /-- An additive group isomorphism carries the centralizer of a set onto the
+centralizer of its image. -/]
+theorem map_centralizer (e : G ≃* G') (s : Set G) :
+    (centralizer s).map (e : G →* G') = centralizer (e '' s) := by
+  refine le_antisymm (map_centralizer_le_centralizer_image s (e : G →* G')) fun g hg ↦
+    ⟨e.symm g, ?_, e.apply_symm_apply g⟩
+  simpa [Set.image_image] using
+    map_centralizer_le_centralizer_image (e '' s) (e.symm : G' →* G) (mem_map_of_mem _ hg)
+
+end MulEquiv

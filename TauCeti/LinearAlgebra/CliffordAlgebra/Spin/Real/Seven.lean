@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
+import TauCeti.GroupTheory.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.OrthogonalBasis
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
@@ -398,6 +399,20 @@ private theorem spinVectorAction_spinBasis_single (s : Finset (Fin (0 + 7))) (hs
     (isOrthoᵢ_associated_realCliffordForm 0 7) hs (g := spinBasis s hs)
     (Or.inl (coe_spinBasis s hs)) i
 
+/-- The Spin action of `e_s` as the diagonal matrix of signs, `-1` on the indices in `s`. -/
+private theorem toLinearMap_spinVectorAction_spinBasis (s : Finset (Fin (0 + 7)))
+    (hs : Even s.card) :
+    (spinVectorAction _ (spinBasis s hs)).toLinearMap =
+      Matrix.toLin' (Matrix.diagonal fun i ↦ if i ∈ s then -1 else 1) := by
+  refine (Pi.basisFun ℝ (Fin (0 + 7))).ext fun i ↦ ?_
+  simp only [Pi.basisFun_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply,
+    Matrix.diagonal_mulVec_single, mul_one, spinVectorAction_spinBasis_single]
+  split_ifs <;> simp [Pi.single_neg]
+
+/-- The coordinates negated by the Spin action of `x`: the indices `i` with `x • eᵢ = -eᵢ`. -/
+private noncomputable def negSupport (x : realCliffordSpinGroup 0 7) : Finset (Fin (0 + 7)) :=
+  Finset.univ.filter fun i ↦ spinVectorAction _ x (Pi.single i 1) = -Pi.single i 1
+
 /-- An element of the centralizer of the elementary abelian subgroup sends every coordinate vector
 `eᵢ` to `±eᵢ`. Its image of `eᵢ` lies in the same eigenspaces of the three diagonal sign changes
 `e_s` as `eᵢ` does, and these joint eigenspaces are the coordinate lines. -/
@@ -434,15 +449,15 @@ private theorem spinVectorAction_single_eq_or {x : realCliffordSpinGroup 0 7}
     rw [hsingle, h] <;> simp
 
 /-- The Spin action of an element of the centralizer as the diagonal matrix of signs, `-1` on the
-indices `i` with `x • eᵢ = -eᵢ`. -/
+indices of `negSupport x`. -/
 private theorem toLinearMap_spinVectorAction_eq_toLin' {x : realCliffordSpinGroup 0 7}
     (hx : x ∈ Subgroup.centralizer (realSpinZeroSevenElementaryAbelian : Set _)) :
-    (spinVectorAction _ x).toLinearMap = Matrix.toLin' (Matrix.diagonal fun i ↦
-      if i ∈ Finset.univ.filter (fun i ↦ spinVectorAction _ x (Pi.single i 1) = -Pi.single i 1)
-      then -1 else 1) := by
+    (spinVectorAction _ x).toLinearMap =
+      Matrix.toLin' (Matrix.diagonal fun i ↦ if i ∈ negSupport x then -1 else 1) := by
   refine (Pi.basisFun ℝ (Fin (0 + 7))).ext fun i ↦ ?_
   simp only [Pi.basisFun_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply,
-    Matrix.diagonal_mulVec_single, Finset.mem_filter, Finset.mem_univ, true_and, mul_one]
+    Matrix.diagonal_mulVec_single, negSupport, Finset.mem_filter, Finset.mem_univ, true_and,
+    mul_one]
   rcases spinVectorAction_single_eq_or hx i with h | h <;> split_ifs <;>
     simp_all [Pi.single_neg]
 
@@ -452,27 +467,23 @@ is even and `x` has the action of `e_t`; the kernel of the action is `±1`. -/
 private theorem exists_isSignedBasis_of_mem_centralizer {x : realCliffordSpinGroup 0 7}
     (hx : x ∈ Subgroup.centralizer (realSpinZeroSevenElementaryAbelian : Set _)) :
     ∃ t : Finset (Fin (0 + 7)), Even t.card ∧ IsSignedBasis x t := by
-  set t := Finset.univ.filter
-    (fun i ↦ spinVectorAction _ x (Pi.single i 1) = -Pi.single i 1) with ht
   have hdet := congrArg Units.val (QuadraticMap.det_coe_specialOrthogonalGroup
     (spinToSpecialOrthogonal (realCliffordForm 0 7) x))
-  have heven : Even t.card := by
+  have heven : Even (negSupport x).card := by
     rw [← neg_one_pow_eq_one_iff_even (R := ℝ) (by norm_num)]
     simpa [coe_spinToSpecialOrthogonal, LinearEquiv.coe_det,
-      toLinearMap_spinVectorAction_eq_toLin' hx, Matrix.det_diagonal, Finset.prod_ite_mem,
-      ← ht] using hdet
-  refine ⟨t, heven, ?_⟩
+      toLinearMap_spinVectorAction_eq_toLin' hx, Matrix.det_diagonal, Finset.prod_ite_mem]
+      using hdet
+  refine ⟨negSupport x, heven, ?_⟩
   have hρ : spinToSpecialOrthogonal (realCliffordForm 0 7) x =
-      spinToSpecialOrthogonal (realCliffordForm 0 7) (spinBasis t heven) := by
-    refine Subtype.ext (LinearEquiv.toLinearMap_injective
-      ((Pi.basisFun ℝ (Fin (0 + 7))).ext fun i ↦ ?_))
-    simp only [Pi.basisFun_apply, LinearEquiv.coe_coe, coe_spinToSpecialOrthogonal_apply,
-      spinVectorAction_spinBasis_single, ht, Finset.mem_filter, Finset.mem_univ, true_and]
-    rcases spinVectorAction_single_eq_or hx i with h | h <;> split_ifs <;> simp_all
+      spinToSpecialOrthogonal (realCliffordForm 0 7) (spinBasis (negSupport x) heven) :=
+    Subtype.ext (LinearEquiv.toLinearMap_injective (by
+      rw [coe_spinToSpecialOrthogonal, coe_spinToSpecialOrthogonal,
+        toLinearMap_spinVectorAction_eq_toLin' hx, toLinearMap_spinVectorAction_spinBasis]))
   rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq _ (nondegenerate_realCliffordForm 0 7)
     x _ hρ with h | h
-  · exact Or.inl (by rw [h, coe_spinBasis])
-  · exact Or.inr (by simp [h])
+  · exact Or.inl ((congrArg Subtype.val h).trans (coe_spinBasis _ heven))
+  · exact Or.inr (by rw [congrArg Subtype.val h]; simp)
 
 /-- **The elementary abelian subgroup is its own centralizer** in the Spin group of
 `realCliffordForm 0 7`. An element `x` commuting with it acts on `ℝ⁷` preserving the joint
@@ -561,19 +572,9 @@ theorem exponent_realSpinSevenElementaryAbelian :
 theorem centralizer_realSpinSevenElementaryAbelian :
     Subgroup.centralizer (realSpinSevenElementaryAbelian : Set (realCliffordSpinGroup 7 0)) =
       realSpinSevenElementaryAbelian := by
-  ext g
-  rw [Subgroup.mem_centralizer_iff, mem_realSpinSevenElementaryAbelian_iff,
-    ← centralizer_realSpinZeroSevenElementaryAbelian, Subgroup.mem_centralizer_iff]
-  constructor
-  · intro h k hk
-    have := h (realCliffordSpinGroupEquivNeg 0 7 k)
-      (mem_realSpinSevenElementaryAbelian_iff.mpr (by simpa using hk))
-    apply (realCliffordSpinGroupEquivNeg 0 7).injective
-    simpa using this
-  · intro h k hk
-    have := h _ (mem_realSpinSevenElementaryAbelian_iff.mp hk)
-    apply (realCliffordSpinGroupEquivNeg 0 7).symm.injective
-    simpa using this
+  rw [realSpinSevenElementaryAbelian, Subgroup.coe_map, MulEquiv.coe_toMonoidHom,
+    MulEquiv.toMonoidHom_eq_coe, ← MulEquiv.map_centralizer,
+    centralizer_realSpinZeroSevenElementaryAbelian]
 
 /-- **The elementary abelian subgroup of `Spin(7)` is a maximal commutative subgroup**: every
 commutative subgroup containing it is equal to it, since such a subgroup lies in the centralizer.
