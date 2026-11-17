@@ -478,31 +478,12 @@ theorem exists_norm_le_euclideanParabolicOperatorL (hα₀ : 0 < α) (hα₁ : �
   set G := ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖
   -- The comparison principle bounds the supremum of `u` by its initial values and `P u`.
   have hV : ‖valueL u‖ ≤ E₀ * (P + G) := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
-    have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα₁.le
-      (b := b) (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ))
-      (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
-      K.coe_nonneg u (fun q ↦ by
-        simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
-          (euclideanParabolicOperatorL hα₁.le a b c u) q)
-      (fun x ↦ by simpa using CkHolderSpace.norm_apply_le (u.spatialTrace ⟨0, _⟩) x) p
-    obtain ⟨ht₀, htT⟩ := (slabTime p).2
-    have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans (by exact_mod_cast hTT₀)
-    rw [valueL_apply, Real.norm_eq_abs, hE]
-    refine hmax.trans ?_
-    rw [sub_zero]
-    have hP₀ : 0 ≤ P := norm_nonneg _
-    have hG₀ : 0 ≤ G := norm_nonneg _
-    have hexp : Real.exp (K * (slabTime p : ℝ)) ≤ Real.exp (K * T₀) :=
-      Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)
-    have hlin : G + (slabTime p : ℝ) * P ≤ (1 + T₀) * (P + G) := by
-      nlinarith [mul_le_mul_of_nonneg_right htT₀ hP₀, T₀.coe_nonneg]
-    calc
-      _ ≤ Real.exp (K * T₀) * (G + (slabTime p : ℝ) * P) :=
-        mul_le_mul_of_nonneg_right hexp (by positivity)
-      _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (P + G)) :=
-        mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
-      _ = _ := by ring
+    have h := norm_valueL_le_exp_mul hα₁.le (b := b)
+      (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ))
+      (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck)) K.coe_nonneg
+      (T₀ := T₀) (by rw [sub_zero]; exact_mod_cast hTT₀) u
+      (fun x ↦ by simpa using CkHolderSpace.norm_apply_le (u.spatialTrace ⟨0, _⟩) x)
+    rwa [hE, add_comm P]
   have h := hest T hT hTT₀ a b c ha ha' hak hbk hck u
   have : 0 ≤ P := norm_nonneg _
   have : 0 ≤ G := norm_nonneg _

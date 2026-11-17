@@ -34,13 +34,26 @@ restricts the value, the gradient and the time slices, and is a continuous linea
 most one. Time reversal keeps the spatial gradient and reverses each time slice; it is a linear
 isometric equivalence, and it commutes with restriction.
 
+A bounded parabolically Hölder field on `E × [a, b]` that vanishes up to time `s` is controlled
+by its restriction to `E × [s, b]`: the two norms are equal. Two points on
+either side of time `s` are no closer than the pair obtained by moving the earlier one up to
+time `s`, where the field still vanishes. This lets a product with a time cutoff vanishing near the
+initial time be estimated through the restriction of the other factor.
+
 ## Main declarations
 
-* `TauCeti.ParabolicC2HolderSpace.restrictL`: restriction to a smaller slab.
+* `TauCeti.ParabolicC2HolderSpace.restrictL`: restriction to a smaller slab, with
+  `TauCeti.ParabolicC2HolderSpace.norm_restrictL_apply_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_valueL_restrictL_le`.
 * `TauCeti.ParabolicC2HolderSpace.timeReverseLIE`: time reversal about `T`.
 * `TauCeti.ParabolicC2HolderSpace.restrictL_timeReverseLIE`: the two commute.
-* `TauCeti.ParabolicC1HolderSpace.restrictL`, `TauCeti.ParabolicC1HolderSpace.timeReverseLIE` and
+* `TauCeti.ParabolicC1HolderSpace.restrictL` (with
+  `TauCeti.ParabolicC1HolderSpace.norm_restrictL_apply_le` and
+  `TauCeti.ParabolicC1HolderSpace.norm_valueL_restrictL_le`),
+  `TauCeti.ParabolicC1HolderSpace.timeReverseLIE` and
   `TauCeti.ParabolicC1HolderSpace.restrictL_timeReverseLIE`: the order-one analogues.
+* `TauCeti.HolderSpace.norm_compLipschitzL_inclusion_eq_of_eq_zero`: the norm of a field
+  vanishing up to time `s` is that of its restriction to `E × [s, b]`.
 
 ## References
 
@@ -166,6 +179,19 @@ theorem norm_restrictL_le :
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb hab' f
+
+/-- The restriction of a map to a smaller slab has norm at most that of the map. -/
+theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb hab' f
+
+/-- The restriction of a map to a smaller slab has supremum at most that of the map. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueL (restrictL ha hb hab' f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    rw [valueL_apply, restrictL_apply, ← valueL_apply]
+    exact (valueL f).norm_coe_le_norm _
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
@@ -404,6 +430,19 @@ theorem norm_restrictL_le : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ �
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb f
 
+/-- The restriction of a map to a smaller slab has norm at most that of the map. -/
+theorem norm_restrictL_apply_le (f : ParabolicC1HolderSpace α E F a b) :
+    ‖restrictL ha hb f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb f
+
+/-- The restriction of a map to a smaller slab has supremum at most that of the map. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC1HolderSpace α E F a b) :
+    ‖valueL (restrictL ha hb f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    rw [valueL_apply, restrictL_apply, ← valueL_apply]
+    exact (valueL f).norm_coe_le_norm _
+
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
 theorem restrictL_self (f : ParabolicC1HolderSpace α E F a b) :
@@ -539,5 +578,70 @@ theorem restrictL_timeReverseLIE {c d c' d' : ℝ} (hc : a ≤ c) (hd : d ≤ b)
 end TimeReversal
 
 end ParabolicC1HolderSpace
+
+/-! ### Fields vanishing up to a time -/
+
+namespace HolderSpace
+
+variable {a b s : ℝ}
+
+open ParabolicSpaceTime in
+/-- **A field vanishing up to time `s` is controlled on `[s, b]`.** If a bounded parabolically
+Hölder field on the slab `E × [a, b]` vanishes at all times `t ≤ s`, its norm is the norm of its
+restriction to `E × [s, b]`. -/
+theorem norm_compLipschitzL_inclusion_eq_of_eq_zero {E : Type*} [MetricSpace E] (has : a ≤ s)
+    (f : HolderSpace α (slab (E := E) a b) F)
+    (hf : ∀ p : slab (E := E) a b, (p : ParabolicSpaceTime E).time ≤ s → f p = 0) :
+    ‖compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab (E := E) has le_rfl)) f‖ =
+      ‖f‖ := by
+  set g := compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab (E := E) has le_rfl)) f
+  refine le_antisymm ((ContinuousLinearMap.le_opNorm _ f).trans
+    (mul_le_of_le_one_left (norm_nonneg _) (norm_compLipschitzL_le_one _))) ?_
+  -- After time `s`, the points of the slab lie in the smaller slab, where `f` is `g`.
+  have hsub : ∀ p : slab (E := E) a b, s ≤ (p : ParabolicSpaceTime E).time →
+      ∃ p' : slab (E := E) s b, (p' : ParabolicSpaceTime E) = p ∧ g p' = f p := fun p hp ↦
+    ⟨⟨p, mem_slab.2 ⟨hp, (mem_slab.1 p.2).2⟩⟩, rfl, by
+      simp only [g, compLipschitzL_apply, Set.inclusion_mk]⟩
+  -- One point after time `s`, the other at or before it.
+  have key : ∀ p q : slab (E := E) a b, s < (p : ParabolicSpaceTime E).time →
+      (q : ParabolicSpaceTime E).time ≤ s →
+      edist (f p) (f q) ≤ nnHolderNorm α (g : slab (E := E) s b → F) * edist p q ^ (α : ℝ) := by
+    intro p q hp hq
+    obtain ⟨p', hpp', hp'⟩ := hsub p hp.le
+    have hq' : ofCoords (q : ParabolicSpaceTime E).space s ∈ slab (E := E) s b :=
+      mem_slab.2 ⟨by simp, by simpa using hp.le.trans (mem_slab.1 p.2).2⟩
+    have hfq : f q = g ⟨_, hq'⟩ := by
+      rw [hf q hq, compLipschitzL_apply, Set.inclusion_mk]
+      exact (hf _ (by simp)).symm
+    rw [← hp', hfq]
+    refine (g.holderWith p' ⟨_, hq'⟩).trans ?_
+    gcongr
+    rw [Subtype.edist_eq, Subtype.edist_eq, hpp']
+    exact edist_ofCoords_space_le hq hp.le
+  have hH : HolderWith (nnHolderNorm α (g : slab (E := E) s b → F)) α f := by
+    intro p q
+    rcases le_or_gt (p : ParabolicSpaceTime E).time s with hp | hp <;>
+      rcases le_or_gt (q : ParabolicSpaceTime E).time s with hq | hq
+    · rw [hf p hp, hf q hq, edist_self]
+      exact zero_le
+    · rw [edist_comm, edist_comm p]
+      exact key q p hq hp
+    · exact key p q hp hq
+    · obtain ⟨p', hpp', hp'⟩ := hsub p hp.le
+      obtain ⟨q', hqq', hq'⟩ := hsub q hq.le
+      rw [← hp', ← hq']
+      refine (g.holderWith p' q').trans ?_
+      rw [Subtype.edist_eq p' q', Subtype.edist_eq p q, hpp', hqq']
+  refine (norm_le_of_norm_le_of_holderWith (norm_nonneg g.toBoundedContinuousFunction)
+    (fun p ↦ ?_) hH).trans_eq ?_
+  · rcases le_or_gt (p : ParabolicSpaceTime E).time s with hp | hp
+    · rw [hf p hp, norm_zero]
+      exact norm_nonneg _
+    · obtain ⟨p', -, hp'⟩ := hsub p hp.le
+      rw [← hp', ← toBoundedContinuousFunction_apply]
+      exact g.toBoundedContinuousFunction.norm_coe_le_norm p'
+  · rw [norm_def g, coe_toBoundedContinuousFunction]
+
+end HolderSpace
 
 end TauCeti
