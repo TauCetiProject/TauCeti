@@ -16,7 +16,8 @@ public import TauCeti.CategoryTheory.Linear.Endomorphism
 Preserving a chosen dagger is a property of a native functor. Induced and full-subcategory
 inclusions preserve the inherited dagger, and fully faithful dagger-preserving functors commute
 with daggers on preimages. When the categories and functor are additive and scalar-linear,
-`Functor.mapEndAlgHom` upgrades to a unital star-algebra homomorphism `Functor.mapEndStarAlgHom`,
+`Functor.mapEndAlgHom` upgrades to a unital star-algebra homomorphism `Functor.mapEndStarAlgHom`
+(and a star-algebra equivalence `Functor.mapEndStarAlgEquiv` when the functor is fully faithful),
 and unitary object isomorphisms conjugate endomorphism algebras by star-algebra equivalences.
 
 Natural transformations between dagger-preserving functors admit a pointwise dagger, and
@@ -85,38 +86,45 @@ theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
   simp only [isUnitary_iff, ← map_dagger, ← Functor.map_comp, ← Functor.map_id,
     F.map_injective.eq_iff]
 
-section EndStarAlgHom
+section Linear
 
-variable (F : C ⥤ D) (R : Type w) [CommSemiring R]
-  [Preadditive C] [Preadditive D] [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
-  [F.Additive] [F.Linear R] [F.PreservesDagger]
+variable {R : Type w} [CommSemiring R]
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [CategoryTheory.Linear R C]
+  [DaggerCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [Preadditive D] [CategoryTheory.Linear R D]
+  [DaggerCategory D]
+variable (F : C ⥤ D) [F.Additive] [F.Linear R] [F.PreservesDagger]
 
-/-- An additive scalar-linear dagger-preserving functor induces a unital star-algebra
-homomorphism on endomorphism algebras, refining `CategoryTheory.Functor.mapEndAlgHom`. -/
+variable (R) in
+/-- A linear dagger-preserving functor as a unital star algebra homomorphism between
+endomorphism algebras: the algebra homomorphism `CategoryTheory.Functor.mapEndAlgHom`, which
+also preserves the star. -/
 def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
   __ := F.mapEndAlgHom R X
-  map_star' f := by ext; simp
+  map_star' a := by ext; simp
 
-/-- Forgetting the star structure recovers `CategoryTheory.Functor.mapEndAlgHom`. -/
-@[simp] theorem mapEndStarAlgHom_toAlgHom (X : C) :
+/-- The underlying algebra homomorphism of `F.mapEndStarAlgHom R X` is `F.mapEndAlgHom R X`. -/
+@[simp] theorem toAlgHom_mapEndStarAlgHom (X : C) :
     (F.mapEndStarAlgHom R X).toAlgHom = F.mapEndAlgHom R X := (rfl)
 
-/-- The induced star-algebra homomorphism acts by the functor on underlying arrows. -/
-@[simp, grind =] theorem mapEndStarAlgHom_apply_asHom (X : C) (f : End X) :
-    (F.mapEndStarAlgHom R X f).asHom = F.map f.asHom :=
-  F.mapEndAlgHom_asHom R X f
+/-- The star algebra homomorphism of a functor applies the functor to the underlying arrow. -/
+@[simp, grind =] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
+    (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
+  F.mapEndAlgHom_asHom R X a
 
+variable (R) in
 /-- A faithful linear dagger functor embeds each endomorphism star-algebra. -/
 theorem mapEndStarAlgHom_injective [F.Faithful] (X : C) :
     Function.Injective (F.mapEndStarAlgHom R X) :=
   F.mapEndAlgHom_injective R X
 
+variable (R) in
 /-- A full linear dagger functor surjects onto the image object's endomorphism star-algebra. -/
 theorem mapEndStarAlgHom_surjective [F.Full] (X : C) :
     Function.Surjective (F.mapEndStarAlgHom R X) := fun g =>
   ⟨End.of (F.preimage g.asHom), by ext; simp⟩
 
-end EndStarAlgHom
+end Linear
 
 section EndStarAlgEquiv
 

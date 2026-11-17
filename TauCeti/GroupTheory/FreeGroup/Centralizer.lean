@@ -9,6 +9,8 @@ public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.Algebra.Group.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Torsion
+import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 
 /-!
 # Centralizers in free groups
@@ -23,6 +25,12 @@ These are the facts from which maximal roots of elements of a free group are bui
 roots for a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a
 free basis.
 
+Write the reduced word of `u ≠ 1` as `c ++ v ++ c⁻¹` with `v` cyclically reduced; the reduced
+word of `u ^ m` is then `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. If the reduced words of large powers of `u`
+and of `u'` agree on a long enough prefix, reading the common prefix past both conjugators shows
+`u ^ |v'| = u' ^ |v|`; since roots are unique in a free group, commuting with a nonzero power is
+commuting with its base, so `u` and `u'` commute.
+
 ## Main results
 
 * `FreeGroup.mem_zpowers_of_of_commute`: an element commuting with a generator `of a` is a power
@@ -33,10 +41,13 @@ free basis.
   is trivial.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
+* `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
   nontrivial element commute with each other.
 * `IsFreeGroup.isCyclic_centralizer`: the centralizer of a nontrivial element of a free group is
   cyclic.
+* `FreeGroup.commute_of_take_toWord_pow_eq`: if the reduced words of `u ^ L` and `v ^ L` have the
+  same first `L` letters for one `L ≥ ‖u‖ ‖v‖`, then `u` and `v` commute.
 
 ## References
 
@@ -150,3 +161,107 @@ theorem isCyclic_centralizer {x : G} (hx : x ≠ 1) : IsCyclic (Subgroup.central
   Subgroup.isCyclic_of_isMulCommutative _
 
 end IsFreeGroup
+
+namespace FreeGroup
+
+variable {α : Type*}
+
+/-- Nonzero powers of distinct generators of a free group do not commute: `of a ^ m` and
+`of b ^ n` commute only when `m = 0` or `n = 0`. -/
+@[simp]
+theorem commute_of_zpow_of_zpow_iff {a b : α} (hab : a ≠ b) {m n : ℤ} :
+    Commute (of a ^ m) (of b ^ n) ↔ m = 0 ∨ n = 0 := by
+  refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
+  by_contra! hmn
+  rw [Commute.zpow_left_iff hmn.1, Commute.zpow_right_iff hmn.2] at h
+  exact hab (eq_of_commute_of_of h)
+
+variable [DecidableEq α]
+
+open reduceCyclically
+
+/-- The reduced word of `u ^ (j + d)` for `j + d ≠ 0`: the conjugator `c`, then `j` and `d`
+copies of the cyclic reduction `v`, then `c⁻¹`. -/
+private theorem toWord_pow_add (u : FreeGroup α) {j d : ℕ} (h : j + d ≠ 0) :
+    (u ^ (j + d)).toWord = conjugator u.toWord ++
+      ((List.replicate j (reduceCyclically u.toWord)).flatten ++
+        ((List.replicate d (reduceCyclically u.toWord)).flatten ++
+          invRev (conjugator u.toWord))) := by
+  simp only [toWord_pow, reduce_flatten_replicate isReduced_toWord, h, ↓reduceIte]
+  rw [List.replicate_add, List.flatten_append]
+  simp only [List.append_assoc]
+
+/-- Reading `j` more periods of the reduced word of `u ^ m`, past the conjugator, multiplies on
+the left by `u ^ j`. -/
+private theorem mk_take_toWord_pow_add {u : FreeGroup α} (hu : u ≠ 1) {n j m : ℕ}
+    (hc : (conjugator u.toWord).length ≤ n)
+    (hn : n + j * (reduceCyclically u.toWord).length ≤
+      (conjugator u.toWord).length + m * (reduceCyclically u.toWord).length) :
+    mk ((u ^ m).toWord.take (n + j * (reduceCyclically u.toWord).length)) =
+      u ^ j * mk ((u ^ m).toWord.take n) := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj
+  · simp
+  have hv := length_reduceCyclically_toWord_pos_iff.2 hu
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hc
+  obtain ⟨d, rfl⟩ : ∃ d, m = j + d :=
+    Nat.exists_eq_add_of_le (Nat.le_of_mul_le_mul_right (by nlinarith) hv)
+  have hw := toWord_pow_add u (j := j) (d := d) (by omega)
+  have hw' := toWord_pow_add u (j := d) (d := j) (by omega)
+  have hu' : u = mk (conjugator u.toWord) * mk (reduceCyclically u.toWord) *
+      (mk (conjugator u.toWord))⁻¹ := by
+    rw [inv_mk, mul_mk, mul_mk, conj_conjugator_reduceCyclically, mk_toWord]
+  set c := conjugator u.toWord
+  set v := reduceCyclically u.toWord
+  have hlen (i : ℕ) : ((List.replicate i v).flatten).length = i * v.length := by
+    simp [List.length_flatten, List.map_replicate]
+  have hk : k ≤ ((List.replicate d v).flatten).length := by rw [hlen]; nlinarith
+  -- Both prefixes are `c` followed by a prefix of the periodic part.
+  have hlong : (u ^ (j + d)).toWord.take (c.length + k + j * v.length) =
+      c ++ (List.replicate j v).flatten ++ (List.replicate d v).flatten.take k := by
+    have hidx : c.length + k + j * v.length =
+        c.length + ((List.replicate j v).flatten.length + k) := by
+      rw [hlen]; ring
+    rw [hidx, hw, List.take_length_add_append, List.take_length_add_append,
+      List.take_append_of_le_length hk, List.append_assoc]
+  have hshort : (u ^ (j + d)).toWord.take (c.length + k) =
+      c ++ (List.replicate d v).flatten.take k := by
+    rw [Nat.add_comm j d, hw', List.take_length_add_append, List.take_append_of_le_length hk]
+  rw [hlong, hshort]
+  simp only [← mul_mk, ← pow_mk, hu', conj_pow]
+  group
+
+/-- If the reduced words of `u ^ L` and `v ^ L` have the same first `L` letters for one
+`L ≥ ‖u‖ ‖v‖`, where `‖·‖` is the word length, then `u` and `v` commute. This is a
+free-group form of the fact that two periodic words which agree on a long enough segment have
+commuting periods, applied to the attracting rays of `u` and `v`. -/
+theorem commute_of_take_toWord_pow_eq {u v : FreeGroup α} {L : ℕ}
+    (hL : u.norm * v.norm ≤ L)
+    (h : (u ^ L).toWord.take L = (v ^ L).toWord.take L) : Commute u v := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · exact Commute.one_left v
+  rcases eq_or_ne v 1 with rfl | hv
+  · exact Commute.one_right u
+  have hp := length_reduceCyclically_toWord_pos_iff.2 hu
+  have hq := length_reduceCyclically_toWord_pos_iff.2 hv
+  have hu' := norm_pow_eq u one_pos
+  have hv' := norm_pow_eq v one_pos
+  rw [pow_one] at hu' hv'
+  -- The word length is twice the conjugator length plus the cyclically reduced length, which is
+  -- positive; so `‖u‖ ‖v‖` bounds the length of the two conjugators plus `|v| |v'|`.
+  have hL' : (conjugator u.toWord).length + (conjugator v.toWord).length +
+      (reduceCyclically u.toWord).length * (reduceCyclically v.toWord).length ≤ L :=
+    hL.trans' (by nlinarith)
+  set p := (reduceCyclically u.toWord).length
+  set q := (reduceCyclically v.toWord).length
+  set n := (conjugator u.toWord).length + (conjugator v.toWord).length
+  -- Every prefix of length at most `L` of the two words agrees.
+  have htake {i : ℕ} (hi : i ≤ L) : (u ^ L).toWord.take i = (v ^ L).toWord.take i := by
+    rw [← Nat.min_eq_left hi, ← List.take_take, h, List.take_take]
+  have h₁ := mk_take_toWord_pow_add hu (n := n) (j := q) (m := L) (by omega) (by nlinarith)
+  have h₂ := mk_take_toWord_pow_add hv (n := n) (j := p) (m := L) (by omega) (by nlinarith)
+  rw [htake (by nlinarith), htake (by omega), Nat.mul_comm q p] at h₁
+  rw [← Commute.pow_left_iff hq.ne', ← Commute.pow_right_iff hp.ne',
+    mul_right_cancel (h₁.symm.trans h₂)]
+  exact Commute.refl _
+
+end FreeGroup
