@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.ThetaSeries.DiscriminantGroup
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.LinearAlgebra.Span.Basic
-import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
 /-!
 # Rank-one lattice theta series and the non-integral lattice `½ ℤ`
