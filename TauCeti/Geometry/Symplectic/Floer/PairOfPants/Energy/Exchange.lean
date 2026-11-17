@@ -526,15 +526,15 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ} {c : ℝ}
 
-/-- The member `c` of the family is `C¹` jointly in the domain point of `S` and the target
-point. -/
-private theorem contMDiffAt_exchangePerturbation_apply (hH : ∀ q, Periodic (H q) 1)
+/-- The components of the member `c` of the family in real coordinates are `C¹` jointly in the
+domain point and the target point, at points of `S`. -/
+private theorem contMDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ exchangePerturbation H c p.1 p.2) (Complex.equivRealProdCLM.symm z, x) :=
-  (contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
-    (f := fun p : ℂ × M ↦ (c, p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
+    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v) (z, x) :=
+  (contMDiffOn_uncurry_exchangePerturbation hH hHs c v).contMDiffAt
+    ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds ⟨hz, mem_univ x⟩)
 
 /-- The components of the member `c` of the family in real coordinates are differentiable in the
 domain point, at points of `S`. -/
@@ -542,13 +542,9 @@ private theorem differentiableAt_exchangePerturbation_domain (hH : ∀ q, Period
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
     DifferentiableAt ℝ (fun z ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      z := by
-  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ exchangePerturbation H c w x)
-      (Complex.equivRealProdCLM.symm z) :=
-    (contMDiffAt_exchangePerturbation_apply hH hHs c hz x).comp (f := fun w : ℂ ↦ (w, x)) _
-      (contMDiffAt_id.prodMk contMDiffAt_const)
-  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
-    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
+      z :=
+  ((contMDiffAt_uncurry_exchangePerturbation hH hHs c hz x v).comp (f := fun w ↦ (w, x)) z
+    (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt.differentiableAt one_ne_zero
 
 /-- The components of the member `c` of the family are differentiable in the target point, at
 points of `S`. -/
@@ -557,10 +553,8 @@ private theorem mdifferentiableAt_exchangePerturbation_target (hH : ∀ q, Perio
     (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
     MDifferentiableAt I 𝓘(ℝ)
       (fun y ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) y v) x :=
-  (((contMDiffAt_exchangePerturbation_apply hH hHs c hz x).comp
-    (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
-      (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
-    one_ne_zero
+  ((contMDiffAt_uncurry_exchangePerturbation hH hHs c hz x v).comp (f := fun y ↦ (z, y)) x
+    (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
 
 /-- If `u` is `C¹` on `S`, then so is `u ∘ Φ_c`. -/
 private theorem contMDiffOn_comp_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {u : ℝ × ℝ → M}
@@ -823,9 +817,8 @@ theorem IsNondegenerate.neg_sum_le_integral_add_of_exchangePerturbation_exchange
             (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
           ∫ t in (0 : ℝ)..1, H inf t (u (Complex.equivRealProdCLM
             (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) := by
-  have hpos := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet
-      fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have hpos := setIntegral_nonneg (μ := volume) (measurableSet_preimage_exchangeTruncation c R)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le hH hHs hB
       hc₀ hc₁ hu (by linarith : (1 : ℝ) ≤ R))
@@ -1168,9 +1161,8 @@ theorem hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation (ω : Sympl
           (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) -
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t := by
   -- The energy over the truncation is nonnegative.
-  have hE := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_exchangeTruncation c R)
+    fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
     ω hH hHs hh hhH hc₀ hc₁ hu.continuousOn
   rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
@@ -1334,7 +1326,7 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticFor
     (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u
   set T : ℝ → Set (ℝ × ℝ) := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R
-  have hTS (R : ℝ) : T R ⊆ thricePuncturedSphereReal := fun z hz ↦ exchangeTruncation_subset c R hz
+  have hTS := preimage_exchangeTruncation_subset c
   have hKc (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
       (thricePuncturedSphereReal ×ˢ univ) :=
@@ -1344,17 +1336,11 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticFor
       (hKc 1) (hKc Complex.I)
   -- The lower integrals over `T R` are the measures of `T R` for the density `ofReal ∘ e`, and the
   -- truncations increase to `S`, so these measures converge to the energy over `S`.
-  have hTm (R : ℝ) : MeasurableSet (T R) :=
-    ((isClosed_exchangeTruncation c R).preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
-  have hU : ⋃ R, T R = thricePuncturedSphereReal := by
-    ext z
-    simp only [T, ← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
-      mem_thricePuncturedSphereReal_iff]
   have hlim := tendsto_measure_iUnion_atTop
     (μ := volume.withDensity fun z ↦ ENNReal.ofReal (e z)) (s := T)
     fun R R' hRR' ↦ preimage_mono (exchangeTruncation_mono c hRR')
-  rw [hU, withDensity_apply _ isOpen_thricePuncturedSphereReal.measurableSet] at hlim
+  rw [iUnion_preimage_exchangeTruncation,
+    withDensity_apply _ isOpen_thricePuncturedSphereReal.measurableSet] at hlim
   refine tendsto_nhds_unique hlim ?_
   -- On `T R`, `R ≥ 2`, the energy is the change of action minus the curvature over `S`.
   refine ((ENNReal.continuous_ofReal.tendsto _).comp
@@ -1364,9 +1350,9 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticFor
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_exchangeTruncation c R)
   simp only [Function.comp_apply]
-  rw [withDensity_apply _ (hTm R), ← ofReal_integral_eq_lintegral_ofReal
-    ((he.mono (hTS R)).integrableOn_compact hTc)
-    (ae_restrict_of_forall_mem (hTm R) fun z hz ↦
+  rw [withDensity_apply _ (measurableSet_preimage_exchangeTruncation c R),
+    ← ofReal_integral_eq_lintegral_ofReal ((he.mono (hTS R)).integrableOn_compact hTc)
+    (ae_restrict_of_forall_mem (measurableSet_preimage_exchangeTruncation c R) fun z hz ↦
       ω.floerEnergyDensity_nonneg (hJ z (hTS R hz)) (hfloer z (hTS R hz))),
     integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
 
