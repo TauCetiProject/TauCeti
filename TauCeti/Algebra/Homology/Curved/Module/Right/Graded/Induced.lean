@@ -701,7 +701,6 @@ instance epi_inducedDesc {M : CurvedDGRightModuleCat.{u, u, u} h}
 
 variable (h) in
 /-- The **induced curved-module functor** `G⁺`, left adjoint to `forgetDifferential`. -/
-@[expose, implicit_reducible]
 noncomputable def inducedFunctor :
     GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece ⥤
       ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) :=
@@ -722,22 +721,30 @@ theorem inducedFunctor_obj (h : IsCurvedDGAlgebra 𝒜 d w)
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (induced h X) :=
   (rfl)
 
-/-- `inducedFunctor h` maps `u : X ⟶ Y` to `inducedDesc (u ≫ inducedι h Y)`. -/
+/-- `inducedFunctor h` maps `u : X ⟶ Y` to `inducedDesc (u ≫ inducedι h Y)`, transported along
+`inducedFunctor_obj`. -/
 @[simp]
 theorem inducedFunctor_map (h : IsCurvedDGAlgebra 𝒜 d w)
     {X Y : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece} (u : X ⟶ Y) :
-    (inducedFunctor h).map u = inducedDesc (u ≫ inducedι h Y) := by
-  dsimp only [inducedFunctor]
-  rw [Adjunction.leftAdjointOfEquiv_map]
-  simp only [Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, CategoryTheory.Functor.map_id]
-  exact congrArg (fun v ↦ inducedDesc (u ≫ v)) (Category.comp_id (inducedι h Y))
+    (inducedFunctor h).map u =
+      eqToHom (inducedFunctor_obj h X) ≫ inducedDesc (u ≫ inducedι h Y) ≫
+        eqToHom (inducedFunctor_obj h Y).symm := by
+  have hmap : (inducedFunctor h).map u = inducedDesc (u ≫ inducedι h Y) := by
+    dsimp only [inducedFunctor]
+    rw [Adjunction.leftAdjointOfEquiv_map]
+    simp only [Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, CategoryTheory.Functor.map_id]
+    exact congrArg (fun v ↦ inducedDesc (u ≫ v)) (Category.comp_id (inducedι h Y))
+  exact hmap.trans ((Category.id_comp _).trans (Category.comp_id _)).symm
 
-/-- Precomposing `inducedDesc f` with `(inducedFunctor h).map u` descends `u ≫ f`. -/
+/-- Precomposing `inducedDesc f` with `(inducedFunctor h).map u` (transported along
+`inducedFunctor_obj`) descends `u ≫ f`. -/
 @[reassoc]
 theorem inducedFunctor_map_comp_inducedDesc {M : CurvedDGRightModuleCat.{u, u, u} h}
     {X Y : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
     (u : X ⟶ Y) (f : Y ⟶ toGradedModuleCat M) :
-    (inducedFunctor h).map u ≫ inducedDesc f = inducedDesc (u ≫ f) := by
+    (inducedFunctor h).map u ≫ eqToHom (inducedFunctor_obj h Y) ≫ inducedDesc f =
+      eqToHom (inducedFunctor_obj h X) ≫ inducedDesc (u ≫ f) := by
+  rw [inducedFunctor_map]
   simp
 
 variable (h) in
@@ -752,18 +759,48 @@ noncomputable def inducedAdj : inducedFunctor h ⊣ forgetDifferential (h := h) 
           inducedι_comp_forgetDifferential_inducedDesc (M := ForgetEnrichment.to _ M) f })
     fun _ _ _ _ _ ↦ by simp only [Equiv.coe_fn_mk, Functor.map_comp, Category.assoc]
 
-/-- The forward hom-equivalence of `inducedAdj h` precomposes with `inducedι`. -/
+/-- The unit of `inducedAdj h` at `X` is `inducedι h X`, transported along
+`inducedFunctor_obj`. -/
+@[simp]
+theorem inducedAdj_unit_app (h : IsCurvedDGAlgebra 𝒜 d w)
+    (X : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
+    (inducedAdj h).unit.app X =
+      inducedι h X ≫
+        (forgetDifferential (h := h)).map
+          (X := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (induced h X))
+          (eqToHom (inducedFunctor_obj h X).symm) := by
+  rw [inducedAdj, Adjunction.adjunctionOfEquivLeft_unit_app]
+  rfl
+
+/-- The counit of `inducedAdj h` at `M` is `inducedDesc (𝟙 (toGradedModuleCat M))`, transported
+along `inducedFunctor_obj`. -/
+@[simp]
+theorem inducedAdj_counit_app (h : IsCurvedDGAlgebra 𝒜 d w)
+    (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    (inducedAdj h).counit.app (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) =
+      eqToHom (inducedFunctor_obj h (toGradedModuleCat M)) ≫
+        inducedDesc (𝟙 (toGradedModuleCat M)) := by
+  rw [inducedAdj, Adjunction.adjunctionOfEquivLeft_counit_app]
+  change inducedDesc (𝟙 (toGradedModuleCat M)) = 𝟙 _ ≫ inducedDesc (𝟙 (toGradedModuleCat M))
+  exact (Category.id_comp _).symm
+
+/-- The forward hom-equivalence of `inducedAdj h` precomposes with `inducedι`, transported along
+`inducedFunctor_obj`. -/
 @[simp]
 theorem inducedAdj_homEquiv_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     {X : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
     {M : CurvedDGRightModuleCat.{u, u, u} h}
     (φ : (inducedFunctor h).obj X ⟶ ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) :
     (inducedAdj h).homEquiv X (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) φ =
-      inducedι h X ≫ (forgetDifferential (h := h)).map φ := by
-  rw [inducedAdj, Adjunction.adjunctionOfEquivLeft, Adjunction.mkOfHomEquiv_homEquiv]
-  rfl
+      inducedι h X ≫
+        (forgetDifferential (h := h)).map
+          (X := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (induced h X))
+          (eqToHom (inducedFunctor_obj h X).symm) ≫
+        (forgetDifferential (h := h)).map φ := by
+  rw [Adjunction.homEquiv_unit, inducedAdj_unit_app, Category.assoc]
 
-/-- The inverse hom-equivalence of `inducedAdj h` is `inducedDesc`. -/
+/-- The inverse hom-equivalence of `inducedAdj h` is `inducedDesc`, transported along
+`inducedFunctor_obj`. -/
 @[simp]
 theorem inducedAdj_homEquiv_symm_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     {X : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
@@ -771,27 +808,9 @@ theorem inducedAdj_homEquiv_symm_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     (f : X ⟶ toGradedModuleCat M) :
     ((inducedAdj h).homEquiv
         X (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)).symm f =
-      inducedDesc f := by
-  rw [inducedAdj, Adjunction.adjunctionOfEquivLeft, Adjunction.mkOfHomEquiv_homEquiv]
-  rfl
-
-/-- The unit of `inducedAdj h` at `X` is `inducedι h X`. -/
-@[simp]
-theorem inducedAdj_unit_app (h : IsCurvedDGAlgebra 𝒜 d w)
-    (X : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
-    (inducedAdj h).unit.app X = inducedι h X := by
-  rw [inducedAdj, Adjunction.adjunctionOfEquivLeft_unit_app]
-  simp only [Equiv.coe_fn_mk, CategoryTheory.Functor.map_id]
-  exact Category.comp_id (inducedι h X)
-
-/-- The counit of `inducedAdj h` at `M` is `inducedDesc (𝟙 (toGradedModuleCat M))`. -/
-@[simp]
-theorem inducedAdj_counit_app (h : IsCurvedDGAlgebra 𝒜 d w)
-    (M : CurvedDGRightModuleCat.{u, u, u} h) :
-    (inducedAdj h).counit.app (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) =
-      inducedDesc (𝟙 (toGradedModuleCat M)) := by
-  rw [inducedAdj, Adjunction.adjunctionOfEquivLeft_counit_app]
-  rfl
+      eqToHom (inducedFunctor_obj h X) ≫ inducedDesc f := by
+  rw [Adjunction.homEquiv_counit, inducedAdj_counit_app, inducedFunctor_map_comp_inducedDesc]
+  exact congrArg (eqToHom (inducedFunctor_obj h X) ≫ inducedDesc ·) (Category.comp_id f)
 
 instance : (inducedFunctor h).IsLeftAdjoint :=
   (inducedAdj h).isLeftAdjoint
@@ -805,8 +824,10 @@ instance : (inducedFunctor h).Additive :=
 instance : (inducedFunctor h).Linear R where
   map_smul {X Y} u r := by
     rw [inducedFunctor_map, inducedFunctor_map]
-    apply induced_hom_ext
-    simp
+    have hsmul : inducedDesc ((r • u) ≫ inducedι h Y) = r • inducedDesc (u ≫ inducedι h Y) := by
+      apply induced_hom_ext
+      simp
+    rw [hsmul, Linear.smul_comp, Linear.comp_smul]
 
 end InducedAdjunction
 
@@ -1088,7 +1109,6 @@ instance mono_coinducedLift {M : CurvedDGRightModuleCat.{u, u, u} h}
 
 variable (h) in
 /-- The **coinduced curved-module functor** `G⁻`, right adjoint to `forgetDifferential`. -/
-@[expose, implicit_reducible]
 noncomputable def coinducedFunctor :
     GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece ⥤
       ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) :=
@@ -1109,21 +1129,30 @@ theorem coinducedFunctor_obj (h : IsCurvedDGAlgebra 𝒜 d w)
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinduced h Y) :=
   (rfl)
 
-/-- `coinducedFunctor h` maps `v : Y ⟶ Z` to `coinducedLift (coinducedCounit h Y ≫ v)`. -/
+/-- `coinducedFunctor h` maps `v : Y ⟶ Z` to `coinducedLift (coinducedCounit h Y ≫ v)`,
+transported along `coinducedFunctor_obj`. -/
 @[simp]
 theorem coinducedFunctor_map (h : IsCurvedDGAlgebra 𝒜 d w)
     {Y Z : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece} (v : Y ⟶ Z) :
-    (coinducedFunctor h).map v = coinducedLift (coinducedCounit h Y ≫ v) := by
-  dsimp only [coinducedFunctor]
-  rw [Adjunction.rightAdjointOfEquiv_map]
-  simp only [Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, CategoryTheory.Functor.map_id, Category.id_comp]
+    (coinducedFunctor h).map v =
+      eqToHom (coinducedFunctor_obj h Y) ≫ coinducedLift (coinducedCounit h Y ≫ v) ≫
+        eqToHom (coinducedFunctor_obj h Z).symm := by
+  have hmap : (coinducedFunctor h).map v = coinducedLift (coinducedCounit h Y ≫ v) := by
+    dsimp only [coinducedFunctor]
+    rw [Adjunction.rightAdjointOfEquiv_map]
+    simp only [Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, CategoryTheory.Functor.map_id,
+      Category.id_comp]
+  exact hmap.trans ((Category.id_comp _).trans (Category.comp_id _)).symm
 
-/-- Postcomposing `coinducedLift g` with `(coinducedFunctor h).map v` lifts `g ≫ v`. -/
+/-- Postcomposing `coinducedLift g` with `(coinducedFunctor h).map v` (transported along
+`coinducedFunctor_obj`) lifts `g ≫ v`. -/
 @[reassoc]
 theorem coinducedLift_comp_coinducedFunctor_map {M : CurvedDGRightModuleCat.{u, u, u} h}
     {Y Z : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
     (g : toGradedModuleCat M ⟶ Y) (v : Y ⟶ Z) :
-    coinducedLift g ≫ (coinducedFunctor h).map v = coinducedLift (g ≫ v) := by
+    coinducedLift g ≫ eqToHom (coinducedFunctor_obj h Y).symm ≫ (coinducedFunctor h).map v =
+      coinducedLift (g ≫ v) ≫ eqToHom (coinducedFunctor_obj h Z).symm := by
+  rw [coinducedFunctor_map]
   simp
 
 variable (h) in
@@ -1138,7 +1167,31 @@ noncomputable def coinducedAdj : forgetDifferential (h := h) ⊣ coinducedFuncto
         right_inv := fun φ ↦ coinducedLift_unique (M := ForgetEnrichment.to _ M) φ })
     fun _ _ _ _ _ ↦ (comp_coinducedLift _ _).symm
 
-/-- The forward hom-equivalence of `coinducedAdj h` is `coinducedLift`. -/
+/-- The counit of `coinducedAdj h` at `Y` is `coinducedCounit h Y`, transported along
+`coinducedFunctor_obj`. -/
+@[simp]
+theorem coinducedAdj_counit_app (h : IsCurvedDGAlgebra 𝒜 d w)
+    (Y : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
+    (coinducedAdj h).counit.app Y =
+      (forgetDifferential (h := h)).map (eqToHom (coinducedFunctor_obj h Y)) ≫
+        coinducedCounit h Y := by
+  rw [coinducedAdj, Adjunction.adjunctionOfEquivRight_counit_app]
+  rfl
+
+/-- The unit of `coinducedAdj h` at `M` is `coinducedLift (𝟙 (toGradedModuleCat M))`, transported
+along `coinducedFunctor_obj`. -/
+@[simp]
+theorem coinducedAdj_unit_app (h : IsCurvedDGAlgebra 𝒜 d w)
+    (M : CurvedDGRightModuleCat.{u, u, u} h) :
+    (coinducedAdj h).unit.app (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) =
+      coinducedLift (𝟙 (toGradedModuleCat M)) ≫
+        eqToHom (coinducedFunctor_obj h (toGradedModuleCat M)).symm := by
+  rw [coinducedAdj, Adjunction.adjunctionOfEquivRight_unit_app]
+  change coinducedLift (𝟙 (toGradedModuleCat M)) = coinducedLift (𝟙 (toGradedModuleCat M)) ≫ 𝟙 _
+  exact (Category.comp_id _).symm
+
+/-- The forward hom-equivalence of `coinducedAdj h` is `coinducedLift`, transported along
+`coinducedFunctor_obj`. -/
 @[simp]
 theorem coinducedAdj_homEquiv_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     {M : CurvedDGRightModuleCat.{u, u, u} h}
@@ -1146,11 +1199,12 @@ theorem coinducedAdj_homEquiv_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     (g : toGradedModuleCat M ⟶ Y) :
     (coinducedAdj h).homEquiv
         (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) Y g =
-      coinducedLift g := by
-  rw [coinducedAdj, Adjunction.adjunctionOfEquivRight, Adjunction.mkOfHomEquiv_homEquiv]
-  rfl
+      coinducedLift g ≫ eqToHom (coinducedFunctor_obj h Y).symm := by
+  rw [Adjunction.homEquiv_unit, coinducedAdj_unit_app, Category.assoc,
+    coinducedLift_comp_coinducedFunctor_map, Category.id_comp]
 
-/-- The inverse hom-equivalence of `coinducedAdj h` postcomposes with `coinducedCounit`. -/
+/-- The inverse hom-equivalence of `coinducedAdj h` postcomposes with `coinducedCounit`,
+transported along `coinducedFunctor_obj`. -/
 @[simp]
 theorem coinducedAdj_homEquiv_symm_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     {M : CurvedDGRightModuleCat.{u, u, u} h}
@@ -1158,26 +1212,10 @@ theorem coinducedAdj_homEquiv_symm_apply (h : IsCurvedDGAlgebra 𝒜 d w)
     (φ : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶ (coinducedFunctor h).obj Y) :
     ((coinducedAdj h).homEquiv
         (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) Y).symm φ =
-      (forgetDifferential (h := h)).map φ ≫ coinducedCounit h Y := by
-  rw [coinducedAdj, Adjunction.adjunctionOfEquivRight, Adjunction.mkOfHomEquiv_homEquiv]
-  rfl
-
-/-- The counit of `coinducedAdj h` at `Y` is `coinducedCounit h Y`. -/
-@[simp]
-theorem coinducedAdj_counit_app (h : IsCurvedDGAlgebra 𝒜 d w)
-    (Y : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
-    (coinducedAdj h).counit.app Y = coinducedCounit h Y := by
-  rw [coinducedAdj, Adjunction.adjunctionOfEquivRight_counit_app]
-  simp only [Equiv.coe_fn_symm_mk, CategoryTheory.Functor.map_id, Category.id_comp]
-
-/-- The unit of `coinducedAdj h` at `M` is `coinducedLift (𝟙 (toGradedModuleCat M))`. -/
-@[simp]
-theorem coinducedAdj_unit_app (h : IsCurvedDGAlgebra 𝒜 d w)
-    (M : CurvedDGRightModuleCat.{u, u, u} h) :
-    (coinducedAdj h).unit.app (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) =
-      coinducedLift (𝟙 (toGradedModuleCat M)) := by
-  rw [coinducedAdj, Adjunction.adjunctionOfEquivRight_unit_app]
-  rfl
+      (forgetDifferential (h := h)).map φ ≫
+        (forgetDifferential (h := h)).map (eqToHom (coinducedFunctor_obj h Y)) ≫
+        coinducedCounit h Y := by
+  rw [Adjunction.homEquiv_counit, coinducedAdj_counit_app]
 
 instance : (forgetDifferential (h := h)).IsLeftAdjoint :=
   (coinducedAdj h).isLeftAdjoint
@@ -1191,8 +1229,11 @@ instance : (coinducedFunctor h).Additive :=
 instance : (coinducedFunctor h).Linear R where
   map_smul {Y Z} v r := by
     rw [coinducedFunctor_map, coinducedFunctor_map]
-    apply coinduced_hom_ext
-    simp
+    have hsmul : coinducedLift (coinducedCounit h Y ≫ (r • v)) =
+        r • coinducedLift (coinducedCounit h Y ≫ v) := by
+      apply coinduced_hom_ext
+      simp
+    rw [hsmul, Linear.smul_comp, Linear.comp_smul]
 
 end CoinducedAdjunction
 
