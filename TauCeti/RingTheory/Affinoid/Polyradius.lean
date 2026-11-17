@@ -36,12 +36,10 @@ namespace TauCeti
 open _root_.MvPowerSeries
 
 variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  [Finite σ] {r : σ → ℝ} [∀ i, Fact (0 < r i)]
 
-omit [∀ i, Fact (0 < r i)] in
 /-- Restricted series at polyradii in the divisible hull of the value group form a strictly
 affinoid algebra. The positive exponent and scalar may depend on the variable. -/
-theorem isAffinoidAlgebra_isRestricted_of_pow_eq_norm
+theorem isAffinoidAlgebra_isRestricted_of_pow_eq_norm [Finite σ] {r : σ → ℝ}
     (hr : ∀ i, ∃ n : ℕ, 0 < n ∧ ∃ c : Kˣ, r i ^ n = ‖(c : K)‖) :
     IsAffinoidAlgebra K (IsRestricted.subring (R := K) r) := by
   -- `|r|` is positive by `hr`.
@@ -63,10 +61,9 @@ theorem isAffinoidAlgebra_isRestricted_of_pow_eq_norm
     fun f ↦ ⟨⟨f.1, (MvPowerSeries.IsRestricted.subring_abs (R := K) r).ge f.2⟩,
       Subtype.ext (Subring.coe_inclusion hle _)⟩
 
-omit [Finite σ] in
 /-- Strict affinoidness forces every positive radius into the divisible hull of the value
 group. A single positive exponent works simultaneously for all variables. -/
-theorem exists_pow_eq_norm_of_isAffinoidAlgebra_isRestricted
+theorem exists_pow_eq_norm_of_isAffinoidAlgebra_isRestricted {r : σ → ℝ} [∀ i, Fact (0 < r i)]
     (hA : IsAffinoidAlgebra K (IsRestricted.subring (R := K) r)) :
     ∃ n : ℕ, 0 < n ∧ ∀ i, ∃ c : Kˣ, r i ^ n = ‖(c : K)‖ := by
   obtain ⟨n, hn, h⟩ := hA.exists_supSeminorm_pow_eq_norm
@@ -78,7 +75,8 @@ theorem exists_pow_eq_norm_of_isAffinoidAlgebra_isRestricted
 
 /-- **Strict-polyradius criterion.** Restricted series at positive polyradii are strictly
 `K`-affinoid exactly when every radius belongs to the divisible hull of `|Kˣ|`. -/
-theorem isAffinoidAlgebra_isRestricted_iff_pow_eq_norm :
+theorem isAffinoidAlgebra_isRestricted_iff_pow_eq_norm [Finite σ] {r : σ → ℝ}
+    [∀ i, Fact (0 < r i)] :
     IsAffinoidAlgebra K (IsRestricted.subring (R := K) r) ↔
       ∀ i, ∃ n : ℕ, 0 < n ∧ ∃ c : Kˣ, r i ^ n = ‖(c : K)‖ := by
   constructor
