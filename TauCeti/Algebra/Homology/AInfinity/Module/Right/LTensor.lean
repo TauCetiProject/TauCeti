@@ -129,11 +129,7 @@ private noncomputable def lTensorAct : (n : ℕ) →
 private theorem lTensorAct_tmul_tmul (n : ℕ) (a : Fin n → A) (b : Fin n → B) (b₀ : B) (m : M) :
     Mm.lTensorAct dB n (fun i => a i ⊗ₜ[R] b i) (b₀ ⊗ₜ[R] m) =
       (b₀ * (List.ofFn b).prod) ⊗ₜ[R] Mm.act n a m + if n = 0 then dB b₀ ⊗ₜ[R] m else 0 := by
-  cases n with
-  | zero =>
-    simp [lTensorAct, lTensorEval_tmul_tmul, MultilinearMap.mkPiAlgebraFin_apply]
-  | succ n =>
-    simp [lTensorAct, lTensorEval_tmul_tmul, MultilinearMap.mkPiAlgebraFin_apply]
+  cases n <;> simp [lTensorAct, lTensorEval_tmul_tmul, MultilinearMap.mkPiAlgebraFin_apply]
 
 private theorem act_congr {j j' : ℕ} (h : j = j') {a : Fin j → A} {a' : Fin j' → A}
     (ha : ∀ l, a l = a' (Fin.cast h l)) : Mm.act j a = Mm.act j' a' := by

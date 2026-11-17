@@ -34,7 +34,7 @@ are the row vectors `φ : Y → B ⊗ M`, standing for `∑ y, φ y ⊗ y`, and 
 `D` structure over `B` in a basis needs a basis of `M` adapted to the idempotents, and is not done
 here.
 
-* **It is a differential `B`-module.** The differential satisfies the Leibniz rule
+* **The Leibniz rule.** The differential satisfies
   `∂ (b • φ) = b • ∂ φ + d_B b • φ` for the left action of `B`
   (`TauCeti.TypeDStructure.typeABoxDifferential_lTensor_smul`, with its two bounded forms
   `TauCeti.TypeDStructure.typeABoxDifferential_lTensor_smul_of_isBounded` and
@@ -45,6 +45,9 @@ here.
   `B ⊗ M`, and when `M` is bounded
   (`TauCeti.TypeDStructure.typeABoxDifferential_typeABoxDifferential_lTensor_of_act_eq_zero`),
   since `B ⊗ M` is then bounded as well.
+
+Together, the Leibniz rule and `∂ ∘ ∂ = 0` make `B ⊗ (M ⊠ N)` a differential `B`-module whenever
+`M` or `N` is bounded.
 
 When `M` is strictly unital, so is `B ⊗ M` for the idempotents `ιA s ⊗ ιB t` of the type `DD`
 structure (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.lTensor`). If moreover the
@@ -87,7 +90,8 @@ variable {R A B M : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra
   (hB : IsUngradedDGAlgebra dB) (Mm : UngradedAInfinityRightModule dA M)
   (N : TypeDDStructure dA dB ιA ιB Y)
 
-/-- **The box tensor product with a type `DD` structure is a differential `B`-module.** When the
+/-- **The box tensor differential with a type `DD` structure satisfies the Leibniz rule** for the
+left action of `B`. When the
 operations of the matrix module of `B ⊗ M` vanish along `δ` from some arity on, the box tensor
 differential of `B ⊗ M` with `N` satisfies the Leibniz rule `∂ (b • φ) = b • ∂ φ + d_B b • φ` for
 the left action of `B` on the factor `B`. -/
@@ -103,10 +107,7 @@ theorem typeABoxDifferential_lTensor_smul {K : ℕ}
     UngradedAInfinityRightModule.lTensor_act_smul, smul_sum, smul_ite, smul_zero]
   -- Each operation is `B`-linear; `m₁` adds `d_B b • φ (x 0)`, which survives on the paths of
   -- length zero, the constant paths at `z`.
-  have hite (P : Prop) [Decidable P] (u v : B ⊗[R] M) :
-      (if P then u + v else 0) = (if P then u else 0) + (if P then v else 0) := by
-    split_ifs <;> simp
-  simp only [hite, sum_add_distrib, add_right_inj]
+  simp only [ite_add_zero, sum_add_distrib, add_right_inj]
   rw [sum_eq_single_of_mem 0 (mem_range.2 (Nat.succ_pos K)) fun n _ hn => by
     simp [hn]]
   simp only [ite_true]
@@ -115,8 +116,8 @@ theorem typeABoxDifferential_lTensor_smul {K : ℕ}
     exact h)).elim]
   exact ite_eq_left rfl
 
-/-- **The box tensor product with a bounded type `DD` structure is a differential `B`-module**:
-`∂ (b • φ) = b • ∂ φ + d_B b • φ`. -/
+/-- **The box tensor differential with a bounded type `DD` structure satisfies the Leibniz rule**
+for the left action of `B`: `∂ (b • φ) = b • ∂ φ + d_B b • φ`. -/
 theorem typeABoxDifferential_lTensor_smul_of_isBounded (hN : N.IsBounded) (b : B)
     (φ : Y → B ⊗[R] M) :
     N.typeABoxDifferential (Mm.lTensor hB) (b • φ) =
@@ -124,9 +125,9 @@ theorem typeABoxDifferential_lTensor_smul_of_isBounded (hN : N.IsBounded) (b : B
   obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
   exact N.typeABoxDifferential_lTensor_smul hB Mm (hK (Mm.lTensor hB)) b φ
 
-/-- **The box tensor product of a bounded type `A` module with a type `DD` structure is a
-differential `B`-module**: if the operations `m_{n+1}` of `M` vanish for `n ≥ K`, then
-`∂ (b • φ) = b • ∂ φ + d_B b • φ`. -/
+/-- **The box tensor differential of a bounded type `A` module with a type `DD` structure
+satisfies the Leibniz rule** for the left action of `B`: if the operations `m_{n+1}` of `M` vanish
+for `n ≥ K`, then `∂ (b • φ) = b • ∂ φ + d_B b • φ`. -/
 theorem typeABoxDifferential_lTensor_smul_of_act_eq_zero {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0)
     (b : B) (φ : Y → B ⊗[R] M) :
     N.typeABoxDifferential (Mm.lTensor hB) (b • φ) =
