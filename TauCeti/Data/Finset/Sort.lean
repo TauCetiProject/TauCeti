@@ -42,6 +42,7 @@ last position going to `0`) commutes with sorting up to a cyclic rotation of the
 
 The `i`-th smallest element of `s` has exactly `i` elements of `s` below it, and it satisfies a
 predicate closed under passing to smaller elements exactly when more than `i` elements of `s` do.
+For a finset of `Fin n`, its value is at least `i`.
 
 Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`.
@@ -308,6 +309,24 @@ theorem lt_card_filter_iff_apply_orderEmbOfFin_of_imp (s : Finset α) {k : ℕ} 
   subst e
   rw [filter_map, card_map]
   exact Fin.lt_card_filter_univ_iff_apply_of_imp _ fun i j hji ↦ hp _ _ (a.monotone hji)
+
+/-- The increasing enumeration of all elements of `Fin n` is the canonical cardinality cast. -/
+theorem orderEmbOfFin_univ_apply {n : ℕ} (c : Fin #(univ : Finset (Fin n))) :
+    (univ : Finset (Fin n)).orderEmbOfFin rfl c = finCongr (by simp) c := by
+  have hcard : #(univ : Finset (Fin n)) = n := by simp
+  calc
+    _ = (univ : Finset (Fin n)).orderEmbOfFin hcard (finCongr hcard c) :=
+      (orderEmbOfFin_eq_orderEmbOfFin_iff (s := univ) (h := rfl) (h' := hcard)
+        (i := c) (j := finCongr hcard c)).2 rfl
+    _ = finCongr hcard c :=
+      congrFun (Finset.orderEmbOfFin_unique hcard (fun _ ↦ mem_univ _) strictMono_id).symm _
+
+/-- The `m`-th element of a finset of `Fin n` in increasing order is at least `m`. -/
+theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #s = k) (m : Fin k) :
+    (m : ℕ) ≤ s.orderEmbOfFin h m :=
+  calc (m : ℕ) = #{x ∈ s | x < s.orderEmbOfFin h m} := (s.card_filter_lt_orderEmbOfFin h m).symm
+    _ ≤ #(Iio (s.orderEmbOfFin h m)) := card_le_card fun _ hx ↦ mem_Iio.2 (mem_filter.1 hx).2
+    _ = s.orderEmbOfFin h m := Fin.card_Iio _
 
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
