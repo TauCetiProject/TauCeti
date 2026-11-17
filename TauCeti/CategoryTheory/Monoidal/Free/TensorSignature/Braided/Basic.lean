@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Basic
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
+import Mathlib.CategoryTheory.CommSq
 
 /-!
 # The free braided monoidal category on a tensor signature
@@ -685,16 +686,6 @@ theorem wordIso_tensor_inv (X Y : S.FreeBraided) :
       δ G X Y ≫ ((wordIso F G e X).inv ⊗ₘ (wordIso F G e Y).inv) ≫ μ F X Y :=
   Category.assoc _ _ _
 
-/-- If `wordIso` commutes with the forward morphism of an isomorphism in `S.FreeBraided`, it also
-commutes with its inverse. -/
-private theorem map_iso_inv_comp_wordIso_hom {F G : S.FreeBraided ⥤ D} [F.Monoidal] [G.Monoidal]
-    {e : ∀ a, F.obj (of a) ≅ G.obj (of a)} {X Y : S.FreeBraided} (i : X ≅ Y)
-    (hi : F.map i.hom ≫ (wordIso F G e Y).hom = (wordIso F G e X).hom ≫ G.map i.hom) :
-    F.map i.inv ≫ (wordIso F G e X).hom = (wordIso F G e Y).hom ≫ G.map i.inv := by
-  rw [← cancel_epi (F.map i.hom), ← Functor.map_comp_assoc, i.hom_inv_id, Functor.map_id,
-    Category.id_comp, reassoc_of% hi, ← Functor.map_comp, i.hom_inv_id, Functor.map_id,
-    Category.comp_id]
-
 end Monoidal
 
 variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D]
@@ -744,13 +735,21 @@ theorem map_comp_wordIso_hom
   induction f using Hom.inductionOn with
   | id X => simp
   | α_hom X Y Z => exact map_α_hom_comp_wordIso_hom X Y Z
-  | α_inv X Y Z => exact map_iso_inv_comp_wordIso_hom (α_ X Y Z) (map_α_hom_comp_wordIso_hom X Y Z)
+  | α_inv X Y Z =>
+    exact (CommSq.horiz_inv (f := F.mapIso (α_ X Y Z)) (i := G.mapIso (α_ X Y Z))
+      ⟨map_α_hom_comp_wordIso_hom X Y Z⟩).w
   | l_hom X => exact map_l_hom_comp_wordIso_hom X
-  | l_inv X => exact map_iso_inv_comp_wordIso_hom (λ_ X) (map_l_hom_comp_wordIso_hom X)
+  | l_inv X =>
+    exact (CommSq.horiz_inv (f := F.mapIso (λ_ X)) (i := G.mapIso (λ_ X))
+      ⟨map_l_hom_comp_wordIso_hom X⟩).w
   | ρ_hom X => exact map_ρ_hom_comp_wordIso_hom X
-  | ρ_inv X => exact map_iso_inv_comp_wordIso_hom (ρ_ X) (map_ρ_hom_comp_wordIso_hom X)
+  | ρ_inv X =>
+    exact (CommSq.horiz_inv (f := F.mapIso (ρ_ X)) (i := G.mapIso (ρ_ X))
+      ⟨map_ρ_hom_comp_wordIso_hom X⟩).w
   | β_hom X Y => exact map_β_hom_comp_wordIso_hom X Y
-  | β_inv X Y => exact map_iso_inv_comp_wordIso_hom (β_ X Y) (map_β_hom_comp_wordIso_hom X Y)
+  | β_inv X Y =>
+    exact (CommSq.horiz_inv (f := F.mapIso (β_ X Y)) (i := G.mapIso (β_ X Y))
+      ⟨map_β_hom_comp_wordIso_hom X Y⟩).w
   | coupon g => exact he g
   | comp f g hf hg =>
     rw [Functor.map_comp, Functor.map_comp, Category.assoc, hg, reassoc_of% hf]
