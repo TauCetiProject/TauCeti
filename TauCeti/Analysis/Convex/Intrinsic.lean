@@ -73,6 +73,9 @@ argument, and the relative-frontier nowhere-density and local-membership lemmas,
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
 Original copyright (c) 2026 Mei contributors; original author: Codex.
+
+`ContinuousAffineEquiv.pairwise_disjoint_intrinsicInterior_image` records that a continuous affine
+equivalence preserves pairwise disjointness of intrinsic interiors.
 -/
 
 public section
@@ -629,3 +632,19 @@ theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ 
     exact (this (by simpa [B, g] using hwP)).elim
 
 end Convex
+
+namespace ContinuousAffineEquiv
+
+/-- A continuous affine equivalence preserves pairwise disjointness of intrinsic interiors. -/
+theorem pairwise_disjoint_intrinsicInterior_image {𝕜 V W P Q ι : Type*} [Ring 𝕜]
+    [AddCommGroup V] [AddCommGroup W] [Module 𝕜 V] [Module 𝕜 W]
+    [TopologicalSpace P] [TopologicalSpace Q] [AddTorsor V P] [AddTorsor W Q]
+    (e : P ≃ᴬ[𝕜] Q) {S : ι → Set P}
+    (hS : Pairwise fun i j => Disjoint (intrinsicInterior 𝕜 (S i)) (intrinsicInterior 𝕜 (S j))) :
+    Pairwise fun i j =>
+      Disjoint (intrinsicInterior 𝕜 (e '' S i)) (intrinsicInterior 𝕜 (e '' S j)) := by
+  intro i j hij
+  rw [e.intrinsicInterior_image, e.intrinsicInterior_image]
+  exact Set.disjoint_image_of_injective e.injective (hS hij)
+
+end ContinuousAffineEquiv

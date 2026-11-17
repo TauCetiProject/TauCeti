@@ -23,11 +23,12 @@ each normal functional's kernel with the wall's affine direction and relates any
 on walls with nested directions by a nonzero scalar. This yields functoriality of `crossingWord`:
 * under passing to a subcomplex
   (`FinitePolyhedralComplex.IsSubcomplex.crossingWord_restrictPrefunctor`), killing walls outside
-  the subcomplex via `TauCeti.deleteWallsMap`;
+  the subcomplex via `Function.extend`;
 * under subdividing the polyhedral complex
-  (`FinitePolyhedralComplex.IsSubdivision.crossingWord_mapPath`), sending walls inside
-  higher-dimensional coarse cells to `1` and subdivided pieces of a coarse wall `w` to
-  `FreeGroup.of w` or `(FreeGroup.of w)⁻¹` according as coorientations agree or disagree;
+  (`FinitePolyhedralComplex.IsSubdivision.crossingWord_mapPath`), via
+  `FinitePolyhedralComplex.wallWordMap`, sending walls inside higher-dimensional coarse cells to `1`
+  and subdivided pieces of a coarse wall `w` to `FreeGroup.of w` or `(FreeGroup.of w)⁻¹` according
+  as coorientations agree or disagree;
 * under `Toric.IntegralAffineEquiv` coordinate transport
   (`FinitePolyhedralComplex.crossingWord_image`), mapping generators along `C.wallsEquiv e`.
 
@@ -52,8 +53,8 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 /-- An allowed endpoint for a finite polyhedral complex `C`: an ambient point lying on no wall of
 `C`. -/
-abbrev WallComplement (C : FinitePolyhedralComplex h) : Type _ :=
-  _root_.TauCeti.WallComplement (Subtype.val : C.walls → Set V)
+abbrev wallComplement (C : FinitePolyhedralComplex h) : Type _ :=
+  WallComplement (Subtype.val : C.walls → Set V)
 
 /-- A family of wall coorientations on `C` assigns to each wall `w ∈ C.walls` a nonzero real linear
 functional vanishing on the wall's affine direction. -/
@@ -126,58 +127,68 @@ theorem IsWallCoorientation.exists_ne_zero_eq_smul {C C' : FinitePolyhedralCompl
 
 /-- The crossing word in `FreeGroup C.walls` of an admissible polygonal path for `C`. -/
 def crossingWord (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) : FreeGroup C.walls :=
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) : FreeGroup C.walls :=
   p.crossingWord ν C.pairwise_disjoint_intrinsicInterior_walls
 
 /-- `FinitePolyhedralComplex.crossingWord` is `Quiver.Path.crossingWord` applied to
 `C.pairwise_disjoint_intrinsicInterior_walls`. -/
 theorem crossingWord_def (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     C.crossingWord ν p = p.crossingWord ν C.pairwise_disjoint_intrinsicInterior_walls :=
   (rfl)
 
+/-- A constant path has trivial crossing word. -/
 @[simp]
 theorem crossingWord_nil (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    (x : C.WallComplement) :
+    (x : C.wallComplement) :
     C.crossingWord ν (Quiver.Path.nil : AdmissiblePLPath x x) = 1 :=
   Quiver.Path.crossingWord_nil ν _
 
+/-- Extending an admissible path by a segment multiplies by the segment's crossing word on the
+left. -/
 @[simp]
 theorem crossingWord_cons (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y z : C.WallComplement} (p : AdmissiblePLPath x y) (e : y ⟶ z) :
+    {x y z : C.wallComplement} (p : AdmissiblePLPath x y) (e : y ⟶ z) :
     C.crossingWord ν (p.cons e) =
-      _root_.TauCeti.WallComplement.segmentCrossingWord ν
+      WallComplement.segmentCrossingWord ν
         C.pairwise_disjoint_intrinsicInterior_walls e * C.crossingWord ν p :=
   Quiver.Path.crossingWord_cons ν _ p e
 
+/-- The crossing word of a single-segment path is the segment's crossing word. -/
 @[simp]
 theorem crossingWord_toPath (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y : C.WallComplement} (e : x ⟶ y) :
+    {x y : C.wallComplement} (e : x ⟶ y) :
     C.crossingWord ν e.toPath =
-      _root_.TauCeti.WallComplement.segmentCrossingWord ν
+      WallComplement.segmentCrossingWord ν
         C.pairwise_disjoint_intrinsicInterior_walls e :=
   Quiver.Path.crossingWord_toPath ν _ e
 
+/-- Concatenating two admissible paths multiplies their crossing words in reverse order. -/
 @[simp]
 theorem crossingWord_comp (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y z : C.WallComplement} (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
+    {x y z : C.wallComplement} (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
     C.crossingWord ν (p.comp q) = C.crossingWord ν q * C.crossingWord ν p :=
   Quiver.Path.crossingWord_comp ν _ p q
 
+/-- Positive rescaling of wall coorientations leaves `C.crossingWord` unchanged. -/
 @[simp]
 theorem crossingWord_smul (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    (r : C.walls → ℝ) (hr : ∀ w, 0 < r w) {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    (r : C.walls → ℝ) (hr : ∀ w, 0 < r w) {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     C.crossingWord (fun w => r w • ν w) p = C.crossingWord ν p :=
   Quiver.Path.crossingWord_smul ν _ r hr p
 
+/-- Reversing an admissible path inverts its crossing word for a wall coorientation. -/
 @[simp]
 theorem crossingWord_reverse {C : FinitePolyhedralComplex h} {ν : C.walls → V →ₗ[ℝ] ℝ}
-    (hν : C.IsWallCoorientation ν) {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    (hν : C.IsWallCoorientation ν) {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     C.crossingWord ν p.reverse = (C.crossingWord ν p)⁻¹ :=
   Quiver.Path.crossingWord_reverse ν _ hν.ker_eq p
 
-theorem crossingWord_eq_of_isSubdivision (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y : C.WallComplement} {p q : AdmissiblePLPath x y} (hpq : p.IsSubdivision q) :
+/-- Subdividing an admissible polygonal path by allowed interior vertices leaves `C.crossingWord`
+unchanged. -/
+theorem crossingWord_eq_of_path_isSubdivision (C : FinitePolyhedralComplex h)
+    (ν : C.walls → V →ₗ[ℝ] ℝ) {x y : C.wallComplement} {p q : AdmissiblePLPath x y}
+    (hpq : p.IsSubdivision q) :
     C.crossingWord ν p = C.crossingWord ν q :=
   hpq.crossingWord_eq ν _
 
@@ -186,27 +197,98 @@ theorem lift_crossingWord_eq_wallPathProduct {G : Type*} [Group G]
     (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ) (label : C.walls → G)
     (hcomm : ∀ w₁ w₂ : C.walls,
       affineSpan ℝ (w₁ : Set V) = affineSpan ℝ (w₂ : Set V) → Commute (label w₁) (label w₂))
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     FreeGroup.lift label (C.crossingWord ν p) = p.wallPathProduct ν label hcomm :=
   Quiver.Path.lift_crossingWord_eq_wallPathProduct ν _ label hcomm p
 
 /-! ### Subcomplex wall deletion -/
 
 /-- Passing from `C` to a subcomplex `D` along `WallComplement.restrictPrefunctor` maps
-`crossingWord` by `FreeGroup.lift (deleteWallsMap ...)`, killing all walls of `C` outside `D`. -/
+`crossingWord` by `FreeGroup.lift (Function.extend ... FreeGroup.of 1)`, killing all walls of `C`
+outside `D`. -/
 @[simp]
 theorem IsSubcomplex.crossingWord_restrictPrefunctor {C D : FinitePolyhedralComplex h}
     (hDC : D.IsSubcomplex C) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     D.crossingWord (ν ∘ Set.inclusion (hDC.cellsOfCodimension_subset 1))
-        ((_root_.TauCeti.WallComplement.restrictPrefunctor (Subtype.val : C.walls → Set V)
+        ((WallComplement.restrictPrefunctor (Subtype.val : C.walls → Set V)
           (Set.inclusion (hDC.cellsOfCodimension_subset 1))).mapPath p) =
-      FreeGroup.lift (_root_.TauCeti.deleteWallsMap
-        (Set.inclusion (hDC.cellsOfCodimension_subset 1))) (C.crossingWord ν p) :=
+      FreeGroup.lift (Function.extend (Set.inclusion (hDC.cellsOfCodimension_subset 1))
+        FreeGroup.of 1) (C.crossingWord ν p) :=
   Quiver.Path.crossingWord_restrictPrefunctor ν C.pairwise_disjoint_intrinsicInterior_walls
     (Set.inclusion_injective (hDC.cellsOfCodimension_subset 1)) p
 
 /-! ### Functoriality under polyhedral complex subdivision -/
+
+/-- Generator map `C'.walls → FreeGroup C.walls` comparing the walls of `C'` against those of `C`:
+for `w' ⊆ w`, sends `w' ∈ C'.walls` to `FreeGroup.of w` when `ν' w'` is a positive scalar multiple
+of `ν w` and to `(FreeGroup.of w)⁻¹` otherwise (i.e. when coorientations disagree under
+`IsWallCoorientation`), and sends `w'` to `1` when no wall of `C` contains `w'`. -/
+def wallWordMap (C' C : FinitePolyhedralComplex h)
+    (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ) (w' : C'.walls) :
+    FreeGroup C.walls :=
+  open scoped Classical in
+  if hex : ∃ w : C.walls, (w' : Set V) ⊆ (w : Set V) then
+    if ∃ c : ℝ, 0 < c ∧ ν' w' = c • ν hex.choose then
+      FreeGroup.of hex.choose
+    else
+      (FreeGroup.of hex.choose)⁻¹
+  else 1
+
+/-- Defining equation for `FinitePolyhedralComplex.wallWordMap`. -/
+theorem wallWordMap_def (C' C : FinitePolyhedralComplex h)
+    (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ) (w' : C'.walls) :
+    C'.wallWordMap C ν' ν w' =
+      (open scoped Classical in
+      if hex : ∃ w : C.walls, (w' : Set V) ⊆ (w : Set V) then
+        if ∃ c : ℝ, 0 < c ∧ ν' w' = c • ν hex.choose then
+          FreeGroup.of hex.choose
+        else
+          (FreeGroup.of hex.choose)⁻¹
+      else 1) :=
+  (rfl)
+
+/-- When `w' ⊆ w` and `ν' w' = c • ν w` with `0 < c`, `wallWordMap` sends `w'` to `FreeGroup.of w`.
+-/
+theorem wallWordMap_of_subset_pos {C' C : FinitePolyhedralComplex h}
+    {ν' : C'.walls → V →ₗ[ℝ] ℝ} {ν : C.walls → V →ₗ[ℝ] ℝ}
+    {w' : C'.walls} {w : C.walls} (hw : (w' : Set V) ⊆ (w : Set V))
+    {c : ℝ} (hc : 0 < c) (hνc : ν' w' = c • ν w) :
+    C'.wallWordMap C ν' ν w' = FreeGroup.of w := by
+  unfold wallWordMap
+  split_ifs with hex hpos
+  · exact congrArg FreeGroup.of (C.eq_of_wall_subset hex.choose_spec hw)
+  · exfalso
+    exact hpos ⟨c, hc, C.eq_of_wall_subset hex.choose_spec hw ▸ hνc⟩
+  · exact (hex ⟨w, hw⟩).elim
+
+/-- When `w' ⊆ w`, `ν w ≠ 0`, and `ν' w' = c • ν w` with `c < 0`, `wallWordMap` sends `w'` to
+`(FreeGroup.of w)⁻¹`. -/
+theorem wallWordMap_of_subset_neg {C' C : FinitePolyhedralComplex h}
+    {ν' : C'.walls → V →ₗ[ℝ] ℝ} {ν : C.walls → V →ₗ[ℝ] ℝ}
+    {w' : C'.walls} {w : C.walls} (hνw : ν w ≠ 0) (hw : (w' : Set V) ⊆ (w : Set V))
+    {c : ℝ} (hc : c < 0) (hνc : ν' w' = c • ν w) :
+    C'.wallWordMap C ν' ν w' = (FreeGroup.of w)⁻¹ := by
+  unfold wallWordMap
+  split_ifs with hex hpos
+  · exfalso
+    obtain ⟨c', hc', hνc'⟩ := C.eq_of_wall_subset hex.choose_spec hw ▸ hpos
+    obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hνw
+    replace hv : ν w v ≠ 0 := by simpa using hv
+    have hmul : c * ν w v = c' * ν w v := by
+      simpa [LinearMap.smul_apply, smul_eq_mul] using
+        LinearMap.congr_fun (hνc.symm.trans hνc') v
+    linarith [mul_right_cancel₀ hv hmul]
+  · exact congrArg (fun u => (FreeGroup.of u)⁻¹) (C.eq_of_wall_subset hex.choose_spec hw)
+  · exact (hex ⟨w, hw⟩).elim
+
+/-- When no wall of `C` contains `w'`, `wallWordMap` sends `w'` to `1`. -/
+@[simp]
+theorem wallWordMap_of_forall_not_subset {C' C : FinitePolyhedralComplex h}
+    (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ)
+    {w' : C'.walls} (hw : ∀ w : C.walls, ¬ (w' : Set V) ⊆ (w : Set V)) :
+    C'.wallWordMap C ν' ν w' = 1 := by
+  simp [wallWordMap, hw]
 
 namespace IsSubdivision
 
@@ -233,7 +315,7 @@ theorem singularSupport_walls_subset {C C' : FinitePolyhedralComplex h}
 /-- An allowed endpoint for a subdivision `C'` of `C` is automatically an allowed endpoint for `C`.
 -/
 abbrev wallComplement {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    (x : C'.WallComplement) : C.WallComplement where
+    (x : C'.wallComplement) : C.wallComplement where
   val := x.val
   notMem w hw := by
     obtain ⟨w', hw', -, -, hxw'⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hw
@@ -242,13 +324,13 @@ abbrev wallComplement {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivisio
 /-- Viewing an allowed vertex of `C'` as an allowed vertex of `C` preserves its ambient point. -/
 @[simp]
 theorem wallComplement_val {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    (x : C'.WallComplement) : (hsub.wallComplement x).val = x.val :=
+    (x : C'.wallComplement) : (hsub.wallComplement x).val = x.val :=
   (rfl)
 
 /-- An admissible segment for a subdivision `C'` of `C` is automatically admissible for `C`. -/
 theorem admissibleSegment {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (a : _root_.TauCeti.WallComplement.AdmissibleSegment x y) :
-    _root_.TauCeti.WallComplement.AdmissibleSegment (hsub.wallComplement x)
+    {x y : C'.wallComplement} (a : WallComplement.AdmissibleSegment x y) :
+    WallComplement.AdmissibleSegment (hsub.wallComplement x)
       (hsub.wallComplement y) where
   transverse w := by
     rintro ⟨t, ht, hzw⟩
@@ -260,7 +342,7 @@ theorem admissibleSegment {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdiv
 /-- The quiver prefunctor viewing paths admissible for a subdivision `C'` as paths admissible for
 `C`. -/
 abbrev wallPrefunctor {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C) :
-    C'.WallComplement ⥤q C.WallComplement where
+    C'.wallComplement ⥤q C.wallComplement where
   obj x := hsub.wallComplement x
   map a := ⟨hsub.admissibleSegment a.down⟩
 
@@ -271,142 +353,72 @@ instance {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C) :
 
 /-- View an admissible polygonal path for `C'` as an admissible polygonal path for `C`. -/
 def mapPath {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     AdmissiblePLPath (hsub.wallComplement x) (hsub.wallComplement y) :=
   hsub.wallPrefunctor.mapPath p
 
 /-- `IsSubdivision.mapPath` is `Prefunctor.mapPath` along `hsub.wallPrefunctor`. -/
 theorem mapPath_def {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     hsub.mapPath p = hsub.wallPrefunctor.mapPath p :=
   (rfl)
 
 @[simp]
 theorem mapPath_nil {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    (x : C'.WallComplement) :
+    (x : C'.wallComplement) :
     hsub.mapPath (Quiver.Path.nil : AdmissiblePLPath x x) = Quiver.Path.nil :=
   (rfl)
 
 @[simp]
 theorem mapPath_cons {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y z : C'.WallComplement} (p : AdmissiblePLPath x y) (a : y ⟶ z) :
+    {x y z : C'.wallComplement} (p : AdmissiblePLPath x y) (a : y ⟶ z) :
     hsub.mapPath (p.cons a) = (hsub.mapPath p).cons (hsub.wallPrefunctor.map a) :=
   (rfl)
 
 @[simp]
 theorem mapPath_toPath {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (a : x ⟶ y) :
+    {x y : C'.wallComplement} (a : x ⟶ y) :
     hsub.mapPath a.toPath = (hsub.wallPrefunctor.map a).toPath :=
   (rfl)
 
 @[simp]
 theorem mapPath_comp {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y z : C'.WallComplement} (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
+    {x y z : C'.wallComplement} (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
     hsub.mapPath (p.comp q) = (hsub.mapPath p).comp (hsub.mapPath q) :=
   Prefunctor.mapPath_comp _ _ _
 
 @[simp]
 theorem length_mapPath {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     (hsub.mapPath p).length = p.length :=
   Prefunctor.length_mapPath _ _
 
 @[simp]
 theorem vertices_mapPath {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     (hsub.mapPath p).vertices = p.vertices.map hsub.wallComplement :=
   Prefunctor.vertices_mapPath _ _
 
 /-- Viewing a path of `C'` in `C` preserves its ambient vertex list. -/
 theorem map_val_vertices_mapPath {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
-    (hsub.mapPath p).vertices.map _root_.TauCeti.WallComplement.val =
-      p.vertices.map _root_.TauCeti.WallComplement.val := by
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
+    (hsub.mapPath p).vertices.map WallComplement.val =
+      p.vertices.map WallComplement.val := by
   simp only [vertices_mapPath, List.map_map, Function.comp_def]
 
 @[simp]
 theorem mapPath_reverse {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     hsub.mapPath p.reverse = (hsub.mapPath p).reverse :=
   Prefunctor.mapPath_reverse hsub.wallPrefunctor p
 
 @[simp]
 theorem toContinuousPath_mapPath {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     (hsub.mapPath p).toContinuousPath = p.toContinuousPath := by
   induction p with
   | nil => simp
   | cons p a ih => simp only [mapPath_cons, Quiver.Path.toContinuousPath_cons, ih]
-
-/-- Generator map `C'.walls → FreeGroup C.walls` for a complex subdivision `C'.IsSubdivision C`:
-for `w' ⊆ w`, sends `w' ∈ C'.walls` to `FreeGroup.of w` when `ν' w'` is a positive scalar multiple
-of `ν w` and to `(FreeGroup.of w)⁻¹` otherwise (i.e. when coorientations disagree under
-`IsWallCoorientation`), and sends `w'` to `1` when no wall of `C` contains `w'`. -/
-def wallWordMap {C C' : FinitePolyhedralComplex h} (_ : C'.IsSubdivision C)
-    (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ) (w' : C'.walls) :
-    FreeGroup C.walls :=
-  open scoped Classical in
-  if hex : ∃ w : C.walls, (w' : Set V) ⊆ (w : Set V) then
-    if ∃ c : ℝ, 0 < c ∧ ν' w' = c • ν hex.choose then
-      FreeGroup.of hex.choose
-    else
-      (FreeGroup.of hex.choose)⁻¹
-  else 1
-
-/-- Defining equation for `IsSubdivision.wallWordMap`. -/
-theorem wallWordMap_def {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ) (w' : C'.walls) :
-    hsub.wallWordMap ν' ν w' =
-      (open scoped Classical in
-      if hex : ∃ w : C.walls, (w' : Set V) ⊆ (w : Set V) then
-        if ∃ c : ℝ, 0 < c ∧ ν' w' = c • ν hex.choose then
-          FreeGroup.of hex.choose
-        else
-          (FreeGroup.of hex.choose)⁻¹
-      else 1) :=
-  (rfl)
-
-/-- When `w' ⊆ w` and `ν' w' = c • ν w` with `0 < c`, `wallWordMap` sends `w'` to `FreeGroup.of w`.
--/
-theorem wallWordMap_of_subset_pos {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {ν' : C'.walls → V →ₗ[ℝ] ℝ} {ν : C.walls → V →ₗ[ℝ] ℝ}
-    {w' : C'.walls} {w : C.walls} (hw : (w' : Set V) ⊆ (w : Set V))
-    {c : ℝ} (hc : 0 < c) (hνc : ν' w' = c • ν w) :
-    hsub.wallWordMap ν' ν w' = FreeGroup.of w := by
-  unfold wallWordMap
-  split_ifs with hex hpos
-  · exact congrArg FreeGroup.of (C.eq_of_wall_subset hex.choose_spec hw)
-  · exfalso
-    exact hpos ⟨c, hc, C.eq_of_wall_subset hex.choose_spec hw ▸ hνc⟩
-  · exact (hex ⟨w, hw⟩).elim
-
-/-- When `w' ⊆ w`, `ν w ≠ 0`, and `ν' w' = c • ν w` with `c < 0`, `wallWordMap` sends `w'` to
-`(FreeGroup.of w)⁻¹`. -/
-theorem wallWordMap_of_subset_neg {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
-    {ν' : C'.walls → V →ₗ[ℝ] ℝ} {ν : C.walls → V →ₗ[ℝ] ℝ}
-    {w' : C'.walls} {w : C.walls} (hνw : ν w ≠ 0) (hw : (w' : Set V) ⊆ (w : Set V))
-    {c : ℝ} (hc : c < 0) (hνc : ν' w' = c • ν w) :
-    hsub.wallWordMap ν' ν w' = (FreeGroup.of w)⁻¹ := by
-  unfold wallWordMap
-  split_ifs with hex hpos
-  · exfalso
-    obtain ⟨c', hc', hνc'⟩ := C.eq_of_wall_subset hex.choose_spec hw ▸ hpos
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hνw
-    replace hv : ν w v ≠ 0 := by simpa using hv
-    have hmul : c * ν w v = c' * ν w v := by
-      simpa [LinearMap.smul_apply, smul_eq_mul] using
-        LinearMap.congr_fun (hνc.symm.trans hνc') v
-    linarith [mul_right_cancel₀ hv hmul]
-  · exact congrArg (fun u => (FreeGroup.of u)⁻¹) (C.eq_of_wall_subset hex.choose_spec hw)
-  · exact (hex ⟨w, hw⟩).elim
-
-/-- When no wall of `C` contains `w'`, `wallWordMap` sends `w'` to `1`. -/
-@[simp]
-theorem wallWordMap_of_forall_not_subset {C C' : FinitePolyhedralComplex h}
-    (hsub : C'.IsSubdivision C) (ν' : C'.walls → V →ₗ[ℝ] ℝ) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    {w' : C'.walls} (hw : ∀ w : C.walls, ¬ (w' : Set V) ⊆ (w : Set V)) :
-    hsub.wallWordMap ν' ν w' = 1 := by
-  simp [wallWordMap, hw]
 
 private theorem neg_ite_sign_of_neg {c v : ℝ} (hc : c < 0) (hv : v ≠ 0) :
     -(if 0 < c * v then -1 else 1 : ℤ) = if 0 < v then -1 else 1 := by
@@ -416,84 +428,84 @@ private theorem neg_ite_sign_of_neg {c v : ℝ} (hc : c < 0) (hv : v ≠ 0) :
   · rfl
   · exact (h1 (mul_pos_of_neg_of_neg hc (lt_of_le_of_ne (not_lt.mp h2) hv))).elim
 
-/-- Lifting `crossingEventWord` on a subdivision `C'` by `wallWordMap` recovers the coarse
-`crossingEventWord` on `C` at every parameter `t`. -/
+/-- Lifting `crossingEventWord` on a subdivision `C'` by `FinitePolyhedralComplex.wallWordMap`
+recovers the coarse `crossingEventWord` on `C` at every parameter `t`. -/
 theorem lift_crossingEventWord {C C' : FinitePolyhedralComplex h} (hsub : C'.IsSubdivision C)
     {ν' : C'.walls → V →ₗ[ℝ] ℝ} {ν : C.walls → V →ₗ[ℝ] ℝ}
     (hν' : C'.IsWallCoorientation ν') (hν : C.IsWallCoorientation ν)
-    {x y : C'.WallComplement} (e : x ⟶ y)
+    {x y : C'.wallComplement} (e : x ⟶ y)
     (e₀ : hsub.wallComplement x ⟶ hsub.wallComplement y) (t : ℝ) :
-    FreeGroup.lift (hsub.wallWordMap ν' ν)
-        (_root_.TauCeti.WallComplement.crossingEventWord ν'
+    FreeGroup.lift (C'.wallWordMap C ν' ν)
+        (WallComplement.crossingEventWord ν'
           C'.pairwise_disjoint_intrinsicInterior_walls e t) =
-      _root_.TauCeti.WallComplement.crossingEventWord ν
+      WallComplement.crossingEventWord ν
         C.pairwise_disjoint_intrinsicInterior_walls e₀ t := by
-  by_cases hcr' : ∃ w' : C'.walls, (w', t) ∈ _root_.TauCeti.WallComplement.crossings x y
+  by_cases hcr' : ∃ w' : C'.walls, (w', t) ∈ WallComplement.crossings x y
   · obtain ⟨w', hw't⟩ := hcr'
-    obtain ⟨htI, hzw'⟩ := (_root_.TauCeti.WallComplement.mem_crossings x y w' t).mp hw't
-    rw [_root_.TauCeti.WallComplement.crossingEventWord_of_mem_crossings ν' _ e hw't,
+    obtain ⟨htI, hzw'⟩ := (WallComplement.mem_crossings x y w' t).mp hw't
+    rw [WallComplement.crossingEventWord_of_mem_crossings ν' _ e hw't,
       map_zpow, FreeGroup.lift_apply_of]
     by_cases hex : ∃ w : C.walls, (w' : Set V) ⊆ (w : Set V)
     · obtain ⟨w, hww⟩ := hex
-      have hwt : (w, t) ∈ _root_.TauCeti.WallComplement.crossings
+      have hwt : (w, t) ∈ WallComplement.crossings
           (hsub.wallComplement x) (hsub.wallComplement y) :=
-        (_root_.TauCeti.WallComplement.mem_crossings _ _ w t).mpr ⟨htI, hww hzw'⟩
-      rw [_root_.TauCeti.WallComplement.crossingEventWord_of_mem_crossings ν _ e₀ hwt]
+        (WallComplement.mem_crossings _ _ w t).mpr ⟨htI, hww hzw'⟩
+      rw [WallComplement.crossingEventWord_of_mem_crossings ν _ e₀ hwt]
       obtain ⟨c, hc0, hνc⟩ :=
         hν.exists_ne_zero_eq_smul hν' (AffineSubspace.direction_le (affineSpan_mono ℝ hww))
       have hv_ne : ν w (y.val - x.val) ≠ 0 := fun hz =>
         e₀.down.transverse w ⟨t, htI, hww hzw'⟩ ((hν.ker_eq w) ▸ LinearMap.mem_ker.mpr hz)
       rcases lt_or_gt_of_ne hc0 with hneg | hpos
-      · rw [hsub.wallWordMap_of_subset_neg (hν.ne_zero w) hww hneg hνc, hνc, LinearMap.smul_apply,
+      · rw [wallWordMap_of_subset_neg (hν.ne_zero w) hww hneg hνc, hνc, LinearMap.smul_apply,
           smul_eq_mul, inv_zpow, ← zpow_neg]
         exact congrArg (FreeGroup.of w ^ ·) (neg_ite_sign_of_neg hneg hv_ne)
-      · rw [hsub.wallWordMap_of_subset_pos hww hpos hνc, hνc, LinearMap.smul_apply, smul_eq_mul]
+      · rw [wallWordMap_of_subset_pos hww hpos hνc, hνc, LinearMap.smul_apply, smul_eq_mul]
         simp only [mul_pos_iff_of_pos_left hpos]
     · have hex' : ∀ w : C.walls, ¬ (w' : Set V) ⊆ (w : Set V) := fun w hw => hex ⟨w, hw⟩
-      rw [hsub.wallWordMap_of_forall_not_subset ν' ν hex', one_zpow]
-      refine (_root_.TauCeti.WallComplement.crossingEventWord_eq_one_of_forall_notMem ν _ e₀ t
+      rw [wallWordMap_of_forall_not_subset ν' ν hex', one_zpow]
+      refine (WallComplement.crossingEventWord_eq_one_of_forall_notMem ν _ e₀ t
         fun w hwt => ?_).symm
-      obtain ⟨_, hzw⟩ := (_root_.TauCeti.WallComplement.mem_crossings _ _ w t).mp hwt
+      obtain ⟨_, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
       obtain ⟨w'', hw'', hsub'', -, hzw''⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
-      have hw''t : (⟨w'', hw''⟩, t) ∈ _root_.TauCeti.WallComplement.crossings x y :=
-        (_root_.TauCeti.WallComplement.mem_crossings x y ⟨w'', hw''⟩ t).mpr ⟨htI, hzw''⟩
+      have hw''t : (⟨w'', hw''⟩, t) ∈ WallComplement.crossings x y :=
+        (WallComplement.mem_crossings x y ⟨w'', hw''⟩ t).mpr ⟨htI, hzw''⟩
       exact hex' w (e.down.eq_of_mem_crossings C'.pairwise_disjoint_intrinsicInterior_walls
         hw't hw''t ▸ hsub'')
-  · rw [_root_.TauCeti.WallComplement.crossingEventWord_eq_one_of_forall_notMem ν' _ e t
+  · rw [WallComplement.crossingEventWord_eq_one_of_forall_notMem ν' _ e t
         fun w' hw' => hcr' ⟨w', hw'⟩, map_one]
-    refine (_root_.TauCeti.WallComplement.crossingEventWord_eq_one_of_forall_notMem ν _ e₀ t
+    refine (WallComplement.crossingEventWord_eq_one_of_forall_notMem ν _ e₀ t
       fun w hwt => ?_).symm
-    obtain ⟨htI, hzw⟩ := (_root_.TauCeti.WallComplement.mem_crossings _ _ w t).mp hwt
+    obtain ⟨htI, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
     obtain ⟨w', hw', -, -, hzw'⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
     exact hcr' ⟨⟨w', hw'⟩,
-      (_root_.TauCeti.WallComplement.mem_crossings x y ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
+      (WallComplement.mem_crossings x y ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
 
 /-- Subdividing a finite polyhedral complex `C` into `C'` maps the crossing word of any admissible
-path for `C'` to its crossing word on `C` via `FreeGroup.lift (hsub.wallWordMap ν' ν)`. -/
+path for `C'` to its crossing word on `C` via `FreeGroup.lift (C'.wallWordMap C ν' ν)`. -/
 theorem crossingWord_mapPath {C C' : FinitePolyhedralComplex h}
     (hsub : C'.IsSubdivision C) {ν' : C'.walls → V →ₗ[ℝ] ℝ} {ν : C.walls → V →ₗ[ℝ] ℝ}
     (hν' : C'.IsWallCoorientation ν') (hν : C.IsWallCoorientation ν)
-    {x y : C'.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C'.wallComplement} (p : AdmissiblePLPath x y) :
     C.crossingWord ν (hsub.mapPath p) =
-      FreeGroup.lift (hsub.wallWordMap ν' ν) (C'.crossingWord ν' p) := by
+      FreeGroup.lift (C'.wallWordMap C ν' ν) (C'.crossingWord ν' p) := by
   induction p with
   | nil => simp
   | @cons u v p a ih =>
     rw [mapPath_cons, crossingWord_cons, crossingWord_cons, map_mul, ih]
     refine congrArg (· * _) ?_
     let a₀ : hsub.wallComplement u ⟶ hsub.wallComplement v := hsub.wallPrefunctor.map a
-    have hcover : ∀ t ∈ _root_.TauCeti.WallComplement.orderedCrossingTimes a₀,
-        t ∈ _root_.TauCeti.WallComplement.orderedCrossingTimes a := by
+    have hcover : ∀ t ∈ WallComplement.orderedCrossingTimes a₀,
+        t ∈ WallComplement.orderedCrossingTimes a := by
       intro t ht
-      obtain ⟨w, hwt⟩ := (_root_.TauCeti.WallComplement.mem_orderedCrossingTimes a₀ t).mp ht
-      obtain ⟨htI, hzw⟩ := (_root_.TauCeti.WallComplement.mem_crossings _ _ w t).mp hwt
+      obtain ⟨w, hwt⟩ := (WallComplement.mem_orderedCrossingTimes a₀ t).mp ht
+      obtain ⟨htI, hzw⟩ := (WallComplement.mem_crossings _ _ w t).mp hwt
       obtain ⟨w', hw', -, -, hzw'⟩ := hsub.exists_mem_cellsOfCodimension_subset w.2 hzw
-      exact (_root_.TauCeti.WallComplement.mem_orderedCrossingTimes a t).mpr
-        ⟨⟨w', hw'⟩, (_root_.TauCeti.WallComplement.mem_crossings u v ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
-    rw [_root_.TauCeti.WallComplement.segmentCrossingWord_eq_prod_of_crossingTimes ν _ a₀
-      (_root_.TauCeti.WallComplement.orderedCrossingTimes a)
-      (_root_.TauCeti.WallComplement.pairwise_orderedCrossingTimes a) hcover,
-      _root_.TauCeti.WallComplement.segmentCrossingWord_def, map_list_prod, List.map_map]
+      exact (WallComplement.mem_orderedCrossingTimes a t).mpr
+        ⟨⟨w', hw'⟩, (WallComplement.mem_crossings u v ⟨w', hw'⟩ t).mpr ⟨htI, hzw'⟩⟩
+    rw [WallComplement.segmentCrossingWord_eq_prod_of_crossingTimes ν _ a₀
+      (WallComplement.orderedCrossingTimes a)
+      (WallComplement.pairwise_orderedCrossingTimes a) hcover,
+      WallComplement.segmentCrossingWord_def, map_list_prod, List.map_map]
     exact congrArg List.prod
       (List.map_congr_left fun t _ => (hsub.lift_crossingEventWord hν' hν a a₀ t).symm)
 
@@ -515,25 +527,25 @@ theorem coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv
 
 /-- Transport an allowed vertex of `C` to `C.image e` along an integral affine equivalence `e`. -/
 abbrev imageEndpoint (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    (x : C.WallComplement) : (C.image e).WallComplement :=
+    (x : C.wallComplement) : (C.image e).wallComplement :=
   x.mapReindex e.toContinuousAffineEquiv (C.wallsEquiv e)
     (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e)
 
 /-- `imageEndpoint` acts on ambient points as `e`. -/
 theorem imageEndpoint_val (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    (x : C.WallComplement) : (C.imageEndpoint e x).val = e x.val := by
+    (x : C.wallComplement) : (C.imageEndpoint e x).val = e x.val := by
   simp
 
 /-- The quiver prefunctor transporting admissible segments of `C` to `C.image e` along `e`. -/
 abbrev imagePrefunctor (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h') :
-    C.WallComplement ⥤q (C.image e).WallComplement :=
-  _root_.TauCeti.WallComplement.mapReindexPrefunctor e.toContinuousAffineEquiv (C.wallsEquiv e)
+    C.wallComplement ⥤q (C.image e).wallComplement :=
+  WallComplement.mapReindexPrefunctor e.toContinuousAffineEquiv (C.wallsEquiv e)
     (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e)
 
 /-- Transport an admissible polygonal path of `C` to `C.image e` along an integral affine
 equivalence `e`. -/
 def imagePath (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     AdmissiblePLPath (C.imageEndpoint e x) (C.imageEndpoint e y) :=
   p.affineMapReindex e.toContinuousAffineEquiv (C.wallsEquiv e)
     (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e)
@@ -541,70 +553,70 @@ def imagePath (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h
 /-- `imagePath` unfolds to `Quiver.Path.affineMapReindex` along `e.toContinuousAffineEquiv` and
 `C.wallsEquiv e`. -/
 theorem imagePath_eq_affineMapReindex (C : FinitePolyhedralComplex h)
-    (e : Toric.IntegralAffineEquiv h h') {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     C.imagePath e p = p.affineMapReindex e.toContinuousAffineEquiv (C.wallsEquiv e)
       (C.coe_wallsEquiv_apply_eq_image_toContinuousAffineEquiv e) :=
   (rfl)
 
 /-- `imagePath` is `Prefunctor.mapPath` along `C.imagePrefunctor e`. -/
 theorem imagePath_def (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     C.imagePath e p = (C.imagePrefunctor e).mapPath p :=
   Quiver.Path.affineMapReindex_def p _ _ _
 
 @[simp]
 theorem imagePath_nil (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    (x : C.WallComplement) :
+    (x : C.wallComplement) :
     C.imagePath e (Quiver.Path.nil : AdmissiblePLPath x x) = Quiver.Path.nil :=
   Quiver.Path.affineMapReindex_nil _ _ _
 
 @[simp]
 theorem imagePath_cons (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y z : C.WallComplement} (p : AdmissiblePLPath x y) (a : y ⟶ z) :
+    {x y z : C.wallComplement} (p : AdmissiblePLPath x y) (a : y ⟶ z) :
     C.imagePath e (p.cons a) = (C.imagePath e p).cons ((C.imagePrefunctor e).map a) :=
   Quiver.Path.affineMapReindex_cons p a _ _ _
 
 @[simp]
 theorem imagePath_toPath (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y : C.WallComplement} (a : x ⟶ y) :
+    {x y : C.wallComplement} (a : x ⟶ y) :
     C.imagePath e a.toPath = ((C.imagePrefunctor e).map a).toPath :=
   Quiver.Path.affineMapReindex_toPath a _ _ _
 
 @[simp]
 theorem imagePath_comp (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y z : C.WallComplement} (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
+    {x y z : C.wallComplement} (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
     C.imagePath e (p.comp q) = (C.imagePath e p).comp (C.imagePath e q) :=
   Quiver.Path.affineMapReindex_comp p q _ _ _
 
 @[simp]
 theorem length_imagePath (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     (C.imagePath e p).length = p.length :=
   Quiver.Path.length_affineMapReindex p _ _ _
 
 @[simp]
 theorem vertices_imagePath (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     (C.imagePath e p).vertices = p.vertices.map (C.imageEndpoint e) :=
   Quiver.Path.vertices_affineMapReindex p _ _ _
 
 /-- Transporting a path along `e` maps its ambient vertex list by `e`. -/
 theorem map_val_vertices_imagePath (C : FinitePolyhedralComplex h)
-    (e : Toric.IntegralAffineEquiv h h') {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
-    (C.imagePath e p).vertices.map _root_.TauCeti.WallComplement.val =
-      (p.vertices.map _root_.TauCeti.WallComplement.val).map e := by
+    (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
+    (C.imagePath e p).vertices.map WallComplement.val =
+      (p.vertices.map WallComplement.val).map e := by
   rw [imagePath_eq_affineMapReindex, Quiver.Path.map_val_vertices_affineMapReindex,
     e.coe_toContinuousAffineEquiv]
 
 @[simp]
 theorem imagePath_reverse (C : FinitePolyhedralComplex h) (e : Toric.IntegralAffineEquiv h h')
-    {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     C.imagePath e p.reverse = (C.imagePath e p).reverse :=
   Quiver.Path.affineMapReindex_reverse p _ _ _
 
 @[simp]
 theorem toContinuousPath_imagePath (C : FinitePolyhedralComplex h)
-    (e : Toric.IntegralAffineEquiv h h') {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     (C.imagePath e p).toContinuousPath =
       p.toContinuousPath.map e.toContinuousAffineEquiv.continuous :=
   Quiver.Path.toContinuousPath_affineMapReindex p _ _ _
@@ -636,7 +648,7 @@ theorem IsWallCoorientation.image {C : FinitePolyhedralComplex h} {ν : C.walls 
 `ν ∘ e.linear⁻¹`. -/
 @[simp]
 theorem crossingWord_image (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
-    (e : Toric.IntegralAffineEquiv h h') {x y : C.WallComplement} (p : AdmissiblePLPath x y) :
+    (e : Toric.IntegralAffineEquiv h h') {x y : C.wallComplement} (p : AdmissiblePLPath x y) :
     (C.image e).crossingWord
         (fun w' => (ν ((C.wallsEquiv e).symm w')).comp e.toAffineEquiv.linear.symm.toLinearMap)
         (C.imagePath e p) =

@@ -10,6 +10,7 @@ import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # Worked example: crossing word of the square loop around the four half-axes in `ℝ × ℝ`
@@ -220,37 +221,85 @@ private theorem crossings_eq_singleton {u v : WallComplement halfAxis} {i₀ : F
   simp only [WallComplement.mem_crossings, Set.mem_singleton_iff, Prod.mk.injEq]
   exact ⟨fun ⟨_, hi⟩ => honly i t hi, by rintro ⟨rfl, rfl⟩; exact ⟨ht₀, hi₀⟩⟩
 
-@[simp]
-theorem crossings_segTop : WallComplement.crossings vPP vNP = {(1, (1 / 2 : ℝ))} :=
-  crossings_eq_singleton
-    (fun i t hi => by
-      fin_cases i <;> simp [AffineMap.lineMap_apply_module'] at hi <;> constructor <;> try rfl
-      all_goals linarith)
-    (by norm_num) (by norm_num [AffineMap.lineMap_apply_module'])
+private theorem crossings_horizontal {u v : WallComplement halfAxis} {a b : ℝ}
+    (ha : a ≠ 0) (hb : b ≠ 0) (hu : u.val = (a, b)) (hv : v.val = (-a, b)) :
+    WallComplement.crossings u v = {(if 0 < b then 1 else 3, (1 / 2 : ℝ))} := by
+  refine crossings_eq_singleton ?_ (by norm_num) ?_
+  · intro i t hi
+    have hpt : AffineMap.lineMap u.val v.val t = ((1 - 2 * t) * a, b) := by
+      rw [AffineMap.lineMap_apply_module', hu, hv]
+      ext <;> dsimp <;> ring
+    rw [hpt] at hi
+    fin_cases i
+    · exact (hb hi.2).elim
+    · have ht : t = 1 / 2 := by
+        rcases mul_eq_zero.mp hi.1 with h | h
+        · linarith
+        · exact (ha h).elim
+      exact ⟨by rw [ite_eq_left (lt_of_le_of_ne hi.2 hb.symm)]; rfl, ht⟩
+    · exact (hb hi.2).elim
+    · have ht : t = 1 / 2 := by
+        rcases mul_eq_zero.mp hi.1 with h | h
+        · linarith
+        · exact (ha h).elim
+      exact ⟨by rw [ite_eq_right (not_lt.mpr hi.2)]; rfl, ht⟩
+  · have hpt : AffineMap.lineMap u.val v.val (1 / 2 : ℝ) = (0, b) := by
+      rw [AffineMap.lineMap_apply_module', hu, hv]
+      ext <;> dsimp <;> ring
+    rw [hpt]
+    split_ifs with hpos
+    · exact ⟨rfl, hpos.le⟩
+    · exact ⟨rfl, le_of_not_gt hpos⟩
+
+private theorem crossings_vertical {u v : WallComplement halfAxis} {a b : ℝ}
+    (ha : a ≠ 0) (hb : b ≠ 0) (hu : u.val = (a, b)) (hv : v.val = (a, -b)) :
+    WallComplement.crossings u v = {(if 0 < a then 0 else 2, (1 / 2 : ℝ))} := by
+  refine crossings_eq_singleton ?_ (by norm_num) ?_
+  · intro i t hi
+    have hpt : AffineMap.lineMap u.val v.val t = (a, (1 - 2 * t) * b) := by
+      rw [AffineMap.lineMap_apply_module', hu, hv]
+      ext <;> dsimp <;> ring
+    rw [hpt] at hi
+    fin_cases i
+    · have ht : t = 1 / 2 := by
+        rcases mul_eq_zero.mp hi.2 with h | h
+        · linarith
+        · exact (hb h).elim
+      exact ⟨by rw [ite_eq_left (lt_of_le_of_ne hi.1 ha.symm)]; rfl, ht⟩
+    · exact (ha hi.1).elim
+    · have ht : t = 1 / 2 := by
+        rcases mul_eq_zero.mp hi.2 with h | h
+        · linarith
+        · exact (hb h).elim
+      exact ⟨by rw [ite_eq_right (not_lt.mpr hi.1)]; rfl, ht⟩
+    · exact (ha hi.1).elim
+  · have hpt : AffineMap.lineMap u.val v.val (1 / 2 : ℝ) = (a, 0) := by
+      rw [AffineMap.lineMap_apply_module', hu, hv]
+      ext <;> dsimp <;> ring
+    rw [hpt]
+    split_ifs with hpos
+    · exact ⟨hpos.le, rfl⟩
+    · exact ⟨le_of_not_gt hpos, rfl⟩
 
 @[simp]
-theorem crossings_segLeft : WallComplement.crossings vNP vNN = {(2, (1 / 2 : ℝ))} :=
-  crossings_eq_singleton
-    (fun i t hi => by
-      fin_cases i <;> simp [AffineMap.lineMap_apply_module'] at hi <;> constructor <;> try rfl
-      all_goals linarith)
-    (by norm_num) (by norm_num [AffineMap.lineMap_apply_module'])
+theorem crossings_segTop : WallComplement.crossings vPP vNP = {(1, (1 / 2 : ℝ))} := by
+  simpa using crossings_horizontal (u := vPP) (v := vNP) one_ne_zero one_ne_zero rfl rfl
 
 @[simp]
-theorem crossings_segBot : WallComplement.crossings vNN vPN = {(3, (1 / 2 : ℝ))} :=
-  crossings_eq_singleton
-    (fun i t hi => by
-      fin_cases i <;> simp [AffineMap.lineMap_apply_module'] at hi <;> constructor <;> try rfl
-      all_goals linarith)
-    (by norm_num) (by norm_num [AffineMap.lineMap_apply_module'])
+theorem crossings_segLeft : WallComplement.crossings vNP vNN = {(2, (1 / 2 : ℝ))} := by
+  rw [crossings_vertical (u := vNP) (v := vNN) (by norm_num) one_ne_zero rfl rfl,
+    ite_eq_right (by norm_num)]
 
 @[simp]
-theorem crossings_segRight : WallComplement.crossings vPN vPP = {(0, (1 / 2 : ℝ))} :=
-  crossings_eq_singleton
-    (fun i t hi => by
-      fin_cases i <;> simp [AffineMap.lineMap_apply_module'] at hi <;> constructor <;> try rfl
-      all_goals linarith)
-    (by norm_num) (by norm_num [AffineMap.lineMap_apply_module'])
+theorem crossings_segBot : WallComplement.crossings vNN vPN = {(3, (1 / 2 : ℝ))} := by
+  rw [crossings_horizontal (u := vNN) (v := vPN) (by norm_num) (by norm_num) rfl
+      (by simp [vPN_val]),
+    ite_eq_right (by norm_num)]
+
+@[simp]
+theorem crossings_segRight : WallComplement.crossings vPN vPP = {(0, (1 / 2 : ℝ))} := by
+  simpa using crossings_vertical (u := vPN) (v := vPP) one_ne_zero (by norm_num) rfl
+    (by simp [vPP_val])
 
 /-- Any straight segment between off-wall points missing `(0, 0)` is admissible for `halfAxis`. -/
 def mkAdmissibleEdge {u v : WallComplement halfAxis}
@@ -297,12 +346,17 @@ negative `y`-, and positive `x`-half-axes in order, producing the crossing word
 theorem crossingWord_squareLoop :
     squareLoop.crossingWord halfAxisNormal pairwise_disjoint_intrinsicInterior_halfAxis =
       (FreeGroup.of 0)⁻¹ * ((FreeGroup.of 3)⁻¹ * (FreeGroup.of 2 * FreeGroup.of 1)) := by
+  have hTop : ¬ 0 < halfAxisNormal 1 (vNP.val - vPP.val) := by norm_num
+  have hLeft : ¬ 0 < halfAxisNormal 2 (vNN.val - vNP.val) := by norm_num
+  have hBot : 0 < halfAxisNormal 3 (vPN.val - vNN.val) := by norm_num
+  have hRight : 0 < halfAxisNormal 0 (vPP.val - vPN.val) := by norm_num
   simp only [squareLoop_def, Quiver.Path.crossingWord_cons, Quiver.Path.crossingWord_toPath,
     WallComplement.segmentCrossingWord_of_crossings_eq_singleton _ _ segTop crossings_segTop,
     WallComplement.segmentCrossingWord_of_crossings_eq_singleton _ _ segLeft crossings_segLeft,
     WallComplement.segmentCrossingWord_of_crossings_eq_singleton _ _ segBot crossings_segBot,
-    WallComplement.segmentCrossingWord_of_crossings_eq_singleton _ _ segRight crossings_segRight]
-  split_ifs <;> norm_num at *
+    WallComplement.segmentCrossingWord_of_crossings_eq_singleton _ _ segRight crossings_segRight,
+    ite_eq_right hTop, ite_eq_right hLeft, ite_eq_left hBot, ite_eq_left hRight, zpow_one,
+    zpow_neg_one]
 
 /-- Lifting `squareLoop.crossingWord` along `f : Fin 4 → G` multiplies the four generator images in
 counterclockwise left-action order. -/
@@ -321,11 +375,11 @@ theorem crossingWord_squareLoop_restrict_posX :
         (pairwise_disjoint_intrinsicInterior_halfAxis.comp_of_injective
           fun _ _ _ => Subsingleton.elim _ _) =
       (FreeGroup.of ())⁻¹ := by
+  have hinj : Function.Injective (fun _ : Unit => (0 : Fin 4)) := fun _ _ _ => Subsingleton.elim _ _
   rw [Quiver.Path.crossingWord_restrictPrefunctor halfAxisNormal
-      pairwise_disjoint_intrinsicInterior_halfAxis (fun _ _ _ => Subsingleton.elim _ _) squareLoop,
+      pairwise_disjoint_intrinsicInterior_halfAxis hinj squareLoop,
     lift_crossingWord_squareLoop]
-  simp [deleteWallsMap_apply_of_injective (f := fun _ : Unit => (0 : Fin 4))
-    (fun _ _ _ => Subsingleton.elim _ _) ()]
+  simp [hinj.extend_apply FreeGroup.of 1 (), Function.extend_apply']
 
 /-- Restricting `squareLoop` to the positive `x`-half-axis produces a nontrivial crossing word,
 distinct from the constant loop's word `1`. -/

@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.Topology.Algebra.ContinuousAffineEquiv
 
 /-!
 # Homogenization of continuous affine maps
@@ -16,9 +17,15 @@ recovers `g`; over a division ring, a nonzero-height value is `t • g (t⁻¹ �
 This construction supplies the linear functionals used to homogenize affine inequalities
 and the linear pieces used to extend piecewise-affine maps to geometric cones.
 
-Adapted from `Mei/Geometry/Convex/Homogenization/Inequalities.lean` in
+At the end of the file, `ContinuousAffineEquiv.linear_symm_apply_vsub` and
+`ContinuousAffineEquiv.linear_symm_apply_sub` record that the inverse linear part of a
+continuous affine equivalence pulls back displacements and differences between image points.
+
+The `ContinuousAffineMap.homogenize` section is adapted from
+`Mei/Geometry/Convex/Homogenization/Inequalities.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`, licensed under Apache 2.0.
+The `ContinuousAffineEquiv` displacement pullback lemmas were added in Tau Ceti.
 -/
 
 public section
@@ -116,3 +123,23 @@ theorem homogenize_apply_of_ne_zero
   rw [heval, homogenize_apply, smul_add, smul_inv_smul₀ ht]
 
 end ContinuousAffineMap
+
+namespace ContinuousAffineEquiv
+
+/-- Pulling back the displacement between two images along `e.toAffineEquiv.linear.symm` recovers
+the original displacement vector. -/
+theorem linear_symm_apply_vsub {𝕜 V W P Q : Type*} [Ring 𝕜] [AddCommGroup V] [AddCommGroup W]
+    [Module 𝕜 V] [Module 𝕜 W] [TopologicalSpace P] [TopologicalSpace Q]
+    [AddTorsor V P] [AddTorsor W Q] (e : P ≃ᴬ[𝕜] Q) (x y : P) :
+    e.toAffineEquiv.linear.symm (e x -ᵥ e y) = x -ᵥ y := by
+  simpa using e.toAffineEquiv.symm.toAffineMap.linear_apply_vsub (e x) (e y)
+
+/-- Pulling back the difference of two module images along `e.toAffineEquiv.linear.symm` recovers
+the original difference. -/
+theorem linear_symm_apply_sub {𝕜 V U : Type*} [Ring 𝕜] [AddCommGroup V] [Module 𝕜 V]
+    [TopologicalSpace V] [AddCommGroup U] [Module 𝕜 U] [TopologicalSpace U]
+    (e : V ≃ᴬ[𝕜] U) (x y : V) :
+    e.toAffineEquiv.linear.symm (e x - e y) = x - y := by
+  simpa only [vsub_eq_sub] using e.linear_symm_apply_vsub x y
+
+end ContinuousAffineEquiv

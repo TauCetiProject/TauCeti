@@ -152,17 +152,14 @@ theorem eq_of_subset_of_affineSpan_eq (C : FinitePolyhedralComplex h)
     (affineSpan_nonempty ℝ).mp (hspan₁.symm ▸ (C.nonempty P₁ hP₁).affineSpan ℝ)
   have hI : P₁ ∩ P₂ ∈ C.cells :=
     C.inter_mem_cells hP₁ hP₂ (hQne.mono (Set.subset_inter hQP₁ hQP₂))
-  have hspanI₁ : affineSpan ℝ (P₁ ∩ P₂) = affineSpan ℝ P₁ :=
-    le_antisymm (affineSpan_mono ℝ Set.inter_subset_left)
-      (hspan₁ ▸ affineSpan_mono ℝ (Set.subset_inter hQP₁ hQP₂))
-  have hspanI₂ : affineSpan ℝ (P₁ ∩ P₂) = affineSpan ℝ P₂ :=
-    le_antisymm (affineSpan_mono ℝ Set.inter_subset_right)
-      (hspan₂ ▸ affineSpan_mono ℝ (Set.subset_inter hQP₁ hQP₂))
-  have heq₁ := C.eq_of_subset_of_finrank_direction_le hI hP₁ Set.inter_subset_left
-    (by rw [hspanI₁])
-  have heq₂ := C.eq_of_subset_of_finrank_direction_le hI hP₂ Set.inter_subset_right
-    (by rw [hspanI₂])
-  exact heq₁.symm.trans heq₂
+  have heq : ∀ {P : Set V}, P ∈ C.cells → P₁ ∩ P₂ ⊆ P → affineSpan ℝ Q = affineSpan ℝ P →
+      P₁ ∩ P₂ = P := fun {P} hP hIP hspan => by
+    have hspanI : affineSpan ℝ (P₁ ∩ P₂) = affineSpan ℝ P :=
+      le_antisymm (affineSpan_mono ℝ hIP)
+        (hspan ▸ affineSpan_mono ℝ (Set.subset_inter hQP₁ hQP₂))
+    exact C.eq_of_subset_of_finrank_direction_le hI hP hIP (by rw [hspanI])
+  exact (heq hP₁ Set.inter_subset_left hspan₁).symm.trans
+    (heq hP₂ Set.inter_subset_right hspan₂)
 
 /-- A cell contained in another cell is a face of it. -/
 theorem isPolyhedralFace_of_subset (C : FinitePolyhedralComplex h) {P Q : Set V}
@@ -337,20 +334,17 @@ theorem eq_of_subset_of_mem_cellsOfCodimension (C : FinitePolyhedralComplex h) {
     (hP₁ : P₁ ∈ C.cellsOfCodimension k) (hP₂ : P₂ ∈ C.cellsOfCodimension k)
     (hQP₁ : Q ⊆ P₁) (hQP₂ : Q ⊆ P₂) : P₁ = P₂ := by
   have := h.finiteDimensional
-  obtain ⟨hP₁C, hd₁⟩ := mem_cellsOfCodimension.mp hP₁
-  obtain ⟨hP₂C, hd₂⟩ := mem_cellsOfCodimension.mp hP₂
   obtain ⟨x, hx⟩ := hne
-  have hspan₁ : affineSpan ℝ Q = affineSpan ℝ P₁ := by
+  have hspan : ∀ {P : Set V}, P ∈ C.cellsOfCodimension k → Q ⊆ P →
+      affineSpan ℝ Q = affineSpan ℝ P := fun {P} hP hQP => by
+    have hd := (mem_cellsOfCodimension.mp hP).2
     refine AffineSubspace.ext_of_direction_eq ?_
-      ⟨x, subset_affineSpan ℝ Q hx, subset_affineSpan ℝ P₁ (hQP₁ hx)⟩
+      ⟨x, subset_affineSpan ℝ Q hx, subset_affineSpan ℝ P (hQP hx)⟩
     exact Submodule.eq_of_le_of_finrank_eq
-      (AffineSubspace.direction_le (affineSpan_mono ℝ hQP₁)) (by omega)
-  have hspan₂ : affineSpan ℝ Q = affineSpan ℝ P₂ := by
-    refine AffineSubspace.ext_of_direction_eq ?_
-      ⟨x, subset_affineSpan ℝ Q hx, subset_affineSpan ℝ P₂ (hQP₂ hx)⟩
-    exact Submodule.eq_of_le_of_finrank_eq
-      (AffineSubspace.direction_le (affineSpan_mono ℝ hQP₂)) (by omega)
-  exact C.eq_of_subset_of_affineSpan_eq hP₁C hP₂C hQP₁ hQP₂ hspan₁ hspan₂
+      (AffineSubspace.direction_le (affineSpan_mono ℝ hQP)) (by omega)
+  exact C.eq_of_subset_of_affineSpan_eq
+    (mem_cellsOfCodimension.mp hP₁).1 (mem_cellsOfCodimension.mp hP₂).1
+    hQP₁ hQP₂ (hspan hP₁ hQP₁) (hspan hP₂ hQP₂)
 
 /-- Distinct walls of a finite polyhedral complex have disjoint intrinsic interiors. -/
 theorem pairwise_disjoint_intrinsicInterior_walls (C : FinitePolyhedralComplex h) :

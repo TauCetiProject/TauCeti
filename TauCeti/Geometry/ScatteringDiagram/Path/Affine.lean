@@ -33,40 +33,6 @@ public section
 
 open Set
 
-namespace ContinuousAffineEquiv
-
-section General
-
-variable {𝕜 V W P Q ι : Type*} [Ring 𝕜] [AddCommGroup V] [AddCommGroup W] [Module 𝕜 V] [Module 𝕜 W]
-  [TopologicalSpace P] [TopologicalSpace Q] [AddTorsor V P] [AddTorsor W Q]
-
-/-- Pulling back the displacement between two images along `e.toAffineEquiv.linear.symm` recovers
-the original displacement vector. -/
-theorem linear_symm_apply_vsub (e : P ≃ᴬ[𝕜] Q) (x y : P) :
-    e.toAffineEquiv.linear.symm (e x -ᵥ e y) = x -ᵥ y := by
-  rw [LinearEquiv.symm_apply_eq, ← e.coe_coe, ← AffineEquiv.coe_toAffineMap,
-    ← AffineMap.linear_apply_vsub, AffineEquiv.linear_toAffineMap, LinearEquiv.coe_coe]
-
-/-- Pulling back the difference of two module images along `e.toAffineEquiv.linear.symm` recovers
-the original difference. -/
-theorem linear_symm_apply_sub {V U : Type*} [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
-    [AddCommGroup U] [Module 𝕜 U] [TopologicalSpace U] (e : V ≃ᴬ[𝕜] U) (x y : V) :
-    e.toAffineEquiv.linear.symm (e x - e y) = x - y := by
-  simpa only [vsub_eq_sub] using e.linear_symm_apply_vsub x y
-
-/-- A continuous affine equivalence preserves pairwise disjointness of intrinsic interiors. -/
-theorem pairwise_disjoint_intrinsicInterior_image (e : P ≃ᴬ[𝕜] Q) {S : ι → Set P}
-    (hS : Pairwise fun i j => Disjoint (intrinsicInterior 𝕜 (S i)) (intrinsicInterior 𝕜 (S j))) :
-    Pairwise fun i j =>
-      Disjoint (intrinsicInterior 𝕜 (e '' S i)) (intrinsicInterior 𝕜 (e '' S j)) := by
-  intro i j hij
-  rw [e.intrinsicInterior_image, e.intrinsicInterior_image]
-  exact Set.disjoint_image_of_injective e.injective (hS hij)
-
-end General
-
-end ContinuousAffineEquiv
-
 namespace TauCeti.WallComplement
 
 variable {V U ι : Type*}
@@ -144,10 +110,7 @@ theorem mem_crossings_mapReindex (x y : WallComplement W) (e : V ≃ᴬ[ℝ] U) 
     (hW : ∀ i, W' (r i) = e '' W i) (i : ι) (t : ℝ) :
     (r i, t) ∈ crossings (x.mapReindex e r hW) (y.mapReindex e r hW) ↔
       (i, t) ∈ crossings x y := by
-  have heq : W' = (fun j => e '' W j) ∘ r.symm := funext fun i' => by
-    obtain ⟨j, rfl⟩ := r.surjective i'
-    simp [hW j]
-  subst heq
+  obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
   exact (mem_crossings_restrictPrefunctor (fun j => e '' W j) r.symm
     (x.map e) (y.map e) (r i) t).trans (by simp [crossings_map])
 
@@ -156,10 +119,7 @@ admissibility. -/
 theorem AdmissibleSegment.mapReindex {x y : WallComplement W} (a : AdmissibleSegment x y)
     (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
     AdmissibleSegment (x.mapReindex e r hW) (y.mapReindex e r hW) := by
-  have heq : W' = (fun j => e '' W j) ∘ r.symm := funext fun i' => by
-    obtain ⟨j, rfl⟩ := r.surjective i'
-    simp [hW j]
-  subst heq
+  obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
   exact ((restrictPrefunctor (fun j => e '' W j) r.symm).map ⟨a.map e⟩).down
 
 /-- The quiver prefunctor transporting admissible segments along `e : V ≃ᴬ[ℝ] U` and `r : ι ≃ ι'`.
@@ -365,6 +325,15 @@ theorem affineMapReindex_reverse (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U
     p.reverse.affineMapReindex e r hW = (p.affineMapReindex e r hW).reverse :=
   Prefunctor.mapPath_reverse (WallComplement.mapReindexPrefunctor e r hW) p
 
+/-- When the target wall family is `(fun i => e '' W i) ∘ r.symm`, reindexed affine transport
+factors as `affineMap e` followed by `WallComplement.restrictPrefunctor _ r.symm`. -/
+theorem affineMapReindex_eq_restrictPrefunctor_mapPath_affineMap (p : AdmissiblePLPath x y)
+    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, ((fun j => e '' W j) ∘ r.symm) (r i) = e '' W i) :
+    p.affineMapReindex e r hW =
+      (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm).mapPath (p.affineMap e) :=
+  Prefunctor.mapPath_comp_apply e.wallComplementPrefunctor
+    (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm) p
+
 /-- Reindexed affine transport maps the wall index of every crossing event along `r : ι ≃ ι'` while
 retaining its edge index and affine parameter. -/
 @[simp]
@@ -373,32 +342,18 @@ theorem mem_crossingEvents_affineMapReindex (p : AdmissiblePLPath x y)
     (j : ℕ) (i' : ι') (t : ℝ) :
     (j, i', t) ∈ (p.affineMapReindex e r hW).crossingEvents ↔
       (j, r.symm i', t) ∈ p.crossingEvents := by
-  have heq : W' = (fun i => e '' W i) ∘ r.symm := funext fun k' => by
-    obtain ⟨k, rfl⟩ := r.surjective k'
-    simp [hW k]
-  subst heq
-  have hpath :
-      p.affineMapReindex e r hW =
-        (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm).mapPath (p.affineMap e) :=
-    Prefunctor.mapPath_comp_apply e.wallComplementPrefunctor
-      (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm) p
-  rw [hpath, mem_crossingEvents_restrictPrefunctor, crossingEvents_affineMap]
+  obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
+  rw [affineMapReindex_eq_restrictPrefunctor_mapPath_affineMap,
+    mem_crossingEvents_restrictPrefunctor, crossingEvents_affineMap]
 
 /-- Reindexed affine transport maps the continuous realization of a path by `e`. -/
 @[simp]
 theorem toContinuousPath_affineMapReindex (p : AdmissiblePLPath x y)
     (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
     (p.affineMapReindex e r hW).toContinuousPath = p.toContinuousPath.map e.continuous := by
-  have heq : W' = (fun i => e '' W i) ∘ r.symm := funext fun i' => by
-    obtain ⟨i, rfl⟩ := r.surjective i'
-    simp [hW i]
-  subst heq
-  have hpath :
-      p.affineMapReindex e r hW =
-        (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm).mapPath (p.affineMap e) :=
-    Prefunctor.mapPath_comp_apply e.wallComplementPrefunctor
-      (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm) p
-  rw [hpath, toContinuousPath_restrictPrefunctor, toContinuousPath_affineMap]
+  obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
+  rw [affineMapReindex_eq_restrictPrefunctor_mapPath_affineMap,
+    toContinuousPath_restrictPrefunctor, toContinuousPath_affineMap]
 
 /-- Reindexed affine transport along `Equiv.refl ι` agrees with `affineMap`. -/
 @[simp]

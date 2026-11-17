@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.ScatteringDiagram.Path.Product
 public import Mathlib.GroupTheory.FreeGroup.Basic
+import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Data.Finset.Sort
 
 /-!
@@ -60,37 +61,6 @@ public section
 noncomputable section
 
 open Set
-
-namespace TauCeti
-
-/-- Generator map for wall deletion along `f : κ → ι`: sends each `i ∈ Set.range f` to
-`FreeGroup.of` of a chosen preimage (hence sending `f j` to `FreeGroup.of j` when `f` is injective)
-and every index outside `Set.range f` to `1`. -/
-def deleteWallsMap {ι κ : Type*} (f : κ → ι) (i : ι) : FreeGroup κ :=
-  open scoped Classical in
-  if hi : i ∈ Set.range f then FreeGroup.of hi.choose else 1
-
-open Classical in
-/-- Unfold `deleteWallsMap` as a classical `dite` over membership in `Set.range f`. -/
-theorem deleteWallsMap_def {ι κ : Type*} (f : κ → ι) (i : ι) :
-    deleteWallsMap f i = if hi : i ∈ Set.range f then FreeGroup.of hi.choose else 1 := (rfl)
-
-/-- When `f` is injective, `deleteWallsMap f` sends each `f j` to `FreeGroup.of j`. -/
-@[simp]
-theorem deleteWallsMap_apply_of_injective {ι κ : Type*} {f : κ → ι} (hf : Function.Injective f)
-    (j : κ) : deleteWallsMap f (f j) = FreeGroup.of j := by
-  unfold deleteWallsMap
-  split_ifs with hj
-  · exact congrArg FreeGroup.of (hf hj.choose_spec)
-  · exact (hj ⟨j, rfl⟩).elim
-
-/-- `deleteWallsMap f` sends every index outside `Set.range f` to `1`. -/
-@[simp]
-theorem deleteWallsMap_apply_of_notMem {ι κ : Type*} (f : κ → ι) {i : ι} (hi : i ∉ Set.range f) :
-    deleteWallsMap f i = 1 := by
-  simp [deleteWallsMap, hi]
-
-end TauCeti
 
 namespace TauCeti.WallComplement
 
@@ -396,7 +366,7 @@ theorem segmentCrossingWord_restrictPrefunctor_eq_lift [Finite ι] [Finite κ] (
     rw [crossingEventWord_of_mem_crossings (ν ∘ f) hdisj' e' hj,
       crossingEventWord_of_mem_crossings ν hdisj e hjf, map_zpow, FreeGroup.lift_apply_of,
       hg_mem j]
-    rfl
+    rw [Function.comp_apply, restrictPrefunctor_obj_val W f y, restrictPrefunctor_obj_val W f x]
   · rw [crossingEventWord_eq_one_of_forall_notMem _ hdisj' e' t fun j hj => hcr' ⟨j, hj⟩]
     by_cases hcr : ∃ i, (i, t) ∈ crossings x y
     · obtain ⟨i, hi⟩ := hcr
@@ -587,8 +557,8 @@ theorem crossingWord_restrictPrefunctor_eq_lift [Finite ι] [Finite κ] (ν : ι
       e ((WallComplement.restrictPrefunctor W f).map e))
 
 /-- Restricting to an injectively indexed subfamily of walls along
-`WallComplement.restrictPrefunctor W f` maps `crossingWord` by `FreeGroup.lift (deleteWallsMap f)`,
-killing deleted walls. -/
+`WallComplement.restrictPrefunctor W f` maps `crossingWord` by
+`FreeGroup.lift (Function.extend f FreeGroup.of 1)`, killing deleted walls. -/
 @[simp]
 theorem crossingWord_restrictPrefunctor [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
@@ -597,9 +567,9 @@ theorem crossingWord_restrictPrefunctor [Finite ι] [Finite κ] (ν : ι → V �
       Disjoint (intrinsicInterior ℝ ((W ∘ f) i)) (intrinsicInterior ℝ ((W ∘ f) j))}
     (p : AdmissiblePLPath x y) :
     ((WallComplement.restrictPrefunctor W f).mapPath p).crossingWord (ν ∘ f) hdisj' =
-      FreeGroup.lift (deleteWallsMap f) (p.crossingWord ν hdisj) :=
-  crossingWord_restrictPrefunctor_eq_lift ν hdisj (deleteWallsMap_apply_of_injective hf)
-    (fun _ => deleteWallsMap_apply_of_notMem f) p
+      FreeGroup.lift (Function.extend f FreeGroup.of 1) (p.crossingWord ν hdisj) :=
+  crossingWord_restrictPrefunctor_eq_lift ν hdisj (hf.extend_apply _ _)
+    (fun i hi => Function.extend_apply' _ _ i (by simpa using hi)) p
 
 end WallRestriction
 
@@ -635,20 +605,11 @@ theorem crossingWord_affineMapReindex [Finite ι] [Finite ι'] (ν : ι → V �
     (p.affineMapReindex e r hW).crossingWord
         (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
       FreeGroup.map r (p.crossingWord ν hdisj) := by
-  have heq : W' = (fun i => e '' W i) ∘ r.symm := funext fun i' => by
-    obtain ⟨i, rfl⟩ := r.surjective i'
-    simp [hW i]
-  subst heq
-  have hpath :
-      p.affineMapReindex e r hW =
-        (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm).mapPath (p.affineMap e) := by
-    rw [affineMapReindex_def, affineMap_def]
-    exact Prefunctor.mapPath_comp_apply e.wallComplementPrefunctor
-      (WallComplement.restrictPrefunctor (fun i => e '' W i) r.symm) p
+  obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
   have hν :
       (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) =
         (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) ∘ r.symm := rfl
-  rw [hpath, hν,
+  rw [affineMapReindex_eq_restrictPrefunctor_mapPath_affineMap, hν,
     crossingWord_restrictPrefunctor_eq_lift _ (e.pairwise_disjoint_intrinsicInterior_image hdisj)
       (g := FreeGroup.of ∘ r) (fun i' => by simp)
       (fun i hi => (hi ⟨r i, r.symm_apply_apply i⟩).elim) (p.affineMap e),
