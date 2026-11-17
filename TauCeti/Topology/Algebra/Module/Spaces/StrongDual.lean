@@ -23,34 +23,38 @@ infrabarrelled.
 It is injective if and only if continuous linear functionals separate the points of `E`
 (`StrongDual.eval_injective_iff`), and it intertwines every continuous linear map `S : E →L[𝕜] F`
 with its double strong transpose `ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 S)`
-(`StrongDual.precomp_precomp_eval_apply`, `StrongDual.precomp_precomp_comp_eval`).
+(`ContinuousLinearMap.precomp_precomp_eval_apply`,
+`ContinuousLinearMap.precomp_precomp_comp_eval`).
 
 When `E` and `F` carry continuous linear equivalences `eE` and `eF` with their strong biduals
 whose underlying maps agree with `StrongDual.eval`, the same pairing identity upgrades naturality
-to continuous linear maps (`StrongDual.precomp_precomp_comp_eq_of_coe_eq_eval`) and recovers `S`
-from its double strong transpose (`StrongDual.symm_comp_precomp_precomp_comp_eq_of_coe_eq_eval`).
+to continuous linear maps (`ContinuousLinearEquiv.precomp_precomp_comp_eq_of_coe_eq_eval`) and
+recovers `S` from its double strong transpose
+(`ContinuousLinearEquiv.symm_comp_precomp_precomp_comp_eq_of_coe_eq_eval`).
 Moreover, if `e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` agrees with `StrongDual.eval 𝕜 E`, then
 the inverse of its strong transpose,
 `ContinuousLinearEquiv.arrowCongr e (ContinuousLinearEquiv.refl 𝕜 𝕜)`, is a topological linear
 isomorphism from `StrongDual 𝕜 E` onto its own strong bidual acting by canonical evaluation
-`Ξ ↦ Ξ φ` (`StrongDual.arrowCongr_refl_apply_of_coe_eq_eval`): the strong dual of a strongly
-reflexive space is strongly reflexive, with canonical evaluation inverse to the strong transpose of
-evaluation on `E`. Likewise, any dual pair of equivalences `a : StrongDual 𝕜 E ≃L[𝕜] F` and
-`b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation induces strong-bidual evaluation
-equivalences on both `E` and `F` (`StrongDual.bidualEquivOfDualEquiv`,
-`StrongDual.dualBidualEquivOfDualEquiv`).
+`Ξ ↦ Ξ φ` (`ContinuousLinearEquiv.arrowCongr_refl_apply_of_coe_eq_eval`): the strong dual of a
+strongly reflexive space is strongly reflexive, with canonical evaluation inverse to the strong
+transpose of evaluation on `E`. Likewise, any dual pair of equivalences
+`a : StrongDual 𝕜 E ≃L[𝕜] F` and `b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation induces
+strong-bidual evaluation equivalences on both `E` and `F`
+(`ContinuousLinearEquiv.bidualEquivOfDualEquiv`,
+`ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`).
 
 ## Main declarations
 
 * `StrongDual.eval`: canonical linear evaluation `E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)`.
 * `StrongDual.eval_injective_iff`: `StrongDual.eval 𝕜 E` is injective iff `SeparatingDual 𝕜 E`.
-* `StrongDual.precomp_precomp_eval_apply`: naturality of `StrongDual.eval` under double strong
-  transposition.
-* `StrongDual.precomp_precomp_comp_eq_of_coe_eq_eval`: naturality of strong-bidual continuous
-  linear equivalences agreeing with `StrongDual.eval`.
-* `StrongDual.bidualEquivOfDualEquiv`, `StrongDual.dualBidualEquivOfDualEquiv`: strong-bidual
-  evaluation equivalences constructed from compatible dual identifications.
-* `StrongDual.arrowCongr_refl_apply_of_coe_eq_eval`: for an evaluation isomorphism
+* `ContinuousLinearMap.precomp_precomp_eval_apply`: naturality of `StrongDual.eval` under double
+  strong transposition.
+* `ContinuousLinearEquiv.precomp_precomp_comp_eq_of_coe_eq_eval`: naturality of strong-bidual
+  continuous linear equivalences agreeing with `StrongDual.eval`.
+* `ContinuousLinearEquiv.bidualEquivOfDualEquiv`,
+  `ContinuousLinearEquiv.dualBidualEquivOfDualEquiv`: strong-bidual evaluation equivalences
+  constructed from compatible dual identifications.
+* `ContinuousLinearEquiv.arrowCongr_refl_apply_of_coe_eq_eval`: for an evaluation isomorphism
   `e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)`,
   `ContinuousLinearEquiv.arrowCongr e (.refl 𝕜 𝕜)` acts by canonical evaluation on
   `StrongDual 𝕜 E`, inverse to the strong transpose `precomp 𝕜 e`.
@@ -96,32 +100,48 @@ bidual is injective. -/
 theorem eval_injective [SeparatingDual 𝕜 E] : Function.Injective (eval 𝕜 E) :=
   eval_injective_iff.2 inferInstance
 
-section Naturality
+end StrongDual
 
-variable {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [NormedField 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
 
 /-- Pointwise naturality of canonical evaluation into the strong bidual under the double strong
 transpose of a continuous linear map. -/
 theorem precomp_precomp_eval_apply (S : E →L[𝕜] F) (x : E) :
-    precomp 𝕜 (precomp 𝕜 S : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (eval 𝕜 E x) =
-      eval 𝕜 F (S x) := by
+    precomp 𝕜 (precomp 𝕜 S : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (StrongDual.eval 𝕜 E x) =
+      StrongDual.eval 𝕜 F (S x) := by
   ext f
   simp [precomp_apply]
 
 /-- Operator naturality of canonical evaluation into the strong bidual under the double strong
 transpose of a continuous linear map. -/
 theorem precomp_precomp_comp_eval (S : E →L[𝕜] F) :
-    (precomp 𝕜 (precomp 𝕜 S : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)).toLinearMap.comp (eval 𝕜 E) =
-      (eval 𝕜 F).comp S.toLinearMap := by
+    (precomp 𝕜 (precomp 𝕜 S : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)).toLinearMap.comp
+        (StrongDual.eval 𝕜 E) =
+      (StrongDual.eval 𝕜 F).comp S.toLinearMap := by
   ext x f
   simp [precomp_apply]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+section Naturality
+
+variable {𝕜 E F : Type*} [NormedField 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
 
 /-- If `eE` and `eF` are strong-bidual continuous linear equivalences whose underlying maps are
 canonical evaluation, every continuous linear map `S : E →L[𝕜] F` intertwines them with its double
 strong transpose `S′′`. -/
 theorem precomp_precomp_comp_eq_of_coe_eq_eval
-    (eE : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) (heE : ⇑eE = eval 𝕜 E)
-    (eF : F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)) (heF : ⇑eF = eval 𝕜 F) (S : E →L[𝕜] F) :
+    (eE : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) (heE : ⇑eE = StrongDual.eval 𝕜 E)
+    (eF : F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)) (heF : ⇑eF = StrongDual.eval 𝕜 F)
+    (S : E →L[𝕜] F) :
     (precomp 𝕜 (precomp 𝕜 S : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)).comp
         eE.toContinuousLinearMap =
       eF.toContinuousLinearMap.comp S := by
@@ -133,8 +153,9 @@ theorem precomp_precomp_comp_eq_of_coe_eq_eval
 /-- Under strong-bidual evaluation equivalences `eE` and `eF`, a continuous linear map `S` is
 recovered from its double strong transpose `S′′` as `eF⁻¹ ∘ S′′ ∘ eE`. -/
 theorem symm_comp_precomp_precomp_comp_eq_of_coe_eq_eval
-    (eE : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) (heE : ⇑eE = eval 𝕜 E)
-    (eF : F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)) (heF : ⇑eF = eval 𝕜 F) (S : E →L[𝕜] F) :
+    (eE : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) (heE : ⇑eE = StrongDual.eval 𝕜 E)
+    (eF : F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)) (heF : ⇑eF = StrongDual.eval 𝕜 F)
+    (S : E →L[𝕜] F) :
     eF.symm.toContinuousLinearMap.comp
         ((precomp 𝕜 (precomp 𝕜 S : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)).comp
           eE.toContinuousLinearMap) =
@@ -147,20 +168,21 @@ end Naturality
 
 section DualReflexivity
 
-variable {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+variable {𝕜 E F : Type*} [NormedField 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
 
 /-- Given topological linear isomorphisms `a : StrongDual 𝕜 E ≃L[𝕜] F` and
 `b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation (`b x (a ℓ) = ℓ x`), canonical evaluation
-`eval 𝕜 E` is a topological linear isomorphism `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)`, equal to
-`b.trans (a.symm.arrowCongr (.refl 𝕜 𝕜))`. -/
+`StrongDual.eval 𝕜 E` is a topological linear isomorphism `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)`,
+equal to `b.trans (a.symm.arrowCongr (.refl 𝕜 𝕜))`. -/
 def bidualEquivOfDualEquiv (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
     E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
   let e := b.trans (a.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))
-  have he : ∀ x, e x = eval 𝕜 E x := fun x ↦ ContinuousLinearMap.ext fun ℓ ↦ by
-    simpa [e, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.arrowCongr_apply,
-      ContinuousLinearEquiv.refl_apply] using h x ℓ
-  { __ := eval 𝕜 E
+  have he : ∀ x, e x = StrongDual.eval 𝕜 E x := fun x ↦ ContinuousLinearMap.ext fun ℓ ↦ by
+    simpa [e, trans_apply, arrowCongr_apply, refl_apply] using h x ℓ
+  { __ := StrongDual.eval 𝕜 E
     invFun := e.symm
     left_inv x := by rw [LinearMap.toFun_eq_coe, ← he x, e.symm_apply_apply]
     right_inv Ξ := by rw [LinearMap.toFun_eq_coe, ← he (e.symm Ξ), e.apply_symm_apply]
@@ -170,18 +192,19 @@ def bidualEquivOfDualEquiv (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜
 @[simp]
 theorem coe_bidualEquivOfDualEquiv (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    ⇑(bidualEquivOfDualEquiv a b h) = eval 𝕜 E :=
+    ⇑(bidualEquivOfDualEquiv a b h) = StrongDual.eval 𝕜 E :=
   (rfl)
 
 theorem bidualEquivOfDualEquiv_apply (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) (x : E) (ℓ : StrongDual 𝕜 E) :
     bidualEquivOfDualEquiv a b h x ℓ = ℓ x := by
-  rw [coe_bidualEquivOfDualEquiv, eval_apply]
+  rw [coe_bidualEquivOfDualEquiv, StrongDual.eval_apply]
 
 omit [ContinuousSMul 𝕜 E] in
 /-- Given topological linear isomorphisms `a : StrongDual 𝕜 E ≃L[𝕜] F` and
 `b : E ≃L[𝕜] StrongDual 𝕜 F` compatible with evaluation (`b x (a ℓ) = ℓ x`), canonical evaluation
-`eval 𝕜 F` is also a topological linear isomorphism `F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)`. -/
+`StrongDual.eval 𝕜 F` is also a topological linear isomorphism
+`F ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)`. -/
 def dualBidualEquivOfDualEquiv [ContinuousSMul 𝕜 F]
     (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
@@ -194,7 +217,7 @@ omit [ContinuousSMul 𝕜 E] in
 theorem coe_dualBidualEquivOfDualEquiv [ContinuousSMul 𝕜 F]
     (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) :
-    ⇑(dualBidualEquivOfDualEquiv a b h) = eval 𝕜 F := by
+    ⇑(dualBidualEquivOfDualEquiv a b h) = StrongDual.eval 𝕜 F := by
   rw [dualBidualEquivOfDualEquiv, coe_bidualEquivOfDualEquiv]
 
 omit [ContinuousSMul 𝕜 E] in
@@ -202,22 +225,21 @@ theorem dualBidualEquivOfDualEquiv_apply [ContinuousSMul 𝕜 F]
     (a : StrongDual 𝕜 E ≃L[𝕜] F) (b : E ≃L[𝕜] StrongDual 𝕜 F)
     (h : ∀ (x : E) (ℓ : StrongDual 𝕜 E), b x (a ℓ) = ℓ x) (f : F) (φ : StrongDual 𝕜 F) :
     dualBidualEquivOfDualEquiv a b h f φ = φ f := by
-  rw [coe_dualBidualEquivOfDualEquiv, eval_apply]
+  rw [coe_dualBidualEquivOfDualEquiv, StrongDual.eval_apply]
 
-/-- If `e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` agrees with canonical evaluation `eval 𝕜 E`,
-then `ContinuousLinearEquiv.arrowCongr e (.refl 𝕜 𝕜)` is a topological linear isomorphism from
-`StrongDual 𝕜 E` onto its strong bidual, inverse to the strong transpose `precomp 𝕜 e`, and it acts
-by canonical evaluation `Ξ ↦ Ξ φ`. -/
+/-- If `e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` agrees with canonical evaluation
+`StrongDual.eval 𝕜 E`, then `ContinuousLinearEquiv.arrowCongr e (.refl 𝕜 𝕜)` is a topological
+linear isomorphism from `StrongDual 𝕜 E` onto its strong bidual, inverse to the strong transpose
+`precomp 𝕜 e`, and it acts by canonical evaluation `Ξ ↦ Ξ φ`. -/
 theorem arrowCongr_refl_apply_of_coe_eq_eval
-    (e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) (he : ⇑e = eval 𝕜 E)
+    (e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) (he : ⇑e = StrongDual.eval 𝕜 E)
     (φ : StrongDual 𝕜 E) (Ξ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
-    ContinuousLinearEquiv.arrowCongr e (ContinuousLinearEquiv.refl 𝕜 𝕜) φ Ξ = Ξ φ := by
-  calc ContinuousLinearEquiv.arrowCongr e (ContinuousLinearEquiv.refl 𝕜 𝕜) φ Ξ
-      = φ (e.symm Ξ) := by
-        simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.refl_apply]
+    e.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) φ Ξ = Ξ φ := by
+  calc e.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) φ Ξ
+      = φ (e.symm Ξ) := by simp only [arrowCongr_apply, refl_apply]
     _ = e (e.symm Ξ) φ := (DFunLike.congr_fun (congr_fun he (e.symm Ξ)) φ).symm
     _ = Ξ φ := by rw [e.apply_symm_apply]
 
 end DualReflexivity
 
-end StrongDual
+end ContinuousLinearEquiv

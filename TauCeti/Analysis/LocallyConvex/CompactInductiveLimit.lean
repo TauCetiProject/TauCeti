@@ -372,7 +372,7 @@ def strongBidualEquivOfInductiveLimit
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
     (hc : Continuous (dualProjectiveLimit.liftEval hι hinj hcover)) :
     L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L) :=
-  StrongDual.bidualEquivOfDualEquiv
+  ContinuousLinearEquiv.bidualEquivOfDualEquiv
     (dualProjectiveLimit.strongDualEquiv hT hι hinj hcover
       (dualProjectiveLimit.continuous_of_continuous_comp_of_continuous_liftEval
         hι hinj hcover hc))
@@ -392,7 +392,7 @@ variable [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopologicalAddGroup L] [Co
 @[simp]
 theorem coe_strongBidualEquivOfInductiveLimit :
     ⇑(strongBidualEquivOfInductiveLimit hT hι hinj hcover hc) = StrongDual.eval 𝕜 L := by
-  rw [strongBidualEquivOfInductiveLimit, StrongDual.coe_bidualEquivOfDualEquiv]
+  rw [strongBidualEquivOfInductiveLimit, ContinuousLinearEquiv.coe_bidualEquivOfDualEquiv]
 
 theorem strongBidualEquivOfInductiveLimit_apply (x : L) (ℓ : StrongDual 𝕜 L) :
     strongBidualEquivOfInductiveLimit hT hι hinj hcover hc x ℓ = ℓ x := by
@@ -415,7 +415,7 @@ theorem precomp_precomp_comp_strongBidualEquivOfInductiveLimit
       (ContinuousLinearMap.precomp 𝕜 S : StrongDual 𝕜 L₂ →L[𝕜] StrongDual 𝕜 L)).comp
         (strongBidualEquivOfInductiveLimit hT hι hinj hcover hc).toContinuousLinearMap =
       (strongBidualEquivOfInductiveLimit hT₂ hι₂ hinj₂ hcover₂ hc₂).toContinuousLinearMap.comp S :=
-  StrongDual.precomp_precomp_comp_eq_of_coe_eq_eval _
+  ContinuousLinearEquiv.precomp_precomp_comp_eq_of_coe_eq_eval _
     (coe_strongBidualEquivOfInductiveLimit hT hι hinj hcover hc) _
     (coe_strongBidualEquivOfInductiveLimit hT₂ hι₂ hinj₂ hcover₂ hc₂) S
 
@@ -436,7 +436,7 @@ theorem strongBidualEquivOfInductiveLimit_symm_comp_precomp_precomp
       ((ContinuousLinearMap.precomp 𝕜
         (ContinuousLinearMap.precomp 𝕜 S : StrongDual 𝕜 L₂ →L[𝕜] StrongDual 𝕜 L)).comp
           (strongBidualEquivOfInductiveLimit hT hι hinj hcover hc).toContinuousLinearMap) = S :=
-  StrongDual.symm_comp_precomp_precomp_comp_eq_of_coe_eq_eval _
+  ContinuousLinearEquiv.symm_comp_precomp_precomp_comp_eq_of_coe_eq_eval _
     (coe_strongBidualEquivOfInductiveLimit hT hι hinj hcover hc) _
     (coe_strongBidualEquivOfInductiveLimit hT₂ hι₂ hinj₂ hcover₂ hc₂) S
 

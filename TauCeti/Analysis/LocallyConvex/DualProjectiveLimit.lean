@@ -447,7 +447,7 @@ theorem arrowCongr_strongBidualEquiv_apply (hT : ∀ n, (T n).IsWeaklyCompact)
     (φ : StrongDual 𝕜 (dualProjectiveLimit T))
     (Ξ : StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) :
     (strongBidualEquiv hT).arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) φ Ξ = Ξ φ :=
-  StrongDual.arrowCongr_refl_apply_of_coe_eq_eval (strongBidualEquiv hT)
+  (strongBidualEquiv hT).arrowCongr_refl_apply_of_coe_eq_eval
     (coe_strongBidualEquiv hT) φ Ξ
 
 section Precomp
