@@ -43,12 +43,11 @@ theorem isExposed_setOf_eq_of_le (g : V →ᴬ[𝕜] 𝕜) {c : 𝕜} (hg : ∀ 
     simpa only [ContinuousAffineMap.coe_toAffineMap, Pi.sub_apply, sub_eq_add_neg] using
       congrFun g.toAffineMap.decomp' x
   let l : StrongDual 𝕜 V := ⟨g.toAffineMap.linear, by
-    change Continuous (g.toAffineMap.linear : V → 𝕜)
-    rw [hlin]
+    rw [LinearMap.toFun_eq_coe, hlin]
     exact g.continuous.add continuous_const⟩
+  have hl : (l : V → 𝕜) = g.toAffineMap.linear := ContinuousLinearMap.coe_mk' _ _
   have hval (x : V) : g x = l x + g 0 := by
-    change g x = g.toAffineMap.linear x + g 0
-    rw [congrFun hlin, add_assoc, neg_add_cancel, add_zero]
+    rw [congrFun hl, congrFun hlin, add_assoc, neg_add_cancel, add_zero]
   have hcmp (a b : V) : l a ≤ l b ↔ g a ≤ g b := by
     rw [hval a, hval b, add_le_add_iff_right]
   refine ⟨l, Set.ext fun x => ?_⟩
