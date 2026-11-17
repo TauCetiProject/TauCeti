@@ -12,6 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.Morse.QuadraticHandle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
@@ -88,23 +89,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {ι : Type*} {n : ℕ} {f : M → ℝ} {c ε : ℝ}
-
-/-- At a critical point `φ⁻¹ (L t₀)` of `F`, read through a partial diffeomorphism `φ`, the
-derivative of `F` along the curve `t ↦ φ⁻¹ (L t)` vanishes at `t₀`. -/
-private theorem hasDerivAt_comp_symm_of_mfderiv_eq_zero {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] (φ : PartialDiffeomorph I 𝓘(ℝ, E') M E' ∞) {F : M → ℝ} {L : ℝ → E'}
-    {t₀ : ℝ} (hL : DifferentiableAt ℝ L t₀) (ht₀ : L t₀ ∈ φ.target)
-    (hF : MDifferentiableAt I 𝓘(ℝ) F (φ.symm (L t₀)))
-    (h0 : mfderiv I 𝓘(ℝ) F (φ.symm (L t₀)) = 0) :
-    HasDerivAt (fun t ↦ F (φ.symm (L t))) 0 t₀ := by
-  -- The inverse of `φ` is the inverse function `φ.invFun` of the partial diffeomorphism.
-  have hγ : MDifferentiableAt 𝓘(ℝ) I (fun t ↦ φ.symm (L t)) t₀ :=
-    ((φ.contMDiffOn_invFun.contMDiffAt (φ.open_target.mem_nhds ht₀)).mdifferentiableAt
-      (by simp)).comp t₀ (mdifferentiableAt_iff_differentiableAt.2 hL)
-  have hd : HasFDerivAt (fun t ↦ F (φ.symm (L t))) (0 : ℝ →L[ℝ] ℝ) t₀ := by
-    have h := hF.hasMFDerivAt.comp t₀ hγ.hasMFDerivAt
-    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
-  simpa using hd.hasDerivAt
 
 section MilnorFunction
 
@@ -207,7 +191,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
   rw [← show γ 1 = x from (congrArg φ.symm hL1).trans (φ.left_inv hx)] at hF h0
-  have hd := hasDerivAt_comp_symm_of_mfderiv_eq_zero (ψ i) (L := L)
+  have hd := (ψ i).hasDerivAt_comp_symm_of_mfderiv_eq_zero (by simp) (L := L)
     (e.symm.differentiableAt.comp _
       ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))) hLt hF h0
   -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
@@ -506,7 +490,8 @@ theorem mfderiv_ne_zero_of_mem_source_of_ne_level (hfs : ContMDiff I 𝓘(ℝ) �
   set γ : ℝ → M := fun t ↦ φ.symm (t • y)
   have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
   rw [← hγ1] at h0
-  have hd := hasDerivAt_comp_symm_of_mfderiv_eq_zero φ (differentiableAt_id.smul_const y)
+  have hd := φ.hasDerivAt_comp_symm_of_mfderiv_eq_zero (by simp)
+    (differentiableAt_id.smul_const y)
     (by simpa using hy) (hfs.mdifferentiableAt (by simp)) h0
   have hsum (t : ℝ) : ∑ j, (if j.val < k then -1 else 1) * (t • y) j ^ 2 =
       t ^ 2 * ∑ j, (if j.val < k then (-1 : ℝ) else 1) * y j ^ 2 := by
