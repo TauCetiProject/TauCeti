@@ -44,8 +44,6 @@ parameter `c * q ^ N` (`mul_pow_jimboWeightedTrace_eq_ocneanuTrace`), and the ke
 
 ## Main results
 
-* `TauCeti.TypeAHeckeAlgebra.jimbo_strandIncl_mapDomain_snoc`: intertwining of `jimbo` with
-  `strandIncl` and appending a fixed colour.
 * `TauCeti.TypeAHeckeAlgebra.commute_jimboEnhancement_jimbo`: Turaev's enhancement commutes with
   the entire Hecke-algebra action.
 * `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_strandIncl`,
@@ -69,79 +67,10 @@ parameter `c * q ^ N` (`mul_pow_jimboWeightedTrace_eq_ocneanuTrace`), and the ke
 
 public section
 
-open Finsupp Function
+open Finsupp
 open scoped BigOperators
 
 namespace TauCeti.TypeAHeckeAlgebra
-
-section Intertwining
-
-variable {R : Type*} [CommRing R] (ι : Type*) [LinearOrder ι] (q : Rˣ) {n : ℕ}
-
-/-- A map of type-A Hecke algebras and a linear map of word spaces which intertwine the Jimbo
-representations on every generator intertwine them on every element. -/
-theorem jimbo_comp_eq_of_forall_T {m : ℕ}
-    (f : TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q m)
-    (L : ((Fin n → ι) →₀ R) →ₗ[R] (Fin m → ι) →₀ R)
-    (h : ∀ i, (jimbo ι q (f (T q i))).comp L = L.comp (jimbo ι q (T q i)))
-    (x : TypeAHeckeAlgebra R q n) :
-    (jimbo ι q (f x)).comp L = L.comp (jimbo ι q x) := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-    rw [adjoin_range_T]
-    trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem y hy =>
-    obtain ⟨i, rfl⟩ := hy
-    exact h i
-  | algebraMap r =>
-    rw [AlgHom.commutes, AlgHom.commutes]
-    exact LinearMap.ext fun v ↦ by simp [Module.algebraMap_end_apply]
-  | add x y _ _ hx hy => simp only [map_add, LinearMap.add_comp, LinearMap.comp_add, hx, hy]
-  | mul x y _ _ hx hy =>
-    rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-      LinearMap.comp_assoc, hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
-
-/-- The action of a Hecke-algebra element after adding an uncrossed last strand is its original
-action with the last colour held fixed. -/
-@[simp]
-theorem jimbo_strandIncl_mapDomain_snoc (x : TypeAHeckeAlgebra R q n) (a : ι)
-    (v : (Fin n → ι) →₀ R) :
-    jimbo ι q (strandIncl R q n x) (mapDomain (fun w ↦ Fin.snoc w a) v) =
-      mapDomain (fun w ↦ Fin.snoc w a) (jimbo ι q x v) := by
-  set L := lmapDomain R R (fun w : Fin n → ι ↦ (Fin.snoc w a : Fin (n + 1) → ι))
-  suffices h : (jimbo ι q (strandIncl R q n x)).comp L = L.comp (jimbo ι q x) by
-    simpa [L] using LinearMap.congr_fun h v
-  refine jimbo_comp_eq_of_forall_T ι q _ L (fun i ↦ ?_) x
-  have hj : BraidGroup.strand (Fin.castLE (by omega) i : Fin (n + 1 - 1)) =
-      (BraidGroup.strand i).castSucc := Fin.ext (by simp)
-  have hk : BraidGroup.strandSucc (Fin.castLE (by omega) i : Fin (n + 1 - 1)) =
-      (BraidGroup.strandSucc i).castSucc := Fin.ext (by simp)
-  rw [strandIncl_T, jimbo_T, jimbo_T, hj, hk]
-  exact KnotTheory.jimboGenerator_comp_lmapDomain_snoc q _ _ a
-
-/-- Adding an uncrossed last strand preserves matrix coefficients within each block of words with a
-fixed last colour and gives zero between blocks with different last colours. -/
-theorem jimbo_strandIncl_single_snoc_apply_snoc (x : TypeAHeckeAlgebra R q n)
-    (w u : Fin n → ι) (a d : ι) :
-    jimbo ι q (strandIncl R q n x) (single (Fin.snoc w a) 1) (Fin.snoc u d) =
-      if a = d then jimbo ι q x (single w 1) u else 0 := by
-  classical
-  have h := jimbo_strandIncl_mapDomain_snoc ι q x a (single w 1)
-  rw [mapDomain_single] at h
-  rw [h]
-  by_cases had : a = d
-  · subst d
-    simp only [↓reduceIte]
-    exact mapDomain_apply_of_injective (@Fin.snoc_left_injective _ (fun _ ↦ ι) a) _ _
-  · simp only [had, ↓reduceIte]
-    apply mapDomain_of_notMem_range
-    rintro ⟨v, hv⟩
-    apply had
-    simpa using congrArg (fun z : Fin (n + 1) → ι ↦ z (Fin.last n)) hv
-
-end Intertwining
-
-section WeightedTrace
 
 variable {R : Type*} [CommRing R]
 
@@ -392,7 +321,5 @@ theorem ker_jimbo_le_finiteRadical_ocneanuTrace {N : ℕ} {q : Rˣ} {c : R}
   intro y
   rw [← mul_pow_jimboWeightedTrace_eq_ocneanuTrace hc, jimboWeightedTrace_apply,
     map_mul (jimbo (Fin N) q) x y, hx, zero_mul, zero_mul, map_zero, mul_zero]
-
-end WeightedTrace
 
 end TauCeti.TypeAHeckeAlgebra
