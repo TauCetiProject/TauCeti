@@ -41,11 +41,12 @@ subsets with compact closure inside it.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
 and smooth maps on the whole plane are in every class on every set.
 Conversely, let `U` agree almost everywhere with its interior, as open sets and half-discs do.
-If `g` is `Cᵏ` on an open set containing `U` and agrees almost everywhere on `U` with
+If `g` is `Cᵏ` on the interior of `U` and agrees almost everywhere on `U` with
 `u ∈ MemWkpLoc p U (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
 (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, for `k ≥ 1`) and
 `iteratedFDeriv ℝ k g ∈ MemWkpLoc p U m` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`). If
-`U` lies in the closure of its interior, two such `g` have the same derivatives of order at most
+`U` lies in the closure of its interior, two maps that are `Cᵏ` on open sets containing `U` and
+agree almost everywhere on `U` have the same derivatives of order at most
 `k` at every point of `U` (`TauCeti.eqOn_iteratedFDeriv_of_ae_eq`).
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), and since the real axis is null, local
@@ -648,19 +649,18 @@ variable {m : ℕ} {u : ℂ → F}
 
 /-- **The derivative of a `C¹` representative is a weak derivative.** Let `U` agree almost
 everywhere with its interior, as an open set does and as a half-disc `Ω ∩ {0 ≤ im}` does
-(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). If `g` is `C¹` on a set `V` containing `U` and
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). If `g` is `C¹` on the interior of `U` and
 agrees almost everywhere on `U` with `u ∈ MemWkpLoc p U (k + 1)`, then `fderiv ℝ g` is a weak
 derivative of `u` on the interior of `U` and lies in `MemWkpLoc p U k`. By uniqueness of weak
 derivatives (`TauCeti.HasWeakFDerivOn.ae_eq`), every weak derivative of `u` on the interior of `U`
 agrees with `fderiv ℝ g` almost everywhere on `U`. -/
 theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p U (k + 1) u)
-    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hUV : U ⊆ V) (hg : ContDiffOn ℝ 1 g V)
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hg : ContDiffOn ℝ 1 g (Opens.interior U))
     (hug : u =ᵐ[volume.restrict U] g) :
     HasWeakFDerivOn volume (Opens.interior U) u (fderiv ℝ g) ∧ MemWkpLoc p U k (fderiv ℝ g) := by
   have := hu.completeSpace
   rw [Measure.restrict_congr_set hU] at hug
-  have hg' : HasWeakFDerivOn volume (Opens.interior U) g (fderiv ℝ g) :=
-    (hg.mono fun z hz => hUV (interior_subset hz)).hasWeakFDerivOn_fderiv
+  have hg' : HasWeakFDerivOn volume (Opens.interior U) g (fderiv ℝ g) := hg.hasWeakFDerivOn_fderiv
   obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv
   refine ⟨hg'.congr_ae hug.symm, hDk.congr_ae ?_⟩
   rw [Measure.restrict_congr_set hU]
@@ -668,12 +668,12 @@ theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p U (k + 
 
 /-- **Iterated derivatives of a `Cᵏ` representative.** Let `U` agree almost everywhere with its
 interior, as an open set does and as a half-disc `Ω ∩ {0 ≤ im}` does
-(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). If `g` is `Cᵏ` on an open set `V` containing `U`
-and agrees almost everywhere on `U` with `u ∈ MemWkpLoc p U (k + m)`, then `iteratedFDeriv ℝ k g`
-lies in `MemWkpLoc p U m`. No restriction on `p` is needed. -/
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). If `g` is `Cᵏ` on the interior of `U` and agrees
+almost everywhere on `U` with `u ∈ MemWkpLoc p U (k + m)`, then `iteratedFDeriv ℝ k g` lies in
+`MemWkpLoc p U m`. No restriction on `p` is needed. -/
 theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p U (k + m) u)
-    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hV : IsOpen V) (hUV : U ⊆ V)
-    (hg : ContDiffOn ℝ k g V) (hug : u =ᵐ[volume.restrict U] g) :
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hg : ContDiffOn ℝ k g (Opens.interior U))
+    (hug : u =ᵐ[volume.restrict U] g) :
     MemWkpLoc p U m (iteratedFDeriv ℝ k g) := by
   induction k generalizing F with
   | zero =>
@@ -682,9 +682,10 @@ theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p U (k + m) u)
       ((Nat.zero_add m ▸ hu).congr_ae hug)
   | succ k ih =>
     rw [Nat.add_right_comm] at hu
-    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn hU hUV
+    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn hU
       (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
-    have hgk : ContDiffOn ℝ k (fderiv ℝ g) V := hg.fderiv_of_isOpen hV (by push_cast; rfl)
+    have hgk : ContDiffOn ℝ k (fderiv ℝ g) (Opens.interior U) :=
+      hg.fderiv_of_isOpen isOpen_interior (by push_cast; rfl)
     have h := ih hDk hgk (Filter.EventuallyEq.refl _ _)
     have heq : iteratedFDeriv ℝ (k + 1) g =
         fun z => (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm
