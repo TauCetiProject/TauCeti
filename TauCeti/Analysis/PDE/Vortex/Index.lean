@@ -18,11 +18,11 @@ At a field `x`, the gauge-fixed vortex operator `L_x = d₀* ⊕ d₁` is realiz
 
 `TauCeti.Vortex.sobolevGaugeFixedOperator a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`,
 
-with `a` the `L∞` class of `x`. At a `C¹` vortex with `|α| → 1` at infinity it is onto, and it is
-Fredholm (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`,
-`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`), so its index is the real dimension of its
-kernel. This file computes that dimension, completing Taubes's computation of the index of the
-linearized vortex operator.
+with `a` the `L∞` class of `x`. At a `C¹` vortex with `|α| → 1` at infinity it is onto
+(`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`), and if also `d_a α → 0` at infinity it is
+Fredholm (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`), so its index is the real
+dimension of its kernel. This file computes that dimension, completing Taubes's computation of the
+index of the linearized vortex operator.
 
 * **The kernel is the weak kernel.** At every continuous field, taking the `L²` class of the values
   identifies the kernel of the realization with the weak `L²` kernel `weakGaugeFixedKernel x`, the
