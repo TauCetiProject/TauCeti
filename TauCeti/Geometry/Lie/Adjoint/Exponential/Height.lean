@@ -29,17 +29,18 @@ curve has velocity `⁅A, p⁆` at `t = 0`, and every tangent vector of the orbi
 so at the critical point `p` these second derivatives are the values `Hess_p f_X(⁅A, p⁆, ⁅A, p⁆)`
 of the Hessian quadratic form of the height on the orbit.
 
-On a root plane `E` of `t` with root `α` (`TauCeti.IsRootPlane`), and for `p, X ∈ t`, this is
-`-α(p) α(X) B(A, A)`
-(`TauCeti.Lie.hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul_of_isRootPlane`), the formula
-`Hess_p f_X(q_p A, q_p A) = -α(X) α(p) B(A, A)` of `TauCeti.Algebra.Lie.Coadjoint.RootPlane`.
+On a root plane `E` of `t` with root `α` (`TauCeti.IsRootPlane`), and for `p, X ∈ t`, this second
+derivative is `-α(p) α(X) B(A, A)`
+(`TauCeti.Lie.hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul_of_isRootPlane`). When
+moreover `⁅X, p⁆ = 0` (for instance when `t` is abelian), `p` is critical and this is the Hessian
+value `Hess_p f_X(q_p A, q_p A) = -α(X) α(p) B(A, A)` of `TauCeti.Algebra.Lie.Coadjoint.RootPlane`.
 
 ## Main results
 
 * `TauCeti.Lie.hasDerivAt_apply_tangentAd_mulInvariantExp_smul`: the derivative of the height
   along the orbit curve.
-* `TauCeti.Lie.hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_eq_zero`: a point commuting with
-  `X` is critical for the height of an invariant form along every orbit curve.
+* `TauCeti.Lie.hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_of_lie_eq_zero`: a point
+  commuting with `X` is critical for the height of an invariant form along every orbit curve.
 * `TauCeti.Lie.hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul`,
   `TauCeti.Lie.hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul_of_lieInvariant`: the
   second derivative at `t = 0`.
@@ -94,7 +95,7 @@ theorem hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero :
 
 /-- **Points commuting with `X` are critical for the height.** For an invariant form `B` and
 `⁅X, p⁆ = 0`, the height `B(Ad_(exp tA) p, X)` has derivative `0` at `t = 0` for every `A`. -/
-theorem hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_eq_zero
+theorem hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_of_lie_eq_zero
     (hB : B.lieInvariant (GroupLieAlgebra I G)) (hXp : ⁅X, p⁆ = 0) :
     HasDerivAt (fun t : ℝ ↦ B (tangentAd (I := I) (mulInvariantExp (I := I) (G := G) (t • A)) p) X)
       0 0 := by
@@ -132,8 +133,8 @@ theorem hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul :
 /-- **The Hessian of a height at a point commuting with `X`.** For an invariant form `B`, the
 second derivative of `B(Ad_(exp tA) p, X)` at `t = 0` is `-B(⁅A, p⁆, ⁅A, X⁆)`. When `⁅X, p⁆ = 0`,
 `p` is a critical point of the height on its orbit
-(`TauCeti.Lie.hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_eq_zero`), and this is the value
-of its Hessian quadratic form on the tangent vector `⁅A, p⁆`. -/
+(`TauCeti.Lie.hasDerivAt_apply_tangentAd_mulInvariantExp_smul_zero_of_lie_eq_zero`), and this is
+the value of its Hessian quadratic form on the tangent vector `⁅A, p⁆`. -/
 theorem hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul_of_lieInvariant
     (hB : B.lieInvariant (GroupLieAlgebra I G)) :
     HasDerivAt
@@ -144,7 +145,8 @@ theorem hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul_of_lieInvariant
 
 /-- **The height Hessian along a root plane.** For an invariant form `B`, a root plane `E` of `t`
 with root `α`, `p, X ∈ t` and `A ∈ E`, the second derivative of `B(Ad_(exp tA) p, X)` at `t = 0`
-is `-α(p) α(X) B(A, A)`. -/
+is `-α(p) α(X) B(A, A)`. When `⁅X, p⁆ = 0` (for instance when `t` is abelian), `p` is a critical
+point of the height and this is the value of its Hessian quadratic form on `⁅A, p⁆`. -/
 theorem hasDerivAt_deriv_apply_tangentAd_mulInvariantExp_smul_of_isRootPlane
     (hB : B.lieInvariant (GroupLieAlgebra I G)) {t : Submodule ℝ (GroupLieAlgebra I G)}
     {α : Module.Dual ℝ t} {V : Submodule ℝ (GroupLieAlgebra I G)} {J : Module.End ℝ V}

@@ -30,42 +30,51 @@ Write `q_p A = ⁅A, p⁆` for the derivative at the identity of the orbit map `
   `α(p) ω_ν = B(J x, y)`, that is `ω_ν(x, y) = B(J x, y) / α(p)`
   (`TauCeti.IsRootPlane.mul_kksForm_mk`);
 * for `X ∈ t`, the form `B(q_p A, q_X C) = α(p) α(X) B(A, C)`
-  (`TauCeti.IsRootPlane.apply_lie_lie`). Its negative is the Hessian of the height
-  `f_X = B(·, X)` along the orbit at `p`, the second derivative of `t ↦ B(Ad_(exp tA) p, X)`
-  computed in `TauCeti.Geometry.Lie.Adjoint.Exponential.Height`:
-  `Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`. With `X = p` the identity is the
-  quotient-coordinate congruence `B(q_p A, q_p C) = α(p)² B(A, C)`, so in tangent vectors
-  `Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)` (`TauCeti.IsRootPlane.mul_apply_lie_lie`).
+  (`TauCeti.IsRootPlane.apply_lie_lie`). With `X = p` this is the quotient-coordinate congruence
+  `B(q_p A, q_p C) = α(p)² B(A, C)`, so in tangent vectors `x = q_p A`, `y = q_p C`,
+  `α(p) B(q_p A, q_X C) = α(X) B(x, y)` (`TauCeti.IsRootPlane.mul_apply_lie_lie`).
 
-Two root planes that are orthogonal for `B` contribute no cross terms to either form
-(`TauCeti.IsRootPlane.apply_lie_eq_zero_of_le_orthogonal`,
+These are formulas for `B(q_p A, q_X C)`. They read as the Hessian of the height `f_X = B(·, X)`
+along the orbit at `p` when `B` is invariant and `⁅X, p⁆ = 0` (for instance when `t` is abelian):
+then `p` is a critical point of `f_X` on its orbit, and `-B(q_p A, q_X A)` is the second derivative
+of `t ↦ B(Ad_(exp tA) p, X)` at `t = 0`, computed in
+`TauCeti.Geometry.Lie.Adjoint.Exponential.Height`. If `B` is moreover symmetric, polarization gives
+the Hessian bilinear form `Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`, that is
+`Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)` in tangent vectors.
+
+For an invariant form, root planes whose roots satisfy `α(H)² ≠ α'(H)²` for some `H ∈ t` are
+orthogonal (`TauCeti.IsRootPlane.le_orthogonal`), and two root planes that are orthogonal for `B`
+contribute no cross terms to either form (`TauCeti.IsRootPlane.apply_lie_eq_zero_of_le_orthogonal`,
 `TauCeti.IsRootPlane.apply_lie_lie_eq_zero_of_le_orthogonal`). For a nondegenerate form a root
 plane is a tangent direction of the orbit through `p` exactly when `α(p) ≠ 0`: its nonzero vectors
 stabilize `ν` exactly when `α(p) = 0` (`TauCeti.IsRootPlane.mem_lieAnnihilator_iff`), so a plane
 with `α(p) ≠ 0` injects into the algebraic tangent model `L ⧸ L_ν`, while a plane with `α(p) = 0`
-lies in the stabilizer.
+lies in the stabilizer (`TauCeti.IsRootPlane.le_lieAnnihilator`, which needs only invariance).
 
-All of this is linear algebra over a commutative ring and needs neither symmetry nor positivity
-of `B`; nondegeneracy and the absence of zero divisors enter only the stabilizer statements.
+The formulas themselves are linear algebra over a commutative ring and need neither symmetry nor
+positivity of `B`; symmetry enters only their reading as a Hessian bilinear form, and the absence
+of zero divisors and nondegeneracy only the orthogonality and stabilizer statements.
 
 As an example, `so(3) ≅ (R³, ⨯₃)` with the dot product (`TauCeti.soThreeForm`) has the root plane
 `E = ẑ^⊥` of `t = R ẑ`, where `ẑ` is the hat matrix of the third standard basis vector, with
 rotation `J = ad ẑ` and root `α(c ẑ) = c` (`TauCeti.isRootPlane_soThree`). For `p = r ẑ` and
 `X = a ẑ` the formulas above give the Hessian `-a B / r` of the height on the tangent plane of the
-coadjoint sphere of radius `r` (`TauCeti.soThreeForm_lie_lie_smul_soThreeZ`).
+coadjoint sphere of radius `r` (`TauCeti.soThreeForm_lie_lie_smul_soThreeZ`); here `t` is a line,
+hence abelian, and the dot product is symmetric and invariant.
 
 ## Main definitions
 
 * `TauCeti.IsRootPlane B t α E J`: `J` is a `B`-skew complex structure on `E` and every `H ∈ t`
   acts on `E` by `α(H) J`.
-* `TauCeti.soThreeForm`: the dot product on `so(3)`, read through the hat map.
 
 ## Main results
 
 * `TauCeti.IsRootPlane.kksForm_mk`, `TauCeti.IsRootPlane.mul_kksForm_mk`: the KKS form on a root
   plane.
-* `TauCeti.IsRootPlane.apply_lie_lie`, `TauCeti.IsRootPlane.mul_apply_lie_lie`: the height
-  Hessian on a root plane, in quotient and in tangent coordinates.
+* `TauCeti.IsRootPlane.apply_lie_lie`, `TauCeti.IsRootPlane.mul_apply_lie_lie`: the form
+  `B(q_p A, q_X C)` behind the height Hessian on a root plane, in quotient and in tangent
+  coordinates.
+* `TauCeti.IsRootPlane.le_orthogonal`: root planes with roots `α ≠ ±α'` are orthogonal.
 * `TauCeti.IsRootPlane.mem_lieAnnihilator_iff`: a root plane meets the stabilizer of `B p` only
   in `0` when `α(p) ≠ 0`, and lies in it when `α(p) = 0`.
 * `TauCeti.isRootPlane_soThree`: the root plane of `so(3)`, and
@@ -121,9 +130,10 @@ theorem lie_left (h : IsRootPlane B t α E J) (v : E) (H : t) :
     ⁅(v : L), (H : L)⁆ = -(α H • (J v : L)) := by
   rw [← lie_skew, h.lie_apply]
 
-/-- The Kirillov form of `B p`, for `p ∈ t`, on a root plane: `B p ⁅A, C⁆ = α(p) B(J A, C)`. -/
-theorem apply_lie (h : IsRootPlane B t α E J) (hB : B.lieInvariant L) (p : t) (v w : E) :
-    B p ⁅(v : L), (w : L)⁆ = α p * B (J v) w := by
+/-- The Kirillov form of `B p`, for `p ∈ t`, with one argument in a root plane:
+`B p ⁅A, C⁆ = α(p) B(J A, C)` for `A` in the plane and any `C`. -/
+theorem apply_lie (h : IsRootPlane B t α E J) (hB : B.lieInvariant L) (p : t) (v : E) (w : L) :
+    B p ⁅(v : L), w⁆ = α p * B (J v) w := by
   have hinv := hB (v : L) (p : L) (w : L)
   rw [h.lie_left, map_neg, map_smul, LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul]
     at hinv
@@ -145,18 +155,20 @@ theorem mul_kksForm_mk (h : IsRootPlane B t α E J) (hB : B.lieInvariant L) (p :
     {v w x y : E} (hx : (x : L) = ⁅(v : L), (p : L)⁆) (hy : (y : L) = ⁅(w : L), (p : L)⁆) :
     α p * Dual.kksForm (B p) (Submodule.Quotient.mk (v : L)) (Submodule.Quotient.mk (w : L)) =
       B (J x) y := by
+  -- The orbit derivative `⁅u, p⁆ = -(α(p) • J u)` (`lie_left`), read in the plane `E`.
+  have hq {u z : E} (hz : (z : L) = ⁅(u : L), (p : L)⁆) : z = -(α p • J u) :=
+    Subtype.ext (by rw [hz, h.lie_left, Submodule.coe_neg, Submodule.coe_smul])
   have hJx : J x = α p • v := by
-    rw [show x = -(α p • J v) from Subtype.ext (by rw [hx, h.lie_left]; rfl), map_neg, map_smul,
-      h.apply_apply, smul_neg, neg_neg]
-  have hy' : y = -(α p • J w) := Subtype.ext (by rw [hy, h.lie_left]; rfl)
-  rw [h.kksForm_mk hB, hJx, hy']
+    rw [hq hx, map_neg, map_smul, h.apply_apply, smul_neg, neg_neg]
+  rw [h.kksForm_mk hB, hJx, hq hy]
   simp only [Submodule.coe_neg, Submodule.coe_smul, map_neg, map_smul, LinearMap.smul_apply,
     smul_eq_mul, h.apply_left v w]
   ring
 
-/-- **The height Hessian on a root plane.** For `p, X ∈ t` and `A, C` in a root plane,
-`B(q_p A, q_X C) = α(p) α(X) B(A, C)`. Its negative `-B(⁅A, p⁆, ⁅C, X⁆)` is the Hessian at `p` of
-the height `f_X = B(·, X)` along the orbit through `p`, so
+/-- **The form behind the height Hessian on a root plane.** For `p, X ∈ t` and `A, C` in a root
+plane, `B(q_p A, q_X C) = α(p) α(X) B(A, C)`. When `B` is invariant and symmetric and
+`⁅X, p⁆ = 0` (for instance when `t` is abelian), its negative `-B(⁅A, p⁆, ⁅C, X⁆)` is the Hessian
+at the critical point `p` of the height `f_X = B(·, X)` along the orbit through `p`, so
 `Hess_p f_X(q_p A, q_p C) = -α(X) α(p) B(A, C)`. -/
 theorem apply_lie_lie (h : IsRootPlane B t α E J) (p X : t) (v w : E) :
     B ⁅(v : L), (p : L)⁆ ⁅(w : L), (X : L)⁆ = α p * α X * B v w := by
@@ -172,8 +184,9 @@ theorem apply_lie_lie_self (h : IsRootPlane B t α E J) (p : t) (v w : E) :
   rw [h.apply_lie_lie, sq]
 
 /-- **The height Hessian in tangent vectors.** For `p, X ∈ t` and the tangent vectors
-`x = q_p A`, `y = q_p C` of the orbit at `p`, `α(p) Hess_p f_X(x, y) = -α(X) B(x, y)`, where
-`Hess_p f_X(q_p A, q_p C) = -B(⁅A, p⁆, ⁅C, X⁆)`; when `α(p)` is invertible,
+`x = q_p A`, `y = q_p C` of the orbit at `p`, `α(p) (-B(⁅A, p⁆, ⁅C, X⁆)) = -α(X) B(x, y)`. When
+`B` is invariant and symmetric and `⁅X, p⁆ = 0`, the factor `-B(⁅A, p⁆, ⁅C, X⁆)` is
+`Hess_p f_X(x, y)` (`TauCeti.IsRootPlane.apply_lie_lie`), so when `α(p)` is also invertible,
 `Hess_p f_X(x, y) = -α(X) B(x, y) / α(p)`. -/
 theorem mul_apply_lie_lie (h : IsRootPlane B t α E J) (p X : t) (v w : E) :
     α p * -B ⁅(v : L), (p : L)⁆ ⁅(w : L), (X : L)⁆ =
@@ -187,19 +200,37 @@ section Orthogonal
 
 variable {α' : Dual R t} {E' : Submodule R L} {J' : Module.End R E'}
 
-/-- **No cross terms in the KKS form.** If two root planes are orthogonal for `B`, the Kirillov
-form of `B p`, `p ∈ t`, pairs them to zero. -/
+/-- **Root planes with distinct roots are orthogonal.** For an invariant form `B`, if
+`α(H)² ≠ α'(H)²` for some `H ∈ t` (so `α ≠ ±α'`), the root planes of `α` and `α'` are orthogonal
+for `B`. -/
+theorem le_orthogonal [NoZeroDivisors R] (h : IsRootPlane B t α E J)
+    (h' : IsRootPlane B t α' E' J') (hB : B.lieInvariant L) {H : t} (hH : α H ^ 2 ≠ α' H ^ 2) :
+    E' ≤ B.orthogonal E := by
+  -- Invariance under `H`: `α(H) B(J v, w) = -α'(H) B(v, J' w)`.
+  have key (v : E) (w : E') : α H * B (J v) w = -(α' H * B v (J' w)) := by
+    have hinv := hB (H : L) (v : L) (w : L)
+    rwa [h.lie_apply, h'.lie_apply, map_smul, LinearMap.smul_apply, map_smul, smul_eq_mul,
+      smul_eq_mul] at hinv
+  intro w hw v hv
+  have h₁ := key (J ⟨v, hv⟩) ⟨w, hw⟩
+  have h₂ := key ⟨v, hv⟩ (J' ⟨w, hw⟩)
+  rw [h.apply_apply, Submodule.coe_neg, map_neg, LinearMap.neg_apply] at h₁
+  rw [h'.apply_apply, Submodule.coe_neg, map_neg] at h₂
+  have hzero : (α H ^ 2 - α' H ^ 2) * B v w = 0 := by
+    linear_combination (-α H) * h₁ + α' H * h₂
+  exact (mul_eq_zero.mp hzero).resolve_left (sub_ne_zero.mpr hH)
+
+/-- **No cross terms in the KKS form.** If two root planes are orthogonal for `B` (for instance
+by `TauCeti.IsRootPlane.le_orthogonal`), the Kirillov form of `B p`, `p ∈ t`, pairs them to
+zero. -/
 theorem apply_lie_eq_zero_of_le_orthogonal (h : IsRootPlane B t α E J) (hB : B.lieInvariant L)
     (horth : E' ≤ B.orthogonal E) (p : t) (v : E) (w : E') :
     B p ⁅(v : L), (w : L)⁆ = 0 := by
-  have hinv := hB (v : L) (p : L) (w : L)
-  have hzero : B (J v) w = 0 := horth w.2 _ (J v).2
-  rw [h.lie_left, map_neg, map_smul, LinearMap.neg_apply, LinearMap.smul_apply, hzero,
-    smul_zero, neg_zero] at hinv
-  exact neg_eq_zero.mp hinv.symm
+  rw [h.apply_lie hB, show B (J v) w = 0 from horth w.2 _ (J v).2, mul_zero]
 
-/-- **No cross terms in the height Hessian.** If two root planes are orthogonal for `B`, then
-`B(q_p A, q_X C) = 0` for `p, X ∈ t`, `A` in the first plane and `C` in the second. -/
+/-- **No cross terms in the height Hessian.** If two root planes are orthogonal for `B` (for
+instance by `TauCeti.IsRootPlane.le_orthogonal`), then `B(q_p A, q_X C) = 0` for `p, X ∈ t`, `A`
+in the first plane and `C` in the second. -/
 theorem apply_lie_lie_eq_zero_of_le_orthogonal (h : IsRootPlane B t α E J)
     (h' : IsRootPlane B t α' E' J') (horth : E' ≤ B.orthogonal E) (p X : t) (v : E) (w : E') :
     B ⁅(v : L), (p : L)⁆ ⁅(w : L), (X : L)⁆ = 0 := by
@@ -211,9 +242,15 @@ end Orthogonal
 
 /-! #### Root planes and the stabilizer -/
 
+/-- A root plane with `α(p) = 0` lies in the stabilizer of `B p`. -/
+theorem le_lieAnnihilator (h : IsRootPlane B t α E J) (hB : B.lieInvariant L) {p : t}
+    (hp : α p = 0) : E ≤ (lieAnnihilator R L (B p)).toSubmodule := fun v hv ↦ by
+  rw [LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator, hB.lie_apply_eq,
+    h.lie_left ⟨v, hv⟩ p, hp, zero_smul, neg_zero, map_zero]
+
 section Stabilizer
 
-variable [IsDomain R] [Module.IsTorsionFree R L]
+variable [IsDomain R]
 
 /-- **Root planes and the coadjoint stabilizer.** For a separating invariant form `B` and
 `p ∈ t`, a vector `A` of a root plane stabilizes `ν = B p` exactly when `α(p) = 0` or `A = 0`.
@@ -222,15 +259,10 @@ only in `0`: it is a plane of tangent directions of the orbit through `ν`. -/
 theorem mem_lieAnnihilator_iff (h : IsRootPlane B t α E J) (hB : B.lieInvariant L)
     (hsep : B.SeparatingLeft) (p : t) (v : E) :
     (v : L) ∈ lieAnnihilator R L (B p) ↔ α p = 0 ∨ v = 0 := by
-  rw [mem_lieAnnihilator, hB.lie_apply_eq, ← LinearMap.mem_ker,
-    (LinearMap.separatingLeft_iff_ker_eq_bot).mp hsep, Submodule.mem_bot, h.lie_left, neg_eq_zero,
-    smul_eq_zero, ZeroMemClass.coe_eq_zero, map_eq_zero_iff J h.injective]
-
-/-- A root plane with `α(p) = 0` lies in the stabilizer of `B p`. -/
-theorem le_lieAnnihilator (h : IsRootPlane B t α E J) (hB : B.lieInvariant L)
-    (hsep : B.SeparatingLeft) {p : t} (hp : α p = 0) :
-    E ≤ (lieAnnihilator R L (B p)).toSubmodule := fun v hv ↦
-  (h.mem_lieAnnihilator_iff hB hsep p ⟨v, hv⟩).mpr (.inl hp)
+  have hinj : Function.Injective B :=
+    LinearMap.ker_eq_bot.mp ((LinearMap.separatingLeft_iff_ker_eq_bot).mp hsep)
+  rw [mem_lieAnnihilator, hB.lie_apply_eq, h.lie_left]
+  simp [map_eq_zero_iff B hinj, map_eq_zero_iff J h.injective]
 
 /-- A root plane with `α(p) ≠ 0` meets the stabilizer of `B p` only in `0`, so it injects into
 the algebraic tangent model `L ⧸ L_ν` of the coadjoint orbit through `ν = B p`. -/
@@ -256,36 +288,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (R : Type*) [CommRing R] [NoZeroDivisors R] [NeZero (2 : R)]
 
-/-- The dot product on `so(3)`, read through the hat map: `B(û, v̂) = u ⬝ᵥ v`. -/
-def soThreeForm : LinearMap.BilinForm R (so (Fin 3) R) :=
-  (soThreeDualEquiv R).toLinearMap ∘ₗ (soThreeEquiv R).symm.toLinearMap
-
 variable {R}
-
-@[simp]
-theorem soThreeForm_apply_soThreeEquiv (u v : Fin 3 → R) :
-    soThreeForm R (soThreeEquiv R u) (soThreeEquiv R v) = u ⬝ᵥ v := by
-  simp [soThreeForm]
-
-/-- The dot product on `so(3)` is invariant: `(u ⨯₃ v) ⬝ᵥ w = -(v ⬝ᵥ (u ⨯₃ w))`. -/
-theorem lieInvariant_soThreeForm : (soThreeForm R).lieInvariant (so (Fin 3) R) := by
-  intro x y z
-  obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
-  obtain ⟨v, rfl⟩ := (soThreeEquiv R).surjective y
-  obtain ⟨w, rfl⟩ := (soThreeEquiv R).surjective z
-  simp only [lie_soThreeEquiv, soThreeForm_apply_soThreeEquiv, cross_apply, dotProduct,
-    Fin.sum_univ_three]
-  simp
-  ring
-
-/-- The dot product on `so(3)` is nondegenerate. -/
-theorem separatingLeft_soThreeForm : (soThreeForm R).SeparatingLeft := by
-  intro x hx
-  obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
-  have h (i : Fin 3) : u i = 0 := by
-    simpa [dotProduct, Fin.sum_univ_three, Pi.single_apply] using
-      hx (soThreeEquiv R (Pi.single i 1))
-  rw [show u = 0 from funext h, map_zero]
 
 variable (R) in
 /-- The generator `ẑ ∈ so(3)` of the rotations about the third axis. -/
@@ -337,9 +340,11 @@ theorem isRootPlane_soThree :
     simp [dotProduct, Fin.sum_univ_three]
 
 /-- **The height Hessian of the coadjoint sphere of `so(3)`.** For `p = r ẑ`, `X = a ẑ` and
-`u, w ⊥ e₃`, `B(q_p û, q_X ŵ) = r a (u ⬝ᵥ w)`. So the Hessian at `p` of the height `B(·, X)` on the
-orbit of `p` is `-r a B` in the coordinates `û, ŵ` of `ẑ^⊥`, and `-a B / r` in the tangent vectors
-`q_p û, q_p ŵ` (`TauCeti.IsRootPlane.mul_apply_lie_lie`). -/
+`u, w ⊥ e₃`, `B(q_p û, q_X ŵ) = r a (u ⬝ᵥ w)`. Since `p` and `X` commute and the dot product is
+symmetric and invariant (`TauCeti.isSymm_soThreeForm`, `TauCeti.lieInvariant_soThreeForm`), the
+Hessian at `p` of the height `B(·, X)` on the orbit of `p` is `-r a B` in the coordinates `û, ŵ`
+of `ẑ^⊥`, and `-a B / r` in the tangent vectors `q_p û, q_p ŵ`
+(`TauCeti.IsRootPlane.mul_apply_lie_lie`). -/
 theorem soThreeForm_lie_lie_smul_soThreeZ (r a : R) {u w : Fin 3 → R} (hu : u 2 = 0)
     (hw : w 2 = 0) :
     soThreeForm R ⁅soThreeEquiv R u, r • soThreeZ R⁆ ⁅soThreeEquiv R w, a • soThreeZ R⁆ =

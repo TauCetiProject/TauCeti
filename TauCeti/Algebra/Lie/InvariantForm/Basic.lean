@@ -102,8 +102,8 @@ variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup
   [LieRingModule L M] [LieModule R L M] {Φ : LinearMap.BilinForm R M}
 
 /-- An invariant bilinear form intertwines the action on `M` with the dual action on `M*`:
-`⁅x, Φ y⁆ = Φ ⁅x, y⁆`. On the adjoint module, `y ↦ Φ y` thus carries adjoint orbits to coadjoint
-orbits, and the orbit derivative `⁅x, Φ p⁆` of `Φ p` to `Φ ⁅x, p⁆`. No nondegeneracy is needed;
+`⁅x, Φ y⁆ = Φ ⁅x, y⁆`. On the adjoint module, the orbit derivative `⁅x, Φ p⁆` of `Φ p` is thus
+`Φ ⁅x, p⁆`. No nondegeneracy is needed;
 for a nondegenerate form on a finite-dimensional module this is the bracket compatibility of
 `LinearMap.BilinForm.lieModuleEquivDual`. -/
 theorem lie_apply_eq (hΦ : Φ.lieInvariant L) (x : L) (y : M) : ⁅x, Φ y⁆ = Φ ⁅x, y⁆ := by
