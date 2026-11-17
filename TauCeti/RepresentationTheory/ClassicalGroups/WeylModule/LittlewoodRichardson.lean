@@ -237,8 +237,8 @@ private theorem finrank_hom_tprod_rationalWeylFDRep_eq_sum (l m γ : DominantWei
   let _ (p : ι) : AddCommGroup (weylModuleOfShape ℂ n (w p).detShiftShape).toSubmodule :=
     inferInstance
   obtain ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n l m
-  let e₁ := (FDRep.forget₂HomLinearEquiv (rationalWeylFDRep ℂ n γ)
-    (rationalWeylFDRep ℂ n l ⊗ rationalWeylFDRep ℂ n m)).symm ≪≫ₗ Rep.homLinearEquiv _ _
+  let e₁ := FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
+    (rationalWeylFDRep ℂ n l ⊗ rationalWeylFDRep ℂ n m)
   let e₂ := Representation.Equiv.intertwiningMapCongr
     (Representation.Equiv.refl (rationalWeylRep ℂ n γ)) e
   let e₃ := Representation.IntertwiningMap.directSumLinearEquiv
@@ -247,8 +247,7 @@ private theorem finrank_hom_tprod_rationalWeylFDRep_eq_sum (l m γ : DominantWei
       (rationalWeylRep ℂ n (w p))) ≃ₗ[ℂ]
       (∀ p : ι, rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n (w p)) :=
     LinearEquiv.piCongrRight fun p =>
-      ((FDRep.forget₂HomLinearEquiv (rationalWeylFDRep ℂ n γ)
-        (rationalWeylFDRep ℂ n (w p))).symm ≪≫ₗ Rep.homLinearEquiv _ _).symm
+      (FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ) (rationalWeylFDRep ℂ n (w p))).symm
   have hfin : ∀ p : ι, Module.Finite ℂ
       (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n (w p)) := fun _ => inferInstance
   rw [(e₁ ≪≫ₗ e₂ ≪≫ₗ e₃ ≪≫ₗ e₄).finrank_eq, Module.finrank_pi_fintype]

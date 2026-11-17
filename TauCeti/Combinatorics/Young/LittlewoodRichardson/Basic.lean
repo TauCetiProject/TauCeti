@@ -39,12 +39,15 @@ first letter `m > i` would be read before any `m - 1`. Consequently
 * `TauCeti.LRTableau λ ν μ`: the Littlewood–Richardson tableaux of shape `ν / λ` and content `μ`.
 * `TauCeti.LRTableau.highestWeight μ`: the highest-weight tableau, the Littlewood–Richardson
   tableau of straight shape `μ / ⊥` and content `μ`.
+* `TauCeti.LRTableau.congr`: entry-preserving equivalence transporting `LRTableau` along equalities
+  of inner, outer, and content shapes.
 
 ## Main results
 
 * `TauCeti.SkewSemistandardYoungTableau.isLatticeWord_readingWord_iff`: the lattice condition in
   terms of row counts.
 * `TauCeti.LRTableau.entry_le`: the entries in row `i` are at most `i`.
+* `TauCeti.LRTableau.rowCount_eq_zero_of_lt`: row `r` contains no letter strictly larger than `r`.
 * `TauCeti.LRTableau.card_eq`: a Littlewood–Richardson tableau of shape `ν / λ` and content `μ`
   forces `|ν| = |λ| + |μ|`.
 * `TauCeti.natCard_lrTableau_bot_left`: `c^ν_{∅ μ}` is `1` if `ν = μ` and `0` otherwise.
@@ -258,6 +261,65 @@ instance (μ : YoungDiagram) : Unique (LRTableau μ μ ⊥) where
         simp [rowReadingWord_def]⟩
   uniq T := Subtype.ext <| SkewSemistandardYoungTableau.ext fun i j =>
     T.1.zeros_of_notMem_sdiff (by simp)
+
+/-- Reindex a Littlewood–Richardson tableau along equalities of its inner, outer, and content
+shapes without changing any cell entry. -/
+def congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
+    (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂) :
+    LRTableau inner₁ outer₁ μ₁ ≃ LRTableau inner₂ outer₂ μ₂ where
+  toFun T := ⟨⟨T.1.entry, hinner ▸ houter ▸ T.1.le,
+    fun h₁ h₂ h₃ => T.1.row_weak' h₁ (hinner ▸ h₂) (houter ▸ h₃),
+    fun h₁ h₂ h₃ => T.1.col_strict' h₁ (hinner ▸ h₂) (houter ▸ h₃),
+    fun h => T.1.zeros_inner' (hinner ▸ h),
+    fun h => T.1.zeros' (houter ▸ h)⟩,
+    by subst hinner; subst houter; subst hμ; exact T.2⟩
+  invFun T := ⟨⟨T.1.entry, hinner.symm ▸ houter.symm ▸ T.1.le,
+    fun h₁ h₂ h₃ => T.1.row_weak' h₁ (hinner.symm ▸ h₂) (houter.symm ▸ h₃),
+    fun h₁ h₂ h₃ => T.1.col_strict' h₁ (hinner.symm ▸ h₂) (houter.symm ▸ h₃),
+    fun h => T.1.zeros_inner' (hinner.symm ▸ h),
+    fun h => T.1.zeros' (houter.symm ▸ h)⟩,
+    by subst hinner; subst houter; subst hμ; exact T.2⟩
+  left_inv _ := Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
+  right_inv _ := Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
+
+/-- Reindexing along reflexive equalities is the identity equivalence. -/
+@[simp] theorem congr_refl (inner outer μ : YoungDiagram) :
+    congr (rfl : inner = inner) (rfl : outer = outer) (rfl : μ = μ) = Equiv.refl _ := by
+  exact Equiv.ext fun _ => Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
+
+/-- The inverse of `LRTableau.congr` reindexes along the symmetric equalities. -/
+@[simp] theorem congr_symm {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
+    (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂) :
+    (congr hinner houter hμ).symm = congr hinner.symm houter.symm hμ.symm := by
+  exact Equiv.ext fun _ => Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
+
+/-- Composing two `LRTableau.congr` equivalences reindexes along the transitive equalities. -/
+@[simp] theorem congr_trans {inner₁ inner₂ inner₃ outer₁ outer₂ outer₃ μ₁ μ₂ μ₃ : YoungDiagram}
+    (hinner₁ : inner₁ = inner₂) (houter₁ : outer₁ = outer₂) (hμ₁ : μ₁ = μ₂)
+    (hinner₂ : inner₂ = inner₃) (houter₂ : outer₂ = outer₃) (hμ₂ : μ₂ = μ₃) :
+    (congr hinner₁ houter₁ hμ₁).trans (congr hinner₂ houter₂ hμ₂) =
+      congr (hinner₁.trans hinner₂) (houter₁.trans houter₂) (hμ₁.trans hμ₂) := by
+  exact Equiv.ext fun _ => Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
+
+/-- `LRTableau.congr` leaves every cell entry unchanged. -/
+@[simp] theorem congr_apply {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
+    (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂)
+    (T : LRTableau inner₁ outer₁ μ₁) (i j : ℕ) :
+    (congr hinner houter hμ T).1 i j = T.1 i j := (rfl)
+
+/-- `LRTableau.congr` preserves every row-count multiplicity. -/
+@[simp] theorem rowCount_congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
+    (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂)
+    (T : LRTableau inner₁ outer₁ μ₁) (i k : ℕ) :
+    (congr hinner houter hμ T).1.rowCount i k = T.1.rowCount i k := by
+  subst hinner; subst houter; subst hμ; rfl
+
+/-- `LRTableau.congr` preserves the content of a Littlewood–Richardson tableau. -/
+@[simp] theorem content_congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
+    (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂)
+    (T : LRTableau inner₁ outer₁ μ₁) :
+    (congr hinner houter hμ T).1.content = T.1.content := by
+  subst hinner; subst houter; subst hμ; rfl
 
 end LRTableau
 

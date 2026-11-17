@@ -11,7 +11,6 @@ public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
-import Mathlib.RepresentationTheory.FDRep
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
@@ -313,6 +312,12 @@ private theorem sum_range_hiveEntryInt_row_le (h : IntegerHive n) {r i : ℕ}
     simp only [hiveEntryInt, hr, ↓reduceDIte, hm]
     abel
 
+private theorem sum_range_eq_of_eq_zero {M : Type*} [AddCommMonoid M] {f : ℕ → M} {a b : ℕ}
+    (hab : a ≤ b) (h0 : ∀ i, a ≤ i → i < b → f i = 0) :
+    ∑ i ∈ Finset.range b, f i = ∑ i ∈ Finset.range a, f i :=
+  (Finset.sum_subset (Finset.range_mono hab) fun i hib hia =>
+    h0 i (Nat.le_of_not_lt (Finset.mem_range.not.mp hia)) (Finset.mem_range.mp hib)).symm
+
 /-- Full row sum of `hiveEntryInt` for `r < n` and `r + 1 ≤ i`. -/
 private theorem sum_range_hiveEntryInt_row_full (h : IntegerHive n) {r i : ℕ}
     (hri : r + 1 ≤ i) (hr : r < n) :
@@ -320,12 +325,8 @@ private theorem sum_range_hiveEntryInt_row_full (h : IntegerHive n) {r i : ℕ}
       (h (Vertex.ofIJ n (r + 1) (r + 1) le_rfl hr) - h (Vertex.ofIJ n r r le_rfl hr.le)) -
         (h (Vertex.ofIJ n 0 (r + 1) (Nat.zero_le _) hr) -
           h (Vertex.ofIJ n 0 r (Nat.zero_le _) hr.le)) := by
-  have heq : ∑ k ∈ Finset.range i, hiveEntryInt h r k =
-      ∑ k ∈ Finset.range (r + 1), hiveEntryInt h r k := by
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hri
-    rw [Finset.sum_range_add, Finset.sum_eq_zero (s := Finset.range d) fun l _ =>
-      hiveEntryInt_eq_zero_of_lt h (by omega), add_zero]
-  rw [heq, Finset.sum_range_succ, sum_range_hiveEntryInt_row_le h le_rfl hr]
+  rw [sum_range_eq_of_eq_zero hri fun k hk _ => hiveEntryInt_eq_zero_of_lt h (by omega),
+    Finset.sum_range_succ, sum_range_hiveEntryInt_row_le h le_rfl hr]
   simp only [hiveEntryInt, hr, ↓reduceDIte, lt_irrefl, ↓reduceIte]
   abel
 
@@ -413,6 +414,13 @@ private theorem natCast_hiveEntryNat (hμ : μ.IsPolynomial)
     (hiveEntryNat h.1 r k : ℤ) = hiveEntryInt h.1 r k :=
   Int.toNat_of_nonneg (hiveEntryInt_nonneg hμ h r k)
 
+private theorem natCast_sum_hiveEntryNat {ι : Type*} (hμ : μ.IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) (s : Finset ι) (f g : ι → ℕ) :
+    ((∑ x ∈ s, hiveEntryNat h.1 (f x) (g x) : ℕ) : ℤ) =
+      ∑ x ∈ s, hiveEntryInt h.1 (f x) (g x) := by
+  rw [Nat.cast_sum]
+  exact Finset.sum_congr rfl fun x _ => natCast_hiveEntryNat hμ h (f x) (g x)
+
 private theorem shape_le_of_fixedIntegerHive (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
     lam.shape ≤ γ.shape := by
@@ -438,9 +446,8 @@ private theorem sum_range_hiveEntryNat_row (hlam : lam.IsPolynomial) (hμ : μ.I
   · have hfull := sum_range_hiveEntryInt_row_full h.1 (i := n) hr hr
     rw [step_ofIJ_diag h hr, step_ofIJ_zero_left h hr] at hfull
     have hZ : ((∑ k ∈ Finset.range n, hiveEntryNat h.1 r k : ℕ) : ℤ) =
-        ∑ k ∈ Finset.range n, hiveEntryInt h.1 r k := by
-      rw [Nat.cast_sum]
-      exact Finset.sum_congr rfl fun k _ => natCast_hiveEntryNat hμ h r k
+        ∑ k ∈ Finset.range n, hiveEntryInt h.1 r k :=
+      natCast_sum_hiveEntryNat hμ h (Finset.range n) (fun _ => r) (fun k => k)
     have h1 : (lam.shape.rowLen r : ℤ) = lam.1 ⟨r, hr⟩ :=
       DominantWeight.natCast_rowLen_shape hlam ⟨r, hr⟩
     have h2 : (γ.shape.rowLen r : ℤ) = γ.1 ⟨r, hr⟩ :=
@@ -456,9 +463,8 @@ private theorem sum_range_hiveEntryNat_col (hμ : μ.IsPolynomial)
     ∑ r ∈ Finset.range n, hiveEntryNat h.1 r k = μ.shape.rowLen k := by
   by_cases hk : k < n
   · have hZ : ((∑ r ∈ Finset.range n, hiveEntryNat h.1 r k : ℕ) : ℤ) =
-        ∑ r ∈ Finset.range n, hiveEntryInt h.1 r k := by
-      rw [Nat.cast_sum]
-      exact Finset.sum_congr rfl fun r _ => natCast_hiveEntryNat hμ h r k
+        ∑ r ∈ Finset.range n, hiveEntryInt h.1 r k :=
+      natCast_sum_hiveEntryNat hμ h (Finset.range n) (fun r => r) (fun _ => k)
     have hμk : (μ.shape.rowLen k : ℤ) = μ.1 ⟨k, hk⟩ :=
       DominantWeight.natCast_rowLen_shape hμ ⟨k, hk⟩
     rw [sum_range_hiveEntryInt_col h.1 hk le_rfl, step_ofIJ_right_eq h hk, ← hμk] at hZ
@@ -476,14 +482,8 @@ private theorem hiveEntryNat_col_strict (hlam : lam.IsPolynomial) (hμ : μ.IsPo
     suffices ((lam.shape.rowLen (r + 1) : ℤ) +
         ∑ k ∈ Finset.range (x + 1), hiveEntryInt h.1 (r + 1) k) ≤
         (lam.shape.rowLen r : ℤ) + ∑ k ∈ Finset.range x, hiveEntryInt h.1 r k by
-      have hL : ((∑ k ∈ Finset.range (x + 1), hiveEntryNat h.1 (r + 1) k : ℕ) : ℤ) =
-          ∑ k ∈ Finset.range (x + 1), hiveEntryInt h.1 (r + 1) k := by
-        rw [Nat.cast_sum]
-        exact Finset.sum_congr rfl fun k _ => natCast_hiveEntryNat hμ h (r + 1) k
-      have hR : ((∑ k ∈ Finset.range x, hiveEntryNat h.1 r k : ℕ) : ℤ) =
-          ∑ k ∈ Finset.range x, hiveEntryInt h.1 r k := by
-        rw [Nat.cast_sum]
-        exact Finset.sum_congr rfl fun k _ => natCast_hiveEntryNat hμ h r k
+      have hL := natCast_sum_hiveEntryNat hμ h (Finset.range (x + 1)) (fun _ => r + 1) (fun k => k)
+      have hR := natCast_sum_hiveEntryNat hμ h (Finset.range x) (fun _ => r) (fun k => k)
       omega
     rw [DominantWeight.natCast_rowLen_shape hlam ⟨r + 1, hr1⟩,
       DominantWeight.natCast_rowLen_shape hlam ⟨r, hr⟩]
@@ -511,14 +511,8 @@ private theorem hiveEntryNat_lattice (hμ : μ.IsPolynomial)
       ∑ r ∈ Finset.range x, hiveEntryNat h.1 r k := by
   suffices ∑ r ∈ Finset.range (x + 1), hiveEntryInt h.1 r (k + 1) ≤
       ∑ r ∈ Finset.range x, hiveEntryInt h.1 r k by
-    have hL : ((∑ r ∈ Finset.range (x + 1), hiveEntryNat h.1 r (k + 1) : ℕ) : ℤ) =
-        ∑ r ∈ Finset.range (x + 1), hiveEntryInt h.1 r (k + 1) := by
-      rw [Nat.cast_sum]
-      exact Finset.sum_congr rfl fun r _ => natCast_hiveEntryNat hμ h r (k + 1)
-    have hR : ((∑ r ∈ Finset.range x, hiveEntryNat h.1 r k : ℕ) : ℤ) =
-        ∑ r ∈ Finset.range x, hiveEntryInt h.1 r k := by
-      rw [Nat.cast_sum]
-      exact Finset.sum_congr rfl fun r _ => natCast_hiveEntryNat hμ h r k
+    have hL := natCast_sum_hiveEntryNat hμ h (Finset.range (x + 1)) (fun r => r) (fun _ => k + 1)
+    have hR := natCast_sum_hiveEntryNat hμ h (Finset.range x) (fun r => r) (fun _ => k)
     omega
   rcases le_or_gt x k with hxk | hkx
   · rw [Finset.sum_eq_zero fun r hr => hiveEntryInt_eq_zero_of_lt h.1 (by
@@ -529,17 +523,11 @@ private theorem hiveEntryNat_lattice (hμ : μ.IsPolynomial)
       · rw [sum_range_hiveEntryInt_col h.1 (by omega : k + 1 < x + 1) hx1,
           sum_range_hiveEntryInt_col h.1 hkx (by omega : x ≤ n)]
         linarith [h.1.le_ofIJ_left hkx hx1]
-      · have heq1 : ∑ r ∈ Finset.range (x + 1), hiveEntryInt h.1 r (k + 1) =
-            ∑ r ∈ Finset.range n, hiveEntryInt h.1 r (k + 1) := by
-          obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (by omega : n ≤ x + 1)
-          rw [hd, Finset.sum_range_add, Finset.sum_eq_zero (s := Finset.range d) fun l _ =>
-            hiveEntryInt_eq_zero_of_le h.1 (Nat.le_add_right n l), add_zero]
-        have heq2 : ∑ r ∈ Finset.range x, hiveEntryInt h.1 r k =
-            ∑ r ∈ Finset.range n, hiveEntryInt h.1 r k := by
-          obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (by omega : n ≤ x)
-          rw [hd, Finset.sum_range_add, Finset.sum_eq_zero (s := Finset.range d) fun l _ =>
-            hiveEntryInt_eq_zero_of_le h.1 (Nat.le_add_right n l), add_zero]
-        rw [heq1, heq2, sum_range_hiveEntryInt_col h.1 hk1 le_rfl,
+      · rw [sum_range_eq_of_eq_zero (by omega : n ≤ x + 1) fun r hr _ =>
+              hiveEntryInt_eq_zero_of_le h.1 hr,
+          sum_range_eq_of_eq_zero (by omega : n ≤ x) fun r hr _ =>
+              hiveEntryInt_eq_zero_of_le h.1 hr,
+          sum_range_hiveEntryInt_col h.1 hk1 le_rfl,
           sum_range_hiveEntryInt_col h.1 (by omega : k < n) le_rfl,
           step_ofIJ_right_eq h hk1, step_ofIJ_right_eq h (by omega : k < n)]
         exact μ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ k))
@@ -693,6 +681,22 @@ def fixedIntegerHiveEquivLRTableauShift {a b : ℤ}
       LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape :=
   (shiftProductBoundaryEquiv lam μ γ a b).trans (fixedIntegerHiveEquivLRTableau hlam hμ hγ)
 
+/-- Forward direction of `fixedIntegerHiveEquivLRTableauShift`. -/
+@[simp] theorem fixedIntegerHiveEquivLRTableauShift_apply {a b : ℤ}
+    (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    fixedIntegerHiveEquivLRTableauShift hlam hμ hγ h =
+      lrTableauOfHive hlam hμ (shiftProductBoundaryEquiv lam μ γ a b h) := (rfl)
+
+/-- Inverse direction of `fixedIntegerHiveEquivLRTableauShift`. -/
+@[simp] theorem fixedIntegerHiveEquivLRTableauShift_symm_apply {a b : ℤ}
+    (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial)
+    (T : LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape) :
+    (fixedIntegerHiveEquivLRTableauShift hlam hμ hγ).symm T =
+      (shiftProductBoundaryEquiv lam μ γ a b).symm (hiveOfLRTableau hlam hμ hγ T) := (rfl)
+
 /-- Shift-independent cardinality identity for arbitrary signed dominant weights. -/
 theorem hiveCount_productBoundary_eq_natCard_lrTableau_of_shift {a b : ℤ}
     (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
@@ -708,15 +712,59 @@ def fixedIntegerHiveEquivLRTableauDetShift
     (hshift : lam.detShift + μ.detShift ≤ γ.detShift) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       LRTableau lam.detShiftShape (γ.shift (-(lam.detShift + μ.detShift))).shape
-        μ.detShiftShape := by
-  have hγ : (γ.shift (-(lam.detShift + μ.detShift))).IsPolynomial :=
-    γ.isPolynomial_shift_of_zero_le_detShift_add (by omega)
-  have hsum : -lam.detShift + -μ.detShift = -(lam.detShift + μ.detShift) := by omega
-  have he := fixedIntegerHiveEquivLRTableauShift (lam := lam) (μ := μ) (γ := γ)
+        μ.detShiftShape :=
+  (fixedIntegerHiveEquivLRTableauShift (lam := lam) (μ := μ) (γ := γ)
     (a := -lam.detShift) (b := -μ.detShift)
-    lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift (hsum.symm ▸ hγ)
-  rwa [DominantWeight.shape_shift_neg_detShift, DominantWeight.shape_shift_neg_detShift,
-    hsum] at he
+    lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
+    (γ.isPolynomial_shift_of_zero_le_detShift_add (by omega))).trans
+    (LRTableau.congr lam.shape_shift_neg_detShift
+      (congrArg (fun m => (γ.shift m).shape) (neg_add lam.detShift μ.detShift).symm)
+      μ.shape_shift_neg_detShift)
+
+/-- Forward direction of `fixedIntegerHiveEquivLRTableauDetShift`. -/
+@[simp] theorem fixedIntegerHiveEquivLRTableauDetShift_apply
+    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    fixedIntegerHiveEquivLRTableauDetShift hshift h =
+      LRTableau.congr lam.shape_shift_neg_detShift
+        (congrArg (fun m => (γ.shift m).shape) (neg_add lam.detShift μ.detShift).symm)
+        μ.shape_shift_neg_detShift
+        (lrTableauOfHive lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
+          (shiftProductBoundaryEquiv lam μ γ (-lam.detShift) (-μ.detShift) h)) := (rfl)
+
+/-- Inverse direction of `fixedIntegerHiveEquivLRTableauDetShift`. -/
+@[simp] theorem fixedIntegerHiveEquivLRTableauDetShift_symm_apply
+    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
+    (T : LRTableau lam.detShiftShape (γ.shift (-(lam.detShift + μ.detShift))).shape
+      μ.detShiftShape) :
+    (fixedIntegerHiveEquivLRTableauDetShift hshift).symm T =
+      (shiftProductBoundaryEquiv lam μ γ (-lam.detShift) (-μ.detShift)).symm
+        (hiveOfLRTableau lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
+          (γ.isPolynomial_shift_of_zero_le_detShift_add (by omega))
+          (LRTableau.congr lam.shape_shift_neg_detShift.symm
+            (congrArg (fun m => (γ.shift m).shape) (neg_add lam.detShift μ.detShift))
+            μ.shape_shift_neg_detShift.symm T)) := by
+  simp [fixedIntegerHiveEquivLRTableauDetShift]
+
+/-- Every cell entry of `fixedIntegerHiveEquivLRTableauDetShift hshift h` agrees with the shifted
+tableau `lrTableauOfHive` with no shape-cast overhead. -/
+theorem fixedIntegerHiveEquivLRTableauDetShift_apply_entry
+    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) (i j : ℕ) :
+    (fixedIntegerHiveEquivLRTableauDetShift hshift h).1 i j =
+      (lrTableauOfHive lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
+        (shiftProductBoundaryEquiv lam μ γ (-lam.detShift) (-μ.detShift) h)).1 i j := by
+  simp
+
+/-- The row counts of `fixedIntegerHiveEquivLRTableauDetShift hshift h` agree with those of the
+shifted tableau `lrTableauOfHive`. -/
+theorem rowCount_fixedIntegerHiveEquivLRTableauDetShift
+    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) (i k : ℕ) :
+    (fixedIntegerHiveEquivLRTableauDetShift hshift h).1.rowCount i k =
+      (lrTableauOfHive lam.isPolynomial_shift_neg_detShift μ.isPolynomial_shift_neg_detShift
+        (shiftProductBoundaryEquiv lam μ γ (-lam.detShift) (-μ.detShift) h)).1.rowCount i k := by
+  simp
 
 end FixedWeights
 
@@ -797,18 +845,18 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
 theorem hiveCount_comm {n : ℕ} (lam μ γ : DominantWeight n) :
     hiveCount (productBoundary lam μ γ) = hiveCount (productBoundary μ lam γ) := by
   rw [← finrank_hom_eq_hiveCount, ← finrank_hom_eq_hiveCount]
-  let e₁ := (FDRep.forget₂HomLinearEquiv (rationalWeylFDRep ℂ n γ)
-    (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ)).symm ≪≫ₗ Rep.homLinearEquiv _ _
+  let e₁ := FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
+    (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ)
   let e₂ := Representation.Equiv.intertwiningMapCongr
     (Representation.Equiv.refl (rationalWeylRep ℂ n γ))
     (Representation.TensorProduct.comm (rationalWeylRep ℂ n lam) (rationalWeylRep ℂ n μ))
-  let e₃ := ((FDRep.forget₂HomLinearEquiv (rationalWeylFDRep ℂ n γ)
-    (rationalWeylFDRep ℂ n μ ⊗ rationalWeylFDRep ℂ n lam)).symm ≪≫ₗ Rep.homLinearEquiv _ _).symm
+  let e₃ := (FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
+    (rationalWeylFDRep ℂ n μ ⊗ rationalWeylFDRep ℂ n lam)).symm
   exact (e₁ ≪≫ₗ e₂ ≪≫ₗ e₃).finrank_eq
 
 end TensorMultiplicities
 
-/-! ### Concrete checks at ranks `0`, `1`, `2` (signed), and `3` (multiplicity `2`) -/
+/-! ### Concrete `GLₙ(ℂ)` multiplicity checks at ranks `0`, `1`, and `3` -/
 
 section ConcreteChecks
 
@@ -818,166 +866,12 @@ theorem finrank_hom_zero_eq_one (lam μ γ : DominantWeight 0) :
         (rationalWeylFDRep ℂ 0 γ ⟶ rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ) = 1 := by
   rw [finrank_hom_eq_hiveCount, hiveCount_rank_zero]
 
-/-- Rank-`1` check: `hiveCount` for `GL₁` characters is `1` when `λ₀ + μ₀ = γ₀` and `0`
-otherwise. -/
-theorem hiveCount_one_productBoundary (lam μ γ : DominantWeight 1) :
-    hiveCount (productBoundary lam μ γ) = if lam.1 0 + μ.1 0 = γ.1 0 then 1 else 0 := by
-  split_ifs with hsum
-  · have : Unique (FixedIntegerHive (productBoundary lam μ γ)) :=
-      { default := ⟨equivOne.symm (lam.1 0, γ.1 0), by
-          ext s i; fin_cases i; fin_cases s <;> simp; omega⟩
-        uniq := fun h => Subtype.ext <| equivOne.injective <| Prod.ext
-          (by
-            have hb := congrFun (congrFun h.2 0) 0
-            rw [boundary_apply, productBoundary_zero] at hb
-            have h0 : Vertex.edgePoint 1 0 (0 : Fin 1).castSucc = Vertex.cornerA 1 := by
-              ext <;> simp
-            have h1 : Vertex.edgePoint 1 0 (0 : Fin 1).succ = ⟨0, 1, 0, rfl⟩ := by
-              ext <;> simp
-            rw [h0, h1, h.1.apply_cornerA, sub_zero] at hb
-            simpa [equivOne_apply] using hb)
-          (by
-            have hb := congrFun (congrFun h.2 2) 0
-            rw [boundary_apply, productBoundary_two, DominantWeight.dual_apply] at hb
-            have h0 : Vertex.edgePoint 1 2 (0 : Fin 1).castSucc = ⟨0, 0, 1, rfl⟩ := by
-              ext <;> simp
-            have h1 : Vertex.edgePoint 1 2 (0 : Fin 1).succ = Vertex.cornerA 1 := by
-              ext <;> simp
-            rw [h0, h1, h.1.apply_cornerA, zero_sub, Fin.rev_zero] at hb
-            simpa [equivOne_apply] using neg_inj.mp hb) }
-    rw [← card_fixedIntegerHive]; exact Fintype.card_unique
-  · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => hsum (by
-      simpa using sum_eq_of_productBoundary hb)⟩
-
 /-- Rank-`1` `GL₁(ℂ)` tensor-product check via `finrank_hom_eq_hiveCount`. -/
 theorem finrank_hom_one_eq_ite (lam μ γ : DominantWeight 1) :
     Module.finrank ℂ
         (rationalWeylFDRep ℂ 1 γ ⟶ rationalWeylFDRep ℂ 1 lam ⊗ rationalWeylFDRep ℂ 1 μ) =
       if lam.1 0 + μ.1 0 = γ.1 0 then 1 else 0 := by
   rw [finrank_hom_eq_hiveCount, hiveCount_one_productBoundary]
-
-/-- Rank-`2` signed check: `V_{(1, 0)} ⊗ V_{(0, -1)}` contains the trivial module `V_{(0, 0)}` with
-multiplicity `1`, reduced by a determinant shift to `c^{(1, 1)}_{(1, 0), (1, 0)} = 1`. -/
-theorem hiveCount_two_std_dual_trivial :
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 := by
-  rw [← hiveCount_productBoundary_shift _ _ _ 0 1]
-  convert hiveCount_two_std_std_det using 2
-  ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
-
-/-- Rank-`2` signed check: `V_{(1, 0)} ⊗ V_{(0, -1)}` contains the adjoint summand `V_{(1, -1)}`
-with multiplicity `1`, reduced by a determinant shift to `c^{(2, 0)}_{(1, 0), (1, 0)} = 1`. -/
-theorem hiveCount_two_std_dual_adjoint :
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩) = 1 := by
-  rw [← hiveCount_productBoundary_shift _ _ _ 0 1]
-  convert hiveCount_two_std_std_sym using 2
-  ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
-
-/-- Rank-`2` signed exclusion check: `γ = (2, -2)` violates `λ₂ + μ₂ ≤ γ₂` (`-1 ≤ -2`). -/
-theorem hiveCount_two_std_dual_excluded :
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![2, -2], by decide⟩) = 0 := by
-  rw [hiveCount_eq_zero_iff]
-  refine ⟨fun ⟨_, hb⟩ => ?_⟩
-  have hlast := last_le_of_productBoundary hb; simp at hlast
-
-/-- On `Δ₃`, the boundary determines every vertex except the unique interior vertex `(1, 1, 1)`. -/
-private theorem eq_of_boundary_eq_of_interior_eq_three {h₁ h₂ : IntegerHive 3}
-    (hb : h₁.boundary = h₂.boundary) (hm : h₁ ⟨1, 1, 1, rfl⟩ = h₂ ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
-  refine Hive.ext fun p => ?_
-  have := p.sum_eq
-  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0 ∨ (p.x = 1 ∧ p.y = 1 ∧ p.z = 1)) with
-    hz | hx | hy | ⟨hx, hy, hz⟩
-  · have hp : p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
-    rw [hp, apply_edgePoint_zero, apply_edgePoint_zero, hb]
-  · have hp : p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
-    rw [hp, apply_edgePoint_one, apply_edgePoint_one, hb]
-  · have hp : p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
-    rw [hp, apply_edgePoint_two, apply_edgePoint_two, hb]
-  · have hp : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp [hx, hy, hz]
-    rw [hp, hm]
-
-private def hiveThreeTwoOneFun (t : ℤ) (p : Vertex 3) : ℤ :=
-  match p.z, p.y + p.z with
-  | 0, 1 => 2
-  | 0, 2 | 0, 3 | 1, 1 => 3
-  | 1, 2 => t
-  | 1, 3 | 2, 2 => 5
-  | 2, 3 | 3, 3 => 6
-  | _, _ => 0
-
-private theorem isRhombusConcave_hiveThreeTwoOneFun {t : ℤ} (ht4 : 4 ≤ t) (ht5 : t ≤ 5) :
-    IsRhombusConcave (hiveThreeTwoOneFun t) := by
-  rw [isRhombusConcave_iff_ofIJ]
-  refine ⟨fun i j hij hjn => ?_, fun i j hij hjn => ?_, fun i j hij hjn => ?_⟩
-  · have : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1) := by omega
-    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hiveThreeTwoOneFun] <;> omega
-  · have : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2) := by omega
-    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hiveThreeTwoOneFun] <;> omega
-  · have : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2) := by omega
-    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hiveThreeTwoOneFun] <;> omega
-
-/-- Parameterized family of size-`3` hives with boundary `((2, 1, 0), (2, 1, 0), (3, 2, 1)*)` and
-interior entry `t ∈ {4, 5}` at `(1, 1, 1)`. -/
-private def hiveThreeTwoOne (t : ℤ) (ht4 : 4 ≤ t) (ht5 : t ≤ 5) :
-    FixedIntegerHive
-      (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
-        ⟨![3, 2, 1], by decide⟩) :=
-  ⟨⟨hiveThreeTwoOneFun t, by simp [hiveThreeTwoOneFun],
-      fun hr => (isRhombusConcave_def _).mp (isRhombusConcave_hiveThreeTwoOneFun ht4 ht5) hr⟩,
-    by
-      ext s i; fin_cases s <;> fin_cases i <;>
-        simp [boundary_apply, DominantWeight.dual_apply, hiveThreeTwoOneFun]⟩
-
-private theorem hiveThreeTwoOne_interior (t : ℤ) (ht4 : 4 ≤ t) (ht5 : t ≤ 5) :
-    (hiveThreeTwoOne t ht4 ht5).1 ⟨1, 1, 1, rfl⟩ = t := rfl
-
-/-- **First multiplicity-`2` check**: `c^{(3, 2, 1)}_{(2, 1, 0), (2, 1, 0)} = 2`, realized by the
-two integer hives with interior values `4` and `5` at `(1, 1, 1)`. -/
-theorem hiveCount_three_two_one_two_one_three_two_one :
-    hiveCount
-      (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
-        ⟨![3, 2, 1], by decide⟩) = 2 := by
-  let B := productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
-    ⟨![3, 2, 1], by decide⟩
-  have hbound : ∀ h : FixedIntegerHive B,
-      h.1 ⟨1, 1, 1, rfl⟩ = 4 ∨ h.1 ⟨1, 1, 1, rfl⟩ = 5 := fun h => by
-    have hu1 := h.1.le_ofIJ_upright (i := 0) (j := 1) (by omega) (by omega)
-    have hu2 := h.1.le_ofIJ_upright (i := 0) (j := 2) (by omega) (by omega)
-    have h01 : h.1 (Vertex.ofIJ 3 0 1 (by omega) (by omega)) = 2 := by
-      rw [Vertex.ofIJ_zero_left, apply_edgePoint_zero, h.2]; simp [B, Finset.sum_filter]
-    have h02 : h.1 (Vertex.ofIJ 3 0 2 (by omega) (by omega)) = 3 := by
-      rw [Vertex.ofIJ_zero_left, apply_edgePoint_zero, h.2]
-      simp [B, Finset.sum_filter, Fin.sum_univ_three]
-    have h03 : h.1 (Vertex.ofIJ 3 0 3 (by omega) (by omega)) = 3 := by
-      rw [Vertex.ofIJ_zero_left, apply_edgePoint_zero, h.2]; simp [B, Fin.sum_univ_three]
-    have h11 : h.1 (Vertex.ofIJ 3 1 1 (by omega) (by omega)) = 3 := by
-      rw [Vertex.ofIJ_diag, apply_edgePoint_two, h.2]
-      simp [B, Finset.sum_filter, Fin.sum_univ_three, DominantWeight.dual_apply]
-    have h13 : h.1 (Vertex.ofIJ 3 1 3 (by omega) (by omega)) = 5 := by
-      rw [Vertex.ofIJ_right_eq, apply_edgePoint_one, h.2]
-      simp [B, Finset.sum_filter, Fin.sum_univ_three]
-    have hm : Vertex.ofIJ 3 1 2 (by omega) (by omega) = ⟨1, 1, 1, rfl⟩ := by ext <;> simp
-    rw [h01, h02, h11, hm] at hu1; rw [h02, h03, h13, hm] at hu2
-    omega
-  let e : FixedIntegerHive B ≃ Bool :=
-    { toFun := fun h => decide (h.1 ⟨1, 1, 1, rfl⟩ = 4)
-      invFun := fun b => if b then hiveThreeTwoOne 4 le_rfl (by omega)
-        else hiveThreeTwoOne 5 (by omega) le_rfl
-      left_inv := fun h => Subtype.ext <| by
-        rcases hbound h with h4 | h5
-        · simp only [h4, decide_true, ↓reduceIte]
-          exact eq_of_boundary_eq_of_interior_eq_three
-            ((hiveThreeTwoOne 4 le_rfl (by omega)).2.trans h.2.symm)
-            (by rw [hiveThreeTwoOne_interior, h4])
-        · have h54 : (5 : ℤ) ≠ 4 := by omega
-          simp only [h5, h54, decide_false, Bool.false_eq_true, ↓reduceIte]
-          exact eq_of_boundary_eq_of_interior_eq_three
-            ((hiveThreeTwoOne 5 (by omega) le_rfl).2.trans h.2.symm)
-            (by rw [hiveThreeTwoOne_interior, h5])
-      right_inv := fun b => by cases b <;> simp [hiveThreeTwoOne_interior] }
-  rw [← card_fixedIntegerHive, Fintype.card_congr e, Fintype.card_bool]
 
 /-- `GL₃(ℂ)` multiplicity-`2` check: `V_{(2, 1, 0)} ⊗ V_{(2, 1, 0)}` contains two copies of
 `V_{(3, 2, 1)}`. -/
