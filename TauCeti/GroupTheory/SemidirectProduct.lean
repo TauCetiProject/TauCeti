@@ -30,6 +30,8 @@ normal in the full semidirect product (`Subgroup.normal_map_inl`).
   multiplication homomorphism is `H ⊔ K`.
 * `SemidirectProduct.ker_rightHom_sup_range_inr`: the kernel of the projection to the acting group
   and the acting group generate the semidirect product.
+* `SemidirectProduct.infinite_range_inl`: the image of the normal factor is infinite whenever the
+  normal factor is infinite.
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff` and
   `SemidirectProduct.ker_monoidHomSubgroup_eq_bot_iff`: its kernel consists of antidiagonal pairs
   and is trivial if and only if `Disjoint H K`.
@@ -202,6 +204,13 @@ theorem quotientGroupMk'_comp_mulEquivSubgroup :
     (right_mulEquivSubgroup_symm_eq_quotientMulEquiv h (mulEquivSubgroup h x)).symm
 
 end mulEquivSubgroup
+
+/-- If `N` is infinite, then the image of `SemidirectProduct.inl` in `N ⋊[φ] Q` is infinite. -/
+theorem infinite_range_inl {N Q : Type*} [Group N] [Infinite N] [Group Q] {φ : Q →* MulAut N} :
+    Infinite (inl : N →* N ⋊[φ] Q).range :=
+  (Equiv.ofBijective (inl : N →* N ⋊[φ] Q).rangeRestrict
+    ⟨fun _ _ h ↦ inl_injective (congrArg Subtype.val h),
+      MonoidHom.rangeRestrict_surjective _⟩).infinite_iff.mp ‹_›
 
 section MonoidHomSubgroup
 

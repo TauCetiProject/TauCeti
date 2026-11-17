@@ -199,23 +199,14 @@ noncomputable def functorObjIso (R : Type u) [CommRing R]
         exact ⟨(moduleFinite_iff_isFinite_hopfSpec R H.unop.obj).mp
           hH.1, hp.1, hp.2,
           (isCocomm_iff_isCommMonObj_hopfSpec R H.unop.obj).mp hH.2.2⟩⟩ :=
-  (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
-    ((affineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
-      ((functorCompιIso R).app H))
+  ObjectProperty.isoMk _ <| ObjectProperty.isoMk _ ((functorCompιIso R).app H)
 
 /-- After forgetting the property proofs, the object comparison is the Hopf--spectrum
 functor comparison. -/
 theorem functorObjIso_hom_hom_hom (R : Type u) [CommRing R]
     (H : (FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R)ᵒᵖ) :
-    (functorObjIso R H).hom.hom.hom = (functorCompιIso R).hom.app H := by
-  calc
-    _ = (affineGroupSchemeProperty (CommRingCat.of R)).ι.map
-        ((finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.map
-          (functorObjIso R H).hom) := rfl
-    _ = _ := by
-      rw [functorObjIso, Functor.preimageIso_hom, Functor.map_preimage,
-        Functor.preimageIso_hom, Functor.map_preimage]
-      rfl
+    (functorObjIso R H).hom.hom.hom = (functorCompιIso R).hom.app H :=
+  (rfl)
 
 /-- The inverse restricted anti-equivalence computes as the unrestricted coordinate-Hopf-algebra
 functor after forgetting finite local freeness and commutativity. -/
