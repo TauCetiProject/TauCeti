@@ -409,6 +409,13 @@ instance isClosed_range : IsClosed (φ.range : Set B) := by
   rw [NonUnitalStarAlgHom.coe_range]
   exact φ.isClosed_setRange
 
+/-- The closed C⋆-subalgebra range `φ.range` inherits the `StarOrderedRing` order from `B`.
+Registering this directly prevents `Subtype.starOrderedRing` from unfolding complex ambient
+types such as operators on a completion during typeclass synthesis. -/
+instance instStarOrderedRingRange [PartialOrder B] [StarOrderedRing B] :
+    StarOrderedRing φ.range :=
+  Subtype.starOrderedRing φ.range
+
 /-- Every `⋆`-homomorphism between C⋆-algebras with dense range is surjective. -/
 theorem surjective_of_denseRange {φ : A →⋆ₙₐ[ℂ] B} (hφ : DenseRange φ) :
     Function.Surjective φ := by
