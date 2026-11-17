@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Convex.Sequence.FiniteSlopeMultiset
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
 public import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Finite slopes of the Newton polygon of a polynomial
@@ -81,6 +82,9 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   below that line.
 * `Polynomial.newtonSlopes_eq_replicate_of_eisenstein`: an Eisenstein polynomial of degree `d`
   has `d` finite slopes, all equal to `-1 / d`.
+* `PowerSeries.finite_finiteEdges_newtonPolygon_iff`: conversely, for a power series with
+  admissible coefficient heights under a valuation that takes `⊤` only at `0`, the Newton polygon
+  has finitely many finite unit edges if and only if the series is a polynomial.
 
 ## References
 
@@ -519,3 +523,34 @@ theorem newtonSlopes_eq_replicate_of_eisenstein (hlead : v f.leadingCoeff = 0)
 end Pure
 
 end Polynomial
+
+namespace PowerSeries
+
+variable {R : Type*} [Ring R] {v : AddValuation R (WithTop ℝ)}
+
+/-- For a power series with admissible coefficient heights under an additive valuation that takes
+`⊤` only at `0`, the Newton polygon has only finitely many finite unit edges if and only if the
+series is a polynomial. -/
+theorem finite_finiteEdges_newtonPolygon_iff (hv0 : ∀ x, v x = ⊤ → x = 0) {f : R⟦X⟧}
+    (ha : IsAdmissible fun n => v (f.coeff n)) :
+    (finiteEdges (f.newtonPolygon v)).Finite ↔ ∃ P : Polynomial R, (P : R⟦X⟧) = f := by
+  refine ⟨fun hfin => ?_, ?_⟩
+  · rcases Set.finite_or_infinite {n : ℕ | f.coeff n ≠ 0} with hS | hS
+    · obtain ⟨B, hB⟩ := hS.bddAbove
+      refine ⟨trunc (B + 1) f, coe_trunc_eq_self_of_coeff_eq_zero fun n hn => ?_⟩
+      by_contra hne
+      exact absurd (hB hne) (by omega)
+    · obtain ⟨i₀, hi₀⟩ := hS.nonempty
+      have hsub : Set.Ici i₀ ⊆ finiteEdges (f.newtonPolygon v) := fun n hn => by
+        rw [Set.mem_Ici] at hn
+        obtain ⟨k, hk, hnk⟩ := hS.exists_gt (n + 1)
+        have hi₀' : v (f.coeff i₀) ≠ ⊤ := fun h => hi₀ (hv0 _ h)
+        have hk' : v (f.coeff k) ≠ ⊤ := fun h => hk (hv0 _ h)
+        rw [mem_finiteEdges, newtonPolygon_def]
+        exact ⟨(lowerConvexEnvelope_ne_top_iff ha).mpr ⟨i₀, hn, k, by omega, hi₀', hk'⟩,
+          (lowerConvexEnvelope_ne_top_iff ha).mpr ⟨i₀, by omega, k, hnk.le, hi₀', hk'⟩⟩
+      exact ((Set.Ici_infinite i₀) (hfin.subset hsub)).elim
+  · rintro ⟨P, rfl⟩
+    simpa only [Polynomial.newtonPolygon_coe] using P.finite_finiteEdges_newtonPolygon v
+
+end PowerSeries

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Order.Filter.Basic
+import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
 # Multiplicities of labelled roots
@@ -20,7 +21,9 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`.
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`. Over a field, the root
+multiset of a finite product `∏ i ∈ s, (1 - (b i)⁻¹ X)` of normalised linear factors with nonzero
+`b i` is `s.val.map b` (`Polynomial.roots_prod_one_sub_C_inv_mul_X`).
 -/
 
 public section
@@ -90,5 +93,22 @@ theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l 
     (r : ι → R) (z : R) : (C l * ∏ i, (X - C (r i))).IsRoot z ↔ ∃ i, r i = z := by
   rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
   simp [sub_eq_zero, eq_comm]
+
+/-- The multiset of roots of a finite product `∏ i ∈ s, (1 - (b i)⁻¹ X)` over a field with all
+`b i ≠ 0` is `s.val.map b`. -/
+theorem roots_prod_one_sub_C_inv_mul_X {K ι : Type*} [Field K] (s : Finset ι) {b : ι → K}
+    (hb : ∀ i ∈ s, b i ≠ 0) :
+    (∏ i ∈ s, (1 - C (b i)⁻¹ * X)).roots = s.val.map b := by
+  have hne : (∏ i ∈ s, (1 - C (b i)⁻¹ * X)) ≠ 0 := by
+    intro h0
+    have hc := congrArg constantCoeff h0
+    simp [map_prod] at hc
+  rw [roots_prod _ s hne]
+  have hfac : ∀ i ∈ s.val, (1 - C (b i)⁻¹ * X).roots = {b i} := fun i hi ↦ by
+    have hlin : (1 - C (b i)⁻¹ * X : K[X]) = C (-(b i)⁻¹) * X + C 1 := by
+      simp [sub_eq_neg_add]
+    rw [hlin, roots_C_mul_X_add_C 1 (neg_ne_zero.mpr (inv_ne_zero (hb i hi)))]
+    simp
+  rw [Multiset.bind_congr hfac, Multiset.bind_singleton]
 
 end Polynomial
