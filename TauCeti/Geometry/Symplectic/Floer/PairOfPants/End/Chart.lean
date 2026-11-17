@@ -107,9 +107,12 @@ apply to all three ends.
   `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
   `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
   coordinate.
-* `TauCeti.Floer.contDiffAt_endHeight`, `TauCeti.Floer.endHeight_positiveEndChart`,
-  `TauCeti.Floer.endHeight_nonpos_of_ne`: the end height is smooth away from the center of the end,
-  is `s` at `φ'_q(s, t)`, and is positive on at most one end.
+* `TauCeti.Floer.contDiffAt_endHeight`, `TauCeti.Floer.contDiffAt_endHeight_of_mem`,
+  `TauCeti.Floer.endHeight_positiveEndChart`, `TauCeti.Floer.endHeight_nonpos_of_ne`: the end
+  height is smooth away from the center of the end, in particular on `S`, is `s` at `φ'_q(s, t)`,
+  and is positive on at most one end.
+* `TauCeti.Floer.mem_preimage_truncation_iff`: a point lies in the truncation `S_T` exactly when it
+  lies in `S` and its end heights are at most `T`.
 * `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function with compact
   support in `S` vanishes in the positive end chart beyond some height.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
@@ -793,6 +796,19 @@ theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
   contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
     Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
 
+/-- The signed longitudinal coordinate of an end is smooth on `S`. -/
+theorem contDiffAt_endHeight_of_mem (q : Puncture) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) {n : WithTop ℕ∞} : ContDiffAt ℝ n (endHeight q) z :=
+  contDiffAt_endHeight q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+
+/-- In real coordinates, a point lies in the truncation `S_T` exactly when it lies in `S` and its
+end height on every end is at most `T`. -/
+theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
+    z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
+      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
+  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
+    and_assoc]
+
 /-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
 theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
     endHeight q (endChart q ζ) = q.endSign * ζ.1 := by
@@ -817,13 +833,12 @@ theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero 
     ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
   -- The end height is bounded on the support of `f`.
   obtain ⟨N, hN⟩ := hfc.isCompact.exists_bound_of_continuousOn (f := endHeight q)
-    fun z hz ↦ (contDiffAt_endHeight q (ne_endCenter
-      (mem_thricePuncturedSphereReal_iff.1 (hfS hz)) q) (n := 0)).continuousAt.continuousWithinAt
+    fun z hz ↦ (contDiffAt_endHeight_of_mem q (hfS hz) (n := 0)).continuousAt.continuousWithinAt
   refine ⟨N, fun ζ hζ ↦ ?_⟩
   filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
   rw [Pi.zero_apply, Function.comp_apply]
   refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-  have := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hN _ h))
+  have := (Real.le_norm_self _).trans (hN _ h)
   rw [endHeight_positiveEndChart] at this
   exact absurd hζ' (not_lt.2 this)
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
 import TauCeti.Topology.Instances.Real.TSupport
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # The end estimate of the linearized Floer operator on the pair of pants
@@ -104,32 +105,6 @@ private theorem norm_floerLinearization_comp_positiveEndChart_sq_le (ω : Symple
         rw [mul_pow, mul_pow]
         nlinarith [mul_le_mul_of_nonneg_right hab
           (mul_nonneg (sq_nonneg (1 + B)) (sq_nonneg ‖D‖))]
-
-/-- **Bounding `J` near an orbit.** If the loops of `v` converge uniformly to a continuous loop
-`x`, then a continuous family of structures `J_t(y)` is bounded along `v` on `[R, ∞) × [0, 1]` for
-some `R`. -/
-private theorem exists_forall_norm_le_of_tendstoUniformlyOn
-    {Je : ℝ → V → AlmostComplexStructure V}
-    (hJe : Continuous fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
-    {x : ℝ → V} (hx : Continuous x) {v : ℝ × ℝ → V}
-    (hv : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atTop (Icc 0 1)) :
-    ∃ B R : ℝ, ∀ ζ : ℝ × ℝ, R ≤ ζ.1 → ζ.2 ∈ Icc (0 : ℝ) 1 →
-      ‖(Je ζ.2 (v ζ)).toLinearMap.toContinuousLinearMap‖ ≤ B := by
-  -- The points `(t, y)` with `t ∈ [0, 1]` and `y` within `1` of `x t` form a compact set.
-  have hK : IsCompact ((fun p : ℝ × V ↦ (p.1, x p.1 + p.2)) ''
-      (Icc (0 : ℝ) 1 ×ˢ Metric.closedBall (0 : V) 1)) :=
-    (isCompact_Icc.prod (isCompact_closedBall (0 : V) 1)).image (by fun_prop)
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hJe.continuousOn
-  obtain ⟨R, hR⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 hv 1 one_pos)
-  refine ⟨B, R, fun ζ hζ ht ↦ ?_⟩
-  have hmem : (ζ.2, v ζ) ∈ (fun p : ℝ × V ↦ (p.1, x p.1 + p.2)) ''
-      (Icc (0 : ℝ) 1 ×ˢ Metric.closedBall (0 : V) 1) := by
-    refine ⟨(ζ.2, v ζ - x ζ.2), ⟨ht, ?_⟩, by simp only [add_sub_cancel]⟩
-    rw [mem_closedBall_zero_iff, ← dist_eq_norm, dist_comm]
-    exact le_of_lt (hR ζ.1 hζ ζ.2 ht)
-  have h := hB _ hmem
-  beta_reduce at h
-  exact h
 
 /-- **Changing variables along an end chart.** For a nonnegative integrable function `g`, the
 integral of `det (dφ'_q) · g ∘ φ'_q` over a finite band `[a, b] × [0, 1]` is at most the integral
@@ -301,7 +276,6 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u ξ z‖ ^ 2 := by
   have hH' := contDiff_uncurry_positiveEndHamiltonian (hHs q)
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have huφ (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) : ContDiffAt ℝ 1 (u ∘ positiveEndChart q) ζ :=
     (hu _ (positiveEndChart_mem_thricePuncturedSphereReal hζ)).comp _
       (contDiff_positiveEndChart q 1).contDiffAt
@@ -311,8 +285,9 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
       hx hnd hJe hJex (u := u ∘ positiveEndChart q)
       ((eventually_gt_atTop 0).mono fun s hs t _ ↦ huφ (s, t) hs) hux hδ
   obtain ⟨R₂, hR₂⟩ := mem_atTop_sets.1 hU
-  obtain ⟨B, R₃, hB⟩ := exists_forall_norm_le_of_tendstoUniformlyOn hJe.continuous hxc
-    (v := u ∘ positiveEndChart q) hux
+  obtain ⟨B, R₃, hR₃⟩ := (exists_eventually_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
+    (fun t _ ↦ (hx t).continuousAt.continuousWithinAt) hJe.continuous hux).imp
+      fun _ ↦ eventually_atTop.1
   set R := max (max R₂ R₃) (max R₁ 2)
   have hR2 : 2 ≤ R := (le_max_right _ _).trans (le_max_right _ _)
   refine ⟨max C₁ 0 * (2 * (1 + B) ^ 2), R, fun ξ hξ hξc hξR ↦ ?_⟩
@@ -329,8 +304,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
           (prod_mono (fun s hs ↦ lt_of_lt_of_le (by linarith) hs.1) subset_rfl) fun ζ hζ ↦ ?_
         have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan
           fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-        have h₀ : ξ (positiveEndChart q ζ) = 0 := h.eq_of_nhds
-        simp [h.fderiv_eq, h₀]
+        simp [h.fderiv_eq, show ξ (positiveEndChart q ζ) = 0 from h.eq_of_nhds]
     _ ≤ C₁ * ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
           (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)
@@ -347,7 +321,8 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
           (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _)).trans
           (mul_le_mul_of_nonneg_left
             (ω.setIntegral_norm_floerLinearization_comp_positiveEndChart_sq_le hH hHs hJe
-              hJeq hJ hu hF hB hξ hξc hξS ((le_max_left _ _).trans (le_max_right _ _))
+              hJeq hJ hu hF (fun ζ hζ ht ↦ hR₃ ζ.1 hζ ζ.2 ht) hξ hξc hξS
+              ((le_max_left _ _).trans (le_max_right _ _))
               ((le_max_right _ _).trans (le_max_left _ _)) hR2) (le_max_right _ _))
     _ = _ := by ring
 

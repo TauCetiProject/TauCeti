@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.SemiFredholm
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Symplectic.Floer.SobolevDensity
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the pair of pants
@@ -77,17 +77,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-! ### Cutoffs on the pair of pants -/
-
-/-- The end height `±s_q` is smooth on `S`. -/
-private theorem contDiffAt_endHeight_of_mem (q : Puncture) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) {n : WithTop ℕ∞} : ContDiffAt ℝ n (endHeight q) z :=
-  contDiffAt_endHeight q (Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
-
-private theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
-    z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
-      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
-  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
-    and_assoc]
 
 /-- The cutoff `β_q = ψ(2 (±s - R₀) - 1)` of the end `q`, for the smooth transition function `ψ`.
 It vanishes to first order where `±s ≤ R₀`, and it is `1` where `±s ≥ R₀ + 1`. -/
@@ -222,42 +211,6 @@ private theorem contDiff_smul_of_tsupport_subset {f : ℝ × ℝ → ℝ}
     ContDiff ℝ 2 fun z ↦ f z • ξ z :=
   (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
     (fun z hz ↦ (hf z hz).contDiffWithinAt) hξ.contDiffOn isOpen_thricePuncturedSphereReal hξS
-
-/-- **The operator on a cut-off section, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` at
-`z`, then `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` at `z`. -/
-private theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
-    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z)
-    (hf₁ : |f z| ≤ 1) {M B : ℝ} (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
-    ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
-      2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖ξ z‖ ^ 2 := by
-  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
-  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • ξ z‖ ≤ M * ‖ξ z‖ := by
-    rw [norm_smul]
-    gcongr
-    exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
-  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z)‖ ≤ M * (B * ‖ξ z‖) := by
-    rw [norm_smul]
-    gcongr
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
-  have h₀ : ‖f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
-  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
-  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
-    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
-    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
-      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
-      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
-    nlinarith
-  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
-        gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
-          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
 
 /-- **The `L²` norm of the operator on a cut-off section.** Let `f` be smooth on `S` with
 `|f| ≤ 1`, with derivative supported in a compact set `K ⊆ S` and bounded by `M` there, and let
@@ -417,7 +370,7 @@ private theorem exists_forall_norm_fderiv_cutoff_le (R₀ : ℝ) :
         one_ne_zero).norm.continuousWithinAt
   have hMs (z : ℝ × ℝ) (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1)) :
       ∑ q, ‖fderiv ℝ (endCutoff R₀ q) z‖ ≤ M :=
-    (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hM z hz))
+    (Real.le_norm_self _).trans (hM z hz)
   refine ⟨M, fun q z hz ↦ (Finset.single_le_sum (fun r _ ↦ norm_nonneg
     (fderiv ℝ (endCutoff R₀ r) z)) (Finset.mem_univ q)).trans (hMs z hz), fun z hz ↦ ?_⟩
   rw [fderiv_coreCutoff R₀ (hKS hz), norm_neg]
@@ -494,8 +447,9 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff (ω : SymplecticForm
     integral_add (hI (by fun_prop)) (hI (by fun_prop))
   calc _ ≤ ∫ z in K, sobolevDensity ξc z := setIntegral_sobolevDensity_le_coreCutoff R₀ hξ hξS
     _ = (∫ z in K, (‖fderiv ℝ ξc z stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ ξc z stdComplexLineImag‖ ^ 2)) + ∫ z in K, ‖ξc z‖ ^ 2 :=
-        integral_add (hI (by fun_prop)) (hI (by fun_prop))
+          ‖fderiv ℝ ξc z stdComplexLineImag‖ ^ 2)) + ∫ z in K, ‖ξc z‖ ^ 2 := by
+        simp only [sobolevDensity_apply]
+        exact integral_add (hI (by fun_prop)) (hI (by fun_prop))
     _ ≤ _ := by
         gcongr
         refine (hint hξc' (tsupport_coreCutoff_smul_subset hR₀ hξS)).trans ?_
@@ -630,10 +584,17 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     have := (le_abs_self (R q)).trans
       (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
     linarith
+  -- The end estimates, with their integrands written as energy densities.
+  have hend' (q : Puncture) ⦃ξ : ℝ × ℝ → V⦄ (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
+      (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < endHeight q z}) :
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
+        C q * ∫ z, ‖ω.floerLinearization
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 := by
+    simpa only [sobolevDensity_apply, Function.comp_apply] using hend q hξ hξc hξR
   obtain ⟨C₁, hC₁, h₁⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend (by linarith) hR
+    hKt hu hc (C := C) (R := R) hend' (by linarith) hR
   obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
+    hKt hu hc (C := C) (R := R) hend' (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
       (lt_add_one _)
   refine ⟨C₁ + C₂, by positivity, R₀ + 1, fun ξ hξ hξc hξS ↦ ?_⟩
   have e₁ := h₁ hξ hξc hξS
@@ -655,9 +616,8 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
       sobolevDensity (ξ ∘ positiveEndChart q) ζ :=
     Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
       fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  -- The integrands of the statement are the energy densities `sobolevDensity`, by definition.
-  change (∑ q, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) +
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), sobolevDensity ξ z ≤ _
+  -- The integrands of the statement are the energy densities `sobolevDensity`.
+  simp only [sobolevDensity_apply, Function.comp_apply] at e₁ e₂ hcore₀ hends₀
   nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
 
 /-- **The semi-Fredholm estimate along a Floer pair of pants.** Let `H_q` be jointly `C²`

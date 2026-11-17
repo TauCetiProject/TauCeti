@@ -127,8 +127,8 @@ private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
   · rfl
   · obtain ⟨q, hq⟩ : ∃ q, T + 1 < endHeight q z := by
       by_contra! h'
-      simp only [endHeight_apply] at h'
-      exact hz (mem_truncation.2 ⟨(not_or.1 h).1, (not_or.1 h).2, h'⟩)
+      exact hz (mem_preimage_truncation_iff.2
+        ⟨mem_thricePuncturedSphereReal_iff.2 (not_or.1 h), h'⟩)
     refine Finset.prod_eq_zero (Finset.mem_univ q) ?_
     rw [smoothTransition.one_of_one_le (by linarith), sub_self]
 
@@ -183,8 +183,7 @@ is `1` nearby. -/
 private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (hT : ∀ q, endHeight q z < T) : truncation T =ᶠ[𝓝 z] fun _ ↦ 1 := by
   have hev : ∀ᶠ z' in 𝓝 z, ∀ q, endHeight q z' < T := eventually_all.2 fun q ↦
-    (contDiffAt_endHeight q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
-      (n := 0)).continuousAt.eventually (gt_mem_nhds (hT q))
+    (contDiffAt_endHeight_of_mem q hz (n := 0)).continuousAt.eventually (gt_mem_nhds (hT q))
   filter_upwards [truncation_eventuallyEq_prod T hz, hev] with z' h₁ h₂
   rw [h₁]
   exact Finset.prod_eq_one fun q _ ↦ by

@@ -25,7 +25,9 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
 on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
 (`floerLinearization_smul_fst`), and on a direction multiplied by a function `f` of both
-variables as `f D ξ + (∂s f) ξ + (∂t f) J ξ` (`floerLinearization_fun_smul`). Its value at a point
+variables as `f D ξ + (∂s f) ξ + (∂t f) J ξ` (`floerLinearization_fun_smul`), so that
+`‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` where `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`
+(`norm_floerLinearization_fun_smul_sq_le`). Its value at a point
 depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), so
 it vanishes off the support of the direction (`floerLinearization_of_notMem_tsupport`), and on
 the Floer data only through their values at that point (`floerLinearization_congr_data`). For
@@ -191,6 +193,42 @@ theorem floerLinearization_fun_smul (ω : SymplecticForm V)
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_smul, map_add,
     map_sub]
   module
+
+/-- **The operator on a cut-off direction, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` at
+`z`, then `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` at `z`. -/
+theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z)
+    (hf₁ : |f z| ≤ 1) {M B : ℝ} (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
+    ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
+      2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖ξ z‖ ^ 2 := by
+  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
+  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • ξ z‖ ≤ M * ‖ξ z‖ := by
+    rw [norm_smul]
+    gcongr
+    exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
+  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z)‖ ≤ M * (B * ‖ξ z‖) := by
+    rw [norm_smul]
+    gcongr
+    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
+    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
+  have h₀ : ‖f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
+  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
+    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
+  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
+    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
+  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
+      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
+      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
+    nlinarith
+  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
+        gcongr
+    _ ≤ _ := by
+        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
+          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`

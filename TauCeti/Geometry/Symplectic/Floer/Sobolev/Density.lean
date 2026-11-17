@@ -35,7 +35,7 @@ namespace TauCeti.Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a map `ξ : ℝ × ℝ → V`. -/
-@[expose] noncomputable def sobolevDensity (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ℝ :=
+noncomputable def sobolevDensity (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ℝ :=
   ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2
 
 theorem sobolevDensity_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :

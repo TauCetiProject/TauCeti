@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Symplectic.Floer.SobolevDensity
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.Instances.Real.TSupport
 
@@ -309,7 +309,8 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
   have hint {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) (p q : ℝ) :
       IntegrableOn (fun z ↦ ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
-    hI (Floer.continuous_sobolevDensity (hη.of_le one_le_two)) p q
+    hI (by simpa only [funext (Floer.sobolevDensity_apply η)] using
+      Floer.continuous_sobolevDensity (hη.of_le one_le_two)) p q
   -- The piece near `+∞`.
   have hPp : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξp z stdComplexLineReal‖ ^ 2 +
       ‖fderiv ℝ ξp z stdComplexLineImag‖ ^ 2 + ‖ξp z‖ ^ 2) ≤ max Cp 0 * (L * (X + Y)) := by
