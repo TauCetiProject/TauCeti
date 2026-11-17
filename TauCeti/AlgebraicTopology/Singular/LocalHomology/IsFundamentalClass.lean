@@ -45,6 +45,8 @@ one, are fundamental classes in this sense.
   `μ` exactly when `r` is a unit.
 * `TauCeti.isFundamentalClass_iff_ne_zero`: over a division ring, on a compact connected manifold,
   the fundamental classes are exactly the nonzero top-dimensional classes.
+* `TauCeti.IsFundamentalClass.map_homeomorph`: homeomorphisms carry fundamental classes to
+  fundamental classes.
 * `TauCeti.isFundamentalClass_iff_forall_isLocalOrientation`: with integral coefficients, `μ` is a
   fundamental class exactly when its image at each point is a local orientation.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_fundamentalClass`: the integral fundamental
@@ -53,6 +55,8 @@ one, are fundamental classes in this sense.
   compact oriented manifold, `c • [M]` is a fundamental class exactly when `c = ±1`. In
   particular `2 • [M]` is not (`not_isFundamentalClass_two_zsmul_fundamentalClass`); for `M` the
   circle, the image of `2 • [S¹]` at each point is twice a generator.
+* `TauCeti.HomologicalOrientation.isFundamentalClass_iff_eq_or_eq_neg`: on a compact connected
+  oriented manifold, the integral fundamental classes are exactly `[M]` and `-[M]`.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_rationalFundamentalClass`: the rational
   fundamental class of a compact connected oriented manifold is a fundamental class.
 
@@ -123,6 +127,35 @@ theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
   forall_congr' fun x ↦ (e x).span_singleton_eq_top_iff_isUnit
 
 end Definition
+
+section Homeomorph
+
+variable {M M' : Type w} [TopologicalSpace M] [TopologicalSpace M'] [T1Space M'] {R : Type u}
+  [Ring R] {N : ModuleCat.{w} R} {n : ℕ}
+
+open AlgebraicTopology in
+/-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : M ≃ₜ M'`
+carries a fundamental class of `M` to a fundamental class of `M'`. -/
+theorem IsFundamentalClass.map_homeomorph
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (hμ : IsFundamentalClass μ) (e : M ≃ₜ M') :
+    IsFundamentalClass
+      ((((singularHomologyFunctor (ModuleCat.{w} R) n).obj N).map
+        (TopCat.ofHom (e : C(M, M')))).hom μ) := by
+  intro y
+  obtain ⟨x, rfl⟩ := e.surjective y
+  have hx : (e : C(M, M')) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
+  have hsurj := (ConcreteCategory.bijective_of_isIso
+    (localHomologyIsoOfIsOpenEmbedding N e.isOpenEmbedding x n).hom).2
+  rw [localHomologyIsoOfIsOpenEmbedding_hom] at hsurj
+  have h := congrArg (Submodule.map (localHomologyMap N (e : C(M, M')) hx n).hom) (hμ x)
+  rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
+    LinearMap.range_eq_top.2 hsurj] at h
+  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology.
+  erw [singularHomologyToLocalHomology_singularHomologyMap N (e : C(M, M')) hx]
+  exact h
+
+end Homeomorph
 
 section Manifold
 
@@ -237,6 +270,21 @@ theorem not_isFundamentalClass_two_zsmul_fundamentalClass [Nonempty M] :
     ¬ IsFundamentalClass ((2 : ℤ) • o.fundamentalClass hn) := by
   rw [o.isFundamentalClass_zsmul_fundamentalClass_iff hn, Int.isUnit_iff]
   omega
+
+/-- **The fundamental classes of a connected manifold.** On a compact connected oriented manifold,
+the integral fundamental classes are exactly `[M]` and `-[M]`. -/
+theorem isFundamentalClass_iff_eq_or_eq_neg [ConnectedSpace M]
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)) :
+    IsFundamentalClass μ ↔ μ = o.fundamentalClass hn ∨ μ = -o.fundamentalClass hn := by
+  have : Nonempty M := ConnectedSpace.toNonempty
+  obtain ⟨c, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hn μ
+  rw [o.isFundamentalClass_zsmul_fundamentalClass_iff hn, Int.isUnit_iff]
+  refine ⟨?_, ?_⟩
+  · rintro (rfl | rfl) <;> simp
+  · rintro (h | h)
+    · exact Or.inl (((o.fundamentalClassEquiv hn).injective (by simpa using h)))
+    · exact Or.inr (((o.fundamentalClassEquiv hn).injective (by simpa using h)))
 
 /-- **The rational fundamental class is a fundamental class** on a compact connected oriented
 manifold: it is nonzero, and over the field `ℚ` every nonzero top-dimensional class is

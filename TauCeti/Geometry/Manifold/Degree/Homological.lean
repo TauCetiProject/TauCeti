@@ -9,7 +9,11 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
+import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
+import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
@@ -42,6 +46,13 @@ For a map between compact manifolds, with `N` preconnected, this reads
 (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
 computed by counting preimages with signs computes the image of the fundamental class.
 
+The same holds for compact connected boundaryless manifolds modelled on any finite-dimensional real
+normed spaces, such as products, read through copies charted in `ℝⁿ⁺¹`
+(`TauCeti.BoundarylessModel`) with the orientations pulled back along the identities. Without a
+common chart there is no preferred fundamental class, and the formula holds up to sign for any
+integral fundamental classes (`TauCeti.IsFundamentalClass`) of `M` and `N`
+(`TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`).
+
 When `N` is moreover σ-compact, a proper `C¹` map has a regular value by Sard's theorem, so its
 homological degree is the mapping degree `TauCeti.degree o o' f`
 (`TauCeti.Manifold.Orientation.degree_toHomologicalOrientation_eq_degree`). For a proper smooth
@@ -63,6 +74,10 @@ disc.
 * `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`: for a map
   between compact manifolds, with preconnected target, `f_*[M]` is the signed count of preimages
   of a regular value times `[N]`.
+* `TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`: for a
+  `C¹` map between compact connected boundaryless manifolds with any models, `f_* μ` is `±` the
+  signed count of preimages of a regular value times `ν`, for any integral fundamental classes `μ`
+  and `ν`.
 * `TauCeti.Manifold.Orientation.degree_toHomologicalOrientation_eq_degree`: the homological
   degree of a proper `C¹` map onto a preconnected σ-compact manifold is its mapping degree.
 * `TauCeti.Manifold.Orientation.integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul`:
@@ -221,6 +236,181 @@ theorem integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul
         integralTopForm o' φ := by
   rw [degree_toHomologicalOrientation_eq_degree hE o o' (hf.of_le (by simp)) hfp]
   exact integralTopForm_mpullback_eq_degree_mul o o' hf hfp hφ hc
+
+section AnyModel
+
+open CategoryTheory AlgebraicTopology
+
+/-- A homeomorphism `e : X ≃ₜ Y` followed by its inverse acts as the identity on integral
+homology. -/
+private theorem singularHomologyMap_homeomorph_symm_apply {X Y : Type} [TopologicalSpace X]
+    [TopologicalSpace Y] (e : X ≃ₜ Y) {k : ℕ}
+    (μ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
+      (TopCat.of Y)) :
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+        (TopCat.ofHom (e : C(X, Y)))).hom
+      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+        (TopCat.ofHom (e.symm : C(Y, X)))).hom μ) = μ := by
+  have he : (e : C(X, Y)).comp (e.symm : C(Y, X)) = ContinuousMap.id Y := by ext; simp
+  have h : ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+        (TopCat.ofHom (e.symm : C(Y, X))) ≫
+      ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+        (TopCat.ofHom (e : C(X, Y))) = 𝟙 _ := by
+    rw [← Functor.map_comp, ← TopCat.ofHom_comp, he, TopCat.ofHom_id,
+      CategoryTheory.Functor.map_id]
+  exact congrArg (fun φ ↦ φ.hom μ) h
+
+/-- On a compact connected manifold charted in a finite-dimensional real inner product space `F`
+of dimension `k + 1`, with an orientation `o`, every integral fundamental class of a space `X`
+homeomorphic to it through `e : M ≃ₜ X` is `±` the image of the fundamental class of `o`. -/
+private theorem eq_smul_mapFundamentalClass_of_isFundamentalClass {F M X : Type}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {k : ℕ}
+    (hF : finrank ℝ F = k + 1) [TopologicalSpace M] [T2Space M] [ChartedSpace F M]
+    [IsManifold 𝓘(ℝ, F) 1 M] [CompactSpace M] [ConnectedSpace M] [TopologicalSpace X]
+    (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (k + 1))) (e : M ≃ₜ X)
+    {μ : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (k + 1) :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) :
+    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
+      μ = s • (o.toHomologicalOrientation hF).mapFundamentalClass hF (e : C(M, X)) := by
+  -- Pull `μ` back to `M`, where it is `±[M]`, and push it forward again.
+  rcases ((o.toHomologicalOrientation hF).isFundamentalClass_iff_eq_or_eq_neg hF _).1
+      (hμ.map_homeomorph e.symm) with h | h
+  · refine ⟨1, Or.inl rfl, ?_⟩
+    rw [one_smul, HomologicalOrientation.mapFundamentalClass_def, ← h]
+    exact (singularHomologyMap_homeomorph_symm_apply e μ).symm
+  · refine ⟨-1, Or.inr rfl, ?_⟩
+    rw [neg_one_zsmul, ← HomologicalOrientation.mapFundamentalClass_neg,
+      HomologicalOrientation.mapFundamentalClass_def,
+      HomologicalOrientation.fundamentalClass_neg, ← h]
+    exact (singularHomologyMap_homeomorph_symm_apply e μ).symm
+
+variable {W W' H H' M N : Type} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+  [NormedAddCommGroup W'] [NormedSpace ℝ W'] [FiniteDimensional ℝ W'] [TopologicalSpace H]
+  [TopologicalSpace H'] {I : ModelWithCorners ℝ W H} [I.Boundaryless]
+  {J : ModelWithCorners ℝ W' H'} [J.Boundaryless]
+  [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I 1 M] [CompactSpace M]
+  [ConnectedSpace M]
+  [TopologicalSpace N] [T2Space N] [ChartedSpace H' N] [IsManifold J 1 N] [CompactSpace N]
+  [ConnectedSpace N]
+
+omit [I.Boundaryless] [J.Boundaryless] [T2Space M] [CompactSpace M] [ConnectedSpace M]
+  [T2Space N] [CompactSpace N] [ConnectedSpace N] in
+/-- The degree formula of
+`TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`, given `C¹`
+diffeomorphisms `ιM : M' → M` and `ιN : N' → N` from compact connected manifolds charted
+in one inner product space `V`: on these, `f` is read as `ιN⁻¹ ∘ f ∘ ιM`, whose degree is that of
+`f` for the pulled-back orientations, and the inner-product formula applies. -/
+private theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul_of_diffeomorph
+    {V M' N' : Type} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    {k : ℕ} (hV : finrank ℝ V = k + 1)
+    [TopologicalSpace M'] [T2Space M'] [ChartedSpace V M'] [IsManifold 𝓘(ℝ, V) 1 M']
+    [CompactSpace M'] [ConnectedSpace M']
+    [TopologicalSpace N'] [T2Space N'] [ChartedSpace V N'] [IsManifold 𝓘(ℝ, V) 1 N']
+    [CompactSpace N'] [ConnectedSpace N']
+    (ιM : M' ≃ₘ^1⟮𝓘(ℝ, V), I⟯ M) (ιN : N' ≃ₘ^1⟮𝓘(ℝ, V), J⟯ N)
+    (o : Manifold.Orientation I M (Fin (k + 1))) (o' : Manifold.Orientation J N (Fin (k + 1)))
+    {f : C(M, N)} (hf : ContMDiff I J 1 f) {y : N} (hy : IsRegularValue I J f y)
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (k + 1) :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ)
+    {ν : ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (k + 1) :
+      ModuleCat.{0} ℤ)} (hν : IsFundamentalClass ν) :
+    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).obj
+          (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom μ =
+        (s * degreeAtRegularValue o o' f y) • ν := by
+  have hιM (x) : (mfderiv 𝓘(ℝ, V) I ιM x).IsInvertible := ιM.isInvertible_mfderiv one_ne_zero
+  have hιN (x) : (mfderiv 𝓘(ℝ, V) J ιN x).IsInvertible := ιN.isInvertible_mfderiv one_ne_zero
+  let oM := o.pullback ιM.contMDiff hιM (by simp [hV])
+  let oN := o'.pullback ιN.contMDiff hιN (by simp [hV])
+  -- Read on the copies, `f` is `g = ιN⁻¹ ∘ f ∘ ιM`, with the same degree at `ιN⁻¹ y`.
+  let g : C(M', N') :=
+    (ιN.symm.toHomeomorph : C(N, N')).comp
+      (f.comp (ιM.toHomeomorph : C(M', M)))
+  have hιg : ⇑ιN ∘ ⇑g = ⇑f ∘ ⇑ιM := funext fun x ↦ by simp [g]
+  have hg : MDifferentiable 𝓘(ℝ, V) 𝓘(ℝ, V) g :=
+    (ιN.symm.contMDiff.comp (hf.comp ιM.contMDiff)).mdifferentiable one_ne_zero
+  have hgdeg : degreeAtRegularValue oM oN g (ιN.symm y) = degreeAtRegularValue o o' f y := by
+    rw [← degreeAtRegularValue_comp_left_of_bijective (e := ιN) ιN.toHomeomorph.bijective
+      (o'.isOrientationPreservingAt_pullback _ hιN _) hg, hιg, ιN.apply_symm_apply,
+      degreeAtRegularValue_comp_of_bijective (e := ιM) ιM.toHomeomorph.bijective
+        (o.isOrientationPreservingAt_pullback _ hιM _) (hf.mdifferentiable one_ne_zero)]
+  have hreg : IsRegularValue 𝓘(ℝ, V) 𝓘(ℝ, V) g (ιN.symm y) := by
+    refine isRegularValue_iff.2 fun x hx ↦ ?_
+    have hx' : f (ιM x) = y := by
+      rw [← ιN.apply_symm_apply (f (ιM x))]
+      exact ιN.symm.injective (by simpa [g] using hx) ▸ ιN.apply_symm_apply y
+    exact (isRegularPoint_iff.2 (ιN.symm.isInvertible_mfderiv one_ne_zero).surjective).comp
+      ((hy.isRegularPoint hx').comp (isRegularPoint_iff.2 (hιM x).surjective))
+  have key := mapFundamentalClass_eq_degreeAtRegularValue_smul hV oM oN hreg
+  rw [hgdeg] at key
+  -- Compare `μ` and `ν` with the images of the fundamental classes of the copies.
+  obtain ⟨s₁, hs₁, rfl⟩ :=
+    eq_smul_mapFundamentalClass_of_isFundamentalClass hV oM ιM.toHomeomorph hμ
+  obtain ⟨s₂, hs₂, rfl⟩ :=
+    eq_smul_mapFundamentalClass_of_isFundamentalClass hV oN ιN.toHomeomorph hν
+  refine ⟨s₁ * s₂, ?_, ?_⟩
+  · rcases hs₁ with rfl | rfl <;> rcases hs₂ with rfl | rfl <;> simp
+  -- `f ∘ ιM = ιN ∘ g` carries `±[M']` to `±deg • ιN_*[N']`.
+  have hcomp : f.comp (ιM.toHomeomorph : C(M', M)) =
+      (ιN.toHomeomorph : C(N', N)).comp g :=
+    ContinuousMap.ext fun x ↦ (congrFun hιg x).symm
+  rw [map_zsmul, ← HomologicalOrientation.mapFundamentalClass_comp, hcomp,
+    HomologicalOrientation.mapFundamentalClass_comp, key]
+  -- The fundamental class of `N'` is read in the homology functor's object.
+  erw [map_zsmul]
+  rw [← HomologicalOrientation.mapFundamentalClass_def, smul_smul]
+  -- The right-hand side lives in the homology of `N`, read as `SSet.homology`.
+  erw [smul_smul]
+  congr 1
+  have h₂ : s₂ * s₂ = 1 := by rcases hs₂ with rfl | rfl <;> rfl
+  linear_combination (-(s₁ * degreeAtRegularValue o o' f y)) * h₂
+
+
+/-- **The smooth degree is the homological degree, for any models.** Let `f : M → N` be a `C¹`
+map between compact connected boundaryless manifolds of dimension `k + 1`, modelled on any
+finite-dimensional real normed spaces, with orientations `o` and `o'`, and let `y` be a regular
+value of `f`. Then `f` sends any integral fundamental class `μ` of `M` to `±` the signed count of
+preimages `degreeAtRegularValue o o' f y` times any integral fundamental class `ν` of `N`. Here the
+fundamental classes are those of `TauCeti.IsFundamentalClass`, which need no orientation datum;
+for manifolds charted in one inner product space, with the fundamental classes of `o` and `o'`, the
+sign is `1` (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`). -/
+theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul {k : ℕ}
+    (hW : finrank ℝ W = k + 1) (hW' : finrank ℝ W' = k + 1)
+    (o : Manifold.Orientation I M (Fin (k + 1))) (o' : Manifold.Orientation J N (Fin (k + 1)))
+    {f : C(M, N)} (hf : ContMDiff I J 1 f) {y : N} (hy : IsRegularValue I J f y)
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (k + 1) :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ)
+    {ν : ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (k + 1) :
+      ModuleCat.{0} ℤ)} (hν : IsFundamentalClass ν) :
+    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).obj
+          (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom μ =
+        (s * degreeAtRegularValue o o' f y) • ν := by
+  -- Copies `M'` and `N'` of `M` and `N` charted in `V = ℝᵏ⁺¹`, with the identities `ιM`, `ιN`.
+  let V := EuclideanSpace ℝ (Fin (k + 1))
+  have hV : finrank ℝ V = k + 1 := finrank_euclideanSpace_fin
+  let IM := I.transContinuousLinearEquiv (ContinuousLinearEquiv.ofFinrankEq (hW.trans hV.symm))
+  let IN := J.transContinuousLinearEquiv (ContinuousLinearEquiv.ofFinrankEq (hW'.trans hV.symm))
+  let _ : CompactSpace (BoundarylessModel IM M) := (BoundarylessModel.homeomorph IM M).compactSpace
+  let _ : T2Space (BoundarylessModel IM M) := (BoundarylessModel.homeomorph IM M).t2Space
+  let _ : ConnectedSpace (BoundarylessModel IM M) :=
+    (BoundarylessModel.homeomorph IM M).surjective.connectedSpace
+      (BoundarylessModel.homeomorph IM M).continuous
+  let _ : CompactSpace (BoundarylessModel IN N) := (BoundarylessModel.homeomorph IN N).compactSpace
+  let _ : T2Space (BoundarylessModel IN N) := (BoundarylessModel.homeomorph IN N).t2Space
+  let _ : ConnectedSpace (BoundarylessModel IN N) :=
+    (BoundarylessModel.homeomorph IN N).surjective.connectedSpace
+      (BoundarylessModel.homeomorph IN N).continuous
+  let ιM : BoundarylessModel IM M ≃ₘ^1⟮𝓘(ℝ, V), I⟯ M :=
+    ((ContinuousLinearEquiv.toTransContinuousLinearEquiv I M _).trans
+      (BoundarylessModel.diffeomorph IM 1)).symm
+  let ιN : BoundarylessModel IN N ≃ₘ^1⟮𝓘(ℝ, V), J⟯ N :=
+    ((ContinuousLinearEquiv.toTransContinuousLinearEquiv J N _).trans
+      (BoundarylessModel.diffeomorph IN 1)).symm
+  exact exists_singularHomologyMap_eq_degreeAtRegularValue_smul_of_diffeomorph hV ιM ιN o o' hf
+    hy hμ hν
+
+end AnyModel
 
 end Manifold.Orientation
 

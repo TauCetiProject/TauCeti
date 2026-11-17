@@ -43,8 +43,9 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
 * `TauCeti.degreeAtRegularValue_of_notMem_range`: the degree vanishes at a value outside the range.
 * `TauCeti.degreeAtRegularValue_id`, `TauCeti.degreeAtRegularValue_const`: the identity has degree
   `1` and a constant map into a manifold of positive dimension has degree `0`.
-* `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with an orientation-preserving
-  bijection does not change the degree.
+* `TauCeti.degreeAtRegularValue_comp_of_bijective`,
+  `TauCeti.degreeAtRegularValue_comp_left_of_bijective`: precomposing or postcomposing with an
+  orientation-preserving bijection does not change the degree.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
@@ -155,6 +156,26 @@ theorem degreeAtRegularValue_comp_of_bijective {e : M₀ → M} (he : Bijective 
   · rw [orientationSign_comp (hf (e x))
       (mdifferentiableAt_of_isInvertible_mfderiv (hpres x).isInvertible_mfderiv),
       orientationSign_of_isOrientationPreservingAt (hpres x), mul_one]
+
+variable {E₁ H₁ N₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+  [TopologicalSpace H₁] {J₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace N₁]
+  [ChartedSpace H₁ N₁] [IsManifold J₁ 1 N₁] {o₁ : Manifold.Orientation J₁ N₁ ι}
+
+/-- **Postcomposing with an orientation-preserving bijection preserves the degree.** If
+`e : N → N₁` is a bijection preserving the orientations `o'` and `o₁` at every point and `f` is
+differentiable, then `e ∘ f` has the same degree at `e y` as `f` at `y`: the two maps have the same
+fibres over these points, and the orientation signs agree. -/
+theorem degreeAtRegularValue_comp_left_of_bijective {e : N → N₁} (he : Bijective e)
+    (hpres : ∀ z, IsOrientationPreservingAt o' o₁ e z) (hf : MDifferentiable I J f) (y : N) :
+    degreeAtRegularValue o o₁ (e ∘ f) (e y) = degreeAtRegularValue o o' f y := by
+  have hfib : (e ∘ f) ⁻¹' {e y} = f ⁻¹' {y} := by
+    ext x
+    simp [he.injective.eq_iff]
+  rw [degreeAtRegularValue, degreeAtRegularValue, hfib]
+  refine finsum_mem_congr rfl fun x _ ↦ ?_
+  rw [orientationSign_comp
+      (mdifferentiableAt_of_isInvertible_mfderiv (hpres (f x)).isInvertible_mfderiv) (hf x),
+    orientationSign_of_isOrientationPreservingAt (hpres (f x)), one_mul]
 
 end Comp
 
