@@ -488,6 +488,12 @@ instance finite_topRow_eq (l : Fin n → ℤ) : Finite {P : GTPattern n // P.top
       · rw [P.entry_eq_zero (by omega), P'.entry_eq_zero (by omega)]
     · rw [P.entry_eq_zero (by omega), P'.entry_eq_zero (by omega)]
 
+/-- Adding an arbitrary predicate to a fixed top row preserves finiteness. -/
+instance finite_topRow_eq_and (l : Fin n → ℤ) (p : GTPattern n → Prop) :
+    Finite {P : GTPattern n // P.topRow = l ∧ p P} :=
+  Finite.of_injective (fun P => (⟨P.1, P.2.1⟩ : {P : GTPattern n // P.topRow = l}))
+    fun _ _ h => Subtype.ext (Subtype.mk.inj h)
+
 /-! ### The counts in low rank -/
 
 /-- A one-row pattern is nothing but its top row: for each `l` there is exactly one pattern with

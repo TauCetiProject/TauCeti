@@ -63,7 +63,9 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 * `TauCeti.Hive.EqConstraintIndex`, `TauCeti.Hive.eqMatrix`, `TauCeti.Hive.eqRHS`,
   `TauCeti.Hive.rhombusMatrix`: finite equality and inequality matrices over any ring.
 * `TauCeti.Hive.properCone`, `TauCeti.Hive.realFibre`: closed real hive cone and polytope fibres.
-* `TauCeti.Hive.FixedIntegerHive`, `TauCeti.Hive.hiveCount`: integer hive fibres and counts.
+* `TauCeti.Hive.FixedIntegerHive`, `TauCeti.Hive.hiveCount`,
+  `TauCeti.Hive.fixedIntegerHiveRotateEquiv`, `TauCeti.Hive.fixedIntegerHiveRotateTwiceEquiv`:
+  integer hive fibres, counts, and boundary-rotation equivalences.
 
 ## Main results
 
@@ -517,16 +519,80 @@ instance uniqueFixedIntegerHiveZero (n : ℕ) :
 @[simp] theorem hiveCount_rank_zero (B : Fin 3 → Fin 0 → ℤ) : hiveCount B = 1 := by
   rw [Subsingleton.elim B 0, hiveCount_zero]
 
+/-- One clockwise rotation re-normalizes `FixedIntegerHive B` onto
+`FixedIntegerHive (fun s => B (s + 1))`. -/
+def fixedIntegerHiveRotateEquiv {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
+    FixedIntegerHive B ≃ FixedIntegerHive (fun s => B (s + 1)) where
+  toFun h := ⟨h.1.rotate, by ext s i; simp [h.2]⟩
+  invFun h := ⟨h.1.rotate.rotate, by ext s i; fin_cases s <;> simp [h.2]⟩
+  left_inv h := Subtype.ext h.1.rotate_rotate_rotate
+  right_inv h := Subtype.ext h.1.rotate_rotate_rotate
+
+@[simp, grind =]
+theorem fixedIntegerHiveRotateEquiv_coe {n : ℕ} (B : Fin 3 → Fin n → ℤ)
+    (h : FixedIntegerHive B) :
+    (fixedIntegerHiveRotateEquiv B h).1 = h.1.rotate := (rfl)
+
+@[simp, grind =]
+theorem fixedIntegerHiveRotateEquiv_symm_coe {n : ℕ} (B : Fin 3 → Fin n → ℤ)
+    (h : FixedIntegerHive (fun s => B (s + 1))) :
+    ((fixedIntegerHiveRotateEquiv B).symm h).1 = h.1.rotate.rotate := (rfl)
+
 /-- Clockwise rotation of the boundary preserves `hiveCount`. -/
 @[simp] theorem hiveCount_rotate {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     hiveCount (fun s => B (s + 1)) = hiveCount B :=
-  Fintype.card_congr
-    { toFun := fun h => ⟨h.1.rotate.rotate, by
-        ext s i; rw [boundary_rotate, boundary_rotate, h.2]; dsimp only
-        rw [show s + 1 + 1 + 1 = s by fin_cases s <;> decide]⟩
-      invFun := fun h => ⟨h.1.rotate, by ext s i; simp [h.2]⟩
-      left_inv := fun _ => by ext p; simp
-      right_inv := fun _ => by ext p; simp }
+  Fintype.card_congr (fixedIntegerHiveRotateEquiv B).symm
+
+/-- Two clockwise rotations convert `FixedIntegerHive (cyclicBoundary lam μ ν)` into
+`FixedIntegerHive (productBoundary ν lam μ.dual)`, shifting entries by `-h C = ∑ r, ν.1 r`. -/
+def fixedIntegerHiveRotateTwiceEquiv {n : ℕ} (lam μ ν : DominantWeight n) :
+    FixedIntegerHive (cyclicBoundary lam μ ν) ≃
+      FixedIntegerHive (productBoundary ν lam μ.dual) :=
+  (Equiv.subtypeEquivRight fun h : IntegerHive n => by
+    have hshift : cyclicBoundary lam μ ν = fun s => productBoundary ν lam μ.dual (s + 1) := by
+      ext s i; fin_cases s <;> simp
+    rw [hshift]).trans (fixedIntegerHiveRotateEquiv (productBoundary ν lam μ.dual)).symm
+
+@[grind =]
+theorem fixedIntegerHiveRotateTwiceEquiv_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (h : FixedIntegerHive (cyclicBoundary lam μ ν)) :
+    (fixedIntegerHiveRotateTwiceEquiv lam μ ν h).1 = h.1.rotate.rotate := (rfl)
+
+@[grind =]
+theorem fixedIntegerHiveRotateTwiceEquiv_symm_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (h : FixedIntegerHive (productBoundary ν lam μ.dual)) :
+    ((fixedIntegerHiveRotateTwiceEquiv lam μ ν).symm h).1 = h.1.rotate := (rfl)
+
+/-- Explicit gauge conversion on entries under `fixedIntegerHiveRotateTwiceEquiv`:
+`(h.rotate.rotate) p = h p.rotate.rotate + ∑ r, ν.1 r`. -/
+@[simp, grind =]
+theorem fixedIntegerHiveRotateTwiceEquiv_apply_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (h : FixedIntegerHive (cyclicBoundary lam μ ν)) (p : Vertex n) :
+    (fixedIntegerHiveRotateTwiceEquiv lam μ ν h).1 p =
+      h.1 p.rotate.rotate + ∑ r : Fin n, ν.1 r := by
+  have hC : (Vertex.cornerA n).rotate.rotate = Vertex.edgePoint n 2 0 := by ext <;> simp
+  have hall : ({r : Fin n | 0 ≤ r.val} : Finset (Fin n)) = Finset.univ := by ext r; simp
+  have hval : h.1 (Vertex.cornerA n).rotate.rotate = -∑ r : Fin n, ν.1 r := by
+    rw [hC, h.1.apply_edgePoint_two 0, Fin.val_zero, hall, h.2, cyclicBoundary_two]
+  rw [fixedIntegerHiveRotateTwiceEquiv_coe]
+  simp only [rotate_apply, hval]
+  abel
+
+@[simp, grind =]
+theorem fixedIntegerHiveRotateTwiceEquiv_symm_apply_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (h : FixedIntegerHive (productBoundary ν lam μ.dual)) (p : Vertex n) :
+    ((fixedIntegerHiveRotateTwiceEquiv lam μ ν).symm h).1 p =
+      h.1 p.rotate - ∑ r : Fin n, ν.1 r := by
+  have hB : (Vertex.cornerA n).rotate = Vertex.edgePoint n 0 (Fin.last n) := by ext <;> simp
+  have hall : ({r : Fin n | r.val < n} : Finset (Fin n)) = Finset.univ := by ext r; simp
+  have hval : h.1 (Vertex.cornerA n).rotate = ∑ r : Fin n, ν.1 r := by
+    rw [hB, h.1.apply_edgePoint_zero, Fin.val_last, hall, h.2, productBoundary_zero]
+  rw [fixedIntegerHiveRotateTwiceEquiv_symm_coe, rotate_apply, hval]
+
+@[simp]
+theorem hiveCount_cyclicBoundary {n : ℕ} (lam μ ν : DominantWeight n) :
+    hiveCount (cyclicBoundary lam μ ν) = hiveCount (productBoundary ν lam μ.dual) :=
+  Fintype.card_congr (fixedIntegerHiveRotateTwiceEquiv lam μ ν)
 
 /-- Reflection of the boundary preserves `hiveCount`. -/
 @[simp] theorem hiveCount_reflect {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
@@ -572,15 +638,11 @@ theorem suffix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n
     show h.rotate.boundary 0 = μ.1 by simp [boundary_rotate, hb],
     show h.rotate.boundary 1 = γ.dual.1 by simp [boundary_rotate, hb],
     show h.rotate.boundary 2 = lam.1 by simp [boundary_rotate, hb]] at hup
-  have hdual : (∑ i : Fin n with i.val < n - k, γ.dual.1 i) = -∑ j : Fin n with k ≤ j.val, γ.1 j :=
-    by
-    simp only [DominantWeight.dual_apply, Finset.sum_neg_distrib, neg_inj, Finset.sum_filter]
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (Equiv.sum_comp Fin.revPerm fun j : Fin n => if k ≤ j.val then γ.1 j else 0)
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    by_cases hi : i.val < n - k
-    · simp [hi, show k ≤ n - (i.val + 1) by omega]
-    · simp [hi, show ¬ k ≤ n - (i.val + 1) by omega]
+  have hdual : (∑ i : Fin n with i.val < n - k, γ.dual.1 i) =
+      -∑ j : Fin n with k ≤ j.val, γ.1 j := by
+    have hrev := sum_filter_rev_eq_prefixSum (n - k) (fun i : Fin n => γ.1 i.rev)
+    simp only [Nat.sub_sub_self hk, Fin.rev_rev, prefixSum_def] at hrev
+    simp [DominantWeight.dual_apply, Finset.sum_neg_distrib, hrev]
   rw [hdual, ← Finset.sum_filter_add_sum_filter_not Finset.univ
     (fun i : Fin n => i.val < k) μ.1] at hup
   simp only [not_lt] at hup; linarith

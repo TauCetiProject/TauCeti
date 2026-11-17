@@ -49,6 +49,8 @@ its determinant twist `(1, 0, -1)` both carry exactly `8` patterns.
 ## Main results
 
 * `TauCeti.card_interlacingFinset`: how many sequences interlace a given one.
+* `TauCeti.sum_interlacingFinset_three`: summing over `interlacingFinset l` for `l : Fin 3 → ℤ`
+  splits as an iterated sum over `[l 1, l 0]` and `[l 2, l 1]`.
 * `TauCeti.GTPattern.truncateSigmaEquiv`: the patterns over `l` sorted by the row below the top.
 * `TauCeti.GTPattern.card_topRow_succ`: **the branching recursion for the pattern count**.
 * `TauCeti.GTPattern.truncateTopWeightSigmaEquiv`: the patterns with top weight `l` sorted by the
@@ -100,6 +102,36 @@ theorem card_interlacingFinset (l : Fin (n + 1) → ℤ) :
   rw [interlacingFinset, Pi.card_Icc]
   exact Finset.prod_congr rfl fun i _ => Int.card_Icc _ _
 
+/-- Summing over `TauCeti.interlacingFinset l` for `l : Fin 3 → ℤ` splits as an iterated sum over
+the two independent intervals `[l 1, l 0]` and `[l 2, l 1]`. -/
+theorem sum_interlacingFinset_three {M : Type*} [AddCommMonoid M] (l : Fin 3 → ℤ)
+    (f : (Fin 2 → ℤ) → M) :
+    ∑ m ∈ interlacingFinset l, f m =
+      ∑ a ∈ Finset.Icc (l 1) (l 0), ∑ b ∈ Finset.Icc (l 2) (l 1), f ![a, b] := by
+  rw [← Finset.sum_product']
+  refine Finset.sum_nbij' (fun m => (m 0, m 1)) (fun p => ![p.1, p.2]) ?_ ?_ ?_ ?_ ?_
+  · intro m hm
+    rw [mem_interlacingFinset] at hm
+    exact Finset.mem_product.mpr
+      ⟨Finset.mem_Icc.mpr ⟨hm.succ_le 0, hm.le_castSucc 0⟩,
+        Finset.mem_Icc.mpr ⟨hm.succ_le 1, hm.le_castSucc 1⟩⟩
+  · intro p hp
+    obtain ⟨hp₀, hp₁⟩ := Finset.mem_product.mp hp
+    rw [Finset.mem_Icc] at hp₀ hp₁
+    refine mem_interlacingFinset.mpr (interlaces_iff.mpr fun i => ?_)
+    fin_cases i
+    · exact ⟨hp₀.2, hp₀.1⟩
+    · exact ⟨hp₁.2, hp₁.1⟩
+  · intro m _
+    ext i
+    fin_cases i <;> rfl
+  · intro _ _
+    rfl
+  · intro m _
+    refine congrArg f ?_
+    ext i
+    fin_cases i <;> rfl
+
 /-- The dominant weights interlacing a dominant weight `l`, as a `Finset`.
 
 A sequence interlacing a weakly decreasing sequence is itself weakly decreasing
@@ -137,6 +169,25 @@ def truncateSigmaEquiv (l : Fin (n + 1) → ℤ) :
         have hm' : Q.topRow = m := hQ
         subst hm'
         rfl }
+
+@[simp, grind =]
+theorem truncateSigmaEquiv_apply_fst_coe (l : Fin (n + 1) → ℤ)
+    (P : {P : GTPattern (n + 1) // P.topRow = l}) :
+    ((truncateSigmaEquiv l P).1 : Fin n → ℤ) = P.1.truncate.topRow :=
+  congrArg topRow (truncateEquiv_apply_coe l P)
+
+@[simp, grind =]
+theorem truncateSigmaEquiv_apply_snd_coe (l : Fin (n + 1) → ℤ)
+    (P : {P : GTPattern (n + 1) // P.topRow = l}) :
+    (truncateSigmaEquiv l P).2.1 = P.1.truncate :=
+  truncateEquiv_apply_coe l P
+
+@[simp, grind =]
+theorem truncateSigmaEquiv_symm_apply_coe (l : Fin (n + 1) → ℤ)
+    (x : Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)}) :
+    ((truncateSigmaEquiv l).symm x).1 =
+      x.2.1.extend l (by rw [x.2.2]; exact mem_interlacingFinset.mp x.1.2) :=
+  truncateEquiv_symm_apply_coe l ⟨x.2.1, by rw [x.2.2]; exact mem_interlacingFinset.mp x.1.2⟩
 
 /-- **The branching recursion for the pattern count.**  The Gelfand-Tsetlin patterns with `n + 1`
 rows and top row `l` are counted by the patterns with `n` rows, summed over the sequences
@@ -269,27 +320,8 @@ is not weakly decreasing one of the two intervals is empty and the count is `0`.
 theorem card_topRow_three (l : Fin 3 → ℤ) :
     Nat.card {P : GTPattern 3 // P.topRow = l}
       = ∑ a ∈ Finset.Icc (l 1) (l 0), ∑ b ∈ Finset.Icc (l 2) (l 1), (a - b + 1).toNat := by
-  rw [card_topRow_succ, ← Finset.sum_product']
-  refine Finset.sum_nbij' (fun m => (m 0, m 1)) (fun p => ![p.1, p.2]) ?_ ?_ ?_ ?_ ?_
-  · intro m hm
-    rw [mem_interlacingFinset] at hm
-    exact Finset.mem_product.mpr
-      ⟨Finset.mem_Icc.mpr ⟨hm.succ_le 0, hm.le_castSucc 0⟩,
-        Finset.mem_Icc.mpr ⟨hm.succ_le 1, hm.le_castSucc 1⟩⟩
-  · intro p hp
-    obtain ⟨hp₀, hp₁⟩ := Finset.mem_product.mp hp
-    rw [Finset.mem_Icc] at hp₀ hp₁
-    refine mem_interlacingFinset.mpr (interlaces_iff.mpr fun i => ?_)
-    fin_cases i
-    · exact ⟨hp₀.2, hp₀.1⟩
-    · exact ⟨hp₁.2, hp₁.1⟩
-  · intro m _
-    ext i
-    fin_cases i <;> rfl
-  · intro p _
-    rfl
-  · intro m _
-    exact card_topRow_two_eq_toNat_sub_add_one m
+  rw [card_topRow_succ, sum_interlacingFinset_three]
+  simp only [card_topRow_two_eq_toNat_sub_add_one, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- **A worked `GL 3` example.** The top row `(2, 1, 0)` carries exactly `8` Gelfand-Tsetlin
 patterns, one for each choice of an interlacing middle row `(a, b)` with `2 ≥ a ≥ 1`, `1 ≥ b ≥ 0`

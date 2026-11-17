@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.Fin.Rev
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
 
@@ -31,6 +32,8 @@ This file contains basic facts about finite partial sums.
 * `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
+* `TauCeti.sum_filter_rev_eq_prefixSum`: summing `x ∘ Fin.rev` over the suffix `n - k ≤ i.val`
+  gives `prefixSum k x`.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
   distributive scalar actions commute with prefix sums.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
@@ -185,6 +188,15 @@ theorem prefixSum_init {k : ℕ} (hk : k ≤ n) (x : Fin (n + 1) → M) :
 theorem prefixSum_append_zero {m : ℕ} (k : ℕ) (x : Fin n → M) :
     prefixSum k (Fin.append x (0 : Fin m → M)) = prefixSum k x := by
   simp [prefixSum, sum_filter, Fin.sum_univ_add]
+
+/-- Summing `x ∘ Fin.rev` over the suffix `n - k ≤ i.val` gives the prefix sum of length `k`. -/
+theorem sum_filter_rev_eq_prefixSum (k : ℕ) (x : Fin n → M) :
+    (∑ i : Fin n with n - k ≤ i.val, x i.rev) = prefixSum k x := by
+  rw [sum_filter, prefixSum, sum_filter, ← Equiv.sum_comp Fin.revPerm]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hi := i.isLt
+  simp only [Fin.revPerm_apply, Fin.rev_rev, Fin.val_rev]
+  exact if_congr (by omega) rfl rfl
 
 end PrefixSum
 
