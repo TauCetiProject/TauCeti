@@ -53,7 +53,9 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
 
 The map induced by a holomorphic map descends pullback of closed forms along the surjective class
 map with `LinearMap.liftOfSurjective`, as `TauCeti.deRhamCohomology.map` in
-`TauCeti.Geometry.Manifold.DeRham.Map`.
+`TauCeti.Geometry.Manifold.DeRham.Map`. The cochain map `TauCeti.dolbeaultComplex.map` and its
+comparison `TauCeti.dolbeaultComplex.homologyMap_map` likewise follow `TauCeti.deRhamComplex.map`
+and `TauCeti.deRhamComplex.homologyMap_map` in the same file.
 
 ## References
 
@@ -187,9 +189,7 @@ theorem coe_mpullback {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') 
 theorem mpullback_id (p q : ℕ) :
     mpullback (F := F) (f := id) contMDiff_id (isPseudoholomorphic_id (ofComplexManifold E M))
       p q = LinearMap.id :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <| by
-    rw [coe_mpullback]
-    exact LinearMap.congr_fun SmoothForm.mpullback_id φ.1.1
+  LinearMap.ext fun φ ↦ Subtype.ext <| LinearMap.congr_fun (mpullbackType_id _ p q) φ.1
 
 /-- Pullback of `∂bar`-closed forms reverses composition. -/
 theorem mpullback_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
@@ -199,9 +199,8 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ,
     (p q : ℕ) :
     mpullback (F := F) (hg.comp hf) (hJ'.comp hJ) p q =
       mpullback hf hJ p q ∘ₗ mpullback hg hJ' p q :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <| by
-    rw [coe_mpullback, LinearMap.comp_apply, coe_mpullback, coe_mpullback]
-    exact LinearMap.congr_fun (SmoothForm.mpullback_comp f g hf hg) φ.1.1
+  LinearMap.ext fun φ ↦ Subtype.ext <|
+    LinearMap.congr_fun (mpullbackType_comp hf hJ hg hJ' p q) φ.1
 
 /-- Pullback along a holomorphic map preserves `∂bar`-exact forms. -/
 theorem mpullback_mem_exactForms {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
@@ -482,15 +481,8 @@ theorem map_congr {f f' : M₁ → M₂} (h : f = f') (hf : ContMDiff 𝓘(ℝ, 
 theorem map_id (p : ℕ) :
     map (F := F) (f := (id : M₁ → M₁)) contMDiff_id
       (isPseudoholomorphic_id (ofComplexManifold E₁ M₁)) p = 𝟙 _ := by
-  refine HomologicalComplex.hom_ext _ _ fun q ↦ ?_
-  have h : ModuleCat.ofHom (mpullbackType (F := F) (contMDiff_id (I := 𝓘(ℝ, E₁)) (M := M₁))
-      (isPseudoholomorphic_id (ofComplexManifold E₁ M₁)) p q) = 𝟙 _ := by
-    ext φ : 2
-    exact Subtype.ext (by
-      simp only [ModuleCat.hom_ofHom, ModuleCat.hom_id, LinearMap.id_apply, coe_mpullbackType,
-        SmoothForm.mpullback_id])
-  rw [← cancel_mono (dolbeaultComplexXIso p q).hom, map_f, h, HomologicalComplex.id_f,
-    Category.comp_id, Category.id_comp]
+  ext q : 2
+  simp [map, ModuleCat.ofHom_id]
 
 /-- The induced cochain maps reverse composition of holomorphic maps. -/
 theorem map_comp {f : M₁ → M₂} {g : M₂ → M₃} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
@@ -499,15 +491,9 @@ theorem map_comp {f : M₁ → M₂} {g : M₂ → M₃} (hf : ContMDiff 𝓘(�
     (hJ' : IsPseudoholomorphic (ofComplexManifold E₂ M₂) (ofComplexManifold E₃ M₃) g)
     (p : ℕ) :
     map (F := F) (hg.comp hf) (hJ'.comp hJ) p = map hg hJ' p ≫ map hf hJ p := by
-  refine HomologicalComplex.hom_ext _ _ fun q ↦ ?_
-  have h : ModuleCat.ofHom (mpullbackType (F := F) (hg.comp hf) (hJ'.comp hJ) p q) =
-      ModuleCat.ofHom (mpullbackType hg hJ' p q) ≫ ModuleCat.ofHom (mpullbackType hf hJ p q) := by
-    ext φ : 2
-    exact Subtype.ext (by
-      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-        coe_mpullbackType, SmoothForm.mpullback_comp f g hf hg])
-  rw [← cancel_mono (dolbeaultComplexXIso p q).hom, map_f, h, HomologicalComplex.comp_f,
-    Category.assoc, map_f, map_f_assoc]
+  ext q : 2
+  simp only [map, HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id_assoc,
+    mpullbackType_comp hf hJ hg hJ' p q, ModuleCat.ofHom_comp]
 
 /-- The map induced on cohomology by the cochain map of a holomorphic map is pullback on
 Dolbeault cohomology. -/
@@ -518,18 +504,11 @@ theorem homologyMap_map {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘
       ModuleCat.ofHom (dolbeaultCohomology.map hf hJ p q) := by
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   obtain ⟨φ, rfl⟩ := dolbeaultCohomology.mk_surjective p q c
-  have hφ := (mem_closedForms_iff_delBarType_eq_zero p q φ.1).mp φ.2
-  -- The cycle of the Dolbeault complex corresponding to `φ`.
-  let z := (dolbeaultComplex E₂ M₂ F p).moduleCatCyclesMk ((dolbeaultComplexXIso p q).inv φ.1)
-    (q + 1) (by simp) (by rw [dolbeaultComplex_d_apply, Iso.inv_hom_id_apply, hφ, map_zero])
-  rw [dolbeaultCohomology.mk_eq_homologyπ p q φ z (by simp [z]), ← ModuleCat.comp_apply,
-    HomologicalComplex.homologyπ_naturality, ModuleCat.hom_ofHom, ModuleCat.comp_apply,
-    ← dolbeaultCohomology.mk_eq_homologyπ p q φ z (by simp [z]), dolbeaultCohomology.map_mk,
-    dolbeaultCohomology.mk_eq_homologyπ]
-  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
-    HomologicalComplex.iCycles_moduleCatCyclesMk, map_f_inv_apply, Iso.inv_hom_id_apply]
-  exact Subtype.ext ((coe_mpullbackType hf hJ p q φ.1).trans
-    (closedForms.coe_mpullback hf hJ p q φ).symm)
+  rw [ModuleCat.hom_ofHom, dolbeaultCohomology.map_mk,
+    dolbeaultCohomology.mk_eq_moduleCatHomologyClass,
+    dolbeaultCohomology.mk_eq_moduleCatHomologyClass]
+  exact HomologicalComplex.homologyMap_moduleCatHomologyClass _ _ _ (map hf hJ p) _ _
+    (closedForms.mpullback hf hJ p q) (fun φ ↦ map_f_inv_apply hf hJ p q φ.1) φ
 
 end dolbeaultComplex
 

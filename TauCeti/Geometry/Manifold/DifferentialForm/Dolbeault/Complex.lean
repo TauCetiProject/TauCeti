@@ -198,6 +198,21 @@ theorem mk_eq_homologyπ (p q : ℕ) (φ : closedForms E M F p q)
     (fun q ↦ (ofComplexManifold E M).typeForms (F := F) p q) (closedForms E M F p)
     (dolbeaultComplexXIso p) (mem_closedForms_iff_complex p) φ z hz
 
+/-- The class map is the homology class map of the closed forms, embedded into the Dolbeault
+complex through the canonical identification of its terms. -/
+theorem mk_eq_moduleCatHomologyClass (p q : ℕ) :
+    mk (E := E) (M := M) (F := F) p q =
+      (dolbeaultComplex E M F p).moduleCatHomologyClass (Z := closedForms E M F p q)
+        (CochainComplex.next ℕ q)
+        ((dolbeaultComplexXIso p q).inv.hom ∘ₗ (closedForms E M F p q).subtype) fun φ ↦ by
+          rw [LinearMap.comp_apply, Submodule.subtype_apply, dolbeaultComplex_d_apply,
+            Iso.inv_hom_id_apply, (mem_closedForms_iff_delBarType_eq_zero p q φ.1).mp φ.2,
+            map_zero] :=
+  LinearMap.ext fun φ ↦ by
+    rw [mk, HomologicalComplex.moduleCatCohomologyClassOfIso_apply,
+      HomologicalComplex.moduleCatHomologyClass_apply]
+    rfl
+
 /-- Every Dolbeault cohomology class has a `∂bar`-closed representative. -/
 theorem mk_surjective (p q : ℕ) : Function.Surjective (mk (E := E) (M := M) (F := F) p q) := by
   exact (dolbeaultComplex E M F p).moduleCatCohomologyClassOfIso_surjective

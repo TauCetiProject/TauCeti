@@ -18,7 +18,9 @@ Dolbeault complex of the pair `(M, U)` is the mapping cocone `Cone(A^(p,•)(M) 
 of the restriction of smooth forms of type `(p,•)` from `M` to `U`
 (`TauCeti.relativeDolbeaultComplex`). The Dolbeault complexes are indexed by `ℕ`; they are
 extended by zero in negative degrees along `ComplexShape.embeddingUpNat`, so that Mathlib's
-`CochainComplex.mappingCocone` applies. For a closed subset `S` of `M` and `U = M ∖ S` its
+`CochainComplex.mappingCocone` applies; the relative complex is then strictly concentrated in
+nonnegative degrees (`CochainComplex.mappingCocone.isStrictlyGE`). For a closed subset `S` of `M`
+and `U = M ∖ S` its
 cohomology is the relative Dolbeault cohomology of `(M, M ∖ S)`, which by the relative Dolbeault
 theorem computes the cohomology `H_S^q(M, Ω^p)` of holomorphic `p`-forms with supports in `S`; that
 comparison is not proved here.
@@ -34,15 +36,20 @@ a relative coboundary exactly when `(α, β) = (∂bar γ, γ|_U - ∂bar η)`. 
 cocycles are the `∂bar`-closed, that is holomorphic, `p`-forms on `M` vanishing on `U`.
 
 In positive degree the relative cocycles form the submodule
-`TauCeti.relativeDolbeaultComplex.cocycles` of the coordinates, with the class map
-`TauCeti.relativeDolbeaultComplex.mk` onto the cohomology of the relative complex. The connecting
+`TauCeti.relativeDolbeaultComplex.cocyclesSucc` of the coordinates, with the class map
+`TauCeti.relativeDolbeaultComplex.mkSucc` onto the cohomology of the relative complex. In degree
+zero the relative cocycles `TauCeti.relativeDolbeaultComplex.cocyclesZero` are identified with the
+cohomology (`TauCeti.relativeDolbeaultComplex.mkZeroEquiv`). The connecting
 map `H^(p,q)(U) → H^(p,q+1)(M, U)` is `δ[b] = -[(0, b)]`; when `b` is the restriction of a form
 `b'` on `M`, it is also `[(∂bar b', 0)]`.
 
 A holomorphic map of pairs, a commutative square of holomorphic maps `f : M₁ → M₂` and
 `g : U₁ → U₂` over the inclusions, induces a cochain map of relative complexes acting by pullback
 on both coordinates (`TauCeti.relativeDolbeaultComplex.map`); it is compatible with identities and
-composition. Restricting to an open subset of `M`, and enlarging `U`, are maps of pairs.
+composition, with the class maps and with the connecting map. For open subsets `M'` of `M` and `U'`
+of `U`, the inclusions `(M', M' ∩ U) ⟶ (M, U)` and `(M, U') ⟶ (M, U)` are holomorphic maps of
+pairs; they induce restriction to `M'` and shrinking of `U` (enlarging the support `M ∖ U`) on the
+relative complexes.
 
 ## Main declarations
 
@@ -57,12 +64,16 @@ composition. Restricting to an open subset of `M`, and enlarging `U`, are maps o
 * `TauCeti.relativeDolbeaultComplex.d_XEquiv_symm_eq_zero_iff`,
   `TauCeti.relativeDolbeaultComplex.XEquiv_symm_mem_range_d_iff`: relative cocycles and
   coboundaries.
-* `TauCeti.relativeDolbeaultComplex.cocycles`, `TauCeti.relativeDolbeaultComplex.mk`: relative
-  cocycles of positive degree and their classes, with `mk_surjective` and `mk_eq_zero_iff`.
+* `TauCeti.relativeDolbeaultComplex.cocyclesSucc`, `TauCeti.relativeDolbeaultComplex.mkSucc`:
+  relative cocycles of positive degree and their classes, with `mkSucc_surjective` and
+  `mkSucc_eq_zero_iff`.
+* `TauCeti.relativeDolbeaultComplex.cocyclesZero`, `TauCeti.relativeDolbeaultComplex.mkZeroEquiv`:
+  relative cocycles of degree `0`, identified with the cohomology in degree `0`.
 * `TauCeti.relativeDolbeaultComplex.δ`: the connecting map, with `δ_mk` and
   `δ_mk_of_restrictType_eq`.
 * `TauCeti.relativeDolbeaultComplex.map`: the cochain map induced by a holomorphic map of pairs,
-  with `map_f_XEquiv_symm`, `map_id` and `map_comp`.
+  with `map_f_XEquiv_symm`, `map_id`, `map_comp`, the action on classes `homologyMap_map_mkSucc`
+  and `homologyMap_map_mkZeroEquiv`, and the naturality `homologyMap_map_δ` of the connecting map.
 
 ## References
 
@@ -70,6 +81,8 @@ composition. Restricting to an open subset of `M`, and enlarging `U`, are maps o
   J. Math. Soc. Japan 75 (2023).
 * R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, Chapter I, §6, for the
   analogous relative de Rham complex.
+* The index conventions and the shape of the coordinate and class API parallel the relative de Rham
+  complex of https://github.com/TauCetiProject/TauCeti/pull/39206.
 -/
 
 public section
@@ -101,6 +114,15 @@ def extendXEquiv (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n) :
       (ofComplexManifold E M).typeForms (F := F) p q :=
   ((extendXIso _ _ (i := q) (by simp [← hn])) ≪≫ dolbeaultComplexXIso p q).toLinearEquiv
 
+/-- `extendXEquiv` is the composite of the canonical identifications. -/
+theorem extendXEquiv_apply (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n)
+    (x : ((dolbeaultComplex E M F p).extend ComplexShape.embeddingUpNat).X n) :
+    extendXEquiv E M F p q n hn x =
+      (dolbeaultComplexXIso p q).hom
+        ((extendXIso (dolbeaultComplex E M F p) ComplexShape.embeddingUpNat (i := q)
+          (by simp [← hn])).hom x) :=
+  (rfl)
+
 /-- The inverse of `extendXEquiv` is the inverse of the canonical identifications. -/
 theorem extendXEquiv_symm_apply (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n)
     (α : (ofComplexManifold E M).typeForms (F := F) p q) :
@@ -108,14 +130,6 @@ theorem extendXEquiv_symm_apply (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n)
       (extendXIso (dolbeaultComplex E M F p) ComplexShape.embeddingUpNat (i := q)
         (by simp [← hn])).inv ((dolbeaultComplexXIso p q).inv α) :=
   (rfl)
-
-variable (E M F) in
-/-- The Dolbeault complex extended by zero vanishes in negative degrees. -/
-theorem isZero_extend_X (p : ℕ) (n : ℤ) (hn : n < 0) :
-    Limits.IsZero (((dolbeaultComplex E M F p).extend ComplexShape.embeddingUpNat).X n) :=
-  HomologicalComplex.isZero_extend_X _ _ _ fun i ↦ by
-    rw [ComplexShape.embeddingUpNat_f]
-    omega
 
 /-- In the coordinates `extendXEquiv`, the differential of the extended Dolbeault complex is
 `∂bar`. -/
@@ -157,7 +171,15 @@ Dolbeault complexes extended by zero to `ℤ`. -/
 def restriction (U : Opens M) (p : ℕ) :
     (dolbeaultComplex E M F p).extend ComplexShape.embeddingUpNat ⟶
       (dolbeaultComplex E U F p).extend ComplexShape.embeddingUpNat :=
-  extendMap (dolbeaultComplex.map contMDiff_subtype_val (isPseudoholomorphic_subtype_val U) p) _
+  extendMap (dolbeaultComplex.map contMDiff_subtype_val
+    (isPseudoholomorphic_ofComplexManifold_subtype_val U) p) _
+
+/-- The restriction cochain map is the extension by zero of the cochain map induced by the
+inclusion of `U`. -/
+theorem restriction_def (U : Opens M) (p : ℕ) :
+    restriction E M F U p = extendMap (dolbeaultComplex.map contMDiff_subtype_val
+      (isPseudoholomorphic_ofComplexManifold_subtype_val U) p) _ :=
+  (rfl)
 
 end relativeDolbeaultComplex
 
@@ -176,7 +198,7 @@ variable (U : Opens M) (p : ℕ)
 abbrev restrictType (q : ℕ) :
     (ofComplexManifold E M).typeForms (F := F) p q →ₗ[ℂ]
       (ofComplexManifold E U).typeForms (F := F) p q :=
-  mpullbackType contMDiff_subtype_val (isPseudoholomorphic_subtype_val U) p q
+  mpullbackType contMDiff_subtype_val (isPseudoholomorphic_ofComplexManifold_subtype_val U) p q
 
 /-- In the coordinates `dolbeaultComplex.extendXEquiv`, the restriction cochain map is restriction
 of type forms to `U`. -/
@@ -204,38 +226,46 @@ def XEquivZero :
     (relativeDolbeaultComplex E M F U p).X 0 ≃ₗ[ℂ] (ofComplexManifold E M).typeForms (F := F) p 0 :=
   letI : Unique (((dolbeaultComplex E U F p).extend ComplexShape.embeddingUpNat).X (-1)) :=
     @uniqueOfSubsingleton _ (ModuleCat.isZero_iff_subsingleton.mp
-      (dolbeaultComplex.isZero_extend_X E U F p (-1) (by norm_num))) 0
+      (CochainComplex.isZero_of_isStrictlyGE
+        ((dolbeaultComplex E U F p).extend ComplexShape.embeddingUpNat) 0 (-1))) 0
   (mappingCocone.relativeCoordinates (restriction E M F U p) 0 (-1) rfl).trans
     (((dolbeaultComplex.extendXEquiv E M F p 0 0 rfl).prodCongr (LinearEquiv.refl ℂ _)).trans
       (LinearEquiv.prodUnique (R := ℂ)))
 
-/-- The relative Dolbeault complex vanishes in negative degrees. -/
-theorem isZero_X_of_neg {n : ℤ} (hn : n < 0) :
-    Limits.IsZero ((relativeDolbeaultComplex E M F U p).X n) := by
-  have := ModuleCat.isZero_iff_subsingleton.mp (dolbeaultComplex.isZero_extend_X E M F p n hn)
-  have := ModuleCat.isZero_iff_subsingleton.mp
-    (dolbeaultComplex.isZero_extend_X E U F p (n + -1) (by omega))
-  rw [ModuleCat.isZero_iff_subsingleton]
-  exact (mappingCocone.relativeCoordinates (restriction E M F U p) n (n + -1)
-    rfl).toEquiv.subsingleton
+/-- `XEquiv` reads the relative coordinates through the identifications `extendXEquiv`. -/
+theorem XEquiv_apply (n : ℤ) (q : ℕ) (hq : ((q + 1 : ℕ) : ℤ) = n)
+    (x : (relativeDolbeaultComplex E M F U p).X n) :
+    XEquiv U p n q hq x =
+      (dolbeaultComplex.extendXEquiv E M F p (q + 1) n hq
+          (mappingCocone.relativeCoordinates (restriction E M F U p) n q (by omega) x).1,
+        dolbeaultComplex.extendXEquiv E U F p q q rfl
+          (mappingCocone.relativeCoordinates (restriction E M F U p) n q (by omega) x).2) :=
+  (rfl)
 
-private lemma XEquiv_symm_eq (n : ℤ) (q : ℕ) (hq : ((q + 1 : ℕ) : ℤ) = n)
+/-- The inverse of `XEquiv` is the inverse of the relative coordinates. -/
+theorem XEquiv_symm_apply (n : ℤ) (q : ℕ) (hq : ((q + 1 : ℕ) : ℤ) = n)
     (x : (ofComplexManifold E M).typeForms (F := F) p (q + 1) ×
       (ofComplexManifold E U).typeForms (F := F) p q) :
     (XEquiv U p n q hq).symm x = (mappingCocone.relativeCoordinates (restriction E M F U p) n q
       (by omega)).symm ((dolbeaultComplex.extendXEquiv E M F p (q + 1) n hq).symm x.1,
         (dolbeaultComplex.extendXEquiv E U F p q q rfl).symm x.2) :=
-  rfl
+  (rfl)
 
-private lemma XEquivZero_symm_eq (α : (ofComplexManifold E M).typeForms (F := F) p 0) :
+/-- `XEquivZero` reads the first relative coordinate through `extendXEquiv`. -/
+theorem XEquivZero_apply (x : (relativeDolbeaultComplex E M F U p).X 0) :
+    XEquivZero U p x = dolbeaultComplex.extendXEquiv E M F p 0 0 rfl
+      (mappingCocone.relativeCoordinates (restriction E M F U p) 0 (-1) rfl x).1 :=
+  (rfl)
+
+/-- The inverse of `XEquivZero` is the inverse of the relative coordinates, with second
+coordinate zero. -/
+theorem XEquivZero_symm_apply (α : (ofComplexManifold E M).typeForms (F := F) p 0) :
     (XEquivZero U p).symm α =
       (mappingCocone.relativeCoordinates (restriction E M F U p) 0 (-1) rfl).symm
         ((dolbeaultComplex.extendXEquiv E M F p 0 0 rfl).symm α, 0) := by
   apply (XEquivZero U p).injective
-  rw [LinearEquiv.apply_symm_apply]
-  unfold XEquivZero
-  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-  simp
+  rw [LinearEquiv.apply_symm_apply, XEquivZero_apply, LinearEquiv.apply_symm_apply,
+    LinearEquiv.apply_symm_apply]
 
 /-! ### The relative differential -/
 
@@ -250,7 +280,7 @@ theorem d_XEquiv_symm (n n' : ℤ) (q : ℕ) (hq : ((q + 1 : ℕ) : ℤ) = n) (h
         ((ofComplexManifold E M).delBarType p (q + 1) α,
           restrictType U p (q + 1) α - (ofComplexManifold E U).delBarType p q β) := by
   subst hq hn'
-  rw [XEquiv_symm_eq, XEquiv_symm_eq]
+  rw [XEquiv_symm_apply, XEquiv_symm_apply]
   refine (mappingCocone.d_relativeCoordinates_symm _ _ q (by omega) _).trans
     (congrArg _ (Prod.ext (dolbeaultComplex.extend_d_extendXEquiv_symm _ _ _ _ _ rfl _) ?_))
   dsimp only
@@ -265,7 +295,7 @@ theorem d_XEquivZero_symm (α : (ofComplexManifold E M).typeForms (F := F) p 0) 
     (relativeDolbeaultComplex E M F U p).d 0 1 ((XEquivZero U p).symm α) =
       (XEquiv U p 1 0 rfl).symm
         ((ofComplexManifold E M).delBarType p 0 α, restrictType U p 0 α) := by
-  rw [XEquivZero_symm_eq, XEquiv_symm_eq]
+  rw [XEquivZero_symm_apply, XEquiv_symm_apply]
   refine (mappingCocone.d_relativeCoordinates_symm _ 0 (-1) rfl _).trans
     (congrArg _ (Prod.ext (dolbeaultComplex.extend_d_extendXEquiv_symm _ _ _ _ _ rfl _) ?_))
   dsimp only
@@ -336,7 +366,7 @@ section Classes
 
 /-- The relative cocycles of degree `q + 1` in coordinates: pairs `(α, β)` of a form `α` of type
 `(p,q+1)` on `M` and a form `β` of type `(p,q)` on `U` with `∂bar α = 0` and `α|_U = ∂bar β`. -/
-def cocycles (q : ℕ) :
+def cocyclesSucc (q : ℕ) :
     Submodule ℂ ((ofComplexManifold E M).typeForms (F := F) p (q + 1) ×
       (ofComplexManifold E U).typeForms (F := F) p q) :=
   LinearMap.ker ((((ofComplexManifold E M).delBarType p (q + 1)).comp (LinearMap.fst ℂ _ _)).prod
@@ -345,73 +375,134 @@ def cocycles (q : ℕ) :
 
 /-- Membership in the relative cocycles: `∂bar α = 0` and `α|_U = ∂bar β`. -/
 @[simp]
-theorem mem_cocycles {q : ℕ} (x : (ofComplexManifold E M).typeForms (F := F) p (q + 1) ×
+theorem mem_cocyclesSucc {q : ℕ} (x : (ofComplexManifold E M).typeForms (F := F) p (q + 1) ×
       (ofComplexManifold E U).typeForms (F := F) p q) :
-    x ∈ cocycles U p q ↔ (ofComplexManifold E M).delBarType p (q + 1) x.1 = 0 ∧
+    x ∈ cocyclesSucc U p q ↔ (ofComplexManifold E M).delBarType p (q + 1) x.1 = 0 ∧
       restrictType U p (q + 1) x.1 = (ofComplexManifold E U).delBarType p q x.2 := by
-  simp [cocycles, sub_eq_zero]
+  simp [cocyclesSucc, sub_eq_zero]
+
+/-- For a `∂bar`-closed form `b` on `U`, the pair `(0, b)` is a relative cocycle. -/
+theorem zero_prodMk_mem_cocyclesSucc {q : ℕ} (b : Dolbeault.closedForms E U F p q) :
+    ((0 : (ofComplexManifold E M).typeForms (F := F) p (q + 1)), b.1) ∈ cocyclesSucc U p q :=
+  (mem_cocyclesSucc U p _).mpr ⟨map_zero _, (map_zero _).trans
+    ((Dolbeault.mem_closedForms_iff_delBarType_eq_zero p q b.1).mp b.2).symm⟩
+
+/-- For a form `b'` on `M` whose restriction to `U` is `∂bar`-closed, the pair `(∂bar b', 0)` is a
+relative cocycle. -/
+theorem delBarType_prodMk_zero_mem_cocyclesSucc {q : ℕ}
+    (b' : (ofComplexManifold E M).typeForms (F := F) p q)
+    (hb' : restrictType U p q b' ∈ Dolbeault.closedForms E U F p q) :
+    ((ofComplexManifold E M).delBarType p q b', 0) ∈ cocyclesSucc U p q :=
+  (mem_cocyclesSucc U p _).mpr ⟨delBarType_delBarType_ofComplexManifold p q b', by
+    rw [map_zero, ← delBarType_mpullbackType,
+      (Dolbeault.mem_closedForms_iff_delBarType_eq_zero p q _).mp hb']⟩
 
 /-- The relative Dolbeault cohomology class of a relative cocycle of degree `q + 1`. -/
-def mk (q : ℕ) :
-    cocycles (E := E) (F := F) U p q →ₗ[ℂ]
+def mkSucc (q : ℕ) :
+    cocyclesSucc (E := E) (F := F) U p q →ₗ[ℂ]
       (relativeDolbeaultComplex E M F U p).homology ((q + 1 : ℕ) : ℤ) :=
-  (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass (Z := cocycles U p q)
+  (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass (Z := cocyclesSucc U p q)
     (CochainComplex.next ℤ _)
-    ((XEquiv U p _ q rfl).symm.toLinearMap ∘ₗ (cocycles U p q).subtype) fun x ↦ by
+    ((XEquiv U p _ q rfl).symm.toLinearMap ∘ₗ (cocyclesSucc U p q).subtype) fun x ↦ by
       obtain ⟨⟨α, β⟩, hx⟩ := x
-      exact (d_XEquiv_symm_eq_zero_iff U p _ _ q rfl rfl α β).mpr ((mem_cocycles U p _).mp hx)
+      exact (d_XEquiv_symm_eq_zero_iff U p _ _ q rfl rfl α β).mpr ((mem_cocyclesSucc U p _).mp hx)
 
 /-- The relative class map is the homology class map of the relative cocycles, embedded into the
 relative complex through the coordinates `XEquiv`. -/
-theorem mk_eq_moduleCatHomologyClass (q : ℕ) :
-    relativeDolbeaultComplex.mk (E := E) (F := F) U p q =
-      (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass (Z := cocycles U p q)
+theorem mkSucc_eq_moduleCatHomologyClass (q : ℕ) :
+    relativeDolbeaultComplex.mkSucc (E := E) (F := F) U p q =
+      (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass (Z := cocyclesSucc U p q)
         (CochainComplex.next ℤ _)
-        ((XEquiv U p _ q rfl).symm.toLinearMap ∘ₗ (cocycles U p q).subtype) fun x ↦ by
+        ((XEquiv U p _ q rfl).symm.toLinearMap ∘ₗ (cocyclesSucc U p q).subtype) fun x ↦ by
           obtain ⟨⟨α, β⟩, hx⟩ := x
           exact (d_XEquiv_symm_eq_zero_iff U p _ _ q rfl rfl α β).mpr
-            ((mem_cocycles U p _).mp hx) :=
+            ((mem_cocyclesSucc U p _).mp hx) :=
   (rfl)
 
 /-- Every relative Dolbeault cohomology class of positive degree is represented by a relative
 cocycle. -/
-theorem mk_surjective (q : ℕ) :
-    Function.Surjective (relativeDolbeaultComplex.mk (E := E) (F := F) U p q) := by
-  rw [relativeDolbeaultComplex.mk]
+theorem mkSucc_surjective (q : ℕ) :
+    Function.Surjective (relativeDolbeaultComplex.mkSucc (E := E) (F := F) U p q) := by
+  rw [relativeDolbeaultComplex.mkSucc]
   refine (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass_surjective _ _ _ fun y hy ↦ ?_
   obtain ⟨⟨α, β⟩, rfl⟩ := (XEquiv U p _ q rfl).symm.surjective y
-  exact ⟨⟨(α, β), (mem_cocycles U p _).mpr
+  exact ⟨⟨(α, β), (mem_cocyclesSucc U p _).mpr
     ((d_XEquiv_symm_eq_zero_iff U p _ _ q rfl rfl α β).mp hy)⟩, rfl⟩
 
 /-- The class of a relative cocycle vanishes exactly when the cocycle is a coboundary. -/
-theorem mk_eq_zero_iff (q : ℕ) (x : cocycles (E := E) (F := F) U p q) :
-    relativeDolbeaultComplex.mk U p q x = 0 ↔ ∃ y : (relativeDolbeaultComplex E M F U p).X q,
-      (relativeDolbeaultComplex E M F U p).d q ((q + 1 : ℕ) : ℤ) y =
-        (XEquiv U p _ q rfl).symm x := by
-  rw [relativeDolbeaultComplex.mk]
+theorem mkSucc_eq_zero_iff (q : ℕ) (x : cocyclesSucc (E := E) (F := F) U p q) :
+    relativeDolbeaultComplex.mkSucc U p q x = 0 ↔
+      ∃ y : (relativeDolbeaultComplex E M F U p).X q,
+        (relativeDolbeaultComplex E M F U p).d q ((q + 1 : ℕ) : ℤ) y =
+          (XEquiv U p _ q rfl).symm x := by
+  rw [relativeDolbeaultComplex.mkSucc]
   exact (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass_eq_zero_iff _ _ _ (by simp) x
+
+/-- The relative cocycles of degree `0` in coordinates: the holomorphic forms `α` of type `(p,0)`
+on `M`, `∂bar α = 0`, vanishing on `U`. -/
+def cocyclesZero : Submodule ℂ ((ofComplexManifold E M).typeForms (F := F) p 0) :=
+  LinearMap.ker (((ofComplexManifold E M).delBarType p 0).prod (restrictType U p 0))
+
+/-- Membership in the relative cocycles of degree `0`: `∂bar α = 0` and `α|_U = 0`. -/
+@[simp]
+theorem mem_cocyclesZero (α : (ofComplexManifold E M).typeForms (F := F) p 0) :
+    α ∈ cocyclesZero U p ↔
+      (ofComplexManifold E M).delBarType p 0 α = 0 ∧ restrictType U p 0 α = 0 := by
+  simp [cocyclesZero]
+
+/-- The relative cohomology in degree `0` is the space of relative cocycles of degree `0`: the
+class map is a linear equivalence. -/
+def mkZeroEquiv :
+    cocyclesZero (E := E) (F := F) U p ≃ₗ[ℂ] (relativeDolbeaultComplex E M F U p).homology 0 :=
+  have hd (x : cocyclesZero (E := E) (F := F) U p) :
+      (relativeDolbeaultComplex E M F U p).d 0 1 ((XEquivZero U p).symm x.1) = 0 :=
+    (d_XEquivZero_symm_eq_zero_iff U p x.1).mpr ((mem_cocyclesZero U p _).mp x.2)
+  LinearEquiv.ofBijective
+    ((relativeDolbeaultComplex E M F U p).moduleCatHomologyClass (Z := cocyclesZero U p)
+      (CochainComplex.next ℤ 0)
+      ((XEquivZero U p).symm.toLinearMap ∘ₗ (cocyclesZero U p).subtype) hd)
+    ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ by
+      obtain ⟨y, hy⟩ := ((relativeDolbeaultComplex E M F U p).moduleCatHomologyClass_eq_zero_iff
+        _ _ _ (CochainComplex.prev ℤ 0) x).mp hx
+      rw [(ModuleCat.isZero_iff_subsingleton.mp (CochainComplex.isZero_of_isStrictlyGE
+        (relativeDolbeaultComplex E M F U p) 0 (0 - 1) (by norm_num))).elim y 0, map_zero] at hy
+      exact Subtype.ext ((XEquivZero U p).symm.injective
+        (hy.symm.trans (XEquivZero U p).symm.map_zero.symm)),
+    (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass_surjective _ _ _ fun y hy ↦ by
+      obtain ⟨α, rfl⟩ := (XEquivZero U p).symm.surjective y
+      exact ⟨⟨α, (mem_cocyclesZero U p _).mpr ((d_XEquivZero_symm_eq_zero_iff U p α).mp hy)⟩,
+        rfl⟩⟩
+
+/-- The identification of the relative cohomology in degree `0` with the relative cocycles is the
+homology class map of the cocycles, embedded into the relative complex through `XEquivZero`. -/
+theorem mkZeroEquiv_apply (x : cocyclesZero (E := E) (F := F) U p) :
+    mkZeroEquiv U p x =
+      (relativeDolbeaultComplex E M F U p).moduleCatHomologyClass (Z := cocyclesZero U p)
+        (CochainComplex.next ℤ 0)
+        ((XEquivZero U p).symm.toLinearMap ∘ₗ (cocyclesZero U p).subtype)
+        (fun x ↦ (d_XEquivZero_symm_eq_zero_iff U p x.1).mpr ((mem_cocyclesZero U p _).mp x.2))
+        x :=
+  (rfl)
 
 /-- The pair `(0, b)` for a `∂bar`-closed form `b` on `U`, as a relative cocycle. -/
 private def inrClosed (q : ℕ) :
-    Dolbeault.closedForms E U F p q →ₗ[ℂ] cocycles (E := E) (F := F) U p q :=
+    Dolbeault.closedForms E U F p q →ₗ[ℂ] cocyclesSucc (E := E) (F := F) U p q :=
   ((LinearMap.inr ℂ ((ofComplexManifold E M).typeForms (F := F) p (q + 1))
     ((ofComplexManifold E U).typeForms (F := F) p q)).comp
       (Dolbeault.closedForms E U F p q).subtype).codRestrict _ fun b ↦ by
-    rw [mem_cocycles]
-    refine ⟨by simp, ?_⟩
-    simp only [LinearMap.comp_apply, LinearMap.inr_apply, Submodule.subtype_apply, map_zero]
-    exact ((Dolbeault.mem_closedForms_iff_delBarType_eq_zero p q b.1).mp b.2).symm
+    simp only [LinearMap.comp_apply, LinearMap.inr_apply, Submodule.subtype_apply]
+    exact zero_prodMk_mem_cocyclesSucc U p b
 
 private lemma mk_inrClosed_eq_zero (q : ℕ) (b : Dolbeault.closedForms E U F p q)
     (hb : b.1 ∈ Dolbeault.exactForms E U F p q) :
-    relativeDolbeaultComplex.mk (E := E) (F := F) (M := M) U p q (inrClosed U p q b) = 0 := by
+    relativeDolbeaultComplex.mkSucc (E := E) (F := F) (M := M) U p q (inrClosed U p q b) = 0 := by
   cases q with
   | zero =>
-    rw [Dolbeault.exactForms_zero, Submodule.mem_bot] at hb
-    rw [show b = 0 from Subtype.ext hb, map_zero, map_zero]
+    rw [Dolbeault.exactForms_zero, Submodule.mem_bot, Submodule.coe_eq_zero] at hb
+    rw [hb, map_zero, map_zero]
   | succ q =>
     obtain ⟨η, hη⟩ := (Dolbeault.mem_exactForms_succ p q b.1).mp hb
-    rw [mk_eq_zero_iff]
+    rw [mkSucc_eq_zero_iff]
     refine ⟨(XEquiv U p _ q rfl).symm (0, -η),
       (d_XEquiv_symm U p _ _ q rfl (by omega) _ _).trans ?_⟩
     congr 1
@@ -422,7 +513,7 @@ private lemma mk_inrClosed_eq_zero (q : ℕ) (b : Dolbeault.closedForms E U F p 
 private def δClosed (q : ℕ) :
     Dolbeault.closedForms E U F p q →ₗ[ℂ]
       (relativeDolbeaultComplex E M F U p).homology ((q + 1 : ℕ) : ℤ) :=
-  -(relativeDolbeaultComplex.mk U p q ∘ₗ inrClosed U p q)
+  -(relativeDolbeaultComplex.mkSucc U p q ∘ₗ inrClosed U p q)
 
 private lemma ker_le_ker_δClosed (q : ℕ) :
     LinearMap.ker (dolbeaultCohomology.mk (E := E) (M := U) (F := F) p q) ≤
@@ -447,9 +538,7 @@ def δ (q : ℕ) :
 /-- The connecting map sends the class of a `∂bar`-closed form `b` on `U` to `-[(0, b)]`. -/
 theorem δ_mk (q : ℕ) (b : Dolbeault.closedForms E U F p q) :
     δ (M := M) U p q (dolbeaultCohomology.mk p q b) =
-      -relativeDolbeaultComplex.mk U p q ⟨(0, b.1), (mem_cocycles U p _).mpr ⟨map_zero _,
-        (map_zero _).trans ((Dolbeault.mem_closedForms_iff_delBarType_eq_zero p q b.1).mp
-          b.2).symm⟩⟩ := by
+      -relativeDolbeaultComplex.mkSucc U p q ⟨(0, b.1), zero_prodMk_mem_cocyclesSucc U p b⟩ := by
   rw [δ, LinearMap.equivOfSurjective_apply]
   rfl
 
@@ -458,16 +547,9 @@ sends its class to the class of `(∂bar b', 0)`. -/
 theorem δ_mk_of_restrictType_eq (q : ℕ) (b : Dolbeault.closedForms E U F p q)
     (b' : (ofComplexManifold E M).typeForms (F := F) p q) (hb' : restrictType U p q b' = b.1) :
     δ (M := M) U p q (dolbeaultCohomology.mk p q b) =
-      relativeDolbeaultComplex.mk U p q ⟨((ofComplexManifold E M).delBarType p q b', 0),
-        (mem_cocycles U p _).mpr
-        ⟨Subtype.ext (by
-            dsimp only
-            rw [coe_delBarType, coe_delBarType, delBar_delBar_ofComplexManifold,
-              Submodule.coe_zero]), by
-          dsimp only
-          rw [map_zero, ← delBarType_mpullbackType, hb',
-            (Dolbeault.mem_closedForms_iff_delBarType_eq_zero p q b.1).mp b.2]⟩⟩ := by
-  rw [δ_mk, neg_eq_iff_add_eq_zero, ← map_add, mk_eq_zero_iff]
+      relativeDolbeaultComplex.mkSucc U p q ⟨((ofComplexManifold E M).delBarType p q b', 0),
+        delBarType_prodMk_zero_mem_cocyclesSucc U p b' (hb' ▸ b.2)⟩ := by
+  rw [δ_mk, neg_eq_iff_add_eq_zero, ← map_add, mkSucc_eq_zero_iff]
   cases q with
   | zero =>
     refine ⟨(XEquivZero U p).symm b', (d_XEquivZero_symm U p b').trans ?_⟩
@@ -518,7 +600,29 @@ def map (p : ℕ) :
     (extendMap (dolbeaultComplex.map hg hJg p) ComplexShape.embeddingUpNat)
     (restriction_comp_extendMap_map hf hJ hg hJg hfg p))⟦(-1 : ℤ)⟧'
 
+/-- The cochain map induced by a holomorphic map of pairs is the shifted map of mapping cones
+induced by the extended cochain maps of `f` and `g`. -/
+theorem map_def (p : ℕ) :
+    map (F := F) hf hJ hg hJg hfg p =
+      (mappingCone.map (restriction E₂ M₂ F U₂ p) (restriction E₁ M₁ F U₁ p)
+        (extendMap (dolbeaultComplex.map hf hJ p) ComplexShape.embeddingUpNat)
+        (extendMap (dolbeaultComplex.map hg hJg p) ComplexShape.embeddingUpNat)
+        (restriction_comp_extendMap_map hf hJ hg hJg hfg p))⟦(-1 : ℤ)⟧' :=
+  (rfl)
+
+/-- The cochain map induced by a holomorphic map of pairs depends only on the maps. -/
+theorem map_congr {f' : M₁ → M₂} (hff : f = f') (hf' : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f')
+    (hJ' : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f')
+    {g' : U₁ → U₂} (hgg : g = g') (hg' : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ g')
+    (hJg' : IsPseudoholomorphic (ofComplexManifold E₁ U₁) (ofComplexManifold E₂ U₂) g')
+    (hfg' : ∀ x : U₁, (g' x : M₂) = f' x) (p : ℕ) :
+    map (F := F) hf hJ hg hJg hfg p = map hf' hJ' hg' hJg' hfg' p := by
+  subst hff hgg
+  rfl
+
 /-- The map induced by a holomorphic map of pairs acts componentwise in relative coordinates. -/
+-- `mappingCocone.relativeCoordinates_map` does not rewrite after unfolding `map` directly: the
+-- unfolded morphism is typed between the mapping cocones, not between the relative complexes.
 private lemma relativeCoordinates_map_f (p : ℕ) (n k : ℤ) (hnk : n + -1 = k)
     (x : (relativeDolbeaultComplex E₂ M₂ F U₂ p).X n) :
     mappingCocone.relativeCoordinates (restriction E₁ M₁ F U₁ p) n k hnk
@@ -537,7 +641,7 @@ theorem map_f_XEquiv_symm (p : ℕ) (n : ℤ) (q : ℕ) (hq : ((q + 1 : ℕ) : �
     (map hf hJ hg hJg hfg p).f n ((XEquiv U₂ p n q hq).symm (α, β)) =
       (XEquiv U₁ p n q hq).symm (mpullbackType hf hJ p (q + 1) α, mpullbackType hg hJg p q β) := by
   apply (XEquiv U₁ p n q hq).injective
-  rw [LinearEquiv.apply_symm_apply, XEquiv_symm_eq, XEquiv, LinearEquiv.trans_apply,
+  rw [LinearEquiv.apply_symm_apply, XEquiv_symm_apply, XEquiv, LinearEquiv.trans_apply,
     relativeCoordinates_map_f, LinearEquiv.apply_symm_apply]
   simp [dolbeaultComplex.extendMap_map_f_extendXEquiv_symm]
 
@@ -547,7 +651,7 @@ theorem map_f_XEquivZero_symm (p : ℕ) (α : (ofComplexManifold E₂ M₂).type
     (map hf hJ hg hJg hfg p).f 0 ((XEquivZero U₂ p).symm α) =
       (XEquivZero U₁ p).symm (mpullbackType hf hJ p 0 α) := by
   apply (XEquivZero U₁ p).injective
-  rw [LinearEquiv.apply_symm_apply, XEquivZero_symm_eq, XEquivZero, LinearEquiv.trans_apply,
+  rw [LinearEquiv.apply_symm_apply, XEquivZero_symm_apply, XEquivZero, LinearEquiv.trans_apply,
     relativeCoordinates_map_f, LinearEquiv.apply_symm_apply]
   simp only [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.prodUnique_apply,
     dolbeaultComplex.extendMap_map_f_extendXEquiv_symm, LinearEquiv.apply_symm_apply]
@@ -580,6 +684,80 @@ theorem map_comp {f' : M₂ → M₃} (hf' : ContMDiff 𝓘(ℝ, E₂) 𝓘(ℝ,
     (restriction_comp_extendMap_map hf' hJ' hg' hJg' hfg' p) _ _
     (restriction_comp_extendMap_map hf hJ hg hJg hfg p)]
   exact (CategoryTheory.shiftFunctor (CochainComplex (ModuleCat ℂ) ℤ) (-1 : ℤ)).map_comp _ _
+
+include hfg in
+/-- Pullback along a holomorphic map of pairs commutes with restriction of type forms. -/
+theorem restrictType_mpullbackType (p q : ℕ)
+    (α : (ofComplexManifold E₂ M₂).typeForms (F := F) p q) :
+    restrictType U₁ p q (mpullbackType hf hJ p q α) =
+      mpullbackType hg hJg p q (restrictType U₂ p q α) := by
+  rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← mpullbackType_comp, ← mpullbackType_comp]
+  exact LinearMap.congr_fun
+    (mpullbackType_congr (funext fun x ↦ (hfg x).symm) _ _ _ _ p q) α
+
+/-- Pullback of relative cocycles of degree `q + 1` along a holomorphic map of pairs. -/
+def mapCocyclesSucc (p q : ℕ) :
+    cocyclesSucc (E := E₂) (F := F) U₂ p q →ₗ[ℂ] cocyclesSucc (E := E₁) (F := F) U₁ p q :=
+  ((mpullbackType hf hJ p (q + 1)).prodMap (mpullbackType hg hJg p q)).restrict fun x hx ↦ by
+    rw [mem_cocyclesSucc] at hx ⊢
+    refine ⟨?_, ?_⟩
+    · rw [LinearMap.prodMap_apply, delBarType_mpullbackType, hx.1, map_zero]
+    · rw [LinearMap.prodMap_apply, restrictType_mpullbackType hf hJ hg hJg hfg, hx.2,
+        delBarType_mpullbackType]
+
+/-- Pullback of relative cocycles of positive degree pulls back both forms. -/
+@[simp]
+theorem coe_mapCocyclesSucc (p q : ℕ) (x : cocyclesSucc (E := E₂) (F := F) U₂ p q) :
+    (mapCocyclesSucc hf hJ hg hJg hfg p q x : _ × _) =
+      (mpullbackType hf hJ p (q + 1) x.1.1, mpullbackType hg hJg p q x.1.2) :=
+  (rfl)
+
+/-- Pullback of relative cocycles of degree `0` along a holomorphic map of pairs. -/
+def mapCocyclesZero (p : ℕ) :
+    cocyclesZero (E := E₂) (F := F) U₂ p →ₗ[ℂ] cocyclesZero (E := E₁) (F := F) U₁ p :=
+  (mpullbackType hf hJ p 0).restrict fun α hα ↦ by
+    rw [mem_cocyclesZero] at hα ⊢
+    rw [delBarType_mpullbackType, hα.1, map_zero, restrictType_mpullbackType hf hJ hg hJg hfg,
+      hα.2, map_zero]
+    exact ⟨rfl, rfl⟩
+
+/-- Pullback of relative cocycles of degree `0` is pullback of forms. -/
+@[simp]
+theorem coe_mapCocyclesZero (p : ℕ) (α : cocyclesZero (E := E₂) (F := F) U₂ p) :
+    (mapCocyclesZero hf hJ hg hJg hfg p α : (ofComplexManifold E₁ M₁).typeForms (F := F) p 0) =
+      mpullbackType hf hJ p 0 α.1 :=
+  (rfl)
+
+/-- The map induced on relative cohomology of positive degree by a holomorphic map of pairs sends
+the class of a relative cocycle to the class of its pullback. -/
+theorem homologyMap_map_mkSucc (p q : ℕ) (x : cocyclesSucc (E := E₂) (F := F) U₂ p q) :
+    HomologicalComplex.homologyMap (map (F := F) hf hJ hg hJg hfg p) ((q + 1 : ℕ) : ℤ)
+        (mkSucc U₂ p q x) =
+      mkSucc U₁ p q (mapCocyclesSucc hf hJ hg hJg hfg p q x) := by
+  rw [mkSucc_eq_moduleCatHomologyClass, mkSucc_eq_moduleCatHomologyClass]
+  exact HomologicalComplex.homologyMap_moduleCatHomologyClass _ _ _ _ _ _ _ (fun x ↦
+    map_f_XEquiv_symm hf hJ hg hJg hfg p _ q rfl x.1.1 x.1.2) x
+
+/-- The map induced on relative cohomology of degree `0` by a holomorphic map of pairs is pullback
+of relative cocycles. -/
+theorem homologyMap_map_mkZeroEquiv (p : ℕ) (α : cocyclesZero (E := E₂) (F := F) U₂ p) :
+    HomologicalComplex.homologyMap (map (F := F) hf hJ hg hJg hfg p) 0 (mkZeroEquiv U₂ p α) =
+      mkZeroEquiv U₁ p (mapCocyclesZero hf hJ hg hJg hfg p α) := by
+  rw [mkZeroEquiv_apply, mkZeroEquiv_apply]
+  exact HomologicalComplex.homologyMap_moduleCatHomologyClass _ _ _ _ _ _ _ (fun α ↦
+    map_f_XEquivZero_symm hf hJ hg hJg hfg p α.1) α
+
+/-- The connecting maps are natural in holomorphic maps of pairs. -/
+theorem homologyMap_map_δ (p q : ℕ) (c : dolbeaultCohomology E₂ U₂ F p q) :
+    HomologicalComplex.homologyMap (map (F := F) hf hJ hg hJg hfg p) ((q + 1 : ℕ) : ℤ)
+        (δ U₂ p q c) =
+      δ U₁ p q (dolbeaultCohomology.map hg hJg p q c) := by
+  obtain ⟨b, rfl⟩ := dolbeaultCohomology.mk_surjective p q c
+  rw [δ_mk, map_neg, homologyMap_map_mkSucc, dolbeaultCohomology.map_mk, δ_mk]
+  refine congrArg (fun x ↦ -mkSucc U₁ p q x) (Subtype.ext ?_)
+  rw [coe_mapCocyclesSucc]
+  exact Prod.ext (map_zero _) (Subtype.ext ((coe_mpullbackType hg hJg p q b.1).trans
+    (Dolbeault.closedForms.coe_mpullback hg hJg p q b).symm))
 
 end Map
 

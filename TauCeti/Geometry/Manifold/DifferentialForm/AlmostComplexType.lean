@@ -72,7 +72,8 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
 * `TauCeti.SmoothAlmostComplexStructure.mpullbackType`: pullback along a pseudoholomorphic map as
-  a complex-linear map between the forms of type `(p,q)`.
+  a complex-linear map between the forms of type `(p,q)`, with `mpullbackType_id` and
+  `mpullbackType_comp`.
 * `TauCeti.SmoothForm.IsOfType.alternatingDerivation_fderivWithin_inChartAt`: the derivative of
   the type equation in a chart.
 * `TauCeti.SmoothForm.IsOfType.typeProjection_mextDerivₗ_eq_zero`,
@@ -595,6 +596,31 @@ theorem coe_mpullbackType (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic 
     (p q : ℕ) (φ : J'.typeForms (F := F) p q) :
     (mpullbackType hu hJ p q φ : SmoothForm I M F (p + q)) = SmoothForm.mpullback u hu φ.1 :=
   (rfl)
+
+/-- Pullback of type forms along the identity is the identity. -/
+@[simp]
+theorem mpullbackType_id (J : SmoothAlmostComplexStructure I M) (p q : ℕ) :
+    mpullbackType (F := F) contMDiff_id (isPseudoholomorphic_id J) p q = LinearMap.id :=
+  LinearMap.ext fun φ ↦ Subtype.ext <| LinearMap.congr_fun SmoothForm.mpullback_id φ.1
+
+/-- Pullback of type forms reverses composition. -/
+theorem mpullbackType_comp {E'' H'' M'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} [TopologicalSpace M'']
+    [ChartedSpace H'' M''] [IsManifold I'' ∞ M''] {J'' : SmoothAlmostComplexStructure I'' M''}
+    {v : M' → M''} (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' u)
+    (hv : ContMDiff I' I'' ∞ v) (hJ' : IsPseudoholomorphic J' J'' v) (p q : ℕ) :
+    mpullbackType (F := F) (hv.comp hu) (hJ'.comp hJ) p q =
+      mpullbackType hu hJ p q ∘ₗ mpullbackType hv hJ' p q :=
+  LinearMap.ext fun φ ↦ Subtype.ext <|
+    LinearMap.congr_fun (SmoothForm.mpullback_comp u v hu hv) φ.1
+
+/-- Pullback of type forms depends only on the map. -/
+theorem mpullbackType_congr {u' : M → M'} (h : u = u') (hu : ContMDiff I I' ∞ u)
+    (hJ : IsPseudoholomorphic J J' u) (hu' : ContMDiff I I' ∞ u')
+    (hJ' : IsPseudoholomorphic J J' u') (p q : ℕ) :
+    mpullbackType (F := F) hu hJ p q = mpullbackType hu' hJ' p q := by
+  subst h
+  rfl
 
 end SmoothAlmostComplexStructure
 

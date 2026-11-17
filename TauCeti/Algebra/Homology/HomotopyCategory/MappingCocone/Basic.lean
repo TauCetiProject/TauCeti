@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCocone
 public import Mathlib.CategoryTheory.Abelian.Refinements
@@ -33,6 +34,8 @@ compares the mapping cone of the first map with the third term.
 * `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst` and
   `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v`: the projections of
   the mapping cocone are natural in commutative squares.
+* `CochainComplex.mappingCocone.isStrictlyGE`: the mapping cocone of a morphism of complexes
+  strictly concentrated in degrees at least `n` is strictly concentrated in degrees at least `n`.
 * `CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`: for a short exact sequence `S` of
   cochain complexes, the lift `S.X₁ ⟶ mappingCocone S.g` of `S.f` is a quasi-isomorphism.
 
@@ -142,6 +145,17 @@ lemma ext_to {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 
     (h₂ : f ≫ (snd φ).v p q hpq = g ≫ (snd φ).v p q hpq) : f = g := by
   rw [← Category.comp_id f, ← Category.comp_id g, ← id_X φ p q hpq, Preadditive.comp_add,
     Preadditive.comp_add, reassoc_of% h₁, reassoc_of% h₂]
+
+/-- The mapping cocone of a morphism of cochain complexes which are both strictly concentrated
+in degrees at least `n` is strictly concentrated in degrees at least `n`. -/
+instance isStrictlyGE {K L : CochainComplex C ℤ} (φ : K ⟶ L) (n : ℤ) [K.IsStrictlyGE n]
+    [L.IsStrictlyGE n] : (mappingCocone φ).IsStrictlyGE n := by
+  have : (mappingCone φ).IsStrictlyGE (n - 1) := by
+    rw [isStrictlyGE_iff]
+    intro i hi
+    rw [mappingCone.isZero_X_iff]
+    exact ⟨K.isZero_of_isStrictlyGE n _, L.isZero_of_isStrictlyGE n _⟩
+  exact (mappingCone φ).isStrictlyGE_shift (n - 1) (-1) n (by lia)
 
 end
 
