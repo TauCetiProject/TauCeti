@@ -175,6 +175,14 @@ theorem coe_algebraMap (p : R[X]) :
   rw [coe_X]
   exact Polynomial.mapAlg_eq_map B p
 
+/-- A scalar polynomial acts on the coefficient subalgebra by multiplication in `B[X]`. -/
+@[simp]
+theorem coe_smul (p : R[X]) (f : coeffSubalgebra M) :
+    letI := algebra M h1
+    ((p • f : coeffSubalgebra M) : B[X]) = p.map (algebraMap R B) * f := by
+  let := algebra M h1
+  rw [Algebra.smul_def, Subalgebra.coe_mul, coe_algebraMap]
+
 /-- The parameter-ring algebra structure extends the coefficient-ring algebra structure. -/
 theorem isScalarTower :
     letI := algebra M h1

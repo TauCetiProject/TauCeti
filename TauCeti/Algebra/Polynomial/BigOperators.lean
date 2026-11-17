@@ -20,6 +20,9 @@ factors in the degrees `n i`. Mathlib proves this for a uniform bound `n`
 what is needed to read off the top coefficient of a determinant whose columns have different
 degree bounds.
 
+A product of monomials over a list is the monomial of the summed degrees and the ordered product
+of the coefficients.
+
 This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
@@ -54,6 +57,14 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
   rw [coeff_C_mul_X_pow, ite_eq_right_iff]
   have := mem_range.1 hj
   omega
+
+/-- A product of monomials over a list is the monomial of the summed degrees and the product
+of the coefficients, in the same order. -/
+theorem list_prod_map_monomial {α : Type*} (l : List α) (e : α → ℕ) (a : α → R) :
+    (l.map fun i ↦ monomial (e i) (a i)).prod = monomial (l.map e).sum (l.map a).prod := by
+  induction l with
+  | nil => simp
+  | cons i l ih => simp [ih, monomial_mul_monomial]
 
 end Semiring
 
