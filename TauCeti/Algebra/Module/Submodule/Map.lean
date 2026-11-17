@@ -42,6 +42,8 @@ is a surjection rather than an isomorphism.
   vectors.
 * `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images along the
   inclusion.
+* `Submodule.mem_submoduleOf`: an element of `q` lies in `p.submoduleOf q` iff its ambient value
+  lies in `p`.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -74,6 +76,12 @@ isomorphism's round-trip laws. -/
 theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
     p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
   rfl
+
+/-- An element of `q` lies in `p.submoduleOf q` if and only if its ambient value in `M` lies in
+`p`. -/
+@[simp, grind =]
+theorem mem_submoduleOf {p q : Submodule R M} {x : q} : x ∈ p.submoduleOf q ↔ (x : M) ∈ p := by
+  rw [submoduleOf, mem_comap, subtype_apply]
 
 end Submodule
 
