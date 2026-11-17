@@ -145,7 +145,7 @@ theorem localIndex_deck (p : OrientationCover 𝓘(ℝ, E) M) :
   have hinv : (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E)
       (VectorBundleOrientationCover.deck : OrientationCover 𝓘(ℝ, E) M → _) p).IsInvertible :=
     (isOrientationReversingAt_deck p).isInvertible_mfderiv
-  exact (TauCeti.Manifold.Orientation.localIndex_toHomologicalOrientation hE _ _ _ hinv).trans
+  exact (TauCeti.Manifold.Orientation.localIndex_toHomologicalOrientation hE hE _ _ _ hinv).trans
     (TauCeti.Manifold.Orientation.orientationSign_of_isOrientationReversingAt
       ((isOrientationReversingAt_deck p).reindex (finCongr hE)))
 
