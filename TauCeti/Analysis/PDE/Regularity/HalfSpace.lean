@@ -483,8 +483,8 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
   have hder : ∀ v, ∃ d : W1p mu Omega 2,
       HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := fun v => by
     obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
-    rw [Wkp.value_succ, hU, Wkp.value_one] at hd
-    exact ⟨d, Wkp.value_one (u : W1p mu Omega 2) ▸ hd⟩
+    rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
+    exact ⟨d, hd⟩
   choose D hD using fun j => hder (b j)
   obtain ⟨d, hd⟩ := hder τ
   -- The tangential derivative has zero boundary values.
