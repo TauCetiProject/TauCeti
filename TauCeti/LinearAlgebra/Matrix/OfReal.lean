@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.DetDescent
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Real matrices as complex matrices
@@ -27,6 +28,8 @@ by the same congruence.
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.map_ofReal_mul` and `Matrix.det_map_ofReal`: viewing real matrices as complex matrices
+  commutes with products and determinants.
 * `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
   complex matrix.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
@@ -68,13 +71,23 @@ theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
 
-/-- A real square matrix is invertible exactly when it is invertible as a complex matrix. -/
+/-- The complex image of a product of real matrices is the product of the complex images. -/
+theorem map_ofReal_mul [Fintype m] (M : Matrix l m ℝ) (N : Matrix m n ℝ) :
+    (M * N).map ((↑) : ℝ → ℂ) = M.map (↑) * N.map (↑) :=
+  Matrix.map_mul (f := Complex.ofRealHom)
+
+/-- The determinant of a real square matrix is the same over `ℂ`. -/
+@[simp]
+theorem det_map_ofReal [Fintype n] [DecidableEq n] (M : Matrix n n ℝ) :
+    (M.map ((↑) : ℝ → ℂ)).det = (M.det : ℂ) :=
+  (Complex.ofRealHom.map_det M).symm
+
+/-- A real square matrix is invertible exactly when it is invertible as a complex matrix: the
+case `ℝ → ℂ` of `Matrix.isUnit_map_iff`. -/
 @[simp]
 theorem isUnit_map_ofReal_iff [Fintype n] [DecidableEq n] {M : Matrix n n ℝ} :
-    IsUnit (M.map ((↑) : ℝ → ℂ)) ↔ IsUnit M := by
-  rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det,
-    show (M.map ((↑) : ℝ → ℂ)).det = (M.det : ℂ) from (Complex.ofRealHom.map_det M).symm,
-    isUnit_iff_ne_zero, isUnit_iff_ne_zero, Complex.ofReal_ne_zero]
+    IsUnit (M.map ((↑) : ℝ → ℂ)) ↔ IsUnit M :=
+  isUnit_map_iff Complex.ofRealHom M
 
 /-- The real Gram matrix `Re ((M N)ᴴ (M N))` of the columns of `M N`, for a real matrix `N`, is
 `Nᵀ Re (Mᴴ M) N`. -/

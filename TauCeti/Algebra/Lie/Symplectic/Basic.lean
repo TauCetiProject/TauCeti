@@ -129,10 +129,13 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
 symmetric. For the standard form `ω(x, y) = xᵀ J y`, `J * S` is the linear Hamiltonian vector field
 of the quadratic Hamiltonian `x ↦ xᵀ S x / 2`. -/
 theorem J_mul_mem_sp_iff {S : Matrix (l ⊕ l) (l ⊕ l) R} : J l R * S ∈ sp l R ↔ S.IsSymm := by
-  rw [mem_sp, transpose_mul, J_transpose, Matrix.mul_neg, neg_mul, Matrix.mul_assoc, J_squared,
-    ← Matrix.mul_assoc, J_squared, Matrix.mul_neg, Matrix.mul_one, neg_mul, Matrix.one_mul,
-    neg_neg, neg_neg]
-  exact Iff.rfl
+  -- `(J S)ᵀ J = Sᵀ (-J) J = Sᵀ` and `-(J (J S)) = S`, as `J * J = -1`.
+  have hl : (J l R * S)ᵀ * J l R = Sᵀ := by
+    simp [transpose_mul, J_transpose, Matrix.mul_assoc, J_squared]
+  have hr : -(J l R * (J l R * S)) = S := by
+    simp [← Matrix.mul_assoc, J_squared]
+  rw [mem_sp, hl, hr]
+  exact ⟨fun h ↦ IsSymm.ext fun i j ↦ by rw [← transpose_apply S i j, h], IsSymm.eq⟩
 
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :

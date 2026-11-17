@@ -462,17 +462,15 @@ theorem isRoot_one_charpoly_souriau_iff (U : unitaryGroup n ℂ) :
     have him : (U : Matrix n n ℂ)ᴴ - (U : Matrix n n ℂ)ᵀ = (-2 * Complex.I) •
         (((U : Matrix n n ℂ).map Complex.im).map ((↑) : ℝ → ℂ))ᵀ := by
       ext i j
-      apply Complex.ext <;> simp
-      ring
+      apply Complex.ext
+      · simp
+      · simp
+        ring
     rw [coe_souriau, ← him, Matrix.mul_sub, hU]
-  have hdetU : (U : Matrix n n ℂ).det ≠ 0 := by
-    have h := congrArg det hU
-    rw [det_mul, det_one] at h
-    exact left_ne_zero_of_mul_eq_one h
   rw [Polynomial.IsRoot.def, eval_charpoly, scalar_apply, diagonal_one, hfac, det_mul, det_smul,
-    det_transpose, show (((U : Matrix n n ℂ).map Complex.im).map ((↑) : ℝ → ℂ)).det =
-      (((U : Matrix n n ℂ).map Complex.im).det : ℂ) from (Complex.ofRealHom.map_det _).symm]
-  simp [hdetU, Complex.I_ne_zero]
+    det_transpose, det_map_ofReal]
+  simp [(UnitaryGroup.det_isUnit U).ne_zero, Complex.I_ne_zero]
+
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
 `(⌊x⌋ + ⌈x⌉) / 2`: it is `⌊x⌋ + 1/2` if `x` is not an integer and `x` if it is. -/
 private theorem div_pi_sub_angleOffset (φ : ℝ) :

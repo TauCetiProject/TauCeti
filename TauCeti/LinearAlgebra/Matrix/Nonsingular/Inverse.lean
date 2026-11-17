@@ -17,7 +17,8 @@ Applying a ring homomorphism `f : R →+* S` entrywise commutes with taking the 
 matrix, provided `f` is a local homomorphism (`Matrix.map_nonsing_inv`). The inverse
 `A⁻¹ = Ring.inverse (det A) • adjugate A` is built from the determinant and the adjugate, which
 commute with every ring homomorphism (`RingHom.map_det`, `RingHom.map_adjugate`), and a local
-homomorphism commutes with `Ring.inverse` (`map_ringInverse`).
+homomorphism commutes with `Ring.inverse` (`map_ringInverse`). For the same reason a local
+homomorphism preserves and reflects invertibility of square matrices (`Matrix.isUnit_map_iff`).
 
 Locality is needed: `ℤ →+* ℚ` is not local, and the `1 × 1` matrix `2` over `ℤ` has inverse `0`,
 while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a field to a nontrivial
@@ -55,6 +56,14 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   rw [inv_def, inv_def, ← hdet, ← hadj, ← map_ringInverse f]
   ext i j
   simp
+
+/-- A local ring homomorphism applied entrywise preserves and reflects invertibility of a square
+matrix. Every ring homomorphism from a field to a nontrivial ring is local, so this covers the
+casts `ℚ → ℝ` and `ℝ → ℂ`. -/
+theorem isUnit_map_iff (f : F) [IsLocalHom f] (A : Matrix n n R) :
+    IsUnit (A.map f) ↔ IsUnit A := by
+  have hdet : f A.det = (A.map f).det := RingHom.map_det (f : R →+* S) A
+  rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det, ← hdet, _root_.isUnit_map_iff]
 
 /-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
 the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/

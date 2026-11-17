@@ -83,6 +83,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
 * `SymplecticGroup.isUnit_det_mul_J_add_J_mul`: for a real symplectic matrix `A`, the matrix
   `A J + J A` is invertible.
+* `SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add`: for a symplectic matrix `A` with `1 + A`
+  invertible, the Cayley generator `J (1 - A) (1 + A)⁻¹` is symmetric.
 -/
 
 public section
@@ -423,5 +425,37 @@ theorem symm_and_toBlocks₂₂_of_mem_symplecticGroup {n R : Type*} [Fintype n]
       _ = Ainvᵀ + C * Ainv * A * (Ainv * B) := by
         rw [← mul_assoc (C * Ainv * A) Ainv B, mul_assoc (C * Ainv) A Ainv, hright, mul_one]
       _ = C * Ainv * A * (Ainv * B) + Ainvᵀ := add_comm _ _
+
+/-- **The Cayley generator of a symplectic matrix is symmetric.** For a symplectic matrix `A` with
+`1 + A` invertible, the matrix `J (1 - A) (1 + A)⁻¹` is symmetric: conjugating its antisymmetric
+part by `1 + A` gives `2 (Aᵀ J A - J) = 0`. -/
+theorem isSymm_J_mul_one_sub_mul_inv_one_add {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hA : A ∈ symplecticGroup l R) (h1 : IsUnit (1 + A)) :
+    (J l R * (1 - A) * (1 + A)⁻¹).IsSymm := by
+  have hJ : Aᵀ * J l R * A = J l R := mem_iff'.1 hA
+  have hP : IsUnit (1 + A).det := (isUnit_iff_isUnit_det _).1 h1
+  have hPT : IsUnit (1 + A)ᵀ.det := by rwa [det_transpose]
+  -- Conjugating `Bᵀ - B` by `1 + A` gives `-2 J + 2 Aᵀ J A = 0`.
+  have key : (1 + A)ᵀ * ((J l R * (1 - A) * (1 + A)⁻¹)ᵀ - J l R * (1 - A) * (1 + A)⁻¹) *
+      (1 + A) = 0 := by
+    have h₁ : (1 + A)ᵀ * ((1 + A)⁻¹)ᵀ = 1 := by
+      rw [← transpose_mul, nonsing_inv_mul _ hP, transpose_one]
+    have h₂ : (1 + A)⁻¹ * (1 + A) = 1 := nonsing_inv_mul _ hP
+    calc (1 + A)ᵀ * ((J l R * (1 - A) * (1 + A)⁻¹)ᵀ - J l R * (1 - A) * (1 + A)⁻¹) * (1 + A)
+        = ((1 + A)ᵀ * ((1 + A)⁻¹)ᵀ) * (1 - A)ᵀ * (J l R)ᵀ * (1 + A) -
+            (1 + A)ᵀ * J l R * (1 - A) * ((1 + A)⁻¹ * (1 + A)) := by
+          simp only [transpose_mul]
+          noncomm_ring
+      _ = -2 • J l R + 2 • (Aᵀ * J l R * A) := by
+          rw [h₁, h₂, J_transpose]
+          simp only [transpose_sub, transpose_add, transpose_one]
+          noncomm_ring
+      _ = 0 := by rw [hJ]; abel
+  have hcancel := congrArg (fun X ↦ ((1 + A)ᵀ)⁻¹ * X * (1 + A)⁻¹) key
+  simp only [Matrix.mul_zero, Matrix.zero_mul] at hcancel
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, nonsing_inv_mul _ hPT, Matrix.one_mul,
+    Matrix.mul_assoc, mul_nonsing_inv _ hP, Matrix.mul_one, sub_eq_zero] at hcancel
+  rw [Matrix.IsSymm]
+  exact hcancel
 
 end SymplecticGroup
