@@ -324,18 +324,6 @@ theorem normalizedCoordinateFlux_fun_sub_const :
       normalizedCoordinateFlux n g r := by
   simpa only [sub_eq_add_neg, Pi.neg_apply] using normalizedCoordinateFlux_fun_add_const g (-a) r
 
-/-- Scalar multiplication of coefficient fields rescales the flux density. -/
-@[simp]
-theorem coordinateFluxIntegrand_smul (c : ℝ) :
-    coordinateFluxIntegrand n (c • g) r x = c * coordinateFluxIntegrand n g r x :=
-  coordinateFluxIntegrand_const_mul g c r x
-
-/-- Scalar multiplication of coefficient fields rescales the normalized flux. -/
-@[simp]
-theorem normalizedCoordinateFlux_smul (c : ℝ) :
-    normalizedCoordinateFlux n (c • g) r = c * normalizedCoordinateFlux n g r :=
-  normalizedCoordinateFlux_const_mul g c r
-
 /-- Negation of coefficient fields negates the flux density. -/
 @[simp]
 theorem coordinateFluxIntegrand_neg :
@@ -348,83 +336,21 @@ theorem normalizedCoordinateFlux_neg :
     normalizedCoordinateFlux n (-g) r = -normalizedCoordinateFlux n g r := by
   simpa [Pi.neg_def] using normalizedCoordinateFlux_const_mul g (-1) r
 
-/-- Pointwise negation of coefficients negates the flux density. -/
-@[simp]
-theorem coordinateFluxIntegrand_fun_neg :
-    coordinateFluxIntegrand n (fun y i j => -g y i j) r x =
-      -coordinateFluxIntegrand n g r x :=
-  coordinateFluxIntegrand_neg g r x
-
-/-- Pointwise negation of coefficients negates the normalized flux. -/
-@[simp]
-theorem normalizedCoordinateFlux_fun_neg :
-    normalizedCoordinateFlux n (fun y i j => -g y i j) r =
-      -normalizedCoordinateFlux n g r :=
-  normalizedCoordinateFlux_neg g r
-
 /-- Subtracting coefficients from a constant matrix negates the flux density. -/
 @[simp]
 theorem coordinateFluxIntegrand_fun_const_sub :
     coordinateFluxIntegrand n (fun y i j => a i j - g y i j) r x =
       -coordinateFluxIntegrand n g r x := by
-  simp only [sub_eq_add_neg, coordinateFluxIntegrand_fun_const_add,
-    coordinateFluxIntegrand_fun_neg]
+  simp only [sub_eq_add_neg, coordinateFluxIntegrand_fun_const_add]
+  exact coordinateFluxIntegrand_neg g r x
 
 /-- Subtracting coefficients from a constant matrix negates the normalized flux. -/
 @[simp]
 theorem normalizedCoordinateFlux_fun_const_sub :
     normalizedCoordinateFlux n (fun y i j => a i j - g y i j) r =
       -normalizedCoordinateFlux n g r := by
-  simp only [sub_eq_add_neg, normalizedCoordinateFlux_fun_const_add,
-    normalizedCoordinateFlux_fun_neg]
-
-/-- Adding a constant coefficient field preserves the flux density. -/
-@[simp]
-theorem coordinateFluxIntegrand_add_const :
-    coordinateFluxIntegrand n (g + fun _ => a) r x = coordinateFluxIntegrand n g r x :=
-  coordinateFluxIntegrand_fun_add_const g a r x
-
-/-- Adding a constant coefficient field preserves the normalized flux. -/
-@[simp]
-theorem normalizedCoordinateFlux_add_const :
-    normalizedCoordinateFlux n (g + fun _ => a) r = normalizedCoordinateFlux n g r :=
-  normalizedCoordinateFlux_fun_add_const g a r
-
-/-- Adding coefficients to a constant field preserves the flux density. -/
-@[simp]
-theorem coordinateFluxIntegrand_const_add :
-    coordinateFluxIntegrand n ((fun _ => a) + g) r x = coordinateFluxIntegrand n g r x :=
-  coordinateFluxIntegrand_fun_const_add g a r x
-
-/-- Adding coefficients to a constant field preserves the normalized flux. -/
-@[simp]
-theorem normalizedCoordinateFlux_const_add :
-    normalizedCoordinateFlux n ((fun _ => a) + g) r = normalizedCoordinateFlux n g r :=
-  normalizedCoordinateFlux_fun_const_add g a r
-
-/-- Subtracting a constant coefficient field preserves the flux density. -/
-@[simp]
-theorem coordinateFluxIntegrand_sub_const :
-    coordinateFluxIntegrand n (g - fun _ => a) r x = coordinateFluxIntegrand n g r x :=
-  coordinateFluxIntegrand_fun_sub_const g a r x
-
-/-- Subtracting a constant coefficient field preserves the normalized flux. -/
-@[simp]
-theorem normalizedCoordinateFlux_sub_const :
-    normalizedCoordinateFlux n (g - fun _ => a) r = normalizedCoordinateFlux n g r :=
-  normalizedCoordinateFlux_fun_sub_const g a r
-
-/-- Subtracting coefficients from a constant field negates the flux density. -/
-@[simp]
-theorem coordinateFluxIntegrand_const_sub :
-    coordinateFluxIntegrand n ((fun _ => a) - g) r x = -coordinateFluxIntegrand n g r x :=
-  coordinateFluxIntegrand_fun_const_sub g a r x
-
-/-- Subtracting coefficients from a constant field negates the normalized flux. -/
-@[simp]
-theorem normalizedCoordinateFlux_const_sub :
-    normalizedCoordinateFlux n ((fun _ => a) - g) r = -normalizedCoordinateFlux n g r :=
-  normalizedCoordinateFlux_fun_const_sub g a r
+  simp only [sub_eq_add_neg, normalizedCoordinateFlux_fun_const_add]
+  exact normalizedCoordinateFlux_neg g r
 
 end Operations
 
@@ -461,55 +387,6 @@ theorem normalizedCoordinateFlux_sub
   simpa only [sub_eq_add_neg, normalizedCoordinateFlux_neg] using
     normalizedCoordinateFlux_add (g := g) (h := -h) hg
       (fun x hx i j => by simpa only [Pi.neg_def] using (hh x hx i j).neg) hgi hni
-
-section Pointwise
-
-variable {g h : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
-  {x : EuclideanSpace ℝ (Fin n)} {r : ℝ}
-
-/-- Pointwise addition of differentiable coefficients adds the flux densities. -/
-theorem coordinateFluxIntegrand_fun_add
-    (hg : ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
-    (hh : ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x) :
-    coordinateFluxIntegrand n (fun y i j => g y i j + h y i j) r x =
-      coordinateFluxIntegrand n g r x + coordinateFluxIntegrand n h r x :=
-  coordinateFluxIntegrand_add hg hh r
-
-/-- Pointwise subtraction of differentiable coefficients subtracts the flux densities. -/
-theorem coordinateFluxIntegrand_fun_sub
-    (hg : ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
-    (hh : ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x) :
-    coordinateFluxIntegrand n (fun y i j => g y i j - h y i j) r x =
-      coordinateFluxIntegrand n g r x - coordinateFluxIntegrand n h r x :=
-  coordinateFluxIntegrand_sub hg hh r
-
-/-- Pointwise addition adds normalized fluxes when the coefficients are differentiable and
-their flux densities are integrable on the sphere. -/
-theorem normalizedCoordinateFlux_fun_add
-    (hg : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
-    (hh : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x)
-    (hgi : IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
-      (Measure.euclideanHausdorffMeasure (n - 1)))
-    (hhi : IntegrableOn (coordinateFluxIntegrand n h r) (Metric.sphere 0 r)
-      (Measure.euclideanHausdorffMeasure (n - 1))) :
-    normalizedCoordinateFlux n (fun y i j => g y i j + h y i j) r =
-      normalizedCoordinateFlux n g r + normalizedCoordinateFlux n h r :=
-  normalizedCoordinateFlux_add hg hh hgi hhi
-
-/-- Pointwise subtraction subtracts normalized fluxes when the coefficients are differentiable
-and their flux densities are integrable on the sphere. -/
-theorem normalizedCoordinateFlux_fun_sub
-    (hg : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
-    (hh : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x)
-    (hgi : IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
-      (Measure.euclideanHausdorffMeasure (n - 1)))
-    (hhi : IntegrableOn (coordinateFluxIntegrand n h r) (Metric.sphere 0 r)
-      (Measure.euclideanHausdorffMeasure (n - 1))) :
-    normalizedCoordinateFlux n (fun y i j => g y i j - h y i j) r =
-      normalizedCoordinateFlux n g r - normalizedCoordinateFlux n h r :=
-  normalizedCoordinateFlux_sub hg hh hgi hhi
-
-end Pointwise
 
 /-- For the conformally Euclidean coefficient matrix `w δ`, the coordinate flux integrand is
 `-(n - 1) dw_x(x) / r`. This identity does not require `w` to be radial or positive. -/
