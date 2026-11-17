@@ -52,7 +52,13 @@ a basis and the multiplication table above holds on the nose.
   `β g h * c (g * h) = α g h * (c g * c h)` for some `c : G → kˣ` have isomorphic twisted monoid
   algebras. For a group `G` that relation is exactly the statement that `α` and `β` are
   cohomologous, so there `k_α[G]` depends up to isomorphism only on the class of `α` in
-  `H²(G, kˣ)`.
+  `H²(G, kˣ)`;
+* `TauCeti.TwistedMonoidAlgebra.map`: functoriality along a monoid homomorphism compatible with
+  two factor sets, preserving injectivity (`TauCeti.TwistedMonoidAlgebra.map_injective`);
+* `TauCeti.TwistedMonoidAlgebra.scalarTrace`: the coordinate of `1` in the twisted basis, which is
+  a nondegenerate tracial linear functional whenever `G` is a group
+  (`TauCeti.TwistedMonoidAlgebra.scalarTrace_mul_comm`,
+  `TauCeti.TwistedMonoidAlgebra.forall_scalarTrace_mul_eq_zero_iff`).
 
 ## Implementation notes
 
@@ -312,6 +318,29 @@ theorem twistedTranslation_mem_twistedMonoidAlgebra (g : G) :
 
 namespace TwistedMonoidAlgebra
 
+/-- The ring structure on `twistedMonoidAlgebra k G α` when `k` is a commutative ring, extending
+`Subalgebra.toSemiring` directly so that `Ring.toSemiring` agrees with `Subalgebra.toSemiring` at
+reducible transparency (avoiding `Finsupp` `Zero`-instance mismatches when forming subalgebras or
+star subalgebras of `twistedMonoidAlgebra k G α`). -/
+noncomputable instance instRing {k G : Type*} [CommRing k] [Monoid G] {α : G → G → kˣ}
+    [IsFactorSet α] : Ring (twistedMonoidAlgebra k G α) :=
+  let R : Ring (twistedMonoidAlgebra k G α) :=
+    @Subalgebra.toRing k (Module.End k (G →₀ k)) _
+      (@Module.End.instRing k (G →₀ k) _ (@Finsupp.instAddCommGroup G k _) _)
+      _ (twistedMonoidAlgebra k G α)
+  { (twistedMonoidAlgebra k G α).toSemiring with
+    neg := R.neg
+    sub := R.sub
+    sub_eq_add_neg := R.sub_eq_add_neg
+    zsmul := R.zsmul
+    zsmul_zero' := R.zsmul_zero'
+    zsmul_succ' := R.zsmul_succ'
+    zsmul_neg' := R.zsmul_neg'
+    neg_add_cancel := R.neg_add_cancel
+    intCast := R.intCast
+    intCast_ofNat := R.intCast_ofNat
+    intCast_negSucc := R.intCast_negSucc }
+
 variable {k G α}
 
 /-- The basis element of `k_α[G]` at `g : G`, namely the `α`-twisted translation by `g`. -/
@@ -499,5 +528,153 @@ end Coboundary
 end TwistedMonoidAlgebra
 
 end Algebra
+
+namespace TwistedMonoidAlgebra
+
+section Map
+
+variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
+  {α : G → G → kˣ} [IsFactorSet α] {β : H → H → kˣ} [IsFactorSet β]
+
+/-- A monoid homomorphism compatible with two factor sets induces an algebra homomorphism between
+the corresponding twisted monoid algebras, sending each basis element `of g` to `of (f g)`. -/
+noncomputable def map (f : G →* H) (hf : ∀ g₁ g₂ : G, β (f g₁) (f g₂) = α g₁ g₂) :
+    twistedMonoidAlgebra k G α →ₐ[k] twistedMonoidAlgebra k H β :=
+  lift (fun g ↦ of (f g))
+    (by rw [map_one, of_one])
+    (fun g₁ g₂ ↦ by rw [of_mul_of, hf, map_mul])
+
+/-- `map f hf` acts on basis elements by applying `f`. -/
+@[simp]
+theorem map_of (f : G →* H) (hf : ∀ g₁ g₂ : G, β (f g₁) (f g₂) = α g₁ g₂) (g : G) :
+    map f hf (of g) = of (f g) :=
+  lift_of ..
+
+/-- Along an injective monoid homomorphism, the coordinate of `map f hf x` at `f g` equals the
+coordinate of `x` at `g`. -/
+theorem basis_repr_map {f : G →* H} (hf : ∀ g₁ g₂ : G, β (f g₁) (f g₂) = α g₁ g₂)
+    (hinj : Function.Injective f) (x : twistedMonoidAlgebra k G α) (g : G) :
+    (basis k H β).repr (map f hf x) (f g) = (basis k G α).repr x g := by
+  have hlin : ((basis k H β).coord (f g)).comp (map f hf).toLinearMap =
+      (basis k G α).coord g := by
+    refine (basis k G α).ext fun g' ↦ ?_
+    classical
+    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Basis.coord_apply, Basis.repr_self]
+    rw [basis_apply, map_of, ← basis_apply, Basis.repr_self]
+    simp [Finsupp.single_apply, hinj.eq_iff]
+  exact LinearMap.congr_fun hlin x
+
+/-- An injective monoid homomorphism compatible with the factor sets induces an injective algebra
+homomorphism between twisted monoid algebras. -/
+theorem map_injective {f : G →* H} (hf : ∀ g₁ g₂ : G, β (f g₁) (f g₂) = α g₁ g₂)
+    (hinj : Function.Injective f) : Function.Injective (map f hf) := by
+  intro x y hxy
+  apply (basis k G α).repr.injective
+  ext g
+  rw [← basis_repr_map hf hinj x g, ← basis_repr_map hf hinj y g, hxy]
+
+end Map
+
+section ScalarTrace
+
+section Monoid
+
+variable {k G : Type*} [CommSemiring k] [Monoid G] (α : G → G → kˣ) [IsFactorSet α]
+
+/-- The **scalar trace** on a twisted monoid algebra `k_α[G]`: the coefficient of `1 = of 1` in
+the twisted basis. When `G` is a group it is a nondegenerate tracial linear functional. -/
+noncomputable def scalarTrace : twistedMonoidAlgebra k G α →ₗ[k] k :=
+  (basis k G α).coord 1
+
+/-- Unfolding `scalarTrace` as the `1`-coordinate in `TwistedMonoidAlgebra.basis`. -/
+theorem scalarTrace_apply (x : twistedMonoidAlgebra k G α) :
+    scalarTrace α x = (basis k G α).repr x 1 := (rfl)
+
+/-- The scalar trace of `1` is `1`. -/
+@[simp]
+theorem scalarTrace_one : scalarTrace α 1 = 1 := by
+  rw [← of_one (k := k) (G := G) (α := α), scalarTrace_apply, ← basis_apply, Basis.repr_self,
+    Finsupp.single_eq_same]
+
+/-- The scalar trace vanishes on every non-identity basis element. -/
+theorem scalarTrace_of_ne_one {g : G} (hg : g ≠ 1) :
+    scalarTrace α (of g) = 0 := by
+  rw [scalarTrace_apply, ← basis_apply, Basis.repr_self, Finsupp.single_eq_of_ne hg.symm]
+
+/-- Evaluation of `scalarTrace` on a basis element. -/
+theorem scalarTrace_of [DecidableEq G] (g : G) :
+    scalarTrace α (of g) = if g = 1 then 1 else 0 := by
+  split_ifs with hg
+  · rw [hg, of_one, scalarTrace_one]
+  · exact scalarTrace_of_ne_one α hg
+
+/-- An injective compatible monoid homomorphism preserves `scalarTrace`. -/
+theorem scalarTrace_map {H : Type*} [Monoid H] {β : H → H → kˣ} [IsFactorSet β]
+    {f : G →* H} (hf : ∀ g₁ g₂ : G, β (f g₁) (f g₂) = α g₁ g₂)
+    (hinj : Function.Injective f) (x : twistedMonoidAlgebra k G α) :
+    scalarTrace β (map f hf x) = scalarTrace α x := by
+  rw [scalarTrace_apply, scalarTrace_apply, ← map_one f, basis_repr_map hf hinj]
+
+end Monoid
+
+section Group
+
+variable {k G : Type*} [CommSemiring k] [Group G] (α : G → G → kˣ) [IsFactorSet α]
+
+/-- The scalar trace of a product of two basis elements. -/
+theorem scalarTrace_of_mul_of [DecidableEq G] (g h : G) :
+    scalarTrace α (of g * of h) = if g * h = 1 then (α g h : k) else 0 := by
+  rw [of_mul_of, map_smul, scalarTrace_of, smul_eq_mul]
+  split_ifs <;> simp
+
+/-- Multiplying on the right by `of g⁻¹` extracts the `g`-coordinate up to the unit `α g g⁻¹`. -/
+theorem scalarTrace_mul_of_inv (x : twistedMonoidAlgebra k G α) (g : G) :
+    scalarTrace α (x * of g⁻¹) = (α g g⁻¹ : k) * (basis k G α).repr x g := by
+  have hlin : (scalarTrace α).comp (LinearMap.mulRight k (of g⁻¹)) =
+      (α g g⁻¹ : k) • (basis k G α).coord g := by
+    refine (basis k G α).ext fun h ↦ ?_
+    classical
+    simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.smul_apply,
+      Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, smul_eq_mul]
+    rw [basis_apply, scalarTrace_of_mul_of, mul_inv_eq_one]
+    split_ifs with hhg
+    · subst hhg
+      simp
+    · simp
+  exact LinearMap.congr_fun hlin x
+
+/-- **Traciality of the scalar trace on a twisted group algebra.** -/
+theorem scalarTrace_mul_comm (x y : twistedMonoidAlgebra k G α) :
+    scalarTrace α (x * y) = scalarTrace α (y * x) := by
+  have hbil : (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ (scalarTrace α) =
+      ((LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ (scalarTrace α)).flip := by
+    refine (basis k G α).ext fun g ↦ (basis k G α).ext fun h ↦ ?_
+    classical
+    simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.flip_apply, basis_apply,
+      scalarTrace_of_mul_of]
+    by_cases hgh : g * h = 1
+    · have hhg : h = g⁻¹ := eq_inv_of_mul_eq_one_right hgh
+      subst hhg
+      simp [IsFactorSet.apply_inv_eq_inv_apply α g]
+    · have hhg : h * g ≠ 1 := fun h1 ↦ hgh (by rw [eq_inv_of_mul_eq_one_left h1, mul_inv_cancel])
+      simp [hgh, hhg]
+  exact LinearMap.congr_fun₂ hbil x y
+
+/-- **Nondegeneracy of the scalar trace pairing on a twisted group algebra.** -/
+theorem forall_scalarTrace_mul_eq_zero_iff {x : twistedMonoidAlgebra k G α} :
+    (∀ y, scalarTrace α (x * y) = 0) ↔ x = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx y ↦ by simp [hx]⟩
+  apply (basis k G α).repr.injective
+  ext g
+  have h0 := hx (of g⁻¹)
+  rw [scalarTrace_mul_of_inv] at h0
+  have h1 := congrArg ((((α g g⁻¹)⁻¹ : kˣ) : k) * ·) h0
+  simpa [← mul_assoc, ← Units.val_mul] using h1
+
+end Group
+
+end ScalarTrace
+
+end TwistedMonoidAlgebra
 
 end TauCeti
