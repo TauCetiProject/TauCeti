@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 public import TauCeti.Algebra.Group.Subgroup.OrderedProduct
 import TauCeti.LinearAlgebra.RootSystem.Finite.PositiveCombinations
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 /-!
 # Ordered positive-root products outside G₂
@@ -115,8 +116,8 @@ private theorem commutator_mem_higher_roots
   -- A root sum has either no double string or exactly one orientation of a double string.
   by_cases hsum : P.root α + P.root β ∈ Set.range P.root
   · obtain ⟨γ, hγ⟩ := hsum
-    have hγZ := (root_rationalRootSystem_eq_nsmul_add_iff α β γ 1).mp (by simpa using hγ)
-    simp only [one_nsmul] at hγZ
+    have hγZ := (RootPairing.root_eq_add_iff_of_pairingIn
+      (Equiv.refl _) (t.pairingIn_rationalRootSystem ht) γ α β).mp hγ
     have hlin := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
     have hexclude := P.not_double_root_add_and_root_add_double_mem hlin
     have hdouble {a c d : Fin t.numRoots}
@@ -141,9 +142,10 @@ private theorem commutator_mem_higher_roots
           2 • (t.simplyConnectedRootDatum ht).root β ∉
             Set.range (t.simplyConnectedRootDatum ht).root := by
         rintro ⟨d, hd⟩
-        exact hexclude ⟨⟨δ, hδQ⟩, ⟨d, by
-          simpa only [add_comm] using
-            (root_rationalRootSystem_eq_nsmul_add_iff β α d 2).mpr (hd.trans (add_comm _ _))⟩⟩
+        have hiff := RootPairing.root_eq_add_zsmul_iff_of_pairingIn
+          (Equiv.refl _) (t.pairingIn_rationalRootSystem ht) d α β 2
+        simp only [Equiv.refl_apply, ofNat_zsmul] at hiff
+        exact hexclude ⟨⟨δ, hδQ⟩, ⟨d, hiff.mpr hd⟩⟩
       rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
         ρ M hM hnil hγZ hδ (not_three_nsmul_add_mem_range_root α β hlin) hb]
       exact H.mul_mem (hmem hα hβ rfl hγ _) (hdouble hα hβ rfl hγ hδQ _)
@@ -165,12 +167,8 @@ private theorem commutator_mem_higher_roots
           (by simpa only [add_comm] using hb)]
         exact hmem hα hβ rfl hγ _
   · -- Without a root sum the groups commute; positivity rules out opposite roots.
-    have hsumZ : (t.simplyConnectedRootDatum ht).root α +
-        (t.simplyConnectedRootDatum ht).root β ∉
-          Set.range (t.simplyConnectedRootDatum ht).root := by
-      rintro ⟨γ, hγ⟩
-      exact hsum ⟨γ, by simpa only [one_nsmul] using
-        (root_rationalRootSystem_eq_nsmul_add_iff α β γ 1).mpr (by simpa only [one_nsmul] using hγ)⟩
+    have hsumZ := mt (RootPairing.root_add_mem_range_iff_of_pairingIn
+      (Equiv.refl _) (t.pairingIn_rationalRootSystem ht) α β).mpr hsum
     have hzero : (t.simplyConnectedRootDatum ht).root α +
         (t.simplyConnectedRootDatum ht).root β ≠ 0 := by
       intro hz
