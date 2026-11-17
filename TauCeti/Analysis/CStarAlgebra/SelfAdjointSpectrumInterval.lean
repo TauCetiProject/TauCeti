@@ -11,7 +11,6 @@ import Mathlib.Algebra.Star.BigOperators
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # Spectral intervals of self-adjoint elements
@@ -41,6 +40,8 @@ and its real spectrum directly.
 
 * `IsSelfAdjoint.norm_le_iff_spectrum_subset_Icc`: for `0 ≤ r`, `‖a‖ ≤ r` if and only if
   `spectrum ℝ a ⊆ Set.Icc (-r) r`.
+* `IsSelfAdjoint.norm_sub_algebraMap_le_iff_spectrum_subset_Icc`: for `0 ≤ r`,
+  `‖a - algebraMap ℝ A c‖ ≤ r` if and only if `spectrum ℝ a ⊆ Set.Icc (c - r) (c + r)`.
 * `IsSelfAdjoint.spectrum_add_subset_Icc`: real-spectrum interval bounds add for two self-adjoint
   elements under an isometric continuous functional calculus.
 * `TauCeti.spectrum_sum_subset_Icc`: real-spectrum interval bounds add across any finite sum of
@@ -51,8 +52,6 @@ public section
 
 namespace IsSelfAdjoint
 
-section IsometricCFC
-
 variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
   [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] {a : A} {r : ℝ}
 
@@ -61,6 +60,16 @@ in the interval `[-r, r]`. -/
 theorem norm_le_iff_spectrum_subset_Icc (ha : IsSelfAdjoint a) (hr : 0 ≤ r) :
     ‖a‖ ≤ r ↔ spectrum ℝ a ⊆ Set.Icc (-r) r := by
   simpa [Set.subset_def, abs_le, cfc_id' ℝ a] using norm_cfc_le_iff (id : ℝ → ℝ) a hr
+
+/-- The distance of a self-adjoint element from a real scalar `c` is at most `r ≥ 0` exactly when
+its real spectrum lies in `[c - r, c + r]`. -/
+theorem norm_sub_algebraMap_le_iff_spectrum_subset_Icc (ha : IsSelfAdjoint a) (c : ℝ)
+    (hr : 0 ≤ r) : ‖a - algebraMap ℝ A c‖ ≤ r ↔ spectrum ℝ a ⊆ Set.Icc (c - r) (c + r) := by
+  have hcfc : cfc (fun x : ℝ => x - c) a = a - algebraMap ℝ A c := by
+    rw [cfc_sub (fun x : ℝ => x) (fun _ => c) a, cfc_id' ℝ a, cfc_const c a]
+  rw [← hcfc, norm_cfc_le_iff _ a hr]
+  exact forall₂_congr fun _ _ => by
+    rw [Real.norm_eq_abs, abs_le]; constructor <;> intro ⟨_, _⟩ <;> constructor <;> linarith
 
 /-- If two self-adjoint elements have real spectra in `[m₁, M₁]` and `[m₂, M₂]`, then the real
 spectrum of their sum lies in `[m₁ + m₂, M₁ + M₂]`. -/
@@ -71,22 +80,22 @@ theorem spectrum_add_subset_Icc {b : A} (ha : IsSelfAdjoint a) (hb : IsSelfAdjoi
   · simp
   obtain ⟨x₁, hx₁⟩ := ContinuousFunctionalCalculus.spectrum_nonempty (R := ℝ) a ha
   obtain ⟨x₂, hx₂⟩ := ContinuousFunctionalCalculus.spectrum_nonempty (R := ℝ) b hb
-  have hm₁ : m₁ ≤ M₁ := (haI hx₁).1.trans (haI hx₁).2
-  have hm₂ : m₂ ≤ M₂ := (hbI hx₂).1.trans (hbI hx₂).2
-  have hiff {z : A} {m M : ℝ} (hz : IsSelfAdjoint z) (hm : m ≤ M) :
-      ‖z - algebraMap ℝ A ((m + M) / 2)‖ ≤ (M - m) / 2 ↔ spectrum ℝ z ⊆ Set.Icc m M := by
-    rw [← show cfc (fun x : ℝ => x - (m + M) / 2) z = z - algebraMap ℝ A ((m + M) / 2) by
-        rw [cfc_sub (fun x : ℝ => x) (fun _ => (m + M) / 2) z, cfc_id' ℝ z,
-          cfc_const ((m + M) / 2) z], norm_cfc_le_iff _ z (by linarith)]
-    exact forall₂_congr fun _ _ => by
-      rw [Real.norm_eq_abs, abs_le]; constructor <;> intro ⟨_, _⟩ <;> constructor <;> linarith
-  refine (hiff (ha.add hb) (add_le_add hm₁ hm₂)).mp ?_
-  rw [show (a + b) - algebraMap ℝ A ((m₁ + m₂ + (M₁ + M₂)) / 2) =
-      (a - algebraMap ℝ A ((m₁ + M₁) / 2)) + (b - algebraMap ℝ A ((m₂ + M₂) / 2)) by
-    rw [show (m₁ + m₂ + (M₁ + M₂)) / 2 = (m₁ + M₁) / 2 + (m₂ + M₂) / 2 by ring, map_add]; abel]
-  exact (norm_add_le _ _).trans <| by linarith [(hiff ha hm₁).mpr haI, (hiff hb hm₂).mpr hbI]
-
-end IsometricCFC
+  set c₁ := (m₁ + M₁) / 2 with hc₁; set r₁ := (M₁ - m₁) / 2 with hr₁_def
+  set c₂ := (m₂ + M₂) / 2 with hc₂; set r₂ := (M₂ - m₂) / 2 with hr₂_def
+  have hr₁ : 0 ≤ r₁ := by linarith [(haI hx₁).1, (haI hx₁).2]
+  have hr₂ : 0 ≤ r₂ := by linarith [(hbI hx₂).1, (hbI hx₂).2]
+  have hI₁ : Set.Icc (c₁ - r₁) (c₁ + r₁) = Set.Icc m₁ M₁ := by congr 1 <;> linarith
+  have hI₂ : Set.Icc (c₂ - r₂) (c₂ + r₂) = Set.Icc m₂ M₂ := by congr 1 <;> linarith
+  have h₁ : ‖a - algebraMap ℝ A c₁‖ ≤ r₁ :=
+    (ha.norm_sub_algebraMap_le_iff_spectrum_subset_Icc c₁ hr₁).mpr (hI₁.symm ▸ haI)
+  have h₂ : ‖b - algebraMap ℝ A c₂‖ ≤ r₂ :=
+    (hb.norm_sub_algebraMap_le_iff_spectrum_subset_Icc c₂ hr₂).mpr (hI₂.symm ▸ hbI)
+  have hsub : (a + b) - algebraMap ℝ A (c₁ + c₂) =
+      (a - algebraMap ℝ A c₁) + (b - algebraMap ℝ A c₂) := by rw [map_add]; abel
+  have hI₁₂ : Set.Icc (c₁ + c₂ - (r₁ + r₂)) (c₁ + c₂ + (r₁ + r₂)) =
+      Set.Icc (m₁ + m₂) (M₁ + M₂) := by congr 1 <;> linarith
+  exact hI₁₂ ▸ ((ha.add hb).norm_sub_algebraMap_le_iff_spectrum_subset_Icc (c₁ + c₂)
+    (add_nonneg hr₁ hr₂)).mp (hsub ▸ (norm_add_le _ _).trans (add_le_add h₁ h₂))
 
 end IsSelfAdjoint
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.FreeProbability.Law.FreeProduct
 public import TauCeti.Probability.FreeProbability.Law.Independence
 public import TauCeti.Probability.FreeProbability.Law.Series
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.Support
@@ -66,8 +66,7 @@ private abbrev IsCompactProb (μ : Measure ℝ) : Prop :=
   IsProbabilityMeasure μ ∧ IsCompact μ.support
 
 private theorem instProbCond {μ ν : Measure ℝ} (hμ : IsProbabilityMeasure μ)
-    (hν : IsProbabilityMeasure ν) : ∀ b : Bool, IsProbabilityMeasure (cond b μ ν) :=
-  Bool.rec hν hμ
+    (hν : IsProbabilityMeasure ν) : ∀ b : Bool, IsProbabilityMeasure (cond b μ ν) := Bool.rec hν hμ
 
 private theorem instCompactCond {μ ν : Measure ℝ} (hμ : IsCompact μ.support)
     (hν : IsCompact ν.support) : ∀ b : Bool, CompactSpace (cond b μ ν).support :=
@@ -111,8 +110,7 @@ theorem freeConv_eq_zero_of_not {μ ν : Measure ℝ}
 @[simp] theorem freeConv_zero (μ : Measure ℝ) : μ.freeConv (0 : Measure ℝ) = 0 :=
   freeConv_eq_zero_of_not fun h => not_isProbabilityMeasure_zero h.2.1
 
-/-- The free additive convolution of two compactly supported probability measures is a probability
-measure. -/
+/-- The free convolution of compactly supported probability laws is a probability measure. -/
 theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [hμp : IsProbabilityMeasure μ]
     [hνp : IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     IsProbabilityMeasure (μ.freeConv ν) := by
@@ -176,8 +174,6 @@ end MeasureTheory.Measure
 
 namespace TauCeti
 
-section Transport
-
 variable {A ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-- **Realization-independence of free additive convolution (elements).** -/
@@ -235,8 +231,6 @@ theorem law_add_vonNeumannGenerator {i j : ι} (hij : i ≠ j) :
 
 end FreeLawRealization
 
-end Transport
-
 end TauCeti
 
 /-! ### Algebraic laws, Dirac identity, affine pushforwards, and support bounds -/
@@ -285,21 +279,6 @@ theorem freeConv_assoc (μ ν ρ : Measure ℝ) :
 
 instance : Std.Associative (α := Measure ℝ) freeConv := ⟨freeConv_assoc⟩
 
-private theorem isSelfAdjoint_smul_add_algebraMap {A : Type*} [CStarAlgebra A] {x : A}
-    (hx : IsSelfAdjoint x) (b c : ℝ) : IsSelfAdjoint (b • x + algebraMap ℝ A c) :=
-  ((IsSelfAdjoint.all b).smul hx).add (IsSelfAdjoint.algebraMap A (.all c))
-
-private theorem algebraMap_real_mem_adjoin {A : Type*} [CStarAlgebra A] (x : A) (c : ℝ) :
-    algebraMap ℝ A c ∈ Algebra.adjoin ℂ {x} := by
-  rw [Algebra.algebraMap_eq_smul_one, RCLike.real_smul_eq_coe_smul (K := ℂ)]
-  exact Subalgebra.smul_mem _ (one_mem _) _
-
-private theorem smul_add_algebraMap_mem_adjoin {A : Type*} [CStarAlgebra A] (x : A) (b c : ℝ) :
-    b • x + algebraMap ℝ A c ∈ Algebra.adjoin ℂ {x} := by
-  rw [RCLike.real_smul_eq_coe_smul (K := ℂ)]
-  exact add_mem (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton ℂ x) _)
-    (algebraMap_real_mem_adjoin x c)
-
 /-- **Affine equivariance of free additive convolution** (valid for all real slopes `b`, including
 `b = 0` and `b < 0`). -/
 theorem freeConv_map_affine {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
@@ -310,16 +289,21 @@ theorem freeConv_map_affine {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsP
     exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
   have hfun (d : ℝ) : (fun x : ℝ => b * x + d) = fun x => d + b * x := funext fun _ => add_comm _ _
   have hadd := (TauCeti.isFreelyIndependentElements_iff.mp hg_free).law_add hφ
-    Bool.false_ne_true.symm (smul_add_algebraMap_mem_adjoin (g true) b a)
-    (smul_add_algebraMap_mem_adjoin (g false) b c)
-    (isSelfAdjoint_smul_add_algebraMap hg1_sa b a) (isSelfAdjoint_smul_add_algebraMap hg2_sa b c)
+    Bool.false_ne_true.symm
+    (add_mem (((Algebra.adjoin ℂ {g true}).restrictScalars ℝ).smul_mem
+        (Algebra.self_mem_adjoin_singleton ℂ (g true)) b)
+      (((Algebra.adjoin ℂ {g true}).restrictScalars ℝ).algebraMap_mem a))
+    (add_mem (((Algebra.adjoin ℂ {g false}).restrictScalars ℝ).smul_mem
+        (Algebra.self_mem_adjoin_singleton ℂ (g false)) b)
+      (((Algebra.adjoin ℂ {g false}).restrictScalars ℝ).algebraMap_mem c))
+    (((IsSelfAdjoint.all b).smul hg1_sa).add (IsSelfAdjoint.algebraMap A (.all a)))
+    (((IsSelfAdjoint.all b).smul hg2_sa).add (IsSelfAdjoint.algebraMap A (.all c)))
   rw [φ.law_smul_add_algebraMap hg1_sa b a, hfun a, hg1_law,
     φ.law_smul_add_algebraMap hg2_sa b c, hfun c, hg2_law] at hadd
   rw [← hadd, add_add_add_comm, ← smul_add, ← map_add,
     φ.law_smul_add_algebraMap (hg1_sa.add hg2_sa) b (a + c), hfun (a + c), hsum_law]
 
-/-- Translating measures on `ℝ` by `a` and `b` translates `μ.freeConv ν` by `a + b`,
-unconditionally. -/
+/-- Translating `μ` by `a` and `ν` by `b` translates `μ.freeConv ν` by `a + b`, unconditionally. -/
 theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
     (μ.map (a + ·)).freeConv (ν.map (b + ·)) = (μ.freeConv ν).map (a + b + ·) := by
   have hcp (σ : Measure ℝ) (c : ℝ) : IsCompactProb (σ.map (c + ·)) → IsCompactProb σ :=
@@ -356,7 +340,7 @@ theorem dirac_freeConv (a : ℝ) {μ : Measure ℝ} [IsProbabilityMeasure μ]
   obtain ⟨A, _, _, _, φ, g, hφ, hg_free, -, hg_sa, -, -, -, hg_law, -⟩ :=
     exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hμ
   have hadd := (TauCeti.isFreelyIndependentElements_iff.mp hg_free).law_add hφ
-    Bool.false_ne_true.symm (algebraMap_real_mem_adjoin (g true) a)
+    Bool.false_ne_true.symm (((Algebra.adjoin ℂ {g true}).restrictScalars ℝ).algebraMap_mem a)
     (Algebra.self_mem_adjoin_singleton ℂ (g false)) (IsSelfAdjoint.algebraMap A (.all a)) hg_sa
   rw [φ.law_algebraMap_of_apply_one hφ a, hg_law, add_comm, ← one_smul ℝ (g false),
     φ.law_smul_add_algebraMap hg_sa 1 a, hg_law] at hadd
@@ -461,15 +445,12 @@ theorem variance_id_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [Is
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     variance id (μ.freeConv ν) = variance id μ + variance id ν := by
   have := isProbabilityMeasure_freeConv hμ hν
-  have hmem {ρ : Measure ℝ} [IsProbabilityMeasure ρ] (hρ : IsCompact ρ.support) :
-      MemLp (id : ℝ → ℝ) 2 ρ := by
-    rw [← Measure.restrict_eq_self_of_ae_mem
-      (Filter.eventually_mem_set.mpr (support_mem_ae (μ := ρ)))]
-    exact continuousOn_id.memLp_restrict_of_subset_isCompact
-      hρ isClosed_support.measurableSet .rfl 2
-  simpa [coeff_one_rSeries_integral_eq_variance (hmem (isCompact_support_freeConv μ ν)),
-    coeff_one_rSeries_integral_eq_variance (hmem hμ),
-    coeff_one_rSeries_integral_eq_variance (hmem hν)] using
+  simpa [coeff_one_rSeries_integral_eq_variance
+      (continuousOn_id.memLp_of_isCompact_support (isCompact_support_freeConv μ ν) support_mem_ae),
+    coeff_one_rSeries_integral_eq_variance
+      (continuousOn_id.memLp_of_isCompact_support hμ support_mem_ae),
+    coeff_one_rSeries_integral_eq_variance
+      (continuousOn_id.memLp_of_isCompact_support hν support_mem_ae)] using
     congrArg (PowerSeries.coeff 1) (rSeries_integral_freeConv hμ hν)
 
 end MeasureTheory.Measure

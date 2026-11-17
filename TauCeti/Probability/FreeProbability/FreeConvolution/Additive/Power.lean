@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.FreeConvolution.Additive.Basic
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
@@ -55,8 +55,6 @@ open scoped ComplexOrder ENNReal NNReal
 /-! ### Finite-family free convolution (`Finset.fold`) and transport -/
 
 namespace MeasureTheory.Measure
-
-section Fold
 
 variable {ι : Type*} (s : Finset ι) {μ : ι → Measure ℝ}
 
@@ -128,13 +126,9 @@ theorem freeCumulant_integral_fold_freeConv (hprob : ∀ i ∈ s, IsProbabilityM
     TauCeti.coeff_succ_freeCumulantSeries, rSeries_integral_fold_freeConv s hprob hcomp,
     _root_.map_sum (PowerSeries.coeff k)]
 
-end Fold
-
 end MeasureTheory.Measure
 
 namespace TauCeti
-
-section FiniteFamily
 
 variable {A ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -173,8 +167,7 @@ namespace FreeLawRealization
 variable [DecidableEq ι] (μ : ι → Measure ℝ)
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
-/-- In `algebra μ`, `∑ i ∈ s, generator μ i` realizes `s.fold Measure.freeConv (Measure.dirac 0) μ`.
--/
+/-- In `algebra μ`, `∑ i ∈ s, generator μ i` has law `s.fold freeConv (dirac 0) μ`. -/
 theorem law_sum_generator (s : Finset ι) :
     (state μ).law (∑ i ∈ s, generator μ i) = s.fold Measure.freeConv (Measure.dirac 0) μ := by
   simp [(isFreelyIndependentElements_generator μ).law_sum (state_one μ) s
@@ -189,8 +182,6 @@ theorem law_sum_vonNeumannGenerator (s : Finset ι) :
     fun i _ => isSelfAdjoint_vonNeumannGenerator μ i]
 
 end FreeLawRealization
-
-end FiniteFamily
 
 end TauCeti
 
@@ -228,7 +219,7 @@ theorem freeConvolutionPower_eq_zero_of_not {μ : Measure ℝ} {n : ℕ} (hn : n
 theorem isCompact_support_freeConvolutionPower (μ : Measure ℝ) :
     ∀ n : ℕ, IsCompact (μ.freeConvolutionPower n).support
   | 0 => by simp [Measure.support_dirac]
-  | _ + 1 => by exact isCompact_support_freeConv _ _
+  | _ + 1 => isCompact_support_freeConv _ _
 
 /-- Every free convolution power of a compactly supported probability measure is a probability
 measure. -/
@@ -254,8 +245,7 @@ theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : �
 
 /-- The first free convolution power of a compactly supported probability measure is itself. -/
 theorem freeConvolutionPower_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
-    (hμ : IsCompact μ.support) : μ.freeConvolutionPower 1 = μ := by
-  exact dirac_zero_freeConv hμ
+    (hμ : IsCompact μ.support) : μ.freeConvolutionPower 1 = μ := dirac_zero_freeConv hμ
 
 /-- Free convolution powers turn addition of exponents into `freeConv`, unconditionally for all
 measures on `ℝ`. -/
@@ -275,8 +265,7 @@ theorem freeConvolutionPower_add (μ : Measure ℝ) (m n : ℕ) :
 
 /-- Left recursion `μ^{⊞ (n + 1)} = μ ⊞ μ^{⊞ n}`, unconditionally for all measures on `ℝ`. -/
 theorem freeConvolutionPower_succ' (μ : Measure ℝ) (n : ℕ) :
-    μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n) :=
-  freeConv_comm _ _
+    μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n) := freeConv_comm _ _
 
 /-- Free convolution powers of a Dirac mass add its atom `n` times. -/
 theorem freeConvolutionPower_dirac (a : ℝ) (n : ℕ) :
@@ -382,21 +371,15 @@ theorem variance_id_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasur
     (hμ : IsCompact μ.support) (n : ℕ) :
     variance id (μ.freeConvolutionPower n) = n * variance id μ := by
   have := isProbabilityMeasure_freeConvolutionPower hμ n
-  have hmem {ρ : Measure ℝ} [IsProbabilityMeasure ρ] (hρ : IsCompact ρ.support) :
-      MemLp (id : ℝ → ℝ) 2 ρ := by
-    rw [← Measure.restrict_eq_self_of_ae_mem
-      (Filter.eventually_mem_set.mpr (support_mem_ae (μ := ρ)))]
-    exact continuousOn_id.memLp_restrict_of_subset_isCompact
-      hρ isClosed_support.measurableSet .rfl 2
-  simpa [coeff_one_rSeries_integral_eq_variance (hmem (isCompact_support_freeConvolutionPower μ n)),
-    coeff_one_rSeries_integral_eq_variance (hmem hμ), nsmul_eq_mul] using
+  simpa [coeff_one_rSeries_integral_eq_variance (continuousOn_id.memLp_of_isCompact_support
+        (isCompact_support_freeConvolutionPower μ n) support_mem_ae),
+    coeff_one_rSeries_integral_eq_variance
+      (continuousOn_id.memLp_of_isCompact_support hμ support_mem_ae), nsmul_eq_mul] using
     congrArg (PowerSeries.coeff 1) (rSeries_integral_freeConvolutionPower hμ n)
 
 end MeasureTheory.Measure
 
 namespace TauCeti
-
-section ConvolutionPowerLaw
 
 variable {A ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -417,7 +400,5 @@ theorem IsFreelyIndependent.law_sum_eq_freeConvolutionPower {φ : A →ₚ[ℂ] 
     φ.law (∑ i ∈ s, a i) = μ.freeConvolutionPower #s := by
   rw [hB.law_sum hφ s haB hasa, Finset.fold_congr (g := fun _ => μ) fun i hi => hlaw i hi,
     Measure.fold_freeConv_const s μ]
-
-end ConvolutionPowerLaw
 
 end TauCeti
