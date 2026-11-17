@@ -478,6 +478,17 @@ theorem isManifoldNondegenerateCriticalPoint_iff_criticalHessian :
   · refine ⟨hsmooth.1 hf, ?_, hinv⟩
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
 
+/-- On a finite-dimensional boundaryless manifold, a critical point of a function which is `C²`
+there is nondegenerate as soon as its critical Hessian is nondegenerate: the only tangent vector `a`
+with `Hess f(x)(a, b) = 0` for every `b` is `a = 0`. -/
+theorem IsManifoldNondegenerateCriticalPoint.of_nondegenerate_criticalHessian
+    [FiniteDimensional ℝ E] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hcrit : x ∈ criticalPoints I f)
+    (h : ∀ a, (∀ b, criticalHessian I f x a b = 0) → a = 0) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
+  isManifoldNondegenerateCriticalPoint_iff_criticalHessian.2 ⟨hf,
+    TauCeti.mem_criticalPoints.1 hcrit, criticalHessian_isInvertible_of_injective
+      ((injective_iff_map_eq_zero _).2 fun a ha ↦ h a fun b ↦ by simp [ha])⟩
+
 section Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
