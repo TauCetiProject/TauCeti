@@ -129,6 +129,18 @@ theorem snd_openChainEdge_last (x : (E × E) × (Fin (n + 1) → E)) :
     (openChainEdge (Fin.last (n + 1)) x).2 = x.1.2 := by
   simp [openChainEdge]
 
+/-- The first edge ends at the internal vertex `a_0`. -/
+@[simp]
+theorem snd_openChainEdge_zero (x : (E × E) × (Fin (n + 1) → E)) :
+    (openChainEdge 0 x).2 = x.2 0 := by
+  rw [← Fin.castSucc_zero, snd_openChainEdge_castSucc]
+
+/-- The last edge starts at the internal vertex `a_n`. -/
+@[simp]
+theorem fst_openChainEdge_last (x : (E × E) × (Fin (n + 1) → E)) :
+    (openChainEdge (Fin.last (n + 1)) x).1 = x.2 (Fin.last n) := by
+  rw [← Fin.succ_last, fst_openChainEdge_succ]
+
 /-- The first edge is `(q, a_0)`. -/
 theorem openChainEdge_zero (x : (E × E) × (Fin (n + 1) → E)) :
     openChainEdge 0 x = (x.1.1, x.2 0) := by
@@ -169,16 +181,23 @@ theorem openChainAction_apply (S : Fin (n + 2) → E × E → ℝ) (x : (E × E)
 /-- With one internal vertex, the open-chain action is `S_0(q, a_0) + S_1(a_0, Q)`. -/
 theorem openChainAction_fin_two (S : Fin 2 → E × E → ℝ) (q Q : E) (a : Fin 1 → E) :
     openChainAction S ((q, Q), a) = S 0 (q, a 0) + S 1 (a 0, Q) := by
-  rw [openChainAction_apply, Fin.sum_univ_two, openChainEdge_zero]
-  exact congrArg (fun e ↦ S 0 (q, a 0) + S 1 e) (openChainEdge_last _)
+  -- The numeral `1 : Fin 2` is the last edge.
+  have h₁ : (1 : Fin 2) = Fin.last 1 := rfl
+  rw [openChainAction_apply, Fin.sum_univ_two, openChainEdge_zero, h₁, openChainEdge_last,
+    Fin.last_zero]
 
 /-- With two internal vertices, the open-chain action is
 `S_0(q, a_0) + S_1(a_0, a_1) + S_2(a_1, Q)`. -/
 theorem openChainAction_fin_three (S : Fin 3 → E × E → ℝ) (q Q : E) (a : Fin 2 → E) :
     openChainAction S ((q, Q), a) = S 0 (q, a 0) + S 1 (a 0, a 1) + S 2 (a 1, Q) := by
-  rw [openChainAction_apply, Fin.sum_univ_three, openChainEdge_zero]
-  exact congrArg₂ (fun e e' ↦ S 0 (q, a 0) + S 1 e + S 2 e')
-    (openChainEdge_succ_castSucc (0 : Fin 1) _) (openChainEdge_last _)
+  -- The numeral `1 : Fin 3` is the internal edge `(0 : Fin 1).castSucc.succ`, the numeral
+  -- `2 : Fin 3` is the last edge, and the numeral `1 : Fin 2` is the last internal vertex.
+  have h₁ : (1 : Fin 3) = (0 : Fin 1).castSucc.succ := rfl
+  have h₂ : (2 : Fin 3) = Fin.last 2 := rfl
+  have h₁' : (1 : Fin 2) = Fin.last 1 := rfl
+  rw [openChainAction_apply, Fin.sum_univ_three, openChainEdge_zero, h₁, h₂,
+    openChainEdge_succ_castSucc, openChainEdge_last, ← h₁', Fin.castSucc_zero,
+    Fin.succ_zero_eq_one (n := 0)]
 
 /-- Smoothness of the open-chain action, from that of the generating functions on the edges. -/
 theorem contDiffAt_openChainAction {S : Fin (n + 2) → E × E → ℝ}
@@ -558,6 +577,67 @@ private theorem eq_fderiv_of_openChain_matching
   rw [hsub, map_sub, map_sub, map_sub, map_sub, sub_apply, sub_apply]
   linarith
 
+/-- The variations of the edges solving the differentiated matching equations one vertex after
+the other: the variation of the edge `0` is `(0, M_(S_0)⁻¹ p)`, and the variation of the edge
+`i + 1` starts at the end `c` of the variation `ε_i` of the edge `i` and ends at the solution
+`M_(S_(i+1))⁻¹ (-(∂²S_i(ε_i)(0, ·) + ∂²S_(i+1)(c, 0)(·, 0)))` of the matching equation at the
+vertex `i`. -/
+private def openChainSolution (S : Fin (n + 2) → E × E → ℝ) (x : (E × E) × (Fin (n + 1) → E)) :
+    Fin (n + 2) → StrongDual ℝ E →L[ℝ] E × E :=
+  Fin.induction
+    (inr ℝ E E ∘L (cotangentMixedHessian (S 0) (openChainEdge 0 x)).inverse)
+    fun i e ↦ (snd ℝ E E ∘L e).prod
+      ((cotangentMixedHessian (S i.succ) (openChainEdge i.succ x)).inverse ∘L
+        ((-(precomp ℝ (inr ℝ E E) ∘L
+              fderiv ℝ (fderiv ℝ (S i.castSucc)) (openChainEdge i.castSucc x) +
+            precomp ℝ (inl ℝ E E) ∘L fderiv ℝ (fderiv ℝ (S i.succ)) (openChainEdge i.succ x) ∘L
+              inl ℝ E E ∘L snd ℝ E E)) ∘L e))
+
+private theorem openChainSolution_zero_apply (S : Fin (n + 2) → E × E → ℝ)
+    (x : (E × E) × (Fin (n + 1) → E)) (p : StrongDual ℝ E) :
+    openChainSolution S x 0 p =
+      (0, (cotangentMixedHessian (S 0) (openChainEdge 0 x)).inverse p) := by
+  simp [openChainSolution]
+
+private theorem openChainSolution_succ_apply (S : Fin (n + 2) → E × E → ℝ)
+    (x : (E × E) × (Fin (n + 1) → E)) (i : Fin (n + 1)) (p : StrongDual ℝ E) :
+    openChainSolution S x i.succ p =
+      ((openChainSolution S x i.castSucc p).2,
+        (cotangentMixedHessian (S i.succ) (openChainEdge i.succ x)).inverse
+          (-(fderiv ℝ (fderiv ℝ (S i.castSucc)) (openChainEdge i.castSucc x)
+                (openChainSolution S x i.castSucc p) ∘L inr ℝ E E +
+            fderiv ℝ (fderiv ℝ (S i.succ)) (openChainEdge i.succ x)
+                ((openChainSolution S x i.castSucc p).2, 0) ∘L inl ℝ E E))) := by
+  simp [openChainSolution]
+
+/-- The variations `TauCeti.openChainSolution` solve the differentiated matching equation
+`-∂²S_i(ε_i)(0, ·) = ∂²S_(i+1)(ε_(i+1))(·, 0)` at the vertex `i`, provided `S_(i+1)` has an
+invertible mixed Hessian on its edge. -/
+private theorem openChainSolution_matching {i : Fin (n + 1)}
+    (hM : (cotangentMixedHessian (S i.succ) (openChainEdge i.succ ((q, Q), a))).IsInvertible)
+    (p : StrongDual ℝ E) (v : E) :
+    -fderiv ℝ (fderiv ℝ (S i.castSucc)) (openChainEdge i.castSucc ((q, Q), a))
+        (openChainSolution S ((q, Q), a) i.castSucc p) (0, v) =
+      fderiv ℝ (fderiv ℝ (S i.succ)) (openChainEdge i.succ ((q, Q), a))
+        (openChainSolution S ((q, Q), a) i.succ p) (v, 0) := by
+  set T : Fin (n + 2) → E × E →L[ℝ] StrongDual ℝ (E × E) :=
+    fun k ↦ fderiv ℝ (fderiv ℝ (S k)) (openChainEdge k ((q, Q), a))
+  set ε := openChainSolution S ((q, Q), a)
+  -- The variation of the edge `i + 1` is `(c, 0) + (0, M_(S_(i+1))⁻¹ ℓ)`, and
+  -- `∂²S_(i+1)(0, M_(S_(i+1))⁻¹ ℓ)(·, 0) = ℓ`.
+  have hw := congrArg (fun f ↦ f v) (hM.self_apply_inverse
+    (-(T i.castSucc (ε i.castSucc p) ∘L inr ℝ E E + T i.succ ((ε i.castSucc p).2, 0) ∘L inl ℝ E E)))
+  have hsplit : ε i.succ p = ((ε i.castSucc p).2, 0) +
+      (0, (cotangentMixedHessian (S i.succ) (openChainEdge i.succ ((q, Q), a))).inverse
+        (-(T i.castSucc (ε i.castSucc p) ∘L inr ℝ E E +
+          T i.succ ((ε i.castSucc p).2, 0) ∘L inl ℝ E E))) := by
+    rw [Prod.mk_add_mk, add_zero, zero_add]
+    exact openChainSolution_succ_apply S ((q, Q), a) i p
+  simp only [cotangentMixedHessian_apply_apply, neg_apply, add_apply, comp_apply, inr_apply,
+    inl_apply] at hw
+  rw [hsplit, map_add, add_apply, hw]
+  ring
+
 /-- **The eliminated generating function is of the first kind.** If every `S_k` has an invertible
 mixed Hessian on its edge and the negative Hessian of the open-chain action in the internal
 vertices is invertible, then the eliminated generating function `R` has an invertible mixed
@@ -575,24 +655,17 @@ theorem isInvertible_cotangentMixedHessian_openChain
       cotangentGeneratingSource R y = cotangentGeneratingSource (S 0) (y.1, b y 0)) :
     (cotangentMixedHessian R (q, Q)).IsInvertible := by
   have hS' (k : Fin (n + 2)) := ((hS k).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
-  set T : Fin (n + 2) → E × E →L[ℝ] StrongDual ℝ (E × E) :=
-    fun k ↦ fderiv ℝ (fderiv ℝ (S k)) (openChainEdge k ((q, Q), a))
   -- The right inverse solves the differentiated matching equations one vertex after the other,
   -- starting from the variation `(0, M_(S_0)⁻¹ p)` of the first edge.
-  let ε : Fin (n + 2) → StrongDual ℝ E →L[ℝ] E × E := Fin.induction
-    (inr ℝ E E ∘L (cotangentMixedHessian (S 0) (openChainEdge 0 ((q, Q), a))).inverse)
-    fun i e ↦ (snd ℝ E E ∘L e).prod
-      ((cotangentMixedHessian (S i.succ) (openChainEdge i.succ ((q, Q), a))).inverse ∘L
-        ((-(precomp ℝ (inr ℝ E E) ∘L T i.castSucc +
-          precomp ℝ (inl ℝ E E) ∘L T i.succ ∘L inl ℝ E E ∘L snd ℝ E E)) ∘L e))
+  set ε := openChainSolution S ((q, Q), a)
   have hright (p : StrongDual ℝ E) :
       cotangentMixedHessian R (q, Q) ((ε (Fin.last (n + 1)) p).2) = p := by
     set D : Fin (n + 1) → E := fun i ↦ (ε i.castSucc p).2
     have hε (k : Fin (n + 2)) : openChainEdge k ((0, (ε (Fin.last (n + 1)) p).2), D) = ε k p := by
       induction k using Fin.cases with
-      | zero => simp [openChainEdge_zero, D, ε]
+      | zero => simp [openChainEdge_zero, D, ε, openChainSolution_zero_apply]
       | succ i =>
-        refine Prod.ext (by simp [D, ε]) ?_
+        refine Prod.ext (by simp [D, ε, openChainSolution_succ_apply]) ?_
         induction i using Fin.lastCases with
         | last => simp
         | cast j => rw [Fin.succ_castSucc, snd_openChainEdge_castSucc]
@@ -600,23 +673,12 @@ theorem isInvertible_cotangentMixedHessian_openChain
       (δQ := (ε (Fin.last (n + 1)) p).2) (D := D)
       fun i v ↦ by
         rw [hε, hε]
-        have hw := congrArg (fun f ↦ f v) ((hM i.succ).self_apply_inverse
-          (-(T i.castSucc (ε i.castSucc p) ∘L inr ℝ E E +
-            T i.succ ((ε i.castSucc p).2, 0) ∘L inl ℝ E E)))
-        have hsplit : ε i.succ p = ((ε i.castSucc p).2, 0) +
-            (0, (cotangentMixedHessian (S i.succ) (openChainEdge i.succ ((q, Q), a))).inverse
-              (-(T i.castSucc (ε i.castSucc p) ∘L inr ℝ E E +
-                T i.succ ((ε i.castSucc p).2, 0) ∘L inl ℝ E E))) := by
-          simp [ε]
-        simp only [cotangentMixedHessian_apply_apply, neg_apply, add_apply, comp_apply, inr_apply,
-          inl_apply] at hw
-        rw [hsplit, map_add, add_apply, hw]
-        ring
+        exact openChainSolution_matching (hM i.succ) p v
     rw [cotangentMixedHessian_openChain_apply (by simpa [openChainEdge_zero] using hS' 0) hR hb hb₀
       (hrel.mono fun _ h ↦ h.2), ← hD]
     have h0 := (hM 0).self_apply_inverse p
     rw [openChainEdge_zero] at h0
-    simpa [D, ε, openChainEdge_zero] using h0
+    simpa [D, ε, openChainSolution_zero_apply, openChainEdge_zero] using h0
   have hinj := injective_cotangentMixedHessian_openChain hS' (fun k ↦ (hM k).bijective.1) hR hb
     hb₀ hrel
   exact .of_inverse (g := snd ℝ E E ∘L ε (Fin.last (n + 1))) (ext hright)
