@@ -208,6 +208,14 @@ theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}
   exact ⟨⟨_, (mem_adicCompletionIntegers _ K v).mpr hv.le⟩,
     adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hv, rfl⟩
 
+variable (K) in
+/-- Every integer power `exp n` is attained as the adic valuation of a unit of `K_v`
+(in particular `n = -1` supplies a uniformizer). -/
+theorem exists_unit_valued_eq_exp (n : ℤ) :
+    ∃ u : (v.adicCompletion K)ˣ, Valued.v (u : v.adicCompletion K) = exp n := by
+  obtain ⟨x, hx⟩ := v.valuedAdicCompletion_surjective K (exp n)
+  exact ⟨Units.mk0 x fun h ↦ exp_ne_zero (hx.symm.trans (by rw [h, map_zero])), hx⟩
+
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
     (hπ : Irreducible π) :
