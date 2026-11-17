@@ -14,10 +14,10 @@ import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 /-!
 # Connectedness of the punctured spectrum
 
-The punctured spectrum `U = Spec R ∖ {𝔪}` of a local ring `R` is nonempty exactly when `R` has
-positive Krull dimension (`TauCeti.IsLocalRing.nonempty_puncturedSpectrum_iff`). If `R` is
-Noetherian of depth at least two, then `U` is moreover connected
-(`TauCeti.IsLocalRing.connectedSpace_puncturedSpectrum`).
+If `R` is a Noetherian local ring of depth at least two, then its punctured spectrum
+`U = Spec R ∖ {𝔪}` is connected (`TauCeti.IsLocalRing.connectedSpace_puncturedSpectrum`). It is
+nonempty since `R` has positive Krull dimension
+(`TauCeti.IsLocalRing.nonempty_puncturedSpectrum_iff`).
 
 Connectedness comes from the algebraic Hartogs principle: in depth at least two, restriction
 `R = Γ(Spec R, 𝒪) → Γ(U, 𝒪)` is bijective. A decomposition of `U` into two disjoint nonempty open
@@ -34,8 +34,6 @@ as in Stacks, Lemma 58.19.7 (0BLJ).
 
 ## Main results
 
-* `TauCeti.IsLocalRing.nonempty_puncturedSpectrum_iff`: the punctured spectrum is nonempty if and
-  only if `0 < ringKrullDim R`.
 * `TauCeti.IsLocalRing.connectedSpace_puncturedSpectrum`: the punctured spectrum of a Noetherian
   local ring of depth at least two is connected.
 
@@ -57,19 +55,6 @@ namespace TauCeti.IsLocalRing
 
 variable (R : Type u) [CommRing R] [IsLocalRing R]
 
-/-- The punctured spectrum of a local ring is nonempty if and only if the ring has positive Krull
-dimension. -/
-theorem nonempty_puncturedSpectrum_iff :
-    Nonempty (puncturedSpectrum R) ↔ 0 < ringKrullDim R := by
-  refine ⟨fun ⟨⟨x, hx⟩⟩ ↦ ?_, fun h ↦ ?_⟩
-  · -- In dimension zero the closed point is the only point.
-    by_contra hdim
-    have : Ring.KrullDimLE 0 R := Ring.krullDimLE_iff.mpr (not_lt.mp hdim)
-    have := Ring.KrullDimLE.subsingleton_primeSpectrum R
-    exact (mem_puncturedSpectrum_iff R x).mp hx (Subsingleton.elim _ _)
-  · obtain ⟨x, hx⟩ := (dense_compl_singleton_closedPoint_iff.mpr h).nonempty
-    exact ⟨⟨x, (mem_puncturedSpectrum_iff R x).mpr hx⟩⟩
-
 /-- **The punctured spectrum is connected in depth at least two.** For a Noetherian local ring
 `R` of depth at least two, the complement of the closed point of `Spec R` is connected. -/
 theorem connectedSpace_puncturedSpectrum [IsNoetherianRing R]
@@ -77,16 +62,13 @@ theorem connectedSpace_puncturedSpectrum [IsNoetherianRing R]
     ConnectedSpace (puncturedSpectrum R).toScheme := by
   let U := puncturedSpectrum R
   let X := U.toScheme
-  have : Nonempty X := (nonempty_puncturedSpectrum_iff R).mpr <| by
-    have hle : (_root_.IsLocalRing.depth (ModuleCat.of R R) : WithBot ℕ∞) ≤ ringKrullDim R := by
-      simpa only [Module.supportDim_self_eq_ringKrullDim] using
-        _root_.IsLocalRing.depth_le_supportDim (R := R) (M := ModuleCat.of R R)
-    exact lt_of_lt_of_le (by exact_mod_cast (zero_lt_two.trans_le hdepth)) hle
+  have : Nonempty X := (nonempty_puncturedSpectrum_iff R).mpr
+    (dense_compl_singleton_closedPoint_iff.mp
+      (dense_compl_singleton_closedPoint_of_one_le_depth (one_le_two.trans hdepth)))
   -- By the Hartogs principle, `R → Γ(U, 𝒪)` is a ring isomorphism.
   have hbij := TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat (B := R) hdepth
     U fun p hp ↦ (mem_puncturedSpectrum_iff R p).mpr fun h ↦ hp (by
-      -- The ideal of `closedPoint R` is `maximalIdeal R`, by definition.
-      simp [h, Ideal.under_def, Ideal.comap_id]; rfl)
+      simp [h, Ideal.under_def, Ideal.comap_id, _root_.IsLocalRing.closedPoint])
   let eR : R ≃+* Γ(X, ⊤) :=
     ((Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv.trans
       (RingEquiv.ofBijective _ hbij)).trans U.topIso.symm.commRingCatIsoToRingEquiv

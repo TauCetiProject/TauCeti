@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Base change of finite étale schemes to a nonempty scheme over a connected base
@@ -54,21 +55,13 @@ variable {S T : Scheme.{u}} (f : T ⟶ S) [PreconnectedSpace S] [Nonempty T]
 faithful. -/
 instance faithful_pullback_of_preconnectedSpace : (pullback f).Faithful := by
   obtain ⟨t⟩ := ‹Nonempty T›
-  let K := T.residueField t
-  -- A geometric point of `T`, at an algebraic closure of a residue field.
-  let x := Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K))) ≫
-    T.fromSpecResidueField t
-  exact Functor.Faithful.of_comp_iso (pullbackCompFiberIso f x)
+  exact Functor.Faithful.of_comp_iso (pullbackCompFiberIso f (T.fromSpecAlgebraicClosure t))
 
 /-- Base change of finite étale schemes to a nonempty scheme over a connected base reflects
 isomorphisms. -/
 instance reflectsIsomorphisms_pullback : (pullback f).ReflectsIsomorphisms := by
   obtain ⟨t⟩ := ‹Nonempty T›
-  let K := T.residueField t
-  -- A geometric point of `T`, at an algebraic closure of a residue field.
-  let x := Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K))) ≫
-    T.fromSpecResidueField t
-  have := reflectsIsomorphisms_of_iso (pullbackCompFiberIso f x).symm
-  exact reflectsIsomorphisms_of_comp (pullback f) (fiber x)
+  have := reflectsIsomorphisms_of_iso (pullbackCompFiberIso f (T.fromSpecAlgebraicClosure t)).symm
+  exact reflectsIsomorphisms_of_comp (pullback f) (fiber (T.fromSpecAlgebraicClosure t))
 
 end TauCeti.FiniteEtaleScheme

@@ -112,10 +112,8 @@ theorem restrictPunctured_faithful_iff :
     (restrictPunctured R).Faithful ↔ 0 < ringKrullDim R := by
   refine ⟨fun _ ↦ ?_, restrictPunctured_faithful R⟩
   by_contra hdim
-  have : Ring.KrullDimLE 0 R := Ring.krullDimLE_iff.mpr (not_lt.mp hdim)
-  have := Ring.KrullDimLE.subsingleton_primeSpectrum R
   have : IsEmpty (puncturedSpectrum R).toScheme :=
-    ⟨fun x ↦ (mem_puncturedSpectrum_iff R x.1).mp x.2 (Subsingleton.elim _ _)⟩
+    not_nonempty_iff.mp (mt (nonempty_puncturedSpectrum_iff R).mp hdim)
   -- Over the empty punctured spectrum all finite étale schemes are empty, so any two parallel
   -- morphisms agree.
   have hsub {X Y : TauCeti.FiniteEtaleScheme (puncturedSpectrum R).toScheme} (a b : X ⟶ Y) :
