@@ -52,77 +52,6 @@ namespace TauCeti
 
 variable {α : Type*} [DecidableEq α]
 
-/-- When an `n`-step path visits `1 + #N` vertices (attaining the path tree bound), any nonloop
-unordered pair `e₀` induces a vertex labeling whose parity changes exclusively across steps with
-unordered edge `e₀`. -/
-private theorem exists_mod_two_color_of_card_image_eq (p : ℕ → α) (n : ℕ) (e₀ : Sym2 α)
-    (he₀ : ∀ x, s(x, x) ≠ e₀)
-    (hv : #((range (n + 1)).image p) =
-      #(((range n).filter fun r ↦ p r ≠ p (r + 1)).image fun r ↦ s(p r, p (r + 1))) + 1) :
-    ∃ c : α → ℕ, ∀ r < n,
-      (c (p r) + c (p (r + 1))) % 2 = if s(p r, p (r + 1)) = e₀ then 1 else 0 := by
-  induction n with
-  | zero => exact ⟨fun _ ↦ 0, by simp⟩
-  | succ n ih =>
-    set Vn := (range (n + 1)).image p
-    set Nn := ((range n).filter fun r ↦ p r ≠ p (r + 1)).image fun r ↦ s(p r, p (r + 1))
-    set Nn1 := ((range (n + 1)).filter fun r ↦ p r ≠ p (r + 1)).image fun r ↦ s(p r, p (r + 1))
-    have hle : #Vn ≤ #Nn + 1 := card_image_range_le_card_nonloop_edges_add_one p n
-    have hNsub : Nn ⊆ Nn1 := image_subset_image (filter_subset_filter _ (range_mono (by omega)))
-    have hNle : #Nn ≤ #Nn1 := card_le_card hNsub
-    have hVstep : (range (n + 2)).image p = insert (p (n + 1)) Vn := by simp [Vn, range_add_one]
-    by_cases hmem : p (n + 1) ∈ Vn
-    · -- Revisiting a vertex forces `Nn = Nn1`, so a nonloop last step repeats an earlier edge.
-      rw [hVstep, insert_eq_of_mem hmem] at hv
-      obtain ⟨c, hc⟩ := ih (by omega)
-      refine ⟨c, fun r hr ↦ ?_⟩
-      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hr) with hlt | rfl
-      · exact hc r hlt
-      · by_cases hloop : p r = p (r + 1)
-        · simp only [← hloop, he₀ (p r), ↓reduceIte]; omega
-        · have hin : s(p r, p (r + 1)) ∈ Nn := by
-            rw [eq_of_subset_of_card_le hNsub (by omega)]
-            exact mem_image.mpr ⟨r, mem_filter.mpr ⟨mem_range.mpr (by omega), hloop⟩, rfl⟩
-          obtain ⟨q, hqN, hqe⟩ := mem_image.mp hin
-          have hsum : c (p r) + c (p (r + 1)) = c (p q) + c (p (q + 1)) := by
-            rcases Sym2.eq_iff.mp hqe with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp [h1, h2, add_comm]
-          rw [hsum, ← hqe, hc q (mem_range.mp (mem_filter.mp hqN).1)]
-    · -- Discovering a fresh vertex adds one new nonloop edge; extend `c` at `p (n + 1)`.
-      have hnot_pre {m : ℕ} (hm : m ≤ n) : p m ≠ p (n + 1) := fun h ↦
-        hmem (mem_image.mpr ⟨m, mem_range.mpr (by omega), h⟩)
-      have hnotN : s(p n, p (n + 1)) ∉ Nn := fun hin ↦ by
-        obtain ⟨q, hqN, hqe⟩ := mem_image.mp hin
-        have hql : q < n := mem_range.mp (mem_filter.mp hqN).1
-        have hm : p (n + 1) ∈ s(p q, p (q + 1)) := by rw [hqe]; exact Sym2.mem_mk_right _ _
-        rcases Sym2.mem_iff.mp hm with h | h
-        · exact hnot_pre hql.le h.symm
-        · exact hnot_pre hql h.symm
-      rw [hVstep, card_insert_of_notMem hmem] at hv
-      have hNcard : #Nn1 = #Nn + 1 := by
-        simp [Nn, Nn1, range_add_one, filter_insert, hnot_pre le_rfl, hnotN]
-      obtain ⟨c, hc⟩ := ih (by omega)
-      refine ⟨Function.update c (p (n + 1))
-        (c (p n) + if s(p n, p (n + 1)) = e₀ then 1 else 0), fun r hr ↦ ?_⟩
-      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hr) with hlt | rfl
-      · rw [Function.update_of_ne (hnot_pre hlt.le), Function.update_of_ne (hnot_pre hlt)]
-        exact hc r hlt
-      · simp only [Function.update_of_ne (hnot_pre le_rfl), Function.update_self]
-        split_ifs <;> omega
-
-/-- If `c` flips parity exclusively across steps with unordered edge `e₀`, any closed walk
-traverses `e₀` an even number of times. -/
-private theorem card_filter_cyclic_edge_mod_two_eq_zero {k : ℕ} (w : Fin k → α) (c : α → ℕ)
-    (e₀ : Sym2 α)
-    (hc : ∀ i, (c (w i) + c (w (finRotate k i))) % 2 =
-      if s(w i, w (finRotate k i)) = e₀ then 1 else 0) :
-    #{i | s(w i, w (finRotate k i)) = e₀} % 2 = 0 := by
-  have h1 (i : Fin k) : (if s(w i, w (finRotate k i)) = e₀ then 1 else 0) =
-      (c (w i) + c (w (finRotate k i))) % 2 := (hc i).symm
-  rw [card_filter]
-  simp_rw [h1]
-  rw [← sum_nat_mod, sum_add_distrib, Equiv.sum_comp (finRotate k) (fun i ↦ c (w i))]
-  omega
-
 /-- Two cyclic walks sharing a vertex `w₁ a₀ = w₂ b₀` concatenate into a walk of `k₁ + k₂` steps
 whose visited vertices are `image w₁ ∪ image w₂` and whose steps cover all cyclic steps of `w₁`
 and `w₂` without introducing any new nonloop edges. -/
@@ -247,10 +176,10 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k�
   set e₀ := s(w₁ i₀, w₁ (finRotate k₁ i₀))
   have he₀E : e₀ ∈ E := mem_image.mpr ⟨.inl i₀, mem_univ _, rfl⟩
   have hEpos : 1 ≤ #E := card_pos.mpr ⟨e₀, he₀E⟩
-  have he₀_noloop : ∀ x, s(x, x) ≠ e₀ := fun x hx ↦ by
+  have he₀_noloop : ¬ e₀.IsDiag := by
     obtain ⟨r, hr, hre⟩ := mem_image.mp (hNE.symm ▸ he₀E)
-    rcases Sym2.eq_iff.mp (hre.trans hx.symm) with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;>
-      exact (mem_filter.mp hr).2 (h1.trans h2.symm)
+    rw [← hre, Sym2.mk_isDiag_iff]
+    exact (mem_filter.mp hr).2
   have hVN : #((range (k₁ + k₂ + 1)).image p) = #N + 1 := by rw [hpV]; omega
   obtain ⟨c, hc⟩ := exists_mod_two_color_of_card_image_eq p (k₁ + k₂) e₀ he₀_noloop hVN
   -- Both closed walks traverse `e₀` a positive even number of times, giving fiber size ≥ 4.
