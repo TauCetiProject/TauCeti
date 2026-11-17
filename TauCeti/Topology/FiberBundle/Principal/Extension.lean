@@ -40,11 +40,6 @@ open Bundle Filter MulAction MulOpposite Set Topology
 namespace TauCeti.PrincipalBundle
 
 section Extend
-/-- Helper pinning the `FunLike` coercion on `hρ : Continuous ρ` inside `Extend`, so that
-`Extend P ρ hρ` unifies uniformly with `(extendCore P ρ _).Fiber` during instance search. -/
-theorem extendContinuousCoe {G H : Type*} [TopologicalSpace G] [TopologicalSpace H]
-    [Group G] [Group H] (ρ : G →* H) (hρ : Continuous ρ) : Continuous ⇑ρ := hρ
-
 section
 variable {G H B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
   [Group H] [TopologicalSpace H] (P : B → Type*) [TopologicalSpace (TotalSpace G P)]
@@ -70,7 +65,7 @@ noncomputable def extendCore : FiberBundleCore B B H :=
 
 /-- The **extension of structure group** `P ×_ρ H` of a principal `G`-bundle `P` along a continuous
 group homomorphism `ρ : G →* H` into a group `H` with continuous multiplication. -/
-abbrev Extend : B → Type _ := (extendCore P ρ (extendContinuousCoe ρ hρ)).Fiber
+abbrev Extend : B → Type _ := (extendCore P ρ hρ).Fiber
 end
 
 namespace Extend
@@ -100,10 +95,8 @@ variable (ρ : G →* H) (hρ : Continuous ρ)
 
 /-- Preferred trivializations of `Extend P ρ hρ` agree with the native charts of `extendCore`. -/
 theorem trivializationAt_eq_localTriv (b : B) :
-    trivializationAt H (Extend P ρ hρ) b =
-      (extendCore P ρ (extendContinuousCoe ρ hρ)).localTriv b :=
-  congrArg (extendCore P ρ (extendContinuousCoe ρ hρ)).localTriv
-    (extendCore_indexAt P ρ (extendContinuousCoe ρ hρ) b)
+    trivializationAt H (Extend P ρ hρ) b = (extendCore P ρ hρ).localTriv b :=
+  congrArg (extendCore P ρ hρ).localTriv (extendCore_indexAt P ρ hρ b)
 /-- The base set of `trivializationAt H (Extend P ρ hρ) b` agrees with `trivializationAt G P b`. -/
 @[simp] theorem baseSet_trivializationAt (b : B) :
     (trivializationAt H (Extend P ρ hρ) b).baseSet = (trivializationAt G P b).baseSet := by
@@ -292,10 +285,15 @@ variable (ρ : G →* H) (hρ : Continuous ρ) (φ : ∀ b, P b → Q b)
 @[simp] theorem equivOfEquivariant_mk {b : B} (p : P b) (h : H) :
     equivOfEquivariant ρ hρ φ hφ b (mk ρ hρ p h) = op h • φ b p := by
   set p₀ : P b := (FiberBundle.homeomorphAt G P b).symm 1
-  have hp : p = op (division G p₀ p) • p₀ := (smul_division p₀ p).symm
-  dsimp only [equivOfEquivariant]
-  rw [hp, mk_smul, Equiv.trans_apply, Equiv.ofBijective_symm_apply_apply]
-  dsimp only [Equiv.coe_fn_mk]; rw [hφ, op_mul, mul_smul]
+  set g : G := division G p₀ p
+  have hp : p = op g • p₀ := (smul_division p₀ p).symm
+  have heval (k : H) :
+      equivOfEquivariant ρ hρ φ hφ b (mk ρ hρ p₀ k) = op k • φ b p₀ := by
+    simp [equivOfEquivariant, p₀]
+  calc equivOfEquivariant ρ hρ φ hφ b (mk ρ hρ p h)
+      = equivOfEquivariant ρ hρ φ hφ b (mk ρ hρ p₀ (ρ g * h)) := by rw [hp, mk_smul]
+    _ = op (ρ g * h) • φ b p₀ := heval _
+    _ = op h • φ b p := by rw [op_mul, mul_smul, ← hφ, ← hp]
 @[simp] theorem equivOfEquivariant_inl {b : B} (p : P b) :
     equivOfEquivariant ρ hρ φ hφ b (inl ρ hρ p) = φ b p := by
   rw [inl_def, equivOfEquivariant_mk, op_one, one_smul]

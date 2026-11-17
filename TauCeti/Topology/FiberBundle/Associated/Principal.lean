@@ -93,8 +93,9 @@ variable [MulAction G H] [ContinuousSMul G H] [SMulCommClass G Hᵐᵒᵖ H] [To
   [MulAction H F] [ContinuousSMul H F] [MulAction G F] [ContinuousSMul G F] [IsScalarTower G H F]
 
 omit [IsScalarTower G H F] in
-/-- Fibrewise transitivity equivalence `(P ×_G H) ×_H F ≃ P ×_G F`, sending `[[p, h], v]` to
-`[p, h • v]`. -/
+/-- Preferred-chart fibre equivalence `(P ×_G H) ×_H F ≃ P ×_G F` via the preferred unit section
+of `P` at `b`. Under `[IsScalarTower G H F]`, this agrees on all representatives with
+`[[p, h], v] ↦ [p, h • v]`; see `assocEquiv_mk`. -/
 noncomputable def assocEquiv (b : B) :
     AssociatedBundle H (AssociatedBundle G P H) F b ≃ AssociatedBundle G P F b :=
   let p : P b := (FiberBundle.homeomorphAt G P b).symm 1
@@ -107,12 +108,18 @@ noncomputable def assocEquiv (b : B) :
         (mk H (P := AssociatedBundle G P H) (mk G p h) v) = mk G p (h • v) := by
   set p₀ : P b := (FiberBundle.homeomorphAt G P b).symm 1
   set g : G := PrincipalBundle.division G p₀ p
-  have hmk : mk G p h = op ((g • (1 : H)) * h) • mk G p₀ (1 : H) := by
-    rw [smul_mk, one_mul, ← op_smul_eq_mul, ← smul_comm, op_smul_eq_mul, one_mul,
-      ← mk_smul, PrincipalBundle.smul_division]
-  dsimp only [assocEquiv]
-  rw [hmk, mk_smul, Equiv.trans_apply, Equiv.ofBijective_symm_apply_apply, Equiv.ofBijective_apply,
-    mul_smul, smul_assoc, one_smul, ← mk_smul, PrincipalBundle.smul_division]
+  have hp : p = op g • p₀ := (PrincipalBundle.smul_division p₀ p).symm
+  have hmk : mk G p h = op (g • h) • mk G p₀ (1 : H) := by rw [hp, mk_smul, smul_mk, one_mul]
+  have heval (w : F) : assocEquiv (G := G) (P := P) (H := H) (F := F) b
+      (mk H (P := AssociatedBundle G P H) (mk G p₀ (1 : H)) w) = mk G p₀ w := by
+    simp [assocEquiv, p₀]
+  calc assocEquiv (G := G) (P := P) (H := H) (F := F) b
+        (mk H (P := AssociatedBundle G P H) (mk G p h) v)
+      = assocEquiv (G := G) (P := P) (H := H) (F := F) b
+          (mk H (P := AssociatedBundle G P H) (mk G p₀ (1 : H)) ((g • h) • v)) := by
+          rw [hmk, mk_smul]
+    _ = mk G p₀ ((g • h) • v) := heval _
+    _ = mk G p (h • v) := by rw [smul_assoc, ← mk_smul, ← hp]
 
 @[simp] theorem assocEquiv_symm_mk {b : B} (p : P b) (v : F) :
     (assocEquiv (G := G) (P := P) (H := H) (F := F) b).symm (mk G p v) =
@@ -200,11 +207,14 @@ variable (ρ : G →* H) (φ : ∀ b, P b → Q b)
 @[simp] theorem equivOfEquivariant_mk {b : B} (p : P b) (v : F) :
     equivOfEquivariant ρ φ hφ hF b (mk G p v) = mk H (φ b p) v := by
   set p₀ : P b := (FiberBundle.homeomorphAt G P b).symm 1
-  have hp : p = op (PrincipalBundle.division G p₀ p) • p₀ :=
-    (PrincipalBundle.smul_division p₀ p).symm
-  dsimp only [equivOfEquivariant]
-  rw [hp, mk_smul, Equiv.trans_apply, Equiv.ofBijective_symm_apply_apply, Equiv.ofBijective_apply,
-    hF, ← mk_smul, ← hφ]
+  set g : G := PrincipalBundle.division G p₀ p
+  have hp : p = op g • p₀ := (PrincipalBundle.smul_division p₀ p).symm
+  have heval (w : F) : equivOfEquivariant ρ φ hφ hF b (mk G p₀ w) = mk H (φ b p₀) w := by
+    simp [equivOfEquivariant, p₀]
+  calc equivOfEquivariant ρ φ hφ hF b (mk G p v)
+      = equivOfEquivariant ρ φ hφ hF b (mk G p₀ (g • v)) := by rw [hp, mk_smul]
+    _ = mk H (φ b p₀) (g • v) := heval _
+    _ = mk H (φ b p) v := by rw [hF, ← mk_smul, ← hφ, ← hp]
 @[simp] theorem equivOfEquivariant_symm_mk {b : B} (p : P b) (v : F) :
     (equivOfEquivariant ρ φ hφ hF b).symm (mk H (φ b p) v) = mk G p v :=
   (equivOfEquivariant ρ φ hφ hF b).symm_apply_eq.2 (equivOfEquivariant_mk ρ φ hφ hF p v).symm
