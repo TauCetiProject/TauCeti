@@ -72,6 +72,15 @@ theorem map_strandIncl_mul_e_last_mul (htr : IsMarkovTrace R δ tr) {n : ℕ}
   rw [htr.map_mul_comm, ← mul_assoc, ← map_mul, htr.map_strandIncl_mul_e_last,
     htr.map_mul_comm]
 
+/-- Adding a straight strand at any level `n ≥ 0` multiplies a Markov trace by `δ`. -/
+@[simp]
+theorem map_strandInclAll (htr : IsMarkovTrace R δ tr) (n : ℕ) (x : TemperleyLieb R δ n) :
+    tr (n + 1) (strandInclAll n x) = δ * tr n x := by
+  cases n with
+  | zero =>
+    rw [eq_algebraMap_aug_zero x]; simp [Algebra.algebraMap_eq_smul_one, htr.map_one, mul_comm]
+  | succ n => rw [strandInclAll_succ, htr.map_strandIncl]
+
 /-- On at most one strand the algebra is the base ring, so a Markov trace is determined there by
 its normalization `tr n 1 = δ ^ n`. -/
 private theorem eq_of_le_one {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}

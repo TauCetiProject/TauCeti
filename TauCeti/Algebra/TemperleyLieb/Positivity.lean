@@ -9,10 +9,11 @@ public import TauCeti.Algebra.TemperleyLieb.QuantumDimension
 public import TauCeti.QuantumGroups.QuantumInteger.Real
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 import TauCeti.Algebra.TemperleyLieb.PathModel
 import TauCeti.Algebra.TemperleyLieb.SpinPositivity
-import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 /-!
 # Jones's positivity theorem
@@ -65,7 +66,13 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   only be positive semidefinite below level `⌊π / θ⌋`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_eq_two_mul_cos`: positivity
   at the loop values `2 cos (π / m)`.
+* `TauCeti.TemperleyLieb.one_le_of_mem_jonesLoopParameters`,
+  `TauCeti.TemperleyLieb.pos_of_mem_jonesLoopParameters`: every admissible loop parameter satisfies
+  `1 ≤ δ` and in particular `0 < δ`.
+* `TauCeti.TemperleyLieb.sum_neighborFinset_pathGraph_qInt`: the quantum integers `[t + 1]` form a
+  `2 cos (π / m)`-eigenvector of the adjacency matrix of `pathGraph (m - 1)`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff`,
+  `IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters`,
   `TauCeti.TemperleyLieb.markovTrace_nonneg_iff`: **Jones's positivity theorem**.
 
 ## References
@@ -92,6 +99,21 @@ def jonesLoopParameters : Set ℝ :=
 theorem mem_jonesLoopParameters {δ : ℝ} :
     δ ∈ jonesLoopParameters ↔ (∃ m : ℕ, 3 ≤ m ∧ δ = 2 * cos (π / m)) ∨ 2 ≤ δ :=
   Iff.rfl
+
+/-- Every admissible Jones loop parameter satisfies `1 ≤ δ`, since
+`2 cos (π / m) ≥ 2 cos (π / 3) = 1` for `m ≥ 3`. -/
+theorem one_le_of_mem_jonesLoopParameters {δ : ℝ} (hδ : δ ∈ jonesLoopParameters) : 1 ≤ δ := by
+  rcases mem_jonesLoopParameters.1 hδ with ⟨m, hm, rfl⟩ | h2
+  · have hle : π / m ≤ π / 3 :=
+      div_le_div_of_nonneg_left pi_pos.le (by norm_num) (by exact_mod_cast hm)
+    have hcos := cos_le_cos_of_nonneg_of_le_pi (div_nonneg pi_pos.le (Nat.cast_nonneg m))
+      (by linarith [pi_pos]) hle
+    rw [cos_pi_div_three] at hcos; linarith
+  · linarith
+
+/-- Every admissible Jones loop parameter is strictly positive. -/
+theorem pos_of_mem_jonesLoopParameters {δ : ℝ} (hδ : δ ∈ jonesLoopParameters) : 0 < δ :=
+  lt_of_lt_of_le zero_lt_one (one_le_of_mem_jonesLoopParameters hδ)
 
 section QuantumInteger
 
@@ -135,13 +157,14 @@ theorem qInt_floor_add_one_neg_of_notMem_jonesLoopParameters (hδ : 0 < δ)
   rwa [hcos] at h
 
 open SimpleGraph in
-/-- At `δ = 2 cos (π / (k + 2))`, the quantum integers `[t + 1]` on the vertices `t` of the path
-graph on `k + 1` vertices, the Dynkin graph `A_(k+1)`, form an eigenvector of its adjacency
-matrix with eigenvalue `δ`: this is the recurrence `[t] + [t + 2] = δ [t + 1]`, with `[0] = 0` at
-one end of the graph and `[k + 2] = 0` at the other. -/
-private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
-    ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (u + 1) =
-      2 * cos (π / (k + 2 : ℕ)) * qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (v + 1) := by
+/-- At `δ = 2 cos (π / m)`, the quantum integers `[t + 1]` on the vertices `t` of the path
+graph on `m - 1` vertices (the Dynkin graph `A_(m-1)`, automatically `m ≥ 2` when a vertex `v`
+exists) form an eigenvector of its adjacency matrix with eigenvalue `δ`: this is the recurrence
+`[t] + [t + 2] = δ [t + 1]`, with `[0] = 0` at one end of the graph and `[m] = 0` at the other. -/
+theorem sum_neighborFinset_pathGraph_qInt {m : ℕ} (v : Fin (m - 1)) :
+    ∑ u ∈ (pathGraph (m - 1)).neighborFinset v, qInt ℝ (2 * cos (π / (m : ℕ))) (u + 1) =
+      2 * cos (π / (m : ℕ)) * qInt ℝ (2 * cos (π / (m : ℕ))) (v + 1) := by
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by have := v.isLt; omega⟩
   set δ := 2 * cos (π / (k + 2 : ℕ))
   rw [neighborFinset_eq_filter, Finset.sum_filter]
   simp only [pathGraph_adj]
@@ -154,14 +177,14 @@ private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
   simp_rw [h]
   rw [Finset.sum_add_distrib, Finset.sum_ite_eq]
   -- The neighbour above `v` contributes `[v + 2]`, which vanishes when `v` is the top vertex.
-  have h1 : (if v.val + 1 ∈ Finset.range (k + 1) then qInt ℝ δ (v + 1 + 1) else 0) =
+  have h1 : (if v.val + 1 ∈ Finset.range (k + 2 - 1) then qInt ℝ δ (v + 1 + 1) else 0) =
       qInt ℝ δ (v + 2) := by
     split_ifs with hv
     · rfl
     · rw [show v.val + 2 = k + 2 by simp at hv; omega]
       exact (qInt_two_mul_cos_pi_div_eq_zero (by omega)).symm
   -- The neighbour below `v` contributes `[v]`, which vanishes when `v` is the bottom vertex.
-  have h2 : ∑ j ∈ Finset.range (k + 1), (if j + 1 = v.val then qInt ℝ δ (j + 1) else 0) =
+  have h2 : ∑ j ∈ Finset.range (k + 2 - 1), (if j + 1 = v.val then qInt ℝ δ (j + 1) else 0) =
       qInt ℝ δ v := by
     obtain ⟨_ | w, hw⟩ := v
     · simp
@@ -270,7 +293,7 @@ theorem map_star_mul_self_nonneg_of_eq_two_mul_cos (htr : IsMarkovTrace ℂ (δ 
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hpos t)).ne')
     (fun t ↦ Complex.conj_ofReal _) (fun v ↦ ?_) x
   simp only [← Complex.ofReal_pow, Real.sq_sqrt (hpos _).le]
-  exact_mod_cast sum_neighborFinset_pathGraph_qInt v
+  exact_mod_cast sum_neighborFinset_pathGraph_qInt (m := k + 2) v
 
 /-- **Jones's positivity theorem.** For `δ > 0`, the Hermitian forms `(x, y) ↦ tr n (x⋆ * y)` of a
 Markov trace are positive semidefinite on every number of strands exactly when `δ` is an admissible
@@ -282,6 +305,20 @@ theorem forall_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace ℂ (δ : ℂ) 
   obtain ⟨m, hm, hδm⟩ | h2 := h
   · exact htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (by omega) hδm x
   · exact htr.map_star_mul_self_nonneg_of_two_le h2 x
+
+/-- **Complete positivity classification** for a Markov trace over `ℂ` at any real `δ`: all
+Hermitian forms `x ↦ tr n (star x * x)` are nonnegative iff `δ = 0` or `δ ∈ jonesLoopParameters`. -/
+theorem forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) :
+    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ tr n (star x * x)) ↔
+      δ = 0 ∨ δ ∈ jonesLoopParameters := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h0 : 0 ≤ δ := Complex.zero_le_real.1 (by simpa [htr.map_one] using h 1 1)
+    exact (eq_or_lt_of_le h0).imp Eq.symm fun hp ↦
+      (htr.forall_map_star_mul_self_nonneg_iff hp).1 h
+  · rcases h with rfl | hJ
+    · exact fun _ ↦ htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (m := 2) le_rfl (by simp)
+    · exact (htr.forall_map_star_mul_self_nonneg_iff (pos_of_mem_jonesLoopParameters hJ)).2 hJ
 
 end IsMarkovTrace
 
