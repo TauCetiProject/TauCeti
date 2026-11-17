@@ -263,7 +263,7 @@ lemma augmentationIso_hom_naturality (i : ι) {X Y : BasedTopologicalSpace.{u}} 
       (HP.augmentationIso i X).hom ≫
         biprod.map (𝟙 _) ((HP.Hₚ i).map (BasedTopologicalSpace.toTopPair.map f)) := by
   ext
-  · simp [← Functor.map_comp]
+  · simp [← Functor.map_comp, ← TopCat.ofHom_comp]
   · simpa using (HP.hFstToHₚ_naturality (BasedTopologicalSpace.toTopPair.map f) i).symm
 
 end Augmentation
@@ -374,7 +374,7 @@ lemma cohomologyAugmentationIso_inv_naturality (i : ι) {X Y : BasedTopologicalS
       (E.cohomologyAugmentationIso i Y).inv ≫
         ((E.H i).map (TopCat.ofHom f.toContinuousMap)).unop := by
   apply biprod.hom_ext'
-  · simp [← unop_comp, ← Functor.map_comp]
+  · simp [← unop_comp, ← Functor.map_comp, ← TopCat.ofHom_comp]
   · simpa [← unop_comp] using
       congrArg Quiver.Hom.unop (E.hFstToHₚ_naturality (BasedTopologicalSpace.toTopPair.map f) i)
 

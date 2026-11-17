@@ -169,13 +169,6 @@ def toTopPair : BasedTopologicalSpace.{u} ⥤ TopPair.{u} where
       prop_hom_left := trivial
       prop_hom_right := trivial }
 
-/-- A based map `X ⟶ Y` followed by the map `Y ⟶ *` is the map `X ⟶ *`. -/
-@[simp]
-lemma ofHom_comp_const_punit {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) :
-    TopCat.ofHom f.toContinuousMap ≫ TopCat.ofHom (ContinuousMap.const Y.carrier PUnit.unit) =
-      TopCat.ofHom (ContinuousMap.const X.carrier PUnit.unit) := by
-  ext
-
 /-- The space `X₊ = * ⊔ X` obtained by adding a disjoint basepoint to a space `X`. -/
 @[expose, implicit_reducible, simps]
 def addBasepoint : TopCat.{u} ⥤ BasedTopologicalSpace.{u} where
