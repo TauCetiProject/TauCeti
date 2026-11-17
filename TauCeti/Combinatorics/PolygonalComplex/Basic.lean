@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 public import TauCeti.Data.Fin.Basic
 public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -18,7 +18,9 @@ A polygonal complex is a Serre graph, its one-skeleton, together with a family o
 face is a polygon whose sides are attached, in cyclic order, to a closed sequence of darts of the
 one-skeleton: the `i`-th side of a face ends where its `(i + 1)`-st side starts, cyclically. Loops,
 parallel edges and repeated darts along a face are all allowed, so the one-vertex polygons
-`a b a⁻¹ b⁻¹` (a torus) and `a a` (a projective plane) are polygonal complexes.
+`a b a⁻¹ b⁻¹` (a torus) and `a a` (a projective plane) are polygonal complexes. Read from its
+first corner, the sides of a face are the darts of a closed path in the one-skeleton
+(`PolygonalComplex.facePath`).
 
 Distinct occurrences of the same vertex along the faces are kept apart as *corners*
 (`PolygonalComplex.Corner`): the corner `(f, i)` of the face `f` sits at the start of its `i`-th
@@ -43,6 +45,7 @@ condition into the global statement that every edge lies on one or two face side
 * `TauCeti.PolygonalComplex`: a Serre graph with faces attached along closed dart sequences.
 * `TauCeti.PolygonalComplex.Corner`, `TauCeti.PolygonalComplex.cornerEnds`: corners of faces and
   their two germs.
+* `TauCeti.PolygonalComplex.facePath`: the closed path along the sides of a face.
 * `TauCeti.PolygonalComplex.vertexLink`: the link of a vertex.
 * `TauCeti.PolygonalComplex.linkDegree`: the degree of a germ in its link.
 * `TauCeti.PolygonalComplex.sideCount`: the number of face sides traversing a dart.
@@ -210,6 +213,41 @@ def cornerEnds (c : C.Corner) : C.graph.E × C.graph.E :=
     (C.cornerEnds c).1 = C.graph.rev (C.incoming c) := (rfl)
 
 @[simp] theorem cornerEnds_snd (c : C.Corner) : (C.cornerEnds c).2 = C.outgoing c := (rfl)
+
+/-! ### Face paths -/
+
+-- The sides of a face, read from its first corner, form a closed path.
+private theorem exists_path_darts_eq_ofFn_side (f : C.Face) :
+    ∃ p : C.graph.Path (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩)
+        (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩),
+      SerreGraph.Path.darts C.graph p = List.ofFn (C.side f) := by
+  refine SerreGraph.exists_path_darts_eq C.graph _ (List.ext_getElem (by simp) fun i h₁ h₂ => ?_)
+  rcases i with _ | i
+  · simp only [← src_outgoing, outgoing_def]
+    simp [C.sides_pos f]
+  · simp only [List.length_cons, List.length_map, List.length_ofFn] at h₁
+    simp only [List.getElem_cons_succ, List.getElem_append, List.getElem_map, List.getElem_ofFn,
+      List.length_map, List.length_ofFn, List.getElem_singleton]
+    split_ifs
+    · exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
+    · rw [← src_outgoing, outgoing_def]
+      exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
+
+/-- The boundary path of a face: the closed path at its first corner whose darts are the sides
+of the face, in order. -/
+noncomputable def facePath (f : C.Face) :
+    C.graph.Path (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩)
+      (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩) :=
+  (C.exists_path_darts_eq_ofFn_side f).choose
+
+/-- The darts of the boundary path of a face are its sides, in order. -/
+@[simp] theorem darts_facePath (f : C.Face) :
+    SerreGraph.Path.darts C.graph (C.facePath f) = List.ofFn (C.side f) :=
+  (C.exists_path_darts_eq_ofFn_side f).choose_spec
+
+/-- The boundary path of a face has one dart for each side. -/
+@[simp] theorem length_facePath (f : C.Face) : (C.facePath f).length = C.sides f := by
+  rw [← SerreGraph.Path.length_darts, darts_facePath, List.length_ofFn]
 
 /-! ### Vertex links -/
 
