@@ -59,60 +59,6 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The graph frame of `A`, as a real-linear map on the real vectors. -/
-private noncomputable def graphFrameLin (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    (n ⊕ n → ℝ) →ₗ[ℝ] EuclideanSpace ℂ (n ⊕ n) where
-  toFun x := WithLp.toLp 2 (graphFrame A *ᵥ fun k ↦ (x k : ℂ))
-  map_add' x y := by
-    rw [← WithLp.toLp_add, ← mulVec_add]
-    congr 2
-    ext k
-    simp
-  map_smul' c x := by
-    rw [RingHom.id_apply, ← WithLp.toLp_smul, ← mulVec_smul]
-    congr 2
-    ext k
-    simp
-
-private theorem graphFrameLin_apply (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → ℝ) :
-    graphFrameLin A x = WithLp.toLp 2 (graphFrame A *ᵥ fun k ↦ (x k : ℂ)) :=
-  (rfl)
-
-/-- Graph frames agree on real vectors `x` and `y` exactly when `x = y` and `A x = B y`: the first
-factor `conj (φ x)` recovers `x`, and the second is `φ (A x)`. -/
-private theorem graphFrame_mulVec_eq_iff (A B : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x y : n ⊕ n → ℝ) :
-    (graphFrame A *ᵥ fun k ↦ (x k : ℂ)) = (graphFrame B *ᵥ fun k ↦ (y k : ℂ)) ↔
-      x = y ∧ A *ᵥ x = B *ᵥ y := by
-  rw [graphFrame_mulVec, graphFrame_mulVec]
-  constructor
-  · intro h
-    have h₁ (i : n) := congrFun h (.inl i)
-    have h₂ (i : n) := congrFun h (.inr i)
-    simp only [Sum.elim_inl, Sum.elim_inr, Complex.ext_iff] at h₁ h₂
-    refine ⟨funext fun k ↦ ?_, funext fun k ↦ ?_⟩ <;> rcases k with i | i <;> simp_all
-  · rintro ⟨rfl, h⟩
-    rw [h]
-
-private theorem injective_graphFrameLin (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    Function.Injective (graphFrameLin A) := fun x y h ↦
-  ((graphFrame_mulVec_eq_iff A A x y).1 (by simpa [graphFrameLin_apply] using h)).1
-
-/-- The graph of `A` meets the diagonal in the image of the fixed vectors of `A`. -/
-private theorem realImage_graphFrame_inf_realImage_graphFrame_one
-    (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    (graphFrame A).realImage ⊓ (graphFrame 1).realImage =
-      (eigenspace (toLin' A) 1).map (graphFrameLin A) := by
-  ext v
-  simp only [Submodule.mem_inf, mem_realImage_iff_exists_mulVec, Submodule.mem_map,
-    mem_eigenspace_iff, toLin'_apply, one_smul, graphFrameLin_apply]
-  constructor
-  · rintro ⟨⟨x, rfl⟩, y, hy⟩
-    obtain ⟨rfl, h⟩ := (graphFrame_mulVec_eq_iff _ _ _ _).1 (WithLp.toLp_injective 2 hy).symm
-    exact ⟨x, by simpa using h, rfl⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨⟨x, rfl⟩, x, congrArg (WithLp.toLp 2)
-      ((graphFrame_mulVec_eq_iff _ _ _ _).2 ⟨rfl, by simpa using hx.symm⟩)⟩
-
 /-- **The graph of `A` meets the diagonal in the fixed vectors of `A`.** The real dimension of the
 intersection of the straightened graph `T Γ(A)` with `ℝ^{n ⊕ n}`, the straightened diagonal, is
 the dimension of the eigenspace of `A` at `1`. -/
@@ -175,16 +121,25 @@ theorem conleyZehnderIndex_map_conj (P : GLSymplectic n ℝ) {A B : GLSymplectic
       continuous_toFun := by fun_prop
       map_zero_left := fun t ↦ by simp [δ]
       map_one_left := fun t ↦ by simp [δ] }
+  -- `F` evaluates by its defining formula; Mathlib has no `coe_mk` lemma for homotopies.
+  have hF_apply (p : I × I) : F p = δ p.1 * γ p.2 * (δ p.1)⁻¹ := rfl
   -- Its paths through the endpoints run through conjugates of a fixed matrix.
-  have hedge (x : I) : conleyZehnderIndex (F.evalAt x) = 0 :=
-    conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq _ fun s ↦
-      finrank_eigenspace_toLin'_conj (δ s : GL (n ⊕ n) ℝ) (γ x : GL (n ⊕ n) ℝ) 1
+  have hedge (x : I) : conleyZehnderIndex (F.evalAt x) = 0 := by
+    refine conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq _
+      (k := finrank ℝ (eigenspace (toLin' ((γ x : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) 1))
+      fun s ↦ ?_
+    have hF : ((F.evalAt x s : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) =
+        (δ s : GL (n ⊕ n) ℝ) * (γ x : GL (n ⊕ n) ℝ) * (δ s : GL (n ⊕ n) ℝ)⁻¹ := by
+      rw [ContinuousMap.Homotopy.evalAt_apply, hF_apply, Subgroup.coe_mul, Subgroup.coe_mul,
+        Subgroup.coe_inv]
+    rw [hF]
+    exact finrank_eigenspace_toLin'_conj (δ s : GL (n ⊕ n) ℝ) (γ x : GL (n ⊕ n) ℝ) 1
   have h := conleyZehnderIndex_eq_of_homotopic (Path.Homotopic.map_trans_evalAt F Path.id)
   rw [conleyZehnderIndex_trans, conleyZehnderIndex_trans, hedge, hedge, add_zero, zero_add] at h
   -- Along `Path.id`, the two maps are `γ` and its conjugate, with endpoints written differently.
   rw [conleyZehnderIndex_def, conleyZehnderIndex_def, neg_inj] at h
   rw [conleyZehnderIndex_def, conleyZehnderIndex_def, neg_inj]
   refine Eq.trans ?_ (h.symm.trans ?_) <;>
-    exact UnitaryGroup.maslovIndex_eq_of_souriau_eq _ _ fun _ ↦ rfl
+    exact UnitaryGroup.maslovIndex_eq_of_souriau_eq _ _ fun _ ↦ by simp [Path.map_coe]
 
 end TauCeti.GLSymplectic

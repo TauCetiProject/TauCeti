@@ -31,6 +31,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   into unitarity.
 * `Matrix.forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup`: a complex `2 × 2` matrix is
   unitary exactly when it preserves the Hermitian norm of every vector `(z, 1)`.
+* `Matrix.UnitaryGroup.transpose_mul_map_star`: the inverse of the transpose of a unitary matrix
+  `U` is its entrywise conjugate, `Uᵀ conj(U) = 1`.
 
 
 ## Main definitions
@@ -164,6 +166,13 @@ theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matr
 /-- The determinant of a unitary matrix depends continuously on the matrix. -/
 theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
   Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+
+/-- The transpose of a unitary matrix is unitary, with inverse its entrywise conjugate:
+`Uᵀ conj(U) = 1`. -/
+theorem transpose_mul_map_star {α : Type*} [CommRing α] [StarRing α] (U : unitaryGroup n α) :
+    (U : Matrix n n α)ᵀ * (U : Matrix n n α).map star = 1 := by
+  simpa [transpose_inv_eq_map_star] using
+    congrArg Subtype.val (mul_inv_cancel (UnitaryGroup.transpose U))
 
 section Sum
 

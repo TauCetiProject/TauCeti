@@ -51,12 +51,6 @@ namespace Matrix.UnitaryGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The transpose of a unitary matrix is unitary: `Uᵀ conj(U) = 1`. -/
-private theorem transpose_mul_map_star (U : unitaryGroup n ℂ) :
-    (U : Matrix n n ℂ)ᵀ * (U : Matrix n n ℂ).map star = 1 := by
-  simpa [transpose_inv_eq_map_star] using
-    congrArg Subtype.val (mul_inv_cancel (UnitaryGroup.transpose U))
-
 /-- A real vector `x` is fixed by the Souriau map `U Uᵀ` exactly when it lies in `U ℝⁿ`. -/
 private theorem souriau_mulVec_eq_self_iff (U : unitaryGroup n ℂ) {x : n → ℂ}
     (hx : star x = x) :

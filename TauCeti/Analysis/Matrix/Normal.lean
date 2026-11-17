@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Analysis.InnerProductSpace.NormalOperator
-public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
 # Unitary diagonalization of commuting normal matrices
@@ -100,15 +99,8 @@ open Module Module.End in
 root of the characteristic polynomial, is its geometric multiplicity. -/
 theorem rootMultiplicity_charpoly_eq_finrank_eigenspace (A : Matrix n n ℂ) [IsStarNormal A]
     (μ : ℂ) : A.charpoly.rootMultiplicity μ = finrank ℂ (eigenspace (toEuclideanLin A) μ) := by
-  obtain ⟨b, ν, hb⟩ := (toEuclideanLin A).exists_orthonormalBasis_apply_eq_smul_of_isStarNormal
-    (ι := n) (by simp)
-  have htop : ⨆ μ, eigenspace (toEuclideanLin A) μ = ⊤ := by
-    rw [eq_top_iff, ← b.toBasis.span_eq, Submodule.span_le]
-    rintro _ ⟨i, rfl⟩
-    exact Submodule.mem_iSup_of_mem (ν i) (mem_eigenspace_iff.2 (by simpa using hb i))
-  have hss : IsFinitelySemisimple (toEuclideanLin A) :=
-    (TauCeti.isSemisimple_of_iSup_eigenspace_eq_top htop).isFinitelySemisimple
-  rw [← hss.rootMultiplicity_charpoly, toEuclideanLin_eq_toLin_orthonormal,
+  rw [← (toEuclideanLin A).rootMultiplicity_charpoly_of_isStarNormal,
+    toEuclideanLin_eq_toLin_orthonormal,
     ← LinearMap.charpoly_toMatrix _ (EuclideanSpace.basisFun n ℂ).toBasis, LinearMap.toMatrix_toLin]
 
 end Matrix
