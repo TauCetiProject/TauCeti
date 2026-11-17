@@ -29,19 +29,23 @@ and resolvent methods:
 
 * the entry formulas and `wignerMatrix_isHermitian`;
 * the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
-* the matrix depends only on the entries in its corner (`wignerMatrix_congr`), and the top-left
-  `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
-* measurability in the sample point;
+* the matrix depends only on the entries in its corner (`wignerMatrix_congr`,
+  `wignerMatrix_ite_lt`), and the top-left `m × m` corner of `Hₙ` is `√(m/n) Hₘ`
+  (`submatrix_castLE_wignerMatrix`);
+* measurability in the sample point from corner entries (`measurable_wignerMatrix`,
+  `aemeasurable_wignerMatrix`);
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
-  the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`), and the
-  law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
+  the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`),
+  independence restricts to the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`), and the law
+  of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
-  independent (`iIndepFun_wignerMatrix_apply_of_ne`,
+  independent whenever the corner upper entries are (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
-* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
-  give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
-  integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
+* centred corner entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ`
+  corner entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix
+  entries is integrable when the corner entries lie in `Lᵏ`
+  (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
   (`integral_re_trace_wignerMatrix_mul_self`).
@@ -148,6 +152,14 @@ theorem wignerMatrix_congr {Ω' : Type*} {ξ' : StrictUpper → Ω' → ℂ} {η
     rw [wignerMatrix_apply_self, wignerMatrix_apply_self, hη _ i.2]
   · rw [wignerMatrix_apply_of_gt _ _ _ h, wignerMatrix_apply_of_gt _ _ _ h, hξ ⟨_, h⟩ i.2]
 
+/-- Zeroing the array coordinates outside the top-left `n × n` corner leaves the Wigner matrix of
+size `n` unchanged. -/
+@[simp]
+theorem wignerMatrix_ite_lt (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (n : ℕ) :
+    wignerMatrix (fun ij ↦ if ij.1.2 < n then ξ ij else 0)
+      (fun i ↦ if i < n then η i else 0) n = wignerMatrix ξ η n :=
+  funext fun ω' ↦ wignerMatrix_congr ω' (fun _ hij ↦ by simp [hij]) (fun _ hi ↦ by simp [hi])
+
 /-- The top-left `m × m` corner of the normalised Wigner matrix of size `n ≥ m` is `√(m/n)`
 times the normalised Wigner matrix of size `m`. -/
 theorem submatrix_castLE_wignerMatrix {m : ℕ} (hmn : m ≤ n) :
@@ -208,22 +220,36 @@ theorem aemeasurable_sumElim_ofReal {P : Measure Ω} (hξ : ∀ ij, AEMeasurable
   | inl ij => exact hξ ij
   | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hη i)
 
-/-- A Wigner matrix with measurable entries is a measurable random matrix. -/
-theorem measurable_wignerMatrix (hξ : ∀ ij, Measurable (ξ ij)) (hη : ∀ i, Measurable (η i))
-    (n : ℕ) : Measurable (wignerMatrix ξ η n) := by
-  rw [← wignerOfArray_comp]
-  refine (measurable_wignerOfArray n).comp (measurable_pi_iff.2 fun k ↦ ?_)
-  cases k with
-  | inl ij => exact hξ ij
-  | inr i => exact Complex.measurable_ofReal.comp (hη i)
+/-- A Wigner matrix of size `n` whose corner entries are measurable is a measurable random
+matrix. -/
+theorem measurable_wignerMatrix {n : ℕ} (hξ : ∀ ij : StrictUpper, ij.1.2 < n → Measurable (ξ ij))
+    (hη : ∀ i < n, Measurable (η i)) : Measurable (wignerMatrix ξ η n) := by
+  refine Measurable.of_eval_matrix _ fun i j ↦ ?_
+  rcases lt_trichotomy i.val j.val with h | h | h
+  · simp only [wignerMatrix_apply_of_lt _ _ _ h]
+    exact measurable_const.mul (hξ _ j.isLt)
+  · obtain rfl := Fin.ext h
+    simp only [wignerMatrix_apply_self]
+    exact measurable_const.mul (Complex.measurable_ofReal.comp (hη _ i.isLt))
+  · simp only [wignerMatrix_apply_of_gt _ _ _ h]
+    exact measurable_const.mul (continuous_star.measurable.comp (hξ _ i.isLt))
 
-/-- A Wigner matrix with almost everywhere measurable entries is almost everywhere
-measurable. -/
-theorem aemeasurable_wignerMatrix {P : Measure Ω} (hξ : ∀ ij, AEMeasurable (ξ ij) P)
-    (hη : ∀ i, AEMeasurable (η i) P) (n : ℕ) : AEMeasurable (wignerMatrix ξ η n) P := by
-  rw [← wignerOfArray_comp]
-  exact (measurable_wignerOfArray n).comp_aemeasurable
-    (aemeasurable_pi_iff.2 (aemeasurable_sumElim_ofReal hξ hη))
+/-- A Wigner matrix of size `n` whose corner entries are almost everywhere measurable is almost
+everywhere measurable. -/
+theorem aemeasurable_wignerMatrix {P : Measure Ω} {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEMeasurable (ξ ij) P)
+    (hη : ∀ i < n, AEMeasurable (η i) P) : AEMeasurable (wignerMatrix ξ η n) P := by
+  rw [← wignerMatrix_ite_lt ξ η n, ← wignerOfArray_comp]
+  refine (measurable_wignerOfArray n).comp_aemeasurable
+    (aemeasurable_pi_iff.2 (aemeasurable_sumElim_ofReal (fun ij ↦ ?_) (fun i ↦ ?_)))
+  · by_cases h : ij.1.2 < n
+    · simpa [h] using hξ ij h
+    · rw [ite_eq_right h]
+      exact aemeasurable_const
+  · by_cases h : i < n
+    · simpa [h] using hη i h
+    · rw [ite_eq_right h]
+      exact aemeasurable_const
 
 end Measurability
 
@@ -319,26 +345,36 @@ theorem identDistrib_wignerMatrix {Ω' : Type*} [MeasurableSpace Ω'] {P' : Meas
   rw [← wignerOfArray_comp, ← wignerOfArray_comp]
   exact (IdentDistrib.pi h hindep hindep').comp (measurable_wignerOfArray n)
 
+/-- Restricting an independent `StrictUpper ⊕ ℕ`-indexed entry array to the `n × n` corner
+preserves independence. -/
+theorem iIndepFun_sumElim_ofReal_subtype_lt {n : ℕ}
+    (hindep : iIndepFun (fun r : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) r) P) :
+    iIndepFun
+      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P := by
+  simpa only [Function.comp_def, Sum.elim_map] using
+    hindep.precomp (Subtype.val_injective.sumMap Subtype.val_injective)
+
 end Independence
 
 section IndependentEdges
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-/-- Entries at distinct unordered off-diagonal positions are independent whenever the
+/-- Entries at distinct unordered off-diagonal positions are independent whenever the corner
 upper-triangular coordinates are independent. No condition is needed on the diagonal entries. -/
 theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
     (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
-    (hindep : iIndepFun ξ P) :
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P) :
     iIndepFun (fun i ω ↦ wignerMatrix ξ η n ω (u i) (v i)) P := by
-  let e : ι → StrictUpper := fun i ↦
-    ⟨(min (u i).val (v i).val, max (u i).val (v i).val),
-      min_lt_max.mpr (Fin.val_ne_of_ne (hne i))⟩
+  let e : ι → {ij : StrictUpper // ij.1.2 < n} := fun i ↦
+    ⟨⟨(min (u i).val (v i).val, max (u i).val (v i).val),
+      min_lt_max.mpr (Fin.val_ne_of_ne (hne i))⟩, max_lt (u i).isLt (v i).isLt⟩
   have he : Function.Injective e := by
     intro i j hij
     apply hinj
-    have hmin := congrArg (fun x : StrictUpper ↦ x.1.1) hij
-    have hmax := congrArg (fun x : StrictUpper ↦ x.1.2) hij
+    have hmin := congrArg (fun x : {ij : StrictUpper // ij.1.2 < n} ↦ x.1.1.1) hij
+    have hmax := congrArg (fun x : {ij : StrictUpper // ij.1.2 < n} ↦ x.1.1.2) hij
     simp only [e] at hmin hmax
     rw [Sym2.eq_iff]
     simp only [Fin.ext_iff]
@@ -356,11 +392,11 @@ theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → 
       max_eq_left hij.le, wignerMatrix_apply_of_gt _ _ _ hij]
 
 /-- Squared absolute values of entries at distinct unordered off-diagonal positions are
-independent whenever the upper-triangular coordinates are independent. No condition is needed
-on the diagonal entries. -/
+independent whenever the corner upper-triangular coordinates are independent. No condition is
+needed on the diagonal entries. -/
 theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
     (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
-    (hindep : iIndepFun ξ P) :
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P) :
     iIndepFun (fun i ω ↦ ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2) P :=
   (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
     (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
@@ -371,36 +407,39 @@ section Entries
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-
-/-- If the entries of the array are centred, every entry of the Wigner matrix has expectation
-zero. -/
-theorem integral_wignerMatrix_apply_eq_zero (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
-    (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {n : ℕ} (i j : Fin n) :
+/-- If the corner entries of size `n` are centred, every entry of the `n × n` Wigner matrix has
+expectation zero. -/
+theorem integral_wignerMatrix_apply_eq_zero {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+    (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (i j : Fin n) :
     ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
   rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
+  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.isLt]
   · obtain rfl := Fin.ext h
-    simp [integral_const_mul, integral_complex_ofReal, hη]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
+    simp [integral_const_mul, integral_complex_ofReal, hη _ i.isLt]
+  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
+      hξ ⟨(j.val, i.val), h⟩ i.isLt]
 
-/-- If the entries of the array lie in `Lᵖ`, so does every entry of the Wigner matrix. -/
-theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p P)
-    (hη : ∀ i, MemLp (η i) p P) {n : ℕ} (i j : Fin n) :
+/-- If the corner entries of size `n` lie in `Lᵖ`, so does every entry of the `n × n` Wigner
+matrix. -/
+theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) p P)
+    (hη : ∀ i < n, MemLp (η i) p P) (i j : Fin n) :
     MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P := by
   rcases lt_trichotomy i.val j.val with h | h | h
   · simp only [wignerMatrix_apply_of_lt _ _ _ h]
-    exact (hξ _).const_mul _
+    exact (hξ _ j.isLt).const_mul _
   · obtain rfl := Fin.ext h
     simp only [wignerMatrix_apply_self]
-    exact (hη _).ofReal.const_mul _
+    exact (hη _ i.isLt).ofReal.const_mul _
   · simp only [wignerMatrix_apply_of_gt _ _ _ h]
-    exact (hξ _).star.const_mul _
+    exact (hξ _ i.isLt).star.const_mul _
 
-/-- A product of `k` entries of a Wigner matrix, indexed by a finite type `ι` of cardinality `k`,
-is integrable when the entries of the array lie in `Lᵏ`. -/
-theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι]
-    (hξ : ∀ ij, MemLp (ξ ij) (Fintype.card ι) P) (hη : ∀ i, MemLp (η i) (Fintype.card ι) P)
-    {n : ℕ} (u v : ι → Fin n) :
+/-- A product of `k` entries of an `n × n` Wigner matrix, indexed by a finite type `ι` of
+cardinality `k`, is integrable when the corner entries of size `n` lie in `Lᵏ`. -/
+theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι] {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) (Fintype.card ι) P)
+    (hη : ∀ i < n, MemLp (η i) (Fintype.card ι) P) (u v : ι → Fin n) :
     Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
   cases isEmpty_or_nonempty ι
   · simp

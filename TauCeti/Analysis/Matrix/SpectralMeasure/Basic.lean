@@ -239,6 +239,36 @@ theorem lintegral_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f 
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (hA.eigenvalues i) := by
   simp [spectralMeasure_def, lintegral_finsetSum_measure, lintegral_dirac, Finset.mul_sum]
 
+/-- The Lebesgue integral of `‖x ^ k‖` against the spectral measure of a Hermitian matrix `A` is
+at most `((card n) * ∑ i, ∑ j, ‖A i j‖) ^ k`. -/
+theorem lintegral_ofReal_norm_pow_spectralMeasure_le (A : Matrix n n 𝕜) (hA : A.IsHermitian)
+    (k : ℕ) :
+    ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂(A.spectralMeasure hA : Measure ℝ) ≤
+      ENNReal.ofReal (((Fintype.card n : ℝ) * ∑ i, ∑ j, ‖A i j‖) ^ k) := by
+  set S : ℝ := ∑ i, ∑ j, ‖A i j‖
+  set M : ℝ := (Fintype.card n : ℝ) * S
+  have hentry (i j : n) : ‖A i j‖ ≤ S :=
+    (Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ j)).trans
+      (Finset.single_le_sum (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+        (Finset.mem_univ i))
+  have heig (r : Fin (Fintype.card n)) : ‖hA.eigenvalues₀ r ^ k‖ ≤ M ^ k := by
+    have habs : |hA.eigenvalues₀ r| ≤ M := hA.abs_eigenvalues₀_le_of_entry_le hentry r
+    rw [norm_pow, Real.norm_eq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) habs k
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    lintegral_empiricalMeasureOfFintype (by fun_prop), Fintype.card_fin]
+  calc ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ r : Fin (Fintype.card n), ENNReal.ofReal ‖hA.eigenvalues₀ r ^ k‖
+      ≤ ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ _r : Fin (Fintype.card n), ENNReal.ofReal (M ^ k) := by
+        gcongr with r
+        exact heig r
+    _ = ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+          (((Fintype.card n : ℕ) : ℝ≥0∞) * ENNReal.ofReal (M ^ k)) := by
+        simp [Fintype.card_fin]
+    _ = ENNReal.ofReal (M ^ k) :=
+        ENNReal.inv_mul_cancel_left (by simp) (by simp)
+
 /-- The empirical measure `(card n)⁻¹ ∑ δ_z` of a complex square matrix of positive size, the
 sum running over the roots `z` of its characteristic polynomial with algebraic multiplicity. -/
 def eigenvalueMeasure (A : Matrix n n ℂ) : ProbabilityMeasure ℂ :=
