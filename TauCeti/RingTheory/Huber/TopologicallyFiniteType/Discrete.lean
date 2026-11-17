@@ -28,7 +28,7 @@ target:
 * On Huber pairs `f : S → U` with `A` discrete, `f.IsTopologicallyFiniteType` is equivalent to
   `f.IsPlusWeaklyFiniteType`
   (`Pair.Hom.isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology`), since
-  unweighted variables absorb polynomial generators while weight-`{1}` variables absorb the
+  weight-`∅` variables absorb polynomial generators while weight-`{1}` variables absorb the
   finitely many extra generators of `U.plus`.
 * When both plus rings are the entire ring (`S.plus = ⊤` and `U.plus = ⊤`), and in particular for
   morphisms between discrete Huber pairs `Pair.discrete A → Pair.discrete B`, topological finite

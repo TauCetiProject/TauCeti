@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyHuberStandard
 
-import Mathlib.RingTheory.RingHom.FinitePresentation
+import TauCeti.RingTheory.Huber.LocalizationTopology.Discrete
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
@@ -100,8 +100,7 @@ theorem CompleteAffinoidOpen.finitePresentation_rationalLocalizationHom
     (hT : IsOpen (Ideal.span (T : Set C.Ring) : Set C.Ring)) :
     (C.rationalLocalizationHom T s hT).toRingHom.FinitePresentation := by
   rw [rationalLocalizationHom, toRationalLocalizationHom_def, toRingHom_toCompletionLocHom]
-  exact ringHom_prop_toCompletionLoc_of_discrete RingHom.finitePresentation_respectsIso
-    RingHom.finitePresentation_holdsForLocalizationAway C.pairOfDefinition (T : Set C.Ring) s
+  exact C.pairOfDefinition.finitePresentation_toCompletionLoc_of_discreteTopology (T : Set C.Ring) s
     (Localization.Away s)
     (C.pairOfDefinition.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT)
 
@@ -375,13 +374,13 @@ instance LocallyOfFinitePresentation.respectsIso :
     have hb₀' : CX'.hom.base b₀ = x' := by
       have he := congrArg (fun m : X'.obj ⟶ X'.obj ↦ m.base x') e.hom_inv_id
       rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply] at he
-      change (CX.hom ≫ e.inv).base b₀ = x'
-      rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply, hb₀]
+      dsimp only [CX']
+      rw [compOpenImmersion_hom_base, hb₀]
       exact he.trans (by simp)
     refine locallyOfFinitePresentationAt_of_openImmersion_sq CY CX' φ hφ hfp hb₀' ?_
-    change CY.pairComap CX φ ≫ CY.hom = (CX.hom ≫ e.inv) ≫ (i ≫ f).hom
-    rw [ObjectProperty.FullSubcategory.comp_hom (f := i) (g := f), hi, Category.assoc,
-      Iso.inv_hom_id_assoc]
+    dsimp only [CX']
+    rw [pairComap_compOpenImmersion_right_eq_comp_iff,
+      ObjectProperty.FullSubcategory.comp_hom (f := i) (g := f), hi, Iso.inv_hom_id_assoc]
     exact hsq
   postcomp {X Y Y'} i _ f hf x := by
     let e : Y.obj ≅ Y'.obj := (ObjectProperty.ι _).mapIso (asIso i)
@@ -390,8 +389,9 @@ instance LocallyOfFinitePresentation.respectsIso :
     let CY' := CY.compOpenImmersion e.hom
     have : IsHuberStandard CY'.Ring := hStd
     refine locallyOfFinitePresentationAt_of_openImmersion_sq CY' CX φ hφ hfp hb₀ ?_
-    change CY.pairComap CX φ ≫ (CY.hom ≫ e.hom) = CX.hom ≫ (f ≫ i).hom
-    rw [ObjectProperty.FullSubcategory.comp_hom (f := f) (g := i), hi, ← Category.assoc, hsq,
+    dsimp only [CY']
+    rw [pairComap_compOpenImmersion_left_comp_hom,
+      ObjectProperty.FullSubcategory.comp_hom (f := f) (g := i), hi, ← Category.assoc, hsq,
       Category.assoc]
 
 /-- **Chart refinement over a prescribed target open for `LocallyOfFinitePresentation`**: given
