@@ -15,9 +15,12 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 
 Every smooth map on a closed real interval with values in a complete real
 normed space admits a globally smooth extension (`TauCeti.exists_smooth_extension_Icc`). The proof
-realizes arbitrary endpoint jets by shrinking polynomial cutoffs, then glues the successive
-derivatives. For any finite order `n : ℕ`, endpoint Taylor polynomials give a globally `C^n`
-extension without requiring completeness (`TauCeti.exists_contDiff_extension_Icc`).
+realizes arbitrary infinite endpoint jets by shrinking polynomial cutoffs
+(`TauCeti.exists_smooth_endpoint_jets`), then pastes matching derivatives
+(`TauCeti.smooth_pasting_of_matching_endpoint_jets`). For any finite order `n : ℕ`, finite jet
+realization (`TauCeti.exists_contDiff_finite_endpoint_jets`) and finite-order pasting
+(`TauCeti.contDiff_pasting_of_matching_endpoint_jets`) give a globally `C^n` extension without
+requiring completeness (`TauCeti.exists_contDiff_extension_Icc`).
 This supplies closed-interval endpoint representatives for variations.
 
 Public formalization references:
@@ -150,6 +153,20 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
       mul_inv_cancel₀ hr.ne', one_pow, one_mul]
   exact ⟨f, hf, hfsupp, hsmall, fun m ↦
     (hnear.iteratedDeriv_eq m).trans (endpointJetPolynomial_deriv k m A)⟩
+
+/-- Any prescribed derivatives up to order `n` at `0` are realized by a smooth function on `ℝ`,
+without requiring completeness of `E`. -/
+theorem exists_contDiff_finite_endpoint_jets (n : ℕ) (A : ℕ → E) :
+    ∃ p : ℝ → E, ContDiff ℝ ∞ p ∧ ∀ k ≤ n, iteratedDeriv k p 0 = A k := by
+  let p : ℝ → E := fun x ↦ ∑ j ∈ Finset.range (n + 1), endpointJetPolynomial j (A j) x
+  refine ⟨p, ContDiff.sum fun j _ ↦ endpointJetPolynomial_contDiff j (A j), fun k hk ↦ ?_⟩
+  have hsum : iteratedDeriv k p 0 =
+      ∑ j ∈ Finset.range (n + 1), iteratedDeriv k (endpointJetPolynomial j (A j)) 0 := by
+    have hcd : ∀ j ∈ Finset.range (n + 1), ContDiffAt ℝ k (endpointJetPolynomial j (A j)) 0 :=
+      fun j _ ↦ ((endpointJetPolynomial_contDiff j (A j)).of_le (by simp)).contDiffAt
+    simpa only [p] using iteratedDeriv_fun_sum hcd
+  rw [hsum]
+  simp [endpointJetPolynomial_deriv, Nat.lt_succ_of_le hk]
 
 variable [CompleteSpace E]
 
@@ -308,9 +325,10 @@ theorem smooth_pasting_of_matching_endpoint_jets {a b : ℝ} (hab : a < b)
   intro x hx
   exact (pasteEndpointDerivatives_eq_middle (hla 0) hx).trans (by simp [iteratedDerivWithin_zero])
 
-/-- `C^n` functions on `(-∞, a]`, `[a, b]`, and `[b, ∞)` whose derivatives up to order `n` match
-at both endpoints paste to a globally `C^n` representative of the closed-interval function. -/
-private theorem contDiff_pasting_of_matching_endpoint_jets {n : ℕ} {a b : ℝ} (hab : a < b)
+/-- Globally `C^n` functions `l` and `r` whose derivatives up to order `n` match a `C^n` function
+`f` on `[a, b]` (`a < b`) at `a` and `b` paste to a globally `C^n` representative of `f` on
+`[a, b]`. -/
+theorem contDiff_pasting_of_matching_endpoint_jets {n : ℕ} {a b : ℝ} (hab : a < b)
     (f l r : ℝ → E) (hf : ContDiffOn ℝ n f (Icc a b))
     (hl : ContDiff ℝ n l) (hr : ContDiff ℝ n r)
     (hla : ∀ k ≤ n, iteratedDeriv k l a = iteratedDerivWithin k f (Icc a b) a)
@@ -359,19 +377,6 @@ end Pasting
 section FiniteOrder
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A finite-order Taylor polynomial realizes prescribed derivatives up to order `n` at `0`. -/
-private theorem exists_contDiff_finite_endpoint_jets (n : ℕ) (A : ℕ → E) :
-    ∃ p : ℝ → E, ContDiff ℝ ∞ p ∧ ∀ k ≤ n, iteratedDeriv k p 0 = A k := by
-  let p : ℝ → E := fun x ↦ ∑ j ∈ Finset.range (n + 1), endpointJetPolynomial j (A j) x
-  refine ⟨p, ContDiff.sum fun j _ ↦ endpointJetPolynomial_contDiff j (A j), fun k hk ↦ ?_⟩
-  have hsum : iteratedDeriv k p 0 =
-      ∑ j ∈ Finset.range (n + 1), iteratedDeriv k (endpointJetPolynomial j (A j)) 0 := by
-    have hcd : ∀ j ∈ Finset.range (n + 1), ContDiffAt ℝ k (endpointJetPolynomial j (A j)) 0 :=
-      fun j _ ↦ ((endpointJetPolynomial_contDiff j (A j)).of_le (by simp)).contDiffAt
-    simpa only [p] using iteratedDeriv_fun_sum hcd
-  rw [hsum]
-  simp [endpointJetPolynomial_deriv, Nat.lt_succ_of_le hk]
 
 /-- A `C^n` map (`n : ℕ`) from a closed real interval to a real normed space has a globally `C^n`
 extension agreeing on the interval. Finite-order extension uses endpoint Taylor polynomials and
