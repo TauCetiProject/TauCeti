@@ -37,19 +37,6 @@ namespace TauCeti.Manifold
 
 open Riemannian.Tensor
 
-/-- The canonical identification of a tangent space of a real inner-product space with the
-model space preserves inner products. -/
-theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] {x : F}
-    (v w : TangentSpace 𝓘(ℝ, F) x) :
-    inner ℝ v w = inner ℝ (NormedSpace.fromTangentSpace x v)
-      (NormedSpace.fromTangentSpace x w) := by
-  -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
-  -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
-  -- its inner product. This is the same definitional transport used by
-  -- Mathlib's `norm_tangentSpace_vectorSpace`.
-  rfl
-
 /-- On a flat inner product space with its standard Riemannian metric, the manifold gradient is
 Mathlib's `gradient`. -/
 theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
