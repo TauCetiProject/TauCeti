@@ -244,6 +244,13 @@ theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommMonoid M]
     Finset.sum_ite_eq]
   simp
 
+/-- Pairing the `0`-chain of a generator with a ring-valued function on intersection points sums
+the function over the points of the generator. -/
+theorem sum_generatorChain_mul [Fintype Point] {R : Type*} [Ring R] (g : D.Generator)
+    (f : Point → R) : ∑ q, (D.generatorChain g q : R) * f q = ∑ i, f (D.point g i) := by
+  simp_rw [← zsmul_eq_mul]
+  exact D.sum_generatorChain_smul g f
+
 /-- Two generators with the same chosen points are equal. -/
 @[ext]
 theorem Generator.ext {g g' : D.Generator} (h : ∀ i, (g.2 i : Point) = g'.2 i) : g = g' :=
