@@ -24,7 +24,10 @@ Its continuity comes from the closed graph theorem rather than from a norm compu
 `H^{s,p}` embeds continuously in the tempered distributions
 (`BesselPotentialSpace.continuous_toDistr`), so a linear map into `H^{s,p}` from a Banach space is
 continuous as soon as its composite with this embedding is
-(`BesselPotentialSpace.continuous_of_continuous_toDistr`). Taking `r = 0` gives the continuous
+(`BesselPotentialSpace.continuous_of_continuous_toDistr`). The same argument restricts every
+continuous linear operator `A` on tempered distributions that maps `H^{s,p}(E, G)` into
+`H^{r,p}(E, G')` to a bounded operator between these spaces (`BesselPotentialSpace.mapCLM`); the
+inclusion is the restriction of the identity. Taking `r = 0` gives the continuous
 inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`.
 
 For `p = 2` and a complex Hilbert space `F` the inclusion `H^s(E, F) ⊆ H^r(E, F)` has norm at most
@@ -40,8 +43,8 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, G)` embeds continuously in `𝓢'(E, G)`.
 * `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
   maps into `H^{s,p}`.
-* `BesselPotentialSpace.restrictCLM`: a continuous linear operator on tempered distributions
-  mapping `H^{s,p}` into `H^{r,p}`, as a continuous linear map `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G)`.
+* `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G')` of an
+  operator on tempered distributions that maps `H^{s,p}` into `H^{r,p}`.
 * `BesselPotentialSpace.inclusion`: the inclusion `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G)` for
   `r ≤ s`.
 * `BesselPotentialSpace.toDistr_inclusion`: it does not change the tempered distribution, and
@@ -103,38 +106,45 @@ theorem continuous_of_continuous_toDistr {X : Type*} [NormedAddCommGroup X]
   refine L.continuous_of_seq_closed_graph fun u x y hu hy ↦ ext ?_
   exact tendsto_nhds_unique ((continuous_toDistr.tendsto y).comp hy) ((hL.tendsto x).comp hu)
 
-/-- The restriction of a continuous linear operator `T` on tempered distributions that maps
-`H^{s,p}(E, G)` into `H^{r,p}(E, G)` to a continuous linear map `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G)`.
-It acts on the underlying tempered distributions as `T`
-(`BesselPotentialSpace.toDistr_restrictCLM`), and it is continuous by the closed graph theorem
-(`BesselPotentialSpace.continuous_of_continuous_toDistr`). -/
-def restrictCLM (T : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G))
-    (hT : ∀ u : H^{s, p}(E, G), MemSobolev r p (T u.toDistr)) :
-    H^{s, p}(E, G) →L[ℂ] H^{r, p}(E, G) :=
-  let L : H^{s, p}(E, G) →ₗ[ℂ] H^{r, p}(E, G) :=
-    { toFun u := (hT u).toBesselPotentialSpace
+section mapCLM
+
+variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℂ G'] [CompleteSpace G']
+
+/-- **Restriction of an operator on tempered distributions to Bessel-potential spaces.** A
+continuous linear map `A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G')` that maps `H^{s,p}(E, G)` into
+`H^{r,p}(E, G')` restricts to a bounded operator between these spaces; its continuity is the
+closed graph theorem. The restriction keeps the action of `A` on the underlying tempered
+distributions (`BesselPotentialSpace.toDistr_mapCLM`). -/
+def mapCLM (A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G'))
+    (hA : ∀ u : H^{s, p}(E, G), MemSobolev r p (A u.toDistr)) :
+    H^{s, p}(E, G) →L[ℂ] H^{r, p}(E, G') :=
+  let L : H^{s, p}(E, G) →ₗ[ℂ] H^{r, p}(E, G') :=
+    { toFun u := (hA u).toBesselPotentialSpace
       map_add' u v := ext (by simp)
       map_smul' c u := ext (by simp) }
   { L with
     cont := continuous_of_continuous_toDistr (L.restrictScalars ℝ) <|
-      (T.continuous.comp continuous_toDistr).congr fun u ↦ by simp [L] }
+      (A.continuous.comp continuous_toDistr).congr fun u ↦ by simp [L] }
 
+/-- `mapCLM A hA` acts on the underlying tempered distributions by `A`. -/
 @[simp]
-theorem toDistr_restrictCLM (T : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G))
-    (hT : ∀ u : H^{s, p}(E, G), MemSobolev r p (T u.toDistr)) (u : H^{s, p}(E, G)) :
-    (restrictCLM T hT u).toDistr = T u.toDistr :=
+theorem toDistr_mapCLM (A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G'))
+    (hA : ∀ u : H^{s, p}(E, G), MemSobolev r p (A u.toDistr)) (u : H^{s, p}(E, G)) :
+    (mapCLM A hA u).toDistr = A u.toDistr :=
   MemSobolev.toBesselPotentialSpace_toDistr _
 
+end mapCLM
+
 /-- The inclusion `H^{s,p}(E, G) ⊆ H^{r,p}(E, G)` of Bessel-potential spaces for `r ≤ s`, as a
-continuous linear map. It keeps the underlying tempered distribution
-(`BesselPotentialSpace.toDistr_inclusion`), and for `p = 2` and a Hilbert space it has norm at most
-`1` (`BesselPotentialSpace.norm_inclusion_le`). -/
+continuous linear map: the restriction `BesselPotentialSpace.mapCLM` of the identity of `𝓢'(E, G)`.
+It keeps the underlying tempered distribution (`BesselPotentialSpace.toDistr_inclusion`), and for
+`p = 2` and a Hilbert space it has norm at most `1` (`BesselPotentialSpace.norm_inclusion_le`). -/
 def inclusion (h : r ≤ s) : H^{s, p}(E, G) →L[ℂ] H^{r, p}(E, G) :=
-  restrictCLM (.id ℂ _) fun u ↦ u.memSobolev_toDistr.of_le h
+  mapCLM (.id ℂ _) fun u ↦ u.memSobolev_toDistr.of_le h
 
 @[simp]
 theorem toDistr_inclusion (h : r ≤ s) (u : H^{s, p}(E, G)) : (inclusion h u).toDistr = u.toDistr :=
-  toDistr_restrictCLM _ _ u
+  toDistr_mapCLM _ _ u
 
 /-- The inclusion `H^{s,p} ⊆ H^{r,p}` is injective. -/
 theorem inclusion_injective (h : r ≤ s) :

@@ -410,7 +410,7 @@ def compCLM (φ : E ≃ E) (hφ : (φ : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
     H^{s}(E, F) →L[ℂ] H^{s}(E, F) :=
-  restrictCLM (TemperedDistribution.compCLM F φ hφ hψ) fun u ↦
+  mapCLM (TemperedDistribution.compCLM F φ hφ hψ) fun u ↦
     u.memSobolev_toDistr.compCLM hφ hψ hb hb'
 
 variable (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
@@ -420,7 +420,7 @@ variable (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).Ha
 @[simp]
 theorem toDistr_compCLM (u : H^{s}(E, F)) :
     (compCLM φ hφ hψ hb hb' s u).toDistr = TemperedDistribution.compCLM F φ hφ hψ u.toDistr :=
-  toDistr_restrictCLM _ _ u
+  toDistr_mapCLM _ _ u
 
 /-- On Schwartz functions the pullback is composition with `φ`. -/
 @[simp]

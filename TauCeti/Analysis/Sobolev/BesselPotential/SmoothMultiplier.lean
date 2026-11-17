@@ -124,7 +124,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (hp : 1 < p) (hp_to
       C * ‖toBesselPotentialSpaceCLM k p u‖ := by
   -- Multiplication by `g` preserves `H^k`, so by the closed graph theorem it is bounded there.
   let T : H^{(k : ℝ), p}(E, F) →L[ℂ] H^{(k : ℝ), p}(E, F) :=
-    BesselPotentialSpace.restrictCLM (TemperedDistribution.smulLeftCLM F g) fun f ↦
+    BesselPotentialSpace.mapCLM (TemperedDistribution.smulLeftCLM F g) fun f ↦
       f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hg hbd
   refine ⟨‖T‖, norm_nonneg _, fun u ↦ ?_⟩
   have hT : T (toBesselPotentialSpaceCLM k p u) =

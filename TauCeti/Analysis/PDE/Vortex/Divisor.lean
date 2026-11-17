@@ -49,7 +49,9 @@ divisors of their sections converge in `Sym ℂ m`
 (`TauCeti.Vortex.tendsto_of_tendstoLocallyUniformly`), by Hurwitz's theorem
 `TauCeti.IsZeroMultiplicity.tendsto_of_tendstoLocallyUniformly`. Since `H^s(ℂ)`, `s > 1`, embeds
 continuously in the bounded continuous functions, convergence in the affine field space `A_m^s` is
-stronger than locally uniform convergence; no topology on `A_m^s` is constructed here.
+stronger than locally uniform convergence. The topology of `A_m^s` on its continuous fields, and the
+resulting continuity of the divisor (`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_tendsto`), are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology`.
 
 Conversely, by Taubes's uniqueness theorem
 (`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`), two smooth framed vortices with a common

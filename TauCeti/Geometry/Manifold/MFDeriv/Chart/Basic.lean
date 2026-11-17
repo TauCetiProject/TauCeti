@@ -128,6 +128,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_extChartAt_self` and `TauCeti.mfderiv_extChartAt_eq_id`: the extended
   chart at `x` has the identity as its manifold derivative at `x`, with no smoothness hypothesis on
   the atlas.
+* `TauCeti.hasMFDerivAt_extChartAt_symm_self`: on a boundaryless manifold, the inverse extended
+  chart at `x` has the identity as its manifold derivative at `extChartAt I x x`, with no
+  smoothness hypothesis on the atlas.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -1095,6 +1098,21 @@ smoothness hypothesis on the atlas. -/
 theorem mfderiv_extChartAt_eq_id (x : M) :
     mfderiv I 𝓘(𝕜, E) (extChartAt I x) x = ContinuousLinearMap.id 𝕜 E :=
   (hasMFDerivAt_extChartAt_self x).mfderiv
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the inverse of the preferred extended chart at `x` has the identity
+as its manifold derivative at the chart image `extChartAt I x x` of its centre. There is no
+smoothness hypothesis on the atlas. -/
+theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
+    HasMFDerivAt 𝓘(𝕜, E) I (extChartAt I x).symm (extChartAt I x x)
+      (ContinuousLinearMap.id 𝕜 E) := by
+  -- Read in the chart at `x`, the inverse chart is the identity on the chart target.
+  refine ⟨(continuousOn_extChartAt_symm x).continuousAt (extChartAt_target_mem_nhds x), ?_⟩
+  rw [writtenInExtChartAt, extChartAt_to_inv, extChartAt_model_space_eq_id]
+  exact (hasFDerivWithinAt_id (extChartAt I x x) _).congr_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (extChartAt_target_mem_nhds x))
+      fun _ h ↦ (extChartAt I x).right_inv h)
+    ((extChartAt I x).right_inv (mem_extChartAt_target x))
 
 end ExtChartAtSelf
 
