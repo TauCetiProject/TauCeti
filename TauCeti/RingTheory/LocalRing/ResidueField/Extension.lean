@@ -282,36 +282,24 @@ private instance : PartialOrder (AlgStage R L) where
   le s₁ s₂ := ∃ h : s₁.carrier ⊆ s₂.carrier,
     s₂.ideal.comap (MvPolynomial.rename (Set.inclusion h)).toRingHom = s₁.ideal
   le_refl s := ⟨Set.Subset.rfl, by
-    have hinc : Set.inclusion (Set.Subset.refl s.carrier) = id := rfl
-    rw [hinc, MvPolynomial.rename_id]
-    rfl⟩
+    simp [Set.inclusion_eq_id, MvPolynomial.rename_id]⟩
   le_trans s₁ s₂ s₃ := by
     rintro ⟨h₁₂, hi₁₂⟩ ⟨h₂₃, hi₂₃⟩
     refine ⟨h₁₂.trans h₂₃, ?_⟩
-    ext p
-    have hp₁ : p ∈ s₁.ideal ↔ MvPolynomial.rename (Set.inclusion h₁₂) p ∈ s₂.ideal :=
-      (Ideal.ext_iff.mp hi₁₂ p).symm
-    have hp₂ : MvPolynomial.rename (Set.inclusion h₁₂) p ∈ s₂.ideal ↔
-        MvPolynomial.rename (Set.inclusion h₂₃)
-          (MvPolynomial.rename (Set.inclusion h₁₂) p) ∈ s₃.ideal :=
-      (Ideal.ext_iff.mp hi₂₃ _).symm
-    simp only [Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    rw [hp₁, hp₂, MvPolynomial.rename_rename]
-    rfl
+    simp only [← hi₁₂, ← hi₂₃, Ideal.comap_comap, AlgHom.toRingHom_eq_coe,
+      ← AlgHom.comp_toRingHom, MvPolynomial.rename_comp_rename, Set.inclusion_comp_inclusion]
   le_antisymm := by
     rintro ⟨c₁, I₁, h1, h2, h3, h4⟩ ⟨c₂, I₂, g1, g2, g3, g4⟩ ⟨h₁₂, hi₁₂⟩ ⟨h₂₁, _⟩
     obtain rfl : c₁ = c₂ := Set.Subset.antisymm h₁₂ h₂₁
-    have hinc : Set.inclusion h₁₂ = id := rfl
     have hI : I₂ = I₁ := by
-      simpa [hinc] using hi₁₂
+      simpa [Set.inclusion_eq_id, MvPolynomial.rename_id] using hi₁₂
     subst hI
     rfl
 
 private lemma mem_ideal_iff_of_le {s₁ s₂ : AlgStage R L} (h : s₁ ≤ s₂)
     (p : MvPolynomial s₁.carrier R) :
-    MvPolynomial.rename (Set.inclusion h.choose) p ∈ s₂.ideal ↔ p ∈ s₁.ideal := by
-  have hmem := Ideal.ext_iff.mp h.choose_spec p
-  exact hmem
+    MvPolynomial.rename (Set.inclusion h.choose) p ∈ s₂.ideal ↔ p ∈ s₁.ideal :=
+  Ideal.ext_iff.mp h.choose_spec p
 
 /-- Base stage with empty carrier and zero ideal, isomorphic to `R`. -/
 private def base : AlgStage R L := by
@@ -836,10 +824,7 @@ def residueFieldEquiv : ResidueField (ResidueExtension R L) ≃ₐ[ResidueField 
   let ψ : ResidueExtension R L →ₐ[R] L :=
     { (chosenAlgStage R L).evalQuot.comp (equivQuot R L).toAlgHom.toRingHom with
       commutes' := fun r ↦ by
-        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-          MonoidHom.coe_ofClass, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-          AlgEquiv.coe_toAlgHom, AlgEquiv.commutes, toFieldHom_algebraMap,
-          RingHom.algebraMap_toAlgebra] }
+        simp [toFieldHom_algebraMap, RingHom.algebraMap_toAlgebra] }
   have hψ : Function.Surjective ψ :=
     (toFieldHom_surjective R L).comp (equivQuot R L).surjective
   exact (residueFieldAlgEquivOfSurjective (ψ := ψ) hψ).extendScalarsOfSurjective

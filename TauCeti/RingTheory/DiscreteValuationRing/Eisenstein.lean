@@ -259,9 +259,7 @@ theorem addVal_algebraMap [IsDomain B] [FaithfulSMul A B] [IsDiscreteValuationRi
       f.natDegree • IsDiscreteValuationRing.addVal A a := by
   have : Module.Finite A B :=
     ⟨by simpa [hadj] using (hf.isIntegral_of_aeval_eq_zero hx).fg_adjoin_singleton⟩
-  have hpos : 0 < f.natDegree :=
-    natDegree_pos_of_aeval_root (leadingCoeff_ne_zero.mp hf.isUnit_leadingCoeff.ne_zero) hx
-      fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff A B).mp
+  have hpos : 0 < f.natDegree := hf.natDegree_pos_of_aeval_eq_zero hx
   have hne : (maximalIdeal A).map (algebraMap A B) ≠ ⊥ := by
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible A
     intro h

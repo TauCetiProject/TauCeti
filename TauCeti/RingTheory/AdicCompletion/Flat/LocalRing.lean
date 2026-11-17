@@ -24,11 +24,12 @@ over `R`.
 
 When `R` and `S` are local rings and `(maximalIdeal R).map (algebraMap R S) = maximalIdeal S`, the
 quotient `S ⧸ maximalIdeal S` is a field, so `AdicCompletion (maximalIdeal S) S` is flat — hence
-faithfully flat — over `R`. This generalizes `TauCeti.StrictHenselization.flat_adicCompletion` in
-`TauCeti/RingTheory/StrictHenselization/Noetherian.lean` from the pointed étale colimit to
-arbitrary flat algebras, covering in particular local extensions with arbitrary residue field
-extensions (*ÉGA III*, Chap. 0, 10.3.1), where `S` may have infinite transcendence or inseparable
-residue degree.
+faithfully flat — over `R`. This applies both to the completed pointed étale colimit in
+`TauCeti/RingTheory/StrictHenselization/Noetherian.lean`
+(`TauCeti.StrictHenselization.isNoetherianRing_algebra_iff`, which uses
+`flat_of_map_maximalIdeal_eq`) and to local extensions with arbitrary residue field extensions
+(*ÉGA III*, Chap. 0, 10.3.1), where `S` may have infinite transcendence or inseparable residue
+degree.
 
 ## Main results
 
@@ -61,8 +62,7 @@ namespace TauCeti.AdicCompletion
 
 /-- If `R` is a Noetherian ring, `S` is a flat `R`-algebra, `I.map (algebraMap R S) = J`, and
 `S ⧸ J` is Noetherian, then `AdicCompletion J S` is flat over `R`, without assuming `S` itself is
-Noetherian. Adapted from the pointed étale colimit argument in
-`TauCeti/RingTheory/StrictHenselization/Noetherian.lean`. -/
+Noetherian. -/
 theorem flat_of_map_eq {R S : Type*} [CommRing R] [IsNoetherianRing R] [CommRing S] [Algebra R S]
     [Module.Flat R S] {I : Ideal R} {J : Ideal S} [IsNoetherianRing (S ⧸ J)]
     (h : I.map (algebraMap R S) = J) :
@@ -114,9 +114,7 @@ theorem isLocalHom_algebraMap_base_of_map_maximalIdeal_eq (hR : (maximalIdeal R)
 
 /-- If `R` is a Noetherian local ring and `S` is a flat local `R`-algebra with
 `(maximalIdeal R).map (algebraMap R S) = maximalIdeal S`, then the completion
-`AdicCompletion (maximalIdeal S) S` is flat over `R`, without assuming `S` is Noetherian.
-Generalizes the pointed étale colimit flatness step in
-`TauCeti/RingTheory/StrictHenselization/Noetherian.lean`. -/
+`AdicCompletion (maximalIdeal S) S` is flat over `R`, without assuming `S` is Noetherian. -/
 theorem flat_of_map_maximalIdeal_eq [IsNoetherianRing R] [Module.Flat R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     Module.Flat R (_root_.AdicCompletion (maximalIdeal S) S) := by

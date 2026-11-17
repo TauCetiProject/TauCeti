@@ -142,19 +142,22 @@ private lemma coe_mapAlgHom'_completion [IsNoetherianRing R] :
   obtain ⟨a, rfl⟩ := residue_surjective x
   rw [ResidueField.mapAlgHom'_residue, IsScalarTower.toAlgHom_apply, ResidueField.map_residue]
 
-/-- Canonical `ResidueField R`-algebra isomorphism
-`ResidueField (CompletedResidueExtension R L) ≃ₐ[ResidueField R] L`. -/
-def residueFieldEquiv [IsNoetherianRing R] :
-    ResidueField (CompletedResidueExtension R L) ≃ₐ[ResidueField R] L :=
-  (AlgEquiv.ofBijective
+private def completionResidueEquiv [IsNoetherianRing R] :
+    ResidueField (ResidueExtension R L) ≃ₐ[ResidueField R]
+      ResidueField (CompletedResidueExtension R L) :=
+  AlgEquiv.ofBijective
     (ResidueField.mapAlgHom'
       (IsScalarTower.toAlgHom R (ResidueExtension R L) (CompletedResidueExtension R L)))
     (by
       rw [coe_mapAlgHom'_completion]
       exact AdicCompletion.residueField_map_bijective_of_fg
-        (ResidueExtension.maximalIdeal_fg R L
-          (maximalIdeal R).fg_of_isNoetherianRing))).symm.trans
-    (ResidueExtension.residueFieldEquiv R L)
+        (ResidueExtension.maximalIdeal_fg R L (maximalIdeal R).fg_of_isNoetherianRing))
+
+/-- Canonical `ResidueField R`-algebra isomorphism
+`ResidueField (CompletedResidueExtension R L) ≃ₐ[ResidueField R] L`. -/
+def residueFieldEquiv [IsNoetherianRing R] :
+    ResidueField (CompletedResidueExtension R L) ≃ₐ[ResidueField R] L :=
+  (completionResidueEquiv R L).symm.trans (ResidueExtension.residueFieldEquiv R L)
 
 /-- `residueFieldEquiv R L` commutes with `ResidueExtension.residueFieldEquiv R L` along the
 residue field map induced by completion. -/
@@ -164,17 +167,11 @@ theorem residueFieldEquiv_map [IsNoetherianRing R]
     residueFieldEquiv R L
         (ResidueField.map (algebraMap (ResidueExtension R L) (CompletedResidueExtension R L)) x) =
       ResidueExtension.residueFieldEquiv R L x := by
-  let eC := AlgEquiv.ofBijective
-    (ResidueField.mapAlgHom'
-      (IsScalarTower.toAlgHom R (ResidueExtension R L) (CompletedResidueExtension R L)))
-    (by
-      rw [coe_mapAlgHom'_completion]
-      exact AdicCompletion.residueField_map_bijective_of_fg
-        (ResidueExtension.maximalIdeal_fg R L (maximalIdeal R).fg_of_isNoetherianRing))
   have hx : ResidueField.map (algebraMap (ResidueExtension R L) (CompletedResidueExtension R L)) x =
-      eC x := by
-    rw [AlgEquiv.ofBijective_apply, congrFun (coe_mapAlgHom'_completion R L) x]
-  rw [hx, residueFieldEquiv, AlgEquiv.trans_apply, eC.symm_apply_apply]
+      completionResidueEquiv R L x := by
+    rw [completionResidueEquiv, AlgEquiv.ofBijective_apply,
+      congrFun (coe_mapAlgHom'_completion R L) x]
+  rw [hx, residueFieldEquiv, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply]
 
 /-- Evaluating `residueFieldEquiv R L` on the residue class of an element coming from
 `ResidueExtension R L` agrees with `ResidueExtension.residueFieldEquiv R L`. -/

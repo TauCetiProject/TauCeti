@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Minimal polynomials, `AdjoinRoot` presentations, and degrees of Eisenstein roots
@@ -23,10 +24,13 @@ field `K = Frac R`, and determines the field degree `[K(α) : K] = deg f`.
 
 ## Main definitions and results
 
-* `Polynomial.IsEisensteinAt.isUnit_leadingCoeff` and
-  `Polynomial.IsEisensteinAt.isIntegral_of_aeval_eq_zero`: over a local ring, a polynomial that is
-  Eisenstein at the maximal ideal has unit leading coefficient, so any root of it is integral.
-* `Polynomial.IsEisensteinAt.associated_minpoly` and
+* `Polynomial.IsEisensteinAt.isUnit_leadingCoeff`,
+  `Polynomial.IsEisensteinAt.natDegree_pos_of_aeval_eq_zero`, and
+  `Polynomial.IsEisensteinAt.isIntegral_of_aeval_eq_zero`: basic properties of Eisenstein
+  polynomials and their roots (unit leading coefficient over a local ring, positive degree in any
+  faithful algebra, and integrality of roots).
+* `Polynomial.IsEisensteinAt.associated_minpoly_of_aeval_eq_zero`,
+  `Polynomial.IsEisensteinAt.associated_minpoly`, and
   `Polynomial.IsEisensteinAt.minpoly_eq_of_monic`: identify the minimal polynomial up to a unit
   (and on the nose when `f` is monic).
 * `Polynomial.IsEisensteinAt.ker_aeval_eq_span` and
@@ -52,22 +56,21 @@ theorem isUnit_leadingCoeff {R : Type*} [CommSemiring R] [IsLocalRing R] {f : R[
     (hf : f.IsEisensteinAt (IsLocalRing.maximalIdeal R)) : IsUnit f.leadingCoeff :=
   IsLocalRing.notMem_maximalIdeal.mp hf.leading
 
-private theorem isIntegral_of_isUnit_leadingCoeff {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
-    {f : R[X]} {x : S} (hlc : IsUnit f.leadingCoeff) (hx : aeval x f = 0) : IsIntegral R x :=
-  ⟨hlc.unit⁻¹ • f, monic_of_isUnit_leadingCoeff_inv_smul hlc, by
-    rw [← aeval_def, Units.smul_def, smul_eq_C_mul, map_mul, hx, mul_zero]⟩
-
-private theorem associated_unit_smul {R : Type*} [CommSemiring R] (u : Rˣ) (f : R[X]) :
-    Associated (u • f) f := by
-  rw [Units.smul_def, smul_eq_C_mul]
-  exact associated_unit_mul_left f _ (isUnit_C.mpr u.isUnit)
+/-- An Eisenstein polynomial with a root in an algebra with injective structure map has positive
+degree. -/
+theorem natDegree_pos_of_aeval_eq_zero {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    [FaithfulSMul R S] {𝓟 : Ideal R} {f : R[X]} {x : S} (hf : f.IsEisensteinAt 𝓟)
+    (hx : aeval x f = 0) :
+    0 < f.natDegree :=
+  natDegree_pos_of_eval₂_root (fun h ↦ hf.leading (by simp [h])) (algebraMap R S) hx
+    fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff R S).mp
 
 /-- Any root of a polynomial that is Eisenstein at the maximal ideal of a local ring is integral
 over that ring. -/
 theorem isIntegral_of_aeval_eq_zero {R S : Type*} [CommRing R] [IsLocalRing R] [Ring S]
     [Algebra R S] {f : R[X]} {x : S} (hf : f.IsEisensteinAt (IsLocalRing.maximalIdeal R))
     (hx : aeval x f = 0) : IsIntegral R x :=
-  isIntegral_of_isUnit_leadingCoeff hf.isUnit_leadingCoeff hx
+  TauCeti.isIntegral_of_isUnit_leadingCoeff hf.isUnit_leadingCoeff hx
 
 private theorem irreducible_of_isUnit_leadingCoeff {R : Type*} [CommRing R] [IsDomain R]
     {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} (hf : f.IsEisensteinAt 𝓟)
@@ -83,29 +86,32 @@ variable {R S : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
 
 /-- The minimal polynomial of a root of an Eisenstein polynomial `f` with unit leading coefficient
 over an integrally closed domain is associated to `f`. -/
+theorem associated_minpoly_of_aeval_eq_zero [FaithfulSMul R S] {𝓟 : Ideal R} [𝓟.IsPrime]
+    {f : R[X]} {ξ : S} (hf : f.IsEisensteinAt 𝓟) (hlc : IsUnit f.leadingCoeff)
+    (hξ : aeval ξ f = 0) : Associated (minpoly R ξ) f := by
+  have : Module.IsTorsionFree R S :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R S)
+  have hfirr : Irreducible f :=
+    hf.irreducible_of_isUnit_leadingCoeff hlc (hf.natDegree_pos_of_aeval_eq_zero hξ)
+  have hξ_int : IsIntegral R ξ := TauCeti.isIntegral_of_isUnit_leadingCoeff hlc hξ
+  exact (minpoly.irreducible hξ_int).associated_of_dvd hfirr
+    (minpoly.isIntegrallyClosed_dvd hξ_int hξ)
+
+/-- The minimal polynomial of a root of an Eisenstein polynomial `f` with unit leading coefficient
+over an integrally closed domain is associated to `f`. -/
 theorem associated_minpoly [Module.IsTorsionFree R S] {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} {ξ : S}
     (hf : f.IsEisensteinAt 𝓟) (hlc : IsUnit f.leadingCoeff)
-    (hroot : (f.map (algebraMap R S)).IsRoot ξ) : Associated (minpoly R ξ) f := by
-  have haeval : aeval ξ f = 0 := by simpa [aeval_def] using hroot
-  have hdeg : 0 < f.natDegree :=
-    natDegree_pos_of_aeval_root (leadingCoeff_ne_zero.1 hlc.ne_zero) haeval
-      fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff R S).1
-  have hfirr : Irreducible f := hf.irreducible_of_isUnit_leadingCoeff hlc hdeg
-  have hξ : IsIntegral R ξ :=
-    (minpoly.IsIntegrallyClosed.isIntegral_iff_isUnit_leadingCoeff hfirr haeval).2 hlc
-  exact (minpoly.irreducible hξ).associated_of_dvd hfirr (minpoly.isIntegrallyClosed_dvd hξ haeval)
+    (hroot : (f.map (algebraMap R S)).IsRoot ξ) : Associated (minpoly R ξ) f :=
+  hf.associated_minpoly_of_aeval_eq_zero hlc (by simpa [aeval_def] using hroot)
 
 /-- If `f` is monic and Eisenstein at a prime ideal of an integrally closed domain `R`, then `f`
 is the minimal polynomial over `R` of any of its roots in a domain `S` with injective structure map
 from `R`. -/
 theorem minpoly_eq_of_monic [FaithfulSMul R S] {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} {ξ : S}
     (hf : f.IsEisensteinAt 𝓟) (hmo : f.Monic) (hξ : aeval ξ f = 0) :
-    minpoly R ξ = f := by
-  have : Module.IsTorsionFree R S :=
-    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R S)
-  have hroot : (f.map (algebraMap R S)).IsRoot ξ := by rwa [IsRoot.def, eval_map_algebraMap]
-  exact eq_of_monic_of_associated (minpoly.monic ⟨f, hmo, hξ⟩) hmo
-    (hf.associated_minpoly (hmo.leadingCoeff.symm ▸ isUnit_one) hroot)
+    minpoly R ξ = f :=
+  eq_of_monic_of_associated (minpoly.monic ⟨f, hmo, hξ⟩) hmo
+    (hf.associated_minpoly_of_aeval_eq_zero (hmo.leadingCoeff.symm ▸ isUnit_one) hξ)
 
 /-- Over an integrally closed domain `R`, the kernel of `aeval x : R[X] →ₐ[R] S` at a root `x` of
 an Eisenstein polynomial `f` with unit leading coefficient in a domain `S` with injective structure
@@ -115,11 +121,10 @@ theorem ker_aeval_eq_span [FaithfulSMul R S] {𝓟 : Ideal R} [𝓟.IsPrime] {f 
     RingHom.ker (aeval x : R[X] →ₐ[R] S) = Ideal.span {f} := by
   have : Module.IsTorsionFree R S :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R S)
-  have hroot : (f.map (algebraMap R S)).IsRoot x := by rwa [IsRoot.def, eval_map_algebraMap]
-  have hx_int : IsIntegral R x := isIntegral_of_isUnit_leadingCoeff hlc hx
+  have hx_int : IsIntegral R x := TauCeti.isIntegral_of_isUnit_leadingCoeff hlc hx
   ext p
   rw [RingHom.mem_ker, minpoly.isIntegrallyClosed_dvd_iff hx_int, ← Ideal.mem_span_singleton,
-    Ideal.span_singleton_eq_span_singleton.mpr (hf.associated_minpoly hlc hroot)]
+    Ideal.span_singleton_eq_span_singleton.mpr (hf.associated_minpoly_of_aeval_eq_zero hlc hx)]
 
 /-- Canonical `R`-algebra isomorphism `AdjoinRoot f ≃ₐ[R] S` sending `AdjoinRoot.root f` to `x`,
 for an Eisenstein polynomial `f` with unit leading coefficient over an integrally closed domain `R`
@@ -130,10 +135,10 @@ noncomputable def adjoinRootAlgEquiv [FaithfulSMul R S] {𝓟 : Ideal R} [𝓟.I
     AdjoinRoot f ≃ₐ[R] S :=
   have : Module.IsTorsionFree R S :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R S)
-  have hroot : (f.map (algebraMap R S)).IsRoot x := by rwa [IsRoot.def, eval_map_algebraMap]
-  have hx_int : IsIntegral R x := isIntegral_of_isUnit_leadingCoeff hlc hx
+  have hx_int : IsIntegral R x := TauCeti.isIntegral_of_isUnit_leadingCoeff hlc hx
   ((AdjoinRoot.algEquivOfAssociated R f (minpoly R x)
-      (hf.associated_minpoly hlc hroot).symm).trans (minpoly.equivAdjoin hx_int)).trans
+      (hf.associated_minpoly_of_aeval_eq_zero hlc hx).symm).trans
+    (minpoly.equivAdjoin hx_int)).trans
     ((Subalgebra.equivOfEq _ _ hadj).trans Subalgebra.topEquiv)
 
 /-- `adjoinRootAlgEquiv` sends `AdjoinRoot.root f` to `x`. -/
@@ -176,7 +181,9 @@ theorem irreducible_map_fractionRing {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]}
     Irreducible (f.map (algebraMap R K)) := by
   let g : R[X] := hlc.unit⁻¹ • f
   have hg_mo : g.Monic := monic_of_isUnit_leadingCoeff_inv_smul hlc
-  have hassoc : Associated g f := associated_unit_smul hlc.unit⁻¹ f
+  have hassoc : Associated g f := by
+    simp only [g, Units.smul_def, smul_eq_C_mul]
+    exact associated_unit_mul_left f _ (isUnit_C.mpr hlc.unit⁻¹.isUnit)
   have hmap_irr : Irreducible (g.map (algebraMap R K)) :=
     (hg_mo.irreducible_iff_irreducible_map_fraction_map (K := K)).mp
       (hassoc.symm.irreducible (hf.irreducible_of_isUnit_leadingCoeff hlc hdeg))
@@ -190,18 +197,12 @@ theorem finrank_adjoin_eq_natDegree {K E : Type*} [Field K] [Algebra R K] [IsFra
     (hα : aeval α f = 0) :
     Module.finrank K K⟮α⟯ = f.natDegree := by
   have : FaithfulSMul R E := FaithfulSMul.trans R K E
-  have : Module.IsTorsionFree R E :=
-    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R E)
-  have hroot : (f.map (algebraMap R E)).IsRoot α := by rwa [IsRoot.def, eval_map_algebraMap]
-  let g : R[X] := hlc.unit⁻¹ • f
-  have hg_mo : g.Monic := monic_of_isUnit_leadingCoeff_inv_smul hlc
-  have hα_int : IsIntegral R α := isIntegral_of_isUnit_leadingCoeff hlc hα
-  have hassoc : Associated (minpoly R α) g :=
-    (hf.associated_minpoly hlc hroot).trans (associated_unit_smul hlc.unit⁻¹ f).symm
-  have hmin : minpoly R α = g := eq_of_monic_of_associated (minpoly.monic hα_int) hg_mo hassoc
+  have hα_int : IsIntegral R α := TauCeti.isIntegral_of_isUnit_leadingCoeff hlc hα
+  obtain ⟨u, hu⟩ := hf.associated_minpoly_of_aeval_eq_zero hlc hα
   rw [IntermediateField.adjoin.finrank hα_int.tower_top,
     minpoly.isIntegrallyClosed_eq_field_fractions' K hα_int, (minpoly.monic hα_int).natDegree_map,
-    hmin, natDegree_smul_of_smul_regular f (IsSMulRegular.all _)]
+    ← hu, natDegree_mul (minpoly.ne_zero hα_int) u.ne_zero,
+    natDegree_eq_zero_of_isUnit u.isUnit, add_zero]
 
 /-- If `E = K⟮α⟯` is generated over `K = Frac R` by a root `α` of an Eisenstein polynomial
 `f : R[X]` with unit leading coefficient, then `[E : K] = f.natDegree`. -/

@@ -34,8 +34,8 @@ an algebraically closed field without ramifying the base.
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique III*, Chapitre 0,
   Proposition 10.3.1.
-* J.-P. Serre, *Local Fields*, Chapter III, §5 (unramified residue-field enlargement of complete
-  discrete valuation rings).
+* J.-P. Serre, *Local Fields*, Chapter III, §5 (the case of separable algebraic residue-field
+  extensions of complete discrete valuation rings).
 -/
 
 public section

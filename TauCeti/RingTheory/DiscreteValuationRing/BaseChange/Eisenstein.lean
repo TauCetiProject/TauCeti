@@ -53,26 +53,29 @@ from the valuations in `R` of the coefficients of `p %ₘ g`. Consequently:
 
 ## Main definitions and results
 
-* `Polynomial.IsEisensteinAt.baseChangeAlgHom`,
+* `Polynomial.IsEisensteinAt.liftAlgHom`,
   `Polynomial.IsEisensteinAt.addVal_aeval_map_eq`,
-  `Polynomial.IsEisensteinAt.addVal_baseChangeAlgHom`, and
-  `Polynomial.IsEisensteinAt.baseChangeAlgHom_injective`: canonical `R`-algebra map `B →ₐ[R] B'`
-  sending `x ↦ x'`, valuation preservation, and injectivity under unramified DVR base change.
+  `Polynomial.IsEisensteinAt.addVal_liftAlgHom`, and
+  `Polynomial.IsEisensteinAt.liftAlgHom_injective`: canonical `R`-algebra map `B →ₐ[R] B'`
+  sending `x ↦ x'`, valuation preservation, and injectivity under a DVR homomorphism with
+  `(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'` (ramification index one).
 * `Polynomial.IsEisensteinAt.lowerIndex_eq`,
   `Polynomial.IsEisensteinAt.comap_ramificationGroup`, and
   `Polynomial.IsEisensteinAt.comap_ramificationGroupReal`: preservation of lower indices and lower
   ramification groups under equivariant Eisenstein base change.
-* `Polynomial.IsEisensteinAt.irreducible_map_fractionRing_of_map_maximalIdeal_eq`,
-  `Polynomial.IsEisensteinAt.finrank_eq_natDegree_of_map_maximalIdeal_eq`,
-  `Polynomial.IsEisensteinAt.integralClosure_eq_adjoin_of_map_maximalIdeal_eq`,
-  `Polynomial.IsEisensteinAt.adjoin_singleton_eq_top_integralClosure_of_map_maximalIdeal_eq`, and
-  `Polynomial.IsEisensteinAt.isDiscreteValuationRing_integralClosure_of_map_maximalIdeal_eq`:
-  irreducibility over `K'`, degree `[E' : K'] = deg f`, and DVR structure of
-  `integralClosure R' E' = R'[α]`.
+* `Polynomial.IsEisensteinAt.liftedRoot`,
+  `Polynomial.IsEisensteinAt.aeval_liftedRoot_eq_zero`,
+  `Polynomial.IsEisensteinAt.finrank_eq_natDegree_of_map_maximalIdeal_eq`, and
+  `Polynomial.IsEisensteinAt.irreducible_map_fractionRing_of_map_maximalIdeal_eq`: lifting a root
+  of `f.map (algebraMap R R')` into `integralClosure R' E'`, degree `[E' : K'] = deg f`, and
+  irreducibility over `K' = Frac R'`.
 * `Polynomial.IsEisensteinAt.galHom`,
+  `Polynomial.IsEisensteinAt.galHom_apply_gen`,
+  `Polynomial.IsEisensteinAt.galHom_smul_gen`,
   `Polynomial.IsEisensteinAt.galHom_injective`, and
   `Polynomial.IsEisensteinAt.lowerIndex_galHom`: base-change homomorphism
-  `(E ≃ₐ[K] E) →* (E' ≃ₐ[K'] E')`, injectivity for algebraic `E / K`, and lower-index preservation.
+  `(E ≃ₐ[K] E) →* (E' ≃ₐ[K'] E')`, generator action, injectivity for algebraic `E / K`, and
+  lower-index preservation.
 * `Polynomial.IsEisensteinAt.isGalois_of_map_maximalIdeal_eq`,
   `Polynomial.IsEisensteinAt.galMulEquiv`,
   `Polynomial.IsEisensteinAt.map_ramificationGroup_galMulEquiv`, and
@@ -95,16 +98,9 @@ open scoped Pointwise
 
 namespace Polynomial.IsEisensteinAt
 
-private theorem natDegree_pos_of_aeval_eq_zero {R S : Type*} [CommRing R] [IsLocalRing R]
-    [CommRing S] [Algebra R S] [FaithfulSMul R S] {f : R[X]} {x : S}
-    (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0) :
-    0 < f.natDegree :=
-  natDegree_pos_of_aeval_root (leadingCoeff_ne_zero.mp hf.isUnit_leadingCoeff.ne_zero) hx
-    fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff R S).mp
-
 /-! ### Ring-level base change and preservation of lower ramification -/
 
-section BaseChangeHom
+section LiftAlgHom
 
 variable {R B B' : Type*} [CommRing R] [IsDomain R] [IsLocalRing R] [IsIntegrallyClosed R]
   [CommRing B] [IsDomain B] [Algebra R B] [FaithfulSMul R B]
@@ -112,7 +108,7 @@ variable {R B B' : Type*} [CommRing R] [IsDomain R] [IsLocalRing R] [IsIntegrall
 
 /-- Canonical `R`-algebra homomorphism `B →ₐ[R] B'` sending the Eisenstein generator `x` of a
 domain `B` with injective structure map from `R` to any root `x'` of `f` in an `R`-algebra `B'`. -/
-def baseChangeAlgHom [CommRing B'] [Algebra R B'] {x' : B'}
+def liftAlgHom [CommRing B'] [Algebra R B'] {x' : B'}
     (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin R {x} = ⊤) (hx' : aeval x' f = 0) :
     B →ₐ[R] B' :=
@@ -120,39 +116,25 @@ def baseChangeAlgHom [CommRing B'] [Algebra R B'] {x' : B'}
       (by rwa [Algebra.toRingHom_ofId, ← aeval_def])).comp
     (hf.adjoinRootAlgEquiv hf.isUnit_leadingCoeff hx hadj).symm.toAlgHom
 
-/-- `baseChangeAlgHom` maps `aeval x p` to `aeval x' p`. -/
+/-- `liftAlgHom` maps `aeval x p` to `aeval x' p`. -/
 @[simp]
-theorem baseChangeAlgHom_aeval [CommRing B'] [Algebra R B'] {x' : B'}
+theorem liftAlgHom_aeval [CommRing B'] [Algebra R B'] {x' : B'}
     (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin R {x} = ⊤) (hx' : aeval x' f = 0) (p : R[X]) :
-    hf.baseChangeAlgHom hx hadj hx' (aeval x p) = aeval x' p := by
-  rw [baseChangeAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    hf.liftAlgHom hx hadj hx' (aeval x p) = aeval x' p := by
+  rw [liftAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     adjoinRootAlgEquiv_symm_apply_aeval, AdjoinRoot.liftAlgHom_mk,
     Algebra.toRingHom_ofId, aeval_def]
 
-/-- `baseChangeAlgHom` sends the Eisenstein generator `x` to `x'`. -/
+/-- `liftAlgHom` sends the Eisenstein generator `x` to `x'`. -/
 @[simp]
-theorem baseChangeAlgHom_apply_gen [CommRing B'] [Algebra R B'] {x' : B'}
+theorem liftAlgHom_apply_gen [CommRing B'] [Algebra R B'] {x' : B'}
     (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin R {x} = ⊤) (hx' : aeval x' f = 0) :
-    hf.baseChangeAlgHom hx hadj hx' x = x' := by
-  simpa using hf.baseChangeAlgHom_aeval hx hadj hx' X
+    hf.liftAlgHom hx hadj hx' x = x' := by
+  simpa using hf.liftAlgHom_aeval hx hadj hx' X
 
-private theorem baseChangeAlgHom_congr_algebra [CommRing B']
-    (inst₁ inst₂ : Algebra R B') (halg : @algebraMap R B' _ _ inst₁ = @algebraMap R B' _ _ inst₂)
-    {x' : B'} (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
-    (hadj : Algebra.adjoin R {x} = ⊤)
-    (hx₁ : @aeval R B' _ _ inst₁ x' f = 0) (hx₂ : @aeval R B' _ _ inst₂ x' f = 0) (b : B) :
-    @baseChangeAlgHom R B B' _ _ _ _ _ _ _ _ f x _ inst₁ x' hf hx hadj hx₁ b =
-      @baseChangeAlgHom R B B' _ _ _ _ _ _ _ _ f x _ inst₂ x' hf hx hadj hx₂ b := by
-  have hb : b ∈ Algebra.adjoin R {x} := hadj ▸ Algebra.mem_top
-  rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hb
-  obtain ⟨p, rfl⟩ := hb
-  rw [@baseChangeAlgHom_aeval R B B' _ _ _ _ _ _ _ _ f x _ inst₁ x' hf hx hadj hx₁ p,
-    @baseChangeAlgHom_aeval R B B' _ _ _ _ _ _ _ _ f x _ inst₂ x' hf hx hadj hx₂ p,
-    @aeval_def R B' _ _ inst₁, @aeval_def R B' _ _ inst₂, halg]
-
-end BaseChangeHom
+end LiftAlgHom
 
 section RingBaseChange
 
@@ -162,10 +144,11 @@ variable {R R' B B' : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing 
   [CommRing B'] [IsDomain B'] [Algebra R' B'] [FaithfulSMul R' B']
   {f : R[X]} {x : B} {x' : B'}
 
-/-- Under an unramified map of discrete valuation rings `R → R'`, evaluating any `p : R[X]` at an
-Eisenstein generator `x` of a domain `B` with injective structure map from `R` has the same
-normalized valuation as evaluating `p.map (algebraMap R R')` at an Eisenstein generator `x'` of a
-domain `B'` with injective structure map from `R'`. -/
+/-- Under a homomorphism of discrete valuation rings `R → R'` with
+`(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'` (ramification index one), evaluating
+any `p : R[X]` at an Eisenstein generator `x` of a domain `B` with injective structure map from `R`
+has the same normalized valuation as evaluating `p.map (algebraMap R R')` at an Eisenstein
+generator `x'` of a domain `B'` with injective structure map from `R'`. -/
 theorem addVal_aeval_map_eq [IsDiscreteValuationRing B] [IsDiscreteValuationRing B']
     (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin R {x} = ⊤)
@@ -209,37 +192,38 @@ theorem addVal_aeval_map_eq [IsDiscreteValuationRing B] [IsDiscreteValuationRing
 
 variable [Algebra R B'] [IsScalarTower R R' B']
 
-/-- Under an unramified homomorphism of discrete valuation rings `R → R'` and into a domain `B'`
-with injective structure map from `R'` generated over `R'` by `x'`, `baseChangeAlgHom` preserves
-the normalized additive valuation of every element of `B`. -/
-theorem addVal_baseChangeAlgHom [IsDiscreteValuationRing B] [IsDiscreteValuationRing B']
+/-- Under a homomorphism of discrete valuation rings `R → R'` with
+`(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'` (ramification index one) and into a
+domain `B'` with injective structure map from `R'` generated over `R'` by `x'`, `liftAlgHom`
+preserves the normalized additive valuation of every element of `B`. -/
+theorem addVal_liftAlgHom [IsDiscreteValuationRing B] [IsDiscreteValuationRing B']
     (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hx' : aeval x' f = 0) (hadj' : Algebra.adjoin R' {x'} = ⊤) (b : B) :
-    IsDiscreteValuationRing.addVal B' (hf.baseChangeAlgHom hx hadj hx' b) =
+    IsDiscreteValuationRing.addVal B' (hf.liftAlgHom hx hadj hx' b) =
       IsDiscreteValuationRing.addVal B b := by
   have hb : b ∈ Algebra.adjoin R {x} := hadj ▸ Algebra.mem_top
   rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hb
   obtain ⟨p, rfl⟩ := hb
-  rw [hf.baseChangeAlgHom_aeval hx hadj hx', ← aeval_map_algebraMap R' x' p]
+  rw [hf.liftAlgHom_aeval hx hadj hx', ← aeval_map_algebraMap R' x' p]
   exact hf.addVal_aeval_map_eq hx hadj hmax ((aeval_map_algebraMap R' x' f).trans hx') hadj' p
 
-/-- When `R → R'` is an unramified homomorphism of discrete valuation rings
-(`(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'`) and `B'` is a domain with injective
-structure map from `R'` (`FaithfulSMul R' B'`) generated over `R'` by a root `x'` of `f`,
-`baseChangeAlgHom` is injective. -/
-theorem baseChangeAlgHom_injective (hf : f.IsEisensteinAt (maximalIdeal R))
+/-- When `R → R'` is a homomorphism of discrete valuation rings under which `maximalIdeal R`
+generates `maximalIdeal R'` (ramification index one) and `B'` is a domain with injective structure
+map from `R'` (`FaithfulSMul R' B'`) generated over `R'` by a root `x'` of `f`, `liftAlgHom` is
+injective. -/
+theorem liftAlgHom_injective (hf : f.IsEisensteinAt (maximalIdeal R))
     (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hx' : aeval x' f = 0) (hadj' : Algebra.adjoin R' {x'} = ⊤) :
-    Function.Injective (hf.baseChangeAlgHom hx hadj hx') := by
+    Function.Injective (hf.liftAlgHom hx hadj hx') := by
   have := hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
   have := (hf.map_of_map_maximalIdeal_eq hmax).isDiscreteValuationRing_of_adjoin_eq_top
     ((aeval_map_algebraMap R' x' f).trans hx') hadj'
   refine (injective_iff_map_eq_zero _).mpr fun b hb ↦ ?_
   rw [← IsDiscreteValuationRing.addVal_eq_top_iff,
-    ← hf.addVal_baseChangeAlgHom hx hadj hmax hx' hadj', hb,
+    ← hf.addVal_liftAlgHom hx hadj hmax hx' hadj', hb,
     IsDiscreteValuationRing.addVal_zero]
 
 section Equivariant
@@ -248,19 +232,19 @@ variable {H H' : Type*} [Group H] [Group H']
   [MulSemiringAction H B] [MulSemiringAction H' B']
 
 /-- Normalized displacement valuation `addVal (σ • x - x)` is preserved along any group action map
-intertwining `x` and `x'` via `baseChangeAlgHom`. -/
+intertwining `x` and `x'` via `liftAlgHom`. -/
 theorem addVal_smul_sub_eq [IsDiscreteValuationRing B] [IsDiscreteValuationRing B']
     (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0)
     (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hx' : aeval x' f = 0) (hadj' : Algebra.adjoin R' {x'} = ⊤)
-    {σ : H} {σ' : H'} (hσσ' : σ' • x' = hf.baseChangeAlgHom hx hadj hx' (σ • x)) :
+    {σ : H} {σ' : H'} (hσσ' : σ' • x' = hf.liftAlgHom hx hadj hx' (σ • x)) :
     IsDiscreteValuationRing.addVal B' (σ' • x' - x') =
       IsDiscreteValuationRing.addVal B (σ • x - x) := by
-  have hsub : σ' • x' - x' = hf.baseChangeAlgHom hx hadj hx' (σ • x - x) := by
-    rw [map_sub, hσσ', hf.baseChangeAlgHom_apply_gen]
+  have hsub : σ' • x' - x' = hf.liftAlgHom hx hadj hx' (σ • x - x) := by
+    rw [map_sub, hσσ', hf.liftAlgHom_apply_gen]
   rw [hsub]
-  exact hf.addVal_baseChangeAlgHom hx hadj hmax hx' hadj' (σ • x - x)
+  exact hf.addVal_liftAlgHom hx hadj hmax hx' hadj' (σ • x - x)
 
 variable [SMulCommClass H R B] [SMulCommClass H' R' B']
 
@@ -271,7 +255,7 @@ theorem lowerIndex_eq [IsDiscreteValuationRing B] [IsDiscreteValuationRing B']
     (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hx' : aeval x' f = 0) (hadj' : Algebra.adjoin R' {x'} = ⊤)
-    {σ : H} {σ' : H'} (hσσ' : σ' • x' = hf.baseChangeAlgHom hx hadj hx' (σ • x)) :
+    {σ : H} {σ' : H'} (hσσ' : σ' • x' = hf.liftAlgHom hx hadj hx' (σ • x)) :
     TauCeti.IsLocalRing.lowerIndex B' σ' = TauCeti.IsLocalRing.lowerIndex B σ := by
   rw [TauCeti.IsLocalRing.lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hadj',
     TauCeti.IsLocalRing.lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hadj]
@@ -284,7 +268,7 @@ theorem comap_ramificationGroup [IsLocalRing B] [IsLocalRing B']
     (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hx' : aeval x' f = 0) (hadj' : Algebra.adjoin R' {x'} = ⊤)
-    (ρ : H →* H') (hρ : ∀ σ, ρ σ • x' = hf.baseChangeAlgHom hx hadj hx' (σ • x)) (i : ℤ) :
+    (ρ : H →* H') (hρ : ∀ σ, ρ σ • x' = hf.liftAlgHom hx hadj hx' (σ • x)) (i : ℤ) :
     (TauCeti.IsLocalRing.ramificationGroup H' B' i).comap ρ =
       TauCeti.IsLocalRing.ramificationGroup H B i := by
   have := hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
@@ -301,7 +285,7 @@ theorem comap_ramificationGroupReal [IsLocalRing B] [IsLocalRing B']
     (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hx' : aeval x' f = 0) (hadj' : Algebra.adjoin R' {x'} = ⊤)
-    (ρ : H →* H') (hρ : ∀ σ, ρ σ • x' = hf.baseChangeAlgHom hx hadj hx' (σ • x)) (u : ℝ) :
+    (ρ : H →* H') (hρ : ∀ σ, ρ σ • x' = hf.liftAlgHom hx hadj hx' (σ • x)) (u : ℝ) :
     (TauCeti.IsLocalRing.ramificationGroupReal H' B' u).comap ρ =
       TauCeti.IsLocalRing.ramificationGroupReal H B u := by
   rw [TauCeti.IsLocalRing.ramificationGroupReal_def,
@@ -312,7 +296,44 @@ end Equivariant
 
 end RingBaseChange
 
-/-! ### Field and Galois base change along unramified DVR homomorphisms -/
+/-! ### Field and Galois base change along ramification-index-one DVR homomorphisms -/
+
+section LiftedRoot
+
+variable {R R' E' : Type*}
+  [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+  [CommRing R'] [IsDomain R'] [IsDiscreteValuationRing R'] [Algebra R R']
+  [CommRing E'] [Algebra R' E'] {f : R[X]} {α : E'}
+
+/-- A root `α : E'` of `f.map (algebraMap R R')` for an Eisenstein polynomial `f : R[X]` along a
+homomorphism of discrete valuation rings `R → R'` with
+`(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'` (ramification index one), bundled as an
+element of `integralClosure R' E'`. -/
+def liftedRoot (hf : f.IsEisensteinAt (maximalIdeal R))
+    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
+    (hα : aeval α (f.map (algebraMap R R')) = 0) : integralClosure R' E' :=
+  ⟨α, (mem_integralClosure_iff R' E').mpr
+    ((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα)⟩
+
+/-- The underlying element of `hf.liftedRoot hmax hα` in `E'` is `α`. -/
+@[simp]
+theorem coe_liftedRoot (hf : f.IsEisensteinAt (maximalIdeal R))
+    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
+    (hα : aeval α (f.map (algebraMap R R')) = 0) :
+    (hf.liftedRoot hmax hα : E') = α := by
+  rfl
+
+/-- `hf.liftedRoot hmax hα` is a root of `f` in `integralClosure R' E'`. -/
+theorem aeval_liftedRoot_eq_zero [Algebra R E'] [IsScalarTower R R' E']
+    (hf : f.IsEisensteinAt (maximalIdeal R))
+    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
+    (hα : aeval α (f.map (algebraMap R R')) = 0) :
+    aeval (hf.liftedRoot hmax hα) f = 0 :=
+  (aeval_map_algebraMap R' (hf.liftedRoot hmax hα) f).symm.trans
+    (Subtype.ext ((aeval_subalgebra_coe (f.map (algebraMap R R')) (integralClosure R' E')
+      (hf.liftedRoot hmax hα)).trans hα))
+
+end LiftedRoot
 
 section FieldBaseChange
 
@@ -327,7 +348,8 @@ variable {E' : Type*} [Field E'] [Algebra K' E'] [Algebra R' E'] [IsScalarTower 
   {f : R[X]} {α : E'}
 
 /-- If `E' = K'⟮α⟯` is generated over `K' = Frac R'` by a root `α` of `f.map (algebraMap R R')` for
-an Eisenstein polynomial `f : R[X]` along an unramified DVR homomorphism `R → R'`, then
+an Eisenstein polynomial `f : R[X]` along a DVR homomorphism `R → R'` with
+`(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'` (ramification index one), then
 `[E' : K'] = f.natDegree`. -/
 theorem finrank_eq_natDegree_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (maximalIdeal R))
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
@@ -337,35 +359,6 @@ theorem finrank_eq_natDegree_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (maxi
   have hinj := TauCeti.IsDiscreteValuationRing.algebraMap_injective_of_map_maximalIdeal_eq hmax
   exact (hf'.finrank_eq_natDegree hf'.isUnit_leadingCoeff hα hgen).trans
     (natDegree_map_eq_of_injective hinj f)
-
-/-- If `E' = K'⟮α⟯` is generated over `K' = Frac R'` by a root `α` of `f.map (algebraMap R R')`,
-then the integral closure of `R'` in `E'` is `R'[α]`. -/
-theorem integralClosure_eq_adjoin_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
-    integralClosure R' E' = Algebra.adjoin R' {α} :=
-  (hf.map_of_map_maximalIdeal_eq hmax).integralClosure_eq_adjoin hα hgen
-
-/-- In the situation of `integralClosure_eq_adjoin_of_map_maximalIdeal_eq`, the root `α` viewed in
-`integralClosure R' E'` generates `integralClosure R' E'` as an `R'`-algebra. -/
-theorem adjoin_singleton_eq_top_integralClosure_of_map_maximalIdeal_eq
-    (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
-    Algebra.adjoin R'
-      {(⟨α, (mem_integralClosure_iff R' E').mpr
-        ((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα)⟩ :
-        integralClosure R' E')} = ⊤ :=
-  (hf.map_of_map_maximalIdeal_eq hmax).adjoin_singleton_eq_top_integralClosure hα hgen
-
-/-- In the situation of `integralClosure_eq_adjoin_of_map_maximalIdeal_eq`,
-`integralClosure R' E'` is a discrete valuation ring. -/
-theorem isDiscreteValuationRing_integralClosure_of_map_maximalIdeal_eq
-    (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
-    IsDiscreteValuationRing (integralClosure R' E') :=
-  (hf.map_of_map_maximalIdeal_eq hmax).isDiscreteValuationRing_integralClosure hα hgen
 
 end Extension
 
@@ -403,63 +396,133 @@ private theorem natDegree_pos_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (max
   rw [← natDegree_map_eq_of_injective hinj f]
   exact (hf.map_of_map_maximalIdeal_eq hmax).natDegree_pos_of_aeval_eq_zero hα
 
-omit [IsFractionRing R' K'] in
-private theorem finiteDimensional_target_of_map_maximalIdeal_eq
-    (hf : f.IsEisensteinAt (maximalIdeal R))
+private theorem finrank_eq_finrank_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (maximalIdeal R))
+    (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
+    [Algebra.IsAlgebraic K E]
+    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
-    FiniteDimensional K' E' :=
-  (PowerBasis.ofAdjoinSimpleEqTop
-    (((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα).tower_top) hgen).finite
+    Module.finrank K E = Module.finrank K' E' ∧
+      FiniteDimensional K E ∧ FiniteDimensional K' E' := by
+  have hdeg : 0 < f.natDegree := hf.natDegree_pos_of_map_maximalIdeal_eq K' hmax hα
+  have hfinE : Module.finrank K E = f.natDegree :=
+    hf.finrank_eq_natDegree_of_adjoin_eq_top hf.isUnit_leadingCoeff K hx hadj
+  have hfinE' : Module.finrank K' E' = f.natDegree :=
+    hf.finrank_eq_natDegree_of_map_maximalIdeal_eq hmax hα hgen
+  exact ⟨hfinE.trans hfinE'.symm,
+    Module.finite_of_finrank_pos (hfinE.symm ▸ hdeg),
+    Module.finite_of_finrank_pos (hfinE'.symm ▸ hdeg)⟩
 
-private def liftedRoot (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) : integralClosure R' E' :=
-  ⟨α, (mem_integralClosure_iff R' E').mpr
-    ((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα)⟩
+private lemma withGaloisInstances (R R' K K' E E' : Type*)
+    [CommRing R] [CommRing R'] [Algebra R R']
+    [Field K] [Algebra R K] [IsFractionRing R K]
+    [Field K'] [Algebra R' K'] [IsFractionRing R' K']
+    [Field E] [Algebra R E] [Algebra K E] [IsScalarTower R K E]
+    [Field E'] [Algebra R' E'] [Algebra K' E'] [IsScalarTower R' K' E']
+    {P : Prop}
+    (h : [Algebra R E'] → [IsScalarTower R R' E'] →
+      [FaithfulSMul R (integralClosure R E)] →
+      [FaithfulSMul R' (integralClosure R' E')] → P) : P := by
+  let : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
+  have : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
+  have : FaithfulSMul R E := FaithfulSMul.trans R K E
+  have : FaithfulSMul R (integralClosure R E) :=
+    FaithfulSMul.tower_bot R (integralClosure R E) E
+  have : FaithfulSMul R' E' := FaithfulSMul.trans R' K' E'
+  have : FaithfulSMul R' (integralClosure R' E') :=
+    FaithfulSMul.tower_bot R' (integralClosure R' E') E'
+  exact h
 
-private theorem aeval_liftedRoot_eq_zero [Algebra R E'] [IsScalarTower R R' E']
-    (hf : f.IsEisensteinAt (maximalIdeal R))
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
+omit [IsDomain R'] [IsDiscreteValuationRing R'] in
+/-- Ring homomorphism `integralClosure R E →+* E'` sending `x ↦ α` along
+`R → R' → E'`, built without requiring an ambient `Algebra R E'` instance. -/
+private def targetHom (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
+    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
     (hα : aeval α (f.map (algebraMap R R')) = 0) :
-    aeval (hf.liftedRoot hmax hα) f = 0 :=
-  (aeval_map_algebraMap R' (hf.liftedRoot hmax hα) f).symm.trans
-    (Subtype.ext ((aeval_subalgebra_coe (f.map (algebraMap R R')) (integralClosure R' E')
-      (hf.liftedRoot hmax hα)).trans hα))
+    integralClosure R E →+* E' :=
+  haveI : FaithfulSMul R E := FaithfulSMul.trans R K E
+  haveI : FaithfulSMul R (integralClosure R E) :=
+    FaithfulSMul.tower_bot R (integralClosure R E) E
+  (AdjoinRoot.lift ((algebraMap R' E').comp (algebraMap R R')) α
+      (by rwa [← eval₂_map, ← aeval_def])).comp
+    (hf.adjoinRootAlgEquiv hf.isUnit_leadingCoeff hx hadj).symm.toRingHom
 
-private theorem aeval_baseChange_smul_minpoly [Algebra R E'] [IsScalarTower R R' E']
+omit [IsDomain R'] [IsDiscreteValuationRing R'] in
+private theorem targetHom_aeval (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
+    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
+    (hα : aeval α (f.map (algebraMap R R')) = 0) (p : R[X]) :
+    hf.targetHom K hx hadj hα (aeval x p) = aeval α (p.map (algebraMap R R')) := by
+  have : FaithfulSMul R E := FaithfulSMul.trans R K E
+  have : FaithfulSMul R (integralClosure R E) :=
+    FaithfulSMul.tower_bot R (integralClosure R E) E
+  dsimp only [targetHom]
+  rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
+    adjoinRootAlgEquiv_symm_apply_aeval, AdjoinRoot.lift_mk, ← eval₂_map, ← aeval_def]
+
+omit [IsDomain R'] [IsDiscreteValuationRing R'] in
+private theorem targetHom_apply_gen (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
+    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
+    (hα : aeval α (f.map (algebraMap R R')) = 0) :
+    hf.targetHom K hx hadj hα x = α := by
+  simpa using hf.targetHom_aeval K hx hadj hα X
+
+omit [IsDomain R'] [IsDiscreteValuationRing R'] in
+private theorem targetHom_aeval_any (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
+    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
+    (hα : aeval α (f.map (algebraMap R R')) = 0)
+    (b : integralClosure R E) (p : R[X]) :
+    hf.targetHom K hx hadj hα (aeval b p) =
+      aeval (hf.targetHom K hx hadj hα b) (p.map (algebraMap R R')) := by
+  have hcomp : (hf.targetHom K hx hadj hα).comp (algebraMap R (integralClosure R E)) =
+      (algebraMap R' E').comp (algebraMap R R') := by
+    ext r
+    simpa [RingHom.comp_apply, aeval_C] using hf.targetHom_aeval K hx hadj hα (C r)
+  rw [aeval_def, hom_eval₂, hcomp, ← eval₂_map, ← aeval_def]
+
+omit [IsDomain R'] [IsDiscreteValuationRing R'] in
+private theorem targetHom_eq_liftAlgHom [Algebra R E'] [IsScalarTower R R' E']
     [FaithfulSMul R (integralClosure R E)]
-    (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*) [Field K] [Algebra R K]
-    [Algebra K E] [IsScalarTower R K E]
+    (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
+    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
+    (hα : aeval α (f.map (algebraMap R R')) = 0) (b : integralClosure R E) :
+    hf.targetHom K hx hadj hα b =
+      hf.liftAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) b := by
+  have hb : b ∈ Algebra.adjoin R {x} := hadj ▸ Algebra.mem_top
+  rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hb
+  obtain ⟨p, rfl⟩ := hb
+  rw [hf.targetHom_aeval K hx hadj hα p, hf.liftAlgHom_aeval, aeval_map_algebraMap]
+
+private theorem aeval_targetHom_smul_minpoly (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
     (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (σ : E ≃ₐ[K] E) :
-    aeval (hf.baseChangeAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) (σ • x))
-      (minpoly K' α) = 0 := by
-  let jE : integralClosure R E →ₐ[R] E' :=
-    hf.baseChangeAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα)
+    aeval (hf.targetHom K hx hadj hα (σ • x)) (minpoly K' α) = 0 := by
+  let : Algebra R K' := ((algebraMap R' K').comp (algebraMap R R')).toAlgebra
+  have : IsScalarTower R R' K' := .of_algebraMap_eq' rfl
   have hact : aeval (σ • x) f = σ • aeval x f :=
     aeval_algHom_apply (MulSemiringAction.toAlgHom R (integralClosure R E) σ) x f
-  have hjf : aeval (jE (σ • x)) f = 0 := by
-    rw [aeval_algHom_apply jE (σ • x) f, hact, hx, smul_zero, map_zero]
-  have hjg : aeval (jE (σ • x)) ((f.map (algebraMap R R')).map (algebraMap R' K')) = 0 := by
-    rw [aeval_map_algebraMap K', aeval_map_algebraMap R']
-    exact hjf
-  have hf' := hf.map_of_map_maximalIdeal_eq hmax
-  have hinj := TauCeti.IsDiscreteValuationRing.algebraMap_injective_of_map_maximalIdeal_eq hmax
-  have hdeg' : 0 < (f.map (algebraMap R R')).natDegree := by
-    rw [natDegree_map_eq_of_injective hinj]
-    exact hf.natDegree_pos_of_map_maximalIdeal_eq K' hmax hα
-  have hg_irr : Irreducible ((f.map (algebraMap R R')).map (algebraMap R' K')) :=
-    hf'.irreducible_map_fractionRing hf'.isUnit_leadingCoeff K' hdeg'
-  have hα_int : IsIntegral K' α := (hf'.isIntegral_of_aeval_eq_zero hα).tower_top
-  have hdvd : minpoly K' α ∣ (f.map (algebraMap R R')).map (algebraMap R' K') := by
+  have hjf' : aeval (hf.targetHom K hx hadj hα (σ • x)) (f.map (algebraMap R R')) = 0 := by
+    rw [← hf.targetHom_aeval_any K hx hadj hα (σ • x) f, hact, hx, smul_zero, map_zero]
+  have hjg : aeval (hf.targetHom K hx hadj hα (σ • x)) (f.map (algebraMap R K')) = 0 := by
+    rwa [IsScalarTower.algebraMap_eq R R' K', ← Polynomial.map_map, aeval_map_algebraMap K']
+  have hg_irr : Irreducible (f.map (algebraMap R K')) :=
+    hf.irreducible_map_fractionRing_of_map_maximalIdeal_eq
+      (hf.natDegree_pos_of_map_maximalIdeal_eq K' hmax hα) hmax
+  have hα_int : IsIntegral K' α :=
+    ((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα).tower_top
+  have hdvd : minpoly K' α ∣ f.map (algebraMap R K') := by
     refine minpoly.dvd K' α ?_
-    rwa [aeval_map_algebraMap K']
+    rwa [IsScalarTower.algebraMap_eq R R' K', ← Polynomial.map_map, aeval_map_algebraMap K']
   exact aeval_eq_zero_of_dvd_aeval_eq_zero
     ((minpoly.irreducible hα_int).associated_of_dvd hg_irr hdvd).symm.dvd hjg
 
-/-- Given any `σ : E ≃ₐ[K] E`, the image of `σ • x` under `baseChangeAlgHom` defines a unique
+/-- Given any `σ : E ≃ₐ[K] E`, the image of `σ • x` under `targetHom` defines a unique
 `K'`-automorphism of `E'` via the power basis generated by `α`. -/
 private def galHomAux (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
@@ -467,47 +530,29 @@ private def galHomAux (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤)
     (σ : E ≃ₐ[K] E) : E' ≃ₐ[K'] E' :=
-  letI : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
-  haveI : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
-  haveI : FaithfulSMul R E := FaithfulSMul.trans R K E
-  haveI : FaithfulSMul R (integralClosure R E) :=
-    FaithfulSMul.tower_bot R (integralClosure R E) E
   let pb : PowerBasis K' E' :=
     PowerBasis.ofAdjoinSimpleEqTop
       (((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα).tower_top) hgen
   haveI : FiniteDimensional K' E' := pb.finite
-  let y : E' :=
-    hf.baseChangeAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) (σ • x)
+  let y : E' := hf.targetHom K hx hadj hα (σ • x)
   have hy : aeval y (minpoly K' pb.gen) = 0 := by
     rw [PowerBasis.ofAdjoinSimpleEqTop_gen]
-    exact hf.aeval_baseChange_smul_minpoly K hx hadj hmax hα σ
+    exact hf.aeval_targetHom_smul_minpoly K hx hadj hmax hα σ
   (pb.lift y hy).algEquivOfFinrankEq rfl
 
-private theorem galHomAux_apply_gen [Algebra R E'] [IsScalarTower R R' E']
-    [FaithfulSMul R (integralClosure R E)]
-    (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
+private theorem galHomAux_apply_gen (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
     (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤)
     (σ : E ≃ₐ[K] E) :
-    hf.galHomAux K hx hadj hmax hα hgen σ α =
-      hf.baseChangeAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) (σ • x) := by
-  let instR : Algebra R E' := inferInstance
-  have hmap : (algebraMap R' E').comp (algebraMap R R') = algebraMap R E' :=
-    (IsScalarTower.algebraMap_eq R R' E').symm
-  let inst₀ : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
+    hf.galHomAux K hx hadj hmax hα hgen σ α = hf.targetHom K hx hadj hα (σ • x) := by
   let pb : PowerBasis K' E' :=
     PowerBasis.ofAdjoinSimpleEqTop
       (((hf.map_of_map_maximalIdeal_eq hmax).isIntegral_of_aeval_eq_zero hα).tower_top) hgen
   have : FiniteDimensional K' E' := pb.finite
-  have hlift (y : E') (hy : aeval y (minpoly K' pb.gen) = 0) : pb.lift y hy α = y := by
-    have h := pb.lift_gen y hy
-    rwa [PowerBasis.ofAdjoinSimpleEqTop_gen] at h
-  rw [galHomAux, AlgHom.algEquivOfFinrankEq_apply, hlift]
-  exact hf.baseChangeAlgHom_congr_algebra inst₀ instR
-    (by rw [RingHom.algebraMap_toAlgebra]; exact hmap)
-    hx hadj _ _ (σ • x)
+  rw [galHomAux, AlgHom.algEquivOfFinrankEq_apply]
+  simpa only [pb, PowerBasis.ofAdjoinSimpleEqTop_gen] using pb.lift_gen _ _
 
 private theorem galHomAux_mul (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
@@ -518,13 +563,6 @@ private theorem galHomAux_mul (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type
     hf.galHomAux K hx hadj hmax hα hgen (σ * τ) =
       hf.galHomAux K hx hadj hmax hα hgen σ *
         hf.galHomAux K hx hadj hmax hα hgen τ := by
-  let : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
-  have : FaithfulSMul R E := FaithfulSMul.trans R K E
-  have : FaithfulSMul R (integralClosure R E) :=
-    FaithfulSMul.tower_bot R (integralClosure R E) E
-  have hαR : aeval α f = 0 := (aeval_map_algebraMap R' α f).symm.trans hα
-  let jE : integralClosure R E →ₐ[R] E' := hf.baseChangeAlgHom hx hadj hαR
   refine TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top hgen fun y hy ↦ ?_
   rw [Set.mem_singleton_iff.mp hy, AlgEquiv.mul_apply,
     hf.galHomAux_apply_gen K hx hadj hmax hα hgen,
@@ -533,15 +571,14 @@ private theorem galHomAux_mul (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type
   rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hτ
   obtain ⟨p, hp⟩ := hτ
   let q : K'[X] := (p.map (algebraMap R R')).map (algebraMap R' K')
-  have hq_eval (z : E') : aeval z q = aeval z p := by
-    rw [aeval_map_algebraMap K', aeval_map_algebraMap R']
-  have hj_τ : jE (τ • x) = aeval α q := by
-    rw [hq_eval, ← hp]
-    exact hf.baseChangeAlgHom_aeval hx hadj hαR p
-  have hj_mul : jE ((σ * τ) • x) = aeval (jE (σ • x)) q := by
+  have hj_τ : hf.targetHom K hx hadj hα (τ • x) = aeval α q := by
+    rw [aeval_map_algebraMap K', ← hp, hf.targetHom_aeval K hx hadj hα p]
+  have hj_mul : hf.targetHom K hx hadj hα ((σ * τ) • x) =
+      aeval (hf.targetHom K hx hadj hα (σ • x)) q := by
     have hact : σ • aeval x p = aeval (σ • x) p :=
       (aeval_algHom_apply (MulSemiringAction.toAlgHom R (integralClosure R E) σ) x p).symm
-    rw [mul_smul, ← hp, hact, ← aeval_algHom_apply jE (σ • x) p, ← hq_eval]
+    rw [mul_smul, ← hp, hact, hf.targetHom_aeval_any K hx hadj hα (σ • x) p,
+      aeval_map_algebraMap K']
   rw [hj_mul, hj_τ, ← aeval_algHom_apply (hf.galHomAux K hx hadj hmax hα hgen σ) α q,
     hf.galHomAux_apply_gen K hx hadj hmax hα hgen σ]
 
@@ -554,14 +591,9 @@ def galHom (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     (E ≃ₐ[K] E) →* (E' ≃ₐ[K'] E') where
   toFun := hf.galHomAux K hx hadj hmax hα hgen
   map_one' := by
-    let : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
-    have : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
-    have : FaithfulSMul R E := FaithfulSMul.trans R K E
-    have : FaithfulSMul R (integralClosure R E) :=
-      FaithfulSMul.tower_bot R (integralClosure R E) E
     refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen fun y hy ↦ ?_
     rw [Set.mem_singleton_iff.mp hy, hf.galHomAux_apply_gen K hx hadj hmax hα hgen,
-      one_smul, hf.baseChangeAlgHom_apply_gen]
+      one_smul, hf.targetHom_apply_gen]
   map_mul' := hf.galHomAux_mul K hx hadj hmax hα hgen
 
 /-- Action of `galHom σ` on the primitive element `α : E'`. -/
@@ -573,40 +605,36 @@ theorem galHom_apply_gen [Algebra R E'] [IsScalarTower R R' E']
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) (σ : E ≃ₐ[K] E) :
     hf.galHom K hx hadj hmax hα hgen σ α =
-      hf.baseChangeAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) (σ • x) :=
-  hf.galHomAux_apply_gen K hx hadj hmax hα hgen σ
+      hf.liftAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) (σ • x) :=
+  (hf.galHomAux_apply_gen K hx hadj hmax hα hgen σ).trans
+    (hf.targetHom_eq_liftAlgHom K hx hadj hα (σ • x))
 
 /-- `galHom` intertwines the actions on the Eisenstein generators of the integral closures via
-`baseChangeAlgHom`. -/
+`liftAlgHom`. -/
 theorem galHom_smul_gen [Algebra R E'] [IsScalarTower R R' E']
     [FaithfulSMul R (integralClosure R E)]
     (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
     (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤)
-    (hα_mem : α ∈ integralClosure R' E') (σ : E ≃ₐ[K] E) :
-    (hf.galHom K hx hadj hmax hα hgen σ) • (⟨α, hα_mem⟩ : integralClosure R' E') =
-      hf.baseChangeAlgHom hx hadj
-        ((aeval_map_algebraMap R' (⟨α, hα_mem⟩ : integralClosure R' E') f).symm.trans
-          (Subtype.ext ((aeval_subalgebra_coe (f.map (algebraMap R R')) (integralClosure R' E')
-            ⟨α, hα_mem⟩).trans hα)))
-        (σ • x) := by
+    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) (σ : E ≃ₐ[K] E) :
+    (hf.galHom K hx hadj hmax hα hgen σ) • hf.liftedRoot hmax hα =
+      hf.liftAlgHom hx hadj (hf.aeval_liftedRoot_eq_zero hmax hα) (σ • x) := by
   apply Subtype.ext
-  rw [integralClosure.coe_smul, AlgEquiv.smul_def,
+  rw [integralClosure.coe_smul, AlgEquiv.smul_def, coe_liftedRoot,
     hf.galHom_apply_gen K hx hadj hmax hα hgen σ]
   have hmem : σ • x ∈ Algebra.adjoin R {x} := hadj ▸ Algebra.mem_top
   rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hmem
   obtain ⟨p, hp⟩ := hmem
-  rw [← hp, hf.baseChangeAlgHom_aeval, hf.baseChangeAlgHom_aeval,
-    ← aeval_map_algebraMap R' (⟨α, hα_mem⟩ : integralClosure R' E') p,
+  rw [← hp, hf.liftAlgHom_aeval, hf.liftAlgHom_aeval,
+    ← aeval_map_algebraMap R' (hf.liftedRoot hmax hα) p,
     aeval_subalgebra_coe (p.map (algebraMap R R')) (integralClosure R' E'),
-    aeval_map_algebraMap R' α p]
+    coe_liftedRoot, aeval_map_algebraMap R' α p]
 
 /-- `galHom` preserves Serre's lower index on the integral closures.
 Here `IsDiscreteValuationRing` holds for both integral closures by
 `Polynomial.IsEisensteinAt.isDiscreteValuationRing_of_adjoin_eq_top` and
-`Polynomial.IsEisensteinAt.isDiscreteValuationRing_integralClosure_of_map_maximalIdeal_eq`. -/
+`(hf.map_of_map_maximalIdeal_eq hmax).isDiscreteValuationRing_integralClosure`. -/
 theorem lowerIndex_galHom (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
     [IsDiscreteValuationRing (integralClosure R E)]
@@ -617,17 +645,11 @@ theorem lowerIndex_galHom (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     TauCeti.IsLocalRing.lowerIndex (integralClosure R' E')
         (hf.galHom K hx hadj hmax hα hgen σ) =
       TauCeti.IsLocalRing.lowerIndex (integralClosure R E) σ := by
-  let : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
-  have : FaithfulSMul R E := FaithfulSMul.trans R K E
-  have : FaithfulSMul R (integralClosure R E) :=
-    FaithfulSMul.tower_bot R (integralClosure R E) E
-  have : FaithfulSMul R' E' := FaithfulSMul.trans R' K' E'
-  have : FaithfulSMul R' (integralClosure R' E') :=
-    FaithfulSMul.tower_bot R' (integralClosure R' E') E'
+  refine withGaloisInstances R R' K K' E E' ?_
+  intro _ _ _ _
   exact hf.lowerIndex_eq hx hadj hmax (hf.aeval_liftedRoot_eq_zero hmax hα)
-    (hf.adjoin_singleton_eq_top_integralClosure_of_map_maximalIdeal_eq hmax hα hgen)
-    (hf.galHom_smul_gen K hx hadj hmax hα hgen (hf.liftedRoot hmax hα).2 σ)
+    ((hf.map_of_map_maximalIdeal_eq hmax).adjoin_singleton_eq_top_integralClosure hα hgen)
+    (hf.galHom_smul_gen K hx hadj hmax hα hgen σ)
 
 /-- `galHom` is injective whenever `E / K` is algebraic. -/
 theorem galHom_injective (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
@@ -637,30 +659,24 @@ theorem galHom_injective (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
     Function.Injective (hf.galHom K hx hadj hmax hα hgen) := by
-  let : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
-  have : FaithfulSMul R E := FaithfulSMul.trans R K E
-  have : FaithfulSMul R (integralClosure R E) :=
-    FaithfulSMul.tower_bot R (integralClosure R E) E
-  have : FaithfulSMul R' E' := FaithfulSMul.trans R' K' E'
-  have : FaithfulSMul R' (integralClosure R' E') :=
-    FaithfulSMul.tower_bot R' (integralClosure R' E') E'
+  refine withGaloisInstances R R' K K' E E' ?_
+  intro _ _ _ _
   have hx' := hf.aeval_liftedRoot_eq_zero hmax hα
   have hadj' : Algebra.adjoin R' {hf.liftedRoot hmax hα} = ⊤ :=
-    hf.adjoin_singleton_eq_top_integralClosure_of_map_maximalIdeal_eq hmax hα hgen
+    (hf.map_of_map_maximalIdeal_eq hmax).adjoin_singleton_eq_top_integralClosure hα hgen
   refine (injective_iff_map_eq_one _).mpr fun σ hσ ↦ ?_
-  have hsmul := hf.galHom_smul_gen K hx hadj hmax hα hgen (hf.liftedRoot hmax hα).2 σ
+  have hsmul := hf.galHom_smul_gen K hx hadj hmax hα hgen σ
   rw [hσ, one_smul] at hsmul
-  have hj_eq : hf.baseChangeAlgHom hx hadj hx' (σ • x) =
-      hf.baseChangeAlgHom hx hadj hx' x :=
-    hsmul.symm.trans (hf.baseChangeAlgHom_apply_gen hx hadj hx').symm
+  have hj_eq : hf.liftAlgHom hx hadj hx' (σ • x) = hf.liftAlgHom hx hadj hx' x :=
+    hsmul.symm.trans (hf.liftAlgHom_apply_gen hx hadj hx').symm
   exact TauCeti.IntermediateField.algEquiv_eq_one_of_smul_eq_self (K := K) hadj
-    (hf.baseChangeAlgHom_injective hx hadj hmax hx' hadj' hj_eq)
+    (hf.liftAlgHom_injective hx hadj hmax hx' hadj' hj_eq)
 
 /-- **Galois preservation under Eisenstein base change.** If `E / K` is Galois with
 `integralClosure R E` generated over `R` by a root `x` of an Eisenstein polynomial `f`, and
-`E' = K'⟮α⟯` is generated over `K'` by a root `α` of `f.map (algebraMap R R')` along an unramified
-map of discrete valuation rings `R → R'`, then `E' / K'` is Galois. -/
+`E' = K'⟮α⟯` is generated over `K'` by a root `α` of `f.map (algebraMap R R')` along a DVR
+homomorphism `R → R'` with `(maximalIdeal R).map (algebraMap R R') = maximalIdeal R'` (ramification
+index one), then `E' / K'` is Galois. -/
 theorem isGalois_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
     [IsGalois K E]
@@ -668,19 +684,12 @@ theorem isGalois_of_map_maximalIdeal_eq (hf : f.IsEisensteinAt (maximalIdeal R))
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
     IsGalois K' E' := by
-  have hdeg : 0 < f.natDegree := hf.natDegree_pos_of_map_maximalIdeal_eq K' hmax hα
-  have hfinE : Module.finrank K E = f.natDegree :=
-    hf.finrank_eq_natDegree_of_adjoin_eq_top hf.isUnit_leadingCoeff K hx hadj
-  have hfinE' : Module.finrank K' E' = f.natDegree :=
-    hf.finrank_eq_natDegree_of_map_maximalIdeal_eq hmax hα hgen
-  have : FiniteDimensional K E := Module.finite_of_finrank_pos (hfinE.symm ▸ hdeg)
-  have : FiniteDimensional K' E' :=
-    hf.finiteDimensional_target_of_map_maximalIdeal_eq hmax hα hgen
+  obtain ⟨hfin, _, _⟩ := hf.finrank_eq_finrank_of_map_maximalIdeal_eq K hx hadj hmax hα hgen
   have hcard_le : Nat.card (E' ≃ₐ[K'] E') ≤ Module.finrank K' E' := by
     rw [Nat.card_eq_fintype_card]
     exact AlgEquiv.card_le
   have hcard_ge : Module.finrank K' E' ≤ Nat.card (E' ≃ₐ[K'] E') := by
-    rw [hfinE', ← hfinE, ← IsGalois.card_aut_eq_finrank K E]
+    rw [← hfin, ← IsGalois.card_aut_eq_finrank K E]
     exact Nat.card_le_card_of_injective _ (hf.galHom_injective K hx hadj hmax hα hgen)
   exact IsGalois.of_card_aut_eq_finrank K' E' (le_antisymm hcard_le hcard_ge)
 
@@ -693,19 +702,14 @@ def galMulEquiv (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
     (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
     (E ≃ₐ[K] E) ≃* (E' ≃ₐ[K'] E') :=
-  have hdeg : 0 < f.natDegree := hf.natDegree_pos_of_map_maximalIdeal_eq K' hmax hα
-  have hfinE : Module.finrank K E = f.natDegree :=
-    hf.finrank_eq_natDegree_of_adjoin_eq_top hf.isUnit_leadingCoeff K hx hadj
-  have hfinE' : Module.finrank K' E' = f.natDegree :=
-    hf.finrank_eq_natDegree_of_map_maximalIdeal_eq hmax hα hgen
-  have : FiniteDimensional K E := Module.finite_of_finrank_pos (hfinE.symm ▸ hdeg)
-  have : FiniteDimensional K' E' :=
-    hf.finiteDimensional_target_of_map_maximalIdeal_eq hmax hα hgen
+  have hfin := hf.finrank_eq_finrank_of_map_maximalIdeal_eq K hx hadj hmax hα hgen
+  have : FiniteDimensional K E := hfin.2.1
+  have : FiniteDimensional K' E' := hfin.2.2
   have : IsGalois K' E' := hf.isGalois_of_map_maximalIdeal_eq K hx hadj hmax hα hgen
   have hinj := hf.galHom_injective K hx hadj hmax hα hgen
   have hcard : Fintype.card (E ≃ₐ[K] E) = Fintype.card (E' ≃ₐ[K'] E') := by
     rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card,
-      IsGalois.card_aut_eq_finrank K E, IsGalois.card_aut_eq_finrank K' E', hfinE, hfinE']
+      IsGalois.card_aut_eq_finrank K E, IsGalois.card_aut_eq_finrank K' E', hfin.1]
   MulEquiv.ofBijective (hf.galHom K hx hadj hmax hα hgen)
     ((Fintype.bijective_iff_injective_and_card _).mpr ⟨hinj, hcard⟩)
 
@@ -720,69 +724,6 @@ theorem galMulEquiv_apply (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     hf.galMulEquiv K hx hadj hmax hα hgen σ = hf.galHom K hx hadj hmax hα hgen σ :=
   MulEquiv.ofBijective_apply _ _ σ
 
-/-- The underlying `MonoidHom` of `galMulEquiv` is `galHom`. -/
-theorem galMulEquiv_toMonoidHom (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
-    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
-    [IsGalois K E]
-    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) :
-    (hf.galMulEquiv K hx hadj hmax hα hgen).toMonoidHom =
-      hf.galHom K hx hadj hmax hα hgen :=
-  MonoidHom.ext (hf.galMulEquiv_apply K hx hadj hmax hα hgen)
-
-/-- `galMulEquiv` intertwines the Galois actions on the Eisenstein generators via
-`baseChangeAlgHom`. -/
-theorem galMulEquiv_smul_gen [Algebra R E'] [IsScalarTower R R' E']
-    [FaithfulSMul R (integralClosure R E)]
-    (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
-    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
-    [IsGalois K E]
-    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤)
-    (hα_mem : α ∈ integralClosure R' E') (σ : E ≃ₐ[K] E) :
-    (hf.galMulEquiv K hx hadj hmax hα hgen σ) • (⟨α, hα_mem⟩ : integralClosure R' E') =
-      hf.baseChangeAlgHom hx hadj
-        ((aeval_map_algebraMap R' (⟨α, hα_mem⟩ : integralClosure R' E') f).symm.trans
-          (Subtype.ext ((aeval_subalgebra_coe (f.map (algebraMap R R')) (integralClosure R' E')
-            ⟨α, hα_mem⟩).trans hα)))
-        (σ • x) := by
-  rw [hf.galMulEquiv_apply]
-  exact hf.galHom_smul_gen K hx hadj hmax hα hgen hα_mem σ
-
-/-- Action of `galMulEquiv σ` on the primitive element `α : E'`. -/
-theorem galMulEquiv_apply_gen [Algebra R E'] [IsScalarTower R R' E']
-    [FaithfulSMul R (integralClosure R E)]
-    (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
-    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
-    [IsGalois K E]
-    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) (σ : E ≃ₐ[K] E) :
-    hf.galMulEquiv K hx hadj hmax hα hgen σ α =
-      hf.baseChangeAlgHom hx hadj ((aeval_map_algebraMap R' α f).symm.trans hα) (σ • x) := by
-  rw [hf.galMulEquiv_apply]
-  exact hf.galHom_apply_gen K hx hadj hmax hα hgen σ
-
-/-- `galMulEquiv` preserves Serre's lower index on the integral closures.
-Here `IsDiscreteValuationRing` holds for both integral closures by
-`Polynomial.IsEisensteinAt.isDiscreteValuationRing_of_adjoin_eq_top` and
-`Polynomial.IsEisensteinAt.isDiscreteValuationRing_integralClosure_of_map_maximalIdeal_eq`. -/
-theorem lowerIndex_galMulEquiv (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
-    [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
-    [IsGalois K E]
-    [IsDiscreteValuationRing (integralClosure R E)]
-    [IsDiscreteValuationRing (integralClosure R' E')]
-    (hx : aeval x f = 0) (hadj : Algebra.adjoin R {x} = ⊤)
-    (hmax : (maximalIdeal R).map (algebraMap R R') = maximalIdeal R')
-    (hα : aeval α (f.map (algebraMap R R')) = 0) (hgen : K'⟮α⟯ = ⊤) (σ : E ≃ₐ[K] E) :
-    TauCeti.IsLocalRing.lowerIndex (integralClosure R' E')
-        (hf.galMulEquiv K hx hadj hmax hα hgen σ) =
-      TauCeti.IsLocalRing.lowerIndex (integralClosure R E) σ := by
-  rw [hf.galMulEquiv_apply]
-  exact hf.lowerIndex_galHom K hx hadj hmax hα hgen σ
-
 /-- `galMulEquiv` maps the `i`-th lower ramification group of `E / K` onto that of `E' / K'`. -/
 theorem map_ramificationGroup_galMulEquiv (hf : f.IsEisensteinAt (maximalIdeal R)) (K : Type*)
     [Field K] [Algebra R K] [IsFractionRing R K] [Algebra K E] [IsScalarTower R K E]
@@ -794,18 +735,14 @@ theorem map_ramificationGroup_galMulEquiv (hf : f.IsEisensteinAt (maximalIdeal R
     (TauCeti.IsLocalRing.ramificationGroup (E ≃ₐ[K] E) (integralClosure R E) i).map
         (hf.galMulEquiv K hx hadj hmax hα hgen).toMonoidHom =
       TauCeti.IsLocalRing.ramificationGroup (E' ≃ₐ[K'] E') (integralClosure R' E') i := by
-  let : Algebra R E' := ((algebraMap R' E').comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' E' := .of_algebraMap_eq' rfl
-  have : FaithfulSMul R E := FaithfulSMul.trans R K E
-  have : FaithfulSMul R (integralClosure R E) :=
-    FaithfulSMul.tower_bot R (integralClosure R E) E
-  have : FaithfulSMul R' E' := FaithfulSMul.trans R' K' E'
-  have : FaithfulSMul R' (integralClosure R' E') :=
-    FaithfulSMul.tower_bot R' (integralClosure R' E') E'
+  refine withGaloisInstances R R' K K' E E' ?_
+  intro _ _ _ _
   let e := hf.galMulEquiv K hx hadj hmax hα hgen
   rw [← hf.comap_ramificationGroup hx hadj hmax (hf.aeval_liftedRoot_eq_zero hmax hα)
-    (hf.adjoin_singleton_eq_top_integralClosure_of_map_maximalIdeal_eq hmax hα hgen) e.toMonoidHom
-    (hf.galMulEquiv_smul_gen K hx hadj hmax hα hgen (hf.liftedRoot hmax hα).2) i]
+    ((hf.map_of_map_maximalIdeal_eq hmax).adjoin_singleton_eq_top_integralClosure hα hgen)
+    e.toMonoidHom
+    (fun σ ↦ by simpa only [e, MulEquiv.coe_toMonoidHom, galMulEquiv_apply] using
+      hf.galHom_smul_gen K hx hadj hmax hα hgen σ) i]
   exact Subgroup.map_comap_eq_self_of_surjective e.surjective _
 
 /-- Real-indexed counterpart of `map_ramificationGroup_galMulEquiv`. -/

@@ -69,8 +69,6 @@ of `AdjoinRoot g`.
   is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
   The two modules agree definitionally, so this connects cyclic module structure theorems with
   `AdjoinRoot` directly.
-* `TauCeti.AdjoinRoot.aeval_root_map_eq_zero`: for an `R`-algebra `S` and `g : R[X]`, the canonical
-  root of `g.map (algebraMap R S)` in `AdjoinRoot (g.map (algebraMap R S))` evaluates `g` to `0`.
 
 Stated over arbitrary commutative rings.
 
@@ -379,17 +377,5 @@ theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) 
       quotientSpanEquivAdjoinRoot_mk, quotientSpanEquivAdjoinRoot_mk, map_mul]
 
 end Polynomial
-
-namespace TauCeti.AdjoinRoot
-
-/-- For an `R`-algebra `S` and `g : R[X]`, the canonical root of `g.map (algebraMap R S)` in
-`AdjoinRoot (g.map (algebraMap R S))` evaluates `g` to `0`. -/
-@[simp]
-theorem aeval_root_map_eq_zero {R S : Type*} [CommSemiring R] [CommRing S] [Algebra R S]
-    (g : R[X]) :
-    aeval (_root_.AdjoinRoot.root (g.map (algebraMap R S))) g = 0 := by
-  rw [← aeval_map_algebraMap S, _root_.AdjoinRoot.aeval_eq, _root_.AdjoinRoot.mk_self]
-
-end TauCeti.AdjoinRoot
 
 end
