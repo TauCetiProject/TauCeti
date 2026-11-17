@@ -731,6 +731,7 @@ theorem mapSemilinear_def (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
     p.mapSemilinear g = ofSegments 𝕜' (p.segments.map g) := (rfl)
 
 /-- A semilinear image along a monotone ring hom can be computed on any segment presentation. -/
+@[simp]
 theorem mapSemilinear_ofSegments (l : List V) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
     (ofSegments 𝕜 l).mapSemilinear g = ofSegments 𝕜' (l.map g) := by
   simp only [mapSemilinear, segments_ofSegments, ofSegments_map_normalize_semilinear g hσ]
@@ -745,6 +746,7 @@ theorem mapSemilinear_straight (v : V) (g : V →ₛₗ[σ] W) :
   by_cases hv : v = 0 <;> simp [mapSemilinear, straight_def, normalize, consMerge, hv]
 
 /-- Semilinear images along a monotone ring homomorphism preserve concatenation. -/
+@[simp]
 theorem mapSemilinear_mul (p q : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) (hσ : Monotone σ) :
     (p * q).mapSemilinear g = p.mapSemilinear g * q.mapSemilinear g := by
   simp [mapSemilinear, ofSegments_map_normalize_semilinear g hσ, List.map_append]
@@ -761,6 +763,7 @@ theorem mapSemilinear_reverse (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) :
     Function.comp_def]
 
 /-- Composition of semilinear images along monotone ring homomorphisms. -/
+@[simp]
 theorem mapSemilinear_mapSemilinear {𝕜'' U : Type*} [Field 𝕜''] [PartialOrder 𝕜'']
     [IsStrictOrderedRing 𝕜''] [AddCommGroup U] [Module 𝕜'' U] {τ : 𝕜' →+* 𝕜''} {ρ : 𝕜 →+* 𝕜''}
     [RingHomCompTriple σ τ ρ] (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) (h : W →ₛₗ[τ] U)
