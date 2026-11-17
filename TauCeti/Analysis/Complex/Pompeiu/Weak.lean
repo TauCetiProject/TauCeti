@@ -147,8 +147,7 @@ theorem integral_cauchyTransform_apply_conjWirtingerDeriv [CompleteSpace V] [Com
   have hg : Continuous g := hψ.continuous_conjWirtingerDeriv_apply 1
   have hgK (w : ℂ) (hw : w ∉ tsupport ψ) : g w = 0 := by
     simp [hg_def, conjWirtingerDeriv_of_notMem_tsupport hw]
-  obtain ⟨C, hC⟩ := hg.bounded_above_of_compact_support
-    (hc.mono' fun w hw ↦ by_contra fun h ↦ hw (hgK w h))
+  obtain ⟨C, hC⟩ := hg.bounded_above_of_compact_support (hc.conjWirtingerDeriv_apply 1)
   set K := tsupport ψ
   have hK : volume K ≠ ⊤ := hc.isCompact.measure_lt_top.ne
   have hP := integrable_prod_sub_inv_smul hf hK

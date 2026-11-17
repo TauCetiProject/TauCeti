@@ -137,11 +137,9 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
   have hdbar : Continuous fun z ↦ conjWirtingerDeriv v z 1 :=
     (hv.of_le (by simp)).continuous_conjWirtingerDeriv_apply 1
   -- Off `U`, the map `v` vanishes near the point, and so does `\bar∂ v`.
-  have hsupp : (fun z ↦ conjWirtingerDeriv v z 1).support ⊆ U := by
-    intro z hz
-    by_contra hzU
-    have hzv : z ∉ tsupport v := fun h ↦ hzU (hχU (tsupport_smul_subset_left χ u h))
-    exact hz (by simp [conjWirtingerDeriv_of_notMem_tsupport hzv])
+  have hsupp : (fun z ↦ conjWirtingerDeriv v z 1).support ⊆ U := fun _ hz ↦
+    hχU (tsupport_smul_subset_left χ u
+      (tsupport_conjWirtingerDeriv_apply_subset v 1 (subset_tsupport _ hz)))
   rw [← eLpNorm_restrict_eq_of_support_subset hdbar.aestronglyMeasurable hsupp]
   have hpt : ∀ᵐ z ∂(volume.restrict U), ‖conjWirtingerDeriv v z 1‖ ≤
       ‖g z‖ + δ * ‖fderiv ℝ v z‖ + (δ * L + M + L : ℝ≥0) * ‖u z‖ := by
