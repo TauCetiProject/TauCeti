@@ -26,6 +26,10 @@ fixed-family cohomology maps. The specialization to small systems of open covers
 
 ## References
 
+* The formal construction follows the ordinary Čech colimit API in
+  `TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Colimit`, especially
+  `TauCeti.CategoryTheory.cechCohomologyDiagram`, `TauCeti.CategoryTheory.cechCohomology`,
+  and `TauCeti.CategoryTheory.cechCohomologyDesc`, adapted here to total Čech cohomology.
 * The Stacks Project, Cohomology of Sheaves, §20.25, especially equation (20.25.0.2),
   for refinement independence, and §20.15 for the cover-colimit construction.
 -/
