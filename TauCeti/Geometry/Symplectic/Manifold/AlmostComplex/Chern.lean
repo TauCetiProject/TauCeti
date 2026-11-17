@@ -26,7 +26,7 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   `K (J v) = v` has `K v = -J v`, and `σ(v, K v) = -σ(v, J v)` cannot be positive together with
   `σ(v, J v)` unless `v = 0`. So the complex-linear part `v ↦ (v - K (J v)) / 2` of the identity is
   an isomorphism of complex vector bundles `(TM, J) ≃ (TM, K)`
-  (`TauCeti.Bundle.ContinuousComplexStructure.linearPartEquiv`), and the clutching numbers of
+  (`TauCeti.Bundle.ContinuousComplexStructure.complexLinearPartEquiv`), and the clutching numbers of
   `(TM, J)` and `(TM, K)` agree (`TauCeti.SmoothTwoForm.Tames.clutchingNumberHom_eq`), for any
   complex model fibres.
 * **The first Chern number of `σ`.** On a Hausdorff σ-compact manifold every fiberwise
