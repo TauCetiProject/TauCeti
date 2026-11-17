@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Center
 public import TauCeti.Topology.Algebra.Group.Goursat
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
 /-!
 # Diagonal overgroups of the general linear group: algebraic and Goursat structure
@@ -114,8 +116,14 @@ theorem determinantEqual_eq_diagonalExt_ker_det :
 theorem diagonal_le_scalarDiagonal : diagonal ι R ≤ scalarDiagonal ι R :=
   fun _ hp => mem_scalarDiagonal_iff.mpr ⟨1, by simp [mem_diagonal_iff.mp hp]⟩
 
+theorem graph_id_le_scalarDiagonal : (MonoidHom.id (GL ι R)).graph ≤ scalarDiagonal ι R :=
+  diagonal_eq_graph_id (ι := ι) (R := R) ▸ diagonal_le_scalarDiagonal
+
 theorem diagonal_le_determinantEqual : diagonal ι R ≤ determinantEqual ι R :=
   fun _ hp => mem_determinantEqual_iff.mpr (congrArg _ (mem_diagonal_iff.mp hp))
+
+theorem graph_id_le_determinantEqual : (MonoidHom.id (GL ι R)).graph ≤ determinantEqual ι R :=
+  diagonal_eq_graph_id (ι := ι) (R := R) ▸ diagonal_le_determinantEqual
 
 @[simp] theorem goursatFst_diagonal : (diagonal ι R).goursatFst = ⊥ := by
   rw [diagonal_eq_graph_id, Subgroup.goursatFst_graph_id]
@@ -138,14 +146,19 @@ instance instNormalDiagonalSubgroupOfScalarDiagonal :
     ((diagonal ι R).subgroupOf (scalarDiagonal ι R)).Normal := by
   rw [Subgroup.normal_subgroupOf_iff_le_normalizer diagonal_le_scalarDiagonal, normalizer_diagonal]
 
-theorem scalarDiagonal_ne_top [Nontrivial ι] [Nontrivial R] : scalarDiagonal ι R ≠ ⊤ := by
+theorem not_determinantEqual_le_scalarDiagonal [Nontrivial ι] [Nontrivial R] :
+    ¬ (determinantEqual ι R ≤ scalarDiagonal ι R) := by
   obtain ⟨i, j, hij⟩ := exists_pair_ne ι
-  intro htop
-  obtain ⟨u, hu⟩ := mem_scalarDiagonal_iff.mp
-    (htop ▸ Subgroup.mem_top (SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij 1), 1))
+  intro hle
+  obtain ⟨u, hu⟩ := mem_scalarDiagonal_iff.mp (hle ((mem_determinantEqual_iff
+    (p := (SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij (1 : R)), 1))).mpr
+    (by simp)))
   simpa [SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.transvection_coe,
     GeneralLinearGroup.coe_scalar, hij] using
     congrArg (fun M : Matrix ι ι R => M i j) (congrArg Units.val hu)
+
+theorem scalarDiagonal_ne_top [Nontrivial ι] [Nontrivial R] : scalarDiagonal ι R ≠ ⊤ :=
+  fun htop => not_determinantEqual_le_scalarDiagonal (htop ▸ le_top)
 
 /-- **The diagonal subgroup is not normal in `GL ι R × GL ι R`** when `|ι| ≥ 2` and `R` is
 nontrivial. -/
@@ -163,37 +176,11 @@ theorem not_normal_diagonal [Nontrivial ι] [Nontrivial R] : ¬ (diagonal ι R).
 @[simp] theorem ker_scalarDiagonalMap_of_isEmpty [IsEmpty ι] : (scalarDiagonalMap ι R).ker = ⊤ :=
   eq_top_iff.mpr fun _ _ => Subsingleton.elim _ _
 
-private theorem apply_mul_inv_of_mem_center (i₀ : ι) {g : GL ι R}
-    (hg : g ∈ Subgroup.center (GL ι R)) :
-    (g : Matrix ι ι R) i₀ i₀ * ((g⁻¹ : GL ι R) : Matrix ι ι R) i₀ i₀ = 1 := by
-  obtain ⟨u, rfl⟩ := GeneralLinearGroup.center_eq_range_scalar.le hg
-  simp [← map_inv, GeneralLinearGroup.coe_scalar]
-
-private def unitOfCenter (i₀ : ι) (z : Subgroup.center (GL ι R)) : Rˣ where
-  val := (z.1 : Matrix ι ι R) i₀ i₀
-  inv := ((z.1⁻¹ : GL ι R) : Matrix ι ι R) i₀ i₀
-  val_inv := apply_mul_inv_of_mem_center i₀ z.2
-  inv_val := by rw [mul_comm]; exact apply_mul_inv_of_mem_center i₀ z.2
-
-private theorem unitOfCenter_scalar (i₀ : ι) (u : Rˣ) :
-    unitOfCenter i₀ ⟨GeneralLinearGroup.scalar ι u,
-      GeneralLinearGroup.center_eq_range_scalar.ge ⟨u, rfl⟩⟩ = u :=
-  Units.ext (by simp [unitOfCenter, GeneralLinearGroup.coe_scalar])
-
-private theorem scalar_unitOfCenter (i₀ : ι) (z : Subgroup.center (GL ι R)) :
-    GeneralLinearGroup.scalar ι (unitOfCenter i₀ z) = z.1 := by
-  obtain ⟨u, hu⟩ := GeneralLinearGroup.center_eq_range_scalar.le z.2
-  exact (congrArg (GeneralLinearGroup.scalar ι ∘ unitOfCenter i₀)
-    (Subtype.ext hu.symm)).trans (congrArg _ (unitOfCenter_scalar i₀ u) |>.trans hu)
-
 theorem scalarDiagonalMap_injective [Nonempty ι] :
     Function.Injective (scalarDiagonalMap ι R) := by
-  obtain ⟨i₀⟩ := ‹Nonempty ι›
   rintro ⟨g₁, u₁⟩ ⟨g₂, u₂⟩ h
   obtain ⟨h1, rfl⟩ := Prod.ext_iff.mp h
-  exact Prod.ext rfl (Units.ext <| by
-    simpa [GeneralLinearGroup.coe_scalar] using
-      congrArg (fun M : Matrix ι ι R => M i₀ i₀) (congrArg Units.val (mul_right_cancel h1)))
+  exact Prod.ext rfl (GeneralLinearGroup.scalar_injective (mul_right_cancel h1))
 
 /-- **Isomorphism `GL ι R ≃* diagonal ι R`** sending `g` to `(g, g)`. -/
 def diagonalEquiv : GL ι R ≃* diagonal ι R where
@@ -212,10 +199,10 @@ def diagonalEquiv : GL ι R ≃* diagonal ι R where
 noncomputable def scalarDiagonalEquiv [Nonempty ι] :
     GL ι R × Rˣ ≃* scalarDiagonal ι R where
   toFun := (scalarDiagonalMap ι R).rangeRestrict
-  invFun q := (q.1.2, unitOfCenter (Classical.arbitrary ι) ⟨q.1.1 / q.1.2,
+  invFun q := (q.1.2, (GeneralLinearGroup.unitsMulEquivCenter ι).symm ⟨q.1.1 / q.1.2,
     Subgroup.mem_diagonalExt.mp (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.2)⟩)
-  left_inv p := Prod.ext rfl (by simp [mul_div_cancel_right, unitOfCenter_scalar])
-  right_inv q := Subtype.ext (Prod.ext (by simp [scalar_unitOfCenter, div_mul_cancel]) rfl)
+  left_inv p := Prod.ext rfl (by simp [mul_div_cancel_right])
+  right_inv q := Subtype.ext (Prod.ext (by simp [div_mul_cancel]) rfl)
   map_mul' := map_mul _
 
 @[simp] theorem coe_scalarDiagonalEquiv_apply [Nonempty ι] (p : GL ι R × Rˣ) :
@@ -227,7 +214,7 @@ noncomputable def scalarDiagonalEquiv [Nonempty ι] :
 
 @[simp] theorem scalar_snd_scalarDiagonalEquiv_symm [Nonempty ι] (q : scalarDiagonal ι R) :
     GeneralLinearGroup.scalar ι (scalarDiagonalEquiv.symm q).2 = q.1.1 / q.1.2 :=
-  scalar_unitOfCenter _ _
+  GeneralLinearGroup.scalar_unitsMulEquivCenter_symm _
 
 theorem determinantRatio_surjective [Nonempty ι] :
     Function.Surjective (determinantRatio ι R) := fun u =>
@@ -288,15 +275,6 @@ section TopologicalRing
 
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [TopologicalSpace R]
 
-/-- The central scalar embedding `Rˣ → GL ι R` is continuous over any topological ring. -/
-theorem continuous_scalar : Continuous (GeneralLinearGroup.scalar ι : Rˣ → GL ι R) :=
-  Units.continuous_iff.mpr
-    ⟨by simpa only [Function.comp_def, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply] using
-        (continuous_pi fun _ => Units.continuous_val).matrix_diagonal,
-     by simpa only [Function.comp_def, MulOpposite.op_inv, ← map_inv,
-        GeneralLinearGroup.coe_scalar, Matrix.scalar_apply] using
-        (continuous_pi fun _ => Units.continuous_coe_inv).matrix_diagonal⟩
-
 /-- **Topological group isomorphism `GL ι R × Rˣ ≃ₜ* scalarDiagonal ι R`** for nonempty `ι`. -/
 noncomputable def scalarDiagonalContinuousMulEquiv [IsTopologicalRing R] [Nonempty ι] :
     GL ι R × Rˣ ≃ₜ* scalarDiagonal ι R where
@@ -305,11 +283,18 @@ noncomputable def scalarDiagonalContinuousMulEquiv [IsTopologicalRing R] [Nonemp
     (((continuous_scalar.comp continuous_snd).mul continuous_fst).prodMk
       continuous_fst).subtype_mk _
   continuous_invFun := (continuous_snd.comp continuous_subtype_val).prodMk <| by
+    obtain ⟨i₀⟩ := ‹Nonempty ι›
     have hdiv : Continuous fun q : scalarDiagonal ι R => q.1.1 / q.1.2 :=
       (continuous_fst.comp continuous_subtype_val).div' (continuous_snd.comp continuous_subtype_val)
-    exact Units.continuous_iff.mpr
-      ⟨(Units.continuous_val.comp hdiv).matrix_elem _ _,
-       (Units.continuous_val.comp hdiv.inv).matrix_elem _ _⟩
+    let divMem (q : scalarDiagonal ι R) : Subgroup.center (GL ι R) :=
+      ⟨q.1.1 / q.1.2, Subgroup.mem_diagonalExt.mp
+        (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.2)⟩
+    refine Units.continuous_iff.mpr
+      ⟨((Units.continuous_val.comp hdiv).matrix_elem i₀ i₀).congr fun q =>
+          (GeneralLinearGroup.val_unitsMulEquivCenter_symm_apply (divMem q) i₀).symm,
+       ((Units.continuous_val.comp hdiv.inv).matrix_elem i₀ i₀).congr fun q => by
+          simpa only [Function.comp_def, Pi.inv_apply, ← map_inv, Subgroup.coe_inv] using
+            (GeneralLinearGroup.val_unitsMulEquivCenter_symm_apply (divMem q)⁻¹ i₀).symm⟩
 
 end TopologicalRing
 

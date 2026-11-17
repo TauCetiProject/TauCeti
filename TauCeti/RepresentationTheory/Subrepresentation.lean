@@ -401,9 +401,8 @@ section Irreducible
 variable {k : Type*} [Field k] {H K : Type*} [Monoid H] [Monoid K]
   {V : Type*} [AddCommGroup V] [Module k V]
 
-/-- **Irreducibility ascends along restriction.** If a representation `ρ` becomes irreducible when
-restricted along a monoid homomorphism `f : H →* K`, then `ρ` is already irreducible: every
-`K`-invariant subspace is in particular `H`-invariant, so it must be `⊥` or `⊤`. -/
+/-- If `ρ.comp f` is irreducible for a monoid homomorphism `f : H →* K`, then `ρ` is
+irreducible. -/
 theorem Representation.IsIrreducible.of_comp {f : H →* K} {ρ : Representation k K V}
     (h : Representation.IsIrreducible (ρ.comp f)) : ρ.IsIrreducible := by
   have : Nontrivial (Subrepresentation ρ) :=

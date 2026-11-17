@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.RepresentationTheory.ClassicalGroups.DiagonalOvergroups.Basic
+-- Supplies `instance : PathConnectedSpace ℂˣ` for `instPathConnectedSpaceScalarDiagonal`.
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.Algebra.Group.Matrix
 import Mathlib.Topology.Algebra.Group.Units
@@ -20,6 +21,7 @@ import TauCeti.Geometry.Lie.Subgroup.Center
 import TauCeti.Geometry.Lie.Subgroup.Units
 import TauCeti.Topology.Algebra.Group.Goursat
 import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
 /-!
 # Classification of connected complex diagonal overgroups of `GL ι ℂ`
@@ -146,15 +148,13 @@ theorem isClosed_diagonal [T2Space R] : IsClosed (diagonal ι R : Set (GL ι R �
 
 theorem isClosed_scalarDiagonal [T2Space R] :
     IsClosed (scalarDiagonal ι R : Set (GL ι R × GL ι R)) := by
-  rw [Subgroup.isClosed_iff_isClosed_goursatFst
-    (diagonal_eq_graph_id (ι := ι) (R := R) ▸ diagonal_le_scalarDiagonal),
+  rw [Subgroup.isClosed_iff_isClosed_goursatFst graph_id_le_scalarDiagonal,
     goursatFst_scalarDiagonal]
   exact Subgroup.isClosed_center
 
 theorem isClosed_determinantEqual [T2Space R] :
     IsClosed (determinantEqual ι R : Set (GL ι R × GL ι R)) := by
-  rw [Subgroup.isClosed_iff_isClosed_goursatFst
-    (diagonal_eq_graph_id (ι := ι) (R := R) ▸ diagonal_le_determinantEqual),
+  rw [Subgroup.isClosed_iff_isClosed_goursatFst graph_id_le_determinantEqual,
     goursatFst_determinantEqual]
   exact MonoidHom.coe_range (SpecialLinearGroup.toGL (n := ι) (R := R)) ▸
     SpecialLinearGroup.isClosedEmbedding_toGL.isClosed_range
@@ -165,15 +165,13 @@ instance instPathConnectedSpaceDiagonal : PathConnectedSpace (diagonal ι ℂ) :
   exact ⟨⟨1⟩, fun x y => Subsingleton.elim x y ▸ Joined.refl x⟩
 
 instance instPathConnectedSpaceScalarDiagonal : PathConnectedSpace (scalarDiagonal ι ℂ) := by
-  rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
-    (diagonal_eq_graph_id (ι := ι) (R := ℂ) ▸ diagonal_le_scalarDiagonal),
+  rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst graph_id_le_scalarDiagonal,
     goursatFst_scalarDiagonal, GeneralLinearGroup.center_eq_range_scalar]
   exact (GeneralLinearGroup.scalar ι).rangeRestrict_surjective.pathConnectedSpace
     (continuous_scalar.subtype_mk _)
 
 instance instPathConnectedSpaceDeterminantEqual : PathConnectedSpace (determinantEqual ι ℂ) := by
-  rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
-    (diagonal_eq_graph_id (ι := ι) (R := ℂ) ▸ diagonal_le_determinantEqual),
+  rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst graph_id_le_determinantEqual,
     goursatFst_determinantEqual]
   exact (SpecialLinearGroup.toGL (n := ι) (R := ℂ)).rangeRestrict_surjective.pathConnectedSpace
     (SpecialLinearGroup.isClosedEmbedding_toGL.continuous.subtype_mk _)
@@ -230,7 +228,7 @@ theorem realDirections_mono {H₁ H₂ : Subgroup (GL ι ℂ × GL ι ℂ)} (h :
   Set.eq_univ_of_forall fun _ _ => Subgroup.mem_top _
 
 /-- **Complex closure of `realDirections H` is equivalent to `Complex.I`-invariance.** -/
-theorem forall_pairExp_complex_smul_mem_iff_smul_I_mem (H : Subgroup (GL ι ℂ × GL ι ℂ)) :
+theorem forall_pairExp_complex_smul_mem_iff_I_smul_mem (H : Subgroup (GL ι ℂ × GL ι ℂ)) :
     (∀ X ∈ realDirections H, ∀ z : ℂ, pairExp (z • X) ∈ H) ↔
       ∀ X ∈ realDirections H, Complex.I • X ∈ realDirections H := by
   refine ⟨fun h X hX t => ?_, fun hI X hX z => ?_⟩
@@ -269,18 +267,12 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 private theorem prodUnits_expUnit_eq_pairExp (X : Matrix ι ι ℂ × Matrix ι ι ℂ) :
     (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)).toMonoidHom (TauCeti.expUnit X) =
       pairExp X := by
-  refine Prod.ext (Units.ext ?_) (Units.ext ?_)
-  -- The `NormedSpace.exp` instances (`normedAlgebraRatOfReal` vs default) agree definitionally.
-  · simp only [MulEquiv.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
+  refine Prod.ext (Units.ext ?_) (Units.ext ?_) <;>
+    simp only [MulEquiv.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
       ContinuousMulEquiv.toMulEquiv_prodUnits, MulEquiv.prodUnits, MulEquiv.coe_mk,
-      Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, MonoidHom.coe_fst,
-      TauCeti.expUnit_coe, Prod.fst_exp, coe_fst_pairExp]
-    rfl
-  · simp only [MulEquiv.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
-      ContinuousMulEquiv.toMulEquiv_prodUnits, MulEquiv.prodUnits, MulEquiv.coe_mk,
-      Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, MonoidHom.coe_snd,
-      TauCeti.expUnit_coe, Prod.snd_exp, coe_snd_pairExp]
-    rfl
+      Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, MonoidHom.coe_fst, MonoidHom.coe_snd,
+      TauCeti.expUnit_coe, Prod.fst_exp, Prod.snd_exp, coe_fst_pairExp, coe_snd_pairExp,
+      Matrix.linftyOpTopologicalSpace_eq]
 
 private theorem mem_realDirections_iff_mem_lieSubalgebraOfSubgroup
     {H : Subgroup (GL ι ℂ × GL ι ℂ)} (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ)))

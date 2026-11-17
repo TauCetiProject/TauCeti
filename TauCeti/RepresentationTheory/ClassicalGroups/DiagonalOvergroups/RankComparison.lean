@@ -12,6 +12,7 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 import TauCeti.Analysis.Matrix.SpecialLinearGroup.Connected
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.Topology.Algebra.Group.Goursat
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
@@ -22,10 +23,15 @@ import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 Complements `TauCeti.RepresentationTheory.ClassicalGroups.DiagonalOvergroups.Classification` with:
 * rank `0` (`[IsEmpty ι]`): all four subgroups equal `⊤`;
 * rank `1` (`[Unique ι]`): `determinantEqual ι R = diagonal ι R` and `scalarDiagonal ι R = ⊤`;
-* rank `≥ 2` (`[Nontrivial ι]` over `ℂ`): all four subgroups are distinct, `scalarDiagonal ι ℂ` and
-  `determinantEqual ι ℂ` are incomparable with join `⊤` and disconnected intersection;
-* the closed path-connected real Lie counterexample `determinantModulusOne ι`
-  (`‖det g / det h‖ = 1`), strictly containing `determinantEqual ι ℂ` for `Nonempty ι`.
+* rank `≥ 2`: strict inclusions (`diagonal_lt_scalarDiagonal`, `determinantEqual_lt_top` over any
+  `CommRing R` with `[Nontrivial Rˣ]`; `diagonal_lt_determinantEqual`, `scalarDiagonal_lt_top` over
+  any `[Nontrivial R]`), and over `ℂ` incomparability of `scalarDiagonal ι ℂ` and
+  `determinantEqual ι ℂ` with join `⊤` and disconnected intersection;
+* `determinantModulusOne ι` (`{(g, h) | ‖(determinantRatio ι ℂ (g, h) : ℂ)‖ = 1}`): for
+  `[Nonempty ι]`, a closed, path-connected subgroup containing `diagonal ι ℂ` that strictly contains
+  `determinantEqual ι ℂ` and is not one of the four models in
+  `eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top`, because it fails the
+  complex-closure hypothesis (`not_forall_pairExp_complex_smul_mem_determinantModulusOne`).
 
 ## References
 
@@ -89,36 +95,26 @@ theorem not_scalarDiagonal_le_determinantEqual [Nonempty ι] :
     Units.val_mk0, norm_pow, Complex.norm_ofNat, norm_one] at hdet
   exact (one_lt_pow₀ (by norm_num : (1 : ℝ) < 2) Fintype.card_pos.ne').ne' hdet
 
-theorem not_determinantEqual_le_scalarDiagonal [Nontrivial ι] [Nontrivial R] :
-    ¬ (determinantEqual ι R ≤ scalarDiagonal ι R) := by
-  obtain ⟨i, j, hij⟩ := exists_pair_ne ι
-  intro hle
-  obtain ⟨u, hu⟩ := mem_scalarDiagonal_iff.mp (hle ((mem_determinantEqual_iff
-    (p := (SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij (1 : R)), 1))).mpr
-    (by simp)))
-  simpa [SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.transvection_coe,
-    GeneralLinearGroup.coe_scalar, hij] using
-    congrArg (fun M : Matrix ι ι R => M i j) (congrArg Units.val hu)
-
-theorem diagonal_lt_scalarDiagonal [Nonempty ι] : diagonal ι ℂ < scalarDiagonal ι ℂ := by
-  obtain ⟨i₀⟩ := ‹Nonempty ι›
+theorem diagonal_lt_scalarDiagonal [Nonempty ι] [Nontrivial Rˣ] :
+    diagonal ι R < scalarDiagonal ι R := by
   refine lt_of_le_of_ne diagonal_le_scalarDiagonal fun h => ?_
-  let u : ℂˣ := Units.mk0 (-1) (by norm_num)
-  have heq := congrArg (fun M : Matrix ι ι ℂ => M i₀ i₀) (congrArg Units.val (mem_diagonal_iff.mp
-    (h ▸ (mem_scalarDiagonal_iff (p := (GeneralLinearGroup.scalar ι u, 1))).mpr
-      ⟨u, (mul_one _).symm⟩)))
-  norm_num [u, GeneralLinearGroup.coe_scalar] at heq
+  obtain ⟨u, hu⟩ := exists_ne (1 : Rˣ)
+  have hmem : (GeneralLinearGroup.scalar ι u, 1) ∈ diagonal ι R :=
+    h ▸ (mem_scalarDiagonal_iff (p := (GeneralLinearGroup.scalar ι u, 1))).mpr
+      ⟨u, (mul_one _).symm⟩
+  exact hu (GeneralLinearGroup.scalar_injective ((mem_diagonal_iff.mp hmem).trans (map_one _).symm))
 
 theorem diagonal_lt_determinantEqual [Nontrivial ι] [Nontrivial R] :
     diagonal ι R < determinantEqual ι R :=
   lt_of_le_of_ne diagonal_le_determinantEqual fun h =>
     not_determinantEqual_le_scalarDiagonal (h ▸ diagonal_le_scalarDiagonal)
 
-theorem determinantEqual_lt_top [Nonempty ι] : determinantEqual ι ℂ < ⊤ := by
+theorem determinantEqual_lt_top [Nonempty ι] [Nontrivial Rˣ] : determinantEqual ι R < ⊤ := by
   refine lt_top_iff_ne_top.mpr fun htop => ?_
-  obtain ⟨g, hg⟩ := GeneralLinearGroup.det_surjective (n := ι) (Units.mk0 (2 : ℂ) two_ne_zero)
-  have hdet := congrArg Units.val (mem_determinantEqual_iff.mp (htop ▸ Subgroup.mem_top (g, 1)))
-  norm_num [hg] at hdet
+  obtain ⟨u, hu⟩ := exists_ne (1 : Rˣ)
+  obtain ⟨g, hg⟩ := GeneralLinearGroup.det_surjective (n := ι) u
+  have hdet := mem_determinantEqual_iff.mp (htop ▸ Subgroup.mem_top (g, 1))
+  exact hu (by simpa [hg] using hdet)
 
 theorem scalarDiagonal_lt_top [Nontrivial ι] [Nontrivial R] : scalarDiagonal ι R < ⊤ :=
   lt_top_iff_ne_top.mpr scalarDiagonal_ne_top
@@ -149,10 +145,8 @@ theorem not_isPreconnected_scalarDiagonal_inf_determinantEqual [Nontrivial ι] :
     have hu : IsPrimitiveRoot u (Fintype.card ι) := IsPrimitiveRoot.coe_units_iff.mp hζ
     have hmem : (GeneralLinearGroup.scalar ι u, (1 : GL ι ℂ)) ∈ diagonal ι ℂ :=
       heq ▸ mem_scalarDiagonal_inf_determinantEqual_iff.mpr ⟨u, hu.pow_eq_one, by simp⟩
-    obtain ⟨i₀⟩ := (inferInstance : Nonempty ι)
-    exact hu.ne_one Fintype.one_lt_card (Units.ext <| by
-      simpa [GeneralLinearGroup.coe_scalar] using
-        congrArg (fun M : Matrix ι ι ℂ => M i₀ i₀) (congrArg Units.val (mem_diagonal_iff.mp hmem)))
+    exact hu.ne_one Fintype.one_lt_card
+      (GeneralLinearGroup.scalar_injective ((mem_diagonal_iff.mp hmem).trans (map_one _).symm))
   · exact not_scalarDiagonal_le_determinantEqual (heq ▸ inf_le_right)
   · exact not_determinantEqual_le_scalarDiagonal (heq ▸ inf_le_left)
   · exact not_determinantEqual_le_scalarDiagonal (top_unique (heq ▸ inf_le_left) ▸ le_top)
@@ -180,7 +174,12 @@ theorem exists_mem_scalarDiagonal_mul_mem_determinantEqual (p : GL ι ℂ × GL 
     let ⟨_, hq, _, hr, hp⟩ := exists_mem_scalarDiagonal_mul_mem_determinantEqual p
     hp ▸ Subgroup.mul_mem_sup hq hr
 
-/-- **Real Lie overgroup `r⁻¹(S¹)`**: pairs `(g, h)` whose determinant ratio has modulus `1`. -/
+/-- **The unit-modulus determinant-ratio subgroup**
+`{(g, h) | ‖(determinantRatio ι ℂ (g, h) : ℂ)‖ = 1}`. For `[Nonempty ι]`, this is a closed,
+path-connected subgroup containing `diagonal ι ℂ` that strictly contains `determinantEqual ι ℂ` and
+is not one of the four models in
+`eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top`, because it fails the
+complex-closure hypothesis (`not_forall_pairExp_complex_smul_mem_determinantModulusOne`). -/
 def determinantModulusOne (ι : Type*) [Fintype ι] [DecidableEq ι] :
     Subgroup (GL ι ℂ × GL ι ℂ) where
   carrier := {p | ‖(determinantRatio ι ℂ p : ℂ)‖ = 1}
@@ -200,10 +199,13 @@ theorem determinantEqual_le_determinantModulusOne :
   rw [mem_determinantModulusOne_iff, determinantRatio_apply, mem_determinantEqual_iff.mp hp,
     div_self', Units.val_one, norm_one]
 
+theorem graph_id_le_determinantModulusOne :
+    (MonoidHom.id (GL ι ℂ)).graph ≤ determinantModulusOne ι :=
+  graph_id_le_determinantEqual.trans determinantEqual_le_determinantModulusOne
+
 theorem isClosed_determinantModulusOne :
     IsClosed (determinantModulusOne ι : Set (GL ι ℂ × GL ι ℂ)) := by
-  rw [Subgroup.isClosed_iff_isClosed_goursatFst (diagonal_eq_graph_id (ι := ι) (R := ℂ) ▸
-    diagonal_le_determinantEqual.trans determinantEqual_le_determinantModulusOne),
+  rw [Subgroup.isClosed_iff_isClosed_goursatFst graph_id_le_determinantModulusOne,
     show ((determinantModulusOne ι).goursatFst : Set (GL ι ℂ)) =
       {g : GL ι ℂ | ‖(g : Matrix ι ι ℂ).det‖ = 1} from
       Set.ext fun g => by simp [Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply]]
@@ -212,8 +214,7 @@ theorem isClosed_determinantModulusOne :
 instance instPathConnectedSpaceDeterminantModulusOne :
     PathConnectedSpace (determinantModulusOne ι) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
-    (diagonal_eq_graph_id (ι := ι) (R := ℂ) ▸
-      diagonal_le_determinantEqual.trans determinantEqual_le_determinantModulusOne)]
+    graph_id_le_determinantModulusOne]
   rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
   · exact ⟨⟨1⟩, fun x y => Subsingleton.elim x y ▸ Joined.refl x⟩
   let expCircle : ℝ → ℂˣ := fun θ =>
@@ -260,26 +261,18 @@ theorem determinantEqual_lt_determinantModulusOne [Nonempty ι] :
 theorem not_forall_pairExp_complex_smul_mem_determinantModulusOne [Nonempty ι] :
     ¬ (∀ X ∈ realDirections (determinantModulusOne ι), ∀ z : ℂ,
       pairExp (z • X) ∈ determinantModulusOne ι) := fun hcomplex => by
+  have hnorm (z : ℂ) :
+      ‖(NormedSpace.exp (z • (1 : Matrix ι ι ℂ))).det‖ = Real.exp (z.re * Fintype.card ι) := by
+    rw [Matrix.det_exp, Matrix.trace_smul, Matrix.trace_one, ← Complex.exp_eq_exp_ℂ,
+      smul_eq_mul, Complex.norm_exp]; simp
   let X : Matrix ι ι ℂ × Matrix ι ι ℂ := (Complex.I • 1, 0)
   have hX : X ∈ realDirections (determinantModulusOne ι) := mem_realDirections_iff.mpr fun t => by
-    have hdet2 : (pairExp (t • X)).2.det = 1 :=
-      Units.ext (by simp [X, GeneralLinearGroup.val_det_apply])
-    rw [mem_determinantModulusOne_iff, determinantRatio_apply, hdet2, div_one,
-      GeneralLinearGroup.val_det_apply, coe_fst_pairExp, Prod.smul_fst, Matrix.det_exp,
-      Matrix.trace_smul, Matrix.trace_smul, Matrix.trace_one, ← Complex.exp_eq_exp_ℂ]
-    have htr : t • (Complex.I • (Fintype.card ι : ℂ)) =
-        ((t * Fintype.card ι : ℝ) : ℂ) * Complex.I := by simp [Complex.real_smul]; ring
-    rw [htr]; exact Complex.norm_exp_ofReal_mul_I _
+    have ht : t • (Complex.I • (1 : Matrix ι ι ℂ)) = ((t : ℂ) * Complex.I) • 1 := by
+      rw [← algebraMap_smul ℂ t, smul_smul, Complex.coe_algebraMap]
+    simp [X, ht, GeneralLinearGroup.val_det_apply, hnorm]
   have hbad := hcomplex X hX Complex.I
-  have hdet2 : (pairExp (Complex.I • X)).2.det = 1 :=
-    Units.ext (by simp [X, GeneralLinearGroup.val_det_apply])
-  rw [mem_determinantModulusOne_iff, determinantRatio_apply, hdet2, div_one,
-    GeneralLinearGroup.val_det_apply, coe_fst_pairExp, Prod.smul_fst, Matrix.det_exp,
-    show (Complex.I • (Complex.I • (1 : Matrix ι ι ℂ))).trace = -(Fintype.card ι : ℂ) by
-      rw [smul_smul, Complex.I_mul_I, neg_one_smul, Matrix.trace_neg, Matrix.trace_one],
-    ← Complex.exp_eq_exp_ℂ, ← Complex.ofReal_natCast, ← Complex.ofReal_neg, ← Complex.ofReal_exp,
-    Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_eq_one_iff, neg_eq_zero,
-    Nat.cast_eq_zero] at hbad
-  exact Fintype.card_ne_zero hbad
+  have hI : ‖(NormedSpace.exp (-1 : Matrix ι ι ℂ)).det‖ = Real.exp (-(Fintype.card ι : ℝ)) := by
+    simpa using hnorm (-1)
+  simp [X, GeneralLinearGroup.val_det_apply, smul_smul, hI, Fintype.card_ne_zero] at hbad
 
 end TauCeti.DiagonalOvergroups
