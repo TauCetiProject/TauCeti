@@ -51,14 +51,13 @@ variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder 
 and the end of the grid have small integrals. -/
 private theorem setIntegral_sub_stoppedValue_le
     (hU : UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.1) 1 μ)
-    (hX : ∀ t, Integrable (X t) μ) {ε δ : ℝ≥0∞} {ε' : ℝ} (hε' : 0 ≤ ε') (hε : ε = .ofReal ε')
+    (hX : ∀ t, Integrable (X t) μ) {δ : ℝ≥0∞} {ε' : ℝ} (hε' : 0 ≤ ε')
     (hδ : ∀ (τ : BoundedStoppingTime ℱ T) (s : Set Ω), μ s ≤ δ →
-      eLpNorm (stoppedValue X τ.1) 1 (μ.restrict s) ≤ ε)
+      eLpNorm (stoppedValue X τ.1) 1 (μ.restrict s) ≤ .ofReal ε')
     {g : ℕ → ι} (hg : Monotone g) {N : ℕ} (hgN : g N ≤ T)
     {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ) (hσN : ∀ ω, σ ω ≤ N)
     (hs : μ {ω | σ ω < N} ≤ δ) :
     ∫ ω in {ω | σ ω < N}, (X (g N) ω - stoppedValue (fun k ↦ X (g k)) σ ω) ∂μ ≤ 2 * ε' := by
-  subst hε
   set τ := BoundedStoppingTime.ofComp hg hgN hσ hσN
   have hδN := hδ (BoundedStoppingTime.const hgN) _ hs
   rw [BoundedStoppingTime.stoppedValue_const] at hδN
@@ -121,9 +120,9 @@ theorem IsClassDL.uniformIntegrable_predictablePart [IsFiniteMeasure μ]
     refine hE.trans ?_
     rw [add_mul, div_mul_cancel₀ _ hd.ne']
     linarith
-  have hσs := setIntegral_sub_stoppedValue_le hU hX.integrable (by positivity) rfl hbound
+  have hσs := setIntegral_sub_stoppedValue_le hU hX.integrable (by positivity) hbound
     (hg i) (hgN i) hσ hσN (hsmall (by linarith))
-  have hρs := setIntegral_sub_stoppedValue_le hU hX.integrable (by positivity) rfl hbound
+  have hρs := setIntegral_sub_stoppedValue_le hU hX.integrable (by positivity) hbound
     (hg i) (hgN i) hρ hρN (hsmall (by linarith))
   linarith
 
