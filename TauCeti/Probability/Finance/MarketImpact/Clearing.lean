@@ -107,6 +107,12 @@ theorem hasDerivAt_clearingMap_of_differentiableOn (hH : DifferentiableOn ℝ H 
     (hx : 0 < x) : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x) x :=
   ((hH x hx).differentiableAt (Ioi_mem_nhds hx)).hasDerivAt.clearingMap
 
+/-- If the program-trader demand `H` is differentiable on the positive half-line, the derivative
+of the clearing map at every positive price `x` is `1 - H(x) - x H'(x)`. -/
+theorem deriv_clearingMap_of_differentiableOn (hH : DifferentiableOn ℝ H (Ioi 0)) (hx : 0 < x) :
+    deriv (clearingMap H) x = 1 - H x - x * deriv H x :=
+  (hasDerivAt_clearingMap_of_differentiableOn hH hx).deriv
+
 /-- The clearing map is continuous wherever the program-trader demand is. -/
 theorem continuousOn_clearingMap {s : Set ℝ} (hH : ContinuousOn H s) :
     ContinuousOn (clearingMap H) s :=
@@ -123,8 +129,7 @@ theorem strictMonoOn_clearingMap : StrictMonoOn (clearingMap H) (Ioi 0) := by
   refine strictMonoOn_of_deriv_pos (convex_Ioi 0) (continuousOn_clearingMap hH.continuousOn)
     fun x hx ↦ ?_
   rw [interior_Ioi] at hx
-  rw [(hasDerivAt_clearingMap_of_differentiableOn hH hx).deriv]
-  exact hpos x hx
+  exact (deriv_clearingMap_of_differentiableOn hH hx).symm ▸ hpos x hx
 
 /-- Under a positive clearing derivative, the equilibrium price recovers every positive price
 from its clearing value. -/
@@ -164,8 +169,7 @@ theorem mul_sub_le_clearingMap_sub {x₁ x₂ : ℝ} (hx₁ : 0 < x₁) (hx : x�
       (interior_subset hx)).differentiableAt.differentiableWithinAt)
     (fun x hx ↦ ?_) x₁ hx₁ x₂ (hx₁.trans_le hx) hx
   rw [interior_Ioi] at hx
-  rw [(hasDerivAt_clearingMap_of_differentiableOn hH hx).deriv]
-  exact hmargin x hx
+  exact (deriv_clearingMap_of_differentiableOn hH hx).symm ▸ hmargin x hx
 
 /-- Under a lower bound `δ` on the clearing derivative, positive prices at distance `d` have
 clearing values at distance at least `δ d`. -/
@@ -185,9 +189,9 @@ theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
   refine lipschitzOnWith_iff_restrict.2 (AntilipschitzWith.to_rightInvOn' ?_
     (surjOn_image _ _).mapsTo_invFunOn (surjOn_image _ _).rightInvOn_invFunOn)
   refine AntilipschitzWith.of_le_mul_dist fun x₁ x₂ ↦ ?_
-  rw [Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Subtype.dist_eq, domRestrict_apply,
-    domRestrict_apply, Real.dist_eq, Real.dist_eq, ← div_eq_inv_mul, le_div_iff₀' hδ]
-  exact mul_abs_sub_le_abs_clearingMap_sub hH hmargin x₂.2 x₁.2
+  simp only [Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Subtype.dist_eq, domRestrict_apply,
+    Real.dist_eq]
+  exact (le_inv_mul_iff₀ hδ).2 (mul_abs_sub_le_abs_clearingMap_sub hH hmargin x₂.2 x₁.2)
 
 /-- Under a strictly positive clearing-derivative margin, the clearing map tends to infinity with
 the price. -/
