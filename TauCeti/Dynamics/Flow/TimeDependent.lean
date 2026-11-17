@@ -25,12 +25,16 @@ law of an ordinary `Flow`.
 ## Main declarations
 
 * `TauCeti.timeDependentSuspension`: the autonomous field `(t, x) ↦ (1, v t x)`.
+* `TauCeti.lipschitzWith_timeDependentSuspension`: a jointly Lipschitz field has a Lipschitz
+  suspension.
 * `TauCeti.timeDependentFlow`: the global evolution map of a time-dependent field whose
   suspension is globally Lipschitz.
 * `TauCeti.hasDerivAt_timeDependentFlow`: the evolution solves `x' = v(t, x)`.
 * `TauCeti.timeDependentFlow_trans`: evolution through an intermediate time composes.
 * `TauCeti.timeDependentFlow_eq_integral`: the integral equation from time `s` to time `t`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
+* `TauCeti.timeDependentFlow_add_const`: the flow of a translation-invariant field commutes with
+  the translation.
 
 The construction uses the global autonomous Picard--Lindelöf solution from
 `TauCeti.Analysis.ODE.GlobalSolution`.
@@ -55,6 +59,15 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] in
 theorem timeDependentSuspension_apply (v : ℝ → E → E) (t : ℝ) (x : E) :
     timeDependentSuspension v (t, x) = (1, v t x) :=
   by rw [timeDependentSuspension]
+
+omit [NormedSpace ℝ E] [CompleteSpace E] in
+/-- The suspension of a time-dependent field is Lipschitz with the joint Lipschitz constant of
+the field in time and space. -/
+theorem lipschitzWith_timeDependentSuspension {v : ℝ → E → E} {K : ℝ≥0}
+    (hv : LipschitzWith K fun p : ℝ × E ↦ v p.1 p.2) :
+    LipschitzWith K (timeDependentSuspension v) :=
+  LipschitzWith.of_dist_le_mul fun p q ↦ by
+    simpa [timeDependentSuspension, Prod.dist_eq] using hv.dist_le_mul p q
 
 /-- The time coordinate of the suspended global solution advances at unit speed. -/
 private theorem fst_globalSolution_timeDependentSuspension (v : ℝ → E → E) {K : ℝ≥0}
@@ -198,6 +211,16 @@ theorem eq_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
   rw [globalSolution_timeDependentSuspension v hv s t (y s)] at hat
   have harg : s + (t - s) = t := by ring
   simpa only [γ, harg] using congrArg Prod.snd hat
+
+/-- If a time-dependent field is invariant under the translation by `c`, its flow commutes with
+that translation. -/
+theorem timeDependentFlow_add_const (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) {c : E}
+    (hc : ∀ t x, v t (x + c) = v t x) (s t : ℝ) (x : E) :
+    timeDependentFlow v hv s t (x + c) = timeDependentFlow v hv s t x + c := by
+  have h := eq_timeDependentFlow v hv (y := fun u ↦ timeDependentFlow v hv s u x + c)
+    (fun u ↦ by simpa only [hc] using (hasDerivAt_timeDependentFlow v hv s u x).add_const c) s t
+  simpa using h.symm
 
 end TauCeti
 
