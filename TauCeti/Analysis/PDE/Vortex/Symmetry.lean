@@ -41,8 +41,9 @@ the end framing. This constant gauge does not tend to one at infinity, so it is 
 frame of the line at infinity rather than an element of the framed gauge group.
 
 At a point, `rotateField u` and `rotateTarget u` act on values by the linear isometries
-`fieldRotation u` and `targetRotation u` of `ℝ⁴`, and the zeroth-order part of `L_x` intertwines
-them (`gaugeFixedZerothOrder_fieldRotation`).
+`fieldRotation u` and `targetRotation u` of `ℝ⁴`, and the zeroth-order and first-order parts of
+`L_x` intertwine them (`gaugeFixedZerothOrder_fieldRotation` and
+`gaugeFixedFirstOrder_fieldRotation`).
 
 These are identities of smooth differential expressions. Their counterparts for the `H¹`
 realization of `L_x` are in `TauCeti.Analysis.PDE.Vortex.RigidMotion`; the induced action on the
@@ -77,6 +78,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter Topology
+open scoped ComplexConjugate
 
 /-! ### Translations -/
 
@@ -457,6 +459,26 @@ theorem gaugeFixedZerothOrder_fieldRotation (u : Circle) (w v : EuclideanSpace �
       targetRotation u (gaugeFixedZerothOrder w v) := by
   ext i
   fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring
+
+/-- The first-order part of `L_x` intertwines the rotation of the gradients of the coordinates
+with `targetRotation u`: the gradient of a coordinate composed with `z ↦ u z` (or with any rigid
+motion `z ↦ u z + a`) is `u⁻¹` times the gradient at the image point, and the coordinates are
+mixed by `fieldRotation u`. -/
+theorem gaugeFixedFirstOrder_fieldRotation (u : Circle) (G : Fin 4 → ℂ) :
+    gaugeFixedFirstOrder (fun i ↦ ∑ k, fieldRotation u (EuclideanSpace.single k 1) i •
+      (conj (u : ℂ) * G k)) = targetRotation u (gaugeFixedFirstOrder G) := by
+  have hn := Circle.re_sq_add_im_sq u
+  ext i
+  fin_cases i <;>
+    simp only [gaugeFixedFirstOrder_apply, targetRotation_apply, fieldRotation_apply,
+      Fin.sum_univ_four, PiLp.single_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Fin.reduceEq, ↓reduceIte,
+      Complex.inner, real_smul, add_re, add_im, mul_re, mul_im, conj_re, conj_im, ofReal_re,
+      ofReal_im, one_re, one_im, I_re, I_im]
+  · linear_combination ((G 0).re + (G 1).im) * hn
+  · linear_combination ((G 0).im - (G 1).re) * hn
+  · ring
+  · ring
 
 /-- Evaluation of a real-linear functional at `u`, in the basis `(1, I)`. -/
 private theorem clm_apply_coe (L : ℂ →L[ℝ] ℝ) (u : Circle) :

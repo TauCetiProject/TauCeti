@@ -231,25 +231,6 @@ private def w1pMotionEquiv (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] Euclid
   .equivOfInverse (w1pMotion R g) (w1pMotion R.symm g.symm) (w1pMotion_symm_w1pMotion R g)
     (w1pMotion_w1pMotion_symm R g)
 
-/-- The first-order part of `L_x` intertwines the rotation of the gradients of the coordinates
-with `targetRotation u`: the gradient of a coordinate composed with `z ↦ u z + a` is `u⁻¹` times
-the gradient at the image point, and the coordinates are mixed by `fieldRotation u`. -/
-private theorem gaugeFixedFirstOrder_fieldRotation (u : Circle) (G : Fin 4 → ℂ) :
-    gaugeFixedFirstOrder (fun i ↦ ∑ k, fieldRotation u (EuclideanSpace.single k 1) i •
-      (conj (u : ℂ) * G k)) = targetRotation u (gaugeFixedFirstOrder G) := by
-  have hn := Circle.re_sq_add_im_sq u
-  ext i
-  fin_cases i <;>
-    simp only [gaugeFixedFirstOrder_apply, targetRotation_apply, fieldRotation_apply,
-      Fin.sum_univ_four, PiLp.single_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Fin.reduceEq, ↓reduceIte,
-      Complex.inner, real_smul, add_re, add_im, mul_re, mul_im, conj_re, conj_im, ofReal_re,
-      ofReal_im, one_re, one_im, I_re, I_im]
-  · linear_combination ((G 0).re + (G 1).im) * hn
-  · linear_combination ((G 0).im - (G 1).re) * hn
-  · ring
-  · ring
-
 private theorem w1pMotionEquiv_apply
     (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
     (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : w1pMotionEquiv R g y = w1pMotion R g y := (rfl)
