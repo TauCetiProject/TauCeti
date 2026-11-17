@@ -272,10 +272,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain_iff (hab : a < b) {kappa 
   push Not at hne
   obtain ⟨u, hu0, hu⟩ := (isDirichletEigenvalue_iff kappa).1 hkappa
   refine hu0 (Subtype.ext (W1p.ext_value ?_))
-  have hzero : W1p.value ((0 : W1p0 volume (intervalDomain a b) 2) :
-      W1p volume (intervalDomain a b) 2) = 0 := by
-    rw [← W1p0.valueL_apply, map_zero]
-  rw [hzero]
+  rw [ZeroMemClass.coe_zero, W1p.value_zero]
   -- `u` is orthogonal to every sine mode, since `κ` differs from each of their eigenvalues.
   refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun k hk => ?_
   obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k

@@ -408,9 +408,7 @@ theorem isDirichletEigenvalue_laplacian_boxDomain_iff {a b : ι → ℝ} (hab : 
   rcases s.eq_empty_or_nonempty with rfl | ⟨k, hk⟩
   · -- With no admissible mode, the eigenfunction would vanish.
     refine absurd (Subtype.ext (W1p.ext_value (Lp.ext ?_))) hu0
-    have hzero : W1p.value ((0 : W1p0 mu (boxDomain a b) 2) : W1p mu (boxDomain a b) 2) = 0 := by
-      rw [← W1p0.valueL_apply, map_zero]
-    rw [hzero]
+    rw [ZeroMemClass.coe_zero, W1p.value_zero]
     filter_upwards [hsum, Lp.coeFn_zero ℝ 2
       (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))] with x h1 h2
     rw [h1, h2]
