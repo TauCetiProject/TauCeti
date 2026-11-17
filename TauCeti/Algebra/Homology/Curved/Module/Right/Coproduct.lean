@@ -378,9 +378,9 @@ theorem shortExact_closedDirectSumMap
     (g : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (L j) ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j))
     (hfg : ∀ j, f j ≫ g j = 0)
-    (hfg' : closedDirectSumMap f ≫ closedDirectSumMap g = 0)
     (hS : ∀ j, (ShortComplex.mk (f j) (g j) (hfg j)).ShortExact) :
-    (ShortComplex.mk (closedDirectSumMap f) (closedDirectSumMap g) hfg').ShortExact := by
+    (ShortComplex.mk (closedDirectSumMap f) (closedDirectSumMap g)
+      (by simp only [closedDirectSumMap_comp, hfg, closedDirectSumMap_zero])).ShortExact := by
   have hSj : ∀ j, Function.Injective (closedHom (f j)) ∧
       Function.Surjective (closedHom (g j)) ∧
       Function.Exact (closedHom (f j)) (closedHom (g j)) :=

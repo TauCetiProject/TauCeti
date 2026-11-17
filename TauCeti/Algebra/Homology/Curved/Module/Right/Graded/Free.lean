@@ -137,26 +137,25 @@ private theorem freeTwist_mul (a b : A) (v : V) :
   induction b using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | add b₁ b₂ hb₁ hb₂ =>
-    rw [add_mul, map_add, MulOpposite.op_add, add_smul, hb₁, hb₂, map_add,
-      MulOpposite.op_add, add_smul, smul_add, MulOpposite.op_add, add_smul, map_add, smul_add]
+    simp only [add_mul, map_add, MulOpposite.op_add, add_smul, smul_add, hb₁, hb₂]
     abel
   | @homogeneous i b =>
     rcases b with ⟨b, hb⟩
-    induction v using DirectSum.Decomposition.inductionOn V.grading.piece with
-    | zero => simp
-    | add v₁ v₂ hv₁ hv₂ =>
-      rw [map_add, smul_add, hv₁, hv₂, smul_add, smul_add, smul_add, map_add, smul_add]
-      abel
-    | @homogeneous q v =>
-      rcases v with ⟨v, hv⟩
-      have hbv : op b • v ∈ V.grading.piece (q + i) := op_smul_mem_of_mem_graded hb hv
-      rw [h.leibniz hb a, V.grading.koszulTwist_one_eq_negOnePow_smul hv,
-        V.grading.koszulTwist_one_eq_negOnePow_smul hbv, MulOpposite.op_add, add_smul, op_mul,
-        mul_smul]
-      congr 1
-      rw [Units.smul_def i.negOnePow, MulOpposite.op_smul, ← Units.smul_def, smul_assoc,
-        smul_comm (op (b * d a)) q.negOnePow, smul_smul, ← Int.negOnePow_add, add_comm i q,
-        op_mul, mul_smul, smul_comm]
+    have hτb : V.grading.koszulTwist 1 (op b • v) =
+        i.negOnePow • (op b • V.grading.koszulTwist 1 v) := by
+      have hact : LinearMap.IsHomogeneous
+          ({ toFun := (op b • ·)
+             map_add' := smul_add (op b)
+             map_smul' := fun r x ↦ smul_comm (op b) r x } : V →ₗ[R] V)
+          V.grading.piece V.grading.piece i :=
+        LinearMap.isHomogeneous_def.mpr fun _ _ hw ↦ op_smul_mem_of_mem_graded hb hw
+      simpa only [LinearMap.coe_mk, AddHom.coe_mk, one_mul, Int.cast_smul_eq_zsmul,
+        ← Units.smul_def] using hact.koszulTwist_apply 1 v
+    have hop (x : A) (w : V) : op (i.negOnePow • x) • w = i.negOnePow • (op x • w) := by
+      rw [Units.smul_def, MulOpposite.op_smul, ← Units.smul_def, smul_assoc]
+    rw [h.leibniz hb a, hτb]
+    simp only [MulOpposite.op_add, add_smul, hop, op_mul, mul_smul]
+    rw [smul_comm (op (d a)) i.negOnePow]
 
 private instance : Module Aᵐᵒᵖ (FreeCarrier h V) where
   one_smul x := by
@@ -254,25 +253,28 @@ private theorem isCurvedDGRightModule_freeCarrier :
         using hx.1⟩
   leibniz {p x} hx a := by
     rw [mem_freeInternalGrading_piece_iff] at hx
-    have hsign : (p - 1).negOnePow = -p.negOnePow :=
-      Int.negOnePow_eq_neg_of_odd_sub ⟨-1, by omega⟩
-    have hc (X Y Z : V) : X - Y + (Y + Z) = X + Z := by abel
+    have hτ₁ (b : A) :
+        op b • V.grading.koszulTwist 1 x.fst = p.negOnePow • (op b • x.fst) := by
+      rw [V.grading.koszulTwist_one_eq_negOnePow_smul hx.1, smul_comm]
+    have hτ₂ (b : A) :
+        op b • V.grading.koszulTwist 1 x.snd = -(p.negOnePow • (op b • x.snd)) := by
+      have hsign : (p - 1).negOnePow = -p.negOnePow :=
+        Int.negOnePow_eq_neg_of_odd_sub ⟨-1, by omega⟩
+      rw [V.grading.koszulTwist_one_eq_negOnePow_smul hx.2, hsign, Units.neg_smul, smul_neg,
+        smul_comm]
     refine FreeCarrier.ext ?_ ?_
     · -- Unfold `freeDifferential` and the twisted `Aᵐᵒᵖ`-action on the first coordinate.
       change op w • (op a • x.snd) =
         (op a • (op w • x.snd) - op (d a) • V.grading.koszulTwist 1 x.fst) +
           p.negOnePow • (op (d a) • x.fst - op (d (d a)) • V.grading.koszulTwist 1 x.snd)
-      rw [V.grading.koszulTwist_one_eq_negOnePow_smul hx.1,
-        V.grading.koszulTwist_one_eq_negOnePow_smul hx.2, hsign,
-        Units.neg_smul, smul_neg, sub_neg_eq_add, smul_comm (op (d a)) p.negOnePow, smul_add,
-        smul_comm (op (d (d a))) p.negOnePow, negOnePow_smul_negOnePow_smul,
-        ← mul_smul, ← mul_smul, ← op_mul, ← op_mul, hc,
-        ← add_smul, ← MulOpposite.op_add, h.sq_eq a, add_sub_cancel]
+      rw [hτ₁, hτ₂, h.sq_eq a]
+      simp only [smul_sub, smul_neg, negOnePow_smul_negOnePow_smul, MulOpposite.op_sub, sub_smul,
+        op_mul, mul_smul]
+      abel
     · -- Unfold `freeDifferential` and the twisted `Aᵐᵒᵖ`-action on the second coordinate.
       change op a • x.fst - op (d a) • V.grading.koszulTwist 1 x.snd =
         op a • x.fst + p.negOnePow • (op (d a) • x.snd)
-      rw [V.grading.koszulTwist_one_eq_negOnePow_smul hx.2, hsign, Units.neg_smul, smul_neg,
-        sub_neg_eq_add, smul_comm]
+      rw [hτ₂, sub_neg_eq_add]
   sq_eq x := by
     refine FreeCarrier.ext ?_ rfl
     -- Unfold `freeDifferential ∘ freeDifferential` and `op w • x` on the first coordinate.
@@ -426,17 +428,15 @@ def freeDesc (f : V ⟶ toGradedModuleCat M) :
     induction v using DirectSum.Decomposition.inductionOn V.grading.piece with
     | zero => simp
     | add v₁ v₂ hv₁ hv₂ =>
-      rw [smul_add, map_add, map_add, map_add, smul_add, map_add, map_add, map_add, smul_add,
-        ← hv₁, ← hv₂]
+      simp only [smul_add, map_add, ← hv₁, ← hv₂]
       abel
     | @homogeneous q v =>
       rcases v with ⟨v, hv⟩
       have hfv : f' v ∈ M.grading q := by
         simpa only [toGradedModuleCat_piece] using GradedModuleCat.map_mem f hv
       rw [f'.map_smul, M.isCurvedDGRightModule.leibniz hfv a,
-        V.grading.koszulTwist_one_eq_negOnePow_smul hv]
-      simp_rw [Units.smul_def, smul_comm (op (d a)) (q.negOnePow : ℤ), map_zsmul, f'.map_smul,
-        add_sub_cancel_right]
+        V.grading.koszulTwist_one_eq_negOnePow_smul hv, smul_comm (op (d a)) q.negOnePow]
+      simp only [Units.smul_def, map_zsmul, f'.map_smul, add_sub_cancel_right]
   refine closedHomOf
     { toFun := fun x : FreeCarrier h V ↦ f' x.fst + M.differential (f' x.snd)
       map_add' := fun x y ↦ by

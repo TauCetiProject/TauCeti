@@ -139,12 +139,8 @@ private theorem hasContractibleResolution_directSum {J : Type u} :
   | 0, _, hM => isZero_homotopy_directSum hM
   | m + 1, M, hM => by
     choose K Q f g hfg hS hQ hK using hM
-    have hfg' : closedDirectSumMap f ≫ closedDirectSumMap g = 0 := by
-      rw [closedDirectSumMap_comp]
-      simp_rw [hfg]
-      exact closedDirectSumMap_zero
-    exact ⟨directSum K, directSum Q, closedDirectSumMap f, closedDirectSumMap g, hfg',
-      shortExact_closedDirectSumMap f g hfg hfg' hS,
+    exact ⟨directSum K, directSum Q, closedDirectSumMap f, closedDirectSumMap g, _,
+      shortExact_closedDirectSumMap f g hfg hS,
       isZero_homotopy_directSum hQ,
       hasContractibleResolution_directSum m K hK⟩
 
