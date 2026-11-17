@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Tuple.Duplicate
 public import TauCeti.LinearAlgebra.Graded.Insertion
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
@@ -30,8 +31,6 @@ block.
 
 * `TauCeti.ReducedTensorWords.splice`: a block of a tensor word with one of its subblocks collapsed
   to a single letter.
-* `TauCeti.ReducedTensorWords.duplicateAt`: replaces one entry of a `Fin`-tuple by two adjacent
-  copies of a distinguished element.
 
 ## Main results
 
@@ -50,9 +49,8 @@ block.
   splicing a block of the rest.
 * `TauCeti.ReducedTensorWords.splice_mem_filtration`: a block of `b` letters with `d` of them
   collapsed to one letter has length at most `b + 1 - d`.
-* `TauCeti.ReducedTensorWords.sum_duplicateAt` and the `subword_*_duplicateAt_*` /
-  `splice_two_duplicateAt_*` family: sum, subword, and binary-splice identities for tuples with a
-  duplicated adjacent entry.
+* The `subword_*_duplicateAt_*` / `splice_two_duplicateAt_*` family: subword and binary-splice
+  identities for tuples with a duplicated adjacent entry (`TauCeti.duplicateAt`).
 
 ## References
 
@@ -598,79 +596,7 @@ theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R
     exact zero_mem _
   · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
 
-/-! ### Duplicating an entry into two adjacent copies -/
-
-/-- Replace `z j` in an `L`-tuple `z` by two adjacent copies of `e` at positions `j` and `j + 1`. -/
-def duplicateAt {α : Type*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α) : Fin (L + 1) → α :=
-  j.succ.insertNth e (Function.update z j e)
-
-/-- Explicit definition of `duplicateAt` via `Fin.insertNth` and `Function.update`. -/
-theorem duplicateAt_def {α : Type*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α) :
-    duplicateAt e j z = j.succ.insertNth e (Function.update z j e) := by rfl
-
-/-- Coordinate formula for `duplicateAt`: `< j` unchanged, `j` and `j + 1` equal `e`, `> j + 1`
-shifted down by `1`. -/
-theorem duplicateAt_apply {α : Type*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α)
-    (k : Fin (L + 1)) :
-    duplicateAt e j z k =
-      if hk : k.1 < j.1 then z ⟨k.1, by omega⟩
-      else if k.1 = j.1 ∨ k.1 = j.1 + 1 then e else z ⟨k.1 - 1, by omega⟩ := by
-  rw [duplicateAt]
-  cases k using Fin.succAboveCases j.succ with
-  | x => simp
-  | p r =>
-    rw [Fin.insertNth_apply_succAbove]
-    rcases lt_trichotomy r.1 j.1 with hlt | heq | hgt
-    · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_lt hlt (congrArg Fin.val h)),
-        Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp; omega))]; simp [hlt]
-    · obtain rfl := Fin.ext heq
-      rw [Function.update_self, Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp))]; simp
-    · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_gt hgt (congrArg Fin.val h)),
-        Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega)),
-        dite_eq_right (by rw [Fin.val_succ]; omega), ite_eq_right (by rw [Fin.val_succ]; omega)]
-      exact congrArg z (Fin.ext (by simp))
-
-/-- Sum of `duplicateAt a j 𝒟` when `𝒟 j = a`: replacing `a` at `j` by two copies adds `a`. -/
-theorem sum_duplicateAt {G : Type*} [AddCommMonoid G] {L : ℕ} (j : Fin L) {a : G}
-    {𝒟 : Fin L → G} (h𝒟j : 𝒟 j = a) :
-    ∑ k : Fin (L + 1), duplicateAt a j 𝒟 k = (∑ r : Fin L, 𝒟 r) + a := by
-  rw [duplicateAt, Fin.sum_univ_succAbove _ j.succ, Fin.insertNth_apply_same]
-  simp only [Fin.insertNth_apply_succAbove]
-  rw [Finset.sum_update_of_mem (Finset.mem_univ j), Finset.sdiff_singleton_eq_erase]
-  have hsum := Finset.add_sum_erase Finset.univ 𝒟 (Finset.mem_univ j)
-  rw [h𝒟j] at hsum; rw [hsum, add_comm]
-
-/-- Prefix sums of `duplicateAt a j 𝒟` of length at most `j` agree with those of `𝒟`. -/
-theorem sum_duplicateAt_range_le {G : Type*} [AddCommMonoid G] {L : ℕ} (a : G) (j : Fin L)
-    (𝒟 : Fin L → G) {p : ℕ} (hp : p ≤ j.1) :
-    (∑ r ∈ Finset.range p, if h : r < L + 1 then duplicateAt a j 𝒟 ⟨r, h⟩ else 0) =
-      ∑ r ∈ Finset.range p, if h : r < L then 𝒟 ⟨r, h⟩ else 0 :=
-  Finset.sum_congr rfl fun r hr ↦ by
-    rw [Finset.mem_range] at hr
-    rw [dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply,
-      dite_eq_left (by rw [Fin.val_mk]; omega)]
-
-/-- Prefix sums of `duplicateAt a j 𝒟` of length `q + 1` with `j ≤ q ≤ L` exceed the length-`q`
-prefix sum of `𝒟` by `a` when `𝒟 j = a`. -/
-theorem sum_duplicateAt_range_succ_ge {G : Type*} [AddCommMonoid G] {L : ℕ} (j : Fin L) {a : G}
-    {𝒟 : Fin L → G} (h𝒟j : 𝒟 j = a) {q : ℕ} (hq₁ : j.1 ≤ q) : q ≤ L →
-    (∑ r ∈ Finset.range (q + 1), if h : r < L + 1 then duplicateAt a j 𝒟 ⟨r, h⟩ else 0) =
-      (∑ r ∈ Finset.range q, if h : r < L then 𝒟 ⟨r, h⟩ else 0) + a := by
-  induction q, hq₁ using Nat.le_induction with
-  | base =>
-    intro _
-    rw [Finset.sum_range_succ, sum_duplicateAt_range_le a j 𝒟 le_rfl, dite_eq_left (by omega),
-      duplicateAt_apply, dite_eq_right (lt_irrefl _), ite_eq_left (.inl rfl)]
-  | succ q hjq ih =>
-    intro hq₂
-    rw [Finset.sum_range_succ _ (q + 1), ih (by omega), Finset.sum_range_succ _ q,
-      dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply]
-    rcases eq_or_lt_of_le hjq with heq | hlt
-    · rw [show (⟨q, by omega⟩ : Fin L) = j from Fin.ext heq.symm, h𝒟j,
-        dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_left (.inr (by rw [Fin.val_mk]; omega))]
-    · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega),
-        show (⟨(⟨q + 1, by omega⟩ : Fin (L + 1)).1 - 1, by omega⟩ : Fin L) = ⟨q, by omega⟩
-          from Fin.ext (by simp), add_right_comm]
+/-! ### Subword and splice identities for duplicated entries -/
 
 /-- The initial `(n + 1)`-letter subword of `duplicateAt e j.castSucc w` duplicates `e` at slot `j`
 of the initial `n`-letter prefix of `w`. -/

@@ -48,30 +48,6 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 /-! ### The position-by-position unit-killing cochain -/
 
-private theorem taylor_curryMid_prefix_negOnePowCast (𝒜 : AInfinityAlgebra R A) (e : A) (m : ℕ)
-    (j : Fin (m + 2)) (𝒟 : Fin (m + 2) → ℤ) (v : Fin (m + 2) → A) : ∀ k ≤ m + 2,
-      (((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
-        (PiTensorProduct.tprod R)).curryMid j.succ e)
-          (fun r ↦ if r.1 < k then negOnePowCast R (𝒟 r) • v r else v r) =
-        negOnePowCast R (∑ i ∈ Finset.range k, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0) •
-          (((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
-            (PiTensorProduct.tprod R)).curryMid j.succ e) v
-  | 0, _ => by simp
-  | k + 1, hk => by
-    let M := ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
-      (PiTensorProduct.tprod R)).curryMid j.succ e
-    let f : Fin (m + 2) → A := fun r ↦ if r.1 < k then negOnePowCast R (𝒟 r) • v r else v r
-    have hupd : (fun r : Fin (m + 2) ↦ if r.1 < k + 1 then negOnePowCast R (𝒟 r) • v r else v r) =
-        Function.update f ⟨k, hk⟩ (negOnePowCast R (𝒟 ⟨k, hk⟩) • v ⟨k, hk⟩) := funext fun r ↦ by
-      rcases eq_or_ne r ⟨k, hk⟩ with rfl | hr
-      · simp [f]
-      · simp [Function.update_of_ne hr, f, show r.1 < k + 1 ↔ r.1 < k from
-          ⟨fun h ↦ Nat.lt_of_le_of_ne (Nat.lt_succ_iff.mp h) (Fin.val_ne_of_ne hr), by omega⟩]
-    rw [hupd, M.map_update_smul, RingHom.id_apply,
-      Function.update_eq_self_iff.2 (by simp [f] : v ⟨k, hk⟩ = f ⟨k, hk⟩),
-      taylor_curryMid_prefix_negOnePowCast 𝒜 e m j 𝒟 v k (by omega), smul_smul,
-      ← negOnePowCast_add, Finset.sum_range_succ, dite_eq_left (by omega : k < m + 2), add_comm]
-
 private noncomputable def unitKillingMultilinear (𝒜 : AInfinityAlgebra R A) (e : A)
     (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) A :=
@@ -134,34 +110,35 @@ private theorem unitKillingCochain_of_tprod_of_homogeneous (𝒜 : AInfinityAlge
             (PiTensorProduct.tprod R (duplicateAt e j z)))) := by
   let N := ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
     (PiTensorProduct.tprod R)).curryMid j.succ e
-  rw [unitKillingCochain_of_tprod]; congr 1
-  have htwist : (fun r : Fin (m + 2) ↦
-      if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r) =
-      fun r ↦ if r.1 < j.1 then negOnePowCast R (𝒟 r) • z r else z r := funext fun r ↦ by
-    split_ifs with hr
-    · rw [(𝒜.grading.shift 1).koszulTwist_one_apply_of_mem (hz r hr), negOnePowCast_eq_intCast]
-    · rfl
-  have hN := taylor_curryMid_prefix_negOnePowCast 𝒜 e m j (Function.update 𝒟 j (-1))
-    (Function.update z j e) j.1 (le_of_lt j.isLt)
-  have hlhs : (fun r : Fin (m + 2) ↦ if r.1 < j.1 then
-      negOnePowCast R (Function.update 𝒟 j (-1) r) • Function.update z j e r
-      else Function.update z j e r) =
-      Function.update (fun r ↦ if r.1 < j.1 then negOnePowCast R (𝒟 r) • z r else z r) j e :=
-    funext fun r ↦ by by_cases hr : r = j <;> simp [hr]
-  have hsum : (∑ i ∈ Finset.range j.1,
-      if h : i < m + 2 then Function.update 𝒟 j (-1) ⟨i, h⟩ else 0) =
-      ∑ i ∈ Finset.range j.1, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0 :=
-    Finset.sum_congr rfl fun i hi ↦ by
-      rw [Finset.mem_range] at hi
-      rw [dite_eq_left (by omega), dite_eq_left (by omega),
-        Function.update_of_ne (fun h ↦ Nat.ne_of_lt hi (congrArg Fin.val h))]
+  let s : Finset (Fin (m + 2)) := Finset.univ.filter fun r ↦ r.1 < j.1
+  have harg : Function.update (fun r : Fin (m + 2) ↦
+      if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r) j e =
+      s.piecewise (fun r ↦ negOnePowCast R (𝒟 r) • Function.update z j e r)
+        (Function.update z j e) := funext fun r ↦ by
+    rcases lt_trichotomy r j with hlt | rfl | hgt
+    · have hr : r.1 < j.1 := hlt
+      simp only [s, Finset.piecewise, Finset.mem_filter, Finset.mem_univ, true_and, hr, ↓reduceIte,
+        Function.update_of_ne hlt.ne]
+      rw [(𝒜.grading.shift 1).koszulTwist_one_apply_of_mem (hz r hr), negOnePowCast_eq_intCast]
+    · simp [s, Finset.piecewise]
+    · simp [s, Finset.piecewise, Function.update_of_ne hgt.ne', lt_asymm hgt]
+  have hsum : ∑ r ∈ s, 𝒟 r =
+      ∑ i ∈ Finset.range j.1, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0 := by
+    refine Finset.sum_nbij Fin.val (fun r hr ↦ Finset.mem_range.2 (Finset.mem_filter.1 hr).2)
+      (fun _ _ _ _ h ↦ Fin.ext h) (fun i hi ↦ ?_) (fun r _ ↦ by simp)
+    refine ⟨⟨i, lt_trans (Finset.mem_range.1 hi) j.2⟩, ?_, rfl⟩
+    exact Finset.mem_coe.2 (Finset.mem_filter.2 ⟨Finset.mem_univ _, Finset.mem_range.1 hi⟩)
+  have hN := N.map_piecewise_smul (fun r ↦ negOnePowCast R (𝒟 r)) (Function.update z j e) s
+  rw [← harg] at hN
+  simp only [RingHom.id_apply, ← negOnePowCast_sum, hsum] at hN
   have hN' : 𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R
-      (duplicateAt e j fun r ↦ if r.1 < j.1 then negOnePowCast R (𝒟 r) • z r else z r))) =
+      (duplicateAt e j fun r ↦
+        if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r))) =
       negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0) •
         𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R (duplicateAt e j z))) := by
-    simpa only [hlhs, hsum, N, duplicateAt_def, MultilinearMap.curryMid_apply_apply,
+    simpa only [N, duplicateAt_def, MultilinearMap.curryMid_apply_apply,
       LinearMap.compMultilinearMap_apply, LinearMap.comp_apply] using hN
-  rw [htwist, hN', smul_comm]
+  rw [unitKillingCochain_of_tprod, hN', smul_comm]
 
 private theorem isHomogeneous_unitKillingCochain (𝒜 : AInfinityAlgebra R A) {e : A}
     (he : e ∈ 𝒜.grading.piece 0) {π : Module.Dual R A} (hπ : π ∈ 𝒜.grading.dualPiece 0) (m : ℕ)

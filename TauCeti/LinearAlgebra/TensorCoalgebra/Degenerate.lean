@@ -262,19 +262,19 @@ theorem duplicateAt_mem_piece {ι : Type*} [DecidableEq ι] {G : InternalGrading
 
 /-- Membership in a submodule for an `n`-letter pure tensor word carrying a homogeneous element `e`
 at slot `i` may be checked on tuples of homogeneous letters carrying `e` with its degree at `i`. -/
-theorem of_tprod_mem_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
-    (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} (n : {n : ℕ // 0 < n})
+theorem of_tprod_mem_of_mem_piece {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι) {e : M}
+    {E : ι} (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} (n : {n : ℕ // 0 < n})
     (i : Fin n.1)
-    (h : ∀ (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ),
+    (h : ∀ (x : Fin n.1 → M) (𝒟 : Fin n.1 → ι),
       (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
         of R M n (PiTensorProduct.tprod R x) ∈ S)
     (x : Fin n.1 → M) (hi : x i = e) :
     of R M n (PiTensorProduct.tprod R x) ∈ S := by
   classical
   -- Expand every letter except the `i`-th one into its homogeneous components.
-  let support : Fin n.1 → Finset ℤ := fun j ↦
+  let support : Fin n.1 → Finset ι := fun j ↦
     if j = i then {E} else (DirectSum.decompose G.piece (x j)).support
-  let component : Fin n.1 → ℤ → M := fun j p ↦
+  let component : Fin n.1 → ι → M := fun j p ↦
     if j = i then e else DirectSum.decompose G.piece (x j) p
   have hx (j : Fin n.1) : ∑ p ∈ support j, component j p = x j := by
     by_cases hj : j = i
@@ -297,9 +297,10 @@ theorem of_tprod_mem_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ
 
 /-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
 is the homogeneous element `e` with its degree. -/
-theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
+theorem degenerateWords_le_iff_of_mem_piece {ι : Type*} [DecidableEq ι]
+    (G : InternalGrading R M ι) {e : M} {E : ι}
     (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
-    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ)
+    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ι)
       (i : Fin n.1), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
         of R M n (PiTensorProduct.tprod R x) ∈ S := by
   refine ⟨fun h n x 𝒟 i _ hi _ ↦ h (of_tprod_mem_degenerateWords n x ⟨i, hi⟩), fun h ↦ ?_⟩
