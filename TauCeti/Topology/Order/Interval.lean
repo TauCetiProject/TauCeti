@@ -89,18 +89,32 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
 
 /-- The frontier of `[a, b]` avoids a set containing neither `a` nor `b`. -/
-theorem disjoint_frontier_Icc {α : Type*} [TopologicalSpace α] [LinearOrder α] [OrderTopology α]
-    [DenselyOrdered α] [NoMinOrder α] [NoMaxOrder α] {a b : α} {s : Set α} (hab : a ≤ b)
-    (ha : a ∉ s) (hb : b ∉ s) : Disjoint (frontier (Icc a b)) s := by
-  rw [frontier_Icc hab]
-  exact disjoint_insert_left.2 ⟨ha, disjoint_singleton_left.2 hb⟩
+theorem disjoint_frontier_Icc {α : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {a b : α} {s : Set α} (ha : a ∉ s) (hb : b ∉ s) :
+    Disjoint (frontier (Icc a b)) s := by
+  refine disjoint_left.2 fun x hx hxs ↦ ?_
+  -- The frontier lies in `[a, b]`, but not in the interior, which contains `(a, b)`.
+  have hx' : x ∈ Icc a b \ Ioo a b := ⟨isClosed_Icc.frontier_subset hx, fun h ↦
+    disjoint_left.1 disjoint_interior_frontier (interior_maximal Ioo_subset_Icc_self isOpen_Ioo h)
+      hx⟩
+  rw [Icc_sdiff_Ioo_same (hx'.1.1.trans hx'.1.2)] at hx'
+  rcases hx' with rfl | rfl
+  exacts [ha hxs, hb hxs]
 
 /-- The frontier of `(a, b]` avoids a set containing neither `a` nor `b`. -/
-theorem disjoint_frontier_Ioc {α : Type*} [TopologicalSpace α] [LinearOrder α] [OrderTopology α]
-    [DenselyOrdered α] [NoMaxOrder α] {a b : α} {s : Set α} (hab : a < b) (ha : a ∉ s)
-    (hb : b ∉ s) : Disjoint (frontier (Ioc a b)) s := by
-  rw [frontier_Ioc hab]
-  exact disjoint_insert_left.2 ⟨ha, disjoint_singleton_left.2 hb⟩
+theorem disjoint_frontier_Ioc {α : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {a b : α} {s : Set α} (ha : a ∉ s) (hb : b ∉ s) :
+    Disjoint (frontier (Ioc a b)) s := by
+  refine disjoint_left.2 fun x hx hxs ↦ ?_
+  -- The frontier lies in the closure, inside `[a, b]`, but not in the interior, which contains
+  -- `(a, b)`.
+  have hx' : x ∈ Icc a b \ Ioo a b :=
+    ⟨closure_minimal Ioc_subset_Icc_self isClosed_Icc (frontier_subset_closure hx), fun h ↦
+      disjoint_left.1 disjoint_interior_frontier (interior_maximal Ioo_subset_Ioc_self isOpen_Ioo h)
+        hx⟩
+  rw [Icc_sdiff_Ioo_same (hx'.1.1.trans hx'.1.2)] at hx'
+  rcases hx' with rfl | rfl
+  exacts [ha hxs, hb hxs]
 
 /-- In `ℝ`, an interval whose endpoints lie within `ε` of `x` is contained in the ball of radius
 `ε` about `x`. -/
