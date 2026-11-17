@@ -62,7 +62,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds;
   `TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset` is the version for a product `f g`
   where `f` is only controlled near the support of `g`.
-* `ContDiff.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
+* `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
   most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
@@ -294,13 +294,13 @@ theorem ContDiff.norm_iteratedFDeriv_comp_const_smul_le {N : ℕ} {f : E → F}
   rw [iteratedFDeriv_comp_const_smul c (hf.of_le (by exact_mod_cast hp)), norm_smul, norm_pow]
   exact mul_le_mul (pow_le_pow_right₀ hc hp) (hC p hp _) (norm_nonneg _) (by positivity)
 
-/-- The order-`k` derivative of `y ↦ f y • v`, for a scalar-valued `f` and a fixed vector `v`, is
-at most that of `f` times `‖v‖`. -/
-theorem ContDiff.norm_iteratedFDeriv_smul_const_le {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
-    [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F] {f : E → A} {k : ℕ}
-    (hf : ContDiff 𝕜 k f) (v : F) (x : E) :
+/-- The order-`k` derivative of `y ↦ f y • v` at `x`, for a scalar-valued `f` that is `C^k` at `x`
+and a fixed vector `v`, is at most that of `f` times `‖v‖`. -/
+theorem ContDiffAt.norm_iteratedFDeriv_smul_const_le {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F] {f : E → A} {k : ℕ}
+    {x : E} (hf : ContDiffAt 𝕜 k f x) (v : F) :
     ‖iteratedFDeriv 𝕜 k (fun y ↦ f y • v) x‖ ≤ ‖iteratedFDeriv 𝕜 k f x‖ * ‖v‖ := by
-  rw [iteratedFDeriv_smul_const_apply hf.contDiffAt, mul_comm]
+  rw [iteratedFDeriv_smul_const_apply hf, mul_comm]
   refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans ?_
   gcongr
   refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun z ↦ ?_

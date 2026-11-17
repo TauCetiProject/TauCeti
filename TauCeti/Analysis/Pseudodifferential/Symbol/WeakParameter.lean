@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
-import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
+import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -45,20 +47,21 @@ The symbol at the spectral parameter `λ` is `a(x, ξ, λ⁻¹)`. This is the cl
 
 * `TauCeti.WeakParameterSymbol.toSymbol`, `TauCeti.WeakParameterSymbol.iteratedDerivSymbol`: the
   value at `r ∈ R` is a symbol of order `m`, and its `j`-th derivative in `r` one of order
-  `m + d j`; `TauCeti.WeakParameterSymbol.bddAbove_seminorm_iteratedDerivSymbol` says that the
-  seminorms of the latter are bounded uniformly in `r`.
+  `m + d j`, both `ℂ`-linear in the weakly parameter-dependent symbol;
+  `TauCeti.WeakParameterSymbol.bddAbove_seminorm_iteratedDerivSymbol` says that the seminorms of
+  the latter are bounded uniformly in `r`.
 * `TauCeti.WeakParameterSymbol.inclusion`: the class grows with `m` and with `d`, and it is a
   complex vector space.
 * `TauCeti.WeakParameterSymbol.ofSymbol`: a symbol independent of the parameter is weakly
   parameter-dependent for every anisotropy.
-* `TauCeti.WeakParameterSymbol.shiftedLaplacianResolvent`: on a sector `Re r ≤ c ‖r‖`, `c < 1`,
-  of reciprocal parameters, the normalized resolvent symbol `(1 - r (1 + ‖ξ‖²))⁻¹` of `1 - Δ`
-  has frequency order `0` and anisotropy `2`. Its `j`-th derivative in `r` is
-  `j! (1 + ‖ξ‖²) ^ j (1 - r (1 + ‖ξ‖²)) ^ (-(j + 1))`
-  (`TauCeti.WeakParameterSymbol.iteratedDeriv_coefficient_shiftedLaplacianResolvent`). At the
-  spectral parameter `λ` it is `-λ` times the resolvent symbol `((1 + ‖ξ‖²) - λ)⁻¹` of the
+* `TauCeti.WeakParameterSymbol.shiftedLaplacianNormalizedResolvent`: on a sector
+  `Re r ≤ c ‖r‖`, `c < 1`, of reciprocal parameters, the normalized resolvent symbol
+  `(1 - r (1 + ‖ξ‖²))⁻¹` of `1 - Δ` has frequency order `0` and anisotropy `2`. Its `j`-th
+  derivative in `r` is `j! (1 + ‖ξ‖²) ^ j (1 - r (1 + ‖ξ‖²)) ^ (-(j + 1))`
+  (`TauCeti.WeakParameterSymbol.iteratedDeriv_coefficient_shiftedLaplacianNormalizedResolvent`).
+  At the spectral parameter `λ` it is `-λ` times the resolvent symbol `((1 + ‖ξ‖²) - λ)⁻¹` of the
   strongly parameter-dependent calculus
-  (`TauCeti.WeakParameterSymbol.coefficient_shiftedLaplacianResolvent_inv_eq_neg_smul`).
+  (`TauCeti.WeakParameterSymbol.coefficient_shiftedLaplacianNormalizedResolvent_inv_eq_neg_smul`).
 
 ## Implementation notes
 
@@ -267,6 +270,34 @@ theorem coefficient_iteratedDerivSymbol (a : WeakParameterSymbol n R V W d m) (j
     (hr : r ∈ R) (p : CoordinateSpace n × CoordinateSpace n) :
     (a.iteratedDerivSymbol j hr).coefficient p = iteratedDeriv j (a.coefficient p) r := (rfl)
 
+@[simp]
+theorem iteratedDerivSymbol_zero (j : ℕ) {r : ℂ} (hr : r ∈ R) :
+    (0 : WeakParameterSymbol n R V W d m).iteratedDerivSymbol j hr = 0 :=
+  Symbol.ext (funext fun _ => iteratedDeriv_const_zero)
+
+@[simp]
+theorem iteratedDerivSymbol_add (a b : WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ}
+    (hr : r ∈ R) :
+    (a + b).iteratedDerivSymbol j hr = a.iteratedDerivSymbol j hr + b.iteratedDerivSymbol j hr :=
+  Symbol.ext (funext fun _ => iteratedDeriv_fun_add (a.contDiffAt_coefficient _ hr)
+    (b.contDiffAt_coefficient _ hr))
+
+@[simp]
+theorem iteratedDerivSymbol_smul (c : ℂ) (a : WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ}
+    (hr : r ∈ R) : (c • a).iteratedDerivSymbol j hr = c • a.iteratedDerivSymbol j hr :=
+  Symbol.ext (funext fun _ => iteratedDeriv_fun_const_smul (a.contDiffAt_coefficient _ hr) c)
+
+@[simp]
+theorem iteratedDerivSymbol_neg (a : WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ}
+    (hr : r ∈ R) : (-a).iteratedDerivSymbol j hr = -a.iteratedDerivSymbol j hr := by
+  rw [← neg_one_smul ℂ a, iteratedDerivSymbol_smul, neg_one_smul]
+
+@[simp]
+theorem iteratedDerivSymbol_sub (a b : WeakParameterSymbol n R V W d m) (j : ℕ) {r : ℂ}
+    (hr : r ∈ R) :
+    (a - b).iteratedDerivSymbol j hr = a.iteratedDerivSymbol j hr - b.iteratedDerivSymbol j hr := by
+  rw [sub_eq_add_neg, iteratedDerivSymbol_add, iteratedDerivSymbol_neg, ← sub_eq_add_neg]
+
 /-- The value at `r ∈ R`, a symbol of order `m`. -/
 def toSymbol (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) : Symbol n V W m where
   coefficient p := a.coefficient p r
@@ -278,6 +309,28 @@ def toSymbol (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) : Sy
 theorem coefficient_toSymbol (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (a.toSymbol hr).coefficient p = a.coefficient p r := (rfl)
+
+@[simp]
+theorem toSymbol_zero {r : ℂ} (hr : r ∈ R) :
+    (0 : WeakParameterSymbol n R V W d m).toSymbol hr = 0 := (rfl)
+
+@[simp]
+theorem toSymbol_add (a b : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) :
+    (a + b).toSymbol hr = a.toSymbol hr + b.toSymbol hr := (rfl)
+
+@[simp]
+theorem toSymbol_smul (c : ℂ) (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) :
+    (c • a).toSymbol hr = c • a.toSymbol hr := (rfl)
+
+@[simp]
+theorem toSymbol_neg (a : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) :
+    (-a).toSymbol hr = -a.toSymbol hr := by
+  rw [← neg_one_smul ℂ a, toSymbol_smul, neg_one_smul]
+
+@[simp]
+theorem toSymbol_sub (a b : WeakParameterSymbol n R V W d m) {r : ℂ} (hr : r ∈ R) :
+    (a - b).toSymbol hr = a.toSymbol hr - b.toSymbol hr := by
+  rw [sub_eq_add_neg, toSymbol_add, toSymbol_neg, ← sub_eq_add_neg]
 
 /-- **Uniform estimates.** Every seminorm of the `j`-th parameter derivative is bounded uniformly
 in the parameter `r ∈ R`. -/
@@ -324,20 +377,16 @@ def inclusion (hm : m ≤ m') (hd : d ≤ d') :
 theorem coefficient_inclusion (hm : m ≤ m') (hd : d ≤ d') (a : WeakParameterSymbol n R V W d m) :
     (inclusion hm hd a).coefficient = a.coefficient := (rfl)
 
+@[simp]
+theorem toSymbol_inclusion (hm : m ≤ m') (hd : d ≤ d') (a : WeakParameterSymbol n R V W d m)
+    {r : ℂ} (hr : r ∈ R) : (inclusion hm hd a).toSymbol hr = Symbol.inclusion hm (a.toSymbol hr) :=
+  Symbol.ext (Symbol.coefficient_inclusion hm (a.toSymbol hr)).symm
+
 theorem inclusion_injective (hm : m ≤ m') (hd : d ≤ d') :
     Function.Injective (inclusion (n := n) (R := R) (V := V) (W := W) hm hd) :=
   fun _ _ hab => WeakParameterSymbol.ext (by simpa using congrArg coefficient hab)
 
 /-! ### Parameter-independent symbols -/
-
-/-- On an open set, the iterated derivatives of a function that is constant near the point are
-those of the constant. -/
-private theorem iteratedDeriv_indicator_const {c : V →L[ℂ] W} (j : ℕ) {r : ℂ} (hr : r ∈ R) :
-    iteratedDeriv j ((R : Set ℂ).indicator fun _ => c) r = if j = 0 then c else 0 := by
-  have h : ((R : Set ℂ).indicator fun _ => c) =ᶠ[𝓝 r] fun _ => c := by
-    filter_upwards [R.isOpen.mem_nhds hr] with s hs
-    exact indicator_of_mem hs _
-  rw [h.iteratedDeriv_eq, iteratedDeriv_const]
 
 /-- A symbol `b` of order `m` that does not depend on the parameter is weakly parameter-dependent
 of frequency order `m`, for every anisotropy `d`: its parameter derivatives vanish. -/
@@ -347,7 +396,7 @@ def ofSymbol (b : Symbol n V W m) : WeakParameterSymbol n R V W d m where
     (contDiffOn_const (c := b.coefficient p)).congr fun _ hr => indicator_of_mem hr _
   coefficient_of_notMem p r hr := indicator_of_notMem hr _
   contDiff_iteratedDeriv j r hr := by
-    simp only [iteratedDeriv_indicator_const j hr]
+    simp only [iteratedDeriv_indicator_of_mem R.isOpen hr, iteratedDeriv_const]
     split_ifs
     · exact b.contDiff_coefficient
     · exact contDiff_const
@@ -355,9 +404,10 @@ def ofSymbol (b : Symbol n V W m) : WeakParameterSymbol n R V W d m where
     rcases eq_or_ne j 0 with rfl | hj
     · obtain ⟨C, hC, hCb⟩ := b.exists_bound K hK α β
       exact ⟨C, hC, fun x hx ξ r hr => by
-        simpa [iteratedDeriv_indicator_const 0 hr] using hCb x hx ξ⟩
+        simpa [iteratedDeriv_indicator_of_mem R.isOpen hr] using hCb x hx ξ⟩
     · exact ⟨0, le_rfl, fun x _ ξ r hr => by
-        simp only [iteratedDeriv_indicator_const j hr, hj, ↓reduceIte, zero_mul, norm_le_zero_iff]
+        simp only [iteratedDeriv_indicator_of_mem R.isOpen hr, iteratedDeriv_const, hj, ↓reduceIte,
+          zero_mul, norm_le_zero_iff]
         exact mixedDeriv_zero (A := V →L[ℂ] W) α β x ξ⟩
 
 @[simp]
@@ -373,41 +423,21 @@ theorem toSymbol_ofSymbol (b : Symbol n V W m) {r : ℂ} (hr : r ∈ R) :
 
 /-! ### The normalized resolvent of `1 - Δ` -/
 
-/-- On the sector `Re r ≤ c ‖r‖`, `c < 1`, the numbers `1 - r t`, `t ≥ 0`, stay away from `0`:
-`‖1 - r t‖ ≥ (1 - max c (-1)) / 2 * (1 + ‖r‖ t)`. -/
-private theorem mul_one_add_le_norm_one_sub_mul {c : ℝ} (hc : c < 1) {r : ℂ}
+/-- On the sector `Re r ≤ c ‖r‖`, the numbers `1 - r t`, `t ≥ 0`, satisfy
+`‖1 - r t‖ ≥ (1 - max c (-1)) / 2 * (1 + ‖r‖ t)`, which keeps them away from `0` for `c < 1`. -/
+private theorem mul_one_add_le_norm_one_sub_mul {c : ℝ} {r : ℂ}
     (hr : r.re ≤ c * ‖r‖) {t : ℝ} (ht : 0 ≤ t) :
     (1 - max c (-1)) / 2 * (1 + ‖r‖ * t) ≤ ‖1 - r * t‖ := by
-  set c₀ := max c (-1)
-  have hc₀ : -1 ≤ c₀ := le_max_right _ _
-  have hc₀' : c₀ < 1 := max_lt hc (by norm_num)
-  set a := ‖r‖ * t
-  have ha : 0 ≤ a := by positivity
-  have hre : (r * t).re ≤ c₀ * a := by
-    have : (r * t).re = r.re * t := by simp
-    rw [this]
-    calc r.re * t ≤ c * ‖r‖ * t := mul_le_mul_of_nonneg_right hr ht
-      _ ≤ c₀ * a := by
-        rw [mul_assoc]
-        exact mul_le_mul_of_nonneg_right (le_max_left _ _) ha
-  have hsq : ‖1 - r * t‖ ^ 2 = 1 - 2 * (r * t).re + a ^ 2 := by
-    have hnorm : ‖r * t‖ = a := by
-      rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht]
-    rw [← hnorm, Complex.sq_norm, Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
-    simp only [Complex.sub_re, Complex.one_re, Complex.sub_im, Complex.one_im]
-    ring
-  have h1 : ((1 - c₀) / 2 * (1 + a)) ^ 2 ≤ ‖1 - r * t‖ ^ 2 := by
-    rw [hsq]
-    nlinarith [mul_le_mul_of_nonneg_left hre (by norm_num : (0 : ℝ) ≤ 2),
-      mul_nonneg (by linarith : 0 ≤ 1 + c₀) (sq_nonneg (1 - a)),
-      mul_nonneg (mul_nonneg (by linarith : 0 ≤ 1 - c₀) (by linarith : 0 ≤ 1 + c₀))
-        (sq_nonneg (1 + a))]
-  exact le_of_pow_le_pow_left₀ two_ne_zero (norm_nonneg _) h1
+  have hnorm : ‖r * t‖ = ‖r‖ * t := by rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht]
+  have h := Complex.mul_add_norm_le_norm_ofReal_sub (z := r * t) zero_le_one (by
+    rw [hnorm]
+    simpa [mul_assoc] using mul_le_mul_of_nonneg_right hr ht)
+  rwa [hnorm, Complex.ofReal_one] at h
 
 private theorem one_sub_mul_ne_zero {c : ℝ} (hc : c < 1) {r : ℂ} (hr : r.re ≤ c * ‖r‖) {t : ℝ}
     (ht : 0 ≤ t) : 1 - r * t ≠ 0 := by
   intro h
-  have h' := mul_one_add_le_norm_one_sub_mul hc hr ht
+  have h' := mul_one_add_le_norm_one_sub_mul hr ht
   rw [h, norm_zero] at h'
   have : 0 < (1 - max c (-1)) / 2 * (1 + ‖r‖ * t) :=
     mul_pos (by linarith [max_lt hc (show (-1 : ℝ) < 1 by norm_num)]) (by positivity)
@@ -526,7 +556,7 @@ private theorem exists_norm_iteratedFDeriv_inv_one_sub_mul_weight_le {c : ℝ} (
   have hlow : (1 - max c (-1)) / 2 * σ ≤ ‖h 0‖ := by
     have h0 : h 0 = 1 - r * (u : ℂ) := by simp [hhdef, hudef]
     rw [h0]
-    exact mul_one_add_le_norm_one_sub_mul hc hr hu.le
+    exact mul_one_add_le_norm_one_sub_mul hr hu.le
   have hinv := hQb h σ 0 (by positivity) (hh.of_le (mod_cast le_top)) hder hlow k le_rfl
   -- Undo the dilation: `‖D^k (h⁻¹) 0‖ = t ^ k ‖D^k (1 - r (1 + ‖·‖²))⁻¹ ξ‖`.
   have hundil : ‖iteratedFDeriv ℝ k (fun v => (h v)⁻¹) 0‖ = ‖t‖ ^ k * ‖iteratedFDeriv ℝ k
@@ -543,46 +573,36 @@ private theorem exists_norm_iteratedFDeriv_inv_one_sub_mul_weight_le {c : ℝ} (
         rw [div_eq_mul_inv, ← Real.rpow_neg hu.le]
         ring_nf
 
-/-- The derivatives in `r` of the normalized resolvent `(1 - r u)⁻¹`:
-`∂_r^j (1 - r u)⁻¹ = j! u ^ j ((1 - r u)⁻¹) ^ (j + 1)` wherever `1 - r u ≠ 0`. -/
-private theorem iteratedDeriv_inv_one_sub_mul (u : ℂ) (j : ℕ) {r : ℂ} (hr : 1 - r * u ≠ 0) :
-    iteratedDeriv j (fun r => (1 - r * u)⁻¹) r = j ! * (u ^ j * ((1 - r * u)⁻¹) ^ (j + 1)) := by
-  induction j generalizing r with
-  | zero => simp
-  | succ j ih =>
-    have hopen : IsOpen {s : ℂ | 1 - s * u ≠ 0} :=
-      isOpen_ne_fun (continuous_const.sub (continuous_id.mul continuous_const)) continuous_const
-    have hev : iteratedDeriv j (fun r => (1 - r * u)⁻¹) =ᶠ[𝓝 r]
-        fun s => j ! * (u ^ j * ((1 - s * u)⁻¹) ^ (j + 1)) := by
-      filter_upwards [hopen.mem_nhds hr] with s hs
-      exact ih hs
-    rw [iteratedDeriv_succ, hev.deriv_eq]
-    have h1 : HasDerivAt (fun s : ℂ => 1 - s * u) (-u) r := by
-      simpa using ((hasDerivAt_id r).mul_const u).const_sub 1
-    have h2 := ((h1.inv hr).pow (j + 1)).const_mul ((j ! : ℂ) * u ^ j)
-    have h3 : HasDerivAt (fun s => (j ! : ℂ) * (u ^ j * ((1 - s * u)⁻¹) ^ (j + 1)))
-        ((j ! : ℂ) * u ^ j * (((j + 1 : ℕ) : ℂ) * ((1 - r * u)⁻¹) ^ j *
-          (-(-u) / (1 - r * u) ^ 2))) r := by
-      convert h2 using 1
-      · funext s
-        simp only [Pi.pow_apply, Pi.inv_apply]
-        ring
-      · simp
-    rw [h3.deriv, Nat.factorial_succ, neg_neg, div_eq_mul_inv, ← inv_pow]
-    push_cast
-    ring
-
-/-- The `j`-th parameter derivative of `(1 - r w)⁻¹ • id` on an open set of parameters. -/
+/-- The `j`-th parameter derivative of `(1 - r u)⁻¹ • id` on an open set of parameters:
+`∂_r^j (1 - r u)⁻¹ = j! u ^ j ((1 - r u)⁻¹) ^ (j + 1)` (Mathlib's `iter_deriv_inv_linear`). -/
 private theorem iteratedDeriv_indicator_inv_one_sub_mul_smul (u : ℂ) (j : ℕ) {r : ℂ} (hr : r ∈ R)
     (hu : 1 - r * u ≠ 0) :
     iteratedDeriv j ((R : Set ℂ).indicator fun r => (1 - r * u)⁻¹ • ContinuousLinearMap.id ℂ V)
         r = (j ! * (u ^ j * ((1 - r * u)⁻¹) ^ (j + 1))) • ContinuousLinearMap.id ℂ V := by
-  have hev : ((R : Set ℂ).indicator fun r => (1 - r * u)⁻¹ • ContinuousLinearMap.id ℂ V) =ᶠ[𝓝 r]
-      fun r => (1 - r * u)⁻¹ • ContinuousLinearMap.id ℂ V := by
-    filter_upwards [R.isOpen.mem_nhds hr] with s hs
-    exact indicator_of_mem hs _
-  rw [hev.iteratedDeriv_eq, iteratedDeriv_smul_const, iteratedDeriv_inv_one_sub_mul u j hu]
-  exact ((contDiffAt_const.sub (contDiffAt_id.mul contDiffAt_const)).inv hu)
+  have hf : (fun r : ℂ => (1 - r * u)⁻¹) = fun r => (-u * r + 1)⁻¹ := by
+    funext s
+    ring_nf
+  have hd : ContDiffAt ℂ j (fun s : ℂ => (1 - s * u)⁻¹) r :=
+    (contDiffAt_const.sub (contDiffAt_id.mul contDiffAt_const)).inv hu
+  rw [iteratedDeriv_indicator_of_mem R.isOpen hr, iteratedDeriv_smul_const hd, hf,
+    iteratedDeriv_eq_iterate, iter_deriv_inv_linear]
+  congr 1
+  beta_reduce
+  have h1 : ((-1 : ℂ)) ^ j * (-1) ^ j = 1 := by rw [← mul_pow]; norm_num
+  rw [show (-1 - j : ℤ) = -((j + 1 : ℕ) : ℤ) by push_cast; ring, zpow_neg, zpow_natCast,
+    ← inv_pow, show -u * r + 1 = 1 - r * u by ring, neg_pow u j]
+  linear_combination (j ! * u ^ j * ((1 - r * u)⁻¹) ^ (j + 1) : ℂ) * h1
+
+/-- The `j`-th parameter derivative of the normalized resolvent of `1 - Δ`, at a parameter `r ∈ R`
+in the sector `Re r ≤ c ‖r‖`, as a function of `(x, ξ)`. -/
+private theorem iteratedDeriv_indicator_inv_one_sub_mul_weight_smul {c : ℝ} (hc : c < 1) (j : ℕ)
+    {r : ℂ} (hr : r ∈ R) (hrc : r.re ≤ c * ‖r‖) :
+    (fun p : CoordinateSpace n × CoordinateSpace n => iteratedDeriv j ((R : Set ℂ).indicator
+      fun r => (1 - r * ((1 + ‖p.2‖ ^ 2 : ℝ) : ℂ))⁻¹ • ContinuousLinearMap.id ℂ V) r) =
+      fun p => ((j ! : ℂ) * (((1 + ‖p.2‖ ^ 2 : ℝ) : ℂ) ^ j *
+        ((1 - r * ((1 + ‖p.2‖ ^ 2 : ℝ) : ℂ))⁻¹) ^ (j + 1))) • ContinuousLinearMap.id ℂ V :=
+  funext fun p => iteratedDeriv_indicator_inv_one_sub_mul_smul _ j hr
+    (one_sub_mul_ne_zero hc hrc (by positivity : (0 : ℝ) ≤ 1 + ‖p.2‖ ^ 2))
 
 /-- The `j`-th parameter derivative `j! (1 + ‖ξ‖²) ^ j ((1 - r (1 + ‖ξ‖²))⁻¹) ^ (j + 1)` of the
 normalized resolvent is smooth in `ξ` for `r` in the sector. -/
@@ -618,10 +638,11 @@ private theorem exists_norm_iteratedFDeriv_resolventDeriv_le {c : ℝ} (hc : c <
       ((1 - (r : ℂ) * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ))⁻¹) ^ (j + 1))
     (fun _ => ((contDiff_weight (n := n)).pow j).of_le (mod_cast le_top))
     (fun r => ((hG r).pow (j + 1)).of_le (mod_cast le_top)) (k := k)
-    (fun i _ => exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow
-      (fun _ => contDiff_weight (n := n)) hW j i)
-    (fun i _ => exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow hG
-      (fun i => exists_norm_iteratedFDeriv_inv_one_sub_mul_weight_le hc i) (j + 1) i)
+    (fun i _ => exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow (k := i)
+      (fun _ => (contDiff_weight (n := n)).of_le (mod_cast le_top)) (fun i' _ => hW i') j)
+    (fun i _ => exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow (k := i)
+      (fun r => (hG r).of_le (mod_cast le_top))
+      (fun i' _ => exists_norm_iteratedFDeriv_inv_one_sub_mul_weight_le hc i') (j + 1))
   refine ⟨j ! * |C|, by positivity, fun r ξ => ?_⟩
   have hsmul : (fun ξ : CoordinateSpace n => (j ! : ℂ) *
       (((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) ^ j * ((1 - (r : ℂ) * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ))⁻¹) ^ (j + 1))) =
@@ -656,7 +677,7 @@ private theorem exists_norm_mixedDeriv_resolventDeriv_le {c : ℝ} (hc : c < 1) 
   rcases eq_or_ne α [] with rfl | hα
   · rw [mixedDeriv_nil_comp_snd F]
     refine (norm_coordinateDeriv_le β ((hs.smul contDiff_const).of_le (mod_cast le_top)) ξ).trans ?_
-    refine ((hs.of_le (mod_cast le_top)).norm_iteratedFDeriv_smul_const_le _ ξ).trans ?_
+    refine ((hs.of_le (mod_cast le_top)).contDiffAt.norm_iteratedFDeriv_smul_const_le _).trans ?_
     refine (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le).trans ?_
     exact hC ⟨r, hr⟩ ξ
   · rw [mixedDeriv_comp_snd F hα, norm_zero]
@@ -668,7 +689,7 @@ of reciprocal parameters inside a sector `Re r ≤ c ‖r‖`, `c < 1`. At the s
 `λ = r⁻¹` it is `λ (λ - (1 + ‖ξ‖²))⁻¹`. It is weakly parameter-dependent of frequency order `0`
 and anisotropy `2`: its `j`-th derivative in `r` is
 `j! (1 + ‖ξ‖²) ^ j (1 - r (1 + ‖ξ‖²)) ^ (-(j + 1))`, of order `2 j` uniformly in `r`. -/
-def shiftedLaplacianResolvent {c : ℝ} (hc : c < 1) (hR : ∀ r ∈ R, r.re ≤ c * ‖r‖) :
+def shiftedLaplacianNormalizedResolvent {c : ℝ} (hc : c < 1) (hR : ∀ r ∈ R, r.re ≤ c * ‖r‖) :
     WeakParameterSymbol n R V V 2 0 where
   coefficient p := (R : Set ℂ).indicator fun r =>
     (1 - r * ((1 + ‖p.2‖ ^ 2 : ℝ) : ℂ))⁻¹ • ContinuousLinearMap.id ℂ V
@@ -680,44 +701,40 @@ def shiftedLaplacianResolvent {c : ℝ} (hc : c < 1) (hR : ∀ r ∈ R, r.re ≤
       one_sub_mul_ne_zero hc (hR r hr) (by positivity)).smul contDiffOn_const
   coefficient_of_notMem p r hr := indicator_of_notMem hr _
   contDiff_iteratedDeriv j r hr := by
-    rw [funext fun p : CoordinateSpace n × CoordinateSpace n =>
-      iteratedDeriv_indicator_inv_one_sub_mul_smul (V := V) _ j hr
-        (one_sub_mul_ne_zero hc (hR r hr) (by positivity : (0 : ℝ) ≤ 1 + ‖p.2‖ ^ 2))]
+    rw [iteratedDeriv_indicator_inv_one_sub_mul_weight_smul hc j hr (hR r hr)]
     exact ((contDiff_resolventDeriv hc (hR r hr) j).smul contDiff_const).comp contDiff_snd
   exists_bound K _ j α β := by
     obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_resolventDeriv_le (n := n) (V := V) hc j β
     refine ⟨C, hC0, fun x _ ξ r hr => ?_⟩
-    rw [funext fun p : CoordinateSpace n × CoordinateSpace n =>
-      iteratedDeriv_indicator_inv_one_sub_mul_smul (V := V) _ j hr
-        (one_sub_mul_ne_zero hc (hR r hr) (by positivity : (0 : ℝ) ≤ 1 + ‖p.2‖ ^ 2))]
+    rw [iteratedDeriv_indicator_inv_one_sub_mul_weight_smul hc j hr (hR r hr)]
     exact hC r (hR r hr) α x ξ
 
 variable {c : ℝ} {hc : c < 1} {hR : ∀ r ∈ R, r.re ≤ c * ‖r‖}
 
 @[simp]
-theorem coefficient_shiftedLaplacianResolvent (x ξ : CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
-    (shiftedLaplacianResolvent V hc hR).coefficient (x, ξ) r =
+theorem coefficient_shiftedLaplacianNormalizedResolvent (x ξ : CoordinateSpace n) {r : ℂ}
+    (hr : r ∈ R) :
+    (shiftedLaplacianNormalizedResolvent V hc hR).coefficient (x, ξ) r =
       (1 - r * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ))⁻¹ • ContinuousLinearMap.id ℂ V :=
   indicator_of_mem (s := (R : Set ℂ)) hr fun r =>
     (1 - r * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ))⁻¹ • ContinuousLinearMap.id ℂ V
 
 /-- The parameter derivatives of the normalized resolvent symbol:
 `∂_r^j (1 - r (1 + ‖ξ‖²))⁻¹ = j! (1 + ‖ξ‖²) ^ j ((1 - r (1 + ‖ξ‖²))⁻¹) ^ (j + 1)`. -/
-theorem iteratedDeriv_coefficient_shiftedLaplacianResolvent (j : ℕ) (x ξ : CoordinateSpace n)
-    {r : ℂ} (hr : r ∈ R) :
-    iteratedDeriv j ((shiftedLaplacianResolvent V hc hR).coefficient (x, ξ)) r =
+theorem iteratedDeriv_coefficient_shiftedLaplacianNormalizedResolvent (j : ℕ)
+    (x ξ : CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
+    iteratedDeriv j ((shiftedLaplacianNormalizedResolvent V hc hR).coefficient (x, ξ)) r =
       ((j ! : ℂ) * (((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) ^ j *
         ((1 - r * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ))⁻¹) ^ (j + 1))) • ContinuousLinearMap.id ℂ V :=
-  iteratedDeriv_indicator_inv_one_sub_mul_smul _ j hr
-    (one_sub_mul_ne_zero hc (hR r hr) (by positivity))
+  congrFun (iteratedDeriv_indicator_inv_one_sub_mul_weight_smul hc j hr (hR r hr)) (x, ξ)
 
 /-- At the spectral parameter `λ ≠ 0` with `λ⁻¹ ∈ R`, the normalized resolvent symbol is
 `-λ ((1 + ‖ξ‖²) - λ)⁻¹`, that is `-λ` times the resolvent symbol of `1 - Δ`. -/
-theorem coefficient_shiftedLaplacianResolvent_inv (x ξ : CoordinateSpace n) {μ : ℂ}
+theorem coefficient_shiftedLaplacianNormalizedResolvent_inv (x ξ : CoordinateSpace n) {μ : ℂ}
     (hμ : μ⁻¹ ∈ R) (hμ0 : μ ≠ 0) :
-    (shiftedLaplacianResolvent V hc hR).coefficient (x, ξ) μ⁻¹ =
+    (shiftedLaplacianNormalizedResolvent V hc hR).coefficient (x, ξ) μ⁻¹ =
       (-μ * (((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) - μ)⁻¹) • ContinuousLinearMap.id ℂ V := by
-  rw [coefficient_shiftedLaplacianResolvent x ξ hμ]
+  rw [coefficient_shiftedLaplacianNormalizedResolvent x ξ hμ]
   have h1 : 1 - μ⁻¹ * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) = -(((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) - μ) * μ⁻¹ := by
     field_simp
     ring
@@ -728,13 +745,13 @@ theorem coefficient_shiftedLaplacianResolvent_inv (x ξ : CoordinateSpace n) {μ
 /-- **Comparison with the strongly parameter-dependent calculus.** At a spectral parameter
 `λ ∈ Λ` with `λ⁻¹ ∈ R`, the normalized resolvent symbol is `-λ` times the resolvent symbol
 `((1 + ‖ξ‖²) - λ)⁻¹`, the inverse of the strongly parameter-dependent symbol of `1 - Δ - λ`. -/
-theorem coefficient_shiftedLaplacianResolvent_inv_eq_neg_smul [CompleteSpace V]
+theorem coefficient_shiftedLaplacianNormalizedResolvent_inv_eq_neg_smul [CompleteSpace V]
     {Λ : TopologicalSpace.Opens ℂ}
     (h : (ParameterSymbol.shiftedLaplacian V 1 : ParameterSymbol n Λ V V 2).IsElliptic)
     (x ξ : CoordinateSpace n) {μ : ℂ} (hμΛ : μ ∈ Λ) (hμ : μ⁻¹ ∈ R) (hμ0 : μ ≠ 0) :
-    (shiftedLaplacianResolvent V hc hR).coefficient (x, ξ) μ⁻¹ =
+    (shiftedLaplacianNormalizedResolvent V hc hR).coefficient (x, ξ) μ⁻¹ =
       (-μ) • ((ParameterSymbol.shiftedLaplacian V 1).inverse h).coefficient ((x, ξ), μ) := by
-  rw [coefficient_shiftedLaplacianResolvent_inv x ξ hμ hμ0,
+  rw [coefficient_shiftedLaplacianNormalizedResolvent_inv x ξ hμ hμ0,
     ParameterSymbol.coefficient_inverse_shiftedLaplacian h x ξ hμΛ, smul_smul]
 
 end WeakParameterSymbol

@@ -323,14 +323,15 @@ theorem exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow {ι 𝔸 : Type*}
         rw [← hexp]
         ring
 
-/-- **Symbol estimates for powers, uniformly in a parameter.** If a family of smooth functions
-with values in a normed algebra satisfies the symbol estimates of order `a`, with constants
-independent of the parameter `t`, then its `N`-th powers satisfy those of order `N a`. -/
+/-- **Symbol estimates for powers, uniformly in a parameter.** If the first `k` derivatives of a
+family of `C^k` functions with values in a normed algebra satisfy the symbol estimates of order
+`a`, with constants independent of the parameter `t`, then the `k`-th derivative of their `N`-th
+powers satisfies the estimate of order `N a`. -/
 theorem exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
-    [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] {f : ι → E → 𝔸} (hf : ∀ t, ContDiff ℝ ∞ (f t)) {a : ℝ}
-    (hfk : ∀ i : ℕ, ∃ C, ∀ t x,
-      ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
-    (N k : ℕ) :
+    [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] {f : ι → E → 𝔸} {k : ℕ} (hf : ∀ t, ContDiff ℝ k (f t))
+    {a : ℝ}
+    (hfk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (N : ℕ) :
     ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x ^ N) x‖ ≤
       C * (1 + ‖x‖ ^ 2) ^ ((N * a - k) / 2) := by
   induction N generalizing k with
@@ -342,8 +343,9 @@ theorem exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow {ι 𝔸 : Type*}
       positivity
   | succ N ih =>
     obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow
-      (fun t ↦ ((hf t).pow N).of_le (mod_cast le_top)) (fun t ↦ (hf t).of_le (mod_cast le_top))
-      (fun i _ ↦ ih i) (fun i _ ↦ hfk i) (k := k)
+      (fun t ↦ (hf t).pow N) hf
+      (fun i hi ↦ ih (fun t ↦ (hf t).of_le (mod_cast hi)) fun i' hi' ↦ hfk i' (hi'.trans hi))
+      hfk
     refine ⟨C, fun t x ↦ ?_⟩
     simp only [pow_succ]
     refine (hC t x).trans_eq ?_
