@@ -54,7 +54,7 @@ many discs: discs inside `(E (n + 1))⁺` around its points off the axis, and ar
 `x` on the axis discs inside `E (n + 1)` centred at `x`, whose upper halves are Lipschitz domains.
 On each of these pieces forgetting one derivative is compact by the Rellich–Kondrachov theorem
 for Lipschitz domains (`TauCeti.Wkp.isCompactOperator_lowerOrderL_complexBall` and
-`TauCeti.Wkp.isCompactOperator_lowerOrderL_ball_upperHalf`), and compactness of a map into
+`TauCeti.Wkp.isCompactOperator_lowerOrderL_upperHalf_complexBall`), and compactness of a map into
 `W^{k,p}` is local on a finite open cover (`TauCeti.Wkp.isCompactOperator_of_restrictL`).
 
 ## Main declarations
@@ -88,24 +88,6 @@ namespace TauCeti
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens ℂ} {k : ℕ}
 
 /-! ### Extraction along an exhaustion -/
-
-/-- An exhaustion of `Ω` by open sets with compact closures, the closure of each inside the next
-and inside `Ω`, which eventually contains every open set with compact closure in `Ω`. -/
-private theorem exists_exhaustion (Ω : Opens ℂ) :
-    ∃ E : ℕ → Opens ℂ, (∀ n, IsCompact (closure (E n : Set ℂ))) ∧
-      (∀ n, closure (E n : Set ℂ) ⊆ E (n + 1)) ∧ (∀ n, closure (E n : Set ℂ) ⊆ Ω) ∧
-      ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
-        ∃ n, W ≤ E n := by
-  obtain ⟨E, hEc, hEsucc, hEU⟩ := Ω.exists_isCompact_closure_subset_succ_iUnion_eq
-  have hEmono : Monotone E := monotone_nat_of_le_succ fun n =>
-    SetLike.coe_subset_coe.1 (subset_closure.trans (hEsucc n))
-  refine ⟨E, hEc, hEsucc, fun n =>
-    (hEsucc n).trans (hEU ▸ subset_iUnion (fun n => (E n : Set ℂ)) (n + 1)),
-    fun W hWc hWΩ => ?_⟩
-  obtain ⟨n, hn⟩ := hWc.elim_directed_cover (fun n => (E n : Set ℂ)) (fun n => (E n).isOpen)
-    (hWΩ.trans hEU.symm.subset)
-    (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hEmono h))
-  exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
 
 /-- Elements `a n` of `W^{k,p}(O n)` over an increasing sequence of open sets, each the restriction
 of the next, are represented by one function: their values agree almost everywhere on each `O n`
@@ -201,7 +183,7 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
         ∀ i (y : ℕ → Wkp volume W p k) (w : Wkp volume W p k),
           (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict W] u i (φ j)) →
           Wkp.value k w =ᵐ[volume.restrict W] v i → Tendsto y atTop (𝓝 w) := by
-  obtain ⟨E, hEc, hEsucc, hEΩ, hWE⟩ := exists_exhaustion Ω
+  obtain ⟨E, hEc, hEsucc, hEΩ, hWE⟩ := Ω.exists_isCompact_closure_subset_succ_forall_exists_le
   have hEle : ∀ n, E n ≤ E (n + 1) := fun n =>
     SetLike.coe_subset_coe.1 (subset_closure.trans (hEsucc n))
   obtain ⟨φ, hφ, v, hv⟩ := exists_subseq_tendsto_wkp_of_isCompactOperator hEle
@@ -233,6 +215,18 @@ theorem exists_subseq_memWkpLoc_tendsto_wkp {u : ℕ → ℂ → ℝ}
     (u := fun _ => u) fun W hWc hWΩ _ => hu W hWc hWΩ
   exact ⟨φ, hφ, v (), hv (), fun W hWc hWΩ => hlim W hWc hWΩ ()⟩
 
+omit [Fact (1 ≤ p)] in
+/-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
+are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
+private theorem exists_memWkpLoc_repr_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ι : Type*} [Finite ι] (b : Module.Basis ι ℝ F) {U : Set ℂ} {v : ι → ℂ → ℝ}
+    (hv : ∀ i, MemWkpLoc p U k (v i)) :
+    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+  have := Fintype.ofFinite ι
+  have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
+    funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
+  exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
+
 /-- **Local Rellich compactness for vector-valued functions.** Let `F` be a finite-dimensional
 real vector space with basis `b`, let `1 ≤ p ≤ ∞`, and let `u m : ℂ → F` have coordinates bounded
 in `W^{k+1,p}` on every relatively compact open subset `W` of `Ω`. Then a subsequence `u (φ j)`
@@ -250,15 +244,10 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_tendsto_wkp {F : Type*}
           (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict W] fun z => b.repr (u (φ j) z) i) →
           Wkp.value k w =ᵐ[volume.restrict W] (fun z => b.repr (v z) i) →
           Tendsto y atTop (𝓝 w) := by
-  have := Fintype.ofFinite ι
   obtain ⟨φ, hφ, v, hv, hlim⟩ := exists_subseq_memWkpLoc_tendsto_wkp_family (Ω := Ω)
     (u := fun i m z => b.repr (u m z) i) hu
-  have hrepr : ∀ z i, b.repr (b.equivFun.symm (fun j => v j z)) i = v i z := fun z i => by
-    rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
-  refine ⟨φ, hφ, fun z => b.equivFun.symm fun j => v j z, ?_, fun W hWc hWΩ i y w hy hw =>
-    hlim W hWc hWΩ i y w hy ?_⟩
-  · exact b.memWkpLoc_iff.2 fun i => by simpa only [hrepr] using hv i
-  · simpa only [hrepr] using hw
+  obtain ⟨V, hV, hVv⟩ := exists_memWkpLoc_repr_eq b hv
+  exact ⟨φ, hφ, V, hV, fun W hWc hWΩ i y w hy hw => hlim W hWc hWΩ i y w hy (hVv i ▸ hw)⟩
 
 /-! ### Local Rellich compactness up to the real axis -/
 
@@ -289,7 +278,7 @@ private theorem exists_piece_isCompactOperator_lowerOrderL {V W : Opens ℂ}
     refine ⟨⟨ball z r, isOpen_ball⟩, mem_ball_self hr,
       (⟨ball (z.re : ℂ) r, isOpen_ball⟩ : Opens ℂ).upperHalf, fun y hy => ?_,
       Opens.upperHalf_mono fun y hy => hrW ?_,
-      Wkp.isCompactOperator_lowerOrderL_ball_upperHalf z.re r k⟩
+      Wkp.isCompactOperator_lowerOrderL_upperHalf_complexBall z.re r k⟩
     · obtain ⟨hyV, hyO⟩ := Opens.mem_inf.1 hy
       rw [Opens.mem_mk, ← hzx] at hyO
       exact Opens.mem_upperHalf.2 ⟨Opens.mem_mk.2 hyO, (Opens.mem_upperHalf.1 hyV).2⟩
@@ -351,7 +340,7 @@ private theorem exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp_family
           (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] u i (φ j)) →
           Wkp.value k w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] v i →
           Tendsto y atTop (𝓝 w) := by
-  obtain ⟨E, hEc, hEsucc, hEΩ, hWE⟩ := exists_exhaustion Ω
+  obtain ⟨E, hEc, hEsucc, hEΩ, hWE⟩ := Ω.exists_isCompact_closure_subset_succ_forall_exists_le
   have hEle : ∀ n, (E n).upperHalf ≤ (E (n + 1)).upperHalf := fun n =>
     Opens.upperHalf_mono (SetLike.coe_subset_coe.1 (subset_closure.trans (hEsucc n)))
   obtain ⟨φ, hφ, v, hv⟩ := exists_subseq_tendsto_wkp_of_isCompactOperator hEle
@@ -408,15 +397,10 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendst
             fun z => b.repr (u (φ j) z) i) →
           Wkp.value k w =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] (fun z => b.repr (v z) i) →
           Tendsto y atTop (𝓝 w) := by
-  have := Fintype.ofFinite ι
   obtain ⟨φ, hφ, v, hv, hlim⟩ :=
     exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp_family (Ω := Ω)
       (u := fun i m z => b.repr (u m z) i) hu
-  have hrepr : ∀ z i, b.repr (b.equivFun.symm (fun j => v j z)) i = v i z := fun z i => by
-    rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
-  refine ⟨φ, hφ, fun z => b.equivFun.symm fun j => v j z, ?_, fun W hWc hWΩ i y w hy hw =>
-    hlim W hWc hWΩ i y w hy ?_⟩
-  · exact b.memWkpLoc_iff.2 fun i => by simpa only [hrepr] using hv i
-  · simpa only [hrepr] using hw
+  obtain ⟨V, hV, hVv⟩ := exists_memWkpLoc_repr_eq b hv
+  exact ⟨φ, hφ, V, hV, fun W hWc hWΩ i y w hy hw => hlim W hWc hWΩ i y w hy (hVv i ▸ hw)⟩
 
 end TauCeti
