@@ -249,7 +249,7 @@ theorem intervalIntegrable_of_even (hper : Periodic f T) (heven : Function.Even 
     rw [sub_eq_neg_add, hper (-x), heven x]
   have h2 : IntervalIntegrable f volume (T / 2) T := by
     have h := hf.comp_sub_left T
-    rw [hfun, show T - T / 2 = T / 2 by ring, sub_zero] at h
+    rw [hfun, sub_half, sub_zero] at h
     exact h.symm
   exact hper.intervalIntegrable₀ hT (hf.trans h2) a b
 
