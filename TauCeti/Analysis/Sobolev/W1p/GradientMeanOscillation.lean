@@ -172,8 +172,8 @@ theorem W1p.setAverage_closedBall_norm_gradient_sub_le
   rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR]
   ring
 
-/-- If `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C (R^{(n+1)/2+α} Q)² (t / R)^{n+1+2α}`, then the mean
-oscillation of `∇u` on `closedBall z t` is at most `√(C / ω) Q t^α`, where `ω` is the volume of
+/-- If `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C (R^{(n+1)/2+a} Q)² (t / R)^{n+1+2a}`, then the mean
+oscillation of `∇u` on `closedBall z t` is at most `√(C / ω) Q t^a`, where `ω` is the volume of
 the unit ball. -/
 theorem W1p.setAverage_closedBall_norm_gradient_sub_le_mul_rpow
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
@@ -201,8 +201,8 @@ theorem W1p.setAverage_closedBall_norm_gradient_sub_le_mul_rpow
     rw [hV, hC, Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (by positivity), Real.rpow_neg hR.le]
     field_simp
 
-/-- If `∫_{B_{θR}} ‖∇u‖² ≤ R^{n+1} (R^α Q)²`, then the average of `∇u` over `closedBall z (θ R)`
-is at most `R^α Q / √(ω θ^{n+1})`, where `ω` is the volume of the unit ball. -/
+/-- If `∫_{B_{θR}} ‖∇u‖² ≤ R^{n+1} (R^a Q)²`, then the average of `∇u` over `closedBall z (θ R)`
+is at most `R^a Q / √(ω θ^{n+1})`, where `ω` is the volume of the unit ball. -/
 theorem W1p.norm_setAverage_closedBall_gradient_le_div
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {θ R Q a : ℝ} (hball : ball z (θ * R) ⊆ Omega)

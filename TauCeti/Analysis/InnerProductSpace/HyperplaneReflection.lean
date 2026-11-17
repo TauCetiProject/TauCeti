@@ -163,8 +163,9 @@ theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c �
   · simp [hyperplaneReflection_apply]
   have hid : ‖x - hyperplaneReflection ν c z‖ ^ 2 =
       ‖x - z‖ ^ 2 + 4 * (⟪z, ν⟫_ℝ - c) * (⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2 := by
-    rw [hyperplaneReflection_apply, sub_sub_eq_add_sub, add_sub_right_comm, norm_add_sq_real,
-      inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, inner_sub_left]
+    -- Expand both squares.
+    simp only [hyperplaneReflection_apply, norm_sub_sq_real, inner_sub_right, inner_smul_right,
+      norm_smul, real_inner_comm ν, Real.norm_eq_abs, mul_pow, sq_abs]
     field_simp
     ring
   have h0 : 0 ≤ 4 * (⟪z, ν⟫_ℝ - c) * (⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2 := by

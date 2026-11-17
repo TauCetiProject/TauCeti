@@ -571,10 +571,7 @@ theorem abs_energyFormH1_sub_compHyperplaneReflectionL_le (hν : ν ≠ 0)
       W1p mu (V ⊓ H) 2)‖ ≤ 2 * ‖W1p.gradient (φ : W1p mu V 2)‖ := by
     rw [W1p0.coe_restrictSubCompHyperplaneReflectionL]
     refine (W1p.norm_gradient_restrictL_le _ _).trans ?_
-    have hsub := map_sub (W1p.gradientL (mu := mu) (Omega := V) (p := 2)) (φ : W1p mu V 2)
-      (W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hV (φ : W1p mu V 2))
-    simp only [W1p.gradientL_apply] at hsub
-    rw [hsub, two_mul]
+    rw [W1p.gradient_sub, two_mul]
     refine (norm_sub_le _ _).trans_eq ?_
     rw [W1p.norm_gradient_compHyperplaneReflectionL]
   refine (congrArg abs h).trans_le ((abs_real_inner_le_norm _ _).trans ?_)

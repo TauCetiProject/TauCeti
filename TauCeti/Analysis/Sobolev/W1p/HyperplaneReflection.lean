@@ -189,9 +189,7 @@ theorem W1p.gradient_restrictL_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤)
   have hVU' : (V : Set E) ⊆ U := SetLike.coe_subset_coe.mpr hVU
   have hsub : ∀ {W : Opens E} (f g : W1p mu W p),
       ⇑(W1p.gradient (f - g)) =ᵐ[mu.restrict W] ⇑(W1p.gradient f) - ⇑(W1p.gradient g) :=
-    fun f g => by
-      simpa only [← W1p.gradientL_apply, map_sub] using
-        Lp.coeFn_sub (W1p.gradient f) (W1p.gradient g)
+    fun f g => W1p.gradient_sub f g ▸ Lp.coeFn_sub _ _
   have hres := W1p.gradient_restrictL_ae hVU u
   -- The same agreement at the reflected point, since the reflection preserves `V` and `mu`.
   have hresρ : ∀ᵐ x ∂mu.restrict V,
