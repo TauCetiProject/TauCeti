@@ -269,14 +269,11 @@ theorem W1p.setIntegral_norm_gradient_sub_sq_eq (hU : U ≤ Omega) (u : W1p mu O
     (w : W1p mu U 2) :
     ∫ x in U, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ∂mu =
       ‖W1p.gradient (W1p.restrictL hU u - w)‖ ^ 2 := by
-  have hsub : W1p.gradient (W1p.restrictL hU u - w) =
-      W1p.gradient (W1p.restrictL hU u) - W1p.gradient w := by
-    simp only [← W1p.gradientL_apply, map_sub]
   rw [← MeasureTheory.Lp.integral_norm_sq_eq_norm_sq]
   refine integral_congr_ae ?_
-  filter_upwards [W1p.gradient_restrictL_ae hU u,
-    Lp.coeFn_sub (W1p.gradient (W1p.restrictL hU u)) (W1p.gradient w)] with x h1 h2
-  rw [hsub, h2, Pi.sub_apply, h1]
+  filter_upwards [W1p.gradient_restrictL_ae hU u, W1p.gradient_sub_ae (W1p.restrictL hU u) w]
+    with x h1 h2
+  rw [h2, Pi.sub_apply, h1]
 
 /-! ### Subset averages -/
 
