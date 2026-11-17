@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
+import TauCeti.MeasureTheory.Covering.EssentialBoundary
 
 /-!
 # Approximate tangency of differentiable normal graphs
@@ -101,13 +101,6 @@ local notation "Gφ" => TauCeti.normalGraphEmbedding φ
 local notation "kE" => finrank ℝ E
 local notation "R[" A "]" =>
   LinearMap.range (ContinuousLinearMap.toLinearMap (ContinuousLinearMap.normalGraphL A))
-private lemma tendsto_vol_nhds (hs : s ∈ 𝓝 x) : Tendsto (fun r =>
-    volume (s ∩ closedBall x r) / volume (closedBall (0 : E) r)) (𝓝[>] 0) (𝓝 1) := by
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.mp hs; refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT hδ] with r ⟨hr0, hrδ⟩
-  rw [inter_eq_self_of_subset_right fun y hy => hball (mem_ball.mpr ((mem_closedBall.mp hy).trans_lt
-    hrδ)), addHaar_closedBall_center, ENNReal.div_self (measure_closedBall_pos volume 0 hr0).ne'
-    measure_closedBall_lt_top.ne]
 namespace HasFDerivWithinAt
 variable (hφ : HasFDerivWithinAt φ A s x) (hx : x ∈ s) (hdens : Tendsto (fun r => volume (s ∩
     closedBall x r) / volume (closedBall (0 : E) r)) (𝓝[>] 0) (𝓝 1))
@@ -144,12 +137,15 @@ include hφ
 theorem isApproximateTangentPlane_normalGraphEmbedding_image_iff (hs : s ∈ 𝓝 x) {Q : Submodule ℝ
     (WithLp 2 (ℝ × E))} : IsApproximateTangentPlane kE (Gφ '' s) (Gφ x) Q ↔ Q = R[A] :=
   hφ.hasFDerivWithinAt.isApproximateTangentPlane_normalGraphEmbedding_image_iff (mem_of_mem_nhds hs)
-    (tendsto_vol_nhds hs)
+    ((hasDensityAt_iff.mp (mem_essentialInterior.mp
+      (interior_subset_essentialInterior (μ := volume) (mem_interior_iff_mem_nhds.mpr hs)))).congr
+      fun _ => by rw [addHaar_closedBall_center])
 /-- Canonical approximate tangent `(dim E)`-plane over `s ∈ 𝓝 x`. -/
 theorem approximateTangentPlane_normalGraphEmbedding_image_eq (hs : s ∈ 𝓝 x) :
     approximateTangentPlane kE (Gφ '' s) (Gφ x) = R[A] :=
-  hφ.hasFDerivWithinAt.approximateTangentPlane_normalGraphEmbedding_image_eq (mem_of_mem_nhds hs)
-    (tendsto_vol_nhds hs)
+  ((hφ.isApproximateTangentPlane_normalGraphEmbedding_image_iff hs).mpr
+    rfl).approximateTangentPlane_eq
+    fun _ hQ => (hφ.isApproximateTangentPlane_normalGraphEmbedding_image_iff hs).mp hQ
 /-- Agreement of `approximateTangentPlane` with the span of `tangentConeAt` over `s ∈ 𝓝 x`. -/
 theorem approximateTangentPlane_normalGraphEmbedding_image_eq_span_tangentConeAt (hs : s ∈ 𝓝 x) :
     approximateTangentPlane kE (Gφ '' s) (Gφ x) =
@@ -158,23 +154,25 @@ theorem approximateTangentPlane_normalGraphEmbedding_image_eq_span_tangentConeAt
       (hφ.span_tangentConeAt_normalGraphEmbedding_image hs).symm
 /-- Uniqueness of the approximate tangent `(dim E)`-plane on the full normal graph. -/
 theorem isApproximateTangentPlane_range_normalGraphEmbedding_iff {Q : Submodule ℝ (WithLp 2 (ℝ ×
-    E))} : IsApproximateTangentPlane kE (range Gφ) (Gφ x) Q ↔ Q = R[A] := by
-  rw [← image_univ]; exact hφ.isApproximateTangentPlane_normalGraphEmbedding_image_iff univ_mem
+    E))} : IsApproximateTangentPlane kE (range Gφ) (Gφ x) Q ↔ Q = R[A] :=
+  image_univ (f := Gφ) ▸ hφ.isApproximateTangentPlane_normalGraphEmbedding_image_iff univ_mem
 /-- Canonical approximate tangent `(dim E)`-plane on `range Gφ`. -/
 theorem approximateTangentPlane_range_normalGraphEmbedding_eq :
-    approximateTangentPlane kE (range Gφ) (Gφ x) = R[A] := by
-  rw [← image_univ]; exact hφ.approximateTangentPlane_normalGraphEmbedding_image_eq univ_mem
+    approximateTangentPlane kE (range Gφ) (Gφ x) = R[A] :=
+  image_univ (f := Gφ) ▸ hφ.approximateTangentPlane_normalGraphEmbedding_image_eq univ_mem
 /-- Agreement of `approximateTangentPlane` with the span of `tangentConeAt` on the full graph. -/
 theorem approximateTangentPlane_range_normalGraphEmbedding_eq_span_tangentConeAt :
-    approximateTangentPlane kE (range Gφ) (Gφ x) = Submodule.span ℝ (tangentConeAt ℝ (range Gφ)
-      (Gφ x)) := by
-  rw [← image_univ]
-  exact hφ.approximateTangentPlane_normalGraphEmbedding_image_eq_span_tangentConeAt univ_mem
+    approximateTangentPlane kE (range Gφ) (Gφ x) =
+      Submodule.span ℝ (tangentConeAt ℝ (range Gφ) (Gφ x)) :=
+  image_univ (f := Gφ) ▸
+    hφ.approximateTangentPlane_normalGraphEmbedding_image_eq_span_tangentConeAt univ_mem
 /-- Tangential Jacobian `(√(1 + ‖A‖²))⁻¹` of `WithLp.snd` on the full normal graph. -/
 theorem tangentialJacobian_snd_range_normalGraphEmbedding :
     tangentialJacobian kE (range Gφ) WithLp.snd (Gφ x) = (Real.sqrt (1 + ‖A‖ ^ 2))⁻¹ :=
   image_univ (f := Gφ) ▸
-    (hφ.hasFDerivWithinAt (s := univ)).tangentialJacobian_snd_normalGraphEmbedding
-      (mem_univ x) (tendsto_vol_nhds univ_mem)
+    (hφ.hasFDerivWithinAt (s := univ)).tangentialJacobian_snd_normalGraphEmbedding (mem_univ x)
+      ((hasDensityAt_iff.mp (mem_essentialInterior.mp (interior_subset_essentialInterior
+        (μ := volume) (mem_interior_iff_mem_nhds.mpr (univ_mem : univ ∈ 𝓝 x))))).congr
+        fun _ => by rw [addHaar_closedBall_center])
 end HasFDerivAt
 end InnerProductParameter
