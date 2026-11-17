@@ -8,8 +8,9 @@ module
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Compatibility
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.DegreeMutation
 
-import Mathlib.Algebra.Order.Pi
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Order.Module.Sign
+import TauCeti.Data.List.Infix
 
 /-!
 # Principal `c`- and `g`-matrices and tropical duality
@@ -31,15 +32,17 @@ with the mutable part of `degreeMutationWord` started from `Sum.elim 1.col (-B�
 `gMatrix B₀ w * matrixMutationWord (Function.Embedding.refl K) B₀ w = B₀ * cMatrix B₀ w`.
 
 Every row of `cMatrix B₀ w` is unconditionally nonzero. When column `k` of `cMatrix B₀ w` has
-coherent sign `ε ∈ {1, -1}` (`∀ i, 0 ≤ ε * cMatrix B₀ w i k`), `cMatrix` right-multiplies by `Fε`
-with no diagonal hypothesis, and when `B_w k k = 0` and `G_w * B_w = B₀ * C_w` also hold, `gMatrix`
-right-multiplies by `Eε`. Along any column-sign-coherent word, the `c`-vectors are linearly
-independent over `ℤ` (hence nonzero) and satisfy the principal exchange-monomial exponent dichotomy
-for arbitrary `K`, and for finite `K`, `cMatrix B₀ w` has determinant `(-1) ^ w.length` and is
-unimodular over `ℤ`. When the mutable diagonal also vanishes at each step along a
-column-sign-coherent word, `gMatrix B₀ w` likewise has determinant `(-1) ^ w.length`, is unimodular
-over `ℤ` with nonzero rows and `g`-vectors, and satisfies Nakanishi–Zelevinsky tropical duality
-`(gMatrix B₀ w)ᵀ * diagonal s * cMatrix B₀ w = diagonal s` for any skew-symmetrizer `s` of `B₀`.
+coherent sign `ε ∈ {1, -1}` (`∀ i, 0 ≤ ε * cMatrix B₀ w i k`), for finite `K`, `cMatrix`
+right-multiplies by `Fε` with no diagonal hypothesis, and when `B_w k k = 0` and
+`G_w * B_w = B₀ * C_w` also hold, `gMatrix` right-multiplies by `Eε`. Along any
+column-sign-coherent word, the `c`-vectors are linearly independent over `ℤ` (hence nonzero) for
+arbitrary `K`, any terminal `c`-vector that is itself sign-coherent satisfies the principal
+exchange-monomial exponent dichotomy, and for finite `K`, `cMatrix B₀ w` has determinant
+`(-1) ^ w.length` and is unimodular over `ℤ`. When the mutable diagonal also vanishes at each step
+along a column-sign-coherent word, `gMatrix B₀ w` likewise has determinant `(-1) ^ w.length`, is
+unimodular over `ℤ` with nonzero rows and `g`-vectors, and satisfies Nakanishi–Zelevinsky tropical
+duality `(gMatrix B₀ w)ᵀ * diagonal s * cMatrix B₀ w = diagonal s` for any skew-symmetrizer `s`
+of `B₀`.
 
 ## References
 
@@ -54,24 +57,6 @@ public section
 namespace TauCeti
 
 open Matrix
-
-section Helpers
-
-variable {K : Type*}
-
-private theorem forall_append_singleton_left {P : List K → K → Prop} {u : List K} {k : K}
-    (h : ∀ a l b, u ++ [k] = a ++ l :: b → P a l) :
-    ∀ a l b, u = a ++ l :: b → P a l :=
-  fun a l b hu ↦ h a l (b ++ [k]) (by simp [hu])
-
-private theorem exists_unit_sign_of_nonneg_or_nonpos {v : K → ℤ}
-    (hv : (∀ i, 0 ≤ v i) ∨ ∀ i, v i ≤ 0) :
-    ∃ ε : ℤ, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε * v i := by
-  rcases hv with hpos | hneg
-  · exact ⟨1, Or.inl rfl, fun i ↦ by simpa using hpos i⟩
-  · exact ⟨-1, Or.inr rfl, fun i ↦ by linarith [hneg i]⟩
-
-end Helpers
 
 section CMatrix
 
@@ -286,52 +271,6 @@ theorem cMatrix_append_singleton_apply_of_sign {k : K} {ε : ℤ}
       simp only [neg_one_mul, posPart_neg]
       ring
 
-private theorem linearIndependent_ite_update {M : Type*} [AddCommGroup M] {v : K → M}
-    (hv : LinearIndependent ℤ v) (k : K) (m : K → ℤ) :
-    LinearIndependent ℤ (fun j ↦ if j = k then -v k else v j + m j • v k) := by
-  rw [linearIndependent_iff'] at hv ⊢
-  intro s g hg
-  let f : K → ℤ := fun j ↦ if j ∈ s then g j else 0
-  let S : Finset K := insert k s
-  let c : K → ℤ := Function.update f k (-f k + ∑ j ∈ S.erase k, f j * m j)
-  have hSf : ∑ j ∈ S, f j • (if j = k then -v k else v j + m j • v k) = 0 := by
-    rw [← hg]
-    by_cases hks : k ∈ s
-    · rw [show S = s from Finset.insert_eq_of_mem hks]
-      exact Finset.sum_congr rfl fun j hj ↦ by simp [f, hj]
-    · rw [Finset.sum_insert hks]
-      simp only [f, hks, ↓reduceIte, zero_smul, zero_add]
-      exact Finset.sum_congr rfl fun j hj ↦ by simp [hj]
-  have hSc : ∑ j ∈ S, c j • v j = 0 := by
-    rw [← Finset.add_sum_erase S _ (Finset.mem_insert_self k s)] at hSf ⊢
-    simp only [↓reduceIte, smul_neg, c, Function.update_self, add_smul, neg_smul,
-      Finset.sum_smul] at hSf ⊢
-    have h1 : ∑ j ∈ S.erase k, Function.update f k (-f k + ∑ l ∈ S.erase k, f l * m l) j • v j =
-        ∑ j ∈ S.erase k, f j • v j :=
-      Finset.sum_congr rfl fun j hj ↦ by simp [(Finset.mem_erase.mp hj).1]
-    have h2 : ∑ j ∈ S.erase k, f j • (if j = k then -v k else v j + m j • v k) =
-        ∑ j ∈ S.erase k, f j • v j + ∑ j ∈ S.erase k, (f j * m j) • v k := by
-      rw [← Finset.sum_add_distrib]
-      refine Finset.sum_congr rfl fun j hj ↦ ?_
-      simp only [(Finset.mem_erase.mp hj).1, ↓reduceIte, smul_add, mul_smul]
-    rw [h1]
-    rw [h2] at hSf
-    abel_nf at hSf ⊢
-    exact hSf
-  have hc0 := hv S c hSc
-  intro j hj
-  by_cases hjk : j = k
-  · subst j
-    have hsum0 : ∑ l ∈ S.erase k, f l * m l = 0 :=
-      Finset.sum_eq_zero fun l hl ↦ by
-        have hcl := hc0 l (Finset.mem_of_mem_erase hl)
-        simp [c, (Finset.mem_erase.mp hl).1] at hcl
-        simp [hcl]
-    have hck := hc0 k (Finset.mem_insert_self k s)
-    rw [show c k = -f k + ∑ l ∈ S.erase k, f l * m l from Function.update_self .., hsum0] at hck
-    simpa [f, hj] using hck
-  · simpa [c, hjk, f, hj] using hc0 j (Finset.mem_insert_of_mem hj)
-
 /-- Along any column-sign-coherent word, the family of `c`-vectors `cVector B₀ w` is linearly
 independent over `ℤ`, with no finiteness or vanishing-diagonal hypothesis. -/
 theorem linearIndependent_cVector_of_signCoherent
@@ -340,23 +279,23 @@ theorem linearIndependent_cVector_of_signCoherent
     LinearIndependent ℤ (cVector B₀ w) := by
   induction w using List.reverseRecOn with
   | nil =>
-    rw [linearIndependent_iff']
-    intro s g hg j hj
-    have h := congrFun hg j
-    simp only [Finset.sum_apply, Pi.smul_apply, cVector_nil, Pi.single_apply,
-      smul_eq_mul, mul_ite, mul_one, mul_zero, Pi.zero_apply] at h
-    simpa [hj, eq_comm] using h
+    have hnil : cVector B₀ [] = fun j ↦ Pi.single j 1 := funext (cVector_nil B₀)
+    rw [hnil]
+    exact Pi.linearIndependent_single_one K ℤ
   | append_singleton u k ih =>
-    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
-    have hstep : cVector B₀ (u ++ [k]) = fun j ↦
-        if j = k then -cVector B₀ u k
-        else cVector B₀ u j +
-          (ε * matrixMutationWord (Function.Embedding.refl K) B₀ u k j)⁺ • cVector B₀ u k := by
+    obtain ⟨ε, hε, hsign⟩ :=
+      (exists_eq_one_or_neg_one_and_forall_mul_nonneg_iff (cMatrix B₀ u · k)).mpr
+        (hc u k [] (by simp))
+    let m : K → ℤ := fun j ↦ (ε * matrixMutationWord (Function.Embedding.refl K) B₀ u k j)⁺
+    have hstep : cVector B₀ (u ++ [k]) =
+        Function.update (1 : K → ℤˣ) k (-1) •
+          (cVector B₀ u + fun j ↦ Function.update m k 0 j • cVector B₀ u k) := by
       ext j i
       rw [cVector_apply, cMatrix_append_singleton_apply_of_sign B₀ u hε hsign]
-      by_cases hj : j = k <;> simp [hj, mul_comm]
+      by_cases hj : j = k <;> simp [hj, mul_comm, m]
     rw [hstep]
-    exact linearIndependent_ite_update (ih (forall_append_singleton_left hc)) k _
+    exact ((linearIndependent_add_smul_iff (Function.update_self k 0 m)).mpr
+      (ih ((List.prefix_append u [k]).forall_append_cons hc))).units_smul _
 
 /-- Along any column-sign-coherent word, no `c`-vector vanishes. -/
 theorem cVector_ne_zero_of_signCoherent
@@ -386,12 +325,6 @@ end CMatrix
 namespace ExchangeMatrix
 
 variable {K : Type*} (B : ExchangeMatrix (Function.Embedding.refl K))
-
-/-- For a square exchange matrix along `Function.Embedding.refl K`, `B.symmetrizer`
-skew-symmetrizes `B.matrix` directly without a `submatrix` wrapper. -/
-theorem matrix_isSkewSymmetrizer : B.matrix.IsSkewSymmetrizer B.symmetrizer := by
-  have h : B.matrix.submatrix (Function.Embedding.refl K) id = B.matrix := by ext; simp
-  exact h ▸ B.isSkewSymmetrizer
 
 /-- Mutating the bundled principal extension along `w` gives `(B.mutationWord w).matrix` in the
 mutable block and `cMatrix B.matrix w` in the frozen block. -/
@@ -526,7 +459,7 @@ theorem degreeMutationWord_fromRows_one_elim_col
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    have hdu := forall_append_singleton_left hdiag
+    have hdu := (List.prefix_append u [k]).forall_append_cons hdiag
     have hu := ih hdu
     have hann : ∀ j : K,
         ∑ a : K ⊕ K,
@@ -802,9 +735,11 @@ theorem det_cMatrix_of_signCoherent
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    obtain ⟨ε, hε, hsign⟩ :=
+      (exists_eq_one_or_neg_one_and_forall_mul_nonneg_iff (cMatrix B₀ u · k)).mpr
+        (hc u k [] (by simp))
     rw [cMatrix_append_singleton_eq_mul_matrixMutationRight B₀ u hε hsign,
-      det_mul, ih (forall_append_singleton_left hc), det_matrixMutationRight,
+      det_mul, ih ((List.prefix_append u [k]).forall_append_cons hc), det_matrixMutationRight,
       List.length_append, List.length_singleton, pow_add, pow_one]
 
 /-- Along any word whose prefixes have zero mutable diagonal at each step and column-sign-coherent
@@ -818,11 +753,13 @@ theorem det_gMatrix_of_signCoherent
   induction w using List.reverseRecOn with
   | nil => simp
   | append_singleton u k ih =>
-    have hdu := forall_append_singleton_left hdiag
-    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    have hdu := (List.prefix_append u [k]).forall_append_cons hdiag
+    obtain ⟨ε, hε, hsign⟩ :=
+      (exists_eq_one_or_neg_one_and_forall_mul_nonneg_iff (cMatrix B₀ u · k)).mpr
+        (hc u k [] (by simp))
     rw [gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ u (hdiag u k [] (by simp))
         (gMatrix_mul_matrixMutationWord B₀ u hdu) hε hsign,
-      det_mul, ih hdu (forall_append_singleton_left hc), det_matrixMutationLeft,
+      det_mul, ih hdu ((List.prefix_append u [k]).forall_append_cons hc), det_matrixMutationLeft,
       List.length_append, List.length_singleton, pow_add, pow_one]
 
 /-- Along any column-sign-coherent word, `cMatrix B₀ w` is unimodular over `ℤ`. -/
@@ -916,7 +853,9 @@ theorem transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent
   | nil => simp
   | append_singleton u k ih =>
     have hsu := hs.matrixMutationWord u
-    obtain ⟨ε, hε, hsign⟩ := exists_unit_sign_of_nonneg_or_nonpos (hc u k [] (by simp))
+    obtain ⟨ε, hε, hsign⟩ :=
+      (exists_eq_one_or_neg_one_and_forall_mul_nonneg_iff (cMatrix B₀ u · k)).mpr
+        (hc u k [] (by simp))
     rw [cMatrix_append_singleton_eq_mul_matrixMutationRight B₀ u hε hsign,
       gMatrix_append_singleton_eq_mul_matrixMutationLeft B₀ u (hsu.apply_self k)
         (hs.gMatrix_mul_matrixMutationWord u) hε hsign]
@@ -928,7 +867,7 @@ theorem transpose_gMatrix_mul_diagonal_mul_cMatrix_of_signCoherent
       (gMatrix B₀ u * E)ᵀ * diagonal s * (cMatrix B₀ u * F)
         = Eᵀ * ((gMatrix B₀ u)ᵀ * diagonal s * cMatrix B₀ u) * F := by
           simp only [Matrix.transpose_mul, Matrix.mul_assoc]
-      _ = Eᵀ * diagonal s * F := by rw [ih (forall_append_singleton_left hc)]
+      _ = Eᵀ * diagonal s * F := by rw [ih ((List.prefix_append u [k]).forall_append_cons hc)]
       _ = diagonal s :=
           hsu.transpose_matrixMutationLeft_mul_diagonal_mul_matrixMutationRight k ε
 

@@ -12,7 +12,8 @@ public import Mathlib.Data.List.Infix
 
 Concatenating fewer copies of a list gives a prefix of concatenating more copies. A list which,
 followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself begins with these `k`
-copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`.
+copies. A predicate holding on every prefix-element split `w = a ++ l :: b` restricts to any
+prefix `u <+: w`. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`.
 -/
 
 public section
@@ -39,6 +40,14 @@ theorem replicate_prefix_of_append_cons_eq {x y : α} (hxy : x ≠ y) {l t r : L
       obtain rfl : y = z := by simpa using congrArg head? hc'
       exact absurd (eq_of_mem_replicate (hc ▸ by simp : y ∈ replicate k x)).symm hxy
   · exact ⟨c, hc.symm⟩
+
+/-- A predicate on every prefix-element pair `(a, l)` occurring in a decomposition
+`w = a ++ l :: b` restricts to any prefix `u <+: w`. -/
+theorem IsPrefix.forall_append_cons {P : List α → α → Prop} {u w : List α}
+    (hpref : u <+: w) (h : ∀ a l b, w = a ++ l :: b → P a l) :
+    ∀ a l b, u = a ++ l :: b → P a l := by
+  obtain ⟨v, rfl⟩ := hpref
+  exact fun a l b hu ↦ h a l (b ++ v) (by simp [hu])
 
 /-- A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`. This is the
 infix analogue of `List.Sublist.of_sublist_append_right`. -/

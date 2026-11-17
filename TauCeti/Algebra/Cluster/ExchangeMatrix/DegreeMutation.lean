@@ -264,30 +264,29 @@ theorem sum_matrixMutation_ediv_smul_degreeMutation {r : K → ℤ}
         (r k * (B (row k) j / r j)⁺) • ∑ i, (B i k / r k) • g i := by
   let : Fintype K := Fintype.ofInjective row row.injective
   set β : Matrix I K ℤ := of fun i l ↦ B i l / r l
-  set β' : Matrix I K ℤ := of fun i l ↦ matrixMutation row B k i l / r l
   have hstep :
-      ∑ i, β' i j • degreeMutation row B k g i =
+      ∑ i, (matrixMutation row B k i j / r j) • degreeMutation row B k g i =
         ∑ a, (β * matrixMutationRight row β k (r k * 1)) a j • g a := by
     simp_rw [degreeMutation_eq_sum_matrixMutationLeft_smul, Finset.smul_sum, smul_smul]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun a _ ↦ ?_
     rw [← Finset.sum_smul]
     congr 1
-    simp_rw [mul_comm (β' _ j)]
+    simp_rw [mul_comm (matrixMutation row B k _ j / r j)]
     have hfac := congrFun (congrFun
       (matrixMutationLeft_mul_of_matrixMutation_ediv row B r k 1 hr hdvd hkk (Or.inl rfl)) a) j
-    simpa only [Matrix.mul_apply, β, β'] using hfac
-  rw [show (∑ i, (matrixMutation row B k i j / r j) • degreeMutation row B k g i) =
-      ∑ i, β' i j • degreeMutation row B k g i from rfl, hstep]
+    simpa only [Matrix.mul_apply, β, of_apply] using hfac
+  rw [hstep]
   by_cases hj : j = k
   · subst j
     simp [mul_matrixMutationRight_apply, β, Finset.sum_neg_distrib]
   · have hrk : ((r k * 1) * β (row k) j)⁺ = r k * (B (row k) j / r j)⁺ := by
       simp only [mul_one, β, of_apply, posPart_def, mul_max_of_nonneg _ _ (hr k).le, mul_zero]
     simp only [hj, ite_false, mul_matrixMutationRight_apply, hrk, add_smul]
+    simp only [β, of_apply]
     rw [Finset.sum_add_distrib, Finset.smul_sum]
-    refine congrArg₂ (· + ·) (by rfl) (Finset.sum_congr rfl fun a _ ↦ ?_)
-    simp [smul_smul, mul_comm, β]
+    refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun a _ ↦ ?_)
+    simp [smul_smul, mul_comm]
 
 /-- Along the mutation column `k`, the mutated matrix pairs with the mutated degrees by the
 negative of the original pairing whenever `B (row k) k = 0`. -/
