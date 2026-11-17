@@ -53,12 +53,9 @@ theorem discriminantExponent_fixedField_stabilizer_smul
     (IntermediateField.fixedField
       (stabilizer Gal(SeparableClosure K/K) (σ • x))).discriminantExponent =
         (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
-  rw [stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-    Subgroup.fixedField_map_conj]
-  exact (IntermediateField.discriminantExponent_eq_of_algEquiv
-    ((IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) x)).equivMap
-      σ.toAlgHom)).symm
+          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
+  IntermediateField.apply_fixedField_stabilizer_smul
+    IntermediateField.discriminantExponent_eq_of_algEquiv σ x
 
 /-- The summand of an orbit can be computed at any point in that orbit. -/
 theorem discriminantExponent_fixedField_stabilizer_out
@@ -67,9 +64,9 @@ theorem discriminantExponent_fixedField_stabilizer_out
     (IntermediateField.fixedField
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
-  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
-  exact (discriminantExponent_fixedField_stabilizer_smul K σ ω.out).symm
+          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
+  IntermediateField.apply_fixedField_stabilizer_out
+    IntermediateField.discriminantExponent_eq_of_algEquiv hx
 
 private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
     (f : X → Y) (hf : Function.Injective f)
@@ -79,9 +76,9 @@ private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
     (IntermediateField.fixedField
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
-  rw [discriminantExponent_fixedField_stabilizer_out K hx,
-    MulAction.stabilizer_eq_of_injective f hf he]
+          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
+  IntermediateField.apply_fixedField_stabilizer_out_of_injective
+    IntermediateField.discriminantExponent_eq_of_algEquiv f hf he hx
 
 /-- The sum of the discriminant exponents of the fixed fields of point stabilizers, one per
 orbit. An infinite fixed field contributes zero; infinitely many nonzero summands give a total
