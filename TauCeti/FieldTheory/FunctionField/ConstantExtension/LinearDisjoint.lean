@@ -188,6 +188,7 @@ theorem finrank_ratFunc_eq_of_linearDisjoint
 
 /-- The coordinates of an element of `F` in `constantExtensionRatFuncBasis` are the images of its
 coordinates over `RatFunc k`. -/
+@[simp]
 theorem constantExtensionRatFuncBasis_repr_algebraMap
     [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
