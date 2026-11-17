@@ -289,8 +289,7 @@ theorem shift (hW : IsFilteredPreBrownian ℱ W P) (t₀ : ℝ≥0) :
   adapted t := (hW.adapted.comp (add_right_mono (a := t₀)) t).sub
     ((Filtration.measurable_comp_iff ℱ _ t).2 (hW.adapted.measurable_le le_self_add))
   indep_sub s t hst := by
-    rw [Filtration.comp_apply, show ((fun ω ↦ W (t₀ + t) ω - W t₀ ω) -
-      fun ω ↦ W (t₀ + s) ω - W t₀ ω) = W (t₀ + t) - W (t₀ + s) by ext ω; simp]
+    rw [Filtration.comp_apply, ← Pi.sub_def, ← Pi.sub_def, sub_sub_sub_cancel_right]
     exact hW.indep_sub (by gcongr)
 
 /-- Right-continuing `ℱ` preserves `IsFilteredPreBrownian` under a.s. right-continuity. -/
