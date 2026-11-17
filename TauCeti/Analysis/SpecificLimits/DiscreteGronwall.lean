@@ -42,6 +42,8 @@ energy dissipated, `d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the 
 ## Main declarations
 
 * `TauCeti.one_add_mul_pow_ceil_div_le_exp`: `(1 + aτ) ^ ⌈t / τ⌉₊ ≤ exp (a (t + τ))`.
+* `TauCeti.inv_one_add_mul_pow_ceil_div_le_exp`: `(1 + mτ)⁻¹ ^ ⌈t / τ⌉₊ ≤ exp (|m| / c * (t + τ))`
+  when `0 < c ≤ 1 + mτ`.
 * `TauCeti.tendsto_one_add_mul_pow`: `(1 + m * τ j) ^ N j → exp (m * d)` when `τ j → 0` and
   `N j * τ j → d`.
 * `TauCeti.tendsto_ceil_div_mul`: `⌈r / τ j⌉₊ * τ j → r` when `0 ≤ r`, `0 < τ j` eventually, and
@@ -84,6 +86,29 @@ theorem one_add_mul_pow_ceil_div_le_exp {a τ t : ℝ} (ha : 0 ≤ a) (htτ : 0 
         linarith [Real.add_one_le_exp (a * τ)]
     _ = Real.exp (a * (⌈t / τ⌉₊ * τ)) := by rw [← Real.exp_nat_mul]; ring_nf
     _ ≤ Real.exp (a * (t + τ)) := by gcongr
+
+/-- After `⌈t / τ⌉₊` time steps of length `τ`, if the per-step factor satisfies `c ≤ 1 + m * τ`
+with `0 < c`, then its inverse accumulates to at most `exp (|m| / c * (t + τ))`. Only
+`0 ≤ t + τ` is needed: when `t ≤ 0` or `τ ≤ 0` no step is taken and the bound reads
+`1 ≤ exp (|m| / c * (t + τ))`. -/
+theorem inv_one_add_mul_pow_ceil_div_le_exp {m c τ t : ℝ} (hc : 0 < c) (hmτ : c ≤ 1 + m * τ)
+    (htτ : 0 ≤ t + τ) :
+    (1 + m * τ)⁻¹ ^ ⌈t / τ⌉₊ ≤ Real.exp (|m| / c * (t + τ)) := by
+  rcases le_or_gt (t / τ) 0 with h | h
+  · rw [Nat.ceil_eq_zero.2 h, pow_zero]
+    exact Real.one_le_exp (by positivity)
+  have hτ : 0 < τ := by rcases div_pos_iff.1 h with h | h <;> linarith [h.1, h.2]
+  have hr_inv_le : (1 + m * τ)⁻¹ ≤ 1 + |m| / c * τ := by
+    rw [inv_le_iff_one_le_mul₀ (hc.trans_le hmτ)]
+    have h1 : |m| * τ ≤ |m| / c * τ * (1 + m * τ) := by
+      calc |m| * τ = |m| / c * τ * c := by field_simp
+        _ ≤ |m| / c * τ * (1 + m * τ) := by gcongr
+    nlinarith [neg_abs_le m]
+  calc (1 + m * τ)⁻¹ ^ ⌈t / τ⌉₊
+      ≤ (1 + |m| / c * τ) ^ ⌈t / τ⌉₊ :=
+        pow_le_pow_left₀ (inv_nonneg.2 (hc.trans_le hmτ).le) hr_inv_le _
+    _ ≤ Real.exp (|m| / c * (t + τ)) :=
+        one_add_mul_pow_ceil_div_le_exp (by positivity) htτ
 
 /-- **Discrete Grönwall bound under coercivity.** Let `D n ≥ 0` with `D 0 = 0` grow by steps
 `D (n + 1) ≤ D n + d n` whose squared lengths are paid for by an energy `e`,
