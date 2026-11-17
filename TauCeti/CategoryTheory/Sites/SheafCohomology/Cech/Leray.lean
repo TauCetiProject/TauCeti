@@ -79,7 +79,7 @@ The degree `0` part of that development is in
 * [Stacks: Tag 03AV](https://stacks.math.columbia.edu/tag/03AV), Section 21.10 on Čech cohomology
   and cohomology, and [Stacks: Tag 03OW](https://stacks.math.columbia.edu/tag/03OW), for Leray's
   acyclicity theorem.
-* R. Hartshorne, *Algebraic Geometry*, Exercise III.4.11, for a finite open cover of a space.
+* R. Hartshorne, *Algebraic Geometry*, Exercise III.4.11, for an open cover of a topological space.
 -/
 
 public section

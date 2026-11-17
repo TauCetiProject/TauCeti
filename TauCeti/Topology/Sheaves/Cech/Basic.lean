@@ -67,7 +67,7 @@ global sections; for a sheaf of abelian groups, hence with the degree `0` sheaf 
   (`TauCeti.Topology.homologyMap_comp_homologyZeroCechIso_hom`) and induced by the augmentation
   (`TauCeti.Topology.homologyMap_cechAugmentation_comp_homologyZeroCechIso_hom`); this is
   `TauCeti.CategoryTheory.homologyZeroCechIso` for the cover, which covers the terminal open
-  (`TopologicalSpace.Opens.coversTop_iff`).
+  (`Opens.coversTop_iff`).
 
 ## References
 

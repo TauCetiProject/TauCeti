@@ -53,7 +53,7 @@ noncomputable section
 
 open CategoryTheory Limits Opposite
 
-universe w v u
+universe w w' v u
 
 namespace TauCeti.CategoryTheory
 
@@ -78,14 +78,14 @@ theorem quasiIsoAt_cechAugmentation_zero_of_coversTop {A : Type*} [Category* A] 
     QuasiIsoAt (cechAugmentation U hT F.obj) 0 :=
   (quasiIsoAt_cechAugmentation_zero_iff U hT F.obj).2 (isSheafFor_ofArrows_of_coversTop U hT hU F)
 
-variable [HasSheafify J AddCommGrpCat.{v}] [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
-  [HasProducts.{w} AddCommGrpCat.{v}]
+variable [HasSheafify J AddCommGrpCat.{w'}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{w'})]
+  [HasProducts.{w} AddCommGrpCat.{w'}]
 
 /-- The degree `0` Čech cohomology of a sheaf for a covering family is the group of global
 sections, which is also the degree `0` sheaf cohomology. -/
-def homologyZeroCechIso (F : Sheaf J AddCommGrpCat.{v}) :
+def homologyZeroCechIso (F : Sheaf J AddCommGrpCat.{w'}) :
     ((cechComplexFunctor U).obj F.obj).homology 0 ≅
-      AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{v} F 0) :=
+      AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{w'} F 0) :=
   have := quasiIsoAt_cechAugmentation_zero_of_coversTop U hT hU F
   (asIso (HomologicalComplex.homologyMap (cechAugmentation U hT F.obj) 0)).symm ≪≫
     HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 _ ≪≫
@@ -95,7 +95,7 @@ def homologyZeroCechIso (F : Sheaf J AddCommGrpCat.{v}) :
 by the augmentation `F(T) ⟶ Č(U, F)`: composed with it, it is the identification of the global
 sections `F(T)` with `H⁰(F)`. -/
 @[reassoc (attr := simp)]
-theorem homologyMap_cechAugmentation_comp_homologyZeroCechIso_hom (F : Sheaf J AddCommGrpCat.{v}) :
+theorem homologyMap_cechAugmentation_comp_homologyZeroCechIso_hom (F : Sheaf J AddCommGrpCat.{w'}) :
     HomologicalComplex.homologyMap (cechAugmentation U hT F.obj) 0 ≫
         (homologyZeroCechIso U hT hU F).hom =
       (HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 _).hom ≫
@@ -106,7 +106,7 @@ theorem homologyMap_cechAugmentation_comp_homologyZeroCechIso_hom (F : Sheaf J A
 /-- The identification of degree `0` Čech cohomology with degree `0` sheaf cohomology is natural
 in the sheaf. -/
 @[reassoc (attr := simp)]
-theorem homologyMap_comp_homologyZeroCechIso_hom {P Q : Sheaf J AddCommGrpCat.{v}} (g : P ⟶ Q) :
+theorem homologyMap_comp_homologyZeroCechIso_hom {P Q : Sheaf J AddCommGrpCat.{w'}} (g : P ⟶ Q) :
     HomologicalComplex.homologyMap ((cechComplexFunctor U).map g.hom) 0 ≫
         (homologyZeroCechIso U hT hU Q).hom =
       (homologyZeroCechIso U hT hU P).hom ≫
@@ -126,7 +126,7 @@ theorem homologyMap_comp_homologyZeroCechIso_hom {P Q : Sheaf J AddCommGrpCat.{v
 sections. -/
 @[reassoc]
 theorem homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom {κ : Type w} (V : κ → C)
-    (hV : J.CoversTop V) (F : Sheaf J AddCommGrpCat.{v})
+    (hV : J.CoversTop V) (F : Sheaf J AddCommGrpCat.{w'})
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 0 ≫
         (homologyZeroCechIso U hT hU F).hom = (homologyZeroCechIso V hT hV F).hom := by

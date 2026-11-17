@@ -22,7 +22,7 @@ respects any module structure on both sides that is induced by an action of a ri
 
 This is Leray's acyclicity theorem for a covering of a site
 (`TauCeti.CategoryTheory.homologyCechComplexIsoH`), applied to the site of opens of `X`: the cover
-covers the terminal open `⊤` (`TopologicalSpace.Opens.coversTop_iff`), and the finite products of
+covers the terminal open `⊤` (`Opens.coversTop_iff`), and the finite products of
 opens are their intersections (`TauCeti.Topology.homologyCechComplexIsoH_def`).
 
 ## Main results
