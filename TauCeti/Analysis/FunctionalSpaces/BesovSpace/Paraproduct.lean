@@ -88,6 +88,8 @@ constants depend only on the bump function, the gap and the regularities.
   have spectra in dyadic balls.
 * `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq` and
   `TauCeti.BesovSpace.norm_lowPass_le_of_neg`: the size of the low-frequency cut-offs.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos`: at positive regularity the tempered
+  distribution is an `Lᵖ` function, so the bounded-factor paraproduct estimates apply to it.
 * `TauCeti.BesovSpace.lowPass_smul_lowPass`: Bony's decomposition of `S_M u · S_M v`.
 * `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq` and
   `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg`: the paraproduct
@@ -209,30 +211,55 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
       rw [coe_lowPass, hf, hg]
   rwa [h]
 
-/-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
-`‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`, since the blocks satisfy `‖Δₖ u‖_p ≤ 2^{-s k} ‖u‖` and
-`∑_{k < m} 2^{-s k} ≤ 2^{-s m} / (2^{-s} - 1)`. -/
-theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
-    ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by
+/-- **The block norms at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
+`∑_{k < m} ‖Δₖ u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`, since the blocks satisfy
+`‖Δₖ u‖_p ≤ 2^{-s k} ‖u‖` and `∑_{k < m} 2^{-s k} ≤ 2^{-s m} / (2^{-s} - 1)`. -/
+theorem sum_norm_block_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q)
+    (m : ℕ) : ∑ k ∈ Finset.range m, ‖u.block k‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by
   set x : ℝ := 2 ^ (-s)
   have hx : 1 < x := Real.one_lt_rpow one_lt_two (neg_pos.2 hs)
   have hpow : ∀ k : ℕ, (2 : ℝ) ^ (-s * k) = x ^ k := fun k ↦ by
     rw [Real.rpow_mul zero_le_two, Real.rpow_natCast]
-  -- Each block is bounded by `2^{-s k} ‖u‖ = x^k ‖u‖`.
-  have hblock : ∀ k : ℕ, ‖u.block k‖ ≤ x ^ k * ‖u‖ := fun k ↦ by
-    calc ‖u.block k‖ = 2 ^ (-s * k) * (2 ^ (s * k) * ‖u.block k‖) := by
-          rw [← mul_assoc, ← Real.rpow_add two_pos, neg_mul, neg_add_cancel, Real.rpow_zero,
-            one_mul]
-      _ ≤ 2 ^ (-s * k) * ‖u‖ := mul_le_mul_of_nonneg_left (u.rpow_mul_norm_block_le k)
-          (by positivity)
-      _ = x ^ k * ‖u‖ := by rw [hpow]
-  calc ‖u.lowPass m‖ ≤ ∑ k ∈ Finset.range m, ‖u.block k‖ := norm_sum_le _ _
-    _ ≤ ∑ k ∈ Finset.range m, x ^ k * ‖u‖ := Finset.sum_le_sum fun k _ ↦ hblock k
+  calc ∑ k ∈ Finset.range m, ‖u.block k‖ ≤ ∑ k ∈ Finset.range m, x ^ k * ‖u‖ :=
+        Finset.sum_le_sum fun k _ ↦ (u.norm_block_le k).trans_eq (by rw [hpow])
     _ = (x ^ m - 1) / (x - 1) * ‖u‖ := by rw [← Finset.sum_mul, geom_sum_eq hx.ne']
     _ ≤ x ^ m / (x - 1) * ‖u‖ := by
         gcongr
         linarith
     _ = 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by rw [hpow]
+
+/-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
+`‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`. -/
+theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
+    ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ :=
+  (norm_sum_le _ _).trans (sum_norm_block_le_of_neg hs u m)
+
+open Filter in
+/-- **Elements of positive regularity are `Lᵖ` functions.** If `u ∈ B^s_{p,q}` with `0 < s`, then
+the tempered distribution of `u` is an `Lᵖ` function `f`, the sum of the absolutely convergent
+series `∑ₖ Δₖ u`, with `‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_pos [Fact (1 ≤ q)] (hs : 0 < s)
+    (u : BesovSpace F φ s p q) :
+    ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
+  set x : ℝ := 2 ^ (-s)
+  have hx : x < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hs)
+  have hblock (k : ℕ) : ‖u.block k‖ ≤ ‖u‖ * x ^ k := by
+    rw [mul_comm, ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
+    exact u.norm_block_le k
+  have hgeom : Summable fun k : ℕ ↦ ‖u‖ * x ^ k :=
+    (summable_geometric_of_lt_one (by positivity) hx).mul_left _
+  have hsum : Summable fun k ↦ ‖u.block k‖ :=
+    hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hblock
+  refine ⟨∑' k, u.block k, ?_, ?_⟩
+  · -- Both sides are limits of the partial sums `∑_{k < m} Δₖ u` in `𝓢'(E, F)`.
+    refine tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u.toDistr) ?_
+    have hlim := (hsum.of_norm.hasSum.map (Lp.toTemperedDistributionCLM F volume p)
+      (Lp.toTemperedDistributionCLM F volume p).continuous).tendsto_sum_nat
+    simpa only [Function.comp_def, Lp.toTemperedDistributionCLM_apply, coe_block] using hlim
+  · calc ‖∑' k, u.block k‖ ≤ ∑' k, ‖u.block k‖ := norm_tsum_le_tsum_norm hsum
+      _ ≤ ∑' k : ℕ, ‖u‖ * x ^ k := hsum.tsum_le_tsum hblock hgeom
+      _ = (1 - x)⁻¹ * ‖u‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one (by positivity) hx,
+          mul_comm]
 
 end LowPass
 

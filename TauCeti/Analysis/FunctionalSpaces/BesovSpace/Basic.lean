@@ -570,6 +570,12 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
   rw [← norm_weightedBlocks_apply, ← norm_weightedBlocks]
   exact lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j
 
+/-- **The single-block bound, unweighted:** `‖Δⱼ u‖_p ≤ 2^{-js} ‖u‖`. -/
+theorem norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
+    ‖u.block j‖ ≤ 2 ^ (-s * j) * ‖u‖ := by
+  rw [neg_mul, Real.rpow_neg zero_le_two, ← div_eq_inv_mul, le_div_iff₀' (by positivity)]
+  exact rpow_mul_norm_block_le u j
+
 /-- **The weighted block norms as a sequence in `ℓ^q`.** The sequence `(2^{js} ‖Δⱼ u‖_p)ⱼ` of
 `u ∈ B^s_{p,q}` is an element of `ℓ^q` of norm at most `‖u‖`. It is the majorant to which the
 summation lemmas for series of spectrally localized pieces are applied. -/
