@@ -41,7 +41,8 @@ Cauchy–Riemann operator `∂bar` on `TS²`. Their real dimension `6`
 (`OnePoint.finrank_real_holomorphicVectorFields`) agrees with the value
 `n χ + 2 c₁ = 1 · 2 + 2 · 2` of the Riemann–Roch index formula. This file only computes the
 dimension of the kernel: identifying it with the index also needs the vanishing of the cokernel of
-`∂bar` and the evaluation `c₁(TS²)[S²] = 2`, neither of which is proved here.
+`∂bar`, which is not proved here, and the evaluation `c₁(TS²)[S²] = 2`
+(`TauCeti.clutchingNumber_tangentSpace_riemannSphereSquare`).
 
 ## Main declarations
 
