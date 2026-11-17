@@ -62,8 +62,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `i`-th coordinate vector.
 * `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
   finitely many exponent vectors of each degree, and of degree at most `n`.
-* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
-  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
+* `Finsupp.fintypeDegreeEq`, `Finsupp.fintypeDegreeLe`: for a fintype of variables with decidable
+  equality, the exponent vectors of degree `n`, and of degree at most `n`, form a fintype,
+  enumerated by `Finset.finsuppAntidiag`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
@@ -276,6 +277,17 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree = n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+/-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
+form a fintype, enumerated by the union of `Finset.finsuppAntidiag` up to `n`. -/
+instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype {s : σ →₀ ℕ // s.degree ≤ n} :=
+  Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
+    ((Finset.range (n + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·))
+    fun s ↦ by
+      simp only [Finset.mem_biUnion, Finset.mem_range, Finset.mem_finsuppAntidiag,
+        Finset.subset_univ, and_true, Set.mem_ofPred_eq, Nat.lt_succ_iff, degree_eq_sum]
+      exact ⟨fun ⟨_, hk, hsk⟩ ↦ hsk ▸ hk, fun hs ↦ ⟨_, hs, rfl⟩⟩
 
 end Finsupp
 

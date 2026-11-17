@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
+import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.RingTheory.Finiteness.Prod
 import TauCeti.RingTheory.KrullDimension.Integral
 
@@ -18,12 +22,12 @@ import TauCeti.RingTheory.KrullDimension.Integral
 
 For a commutative ring `R` and an `R`-module `M`, the trivial square-zero extension
 `TrivSqZeroExt R M` is the ring `R ⊕ M` in which `M` is an ideal of square zero. As an `R`-module
-it is `R × M`.
+it is `R × M` (`TrivSqZeroExt.linearEquivProd`).
 
 This file records the standard finiteness and dimension invariants: over a local ring `R` the
-extension is local and the inclusion of `R` is a local homomorphism; it is finite, respectively
-Noetherian, when `M` is finite (and `R` is Noetherian); and, being integral over `R`, it has the
-Krull dimension of `R`.
+extension is local and the inclusion of `R` is a local homomorphism; it is finite, free,
+respectively Noetherian, when `M` is finite, free (and `R` is Noetherian); its `finrank` is the
+sum of those of `R` and `M`; and, being integral over `R`, it has the Krull dimension of `R`.
 
 Taking for `M` the residue field of a local ring `A` gives `A[z] ⧸ (z², 𝔪z)`, a finite local
 `A`-algebra with the dimension of `A` and of depth zero, which is not flat over `A` unless `A` is
@@ -31,6 +35,8 @@ a field (`TrivSqZeroExt.depth_eq_zero`, `TrivSqZeroExt.not_flat`).
 
 ## Main results
 
+* `TrivSqZeroExt.linearEquivProd`: as an `S`-module, `TrivSqZeroExt R M ≃ₗ[S] R × M`.
+* `TrivSqZeroExt.finrank_eq`: `finrank S (TrivSqZeroExt R M) = finrank S R + finrank S M`.
 * `TrivSqZeroExt.isLocalRing`: the trivial square-zero extension of a local ring is local.
 * `TrivSqZeroExt.mem_maximalIdeal_iff`: its maximal ideal consists of the elements whose first
   component lies in the maximal ideal of `R`.
@@ -41,6 +47,44 @@ public section
 open IsLocalRing
 
 namespace TrivSqZeroExt
+
+section Module
+
+/-- As an `S`-module, the trivial square-zero extension `TrivSqZeroExt R M` is `R × M`. -/
+def linearEquivProd (S R M : Type*) [Semiring S] [AddCommMonoid R] [AddCommMonoid M]
+    [Module S R] [Module S M] : TrivSqZeroExt R M ≃ₗ[S] R × M where
+  toFun x := (x.fst, x.snd)
+  invFun p := inl p.1 + inr p.2
+  left_inv := inl_fst_add_inr_snd_eq
+  right_inv p := by ext <;> simp
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem linearEquivProd_apply {S R M : Type*} [Semiring S] [AddCommMonoid R] [AddCommMonoid M]
+    [Module S R] [Module S M] (x : TrivSqZeroExt R M) :
+    linearEquivProd S R M x = (x.fst, x.snd) := by rfl
+
+@[simp]
+theorem linearEquivProd_symm_apply {S R M : Type*} [Semiring S] [AddCommMonoid R]
+    [AddCommMonoid M] [Module S R] [Module S M] (p : R × M) :
+    (linearEquivProd S R M).symm p = inl p.1 + inr p.2 := by rfl
+
+/-- The trivial square-zero extension of two free `S`-modules is free. -/
+instance moduleFree {S R M : Type*} [Semiring S] [AddCommMonoid R] [AddCommMonoid M]
+    [Module S R] [Module S M] [Module.Free S R] [Module.Free S M] :
+    Module.Free S (TrivSqZeroExt R M) :=
+  Module.Free.of_equiv (linearEquivProd S R M).symm
+
+/-- The `finrank` of a trivial square-zero extension is the sum of the `finrank`s of its base
+and infinitesimal parts. -/
+theorem finrank_eq {S R M : Type*} [Ring S] [StrongRankCondition S] [AddCommGroup R]
+    [AddCommGroup M] [Module S R] [Module S M] [Module.Free S R] [Module.Finite S R]
+    [Module.Free S M] [Module.Finite S M] :
+    Module.finrank S (TrivSqZeroExt R M) = Module.finrank S R + Module.finrank S M :=
+  (linearEquivProd S R M).finrank_eq.trans Module.finrank_prod
+
+end Module
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M]
   [IsCentralScalar R M]
