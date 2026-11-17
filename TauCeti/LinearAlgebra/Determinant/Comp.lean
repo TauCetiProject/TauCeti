@@ -35,6 +35,7 @@ operator is composed with a change of trivialization.
 ## Main declarations
 
 * `LinearMap.detLineCompEquiv`: the isomorphism `det (g ∘ f) ≃ det f ⊗ det g`.
+* `LinearMap.detLineCompEquiv_def`: it is the six-term isomorphism of that sequence.
 * `LinearMap.detLineCompEquiv_tmul`: its value on exterior products.
 
 ## References
@@ -69,6 +70,15 @@ def detLineCompEquiv : (g ∘ₗ f).detLine ≃ₗ[K] f.detLine ⊗[K] g.detLine
     (f.exact_inclusion_kerCompToKer g) (f.exact_kerCompToKer_kerToCoker g)
     (f.exact_kerToCoker_cokerToCokerComp g) (f.exact_cokerToCokerComp_factor g)
     (Submodule.factor_surjective _)
+
+/-- `LinearMap.detLineCompEquiv` is the six-term isomorphism `TauCeti.detLineSixTermEquiv` of the
+exact sequence `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0`. -/
+theorem detLineCompEquiv_def [FiniteDimensional K (P ⧸ range (g ∘ₗ f))] :
+    f.detLineCompEquiv g = TauCeti.detLineSixTermEquiv
+      (Submodule.inclusion_injective (ker_le_ker_comp f g)) (f.exact_inclusion_kerCompToKer g)
+      (f.exact_kerCompToKer_kerToCoker g) (f.exact_kerToCoker_cokerToCokerComp g)
+      (f.exact_cokerToCokerComp_factor g) (Submodule.factor_surjective _) :=
+  (rfl)
 
 /-- **The value of `LinearMap.detLineCompEquiv` on exterior products.** Choose `u`, a family of
 `dim (ker f)` vectors of `ker f`, and families `v`, `w`, `x` and `y` in `ker (g ∘ f)`, `ker g`,

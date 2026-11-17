@@ -105,21 +105,15 @@ private theorem cokerEquiv_mk (y : F) :
 
 /-- Complex positivity of an element of the determinant line of `T.restrictScalars ℝ`, read in the
 complex kernel and cokernel of `T`. This is `LinearMap.isComplexPositiveDetLine_iff`, with
-`LinearMap.detLineRestrictScalarsEquiv`, whose body is not exposed here, computed on pure tensors
+`LinearMap.detLineRestrictScalarsEquiv` unfolded by `LinearMap.detLineRestrictScalarsEquiv_eq_congr`
 and with the kernel and cokernel retyped through `kerEquiv` and `cokerEquiv`. -/
 private theorem isComplexPositiveDetLine_iff_congr
     {z : (T.restrictScalars ℝ : E →ₗ[ℝ] F).detLine} :
     (T : E →ₗ[ℂ] F).IsComplexPositiveDetLine z ↔
       IsComplexPositiveTMulDual (TensorProduct.congr (kerEquiv T).symm.detLineCongr
         (cokerEquiv T).symm.detLineCongr.dualMap z) := by
-  have heq : ((T : E →ₗ[ℂ] F).detLineRestrictScalarsEquiv :
-      (T.restrictScalars ℝ : E →ₗ[ℝ] F).detLine ≃ₗ[ℝ] _) = TensorProduct.congr
-        (kerEquiv T).symm.detLineCongr (cokerEquiv T).symm.detLineCongr.dualMap :=
-    LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun x φ ↦
-      (LinearMap.detLineRestrictScalarsEquiv_tmul _ x φ).trans (TensorProduct.congr_tmul
-        (kerEquiv T).symm.detLineCongr (cokerEquiv T).symm.detLineCongr.dualMap x φ).symm)
-  exact LinearMap.isComplexPositiveDetLine_iff.trans
-    (Iff.of_eq (congrArg _ (LinearEquiv.congr_fun heq z)))
+  exact LinearMap.isComplexPositiveDetLine_iff.trans (Iff.of_eq (congrArg _
+    (LinearEquiv.congr_fun (LinearMap.detLineRestrictScalarsEquiv_eq_congr (T : E →ₗ[ℂ] F)) z)))
 
 end Real
 

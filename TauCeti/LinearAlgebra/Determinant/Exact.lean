@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.ExteriorPower.ShortExact
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
@@ -241,8 +242,8 @@ theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
   -- Join the two halves of `γ` along `0 → range g → C → D → 0`.
   have hγ' : detLineShortExactEquiv (LinearMap.range g).injective_subtype hgh.range_subtype hh
       (exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v) ⊗ₜ exteriorPower.ιMulti K _ (h ∘ z)) = γ :=
-    Subtype.ext (by rw [hγ, coe_detLineShortExactEquiv_tmul, ← Function.comp_assoc,
-      ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
+    Subtype.ext (by rw [hγ, coe_detLineShortExactEquiv_tmul,
+      LinearMap.subtype_comp_rangeRestrict_comp])
   simp only [detLineFourTermEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, hβ',
     LinearEquiv.lTensor_tmul, TensorProduct.assoc_tmul, LinearMap.lTensor_tmul,
     TensorProduct.rid_tmul, Dual.eval_apply, Module.Invertible.leftCancelDualEquiv_tmul_apply,
@@ -614,7 +615,7 @@ theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
   -- The second four-term sequence, written against `χ`.
   have hE₂ := detLineFourTermEquiv_tmul_eq_smul_tmul (LinearMap.range f₃).injective_subtype
     h₃₄.range_subtype h₄₅ hf₅ (f₃.rangeRestrict ∘ w) x y (β := δ)
-    (by rw [hδ, ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
+    (by rw [hδ, LinearMap.subtype_comp_rangeRestrict_comp])
     hε φ hχ
   have h₁ : (Module.Invertible.rightCancelEquiv _
       (Module.Invertible.linearEquiv K (detLine K A₃))).symm β = (β ⊗ₜ γ₀') ⊗ₜ γ₀ := by
