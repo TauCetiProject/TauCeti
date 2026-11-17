@@ -216,11 +216,11 @@ theorem preservesColimit_parallelPair_zero_sectionsFunctor {M N : X.Modules}
 
 /-- Over an affine open `U`, the sections of the cokernel of a morphism `φ : M ⟶ N` of
 quasicoherent `𝒪_X`-modules identify with
-`Γ(N, U) ⧸ LinearMap.range (φ.val.app (Opposite.op U)).hom`. -/
+`Γ(N, U) ⧸ LinearMap.range (ModuleCat.Hom.hom (R := Γ(X, U)) (φ.val.app (Opposite.op U)))`. -/
 def cokernelSectionsEquiv {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
     (φ : M ⟶ N) (U : X.affineOpens) :
-    (Γ(N, U.1) ⧸ LinearMap.range (τ₁₂ := RingHom.id Γ(X, U.1))
-        (M := Γ(M, U.1)) (M₂ := Γ(N, U.1)) (φ.val.app (Opposite.op U.1)).hom) ≃ₗ[Γ(X, U)]
+    (Γ(N, U.1) ⧸ LinearMap.range
+        (ModuleCat.Hom.hom (R := Γ(X, U.1)) (φ.val.app (Opposite.op U.1)))) ≃ₗ[Γ(X, U)]
       Γ(cokernel φ, U.1) := by
   haveI := preservesColimit_parallelPair_zero_sectionsFunctor φ U.2
   exact (PreservesCokernel.iso (sectionsFunctor U.1) φ ≪≫
