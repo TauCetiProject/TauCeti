@@ -46,6 +46,8 @@ No flatness or noetherian hypothesis is needed.
   subcomodules are finite.
 * `TauCeti.Subcomodule.instIsAtomic`: over a field every nonzero subcomodule contains a simple
   subcomodule.
+* `TauCeti.Comodule.finite_of_isSimpleOrder`: for a projective coefficient coalgebra, every simple
+  comodule is finitely generated.
 
 ## References
 
@@ -316,5 +318,20 @@ instance instIsAtomic : IsAtomic (Subcomodule k C M) := by
 end Field
 
 end Subcomodule
+
+namespace Comodule
+
+/-- If the coefficient coalgebra is projective over `R`, every simple right comodule is finitely
+generated over `R`. -/
+theorem finite_of_isSimpleOrder {R : Type u} {C : Type v} {M : Type w} [CommSemiring R]
+    [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Projective R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M] [IsSimpleOrder (Subcomodule R C M)] :
+    Module.Finite R M := by
+  have hfin : Module.Finite R (⊤ : Subcomodule R C M).toSubmodule :=
+    Subcomodule.finite_of_isAtom (R := R) (C := C) isAtom_top
+  rw [Subcomodule.top_toSubmodule] at hfin
+  exact Module.Finite.equiv (Submodule.topEquiv (R := R) (M := M))
+
+end Comodule
 
 end TauCeti
