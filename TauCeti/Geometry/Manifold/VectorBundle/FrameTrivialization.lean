@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 
 /-!
@@ -49,6 +50,7 @@ holomorphic section.
   continuously on the vector, as a point of the total space.
 * `IsLocalFrameOn.coeff_sum_smul`: the coefficients of a combination of frame vectors are its
   coefficients.
+* `IsLocalFrameOn.card_eq_finrank`: a frame has as many members as the dimension of the fibre.
 * `IsLocalFrameOn.trivialization_mem_maximalAtlas`: the trivialization of a `C^n` local frame lies
   in the maximal atlas of `C^n` trivializations.
 * `Bundle.Trivialization.isLocalFrameOn_symm_of_mem_maximalAtlas`: a member of the maximal atlas
@@ -413,6 +415,12 @@ theorem coeff_sum_smul [Fintype ι] (hs : IsLocalFrameOn IB F n s U) {x : B} (hx
   classical
   simp only [map_sum, map_smul, hs.coeff_apply_self hx, smul_eq_mul, mul_ite, mul_one, mul_zero,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
+omit [CompleteSpace 𝕜] in
+/-- A frame of a bundle with fibre `F` has as many members as the dimension of `F`. -/
+theorem card_eq_finrank [Fintype ι] [VectorBundle 𝕜 F V] (hs : IsLocalFrameOn IB F n s U)
+    {x : B} (hx : x ∈ U) : Fintype.card ι = finrank 𝕜 F :=
+  (finrank_eq_card_basis (hs.toBasisAt hx)).symm.trans (VectorBundle.finrank_eq 𝕜 F V x)
 
 end IsLocalFrameOn
 

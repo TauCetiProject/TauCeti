@@ -222,23 +222,25 @@ instance : MulAction (Multiplicative (ι → ℤ)) (LatticeCover α hα) where
     abel
 
 /-- The coordinates `c` of a covector `p = ∑ i, c i • α i x` in the frame. -/
-private def coord (z : CotangentBundle I B) : ι → ℝ := fun i ↦ hα.coeff i z.proj z.2
+def coord (z : CotangentBundle I B) : ι → ℝ := fun i ↦ hα.coeff i z.proj z.2
 
 omit [Fintype ι] in
-private theorem continuous_coord [FiniteDimensional ℝ E] : Continuous (coord hα) :=
+/-- The coordinate `i` of a covector is its coefficient `i` in the frame. -/
+@[simp]
+theorem coord_apply (z : CotangentBundle I B) (i : ι) : coord hα z i = hα.coeff i z.proj z.2 :=
+  (rfl)
+
+omit [Fintype ι] in
+/-- The coordinates of a covector in the frame depend continuously on the covector. -/
+theorem continuous_coord [FiniteDimensional ℝ E] : Continuous (coord hα) :=
   continuous_pi fun i ↦ continuousOn_univ.mp (hα.continuousOn_coeff_totalSpace isOpen_univ i)
 
 /-- Translating by the lattice vector of `k` shifts the coordinates by `k`. -/
-private theorem coord_add_sum (x : B) (p : TangentSpace I x →L[ℝ] ℝ) (k : ι → ℤ) :
+theorem coord_add_sum (x : B) (p : TangentSpace I x →L[ℝ] ℝ) (k : ι → ℤ) :
     coord hα ⟨x, p + ∑ i, (k i : ℝ) • SmoothForm.degreeOneEquiv (α i) x⟩ =
       coord hα ⟨x, p⟩ + fun i ↦ (k i : ℝ) := by
-  classical
   funext i
-  have h (j : ι) :
-      hα.coeff i x (SmoothForm.degreeOneEquiv (α j) x) = if j = i then 1 else 0 := by
-    rw [hα.coeff_apply_of_mem (mem_univ x) (fun x ↦ SmoothForm.degreeOneEquiv (α j) x),
-      ← hα.toBasisAt_coe (mem_univ x), Module.Basis.repr_self, Finsupp.single_apply]
-  simp [coord, map_sum, h]
+  simp only [coord, map_add, hα.coeff_sum_smul (mem_univ x), Pi.add_apply]
 
 /-- The action is properly discontinuous: only finitely many integer vectors translate a compact
 set to meet another compact set. -/
