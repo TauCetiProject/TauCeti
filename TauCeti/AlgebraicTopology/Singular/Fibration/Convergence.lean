@@ -81,10 +81,7 @@ chains of `E` by the singular chains of the preimages of the skeleta. Its spectr
 the skeleta. -/
 abbrev serreSpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :=
-  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-    (monotone_chainFiltration
-      ((AlgebraicTopology.singularChainComplexFunctor _).obj (ModuleCat.of R R))
-      (monotone_preimageSkeleton (C := C) p)))
+  filteredSpaceSpectralObject (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p)
 
 end Defs
 
