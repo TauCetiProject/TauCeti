@@ -24,9 +24,10 @@ parameters `ζᵢ = ζ^(dᵢ)` of a symmetrizable Cartan datum have `ζᵢ²` of
 `ℓᵢ = L / gcd(L, dᵢ)`, the least positive exponent `m` with `ζ^(2 m dᵢ) = 1`. When `L` is not
 coprime to every `dᵢ`, the exponents `ℓᵢ` may vary across the diagram; Lusztig's quantum Frobenius
 homomorphism lands in the algebra attached to the **modified datum** `(A*, d*)` with entries
-`aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ`, symmetrizer `dᵢ* = ℓᵢ² dᵢ`, and target parameters
-`ζᵢ* = ζ^(dᵢ ℓᵢ²) ∈ {1, -1}` (whose Cartan matrix `A*` still equals `A` whenever the orders `ℓᵢ`
-are constant, and differs from `A` only when `ℓᵢ` varies across an edge).
+`aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ`, symmetrizer `dᵢ* = ℓᵢ² dᵢ`, and target parameters `ζᵢ* = ζ^(dᵢ ℓᵢ²)`
+satisfying `(ζᵢ*)² = 1` (and hence `ζᵢ* ∈ {1, -1}` in a ring without zero divisors). The modified
+Cartan matrix `A*` still equals `A` whenever the orders `ℓᵢ` are constant, and differs from `A`
+only when `ℓᵢ` varies across an edge.
 
 This file develops the matrix, arithmetic, graph and root-of-unity theory of these Frobenius order
 data for an arbitrary `TauCeti.SymmetrizableDatum`:
@@ -35,7 +36,8 @@ data for an arbitrary `TauCeti.SymmetrizableDatum`:
   their characterization as the multiplicative order of `ζ^(2 dᵢ)` and least positive solution of
   `ζ^(2 m dᵢ) = 1`;
 * the target root-of-unity parameters `ζᵢ* = ζ^(dᵢ ℓᵢ²)`
-  (`TauCeti.SymmetrizableDatum.frobeniusTarget`), whose squares equal `1`;
+  (`TauCeti.SymmetrizableDatum.frobeniusTarget`), which satisfy `(ζᵢ*)² = 1` whenever
+  `ζ^(2 L) = 1` (and `ζᵢ* ∈ {1, -1}` in a ring without zero divisors);
 * the integrality `(ℓᵢ : ℤ) ∣ ℓⱼ aᵢⱼ` for every symmetrizable generalized Cartan matrix, with no
   finite-type hypothesis
   (`TauCeti.SymmetrizableDatum.frobeniusOrder_dvd_frobeniusOrder_mul_cartan`), and the resulting
@@ -152,7 +154,7 @@ theorem orderOf_pow_two_mul_symmetrizer (ζ : M) (i : I) :
   rw [pow_mul, orderOf_pow' (ζ ^ 2) (A.symmetrizer_ne_zero i), frobeniusOrder_def]
 
 /-- The **target parameter** `ζᵢ* = ζ^(dᵢ ℓᵢ²)` of the quantum Frobenius homomorphism at node `i`.
-When `ζ^(2 L) = 1`, its square is `1`, so over an integral domain it is `1` or `-1`. -/
+When `ζ^(2 L) = 1`, its square is `1`, so in a ring without zero divisors it is `1` or `-1`. -/
 def frobeniusTarget (ζ : M) (L : ℕ) (i : I) : M :=
   ζ ^ (A.symmetrizer i * A.frobeniusOrder L i ^ 2)
 

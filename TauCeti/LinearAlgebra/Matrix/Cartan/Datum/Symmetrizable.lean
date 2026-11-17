@@ -163,6 +163,11 @@ lemma simplyConnectedCartanDatum_coroot (hdet : A.cartan.det ≠ 0) (i : ι) :
   simp [simplyConnectedCartanDatum]
 
 @[simp]
+lemma simplyConnectedCartanDatum_root_apply (hdet : A.cartan.det ≠ 0) (j : ι) (y : ι → ℤ) :
+    (A.simplyConnectedCartanDatum hdet).root j y = ∑ i, A.cartan i j * y i := by
+  simp [simplyConnectedCartanDatum]
+
+@[simp]
 lemma simplyConnectedCartanDatum_symmetrizer (hdet : A.cartan.det ≠ 0) :
     (A.simplyConnectedCartanDatum hdet).symmetrizer = A.symmetrizer := by
   simp [simplyConnectedCartanDatum]

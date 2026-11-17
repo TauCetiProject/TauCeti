@@ -257,18 +257,12 @@ lemma coe_modifiedRoot (L : ℕ) (i : ι) :
 /-- For `L > 0`, the modified simple roots `αᵢ* = ℓᵢ • αᵢ` are `ℤ`-linearly independent in `X*`. -/
 theorem linearIndependent_modifiedRoot {L : ℕ} (hL : 0 < L) :
     LinearIndependent ℤ (D.modifiedRoot L) := by
-  rw [linearIndependent_iff']
-  intro s g hg i hi
-  have hsum : ∑ j ∈ s, (g j * D.frobeniusOrder L j) • D.root j = 0 := by
-    have hval := congrArg Subtype.val hg
-    rw [Submodule.coe_sum, ZeroMemClass.coe_zero] at hval
-    refine Eq.trans ?_ hval
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [SetLike.val_smul, coe_modifiedRoot, ← natCast_zsmul, smul_smul]
-  have hzero := linearIndependent_iff'.mp D.linearIndependent_root s
-    (fun j ↦ g j * D.frobeniusOrder L j) hsum i hi
-  exact (mul_eq_zero.mp hzero).resolve_right
-    (Int.natCast_ne_zero.mpr (D.frobeniusOrder_ne_zero hL i))
+  refine LinearIndependent.of_comp (D.modifiedWeightLattice L).subtype ?_
+  convert D.linearIndependent_root.smul_of_isRightRegular
+    (w := fun i ↦ (D.frobeniusOrder L i : ℤ))
+    (fun i ↦ (IsRegular.of_ne_zero (Int.natCast_ne_zero.mpr (D.frobeniusOrder_ne_zero hL i))).right)
+  ext i
+  simp [coe_modifiedRoot]
 
 /-- The canonical `ℤ`-linear restriction map `Y →ₗ[ℤ] Hom(X*, ℤ)` sending a coweight `y ∈ Y` to
 `λ ↦ ⟨λ, y⟩` on `X*`. -/
