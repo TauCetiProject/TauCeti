@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
@@ -36,10 +35,10 @@ equations. On deep levels of the formal group `φ` shifts the filtration by the 
 `c u₂ / u₁` (`TauCeti.Isogeny.eventually_index_range_pointMapHom_mul_index_formalPointFiltration`),
 while each formal level index factors into a power of `q_v`, the nonsingular reduction count
 `#E_ns(κ(v))`, and the local Tamagawa number `c_v(E)`
-(`WeierstrassCurve.index_formalPointFiltration_eq_mul_tamagawaNumber`). Because isogenous minimal
-equations over the local field `K_v` have equally many nonsingular reduced points at good and bad
-reduction alike (`TauCeti.Isogeny.natCard_point_reduction_eq`), the reduced point counts cancel,
-leaving the local identity
+(`WeierstrassCurve.index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber`). Because
+isogenous minimal equations over the local field `K_v` have equally many nonsingular reduced points
+at good and bad reduction alike (`TauCeti.Isogeny.natCard_point_reduction_eq`), the reduced point
+counts cancel, leaving the local identity
 
 `|c u₂ / u₁|_v · z_v(φ) · c_v(E₁) = c_v(E₂)`.
 
@@ -95,31 +94,6 @@ section AdicCompletion
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-open scoped Classical in
-/-- On a minimal equation over `v.adicCompletionIntegers K`, the index of the `(k + 1)`-st formal
-level factors into `(#𝓀[K_v]) ^ k`, the nonsingular reduction count at `𝒪[K_v]`, and the Tamagawa
-number with respect to `ValuativeRel.valuation K_v`. -/
-private theorem index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber
-    (v : HeightOneSpectrum R) [Finite (R ⧸ v.asIdeal)]
-    (M : WeierstrassCurve (v.adicCompletionIntegers K))
-    [(M.baseChange (v.adicCompletion K)).IsElliptic]
-    [IsMinimal 𝒪[v.adicCompletion K] (M.baseChange (v.adicCompletion K))] (k : ℕ) :
-    (M.formalPointFiltration v (k + 1)).index =
-      Nat.card 𝓀[v.adicCompletion K] ^ k *
-        Nat.card
-          ((M.baseChange (v.adicCompletion K)).reduction 𝒪[v.adicCompletion K]).toAffine.Point *
-        (M.baseChange (v.adicCompletion K)).tamagawaNumber (valuation (v.adicCompletion K)) := by
-  have : IsMinimal (v.adicCompletionIntegers K) (M.baseChange (v.adicCompletion K)) :=
-    (isMinimal_adicCompletion_iff v _).mp inferInstance
-  have hq : Nat.card (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) =
-      Nat.card 𝓀[v.adicCompletion K] :=
-    Nat.card_congr <| (IsLocalRing.ResidueField.mapEquiv
-      (v.integerEquivAdicCompletionIntegers (K := K)).symm).toEquiv
-  have hequiv := ValuativeRel.isEquiv (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
-    (valuation (v.adicCompletion K))
-  rw [M.index_formalPointFiltration_eq_mul_tamagawaNumber v, hq,
-    ← M.natCard_point_reduction_baseChange_adicCompletion, tamagawaNumber_congr _ hequiv]
-
 /-- When `deg φ` is nonzero in `R`, the differential pullback constant of `φ` over `K_v` has
 nonzero valuation. -/
 private theorem valued_ne_zero_of_pullbackDifferential_eq_smul (v : HeightOneSpectrum R)
@@ -171,8 +145,8 @@ private theorem zpow_natCard_mul_kummerRatio_mul_tamagawaNumber_baseChange
     push_cast
     omega
   have hind := hlev (j + 1) hjk
-  rw [index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber v M₁,
-    index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber v M₂,
+  rw [M₁.index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber v,
+    M₂.index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber v,
     ← φ.natCard_point_reduction_eq] at hind
   let q : ℚ := Nat.card 𝓀[v.adicCompletion K]
   let N : ℚ := Nat.card
