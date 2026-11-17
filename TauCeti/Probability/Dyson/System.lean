@@ -427,10 +427,7 @@ theorem isDysonPath_of_subsingleton {n : ℕ} [Subsingleton (Fin n)] (x : Fin n 
     IsDysonPath n x w (fun t i ↦ x i + w t i) := by
   refine ⟨continuous_const.add hw, fun t _ i j hij ↦ (hij.ne (Subsingleton.elim i j)).elim,
     fun t i ↦ ?_⟩
-  have hempty : (univ : Finset (Fin n)).erase i = ∅ := by
-    ext j
-    simp [Subsingleton.elim j i]
-  simp [hempty, dysonDrift_of_subsingleton]
+  simp [← singleton_eq_univ i]
 
 /-- For `n ≤ 1`, `X t ω i = x i + √(2 / (β * n)) * B i t ω` solves `IsDysonSolution` whenever each
 coordinate `B i` has `P`-almost-surely continuous paths (for example `(hB i).cont` when `B i` is

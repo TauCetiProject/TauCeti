@@ -288,6 +288,11 @@ theorem sum_dysonTruncPath (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → �
 
 /-! ### Local compatibility and pasting before chamber exit -/
 
+private theorem toNNReal_mem_Ioo {s : ℝ} {t T : ℝ≥0} (hs : s ∈ Ioo (0 : ℝ) t) (ht : t ≤ T) :
+    s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
+  ⟨Real.toNNReal_pos.2 hs.1,
+    (Real.toNNReal_lt_iff_lt_coe hs.1.le).2 (hs.2.trans_le (NNReal.coe_le_coe.2 ht))⟩
+
 /-- **Threshold compatibility up to chamber exit.** For `0 < δ₁ ≤ δ₂`, if `dysonTruncPath` at
 threshold `δ₂` stays inside `{z | ∀ i < j, δ₂ ≤ z i - z j}` on `(0, T)`, then `dysonTruncPath` at
 threshold `δ₁` agrees with it throughout `[0, T]`. -/
@@ -305,10 +310,7 @@ theorem dysonTruncPath_eq_of_le_of_le_sub {n : ℕ} {δ₁ δ₂ : ℝ} (hδ₁ 
     rw [dysonTruncPath_eq_integral n hδ₂ x hw t i]
     congr 1
     refine _root_.intervalIntegral.integral_congr_Ioo_of_le (NNReal.coe_nonneg t) fun s hs ↦ ?_
-    have hs_nn : s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
-      ⟨Real.toNNReal_pos.2 hs.1,
-        NNReal.coe_lt_coe.1 ((Real.coe_toNNReal s hs.1.le).trans_lt
-          (hs.2.trans_le (NNReal.coe_le_coe.2 ht.2)))⟩
+    have hs_nn := toNNReal_mem_Ioo hs ht.2
     rw [dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal hs_nn),
       dysonDriftTrunc_eq_dysonDrift fun i j hij ↦ hle.trans (hch s.toNNReal hs_nn hij)]
   exact fun _ ht ↦ (heq ht).symm
@@ -326,11 +328,7 @@ theorem IsDysonPath.eq_dysonTruncPath_of_le_sub {n : ℕ} {x : Fin n → ℝ}
   rw [hγ.apply_eq t i]
   congr 1
   refine _root_.intervalIntegral.integral_congr_Ioo_of_le (NNReal.coe_nonneg t) fun s hs ↦ ?_
-  have hs_nn : s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
-    ⟨Real.toNNReal_pos.2 hs.1,
-      NNReal.coe_lt_coe.1 ((Real.coe_toNNReal s hs.1.le).trans_lt
-        (hs.2.trans_le (NNReal.coe_le_coe.2 ht.2)))⟩
-  rw [← dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal hs_nn)]
+  rw [← dysonDriftTrunc_eq_dysonDrift (hch s.toNNReal (toNNReal_mem_Ioo hs ht.2))]
 
 /-- Any trajectory `γ` that agrees on every compact horizon `[0, T]` with some `δ`-truncated Dyson
 trajectory staying inside the `δ`-chamber on `[0, T]` is a global `IsDysonPath`. -/

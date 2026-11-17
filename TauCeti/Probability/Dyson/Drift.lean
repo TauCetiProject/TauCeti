@@ -21,12 +21,15 @@ The deterministic drift of the Dyson Brownian motion particle system on `ℝⁿ`
 for all real numbers (including at `0` where `0⁻¹ = 0`), any pairing `∑ᵢ uᵢ dysonDrift n x i`
 folds onto the increasing index pairs `i < j`, and the total drift sums to zero identically.
 
-On injective configurations `x, y`, the inner product `⟨dysonDrift n x - dysonDrift n y, x - y⟩`
-equals `-n⁻¹ ∑_{i < j} ((xᵢ - xⱼ) - (yᵢ - yⱼ))² / ((xᵢ - xⱼ)(yᵢ - yⱼ))`, which is nonpositive on
-the open decreasing chamber `{x₁ > ⋯ > xₙ}` (AGZ §4.3.1, Proposition 4.3.5). Testing instead
-against the positive parts `max (xᵢ - yᵢ) 0` yields the one-sided dissipativity inequality
-`∑ᵢ (dysonDrift n x i - dysonDrift n y i) max (xᵢ - yᵢ) 0 ≤ 0` driving coordinatewise order
-comparison (AGZ Lemma 4.3.6).
+On injective configurations `x, y`, the difference pairing identity
+`sum_dysonDrift_sub_dysonDrift_mul` yields the monotonicity identity
+`⟨dysonDrift n x - dysonDrift n y, x - y⟩ =
+  -n⁻¹ ∑_{i < j} ((xᵢ - xⱼ) - (yᵢ - yⱼ))² / ((xᵢ - xⱼ)(yᵢ - yⱼ))` (AGZ §4.3.1,
+Proposition 4.3.5). More generally, on the open decreasing chamber `{x₁ > ⋯ > xₙ}`, pairing
+`dysonDrift n x - dysonDrift n y` against `i ↦ φ (xᵢ - yᵢ)` for any monotone function
+`φ : ℝ → ℝ` is nonpositive (`sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos`), yielding both
+the `ℓ²`-dissipativity inequality (`φ = id`) and the one-sided positive-part dissipativity
+inequality (`φ = (max · 0)`) driving coordinatewise order comparison (AGZ Lemma 4.3.6).
 
 For localizing singular collisions, `dysonDriftTrunc n δ` replaces `(xᵢ - xⱼ)⁻¹` for `i < j` by
 `(max (xᵢ - xⱼ) δ)⁻¹` while preserving off-diagonal antisymmetry. It agrees with `dysonDrift n`
@@ -38,11 +41,14 @@ bounded by `δ⁻¹` and globally Lipschitz with constant `2 / δ²`.
 * `TauCeti.Probability.dysonDrift`: the repulsive drift `n⁻¹ ∑_{j ≠ i} (x i - x j)⁻¹`.
 * `TauCeti.Probability.sum_mul_dysonDrift` and `TauCeti.Probability.sum_dysonDrift`: off-diagonal
   pairing over `i < j` and zero coordinate sum.
-* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub` and
-  `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos`: monotonicity identity and
-  dissipativity on the open chamber.
-* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos`: positive-part
-  dissipativity on the open chamber.
+* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul`: difference pairing identity over
+  `i < j`.
+* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub`: monotonicity identity on injective
+  configurations.
+* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos`: monotone-test
+  dissipativity on the open chamber, specializing to
+  `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos` (`id`) and
+  `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos` (`max · 0`).
 * `TauCeti.Probability.dysonDriftTrunc`: antisymmetric truncation at gap threshold `δ`.
 * `TauCeti.Probability.dysonDriftTrunc_eq_dysonDrift`: agreement on `{x | ∀ i < j, δ ≤ x i - x j}`.
 * `TauCeti.Probability.lipschitzWith_dysonDriftTrunc`: global Lipschitz bound for `0 < δ`.
@@ -75,10 +81,7 @@ theorem dysonDrift_apply (n : ℕ) (x : Fin n → ℝ) (i : Fin n) :
 theorem dysonDrift_of_subsingleton {n : ℕ} [Subsingleton (Fin n)] (x : Fin n → ℝ) :
     dysonDrift n x = 0 := by
   ext i
-  have hempty : (univ : Finset (Fin n)).erase i = ∅ := by
-    ext j
-    simp [Subsingleton.elim j i]
-  simp [dysonDrift, hempty]
+  simp [dysonDrift, ← singleton_eq_univ i]
 
 /-- First coordinate of the two-particle Dyson drift. -/
 theorem dysonDrift_two_zero (x : Fin 2 → ℝ) :
@@ -139,27 +142,49 @@ theorem continuousAt_dysonDrift {n : ℕ} {x : Fin n → ℝ} (hx : Function.Inj
   exact ((continuous_apply i).continuousAt.sub (continuous_apply j).continuousAt).inv₀
     (sub_ne_zero.2 (hx.ne (ne_of_mem_erase hj).symm))
 
+/-- Folding an off-diagonal pairing against an antisymmetric kernel onto strictly increasing pairs
+`i < j`. Only off-diagonal antisymmetry (`i < j → k j i = -k i j`) is required, since the diagonal
+is excluded from `univ.erase i`. -/
+private theorem sum_mul_sum_erase_eq_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderTop ι] [LocallyFiniteOrderBot ι] [NonUnitalNonAssocRing R]
+    (u : ι → R) (k : ι → ι → R) (hk : ∀ ⦃i j : ι⦄, i < j → k j i = -k i j) :
+    ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j := by
+  have hpull : ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ {i}ᶜ, u i * k i j :=
+    sum_congr rfl fun i _ ↦ by rw [compl_singleton, mul_sum]
+  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
+  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
+  rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
+
 /-- **Off-diagonal pairing identity.** Pairing `dysonDrift n x` against any vector `u` folds onto
 strictly increasing index pairs `i < j`. -/
 theorem sum_mul_dysonDrift (n : ℕ) (u x : Fin n → ℝ) :
     ∑ i, u i * dysonDrift n x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * (x i - x j)⁻¹ := by
-  have hpull : ∑ i, u i * dysonDrift n x i =
-      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ {i}ᶜ, u i * (x i - x j)⁻¹ := by
-    rw [mul_sum]
-    refine sum_congr rfl fun i _ ↦ ?_
-    rw [dysonDrift, compl_singleton, ← mul_assoc, mul_comm (u i), mul_assoc, mul_sum]
-  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * (x i - x j)⁻¹)]
-  congr 1
-  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
+  simp_rw [dysonDrift, mul_left_comm (u _)]
+  rw [← mul_sum, sum_mul_sum_erase_eq_sum_Ioi]
+  intro i j _
   rw [← neg_sub (x i) (x j), inv_neg]
-  ring
 
 /-- The coordinates of `dysonDrift n x` sum to zero for every configuration `x`. -/
 @[simp]
 theorem sum_dysonDrift (n : ℕ) (x : Fin n → ℝ) :
     ∑ i, dysonDrift n x i = 0 := by
   simpa using sum_mul_dysonDrift n (fun _ ↦ 1) x
+
+/-- **Difference pairing identity for the Dyson drift.** Pairing `dysonDrift n x - dysonDrift n y`
+against any vector `u : Fin n → ℝ` folds onto strictly increasing index pairs `i < j`. -/
+theorem sum_dysonDrift_sub_dysonDrift_mul (n : ℕ) (x y u : Fin n → ℝ) :
+    ∑ i, (dysonDrift n x i - dysonDrift n y i) * u i =
+      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * ((x i - x j)⁻¹ - (y i - y j)⁻¹) := by
+  have hrew : ∑ i, (dysonDrift n x i - dysonDrift n y i) * u i =
+      (∑ i, u i * dysonDrift n x i) - ∑ i, u i * dysonDrift n y i := by
+    rw [← sum_sub_distrib]
+    exact sum_congr rfl fun i _ ↦ by ring
+  rw [hrew, sum_mul_dysonDrift, sum_mul_dysonDrift, ← mul_sub, ← sum_sub_distrib]
+  congr 1
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [← sum_sub_distrib]
+  exact sum_congr rfl fun j _ ↦ by ring
 
 /-- **Monotonicity identity for the Dyson drift** (AGZ §4.3.1, proof of Proposition 4.3.5). For any
 two injective configurations `x, y : Fin n → ℝ`, `⟨dysonDrift n x - dysonDrift n y, x - y⟩` equals
@@ -169,15 +194,11 @@ theorem sum_dysonDrift_sub_dysonDrift_mul_sub {n : ℕ} {x y : Fin n → ℝ} (h
     ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) =
       -(n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i,
         ((x i - x j) - (y i - y j)) ^ 2 / ((x i - x j) * (y i - y j)) := by
-  have hrew : ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) =
-      (∑ i, (x i - y i) * dysonDrift n x i) - ∑ i, (x i - y i) * dysonDrift n y i := by
-    rw [← sum_sub_distrib]
-    exact sum_congr rfl fun i _ ↦ by ring
-  rw [hrew, sum_mul_dysonDrift, sum_mul_dysonDrift, ← mul_sub, ← sum_sub_distrib, neg_mul,
-    ← neg_eq_iff_eq_neg, ← mul_neg, ← sum_neg_distrib]
+  rw [sum_dysonDrift_sub_dysonDrift_mul n x y (fun i ↦ x i - y i), neg_mul, ← mul_neg,
+    ← sum_neg_distrib]
   congr 1
   refine sum_congr rfl fun i _ ↦ ?_
-  rw [← sum_sub_distrib, ← sum_neg_distrib]
+  rw [← sum_neg_distrib]
   refine sum_congr rfl fun j hj ↦ ?_
   have hne : i ≠ j := (mem_Ioi.1 hj).ne
   have hax : x i - x j ≠ 0 := sub_ne_zero.2 (hx.ne hne)
@@ -185,46 +206,46 @@ theorem sum_dysonDrift_sub_dysonDrift_mul_sub {n : ℕ} {x y : Fin n → ℝ} (h
   field_simp
   ring
 
+/-- **Monotone-test dissipativity on the open chamber.** For `StrictAnti x`, `StrictAnti y`, and
+any monotone test function `φ : ℝ → ℝ`, testing `dysonDrift n x - dysonDrift n y` against
+`i ↦ φ (x i - y i)` is nonpositive. This simultaneously covers the `ℓ²`-dissipativity case
+`φ = id` (`sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos`) and the positive-part case
+`φ = (max · 0)` (`sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos`). -/
+theorem sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos {n : ℕ} {x y : Fin n → ℝ}
+    {φ : ℝ → ℝ} (hφ : Monotone φ) (hx : StrictAnti x) (hy : StrictAnti y) :
+    ∑ i, (dysonDrift n x i - dysonDrift n y i) * φ (x i - y i) ≤ 0 := by
+  rw [sum_dysonDrift_sub_dysonDrift_mul n x y (fun k ↦ φ (x k - y k))]
+  refine mul_nonpos_of_nonneg_of_nonpos (by positivity)
+    (sum_nonpos fun i _ ↦ sum_nonpos fun j hj ↦ ?_)
+  have hij : i < j := mem_Ioi.1 hj
+  have ha : 0 < x i - x j := sub_pos.2 (hx hij)
+  have hb : 0 < y i - y j := sub_pos.2 (hy hij)
+  have hfrac : (φ (x i - y i) - φ (x j - y j)) * ((x i - x j)⁻¹ - (y i - y j)⁻¹) =
+      (φ (x i - y i) - φ (x j - y j)) * ((x j - y j) - (x i - y i)) /
+        ((x i - x j) * (y i - y j)) := by
+    field_simp
+    ring
+  rw [hfrac]
+  refine div_nonpos_of_nonpos_of_nonneg ?_ (mul_pos ha hb).le
+  rcases le_total (x i - y i) (x j - y j) with hle | hge
+  · exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 (hφ hle)) (sub_nonneg.2 hle)
+  · exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 (hφ hge)) (sub_nonpos.2 hge)
+
 /-- **Dissipativity of the Dyson drift on the open chamber.** For `StrictAnti x` and `StrictAnti y`,
 `∑ᵢ (dysonDrift n x i - dysonDrift n y i) (xᵢ - yᵢ) ≤ 0`. -/
 theorem sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos {n : ℕ} {x y : Fin n → ℝ} (hx : StrictAnti x)
     (hy : StrictAnti y) :
-    ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) ≤ 0 := by
-  rw [sum_dysonDrift_sub_dysonDrift_mul_sub hx.injective hy.injective, neg_mul, neg_nonpos]
-  refine mul_nonneg (by positivity) (sum_nonneg fun i _ ↦ sum_nonneg fun j hj ↦ ?_)
-  have hij : i < j := mem_Ioi.1 hj
-  exact div_nonneg (sq_nonneg _)
-    (mul_nonneg (sub_pos.2 (hx hij)).le (sub_pos.2 (hy hij)).le)
+    ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) ≤ 0 :=
+  sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos monotone_id hx hy
 
 /-- **One-sided positive-part dissipativity on the open chamber** (for AGZ Lemma 4.3.6). For
 `StrictAnti x` and `StrictAnti y`, testing `dysonDrift n x - dysonDrift n y` against
 `i ↦ max (x i - y i) 0` is nonpositive. -/
 theorem sum_dysonDrift_sub_dysonDrift_mul_max_sub_zero_nonpos {n : ℕ} {x y : Fin n → ℝ}
     (hx : StrictAnti x) (hy : StrictAnti y) :
-    ∑ i, (dysonDrift n x i - dysonDrift n y i) * max (x i - y i) 0 ≤ 0 := by
-  set u : Fin n → ℝ := fun k ↦ max (x k - y k) 0
-  have hrew : ∑ i, (dysonDrift n x i - dysonDrift n y i) * u i =
-      (∑ i, u i * dysonDrift n x i) - ∑ i, u i * dysonDrift n y i := by
-    rw [← sum_sub_distrib]
-    exact sum_congr rfl fun i _ ↦ by ring
-  rw [hrew, sum_mul_dysonDrift, sum_mul_dysonDrift, ← mul_sub, ← sum_sub_distrib]
-  refine mul_nonpos_of_nonneg_of_nonpos (by positivity) (sum_nonpos fun i _ ↦ ?_)
-  rw [← sum_sub_distrib]
-  refine sum_nonpos fun j hj ↦ ?_
-  have hij : i < j := mem_Ioi.1 hj
-  have ha : 0 < x i - x j := sub_pos.2 (hx hij)
-  have hb : 0 < y i - y j := sub_pos.2 (hy hij)
-  have hfrac : (u i - u j) * (x i - x j)⁻¹ - (u i - u j) * (y i - y j)⁻¹ =
-      (u i - u j) * ((x j - y j) - (x i - y i)) / ((x i - x j) * (y i - y j)) := by
-    field_simp
-    ring
-  rw [hfrac]
-  refine div_nonpos_of_nonpos_of_nonneg ?_ (mul_pos ha hb).le
-  rcases le_total (x i - y i) (x j - y j) with hle | hge
-  · have hu : u i ≤ u j := max_le_max_right 0 hle
-    exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 hu) (sub_nonneg.2 hle)
-  · have hu : u j ≤ u i := max_le_max_right 0 hge
-    exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 hu) (sub_nonpos.2 hge)
+    ∑ i, (dysonDrift n x i - dysonDrift n y i) * max (x i - y i) 0 ≤ 0 :=
+  sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos (φ := fun t ↦ max t 0)
+    (fun _ _ h ↦ max_le_max_right 0 h) hx hy
 
 /-- **Antisymmetric truncated Dyson drift** at gap threshold `δ`. For `i < j` the singular factor
 `(x i - x j)⁻¹` is replaced by `(max (x i - x j) δ)⁻¹`, and for `j < i` by its negation so that
@@ -244,10 +265,7 @@ theorem dysonDriftTrunc_apply (n : ℕ) (δ : ℝ) (x : Fin n → ℝ) (i : Fin 
 theorem dysonDriftTrunc_of_subsingleton {n : ℕ} [Subsingleton (Fin n)] (δ : ℝ) (x : Fin n → ℝ) :
     dysonDriftTrunc n δ x = 0 := by
   ext i
-  have hempty : (univ : Finset (Fin n)).erase i = ∅ := by
-    ext j
-    simp [Subsingleton.elim j i]
-  simp [dysonDriftTrunc, hempty]
+  simp [dysonDriftTrunc, ← singleton_eq_univ i]
 
 /-- Shifting every particle by a common constant leaves `dysonDriftTrunc` unchanged. -/
 @[simp]
@@ -274,19 +292,12 @@ theorem dysonDriftTrunc_eq_dysonDrift {n : ℕ} {δ : ℝ} {x : Fin n → ℝ}
 theorem sum_mul_dysonDriftTrunc (n : ℕ) (δ : ℝ) (u x : Fin n → ℝ) :
     ∑ i, u i * dysonDriftTrunc n δ x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * (max (x i - x j) δ)⁻¹ := by
-  have hpull : ∑ i, u i * dysonDriftTrunc n δ x i =
-      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ {i}ᶜ, u i *
-        (if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹) := by
-    rw [mul_sum]
-    refine sum_congr rfl fun i _ ↦ ?_
-    rw [dysonDriftTrunc, compl_singleton, ← mul_assoc, mul_comm (u i), mul_assoc, mul_sum]
-  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag
-    (fun j i ↦ u i * if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹)]
-  congr 1
-  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
-  have hij : i < j := mem_Ioi.1 hj
-  simp only [hij, hij.not_gt, ↓reduceIte]
-  ring
+  simp_rw [dysonDriftTrunc, mul_left_comm (u _)]
+  rw [← mul_sum, sum_mul_sum_erase_eq_sum_Ioi]
+  · refine congrArg _ (sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_)
+    simp [mem_Ioi.1 hj]
+  · intro i j hij
+    simp [hij, hij.not_gt]
 
 /-- The coordinates of `dysonDriftTrunc n δ x` sum to zero for every `δ` and `x`. -/
 @[simp]
