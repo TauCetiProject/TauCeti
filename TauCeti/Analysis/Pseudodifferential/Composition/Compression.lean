@@ -91,21 +91,6 @@ section Cutoff
 
 variable {ψ : CoordinateSpace n → ℝ}
 
-variable (V) in
-/-- The symbol `ψ(x) id_V` of multiplication by a smooth real function `ψ`. -/
-private def cutoff (hψ : ContDiff ℝ ∞ ψ) : Symbol n V V 0 :=
-  ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)
-
-private theorem coefficient_cutoff (hψ : ContDiff ℝ ∞ ψ)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (cutoff V hψ).coefficient p = ψ p.1 • ContinuousLinearMap.id ℂ V := by
-  rw [cutoff, coefficient_ofSpatial]
-
-private theorem hasCompactSpatialSupport_cutoff (hψ : ContDiff ℝ ∞ ψ)
-    (hψc : HasCompactSupport ψ) :
-    (cutoff V hψ).HasCompactSpatialSupport :=
-  (hasCompactSpatialSupport_ofSpatial_iff _).2 (hψc.smul_right)
-
 /-- The position derivatives of the cutoff symbol are those of `ψ`. -/
 private theorem mixedDeriv_cutoff (hψ : ContDiff ℝ ∞ ψ) (α : List (Fin n))
     (x ξ : CoordinateSpace n) :
@@ -169,21 +154,13 @@ def compress (a : Symbol n V W m) (φ ψ : CoordinateSpace n → ℝ) (hφ : Con
 
 variable {a : Symbol n V W m}
 
-/-- The compression in terms of the cutoff symbol. -/
-private theorem coefficient_compress_eq_cutoff (hφ : ContDiff ℝ ∞ φ) (hψ : ContDiff ℝ ∞ ψ)
-    (hψc : HasCompactSupport ψ) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.compress φ ψ hφ hψ hψc).coefficient p = φ p.1 •
-      (a.sharp (cutoff V hψ) (hasCompactSpatialSupport_cutoff hψ hψc)).coefficient p := by
-  simp [compress, coefficient_cutoff]
-
 /-- The coefficient of the compression `φ (a # ψ)`. -/
 @[simp]
 theorem coefficient_compress (hφ : ContDiff ℝ ∞ φ) (hψ : ContDiff ℝ ∞ ψ)
     (hψc : HasCompactSupport ψ) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.compress φ ψ hφ hψ hψc).coefficient p = φ p.1 • (a.sharp
-      (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const))
-      ((hasCompactSpatialSupport_ofSpatial_iff _).2 hψc.smul_right)).coefficient p :=
-  coefficient_compress_eq_cutoff hφ hψ hψc p
+    (a.compress φ ψ hφ hψ hψc).coefficient p = φ p.1 •
+      (a.sharp (cutoff V hψ) (hasCompactSpatialSupport_cutoff hψ hψc)).coefficient p := by
+  simp [compress]
 
 section Linear
 
@@ -194,14 +171,14 @@ theorem add_compress (a b : Symbol n V W m) :
     (a + b).compress φ ψ hφ hψ hψc = a.compress φ ψ hφ hψ hψc + b.compress φ ψ hφ hψ hψc := by
   ext1
   funext p
-  simp only [coefficient_add, Pi.add_apply, coefficient_compress_eq_cutoff, add_sharp, smul_add]
+  simp only [coefficient_add, Pi.add_apply, coefficient_compress, add_sharp, smul_add]
 
 @[simp]
 theorem smul_compress (c : ℂ) (a : Symbol n V W m) :
     (c • a).compress φ ψ hφ hψ hψc = c • a.compress φ ψ hφ hψ hψc := by
   ext1
   funext p
-  simp only [coefficient_smul, Pi.smul_apply, coefficient_compress_eq_cutoff, smul_sharp,
+  simp only [coefficient_smul, Pi.smul_apply, coefficient_compress, smul_sharp,
     smul_comm (φ p.1) c]
 
 @[simp]
@@ -221,14 +198,14 @@ theorem inclusion_compress {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
     (inclusion h a).compress φ ψ hφ hψ hψc = inclusion h (a.compress φ ψ hφ hψ hψc) := by
   ext1
   funext p
-  simp only [coefficient_inclusion, coefficient_compress_eq_cutoff, inclusion_sharp]
+  simp only [coefficient_inclusion, coefficient_compress, inclusion_sharp]
 
 theorem compress_add_left {φ' : CoordinateSpace n → ℝ} (hφ' : ContDiff ℝ ∞ φ') :
     a.compress (φ + φ') ψ (hφ.add hφ') hψ hψc =
       a.compress φ ψ hφ hψ hψc + a.compress φ' ψ hφ' hψ hψc := by
   ext1
   funext p
-  simp only [coefficient_add, Pi.add_apply, coefficient_compress_eq_cutoff, add_smul]
+  simp only [coefficient_add, Pi.add_apply, coefficient_compress, add_smul]
 
 theorem compress_add_right {ψ' : CoordinateSpace n → ℝ} (hψ' : ContDiff ℝ ∞ ψ')
     (hψ'c : HasCompactSupport ψ') :
@@ -236,8 +213,8 @@ theorem compress_add_right {ψ' : CoordinateSpace n → ℝ} (hψ' : ContDiff �
       a.compress φ ψ hφ hψ hψc + a.compress φ ψ' hφ hψ' hψ'c := by
   ext1
   funext p
-  rw [coefficient_add, Pi.add_apply, coefficient_compress_eq_cutoff, coefficient_compress_eq_cutoff,
-    coefficient_compress_eq_cutoff, sharp_congr _ ((hasCompactSpatialSupport_cutoff hψ hψc).add
+  rw [coefficient_add, Pi.add_apply, coefficient_compress, coefficient_compress,
+    coefficient_compress, sharp_congr _ ((hasCompactSpatialSupport_cutoff hψ hψc).add
       (hasCompactSpatialSupport_cutoff hψ' hψ'c)) (cutoff_add hψ hψ'), sharp_add, coefficient_add,
     Pi.add_apply, smul_add]
 
@@ -247,8 +224,8 @@ theorem compress_sub_right {ψ' : CoordinateSpace n → ℝ} (hψ' : ContDiff �
       a.compress φ ψ hφ hψ hψc - a.compress φ ψ' hφ hψ' hψ'c := by
   ext1
   funext p
-  rw [coefficient_sub, Pi.sub_apply, coefficient_compress_eq_cutoff, coefficient_compress_eq_cutoff,
-    coefficient_compress_eq_cutoff, sharp_congr _ ((hasCompactSpatialSupport_cutoff hψ hψc).sub
+  rw [coefficient_sub, Pi.sub_apply, coefficient_compress, coefficient_compress,
+    coefficient_compress, sharp_congr _ ((hasCompactSpatialSupport_cutoff hψ hψc).sub
       (hasCompactSpatialSupport_cutoff hψ' hψ'c)) (cutoff_sub hψ hψ'), sharp_sub, coefficient_sub,
     Pi.sub_apply, smul_sub]
 
@@ -266,7 +243,7 @@ theorem compress_zero_right (hψ : ContDiff ℝ ∞ (0 : CoordinateSpace n → �
     (hψc : HasCompactSupport (0 : CoordinateSpace n → ℝ)) : a.compress φ 0 hφ hψ hψc = 0 := by
   ext1
   funext p
-  rw [coefficient_compress_eq_cutoff, sharp_congr _ hasCompactSpatialSupport_zero (cutoff_zero hψ),
+  rw [coefficient_compress, sharp_congr _ hasCompactSpatialSupport_zero (cutoff_zero hψ),
     sharp_zero, coefficient_zero, Pi.zero_apply, smul_zero, coefficient_zero, Pi.zero_apply]
 
 end Linear
@@ -338,7 +315,7 @@ private theorem coefficient_compress_eq_sum (hφ : ContDiff ℝ ∞ φ) (hψ : C
       (∑ k ∈ range N, (a.sharpTerm (cutoff V hψ) k).coefficient (x, ξ) +
         (a.sharpRemainder (cutoff V hψ) (hasCompactSpatialSupport_cutoff hψ hψc) N).coefficient
           (x, ξ)) := by
-  rw [coefficient_compress_eq_cutoff, coefficient_sharpRemainder]
+  rw [coefficient_compress, coefficient_sharpRemainder]
   simp
 
 /-- **The compression to second order.** The compression of a symbol `a` of order `m` by the
@@ -418,7 +395,7 @@ theorem quantizeSchwartzValue_compress (hφ : ContDiff ℝ ∞ φ) (hψ : ContDi
   have h : quantizeSchwartzValue (a.compress φ ψ hφ hψ hψc).coefficient u x =
       quantizeSchwartzValue ((φ x : ℂ) • (a.sharp (cutoff V hψ) hc).coefficient) u x :=
     quantizeSchwartzValue_congr_left (fun ξ ↦ by
-      simp only [coefficient_compress_eq_cutoff, Pi.smul_apply, Complex.coe_smul]) u
+      simp only [coefficient_compress, Pi.smul_apply, Complex.coe_smul]) u
   rw [h, quantizeSchwartzValue_smul_left, Complex.coe_smul,
     quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   congr 2

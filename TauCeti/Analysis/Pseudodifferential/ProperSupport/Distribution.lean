@@ -97,26 +97,20 @@ section Cutoff
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W]
 
-/-- The smooth multiplier `x ↦ ψ x • id` of a real function `ψ`. -/
-private theorem contDiff_ofReal_smul_id {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) :
-    ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) • ContinuousLinearMap.id ℂ W :=
-  (Complex.ofRealCLM.contDiff.comp hψ).smul contDiff_const
-
 /-- The symbol `ψ(x) a(x, ξ)` of the operator `Op(a)` followed by multiplication by `ψ`. -/
 private def spatialCutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (a : Symbol n V W m) : Symbol n V W (0 + m) :=
-  (ofSpatial _ (contDiff_ofReal_smul_id (W := W) hψ)).comp a
+  (cutoff W hψ).comp a
 
 private theorem coefficient_spatialCutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (spatialCutoff hψ a).coefficient p = (ψ p.1 : ℂ) • a.coefficient p := by
-  simp [spatialCutoff, coefficient_comp]
+  simp [spatialCutoff, coefficient_comp, Complex.coe_smul]
 
 private theorem hasCompactSpatialSupport_spatialCutoff {ψ : CoordinateSpace n → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (a : Symbol n V W m) :
     (spatialCutoff hψ a).HasCompactSpatialSupport :=
-  HasCompactSpatialSupport.comp_right ((hasCompactSpatialSupport_ofSpatial_iff _).2
-    ((hψc.comp_left Complex.ofReal_zero).smul_right)) a
+  (hasCompactSpatialSupport_cutoff hψ hψc).comp_right a
 
 private theorem quantizeSchwartzValue_spatialCutoff {ψ : CoordinateSpace n → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
@@ -202,17 +196,6 @@ private def supportedInCLM {m' : ℝ} {V' W' : Type*}
     (fun f ↦ b.contDiff_quantizeSchwartzValue _) hsupp
     (fun i _ ↦ (hest i).imp fun _ ⟨C, hC0, h⟩ ↦ ⟨C, hC0, fun f x _ ↦ h f x⟩)
 
-/-- A function supported in `K`, read as a test function on `ℝⁿ` and then as a Schwartz function,
-is its image under `ContDiffMapSupportedIn.toSchwartzMapCLM`. -/
-private theorem toSchwartzMap_ofSupportedIn {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {K : Compacts (CoordinateSpace n)}
-    (hK : (K : Set (CoordinateSpace n)) ⊆ (⊤ : Opens (CoordinateSpace n)))
-    (f : 𝓓_{K}(CoordinateSpace n, E)) :
-    (TestFunction.ofSupportedIn hK f).hasCompactSupport.toSchwartzMap
-        (TestFunction.ofSupportedIn hK f).contDiff =
-      ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f :=
-  SchwartzMap.ext fun x ↦ (ContDiffMapSupportedIn.toSchwartzMapCLM_apply ℂ f x).symm
-
 /-- The closed `R`-neighbourhood of the support of a function supported in `K`, read as a Schwartz
 function, lies in the closed `R`-neighbourhood of `K`. -/
 private theorem cthickening_tsupport_toSchwartzMapCLM_subset {E : Type*} [NormedAddCommGroup E]
@@ -263,7 +246,8 @@ def quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
         (ha.tsupport_quantizeSchwartzValue_subset _), subset_univ _⟩)
     (fun K _ ↦ TestFunction.ofSupportedInCLM ℂ (subset_univ _) ∘L quantizeSupportedInCLM ha K)
     (fun _ hK f ↦ TestFunction.ext fun x ↦
-      congrArg (quantizeSchwartzValue a.coefficient · x) (toSchwartzMap_ofSupportedIn hK f))
+      congrArg (quantizeSchwartzValue a.coefficient · x)
+        (ContDiffMapSupportedIn.toSchwartzMap_ofSupportedIn ℂ hK f))
 
 /-- The values of `Op(a) u` are the quantization of `u`, read as a Schwartz function. -/
 @[simp]

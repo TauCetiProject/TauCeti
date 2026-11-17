@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
 # Smooth functions supported in a compact set as Schwartz functions
@@ -14,7 +15,9 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 A smooth function supported in a compact set `K` is a Schwartz function. This file shows that the
 resulting inclusion of `𝓓_{K}(E, F)` into `𝓢(E, F)` is continuous
 (`ContDiffMapSupportedIn.toSchwartzMapCLM`, which does not change the function:
-`ContDiffMapSupportedIn.coe_toSchwartzMapCLM`). On functions supported in `K`, the Schwartz
+`ContDiffMapSupportedIn.coe_toSchwartzMapCLM`), and it agrees with reading a function supported in
+`K` as a test function and then as a Schwartz function
+(`ContDiffMapSupportedIn.toSchwartzMap_ofSupportedIn`). On functions supported in `K`, the Schwartz
 seminorm `sup ‖x‖ ^ k ‖D^j f x‖` is at most `max r 0 ^ k` times the seminorm `sup ‖D^j f‖`, for a
 bound `r` on the norms of the points of `K`.
 -/
@@ -68,5 +71,13 @@ theorem toSchwartzMapCLM_apply (f : 𝓓_{K}(E, F)) (x : E) : toSchwartzMapCLM �
 theorem tsupport_toSchwartzMapCLM_subset (f : 𝓓_{K}(E, F)) :
     tsupport (toSchwartzMapCLM 𝕜 f) ⊆ K :=
   f.tsupport_subset
+
+/-- A smooth function supported in `K`, read as a test function on an open set `Ω ⊇ K` and then as
+a Schwartz function, is its image under `toSchwartzMapCLM`. -/
+theorem toSchwartzMap_ofSupportedIn {Ω : Opens E} (hK : (K : Set E) ⊆ Ω) (f : 𝓓_{K}(E, F)) :
+    (TestFunction.ofSupportedIn hK f).hasCompactSupport.toSchwartzMap
+        (TestFunction.ofSupportedIn hK f).contDiff =
+      toSchwartzMapCLM 𝕜 f :=
+  SchwartzMap.ext fun x ↦ (toSchwartzMapCLM_apply 𝕜 f x).symm
 
 end ContDiffMapSupportedIn

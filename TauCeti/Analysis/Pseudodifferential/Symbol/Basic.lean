@@ -37,8 +37,9 @@ space, and develop the first operations of the symbol calculus:
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
-  of multiplication by `f`, has order `0`; in particular so does a constant
-  (`TauCeti.Symbol.const`);
+  of multiplication by `f`, has order `0`; in particular so do a constant
+  (`TauCeti.Symbol.const`) and the multiplication `ψ(x) id` by a smooth real function `ψ`
+  (`TauCeti.Symbol.cutoff`);
 * `TauCeti.Symbol.ofFrequency`: a smooth coefficient `b(ξ)` independent of the position with
   `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩^(m - k)` has order `m`, with estimates uniform in the position
   (`TauCeti.Symbol.isUniform_ofFrequency`);
@@ -905,6 +906,23 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   rcases eq_or_ne α [] with rfl | hα
   · simp
   · simp [coordinateDeriv_const T hα]
+
+variable (V) in
+/-- The symbol `ψ(x) id_V` of multiplication by a smooth real function `ψ`. -/
+def cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) : Symbol n V V 0 :=
+  ofSpatial (fun x => ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)
+
+@[simp]
+theorem coefficient_cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (cutoff V hψ).coefficient p = ψ p.1 • ContinuousLinearMap.id ℂ V := by
+  rw [cutoff, coefficient_ofSpatial]
+
+/-- The symbol of multiplication by a compactly supported smooth function has compact spatial
+support. -/
+theorem hasCompactSpatialSupport_cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) : (cutoff V hψ).HasCompactSpatialSupport :=
+  (hasCompactSpatialSupport_ofSpatial_iff _).2 hψc.smul_right
 
 end Spatial
 
