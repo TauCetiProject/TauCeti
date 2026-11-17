@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Empty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -50,8 +49,8 @@ theorem mem_ker_indexHom_iff {g : P.Aut} :
 /-- An automorphism in `(Equiv.indexHom P).ker` preserves every coroot functional. -/
 theorem coroot'_smul_of_mem_ker_indexHom {g : P.Aut} (hg : g ∈ (Equiv.indexHom P).ker)
     (i : ι) (x : M) : P.coroot' i (g • x) = P.coroot' i x := by
-  have h1 : g.indexEquiv = 1 := hg
-  rw [coroot'_smul, ← Equiv.Perm.inv_def, h1, inv_one, Equiv.Perm.one_apply]
+  rw [MonoidHom.mem_ker, Equiv.indexHom_apply] at hg
+  rw [coroot'_smul, ← Equiv.Perm.inv_def, hg, inv_one, Equiv.Perm.one_apply]
 
 section OfFixRootCoroot
 
@@ -77,6 +76,10 @@ noncomputable def Equiv.ofFixRootCoroot : P.Aut :=
 @[simp] theorem Equiv.ofFixRootCoroot_weightEquiv :
     (Equiv.ofFixRootCoroot P e hroot hcoroot).weightEquiv = e :=
   LinearEquiv.toLinearMap_injective rfl
+
+/-- `Equiv.ofFixRootCoroot` acts on weights via `e`. -/
+@[simp] theorem Equiv.ofFixRootCoroot_smul (x : M) :
+    Equiv.ofFixRootCoroot P e hroot hcoroot • x = e x := (rfl)
 
 /-- The coweight equivalence of `Equiv.ofFixRootCoroot` is the transpose of `e` transported across
 `P.flip.toPerfPair`. -/
@@ -131,9 +134,15 @@ noncomputable def autMulEquivOfIsEmpty [IsEmpty ι] : P.Aut ≃* (M ≃ₗ[R] M)
 @[simp] theorem autMulEquivOfIsEmpty_apply [IsEmpty ι] (g : P.Aut) :
     P.autMulEquivOfIsEmpty g = g.weightEquiv := (rfl)
 
-/-- The inverse of `autMulEquivOfIsEmpty` lifts `e : M ≃ₗ[R] M` with weight equivalence `e`. -/
-@[simp] theorem autMulEquivOfIsEmpty_symm_apply_weightEquiv [IsEmpty ι] (e : M ≃ₗ[R] M) :
-    (P.autMulEquivOfIsEmpty.symm e).weightEquiv = e :=
-  Equiv.ofFixRootCoroot_weightEquiv P e isEmptyElim isEmptyElim
+/-- The inverse of `autMulEquivOfIsEmpty` lifts `e : M ≃ₗ[R] M` via `Equiv.ofFixRootCoroot`. -/
+@[simp] theorem autMulEquivOfIsEmpty_symm_apply [IsEmpty ι] (e : M ≃ₗ[R] M) :
+    P.autMulEquivOfIsEmpty.symm e = Equiv.ofFixRootCoroot P e isEmptyElim isEmptyElim := (rfl)
+
+/-- The inverse of `autMulEquivOfIsEmpty` lifts `e : M ≃ₗ[R] M` with weight equivalence `e`.
+
+Not a `simp` lemma: `simp` derives this from `RootPairing.autMulEquivOfIsEmpty_symm_apply` and
+`RootPairing.Equiv.ofFixRootCoroot_weightEquiv`. -/
+theorem autMulEquivOfIsEmpty_symm_apply_weightEquiv [IsEmpty ι] (e : M ≃ₗ[R] M) :
+    (P.autMulEquivOfIsEmpty.symm e).weightEquiv = e := by simp
 
 end RootPairing

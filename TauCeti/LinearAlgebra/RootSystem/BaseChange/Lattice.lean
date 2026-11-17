@@ -21,8 +21,8 @@ For a root pairing `P` over a faithful `R`-algebra `S` and an `R`-submodule pair
 (generalizing Mathlib's `RootPairing.restrictScalars'` in
 `Mathlib/LinearAlgebra/RootSystem/BaseChange.lean` from subfields to dual lattices over a faithful
 subring), with `P.weylGroup ≤ P.latticeAut X₀ Y₀` and
-`hXY.restrictAutHom : P.latticeAut X₀ Y₀ →* hXY.restrict.Aut`. When `X₀`, `Y₀` satisfy
-`IsBaseChange`, extension and restriction are mutually inverse
+`hXY.restrictAutHom : P.latticeAut X₀ Y₀ →* hXY.restrict.Aut`. When `Y₀` is finite free over `R`
+and `X₀`, `Y₀` satisfy `IsBaseChange S`, extension and restriction are mutually inverse
 (`hXY.autMulEquiv hX hY : hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀`).
 
 ## Main definitions
@@ -265,7 +265,7 @@ theorem algebraMap_restrict_root' (i : ι) (y : Y₀) :
   simp [coreflection_apply, ← algebraMap_smul S]
 
 /-- If `P` takes values in `T` along a scalar tower `T → R → S`, then so does `hXY.restrict`. -/
-theorem isValuedIn_restrict (T : Type*) [CommRing T] [Algebra T R] [Algebra T S]
+instance isValuedIn_restrict (T : Type*) [CommRing T] [Algebra T R] [Algebra T S]
     [IsScalarTower T R S] [P.IsValuedIn T] : hXY.restrict.IsValuedIn T where
   exists_value i j := by
     obtain ⟨t, ht⟩ := P.exists_value (S := T) i j
@@ -275,9 +275,7 @@ theorem isValuedIn_restrict (T : Type*) [CommRing T] [Algebra T R] [Algebra T S]
 /-- Restriction preserves `T`-valued pairings (in particular Cartan integers when `T = ℤ`). -/
 @[simp] theorem restrict_pairingIn (T : Type*) [CommRing T] [Algebra T R] [Algebra T S]
     [IsScalarTower T R S] [FaithfulSMul T S] [P.IsValuedIn T] (i j : ι) :
-    letI := hXY.isValuedIn_restrict T
     hXY.restrict.pairingIn T i j = P.pairingIn T i j := by
-  let _ := hXY.isValuedIn_restrict T
   apply FaithfulSMul.algebraMap_injective T S
   rw [algebraMap_pairingIn, IsScalarTower.algebraMap_apply T R S, algebraMap_pairingIn,
     hXY.algebraMap_restrict_pairing]
@@ -287,7 +285,7 @@ theorem isCrystallographic_restrict [P.IsCrystallographic] : hXY.restrict.IsCrys
   hXY.isValuedIn_restrict ℤ
 
 /-- Restriction of a reduced root pairing along a faithful algebra is reduced. -/
-theorem isReduced_restrict [P.IsReduced] : hXY.restrict.IsReduced where
+instance isReduced_restrict [P.IsReduced] : hXY.restrict.IsReduced where
   eq_or_eq_neg i j h := by
     have hS : ¬ LinearIndependent S ![P.root i, P.root j] := fun hli ↦ h <| by
       have hliR : LinearIndependent R ![P.root i, P.root j] := hli.restrict_scalars' R
@@ -466,6 +464,11 @@ noncomputable def extendAutHom : hXY.restrict.Aut →* P.latticeAut X₀ Y₀ :=
     (hXY.restrict.autBaseChangeHom S)).codRestrict (P.latticeAut X₀ Y₀)
     (hXY.autCongr_autBaseChangeHom_mem_latticeAut hX hY)
 
+/-- Coercing `hXY.extendAutHom hX hY u` to `P.Aut` applies `autCongr` to `autBaseChangeHom`. -/
+theorem coe_extendAutHom_apply (u : hXY.restrict.Aut) :
+    (hXY.extendAutHom hX hY u : P.Aut) =
+      (hXY.baseChangeEquiv hX hY).autCongr (hXY.restrict.autBaseChangeHom S u) := (rfl)
+
 /-- Extending an automorphism of `hXY.restrict` agrees with it on `X₀`. -/
 theorem extendAutHom_weightEquiv_coe (u : hXY.restrict.Aut) (x : X₀) :
     ((hXY.extendAutHom hX hY u : P.Aut).weightEquiv (x : M)) = (u.weightEquiv x : M) :=
@@ -505,7 +508,8 @@ theorem extendAutHom_weightEquiv_coe (u : hXY.restrict.Aut) (x : X₀) :
 
 include hX hY in
 /-- **Scalar extension and lattice restriction give an isomorphism
-`hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀`.** -/
+`hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀`** when `Y₀` is finite free over `R` and the inclusions
+of `X₀` and `Y₀` exhibit `M` and `N` as base changes along `R → S`. -/
 noncomputable def autMulEquiv : hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀ where
   toFun := hXY.extendAutHom hX hY
   invFun := hXY.restrictAutHom
@@ -531,19 +535,59 @@ variable {ι R K M N : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRi
   [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower R K M]
   [AddCommGroup N] [Module K N] [Module R N] [IsScalarTower R K N]
   {P : RootPairing ι K M N} {X₀ : Submodule R M} {Y₀ : Submodule R N}
-  [Module.Free R X₀] [X₀.IsLattice K] [Module.Free R Y₀] [Y₀.IsLattice K]
+  [X₀.IsLattice K] [Module.Free R Y₀] [Y₀.IsLattice K]
 
-/-- **For free full lattices over an integral domain in its fraction field, the integral
-automorphisms are isomorphic to the lattice-preserving automorphisms of the ambient pairing.** -/
+/-- **For full lattices over an integral domain in its fraction field with free coweight lattice,
+the integral automorphisms are isomorphic to the lattice-preserving automorphisms of the ambient
+pairing.** -/
 noncomputable def IsDualLatticePair.autMulEquivOfIsLattice (hXY : P.IsDualLatticePair X₀ Y₀) :
     hXY.restrict.Aut ≃* P.latticeAut X₀ Y₀ := by
-  have : Module.Finite R Y₀ := Module.Finite.iff_fg.mpr Submodule.IsLattice.fg
+  have : Module.Free R X₀ := .of_equiv hXY.restrict.toLinearMap.toPerfPair.symm
+  have : Module.Finite R Y₀ := Submodule.IsLattice.finite K Y₀
   exact hXY.autMulEquiv (Submodule.isBaseChange_subtype X₀) (Submodule.isBaseChange_subtype Y₀)
 
 /-- On `(X₀, Y₀)`, `autMulEquivOfIsLattice.symm` is lattice restriction `restrictAutHom`. -/
 @[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_symm_apply
     (hXY : P.IsDualLatticePair X₀ Y₀) (g : P.latticeAut X₀ Y₀) :
-    hXY.autMulEquivOfIsLattice.symm g = hXY.restrictAutHom g := (rfl)
+    hXY.autMulEquivOfIsLattice.symm g = hXY.restrictAutHom g := by
+  simp [autMulEquivOfIsLattice]
+
+/-- `autMulEquivOfIsLattice` extends the weight action of `u` on `X₀`. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_smul_coe
+    (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) (x : X₀) :
+    (hXY.autMulEquivOfIsLattice u : P.Aut) • (x : M) = ((u • x : X₀) : M) := by
+  rw [← hXY.coe_restrictAutHom_smul, ← hXY.autMulEquivOfIsLattice_symm_apply,
+    MulEquiv.symm_apply_apply]
+
+/-- `autMulEquivOfIsLattice` extends the forward coweight action of `u` on `Y₀`. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_coweightEquiv_symm_coe
+    (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) (y : Y₀) :
+    ((hXY.autMulEquivOfIsLattice u : P.Aut).coweightEquiv.symm (y : N)) =
+      (u.coweightEquiv.symm y : N) := by
+  rw [← hXY.coe_restrictAutHom_coweightEquiv_symm, ← hXY.autMulEquivOfIsLattice_symm_apply,
+    MulEquiv.symm_apply_apply]
+
+/-- `autMulEquivOfIsLattice` preserves the root-index permutation. -/
+@[simp] theorem IsDualLatticePair.autMulEquivOfIsLattice_indexEquiv
+    (hXY : P.IsDualLatticePair X₀ Y₀) (u : hXY.restrict.Aut) :
+    (hXY.autMulEquivOfIsLattice u : P.Aut).indexEquiv = u.indexEquiv := by
+  rw [← hXY.restrictAutHom_indexEquiv, ← hXY.autMulEquivOfIsLattice_symm_apply,
+    MulEquiv.symm_apply_apply]
+
+/-- When `Module.Free R X₀` and `Module.Finite R Y₀` are available as instances,
+`autMulEquivOfIsLattice` agrees with `extendAutHom` along the lattice base-change maps.
+
+Not a `simp` lemma: the right-hand side requires `[Module.Free R X₀]` and `[Module.Finite R Y₀]`;
+use `autMulEquivOfIsLattice_smul_coe`, `autMulEquivOfIsLattice_coweightEquiv_symm_coe`, and
+`autMulEquivOfIsLattice_indexEquiv` for hypothesis-free `simp` evaluation. -/
+theorem IsDualLatticePair.autMulEquivOfIsLattice_apply
+    (hXY : P.IsDualLatticePair X₀ Y₀) [Module.Free R X₀] [Module.Finite R Y₀]
+    (u : hXY.restrict.Aut) :
+    hXY.autMulEquivOfIsLattice u =
+      hXY.extendAutHom (Submodule.isBaseChange_subtype X₀)
+        (Submodule.isBaseChange_subtype Y₀) u := by
+  apply hXY.autMulEquivOfIsLattice.symm.injective
+  simp [autMulEquivOfIsLattice]
 
 end FractionField
 
@@ -636,7 +680,7 @@ theorem autBaseChangeHom_mem_latticeAut (g : D.Aut) :
 
 /-- Extending the pullback of a restricted unit-tensor automorphism recovers the ambient
 automorphism. -/
-@[simp] theorem autBaseChangeHom_symm_autCongr_restrictAutHom
+@[simp] theorem autBaseChangeHom_autCongr_symm_restrictAutHom
     (g : (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
       (LinearMap.range (TensorProduct.mk R S Y 1))) :
     D.autBaseChangeHom S ((D.unitTmulRootPairingEquiv S).autCongr.symm
@@ -661,7 +705,7 @@ theorem range_autBaseChangeHom :
       (LinearMap.range (TensorProduct.mk R S X 1))
       (LinearMap.range (TensorProduct.mk R S Y 1)) :=
   le_antisymm (by rintro _ ⟨g, rfl⟩; exact D.autBaseChangeHom_mem_latticeAut S g) fun g hg ↦
-    ⟨_, D.autBaseChangeHom_symm_autCongr_restrictAutHom S ⟨g, hg⟩⟩
+    ⟨_, D.autBaseChangeHom_autCongr_symm_restrictAutHom S ⟨g, hg⟩⟩
 
 /-- **Scalar extension identifies `D.Aut` with the unit-tensor lattice stabilizer in
 `(D.baseChange S).Aut`.** -/
@@ -675,11 +719,12 @@ noncomputable def autMulEquivLatticeAutBaseChange :
 `D.autBaseChangeHom S g`. -/
 @[simp] theorem coe_autMulEquivLatticeAutBaseChange_apply (g : D.Aut) :
     (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) =
-      D.autBaseChangeHom S g := (rfl)
+      D.autBaseChangeHom S g := by
+  simp [autMulEquivLatticeAutBaseChange, MonoidHom.ofInjective_apply]
 
 /-- Restriction to the unit-tensor lattices and pullback along `unitTmulRootPairingEquiv` is the
 inverse of `autMulEquivLatticeAutBaseChange`. -/
-theorem autMulEquivLatticeAutBaseChange_symm_apply
+@[simp] theorem autMulEquivLatticeAutBaseChange_symm_apply
     (g : (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
       (LinearMap.range (TensorProduct.mk R S Y 1))) :
     (D.autMulEquivLatticeAutBaseChange S).symm g =
@@ -687,7 +732,7 @@ theorem autMulEquivLatticeAutBaseChange_symm_apply
         ((D.isDualLatticePair_range_mk_one S).restrictAutHom g) := by
   apply D.autBaseChangeHom_injective S
   rw [← D.coe_autMulEquivLatticeAutBaseChange_apply S, MulEquiv.apply_symm_apply,
-    D.autBaseChangeHom_symm_autCongr_restrictAutHom S g]
+    D.autBaseChangeHom_autCongr_symm_restrictAutHom S g]
 
 end UnitTmul
 

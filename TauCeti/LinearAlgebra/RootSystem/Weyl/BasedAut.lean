@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.CentralAut
 public import TauCeti.LinearAlgebra.RootSystem.Empty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
+import Mathlib.LinearAlgebra.Transvection.Basic
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
@@ -47,7 +48,7 @@ stabilizer contains the kernel `(Equiv.indexHom P).ker` of central automorphisms
 `RootPairing.Equiv.ofFixRootCoroot` and characterized by `RootPairing.map_weightHom_ker_indexHom`);
 in particular, when `ι` is empty every automorphism is based
 (`RootPairing.Base.basedAut_eq_top_of_isEmpty`), and `b.basedAut` can be infinite even for a finite
-reduced crystallographic integral root datum (`RootPairing.infinite_basedAut_empty_fin_two`).
+reduced crystallographic integral root datum (`TauCeti.infinite_basedAut_empty_fin_two`).
 
 ## Main definitions
 
@@ -84,7 +85,7 @@ reduced crystallographic integral root datum (`RootPairing.infinite_basedAut_emp
   `g` is the Weyl-group element carrying `b` to `b.map g`.
 * `RootPairing.Base.ker_indexHom_le_basedAut` and `RootPairing.Equiv.ofFixRootCoroot_mem_basedAut`:
   every base stabilizer contains the kernel `(Equiv.indexHom P).ker` of central automorphisms.
-* `RootPairing.Base.basedAut_eq_top_of_isEmpty` and `RootPairing.infinite_basedAut_empty_fin_two`:
+* `RootPairing.Base.basedAut_eq_top_of_isEmpty` and `TauCeti.infinite_basedAut_empty_fin_two`:
   in the root-free case every automorphism is based, and `basedAut` can be infinite for an
   integral root datum.
 
@@ -315,8 +316,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 automorphisms.** -/
 theorem Base.ker_indexHom_le_basedAut {P : RootPairing ι R M N} (b : P.Base) :
     (Equiv.indexHom P).ker ≤ b.basedAut := fun g hg ↦ by
-  have h1 : g.indexEquiv = 1 := hg
-  simp [Base.mem_basedAut_iff, h1]
+  rw [MonoidHom.mem_ker, Equiv.indexHom_apply] at hg
+  simp [Base.mem_basedAut_iff, hg]
 
 /-- Every compatible central automorphism `Equiv.ofFixRootCoroot` belongs to `b.basedAut`. -/
 theorem Equiv.ofFixRootCoroot_mem_basedAut (P : RootPairing ι R M N) (b : P.Base)
@@ -330,31 +331,27 @@ theorem Equiv.ofFixRootCoroot_mem_basedAut (P : RootPairing ι R M N) (b : P.Bas
     (b : P.Base) : b.basedAut = ⊤ :=
   eq_top_iff.mpr fun g _ ↦ b.ker_indexHom_le_basedAut (Subsingleton.elim (Equiv.indexHom P g) 1)
 
-/-- **The based automorphism group of a finite reduced crystallographic integral root datum can
-be infinite**: on the rank-2 root-free datum `RootPairing.empty ℤ (Fin 2 → ℤ)`, the unipotent
-shear `(x₀, x₁) ↦ (x₀ + x₁, x₁)` generates infinitely many based automorphisms. -/
-theorem infinite_basedAut_empty_fin_two :
-    Infinite (Base.ofIsEmpty (RootPairing.empty ℤ (Fin 2 → ℤ))).basedAut := by
-  let P₀ := RootPairing.empty ℤ (Fin 2 → ℤ)
-  let shear : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
-    { toFun v := ![v 0 + v 1, v 1]
-      invFun v := ![v 0 - v 1, v 1]
-      left_inv v := by ext i; fin_cases i <;> simp
-      right_inv v := by ext i; fin_cases i <;> simp
-      map_add' u v := by ext i; fin_cases i <;> simp [add_add_add_comm]
-      map_smul' r v := by ext i; fin_cases i <;> simp [mul_add] }
-  have hpow (n : ℕ) : (shear ^ n) ![0, 1] = ![(n : ℤ), 1] := by
-    induction n with
-    | zero => simp
-    | succ n ih => rw [pow_succ', mul_apply_eq_comp, ih]; ext i; fin_cases i <;> simp [shear]
-  refine Infinite.of_injective
-    (fun n : ℕ ↦ (⟨P₀.autMulEquivOfIsEmpty.symm (shear ^ n), by simp⟩ :
-      (Base.ofIsEmpty P₀).basedAut)) fun m n hmn ↦ ?_
-  have h0 := congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e ![0, 1] 0) <|
-    P₀.autMulEquivOfIsEmpty.symm.injective (congrArg Subtype.val hmn)
-  rw [hpow m, hpow n] at h0
-  exact Int.ofNat.inj h0
-
 end CentralAndEmpty
 
 end RootPairing
+
+namespace TauCeti
+
+/-- **The based automorphism group of a finite reduced crystallographic integral root datum can
+be infinite**: on the rank-2 root-free datum `RootPairing.empty ℤ (Fin 2 → ℤ)`, the based
+automorphism group is infinite. -/
+theorem infinite_basedAut_empty_fin_two :
+    Infinite (RootPairing.Base.ofIsEmpty (RootPairing.empty ℤ (Fin 2 → ℤ))).basedAut := by
+  -- The unipotent shears `(x₀, x₁) ↦ (x₀ + n x₁, x₁)` form an infinite family of automorphisms.
+  let P₀ := RootPairing.empty ℤ (Fin 2 → ℤ)
+  let shear (n : ℤ) : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
+    LinearEquiv.transvection (f := LinearMap.proj (1 : Fin 2)) (v := Pi.single (0 : Fin 2) n)
+      (by simp)
+  refine Infinite.of_injective
+    (fun n : ℤ ↦ (⟨P₀.autMulEquivOfIsEmpty.symm (shear n), by simp⟩ :
+      (RootPairing.Base.ofIsEmpty P₀).basedAut)) fun m n hmn ↦ ?_
+  have h0 := congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e (Pi.single 1 1) 0) <|
+    P₀.autMulEquivOfIsEmpty.symm.injective (congrArg Subtype.val hmn)
+  simpa [shear, LinearEquiv.transvection.apply, LinearMap.transvection.apply] using h0
+
+end TauCeti

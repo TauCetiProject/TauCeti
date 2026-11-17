@@ -166,8 +166,8 @@ noncomputable def baseChange : (P.baseChange S).Base where
     (i j : (b.baseChange S).support) :
     (b.baseChange S).cartanMatrixIn T i j =
       b.cartanMatrixIn T ⟨i, (b.support_baseChange S).le i.2⟩
-        ⟨j, (b.support_baseChange S).le j.2⟩ :=
-  P.baseChange_pairingIn S T i j
+        ⟨j, (b.support_baseChange S).le j.2⟩ := by
+  simp [cartanMatrixIn_def]
 
 /-- Scalar extension preserves every entry of the integral Cartan matrix of a crystallographic
 root pairing. -/

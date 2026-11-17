@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import TauCeti.LinearAlgebra.RootSystem.EquivComp
 
 /-!
@@ -245,7 +245,8 @@ noncomputable def weylGroupBaseChangeMulEquiv : P.weylGroup ≃* (P.baseChange S
 
 /-- Coercing `weylGroupBaseChangeMulEquiv` to `(P.baseChange S).Aut` applies `autBaseChangeHom`. -/
 @[simp] theorem coe_weylGroupBaseChangeMulEquiv_apply (w : P.weylGroup) :
-    (P.weylGroupBaseChangeMulEquiv S w : (P.baseChange S).Aut) = P.autBaseChangeHom S w := (rfl)
+    (P.weylGroupBaseChangeMulEquiv S w : (P.baseChange S).Aut) = P.autBaseChangeHom S w := by
+  simp [weylGroupBaseChangeMulEquiv]
 
 /-- The Weyl-group isomorphism acts on pure tensors through the Weyl action of `P`. -/
 @[simp] theorem weylGroupBaseChangeMulEquiv_smul_tmul (w : P.weylGroup) (a : S) (m : M) :
@@ -265,11 +266,13 @@ noncomputable def weylGroupBaseChangeMulEquiv : P.weylGroup ≃* (P.baseChange S
 
 /-- Scalar extension preserves the root-index permutation of every Weyl-group element.
 
-Not a `simp` lemma: `RootPairing.weylGroupToPerm` simplifies to `indexEquiv` via
-`weylGroupToPerm_apply`. -/
+Not a `simp` lemma: `RootPairing.weylGroupToPerm` is an `abbrev` for
+`(Equiv.indexHom _).domRestrict _.weylGroup`, so `simp` rewrites the left-hand side via
+`MonoidHom.domRestrict_apply` and `RootPairing.Equiv.indexHom_apply`. -/
 theorem weylGroupToPerm_weylGroupBaseChangeMulEquiv (w : P.weylGroup) :
     (P.baseChange S).weylGroupToPerm (P.weylGroupBaseChangeMulEquiv S w) =
-      P.weylGroupToPerm w := (rfl)
+      P.weylGroupToPerm w := by
+  simp [weylGroupToPerm]
 
 end AutBaseChange
 

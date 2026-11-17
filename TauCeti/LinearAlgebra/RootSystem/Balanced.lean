@@ -69,7 +69,7 @@ noncomputable def rootSpanProj : M →ₗ[R] P.rootSpan R :=
     P.isCompl_rootSpan_iInf_ker_coroot'
 
 /-- `P.rootSpanProj` acts as the identity on `P.rootSpan R`. -/
-@[simp] theorem rootSpanProj_apply_of_mem (x : P.rootSpan R) : P.rootSpanProj x = x :=
+@[simp] theorem rootSpanProj_apply_coe (x : P.rootSpan R) : P.rootSpanProj x = x :=
   Submodule.projectionOnto_apply_left _ x
 
 /-- The kernel of `P.rootSpanProj` is `⨅ i, LinearMap.ker (P.coroot' i)`. -/
