@@ -35,7 +35,7 @@ Whenever `δ` satisfies the Kähler lift condition `∀ r : R, D R S (δ (algebr
 * `deRhamLieDeriv` respects linearity in the derivation, naturality along `R`-algebra homomorphisms
   (`Derivation.map_deRhamLieDeriv`), and commutators (`Derivation.deRhamLieDeriv_commutator`), so
   commuting derivations of `S` lift to commuting derivations of `ExteriorAlgebra S Ω[S⁄R]`
-  (`Derivation.commute_deRhamLieDeriv_of_bracket_eq_zero`).
+  (`Derivation.commute_deRhamLieDeriv_of_lie_eq_zero`).
 
 ## Main definitions
 
@@ -51,12 +51,12 @@ Whenever `δ` satisfies the Kähler lift condition `∀ r : R, D R S (δ (algebr
   `ExteriorAlgebra S Ω[S⁄R]` extending `δ` on `S` and commuting with `extDeriv R S` on `S`.
 * `Derivation.deRhamLieDeriv_congr`, `Derivation.deRhamLieDeriv_zero`,
   `Derivation.deRhamLieDeriv_add`, `Derivation.deRhamLieDeriv_neg`,
-  `Derivation.deRhamLieDeriv_sub`, `Derivation.smul_deRhamLieDeriv`: congruence and linearity in
-  the derivation.
+  `Derivation.deRhamLieDeriv_sub`, `Derivation.deRhamLieDeriv_sum`,
+  `Derivation.smul_deRhamLieDeriv`: congruence and linearity in the derivation.
 * `Derivation.map_deRhamLieDeriv`: naturality with `TauCeti.KaehlerDeRham.map`.
 * `Derivation.deRhamLieDeriv_commutator`: `(⁅δ₁, δ₂⁆).deRhamLieDeriv` is the commutator of
   `δ₁.deRhamLieDeriv` and `δ₂.deRhamLieDeriv`.
-* `Derivation.commute_deRhamLieDeriv_of_bracket_eq_zero`: commuting derivations of `S` lift to
+* `Derivation.commute_deRhamLieDeriv_of_lie_eq_zero`: commuting derivations of `S` lift to
   commuting Lie derivatives on `ExteriorAlgebra S Ω[S⁄R]`.
 
 ## Implementation notes
@@ -269,6 +269,17 @@ theorem deRhamLieDeriv_sub {δ₁ δ₂ : Derivation k S S}
     (sub_eq_add_neg δ₁ δ₂), deRhamLieDeriv_add h₁ (D_neg_algebraMap_eq_zero h₂),
     deRhamLieDeriv_neg h₂, ← sub_eq_add_neg]
 
+/-- `deRhamLieDeriv` respects finite sums of derivations. -/
+theorem deRhamLieDeriv_sum {ι : Type*} (t : Finset ι) (δ : ι → Derivation k S S)
+    (hδ : ∀ i ∈ t, ∀ r : R, KaehlerDifferential.D R S (δ i (algebraMap R S r)) = 0) :
+    (∑ i ∈ t, δ i).deRhamLieDeriv (D_sum_algebraMap_eq_zero t δ hδ) =
+      ∑ i ∈ t.attach, (δ i.1).deRhamLieDeriv (hδ i.1 i.2) := by
+  symm
+  refine deRhamLieDeriv_unique (∑ i ∈ t, δ i) _
+    (Submodule.sum_mem _ fun i _ ↦ (δ i.1).deRhamLieDeriv_mem_derivationLieAlgebra (hδ i.1 i.2))
+    (fun s ↦ by simp [Finset.sum_attach t (fun i ↦ algebraMap S _ (δ i s))])
+    fun s ↦ by simp [map_sum]
+
 /-- In a scalar tower `k → R → S`, `deRhamLieDeriv` is `k`-linear in the derivation `δ`. -/
 theorem smul_deRhamLieDeriv [Algebra k R] [IsScalarTower k R S] (c : k) {δ : Derivation k S S}
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) :
@@ -327,15 +338,16 @@ theorem deRhamLieDeriv_commutator {δ₁ δ₂ : Derivation k S S}
   · simp [hbr]
 
 /-- **Commuting derivations lift to commuting Lie derivatives** on the algebraic de Rham complex. -/
-theorem commute_deRhamLieDeriv_of_bracket_eq_zero {δ₁ δ₂ : Derivation k S S}
+theorem commute_deRhamLieDeriv_of_lie_eq_zero {δ₁ δ₂ : Derivation k S S}
     (h₁ : ∀ r : R, KaehlerDifferential.D R S (δ₁ (algebraMap R S r)) = 0)
     (h₂ : ∀ r : R, KaehlerDifferential.D R S (δ₂ (algebraMap R S r)) = 0)
     (hcomm : ⁅δ₁, δ₂⁆ = 0) :
     Function.Commute (δ₁.deRhamLieDeriv h₁) (δ₂.deRhamLieDeriv h₂) := by
   intro x
-  have h := congrFun (congrArg DFunLike.coe (deRhamLieDeriv_commutator h₁ h₂)) x
-  rw [deRhamLieDeriv_congr _ (fun _ ↦ by simp) hcomm, deRhamLieDeriv_zero,
-    LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply] at h
+  have h := LinearMap.congr_fun (deRhamLieDeriv_commutator h₁ h₂) x
+  rw [deRhamLieDeriv_congr _ (fun _ ↦ by simp) hcomm] at h
+  simp only [deRhamLieDeriv_zero, LinearMap.zero_apply, LinearMap.sub_apply,
+    LinearMap.comp_apply] at h
   exact sub_eq_zero.mp h.symm
 
 end Derivation

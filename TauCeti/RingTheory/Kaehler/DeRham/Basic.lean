@@ -59,8 +59,9 @@ arbitrary `R`-algebra homomorphisms, acting on `1`-forms through
   `R`-algebra under `grading R S` and `extDeriv R S`.
 * `TauCeti.KaehlerDeRham.extDeriv_unique`, `extDeriv_unique_of_isDGAlgebra`: uniqueness of the
   algebraic exterior derivative.
-* `TauCeti.KaehlerDeRham.dgAlgHom_ext`, `dgAlgHom_ext_iff`: two DG algebra morphisms out of
-  `ExteriorAlgebra S Ω[S⁄R]` agree if and only if they agree on `S`.
+* `TauCeti.KaehlerDeRham.dgAlgHom_ext`, `dgAlgHom_ext_iff`, `eq_liftDGAlgHom_iff`: two DG algebra
+  morphisms out of `ExteriorAlgebra S Ω[S⁄R]` agree if and only if they agree on `S`, and
+  uniqueness in the universal property of `liftDGAlgHom`.
 
 ## Implementation notes
 
@@ -111,6 +112,7 @@ theorem grading_def (p : ℤ) :
 
 /-- In nonnegative degree `n`, `grading R S n` is the `R`-scalar restriction of the `n`-th exterior
 power `⋀[S]^n Ω[S⁄R]`. -/
+@[simp]
 theorem grading_natCast (n : ℕ) :
     grading R S (n : ℕ) = (⋀[S]^n Ω[S⁄R]).restrictScalars R := by
   rw [grading_def, TauCeti.ExteriorAlgebra.integerGrading_natCast]
@@ -130,26 +132,6 @@ theorem mem_grading_natCast {n : ℕ} {x : ExteriorAlgebra S Ω[S⁄R]} :
 theorem grading_of_neg {p : ℤ} (hp : p < 0) : grading R S p = ⊥ := by
   ext x
   simp [TauCeti.ExteriorAlgebra.integerGrading_of_neg hp]
-
-/-- The homogeneous components of `x : ExteriorAlgebra S Ω[S⁄R]` with respect to `grading R S`
-agree with those for `TauCeti.ExteriorAlgebra.integerGrading S Ω[S⁄R]`. -/
-@[simp]
-theorem coe_decompose_grading (x : ExteriorAlgebra S Ω[S⁄R]) (p : ℤ) :
-    (DirectSum.decompose (grading R S) x p : ExteriorAlgebra S Ω[S⁄R]) =
-      (DirectSum.decompose (TauCeti.ExteriorAlgebra.integerGrading S Ω[S⁄R]) x p :
-        ExteriorAlgebra S Ω[S⁄R]) := by
-  induction x using DirectSum.Decomposition.inductionOn (grading R S) with
-  | zero => simp
-  | @homogeneous i y =>
-    by_cases h : i = p
-    · subst h
-      rw [DirectSum.decompose_of_mem_same (grading R S) y.2,
-        DirectSum.decompose_of_mem_same (TauCeti.ExteriorAlgebra.integerGrading S Ω[S⁄R])
-          (mem_grading_iff.mp y.2)]
-    · rw [DirectSum.decompose_of_mem_ne (grading R S) y.2 h,
-        DirectSum.decompose_of_mem_ne (TauCeti.ExteriorAlgebra.integerGrading S Ω[S⁄R])
-          (mem_grading_iff.mp y.2) h]
-  | add x₁ x₂ ih₁ ih₂ => simp [ih₁, ih₂]
 
 /-- The grade involution acts on the degree-`p` piece `grading R S p` by `p.negOnePow`. -/
 theorem involute_of_mem_grading {p : ℤ} {x : ExteriorAlgebra S Ω[S⁄R]}
@@ -179,12 +161,10 @@ theorem inductionOn {motive : ExteriorAlgebra S Ω[S⁄R] → Prop} (x : Exterio
     (mul : ∀ x y : ExteriorAlgebra S Ω[S⁄R], motive x → motive y → motive (x * y))
     (add : ∀ x y : ExteriorAlgebra S Ω[S⁄R], motive x → motive y → motive (x + y)) :
     motive x := by
-  have h0 : motive 0 := by simpa using algebraMap 0
   induction x using CliffordAlgebra.induction with
   | algebraMap s => exact algebraMap s
   | ι ω =>
     induction ω using KaehlerDifferential.inductionOn with
-    | zero => simpa using h0
     | D s => exact ι_D s
     | smul s ω ih =>
       rw [LinearMap.map_smul, Algebra.smul_def]
@@ -230,21 +210,16 @@ private theorem preExtDerivOne_smul (s : S) (v : S →₀ S) :
     simp [Finsupp.smul_single, preExtDerivOne_single, Derivation.leibniz, add_mul]
 
 private theorem preExtDerivOne_eq_zero_of_mem_kerTotal {v : S →₀ S}
-    (hv : v ∈ KaehlerDifferential.kerTotal R S) : preExtDerivOne R S v = 0 := by
-  induction hv using Submodule.span_induction with
-  | mem v hv =>
-    rcases hv with (⟨⟨x, y⟩, rfl⟩ | ⟨⟨x, y⟩, rfl⟩) | ⟨r, rfl⟩
-    · simp [preExtDerivOne_single]
-    · simp only [map_sub, map_add, preExtDerivOne_single, Derivation.map_one_eq_zero, map_zero,
+    (hv : v ∈ KaehlerDifferential.kerTotal R S) : preExtDerivOne R S v = 0 :=
+  TauCeti.KaehlerDifferential.map_eq_zero_of_mem_kerTotal (preExtDerivOne R S)
+    (fun _ _ ↦ by simp [preExtDerivOne_single])
+    (fun _ _ ↦ by
+      simp only [map_sub, map_add, preExtDerivOne_single, Derivation.map_one_eq_zero, map_zero,
         zero_mul, sub_zero]
-      exact ExteriorAlgebra.ι_add_mul_swap _ _
-    · simp [preExtDerivOne_single]
-  | zero => simp
-  | add _ _ _ _ ih₁ ih₂ => rw [map_add, ih₁, ih₂, add_zero]
-  | smul s v hv ih =>
-    have hker : Finsupp.linearCombination S (KaehlerDifferential.D R S) v = 0 := by
-      rwa [← LinearMap.mem_ker, KaehlerDifferential.kerTotal_eq]
-    rw [preExtDerivOne_smul, ih, hker, smul_zero, map_zero, mul_zero, add_zero]
+      exact ExteriorAlgebra.ι_add_mul_swap _ _)
+    (fun _ ↦ by simp [preExtDerivOne_single])
+    (fun s v hker ih ↦ by simp [preExtDerivOne_smul, ih, hker])
+    hv
 
 /-- Auxiliary degree-one exterior derivative `Ω[S⁄R] →ₗ[R] ExteriorAlgebra S Ω[S⁄R]`. -/
 private noncomputable def extDerivOne : Ω[S⁄R] →ₗ[R] ExteriorAlgebra S Ω[S⁄R] :=
@@ -267,9 +242,6 @@ private theorem extDerivOne_smul (s : S) (ω : Ω[S⁄R]) :
 private theorem extDerivOne_mem_exteriorPower_two (ω : Ω[S⁄R]) :
     extDerivOne R S ω ∈ ⋀[S]^2 Ω[S⁄R] := by
   induction ω using KaehlerDifferential.inductionOn with
-  | zero =>
-    rw [map_zero]
-    exact zero_mem _
   | D x =>
     rw [extDerivOne_D]
     exact zero_mem _
@@ -439,6 +411,25 @@ theorem extDeriv_unique {d : ExteriorAlgebra S Ω[S⁄R] →ₗ[R] ExteriorAlgeb
   | mul x y ihx ihy => rw [h_mul, extDeriv_mul, ihx, ihy]
   | add x y ihx ihy => rw [map_add, map_add, ihx, ihy]
 
+/-- For any grading-preserving `R`-algebra homomorphism `F` from `ExteriorAlgebra S Ω[S⁄R]` into a
+differential graded `R`-algebra `(B, ℬ, dB)`, `dB` obeys the `involute`-twisted Leibniz rule on
+products `F z * b`. -/
+private theorem d_mul_eq_involute {B : Type*} [Ring B] [Algebra R B]
+    {ℬ : ℤ → Submodule R B} [GradedAlgebra ℬ] {dB : B →ₗ[R] B}
+    (hB : TauCeti.IsDGAlgebra ℬ dB) (F : ExteriorAlgebra S Ω[S⁄R] →ₐ[R] B)
+    (hF : ∀ {p : ℤ} {x : ExteriorAlgebra S Ω[S⁄R]}, x ∈ grading R S p → F x ∈ ℬ p)
+    (z : ExteriorAlgebra S Ω[S⁄R]) (b : B) :
+    dB (F z * b) =
+      dB (F z) * b + F (involute (Q := (0 : QuadraticForm S Ω[S⁄R])) z) * dB b := by
+  induction z using DirectSum.Decomposition.inductionOn (grading R S) with
+  | zero => simp
+  | homogeneous z =>
+    rw [hB.leibniz (hF z.property), involute_of_mem_grading z.property, Units.smul_def,
+      Units.smul_def, map_zsmul, smul_mul_assoc]
+  | add z z' ihz ihz' =>
+    simp only [map_add, add_mul, ihz, ihz']
+    abel
+
 /-- A differential making `(ExteriorAlgebra S Ω[S⁄R], grading R S)` a differential graded
 `R`-algebra and extending `ι ∘ D R S` on `S` is necessarily `extDeriv R S`. -/
 theorem extDeriv_unique_of_isDGAlgebra
@@ -446,15 +437,9 @@ theorem extDeriv_unique_of_isDGAlgebra
     (hd : TauCeti.IsDGAlgebra (grading R S) d)
     (h_alg : ∀ s : S,
       d (algebraMap S _ s) = ExteriorAlgebra.ι S (KaehlerDifferential.D R S s)) :
-    d = extDeriv R S := by
-  refine extDeriv_unique h_alg (fun s ↦ hd.sq_zero _) fun x y ↦ ?_
-  induction x using DirectSum.Decomposition.inductionOn (grading R S) with
-  | zero => simp
-  | homogeneous x =>
-    rw [hd.leibniz x.property y, involute_of_mem_grading x.property, smul_mul_assoc]
-  | add x x' ihx ihx' =>
-    simp only [add_mul, map_add, ihx, ihx']
-    abel
+    d = extDeriv R S :=
+  extDeriv_unique h_alg (fun _ ↦ hd.sq_zero _) fun x y ↦
+    d_mul_eq_involute hd (AlgHom.id R _) (fun hx ↦ hx) x y
 
 end Construction
 
@@ -467,6 +452,7 @@ variable {R S B : Type*} [CommRing R] [CommRing S] [Algebra R S] [Ring B] [Algeb
 
 /-- **Extensionality of DG algebra morphisms out of the algebraic de Rham complex**: two DG algebra
 morphisms out of `ExteriorAlgebra S Ω[S⁄R]` agree as soon as they agree on degree zero (`S`). -/
+@[ext]
 theorem dgAlgHom_ext {hB : TauCeti.IsDGAlgebra ℬ dB}
     {Φ Ψ : TauCeti.DGAlgHom (isDGAlgebra R S) hB}
     (h : ∀ s : S,
@@ -479,16 +465,6 @@ theorem dgAlgHom_ext {hB : TauCeti.IsDGAlgebra ℬ dB}
   | ι_D s => rw [← extDeriv_algebraMap, ← Φ.map_d, ← Ψ.map_d, h s]
   | mul x y ihx ihy => rw [map_mul, map_mul, ihx, ihy]
   | add x y ihx ihy => rw [map_add, map_add, ihx, ihy]
-
-/-- Two DG algebra morphisms out of `ExteriorAlgebra S Ω[S⁄R]` are equal if and only if they agree
-on `S`. -/
-theorem dgAlgHom_ext_iff {hB : TauCeti.IsDGAlgebra ℬ dB}
-    {Φ Ψ : TauCeti.DGAlgHom (isDGAlgebra R S) hB} :
-    Φ = Ψ ↔
-      ∀ s : S,
-        Φ (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) =
-          Ψ (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) :=
-  ⟨fun h s ↦ by rw [h], dgAlgHom_ext⟩
 
 section LiftCentralizer
 
@@ -539,10 +515,8 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
   have hanti : ∀ ω₁ ω₂ : Ω[S⁄R], φ ω₁ * φ ω₂ + φ ω₂ * φ ω₁ = 0 := by
     intro ω₁ ω₂
     induction ω₁ using KaehlerDifferential.inductionOn with
-    | zero => simp
     | D s =>
       induction ω₂ using KaehlerDifferential.inductionOn with
-      | zero => simp
       | D t =>
         exact Subtype.ext <| by
           simpa [φ, D₀] using dB_mul_add_mul_dB hB f hf₀ hcomm s t
@@ -559,7 +533,6 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
   have hφ_sq : ∀ ω : Ω[S⁄R], φ ω * φ ω = 0 := by
     intro ω
     induction ω using KaehlerDifferential.inductionOn with
-    | zero => simp
     | D s => exact Subtype.ext <| by simpa [φ, D₀] using hsq s
     | smul s ω ih =>
       simp only [LinearMap.map_smul, smul_mul_assoc, mul_smul_comm, ih, smul_zero]
@@ -596,9 +569,6 @@ private theorem liftAlgHomAux_ι_mem_one (hB : TauCeti.IsDGAlgebra ℬ dB) (f : 
     (hsq : ∀ s : S, dB (f s) * dB (f s) = 0) (ω : Ω[S⁄R]) :
     liftAlgHomAux hB f hf₀ hcomm hsq (ExteriorAlgebra.ι S ω) ∈ ℬ 1 := by
   induction ω using KaehlerDifferential.inductionOn with
-  | zero =>
-    rw [map_zero, map_zero]
-    exact zero_mem _
   | D s =>
     rw [liftAlgHomAux_ι_D]
     simpa using hB.map_mem (hf₀ s)
@@ -639,24 +609,14 @@ private theorem liftAlgHomAux_map_d (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →
     (hsq : ∀ s : S, dB (f s) * dB (f s) = 0) (x : ExteriorAlgebra S Ω[S⁄R]) :
     dB (liftAlgHomAux hB f hf₀ hcomm hsq x) =
       liftAlgHomAux hB f hf₀ hcomm hsq (extDeriv R S x) := by
-  set F := liftAlgHomAux hB f hf₀ hcomm hsq
-  have hleib (z w : ExteriorAlgebra S Ω[S⁄R]) :
-      dB (F z * F w) =
-        dB (F z) * F w +
-          F (involute (Q := (0 : QuadraticForm S Ω[S⁄R])) z) * dB (F w) := by
-    induction z using DirectSum.Decomposition.inductionOn (grading R S) with
-    | zero => simp
-    | homogeneous z =>
-      rw [hB.leibniz (liftAlgHomAux_mem hB f hf₀ hcomm hsq z.property),
-        involute_of_mem_grading z.property, Units.smul_def, Units.smul_def, map_zsmul,
-        smul_mul_assoc]
-    | add z z' ihz ihz' =>
-      simp only [map_add, add_mul, ihz, ihz']
-      abel
   induction x using inductionOn with
   | algebraMap s => rw [liftAlgHomAux_algebraMap, extDeriv_algebraMap, liftAlgHomAux_ι_D]
   | ι_D s => rw [liftAlgHomAux_ι_D, hB.sq_zero, extDeriv_ι_D, map_zero]
-  | mul x y ihx ihy => simp only [map_mul, hleib, ihx, ihy, extDeriv_mul, map_add]
+  | mul x y ihx ihy =>
+    simp only [map_mul,
+      d_mul_eq_involute hB (liftAlgHomAux hB f hf₀ hcomm hsq)
+        (liftAlgHomAux_mem hB f hf₀ hcomm hsq),
+      ihx, ihy, extDeriv_mul, map_add]
   | add x y ihx ihy => simp only [map_add, ihx, ihy]
 
 end LiftCentralizer
@@ -700,6 +660,17 @@ theorem liftDGAlgHom_smul (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →ₐ[R] B)
       f s * liftDGAlgHom hB f hf₀ hcomm hsq x := by
   rw [Algebra.smul_def, map_mul, liftDGAlgHom_algebraMap]
 
+/-- **Uniqueness in the universal property of the algebraic de Rham DG algebra**: a DG algebra
+morphism out of `ExteriorAlgebra S Ω[S⁄R]` equals `liftDGAlgHom hB f hf₀ hcomm hsq` if and only if
+it extends `f` on degree-zero elements `algebraMap S _ s`. -/
+theorem eq_liftDGAlgHom_iff (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →ₐ[R] B)
+    (hf₀ : ∀ s : S, f s ∈ ℬ 0) (hcomm : ∀ s t : S, f s * dB (f t) = dB (f t) * f s)
+    (hsq : ∀ s : S, dB (f s) * dB (f s) = 0)
+    {Φ : TauCeti.DGAlgHom (isDGAlgebra R S) hB} :
+    Φ = liftDGAlgHom hB f hf₀ hcomm hsq ↔
+      ∀ s : S, Φ (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) = f s := by
+  simp [TauCeti.KaehlerDeRham.dgAlgHom_ext_iff]
+
 end UniversalProperty
 
 section Functoriality
@@ -737,7 +708,6 @@ theorem map_ι (f : A →ₐ[R] B) (ω : Ω[A⁄R]) :
     map f (ExteriorAlgebra.ι A ω) =
       ExteriorAlgebra.ι B (KaehlerDifferential.mapSemilinear f ω) := by
   induction ω using KaehlerDifferential.inductionOn with
-  | zero => simp only [map_zero]
   | D a =>
     rw [KaehlerDifferential.mapSemilinear_D, ← extDeriv_algebraMap, ← (map f).map_d,
       map_algebraMap, extDeriv_algebraMap]

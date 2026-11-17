@@ -18,12 +18,12 @@ vanish on `R`, covering lifted base/total derivations in a ring tower `k → R �
 relative derivations `Derivation R S S`).
 
 A `k`-linear endomorphism `L` of `Ω[S⁄R]` satisfying `L (D R S s) = D R S (δ s)` exists **if and
-only if** `∀ r : R, D R S (δ (algebraMap R S r)) = 0` (`Derivation.exists_kaehlerLieDeriv_iff`).
+only if** `∀ r : R, D R S (δ (algebraMap R S r)) = 0` (`Derivation.exists_apply_D_eq_iff`).
 This condition holds automatically for relative derivations `δ : Derivation R S S`
 (`Derivation.D_apply_algebraMap_eq_zero`), for compatible derivation pairs in
 `Derivation.couple k R S` (`Derivation.Compatible.D_apply_algebraMap_eq_zero`), and is closed under
-addition, negation, subtraction, `k`-scalar multiplication in a tower `k → R → S`, and Lie brackets
-(`Derivation.D_commutator_algebraMap_eq_zero`).
+addition, negation, subtraction, finite sums, `k`-scalar multiplication in a tower `k → R → S`, and
+Lie brackets (`Derivation.D_commutator_algebraMap_eq_zero`).
 
 Whenever the condition holds, `δ.kaehlerLieDeriv hδ : Module.End k Ω[S⁄R]` is constructed by
 descending `single x c ↦ δ c • D R S x + c • D R S (δ x)` through
@@ -41,12 +41,13 @@ homomorphisms (`Derivation.mapSemilinear_kaehlerLieDeriv`).
 
 * `Derivation.kaehlerLieDeriv_D`, `Derivation.kaehlerLieDeriv_smul`: action on exact differentials
   and `S`-scalar Leibniz rule.
-* `Derivation.exists_kaehlerLieDeriv_iff`: exact criterion for `δ` to lift to `Ω[S⁄R]`.
+* `Derivation.exists_apply_D_eq_iff`: exact criterion for a `k`-linear endomorphism `L` of
+  `Ω[S⁄R]` to satisfy `L (D R S s) = D R S (δ s)`.
 * `Derivation.kaehlerLieDeriv_unique`: uniqueness of `δ.kaehlerLieDeriv hδ`.
 * `Derivation.kaehlerLieDeriv_congr`, `Derivation.kaehlerLieDeriv_zero`,
   `Derivation.kaehlerLieDeriv_add`, `Derivation.kaehlerLieDeriv_neg`,
-  `Derivation.kaehlerLieDeriv_sub`, `Derivation.smul_kaehlerLieDeriv`: congruence and linearity in
-  the derivation.
+  `Derivation.kaehlerLieDeriv_sub`, `Derivation.kaehlerLieDeriv_sum`,
+  `Derivation.smul_kaehlerLieDeriv`: congruence and linearity in the derivation.
 * `Derivation.kaehlerLieDeriv_commutator`: `(⁅δ₁, δ₂⁆).kaehlerLieDeriv` is the commutator of
   `δ₁.kaehlerLieDeriv` and `δ₂.kaehlerLieDeriv`.
 * `Derivation.mapSemilinear_kaehlerLieDeriv`: naturality with `KaehlerDifferential.mapSemilinear`.
@@ -94,23 +95,19 @@ private theorem preKaehlerLieDeriv_smul (δ : Derivation k S S) (s : S) (v : S �
 private theorem preKaehlerLieDeriv_eq_zero_of_mem_kerTotal (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0)
     {v : S →₀ S} (hv : v ∈ KaehlerDifferential.kerTotal R S) :
-    preKaehlerLieDeriv R δ v = 0 := by
-  induction hv using Submodule.span_induction with
-  | mem v hv =>
-    rcases hv with (⟨⟨x, y⟩, rfl⟩ | ⟨⟨x, y⟩, rfl⟩) | ⟨r, rfl⟩
-    · simp only [map_sub, map_add, preKaehlerLieDeriv_single, Derivation.map_one_eq_zero,
+    preKaehlerLieDeriv R δ v = 0 :=
+  TauCeti.KaehlerDifferential.map_eq_zero_of_mem_kerTotal (preKaehlerLieDeriv R δ)
+    (fun _ _ ↦ by
+      simp only [map_sub, map_add, preKaehlerLieDeriv_single, Derivation.map_one_eq_zero,
         zero_smul, zero_add, one_smul]
-      abel
-    · simp only [map_sub, map_add, preKaehlerLieDeriv_single, Derivation.map_one_eq_zero,
+      abel)
+    (fun _ _ ↦ by
+      simp only [map_sub, map_add, preKaehlerLieDeriv_single, Derivation.map_one_eq_zero,
         zero_smul, zero_add, one_smul, δ.leibniz, smul_eq_mul, Derivation.leibniz]
-      abel
-    · simp [preKaehlerLieDeriv_single, hδ r]
-  | zero => simp
-  | add _ _ _ _ ih₁ ih₂ => rw [map_add, ih₁, ih₂, add_zero]
-  | smul s v hv ih =>
-    have hker : Finsupp.linearCombination S (KaehlerDifferential.D R S) v = 0 := by
-      rwa [← LinearMap.mem_ker, KaehlerDifferential.kerTotal_eq]
-    rw [preKaehlerLieDeriv_smul, ih, hker, smul_zero, smul_zero, add_zero]
+      abel)
+    (fun r ↦ by simp [preKaehlerLieDeriv_single, hδ r])
+    (fun s v hker ih ↦ by simp [preKaehlerLieDeriv_smul, ih, hker])
+    hv
 
 /-- **Lie derivative on Kähler differentials**: for a `k`-derivation `δ : Derivation k S S` such
 that `D R S (δ (algebraMap R S r)) = 0` for all `r : R`, `δ.kaehlerLieDeriv hδ` is the unique
@@ -144,7 +141,7 @@ theorem kaehlerLieDeriv_smul (δ : Derivation k S S)
 /-- **Necessary and sufficient condition for lifting a `k`-derivation of `S` to `Ω[S⁄R]`**:
 there exists a `k`-linear endomorphism `L` of `Ω[S⁄R]` satisfying `L (D R S s) = D R S (δ s)` for
 all `s : S` if and only if `D R S (δ (algebraMap R S r)) = 0` for all `r : R`. -/
-theorem exists_kaehlerLieDeriv_iff (δ : Derivation k S S) :
+theorem exists_apply_D_eq_iff (δ : Derivation k S S) :
     (∃ L : Module.End k Ω[S⁄R],
       ∀ s : S, L (KaehlerDifferential.D R S s) = KaehlerDifferential.D R S (δ s)) ↔
       ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0 :=
@@ -161,7 +158,6 @@ theorem kaehlerLieDeriv_unique (δ : Derivation k S S)
     L = δ.kaehlerLieDeriv hδ := by
   refine LinearMap.ext fun ω ↦ ?_
   induction ω using KaehlerDifferential.inductionOn with
-  | zero => simp
   | D s => rw [hD, kaehlerLieDeriv_D]
   | smul s ω ih => rw [hsmul, kaehlerLieDeriv_smul, ih]
   | add _ _ ih₁ ih₂ => rw [map_add, map_add, ih₁, ih₂]
@@ -200,6 +196,13 @@ theorem D_sub_algebraMap_eq_zero {δ₁ δ₂ : Derivation k S S}
     (h₂ : ∀ r : R, KaehlerDifferential.D R S (δ₂ (algebraMap R S r)) = 0) (r : R) :
     KaehlerDifferential.D R S ((δ₁ - δ₂) (algebraMap R S r)) = 0 := by
   simp [h₁ r, h₂ r]
+
+/-- If each `δ i : Derivation k S S` for `i ∈ t` satisfies the lift condition for `Ω[S⁄R]`, so
+does `∑ i ∈ t, δ i`. -/
+theorem D_sum_algebraMap_eq_zero {ι : Type*} (t : Finset ι) (δ : ι → Derivation k S S)
+    (hδ : ∀ i ∈ t, ∀ r : R, KaehlerDifferential.D R S (δ i (algebraMap R S r)) = 0) (r : R) :
+    KaehlerDifferential.D R S ((∑ i ∈ t, δ i) (algebraMap R S r)) = 0 := by
+  simp [Finset.sum_eq_zero fun i hi ↦ hδ i hi r]
 
 /-- In a scalar tower `k → R → S`, if `δ : Derivation k S S` satisfies the lift condition for
 `Ω[S⁄R]`, so does `c • δ` for any `c : k`. -/
@@ -254,6 +257,16 @@ theorem kaehlerLieDeriv_sub {δ₁ δ₂ : Derivation k S S}
     (sub_eq_add_neg δ₁ δ₂), kaehlerLieDeriv_add h₁ (D_neg_algebraMap_eq_zero h₂),
     kaehlerLieDeriv_neg h₂, ← sub_eq_add_neg]
 
+/-- `kaehlerLieDeriv` respects finite sums of derivations. -/
+theorem kaehlerLieDeriv_sum {ι : Type*} (t : Finset ι) (δ : ι → Derivation k S S)
+    (hδ : ∀ i ∈ t, ∀ r : R, KaehlerDifferential.D R S (δ i (algebraMap R S r)) = 0) :
+    (∑ i ∈ t, δ i).kaehlerLieDeriv (D_sum_algebraMap_eq_zero t δ hδ) =
+      ∑ i ∈ t.attach, (δ i.1).kaehlerLieDeriv (hδ i.1 i.2) := by
+  refine ((∑ i ∈ t, δ i).kaehlerLieDeriv_unique _ (fun s ↦ ?_) fun s ω ↦ ?_).symm
+  · simp [Finset.sum_attach t (fun i ↦ KaehlerDifferential.D R S (δ i s))]
+  · simp [LinearMap.sum_apply, kaehlerLieDeriv_smul, Finset.sum_add_distrib, Finset.sum_smul,
+      Finset.smul_sum, Finset.sum_attach t (fun i ↦ δ i s • ω)]
+
 /-- In a scalar tower `k → R → S`, `kaehlerLieDeriv` is `k`-linear in the derivation `δ`. -/
 theorem smul_kaehlerLieDeriv [Algebra k R] [IsScalarTower k R S] (c : k) {δ : Derivation k S S}
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) :
@@ -290,7 +303,6 @@ theorem mapSemilinear_kaehlerLieDeriv {kA kB R A B : Type*}
     KaehlerDifferential.mapSemilinear f (δA.kaehlerLieDeriv hA ω) =
       δB.kaehlerLieDeriv hB (KaehlerDifferential.mapSemilinear f ω) := by
   induction ω using KaehlerDifferential.inductionOn with
-  | zero => simp only [map_zero]
   | D a => simp only [kaehlerLieDeriv_D, KaehlerDifferential.mapSemilinear_D, hf]
   | smul a ω ih =>
     simp only [kaehlerLieDeriv_smul, map_add, KaehlerDifferential.mapSemilinear_smul, hf, ih]

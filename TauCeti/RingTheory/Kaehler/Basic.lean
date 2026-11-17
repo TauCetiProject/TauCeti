@@ -19,8 +19,12 @@ This file packages those two facts for downstream constructions of non-`S`-linea
 `Ω[S⁄R]` (such as the degree-one exterior differential `s • D t ↦ D s ∧ D t` and Lie derivatives
 along derivations of `S`):
 
-* `KaehlerDifferential.inductionOn`: `S`-linear span induction on `Ω[S⁄R]` with cases `0`,
+* `KaehlerDifferential.inductionOn`: `S`-linear span induction on `Ω[S⁄R]` with cases
   `D R S s`, `s • ω`, and `ω₁ + ω₂`.
+* `TauCeti.KaehlerDifferential.map_eq_zero_of_mem_kerTotal`: proves an additive map on `S →₀ S`
+  vanishes on `KaehlerDifferential.kerTotal R S` from vanishing on its three defining relation
+  families and closure under `S`-scalar multiplication on
+  `ker (Finsupp.linearCombination S (D R S))`.
 * `TauCeti.KaehlerDifferential.liftOfKerTotal`: descends any `k`-linear map `(S →₀ S) →ₗ[k] M`
   vanishing on `KaehlerDifferential.kerTotal R S` to a `k`-linear map `Ω[S⁄R] →ₗ[k] M`, over an
   arbitrary commutative base ring `k` with `[Algebra k S]`.
@@ -31,17 +35,17 @@ public section
 namespace KaehlerDifferential
 
 /-- **Span induction on Kähler differentials**: to prove a predicate on `ω : Ω[S⁄R]`, it suffices to
-verify it on `0` and exact differentials `D R S s`, and show closure under `S`-scalar multiplication
-and addition. -/
+verify it on exact differentials `D R S s`, and show closure under `S`-scalar multiplication and
+addition. -/
 @[elab_as_elim]
 theorem inductionOn {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     {motive : Ω[S⁄R] → Prop} (ω : Ω[S⁄R])
-    (zero : motive 0)
     (D : ∀ s : S, motive (KaehlerDifferential.D R S s))
     (smul : ∀ (s : S) (ω : Ω[S⁄R]), motive ω → motive (s • ω))
     (add : ∀ ω₁ ω₂ : Ω[S⁄R], motive ω₁ → motive ω₂ → motive (ω₁ + ω₂)) :
     motive ω := by
-  refine Submodule.span_induction ?_ zero (fun _ _ _ _ ↦ add _ _) (fun s _ _ ↦ smul s _)
+  refine Submodule.span_induction ?_ (by simpa using D 0) (fun _ _ _ _ ↦ add _ _)
+    (fun s _ _ ↦ smul s _)
     (KaehlerDifferential.span_range_derivation R S ▸ Submodule.mem_top :
       ω ∈ Submodule.span S (Set.range (KaehlerDifferential.D R S)))
   rintro _ ⟨s, rfl⟩
@@ -50,6 +54,35 @@ theorem inductionOn {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 end KaehlerDifferential
 
 namespace TauCeti.KaehlerDifferential
+
+/-- **Generator criterion for vanishing on `KaehlerDifferential.kerTotal R S`**: an additive map
+`f : (S →₀ S) → M` vanishes on `KaehlerDifferential.kerTotal R S` if it annihilates the three
+defining relation families (additivity, Leibniz rule, and `R`-scalars) and preserves vanishing under
+`S`-scalar multiplication on `ker (Finsupp.linearCombination S (D R S))`. -/
+theorem map_eq_zero_of_mem_kerTotal {R S M F : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [AddCommMonoid M] [FunLike F (S →₀ S) M] [AddMonoidHomClass F (S →₀ S) M] (f : F)
+    (hadd : ∀ x y : S,
+      f (Finsupp.single x 1 + Finsupp.single y 1 - Finsupp.single (x + y) 1) = 0)
+    (hmul : ∀ x y : S,
+      f (Finsupp.single y x + Finsupp.single x y - Finsupp.single (x * y) 1) = 0)
+    (hconst : ∀ r : R, f (Finsupp.single (algebraMap R S r) 1) = 0)
+    (hsmul : ∀ (s : S) (v : S →₀ S),
+      Finsupp.linearCombination S (_root_.KaehlerDifferential.D R S) v = 0 →
+        f v = 0 → f (s • v) = 0)
+    {v : S →₀ S} (hv : v ∈ _root_.KaehlerDifferential.kerTotal R S) : f v = 0 := by
+  rw [_root_.KaehlerDifferential.kerTotal] at hv
+  induction hv using Submodule.span_induction with
+  | mem v hv =>
+    rcases hv with (⟨⟨x, y⟩, rfl⟩ | ⟨⟨x, y⟩, rfl⟩) | ⟨r, rfl⟩
+    · exact hadd x y
+    · exact hmul x y
+    · exact hconst r
+  | zero => exact map_zero f
+  | add _ _ _ _ ih₁ ih₂ => rw [map_add, ih₁, ih₂, add_zero]
+  | smul s v hv ih =>
+    have hker : Finsupp.linearCombination S (_root_.KaehlerDifferential.D R S) v = 0 := by
+      rwa [← LinearMap.mem_ker, _root_.KaehlerDifferential.kerTotal_eq]
+    exact hsmul s v hker ih
 
 variable {k S M : Type*} (R : Type*) [CommRing k] [CommRing R] [CommRing S]
   [Algebra k S] [Algebra R S] [AddCommGroup M] [Module k M]
