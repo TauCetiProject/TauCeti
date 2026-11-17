@@ -9,10 +9,11 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Defs
 
 /-!
-# Quotients by setoids and fibre products of topological spaces
+# Quotients by setoids, fibre products, and subtypes of topological spaces
 
-This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`, and to
-the topology of the fibre product `Function.Pullback f g`, a subspace of the product.
+This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`, to
+the topology of the fibre product `Function.Pullback f g`, a subspace of the product, and to the
+subtype-topology convergence API for continuous maps on subtypes.
 
 ## Main results
 
@@ -28,6 +29,8 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
   from the other factor is.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`: the projections of the fibre product,
   bundled as continuous maps.
+* `ContinuousAt.tendsto_comap_val`, `Continuous.tendsto_comap_val`: a continuous function on a
+  subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.1)`.
 -/
 
 public section
@@ -143,3 +146,23 @@ theorem ContinuousMap.coe_pullbackSnd : ⇑(pullbackSnd f g) = Function.Pullback
   (rfl)
 
 end Pullback
+
+section Subtype
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {p : X → Prop} {f : Subtype p → Y}
+
+/-- A function on a subtype that is continuous at `x` tends to `f x` along
+`Filter.comap Subtype.val (𝓝 x.1)`. -/
+theorem ContinuousAt.tendsto_comap_val {x : Subtype p} (hf : ContinuousAt f x) :
+    Filter.Tendsto f (Filter.comap Subtype.val (𝓝 x.1)) (𝓝 (f x)) := by
+  cases x
+  rw [← nhds_subtype_eq_comap]
+  exact hf.tendsto
+
+/-- A continuous function on a subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.1)` at
+every point `x`. -/
+theorem Continuous.tendsto_comap_val (hf : Continuous f) (x : Subtype p) :
+    Filter.Tendsto f (Filter.comap Subtype.val (𝓝 x.1)) (𝓝 (f x)) :=
+  hf.continuousAt.tendsto_comap_val
+
+end Subtype
