@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.AlgebraicTopology.Cohomology.InsertionForm
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Chamber
-import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # The Seiberg–Witten wall class of a symplectic suspension with `b₁ = 1`

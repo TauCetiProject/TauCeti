@@ -42,11 +42,11 @@ Every class `x = a v + c t` (modulo torsion) also has even square `x · x = 2ac`
 square `-1`.
 
 The statements are about an arbitrary `ℤ`-valued bilinear form `B` on an abelian group `H`,
-playing the role of the intersection form on `H²(X; ℤ)`. The `ℤ`-module structure on `H` is
-arbitrary, such as that of a cohomology group, rather than the one every abelian group
-carries. Torsion is retained: the classes `e`
-and `κ` are only assumed to agree with their coordinate expressions up to elements of finite
-order, which every `ℤ`-valued bilinear form annihilates.
+playing the role of the intersection form on `H²(X; ℤ)`. The statements take any `Module ℤ H`
+instance, such as the one on a cohomology group, which agrees with the default
+`AddCommGroup.toIntModule` only propositionally. Torsion is retained: the classes `e` and `κ` are
+only assumed to agree with their coordinate expressions up to elements of finite order, which
+every `ℤ`-valued bilinear form annihilates.
 
 ## Main results
 
@@ -93,6 +93,8 @@ theorem apply_self_sub_apply_canonical_eq (hv : B v v = 0) (ht : B t t = 0) (hvt
     (htv : B t v = 1) (he : IsOfFinAddOrder (e - (a • v + c • t)))
     (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
     B e e - B κ e = 2 * c * (a + 1 - g) := by
+  -- `apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub` is stated for the default `ℤ`-module
+  -- structure; any two `ℤ`-module structures agree, so substitute it for the given one.
   obtain rfl := Subsingleton.elim ‹Module ℤ H› (AddCommGroup.toIntModule H)
   rw [B.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub hv ht hvt htv he,
     B.apply_eq_apply_of_isOfFinAddOrder_sub_left hκ,
