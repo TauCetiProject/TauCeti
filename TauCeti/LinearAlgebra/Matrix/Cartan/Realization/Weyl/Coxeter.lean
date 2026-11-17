@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coxeter.Length
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.GroupTheory.Coxeter.Dihedral
 import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import TauCeti.GroupTheory.Coxeter.Length
-import TauCeti.RingTheory.Polynomial.Chebyshev.Order
 
 /-!
 # The Weyl group of a Kac–Moody realization is a Coxeter group
@@ -22,11 +21,11 @@ Let `A : Matrix I I ℤ` be a generalized Cartan matrix (`A i i = 2`, `A i j ≤
 `A` over a field `K`. No symmetrizability, nonsingularity, finiteness of `I`, or finite
 dimensionality of `H` is assumed.
 
-This file reads a Coxeter matrix `Matrix.cartanCoxeterMatrix A` off `A` (assigning `2, 3, 4, 6`
-when `A i j * A j i = 0, 1, 2, 3` for `i ≠ j`, `0` otherwise, and `1` on the diagonal), verifies
-the braid relations of the simple reflections over an arbitrary field `K` via Mathlib's Chebyshev
-reflection formulas (`Module.reflection_mul_reflection_pow_apply`), and proves Kac's **Lemma 3.11**
-and **Proposition 3.13** over any field of characteristic zero:
+Using the Coxeter matrix `Matrix.cartanCoxeterMatrix A` from
+`TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Matrix`, this file verifies the braid relations of
+the simple reflections over an arbitrary field `K` via Mathlib's Chebyshev reflection formulas
+(`Module.reflection_mul_reflection_pow_apply`), and proves Kac's **Lemma 3.11** and
+**Proposition 3.13** over any field of characteristic zero:
 
 * `ℓ(w sᵢ) < ℓ(w)` if and only if `-w(αᵢ) ∈ Q₊`, and `ℓ(w sᵢ) = ℓ(w) + 1` if and only if
   `w(αᵢ) ∈ Q₊`;
@@ -39,7 +38,6 @@ and **Proposition 3.13** over any field of characteristic zero:
 
 ## Main definitions
 
-* `Matrix.cartanCoxeterMatrix`: the `CoxeterMatrix I` read off an integer matrix `A`.
 * `TauCeti.CartanRealization.weylCoxeterHom`: the canonical lift
   `A.cartanCoxeterMatrix.Group →* R.weylGroup _` over any field.
 * `TauCeti.CartanRealization.weylCoxeterEquiv`,
@@ -69,141 +67,11 @@ public section
 
 open Module Polynomial.Chebyshev
 
-/-! ### The Coxeter matrix of an integer matrix -/
-
-namespace Matrix
-
-section CartanCoxeterMatrix
-
-open TauCeti
-
-variable {I : Type*} [DecidableEq I]
-
-/-- **The Coxeter matrix read off an integer matrix `A`.** On the diagonal its entries are `1`;
-off the diagonal its `(i, j)` entry is `coxeterOrder (A i j * A j i)` (`2, 3, 4, 6` on
-`0, 1, 2, 3`) when `A i j * A j i ≤ 3`, and `0` (Mathlib's encoding of `∞`) otherwise
-(`A i j * A j i ∉ {0, 1, 2, 3}`). -/
-def cartanCoxeterMatrix (A : Matrix I I ℤ) : CoxeterMatrix I where
-  M := .of fun i j ↦
-    if i = j then 1
-    else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0
-  isSymm := by
-    ext i j
-    simp only [transpose_apply, of_apply, eq_comm (a := j), mul_comm (A j i)]
-  diagonal i := by simp
-  off_diagonal i j hij := by
-    simp only [of_apply, hij, ↓reduceIte]
-    split_ifs with hle
-    · by_cases hmem : A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)
-      · have := two_le_coxeterOrder hmem
-        omega
-      · have hnot : A i j * A j i ∉ ({0, 1, 2, 3, 4} : Set ℤ) := by
-          simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem ⊢
-          omega
-        rw [coxeterOrder_eq_zero_iff.mpr hnot]
-        exact Nat.zero_ne_one
-    · exact Nat.zero_ne_one
-
-theorem cartanCoxeterMatrix_apply (A : Matrix I I ℤ) (i j : I) :
-    A.cartanCoxeterMatrix i j =
-      if i = j then 1
-      else if A i j * A j i ≤ 3 then coxeterOrder (A i j * A j i) else 0 := (rfl)
-
-theorem cartanCoxeterMatrix_of_ne_of_le {A : Matrix I I ℤ} {i j : I} (hij : i ≠ j)
-    (h : A i j * A j i ≤ 3) :
-    A.cartanCoxeterMatrix i j = coxeterOrder (A i j * A j i) := by
-  simp [cartanCoxeterMatrix_apply, hij, h]
-
-theorem cartanCoxeterMatrix_of_ne_of_lt {A : Matrix I I ℤ} {i j : I} (hij : i ≠ j)
-    (h : 3 < A i j * A j i) :
-    A.cartanCoxeterMatrix i j = 0 := by
-  simp [cartanCoxeterMatrix_apply, hij, not_le.mpr h]
-
-/-- Off the diagonal, the Coxeter entry vanishes (representing `∞`) exactly when the Cartan
-product does not lie in `{0, 1, 2, 3}`. -/
-theorem cartanCoxeterMatrix_eq_zero_iff_not_mem {A : Matrix I I ℤ} {i j : I} (hij : i ≠ j) :
-    A.cartanCoxeterMatrix i j = 0 ↔ A i j * A j i ∉ ({0, 1, 2, 3} : Set ℤ) := by
-  rcases le_or_gt (A i j * A j i) 3 with hle | hlt
-  · rw [cartanCoxeterMatrix_of_ne_of_le hij hle, coxeterOrder_eq_zero_iff]
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
-  · rw [cartanCoxeterMatrix_of_ne_of_lt hij hlt]
-    simp only [true_iff, Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
-
-/-- When `0 ≤ A i j * A j i` and `i ≠ j`, the Coxeter entry vanishes (representing `∞`) exactly
-when the Cartan product exceeds `3`. -/
-theorem cartanCoxeterMatrix_eq_zero_iff {A : Matrix I I ℤ} {i j : I} (hij : i ≠ j)
-    (hnonneg : 0 ≤ A i j * A j i) :
-    A.cartanCoxeterMatrix i j = 0 ↔ 3 < A i j * A j i := by
-  rw [cartanCoxeterMatrix_eq_zero_iff_not_mem hij]
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  omega
-
-/-- When `A i i ≠ 0` and `A j i = 0 → A i j = 0`, the Coxeter entry at `(i, j)` is `2` exactly
-when `A i j = 0`. -/
-theorem cartanCoxeterMatrix_eq_two_iff {A : Matrix I I ℤ} {i j : I}
-    (hdiag : A i i ≠ 0) (hzero : A j i = 0 → A i j = 0) :
-    A.cartanCoxeterMatrix i j = 2 ↔ A i j = 0 := by
-  rcases eq_or_ne i j with rfl | hij
-  · simp [hdiag]
-  · rcases le_or_gt (A i j * A j i) 3 with hle | hlt
-    · rw [cartanCoxeterMatrix_of_ne_of_le hij hle, coxeterOrder_eq_two_iff, mul_eq_zero]
-      exact or_iff_left_iff_imp.mpr hzero
-    · rw [cartanCoxeterMatrix_of_ne_of_lt hij hlt]
-      refine ⟨by omega, fun h₀ ↦ absurd ?_ (not_le.mpr hlt)⟩
-      simp [h₀]
-
-/-- When all off-diagonal Cartan products lie in `{0, 1, 2, 3}`, `Matrix.cartanCoxeterMatrix`
-agrees with `TauCeti.coxeterMatrixOfCartanMatrix`. -/
-theorem cartanCoxeterMatrix_eq_coxeterMatrixOfCartanMatrix (A : Matrix I I ℤ)
-    (hdiag : ∀ i, A i i = 2)
-    (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) :
-    A.cartanCoxeterMatrix = coxeterMatrixOfCartanMatrix A hdiag hmem := by
-  ext i j
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  · have hle : A i j * A j i ≤ 3 := by
-      have := hmem i j hij
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at this
-      omega
-    rw [cartanCoxeterMatrix_of_ne_of_le hij hle, coxeterMatrixOfCartanMatrix_apply]
-
-end CartanCoxeterMatrix
-
-end Matrix
-
 namespace TauCeti
 
 namespace CartanRealization
 
 /-! ### Braid relations and rank-two Chebyshev positivity over an arbitrary field -/
-
-/-- The two Chebyshev combinations occurring in `(sᵢ sⱼ)^n (αᵢ)` and `sⱼ (sᵢ sⱼ)^n (αᵢ)` are
-nonnegative for every reduced alternating word of length `m` not ending in `i`. -/
-private theorem nonneg_chebyshev_pair {c : ℤ} (hc : 0 ≤ c) {m : ℕ}
-    (hm : c ≤ 3 → m < coxeterOrder c) :
-    0 ≤ (S ℤ (m / 2 : ℕ)).eval (c - 2) + (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2) ∧
-      0 ≤ (if Even m then (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
-        else (S ℤ (m / 2 : ℕ)).eval (c - 2)) := by
-  rcases le_or_gt c 3 with hle | hgt
-  · have hlt := hm hle
-    have hmem : c ∈ ({0, 1, 2, 3} : Set ℤ) := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
-    rcases hmem with rfl | rfl | rfl | rfl
-    · rw [coxeterOrder_zero] at hlt
-      interval_cases m <;> simp [Nat.even_iff, S_neg_one, S_zero]
-    · rw [coxeterOrder_one] at hlt
-      interval_cases m <;> simp [Nat.even_iff, S_neg_one, S_zero, S_one]
-    · rw [coxeterOrder_two] at hlt
-      interval_cases m <;> simp [Nat.even_iff, S_neg_one, S_zero, S_one]
-    · rw [coxeterOrder_three] at hlt
-      interval_cases m <;> simp [Nat.even_iff, S_neg_one, S_zero, S_one, S_two]
-  · have ht : 2 ≤ c - 2 := by omega
-    have hn : 1 ≤ (S ℤ (m / 2 : ℕ)).eval (c - 2) := one_le_S_eval ht (m / 2)
-    have hn1 : 0 ≤ (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2) := nonneg_S_eval_sub_one ht (m / 2)
-    exact ⟨by omega, by split_ifs <;> omega⟩
 
 /-- Closed-form Chebyshev evaluation of `((if Even m then 1 else sⱼ) * (sᵢ * sⱼ) ^ (m / 2)) αᵢ`. -/
 private theorem alternating_simpleReflection_apply_root {I K H : Type*} [Field K] [AddCommGroup H]
@@ -336,67 +204,6 @@ theorem weylCoxeterHom_surjective (hdiag : ∀ i, A i i = 2)
   exact ⟨A.cartanCoxeterMatrix.toCoxeterSystem.wordProd l,
     R.weylCoxeterHom_wordProd hdiag hzero l⟩
 
-private theorem not_wordProd_alternatingWord_succ_of_not_isRightDescent {i j : I}
-    {v : A.cartanCoxeterMatrix.Group}
-    (hdesc : ¬A.cartanCoxeterMatrix.toCoxeterSystem.IsRightDescent v i) (k : ℕ)
-    (hkv : A.cartanCoxeterMatrix.toCoxeterSystem.length v = k + 1) :
-    A.cartanCoxeterMatrix.toCoxeterSystem.wordProd
-      (CoxeterSystem.alternatingWord j i (k + 1)) ≠ v := fun hk ↦
-  hdesc <| by
-    let cs₀ := A.cartanCoxeterMatrix.toCoxeterSystem
-    have hmul : v * cs₀.simple i = cs₀.wordProd (CoxeterSystem.alternatingWord i j k) := by
-      rw [← hk, CoxeterSystem.alternatingWord_succ, cs₀.wordProd_concat,
-        cs₀.simple_mul_simple_cancel_right]
-    rw [CoxeterSystem.IsRightDescent, hmul, hkv]
-    exact (cs₀.length_wordProd_le _).trans_lt
-      (by rw [CoxeterSystem.length_alternatingWord]; omega)
-
-private theorem parabolic_pair_word_of_not_isRightDescent
-    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) {i j : I} (hij : i ≠ j)
-    {v : A.cartanCoxeterMatrix.Group}
-    (hv : v ∈ A.cartanCoxeterMatrix.toCoxeterSystem.parabolic {i, j})
-    (hdesc : ¬A.cartanCoxeterMatrix.toCoxeterSystem.IsRightDescent v i) :
-    A.cartanCoxeterMatrix.toCoxeterSystem.wordProd
-        (CoxeterSystem.alternatingWord i j
-          (A.cartanCoxeterMatrix.toCoxeterSystem.length v)) = v ∧
-      (A i j * A j i ≤ 3 →
-        A.cartanCoxeterMatrix.toCoxeterSystem.length v < coxeterOrder (A i j * A j i)) := by
-  let cs₀ := A.cartanCoxeterMatrix.toCoxeterSystem
-  have hv_eq : cs₀.wordProd (CoxeterSystem.alternatingWord i j (cs₀.length v)) = v := by
-    rcases cs₀.wordProd_alternatingWord_eq_of_mem_parabolic_pair hv with h | h
-    · exact h
-    · rcases hm : cs₀.length v with _ | k
-      · rw [List.eq_nil_of_length_eq_zero (CoxeterSystem.length_alternatingWord i j 0),
-          cs₀.wordProd_nil, cs₀.length_eq_zero_iff.mp hm]
-      · rw [hm] at h
-        exact absurd h (not_wordProd_alternatingWord_succ_of_not_isRightDescent hdesc k hm)
-  refine ⟨hv_eq, fun hle ↦ ?_⟩
-  have hM : A.cartanCoxeterMatrix i j = coxeterOrder (A i j * A j i) :=
-    Matrix.cartanCoxeterMatrix_of_ne_of_le hij hle
-  have hne0 : A.cartanCoxeterMatrix i j ≠ 0 := by
-    have h0 := mul_nonneg_of_nonpos_of_nonpos (hoff i j hij) (hoff j i hij.symm)
-    have hmem : A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega
-    have h2 := two_le_coxeterOrder hmem
-    rw [hM]; omega
-  have hred : cs₀.IsReduced (CoxeterSystem.alternatingWord i j (cs₀.length v)) := by
-    rw [CoxeterSystem.IsReduced, hv_eq, CoxeterSystem.length_alternatingWord]
-  have hle' : cs₀.length v ≤ A.cartanCoxeterMatrix i j :=
-    not_lt.mp fun hgt ↦ cs₀.not_isReduced_alternatingWord i j hne0 hgt hred
-  rcases lt_or_eq_of_le hle' with hlt | heq
-  · rwa [← hM]
-  · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hne0
-    have hbr : cs₀.wordProd (CoxeterSystem.alternatingWord j i (k + 1)) = v := by
-      calc cs₀.wordProd (CoxeterSystem.alternatingWord j i (k + 1))
-        _ = cs₀.wordProd (CoxeterSystem.braidWord A.cartanCoxeterMatrix j i) := by
-            rw [CoxeterSystem.braidWord, A.cartanCoxeterMatrix.symmetric j i, hk,
-              Nat.succ_eq_add_one]
-        _ = cs₀.wordProd (CoxeterSystem.braidWord A.cartanCoxeterMatrix i j) :=
-            cs₀.wordProd_braidWord_eq j i
-        _ = v := by rw [CoxeterSystem.braidWord, ← heq, hv_eq]
-    exact absurd hbr
-      (not_wordProd_alternatingWord_succ_of_not_isRightDescent hdesc k (heq.trans hk))
-
 /-- In a rank-two standard parabolic subgroup `⟨sᵢ, sⱼ⟩`, an element `v` for which `i` is not a
 right descent sends `αᵢ` to a natural combination `a • αᵢ + b • αⱼ`. -/
 private theorem exists_apply_root_eq_nsmul_of_mem_parabolic_pair
@@ -408,15 +215,37 @@ private theorem exists_apply_root_eq_nsmul_of_mem_parabolic_pair
     ∃ a b : ℕ,
       ((R.weylCoxeterHom hdiag hzero v :
           Dual K H ≃ₗ[K] Dual K H) (R.root i)) = a • R.root i + b • R.root j := by
-  obtain ⟨hv_eq, hm_lt⟩ := parabolic_pair_word_of_not_isRightDescent hoff hij hv hdesc
-  let m := A.cartanCoxeterMatrix.toCoxeterSystem.length v
+  let cs₀ := A.cartanCoxeterMatrix.toCoxeterSystem
+  let m := cs₀.length v
   let hd := diag_map_intCast (K := K) hdiag
   let c := A i j * A j i
   have hnonneg : 0 ≤ c := mul_nonneg_of_nonpos_of_nonpos (hoff i j hij) (hoff j i hij.symm)
-  obtain ⟨ha, hb⟩ := nonneg_chebyshev_pair (m := m) hnonneg hm_lt
+  have hv_eq : cs₀.wordProd (CoxeterSystem.alternatingWord i j m) = v :=
+    cs₀.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent hv hdesc
+  have hm_lt : c ≤ 3 → m < coxeterOrder c := fun hle ↦ by
+    have hM : A.cartanCoxeterMatrix i j = coxeterOrder c :=
+      Matrix.cartanCoxeterMatrix_of_ne_of_le hij hle
+    have hne0 : A.cartanCoxeterMatrix i j ≠ 0 := by
+      rw [Ne, Matrix.cartanCoxeterMatrix_eq_zero_iff hij hnonneg]
+      omega
+    rw [← hM]
+    exact cs₀.length_lt_of_mem_parabolic_pair_of_not_isRightDescent hne0 hv hdesc
   let aZ : ℤ := (S ℤ (m / 2 : ℕ)).eval (c - 2) + (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
   let bS : ℤ := if Even m then (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
     else (S ℤ (m / 2 : ℕ)).eval (c - 2)
+  have ha : 0 ≤ aZ := chebyshevS_add_sub_one_eval_sub_two_nonneg (c := c) fun hle ↦ by
+    have := hm_lt hle
+    omega
+  have hb : 0 ≤ bS := by
+    dsimp only [bS]
+    split_ifs with he
+    · exact chebyshevS_sub_one_eval_sub_two_nonneg (c := c) fun hle ↦ by
+        have := hm_lt hle
+        omega
+    · exact chebyshevS_eval_sub_two_nonneg (c := c) fun hle ↦ by
+        have := hm_lt hle
+        rw [Nat.even_iff] at he
+        omega
   have hbZ : 0 ≤ bS * -A j i := mul_nonneg hb (neg_nonneg.mpr (hoff j i hij.symm))
   have ha_eq : (aZ.toNat : ℤ) = aZ := Int.toNat_of_nonneg ha
   have hb_eq : ((bS * -A j i).toNat : ℤ) = bS * -A j i := Int.toNat_of_nonneg hbZ
