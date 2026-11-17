@@ -18,10 +18,9 @@ For a constant symplectic form, taking the Hamiltonian vector field commutes wit
 variation: `δX_H = X_(δH)`. Joint `C²` regularity of the Hamiltonians justifies exchanging the
 parameter and target derivatives. We also record joint regularity of the vector fields, with
 one derivative lost. These are the coefficient calculus needed to differentiate inhomogeneous
-Cauchy–Riemann equations in local coordinates. Orbits of a jointly `C¹` family are `C¹`
-(`TauCeti.SymplecticForm.contDiff_one_of_hasDerivAt_hamiltonianVectorField`). For a jointly `C²`,
-`1`-periodic family the vector fields `X_{H_t}` are Lipschitz on each bounded set with a constant
-independent of `t` (`TauCeti.SymplecticForm.exists_forall_lipschitzOnWith_hamiltonianVectorField`).
+Cauchy–Riemann equations in local coordinates. For a jointly `C²`, `1`-periodic family the vector
+fields `X_{H_t}` are Lipschitz on each bounded set with a constant independent of `t`
+(`TauCeti.SymplecticForm.exists_forall_lipschitzOnWith_hamiltonianVectorField`).
 
 The contraction convention is `ω(X_H, ·) = dH`. See McDuff–Salamon, *Introduction to Symplectic
 Topology*, the discussion of Hamiltonian vector fields. Mixed derivatives use
@@ -55,16 +54,6 @@ theorem contDiff_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
     {K : P → V → ℝ} {n : WithTop ℕ∞} (hK : ContDiff ℝ (n + 1) (Function.uncurry K)) :
     ContDiff ℝ n (fun w : P × V ↦ ω.hamiltonianVectorField (K w.1) w.2) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ ω.contDiffAt_hamiltonianVectorField_uncurry hK.contDiffAt
-
-/-- An orbit `x' = X_{H_t}(x)` of a jointly `C¹` Hamiltonian family is `C¹`. -/
-theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (Function.uncurry H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x := by
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
-  rw [show deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) from funext fun t ↦ (hx t).deriv]
-  exact (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous.comp
-    (continuous_id.prodMk hxc)
 
 /-- **A uniform Lipschitz bound.** For a jointly `C²`, `1`-periodic Hamiltonian family `H`, the
 vector fields `X_{H_t}` are Lipschitz on every bounded set `s`, with a constant independent of

@@ -915,14 +915,8 @@ private theorem norm_restrictValue_jetₗ_le {M : ℝ × ℝ → V × V × V →
     (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
     ‖restrictValue T (jetₗ V ξ)‖ ≤ √(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖ := by
-  have hjm := memLp_jet ξ.2
-  -- `‖ξ‖²` is integrable on the strip, being dominated by `‖jet ξ‖²`.
-  have hint : Integrable (fun z ↦ ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) stripMeasure := by
-    refine (hjm.integrable_norm_pow two_ne_zero).mono'
-      (((mem_testSection_iff.1 ξ.2).1.continuous.norm.pow 2).aestronglyMeasurable)
-      (Eventually.of_forall fun z ↦ ?_)
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_norm_jet _ z) 2
+  have hint := integrable_of_jet_eq_zero ξ.2 ((mem_testSection_iff.1 ξ.2).1.continuous.norm.pow 2)
+    fun z h ↦ by rw [jet_apply, Prod.mk_eq_zero] at h; simp [h.1]
   have hD : ‖jetOperator M (jetₗ V ξ)‖ ^ 2 =
       ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
     rw [← Lp.integral_norm_sq_eq_norm_sq]

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.SpectralGap
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
@@ -462,8 +463,9 @@ private theorem memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationar
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
           (fun w ↦ x w.2)) C T := by
   have hu : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ x w.2 :=
-    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le one_le_two) hx).comp
-      contDiff_snd
+    (contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
+        (by simpa using hH.of_le one_le_two)).continuous hx).comp contDiff_snd
   -- The loops of `u` and its slice defect do not depend on `s`, so they converge uniformly.
   have hc (f : ℝ → V) (l : Filter ℝ) : TendstoUniformlyOn (fun (_ : ℝ) t ↦ f t) f l (Icc 0 1) :=
     fun _ hU ↦ Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hU
