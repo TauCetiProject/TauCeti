@@ -147,11 +147,8 @@ theorem mooreMeridianLoop_apply
 /-- The products `(w, u) ↦ λ(w) * λ'(u)` of Moore loops at `p`. -/
 def mooreMeridianLoopFixedMul :
     C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1, MooreLoopSpace _ p) :=
-  ⟨fun x ↦ (meridianLoopFixedReturn p u₀ x.1).toMooreLoop *
-      (meridianLoopFixedDeparture p u₀ x.2).toMooreLoop,
-    (Path.continuous_toMooreLoop.comp ((meridianLoopFixedReturn p u₀).continuous.comp
-      continuous_fst)).mul (Path.continuous_toMooreLoop.comp
-        ((meridianLoopFixedDeparture p u₀).continuous.comp continuous_snd))⟩
+  (Path.mulMooreLoop p).comp
+    ((meridianLoopFixedReturn p u₀).prodMap (meridianLoopFixedDeparture p u₀))
 
 @[simp]
 theorem mooreMeridianLoopFixedMul_apply
@@ -159,7 +156,7 @@ theorem mooreMeridianLoopFixedMul_apply
     mooreMeridianLoopFixedMul p u₀ x =
       (meridianLoopFixedReturn p u₀ x.1).toMooreLoop *
         (meridianLoopFixedDeparture p u₀ x.2).toMooreLoop :=
-  (rfl)
+  Path.mulMooreLoop_apply _
 
 /-- The map `(w, u) ↦ λ(w) * λ'(u)` is the tensor product of `λ` and `λ'`, read in the Moore loops,
 followed by the multiplication of the Moore loop space. -/
@@ -171,8 +168,9 @@ theorem tensorHom_comp_mul_eq_mooreMeridianLoopFixedMul :
       ofHom (mooreMeridianLoopFixedMul p u₀) := by
   refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
   rw [ConcreteCategory.comp_apply, of_mul_apply, TopCat.tensor_apply]
-  exact congrArg₂ (· * ·) (MooreLoopSpace.homotopyEquivPath_symm_apply _)
-    (MooreLoopSpace.homotopyEquivPath_symm_apply _)
+  exact (congrArg₂ (· * ·) (MooreLoopSpace.homotopyEquivPath_symm_apply _)
+    (MooreLoopSpace.homotopyEquivPath_symm_apply _)).trans
+      (mooreMeridianLoopFixedMul_apply p u₀ x).symm
 
 /-- **In Moore loops, the meridian loops are a product up to homotopy**: the map
 `(w, u) ↦ γ_w · γ_u⁻¹` into the Moore loops at `p` is homotopic to `(w, u) ↦ λ(w) * λ'(u)`. -/
@@ -189,9 +187,10 @@ theorem homotopic_mooreMeridianLoop_mul :
     ext1 x
     simp [Path.mooreLoopTrans_apply]
   rw [e] at h₁
-  convert h₁.trans h₂ using 1 <;> ext1 x
-  · simp [Prod.swap]
-  · simp [Path.mulMooreLoop_apply]
+  refine .trans ?_ h₂
+  convert h₁ using 1
+  ext1 x
+  simp [Prod.swap]
 
 /-- **The meridian loops carry a cross product to a Pontryagin product.** For classes `a` and `b`
 of the singular homology of the unit tangent sphere `S` with coefficients in a commutative ring
