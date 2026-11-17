@@ -46,6 +46,9 @@ one-sided inverse has that inverse on both sides.
   inverse with precomposition by `f` and by `g` respectively.
 * `MeasureTheory.Lp.leftInverse_compMeasurePreserving`: precomposition by `g` is a left inverse
   of precomposition by `f` when `f ∘ g` is almost everywhere the identity.
+* `LinearIsometryEquiv.compLpₗᵢEquiv`: pointwise composition with a linear isometry equivalence
+  of the values, as a linear isometry equivalence of `Lp`, with
+  `LinearIsometryEquiv.coeFn_compLpₗᵢEquiv` and `LinearIsometryEquiv.compLpₗᵢEquiv_symm`.
 * `MeasureTheory.Lp.compMeasurePreserving_toLp` identifies precomposition on the `Lp` class of a
   continuous function with ordinary composition of continuous maps.
 -/
@@ -200,6 +203,55 @@ theorem coeFn_compMeasurePreservingₗᵢEquiv_symm (hf : MeasurePreserving f μ
     ⇑((compMeasurePreservingₗᵢEquiv 𝕜 hf hg hfg).symm x) =ᵐ[μb] ⇑x ∘ g := by
   rw [compMeasurePreservingₗᵢEquiv_symm_apply]
   exact coeFn_compMeasurePreserving x hg
+
+section LinearIsometryEquiv
+
+variable {𝕜' F : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜' F]
+
+/-- **Pointwise composition with a linear isometry equivalence, on `Lp`.** For
+`R : E ≃ₗᵢ[𝕜'] F`, the map `f ↦ R ∘ f` is a linear isometry equivalence
+`Lp E p μ ≃ₗᵢ[𝕜'] Lp F p μ`, with inverse `f ↦ R.symm ∘ f`. Following it or preceding it by
+`MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` moves the points and rotates the values. -/
+noncomputable def _root_.LinearIsometryEquiv.compLpₗᵢEquiv (R : E ≃ₗᵢ[𝕜'] F) (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] (μ : Measure α) : Lp E p μ ≃ₗᵢ[𝕜'] Lp F p μ where
+  toLinearEquiv := .ofLinearMap (R.toLinearIsometry.toContinuousLinearMap.compLpₗ p μ)
+    (R.symm.toLinearIsometry.toContinuousLinearMap.compLpₗ p μ)
+    (LinearMap.ext fun f ↦ Lp.ext <| by
+      filter_upwards [R.toLinearIsometry.toContinuousLinearMap.coeFn_compLp
+          (R.symm.toLinearIsometry.toContinuousLinearMap.compLp f),
+        R.symm.toLinearIsometry.toContinuousLinearMap.coeFn_compLp f] with a h₁ h₂
+      simp [h₁, h₂])
+    (LinearMap.ext fun f ↦ Lp.ext <| by
+      filter_upwards [R.symm.toLinearIsometry.toContinuousLinearMap.coeFn_compLp
+          (R.toLinearIsometry.toContinuousLinearMap.compLp f),
+        R.toLinearIsometry.toContinuousLinearMap.coeFn_compLp f] with a h₁ h₂
+      simp [h₁, h₂])
+  norm_map' f := by
+    simp only [LinearEquiv.coe_ofLinearMap, ContinuousLinearMap.compLpₗ_apply, Lp.norm_def]
+    refine congrArg ENNReal.toReal
+      (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_)
+    filter_upwards [R.toLinearIsometry.toContinuousLinearMap.coeFn_compLp f] with a ha
+    simp [ha]
+
+variable (R : E ≃ₗᵢ[𝕜'] F)
+
+/-- `LinearIsometryEquiv.compLpₗᵢEquiv` is almost everywhere pointwise composition. -/
+theorem _root_.LinearIsometryEquiv.coeFn_compLpₗᵢEquiv (f : Lp E p μ) :
+    ⇑(R.compLpₗᵢEquiv p μ f) =ᵐ[μ] fun a ↦ R (f a) := by
+  filter_upwards [ContinuousLinearMap.coeFn_compLp R.toLinearIsometry.toContinuousLinearMap f]
+    with a ha
+  exact ha
+
+@[simp]
+theorem _root_.LinearIsometryEquiv.compLpₗᵢEquiv_symm :
+    (R.compLpₗᵢEquiv p μ).symm = R.symm.compLpₗᵢEquiv p μ := by
+  refine LinearIsometryEquiv.ext fun f ↦ (LinearIsometryEquiv.symm_apply_eq _).2 (Lp.ext ?_)
+  filter_upwards [R.coeFn_compLpₗᵢEquiv (R.symm.compLpₗᵢEquiv p μ f),
+    R.symm.coeFn_compLpₗᵢEquiv f] with a h₁ h₂
+  rw [h₁, h₂, LinearIsometryEquiv.apply_symm_apply]
+
+end LinearIsometryEquiv
 
 section ContinuousMap
 
