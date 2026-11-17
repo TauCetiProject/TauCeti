@@ -112,22 +112,11 @@ the collar integrals are the averages `±∫ β'(±s - T) h_q(s) ds` of the end-
 
 section Cutoff
 
-/-- The signed longitudinal coordinate `±s_q` of the end `q`, at a point of `ℝ × ℝ ≃ ℂ`. -/
-private noncomputable def endHeight (q : Puncture) (z : ℝ × ℝ) : ℝ :=
-  q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-
 /-- The cutoff truncating the pair of pants at height `T` on each end: the product over the three
 ends of `1 - β(±s_q - T)`, and `0` at the punctures `0` and `1`. -/
 private noncomputable def truncation (T : ℝ) (z : ℝ × ℝ) : ℝ :=
   if Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1 then 0
   else ∏ q, (1 - smoothTransition (endHeight q z - T))
-
-private theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) {n : WithTop ℕ∞} :
-    ContDiffAt ℝ n (endHeight q) z := by
-  unfold endHeight
-  exact contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
-    Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
 
 /-- The cutoff at height `T` vanishes off the compact truncation `S_{T+1}`. -/
 private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
@@ -138,6 +127,7 @@ private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
   · rfl
   · obtain ⟨q, hq⟩ : ∃ q, T + 1 < endHeight q z := by
       by_contra! h'
+      simp only [endHeight_apply] at h'
       exact hz (mem_truncation.2 ⟨(not_or.1 h).1, (not_or.1 h).2, h'⟩)
     refine Finset.prod_eq_zero (Finset.mem_univ q) ?_
     rw [smoothTransition.one_of_one_le (by linarith), sub_self]
@@ -209,11 +199,6 @@ private theorem tendsto_truncation {z : ℝ × ℝ} (hz : z ∈ thricePuncturedS
   exact (Finset.prod_eq_one fun q _ ↦ by
     rw [smoothTransition.zero_of_nonpos (by linarith [hT q]), sub_zero]).symm
 
-/-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
-private theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
-    endHeight q (endChart q ζ) = q.endSign * ζ.1 := by
-  rw [endHeight, re_endCoord_endChart]
-
 /-- Along the end `q`, where `±s > 0`, the cutoff at height `T ≥ 0` is `1 - β(±s - T)`. -/
 private theorem truncation_endChart {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ : ℝ × ℝ}
     (hζ : 0 < q.endSign * ζ.1) :
@@ -222,7 +207,7 @@ private theorem truncation_endChart {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ 
   have hζ' : 0 < q.endSign * (Complex.equivRealProdCLM.symm ζ).re := by simpa using hζ
   have hS := q.cylindricalEndLift_ne_zero_and_ne_one hζ'
   have hr (r : Puncture) (hr : r ≠ q) : endHeight r (endChart q ζ) ≤ 0 :=
-    endSign_mul_re_endCoord_nonpos hr.symm (by rwa [re_endCoord_endChart])
+    endHeight_nonpos_of_ne hr.symm (by rwa [endHeight_endChart])
   rw [truncation, ite_eq_right (by rw [hw]; exact not_or.2 hS), Finset.prod_eq_single q,
     endHeight_endChart]
   · intro r _ hrq
@@ -621,7 +606,7 @@ private theorem fderiv_truncation_eq_zero {T : ℝ} (hT : 2 ≤ T) {z : ℝ × �
   by_cases hzS : z ∈ thricePuncturedSphereReal
   · have hT' (q : Puncture) : endHeight q z < T := by
       by_contra h
-      rw [not_lt, endHeight] at h
+      rw [not_lt, endHeight_apply] at h
       exact hz (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)
     rw [(truncation_eventuallyEq_one hzS hT').fderiv_eq, fderiv_const_apply]
   · simp only [mem_thricePuncturedSphereReal_iff, not_and_or, not_not] at hzS

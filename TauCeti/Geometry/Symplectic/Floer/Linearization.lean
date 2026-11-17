@@ -34,7 +34,8 @@ are `C¹` (`continuousAt_floerLinearization`), and continuous everywhere when th
 everywhere (`continuous_floerLinearization`), or when the direction is supported in an open set
 on which the data are regular (`continuous_floerLinearization_of_tsupport_subset`), so its `L²`
 norms over compact sets are finite. A compactly supported direction has a compactly supported
-image (`hasCompactSupport_floerLinearization`).
+image (`hasCompactSupport_floerLinearization`), whose square norm is then integrable
+(`integrable_norm_floerLinearization_sq`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -178,41 +179,6 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
-/-- **Conjugating the linearization by an exponential weight.** On maps of the form
-`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
-differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
-theorem floerLinearization_exp_smul (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
-      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
-      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
-    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
-  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
-  module
-
-/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
-`z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
-direction, where the operator has the leading term `∂s`. -/
-theorem floerLinearization_smul_fst (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
-    (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
-      β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, comp_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
-  module
-
 /-- **Multiplying by a function.** If `f` and `ξ` are differentiable at `z`, the linearized Floer
 operator at `z` sends `f ξ` to `f D ξ + (∂s f) ξ + (∂t f) J ξ`. -/
 theorem floerLinearization_fun_smul (ω : SymplecticForm V)
@@ -224,6 +190,33 @@ theorem floerLinearization_fun_smul (ω : SymplecticForm V)
   rw [floerLinearization_def, fderiv_fun_smul hf hξ, floerLinearization_def]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_smul, map_add,
     map_sub]
+  module
+
+/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
+`z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
+direction, where the operator has the leading term `∂s`. -/
+theorem floerLinearization_smul_fst (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
+    (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
+      β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hd.differentiableAt hξ, hd.fderiv]
+  simp only [comp_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
+    stdComplexLineImag_fst, toSpanSingleton_apply, one_smul, zero_smul, add_zero]
+
+/-- **Conjugating the linearization by an exponential weight.** On maps of the form
+`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
+differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
+theorem floerLinearization_exp_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
+  have hβ : HasDerivAt (fun s ↦ Real.exp (-(δ * s))) (Real.exp (-(δ * z.1)) * -(δ * 1)) z.1 :=
+    ((hasDerivAt_id' z.1).const_mul δ).neg.exp
+  rw [ω.floerLinearization_smul_fst J Ks Kt u ξ hβ hξ]
   module
 
 /-- The linearization at `z` depends only on the germ of the direction at `z`. -/
@@ -340,18 +333,6 @@ theorem continuousAt_floerLinearization (ω : SymplecticForm V)
   exact ((hdξ _).add (hJu.clm_apply (hdξ _))).add
     ((ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu).clm_apply hξ.continuousAt)
 
-/-- **Global continuity of the linearization.** Let `u` and `ξ` be `C¹`, and let the coefficients
-`J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point `(z, u z)`. Then the linearized
-Floer operator along `u` in the direction `ξ` is continuous. -/
-theorem continuous_floerLinearization (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
-  continuous_iff_continuousAt.2 fun z ↦
-    ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
-
 /-- The linearized Floer operator in a direction `ξ` supported in an open set `U` is continuous
 when the data are regular along `u` on `U`. -/
 theorem continuous_floerLinearization_of_tsupport_subset (ω : SymplecticForm V)
@@ -370,11 +351,34 @@ theorem continuous_floerLinearization_of_tsupport_subset (ω : SymplecticForm V)
         fun w hw ↦ ω.floerLinearization_of_notMem_tsupport J Ks Kt u hw
     exact continuousAt_const.congr h.symm
 
+/-- **Global continuity of the linearization.** Let `u` and `ξ` be `C¹`, and let the coefficients
+`J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point `(z, u z)`. Then the linearized
+Floer operator along `u` in the direction `ξ` is continuous. -/
+theorem continuous_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
+  ω.continuous_floerLinearization_of_tsupport_subset (U := Set.univ) (fun z _ ↦ hJ z)
+    (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun _ _ ↦ hu.contDiffAt) hξ (Set.subset_univ _)
+
 /-- The linearized Floer operator in a compactly supported direction is compactly supported. -/
 theorem hasCompactSupport_floerLinearization (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {ξ : ℝ × ℝ → V}
     (hξ : HasCompactSupport ξ) : HasCompactSupport (ω.floerLinearization J Ks Kt u ξ) :=
   hξ.mono' fun _ hz ↦ by_contra fun h ↦ hz (ω.floerLinearization_of_notMem_tsupport J Ks Kt u h)
+
+/-- Where the linearized Floer operator in a compactly supported direction is continuous, its
+square norm is integrable. -/
+theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
+    {μ : MeasureTheory.Measure (ℝ × ℝ)} [MeasureTheory.IsFiniteMeasureOnCompacts μ]
+    (hD : Continuous (ω.floerLinearization J Ks Kt u ξ)) (hξ : HasCompactSupport ξ) :
+    MeasureTheory.Integrable (fun z ↦ ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) μ :=
+  Continuous.integrable_of_hasCompactSupport (by fun_prop)
+    ((ω.hasCompactSupport_floerLinearization J Ks Kt u hξ).comp_left (g := fun v ↦ ‖v‖ ^ 2)
+      (by simp))
 
 section Families
 

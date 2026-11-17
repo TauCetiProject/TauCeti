@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.SobolevDensity
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.Instances.Real.TSupport
 
@@ -101,14 +102,6 @@ private theorem setIntegral_norm_floerLinearization_sq_eq (ω : SymplecticForm V
     rw [ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
       (eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hξ hz), floerLinearization_zero]
     simp
-
-omit [FiniteDimensional ℝ V] in
-/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
-private theorem continuous_sobolev {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
-  have := hξ.continuous_fderiv one_ne_zero
-  fun_prop
 
 /-- **The `L²` norm of `D_u` on a cut-off section.** For a cutoff `β(s)` with `|β| ≤ 1`,
 `|β'| ≤ M` and `β'` supported in `[-T, T]`, the `L²` norm of `D_u (β ξ) = β D_u ξ + β' ξ` is
@@ -316,7 +309,7 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
   have hint {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) (p q : ℝ) :
       IntegrableOn (fun z ↦ ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
-    hI (continuous_sobolev (hη.of_le one_le_two)) p q
+    hI (Floer.continuous_sobolevDensity (hη.of_le one_le_two)) p q
   -- The piece near `+∞`.
   have hPp : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξp z stdComplexLineReal‖ ^ 2 +
       ‖fderiv ℝ ξp z stdComplexLineImag‖ ^ 2 + ‖ξp z‖ ^ 2) ≤ max Cp 0 * (L * (X + Y)) := by

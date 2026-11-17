@@ -217,9 +217,7 @@ private theorem setIntegral_norm_floerLinearization_comp_positiveEndChart_sq_le
   have hφc : Continuous (positiveEndChart q) := (contDiff_positiveEndChart q 0).continuous
   refine le_trans ?_ (mul_le_mul_of_nonneg_left
     (setIntegral_det_mul_comp_positiveEndChart_le_integral (fun _ ↦ sq_nonneg (‖D _‖))
-      (Continuous.integrable_of_hasCompactSupport (by fun_prop)
-        ((ω.hasCompactSupport_floerLinearization _ _ _ u hξc).comp_left
-          (g := fun v ↦ ‖v‖ ^ 2) (by simp))) q a b) (by positivity))
+      (ω.integrable_norm_floerLinearization_sq hDc hξc) q a b) (by positivity))
   rw [← integral_const_mul]
   refine setIntegral_mono_on (hDe.integrableOn_compact hrect)
     ((by fun_prop : Continuous fun ζ ↦ 2 * (1 + B) ^ 2 *
@@ -241,22 +239,19 @@ omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 end chart outside a finite band `(R, b) × ℝ`. -/
 private theorem exists_forall_comp_positiveEndChart_eq_zero {q : Puncture} {R : ℝ}
     {ξ : ℝ × ℝ → V} (hξc : HasCompactSupport ξ)
-    (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧
-      R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re}) :
+    (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < endHeight q z}) :
     ∃ b, R ≤ b ∧ ∀ s t, s ∉ Ioo R b → (ξ ∘ positiveEndChart q) (s, t) = 0 := by
-  -- The signed longitudinal coordinate of the end is bounded on the support of `ξ`.
-  obtain ⟨N, hN⟩ := hξc.isCompact.exists_bound_of_continuousOn
-    (f := fun z ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)
-    fun z hz ↦ (continuousAt_const.mul ((q.contDiffAt_re_endCoord (Puncture.ne_endCenter
-      (mem_thricePuncturedSphereReal_iff.1 (hξR hz).1) q) (n := 0)).continuousAt.comp
-        Complex.equivRealProdCLM.symm.continuous.continuousAt)).continuousWithinAt
+  obtain ⟨N, hN⟩ :=
+    exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc (fun z hz ↦ (hξR hz).1) q
   refine ⟨max N R + 1, by linarith [le_max_right N R], fun s t hs ↦ ?_⟩
-  have hs' := (exists_endCoord_positiveEndChart q (s, t)).choose_spec.1
-  rw [Function.comp_apply]
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ hs ⟨?_, ?_⟩
-  · simpa [hs'] using (hξR h).2
-  · have := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hN _ h))
-    rw [hs'] at this
+  rcases le_or_gt s R with h | h
+  · rw [Function.comp_apply]
+    refine image_eq_zero_of_notMem_tsupport fun h' ↦ ?_
+    have := (hξR h').2
+    rw [endHeight_positiveEndChart] at this
+    linarith
+  · refine (hN (s, t) ?_).eq_of_nhds
+    have : max N R + 1 ≤ s := not_lt.1 fun h' ↦ hs ⟨h, h'⟩
     linarith [le_max_left N R]
 
 /-- **The end estimate along a Floer pair of pants.** Let `u` be a `C¹` solution on
@@ -296,8 +291,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
     ∃ C R : ℝ, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
-      tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧
-        R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re} →
+      tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < endHeight q z} →
       ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1,
           (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +

@@ -39,6 +39,8 @@ apply to all three ends.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
 * `TauCeti.Floer.positiveEndChart q`: the end chart of `q` read as a positive end.
+* `TauCeti.Floer.endHeight q`: the signed longitudinal coordinate `±s_q` of the end `q` in the
+  real coordinates `ℝ × ℝ ≃ ℂ`; it is `s` at `φ'_q(s, t)`.
 * `TauCeti.Floer.positiveEndHamiltonian H q`: the end Hamiltonian in the positive end chart.
 
 ## Main results
@@ -105,6 +107,11 @@ apply to all three ends.
   `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
   `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
   coordinate.
+* `TauCeti.Floer.contDiffAt_endHeight`, `TauCeti.Floer.endHeight_positiveEndChart`,
+  `TauCeti.Floer.endHeight_nonpos_of_ne`: the end height is smooth away from the center of the end,
+  is `s` at `φ'_q(s, t)`, and is positive on at most one end.
+* `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function with compact
+  support in `S` vanishes in the positive end chart beyond some height.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -770,6 +777,55 @@ theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
   · exact ⟨k, by simp [h]⟩
   · exact ⟨-k, by simp [h, add_comm]⟩
+
+/-- The signed longitudinal coordinate `±s_q` of the end `q`, at a point of `ℝ × ℝ ≃ ℂ`. -/
+noncomputable def endHeight (q : Puncture) (z : ℝ × ℝ) : ℝ :=
+  q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+
+theorem endHeight_apply (q : Puncture) (z : ℝ × ℝ) :
+    endHeight q z = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re :=
+  (rfl)
+
+/-- The signed longitudinal coordinate of an end is smooth away from the center of the end. -/
+theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (endHeight q) z :=
+  contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
+    Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
+
+/-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
+theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
+    endHeight q (endChart q ζ) = q.endSign * ζ.1 := by
+  rw [endHeight, re_endCoord_endChart]
+
+/-- The end height of `φ'_q(s, t)` is `s`. -/
+@[simp]
+theorem endHeight_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    endHeight q (positiveEndChart q ζ) = ζ.1 :=
+  (exists_endCoord_positiveEndChart q ζ).choose_spec.1
+
+/-- A point lies beyond `0` on at most one end. -/
+theorem endHeight_nonpos_of_ne {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
+    (h : 0 < endHeight q z) : endHeight r z ≤ 0 :=
+  endSign_mul_re_endCoord_nonpos hqr h
+
+/-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
+point beyond some height. -/
+theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero M]
+    {f : ℝ × ℝ → M} (hfc : HasCompactSupport f) (hfS : tsupport f ⊆ thricePuncturedSphereReal)
+    (q : Puncture) :
+    ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
+  -- The end height is bounded on the support of `f`.
+  obtain ⟨N, hN⟩ := hfc.isCompact.exists_bound_of_continuousOn (f := endHeight q)
+    fun z hz ↦ (contDiffAt_endHeight q (ne_endCenter
+      (mem_thricePuncturedSphereReal_iff.1 (hfS hz)) q) (n := 0)).continuousAt.continuousWithinAt
+  refine ⟨N, fun ζ hζ ↦ ?_⟩
+  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
+  rw [Pi.zero_apply, Function.comp_apply]
+  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
+  have := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hN _ h))
+  rw [endHeight_positiveEndChart] at this
+  exact absurd hζ' (not_lt.2 this)
 
 /-- The positive end chart is injective on the open band `ℝ × (0, 1)`. -/
 theorem injOn_positiveEndChart (q : Puncture) :

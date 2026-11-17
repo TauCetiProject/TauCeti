@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.SemiFredholm
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Topology.Instances.Real.TSupport
+import TauCeti.Geometry.Symplectic.Floer.SobolevDensity
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the pair of pants
@@ -36,8 +36,8 @@ the almost complex structure (`integral_associatedBilinForm_floerLinearization_i
   `TauCeti.Geometry.Symplectic.Floer.InteriorEstimate` on compact parts of the domain.
   The section is cut into three end pieces `β_q ξ` and the core piece `(1 - ∑_q β_q) ξ`,
   supported in `S_{R₀ + 1}`, where `β_q = ψ(2 (±s_q - R₀) - 1)` for the smooth transition function
-  `ψ` and the signed longitudinal coordinates `±s_q` of the ends. The operator differentiates the
-  cutoffs only in the compact collars `R₀ ≤ ±s_q ≤ R₀ + 1`
+  `ψ` and the signed longitudinal coordinates `±s_q` (`TauCeti.Floer.endHeight`) of the ends. The
+  operator differentiates the cutoffs only in the compact collars `R₀ ≤ ±s_q ≤ R₀ + 1`
   (`TauCeti.SymplecticForm.floerLinearization_fun_smul`). The end pieces control the energy
   beyond `R₀ + 1` and the core piece the energy on `S_{R₀}`; patching at the two heights `R₀`
   and `R₀ + 1` covers all of `S`.
@@ -78,28 +78,16 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### Cutoffs on the pair of pants -/
 
-/-- The signed longitudinal coordinate `±s` of the end `q`, in real coordinates. -/
-private noncomputable def endHeight (q : Puncture) (z : ℝ × ℝ) : ℝ :=
-  q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-
-private theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
+/-- The end height `±s_q` is smooth on `S`. -/
+private theorem contDiffAt_endHeight_of_mem (q : Puncture) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) {n : WithTop ℕ∞} : ContDiffAt ℝ n (endHeight q) z :=
-  contDiffAt_const.mul ((q.contDiffAt_re_endCoord
-    (Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)).comp z
-      Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
-
-private theorem endHeight_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
-    endHeight q (positiveEndChart q ζ) = ζ.1 :=
-  (exists_endCoord_positiveEndChart q ζ).choose_spec.1
-
-private theorem endHeight_nonpos {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
-    (h : 0 < endHeight q z) : endHeight r z ≤ 0 :=
-  Puncture.endSign_mul_re_endCoord_nonpos hqr h
+  contDiffAt_endHeight q (Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
 
 private theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
     z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
       z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
-  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight, and_assoc]
+  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
+    and_assoc]
 
 /-- The cutoff `β_q = ψ(2 (±s - R₀) - 1)` of the end `q`, for the smooth transition function `ψ`.
 It vanishes to first order where `±s ≤ R₀`, and it is `1` where `±s ≥ R₀ + 1`. -/
@@ -110,7 +98,7 @@ private theorem contDiffAt_endCutoff (R₀ : ℝ) (q : Puncture) {z : ℝ × ℝ
     (hz : z ∈ thricePuncturedSphereReal) {n : ℕ∞} :
     ContDiffAt ℝ n (endCutoff R₀ q) z :=
   Real.smoothTransition.contDiff.contDiffAt.comp z
-    ((contDiffAt_const.mul ((contDiffAt_endHeight q hz).sub contDiffAt_const)).sub
+    ((contDiffAt_const.mul ((contDiffAt_endHeight_of_mem q hz).sub contDiffAt_const)).sub
       contDiffAt_const)
 
 private theorem endCutoff_nonneg (R₀ : ℝ) (q : Puncture) (z : ℝ × ℝ) : 0 ≤ endCutoff R₀ q z :=
@@ -132,7 +120,7 @@ private theorem fderiv_endCutoff (R₀ : ℝ) (q : Puncture) {z : ℝ × ℝ}
     fderiv ℝ (endCutoff R₀ q) z =
       deriv Real.smoothTransition (2 * (endHeight q z - R₀) - 1) •
         (2 : ℝ) • fderiv ℝ (endHeight q) z :=
-  ((((contDiffAt_endHeight q hz (n := 1)).differentiableAt one_ne_zero).hasFDerivAt.sub_const
+  ((((contDiffAt_endHeight_of_mem q hz (n := 1)).differentiableAt one_ne_zero).hasFDerivAt.sub_const
     R₀).const_mul 2 |>.sub_const 1).smoothTransition.fderiv
 
 private theorem fderiv_endCutoff_eq_zero {R₀ : ℝ} {q : Puncture} {z : ℝ × ℝ}
@@ -167,7 +155,7 @@ private theorem fderiv_coreCutoff (R₀ : ℝ) {z : ℝ × ℝ} (hz : z ∈ thri
 /-- At a point beyond `R₀ ≥ 0` on the end `q`, all other end cutoffs vanish. -/
 private theorem endCutoff_eq_zero_of_ne {R₀ : ℝ} (hR₀ : 0 ≤ R₀) {q r : Puncture} (hqr : q ≠ r)
     {z : ℝ × ℝ} (h : R₀ < endHeight q z) : endCutoff R₀ r z = 0 :=
-  endCutoff_eq_zero ((endHeight_nonpos hqr (by linarith)).trans hR₀)
+  endCutoff_eq_zero ((endHeight_nonpos_of_ne hqr (by linarith)).trans hR₀)
 
 /-- At most one end cutoff is nonzero, so the core cutoff lies in `[0, 1]`. -/
 private theorem coreCutoff_mem_Icc {R₀ : ℝ} (hR₀ : 0 ≤ R₀) (z : ℝ × ℝ) :
@@ -206,7 +194,7 @@ private theorem tsupport_endCutoff_smul_subset {R₀ : ℝ} {q : Puncture} {ξ :
   intro z hz
   have hzS : z ∈ thricePuncturedSphereReal := hξS (tsupport_smul_subset_right _ _ hz)
   refine ⟨hzS, le_of_not_gt fun h ↦ notMem_tsupport_iff_eventuallyEq.2 ?_ hz⟩
-  filter_upwards [(contDiffAt_endHeight q hzS (n := 0)).continuousAt.eventually
+  filter_upwards [(contDiffAt_endHeight_of_mem q hzS (n := 0)).continuousAt.eventually
     (Iio_mem_nhds h)] with w hw
   simp [endCutoff_eq_zero (le_of_lt hw)]
 
@@ -220,11 +208,20 @@ private theorem tsupport_coreCutoff_smul_subset {R₀ : ℝ} (hR₀ : 0 ≤ R₀
   have hzS : z ∈ thricePuncturedSphereReal := hξS (tsupport_smul_subset_right _ _ hz)
   refine mem_preimage_truncation_iff.2 ⟨hzS, fun q ↦ le_of_not_gt fun h ↦
     notMem_tsupport_iff_eventuallyEq.2 ?_ hz⟩
-  filter_upwards [(contDiffAt_endHeight q hzS (n := 0)).continuousAt.eventually
+  filter_upwards [(contDiffAt_endHeight_of_mem q hzS (n := 0)).continuousAt.eventually
     (Ioi_mem_nhds h)] with w hw
   simp [coreCutoff_eq_zero hR₀ (le_of_lt hw)]
 
 /-! ### The linearized operator on cut-off sections -/
+
+omit [FiniteDimensional ℝ V] in
+/-- A function that is `C²` on `S` times a `C²` section supported in `S` is `C²`. -/
+private theorem contDiff_smul_of_tsupport_subset {f : ℝ × ℝ → ℝ}
+    (hf : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 f z) {ξ : ℝ × ℝ → V}
+    (hξ : ContDiff ℝ 2 ξ) (hξS : tsupport ξ ⊆ thricePuncturedSphereReal) :
+    ContDiff ℝ 2 fun z ↦ f z • ξ z :=
+  (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
+    (fun z hz ↦ (hf z hz).contDiffWithinAt) hξ.contDiffOn isOpen_thricePuncturedSphereReal hξS
 
 /-- **The operator on a cut-off section, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` at
 `z`, then `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` at `z`. -/
@@ -281,17 +278,13 @@ private theorem integral_norm_floerLinearization_fun_smul_sq_le (ω : Symplectic
     ∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
       2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
         2 * (M * (1 + B)) ^ 2 * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  have hfξ : ContDiff ℝ 2 fun z ↦ f z • ξ z :=
-    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-      (fun z hz ↦ (hf z hz).contDiffWithinAt) hξ.contDiffOn isOpen_thricePuncturedSphereReal hξS
+  have hfξ : ContDiff ℝ 2 fun z ↦ f z • ξ z := contDiff_smul_of_tsupport_subset hf hξ hξS
   have hint {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
       (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
       Integrable fun z ↦ ‖ω.floerLinearization J Ks Kt u η z‖ ^ 2 := by
-    have hD := ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu
-      (hη.of_le one_le_two) hηS
-    exact Continuous.integrable_of_hasCompactSupport (by fun_prop)
-      ((ω.hasCompactSupport_floerLinearization J Ks Kt u hηc).comp_left (g := fun v ↦ ‖v‖ ^ 2)
-        (by simp))
+    exact ω.integrable_norm_floerLinearization_sq
+      (ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu (hη.of_le one_le_two)
+        hηS) hηc
   have hind : Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
     ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator
       hK.measurableSet
@@ -323,30 +316,6 @@ private theorem integral_norm_floerLinearization_fun_smul_sq_le (ω : Symplectic
         rw [integral_add ((hint hξ hξc hξS).const_mul 2) (hind.const_mul _), integral_const_mul,
           integral_const_mul, integral_indicator hK.measurableSet]
 
-/-- The `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a map. -/
-private noncomputable def sobolevDensity (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ℝ :=
-  ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2
-
-omit [FiniteDimensional ℝ V] in
-private theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ sobolevDensity ξ z := by
-  unfold sobolevDensity
-  positivity
-
-omit [FiniteDimensional ℝ V] in
-/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
-private theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous (sobolevDensity ξ) := by
-  have := hξ.continuous_fderiv one_ne_zero
-  have := hξ.continuous
-  unfold sobolevDensity
-  fun_prop
-
-omit [FiniteDimensional ℝ V] in
-/-- Two maps that agree near `z` have the same energy density at `z`. -/
-private theorem sobolevDensity_congr {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[𝓝 z] η) :
-    sobolevDensity ξ z = sobolevDensity η z := by
-  rw [sobolevDensity, sobolevDensity, h.fderiv_eq, h.eq_of_nhds]
-
 omit [FiniteDimensional ℝ V] in
 /-- A `C²` section with compact support in `S` has integrable `W^{1,2}` energy density in each
 positive end chart, over every half-cylinder `(a, ∞) × [0, 1]`. -/
@@ -354,25 +323,16 @@ private theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × �
     (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
     (hξS : tsupport ξ ⊆ thricePuncturedSphereReal) (q : Puncture) (a : ℝ) :
     IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
-  -- The longitudinal coordinate of the end is bounded on the support of `ξ`.
-  obtain ⟨N, hN⟩ := hξc.isCompact.exists_bound_of_continuousOn (f := endHeight q)
-    fun z hz ↦ (contDiffAt_endHeight q (hξS hz) (n := 0)).continuousAt.continuousWithinAt
+  -- Beyond some `N` in the end chart, `ξ` vanishes identically.
+  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
   have hg : ContDiff ℝ 2 (ξ ∘ positiveEndChart q) := hξ.comp (contDiff_positiveEndChart q 2)
-  -- Beyond `N` in the end chart, `ξ` vanishes identically.
-  have hzero (ζ : ℝ × ℝ) (hζ : N < ζ.1) : ξ ∘ positiveEndChart q =ᶠ[𝓝 ζ] 0 := by
-    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
-    rw [Pi.zero_apply, Function.comp_apply]
-    refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-    have := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hN _ h))
-    rw [endHeight_positiveEndChart] at this
-    exact absurd hζ' (not_lt.2 this)
   have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   refine (((continuous_sobolevDensity (hg.of_le one_le_two)).continuousOn).integrableOn_compact
     hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
   have hζN : N < ζ.1 := by
     by_contra! h
     exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr (hzero ζ hζN), sobolevDensity]
+  rw [sobolevDensity_congr (hzero ζ hζN), sobolevDensity_apply]
   simp
 
 omit [FiniteDimensional ℝ V] in
@@ -385,9 +345,7 @@ private theorem setIntegral_sobolevDensity_le_endCutoff {R₀ : ℝ} (hR₀ : 0 
       ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity ((fun z ↦ endCutoff R₀ q z • ξ z) ∘ positiveEndChart q) ζ := by
   have hβξ : ContDiff ℝ 2 fun z ↦ endCutoff R₀ q z • ξ z :=
-    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-      (fun z hz ↦ (contDiffAt_endCutoff R₀ q hz).contDiffWithinAt) hξ.contDiffOn
-      isOpen_thricePuncturedSphereReal hξS
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_endCutoff R₀ q hz) hξ hξS
   calc _ = ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity ((fun z ↦ endCutoff R₀ q z • ξ z) ∘ positiveEndChart q) ζ := by
         refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
@@ -411,16 +369,14 @@ private theorem setIntegral_sobolevDensity_le_coreCutoff (R₀ : ℝ) {ξ : ℝ 
       ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
         sobolevDensity (fun w ↦ coreCutoff R₀ w • ξ w) z := by
   have hβξ : ContDiff ℝ 2 fun z ↦ coreCutoff R₀ z • ξ z :=
-    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-      (fun z hz ↦ (contDiffAt_coreCutoff R₀ hz).contDiffWithinAt) hξ.contDiffOn
-      isOpen_thricePuncturedSphereReal hξS
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) hξ hξS
   calc _ = ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
         sobolevDensity (fun w ↦ coreCutoff R₀ w • ξ w) z := by
         refine setIntegral_congr_fun (isCompact_preimage_truncation R₀).measurableSet
           fun z hz ↦ ?_
         obtain ⟨h₁, h₀⟩ := coreCutoff_eq_one_and_fderiv_eq_zero hz
         have hzS := preimage_truncation_subset_thricePuncturedSphereReal R₀ hz
-        rw [sobolevDensity, sobolevDensity, fderiv_fun_smul
+        rw [sobolevDensity_apply, sobolevDensity_apply, fderiv_fun_smul
           ((contDiffAt_coreCutoff R₀ hzS (n := 1)).differentiableAt one_ne_zero)
           (hξ.differentiable two_ne_zero z), h₁, h₀]
         simp
@@ -438,7 +394,7 @@ private theorem mem_preimage_truncation_of_fderiv_endCutoff_ne_zero {R₀ : ℝ}
   refine mem_preimage_truncation_iff.2 ⟨hz, fun r ↦ ?_⟩
   rcases eq_or_ne q r with rfl | hqr
   · exact h₂
-  · linarith [endHeight_nonpos hqr (by linarith : 0 < endHeight q z)]
+  · linarith [endHeight_nonpos_of_ne hqr (by linarith : 0 < endHeight q z)]
 
 /-- Where the derivative of the core cutoff is nonzero, the point lies in `S_{R₀ + 1}`. -/
 private theorem mem_preimage_truncation_of_fderiv_coreCutoff_ne_zero {R₀ : ℝ} (hR₀ : 0 < R₀)
@@ -482,9 +438,7 @@ private theorem setIntegral_sobolevDensity_le_of_endCutoff {R₀ : ℝ} (hR₀ :
     ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
       max Cq 0 * E := by
   have hβξ : ContDiff ℝ 2 fun z ↦ endCutoff R₀ q z • ξ z :=
-    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-      (fun z hz ↦ (contDiffAt_endCutoff R₀ q hz).contDiffWithinAt) hξ.contDiffOn
-      isOpen_thricePuncturedSphereReal hξS
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_endCutoff R₀ q hz) hξ hξS
   refine (setIntegral_sobolevDensity_le_endCutoff hR₀ q hξ hξc hξS).trans <|
     (hend hβξ hξc.smul_left fun z hz ↦ ?_).trans ?_
   · obtain ⟨hzS, hzR⟩ := tsupport_endCutoff_smul_subset hξS hz
@@ -518,9 +472,7 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff (ω : SymplecticForm
   have hK : IsCompact K := isCompact_preimage_truncation _
   set ξc : ℝ × ℝ → V := fun w ↦ coreCutoff R₀ w • ξ w
   have hξc' : ContDiff ℝ 2 ξc :=
-    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-      (fun z hz ↦ (contDiffAt_coreCutoff R₀ hz).contDiffWithinAt) hξ.contDiffOn
-      isOpen_thricePuncturedSphereReal hξS
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) hξ hξS
   have hcont := hξc'.continuous
   have hdcont := hξc'.continuous_fderiv two_ne_zero
   have hDcont := ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu
@@ -535,9 +487,8 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff (ω : SymplecticForm
     exact mul_le_of_le_one_left (norm_nonneg _) (abs_coreCutoff_le_one hR₀ z)
   have hDK : ∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 ≤
       ∫ z, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 :=
-    setIntegral_le_integral (Continuous.integrable_of_hasCompactSupport (by fun_prop)
-      ((ω.hasCompactSupport_floerLinearization J Ks Kt u hξc.smul_left).comp_left
-        (g := fun v ↦ ‖v‖ ^ 2) (by simp))) (ae_of_all _ fun _ ↦ sq_nonneg _)
+    setIntegral_le_integral (ω.integrable_norm_floerLinearization_sq hDcont hξc.smul_left)
+      (ae_of_all _ fun _ ↦ sq_nonneg _)
   have hsplit : ∫ z in K, (‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 + ‖ξc z‖ ^ 2) =
       (∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2) + ∫ z in K, ‖ξc z‖ ^ 2 :=
     integral_add (hI (by fun_prop)) (hI (by fun_prop))
@@ -652,8 +603,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z))) {C R : Puncture → ℝ}
     (hend : ∀ q ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
-      tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧
-        R q < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re} →
+      tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < endHeight q z} →
       ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1,
           (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +

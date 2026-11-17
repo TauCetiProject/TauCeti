@@ -399,13 +399,6 @@ longitudinal coordinate `±s_r` is at most `R` and `0` where it is at least `R +
 private noncomputable def endCutoff (r : Puncture) (R : ℝ) (z : ℝ × ℝ) : ℝ :=
   1 - smoothTransition (r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re - R)
 
-private theorem continuousAt_endHeight {r : Puncture} {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter) :
-    ContinuousAt (fun z : ℝ × ℝ ↦ r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re)
-      z :=
-  continuousAt_const.mul ((r.contDiffAt_re_endCoord hz (n := 0)).continuousAt.comp
-    Complex.equivRealProdCLM.symm.continuous.continuousAt)
-
 private theorem contDiffAt_endCutoff {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter) {n : ℕ∞} :
     ContDiffAt ℝ n (endCutoff r R) z :=
@@ -418,7 +411,9 @@ private theorem endCutoff_eventuallyEq_one {r : Puncture} {R : ℝ} {z : ℝ × 
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
     (h : r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < R) :
     endCutoff r R =ᶠ[𝓝 z] fun _ ↦ 1 := by
-  filter_upwards [(continuousAt_endHeight hz).eventually (gt_mem_nhds h)] with z' hz'
+  filter_upwards [(contDiffAt_endHeight r hz (n := 0)).continuousAt.eventually
+    (gt_mem_nhds (by rwa [endHeight_apply]))] with z' hz'
+  rw [endHeight_apply] at hz'
   rw [endCutoff, smoothTransition.zero_of_nonpos (by linarith), sub_zero]
 
 /-- Near a point at which `±s_r > R + 1`, the cutoff is `0`. -/
@@ -426,7 +421,9 @@ private theorem endCutoff_eventuallyEq_zero {r : Puncture} {R : ℝ} {z : ℝ ×
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
     (h : R + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) :
     endCutoff r R =ᶠ[𝓝 z] fun _ ↦ 0 := by
-  filter_upwards [(continuousAt_endHeight hz).eventually (lt_mem_nhds h)] with z' hz'
+  filter_upwards [(contDiffAt_endHeight r hz (n := 0)).continuousAt.eventually
+    (lt_mem_nhds (by rwa [endHeight_apply]))] with z' hz'
+  rw [endHeight_apply] at hz'
   rw [endCutoff, smoothTransition.one_of_one_le (by linarith), sub_self]
 
 /-- The cutoffs at height `L/2 + 1` are `1` on the boundary circles `±s = L/2` of the ends. -/
