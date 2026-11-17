@@ -16,8 +16,9 @@ moduli spaces of Floer solutions on the plumbed four-punctured sphere: a pair of
 `S' = ℂ ∖ {0, 1}` whose output converges to an orbit `x`, and a pair of pants `u` on `S` whose
 input `q ∈ {0, 1}` converges to the same orbit. Both maps are read in the real coordinates
 `ℝ × ℝ ≃ ℂ`. Gluing them begins with an approximate solution on the plumbed four-punctured sphere
-`ℂ ∖ {0, 1, ψ(1)}` of neck length `L = 2R`, where `ψ = TauCeti.ThricePuncturedSphere.Puncture.`
-`plumbingMap q L` is the plumbing map, which is the translation `z ↦ z + L` in end coordinates.
+`ℂ ∖ {0, 1, ψ(1)}` of neck length `L = 2R`, where `ψ = q.plumbingMap L` is the plumbing map
+(`TauCeti.ThricePuncturedSphere.Puncture.plumbingMap`), which is the translation `z ↦ z + L` in
+end coordinates.
 
 The output end of `u'`, read in the end chart `φ_∞` of `S'`, is the map `v = u' ∘ φ_∞`, defined on
 the whole plane. Its loops converge to `x` as `s → -∞`, and for large negative `s` it solves the
@@ -49,12 +50,16 @@ Floer equation of the cylindrical datum `H_∞(t) dt`. The *pre-glued compositio
   (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_preglueComposition_of_lt`) and on the
   image of the inserted part `s_∞ > 1 - R`
   (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_preglueComposition_realChart`).
-* **On the neck the error is exponentially small.** In the end chart of `q` the neck is a long
-  cylinder, on which both perturbations are `H_q(t) dt`. If `u ∘ φ_q` and `v` converge to `x` in
-  `C¹` at an exponential rate `κ` and solve the cylindrical Floer equation beyond the heights `T`
-  and `T'` respectively, the Floer operator of the pre-glued composition, read in the end chart, is
-  at most `C' e^{-κ R}` on the whole neck `T < s < 2R + T'`, whose length grows with `R`
+* **On the neck the cylindrical error is exponentially small.** In the end chart of `q` the neck
+  is a long cylinder. Fix cylindrical neck data: a Hamiltonian `H` and a `t`-dependent almost
+  complex structure `J`. If `u ∘ φ_q` and `v` converge to `x` in `C¹` at an exponential rate `κ`
+  and solve the cylindrical Floer equation of `(H, J)` beyond the heights `T` and `T'`
+  respectively, the cylindrical Floer operator of `(H, J)` applied to the pre-glued composition,
+  read in the end chart, is at most `C' e^{-κ R}` on the whole neck `T < s < 2R + T'`, whose
+  length grows with `R`
   (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueComposition_comp_le`).
+  Identifying this operator with the plumbed Floer operator of
+  `TauCeti.Floer.plumbedPerturbation` on the neck is not proved here.
 
 These are the properties of the approximate solution consumed by the gluing theorem for the two
 broken products at the ends of the associativity family. The Sobolev setting, the right inverse
@@ -92,8 +97,8 @@ the plumbing map of neck length `L` of the end chart of `∞` at `y`. -/
 theorem endChart_add_eq_realChart_plumbingMap (q : Puncture) (L : ℝ) (y : ℝ × ℝ) :
     endChart q (y + (L, 0)) = realChart (q.plumbingMap L) (endChart inf y) := by
   have h : Complex.equivRealProdCLM.symm (y + (L, 0)) = Complex.equivRealProdCLM.symm y + L := by
-    rw [map_add]
-    congr 1
+    rw [map_add, Complex.equivRealProdCLM_symm_apply (L, 0)]
+    simp
   rw [endChart_apply, endChart_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply, h,
     cylindricalEndLift_add_ofReal]
 
@@ -179,20 +184,13 @@ theorem preglueComposition_eventuallyEq_comp_realChart (hq : q ≠ inf) (hR : 0 
     (h : 1 - R < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re) :
     preglueComposition q x u u' R =ᶠ[𝓝 (realChart (q.plumbingMap (2 * R)) w)]
       u' ∘ realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor (2 * R) := by
-  set g := realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor (2 * R)
-  have hgψ (z : ℝ × ℝ) : g (realChart (q.plumbingMap (2 * R)) z) = z := by
-    simp only [g, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      plumbingMap_sub_endCenter_div_plumbingFactor, ContinuousLinearEquiv.apply_symm_apply]
-  have hψg (z : ℝ × ℝ) : realChart (q.plumbingMap (2 * R)) (g z) = z := by
-    simp only [g, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      plumbingMap_sub_endCenter_div, ContinuousLinearEquiv.apply_symm_apply]
-  have hgc : Continuous g :=
+  have hgc : Continuous (realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor (2 * R)) :=
     (TauCeti.Complex.contDiff_realChart (n := 0) (by fun_prop)).continuous
   have h' := preglueComposition_comp_realChart_plumbingMap_eventuallyEq (x := x) (u := u)
     (u' := u') hq hR hw h
-  rw [← hgψ w] at h'
+  rw [← leftInverse_realChart_plumbingMap q (2 * R) w] at h'
   filter_upwards [hgc.continuousAt.eventually h'] with z hz
-  rwa [comp_apply, hψg] at hz
+  rwa [comp_apply, rightInverse_realChart_plumbingMap] at hz
 
 /-- **The pre-glued composition in the end chart.** If the loop `x` has period one and `R ≥ 1`, the
 pre-glued composition read in the positive end chart of `q` is the pre-glued map of `u ∘ φ'_q` and
@@ -309,9 +307,7 @@ theorem isComplexLinearMap_perturbedFDeriv_preglueComposition_realChart (ω : Sy
     preglueComposition_eventuallyEq_comp_realChart hq (by linarith) hw.1 h
   have hf (ζ : ℂ) : HasDerivAt f b⁻¹ ζ := by
     simpa [f, div_eq_mul_inv] using ((hasDerivAt_id ζ).sub_const q.endCenter).mul_const b⁻¹
-  have hgz : g z = w := by
-    simp only [g, z, f, b, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      plumbingMap_sub_endCenter_div_plumbingFactor, ContinuousLinearEquiv.apply_symm_apply]
+  have hgz : g z = w := leftInverse_realChart_plumbingMap q L w
   -- Along `g` the inserted perturbation pulls back to the plumbed perturbation, since `z` lies
   -- beyond the height `2` on the end `q`.
   have hre : 2 < (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
@@ -381,15 +377,9 @@ theorem exists_eventually_norm_floerOperator_preglueComposition_comp_le (ω : Sy
       ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (preglueComposition q x u u' R ∘ positiveEndChart q) z‖ ≤
         C' * Real.exp (-(κ * R)) := by
-  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
-    hu hdu hu'd hu' hdu' (fun z hz ↦ huF z hz) fun z hz ↦ hu'F z hz
-  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz ↦ ?_⟩
-  rw [preglueComposition_comp_positiveEndChart hxper hR₁, floerOperator_comp_sub]
-  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
-    fun _ ↦ ⟨?_, by simpa using hz.2⟩
-  · simpa using hz.1.1
-  · simp only [Prod.fst_sub, mem_Iio]
-    linarith [hz.1.2]
+  simpa only [preglueComposition_def] using
+    ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio q hH hJ hx hxper hκ hud hu hdu
+      huF hu'd hu' hdu' (fun s t ↦ by simp only [comp_apply, endChart_add_one]) hu'F
 
 end SymplecticForm
 
