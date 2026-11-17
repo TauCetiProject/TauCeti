@@ -83,7 +83,7 @@ theorem laplacian_inner_sq (v x : E) : Δ (fun y : E ↦ ⟪v, y⟫ ^ 2) x = 2 *
     have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
     simp [P, Submodule.starProjection_singleton, norm_smul]
     field_simp
-    exact (sq_abs _).symm
+    simp [sq_abs]
   rw [h, laplacian_smul _ (P.contDiff.norm_sq ℝ).contDiffAt,
     Submodule.laplacian_norm_starProjection_sq, finrank_span_singleton hv, smul_eq_mul]
   push_cast

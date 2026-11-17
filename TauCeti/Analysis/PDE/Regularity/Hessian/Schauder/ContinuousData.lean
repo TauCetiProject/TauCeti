@@ -187,7 +187,7 @@ private theorem hasFDerivAt_quad (e : Fin 2 → E) (x : E) : HasFDerivAt (quad e
 private theorem fderiv_quad_self (e : Fin 2 → E) (x : E) :
     fderiv ℝ (quad e) x x = 2 * quad e x := by
   rw [(hasFDerivAt_quad e x).fderiv]
-  simp [quad]
+  simp only [sub_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, quad]
   ring
 
 private theorem abs_quad_le {e : Fin 2 → E} (he : Orthonormal ℝ e) (x : E) :
@@ -392,8 +392,8 @@ theorem not_contDiffAt_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orthonormal �
       (contDiff_id.smul contDiff_const).contDiffAt
     have hu' : ContDiffAt ℝ 2 (quadraticSqrtNegLog e) ((0 : ℝ) • e 1) := by simpa using hu
     exact hu'.comp 0 hline
-  -- `φ` is even, so `φ'(0) = 0`; as `φ'` is differentiable at `0`, `φ' = O(t)` there, and the mean
-  -- value inequality gives `φ = O(t²)`.
+  -- `φ` is even, so `fderiv φ 0 = 0`; as `fderiv φ` is differentiable at `0`,
+  -- `isBigO_norm_rpow_add_one_of_fderiv_of_apply_eq_zero` gives `φ = O(t²)`.
   have hd0 : deriv φ 0 = 0 := by
     have := deriv_comp_neg (f := φ) (x := 0)
     simp only [show ∀ t, φ (-t) = φ t from fun t ↦ by simp [hφ_eq], neg_zero] at this
