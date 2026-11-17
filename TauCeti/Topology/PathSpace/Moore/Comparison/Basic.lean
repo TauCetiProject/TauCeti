@@ -384,9 +384,7 @@ theorem toPath_one : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
 @[simp]
 theorem toPath_symm (γ : MooreLoopSpace X x) : γ.symm.toPath = γ.toPath.symm := by
   ext s
-  rw [Path.symm_apply, Function.comp_apply, toPath_apply, toPath_apply, toMoorePath_symm,
-    MoorePath.length_symm, MoorePath.symm_apply,
-    eq_tsub_of_add_eq (unitInterval.toNNReal_symm_add_toNNReal s), mul_tsub, mul_one]
+  simp [unitInterval.toNNReal_symm, mul_tsub]
 
 /-- A loop on the unit interval at `x`, as a Moore loop of length one. -/
 def _root_.Path.toMooreLoop (p : Path x x) : MooreLoopSpace X x :=
