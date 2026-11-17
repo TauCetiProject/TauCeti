@@ -359,8 +359,9 @@ theorem maximalIdeal_monoidAlgebra_zmodFourUnits :
         MonoidAlgebra.single (-1 : (ZMod 4)ˣ) 1 - 1} := by
   have hS : Ideal.span {(2 : ℤ_[2])} = IsLocalRing.maximalIdeal ℤ_[2] := by
     simpa only [Nat.cast_ofNat] using (PadicInt.maximalIdeal_eq_span_p (p := 2)).symm
+  have hu : ∀ v : (ZMod 4)ˣ, v = 1 ∨ v = -1 := by decide
   have hT : Subgroup.closure ({(-1 : (ZMod 4)ˣ)} : Set (ZMod 4)ˣ) = ⊤ := eq_top_iff.mpr fun u _ ↦ by
-    rcases (show ∀ v : (ZMod 4)ˣ, v = 1 ∨ v = -1 by decide) u with rfl | rfl
+    rcases hu u with rfl | rfl
     exacts [Subgroup.one_mem _, Subgroup.subset_closure rfl]
   simpa only [Set.image_singleton, Set.singleton_union, map_ofNat] using
     TauCeti.MonoidAlgebra.maximalIdeal_eq_span_of_closure_eq_top hS hT

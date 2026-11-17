@@ -47,8 +47,11 @@ theorem continuous_coeff_powerSeriesAlgEquiv_symm {R A M : Type*} [CommSemiring 
     (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto A _ _ _).mpr fun n ↦ ?_
   let l : MonoidAlgebra A M →ₗ[R] A :=
     (Finsupp.lapply m).comp (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  have hl : ∀ a : MonoidAlgebra A M, l a = a.coeff m := fun a ↦ by
+    simp only [l, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      MonoidAlgebra.coeffLinearEquiv_apply, Finsupp.lapply_apply]
   simpa only [MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, ContinuousAt,
-    Function.comp_def, show ∀ a, l a = a.coeff m from fun _ ↦ rfl] using
+    Function.comp_def, hl] using
       ((IsModuleTopology.continuous_of_linearMap l).comp
         (PowerSeries.WithPiTopology.continuous_coeff (MonoidAlgebra A M) n)).continuousAt
 

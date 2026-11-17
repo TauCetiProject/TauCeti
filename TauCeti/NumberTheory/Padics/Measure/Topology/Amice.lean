@@ -158,26 +158,24 @@ theorem powerSeriesCoordinate_amiceTransformₐ (μ : D(Multiplicative ℤ_[p], 
   let : TopologicalSpace D(Multiplicative ℤ_[p], ℤ_[p]) := WeakTopology
   let coord := completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
     (topologicallyGenerates_ofAdd_one_padicInt p)
-  let e := coord.trans (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm
-  let Ψ : PowerSeries ℤ_[p] →ₐ[ℤ_[p]] PowerSeries ℤ_[p] := amiceTransformₐ.comp e.toAlgHom
-  have hΨ_cont : Continuous Ψ := continuous_amiceTransformₐ_weak.comp <|
-    (continuous_completedGroupAlgebraEquiv_symm_weak (Γ := Multiplicative ℤ_[p])).comp <|
-      completedGroupAlgebra.continuous_powerSeriesCoordinate _ _
-  have hb1 : PowerSeries.binomialSeries ℤ_[p] (1 : ℤ_[p]) = 1 + PowerSeries.X := by
-    simpa using PowerSeries.binomialSeries_nat (A := ℤ_[p]) (R := ℤ_[p]) 1
-  have hΨX : Ψ PowerSeries.X = PowerSeries.X := add_left_cancel (a := (1 : PowerSeries ℤ_[p])) <| by
-    conv_lhs => rw [← map_one Ψ, ← map_add, ← hb1]
-    dsimp only [Ψ, e, coord, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.trans_apply]
-    rw [completedGroupAlgebra.powerSeriesCoordinate_binomialSeries,
-      IsProP.padicPow_ofAdd_one_padicInt, completedGroupAlgebraEquiv_symm_of, amiceTransformₐ_dirac,
-      toAdd_ofAdd, hb1]
-  have heq := congrFun ((PowerSeries.WithPiTopology.denseRange_toPowerSeries ℤ_[p]).equalizer
-    hΨ_cont continuous_id <| funext fun P ↦ by
-      simp only [Function.comp_apply, id_eq, PowerSeries.algHom_coe_eq_aeval, hΨX]
-      exact (PowerSeries.algHom_coe_eq_aeval (AlgHom.id ℤ_[p] _) P).symm) (e.symm μ)
-  rw [show amiceTransformₐ μ = e.symm μ by simpa [Ψ] using heq]
-  simpa only [e, AlgEquiv.symm_trans_apply, AlgEquiv.symm_symm, completedGroupAlgebraEquiv_apply]
-    using coord.apply_symm_apply (toCompletedGroupAlgebra μ)
+  let eqv := completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)
+  let φ : completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]) →ₐ[ℤ_[p]]
+      completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]) :=
+    coord.toAlgHom.comp (amiceTransformₐ.comp eqv.symm.toAlgHom)
+  have hφ : Continuous φ :=
+    (completedGroupAlgebra.continuous_powerSeriesCoordinate _ _).comp <|
+      continuous_amiceTransformₐ_weak.comp <|
+        continuous_completedGroupAlgebraEquiv_symm_weak (Γ := Multiplicative ℤ_[p])
+  have hEq : φ = AlgHom.id ℤ_[p] _ :=
+    completedGroupAlgebra.algHom_ext_of_continuous hφ continuous_id fun g ↦ by
+      simp only [φ, coord, eqv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply,
+        completedGroupAlgebraEquiv_symm_of, amiceTransformₐ_dirac,
+        completedGroupAlgebra.powerSeriesCoordinate_binomialSeries,
+        IsProP.padicPow_ofAdd_one_padicInt, ofAdd_toAdd]
+  have hμ := AlgHom.congr_fun hEq (eqv μ)
+  simp only [φ, coord, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply,
+    AlgEquiv.symm_apply_apply] at hμ
+  simpa only [eqv, completedGroupAlgebraEquiv_apply] using hμ
 
 /-- Inverse `powerSeriesCoordinate` at `ofAdd 1` on `toCompletedGroupAlgebra μ` is
 `amiceTransformₐ μ`. -/

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Ring.DualNumber
 public import TauCeti.NumberTheory.Padics.WeightSpace.Specialization
-public import TauCeti.RingTheory.LocalRing.Basic
 import Mathlib.Algebra.Polynomial.Monic
 
 /-!
@@ -84,9 +83,7 @@ example :
   refine ⟨by rw [adicSpecialize_of, ← finiteChar_apply, finiteChar_ofHasEval]; simp, ?_⟩
   rw [adicSpecialize_of, ← finiteChar_apply, finiteChar_ofHasEval]
   have hsq : (padicUnitsSection 2 (-1 : (ZMod (2 ^ padicUnitsDepth 2))ˣ) : ℤ_[2]) ^ 2 = 1 := by
-    rw [← Units.val_pow_eq_pow_val, ← map_pow,
-      show (-1 : (ZMod (2 ^ padicUnitsDepth 2))ˣ) ^ 2 = 1 by rw [padicUnitsDepth_two]; decide,
-      map_one, Units.val_one]
+    rw [← Units.val_pow_eq_pow_val, ← map_pow, neg_one_sq, map_one, Units.val_one]
   exact (sq_eq_one_iff.mp hsq).resolve_left fun h1 ↦
     (padicUnitsSection_injective 2).ne (a₁ := (-1 : (ZMod (2 ^ padicUnitsDepth 2))ˣ)) (a₂ := 1)
       (by rw [padicUnitsDepth_two]; decide) ((Units.ext h1).trans (map_one _).symm)
