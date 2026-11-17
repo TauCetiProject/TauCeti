@@ -258,16 +258,6 @@ private theorem hasFDerivAt_dotNeg (q : (ι → ℝ) × (ι → ℝ)) :
     simp [dotNeg]
   · ext q' <;> simp [dotNegDeriv]
 
-omit [IsManifold I ∞ B] in
-/-- The base point `[-p c]` of `G(c, x)` has derivative `(u, w) ↦ -p u`. -/
-private theorem hasMFDerivAt_angles (x : (ι → ℝ) × B) :
-    HasMFDerivAt (𝓘(ℝ, ι → ℝ).prod I) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun y : (ι → ℝ) × B ↦ fun i ↦ ((anglesActions p a y).1 i : AddCircle p)) x
-      ((-(p • ContinuousLinearMap.id ℝ (ι → ℝ))).comp (ContinuousLinearMap.fst ℝ (ι → ℝ) E)) :=
-  (AddCircle.hasMFDerivAt_coe_pi p _).comp x
-    ((-(p • ContinuousLinearMap.id ℝ (ι → ℝ))).hasMFDerivAt.comp x
-      (hasMFDerivAt_fst (I := 𝓘(ℝ, ι → ℝ)) (I' := I) x))
-
 omit [IsManifold I ∞ B] [Fact (0 < p)] in
 /-- The differential of `p (c ⬝ a(x))` at `(c, x)` sends `(u, e)` to
 `-∑ j, (-p c_j da_j(e) - p a_j(x) u_j)`. -/
@@ -314,13 +304,11 @@ private theorem mpullback_actionAngleCover_comp_liouvilleForm_apply
         (contMDiff_actionAngleCover_comp p ha)
         (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))).1 x ![w] =
       ∑ j, a x.2 j * -(p * w.1 j) := by
-  rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_comp_eq
-      (g := fun y ↦ fun i ↦ ((anglesActions p a y).1 i : AddCircle p))
-      (fun _ ↦ proj_actionAngleCover p _)
-      ((contMDiff_actionAngleCover_comp p ha x).mdifferentiableAt (by simp)),
-    Matrix.cons_val_zero, (hasMFDerivAt_angles p x).mfderiv, Function.comp_apply]
-  -- The derivative `(u, e) ↦ -p u` of the angles has coordinates `-(p * u_j)` by definition.
-  exact (actionAngleCover_snd_apply p _ _).trans (Finset.sum_congr rfl fun j _ ↦ rfl)
+  rw [← SmoothForm.mpullback_mpullback _ _ (contMDiff_anglesActions p ha)
+      (contMDiff_actionAngleCover p), SmoothForm.mpullback_apply_one, SmoothForm.coe_mpullback,
+    mpullback_liouvilleForm_actionAngleCover_apply, (hasMFDerivAt_anglesActions p ha x).mfderiv]
+  -- The derivative `(u, e) ↦ (-p u, da_x e)` has first coordinates `-(p * u_j)` by definition.
+  rfl
 
 variable {p}
 
