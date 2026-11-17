@@ -18,7 +18,8 @@ functional of norm one, with `τ (a * b) = τ (b * a)` for all `a, b`. These are
 `0`-KMS states of the trivial dynamics, `TauCeti.CStarAction.isKMSState_zero_iff`, and the
 predicate `PositiveContinuousLinearMap.IsTracialState` is defined that way, so that the
 theory of KMS states applies to it directly. The tracial state space `TauCeti.tracialStates A`
-is the corresponding set `T(A)` in the weak-* dual.
+is the corresponding set `T(A)` in the weak-* dual; `TauCeti.tracialStates_eq_kmsStates` identifies
+it with the set of β-KMS states of the trivial dynamics for every `β`.
 
 * `PositiveContinuousLinearMap.isTracialState_iff`: a tracial state is a positive functional of
   norm one with `τ (a * b) = τ (b * a)`; `PositiveContinuousLinearMap.isTracialState_iff_map_one`
@@ -27,7 +28,8 @@ is the corresponding set `T(A)` in the weak-* dual.
   on the pairs `(star a, a)`, `τ (star a * a) = τ (a * star a)`, by polarization.
 * `PositiveContinuousLinearMap.isTracialState_iff_map_unitary_conj`: for unital `A`, a state is
   tracial exactly when it is invariant under every inner automorphism `a ↦ u * a * star u`,
-  because a unital C⋆-algebra is spanned by its unitaries.
+  because a unital C⋆-algebra is spanned by its unitaries. The underlying linear-algebra fact,
+  for any complex linear map, is `LinearMap.forall_map_mul_comm_iff_forall_map_unitary_conj`.
 * `PositiveContinuousLinearMap.IsTracialState.comp`: tracial states pull back to tracial states
   along unital star homomorphisms of unital algebras; without a unit, the pullback is tracial
   when it has norm one (`IsTracialState.comp_of_norm_eq_one`), in particular along surjections
@@ -57,6 +59,28 @@ public section
 open Set WeakDual
 open scoped ComplexOrder
 
+namespace LinearMap
+
+variable {A M : Type*} [CStarAlgebra A] [AddCommGroup M] [Module ℂ M]
+
+/-- **Unitary criterion for traciality.** A complex linear map `f` on a unital C⋆-algebra
+satisfies `f (a * b) = f (b * a)` for all `a, b` exactly when it is invariant under every inner
+automorphism `a ↦ u * a * star u`. The converse direction uses that a unital C⋆-algebra is
+spanned by its unitaries. -/
+theorem forall_map_mul_comm_iff_forall_map_unitary_conj (f : A →ₗ[ℂ] M) :
+    (∀ a b, f (a * b) = f (b * a)) ↔ ∀ u ∈ unitary A, ∀ a, f (u * a * star u) = f a := by
+  refine ⟨fun h u hu a => ?_, fun h a b => ?_⟩
+  · rw [h, ← mul_assoc, Unitary.star_mul_self_of_mem hu, one_mul]
+  -- `a ↦ f (a * b)` and `a ↦ f (b * a)` are linear and agree on the unitaries, which span `A`
+  have key : f ∘ₗ LinearMap.mulRight ℂ b = f ∘ₗ LinearMap.mulLeft ℂ b := by
+    refine LinearMap.ext_on (CStarAlgebra.span_unitary A) fun u hu => ?_
+    have := h u hu (b * u)
+    rw [mul_assoc, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one] at this
+    simpa using this
+  simpa using LinearMap.congr_fun key a
+
+end LinearMap
+
 namespace PositiveContinuousLinearMap
 
 section NonUnital
@@ -78,6 +102,7 @@ theorem isTracialState_iff :
 
 /-- For the trivial dynamics the β-KMS states are the tracial states, at every inverse
 temperature `β`. -/
+@[simp]
 theorem _root_.TauCeti.CStarAction.isKMSState_trivial_iff_isTracialState {β : ℝ} :
     (TauCeti.CStarAction.trivial : TauCeti.CStarAction (Multiplicative ℝ) A).IsKMSState β τ ↔
       τ.IsTracialState :=
@@ -144,24 +169,18 @@ theorem IsTracialState.map_one (hτ : τ.IsTracialState) : τ 1 = 1 :=
 /-- A tracial state is invariant under the inner automorphism `a ↦ u * a * star u` of a unitary
 `u`. -/
 theorem IsTracialState.map_unitary_conj (hτ : τ.IsTracialState) {u : A} (hu : u ∈ unitary A)
-    (a : A) : τ (u * a * star u) = τ a := by
-  rw [hτ.map_mul_comm, ← mul_assoc, Unitary.star_mul_self_of_mem hu, one_mul]
+    (a : A) : τ (u * a * star u) = τ a :=
+  (LinearMap.forall_map_mul_comm_iff_forall_map_unitary_conj (τ : A →ₗ[ℂ] ℂ)).1
+    hτ.map_mul_comm u hu a
 
 /-- **Unitary criterion.** On a unital C⋆-algebra, a positive functional is a tracial state
 exactly when `τ 1 = 1` and `τ` is invariant under every inner automorphism `a ↦ u * a * star u`.
-The converse direction uses that a unital C⋆-algebra is spanned by its unitaries. -/
+This is `LinearMap.forall_map_mul_comm_iff_forall_map_unitary_conj` for positive functionals. -/
 theorem isTracialState_iff_map_unitary_conj :
     τ.IsTracialState ↔ τ 1 = 1 ∧ ∀ u ∈ unitary A, ∀ a, τ (u * a * star u) = τ a := by
-  refine ⟨fun hτ => ⟨hτ.map_one, fun u hu => hτ.map_unitary_conj hu⟩, fun ⟨h1, h⟩ => ?_⟩
-  refine isTracialState_iff_map_one.2 ⟨h1, fun a b => ?_⟩
-  -- `a ↦ τ (a * b)` and `a ↦ τ (b * a)` are linear and agree on the unitaries, which span `A`
-  have key : (τ : A →ₗ[ℂ] ℂ) ∘ₗ LinearMap.mulRight ℂ b =
-      (τ : A →ₗ[ℂ] ℂ) ∘ₗ LinearMap.mulLeft ℂ b := by
-    refine LinearMap.ext_on (CStarAlgebra.span_unitary A) fun u hu => ?_
-    have := h u hu (b * u)
-    rw [mul_assoc, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one] at this
-    simpa using this
-  simpa using LinearMap.congr_fun key a
+  rw [isTracialState_iff_map_one]
+  exact and_congr_right fun _ =>
+    LinearMap.forall_map_mul_comm_iff_forall_map_unitary_conj (τ : A →ₗ[ℂ] ℂ)
 
 /-- **No trace in the presence of two complementary isometries.** If a unital C⋆-algebra
 contains isometries `s, t` (`star s * s = 1 = star t * t`) whose range projections add up to
@@ -205,6 +224,14 @@ variable (A) in
 the weak-* dual `WeakDual ℂ A`. It is the set of `0`-KMS states of the trivial dynamics. -/
 noncomputable def tracialStates : Set (WeakDual ℂ A) :=
   (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).kmsStates 0
+
+/-- The tracial state space is the set of β-KMS states of the trivial dynamics, at every inverse
+temperature `β`, so the theory of KMS state spaces applies to `T(A)`. -/
+theorem tracialStates_eq_kmsStates (β : ℝ) :
+    tracialStates A = (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).kmsStates β := by
+  ext φ
+  simp only [tracialStates, CStarAction.mem_kmsStates_iff,
+    CStarAction.isKMSState_trivial_iff_isTracialState]
 
 /-- A positive functional lies in `T(A)` exactly when it is a tracial state. -/
 @[simp]
