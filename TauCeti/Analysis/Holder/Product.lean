@@ -220,9 +220,8 @@ private def ckHolderOnBilinear (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ
       ((f.contDiffOn (extendZero_coe f)).prodMk (g.contDiffOn (extendZero_coe g))))
     (fun _ hj ↦ ⟨2 ^ k * ‖B‖ * ‖f‖ * ‖g‖, norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g
       (extendZero_coe f) (extendZero_coe g) hj⟩)
-    (show MemHolder α fun _ : Ω ↦ _ from
-      (holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g (extendZero_coe f)
-        (extendZero_coe g)).holderWith.memHolder)
+    (HolderWith.memHolder fun x y ↦ holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα
+      f g (extendZero_coe f) (extendZero_coe g) x x.2 y y.2)
 
 @[simp]
 private theorem ckHolderOnBilinear_apply (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
@@ -235,16 +234,14 @@ private theorem norm_ckHolderOnBilinear_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ 
     ‖ckHolderOnBilinear B hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
   refine (CkHolderSpaceOn.norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
     (M := fun _ ↦ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖) (fun _ ↦ by positivity) (fun i x ↦ ?_)
-    (K := 6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) ?_).trans_eq ?_
+    (K := 6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) (fun x y ↦ ?_)).trans_eq ?_
   · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn]
     exact norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g (extendZero_coe f)
       (extendZero_coe g) (by omega) x
-  · have he : ⇑((ckHolderOnBilinear B hΩ hα f g).iteratedFDeriv (Fin.last k)) =
-        (Ω : Set X).domRestrict (iteratedFDeriv ℝ k fun x ↦ B (extendZero f x) (extendZero g x)) :=
-      funext fun x ↦ by rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn]; rfl
-    rw [he]
-    exact (holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g (extendZero_coe f)
-      (extendZero_coe g)).holderWith
+  · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn,
+      CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn, Fin.val_last]
+    exact holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g (extendZero_coe f)
+      (extendZero_coe g) x x.2 y y.2
   · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     push_cast
     ring
