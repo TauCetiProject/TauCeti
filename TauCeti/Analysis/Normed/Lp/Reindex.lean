@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Algebra.BigOperators.Intervals
 
@@ -18,7 +19,11 @@ value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
 (`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`).
+(`TauCeti.memℓp_nat_add_iff`). When `g` is injective on all of `ι'` this says that `f ∘ g ∈ ℓᵖ`
+(`Memℓp.comp_injective`), and for an equivalence `e : ι ≃ ι'` the reindexing `f ↦ f ∘ e.symm` is
+a linear isometry equivalence `LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι)` and `ℓᵖ(ι')`,
+the `ℓᵖ` counterpart of Mathlib's `LinearIsometryEquiv.piLpCongrLeft`. It is how a group action on
+the index type acts on `ℓᵖ` by translations.
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -90,6 +95,67 @@ theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : �
     simp_rw [h]
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp'.ne']) hg t).trans_le (lp.sum_rpow_le_norm_rpow hp' f _)
+
+/-- **Reindexing in `ℓᵖ` along an injective map.** If `f ∈ ℓᵖ` and `g` is injective, then
+`f ∘ g ∈ ℓᵖ`. -/
+theorem Memℓp.comp_injective {f : ι → G} (hf : Memℓp f p) {g : ι' → ι} (hg : g.Injective) :
+    Memℓp (f ∘ g) p := by
+  simpa using hf.indicator_comp (s := Set.univ) hg.injOn
+
+namespace LinearIsometryEquiv
+
+variable (p) [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜] (E : Type*) [NormedAddCommGroup E]
+  [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- Reindexing `ℓᵖ` along an equivalence `e : ι ≃ ι'` of index types, `f ↦ f ∘ e.symm`, as a
+linear isometry equivalence. This is the `ℓᵖ` counterpart of
+`LinearIsometryEquiv.piLpCongrLeft`. -/
+def lpCongrLeft (e : ι ≃ ι') : lp (fun _ : ι ↦ E) p ≃ₗᵢ[𝕜] lp (fun _ : ι' ↦ E) p where
+  toFun f := ⟨f ∘ e.symm, (lp.memℓp f).comp_injective e.symm.injective⟩
+  invFun f := ⟨f ∘ e, (lp.memℓp f).comp_injective e.injective⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv f := lp.ext <| funext fun i ↦ by simp
+  right_inv f := lp.ext <| funext fun i ↦ by simp
+  norm_map' f := by
+    have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+    -- Each of `f ∘ e.symm` and `f = (f ∘ e.symm) ∘ e` reindexes the other along an injection.
+    refine le_antisymm (lp.norm_le_of_forall_eq_indicator_comp hp e.symm.injective.injOn
+      (s := Set.univ) fun i ↦ by rw [Set.indicator_univ]; rfl) ?_
+    exact lp.norm_le_of_forall_eq_indicator_comp hp e.injective.injOn (s := Set.univ)
+      fun i ↦ by rw [Set.indicator_univ]; exact congrArg f (e.symm_apply_apply i).symm
+
+variable {p 𝕜 E}
+
+@[simp]
+theorem lpCongrLeft_apply (e : ι ≃ ι') (f : lp (fun _ : ι ↦ E) p) (i : ι') :
+    lpCongrLeft p 𝕜 E e f i = f (e.symm i) :=
+  (rfl)
+
+@[simp]
+theorem lpCongrLeft_symm (e : ι ≃ ι') :
+    (lpCongrLeft p 𝕜 E e).symm = lpCongrLeft p 𝕜 E e.symm := by
+  ext f i
+  rfl
+
+@[simp]
+theorem lpCongrLeft_refl : lpCongrLeft p 𝕜 E (Equiv.refl ι) = .refl 𝕜 _ := by
+  ext f i
+  rfl
+
+theorem lpCongrLeft_trans {ι'' : Type*} (e : ι ≃ ι') (e' : ι' ≃ ι'') :
+    lpCongrLeft p 𝕜 E (e.trans e') = (lpCongrLeft p 𝕜 E e).trans (lpCongrLeft p 𝕜 E e') := by
+  ext f i
+  rfl
+
+/-- Reindexing takes the unit vector at `i` to the unit vector at `e i`. -/
+@[simp]
+theorem lpCongrLeft_single [DecidableEq ι] [DecidableEq ι'] (e : ι ≃ ι') (i : ι) (x : E) :
+    lpCongrLeft p 𝕜 E e (lp.single p i x) = lp.single p (e i) x := by
+  ext j
+  simp [lp.single_apply, Pi.single_apply, Equiv.symm_apply_eq]
+
+end LinearIsometryEquiv
 
 namespace TauCeti
 
