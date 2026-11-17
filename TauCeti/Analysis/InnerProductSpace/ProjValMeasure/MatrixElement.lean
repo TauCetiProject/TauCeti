@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Variation
 public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
-import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -225,23 +225,9 @@ theorem integral_norm_variation_polarizedComplexMeasure_le {E : Type*} [NormedAd
     ∫ t, ‖f t‖ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
       ‖ψ‖ * Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ξ)) := by
   have hac := P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ψ ξ
-  have hint : Integrable (fun t => ‖f t‖ ^ 2) (P.diag ξ) :=
-    (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf
-  have heLp : eLpNorm f 2 (P.diag ξ) = ENNReal.ofReal (Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ξ))) := by
-    refine ENNReal.rpow_left_injective (show (2 : ℝ) ≠ 0 by norm_num) ?_
-    dsimp only
-    have heLp_sq : eLpNorm f 2 (P.diag ξ) ^ 2 = ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) := by
-      simpa only [Nat.cast_ofNat] using
-        (TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (n := 2) two_ne_zero
-          hf.aestronglyMeasurable).symm
-    rw [ENNReal.rpow_two, ENNReal.rpow_two,
-      ← ENNReal.ofReal_pow (Real.sqrt_nonneg _),
-      Real.sq_sqrt (integral_nonneg fun _ => sq_nonneg _),
-      ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun _ => sq_nonneg _), heLp_sq]
-    exact lintegral_congr fun t => by rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
   rw [integral_norm_eq_lintegral_eNorm (hf.aestronglyMeasurable.mono_ac hac)]
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
-  rw [ENNReal.ofReal_mul (norm_nonneg ψ), ofReal_norm, ← heLp]
+  rw [ENNReal.ofReal_mul (norm_nonneg ψ), ofReal_norm, ← hf.eLpNorm_two_eq_ofReal_sqrt_integral]
   exact P.lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm hf.aestronglyMeasurable ψ
 
 /-- **Left-slot Cauchy–Schwarz variation estimate** for the polarized spectral measure: for
