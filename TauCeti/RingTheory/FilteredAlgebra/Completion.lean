@@ -198,6 +198,13 @@ theorem completionIdeal_zero : F.completionIdeal 0 = ⊤ := (rfl)
 theorem completionIdeal_succ (k : ℕ) :
     F.completionIdeal (k + 1) = RingHom.ker (F.projection k) := (rfl)
 
+/-- Two elements of a filtered ring completion whose difference lies in `completionIdeal (k + 1)`
+have equal order-`k` projections. -/
+theorem projection_eq_of_sub_mem_completionIdeal_succ {k : ℕ} {x y : F.completion}
+    (h : x - y ∈ F.completionIdeal (k + 1)) : F.projection k x = F.projection k y := by
+  rw [completionIdeal_succ, RingHom.mem_ker, map_sub] at h
+  exact sub_eq_zero.mp h
+
 /-- All induced completion ideals are two-sided. -/
 instance completionIdeal_isTwoSided (k : ℕ) : (F.completionIdeal k).IsTwoSided := by
   cases k <;> simp only [completionIdeal_zero, completionIdeal_succ] <;> infer_instance

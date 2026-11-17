@@ -19,11 +19,13 @@ identifies the Lie algebra with its primitive elements: those with counit zero a
 flatness hypothesis. The primitive submodule is `Coalgebra.skewPrimitive R 1 1`.
 
 `UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι` recovers a Lie element from a
-primitive element. `TauCeti.UniversalEnvelopingAlgebra.primitiveEquiv` gives the resulting linear
-equivalence, with forward and inverse equations and compatibility of the Lie bracket with the
-commutator. These classification results assume `R : Type` and `[Algebra ℚ R]`; the Lie algebra
-may lie in any universe. Primitivity of canonical generators itself needs only a commutative ring
-and is available in `TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra`.
+primitive element. `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_rat` gives injectivity of
+`ι` over any commutative rational algebra `R : Type`, and
+`TauCeti.UniversalEnvelopingAlgebra.primitiveEquiv` gives the resulting linear equivalence, with
+forward and inverse equations and compatibility of the Lie bracket with the commutator. These
+classification results assume `R : Type` and `[Algebra ℚ R]`; the Lie algebra may lie in any
+universe. Primitivity of canonical generators itself needs only a commutative ring and is available
+in `TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra`.
 
 ## References
 
@@ -81,6 +83,12 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R
 
+/-- Over a commutative rational algebra `R : Type`, the canonical map `ι : L → U(L)` is injective,
+without a freeness or flatness assumption on `L`. -/
+theorem ι_injective_of_rat : Function.Injective (ι : L → U) :=
+  fun _ _ h => SymmetricAlgebra.ι_injective R L <| pbwSymmetrizationMap_injective R L (by
+    simpa only [pbwSymmetrizationMap_ι] using h)
+
 /-- Over a commutative rational algebra `R : Type`, the canonical Lie inclusion identifies
 the Lie algebra with the primitive submodule of its enveloping algebra. No freeness or flatness
 hypothesis is needed. -/
@@ -88,9 +96,7 @@ noncomputable def primitiveEquiv : L ≃ₗ[R] Coalgebra.skewPrimitive R (1 : U)
   LinearEquiv.ofBijective
     ((ι : L →ₗ⁅R⁆ U).toLinearMap.codRestrict _ fun x =>
       isPrimitiveElem_ι R L x)
-    ⟨(LinearMap.injective_codRestrict_iff _).mpr fun x y h =>
-      SymmetricAlgebra.ι_injective R L <| pbwSymmetrizationMap_injective R L (by
-        simpa only [pbwSymmetrizationMap_ι, LieHom.coe_toLinearMap] using h),
+    ⟨(LinearMap.injective_codRestrict_iff _).mpr (ι_injective_of_rat R L),
       fun p => by
         obtain ⟨x, hx⟩ :=
           (_root_.UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι (p : U)).mp p.property

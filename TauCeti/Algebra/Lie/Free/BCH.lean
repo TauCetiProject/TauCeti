@@ -17,9 +17,7 @@ Word length equips `FreeLieAlgebra R S` over any commutative ring `R` with a pos
 (`TauCeti.FreeLieAlgebra.isPositiveGrading`) whose degree ideals are the lower central series
 (`TauCeti.FreeLieAlgebra.degreeIdeal_eq_lowerCentralSeries`) and whose enveloping filtration
 coincides with the powers of the augmentation ideal
-(`TauCeti.FreeLieAlgebra.envelopingFiltration_ideal_eq_augmentation_pow`). Over a commutative
-rational algebra `R : Type`, `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι_of_rat` removes the
-injectivity hypothesis on `ι`.
+(`TauCeti.FreeLieAlgebra.envelopingFiltration_ideal_eq_augmentation_pow`).
 
 Specializing `TauCeti.PositiveDegrees.completedLieBCH` to `FreeLieAlgebra ℚ S` constructs, for any
 `x, y : FreeLieAlgebra ℚ S` and nilpotency class `c : ℕ`, the unique class
@@ -124,34 +122,6 @@ theorem envelopingQuotientEquivAugmentationPow_truncatedLieToU (c : ℕ)
   simp [LieIdeal.mkQ_apply]
 
 end CommRing
-
-section RatAlgebra
-
-universe u
-
-variable (R : Type) [CommRing R] [Algebra ℚ R] (S : Type u)
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-local notation "F" => _root_.FreeLieAlgebra R S
-local notation "U" => _root_.UniversalEnvelopingAlgebra R F
-local notation "J" => HopfIdeal.toIdeal (HopfIdeal.augmentation R U)
-
-/-- Over a commutative rational algebra `R : Type`, the preimage of `J ^ (c + 1)` along the
-canonical map `ι : FreeLieAlgebra R S → U(FreeLieAlgebra R S)` is `lowerCentralSeries c`. -/
-theorem comap_augmentation_pow_ι_of_rat (c : ℕ) :
-    ((J ^ (c + 1)).restrictScalars R).comap
-        (_root_.UniversalEnvelopingAlgebra.ι R : F →ₗ⁅R⁆ U).toLinearMap =
-      (LieModule.lowerCentralSeries R F F c).toSubmodule :=
-  comap_augmentation_pow_ι R S (UniversalEnvelopingAlgebra.ι_injective_of_rat R F) c
-
-/-- Over a commutative rational algebra `R : Type`, the induced Lie homomorphism from
-`FreeLieAlgebra R S ⧸ lowerCentralSeries c` into `U ⧸ J ^ (c + 1)` is injective. -/
-theorem lowerCentralQuotientι_injective_of_rat (c : ℕ) :
-    Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
-  lowerCentralQuotientι_injective R S (UniversalEnvelopingAlgebra.ι_injective_of_rat R F) c
-
-end RatAlgebra
 
 section RationalBCH
 

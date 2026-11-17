@@ -167,6 +167,25 @@ theorem factor_completionProjection {k l : ℕ} (h : k ≤ l) (x : completion I 
       completionProjection I hI k x :=
   factor_projectionLinear I hI h x
 
+/-- Construct an element of the Lie completion from a compatible family of quotient classes. -/
+noncomputable def completionMk (y : ∀ k, L ⧸ I k)
+    (hy : ∀ k, LieIdeal.factor (hI (Nat.le_succ k)) (y (k + 1)) = y k) :
+    completion I hI :=
+  ⟨fun k => (quotientEquiv I hI k).symm (y k), (ModuleTower.mem_lim _).mpr fun k => by
+    apply (quotientEquiv I hI k).injective
+    rw [← ModuleTower.transitionOfLE_succ, quotientEquiv_transition,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+    exact hy k⟩
+
+/-- The order-`k` projection of `completionMk` is its `k`-th quotient class. -/
+@[simp]
+theorem completionProjection_completionMk (y : ∀ k, L ⧸ I k)
+    (hy : ∀ k, LieIdeal.factor (hI (Nat.le_succ k)) (y (k + 1)) = y k) (k : ℕ) :
+    completionProjection I hI k (completionMk I hI y hy) = y k := by
+  -- Lie homomorphisms store a linear map; expose that projection before evaluating `limπ`.
+  change projectionLinear I hI k (completionMk I hI y hy) = y k
+  simp [projectionLinear, completionMk, ModuleTower.limπ_apply]
+
 variable {M : Type*} [LieRing M] [LieAlgebra R M]
 
 /-- Lift a compatible family of Lie homomorphisms into the Lie completion. -/

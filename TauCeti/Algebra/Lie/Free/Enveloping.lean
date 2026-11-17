@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.Free.LowerCentral
 public import TauCeti.Algebra.Lie.Presentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cofinality
 
+import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
+
 /-!
 # Augmentation powers and the lower central series of a free Lie algebra
 
@@ -29,7 +31,9 @@ when `R` is a `ℚ`-algebra the exponential `exp x` and the logarithm `log (1 + 
 element `x` are finite sums.
 
 Injectivity of `ι` holds whenever `F` is free as an `R`-module
-(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), in particular over every field.
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), in particular over every field, and also over
+every commutative rational algebra `R : Type`
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_rat`).
 
 ## Main results
 
@@ -42,6 +46,9 @@ Injectivity of `ι` holds whenever `F` is free as an `R`-module
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective`: if `ι` is injective, so is the
   induced map `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` from
   `F ⧸ lowerCentralSeries c` to `U(F) ⧸ J ^ (c + 1)`.
+* `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι_of_rat` and
+  `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective_of_rat`: unconditional versions over any
+  commutative rational algebra `R : Type`.
 
 ## Attribution
 
@@ -55,6 +62,8 @@ are retained.
 public section
 
 namespace TauCeti.FreeLieAlgebra
+
+section CommRing
 
 variable (R : Type*) [CommRing R] (S : Type*)
 
@@ -107,5 +116,35 @@ theorem lowerCentralQuotientι_injective
     Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
   (UniversalEnvelopingAlgebra.lowerCentralQuotientι_injective_iff R F c).mpr
     (comap_augmentation_pow_ι R S hι c).le
+
+end CommRing
+
+section RatAlgebra
+
+universe u
+
+variable (R : Type) [CommRing R] [Algebra ℚ R] (S : Type u)
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+local notation "F" => _root_.FreeLieAlgebra R S
+local notation "U" => _root_.UniversalEnvelopingAlgebra R F
+local notation "J" => HopfIdeal.toIdeal (HopfIdeal.augmentation R U)
+
+/-- Over a commutative rational algebra `R : Type`, the preimage of `J ^ (c + 1)` along the
+canonical map `ι : FreeLieAlgebra R S → U(FreeLieAlgebra R S)` is `lowerCentralSeries c`. -/
+theorem comap_augmentation_pow_ι_of_rat (c : ℕ) :
+    ((J ^ (c + 1)).restrictScalars R).comap
+        (_root_.UniversalEnvelopingAlgebra.ι R : F →ₗ⁅R⁆ U).toLinearMap =
+      (LieModule.lowerCentralSeries R F F c).toSubmodule :=
+  comap_augmentation_pow_ι R S (UniversalEnvelopingAlgebra.ι_injective_of_rat R F) c
+
+/-- Over a commutative rational algebra `R : Type`, the induced Lie homomorphism from
+`FreeLieAlgebra R S ⧸ lowerCentralSeries c` into `U ⧸ J ^ (c + 1)` is injective. -/
+theorem lowerCentralQuotientι_injective_of_rat (c : ℕ) :
+    Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
+  lowerCentralQuotientι_injective R S (UniversalEnvelopingAlgebra.ι_injective_of_rat R F) c
+
+end RatAlgebra
 
 end TauCeti.FreeLieAlgebra

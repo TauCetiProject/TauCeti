@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Bialgebra.Primitive
 public import TauCeti.RingTheory.FilteredAlgebra.Exp.Basic
 public import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Basic
 
+import TauCeti.RingTheory.FilteredAlgebra.Exp.Map
+
 /-!
 # Completed counit, comultiplication, and primitive-exponential correspondence
 
@@ -195,25 +197,38 @@ private theorem tensorProduct_ideal_one_le_ker_counitMulAlgHom :
       simp [hb0]
   exact fun t ht => bound ((F.mem_tensorProduct_ideal_iff R F).mp ht)
 
+private noncomputable def completedCounitMul :
+    (F.tensorProduct R F).completion →ₐ[R] R :=
+  (Ideal.Quotient.liftₐ _ (counitMulAlgHom (R := R))
+    fun _ ht => RingHom.mem_ker.mp (F.tensorProduct_ideal_one_le_ker_counitMulAlgHom R hε ht)).comp
+    ((F.tensorProduct R F).projectionₐ (R := R) 0)
+
+private theorem completedCounitMul_completedComul (x : F.completion) :
+    F.completedCounitMul R hε (F.completedComul R hΔ x) = F.completedCounit R hε x := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection 0 x)
+  rw [F.completedCounit_eq_of_mk_eq_projection_zero R hε ha, ← counitMulAlgHom_comul R a]
+  simp [completedCounitMul, ← ha]
+  rfl
+
+private theorem completedCounitMul_completedTensor (x y : F.completion) :
+    F.completedCounitMul R hε (F.completedTensor R F x y) =
+      F.completedCounit R hε x * F.completedCounit R hε y := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection 0 x)
+  obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (F.projection 0 y)
+  rw [F.completedCounit_eq_of_mk_eq_projection_zero R hε ha,
+    F.completedCounit_eq_of_mk_eq_projection_zero R hε hb, ← counitMulAlgHom_tmul R a b]
+  simp [completedCounitMul, F.projection_completedTensor_of_representatives R F 0 x y a b ha hb]
+  rfl
+
 /-- The completed primitive comultiplication identity already forces the completed counit to
 vanish, over any commutative base ring. -/
 theorem completedCounit_eq_zero_of_completedComul_eq {x : F.completion}
     (hx : F.completedComul R hΔ x = F.completedTensor R F x 1 + F.completedTensor R F 1 x) :
     F.completedCounit R hε x = 0 := by
-  let q : (A ⊗[R] A) ⧸ (F.tensorProduct R F).ideal 1 →ₐ[R] R :=
-    Ideal.Quotient.liftₐ _ (counitMulAlgHom (R := R))
-      fun _ ht => RingHom.mem_ker.mp (F.tensorProduct_ideal_one_le_ker_counitMulAlgHom R hε ht)
-  have hq (t : A ⊗[R] A) : q (Ideal.Quotient.mk _ t) = counitMulAlgHom R t := rfl
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection 0 x)
-  have h1 : Ideal.Quotient.mk (F.ideal 1) (1 : A) = F.projection 0 1 := by simp
-  have h := congrArg (fun t => q ((F.tensorProduct R F).projection 0 t)) hx
-  rw [projection_completedComul, ← ha, Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk,
-    Bialgebra.comulAlgHom_apply, hq, counitMulAlgHom_comul, map_add,
-    F.projection_completedTensor_of_representatives R F 0 x 1 a 1 ha h1,
-    F.projection_completedTensor_of_representatives R F 0 1 x 1 a h1 ha, map_add,
-    hq, hq, counitMulAlgHom_tmul, counitMulAlgHom_tmul, Bialgebra.counit_one, mul_one, one_mul] at h
-  rw [F.completedCounit_eq_of_mk_eq_projection_zero R hε ha]
-  simpa using sub_eq_zero.mpr h.symm
+  have h := congrArg (F.completedCounitMul R hε) hx
+  simp only [F.completedCounitMul_completedComul R hΔ hε, map_add,
+    F.completedCounitMul_completedTensor R hε, map_one, mul_one, one_mul] at h
+  exact left_eq_add.mp h
 
 /-- An element `u` of a completed filtered bialgebra is group-like when `ε̂ u = 1` and
 `Δ̂ u = u ⊗̂ u`. -/
@@ -373,6 +388,61 @@ theorem isCompletedPrimitive_toCompletion {a : A} (ha : Bialgebra.IsPrimitiveEle
     rw [completedComul_toCompletion, ha.comul_eq_tmul_add_tmul, map_add,
       ← F.completedTensor_toCompletion R F, ← F.completedTensor_toCompletion R F, map_one, add_comm]
 
+/-- An element of a filtered bialgebra completion that can be approximated modulo every
+`completionIdeal (k + 1)` by completed primitive elements is itself completed primitive. -/
+theorem isCompletedPrimitive_of_forall_sub_mem {u : F.completion}
+    (hu : ∀ k, ∃ v : F.completion, F.IsCompletedPrimitive R hΔ hε v ∧
+      u - v ∈ F.completionIdeal (k + 1)) :
+    F.IsCompletedPrimitive R hΔ hε u := by
+  refine (F.isCompletedPrimitive_iff_completedComul_eq R hΔ hε).mpr <|
+    (F.tensorProduct R F).completion_ext fun k => ?_
+  obtain ⟨v, hv, huv⟩ := hu k
+  have hc : (F.tensorProduct R F).projection k (F.completedComul R hΔ u) =
+      (F.tensorProduct R F).projection k (F.completedComul R hΔ v) :=
+    (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ
+      (by rw [← map_sub]; exact F.completedComul_mem_completionIdeal R hΔ huv)
+  have hl : (F.tensorProduct R F).projection k (F.completedTensor R F u 1) =
+      (F.tensorProduct R F).projection k (F.completedTensor R F v 1) :=
+    (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
+      rw [completedTensor_one_right, completedTensor_one_right, ← map_sub]
+      exact F.includeLeftCompletion_mem_completionIdeal R F huv)
+  have hr : (F.tensorProduct R F).projection k (F.completedTensor R F 1 u) =
+      (F.tensorProduct R F).projection k (F.completedTensor R F 1 v) :=
+    (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
+      rw [completedTensor_one_left, completedTensor_one_left, ← map_sub]
+      exact F.includeRightCompletion_mem_completionIdeal R F huv)
+  rw [hc, hv.completedComul_eq, map_add, map_add, hl, hr]
+
+/-- If a completed primitive element `u` agrees with `F.toCompletion b` modulo
+`completionIdeal (k + 1)`, then `b` is primitive modulo `(F.tensorProduct R F).ideal (k + 1)`. -/
+theorem comul_sub_mem_of_isCompletedPrimitive_of_sub_mem
+    {u : F.completion} (hu : F.IsCompletedPrimitive R hΔ hε u) {k : ℕ} {b : A}
+    (hbu : u - F.toCompletion b ∈ F.completionIdeal (k + 1)) :
+    Coalgebra.comul (R := R) b - (b ⊗ₜ[R] 1 + 1 ⊗ₜ[R] b) ∈
+      (F.tensorProduct R F).ideal (k + 1) := by
+  have hc : (F.tensorProduct R F).projection k (F.completedComul R hΔ u) =
+      Ideal.Quotient.mk ((F.tensorProduct R F).ideal (k + 1)) (Coalgebra.comul (R := R) b) := by
+    rw [← (F.tensorProduct R F).projection_toCompletion k (Coalgebra.comul (R := R) b),
+      ← F.completedComul_toCompletion R hΔ b]
+    exact (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ
+      (by simpa only [← map_sub] using F.completedComul_mem_completionIdeal R hΔ hbu)
+  have hl : (F.tensorProduct R F).projection k (F.completedTensor R F u 1) =
+      Ideal.Quotient.mk ((F.tensorProduct R F).ideal (k + 1)) (b ⊗ₜ[R] 1) := by
+    rw [← (F.tensorProduct R F).projection_toCompletion k (b ⊗ₜ[R] 1),
+      ← F.includeLeftCompletion_toCompletion R F b, ← F.completedTensor_one_right R F]
+    exact (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
+      simpa only [completedTensor_one_right, ← map_sub] using
+        F.includeLeftCompletion_mem_completionIdeal R F hbu)
+  have hr : (F.tensorProduct R F).projection k (F.completedTensor R F 1 u) =
+      Ideal.Quotient.mk ((F.tensorProduct R F).ideal (k + 1)) (1 ⊗ₜ[R] b) := by
+    rw [← (F.tensorProduct R F).projection_toCompletion k (1 ⊗ₜ[R] b),
+      ← F.includeRightCompletion_toCompletion R F b, ← F.completedTensor_one_left R F]
+    exact (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
+      simpa only [completedTensor_one_left, ← map_sub] using
+        F.includeRightCompletion_mem_completionIdeal R F hbu)
+  exact Ideal.Quotient.eq_zero_iff_mem.mp <| by
+    rw [map_sub, map_add, ← hc, ← hl, ← hr, ← map_add, hu.completedComul_eq, sub_self]
+
 end GroupLikeAndPrimitive
 
 section Exp
@@ -388,11 +458,11 @@ theorem includeLeftCompletion_completedExp (x : F.completionIdeal 1) :
     F.includeLeftCompletion R F (F.completedExp x) =
       (F.tensorProduct R F).completedExp
         ⟨F.includeLeftCompletion R F x,
-          F.includeLeftCompletion_mem_completionIdeal R F x.property⟩ :=
-  (F.tensorProduct R F).completion_ext fun k => by
-    rw [projection_includeLeftCompletion, projection_completedExp, projection_completedExp,
-      projection_includeLeftCompletion]
-    exact (F.isNilpotent_projection x.property k).map_exp _
+          F.includeLeftCompletion_mem_completionIdeal R F x.property⟩ := by
+  simpa only [← AlgHom.coe_toRingHom, coe_includeLeftCompletion] using
+    F.mapCompletion_completedExp (F.tensorProduct R F)
+      ((Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] A) : A →+* A ⊗[R] A) id monotone_id
+      (fun k => F.ideal_le_comap_includeLeft R F (k + 1)) (F.ideal_le_comap_includeLeft R F 1) x
 
 /-- The completed right tensor inclusion commutes with `completedExp`. -/
 @[simp]
@@ -400,22 +470,22 @@ theorem includeRightCompletion_completedExp (x : F.completionIdeal 1) :
     F.includeRightCompletion R F (F.completedExp x) =
       (F.tensorProduct R F).completedExp
         ⟨F.includeRightCompletion R F x,
-          F.includeRightCompletion_mem_completionIdeal R F x.property⟩ :=
-  (F.tensorProduct R F).completion_ext fun k => by
-    rw [projection_includeRightCompletion, projection_completedExp, projection_completedExp,
-      projection_includeRightCompletion]
-    exact (F.isNilpotent_projection x.property k).map_exp _
+          F.includeRightCompletion_mem_completionIdeal R F x.property⟩ := by
+  simpa only [← AlgHom.coe_toRingHom, coe_includeRightCompletion] using
+    F.mapCompletion_completedExp (F.tensorProduct R F)
+      ((Algebra.TensorProduct.includeRight : A →ₐ[R] A ⊗[R] A) : A →+* A ⊗[R] A) id monotone_id
+      (fun k => F.ideal_le_comap_includeRight R F (k + 1)) (F.ideal_le_comap_includeRight R F 1) x
 
 /-- Completed comultiplication commutes with `completedExp`. -/
 @[simp]
 theorem completedComul_completedExp (x : F.completionIdeal 1) :
     F.completedComul R hΔ (F.completedExp x) =
       (F.tensorProduct R F).completedExp
-        ⟨F.completedComul R hΔ x, F.completedComul_mem_completionIdeal R hΔ x.property⟩ :=
-  (F.tensorProduct R F).completion_ext fun k => by
-    rw [projection_completedComul, projection_completedExp, projection_completedExp,
-      projection_completedComul]
-    exact (F.isNilpotent_projection x.property k).map_exp _
+        ⟨F.completedComul R hΔ x, F.completedComul_mem_completionIdeal R hΔ x.property⟩ := by
+  simpa only [← AlgHom.coe_toRingHom, coe_completedComul] using
+    F.mapCompletion_completedExp (F.tensorProduct R F)
+      (Bialgebra.comulAlgHom R A : A →+* A ⊗[R] A) id monotone_id
+      (fun k => hΔ (k + 1)) (hΔ 1) x
 
 /-- Completed comultiplication commutes with `completedLog`. -/
 @[simp]
@@ -423,12 +493,11 @@ theorem completedComul_completedLog (u : {u : F.completion // u - 1 ∈ F.comple
     F.completedComul R hΔ (F.completedLog u) =
       (F.tensorProduct R F).completedLog ⟨F.completedComul R hΔ u, by
         simpa only [map_sub, map_one] using
-          F.completedComul_mem_completionIdeal R hΔ u.property⟩ :=
-  (F.tensorProduct R F).completion_ext fun k => by
-    rw [projection_completedComul, projection_completedLog, projection_completedLog,
-      projection_completedComul]
-    exact (by simpa only [map_sub, map_one] using F.isNilpotent_projection u.property k :
-      IsNilpotent (F.projection k u - 1)).map_log _
+          F.completedComul_mem_completionIdeal R hΔ u.property⟩ := by
+  simpa only [← AlgHom.coe_toRingHom, coe_completedComul] using
+    F.mapCompletion_completedLog (F.tensorProduct R F)
+      (Bialgebra.comulAlgHom R A : A →+* A ⊗[R] A) id monotone_id
+      (fun k => hΔ (k + 1)) (hΔ 1) u
 
 /-- The completed exponential of a completed primitive element in the first completion ideal is
 completed group-like. -/

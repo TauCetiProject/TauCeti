@@ -39,58 +39,11 @@ public section
 
 open scoped DirectSum TensorProduct
 
-namespace TauCeti.UniversalEnvelopingAlgebra
-
-universe v
-
-/-- Over a commutative rational algebra `R : Type`, the canonical map `ι : L → U(L)` is injective,
-without a freeness or flatness assumption on `L`. -/
-theorem ι_injective_of_rat (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R]
-    [LieRing L] [LieAlgebra R L] :
-    Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R :
-      L → _root_.UniversalEnvelopingAlgebra R L) :=
-  fun _ _ h => (primitiveEquiv R L).injective (Subtype.ext (by simpa using h))
-
-end TauCeti.UniversalEnvelopingAlgebra
-
 namespace TauCeti.PositiveDegrees
 
 open _root_.UniversalEnvelopingAlgebra TauCeti.UniversalEnvelopingAlgebra
 
 universe u v
-
-section CompletionMk
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-private noncomputable def spanSingletonLieHom {M : Type*} [LieRing M] [LieAlgebra R M]
-    (m : M) : R →ₗ⁅R⁆ M where
-  toLinearMap := LinearMap.toSpanSingleton R M m
-  map_lie' {r s} := by
-    rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]
-    simp [LinearMap.toSpanSingleton_apply]
-
-@[simp]
-private theorem spanSingletonLieHom_apply {M : Type*} [LieRing M] [LieAlgebra R M]
-    (m : M) (r : R) : spanSingletonLieHom (R := R) m r = r • m := (rfl)
-
-private noncomputable def lieIdealCompletionMk {I : ℕ → LieIdeal R L} (hI : Antitone I)
-    (y : ∀ k, L ⧸ I k) (hy : ∀ k, LieIdeal.factor (hI (Nat.le_succ k)) (y (k + 1)) = y k) :
-    LieIdeal.completion I hI :=
-  LieIdeal.completionLift I hI (fun k => spanSingletonLieHom (y k))
-    (fun k => LieHom.ext fun r => by
-      simpa only [LieHom.coe_comp, Function.comp_apply, spanSingletonLieHom_apply,
-        map_smul] using congrArg (r • ·) (hy k)) 1
-
-private theorem completionProjection_lieIdealCompletionMk {I : ℕ → LieIdeal R L}
-    (hI : Antitone I) (y : ∀ k, L ⧸ I k)
-    (hy : ∀ k, LieIdeal.factor (hI (Nat.le_succ k)) (y (k + 1)) = y k) (k : ℕ) :
-    LieIdeal.completionProjection I hI k (lieIdealCompletionMk hI y hy) = y k := by
-  simp [lieIdealCompletionMk]
-
-end CompletionMk
 
 section Primitive
 
@@ -150,7 +103,7 @@ private theorem exists_truncatedLieToU_eq_projection {u : (d.envelopingFiltratio
       AlgFiltration.projection_toCompletion, ← ha, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
   obtain ⟨x, hx⟩ := (_root_.UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι b).mp <|
     d.isPrimitiveElem_of_mem_envelopingFiltration_tensorProduct_succ ℒ hdeg
-      ((d.envelopingFiltration ℒ).comul_sub_mem_of_isCompletedPrimitive_of_sub_mem
+      ((d.envelopingFiltration ℒ).comul_sub_mem_of_isCompletedPrimitive_of_sub_mem R
         (d.envelopingFiltration_ideal_le_comap_comul ℒ)
         (d.envelopingFiltration_one_le_ker_counit ℒ) hu hbu)
   refine ⟨LieSubmodule.Quotient.mk x, ?_⟩
@@ -172,9 +125,9 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU
     d.truncatedLieToU_injective_of_rat ℒ k <| by
       rw [← d.factor_truncatedLieToU ℒ (Nat.le_succ k) (y (k + 1)), hy (k + 1),
         (d.envelopingFiltration ℒ).factor_projection (Nat.le_succ k) u, hy k]
-  refine ⟨lieIdealCompletionMk (d.degreeIdeal_antitone ℒ) y hcompat,
+  refine ⟨LieIdeal.completionMk (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) y hcompat,
     (d.envelopingFiltration ℒ).completion_ext fun k => ?_⟩
-  rw [projection_completedLieToU, completionProjection_lieIdealCompletionMk, hy k]
+  rw [projection_completedLieToU, LieIdeal.completionProjection_completionMk, hy k]
 
 /-- Over a commutative rational algebra `R : Type`, `completedLieToU` identifies the completed
 positively graded Lie algebra with the `R`-submodule of completed primitive elements. -/

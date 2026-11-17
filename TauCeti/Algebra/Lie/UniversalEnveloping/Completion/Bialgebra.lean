@@ -44,79 +44,6 @@ public section
 
 open scoped DirectSum TensorProduct
 
-namespace TauCeti.AlgFiltration
-
-/-- Two elements of a filtered ring completion whose difference lies in `completionIdeal (k + 1)`
-have equal order-`k` projections. -/
-theorem projection_eq_of_sub_mem_completionIdeal_succ {A : Type*} [Ring A] (F : AlgFiltration A)
-    {k : ℕ} {x y : F.completion} (h : x - y ∈ F.completionIdeal (k + 1)) :
-    F.projection k x = F.projection k y := by
-  rw [completionIdeal_succ, RingHom.mem_ker, map_sub] at h
-  exact sub_eq_zero.mp h
-
-/-- An element of a filtered bialgebra completion that can be approximated modulo every
-`completionIdeal (k + 1)` by completed primitive elements is itself completed primitive. -/
-theorem isCompletedPrimitive_of_forall_sub_mem {R A : Type*} [CommRing R] [Ring A] [Bialgebra R A]
-    (F : AlgFiltration A)
-    (hΔ : ∀ k, F.ideal k ≤ ((F.tensorProduct R F).ideal k).comap (Bialgebra.comulAlgHom R A))
-    (hε : F.ideal 1 ≤ RingHom.ker (Bialgebra.counitAlgHom R A)) {u : F.completion}
-    (hu : ∀ k, ∃ v : F.completion, F.IsCompletedPrimitive R hΔ hε v ∧
-      u - v ∈ F.completionIdeal (k + 1)) :
-    F.IsCompletedPrimitive R hΔ hε u := by
-  refine (F.isCompletedPrimitive_iff_completedComul_eq R hΔ hε).mpr <|
-    (F.tensorProduct R F).completion_ext fun k => ?_
-  obtain ⟨v, hv, huv⟩ := hu k
-  have hc : (F.tensorProduct R F).projection k (F.completedComul R hΔ u) =
-      (F.tensorProduct R F).projection k (F.completedComul R hΔ v) :=
-    (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ
-      (by rw [← map_sub]; exact F.completedComul_mem_completionIdeal R hΔ huv)
-  have hl : (F.tensorProduct R F).projection k (F.completedTensor R F u 1) =
-      (F.tensorProduct R F).projection k (F.completedTensor R F v 1) :=
-    (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
-      rw [completedTensor_one_right, completedTensor_one_right, ← map_sub]
-      exact F.includeLeftCompletion_mem_completionIdeal R F huv)
-  have hr : (F.tensorProduct R F).projection k (F.completedTensor R F 1 u) =
-      (F.tensorProduct R F).projection k (F.completedTensor R F 1 v) :=
-    (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
-      rw [completedTensor_one_left, completedTensor_one_left, ← map_sub]
-      exact F.includeRightCompletion_mem_completionIdeal R F huv)
-  rw [hc, hv.completedComul_eq, map_add, map_add, hl, hr]
-
-/-- If a completed primitive element `u` agrees with `F.toCompletion b` modulo
-`completionIdeal (k + 1)`, then `b` is primitive modulo `(F.tensorProduct R F).ideal (k + 1)`. -/
-theorem comul_sub_mem_of_isCompletedPrimitive_of_sub_mem {R A : Type*} [CommRing R] [Ring A]
-    [Bialgebra R A] (F : AlgFiltration A)
-    (hΔ : ∀ k, F.ideal k ≤ ((F.tensorProduct R F).ideal k).comap (Bialgebra.comulAlgHom R A))
-    (hε : F.ideal 1 ≤ RingHom.ker (Bialgebra.counitAlgHom R A))
-    {u : F.completion} (hu : F.IsCompletedPrimitive R hΔ hε u) {k : ℕ} {b : A}
-    (hbu : u - F.toCompletion b ∈ F.completionIdeal (k + 1)) :
-    Coalgebra.comul (R := R) b - (b ⊗ₜ[R] 1 + 1 ⊗ₜ[R] b) ∈
-      (F.tensorProduct R F).ideal (k + 1) := by
-  have hc : (F.tensorProduct R F).projection k (F.completedComul R hΔ u) =
-      Ideal.Quotient.mk ((F.tensorProduct R F).ideal (k + 1)) (Coalgebra.comul (R := R) b) := by
-    rw [← (F.tensorProduct R F).projection_toCompletion k (Coalgebra.comul (R := R) b),
-      ← F.completedComul_toCompletion R hΔ b]
-    exact (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ
-      (by simpa only [← map_sub] using F.completedComul_mem_completionIdeal R hΔ hbu)
-  have hl : (F.tensorProduct R F).projection k (F.completedTensor R F u 1) =
-      Ideal.Quotient.mk ((F.tensorProduct R F).ideal (k + 1)) (b ⊗ₜ[R] 1) := by
-    rw [← (F.tensorProduct R F).projection_toCompletion k (b ⊗ₜ[R] 1),
-      ← F.includeLeftCompletion_toCompletion R F b, ← F.completedTensor_one_right R F]
-    exact (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
-      simpa only [completedTensor_one_right, ← map_sub] using
-        F.includeLeftCompletion_mem_completionIdeal R F hbu)
-  have hr : (F.tensorProduct R F).projection k (F.completedTensor R F 1 u) =
-      Ideal.Quotient.mk ((F.tensorProduct R F).ideal (k + 1)) (1 ⊗ₜ[R] b) := by
-    rw [← (F.tensorProduct R F).projection_toCompletion k (1 ⊗ₜ[R] b),
-      ← F.includeRightCompletion_toCompletion R F b, ← F.completedTensor_one_left R F]
-    exact (F.tensorProduct R F).projection_eq_of_sub_mem_completionIdeal_succ (by
-      simpa only [completedTensor_one_left, ← map_sub] using
-        F.includeRightCompletion_mem_completionIdeal R F hbu)
-  exact Ideal.Quotient.eq_zero_iff_mem.mp <| by
-    rw [map_sub, map_add, ← hc, ← hl, ← hr, ← map_add, hu.completedComul_eq, sub_self]
-
-end TauCeti.AlgFiltration
-
 namespace TauCeti.UniversalEnvelopingAlgebra
 
 open _root_.UniversalEnvelopingAlgebra Opposite
@@ -536,7 +463,7 @@ theorem isCompletedPrimitive_completedLieToU (z : d.completedLie ℒ) :
     (d.envelopingFiltration ℒ).IsCompletedPrimitive R
       (d.envelopingFiltration_ideal_le_comap_comul ℒ)
       (d.envelopingFiltration_one_le_ker_counit ℒ) (d.completedLieToU ℒ z) := by
-  refine (d.envelopingFiltration ℒ).isCompletedPrimitive_of_forall_sub_mem
+  refine (d.envelopingFiltration ℒ).isCompletedPrimitive_of_forall_sub_mem R
     (d.envelopingFiltration_ideal_le_comap_comul ℒ)
     (d.envelopingFiltration_one_le_ker_counit ℒ) fun k => ?_
   obtain ⟨x, hx⟩ := (d.degreeIdeal ℒ k).surjective_mkQ

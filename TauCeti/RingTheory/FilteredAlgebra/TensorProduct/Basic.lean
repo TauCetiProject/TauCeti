@@ -107,6 +107,26 @@ noncomputable def includeRightCompletion :
   G.mapCompletionₐ (F.tensorProduct R G) (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B)
     id monotone_id fun k => F.ideal_le_comap_includeRight R G (k + 1)
 
+/-- Forgetting scalars on `includeLeftCompletion` gives the ring completion map of the left
+tensor inclusion. -/
+@[simp]
+theorem coe_includeLeftCompletion :
+    (F.includeLeftCompletion R G : F.completion →+* (F.tensorProduct R G).completion) =
+      F.mapCompletion (F.tensorProduct R G)
+        ((Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] B) : A →+* A ⊗[R] B)
+        id monotone_id (fun k => F.ideal_le_comap_includeLeft R G (k + 1)) :=
+  F.coe_mapCompletionₐ (F.tensorProduct R G) _ id monotone_id _
+
+/-- Forgetting scalars on `includeRightCompletion` gives the ring completion map of the right
+tensor inclusion. -/
+@[simp]
+theorem coe_includeRightCompletion :
+    (F.includeRightCompletion R G : G.completion →+* (F.tensorProduct R G).completion) =
+      G.mapCompletion (F.tensorProduct R G)
+        ((Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) : B →+* A ⊗[R] B)
+        id monotone_id (fun k => F.ideal_le_comap_includeRight R G (k + 1)) :=
+  G.coe_mapCompletionₐ (F.tensorProduct R G) _ id monotone_id _
+
 /-- The completed left inclusion extends the ordinary tensor inclusion. -/
 @[simp]
 theorem includeLeftCompletion_toCompletion (a : A) :
