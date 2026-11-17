@@ -196,7 +196,7 @@ private theorem stabilizer_mk (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
   refine ⟨fun hγ ↦ ?_, fun hγ ↦ ?_⟩
   · exact (hγ.comp_right p.reverse).symm.trans (Path.Homotopic.comp_comp_reverse γ p)
   · exact (hγ.symm.comp_right p).trans
-      (Path.Homotopic.comp_reverse_comp_comp (p.cons (.vertex h)) p .nil)
+      (Path.Homotopic.comp_reverse_comp (p.cons (.vertex h)) p)
 
 end PathCoset
 
@@ -410,10 +410,12 @@ private theorem bassSerreGraph_isAcyclic : (bassSerreGraph 𝔸 a).IsAcyclic := 
 
 private theorem BSDart.src_smul (g : π₁ 𝔸 a) (d : BSDart 𝔸 a) : (g • d).src = g • d.src := by
   obtain ⟨b, c, e, y⟩ := d
+  simp only [Sigma.smul_mk, BSDart.src]
   exact congrArg (Sigma.mk b) (PathCoset.map_smul _ g y)
 
 private theorem BSDart.rev_smul (g : π₁ 𝔸 a) (d : BSDart 𝔸 a) : (g • d).rev = g • d.rev := by
   obtain ⟨b, c, e, y⟩ := d
+  simp only [Sigma.smul_mk, BSDart.rev]
   exact congrArg (fun z ↦ (⟨c, b, Quiver.reverse e, z⟩ : BSDart 𝔸 a))
     (PathCoset.consDart_smul e g y)
 
@@ -448,6 +450,26 @@ def bassSerreTree : GTree.{max u v w, max u v w} (π₁ 𝔸 a) where
       ((Γ.reverse_val e).symm.trans (congrArg (fun d : BSDart 𝔸 a ↦ d.2.2.1.1) h).symm)
 
 variable {𝔸 a}
+
+/-- The action of `π₁(𝔸, a)` on the vertices of the Bass–Serre tree is its action on the cosets
+`p A_b`. -/
+private theorem bassSerreTree_smul_vertex (g : π₁ 𝔸 a) (y : (bassSerreTree 𝔸 a).V) :
+    g • y = (⟨y.1, g • y.2⟩ : BSVertex 𝔸 a) := by
+  rw [GTree.smul_vertex_def, SerreGraph.Aut.smul_vertex_def]
+  -- The action of `bassSerreTree` is `bassSerreAction`, which permutes vertices by `toPerm g`.
+  refine (MulAction.toPerm_apply (β := BSVertex 𝔸 a) g y).trans ?_
+  obtain ⟨b, y⟩ := y
+  rw [Sigma.smul_mk]
+
+/-- The action of `π₁(𝔸, a)` on the darts of the Bass–Serre tree is its action on the cosets
+`p α_e(A_e)`. -/
+private theorem bassSerreTree_smul_dart (g : π₁ 𝔸 a) (d : (bassSerreTree 𝔸 a).E) :
+    g • d = (⟨d.1, d.2.1, d.2.2.1, g • d.2.2.2⟩ : BSDart 𝔸 a) := by
+  rw [GTree.smul_dart_def, SerreGraph.Aut.smul_dart_def]
+  -- The action of `bassSerreTree` is `bassSerreAction`, which permutes darts by `toPerm g`.
+  refine (MulAction.toPerm_apply (β := BSDart 𝔸 a) g d).trans ?_
+  obtain ⟨b, c, e, y⟩ := d
+  rw [Sigma.smul_mk, Sigma.smul_mk, Sigma.smul_mk]
 
 /-- The vertex `p A_b` of the Bass–Serre tree given by an `𝔸`-path `p` from `a` to `b`. -/
 -- The definitions below are `noncomputable` because the vertex and dart types of `bassSerreTree`,
@@ -499,6 +521,12 @@ theorem bassSerreDart_congr {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : 
     (g : 𝔸.vertexGroup b) : bassSerreVertex (p.cons (.vertex g)) = bassSerreVertex p :=
   bsVertex_cons_vertex p g
 
+/-- Right multiplication by an element of `α_e(A_e)` does not change the dart `p α_e(A_e)`. -/
+@[simp] theorem bassSerreDart_cons_vertex_αArrow {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    bassSerreDart (p.cons (.vertex (𝔸.αArrow e c₀))) e = bassSerreDart p e :=
+  (bassSerreDart_eq_bassSerreDart_iff.2 ⟨c₀, .refl _⟩).symm
+
 /-- The dart `p α_e(A_e)` starts at `p A_b`. -/
 @[simp] theorem src_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
     (bassSerreTree 𝔸 a).src (bassSerreDart p e) = bassSerreVertex p :=
@@ -517,20 +545,22 @@ theorem bassSerreDart_congr {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : 
 
 /-- The fundamental group acts on vertices by concatenation on the left. -/
 @[simp] theorem smul_bassSerreVertex (γ : 𝔸.Path ⟨a⟩ ⟨a⟩) {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
-    π₁.mk γ • bassSerreVertex p = bassSerreVertex (γ.comp p) :=
-  congrArg (Sigma.mk b) (PathCoset.smul_mk γ p)
+    π₁.mk γ • bassSerreVertex p = bassSerreVertex (γ.comp p) := by
+  rw [bassSerreTree_smul_vertex]
+  exact congrArg (Sigma.mk b) (PathCoset.smul_mk γ p)
 
 /-- The fundamental group acts on darts by concatenation on the left. -/
 @[simp] theorem smul_bassSerreDart (γ : 𝔸.Path ⟨a⟩ ⟨a⟩) {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
-    (e : b ⟶ c) : π₁.mk γ • bassSerreDart p e = bassSerreDart (γ.comp p) e :=
-  congrArg (fun y ↦ (⟨b, c, e, y⟩ : BSDart 𝔸 a)) (PathCoset.smul_mk γ p)
+    (e : b ⟶ c) : π₁.mk γ • bassSerreDart p e = bassSerreDart (γ.comp p) e := by
+  rw [bassSerreTree_smul_dart]
+  exact congrArg (fun y ↦ (⟨b, c, e, y⟩ : BSDart 𝔸 a)) (PathCoset.smul_mk γ p)
 
 /-- The stabilizer of the vertex `p A_b` is the conjugate `p A_b p⁻¹` of the vertex group. -/
 theorem stabilizer_bassSerreVertex {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     stabilizer (π₁ 𝔸 a) (bassSerreVertex p) = (π₁.vertexHom p).range := by
   rw [MonoidHom.range_eq_map, ← PathCoset.stabilizer_mk (H := ⊤)]
   ext g
-  -- The action on vertices is the action on the cosets in the second component.
+  rw [mem_stabilizer_iff, mem_stabilizer_iff, bassSerreTree_smul_vertex]
   exact sigma_mk_injective.eq_iff
 
 /-- The stabilizer of the dart `p α_e(A_e)` is the conjugate `p α_e(A_e) p⁻¹` of the image of the
@@ -539,7 +569,7 @@ theorem stabilizer_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e
     stabilizer (π₁ 𝔸 a) (bassSerreDart p e) = (𝔸.αArrow e).range.map (π₁.vertexHom p) := by
   rw [← PathCoset.stabilizer_mk]
   ext g
-  -- The action on darts is the action on the cosets in the last component.
+  rw [mem_stabilizer_iff, mem_stabilizer_iff, bassSerreTree_smul_dart]
   exact sigma_mk_injective.eq_iff.trans <| sigma_mk_injective.eq_iff.trans
     sigma_mk_injective.eq_iff
 
@@ -549,14 +579,14 @@ theorem exists_smul_bassSerreVertex_eq {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b�
     ∃ g : π₁ 𝔸 a, g • bassSerreVertex p = bassSerreVertex q :=
   ⟨π₁.mk (q.comp p.reverse), by
     rw [smul_bassSerreVertex]
-    exact bassSerreVertex_congr (by simpa using Path.Homotopic.comp_reverse_comp_comp q p .nil)⟩
+    exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp q p)⟩
 
 /-- `π₁(𝔸, a)` acts transitively on the darts `p α_e(A_e)` over a dart `e` of `Γ`. -/
 theorem exists_smul_bassSerreDart_eq {b c : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
     ∃ g : π₁ 𝔸 a, g • bassSerreDart p e = bassSerreDart q e :=
   ⟨π₁.mk (q.comp p.reverse), by
     rw [smul_bassSerreDart]
-    exact bassSerreDart_congr (by simpa using Path.Homotopic.comp_reverse_comp_comp q p .nil) e⟩
+    exact bassSerreDart_congr (Path.Homotopic.comp_reverse_comp q p) e⟩
 
 /-! ### The quotient graph -/
 
@@ -682,6 +712,12 @@ noncomputable def bassSerreQuotientIso (hΓ : Γ.Preconnected) :
       (Set.ext_iff.1 range_bassSerreQuotientHom_mapV b).2 ((Γ.preconnected_iff.1 hΓ) a b)⟩
     ⟨bassSerreQuotientHom_mapE_injective, fun e ↦
       (Set.ext_iff.1 range_bassSerreQuotientHom_mapE e).2 ((Γ.preconnected_iff.1 hΓ) a _)⟩
+
+variable {𝔸 a} in
+/-- The isomorphism from the quotient graph to `Γ` is the morphism `bassSerreQuotientHom`. -/
+@[simp] theorem bassSerreQuotientIso_toHom (hΓ : Γ.Preconnected) :
+    (bassSerreQuotientIso 𝔸 a hΓ).toHom = bassSerreQuotientHom 𝔸 a :=
+  SerreGraph.Hom.toIso_toHom _ _ _
 
 end Graph
 
