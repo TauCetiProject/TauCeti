@@ -89,13 +89,10 @@ theorem tendsto_measureReal_renewalExcess_le_of_mean_eq_top
   · exact tendsto_measureReal_renewalExcess_le_of_isLattice_of_mean_eq_top
       hT hindep hid hlattice hmean x
   · have := hindep.isProbabilityMeasure
-    have hF := Measure.measure_singleton_zero_lt_one_of_not_isLattice hlattice
-    have hzero : P {ω | T 0 ω = 0} < 1 := by
-      rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
     have hlim := (P.map (T 0)).tendsto_renewalFunction_add_sub hlattice x
     rw [hmean, ENNReal.inv_top, ENNReal.toReal_zero, zero_mul] at hlim
     exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-      hT hindep hid hzero x hlim
+      hT hindep hid (Measure.measure_setOf_eq_zero_lt_one_of_not_isLattice hlattice) x hlim
 
 /-- **Infinite-mean excess survival limit.** For i.i.d. nonnegative interarrival times of infinite
 extended mean, whether lattice or nonlattice, the probability that the excess life at time `t`
@@ -146,11 +143,9 @@ theorem tendsto_measureReal_lt_renewalExcess
     Tendsto (fun t ↦ P.real {ω | x < renewalExcess T t ω}) atTop
       (𝓝 ((P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)))) := by
   have := hindep.isProbabilityMeasure
-  have hF := Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
-  have hzero : P {ω | T 0 ω = 0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
   exact tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
-    hT hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
+    hT hindep hid (Measure.measure_setOf_eq_zero_lt_one_of_not_isLattice hNL) hmean
+    ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Limiting excess-life distribution function.** For i.i.d. nonnegative interarrival times with
 nonlattice law, `P.real {ω | renewalExcess T t ω ≤ x}` converges as `t → ∞` to
@@ -170,11 +165,9 @@ theorem tendsto_measureReal_renewalExcess_le
       measureReal_zero, Pi.zero_apply] using
       tendsto_measureReal_renewalExcess_le_of_mean_eq_top hT hindep hid hmean x
   · have := hindep.isProbabilityMeasure
-    have hF := Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
-    have hzero : P {ω | T 0 ω = 0} < 1 := by
-      rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
     exact tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
-      hT hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
+      hT hindep hid (Measure.measure_setOf_eq_zero_lt_one_of_not_isLattice hNL) hmean
+      ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Limiting excess-life CDF.** For i.i.d. nonnegative interarrival times with nonlattice law of
 finite extended mean, the cumulative distribution function of the real-valued excess converges
@@ -189,11 +182,9 @@ theorem tendsto_cdf_renewalExcess
     Tendsto (fun t ↦ cdf (P.map (fun ω ↦ (renewalExcess T t ω : ℝ))) x) atTop
       (𝓝 (cdf (P.map (T 0)).equilibriumExcessLaw x)) := by
   have := hindep.isProbabilityMeasure
-  have hF := Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
-  have hzero : P {ω | T 0 ω = 0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
   exact tendsto_cdf_renewalExcess_of_tendsto_measureReal_Ioc
-    hT hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
+    hT hindep hid (Measure.measure_setOf_eq_zero_lt_one_of_not_isLattice hNL) hmean
+    ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Limiting excess-life theorem in distribution.** For i.i.d. nonnegative interarrival times with
 nonlattice law of finite extended mean, the real-valued excess `(renewalExcess T t ω : ℝ)`
@@ -210,12 +201,9 @@ theorem tendstoInDistribution_renewalExcess
     {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} [IsProbabilityMeasure Q]
     {Z : Ω' → ℝ} (hZ : HasLaw Z (P.map (T 0)).equilibriumExcessLaw Q) :
     TendstoInDistribution (fun (t : ℝ≥0) ω ↦ (renewalExcess T t ω : ℝ)) atTop
-      Z (fun _ ↦ P) Q := by
-  have hF := Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
-  have hzero : P {ω | T 0 ω = 0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
-  exact tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
-    hT hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL)
-    hZ tendsto_id
+      Z (fun _ ↦ P) Q :=
+  tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
+    hT hindep hid (Measure.measure_setOf_eq_zero_lt_one_of_not_isLattice hNL) hmean
+    ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) hZ tendsto_id
 
 end TauCeti.Probability
