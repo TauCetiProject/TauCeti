@@ -321,10 +321,15 @@ def sublevelInclusionCodRestrict {X β : Type*} [TopologicalSpace X] [Preorder �
   ⟨fun x ↦ ⟨sublevelInclusion f a b hab x, x.2⟩, (map_continuous _).subtype_mk _⟩
 
 @[simp]
+theorem coe_sublevelInclusionCodRestrict_apply {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    (sublevelInclusionCodRestrict f a b hab x : {x | f x ≤ b}) = sublevelInclusion f a b hab x :=
+  (rfl)
+
 theorem coe_coe_sublevelInclusionCodRestrict_apply {X β : Type*} [TopologicalSpace X]
     [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
-    ((sublevelInclusionCodRestrict f a b hab x : {x | f x ≤ b}) : X) = x :=
-  (rfl)
+    ((sublevelInclusionCodRestrict f a b hab x : {x | f x ≤ b}) : X) = x := by
+  simp
 
 /-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
 `X` via `Subtype.val`. -/

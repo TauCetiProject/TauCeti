@@ -320,48 +320,6 @@ private theorem exists_leftInverse_fiberwiseCellComparison_const (hfs : ContMDif
   · exact fiberwiseCellAttachmentProj_constFamilyCurry (fun i ↦ (φ i).toOpenPartialHomeomorph) k
       hk hε.le hball' hf _ _
 
-omit [FiniteDimensional ℝ E] [Iₘ.Boundaryless] [IsManifold Iₘ ∞ M] [T2Space M] in
-/-- A critical point of `f` in the source of a smooth chart `φ` in which
-`f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` is the centre of the chart, where `f` takes the value
-`c`. -/
-private theorem eq_of_mem_criticalPoints_of_mem_source
-    (φ : PartialDiffeomorph Iₘ 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
-    {k : ℕ} (hf : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
-    {x : M} (hx : x ∈ φ.source) (hcrit : x ∈ criticalPoints Iₘ f) : f x = c := by
-  have hy : φ x ∈ φ.target := φ.map_source hx
-  -- `φ x` is a critical point of `f ∘ φ⁻¹`, which near `φ x` is `z ↦ c + Σ ±zⱼ²`.
-  have h₁ : φ x ∈ criticalPoints 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (f ∘ φ.symm) :=
-    ((PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ φ.symm hy).mem_criticalPoints_comp_iff
-      (by simp)).2 (by rwa [show φ.symm (φ x) = x from φ.left_inv hx])
-  have heq : f ∘ φ.symm =ᶠ[𝓝 (φ x)]
-      fun z ↦ c + ∑ j, (if j.val < k then -1 else 1 : ℝ) * z j ^ 2 := by
-    filter_upwards [φ.open_target.mem_nhds hy] with z hz
-    have h := hf _ (φ.map_target hz)
-    rw [φ.right_inv hz] at h
-    exact h
-  have hd : HasFDerivAt
-      (fun z : EuclideanSpace ℝ (Fin n) ↦ c + ∑ j, (if j.val < k then -1 else 1 : ℝ) * z j ^ 2)
-      (∑ j, ((if j.val < k then -1 else 1 : ℝ) * (2 * φ x j)) • EuclideanSpace.proj (𝕜 := ℝ) j)
-      (φ x) := by
-    refine HasFDerivAt.const_add c (HasFDerivAt.fun_sum fun j _ ↦ ?_)
-    have h : HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ z j)
-        (EuclideanSpace.proj (𝕜 := ℝ) j) (φ x) :=
-      (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin n) j).hasFDerivAt
-    convert (h.pow 2).const_mul (if j.val < k then -1 else 1 : ℝ) using 1
-    ext v
-    simp
-  rw [mem_criticalPoints_iff_fderiv_eq_zero, heq.fderiv_eq, hd.fderiv] at h₁
-  -- The `j`-th partial derivative `±2 (φ x)ⱼ` vanishes, so `φ x = 0`.
-  have h0 (j : Fin n) : φ x j = 0 := by
-    have := congr($h₁ (EuclideanSpace.single j 1))
-    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-      PiLp.proj_apply, EuclideanSpace.single, PiLp.ofLp_single, Pi.single_apply, mul_ite, mul_one,
-      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, zero_apply] at this
-    have hs : (if j.val < k then -1 else 1 : ℝ) ≠ 0 := by split_ifs <;> norm_num
-    simpa using (mul_eq_zero.1 this).resolve_left hs
-  rw [hf x hx]
-  simp [h0]
-
 /-- **The comparison map of a family of Morse cells has a left inverse up to homotopy over `P`.**
 Let `f` be smooth, `P` compact and locally compact, and `ψ p i`, for `p : P` and `i : ι`, charts
 in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`, whose targets contain the closed ball of
@@ -421,7 +379,7 @@ theorem exists_homotopyRel_comp_fiberwiseCellComparison_morseFamily [CompactSpac
   have hreg (x : M) (hx₁ : c - ε ≤ f x) (hx₂ : f x < c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by
     have hx := mem_criticalPoints_iff_mfderiv_eq_zero.2 h0
     obtain ⟨i, hi⟩ := mem_iUnion.1 (hcrit ⟨hx, hx₁, by linarith⟩)
-    exact hx₂.ne (eq_of_mem_criticalPoints_of_mem_source (φ i) (hfφ i) hi hx)
+    exact hx₂.ne (eq_of_mem_criticalPoints_of_mem_source (hfφ i) hi hx)
   -- The left inverse `g₀` over `P` for the constant family `φ`.
   obtain ⟨g₀, hg₀, hg₀P⟩ := exists_leftInverse_fiberwiseCellComparison_const (P := P) hfs φ hφ k hk
     hε hballφ hfφ hcompact hcrit

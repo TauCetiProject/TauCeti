@@ -40,9 +40,9 @@ is the identity on `P × A`, sends `(p, x)` in the `i`-th disc with `‖x‖ ≤
 `(p, K i (2 - 2‖x‖, (p, x/‖x‖)))` of `P × A`. It lies over `P`, and `Φ₀ ∘ E` is homotopic to `Φ₁`
 relative to `P × A` through maps over `P` (`TauCeti.fiberwiseCellReattachmentHomotopy`), for the
 comparison maps `Φ₀` and `Φ₁`. If `Φ₀` has a left inverse `g₀` over `P`, up to a homotopy relative
-to `P × A` over `P`, then `E` is homotopic to `g₀ ∘ Φ₁` relative to `P × A` over `P`
-(`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse`). Hence the relative
-homotopy class of `E` over `P` does not depend on the chosen `h` and `K`
+to `P × A` over `P`, then `E` is homotopic to `g₀ ∘ Φ₁` relative to `P × A` over `P`, by
+`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp_fiberwiseCellComparison`.
+Hence the relative homotopy class of `E` over `P` does not depend on the chosen `h` and `K`
 (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_fiberwiseCellReattachment`), and
 reattachment maps compose up to homotopy relative to `P × A` over `P`
 (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment`).
@@ -643,7 +643,7 @@ include hG₀ hg₀P in
 `P × A` by a homotopy `G₀` over `P`. Then the fiberwise reattachment map is homotopic to `g₀ ∘ Φ₁`
 relative to `P × A`, by a homotopy over `P`: it is `G₀` read backwards along the reattachment map,
 followed by `g₀` applied to `TauCeti.fiberwiseCellReattachmentHomotopy`. -/
-theorem exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse :
+theorem exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp_fiberwiseCellComparison :
     ∃ G : (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK).hom.HomotopyRel
         (g₀.comp (fiberwiseCellComparison α₁ χ₁ hχ₁).hom)
         (range (fiberwiseCellAttachmentIncl α₁)),
@@ -679,10 +679,12 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_fiberwiseCellReattachment :
         (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h' hh' K' hK').hom
         (range (fiberwiseCellAttachmentIncl α₁)),
       ∀ t y, fiberwiseCellAttachmentProj α₀ (G (t, y)) = fiberwiseCellAttachmentProj α₁ y := by
-  obtain ⟨G, hG⟩ := exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse
-    α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK g₀ G₀ hG₀ hg₀P
-  obtain ⟨G', hG'⟩ := exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse
-    α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h' hh' K' hK' g₀ G₀ hG₀ hg₀P
+  obtain ⟨G, hG⟩ :=
+    exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp_fiberwiseCellComparison
+      α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK g₀ G₀ hG₀ hg₀P
+  obtain ⟨G', hG'⟩ :=
+    exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp_fiberwiseCellComparison
+      α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h' hh' K' hK' g₀ G₀ hG₀ hg₀P
   refine ⟨G.trans G'.symm, fun t y ↦ ?_⟩
   rw [ContinuousMap.HomotopyRel.trans_apply]
   split_ifs
@@ -730,10 +732,12 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
       ∀ t y, fiberwiseCellAttachmentProj α₀ (G (t, y)) = fiberwiseCellAttachmentProj α₂ y := by
   -- `E₀₁ ∘ E₁₂ ≃ g₀ ∘ Φ₁ ∘ E₁₂ ≃ g₀ ∘ Φ₂ ≃ E₀₂`.
   set E₁₂ := fiberwiseCellReattachment α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂ K₁₂ hK₁₂
-  obtain ⟨G₁, hG₁⟩ := exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse
-    α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h₀₁ hh₀₁ K₀₁ hK₀₁ g₀ G₀ hG₀ hg₀P
-  obtain ⟨G₃, hG₃⟩ := exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse
-    α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂ hh₀₂ K₀₂ hK₀₂ g₀ G₀ hG₀ hg₀P
+  obtain ⟨G₁, hG₁⟩ :=
+    exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp_fiberwiseCellComparison
+      α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h₀₁ hh₀₁ K₀₁ hK₀₁ g₀ G₀ hG₀ hg₀P
+  obtain ⟨G₃, hG₃⟩ :=
+    exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp_fiberwiseCellComparison
+      α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂ hh₀₂ K₀₂ hK₀₂ g₀ G₀ hG₀ hg₀P
   have hmono : range (fiberwiseCellAttachmentIncl α₂) ⊆
       E₁₂.hom ⁻¹' range (fiberwiseCellAttachmentIncl α₁) := by
     rintro _ ⟨x, rfl⟩
