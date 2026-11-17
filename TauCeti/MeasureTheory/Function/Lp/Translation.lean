@@ -12,6 +12,7 @@ public import TauCeti.Topology.Instances.ENNReal
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 
@@ -48,6 +49,8 @@ for a `C¹` function, and needs no integrability of the function itself.
   increment with its pointwise `eLpNorm`.
 * `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
   domain whose translate stays in the original domain.
+* `Filter.EventuallyEq.comp_add_right_restrict_of_mapsTo`: the same for almost everywhere
+  equality.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`: translation increments of an `Lᵖ` function
   tend to zero.
 * `MeasureTheory.eLpNorm_comp_add_sub_le_two_mul`: a translation increment is at most twice the
@@ -62,6 +65,10 @@ for a `C¹` function, and needs no integrability of the function itself.
   with `Lᵖ` derivative.
 * `ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv`: the second-order
   translation estimate, bounding a mixed second difference by the second derivative.
+* `norm_inv_smul_sub_sub_fderiv_le_of_lipschitzWith`: the second-order Taylor bound for the
+  difference quotients of a function with Lipschitz derivative.
+* `HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv`: difference quotients
+  of a compactly supported `C²` function converge in `Lᵖ` to its directional derivative.
 
 ## References
 
@@ -224,6 +231,16 @@ theorem comp_add_right_restrict_of_mapsTo [TopologicalSpace F] [ContinuousENorm 
     (measurableEmbedding_addRight h) Omega)).mono_measure
     (Measure.restrict_mono_set mu hVO.subset_preimage)
 
+/-- Almost everywhere equality survives translation on any set whose translate lies in the
+original domain: if `f = g` almost everywhere on `Ω` and `V + h ⊆ Ω`, then `f (· + h) = g (· + h)`
+almost everywhere on `V`. -/
+theorem _root_.Filter.EventuallyEq.comp_add_right_restrict_of_mapsTo {Omega V : Set E} {h : E}
+    {f g : E → F} (hfg : f =ᵐ[mu.restrict Omega] g) (hVO : MapsTo (· + h) V Omega) :
+    (fun x => f (x + h)) =ᵐ[mu.restrict V] fun x => g (x + h) :=
+  ae_restrict_of_ae_restrict_of_subset hVO.subset_preimage
+    (((measurePreserving_add_right mu h).restrict_preimage_emb
+      (measurableEmbedding_addRight h) Omega).quasiMeasurePreserving.ae_eq_comp hfg)
+
 end
 
 variable {E F : Type*} [AddZeroClass E] [MeasurableSpace E] {mu : Measure E}
@@ -318,6 +335,30 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
     _ ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
         simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul
           (μ := volume.restrict (Icc (0 : ℝ) 1)) (u := fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ) hr
+
+/-- **The second-order Taylor bound for difference quotients.** If `u` is differentiable with an
+`L`-Lipschitz derivative, then for every step `t ≠ 0`
+
+`‖t⁻¹ (u(x + t v) - u(x)) - Du(x) v‖ ≤ L |t| ‖v‖²`. -/
+theorem norm_inv_smul_sub_sub_fderiv_le_of_lipschitzWith (hu : Differentiable ℝ u) {L : NNReal}
+    (hL : LipschitzWith L (fderiv ℝ u)) (x v : E) {t : ℝ} (ht : t ≠ 0) :
+    ‖t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v‖ ≤ L * |t| * ‖v‖ ^ 2 := by
+  -- The mean value inequality for `u - Du(x)` on the ball of radius `|t| ‖v‖` about `x`.
+  have hbound : ∀ y ∈ Metric.closedBall x (|t| * ‖v‖),
+      ‖fderiv ℝ u y - fderiv ℝ u x‖ ≤ L * (|t| * ‖v‖) := fun y hy => by
+    rw [← dist_eq_norm]
+    exact (hL.dist_le_mul y x).trans (by gcongr; exact Metric.mem_closedBall.1 hy)
+  have hmem : x + t • v ∈ Metric.closedBall x (|t| * ‖v‖) := by
+    rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
+  have h := (convex_closedBall x (|t| * ‖v‖)).norm_image_sub_le_of_norm_fderiv_le'
+    (fun y _ => hu y) hbound (Metric.mem_closedBall_self (by positivity)) hmem
+  rw [add_sub_cancel_left, map_smul, norm_smul, Real.norm_eq_abs] at h
+  have hrw : t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v =
+      t⁻¹ • (u (x + t • v) - u x - t • fderiv ℝ u x v) := by
+    rw [smul_sub (t⁻¹) (u (x + t • v) - u x), smul_smul, inv_mul_cancel₀ ht, one_smul]
+  rw [hrw, norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 ht)]
+  calc ‖u (x + t • v) - u x - t • fderiv ℝ u x v‖ ≤ L * (|t| * ‖v‖) * (|t| * ‖v‖) := h
+    _ = |t| * (L * |t| * ‖v‖ ^ 2) := by ring
 
 end Calculus
 
@@ -501,5 +542,68 @@ theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
         exact (hu.fderiv_right (m := 1) (by norm_num)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
           hp k
     _ = ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := (mul_assoc _ _ _).symm
+
+omit [SFinite mu] [mu.IsAddRightInvariant] in
+/-- **Difference quotients of a smooth compactly supported function converge in `Lᵖ`** to its
+directional derivative: for a compactly supported `C²` function `u`, every direction `v` and
+every exponent `p`,
+
+`‖t⁻¹ (u(· + t v) - u) - Du · v‖_p → 0` as `t → 0`.
+
+The second derivative of `u` is bounded, so the error is at most `C |t|` pointwise, and for
+`|t| ≤ 1` it vanishes off a fixed compact set. -/
+theorem HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv [ProperSpace E]
+    [IsFiniteMeasureOnCompacts mu] (hu : HasCompactSupport u) (hu' : ContDiff ℝ 2 u) (v : E)
+    {p : ℝ≥0∞} :
+    Filter.Tendsto (fun t : ℝ => eLpNorm (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v)
+      p mu) (nhdsWithin 0 {0}ᶜ) (nhds 0) := by
+  have hd : Differentiable ℝ u := hu'.differentiable (by norm_num)
+  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport (hu.fderiv ℝ)
+    (hu'.fderiv_right (m := 1) (by norm_num)) one_ne_zero
+  have htaylor : ∀ x {t : ℝ}, t ≠ 0 →
+      ‖t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v‖ ≤ L * |t| * ‖v‖ ^ 2 := fun x _ ht =>
+    norm_inv_smul_sub_sub_fderiv_le_of_lipschitzWith hd hL x v ht
+  -- For `|t| ≤ 1` the error vanishes off the `‖v‖`-thickening of the support.
+  set K := Metric.cthickening ‖v‖ (tsupport u)
+  have hK : IsCompact K := hu.isCompact.cthickening
+  have hvanish : ∀ x ∉ K, ∀ t : ℝ, |t| ≤ 1 → t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v = 0 := by
+    intro x hx t ht
+    have hfar : ∀ y, dist x y ≤ ‖v‖ → y ∉ tsupport u := fun y hy hy' =>
+      hx (Metric.mem_cthickening_of_dist_le x y ‖v‖ _ hy' hy)
+    have h1 : x + t • v ∉ tsupport u := hfar _ (by
+      rw [dist_comm, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
+      exact mul_le_of_le_one_left (norm_nonneg v) ht)
+    have h0 : x ∉ tsupport u := hfar x (by simp)
+    rw [image_eq_zero_of_notMem_tsupport h1, image_eq_zero_of_notMem_tsupport h0,
+      fderiv_of_notMem_tsupport ℝ h0]
+    simp
+  -- The `Lᵖ` norm is at most `L |t| ‖v‖² μ(K)^(1/p)`, which tends to zero.
+  have hlim : Filter.Tendsto
+      (fun t : ℝ => mu K ^ p.toReal⁻¹ * ENNReal.ofReal (L * |t| * ‖v‖ ^ 2))
+      (nhdsWithin 0 {0}ᶜ) (nhds 0) := by
+    have h : Filter.Tendsto (fun t : ℝ => ENNReal.ofReal (L * |t| * ‖v‖ ^ 2)) (nhds 0)
+        (nhds 0) := by
+      have hc : Continuous fun t : ℝ => L * |t| * ‖v‖ ^ 2 := by fun_prop
+      simpa [Function.comp_def] using (ENNReal.continuous_ofReal.comp hc).tendsto 0
+    simpa using ENNReal.Tendsto.const_mul (h.mono_left nhdsWithin_le_nhds)
+      (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK.measure_lt_top.ne))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Filter.Eventually.of_forall fun _ => bot_le) ?_
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with t ht ht1
+  have ht1' : |t| ≤ 1 := by simpa [Real.dist_eq] using ht1
+  have hind : (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v) =
+      K.indicator fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v := by
+    ext x
+    by_cases hx : x ∈ K
+    · rw [indicator_of_mem hx]
+    · rw [indicator_of_notMem hx, hvanish x hx t ht1']
+  rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict hK.measurableSet.nullMeasurableSet]
+  have hmeas : Continuous fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v :=
+    (continuous_const.smul ((hd.continuous.comp (by fun_prop)).sub hd.continuous)).sub
+      ((hu'.continuous_fderiv (by norm_num)).clm_apply continuous_const)
+  have h := eLpNorm_le_of_ae_bound (μ := mu.restrict K) (p := p) hmeas.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => htaylor x ht)
+  rwa [Measure.restrict_apply_univ] at h
 
 end Translation
