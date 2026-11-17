@@ -55,6 +55,8 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
 * `criticalHessian_apply_eq_eval₂_fderiv`: at a critical point, the critical Hessian is `σ_p`
   applied to the linearization of the Hamiltonian vector field.
+* `criticalHessian_apply_eq_zero_iff`: at a critical point, the null space of the critical
+  Hessian is the kernel of the linearization of the Hamiltonian vector field.
 * `injective_fderiv_mpullbackWithin_hamiltonianVectorField_iff`: the linearization of `X_F` at a
   critical point is injective exactly when the critical point is nondegenerate.
 * `eventually_isNondegenerateFixedPt_flowOf_hamiltonianVectorField`: a nondegenerate critical point
@@ -140,6 +142,26 @@ theorem criticalHessian_apply_eq_eval₂_fderiv (h : σ.IsNondegenerate)
   rw [hupd, RoughForm.inChartAt_extChartAt_self]
   exact (SmoothBundleForm.eval₂_apply σ p _ u).symm
 
+/-- **The null space of the Hessian at a critical point.** For a nondegenerate two-form `σ` and a
+`C²` function `F` with a critical point `p`, the critical Hessian of `F` at `p` kills `w` exactly
+when the linearization of `X_F` at `p`, the derivative at the chart image of `p` of the coordinate
+expression of `X_F` in the preferred chart at `p`, kills `w`. -/
+theorem criticalHessian_apply_eq_zero_iff (h : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) 2 F)
+    (hcrit : mvfderiv I F p = 0) (w : TangentSpace I p) :
+    criticalHessian I F p w = 0 ↔
+      fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
+        (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p) w = 0 := by
+  set L := fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
+    (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p)
+  -- The critical Hessian is `σ_p (L ·, ·)` and `σ_p` is nondegenerate.
+  refine ⟨fun hw ↦ isNondegenerate_iff_separatingLeft.1 h p (L w) fun u ↦ ?_, fun hw ↦ ?_⟩
+  · rw [← criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
+    exact zero_apply u
+  · ext u
+    rw [criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
+    exact (SmoothBundleForm.eval₂_apply σ p 0 u).trans
+      ((σ.1 p).map_coord_zero (m := ![0, u]) 0 rfl)
+
 /-- **Nondegenerate critical points are the zeros of `X_F` with injective linearization.** For a
 nondegenerate two-form `σ` and a `C²` function `F` with a critical point `p`, the derivative at the
 chart image of `p` of the coordinate expression of `X_F` in the preferred chart at `p` is injective
@@ -152,14 +174,7 @@ theorem injective_fderiv_mpullbackWithin_hamiltonianVectorField_iff (h : σ.IsNo
   set L := fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
     (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p)
   -- The critical Hessian and `L` have the same kernel, since `σ_p` is nondegenerate.
-  have hker (w : TangentSpace I p) : criticalHessian I F p w = 0 ↔ L w = 0 := by
-    refine ⟨fun hw ↦ isNondegenerate_iff_separatingLeft.1 h p (L w) fun u ↦ ?_, fun hw ↦ ?_⟩
-    · rw [← criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
-      exact zero_apply u
-    · ext u
-      rw [criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
-      exact (SmoothBundleForm.eval₂_apply σ p 0 u).trans
-        ((σ.1 p).map_coord_zero (m := ![0, u]) 0 rfl)
+  have hker := criticalHessian_apply_eq_zero_iff h hF hcrit
   rw [isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
   -- `L` acts on `E` and the critical Hessian on `TangentSpace I p`, which is `E` by definition.
   refine ⟨fun hL ↦ ⟨hF p, hcrit, criticalHessian_isInvertible_of_injective
