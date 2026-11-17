@@ -115,27 +115,48 @@ theorem isProperOnSupport_of_isCompact_dsupport [T2Space E'] (hΦ : ContinuousOn
 theorem isProperOnSupport_zero [IsTopologicalAddGroup F] : IsProperOnSupport (0 : 𝓓'(Ω, F)) Φ Ω' :=
   fun _ _ _ ↦ by simp [dsupport_zero]
 
-/-- The sum of two distributions on whose supports `Φ` is proper. -/
+/-- `Φ` is proper on the support of `T` if, over every compact `K ⊆ Ω'`, the part
+`Ω ∩ supp T ∩ Φ⁻¹(K)` of the support of `T` lies in a compact subset of `Ω ∩ Φ⁻¹(K)`. -/
+theorem IsProperOnSupport.of_forall_subset {T : 𝓓'(Ω, F)}
+    (h : ∀ K : Set E', IsCompact K → K ⊆ Ω' → ∃ C : Set E, IsCompact C ∧
+      (Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' K ⊆ C ∧ C ⊆ (Ω : Set E) ∩ Φ ⁻¹' K) :
+    IsProperOnSupport T Φ Ω' := fun K hK hKΩ' ↦ by
+  obtain ⟨C, hC, hTC, hCK⟩ := h K hK hKΩ'
+  -- The part of the support of `T` over `K` is the closed part `C ∩ supp T` of `C`.
+  have hTC' : (Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' K = C ∩ dsupport T := by
+    refine Subset.antisymm (subset_inter hTC (inter_subset_left.trans inter_subset_right)) ?_
+    rintro x ⟨hxC, hxT⟩
+    obtain ⟨hxΩ, hxK⟩ := hCK hxC
+    exact ⟨⟨hxΩ, hxT⟩, hxK⟩
+  rw [hTC']
+  exact hC.inter_right isClosed_dsupport
+
+/-- If `Φ` is proper on the support of `T`, it is proper on the support of every distribution on
+`Ω` whose support lies in that of `T`. -/
+theorem IsProperOnSupport.mono {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
+    {S : 𝓓'(Ω, G)} {T : 𝓓'(Ω, F)} (hT : IsProperOnSupport T Φ Ω')
+    (hST : dsupport S ⊆ dsupport T) : IsProperOnSupport S Φ Ω' :=
+  of_forall_subset fun K hK hKΩ' ↦ ⟨_, hT K hK hKΩ',
+    inter_subset_inter_left _ (inter_subset_inter_right _ hST),
+    inter_subset_inter_left _ inter_subset_left⟩
+
+/-- If `Φ` is proper on the supports of `S` and `T`, it is proper on the support of `S + T`. -/
 theorem IsProperOnSupport.add [IsTopologicalAddGroup F] {S T : 𝓓'(Ω, F)}
     (hS : IsProperOnSupport S Φ Ω') (hT : IsProperOnSupport T Φ Ω') :
-    IsProperOnSupport (S + T) Φ Ω' := fun K hK hKΩ' ↦ by
-  -- Over `K`, the support of `S + T` in `Ω` is a closed part of the union of those of `S` and `T`.
-  convert ((hS K hK hKΩ').union (hT K hK hKΩ')).inter_right
-    (isClosed_dsupport (f := ⇑(S + T))) using 1
-  refine Subset.antisymm (fun x hx ↦ ⟨?_, hx.1.2⟩) fun x hx ↦ ?_
-  · rcases dsupport_add_subset (⇑S) (⇑T) hx.1.2 with h | h
-    · exact Or.inl ⟨⟨hx.1.1, h⟩, hx.2⟩
-    · exact Or.inr ⟨⟨hx.1.1, h⟩, hx.2⟩
-  · rcases hx.1 with h | h <;> exact ⟨⟨h.1.1, hx.2⟩, h.2⟩
+    IsProperOnSupport (S + T) Φ Ω' :=
+  -- Over `K`, the support of `S + T` in `Ω` lies in the union of those of `S` and `T`.
+  of_forall_subset fun K hK hKΩ' ↦ ⟨_, (hS K hK hKΩ').union (hT K hK hKΩ'),
+    fun _ ⟨⟨hxΩ, hx⟩, hxK⟩ ↦ (dsupport_add_subset (⇑S) (⇑T) hx).imp
+      (fun h ↦ ⟨⟨hxΩ, h⟩, hxK⟩) fun h ↦ ⟨⟨hxΩ, h⟩, hxK⟩,
+    union_subset (inter_subset_inter_left _ inter_subset_left)
+      (inter_subset_inter_left _ inter_subset_left)⟩
 
-/-- A scalar multiple of a distribution on whose support `Φ` is proper. -/
+/-- If `Φ` is proper on the support of `T`, it is proper on the support of `c • T`. -/
 theorem IsProperOnSupport.smul {R : Type*} [Monoid R] [DistribMulAction R F]
     [SMulCommClass ℝ R F] [ContinuousConstSMul R F] {Φ : E → E'}
     {T : 𝓓'(Ω, F)} (hT : IsProperOnSupport T Φ Ω') (c : R) :
-    IsProperOnSupport (c • T) Φ Ω' := fun K hK hKΩ' ↦ by
-  convert (hT K hK hKΩ').inter_right (isClosed_dsupport (f := ⇑(c • T))) using 1
-  exact Subset.antisymm (fun x hx ↦ ⟨⟨⟨hx.1.1, dsupport_smul_subset c (⇑T) hx.1.2⟩, hx.2⟩, hx.1.2⟩)
-    fun x hx ↦ ⟨⟨hx.1.1.1, hx.2⟩, hx.1.2⟩
+    IsProperOnSupport (c • T) Φ Ω' :=
+  hT.mono (dsupport_smul_subset c (⇑T))
 
 end IsProperOnSupport
 
@@ -404,7 +425,8 @@ the support of `S ⊗ T`. -/
 theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
     (hV' : (V' : Set (E' × D')) ⊆ (Ω' : Set E') ×ˢ (O' : Set D')) (hΦ : ContinuousOn Φ Ω)
     (hΨ : ContinuousOn Ψ O) (hS : IsProperOnSupport S Φ Ω') (hT : IsProperOnSupport T Ψ O') :
-    IsProperOnSupport (S.tensorProduct T hV.subset) (Prod.map Φ Ψ) V' := fun K hK hKV' ↦ by
+    IsProperOnSupport (S.tensorProduct T hV.subset) (Prod.map Φ Ψ) V' := by
+  refine of_forall_subset fun K hK hKV' ↦ ?_
   have hK₁ : Prod.fst '' K ⊆ Ω' := image_subset_iff.2 fun p hp ↦ (hV' (hKV' hp)).1
   have hK₂ : Prod.snd '' K ⊆ O' := image_subset_iff.2 fun p hp ↦ (hV' (hKV' hp)).2
   -- Over `K`, the support of `S ⊗ T` lies in the product `C` of the parts of the supports of `S`
@@ -415,13 +437,12 @@ theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) 
     hV ▸ prod_mono (inter_subset_left.trans inter_subset_left)
       (inter_subset_left.trans inter_subset_left)
   have hΦΨ : ContinuousOn (Prod.map Φ Ψ) V := hV ▸ hΦ.prodMap hΨ
-  convert ((hC.inter_preimage (hΦΨ.mono hCV) hK.isClosed).inter_right
-    (isClosed_dsupport (f := ⇑(S.tensorProduct T hV.subset)))) using 1
-  refine Subset.antisymm (fun p hp ↦ ⟨⟨?_, hp.2⟩, hp.1.2⟩) fun p hp ↦ ⟨⟨hCV hp.1.1, hp.2⟩, hp.1.2⟩
-  have hpV : p ∈ (Ω : Set E) ×ˢ (O : Set D) := hV ▸ hp.1.1
-  have hpST := dsupport_tensorProduct_subset S T hV.subset hp.1.2
-  exact ⟨⟨⟨hpV.1, hpST.1⟩, ⟨Prod.map Φ Ψ p, hp.2, rfl⟩⟩,
-    ⟨⟨hpV.2, hpST.2⟩, ⟨Prod.map Φ Ψ p, hp.2, rfl⟩⟩⟩
+  refine ⟨_, hC.inter_preimage (hΦΨ.mono hCV) hK.isClosed, ?_, fun p hp ↦ ⟨hCV hp.1, hp.2⟩⟩
+  rintro p ⟨⟨hpV, hp⟩, hpK⟩
+  have hpΩO : p ∈ (Ω : Set E) ×ˢ (O : Set D) := hV ▸ hpV
+  have hpST := dsupport_tensorProduct_subset S T hV.subset hp
+  exact ⟨⟨⟨⟨hpΩO.1, hpST.1⟩, ⟨Prod.map Φ Ψ p, hpK, rfl⟩⟩,
+    ⟨⟨hpΩO.2, hpST.2⟩, ⟨Prod.map Φ Ψ p, hpK, rfl⟩⟩⟩, hpK⟩
 
 variable [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ O}
 
@@ -454,15 +475,15 @@ omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
 /-- The first projection is proper on the support of `S ⊗ T` when `T` has compact support. -/
 theorem isProperOnSupport_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
     (hT : IsCompact (dsupport T)) (hTO : dsupport T ⊆ O) :
-    IsProperOnSupport (S.tensorProduct T hV.subset) Prod.fst Ω := fun K hK hKΩ ↦ by
+    IsProperOnSupport (S.tensorProduct T hV.subset) Prod.fst Ω := by
+  refine IsProperOnSupport.of_forall_subset fun K hK hKΩ ↦ ?_
   have hCV : (K ∩ dsupport S) ×ˢ dsupport T ⊆ (V : Set (E × D)) :=
     hV ▸ prod_mono (inter_subset_left.trans hKΩ) hTO
-  convert ((((hK.inter_right (isClosed_dsupport (f := ⇑S))).prod hT).inter_preimage
-    continuousOn_fst hK.isClosed).inter_right
-    (isClosed_dsupport (f := ⇑(S.tensorProduct T hV.subset)))) using 1
-  refine Subset.antisymm (fun p hp ↦ ⟨⟨?_, hp.2⟩, hp.1.2⟩) fun p hp ↦ ⟨⟨hCV hp.1.1, hp.2⟩, hp.1.2⟩
-  have hpST := dsupport_tensorProduct_subset S T hV.subset hp.1.2
-  exact ⟨⟨hp.2, hpST.1⟩, hpST.2⟩
+  refine ⟨_, ((hK.inter_right (isClosed_dsupport (f := ⇑S))).prod hT).inter_preimage
+    continuousOn_fst hK.isClosed, ?_, fun p hp ↦ ⟨hCV hp.1, hp.2⟩⟩
+  rintro p ⟨⟨-, hp⟩, hpK⟩
+  have hpST := dsupport_tensorProduct_subset S T hV.subset hp
+  exact ⟨⟨⟨hpK, hpST.1⟩, hpST.2⟩, hpK⟩
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
 /-- **Integration over the fibres of the first projection.** If `T` has compact support, pushing
@@ -485,7 +506,8 @@ theorem pushforward_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×
   have hpST := dsupport_tensorProduct_subset S T hV.subset hp.2
   filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
     (hχ.filter_mono (nhds_le_nhdsSet hpST.2))] with q hq
-  simp [prodSMulCLM_apply, show χ q.2 = 1 from hq]
+  simp only [mem_preimage, mem_ofPred_eq] at hq
+  simp [prodSMulCLM_apply, hq]
 
 end TensorProduct
 

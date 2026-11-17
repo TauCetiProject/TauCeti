@@ -209,7 +209,8 @@ theorem waveFrontSet_pushforward_subset (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ)
     (inter_subset_left.trans inter_subset_left)
   -- Over the interior `U` of `K`, `A_* T` is the pushforward of `T` with the cutoff `χ`.
   let U : Opens E' := ⟨interior K, isOpen_interior⟩
-  have h := waveFrontSet_inter_eq_of_restrictCLM_eq (show U ≤ Ω' from interior_subset.trans hKΩ')
+  have h := waveFrontSet_inter_eq_of_restrictCLM_eq
+    (SetLike.coe_subset_coe.1 (interior_subset.trans hKΩ'))
     (restrictCLM_pushforward (hΦ := A.contDiff.contDiffOn) (hT := hT) (U := U)
       interior_subset hχ)
   have hp' : (y, η) ∈ (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ∩
