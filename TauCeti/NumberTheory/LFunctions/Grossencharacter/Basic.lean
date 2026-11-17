@@ -67,6 +67,8 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
   `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd`: the finite conductor of the
   presented character divides the finite part of the modulus.
 * `TauCeti.LFunctions.Grossencharacter.toHeckeCharacter_primeIdele`: the value at a prime idele.
+* `TauCeti.LFunctions.Grossencharacter.infinityType_unitaryPart`: the infinity type of the unitary
+  part has vanishing real and complex modulus exponents.
 * `TauCeti.LFunctions.Grossencharacter.lFunctionC_ofRayClassCharacter`: the presented L-function
   of a ray class character is its Hecke L-function.
 
@@ -135,6 +137,27 @@ type `infinityType`. -/
 theorem isAlgebraic (χ : Grossencharacter K 𝔪) : χ.toHeckeCharacter.IsAlgebraic :=
   HeckeCharacter.isAlgebraic_iff_exists_agreesOnIdentityComponent.mpr
     ⟨χ.infinityType, χ.agreesOnIdentityComponent⟩
+
+/-- Because `χ` is algebraic, the infinity type of `χ.toHeckeCharacter.unitaryPart` has vanishing
+real and complex modulus exponents at every archimedean place, retaining only the real parities and
+complex angular frequencies of `χ`. -/
+theorem infinityType_unitaryPart (χ : Grossencharacter K 𝔪) :
+    χ.toHeckeCharacter.unitaryPart.infinityType =
+      { realExponent := 0
+        realParity := χ.toHeckeCharacter.infinityType.realParity
+        complexExponent := 0
+        complexAngularFrequency :=
+          (AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency } := by
+  obtain ⟨hre_eq, hce_eq, hfreq_eq⟩ :=
+    (χ.toHeckeCharacter.infinityType.agreesOnIdentityComponent_iff _).mp
+      χ.agreesOnIdentityComponent
+  rw [HeckeCharacter.unitaryPart_def, HeckeCharacter.infinityType_mul,
+    HeckeCharacter.infinityType_normPow]
+  ext w
+  · exact Complex.ext (by simp) (by simp [hre_eq])
+  · simp
+  · exact Complex.ext (by simp) (by simp [hce_eq])
+  · simp [hfreq_eq]
 
 /-- The weight of a presentation vanishes at the primes dividing the modulus. -/
 theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOneSpectrum (𝓞 K)}
