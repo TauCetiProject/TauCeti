@@ -51,7 +51,8 @@ admissible functions through their boundary traces:
   the admissible functions `exp (δ (z - θ)²) x` with `δ → 0`
   (`ComplexMethodSpace.norm_le_of_isBoundedStripFunction`), and at `θ = 0, 1` evaluating the
   boundary traces `g₀, g₁` at `t = 0` (recovering `F 0` and `F 1`) gives contractive injections
-  `[X₀, X₁]_0 →L[ℂ] X₀` and `[X₀, X₁]_1 →L[ℂ] X₁` that preserve the intersection norm
+  `[X₀, X₁]_0 →L[ℂ] X₀` and `[X₀, X₁]_1 →L[ℂ] X₁`; on elements of `X₀ ∩ X₁`, the interpolation norm
+  at `θ = 0` or `1` equals the corresponding endpoint norm `‖x‖_{X₀}` or `‖x‖_{X₁}`
   (`ComplexMethodSpace.norm_ofInter_zero`, `ComplexMethodSpace.norm_ofInter_one`);
 * `CompatibleCouple.IsBoundedAnalyticFamily T T₀ T₁`: operators `T z : X₀ + X₁ → Y₀ + Y₁`,
   holomorphic in operator norm on the open strip, strongly continuous and uniformly bounded on the

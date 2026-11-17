@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
 
+import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 
 /-!
@@ -96,11 +97,11 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 * `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
   maps.
-* `TauCeti.integral_fourier_smul_sub_eq`, `Continuous.exists_continuousMap_integral_smul_sub_lt`,
-  `Continuous.exists_mem_span_fourier_integral_smul_sub_lt`: circle convolution against
-  `fourier m` extracts `fourier m x • fourierCoeff f m`, and continuous Banach-space-valued maps on
-  `AddCircle T` are uniformly approximated by convolving against continuous kernels and scalar
-  trigonometric polynomials.
+* `Function.Periodic.intervalIntegrable_fourier_smul_lift`,
+  `ContinuousLinearMap.integral_smul_sub_haarAddCircle_comp`,
+  `TauCeti.integral_fourier_smul_sub_eq`, `Continuous.exists_continuousMap_integral_smul_sub_lt`,
+  `Continuous.exists_mem_span_fourier_integral_smul_sub_lt`: periodic lift integrability,
+  convolution commutation with CLMs, and uniform approximation on `AddCircle T`.
 
 ## Tags
 
@@ -345,6 +346,27 @@ theorem _root_.Continuous.integrable_smul_sub_haarAddCircle {𝕜 E : Type*} [To
   (hR.smul (hf.comp (continuous_const.sub continuous_id))).integrable_of_hasCompactSupport
     (.of_compactSpace _)
 
+omit [Fact (0 < T)] in
+/-- For continuous `T`-periodic `p`, `y ↦ fourier m y • hp.lift y` is interval integrable. -/
+theorem _root_.Function.Periodic.intervalIntegrable_fourier_smul_lift {E : Type*}
+    [NormedAddCommGroup E] [SMul ℂ E] [ContinuousSMul ℂ E] {p : ℝ → E}
+    (hp : Function.Periodic p T) (hp_cont : Continuous p) (m : ℤ)
+    {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] (a b : ℝ) :
+    IntervalIntegrable (fun y : ℝ ↦ @fourier T m y • hp.lift y) μ a b :=
+  have hl : Continuous hp.lift := continuous_coinduced_dom.2 hp_cont
+  (((@fourier T m).continuous.comp continuous_quotient_mk').smul
+    (hl.comp continuous_quotient_mk')).intervalIntegrable a b
+
+/-- Convolving `x ↦ L (f x)` against a continuous kernel `R` commutes with `L`. -/
+theorem _root_.ContinuousLinearMap.integral_smul_sub_haarAddCircle_comp {𝕜 E F : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [CompleteSpace F]
+    (L : E →L[𝕜] F) {R : AddCircle T → 𝕜} (hR : Continuous R) {f : AddCircle T → E}
+    (hf : Continuous f) (x : AddCircle T) :
+    ∫ u : AddCircle T, R u • L (f (x - u)) ∂haarAddCircle =
+      L (∫ u : AddCircle T, R u • f (x - u) ∂haarAddCircle) := by
+  simpa only [map_smul] using L.integral_comp_comm (hR.integrable_smul_sub_haarAddCircle hf x)
+
 /-- Convolving `f : AddCircle T → E` against `fourier m` yields `fourier m x • fourierCoeff f m`. -/
 theorem integral_fourier_smul_sub_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (m : ℤ) (f : AddCircle T → E) (x : AddCircle T) :
@@ -359,7 +381,6 @@ theorem _root_.Continuous.exists_continuousMap_integral_smul_sub_lt {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {f : AddCircle T → E}
     (hf : Continuous f) {ε : ℝ} (hε : 0 < ε) : ∃ K : C(AddCircle T, ℂ),
       ∀ x : AddCircle T, ‖(∫ u : AddCircle T, K u • f (x - u) ∂haarAddCircle) - f x‖ < ε := by
-  -- Build a normalized tent kernel supported on `{u | ‖u‖ < η}` from uniform continuity.
   obtain ⟨η, hη, huc⟩ := Metric.uniformContinuous_iff.1
     (CompactSpace.uniformContinuous_of_continuous hf) (ε / 2) (half_pos hε)
   let tent : AddCircle T → ℝ := fun u ↦ max 0 (1 - ‖u‖ / η)
@@ -368,30 +389,17 @@ theorem _root_.Continuous.exists_continuousMap_integral_smul_sub_lt {E : Type*}
   have hc : 0 < c := integral_pos_of_integrable_nonneg_ne_zero htent
     (htent.integrable_of_hasCompactSupport (.of_compactSpace _)) (fun _ ↦ le_max_left _ _)
     (by simp [tent] : tent 0 ≠ 0)
-  let K : C(AddCircle T, ℂ) := ⟨fun u ↦ ((c⁻¹ * tent u : ℝ) : ℂ), by fun_prop⟩
-  have hK_int : ∫ u, K u ∂haarAddCircle = 1 := by
-    simp_rw [K, ContinuousMap.coe_mk, Complex.ofReal_mul, integral_const_mul,
-      integral_complex_ofReal]
-    rw [show (∫ u, tent u ∂haarAddCircle) = c from rfl, ← Complex.ofReal_mul,
-      inv_mul_cancel₀ hc.ne', Complex.ofReal_one]
-  have hK_norm : ∫ u, ‖K u‖ ∂haarAddCircle = 1 := by
-    have h0 (u) : 0 ≤ c⁻¹ * tent u := mul_nonneg (inv_nonneg.2 hc.le) (le_max_left _ _)
-    simp_rw [K, ContinuousMap.coe_mk, Complex.norm_real, Real.norm_of_nonneg (h0 _),
-      integral_const_mul]
-    exact inv_mul_cancel₀ hc.ne'
-  refine ⟨K, fun x ↦ lt_of_le_of_lt ?_ (half_lt_self hε)⟩
-  have hintK := K.continuous.integrable_smul_sub_haarAddCircle hf x
-  have hintKx := K.continuous.integrable_smul_sub_haarAddCircle (continuous_const (y := f x)) 0
-  rw [← show (∫ u, K u • f x ∂haarAddCircle) = f x by rw [integral_smul_const, hK_int, one_smul],
-    ← integral_sub hintK hintKx]
-  refine (norm_integral_le_integral_norm _).trans <| (integral_mono (hintK.sub hintKx).norm
-    ((K.continuous.norm.mul_const (ε / 2)).integrable_of_hasCompactSupport (.of_compactSpace _))
-    fun u ↦ ?_).trans_eq (by rw [integral_mul_const, hK_norm, one_mul])
-  simp only [Pi.sub_apply, ← smul_sub, norm_smul]
-  by_cases hu : ‖u‖ < η
-  · exact mul_le_mul_of_nonneg_left ((dist_eq_norm _ _).symm.trans_lt (huc
-      (by rwa [dist_eq_norm, sub_right_comm, sub_self, zero_sub, norm_neg]))).le (norm_nonneg _)
-  · simp [K, tent, max_eq_left (sub_nonpos.2 ((one_le_div hη).2 (not_lt.1 hu)))]
+  let k : AddCircle T → ℝ := fun u ↦ c⁻¹ * tent u
+  have hsupp : Function.support k ⊆ Metric.ball 0 η := fun u hu ↦ by
+    rw [Metric.mem_ball, dist_zero_right]; by_contra h
+    exact hu (by simp [k, tent, max_eq_left (sub_nonpos.2 ((one_le_div hη).2 (not_lt.1 h)))])
+  refine ⟨⟨fun u ↦ (k u : ℂ), by fun_prop⟩, fun x ↦ ?_⟩
+  have hconv := MeasureTheory.dist_convolution_le (μ := haarAddCircle) (x₀ := x) (z₀ := f x)
+    (half_pos hε).le hsupp (fun _ ↦ mul_nonneg (inv_nonneg.2 hc.le) (le_max_left _ _))
+    (by rw [integral_const_mul, inv_mul_cancel₀ hc.ne']) hf.aestronglyMeasurable
+    fun y hy ↦ (huc (Metric.mem_ball.1 hy)).le
+  rw [MeasureTheory.convolution_def, dist_eq_norm] at hconv
+  simpa [Complex.coe_smul] using hconv.trans_lt (half_lt_self hε)
 
 /-- **Uniform convolution approximation by scalar trigonometric polynomials.** Every continuous
 Banach-valued map `f : AddCircle T → E` is uniformly approximated by convolving against

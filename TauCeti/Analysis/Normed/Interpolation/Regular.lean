@@ -154,19 +154,14 @@ theorem coe_interFst_regularizeInterEquiv_symm (x : C.inter) :
 theorem coe_interSnd_regularizeInterEquiv_symm (x : C.inter) :
     (C.regularize.interSnd (C.regularizeInterEquiv.symm x) : X₁) = C.interSnd x := by simp
 
-private theorem denseRange_subtype_of_closure {E α β : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {S : Submodule 𝕜 E} {f : α → S} {g : β → E} {e : α ≃ β}
-    (hfg : ∀ a, (f a : E) = g (e a)) (hS : (S : Set E) = closure (Set.range g)) : DenseRange f :=
-  S.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z => by
-    rw [Submodule.subtypeL_apply, ← Set.range_comp, show S.subtypeL ∘ f = g ∘ e from funext hfg,
-      e.surjective.range_comp, ← hS]; exact SetLike.coe_mem z
-
 /-- The regularization of any compatible couple is regular. -/
 @[simp] theorem isRegular_regularize : C.regularize.IsRegular :=
-  ⟨denseRange_subtype_of_closure (e := C.regularizeInterEquiv.toEquiv)
-      (fun y => (C.interFst_regularizeInterEquiv y).symm) C.coe_fstClosure,
-    denseRange_subtype_of_closure (e := C.regularizeInterEquiv.toEquiv)
-      (fun y => (C.interSnd_regularizeInterEquiv y).symm) C.coe_sndClosure⟩
+  ⟨Subtype.dense_iff.2 <| C.coe_fstClosure.subset.trans <| closure_mono <| by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨_, ⟨C.regularizeInterEquiv.symm x, rfl⟩, C.coe_interFst_regularizeInterEquiv_symm x⟩,
+    Subtype.dense_iff.2 <| C.coe_sndClosure.subset.trans <| closure_mono <| by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨_, ⟨C.regularizeInterEquiv.symm x, rfl⟩, C.coe_interSnd_regularizeInterEquiv_symm x⟩⟩
 
 section RegularizeSum
 variable [ContinuousAdd V]

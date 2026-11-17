@@ -74,12 +74,6 @@ end ComplexMethodSpace
 /-! ### Calderón's density lemma (Bergh–Löfström, Lemma 4.2.3) -/
 
 section ElementaryTraces
-private theorem complete_sq_expGaussian {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) (z : ℂ) :
-    exp (-((ω : ℂ) ^ 2 / (4 * δ))) * exp ((δ : ℂ) * (z - (-ω / (2 * δ) : ℝ)) ^ 2) =
-      exp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) := by
-  have : (δ : ℂ) ≠ 0 := ofReal_ne_zero.2 hδ.ne'
-  rw [← Complex.exp_add]; congr 1; push_cast; field_simp; ring
-
 /-- The continuous linear map sending `x ∈ X₀ ∩ X₁` to the admissible boundary trace of
 `z ↦ exp (δ z² + ω z) x` (`δ > 0`, `ω : ℝ`). -/
 def expGaussianTrace {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) : C.inter →L[ℂ] C.stripTraces :=
@@ -88,13 +82,13 @@ def expGaussianTrace {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) : C.inter →L[ℂ] C.
 @[simp] theorem expGaussianTrace_apply_fst {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) (x : C.inter) (t : ℝ) :
     (C.expGaussianTrace hδ ω x : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t =
       exp ((δ : ℂ) * (t * I) ^ 2 + (ω : ℂ) * (t * I)) • C.interFst x := by
-  simpa [expGaussianTrace, smul_smul] using
-    congrArg (· • C.interFst x) (complete_sq_expGaussian hδ ω (t * I))
+  simp [expGaussianTrace, smul_smul, exp_mul_sq_add_mul (ofReal_ne_zero.2 hδ.ne'),
+    neg_div, sub_neg_eq_add]
 @[simp] theorem expGaussianTrace_apply_snd {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) (x : C.inter) (t : ℝ) :
     (C.expGaussianTrace hδ ω x : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t =
       exp ((δ : ℂ) * (1 + t * I) ^ 2 + (ω : ℂ) * (1 + t * I)) • C.interSnd x := by
-  simpa [expGaussianTrace, smul_smul] using
-    congrArg (· • C.interSnd x) (complete_sq_expGaussian hδ ω (1 + t * I))
+  simp [expGaussianTrace, smul_smul, exp_mul_sq_add_mul (ofReal_ne_zero.2 hδ.ne'),
+    neg_div, sub_neg_eq_add]
 
 /-- Sharp boundary-trace norm bound on `C.expGaussianTrace hδ ω x`. -/
 theorem norm_expGaussianTrace_le {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) (x : C.inter) :
@@ -112,8 +106,9 @@ theorem norm_expGaussianTrace_le {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) (x : C.int
 theorem stripEval_expGaussianTrace {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) (x : C.inter) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) : C.stripEval z (C.expGaussianTrace hδ ω x) =
       exp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) • C.fstToSum (C.interFst x) := by
-  rw [expGaussianTrace, smul_apply, map_smul,
-    C.stripEval_gaussianTrace hδ _ x hz, smul_smul, complete_sq_expGaussian hδ]
+  rw [expGaussianTrace, smul_apply, map_smul, C.stripEval_gaussianTrace hδ _ x hz, smul_smul,
+    exp_mul_sq_add_mul (ofReal_ne_zero.2 hδ.ne')]
+  simp [neg_div, sub_neg_eq_add]
 @[simp] theorem ComplexMethodSpace.mk_expGaussianTrace {C : CompatibleCouple ℂ X₀ X₁ V} {δ : ℝ}
     (hδ : 0 < δ) (ω θ : ℝ) (x : C.inter) :
     ComplexMethodSpace.mk θ (C.expGaussianTrace hδ ω x) =
@@ -148,185 +143,115 @@ variable {C} in
   Submodule.span_induction (by rintro _ ⟨_, hδ, ω, x, rfl⟩; exact expGaussian hδ ω x)
     zero add smul hg
 
-private theorem exists_gaussian_smul_approx_single {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] (a : ℝ) (f : C₀(ℝ, E)) {ε : ℝ} (hε : 0 < ε) :
-    ∃ δ₀ > 0, ∀ {δ : ℝ}, 0 < δ → δ < δ₀ →
-      ∀ t : ℝ, ‖exp ((2 * δ : ℝ) * (a + t * I) ^ 2) • f t - f t‖ ≤ ε := by
-  have hlim : Tendsto (fun t : ℝ => ‖f t‖) (cocompact ℝ) (𝓝 0) := by
-    simpa using (zero_at_infty f).norm
-  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (gt_mem_nhds (by positivity : 0 < ε / 4)))
-  obtain ⟨R, _, hR⟩ := hK.isBounded.exists_pos_norm_le
-  obtain ⟨η, hηpos, hη⟩ := Metric.continuousAt_iff.1
-    (Complex.continuous_exp.continuousAt (x := 0)) (ε / (‖f‖ + 1)) (div_pos hε (by positivity))
-  rw [Complex.exp_zero] at hη
-  let B : ℝ := (|a| + R) ^ 2 + 1
-  have : 0 < B := by positivity
-  refine ⟨min (Real.log 2 / (2 * (a ^ 2 + 1))) (η / (2 * B)),
-    lt_min (div_pos (Real.log_pos one_lt_two) (by positivity)) (div_pos hηpos (by positivity)),
-    fun {δ} hδ hδlt t => ?_⟩
-  by_cases ht : |t| ≤ R
-  · have hsq : ‖(a + t * I : ℂ) ^ 2‖ < B := ((norm_pow _ 2).trans_le (pow_le_pow_left₀
-      (norm_nonneg _) ((norm_add_le _ _).trans
-        (by simpa using add_le_add_right ht |a|)) 2)).trans_lt (lt_add_one _)
-    have hw : dist (((2 * δ : ℝ) : ℂ) * (a + t * I) ^ 2) 0 < η := by
-      rw [dist_zero_right, norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-      exact (mul_lt_mul''
-        (by linarith [hδlt.trans_le (min_le_right _ _)] : 2 * δ < 2 * (η / (2 * B)))
-        hsq (by positivity) (norm_nonneg _)).trans_eq (by field_simp)
-    nth_rw 2 [← one_smul ℂ (f t)]; rw [← sub_smul, norm_smul]
-    exact (mul_le_mul (by simpa [dist_eq_norm] using (hη hw).le) (f.norm_coe_le_norm t)
-      (norm_nonneg _) (by positivity)).trans <| by
-      rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]; linarith
-  · have hft : ‖f t‖ < ε / 4 := hKc fun hm => not_le.2 (not_le.1 ht) (by simpa using hR t hm)
-    have hexp_le : ‖exp (((2 * δ : ℝ) : ℂ) * (a + t * I) ^ 2)‖ ≤ 2 := by
-      rw [norm_exp_ofReal_mul_add_mul_I_sq]
-      refine (Real.exp_le_exp.2 ?_).trans_eq (Real.exp_log zero_lt_two)
-      have := (lt_div_iff₀ (by positivity : 0 < 2 * (a ^ 2 + 1))).1
-        (hδlt.trans_le (min_le_left _ _))
-      nlinarith [sq_nonneg t]
-    exact (norm_sub_le _ _).trans <| by
-      rw [norm_smul]; linarith [mul_le_mul_of_nonneg_right hexp_le (norm_nonneg (f t))]
-private theorem mul_natAbs_le_sq (T : ℝ) (k : ℤ) : T ^ 2 * (k.natAbs : ℝ) ≤ (k * T : ℝ) ^ 2 := by
-  have hk : (k.natAbs : ℝ) ≤ (k : ℝ) ^ 2 := by
-    simpa [Int.cast_pow] using (Int.cast_le (R := ℝ)).2 (Int.natAbs_le_self_sq k)
-  exact (mul_le_mul_of_nonneg_left hk (sq_nonneg T)).trans_eq (by ring)
-private theorem summable_exp_natAbs {δ T : ℝ} (hδ : 0 < δ) (hT : 0 < T) (c : ℝ) :
-    Summable fun k : ℤ => c * (Real.exp (-(δ * T ^ 2 / 2))) ^ k.natAbs :=
-  (summable_pow_natAbs (Real.exp_pos _).le
-    (Real.exp_lt_one_iff.2 (neg_lt_zero.2 (by positivity)))).mul_left c
-private theorem norm_exp_shift_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {δ T B M : ℝ} (hδ : 0 < δ) (hB : 0 ≤ B) (k : ℤ) {z : ℂ}
-    (hz : z ∈ verticalClosedStrip 0 1) (him : |z.im| ≤ B) {v : E} (hv : ‖v‖ ≤ M) :
-    ‖exp ((δ : ℂ) * (z + k * T * I) ^ 2) • v‖ ≤
-      Real.exp (δ * (1 + B ^ 2)) * M * (Real.exp (-(δ * T ^ 2 / 2))) ^ k.natAbs := by
-  rw [norm_smul, mul_right_comm (Real.exp _) M]
-  refine mul_le_mul ?_ hv (norm_nonneg _) (by positivity)
-  rw [show z + k * T * I = (z.re : ℂ) + (z.im + k * T : ℝ) * I by
-      nth_rw 1 [← re_add_im z]; push_cast; ring,
-    norm_exp_ofReal_mul_add_mul_I_sq, ← Real.exp_nat_mul, mul_comm (k.natAbs : ℝ), ← Real.exp_add]
-  have hx2 : z.re ^ 2 ≤ 1 := by nlinarith [hz.1, hz.2]
-  have hy2 : z.im ^ 2 ≤ B ^ 2 := by rwa [sq_le_sq, abs_of_nonneg hB]
-  exact Real.exp_le_exp.2 (by nlinarith [mul_natAbs_le_sq T k, sq_nonneg (2 * z.im + k * T)])
-private theorem norm_double_damped_shift_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    (f : C₀(ℝ, E)) {a δ T : ℝ} (ha : a ∈ Icc 0 1) (hδ : 0 < δ) (k : ℤ) (t : ℝ) :
-    ‖exp ((δ : ℂ) * (a + t * I) ^ 2) •
-        (exp ((δ : ℂ) * ((a : ℂ) + t * I + k * T * I) ^ 2) • f (t + k * T))‖ ≤
-      Real.exp (2 * δ) * ‖f‖ * (Real.exp (-(δ * T ^ 2 / 2))) ^ k.natAbs := by
-  rw [show (a : ℂ) + t * I + k * T * I = (a : ℂ) + (t + k * T : ℝ) * I by push_cast; ring,
-    norm_smul, norm_smul, norm_exp_ofReal_mul_add_mul_I_sq, norm_exp_ofReal_mul_add_mul_I_sq,
-    ← mul_assoc, ← Real.exp_add, mul_right_comm (Real.exp (2 * δ)) ‖f‖, ← Real.exp_nat_mul,
-    mul_comm (k.natAbs : ℝ), ← Real.exp_add]
-  have ha2 : a ^ 2 ≤ 1 := by nlinarith [ha.1, ha.2]
-  exact mul_le_mul
-    (Real.exp_le_exp.2 (by nlinarith [mul_natAbs_le_sq T k, sq_nonneg (2 * t + k * T)]))
-    (f.norm_coe_le_norm _) (norm_nonneg _) (by positivity)
-private theorem tsum_sub_one_shift {G : Type*} [AddCommGroup G] [TopologicalSpace G]
-    (φ : ℤ → G) : (∑' k : ℤ, φ (k - 1)) = ∑' k : ℤ, φ k := (Equiv.subRight (1 : ℤ)).tsum_eq φ
+-- Private Calderón-proof constructions: periodized boundary traces, strip, and damped convolution.
 private def periodizeTrace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (a δ T : ℝ) (f : C₀(ℝ, E)) (t : ℝ) : E :=
   ∑' k : ℤ, exp ((δ : ℂ) * ((a : ℂ) + t * I + k * T * I) ^ 2) • f (t + k * T)
 private theorem summable_periodizeTrace_term {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] (f : C₀(ℝ, E)) {a δ T : ℝ} (ha : a ∈ Icc 0 1)
+    [NormedSpace ℂ E] [CompleteSpace E] (f : C₀(ℝ, E)) (a : ℝ) {δ T : ℝ}
     (hδ : 0 < δ) (hT : 0 < T) (t : ℝ) :
     Summable fun k : ℤ => exp ((δ : ℂ) * ((a : ℂ) + t * I + k * T * I) ^ 2) • f (t + k * T) :=
-  .of_norm_bounded (summable_exp_natAbs hδ hT _) fun k =>
-    norm_exp_shift_smul_le hδ (abs_nonneg t) k (by simpa using ha) (by simp) (f.norm_coe_le_norm _)
+  .of_norm_bounded ((summable_pow_natAbs (Real.exp_pos _).le (Real.exp_lt_one_iff.2
+    (neg_lt_zero.2 (by positivity : 0 < δ * T ^ 2 / 2)))).mul_left
+    (Real.exp (δ * (a ^ 2 + t ^ 2)) * ‖f‖)) fun k => by
+    rw [norm_smul, mul_right_comm (Real.exp _) ‖f‖]
+    exact mul_le_mul (by simpa using (norm_exp_ofReal_mul_add_intCast_mul_I_sq_le hδ.le T k
+      ((a : ℂ) + t * I))) (f.norm_coe_le_norm _) (norm_nonneg _) (by positivity)
 private theorem continuous_periodizeTrace {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] (f : C₀(ℝ, E)) {a δ T : ℝ} (ha : a ∈ Icc 0 1)
+    [NormedSpace ℂ E] [CompleteSpace E] (f : C₀(ℝ, E)) (a : ℝ) {δ T : ℝ}
     (hδ : 0 < δ) (hT : 0 < T) : Continuous (periodizeTrace a δ T f) :=
-  continuous_iff_continuousAt.2 fun t₀ =>
-    (continuousOn_tsum (s := {t | |t| < |t₀| + 1}) (fun _ => by fun_prop)
-      (summable_exp_natAbs hδ hT (Real.exp (δ * (1 + (|t₀| + 1) ^ 2)) * ‖f‖))
-      fun k _ ht => norm_exp_shift_smul_le hδ (by positivity) k (by simpa using ha)
-        (by simpa using le_of_lt ht) (f.norm_coe_le_norm _)).continuousAt
-      ((isOpen_lt (by fun_prop) continuous_const).mem_nhds (lt_add_one |t₀|))
+  continuous_iff_continuousAt.2 fun t₀ => (continuousOn_tsum (s := {t | |t| < |t₀| + 1})
+    (fun _ => by fun_prop) ((summable_pow_natAbs (Real.exp_pos _).le (Real.exp_lt_one_iff.2
+      (neg_lt_zero.2 (by positivity : 0 < δ * T ^ 2 / 2)))).mul_left
+      (Real.exp (δ * (a ^ 2 + (|t₀| + 1) ^ 2)) * ‖f‖)) fun k t ht => by
+      have ht2 : t ^ 2 ≤ (|t₀| + 1) ^ 2 := by rw [← sq_abs t]; gcongr; exact ht.le
+      rw [norm_smul, mul_right_comm (Real.exp _) ‖f‖]
+      exact mul_le_mul ((norm_exp_ofReal_mul_add_intCast_mul_I_sq_le hδ.le T k
+        ((a : ℂ) + t * I)).trans (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2
+        (by simp; nlinarith [ht2])) (by positivity))) (f.norm_coe_le_norm _) (norm_nonneg _)
+        (by positivity)).continuousAt
+    ((isOpen_lt (by fun_prop) continuous_const).mem_nhds (lt_add_one |t₀|))
 private theorem periodic_periodizeTrace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (a δ T : ℝ) (f : C₀(ℝ, E)) : Function.Periodic (periodizeTrace a δ T f) T := fun t => by
-  rw [periodizeTrace, periodizeTrace, ← tsum_sub_one_shift]; congr 1 with k
-  rw [show (a : ℂ) + (t + T : ℝ) * I + (k - 1 : ℤ) * T * I = (a : ℂ) + t * I + k * T * I by
-      push_cast; ring, show t + T + ((k - 1 : ℤ) : ℝ) * T = t + (k : ℝ) * T by push_cast; ring]
+  rw [periodizeTrace, periodizeTrace, ← (Equiv.subRight (1 : ℤ)).tsum_eq]; congr 1 with k
+  rw [Equiv.subRight_apply]; congr 1
+  · congr 3; push_cast; ring
+  · congr 1; push_cast; ring
 private def periodizeStrip (δ T : ℝ) (F : ℂ → C.SumSpace) (z : ℂ) : C.SumSpace :=
   ∑' k : ℤ, exp ((δ : ℂ) * (z + k * T * I) ^ 2) • F (z + k * T * I)
 private theorem diffContOnCl_periodizeStrip [CompleteSpace X₀] [CompleteSpace X₁]
     {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g)
     {δ T : ℝ} (hδ : 0 < δ) (hT : 0 < T) :
     DiffContOnCl ℂ (C.periodizeStrip δ T F) (verticalStrip 0 1) := by
+  have hsum (B : ℝ) : Summable fun k : ℤ =>
+      Real.exp (δ * (1 + B ^ 2)) * ‖g‖ * Real.exp (-(δ * T ^ 2 / 2)) ^ k.natAbs :=
+    (summable_pow_natAbs (Real.exp_pos _).le
+      (Real.exp_lt_one_iff.2 (neg_lt_zero.2 (by positivity : 0 < δ * T ^ 2 / 2)))).mul_left _
+  have hbd (B : ℝ) (k : ℤ) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) (him : |z.im| ≤ B) :
+      ‖exp ((δ : ℂ) * (z + k * T * I) ^ 2) • F (z + k * T * I)‖ ≤
+        Real.exp (δ * (1 + B ^ 2)) * ‖g‖ * Real.exp (-(δ * T ^ 2 / 2)) ^ k.natAbs := by
+    rw [norm_smul, mul_right_comm (Real.exp _) ‖g‖]
+    refine mul_le_mul ((norm_exp_ofReal_mul_add_intCast_mul_I_sq_le hδ.le T k z).trans ?_)
+      (hF.norm_le (z := z + k * T * I) (by simpa using hz)) (norm_nonneg _) (by positivity)
+    have : z.re ^ 2 ≤ 1 := by nlinarith [hz.1, hz.2]
+    have : z.im ^ 2 ≤ B ^ 2 := by rw [← sq_abs z.im]; gcongr
+    gcongr
+  have hopen (B : ℝ) : IsOpen {z : ℂ | |z.im| < B} :=
+    isOpen_lt (continuous_abs.comp continuous_im) continuous_const
+  have hdiff (k : ℤ) : Differentiable ℂ fun z : ℂ => exp ((δ : ℂ) * (z + k * T * I) ^ 2) := by
+    fun_prop
+  have hshift (k : ℤ) : Differentiable ℂ fun z : ℂ => z + k * T * I := by fun_prop
   refine ⟨fun z₀ hz₀ => ?_, ?_⟩
-  · set B := |z₀.im| + 1
-    let U : Set ℂ := verticalStrip 0 1 ∩ {z : ℂ | |z.im| < B}
-    have hU : IsOpen U := (isOpen_verticalStrip 0 1).inter
-      (isOpen_lt (continuous_abs.comp continuous_im) continuous_const)
-    exact ((differentiableOn_tsum_of_summable_norm
-      (summable_exp_natAbs hδ hT (Real.exp (δ * (1 + B ^ 2)) * ‖g‖))
-      (fun k => (by fun_prop : Differentiable ℂ fun z : ℂ =>
-          exp ((δ : ℂ) * (z + k * T * I) ^ 2)).differentiableOn.fun_smul
-        (hF.diffContOnCl.differentiableOn.comp
-          (by fun_prop : Differentiable ℂ fun z : ℂ => z + k * T * I).differentiableOn
-          fun _ hz => by simpa using hz.1))
-      hU fun k z hz => norm_exp_shift_smul_le hδ (by positivity) k
-        (verticalStrip_subset_verticalClosedStrip 0 1 hz.1) (le_of_lt hz.2)
-        (hF.norm_le (z := z + k * T * I)
-          (by simpa using verticalStrip_subset_verticalClosedStrip 0 1 hz.1))).differentiableAt
-      (hU.mem_nhds ⟨hz₀, lt_add_one |z₀.im|⟩)).differentiableWithinAt
-  · rw [closure_verticalStrip zero_ne_one]; intro z₀ hz₀
-    set B := |z₀.im| + 1
-    have hFc : ContinuousOn F (verticalClosedStrip 0 1) :=
-      by simpa using hF.diffContOnCl.continuousOn
+  · set B := |z₀.im| + 1; have hU := (isOpen_verticalStrip 0 1).inter (hopen B)
+    exact ((differentiableOn_tsum_of_summable_norm (hsum B)
+      (fun k => (hdiff k).differentiableOn.fun_smul (hF.diffContOnCl.differentiableOn.comp
+        (hshift k).differentiableOn fun _ hz => by simpa using hz.1))
+      hU fun k z hz => hbd B k (verticalStrip_subset_verticalClosedStrip 0 1 hz.1)
+        hz.2.le).differentiableAt (hU.mem_nhds ⟨hz₀, lt_add_one |z₀.im|⟩)).differentiableWithinAt
+  · have hFc := hF.diffContOnCl.continuousOn
+    rw [closure_verticalStrip zero_ne_one] at hFc ⊢; intro z₀ hz₀; set B := |z₀.im| + 1
     exact (continuousOn_tsum (s := verticalClosedStrip 0 1 ∩ {z : ℂ | |z.im| < B})
-      (fun (k : ℤ) => (by fun_prop : Continuous fun z : ℂ =>
-          exp ((δ : ℂ) * (z + k * T * I) ^ 2)).continuousOn.fun_smul
-        (hFc.comp (by fun_prop : Continuous fun z : ℂ => z + k * T * I).continuousOn
-          fun _ hz => by simpa using hz.1))
-      (summable_exp_natAbs hδ hT (Real.exp (δ * (1 + B ^ 2)) * ‖g‖))
-      (fun k z hz => norm_exp_shift_smul_le hδ (by positivity) k hz.1 (le_of_lt hz.2)
-        (hF.norm_le (z := z + k * T * I) (by simpa using hz.1)))
-      z₀ ⟨hz₀, lt_add_one |z₀.im|⟩).mono_of_mem_nhdsWithin <|
-      inter_mem_nhdsWithin _ <| (isOpen_lt (continuous_abs.comp continuous_im)
-        continuous_const).mem_nhds (lt_add_one |z₀.im|)
+      (fun k => (hdiff k).continuous.continuousOn.fun_smul
+        (hFc.comp (hshift k).continuous.continuousOn fun _ hz => by simpa using hz.1))
+      (hsum B) (fun k z hz => hbd B k hz.1 hz.2.le) z₀
+      ⟨hz₀, lt_add_one |z₀.im|⟩).mono_of_mem_nhdsWithin <|
+      inter_mem_nhdsWithin _ ((hopen B).mem_nhds (lt_add_one |z₀.im|))
 omit [T1Space V] in
 private theorem periodizeStrip_add_mul_I (δ T : ℝ) (F : ℂ → C.SumSpace) (z : ℂ) :
     C.periodizeStrip δ T F (z + T * I) = C.periodizeStrip δ T F z := by
-  rw [periodizeStrip, periodizeStrip, ← tsum_sub_one_shift]; congr 1 with k
-  rw [show z + T * I + ((k - 1 : ℤ) : ℂ) * T * I = z + (k : ℂ) * T * I by push_cast; ring]
+  rw [periodizeStrip, periodizeStrip, ← (Equiv.subRight (1 : ℤ)).tsum_eq]; congr 1 with k
+  rw [Equiv.subRight_apply]; congr 1 <;> [congr 3; congr 1] <;> (push_cast; ring)
 private theorem periodizeStrip_mul_I [CompleteSpace X₀]
     {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g)
     {δ T : ℝ} (hδ : 0 < δ) (hT : 0 < T) (t : ℝ) :
     C.periodizeStrip δ T F (t * I) = C.fstToSum (periodizeTrace 0 δ T g.1 t) := by
-  rw [periodizeTrace,
-    C.fstToSum.map_tsum (summable_periodizeTrace_term g.1 ⟨le_rfl, zero_le_one⟩ hδ hT t),
+  rw [periodizeTrace, C.fstToSum.map_tsum (summable_periodizeTrace_term g.1 0 hδ hT t),
     periodizeStrip]
   congr 1 with k; rw [ofReal_zero, zero_add, map_smul, ← hF.apply_mul_I]; congr 2; push_cast; ring
 private theorem periodizeStrip_one_add_mul_I [CompleteSpace X₁]
     {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g)
     {δ T : ℝ} (hδ : 0 < δ) (hT : 0 < T) (t : ℝ) :
     C.periodizeStrip δ T F (1 + t * I) = C.sndToSum (periodizeTrace 1 δ T g.2 t) := by
-  rw [periodizeTrace,
-    C.sndToSum.map_tsum (summable_periodizeTrace_term g.2 ⟨zero_le_one, le_rfl⟩ hδ hT t),
+  rw [periodizeTrace, C.sndToSum.map_tsum (summable_periodizeTrace_term g.2 1 hδ hT t),
     periodizeStrip]
   congr 1 with k; rw [ofReal_one, map_smul, ← hF.apply_one_add_mul_I]; congr 2; push_cast; ring
-private theorem intervalIntegrable_fourier_smul_lift {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {T : ℝ} {p : ℝ → E} (hp_cont : Continuous p) (hp_per : Function.Periodic p T)
-    (m : ℤ) : IntervalIntegrable (fun y : ℝ => @fourier T (-m) y • hp_per.lift y) volume 0 T := by
-  have hl : Continuous hp_per.lift := continuous_coinduced_dom.2 hp_cont
-  exact (((@fourier T (-m)).continuous.comp continuous_quotient_mk').smul
-    (hl.comp continuous_quotient_mk')).intervalIntegrable 0 T
 private theorem fourierCoeff_periodic_mem_inter [CompleteSpace X₀] [CompleteSpace X₁]
     {T : ℝ} [Fact (0 < T)] {P : ℂ → C.SumSpace} (hP : DiffContOnCl ℂ P (verticalStrip 0 1))
     (hper : ∀ z : ℂ, P (z + T * I) = P z) {p₀ : ℝ → X₀} {p₁ : ℝ → X₁}
-    (hp₀_cont : Continuous p₀) (hp₁_cont : Continuous p₁)
-    (hp₀_per : Function.Periodic p₀ T) (hp₁_per : Function.Periodic p₁ T)
+    (hc₀ : Continuous p₀) (hc₁ : Continuous p₁)
+    (h₀ : Function.Periodic p₀ T) (h₁ : Function.Periodic p₁ T)
     (hP₀ : ∀ t : ℝ, P (t * I) = C.fstToSum (p₀ t))
     (hP₁ : ∀ t : ℝ, P (1 + t * I) = C.sndToSum (p₁ t)) (m : ℤ) :
-    (fourierCoeff hp₀_per.lift m,
-      exp (-(2 * Real.pi * m / T : ℂ)) • fourierCoeff hp₁_per.lift m) ∈ C.inter := by
+    (fourierCoeff h₀.lift m,
+      exp (-(2 * Real.pi * m / T : ℂ)) • fourierCoeff h₁.lift m) ∈ C.inter := by
   rw [C.mem_inter_iff, ← C.sumSpaceEmbed_fstToSum, ← C.sumSpaceEmbed_sndToSum]; congr 1
   rw [fourierCoeff_eq_intervalIntegral _ m 0, fourierCoeff_eq_intervalIntegral _ m 0, zero_add,
     C.fstToSum.map_smul_of_tower, map_smul, C.sndToSum.map_smul_of_tower,
     smul_comm (exp _) (1 / T : ℝ)]; congr 1
   rw [← C.fstToSum.intervalIntegral_comp_comm
-      (intervalIntegrable_fourier_smul_lift hp₀_cont hp₀_per m),
+      (h₀.intervalIntegrable_fourier_smul_lift hc₀ (-m) 0 T),
     ← C.sndToSum.intervalIntegral_comp_comm
-      (intervalIntegrable_fourier_smul_lift hp₁_cont hp₁_per m), ← intervalIntegral.integral_smul]
+      (h₁.intervalIntegrable_fourier_smul_lift hc₁ (-m) 0 T), ← intervalIntegral.integral_smul]
   refine (intervalIntegral.integral_congr fun y _ => ?_).trans
     ((hP.intervalIntegral_exp_smul_add_mul_I_eq zero_le_one T (fun _ _ => hper _) m).trans
       (intervalIntegral.integral_congr fun y _ => ?_))
@@ -337,18 +262,6 @@ private theorem fourierCoeff_periodic_mem_inter [CompleteSpace X₀] [CompleteSp
 private def dampedConv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {T : ℝ} [Fact (0 < T)]
     (a δ : ℝ) (Q : C(AddCircle T, ℂ)) (f : AddCircle T → E) (t : ℝ) : E :=
   exp ((δ : ℂ) * (a + t * I) ^ 2) • ∫ u, Q u • f ((t : AddCircle T) - u) ∂haarAddCircle
-private theorem dampedConv_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {T : ℝ}
-    [Fact (0 < T)] (a δ : ℝ) (Q₁ Q₂ : C(AddCircle T, ℂ)) {f : AddCircle T → E}
-    (hf : Continuous f) (t : ℝ) :
-    dampedConv a δ (Q₁ + Q₂) f t = dampedConv a δ Q₁ f t + dampedConv a δ Q₂ f t := by
-  simp only [dampedConv, ContinuousMap.add_apply, add_smul, ← smul_add]
-  rw [integral_add (Q₁.continuous.integrable_smul_sub_haarAddCircle hf t)
-    (Q₂.continuous.integrable_smul_sub_haarAddCircle hf t)]
-private theorem dampedConv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {T : ℝ}
-    [Fact (0 < T)] (a δ : ℝ) (c : ℂ) (Q : C(AddCircle T, ℂ)) (f : AddCircle T → E) (t : ℝ) :
-    dampedConv a δ (c • Q) f t = c • dampedConv a δ Q f t := by
-  rw [dampedConv, dampedConv, smul_comm]; congr 1
-  simpa [mul_smul] using integral_smul c fun u => Q u • f ((t : AddCircle T) - u)
 private theorem exists_elementary_of_mem_span_fourier {T δ : ℝ} [hT : Fact (0 < T)] (hδ : 0 < δ)
     {f₀ : AddCircle T → X₀} {f₁ : AddCircle T → X₁} (hf₀ : Continuous f₀) (hf₁ : Continuous f₁)
     (hmem : ∀ m : ℤ,
@@ -374,112 +287,109 @@ private theorem exists_elementary_of_mem_span_fourier {T δ : ℝ} [hT : Fact (0
       congr 2; push_cast; field_simp; ring
   · rintro Q₁ Q₂ - - ⟨h₁, hh₁, h₁₀, h₁₁⟩ ⟨h₂, hh₂, h₂₀, h₂₁⟩
     exact ⟨h₁ + h₂, C.elementaryStripTraces.add_mem hh₁ hh₂,
-      fun t => by simp [h₁₀ t, h₂₀ t, dampedConv_add 0 δ Q₁ Q₂ hf₀ t],
-      fun t => by simp [h₁₁ t, h₂₁ t, dampedConv_add 1 δ Q₁ Q₂ hf₁ t]⟩
+      fun t => by simp [h₁₀ t, h₂₀ t, dampedConv, add_smul, ← smul_add, integral_add
+        (Q₁.continuous.integrable_smul_sub_haarAddCircle hf₀ t)
+        (Q₂.continuous.integrable_smul_sub_haarAddCircle hf₀ t)],
+      fun t => by simp [h₁₁ t, h₂₁ t, dampedConv, add_smul, ← smul_add, integral_add
+        (Q₁.continuous.integrable_smul_sub_haarAddCircle hf₁ t)
+        (Q₂.continuous.integrable_smul_sub_haarAddCircle hf₁ t)]⟩
   · rintro c _ - ⟨h₁, hh₁, h₁₀, h₁₁⟩
     exact ⟨c • h₁, C.elementaryStripTraces.smul_mem c hh₁,
-      fun t => by simp [h₁₀ t, dampedConv_smul], fun t => by simp [h₁₁ t, dampedConv_smul]⟩
-private theorem exists_period_tail_lt {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) (M : ℝ) :
-    ∃ T > 0, let r := Real.exp (-(δ * T ^ 2 / 2))
-      Real.exp (2 * δ) * M * (2 * (r * (1 - r)⁻¹)) < ε := by
-  have hr : Tendsto (fun T : ℝ => Real.exp (-(δ * T ^ 2 / 2))) atTop (𝓝 0) :=
-    Real.tendsto_exp_atBot.comp <| (tendsto_neg_atTop_atBot.comp
-      ((tendsto_pow_atTop two_ne_zero).const_mul_atTop (half_pos hδ))).congr fun _ => by dsimp; ring
-  have hlim : Tendsto (fun T : ℝ => Real.exp (2 * δ) * M *
-      (2 * (Real.exp (-(δ * T ^ 2 / 2)) * (1 - Real.exp (-(δ * T ^ 2 / 2)))⁻¹))) atTop (𝓝 0) := by
-    simpa using (((hr.mul ((tendsto_const_nhds.sub hr).inv₀ (by norm_num))).const_mul 2).const_mul
-      (Real.exp (2 * δ) * M))
-  exact ((eventually_gt_atTop (0 : ℝ)).and (hlim.eventually (gt_mem_nhds hε))).exists
+      fun t => by rw [SetLike.val_smul, Prod.smul_fst, FunLike.coe_smul, Pi.smul_apply, h₁₀ t,
+        dampedConv, dampedConv, smul_comm]; simp [mul_smul, integral_smul],
+      fun t => by rw [SetLike.val_smul, Prod.smul_snd, FunLike.coe_smul, Pi.smul_apply, h₁₁ t,
+        dampedConv, dampedConv, smul_comm]; simp [mul_smul, integral_smul]⟩
 private theorem norm_damped_periodizeTrace_sub_le {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] [CompleteSpace E] {a δ T M η : ℝ} (ha : a ∈ Icc 0 1) (hδ : 0 < δ)
-    (hT : 0 < T) (f : C₀(ℝ, E)) (hfM : ‖f‖ ≤ M) (t : ℝ)
-    (htail : Real.exp (2 * δ) * M *
-      (2 * (Real.exp (-(δ * T ^ 2 / 2)) * (1 - Real.exp (-(δ * T ^ 2 / 2)))⁻¹)) < η) :
+    (hT : 0 < T) (f : C₀(ℝ, E)) (hfM : ‖f‖ ≤ M) (t : ℝ) (htail : Real.exp (2 * δ) * M *
+      (∑' k : ℤ, if k = 0 then (0 : ℝ) else Real.exp (-(δ * T ^ 2 / 2)) ^ k.natAbs) < η) :
     ‖exp ((δ : ℂ) * (a + t * I) ^ 2) • periodizeTrace a δ T f t -
         exp (((2 * δ : ℝ) : ℂ) * (a + t * I) ^ 2) • f t‖ ≤ η := by
-  set r := Real.exp (-(δ * T ^ 2 / 2))
-  have hr₀ : 0 ≤ r := (Real.exp_pos _).le
-  have hr₁ : r < 1 := Real.exp_lt_one_iff.2 (neg_lt_zero.2 (by positivity))
+  set r := Real.exp (-(δ * T ^ 2 / 2)); let c : ℂ := exp ((δ : ℂ) * (a + t * I) ^ 2)
   have : 0 ≤ M := (norm_nonneg f).trans hfM
-  have hsum := summable_periodizeTrace_term f ha hδ hT t
-  let hcL : E →L[ℂ] E := ContinuousLinearMap.lsmul ℂ ℂ (exp ((δ : ℂ) * (a + t * I) ^ 2))
-  have h0 : hcL (exp ((δ : ℂ) * ((a : ℂ) + t * I + (0 : ℤ) * T * I) ^ 2) • f (t + (0 : ℤ) * T)) =
+  have hsum := summable_periodizeTrace_term f a hδ hT t
+  have h0 : c • (exp ((δ : ℂ) * ((a : ℂ) + t * I + (0 : ℤ) * T * I) ^ 2) • f (t + (0 : ℤ) * T)) =
       exp (((2 * δ : ℝ) : ℂ) * (a + t * I) ^ 2) • f t := by
-    simp [hcL, smul_smul, ← Complex.exp_add, two_mul, add_mul]
-  rw [show exp ((δ : ℂ) * (a + t * I) ^ 2) • periodizeTrace a δ T f t = _ from hcL.map_tsum hsum,
-    (hsum.mapL hcL).tsum_eq_add_tsum_ite 0, h0, add_sub_cancel_left]
-  have hite_bound (k : ℤ) : ‖if k = 0 then (0 : E) else (hcL ∘ fun k : ℤ =>
-      exp ((δ : ℂ) * ((a : ℂ) + t * I + k * T * I) ^ 2) • f (t + k * T)) k‖ ≤
+    simp [c, smul_smul, ← Complex.exp_add, two_mul, add_mul]
+  rw [periodizeTrace, ← hsum.tsum_const_smul c, (hsum.const_smul c).tsum_eq_add_tsum_ite 0,
+    h0, add_sub_cancel_left]
+  have hite (k : ℤ) : ‖if k = 0 then (0 : E) else
+      c • (exp ((δ : ℂ) * ((a : ℂ) + t * I + k * T * I) ^ 2) • f (t + k * T))‖ ≤
       Real.exp (2 * δ) * M * (if k = 0 then 0 else r ^ k.natAbs) := by
     split_ifs
     · simp
-    · exact (norm_double_damped_shift_le f ha hδ k t).trans (mul_le_mul_of_nonneg_right
-        (mul_le_mul_of_nonneg_left hfM (by positivity)) (by positivity))
+    · have hc : (a : ℂ) + t * I + k * T * I = ((a : ℂ) + t * I) + ((k * T : ℝ) : ℂ) * I := by
+        push_cast; ring
+      have he : -(δ * (k * T) ^ 2 / 2) = -(δ * T ^ 2 / 2) * (k : ℝ) ^ 2 := by ring
+      have ha2 : a ^ 2 ≤ 1 := by nlinarith [ha.1, ha.2]
+      rw [smul_smul, hc, norm_smul, mul_right_comm (Real.exp (2 * δ)) M]
+      refine mul_le_mul ((norm_exp_ofReal_mul_sq_mul_add_mul_I_sq_le hδ.le _ _).trans
+        (mul_le_mul (Real.exp_le_exp.2 (by simp; nlinarith))
+          (he ▸ exp_neg_mul_intCast_sq_le (by positivity) k) (by positivity) (by positivity)))
+        ((f.norm_coe_le_norm _).trans hfM) (norm_nonneg _) (by positivity)
   have hsum_ite : Summable fun k : ℤ =>
       Real.exp (2 * δ) * M * (if k = 0 then (0 : ℝ) else r ^ k.natAbs) :=
-    ((summable_pow_natAbs hr₀ hr₁).of_nonneg_of_le (fun _ => by split_ifs <;> positivity)
+    ((summable_pow_natAbs (r := r) (by positivity) (Real.exp_lt_one_iff.2
+      (neg_lt_zero.2 (by positivity)))).of_nonneg_of_le (fun _ => by split_ifs <;> positivity)
       fun _ => by split_ifs <;> [positivity; exact le_rfl]).mul_left _
-  have hsum_norm := hsum_ite.of_nonneg_of_le (fun _ => norm_nonneg _) hite_bound
-  refine (norm_tsum_le_tsum_norm hsum_norm).trans
-    ((Summable.tsum_le_tsum hite_bound hsum_norm hsum_ite).trans ?_)
-  rw [tsum_mul_left, tsum_ite_eq_zero_pow_natAbs hr₀ hr₁]; exact htail.le
+  have hsum_norm := hsum_ite.of_nonneg_of_le (fun _ => norm_nonneg _) hite
+  exact (norm_tsum_le_tsum_norm hsum_norm).trans
+    ((Summable.tsum_le_tsum hite hsum_norm hsum_ite).trans (by rw [tsum_mul_left]; exact htail.le))
 private theorem norm_damped_conv_sub_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     [CompleteSpace E] {T : ℝ} [hT : Fact (0 < T)] {a δ M ε : ℝ} (ha : a ∈ Icc 0 1) (hδ : 0 < δ)
     (f : C₀(ℝ, E)) (hfM : ‖f‖ ≤ M) (Q : C(AddCircle T, ℂ)) (hQ : ∀ x : AddCircle T,
       ‖(∫ u, Q u • (periodic_periodizeTrace a δ T f).lift (x - u) ∂haarAddCircle) -
         (periodic_periodizeTrace a δ T f).lift x‖ < (ε / 3) / Real.exp δ)
     (htail : Real.exp (2 * δ) * M *
-      (2 * (Real.exp (-(δ * T ^ 2 / 2)) * (1 - Real.exp (-(δ * T ^ 2 / 2)))⁻¹)) < ε / 3)
+      (∑' k : ℤ, if k = 0 then (0 : ℝ) else Real.exp (-(δ * T ^ 2 / 2)) ^ k.natAbs) < ε / 3)
     {t : ℝ} (hdamp : ‖exp (((2 * δ : ℝ) : ℂ) * (a + t * I) ^ 2) • f t - f t‖ ≤ ε / 4) :
-    ‖dampedConv a δ Q (periodic_periodizeTrace a δ T f).lift t - f t‖ ≤
-      ε / 3 + ε / 3 + ε / 4 := by
+    ‖dampedConv a δ Q (periodic_periodizeTrace a δ T f).lift t - f t‖ ≤ ε / 3 + ε / 3 + ε / 4 := by
   let d : E := exp ((δ : ℂ) * (a + t * I) ^ 2) • periodizeTrace a δ T f t
   have hconv_err : ‖dampedConv a δ Q (periodic_periodizeTrace a δ T f).lift t - d‖ ≤ ε / 3 := by
     dsimp [dampedConv, d]; rw [← (periodic_periodizeTrace a δ T f).lift_coe, ← smul_sub, norm_smul]
-    have hbd : ‖exp ((δ : ℂ) * (a + t * I) ^ 2)‖ ≤ Real.exp δ := by
-      simpa using norm_exp_ofReal_mul_sub_sq_le hδ.le 0 (z := a + t * I) (by simpa using ha)
-    exact (mul_le_mul hbd (hQ t).le (norm_nonneg _) (Real.exp_pos δ).le).trans_eq
+    exact (mul_le_mul (by simpa using (norm_exp_ofReal_mul_sub_sq_le hδ.le 0 (z := a + t * I)
+      (by simpa using ha))) (hQ t).le (norm_nonneg _) (Real.exp_pos δ).le).trans_eq
       (mul_div_cancel₀ _ (Real.exp_pos δ).ne')
   linarith [norm_damped_periodizeTrace_sub_le ha hδ hT.out f hfM t htail,
     norm_sub_le_norm_sub_add_norm_sub
       (dampedConv a δ Q (periodic_periodizeTrace a δ T f).lift t) d (f t),
     norm_sub_le_norm_sub_add_norm_sub d (exp (((2 * δ : ℝ) : ℂ) * (a + t * I) ^ 2) • f t) (f t)]
-private theorem norm_integral_smul_sub_comp_lt {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-    {T : ℝ} [Fact (0 < T)] (L : E →L[ℂ] F) (hL : ∀ e, ‖L e‖ ≤ ‖e‖) {f : AddCircle T → E}
-    (hf : Continuous f) {Q : C(AddCircle T, ℂ)} {η : ℝ}
-    (hQ : ∀ x : AddCircle T, ‖(∫ u, Q u • f (x - u) ∂haarAddCircle) - f x‖ < η)
-    (x : AddCircle T) : ‖(∫ u, Q u • L (f (x - u)) ∂haarAddCircle) - L (f x)‖ < η := by
-  rw [show (∫ u, Q u • L (f (x - u)) ∂haarAddCircle) = L (∫ u, Q u • f (x - u) ∂haarAddCircle) by
-    simpa [Function.comp_def] using
-      L.integral_comp_comm (Q.continuous.integrable_smul_sub_haarAddCircle hf x), ← map_sub]
-  exact (hL _).trans_lt (hQ x)
 
 /-- **Calderón's density lemma (Bergh–Löfström, Lemma 4.2.3).** When `X₀` and `X₁` are Banach
 spaces, `C.elementaryStripTraces` is dense in `C.stripTraces`. -/
 theorem dense_elementaryStripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
     Dense (C.elementaryStripTraces : Set C.stripTraces) := by
   refine Metric.dense_iff.2 fun g ε hε => ?_
-  set g₀ : C₀(ℝ, X₀) := (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1
-  set g₁ : C₀(ℝ, X₁) := (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2
-  obtain ⟨δ₀, hδ₀, hdamp₀⟩ := exists_gaussian_smul_approx_single 0 g₀ (by positivity : 0 < ε / 4)
-  obtain ⟨δ₁, hδ₁, hdamp₁⟩ := exists_gaussian_smul_approx_single 1 g₁ (by positivity : 0 < ε / 4)
-  set δ := min δ₀ δ₁ / 2
-  have hδ : 0 < δ := half_pos (lt_min hδ₀ hδ₁)
-  obtain ⟨T, hTpos, htail⟩ := exists_period_tail_lt hδ (by positivity : 0 < ε / 3) ‖g‖
+  set g₀ := (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1; set g₁ := (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2
+  have hbd₀ := Metric.tendstoUniformly_iff.1 (tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul
+    (f := g₀) 0 (isBounded_iff_forall_norm_le.2 ⟨‖g₀‖, fun _ ⟨t, ht⟩ =>
+      ht ▸ g₀.norm_coe_le_norm t⟩) (zero_at_infty g₀)) (ε / 4) (by positivity)
+  have hbd₁ := Metric.tendstoUniformly_iff.1 (tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul
+    (f := g₁) 1 (isBounded_iff_forall_norm_le.2 ⟨‖g₁‖, fun _ ⟨t, ht⟩ =>
+      ht ▸ g₁.norm_coe_le_norm t⟩) (zero_at_infty g₁)) (ε / 4) (by positivity)
+  obtain ⟨u, ⟨hdamp₀, hdamp₁⟩, hu0⟩ := (((hbd₀.and hbd₁).filter_mono
+    (nhdsWithin_mono 0 Ioi_subset_Ici_self)).and self_mem_nhdsWithin).exists
+  set δ := u / 2; have hδ : 0 < δ := half_pos hu0
+  have h2δ : 2 * δ = u := mul_div_cancel₀ u two_ne_zero
+  have hr : Tendsto (fun T : ℝ => Real.exp (-(δ * T ^ 2 / 2))) atTop (𝓝[≥] 0) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (((tendsto_exp_sub_mul_sq_cocompact (half_pos hδ) 0).mono_left atTop_le_cocompact).congr
+        fun _ => by congr 1; ring) (Eventually.of_forall fun _ => (Real.exp_pos _).le)
+  have hlim := (tendsto_tsum_ite_eq_zero_pow_natAbs.comp hr).const_mul (Real.exp (2 * δ) * ‖g‖)
+  rw [mul_zero] at hlim
+  obtain ⟨T, hTpos, htail⟩ := ((eventually_gt_atTop (0 : ℝ)).and
+    (hlim.eventually (gt_mem_nhds (by positivity : 0 < ε / 3)))).exists
   have : Fact (0 < T) := ⟨hTpos⟩
-  have hp₀_cont := continuous_periodizeTrace g₀ ⟨le_rfl, zero_le_one⟩ hδ hTpos
-  have hp₁_cont := continuous_periodizeTrace g₁ ⟨zero_le_one, le_rfl⟩ hδ hTpos
-  have hf₀ : Continuous (periodic_periodizeTrace 0 δ T g₀).lift :=
-    continuous_coinduced_dom.2 hp₀_cont
-  have hf₁ : Continuous (periodic_periodizeTrace 1 δ T g₁).lift :=
-    continuous_coinduced_dom.2 hp₁_cont
+  have hp₀ := continuous_periodizeTrace g₀ 0 hδ hTpos
+  have hp₁ := continuous_periodizeTrace g₁ 1 hδ hTpos
+  have hf₀ : Continuous (periodic_periodizeTrace 0 δ T g₀).lift := continuous_coinduced_dom.2 hp₀
+  have hf₁ : Continuous (periodic_periodizeTrace 1 δ T g₁).lift := continuous_coinduced_dom.2 hp₁
   obtain ⟨Q, hQspan, hQ⟩ := (hf₀.prodMk hf₁).exists_mem_span_fourier_integral_smul_sub_lt
     (div_pos (by positivity : 0 < ε / 3) (Real.exp_pos δ))
   have hStrip := C.isStripFunction_stripFunction g
   obtain ⟨h, hhmem, hh₀, hh₁⟩ := exists_elementary_of_mem_span_fourier C hδ hf₀ hf₁
     (fourierCoeff_periodic_mem_inter C (diffContOnCl_periodizeStrip C hStrip hδ hTpos)
-      (periodizeStrip_add_mul_I C δ T _) hp₀_cont hp₁_cont
+      (periodizeStrip_add_mul_I C δ T _) hp₀ hp₁
       (periodic_periodizeTrace 0 δ T g₀) (periodic_periodizeTrace 1 δ T g₁)
       (periodizeStrip_mul_I C hStrip hδ hTpos) (periodizeStrip_one_add_mul_I C hStrip hδ hTpos))
     hQspan
@@ -488,16 +398,22 @@ theorem dense_elementaryStripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
   refine lt_of_le_of_lt (norm_prod_le_iff.2 ⟨?_, ?_⟩) (by linarith : ε / 3 + ε / 3 + ε / 4 < ε)
   · refine (ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_
     simp only [Prod.fst_sub, FunLike.coe_sub, Pi.sub_apply]; rw [norm_sub_rev, hh₀ t]
-    exact norm_damped_conv_sub_le ⟨le_rfl, zero_le_one⟩ hδ g₀
-      ((norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁))).trans_eq (Submodule.norm_coe g)) Q
-      (norm_integral_smul_sub_comp_lt (.fst ℂ X₀ X₁) norm_fst_le (hf₀.prodMk hf₁) hQ) htail
-      (hdamp₀ hδ ((half_lt_self (lt_min hδ₀ hδ₁)).trans_le (min_le_left _ _)) t)
+    refine norm_damped_conv_sub_le ⟨le_rfl, zero_le_one⟩ hδ g₀
+      ((norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁))).trans_eq (Submodule.norm_coe g)) Q (fun x => ?_)
+      htail (by rw [h2δ, norm_sub_rev]; simpa [dist_eq_norm] using (hdamp₀ t).le)
+    have hc := (ContinuousLinearMap.fst ℂ X₀ X₁).integral_smul_sub_haarAddCircle_comp
+      Q.continuous (hf₀.prodMk hf₁) x
+    simp only [ContinuousLinearMap.coe_fst'] at hc
+    simpa only [Prod.fst_sub, ← hc] using (norm_fst_le _).trans_lt (hQ x)
   · refine (ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_
     simp only [Prod.snd_sub, FunLike.coe_sub, Pi.sub_apply]; rw [norm_sub_rev, hh₁ t]
-    exact norm_damped_conv_sub_le ⟨zero_le_one, le_rfl⟩ hδ g₁
-      ((norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁))).trans_eq (Submodule.norm_coe g)) Q
-      (norm_integral_smul_sub_comp_lt (.snd ℂ X₀ X₁) norm_snd_le (hf₀.prodMk hf₁) hQ) htail
-      (hdamp₁ hδ ((half_lt_self (lt_min hδ₀ hδ₁)).trans_le (min_le_right _ _)) t)
+    refine norm_damped_conv_sub_le ⟨zero_le_one, le_rfl⟩ hδ g₁
+      ((norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁))).trans_eq (Submodule.norm_coe g)) Q (fun x => ?_)
+      htail (by rw [h2δ, norm_sub_rev]; simpa [dist_eq_norm] using (hdamp₁ t).le)
+    have hc := (ContinuousLinearMap.snd ℂ X₀ X₁).integral_smul_sub_haarAddCircle_comp
+      Q.continuous (hf₀.prodMk hf₁) x
+    simp only [ContinuousLinearMap.coe_snd'] at hc
+    simpa only [Prod.snd_sub, ← hc] using (norm_snd_le _).trans_lt (hQ x)
 
 end ElementaryTraces
 
