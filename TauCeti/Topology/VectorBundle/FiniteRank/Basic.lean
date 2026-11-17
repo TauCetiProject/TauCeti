@@ -170,6 +170,15 @@ instance : Preadditive (FiniteRankBundleCore 𝕜 B) where
     (-f).fiberMap x = -f.fiberMap x :=
   CoordinateHom.fiberMap_neg f x
 
+/-- Fibre evaluation commutes with finite sums of bundle morphisms. -/
+@[simp] theorem fiberMap_sum {ι : Type*} (s : Finset ι) (f : ι → (A ⟶ D)) (x : B) :
+    (∑ i ∈ s, f i).fiberMap x = ∑ i ∈ s, (f i).fiberMap x :=
+  map_sum
+    ({ toFun := fun g : A ⟶ D ↦ g.fiberMap x
+       map_zero' := CoordinateHom.fiberMap_zero x
+       map_add' := fun g h ↦ fiberMap_add g h x } : (A ⟶ D) →+ _)
+    f s
+
 /-- Evaluate a coordinate bundle and its morphisms on the fibre at `x`. -/
 @[expose, simps obj]
 def fiberFunctor (x : B) : FiniteRankBundleCore 𝕜 B ⥤ ModuleCat 𝕜 where

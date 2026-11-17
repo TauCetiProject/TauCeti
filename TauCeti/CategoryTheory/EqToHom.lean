@@ -32,6 +32,8 @@ and avoid exposing the definitional equality of the objects being transported.
   horizontal edges gives commutativity after moving the conjugations to the vertical edges.
 * `TauCeti.eqToHom_eq_iso_hom_map_eqToHom`: transport along an index equality is conjugate, through
   identifications `Y i ≅ F.obj (X i)`, to the image under a functor `F` of the transport.
+* `TauCeti.eqToIso_conjugate_trans`: conjugating an isomorphism in two stages by `eqToIso` agrees
+  with conjugating along the composite object equalities.
 * `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
   endpoints to morphisms which agree in the same way.
 * `CategoryTheory.Functor.eqToHom_conjugate_map_conjugate`: transporting a morphism along object
@@ -141,6 +143,16 @@ theorem eqToHom_eq_iso_hom_map_eqToHom {ι C D : Type*} [Category* C] [Category*
     (F : C ⥤ D) {X : ι → C} {Y : ι → D} (e : ∀ i, Y i ≅ F.obj (X i)) {i j : ι} (h : i = j) :
     eqToHom (congrArg Y h) = (e i).hom ≫ F.map (eqToHom (congrArg X h)) ≫ (e j).inv := by
   subst h
+  simp
+
+/-- **Two-stage transport of an isomorphism**: conjugating `e : Y ≅ Z` by `eqToIso` along
+`X = Y` and `Z = V`, and then along `W = X` and `V = U`, agrees with conjugating along the
+composite equalities `W = Y` and `Z = U`. -/
+theorem eqToIso_conjugate_trans {C : Type*} [Category* C] {U V W X Y Z : C}
+    (h₁ : W = X) (h₂ : X = Y) (e : Y ≅ Z) (h₃ : Z = V) (h₄ : V = U) :
+    eqToIso (h₁.trans h₂) ≪≫ e ≪≫ eqToIso (h₃.trans h₄) =
+      eqToIso h₁ ≪≫ (eqToIso h₂ ≪≫ e ≪≫ eqToIso h₃) ≪≫ eqToIso h₄ := by
+  subst h₁ h₂ h₃ h₄
   simp
 
 end TauCeti
