@@ -110,6 +110,7 @@ theorem map [Semiring S] (h : IsNondegenerateSolution α x) (φ : R →+* S)
 
 /-- An injective ring homomorphism preserves and reflects nondegenerate solutions. This moves
 solutions between a field and a subring containing their coordinates and coefficients. -/
+@[simp]
 theorem _root_.TauCeti.isNondegenerateSolution_map_iff [Semiring S] {φ : R →+* S}
     (hφ : Function.Injective φ) : IsNondegenerateSolution (φ ∘ α) (φ ∘ x) ↔
       IsNondegenerateSolution α x := by
