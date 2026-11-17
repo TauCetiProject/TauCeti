@@ -9,7 +9,9 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.IntegralRNDeriv
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Measure.Decomposition.RNDeriv
 
 /-!
 # The Hellinger affinity and the squared Hellinger distance
@@ -123,14 +125,6 @@ theorem integrable_sq_sqrt_toReal_rnDeriv_sub [IsFiniteMeasure P] [IsFiniteMeasu
   have hpq : Integrable (fun x ↦ (P.rnDeriv μ x).toReal + (Q.rnDeriv μ x).toReal) μ :=
     Measure.integrable_toReal_rnDeriv.add Measure.integrable_toReal_rnDeriv
   exact hpq.sub ((integrable_sqrt_toReal_rnDeriv_mul P Q μ).const_mul 2)
-
-/-- The square root `√(dP/dμ)` of the density of a finite measure `P` is square-integrable,
-whatever the reference measure `μ`: its square integrates to at most the mass of `P`. -/
-theorem memLp_two_sqrt_toReal_rnDeriv [IsFiniteMeasure P] (μ : Measure X) :
-    MemLp (fun x ↦ √(P.rnDeriv μ x).toReal) 2 μ := by
-  refine (memLp_two_iff_integrable_sq
-    (P.measurable_rnDeriv _).ennreal_toReal.sqrt.aestronglyMeasurable).mpr ?_
-  simpa only [Real.sq_sqrt ENNReal.toReal_nonneg] using Measure.integrable_toReal_rnDeriv
 
 end Basic
 
@@ -285,22 +279,20 @@ theorem sqrt_sqHellinger_triangle (P Q R : Measure X) [IsProbabilityMeasure P]
   have hP : P ≪ P + Q + R := (Measure.absolutelyContinuous_self_add P Q).add_right R
   have hQ : Q ≪ P + Q + R := (Measure.absolutelyContinuous_add_self P Q).add_right R
   have hR : R ≪ P + Q + R := Measure.absolutelyContinuous_add_self _ R
-  -- For square-integrable `F`, `G`, the number `√(∫ (F - G)²)` is the `L²` seminorm of `F - G`.
-  have hnorm {F G : X → ℝ} (hF : MemLp F 2 (P + Q + R)) (hG : MemLp G 2 (P + Q + R)) :
-      √(∫ x, (F x - G x) ^ 2 ∂(P + Q + R)) = (eLpNorm (F - G) 2 (P + Q + R)).toReal := by
-    rw [(hF.sub hG).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
-      ENNReal.toReal_ofReal (by positivity), Real.sqrt_eq_rpow]
-    simp [Real.norm_eq_abs, sq_abs]
-  have hf := memLp_two_sqrt_toReal_rnDeriv P (P + Q + R)
-  have hg := memLp_two_sqrt_toReal_rnDeriv Q (P + Q + R)
-  have hh := memLp_two_sqrt_toReal_rnDeriv R (P + Q + R)
+  set F := fun x ↦ √(P.rnDeriv (P + Q + R) x).toReal
+  set G := fun x ↦ √(Q.rnDeriv (P + Q + R) x).toReal
+  set H := fun x ↦ √(R.rnDeriv (P + Q + R) x).toReal
+  have hF : MemLp F 2 (P + Q + R) := Measure.memLp_two_sqrt_toReal_rnDeriv P _
+  have hG : MemLp G 2 (P + Q + R) := Measure.memLp_two_sqrt_toReal_rnDeriv Q _
+  have hH : MemLp H 2 (P + Q + R) := Measure.memLp_two_sqrt_toReal_rnDeriv R _
   -- Minkowski's inequality in `L²(P + Q + R)`.
-  rw [sqHellinger_eq_integral hP hR, sqHellinger_eq_integral hP hQ, sqHellinger_eq_integral hQ hR,
-    hnorm hf hh, hnorm hf hg, hnorm hg hh,
-    ← ENNReal.toReal_add (hf.sub hg).eLpNorm_ne_top (hg.sub hh).eLpNorm_ne_top]
-  refine ENNReal.toReal_mono (ENNReal.add_ne_top.mpr
-    ⟨(hf.sub hg).eLpNorm_ne_top, (hg.sub hh).eLpNorm_ne_top⟩) ?_
-  rw [← sub_add_sub_cancel _ (fun x ↦ √(Q.rnDeriv (P + Q + R) x).toReal)]
-  exact eLpNorm_add_le one_le_two
+  have key := eLpNorm_add_le (μ := P + Q + R) (f := F - G) (g := G - H) one_le_two
+  rw [sub_add_sub_cancel, (hF.sub hH).eLpNorm_two_eq_ofReal_sqrt_integral,
+    (hF.sub hG).eLpNorm_two_eq_ofReal_sqrt_integral,
+    (hG.sub hH).eLpNorm_two_eq_ofReal_sqrt_integral,
+    ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _),
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at key
+  rw [sqHellinger_eq_integral hP hR, sqHellinger_eq_integral hP hQ, sqHellinger_eq_integral hQ hR]
+  simpa only [F, G, H, Pi.sub_apply, Real.norm_eq_abs, sq_abs] using key
 
 end TauCeti
