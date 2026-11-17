@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
 import TauCeti.LinearAlgebra.Matrix.DetDescent
-import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.LinearAlgebra.Matrix.Determinant.Smul
 import TauCeti.LinearAlgebra.Matrix.OfReal
 import TauCeti.LinearAlgebra.SymplecticGroup
 

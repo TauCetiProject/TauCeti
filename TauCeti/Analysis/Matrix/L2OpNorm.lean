@@ -32,8 +32,8 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
-* `Matrix.l2_opNorm_map_ofReal`: a real matrix has the same `ℓ²` operator norm as a complex
-  matrix.
+* `Matrix.l2_opNorm_map_ofReal`: a real, possibly rectangular, matrix has the same `ℓ²` operator
+  norm as a complex matrix.
 -/
 
 public section
@@ -118,18 +118,19 @@ theorem l2_opNorm_sub_diagonal_diag_le (A : Matrix n n 𝕜) :
 
 section OfReal
 
-variable {m : Type*} [Fintype m] [DecidableEq m]
+variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
 
-/-- **A real matrix has the same `ℓ²` operator norm over `ℂ`**: its norm as an operator on
-`ℂᵐ` is its norm as an operator on `ℝᵐ`. -/
+/-- **A real matrix has the same `ℓ²` operator norm over `ℂ`**: its norm as an operator
+`ℂⁿ → ℂᵐ` is its norm as an operator `ℝⁿ → ℝᵐ`. -/
 @[simp]
-theorem l2_opNorm_map_ofReal (S : Matrix m m ℝ) : ‖S.map ((↑) : ℝ → ℂ)‖ = ‖S‖ := by
+theorem l2_opNorm_map_ofReal (S : Matrix m n ℝ) : ‖S.map ((↑) : ℝ → ℂ)‖ = ‖S‖ := by
   refine le_antisymm ?_ ?_
-  · rw [← l2_opNorm_toEuclideanCLM]
+  · rw [l2_opNorm_def (S.map _)]
     refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+    rw [LinearEquiv.trans_apply, LinearMap.coe_toContinuousLinearMap', toLpLin_apply]
     -- Split `v = a + i b` with real `a` and `b`: `‖S v‖² = ‖S a‖² + ‖S b‖²`.
-    let a : EuclideanSpace ℝ m := WithLp.toLp 2 fun i ↦ (v i).re
-    let b : EuclideanSpace ℝ m := WithLp.toLp 2 fun i ↦ (v i).im
+    let a : EuclideanSpace ℝ n := WithLp.toLp 2 fun i ↦ (v i).re
+    let b : EuclideanSpace ℝ n := WithLp.toLp 2 fun i ↦ (v i).im
     have ha : ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp a) : EuclideanSpace ℝ m)‖ ≤ ‖S‖ * ‖a‖ :=
       l2_opNorm_mulVec S a
     have hb : ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp b) : EuclideanSpace ℝ m)‖ ≤ ‖S‖ * ‖b‖ :=
@@ -138,10 +139,11 @@ theorem l2_opNorm_map_ofReal (S : Matrix m m ℝ) : ‖S.map ((↑) : ℝ → �
       simp only [EuclideanSpace.norm_sq_eq, a, b, ← Finset.sum_add_distrib, Real.norm_eq_abs,
         sq_abs, Complex.sq_norm, Complex.normSq_apply]
       exact Finset.sum_congr rfl fun i _ ↦ by ring
-    have hSv : ‖toEuclideanCLM (𝕜 := ℂ) (S.map (↑)) v‖ ^ 2 =
+    have hSv : ‖(WithLp.toLp 2 (S.map ((↑) : ℝ → ℂ) *ᵥ WithLp.ofLp v) : EuclideanSpace ℂ m)‖ ^ 2 =
         ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp a) : EuclideanSpace ℝ m)‖ ^ 2 +
           ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp b) : EuclideanSpace ℝ m)‖ ^ 2 := by
-      have hcoord (i : m) : toEuclideanCLM (𝕜 := ℂ) (S.map (↑)) v i = ∑ j, (S i j : ℂ) * v j := by
+      have hcoord (i : m) :
+          (S.map ((↑) : ℝ → ℂ) *ᵥ WithLp.ofLp v) i = ∑ j, (S i j : ℂ) * v j := by
         simp [mulVec, dotProduct]
       simp only [EuclideanSpace.norm_sq_eq, ← Finset.sum_add_distrib, Real.norm_eq_abs,
         sq_abs, Complex.sq_norm, Complex.normSq_apply, hcoord]
@@ -157,14 +159,15 @@ theorem l2_opNorm_map_ofReal (S : Matrix m m ℝ) : ‖S.map ((↑) : ℝ → �
     nlinarith [norm_nonneg (WithLp.toLp 2 (S *ᵥ WithLp.ofLp a) : EuclideanSpace ℝ m),
       norm_nonneg (WithLp.toLp 2 (S *ᵥ WithLp.ofLp b) : EuclideanSpace ℝ m),
       mul_nonneg h0 (norm_nonneg a), mul_nonneg h0 (norm_nonneg b)]
-  · rw [← l2_opNorm_toEuclideanCLM S]
+  · rw [l2_opNorm_def S]
     refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
+    rw [LinearEquiv.trans_apply, LinearMap.coe_toContinuousLinearMap', toLpLin_apply]
     -- A real vector has the same norm as a complex vector.
-    let xc : EuclideanSpace ℂ m := WithLp.toLp 2 fun i ↦ (x i : ℂ)
+    let xc : EuclideanSpace ℂ n := WithLp.toLp 2 fun i ↦ (x i : ℂ)
     have hx : ‖xc‖ = ‖x‖ := by
       simp [EuclideanSpace.norm_eq, xc, Complex.norm_real]
     have hSx : ‖(WithLp.toLp 2 (S.map ((↑) : ℝ → ℂ) *ᵥ WithLp.ofLp xc) : EuclideanSpace ℂ m)‖ =
-        ‖toEuclideanCLM (𝕜 := ℝ) S x‖ := by
+        ‖(WithLp.toLp 2 (S *ᵥ WithLp.ofLp x) : EuclideanSpace ℝ m)‖ := by
       simp [EuclideanSpace.norm_eq, xc, mulVec, dotProduct, ← Complex.ofReal_mul,
         ← Complex.ofReal_sum]
     rw [← hSx, ← hx]

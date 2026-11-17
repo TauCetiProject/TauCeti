@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.Analysis.Normed.Algebra.Spectrum
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
@@ -24,7 +25,8 @@ For a real square matrix `Y` the complex eigenvalues of `exp Y` are therefore th
 complex eigenvalues `ν` of `Y`, and these satisfy `‖ν‖ ≤ ‖Y‖` for the `ℓ²` operator norm
 (`Matrix.exists_norm_le_exp_eq_of_mem_spectrum`). This is how one shows that `exp Y` has no
 eigenvalue `1`, or no eigenvalue `-1`, when `Y` is small: such an eigenvalue forces `ν ∈ 2π i ℤ`,
-respectively `ν ∈ π i (2 ℤ + 1)`.
+respectively `ν ∈ π i (2 ℤ + 1)` (`Complex.eq_zero_of_exp_eq_one_of_norm_lt`,
+`Complex.pi_le_norm_of_exp_eq_neg_one`).
 
 ## Main results
 
@@ -76,34 +78,6 @@ theorem exists_norm_le_exp_eq_of_mem_spectrum (Y : Matrix m m ℝ) {z : ℂ}
   exact ⟨ν, (spectrum.norm_le_norm_of_mem hν).trans_eq (l2_opNorm_map_ofReal Y), hν,
     by rw [Complex.exp_eq_exp_ℂ]⟩
 
-/-- A logarithm `ν` of `1` with `‖ν‖ < 2π` is `0`, since `ν ∈ 2π i ℤ`. -/
-private theorem eq_zero_of_exp_eq_one_of_norm_lt {ν : ℂ} (hν : Complex.exp ν = 1)
-    (hν2π : ‖ν‖ < 2 * Real.pi) : ν = 0 := by
-  obtain ⟨k, rfl⟩ := Complex.exp_eq_one_iff.1 hν
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  have h1 : (1 : ℝ) ≤ |(k : ℝ)| := by exact_mod_cast Int.one_le_abs hk
-  have hnorm : ‖(k : ℂ) * (2 * Real.pi * Complex.I)‖ = |(k : ℝ)| * (2 * Real.pi) := by
-    simp [abs_of_pos Real.pi_pos]
-  nlinarith [Real.pi_pos]
-
-/-- A logarithm `ν` of `-1` has `π ≤ ‖ν‖`, since `ν ∈ π i (2 ℤ + 1)`. -/
-private theorem pi_le_norm_of_exp_eq_neg_one {ν : ℂ} (hν : Complex.exp ν = -1) :
-    Real.pi ≤ ‖ν‖ := by
-  obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.1 (show Complex.exp (ν - Real.pi * Complex.I) = 1 by
-    rw [Complex.exp_sub, hν, Complex.exp_pi_mul_I, neg_div_neg_eq, div_one])
-  have hν' : ν = ((2 * k + 1 : ℤ) : ℂ) * (Real.pi * Complex.I) := by
-    rw [sub_eq_iff_eq_add] at hk
-    rw [hk]
-    push_cast
-    ring
-  have h1 : (1 : ℝ) ≤ |((2 * k + 1 : ℤ) : ℝ)| := by
-    exact_mod_cast Int.one_le_abs (by omega)
-  have hnorm : ‖ν‖ = |((2 * k + 1 : ℤ) : ℝ)| * Real.pi := by
-    rw [hν', norm_mul, Complex.norm_intCast]
-    simp [abs_of_pos Real.pi_pos]
-  nlinarith [Real.pi_pos]
-
 /-- **A small invertible real matrix has exponential without eigenvalue `1`.** If `Y` is invertible
 and `‖Y‖ < 2π`, then `exp Y - 1` is invertible. -/
 theorem isUnit_exp_sub_one {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖ < 2 * Real.pi) :
@@ -115,7 +89,7 @@ theorem isUnit_exp_sub_one {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖
   obtain ⟨ν, hνY, hν, hνe⟩ := exists_norm_le_exp_eq_of_mem_spectrum Y (z := 1) (by
     rw [spectrum.mem_iff, map_one]
     exact h)
-  rw [eq_zero_of_exp_eq_one_of_norm_lt hνe (hνY.trans_lt hY2π), spectrum.zero_mem_iff,
+  rw [Complex.eq_zero_of_exp_eq_one_of_norm_lt hνe (hνY.trans_lt hY2π), spectrum.zero_mem_iff,
     isUnit_map_ofReal_iff] at hν
   exact hν hY
 
@@ -129,6 +103,6 @@ theorem isUnit_exp_add_one {Y : Matrix m m ℝ} (hYπ : ‖Y‖ < Real.pi) : IsU
   obtain ⟨ν, hνY, -, hνe⟩ := exists_norm_le_exp_eq_of_mem_spectrum Y (z := -1) (by
     rw [spectrum.mem_iff, map_neg, map_one]
     exact h)
-  exact (pi_le_norm_of_exp_eq_neg_one hνe).not_gt (hνY.trans_lt hYπ)
+  exact (Complex.pi_le_norm_of_exp_eq_neg_one hνe).not_gt (hνY.trans_lt hYπ)
 
 end Matrix

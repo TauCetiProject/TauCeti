@@ -13,7 +13,7 @@ import TauCeti.Analysis.Matrix.Exponential.Spectrum
 import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
 import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
-import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.LinearAlgebra.Matrix.Determinant.Smul
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
