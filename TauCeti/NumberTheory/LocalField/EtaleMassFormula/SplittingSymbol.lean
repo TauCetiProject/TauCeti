@@ -20,7 +20,10 @@ formulas for these symbols.
 
 * `TauCeti.splittingSymbolAut σ` is `#Aut(σ)`, the product of the residue degrees `f_i` times the
   number of permutations of the factors preserving `σ`.
-* `TauCeti.splittingSymbolExponent σ` is `∑ f_i (e_i - 1)`, the discriminant exponent of `σ`.
+* `TauCeti.splittingSymbolExponent σ` is `∑ f_i (e_i - 1)`, the tame (minimal) discriminant
+  exponent of `σ`, i.e. the exponent in [Bhargava 2007, Prop. 2.1] (equal to the true discriminant
+  exponent of an étale algebra with symbol `σ` only when every `e_i` is prime to the residue
+  characteristic `p`).
 * `TauCeti.ramificationPartition σ` repeats each `e_i - 1` exactly `f_i` times and drops zeros. The
   symbol has degree `n = k + #π + n₀`, where `k` is the sum of its ramification partition `π` and
   `n₀` the total residue degree of its unramified factors
@@ -57,7 +60,7 @@ open scoped Nat ENNReal NNReal
 
 namespace TauCeti
 
-/-! ### The automorphism count, discriminant exponent, and ramification partition -/
+/-! ### The automorphism count, tame discriminant exponent, and ramification partition -/
 
 /-- The order `#Aut(σ)` of the automorphism group of a splitting symbol `σ`, a multiset of pairs
 `(f, e)` of residue degrees and ramification indices [Bhargava 2007, §2]: the product of the
@@ -66,7 +69,11 @@ residue degrees, times the number `∏ₓ (count x)!` of permutations of the fac
 def splittingSymbolAut (σ : Multiset (ℕ × ℕ)) : ℕ :=
   (σ.map Prod.fst).prod * ∏ x ∈ σ.toFinset, (σ.count x)!
 
-/-- The discriminant exponent `∑ f (e - 1)` of a splitting symbol `σ` [Bhargava 2007, §2]. -/
+/-- The tame (minimal) discriminant exponent `∑ f (e - 1)` of a splitting symbol `σ`, i.e. the
+exponent appearing in [Bhargava 2007, Prop. 2.1]. For a Galois set (or étale algebra) with
+splitting symbol `σ`, this equals the true discriminant exponent only when every ramification index
+`e` is prime to the residue characteristic `p` (when `p ∣ e`, wild ramification makes the true
+discriminant exponent strictly larger). -/
 def splittingSymbolExponent (σ : Multiset (ℕ × ℕ)) : ℕ :=
   (σ.map fun x => x.1 * (x.2 - 1)).sum
 
@@ -87,32 +94,32 @@ theorem splittingSymbolExponent_def (σ : Multiset (ℕ × ℕ)) :
     splittingSymbolExponent σ = (σ.map fun x => x.1 * (x.2 - 1)).sum :=
   (rfl)
 
-/-- The empty splitting symbol has discriminant exponent zero. -/
+/-- The empty splitting symbol has tame discriminant exponent zero. -/
 @[simp]
 theorem splittingSymbolExponent_zero : splittingSymbolExponent 0 = 0 := by
   simp [splittingSymbolExponent]
 
-/-- The discriminant exponent of a single factor `(f, e)` is `f * (e - 1)`. -/
+/-- The tame discriminant exponent of a single factor `(f, e)` is `f * (e - 1)`. -/
 @[simp]
 theorem splittingSymbolExponent_singleton (x : ℕ × ℕ) :
     splittingSymbolExponent {x} = x.1 * (x.2 - 1) := by
   simp [splittingSymbolExponent]
 
-/-- Adding a factor `(f, e)` increases the discriminant exponent by `f * (e - 1)`. -/
+/-- Adding a factor `(f, e)` increases the tame discriminant exponent by `f * (e - 1)`. -/
 @[simp]
 theorem splittingSymbolExponent_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
     splittingSymbolExponent (x ::ₘ σ) = x.1 * (x.2 - 1) + splittingSymbolExponent σ := by
   simp [splittingSymbolExponent]
 
-/-- The discriminant exponent of a sum of splitting symbols is the sum of their exponents. -/
+/-- The tame discriminant exponent of a sum of splitting symbols is the sum of their exponents. -/
 @[simp]
 theorem splittingSymbolExponent_add (σ τ : Multiset (ℕ × ℕ)) :
     splittingSymbolExponent (σ + τ) =
       splittingSymbolExponent σ + splittingSymbolExponent τ := by
   simp [splittingSymbolExponent]
 
-/-- Repeating a factor `(f, e)` `n` times multiplies its discriminant exponent `f * (e - 1)` by
-`n`. -/
+/-- Repeating a factor `(f, e)` `n` times multiplies its tame discriminant exponent `f * (e - 1)`
+by `n`. -/
 @[simp]
 theorem splittingSymbolExponent_replicate (n : ℕ) (x : ℕ × ℕ) :
     splittingSymbolExponent (Multiset.replicate n x) = n * (x.1 * (x.2 - 1)) := by
@@ -247,7 +254,8 @@ theorem count_ramificationPartition (σ : Multiset (ℕ × ℕ)) {t : ℕ} (ht :
   rw [Multiset.count_replicate]
   split_ifs <;> omega
 
-/-- The sum of the ramification partition is the discriminant exponent `∑ f (e - 1)` of `σ`. -/
+/-- The sum of the ramification partition is the tame discriminant exponent `∑ f (e - 1)` of
+`σ`. -/
 @[simp]
 theorem sum_ramificationPartition (σ : Multiset (ℕ × ℕ)) :
     (ramificationPartition σ).sum = splittingSymbolExponent σ := by

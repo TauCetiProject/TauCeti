@@ -88,9 +88,7 @@ private def splittingBlockMap (n : ℕ) (σ : Multiset (ℕ × ℕ))
     {ρ : GaloisSet K n // ρ.splittingSymbol = σ} :=
   ⟨GaloisSet.sigma p.1 (fun i ↦ (p.2 i).1), by
     rw [GaloisSet.splittingSymbol_sigma, Finset.sum_congr rfl fun i _ ↦ (p.2 i).2]
-    simp only [Fin.getElem_fin]
-    rw [Fin.sum_univ_fun_getElem σ.toList fun x ↦ ({x} : Multiset (ℕ × ℕ)),
-      Multiset.sum_map_toList, Multiset.sum_map_singleton]⟩
+    simp⟩
 
 @[simp]
 private theorem coe_splittingBlockMap (n : ℕ) (σ : Multiset (ℕ × ℕ))
@@ -318,9 +316,7 @@ private theorem natCard_splittingBlockFiber {n : ℕ} {σ : Multiset (ℕ × ℕ
     ← Nat.card_eq_fintype_card]
   congr 1
   have hu : (Finset.univ : Finset (Fin σ.toList.length)).val.map (fun i ↦ σ.toList[i]) = σ := by
-    rw [Fin.univ_def, Multiset.map_coe]
-    simp only [Fin.getElem_fin]
-    rw [List.map_getElem_finRange, Multiset.coe_toList]
+    simp [Fin.univ_def]
   have ho : (Finset.univ : Finset (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))).val.map
       ρ₀.1.orbitSymbol = σ :=
     ρ₀.1.splittingSymbol_eq_map_orbitSymbol.symm.trans ρ₀.2
@@ -347,9 +343,8 @@ private theorem card_blockEquiv {n : ℕ} {σ : Multiset (ℕ × ℕ)}
       n ! := by
   have hcard_sig :
       Fintype.card (Σ i : Fin σ.toList.length, Fin (σ.toList[i].1 * σ.toList[i].2)) = n := by
-    simpa [Fintype.card_sigma, Fintype.card_fin] using
-      ((Fin.sum_univ_fun_getElem σ.toList fun x ↦ x.1 * x.2).trans
-        (Multiset.sum_map_toList σ fun x ↦ x.1 * x.2)).trans hn
+    rw [← Multiset.sum_map_toList, ← Fin.sum_univ_fun_getElem] at hn
+    simpa [Fintype.card_sigma, Fintype.card_fin] using hn
   rw [Fintype.card_equiv (Fintype.equivFinOfCardEq hcard_sig).symm, Fintype.card_fin]
 
 private theorem tsum_splittingSymbol_singleton_eq {f e : ℕ} (hf : 0 < f) (he : 0 < e) :
@@ -397,11 +392,9 @@ private theorem tsum_splittingBlockTotal_direct (n : ℕ) (σ : Multiset (ℕ ×
     (fun _ _ _ _ _ ↦ Or.inr (ENNReal.mul_ne_top (ENNReal.natCast_ne_top _)
       (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))))]
   congr 1
-  rw [Finset.prod_mul_distrib, ← Nat.cast_prod, Finset.prod_pow_eq_pow_sum]
-  simp only [Fin.getElem_fin]
-  rw [Fin.prod_univ_fun_getElem σ.toList Prod.fst, Multiset.prod_map_toList,
-    Fin.sum_univ_fun_getElem σ.toList fun x ↦ x.1 * (x.2 - 1),
-    Multiset.sum_map_toList, ← splittingSymbolExponent_def]
+  rw [Finset.prod_mul_distrib, ← Nat.cast_prod, Finset.prod_pow_eq_pow_sum,
+    splittingSymbolExponent_def, ← Multiset.sum_map_toList, ← Fin.sum_univ_fun_getElem]
+  simp
 
 private theorem tsum_splittingBlockTotal_fiber (n : ℕ) (σ : Multiset (ℕ × ℕ))
     (hσ : ∀ x ∈ σ, 0 < x.1 ∧ 0 < x.2) :
@@ -562,7 +555,7 @@ theorem etaleMass_eq (n : ℕ) :
   let partOf : GaloisSet K n → PartIdx := fun ρ ↦
     have hdeg := sum_map_mul_eq_sum_ramificationPartition_add ρ.splittingSymbol
       fun x hx ↦ (GaloisSet.pos_of_mem_splittingSymbol hx).2
-    let _ := ρ.sum_map_mul_splittingSymbol
+    have := ρ.sum_map_mul_splittingSymbol
     have hk_le : (ramificationPartition ρ.splittingSymbol).sum ≤ n := by omega
     have hcard_le : Multiset.card (ramificationPartition ρ.splittingSymbol) ≤
         n - (ramificationPartition ρ.splittingSymbol).sum := by omega

@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.GroupAction.Discrete
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Logic.Equiv.Basic
 import TauCeti.Logic.Equiv.Option
 
 /-!
@@ -347,7 +348,7 @@ theorem restrictBlock_val_apply {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K 
       Equiv.sigmaSubtype i
         ⟨b (ρ.val σ (b.symm ⟨i, x⟩)),
           (hb σ (b.symm ⟨i, x⟩)).trans (by rw [b.apply_symm_apply])⟩ := by
-  simp [restrictBlock, Equiv.sigmaSubtype]
+  simp [restrictBlock]
 
 /-- Reassembling the block restrictions of `ρ` along `b` recovers `ρ`. -/
 @[simp]
@@ -356,12 +357,8 @@ theorem sigma_restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
     (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
       (b (ρ.val σ j)).1 = (b j).1) :
     sigma b (ρ.restrictBlock b hb) = ρ := by
-  have hmk : ∀ {a : ι} (s : {p : Σ i, Fin (d i) // p.1 = a}),
-      (⟨a, Equiv.sigmaSubtype a s⟩ : Σ i, Fin (d i)) = s.1 := by
-    rintro a ⟨⟨_, _⟩, rfl⟩
-    rfl
   refine ext fun σ j ↦ ?_
-  rw [sigma_val_apply, restrictBlock_val_apply, hmk]
+  rw [sigma_val_apply, restrictBlock_val_apply, Equiv.sigma_mk_sigmaSubtype]
   simp [Sigma.eta]
 
 /-- Restricting a disjoint union of Galois sets to its `i`-th block recovers the `i`-th
@@ -375,10 +372,9 @@ theorem restrictBlock_sigma {ι : Type*} {d : ι → ℕ}
     (sigma b ρ).restrictBlock b hb i = ρ i := by
   refine ext fun σ x ↦ ?_
   rw [restrictBlock_val_apply, ← (Equiv.sigmaSubtype i).eq_symm_apply]
-  apply Subtype.ext
+  refine Subtype.ext ?_
   dsimp only
-  rw [sigma_val_apply, b.apply_symm_apply, b.apply_symm_apply]
-  simp [Equiv.sigmaSubtype]
+  rw [sigma_val_apply, b.apply_symm_apply, b.apply_symm_apply, Equiv.sigmaSubtype_symm_apply]
 
 /-- Embedding the `i`-th block along `b.symm` is equivariant for `restrictBlock`. -/
 theorem symm_apply_smul_restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)

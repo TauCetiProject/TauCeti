@@ -135,6 +135,19 @@ theorem coe_fiberEquiv_symm_apply {α β γ : Type*} (f : α → γ) (g : β →
     ((fiberEquiv f g).symm e : α ≃ β) = ofFiberEquiv e :=
   (rfl)
 
+/-- The inverse of `Equiv.sigmaSubtype` pairs the fiber element with the pinned base point. -/
+@[simp]
+theorem sigmaSubtype_symm_apply {α : Type*} {β : α → Type*} (a : α) (b : β a) :
+    (sigmaSubtype a).symm b = ⟨⟨a, b⟩, rfl⟩ :=
+  (rfl)
+
+/-- Reconstructing a sigma pair from `Equiv.sigmaSubtype` recovers the underlying element. -/
+theorem sigma_mk_sigmaSubtype {α : Type*} {β : α → Type*} (a : α)
+    (s : {p : Σ i, β i // p.1 = a}) :
+    (⟨a, sigmaSubtype a s⟩ : Σ i, β i) = s.1 := by
+  rcases s with ⟨⟨_, _⟩, rfl⟩
+  rfl
+
 /-- Equivalences `e : α ≃ Σ i, β i` whose first projection agrees with `f : α → ι` correspond to
 families of fiber equivalences `{a // f a = i} ≃ β i`. -/
 def fiberEquivSigma {α ι : Type*} {β : ι → Type*} (f : α → ι) :
@@ -147,10 +160,9 @@ underlying equivalence `e`. -/
 @[simp]
 theorem sigma_mk_fiberEquivSigma_apply_apply {α ι : Type*} {β : ι → Type*} (f : α → ι)
     (e : {e : α ≃ Σ i, β i // ∀ a, (e a).1 = f a}) (i : ι) (a : {a // f a = i}) :
-    (⟨i, fiberEquivSigma f e i a⟩ : Σ i, β i) = e.1 a.1 := by
-  have h : ∀ s : {p : Σ i, β i // p.1 = i}, (⟨i, sigmaSubtype i s⟩ : Σ i, β i) = s.1 :=
-    fun ⟨⟨_, _⟩, rfl⟩ ↦ rfl
-  simpa [fiberEquivSigma] using (h _).trans (coe_fiberEquiv_apply_apply f Sigma.fst e i a)
+    (⟨i, fiberEquivSigma f e i a⟩ : Σ i, β i) = e.1 a.1 :=
+  (sigma_mk_sigmaSubtype i (fiberEquiv f Sigma.fst e i a)).trans
+    (coe_fiberEquiv_apply_apply f Sigma.fst e i a)
 
 /-- The inverse of the fiber equivalence `Equiv.fiberEquivSigma f e i` applies the inverse of the
 underlying equivalence `e` on the `i`-th fiber. -/
