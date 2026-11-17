@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import Mathlib.Topology.Sequences
+import TauCeti.Topology.Sequences.Basic
 
 /-!
 # Convergence in the weak topology
@@ -14,7 +16,9 @@ A family converges in `WeakSpace 𝕜 E` exactly when its values under every con
 functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`). This lets
 weak convergence be used without unfolding the definition of `WeakSpace` as a `WeakBilin` space.
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
-evaluations.
+evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
+to closure of `s` under limits of weakly convergent sequences
+(`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -37,6 +41,14 @@ theorem tendsto_toWeakSpace_iff_forall_eval_tendsto {α : Type*} {l : Filter α}
     Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x)) ↔
       ∀ f : StrongDual 𝕜 E, Tendsto (fun n ↦ f (u n)) l (𝓝 (f x)) :=
   (IsInducing.induced _).tendsto_nhds_iff.trans tendsto_pi_nhds
+
+/-- Sequential closedness of `toWeakSpace 𝕜 E '' s` in `WeakSpace 𝕜 E` is equivalent to closure of
+`s` under limits of weakly convergent sequences in `E`. -/
+theorem isSeqClosed_toWeakSpace_image_iff {s : Set E} :
+    IsSeqClosed (toWeakSpace 𝕜 E '' s) ↔
+      ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ s) →
+        Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ s :=
+  (toWeakSpace 𝕜 E).toEquiv.isSeqClosed_image_iff
 
 /-- If the weak topology is Hausdorff, a family that eventually stays in a compact set and
 converges weakly to `a` converges to `a` in the original topology. -/
