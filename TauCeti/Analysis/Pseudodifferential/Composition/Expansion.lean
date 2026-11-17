@@ -699,6 +699,7 @@ private theorem exists_bound_remainderSymbol [CompleteSpace W] [CompleteSpace U]
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (remainderSymbol a hb N).coefficient x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) :=
   exists_norm_mixedDeriv_le_of_leibniz N P hPspatial hPfrequency
+    HasCompactSpatialSupport (fun hb j ↦ hb.spatialDeriv j) (fun hb j ↦ hb.frequencyDeriv j)
     (fun a _ hb ↦ (remainderSymbol a hb N).coefficient)
     (fun a _ hb ↦ (remainderSymbol a hb N).contDiff_coefficient)
     (fun a _ hb j x ξ ↦ by
