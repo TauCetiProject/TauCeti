@@ -54,7 +54,8 @@ The main results are:
 
 On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` without derivatives; with
 any derivative its seminorms vanish (`TauCeti.Symbol.seminorm_const_nil_nil`,
-`TauCeti.Symbol.seminorm_const_eq_zero`).
+`TauCeti.Symbol.seminorm_const_eq_zero`). On every compact set its seminorms are at most `‖T‖`
+(`TauCeti.Symbol.seminorm_const_le`).
 
 The seminorms are set up following Mathlib's seminorms of the Schwartz space
 (`SchwartzMap.seminorm`).
@@ -246,6 +247,15 @@ theorem seminorm_const_eq_zero {α β : List (Fin n)} (h : α ≠ [] ∨ β ≠ 
         coordinateDeriv_const T (h.resolve_right (by simp)), Pi.zero_apply]
     · exact mixedDeriv_comp_fst (fun _ : CoordinateSpace n => T) α hβ x ξ
   rw [hd, norm_zero, zero_mul]
+
+/-- Every seminorm of the constant symbol `T` is at most `‖T‖`. -/
+theorem seminorm_const_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
+    (T : V →L[ℂ] W) : Symbol.seminorm K α β (const T : Symbol n V W 0) ≤ ‖T‖ := by
+  by_cases h : α = [] ∧ β = []
+  · obtain ⟨rfl, rfl⟩ := h
+    exact seminorm_le_bound K [] [] _ (norm_nonneg T) fun y _ ξ => by simp
+  · rw [seminorm_const_eq_zero (not_and_or.1 h)]
+    exact norm_nonneg T
 
 /-- A symbol satisfies its estimates uniformly in the position exactly when each of its
 seminorms `p_{K,α,β}` is bounded independently of the compact set `K`. -/

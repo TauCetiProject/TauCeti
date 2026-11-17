@@ -37,7 +37,8 @@ parameters with `|λ| ≥ 1`, a bounded set of inverse parameters `r ≠ 0`), wi
 order `m + d j`, and the defining estimates say that every seminorm of the slices is bounded
 uniformly in `r` (`TauCeti.WeakParameterSymbol.exists_seminorm_slice_le`); a holomorphic family
 with such slices is a weakly parameter-dependent symbol
-(`TauCeti.WeakParameterSymbol.ofSlices`).
+(`TauCeti.WeakParameterSymbol.ofSlices`; `TauCeti.WeakParameterSymbol.ofSlicesOn` extends a family
+holomorphic on `R` by zero).
 
 ## Main definitions and results
 
@@ -186,6 +187,40 @@ theorem slice_ofSlices (j : ℕ) (r : R) : (ofSlices b hb hb₀ s hs hbound).sli
   Symbol.ext (funext fun p ↦ (hs j r p).symm)
 
 end OfSlices
+
+section OfSlicesOn
+
+variable (g : CoordinateSpace n × CoordinateSpace n → ℂ → V →L[ℂ] W)
+  (hg : ∀ p, DifferentiableOn ℂ (g p) R)
+  (s : (j : ℕ) → R → Symbol n V W (m + d * j))
+  (hs : ∀ j r p, (s j r).coefficient p = iteratedDeriv j (g p) r)
+  (hbound : ∀ (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) (j : ℕ),
+    ∃ C, ∀ r : R, Symbol.seminorm K α β (s j r) ≤ C)
+
+/-- A family `g`, holomorphic in the parameter on `R`, whose derivatives `∂_r^j g(·, ·, r)` are
+the coefficients of symbols `s j r` of order `m + d j` with seminorms bounded uniformly in `r`,
+gives a weakly parameter-dependent symbol, equal to `g` on `R` and extended by zero outside `R`.
+Unlike `TauCeti.WeakParameterSymbol.ofSlices`, `g` need not vanish outside `R`. -/
+def ofSlicesOn : WeakParameterSymbol n R V W d m :=
+  ofSlices (fun p ↦ (R : Set ℂ).indicator (g p))
+    (fun p ↦ (hg p).congr fun _ hr ↦ indicator_of_mem hr _)
+    (fun _ _ hr ↦ indicator_of_notMem hr _) s
+    (fun j r p ↦ by
+      have h : (R : Set ℂ).EqOn ((R : Set ℂ).indicator (g p)) (g p) :=
+        fun _ hr ↦ indicator_of_mem hr _
+      rw [hs, h.iteratedDeriv_of_isOpen R.isOpen j r.2])
+    hbound
+
+@[simp]
+theorem coefficient_ofSlicesOn (p : CoordinateSpace n × CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
+    (ofSlicesOn g hg s hs hbound).coefficient p r = g p r :=
+  indicator_of_mem hr _
+
+@[simp]
+theorem slice_ofSlicesOn (j : ℕ) (r : R) : (ofSlicesOn g hg s hs hbound).slice j r = s j r :=
+  slice_ofSlices ..
+
+end OfSlicesOn
 
 section Module
 
@@ -353,15 +388,10 @@ private def ofSymbolSlice (b : Symbol n V W m) : (j : ℕ) → Symbol n V W (m +
 parameter-dependent symbol of frequency order `m`: its coefficient is `b(x, ξ)` for every `r ∈ R`.
 All its derivatives in the parameter vanish. -/
 def ofSymbol (b : Symbol n V W m) : WeakParameterSymbol n R V W d m :=
-  ofSlices (fun p ↦ (R : Set ℂ).indicator fun _ ↦ b.coefficient p)
-    (fun p ↦ (differentiableOn_const (b.coefficient p)).congr fun r hr ↦
-      indicator_of_mem hr _)
-    (fun p r hr ↦ indicator_of_notMem hr _)
+  ofSlicesOn (fun p _ ↦ b.coefficient p) (fun p ↦ differentiableOn_const (b.coefficient p))
     (fun j _ ↦ ofSymbolSlice b j)
     (fun j r p ↦ by
-      have h : (R : Set ℂ).EqOn ((R : Set ℂ).indicator fun _ ↦ b.coefficient p)
-          fun _ ↦ b.coefficient p := fun r hr ↦ indicator_of_mem hr _
-      rw [h.iteratedDeriv_of_isOpen R.isOpen j r.2, iteratedDeriv_const]
+      rw [iteratedDeriv_const]
       cases j <;> simp [ofSymbolSlice])
     (fun K α β j ↦ by
       cases j with
@@ -370,9 +400,8 @@ def ofSymbol (b : Symbol n V W m) : WeakParameterSymbol n R V W d m :=
 
 @[simp]
 theorem coefficient_ofSymbol (b : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n)
-    {r : ℂ} (hr : r ∈ R) : (ofSymbol (R := R) (d := d) b).coefficient p r = b.coefficient p := by
-  rw [ofSymbol, coefficient_ofSlices]
-  exact indicator_of_mem hr _
+    {r : ℂ} (hr : r ∈ R) : (ofSymbol (R := R) (d := d) b).coefficient p r = b.coefficient p :=
+  coefficient_ofSlicesOn _ _ _ _ _ p hr
 
 theorem coefficient_slice_ofSymbol_zero (b : Symbol n V W m) (r : R)
     (p : CoordinateSpace n × CoordinateSpace n) :
@@ -382,7 +411,7 @@ theorem coefficient_slice_ofSymbol_zero (b : Symbol n V W m) (r : R)
 @[simp]
 theorem slice_ofSymbol_zero (b : Symbol n V W m) (r : R) :
     (ofSymbol (R := R) (d := d) b).slice 0 r = Symbol.inclusion (by simp) b :=
-  slice_ofSlices ..
+  slice_ofSlicesOn ..
 
 @[simp]
 theorem slice_ofSymbol_succ (b : Symbol n V W m) (j : ℕ) (r : R) :
@@ -400,41 +429,25 @@ its coefficient is `g(r)` for every position and frequency. Its slices are the c
 def ofParameter (hd : 0 ≤ d) (g : ℂ → V →L[ℂ] W) (hg : DifferentiableOn ℂ g R)
     (hbound : ∀ j : ℕ, ∃ C, ∀ r ∈ R, ‖iteratedDeriv j g r‖ ≤ C) :
     WeakParameterSymbol n R V W d 0 :=
-  ofSlices (fun _ ↦ (R : Set ℂ).indicator g)
-    (fun _ ↦ hg.congr fun r hr ↦ indicator_of_mem hr g)
-    (fun _ r hr ↦ indicator_of_notMem hr g)
+  ofSlicesOn (fun _ ↦ g) (fun _ ↦ hg)
     (fun j r ↦ Symbol.inclusion (by positivity) (Symbol.const (iteratedDeriv j g r)))
-    (fun j r p ↦ by
-      have h : (R : Set ℂ).EqOn ((R : Set ℂ).indicator g) g := fun r hr ↦ indicator_of_mem hr g
-      rw [h.iteratedDeriv_of_isOpen R.isOpen j r.2]
-      simp)
-    (fun K α β j ↦ by
-      obtain ⟨C, hC⟩ := hbound j
-      refine ⟨max C 0, fun r ↦ (Symbol.seminorm_inclusion_le _ K α β _).trans ?_⟩
-      have hC' : ‖iteratedDeriv j g r‖ ≤ max C 0 := (hC r r.2).trans (le_max_left _ _)
-      have hC0 : 0 ≤ max C 0 := le_max_right _ _
-      generalize max C 0 = C' at hC' hC0 ⊢
-      by_cases hαβ : α = [] ∧ β = []
-      · obtain ⟨rfl, rfl⟩ := hαβ
-        refine Symbol.seminorm_le_bound K [] [] _ hC0 fun x _ ξ ↦ ?_
-        simpa using hC'
-      · rw [Symbol.seminorm_const_eq_zero (not_and_or.1 hαβ)]
-        exact hC0)
+    (fun j r p ↦ by simp)
+    (fun K α β j ↦ (hbound j).imp fun _ hC r ↦ (Symbol.seminorm_inclusion_le _ K α β _).trans
+      ((Symbol.seminorm_const_le K α β _).trans (hC r r.2)))
 
 @[simp]
 theorem coefficient_ofParameter (hd : 0 ≤ d) (g : ℂ → V →L[ℂ] W) (hg : DifferentiableOn ℂ g R)
     (hbound : ∀ j : ℕ, ∃ C, ∀ r ∈ R, ‖iteratedDeriv j g r‖ ≤ C)
     (p : CoordinateSpace n × CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
-    (ofParameter hd g hg hbound).coefficient p r = g r := by
-  rw [ofParameter, coefficient_ofSlices]
-  exact indicator_of_mem hr g
+    (ofParameter hd g hg hbound).coefficient p r = g r :=
+  coefficient_ofSlicesOn _ _ _ _ _ p hr
 
 @[simp]
 theorem slice_ofParameter (hd : 0 ≤ d) (g : ℂ → V →L[ℂ] W) (hg : DifferentiableOn ℂ g R)
     (hbound : ∀ j : ℕ, ∃ C, ∀ r ∈ R, ‖iteratedDeriv j g r‖ ≤ C) (j : ℕ) (r : R) :
     (ofParameter (n := n) hd g hg hbound).slice j r =
       Symbol.inclusion (by positivity) (Symbol.const (iteratedDeriv j g r)) :=
-  slice_ofSlices ..
+  slice_ofSlicesOn ..
 
 end OfParameter
 
