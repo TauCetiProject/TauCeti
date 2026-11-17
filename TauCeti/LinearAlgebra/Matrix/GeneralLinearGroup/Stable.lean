@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.DirectLimit
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
@@ -35,6 +36,7 @@ induces a homomorphism of algebraic `K₁`, functorially.
   homomorphisms compatible with stabilization.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup`: the stable elementary subgroup
   `E_∞(A)`.
+* `TauCeti.stableTransvection`: the elementary matrix `1 + a E_{ij}` in `GL_∞(A)`.
 * `TauCeti.AlgebraicK1`: algebraic `K₁(A)`, the abelianization of `GL_∞(A)`.
 * `TauCeti.AlgebraicK1.mk`: the class in `K₁(A)` of an invertible matrix.
 * `TauCeti.AlgebraicK1.lift`: the universal property of `K₁(A)`, for families of homomorphisms
@@ -56,6 +58,7 @@ induces a homomorphism of algebraic `K₁`, functorially.
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
   functoriality of algebraic `K₁`.
+* `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
 
 ## References
 
@@ -311,22 +314,121 @@ theorem commutator_le_elementarySubgroup :
   exact of_mem_elementarySubgroup_of_fromBlocksGL
     (fromBlocksGL_commutatorElement_mem_elementarySubgroup u v)
 
+/-- **The stable elementary subgroup `E_∞(A)` is perfect**: it equals its own commutator
+subgroup. -/
+instance elementarySubgroup_isPerfect : Group.IsPerfect (elementarySubgroup A) := by
+  rw [Subgroup.isPerfect_iff]
+  refine le_antisymm (Subgroup.commutator_le_self _) fun x hx ↦ ?_
+  obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hx
+  -- Stabilize to size `n + 3`, where `E (n + 3) A` is perfect.
+  rw [← of_stabilizeGL (Nat.le_add_right n 3)]
+  have h : stabilizeGL A (Nat.le_add_right n 3) u ∈
+      ⁅TauCeti.elementarySubgroup (Fin (n + 3)) A, TauCeti.elementarySubgroup (Fin (n + 3)) A⁆ := by
+    rw [commutator_elementarySubgroup_self (by simp)]
+    exact map_stabilizeGL_elementarySubgroup_le (A := A) (Nat.le_add_right n 3) ⟨u, hu, rfl⟩
+  have hle : (TauCeti.elementarySubgroup (Fin (n + 3)) A).map (of A (n + 3)) ≤
+      elementarySubgroup A := by
+    rintro _ ⟨v, hv, rfl⟩
+    exact of_mem_elementarySubgroup hv
+  exact Subgroup.map_le_iff_le_comap.1 ((Subgroup.map_commutator _ _ _).trans_le
+    (Subgroup.commutator_mono hle hle)) h
+
 /-- **The stable elementary subgroup is the commutator subgroup** of `GL_∞(A)`: every commutator
 is stably elementary, and every elementary matrix of size at least three is a commutator of
 elementary matrices. -/
 theorem elementarySubgroup_eq_commutator :
-    elementarySubgroup A = commutator (StableGeneralLinearGroup A) := by
-  refine le_antisymm ?_ commutator_le_elementarySubgroup
-  intro x hx
-  obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hx
-  -- Stabilize to size `n + 3`, where elementary matrices are commutators.
-  rw [← of_stabilizeGL (Nat.le_add_right n 3)]
-  have h := elementarySubgroup_le_commutator (by simp)
-    (map_stabilizeGL_elementarySubgroup_le (A := A) (Nat.le_add_right n 3) ⟨u, hu, rfl⟩)
-  exact Subgroup.map_le_iff_le_comap.1 ((Subgroup.map_commutator _ _ _).trans_le
-    (Subgroup.commutator_mono le_top le_top)) h
+    elementarySubgroup A = commutator (StableGeneralLinearGroup A) :=
+  le_antisymm
+    ((Subgroup.commutator_eq_self (H := elementarySubgroup A)).symm.trans_le
+      (Subgroup.commutator_mono le_top le_top))
+    commutator_le_elementarySubgroup
+
+/-- **The quotient `GL_∞(A) / E_∞(A)` is commutative**, since `E_∞(A)` contains the commutator
+subgroup of `GL_∞(A)`. -/
+instance instIsMulCommutativeQuotientElementarySubgroup :
+    IsMulCommutative (StableGeneralLinearGroup A ⧸ elementarySubgroup A) :=
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr commutator_le_elementarySubgroup
 
 end StableGeneralLinearGroup
+
+/-! ## Stable transvections -/
+
+/-- The elementary matrix `e_{ij}(a) = 1 + a E_{ij}` as an element of `GL_∞(A)`, formed at size
+`max i j + 1` and mapped into `TauCeti.StableGeneralLinearGroup A`. -/
+def stableTransvection (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A) :
+    StableGeneralLinearGroup A :=
+  StableGeneralLinearGroup.of A (max p.1.1 p.1.2 + 1)
+    (transvectionUnit (i := (⟨p.1.1, by omega⟩ : Fin (max p.1.1 p.1.2 + 1)))
+      (j := ⟨p.1.2, by omega⟩) (fun h ↦ p.2 (congrArg Fin.val h)) a)
+
+/-- Forming `e_{ij}(a)` at any size `n` exceeding both `i` and `j` gives the same element of
+`GL_∞(A)`. -/
+theorem stableTransvection_eq_of (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A)
+    {n : ℕ} (hi : p.1.1 < n) (hj : p.1.2 < n) :
+    stableTransvection p a =
+      StableGeneralLinearGroup.of A n
+        (transvectionUnit (i := ⟨p.1.1, hi⟩) (j := ⟨p.1.2, hj⟩)
+          (fun h ↦ p.2 (congrArg Fin.val h)) a) := by
+  have hle : max p.1.1 p.1.2 + 1 ≤ n := by omega
+  rw [stableTransvection, ← StableGeneralLinearGroup.of_stabilizeGL hle,
+    stabilizeGL_transvectionUnit]
+
+@[simp]
+theorem stableTransvection_zero (p : {p : ℕ × ℕ // p.1 ≠ p.2}) :
+    stableTransvection p (0 : A) = 1 := by
+  simp [stableTransvection]
+
+@[simp]
+theorem stableTransvection_add (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a b : A) :
+    stableTransvection p (a + b) = stableTransvection p a * stableTransvection p b := by
+  simp [stableTransvection, transvectionUnit_add]
+
+@[simp]
+theorem stableTransvection_inv (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A) :
+    (stableTransvection p a)⁻¹ = stableTransvection p (-a) := by
+  simp [stableTransvection, ← map_inv]
+
+/-- Distinct ring parameters give distinct stable transvections. -/
+theorem stableTransvection_injective (p : {p : ℕ × ℕ // p.1 ≠ p.2}) :
+    Function.Injective (stableTransvection (A := A) p) := by
+  intro a b hab
+  exact transvectionUnit_injective _ (StableGeneralLinearGroup.of_injective _ hab)
+
+/-- Stable transvections at non-chaining index pairs commute in `GL_∞(A)`. -/
+theorem commute_stableTransvection {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠ l)
+    (hjk : j ≠ k) (hli : l ≠ i) (a b : A) :
+    Commute (stableTransvection ⟨(i, j), hij⟩ a) (stableTransvection ⟨(k, l), hkl⟩ b) := by
+  let N := max (max i j) (max k l) + 1
+  have hi : i < N := by omega
+  have hj : j < N := by omega
+  have hk : k < N := by omega
+  have hl : l < N := by omega
+  rw [stableTransvection_eq_of ⟨(i, j), hij⟩ a hi hj,
+    stableTransvection_eq_of ⟨(k, l), hkl⟩ b hk hl]
+  exact (commute_transvectionUnit
+    (i := (⟨i, hi⟩ : Fin N)) (j := ⟨j, hj⟩) (k := ⟨k, hk⟩) (l := ⟨l, hl⟩)
+    (fun h ↦ hij (congrArg Fin.val h)) (fun h ↦ hkl (congrArg Fin.val h))
+    (fun h ↦ hjk (congrArg Fin.val h)) (fun h ↦ hli (congrArg Fin.val h)) a b).map
+      (StableGeneralLinearGroup.of A N)
+
+/-- **The Chevalley commutator relation** for stable transvections in `GL_∞(A)`. -/
+theorem commutatorElement_stableTransvection {i j k : ℕ} (hij : i ≠ j) (hjk : j ≠ k)
+    (hik : i ≠ k) (a b : A) :
+    ⁅stableTransvection ⟨(i, j), hij⟩ a, stableTransvection ⟨(j, k), hjk⟩ b⁆ =
+      stableTransvection ⟨(i, k), hik⟩ (a * b) := by
+  let N := max (max i j) k + 1
+  have hi : i < N := by omega
+  have hj : j < N := by omega
+  have hk : k < N := by omega
+  rw [stableTransvection_eq_of ⟨(i, j), hij⟩ a hi hj,
+    stableTransvection_eq_of ⟨(j, k), hjk⟩ b hj hk,
+    stableTransvection_eq_of ⟨(i, k), hik⟩ (a * b) hi hk,
+    ← map_commutatorElement, commutatorElement_transvectionUnit]
+
+/-- Every stable transvection lies in the stable elementary subgroup `E_∞(A)`. -/
+theorem stableTransvection_mem_elementarySubgroup (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A) :
+    stableTransvection p a ∈ StableGeneralLinearGroup.elementarySubgroup A :=
+  StableGeneralLinearGroup.of_mem_elementarySubgroup (transvectionUnit_mem_elementarySubgroup _ a)
 
 /-! ## Algebraic `K₁` -/
 
