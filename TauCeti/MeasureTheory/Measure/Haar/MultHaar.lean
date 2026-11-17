@@ -32,7 +32,9 @@ Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
 (`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
 Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
 `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
-integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The
+integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). No
+pure complex power `t ^ z` is integrable against `dt / t` (`TauCeti.not_integrable_multHaar_cpow`),
+so its Bochner integral vanishes (`TauCeti.integral_multHaar_cpow_eq_zero`). The
 integral of `u ^ α min 1 u⁻¹ ^ (α + β)` against `du / u` is `α⁻¹ + β⁻¹`
 (`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`), and by dilation the kernel
 `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in each variable
@@ -402,6 +404,23 @@ theorem integrable_multHaar_cpow_smul_iff {f : ℝ → E} {s : ℂ} :
     Integrable (fun t : ℝ ↦ (t : ℂ) ^ s • f t) multHaar ↔ MellinConvergent f s := by
   rw [integrable_multHaar_iff, MellinConvergent]
   exact integrableOn_congr_fun (fun t ht ↦ inv_smul_cpow_smul ht s (f t)) measurableSet_Ioi
+
+/-- No pure complex power `t ↦ (t : ℂ) ^ z` is integrable against `dt / t`, because
+`t ^ (Re z - 1)` is not integrable on `(0, ∞)` for any `z : ℂ`. -/
+theorem not_integrable_multHaar_cpow (z : ℂ) :
+    ¬ Integrable (fun t : ℝ ↦ (t : ℂ) ^ z) multHaar := by
+  intro h
+  refine not_integrableOn_Ioi_rpow (z - 1).re ?_
+  have hm : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • (1 : ℂ)) (Ioi 0) :=
+    integrable_multHaar_cpow_smul_iff.mp (by simpa only [smul_eq_mul, mul_one] using h)
+  refine IntegrableOn.congr_fun hm.norm (fun t ht ↦ ?_) measurableSet_Ioi
+  rw [smul_eq_mul, mul_one, Complex.norm_cpow_eq_rpow_re_of_pos ht]
+
+/-- Because no pure complex power `t ↦ (t : ℂ) ^ z` is integrable against `dt / t`, its Bochner
+integral vanishes for every `z : ℂ`. -/
+theorem integral_multHaar_cpow_eq_zero (z : ℂ) :
+    ∫ t : ℝ, (t : ℂ) ^ z ∂multHaar = 0 :=
+  integral_undef (not_integrable_multHaar_cpow z)
 
 end Mellin
 

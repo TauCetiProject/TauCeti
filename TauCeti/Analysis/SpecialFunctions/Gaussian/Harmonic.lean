@@ -383,7 +383,8 @@ theorem fourier_mul_cexp_neg_mul_norm_sq_real {b : ℂ} (hb : 0 < b.re) (ξ : �
       (π / b) ^ (3 / 2 : ℂ) * (-I) * ξ * cexp (-π ^ 2 * ‖ξ‖ ^ 2 / b) := by
   have h := fourier_inner_mul_cexp_neg_mul_norm_sq hb (1 : ℝ) ξ
   simp only [RCLike.inner_apply, conj_trivial, one_mul, Module.finrank_self, Nat.cast_one] at h
-  rwa [show (1 / 2 + 1 : ℂ) = 3 / 2 by norm_num] at h
+  rw [h]
+  norm_num
 
 /-- The one-dimensional Fourier transform of `x^e exp (-b ‖x‖²)` on `ℝ` for `Re b > 0` and
 `e ≤ 1` (the two harmonic degrees in dimension one). -/
@@ -393,8 +394,9 @@ theorem fourier_pow_mul_cexp_neg_mul_norm_sq_real {b : ℂ} (hb : 0 < b.re) {e :
       (π / b) ^ ((e : ℂ) + 1 / 2) * (-I) ^ e * (ξ : ℂ) ^ e * cexp (-π ^ 2 * ‖ξ‖ ^ 2 / b) := by
   interval_cases e
   · simpa [Module.finrank_self] using fourier_gaussian_innerProductSpace hb ξ
-  · simp_rw [Nat.cast_one, show (1 + 1 / 2 : ℂ) = 3 / 2 by norm_num, pow_one]
-    exact fourier_mul_cexp_neg_mul_norm_sq_real hb ξ
+  · simp only [Nat.cast_one, pow_one]
+    rw [fourier_mul_cexp_neg_mul_norm_sq_real hb ξ]
+    norm_num
 
 /-- The Fourier transform of `z^n exp (-b ‖z‖²)` for `Re b > 0`, with Mathlib's
 `exp (-2πi ⟪z, ξ⟫)` convention. -/

@@ -10,7 +10,6 @@ public import TauCeti.Analysis.SpecialFunctions.Gaussian.Harmonic
 public import TauCeti.NumberTheory.LFunctions.Theta.Inversion
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 public import TauCeti.NumberTheory.NumberField.Global.InfinityType.IdentityComponent
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -355,8 +354,7 @@ theorem archWeight_inv (t : ContinuousInfinityType K) (y : realSpace K) :
   rcases le_or_gt 0 (y w) with hx | hx
   · exact Real.inv_rpow hx _
   · rcases (t.harmonicExponent w).even_or_odd with ⟨k, hk⟩ | ⟨k, hk⟩
-    · rw [show (t.harmonicExponent w : ℝ) / 2 = (k : ℕ) by rw [hk]; push_cast; ring,
-        Real.rpow_natCast, Real.rpow_natCast, inv_pow]
+    · rw [hk, Nat.cast_add, add_self_div_two, Real.rpow_natCast, Real.rpow_natCast, inv_pow]
     · have hcos : Real.cos ((t.harmonicExponent w : ℝ) / 2 * π) = 0 :=
         Real.cos_eq_zero_iff.mpr ⟨k, by rw [hk]; push_cast; ring⟩
       simp [Real.rpow_def_of_neg (inv_lt_zero.mpr hx), Real.rpow_def_of_neg hx, hcos]
@@ -500,7 +498,7 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian_one (t : ContinuousInfinity
   have hdiv (r : ℂ) : -(π : ℂ) ^ 2 * r / π = -π * r := by field_simp
   rw [mixedFourier_apply]
   simp_rw [mixedFourier_integrand_one_eq_prod_mul_prod]
-  rw [show (volume : Measure (mixedSpace K)) = volume.prod volume from rfl,
+  rw [Measure.volume_eq_prod,
     MeasureTheory.integral_prod_mul
       (fun xr : {w : InfinitePlace K // w.IsReal} → ℝ ↦
         ∏ w, 𝐞 (-(xr w * ξ.1 w)) • (((xr w : ℝ) : ℂ) ^ (t.realParity w).val *
@@ -726,9 +724,7 @@ theorem tsum_harmonicFactor_mul_archGaussian_add_eq_mixedDual (t : ContinuousInf
           cexp (2 * π * I * mixedInner K v m) := fun hsum ↦
       not_summable_norm_harmonicFactor_mul_archGaussian_add t (mixedDual K L) hy' 0 <|
         hsum.norm.congr fun m ↦ by
-          rw [norm_mul, show (2 * π * I * mixedInner K v m : ℂ) =
-            ((2 * π * mixedInner K v m : ℝ) : ℂ) * I by push_cast; ring,
-            Complex.norm_exp_ofReal_mul_I, mul_one, zero_add]
+          simp [Complex.norm_exp]
     rw [tsum_eq_zero_of_not_summable hlhs, tsum_eq_zero_of_not_summable hrhs, mul_zero]
 
 open scoped Classical in
@@ -745,41 +741,6 @@ theorem tsum_harmonicFactor_mul_archGaussian_eq_mixedDual (t : ContinuousInfinit
     tsum_harmonicFactor_mul_archGaussian_add_eq_mixedDual t L y 0
 
 /-! ### The weighted archimedean gamma integral -/
-
-/-- One-place integrability of `u ^ (z / 2) * exp (-π a² u)` on `(0, ∞)` for `multHaar`. -/
-private theorem integrable_cpow_half_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {z : ℂ}
-    (hz : 0 < z.re) :
-    Integrable (fun u : ℝ ↦ (u : ℂ) ^ (z / 2) * (Real.exp (-(π * a ^ 2 * u)) : ℂ)) multHaar := by
-  have hz2 : 0 < (z / 2).re := by rw [div_ofNat_re]; exact half_pos hz
-  simpa only [smul_eq_mul] using integrable_multHaar_cpow_smul_iff.mpr
-    (mellinConvergent_exp_neg_mul (by positivity) hz2)
-
-/-- One-place gamma integral `∫ u^(z / 2) exp (-π a² u) du / u = Γ_ℝ(z) a^(-z)`. -/
-private theorem integral_cpow_half_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {z : ℂ}
-    (hz : 0 < z.re) :
-    ∫ u, (u : ℂ) ^ (z / 2) * (Real.exp (-(π * a ^ 2 * u)) : ℂ) ∂multHaar =
-      Gammaℝ z * (a : ℂ) ^ (-z) := by
-  have hz2 : 0 < (z / 2).re := by rw [div_ofNat_re]; exact half_pos hz
-  have hc : 0 < π * a ^ 2 := by positivity
-  have hpow : ((π * a ^ 2 : ℝ) : ℂ) ^ (-(z / 2)) = (π : ℂ) ^ (-z / 2) * (a : ℂ) ^ (-z) := by
-    rw [ofReal_mul, TauCeti.ofReal_mul_cpow Real.pi_pos.le, ofReal_pow,
-      TauCeti.ofReal_pow_cpow ha.le]
-    congr 2 <;> ring
-  have h := integral_multHaar_cpow_smul (fun u : ℝ ↦ (Real.exp (-(π * a ^ 2 * u)) : ℂ)) (z / 2)
-  simp only [smul_eq_mul, mellin, ofReal_exp, ofReal_neg, ofReal_mul (π * a ^ 2)] at h ⊢
-  rw [h, integral_cpow_mul_exp_neg_mul_Ioi hz2 hc, one_div, inv_cpow_ofReal_nonneg hc.le,
-    ← cpow_neg, hpow, Gammaℝ_def]
-  ring
-
-/-- For every `z : ℂ`, `u ↦ u ^ z` is not integrable on `(0, ∞)` against `multHaar = du / u`, so
-its Bochner integral vanishes. -/
-private theorem integral_cpow_multHaar_eq_zero (z : ℂ) :
-    ∫ u : ℝ, (u : ℂ) ^ z ∂multHaar = 0 := by
-  refine MeasureTheory.integral_undef fun h ↦ not_integrableOn_Ioi_rpow (z - 1).re ?_
-  have hm : IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • (1 : ℂ)) (Set.Ioi 0) :=
-    integrable_multHaar_cpow_smul_iff.mp (by simpa only [smul_eq_mul, mul_one] using h)
-  refine IntegrableOn.congr_fun hm.norm (fun u hu ↦ ?_) measurableSet_Ioi
-  rw [smul_eq_mul, mul_one, Complex.norm_cpow_eq_rpow_re_of_pos hu]
 
 /-- On the positive orthant, `archGaussian y x * t.archWeight y * archNorm y ^ (s / 2)` splits into
 one factor per infinite place. -/
@@ -814,7 +775,7 @@ theorem integrable_archGaussian_mul_archWeight_mul_archNorm_cpow (t : Continuous
   have hre (w : InfinitePlace K) : 0 < ((mult w : ℂ) * s + t.harmonicExponent w).re := by
     simpa using hs w
   have hint := Integrable.fintype_prod (μ := fun _ : InfinitePlace K ↦ multHaar)
-    fun w ↦ integrable_cpow_half_mul_exp_neg_multHaar (ha w) (hre w)
+    fun w ↦ integrable_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq (ha w).ne' (hre w)
   rw [← archHaar_def] at hint
   refine hint.congr ?_
   filter_upwards [ae_archHaar_pos] with y hy
@@ -836,9 +797,8 @@ private theorem integral_archGaussian_mul_archWeight_mul_archNorm_cpow_of_ne_zer
       (normAtPlace w x : ℂ) ^ (-((mult w : ℂ) * s + t.harmonicExponent w)) =
         ((normAtPlace w x ^ t.harmonicExponent w : ℝ) : ℂ)⁻¹ *
           (normAtPlace w x : ℂ) ^ ((mult w : ℂ) * -s) := by
-    rw [show -((mult w : ℂ) * s + t.harmonicExponent w) =
-        -(t.harmonicExponent w : ℂ) + (mult w : ℂ) * -s by ring,
-      cpow_add _ _ (ofReal_ne_zero.mpr (ha w).ne'), cpow_neg, cpow_natCast, ofReal_pow]
+    rw [neg_add, add_comm, ← mul_neg, cpow_add _ _ (ofReal_ne_zero.mpr (ha w).ne'), cpow_neg,
+      cpow_natCast, ofReal_pow]
   have hnorm : ((mixedEmbedding.norm x : ℝ) : ℂ) ^ (-s) =
       ∏ w, (normAtPlace w x : ℂ) ^ ((mult w : ℂ) * -s) := by
     rw [mixedEmbedding.norm_apply, TauCeti.ofReal_prod_cpow _ fun w _ ↦ pow_nonneg (ha w).le _]
@@ -846,8 +806,9 @@ private theorem integral_archGaussian_mul_archWeight_mul_archNorm_cpow_of_ne_zer
   calc (∏ w, ∫ u, (u : ℂ) ^ (((mult w : ℂ) * s + t.harmonicExponent w) / 2) *
           (Real.exp (-(π * normAtPlace w x ^ 2 * u)) : ℂ) ∂multHaar)
       = ∏ w, Gammaℝ (mult w * s + t.harmonicExponent w) *
-          (normAtPlace w x : ℂ) ^ (-((mult w : ℂ) * s + t.harmonicExponent w)) :=
-        Finset.prod_congr rfl fun w _ ↦ integral_cpow_half_mul_exp_neg_multHaar (ha w) (hre w)
+          (normAtPlace w x : ℂ) ^ (-((mult w : ℂ) * s + t.harmonicExponent w)) := by
+        refine Finset.prod_congr rfl fun w _ ↦ ?_
+        rw [integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq _ (hre w), abs_of_pos (ha w)]
     _ = _ := by
         simp_rw [hsplit]
         rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib, ofReal_prod, Finset.prod_inv_distrib,
@@ -882,7 +843,7 @@ theorem integral_archGaussian_mul_archWeight_mul_archNorm_cpow (t : ContinuousIn
   by_cases hx : mixedEmbedding.norm x = 0
   · obtain ⟨w₀, hw₀⟩ : ∃ w₀ : InfinitePlace K, normAtPlace w₀ x = 0 := by
       by_contra! hall; exact (mixedEmbedding.norm_ne_zero_iff.mpr hall) hx
-    rw [Finset.prod_eq_zero (Finset.mem_univ w₀) (by simp [hw₀, integral_cpow_multHaar_eq_zero])]
+    rw [Finset.prod_eq_zero (Finset.mem_univ w₀) (by simp [hw₀, integral_multHaar_cpow_eq_zero])]
     rcases eq_or_ne s 0 with rfl | hs0
     · have hP : t.harmonicExponent w₀ ≠ 0 := by simpa using (hs w₀).ne'
       have hp0 : (∏ w : InfinitePlace K, normAtPlace w x ^ t.harmonicExponent w) = 0 :=
