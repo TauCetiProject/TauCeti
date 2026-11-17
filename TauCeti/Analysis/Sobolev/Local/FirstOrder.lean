@@ -11,9 +11,9 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Locality
+import TauCeti.Analysis.Sobolev.Local.NormInv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Hyperplane
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -68,18 +68,21 @@ order-one planar class `TauCeti.MemWkpLoc p Ω 1 u` (`TauCeti.memWkpLoc_one_iff_
   `t ↦ lp.single 2 t 1` into non-separable `ℓ²(ℝ)` satisfies scalar `MemW1pLoc p ⊤` after every
   continuous linear functional while failing `MemLpLoc p Set.univ`
   (`TauCeti.forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle`, cf. Arendt–Kreuter).
-* **Haar-measure and linear invariance.** On finite-dimensional real normed spaces, `MemLpLoc` and
-  `MemW1pLoc` are independent of the choice of additive Haar measure and are preserved and reflected
-  by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
+* **Haar-measure and linear invariance.** On finite-dimensional real normed spaces, `MemW1pLoc` is
+  independent of the choice of additive Haar measure (`TauCeti.memW1pLoc_iff_of_isAddHaarMeasure`),
+  invariant under positive measure rescaling (`TauCeti.memW1pLoc_smul_volume_iff`), and preserved
+  and reflected by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
   (`ContinuousLinearEquiv.memW1pLoc_comp_iff`), regardless of Jacobian determinant or choice of
-  equivalent norm (`TauCeti.memW1pLoc_comp_toLp_iff`).
+  equivalent norm (`TauCeti.memW1pLoc_comp_toLp_iff`); the corresponding `MemLpLoc` invariance
+  results live in `TauCeti.Analysis.Sobolev.Local.Basic`.
 * **Sharpness checks.** The identity is in `MemW1pLoc p Ω` without belonging to global `Lᵖ` for
   `p ≠ 0` on a nontrivial space; `x ↦ ‖x‖` lies in `MemW1pLoc p Ω` for all `p` (with
   non-inner-product derivative on `(Fin 2 → ℝ)` equipped with the supremum norm); the unit radial
   map `x ↦ ‖x‖⁻¹ • x` on an inner product space of dimension `d ≥ 2` with `0 ∈ Ω` belongs to
   `MemW1pLoc p Ω` if and only if `p < d` (`TauCeti.memW1pLoc_norm_inv_smul_iff`); and the indicator
-  of an open half-space `{x | 0 < ℓ x}` (`ℓ ≠ 0`) belongs to `MemLpLoc p Ω` for all `p` but never to
-  `MemW1pLoc p Ω` when `Ω` meets `{x | ℓ x = 0}` (`TauCeti.not_memW1pLoc_indicator_pos`).
+  of an open half-space `{x | 0 < ℓ x}` (`ℓ ≠ 0`) belongs to `MemLpLoc p Ω` for all `p`
+  (`TauCeti.memLpLoc_indicator_pos`) but never to `MemW1pLoc p Ω` when `Ω` meets `{x | ℓ x = 0}`
+  (`TauCeti.not_memW1pLoc_indicator_pos`).
 
 ## References
 
@@ -535,23 +538,12 @@ theorem forall_strongDual_memW1pLoc_and_not_memLpLoc_lpSingle (p : ℝ≥0∞) :
       have hdy : dist z (u y) < 1 / 2 := mem_ball.1 hzy
       linarith [dist_eq_norm (u x) (u y)]
     have hcnt_pre : (u ⁻¹' t).Countable := by
-      have hsep_img : IsSeparable (u '' (u ⁻¹' t)) := ht_sep.mono (image_preimage_subset u t)
-      obtain ⟨s, hsc, hsub⟩ := hsep_img
-      -- Every open ball of radius `1 / 2` around `u x` meets the countable dense set `s`, and
-      -- those balls are pairwise disjoint.
-      have hmeet : ∀ x ∈ u ⁻¹' t, ∃ z ∈ s, z ∈ ball (u x) (1 / 2) := fun x hx => by
-        obtain ⟨z, hz⟩ :=
-          Metric.mem_closure_iff.1 (hsub (mem_image_of_mem u hx)) (1 / 2) (by positivity)
-        exact ⟨z, hz.1, mem_ball_comm.1 hz.2⟩
-      choose z hzs hzb using hmeet
-      have hinj : Function.Injective fun x : u ⁻¹' t => (⟨z x.1 x.2, hzs x.1 x.2⟩ : s) := by
-        intro x y heq
-        have hz_eq : z x.1 x.2 = z y.1 y.2 := Subtype.ext_iff.1 heq
-        by_contra hne
-        have hx_ne_y : x.1 ≠ y.1 := fun h => hne (Subtype.ext h)
-        exact Set.disjoint_left.1 (hpair x.2 y.2 hx_ne_y) (hzb x.1 x.2) (hz_eq ▸ hzb y.1 y.2)
-      have : Countable s := hsc.to_subtype
-      exact Set.countable_coe_iff.1 hinj.countable
+      have : SeparableSpace t := ht_sep.separableSpace
+      have hpair_t : PairwiseDisjoint (u ⁻¹' t) fun x : ℝ =>
+          ((↑) : t → H) ⁻¹' ball (u x) ((1 : ℝ) / 2) :=
+        fun _ hx _ hy hxy => (hpair hx hy hxy).preimage _
+      exact hpair_t.countable_of_isOpen (fun _ _ => isOpen_ball.preimage continuous_subtype_val)
+        fun x hx => ⟨⟨u x, hx⟩, Set.mem_preimage.2 (mem_ball_self (by norm_num))⟩
     have hnull_Icc : volume (Icc (0 : ℝ) 1) = 0 := by
       have hsub_ae : (Icc (0 : ℝ) 1 : Set ℝ) ≤ᵐ[volume] u ⁻¹' t :=
         (ae_restrict_iff' measurableSet_Icc).1 ht_ae
@@ -564,27 +556,6 @@ end Coordinates
 /-! ### Haar-measure independence and linear invariance -/
 
 section HaarAndLinear
-
-/-- **Haar-measure independence of `MemLpLoc`.** On a locally compact second-countable topological
-additive group, `MemLpLoc` does not depend on the choice of Borel additive Haar measure. -/
-theorem memLpLoc_iff_of_isAddHaarMeasure {G F : Type*} [AddGroup G] [TopologicalSpace G]
-    [IsTopologicalAddGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
-    [MeasurableSpace G] [BorelSpace G] [NormedAddCommGroup F]
-    (μ ν : Measure G) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
-    {p : ℝ≥0∞} {U : Set G} {f : G → F} :
-    @MemLpLoc G F _ (MeasureSpace.mk μ) _ p U f ↔
-      @MemLpLoc G F _ (MeasureSpace.mk ν) _ p U f := by
-  have aux : ∀ (μ₁ μ₂ : Measure G) [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure],
-      @MemLpLoc G F _ (MeasureSpace.mk μ₁) _ p U f →
-        @MemLpLoc G F _ (MeasureSpace.mk μ₂) _ p U f := by
-    intro μ₁ μ₂ _ _ h
-    rw [@memLpLoc_iff G F _ (MeasureSpace.mk μ₁)] at h
-    rw [@memLpLoc_iff G F _ (MeasureSpace.mk μ₂)]
-    dsimp only [volume] at h ⊢
-    intro K hKU hK
-    rw [Measure.isAddLeftInvariant_eq_smul μ₂ μ₁, Measure.restrict_smul]
-    exact (h K hKU hK).smul_measure ENNReal.coe_ne_top
-  exact ⟨aux μ ν, aux ν μ⟩
 
 /-- **Haar-measure independence of `MemW1pLoc`.** On a finite-dimensional real normed space,
 `MemW1pLoc` does not depend on the choice of Borel additive Haar measure. -/
@@ -600,23 +571,6 @@ theorem memW1pLoc_iff_of_isAddHaarMeasure {E F : Type*} [NormedAddCommGroup E] [
   refine and_congr_right' (exists_congr fun Du => ?_)
   exact and_congr (hasWeakFDerivOn_iff_of_isAddHaarMeasure μ ν)
     (memLpLoc_iff_of_isAddHaarMeasure μ ν)
-
-/-- Rescaling `volume` by any positive factor `c : ℝ≥0` (`c ≠ 0`) leaves `MemLpLoc` unchanged. -/
-theorem memLpLoc_smul_volume_iff {X F : Type*} [TopologicalSpace X] [MeasureSpace X]
-    [NormedAddCommGroup F] {c : ℝ≥0} (hc : c ≠ 0) {p : ℝ≥0∞} {U : Set X} {f : X → F} :
-    @MemLpLoc X F _ (MeasureSpace.mk ((c : ℝ≥0∞) • (volume : Measure X))) _ p U f ↔
-      MemLpLoc p U f := by
-  rw [@memLpLoc_iff X F _ (MeasureSpace.mk ((c : ℝ≥0∞) • (volume : Measure X))), memLpLoc_iff]
-  dsimp only [volume]
-  constructor
-  · intro h K hKU hK
-    have h1 : MemLp f p (((c : ℝ≥0∞) • (volume : Measure X)).restrict K) := h K hKU hK
-    rw [Measure.restrict_smul] at h1
-    have h2 := h1.smul_measure (c := (c⁻¹ : ℝ≥0)) ENNReal.coe_ne_top
-    rwa [smul_smul, ← ENNReal.coe_mul, inv_mul_cancel₀ hc, ENNReal.coe_one, one_smul] at h2
-  · intro h K hKU hK
-    rw [Measure.restrict_smul]
-    exact (h K hKU hK).smul_measure ENNReal.coe_ne_top
 
 /-- Rescaling `volume` by any positive factor `c : ℝ≥0` (`c ≠ 0`) leaves `MemW1pLoc` unchanged. -/
 theorem memW1pLoc_smul_volume_iff {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -634,47 +588,6 @@ theorem memW1pLoc_smul_volume_iff {E F : Type*} [NormedAddCommGroup E] [NormedSp
   rw [memLpLoc_smul_volume_iff hc]
   exact and_congr_right' (exists_congr fun Du =>
     and_congr (hderiv Du) (memLpLoc_smul_volume_iff hc))
-
-/-- Precomposition with a continuous linear equivalence into a finite-dimensional space carrying a
-Borel additive Haar measure preserves `MemLpLoc`. -/
-theorem MemLpLoc.comp_continuousLinearEquiv {E₁ E F : Type*}
-    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
-    [MeasureSpace E₁] [BorelSpace E₁] [(volume : Measure E₁).IsAddHaarMeasure]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
-    [NormedAddCommGroup F]
-    {p : ℝ≥0∞} {U : Set E₁} {V : Set E} {u : E → F}
-    (hu : MemLpLoc p V u) (e : E₁ ≃L[ℝ] E) (hUV : MapsTo e U V) :
-    MemLpLoc p U (u ∘ e) := by
-  have : ((volume : Measure E₁).map e).IsAddHaarMeasure := e.isAddHaarMeasure_map volume
-  have hu_map : @MemLpLoc E F _ (MeasureSpace.mk ((volume : Measure E₁).map e)) _ p V u :=
-    (memLpLoc_iff_of_isAddHaarMeasure volume ((volume : Measure E₁).map e)).1 hu
-  rw [@memLpLoc_iff E F _ (MeasureSpace.mk ((volume : Measure E₁).map e))] at hu_map
-  dsimp only [volume] at hu_map
-  refine memLpLoc_iff.2 fun K hKU hK => ?_
-  have hKe : IsCompact (e '' K) := hK.image e.continuous
-  have h1 : MemLp u p (((volume : Measure E₁).map e).restrict (e '' K)) :=
-    hu_map (e '' K) ((image_mono hKU).trans hUV.image_subset) hKe
-  have hemp : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  have hres : ((volume : Measure E₁).map e).restrict (e '' K) =
-      ((volume : Measure E₁).restrict K).map e := by
-    rw [hemp.restrict_map, Set.preimage_image_eq _ e.injective]
-  rw [hres, hemp.memLp_map_measure_iff] at h1
-  exact h1
-
-/-- Precomposition with a continuous linear equivalence preserves and reflects `MemLpLoc`. -/
-@[simp]
-theorem _root_.ContinuousLinearEquiv.memLpLoc_comp_iff {E₁ E F : Type*}
-    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-    [MeasureSpace E₁] [BorelSpace E₁] [(volume : Measure E₁).IsAddHaarMeasure]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
-    [NormedAddCommGroup F]
-    {p : ℝ≥0∞} {V : Set E} {u : E → F} (e : E₁ ≃L[ℝ] E) :
-    MemLpLoc p (e ⁻¹' V) (u ∘ e) ↔ MemLpLoc p V u := by
-  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e (mapsTo_preimage e V)⟩
-  have hVU : MapsTo e.symm V (e ⁻¹' V) := fun y hy => by simpa using hy
-  simpa [Function.comp_def] using h.comp_continuousLinearEquiv e.symm hVU
 
 /-- **Precomposition with a continuous linear equivalence in `MemW1pLoc`.** Any continuous linear
 equivalence `e : E₁ ≃L[ℝ] E` between finite-dimensional real normed spaces carrying Borel additive
@@ -776,17 +689,6 @@ theorem not_memLp_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fin
       (s := p.toReal) one_pos).1 hint
     have hpos : 0 ≤ p.toReal := ENNReal.toReal_nonneg
     linarith [(Nat.cast_pos (α := ℝ)).2 (Module.finrank_pos (R := ℝ) (M := E))]
-
-/-- On a nontrivial finite-dimensional real normed space, `x ↦ ‖x‖⁻¹` belongs to `MemLpLoc p U` on
-a neighbourhood `U` of the origin if and only if `p < Module.finrank ℝ E`. -/
-theorem memLpLoc_norm_inv_iff_lt_finrank {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [Nontrivial E] [MeasureSpace E] [BorelSpace E]
-    [(volume : Measure E).IsAddHaarMeasure] {p : ℝ≥0∞} {U : Set E} (hU : U ∈ 𝓝 (0 : E)) :
-    MemLpLoc p U (fun x : E => ‖x‖⁻¹) ↔ p < Module.finrank ℝ E := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK => hK.memLp_norm_inv_restrict h⟩
-  by_contra! hp
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
-  exact not_memLp_norm_inv_closedBall hε hp (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
 
 /-- The norm `x ↦ ‖x‖` on any finite-dimensional real normed space belongs to `MemW1pLoc p Ω` for
 every open set `Ω` and every exponent `p`, with weak derivative `fderiv ℝ (‖·‖)` of operator norm at
@@ -912,18 +814,6 @@ theorem memW1pLoc_norm_inv_smul_iff {E : Type*} [NormedAddCommGroup E] [InnerPro
         (by fun_prop : Measurable (D i)).aestronglyMeasurable (Eventually.of_forall fun x => ?_)
       rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
       exact norm_norm_rpow_neg_one_smul_innerSL_sub_le (b i) x
-
-/-- The indicator of an open half-space `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p U` on every
-subset `U` and for every exponent `p : ℝ≥0∞`. -/
-theorem memLpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasureSpace E] [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts (volume : Measure E)]
-    (ℓ : StrongDual ℝ E) (p : ℝ≥0∞) (U : Set E) :
-    MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) := by
-  refine memLpLoc_iff.2 fun K _ hK => ?_
-  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-  exact memLp_indicator_const p
-    (isOpen_lt continuous_const ℓ.continuous).measurableSet.nullMeasurableSet 1
-    (Or.inr (measure_ne_top _ _))
 
 /-- **Jump discontinuities across hyperplanes are not in `MemW1pLoc`.** While the indicator of
 `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p Ω` for every `p` (`TauCeti.memLpLoc_indicator_pos`), it

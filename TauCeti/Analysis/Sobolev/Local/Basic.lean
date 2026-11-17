@@ -14,6 +14,8 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -39,8 +41,13 @@ pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
 pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
-decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
-subsets with compact closure inside it, and on a locally closed subset of a locally compact
+decreasing the derivative order. It also supplies invariance of `MemLpLoc` under positive measure
+rescaling (`TauCeti.memLpLoc_smul_volume_iff`), independence of the choice of Borel additive Haar
+measure (`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`), precomposition with continuous linear
+equivalences (`TauCeti.MemLpLoc.comp_continuousLinearEquiv`,
+`ContinuousLinearEquiv.memLpLoc_comp_iff`), and local `Lᵖ` membership of open half-space
+indicators (`TauCeti.memLpLoc_indicator_pos`). On an open set, local `Lᵖ` membership is detected on
+the open subsets with compact closure inside it, and on a locally closed subset of a locally compact
 second-countable space it implies almost-everywhere strong measurability on the subset for every
 exponent `p : ENNReal`.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
@@ -76,6 +83,7 @@ weak-derivative result it uses.
 public noncomputable section
 
 open MeasureTheory TopologicalSpace
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -374,6 +382,103 @@ theorem MemLpLoc.ae_eq_preciseRepresentative {X F : Type*} [PseudoMetricSpace X]
     (hu : MemLpLoc p Ω f) : f =ᵐ[volume.restrict Ω] preciseRepresentative volume f :=
   ae_eq_restrict_preciseRepresentative Ω.isOpen
     (hu.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed)
+
+/-! ### Measure scaling, Haar invariance, linear transport, and half-space indicators -/
+
+section MeasureAndLinear
+
+/-- Rescaling `volume` by any positive factor `c : ℝ≥0` (`c ≠ 0`) leaves `MemLpLoc` unchanged. -/
+theorem memLpLoc_smul_volume_iff {X F : Type*} [TopologicalSpace X] [MeasureSpace X]
+    [NormedAddCommGroup F] {c : ℝ≥0} (hc : c ≠ 0) {p : ℝ≥0∞} {U : Set X} {f : X → F} :
+    @MemLpLoc X F _ (MeasureSpace.mk ((c : ℝ≥0∞) • (volume : Measure X))) _ p U f ↔
+      MemLpLoc p U f := by
+  rw [@memLpLoc_iff X F _ (MeasureSpace.mk ((c : ℝ≥0∞) • (volume : Measure X))), memLpLoc_iff]
+  dsimp only [volume]
+  constructor
+  · intro h K hKU hK
+    have h1 : MemLp f p (((c : ℝ≥0∞) • (volume : Measure X)).restrict K) := h K hKU hK
+    rw [Measure.restrict_smul] at h1
+    have h2 := h1.smul_measure (c := (c⁻¹ : ℝ≥0)) ENNReal.coe_ne_top
+    rwa [smul_smul, ← ENNReal.coe_mul, inv_mul_cancel₀ hc, ENNReal.coe_one, one_smul] at h2
+  · intro h K hKU hK
+    rw [Measure.restrict_smul]
+    exact (h K hKU hK).smul_measure ENNReal.coe_ne_top
+
+/-- **Haar-measure independence of `MemLpLoc`.** On a locally compact second-countable topological
+additive group, `MemLpLoc` does not depend on the choice of Borel additive Haar measure. -/
+theorem memLpLoc_iff_of_isAddHaarMeasure {G F : Type*} [AddGroup G] [TopologicalSpace G]
+    [IsTopologicalAddGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
+    [MeasurableSpace G] [BorelSpace G] [NormedAddCommGroup F]
+    (μ ν : Measure G) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
+    {p : ℝ≥0∞} {U : Set G} {f : G → F} :
+    @MemLpLoc G F _ (MeasureSpace.mk μ) _ p U f ↔
+      @MemLpLoc G F _ (MeasureSpace.mk ν) _ p U f := by
+  have aux : ∀ (μ₁ μ₂ : Measure G) [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure],
+      @MemLpLoc G F _ (MeasureSpace.mk μ₁) _ p U f →
+        @MemLpLoc G F _ (MeasureSpace.mk μ₂) _ p U f := by
+    intro μ₁ μ₂ _ _ h
+    rw [@memLpLoc_iff G F _ (MeasureSpace.mk μ₁)] at h
+    rw [@memLpLoc_iff G F _ (MeasureSpace.mk μ₂)]
+    dsimp only [volume] at h ⊢
+    intro K hKU hK
+    rw [Measure.isAddLeftInvariant_eq_smul μ₂ μ₁, Measure.restrict_smul]
+    exact (h K hKU hK).smul_measure ENNReal.coe_ne_top
+  exact ⟨aux μ ν, aux ν μ⟩
+
+/-- Precomposition with a continuous linear equivalence into a finite-dimensional space carrying a
+Borel additive Haar measure preserves `MemLpLoc`. -/
+theorem MemLpLoc.comp_continuousLinearEquiv {E₁ E F : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [MeasureSpace E₁] [BorelSpace E₁] [(volume : Measure E₁).IsAddHaarMeasure]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
+    [NormedAddCommGroup F]
+    {p : ℝ≥0∞} {U : Set E₁} {V : Set E} {u : E → F}
+    (hu : MemLpLoc p V u) (e : E₁ ≃L[ℝ] E) (hUV : Set.MapsTo e U V) :
+    MemLpLoc p U (u ∘ e) := by
+  have : ((volume : Measure E₁).map e).IsAddHaarMeasure := e.isAddHaarMeasure_map volume
+  have hu_map : @MemLpLoc E F _ (MeasureSpace.mk ((volume : Measure E₁).map e)) _ p V u :=
+    (memLpLoc_iff_of_isAddHaarMeasure volume ((volume : Measure E₁).map e)).1 hu
+  rw [@memLpLoc_iff E F _ (MeasureSpace.mk ((volume : Measure E₁).map e))] at hu_map
+  dsimp only [volume] at hu_map
+  refine memLpLoc_iff.2 fun K hKU hK => ?_
+  have hKe : IsCompact (e '' K) := hK.image e.continuous
+  have h1 : MemLp u p (((volume : Measure E₁).map e).restrict (e '' K)) :=
+    hu_map (e '' K) ((Set.image_mono hKU).trans hUV.image_subset) hKe
+  have hemp : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  have hres : ((volume : Measure E₁).map e).restrict (e '' K) =
+      ((volume : Measure E₁).restrict K).map e := by
+    rw [hemp.restrict_map, Set.preimage_image_eq _ e.injective]
+  rw [hres, hemp.memLp_map_measure_iff] at h1
+  exact h1
+
+/-- Precomposition with a continuous linear equivalence preserves and reflects `MemLpLoc`. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.memLpLoc_comp_iff {E₁ E F : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+    [MeasureSpace E₁] [BorelSpace E₁] [(volume : Measure E₁).IsAddHaarMeasure]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
+    [NormedAddCommGroup F]
+    {p : ℝ≥0∞} {V : Set E} {u : E → F} (e : E₁ ≃L[ℝ] E) :
+    MemLpLoc p (e ⁻¹' V) (u ∘ e) ↔ MemLpLoc p V u := by
+  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e (Set.mapsTo_preimage e V)⟩
+  have hVU : Set.MapsTo e.symm V (e ⁻¹' V) := fun y hy => by simpa using hy
+  simpa [Function.comp_def] using h.comp_continuousLinearEquiv e.symm hVU
+
+/-- The indicator of an open half-space `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p U` on every
+subset `U` and for every exponent `p : ℝ≥0∞`. -/
+theorem memLpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasureSpace E] [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts (volume : Measure E)]
+    (ℓ : StrongDual ℝ E) (p : ℝ≥0∞) (U : Set E) :
+    MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) := by
+  refine memLpLoc_iff.2 fun K _ hK => ?_
+  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
+  exact memLp_indicator_const p
+    (isOpen_lt continuous_const ℓ.continuous).measurableSet.nullMeasurableSet 1
+    (Or.inr (measure_ne_top _ _))
+
+end MeasureAndLinear
 
 variable {F G : Type*} [NormedAddCommGroup F] [NormedAddCommGroup G]
   {p q : ENNReal} {U V : Set ℂ} {f g : ℂ → F}

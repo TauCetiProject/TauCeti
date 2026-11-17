@@ -24,6 +24,7 @@ import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Holomorphic
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
+import TauCeti.Analysis.Sobolev.Local.NormInv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
@@ -52,10 +53,10 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
-* The map `z ↦ ‖z‖⁻¹` and the components `Re z / ‖z‖²` and `Im z / ‖z‖²` of the gradient of
-  `log ‖z‖` are locally `Lᵖ` near the origin exactly when `p < 2`, and `log ‖z‖` is in the local
-  class `W^{1,p}` there exactly when `p < 2`. These are the exponents of the divergence-form
-  equation `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
+* Using `TauCeti.memLpLoc_norm_inv_iff_lt_finrank`, the components `Re z / ‖z‖²` and `Im z / ‖z‖²`
+  of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly when `p < 2`, and
+  `log ‖z‖` is in the local class `W^{1,p}` there exactly when `p < 2`. These are the exponents of
+  the divergence-form equation `Δ log ‖z‖ = ∂ₛ(Re z / ‖z‖²) + ∂ₜ(Im z / ‖z‖²)`
   (`TauCeti.integral_log_norm_mul_laplacian`).
 * The even reflection does not extend `u = Im z` from the upper half-disc to a local `W^{2,p}`
   map, for any exponent: it gives `|Im z|`, whose first derivative jumps across the real axis. The
@@ -449,22 +450,14 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 
 /-! ### The logarithm of the norm and its gradient -/
 
-/-- **`‖z‖⁻¹` is locally `Lᵖ` near the origin exactly for `p < 2`.** -/
-theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
-    MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
-  by_contra! hp2
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
-  exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)
-    (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
-
 /-- **The components of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly for
 `p < 2`.** These are `Re z / ‖z‖²` and `Im z / ‖z‖²`, the divergence-form data of `log ‖z‖`. -/
 theorem memLpLoc_re_div_and_im_div_iff (hU : U ∈ 𝓝 0) :
     (MemLpLoc p U (fun z : ℂ => z.re / ‖z‖ ^ 2) ∧ MemLpLoc p U fun z : ℂ => z.im / ‖z‖ ^ 2) ↔
       p < 2 := by
-  rw [← memLpLoc_norm_inv_iff hU]
+  have hinv : MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
+    simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank (p := p) hU
+  rw [← hinv]
   have hdiv (a : ℝ) (z : ℂ) (hz : |a| ≤ ‖z‖) :
       ‖a / ‖z‖ ^ 2‖ ≤ ‖‖z‖⁻¹‖ := by
     rcases eq_or_ne z 0 with rfl | hz0
@@ -510,7 +503,9 @@ theorem memWkpLoc_one_log_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
     · simp
     rw [← (hasFDerivAt_log_norm_of_ne hz).fderiv, norm_fderiv_log_norm_of_ne hz]
   simp only [memWkpLoc_succ_iff_of_isOpen, memWkpLoc_zero_iff]
-  rw [← memLpLoc_norm_inv_iff hU]
+  have hinv : MemLpLoc p (Ω : Set ℂ) (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
+    simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank (p := p) hU
+  rw [← hinv]
   constructor
   · rintro ⟨-, D, hD, hDp⟩
     have hae := hD.ae_eq (hasWeakFDerivOn_log_norm Ω)
