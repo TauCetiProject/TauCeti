@@ -30,8 +30,9 @@ Properties of `f` transport **up** to `V_d f` — the level of the congruence su
 eigenvalue and nebentypus transport, the `q`-expansion — which is what makes `V_d` a map of
 modular forms. Two of them also read back **down**: the slash transformation law
 (`slash_conjScale_eq_smul_of_slash_scaleGL`) and holomorphy
-(`mdifferentiable_of_comp_scaleGL_smul`), which is what recognizes a bare function as a form at
-the lower level. The `q`-expansion results go up only.
+(`mdifferentiable_of_comp_scaleGL_smul`), which, together with boundedness at the cusps (supplied
+separately), is what recognizes a bare function as a form at the lower level. The `q`-expansion
+results go up only.
 
 ## Main definitions
 
@@ -222,7 +223,7 @@ lemma coe_inv_scaleGL_smul [NeZero d] (τ : ℍ) : (((scaleGL d)⁻¹ • τ : �
 /-- Scaling down commutes with translation, at the cost of dividing the shift by `d`. -/
 @[simp]
 lemma inv_scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
-    ((scaleGL d)⁻¹ • ((a : ℝ) +ᵥ τ) : ℍ) = (a / (d : ℝ)) +ᵥ ((scaleGL d)⁻¹ • τ) := by
+    ((scaleGL d)⁻¹ • (a +ᵥ τ) : ℍ) = (a / (d : ℝ)) +ᵥ ((scaleGL d)⁻¹ • τ) := by
   apply UpperHalfPlane.ext
   rw [coe_inv_scaleGL_smul, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_vadd,
     coe_inv_scaleGL_smul]
@@ -232,7 +233,7 @@ lemma inv_scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
 /-- Scaling up commutes with translation, at the cost of multiplying the shift by `d`. -/
 @[simp]
 lemma scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
-    (scaleGL d • ((a : ℝ) +ᵥ τ) : ℍ) = ((d : ℝ) * a) +ᵥ (scaleGL d • τ) := by
+    (scaleGL d • (a +ᵥ τ) : ℍ) = ((d : ℝ) * a) +ᵥ (scaleGL d • τ) := by
   apply UpperHalfPlane.ext
   rw [coe_scaleGL_smul, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_vadd, coe_scaleGL_smul]
   push_cast
@@ -825,7 +826,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
     Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ'
   -- move the upper-left entry, along its own column, until it is coprime to `l`
   obtain ⟨i, hi⟩ := exists_sub_mul_isCoprime (γ' 0 0) (γ' 1 0) l
-    ⟨γ' 1 1, -γ' 0 1, by linear_combination hdet⟩
+    (Matrix.SpecialLinearGroup.isCoprime_col γ' 0)
   -- then clear the upper-right entry modulo `l`, which the previous step made possible
   have hunit : IsUnit ((γ' 0 0 - i * γ' 1 0 : ℤ) : ZMod l) :=
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
