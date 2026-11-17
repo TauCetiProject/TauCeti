@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Analysis.Normed.Algebra.Ultra
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
@@ -30,13 +31,15 @@ and no slope when `α = 0`. No completeness of the valuation is used. Applied af
 of coefficients compatible with the valuations, this gives the slopes of a polynomial in terms
 of its roots in any valued extension in which it splits.
 
-When `v` comes from an absolute value with `‖x‖ = b ^ (-v x)` for a base `1 < b`, the root `α`
-has norm `b ^ m` exactly when `-v α = m`. Hence the endpoints of the finite face of slope `σ`
-count the roots, with multiplicity and including the root zero, in the open and closed balls of
-radius `b ^ σ`, and the width of the face counts those on the sphere of that radius. Moreover,
-over an ultrametric normed field, every root of a nonzero pure polynomial of slope `m` in any
-normed field extension has norm at most `b ^ m`, and every nonzero root has norm `b ^ m`, without
-assuming that the polynomial splits.
+When `v` comes from an absolute value with `‖x‖ = b ^ (-v x)` for a base `1 < b`, a nonzero root
+`α` has norm `b ^ m` exactly when `-v α = m`, that is, `Real.logb b ‖α‖ = m`. Hence in any normed
+field extension in which `f` splits, `f.newtonSlopes v` is the multiset of `Real.logb b ‖α‖` over
+nonzero roots `α`, the endpoints of the finite face of slope `σ` count the roots (with multiplicity
+and including the root zero) in the open and closed balls of radius `b ^ σ`, and the width of the
+face counts those on the sphere of that radius. Moreover, without assuming that the polynomial
+splits, `Real.logb b ‖α‖` of any nonzero root `α` is a finite slope, and for a nonzero pure
+polynomial of slope `m`, every root in any normed field extension has norm at most `b ^ m` and
+every nonzero root has norm `b ^ m`.
 
 ## Main results
 
@@ -61,6 +64,10 @@ assuming that the polynomial splits.
   `Polynomial.norm_eq_rpow_of_forall_mem_newtonSlopes_eq`: over a normed field with norm
   `b ^ (-v x)`, every root of a nonzero pure polynomial of slope `m` in any normed field extension
   has norm at most `b ^ m`, and every nonzero root has norm `b ^ m`.
+* `Polynomial.logb_norm_mem_newtonSlopes_of_aeval_eq_zero`,
+  `Polynomial.newtonSlopes_eq_map_roots_map_norm`, `Polynomial.card_filter_roots_map_norm_lt`,
+  `Polynomial.card_filter_roots_map_norm_le` and `Polynomial.card_filter_roots_map_norm_eq`:
+  root-norm slope dictionary and open/closed/sphere ball root counts in normed extensions.
 
 ## References
 
@@ -274,6 +281,143 @@ theorem norm_eq_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m 
   rw [norm_inv, Real.rpow_neg (zero_lt_one.trans hb).le] at hinv
   exact (inv_le_inv₀ (norm_pos_iff.mpr hx0)
     (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m)).mp hinv
+
+private theorem isUltrametricDist_of_norm_eq_rpow : IsUltrametricDist L :=
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  .of_normedAlgebra K
+
+private theorem isFiniteFace_map_ofNorm [IsUltrametricDist L] {f : K[X]} {σ : ℝ} {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    IsFiniteFace ((f.map (algebraMap K L)).newtonPolygon (AddValuation.ofNorm b hb)) σ l u := by
+  rwa [newtonPolygon_map f v (algebraMap K L) (AddValuation.ofNorm_algebraMap_eq v hb hv)]
+
+/-- For a nonzero polynomial `f : K[X]` and any nonzero root `α` in a normed field extension `L` of
+`K`, `Real.logb b ‖α‖` is a finite slope of `f`. Neither completeness nor splitting is needed. -/
+theorem logb_norm_mem_newtonSlopes_of_aeval_eq_zero {f : K[X]} (hf : f ≠ 0) {α : L} (hα : α ≠ 0)
+    (hx : aeval α f = 0) : Real.logb b ‖α‖ ∈ f.newtonSlopes v := by
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
+  have hroot : (f.map (algebraMap K L)).IsRoot α := by rwa [IsRoot, eval_map_algebraMap]
+  have hmem := neg_untop₀_mem_newtonSlopes_of_isRoot
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp)
+    (Polynomial.map_ne_zero hf) hα hroot
+  rwa [newtonSlopes_map f v (algebraMap K L) (AddValuation.ofNorm_algebraMap_eq v hb hv),
+    AddValuation.untop₀_ofNorm, neg_neg] at hmem
+
+/-- If `f : K[X]` splits in a normed field extension `L` of `K`, its finite slope multiset
+`f.newtonSlopes v` is the multiset of `Real.logb b ‖α‖` over its nonzero roots `α` in `L`, counted
+with multiplicity. No completeness is required. -/
+theorem newtonSlopes_eq_map_roots_map_norm [DecidableEq L] {f : K[X]}
+    (hf : (f.map (algebraMap K L)).Splits) :
+    f.newtonSlopes v =
+      ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦ Real.logb b ‖α‖ := by
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
+  rw [newtonSlopes_eq_map_roots_map
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp)
+    (algebraMap K L) (AddValuation.ofNorm_algebraMap_eq v hb hv) hf]
+  exact Multiset.map_congr rfl fun α _ ↦ by rw [AddValuation.untop₀_ofNorm, neg_neg]
+
+/-- If `f : K[X]` splits in `K`, its finite slope multiset `f.newtonSlopes v` is the multiset of
+`Real.logb b ‖α‖` over its nonzero roots `α` in `K`, counted with multiplicity. -/
+theorem newtonSlopes_eq_map_roots_norm [DecidableEq K] {f : K[X]} (hf : f.Splits) :
+    f.newtonSlopes v = (f.roots.filter (· ≠ 0)).map fun α ↦ Real.logb b ‖α‖ := by
+  simpa [Algebra.algebraMap_self, Polynomial.map_id] using
+    newtonSlopes_eq_map_roots_map_norm (L := K) v hb hv
+      (by simpa [Algebra.algebraMap_self, Polynomial.map_id] using hf)
+
+/-- If `f : K[X]` splits in `L` and every nonzero root of `f` in `L` has norm `b ^ m`, then every
+finite slope of `f` equals `m` (with multiplicity `f.natDegree - f.natTrailingDegree`). -/
+theorem newtonSlopes_eq_replicate_of_norm_eq {f : K[X]}
+    (hf : (f.map (algebraMap K L)).Splits) {m : ℝ}
+    (hm : ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → ‖α‖ = b ^ m) :
+    f.newtonSlopes v = Multiset.replicate (f.natDegree - f.natTrailingDegree) m := by
+  classical
+  rw [← card_newtonSlopes f v (fun _ ↦ v.top_iff.mp), Multiset.eq_replicate_card,
+    newtonSlopes_eq_map_roots_map_norm v hb hv hf]
+  intro s hs
+  obtain ⟨α, hα, rfl⟩ := Multiset.mem_map.mp hs
+  rw [Multiset.mem_filter] at hα
+  rw [hm α hα.1 hα.2, Real.logb_rpow (zero_lt_one.trans hb) hb.ne']
+
+/-- When `f : K[X]` splits in `L`, every finite slope of `f` equals `m` if and only if every
+nonzero root of `f` in `L` has norm `b ^ m`. -/
+theorem forall_mem_newtonSlopes_eq_iff_norm_eq {f : K[X]}
+    (hf : (f.map (algebraMap K L)).Splits) {m : ℝ} :
+    (∀ s ∈ f.newtonSlopes v, s = m) ↔
+      ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → ‖α‖ = b ^ m := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
+  refine ⟨fun hm α hα hα0 ↦ ?_, fun hm s hs ↦ ?_⟩
+  · refine norm_eq_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf0 hm hα0 ?_
+    rw [← eval_map_algebraMap]
+    exact isRoot_of_mem_roots hα
+  · rw [newtonSlopes_eq_replicate_of_norm_eq v hb hv hf hm] at hs
+    exact Multiset.eq_of_mem_replicate hs
+
+/-- If `f : K[X]` splits in `L`, the left endpoint `l` of the finite face of slope `σ` of
+`f.newtonPolygon v` equals the number of roots `α` of `f` in `L` in the open ball `‖α‖ < b ^ σ`,
+counted with multiplicity and including the root zero. -/
+theorem card_filter_roots_map_norm_lt {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ ‖α‖ < b ^ σ).card = l := by
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
+  rw [← card_filter_roots_lt_addValuation
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf
+    (isFiniteFace_map_ofNorm v hb hv hface)]
+  refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
+  rw [AddValuation.coe_lt_ofNorm_iff hb, neg_neg]
+
+/-- If `f : K[X]` splits in `L`, the right endpoint `u` of the finite face of slope `σ` of
+`f.newtonPolygon v` equals the number of roots `α` of `f` in `L` in the closed ball
+`‖α‖ ≤ b ^ σ`, counted with multiplicity and including the root zero. -/
+theorem card_filter_roots_map_norm_le {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ ‖α‖ ≤ b ^ σ).card = u := by
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
+  rw [← card_filter_roots_le_addValuation
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf
+    (isFiniteFace_map_ofNorm v hb hv hface)]
+  refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
+  rw [AddValuation.coe_le_ofNorm_iff hb, neg_neg]
+
+/-- If `f : K[X]` splits in `L`, the horizontal width `u - l` of the finite face of slope `σ` of
+`f.newtonPolygon v` equals the number of roots `α` of `f` in `L` on the sphere `‖α‖ = b ^ σ`,
+counted with multiplicity. -/
+theorem card_filter_roots_map_norm_eq {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ ‖α‖ = b ^ σ).card = u - l := by
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
+  rw [← card_filter_roots_addValuation_eq
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf
+    (isFiniteFace_map_ofNorm v hb hv hface)]
+  refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
+  rw [AddValuation.ofNorm_eq_coe_iff hb, neg_neg]
+
+/-- If `f : K[X]` splits in `K`, the left endpoint `l` of the finite face of slope `σ` counts the
+roots `α` of `f` in `K` in the open ball `‖α‖ < b ^ σ`, with multiplicity. -/
+theorem card_filter_roots_norm_lt {f : K[X]} (hf : f.Splits) {σ : ℝ} {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (f.roots.filter fun α ↦ ‖α‖ < b ^ σ).card = l := by
+  simpa [Algebra.algebraMap_self, Polynomial.map_id] using
+    card_filter_roots_map_norm_lt (L := K) v hb hv
+      (by simpa [Algebra.algebraMap_self, Polynomial.map_id] using hf) hface
+
+/-- If `f : K[X]` splits in `K`, the right endpoint `u` of the finite face of slope `σ` counts the
+roots `α` of `f` in `K` in the closed ball `‖α‖ ≤ b ^ σ`, with multiplicity. -/
+theorem card_filter_roots_norm_le {f : K[X]} (hf : f.Splits) {σ : ℝ} {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (f.roots.filter fun α ↦ ‖α‖ ≤ b ^ σ).card = u := by
+  simpa [Algebra.algebraMap_self, Polynomial.map_id] using
+    card_filter_roots_map_norm_le (L := K) v hb hv
+      (by simpa [Algebra.algebraMap_self, Polynomial.map_id] using hf) hface
+
+/-- If `f : K[X]` splits in `K`, the width `u - l` of the finite face of slope `σ` counts the
+roots `α` of `f` in `K` on the sphere `‖α‖ = b ^ σ`, with multiplicity. -/
+theorem card_filter_roots_norm_eq {f : K[X]} (hf : f.Splits) {σ : ℝ} {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (f.roots.filter fun α ↦ ‖α‖ = b ^ σ).card = u - l := by
+  simpa [Algebra.algebraMap_self, Polynomial.map_id] using
+    card_filter_roots_map_norm_eq (L := K) v hb hv
+      (by simpa [Algebra.algebraMap_self, Polynomial.map_id] using hf) hface
 
 end RootNorm
 
