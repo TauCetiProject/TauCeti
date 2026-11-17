@@ -129,7 +129,9 @@ theorem signlessPreprojectiveGrade_le_commutatorSubmodule_of_iso {V : Type*} [Fi
     have h3 : IsUnit (3 : k) := by simpa using hgood 3 (by simp)
     have h5 : IsUnit (5 : k) := by simpa using hgood 5 (by simp)
     rw [← zigzagE8Graph_eq_diagramGraph] at e
-    change G ≃g zigzagE8Graph at e
+    -- `rw [DynkinType.rank_E8]` cannot rewrite the dependent implicit vertex type
+    -- `Fin DynkinType.E8.rank` of `SimpleGraph.Iso`; `dsimp` reduces the `@[expose]` rank.
+    dsimp only [DynkinType.rank_E8] at e
     exact (signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso k e d).mpr
       (signlessPreprojectiveGrade_E8_le_commutatorSubmodule k h2 h3 h5 hd)
   | B n | C n | F4 | G2 => simp at hs
@@ -203,7 +205,9 @@ private theorem exists_not_le_signlessPreprojectiveGrade_of_isBadPrime_of_eq_zer
       exact exists_not_le_signlessPreprojectiveGrade_E_of_two_or_three k (n := 8) (by omega)
         h23 hp0 e
     · rw [← zigzagE8Graph_eq_diagramGraph] at e
-      change G ≃g zigzagE8Graph at e
+      -- `rw [DynkinType.rank_E8]` cannot rewrite the dependent implicit vertex type
+      -- `Fin DynkinType.E8.rank` of `SimpleGraph.Iso`; `dsimp` reduces the `@[expose]` rank.
+      dsimp only [DynkinType.rank_E8] at e
       refine ⟨10, by omega,
         (signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso k e 10).not.mpr fun h =>
           signlessWord_E8_cyclicWord_notMem_commutatorSubmodule k (by simpa using hp0)
