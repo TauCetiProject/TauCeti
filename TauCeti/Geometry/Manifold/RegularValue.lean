@@ -38,6 +38,8 @@ to manifolds, including manifolds with boundary or corners.
   of the set of non-regular points.
 * `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
   values.
+* `TauCeti.IsRegularValue.comp`: precomposing with a map regular on the fibre preserves regular
+  values.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
   manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
@@ -261,6 +263,13 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
       (mfderiv K I g p).range.map (mfderiv I J f (g p)).toLinearMap = ⊤ := by
   rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
     ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
+
+/-- A composite `f ∘ g` has `y` as a regular value if `y` is a regular value of `f` and `g` is
+regular at every point of the fibre `(f ∘ g) ⁻¹' {y}`. -/
+theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
+    (hg : ∀ p, f (g p) = y → IsRegularPoint K I g p) :
+    IsRegularValue K J (f ∘ g) y :=
+  fun p hp ↦ (hf (g p) hp).comp (hg p hp)
 
 end Composition
 

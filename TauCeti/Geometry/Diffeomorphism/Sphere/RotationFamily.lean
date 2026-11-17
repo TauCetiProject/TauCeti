@@ -10,8 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Covered
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 import TauCeti.Geometry.Manifold.Degree.Homological
-import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
-import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
+import TauCeti.Geometry.Manifold.Instances.EuclideanProd
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Sphere.Connected
 import TauCeti.Geometry.Sphere.Equator
@@ -47,9 +46,9 @@ proof of Barraud, Damian, Humilière and Oancea, which needs no computation of h
 
 The comparison of the smooth and homological degrees is stated for manifolds charted in one inner
 product space, while `Sⁿ⁻¹ × S¹` carries the product model on `ℝⁿ⁻¹ × ℝ`. The proof therefore
-reads `Sⁿ⁻¹ × S¹` through a copy charted in `ℝⁿ` (`TauCeti.BoundarylessModel`), after a linear
-identification `ℝⁿ⁻¹ × ℝ ≃ ℝⁿ`, with the orientation pulled back along the identity, which does not
-change the degree (`TauCeti.degreeAtRegularValue_comp_of_bijective`).
+recharts `Sⁿ⁻¹ × S¹` on `ℝⁿ` (`TauCeti.prodEuclideanChartedSpace`,
+`TauCeti.prodEuclideanDiffeomorph`) and pulls the product orientation back along the identity
+diffeomorphism, which does not change the degree (`TauCeti.degreeAtRegularValue_comp_of_bijective`).
 
 ## Main definitions
 
@@ -219,55 +218,6 @@ namespace HomologicalOrientation
 variable {F : Type} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {m : ℕ}
   [Fact (finrank ℝ F = m + 1 + 1)]
 
-/-- The statement of `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_two_of_even`
-for the outward-normal orientation of the sphere, based at the point `p` of the rotation family. -/
-private theorem isCoveredByDiffeomorphisms_sphereOrientation_two
-    (o : Orientation ℝ F (Fin (m + 1 + 1))) (hm : Even m) (k : ℕ∞ω) (p : sphere (0 : F) 1) :
-    (o.sphereOrientation.toHomologicalOrientation
-      finrank_euclideanSpace_fin).IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k p 2 := by
-  have := connectedSpace_sphere (E := F) (m + 1)
-  -- A copy `P'` of `P = Sᵐ × S¹` charted in `ℝᵐ⁺¹`, and the identity `ι : P' → P`.
-  let L : (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin 1)) ≃L[ℝ]
-      EuclideanSpace ℝ (Fin (m + 1)) := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  let J := ((𝓡 m).prod (𝓡 1)).transContinuousLinearEquiv L
-  let P := sphere (0 : (ℝ ∙ (p : F))ᗮ) 1 × sphere (0 : ℂ) 1
-  let _ : CompactSpace (BoundarylessModel J P) := (BoundarylessModel.homeomorph J P).compactSpace
-  let _ : T2Space (BoundarylessModel J P) := (BoundarylessModel.homeomorph J P).t2Space
-  let ι : BoundarylessModel J P ≃ₘ^∞⟮𝓡 (m + 1), (𝓡 m).prod (𝓡 1)⟯ P :=
-    ((ContinuousLinearEquiv.toTransContinuousLinearEquiv ((𝓡 m).prod (𝓡 1)) P L).trans
-      (BoundarylessModel.diffeomorph J ∞)).symm
-  have hι (x) : (mfderiv (𝓡 (m + 1)) ((𝓡 m).prod (𝓡 1)) ι x).IsInvertible :=
-    ι.isInvertible_mfderiv (by simp)
-  -- The product orientation of `P`, pulled back to `P'`.
-  let oP := (o.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere p)).sphereOrientation.prod
-    Complex.orientation.sphereOrientation
-  let oP' := oP.pullback (ι.contMDiff.of_le (by simp)) hι (by simp)
-  -- Read on `P'`, the rotation family still has degree `2` at a point `q ≠ ±p`, a regular value.
-  let f : P → sphere (0 : F) 1 := sphereRotationFamily p
-  have hf : ContMDiff ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) ∞ f := contMDiff_sphereRotationFamily p
-  obtain ⟨q, hqp, hqp'⟩ := exists_ne_and_ne_neg_sphere
-    (by rw [Fact.out (p := finrank ℝ F = m + 1 + 1)]; omega) p
-  have hreg : IsRegularValue (𝓡 (m + 1)) (𝓡 (m + 1)) (f ∘ ι) q :=
-    isRegularValue_iff.2 fun x hx ↦
-      ((isRegularValue_sphereRotationFamily p hqp hqp').isRegularPoint hx).comp
-        (isRegularPoint_iff.2 (hι x).surjective)
-  -- Stated for the composite of continuous maps that the rotations evaluate to below.
-  have key := Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul
-    finrank_euclideanSpace_fin oP' o.sphereOrientation
-    (f := (⟨sphereRotationFamily p, continuous_sphereRotationFamily p⟩ :
-      C(P, sphere (0 : F) 1)).comp ⟨ι, ι.continuous⟩)
-    (by rwa [ContinuousMap.coe_comp, ContinuousMap.coe_mk, ContinuousMap.coe_mk])
-  rw [ContinuousMap.coe_comp, ContinuousMap.coe_mk, ContinuousMap.coe_mk,
-    degreeAtRegularValue_comp_of_bijective (e := ι)
-    ι.toHomeomorph.bijective (oP.isOrientationPreservingAt_pullback _ hι _)
-    (hf.mdifferentiable (by simp)), o.degreeAtRegularValue_sphereRotationFamily_of_even p hm hqp
-    hqp'] at key
-  -- The rotations, composed with `ι`, are a family of diffeomorphisms evaluating to `f ∘ ι`.
-  refine .of_mapFundamentalClass (oP'.toHomologicalOrientation finrank_euclideanSpace_fin)
-    finrank_euclideanSpace_fin ((sphereRotationDiff p k).comp ⟨ι, ι.continuous⟩) ?_
-  rw [← ContinuousMap.comp_assoc, evalAt_comp_sphereRotationDiff, mapFundamentalClass_id]
-  exact key
-
 /-- **Odd spheres are `2`-covered by diffeomorphisms** (the second proof of Proposition 6.34 of
 Barraud–Damian–Humilière–Oancea). For even `m`, the odd-dimensional sphere `Sᵐ⁺¹` is `2`-covered by
 diffeomorphisms, at every base point, for every orientation and every smoothness exponent: the
@@ -279,14 +229,49 @@ theorem isCoveredByDiffeomorphisms_sphere_two_of_even
     (hm : Even m) (k : ℕ∞ω) (x₀ : sphere (0 : F) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ 2 := by
   have := connectedSpace_sphere (E := F) (m + 1)
-  -- Every orientation is the outward-normal orientation up to sign.
-  let o₀ : Orientation ℝ F (Fin (m + 1 + 1)) :=
-    (finBasisOfFinrankEq ℝ F (Fact.out : finrank ℝ F = m + 1 + 1)).orientation
-  rcases eq_or_eq_neg finrank_euclideanSpace_fin
-    (o₀.sphereOrientation.toHomologicalOrientation finrank_euclideanSpace_fin) o with rfl | rfl
-  · exact isCoveredByDiffeomorphisms_sphereOrientation_two o₀ hm k x₀
-  · exact isCoveredByDiffeomorphisms_neg.2
-      (isCoveredByDiffeomorphisms_sphereOrientation_two o₀ hm k x₀)
+  obtain ⟨q, hqx, hqx'⟩ := exists_ne_and_ne_neg_sphere
+    (by rw [Fact.out (p := finrank ℝ F = m + 1 + 1)]; omega) x₀
+  -- Choose a reference orientation of `F` and orient `Sᵐ⁺¹` and `Sᵐ × S¹`.
+  let oF : Orientation ℝ F (Fin (m + 1 + 1)) :=
+    (finBasisOfFinrankEq ℝ F Fact.out).orientation
+  let oQ : Manifold.Orientation (𝓡 (m + 1)) (sphere (0 : F) 1) (Fin (m + 1)) :=
+    oF.sphereOrientation
+  let oP : Manifold.Orientation ((𝓡 m).prod (𝓡 1))
+      (sphere (0 : (ℝ ∙ (x₀ : F))ᗮ) 1 × sphere (0 : ℂ) 1) (Fin (m + 1)) :=
+    (oF.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere x₀)).sphereOrientation.prod
+      Complex.orientation.sphereOrientation
+  -- Rechart `Sᵐ × S¹` on `ℝᵐ⁺¹` and pull back `oP`.
+  let := prodEuclideanChartedSpace (𝕜 := ℝ) (n := m) (m := 1)
+    (M := sphere (0 : (ℝ ∙ (x₀ : F))ᗮ) 1) (N := sphere (0 : ℂ) 1)
+  have := isManifold_prodEuclideanChartedSpace (𝕜 := ℝ) (n := m) (m := 1)
+    (M := sphere (0 : (ℝ ∙ (x₀ : F))ᗮ) 1) (N := sphere (0 : ℂ) 1) 1
+  let e := prodEuclideanDiffeomorph (𝕜 := ℝ) (n := m) (m := 1)
+    (M := sphere (0 : (ℝ ∙ (x₀ : F))ᗮ) 1) (N := sphere (0 : ℂ) 1) 1
+  let oP' : Manifold.Orientation (𝓡 (m + 1))
+      (sphere (0 : (ℝ ∙ (x₀ : F))ᗮ) 1 × sphere (0 : ℂ) 1) (Fin (m + 1)) :=
+    oP.pullback e.contMDiff (fun _ ↦ e.isInvertible_mfderiv one_ne_zero) (by simp)
+  -- Under the Euclidean charts, `q ≠ ±x₀` remains a regular value of degree `2`.
+  have hreg : IsRegularValue (𝓡 (m + 1)) (𝓡 (m + 1)) (sphereRotationFamily x₀) q := by
+    have hcomp := (isRegularValue_sphereRotationFamily x₀ hqx hqx').comp
+      (K := 𝓡 (m + 1)) (g := e) fun p _ ↦
+        isRegularPoint_iff.2 (e.isInvertible_mfderiv one_ne_zero (x := p)).surjective
+    simpa [Function.comp_def, e] using hcomp
+  have hdeg : degreeAtRegularValue oP' oQ (sphereRotationFamily x₀) q = 2 := by
+    have hcomp := degreeAtRegularValue_comp_of_bijective (o₀ := oP') (o := oP) (o' := oQ)
+      (f := sphereRotationFamily x₀) (y := q) e.bijective
+      (fun p _ ↦ Manifold.Orientation.isOrientationPreservingAt_pullback _ _ _ _ p)
+      (fun p _ ↦ ((contMDiff_sphereRotationFamily (m := m) x₀).mdifferentiable (by simp)) (e p))
+    simp only [e, Diffeomorph.coe_toEquiv, coe_prodEuclideanDiffeomorph, Function.comp_id] at hcomp
+    exact hcomp.trans (oF.degreeAtRegularValue_sphereRotationFamily_of_even x₀ hm hqx hqx')
+  -- Push the fundamental class of `Sᵐ × S¹` forward along `sphereRotationDiff x₀ k`.
+  have hcov : (oQ.toHomologicalOrientation finrank_euclideanSpace_fin).IsCoveredByDiffeomorphisms
+      finrank_euclideanSpace_fin k x₀ 2 := by
+    refine .of_mapFundamentalClass (oP'.toHomologicalOrientation finrank_euclideanSpace_fin)
+      finrank_euclideanSpace_fin (sphereRotationDiff (n := m + 1) x₀ k) ?_
+    rw [evalAt_comp_sphereRotationDiff, mapFundamentalClass_id]
+    exact (Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul
+      finrank_euclideanSpace_fin oP' oQ hreg).trans (congrArg (· • _) hdeg)
+  exact (isCoveredByDiffeomorphisms_iff_of_preconnectedSpace _ _).1 hcov
 
 end HomologicalOrientation
 
