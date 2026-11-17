@@ -30,6 +30,7 @@ automatically an interior point.
 * `TauCeti.Lie.Ad_one`: the identity acts trivially.
 * `TauCeti.Lie.Ad_mul`: the group adjoint respects multiplication.
 * `TauCeti.Lie.Ad_inv`: inversion corresponds to the inverse automorphism.
+* `TauCeti.Lie.Ad_eq_refl`: the group adjoint on a commutative Lie group is trivial.
 * `TauCeti.Lie.leftInvariantDerivationLinearIsometryEquivModelVectorSpace_Ad`: the canonical
   derivation–model equivalence intertwines `Ad` and `tangentAd`.
 
@@ -156,5 +157,12 @@ theorem Ad_inv (g : G) : Ad (I := I) g⁻¹ = (Ad (I := I) g).symm := by
     ((e.trans (tangentAd (I := I) g)).trans e.symm).symm
   rw [tangentAd_inv]
   rfl
+
+/-- The group adjoint on left-invariant derivations of a commutative Lie group is trivial. -/
+@[simp]
+theorem Ad_eq_refl [IsMulCommutative G] (g : G) : Ad (I := I) g = LieEquiv.refl :=
+  LieEquiv.ext fun D ↦ by
+    rw [Ad_apply, tangentAd_apply, adjointContinuousLinearMap_eq_id, ContinuousLinearMap.id_apply,
+      LieEquiv.refl_apply, LieEquiv.symm_apply_apply]
 
 end TauCeti.Lie
