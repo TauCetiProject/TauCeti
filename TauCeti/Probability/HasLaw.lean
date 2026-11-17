@@ -34,12 +34,15 @@ connected support onto a law split into two separated pieces is continuous on th
 is the topological reason why optimal transport maps onto disconnected targets are discontinuous.
 
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
-measure. Completing the source measure preserves every random variable's law.
+measure. Completing the source measure preserves every random variable's law. Postcomposing a
+random variable with a measurable embedding preserves and reflects its law.
 Nonnegative random variables whose real coercions have a common law are identically distributed.
 
 ## Main results
 
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
+* `MeasurableEmbedding.hasLaw_comp_iff` — postcomposing with a measurable embedding `f` has law
+  `μ.map f` if and only if the original random variable has law `μ`;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
 * `ProbabilityTheory.HasLaw.measure_singleton_le` — the law of `T` gives `{T x}` at least the
@@ -74,6 +77,18 @@ open scoped NNReal
 namespace TauCeti
 
 namespace Probability
+
+/-- Postcomposing a random variable with a measurable embedding `f` has law `μ.map f` if and only
+if the original random variable has law `μ`. -/
+theorem _root_.MeasurableEmbedding.hasLaw_comp_iff {Ω α β : Type*}
+    {mΩ : MeasurableSpace Ω} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
+    {f : α → β} (hf : MeasurableEmbedding f) {X : Ω → α} {μ : Measure α} {P : Measure Ω} :
+    HasLaw (f ∘ X) (μ.map f) P ↔ HasLaw X μ P := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (hasLaw_map hf.measurable.aemeasurable).comp h⟩
+  have hx : AEMeasurable X P := hf.aemeasurable_comp_iff.mp h.aemeasurable
+  refine ⟨hx, hf.map_injective ?_⟩
+  rw [AEMeasurable.map_map_of_aemeasurable hf.measurable.aemeasurable hx]
+  exact h.map_eq
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}

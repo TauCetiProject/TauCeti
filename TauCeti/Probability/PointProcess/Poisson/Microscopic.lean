@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.PointProcess.OccurrenceTime.Path
 public import TauCeti.Probability.PointProcess.Poisson.Temporal
 public import TauCeti.Probability.Process.Poisson.Microscopic
-import TauCeti.Probability.PointProcess.Poisson.Simplicity
 
 /-!
 # The microscopic characterization of temporal Poisson point processes
@@ -16,12 +15,11 @@ import TauCeti.Probability.PointProcess.Poisson.Simplicity
 For a measurable random measure `M : Ω → Measure ℝ≥0` represented almost surely by a
 natural-valued cumulative count process `N` (`∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = N t ω`), combining the
 count-increment recognition theorems in `TauCeti.Probability.PointProcess.Poisson.Temporal` with
-the scalar small-time Poisson limit theorem and the equal-mesh subdivision bound for multiple jumps
-yields the microscopic characterization of homogeneous temporal Poisson point processes:
+the scalar small-time Poisson limit theorem yields the microscopic characterization of homogeneous
+temporal Poisson point processes:
 
-`M` is a rate-`r` homogeneous Poisson random measure on `ℝ≥0` (and in particular is almost surely
-locally finite, has no atom at zero, and satisfies `∀ t, M ω {t} ≤ 1`) if and only if
-`N 0 = 0` almost surely, `N` has stationary independent increments, and as `h ↓ 0`,
+`M` is a rate-`r` homogeneous Poisson random measure on `ℝ≥0` if and only if `N 0 = 0` almost
+surely, `N` has stationary independent increments, and as `h ↓ 0`,
 
 ```text
 P(N h = 1) = r * h + o(h),       P(N h ≥ 2) = o(h).
@@ -33,6 +31,10 @@ measurable at nonnegative rational times whose sample paths are monotone and rig
 one event of full measure. Rate `r = 0` is included alongside `r > 0`. Path monotonicity and
 right-continuity are required only on one common event of full measure, without assuming
 measurability of that event; natural values automatically exclude explosion at finite times.
+
+Independently of independent increments and measurability, stationary increment laws together with
+`P(N h - N 0 ≥ 2) = o(h)` already imply almost-sure simplicity (`∀ t > 0, M ω {t} ≤ 1`, and at all
+`t : ℝ≥0` when `N 0 ≤ 1` almost surely) via the equal-mesh subdivision bound for multiple jumps.
 
 ## References
 
@@ -83,7 +85,8 @@ theorem ae_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
       rw [hsplit]
       exact_mod_cast hle
     exact (ENNReal.add_le_add_iff_left (ENNReal.natCast_ne_top _)).1 hbound
-  exact (measure_mono (show {t} ⊆ Ioc s t from singleton_subset_iff.mpr ⟨hst, le_rfl⟩)).trans hIoc
+  have ht_sub : {t} ⊆ Ioc s t := singleton_subset_iff.mpr ⟨hst, le_rfl⟩
+  exact (measure_mono ht_sub).trans hIoc
 
 /-- Stationary increment laws and `P(N h - N 0 ≥ 2) = o(h)` imply that
 `countPathMeasure (N · ω)` has singleton mass at most one simultaneously at all positive times,
@@ -208,55 +211,6 @@ theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_stationary_isL
         (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) :=
   isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO
-    (measurable_countPathMeasure_of_nnrat hN)
-    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
-
-/-- **Microscopic characterization including almost-sure simplicity and local finiteness.**
-For a measurable random measure `M` on `ℝ≥0` represented almost surely by cumulative counts `N`,
-the microscopic conditions characterize when `M` is a rate-`r` Poisson random measure whose
-realizations on one event of probability one are locally finite, put zero mass at the origin, and
-satisfy `∀ t, M ω {t} ≤ 1`. -/
-theorem isPoissonRandomMeasure_smul_nnvolume_singleton_le_one_iff_stationary_isLittleO
-    {M : Ω → Measure ℝ≥0} {r : ℝ≥0}
-    (hM : Measurable M)
-    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
-    (IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume) ∧
-      ∀ᵐ ω ∂P, IsLocallyFiniteMeasure (M ω) ∧ M ω {0} = 0 ∧ ∀ t, M ω {t} ≤ 1) ↔
-      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
-      (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
-      (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
-        (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
-      (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
-  refine ⟨fun h ↦ (isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO hM hcount).1 h.1,
-    fun h ↦ ?_⟩
-  have hprm := (isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO hM hcount).2 h
-  have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • nnvolume) :=
-    nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
-  refine ⟨hprm, ?_⟩
-  filter_upwards [hprm.ae_isLocallyFiniteMeasure, hprm.ae_eq_zero (A := {0}) (by simp),
-    hprm.ae_forall_singleton_le_one_smul_nnvolume] with ω hfin h0ω hs
-  exact ⟨hfin, h0ω, hs⟩
-
-/-- **Microscopic characterization of `countPathMeasure` including almost-sure simplicity and local
-finiteness.** For a natural-valued process measurable at nonnegative rational times whose paths are
-monotone and right-continuous on one event of full measure, the microscopic conditions characterize
-when `countPathMeasure (N · ω)` is a rate-`r` Poisson random measure whose realizations on one event
-of probability one are locally finite, put zero mass at the origin, and satisfy
-`∀ t, countPathMeasure (N · ω) {t} ≤ 1`. -/
-theorem
-    isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_singleton_le_one_iff_stationary_isLittleO
-    {r : ℝ≥0} (hN : ∀ q : ℚ≥0, Measurable (N q))
-    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
-    (IsPoissonRandomMeasure P (fun ω ↦ countPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ∧
-      ∀ᵐ ω ∂P, IsLocallyFiniteMeasure (countPathMeasure (N · ω)) ∧
-        countPathMeasure (N · ω) {0} = 0 ∧
-        ∀ t, countPathMeasure (N · ω) {t} ≤ 1) ↔
-      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
-      (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
-      (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
-        (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
-      (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) :=
-  isPoissonRandomMeasure_smul_nnvolume_singleton_le_one_iff_stationary_isLittleO
     (measurable_countPathMeasure_of_nnrat hN)
     (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
 

@@ -12,6 +12,8 @@ public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Probability.Process.Adapted
 public import TauCeti.Probability.Process.Filtration.AmbientNullAugmentation
 import TauCeti.Probability.Distributions.Poisson.Basic
+import TauCeti.Probability.HasLaw
+import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.Independence.Completion
 import TauCeti.Probability.Independence.Filtration
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
@@ -67,14 +69,6 @@ open scoped NNReal
 namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
-
-private theorem indep_comap_congr {m : MeasurableSpace Ω} {α : Type*} [MeasurableSpace α]
-    {X Y : Ω → α} {P : @Measure Ω mΩ} (hXY : X =ᵐ[P] Y)
-    (h : @Indep Ω (.comap X inferInstance) m mΩ P) :
-    @Indep Ω (.comap Y inferInstance) m mΩ P := by
-  have hi : @IndepFun Ω α Ω mΩ inferInstance m X id P := by
-    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using h
-  simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hi.congr hXY .rfl
 
 /-- `N` is a **homogeneous Poisson process of rate `α` relative to the filtration `ℱ`** under
 `P`: it starts at `0` almost surely, it is adapted to `ℱ`, and for `s ≤ t` the increment
@@ -200,7 +194,7 @@ theorem congr (h : IsFilteredPoissonProcess ℱ α N P) {M : ℝ≥0 → Ω → 
   eval_zero_ae_eq_zero := by
     filter_upwards [h.eval_zero_ae_eq_zero, hNM 0] with ω hω hω' using hω' ▸ hω
   hasLaw_sub s t hst := (h.hasLaw_sub hst).congr ((hNM t).sub (hNM s)).symm
-  indep_sub s t hst := indep_comap_congr ((hNM t).sub (hNM s)) (h.indep_sub hst)
+  indep_sub s t hst := (indep_comap_congr_left ((hNM t).sub (hNM s))).1 (h.indep_sub hst)
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process is independent of
 `ℱ s`. -/
@@ -273,16 +267,6 @@ section NatCast
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
 
-private theorem hasLaw_comp_iff_of_measurableEmbedding {α β : Type*}
-    [MeasurableSpace α] [MeasurableSpace β] {f : α → β} (hf : MeasurableEmbedding f)
-    {X : Ω → α} {μ : Measure α} :
-    HasLaw (fun ω ↦ f (X ω)) (μ.map f) P ↔ HasLaw X μ P := by
-  refine ⟨fun h ↦ ?_, fun h ↦ (hasLaw_map hf.measurable.aemeasurable).fun_comp h⟩
-  have hx : AEMeasurable X P := hf.aemeasurable_comp_iff.mp h.aemeasurable
-  refine ⟨hx, hf.map_injective ?_⟩
-  rw [AEMeasurable.map_map_of_aemeasurable hf.measurable.aemeasurable hx]
-  exact h.map_eq
-
 private theorem ae_natCast_sub {s t : ℝ≥0} (hle : ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
     ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) =ᵐ[P]
       fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ) := by
@@ -303,7 +287,7 @@ private theorem ae_le_of_hasLaw_sub_poissonMeasure {r : ℝ≥0}
     ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
   have hcast {X : Ω → ℕ} {c : ℝ≥0} (hX : HasLaw X (poissonMeasure c) P) :
       HasLaw (fun ω ↦ (X ω : ℝ)) Po(ℝ, c) P :=
-    (hasLaw_comp_iff_of_measurableEmbedding .natCast).2 hX
+    MeasurableEmbedding.natCast.hasLaw_comp_iff.2 hX
   have hint {X : Ω → ℝ} {c : ℝ≥0} (hX : HasLaw X Po(ℝ, c) P) : Integrable X P :=
     memLp_one_iff_integrable.1 (by simpa using hX.memLp (memLp_id_map_cast_poissonMeasure c 1))
   have hmarg (u : ℝ≥0) : HasLaw (fun ω ↦ (N u ω : ℝ)) Po(ℝ, r * u) P := by
@@ -321,7 +305,7 @@ private theorem ae_le_of_hasLaw_sub_poissonMeasure {r : ℝ≥0}
     have hle : N t ω ≤ N s ω + (N t ω - N s ω) := le_add_tsub
     exact sub_nonneg.2 (by exact_mod_cast hle)
   have hg_zero : ∫ ω, g ω ∂P = 0 := by
-    change ∫ ω, ((N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) - (N t ω : ℝ)) ∂P = 0
+    dsimp only [g]
     rw [integral_sub hshd (hint ht), integral_add (hint hs) (hint hd),
       integral_of_hasLaw_map_cast_poissonMeasure hs, integral_of_hasLaw_map_cast_poissonMeasure hd,
       integral_of_hasLaw_map_cast_poissonMeasure ht, NNReal.coe_mul, NNReal.coe_mul,
@@ -350,7 +334,7 @@ theorem isFilteredPoissonProcess_natCast_iff
       rw [← Function.comp_def (Nat.cast : ℕ → ℝ), ← MeasurableSpace.comap_comp,
         MeasurableEmbedding.natCast.comap_eq]
     rw [← hcomap]
-    exact ⟨indep_comap_congr (ae_natCast_sub hle), indep_comap_congr (ae_natCast_sub hle).symm⟩
+    exact indep_comap_congr_left (ae_natCast_sub hle)
   constructor
   · intro h
     have hle {s t : ℝ≥0} (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
@@ -358,7 +342,7 @@ theorem isFilteredPoissonProcess_natCast_iff
       exact Nat.cast_le.1 (sub_nonneg.1 hω)
     exact ⟨fun t ↦ MeasurableEmbedding.natCast.measurable_comp_iff.mp (h.adapted t),
       h.eval_zero_ae_eq_zero.mono fun _ hω ↦ Nat.cast_eq_zero.1 hω,
-      fun s t hst ↦ (hasLaw_comp_iff_of_measurableEmbedding .natCast).1
+      fun s t hst ↦ MeasurableEmbedding.natCast.hasLaw_comp_iff.1
         ((h.hasLaw_sub hst).congr (ae_natCast_sub (hle hst)).symm),
       fun s t hst ↦ (hind_iff (hle hst)).1 (h.indep_sub hst)⟩
   · rintro ⟨hadapt, h0, hlaw, hind⟩
@@ -366,7 +350,7 @@ theorem isFilteredPoissonProcess_natCast_iff
       ae_le_of_hasLaw_sub_poissonMeasure h0 hlaw hst
     exact ⟨fun t ↦ (Measurable.of_discrete.comp (hadapt t)).stronglyMeasurable,
       h0.mono fun _ hω ↦ by simp [hω],
-      fun s t hst ↦ ((hasLaw_comp_iff_of_measurableEmbedding .natCast).2
+      fun s t hst ↦ (MeasurableEmbedding.natCast.hasLaw_comp_iff.2
         (hlaw s t hst)).congr (ae_natCast_sub (hle hst)),
       fun s t hst ↦ (hind_iff (hle hst)).2 (hind hst)⟩
 
@@ -400,7 +384,7 @@ theorem isFilteredPoissonProcess_natural_natCast_iff {r : ℝ≥0}
       exact hcast.congr fun i ↦ (ae_natCast_sub (hle (ht i.castSucc_le_succ))).symm
     exact hind_real.isFilteredPoissonProcess_natural hmeas
       (h0.mono fun _ hω ↦ by simp [hω]) fun s t hst ↦
-        ((hasLaw_comp_iff_of_measurableEmbedding .natCast).2 (hlaw s t hst)).congr
+        (MeasurableEmbedding.natCast.hasLaw_comp_iff.2 (hlaw s t hst)).congr
           (ae_natCast_sub (hle hst))
 
 end NatCast
