@@ -608,6 +608,7 @@ lemma map_pullback {G'' : Sheaf K GrpCat.{w}} (ψ : G' ⟶ G'')
 
 /-- Pulling back along `u` and then along `v` is pulling back along the composite `u ⋙ v`, with
 the composite morphism `G ⟶ u_* G' ⟶ u_* v_* G'' = (u ⋙ v)_* G''`. -/
+@[simp]
 lemma pullback_pullback {E : Type u₃} [Category.{v₃} E] {L : GrothendieckTopology E}
     {v : D ⥤ E} [v.IsContinuous K L] [RepresentablyFlat v]
     [HasWeakSheafify L (Type w)] [L.WEqualsLocallyBijective (Type w)] {G'' : Sheaf L GrpCat.{w}}
