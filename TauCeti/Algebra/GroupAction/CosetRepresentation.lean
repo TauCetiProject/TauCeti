@@ -30,9 +30,9 @@ representations, without assuming `H` normal or of finite index:
   (`Equiv.exists_conj_permutationRepresentation_quotient_apply_eq_iff`).
 * **Transport along homomorphisms and right cosets.** Pointwise action preserves index
   (`Subgroup.index_smul` in `TauCeti.GroupTheory.Index.Map`), giving the `ConjAct G`-subaction
-  `Subgroup.ofIndex` (with orbit identification `Subgroup.orbitOfIndexEquiv` and coset enumeration
-  `Subgroup.quotientEquivFin`) transported across `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv`,
-  `MulEquiv.ofIndexEquiv_conjAct_smul`, and `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
+  `Subgroup.ofIndex` (with orbit identification `Subgroup.orbitOfIndexEquiv`) transported across
+  `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv`, `MulEquiv.ofIndexEquiv_conjAct_smul`, and
+  `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
   `TauCeti.QuotientGroup.congrComapOfSurjectiveMk_smul`,
   `TauCeti.QuotientGroup.congrOfMapEq_smul`,
   `Equiv.permutationRepresentation_congrComapOfSurjectiveMk`,
@@ -87,13 +87,6 @@ def orbitOfIndexEquiv {n : ℕ} (H : ofIndex G n) :
     exact MulAction.mem_orbit_iff.mpr ⟨c, Subtype.ext hc⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
-
-/-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
-noncomputable def quotientEquivFin (H : Subgroup G) {n : ℕ} [NeZero n] (hH : H.index = n) :
-    G ⧸ H ≃ Fin n :=
-  have hcard : Nat.card (G ⧸ H) = n := H.index_eq_card.symm.trans hH
-  have : Finite (G ⧸ H) := Nat.finite_of_card_ne_zero (hcard ▸ NeZero.ne n)
-  Finite.equivFinOfCardEq hcard
 
 /-! ### Equivariant coset bijections for conjugate subgroups -/
 

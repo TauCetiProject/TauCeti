@@ -40,10 +40,12 @@ along `modularEquiv` gives Millington's dictionary and subgroup counts for `PSL(
   `modularMarkedIsoClasses n` for `n ≠ 0`.
 * **Finiteness, class counts, and subgroup counts (`TauCeti.ModularGroup.finite_ofIndex`,
   `natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividingOrders`,
-  `natCard_ofIndex_eq_sum_div_automorphismOrder`).** For every `n : ℕ` (including `n = 0`), the
-  number of index-`n` conjugacy classes is `#(connectedIsoClassesWithDividingOrders n 3 2 0)` and
-  the number of index-`n` subgroups is `∑ C, n / C.automorphismOrder`, yielding `1, 1, 2` classes
-  and `1, 1, 4` subgroups in indices `1, 2, 3` (`connectedIsoClassesWithDividingOrders_three`,
+  `natCard_ofIndex_eq_sum_div_automorphismOrder`).** For `n ≠ 0`, both collections are finite, the
+  number of index-`n` conjugacy classes is `#(connectedIsoClassesWithDividingOrders n 3 2 0)`, and
+  the number of index-`n` subgroups is `∑ C, n / C.automorphismOrder`; the all-`n` identities hold
+  using `Nat.card`, which returns `0` at `n = 0` where both collections are infinite
+  (`infinite_orbitRel_quotient_ofIndex_zero`, `infinite_ofIndex_zero`). Evaluating at `n = 1, 2, 3`
+  yields `1, 1, 2` classes and `1, 1, 4` subgroups (`connectedIsoClassesWithDividingOrders_three`,
   `natCard_subgroups_index_three`).
 
 ## References

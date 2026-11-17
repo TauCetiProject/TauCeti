@@ -297,20 +297,11 @@ theorem markedIsoClasses_eq :
   obtain ⟨t, i, rfl⟩ := MarkedIsoClass.mk_surjective m
   simp
 
-/-- A numbering of the cosets of a subgroup of index `n ≠ 0`. -/
-private noncomputable def cosetEquivFinOfIndex [NeZero n]
-    (H : Subgroup.ofIndex (TriangleGroup a b c) n) : TriangleGroup a b c ⧸ H.1 ≃ Fin n :=
-  have hH : Nat.card (TriangleGroup a b c ⧸ H.1) = n :=
-    (Subgroup.index_eq_card H.1).symm.trans (Subgroup.mem_ofIndex.mp H.2)
-  have : Finite (TriangleGroup a b c ⧸ H.1) :=
-    Nat.finite_of_card_ne_zero (by rw [hH]; exact NeZero.ne n)
-  Finite.equivFinOfCardEq hH
-
 private noncomputable def cosetIsoClassAux [NeZero n]
     (q : MulAction.orbitRel.Quotient (ConjAct (TriangleGroup a b c))
       (Subgroup.ofIndex (TriangleGroup a b c) n)) : connectedIsoClasses a b c n :=
   Quotient.liftOn' q
-    (fun H ↦ ⟨IsoClass.mk (cosetTriple H.1 (cosetEquivFinOfIndex H)),
+    (fun H ↦ ⟨IsoClass.mk (cosetTriple H.1 (H.1.quotientEquivFin (Subgroup.mem_ofIndex.mp H.2))),
       mk_mem_connectedIsoClasses_iff.mpr
         ⟨isConnected_cosetTriple _ _, hasDividingOrders_cosetTriple _ _⟩⟩)
     fun H₁ H₂ ⟨g, hg⟩ ↦ by
@@ -321,15 +312,17 @@ private noncomputable def cosetIsoClassAux [NeZero n]
 private theorem coe_cosetIsoClassAux_mk [NeZero n]
     (H : Subgroup.ofIndex (TriangleGroup a b c) n) :
     (cosetIsoClassAux (Quotient.mk'' H) : IsoClass n) =
-      IsoClass.mk (cosetTriple H.1 (cosetEquivFinOfIndex H)) := (rfl)
+      IsoClass.mk (cosetTriple H.1 (H.1.quotientEquivFin (Subgroup.mem_ofIndex.mp H.2))) := (rfl)
 
 private theorem bijective_cosetIsoClassAux [NeZero n] :
     Function.Bijective (cosetIsoClassAux (a := a) (b := b) (c := c) (n := n)) := by
   refine ⟨fun q₁ q₂ h ↦ ?_, fun C ↦ ?_⟩
   · induction q₁ using Quotient.inductionOn' with | h H₁ =>
     induction q₂ using Quotient.inductionOn' with | h H₂ =>
-    have hmk : IsoClass.mk (cosetTriple H₁.1 (cosetEquivFinOfIndex H₁)) =
-        IsoClass.mk (cosetTriple H₂.1 (cosetEquivFinOfIndex H₂)) := congrArg Subtype.val h
+    have hmk :
+        IsoClass.mk (cosetTriple H₁.1 (H₁.1.quotientEquivFin (Subgroup.mem_ofIndex.mp H₁.2))) =
+          IsoClass.mk (cosetTriple H₂.1 (H₂.1.quotientEquivFin (Subgroup.mem_ofIndex.mp H₂.2))) :=
+      congrArg Subtype.val h
     obtain ⟨g, hg⟩ := (cosetTriple_equivalent_cosetTriple_iff _ _).mp (IsoClass.mk_eq_mk_iff.mp hmk)
     exact Quotient.eq''.mpr ⟨g⁻¹, Subtype.ext (by
       rw [SubMulAction.val_smul_of_tower, ← hg, inv_smul_smul])⟩
@@ -379,7 +372,7 @@ theorem coe_cosetConnectedIsoClassEquiv_mk [NeZero n]
 
 private noncomputable def cosetMarkedIsoClassAux [NeZero n]
     (H : Subgroup.ofIndex (TriangleGroup a b c) n) : markedIsoClasses a b c n :=
-  let e := cosetEquivFinOfIndex H
+  let e := H.1.quotientEquivFin (Subgroup.mem_ofIndex.mp H.2)
   ⟨MarkedIsoClass.mk ⟨cosetTriple H.1 e, isConnected_cosetTriple H.1 e⟩
       (e ((1 : TriangleGroup a b c) : TriangleGroup a b c ⧸ H.1)),
     mk_mem_markedIsoClasses_iff.mpr (hasDividingOrders_cosetTriple H.1 e)⟩
