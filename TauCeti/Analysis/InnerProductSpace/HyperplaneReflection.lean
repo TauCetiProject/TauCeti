@@ -44,6 +44,8 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
+* `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
+  `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image.
 * `TauCeti.fderiv_hyperplaneReflection` and `TauCeti.abs_det_fderiv_hyperplaneReflection`: its
   derivative is the linear reflection, of determinant `±1`.
 * `TauCeti.measurePreserving_hyperplaneReflection`: it preserves every additive Haar measure, and
@@ -150,6 +152,24 @@ theorem inner_hyperplaneReflection_lt_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x
     ⟪hyperplaneReflection ν c x, ν⟫_ℝ < c ↔ c < ⟪x, ν⟫_ℝ := by
   rw [inner_hyperplaneReflection hν]
   constructor <;> intro h <;> linarith
+
+/-- **Points on one side are closer than their mirror images.** If `x` and `z` both lie in the
+closed half-space `{y | c ≤ ⟪y, ν⟫}`, then `x` is at least as close to `z` as to the reflection of
+`z` in the hyperplane `{y | ⟪y, ν⟫ = c}`: indeed
+`‖x - ρ z‖² = ‖x - z‖² + 4 (⟪z, ν⟫ - c) (⟪x, ν⟫ - c) / ‖ν‖²`. -/
+theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c ≤ ⟪x, ν⟫_ℝ)
+    (hz : c ≤ ⟪z, ν⟫_ℝ) : dist x z ≤ dist x (hyperplaneReflection ν c z) := by
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp [hyperplaneReflection_apply]
+  set s := 2 * ((⟪z, ν⟫_ℝ - c) / ‖ν‖ ^ 2) with hs
+  have hs0 : 0 ≤ s := by positivity
+  have hsν : s * ‖ν‖ ^ 2 = 2 * (⟪z, ν⟫_ℝ - c) := by
+    rw [hs]
+    field_simp
+  rw [dist_eq_norm, dist_eq_norm, hyperplaneReflection_apply, ← hs, sub_sub_eq_add_sub,
+    add_sub_right_comm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_sq_real,
+    inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, inner_sub_left]
+  nlinarith
 
 /-- The derivative of the hyperplane reflection at every point is its linear part
 `(ℝ ∙ ν)ᗮ.reflection`. -/

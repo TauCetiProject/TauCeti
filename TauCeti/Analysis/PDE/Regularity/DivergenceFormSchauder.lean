@@ -374,7 +374,7 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
     _ = C₀ * (θ ^ (-β) + A / lam ^ 2) * V * (ρ / R) ^ β := by rw [hq]; ring
 
 /-- The square mean oscillation of the gradient on `B_t` is at most its `L²` mass on `B_t`. -/
-private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
+theorem setIntegral_norm_gradient_sub_setAverage_sq_le
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} (hball : ball z t ⊆ Omega) :
     ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 ≤
@@ -387,7 +387,7 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
 
 /-- The square mean oscillation `∫_{B_t} ‖∇u - (∇u)_{B_t}‖²` is nondecreasing in the radius,
 since the average is the best constant in square mean. -/
-private theorem monotoneOn_setIntegral_norm_gradient_sub_setAverage_sq
+theorem monotoneOn_setIntegral_norm_gradient_sub_setAverage_sq
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hball : ball z R ⊆ Omega) :
     MonotoneOn
@@ -484,7 +484,7 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
 
 /-- The gradient is integrable on `closedBall z t` whenever `ball z R ⊆ Ω` and `t ≤ R`; for
 `t = R` because `closedBall z R` and `ball z R` differ by a null set. -/
-private theorem integrableOn_closedBall_gradient {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+theorem integrableOn_closedBall_gradient {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (u : W1p volume Omega 2) {z : EuclideanSpace ℝ (Fin (n + 1))} {R t : ℝ}
     (hball : ball z R ⊆ Omega) (ht : t ≤ R) :
     IntegrableOn (W1p.gradient u) (closedBall z t) := by
@@ -707,7 +707,7 @@ end Iteration
 /-- If `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C (R^{(n+1)/2+α} Q)² (t / R)^{n+1+2α}`, then the mean
 oscillation of `∇u` on `closedBall z t` is at most `√(C / ω) Q t^α`, where `ω` is the volume of
 the unit ball. -/
-private theorem setAverage_closedBall_norm_gradient_sub_le_mul_rpow
+theorem setAverage_closedBall_norm_gradient_sub_le_mul_rpow
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {t R Q C a : ℝ} (hball : ball z t ⊆ Omega) (ht : 0 < t)
     (hR : 0 < R) (hQ : 0 ≤ Q)
@@ -735,7 +735,7 @@ private theorem setAverage_closedBall_norm_gradient_sub_le_mul_rpow
 
 /-- If `∫_{B_{θR}} ‖∇u‖² ≤ R^{n+1} (R^α Q)²`, then the average of `∇u` over `closedBall z (θ R)`
 is at most `R^α Q / √(ω θ^{n+1})`, where `ω` is the volume of the unit ball. -/
-private theorem norm_setAverage_closedBall_gradient_le_div
+theorem norm_setAverage_closedBall_gradient_le_div
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
     {z : EuclideanSpace ℝ (Fin (n + 1))} {θ R Q a : ℝ} (hball : ball z (θ * R) ⊆ Omega)
     (hθ : 0 < θ) (hR : 0 < R) (hQ : 0 ≤ Q)

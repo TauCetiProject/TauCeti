@@ -44,7 +44,9 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
 ## Main declarations
 
 * `TauCeti.W1p.compHyperplaneReflectionL`: precomposition with the hyperplane reflection.
-* `TauCeti.W1p.compHyperplaneReflectionL_compHyperplaneReflectionL`: it is an involution.
+* `TauCeti.W1p.compHyperplaneReflectionL_compHyperplaneReflectionL`: it is an involution, and
+  `TauCeti.W1p.norm_gradient_compHyperplaneReflectionL`: it preserves the `Lᵖ` norm of the weak
+  gradient.
 * `TauCeti.W1p.value_sub_compHyperplaneReflectionL_ae`: the odd reflection `u - u ∘ ρ` of a
   function vanishing off `H` agrees with it on `U ∩ H`.
 * `TauCeti.W1p.restrictL_sub_compHyperplaneReflectionL_mem_w1p0Submodule`: the restriction of
@@ -113,6 +115,19 @@ theorem W1p.gradient_compHyperplaneReflectionL_ae (hp : p ≠ ⊤)
   filter_upwards [W1p.gradient_compL_ae _ _ _ _ _ _ _ _ u] with x hx
   rw [hx, fderiv_hyperplaneReflection,
     (Submodule.isSelfAdjoint_reflection _).adjoint_eq, LinearIsometryEquiv.coe_coe'']
+
+/-- Precomposition with the hyperplane reflection preserves the `Lᵖ` norm of the weak gradient. -/
+@[simp]
+theorem W1p.norm_gradient_compHyperplaneReflectionL (hp : p ≠ ⊤)
+    (hU : MapsTo (hyperplaneReflection ν c) U U) (u : W1p mu U p) :
+    ‖W1p.gradient (W1p.compHyperplaneReflectionL hp ν c hU u)‖ = ‖W1p.gradient u‖ := by
+  have hmp := measurePreserving_restrict_hyperplaneReflection (μ := mu) hU U.isOpen.measurableSet
+  have hm : AEStronglyMeasurable (fun x => W1p.gradient u (hyperplaneReflection ν c x))
+      (mu.restrict U) := (Lp.aestronglyMeasurable _).comp_measurePreserving hmp
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm
+    ((W1p.gradient_compHyperplaneReflectionL_ae hp hU u).mono fun x hx => by
+      rw [hx, LinearIsometryEquiv.norm_map])]
+  exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp)
 
 /-- Precomposition with the hyperplane reflection is an involution. -/
 @[simp]
