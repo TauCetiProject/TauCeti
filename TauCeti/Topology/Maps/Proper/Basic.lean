@@ -23,8 +23,10 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 `Prod.map f g` is proper for every `f` when the source of `g` is empty.
 
 We also record that slice inclusions `y ↦ (x, y)` and pairings `x ↦ (f x, g x)` of a proper map
-with a continuous map into a Hausdorff space are proper, and that a map on a space covered by
-finitely many closed sets is proper if and only if its restriction to each piece is proper.
+with a continuous map into a Hausdorff space are proper, an ultrafilter convergence criterion for
+reparametrized proper maps `z ↦ h (φ z, q z)` on products with Hausdorff first factor, and that a
+map on a space covered by finitely many closed sets is proper if and only if its restriction to each
+piece is proper.
 
 ## Main declarations
 
@@ -40,6 +42,8 @@ finitely many closed sets is proper if and only if its restriction to each piece
   proper when the fixed factor is `T₁`.
 * `IsProperMap.prodMk_of_t2_left` and `IsProperMap.prodMk_of_t2_right`: pairing a proper map with
   an arbitrary continuous map into a Hausdorff space is proper.
+* `IsProperMap.exists_tendsto_of_tendsto_prodMk`: ultrafilter convergence for a reparametrized
+  proper map `z ↦ h (φ z, q z)` on a product with Hausdorff first factor.
 * `isProperMap_iff_iUnion_isClosed` and `isProperMap_iff_union_isClosed`: a map is proper if and
   only if its restrictions to the members of a finite closed cover are proper.
 * `IsProperMap.of_isEmbedding_of_range_eq`: the pullback of a proper map along an embedding of its
@@ -204,6 +208,27 @@ map `x ↦ (f x, g x)`. No separation axiom is needed on `X` or `Y`. -/
 theorem IsProperMap.prodMk_of_t2_right {g : X → Z} [T2Space Z] (hf : IsProperMap f)
     (hg : Continuous g) : IsProperMap fun x ↦ (f x, g x) :=
   (Homeomorph.prodComm Z Y).isProperMap.comp (hf.prodMk_of_t2_left hg)
+
+/-- If `h : T × Y → W` is proper with `T` Hausdorff and `z ↦ h (φ z, q z)` converges along an
+ultrafilter `𝒰` to `w₀`, then `q` converges along `𝒰` to some `y₁ : Y`; moreover, at any limit
+`z₀` of `𝒰` with `q z₀ = y₁` where either `φ` is continuous or `t ↦ h (t, y₁)` is constant, we
+have `h (φ z₀, q z₀) = w₀`. -/
+theorem IsProperMap.exists_tendsto_of_tendsto_prodMk {T : Type*} [TopologicalSpace T] [T2Space T]
+    {h : T × Y → W} (hh : IsProperMap h) {φ : Z → T} {q : Z → Y} {𝒰 : Ultrafilter Z} {w₀ : W}
+    (hlim : Tendsto (fun z ↦ h (φ z, q z)) 𝒰 (𝓝 w₀)) :
+    ∃ y₁ : Y, Tendsto q 𝒰 (𝓝 y₁) ∧
+      ∀ z₀ : Z, (𝒰 : Filter Z) ≤ 𝓝 z₀ → q z₀ = y₁ →
+        (ContinuousAt φ z₀ ∨ ∀ t₁ t₂, h (t₁, y₁) = h (t₂, y₁)) →
+        h (φ z₀, q z₀) = w₀ := by
+  obtain ⟨⟨t₁, y₁⟩, hty, hle⟩ := hh.ultrafilter_le_nhds_of_tendsto (f := h)
+    (𝒰 := 𝒰.map fun z ↦ (φ z, q z)) (by rwa [Ultrafilter.coe_map, tendsto_map'_iff])
+  refine ⟨y₁, tendsto_map'_iff.1 ((continuous_snd.tendsto (t₁, y₁)).mono_left hle),
+    fun z₀ hz₀ hqz hcond ↦ ?_⟩
+  rcases hcond with hφ | hconst
+  · have ht_lim : Tendsto φ 𝒰 (𝓝 t₁) :=
+      tendsto_map'_iff.1 ((continuous_fst.tendsto (t₁, y₁)).mono_left hle)
+    rw [hqz, tendsto_nhds_unique (hφ.tendsto.mono_left hz₀) ht_lim, hty]
+  · rw [hqz, hconst _ t₁, hty]
 
 /-- **Gluing proper maps along a finite closed cover.** If closed sets `s i` cover `X`, with `ι`
 finite, then `f : X → Y` is proper if and only if its restriction to each `s i` is proper. Neither

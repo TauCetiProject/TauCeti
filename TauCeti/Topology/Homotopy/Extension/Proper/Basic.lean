@@ -363,25 +363,6 @@ section NDRPair
 
 variable {X : Type u} [TopologicalSpace X] {A : Set X}
 
-/-- Ultrafilter convergence step for a proper deformation `h : T × Y → Y` fixing `S` pointwise and
-evaluated at a time `φ z` continuous away from `S`. -/
-private theorem ultrafilter_tendsto_apply_prodMk_of_fixed {T Y Z : Type*} [TopologicalSpace T]
-    [T2Space T] [TopologicalSpace Y] [TopologicalSpace Z] {h : C(T × Y, Y)} (hh : IsProperMap h)
-    {S : Set Y} (hS : ∀ t, ∀ y ∈ S, h (t, y) = y) {q : Z → Y} {φ : Z → T}
-    (hφ : ∀ z, q z ∉ S → ContinuousAt φ z) {𝒰 : Ultrafilter Z} {y₀ : Y}
-    (hlim : Tendsto (fun z ↦ h (φ z, q z)) 𝒰 (𝓝 y₀)) :
-    ∃ y₁ : Y, Tendsto q 𝒰 (𝓝 y₁) ∧
-      ∀ z₀ : Z, (𝒰 : Filter Z) ≤ 𝓝 z₀ → q z₀ = y₁ → h (φ z₀, q z₀) = y₀ := by
-  obtain ⟨⟨t₁, y₁⟩, hty, hle⟩ := hh.ultrafilter_le_nhds_of_tendsto (f := h)
-    (𝒰 := 𝒰.map fun z ↦ (φ z, q z)) (by rwa [Ultrafilter.coe_map, tendsto_map'_iff])
-  refine ⟨y₁, tendsto_map'_iff.1 ((continuous_snd.tendsto (t₁, y₁)).mono_left hle),
-    fun z₀ hz₀ hqz ↦ ?_⟩
-  by_cases hy₁ : y₁ ∈ S
-  · rw [hqz, hS _ _ hy₁, ← hty, hS _ _ hy₁]
-  · have ht_lim : Tendsto φ 𝒰 (𝓝 t₁) :=
-      tendsto_map'_iff.1 ((continuous_fst.tendsto (t₁, y₁)).mono_left hle)
-    rw [hqz, tendsto_nhds_unique (((hφ z₀ (hqz.symm ▸ hy₁)).tendsto).mono_left hz₀) ht_lim, hty]
-
 namespace NDRPair
 
 /-- If the ambient deformation `I × X → X` of an NDR pair `(X, A)` is proper, then the induced
@@ -393,18 +374,19 @@ theorem isProperMap_cylinderDeformation {N : NDRPair A} (hN : IsProperMap N.defo
     N.cylinderDeformation.continuous.fst
   rw [isProperMap_iff_ultrafilter]
   refine ⟨N.cylinderDeformation.continuous.snd, fun 𝒰 x₀ hx₀ ↦ ?_⟩
-  obtain ⟨x₁, hx₁, hval⟩ := ultrafilter_tendsto_apply_prodMk_of_fixed hN
-    (fun t _ hx ↦ N.deformation_of_mem t hx)
-    (fun w hw ↦ continuous_fst.continuousAt.mul
-      (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
-        (continuous_fst.comp continuous_snd) (continuous_snd.comp continuous_snd) hw))
-    (hx₀.congr fun ⟨s, t, x⟩ ↦ N.cylinderDeformation_snd s t x)
+  have hlim := hx₀.congr fun w : I × (I × X) ↦ N.cylinderDeformation_snd w.1 w.2.1 w.2.2
+  obtain ⟨x₁, hx₁, hval⟩ := hN.exists_tendsto_of_tendsto_prodMk hlim
   obtain ⟨s₁, -, hs₁⟩ := isCompact_univ.ultrafilter_le_nhds' (𝒰.map Prod.fst) univ_mem
   obtain ⟨t₁, -, ht₁⟩ := isCompact_univ.ultrafilter_le_nhds' (𝒰.map fun w ↦ w.2.1) univ_mem
   have hle : (𝒰 : Filter (I × (I × X))) ≤ 𝓝 (s₁, t₁, x₁) := by
     rw [nhds_prod_eq, nhds_prod_eq, le_prod]
     exact ⟨hs₁, le_prod.2 ⟨tendsto_map'_iff.1 ht₁, tendsto_map'_iff.1 hx₁⟩⟩
-  exact ⟨(s₁, t₁, x₁), (cylinderDeformation_snd N s₁ t₁ x₁).trans (hval _ hle rfl), hle⟩
+  refine ⟨(s₁, t₁, x₁), (cylinderDeformation_snd N s₁ t₁ x₁).trans (hval _ hle rfl ?_), hle⟩
+  by_cases hx₁A : x₁ ∈ A
+  · exact .inr fun _ _ ↦ (N.deformation_of_mem _ hx₁A).trans (N.deformation_of_mem _ hx₁A).symm
+  · exact .inl <| continuous_fst.continuousAt.mul
+      (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
+        (continuous_fst.comp continuous_snd) (continuous_snd.comp continuous_snd) hx₁A)
 
 /-- If the deformation of an NDR pair `(X, A)` is proper, then the retraction of `I × X` onto
 `{0} × X ∪ I × A` is proper as a map into `I × X`. -/
@@ -439,27 +421,29 @@ theorem isProperMap_prod_deformation {Y : Type v} [TopologicalSpace Y] {B : Set 
   rw [isProperMap_iff_ultrafilter]
   refine ⟨(N.prod M).deformation.continuous, fun 𝒰 ⟨x₀, y₀⟩ hxy₀ ↦ ?_⟩
   rw [nhds_prod_eq, tendsto_prod_iff'] at hxy₀
-  obtain ⟨x₁, hx₁, hxval⟩ := ultrafilter_tendsto_apply_prodMk_of_fixed hN
-    (fun t _ hx ↦ N.deformation_of_mem t hx)
-    (fun w hw ↦ continuous_fst.continuousAt.mul
-      (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
-        (M.control.continuous.comp (continuous_snd.comp continuous_snd))
-        (continuous_fst.comp continuous_snd) hw))
-    (hxy₀.1.congr fun ⟨t, x, y⟩ ↦ congrArg Prod.fst (N.prod_deformation_apply M t x y))
-  obtain ⟨y₁, hy₁, hyval⟩ := ultrafilter_tendsto_apply_prodMk_of_fixed hM
-    (fun t _ hy ↦ M.deformation_of_mem t hy)
-    (fun w hw ↦ continuous_fst.continuousAt.mul
-      (M.control.continuousAt_projIcc_div_of_notMem M.control_eq_zero_iff
-        (N.control.continuous.comp (continuous_fst.comp continuous_snd))
-        (continuous_snd.comp continuous_snd) hw))
-    (hxy₀.2.congr fun ⟨t, x, y⟩ ↦ congrArg Prod.snd (N.prod_deformation_apply M t x y))
+  have hxlim := hxy₀.1.congr fun w ↦ by rw [N.prod_deformation_apply]
+  have hylim := hxy₀.2.congr fun w ↦ by rw [N.prod_deformation_apply]
+  obtain ⟨x₁, hx₁, hxval⟩ := hN.exists_tendsto_of_tendsto_prodMk hxlim
+  obtain ⟨y₁, hy₁, hyval⟩ := hM.exists_tendsto_of_tendsto_prodMk hylim
   obtain ⟨t₁, -, ht₁⟩ := isCompact_univ.ultrafilter_le_nhds' (𝒰.map Prod.fst) univ_mem
   have hle : (𝒰 : Filter (I × (X × Y))) ≤ 𝓝 (t₁, x₁, y₁) := by
     rw [nhds_prod_eq, nhds_prod_eq, le_prod]
     exact ⟨ht₁, le_prod.2 ⟨tendsto_map'_iff.1 hx₁, tendsto_map'_iff.1 hy₁⟩⟩
   refine ⟨(t₁, x₁, y₁), ?_, hle⟩
   rw [prod_deformation_apply]
-  exact Prod.ext (hxval _ hle rfl) (hyval _ hle rfl)
+  refine Prod.ext (hxval _ hle rfl ?_) (hyval _ hle rfl ?_)
+  · by_cases hx₁A : x₁ ∈ A
+    · exact .inr fun _ _ ↦ (N.deformation_of_mem _ hx₁A).trans (N.deformation_of_mem _ hx₁A).symm
+    · exact .inl <| continuous_fst.continuousAt.mul
+        (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
+          (M.control.continuous.comp (continuous_snd.comp continuous_snd))
+          (continuous_fst.comp continuous_snd) hx₁A)
+  · by_cases hy₁B : y₁ ∈ B
+    · exact .inr fun _ _ ↦ (M.deformation_of_mem _ hy₁B).trans (M.deformation_of_mem _ hy₁B).symm
+    · exact .inl <| continuous_fst.continuousAt.mul
+        (M.control.continuousAt_projIcc_div_of_notMem M.control_eq_zero_iff
+          (N.control.continuous.comp (continuous_fst.comp continuous_snd))
+          (continuous_snd.comp continuous_snd) hy₁B)
 
 end NDRPair
 

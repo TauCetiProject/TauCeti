@@ -16,13 +16,22 @@ admits a proper homotopy inverse `g : X → A` — with jointly proper homotopie
 there exist a proper retraction `r : X → A` fixing `A` pointwise and a proper homotopy relative to
 `A` from `id_X` to `incl ∘ r` (`TauCeti.properStrongDeformationRetract_of_inverse`).
 
-Following Hatcher (Proposition 0.19) while retaining joint properness on cylinders at each step:
+Following Hatcher (Proposition 0.19) and adapting Tau Ceti's ordinary-homotopy rectification in
+`TauCeti.Topology.Homotopy.Extension.DeformationRetract`
+(`TauCeti.HasHomotopyExtensionProperty.exists_retraction_homotopic`,
+`TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retraction`,
+`TauCeti.HasHomotopyExtensionProperty.exists_strong_deformation_retraction`,
+`TauCeti.HasHomotopyExtensionProperty.exists_strong_deformation_retraction_iff`) and
+`TauCeti.Topology.Homotopy.Extension.Basic`
+(`TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`), while retaining joint
+properness on cylinders at each step:
 1. Extending `g ∘ incl ≃ id_A` from `A` to `X` replaces `g` by a proper retraction `r : X → A`
    properly homotopic to `g`
    (`TauCeti.HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic`).
 2. Concatenating `id_X ≃ incl ∘ r` with its reverse postcomposed with `incl ∘ r` retraces itself on
-   `A`, and extending the tent cutoff from `{0, 1} × X ∪ I × A` to `I × X` makes the homotopy
-   stationary on `A` while preserving properness
+   `A`, and extending the tent cutoff directly from `{0, 1} × X ∪ I × A` to `I × X` (in place of
+   the path-space extension in `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`)
+   makes the homotopy stationary on `A` while preserving properness
    (`TauCeti.HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracing`).
 
 ## Main declarations
@@ -42,6 +51,14 @@ Following Hatcher (Proposition 0.19) while retaining joint properness on cylinde
   Compositio Math. 27 (1973), 1–23, Section 1.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Chapter 0,
   Proposition 0.19.
+* Adapts the ordinary-homotopy retraction and retracing constructions in
+  `TauCeti/Topology/Homotopy/Extension/DeformationRetract.lean`
+  (`TauCeti.HasHomotopyExtensionProperty.exists_retraction_homotopic`,
+  `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retraction`,
+  `TauCeti.HasHomotopyExtensionProperty.exists_strong_deformation_retraction`,
+  `TauCeti.HasHomotopyExtensionProperty.exists_strong_deformation_retraction_iff`) and
+  `TauCeti/Topology/Homotopy/Extension/Basic.lean`
+  (`TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`).
 -/
 
 public section
@@ -52,11 +69,12 @@ namespace TauCeti
 
 open ContinuousMap Set Topology unitInterval
 
-universe u
+universe u v
 
 section Retracing
 
-variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {A : Set X} {f₀ f₁ f₂ : C(X, Y)}
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y] {A : Set X}
+  {f₀ f₁ f₂ : C(X, Y)}
 
 /-- Cutoff tent time `(u, t) ↦ projIcc 0 1 (min (2 t) (2 - 2 t) - u)` contracting the tent
 reparametrization on `I` to `0` as `u` goes from `0` to `1`. -/
@@ -103,6 +121,10 @@ private lemma apply_retracingTime_zero (F : f₀.Homotopy f₁) (G : f₁.Homoto
 private abbrev cylinderBoundary (A : Set X) : Set (I × X) :=
   ({0, 1} : Set I) ×ˢ (univ : Set X) ∪ univ ×ˢ A
 
+private lemma isClosed_cylinderBoundary (hA_closed : IsClosed A) :
+    IsClosed (cylinderBoundary A) :=
+  ((Set.toFinite _).isClosed.prod isClosed_univ).union (isClosed_univ.prod hA_closed)
+
 /-- Proper partial homotopy on `I × ({0, 1} × X ∪ I × A)` keeping `{0} × X` at `f₀`, `{1} × X` at
 `f₂`, and contracting the tent paths `(t, a) ↦ F (retracingTime 0 t, a)` on `I × A` to `f₀`. -/
 private theorem exists_proper_retracing_boundary_homotopy (hA_closed : IsClosed A)
@@ -115,8 +137,7 @@ private theorem exists_proper_retracing_boundary_homotopy (hA_closed : IsClosed 
       ∀ (t : I) {x : X} (hx : x ∈ A), Φ (1, ⟨(t, x), Or.inr ⟨trivial, hx⟩⟩) = f₀ x := by
   classical
   let B := cylinderBoundary A
-  have hB : IsClosed B :=
-    ((Set.toFinite _).isClosed.prod isClosed_univ).union (isClosed_univ.prod hA_closed)
+  have hB : IsClosed B := isClosed_cylinderBoundary hA_closed
   have hπX : IsProperMap (fun q : I × B ↦ q.2.1.2) :=
     (isProperMap_snd_of_compactSpace (X := I)).comp
       (hB.isProperMap_subtypeVal.comp (isProperMap_snd_of_compactSpace (X := I)))
@@ -183,7 +204,8 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_homotopyRel_of_retracin
   obtain ⟨Φ, hΦ, hΦ₀, hΦ_left, hΦ_right, hΦ_side⟩ :=
     exists_proper_retracing_boundary_homotopy hA_closed F G hF hG hretr
   obtain ⟨Ψ, hΨ, -, hΨ₁⟩ :=
-    (hA.zero_one_prod_univ_union_univ_prod hA_closed).exists_extension
+    (hA.zero_one_prod_univ_union_univ_prod hA_closed).exists_extension_of_isClosed
+      (isClosed_cylinderBoundary hA_closed)
       (F.trans G).toContinuousMap (Homotopy.isProperMap_trans hF hG) Φ hΦ hΦ₀
   refine ⟨{ toContinuousMap := Ψ.comp ⟨fun p ↦ (1, p), by fun_prop⟩
             map_zero_left := fun x ↦ (hΨ₁ 1 ⟨(0, x), .inl ⟨.inl rfl, trivial⟩⟩).trans (hΦ_left x)
