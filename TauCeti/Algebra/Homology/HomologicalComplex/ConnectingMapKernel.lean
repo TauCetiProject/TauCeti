@@ -26,9 +26,9 @@ the short exact sequence `K ⟶ ker b ⟶ Q`
 (`TauCeti.kernelCokernelCompSequence_shortExact_of_mono_of_epi`), whose middle term is acyclic
 because `b` is an epimorphic quasi-isomorphism.
 
-This computes the relative homology of a pair of spaces whose ambient space is weakly equivalent
-to a space onto which the subspace maps surjectively on chains, such as a covering space: the
-relative homology is then the shifted homology of the kernel of that surjection.
+This computes the relative homology of a pair whose subspace maps surjectively on chains onto a
+space weakly equivalent to the ambient space, for instance when the subspace is a covering space of
+it: the relative homology is then the shifted homology of the kernel of that surjection.
 -/
 
 public section
@@ -92,9 +92,10 @@ quasi-isomorphism with `e ≫ S.f ≫ b = T.g`; so `K` is the kernel of the comp
 Then `Hᵢ(Q) ≅ Hⱼ(K)` whenever `c.Rel i j`. Composed with the map `Hⱼ(K) ⟶ Hⱼ(A)`, it is the
 connecting map of `S` (`CategoryTheory.ShortComplex.ShortExact.liftδIso_hom_comp_homologyMap`).
 
-For instance, if `S` is the short exact sequence of singular chains of a pair `(D, D₀)` and `b` is
-induced by a weak homotopy equivalence `D ⟶ B`, then the relative homology of the pair is the
-shifted homology of the kernel of the chain map induced by `D₀ ⟶ B`. -/
+For instance, if `S` is the short exact sequence of singular chains of a pair `(D, D₀)`, `b` is
+induced by a weak homotopy equivalence `D ⟶ B`, and the chain map induced by `D₀ ⟶ B` is
+surjective (for instance when `D₀ ⟶ B` is a covering map), then the relative homology of the pair
+is the shifted homology of the kernel of that chain map. -/
 noncomputable def liftδIso (i j : ι) (hij : c.Rel i j) : S.X₃.homology i ≅ T.X₁.homology j :=
   (kernelShortComplex_shortExact hS hT e b hb).δIso i j hij
     ((acyclic_kernel hT e b hb hq i).isZero_homology)

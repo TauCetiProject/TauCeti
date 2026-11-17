@@ -114,6 +114,7 @@ def singularHomologySuccIsoTwistedHomology (n : ℕ) :
 
 /-- The isomorphism `Hₙ₊₁(D, S) ≅ Hₙ(B; L)`, followed by the map `Hₙ(B; L) ⟶ Hₙ(B; R[p]) ≅ Hₙ(S)`
 induced by `L ⟶ R[p]`, is the connecting map `Hₙ₊₁(D, S) ⟶ Hₙ(S)` of the pair. -/
+@[reassoc]
 theorem singularHomologySuccIsoTwistedHomology_hom_comp (n : ℕ) :
     (P.singularHomologySuccIsoTwistedHomology hp π hπ hπw hι n).hom ≫
         LocalCoefficientSystem.twistedHomologyCoefficientMap ι n ≫

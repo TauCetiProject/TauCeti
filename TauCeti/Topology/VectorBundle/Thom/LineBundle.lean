@@ -37,7 +37,7 @@ system of `E`. In degree `0` the Thom pair has no homology, as it has none below
 The isomorphism is the inverse of the comparison of the disc-sphere pair with the Thom pair,
 followed by the lift of the connecting map of `(D(E), S(E))`: composed with the map
 `Hₙ(B; L) ⟶ Hₙ(B; R[S(E)]) ≅ Hₙ(S(E))` induced by `L ⟶ R[S(E)]`, it is that connecting map
-(`TauCeti.singularHomologyMap_discSpherePairMap_comp_thomPairSingularHomologySuccIso`).
+(`TauCeti.discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp`).
 
 ## References
 
@@ -112,7 +112,8 @@ private theorem singularHomologyMap_discSpherePairMap_comp_hom (n : ℕ) :
 /-- The Thom isomorphism of a line bundle, read on the disc-sphere pair and followed by the map
 `Hₙ(B; L) ⟶ Hₙ(B; R[S(E)]) ≅ Hₙ(S(E))` induced by `L ⟶ R[S(E)]`, is the connecting map
 `Hₙ₊₁(D(E), S(E)) ⟶ Hₙ(S(E))` of the disc-sphere pair. -/
-theorem singularHomologyMap_discSpherePairMap_comp_thomPairSingularHomologySuccIso (n : ℕ) :
+@[reassoc]
+theorem discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp (n : ℕ) :
     TopPair.singularHomologyMap (discSpherePairMap F E) (ModuleCat.of R R) (n + 1) ≫
         (thomPairSingularHomologySuccIsoTwistedHomology hnorm hF hι n).hom ≫
           LocalCoefficientSystem.twistedHomologyCoefficientMap ι n ≫
