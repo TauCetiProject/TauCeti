@@ -122,11 +122,6 @@ theorem preimage_map_box {S : ι → Type*} {B : ∀ i, Set (S i)}
     RestrictedProduct.map φ hφ ⁻¹' (box D : Set (Πʳ i, [S i, B i]_[𝓕])) =
       (box (fun i ↦ φ i ⁻¹' D i) : Set (Πʳ i, [R i, A i]_[𝓕])) := by ext; simp
 
-/-- The range of `structureMap` (the everywhere-restricted subspace) is `box A`. -/
-theorem range_structureMap_eq_box :
-    range (structureMap R A 𝓕) = (box A : Set (Πʳ i, [R i, A i]_[𝓕])) :=
-  range_structureMap R A
-
 /-- When `C i ⊆ A i` at every `i ∈ S` for a principal filter `𝓟 S ≥ 𝓕`, the image of `box C` under
 the principal inclusion `inclusion R A hS` is `box C`. -/
 theorem image_inclusion_box_of_principal {S : Set ι} (hS : 𝓕 ≤ 𝓟 S) {C : ∀ i, Set (R i)}
