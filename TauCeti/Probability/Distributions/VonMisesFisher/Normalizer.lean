@@ -204,9 +204,9 @@ theorem vonMisesFisherMeasure_eq_withDensity_besselI (hd : 2 ≤ Module.finrank 
           besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ)) := by
   have hη : κ • (m : E) ≠ 0 := smul_ne_zero hκ.ne' (ne_zero_of_mem_sphere one_ne_zero m)
   have hnorm : ‖κ • (m : E)‖ = κ := by simp [norm_smul, abs_of_pos hκ]
-  rw [vonMisesFisherMeasure_of_nonneg m hκ.le, vonMisesFisherNaturalMeasure_eq_withDensity]
-  simp only [vonMisesFisherNaturalPDF_eq_ofReal, vonMisesFisherNaturalPDFReal_def]
-  rw [integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη, hnorm]
+  rw [vonMisesFisherMeasure_of_nonneg m hκ.le, vonMisesFisherNaturalMeasure_eq_withDensity,
+    vonMisesFisherNaturalPDF_def, vonMisesFisherNaturalPDFReal_def,
+    integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη, hnorm]
   simp_rw [real_inner_smul_left, neg_sub, mul_assoc]
 
 end TauCeti.Probability

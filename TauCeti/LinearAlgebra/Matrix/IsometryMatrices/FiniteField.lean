@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Field
-public import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
+public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
 
 /-!
 # Orders of finite orthogonal groups
@@ -79,11 +80,10 @@ private theorem exists_natCard_isometryMatrices_eq_fromBlocks [Invertible (2 : F
     (Equiv.optionSubtypeNe i₀).symm.trans (Equiv.optionEquivSumPUnit _)
   have hreindex : reindex e e (diagonal d) =
       fromBlocks (diagonal fun i : {i // i ≠ i₀} ↦ d i) 0 0 (diagonal fun _ : Unit ↦ d i₀) := by
-    ext (i | i) (j | j)
-    · simp [e, diagonal_apply, Subtype.ext_iff]
-    · simp [e, i.2]
-    · simp [e, Ne.symm j.2]
-    · simp [e]
+    rw [reindex_apply, submatrix_diagonal_equiv, fromBlocks_diagonal]
+    congr 1
+    funext i
+    cases i <;> simp [e]
   refine ⟨diagonal fun i : {i // i ≠ i₀} ↦ d i, d i₀, isSymm_diagonal _, ?_, hd i₀,
     ⟨P.det, hPdet, ?_⟩, ?_⟩
   · rw [det_diagonal]

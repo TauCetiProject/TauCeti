@@ -186,22 +186,26 @@ theorem gamma1CuspLabel_eq_mk {γ : SL(2, ℤ)} {g : ℕ} (hg : g ∈ N.divisors
   · exact (coe_gamma1CuspLabel_snd_fst γ).trans h₂
   · exact (coe_gamma1CuspLabel_snd_snd γ).trans h₃
 
+/-- For divisors `g = g'` of `N`, the pairs of units `(a mod N / g, b mod g)` and
+`(a' mod N / g', b' mod g')` built from coprime integers, which live in the propositionally equal
+types `(ZMod (N / g))ˣ × (ZMod g)ˣ` and `(ZMod (N / g'))ˣ × (ZMod g')ˣ`, are `HEq` exactly when
+`N / g ∣ a' - a` and `g ∣ b' - b`. This is the comparison of the units in two labels. -/
+private theorem prodMk_unitOfIsCoprime_heq_iff {N g g' : ℕ} (hg : g = g') {a b a' b' : ℤ}
+    (ha : IsCoprime a (N / g : ℕ)) (hb : IsCoprime b g) (ha' : IsCoprime a' (N / g' : ℕ))
+    (hb' : IsCoprime b' g') :
+    HEq (ZMod.unitOfIsCoprime a ha, ZMod.unitOfIsCoprime b hb)
+        (ZMod.unitOfIsCoprime a' ha', ZMod.unitOfIsCoprime b' hb') ↔
+      ((N / g : ℕ) : ℤ) ∣ a' - a ∧ (g : ℤ) ∣ b' - b := by
+  subst hg
+  rw [heq_iff_eq, Prod.ext_iff, Units.ext_iff, Units.ext_iff, ZMod.coe_unitOfIsCoprime,
+    ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime,
+    ZMod.intCast_eq_intCast_iff_dvd_sub, ZMod.intCast_eq_intCast_iff_dvd_sub]
+
 /-- **Equality of labels.** Two matrices with bottom rows `(c, d)` and `(c', d')` have the same
 label exactly when `c' ≡ c` and `d' ≡ d + j c` modulo `N` for some integer `j`. -/
 theorem gamma1CuspLabel_eq_iff (γ γ' : SL(2, ℤ)) :
     gamma1CuspLabel N γ = gamma1CuspLabel N γ' ↔
       ((γ' 1 0 : ℤ) : ZMod N) = γ 1 0 ∧ ∃ j : ℤ, ((γ' 1 1 : ℤ) : ZMod N) = γ 1 1 + j * γ 1 0 := by
-  -- The units live in `ZMod` of moduli that agree only propositionally, so they are compared
-  -- as `HEq`; once the divisors are identified they are compared as integer congruences.
-  have hx {g g' : ℕ} (hg : g = g') {a b a' b' : ℤ} (ha : IsCoprime a (N / g : ℕ))
-      (hb : IsCoprime b g) (ha' : IsCoprime a' (N / g' : ℕ)) (hb' : IsCoprime b' g') :
-      HEq (ZMod.unitOfIsCoprime a ha, ZMod.unitOfIsCoprime b hb)
-          (ZMod.unitOfIsCoprime a' ha', ZMod.unitOfIsCoprime b' hb') ↔
-        ((N / g : ℕ) : ℤ) ∣ a' - a ∧ (g : ℤ) ∣ b' - b := by
-    subst hg
-    rw [heq_iff_eq, Prod.ext_iff, Units.ext_iff, Units.ext_iff, ZMod.coe_unitOfIsCoprime,
-      ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime, ZMod.coe_unitOfIsCoprime,
-      ZMod.intCast_eq_intCast_iff_dvd_sub, ZMod.intCast_eq_intCast_iff_dvd_sub]
   have hN : (N : ℤ) = Int.gcd (γ 1 0) N * (N / Int.gcd (γ 1 0) N : ℕ) := by
     exact_mod_cast (Nat.mul_div_cancel' (Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..))).symm
   have hc (c : ℤ) : c = Int.gcd c N * (c / Int.gcd c N) :=
@@ -214,7 +218,7 @@ theorem gamma1CuspLabel_eq_iff (γ γ' : SL(2, ℤ)) :
   simp only [← Int.cast_mul, ← Int.cast_add, ZMod.intCast_eq_intCast_iff_dvd_sub]
   constructor
   · rintro ⟨hg, hx'⟩
-    obtain ⟨hu, k, hk⟩ := (hx hg ..).mp hx'
+    obtain ⟨hu, k, hk⟩ := (prodMk_unitOfIsCoprime_heq_iff hg ..).mp hx'
     rw [← hg] at hu
     refine ⟨?_, k * Int.gcdA (γ 1 0) N, -(k * Int.gcdB (γ 1 0) N), ?_⟩
     · have h₁ := hc (γ 1 0)
@@ -229,8 +233,8 @@ theorem gamma1CuspLabel_eq_iff (γ γ' : SL(2, ℤ)) :
   · rintro ⟨⟨t, ht⟩, j, s, hs⟩
     have hg : Int.gcd (γ 1 0) N = Int.gcd (γ' 1 0) N := by
       rw [show γ' 1 0 = γ 1 0 + (-t) * N by linear_combination -ht, Int.gcd_add_mul_right_left]
-    refine ⟨hg, (hx hg ..).mpr ⟨⟨-t, mul_left_cancel₀ hg0 ?_⟩, ⟨j * (γ 1 0 / Int.gcd (γ 1 0) N) -
-      (N / Int.gcd (γ 1 0) N : ℕ) * s, ?_⟩⟩⟩
+    refine ⟨hg, (prodMk_unitOfIsCoprime_heq_iff hg ..).mpr ⟨⟨-t, mul_left_cancel₀ hg0 ?_⟩,
+      ⟨j * (γ 1 0 / Int.gcd (γ 1 0) N) - (N / Int.gcd (γ 1 0) N : ℕ) * s, ?_⟩⟩⟩
     · have h₂ := hc (γ' 1 0)
       rw [← hg] at h₂ ⊢
       linear_combination -h₂ + hc (γ 1 0) - ht - t * hN
@@ -244,31 +248,19 @@ theorem gamma1CuspLabel_surjective : Function.Surjective (gamma1CuspLabel N) := 
   have : NeZero g := ⟨hg0⟩
   have : NeZero (N / g) := ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N) hgN) (NeZero.pos g)).ne'⟩
   have hN : (N : ℤ) = g * (N / g : ℕ) := by exact_mod_cast (Nat.mul_div_cancel' hgN).symm
-  -- Lift `u` and `v` to integers `u₀` and `v₀`; the residues `(g u₀, v₀)` modulo `N` lift to
-  -- the bottom row of a matrix in `SL(2, ℤ)`.
+  -- Lift `u` to an integer `u₀` and `v` to a unit `v'` modulo `N`; the residues `(g u₀, v')`
+  -- modulo `N` lift to the bottom row of a matrix in `SL(2, ℤ)`.
   set u₀ : ℤ := ((u : ZMod (N / g)).val : ℤ) with hu₀
-  set v₀ : ℤ := ((v : ZMod g).val : ℤ) with hv₀
   have hu : IsCoprime u₀ (N / g : ℕ) :=
     Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime u)
-  have hv : IsCoprime v₀ g := Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime v)
-  have hcop : IsCoprime ((g * u₀ : ℤ) : ZMod N) (v₀ : ZMod N) := by
-    obtain ⟨x, y, hxy⟩ := hv
-    obtain ⟨s, t, hst⟩ := hu
-    refine ⟨((y * s : ℤ) : ZMod N), (x : ZMod N), ?_⟩
-    have h : y * s * (g * u₀) + x * v₀ = 1 + N * (-(y * t)) := by
-      linear_combination hxy + y * g * hst + y * t * hN
-    have h' := congrArg (Int.cast : ℤ → ZMod N) h
-    push_cast at h'
-    rw [ZMod.natCast_self, zero_mul, add_zero] at h'
-    push_cast
-    exact h'
+  obtain ⟨v', rfl⟩ := ZMod.unitsMap_surjective hgN v
+  have hcop : IsCoprime ((g * u₀ : ℤ) : ZMod N) (v' : ZMod N) := ⟨0, ↑v'⁻¹, by simp⟩
   obtain ⟨c, d, hc, hd, hcd⟩ := IsCoprime.exists_int_lifts hcop
   obtain ⟨γ, -, hγ⟩ := bottom_row_surj (show ![c, d] ∈
     {cd : Fin 2 → ℤ | IsCoprime (cd 0) (cd 1)} from hcd)
   have hγc : γ 1 0 = c := congrFun hγ 0
   have hγd : γ 1 1 = d := congrFun hγ 1
   obtain ⟨k, hk⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub _ _ _).mp hc.symm
-  obtain ⟨l, hl⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub _ _ _).mp hd
   have hck : γ 1 0 = g * (u₀ + (N / g : ℕ) * k) := by linear_combination hγc + hk + k * hN
   refine ⟨γ, gamma1CuspLabel_eq_mk hg ?_ ?_ ?_⟩
   · rw [hck, show (N : ℤ) = g * (N / g : ℕ) from hN, Int.gcd_mul_left, Int.natAbs_natCast,
@@ -276,10 +268,7 @@ theorem gamma1CuspLabel_surjective : Function.Surjective (gamma1CuspLabel N) := 
   · rw [hck, Int.mul_ediv_cancel_left _ (by exact_mod_cast hg0)]
     rw [Int.cast_add, Int.cast_mul, Int.cast_natCast (N / g), ZMod.natCast_self, zero_mul,
       add_zero, hu₀, Int.cast_natCast, ZMod.natCast_zmod_val]
-  · have hdv : ((d : ℤ) : ZMod g) = ((v₀ : ℤ) : ZMod g) :=
-      (ZMod.intCast_eq_intCast_iff_dvd_sub _ _ _).mpr
-        ⟨(N / g : ℕ) * l, by linear_combination hl + l * hN⟩
-    rw [hγd, hdv, hv₀, Int.cast_natCast, ZMod.natCast_zmod_val]
+  · rw [hγd, ← ZMod.cast_intCast hgN, hd, ZMod.unitsMap_val]
 
 /-- **The criterion for equivalence of cusps of `Γ₁(N)` in terms of labels.** The cusps `γ • ∞`
 and `γ' • ∞` of `Γ₁(N)` agree exactly when `γ'` has the label of `γ` or of `-γ`. -/
