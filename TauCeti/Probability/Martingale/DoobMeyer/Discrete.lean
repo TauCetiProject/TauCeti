@@ -50,7 +50,10 @@ open Filter Set
 namespace MeasureTheory
 
 variable {Ω : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω} {ℱ : Filtration ℕ m0}
-  {f : ℕ → Ω → ℝ}
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℕ → Ω → E}
 
 /-- The compensator is the process minus its martingale part. -/
 theorem predictablePart_eq_sub (n : ℕ) :
@@ -58,25 +61,26 @@ theorem predictablePart_eq_sub (n : ℕ) :
   eq_sub_of_add_eq' (congrFun (martingalePart_add_predictablePart ℱ μ f) n)
 
 /-- The compensator of an integrable process is integrable at every index. -/
-theorem integrable_predictablePart (hint : ∀ n, Integrable (f n) μ) (n : ℕ) :
+theorem integrable_predictablePart [CompleteSpace E] (hint : ∀ n, Integrable (f n) μ) (n : ℕ) :
     Integrable (predictablePart f ℱ μ n) μ := by
   rw [predictablePart_eq_sub]
   exact (hint n).sub (integrable_martingalePart hint n)
 
 /-- The compensator of an integrable process at `n` has expectation `E[f_n] - E[f_0]`. -/
-theorem integral_predictablePart [SigmaFiniteFiltration μ ℱ] (hint : ∀ n, Integrable (f n) μ)
-    (n : ℕ) : ∫ ω, predictablePart f ℱ μ n ω ∂μ = ∫ ω, f n ω ∂μ - ∫ ω, f 0 ω ∂μ := by
+theorem integral_predictablePart [CompleteSpace E] [SigmaFiniteFiltration μ ℱ]
+    (hint : ∀ n, Integrable (f n) μ) (n : ℕ) :
+    ∫ ω, predictablePart f ℱ μ n ω ∂μ = ∫ ω, f n ω ∂μ - ∫ ω, f 0 ω ∂μ := by
   induction n with
   | zero => simp
   | succ n ih =>
     rw [predictablePart_add_one, integral_add' (integrable_predictablePart hint n)
       integrable_condExp, integral_condExp (ℱ.le n), integral_sub' (hint (n + 1)) (hint n), ih]
-    ring
+    abel
 
 /-- **Optional sampling for the Doob compensator.** On an event known at a stopping time
 `σ ≤ N`, the compensator of an adapted integrable process grows from `σ` to `N` by the same
 amount, on average, as the process itself. -/
-theorem setIntegral_predictablePart_sub_stoppedValue [IsFiniteMeasure μ]
+theorem setIntegral_predictablePart_sub_stoppedValue [CompleteSpace E] [IsFiniteMeasure μ]
     (hf : StronglyAdapted ℱ f) (hint : ∀ n, Integrable (f n) μ) {σ : Ω → WithTop ℕ}
     (hσ : IsStoppingTime ℱ σ) {N : ℕ} (hσN : ∀ ω, σ ω ≤ N) {s : Set Ω}
     (hs : MeasurableSet[hσ.measurableSpace] s) :
@@ -97,7 +101,7 @@ theorem setIntegral_predictablePart_sub_stoppedValue [IsFiniteMeasure μ]
         (f N ω - stoppedValue f σ ω) -
           (martingalePart f ℱ μ N ω - stoppedValue (martingalePart f ℱ μ) σ ω) := by
     simp only [stoppedValue, hdec]
-    ring
+    abel
   have hfσ := integrable_stoppedValue ℕ hσ hint hσN
   have hMσi := integrable_stoppedValue ℕ hσ (integrable_martingalePart (ℱ := ℱ) hint) hσN
   simp_rw [hpt]
@@ -105,6 +109,10 @@ theorem setIntegral_predictablePart_sub_stoppedValue [IsFiniteMeasure μ]
       ((integrable_martingalePart hint N).sub' hMσi).integrableOn,
     integral_sub (integrable_martingalePart hint N).integrableOn hMσi.integrableOn, hMσ,
     sub_self, sub_zero]
+
+end NormedSpace
+
+variable {f : ℕ → Ω → ℝ}
 
 /-- The first index `k ≤ N` at which the compensator at `k + 1` reaches `c`, or `N` if there is
 none. The compensator at `k + 1` is known at `k`, so this is a stopping time. -/
