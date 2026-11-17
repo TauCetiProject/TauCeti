@@ -405,10 +405,7 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
   have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
   have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
   -- An affine open of a scheme with affine diagonal is an affine morphism.
-  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := ⟨fun V hV ↦
-    (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-      exact (hU i).inf hV)⟩
+  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := (hU i).isAffineHom_ι
   have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
   let F : 𝒰.I₀ → X.Modules := fun i ↦
     (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)

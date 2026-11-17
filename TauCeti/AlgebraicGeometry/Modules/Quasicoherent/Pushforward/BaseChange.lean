@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward.BaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
