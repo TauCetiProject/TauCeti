@@ -14,6 +14,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Indicator
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.Normed.Operator.Restrict
+import TauCeti.LinearAlgebra.End.Idempotent
 
 /-!
 # The spectral flow at a regular crossing
@@ -95,7 +96,7 @@ namespace TauCeti
 the spectral projections for `[-c, 0)` and for `[0, c]` lie in the range of the projection `P` for
 `[-c, c]`, are finite-dimensional and independent, and their dimensions add up to the rank of `P`.
 -/
-private theorem spectralSplitting {S : H →L[ℝ] H} (hS : IsSelfAdjoint S) {c : ℝ} (hc : 0 < c)
+private theorem spectralSplitting {S : H →L[ℝ] H} (hS : IsSelfAdjoint S) {c : ℝ} (hc : 0 ≤ c)
     (h₁ : -c ∉ spectrum ℝ S) (h₂ : c ∉ spectrum ℝ S)
     (hfd : FiniteDimensional ℝ (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) S).range) :
     ∃ (_ : FiniteDimensional ℝ (cfc ((Ico (-c) 0).indicator (1 : ℝ → ℝ)) S).range)
@@ -130,28 +131,25 @@ private theorem spectralSplitting {S : H →L[ℝ] H} (hS : IsSelfAdjoint S) {c 
   have hdisj : Disjoint (Ico (-c) 0) (Icc 0 c) :=
     disjoint_left.2 fun x (hx : x ∈ Ico (-c) 0) (hx' : x ∈ Icc 0 c) ↦ (not_lt.2 hx'.1) hx.2
   refine ⟨‹_›, ‹_›, hmP, hpP, ?_, ?_⟩
-  · -- A vector in both ranges is fixed by both projections, whose product is `0`.
-    have h0 : Em * Ep = 0 := by
-      simp [Em, Ep, TauCeti.cfc_indicator_mul_cfc_indicator S hcm hcp, hdisj.inter_eq]
-    rw [eq_bot_iff]
-    rintro x ⟨⟨y, hy⟩, ⟨z, hz⟩⟩
-    rw [ContinuousLinearMap.coe_coe] at hy hz
-    have hxm : Em x = x := hy ▸ S.cfc_indicator_cfc_indicator_apply _ y
-    have hxp : Ep x = x := hz ▸ S.cfc_indicator_cfc_indicator_apply _ z
-    rw [Submodule.mem_bot]
-    calc x = (Em * Ep) x := by rw [mul_def, ContinuousLinearMap.comp_apply, hxp, hxm]
-      _ = 0 := by rw [h0, zero_apply]
+  · -- The two projections are idempotents with product `0`.
+    have hE : IsIdempotentElem (Em : Module.End ℝ H) :=
+      (TauCeti.isStarProjection_cfc_indicator S _).isIdempotentElem.map toLinearMapRingHom
+    have h0 : (Em : Module.End ℝ H) * Ep = 0 := by
+      simpa using congr(($(show Em * Ep = 0 by
+        simp [Em, Ep, TauCeti.cfc_indicator_mul_cfc_indicator S hcm hcp, hdisj.inter_eq]) :
+          Module.End ℝ H))
+    exact disjoint_iff.1 (hE.disjoint_range_of_mul_eq_zero h0)
   · have h := S.finrank_range_cfc_indicator_union hdisj hcm hcp
-    rwa [Ico_union_Icc_eq_Icc (by linarith) hc.le, ← spectralCount_def] at h
+    rwa [Ico_union_Icc_eq_Icc (by linarith) hc, ← spectralCount_def] at h
 
-/-- **Counting the eigenvalues below `0` by a negative index.** Let `c > 0` be a cut of a
+/-- **Counting the eigenvalues below `0` by a negative index.** Let `c ≥ 0` be a cut of a
 self-adjoint operator `S`: neither `-c` nor `c` is in its spectrum, and its spectral projection
 `P` for `[-c, c]` has finite rank. Let `U : K → H` be an injective map onto the range of `P`. Then
 the negative index of the form `(v, w) ↦ ⟪S (U v), U w⟫` on `K`, plus the number
 `spectralCount c S` of eigenvalues of `S` in `[0, c]`, is the dimension of `K`: the negative index
 counts the eigenvalues of `S` in `[-c, 0)`. -/
 theorem sigNeg_add_spectralCount_eq_finrank {S : H →L[ℝ] H} (hS : IsSelfAdjoint S) {c : ℝ}
-    (hc : 0 < c) (h₁ : -c ∉ spectrum ℝ S) (h₂ : c ∉ spectrum ℝ S)
+    (hc : 0 ≤ c) (h₁ : -c ∉ spectrum ℝ S) (h₂ : c ∉ spectrum ℝ S)
     (hfd : FiniteDimensional ℝ (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) S).range)
     {K : Type*} [NormedAddCommGroup K] [NormedSpace ℝ K] {U : K →L[ℝ] H} (hU : Injective U)
     (hUr : (U : K →ₗ[ℝ] H).range = (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) S).range) :
@@ -181,52 +179,19 @@ theorem sigNeg_add_spectralCount_eq_finrank {S : H →L[ℝ] H} (hS : IsSelfAdjo
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The form `(v, w) ↦ ⟪B (ι v), ι w⟫` on `E` of an operator `B` on `H`. -/
-private noncomputable def restrictForm (ι : E →L[ℝ] H) (B : H →L[ℝ] H) : E →L[ℝ] E →L[ℝ] ℝ :=
-  ((innerSL ℝ).comp B).bilinearComp ι ι
+/-- The form `(v, w) ↦ ⟪B (ι v), ι w⟫` on `E` of an operator `B` on `H`, as a continuous linear
+map in `B`. -/
+private noncomputable def restrictForm (ι : E →L[ℝ] H) :
+    (H →L[ℝ] H) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ :=
+  compL ℝ E (H →L[ℝ] ℝ) (E →L[ℝ] ℝ) ((compL ℝ E H ℝ).flip ι) ∘L
+    compL ℝ E H (H →L[ℝ] ℝ) (innerSL ℝ) ∘L (compL ℝ E H H).flip ι
 
 omit [CompleteSpace H] in
 private theorem restrictForm_apply (ι : E →L[ℝ] H) (B : H →L[ℝ] H) (v w : E) :
     restrictForm ι B v w = ⟪B (ι v), ι w⟫_ℝ := by
-  simp [restrictForm]
-
-omit [CompleteSpace H] in
-private theorem restrictForm_sub (ι : E →L[ℝ] H) (B C : H →L[ℝ] H) :
-    restrictForm ι (B - C) = restrictForm ι B - restrictForm ι C := by
-  ext v w
-  simp [restrictForm_apply, inner_sub_left]
-
-omit [CompleteSpace H] in
-private theorem restrictForm_smul (ι : E →L[ℝ] H) (a : ℝ) (B : H →L[ℝ] H) :
-    restrictForm ι (a • B) = a • restrictForm ι B := by
-  ext v w
-  simp [restrictForm_apply, inner_smul_left]
-
-omit [CompleteSpace H] in
-private theorem norm_restrictForm_le (ι : E →L[ℝ] H) (B : H →L[ℝ] H) :
-    ‖restrictForm ι B‖ ≤ ‖ι‖ * ‖ι‖ * ‖B‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound₂ (restrictForm ι B) (by positivity) fun v w ↦ ?_
-  rw [restrictForm_apply]
-  calc ‖⟪B (ι v), ι w⟫_ℝ‖ ≤ ‖B (ι v)‖ * ‖ι w‖ := norm_inner_le_norm _ _
-    _ ≤ (‖B‖ * (‖ι‖ * ‖v‖)) * (‖ι‖ * ‖w‖) := by
-      gcongr
-      · exact B.le_opNorm_of_le (ι.le_opNorm v)
-      · exact ι.le_opNorm w
-    _ = ‖ι‖ * ‖ι‖ * ‖B‖ * ‖v‖ * ‖w‖ := by ring
-
-omit [CompleteSpace H] in
-/-- `B ↦ ⟪B (ι ·), ι ·⟫` is continuous. -/
-private theorem tendsto_restrictForm {α : Type*} {l : Filter α} (ι : E →L[ℝ] H)
-    {B : α → H →L[ℝ] H} {B₀ : H →L[ℝ] H} (hB : Tendsto B l (𝓝 B₀)) :
-    Tendsto (fun a ↦ restrictForm ι (B a)) l (𝓝 (restrictForm ι B₀)) := by
-  have hB' := (tendsto_iff_norm_sub_tendsto_zero.1 hB).const_mul (‖ι‖ * ‖ι‖)
-  rw [mul_zero] at hB'
-  refine (tendsto_iff_norm_sub_tendsto_zero (f := fun a ↦ restrictForm ι (B a))
-    (b := restrictForm ι B₀)).2 (squeeze_zero
-      (f := fun a ↦ ‖restrictForm ι (B a) - restrictForm ι B₀‖)
-      (fun a ↦ norm_nonneg (restrictForm ι (B a) - restrictForm ι B₀)) (fun a ↦ ?_) hB')
-  rw [← restrictForm_sub]
-  exact norm_restrictForm_le ι _
+  -- `compL` sees `innerSL ℝ` with `RingHom.id ℝ` for `starRingEnd ℝ`, which `simp` cannot match.
+  simp only [restrictForm, coe_comp, Function.comp_apply, flip_apply, compL_apply]
+  exact innerSL_apply_apply ..
 
 variable {A : ℝ → H →L[ℝ] H} {A' : H →L[ℝ] H} {t₀ c : ℝ} {ι : E →L[ℝ] H}
 
@@ -257,9 +222,7 @@ private theorem compressedForm_eq (hK : ∀ v, A t₀ (ι v) = 0) (t : ℝ) :
 /-- The compressed path vanishes at `t₀` when `A t₀` vanishes on the image of `ι`. -/
 private theorem compressedForm_self (hK : ∀ v, A t₀ (ι v) = 0) :
     compressedForm A c ι t₀ = 0 := by
-  rw [compressedForm_eq hK, sub_self, mul_zero]
-  ext v w
-  simp [restrictForm_apply]
+  rw [compressedForm_eq hK, sub_self, mul_zero, map_zero]
 
 /-- **The slope of the compressed path.** If `A t₀` vanishes on the image of `ι` and the spectral
 projection `P t₀` fixes it, then along any filter on which `P t` tends to `P t₀` and the slope of
@@ -280,9 +243,9 @@ private theorem tendsto_slope_compressedForm {l : Filter ℝ} (hK : ∀ v, A t�
   have heq : slope (compressedForm A c ι) t₀ = fun t ↦ restrictForm ι (P t * slope A t₀ t) := by
     funext t
     rw [slope_def_module, slope_def_module, compressedForm_self hK,
-      sub_zero (compressedForm A c ι t), compressedForm_eq hK, mul_smul_comm, restrictForm_smul]
+      sub_zero (compressedForm A c ι t), compressedForm_eq hK, mul_smul_comm, map_smul]
   rw [heq, hlim]
-  exact tendsto_restrictForm ι (hP.mul hA)
+  exact ((restrictForm ι).continuous.tendsto _).comp (hP.mul hA)
 
 /-- **The derivative of the compressed path.** If `A t₀` vanishes on the image of `ι`, the spectral
 projection `P t₀` fixes it and `P` is continuous within `s` at `t₀`, then the compressed path has
@@ -354,7 +317,7 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
       · rintro _ ⟨v, rfl⟩
         exact ⟨v, by simp⟩
       · rw [LinearMap.finrank_range_of_inj hinj, hrk, hK]
-    exact sigNeg_add_spectralCount_eq_finrank hst hc h₁ h₂ hfd hinj hrange
+    exact sigNeg_add_spectralCount_eq_finrank hst hc.le h₁ h₂ hfd hinj hrange
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.1 hloc
   refine ⟨ε, hε, fun a b ha hab hb hs ↦ ?_⟩
   have hsub : Icc a b ⊆ Metric.ball t₀ ε ∩ s := fun u hu ↦ by
