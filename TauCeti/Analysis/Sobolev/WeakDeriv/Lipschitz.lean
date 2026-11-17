@@ -46,6 +46,8 @@ reduced to the real case by testing the identity against continuous linear funct
 * `LocallyLipschitzOn.hasWeakFDerivOn`: the same for an almost-everywhere Fréchet derivative.
 * `LocallyLipschitzOn.hasWeakFDerivOn_fderiv`: for a finite-dimensional codomain, `fderiv ℝ u` is
   the weak derivative.
+* `TauCeti.hasWeakFDerivOn_norm_and_norm_fderiv_le_one`: the norm on any finite-dimensional real
+  normed space has weak derivative `fderiv ℝ norm`, with operator norm bounded everywhere by `1`.
 
 ## References
 
@@ -137,5 +139,13 @@ theorem _root_.LocallyLipschitzOn.hasWeakFDerivOn_fderiv [FiniteDimensional ℝ 
     (hu : LocallyLipschitzOn Ω u) : HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
   hu.hasWeakFDerivOn ((hu.ae_differentiableAt_of_mem Ω.isOpen).mono fun _ hx hxΩ =>
     (hx hxΩ).hasFDerivAt)
+
+/-- On any open subset `Ω` of a finite-dimensional real normed space, `fderiv ℝ norm` is a weak
+Fréchet derivative of `x ↦ ‖x‖` and has operator norm bounded everywhere by `1`. -/
+theorem hasWeakFDerivOn_norm_and_norm_fderiv_le_one (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E => ‖x‖) (fderiv ℝ fun x : E => ‖x‖) ∧
+      ∀ x : E, ‖fderiv ℝ (fun y : E => ‖y‖) x‖ ≤ 1 :=
+  ⟨lipschitzWith_one_norm.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv,
+    fun x => by simpa using norm_fderiv_le_of_lipschitz ℝ lipschitzWith_one_norm (x₀ := x)⟩
 
 end TauCeti

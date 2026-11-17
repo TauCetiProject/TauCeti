@@ -8,9 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-public import Mathlib.Analysis.InnerProductSpace.Dual
-public import Mathlib.MeasureTheory.Measure.Typeclasses.NoAtoms
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Nonseparable
 
 /-!
 # Dual scalar testing and separability obstructions for Banach-valued local Sobolev maps
@@ -28,23 +27,21 @@ points by Hahn–Banach. Consequently:
 3. Without prior Bochner measurability (`AEStronglyMeasurable`), scalar testing does **not**
    suffice on nonseparable targets: for the uncountable orthonormal family
    `u : E → lp (fun _ : E => ℝ) 2`, `x ↦ lp.single 2 x 1` on any nontrivial finite-dimensional
-   real normed space `E`, Riesz representation and countable support of `ℓ²` sequences force
-   `ℓ ∘ u = 0` almost everywhere for every `ℓ : StrongDual ℝ (lp (fun _ : E => ℝ) 2)`, so every
-   scalar composition `ℓ ∘ u` belongs to `MemWkpLoc p U k` of every order `k` and exponent `p`.
-   Yet the pairwise distance `√2 ≥ 1` between distinct values prevents `u` from having an almost
-   everywhere separable range on any set of positive measure (Pettis's measurability theorem), so
-   `u` fails `MemLpLoc p U` and `MemWkpLoc p U k` on every domain with nonempty interior.
+   real normed space `E`, `StrongDual.comp_lp_single_ae_eq_zero` shows `ℓ ∘ u = 0` almost
+   everywhere for every `ℓ : StrongDual ℝ (lp (fun _ : E => ℝ) 2)`, so every scalar composition
+   `ℓ ∘ u` belongs to `MemWkpLoc p U k` of every order `k` and exponent `p`. Yet
+   `TauCeti.not_aestronglyMeasurable_lp_single` shows `u` fails Bochner strong measurability on
+   every set of positive measure, so `u` fails `MemLpLoc p U` and `MemWkpLoc p U k` on every domain
+   with nonempty interior.
 
 ## Main declarations
 
 * `TauCeti.memWkpLoc_one_of_forall_strongDual`,
   `TauCeti.memWkpLoc_one_opens_of_forall_strongDual`: sufficiency of dual testing for
   `MemWkpLoc p U 1` once `u` and `D` lie in `MemLpLoc p U` (`1 ≤ p`).
-* `TauCeti.strongDual_comp_lp_single_ae_eq_zero`: every continuous linear functional on
-  `lp (fun _ : E => ℝ) 2` vanishes almost everywhere along `x ↦ lp.single 2 x 1` under any
-  atomless measure.
-* `TauCeti.not_aestronglyMeasurable_lp_single`: `x ↦ lp.single 2 x 1` is not Bochner
-  a.e.-strongly measurable on any set of positive atomless measure.
+* `TauCeti.memWkpLoc_strongDual_comp_lp_single`, `TauCeti.not_memLpLoc_lp_single`,
+  `TauCeti.not_memWkpLoc_lp_single`: local Sobolev membership of dual compositions versus failure
+  of `MemLpLoc` and `MemWkpLoc` for `x ↦ lp.single 2 x 1`.
 * `TauCeti.forall_strongDual_memWkpLoc_and_not_memLpLoc_lp_single`: on any domain `U` with
   nonempty interior in a nontrivial finite-dimensional space, all scalar dual compositions and
   coordinates lie in `MemWkpLoc p U k`, whereas the map itself lies in neither `MemLpLoc p U` nor
@@ -61,7 +58,7 @@ points by Hahn–Banach. Consequently:
 public noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProductSpace
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -107,83 +104,6 @@ end StrongDual
 
 /-! ### Non-sufficiency of scalar testing without Bochner measurability -/
 
-section NonseparableCounterexample
-
-/-- Under any measure `μ` on `E` assigning zero mass to singletons, every continuous linear
-functional `ℓ` on the nonseparable Hilbert space `lp (fun _ : E => ℝ) 2` vanishes `μ`-almost
-everywhere along the orthonormal family `x ↦ lp.single 2 x 1`: by Riesz representation `ℓ` pairs
-with an `ℓ²` family whose support is countable, hence `μ`-null. -/
-theorem strongDual_comp_lp_single_ae_eq_zero {E : Type*} [DecidableEq E] [MeasurableSpace E]
-    {μ : Measure E} [NullSingletonClass μ] (ℓ : StrongDual ℝ (lp (fun _ : E => ℝ) 2)) :
-    (fun x : E => ℓ (lp.single 2 x (1 : ℝ))) =ᵐ[μ] 0 := by
-  let g : lp (fun _ : E => ℝ) 2 := (InnerProductSpace.toDual ℝ (lp (fun _ : E => ℝ) 2)).symm ℓ
-  have hval : ∀ x : E, ℓ (lp.single 2 x (1 : ℝ)) = g x := fun x => by
-    rw [← InnerProductSpace.toDual_symm_apply, lp.inner_single_right (G := fun _ : E => ℝ)]
-    simp [g]
-  have hsupp : {x : E | g x ≠ 0}.Countable := by
-    refine ((g.prop.summable (by norm_num)).countable_support).mono fun x hx => ?_
-    simp only [Function.mem_support, ne_eq]
-    exact Real.rpow_ne_zero (norm_nonneg _) (by norm_num) |>.2 (norm_ne_zero_iff.2 hx)
-  rw [Filter.EventuallyEq, ae_iff]
-  refine measure_mono_null (fun x hx => ?_) (hsupp.measure_zero μ)
-  simpa [hval x] using hx
-
-/-- Distinct unit basis vectors in `lp (fun _ : E => ℝ) 2` lie at distance at least `1`. -/
-private theorem one_le_dist_lp_single {E : Type*} [DecidableEq E] {x y : E} (hxy : x ≠ y) :
-    (1 : ℝ) ≤ dist (lp.single (E := fun _ : E => ℝ) 2 x 1)
-      (lp.single (E := fun _ : E => ℝ) 2 y 1) := by
-  rw [dist_eq_norm]
-  have hle := lp.norm_apply_le_norm (p := 2) (by norm_num)
-    (lp.single (E := fun _ : E => ℝ) 2 x 1 - lp.single (E := fun _ : E => ℝ) 2 y 1) x
-  rwa [lp.coeFn_sub, Pi.sub_apply, lp.coeFn_single, lp.coeFn_single, Pi.single_eq_same,
-    Pi.single_eq_of_ne hxy, sub_zero, norm_one] at hle
-
-/-- Under any measure `μ` assigning zero mass to singletons, the unit-basis map
-`x ↦ lp.single 2 x 1` into `lp (fun _ : E => ℝ) 2` is not Bochner `AEStronglyMeasurable` on any
-set `s` of positive measure: any separable set in the codomain contains at most countably many
-pairwise `1`-separated points, whose preimage has `μ`-measure zero. -/
-theorem not_aestronglyMeasurable_lp_single {E : Type*} [DecidableEq E] [MeasurableSpace E]
-    {μ : Measure E} [NullSingletonClass μ] {s : Set E} (hs : μ s ≠ 0) :
-    ¬ AEStronglyMeasurable (fun x : E => lp.single (E := fun _ : E => ℝ) 2 x 1)
-      (μ.restrict s) := by
-  intro hu
-  obtain ⟨t, ⟨c, hc_count, htc⟩, hae⟩ := hu.isSeparable_ae_range
-  let S : Set E := {x : E | lp.single (E := fun _ : E => ℝ) 2 x 1 ∈ t}
-  have hnear : ∀ x : S, ∃ z : c,
-      dist (lp.single (E := fun _ : E => ℝ) 2 x.1 1) z.1 < 1 / 2 := fun x => by
-    obtain ⟨z, hzc, hxz⟩ := Metric.mem_closure_iff.1 (htc x.2) (1 / 2) (by norm_num)
-    exact ⟨⟨z, hzc⟩, hxz⟩
-  choose f hf using hnear
-  have hfinj : Function.Injective f := by
-    intro x y hxy
-    by_contra hne
-    have h1 : (1 : ℝ) ≤ dist (lp.single (E := fun _ : E => ℝ) 2 x.1 1)
-        (lp.single (E := fun _ : E => ℝ) 2 y.1 1) :=
-      one_le_dist_lp_single (Subtype.coe_ne_coe.2 hne)
-    have hlt : dist (lp.single (E := fun _ : E => ℝ) 2 x.1 1)
-        (lp.single (E := fun _ : E => ℝ) 2 y.1 1) < 1 := by
-      calc dist (lp.single (E := fun _ : E => ℝ) 2 x.1 1)
-            (lp.single (E := fun _ : E => ℝ) 2 y.1 1)
-          ≤ dist (lp.single (E := fun _ : E => ℝ) 2 x.1 1) (f x).1 +
-              dist (lp.single (E := fun _ : E => ℝ) 2 y.1 1) (f x).1 := dist_triangle_right _ _ _
-        _ = dist (lp.single (E := fun _ : E => ℝ) 2 x.1 1) (f x).1 +
-              dist (lp.single (E := fun _ : E => ℝ) 2 y.1 1) (f y).1 := by rw [hxy]
-        _ < 1 / 2 + 1 / 2 := add_lt_add (hf x) (hf y)
-        _ = 1 := by norm_num
-    exact h1.not_gt hlt
-  have : Countable c := hc_count.to_subtype
-  have hS_count : S.Countable := Set.countable_coe_iff.1 (Function.Injective.countable hfinj)
-  have hS_zero : (μ.restrict s) S = 0 :=
-    nonpos_iff_eq_zero.1 ((Measure.restrict_apply_le s S).trans (hS_count.measure_zero μ).le)
-  have hSc_zero : (μ.restrict s) Sᶜ = 0 := ae_iff.1 hae
-  have h_univ : (μ.restrict s) univ = 0 := nonpos_iff_eq_zero.1 <| by
-    calc (μ.restrict s) univ
-        ≤ (μ.restrict s) S + (μ.restrict s) Sᶜ := by
-          simpa only [union_compl_self] using measure_union_le S Sᶜ
-      _ = 0 := by simp [hS_zero, hSc_zero]
-  rw [Measure.restrict_apply_univ] at h_univ
-  exact hs h_univ
-
 section NormedDomain
 
 variable {E : Type*} [DecidableEq E] [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -197,7 +117,7 @@ theorem memWkpLoc_strongDual_comp_lp_single (p : ℝ≥0∞) (U : Set E) (k : �
     (ℓ : StrongDual ℝ (lp (fun _ : E => ℝ) 2)) :
     MemWkpLoc p U k (fun x : E => ℓ (lp.single (E := fun _ : E => ℝ) 2 x 1)) :=
   memWkpLoc_zero_fun.congr_ae <|
-    ae_restrict_of_ae (strongDual_comp_lp_single_ae_eq_zero (μ := volume) ℓ).symm
+    ae_restrict_of_ae (ℓ.comp_lp_single_ae_eq_zero (μ := volume) (fun _ => (1 : ℝ))).symm
 
 /-- On any set `U` with nonempty interior in a nontrivial finite-dimensional real normed space,
 `x ↦ lp.single 2 x 1` fails `MemLpLoc p U` for every exponent `p : ℝ≥0∞` (including `0` and `∞`),
@@ -213,7 +133,7 @@ theorem not_memLpLoc_lp_single {U : Set E} (hU : (interior U).Nonempty) (p : ℝ
   have hpos : (volume : Measure E) (Metric.closedBall x₀ (r / 2)) ≠ 0 :=
     (hpos_ball.trans_le (measure_mono Metric.ball_subset_closedBall)).ne'
   intro hmem
-  exact not_aestronglyMeasurable_lp_single hpos
+  exact not_aestronglyMeasurable_lp_single (fun _ _ => one_ne_zero) hpos
     (memLpLoc_iff.1 hmem (Metric.closedBall x₀ (r / 2)) hsub
       (isCompact_closedBall x₀ (r / 2))).aestronglyMeasurable
 
@@ -241,7 +161,5 @@ theorem forall_strongDual_memWkpLoc_and_not_memLpLoc_lp_single {U : Set E}
     not_memLpLoc_lp_single hU p, not_memWkpLoc_lp_single hU p k⟩
 
 end NormedDomain
-
-end NonseparableCounterexample
 
 end TauCeti

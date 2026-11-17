@@ -207,10 +207,10 @@ theorem MemLpLoc.locallyIntegrableOn [LocallyCompactSpace E]
     memLp_one_iff_integrable.1 ((hf.mono_exponent hp) K hK hc)
 
 /-- On a locally closed set, local `L¹` membership is exactly local integrability. -/
-theorem memLpLoc_one_iff_locallyIntegrableOn [LocallyCompactSpace E]
-    [IsFiniteMeasureOnCompacts (volume : Measure E)] (hU : IsLocallyClosed U) :
+theorem memLpLoc_one_iff_locallyIntegrableOn [LocallyCompactSpace E] (hU : IsLocallyClosed U) :
     MemLpLoc 1 U f ↔ LocallyIntegrableOn f U volume :=
-  ⟨fun hf => hf.locallyIntegrableOn le_rfl hU,
+  ⟨fun hf => (locallyIntegrableOn_iff hU).2 fun K hK hc =>
+      memLp_one_iff_integrable.1 (hf K hK hc),
     fun hf _K hK hc => memLp_one_iff_integrable.2 (hf.integrableOn_compact_subset hK hc)⟩
 
 /-- A finite sum of locally `Lᵖ` functions is locally `Lᵖ`, without a completeness assumption. -/
@@ -345,27 +345,27 @@ theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
 /-- A factor continuous on `U` preserves local `Lᵖ` membership on `U`, since it is bounded on
 every compact subset of `U`. -/
 theorem MemLpLoc.continuousOn_smul [T2Space E] [OpensMeasurableSpace E]
-    [IsFiniteMeasureOnCompacts (volume : Measure E)] {χ : E → ℝ} (hf : MemLpLoc p U f)
-    (hχ : ContinuousOn χ U) : MemLpLoc p U (fun x => χ x • f x) :=
+    {χ : E → ℝ} (hf : MemLpLoc p U f) (hχ : ContinuousOn χ U) :
+    MemLpLoc p U (fun x => χ x • f x) :=
   memLpLoc_iff.2 fun K hK hc =>
-    (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
+    ((hχ.mono hK).memLp_top_restrict_of_subset_isCompact hc hc.measurableSet subset_rfl).smul
+      (memLpLoc_iff.1 hf K hK hc)
 
 /-- A locally `Lᵖ` field of continuous linear maps applied to a map continuous on `U` is locally
 `Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
 theorem MemLpLoc.clm_apply_continuousOn [T2Space E] [OpensMeasurableSpace E]
-    [IsFiniteMeasureOnCompacts (volume : Measure E)] {A : E → F →L[ℝ] G} (hA : MemLpLoc p U A)
-    (hf : ContinuousOn f U) : MemLpLoc p U (fun x => A x (f x)) :=
+    {A : E → F →L[ℝ] G} (hA : MemLpLoc p U A) (hf : ContinuousOn f U) :
+    MemLpLoc p U (fun x => A x (f x)) :=
   memLpLoc_iff.2 fun K hK hc =>
-    (memLpLoc_iff.1 hA K hK hc).of_bilin (fun B x => B x) 1
-      (memLpLoc_iff.1 (hf.memLpLoc (p := ⊤)) K hK hc) isBoundedBilinearMap_apply.continuous
-      (.of_forall fun x => by simpa using (A x).le_opNNNorm (f x))
+    (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin p (memLpLoc_iff.1 hA K hK hc)
+      ((hf.mono hK).memLp_top_restrict_of_subset_isCompact hc hc.measurableSet subset_rfl)
 
 /-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
 `Lᵖ` function on the whole space: on a compact set `K` the product only sees
 `K ∩ tsupport χ`, a compact subset of `U`. -/
 theorem MemLpLoc.continuous_smul_of_tsupport_subset [T2Space E] [OpensMeasurableSpace E]
-    [IsFiniteMeasureOnCompacts (volume : Measure E)] {χ : E → ℝ} (hf : MemLpLoc p U f)
-    (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) : MemLpLoc p Set.univ (fun x => χ x • f x) := by
+    {χ : E → ℝ} (hf : MemLpLoc p U f) (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) :
+    MemLpLoc p Set.univ (fun x => χ x • f x) := by
   have hT := hf.continuousOn_smul hχ.continuousOn
   have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
   refine memLpLoc_iff.2 fun K _ hK => ?_

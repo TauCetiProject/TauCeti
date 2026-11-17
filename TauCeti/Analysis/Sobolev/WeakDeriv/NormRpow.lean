@@ -8,9 +8,13 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
+import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
@@ -42,6 +46,12 @@ unit radial field `x / ‖x‖`, which is the weak gradient of the norm, are wea
 every open set: their regularizations `(‖x‖ ^ 2 + t) ^ (-1 / 2) ⟪x, v⟫` and the derivatives of
 those converge in `L¹` on the unit ball, dominated by `‖v‖` and by `2 ‖v‖ ‖x‖⁻¹`.
 
+The file also assembles the vector-valued radial power fields `x ↦ ‖x‖ ^ α • x` (`-1 < α`, any
+nontrivial `E`) and the unit radial retraction `x ↦ ‖x‖⁻¹ • x` (`d ≥ 2`), with unexposed derivative
+operators `TauCeti.radialRpowDeriv` and `TauCeti.unitRadialDeriv`, characteristic evaluation and
+zero equations, two-sided operator norm bounds, measurability, and weak differentiability on every
+open set.
+
 ## Main declarations
 
 * `TauCeti.locallyIntegrable_norm_rpow_smul_innerSL`: the classical derivative is locally
@@ -55,6 +65,17 @@ those converge in `L¹` on the unit ball, dominated by `‖v‖` and by `2 ‖v�
 * `TauCeti.abs_norm_rpow_neg_one_mul_inner_le`,
   `TauCeti.norm_norm_rpow_neg_one_smul_innerSL_sub_le`: the coordinates are bounded by `‖v‖` and
   their derivatives by `2 ‖v‖ ‖x‖⁻¹`.
+* `TauCeti.radialRpowDeriv`, `TauCeti.radialRpowDeriv_apply`, `TauCeti.radialRpowDeriv_zero`,
+  `TauCeti.radialRpowDeriv_zero_exp`, `TauCeti.radialRpowDeriv_zero_of_ne_zero`,
+  `TauCeti.hasFDerivAt_norm_rpow_smul_of_ne`, `TauCeti.norm_radialRpowDeriv_le`,
+  `TauCeti.le_norm_radialRpowDeriv`, `TauCeti.aestronglyMeasurable_radialRpowDeriv`,
+  `TauCeti.hasWeakFDerivOn_norm_rpow_smul`:
+  derivative field, API equations, norm bounds, and weak differentiability of `x ↦ ‖x‖ ^ α • x`.
+* `TauCeti.unitRadialDeriv`, `TauCeti.unitRadialDeriv_apply`, `TauCeti.unitRadialDeriv_zero`,
+  `TauCeti.radialRpowDeriv_neg_one`, `TauCeti.norm_unitRadialDeriv_le`,
+  `TauCeti.norm_inv_le_norm_unitRadialDeriv`, `TauCeti.aestronglyMeasurable_unitRadialDeriv`,
+  `TauCeti.hasWeakFDerivOn_norm_inv_smul`: derivative field, API equations, norm bounds, and weak
+  differentiability of `x ↦ ‖x‖⁻¹ • x`.
 -/
 
 public section
@@ -414,5 +435,252 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_mul_inner (hd : 1 < Module.finrank ℝ
   rcases eq_or_ne x 0 with rfl | hx
   · exact Or.inl (Metric.mem_ball_self one_pos)
   · exact Or.inr hx
+
+/-! ### Vector radial powers `x ↦ ‖x‖ ^ α • x` -/
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Classical Fréchet derivative field of the vector radial power `x ↦ ‖x‖ ^ α • x` away from the
+origin: `‖x‖ ^ α • id + (α * ‖x‖ ^ (α - 2)) • (⟪x, ·⟫ • x)`. -/
+def radialRpowDeriv (α : ℝ) (x : E) : E →L[ℝ] E :=
+  ‖x‖ ^ α • ContinuousLinearMap.id ℝ E +
+    (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Characteristic evaluation formula for `radialRpowDeriv`. -/
+theorem radialRpowDeriv_apply (α : ℝ) (x v : E) :
+    radialRpowDeriv α x v = ‖x‖ ^ α • v + (α * ‖x‖ ^ (α - 2) * ⟪x, v⟫) • x := by
+  simp [radialRpowDeriv, mul_smul]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- At the origin, `radialRpowDeriv α 0` simplifies to `(0 : ℝ) ^ α • id` (equal to `id` when
+`α = 0` and to `0` when `α ≠ 0`). -/
+@[simp]
+theorem radialRpowDeriv_zero (α : ℝ) :
+    radialRpowDeriv α (0 : E) = (0 : ℝ) ^ α • ContinuousLinearMap.id ℝ E := by
+  simp [radialRpowDeriv]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- At exponent `α = 0`, `radialRpowDeriv 0 x` is the identity operator everywhere, including at
+the origin. -/
+@[simp]
+theorem radialRpowDeriv_zero_exp (x : E) :
+    radialRpowDeriv 0 x = ContinuousLinearMap.id ℝ E := by
+  simp [radialRpowDeriv]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- For any nonzero exponent `α ≠ 0`, `radialRpowDeriv α` vanishes at the origin. -/
+theorem radialRpowDeriv_zero_of_ne_zero {α : ℝ} (hα : α ≠ 0) :
+    radialRpowDeriv α (0 : E) = 0 := by
+  rw [radialRpowDeriv_zero, Real.zero_rpow hα, zero_smul]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Away from the origin, `radialRpowDeriv α x` is the classical Fréchet derivative of
+`y ↦ ‖y‖ ^ α • y` at `x`. -/
+theorem hasFDerivAt_norm_rpow_smul_of_ne (α : ℝ) {x : E} (hx : x ≠ 0) :
+    HasFDerivAt (fun y : E => ‖y‖ ^ α • y) (radialRpowDeriv α x) x := by
+  refine ((hasFDerivAt_norm_rpow_of_ne α hx).smul (hasFDerivAt_id x)).congr_fderiv ?_
+  ext v
+  simp [radialRpowDeriv, mul_smul]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Operator norm upper bound `‖radialRpowDeriv α x‖ ≤ (1 + |α|) * ‖x‖ ^ α` away from `0`. -/
+theorem norm_radialRpowDeriv_le (α : ℝ) {x : E} (hx : x ≠ 0) :
+    ‖radialRpowDeriv α x‖ ≤ (1 + |α|) * ‖x‖ ^ α := by
+  have hx_pos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hsq : ‖x‖ ^ (α - 2) * (‖x‖ * ‖x‖) = ‖x‖ ^ α := by
+    calc ‖x‖ ^ (α - 2) * (‖x‖ * ‖x‖)
+        = ‖x‖ ^ (α - 2) * ‖x‖ ^ (2 : ℝ) := by rw [Real.rpow_two, sq]
+      _ = ‖x‖ ^ α := by
+        rw [← Real.rpow_add hx_pos]
+        ring_nf
+  calc ‖radialRpowDeriv α x‖
+      ≤ ‖‖x‖ ^ α • ContinuousLinearMap.id ℝ E‖ +
+          ‖(α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x‖ := norm_add_le _ _
+    _ ≤ ‖x‖ ^ α * 1 + |α| * ‖x‖ ^ (α - 2) * (‖x‖ * ‖x‖) := by
+        rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg hx_pos.le α),
+          norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg (Real.rpow_nonneg hx_pos.le _),
+          ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm]
+        gcongr
+        exact ContinuousLinearMap.norm_id_le
+    _ = (1 + |α|) * ‖x‖ ^ α := by
+        rw [mul_assoc |α|, hsq]
+        ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Operator norm lower bound `(1 + α) * ‖x‖ ^ α ≤ ‖radialRpowDeriv α x‖` along the radial
+direction away from `0`, for `-1 < α`. -/
+theorem le_norm_radialRpowDeriv {α : ℝ} (hα : -1 < α) {x : E} (hx : x ≠ 0) :
+    (1 + α) * ‖x‖ ^ α ≤ ‖radialRpowDeriv α x‖ := by
+  have hx_pos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  let u₀ : E := ‖x‖⁻¹ • x
+  have hu₀ : ‖u₀‖ = 1 := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hx_pos.le), inv_mul_cancel₀ hx_pos.ne']
+  have happly : radialRpowDeriv α x u₀ = ((1 + α) * ‖x‖ ^ α) • u₀ := by
+    have hxx : ⟪x, x⟫ = ‖x‖ ^ (2 : ℝ) := by rw [real_inner_self_eq_norm_sq, Real.rpow_two]
+    have hpow : ‖x‖ ^ (α - 2) * ‖x‖ ^ (2 : ℝ) = ‖x‖ ^ α := by
+      rw [← Real.rpow_add hx_pos]
+      ring_nf
+    rw [radialRpowDeriv_apply]
+    simp only [u₀, real_inner_smul_right, hxx]
+    rw [smul_smul, smul_smul, ← add_smul]
+    congr 1
+    calc ‖x‖ ^ α * ‖x‖⁻¹ + α * ‖x‖ ^ (α - 2) * (‖x‖⁻¹ * ‖x‖ ^ (2 : ℝ))
+        = (1 + α) * (‖x‖ ^ α * ‖x‖⁻¹) := by
+          rw [← hpow]
+          ring
+      _ = (1 + α) * ‖x‖ ^ α * ‖x‖⁻¹ := by ring
+  have hle := (radialRpowDeriv α x).le_opNorm u₀
+  rw [happly, norm_smul, hu₀, mul_one, mul_one,
+    Real.norm_of_nonneg (mul_nonneg (by linarith) (Real.rpow_nonneg hx_pos.le α))] at hle
+  exact hle
+
+omit [μ.IsAddHaarMeasure] in
+/-- The derivative field `radialRpowDeriv α` is Bochner `AEStronglyMeasurable` with respect to
+every measure `μ` on a finite-dimensional real inner product space `E`. -/
+theorem aestronglyMeasurable_radialRpowDeriv (α : ℝ) :
+    AEStronglyMeasurable (radialRpowDeriv (E := E) α) μ := by
+  unfold radialRpowDeriv
+  have hcont : Continuous (fun x : E => (innerSL ℝ x).smulRight x) :=
+    ((ContinuousLinearMap.smulRightL ℝ E E).continuous.comp (innerSL ℝ).continuous).clm_apply
+      continuous_id
+  exact ((measurable_norm.pow_const α).aestronglyMeasurable.smul aestronglyMeasurable_const).add
+    ((measurable_const.mul (measurable_norm.pow_const (α - 2))).aestronglyMeasurable.smul
+      hcont.aestronglyMeasurable)
+
+/-- **Weak differentiability of `x ↦ ‖x‖ ^ α • x` for `-1 < α`.** On any nontrivial
+finite-dimensional real inner product space `E` with an additive Haar measure `μ`, `-1 < α` makes
+`x ↦ ‖x‖ ^ α • x` continuous at `0` and its classical derivative `radialRpowDeriv α` (of size
+`‖x‖ ^ α`, with `-dim E ≤ -1 < α`) locally integrable, so `radialRpowDeriv α` is its weak
+derivative on every open set `Ω`. -/
+theorem hasWeakFDerivOn_norm_rpow_smul [Nontrivial E] {α : ℝ} (hα : -1 < α) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E => ‖x‖ ^ α • x) (radialRpowDeriv α) := by
+  have hd : (1 : ℝ) ≤ Module.finrank ℝ E := by
+    exact_mod_cast Nat.succ_le_of_lt (Module.finrank_pos (R := ℝ) (M := E))
+  have hloc : LocallyIntegrable (radialRpowDeriv α) μ := by
+    have h := (locallyIntegrable_norm_sub_rpow (mu := μ) (s := α)
+      (by linarith : -(Module.finrank ℝ E : ℝ) < α) 0).smul (1 + |α|)
+    refine h.mono (aestronglyMeasurable_radialRpowDeriv α) ?_
+    filter_upwards [μ.ae_ne 0] with x hx
+    rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
+    exact norm_radialRpowDeriv_le α hx
+  exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+    (continuous_norm_rpow_smul hα).continuousOn (hloc.locallyIntegrableOn _)
+    fun x hx => hasFDerivAt_norm_rpow_smul_of_ne α hx.2
+
+/-! ### Vector unit radial retraction `x ↦ ‖x‖⁻¹ • x` -/
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Classical Fréchet derivative field of the unit radial retraction `x ↦ ‖x‖⁻¹ • x`:
+`‖x‖⁻¹ • id - ‖x‖ ^ (-3 : ℝ) • (⟪x, ·⟫ • x)`. -/
+def unitRadialDeriv (x : E) : E →L[ℝ] E :=
+  ‖x‖⁻¹ • ContinuousLinearMap.id ℝ E - ‖x‖ ^ (-3 : ℝ) • (innerSL ℝ x).smulRight x
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Characteristic evaluation formula for `unitRadialDeriv`. -/
+theorem unitRadialDeriv_apply (x v : E) :
+    unitRadialDeriv x v = ‖x‖⁻¹ • v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • x := by
+  simp [unitRadialDeriv, mul_smul]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- At the origin, `unitRadialDeriv 0` is the zero operator. -/
+@[simp]
+theorem unitRadialDeriv_zero : unitRadialDeriv (0 : E) = 0 := by
+  simp [unitRadialDeriv]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- `unitRadialDeriv` is the `α = -1` specialization of `radialRpowDeriv` everywhere, including at
+the origin. -/
+theorem radialRpowDeriv_neg_one (x : E) :
+    radialRpowDeriv (-1 : ℝ) x = unitRadialDeriv x := by
+  ext v
+  rw [radialRpowDeriv_apply, unitRadialDeriv_apply, Real.rpow_neg_one]
+  norm_num [sub_eq_add_neg, neg_smul]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Operator norm upper bound `‖unitRadialDeriv x‖ ≤ 2 * ‖x‖⁻¹` at every point `x : E`. -/
+theorem norm_unitRadialDeriv_le (x : E) : ‖unitRadialDeriv x‖ ≤ 2 * ‖x‖⁻¹ := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hx_pos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have h3 : ‖x‖ ^ (-3 : ℝ) * (‖x‖ * ‖x‖) = ‖x‖⁻¹ := by
+    calc ‖x‖ ^ (-3 : ℝ) * (‖x‖ * ‖x‖)
+        = ‖x‖ ^ (-3 : ℝ) * ‖x‖ ^ (2 : ℝ) := by rw [Real.rpow_two, sq]
+      _ = ‖x‖ ^ (-1 : ℝ) := by
+        rw [← Real.rpow_add hx_pos]
+        norm_num
+      _ = ‖x‖⁻¹ := Real.rpow_neg_one ‖x‖
+  calc ‖unitRadialDeriv x‖
+      ≤ ‖‖x‖⁻¹ • ContinuousLinearMap.id ℝ E‖ +
+          ‖‖x‖ ^ (-3 : ℝ) • (innerSL ℝ x).smulRight x‖ := norm_sub_le _ _
+    _ ≤ ‖x‖⁻¹ * 1 + ‖x‖ ^ (-3 : ℝ) * (‖x‖ * ‖x‖) := by
+        rw [norm_smul, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hx_pos.le),
+          Real.norm_of_nonneg (Real.rpow_nonneg hx_pos.le _),
+          ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm]
+        gcongr
+        exact ContinuousLinearMap.norm_id_le
+    _ = 2 * ‖x‖⁻¹ := by
+        rw [h3]
+        ring
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- In dimension at least `2`, `unitRadialDeriv x` stretches any unit tangential vector by
+`‖x‖⁻¹`, giving `‖x‖⁻¹ ≤ ‖unitRadialDeriv x‖` away from `0`. -/
+theorem norm_inv_le_norm_unitRadialDeriv (hd : 1 < Module.finrank ℝ E) {x : E} (hx : x ≠ 0) :
+    ‖x‖⁻¹ ≤ ‖unitRadialDeriv x‖ := by
+  let K : Submodule ℝ E := ℝ ∙ x
+  have hK_le : Module.finrank ℝ K ≤ 1 := (finrank_span_singleton hx).le
+  have h_orth_pos : 0 < Module.finrank ℝ Kᗮ := by
+    have hsum := K.finrank_add_finrank_orthogonal
+    omega
+  have : Nontrivial Kᗮ := Module.nontrivial_of_finrank_pos h_orth_pos
+  obtain ⟨⟨v, hvK⟩, hv0⟩ := exists_ne (0 : Kᗮ)
+  have hv_ne : v ≠ 0 := Subtype.coe_ne_coe.2 hv0
+  have hv_pos : 0 < ‖v‖ := norm_pos_iff.2 hv_ne
+  have hxv : ⟪x, v⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 hvK
+  let w : E := ‖v‖⁻¹ • v
+  have hw_norm : ‖w‖ = 1 := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hv_pos.le), inv_mul_cancel₀ hv_pos.ne']
+  have hxw : ⟪x, w⟫ = 0 := by simp [w, real_inner_smul_right, hxv]
+  have happly : unitRadialDeriv x w = ‖x‖⁻¹ • w := by
+    rw [unitRadialDeriv_apply, hxw, mul_zero, zero_smul, sub_zero]
+  have hle := (unitRadialDeriv x).le_opNorm w
+  rw [happly, norm_smul, hw_norm, mul_one, mul_one,
+    Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x))] at hle
+  exact hle
+
+omit [μ.IsAddHaarMeasure] in
+/-- The derivative field `unitRadialDeriv` is Bochner `AEStronglyMeasurable` with respect to every
+measure `μ` on a finite-dimensional real inner product space `E`. -/
+theorem aestronglyMeasurable_unitRadialDeriv :
+    AEStronglyMeasurable (unitRadialDeriv (E := E)) μ := by
+  unfold unitRadialDeriv
+  have hcont : Continuous (fun x : E => (innerSL ℝ x).smulRight x) :=
+    ((ContinuousLinearMap.smulRightL ℝ E E).continuous.comp (innerSL ℝ).continuous).clm_apply
+      continuous_id
+  exact (measurable_norm.inv.aestronglyMeasurable.smul aestronglyMeasurable_const).sub
+    ((measurable_norm.pow_const (-3 : ℝ)).aestronglyMeasurable.smul hcont.aestronglyMeasurable)
+
+/-- **Weak differentiability of the unit radial retraction in dimension `≥ 2`.** When
+`1 < Module.finrank ℝ E`, `x ↦ ‖x‖⁻¹ • x` has weak Fréchet derivative `unitRadialDeriv` on every
+open set `Ω : Opens E` with respect to any additive Haar measure `μ`. -/
+theorem hasWeakFDerivOn_norm_inv_smul (hd : 1 < Module.finrank ℝ E) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E => ‖x‖⁻¹ • x) unitRadialDeriv := by
+  let b := stdOrthonormalBasis ℝ E
+  rw [hasWeakFDerivOn_iff_coordinates b.toBasis]
+  intro i
+  have hweak := hasWeakFDerivOn_norm_rpow_neg_one_mul_inner (μ := μ) hd (b i) Ω
+  convert hweak using 1
+  · funext x
+    rw [Module.Basis.coord_apply, b.coe_toBasis_repr_apply, b.repr_apply_apply,
+      real_inner_smul_right, real_inner_comm (b i) x, Real.rpow_neg_one]
+  · funext x
+    ext w
+    rw [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+      Module.Basis.coord_apply, b.coe_toBasis_repr_apply, b.repr_apply_apply,
+      unitRadialDeriv_apply, inner_sub_right, real_inner_smul_right, real_inner_smul_right,
+      sub_apply, smul_apply, smul_apply,
+      innerSL_apply_apply, innerSL_apply_apply, Real.rpow_neg_one, real_inner_comm (b i) x]
+    simp only [smul_eq_mul]
+    ring
 
 end TauCeti

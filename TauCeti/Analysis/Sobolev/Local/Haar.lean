@@ -68,9 +68,8 @@ theorem MemLpLoc.smul_measure {E F : Type*} [TopologicalSpace E] [MeasurableSpac
     (hf : @MemLpLoc E _ { volume := μ } F _ p U f) {c : ℝ≥0∞} (hc : c ≠ ∞) :
     @MemLpLoc E _ { volume := c • μ } F _ p U f :=
   (@memLpLoc_iff E _ { volume := c • μ } F _ p U f).2 fun K hKU hK => by
-    change MemLp f p ((c • μ).restrict K)
-    rw [Measure.restrict_smul]
-    exact ((@memLpLoc_iff E _ { volume := μ } F _ p U f).1 hf K hKU hK).smul_measure hc
+    have h := ((@memLpLoc_iff E _ { volume := μ } F _ p U f).1 hf K hKU hK).smul_measure hc
+    rwa [← Measure.restrict_smul] at h
 
 /-- Scaling the ambient measure by a nonzero finite constant preserves and reflects local `Lᵖ`
 membership. -/
@@ -94,15 +93,14 @@ theorem MemLpLoc.of_isAddHaarMeasure {E F : Type*} [AddGroup E] [TopologicalSpac
     (hf : @MemLpLoc E _ { volume := μ } F _ p U f) :
     @MemLpLoc E _ { volume := ν } F _ p U f :=
   (@memLpLoc_iff E _ { volume := ν } F _ p U f).2 fun K hKU hK => by
-    change MemLp f p (ν.restrict K)
     have hrestrict : ν.restrict K = Measure.addHaarScalarFactor ν μ • μ.restrict K := by
       ext s hs
       rw [Measure.restrict_apply hs, smul_apply, Measure.restrict_apply hs,
         ENNReal.smul_def]
       exact Measure.measure_isAddInvariant_eq_smul_of_isCompact_closure_of_measurableSet ν μ
         (hs.inter hK.isClosed.measurableSet) (hK.closure_of_subset inter_subset_right)
-    rw [hrestrict]
-    exact ((@memLpLoc_iff E _ { volume := μ } F _ p U f).1 hf K hKU hK).smul_measure_nnreal
+    exact hrestrict.symm ▸
+      ((@memLpLoc_iff E _ { volume := μ } F _ p U f).1 hf K hKU hK).smul_measure_nnreal
 
 /-- Equivalence of `MemLpLoc` for any two additive Haar measures on a locally compact Hausdorff
 topological additive group. -/
