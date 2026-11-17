@@ -10,10 +10,10 @@ public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Data.NNRat.Encodable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import Mathlib.Topology.Instances.Rat
-import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Probability.Process.Kolmogorov.Edges
+import TauCeti.Topology.Instances.NNRat
 import TauCeti.Topology.Instances.NNReal.DyadicGrid
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.Instances.NNReal.DyadicHolder
 
 /-!
 # The one-dimensional Kolmogorov–Chentsov continuous modification theorem
@@ -33,7 +33,8 @@ exponents `p > 0` and `q > 1` on each compact horizon `[0, N]`,
 No finiteness or completeness hypothesis on `P` and no separability hypothesis on `E` is required.
 The construction builds on Mathlib's `ProbabilityTheory.IsKolmogorovProcess` and
 `IsAEKolmogorovProcess` together with `TauCeti.Probability.Process.Kolmogorov.Edges`,
-`TauCeti.Topology.Instances.NNReal.DyadicGrid`, and `HolderOnWith.extend_of_dense`.
+`TauCeti.Topology.Instances.NNReal.DyadicGrid`, and
+`TauCeti.Topology.Instances.NNReal.DyadicHolder`.
 
 ## Main results
 
@@ -63,334 +64,7 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-section DyadicChaining
-
-private lemma floor_mul_two_pow_le {N : ℕ} {t : ℝ≥0} (ht : t ≤ N) (n : ℕ) :
-    ⌊(t : ℝ) * 2 ^ n⌋₊ ≤ N * 2 ^ n := by
-  refine Nat.floor_le_of_le ?_
-  have ht' : (t : ℝ) ≤ N := by exact_mod_cast ht
-  calc (t : ℝ) * 2 ^ n ≤ (N : ℝ) * 2 ^ n := by gcongr
-    _ = ((N * 2 ^ n : ℕ) : ℝ) := by push_cast; ring
-
-/-- Any `δ ∈ (0, 1)` lies in `[2⁻ʳ, 2 · 2⁻ʳ)` for some positive dyadic scale `r : ℕ`. -/
-private lemma exists_dyadic_scale {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1) :
-    ∃ r : ℕ, 1 ≤ r ∧ (2 : ℝ)⁻¹ ^ r ≤ δ ∧ δ < 2 * (2 : ℝ)⁻¹ ^ r := by
-  obtain ⟨z, hlo, hhi⟩ := exists_mem_Ico_zpow hδ0 one_lt_two
-  have hz_neg : z < 0 := by
-    by_contra! hge
-    have h1 : (1 : ℝ) ≤ (2 : ℝ) ^ z := by
-      simpa using zpow_le_zpow_right₀ (by norm_num : (1 : ℝ) ≤ 2) hge
-    linarith
-  set r : ℕ := (-z).toNat
-  have hz_eq : z = -(r : ℤ) := by omega
-  refine ⟨r, by omega, ?_, ?_⟩
-  · simpa [hz_eq, zpow_neg, zpow_natCast, inv_pow] using hlo
-  · have hpow : (2 : ℝ) ^ (z + 1) = 2 * (2 : ℝ)⁻¹ ^ r := by
-      rw [zpow_add₀ two_ne_zero, zpow_one, hz_eq, zpow_neg, zpow_natCast, inv_pow, mul_comm]
-    linarith
-
-/-- Single parity-rounding step at dyadic level `j` (`b = a` or `b = a + 1`). -/
-private lemma edist_dyadicNNRat_step {E : Type*} [PseudoEMetricSpace E] {f : ℚ≥0 → E}
-    {N j : ℕ} {K γ : ℝ≥0}
-    (hadj : ∀ l : ℕ, ∀ k < N * 2 ^ l,
-      edist (f (dyadicNNRat l k)) (f (dyadicNNRat l (k + 1))) ≤
-        (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ l) ^ (γ : ℝ))
-    {a b : ℕ} (hb : b ≤ N * 2 ^ j) (hab : b = a ∨ b = a + 1) :
-    edist (f (dyadicNNRat j a)) (f (dyadicNNRat j b)) ≤
-      (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ j) ^ (γ : ℝ) := by
-  rcases hab with rfl | rfl
-  · simp
-  · exact hadj j a (by omega)
-
-/-- Binary inward-rounding chaining on dyadic rationals in an extended pseudometric space: if
-adjacent increments at all levels `l` are bounded by `K * (2⁻ˡ) ^ γ`, then any two level-`(r + d)`
-grid points within `2 * 2 ^ d` steps have values within `2 * K * ∑_{i ≤ d} (2^{-(r + i)}) ^ γ`. -/
-private lemma edist_dyadicNNRat_le_sum {E : Type*} [PseudoEMetricSpace E] {f : ℚ≥0 → E}
-    {N r : ℕ} {K γ : ℝ≥0}
-    (hadj : ∀ l : ℕ, ∀ k < N * 2 ^ l,
-      edist (f (dyadicNNRat l k)) (f (dyadicNNRat l (k + 1))) ≤
-        (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ l) ^ (γ : ℝ)) :
-    ∀ (d a b : ℕ), a ≤ b → b ≤ N * 2 ^ (r + d) → b - a ≤ 2 * 2 ^ d →
-      edist (f (dyadicNNRat (r + d) a)) (f (dyadicNNRat (r + d) b)) ≤
-        2 * (K : ℝ≥0∞) * ∑ i ∈ Finset.range (d + 1), ((2⁻¹ : ℝ≥0∞) ^ (r + i)) ^ (γ : ℝ) := by
-  intro d
-  induction d with
-  | zero =>
-    -- Base case: `b - a ≤ 2`, handled in at most two adjacent level-`r` steps.
-    intro a b hab hb hba
-    simp only [zero_add, add_zero, pow_zero, mul_one, Finset.range_one,
-      Finset.sum_singleton] at hb hba ⊢
-    obtain rfl | rfl | rfl : b = a ∨ b = a + 1 ∨ b = a + 2 := by omega
-    · simp
-    · refine (hadj r a (by omega)).trans ?_
-      rw [mul_assoc]
-      exact le_mul_of_one_le_left zero_le one_le_two
-    · calc edist (f (dyadicNNRat r a)) (f (dyadicNNRat r (a + 2)))
-          ≤ edist (f (dyadicNNRat r a)) (f (dyadicNNRat r (a + 1))) +
-              edist (f (dyadicNNRat r (a + 1))) (f (dyadicNNRat r (a + 2))) := edist_triangle ..
-        _ ≤ (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) +
-              (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) :=
-            add_le_add (hadj r a (by omega)) (hadj r (a + 1) (by omega))
-        _ = 2 * (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) := by ring
-  | succ d ih =>
-    intro a b hab hb hba
-    rw [Finset.sum_range_succ, mul_add]
-    by_cases hsmall : b ≤ a + 1
-    · refine (edist_dyadicNNRat_step hadj hb (by omega)).trans (le_trans ?_ le_add_self)
-      rw [mul_assoc]
-      exact le_mul_of_one_le_left zero_le one_le_two
-    · -- Inductive step: round `a` up to `2 * a'` and `b` down to `2 * b'` inside `[a, b]`.
-      let a' := (a + 1) / 2
-      let b' := b / 2
-      have : N * 2 ^ (r + (d + 1)) = 2 * (N * 2 ^ (r + d)) := by rw [← add_assoc, pow_succ]; ring
-      have : 2 * 2 ^ (d + 1) = 4 * 2 ^ d := by rw [pow_succ]; ring
-      have hleft : edist (f (dyadicNNRat (r + (d + 1)) a)) (f (dyadicNNRat (r + d) a')) ≤
-          (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ (r + (d + 1))) ^ (γ : ℝ) := by
-        rw [← add_assoc, ← dyadicNNRat_double (r + d) a', add_assoc]
-        exact edist_dyadicNNRat_step hadj (by omega) (by omega)
-      have hright : edist (f (dyadicNNRat (r + d) b')) (f (dyadicNNRat (r + (d + 1)) b)) ≤
-          (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ (r + (d + 1))) ^ (γ : ℝ) := by
-        rw [← add_assoc, ← dyadicNNRat_double (r + d) b', add_assoc]
-        exact edist_dyadicNNRat_step hadj hb (by omega)
-      calc edist (f (dyadicNNRat (r + (d + 1)) a)) (f (dyadicNNRat (r + (d + 1)) b))
-          ≤ edist (f (dyadicNNRat (r + (d + 1)) a)) (f (dyadicNNRat (r + d) a')) +
-              edist (f (dyadicNNRat (r + d) a')) (f (dyadicNNRat (r + d) b')) +
-              edist (f (dyadicNNRat (r + d) b')) (f (dyadicNNRat (r + (d + 1)) b)) :=
-            edist_triangle4 ..
-        _ ≤ _ := add_le_add (add_le_add hleft (ih a' b' (by omega) (by omega) (by omega))) hright
-        _ = _ := by ring
-
-/-- Geometric series bound for the dyadic chaining tail in `ℝ≥0∞`. -/
-private lemma two_mul_sum_edist_dyadic_le {r d : ℕ} {K γ : ℝ≥0} (hγ : 0 < γ) :
-    2 * (K : ℝ≥0∞) * ∑ i ∈ Finset.range (d + 1), ((2⁻¹ : ℝ≥0∞) ^ (r + i)) ^ (γ : ℝ) ≤
-      ((2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) *
-        ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) := by
-  set ρ : ℝ≥0 := (2⁻¹ : ℝ≥0) ^ (γ : ℝ)
-  have hρ1 : ρ < 1 := NNReal.rpow_lt_one (by norm_num) hγ
-  have hρ_coe : (ρ : ℝ≥0∞) = (2⁻¹ : ℝ≥0∞) ^ (γ : ℝ) := by
-    rw [ENNReal.coe_rpow_of_nonneg _ γ.coe_nonneg]
-    simp
-  have hrew (i : ℕ) :
-      ((2⁻¹ : ℝ≥0∞) ^ (r + i)) ^ (γ : ℝ) = ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) * (ρ : ℝ≥0∞) ^ i := by
-    rw [pow_add, ENNReal.mul_rpow_of_nonneg _ _ γ.coe_nonneg, ENNReal.pow_rpow_comm _ i, hρ_coe]
-  simp_rw [hrew, ← Finset.mul_sum]
-  have hgeom : ∑ i ∈ Finset.range (d + 1), (ρ : ℝ≥0∞) ^ i ≤ ((1 - ρ)⁻¹ : ℝ≥0) := by
-    calc ∑ i ∈ Finset.range (d + 1), (ρ : ℝ≥0∞) ^ i
-        ≤ ∑' i : ℕ, (ρ : ℝ≥0∞) ^ i := sum_le_tsum _
-      _ = (1 - (ρ : ℝ≥0∞))⁻¹ := ENNReal.tsum_geometric _
-      _ = ((1 - ρ)⁻¹ : ℝ≥0) := by
-          rw [ENNReal.coe_inv (tsub_pos_of_lt hρ1).ne', ENNReal.coe_sub, ENNReal.coe_one]
-  calc 2 * (K : ℝ≥0∞) * (((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) * ∑ i ∈ Finset.range (d + 1), (ρ : ℝ≥0∞) ^ i)
-      ≤ 2 * (K : ℝ≥0∞) * (((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) * ((1 - ρ)⁻¹ : ℝ≥0)) := by gcongr
-    _ = ((2 * K * (1 - ρ)⁻¹ : ℝ≥0) : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) := by
-        push_cast; ring
-
-/-- Symmetric form of binary dyadic chaining at common level `r + d`. -/
-private lemma edist_dyadicNNRat_le_of_abs_sub_le {E : Type*} [PseudoEMetricSpace E]
-    {f : ℚ≥0 → E} {N r d : ℕ} {K γ : ℝ≥0} (hγ : 0 < γ)
-    (hadj : ∀ l : ℕ, ∀ k < N * 2 ^ l,
-      edist (f (dyadicNNRat l k)) (f (dyadicNNRat l (k + 1))) ≤
-        (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ l) ^ (γ : ℝ))
-    {b₁ b₂ : ℕ} (hb₁ : b₁ ≤ N * 2 ^ (r + d)) (hb₂ : b₂ ≤ N * 2 ^ (r + d))
-    (hbd : |(b₁ : ℝ) - b₂| ≤ 2 * (2 : ℝ) ^ d) :
-    edist (f (dyadicNNRat (r + d) b₁)) (f (dyadicNNRat (r + d) b₂)) ≤
-      ((2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) *
-        ((2⁻¹ : ℝ≥0∞) ^ r) ^ (γ : ℝ) := by
-  wlog hle : b₁ ≤ b₂ generalizing b₁ b₂
-  · rw [edist_comm]
-    exact this hb₂ hb₁ (by rwa [abs_sub_comm]) (le_of_not_ge hle)
-  have hba : b₂ - b₁ ≤ 2 * 2 ^ d := by
-    refine Nat.cast_le (α := ℝ).mp ?_
-    rw [Nat.cast_sub hle]
-    push_cast
-    linarith [le_abs_self ((b₂ : ℝ) - b₁), abs_sub_comm (b₁ : ℝ) b₂]
-  exact (edist_dyadicNNRat_le_sum hadj d b₁ b₂ hle hb₂ hba).trans
-    (two_mul_sum_edist_dyadic_le hγ)
-
-/-- Short-range Hölder estimate on dyadic rationals in `[0, N]` at distance `< 1`. -/
-private lemma edist_dyadicNNRat_le_of_dist_lt_one {E : Type*} [PseudoEMetricSpace E]
-    {f : ℚ≥0 → E} {N : ℕ} {K γ : ℝ≥0} (hγ : 0 < γ)
-    (hadj : ∀ l : ℕ, ∀ k < N * 2 ^ l,
-      edist (f (dyadicNNRat l k)) (f (dyadicNNRat l (k + 1))) ≤
-        (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ l) ^ (γ : ℝ))
-    {n₁ k₁ n₂ k₂ : ℕ} (hk₁ : k₁ ≤ N * 2 ^ n₁) (hk₂ : k₂ ≤ N * 2 ^ n₂)
-    (hdist : dist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0) < 1) :
-    edist (f (dyadicNNRat n₁ k₁)) (f (dyadicNNRat n₂ k₂)) ≤
-      ((2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) *
-        edist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0) ^ (γ : ℝ) := by
-  set δ := dist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0) with hδ
-  rcases eq_or_lt_of_le (dist_nonneg : 0 ≤ δ) with hδ0 | hδ_pos
-  · have hq : dyadicNNRat n₁ k₁ = dyadicNNRat n₂ k₂ :=
-      NNRat.cast_injective (dist_eq_zero.mp hδ0.symm)
-    simp [hq]
-  · obtain ⟨r, _, hr_lo, hr_hi⟩ := exists_dyadic_scale hδ_pos hdist
-    -- Express both dyadics at the common level `r + (n₁ + n₂)`.
-    let d := n₁ + n₂
-    let a₁ := k₁ * 2 ^ (r + n₂)
-    let a₂ := k₂ * 2 ^ (r + n₁)
-    have heq₁ : dyadicNNRat (r + d) a₁ = dyadicNNRat n₁ k₁ := by
-      have : r + d = n₁ + (r + n₂) := by omega
-      rw [this]; exact dyadicNNRat_scale n₁ (r + n₂) k₁
-    have heq₂ : dyadicNNRat (r + d) a₂ = dyadicNNRat n₂ k₂ := by
-      have : r + d = n₂ + (r + n₁) := by omega
-      rw [this]; exact dyadicNNRat_scale n₂ (r + n₁) k₂
-    have ha₁ : a₁ ≤ N * 2 ^ (r + d) := by
-      have : r + d = n₁ + (r + n₂) := by omega
-      rw [this, pow_add, ← mul_assoc]; exact Nat.mul_le_mul_right _ hk₁
-    have ha₂ : a₂ ≤ N * 2 ^ (r + d) := by
-      have : r + d = n₂ + (r + n₁) := by omega
-      rw [this, pow_add, ← mul_assoc]; exact Nat.mul_le_mul_right _ hk₂
-    have hdiff : |(a₁ : ℝ) - a₂| ≤ 2 * (2 : ℝ) ^ d := by
-      have hδ_eq : δ = |(a₁ : ℝ) - a₂| / 2 ^ (r + d) := by
-        rw [hδ, ← heq₁, ← heq₂, NNReal.dist_eq, coe_dyadicNNRat, coe_dyadicNNRat]
-        push_cast
-        rw [← sub_div, abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2 ^ (r + d))]
-      have hlt : |(a₁ : ℝ) - a₂| < 2 * (2 : ℝ)⁻¹ ^ r * 2 ^ (r + d) :=
-        (div_lt_iff₀ (by positivity : (0 : ℝ) < 2 ^ (r + d))).mp (by linarith [hδ_eq, hr_hi])
-      have hcancel : 2 * (2 : ℝ)⁻¹ ^ r * 2 ^ (r + d) = 2 * (2 : ℝ) ^ d := by
-        rw [pow_add, inv_pow]; field_simp
-      linarith
-    have hchain := edist_dyadicNNRat_le_of_abs_sub_le hγ hadj ha₁ ha₂ hdiff
-    rw [← heq₁, ← heq₂]
-    refine hchain.trans ?_
-    have hr_lo_e : (2⁻¹ : ℝ≥0∞) ^ r ≤
-        edist (dyadicNNRat (r + d) a₁ : ℝ≥0) (dyadicNNRat (r + d) a₂ : ℝ≥0) := by
-      rw [heq₁, heq₂, edist_dist]
-      calc (2⁻¹ : ℝ≥0∞) ^ r
-          = ENNReal.ofReal ((2 : ℝ)⁻¹ ^ r) := by
-              rw [ENNReal.ofReal_pow (by positivity), ENNReal.ofReal_inv_of_pos zero_lt_two,
-                ENNReal.ofReal_ofNat]
-        _ ≤ ENNReal.ofReal δ := ENNReal.ofReal_le_ofReal hr_lo
-    gcongr
-
-/-- Uniform extended-distance bound from `f 0` to any dyadic grid point in `[0, N]`. -/
-private lemma edist_dyadicNNRat_zero_le {E : Type*} [PseudoEMetricSpace E]
-    {f : ℚ≥0 → E} {N : ℕ} {K γ : ℝ≥0} (hγ : 0 < γ)
-    (hadj : ∀ l : ℕ, ∀ k < N * 2 ^ l,
-      edist (f (dyadicNNRat l k)) (f (dyadicNNRat l (k + 1))) ≤
-        (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ l) ^ (γ : ℝ))
-    {n k : ℕ} (hk : k ≤ N * 2 ^ n) :
-    edist (f 0) (f (dyadicNNRat n k)) ≤
-      ((N * K + 2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) := by
-  have hcoarse (l : ℕ) (hl : l ≤ N) : edist (f 0) (f (dyadicNNRat 0 l)) ≤ l * (K : ℝ≥0∞) := by
-    induction l with
-    | zero => simp
-    | succ l ih =>
-      have hstep : edist (f (dyadicNNRat 0 l)) (f (dyadicNNRat 0 (l + 1))) ≤ K := by
-        simpa using hadj 0 l (by simpa using Nat.lt_of_succ_le hl)
-      calc edist (f 0) (f (dyadicNNRat 0 (l + 1)))
-          ≤ edist (f 0) (f (dyadicNNRat 0 l)) +
-              edist (f (dyadicNNRat 0 l)) (f (dyadicNNRat 0 (l + 1))) := edist_triangle ..
-        _ ≤ l * (K : ℝ≥0∞) + K := add_le_add (ih (Nat.le_of_succ_le hl)) hstep
-        _ = ((l + 1 : ℕ) : ℝ≥0∞) * K := by push_cast; ring
-  let j := ⌊((dyadicNNRat n k : ℝ≥0) : ℝ)⌋₊
-  have hjN : j ≤ N := by
-    have hle : (dyadicNNRat n k : ℝ≥0) ≤ N := coe_dyadicNNRat_le_natCast_iff.2 hk
-    simpa only [j, pow_zero, mul_one] using floor_mul_two_pow_le hle 0
-  have hdist_lt : dist (dyadicNNRat 0 j : ℝ≥0) (dyadicNNRat n k : ℝ≥0) < 1 := by
-    rw [NNReal.dist_eq, dyadicNNRat_zero_left, abs_sub_comm]
-    have hle : (j : ℝ) ≤ ((dyadicNNRat n k : ℝ≥0) : ℝ) := Nat.floor_le (by positivity)
-    have hlt : ((dyadicNNRat n k : ℝ≥0) : ℝ) < (j : ℝ) + 1 := Nat.lt_floor_add_one _
-    rw [NNRat.cast_natCast, NNReal.coe_natCast, abs_of_nonneg (sub_nonneg.2 hle)]
-    linarith
-  have hed_le : edist (dyadicNNRat 0 j : ℝ≥0) (dyadicNNRat n k : ℝ≥0) ^ (γ : ℝ) ≤ 1 := by
-    refine ENNReal.rpow_le_one ?_ γ.coe_nonneg
-    rw [edist_dist, ← ENNReal.ofReal_one]
-    exact ENNReal.ofReal_le_ofReal hdist_lt.le
-  have hnear : edist (f (dyadicNNRat 0 j)) (f (dyadicNNRat n k)) ≤
-      ((2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) := by
-    have h := edist_dyadicNNRat_le_of_dist_lt_one hγ hadj (by simpa using hjN) hk hdist_lt
-    exact h.trans (mul_le_of_le_one_right' hed_le)
-  calc edist (f 0) (f (dyadicNNRat n k))
-      ≤ edist (f 0) (f (dyadicNNRat 0 j)) +
-          edist (f (dyadicNNRat 0 j)) (f (dyadicNNRat n k)) := edist_triangle ..
-    _ ≤ j * (K : ℝ≥0∞) + ((2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) :=
-        add_le_add (hcoarse j hjN) hnear
-    _ ≤ ((N * K + 2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹ : ℝ≥0) : ℝ≥0∞) := by
-        push_cast; gcongr
-
-/-- Deterministic dyadic Hölder extension on `[0, N]`: if `f : ℚ≥0 → E` into a complete extended
-metric space has adjacent level-`l` increments on `[0, N]` bounded by `K * (2⁻ˡ) ^ γ`, then `f`
-extends from dyadic rationals in `[0, N]` to a `γ`-Hölder map on `Iic (N : ℝ≥0)`. -/
-private lemma exists_holderWith_Iic_of_dyadic_adj {E : Type*} [EMetricSpace E] [CompleteSpace E]
-    {f : ℚ≥0 → E} {N : ℕ} {K γ : ℝ≥0} (hγ : 0 < γ)
-    (hadj : ∀ l : ℕ, ∀ k < N * 2 ^ l,
-      edist (f (dyadicNNRat l k)) (f (dyadicNNRat l (k + 1))) ≤
-        (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ l) ^ (γ : ℝ)) :
-    ∃ (C : ℝ≥0) (g : Iic (N : ℝ≥0) → E), HolderWith C γ g ∧
-      ∀ n k (hk : k ≤ N * 2 ^ n),
-        g ⟨(dyadicNNRat n k : ℝ≥0), coe_dyadicNNRat_le_natCast_iff.2 hk⟩ = f (dyadicNNRat n k) := by
-  classical
-  let s : Set (Iic (N : ℝ≥0)) :=
-    {x | ∃ q : ℚ≥0, (∃ n k : ℕ, k ≤ N * 2 ^ n ∧ q = dyadicNNRat n k) ∧ (x : ℝ≥0) = q}
-  have hs_dense : Dense s := fun x ↦ mem_closure_iff_seq_limit.2
-    ⟨fun n ↦ ⟨(approxDyadicNNRat n x.1 : ℝ≥0), (coe_approxDyadicNNRat_le n x.1).trans x.2⟩,
-      fun n ↦ ⟨approxDyadicNNRat n x.1,
-        ⟨n, ⌊(x.1 : ℝ) * 2 ^ n⌋₊, floor_mul_two_pow_le x.2 n, approxDyadicNNRat_def n x.1⟩, rfl⟩,
-      tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat x.1)⟩
-  let F : Iic (N : ℝ≥0) → E := fun x ↦ if hx : x ∈ s then f hx.choose else f 0
-  have hF_eq {x : Iic (N : ℝ≥0)} {n k : ℕ} (hk : k ≤ N * 2 ^ n)
-      (hxq : (x : ℝ≥0) = dyadicNNRat n k) : F x = f (dyadicNNRat n k) := by
-    have hx : x ∈ s := ⟨dyadicNNRat n k, ⟨n, k, hk, rfl⟩, hxq⟩
-    simp only [F, hx, ↓reduceDIte]
-    exact congrArg f (NNRat.cast_injective (hx.choose_spec.2.symm.trans hxq))
-  set C₀ : ℝ≥0 := 2 * K * (1 - (2⁻¹ : ℝ≥0) ^ (γ : ℝ))⁻¹
-  set C : ℝ≥0 := 2 * (N * K + C₀)
-  have hC₀_le : C₀ ≤ C :=
-    calc C₀ ≤ N * K + C₀ := le_add_self
-      _ ≤ 2 * (N * K + C₀) := le_mul_of_one_le_left zero_le one_le_two
-  have hholder_s : HolderOnWith C γ F s := by
-    rintro x ⟨_, ⟨n₁, k₁, hk₁, rfl⟩, hxq⟩ y ⟨_, ⟨n₂, k₂, hk₂, rfl⟩, hyq⟩
-    have hed : edist x y = edist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0) := by
-      rw [Subtype.edist_eq, hxq, hyq]
-    rw [hF_eq hk₁ hxq, hF_eq hk₂ hyq, hed]
-    rcases lt_or_ge (dist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0)) 1 with hlt | hge
-    · exact (edist_dyadicNNRat_le_of_dist_lt_one hγ hadj hk₁ hk₂ hlt).trans (by gcongr)
-    · have h1_le : (1 : ℝ≥0∞) ≤
-          edist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0) ^ (γ : ℝ) := by
-        refine ENNReal.one_le_rpow ?_ hγ
-        rw [edist_dist, ← ENNReal.ofReal_one]
-        exact ENNReal.ofReal_le_ofReal hge
-      calc edist (f (dyadicNNRat n₁ k₁)) (f (dyadicNNRat n₂ k₂))
-          ≤ edist (f 0) (f (dyadicNNRat n₁ k₁)) + edist (f 0) (f (dyadicNNRat n₂ k₂)) :=
-            edist_triangle_left ..
-        _ ≤ ((N * K + C₀ : ℝ≥0) : ℝ≥0∞) + ((N * K + C₀ : ℝ≥0) : ℝ≥0∞) :=
-            add_le_add (edist_dyadicNNRat_zero_le hγ hadj hk₁)
-              (edist_dyadicNNRat_zero_le hγ hadj hk₂)
-        _ = (C : ℝ≥0∞) := by simp only [C, two_mul, ENNReal.coe_add]
-        _ ≤ (C : ℝ≥0∞) * edist (dyadicNNRat n₁ k₁ : ℝ≥0) (dyadicNNRat n₂ k₂ : ℝ≥0) ^ (γ : ℝ) :=
-            le_mul_of_one_le_right zero_le h1_le
-  obtain ⟨g, hg_holder, hg_eq⟩ := hholder_s.extend_of_dense hs_dense
-  refine ⟨C, g, hg_holder, fun n k hk ↦ ?_⟩
-  exact (hg_eq ⟨dyadicNNRat n k, ⟨n, k, hk, rfl⟩, rfl⟩).symm.trans (hF_eq hk rfl)
-
-/-- If `g : Iic (N : ℝ≥0) → E` is continuous and agrees with `f : ℚ≥0 → E` on dyadic rationals,
-then `f (approxDyadicNNRat n t)` converges to `g t`. -/
-private lemma tendsto_approxDyadicNNRat_apply_of_continuous {E : Type*} [TopologicalSpace E]
-    {N : ℕ} {f : ℚ≥0 → E} {g : Iic (N : ℝ≥0) → E} (hg_cont : Continuous g)
-    (hg_dyad : ∀ n k (hk : k ≤ N * 2 ^ n),
-      g ⟨(dyadicNNRat n k : ℝ≥0), coe_dyadicNNRat_le_natCast_iff.2 hk⟩ = f (dyadicNNRat n k))
-    (t : Iic (N : ℝ≥0)) :
-    Tendsto (fun n ↦ f (approxDyadicNNRat n t.1)) atTop (𝓝 (g t)) := by
-  have hconv : Tendsto (fun n ↦ (⟨(approxDyadicNNRat n t.1 : ℝ≥0),
-      (coe_approxDyadicNNRat_le n t.1).trans t.2⟩ : Iic (N : ℝ≥0))) atTop (𝓝 t) :=
-    tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat t.1)
-  refine (hg_cont.tendsto t).comp hconv |>.congr fun n ↦ ?_
-  simp only [Function.comp_apply, approxDyadicNNRat_def]
-  exact hg_dyad n ⌊(t.1 : ℝ) * 2 ^ n⌋₊ (floor_mul_two_pow_le t.2 n)
-
-end DyadicChaining
-
 section StochasticExtension
-
-private lemma edist_nnrat_coe (r s : ℚ≥0) :
-    edist r s = edist (r : ℝ≥0) (s : ℝ≥0) := by
-  rw [edist_dist, edist_dist, NNRat.dist_eq, Rat.dist_eq, NNReal.dist_eq]
-  have hcast (q : ℚ≥0) : ((q : ℝ≥0) : ℝ) = ((q : ℚ) : ℝ) := by
-    have h1 := map_nnratCast NNReal.toRealHom q
-    have h2 := map_nnratCast (Rat.castHom ℝ) q
-    exact h1.trans h2.symm
-  rw [hcast r, hcast s]
 
 /-- The measurable event on which every adjacent dyadic increment in `[0, N]` at every level `n`
 is bounded by `K * (2⁻ⁿ) ^ γ` for some `K : ℕ`. -/
@@ -429,7 +103,7 @@ private lemma ae_mem_goodDyadicEvent {Ω E : Type*} {_ : MeasurableSpace Ω}
           {r : ℚ≥0 // (r : ℝ≥0) ≤ N})
         (⟨dyadicNNRat n (i + 1), coe_dyadicNNRat_le_natCast_iff.2 i.2⟩ :
           {r : ℚ≥0 // (r : ℝ≥0) ≤ N}) ≤ ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ^ n := by
-    rw [Subtype.edist_eq, edist_nnrat_coe, edist_dyadicNNRat_succ]
+    rw [Subtype.edist_eq, ← NNRat.edist_cast_nnreal, edist_dyadicNNRat_succ]
     simp
   have hγ' : 1 + p * (γ : ℝ) < q := by
     have : (γ : ℝ) * p < q - 1 := (lt_div_iff₀ hp).mp hγ
@@ -443,37 +117,6 @@ private lemma ae_mem_goodDyadicEvent {Ω E : Type*} {_ : MeasurableSpace Ω}
   simp only [ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat] at hKi
   exact hKi.trans (by gcongr)
 
-/-- Along any sequence `u : ℕ → T` approaching `t` at rate `2⁻ⁿ`, an `IsAEKolmogorovProcess`
-converges almost surely to `X t`. -/
-private lemma ae_tendsto_of_edist_le {T Ω E : Type*} [PseudoEMetricSpace T]
-    {_ : MeasurableSpace Ω} [EMetricSpace E] {P : Measure Ω} {X : T → Ω → E}
-    {p q : ℝ} {M : ℝ≥0} (hX : IsAEKolmogorovProcess X P p q M)
-    {u : ℕ → T} {t : T} (hu : ∀ n, edist (u n) t ≤ (2⁻¹ : ℝ≥0∞) ^ n) :
-    ∀ᵐ ω ∂P, Tendsto (fun n ↦ X (u n) ω) atTop (𝓝 (X t ω)) := by
-  have hp := hX.p_pos
-  have hq := hX.q_pos
-  set β : ℝ := q / (2 * p)
-  have hβ : 0 < β := by positivity
-  have hcard (n : ℕ) : ((1 : ℕ) : ℝ≥0) ≤ 1 * ((2⁻¹ : ℝ≥0) ^ (-(0 : ℝ))) ^ n := by simp
-  have hedge (n : ℕ) (_ : Fin 1) : edist (u n) t ≤ ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ^ n := by
-    simpa using hu n
-  have hβ_lt : 0 + p * β < q := by
-    have : p * β = q / 2 := by simp only [β]; field_simp
-    linarith
-  filter_upwards [hX.ae_exists_edist_le_mul_pow_rpow (C := 1) (r := 2⁻¹) (d := 0) (γ := β)
-    (k := fun _ ↦ 1) (s := fun n _ ↦ u n) (t := fun _ _ ↦ t)
-    (by norm_num) (by norm_num) hcard hedge hβ_lt] with ω ⟨K, hK⟩
-  rw [tendsto_iff_edist_tendsto_0]
-  have hρ_lt : (2⁻¹ : ℝ≥0∞) ^ β < 1 :=
-    ENNReal.rpow_lt_one (by norm_num) hβ
-  have hlim : Tendsto (fun n : ℕ ↦ (K : ℝ≥0∞) * ((2⁻¹ : ℝ≥0∞) ^ n) ^ β) atTop (𝓝 0) := by
-    simpa only [ENNReal.pow_rpow_comm, mul_zero] using
-      ENNReal.Tendsto.const_mul (ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one hρ_lt)
-        (Or.inr ENNReal.coe_ne_top)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
-    fun n ↦ ?_
-  simpa using hK n 0
-
 /-- On `goodDyadicEvent X N γ`, the rational path `r ↦ X r ω` extends from dyadic rationals in
 `[0, N]` to a `γ`-Hölder map on `Iic (N : ℝ≥0)`. -/
 private lemma exists_holderWith_Iic_of_mem_goodDyadicEvent {Ω E : Type*}
@@ -484,8 +127,8 @@ private lemma exists_holderWith_Iic_of_mem_goodDyadicEvent {Ω E : Type*}
         g ⟨(dyadicNNRat n k : ℝ≥0), coe_dyadicNNRat_le_natCast_iff.2 hk⟩ =
           X (dyadicNNRat n k) ω := by
   obtain ⟨K, hK⟩ := mem_iUnion.mp hω
-  refine exists_holderWith_Iic_of_dyadic_adj (f := fun r ↦ X r ω) (K := (K : ℝ≥0)) hγ_pos
-    fun l k hk ↦ ?_
+  refine exists_holderWith_Iic_of_edist_dyadicNNRat_succ_le (f := fun r ↦ X r ω) (K := (K : ℝ≥0))
+    hγ_pos fun l k hk ↦ ?_
   simpa using mem_iInter.mp (mem_iInter.mp hK l) ⟨k, hk⟩
 
 /-- Canonical pathwise dyadic limit on `G`, equal to the constant path `X 0 ω` outside `G`. -/
@@ -502,8 +145,9 @@ private lemma dyadicExtension_eq_of_mem {Ω E : Type*} [TopologicalSpace E] [T2S
     {t : ℝ≥0} (ht : t ≤ N) :
     dyadicExtension X G t ω = g ⟨t, ht⟩ := by
   let : Nonempty E := ⟨X 0 ω⟩
-  exact ((tendsto_approxDyadicNNRat_apply_of_continuous (f := fun r ↦ X r ω)
-    hg_cont hg_dyad ⟨t, ht⟩) |>.congr fun _ ↦ by simp [hω]).limUnder_eq
+  exact ((tendsto_approxDyadicNNRat_apply_of_continuousAt (f := fun r ↦ X r ω)
+    (t := ⟨t, ht⟩) hg_cont.continuousAt fun n k hk ↦
+      hg_dyad n k (coe_dyadicNNRat_le_natCast_iff.1 hk)) |>.congr fun _ ↦ by simp [hω]).limUnder_eq
 
 private lemma dyadicExtension_eq_of_notMem {Ω E : Type*} [TopologicalSpace E] [T2Space E]
     {X : ℚ≥0 → Ω → E} {G : Set Ω} [DecidablePred (· ∈ G)] {ω : Ω} (hω : ω ∉ G) (t : ℝ≥0) :
@@ -525,7 +169,9 @@ private lemma tendsto_approxDyadicNNRat_dyadicExtension_of_mem {Ω E : Type*}
     exists_holderWith_Iic_of_mem_goodDyadicEvent hγ₀_pos (hG_sub ω hω N)
   have hg_cont : Continuous g := (hg_h.uniformContinuous hγ₀_pos).continuous
   rw [dyadicExtension_eq_of_mem hω hg_cont hg_d htN]
-  exact tendsto_approxDyadicNNRat_apply_of_continuous (f := fun r ↦ X r ω) hg_cont hg_d ⟨t, htN⟩
+  exact tendsto_approxDyadicNNRat_apply_of_continuousAt (f := fun r ↦ X r ω)
+    (t := ⟨t, htN⟩) hg_cont.continuousAt fun n k hk ↦
+      hg_d n k (coe_dyadicNNRat_le_natCast_iff.1 hk)
 
 private lemma measurable_dyadicExtension {Ω E : Type*} {_ : MeasurableSpace Ω}
     [EMetricSpace E] [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]
@@ -578,10 +224,11 @@ private lemma ae_eq_dyadicExtension_of_nnrat {Ω E : Type*} {_ : MeasurableSpace
       edist
         (⟨approxDyadicNNRat n (r : ℝ≥0), (coe_approxDyadicNNRat_le n _).trans hrN⟩ :
           {s : ℚ≥0 // (s : ℝ≥0) ≤ N})
-        (⟨r, hrN⟩ : {s : ℚ≥0 // (s : ℝ≥0) ≤ N}) ≤ (2⁻¹ : ℝ≥0∞) ^ n := by
-    rw [Subtype.edist_eq, edist_nnrat_coe]
-    exact edist_approxDyadicNNRat_le n (r : ℝ≥0)
-  filter_upwards [hG_ae, ae_tendsto_of_edist_le (hX_loc N) hu] with ω hω hX_tend
+        (⟨r, hrN⟩ : {s : ℚ≥0 // (s : ℝ≥0) ≤ N}) ≤ ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ^ n := by
+    rw [Subtype.edist_eq, ← NNRat.edist_cast_nnreal]
+    simpa using edist_approxDyadicNNRat_le n (r : ℝ≥0)
+  filter_upwards [hG_ae, (hX_loc N).ae_tendsto_of_edist_le_pow (r := 2⁻¹) (by norm_num) hu]
+    with ω hω hX_tend
   exact tendsto_nhds_unique
     (tendsto_approxDyadicNNRat_dyadicExtension_of_mem hγ₀_pos hG_sub hω r) hX_tend
 
@@ -624,22 +271,6 @@ private lemma exists_holderOnWith_dyadicExtension {Ω E : Type*}
     rw [dyadicExtension_eq_of_notMem hω s, dyadicExtension_eq_of_notMem hω t, edist_self]
     exact zero_le
 
-/-- Every `γ < α` (with `0 < α`) is bounded by `((k + 1) / (k + 2)) * α` for some `k : ℕ`. -/
-private lemma exists_ratio_mul_ge {α : ℝ} (hα : 0 < α) {γ : ℝ≥0} (hγ : (γ : ℝ) < α) :
-    ∃ k : ℕ, (γ : ℝ) ≤ ((k + 1 : ℝ) / (k + 2 : ℝ)) * α := by
-  set δ : ℝ := α - γ
-  have hδ : 0 < δ := sub_pos.2 hγ
-  refine ⟨⌈α / δ⌉₊, ?_⟩
-  have hceil : α / δ < (⌈α / δ⌉₊ : ℝ) + 2 := (Nat.le_ceil _).trans_lt (by linarith)
-  have hmul : α < δ * ((⌈α / δ⌉₊ : ℝ) + 2) := by
-    rw [mul_comm]
-    exact (div_lt_iff₀ hδ).mp hceil
-  have hdiv : α / ((⌈α / δ⌉₊ : ℝ) + 2) < δ := (div_lt_iff₀ (by positivity)).2 hmul
-  have hid :
-      (((⌈α / δ⌉₊ : ℝ) + 1) / ((⌈α / δ⌉₊ : ℝ) + 2)) * α = α - α / ((⌈α / δ⌉₊ : ℝ) + 2) := by
-    field_simp; ring
-  linarith
-
 /-- **Kolmogorov–Chentsov extension from nonnegative rational times.** Let `X : ℚ≥0 → Ω → E` take
 values in a complete extended metric Borel space `E`, with Borel-measurable pair evaluations and a
 local Kolmogorov bound of exponents `p > 0` and `q > 1` on each bounded horizon `[0, N]`. Then `X`
@@ -674,23 +305,21 @@ theorem exists_continuous_extension_of_nnrat {Ω E : Type*} {_ : MeasurableSpace
     IsKolmogorovProcess.IsAEKolmogorovProcess
       { measurablePair := fun r s ↦ hpair r.1 s.1
         kolmogorovCondition := fun r s ↦ by
-          simpa [Subtype.edist_eq, edist_nnrat_coe] using hkol N r.1 s.1 r.2 s.2
+          simpa [Subtype.edist_eq] using hkol N r.1 s.1 r.2 s.2
         p_pos := hp
         q_pos := zero_lt_one.trans hq }
-  -- Intersect `goodDyadicEvent X N (γSeq k)` along `γSeq k ↑ (q - 1) / p`.
-  have hα_pos : 0 < (q - 1) / p := div_pos (sub_pos.2 hq) hp
-  let γSeq : ℕ → ℝ≥0 := fun k ↦ Real.toNNReal (((k + 1 : ℝ) / (k + 2 : ℝ)) * ((q - 1) / p))
-  have hγSeq_coe (k : ℕ) : (γSeq k : ℝ) = ((k + 1 : ℝ) / (k + 2 : ℝ)) * ((q - 1) / p) :=
-    Real.coe_toNNReal _ (by positivity)
-  have hγSeq_pos (k : ℕ) : 0 < γSeq k := by
-    rw [← NNReal.coe_pos, hγSeq_coe]
-    positivity
-  have hγSeq_lt (k : ℕ) : (γSeq k : ℝ) < (q - 1) / p := by
-    rw [hγSeq_coe]
-    exact mul_lt_of_lt_one_left hα_pos ((div_lt_one (by positivity)).2 (by linarith))
+  -- Intersect `goodDyadicEvent X N (γSeq k)` along a sequence `γSeq k ↑ (q - 1) / p`.
+  let α : ℝ≥0 := Real.toNNReal ((q - 1) / p)
+  have hα_coe : (α : ℝ) = (q - 1) / p := Real.coe_toNNReal _ (div_pos (sub_pos.2 hq) hp).le
+  have hα_pos : 0 < α := NNReal.coe_pos.mp (hα_coe.symm ▸ div_pos (sub_pos.2 hq) hp)
+  obtain ⟨γSeq, _, hγSeq_mem, hγSeq_tend⟩ := exists_seq_strictMono_tendsto' hα_pos
+  have hγSeq_pos (k : ℕ) : 0 < γSeq k := (hγSeq_mem k).1
+  have hγSeq_lt (k : ℕ) : (γSeq k : ℝ) < (q - 1) / p :=
+    hα_coe ▸ NNReal.coe_lt_coe.mpr (hγSeq_mem k).2
   have hcofinal (γ : ℝ≥0) (hγ : (γ : ℝ) < (q - 1) / p) : ∃ k, γ ≤ γSeq k := by
-    obtain ⟨k, hk⟩ := exists_ratio_mul_ge hα_pos hγ
-    exact ⟨k, NNReal.coe_le_coe.1 (by rwa [hγSeq_coe])⟩
+    have hγ_lt : γ < α := NNReal.coe_lt_coe.mp (hα_coe.symm ▸ hγ)
+    obtain ⟨k, hk⟩ := (hγSeq_tend.eventually (eventually_gt_nhds hγ_lt)).exists
+    exact ⟨k, hk.le⟩
   let G : Set Ω := ⋂ N : ℕ, ⋂ k : ℕ, goodDyadicEvent X N (γSeq k)
   have hG_meas : MeasurableSet G :=
     MeasurableSet.iInter fun N ↦ MeasurableSet.iInter fun k ↦
@@ -797,12 +426,13 @@ theorem exists_continuous_modification_of_local_isAEKolmogorovProcess
   have hu (n : ℕ) :
       edist
         (⟨approxDyadicNNRat n t, (coe_approxDyadicNNRat_le n t).trans htN⟩ : Iic (N : ℝ≥0))
-        (⟨t, htN⟩ : Iic (N : ℝ≥0)) ≤ (2⁻¹ : ℝ≥0∞) ^ n := by
+        (⟨t, htN⟩ : Iic (N : ℝ≥0)) ≤ ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ^ n := by
     rw [Subtype.edist_eq]
-    exact edist_approxDyadicNNRat_le n t
+    simpa using edist_approxDyadicNNRat_le n t
   have hae_dyad : ∀ᵐ ω ∂P, ∀ n, Y (approxDyadicNNRat n t) ω = X (approxDyadicNNRat n t) ω :=
     ae_all_iff.mpr fun n ↦ (hY_nnrat (approxDyadicNNRat n t)).trans (hX'_ae _)
-  filter_upwards [ae_tendsto_of_edist_le (hX N) hu, hae_dyad] with ω hX_tend hYX
+  filter_upwards [(hX N).ae_tendsto_of_edist_le_pow (r := 2⁻¹) (by norm_num) hu, hae_dyad]
+    with ω hX_tend hYX
   have hY_tend : Tendsto (fun n ↦ X (approxDyadicNNRat n t) ω) atTop (𝓝 (Y t ω)) :=
     ((hY_cont ω).tendsto t).comp (tendsto_approxDyadicNNRat t) |>.congr hYX
   exact tendsto_nhds_unique hY_tend hX_tend

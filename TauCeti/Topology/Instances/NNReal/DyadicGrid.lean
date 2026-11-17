@@ -25,13 +25,14 @@ approximants converge to `t` as `n → ∞`.
   at level `n` are at distance `2⁻ⁿ`.
 * `TauCeti.approxDyadicNNRat`: downward level-`n` dyadic floor approximation of `t : ℝ≥0` in `ℚ≥0`.
 * `TauCeti.coe_approxDyadicNNRat_le`, `TauCeti.dist_approxDyadicNNRat_le`,
-  `TauCeti.edist_approxDyadicNNRat_le`, and `TauCeti.tendsto_approxDyadicNNRat`: error bounds and
-  convergence of `approxDyadicNNRat n t` to `t`.
+  `TauCeti.edist_approxDyadicNNRat_le`, `TauCeti.tendsto_approxDyadicNNRat`, and
+  `TauCeti.tendsto_approxDyadicNNRat_apply_of_continuousAt`: error bounds and convergence of
+  `approxDyadicNNRat n t` to `t` and through functions continuous at `t` on `Iic T`.
 -/
 
 public section
 
-open Filter
+open Filter Set
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
@@ -137,5 +138,19 @@ theorem tendsto_approxDyadicNNRat (t : ℝ≥0) :
       (tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 2)) using 1
   ext n
   simp [approxDyadicNNRat_def]
+
+/-- If `g : Iic T → E` is continuous at `t` and agrees with `f : ℚ≥0 → E` on dyadic rationals in
+`[0, T]`, then `f (approxDyadicNNRat n t.1)` converges to `g t`. -/
+theorem tendsto_approxDyadicNNRat_apply_of_continuousAt {E : Type*} [TopologicalSpace E]
+    {T : ℝ≥0} {f : ℚ≥0 → E} {g : Iic T → E} {t : Iic T} (hg : ContinuousAt g t)
+    (hg_dyad : ∀ n k (hk : (dyadicNNRat n k : ℝ≥0) ≤ T),
+      g ⟨(dyadicNNRat n k : ℝ≥0), hk⟩ = f (dyadicNNRat n k)) :
+    Tendsto (fun n ↦ f (approxDyadicNNRat n t.1)) atTop (𝓝 (g t)) := by
+  have hconv : Tendsto (fun n ↦ (⟨(approxDyadicNNRat n t.1 : ℝ≥0),
+      (coe_approxDyadicNNRat_le n t.1).trans t.2⟩ : Iic T)) atTop (𝓝 t) :=
+    tendsto_subtype_rng.2 (tendsto_approxDyadicNNRat t.1)
+  refine (hg.tendsto.comp hconv).congr fun n ↦ ?_
+  simp only [Function.comp_apply, approxDyadicNNRat_def]
+  exact hg_dyad n ⌊(t.1 : ℝ) * 2 ^ n⌋₊ ((coe_approxDyadicNNRat_le n t.1).trans t.2)
 
 end TauCeti
