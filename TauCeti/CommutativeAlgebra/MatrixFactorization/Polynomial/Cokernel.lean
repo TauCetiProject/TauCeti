@@ -89,6 +89,35 @@ theorem cokernelπ_comp_powerXOfLECokernelQuotientIso_hom (hi : i ≤ n) :
       (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) ≫ ·)
       ((cokernel_π_comp_rootPowHom_cokernelIso_hom R n i).trans hAug))
 
+/-- In `FGModuleCat (AdjoinRoot (X ^ n : R[X]))`, the reduced cokernel of `powerXOfLE R hi`
+(`i ≤ n`) is isomorphic to the cyclic quotient `A ⧸ (x ^ i)`. -/
+def powerXOfLEFGModuleCokernelIso (hi : i ≤ n) :
+    cokernelFunctor.obj
+      ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj (powerXOfLE R hi)) ≅
+    FGModuleCat.of (AdjoinRoot (X ^ n : R[X]))
+      (AdjoinRoot (X ^ n : R[X]) ⧸ Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}) :=
+  (ModuleCat.isFG _).isoMk (powerXOfLECokernelQuotientIso R hi)
+
+@[simp]
+theorem powerXOfLEFGModuleCokernelIso_hom_hom (hi : i ≤ n) :
+    (powerXOfLEFGModuleCokernelIso R hi).hom.hom = (powerXOfLECokernelQuotientIso R hi).hom :=
+  (rfl)
+
+@[simp]
+theorem powerXOfLEFGModuleCokernelIso_inv_hom (hi : i ≤ n) :
+    (powerXOfLEFGModuleCokernelIso R hi).inv.hom = (powerXOfLECokernelQuotientIso R hi).inv :=
+  (rfl)
+
+/-- Forgetting finite generation on `powerXOfLEFGModuleCokernelIso` recovers
+`powerXOfLECokernelQuotientIso`. -/
+@[simp]
+theorem forget₂_mapIso_powerXOfLEFGModuleCokernelIso (hi : i ≤ n) :
+    (forget₂ (FGModuleCat.{u} (AdjoinRoot (X ^ n : R[X])))
+          (ModuleCat.{u} (AdjoinRoot (X ^ n : R[X])))).mapIso
+        (powerXOfLEFGModuleCokernelIso R hi) =
+      powerXOfLECokernelQuotientIso R hi :=
+  (rfl)
+
 /-- The reduced polynomial factorization has the cyclic right-module cokernel `A/(x ^ i)`,
 viewed as a left module through the commutativity isomorphism `A ≃ Aᵐᵒᵖ`. -/
 def powerXOfLECokernelIso (hi : i ≤ n) :
