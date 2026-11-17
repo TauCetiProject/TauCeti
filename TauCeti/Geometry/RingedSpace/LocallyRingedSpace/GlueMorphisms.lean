@@ -58,30 +58,25 @@ private theorem presheafedSpace_pullback_compat (i j : ι) :
   have hl₂ : l ≫ X.toPresheafedSpace.restrictHomOfLE (inf_le_right : U i ⊓ U j ≤ U j) =
       pullback.snd ι₁ ι₂ := by
     rw [← cancel_mono ι₂, Category.assoc, PresheafedSpace.restrictHomOfLE_ofRestrict,
-      PresheafedSpace.IsOpenImmersion.lift_fac]
-    exact pullback.condition
+      PresheafedSpace.IsOpenImmersion.lift_fac]; exact pullback.condition
   have h := congrArg Hom.toHom (hf i j)
   rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h
-  exact (congrArg (· ≫ _) hl₁.symm).trans <| (Category.assoc _ _ _).trans <|
-    (congrArg (l ≫ ·) h).trans <| (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hl₂)
+  rw [← hl₁, ← hl₂, Category.assoc, Category.assoc]; exact congrArg (l ≫ ·) h
 
 private noncomputable def gluePsh : X.toPresheafedSpace ⟶ Y.toPresheafedSpace :=
-  PresheafedSpace.glueMorphisms X.IsSheaf U hU (fPsh U f)
-    (presheafedSpace_pullback_compat U f hf)
+  PresheafedSpace.glueMorphisms X.IsSheaf U hU (fPsh U f) (presheafedSpace_pullback_compat U f hf)
 
 private theorem isLocalHom_stalkMap_gluePsh (x : X) :
     IsLocalHom ((gluePsh U hU f hf).stalkMap x).hom := by
   obtain ⟨i, hx⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
-  let j := X.ofRestrict (U i).isOpenEmbedding
-  let x' : X.restrict (U i).isOpenEmbedding := ⟨x, hx⟩
+  let j := X.ofRestrict (U i).isOpenEmbedding; let x' : X.restrict (U i).isOpenEmbedding := ⟨x, hx⟩
   have hcomp_eq : j.toHom ≫ gluePsh U hU f hf = (f i).toHom :=
     PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i
   have hloc : IsLocalHom ((j.toHom ≫ gluePsh U hU f hf).stalkMap x').hom := by
     rw [PresheafedSpace.stalkMap.congr_hom _ _ hcomp_eq x', CommRingCat.hom_comp]
     have := isLocalHom_of_isIso (eqToHom (hcomp_eq ▸ rfl :
       Y.presheaf.stalk ((j.toHom ≫ gluePsh U hU f hf).base x') = Y.presheaf.stalk ((f i).base x')))
-    have := (f i).prop x'
-    exact CommRingCat.isLocalHom_comp _ _
+    have := (f i).prop x'; exact CommRingCat.isLocalHom_comp _ _
   rw [PresheafedSpace.stalkMap.comp] at hloc
   have : IsLocalHom ((j.toHom.stalkMap x').hom.comp ((gluePsh U hU f hf).stalkMap x).hom) := hloc
   exact isLocalHom_of_comp _ (j.toHom.stalkMap x').hom
@@ -94,8 +89,7 @@ noncomputable def glueMorphisms : X ⟶ Y :=
   ⟨gluePsh U hU f hf, isLocalHom_stalkMap_gluePsh U hU f hf⟩
 
 /-- The glued morphism restricts to `f i` on each member `U i` of the open cover. -/
-@[reassoc (attr := simp)]
-theorem ofRestrict_glueMorphisms (i : ι) :
+@[reassoc (attr := simp)] theorem ofRestrict_glueMorphisms (i : ι) :
     X.ofRestrict (U i).isOpenEmbedding ≫ glueMorphisms U hU f hf = f i :=
   Hom.ext' (PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i)
 
