@@ -82,17 +82,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {lam Lam : ℝ} {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
-/-- The density `⟨a ∇u, ∇w⟩` of the principal energy form is integrable on `Ω` for a measurable
-uniformly elliptic `a` and `u, w ∈ H¹(Ω)`. -/
-private theorem integrable_matrixBilinearForm_gradient
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u w : W1p mu Omega 2) :
-    Integrable (fun x => matrixBilinearForm (a x) (W1p.gradient w x) (W1p.gradient u x))
-      (mu.restrict Omega) := by
-  simpa using h.integrable_energyIntegrand_jetField ha (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-    (fun _ _ => by simp) u w
-
 /-- The pointwise step of the test-function argument: for `ε > 0`, the energy density of `u`
 against `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺` dominates `ε` times the density of `u` against `v` cut
 off to `{u⁺ > ε v}`. -/
@@ -183,8 +172,8 @@ private theorem setIntegral_indicator_matrixBilinearForm_nonpos
   have htest := hu ⟨_, hmem⟩ hnonneg
   rw [energyFormH1_zero_zero_eq_setIntegral] at htest
   have hle := (integral_mono_ae
-    (((integrable_matrixBilinearForm_gradient h ha u v).indicator hFm).const_mul ε)
-    (integrable_matrixBilinearForm_gradient h ha u _)
+    (((h.integrable_matrixBilinearForm_gradient ha u v).indicator hFm).const_mul ε)
+    (h.integrable_matrixBilinearForm_gradient ha u _)
     (mul_indicator_le_matrixBilinearForm_gradient h u v)).trans htest
   rw [integral_const_mul] at hle
   exact nonpos_of_mul_nonpos_right hle hε
@@ -205,7 +194,7 @@ theorem energyFormH1_posPart_left_nonpos
     energyFormH1 a 0 0 (W1p.posPart (by norm_num) u) v ≤ 0 := by
   set g : EuclideanSpace ℝ ι → ℝ :=
     fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)
-  have hg : Integrable g (mu.restrict Omega) := integrable_matrixBilinearForm_gradient h ha u v
+  have hg : Integrable g (mu.restrict Omega) := h.integrable_matrixBilinearForm_gradient ha u v
   have hFm (ε : ℝ) : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0} :=
     measurableSet_lt ((Lp.stronglyMeasurable (W1p.value v)).measurable.const_mul ε)
       ((Lp.stronglyMeasurable (W1p.value u)).measurable.max measurable_const)
