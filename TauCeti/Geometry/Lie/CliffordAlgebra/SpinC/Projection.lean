@@ -604,40 +604,40 @@ theorem realToSpecialOrthogonalProdDetLieEquiv_symm_apply
 /-- The Lie-algebra equivalence `𝔰𝔭𝔦𝔫(n) ≃ₗ⁅ℝ⁆ ker(d det)` induced by `ofSpin`. -/
 def realOfSpinLieEquivDetKer :
     LeftInvariantDerivation IS Spin ≃ₗ⁅ℝ⁆
-      (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)).ker :=
-  LieEquiv.ofBijective
-    { toLinearMap := (lieMap (realOfSpinSmoothHom n hQ)).toLinearMap.codRestrict
-        (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1)
-          (detContinuousMonoidHom _ hQ)).ker.toSubmodule
-        fun X ↦ (mem_ker_lieMap_detContinuousMonoidHom_iff n hQ _).mpr
-          (lieWeight_detContinuousMonoidHom_lieMap_realOfSpinSmoothHom n hQ X)
-      map_lie' := by
-        intro X Y; apply Subtype.ext; exact (lieMap (realOfSpinSmoothHom n hQ)).map_lie X Y }
-    ⟨fun X Y h ↦ lieMap_realOfSpinSmoothHom_injective n hQ (congrArg Subtype.val h),
-      fun Y ↦ by
-        have hd0 : realDetLieLift n hQ (d Y.1) = 0 :=
-          (congrArg (realDetLieLift n hQ)
-            ((mem_ker_lieMap_detContinuousMonoidHom_iff n hQ Y.1).mp Y.2)).trans (map_zero _)
-        refine ⟨(realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-          (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1), Subtype.ext ?_⟩
-        change lieMap (realOfSpinSmoothHom n hQ)
+      (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)).ker where
+  toFun X :=
+    ⟨lieMap (realOfSpinSmoothHom n hQ) X,
+      (mem_ker_lieMap_detContinuousMonoidHom_iff n hQ _).mpr
+        (lieWeight_detContinuousMonoidHom_lieMap_realOfSpinSmoothHom n hQ X)⟩
+  invFun Y :=
+    (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
+      (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1)
+  map_add' X Y := Subtype.ext ((lieMap (realOfSpinSmoothHom n hQ)).map_add X Y)
+  map_smul' c X := Subtype.ext ((lieMap (realOfSpinSmoothHom n hQ)).map_smul c X)
+  map_lie' {X Y} := Subtype.ext ((lieMap (realOfSpinSmoothHom n hQ)).map_lie X Y)
+  left_inv X :=
+    (congrArg (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
+      (lieMap_realToSpecialOrthogonalSmoothRange_lieMap_realOfSpinSmoothHom n hQ X)).trans
+      ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm_apply_apply X)
+  right_inv Y := Subtype.ext <| by
+    have hd0 : realDetLieLift n hQ (d Y.1) = 0 :=
+      (congrArg (realDetLieLift n hQ)
+        ((mem_ker_lieMap_detContinuousMonoidHom_iff n hQ Y.1).mp Y.2)).trans (map_zero _)
+    calc
+      lieMap (realOfSpinSmoothHom n hQ)
           ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-            (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1)) = Y.1
-        calc
-          lieMap (realOfSpinSmoothHom n hQ)
-              ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-                (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1))
-            = realSpinOrthogonalLieLift n hQ
-                (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) :=
-            (realSpinOrthogonalLieLift_apply n hQ _).symm
-          _ = realSpinOrthogonalLieLift n hQ
-                (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) + 0 :=
-            (add_zero _).symm
-          _ = realSpinOrthogonalLieLift n hQ
-                (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) +
-                realDetLieLift n hQ (d Y.1) :=
-            congrArg (realSpinOrthogonalLieLift n hQ _ + ·) hd0.symm
-          _ = Y.1 := realSpinOrthogonalLieLift_add_realDetLieLift n hQ Y.1⟩
+            (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1))
+        = realSpinOrthogonalLieLift n hQ
+            (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) :=
+        (realSpinOrthogonalLieLift_apply n hQ _).symm
+      _ = realSpinOrthogonalLieLift n hQ
+            (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) + 0 :=
+        (add_zero _).symm
+      _ = realSpinOrthogonalLieLift n hQ
+            (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) +
+            realDetLieLift n hQ (d Y.1) :=
+        congrArg (realSpinOrthogonalLieLift n hQ _ + ·) hd0.symm
+      _ = Y.1 := realSpinOrthogonalLieLift_add_realDetLieLift n hQ Y.1
 
 @[simp]
 theorem coe_realOfSpinLieEquivDetKer_apply (X : LeftInvariantDerivation IS Spin) :
@@ -649,28 +649,8 @@ theorem realOfSpinLieEquivDetKer_symm_apply
     (Y : (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)).ker) :
     (realOfSpinLieEquivDetKer n hQ).symm Y =
       (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-        (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) := by
-  apply (realOfSpinLieEquivDetKer n hQ).injective
-  apply Subtype.ext
-  have hdY : realDetLieLift n hQ (d Y.1) = 0 :=
-    (congrArg (realDetLieLift n hQ)
-      ((mem_ker_lieMap_detContinuousMonoidHom_iff n hQ Y.1).mp Y.2)).trans (map_zero _)
-  calc
-    (realOfSpinLieEquivDetKer n hQ ((realOfSpinLieEquivDetKer n hQ).symm Y) : 𝔤)
-      = Y.1 := congrArg Subtype.val ((realOfSpinLieEquivDetKer n hQ).apply_symm_apply Y)
-    _ = realSpinOrthogonalLieLift n hQ (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) +
-          realDetLieLift n hQ (d Y.1) :=
-      (realSpinOrthogonalLieLift_add_realDetLieLift n hQ Y.1).symm
-    _ = realSpinOrthogonalLieLift n hQ (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) +
-          0 :=
-      congrArg (realSpinOrthogonalLieLift n hQ _ + ·) hdY
-    _ = realSpinOrthogonalLieLift n hQ (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) :=
-      add_zero _
-    _ = (realOfSpinLieEquivDetKer n hQ
-          ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-            (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1)) : 𝔤) :=
-      (realSpinOrthogonalLieLift_apply n hQ _).trans
-        (coe_realOfSpinLieEquivDetKer_apply n hQ _).symm
+        (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.1) :=
+  (rfl)
 
 /-! ### Weight-normalized connection and curvature splitting -/
 

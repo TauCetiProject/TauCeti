@@ -65,11 +65,8 @@ theorem lieMap_Ad (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     exact (φ.toMonoidHom.groupLieAlgebraMap_apply I _).symm
   apply (leftInvariantDerivationLieEquivGroupLieAlgebra
     (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))).injective
-  change leftInvariantDerivationLieEquivGroupLieAlgebra _ (lieMap φ _) =
-    leftInvariantDerivationLieEquivGroupLieAlgebra _ (TauCeti.Lie.Ad (I := I') (φ g) _)
-  rw [hmap, TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
-    TauCeti.Lie.tangentAd_apply, TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
-    TauCeti.Lie.tangentAd_apply, hmap]
+  simp only [LieEquiv.coe_toLieHom, hmap,
+    TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, TauCeti.Lie.tangentAd_apply]
   exact φ.toMonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap g _
 
 /-- Bundled naturality of the derivation adjoint along a smooth homomorphism. -/

@@ -113,12 +113,6 @@ private theorem coe_realSpinEvenSmoothHom_apply
   apply Subtype.ext
   simp [spinGroup.val_toUnits_apply, coe_spinGroupToEven_apply]
 
-omit [NormedAlgebra ℝ A] [IsScalarTower ℝ ℂ A] [FiniteDimensional ℂ A] in
-private theorem coe_circleToAlgebraUnits (z : Circle) :
-    ((Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits z) : Aˣ) : A) =
-      (z : ℂ) • (1 : A) := by
-  simp [Algebra.algebraMap_eq_smul_one]
-
 private def realSpinCCoverEvenHom
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A) :
     Spin × Circle →* Aˣ where
@@ -126,8 +120,7 @@ private def realSpinCCoverEvenHom
     Units.map (Algebra.ofId ℂ A).toMonoidHom (Circle.toUnits p.2)
   map_one' := by simp
   map_mul' p q := Units.ext <| by
-    simp only [Prod.fst_mul, Prod.snd_mul, map_mul, Units.val_mul, coe_circleToAlgebraUnits,
-      mul_smul_comm, smul_mul_assoc, mul_one]
+    simp [Algebra.algebraMap_eq_smul_one]
 
 private theorem realSpinCCoverEvenHom_negOne
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A)
@@ -137,9 +130,7 @@ private theorem realSpinCCoverEvenHom_negOne
   have hs : spinGroupToEven (realCliffordForm n 0)
       (spinGroup.negOne (realCliffordForm n 0) hQ) = -1 :=
     Subtype.ext <| (coe_spinGroupToEven_apply _ _).trans (spinGroup.coe_negOne _ hQ)
-  simp only [realSpinCCoverEvenHom, MonoidHom.coe_mk, OneHom.coe_mk, Units.val_mul, Units.val_one,
-    coe_realSpinEvenSmoothHom_apply, hs, map_neg, map_one, coe_circleToAlgebraUnits,
-    Circle.coe_neg, Circle.coe_one, neg_smul, one_smul, neg_mul_neg, mul_one]
+  simp [realSpinCCoverEvenHom, hs]
 
 /-- The smooth weight-one homomorphism `Spinᶜ(n) → Aˣ` induced by an algebra homomorphism out of
 the even Clifford algebra into a finite-dimensional normed `ℂ`-algebra `A`. -/
@@ -152,9 +143,8 @@ def realSpinCEvenSmoothHom
   contMDiff_toFun := by
     let φz : Circle →ₜ* Aˣ :=
       ⟨(Units.map (Algebra.ofId ℂ A).toMonoidHom).comp Circle.toUnits,
-        Continuous.of_coeHom_comp <|
-          (continuous_subtype_val.smul (continuous_const (y := (1 : A)))).congr
-            fun z ↦ (coe_circleToAlgebraUnits z).symm⟩
+        ((continuous_algebraMap ℂ A).units_map (Algebra.ofId ℂ A).toMonoidHom).comp
+          (Continuous.of_coeHom_comp (f := Circle.toUnits) continuous_subtype_val)⟩
     apply (spinCGroup.contMDiff_iff_contMDiff_comp_mk n hQ _).mpr
     refine (((realSpinEvenSmoothHom f).contMDiff_toFun.comp contMDiff_fst).mul
       ((φz.toContMDiffMonoidMorphism (𝓡 1) 𝓘(ℝ, A)).contMDiff_toFun.comp
@@ -176,8 +166,7 @@ theorem coe_realSpinCEvenSmoothHom_mk
     spinCGroup.lift_mk (realCliffordForm n 0) hQ (realSpinCCoverEvenHom f)
       (realSpinCCoverEvenHom_negOne f hQ) p
   rw [congrArg Units.val h]
-  simp only [realSpinCCoverEvenHom, MonoidHom.coe_mk, OneHom.coe_mk, Units.val_mul,
-    coe_realSpinEvenSmoothHom_apply, coe_circleToAlgebraUnits, mul_smul_comm, mul_one]
+  simp [realSpinCCoverEvenHom, Algebra.algebraMap_eq_smul_one]
 
 /-- Restricting `realSpinCEvenSmoothHom` to `Spin(n)` evaluates `f` on the even Spin element. -/
 @[simp]
