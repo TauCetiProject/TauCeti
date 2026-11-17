@@ -57,6 +57,9 @@ coefficient theorem needs for the vanishing of the cohomology of `M` above its d
   if `M` is connected.
 * `TauCeti.singularHomologyToLocalHomology_injective`: for compact connected `M`, the map
   `Hₙ(M) → Hₙ(M, M ∖ {x})` is injective.
+* `TauCeti.singularHomology_ext_of_singularHomologyToLocalHomology`: for compact `M`, classes of
+  `Hₙ(M)` with the same images in local homology at the points of a set meeting every path
+  component are equal.
 * `TauCeti.isIso_localHomologySystemCone_π_app` and
   `TauCeti.singularHomologyIsoOfSimplyConnectedSpace`: for compact simply connected `M`,
   `Hₙ(M) ≅ Hₙ(M, M ∖ {x}) ≅ N`.
@@ -150,6 +153,32 @@ theorem singularHomologyToLocalHomology_injective [CompactSpace M] [ConnectedSpa
     ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at h
   exact ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
     (localHomologySystemCone_π_app_injective N hn (FundamentalGroupoid.mk x) h)
+
+/-- **A top-dimensional class of a compact manifold is determined on a set meeting every path
+component**: two classes of `Hₙ(M; N)` are equal as soon as their images in the local homology
+`Hₙ(M, M ∖ {x}; N)` agree at every point `x` of a set `D` from which every point of `M` can be
+reached by a path. A dense set `D` qualifies, since path components of a manifold are open. -/
+theorem singularHomology_ext_of_singularHomologyToLocalHomology [CompactSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) {D : Set M} (hD : ∀ y, ∃ x ∈ D, Joined x y)
+    {μ μ' : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} Λ)}
+    (h : ∀ x ∈ D,
+      singularHomologyToLocalHomology N x n μ = singularHomologyToLocalHomology N x n μ') :
+    μ = μ' := by
+  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
+    simp only [compl_univ]
+    exact inferInstanceAs (IsEmpty (∅ : Set M))
+  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{w} Λ) N n) := inferInstance
+  refine ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
+    (Concrete.isLimit_ext _ (isLimitLocalHomologySystemCone N M E hn) _ _ fun y ↦ ?_)
+  obtain ⟨x, hx, hxy⟩ := hD y.as
+  -- Transport the equality at `x` along a path from `x` to `y`.
+  let f : FundamentalGroupoid.mk x ⟶ y := Path.Homotopic.Quotient.mk hxy.somePath
+  have hx' := h x hx
+  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+    ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at hx'
+  rw [← Cone.w _ f]
+  exact congrArg (ConcreteCategory.hom ((localHomologySystem N M E n).map f)) hx'
 
 /-- **The image of the top homology of a compact manifold in local homology.** A local
 class at `x` is the restriction of a class of `Hₙ(M, M ∖ M; N)` exactly when it is fixed by the
