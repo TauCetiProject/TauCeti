@@ -411,8 +411,11 @@ theorem not_contDiffAt_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orthonormal �
   obtain ⟨t, ht1, ht, ht0 : 0 < t⟩ :=
     ((hlim.eventually_gt_atTop K).and ((hK.filter_mono nhdsWithin_le_nhds).and
       self_mem_nhdsWithin)).exists
-  norm_num [hφ_eq, abs_of_pos ht0, abs_of_nonneg (Real.sqrt_nonneg _)] at ht
-  rw [mul_comm K] at ht
+  have hφt : ‖φ t‖ = t ^ 2 * √(-Real.log t) := by
+    rw [hφ_eq, norm_neg, abs_of_pos ht0, Real.norm_of_nonneg (by positivity)]
+  have hpow : ‖‖t - 0‖ ^ ((1 : ℝ) + 1)‖ = t ^ 2 := by
+    norm_num [abs_of_pos ht0]
+  rw [hφt, hpow] at ht
   have : √(-Real.log t) ≤ K := le_of_mul_le_mul_left (by linarith) (pow_pos ht0 2)
   linarith
 
@@ -578,6 +581,15 @@ private theorem tendsto_integral_laplacian_smul_approx {e : Fin 2 → E} (he : O
         continuousAt_const.mul ((continuousAt_F hx2).comp (continuousAt_const.add continuousAt_id))
       exact hcont.tendsto.mono_left nhdsWithin_le_nhds
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Integrating against a test function on `Ω` only sees the integrand on `Ω`. -/
+private theorem integral_smul_congr_of_eqOn (φ : 𝓓(Ω, ℝ)) {g₁ g₂ : E → ℝ}
+    (h : EqOn g₁ g₂ Ω) : ∫ x, (φ : E → ℝ) x • g₁ x ∂μ = ∫ x, (φ : E → ℝ) x • g₂ x ∂μ := by
+  refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+  by_cases hx : x ∈ (Ω : Set E)
+  · simp only [h hx]
+  · simp [φ.zero_on_compl hx]
+
 omit [FiniteDimensional ℝ E] in
 /-- Dominated convergence for `∫ φ Δuₜ` as `t → 0⁺`, with the uniform bound on `Δuₜ` on the
 support of `φ`, where `‖x‖² + t ≤ s₀ < 1` for `0 < t < δ`. -/
@@ -586,8 +598,6 @@ private theorem tendsto_integral_smul_approxLaplacian {e : Fin 2 → E} (he : Or
     (hrange : ∀ t ∈ Ioo 0 δ, ∀ x ∈ (Ω : Set E), 0 < ‖x‖ ^ 2 + t ∧ ‖x‖ ^ 2 + t ≤ s₀)
     (φ : 𝓓(Ω, ℝ)) : Tendsto (fun t ↦ ∫ x, (φ : E → ℝ) x • approxLaplacian e t x ∂μ) (𝓝[>] 0)
       (𝓝 (∫ x, (φ : E → ℝ) x • laplacianQuadraticSqrtNegLog e x ∂μ)) := by
-  have hφne : ∀ x, (φ : E → ℝ) x ≠ 0 → x ∈ (Ω : Set E) := fun x hx ↦
-    φ.tsupport_subset (subset_tsupport _ hx)
   set C := ((Module.finrank ℝ E + 4) / 2 + 1) / √(M s₀) + 1 / (4 * (M s₀ * √(M s₀)))
   refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖(φ : E → ℝ) x‖ * C)
     (Eventually.of_forall fun t ↦
@@ -597,20 +607,20 @@ private theorem tendsto_integral_smul_approxLaplacian {e : Fin 2 → E} (he : Or
   · filter_upwards [Ioo_mem_nhdsGT hδ] with t ht
     refine Eventually.of_forall fun x ↦ ?_
     rw [norm_smul, Real.norm_eq_abs (approxLaplacian e t x)]
-    by_cases hx : (φ : E → ℝ) x = 0
-    · simp [hx]
+    by_cases hx : x ∈ (Ω : Set E)
     · gcongr
-      exact abs_approxLaplacian_le e he hs₀ ht.1.le (hrange t ht x (hφne x hx)).1
-        (hrange t ht x (hφne x hx)).2
+      exact abs_approxLaplacian_le e he hs₀ ht.1.le (hrange t ht x hx).1 (hrange t ht x hx).2
+    · simp [φ.zero_on_compl hx]
   · exact (φ.continuous.norm.mul continuous_const).integrable_of_hasCompactSupport
       φ.hasCompactSupport.norm.mul_right
-  · by_cases hx : (φ : E → ℝ) x = 0
-    · simp [hx]
+  · by_cases hx : x ∈ (Ω : Set E)
+    swap
+    · simp [φ.zero_on_compl hx]
     refine Tendsto.const_smul ?_ _
     rcases eq_or_ne x 0 with rfl | hx0
     · simp [approxLaplacian]
     have hx1 : ‖x‖ < 1 := by
-      have := (hrange (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩ x (hφne x hx)).2
+      have := (hrange (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩ x hx).2
       exact (sq_lt_one_iff₀ (norm_nonneg x)).1 (by linarith)
     obtain ⟨hx2, hx3⟩ := norm_sq_add_zero_mem_Ioo hx0 hx1
     have hshift : ContinuousAt (fun t : ℝ ↦ ‖x‖ ^ 2 + t) 0 :=
@@ -652,11 +662,8 @@ private theorem integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball {e : 
     have hc : ContDiffOn ℝ 2 (approx e t) Ω := fun x hx ↦
       (contDiffAt_approx e (hs x hx).1 ((hs x hx).2.trans_lt hs₀)).contDiffWithinAt
     rw [hc.integral_laplacian_smul_eq_integral_smul_laplacian φ]
-    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-    by_cases hx : (φ : E → ℝ) x = 0
-    · simp [hx]
-    · have hxΩ := φ.tsupport_subset (subset_tsupport _ hx)
-      simp only [laplacian_approx he (hs x hxΩ).1 ((hs x hxΩ).2.trans_lt hs₀)]
+    exact integral_smul_congr_of_eqOn φ fun x hx ↦
+      laplacian_approx he (hs x hx).1 ((hs x hx).2.trans_lt hs₀)
   exact tendsto_nhds_unique ((tendsto_integral_laplacian_smul_approx he φ).congr'
       (by filter_upwards [Ioo_mem_nhdsGT hδ] with t ht using hgreen t ht))
     (tendsto_integral_smul_approxLaplacian he hδ hs₀ hrange φ)
@@ -704,10 +711,7 @@ theorem not_exists_contDiffOn_laplacian_eq_laplacianQuadraticSqrtNegLog {e : Fin
       (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) fun φ ↦ ?_
     rw [hvΩ.integral_laplacian_smul_eq_integral_smul_laplacian φ,
       integral_laplacian_smul_quadraticSqrtNegLog _ he (ball_subset_ball (min_le_right _ _)) φ]
-    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-    by_cases hx : (φ : E → ℝ) x = 0
-    · simp [hx]
-    · simp only [hΔv (hΩU (φ.tsupport_subset (subset_tsupport _ hx)))]
+    exact integral_smul_congr_of_eqOn φ (hΔv.mono hΩU)
   -- By Weyl's lemma `v - u` is harmonic, hence `C²`, and then so is `u = v - (v - u)`.
   have hharm := (TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn
     (hvΩ.continuousOn.sub hu.continuousOn)).2 hw
