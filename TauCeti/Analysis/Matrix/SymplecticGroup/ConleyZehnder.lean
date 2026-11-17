@@ -90,6 +90,8 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 
 ## Main results
 
+* `TauCeti.diagonalStraightening_mul_graphFrame`: the straightened graph frame of a real matrix
+  `A` is `(1/√2) ((1 + A) + i J (1 - A))`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
@@ -179,18 +181,40 @@ theorem diagonalStraightening_mem_unitaryGroup :
     conjTranspose_smul, smul_mul_smul, straightening_mul_conjTranspose]
   simp [smul_smul, ← mul_inv, sqrt_two_mul_sqrt_two]
 
+/-- **The straightened graph frame.** The diagonal straightening `T` times the graph frame of a
+real matrix `A` is `(1/√2) ((1 + A) + i J (1 - A))`: its real and imaginary parts are
+`(1 + A) / √2` and `J (1 - A) / √2`. -/
+theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalStraightening n * graphFrame A = ((√2 : ℝ) : ℂ)⁻¹ •
+      ((1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)) := by
+  -- Compare the two matrices on the real basis vectors.
+  refine ext_of_mulVec_single fun j => ?_
+  have hj : (Pi.single j 1 : n ⊕ n → ℂ) = fun k => ((Pi.single j 1 : n ⊕ n → ℝ) k : ℂ) := by
+    ext k
+    by_cases hk : k = j <;> simp [hk]
+  rw [hj]
+  generalize (Pi.single j 1 : n ⊕ n → ℝ) = x
+  have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+      M.map ((↑) : ℝ → ℂ) *ᵥ (fun k => (x k : ℂ)) = fun i => ((M *ᵥ x) i : ℂ) :=
+    funext fun i => (RingHom.map_mulVec ofRealHom M x i).symm
+  rw [← Matrix.mulVec_mulVec, graphFrame_mulVec, diagonalStraightening_def]
+  simp only [Matrix.smul_mulVec, Matrix.add_mulVec, hmap]
+  rw [← Matrix.mulVec_mulVec, J]
+  ext (i | i) <;>
+    simp [Matrix.smul_mulVec, fromBlocks_mulVec, Matrix.neg_mulVec, Matrix.one_mulVec,
+      Matrix.sub_mulVec, -Matrix.mulVec_mulVec]
+  · ring
+  · linear_combination (-(x (.inr i) : ℂ) - ((A *ᵥ x) (.inr i) : ℂ)) * I_sq
+
 /-- The diagonal straightening of the graph frame of the identity, whose columns span the
 diagonal, is the real matrix `√2 • 1`. -/
 private theorem diagonalStraightening_mul_graphFrame_one :
     diagonalStraightening n * graphFrame 1 =
       ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
-  have h : graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      (fromBlocks (1 : Matrix n n ℂ) 1 (Complex.I • 1) (-(Complex.I • 1)))ᴴ := by
-    rw [← realify_one (𝕜 := ℂ) (ι := n), graphFrame_realify, fromBlocks_conjTranspose]
-    simp
-  rw [h, diagonalStraightening_def, Matrix.smul_mul, straightening_mul_conjTranspose,
+  rw [diagonalStraightening_mul_graphFrame, sub_self, Matrix.mul_zero, ← two_smul ℝ 1,
     map_ofReal_sqrt_two_smul_one]
-  simp [smul_smul, inv_sqrt_two]
+  ext i j
+  by_cases hij : i = j <;> simp [hij, inv_sqrt_two]
 
 /-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
 of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
@@ -247,6 +271,18 @@ theorem realImage_graphUnitaryFrame (A : GLSymplectic n ℝ) :
         graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage := by
   rw [graphUnitaryFrame, realImage_mul, realImage_mul, realImage_realOrthonormalize,
     coe_graphFrameUnit]
+
+open scoped MatrixOrder Matrix.Norms.L2Operator in
+/-- The unitary graph frame is the straightened graph frame `T Γ(A)` followed by the real
+change of basis `Re (Γ(A)ᴴ Γ(A)) ^ (-1/2)`. -/
+theorem coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+    (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        (((graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ *
+          graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map Complex.re ^
+            (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
+  rw [graphUnitaryFrame, Subtype.coe_mk, coe_realOrthonormalize, coe_graphFrameUnit,
+    Matrix.mul_assoc]
 
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
