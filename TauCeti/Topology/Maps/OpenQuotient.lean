@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Topology.LocallyClosed
 
 /-!
 # Open quotient maps
@@ -13,6 +14,8 @@ public import Mathlib.Topology.Homeomorph.Defs
 An open quotient map `π : X → Y` commutes with taking frontiers of saturated sets: if `A` is the
 full preimage of its image, the frontier of `π '' A` is the image of the frontier of `A`. This is
 what lets a decomposition of `X` into pieces meeting along their frontiers descend to a quotient.
+Likewise, preimages under an open quotient map commute with `coborder`, so local closedness
+descends along open quotient maps (`IsOpenQuotientMap.isLocallyClosed_preimage_iff`).
 
 Every homeomorphism is an open quotient map (`IsHomeomorph.isOpenQuotientMap`), and discrete
 topologies descend along coinducing, quotient, and open quotient maps
@@ -32,6 +35,13 @@ theorem IsOpenQuotientMap.frontier_image_of_preimage_image_eq (hπ : IsOpenQuoti
     {A : Set X} (hA : π ⁻¹' (π '' A) = A) : frontier (π '' A) = π '' frontier A := by
   rw [← image_preimage_eq (frontier (π '' A)) hπ.surjective,
     hπ.isOpenMap.preimage_frontier_eq_frontier_preimage hπ.continuous, hA]
+
+/-- Under an open quotient map, a set has locally closed preimage if and only if it is locally
+closed. -/
+theorem IsOpenQuotientMap.isLocallyClosed_preimage_iff (hπ : IsOpenQuotientMap π) {s : Set Y} :
+    IsLocallyClosed (π ⁻¹' s) ↔ IsLocallyClosed s := by
+  rw [isLocallyClosed_iff_isOpen_coborder, isLocallyClosed_iff_isOpen_coborder,
+    coborder_preimage hπ.isOpenMap hπ.continuous, ← hπ.isQuotientMap.isOpen_preimage]
 
 /-- A homeomorphism is an open quotient map. -/
 theorem IsHomeomorph.isOpenQuotientMap (hπ : IsHomeomorph π) : IsOpenQuotientMap π :=
