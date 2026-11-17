@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.CauchyProblem.Uniqueness
 public import TauCeti.Analysis.Semigroups.GrowthBound
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The inhomogeneous abstract Cauchy problem
@@ -509,12 +510,6 @@ end IsForcedMildSolution
 
 namespace StronglyContinuousSemigroup
 
-/-- Translating a set integral over `(0, τ]` to one over `(a, a + τ]`. -/
-private theorem setIntegral_Ioc_comp_add_left (f : ℝ → X) (a : ℝ) {τ : ℝ} (hτ : 0 ≤ τ) :
-    ∫ s in Ioc 0 τ, f (a + s) = ∫ s in Ioc a (a + τ), f s := by
-  rw [← intervalIntegral.integral_of_le hτ, ← intervalIntegral.integral_of_le (by linarith),
-    intervalIntegral.integral_comp_add_left, add_zero]
-
 variable [CompleteSpace X] (S : StronglyContinuousSemigroup X)
 
 /-- A function `u` continuous on `[0, T]` that satisfies the integrated equation of
@@ -541,35 +536,33 @@ private theorem isForcedMildSolution_realOperator_sub_min {T : ℝ} (hT : 0 ≤ 
     by rw [hw_le 0 hT], fun τ hτ => ?_⟩
   rcases le_or_gt τ T with hτT | hτT
   · -- On `[0, T]`, `w` is `u`.
-    have hint : ∫ s in Ioc 0 τ, w s = ∫ s in Ioc 0 τ, u s :=
-      setIntegral_congr_fun measurableSet_Ioc fun s hs => hw_le s (hs.2.trans hτT)
-    obtain ⟨hut, hgen⟩ := hmild τ ⟨hτ, hτT⟩
-    refine ⟨hint ▸ hut, ?_⟩
-    rw [hGint, min_eq_left hτT, hw_le τ hτT, ← hgen]
-    exact congrArg S.generator (Subtype.ext hint)
+    rw [setIntegral_congr_fun measurableSet_Ioc fun s hs => hw_le s (hs.2.trans hτT), hGint,
+      min_eq_left hτT, hw_le τ hτT]
+    exact hmild τ ⟨hτ, hτT⟩
   -- After `T`, the time integral splits off the integral of the orbit of `u T` over `(T, τ]`.
   obtain ⟨huT, hgenT⟩ := hmild T ⟨hT, le_rfl⟩
   have horb := S.integral_orbit_mem_domain (u T) (τ - T)
   have hii (c d : ℝ) (hc : 0 ≤ c) (hd : 0 ≤ d) : IntervalIntegrable w volume c d :=
     (hwc.mono fun s (hs : s ∈ uIcc c d) => mem_Ici.2 ((le_min hc hd).trans hs.1)).intervalIntegrable
+  have hshift : ∫ r in Ioc 0 (τ - T), S.realOperator r (u T) = ∫ s in Ioc T τ, w s := by
+    have h := setIntegral_Ioc_comp_add_left w T 0 (τ - T)
+    rw [add_zero, add_sub_cancel] at h
+    rw [← h]
+    exact setIntegral_congr_fun measurableSet_Ioc fun r hr => by
+      rw [hw_ge _ (le_add_of_nonneg_right hr.1.le), add_sub_cancel_left]
   have hint : ∫ s in Ioc 0 τ, w s =
       (∫ s in Ioc 0 T, u s) + ∫ r in Ioc 0 (τ - T), S.realOperator r (u T) := by
-    rw [← setIntegral_congr_fun measurableSet_Ioc fun s hs => hw_le s hs.2,
+    rw [hshift, ← setIntegral_congr_fun measurableSet_Ioc fun s hs => hw_le s hs.2,
       ← intervalIntegral.integral_of_le hτ, ← intervalIntegral.integral_of_le hT,
-      ← intervalIntegral.integral_of_le (sub_nonneg.2 hτT.le),
-      ← intervalIntegral.integral_add_adjacent_intervals (hii 0 T le_rfl hT)
-        (hii T τ hT (hT.trans hτT.le)), ← sub_self T, ← intervalIntegral.integral_comp_sub_right]
-    congr 1
-    exact intervalIntegral.integral_congr fun s hs =>
-      hw_ge s (by rw [uIcc_of_le hτT.le] at hs; exact hs.1)
-  have hmem : (∫ s in Ioc 0 τ, w s) ∈ S.generator.domain := by
-    rw [hint, S.generator_domain]
-    exact add_mem (S.generator_domain ▸ huT) horb
-  refine ⟨hmem, ?_⟩
-  have hsplit : (⟨_, hmem⟩ : S.generator.domain) =
-      ⟨_, huT⟩ + ⟨_, by rw [S.generator_domain]; exact horb⟩ := Subtype.ext hint
-  rw [hsplit, LinearPMap.map_add, hgenT, S.generator_integral_orbit, hw_ge τ hτT.le, hGint,
-    min_eq_right hτT.le]
+      ← intervalIntegral.integral_of_le hτT.le]
+    exact (intervalIntegral.integral_add_adjacent_intervals (hii 0 T le_rfl hT)
+      (hii T τ hT (hT.trans hτT.le))).symm
+  have horb' : (∫ r in Ioc 0 (τ - T), S.realOperator r (u T)) ∈ S.generator.domain := by
+    rw [S.generator_domain]
+    exact horb
+  rw [hint]
+  refine ⟨add_mem huT horb', (S.generator.map_add ⟨_, huT⟩ ⟨_, horb'⟩).trans ?_⟩
+  rw [hgenT, S.generator_integral_orbit, hw_ge τ hτT.le, hGint, min_eq_right hτT.le]
   abel
 
 /-- **Duhamel's formula on a bounded interval.** Let `u` be continuous on `[a, b]` and `F`
@@ -600,11 +593,8 @@ theorem eqOn_realOperator_sub_add_setIntegral_of_generator_setIntegral_eq {a b :
   have hus : ContinuousOn (fun s => u (a + s)) (Icc 0 (b - a)) :=
     hu.comp (by fun_prop) fun s hs => ⟨by linarith [hs.1], by linarith [hs.2]⟩
   have hm := S.isForcedMildSolution_realOperator_sub_min hT hFs hus fun τ hτ => by
-    obtain ⟨hut, hgen⟩ := hmild (a + τ) ⟨by linarith [hτ.1], by linarith [hτ.2]⟩
-    have hint := setIntegral_Ioc_comp_add_left u a hτ.1
-    refine ⟨hint ▸ hut, ?_⟩
-    rw [add_zero, setIntegral_Ioc_comp_add_left F a hτ.1, ← hgen]
-    exact congrArg S.generator (Subtype.ext hint)
+    rw [setIntegral_Ioc_comp_add_left u a, setIntegral_Ioc_comp_add_left F a, add_zero]
+    exact hmild (a + τ) ⟨by linarith [hτ.1], by linarith [hτ.2]⟩
   -- Duhamel's formula on `[0, ∞)` at time `t - a`, translated back to `(a, t]`.
   have hta : 0 ≤ t - a := sub_nonneg.2 ht.1
   have h := hm.eq_realOperator_add_duhamel hta
@@ -612,8 +602,8 @@ theorem eqOn_realOperator_sub_add_setIntegral_of_generator_setIntegral_eq {a b :
     S.realOperator_of_nonpos_apply (sub_nonpos.2 (sub_le_sub_right ht.2 a)), duhamel_def] at h
   rw [h]
   congr 1
-  have hshift := setIntegral_Ioc_comp_add_left (fun s => S.realOperator (t - s) (F s)) a hta
-  rw [add_sub_cancel] at hshift
+  have hshift := setIntegral_Ioc_comp_add_left (fun s => S.realOperator (t - s) (F s)) a 0 (t - a)
+  rw [add_zero, add_sub_cancel] at hshift
   rw [← hshift]
   refine setIntegral_congr_fun measurableSet_Ioc fun s hs => ?_
   rw [indicator_of_mem (show s ∈ Ioc 0 (b - a) from ⟨hs.1, by linarith [hs.2, ht.2]⟩), sub_sub]

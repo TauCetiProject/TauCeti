@@ -203,8 +203,8 @@ theorem exists_hilbertBasis_hasSum_dirichletSemigroup_apply
 /-- **Duhamel's formula for the parabolic Dirichlet problem.** Let `L` have time-independent
 coefficients whose energy form is bounded and coercive on `H¹₀(Ω)`, and let `g` be integrable on
 `(t₀, t₁)` with values in `L²(Ω)`. Let `u` be a weak solution of `∂ₜu + L u = g` in
-`(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`: `u` and `u'` are integrable on `(t₀, t₁)`, the
-image of `u` in `H⁻¹(Ω)` has weak time derivative `u'`, and
+`(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`: `u` is integrable on `(t₀, t₁)`, the image of `u`
+in `H⁻¹(Ω)` has weak time derivative `u'`, and
 
 `u'(t)(v) + a(u(t), v) = ⟪g(t), v⟫_{L²(Ω)}` for all `v ∈ H¹₀(Ω)` and almost every `t`,
 
@@ -218,8 +218,7 @@ theorem eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDua
     (h : HasWeakLineDerivOn volume ⟨Set.Ioo t₀ t₁, isOpen_Ioo⟩
       (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
         (W1p0.valueL (u t))) u' 1)
-    (hu : IntegrableOn u (Set.Ioo t₀ t₁)) (hu' : IntegrableOn u' (Set.Ioo t₀ t₁))
-    (hg : IntegrableOn g (Set.Ioo t₀ t₁))
+    (hu : IntegrableOn u (Set.Ioo t₀ t₁)) (hg : IntegrableOn g (Set.Ioo t₀ t₁))
     (heq : ∀ᵐ t ∂volume.restrict (Set.Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
       u' t v + energyFormH1 a b c (u t : W1p mu Omega 2) (v : W1p mu Omega 2) =
         ⟪g t, W1p0.valueL v⟫_ℝ)
@@ -230,7 +229,7 @@ theorem eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDua
       (Set.Icc t₀ t₁) := by
   rw [dirichletSemigroup_def]
   refine h.eqOn_formSemigroup_add_setIntegral_of_gelfandDual hcoercive W1p0.denseRange_valueL_two
-    hu hu' hg (heq.mono fun t ht => ?_) hw hae
+    hu hg (heq.mono fun t ht => ?_) hw hae
   ext v
   simpa only [add_apply, energyFormH1L0_apply, ContinuousLinearMap.gelfandDual_apply] using ht v
 

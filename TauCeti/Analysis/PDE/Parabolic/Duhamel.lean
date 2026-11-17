@@ -36,8 +36,8 @@ This file shows that the two agree: for every `t ∈ [a, b]`,
 
 (`TauCeti.HasWeakLineDerivOn.eqOn_formSemigroup_add_setIntegral_of_gelfandDual`). In particular,
 for `g = 0` the continuous representative of a weak solution is the semigroup orbit of its
-initial value. Only integrability of `u`, `u'` and `g` on `(a, b)` is used, not their
-square integrability.
+initial value. Only integrability of `u` and `g` on `(a, b)` is used, not their square
+integrability.
 
 ## The argument
 
@@ -81,7 +81,7 @@ domain of the generator of the form semigroup, which sends it to `w t - w a - �
 private theorem HasWeakLineDerivOn.mem_graph_formGenerator_of_gelfandDual
     (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ J.gelfandDual (J (u t))) u' 1)
     (hB : IsCoercive B) (hJ : DenseRange J) (hu : IntegrableOn u (Ioo a b))
-    (hu' : IntegrableOn u' (Ioo a b)) (hg : IntegrableOn g (Ioo a b))
+    (hg : IntegrableOn g (Ioo a b))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + B (u t) = J.gelfandDual (g t))
     (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ J (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
     {t : ℝ} (ht : t ∈ Icc a b) :
@@ -89,6 +89,8 @@ private theorem HasWeakLineDerivOn.mem_graph_formGenerator_of_gelfandDual
   have hsub : Ioo a t ⊆ Ioo a b := Ioo_subset_Ioo_right ht.2
   have hut := hu.mono_set hsub
   have hgt := hg.mono_set hsub
+  have hu' : IntegrableOn u' (Ioo a b) := ((J.gelfandDual.integrable_comp hg).sub
+    (B.integrable_comp hu)).congr (heq.mono fun s hs ↦ (eq_sub_of_add_eq hs).symm)
   -- The weak equation, integrated over `(a, t)`.
   have hftc := h.integral_eq_sub hu' (J.gelfandDual.continuous.comp_continuousOn hw)
     (hae.fun_comp J.gelfandDual) (left_mem_Icc.2 (ht.1.trans ht.2)) ht
@@ -112,7 +114,7 @@ private theorem HasWeakLineDerivOn.mem_graph_formGenerator_of_gelfandDual
 and `J : V →L[ℝ] H` have dense range. Let `u : (a, b) → V` be a weak solution of
 `u' + B u = g` with forcing `g` integrable on `(a, b)`: `t ↦ J.gelfandDual (J (u t))` has weak
 derivative `u'` on `(a, b)` with `u' t + B (u t) = J.gelfandDual (g t)` for almost every `t`, where
-`u` and `u'` are integrable on `(a, b)`. If `w` is continuous on `[a, b]` and equal to `J ∘ u`
+`u` is integrable on `(a, b)`. If `w` is continuous on `[a, b]` and equal to `J ∘ u`
 almost everywhere on `(a, b)`, then for every `t ∈ [a, b]`
 
 `w t = S(t - a) (w a) + ∫_{(a,t]} S(t - s) g(s) ds`,
@@ -121,14 +123,14 @@ where `S = hB.formSemigroup hJ` is the semigroup `e^{-t𝒜}` of the form. -/
 theorem HasWeakLineDerivOn.eqOn_formSemigroup_add_setIntegral_of_gelfandDual
     (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ J.gelfandDual (J (u t))) u' 1)
     (hB : IsCoercive B) (hJ : DenseRange J) (hu : IntegrableOn u (Ioo a b))
-    (hu' : IntegrableOn u' (Ioo a b)) (hg : IntegrableOn g (Ioo a b))
+    (hg : IntegrableOn g (Ioo a b))
     (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + B (u t) = J.gelfandDual (g t))
     (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ J (u t)) =ᵐ[volume.restrict (Ioo a b)] w) :
     EqOn w (fun t ↦ (hB.formSemigroup hJ).realOperator (t - a) (w a) +
       ∫ s in Ioc a t, (hB.formSemigroup hJ).realOperator (t - s) (g s)) (Icc a b) := by
   refine (hB.formSemigroup hJ).eqOn_realOperator_sub_add_setIntegral_of_generator_setIntegral_eq
     (by rwa [integrableOn_Ioc_iff_integrableOn_Ioo]) hw fun t ht ↦ ?_
-  have hmem := h.mem_graph_formGenerator_of_gelfandDual hB hJ hu hu' hg heq hw hae ht
+  have hmem := h.mem_graph_formGenerator_of_gelfandDual hB hJ hu hg heq hw hae ht
   rw [hB.formSemigroup_generator hJ]
   exact ⟨LinearPMap.mem_domain_of_mem_graph hmem, ((LinearPMap.image_iff _).2 hmem).symm⟩
 
