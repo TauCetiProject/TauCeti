@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
-import TauCeti.Data.ENNReal.Inv
+import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
@@ -42,7 +42,8 @@ estimate is the classical union bound over unordered coordinate pairs, using
   their `.real` companions bound the uniform-measure mass of collisions;
 * `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
   compute the exact uniform-measure masses;
-* `uniformOn_injective_eq_zero_of_isEmpty`, `uniformOn_injective_of_subsingleton`, and
+* `uniformOn_injective_eq_zero_of_isEmpty`,
+  `uniformOn_injective_eq_uniformOn_univ_of_subsingleton`, and
   `uniformOn_not_injective_eq_zero_of_subsingleton` (with its `.real` companion) treat the
   infeasible and subsingleton-sample regimes;
 * `uniformOn_inter_le_add_compl` and `uniformOn_le_inter_add_compl` give the general conditioning
@@ -128,9 +129,8 @@ theorem uniformOn_real_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSi
     (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} =
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι := by
-  rw [measureReal_def, uniformOn_not_injective_apply_eq,
-    ENNReal.toReal_one_sub_div (by exact_mod_cast Nat.descFactorial_le_pow _ _)]
-  simp
+  rw [← Set.compl_ofPred, probReal_compl_eq_one_sub (Set.toFinite _).measurableSet,
+    uniformOn_real_injective_apply_eq]
 
 /-- Unconditional upper bound form of `uniformOn_not_injective_apply_eq`: when `ι → κ` is
 nonempty the two sides are equal, and when `ι → κ` is empty the uniform measure is zero while
@@ -150,10 +150,11 @@ theorem uniformOn_real_not_injective_le_one_sub_descFactorial_div_pow [Measurabl
     (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} ≤
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι := by
-  have hle := ENNReal.toReal_mono (ENNReal.sub_ne_top ENNReal.one_ne_top)
-    (uniformOn_not_injective_le_one_sub_descFactorial_div_pow (ι := ι) (κ := κ))
-  rw [ENNReal.toReal_one_sub_div (by exact_mod_cast Nat.descFactorial_le_pow _ _)] at hle
-  simpa [measureReal_def] using hle
+  rcases isEmpty_or_nonempty (ι → κ) with h | h
+  · rw [Measure.eq_zero_of_isEmpty (uniformOn (Set.univ : Set (ι → κ))), measureReal_zero_apply]
+    exact sub_nonneg.2 (div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow _ _)
+      (by positivity))
+  · exact uniformOn_real_not_injective_apply_eq.le
 
 end
 
@@ -171,7 +172,7 @@ theorem uniformOn_injective_eq_zero_of_isEmpty [MeasurableSpace κ] [IsEmpty (ι
 /-- On a subsingleton sample index, every map `ι → κ` is injective, so the uniform measure on
 injective selections coincides with the uniform measure on all selections. -/
 @[simp]
-theorem uniformOn_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace κ] :
+theorem uniformOn_injective_eq_uniformOn_univ_of_subsingleton [Subsingleton ι] [MeasurableSpace κ] :
     uniformOn {f : ι → κ | Function.Injective f} = uniformOn (Set.univ : Set (ι → κ)) := by
   congr 1
   exact Set.eq_univ_of_forall fun f => Function.injective_of_subsingleton f

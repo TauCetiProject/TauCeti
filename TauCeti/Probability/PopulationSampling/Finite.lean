@@ -240,7 +240,7 @@ theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton [Finty
     [Subsingleton ι] [Finite κ] (ρ : Measure (κ → α)) :
     sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
   rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
-    uniformOn_injective_of_subsingleton]
+    uniformOn_injective_eq_uniformOn_univ_of_subsingleton]
 
 /-- Sampling a deterministic population with replacement is the pushforward of uniform
 selections, without an injectivity constraint. -/
