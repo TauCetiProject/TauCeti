@@ -248,6 +248,16 @@ theorem map_comp (f : M →ₗ[k] M') (g : N →ₗ[k] N')
       (map f' g' hf' hg').comp (map f g hf hg) :=
   hom_ext fun _ _ ↦ rfl
 
+variable (k M) in
+/-- Tensoring an `A`-linear map `g` on the left with `M`: the map `1 ⊗ g`. -/
+def lTensor [Module k A] [IsScalarTower k A N] [IsScalarTower k A N'] (g : N →ₗ[A] N') :
+    BalancedTensorProduct k A M N →ₗ[k] BalancedTensorProduct k A M N' :=
+  map LinearMap.id (g.restrictScalars k) (fun _ _ ↦ rfl) g.map_smul
+
+@[simp]
+theorem lTensor_tmul [Module k A] [IsScalarTower k A N] [IsScalarTower k A N']
+    (g : N →ₗ[A] N') (m : M) (n : N) : lTensor k M g (tmul k A m n) = tmul k A m (g n) := (rfl)
+
 /-- Equivariant linear equivalences of the factors identify their balanced tensor products. -/
 def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
     (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
