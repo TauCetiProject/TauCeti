@@ -39,11 +39,15 @@ The route is doubling. `κ ≠ 0` forces `2 • P ≠ 0`, so `2 • P` has an af
 `2 • P` makes `x'` integral — or, in its order-two case, makes `4x'` integral — and either way the
 `4` already present on the left absorbs the difference.
 
-The sharpening for short models is a separate result, `CubicDiscriminant.lean`'s
-`sq_dvd_cubic_discr`.
+For a model with `a₁ = a₃ = 0` the torsion input gives more: there `κ = 2y₀`, so it reads
+`y₀² ∣ Ψ₃(x₀)`, which `CubicDiscriminant.lean`'s `sq_dvd_cubic_discr` turns into divisibility of
+the cubic's discriminant, `Δ / 16`. That sharp form is `ShortNagellLutz.lean`'s
+`y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`.
 
 ## Main results
 
+* `WeierstrassCurve.sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃`: the torsion input, `κ² ∣ 4·Ψ₃(x₀)` when
+  `ψ₂` does not vanish at the point, under the same hypothesis as the companion.
 * `WeierstrassCurve.evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ`: the companion over a UFD `R`,
   taking the same sharp disjunction as `isInteger_or_order_two_of_torsion` but read at `2 • P`,
   guarded by `2 < addOrderOf (2 • P)`.
@@ -116,14 +120,14 @@ variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
 variable (W : WeierstrassCurve R)
 
-/-- **The `Ψ₃` divisibility, from torsion.** For a torsion point with integral coordinates and
-`κ = ψ₂(x₀, y₀) ≠ 0`, the square `κ²` divides `4·Ψ₃(x₀)`.
+/-- **The `Ψ₃` divisibility, from torsion.** Let `P = (x, y)` be a torsion point over `K` at which
+`ψ₂` does not vanish, and let `(x₀, y₀)` be a point of the integral model with `x₀` over `x`. Then
+`κ = ψ₂(x₀, y₀)` has `κ²` dividing `4·Ψ₃(x₀)`.
 
-`κ ≠ 0` makes `2 • P` nonzero, so it has an affine representative `(x', y')`, and the cleared
-doubling relation turns `Ψ₃(x₀)` into `(x₀ - x') · Ψ₂Sq(x₀) = (x₀ - x') · κ²`. Nagell–Lutz
-integrality at `2 • P` then makes `x'` integral — or, in its order-two case, makes `4x'` integral,
-and the `4` is already on the left. -/
-private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
+The arithmetic hypothesis is the one `evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ` takes, and this is
+that theorem's torsion input. For a model with `a₁ = a₃ = 0` it is also the input of
+`sq_dvd_cubic_discr`, which gives the sharp form `y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`. -/
+theorem sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns))
     (hsf : 2 < addOrderOf ((2 : ℕ) • Affine.Point.some _ _ hns) →
@@ -134,6 +138,7 @@ private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
     (hκK : (W.baseChange K).ψ₂.evalEval x y ≠ 0) :
     W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * (W.Ψ₃).eval x₀ := by
   set P := Affine.Point.some _ _ hns
+  -- `κ ≠ 0` makes `2 • P` nonzero, so it has an affine representative `(x', y')`.
   have hord2 : addOrderOf P ≠ 2 := fun h ↦
     hκK ((addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero (W.baseChange K) hns).mp h)
   have hord1 : addOrderOf P ≠ 1 := fun h ↦
