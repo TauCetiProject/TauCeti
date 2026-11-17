@@ -101,11 +101,9 @@ theorem apply_eq_zero (hD : IsContactDistribution I ∞ D) (hX : PreservesDistri
     ext v
     obtain ⟨U, hU, hxU, W, hW, hWD, hWx⟩ := hDs.exists_contMDiffOn_apply_eq v
     have hWd : MDiffAt (T% W) x := (hW.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt (by simp)
-    rw [show v = ⟨W x, hWD x hxU⟩ from Subtype.ext hWx.symm,
-      distributionLeviForm_apply hDs (by simp) hXd hWd hXD
-        (eventually_of_mem (hU.mem_nhds hxU) hWD),
-      LinearMap.zero_apply, neg_eq_zero, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact preservesDistribution_iff.1 hX hU hW hWD x hxU
+    rw [show v = ⟨W x, hWD x hxU⟩ from Subtype.ext hWx.symm, LinearMap.zero_apply]
+    exact (distributionLeviForm_apply_eq_zero_iff hDs (by simp) hXd hWd hXD
+      (eventually_of_mem (hU.mem_nhds hxU) hWD)).2 (preservesDistribution_iff.1 hX hU hW hWD x hxU)
   have h := (hD.bijective_distributionLeviForm x).injective (hL.trans (map_zero _).symm)
   exact congrArg Subtype.val h
 
@@ -115,9 +113,7 @@ contact line `T_y M ⧸ D y` agree at every point `y`, are equal. -/
 theorem eq_of_forall_mkQ_eq (hD : IsContactDistribution I ∞ D) (hX : PreservesDistribution I D X)
     (hY : PreservesDistribution I D Y) (hXd : MDiff (T% X)) (hYd : MDiff (T% Y))
     (h : ∀ y, (D y).mkQ (X y) = (D y).mkQ (Y y)) : X = Y := by
-  have hsub : MDiff (T% (X - Y)) := by
-    rw [sub_eq_add_neg]
-    exact mdifferentiable_add_section hXd fun y ↦ mdifferentiableAt_neg_section (hYd y)
+  have hsub : MDiff (T% (X - Y)) := mdifferentiable_sub_section hXd hYd
   funext y
   rw [← sub_eq_zero]
   exact (hX.sub hY hXd hYd).apply_eq_zero hD (hsub y)
