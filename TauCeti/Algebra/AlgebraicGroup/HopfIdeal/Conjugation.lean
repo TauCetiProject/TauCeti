@@ -43,10 +43,13 @@ ambient group.
 * `TauCeti.HopfIdeal.IsNormal.le_conjugate`: rational points normalize a normal closed subgroup.
 * `TauCeti.HopfIdeal.quotientConjugationEquiv`: the coordinate isomorphism between
   conjugate closed subgroups, with formulas in both directions.
+* `TauCeti.HopfIdeal.quotientConjugationIso`: the same isomorphism in the category of finite-type
+  commutative Hopf algebras.
 * `TauCeti.HopfIdeal.quotientPointConjugation`: conjugation by a normalizing point, restricted to
   the subgroup, as a bialgebra endomorphism of its coordinate algebra.
 * `TauCeti.CommHopfAlgCat.mapDomain_pointConjugation_mem_conjugate_iff`: the pointwise
-  interpretation of the conjugated ideal.
+  interpretation of the conjugated ideal, and `TauCeti.CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff`
+  its form on rational points.
 * `TauCeti.HopfIdeal.conjugate_eq_self_of_mem_quotientPointsSubgroup`: a subgroup's own
   rational points fix its defining ideal, without reducedness assumptions.
 * `TauCeti.HopfIdeal.mem_normalizer_quotientPointsSubgroup_of_conjugate_eq_self`: fixing
@@ -342,6 +345,38 @@ theorem quotientConjugationEquiv_mul (I J K : HopfIdeal R H)
 
 end HopfIdeal
 
+namespace HopfIdeal
+
+open FiniteTypeCommHopfAlgCat
+
+variable {R : Type u} [CommRing R] {H : FiniteTypeCommHopfAlgCat.{u, v} R}
+
+/-- The coordinate isomorphism `H ⧸ J ≅ H ⧸ I` between a closed subgroup and its conjugate
+`J = I.conjugate g`, in the category of finite-type commutative Hopf algebras. -/
+noncomputable def quotientConjugationIso (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
+    (hJ : J = I.conjugate g) : quotient H J ≅ quotient H I :=
+  CategoryTheory.ObjectProperty.isoMk _
+    (_root_.CommHopfAlgCat.isoMk (I.quotientConjugationEquiv J g hJ))
+
+/-- The finite-type coordinate isomorphism of conjugation acts by the bialgebra equivalence
+`HopfIdeal.quotientConjugationEquiv`. -/
+@[simp]
+theorem quotientConjugationIso_hom_apply (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
+    (hJ : J = I.conjugate g) (y : quotient H J) :
+    toBialgHom (I.quotientConjugationIso J g hJ).hom y = I.quotientConjugationEquiv J g hJ y :=
+  (rfl)
+
+/-- The inverse of the finite-type coordinate isomorphism of conjugation acts by the inverse of
+the bialgebra equivalence `HopfIdeal.quotientConjugationEquiv`. -/
+@[simp]
+theorem quotientConjugationIso_inv_apply (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
+    (hJ : J = I.conjugate g) (y : quotient H I) :
+    toBialgHom (I.quotientConjugationIso J g hJ).inv y =
+      (I.quotientConjugationEquiv J g hJ).symm y :=
+  (rfl)
+
+end HopfIdeal
+
 namespace CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
@@ -370,6 +405,17 @@ theorem pointConjugation_mem_conjugate_iff
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv]
   exact mapDomain_pointConjugation_mem_conjugate_iff I g A x
+
+/-- On rational points, conjugation by `g` carries the points of `I` exactly onto the points of
+the conjugated ideal: `gxg⁻¹` lies in `gNg⁻¹` if and only if `x` lies in `N`. -/
+theorem mul_mul_inv_mem_conjugate_iff (I : HopfIdeal R H) (g x : WithConv (H →ₐ[R] R)) :
+    g * x * g⁻¹ ∈
+        quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) (CommAlgCat.of R R) ↔
+      x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I (CommAlgCat.of R R) := by
+  have h := mapDomain_pointConjugation_mem_conjugate_iff I g (CommAlgCat.of R R) x
+  rwa [BialgHom.mapDomain_apply, BialgEquiv.toBialgHom_eq_coe,
+    HopfAlgebra.pointConjugationBialgEquiv_toAlgHom,
+    HopfAlgebra.comp_pointConjugationAlgHom_self] at h
 
 /-- A Hopf ideal whose points are the `g`-conjugates of the points of `I` is the conjugate of
 `I` by `g`. -/
