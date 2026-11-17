@@ -541,7 +541,7 @@ private theorem commute_of_map_eq_stableTransvection (hq_ker : q.ker ≤ center 
   exact hwu'.mul_right (mem_center_iff.mp hc w)
 
 /-- Five-index chaining identity in a central extension of `E_∞(R)`: for pairwise distinct
-`i, j, m, n`, `[ẽ_{im}(a b), ẽ_{mj}(1)] = [ẽ_{in}(a), ẽ_{nj}(b)]`. -/
+`i, j, m, n`, `[e'_{im}(a b), e'_{mj}(1)] = [e'_{in}(a), e'_{nj}(b)]` for lifts `e'` in `E`. -/
 private theorem liftComm_chaining (hq_ker : q.ker ≤ center E) {i j m n : ℕ}
     (hij : i ≠ j) (him : i ≠ m) (hin : i ≠ n) (hjm : j ≠ m) (hjn : j ≠ n) (hmn : m ≠ n)
     (a b : R) :
@@ -587,8 +587,8 @@ private theorem liftComm_chaining (hq_ker : q.ker ≤ center E) {i j m n : ℕ}
     _ = liftComm q hq_range hin hjn.symm a b :=
       commutatorElement_eq_liftComm q hq_range hq_ker hin hjn.symm hqX hqW
 
-/-- The canonical lift `y_{ij}(a) ∈ E` of `e_{ij}(a)`, defined as `[ẽ_{ik}(a), ẽ_{kj}(1)]` for
-`k = max i j + 1`. -/
+/-- The canonical lift `y_{ij}(a) ∈ E` of `e_{ij}(a)`, defined as `[e'_{ik}(a), e'_{kj}(1)]` for
+`k = max i j + 1` and lifts `e'` in `E`. -/
 private def liftGen (i j : ℕ) (a : R) : E :=
   liftComm q hq_range (i := i) (j := max i j + 1) (k := max i j + 1) (l := j)
     (by omega) (by omega) a 1
