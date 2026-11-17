@@ -36,6 +36,11 @@ intended throughout.
   Fredholm locus is empty in mixed dimension
   (`ContinuousLinearMap.isEmpty_isFredholm_of_finiteDimensional_of_not_finiteDimensional`,
   `ContinuousLinearMap.isEmpty_isFredholm_of_not_finiteDimensional_of_finiteDimensional`).
+* `FredholmDecomposition.completeSpace_X₁_iff` and
+  `ContinuousLinearMap.IsFredholm.completeSpace_iff`: between Hausdorff uniform topological vector
+  spaces over a complete nontrivially normed field, a space is complete if and only if the
+  essential factor of a Fredholm decomposition is complete, and a Fredholm operator has complete
+  domain if and only if it has complete codomain.
 * `ContinuousLinearMap.isFredholm_of_finiteDimensional`: every operator between finite-dimensional
   topological vector spaces over a complete scalar field, with Hausdorff target, is Fredholm.
 * `ContinuousLinearMap.IsFredholm.neg`, `ContinuousLinearMap.IsFredholm.smul`: Fredholmness is
@@ -238,3 +243,37 @@ lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
 end RestrictScalars
 
 end ContinuousLinearMap
+
+section CompleteSpace
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [Module 𝕜 E]
+  [ContinuousSMul 𝕜 E] [T2Space E]
+variable [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [Module 𝕜 F]
+  [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- The essential (finite-codimension) factor of a Fredholm decomposition of a Hausdorff uniform
+topological vector space over a complete nontrivially normed field is complete if and only if the
+ambient space is complete. -/
+theorem FredholmDecomposition.completeSpace_X₁_iff (dec : FredholmDecomposition 𝕜 E) :
+    CompleteSpace dec.X₁ ↔ CompleteSpace E := by
+  have : IsUniformAddGroup dec.X₀ := dec.X₀.toAddSubgroup.isUniformAddGroup
+  have : IsUniformAddGroup dec.X₁ := dec.X₁.toAddSubgroup.isUniformAddGroup
+  let e := dec.X₁.prodEquivOfIsTopCompl dec.X₀ dec.isTopCompl
+  have := dec.finite_X₀
+  have hX₀ : CompleteSpace dec.X₀ := FiniteDimensional.completeSpace 𝕜 dec.X₀
+  rw [← e.isUniformEmbedding.completeSpace_congr e.surjective,
+    completeSpace_prod_of_nonempty, and_iff_left hX₀]
+
+/-- A Fredholm operator between Hausdorff uniform topological vector spaces over a complete
+nontrivially normed field has complete domain if and only if it has complete codomain. -/
+theorem ContinuousLinearMap.IsFredholm.completeSpace_iff {T : E →L[𝕜] F} (hT : T.IsFredholm) :
+    CompleteSpace E ↔ CompleteSpace F := by
+  obtain ⟨pkg⟩ := hT.nonempty_fredholmPackage
+  have : IsUniformAddGroup pkg.decDom.X₁ := pkg.decDom.X₁.toAddSubgroup.isUniformAddGroup
+  have : IsUniformAddGroup pkg.decCodom.X₁ := pkg.decCodom.X₁.toAddSubgroup.isUniformAddGroup
+  exact pkg.decDom.completeSpace_X₁_iff.symm.trans
+    ((pkg.equiv.isUniformEmbedding.completeSpace_congr pkg.equiv.surjective).trans
+      pkg.decCodom.completeSpace_X₁_iff)
+
+end CompleteSpace

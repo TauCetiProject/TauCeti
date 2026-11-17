@@ -17,7 +17,8 @@ Two Fredholm operators from a complete complex inner-product space `E` to a comp
 are joined by a continuous path through Fredholm operators exactly when their indices agree.
 All paths use the native operator-norm topology, and the two spaces may differ. No separability,
 dimension, nontriviality, or completeness assumption on `F` is imposed (any Fredholm operator out
-of complete `E` automatically forces `F` to be complete).
+of complete `E` automatically forces `F` to be complete by
+`ContinuousLinearMap.IsFredholm.completeSpace_iff`).
 
 A fixed parametrix reduces the converse to completing the finite-dimensional defect of
 an index-zero Fredholm operator. An affine compact perturbation followed by composition
@@ -102,15 +103,7 @@ joined by an operator-norm continuous path consisting entirely of Fredholm opera
 theorem ContinuousLinearMap.IsFredholm.exists_path_of_index_eq {T₀ T₁ : E →L[ℂ] F}
     (hT₀ : T₀.IsFredholm) (hT₁ : T₁.IsFredholm) (hind : T₀.index = T₁.index) :
     ∃ γ : Path T₀ T₁, ∀ t, (γ t).IsFredholm := by
-  have : CompleteSpace F := by
-    obtain ⟨pkg⟩ := hT₀.nonempty_fredholmPackage
-    have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
-    have : CompleteSpace pkg.decCodom.X₁ :=
-      (pkg.equiv.isUniformEmbedding.completeSpace_congr pkg.equiv.surjective).mp ‹_›
-    have := pkg.decCodom.finite_X₀
-    have : CompleteSpace pkg.decCodom.X₀ := FiniteDimensional.completeSpace ℂ pkg.decCodom.X₀
-    let eF := pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl
-    exact (eF.isUniformEmbedding.completeSpace_congr eF.surjective).mp inferInstance
+  have : CompleteSpace F := hT₀.completeSpace_iff.mp inferInstance
   -- A parametrix for T₁ reduces equality of indices to an index-zero operator on E.
   obtain ⟨Q, hQT, hTQ⟩ := hT₁.exists_isCompactOperator_comp_sub_one
   have hQ : Q.IsFredholm := .of_isCompactOperator_comp_sub_one hTQ hQT
