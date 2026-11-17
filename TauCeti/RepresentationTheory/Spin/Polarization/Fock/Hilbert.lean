@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
@@ -30,9 +31,12 @@ the named `fockNormedAddCommGroup` and `fockInnerProductSpace` locally, in that 
 norm or inner product instance on an exterior algebra is introduced.
 
 The vacuum has norm one, and the normalized real Clifford action has native adjoint
-`c(a)* = c(star a)`. Thus `c(v)* = -c(v)` for real vectors, whereas the unnormalized native action
-`spinAction (ι (1 ⊗ v))` fails to be skew-adjoint whenever `v ≠ 0`
-(`adjoint_spinAction_ι_one_tmul_ne_neg`).
+`c(a)* = c(star a)`. Thus `c(v)* = -c(v)` for real vectors, with the normalization already
+built into the Fock action, so the real Fock action satisfies the geometric convention
+`AlgHom.IsGeometricClifford`. By contrast, the unnormalized native action `spinAction (ι (1 ⊗ v))`
+fails to be skew-adjoint whenever `v ≠ 0` (`adjoint_spinAction_ι_one_tmul_ne_neg`). These
+identities supply the Hermitian hypothesis of the half-spin representation and its restriction to
+either chirality eigenspace.
 
 ## Main definitions
 
@@ -55,10 +59,11 @@ The vacuum has norm one, and the normalized real Clifford action has native adjo
   unit norm of the vacuum.
 * `TauCeti.AlmostComplexStructure.adjoint_fockAction`,
   `TauCeti.AlmostComplexStructure.adjoint_realFockAction`,
-  `TauCeti.AlmostComplexStructure.adjoint_realFockAction_ι`, and
+  `TauCeti.AlmostComplexStructure.adjoint_realFockAction_ι`,
+  `TauCeti.AlmostComplexStructure.isGeometricClifford_realFockAction`, and
   `TauCeti.AlmostComplexStructure.adjoint_spinAction_ι_one_tmul_ne_neg`: native adjoints of the
-  normalized Fock actions, skew-adjointness of real vectors, and failure for the unnormalized
-  `spinAction`.
+  normalized Fock actions, skew-adjointness of real vectors, the geometric convention
+  `AlgHom.IsGeometricClifford`, and failure for the unnormalized `spinAction`.
 
 ## References
 
@@ -261,6 +266,16 @@ theorem adjoint_realFockAction_ι (v : V) :
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
   rw [J.adjoint_realFockAction hQJ hQnd hQ, star_ι, map_neg]
+
+/-- The native Hermitian Fock module satisfies the geometric convention: `Q v = -‖v‖²`, and real
+vectors act skew-Hermitianly. -/
+theorem isGeometricClifford_realFockAction :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    (J.realFockAction hQJ hQnd).IsGeometricClifford := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  exact AlgHom.isGeometricClifford_iff_adjoint.2 ⟨hQ, J.adjoint_realFockAction_ι hQJ hQnd hQ⟩
 
 /-- For any nonzero real vector `v ≠ 0` in a Euclidean space `(V, J)` with `Q v = -‖v‖²`, the
 unnormalized native action `spinAction (ι (1 ⊗ v))` is not skew-adjoint in
