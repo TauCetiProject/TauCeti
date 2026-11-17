@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Retract
 public import TauCeti.Geometry.Manifold.PontryaginThom.Existence
 public import TauCeti.Geometry.Manifold.PontryaginThom.Transverse
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Double loops of a sphere meeting a framed submanifold once
@@ -135,9 +136,10 @@ variable {E V H G : Type*} {S Q : Type} [NormedAddCommGroup E] [NormedSpace ℝ 
 /-- **Lemma 7.6 of Barraud–Damian–Humilière–Oancea.** Let `f : S → Q` embed a compact manifold
 with trivial normal bundle, framed by a smooth global trivialization `φ` of its normal bundle with
 fibre `ℝⁿ⁺²`, and let `σ : Sⁿ⁺² → Q` be a sphere meeting `f(S)` in the single point
-`σ x = f y`, smooth near `x` and transverse there: `im dσ_x + im df_y = T_{σ x} Q`. Then at every
-base point `z` of the sphere the map `Ω²σ : Ω²Sⁿ⁺² → Ω²Q` of Moore double loop spaces is
-injective on singular homology in every degree and with any coefficients. -/
+`σ x = f y`, `C^r` near `x` for some `1 ≤ r` and transverse there:
+`im dσ_x + im df_y = T_{σ x} Q`. Then at every base point `z` of the sphere the map
+`Ω²σ : Ω²Sⁿ⁺² → Ω²Q` of Moore double loop spaces is injective on singular homology in every
+degree and with any coefficients. -/
 theorem injective_singularHomologyMap_map_map_of_transverse (f : SmoothEmbedding I J ∞ S Q)
     (hn : (∞ : ℕ∞ω) ≠ 0)
     (hdim : Module.finrank ℝ (Fin (n + 2) → ℝ) = Module.finrank ℝ V - Module.finrank ℝ E)
@@ -151,7 +153,8 @@ theorem injective_singularHomologyMap_map_map_of_transverse (f : SmoothEmbedding
     (σ : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, Q))
     {x : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1} (hx : σ ⁻¹' range f = {x})
     {s : Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)} (hs : s ∈ 𝓝 x)
-    (hσ : ContMDiffOn (𝓡 (n + 2)) J ∞ σ s) {y : S} (hxy : f y = σ x)
+    {r : WithTop ℕ∞} (hσ : ContMDiffOn (𝓡 (n + 2)) J r σ s) (hr : 1 ≤ r) {y : S}
+    (hxy : f y = σ x)
     (htrans : (mfderiv (𝓡 (n + 2)) J σ x).range ⊔
       (((tangentSpaceCast J (f y) (σ x)).toContinuousLinearMap).comp
         (mfderiv I J f y)).range = ⊤)
@@ -163,7 +166,8 @@ theorem injective_singularHomologyMap_map_map_of_transverse (f : SmoothEmbedding
         C(MooreLoopSpace (MooreLoopSpace _ z) 1, MooreLoopSpace (MooreLoopSpace Q q) 1))) := by
   obtain ⟨τ, hτ, hτd, -⟩ := f.exists_isFramedTube_isLocalDiffeomorph hn hdim φ hφ hφs hφs'
     isOpen_univ (subset_univ _)
-  exact hτ.injective_singularHomologyMap_map_map_of_transverse (hτd (y, 0)) σ hx hs hσ (by simp)
-    hxy htrans hz R m
+  exact hτ.injective_singularHomologyMap_map_map_of_transverse
+    ((hτd (y, 0)).of_le (min_le_right r ∞)) σ hx hs (hσ.of_le (min_le_left r ∞))
+    (le_min hr (by simp)) hxy htrans hz R m
 
 end TauCeti.SmoothEmbedding
