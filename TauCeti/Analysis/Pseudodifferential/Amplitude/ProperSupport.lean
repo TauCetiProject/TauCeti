@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Expansion
-public import TauCeti.Analysis.Pseudodifferential.ProperSupport
+public import TauCeti.Analysis.Pseudodifferential.KernelProperSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!

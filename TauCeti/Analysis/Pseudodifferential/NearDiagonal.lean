@@ -25,6 +25,10 @@ symbol differs from `a` by a smoothing symbol
 (`TauCeti.Symbol.isSmoothing_properLeftSymbol_localizeAmplitude_sub`) plus an integral operator with
 a globally smooth kernel (`TauCeti.Symbol.exists_hasProperSupport_amplitude_and_contDiff_kernel`).
 
+Compare `TauCeti.Analysis.Pseudodifferential.ProperSupport`, which cuts off kernels directly at
+the symbol level for translation-invariant Schwartz factors `χ(x - y)`: here `χ(x, y)` is an
+arbitrary smooth cutoff, giving both the localized amplitude and the explicit `C^∞` kernel.
+
 ## Main declarations
 
 * `TauCeti.Symbol.localizeAmplitude`, `TauCeti.Symbol.diagonal_localizeAmplitude`,

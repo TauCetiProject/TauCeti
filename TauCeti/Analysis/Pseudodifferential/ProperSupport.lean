@@ -5,791 +5,790 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.Complex.Exponential
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.Topology.Maps.Proper.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.MeasureTheory.Integral.Bochner.Set
-import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Topology.Algebra.Group.Pointwise
-import Mathlib.Topology.Compactness.LocallyCompact
-import Mathlib.Topology.Maps.Proper.CompactlyGenerated
-import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+public import TauCeti.Analysis.Pseudodifferential.Quantization
+import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Convolution
 
 /-!
-# Properly supported binary kernels
+# Cutting off the kernel of a pseudodifferential operator near the diagonal
 
-A binary kernel `K : X → Y → M` has *proper output support* (`TauCeti.HasProperOutputSupport`) if
-`(x, y) ↦ x` on `tsupport (Function.uncurry K)` is proper, *proper input support*
-(`TauCeti.HasProperInputSupport`) if `(x, y) ↦ y` is proper, and *proper support*
-(`TauCeti.HasProperSupport`) if both projections are proper. Under weak local compactness and
-Hausdorffness of the target fiber, these mean that compact sets in one variable force compact slices
-in the other (`TauCeti.hasProperOutputSupport_iff`, `TauCeti.hasProperInputSupport_iff`).
+Let `b` be a symbol of order `m` on `ℝⁿ`, whose quantization `Op(b)` has the distribution kernel
+`K_b(x, y) = (2π)⁻ⁿ ∫ exp(i ⟪x - y, ξ⟫) b(x, ξ) dξ`. The support of `K_b` can be all of
+`ℝⁿ × ℝⁿ`: then `Op(b)` does not preserve compact supports, and its output near `x` depends on the
+input far from `x`. Multiplying the kernel by `χ(x - y)`, for a Schwartz function `χ`, gives the
+operator `u ↦ Op(b)(χ(x - ·) u)(x)`. This file shows that it is again a quantization: of the
+symbol of order `m`
 
-For the integral operator `u ↦ (x ↦ ∫ y, K x y (u y))`:
-* **Proper input support** preserves compact support
-  (`TauCeti.HasProperInputSupport.hasCompactSupport_integral`) without smoothness or separation.
-* **Proper output support** of a `C^n` kernel sends every continuous `u` to a `C^n` function
-  (`TauCeti.HasProperOutputSupport.contDiff_integral`).
-* **Transposition** (`TauCeti.HasProperOutputSupport.integral_apply_integral_eq`,
-  `TauCeti.HasProperInputSupport.integral_apply_integral_eq`) swaps `T_K` with the transposed
-  operator `(T_K^t v)(y) = ∫ x, (v x).comp (K x y)`.
+`c(x, ξ) = ∫ 𝓕χ(θ) b(x, ξ - 2πθ) dθ`
 
-In a topological additive group, `(x, y) ↦ φ (x - y)` is properly supported when `φ` has compact
-support (`TauCeti.hasProperSupport_sub_comp`), giving smooth diagonal cutoffs on finite-dimensional
-spaces (`TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`), whereas nonzero
-constant and Gaussian kernels are not properly supported (`TauCeti.not_hasProperSupport_const`,
-`TauCeti.not_hasProperSupport_exp_neg_norm_sub_sq`).
+(`TauCeti.Symbol.kernelCutoff χ b`), the convolution of the frequency slice of `b` with the Fourier
+transform of `χ`. When `χ` has compact support, the kernel `χ(x - y) K_b(x, y)` of `Op(c)` vanishes
+unless `x - y` lies in the support of `χ`: the operator `Op(c)` is properly supported. When `χ`
+equals `1` near the origin, `c` differs from `b` by a smoothing symbol: the part of the kernel
+removed, `(1 - χ(x - y)) K_b(x, y)`, vanishes near the diagonal, where all the singularity of
+`K_b` lies.
+
+So every pseudodifferential operator is a properly supported one, with kernel supported within
+any prescribed distance `ε > 0` of the diagonal, up to an operator with a smoothing symbol
+(`TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`). Properly supported
+operators preserve compact supports, so they can be composed when the symbols have no compact
+spatial support, and they are the pieces that are patched together on manifolds.
 
 ## Main declarations
 
-* `TauCeti.HasProperOutputSupport`, `TauCeti.HasProperInputSupport`, `TauCeti.HasProperSupport`,
-  `TauCeti.hasProperOutputSupport_iff`, `TauCeti.hasProperInputSupport_iff`.
-* `TauCeti.hasProperSupport_sub_comp`,
-  `TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`.
-* `TauCeti.HasProperInputSupport.hasCompactSupport_integral`,
-  `TauCeti.HasProperOutputSupport.contDiff_integral`,
-  `TauCeti.HasProperOutputSupport.integral_apply_integral_eq`,
-  `TauCeti.HasProperInputSupport.integral_apply_integral_eq`.
-* `TauCeti.not_hasProperSupport_const`,
-  `TauCeti.exists_hasCompactSupport_not_hasCompactSupport_integral_const`,
-  `TauCeti.not_hasProperSupport_exp_neg_norm_sub_sq`.
+* `TauCeti.Symbol.kernelCutoff χ b`: the symbol `c` above, with its derivatives
+  `TauCeti.Symbol.spatialDeriv_kernelCutoff` and `TauCeti.Symbol.frequencyDeriv_kernelCutoff`;
+  it keeps compact spatial support (`TauCeti.Symbol.HasCompactSpatialSupport.kernelCutoff`).
+* `TauCeti.Symbol.quantizeSchwartzValue_kernelCutoff`: `Op(c) u (x) = Op(b)(χ(x - ·) u)(x)`.
+* `TauCeti.Symbol.quantizeSchwartzValue_kernelCutoff_congr`: `Op(c) u (x)` only depends on `u`
+  on the set of `y` with `χ(x - y) ≠ 0`.
+* `TauCeti.Symbol.support_quantizeSchwartzValue_kernelCutoff_subset` and
+  `TauCeti.Symbol.hasCompactSupport_quantizeSchwartzValue_kernelCutoff`: the support of
+  `Op(c) u` lies in the sum of the supports of `u` and `χ`, so for compactly supported `χ` the
+  operator `Op(c)` preserves compact supports.
+* `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
+* `TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`: for every `ε > 0`,
+  every symbol is, up to a smoothing symbol, a symbol `c` such that `Op(c) u (x) = 0` whenever `u`
+  vanishes on the ball of radius `ε` about `x`.
+
+## Proof outline
+
+Peetre's inequality `⟨ξ - 2πθ⟩^m ≤ C ⟨ξ⟩^m ⟨θ⟩^|m|` and the rapid decay of `𝓕χ` bound the
+integrand of `c` by an integrable function of `θ` times `⟨ξ⟩^m`, locally uniformly in `x`.
+Differentiating under the integral sign, the derivatives of `c` in `x_j` and `ξ_j` are the
+symbols built from `∂_{x_j} b` and `∂_{ξ_j} b`, which gives smoothness and the symbol estimates.
+
+The quantization formula follows from the convolution formula for `𝓕(χ(x - ·) u)`, one use of
+Fubini's theorem and a change of frequency.
+
+For the smoothing statement, interpolate by `c_s(x, ξ) = ∫ 𝓕χ(θ) b(x, ξ - sθ) dθ`, `s ∈ [0, 2π]`.
+By Fourier inversion `c_0 = χ(0) b`, and differentiating in `s`, using
+`θⱼ 𝓕χ(θ) = (2πi)⁻¹ 𝓕(∂ⱼχ)(θ)`, the derivative of `c_s` is `-(2πi)⁻¹ ∑ⱼ` of the same
+construction for `∂ⱼχ` and `∂_{ξ_j} b`, a symbol of order `m - 1`. If `χ` is constant near `0`,
+then every `∂ⱼχ` vanishes near `0`, so it is again constant near `0`, with value `0` there. By
+induction and the mean value inequality, `c_s - χ(0) b` has order `m - N` for every `N`, uniformly
+in `s ∈ [0, 2π]`.
 
 ## References
 
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
+  (1.21)–(1.28).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1–§2.
 -/
 
 public section
 
-open Filter Function MeasureTheory Set
-open scoped ContDiff Topology
+noncomputable section
+
+open MeasureTheory Real FourierTransform Filter
+open scoped ContDiff RealInnerProductSpace SchwartzMap Topology Pointwise LineDeriv
 
 namespace TauCeti
 
-section Topological
+namespace Symbol
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] {m : ℝ}
 
-section Zero
+/-! ### The integrand -/
 
-variable {M N : Type*} [Zero M] [Zero N]
+section Integrand
 
-/-- A binary kernel `K : X → Y → M` has **proper output support** if the first projection
-`(x, y) ↦ x` restricted to `tsupport (Function.uncurry K)` is a proper map. -/
-def HasProperOutputSupport (K : X → Y → M) : Prop :=
-  IsProperMap fun p : tsupport (uncurry K) ↦ p.1.1
+variable (χ : 𝓢(CoordinateSpace n, ℂ))
 
-/-- A binary kernel `K : X → Y → M` has **proper input support** if the second projection
-`(x, y) ↦ y` restricted to `tsupport (Function.uncurry K)` is a proper map. -/
-def HasProperInputSupport (K : X → Y → M) : Prop :=
-  IsProperMap fun p : tsupport (uncurry K) ↦ p.1.2
+/-- The integrand `𝓕χ(θ) b(x, ξ - sθ)` of the kernel cutoff of `b`, with the frequency shift `2πθ`
+scaled to `sθ`. The kernel cutoff is the case `s = 2π`; the cases `s ∈ [0, 2π]` interpolate between
+`χ(0) b` and the kernel cutoff. -/
+private def cutoffIntegrand (b : Symbol n V W m) (s : ℝ)
+    (p : CoordinateSpace n × CoordinateSpace n) (θ : CoordinateSpace n) : V →L[ℂ] W :=
+  𝓕 χ θ • b.coefficient (p.1, p.2 - s • θ)
 
-/-- A binary kernel `K : X → Y → M` is **properly supported** if both projections from
-`tsupport (Function.uncurry K)` to `X` and `Y` are proper maps. -/
-def HasProperSupport (K : X → Y → M) : Prop :=
-  HasProperOutputSupport K ∧ HasProperInputSupport K
+/-- The integrable function `⟨Rθ⟩ ^ |m| ‖𝓕χ(θ)‖` dominating the integrand. -/
+private def cutoffWeight (m R : ℝ) (θ : CoordinateSpace n) : ℝ :=
+  (1 + ‖R • θ‖ ^ 2) ^ (|m| / 2) * ‖𝓕 χ θ‖
 
-theorem HasProperSupport.out {K : X → Y → M} (hK : HasProperSupport K) :
-    HasProperOutputSupport K :=
-  hK.1
+private theorem integrable_cutoffWeight (m R : ℝ) : Integrable (cutoffWeight χ m R) :=
+  (𝓕 χ).integrable_one_add_norm_smul_sq_rpow_mul_norm R |m|
 
-theorem HasProperSupport.inp {K : X → Y → M} (hK : HasProperSupport K) :
-    HasProperInputSupport K :=
-  hK.2
+private theorem continuous_cutoffIntegrand (b : Symbol n V W m) (s : ℝ)
+    (p : CoordinateSpace n × CoordinateSpace n) : Continuous (cutoffIntegrand χ b s p) :=
+  (𝓕 χ).continuous.smul (b.contDiff_coefficient.continuous.comp (by fun_prop))
 
-theorem hasProperSupport_iff {K : X → Y → M} :
-    HasProperSupport K ↔ HasProperOutputSupport K ∧ HasProperInputSupport K :=
-  Iff.rfl
+/-- Peetre's inequality bounds the integrand by `C ⟨ξ⟩ ^ m ⟨Rθ⟩ ^ |m| ‖𝓕χ(θ)‖`, uniformly for
+scales `|s| ≤ R` and positions in a compact set. -/
+private theorem exists_norm_cutoffIntegrand_le (b : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) (R : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ θ, ‖cutoffIntegrand χ b s (x, ξ) θ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * cutoffWeight χ m R θ := by
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound_coefficient K hK
+  refine ⟨C * 2 ^ (|m| / 2), by positivity, fun s hs x hx ξ θ ↦ ?_⟩
+  have hsθ : ‖-(s • θ)‖ ≤ ‖R • θ‖ := by
+    rw [norm_neg, norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg
+      ((abs_nonneg s).trans hs)]
+    gcongr
+  have hpeetre := one_add_norm_add_sq_rpow_le_mul m ξ (-(s • θ))
+  rw [← sub_eq_add_neg] at hpeetre
+  rw [cutoffIntegrand, norm_smul, cutoffWeight]
+  calc ‖𝓕 χ θ‖ * ‖b.coefficient (x, ξ - s • θ)‖
+      ≤ ‖𝓕 χ θ‖ * (C * (2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+          (1 + ‖R • θ‖ ^ 2) ^ (|m| / 2))) := by
+        gcongr
+        exact (hC x hx _).trans (by gcongr; exact hpeetre.trans (by gcongr))
+    _ = _ := by ring
 
-/-- Shrinking the closed support of a kernel preserves proper output support. No separation axiom is
-needed. -/
-theorem HasProperOutputSupport.of_tsupport_subset {K : X → Y → M} {K' : X → Y → N}
-    (hK : HasProperOutputSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
-    HasProperOutputSupport K' := by
-  rw [HasProperOutputSupport, isProperMap_iff_ultrafilter] at hK ⊢
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 x hx ↦ ?_⟩
-  have hx' : Tendsto (fun p : tsupport (uncurry K) ↦ p.1.1) (𝒰.map (Set.inclusion hsub)) (𝓝 x) := by
-    rwa [Ultrafilter.coe_map, tendsto_map'_iff]
-  obtain ⟨⟨q, hq⟩, rfl, hlim⟩ := hK.2 hx'
-  have hval : Tendsto (Subtype.val : tsupport (uncurry K') → X × Y) 𝒰 (𝓝 q) := by
-    simpa [Ultrafilter.coe_map, tendsto_map'_iff] using
-      (continuous_subtype_val.tendsto ⟨q, hq⟩).mono_left hlim
-  have hq' : q ∈ tsupport (uncurry K') :=
-    (isClosed_tsupport _).mem_of_tendsto hval (univ_mem' Subtype.coe_prop)
-  exact ⟨⟨q, hq'⟩, rfl, tendsto_subtype_rng.2 hval⟩
+private theorem integrable_cutoffIntegrand (b : Symbol n V W m) (s : ℝ)
+    (p : CoordinateSpace n × CoordinateSpace n) : Integrable (cutoffIntegrand χ b s p) := by
+  obtain ⟨C, -, hC⟩ := exists_norm_cutoffIntegrand_le χ b (isCompact_singleton (x := p.1)) |s|
+  exact ((integrable_cutoffWeight χ m |s|).const_mul (C * (1 + ‖p.2‖ ^ 2) ^ (m / 2))).mono'
+    (continuous_cutoffIntegrand χ b s p).aestronglyMeasurable
+    (.of_forall fun θ ↦ by simpa [mul_assoc] using hC s le_rfl p.1 rfl p.2 θ)
 
-private theorem tsupport_uncurry_flip (K : X → Y → M) :
-    tsupport (uncurry (_root_.flip K)) = Prod.swap ⁻¹' tsupport (uncurry K) :=
-  ((Homeomorph.prodComm Y X).preimage_closure (support (uncurry K))).symm
+private theorem differentiableAt_cutoffIntegrand (b : Symbol n V W m) (s : ℝ)
+    (θ : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
+    DifferentiableAt ℝ (fun p ↦ cutoffIntegrand χ b s p θ) p := by
+  unfold cutoffIntegrand
+  exact ((b.contDiff_coefficient.differentiable (by simp) _).comp p
+    (by fun_prop : DifferentiableAt ℝ (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (p.1, p.2 - s • θ)) p)).const_smul (𝓕 χ θ)
 
-/-- Flipping the two arguments of a kernel exchanges output and input proper support. -/
-theorem HasProperOutputSupport.flip {K : X → Y → M} (hK : HasProperOutputSupport K) :
-    HasProperInputSupport (_root_.flip K) :=
-  hK.comp ((Homeomorph.prodComm Y X).subtype
-    fun p ↦ Set.ext_iff.mp (tsupport_uncurry_flip K) p).isProperMap
+/-- The derivative of the integrand in the position `x_j` is the integrand of `∂_{x_j} b`. -/
+private theorem coordinateDeriv_fst_cutoffIntegrand (b : Symbol n V W m) (s : ℝ) (j : Fin n)
+    (θ x ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun x ↦ cutoffIntegrand χ b s (x, ξ) θ) x =
+      cutoffIntegrand χ (spatialDeriv j b) s (x, ξ) θ := by
+  have h : (fun x ↦ cutoffIntegrand χ b s (x, ξ) θ) =
+      𝓕 χ θ • fun x ↦ b.coefficient (x, ξ - s • θ) := rfl
+  rw [h, coordinateDeriv_const_smul, Pi.smul_apply, cutoffIntegrand, coefficient_spatialDeriv]
 
-theorem HasProperInputSupport.flip {K : X → Y → M} (hK : HasProperInputSupport K) :
-    HasProperOutputSupport (_root_.flip K) :=
-  hK.comp ((Homeomorph.prodComm Y X).subtype
-    fun p ↦ Set.ext_iff.mp (tsupport_uncurry_flip K) p).isProperMap
+/-- The derivative of the integrand in the frequency `ξ_j` is the integrand of `∂_{ξ_j} b`. -/
+private theorem coordinateDeriv_snd_cutoffIntegrand (b : Symbol n V W m) (s : ℝ) (j : Fin n)
+    (θ x ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun ξ ↦ cutoffIntegrand χ b s (x, ξ) θ) ξ =
+      cutoffIntegrand χ (frequencyDeriv j b) s (x, ξ) θ := by
+  have h : (fun ξ ↦ cutoffIntegrand χ b s (x, ξ) θ) =
+      𝓕 χ θ • fun ξ ↦ b.coefficient (x, ξ - s • θ) := rfl
+  rw [h, coordinateDeriv_const_smul, Pi.smul_apply, cutoffIntegrand, coefficient_frequencyDeriv]
+  simp only [coordinateDeriv_cons, coordinateDeriv_nil]
+  rw [fderiv_comp_sub (f := fun η ↦ b.coefficient (x, η))]
+
+private theorem fderiv_cutoffIntegrand_apply (b : Symbol n V W m) (s : ℝ)
+    (θ : CoordinateSpace n) (p v : CoordinateSpace n × CoordinateSpace n) :
+    fderiv ℝ (fun p ↦ cutoffIntegrand χ b s p θ) p v =
+      ∑ j, v.1 j • cutoffIntegrand χ (spatialDeriv j b) s p θ +
+        ∑ j, v.2 j • cutoffIntegrand χ (frequencyDeriv j b) s p θ := by
+  rw [fderiv_apply_eq_sum_coordinateDeriv (differentiableAt_cutoffIntegrand χ b s θ p)]
+  simp only [coordinateDeriv_fst_cutoffIntegrand, coordinateDeriv_snd_cutoffIntegrand]
+
+end Integrand
+
+/-! ### The coefficient -/
+
+section Coefficient
+
+variable (χ : 𝓢(CoordinateSpace n, ℂ))
+
+/-- The coefficient `c_s(x, ξ) = ∫ 𝓕χ(θ) b(x, ξ - sθ) dθ`. -/
+private def cutoffCoeff (b : Symbol n V W m) (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
+    V →L[ℂ] W :=
+  ∫ θ, cutoffIntegrand χ b s p θ
+
+private theorem differentiableAt_cutoffCoeff_and_fderiv_apply (b : Symbol n V W m) (s : ℝ)
+    (p₀ : CoordinateSpace n × CoordinateSpace n) :
+    DifferentiableAt ℝ (cutoffCoeff χ b s) p₀ ∧ ∀ v, fderiv ℝ (cutoffCoeff χ b s) p₀ v =
+      ∑ j, v.1 j • (∫ θ, cutoffIntegrand χ (spatialDeriv j b) s p₀ θ) +
+        ∑ j, v.2 j • ∫ θ, cutoffIntegrand χ (frequencyDeriv j b) s p₀ θ := by
+  have hK : IsCompact (Metric.closedBall p₀.1 1) := isCompact_closedBall _ _
+  have hb : ∀ {k : ℝ} (d : Fin n → Symbol n V W k), ∃ C : Fin n → ℝ, ∀ j θ,
+      ∀ p ∈ Metric.ball p₀ 1, ‖cutoffIntegrand χ (d j) s p θ‖ ≤
+        C j * cutoffWeight χ k |s| θ := by
+    intro k d
+    have h := fun j ↦ exists_norm_cutoffIntegrand_le χ (d j) hK |s|
+    choose C hC0 hC using h
+    refine ⟨fun j ↦ C j * (2 ^ |k| * (1 + ‖p₀.2‖ ^ 2) ^ (k / 2)), fun j θ p hp ↦ ?_⟩
+    have hp' : dist p p₀ < 1 := hp
+    rw [Prod.dist_eq, max_lt_iff] at hp'
+    have hw := one_add_norm_sq_rpow_le_of_norm_sub_le_one (dist_eq_norm p.2 p₀.2 ▸ hp'.2.le) k
+    have hθ : 0 ≤ cutoffWeight χ k |s| θ := by unfold cutoffWeight; positivity
+    calc ‖cutoffIntegrand χ (d j) s p θ‖
+        ≤ C j * (1 + ‖p.2‖ ^ 2) ^ (k / 2) * cutoffWeight χ k |s| θ :=
+          hC j s le_rfl p.1 (Metric.mem_closedBall.2 hp'.1.le) p.2 θ
+      _ ≤ C j * (2 ^ |k| * (1 + ‖p₀.2‖ ^ 2) ^ (k / 2)) * cutoffWeight χ k |s| θ := by
+          gcongr
+          exact hC0 j
+  obtain ⟨Cx, hCx⟩ := hb fun j ↦ spatialDeriv j b
+  obtain ⟨Cξ, hCξ⟩ := hb fun j ↦ frequencyDeriv j b
+  refine differentiableAt_integral_and_fderiv_apply_eq_sum (E := V →L[ℂ] W)
+    (F := cutoffIntegrand χ b s)
+    (A := fun j p θ ↦ cutoffIntegrand χ (spatialDeriv j b) s p θ)
+    (B := fun j p θ ↦ cutoffIntegrand χ (frequencyDeriv j b) s p θ)
+    (fun θ p ↦ differentiableAt_cutoffIntegrand χ b s θ p)
+    (fun θ p v ↦ fderiv_cutoffIntegrand_apply χ b s θ p v)
+    (integrable_cutoffIntegrand χ b s)
+    (fun j p ↦ continuous_cutoffIntegrand χ _ s p)
+    (fun j p ↦ continuous_cutoffIntegrand χ _ s p)
+    (((integrable_cutoffWeight χ m |s|).const_mul (∑ j, Cx j)).add
+      ((integrable_cutoffWeight χ (m - 1) |s|).const_mul (∑ j, Cξ j))) p₀ fun θ p hp ↦ ?_
+  rw [Pi.add_apply, Finset.sum_mul, Finset.sum_mul]
+  exact add_le_add (Finset.sum_le_sum fun j _ ↦ hCx j θ p hp)
+    (Finset.sum_le_sum fun j _ ↦ hCξ j θ p hp)
+
+/-- The derivative `∂_{x_j} c_s` is the coefficient built from `∂_{x_j} b`. -/
+private theorem coordinateDeriv_fst_cutoffCoeff (b : Symbol n V W m) (s : ℝ) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun x ↦ cutoffCoeff χ b s (x, ξ)) x =
+      cutoffCoeff χ (spatialDeriv j b) s (x, ξ) := by
+  obtain ⟨hd, hf⟩ := differentiableAt_cutoffCoeff_and_fderiv_apply χ b s (x, ξ)
+  rw [coordinateDeriv_fst_eq_fderiv (f := cutoffCoeff χ b s) (p := (x, ξ)) hd, hf]
+  simp only [PiLp.ofLp_single, Pi.single_apply, ite_smul, one_smul, zero_smul,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true, PiLp.zero_apply, Finset.sum_const_zero,
+    add_zero, cutoffCoeff]
+
+/-- The derivative `∂_{ξ_j} c_s` is the coefficient built from `∂_{ξ_j} b`. -/
+private theorem coordinateDeriv_snd_cutoffCoeff (b : Symbol n V W m) (s : ℝ) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    coordinateDeriv [j] (fun ξ ↦ cutoffCoeff χ b s (x, ξ)) ξ =
+      cutoffCoeff χ (frequencyDeriv j b) s (x, ξ) := by
+  obtain ⟨hd, hf⟩ := differentiableAt_cutoffCoeff_and_fderiv_apply χ b s (x, ξ)
+  rw [coordinateDeriv_snd_eq_fderiv (f := cutoffCoeff χ b s) (p := (x, ξ)) hd, hf]
+  simp only [PiLp.ofLp_single, Pi.single_apply, ite_smul, one_smul, zero_smul,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true, PiLp.zero_apply, Finset.sum_const_zero,
+    zero_add, cutoffCoeff]
+
+private theorem contDiff_cutoffCoeff (s : ℝ) :
+    ∀ (k : ℕ) {m : ℝ} (b : Symbol n V W m), ContDiff ℝ k (cutoffCoeff χ b s)
+  | 0, _, b => contDiff_zero.2 <| continuous_iff_continuousAt.2 fun p ↦
+      (differentiableAt_cutoffCoeff_and_fderiv_apply χ b s p).1.continuousAt
+  | k + 1, _, b => by
+    rw [Nat.cast_add, Nat.cast_one, contDiff_succ_iff_fderiv]
+    refine ⟨fun p ↦ (differentiableAt_cutoffCoeff_and_fderiv_apply χ b s p).1, by simp,
+      contDiff_clm_apply_iff.2 fun v ↦ ?_⟩
+    have h : (fun p ↦ fderiv ℝ (cutoffCoeff χ b s) p v) = fun p ↦
+        ∑ j, v.1 j • cutoffCoeff χ (spatialDeriv j b) s p +
+          ∑ j, v.2 j • cutoffCoeff χ (frequencyDeriv j b) s p := funext fun p ↦ by
+      rw [fderiv_apply_eq_sum_coordinateDeriv
+        (differentiableAt_cutoffCoeff_and_fderiv_apply χ b s p).1]
+      simp only [coordinateDeriv_fst_cutoffCoeff, coordinateDeriv_snd_cutoffCoeff]
+    rw [h]
+    exact (ContDiff.sum fun j _ ↦ (contDiff_cutoffCoeff s k _).const_smul _).add
+      (ContDiff.sum fun j _ ↦ (contDiff_cutoffCoeff s k _).const_smul _)
+
+/-- The coefficient `c_s` grows at most like `⟨ξ⟩ ^ m`, uniformly for scales `|s| ≤ R` and
+positions in a compact set. -/
+private theorem exists_norm_cutoffCoeff_le (b : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) (R : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ,
+      ‖cutoffCoeff χ b s (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_cutoffIntegrand_le χ b hK R
+  set I := ∫ θ, cutoffWeight χ m R θ
+  have hI : 0 ≤ I := integral_nonneg fun θ ↦ by unfold cutoffWeight; positivity
+  refine ⟨C * I, mul_nonneg hC0 hI, fun s hs x hx ξ ↦ ?_⟩
+  refine (norm_integral_le_of_norm_le ((integrable_cutoffWeight χ m R).const_mul
+    (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))) (.of_forall fun θ ↦ hC s hs x hx ξ θ)).trans_eq ?_
+  rw [integral_const_mul]
+  ring
+
+/-- Every mixed derivative `∂_x^α ∂_ξ^β` of `c_s` is the coefficient built from a symbol `b'` of
+order `m - |β|`, and the same mixed derivative of `b` is `b'`. -/
+private theorem exists_mixedDeriv_cutoffCoeff (s : ℝ) (α β : List (Fin n)) :
+    ∀ {m : ℝ} (b : Symbol n V W m), ∃ (m' : ℝ) (b' : Symbol n V W m'), m' = m - β.length ∧
+      (∀ x ξ, mixedDeriv α β (cutoffCoeff χ b s) x ξ = cutoffCoeff χ b' s (x, ξ)) ∧
+      ∀ x ξ, mixedDeriv α β b.coefficient x ξ = b'.coefficient (x, ξ) := by
+  induction β using List.reverseRecOn with
+  | nil =>
+    induction α using List.reverseRecOn with
+    | nil => exact fun b ↦ ⟨_, b, by simp, fun x ξ ↦ by simp, fun x ξ ↦ by simp⟩
+    | append_singleton js j ih =>
+      intro m b
+      obtain ⟨m', b', hm', hc, hb⟩ := ih (spatialDeriv j b)
+      refine ⟨m', b', hm', fun x ξ ↦ ?_, fun x ξ ↦ ?_⟩
+      · rw [← hc, mixedDeriv_def, mixedDeriv_def, coordinateDeriv_append]
+        simp only [coordinateDeriv_nil]
+        congr 1
+        funext y
+        exact coordinateDeriv_fst_cutoffCoeff χ b s j y ξ
+      · rw [← hb, mixedDeriv_spatialDeriv]
+  | append_singleton js j ih =>
+    intro m b
+    obtain ⟨m', b', hm', hc, hb⟩ := ih (frequencyDeriv j b)
+    refine ⟨m', b', by rw [hm']; simp; ring, fun x ξ ↦ ?_, fun x ξ ↦ ?_⟩
+    · rw [← hc, mixedDeriv_def, mixedDeriv_def]
+      congr 1
+      funext y
+      rw [coordinateDeriv_append]
+      congr 1
+      funext η
+      exact coordinateDeriv_snd_cutoffCoeff χ b s j y η
+    · rw [← hb, mixedDeriv_frequencyDeriv]
+
+end Coefficient
+
+/-! ### The kernel cutoff -/
+
+section KernelCutoff
+
+variable (χ : 𝓢(CoordinateSpace n, ℂ))
+
+/-- **The kernel cutoff of a symbol.** For a Schwartz function `χ` and a symbol `b` of order `m`,
+the symbol of order `m`
+
+`c(x, ξ) = ∫ 𝓕χ(θ) b(x, ξ - 2πθ) dθ`,
+
+whose quantization `Op(c) u (x) = Op(b)(χ(x - ·) u)(x)` has the kernel `χ(x - y) K_b(x, y)`
+(`TauCeti.Symbol.quantizeSchwartzValue_kernelCutoff`). For compactly supported `χ` this operator
+is properly supported, and for `χ = 1` near `0` the difference `c - b` is smoothing
+(`TauCeti.Symbol.isSmoothing_kernelCutoff_sub`). -/
+def kernelCutoff (b : Symbol n V W m) : Symbol n V W m where
+  coefficient := cutoffCoeff χ b (2 * π)
+  contDiff_coefficient := contDiff_infty.2 fun k ↦ contDiff_cutoffCoeff χ (2 * π) k b
+  exists_bound K hK α β := by
+    obtain ⟨m', b', hm', hc, -⟩ := exists_mixedDeriv_cutoffCoeff χ (2 * π) α β b
+    obtain ⟨C, hC0, hC⟩ := exists_norm_cutoffCoeff_le χ b' hK (2 * π)
+    refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+    rw [hc, ← hm']
+    exact hC (2 * π) (abs_of_pos Real.two_pi_pos).le x hx ξ
 
 @[simp]
-theorem hasProperOutputSupport_flip_iff {K : X → Y → M} :
-    HasProperOutputSupport (_root_.flip K) ↔ HasProperInputSupport K :=
-  ⟨fun h ↦ h.flip, fun h ↦ h.flip⟩
+theorem coefficient_kernelCutoff (b : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (kernelCutoff χ b).coefficient (x, ξ) = ∫ θ, 𝓕 χ θ • b.coefficient (x, ξ - (2 * π) • θ) :=
+  (rfl)
 
+private theorem coefficient_kernelCutoff_eq_cutoffCoeff (b : Symbol n V W m) :
+    (kernelCutoff χ b).coefficient = cutoffCoeff χ b (2 * π) :=
+  (rfl)
+
+/-- Position derivatives commute with the kernel cutoff. -/
 @[simp]
-theorem hasProperInputSupport_flip_iff {K : X → Y → M} :
-    HasProperInputSupport (_root_.flip K) ↔ HasProperOutputSupport K :=
-  ⟨fun h ↦ h.flip, fun h ↦ h.flip⟩
+theorem spatialDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
+    spatialDeriv j (kernelCutoff χ b) = kernelCutoff χ (spatialDeriv j b) := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_spatialDeriv, coefficient_kernelCutoff_eq_cutoffCoeff,
+    coefficient_kernelCutoff_eq_cutoffCoeff]
+  exact coordinateDeriv_fst_cutoffCoeff χ b (2 * π) j x ξ
 
+/-- Frequency derivatives commute with the kernel cutoff. -/
 @[simp]
-theorem hasProperSupport_flip_iff {K : X → Y → M} :
-    HasProperSupport (_root_.flip K) ↔ HasProperSupport K :=
-  ⟨fun h ↦ ⟨h.2.flip, h.1.flip⟩, fun h ↦ ⟨h.2.flip, h.1.flip⟩⟩
-
-/-- Shrinking the closed support of a kernel preserves proper input support. -/
-theorem HasProperInputSupport.of_tsupport_subset {K : X → Y → M} {K' : X → Y → N}
-    (hK : HasProperInputSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
-    HasProperInputSupport K' := by
-  rw [← hasProperOutputSupport_flip_iff] at hK ⊢
-  exact hK.of_tsupport_subset (by simpa only [tsupport_uncurry_flip] using preimage_mono hsub)
-
-theorem HasProperSupport.of_tsupport_subset {K : X → Y → M} {K' : X → Y → N}
-    (hK : HasProperSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
-    HasProperSupport K' :=
-  ⟨hK.1.of_tsupport_subset hsub, hK.2.of_tsupport_subset hsub⟩
-
-@[simp]
-theorem hasProperOutputSupport_zero : HasProperOutputSupport (0 : X → Y → M) := by
-  rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 _ _ ↦ ?_⟩
-  obtain ⟨p, -⟩ := 𝒰.toFilter.nonempty_of_mem univ_mem
-  have h0 : tsupport (uncurry (0 : X → Y → M)) = ∅ := tsupport_zero
-  exact False.elim (notMem_empty p.1 (h0 ▸ p.prop))
-
-@[simp]
-theorem hasProperInputSupport_zero : HasProperInputSupport (0 : X → Y → M) :=
-  hasProperOutputSupport_flip_iff.mp hasProperOutputSupport_zero
-
-@[simp]
-theorem hasProperSupport_zero : HasProperSupport (0 : X → Y → M) :=
-  ⟨hasProperOutputSupport_zero, hasProperInputSupport_zero⟩
-
-/-- If `K` has proper output support, then for every compact set `C ⊆ X` there is a compact closed
-set `L ⊆ Y` outside which `K x y = 0` for all `x ∈ C`. No separation axiom is needed. -/
-theorem HasProperOutputSupport.exists_isCompact_isClosed_forall_eq_zero {K : X → Y → M}
-    (hK : HasProperOutputSupport K) {C : Set X} (hC : IsCompact C) :
-    ∃ L : Set Y, IsCompact L ∧ IsClosed L ∧ ∀ x ∈ C, ∀ y ∉ L, K x y = 0 := by
-  let S := tsupport (uncurry K)
-  let L : Set Y := (fun p : S ↦ p.1.2) '' ((fun p : S ↦ p.1.1) ⁻¹' C)
-  have hL : IsCompact L :=
-    (hK.isCompact_preimage hC).image (continuous_snd.comp continuous_subtype_val)
-  have hLc : IsClosed L := by
-    rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
-    intro y₀ hy₀
-    have hsub : C ×ˢ ({y₀} : Set Y) ⊆ Sᶜ := by
-      rintro ⟨x, y⟩ ⟨hx, rfl : y = y₀⟩ hmem
-      exact hy₀ ⟨⟨(x, y), hmem⟩, hx, rfl⟩
-    obtain ⟨U, V, _, hVo, hCU, hy₀V, hUV⟩ :=
-      generalized_tube_lemma hC isCompact_singleton (isClosed_tsupport _).isOpen_compl hsub
-    refine ⟨V, ?_, hVo, hy₀V rfl⟩
-    rintro y hyV ⟨⟨⟨x, y'⟩, hmem⟩, hxC, rfl : y' = y⟩
-    exact hUV ⟨hCU hxC, hyV⟩ hmem
-  exact ⟨L, hL, hLc, fun x hx y hy ↦
-    image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦ hy ⟨⟨(x, y), hmem⟩, hx, rfl⟩⟩
-
-/-- If `K` has proper output support, then for every compact set `C ⊆ X` there is a compact set
-`L ⊆ Y` outside which `K x y = 0` for all `x ∈ C`. No separation axiom is needed. -/
-theorem HasProperOutputSupport.exists_isCompact_forall_eq_zero {K : X → Y → M}
-    (hK : HasProperOutputSupport K) {C : Set X} (hC : IsCompact C) :
-    ∃ L : Set Y, IsCompact L ∧ ∀ x ∈ C, ∀ y ∉ L, K x y = 0 := by
-  obtain ⟨L, hL, -, hKL⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hC
-  exact ⟨L, hL, hKL⟩
-
-/-- If `K` has proper input support, then for every compact set `L ⊆ Y` there is a compact closed
-set `C ⊆ X` outside which `K x y = 0` for all `y ∈ L`. No separation axiom is needed. -/
-theorem HasProperInputSupport.exists_isCompact_isClosed_forall_eq_zero {K : X → Y → M}
-    (hK : HasProperInputSupport K) {L : Set Y} (hL : IsCompact L) :
-    ∃ C : Set X, IsCompact C ∧ IsClosed C ∧ ∀ x ∉ C, ∀ y ∈ L, K x y = 0 := by
-  obtain ⟨C, hC, hCc, hCK⟩ := hK.flip.exists_isCompact_isClosed_forall_eq_zero hL
-  exact ⟨C, hC, hCc, fun x hx y hy ↦ hCK y hy x hx⟩
-
-/-- If `K` has proper input support, then for every compact set `L ⊆ Y` there is a compact set
-`C ⊆ X` outside which `K x y = 0` for all `y ∈ L`. No separation axiom is needed. -/
-theorem HasProperInputSupport.exists_isCompact_forall_eq_zero {K : X → Y → M}
-    (hK : HasProperInputSupport K) {L : Set Y} (hL : IsCompact L) :
-    ∃ C : Set X, IsCompact C ∧ ∀ x ∉ C, ∀ y ∈ L, K x y = 0 := by
-  obtain ⟨C, hC, -, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hL
-  exact ⟨C, hC, hCK⟩
-
-/-- If `K` has proper input support and `u : Y → N` has compact support, there is a compact set
-`C ⊆ X` outside which `K x y = 0` or `u y = 0` for every `y`. -/
-theorem HasProperInputSupport.exists_isCompact_forall_eq_zero_of_hasCompactSupport
-    {K : X → Y → M} (hK : HasProperInputSupport K) {u : Y → N} (hu : HasCompactSupport u) :
-    ∃ C : Set X, IsCompact C ∧ ∀ x ∉ C, ∀ y, K x y = 0 ∨ u y = 0 := by
-  obtain ⟨C, hC, hCK⟩ := hK.exists_isCompact_forall_eq_zero hu
-  exact ⟨C, hC, fun x hx y ↦ by_cases (fun hy : y ∈ tsupport u ↦ Or.inl (hCK x hx y hy))
-    fun hy ↦ Or.inr (image_eq_zero_of_notMem_tsupport hy)⟩
-
-/-- Characterization of proper output support when `X` is weakly locally compact and `Y` is
-Hausdorff: for every compact `C ⊆ X`, `K x y` vanishes for `x ∈ C` and `y` outside some compact
-`L ⊆ Y`. -/
-theorem hasProperOutputSupport_iff [WeaklyLocallyCompactSpace X] [T2Space Y] {K : X → Y → M} :
-    HasProperOutputSupport K ↔
-      ∀ C : Set X, IsCompact C → ∃ L : Set Y, IsCompact L ∧ ∀ x ∈ C, ∀ y ∉ L, K x y = 0 := by
-  refine ⟨fun hK _ hC ↦ hK.exists_isCompact_forall_eq_zero hC, fun h ↦ ?_⟩
-  rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 x hx ↦ ?_⟩
-  obtain ⟨C, hC, hxC⟩ := exists_compact_mem_nhds x
-  obtain ⟨L, hL, hKL⟩ := h C hC
-  have hdisj : tsupport (uncurry K) ⊆ (interior C ×ˢ Lᶜ)ᶜ :=
-    closure_minimal (fun ⟨x', y'⟩ hxy ⟨hx', hy'⟩ ↦ hxy (hKL x' (interior_subset hx') y' hy'))
-      (isOpen_interior.prod hL.isClosed.isOpen_compl).isClosed_compl
-  have hL_mem : L ∈ 𝒰.map (fun p : tsupport (uncurry K) ↦ p.1.2) :=
-    mem_map.2 (Filter.mem_of_superset (hx (interior_mem_nhds.2 hxC)) fun p hp ↦
-      by_contra fun hyL ↦ hdisj p.prop ⟨hp, hyL⟩)
-  obtain ⟨y, -, hy⟩ := hL.ultrafilter_le_nhds _ (le_principal_iff.2 hL_mem)
-  have hxy : Tendsto (Subtype.val : tsupport (uncurry K) → X × Y) 𝒰 (𝓝 (x, y)) :=
-    hx.prodMk_nhds hy
-  exact ⟨⟨(x, y), (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)⟩, rfl,
-    tendsto_subtype_rng.2 hxy⟩
-
-/-- Characterization of proper input support when `X` is Hausdorff and `Y` is weakly locally
-compact: for every compact `L ⊆ Y`, `K x y` vanishes for `y ∈ L` and `x` outside some compact
-`C ⊆ X`. -/
-theorem hasProperInputSupport_iff [T2Space X] [WeaklyLocallyCompactSpace Y] {K : X → Y → M} :
-    HasProperInputSupport K ↔
-      ∀ L : Set Y, IsCompact L → ∃ C : Set X, IsCompact C ∧ ∀ x ∉ C, ∀ y ∈ L, K x y = 0 := by
-  rw [← hasProperOutputSupport_flip_iff, hasProperOutputSupport_iff]
-  exact forall₂_congr fun _ _ ↦ exists_congr fun _ ↦ and_congr_right fun _ ↦
-    ⟨fun h x hx y hy ↦ h y hy x hx, fun h y hy x hx ↦ h x hx y hy⟩
-
-/-- A kernel with `tsupport = univ` lacks proper output support if `X` is nonempty and `Y` is
-noncompact. -/
-theorem not_hasProperOutputSupport_of_tsupport_eq_univ [Nonempty X] [NoncompactSpace Y]
-    {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperOutputSupport K := by
-  intro hK
-  obtain ⟨x₀⟩ := ‹Nonempty X›
-  have hcomp : IsCompact ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) :=
-    (hK.isCompact_preimage isCompact_singleton).image (continuous_snd.comp continuous_subtype_val)
-  have heq : ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) = univ :=
-    eq_univ_iff_forall.2 fun y ↦ ⟨⟨(x₀, y), h.symm ▸ mem_univ _⟩, rfl, rfl⟩
-  exact NoncompactSpace.noncompact_univ (heq ▸ hcomp)
-
-/-- A kernel with `tsupport = univ` lacks proper input support if `X` is noncompact and `Y` is
-nonempty. -/
-theorem not_hasProperInputSupport_of_tsupport_eq_univ [NoncompactSpace X] [Nonempty Y]
-    {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperInputSupport K := by
-  rw [← hasProperOutputSupport_flip_iff]
-  exact not_hasProperOutputSupport_of_tsupport_eq_univ (by simp [tsupport_uncurry_flip, h])
-
-theorem not_hasProperSupport_of_tsupport_eq_univ [Nonempty X] [NoncompactSpace Y]
-    {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperSupport K :=
-  fun hK ↦ not_hasProperOutputSupport_of_tsupport_eq_univ h hK.1
-
-private theorem tsupport_uncurry_const {c : M} (hc : c ≠ 0) :
-    tsupport (uncurry fun (_ : X) (_ : Y) ↦ c) = univ := by
-  have h : (uncurry fun (_ : X) (_ : Y) ↦ c) = fun _ : X × Y ↦ c := rfl
-  rw [h, tsupport, support_const hc, closure_univ]
-
-/-- A nonzero constant kernel lacks proper output support when `X` is nonempty and `Y` is
-noncompact. -/
-theorem not_hasProperOutputSupport_const [Nonempty X] [NoncompactSpace Y] {c : M} (hc : c ≠ 0) :
-    ¬HasProperOutputSupport fun (_ : X) (_ : Y) ↦ c :=
-  not_hasProperOutputSupport_of_tsupport_eq_univ (tsupport_uncurry_const hc)
-
-/-- A nonzero constant kernel lacks proper input support when `X` is noncompact and `Y` is
-nonempty. -/
-theorem not_hasProperInputSupport_const [NoncompactSpace X] [Nonempty Y] {c : M} (hc : c ≠ 0) :
-    ¬HasProperInputSupport fun (_ : X) (_ : Y) ↦ c :=
-  not_hasProperInputSupport_of_tsupport_eq_univ (tsupport_uncurry_const hc)
-
-/-- A nonzero constant kernel is not properly supported when `X` is nonempty and `Y` is
-noncompact. -/
-theorem not_hasProperSupport_const [Nonempty X] [NoncompactSpace Y] {c : M} (hc : c ≠ 0) :
-    ¬HasProperSupport fun (_ : X) (_ : Y) ↦ c :=
-  fun h ↦ not_hasProperOutputSupport_const hc h.1
-
-end Zero
-
-/-! ### Algebraic stability -/
-
-section Algebra
-
-private theorem tsupport_uncurry_neg_subset {G : Type*} [NegZeroClass G] (K : X → Y → G) :
-    tsupport (uncurry (-K)) ⊆ tsupport (uncurry K) :=
-  closure_mono fun ⟨x, y⟩ h ↦ mem_support.2 fun h0 ↦
-    mem_support.1 h (by simp [uncurry_apply_pair, show K x y = 0 from h0])
-
-theorem HasProperOutputSupport.neg {G : Type*} [NegZeroClass G] {K : X → Y → G}
-    (hK : HasProperOutputSupport K) : HasProperOutputSupport (-K) :=
-  hK.of_tsupport_subset (tsupport_uncurry_neg_subset K)
-
-theorem HasProperInputSupport.neg {G : Type*} [NegZeroClass G] {K : X → Y → G}
-    (hK : HasProperInputSupport K) : HasProperInputSupport (-K) :=
-  hK.of_tsupport_subset (tsupport_uncurry_neg_subset K)
-
-theorem HasProperSupport.neg {G : Type*} [NegZeroClass G] {K : X → Y → G}
-    (hK : HasProperSupport K) : HasProperSupport (-K) :=
-  ⟨hK.1.neg, hK.2.neg⟩
-
-private theorem tendsto_of_mem_preimage_tsupport {M : Type*} [AddZeroClass M]
-    {K₁ K : X → Y → M} (h₁ : HasProperOutputSupport K₁) {𝒰 : Ultrafilter (tsupport (uncurry K))}
-    {x : X} (hx : Tendsto (fun p : tsupport (uncurry K) ↦ p.1.1) 𝒰 (𝓝 x))
-    (hmem : ((Subtype.val : tsupport (uncurry K) → X × Y) ⁻¹' tsupport (uncurry K₁)) ∈ 𝒰) :
-    ∃ p : tsupport (uncurry K), p.1.1 = x ∧ ↑𝒰 ≤ 𝓝 p := by
-  rw [HasProperOutputSupport, isProperMap_iff_ultrafilter] at h₁
-  let S₁ : Set (tsupport (uncurry K)) := Subtype.val ⁻¹' tsupport (uncurry K₁)
-  have hrange : range (Subtype.val : S₁ → tsupport (uncurry K)) ∈ 𝒰 := by rwa [Subtype.range_coe]
-  let i : S₁ → tsupport (uncurry K₁) := fun p ↦ ⟨p.1.1, p.2⟩
-  have hi_tendsto : Tendsto (fun p : tsupport (uncurry K₁) ↦ p.1.1)
-      ((𝒰.comap Subtype.val_injective hrange).map i) (𝓝 x) := by
-    rw [Ultrafilter.coe_map, Ultrafilter.coe_comap, tendsto_map'_iff]
-    exact (tendsto_comap'_iff hrange).2 hx
-  obtain ⟨⟨q, hq⟩, rfl, hlim⟩ := h₁.2 hi_tendsto
-  have h' : Tendsto ((Subtype.val : tsupport (uncurry K) → X × Y) ∘
-      (Subtype.val : S₁ → tsupport (uncurry K)))
-      (comap (Subtype.val : S₁ → tsupport (uncurry K)) 𝒰) (𝓝 q) := by
-    have h0 := (continuous_subtype_val.tendsto ⟨q, hq⟩).mono_left hlim
-    rwa [Ultrafilter.coe_map, Ultrafilter.coe_comap, tendsto_map'_iff] at h0
-  have hval : Tendsto (Subtype.val : tsupport (uncurry K) → X × Y) 𝒰 (𝓝 q) :=
-    (tendsto_comap'_iff hrange).1 h'
-  exact ⟨⟨q, (isClosed_tsupport _).mem_of_tendsto hval (univ_mem' Subtype.coe_prop)⟩, rfl,
-    tendsto_subtype_rng.2 hval⟩
-
-theorem HasProperOutputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
-    (h₁ : HasProperOutputSupport K₁) (h₂ : HasProperOutputSupport K₂) :
-    HasProperOutputSupport (K₁ + K₂) := by
-  rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 x hx ↦ ?_⟩
-  have hunion : tsupport (uncurry (K₁ + K₂)) ⊆ tsupport (uncurry K₁) ∪ tsupport (uncurry K₂) :=
-    tsupport_add (uncurry K₁) (uncurry K₂)
-  have hor : ((Subtype.val : tsupport (uncurry (K₁ + K₂)) → X × Y) ⁻¹' tsupport (uncurry K₁)) ∈ 𝒰 ∨
-      ((Subtype.val : tsupport (uncurry (K₁ + K₂)) → X × Y) ⁻¹' tsupport (uncurry K₂)) ∈ 𝒰 := by
-    rw [← Ultrafilter.union_mem_iff, ← preimage_union]
-    exact univ_mem' fun p ↦ hunion p.prop
-  exact hor.elim (tendsto_of_mem_preimage_tsupport h₁ hx) (tendsto_of_mem_preimage_tsupport h₂ hx)
-
-theorem HasProperInputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
-    (h₁ : HasProperInputSupport K₁) (h₂ : HasProperInputSupport K₂) :
-    HasProperInputSupport (K₁ + K₂) :=
-  hasProperOutputSupport_flip_iff.mp (h₁.flip.add h₂.flip)
-
-theorem HasProperSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
-    (h₁ : HasProperSupport K₁) (h₂ : HasProperSupport K₂) :
-    HasProperSupport (K₁ + K₂) :=
-  ⟨h₁.1.add h₂.1, h₁.2.add h₂.2⟩
-
-theorem HasProperOutputSupport.sub {G : Type*} [SubNegZeroMonoid G] {K₁ K₂ : X → Y → G}
-    (h₁ : HasProperOutputSupport K₁) (h₂ : HasProperOutputSupport K₂) :
-    HasProperOutputSupport (K₁ - K₂) := by
-  simpa [sub_eq_add_neg] using h₁.add h₂.neg
-
-theorem HasProperInputSupport.sub {G : Type*} [SubNegZeroMonoid G] {K₁ K₂ : X → Y → G}
-    (h₁ : HasProperInputSupport K₁) (h₂ : HasProperInputSupport K₂) :
-    HasProperInputSupport (K₁ - K₂) := by
-  simpa [sub_eq_add_neg] using h₁.add h₂.neg
-
-theorem HasProperSupport.sub {G : Type*} [SubNegZeroMonoid G] {K₁ K₂ : X → Y → G}
-    (h₁ : HasProperSupport K₁) (h₂ : HasProperSupport K₂) :
-    HasProperSupport (K₁ - K₂) :=
-  ⟨h₁.1.sub h₂.1, h₁.2.sub h₂.2⟩
-
-/-- Pointwise scalar multiplication by an arbitrary factor on the right of a properly
-output-supported cutoff `χ` preserves proper output support. -/
-theorem HasProperOutputSupport.smul_right {R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
-    {χ : X → Y → R} (hχ : HasProperOutputSupport χ) (K : X → Y → M) :
-    HasProperOutputSupport fun x y ↦ χ x y • K x y :=
-  hχ.of_tsupport_subset (closure_mono fun ⟨x, y⟩ h ↦
-    mem_support.2 fun h0 ↦ mem_support.1 h
-      (by simp only [uncurry_apply_pair] at h0 ⊢; rw [h0, zero_smul]))
-
-/-- Pointwise scalar multiplication by an arbitrary cutoff `χ` on the left of a properly
-output-supported kernel `K` preserves proper output support. -/
-theorem HasProperOutputSupport.smul_left {R M : Type*} [Zero M] [SMulZeroClass R M]
-    (χ : X → Y → R) {K : X → Y → M} (hK : HasProperOutputSupport K) :
-    HasProperOutputSupport fun x y ↦ χ x y • K x y :=
-  hK.of_tsupport_subset (closure_mono fun ⟨x, y⟩ h ↦
-    mem_support.2 fun h0 ↦ mem_support.1 h
-      (by simp only [uncurry_apply_pair] at h0 ⊢; rw [h0, smul_zero]))
-
-theorem HasProperInputSupport.smul_right {R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
-    {χ : X → Y → R} (hχ : HasProperInputSupport χ) (K : X → Y → M) :
-    HasProperInputSupport fun x y ↦ χ x y • K x y :=
-  hasProperOutputSupport_flip_iff.mp (hχ.flip.smul_right (_root_.flip K))
-
-theorem HasProperInputSupport.smul_left {R M : Type*} [Zero M] [SMulZeroClass R M]
-    (χ : X → Y → R) {K : X → Y → M} (hK : HasProperInputSupport K) :
-    HasProperInputSupport fun x y ↦ χ x y • K x y :=
-  hasProperOutputSupport_flip_iff.mp (hK.flip.smul_left (_root_.flip χ))
-
-theorem HasProperSupport.smul_right {R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
-    {χ : X → Y → R} (hχ : HasProperSupport χ) (K : X → Y → M) :
-    HasProperSupport fun x y ↦ χ x y • K x y :=
-  ⟨hχ.1.smul_right K, hχ.2.smul_right K⟩
-
-theorem HasProperSupport.smul_left {R M : Type*} [Zero M] [SMulZeroClass R M]
-    (χ : X → Y → R) {K : X → Y → M} (hK : HasProperSupport K) :
-    HasProperSupport fun x y ↦ χ x y • K x y :=
-  ⟨hK.1.smul_left χ, hK.2.smul_left χ⟩
-
-end Algebra
-
-end Topological
-
-/-! ### Difference kernels and smooth diagonal cutoffs -/
-
-section Difference
-
-/-- In any topological additive group, composing a compactly supported profile `φ` with subtraction
-`(x, y) ↦ φ (x - y)` produces a kernel with proper output support. No separation axiom is needed. -/
-theorem hasProperOutputSupport_sub_comp {G M : Type*} [TopologicalSpace G] [AddGroup G]
-    [IsTopologicalAddGroup G] [Zero M] {φ : G → M} (hφ : HasCompactSupport φ) :
-    HasProperOutputSupport fun x y : G ↦ φ (x - y) := by
-  set K : G → G → M := fun x y ↦ φ (x - y)
-  have hsub : tsupport (uncurry K) ⊆ {q : G × G | q.1 - q.2 ∈ tsupport φ} :=
-    closure_minimal (fun q hq ↦ subset_tsupport φ hq)
-      ((isClosed_tsupport φ).preimage (continuous_fst.sub continuous_snd))
-  rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 x₀ hx₀ ↦ ?_⟩
-  obtain ⟨z, -, hz⟩ := hφ.ultrafilter_le_nhds (𝒰.map fun p : tsupport (uncurry K) ↦ p.1.1 - p.1.2)
-    (le_principal_iff.2 <| mem_map.2 <| univ_mem' fun p : tsupport (uncurry K) ↦ hsub p.prop)
-  have hdiff : Tendsto (fun p : tsupport (uncurry K) ↦ p.1.1 - p.1.2) 𝒰 (𝓝 z) := hz
-  have hy : Tendsto (fun p : tsupport (uncurry K) ↦ p.1.2) 𝒰 (𝓝 (-z + x₀)) :=
-    (hdiff.neg.add hx₀).congr fun p ↦ by rw [neg_sub, sub_add_cancel]
-  have hxy : Tendsto (Subtype.val : tsupport (uncurry K) → G × G) 𝒰 (𝓝 (x₀, -z + x₀)) :=
-    hx₀.prodMk_nhds hy
-  exact ⟨⟨(x₀, -z + x₀), (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)⟩,
-    rfl, tendsto_subtype_rng.2 hxy⟩
-
-/-- In any topological additive group, `(x, y) ↦ φ (x - y)` has proper input support whenever `φ`
-has compact support. -/
-theorem hasProperInputSupport_sub_comp {G M : Type*} [TopologicalSpace G] [AddGroup G]
-    [IsTopologicalAddGroup G] [Zero M] {φ : G → M} (hφ : HasCompactSupport φ) :
-    HasProperInputSupport fun x y : G ↦ φ (x - y) := by
-  have hneg : HasCompactSupport fun z : G ↦ φ (-z) := hφ.comp_homeomorph (Homeomorph.neg G)
-  convert (hasProperOutputSupport_sub_comp hneg).flip using 1
-  ext x y
-  simp [_root_.flip, neg_sub]
-
-/-- In any topological additive group, `(x, y) ↦ φ (x - y)` is properly supported whenever `φ` has
-compact support. -/
-theorem hasProperSupport_sub_comp {G M : Type*} [TopologicalSpace G] [AddGroup G]
-    [IsTopologicalAddGroup G] [Zero M] {φ : G → M} (hφ : HasCompactSupport φ) :
-    HasProperSupport fun x y : G ↦ φ (x - y) :=
-  ⟨hasProperOutputSupport_sub_comp hφ, hasProperInputSupport_sub_comp hφ⟩
-
-/-- Every finite-dimensional real normed space admits a smooth `[0, 1]`-valued properly supported
-cutoff equal to `1` when `‖x - y‖ ≤ r` (hence on a neighborhood of every diagonal point `(x, x)`)
-and vanishing when `‖x - y‖ ≥ R`, whenever `0 < R` and `r < R`. -/
-theorem exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {r R : ℝ}
-    (hR : 0 < R) (hrR : r < R) :
-    ∃ χ : E → E → ℝ, ContDiff ℝ ∞ (uncurry χ) ∧ range (uncurry χ) ⊆ Icc 0 1 ∧
-      HasProperSupport χ ∧ (∀ x : E, uncurry χ =ᶠ[𝓝 (x, x)] 1) ∧
-      (∀ x y : E, ‖x - y‖ ≤ r → χ x y = 1) ∧ ∀ x y : E, R ≤ ‖x - y‖ → χ x y = 0 := by
-  set r' := max r (R / 2)
-  have hr' : 0 < r' := (half_pos hR).trans_le (le_max_right r (R / 2))
-  let b : ContDiffBump (0 : E) := ⟨r', R, hr', max_lt hrR (half_lt_self hR)⟩
-  have hone : ∀ x y : E, ‖x - y‖ ≤ r → b (x - y) = 1 := fun x y hxy ↦
-    b.one_of_mem_closedBall
-      (by simpa only [Metric.mem_closedBall, dist_zero_right] using hxy.trans (le_max_left r _))
-  refine ⟨fun x y ↦ b (x - y), (b.contDiff (n := ⊤)).comp (contDiff_fst.sub contDiff_snd),
-    range_subset_iff.2 fun p ↦ ⟨b.nonneg' _, b.le_one⟩,
-    hasProperSupport_sub_comp b.hasCompactSupport, fun x ↦ ?_, hone,
-    fun x y hxy ↦ b.zero_of_le_dist (by simpa [dist_eq_norm] using hxy)⟩
-  have hsub : Tendsto (fun p : E × E ↦ p.1 - p.2) (𝓝 (x, x)) (𝓝 (x - x)) :=
-    (continuous_fst.sub continuous_snd).tendsto (x, x)
-  rw [sub_self] at hsub
-  filter_upwards [hsub (Metric.closedBall_mem_nhds 0 hr')] with p hp
-  exact b.one_of_mem_closedBall hp
-
-end Difference
-
-/-! ### Smooth integral operators and transposition -/
-
-section IntegralOperator
-
-private theorem hasCompactSupport_of_isCompact_isClosed {Z α : Type*} [TopologicalSpace Z]
-    [Zero α] {s : Set Z} (hs : IsCompact s) (hsc : IsClosed s) {f : Z → α}
-    (hf : ∀ z ∉ s, f z = 0) : HasCompactSupport f :=
-  hs.of_isClosed_subset (isClosed_tsupport f)
-    (closure_minimal (fun z hz ↦ by_contra fun hzs ↦ mem_support.1 hz (hf z hzs)) hsc)
-
-/-- **Proper input support preserves compact support.** For any binary operator kernel
-`K : X → Y → V →L[𝕜] W` with proper input support, the integral operator
-`u ↦ (x ↦ ∫ y, K x y (u y) ∂μ)` maps compactly supported functions to compactly supported
-functions. No smoothness or separation axiom is needed. -/
-theorem HasProperInputSupport.hasCompactSupport_integral {X Y 𝕜 V W : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] [MeasurableSpace Y] [Semiring 𝕜] [AddCommMonoid V]
-    [Module 𝕜 V] [TopologicalSpace V] [NormedAddCommGroup W] [NormedSpace ℝ W] [Module 𝕜 W]
-    {K : X → Y → V →L[𝕜] W} (hK : HasProperInputSupport K) {u : Y → V}
-    (hu : HasCompactSupport u) (μ : Measure Y := by volume_tac) :
-    HasCompactSupport fun x ↦ ∫ y, K x y (u y) ∂μ := by
-  obtain ⟨C, hC, hCc, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hu
-  refine hasCompactSupport_of_isCompact_isClosed hC hCc fun x hx ↦ ?_
-  have hzero : (fun y ↦ K x y (u y)) = 0 := funext fun y ↦ by
-    by_cases hy : y ∈ tsupport u
-    · simp [hCK x hx y hy]
-    · simp [image_eq_zero_of_notMem_tsupport hy]
-  simp [hzero]
-
-private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*} [TopologicalSpace X]
-    [NormedAddCommGroup Y] [TopologicalSpace M] [Zero M] [T1Space M]
-    {K : X → Y → M} (hK : HasProperOutputSupport K) (hKc : Continuous (uncurry K))
-    {x₁ : X} {y₁ : Y} (hne : K x₁ y₁ ≠ 0) (x₀ : X) :
-    ∃ (U : Set X) (L : Set Y), IsOpen U ∧ x₀ ∈ U ∧ IsCompact L ∧
-      ∀ x ∈ U, ∀ y ∉ L, K x y = 0 := by
-  obtain ⟨L₁, hL₁, hL₁c, hKL₁⟩ :=
-    hK.exists_isCompact_isClosed_forall_eq_zero (isCompact_singleton (x := x₁))
-  have hc₁ : HasCompactSupport fun y ↦ K x₁ y :=
-    hasCompactSupport_of_isCompact_isClosed hL₁ hL₁c fun y hy ↦ hKL₁ x₁ rfl y hy
-  have hcont₁ : Continuous fun y ↦ K x₁ y := hKc.comp (continuous_const.prodMk continuous_id)
-  have : LocallyCompactSpace Y :=
-    (hc₁.eq_zero_or_locallyCompactSpace_of_addGroup hcont₁).resolve_left
-      fun h0 ↦ hne (congrFun h0 y₁)
-  let S := tsupport (uncurry K)
-  obtain ⟨L, hL, hFL⟩ := exists_compact_superset
-    ((hK.isCompact_preimage (isCompact_singleton (x := x₀))).image
-      (continuous_snd.comp continuous_subtype_val))
-  let Z : Set S := (fun p : S ↦ p.1.2) ⁻¹' (interior L)ᶜ
-  have hZc : IsClosed Z :=
-    isOpen_interior.isClosed_compl.preimage (continuous_snd.comp continuous_subtype_val)
-  refine ⟨((fun p : S ↦ p.1.1) '' Z)ᶜ, L, (hK.isClosedMap Z hZc).isOpen_compl,
-    fun ⟨p, hpZ, hp1⟩ ↦ hpZ (hFL ⟨p, hp1, rfl⟩), hL, fun x hxU y hyL ↦ ?_⟩
-  exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦
-    hxU ⟨⟨(x, y), hmem⟩, fun hy_int ↦ hyL (interior_subset hy_int), rfl⟩
-
-/-- **Proper output support gives smoothness on arbitrary continuous inputs.** If `K` is `C^n` on
-`X × Y` and has proper output support, where `μ` is finite on compact subsets of `Y`, then
-`x ↦ ∫ y, K x y (u y) ∂μ` is `C^n` for every continuous `u : Y → V` (with no support assumption on
-`u` and no finite-dimensionality assumption on `X` or `Y`). -/
-theorem HasProperOutputSupport.contDiff_integral {X Y 𝕜 V W : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    [MeasurableSpace Y] [OpensMeasurableSpace Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace 𝕜 V] [IsScalarTower ℝ 𝕜 V]
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
-    {n : ℕ∞} {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K)
-    (hK_diff : ContDiff ℝ n (uncurry K)) {u : Y → V} (hu : Continuous u)
-    (μ : Measure Y := by volume_tac) [IsFiniteMeasureOnCompacts μ] :
-    ContDiff ℝ n fun x ↦ ∫ y, K x y (u y) ∂μ := by
-  by_cases hne : ∃ x₁ y₁, K x₁ y₁ ≠ 0
-  · obtain ⟨x₁, y₁, hne⟩ := hne
-    refine contDiff_iff_contDiffAt.2 fun x₀ ↦ ?_
-    obtain ⟨U, L, hUo, hx₀U, hL, hKL⟩ :=
-      exists_open_isCompact_forall_eq_zero hK hK_diff.continuous hne x₀
-    have : CompactSpace L := isCompact_iff_compactSpace.mp hL
-    have hmeasL : MeasurableSet L := hL.isClosed.measurableSet
-    let μL : Measure L := μ.comap Subtype.val
-    have : IsFiniteMeasure μL := ⟨by
-      rw [(MeasurableEmbedding.subtype_coe hmeasL).comap_apply, image_univ, Subtype.range_coe]
-      exact hL.measure_lt_top⟩
-    have hF : ContDiff ℝ n fun q : X × (Y × V) ↦ (K q.1 q.2.1) q.2.2 :=
-      ((ContinuousLinearMap.restrictScalarsL 𝕜 V W ℝ ℝ).contDiff.comp
-        (hK_diff.comp (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)))).clm_apply
-          (contDiff_snd.comp contDiff_snd)
-    have hon := contDiffOn_integral_smul_of_contDiffOn (μ := μL) (g := fun _ : L ↦ (1 : ℝ))
-      (ι := fun y : L ↦ (y.1, u y.1)) (W := univ) (U := U)
-      (integrable_const 1) (continuous_subtype_val.prodMk (hu.comp continuous_subtype_val))
-      isOpen_univ hF.contDiffOn (fun _ _ _ ↦ mem_univ _)
-    refine (hon.contDiffAt (hUo.mem_nhds hx₀U)).congr_of_eventuallyEq ?_
-    filter_upwards [hUo.mem_nhds hx₀U] with x hx
-    simp only [one_smul]
-    rw [integral_subtype_comap hmeasL (fun y ↦ K x y (u y)),
-      setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by simp [hKL x hx y hy]]
-  · push Not at hne
-    have h0 : (fun x ↦ ∫ y, K x y (u y) ∂μ) = 0 := funext fun x ↦ by simp [hne x]
-    exact h0 ▸ contDiff_const
-
-/-- When `K` has proper output support and `v : X → W →L[𝕜] M` has compact support, the transposed
-operator `y ↦ ∫ x, (v x).comp (K x y) ∂μ` has compact support. -/
-theorem HasProperOutputSupport.hasCompactSupport_integral_comp {X Y 𝕜 V W M : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] [NontriviallyNormedField 𝕜]
-    [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
-    [NormedSpace 𝕜 W] [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M]
-    [IsScalarTower ℝ 𝕜 M] {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K)
-    {v : X → W →L[𝕜] M} (hv : HasCompactSupport v) (μ : Measure X := by volume_tac) :
-    HasCompactSupport fun y ↦ ∫ x, (v x).comp (K x y) ∂μ := by
-  let K' : Y → X → (W →L[𝕜] M) →L[𝕜] (V →L[𝕜] M) :=
-    fun y x ↦ (ContinuousLinearMap.compL 𝕜 V W M).flip (K x y)
-  have hK' : HasProperInputSupport K' :=
-    hK.flip.of_tsupport_subset <| closure_mono fun ⟨y, x⟩ hxy ↦
-      mem_support.2 fun h0 ↦ mem_support.1 hxy
-        (by simp [K', uncurry_apply_pair, show K x y = 0 from h0])
-  exact hK'.hasCompactSupport_integral hv μ
-
-private theorem integral_apply_integral_eq_restrict {X Y 𝕜 W M : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
-    [CompleteSpace W] [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M]
-    [IsScalarTower ℝ 𝕜 M] [CompleteSpace M]
-    {F : X → Y → W} {v : X → W →L[𝕜] M} (μ : Measure X) (ν : Measure Y)
-    [IsFiniteMeasureOnCompacts ν] {C : Set X} {L : Set Y}
-    (hCc : IsClosed C) (hL : IsCompact L) (hLc : IsClosed L) (hF_cont : ∀ x ∈ C, Continuous (F x))
-    (hx_out : ∀ x ∉ C, v x = 0 ∨ ∀ y, F x y = 0) (hy_in : ∀ x ∈ C, ∀ y ∉ L, F x y = 0) :
-    (∫ x, v x (∫ y, F x y ∂ν) ∂μ) = ∫ x in C, ∫ y in L, v x (F x y) ∂ν ∂μ := by
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦
-    (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hF0 ↦ by simp [hF0]]
-  refine integral_congr_ae ((ae_restrict_mem hCc.measurableSet).mono fun x hx ↦ ?_)
-  dsimp only
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (hy_in x hx)]
-  exact (((v x).restrictScalars ℝ).integral_comp_comm <|
-    (hF_cont x hx).integrable_of_hasCompactSupport
-      (hasCompactSupport_of_isCompact_isClosed hL hLc (hy_in x hx))).symm
-
-private theorem integral_apply_integral_eq_of_isCompact_isClosed {X Y 𝕜 V W M : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [SecondCountableTopologyEither X Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W]
-    [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
-    [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
-    {K : X → Y → V →L[𝕜] W} (hKc : Continuous (uncurry K)) {u : Y → V} (hu : Continuous u)
-    {v : X → W →L[𝕜] M} (hv : Continuous v) (μ : Measure X) (ν : Measure Y)
-    [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] {C : Set X} {L : Set Y}
-    (hC : IsCompact C) (hCc : IsClosed C) (hL : IsCompact L) (hLc : IsClosed L)
-    (hx_out : ∀ x ∉ C, v x = 0 ∨ ∀ y, K x y (u y) = 0)
-    (hy_in : ∀ x ∈ C, ∀ y ∉ L, K x y (u y) = 0)
-    (hy_out : ∀ y ∉ L, u y = 0 ∨ ∀ x, (v x).comp (K x y) = 0)
-    (hx_in : ∀ y ∈ L, ∀ x ∉ C, (v x).comp (K x y) = 0) :
-    (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
-  by_cases hM : CompleteSpace M; swap
-  · simp [integral_of_not_completeSpace hM]
-  set μ' := μ.restrict C
-  set ν' := ν.restrict L
-  have : IsFiniteMeasure μ' := ⟨by simp [μ', hC.measure_lt_top]⟩
-  have : IsFiniteMeasure ν' := ⟨by simp [ν', hL.measure_lt_top]⟩
-  have hcont_comp : Continuous fun p : X × Y ↦ (v p.1).comp (K p.1 p.2) :=
-    ((ContinuousLinearMap.compL 𝕜 V W M).continuous.comp (hv.comp continuous_fst)).clm_apply hKc
-  have hint_prod : Integrable (fun p : X × Y ↦ v p.1 (K p.1 p.2 (u p.2))) (μ'.prod ν') :=
-    (hcont_comp.clm_apply (hu.comp continuous_snd)).integrable_of_hasCompactSupport
-      (hasCompactSupport_of_isCompact_isClosed (hC.prod hL) (hCc.prod hLc) fun ⟨x, y⟩ hxy ↦ by
-        by_cases hx : x ∈ C
-        · simp [hy_in x hx y fun hy ↦ hxy ⟨hx, hy⟩]
-        · exact (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hK0 ↦ by simp [hK0])
-  have hLHS := integral_apply_integral_eq_restrict (F := fun x y ↦ K x y (u y)) (v := v)
-    μ ν hCc hL hLc (fun x _ ↦ (hKc.comp (continuous_const.prodMk continuous_id)).clm_apply hu)
-    hx_out hy_in
-  have hRHS := integral_apply_integral_eq_restrict (F := fun y x ↦ (v x).comp (K x y))
-    (v := fun y ↦ ContinuousLinearMap.apply 𝕜 M (u y)) ν μ hLc hC hCc
-    (fun y _ ↦ hcont_comp.comp (continuous_id.prodMk continuous_const))
-    (fun y hy ↦ (hy_out y hy).imp (fun hu0 ↦ by ext; simp [hu0]) id) hx_in
-  exact hLHS.trans ((integral_integral_swap hint_prod).trans hRHS.symm)
-
-/-- **Transposition identity under proper output support.** If `K` is continuous with proper output
-support and `v : X → W →L[𝕜] M` is continuous with compact support, then for *every* continuous
-input `u : Y → V` (with no support assumption on `u`), pairing `(T_K u)(x)` with `v(x)` equals
-pairing `u(y)` with the transposed operator `(T_K^t v)(y) = ∫ x, (v x).comp (K x y) ∂μ`. -/
-theorem HasProperOutputSupport.integral_apply_integral_eq {X Y 𝕜 V W M : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [SecondCountableTopologyEither X Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W]
-    [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
-    [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
-    {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K) (hKc : Continuous (uncurry K))
-    {u : Y → V} (hu : Continuous u) {v : X → W →L[𝕜] M} (hv : Continuous v)
-    (hvc : HasCompactSupport v) (μ : Measure X := by volume_tac)
-    (ν : Measure Y := by volume_tac) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
-    (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
-  obtain ⟨L, hL, hLc, hKL⟩ := hK.exists_isCompact_isClosed_forall_eq_zero hvc
-  exact integral_apply_integral_eq_of_isCompact_isClosed hKc hu hv μ ν hvc (isClosed_tsupport v)
-    hL hLc (fun x hx ↦ Or.inl (image_eq_zero_of_notMem_tsupport hx))
-    (fun x hx y hy ↦ by simp [hKL x hx y hy])
-    (fun y hy ↦ Or.inr fun x ↦ by
-      by_cases hx : x ∈ tsupport v
-      · simp [hKL x hx y hy]
-      · simp [image_eq_zero_of_notMem_tsupport hx])
-    (fun _ _ x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx])
-
-/-- **Transposition identity under proper input support.** Symmetrically, if `K` is continuous with
-proper input support and `u : Y → V` is continuous with compact support, then the transposition
-identity holds for *every* continuous `v : X → W →L[𝕜] M`. -/
-theorem HasProperInputSupport.integral_apply_integral_eq {X Y 𝕜 V W M : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [SecondCountableTopologyEither X Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W]
-    [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
-    [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
-    {K : X → Y → V →L[𝕜] W} (hK : HasProperInputSupport K) (hKc : Continuous (uncurry K))
-    {u : Y → V} (hu : Continuous u) (huc : HasCompactSupport u)
-    {v : X → W →L[𝕜] M} (hv : Continuous v) (μ : Measure X := by volume_tac)
-    (ν : Measure Y := by volume_tac) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
-    (∫ x, v x (∫ y, K x y (u y) ∂ν) ∂μ) = ∫ y, (∫ x, (v x).comp (K x y) ∂μ) (u y) ∂ν := by
-  obtain ⟨C, hC, hCc, hCK⟩ := hK.exists_isCompact_isClosed_forall_eq_zero huc
-  exact integral_apply_integral_eq_of_isCompact_isClosed hKc hu hv μ ν hC hCc
-    huc (isClosed_tsupport u)
-    (fun x hx ↦ Or.inr fun y ↦ by
-      by_cases hy : y ∈ tsupport u
-      · simp [hCK x hx y hy]
-      · simp [image_eq_zero_of_notMem_tsupport hy])
-    (fun _ _ y hy ↦ by simp [image_eq_zero_of_notMem_tsupport hy])
-    (fun y hy ↦ Or.inl (image_eq_zero_of_notMem_tsupport hy))
-    (fun y hy x hx ↦ by simp [hCK x hx y hy])
-
-end IntegralOperator
-
-/-! ### Constant and Gaussian non-examples -/
-
-section Examples
-
-/-- On any nontrivial finite-dimensional real normed space equipped with an open-positive measure
-that is finite on compacts, the constant identity kernel `(x, y) ↦ id` is smooth, sends `u` to the
-constant `∫ u ∂μ`, and fails to preserve compact support: there is a smooth compactly supported `u`
-whose output is a nonzero constant, hence not compactly supported. -/
-theorem exists_hasCompactSupport_not_hasCompactSupport_integral_const {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] (μ : Measure E := by volume_tac)
-    [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] :
-    ∃ u : E → ℝ, ContDiff ℝ ∞ u ∧ HasCompactSupport u ∧ (∫ y, u y ∂μ) ≠ 0 ∧
-      ¬HasCompactSupport fun _ : E ↦ ∫ y, (ContinuousLinearMap.id ℝ ℝ) (u y) ∂μ := by
-  let b : ContDiffBump (0 : E) := ⟨1, 2, zero_lt_one, one_lt_two⟩
-  have hint : Integrable b μ := b.continuous.integrable_of_hasCompactSupport b.hasCompactSupport
-  have hpos : (∫ y : E, b y ∂μ) ≠ 0 :=
-    ((integral_pos_iff_support_of_nonneg b.nonneg' hint).mpr
-      (b.support_eq.symm ▸ Metric.measure_ball_pos μ 0 b.rOut_pos)).ne'
-  refine ⟨b, b.contDiff, b.hasCompactSupport, hpos, fun hc ↦ ?_⟩
-  simp only [ContinuousLinearMap.id_apply, HasCompactSupport] at hc
-  rw [tsupport, support_const hpos, closure_univ] at hc
-  exact NoncompactSpace.noncompact_univ hc
-
-private theorem tsupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E] :
-    tsupport (uncurry fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2)) = univ := by
-  have h : (uncurry fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2)) =
-      fun p : E × E ↦ Real.exp (-‖p.1 - p.2‖ ^ 2) := rfl
-  rw [h, tsupport, eq_univ_iff_forall.2 fun p ↦ mem_support.2 (Real.exp_ne_zero _), closure_univ]
-
-/-- On any nonempty noncompact seminormed additive group (in particular any nontrivial real normed
-space), the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` does not have proper output support. -/
-theorem not_hasProperOutputSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E]
-    [Nonempty E] [NoncompactSpace E] :
-    ¬HasProperOutputSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) :=
-  not_hasProperOutputSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
-
-/-- On any nonempty noncompact seminormed additive group (in particular any nontrivial real normed
-space), the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` does not have proper input support. -/
-theorem not_hasProperInputSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E]
-    [Nonempty E] [NoncompactSpace E] :
-    ¬HasProperInputSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) :=
-  not_hasProperInputSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
-
-/-- On any nonempty noncompact seminormed additive group (in particular any nontrivial real normed
-space), the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` is not properly supported, despite its rapid
-off-diagonal decay. -/
-theorem not_hasProperSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E]
-    [Nonempty E] [NoncompactSpace E] :
-    ¬HasProperSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) :=
-  not_hasProperSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
-
-end Examples
+theorem frequencyDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
+    frequencyDeriv j (kernelCutoff χ b) = kernelCutoff χ (frequencyDeriv j b) := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_frequencyDeriv, coefficient_kernelCutoff_eq_cutoffCoeff,
+    coefficient_kernelCutoff_eq_cutoffCoeff]
+  exact coordinateDeriv_snd_cutoffCoeff χ b (2 * π) j x ξ
+
+/-- The kernel cutoff of a symbol vanishing at the positions outside a compact set vanishes there
+too. -/
+theorem HasCompactSpatialSupport.kernelCutoff {b : Symbol n V W m}
+    (hb : b.HasCompactSpatialSupport) : (Symbol.kernelCutoff χ b).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hbK⟩ := hasCompactSpatialSupport_iff.1 hb
+  refine hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ ?_⟩
+  rw [coefficient_kernelCutoff]
+  simp [hbK x hx]
+
+end KernelCutoff
+
+/-! ### The quantization of the kernel cutoff -/
+
+section Quantization
+
+variable (χ : 𝓢(CoordinateSpace n, ℂ))
+
+/-- The double integrand of the quantization of the kernel cutoff, after inserting the
+convolution formula for `𝓕(χ(x - ·) u)`, is integrable in both frequencies. -/
+private theorem integrable_cutoffQuantizeIntegrand (b : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, x⟫ : ℂ) •
+      𝓕 χ (q.2 - q.1) • b.coefficient (x, (2 * π) • q.1) (𝓕 u q.2)) (volume.prod volume) := by
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound_coefficient_slice x
+  set χ' := SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) (𝓕 χ)
+  have hχ' : ∀ θ, χ' θ = 𝓕 χ (-θ) := fun θ ↦ by simp [χ']
+  have hh : Integrable fun η : CoordinateSpace n ↦ (1 + ‖(2 * π) • η‖ ^ 2) ^ (m / 2) * ‖𝓕 u η‖ :=
+    (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m
+  have hk : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) * ‖χ' θ‖ :=
+    χ'.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |m|
+  have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, x⟫ : ℂ) •
+      𝓕 χ (q.2 - q.1) • b.coefficient (x, (2 * π) • q.1) (𝓕 u q.2) := by
+    refine (continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))).smul
+      (((𝓕 χ).continuous.comp (by fun_prop)).smul
+        ((b.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
+          ((𝓕 u).continuous.comp continuous_snd)))
+  refine ((hh.convolution_integrand (ContinuousLinearMap.mul ℝ ℝ) hk).const_mul
+    (C * 2 ^ (|m| / 2))).mono' hcont.aestronglyMeasurable (.of_forall fun q ↦ ?_)
+  have hξ : (2 * π) • q.1 = (2 * π) • q.2 + (2 * π) • (q.1 - q.2) := by
+    rw [← smul_add, add_sub_cancel]
+  have hpeetre := one_add_norm_add_sq_rpow_le_mul m ((2 * π) • q.2) ((2 * π) • (q.1 - q.2))
+  rw [← hξ] at hpeetre
+  rw [ContinuousLinearMap.mul_apply', hχ', neg_sub, norm_smul, Circle.norm_coe, one_mul,
+    norm_smul]
+  calc ‖𝓕 χ (q.2 - q.1)‖ * ‖b.coefficient (x, (2 * π) • q.1) (𝓕 u q.2)‖
+      ≤ ‖𝓕 χ (q.2 - q.1)‖ * (C * (1 + ‖(2 * π) • q.1‖ ^ 2) ^ (m / 2) * ‖𝓕 u q.2‖) := by
+        gcongr
+        exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact hC _)
+    _ ≤ ‖𝓕 χ (q.2 - q.1)‖ * (C * (2 ^ (|m| / 2) * (1 + ‖(2 * π) • q.2‖ ^ 2) ^ (m / 2) *
+          (1 + ‖(2 * π) • (q.1 - q.2)‖ ^ 2) ^ (|m| / 2)) * ‖𝓕 u q.2‖) := by gcongr
+    _ = _ := by ring
+
+/-- The integrand of the convolution formula for `𝓕(χ(x - ·) u)` at the frequency `ζ`, after the
+change of variables `η = ζ - t`, is integrable. -/
+private theorem integrable_cutoffConvolutionIntegrand (u : 𝓢(CoordinateSpace n, V))
+    (x ζ : CoordinateSpace n) :
+    Integrable fun η : CoordinateSpace n ↦ ((𝐞 (-⟪x, ζ - η⟫) : ℂ) * 𝓕 χ (η - ζ)) • 𝓕 u η := by
+  refine (((𝓕 u).integrable (μ := volume)).norm.const_mul
+    (SchwartzMap.seminorm ℂ 0 0 (𝓕 χ))).mono' ?_ (.of_forall fun η ↦ ?_)
+  · exact (((continuous_subtype_val.comp (Real.continuous_fourierChar.comp
+      (by fun_prop))).mul ((𝓕 χ).continuous.comp (by fun_prop))).smul
+        (𝓕 u).continuous).aestronglyMeasurable
+  · rw [norm_smul, norm_mul, Circle.norm_coe, one_mul]
+    gcongr
+    exact (𝓕 χ).norm_le_seminorm ℂ _
+
+variable [CompleteSpace V] [CompleteSpace W]
+
+/-- **The quantization of the kernel cutoff.** For a Schwartz function `u`,
+
+`Op(c) u (x) = Op(b)(χ(x - ·) u)(x)`, with `c = kernelCutoff χ b`:
+
+the kernel of `Op(c)` is `χ(x - y) K_b(x, y)`. -/
+theorem quantizeSchwartzValue_kernelCutoff (b : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (kernelCutoff χ b).coefficient u x =
+      quantizeSchwartzValue b.coefficient
+        (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) x := by
+  set H : CoordinateSpace n → CoordinateSpace n → W := fun ζ η ↦ (𝐞 ⟪η, x⟫ : ℂ) •
+    𝓕 χ (η - ζ) • b.coefficient (x, (2 * π) • ζ) (𝓕 u η) with hHdef
+  have hH : Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ H q.1 q.2)
+      (volume.prod volume) := integrable_cutoffQuantizeIntegrand χ b u x
+  -- The Schwartz function `y ↦ χ(x - y)` and its Fourier transform `𝐞(-⟪x, t⟫) 𝓕χ(-t)`.
+  set ρ : 𝓢(CoordinateSpace n, ℂ) := SchwartzMap.compSubConstCLM ℂ x
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+      (LinearIsometryEquiv.neg ℝ).toContinuousLinearEquiv χ) with hρ
+  have hfρ (t : CoordinateSpace n) : 𝓕 ρ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
+    rw [hρ, SchwartzMap.fourier_compSubConstCLM_apply,
+      SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply, LinearIsometryEquiv.coe_neg,
+      Circle.smul_def, smul_eq_mul]
+  -- Insert the convolution formula for `𝓕(χ(x - ·) u)` and change variables to `η = ζ - t`.
+  have hR : quantizeSchwartzValue b.coefficient
+      (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) x = ∫ ζ, ∫ η, H ζ η := by
+    rw [quantizeSchwartzValue_def]
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+    have hsl : SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u =
+        SchwartzMap.smulLeftCLM V (ρ : CoordinateSpace n → ℂ) u := by
+      congr
+      ext y
+      simp [ρ]
+    beta_reduce
+    rw [hsl, SchwartzMap.fourier_smulLeftCLM_apply,
+      ← integral_sub_left_eq_self (fun t ↦ 𝓕 ρ t • 𝓕 u (ζ - t)) volume ζ]
+    simp only [hfρ, sub_sub_cancel, neg_sub]
+    rw [← ContinuousLinearMap.integral_comp_comm _ (integrable_cutoffConvolutionIntegrand χ u x ζ),
+      Circle.smul_def, ← integral_smul]
+    refine integral_congr_ae (.of_forall fun η ↦ ?_)
+    simp only [hHdef, map_smul, smul_smul]
+    congr 1
+    have h : ⟪ζ, x⟫ + -⟪x, ζ - η⟫ = ⟪η, x⟫ := by
+      rw [inner_sub_right, real_inner_comm x ζ, real_inner_comm x η]
+      ring
+    rw [← mul_assoc, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
+    simp only [h]
+  -- Swap the integrals and change variables to `ζ = η - θ` in the inner one.
+  rw [hR, integral_integral_swap hH, quantizeSchwartzValue_def]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  beta_reduce
+  rw [← integral_sub_left_eq_self (fun ζ ↦ H ζ η) volume η, coefficient_kernelCutoff,
+    ContinuousLinearMap.integral_apply
+      (φ := fun θ ↦ 𝓕 χ θ • b.coefficient (x, (2 * π) • η - (2 * π) • θ))
+      (integrable_cutoffIntegrand χ b (2 * π) (x, (2 * π) • η)),
+    Circle.smul_def, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun θ ↦ ?_)
+  simp only [hHdef, sub_sub_cancel, smul_sub, smul_apply]
+
+/-- **Locality of the kernel cutoff.** `Op(c) u (x)` only depends on the values of `u` at the
+points `y` with `χ(x - y) ≠ 0`. -/
+theorem quantizeSchwartzValue_kernelCutoff_congr (b : Symbol n V W m)
+    {u v : 𝓢(CoordinateSpace n, V)} {x : CoordinateSpace n}
+    (h : ∀ y, χ (x - y) ≠ 0 → u y = v y) :
+    quantizeSchwartzValue (kernelCutoff χ b).coefficient u x =
+      quantizeSchwartzValue (kernelCutoff χ b).coefficient v x := by
+  rw [quantizeSchwartzValue_kernelCutoff, quantizeSchwartzValue_kernelCutoff]
+  congr 1
+  ext y
+  have hχx : (fun y ↦ χ (x - y)).HasTemperateGrowth := χ.hasTemperateGrowth.comp (by fun_prop)
+  rw [SchwartzMap.smulLeftCLM_apply_apply hχx, SchwartzMap.smulLeftCLM_apply_apply hχx]
+  by_cases hy : χ (x - y) = 0
+  · simp [hy]
+  · rw [h y hy]
+
+/-- `Op(c) u (x) = 0` if `u` vanishes at the points `y` with `χ(x - y) ≠ 0`. -/
+theorem quantizeSchwartzValue_kernelCutoff_eq_zero (b : Symbol n V W m)
+    {u : 𝓢(CoordinateSpace n, V)} {x : CoordinateSpace n} (h : ∀ y, χ (x - y) ≠ 0 → u y = 0) :
+    quantizeSchwartzValue (kernelCutoff χ b).coefficient u x = 0 := by
+  rw [quantizeSchwartzValue_kernelCutoff_congr χ b (v := 0) (by simpa using h),
+    quantizeSchwartzValue_zero_right]
+
+/-- The support of `Op(c) u` lies in the sum of the supports of `u` and `χ`. -/
+theorem support_quantizeSchwartzValue_kernelCutoff_subset (b : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) :
+    Function.support (quantizeSchwartzValue (kernelCutoff χ b).coefficient u) ⊆
+      Function.support u + Function.support χ := by
+  intro x hx
+  by_contra hns
+  refine hx (quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ ?_)
+  by_contra hu
+  exact hns ⟨y, hu, x - y, hy, add_sub_cancel y x⟩
+
+/-- **Proper support.** For compactly supported `χ`, the operator `Op(c)` sends compactly supported
+Schwartz functions to compactly supported ones. -/
+theorem hasCompactSupport_quantizeSchwartzValue_kernelCutoff (hχ : HasCompactSupport χ)
+    (b : Symbol n V W m) {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport u) :
+    HasCompactSupport (quantizeSchwartzValue (kernelCutoff χ b).coefficient u) := by
+  have hK := hu.isCompact.add hχ.isCompact
+  refine HasCompactSupport.intro' hK hK.isClosed fun x hx ↦ ?_
+  by_contra h
+  exact hx (Set.add_subset_add (subset_tsupport _) (subset_tsupport _)
+    (support_quantizeSchwartzValue_kernelCutoff_subset χ b u h))
+
+end Quantization
+
+/-! ### The kernel cutoff differs from the symbol by a smoothing symbol -/
+
+section Smoothing
+
+/-- The factor `-(2πi)⁻¹` with `θⱼ 𝓕ψ(θ) = -(-(2πi)⁻¹) 𝓕(∂ⱼψ)(θ)`. -/
+private def scaleFactor : ℂ := -(2 * π * Complex.I)⁻¹
+
+private theorem norm_scaleFactor : ‖scaleFactor‖ = (2 * π)⁻¹ := by
+  simp [scaleFactor, norm_inv, abs_of_pos Real.pi_pos]
+
+/-- The partial derivative `∂ⱼψ` of a Schwartz function. -/
+private def schwartzPartial (ψ : 𝓢(CoordinateSpace n, ℂ)) (j : Fin n) : 𝓢(CoordinateSpace n, ℂ) :=
+  ∂_{(EuclideanSpace.single j 1 : CoordinateSpace n)} ψ
+
+/-- `𝓕(∂ⱼψ)(θ) = 2πi θⱼ 𝓕ψ(θ)`. -/
+private theorem fourier_schwartzPartial (ψ : 𝓢(CoordinateSpace n, ℂ)) (j : Fin n)
+    (θ : CoordinateSpace n) : 𝓕 (schwartzPartial ψ j) θ = 2 * π * Complex.I * θ j * 𝓕 ψ θ := by
+  rw [schwartzPartial, SchwartzMap.fourier_lineDerivOp_apply, smul_eq_mul]
+  simp [EuclideanSpace.inner_single_right]
+
+/-- The derivative in the scale `s` of the integrand of `c_s`. -/
+private theorem hasDerivAt_cutoffIntegrand (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) (θ : CoordinateSpace n) (s : ℝ) :
+    HasDerivAt (fun s ↦ cutoffIntegrand ψ b s p θ)
+      (∑ j, scaleFactor • cutoffIntegrand (schwartzPartial ψ j)
+        (frequencyDeriv j b) s p θ) s := by
+  have hb : HasFDerivAt (fun η ↦ b.coefficient (p.1, η))
+      (fderiv ℝ (fun η ↦ b.coefficient (p.1, η)) (p.2 - s • θ)) (p.2 - s • θ) :=
+    ((b.contDiff_coefficient.comp (contDiff_prodMk_right p.1)).differentiable (by simp)
+      _).hasFDerivAt
+  have hpath : HasDerivAt (fun s : ℝ ↦ p.2 - s • θ) (-θ) s := by
+    simpa using ((hasDerivAt_id s).smul_const θ).const_sub p.2
+  have h : HasDerivAt (fun s ↦ cutoffIntegrand ψ b s p θ)
+      (𝓕 ψ θ • fderiv ℝ (fun η ↦ b.coefficient (p.1, η)) (p.2 - s • θ) (-θ)) s :=
+    (hb.comp_hasDerivAt s hpath).const_smul (𝓕 ψ θ)
+  refine h.congr_deriv ?_
+  rw [map_neg, ContinuousLinearMap.apply_eq_sum_single, smul_neg, Finset.smul_sum,
+    ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [cutoffIntegrand, fourier_schwartzPartial, fderiv_coefficient_slice_single,
+    ← Complex.coe_smul, smul_smul, smul_smul, ← neg_smul]
+  congr 1
+  simp only [scaleFactor]
+  field_simp
+
+/-- The derivative in the scale `s` of `c_s` is `-(2πi)⁻¹ ∑ⱼ` of the coefficients built from
+`∂ⱼψ` and `∂_{ξ_j} b`. -/
+private theorem hasDerivAt_cutoffCoeff (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) (s₀ : ℝ) :
+    HasDerivAt (fun s ↦ cutoffCoeff ψ b s p)
+      (∑ j, scaleFactor • cutoffCoeff (schwartzPartial ψ j)
+        (frequencyDeriv j b) s₀ p) s₀ := by
+  set R := |s₀| + 1
+  have hb : ∀ j, ∃ C, ∀ s : ℝ, |s| ≤ R → ∀ θ,
+      ‖cutoffIntegrand (schwartzPartial ψ j) (frequencyDeriv j b) s p θ‖ ≤
+        C * (1 + ‖p.2‖ ^ 2) ^ ((m - 1) / 2) *
+          cutoffWeight (schwartzPartial ψ j) (m - 1) R θ := fun j ↦ by
+    obtain ⟨C, -, hC⟩ := exists_norm_cutoffIntegrand_le (schwartzPartial ψ j)
+      (frequencyDeriv j b) (isCompact_singleton (x := p.1)) R
+    exact ⟨C, fun s hs θ ↦ hC s hs p.1 rfl p.2 θ⟩
+  choose C hC using hb
+  have hball : ∀ s ∈ Metric.ball s₀ 1, |s| ≤ R := fun s hs ↦ by
+    rw [Metric.mem_ball, Real.dist_eq] at hs
+    have := abs_sub_abs_le_abs_sub s s₀
+    simp only [R]
+    linarith
+  have hF'c : Continuous fun θ ↦ ∑ j, scaleFactor • cutoffIntegrand (schwartzPartial ψ j)
+      (frequencyDeriv j b) s₀ p θ :=
+    continuous_finsetSum Finset.univ fun j _ ↦
+      (continuous_cutoffIntegrand (schwartzPartial ψ j) (frequencyDeriv j b) s₀ p).const_smul
+        scaleFactor
+  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume)
+    (F := fun s θ ↦ cutoffIntegrand ψ b s p θ)
+    (F' := fun s θ ↦ ∑ j, scaleFactor • cutoffIntegrand (schwartzPartial ψ j)
+      (frequencyDeriv j b) s p θ)
+    (bound := fun θ ↦ ∑ j, ‖scaleFactor‖ * (C j * (1 + ‖p.2‖ ^ 2) ^ ((m - 1) / 2) *
+      cutoffWeight (schwartzPartial ψ j) (m - 1) R θ))
+    (Metric.ball_mem_nhds s₀ one_pos)
+    (.of_forall fun s ↦ (continuous_cutoffIntegrand ψ b s p).aestronglyMeasurable)
+    (integrable_cutoffIntegrand ψ b s₀ p)
+    hF'c.aestronglyMeasurable
+    (.of_forall fun θ s hs ↦ (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ by
+      rw [norm_smul]
+      exact mul_le_mul_of_nonneg_left (hC j s (hball s hs) θ) (norm_nonneg _)))
+    (integrable_finsetSum _ fun j _ ↦
+      ((integrable_cutoffWeight _ (m - 1) R).const_mul _).const_mul _)
+    (.of_forall fun θ s _ ↦ hasDerivAt_cutoffIntegrand ψ b p θ s)
+  have h2 : HasDerivAt (fun s ↦ cutoffCoeff ψ b s p) _ s₀ := h.2
+  refine h2.congr_deriv ?_
+  rw [integral_finsetSum (f := fun j θ ↦ scaleFactor • cutoffIntegrand (schwartzPartial ψ j)
+    (frequencyDeriv j b) s₀ p θ) Finset.univ fun j _ ↦
+    (integrable_cutoffIntegrand (schwartzPartial ψ j) (frequencyDeriv j b) s₀ p).smul scaleFactor]
+  simp only [integral_smul, cutoffCoeff]
+
+/-- The case `N = 0` of the interpolation estimate: `c_s - ψ(0) b` has order `m`, uniformly for
+`s ∈ [0, 2π]` and positions in a compact set. -/
+private theorem exists_norm_cutoffCoeff_sub_le_zero (b : Symbol n V W m)
+    (ψ : 𝓢(CoordinateSpace n, ℂ)) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ s ∈ Set.Icc 0 (2 * π), ∀ x ∈ K, ∀ ξ,
+      ‖cutoffCoeff ψ b s (x, ξ) - ψ 0 • b.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_norm_cutoffCoeff_le ψ b hK (2 * π)
+  obtain ⟨C₂, hC₂0, hC₂⟩ := b.exists_bound_coefficient K hK
+  refine ⟨C₁ + ‖ψ 0‖ * C₂, by positivity, fun s hs x hx ξ ↦ ?_⟩
+  have hs' : |s| ≤ 2 * π := by rw [abs_of_nonneg hs.1]; exact hs.2
+  calc ‖cutoffCoeff ψ b s (x, ξ) - ψ 0 • b.coefficient (x, ξ)‖
+      ≤ ‖cutoffCoeff ψ b s (x, ξ)‖ + ‖ψ 0‖ * ‖b.coefficient (x, ξ)‖ :=
+        (norm_sub_le _ _).trans_eq (by rw [norm_smul])
+    _ ≤ C₁ * (1 + ‖ξ‖ ^ 2) ^ (m / 2) + ‖ψ 0‖ * (C₂ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr
+        · exact hC₁ s hs' x hx ξ
+        · exact hC₂ x hx ξ
+    _ = _ := by ring
+
+variable [CompleteSpace W]
+
+/-- At the scale `s = 0` the interpolating coefficient is `ψ(0) b`. -/
+private theorem cutoffCoeff_zero (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) : cutoffCoeff ψ b 0 p = ψ 0 • b.coefficient p := by
+  simp only [cutoffCoeff, cutoffIntegrand, zero_smul, sub_zero, Prod.mk.eta]
+  rw [integral_smul_const, SchwartzMap.integral_fourier_eq]
+
+/-- **The interpolation estimate.** If `ψ` is constant near `0`, then `c_s - ψ(0) b` has order
+`m - N` for every `N`, uniformly for `s ∈ [0, 2π]` and positions in a compact set. -/
+private theorem exists_norm_cutoffCoeff_sub_le (N : ℕ) :
+    ∀ {m : ℝ} (b : Symbol n V W m) (ψ : 𝓢(CoordinateSpace n, ℂ)),
+      (⇑ψ =ᶠ[𝓝 0] fun _ ↦ ψ 0) → ∀ {K : Set (CoordinateSpace n)}, IsCompact K →
+        ∃ C, 0 ≤ C ∧ ∀ s ∈ Set.Icc 0 (2 * π), ∀ x ∈ K, ∀ ξ,
+          ‖cutoffCoeff ψ b s (x, ξ) - ψ 0 • b.coefficient (x, ξ)‖ ≤
+            C * (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
+  induction N with
+  | zero =>
+    intro m b ψ _ K hK
+    simpa using exists_norm_cutoffCoeff_sub_le_zero b ψ hK
+  | succ N ih =>
+    -- The derivative in `s` involves `∂ⱼψ`, which vanishes near `0`, and `∂_{ξ_j} b`, of order
+    -- `m - 1`; the induction hypothesis bounds it, and `c_0 - ψ(0) b = 0`.
+    intro m b ψ hψ K hK
+    have hψj : ∀ j, ⇑(schwartzPartial ψ j) =ᶠ[𝓝 0] fun _ ↦ 0 := fun j ↦ by
+      rw [schwartzPartial]
+      exact SchwartzMap.lineDerivOp_eventuallyEq_zero hψ _
+    have hψ' : ∀ j, ⇑(schwartzPartial ψ j) =ᶠ[𝓝 0]
+        fun _ ↦ (schwartzPartial ψ j) 0 := fun j ↦ by
+      rw [(hψj j).eq_of_nhds]
+      exact hψj j
+    have hψ0 : ∀ j, (schwartzPartial ψ j) 0 = 0 := fun j ↦
+      (hψj j).eq_of_nhds
+    choose C hC0 hC using fun j ↦ ih (frequencyDeriv j b) _ (hψ' j) hK
+    refine ⟨2 * π * (‖scaleFactor‖ * ∑ j, C j), mul_nonneg Real.two_pi_pos.le
+      (mul_nonneg (norm_nonneg _) (Finset.sum_nonneg fun j _ ↦ hC0 j)), fun s hs x hx ξ ↦ ?_⟩
+    set w := (1 + ‖ξ‖ ^ 2) ^ ((m - ↑(N + 1)) / 2)
+    have hw : (1 + ‖ξ‖ ^ 2) ^ ((m - 1 - N) / 2) = w := by
+      rw [show m - 1 - (N : ℝ) = m - ↑(N + 1) by push_cast; ring]
+    have hderiv : ∀ t ∈ Set.Icc 0 (2 * π), HasDerivWithinAt
+        (fun s ↦ cutoffCoeff ψ b s (x, ξ) - ψ 0 • b.coefficient (x, ξ))
+        (∑ j, scaleFactor • cutoffCoeff (schwartzPartial ψ j)
+          (frequencyDeriv j b) t (x, ξ)) (Set.Icc 0 (2 * π)) t := fun t _ ↦
+      ((hasDerivAt_cutoffCoeff ψ b (x, ξ) t).sub_const _).hasDerivWithinAt
+    have hbound : ∀ t ∈ Set.Ico 0 (2 * π),
+        ‖∑ j, scaleFactor • cutoffCoeff (schwartzPartial ψ j)
+          (frequencyDeriv j b) t (x, ξ)‖ ≤ ‖scaleFactor‖ * ∑ j, C j * w := fun t ht ↦ by
+      refine (norm_sum_le _ _).trans ?_
+      rw [Finset.mul_sum]
+      refine Finset.sum_le_sum fun j _ ↦ ?_
+      have h := hC j t (Set.Ico_subset_Icc_self ht) x hx ξ
+      rw [hψ0 j, zero_smul, sub_zero, hw] at h
+      rw [norm_smul]
+      gcongr
+    -- The mean value inequality on `[0, s]`.
+    have hmvt := norm_image_sub_le_of_norm_deriv_le_segment' hderiv hbound s hs
+    simp only [cutoffCoeff_zero, sub_self, sub_zero] at hmvt
+    have hA : 0 ≤ ‖scaleFactor‖ * ∑ j, C j * w :=
+      mul_nonneg (norm_nonneg _) (Finset.sum_nonneg fun j _ ↦ mul_nonneg (hC0 j) (by positivity))
+    calc ‖cutoffCoeff ψ b s (x, ξ) - ψ 0 • b.coefficient (x, ξ)‖
+        ≤ (‖scaleFactor‖ * ∑ j, C j * w) * s := by simpa using hmvt
+      _ ≤ (‖scaleFactor‖ * ∑ j, C j * w) * (2 * π) := mul_le_mul_of_nonneg_left hs.2 hA
+      _ = 2 * π * (‖scaleFactor‖ * ∑ j, C j) * w := by
+          rw [← Finset.sum_mul]
+          ring
+
+variable (χ : 𝓢(CoordinateSpace n, ℂ))
+
+/-- **The removed part of the kernel is smoothing.** If `χ = 1` near `0`, then the kernel cutoff
+`c` of `b` differs from `b` by a smoothing symbol: `Op(b) - Op(c)`, whose kernel
+`(1 - χ(x - y)) K_b(x, y)` vanishes near the diagonal, has a symbol of order `-∞`. -/
+theorem isSmoothing_kernelCutoff_sub (hχ : ⇑χ =ᶠ[𝓝 0] 1) (b : Symbol n V W m) :
+    (kernelCutoff χ b - b).IsSmoothing := by
+  have h0 : χ 0 = 1 := hχ.eq_of_nhds
+  have hP : ⇑χ =ᶠ[𝓝 0] fun _ ↦ χ 0 := by
+    rw [h0]
+    exact hχ
+  refine isSmoothing_iff_forall_exists_bound.2 fun m' K hK α β ↦ ?_
+  obtain ⟨m'', b', hm'', hc, hb⟩ := exists_mixedDeriv_cutoffCoeff χ (2 * π) α β b
+  obtain ⟨C, hC0, hC⟩ := exists_norm_cutoffCoeff_sub_le ⌈m - m'⌉₊ b' χ hP hK
+  refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+  have hd : mixedDeriv α β (kernelCutoff χ b - b).coefficient x ξ =
+      cutoffCoeff χ b' (2 * π) (x, ξ) - b'.coefficient (x, ξ) := by
+    rw [coefficient_sub, sub_eq_add_neg, mixedDeriv_add (a := (kernelCutoff χ b).coefficient)
+      (b := -b.coefficient) (kernelCutoff χ b).contDiff_coefficient b.contDiff_coefficient.neg,
+      mixedDeriv_neg, ← sub_eq_add_neg, ← hb, ← hc, coefficient_kernelCutoff_eq_cutoffCoeff]
+  have h := hC (2 * π) ⟨Real.two_pi_pos.le, le_rfl⟩ x hx ξ
+  rw [h0, one_smul] at h
+  rw [hd]
+  refine h.trans (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ ?_) hC0)
+  rw [hm'']
+  linarith [Nat.le_ceil (m - m')]
+
+/-- **Every pseudodifferential operator is properly supported up to a smoothing operator.** For
+every `ε > 0`, every symbol `b` differs by a smoothing symbol from a symbol `c` whose
+quantization has kernel supported within distance `ε` of the diagonal: `Op(c) u (x) = 0` whenever
+`u` vanishes on the ball of radius `ε` about `x`. -/
+theorem exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero [CompleteSpace V]
+    (b : Symbol n V W m) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : Symbol n V W m, (c - b).IsSmoothing ∧ ∀ (u : 𝓢(CoordinateSpace n, V))
+      (x : CoordinateSpace n), (∀ y ∈ Metric.ball x ε, u y = 0) →
+        quantizeSchwartzValue c.coefficient u x = 0 := by
+  let φ : ContDiffBump (0 : CoordinateSpace n) := ⟨ε / 2, ε, half_pos hε, half_lt_self hε⟩
+  have hsmooth : ContDiff ℝ ∞ fun y ↦ (φ y : ℂ) := Complex.ofRealCLM.contDiff.comp φ.contDiff
+  have hsupp : HasCompactSupport fun y ↦ (φ y : ℂ) :=
+    φ.hasCompactSupport.comp_left Complex.ofReal_zero
+  set χ := hsupp.toSchwartzMap hsmooth
+  have hχ : ∀ y, χ y = (φ y : ℂ) := fun y ↦ rfl
+  refine ⟨kernelCutoff χ b, isSmoothing_kernelCutoff_sub χ ?_ b, fun u x hu ↦ ?_⟩
+  · filter_upwards [Metric.ball_mem_nhds (0 : CoordinateSpace n) (half_pos hε)] with y hy
+    rw [hχ, φ.one_of_mem_closedBall (Metric.ball_subset_closedBall hy), Complex.ofReal_one,
+      Pi.one_apply]
+  · refine quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ hu y ?_
+    have hmem : x - y ∈ Function.support φ := fun h ↦ hy (by rw [hχ, h, Complex.ofReal_zero])
+    rw [φ.support_eq, Metric.mem_ball, dist_zero_right] at hmem
+    rwa [Metric.mem_ball, dist_eq_norm, ← norm_neg, neg_sub]
+
+end Smoothing
+
+end Symbol
 
 end TauCeti
