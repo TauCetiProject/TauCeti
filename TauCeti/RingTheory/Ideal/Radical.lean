@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Ideal
+public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
@@ -16,16 +16,13 @@ the finitely generated ideals contained in `I`: if `x ^ n ∈ I` then `x` alread
 radical of the principal ideal `(x ^ n) ≤ I`. In particular a radical ideal is the directed
 supremum of the radicals of its finitely generated subideals. This reduces statements about
 quotients by radical ideals that pass to directed unions to the radicals of finitely generated
-ideals, for instance the vanishing of `Tor` of radical quotients of perfect rings. We also record
-that a finitely generated ideal lies in the radical of `J` iff some positive power lies in `J`.
+ideals, for instance the vanishing of `Tor` of radical quotients of perfect rings.
 
 ## Main results
 
 * `Ideal.directed_radical_fg`: the radicals of the finitely generated subideals of `I` form a
   directed family.
 * `Ideal.iSup_radical_fg`: their supremum is the radical of `I`.
-* `Ideal.le_radical_iff_exists_pos_pow_le`: a finitely generated ideal lies in `J.radical` iff
-  some positive power lies in `J`.
 -/
 
 public section
@@ -48,16 +45,6 @@ theorem iSup_radical_fg (I : Ideal R) :
   refine Submodule.mem_iSup_of_mem (⟨span {x ^ n}, Submodule.fg_span_singleton _,
     (span_singleton_le_iff_mem I).2 hx⟩ : {N : Ideal R // N.FG ∧ N ≤ I}) ⟨n, ?_⟩
   exact mem_span_singleton_self _
-
-/-- A finitely generated ideal `I` lies in the radical of `J` if and only if `I ^ k ≤ J` for some
-positive integer `k`. -/
-theorem le_radical_iff_exists_pos_pow_le {I J : Ideal R} (hI : I.FG) :
-    I ≤ J.radical ↔ ∃ k > 0, I ^ k ≤ J := by
-  refine ⟨fun h ↦ ?_, fun ⟨k, _, hk⟩ x hx ↦ ⟨k, hk (pow_mem_pow hx k)⟩⟩
-  obtain ⟨k, hk⟩ := exists_pow_le_of_le_radical_of_fg h hI
-  rcases Nat.eq_zero_or_pos k with rfl | hkpos
-  · exact ⟨1, Nat.one_pos, le_top.trans (by simpa [pow_zero, one_eq_top] using hk)⟩
-  · exact ⟨k, hkpos, hk⟩
 
 end Ideal
 

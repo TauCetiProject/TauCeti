@@ -263,19 +263,23 @@ private noncomputable def chartHom (U : Opens X) (hU : X.IsAffineOpen U) :
   hU.isoSpf.hom ≫ ofSpfMap (B := hU.Sections)
     ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) (hφ.continuous_comp U hU)
 
+private theorem chartHom_eq (U : Opens X) (hU : X.IsAffineOpen U) :
+    chartHom φ hφ U hU = hU.isoSpf.hom ≫ ofSpfMap (B := hU.Sections)
+      ((X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ) (hφ.continuous_comp U hU) := rfl
+
+private theorem sectionsHom_ofSpfMap_apply {B : Type u} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [IsAdicRing B] (ψ : A →+* B) (hψ : Continuous ψ) (a : A) :
+    sectionsHom (ofSpfMap ψ hψ) a = (Spf.topSectionsIso B).inv (ψ a) :=
+  (ConcreteCategory.congr_hom (Spf.topSectionsIso B).hom_inv_id _).symm.trans
+    (congrArg (Spf.topSectionsIso B).inv (topSectionsIso_hom_sectionsHom_ofSpfMap ψ hψ a))
+
 private theorem sectionsHom_chartHom (U : Opens X) (hU : X.IsAffineOpen U) (a : A) :
     sectionsHom (chartHom φ hφ U hU) a =
       (X.toLocallyRingedSpace.restrictTopSectionsIso U).hom
         (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op (φ a)) := by
-  let φU : A →+* hU.Sections := (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op).hom.comp φ
-  have hm_a : sectionsHom (ofSpfMap φU (hφ.continuous_comp U hU)) a =
-      (Spf.topSectionsIso hU.Sections).inv (φU a) :=
-    (ConcreteCategory.congr_hom (Spf.topSectionsIso hU.Sections).hom_inv_id _).symm.trans
-      (congrArg (Spf.topSectionsIso hU.Sections).inv
-        (topSectionsIso_hom_sectionsHom_ofSpfMap φU (hφ.continuous_comp U hU) a))
-  rw [show chartHom φ hφ U hU = hU.isoSpf.hom ≫ ofSpfMap φU (hφ.continuous_comp U hU) from rfl,
-    sectionsHom_comp_apply, hm_a]
-  exact ConcreteCategory.congr_hom (topSectionsIso_inv_isoSpf_hom_c_app_top hU) (φU a)
+  rw [chartHom_eq, sectionsHom_comp_apply]
+  exact (congrArg _ (sectionsHom_ofSpfMap_apply (B := hU.Sections) _ _ a)).trans
+    (ConcreteCategory.congr_hom (topSectionsIso_inv_isoSpf_hom_c_app_top hU) _)
 
 private theorem hom_ofSpf_ext_of_isAffineOpen {U : Opens X} (hU : X.IsAffineOpen U)
     {g₁ g₂ : X.restrict U ⟶ ofSpf A} (h : sectionsHom g₁ = sectionsHom g₂) : g₁ = g₂ := by

@@ -52,13 +52,13 @@ theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
 
 /-- Restriction from an open to itself is the identity morphism: there is only one morphism
 from an open to itself, the identity. -/
+@[simp]
 theorem map_eq_id (F : Presheaf C T) {V : Opens T} (i : op V ⟶ op V) :
     F.map i = 𝟙 (F.obj (op V)) := by
   rw [Subsingleton.elim i (𝟙 _), F.map_id]
 
 /-- Restriction from an open to itself is the identity on sections: there is only one morphism
 from an open to itself, the identity. -/
-@[simp]
 theorem map_apply_eq_self {FC : C → C → Type*} {CC : C → Type*}
     [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
     {V : Opens T} (i : op V ⟶ op V) (s : ToType (F.obj (op V))) : F.map i s = s := by

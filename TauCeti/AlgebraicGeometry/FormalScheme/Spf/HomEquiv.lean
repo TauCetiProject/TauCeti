@@ -380,7 +380,7 @@ private theorem continuous_structureSheafMap_quotientSectionsTopology
   let V (i : { a : A // basicOpen a ≤ U }) : Opens (carrier B) := basicOpen (b * φ i.1)
   have hVle (i) : V i ≤ basicOpen b := by simp only [V, basicOpen_mul]; exact inf_le_left
   have hVcov : basicOpen b ≤ ⨆ i, V i := fun q hqb ↦ by
-    obtain ⟨a, hqa, haU⟩ := exists_basicOpen_le (show comap φ hφ q ∈ U from hb hqb)
+    obtain ⟨a, hqa, haU⟩ := exists_basicOpen_le (Opens.mem_map.mp (hb hqb))
     exact Opens.mem_iSup.mpr ⟨⟨a, haU⟩, by
       simp only [V, basicOpen_mul]; exact ⟨hqb, by rwa [← comap_basicOpen φ hφ a]⟩⟩
   let _ := quotientSectionsTopology hIB (basicOpen b)
@@ -391,24 +391,25 @@ private theorem continuous_structureSheafMap_quotientSectionsTopology
   let _ := sectionsTopology hIA (basicOpen a)
   let _ := sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a))
   have hVφ : V ⟨a, haU⟩ ≤ (Opens.map fBase).obj (basicOpen a) := by
-    rw [show (Opens.map fBase).obj (basicOpen a) = basicOpen (φ a) from comap_basicOpen φ hφ a]
-    simp only [V, basicOpen_mul]; exact inf_le_right
+    have hpre : (Opens.map fBase).obj (basicOpen a) = basicOpen (φ a) := comap_basicOpen φ hφ a
+    rw [hpre]; simp only [V, basicOpen_mul]; exact inf_le_right
   have hc3 : @Continuous _ _ (sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a)))
       (quotientSectionsTopology hIB (V ⟨a, haU⟩)) ((structureSheaf hIB).obj.map (homOfLE hVφ).op) :=
     (quotientSectionsTopology_basicOpen hIB _).symm ▸ sectionsTopology_restrict hIB hVφ
-  refine (hc3.comp ((continuous_structureSheafMap_sectionsTopology φ hφ (basicOpen a)).comp
-    (continuous_restrict_basicOpen_sectionsTopology hIA haU))).congr fun x ↦
-    (ConcreteCategory.congr_hom (show (η.app (op U) : (structureSheaf hIA).obj.obj (op U) ⟶ _) ≫
+  have hhom : (homOfLE hb).op ≫ (homOfLE (hVle ⟨a, haU⟩)).op =
+      ((Opens.map fBase).map (homOfLE haU)).op ≫ (homOfLE hVφ).op :=
+    Quiver.Hom.unop_inj (Subsingleton.elim _ _)
+  have hnat : (η.app (op U) : (structureSheaf hIA).obj.obj (op U) ⟶ _) ≫
         (structureSheaf hIB).obj.map (homOfLE hb).op ≫
         (structureSheaf hIB).obj.map (homOfLE (hVle ⟨a, haU⟩)).op =
       (structureSheaf hIA).obj.map (homOfLE haU).op ≫ (η.app (op (basicOpen a)) : _ ⟶ _) ≫
-        (structureSheaf hIB).obj.map (homOfLE hVφ).op by
-      rw [← (structureSheaf hIB).obj.map_comp,
-        show (homOfLE hb).op ≫ (homOfLE (hVle ⟨a, haU⟩)).op =
-          ((Opens.map fBase).map (homOfLE haU)).op ≫ (homOfLE hVφ).op from
-          Quiver.Hom.unop_inj (Subsingleton.elim _ _),
-        (structureSheaf hIB).obj.map_comp, ← Category.assoc]
-      exact congrArg (· ≫ _) (η.naturality (homOfLE haU).op).symm) x).symm
+        (structureSheaf hIB).obj.map (homOfLE hVφ).op := by
+    rw [← (structureSheaf hIB).obj.map_comp, hhom, (structureSheaf hIB).obj.map_comp,
+      ← Category.assoc]
+    exact congrArg (· ≫ _) (η.naturality (homOfLE haU).op).symm
+  refine (hc3.comp ((continuous_structureSheafMap_sectionsTopology φ hφ (basicOpen a)).comp
+    (continuous_restrict_basicOpen_sectionsTopology hIA haU))).congr fun x ↦
+      (ConcreteCategory.congr_hom hnat x).symm
 
 /-- Every morphism `g : Spf B ⟶ Spf A` is continuous on rings of sections over all opens `U`,
 equipped with `quotientSectionsTopology` (EGA I, Ch. I, 10.2.2 and 10.4.5). -/

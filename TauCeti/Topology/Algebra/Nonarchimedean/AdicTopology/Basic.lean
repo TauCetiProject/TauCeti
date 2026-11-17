@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.RingTheory.Ideal.Maps
 
 import TauCeti.RingTheory.Ideal.Quotient.Defs
-import TauCeti.RingTheory.Ideal.Radical
 import TauCeti.Topology.Discrete
 
 /-!
@@ -55,10 +54,11 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   topology of the extended ideal is an open quotient map.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
-* `IsAdic.continuous_iff_map_le_radical`, `IsAdic.continuous_iff_exists_pos_pow_map_le`, and
-  `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source topology has some
-  finitely generated ideal of definition, continuity can be tested on ideals of definition,
-  without requiring completeness of either ring.
+* `IsAdic.continuous_iff_map_le_radical` and
+  `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source has a finitely
+  generated ideal of definition, continuity can be tested on arbitrary ideals of definition.
+* `IsAdic.continuous_iff_exists_pos_pow_map_le` : a ring homomorphism between adic rings is
+  continuous iff `(I ^ k).map f ≤ J` for some `k > 0` (no finite generation or completeness).
 * `IsAdic.of_radical_eq` and `Ideal.adicTopology_eq_of_radical_eq` : finitely generated ideals
   with the same radical define the same adic topology.
 * `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
@@ -283,15 +283,21 @@ theorem continuous_iff_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace
     _ ≤ (I.map f).radical := Ideal.map_radical_le f
     _ ≤ J.radical := Ideal.radical_le_radical_iff.mpr hf
 
-/-- For a finitely generated ideal of definition `I` of `R` and an ideal of definition `J` of `S`,
-a ring homomorphism `f : R →+* S` is continuous if and only if `(I ^ k).map f ≤ J` for some
-positive integer `k` (EGA I, Ch. 0, 7.1.3–7.1.4; Ch. I, 10.2.2). -/
+/-- For ideals of definition `I` of `R` and `J` of `S`, a ring homomorphism `f : R →+* S` is
+continuous if and only if `(I ^ k).map f ≤ J` for some positive integer `k`, without requiring
+finite generation or completeness (EGA I, Ch. 0, 7.1.3–7.1.4; Ch. I, 10.2.2). -/
 theorem continuous_iff_exists_pos_pow_map_le {S : Type*} [CommRing S] [TopologicalSpace S]
-    {J : Ideal S} (hI : IsAdic I) (hIfg : I.FG) (hJ : IsAdic J) {f : R →+* S} :
+    {J : Ideal S} (hI : IsAdic I) (hJ : IsAdic J) {f : R →+* S} :
     Continuous f ↔ ∃ k > 0, (I ^ k).map f ≤ J := by
-  simpa only [Ideal.map_pow] using
-    (hI.continuous_iff_map_le_radical hJ hI hIfg).trans
-      (Ideal.le_radical_iff_exists_pos_pow_le (hIfg.map f))
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := hJ ▸ J.nonarchimedean.toIsTopologicalRing
+  refine ⟨fun hf ↦ ?_, fun ⟨k, _, hk⟩ ↦ ?_⟩
+  · obtain ⟨n, hn⟩ := hI.exists_pow_succ_le_comap (by simpa using hJ.isOpen_pow 1) hf
+    exact ⟨n + 1, Nat.succ_pos n, Ideal.map_le_iff_le_comap.mpr hn⟩
+  · refine continuous_of_tendsto_nhds_zero f ?_
+    rw [hI.hasBasis_nhds_zero.tendsto_iff hJ.hasBasis_nhds_zero]
+    refine fun n _ ↦ ⟨k * n, trivial, fun x hx ↦ Ideal.pow_right_mono hk n ?_⟩
+    rw [← Ideal.map_pow, ← pow_mul]; exact Ideal.mem_map_of_mem f hx
 
 /-- When the source topology has a finitely generated ideal of definition, a ring homomorphism
 is continuous exactly when it sends every element of any ideal of definition to a

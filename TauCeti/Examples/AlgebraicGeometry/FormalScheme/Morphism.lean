@@ -108,9 +108,7 @@ theorem padicInt_continuous_pow_witness :
       ¬ (IsLocalRing.maximalIdeal ℤ_[p]).map (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
           IsLocalRing.maximalIdeal ℤ_[p] ^ 2 := by
   have hI : IsAdic (IsLocalRing.maximalIdeal ℤ_[p]) := Huber.PadicInt.isAdic_maximalIdeal
-  have hIfg : (IsLocalRing.maximalIdeal ℤ_[p]).FG :=
-    PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Submodule.fg_span_singleton _
-  refine ⟨(hI.continuous_iff_exists_pos_pow_map_le hIfg
+  refine ⟨(hI.continuous_iff_exists_pos_pow_map_le
     (is_ideal_adic_pow hI two_pos)).mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).2, ?_⟩
   rw [Spf.homEquiv_apply_coe, Spf.sectionsHom_id, Ideal.map_id]; intro hle
   have hpI : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] :=

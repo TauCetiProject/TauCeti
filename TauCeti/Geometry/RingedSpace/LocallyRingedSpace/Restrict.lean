@@ -76,7 +76,10 @@ theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :
 /-- Each inclusion `X|_V ⟶ X|_W` is an open immersion of locally ringed spaces. -/
 instance isOpenImmersion_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
     IsOpenImmersion (X.restrictHomOfLE h) := by
-  rw [show X.restrictHomOfLE h = _ from Hom.ext' (restrictHomOfLE_eq_lift X h)]; infer_instance
+  have heq : X.restrictHomOfLE h = IsOpenImmersion.lift (X.ofRestrict W.isOpenEmbedding)
+      (X.ofRestrict V.isOpenEmbedding) (range_ofRestrict_subset X h) :=
+    Hom.ext' (restrictHomOfLE_eq_lift X h)
+  rw [heq]; infer_instance
 
 /-- The inclusion of a restriction into itself is the identity. -/
 @[simp]
@@ -143,7 +146,7 @@ theorem ofRestrict_c_app_self (U : Opens X) :
           (homOfLE (fun x _ ↦ x.2 : (⊤ : Opens _) ≤
             (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj U)).op =
       (X.restrictTopSectionsIso U).hom := by
-  rw [X.ofRestrict_c_app_le (le_refl U), TopCat.Presheaf.map_eq_id, Category.id_comp]
+  simpa using X.ofRestrict_c_app_le (le_refl U)
 
 /-- Restricting a global section along `X|_U ⟶ X` at `op ⊤` is the presheaf restriction
 `Γ(X, ⊤) ⟶ Γ(X, U)` followed by `restrictTopSectionsIso`. -/
@@ -221,11 +224,8 @@ theorem restrictTopSectionsIso_hom_c_app_top_of_fac {X Y : LocallyRingedSpace.{u
         (fUV.c.app (op ⊤) : (Y.restrict V.isOpenEmbedding).presheaf.obj (op ⊤) ⟶
           (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤)) =
       f.c.app (op V) ≫ X.presheaf.map (homOfLE hUV).op ≫ (X.restrictTopSectionsIso U).hom := by
-  have h := restrictTopSectionsIso_hom_c_app_top_of_fac_le f (le_refl V) hUV fUV (𝟙 _)
+  simpa using restrictTopSectionsIso_hom_c_app_top_of_fac_le f (le_refl V) hUV fUV (𝟙 _)
     (hfac.trans (Category.id_comp _).symm)
-  rw [TopCat.Presheaf.map_eq_id, Category.id_comp] at h
-  exact h.trans <| congrArg (_ ≫ _ ≫ ·) <|
-    (congrArg (_ ≫ ·) (LocallyRingedSpace.Γ.map_id _)).trans (Category.comp_id _)
 
 /-- `s ∈ Γ(X, U)` vanishes in the residue field at `x ∈ U` iff its image under
 `restrictTopSectionsIso U` vanishes in the residue field of `X|_U` at `x`. -/
