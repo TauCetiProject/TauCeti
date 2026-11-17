@@ -369,13 +369,6 @@ namespace IsIsolatingRank
 
 variable {ρ σ : RelationalConfiguration L ℕ → Ordinal.{0}}
 
-/-- On a back-and-forth scattered set, meeting countably many isomorphism classes is equivalent to
-boundedness of an isolating rank below `ω₁`. -/
-theorem countable_image_iff_boundedRankOn (hρ : IsIsolatingRank ρ) (hK : BFScattered K) :
-    (Quotient.mk (isoSetoid L ℕ) '' K).Countable ↔ BoundedRankOn ρ K :=
-  Setoid.countable_quotient_comap_val_iff.symm.trans
-    ((hρ.countable_isoClasses_iff_bounded hK).trans boundedRankOn_iff.symm)
-
 /-- **Minimal uncountability and minimal unboundedness agree on scattered classes.** On any
 back-and-forth scattered set `K`, `MinimallyUncountableOn K` is equivalent to
 `MinimallyUnboundedOn ρ K` for every isolating rank `ρ`. -/
