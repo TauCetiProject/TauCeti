@@ -17,9 +17,7 @@ resulting inclusion of `𝓓_{K}(E, F)` into `𝓢(E, F)` is continuous
 (`ContDiffMapSupportedIn.toSchwartzMapCLM`, which does not change the function:
 `ContDiffMapSupportedIn.coe_toSchwartzMapCLM`), and it agrees with reading a function supported in
 `K` as a test function and then as a Schwartz function
-(`ContDiffMapSupportedIn.toSchwartzMap_ofSupportedIn`). On functions supported in `K`, the Schwartz
-seminorm `sup ‖x‖ ^ k ‖D^j f x‖` is at most `max r 0 ^ k` times the seminorm `sup ‖D^j f‖`, for a
-bound `r` on the norms of the points of `K`.
+(`ContDiffMapSupportedIn.toSchwartzMap_ofSupportedIn`).
 -/
 
 public section

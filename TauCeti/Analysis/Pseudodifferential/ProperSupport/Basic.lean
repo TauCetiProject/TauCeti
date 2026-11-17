@@ -56,7 +56,9 @@ spatial support, and they are the pieces that are patched together on manifolds.
   operator `Op(c)` preserves compact supports.
 * `TauCeti.Symbol.HasNearDiagonalKernel a R`: the kernel of `Op(a)` is supported within distance
   `R` of the diagonal, that is, `Op(a) u (x) = 0` whenever `u` vanishes on the ball of radius `R`
-  about `x`. It persists for larger `R` (`TauCeti.Symbol.HasNearDiagonalKernel.mono`). The kernel
+  about `x`. It persists for larger `R` (`TauCeti.Symbol.HasNearDiagonalKernel.mono`), and such
+  an `Op(a)` does not enlarge the support of its input by more than `R`
+  (`TauCeti.Symbol.HasNearDiagonalKernel.tsupport_quantizeSchwartzValue_subset`). The kernel
   cutoff by a `χ` supported in that ball has this property
   (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`).
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
@@ -423,6 +425,23 @@ distance `R'`. -/
 theorem HasNearDiagonalKernel.mono {a : Symbol n V W m} {R R' : ℝ}
     (ha : a.HasNearDiagonalKernel R) (h : R ≤ R') : a.HasNearDiagonalKernel R' :=
   fun u x hu ↦ ha u x fun y hy ↦ hu y (Metric.ball_subset_ball h hy)
+
+/-- An operator with kernel supported within distance `R` of the diagonal vanishes outside the
+closed `R`-neighbourhood of the support of its input. -/
+theorem HasNearDiagonalKernel.quantizeSchwartzValue_eq_zero_of_notMem {a : Symbol n V W m}
+    {R : ℝ} (ha : a.HasNearDiagonalKernel R) {u : 𝓢(CoordinateSpace n, V)}
+    {x : CoordinateSpace n} (hx : x ∉ Metric.cthickening R (tsupport u)) :
+    quantizeSchwartzValue a.coefficient u x = 0 :=
+  hasNearDiagonalKernel_iff.1 ha u x fun y hy ↦ image_eq_zero_of_notMem_tsupport fun hyu ↦
+    hx (Metric.mem_cthickening_of_dist_le x y R _ hyu (Metric.mem_ball'.1 hy).le)
+
+/-- **Proper support.** An operator with kernel supported within distance `R` of the diagonal
+does not enlarge the support of its input by more than `R`. -/
+theorem HasNearDiagonalKernel.tsupport_quantizeSchwartzValue_subset {a : Symbol n V W m}
+    {R : ℝ} (ha : a.HasNearDiagonalKernel R) (u : 𝓢(CoordinateSpace n, V)) :
+    tsupport (quantizeSchwartzValue a.coefficient u) ⊆ Metric.cthickening R (tsupport u) :=
+  closure_minimal (fun _ hx ↦ by_contra fun h ↦ hx (ha.quantizeSchwartzValue_eq_zero_of_notMem h))
+    Metric.isClosed_cthickening
 
 /-! ### The quantization of the kernel cutoff -/
 

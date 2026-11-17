@@ -65,31 +65,6 @@ namespace Symbol
 
 variable {n : ℕ} {m R : ℝ}
 
-/-! ### Supports -/
-
-section Support
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {a : Symbol n V W m}
-
-/-- An operator with kernel supported within distance `R` of the diagonal vanishes outside the
-closed `R`-neighbourhood of the support of its input. -/
-theorem HasNearDiagonalKernel.quantizeSchwartzValue_eq_zero_of_notMem
-    (ha : a.HasNearDiagonalKernel R) {u : 𝓢(CoordinateSpace n, V)} {x : CoordinateSpace n}
-    (hx : x ∉ Metric.cthickening R (tsupport u)) : quantizeSchwartzValue a.coefficient u x = 0 :=
-  hasNearDiagonalKernel_iff.1 ha u x fun y hy ↦ image_eq_zero_of_notMem_tsupport fun hyu ↦
-    hx (Metric.mem_cthickening_of_dist_le x y R _ hyu (Metric.mem_ball'.1 hy).le)
-
-/-- **Proper support.** An operator with kernel supported within distance `R` of the diagonal
-does not enlarge the support of its input by more than `R`. -/
-theorem HasNearDiagonalKernel.tsupport_quantizeSchwartzValue_subset
-    (ha : a.HasNearDiagonalKernel R) (u : 𝓢(CoordinateSpace n, V)) :
-    tsupport (quantizeSchwartzValue a.coefficient u) ⊆ Metric.cthickening R (tsupport u) :=
-  closure_minimal (fun _ hx ↦ by_contra fun h ↦ hx (ha.quantizeSchwartzValue_eq_zero_of_notMem h))
-    Metric.isClosed_cthickening
-
-end Support
-
 /-! ### Spatial cutoffs -/
 
 section Cutoff
