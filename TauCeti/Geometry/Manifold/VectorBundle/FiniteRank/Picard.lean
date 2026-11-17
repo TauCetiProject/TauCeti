@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Dual
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 import Mathlib.CategoryTheory.Monoidal.Transport
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!
 # The symmetric monoidal category of `C^n` finite-rank cores and its Picard group
@@ -30,8 +31,11 @@ monoidal structure, whose generic tensor powers `TauCeti.tensorPow` match powers
 The commutative group `ContMDiffPicardGroup I n B` is the group of units
 `(Skeleton (ContMDiffFiniteRankBundleCore I n B))ˣ` of isomorphism classes of tensor-invertible
 `C^n` cores; for `I = 𝓘(ℂ, EB)` and `n = ∞`, this is the holomorphic Picard group of `B`. Over a
-nonempty base every invertible `C^n` core has rank one, and without completeness of `𝕜` a rank-one
-`C^n` core is isomorphic to `𝟙_` if and only if it admits a nowhere-vanishing `C^n` section
+nonempty base every invertible `C^n` core has rank one, and without completeness of `𝕜` a
+nowhere-vanishing `C^n` section of a rank-one `C^n` core makes `homFromTensorUnitOfSection` an
+isomorphism with explicit inverse `homToTensorUnitOfSectionNeZero`
+(`isoTensorUnitOfSectionNeZero`, `isIso_homFromTensorUnitOfSection_iff`), so a rank-one `C^n` core
+is isomorphic to `𝟙_` if and only if it admits a nowhere-vanishing `C^n` section
 (`nonempty_iso_tensorUnit_iff_exists_section_ne_zero`). Over a complete scalar field:
 
 * every `C^n` morphism with bijective fibre maps is an isomorphism (`isIso_iff_bijective`);
@@ -569,6 +573,195 @@ theorem fiberMap_homFromTensorUnitOfSection_apply (A : ContMDiffFiniteRankBundle
   exact congrArg (c ⟨0, by simp⟩ • ·)
     (A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x) v)
 
+/-- For a rank-one `C^n` core `A` and a nowhere-vanishing `C^n` section `σ`, the `C^n` bundle
+morphism `A ⟶ 𝟙_` dividing fibrewise by `σ`, sending `σ x` to the unit basis vector `1` over
+every `x` (without assuming completeness of `𝕜`). -/
+noncomputable def homToTensorUnitOfSectionNeZero (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    A ⟶ 𝟙_ (ContMDiffFiniteRankBundleCore I n B) := by
+  let k₀ : Fin A.toCore.rank := ⟨0, by simp [hA]⟩
+  let : Unique (Fin A.toCore.rank) := ⟨⟨k₀⟩, fun k ↦ Fin.ext (by omega)⟩
+  let E₀ : (Fin A.toCore.rank → 𝕜) →L[𝕜]
+      (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :=
+    ContinuousLinearMap.smulRight (ContinuousLinearMap.proj k₀) (fun _ ↦ 1)
+  let L' : 𝕜 →L[𝕜]
+      ((Fin A.toCore.rank → 𝕜) →L[𝕜]
+        (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) :=
+    ContinuousLinearMap.smulRight (ContinuousLinearMap.id 𝕜 𝕜) E₀
+  let s (i : B) (x : B) : 𝕜 := (A.toCore.core.localTriv i ⟨x, σ x⟩).2 k₀
+  have hs (i : B) : ContMDiffOn I 𝓘(𝕜) n (s i) (A.toCore.core.baseSet i) := by
+    have : MemTrivializationAtlas (A.toCore.core.localTriv i) := ⟨⟨i, rfl⟩⟩
+    exact (ContinuousLinearMap.proj k₀).contMDiff.comp_contMDiffOn <|
+      ((A.toCore.core.localTriv i).contMDiffOn_section_iff
+        (A.toCore.core.isOpen_baseSet i) subset_rfl).mp hσ.contMDiffOn
+  have hs₀ (i : B) {x : B} (hx : x ∈ A.toCore.core.baseSet i) : s i x ≠ 0 :=
+    fun h0 ↦ hσ₀ x <|
+      ((A.toCore.core.localTriv i).linearEquivAt 𝕜 x hx).map_eq_zero_iff.mp <|
+        funext fun k ↦ (Unique.eq_default k).symm ▸ h0
+  have hsinv (i : B) :
+      ContMDiffOn I 𝓘(𝕜) n (fun x ↦ (s i x)⁻¹) (A.toCore.core.baseSet i) :=
+    fun x hx ↦ (contDiffAt_inv 𝕜 (hs₀ i hx)).contMDiffAt.comp_contMDiffWithinAt x (hs i x hx)
+  let b : A.toCore ⟶ (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore :=
+    { operator := fun i _ ↦
+        ⟨fun x ↦ L' (s i x.1)⁻¹,
+          L'.continuous.comp <|
+            (continuousOn_iff_continuous_domRestrict.1 (hsinv i).continuousOn).comp
+              (continuous_subtype_val.subtype_mk fun x ↦ x.2.1)⟩
+      compatible := fun i i' _ _ x hi hi' _ _ v ↦ by
+        set c := A.toCore.core.coordChange i i' x (fun _ ↦ 1) k₀
+        have hT : A.toCore.core.coordChange i i' x =
+            c • ContinuousLinearMap.id 𝕜 (Fin A.toCore.rank → 𝕜) :=
+          (A.toCore.core.coordChange i i' x).eq_smul_id_of_unique
+        have hs_eq : s i' x = c * s i x := by
+          have hcomp := congrFun (A.toCore.core.coordChange_comp (A.toCore.core.indexAt x)
+            i i' x ⟨⟨A.toCore.core.mem_baseSet_at x, hi⟩, hi'⟩ (σ x)) k₀
+          rw [hT] at hcomp
+          simpa only [s, VectorBundleCore.localTriv_apply, smul_apply,
+            ContinuousLinearMap.id_apply, Pi.smul_apply, smul_eq_mul] using hcomp.symm
+        have hc : c ≠ 0 := fun hc0 ↦ hs₀ i' hi' (by rw [hs_eq, hc0, zero_mul])
+        ext l
+        simp only [L', E₀, ContinuousMap.coe_mk, ContinuousLinearMap.smulRight_apply,
+          ContinuousLinearMap.id_apply, ContinuousLinearMap.proj_apply,
+          coordChange_tensorUnit, hT, smul_apply, Pi.smul_apply, smul_eq_mul, mul_one,
+          hs_eq, mul_inv_rev]
+        rw [mul_assoc, inv_mul_cancel_left₀ hc] }
+  exact ⟨b, CoordinateHom.contMDiff_totalSpaceMap b fun i j ↦
+    (L'.contMDiff.comp_contMDiffOn ((hsinv i).mono inter_subset_left)).congr fun x hx ↦
+      (CoordinateHom.operator_eq b i j ⟨x, hx⟩).symm⟩
+
+@[simp]
+theorem fiberMap_homToTensorUnitOfSectionNeZero_apply (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) (x : B) (v : Fin A.toCore.rank → 𝕜) :
+    (A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀).toHom.fiberMap x v =
+      fun _ ↦ ((σ x : Fin A.toCore.rank → 𝕜) ⟨0, by simp [hA]⟩)⁻¹ * v ⟨0, by simp [hA]⟩ := by
+  let vσ : Fin A.toCore.rank → 𝕜 := σ x
+  have hself : (A.toCore.core.localTriv (A.toCore.core.indexAt x) ⟨x, σ x⟩).2
+      ⟨0, by simp [hA]⟩ = (σ x : Fin A.toCore.rank → 𝕜) ⟨0, by simp [hA]⟩ := by
+    simpa only [VectorBundleCore.localTriv_apply] using
+      congrFun (A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x) vσ)
+        ⟨0, by simp [hA]⟩
+  ext l
+  rw [CoordinateHom.fiberMap_def]
+  simp only [homToTensorUnitOfSectionNeZero, ContinuousMap.coe_mk,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearMap.proj_apply, smul_apply, hself, Pi.smul_apply, smul_eq_mul, mul_one]
+
+@[simp]
+theorem homToTensorUnitOfSectionNeZero_comp_homFromTensorUnitOfSection
+    (A : ContMDiffFiniteRankBundleCore I n B) (hA : A.toCore.rank = 1)
+    (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀ ≫ A.homFromTensorUnitOfSection σ hσ = 𝟙 A := by
+  refine hom_ext <| FiniteRankBundleCore.hom_ext fun x ↦ ?_
+  let k₀ : Fin A.toCore.rank := ⟨0, by simp [hA]⟩
+  let vσ : Fin A.toCore.rank → 𝕜 := σ x
+  have hσk₀ : vσ k₀ ≠ 0 := fun h0 ↦
+    hσ₀ x (funext fun k ↦ (Fin.ext (by omega) : k = k₀) ▸ h0)
+  have hf (c : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :
+      (A.homFromTensorUnitOfSection σ hσ).toHom.fiberMap x c = c ⟨0, by simp⟩ • vσ :=
+    A.fiberMap_homFromTensorUnitOfSection_apply σ hσ x c
+  have hb (v : Fin A.toCore.rank → 𝕜) :
+      (A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀).toHom.fiberMap x v =
+        fun _ ↦ (vσ k₀)⁻¹ * v k₀ :=
+    A.fiberMap_homToTensorUnitOfSectionNeZero_apply hA σ hσ hσ₀ x v
+  ext v k
+  obtain rfl : k = k₀ := Fin.ext (by omega)
+  simp only [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
+    FiniteRankBundleCore.fiberMap_id, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, hf, hb, Pi.smul_apply, smul_eq_mul]
+  rw [mul_comm _ (v k₀), inv_mul_cancel_right₀ hσk₀]
+
+@[simp]
+theorem homFromTensorUnitOfSection_comp_homToTensorUnitOfSectionNeZero
+    (A : ContMDiffFiniteRankBundleCore I n B) (hA : A.toCore.rank = 1)
+    (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    A.homFromTensorUnitOfSection σ hσ ≫ A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀ =
+      𝟙 (𝟙_ (ContMDiffFiniteRankBundleCore I n B)) := by
+  refine hom_ext <| FiniteRankBundleCore.hom_ext fun x ↦ ?_
+  let k₀ : Fin A.toCore.rank := ⟨0, by simp [hA]⟩
+  let vσ : Fin A.toCore.rank → 𝕜 := σ x
+  have hσk₀ : vσ k₀ ≠ 0 := fun h0 ↦
+    hσ₀ x (funext fun k ↦ (Fin.ext (by omega) : k = k₀) ▸ h0)
+  have hf (c : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :
+      (A.homFromTensorUnitOfSection σ hσ).toHom.fiberMap x c = c ⟨0, by simp⟩ • vσ :=
+    A.fiberMap_homFromTensorUnitOfSection_apply σ hσ x c
+  have hb (v : Fin A.toCore.rank → 𝕜) :
+      (A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀).toHom.fiberMap x v =
+        fun _ ↦ (vσ k₀)⁻¹ * v k₀ :=
+    A.fiberMap_homToTensorUnitOfSectionNeZero_apply hA σ hσ hσ₀ x v
+  ext c l
+  obtain rfl : l = ⟨0, by simp⟩ := Fin.ext (Nat.lt_one_iff.mp l.2)
+  simp only [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
+    FiniteRankBundleCore.fiberMap_id, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, hf, hb, Pi.smul_apply, smul_eq_mul]
+  rw [mul_comm (c ⟨0, by simp⟩), inv_mul_cancel_left₀ hσk₀]
+
+/-- A nowhere-vanishing `C^n` section `σ` of a rank-one `C^n` core `A` induces an isomorphism
+`A ≅ 𝟙_` in `ContMDiffFiniteRankBundleCore I n B` (without completeness of `𝕜`), whose inverse is
+`A.homFromTensorUnitOfSection σ hσ`. -/
+noncomputable def isoTensorUnitOfSectionNeZero (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    A ≅ 𝟙_ (ContMDiffFiniteRankBundleCore I n B) where
+  hom := A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀
+  inv := A.homFromTensorUnitOfSection σ hσ
+  hom_inv_id := A.homToTensorUnitOfSectionNeZero_comp_homFromTensorUnitOfSection hA σ hσ hσ₀
+  inv_hom_id := A.homFromTensorUnitOfSection_comp_homToTensorUnitOfSectionNeZero hA σ hσ hσ₀
+
+@[simp]
+theorem isoTensorUnitOfSectionNeZero_hom (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    (A.isoTensorUnitOfSectionNeZero hA σ hσ hσ₀).hom =
+      A.homToTensorUnitOfSectionNeZero hA σ hσ hσ₀ := (rfl)
+
+@[simp]
+theorem isoTensorUnitOfSectionNeZero_inv (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x)))
+    (hσ₀ : ∀ x, σ x ≠ 0) :
+    (A.isoTensorUnitOfSectionNeZero hA σ hσ hσ₀).inv =
+      A.homFromTensorUnitOfSection σ hσ := (rfl)
+
+/-- For a rank-one `C^n` core `A`, `A.homFromTensorUnitOfSection σ hσ : 𝟙_ ⟶ A` is an isomorphism
+in `ContMDiffFiniteRankBundleCore I n B` if and only if `σ` is nowhere-vanishing (without
+completeness of `𝕜`). -/
+theorem isIso_homFromTensorUnitOfSection_iff (A : ContMDiffFiniteRankBundleCore I n B)
+    (hA : A.toCore.rank = 1) (σ : Π x, A.toCore.core.Fiber x)
+    (hσ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜)) n
+      (fun x ↦ TotalSpace.mk' (Fin A.toCore.rank → 𝕜) x (σ x))) :
+    IsIso (A.homFromTensorUnitOfSection σ hσ) ↔ ∀ x, σ x ≠ 0 := by
+  refine ⟨fun h x h0 ↦ ?_, fun hσ₀ ↦ (A.isoTensorUnitOfSectionNeZero hA σ hσ hσ₀).isIso_inv⟩
+  let vσ : Fin A.toCore.rank → 𝕜 := σ x
+  have hv₀ : vσ = 0 := h0
+  have hzero : (A.homFromTensorUnitOfSection σ hσ).toHom.fiberMap x (fun _ ↦ 1) = 0 := by
+    have hf : (A.homFromTensorUnitOfSection σ hσ).toHom.fiberMap x (fun _ ↦ 1) = (1 : 𝕜) • vσ :=
+      A.fiberMap_homFromTensorUnitOfSection_apply σ hσ x (fun _ ↦ 1)
+    rw [hf, hv₀, smul_zero]
+  have h1 := congrArg (fun f : 𝟙_ (ContMDiffFiniteRankBundleCore I n B) ⟶
+      𝟙_ (ContMDiffFiniteRankBundleCore I n B) ↦ f.toHom.fiberMap x (fun _ ↦ 1) ⟨0, by simp⟩)
+    (IsIso.hom_inv_id (A.homFromTensorUnitOfSection σ hσ))
+  simp only [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
+    FiniteRankBundleCore.fiberMap_id, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, hzero, map_zero, Pi.zero_apply] at h1
+  exact zero_ne_one h1
+
 /-- A rank-one `C^n` core is isomorphic to `𝟙_` in `ContMDiffFiniteRankBundleCore I n B` if and
 only if it admits a nowhere-vanishing `C^n` section. -/
 theorem nonempty_iso_tensorUnit_iff_exists_section_ne_zero
@@ -605,110 +798,7 @@ theorem nonempty_iso_tensorUnit_iff_exists_section_ne_zero
       ContinuousLinearMap.id_apply, h0'] at h1
     exact h1 ▸ (e.hom.toHom.fiberMap x).map_zero
   · rintro ⟨σ, hσ, hσ₀⟩
-    let f := A.homFromTensorUnitOfSection σ hσ
-    let k₀ : Fin A.toCore.rank := ⟨0, by omega⟩
-    let : Unique (Fin A.toCore.rank) := ⟨⟨k₀⟩, fun k ↦ Fin.ext (by omega)⟩
-    let i₀ : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank := ⟨0, by simp⟩
-    let E₀ : (Fin A.toCore.rank → 𝕜) →L[𝕜]
-        (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :=
-      ContinuousLinearMap.smulRight (ContinuousLinearMap.proj k₀) (fun _ ↦ 1)
-    let L' : 𝕜 →L[𝕜]
-        ((Fin A.toCore.rank → 𝕜) →L[𝕜]
-          (Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) :=
-      ContinuousLinearMap.smulRight (ContinuousLinearMap.id 𝕜 𝕜) E₀
-    let s (i : B) (x : B) : 𝕜 := (A.toCore.core.localTriv i ⟨x, σ x⟩).2 k₀
-    have hchart (i : B) : ContMDiffOn I 𝓘(𝕜, Fin A.toCore.rank → 𝕜) n
-        (fun x ↦ (A.toCore.core.localTriv i ⟨x, σ x⟩).2) (A.toCore.core.baseSet i) := by
-      have : MemTrivializationAtlas (A.toCore.core.localTriv i) := ⟨⟨i, rfl⟩⟩
-      exact ((A.toCore.core.localTriv i).contMDiffOn_section_iff
-        (A.toCore.core.isOpen_baseSet i) subset_rfl).mp hσ.contMDiffOn
-    have hs (i : B) : ContMDiffOn I 𝓘(𝕜) n (s i) (A.toCore.core.baseSet i) :=
-      (ContinuousLinearMap.proj k₀).contMDiff.comp_contMDiffOn (hchart i)
-    have hs₀ (i : B) {x : B} (hx : x ∈ A.toCore.core.baseSet i) : s i x ≠ 0 := by
-      intro h0
-      apply hσ₀ x
-      let v : Fin A.toCore.rank → 𝕜 := σ x
-      have htriv0 : (A.toCore.core.localTriv i ⟨x, σ x⟩).2 = 0 :=
-        funext fun k ↦ (Unique.eq_default k).symm ▸ h0
-      have hcomp := A.toCore.core.coordChange_comp (A.toCore.core.indexAt x) i
-        (A.toCore.core.indexAt x) x ⟨⟨A.toCore.core.mem_baseSet_at x, hx⟩,
-          A.toCore.core.mem_baseSet_at x⟩ v
-      rw [A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x)] at hcomp
-      have hv0 : v = 0 := by
-        rw [← hcomp]
-        simpa only [VectorBundleCore.localTriv_apply, map_zero] using
-          congrArg (A.toCore.core.coordChange i (A.toCore.core.indexAt x) x) htriv0
-      exact hv0
-    have hsinv (i : B) :
-        ContMDiffOn I 𝓘(𝕜) n (fun x ↦ (s i x)⁻¹) (A.toCore.core.baseSet i) :=
-      fun x hx ↦ (contDiffAt_inv 𝕜 (hs₀ i hx)).contMDiffAt.comp_contMDiffWithinAt x
-        (hs i x hx)
-    let b : A.toCore ⟶ (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore :=
-      { operator := fun i _ ↦
-          ⟨fun x ↦ L' (s i x.1)⁻¹,
-            L'.continuous.comp <|
-              (continuousOn_iff_continuous_domRestrict.1
-                (hsinv i).continuousOn).comp
-                (continuous_subtype_val.subtype_mk fun x ↦ x.2.1)⟩
-        compatible := fun i i' j j' x hi hi' _ _ v ↦ by
-          set c := A.toCore.core.coordChange i i' x (fun _ ↦ 1) k₀
-          have hT : A.toCore.core.coordChange i i' x =
-              c • ContinuousLinearMap.id 𝕜 (Fin A.toCore.rank → 𝕜) :=
-            (A.toCore.core.coordChange i i' x).eq_smul_id_of_unique
-          have hs_eq : s i' x = c * s i x := by
-            have hcomp := congrFun (A.toCore.core.coordChange_comp (A.toCore.core.indexAt x)
-              i i' x ⟨⟨A.toCore.core.mem_baseSet_at x, hi⟩, hi'⟩ (σ x)) k₀
-            rw [hT] at hcomp
-            simpa only [s, VectorBundleCore.localTriv_apply, smul_apply,
-              ContinuousLinearMap.id_apply, Pi.smul_apply, smul_eq_mul] using hcomp.symm
-          have hc : c ≠ 0 := fun hc0 ↦ hs₀ i' hi' (by rw [hs_eq, hc0, zero_mul])
-          ext l
-          simp only [L', E₀, ContinuousMap.coe_mk, ContinuousLinearMap.smulRight_apply,
-            ContinuousLinearMap.id_apply, ContinuousLinearMap.proj_apply,
-            coordChange_tensorUnit, hT, smul_apply,
-            Pi.smul_apply, smul_eq_mul, mul_one, hs_eq, mul_inv_rev]
-          rw [mul_assoc, inv_mul_cancel_left₀ hc] }
-    have hb : ContMDiff (I.prod 𝓘(𝕜, Fin A.toCore.rank → 𝕜))
-        (I.prod 𝓘(𝕜, Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜)) n
-        b.totalSpaceMap :=
-      CoordinateHom.contMDiff_totalSpaceMap b fun i j ↦
-        (L'.contMDiff.comp_contMDiffOn ((hsinv i).mono inter_subset_left)).congr fun x hx ↦
-          (CoordinateHom.operator_eq b i j ⟨x, hx⟩).symm
-    let g : A ⟶ 𝟙_ (ContMDiffFiniteRankBundleCore I n B) := ⟨b, hb⟩
-    let vσ (x : B) : Fin A.toCore.rank → 𝕜 := σ x
-    have hself (x : B) : s (A.toCore.core.indexAt x) x = vσ x k₀ := by
-      simpa only [s, VectorBundleCore.localTriv_apply] using
-        congrFun (A.toCore.core.coordChange_self _ x (A.toCore.core.mem_baseSet_at x) (vσ x)) k₀
-    have hσk₀ (x : B) : vσ x k₀ ≠ 0 := by
-      rw [← hself x]
-      exact hs₀ _ (A.toCore.core.mem_baseSet_at x)
-    have hf_apply (x : B)
-        (c : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank → 𝕜) :
-        f.toHom.fiberMap x c = c i₀ • vσ x :=
-      A.fiberMap_homFromTensorUnitOfSection_apply σ hσ x c
-    have hb_apply (x : B) (v : Fin A.toCore.rank → 𝕜)
-        (l : Fin (𝟙_ (ContMDiffFiniteRankBundleCore I n B)).toCore.rank) :
-        b.fiberMap x v l = (vσ x k₀)⁻¹ * v k₀ := by
-      rw [CoordinateHom.fiberMap_def]
-      simp only [b, L', E₀, ContinuousMap.coe_mk, ContinuousLinearMap.smulRight_apply,
-        ContinuousLinearMap.id_apply, smul_apply, ContinuousLinearMap.proj_apply, hself,
-        Pi.smul_apply, smul_eq_mul, mul_one]
-    refine ⟨⟨g, f, hom_ext <| FiniteRankBundleCore.hom_ext fun x ↦ ?_,
-      hom_ext <| FiniteRankBundleCore.hom_ext fun x ↦ ?_⟩⟩
-    · ext v k
-      obtain rfl : k = k₀ := Unique.eq_default k
-      rw [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
-        FiniteRankBundleCore.fiberMap_id]
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, g,
-        hf_apply, hb_apply, Pi.smul_apply, smul_eq_mul]
-      rw [mul_comm _ (v k₀), inv_mul_cancel_right₀ (hσk₀ x)]
-    · ext c l
-      obtain rfl : l = i₀ := Fin.ext (Nat.lt_one_iff.mp l.2)
-      rw [comp_toHom, id_toHom, FiniteRankBundleCore.fiberMap_comp,
-        FiniteRankBundleCore.fiberMap_id]
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, g,
-        hf_apply, hb_apply, Pi.smul_apply, smul_eq_mul]
-      rw [mul_comm (c i₀), inv_mul_cancel_left₀ (hσk₀ x)]
+    exact ⟨A.isoTensorUnitOfSectionNeZero hA σ hσ hσ₀⟩
 
 end ContMDiffFiniteRankBundleCore
 

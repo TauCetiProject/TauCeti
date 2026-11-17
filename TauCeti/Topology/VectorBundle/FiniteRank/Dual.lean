@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.PiTranspose
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.Topology.VectorBundle.Constructions
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!
 # Duals of finite-rank bundle cores

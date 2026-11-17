@@ -21,7 +21,8 @@ transitions, so for every model `IB` on `X` and every regularity `n` it defines 
 `IsQuotientCoveringMap.associatedContMDiffCore IB n ρ` of `ContMDiffFiniteRankBundleCore IB n X`.
 For a character `χ : G →* 𝕜ˣ`, its rank-one specialization
 `IsQuotientCoveringMap.characterContMDiffCore IB n χ` has total space `C^n`-diffeomorphic over `X`
-to `(hp.characterCore χ).TotalSpace` (`IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`).
+to `(hp.characterCore χ).TotalSpace` via `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`
+(defined in `TauCeti.Geometry.Manifold.Quotient.AssociatedBundle`).
 
 In `ContMDiffFiniteRankBundleCore IB n X`, character line bundles satisfy canonical `C^n`
 isomorphisms (using the categorical tensor power `TauCeti.tensorPow`):
@@ -79,70 +80,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   (IB : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω)
   {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X] [ChartedSpace HB X]
   [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G)
-
-/-- Total-space `C^n` diffeomorphism identifying `(hp.characterFiniteRankCore χ).core.TotalSpace`
-with `(hp.characterCore χ).TotalSpace` over `X`. -/
-noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCore χ).core.TotalSpace ≃ₘ^n⟮IB.prod
-      𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜), IB.prod 𝓘(𝕜)⟯
-      (hp.characterCore χ).TotalSpace where
-  toEquiv := (hp.characterFiniteRankCoreHomeomorph χ).toEquiv
-  contMDiff_toFun :=
-    (hp.characterFiniteRankCore χ).contMDiff_of_localTriv_snd
-      (hp.characterFiniteRankCoreHomeomorph χ)
-      (fun p₀ ↦ by simp [characterFiniteRankCoreHomeomorph_apply])
-      (ContinuousLinearMap.proj (⟨0, by simp⟩ : Fin (hp.characterFiniteRankCore χ).rank))
-      fun b p₀ ↦ by
-        rw [← (hp.characterFiniteRankCore χ).trivializationAt_core,
-          characterFiniteRankCoreHomeomorph_apply]
-        exact hp.trivializationAt_characterCore_snd χ b p₀
-  contMDiff_invFun :=
-    (hp.characterFiniteRankCore χ).contMDiff_of_trivializationAt_snd
-      (hp.characterFiniteRankCoreHomeomorph χ).symm
-      (fun q ↦ by simp [characterFiniteRankCoreHomeomorph_symm_apply])
-      (ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id 𝕜 𝕜) fun b q ↦ by
-        ext k
-        rw [← (hp.characterFiniteRankCore χ).trivializationAt_core,
-          characterFiniteRankCoreHomeomorph_symm_apply]
-        exact hp.trivializationAt_characterFiniteRankCore_snd χ b q k
-
-@[simp] theorem characterFiniteRankCoreDiffeomorph_apply (χ : G →* 𝕜ˣ)
-    (p₀ : (hp.characterFiniteRankCore χ).core.TotalSpace) :
-    hp.characterFiniteRankCoreDiffeomorph IB n χ p₀ =
-      ⟨p₀.1, (p₀.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩ :=
-  hp.characterFiniteRankCoreHomeomorph_apply χ p₀
-
-@[simp] theorem characterFiniteRankCoreDiffeomorph_symm_apply (χ : G →* 𝕜ˣ)
-    (q : (hp.characterCore χ).TotalSpace) :
-    (hp.characterFiniteRankCoreDiffeomorph IB n χ).symm q =
-      ⟨q.1, (fun _ ↦ (q.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩ :=
-  hp.characterFiniteRankCoreHomeomorph_symm_apply χ q
-
-/-- `hp.characterFiniteRankCore χ` admits a nowhere-vanishing `C^n` section if and only if
-`hp.characterCore χ` does. -/
-theorem exists_section_ne_zero_characterFiniteRankCore_iff (χ : G →* 𝕜ˣ) :
-    (∃ σ : ∀ x, (hp.characterFiniteRankCore χ).core.Fiber x,
-      ContMDiff IB (IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)) n
-        (fun x ↦ TotalSpace.mk' (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) x (σ x)) ∧
-      ∀ x, σ x ≠ 0) ↔
-    ∃ τ : ∀ x, (hp.characterCore χ).Fiber x,
-      ContMDiff IB (IB.prod 𝓘(𝕜)) n (fun x ↦ TotalSpace.mk' 𝕜 x (τ x)) ∧
-      ∀ x, τ x ≠ 0 := by
-  let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
-  constructor
-  · rintro ⟨σ, hσ, hσ₀⟩
-    refine ⟨fun x ↦ (σ x : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) k₀,
-      ((hp.characterFiniteRankCoreDiffeomorph IB n χ).contMDiff.comp hσ).congr fun x ↦
-        (hp.characterFiniteRankCoreDiffeomorph_apply IB n χ ⟨x, σ x⟩).symm,
-      fun x h0 ↦ hσ₀ x ?_⟩
-    exact funext fun k ↦ by
-      obtain rfl : k = k₀ := Fin.ext (Nat.lt_one_iff.mp k.2)
-      exact h0
-  · rintro ⟨τ, hτ, hτ₀⟩
-    exact ⟨fun x _ ↦ (τ x : 𝕜),
-      ((hp.characterFiniteRankCoreDiffeomorph IB n χ).symm.contMDiff.comp hτ).congr fun x ↦
-        (hp.characterFiniteRankCoreDiffeomorph_symm_apply IB n χ ⟨x, τ x⟩).symm,
-      fun x h0 ↦ hτ₀ x (congrFun h0 k₀)⟩
 
 /-- The `C^n` finite-rank core over `X` attached to a representation
 `ρ : G →* ((Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜))ˣ` of the deck group. -/
