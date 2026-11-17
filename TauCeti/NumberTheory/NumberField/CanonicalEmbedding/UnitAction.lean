@@ -21,6 +21,8 @@ units on the mixed space.
   scalar multiplication;
 * `ContinuousConstSMul (𝓞 K)ˣ (mixedEmbedding.mixedSpace K)`: the action of a fixed unit is
   continuous, hence measurable, so Mathlib's `measurable_const_smul` applies;
+* `NumberField.mixedEmbedding.mixedEmbedding_units_smul`: the mixed embedding is equivariant
+  with respect to the `(𝓞 K)ˣ` action;
 * `TauCeti.NumberField.Units.unitSMul_mixedEmbedding_eq_self_iff`: a unit fixes the image of a
   nonzero element of `K` exactly when it is the identity.
 
@@ -33,6 +35,18 @@ It also identifies the units of the mixed space itself:
 public section
 
 open NumberField
+
+namespace NumberField.mixedEmbedding
+
+variable {K : Type*} [Field K]
+
+/-- The mixed embedding is equivariant with respect to multiplication by units of `𝓞 K`. -/
+theorem mixedEmbedding_units_smul (u : (𝓞 K)ˣ) (a : K) :
+    mixedEmbedding K (u • a) = u • mixedEmbedding K a := by
+  rw [Units.smul_def, Algebra.smul_def, ← RingOfIntegers.coe_eq_algebraMap, map_mul,
+    unitSMul_smul]
+
+end NumberField.mixedEmbedding
 
 namespace TauCeti.NumberField.Units
 
