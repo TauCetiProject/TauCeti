@@ -42,7 +42,7 @@ Dually, against an additive Haar measure on a finite-dimensional normed space, a
 mollifier can be moved from any locally integrable function `u` on `Omega` onto a test vector field
 `φ ∈ 𝓓(Omega, E)` whose enlarged support stays in `Omega`, giving the adjoint integration-by-parts
 identity `∫ div (φ.mollify mu ρ h) • u = -∫ D(ρ ⋆ u) (φ)`
-(`TauCeti.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution`).
+(`ContDiffBump.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution`).
 
 ## Main statements
 
@@ -59,9 +59,9 @@ identity `∫ div (φ.mollify mu ρ h) • u = -∫ D(ρ ⋆ u) (φ)`
   weak derivative and a smooth compactly supported probability kernel `rho`, Jensen's bound
   `∫ Φ(‖D(u ⋆ rho)‖) ≤ ∫ Φ(‖U‖)` for every `Φ` convex and monotone on `[0, ∞)`, for a
   negation-invariant measure on a second-countable space.
-* `TauCeti.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution`: moving
-  a normalized-bump mollifier from a locally integrable function `u` onto a test vector field `φ`
-  satisfies `∫ div (mollify φ) • u = -∫ D(ρ ⋆ u) (φ)`.
+* `ContDiffBump.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution`:
+  moving a normalized-bump mollifier from a locally integrable function `u` onto a test vector
+  field `φ` satisfies `∫ div (mollify φ) • u = -∫ D(ρ ⋆ u) (φ)`.
 
 ## References
 
@@ -71,10 +71,10 @@ R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, Section 4.1.1.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory TopologicalSpace ContinuousLinearMap
 open scoped ContDiff Convolution Distributions Pointwise
+
+namespace TauCeti
 
 section
 
@@ -196,8 +196,13 @@ theorem HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le
 
 end
 
+end TauCeti
+
+namespace ContDiffBump
+
 section DivergenceMollify
 
+open TauCeti
 open scoped Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -328,4 +333,4 @@ theorem integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convol
 
 end DivergenceMollify
 
-end TauCeti
+end ContDiffBump

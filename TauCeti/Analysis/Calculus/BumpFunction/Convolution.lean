@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -352,21 +353,7 @@ theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_l
     Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₁ y‖])
   by_cases h1 : Integrable (fun t => ρ.normed μ t • f₁ (x - t)) μ
   · by_cases h2 : Integrable (fun t => ρ.normed μ t • f₂ (x - t)) μ
-    · set R := √(A ^ 2 + B ^ 2)
-      have hRsq : R ^ 2 = A ^ 2 + B ^ 2 := Real.sq_sqrt (by positivity)
-      rcases eq_or_lt_of_le (Real.sqrt_nonneg (A ^ 2 + B ^ 2)) with hR0 | hRpos
-      · nlinarith [hRsq, hR0]
-      set c := A / R
-      set s := B / R
-      have hc0 : 0 ≤ c := div_nonneg hA0 hRpos.le
-      have hs0 : 0 ≤ s := div_nonneg hB0 hRpos.le
-      have hcs : c ^ 2 + s ^ 2 = 1 := by
-        simp only [c, s, div_pow, ← add_div, ← hRsq]
-        exact div_self (pow_ne_zero 2 hRpos.ne')
-      have hcAsB : c * A + s * B = R := by
-        have h : c * A + s * B = (A ^ 2 + B ^ 2) / R := by simp only [c, s]; ring
-        rw [h, ← hRsq, sq, mul_div_cancel_right₀ R hRpos.ne']
-      have h1n : Integrable (fun t => ρ.normed μ t * ‖f₁ (x - t)‖) μ := by
+    · have h1n : Integrable (fun t => ρ.normed μ t * ‖f₁ (x - t)‖) μ := by
         simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h1.norm
       have h2n : Integrable (fun t => ρ.normed μ t * ‖f₂ (x - t)‖) μ := by
         simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h2.norm
@@ -378,9 +365,11 @@ theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_l
         simpa only [B, convolution_def, lsmul_apply, norm_smul,
           Real.norm_of_nonneg (ρ.nonneg_normed _)] using
           norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₂ (x - t))
-      have hR_le : R ≤ √M := calc
-        R = c * A + s * B := hcAsB.symm
-        _ ≤ c * (∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ) +
+      rw [← Real.sq_sqrt hM0,
+        TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le hA0 hB0 (Real.sqrt_nonneg M)]
+      intro c s hc0 hs0 hcs
+      calc c * A + s * B
+          ≤ c * (∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ) +
               s * (∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ) :=
             add_le_add (mul_le_mul_of_nonneg_left hA_le hc0)
               (mul_le_mul_of_nonneg_left hB_le hs0)
@@ -391,16 +380,13 @@ theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_l
         _ ≤ ∫ t, ρ.normed μ t * √M ∂μ := by
             refine integral_mono (((h1n.const_mul c).add (h2n.const_mul s)).congr
               (.of_forall fun t => by simp only [Pi.add_apply]; ring))
-              (ρ.integrable_normed.mul_const √M) fun t => ?_
-            refine mul_le_mul_of_nonneg_left (Real.le_sqrt_of_sq_le ?_) (ρ.nonneg_normed t)
-            have hcs_ineq : (c * ‖f₁ (x - t)‖ + s * ‖f₂ (x - t)‖) ^ 2 ≤
-                (c ^ 2 + s ^ 2) * (‖f₁ (x - t)‖ ^ 2 + ‖f₂ (x - t)‖ ^ 2) := by
-              nlinarith [sq_nonneg (c * ‖f₂ (x - t)‖ - s * ‖f₁ (x - t)‖)]
-            rw [hcs, one_mul] at hcs_ineq
-            exact hcs_ineq.trans (hM (x - t))
+              (ρ.integrable_normed.mul_const √M) fun t =>
+                mul_le_mul_of_nonneg_left
+                  ((TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le (norm_nonneg _)
+                    (norm_nonneg _) (Real.sqrt_nonneg M)).1
+                      ((hM (x - t)).trans_eq (Real.sq_sqrt hM0).symm) c s hc0 hs0 hcs)
+                  (ρ.nonneg_normed t)
         _ = √M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
-      rw [← hRsq]
-      exact (pow_le_pow_left₀ hRpos.le hR_le 2).trans_eq (Real.sq_sqrt hM0)
     · have hB : B = 0 := by
         simp only [B, convolution_def, lsmul_apply, integral_undef h2, norm_zero]
       rw [hB, zero_pow two_ne_zero, add_zero]

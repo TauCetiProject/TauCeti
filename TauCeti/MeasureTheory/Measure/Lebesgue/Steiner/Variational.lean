@@ -11,9 +11,11 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.BoundedVariation.Slicing.Excess
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -524,92 +526,6 @@ private theorem abs_slabVerticalDiff_le (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓
       _ ≤ Mψ * L y + Mψ * |ℓ y - L y| :=
           add_le_add_right (mul_le_mul_of_nonneg_left (le_abs_self _) hM0) _
 
-/-- Pointwise dominance of a normalized-bump convolution when `|d| ≤ g + Mψ * |e_L|`. -/
-private theorem abs_normed_convolution_le_of_abs_le {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    (ρ : ContDiffBump (0 : H)) {d g e_L : H → ℝ}
-    (hg : Integrable g volume) (heL : Integrable e_L volume) {Mψ : ℝ}
-    (hd_le : ∀ y, |d y| ≤ g y + Mψ * |e_L y|) (z : H) :
-    |(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z| ≤
-      (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z +
-        Mψ * (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => ‖e_L y‖) z := by
-  have hex_g := ((ρ.hasCompactSupport_normed (μ := volume)).convolutionExists_left (lsmul ℝ ℝ)
-    (ρ.continuous_normed (μ := volume)) hg.locallyIntegrable z).integrable
-  have hex_L := ((ρ.hasCompactSupport_normed (μ := volume)).convolutionExists_left (lsmul ℝ ℝ)
-    (ρ.continuous_normed (μ := volume)) heL.norm.locallyIntegrable z).integrable
-  rw [← Real.norm_eq_abs, convolution_def]
-  refine (norm_integral_le_of_norm_le (hex_g.add (hex_L.const_mul Mψ))
-    (.of_forall fun t => ?_)).trans_eq ?_
-  · simp only [lsmul_apply, smul_eq_mul, norm_mul, Real.norm_eq_abs,
-      abs_of_nonneg (ρ.nonneg_normed t)]
-    calc ρ.normed volume t * |d (z - t)|
-        ≤ ρ.normed volume t * (g (z - t) + Mψ * |e_L (z - t)|) :=
-          mul_le_mul_of_nonneg_left (hd_le _) (ρ.nonneg_normed t)
-      _ = ρ.normed volume t * g (z - t) + Mψ * (ρ.normed volume t * |e_L (z - t)|) := by ring
-  · simp only [Pi.add_apply]
-    rw [integral_add hex_g (hex_L.const_mul Mψ), integral_const_mul]
-    simp only [convolution_def]
-
-/-- `L¹` bound for `∫ d`: splitting `∫ (ρ ⋆ d)` over `D` and `Dᶜ`, where `g = 0` on `Dᶜ`, leaves at
-most `∫_D w + ‖ρ ⋆ g - g‖₁ + Mψ ‖L_k - L‖₁`. -/
-private theorem integral_normed_convolution_le_setIntegral_add_errors {H : Type*}
-    [NormedAddCommGroup H] [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H]
-    [BorelSpace H] (ρ : ContDiffBump (0 : H)) {d g L L_k w : H → ℝ}
-    (hd : Integrable d volume) (hg : Integrable g volume) (hL_err : Integrable (L_k - L) volume)
-    {D : Set H} (hD : NullMeasurableSet D volume) (hg0 : ∀ z ∈ Dᶜ, g z = 0)
-    {Mψ : ℝ} (hM0 : 0 ≤ Mψ) (hd_le : ∀ y, |d y| ≤ g y + Mψ * |L_k y - L y|)
-    (hw : IntegrableOn w D volume)
-    (hγw : ∀ z ∈ D, |(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z| ≤ w z) :
-    ∫ y : H, d y ≤ (∫ z in D, w z) +
-      (∫ z : H, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z - g z‖) +
-      Mψ * ∫ y : H, ‖L_k y - L y‖ := by
-  set γ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d
-  have hρi : Integrable (ρ.normed volume) volume := ρ.integrable_normed (μ := volume)
-  have hγi : Integrable γ volume := hρi.integrable_convolution (lsmul ℝ ℝ) hd
-  have hgi' : Integrable (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) volume :=
-    hρi.integrable_convolution (lsmul ℝ ℝ) hg
-  have hLi' : Integrable (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => ‖L_k y - L y‖) volume :=
-    hρi.integrable_convolution (lsmul ℝ ℝ) hL_err.norm
-  have htot : ∫ y : H, d y = (∫ z in D, γ z) + ∫ z in Dᶜ, γ z := by
-    have hconv := MeasureTheory.integral_convolution (lsmul ℝ ℝ) hρi hd
-    rw [ρ.integral_normed, lsmul_apply, one_smul] at hconv
-    rw [← hconv, ← integral_add_compl₀ hD hγi]
-  have hD_le : ∫ z in D, γ z ≤ ∫ z in D, w z :=
-    setIntegral_mono_on₀ hγi.integrableOn hw hD fun z hz => (le_abs_self _).trans (hγw z hz)
-  have h1 : ∫ z in Dᶜ, γ z ≤ ∫ z in Dᶜ, (‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z - g z‖ +
-      Mψ * (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => ‖L_k y - L y‖) z) := by
-    refine setIntegral_mono_on₀ hγi.integrableOn
-      (((hgi'.sub hg).norm.add (hLi'.const_mul Mψ)).integrableOn) hD.compl fun z hz => ?_
-    refine (le_abs_self _).trans ((abs_normed_convolution_le_of_abs_le ρ hg hL_err hd_le z).trans
-      (add_le_add ?_ le_rfl))
-    rw [hg0 z hz, sub_zero, Real.norm_eq_abs]; exact le_abs_self _
-  have h2 : ∫ z in Dᶜ, (‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z - g z‖ +
-      Mψ * (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => ‖L_k y - L y‖) z) ≤
-      (∫ z : H, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z - g z‖) +
-        Mψ * ∫ z : H, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => ‖L_k y - L y‖) z := by
-    have hgi_sub : Integrable (fun z => ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z - g z‖)
-        volume := (hgi'.sub hg).norm
-    rw [integral_add hgi_sub.integrableOn (hLi'.const_mul Mψ).integrableOn, integral_const_mul]
-    exact add_le_add (setIntegral_le_integral hgi_sub (.of_forall fun _ => norm_nonneg _))
-      (mul_le_mul_of_nonneg_left (setIntegral_le_integral hLi' (.of_forall fun _ =>
-        integral_nonneg fun t => mul_nonneg (ρ.nonneg_normed t) (norm_nonneg _))) hM0)
-  have hconvL := MeasureTheory.integral_convolution (lsmul ℝ ℝ) hρi hL_err.norm
-  rw [ρ.integral_normed, lsmul_apply, one_smul] at hconvL
-  simp only [Pi.sub_apply] at hconvL
-  have hDc : ∫ z in Dᶜ, γ z ≤ (∫ z : H, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z - g z‖) +
-      Mψ * ∫ y : H, ‖L_k y - L y‖ := h1.trans (h2.trans_eq (by rw [hconvL]))
-  linarith
-
-private theorem integrable_min_one_mul {H : Type*} [MeasurableSpace H] {μ : Measure H}
-    {L : H → ℝ} (hLi : Integrable L μ) (hL0 : ∀ y, 0 ≤ L y) {M : ℝ} (hM0 : 0 ≤ M) :
-    Integrable (fun y => min 1 (M * L y)) μ :=
-  (hLi.const_mul M).mono'
-    (aestronglyMeasurable_const.aemeasurable.inf
-      (hLi.aestronglyMeasurable.const_mul M).aemeasurable).aestronglyMeasurable
-    (.of_forall fun y => by
-      rw [Real.norm_of_nonneg (le_min zero_le_one (mul_nonneg hM0 (hL0 y)))]
-      exact min_le_right _ _)
-
 /-- Single-bump slab bound when `volume D ≠ ⊤`: integrating `div ψ₀` over `{|t| < L_ρ / 2}` is
 bounded by the variational functional at `φ = mollify B` plus `L¹` mollification errors. -/
 private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ = 1)
@@ -673,7 +589,8 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
       (.of_forall fun z => (Real.norm_of_nonneg (Real.sqrt_nonneg _)).trans_le
         (Real.sqrt_le_one.2 (sub_le_self _ (sq_nonneg _))))
   refine ⟨φ, hφ1, hwi, ?_⟩
-  have hgi := integrable_min_one_mul hLi (fun _ => measureReal_nonneg) hM0
+  have hgi : Integrable (fun y => min 1 (Mψ * L y)) volume :=
+    (hLi.const_mul Mψ).const_inf zero_le_one
   have hL_err : Integrable (L_ρ - L) volume :=
     ((ρ.integrable_normed (μ := volume)).integrable_convolution (lsmul ℝ ℝ) hLi).sub hLi
   have hd_le (y : (ℝ ∙ e)ᗮ) : |d y| ≤ min 1 (Mψ * L y) + Mψ * |L_ρ y - L y| :=
@@ -681,11 +598,30 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
   have hg0 (z : (ℝ ∙ e)ᗮ) (hz : z ∈ Dᶜ) : min 1 (Mψ * L z) = 0 := by
     have hz0 : volume {t : ℝ | (z : E) + t • e ∈ s} = 0 := by simpa [D] using hz
     simp [hL_def, measureReal_def, hz0]
-  have hd_int := integral_normed_convolution_le_setIntegral_add_errors ρ hdi hgi hL_err hDm hg0
-    hM0 hd_le hwi fun z _ => Real.le_sqrt_of_sq_le (by rw [sq_abs]; linarith [hφ_sq z])
+  have hρi : Integrable (ρ.normed volume) volume := ρ.integrable_normed (μ := volume)
+  have hγi : Integrable (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) volume :=
+    hρi.integrable_convolution (lsmul ℝ ℝ) hdi
+  have htot : ∫ y : (ℝ ∙ e)ᗮ, d y = (∫ z in D, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z) +
+      ∫ z in Dᶜ, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z := by
+    have hconv := MeasureTheory.integral_convolution (lsmul ℝ ℝ) hρi hdi
+    rw [ρ.integral_normed, lsmul_apply, one_smul] at hconv
+    rw [← hconv, ← integral_add_compl₀ hDm hγi]
+  have hD_le : ∫ z in D, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z ≤
+      ∫ z in D, √(1 - ‖φ z‖ ^ 2) :=
+    setIntegral_mono_on₀ hγi.integrableOn hwi hDm fun z _ =>
+      Real.le_sqrt_of_sq_le (by linarith [hφ_sq z])
+  have hDc : ∫ z in Dᶜ, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z ≤
+      (∫ z : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => min 1 (Mψ * L y)) z -
+        min 1 (Mψ * L z)‖) + Mψ * ∫ y : (ℝ ∙ e)ᗮ, ‖L_ρ y - L y‖ := by
+    have h := setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul hρi
+      (.of_forall ρ.nonneg_normed) hdi hgi (hL_err.norm.const_mul Mψ)
+      (.of_forall fun _ => mul_nonneg hM0 (norm_nonneg _))
+      ((ae_restrict_mem₀ hDm.compl).mono fun z hz => (hg0 z hz).le)
+      (.of_forall fun y => (le_abs_self _).trans (hd_le y))
+    simpa only [ρ.integral_normed, one_mul, Pi.sub_apply, integral_const_mul] using h
   have hslab := (integrable_and_integral_divergenceCLM_symmSlab_eq e he ψ₀ hLρ_s).2
   simp_rw [← hd_def, ← hB_def] at hslab
-  have hibp := (integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution ρ
+  have hibp := (ρ.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution
     (hLi.locallyIntegrable.locallyIntegrableOn _) B (subset_univ _)).symm
   simp_rw [← hφ_def, smul_eq_mul] at hibp
   linarith
@@ -763,7 +699,9 @@ private theorem ofReal_setIntegral_steinerSymmetrization_le_iSup
     (divergenceCLM ψ₀).hasCompactSupport
   set Mψ := max M₀ 0; set C₀ := max Cψ 0
   have hLi := integrable_measureReal_lineSection e he hs hfin
-  have hgi := integrable_min_one_mul hLi (fun _ => measureReal_nonneg) (le_max_right M₀ 0 : 0 ≤ Mψ)
+  have hgi : Integrable (fun y : (ℝ ∙ e)ᗮ =>
+      min 1 (Mψ * volume.real {t : ℝ | (y : E) + t • e ∈ s})) volume :=
+    (hLi.const_mul Mψ).const_inf zero_le_one
   have hL_lim := tendsto_integral_norm_normed_convolution_sub hρ_lim hLi
   have hg_lim := tendsto_integral_norm_normed_convolution_sub hρ_lim hgi
   set I₀ : ℝ := ∫ x in steinerSymmetrization e he s, divergenceCLM ψ₀ x

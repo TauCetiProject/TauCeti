@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.BoundedVariation.Slicing.Excess
 import TauCeti.Analysis.BoundedVariation.Slicing.Measurability
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
@@ -149,65 +150,6 @@ theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
     (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ => id)
     hδ0 hδ1 p.1 p.2
 
-private theorem eq_zero_of_forall_delta_le {p a : ℝ} (hp : 0 < p) (ha : 0 ≤ a)
-    (hdelta : ∀ {δ : ℝ}, 0 < δ → δ < 1 → (1 - δ) * p + 2 * √(2 * δ - δ ^ 2) * a ≤ p) :
-    a = 0 := by
-  by_contra ha_ne
-  have ha_pos : 0 < a := lt_of_le_of_ne ha (Ne.symm ha_ne)
-  set δ := 4 * a ^ 2 / (p ^ 2 + 4 * a ^ 2)
-  have hδ0 : 0 < δ := by positivity
-  have hδ1 : δ < 1 := (div_lt_one (by positivity)).2 (by linarith [mul_pos hp hp])
-  have hb := hdelta hδ0 hδ1
-  have hsq : 4 * (2 * δ - δ ^ 2) * a ^ 2 ≤ (δ * p) ^ 2 := by
-    have hsub : 2 * √(2 * δ - δ ^ 2) * a ≤ δ * p := by linarith
-    calc 4 * (2 * δ - δ ^ 2) * a ^ 2
-        = (2 * √(2 * δ - δ ^ 2) * a) ^ 2 := by
-          rw [mul_pow, mul_pow, Real.sq_sqrt (by nlinarith)]; ring
-      _ ≤ (δ * p) ^ 2 := pow_le_pow_left₀ (by positivity) hsub 2
-  have hid : δ * (p ^ 2 + 4 * a ^ 2) = 4 * a ^ 2 := div_mul_cancel₀ _ (by positivity)
-  have hmul_id : δ ^ 2 * (p ^ 2 + 4 * a ^ 2) = 4 * δ * a ^ 2 := by
-    calc δ ^ 2 * (p ^ 2 + 4 * a ^ 2) = δ * (δ * (p ^ 2 + 4 * a ^ 2)) := by ring
-      _ = 4 * δ * a ^ 2 := by rw [hid]; ring
-  linarith [mul_pos hδ0 (sq_pos_of_pos ha_pos)]
-
-private theorem sq_add_four_mul_sq_le_of_forall_delta {p p₀ a : ℝ}
-    (hp₀ : 0 ≤ p₀) (ha : 0 ≤ a) (hp₀_le : p₀ ≤ p) (h2a : 2 * a ≤ p)
-    (hdelta : ∀ {δ : ℝ}, 0 < δ → δ < 1 → (1 - δ) * p₀ + 2 * √(2 * δ - δ ^ 2) * a ≤ p) :
-    p₀ ^ 2 + 4 * a ^ 2 ≤ p ^ 2 := by
-  rcases eq_or_lt_of_le hp₀ with hp₀_eq | hp₀_pos
-  · rw [← hp₀_eq]; nlinarith
-  rcases eq_or_lt_of_le hp₀_le with hp_eq | hp₀_lt
-  · subst hp_eq
-    have ha_zero : a = 0 := eq_zero_of_forall_delta_le hp₀_pos ha hdelta
-    rw [ha_zero]; ring_nf; exact le_rfl
-  · have hp_pos : 0 < p := hp₀_pos.trans hp₀_lt
-    set δ := 1 - p₀ / p
-    have hδ0 : 0 < δ := sub_pos.2 ((div_lt_one hp_pos).2 hp₀_lt)
-    have hδ1 : δ < 1 := sub_lt_self 1 (div_pos hp₀_pos hp_pos)
-    have hb := hdelta hδ0 hδ1
-    have h1δ : 1 - δ = p₀ / p := by ring
-    have h2δ : 2 * δ - δ ^ 2 = (p ^ 2 - p₀ ^ 2) / p ^ 2 := by
-      calc 2 * δ - δ ^ 2 = 1 - (1 - δ) ^ 2 := by ring
-        _ = 1 - (p₀ / p) ^ 2 := by rw [h1δ]
-        _ = (p ^ 2 - p₀ ^ 2) / p ^ 2 := by rw [div_pow, one_sub_div (by positivity)]
-    rw [h1δ, h2δ, Real.sqrt_div (by nlinarith), Real.sqrt_sq hp_pos.le] at hb
-    have hmul : p₀ ^ 2 + 2 * √(p ^ 2 - p₀ ^ 2) * a ≤ p ^ 2 := by
-      have hbp := mul_le_mul_of_nonneg_right hb hp_pos.le
-      calc p₀ ^ 2 + 2 * √(p ^ 2 - p₀ ^ 2) * a
-          = (p₀ / p * p₀ + 2 * (√(p ^ 2 - p₀ ^ 2) / p) * a) * p := by field_simp
-        _ ≤ p * p := hbp
-        _ = p ^ 2 := (sq p).symm
-    have hdiff_pos : 0 ≤ p ^ 2 - p₀ ^ 2 := by nlinarith
-    have h2a_sqrt : 2 * a ≤ √(p ^ 2 - p₀ ^ 2) := by
-      have hle_sqrt : 2 * √(p ^ 2 - p₀ ^ 2) * a ≤ √(p ^ 2 - p₀ ^ 2) ^ 2 := by
-        rw [Real.sq_sqrt hdiff_pos]; linarith
-      have hrt_pos : 0 < √(p ^ 2 - p₀ ^ 2) := Real.sqrt_pos.2 (by nlinarith)
-      nlinarith
-    have hsq : (2 * a) ^ 2 ≤ √(p ^ 2 - p₀ ^ 2) ^ 2 :=
-      pow_le_pow_left₀ (by positivity) h2a_sqrt 2
-    rw [Real.sq_sqrt hdiff_pos] at hsq
-    linarith
-
 /-- **Pythagorean noninterval excess in Steiner's perimeter inequality.** For any null-measurable
 set `s` of finite volume, a unit vector `e`, and any family `A ⊆ (ℝ ∙ e)ᗮ` of line sections of `s`
 in direction `e` that, for almost every `y ∈ A`, do not agree almost everywhere with any interval
@@ -238,18 +180,22 @@ theorem perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le
   have hp0 : 0 ≤ p := ENNReal.toReal_nonneg
   have hp₀0 : 0 ≤ p₀ := ENNReal.toReal_nonneg
   have ha0 : 0 ≤ a := ENNReal.toReal_nonneg
-  have h2a_le : 2 * a ≤ p := by
-    simpa [p, a, ENNReal.toReal_mul] using ENNReal.toReal_mono hPfin h2A
-  have hdelta {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1) :
-      (1 - δ) * p₀ + 2 * √(2 * δ - δ ^ 2) * a ≤ p := by
-    have hlt := ENNReal.toReal_mono hPfin
-      (ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter e he hs hfin hbad
-        hδ0.le hδ1.le)
-    rw [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hP₀_fin)
-      (ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.ofReal_ne_top) hA_fin)] at hlt
-    simpa [p, p₀, a, hδ1.le] using hlt
-  have hreal : p₀ ^ 2 + 4 * a ^ 2 ≤ p ^ 2 :=
-    sq_add_four_mul_sq_le_of_forall_delta hp₀0 ha0 (ENNReal.toReal_mono hPfin hP₀_le) h2a_le hdelta
+  have hreal : p₀ ^ 2 + 4 * a ^ 2 ≤ p ^ 2 := by
+    have hsq : p₀ ^ 2 + (2 * a) ^ 2 ≤ p ^ 2 := by
+      refine (sq_add_sq_le_sq_iff_forall_mul_add_mul_le hp₀0 (by positivity) hp0).2
+        fun c s' hc0 hs'0 hcs => ?_
+      have hc1 : c ≤ 1 := by nlinarith [sq_nonneg s']
+      have hlt := ENNReal.toReal_mono hPfin
+        (ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter e he hs hfin hbad
+          (δ := 1 - c) (sub_nonneg.2 hc1) (by linarith))
+      rw [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hP₀_fin)
+        (ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.ofReal_ne_top) hA_fin)] at hlt
+      have h1 : 1 - (1 - c) = c := by ring
+      have h2 : 2 * (1 - c) - (1 - c) ^ 2 = s' ^ 2 := by linarith
+      rw [h1, h2, Real.sqrt_sq hs'0] at hlt
+      have hlt' : c * p₀ + 2 * s' * a ≤ p := by simpa [p, p₀, a, hc0, hs'0] using hlt
+      linarith
+    linarith
   have hof := ENNReal.ofReal_le_ofReal hreal
   rw [ENNReal.ofReal_add (sq_nonneg p₀) (mul_nonneg (by positivity) (sq_nonneg a))] at hof
   simpa [p, p₀, a, hp0, hp₀0, ha0, hPfin, hP₀_fin, hA_fin] using hof
