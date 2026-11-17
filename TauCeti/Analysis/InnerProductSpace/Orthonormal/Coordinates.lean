@@ -39,6 +39,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.toLinearMapₛₗ₂_one_eq_innerₛₗ`: the sesquilinear form making `b.toBasis`
+  orthonormal is `innerₛₗ 𝕜`.
 * `OrthonormalBasis.subsingleton_of_isEmpty`: a space with an orthonormal basis indexed by an
   empty type is trivial.
 * `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
@@ -97,6 +99,16 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
     b.toBasis.coord i = innerₗ F (b i) := by
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+/-- The sesquilinear form making the underlying basis of an orthonormal basis orthonormal is the
+inner product `innerₛₗ 𝕜`. -/
+@[simp]
+theorem toLinearMapₛₗ₂_one_eq_innerₛₗ [DecidableEq ι] (b : OrthonormalBasis ι 𝕜 E) :
+    Matrix.toLinearMapₛₗ₂ (starRingEnd 𝕜) b.toBasis b.toBasis (1 : Matrix ι ι 𝕜) =
+      innerₛₗ 𝕜 := by
+  refine LinearMap.ext_basis b.toBasis b.toBasis fun i j ↦ ?_
+  rw [Matrix.toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, innerₛₗ_apply_apply, b.coe_toBasis,
+    orthonormal_iff_ite.mp b.orthonormal i j]
 
 /-- The space carrying an orthonormal basis indexed by an empty type is trivial. -/
 theorem subsingleton_of_isEmpty [IsEmpty ι] (b : OrthonormalBasis ι 𝕜 E) : Subsingleton E :=
