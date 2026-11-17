@@ -226,7 +226,7 @@ variable {A R S ι : Type*} [CommSemiring A] [Semiring R] [Semiring S]
 
 /-- A coefficient homomorphism commuting with the base-ring maps preserves evaluation
 on base-ring points. -/
-theorem compRingHom_apply_algebraMap_of_commutes (L : Dual R (ι → R)) (f : R →+* S)
+theorem compRingHom_apply_algebraMap_comp_of_commutes (L : Dual R (ι → R)) (f : R →+* S)
     (hf : ∀ a, f (algebraMap A R a) = algebraMap A S a) (x : ι → A) :
     L.compRingHom f (algebraMap A S ∘ x) = f (L (algebraMap A R ∘ x)) := by
   have h : algebraMap A S ∘ x = f ∘ (algebraMap A R ∘ x) := by
@@ -240,16 +240,16 @@ theorem compRingHom_apply_fun_algebraMap_of_commutes (L : Dual R (ι → R)) (f 
     (hf : ∀ a, f (algebraMap A R a) = algebraMap A S a) (x : ι → A) :
     L.compRingHom f (fun i ↦ algebraMap A S (x i)) =
       f (L (fun i ↦ algebraMap A R (x i))) :=
-  L.compRingHom_apply_algebraMap_of_commutes f hf x
+  L.compRingHom_apply_algebraMap_comp_of_commutes f hf x
 
 /-- Transport along an algebra homomorphism commutes with evaluation on points over the
 base ring. In particular this applies to conjugation fixing the base field. -/
 @[simp]
-theorem compRingHom_apply_algebraMap {F : Type*} [FunLike F R S] [AlgHomClass F A R S]
+theorem compRingHom_apply_algebraMap_comp {F : Type*} [FunLike F R S] [AlgHomClass F A R S]
     (L : Dual R (ι → R)) (f : F) (x : ι → A) :
     L.compRingHom (f : R →+* S) (algebraMap A S ∘ x) =
       f (L (algebraMap A R ∘ x)) := by
-  exact L.compRingHom_apply_algebraMap_of_commutes (f : R →+* S)
+  exact L.compRingHom_apply_algebraMap_comp_of_commutes (f : R →+* S)
     (AlgHomClass.commutes f) x
 
 /-- Evaluation on base-ring coordinates commutes with transport by an algebra homomorphism. -/
@@ -258,7 +258,7 @@ theorem compRingHom_apply_fun_algebraMap {F : Type*} [FunLike F R S] [AlgHomClas
     (L : Dual R (ι → R)) (f : F) (x : ι → A) :
     L.compRingHom (f : R →+* S) (fun i ↦ algebraMap A S (x i)) =
       f (L (fun i ↦ algebraMap A R (x i))) :=
-  L.compRingHom_apply_algebraMap f x
+  L.compRingHom_apply_algebraMap_comp f x
 
 end Algebra
 
@@ -269,10 +269,10 @@ variable {A R S ι : Type*} [CommSemiring A] [CommSemiring R] [Semiring S]
 
 /-- Extension of coefficients in an algebra tower preserves evaluation on base-ring points. -/
 @[simp]
-theorem compRingHom_algebraMap_apply_algebraMap (L : Dual R (ι → R)) (x : ι → A) :
+theorem compRingHom_algebraMap_apply_algebraMap_comp (L : Dual R (ι → R)) (x : ι → A) :
     L.compRingHom (algebraMap R S) (algebraMap A S ∘ x) =
       algebraMap R S (L (algebraMap A R ∘ x)) :=
-  L.compRingHom_apply_algebraMap_of_commutes (algebraMap R S)
+  L.compRingHom_apply_algebraMap_comp_of_commutes (algebraMap R S)
     (fun a ↦ (IsScalarTower.algebraMap_apply A R S a).symm) x
 
 /-- Evaluation on base-ring coordinates commutes with extension along an algebra tower. -/
@@ -280,7 +280,7 @@ theorem compRingHom_algebraMap_apply_algebraMap (L : Dual R (ι → R)) (x : ι 
 theorem compRingHom_algebraMap_apply_fun_algebraMap (L : Dual R (ι → R)) (x : ι → A) :
     L.compRingHom (algebraMap R S) (fun i ↦ algebraMap A S (x i)) =
       algebraMap R S (L (fun i ↦ algebraMap A R (x i))) :=
-  L.compRingHom_algebraMap_apply_algebraMap x
+  L.compRingHom_algebraMap_apply_algebraMap_comp x
 
 end ScalarTower
 
@@ -299,6 +299,20 @@ theorem toMatrix'_pi_compRingHom (L : κ → Dual R (ι → R)) (f : R →+* S) 
   simp [LinearMap.toMatrix'_apply]
 
 end Matrix
+
+section LinearIndependent
+
+variable {R S ι κ : Type*} [Semiring R] [CommSemiring S] [Finite ι]
+
+/-- A transported system of forms is linearly independent exactly when the transported
+coefficient vectors of its forms are. -/
+theorem linearIndependent_compRingHom_iff_comp {L : κ → Dual R (ι → R)} {f : R →+* S} :
+    LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔
+      LinearIndependent S (fun i ↦ f ∘ fun j ↦ L i (Pi.basisFun R ι j)) := by
+  rw [linearIndependent_iff_apply_basis (Pi.basisFun S ι)]
+  simp only [compRingHom_basisFun, Function.comp_def]
+
+end LinearIndependent
 
 section CommRing
 
@@ -321,10 +335,8 @@ theorem linearIndependent_compRingHom_iff_of_injective [IsDomain S]
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
   let := f.toAlgebra
   have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hf
-  rw [linearIndependent_iff_apply_basis (Pi.basisFun R ι),
-    linearIndependent_iff_apply_basis (Pi.basisFun S ι)]
-  simp only [compRingHom_basisFun]
-  rw [← f.algebraMap_toAlgebra]
+  rw [linearIndependent_compRingHom_iff_comp, linearIndependent_iff_apply_basis (Pi.basisFun R ι),
+    ← f.algebraMap_toAlgebra]
   exact linearIndependent_algebraMap_comp_iff
 
 end CommRing
@@ -338,10 +350,8 @@ variable {R S ι κ : Type*} [Field R] [CommSemiring S] [Nontrivial S] [Finite �
 theorem linearIndependent_compRingHom_iff {L : κ → Dual R (ι → R)} {f : R →+* S} :
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
   let := f.toAlgebra
-  rw [linearIndependent_iff_apply_basis (Pi.basisFun R ι),
-    linearIndependent_iff_apply_basis (Pi.basisFun S ι)]
-  simp only [compRingHom_basisFun]
-  rw [← f.algebraMap_toAlgebra]
+  rw [linearIndependent_compRingHom_iff_comp, linearIndependent_iff_apply_basis (Pi.basisFun R ι),
+    ← f.algebraMap_toAlgebra]
   exact TauCeti.linearIndependent_algebraMap_comp_iff_of_field
 
 end Field

@@ -53,12 +53,17 @@ theorem linearIndependent_algebraMap_comp_iff_of_field {K S ι ι' : Type*} [Fie
   · intro h
     classical
     cases nonempty_fintype ι'
-    let := Module.addCommMonoidToAddCommGroup K (M := S)
+    -- `S` is free, hence flat, over the field `K`; Mathlib's freeness instance
+    -- `Module.Free.of_divisionRing` needs an additive group, which exists only locally here.
+    have : Module.Flat K S := by
+      let := Module.addCommMonoidToAddCommGroup K (M := S)
+      infer_instance
     let e := TensorProduct.piScalarRight K S S ι'
-    have h' := (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).2
-      (Module.Flat.linearIndependent_one_tmul (S := S) h)
-    convert h' using 1
-    ext
-    simp [e, Algebra.algebraMap_eq_smul_one]
+    have he : (fun i ↦ algebraMap K S ∘ v i) = e ∘ fun i ↦ (1 : S) ⊗ₜ[K] v i := by
+      ext
+      simp [e, Algebra.algebraMap_eq_smul_one]
+    rw [he]
+    exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).2
+      (Module.Flat.linearIndependent_one_tmul h)
 
 end TauCeti
