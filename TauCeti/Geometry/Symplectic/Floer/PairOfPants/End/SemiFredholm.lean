@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
+import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
@@ -113,20 +114,17 @@ private theorem setIntegral_det_mul_comp_positiveEndChart_le_integral {g : ℝ �
     (hg : ∀ z, 0 ≤ g z) (hgi : Integrable g) (q : Puncture) (a b : ℝ) :
     ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ (positiveEndChart q) ζ).det *
         g (positiveEndChart q ζ) ≤ ∫ z, g z := by
-  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
   have hs : MeasurableSet (Ioo a b ×ˢ Ioo (0 : ℝ) 1) := measurableSet_Ioo.prod measurableSet_Ioo
   calc _ = ∫ ζ in Ioo a b ×ˢ Ioo (0 : ℝ) 1, (fderiv ℝ (positiveEndChart q) ζ).det *
         g (positiveEndChart q ζ) := by
         refine setIntegral_congr_set ?_
         rw [Measure.volume_eq_prod]
         exact (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc).symm
-    _ = ∫ z in positiveEndChart q '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z := by
-        rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-          (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
-            ζ).hasFDerivAt.hasFDerivWithinAt)
-          ((injOn_positiveEndChart q).mono (prod_mono (subset_univ _) subset_rfl))]
-        refine setIntegral_congr_fun hs fun ζ _ ↦ ?_
-        rw [abs_of_pos (det_fderiv_positiveEndChart_pos q ζ), smul_eq_mul]
+    _ = ∫ z in positiveEndChart q '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z :=
+        (integral_image_eq_integral_of_eq_abs_det_smul hs
+          ((injOn_positiveEndChart q).mono (prod_mono (subset_univ _) subset_rfl))
+          (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
+          fun ζ _ ↦ by rw [abs_of_pos (det_fderiv_positiveEndChart_pos q ζ), smul_eq_mul]).symm
     _ ≤ _ := setIntegral_le_integral hgi (ae_of_all _ hg)
 
 /-- **The operator of an end, read in its chart.** Far out on the end `q`, where `J` is the
@@ -304,7 +302,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
           (prod_mono (fun s hs ↦ lt_of_lt_of_le (by linarith) hs.1) subset_rfl) fun ζ hζ ↦ ?_
         have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan
           fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-        simp [h.fderiv_eq, show ξ (positiveEndChart q ζ) = 0 from h.eq_of_nhds]
+        simpa [h.fderiv_eq] using h.eq_of_nhds
     _ ≤ C₁ * ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
           (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)

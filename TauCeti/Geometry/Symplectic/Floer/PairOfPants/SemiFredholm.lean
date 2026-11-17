@@ -138,8 +138,8 @@ private theorem fderiv_coreCutoff (R₀ : ℝ) {z : ℝ × ℝ} (hz : z ∈ thri
     fderiv ℝ (coreCutoff R₀) z = -∑ q, fderiv ℝ (endCutoff R₀ q) z := by
   have hd (q : Puncture) : DifferentiableAt ℝ (endCutoff R₀ q) z :=
     (contDiffAt_endCutoff R₀ q hz (n := 1)).differentiableAt one_ne_zero
-  rw [show coreCutoff R₀ = fun w ↦ 1 - ∑ q, endCutoff R₀ q w from rfl,
-    fderiv_const_sub, fderiv_fun_sum fun q _ ↦ hd q]
+  unfold coreCutoff
+  rw [fderiv_const_sub, fderiv_fun_sum fun q _ ↦ hd q]
 
 /-- At a point beyond `R₀ ≥ 0` on the end `q`, all other end cutoffs vanish. -/
 private theorem endCutoff_eq_zero_of_ne {R₀ : ℝ} (hR₀ : 0 ≤ R₀) {q r : Puncture} (hqr : q ≠ r)

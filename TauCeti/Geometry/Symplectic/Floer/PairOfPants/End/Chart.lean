@@ -47,7 +47,7 @@ apply to all three ends.
 
 * `TauCeti.Floer.isCompact_preimage_truncation`,
   `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
-  `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
+  `TauCeti.Floer.exists_lt_endHeight_of_notMem_truncation`: in real coordinates the
   truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
   end.
 * `TauCeti.Floer.subset_preimage_truncation_of_isOpen`: an open set on which every signed
@@ -163,6 +163,39 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
+/-- The signed longitudinal coordinate `±s_q` of the end `q`, at a point of `ℝ × ℝ ≃ ℂ`. -/
+noncomputable def endHeight (q : Puncture) (z : ℝ × ℝ) : ℝ :=
+  q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+
+theorem endHeight_apply (q : Puncture) (z : ℝ × ℝ) :
+    endHeight q z = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re :=
+  (rfl)
+
+/-- The signed longitudinal coordinate of an end is smooth away from the center of the end. -/
+theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (endHeight q) z :=
+  contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
+    Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
+
+/-- The signed longitudinal coordinate of an end is smooth on `S`. -/
+theorem contDiffAt_endHeight_of_mem (q : Puncture) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) {n : WithTop ℕ∞} : ContDiffAt ℝ n (endHeight q) z :=
+  contDiffAt_endHeight q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+
+/-- In real coordinates, a point lies in the truncation `S_T` exactly when it lies in `S` and its
+end height on every end is at most `T`. -/
+theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
+    z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
+      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
+  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
+    and_assoc]
+
+/-- A point lies beyond `0` on at most one end. -/
+theorem endHeight_nonpos_of_ne {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
+    (h : 0 < endHeight q z) : endHeight r z ≤ 0 :=
+  endSign_mul_re_endCoord_nonpos hqr h
+
 /-- The truncation at heights `R` is compact in real coordinates. -/
 theorem isCompact_preimage_truncationAt (R : Puncture → ℝ) :
     IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncationAt R) :=
@@ -178,9 +211,9 @@ theorem preimage_truncationAt_subset_thricePuncturedSphereReal (R : Puncture →
 `c ≤ R`, gives the truncation at the height `c` on `q` and `R` on the other two ends. -/
 theorem preimage_truncation_inter_eq_preimage_truncationAt (q : Puncture) {c R : ℝ}
     (hcR : c ≤ R) :
-    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
-        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} =
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩ {z | endHeight q z ≤ c} =
       Complex.equivRealProdCLM.symm ⁻¹' truncationAt (Function.update (fun _ ↦ R) q c) := by
+  simp_rw [endHeight_apply]
   rw [← truncation_inter_eq_truncationAt q hcR, preimage_inter,
     preimage_ofPred_eq (p := fun w ↦ q.endSign * (q.endCoord w).re ≤ c)]
 
@@ -198,17 +231,17 @@ theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
 /-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R`
 lies in the truncation `S_R`, in real coordinates. -/
 theorem subset_preimage_truncation_of_isOpen {U : Set (ℝ × ℝ)} (hU : IsOpen U) {R : ℝ}
-    (h : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R) :
+    (h : ∀ z ∈ U, ∀ q : Puncture, endHeight q z ≤ R) :
     U ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
   have hV := subset_truncation_of_isOpen (hU.preimage Complex.equivRealProdCLM.continuous)
-    fun w hw q ↦ by simpa only [ContinuousLinearEquiv.symm_apply_apply] using h _ hw q
+    fun w hw q ↦ by
+      simpa only [endHeight_apply, ContinuousLinearEquiv.symm_apply_apply] using h _ hw q
   exact fun z hz ↦ hV (by simpa using hz)
 
 /-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
-theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
+theorem exists_lt_endHeight_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (hzR : Complex.equivRealProdCLM.symm z ∉ truncation R) :
-    ∃ q : Puncture, R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+    ∃ q : Puncture, R < endHeight q z := by
   by_contra! h
   exact hzR (mem_truncation.2 ⟨(mem_thricePuncturedSphereReal_iff.1 hz).1,
     (mem_thricePuncturedSphereReal_iff.1 hz).2, h⟩)
@@ -218,13 +251,13 @@ its integral over the truncation `S_R`. -/
 theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ × ℝ → E} {R : ℝ}
     (hf : ∀ z ∈ thricePuncturedSphereReal, ∀ q : Puncture,
-      R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re → f z = 0) :
+      R < endHeight q z → f z = 0) :
     ∫ z in thricePuncturedSphereReal, f z =
       ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z := by
   refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
     isOpen_thricePuncturedSphereReal.measurableSet
     (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
-  obtain ⟨q, hq⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation hz.1 hz.2
+  obtain ⟨q, hq⟩ := exists_lt_endHeight_of_notMem_truncation hz.1 hz.2
   exact hf z hz.1 q hq
 
 /-- Almost every point of the plane lies in the pair of pants: the two punctures form a null
@@ -769,45 +802,17 @@ theorem positiveEndChart_endSign_mul_endCoord {q : Puncture} {z : ℝ × ℝ}
 /-- The signed end coordinates of the image of `y` under the positive end chart are `y`, up to an
 integer shift of the angular coordinate. -/
 theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
-    ∃ k : ℤ,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q y))).re = y.1 ∧
+    ∃ k : ℤ, endHeight q (positiveEndChart q y) = y.1 ∧
       q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q y))).im =
         y.2 + k := by
   obtain ⟨s, t⟩ := y
   obtain ⟨k, hk⟩ :=
     q.exists_endCoord_cylindricalEndLift (↑(q.endSign * s) + ↑(q.endSign * t) * Complex.I)
-  rw [positiveEndChart_mk, endChart_mk, ContinuousLinearEquiv.symm_apply_apply, hk]
+  rw [endHeight_apply, positiveEndChart_mk, endChart_mk, ContinuousLinearEquiv.symm_apply_apply,
+    hk]
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
   · exact ⟨k, by simp [h]⟩
   · exact ⟨-k, by simp [h, add_comm]⟩
-
-/-- The signed longitudinal coordinate `±s_q` of the end `q`, at a point of `ℝ × ℝ ≃ ℂ`. -/
-noncomputable def endHeight (q : Puncture) (z : ℝ × ℝ) : ℝ :=
-  q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-
-theorem endHeight_apply (q : Puncture) (z : ℝ × ℝ) :
-    endHeight q z = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re :=
-  (rfl)
-
-/-- The signed longitudinal coordinate of an end is smooth away from the center of the end. -/
-theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) {n : WithTop ℕ∞} :
-    ContDiffAt ℝ n (endHeight q) z :=
-  contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
-    Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
-
-/-- The signed longitudinal coordinate of an end is smooth on `S`. -/
-theorem contDiffAt_endHeight_of_mem (q : Puncture) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) {n : WithTop ℕ∞} : ContDiffAt ℝ n (endHeight q) z :=
-  contDiffAt_endHeight q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
-
-/-- In real coordinates, a point lies in the truncation `S_T` exactly when it lies in `S` and its
-end height on every end is at most `T`. -/
-theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
-    z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
-      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
-  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
-    and_assoc]
 
 /-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
 theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
@@ -819,11 +824,6 @@ theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
 theorem endHeight_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
     endHeight q (positiveEndChart q ζ) = ζ.1 :=
   (exists_endCoord_positiveEndChart q ζ).choose_spec.1
-
-/-- A point lies beyond `0` on at most one end. -/
-theorem endHeight_nonpos_of_ne {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
-    (h : 0 < endHeight q z) : endHeight r z ≤ 0 :=
-  endSign_mul_re_endCoord_nonpos hqr h
 
 /-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
 point beyond some height. -/

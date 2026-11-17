@@ -115,7 +115,8 @@ theorem IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbatio
           δt z x) z (u z)) thricePuncturedSphereReal := by
   -- `D` lies in `S`, and the canonical datum vanishes near `D`, so the curvature splits.
   have hDS : D ⊆ thricePuncturedSphereReal := (hDU.trans (subset_preimage_truncation_of_isOpen hU
-    hcore)).trans (preimage_truncation_subset_thricePuncturedSphereReal 1)
+    fun z hz q ↦ (endHeight_apply q z).trans_le (hcore z hz q))).trans
+    (preimage_truncation_subset_thricePuncturedSphereReal 1)
   have hzero (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ U) :
       (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) = 0 := by
     funext x

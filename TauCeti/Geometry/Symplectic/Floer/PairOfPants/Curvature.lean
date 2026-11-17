@@ -853,6 +853,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_inte
   -- The region is the truncation at the height `c` on `q` and `R` on the other two ends.
   have hRq (r : Puncture) : 1 ≤ Function.update (fun _ ↦ R) q c r :=
     le_update_iff (x := fun _ ↦ 1).2 ⟨hc, fun _ _ ↦ hc.trans hcR⟩ r
+  simp only [← endHeight_apply] at hAV ⊢
   rw [preimage_truncation_inter_eq_preimage_truncationAt q hcR] at hAV ⊢
   rw [hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hH hHs hVo hAV hu hRq,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ q), Finset.mul_sum,

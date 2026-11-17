@@ -157,7 +157,8 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_eq_truncation
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) :=
   setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation fun z hz q hq ↦
-    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz (by linarith) _
+    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz
+      (by rw [← endHeight_apply]; linarith) _
 
 /-- **The energy identity on the truncated pair of pants, in terms of actions.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of
