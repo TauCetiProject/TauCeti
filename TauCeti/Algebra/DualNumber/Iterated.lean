@@ -156,25 +156,25 @@ variable {R}
 
 /-- The `(0, 0)` coordinate of `z : R[ε][ε]` is `z.fst.fst`. -/
 @[simp]
-theorem iteratedDualNumberBasis_repr_zero_zero (z : R[ε][ε]) :
+theorem _root_.DualNumber.iteratedDualNumberBasis_repr_zero_zero (z : R[ε][ε]) :
     (iteratedDualNumberBasis R).repr z (0, 0) = z.fst.fst := by
   simp [iteratedDualNumberBasis]
 
 /-- The `(1, 0)` coordinate of `z : R[ε][ε]` (along `inl ε`) is `z.fst.snd`. -/
 @[simp]
-theorem iteratedDualNumberBasis_repr_one_zero (z : R[ε][ε]) :
+theorem _root_.DualNumber.iteratedDualNumberBasis_repr_one_zero (z : R[ε][ε]) :
     (iteratedDualNumberBasis R).repr z (1, 0) = z.fst.snd := by
   simp [iteratedDualNumberBasis]
 
 /-- The `(0, 1)` coordinate of `z : R[ε][ε]` (along `ε`) is `z.snd.fst`. -/
 @[simp]
-theorem iteratedDualNumberBasis_repr_zero_one (z : R[ε][ε]) :
+theorem _root_.DualNumber.iteratedDualNumberBasis_repr_zero_one (z : R[ε][ε]) :
     (iteratedDualNumberBasis R).repr z (0, 1) = z.snd.fst := by
   simp [iteratedDualNumberBasis]
 
 /-- The `(1, 1)` coordinate of `z : R[ε][ε]` (along `inl ε * ε`) is `z.snd.snd`. -/
 @[simp]
-theorem iteratedDualNumberBasis_repr_one_one (z : R[ε][ε]) :
+theorem _root_.DualNumber.iteratedDualNumberBasis_repr_one_one (z : R[ε][ε]) :
     (iteratedDualNumberBasis R).repr z (1, 1) = z.snd.snd := by
   simp [iteratedDualNumberBasis]
 
@@ -301,31 +301,31 @@ theorem iteratedDualNumberSwap_symm :
 
 /-- Applying `TauCeti.iteratedDualNumberSwap` twice is the identity. -/
 @[simp]
-theorem iteratedDualNumberSwap_apply_apply (z : R[ε][ε]) :
+theorem _root_.DualNumber.iteratedDualNumberSwap_apply_apply (z : R[ε][ε]) :
     iteratedDualNumberSwap R (iteratedDualNumberSwap R z) = z := by
   simpa only [iteratedDualNumberSwap_symm] using (iteratedDualNumberSwap R).symm_apply_apply z
 
 @[simp]
-theorem fst_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
+theorem _root_.DualNumber.fst_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
     (iteratedDualNumberSwap R z).fst.fst = z.fst.fst := by
   simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
     algebraMap_eq_inl']
 
 /-- `TauCeti.iteratedDualNumberSwap` exchanges the `inl ε` and `ε` coordinates of `z : R[ε][ε]`. -/
 @[simp]
-theorem snd_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
+theorem _root_.DualNumber.snd_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
     (iteratedDualNumberSwap R z).fst.snd = z.snd.fst := by
   simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
     algebraMap_eq_inl']
 
 @[simp]
-theorem fst_snd_iteratedDualNumberSwap (z : R[ε][ε]) :
+theorem _root_.DualNumber.fst_snd_iteratedDualNumberSwap (z : R[ε][ε]) :
     (iteratedDualNumberSwap R z).snd.fst = z.fst.snd := by
   simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
     algebraMap_eq_inl']
 
 @[simp]
-theorem snd_snd_iteratedDualNumberSwap (z : R[ε][ε]) :
+theorem _root_.DualNumber.snd_snd_iteratedDualNumberSwap (z : R[ε][ε]) :
     (iteratedDualNumberSwap R z).snd.snd = z.snd.snd := by
   simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
     algebraMap_eq_inl']
@@ -334,16 +334,16 @@ end Swap
 
 end TauCeti
 
-namespace DualNumber
+namespace MvPolynomial
 
-section MvPolynomial
+section DualNumber
 
 variable {R : Type*} [CommSemiring R]
 
 /-- Evaluating a bivariate polynomial `p` at `![inl ε, ε]` in `R[ε][ε]` keeps its four coefficients
 of degrees `≤ 1` in each variable. -/
 theorem aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
-    MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p =
+    aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p =
       algebraMap R R[ε][ε] (p.coeff 0) +
         p.coeff (Finsupp.single 0 1) • inl (ε : R[ε]) +
         p.coeff (Finsupp.single 1 1) • (ε : R[ε][ε]) +
@@ -354,9 +354,9 @@ theorem aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
       add_smul]
     abel
   | monomial d r =>
-    rw [MvPolynomial.aeval_monomial, Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero _),
+    rw [aeval_monomial, Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero _),
       Fin.prod_univ_two]
-    simp only [MvPolynomial.coeff_monomial, Finsupp.ext_iff, Fin.forall_fin_two,
+    simp only [coeff_monomial, Finsupp.ext_iff, Fin.forall_fin_two,
       Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Finsupp.coe_zero,
       Finsupp.coe_add, Pi.zero_apply, Pi.add_apply, Finsupp.single_apply, Fin.isValue,
       zero_ne_one, one_ne_zero, ↓reduceIte, add_zero, zero_add]
@@ -365,26 +365,36 @@ theorem aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
 
 @[simp]
 theorem fst_fst_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
-    (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).fst.fst = p.coeff 0 := by
+    (aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).fst.fst = p.coeff 0 := by
   simp [aeval_inl_eps_eps, algebraMap_eq_inl']
 
 @[simp]
 theorem snd_fst_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
-    (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).fst.snd =
+    (aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).fst.snd =
       p.coeff (Finsupp.single 0 1) := by
   simp [aeval_inl_eps_eps, algebraMap_eq_inl']
 
 @[simp]
 theorem fst_snd_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
-    (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).snd.fst =
+    (aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).snd.fst =
       p.coeff (Finsupp.single 1 1) := by
   simp [aeval_inl_eps_eps, algebraMap_eq_inl']
 
 @[simp]
 theorem snd_snd_aeval_inl_eps_eps (p : MvPolynomial (Fin 2) R) :
-    (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).snd.snd =
+    (aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p).snd.snd =
       p.coeff (Finsupp.single 0 1 + Finsupp.single 1 1) := by
   simp [aeval_inl_eps_eps, algebraMap_eq_inl']
+
+end DualNumber
+
+end MvPolynomial
+
+namespace DualNumber
+
+section MvPolynomial
+
+variable {R : Type*} [CommSemiring R]
 
 /-- Evaluating bivariate polynomials over `R` at `![inl ε, ε]` in `R[ε][ε]` has kernel
 `(X 0 ^ 2, X 1 ^ 2)`. -/
@@ -477,7 +487,8 @@ variable {R}
 /-- `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv` evaluates a residue class at
 `![inl ε, ε]`. -/
 @[simp]
-theorem iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk (p : MvPolynomial (Fin 2) R) :
+theorem _root_.MvPolynomial.iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk
+    (p : MvPolynomial (Fin 2) R) :
     iteratedDualNumberMvPolynomialQuotientAlgEquiv R
         (Ideal.Quotient.mk (Ideal.span {MvPolynomial.X 0 ^ 2, MvPolynomial.X 1 ^ 2}) p) =
       MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p := by
@@ -533,13 +544,14 @@ theorem iteratedDualNumberMvPolynomialQuotientAlgEquiv_symm_smul_eps :
 
 /-- The inverse of `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv` expands `z : R[ε][ε]`
 into the residue class of its four-term multilinear representative. -/
-theorem iteratedDualNumberMvPolynomialQuotientAlgEquiv_symm_apply (z : R[ε][ε]) :
+theorem _root_.DualNumber.iteratedDualNumberMvPolynomialQuotientAlgEquiv_symm_apply
+    (z : R[ε][ε]) :
     (iteratedDualNumberMvPolynomialQuotientAlgEquiv R).symm z =
       Ideal.Quotient.mk (Ideal.span {MvPolynomial.X 0 ^ 2, MvPolynomial.X 1 ^ 2})
         (MvPolynomial.C z.fst.fst + MvPolynomial.C z.fst.snd * MvPolynomial.X 0 +
           MvPolynomial.C z.snd.fst * MvPolynomial.X 1 +
           MvPolynomial.C z.snd.snd * MvPolynomial.X 0 * MvPolynomial.X 1) := by
-  rw [AlgEquiv.symm_apply_eq, iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk]
+  rw [AlgEquiv.symm_apply_eq, MvPolynomial.iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk]
   ext <;> simp [algebraMap_eq_inl']
 
 end MvPolynomialQuotient
