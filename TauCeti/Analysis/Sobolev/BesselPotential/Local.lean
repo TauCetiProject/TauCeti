@@ -160,11 +160,7 @@ theorem isOpen_setOf_isLocallyMemSobolevAt (s : ℝ) (p : ℝ≥0∞) [Fact (1 �
 theorem isLocallyMemSobolevAt_zero_iff :
     (0 : 𝓓'(Ω, ℂ)).IsLocallyMemSobolevAt s p x ↔ x ∈ Ω := by
   refine ⟨IsLocallyMemSobolevAt.mem, fun hx ↦ ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ ?_⟩⟩
-  have h0 : (0 : 𝓓'(Ω, ℂ)).cutoffTempered φ = 0 := by
-    have h := cutoffTempered_add (0 : 𝓓'(Ω, ℂ)) 0 φ
-    rw [add_zero] at h
-    exact add_eq_left.1 h.symm
-  rw [h0]
+  rw [cutoffTempered_zero]
   exact TemperedDistribution.memSobolev_fun_zero E ℂ s p
 
 /-- A scalar multiple of a distribution `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
