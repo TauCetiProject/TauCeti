@@ -42,7 +42,8 @@ Both stalk conditions descend along flat morphisms: for `g : X' ⟶ X` with flat
 `AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_comp`. Hence if `f` is locally of finite
 presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is étale
 (`AlgebraicGeometry.Etale.of_comp_surjective`), because a morphism étale on an open
-neighbourhood of every point is étale (`AlgebraicGeometry.Etale.of_forall_exists_ι_comp`). For
+neighbourhood of every point is étale
+(`AlgebraicGeometry.IsZariskiLocalAtSource.of_forall_exists_ι_comp`). For
 an étale surjective `g` this is the statement of Stacks, Lemma 35.31.1 (036W), that étaleness is
 étale local on the source, for `f` locally of finite presentation.
 Similarly, if `g` is flat and surjective, `f` and `g ≫ f` are locally of finite type and `g ≫ f`
@@ -546,23 +547,15 @@ end StalkAlgebra
 
 end Scheme.Hom
 
-/-- Being étale is local on the source: a morphism is étale if every point of its source has an
-open neighbourhood on which it is étale. -/
-theorem Etale.of_forall_exists_ι_comp {f : X ⟶ Y}
-    (h : ∀ x, ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f)) : Etale f := by
-  choose U hxU hU using h
-  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
-  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
-  exact IsZariskiLocalAtSource.of_iSup_eq_top U
-    (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
-
 /-- **Étaleness descends along flat surjections.** Let `f` be locally of finite presentation and
 `g` flat and surjective. If `g ≫ f` is étale, then `f` is étale. For an étale surjective `g`, this
 is Stacks, Lemma 35.31.1 (036W) for `f` locally of finite presentation. -/
 @[stacks 036W "for `f` locally of finite presentation, with `g` flat and surjective"]
 theorem Etale.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [Flat g]
     [Surjective g] [LocallyOfFinitePresentation f] [Etale (g ≫ f)] : Etale f := by
-  refine Etale.of_forall_exists_ι_comp fun x ↦ ?_
+  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  refine IsZariskiLocalAtSource.of_forall_exists_ι_comp fun x ↦ ?_
   obtain ⟨x', rfl⟩ := g.surjective x
   exact g.exists_etale_of_etale_comp f x' (Flat.stalkMap g x')
 

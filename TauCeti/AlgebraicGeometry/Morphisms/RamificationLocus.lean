@@ -196,7 +196,9 @@ theorem etale_morphismRestrict_iff (U : Y.Opens) :
   refine ⟨fun _ ↦ Set.disjoint_left.mpr fun x hx hne ↦ hne ⟨f ⁻¹ᵁ U, hx, ?_⟩, fun h ↦ ?_⟩
   · rw [← morphismRestrict_ι]
     infer_instance
-  refine Etale.of_forall_exists_ι_comp fun z ↦ ?_
+  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  refine IsZariskiLocalAtSource.of_forall_exists_ι_comp fun z ↦ ?_
   obtain ⟨O, hzO, hO⟩ : ∃ O : X.Opens, (f ⁻¹ᵁ U).ι z ∈ O ∧ Etale (O.ι ≫ f) :=
     not_not.mp (Set.disjoint_left.mp h z.2)
   refine ⟨(f ⁻¹ᵁ U).ι ⁻¹ᵁ O, hzO, ?_⟩
@@ -211,7 +213,9 @@ theorem etale_morphismRestrict_iff (U : Y.Opens) :
 
 /-- A morphism is étale iff its non-étale locus is empty: being étale is local on the source. -/
 theorem nonEtaleLocus_eq_empty_iff : f.nonEtaleLocus = ∅ ↔ Etale f := by
-  refine ⟨fun h ↦ Etale.of_forall_exists_ι_comp fun x ↦
+  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  refine ⟨fun h ↦ IsZariskiLocalAtSource.of_forall_exists_ι_comp fun x ↦
     not_not.mp fun hx ↦ (h ▸ hx : x ∈ (∅ : Set X)), fun _ ↦
     Set.eq_empty_of_forall_notMem fun x hx ↦ hx ⟨⊤, trivial, inferInstance⟩⟩
 
