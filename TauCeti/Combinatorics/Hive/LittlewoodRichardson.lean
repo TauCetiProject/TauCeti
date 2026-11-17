@@ -96,13 +96,6 @@ namespace TauCeti.Hive
 
 variable {n : ℕ}
 
-private theorem sum_range_sum_range_succ_sub (f : ℕ → ℕ → ℤ) (a b : ℕ) :
-    (∑ k ∈ Finset.range a, ∑ r ∈ Finset.range (b + 1), f r k) -
-      (∑ k ∈ Finset.range a, ∑ r ∈ Finset.range b, f r k) =
-    ∑ k ∈ Finset.range a, f b k := by
-  rw [← Finset.sum_sub_distrib]
-  exact Finset.sum_congr rfl fun _ _ => by rw [Finset.sum_range_succ]; abel
-
 /-! ### Forward map: from a Littlewood–Richardson tableau to an integer hive -/
 
 section ForwardMap
@@ -181,13 +174,14 @@ def hiveOfLRTableau {outer μ : YoungDiagram} {lam : DominantWeight n}
       simp only [lrHiveFun_productVertex, sum_filter_val_lt_succ (by omega : j < n) lam.1,
         sum_filter_val_lt_succ (by omega : j + 1 < n) lam.1,
         ← DominantWeight.natCast_rowLen_shape hlam ⟨j, by omega⟩,
-        ← DominantWeight.natCast_rowLen_shape hlam ⟨j + 1, by omega⟩]
+        ← DominantWeight.natCast_rowLen_shape hlam ⟨j + 1, by omega⟩,
+        Finset.sum_range_succ (n := j + 1), Finset.sum_range_succ (n := j),
+        Finset.sum_add_distrib]
       have hcol : (lam.shape.rowLen (j + 1) : ℤ) +
           ∑ k ∈ Finset.range (i + 1), (T.1.rowCount (j + 1) k : ℤ) ≤
           (lam.shape.rowLen j : ℤ) + ∑ k ∈ Finset.range i, (T.1.rowCount j k : ℤ) := by
         exact_mod_cast T.1.rowLen_add_sum_range_rowCount_succ_le j i
-      linarith [sum_range_sum_range_succ_sub (fun r k => (T.1.rowCount r k : ℤ)) i j,
-        sum_range_sum_range_succ_sub (fun r k => (T.1.rowCount r k : ℤ)) (i + 1) (j + 1)]
+      linarith
     · intro i j hij hj
       simp only [lrHiveFun_productVertex, Finset.sum_range_succ (n := i + 1),
         Finset.sum_range_succ (n := i)]
@@ -383,7 +377,8 @@ theorem sum_range_hiveRowCountInt_right {i r : ℕ} (h : Hive n ℤ) (hir : i �
           h (Vertex.productVertex n 0 r (Nat.zero_le _) (by omega))) := by
   have h1 := sum_range_sum_range_hiveRowCountInt h (i := i) (j := r + 1) (by omega) (by omega)
   have h2 := sum_range_sum_range_hiveRowCountInt h (i := i) (j := r) hir (by omega)
-  linarith [sum_range_sum_range_succ_sub (hiveRowCountInt h) i r]
+  simp only [Finset.sum_range_succ (n := r), Finset.sum_add_distrib] at h1
+  linarith
 
 /-- Full-row telescoping across `k < m` (`r < m`) for `r < n`. -/
 theorem sum_range_hiveRowCountInt_right_of_lt {r m : ℕ} (h : Hive n ℤ) (hr : r < n) (hrm : r < m) :
