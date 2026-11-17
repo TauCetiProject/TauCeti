@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.StarAlgHom
-public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.MeasureTheory.Function.Lp.Star
-public import TauCeti.MeasureTheory.Group.Convolution.ApproximateIdentity
 public import TauCeti.MeasureTheory.Group.Convolution.Pointwise
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 
@@ -57,9 +55,6 @@ Each layer assumes only the hypotheses it genuinely uses:
 
 ## Main definitions and statements
 
-* `MeasureTheory.Lp.star_leftTranslation`, `MeasureTheory.Lp.modularInversion_star`,
-  `MeasureTheory.Lp.star_convolutionL`: compatibility of pointwise `star` on `Lp` with left
-  translation, modular inversion, and operator convolution.
 * `TauCeti.GroupAlgebraL1 𝕜 μ`: the `L¹` group algebra carrier wrapping `Lp 𝕜 1 μ`.
 * `TauCeti.GroupAlgebraL1.linearIsometryEquiv`: isometric linear equivalence with `Lp 𝕜 1 μ`.
 * `TauCeti.GroupAlgebraL1.toL1`: constructor from an integrable function `f : G → 𝕜`.
@@ -84,52 +79,6 @@ noncomputable section
 
 open Filter Function MeasureTheory MeasureTheory.Measure Topology
 open scoped ENNReal NNReal
-
-namespace MeasureTheory.Lp
-
-section StarHelpers
-
-variable {G E 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [MeasurableSpace G] [BorelSpace G] {μ : Measure G} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Pointwise `star` on `Lp` commutes with left translation. -/
-theorem star_leftTranslation [μ.IsMulLeftInvariant] [NormedAddCommGroup E] [StarAddMonoid E]
-    [NormedStarGroup E] [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (g : G) (f : Lp E p μ) :
-    star (leftTranslation μ p 𝕜 g f) = leftTranslation μ p 𝕜 g (star f) := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_star (leftTranslation μ p 𝕜 g f), coeFn_leftTranslation (𝕜 := 𝕜) g f,
-    coeFn_leftTranslation (𝕜 := 𝕜) g (star f),
-    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae (coeFn_star f)]
-    with x hx₁ hx₂ hx₃ hx₄
-  rw [hx₁, Pi.star_apply, hx₂, hx₃, hx₄, Pi.star_apply]
-
-/-- Pointwise `star` on `Lp` commutes with the modular inversion `J`. -/
-theorem modularInversion_star [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
-    [NormedAddCommGroup E] [StarAddMonoid E] [NormedStarGroup E] [NormedSpace ℝ E] [StarModule ℝ E]
-    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E] (f : Lp E p μ) :
-    modularInversion μ p 𝕜 (star f) = star (modularInversion μ p 𝕜 f) := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (star f),
-    coeFn_star (modularInversion μ p 𝕜 f), coeFn_modularInversion (𝕜 := 𝕜) f,
-    (quasiMeasurePreserving_inv_of_regular μ).ae (coeFn_star f)] with x hx₁ hx₂ hx₃ hx₄
-  rw [hx₁, hx₂, Pi.star_apply, hx₃, star_smul, star_trivial (_ : ℝ), hx₄, Pi.star_apply]
-
-/-- Pointwise `star` on `L¹(G, μ; 𝕜)` distributes over operator convolution:
-`star (h ⋆ f) = star h ⋆ star f`. -/
-theorem star_convolutionL [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ]
-    [μ.InnerRegularCompactLTTop] [RCLike 𝕜] (h f : Lp 𝕜 1 μ) :
-    star (convolutionL μ 1 ENNReal.one_ne_top h f) =
-      convolutionL μ 1 ENNReal.one_ne_top (star h) (star f) := by
-  have hcomm := (starL' ℝ : Lp 𝕜 1 μ ≃L[ℝ] Lp 𝕜 1 μ).integral_comp_comm
-    (μ := μ) fun y => h y • leftTranslation μ 1 𝕜 y f
-  rw [convolutionL_apply, convolutionL_apply, ← starL'_apply (R := ℝ), ← hcomm]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_star h] with y hy
-  rw [starL'_apply, star_smul, hy, Pi.star_apply, star_leftTranslation]
-
-end StarHelpers
-
-end MeasureTheory.Lp
 
 namespace TauCeti
 
@@ -177,7 +126,7 @@ theorem ext_ae {f g : GroupAlgebraL1 𝕜 μ} (h : f.ofConv =ᵐ[μ] g.ofConv) :
 
 variable (𝕜 μ) in
 /-- `GroupAlgebraL1.ofConv` and `GroupAlgebraL1.toConv` as an equivalence. -/
-@[expose] def equiv : GroupAlgebraL1 𝕜 μ ≃ Lp 𝕜 1 μ where
+def equiv : GroupAlgebraL1 𝕜 μ ≃ Lp 𝕜 1 μ where
   toFun := ofConv
   invFun := toConv
   left_inv _ := rfl
@@ -185,11 +134,11 @@ variable (𝕜 μ) in
 
 @[simp]
 theorem equiv_apply (f : GroupAlgebraL1 𝕜 μ) : equiv 𝕜 μ f = f.ofConv :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem equiv_symm_apply (f : Lp 𝕜 1 μ) : (equiv 𝕜 μ).symm f = toConv f :=
-  rfl
+  (rfl)
 
 instance : Zero (GroupAlgebraL1 𝕜 μ) := ⟨⟨0⟩⟩
 instance : Add (GroupAlgebraL1 𝕜 μ) := ⟨fun f g => ⟨f.ofConv + g.ofConv⟩⟩
@@ -240,20 +189,23 @@ instance : AddCommGroup (GroupAlgebraL1 𝕜 μ) :=
 
 variable (𝕜 μ) in
 /-- `GroupAlgebraL1.ofConv` as an additive equivalence with `Lp 𝕜 1 μ`. -/
-@[expose] def addEquiv : GroupAlgebraL1 𝕜 μ ≃+ Lp 𝕜 1 μ where
+def addEquiv : GroupAlgebraL1 𝕜 μ ≃+ Lp 𝕜 1 μ where
   __ := equiv 𝕜 μ
   map_add' _ _ := rfl
 
 @[simp]
 theorem addEquiv_apply (f : GroupAlgebraL1 𝕜 μ) : addEquiv 𝕜 μ f = f.ofConv :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem addEquiv_symm_apply (f : Lp 𝕜 1 μ) : (addEquiv 𝕜 μ).symm f = toConv f :=
-  rfl
+  (rfl)
 
 instance [Semiring R] [Module R (Lp 𝕜 1 μ)] : Module R (GroupAlgebraL1 𝕜 μ) :=
-  Function.Injective.module R (addEquiv 𝕜 μ).toAddMonoidHom ofConv_injective fun _ _ => rfl
+  Function.Injective.module R
+    ({ toFun := ofConv, map_zero' := rfl, map_add' := fun _ _ => rfl } :
+      GroupAlgebraL1 𝕜 μ →+ Lp 𝕜 1 μ)
+    ofConv_injective fun _ _ => rfl
 
 instance [SMul R (Lp 𝕜 1 μ)] [SMul S (Lp 𝕜 1 μ)] [SMul R S]
     [IsScalarTower R S (Lp 𝕜 1 μ)] :
@@ -266,23 +218,26 @@ instance [SMul R (Lp 𝕜 1 μ)] [SMul S (Lp 𝕜 1 μ)] [SMulCommClass R S (Lp 
 
 variable (R 𝕜 μ) in
 /-- `GroupAlgebraL1.ofConv` as an `R`-linear equivalence with `Lp 𝕜 1 μ`. -/
-@[expose] def linearEquiv [Semiring R] [Module R (Lp 𝕜 1 μ)] :
+def linearEquiv [Semiring R] [Module R (Lp 𝕜 1 μ)] :
     GroupAlgebraL1 𝕜 μ ≃ₗ[R] Lp 𝕜 1 μ where
   __ := addEquiv 𝕜 μ
-  map_smul' _ _ := rfl
+  map_smul' _ _ := (rfl)
 
 @[simp]
 theorem linearEquiv_apply [Semiring R] [Module R (Lp 𝕜 1 μ)]
     (f : GroupAlgebraL1 𝕜 μ) : linearEquiv R 𝕜 μ f = f.ofConv :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem linearEquiv_symm_apply [Semiring R] [Module R (Lp 𝕜 1 μ)]
     (f : Lp 𝕜 1 μ) : (linearEquiv R 𝕜 μ).symm f = toConv f :=
-  rfl
+  (rfl)
 
 instance : NormedAddCommGroup (GroupAlgebraL1 𝕜 μ) :=
-  NormedAddCommGroup.induced _ _ (addEquiv 𝕜 μ) (addEquiv 𝕜 μ).injective
+  NormedAddCommGroup.induced _ _
+    ({ toFun := ofConv, map_zero' := rfl, map_add' := fun _ _ => rfl } :
+      GroupAlgebraL1 𝕜 μ →+ Lp 𝕜 1 μ)
+    ofConv_injective
 
 @[simp]
 theorem norm_ofConv (f : GroupAlgebraL1 𝕜 μ) : ‖f.ofConv‖ = ‖f‖ :=
@@ -298,11 +253,13 @@ theorem norm_eq_integral_norm (f : GroupAlgebraL1 𝕜 μ) :
   L1.norm_eq_integral_norm f.ofConv
 
 instance [NormedField R] [NormedSpace R 𝕜] : NormedSpace R (GroupAlgebraL1 𝕜 μ) :=
-  NormedSpace.induced R _ _ (linearEquiv R 𝕜 μ)
+  NormedSpace.induced R _ _
+    ({ toFun := ofConv, map_add' := fun _ _ => rfl, map_smul' := fun _ _ => rfl } :
+      GroupAlgebraL1 𝕜 μ →ₗ[R] Lp 𝕜 1 μ)
 
 variable (R 𝕜 μ) in
 /-- `GroupAlgebraL1.ofConv` as an `R`-linear isometry equivalence with `Lp 𝕜 1 μ`. -/
-@[expose] def linearIsometryEquiv [NormedField R] [NormedSpace R 𝕜] :
+def linearIsometryEquiv [NormedField R] [NormedSpace R 𝕜] :
     GroupAlgebraL1 𝕜 μ ≃ₗᵢ[R] Lp 𝕜 1 μ where
   __ := linearEquiv R 𝕜 μ
   norm_map' := norm_ofConv
@@ -310,12 +267,12 @@ variable (R 𝕜 μ) in
 @[simp]
 theorem linearIsometryEquiv_apply [NormedField R] [NormedSpace R 𝕜] (f : GroupAlgebraL1 𝕜 μ) :
     linearIsometryEquiv R 𝕜 μ f = f.ofConv :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem linearIsometryEquiv_symm_apply [NormedField R] [NormedSpace R 𝕜] (f : Lp 𝕜 1 μ) :
     (linearIsometryEquiv R 𝕜 μ).symm f = toConv f :=
-  rfl
+  (rfl)
 
 instance [CompleteSpace 𝕜] : CompleteSpace (GroupAlgebraL1 𝕜 μ) :=
   (completeSpace_congr (e := equiv 𝕜 μ)
@@ -536,8 +493,9 @@ theorem ofConv_leftTranslation_ae_eq (g : G) (f : GroupAlgebraL1 𝕜 μ) :
 /-- Left translation is strongly continuous on `GroupAlgebraL1 𝕜 μ`. -/
 theorem continuous_leftTranslation_apply [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
     (f : GroupAlgebraL1 𝕜 μ) :
-    Continuous fun g : G => leftTranslation 𝕜 μ g f :=
-  (linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.comp
+    Continuous fun g : G => leftTranslation 𝕜 μ g f := by
+  simpa only [Function.comp_def, linearIsometryEquiv_symm_apply, ← ofConv_leftTranslation,
+    toConv_ofConv] using (linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.comp
     (Lp.continuous_leftTranslation_apply (𝕜 := 𝕜) ENNReal.one_ne_top f.ofConv)
 
 /-- Convolution is left-equivariant: `L_g (f * h) = (L_g f) * h`. -/
@@ -580,8 +538,9 @@ theorem ofConv_rightTranslation_ae_eq (g : G) (f : GroupAlgebraL1 𝕜 μ) :
 
 /-- Right translation is strongly continuous on `GroupAlgebraL1 𝕜 μ`. -/
 theorem continuous_rightTranslation_apply (f : GroupAlgebraL1 𝕜 μ) :
-    Continuous fun g : G => rightTranslation 𝕜 μ g f :=
-  (linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.comp
+    Continuous fun g : G => rightTranslation 𝕜 μ g f := by
+  simpa only [Function.comp_def, linearIsometryEquiv_symm_apply, ← ofConv_rightTranslation,
+    toConv_ofConv] using (linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.comp
     (Lp.continuous_rightTranslation_apply (𝕜 := 𝕜) ENNReal.one_ne_top f.ofConv)
 
 /-- Convolution is right-equivariant on the second factor: `R_g (f * h) = f * R_g h`. -/
@@ -726,7 +685,7 @@ private theorem rescaleLinearIsometryEquiv_mul [μ'.IsMulLeftInvariant] [IsLocal
     calc (T (f * g)).ofConv
         = E (∫ y, f.ofConv y • Lp.leftTranslation μ' 1 𝕜 y g.ofConv ∂μ') := by
           rw [← toConv_ofConv (f * g), ofConv_mul, Lp.convolutionL_apply]
-          rfl
+          simp [E]
       _ = ∫ y, E (f.ofConv y • Lp.leftTranslation μ' 1 𝕜 y g.ofConv) ∂μ' := by
           simpa using hcomm.symm
       _ = ∫ y, f.ofConv y • Lp.leftTranslation μ 1 𝕜 y (T g).ofConv ∂μ' := by
@@ -737,7 +696,7 @@ private theorem rescaleLinearIsometryEquiv_mul [μ'.IsMulLeftInvariant] [IsLocal
           have htr := congr_arg ofConv (rescaleLinearIsometryEquiv_leftTranslation hc hμ y g)
           rw [← toConv_ofConv (leftTranslation 𝕜 μ' y g), ofConv_leftTranslation,
             ofConv_leftTranslation] at htr
-          exact htr
+          simpa [E, T] using htr
   have hsmul_meas : ∫ y, f.ofConv y • Lp.leftTranslation μ 1 𝕜 y (T g).ofConv ∂μ' =
       ∫ y, f.ofConv y • Lp.leftTranslation μ 1 𝕜 y (T g).ofConv ∂((c : ℝ≥0∞) • μ) :=
     congr_arg (integral · fun y => f.ofConv y • Lp.leftTranslation μ 1 𝕜 y (T g).ofConv) hμ
@@ -773,6 +732,27 @@ def smulMeasureStarAlgEquiv [LocallyCompactSpace G] (𝕜 : Type*) [RCLike 𝕜]
     map_mul' := rescaleLinearIsometryEquiv_mul hc rfl
     map_star' := rescaleLinearIsometryEquiv_star hc rfl
     map_smul' r a := map_smul (rescaleLinearIsometryEquiv 𝕜 c hc rfl) r a }
+
+theorem coe_smulMeasureStarAlgEquiv [LocallyCompactSpace G] (𝕜 : Type*) [RCLike 𝕜]
+    (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] (c : ℝ≥0) (hc : c ≠ 0) :
+    ⇑(smulMeasureStarAlgEquiv 𝕜 μ c hc) =
+      ⇑(rescaleLinearIsometryEquiv 𝕜 c hc (rfl : c • μ = c • μ)) :=
+  (rfl)
+
+/-- `smulMeasureStarAlgEquiv 𝕜 μ c hc` is norm-preserving. -/
+@[simp]
+theorem norm_smulMeasureStarAlgEquiv [LocallyCompactSpace G] (𝕜 : Type*) [RCLike 𝕜]
+    (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] (c : ℝ≥0) (hc : c ≠ 0)
+    (f : GroupAlgebraL1 𝕜 (c • μ)) :
+    ‖smulMeasureStarAlgEquiv 𝕜 μ c hc f‖ = ‖f‖ :=
+  (rescaleLinearIsometryEquiv 𝕜 c hc rfl).norm_map f
+
+/-- `smulMeasureStarAlgEquiv 𝕜 μ c hc` acts on representatives by multiplying by `(c : ℝ)`. -/
+theorem ofConv_smulMeasureStarAlgEquiv_ae_eq [LocallyCompactSpace G] (𝕜 : Type*) [RCLike 𝕜]
+    (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] (c : ℝ≥0) (hc : c ≠ 0)
+    (f : GroupAlgebraL1 𝕜 (c • μ)) :
+    (smulMeasureStarAlgEquiv 𝕜 μ c hc f).ofConv =ᵐ[μ] fun x => (c : ℝ) • f.ofConv x :=
+  ofConv_rescaleLinearIsometryEquiv_ae_eq hc rfl f
 
 end RescaleGroup
 

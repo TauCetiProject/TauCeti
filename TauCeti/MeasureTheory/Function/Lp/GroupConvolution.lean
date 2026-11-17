@@ -11,8 +11,10 @@ public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Topology.Algebra.Module.Star
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Order
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -80,6 +82,10 @@ vector space with an additive Haar measure.
   convolution `h ⋆ f` is represented by `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`.
 * `MeasureTheory.Lp.modularInversion_convolutionL`: the modular inversion reverses convolution,
   `J (h ⋆ k) = J k ⋆ J h`.
+* `MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation_inv`: on `L¹`,
+  `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ` over any `RCLike` scalar field.
+* `MeasureTheory.Lp.star_convolutionL`: pointwise `star` distributes over operator convolution,
+  `star (h ⋆ f) = star h ⋆ star f`.
 
 ## References
 
@@ -202,6 +208,18 @@ theorem leftTranslation_convolutionL (g : G) (h : Lp 𝕜 1 μ) (f : Lp E p μ) 
     (coeFn_leftTranslation (𝕜 := 𝕜) g h)] with y hy
   simp only [hy, inv_mul_cancel_left, map_smul, map_mul, LinearIsometryEquiv.coe_mul,
     Function.comp_apply]
+
+/-- Pointwise `star` on `Lp` distributes over operator convolution:
+`star (h ⋆ f) = star h ⋆ star f`. -/
+theorem star_convolutionL [StarAddMonoid 𝕜] [NormedStarGroup 𝕜] [StarAddMonoid E]
+    [NormedStarGroup E] [StarModule ℝ E] [StarModule 𝕜 E] (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
+    star (convolutionL μ p hp h f) = convolutionL μ p hp (star h) (star f) := by
+  have hcomm := (starL' ℝ : Lp E p μ ≃L[ℝ] Lp E p μ).integral_comp_comm
+    (μ := μ) fun y => h y • leftTranslation μ p 𝕜 y f
+  rw [convolutionL_apply, convolutionL_apply, ← starL'_apply (R := ℝ), ← hcomm]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_star h] with y hy
+  rw [starL'_apply, star_smul, hy, Pi.star_apply, star_leftTranslation]
 
 end NontriviallyNormedField
 
@@ -342,6 +360,33 @@ theorem modularInversion_convolutionL (h k : Lp 𝕜 1 μ) :
   obtain rfl : v = _ :=
     Lp.ext (hv.trans (hgc.integrable_of_hasCompactSupport (μ := μ) hgs).coeFn_toL1.symm)
   exact modularInversion_convolutionL_toL1 hfc hfs hgc hgs
+
+/-- **Convolution as an average of right translates** over an `RCLike` scalar field: for
+`h, k ∈ L¹(G, μ; 𝕜)`, `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ`, where `(R_(z⁻¹) h)(x) = c(z) • h(x * z⁻¹)`
+and `c` is the modular character. -/
+theorem convolutionL_eq_integral_smul_rightTranslation_inv (h k : Lp 𝕜 1 μ) :
+    convolutionL μ 1 ENNReal.one_ne_top h k = ∫ z, k z • rightTranslation μ 1 𝕜 z⁻¹ h ∂μ := by
+  calc convolutionL μ 1 ENNReal.one_ne_top h k
+      = modularInversion μ 1 𝕜
+          (convolutionL μ 1 ENNReal.one_ne_top (modularInversion μ 1 𝕜 k)
+            (modularInversion μ 1 𝕜 h)) := by
+        rw [← modularInversion_convolutionL, modularInversion_modularInversion]
+    _ = ∫ y, modularInversion μ 1 𝕜 k y • rightTranslation μ 1 𝕜 y h ∂μ := by
+        rw [convolutionL_apply, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+          ← ContinuousLinearEquiv.integral_comp_comm]
+        simp_rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, map_smul,
+          ← rightTranslation_apply]
+    _ = ∫ z, (modularCharacter z : ℝ) •
+          (modularInversion μ 1 𝕜 k z⁻¹ • rightTranslation μ 1 𝕜 z⁻¹ h) ∂μ := by
+        simpa only [inv_inv] using
+          TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
+            fun z => modularInversion μ 1 𝕜 k z⁻¹ • rightTranslation μ 1 𝕜 z⁻¹ h
+    _ = ∫ z, k z • rightTranslation μ 1 𝕜 z⁻¹ h ∂μ := by
+        refine integral_congr_ae ?_
+        filter_upwards [(quasiMeasurePreserving_inv_of_regular μ).ae
+          (coeFn_modularInversion (𝕜 := 𝕜) k)] with z hz
+        rw [hz, inv_inv, ENNReal.toReal_one, inv_one, Real.rpow_one, smul_assoc, smul_smul,
+          modularCharacter_mul_inv, one_smul]
 
 end ModularInversion
 section RightTranslation

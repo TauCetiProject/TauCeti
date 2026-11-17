@@ -26,8 +26,8 @@ for every exponent `p : ℝ≥0∞` (in particular `L¹ ∩ L²`), and its modul
 `∫ z, c(z) * u_U(z) ∂μ = ∫ z, u_U(z⁻¹) ∂μ` converges to `1` along `atBot` by continuity of the
 modular character at `1`.
 
-The associated `L¹` classes `μ.approximateIdentityLp U` (real) and
-`μ.approximateIdentityL1 𝕜 U` (over any `RCLike` field `𝕜`) have norm one and form a two-sided
+The associated `L¹` classes `μ.approximateIdentityL1 𝕜 U` (over any `RCLike` scalar field `𝕜`,
+in particular `ℝ` and `ℂ`) have norm one and form a two-sided
 approximate identity on `L¹(G, μ; 𝕜)` and a left approximate identity on Banach-valued `Lᵖ`
 for `1 ≤ p < ∞`.
 The same net works simultaneously for every function and every such exponent. The construction
@@ -89,55 +89,6 @@ theorem tendsto_tsupport_approximateIdentity :
   obtain ⟨V, -, hV⟩ := OpenNhdsOf.basis_nhds.mem_iff.1 hS
   filter_upwards [eventually_le_atBot V] with U hU
   exact (μ.tsupport_approximateIdentity_subset U).trans fun _ hx => hV (hU hx)
-
-/-- The `L¹` class of the continuous kernel. -/
-def approximateIdentityLp (U : OpenNhdsOf (1 : G)) : Lp ℝ 1 μ :=
-  (μ.approximateIdentity U).continuous.integrable_of_hasCompactSupport
-    (μ.approximateIdentity U).hasCompactSupport |>.toL1 _
-
-/-- The `L¹` representative agrees almost everywhere with the continuous kernel. -/
-theorem coeFn_approximateIdentityLp (U : OpenNhdsOf (1 : G)) :
-    μ.approximateIdentityLp U =ᵐ[μ] μ.approximateIdentity U :=
-  Integrable.coeFn_toL1 _
-
-/-- The `L¹` kernels are nonnegative. -/
-theorem approximateIdentityLp_nonneg (U : OpenNhdsOf (1 : G)) :
-    0 ≤ μ.approximateIdentityLp U := by
-  apply (Lp.coeFn_nonneg _).1
-  filter_upwards [μ.coeFn_approximateIdentityLp U] with x hx
-  rw [hx]
-  exact CompactlySupportedContinuousMap.le_def.1 (μ.approximateIdentity_nonneg U) x
-
-/-- Each `L¹` kernel has integral one. -/
-@[simp]
-theorem integral_approximateIdentityLp (U : OpenNhdsOf (1 : G)) :
-    ∫ x, μ.approximateIdentityLp U x ∂μ = 1 := by
-  rw [integral_congr_ae (μ.coeFn_approximateIdentityLp U), μ.integral_approximateIdentity]
-
-/-- Each `L¹` kernel has norm one. -/
-@[simp]
-theorem norm_approximateIdentityLp (U : OpenNhdsOf (1 : G)) :
-    ‖μ.approximateIdentityLp U‖ = 1 := by
-  rw [L1.norm_eq_integral_of_nonneg (μ.approximateIdentityLp_nonneg U),
-    μ.integral_approximateIdentityLp]
-
-/-- Each `L¹` kernel vanishes almost everywhere outside its indexing neighborhood. -/
-theorem approximateIdentityLp_ae_eq_zero (U : OpenNhdsOf (1 : G)) :
-    ∀ᵐ x ∂μ, x ∉ U → μ.approximateIdentityLp U x = 0 := by
-  filter_upwards [μ.coeFn_approximateIdentityLp U] with x hx hxU
-  rw [hx]
-  exact image_eq_zero_of_notMem_tsupport fun h =>
-    hxU (μ.tsupport_approximateIdentity_subset U h)
-
-/-- Along reverse inclusion of open identity neighborhoods, the kernels eventually vanish
-almost everywhere outside any prescribed identity neighborhood. -/
-theorem eventually_approximateIdentityLp_ae_eq_zero {S : Set G} (hS : S ∈ 𝓝 (1 : G)) :
-    ∀ᶠ U : OpenNhdsOf (1 : G) in atBot, ∀ᵐ x ∂μ,
-      x ∉ S → μ.approximateIdentityLp U x = 0 := by
-  obtain ⟨V, -, hV⟩ := OpenNhdsOf.basis_nhds.mem_iff.1 hS
-  filter_upwards [eventually_le_atBot V] with U hU
-  filter_upwards [μ.approximateIdentityLp_ae_eq_zero U] with x hx hxS
-  exact hx fun hxU => hxS (hV (hU hxU))
 
 /-- Each continuous kernel belongs to `Lᵖ(G, μ)` for every exponent `p : ℝ≥0∞`
 (in particular `L¹` and `L²`). -/
@@ -236,11 +187,13 @@ theorem coeFn_approximateIdentityL1 (U : OpenNhdsOf (1 : G)) :
     μ.approximateIdentityL1 𝕜 U =ᵐ[μ] fun x => (μ.approximateIdentity U x : 𝕜) :=
   (μ.integrable_ofReal_approximateIdentity 𝕜 U).coeFn_toL1
 
-/-- Over `ℝ`, `μ.approximateIdentityL1 ℝ U` coincides with `μ.approximateIdentityLp U`. -/
-@[simp]
-theorem approximateIdentityL1_real (U : OpenNhdsOf (1 : G)) :
-    μ.approximateIdentityL1 ℝ U = μ.approximateIdentityLp U :=
-  Lp.ext <| (μ.coeFn_approximateIdentityL1 U).trans (μ.coeFn_approximateIdentityLp U).symm
+/-- Over `ℝ`, the `L¹` kernels are nonnegative. -/
+theorem approximateIdentityL1_nonneg (U : OpenNhdsOf (1 : G)) :
+    0 ≤ μ.approximateIdentityL1 ℝ U := by
+  apply (Lp.coeFn_nonneg _).1
+  filter_upwards [μ.coeFn_approximateIdentityL1 (𝕜 := ℝ) U] with x hx
+  rw [hx]
+  exact CompactlySupportedContinuousMap.le_def.1 (μ.approximateIdentity_nonneg U) x
 
 /-- Each `L¹(G, μ; 𝕜)` kernel has integral one. -/
 @[simp]
@@ -294,38 +247,16 @@ theorem tendsto_approximateIdentityL1_convolutionL [μ.InnerRegularCompactLTTop]
     (.of_forall fun U => (μ.norm_approximateIdentityL1 U).le)
     (fun _ hS => μ.eventually_approximateIdentityL1_ae_eq_zero hS) f
 
-end RCLike
-
-/-- The shrinking continuous kernels form a left approximate identity on Banach-valued `Lᵖ`
-for every `1 ≤ p < ∞`. -/
-theorem tendsto_approximateIdentityLp_convolutionL [μ.InnerRegularCompactLTTop]
-    {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
-    (f : Lp E p μ) :
-    Tendsto (fun U => Lp.convolutionL μ p hp (μ.approximateIdentityLp U) f)
-      atBot (𝓝 f) :=
-  Lp.tendsto_convolutionL_left (μ.approximateIdentityLp_nonneg)
-    (μ.integral_approximateIdentityLp)
-    (fun _ hS => μ.eventually_approximateIdentityLp_ae_eq_zero hS) f
-
-variable [μ.Regular]
-
-/-- The same shrinking kernels form a right approximate identity on real `L¹`. -/
-theorem tendsto_convolutionL_approximateIdentityLp (f : Lp ℝ 1 μ) :
-    Tendsto (fun U => Lp.convolutionL μ 1 ENNReal.one_ne_top f (μ.approximateIdentityLp U))
-      atBot (𝓝 f) :=
-  Lp.tendsto_convolutionL_right (μ.approximateIdentityLp_nonneg)
-    (μ.integral_approximateIdentityLp)
-    (fun _ hS => μ.eventually_approximateIdentityLp_ae_eq_zero hS) f
-
 /-- Over any `RCLike` scalar field `𝕜`, the shrinking continuous kernels form a right approximate
 identity on `L¹(G, μ; 𝕜)`. -/
-theorem tendsto_convolutionL_approximateIdentityL1 {𝕜 : Type*} [RCLike 𝕜] (f : Lp 𝕜 1 μ) :
+theorem tendsto_convolutionL_approximateIdentityL1 [μ.Regular] (f : Lp 𝕜 1 μ) :
     Tendsto (fun U => Lp.convolutionL μ 1 ENNReal.one_ne_top f (μ.approximateIdentityL1 𝕜 U))
       atBot (𝓝 f) :=
   Lp.tendsto_convolutionL_right_of_norm_le
     (.of_forall μ.integral_approximateIdentityL1)
     (.of_forall fun U => (μ.norm_approximateIdentityL1 U).le)
     (fun _ hS => μ.eventually_approximateIdentityL1_ae_eq_zero hS) f
+
+end RCLike
 
 end MeasureTheory.Measure

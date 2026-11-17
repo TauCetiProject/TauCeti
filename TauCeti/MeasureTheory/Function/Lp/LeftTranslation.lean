@@ -50,6 +50,7 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
+* `MeasureTheory.Lp.star_leftTranslation`: left translation commutes with pointwise `star`.
 -/
 
 public section
@@ -152,6 +153,16 @@ theorem continuous_leftTranslation_apply [TopologicalSpace G] [IsTopologicalGrou
   have : Fact (p ≠ ∞) := ⟨hp⟩
   simp_rw [leftTranslation_apply]
   exact (DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const
+
+/-- Pointwise `star` on `Lp` commutes with left translation. -/
+theorem star_leftTranslation [StarAddMonoid E] [NormedStarGroup E] (g : G) (f : Lp E p μ) :
+    star (leftTranslation μ p 𝕜 g f) = leftTranslation μ p 𝕜 g (star f) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_star (leftTranslation μ p 𝕜 g f), coeFn_leftTranslation (𝕜 := 𝕜) g f,
+    coeFn_leftTranslation (𝕜 := 𝕜) g (star f),
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae (coeFn_star f)]
+    with x hx₁ hx₂ hx₃ hx₄
+  rw [hx₁, Pi.star_apply, hx₂, hx₃, hx₄, Pi.star_apply]
 
 end MeasureTheory.Lp
 

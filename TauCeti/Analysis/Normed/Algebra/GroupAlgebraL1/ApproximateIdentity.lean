@@ -16,8 +16,8 @@ For a locally compact group `G` with a left Haar measure `μ` and an `RCLike` sc
 (`ℝ` or `ℂ`), this file packages the shrinking-neighborhood continuous compactly supported kernels
 of `TauCeti.MeasureTheory.Group.Convolution.Kernel` as a canonical net
 `GroupAlgebraL1.approximateIdentity 𝕜 μ : OpenNhdsOf (1 : G) → GroupAlgebraL1 𝕜 μ` indexed by open
-identity neighborhoods ordered by reverse inclusion (`Filter.atBot`), with no countability,
-metrizability, or `σ`-finiteness assumption on `G` or `μ`:
+identity neighborhoods ordered by inclusion, with convergence along `Filter.atBot`, with no
+countability, metrizability, or `σ`-finiteness assumption on `G` or `μ`:
 
 * **Kernel properties (`ofConv_approximateIdentity_ae_eq`, `memLp_approximateIdentity`,
   `norm_approximateIdentity`):** Each `u_U` is represented almost everywhere by the nonnegative
@@ -131,11 +131,12 @@ variable {G 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 `approximateIdentity 𝕜 μ U * f → f` in `GroupAlgebraL1 𝕜 μ` for every `f`. -/
 theorem tendsto_approximateIdentity_mul (f : GroupAlgebraL1 𝕜 μ) :
     Tendsto (fun U => approximateIdentity 𝕜 μ U * f) atBot (𝓝 f) := by
-  refine (((linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.tendsto f.ofConv).comp
-    (μ.tendsto_approximateIdentityL1_convolutionL (𝕜 := 𝕜) ENNReal.one_ne_top f.ofConv)).congr
-    fun U => ?_
-  rw [Function.comp_apply, linearIsometryEquiv_symm_apply, ← ofConv_approximateIdentity,
-    ← ofConv_mul, toConv_ofConv]
+  have hlim := ((linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.tendsto f.ofConv).comp
+    (μ.tendsto_approximateIdentityL1_convolutionL (𝕜 := 𝕜) ENNReal.one_ne_top f.ofConv)
+  rw [linearIsometryEquiv_symm_apply, toConv_ofConv] at hlim
+  exact hlim.congr fun U => by
+    rw [Function.comp_apply, linearIsometryEquiv_symm_apply, ← ofConv_approximateIdentity,
+      ← ofConv_mul, toConv_ofConv]
 
 /-- Every nonzero algebraic character `φ : GroupAlgebraL1 𝕜 μ →ₙₐ[𝕜] 𝕜` converges to `1` along
 `approximateIdentity 𝕜 μ`. -/
@@ -170,10 +171,12 @@ open identity neighborhoods, `f * approximateIdentity 𝕜 μ U → f` in `Group
 `f`. -/
 theorem tendsto_mul_approximateIdentity (f : GroupAlgebraL1 𝕜 μ) :
     Tendsto (fun U => f * approximateIdentity 𝕜 μ U) atBot (𝓝 f) := by
-  refine (((linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.tendsto f.ofConv).comp
-    (μ.tendsto_convolutionL_approximateIdentityL1 f.ofConv)).congr fun U => ?_
-  rw [Function.comp_apply, linearIsometryEquiv_symm_apply, ← ofConv_approximateIdentity,
-    ← ofConv_mul, toConv_ofConv]
+  have hlim := ((linearIsometryEquiv 𝕜 𝕜 μ).symm.continuous.tendsto f.ofConv).comp
+    (μ.tendsto_convolutionL_approximateIdentityL1 f.ofConv)
+  rw [linearIsometryEquiv_symm_apply, toConv_ofConv] at hlim
+  exact hlim.congr fun U => by
+    rw [Function.comp_apply, linearIsometryEquiv_symm_apply, ← ofConv_approximateIdentity,
+      ← ofConv_mul, toConv_ofConv]
 
 /-- Pointwise right-variable formula for `f * approximateIdentity 𝕜 μ U`: on a locally compact
 Hausdorff group, `(f * u_U)(x) = ∫ z, c(z) • (f (x * z⁻¹) * u_U z) ∂μ` for `μ`-almost every `x`. -/
