@@ -252,9 +252,7 @@ theorem extChartAt_unitCubeImage_apply_mk (hM : Injective M) (q₀ : E)
     extChartAt (modelWithCornersUnitCube ι) α ⟨q₀ + M u, mem_image_of_mem _ hu⟩ = u := by
   let := M.unitCubeImageChartedSpace hM q₀
   rw [extChartAt_coe, Function.comp_apply, M.chartAt_unitCubeImage hM q₀ α]
-  change modelWithCornersUnitCube ι
-    (M.unitCubeImageHomeomorph hM q₀ ⟨q₀ + M u, mem_image_of_mem _ hu⟩) = u
-  rw [M.unitCubeImageHomeomorph_apply_mk hM q₀ hu, modelWithCornersUnitCube_apply]
+  simp [M.unitCubeImageHomeomorph_apply_mk hM q₀ hu]
 
 theorem extChartAt_unitCubeImage_symm_of_mem (hM : Injective M) (q₀ : E)
     (α : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1)) {u : ι → ℝ} (hu : u ∈ Icc (0 : ι → ℝ) 1) :
@@ -262,11 +260,9 @@ theorem extChartAt_unitCubeImage_symm_of_mem (hM : Injective M) (q₀ : E)
     (extChartAt (modelWithCornersUnitCube ι) α).symm u =
       ⟨q₀ + M u, mem_image_of_mem _ hu⟩ := by
   let := M.unitCubeImageChartedSpace hM q₀
-  rw [extChartAt, M.chartAt_unitCubeImage hM q₀ α]
+  rw [extChartAt_coe_symm, Function.comp_apply, M.chartAt_unitCubeImage hM q₀ α]
   apply Subtype.ext
-  change ((M.unitCubeImageHomeomorph hM q₀).symm ((modelWithCornersUnitCube ι).symm u) : E) =
-    q₀ + M u
-  rw [M.coe_unitCubeImageHomeomorph_symm_apply hM q₀, modelWithCornersUnitCube_symm_of_mem hu]
+  simp [modelWithCornersUnitCube_symm_of_mem hu]
 
 /-- With its global affine chart, an injective affine image of the unit cube is a `C^n` manifold
 with corners for every `n`. -/

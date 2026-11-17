@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Coordinates
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Affine
-public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 
 /-!
@@ -18,11 +17,12 @@ On the coordinate space `Fin (n + 1) → ℝ`, a family of vector-valued compone
 
 `fluxForm F x = ∑ i, (-1)^i F i x dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`,
 
-built from the coordinate `(n × n)` minor forms `coordMinorForm i`. On the standard coordinate
-`(n)`-tuple omitting `eⱼ`, `fluxForm F x` evaluates to `(-1)^j • F j x`, so its signed omission
-coefficients (`ContinuousAlternatingMap.signedRemoveNth`) are literally `j ↦ F j x`. Consequently,
-whenever every `F i` is differentiable at `x`, the exterior derivative of `fluxForm F` at `x` is
-the divergence times the standard volume `(n + 1)`-form `coordVolumeForm`:
+built from the coordinate `(n × n)` minor forms `coordMinorForm i` from
+`TauCeti.Analysis.Calculus.DifferentialForm.Coordinates`. On the standard coordinate `n`-tuple
+omitting `eⱼ`, `fluxForm F x` evaluates to `(-1)^j • F j x`, so its signed omission coefficients
+(`ContinuousAlternatingMap.signedRemoveNth`) are literally `j ↦ F j x`. Consequently, whenever
+every `F i` is differentiable at `x`, the exterior derivative of `fluxForm F` at `x` is the
+divergence times the standard volume `(n + 1)`-form `coordVolumeForm`:
 
 `extDeriv (fluxForm F) x = coordVolumeForm.smulRight (∑ i, fderiv ℝ (F i) x (Pi.single i 1))`.
 
@@ -35,9 +35,9 @@ where each `F i` is merely differentiable at `p + L u`.
 
 ## Main declarations
 
-* `TauCeti.coordVolumeForm`: the determinant top form `v ↦ (Matrix.of v).det` on `Fin m → ℝ`.
-* `TauCeti.coordMinorForm`: the real `n`-form on `Fin (n + 1) → ℝ` omitting coordinate `i`.
 * `TauCeti.fluxForm`: the `E`-valued flux `n`-form `∑ i, (-1)^i F i dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`.
+* `TauCeti.differentiableAt_fluxForm_iff`: `fluxForm F` is differentiable at `x` iff every
+  component `F i` is differentiable at `x`.
 * `TauCeti.extDerivWithin_fluxForm`, `TauCeti.extDeriv_fluxForm`: exterior derivative of
   `fluxForm F` as divergence times `coordVolumeForm`.
 * `ContinuousLinearEquiv.fluxForm_comp_affine`: affine pullback of `fluxForm F` equals
@@ -59,95 +59,6 @@ noncomputable section
 open Set
 
 namespace TauCeti
-
-section VolumeAndMinor
-
-/-- The standard determinant volume `m`-form on `Fin m → ℝ`, sending an `m`-tuple of vectors to
-the determinant of the `m × m` matrix having those vectors as rows. -/
-def coordVolumeForm {m : ℕ} : (Fin m → ℝ) [⋀^Fin m]→L[ℝ] ℝ :=
-  AlternatingMap.toContinuousAlternatingMap Matrix.detRowAlternating
-
-theorem coordVolumeForm_apply {m : ℕ} (v : Fin m → Fin m → ℝ) :
-    coordVolumeForm v = (Matrix.of v).det := by
-  rw [coordVolumeForm, AlternatingMap.coe_toContinuousAlternatingMap]; rfl
-
-@[simp]
-theorem coordVolumeForm_single {m : ℕ} :
-    coordVolumeForm (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = 1 := by
-  rw [coordVolumeForm_apply, show Matrix.of (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = 1 by
-    ext i j; simp [Pi.single_apply, Matrix.one_apply, eq_comm], Matrix.det_one]
-
-/-- Every continuous alternating `m`-form on `Fin m → ℝ` into a real normed space `E` equals
-`coordVolumeForm` tensored with its value on the standard basis. -/
-theorem _root_.ContinuousAlternatingMap.eq_coordVolumeForm_smulRight {m : ℕ} {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] (η : (Fin m → ℝ) [⋀^Fin m]→L[ℝ] E) :
-    η = coordVolumeForm.smulRight (η (fun i ↦ Pi.single i 1)) := by
-  have hb : (Pi.basisFun ℝ (Fin m) : Fin m → Fin m → ℝ) = fun i ↦ Pi.single i 1 :=
-    funext (Pi.basisFun_apply ℝ (Fin m))
-  rw [← hb]
-  refine ContinuousAlternatingMap.toAlternatingMap_injective <|
-    Module.Basis.ext_alternating (Pi.basisFun ℝ (Fin m)) fun i hi ↦ ?_
-  let σ : Equiv.Perm (Fin m) := Equiv.ofBijective i (Finite.injective_iff_bijective.1 hi)
-  change η.toAlternatingMap (Pi.basisFun ℝ (Fin m) ∘ σ) =
-    (coordVolumeForm.smulRight (η (Pi.basisFun ℝ (Fin m)))).toAlternatingMap
-      (Pi.basisFun ℝ (Fin m) ∘ σ)
-  simp [AlternatingMap.map_perm, hb, coordVolumeForm_single]
-
-/-- Pulling `coordVolumeForm` back along a continuous linear endomorphism multiplies it by the
-signed determinant. -/
-theorem coordVolumeForm_compContinuousLinearMap {m : ℕ}
-    (L : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)) :
-    coordVolumeForm.compContinuousLinearMap L =
-      LinearMap.det L.toLinearMap • coordVolumeForm := by
-  ext v
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousAlternatingMap.smul_apply,
-    coordVolumeForm_apply, coordVolumeForm_apply, smul_eq_mul]
-  simpa only [Pi.basisFun_det_apply, ContinuousLinearMap.coe_coe] using
-    (Pi.basisFun ℝ (Fin m)).det_comp L.toLinearMap v
-
-/-- The real `n`-form on `Fin (n + 1) → ℝ` omitting coordinate `i`: the determinant of the `n × n`
-matrix of remaining coordinates of `n` vectors, i.e., `dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`. -/
-def coordMinorForm {n : ℕ} (i : Fin (n + 1)) : (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ :=
-  AlternatingMap.toContinuousAlternatingMap
-    (Matrix.detRowAlternating.compLinearMap (LinearMap.funLeft ℝ ℝ i.succAbove))
-
-theorem coordMinorForm_apply {n : ℕ} (i : Fin (n + 1)) (v : Fin n → Fin (n + 1) → ℝ) :
-    coordMinorForm i v = (Matrix.of fun r c ↦ v r (i.succAbove c)).det := by
-  rw [coordMinorForm, AlternatingMap.coe_toContinuousAlternatingMap,
-    AlternatingMap.compLinearMap_apply]; rfl
-
-/-- Laplace expansion along row zero expresses the `(n + 1) × (n + 1)` determinant with top row `w`
-and remaining rows `v` as the alternating pairing of `w` with `coordMinorForm`. -/
-theorem sum_signed_mul_coordMinorForm {n : ℕ} (w : Fin (n + 1) → ℝ)
-    (v : Fin n → Fin (n + 1) → ℝ) :
-    ∑ i : Fin (n + 1), (-1 : ℝ) ^ (i : ℕ) * w i * coordMinorForm i v =
-      (Matrix.of (Fin.cons w v)).det := by
-  rw [Matrix.det_succ_row_zero]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coordMinorForm_apply]; rfl
-
-@[simp]
-theorem coordMinorForm_succAbove_single {n : ℕ} (i j : Fin (n + 1)) :
-    coordMinorForm i (fun r ↦ Pi.single (j.succAbove r) 1) = if i = j then 1 else 0 := by
-  rw [coordMinorForm_apply]
-  split_ifs with h
-  · subst h
-    have h1 : (Matrix.of fun r c : Fin n ↦
-        (Pi.single (i.succAbove r) (1 : ℝ) : Fin (n + 1) → ℝ) (i.succAbove c)) = 1 := by
-      ext r c
-      simp [Pi.single_apply, (Fin.succAbove_right_injective (p := i)).eq_iff, Matrix.one_apply,
-        eq_comm]
-    rw [h1, Matrix.det_one]
-  · obtain ⟨c, hc⟩ := Fin.exists_succAbove_eq (Ne.symm h)
-    exact Matrix.det_eq_zero_of_column_eq_zero c fun r ↦ by simp [hc]
-
-@[simp]
-theorem coordMinorForm_removeNth_single {n : ℕ} (i j : Fin (n + 1)) :
-    coordMinorForm i (j.removeNth fun k : Fin (n + 1) ↦ (Pi.single k 1 : Fin (n + 1) → ℝ)) =
-      if i = j then 1 else 0 :=
-  coordMinorForm_succAbove_single i j
-
-end VolumeAndMinor
 
 section FluxForm
 
@@ -207,6 +118,8 @@ theorem signedRemoveNth_fluxForm (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → 
     ← pow_add, ← two_mul, pow_mul]
   norm_num
 
+/-- If every component field `F i` is continuous on `s`, then the flux form `fluxForm F` is
+continuous on `s`. -/
 theorem continuousOn_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {s : Set (Fin (n + 1) → ℝ)} (hF : ∀ i, ContinuousOn (F i) s) :
     ContinuousOn (fluxForm F) s := by
@@ -215,6 +128,8 @@ theorem continuousOn_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
   exact (continuousOn_const (c := (-1 : ℝ) ^ (i : ℕ))).smul
     ((smulRightCLM (coordMinorForm i)).continuous.comp_continuousOn (hF i))
 
+/-- If every component field `F i` is differentiable within `s` at `x`, then `fluxForm F` is
+differentiable within `s` at `x`. -/
 theorem differentiableWithinAt_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {s : Set (Fin (n + 1) → ℝ)} {x : Fin (n + 1) → ℝ}
     (hF : ∀ i, DifferentiableWithinAt ℝ (F i) s x) :
@@ -224,12 +139,17 @@ theorem differentiableWithinAt_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → �
   exact ((smulRightCLM (coordMinorForm i)).differentiableAt.comp_differentiableWithinAt x
     (hF i)).const_smul ((-1 : ℝ) ^ (i : ℕ))
 
+/-- If every component field `F i` is differentiable at `x`, then `fluxForm F` is differentiable
+at `x`. -/
 theorem differentiableAt_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {x : Fin (n + 1) → ℝ} (hF : ∀ i, DifferentiableAt ℝ (F i) x) :
     DifferentiableAt ℝ (fluxForm F) x := by
   rw [← differentiableWithinAt_univ]
   exact differentiableWithinAt_fluxForm fun i ↦ (hF i).differentiableWithinAt
 
+/-- The flux form `fluxForm F` is differentiable at `x` if and only if every component field `F i`
+is differentiable at `x`: the continuous linear omission map `signedRemoveNth` recovers the
+component fields from the form. -/
 theorem differentiableAt_fluxForm_iff {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {x : Fin (n + 1) → ℝ} :
     DifferentiableAt ℝ (fluxForm F) x ↔ ∀ i, DifferentiableAt ℝ (F i) x := by
@@ -242,6 +162,7 @@ theorem differentiableAt_fluxForm_iff {F : Fin (n + 1) → (Fin (n + 1) → ℝ)
       fun y i ↦ F i y := funext fun y ↦ signedRemoveNth_fluxForm F y
   exact differentiableAt_pi.mp (heq ▸ hcomp)
 
+/-- If every component field `F i` is `C^r` on `s`, then `fluxForm F` is `C^r` on `s`. -/
 theorem contDiffOn_fluxForm {r : WithTop ℕ∞} {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {s : Set (Fin (n + 1) → ℝ)} (hF : ∀ i, ContDiffOn ℝ r (F i) s) :
     ContDiffOn ℝ r (fluxForm F) s := by
@@ -250,6 +171,7 @@ theorem contDiffOn_fluxForm {r : WithTop ℕ∞} {F : Fin (n + 1) → (Fin (n + 
   exact ((smulRightCLM (coordMinorForm i)).contDiff.comp_contDiffOn (hF i)).const_smul
     ((-1 : ℝ) ^ (i : ℕ))
 
+/-- If every component field `F i` is globally `C^r`, then `fluxForm F` is globally `C^r`. -/
 theorem contDiff_fluxForm {r : WithTop ℕ∞} {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     (hF : ∀ i, ContDiff ℝ r (F i)) :
     ContDiff ℝ r (fluxForm F) := by
@@ -373,8 +295,7 @@ theorem extDeriv_fluxForm_affineFluxPullback {F : Fin (n + 1) → (Fin (n + 1) �
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousAlternatingMap.smul_apply, ContinuousLinearEquiv.coe_coe, smul_eq_mul] at hv ⊢
   simp only [ContinuousAlternatingMap.smulRight_apply]
-  rw [hv, mul_comm, mul_smul]
-  rfl
+  rw [hv, mul_comm, mul_smul, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- Evaluated on the standard coordinate frame, the exterior derivative of
 `fluxForm (L.affineFluxPullback p F)` at `u` is `det L` times the divergence of `F` at `p + L u`. -/

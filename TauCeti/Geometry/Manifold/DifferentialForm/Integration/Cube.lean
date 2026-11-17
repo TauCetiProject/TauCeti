@@ -87,19 +87,40 @@ theorem unitCubeOrientationLift_signAt (α x : Icc (0 : ι → ℝ) 1) :
   rw [Manifold.OrientationLift.signAt_of_mem _ hx, unitCubeOrientationLift,
     Manifold.OrientationLift.ofHasGroupoid_sign]
 
+/-- Mapping the tangent orientation of `Manifold.Orientation.mk l` along `tangentSpaceCastModel`
+reads off the signed model orientation `if l.sign x x = 1 then l.modelOrientation else
+-l.modelOrientation`. -/
+private theorem map_tangentSpaceCastModel_orientationAt_mk
+    {E H M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [Fintype ι]
+    (l : Manifold.OrientationLift I M ι) (x : M) :
+    _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv
+      ((Manifold.Orientation.mk l).orientationAt x) =
+      if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then
+        l.modelOrientation
+      else -l.modelOrientation := by
+  rw [Manifold.Orientation.orientationAt_mk]
+  -- `TangentSpace I x` is definitionally `E` and `tangentSpaceCastModel I x` is the definitional
+  -- identity across that type synonym, so `(tangentSpaceCastModel I x).toLinearEquiv` reduces to
+  -- `LinearEquiv.refl ℝ E` and `Orientation.map_refl` yields `OrientationLift.orientationAt_eq`.
+  have hcast :
+      _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv (l.orientationAt x) =
+        l.orientationAt x :=
+    DFunLike.congr_fun (_root_.Orientation.map_refl ι) (l.orientationAt x)
+  rw [hcast, Manifold.OrientationLift.orientationAt_eq,
+    Manifold.OrientationLift.chartOrientation_eq_ite]
+
 /-- At every point of the closed unit cube, including faces, edges, and corners, the canonical
 tangent orientation read in the model space is `(Pi.basisFun ℝ ι).orientation`. -/
 theorem map_orientationAt_unitCubeOrientation [DecidableEq ι] (x : Icc (0 : ι → ℝ) 1) :
     _root_.Orientation.map ι (tangentSpaceCastModel (modelWithCornersUnitCube ι) x).toLinearEquiv
       ((unitCubeOrientation ι).orientationAt x) = (Pi.basisFun ℝ ι).orientation := by
-  rw [unitCubeOrientation, Manifold.Orientation.orientationAt_mk]
-  change _root_.Orientation.map ι (LinearEquiv.refl ℝ (ι → ℝ))
-    ((unitCubeOrientationLift ι).orientationAt x) = _
-  rw [_root_.Orientation.map_refl, Manifold.OrientationLift.orientationAt_eq,
-    Manifold.OrientationLift.chartOrientation_eq_ite, unitCubeOrientationLift_modelOrientation,
-    show (unitCubeOrientationLift ι).sign x ⟨x, mem_chart_source _ x⟩ = 1 by
-      rw [unitCubeOrientationLift, Manifold.OrientationLift.ofHasGroupoid_sign]]
-  rfl
+  have hsign : (unitCubeOrientationLift ι).sign x ⟨x, mem_chart_source _ x⟩ = 1 := by
+    rw [unitCubeOrientationLift, Manifold.OrientationLift.ofHasGroupoid_sign]
+  rw [unitCubeOrientation, map_tangentSpaceCastModel_orientationAt_mk, hsign,
+    unitCubeOrientationLift_modelOrientation]
+  simp
 
 end UnitCubeOrientation
 
@@ -233,9 +254,15 @@ theorem isSmoothForm_mpullback_unitCubeImage_of_contDiffOn (hM : Injective M) (q
     have hxt := mem_extChartAt_target (I := modelWithCornersUnitCube ι) x
     rwa [M.extChartAt_unitCubeImage_target hM q₀ x] at hxt
   rw [range_modelWithCornersUnitCube]
-  refine (hcomp _ hx).congr (fun u hu ↦ ?_) ?_
-  · rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hu]; ext v; rfl
-  · rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hx]; ext v; rfl
+  have heq : ∀ u ∈ Icc (0 : ι → ℝ) 1,
+      (mpullback (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
+        (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω).inChartAt x u =
+        C (ω (q₀ + M u)) := fun u hu ↦ by
+    rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hu]
+    ext v
+    exact congrArg (ω (q₀ + M u)) <|
+      funext fun i ↦ NormedSpace.fromTangentSpace_symm_apply (q₀ + M u) (M (v i))
+  exact (hcomp _ hx).congr heq (heq _ hx)
 
 /-- An ambient `k`-form that is continuous on `(fun u ↦ q₀ + M u) '' Icc 0 1` pulls back along
 `Subtype.val` to a `C^0` form on that compact affine cube. -/
@@ -358,14 +385,9 @@ theorem map_orientationAt_unitCubeImageOrientation [DecidableEq ι] (hM : Inject
       if s = 1 then (Pi.basisFun ℝ ι).orientation else -(Pi.basisFun ℝ ι).orientation := by
   let := M.unitCubeImageChartedSpace hM q₀
   let := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  rw [unitCubeImageOrientation, Manifold.Orientation.orientationAt_mk]
-  change _root_.Orientation.map ι (LinearEquiv.refl ℝ (ι → ℝ))
-    ((M.unitCubeImageOrientationLift hM q₀ s).orientationAt x) = _
-  rw [_root_.Orientation.map_refl, Manifold.OrientationLift.orientationAt_eq,
-    Manifold.OrientationLift.chartOrientation_eq_ite,
+  rw [unitCubeImageOrientation, map_tangentSpaceCastModel_orientationAt_mk,
     M.unitCubeImageOrientationLift_sign hM q₀ s x ⟨x, mem_chart_source _ x⟩,
     M.unitCubeImageOrientationLift_modelOrientation hM q₀ s]
-  rfl
 
 end Orientation
 

@@ -78,12 +78,6 @@ section ExteriorDerivative
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-@[simp]
-theorem Quaternion.minorForm_eq_coordMinorForm (i : Fin 4) :
-    minorForm i = coordMinorForm i := by
-  ext v
-  rw [minorForm_apply, coordMinorForm_apply]
-
 /-- The `E`-valued `3`-form `x ↦ (B x).compContinuousAlternatingMap Dq` on `Fin 4 → ℝ` obtained by
 applying a real-linear coefficient `B x : ℍ →L[ℝ] E` to the quaternionic surface element `Dq`. -/
 def quatSurfaceForm (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) (x : Fin 4 → ℝ) :
@@ -102,7 +96,7 @@ theorem quatSurfaceForm_eq_fluxForm (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
   ext x v
   rw [quatSurfaceForm_apply, Dq_apply, map_sum, fluxForm_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_smul, dq_single, one_smul, Quaternion.minorForm_eq_coordMinorForm]
+  rw [map_smul, dq_single, one_smul]
 
 /-- Pulling `quatSurfaceForm B` back along an invertible affine map `u ↦ p + L u` gives the
 coordinate `fluxForm` of `L.affineFluxPullback p (fun i x ↦ B x (dq (Pi.single i 1)))`. -/
@@ -164,9 +158,10 @@ private theorem differentiableAt_of_comp_dq {f : ℍ → ℍ} {x : Fin 4 → ℝ
     (h : DifferentiableAt ℝ (fun y ↦ f (dq y)) x) : DifferentiableAt ℝ f (dq x) := by
   let L := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)
   have hex : L.toContinuousLinearEquiv (dq x) = x := by
-    change L (dq x) = x; rw [coe_dq, L.apply_symm_apply]
+    rw [L.coe_toContinuousLinearEquiv', coe_dq, L.apply_symm_apply]
   have hid : (fun y ↦ f (dq y)) ∘ ⇑L.toContinuousLinearEquiv = f := funext fun q ↦ by
-    change f (dq (L q)) = f q; rw [coe_dq, L.symm_apply_apply]
+    simp only [L, Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv', coe_dq,
+      LinearEquiv.symm_apply_apply]
   exact hid ▸ (hex ▸ h).comp (dq x) L.toContinuousLinearEquiv.differentiableAt
 
 /-- **Left Fueter exterior-derivative identity:** `d(Dq · f) = (fueterLeft (df)) dV` for every
@@ -278,13 +273,23 @@ theorem ambientQuatSurfaceRoughForm_apply {E : Type*} [NormedAddCommGroup E] [No
     ambientQuatSurfaceRoughForm ℓ B x v =
       ℓ (B x (Dq fun r ↦ NormedSpace.fromTangentSpace x (v r))) := (rfl)
 
+/-- Identifies the coordinate `fluxForm` of the scalar components `i ↦ ℓ (B x (dq eᵢ))` with the
+ambient manifold rough `3`-form `ambientQuatSurfaceRoughForm ℓ B` on `Fin 4 → ℝ`. -/
 theorem fluxForm_eq_ambientQuatSurfaceRoughForm {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
     (fluxForm fun i x ↦ ℓ (B x (dq (Pi.single i 1)))) = ambientQuatSurfaceRoughForm ℓ B := by
-  rw [show (fun i (x : Fin 4 → ℝ) ↦ ℓ (B x (dq (Pi.single i 1)))) =
-    fun i x ↦ (ℓ.comp (B x)) (dq (Pi.single i 1)) from rfl, ← quatSurfaceForm_eq_fluxForm]
-  ext x v; exact congrArg ((ℓ.comp (B x)).compContinuousAlternatingMap Dq) (funext fun _ ↦ rfl)
+  have hcomp : (fun i (x : Fin 4 → ℝ) ↦ ℓ (B x (dq (Pi.single i 1)))) =
+      fun i x ↦ (ℓ.comp (B x)) (dq (Pi.single i 1)) := by
+    funext i x
+    simp only [ContinuousLinearMap.comp_apply]
+  rw [hcomp, ← quatSurfaceForm_eq_fluxForm]
+  ext x v
+  simp only [quatSurfaceForm_apply, ContinuousLinearMap.comp_apply]
+  exact congrArg (fun u ↦ ℓ (B x (Dq u)))
+    (funext fun r ↦ (NormedSpace.fromTangentSpace_apply x (v r)).symm)
 
+/-- The ambient rough `3`-form `ambientQuatSurfaceRoughForm ℓ B` is continuous on `s` whenever each
+of the four quaternion-basis coefficient functions `x ↦ B x (dq eᵢ)` is continuous on `s`. -/
 theorem continuousOn_ambientQuatSurfaceRoughForm {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} {s : Set (Fin 4 → ℝ)}
     (hB : ∀ i : Fin 4, ContinuousOn (fun x ↦ B x (dq (Pi.single i 1))) s) :
@@ -293,6 +298,9 @@ theorem continuousOn_ambientQuatSurfaceRoughForm {E : Type*} [NormedAddCommGroup
   rw [← fluxForm_eq_ambientQuatSurfaceRoughForm]
   exact continuousOn_fluxForm fun i ↦ ℓ.continuous.comp_continuousOn (hB i)
 
+/-- The ambient rough `3`-form `ambientQuatSurfaceRoughForm ℓ B` is a `C^r` smooth form on the
+model manifold `Fin 4 → ℝ` whenever each of the four quaternion-basis coefficient functions
+`x ↦ B x (dq eᵢ)` is globally `C^r`. -/
 theorem isSmoothForm_ambientQuatSurfaceRoughForm {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) {r : WithTop ℕ∞} {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E}
     (hB : ∀ i : Fin 4, ContDiff ℝ r (fun x ↦ B x (dq (Pi.single i 1)))) :
@@ -379,15 +387,16 @@ theorem det_cons_affineFacetOutward_affineFacetLinearMap (L : (Fin 4 → ℝ) �
   let u : Fin 3 → Fin 4 → ℝ := fun r ↦ j.insertNth 0 (w r)
   have hcons : Fin.cons (L.affineFacetOutward j b) (fun r ↦ L.affineFacetLinearMap j (w r)) =
       L.toLinearMap ∘ Fin.cons u₀ u := funext <| Fin.cases
-    (by rw [Fin.cons_zero, Function.comp_apply, Fin.cons_zero, affineFacetOutward, map_smul]; rfl)
+    (by rcases b <;> simp [u₀, affineFacetOutward])
     (fun r ↦ by simp [u, affineFacetLinearMap_apply])
   have hdet := (Pi.basisFun ℝ (Fin 4)).det_comp L.toLinearMap (Fin.cons u₀ u)
   simp only [Pi.basisFun_det_apply] at hdet
   rw [hcons, hdet, ← sum_signed_mul_coordMinorForm]
   simp only [u₀, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, ite_mul,
     zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  rw [show coordMinorForm j u = (Matrix.of w).det by simp [coordMinorForm_apply, u],
-    coe_affineFacetSign]
+  have hminor : coordMinorForm j u = (Matrix.of w).det := by
+    simp [coordMinorForm_apply, u]
+  rw [hminor, coe_affineFacetSign]
   rcases b with _ | _ <;> simp <;> ring
 
 end ContinuousLinearMap
