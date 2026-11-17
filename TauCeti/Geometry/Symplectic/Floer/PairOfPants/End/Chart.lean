@@ -331,6 +331,11 @@ theorem endChart_add_one (q : Puncture) (s t : ℝ) :
   rw [endChart_mk, endChart_mk]
   exact congrArg Complex.equivRealProdCLM (by exact_mod_cast q.periodic_cylindricalEndLift s t)
 
+/-- A map read in the end chart is `1`-periodic in the angular coordinate. -/
+theorem periodic_comp_endChart {α : Type*} (q : Puncture) (f : ℝ × ℝ → α) (s : ℝ) :
+    Periodic (fun t ↦ (f ∘ endChart q) (s, t)) 1 := fun t ↦ by
+  simp only [comp_apply, endChart_add_one]
+
 /-- In complex coordinates the end chart is the end lift. -/
 @[simp]
 theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :

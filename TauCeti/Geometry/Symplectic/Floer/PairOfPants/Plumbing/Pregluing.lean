@@ -198,7 +198,7 @@ of the output end `u' ∘ φ_∞`, translated by `R`. -/
 theorem preglueComposition_comp_positiveEndChart (hx : Periodic x 1) (hR : 1 ≤ R) :
     preglueComposition q x u u' R ∘ positiveEndChart q =
       fun y ↦ preglue x (u ∘ positiveEndChart q) (u' ∘ endChart inf) R (y - (R, 0)) :=
-  preglueEnd_comp_positiveEndChart hx (fun s t ↦ by simp only [comp_apply, endChart_add_one]) hR
+  preglueEnd_comp_positiveEndChart hx (periodic_comp_endChart inf u') hR
 
 /-- **The pre-glued composition is smooth.** For an input `q`, if `u` and `u'` are `Cⁿ` on the pair
 of pants, the loop `x` is `Cⁿ` and of period one, and `R ≥ 1`, then the pre-glued composition is
@@ -231,7 +231,7 @@ theorem contDiffOn_preglueComposition {n : ℕ∞} (hq : q ≠ inf) (hx : ContDi
       (contDiff_endChart inf n).contDiffAt
   rw [← hy] at hz ⊢
   exact (contDiffAt_preglueEnd_positiveEndChart hx hxper
-    (fun s t ↦ by simp only [comp_apply, endChart_add_one]) hR
+    (periodic_comp_endChart inf u') hR
     (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz.1)) hv).contDiffWithinAt
 
 end Floer
@@ -379,7 +379,7 @@ theorem exists_eventually_norm_floerOperator_preglueComposition_comp_le (ω : Sy
         C' * Real.exp (-(κ * R)) := by
   simpa only [preglueComposition_def] using
     ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio q hH hJ hx hxper hκ hud hu hdu
-      huF hu'd hu' hdu' (fun s t ↦ by simp only [comp_apply, endChart_add_one]) hu'F
+      huF hu'd hu' hdu' (periodic_comp_endChart inf u') hu'F
 
 end SymplecticForm
 

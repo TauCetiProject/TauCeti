@@ -58,7 +58,10 @@ other end of the cylinder `v`.
   beyond the height `T`
   (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le`). If `v` solves
   the Floer equation only below a height `T'`, the bound holds on the neck `T < s < 2R + T'`
-  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio`). The
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio`). Both
+  are cases of the bound at the heights `s > T` with `s - 2R` in a set `S` on which `v` solves the
+  Floer equation
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn`). The
   error is measured in the cylindrical coordinates of the end, in which the gluing estimates are
   made.
 
@@ -240,6 +243,51 @@ open Floer
 
 variable [FiniteDimensional ℝ V]
 
+/-- **The pre-gluing error at an end of a pair of pants, on the heights where `v` solves the
+Floer equation.** Let `H` be a `C²` Hamiltonian and `J_t(y)` a continuous family of endomorphisms,
+the cylindrical data of the end `q` in its positive end chart `φ'_q`, and let `x` be an orbit of
+`X_{H_t}` of period one. Suppose that `U = u ∘ φ'_q` converges to `x` in `C¹` at the exponential
+rate `κ > 0` as `s → ∞` and solves the Floer equation of the datum `H_t dt` beyond the height `T`,
+and that `v`, of period one in `t`, converges to `x` in `C¹` at the rate `κ` as `s → -∞` and solves
+the Floer equation on `S × [0, 1]`. Then for every large gluing parameter `R`, the Floer operator
+of the pre-glued pair of pants, read in the positive end chart, is at most `C' e^{-κ R}` at every
+point `(s, t)` of `(T, ∞) × [0, 1]` with `s - 2R ∈ S`. -/
+theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn (ω : SymplecticForm V)
+    (q : Puncture) {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V}
+    {C κ T : ℝ} (hH : ContDiff ℝ 2 (uncurry H)) (hJ : Continuous (uncurry J))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxper : Periodic x 1)
+    (hκ : 0 < κ)
+    (hud : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      DifferentiableAt ℝ (u ∘ positiveEndChart q) (s, t))
+    (hu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖u (positiveEndChart q (s, t)) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (u ∘ positiveEndChart q) (s, t) -
+          (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)))
+    (huF : ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0)
+      (fun p ↦ H p.2) (u ∘ positiveEndChart q) z = 0)
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (κ * s))
+    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1)
+    {S : Set ℝ}
+    (hvF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v) 0
+      (S ×ˢ Icc (0 : ℝ) 1)) :
+    ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1, z.1 - 2 * R ∈ S →
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+          (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
+    hu hdu hvd hv hdv (fun z hz ↦ huF z hz) hvF
+  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz hzS ↦ ?_⟩
+  rw [preglueEnd_comp_positiveEndChart hxper hvper hR₁, floerOperator_comp_sub]
+  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
+    fun _ ↦ ⟨?_, by simpa using hz.2⟩
+  · simpa using hz.1
+  · simpa [sub_sub, ← two_mul] using hzS
+
 /-- **The pre-gluing error at an end of a pair of pants is exponentially small.** Let `H` be a
 `C²` Hamiltonian and `J_t(y)` a continuous family of endomorphisms, the cylindrical data of the
 end `q` in its positive end chart `φ'_q`, and let `x` be an orbit of `X_{H_t}` of period one.
@@ -274,13 +322,9 @@ theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le (ω : Symplectic
     ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1,
       ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
-  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
-    hu hdu hvd hv hdv (fun z hz ↦ huF z hz) fun z hz ↦ hvF z hz
-  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz ↦ ?_⟩
-  rw [preglueEnd_comp_positiveEndChart hxper hvper hR₁, floerOperator_comp_sub]
-  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
-    fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩
-  simpa using hz.1
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn q hH hJ
+    hx hxper hκ hud hu hdu huF hvd hv hdv hvper fun z hz ↦ hvF z hz
+  exact ⟨C', hC'.mono fun R hR z hz ↦ hR z hz (mem_univ _)⟩
 
 /-- **The pre-gluing error on the neck at an end of a pair of pants is exponentially small.** Under
 the hypotheses of `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le`,
@@ -314,15 +358,11 @@ theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio (ω : Sym
     ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioo T (2 * R + T') ×ˢ Icc (0 : ℝ) 1,
       ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
-  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
-    hu hdu hvd hv hdv (fun z hz ↦ huF z hz) fun z hz ↦ hvF z hz
-  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz ↦ ?_⟩
-  rw [preglueEnd_comp_positiveEndChart hxper hvper hR₁, floerOperator_comp_sub]
-  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
-    fun _ ↦ ⟨?_, by simpa using hz.2⟩
-  · simpa using hz.1.1
-  · simp only [Prod.fst_sub, mem_Iio]
-    linarith [hz.1.2]
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn q hH hJ
+    hx hxper hκ hud hu hdu huF hvd hv hdv hvper fun z hz ↦ hvF z hz
+  refine ⟨C', hC'.mono fun R hR z hz ↦ hR z ⟨hz.1.1, hz.2⟩ ?_⟩
+  rw [mem_Iio]
+  linarith [hz.1.2]
 
 end SymplecticForm
 
