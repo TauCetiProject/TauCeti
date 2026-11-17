@@ -107,7 +107,28 @@ def IsContactForm.periodicLinearizedReturn (hα : α.IsContactForm)
     (γ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
     Module.End ℝ (α.kerDistribution γ.point) :=
   hα.linearizedReebReturn (hc.mem_flowDomain γ.period γ.point)
-    (by rw [← hα.reebFlow_apply hc]; exact γ.apply_period)
+    ((hα.reebFlow_apply hc γ.period γ.point).symm.trans γ.apply_period)
+
+/-- `periodicLinearizedReturn` is `linearizedReebReturn` at the trajectory's period and
+basepoint. -/
+theorem IsContactForm.periodicLinearizedReturn_def (hα : α.IsContactForm)
+    (hc : IsCompleteVectorField α.reebVectorField)
+    (γ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
+    hα.periodicLinearizedReturn hc γ =
+      hα.linearizedReebReturn (hc.mem_flowDomain γ.period γ.point)
+        ((hα.reebFlow_apply hc γ.period γ.point).symm.trans γ.apply_period) := by
+  unfold IsContactForm.periodicLinearizedReturn
+  rfl
+
+/-- Evaluating `periodicLinearizedReturn` agrees with `mfderiv` of the period-time Reeb flow. -/
+@[simp]
+theorem IsContactForm.coe_periodicLinearizedReturn_apply (hα : α.IsContactForm)
+    (hc : IsCompleteVectorField α.reebVectorField)
+    (γ : Flow.PeriodicTrajectory (hα.reebFlow hc))
+    (v : α.kerDistribution γ.point) :
+    (hα.periodicLinearizedReturn hc γ v : TangentSpace I γ.point) =
+      mfderiv I I (flowOf α.reebVectorField γ.period) γ.point v := by
+  rw [hα.periodicLinearizedReturn_def, hα.coe_linearizedReebReturn_apply]
 
 /-- The linearized Reeb return map of the `k`-fold iterate `γ.iterate k` has the same
 characteristic polynomial as the `k`-th power of that of `γ`. -/
@@ -127,7 +148,7 @@ theorem IsContactForm.charpoly_periodicLinearizedReturn_iterate (hα : α.IsCont
     exact (γ.iterate k).apply_period
   have hk₂ : flowOf α.reebVectorField ((k : ℕ) * γ.period) γ.point = γ.point :=
     hper ▸ hp₂
-  unfold IsContactForm.periodicLinearizedReturn
+  simp_rw [hα.periodicLinearizedReturn_def]
   refine (hα.charpoly_linearizedReebReturn_eq_of_flowOf (hc.mem_flowDomain 0 _) hpt _ _
     (hc.mem_flowDomain _ γ.point) hp₂).trans ?_
   refine congrArg LinearMap.charpoly ?_
@@ -161,7 +182,7 @@ theorem IsContactForm.charpoly_periodicLinearizedReturn_eq_of_mk_eq (hα : α.Is
   have h₁ : flowOf α.reebVectorField γ₂.period γ₁.point = γ₁.point := by
     rw [hper, ← hα.reebFlow_apply hc]
     exact γ₁.apply_period
-  unfold IsContactForm.periodicLinearizedReturn
+  simp_rw [hα.periodicLinearizedReturn_def]
   refine (congrArg LinearMap.charpoly
     (hα.linearizedReebReturn_congr_time _ _ (hc.mem_flowDomain γ₂.period γ₁.point) h₁
       hper.symm)).trans ?_
@@ -217,11 +238,7 @@ theorem IsContactForm.not_isNondegenerateOrbit_iterate_two_of_hasEigenvalue_neg_
     (hneg : (hα.periodicLinearizedReturn hc γ).HasEigenvalue (-1)) :
     ¬hα.IsNondegenerateOrbit hc ((Flow.ClosedOrbit.mk γ).iterate 2) := by
   rw [hα.isNondegenerateOrbit_iterate_mk_iff, not_not]
-  obtain ⟨v, hv⟩ := hneg.exists_hasEigenvector
-  refine Module.End.hasEigenvalue_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.2 ?_, hv.2⟩
-  have hv1 := hv.apply_eq_smul
-  rw [neg_one_smul] at hv1
-  rw [PNat.val_ofNat, sq, mul_apply_eq_comp, hv1, map_neg, hv1, neg_neg, one_smul]
+  simpa using hneg.pow 2
 
 /-- **Finiteness of nondegenerate closed Reeb orbits meeting a compact window below an action
 bound.** For any complete Reeb flow and compact subset `K ⊆ M`, if every closed Reeb orbit meeting
