@@ -36,7 +36,9 @@ in finite-dimensional charts supplies the inverse bundle morphism.
 
 Between two cores with the same chart domains, a fixed coordinate operator intertwining their
 transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
-intertwining coordinate equivalence is an isomorphism (`constIso`).
+intertwining coordinate equivalence is an isomorphism (`constIso`). When a point-indexed core has
+identity transition maps on all chart overlaps (without requiring chart domains to be `Set.univ`),
+`isoTrivialOfCoordChangeEqId` gives the canonical isomorphism to `trivial 𝕜 B A.rank`.
 
 A map into the total space of `trivial 𝕜 B n` is continuous exactly when its base point and its
 coordinate vector in `Fin n → 𝕜` are (`continuous_trivial_iff`). Hence bundle maps into a trivial
@@ -416,6 +418,61 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
     (constIso hbase e he).inv.fiberMap x = e.symm := by
   simp only [constIso, fiberMap_constHom]
+
+/-! ### Cores with identity transition maps -/
+
+section CoordChangeEqId
+
+variable (A : FiniteRankBundleCore 𝕜 B)
+  (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+    A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
+
+/-- Any point-indexed finite-rank core whose transition maps are identities on chart overlaps is
+canonically isomorphic to `trivial 𝕜 B A.rank`, with identity fibre maps. Unlike `constIso`, the
+chart domains of `A` need not be `Set.univ`. -/
+def isoTrivialOfCoordChangeEqId : A ≅ trivial 𝕜 B A.rank where
+  hom :=
+    { operator _ _ := ContinuousMap.const _ (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
+      compatible i i' _ _ x hi hi' _ _ _ := by rw [h i i' x hi hi']; rfl }
+  inv :=
+    { operator _ _ := ContinuousMap.const _ (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
+      compatible _ _ j j' x _ _ hj hj' _ := by rw [h j j' x hj hj']; rfl }
+  hom_inv_id := hom_ext fun _ ↦ by
+    rw [fiberMap_comp, fiberMap_id]
+    ext v; rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]; rfl
+  inv_hom_id := hom_ext fun _ ↦ by
+    rw [fiberMap_comp, fiberMap_id]
+    ext v; rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]; rfl
+
+@[simp]
+theorem fiberMap_isoTrivialOfCoordChangeEqId_hom (x : B) :
+    (isoTrivialOfCoordChangeEqId A h).hom.fiberMap x =
+      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+  rw [CoordinateHom.fiberMap_def]; rfl
+
+@[simp]
+theorem fiberMap_isoTrivialOfCoordChangeEqId_inv (x : B) :
+    (isoTrivialOfCoordChangeEqId A h).inv.fiberMap x =
+      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+  rw [CoordinateHom.fiberMap_def]; rfl
+
+/-- Chart operator of the forward comparison `(isoTrivialOfCoordChangeEqId A h).hom`. -/
+theorem inChartCoordinates_isoTrivialOfCoordChangeEqId_hom (i j : B) {x : B}
+    (hi : x ∈ A.core.baseSet i) :
+    A.core.inChartCoordinates (trivial 𝕜 B A.rank).core i j x
+        ((isoTrivialOfCoordChangeEqId A h).hom.fiberMap x) =
+      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+  ((isoTrivialOfCoordChangeEqId A h).hom.operator_eq i j ⟨x, hi, Set.mem_univ _⟩).symm
+
+/-- Chart operator of the inverse comparison `(isoTrivialOfCoordChangeEqId A h).inv`. -/
+theorem inChartCoordinates_isoTrivialOfCoordChangeEqId_inv (i j : B) {x : B}
+    (hj : x ∈ A.core.baseSet j) :
+    (trivial 𝕜 B A.rank).core.inChartCoordinates A.core i j x
+        ((isoTrivialOfCoordChangeEqId A h).inv.fiberMap x) =
+      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+  ((isoTrivialOfCoordChangeEqId A h).inv.operator_eq i j ⟨x, Set.mem_univ _, hj⟩).symm
+
+end CoordChangeEqId
 
 section Isomorphisms
 

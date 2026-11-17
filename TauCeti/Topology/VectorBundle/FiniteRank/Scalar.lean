@@ -21,10 +21,6 @@ family along `Z.indexAt : B → ι` and transports the fibre `𝕜` to `Fin 1 �
 `toScalarCore Z` and `fromScalarCore Z` identify `(ofScalarCore Z).core` with `Z` over the identity
 of `B` (`ofScalarCoreHomeomorph`), without completeness or separation assumptions.
 
-We also construct `isoTrivialOfCoordChangeEqId`, the canonical isomorphism `A ≅ trivial 𝕜 B A.rank`
-for any point-indexed core whose transition maps are identities on chart overlaps, without
-requiring chart domains to be `Set.univ`.
-
 ## References
 
 * Norman Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, §§2–3.
@@ -33,7 +29,7 @@ requiring chart domains to be `Set.univ`.
 
 public section
 
-open Bundle CategoryTheory Set VectorBundleCore
+open Bundle Set VectorBundleCore
 
 namespace TauCeti.FiniteRankBundleCore
 
@@ -71,23 +67,23 @@ noncomputable def ofScalarCore : FiniteRankBundleCore 𝕜 B where
           Z.coordChange_comp (Z.indexAt x) (Z.indexAt y) (Z.indexAt w) z hz] }
   indexAt_eq _ := rfl
 
-@[simp]
-theorem rank_ofScalarCore : (ofScalarCore Z).rank = 1 := (rfl)
+@[simp] theorem rank_ofScalarCore : (ofScalarCore Z).rank = 1 := (rfl)
 
 /-- Chart domain of `ofScalarCore Z` at `x` equals the preferred chart domain of `Z` at `x`. -/
 theorem baseSet_ofScalarCore (x : B) : (ofScalarCore Z).core.baseSet x = Z.baseSet (Z.indexAt x) :=
   (rfl)
 
-@[simp]
-theorem localTriv_baseSet_ofScalarCore (x : B) :
+@[simp] theorem localTriv_baseSet_ofScalarCore (x : B) :
     ((ofScalarCore Z).core.localTriv x).baseSet = Z.baseSet (Z.indexAt x) := (rfl)
 
-@[simp]
-theorem coordChange_ofScalarCore_apply (x y z : B) (v : Fin (ofScalarCore Z).rank → 𝕜)
+@[simp] theorem coordChange_ofScalarCore_apply (x y z : B) (v : Fin (ofScalarCore Z).rank → 𝕜)
     (k : Fin (ofScalarCore Z).rank) :
     (ofScalarCore Z).core.coordChange x y z v k =
       Z.coordChange (Z.indexAt x) (Z.indexAt y) z (v (0 : Fin 1)) := by
-  dsimp [ofScalarCore] at k ⊢; rw [Subsingleton.elim k 0]; rfl
+  dsimp +instances only [ofScalarCore] at v k ⊢
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_funUnique, ContinuousLinearEquiv.coe_funUnique_symm,
+    Function.const_apply, Function.eval, Fin.default_eq_zero]
 
 /-- Each transition of `ofScalarCore Z` is scalar multiplication by the scalar transition
 `Z.coordChange (Z.indexAt x) (Z.indexAt y) z 1`. -/
@@ -95,10 +91,12 @@ theorem coordChange_ofScalarCore_eq_smul (x y z : B) :
     (ofScalarCore Z).core.coordChange x y z =
       Z.coordChange (Z.indexAt x) (Z.indexAt y) z 1 •
         ContinuousLinearMap.id 𝕜 (Fin (ofScalarCore Z).rank → 𝕜) := by
-  dsimp +instances only [ofScalarCore]; ext v k; rw [Subsingleton.elim k 0]
-  change Z.coordChange (Z.indexAt x) (Z.indexAt y) z (v 0) =
-    Z.coordChange (Z.indexAt x) (Z.indexAt y) z 1 * v 0
-  rw [mul_comm, ← smul_eq_mul, ← ContinuousLinearMap.map_smul, smul_eq_mul, mul_one]
+  ext v k
+  rw [coordChange_ofScalarCore_apply, _root_.smul_apply, ContinuousLinearMap.id_apply,
+    Pi.smul_apply, smul_eq_mul]
+  dsimp only [ofScalarCore] at k ⊢
+  rw [Subsingleton.elim k 0, mul_comm, ← smul_eq_mul, ← ContinuousLinearMap.map_smul,
+    smul_eq_mul, mul_one]
 
 /-- The cocycle morphism from `(ofScalarCore Z).core` to `Z` acting on every fibre by
 `ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜`. -/
@@ -110,14 +108,19 @@ noncomputable def toScalarCore : CoordinateHom (ofScalarCore Z).core Z where
       (continuousOn_iff_continuous_domRestrict.1
         (Z.continuousOn_coordChange (Z.indexAt x) j)).clm_comp_const e⟩
   compatible x x' j j' z hx hx' hj hj' v := by
-    dsimp +instances only [ofScalarCore] at v ⊢
-    change Z.coordChange j j' z (Z.coordChange (Z.indexAt x) j z (v 0)) =
-      Z.coordChange (Z.indexAt x') j' z (Z.coordChange (Z.indexAt x) (Z.indexAt x') z (v 0))
-    rw [Z.coordChange_comp (Z.indexAt x) j j' z ⟨⟨hx, hj⟩, hj'⟩,
-      Z.coordChange_comp (Z.indexAt x) (Z.indexAt x') j' z ⟨⟨hx, hx'⟩, hj'⟩]
+    -- `ContinuousMap.coe_mk` cannot fire at implicit transparency because `funUnique (Fin 1) 𝕜 𝕜`
+    -- has domain `Fin 1 → 𝕜` while the core fibre is `Fin (ofScalarCore Z).rank → 𝕜`
+    -- (definitionally equal via `ofScalarCore`); `calc` reduces both sides directly to the
+    -- underlying transitions of `Z`.
+    rw [baseSet_ofScalarCore] at hx hx'
+    calc Z.coordChange j j' z (Z.coordChange (Z.indexAt x) j z (v (0 : Fin 1)))
+        = Z.coordChange (Z.indexAt x) j' z (v (0 : Fin 1)) :=
+          Z.coordChange_comp (Z.indexAt x) j j' z ⟨⟨hx, hj⟩, hj'⟩ _
+      _ = Z.coordChange (Z.indexAt x') j' z
+            (Z.coordChange (Z.indexAt x) (Z.indexAt x') z (v (0 : Fin 1))) :=
+          (Z.coordChange_comp (Z.indexAt x) (Z.indexAt x') j' z ⟨⟨hx, hx'⟩, hj'⟩ _).symm
 
-@[simp]
-theorem fiberMap_toScalarCore (x : B) :
+@[simp] theorem fiberMap_toScalarCore (x : B) :
     (toScalarCore Z).fiberMap x =
       (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).toContinuousLinearMap := by
   ext v; rw [CoordinateHom.fiberMap_def]
@@ -140,14 +143,20 @@ noncomputable def fromScalarCore : CoordinateHom Z (ofScalarCore Z).core where
       continuous_const.clm_comp <| continuousOn_iff_continuous_domRestrict.1
         (Z.continuousOn_coordChange i (Z.indexAt y))⟩
   compatible i i' y y' z hi hi' hy hy' v := by
-    ext k; rw [coordChange_ofScalarCore_apply]
-    change Z.coordChange (Z.indexAt y) (Z.indexAt y') z (Z.coordChange i (Z.indexAt y) z v) =
-      Z.coordChange i' (Z.indexAt y') z (Z.coordChange i i' z v)
-    rw [Z.coordChange_comp i (Z.indexAt y) (Z.indexAt y') z ⟨⟨hi, hy⟩, hy'⟩,
-      Z.coordChange_comp i i' (Z.indexAt y') z ⟨⟨hi, hi'⟩, hy'⟩]
+    -- As in `toScalarCore`, `funUnique.symm` has codomain `Fin 1 → 𝕜` rather than
+    -- `Fin (ofScalarCore Z).rank → 𝕜` (definitionally equal via `ofScalarCore`), so `simp` cannot
+    -- reduce the composition with `funUnique.symm` at implicit transparency; `calc` reduces both
+    -- sides directly to the underlying transitions of `Z`.
+    rw [baseSet_ofScalarCore] at hy hy'
+    ext k
+    rw [coordChange_ofScalarCore_apply]
+    calc Z.coordChange (Z.indexAt y) (Z.indexAt y') z (Z.coordChange i (Z.indexAt y) z v)
+        = Z.coordChange i (Z.indexAt y') z v :=
+          Z.coordChange_comp i (Z.indexAt y) (Z.indexAt y') z ⟨⟨hi, hy⟩, hy'⟩ v
+      _ = Z.coordChange i' (Z.indexAt y') z (Z.coordChange i i' z v) :=
+          (Z.coordChange_comp i i' (Z.indexAt y') z ⟨⟨hi, hi'⟩, hy'⟩ v).symm
 
-@[simp]
-theorem fiberMap_fromScalarCore (x : B) :
+@[simp] theorem fiberMap_fromScalarCore (x : B) :
     (fromScalarCore Z).fiberMap x =
       (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm.toContinuousLinearMap := by
   ext k; rw [CoordinateHom.fiberMap_def]
@@ -161,16 +170,14 @@ theorem inChartCoordinates_fromScalarCore (i : ι) (y : B) {z : B}
         (Z.coordChange i (Z.indexAt y) z) :=
   ((fromScalarCore Z).operator_eq i y ⟨z, hi, hy⟩).symm
 
-@[simp]
-theorem fromScalarCore_comp_toScalarCore :
+@[simp] theorem fromScalarCore_comp_toScalarCore :
     (fromScalarCore Z).comp (toScalarCore Z) = CoordinateHom.id (ofScalarCore Z).core :=
   CoordinateHom.fiberMap_injective <| funext fun _ ↦ by
     rw [CoordinateHom.fiberMap_comp, fiberMap_fromScalarCore, fiberMap_toScalarCore,
       CoordinateHom.fiberMap_id]
     exact (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).coe_symm_comp_coe
 
-@[simp]
-theorem toScalarCore_comp_fromScalarCore :
+@[simp] theorem toScalarCore_comp_fromScalarCore :
     (toScalarCore Z).comp (fromScalarCore Z) = CoordinateHom.id Z :=
   CoordinateHom.fiberMap_injective <| funext fun _ ↦ by
     rw [CoordinateHom.fiberMap_comp, fiberMap_toScalarCore, fiberMap_fromScalarCore,
@@ -193,69 +200,12 @@ noncomputable def ofScalarCoreHomeomorph : (ofScalarCore Z).core.TotalSpace ≃�
   continuous_toFun := (toScalarCore Z).continuous_totalSpaceMap
   continuous_invFun := (fromScalarCore Z).continuous_totalSpaceMap
 
-@[simp]
-theorem coe_ofScalarCoreHomeomorph :
+@[simp] theorem coe_ofScalarCoreHomeomorph :
     ⇑(ofScalarCoreHomeomorph Z) = (toScalarCore Z).totalSpaceMap := (rfl)
 
-@[simp]
-theorem coe_ofScalarCoreHomeomorph_symm :
+@[simp] theorem coe_ofScalarCoreHomeomorph_symm :
     ⇑(ofScalarCoreHomeomorph Z).symm = (fromScalarCore Z).totalSpaceMap := (rfl)
 
 end ScalarCore
-
-/-! ### Cores with identity transition maps -/
-
-section CoordChangeEqId
-
-variable (A : FiniteRankBundleCore 𝕜 B)
-  (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-    A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-
-/-- Any point-indexed finite-rank core whose transition maps are identities on chart overlaps is
-canonically isomorphic to `trivial 𝕜 B A.rank`, with identity fibre maps. Unlike `constIso`, the
-chart domains of `A` need not be `Set.univ`. -/
-def isoTrivialOfCoordChangeEqId : A ≅ trivial 𝕜 B A.rank where
-  hom :=
-    { operator _ _ := ContinuousMap.const _ (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-      compatible i i' _ _ x hi hi' _ _ _ := by rw [h i i' x hi hi']; rfl }
-  inv :=
-    { operator _ _ := ContinuousMap.const _ (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-      compatible _ _ j j' x _ _ hj hj' _ := by rw [h j j' x hj hj']; rfl }
-  hom_inv_id := hom_ext fun _ ↦ by
-    rw [fiberMap_comp, fiberMap_id]
-    ext v; rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]; rfl
-  inv_hom_id := hom_ext fun _ ↦ by
-    rw [fiberMap_comp, fiberMap_id]
-    ext v; rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]; rfl
-
-@[simp]
-theorem fiberMap_isoTrivialOfCoordChangeEqId_hom (x : B) :
-    (isoTrivialOfCoordChangeEqId A h).hom.fiberMap x =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
-  rw [CoordinateHom.fiberMap_def]; rfl
-
-@[simp]
-theorem fiberMap_isoTrivialOfCoordChangeEqId_inv (x : B) :
-    (isoTrivialOfCoordChangeEqId A h).inv.fiberMap x =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
-  rw [CoordinateHom.fiberMap_def]; rfl
-
-/-- Chart operator of the forward comparison `(isoTrivialOfCoordChangeEqId A h).hom`. -/
-theorem inChartCoordinates_isoTrivialOfCoordChangeEqId_hom (i j : B) {x : B}
-    (hi : x ∈ A.core.baseSet i) :
-    A.core.inChartCoordinates (trivial 𝕜 B A.rank).core i j x
-        ((isoTrivialOfCoordChangeEqId A h).hom.fiberMap x) =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-  ((isoTrivialOfCoordChangeEqId A h).hom.operator_eq i j ⟨x, hi, Set.mem_univ _⟩).symm
-
-/-- Chart operator of the inverse comparison `(isoTrivialOfCoordChangeEqId A h).inv`. -/
-theorem inChartCoordinates_isoTrivialOfCoordChangeEqId_inv (i j : B) {x : B}
-    (hj : x ∈ A.core.baseSet j) :
-    (trivial 𝕜 B A.rank).core.inChartCoordinates A.core i j x
-        ((isoTrivialOfCoordChangeEqId A h).inv.fiberMap x) =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-  ((isoTrivialOfCoordChangeEqId A h).inv.operator_eq i j ⟨x, Set.mem_univ _, hj⟩).symm
-
-end CoordChangeEqId
 
 end TauCeti.FiniteRankBundleCore

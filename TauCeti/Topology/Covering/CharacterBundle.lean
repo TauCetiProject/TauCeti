@@ -74,29 +74,27 @@ theorem characterCore_baseSet (χ : G →* 𝕜ˣ) (e : E) :
     (hp.characterCore χ).baseSet e = (hp.isLocalHomeomorph.localInverseAt e).source := by
   rw [characterCore_def, associatedCore_baseSet]
 
-@[simp]
-theorem characterCore_localTriv_baseSet (χ : G →* 𝕜ˣ) (e : E) :
+@[simp] theorem characterCore_localTriv_baseSet (χ : G →* 𝕜ˣ) (e : E) :
     ((hp.characterCore χ).localTriv e).baseSet =
       (hp.isLocalHomeomorph.localInverseAt e).source := by
   rw [characterCore_def, associatedCore_localTriv_baseSet]
 
 /-- The preferred chart index of `hp.characterCore χ` at `x` is `Function.surjInv hp.surjective x`,
 independently of `χ`. -/
-@[simp]
-theorem characterCore_indexAt (χ : G →* 𝕜ˣ) (x : X) :
+@[simp] theorem characterCore_indexAt (χ : G →* 𝕜ˣ) (x : X) :
     (hp.characterCore χ).indexAt x = Function.surjInv hp.surjective x := by
   rw [characterCore_def, associatedCore_indexAt]
 
 /-! ### Point-indexed rank-one character cores -/
 
+-- Expose the rank projection so the dependent fibre model reduces to `Fin 1 → 𝕜`.
 /-- The point-indexed rank-one vector-bundle core over `X` associated with a character
 `χ : G →* 𝕜ˣ`, obtained from `hp.characterCore χ` via `FiniteRankBundleCore.ofScalarCore`. -/
 @[expose]
 noncomputable def characterFiniteRankCore (χ : G →* 𝕜ˣ) : FiniteRankBundleCore 𝕜 X :=
   ofScalarCore (hp.characterCore χ)
 
-@[simp]
-theorem rank_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
+@[simp] theorem rank_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
     (hp.characterFiniteRankCore χ).rank = 1 := (rfl)
 
 /-- The chart domain of `hp.characterFiniteRankCore χ` at `x` depends only on `p`, namely it is the
@@ -106,8 +104,7 @@ theorem baseSet_characterFiniteRankCore (χ : G →* 𝕜ˣ) (x : X) :
       (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source := by
   simp [characterFiniteRankCore]
 
-@[simp]
-theorem localTriv_baseSet_characterFiniteRankCore (χ : G →* 𝕜ˣ) (x : X) :
+@[simp] theorem localTriv_baseSet_characterFiniteRankCore (χ : G →* 𝕜ˣ) (x : X) :
     ((hp.characterFiniteRankCore χ).core.localTriv x).baseSet =
       (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source := by
   rw [characterFiniteRankCore, localTriv_baseSet_ofScalarCore, characterCore_baseSet,
@@ -125,8 +122,7 @@ theorem coordChange_characterFiniteRankCore_eq_smul (χ : G →* 𝕜ˣ) (i j x 
     characterCore_indexAt, characterCore_indexAt]
 
 /-- The trivial character gives identity transition maps on `hp.characterFiniteRankCore 1`. -/
-@[simp]
-theorem coordChange_characterFiniteRankCore_one (i j x : X) :
+@[simp] theorem coordChange_characterFiniteRankCore_one (i j x : X) :
     (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)).core.coordChange i j x =
       ContinuousLinearMap.id 𝕜 (Fin (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)).rank → 𝕜) := by
   rw [hp.coordChange_characterFiniteRankCore_eq_smul, MonoidHom.one_apply, Units.val_one, one_smul]
@@ -137,13 +133,11 @@ noncomputable def characterFiniteRankCoreHomeomorph (χ : G →* 𝕜ˣ) :
     (hp.characterFiniteRankCore χ).core.TotalSpace ≃ₜ (hp.characterCore χ).TotalSpace :=
   ofScalarCoreHomeomorph (hp.characterCore χ)
 
-@[simp]
-theorem coe_characterFiniteRankCoreHomeomorph (χ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreHomeomorph (χ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreHomeomorph χ) = (toScalarCore (hp.characterCore χ)).totalSpaceMap :=
   coe_ofScalarCoreHomeomorph (hp.characterCore χ)
 
-@[simp]
-theorem coe_characterFiniteRankCoreHomeomorph_symm (χ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreHomeomorph_symm (χ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreHomeomorph χ).symm =
       (fromScalarCore (hp.characterCore χ)).totalSpaceMap :=
   coe_ofScalarCoreHomeomorph_symm (hp.characterCore χ)
@@ -153,19 +147,23 @@ theorem coe_characterFiniteRankCoreHomeomorph_symm (χ : G →* 𝕜ˣ) :
 variable (𝕜) in
 /-- The rank-one core of the trivial character is canonically isomorphic to the monoidal unit
 `𝟙_ (FiniteRankBundleCore 𝕜 X)`. -/
-@[expose]
 noncomputable def characterFiniteRankCoreOneIso :
     hp.characterFiniteRankCore (1 : G →* 𝕜ˣ) ≅ 𝟙_ (FiniteRankBundleCore 𝕜 X) :=
   isoTrivialOfCoordChangeEqId (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ))
     fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_one i j x
 
-@[simp]
-theorem fiberMap_characterFiniteRankCoreOneIso_hom (x : X) :
+variable (𝕜) in
+/-- `hp.characterFiniteRankCoreOneIso 𝕜` is defined via `isoTrivialOfCoordChangeEqId`. -/
+theorem characterFiniteRankCoreOneIso_def :
+    hp.characterFiniteRankCoreOneIso 𝕜 =
+      isoTrivialOfCoordChangeEqId (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ))
+        (fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_one i j x) := (rfl)
+
+@[simp] theorem fiberMap_characterFiniteRankCoreOneIso_hom (x : X) :
     (hp.characterFiniteRankCoreOneIso 𝕜).hom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) :=
   fiberMap_isoTrivialOfCoordChangeEqId_hom _ _ x
 
-@[simp]
-theorem fiberMap_characterFiniteRankCoreOneIso_inv (x : X) :
+@[simp] theorem fiberMap_characterFiniteRankCoreOneIso_inv (x : X) :
     (hp.characterFiniteRankCoreOneIso 𝕜).inv.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) :=
   fiberMap_isoTrivialOfCoordChangeEqId_inv _ _ x
 
@@ -194,7 +192,6 @@ theorem baseSet_tensor_characterFiniteRankCore (χ₁ χ₂ : G →* 𝕜ˣ) (x 
 
 /-- The tensor product of the rank-one cores for `χ₁` and `χ₂` is canonically isomorphic to the
 rank-one core for `χ₁ * χ₂`, acting fibrewise by `kroneckerLid 𝕜 1`. -/
-@[expose]
 noncomputable def characterFiniteRankCoreMulIso (χ₁ χ₂ : G →* 𝕜ˣ) :
     hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂ ≅
       hp.characterFiniteRankCore (χ₁ * χ₂) :=
@@ -203,14 +200,22 @@ noncomputable def characterFiniteRankCoreMulIso (χ₁ χ₂ : G →* 𝕜ˣ) :
     (hp.baseSet_tensor_characterFiniteRankCore χ₁ χ₂) (kroneckerLid 𝕜 1)
     fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_mul_intertwines χ₁ χ₂ i j x
 
-@[simp]
-theorem fiberMap_characterFiniteRankCoreMulIso_hom (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
+/-- `hp.characterFiniteRankCoreMulIso χ₁ χ₂` is the constant isomorphism induced by
+`kroneckerLid 𝕜 1`. -/
+theorem characterFiniteRankCoreMulIso_def (χ₁ χ₂ : G →* 𝕜ˣ) :
+    hp.characterFiniteRankCoreMulIso χ₁ χ₂ =
+      constIso (A := tensor (hp.characterFiniteRankCore χ₁) (hp.characterFiniteRankCore χ₂))
+        (D := hp.characterFiniteRankCore (χ₁ * χ₂))
+        (hp.baseSet_tensor_characterFiniteRankCore χ₁ χ₂) (kroneckerLid 𝕜 1)
+        (fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_mul_intertwines χ₁ χ₂ i j x) :=
+  (rfl)
+
+@[simp] theorem fiberMap_characterFiniteRankCoreMulIso_hom (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
     (hp.characterFiniteRankCoreMulIso χ₁ χ₂).hom.fiberMap x =
       (kroneckerLid 𝕜 1).toContinuousLinearMap :=
   fiberMap_constIso_hom _ _ _ x
 
-@[simp]
-theorem fiberMap_characterFiniteRankCoreMulIso_inv (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
+@[simp] theorem fiberMap_characterFiniteRankCoreMulIso_inv (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
     (hp.characterFiniteRankCoreMulIso χ₁ χ₂).inv.fiberMap x =
       (kroneckerLid 𝕜 1).symm.toContinuousLinearMap :=
   fiberMap_constIso_inv _ _ _ x
@@ -244,12 +249,19 @@ theorem coordChange_characterFiniteRankCore_inv_intertwines [CompleteSpace 𝕜]
 
 /-- Over a complete scalar field, the dual of `hp.characterFiniteRankCore χ` is canonically
 isomorphic to `hp.characterFiniteRankCore χ⁻¹`, acting as the identity on every coordinate fibre. -/
-@[expose]
 noncomputable def characterFiniteRankCoreInvIso [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
     (hp.characterFiniteRankCore χ).dual ≅ hp.characterFiniteRankCore χ⁻¹ :=
   constIso (A := (hp.characterFiniteRankCore χ).dual) (D := hp.characterFiniteRankCore χ⁻¹)
     (hp.baseSet_dual_characterFiniteRankCore χ) (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
     (hp.coordChange_characterFiniteRankCore_inv_intertwines χ)
+
+/-- `hp.characterFiniteRankCoreInvIso χ` is the constant isomorphism induced by the identity
+equivalence on `Fin 1 → 𝕜`. -/
+theorem characterFiniteRankCoreInvIso_def [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
+    hp.characterFiniteRankCoreInvIso χ =
+      constIso (A := (hp.characterFiniteRankCore χ).dual) (D := hp.characterFiniteRankCore χ⁻¹)
+        (hp.baseSet_dual_characterFiniteRankCore χ) (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
+        (hp.coordChange_characterFiniteRankCore_inv_intertwines χ) := (rfl)
 
 @[simp]
 theorem fiberMap_characterFiniteRankCoreInvIso_hom [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) (x : X) :
@@ -273,8 +285,7 @@ noncomputable def characterFiniteRankCorePowIso (χ : G →* 𝕜ˣ) :
       hp.characterFiniteRankCoreMulIso χ (χ ^ m) ≪≫
       eqToIso (congrArg hp.characterFiniteRankCore (pow_succ' χ m).symm)
 
-@[simp]
-theorem characterFiniteRankCorePowIso_zero (χ : G →* 𝕜ˣ) :
+@[simp] theorem characterFiniteRankCorePowIso_zero (χ : G →* 𝕜ˣ) :
     hp.characterFiniteRankCorePowIso χ 0 =
       (hp.characterFiniteRankCoreOneIso 𝕜).symm ≪≫
         eqToIso (congrArg hp.characterFiniteRankCore (pow_zero χ).symm) := (rfl)
@@ -307,11 +318,11 @@ theorem inChartCoordinates_characterCore_eq_smul (χ₁ χ₂ : G →* 𝕜ˣ) (
       χ₁ (hp.deckChange e i₀ x) := by
     rw [← hp.deckChange_mul_deckChange ⟨⟨hx.1, hi₀⟩, hx.2⟩, map_mul, mul_comm, inv_mul_cancel_left]
   refine ContinuousLinearMap.ext fun v ↦ ?_
+  have hmap : ∀ a b : 𝕜, (ϕ x) (a * b) = a * (ϕ x) b := fun a b ↦ (ϕ x).map_smul a b
   simp only [_root_.smul_apply, inChartCoordinates_apply, characterCore_indexAt,
     hp.characterCore_coordChange_apply, hp.characterCore_one_coordChange,
     ContinuousLinearMap.id_apply, smul_eq_mul]
-  rw [show ∀ a b : 𝕜, (ϕ x) (a * b) = a * (ϕ x) b from fun a b ↦ (ϕ x).map_smul a b,
-    MonoidHom.mul_apply, MonoidHom.inv_apply, Units.val_mul, ← hmul, Units.val_mul]
+  rw [hmap, MonoidHom.mul_apply, MonoidHom.inv_apply, Units.val_mul, ← hmul, Units.val_mul]
   ring
 
 /-- Twisting a cocycle morphism `a : CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂)` by
@@ -351,11 +362,8 @@ private noncomputable def twistCharacterCoreHom {χ₁ χ₂ χ₁' χ₂' : G �
         (ψ (hp.deckChange e₁ e₂ x) : 𝕜) * (χ₁ (hp.deckChange e₁ e₂ x) : 𝕜) := by rw [← h₁]; simp
     have h₂x : (χ₂' (hp.deckChange e₁' e₂' x) : 𝕜) =
         (ψ (hp.deckChange e₁' e₂' x) : 𝕜) * (χ₂ (hp.deckChange e₁' e₂' x) : 𝕜) := by rw [← h₂]; simp
-    change (hp.characterCore χ₂').coordChange e₁' e₂' x
-        ((ψ (hp.deckChange e₁ e₁' x) : 𝕜) * a.operator e₁ e₁' _ v) =
-      (ψ (hp.deckChange e₂ e₂' x) : 𝕜) *
-        a.operator e₂ e₂' _ ((hp.characterCore χ₁').coordChange e₁ e₂ x v)
-    rw [hp.characterCore_coordChange_apply, hp.characterCore_coordChange_apply, h₁x, h₂x]
+    simp only [ContinuousMap.coe_mk, _root_.smul_apply, smul_eq_mul,
+      hp.characterCore_coordChange_apply, h₁x, h₂x]
     calc _ = (ψ (hp.deckChange e₁' e₂' x) : 𝕜) * (ψ (hp.deckChange e₁ e₁' x) : 𝕜) *
             ((χ₂ (hp.deckChange e₁' e₂' x) : 𝕜) * a.operator e₁ e₁' _ v) := by ring
       _ = (ψ (hp.deckChange e₂ e₂' x) : 𝕜) * ((χ₂ (hp.deckChange e₁' e₂' x) : 𝕜) *
@@ -367,8 +375,7 @@ private theorem fiberMap_twistCharacterCoreHom {χ₁ χ₂ χ₁' χ₂' : G �
     (a : CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂)) (x : X) :
     (hp.twistCharacterCoreHom ψ h₁ h₂ a).fiberMap x = a.fiberMap x := by
   rw [CoordinateHom.fiberMap_def]
-  change (ψ (hp.deckChange _ _ x) : 𝕜) • a.operator _ _ _ = _
-  rw [CoordinateHom.operator_eq]
+  simp only [twistCharacterCoreHom, ContinuousMap.coe_mk, CoordinateHom.operator_eq]
   have hs : x ∈
       (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source := by
     simpa only [Function.surjInv_eq hp.surjective x] using
@@ -391,14 +398,12 @@ noncomputable def characterCoreHomEquiv (χ₁ χ₂ : G →* 𝕜ˣ) :
   map_add' _ _ := CoordinateHom.fiberMap_injective <| funext fun _ ↦ by
     simp [CoordinateHom.fiberMap_add, fiberMap_twistCharacterCoreHom]
 
-@[simp]
-theorem fiberMap_characterCoreHomEquiv (χ₁ χ₂ : G →* 𝕜ˣ)
+@[simp] theorem fiberMap_characterCoreHomEquiv (χ₁ χ₂ : G →* 𝕜ˣ)
     (a : CoordinateHom (hp.characterCore χ₁) (hp.characterCore χ₂)) (x : X) :
     (hp.characterCoreHomEquiv χ₁ χ₂ a).fiberMap x = a.fiberMap x :=
   hp.fiberMap_twistCharacterCoreHom χ₁⁻¹ (inv_mul_cancel χ₁) rfl a x
 
-@[simp]
-theorem fiberMap_characterCoreHomEquiv_symm (χ₁ χ₂ : G →* 𝕜ˣ)
+@[simp] theorem fiberMap_characterCoreHomEquiv_symm (χ₁ χ₂ : G →* 𝕜ˣ)
     (b : CoordinateHom (hp.characterCore 1) (hp.characterCore (χ₁⁻¹ * χ₂))) (x : X) :
     ((hp.characterCoreHomEquiv χ₁ χ₂).symm b).fiberMap x = b.fiberMap x :=
   hp.fiberMap_twistCharacterCoreHom χ₁ (mul_one χ₁) (mul_inv_cancel_left χ₁ χ₂) b x

@@ -92,26 +92,22 @@ noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
     (hp.characterCore χ).TotalSpace :=
   ofScalarCoreDiffeomorph (hp.characterCore χ)
 
-@[simp]
-theorem coe_characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ) =
       (toScalarCore (hp.characterCore χ)).totalSpaceMap :=
   coe_ofScalarCoreDiffeomorph (hp.characterCore χ)
 
-@[simp]
-theorem coe_characterFiniteRankCoreDiffeomorph_symm (χ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreDiffeomorph_symm (χ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ).symm =
       (fromScalarCore (hp.characterCore χ)).totalSpaceMap :=
   coe_ofScalarCoreDiffeomorph_symm (hp.characterCore χ)
 
-@[simp]
-theorem characterFiniteRankCoreDiffeomorph_toHomeomorph (χ : G →* 𝕜ˣ) :
+@[simp] theorem characterFiniteRankCoreDiffeomorph_toHomeomorph (χ : G →* 𝕜ˣ) :
     (hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ).toHomeomorph =
       hp.characterFiniteRankCoreHomeomorph χ :=
-  Homeomorph.ext fun p ↦ by
-    change hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ p =
-      hp.characterFiniteRankCoreHomeomorph χ p
-    rw [coe_characterFiniteRankCoreDiffeomorph, coe_characterFiniteRankCoreHomeomorph]
+  DFunLike.coe_injective <| by
+    rw [Diffeomorph.coe_toHomeomorph, coe_characterFiniteRankCoreDiffeomorph,
+      coe_characterFiniteRankCoreHomeomorph]
 
 variable (𝕜) in
 /-- The `C^n` bundle equivalence identifying `hp.characterFiniteRankCore 1` with the monoidal unit
@@ -124,17 +120,17 @@ noncomputable def characterFiniteRankCoreOneDiffeomorph :
   diffeomorphTrivialOfCoordChangeEqId (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ))
     fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_one i j x
 
-@[simp]
-theorem coe_characterFiniteRankCoreOneDiffeomorph :
+@[simp] theorem coe_characterFiniteRankCoreOneDiffeomorph :
     ⇑(hp.characterFiniteRankCoreOneDiffeomorph (IB := IB) (n := n) 𝕜) =
-      (hp.characterFiniteRankCoreOneIso 𝕜).hom.totalSpaceMap :=
-  coe_diffeomorphTrivialOfCoordChangeEqId (I := IB) (n := n) _ _
+      (hp.characterFiniteRankCoreOneIso 𝕜).hom.totalSpaceMap := by
+  rw [hp.characterFiniteRankCoreOneIso_def 𝕜]
+  exact coe_diffeomorphTrivialOfCoordChangeEqId (I := IB) (n := n) _ _
 
-@[simp]
-theorem coe_characterFiniteRankCoreOneDiffeomorph_symm :
+@[simp] theorem coe_characterFiniteRankCoreOneDiffeomorph_symm :
     ⇑(hp.characterFiniteRankCoreOneDiffeomorph (IB := IB) (n := n) 𝕜).symm =
-      (hp.characterFiniteRankCoreOneIso 𝕜).inv.totalSpaceMap :=
-  coe_diffeomorphTrivialOfCoordChangeEqId_symm (I := IB) (n := n) _ _
+      (hp.characterFiniteRankCoreOneIso 𝕜).inv.totalSpaceMap := by
+  rw [hp.characterFiniteRankCoreOneIso_def 𝕜]
+  exact coe_diffeomorphTrivialOfCoordChangeEqId_symm (I := IB) (n := n) _ _
 
 /-- The `C^n` bundle equivalence identifying
 `hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂` with
@@ -149,17 +145,17 @@ noncomputable def characterFiniteRankCoreMulDiffeomorph (χ₁ χ₂ : G →* �
     (hp.baseSet_tensor_characterFiniteRankCore χ₁ χ₂) (kroneckerLid 𝕜 1)
     fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_mul_intertwines χ₁ χ₂ i j x
 
-@[simp]
-theorem coe_characterFiniteRankCoreMulDiffeomorph (χ₁ χ₂ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreMulDiffeomorph (χ₁ χ₂ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreMulDiffeomorph (IB := IB) (n := n) χ₁ χ₂) =
-      (hp.characterFiniteRankCoreMulIso χ₁ χ₂).hom.totalSpaceMap :=
-  coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
+      (hp.characterFiniteRankCoreMulIso χ₁ χ₂).hom.totalSpaceMap := by
+  rw [hp.characterFiniteRankCoreMulIso_def χ₁ χ₂]
+  exact coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
 
-@[simp]
-theorem coe_characterFiniteRankCoreMulDiffeomorph_symm (χ₁ χ₂ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreMulDiffeomorph_symm (χ₁ χ₂ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreMulDiffeomorph (IB := IB) (n := n) χ₁ χ₂).symm =
-      (hp.characterFiniteRankCoreMulIso χ₁ χ₂).inv.totalSpaceMap :=
-  coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
+      (hp.characterFiniteRankCoreMulIso χ₁ χ₂).inv.totalSpaceMap := by
+  rw [hp.characterFiniteRankCoreMulIso_def χ₁ χ₂]
+  exact coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
 
 /-- Over a complete scalar field, the `C^n` bundle equivalence identifying
 `(hp.characterFiniteRankCore χ).dual` with `hp.characterFiniteRankCore χ⁻¹` over the identity of
@@ -174,17 +170,17 @@ noncomputable def characterFiniteRankCoreInvDiffeomorph [CompleteSpace 𝕜] (χ
     (hp.baseSet_dual_characterFiniteRankCore χ) (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
     (hp.coordChange_characterFiniteRankCore_inv_intertwines χ)
 
-@[simp]
-theorem coe_characterFiniteRankCoreInvDiffeomorph [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreInvDiffeomorph [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreInvDiffeomorph (IB := IB) (n := n) χ) =
-      (hp.characterFiniteRankCoreInvIso χ).hom.totalSpaceMap :=
-  coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
+      (hp.characterFiniteRankCoreInvIso χ).hom.totalSpaceMap := by
+  rw [hp.characterFiniteRankCoreInvIso_def χ]
+  exact coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
 
-@[simp]
-theorem coe_characterFiniteRankCoreInvDiffeomorph_symm [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
+@[simp] theorem coe_characterFiniteRankCoreInvDiffeomorph_symm [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) :
     ⇑(hp.characterFiniteRankCoreInvDiffeomorph (IB := IB) (n := n) χ).symm =
-      (hp.characterFiniteRankCoreInvIso χ).inv.totalSpaceMap :=
-  coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
+      (hp.characterFiniteRankCoreInvIso χ).inv.totalSpaceMap := by
+  rw [hp.characterFiniteRankCoreInvIso_def χ]
+  exact coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
 
 /-- The forward isomorphism `hp.characterFiniteRankCorePowIso χ m` has `C^n` chart operators,
 without completeness assumptions on `𝕜`. -/
@@ -201,7 +197,8 @@ theorem contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_hom (χ : G
   induction m with
   | zero =>
     intro i j
-    rw [hp.characterFiniteRankCorePowIso_zero χ, Iso.trans_hom, Iso.symm_hom, eqToIso.hom]
+    rw [hp.characterFiniteRankCorePowIso_zero χ, Iso.trans_hom, Iso.symm_hom, eqToIso.hom,
+      hp.characterFiniteRankCoreOneIso_def 𝕜]
     exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
       (contMDiffOn_inChartCoordinates_eqToHom (I := IB) (n := n)
         (congrArg hp.characterFiniteRankCore (pow_zero χ).symm))
@@ -210,7 +207,7 @@ theorem contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_hom (χ : G
   | succ m ih =>
     intro i j
     rw [hp.characterFiniteRankCorePowIso_succ χ m, Iso.trans_hom, Iso.trans_hom, ← Category.assoc,
-      whiskerLeftIso_hom, eqToIso.hom]
+      whiskerLeftIso_hom, eqToIso.hom, hp.characterFiniteRankCoreMulIso_def χ (χ ^ m)]
     exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
       (contMDiffOn_inChartCoordinates_eqToHom (I := IB) (n := n)
         (congrArg hp.characterFiniteRankCore (pow_succ' χ m).symm))
@@ -237,7 +234,8 @@ theorem contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_inv (χ : G
   induction m with
   | zero =>
     intro i j
-    rw [hp.characterFiniteRankCorePowIso_zero χ, Iso.trans_inv, Iso.symm_inv, eqToIso.inv]
+    rw [hp.characterFiniteRankCorePowIso_zero χ, Iso.trans_inv, Iso.symm_inv, eqToIso.inv,
+      hp.characterFiniteRankCoreOneIso_def 𝕜]
     exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
       (contMDiffOn_inChartCoordinates_isoTrivialOfCoordChangeEqId_hom
         (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)) _)
@@ -246,7 +244,7 @@ theorem contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_inv (χ : G
   | succ m ih =>
     intro i j
     rw [hp.characterFiniteRankCorePowIso_succ χ m, Iso.trans_inv, Iso.trans_inv,
-      whiskerLeftIso_inv, eqToIso.inv]
+      whiskerLeftIso_inv, eqToIso.inv, hp.characterFiniteRankCoreMulIso_def χ (χ ^ m)]
     exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
       (contMDiffOn_inChartCoordinates_whiskerLeft (A := hp.characterFiniteRankCore χ)
         (hp.characterFiniteRankCorePowIso χ m).inv ih)
@@ -275,14 +273,12 @@ noncomputable def characterFiniteRankCorePowDiffeomorph (χ : G →* 𝕜ˣ) (m 
     ((hp.characterFiniteRankCorePowIso χ m).inv.contMDiff_totalSpaceMap
       (hp.contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_inv χ m))
 
-@[simp]
-theorem coe_characterFiniteRankCorePowDiffeomorph (χ : G →* 𝕜ˣ) (m : ℕ) :
+@[simp] theorem coe_characterFiniteRankCorePowDiffeomorph (χ : G →* 𝕜ˣ) (m : ℕ) :
     ⇑(hp.characterFiniteRankCorePowDiffeomorph (IB := IB) (n := n) χ m) =
       (hp.characterFiniteRankCorePowIso χ m).hom.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
 
-@[simp]
-theorem coe_characterFiniteRankCorePowDiffeomorph_symm (χ : G →* 𝕜ˣ) (m : ℕ) :
+@[simp] theorem coe_characterFiniteRankCorePowDiffeomorph_symm (χ : G →* 𝕜ˣ) (m : ℕ) :
     ⇑(hp.characterFiniteRankCorePowDiffeomorph (IB := IB) (n := n) χ m).symm =
       (hp.characterFiniteRankCorePowIso χ m).inv.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
@@ -339,12 +335,12 @@ theorem contMDiff_one_section_characterCore_one :
     ContMDiff IB (IB.prod 𝓘(𝕜)) n
       (fun x : X ↦ TotalSpace.mk' 𝕜 (E := (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber) x (1 : 𝕜)) := by
   let s : ∀ x, (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber x := fun _ ↦ (1 : 𝕜)
-  change ContMDiff IB (IB.prod 𝓘(𝕜)) n (fun x ↦ TotalSpace.mk' 𝕜 x (s x))
   intro x
   set y := (hp.characterCore (1 : G →* 𝕜ˣ)).indexAt x
   have : MemTrivializationAtlas ((hp.characterCore (1 : G →* 𝕜ˣ)).localTriv y) := ⟨⟨y, rfl⟩⟩
-  rw [Trivialization.contMDiffAt_section_iff ((hp.characterCore (1 : G →* 𝕜ˣ)).localTriv y)
-    ((hp.characterCore (1 : G →* 𝕜ˣ)).mem_baseSet_at x)]
+  refine (Trivialization.contMDiffAt_section_iff (s := s)
+    ((hp.characterCore (1 : G →* 𝕜ˣ)).localTriv y)
+    ((hp.characterCore (1 : G →* 𝕜ˣ)).mem_baseSet_at x)).2 ?_
   refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
   filter_upwards [((hp.characterCore (1 : G →* 𝕜ˣ)).isOpen_baseSet y).mem_nhds
     ((hp.characterCore (1 : G →* 𝕜ˣ)).mem_baseSet_at x)] with x' _
