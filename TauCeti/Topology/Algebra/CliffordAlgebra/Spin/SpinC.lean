@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Topology.Covering.Quotient
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Proper
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.SpinorNorm
 
@@ -27,6 +28,9 @@ quotient map, and its finite kernel gives the covering.
 
 These are topological group covers. No smoothness or covering statement about classifying
 spaces is asserted.
+
+The compact group `Spinᶜ(n)` for `n ≥ 1` is `CliffordAlgebra.realCliffordSpinCGroupZero n`, the
+group `spinCGroup` of the positive definite form of `ℝⁿ` with its quotient topology.
 
 ## References
 
@@ -164,5 +168,10 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
     (finite_ker_toSpecialOrthogonal_prod_det Q hQ hQn).isDiscrete
 
 end spinCGroup
+
+/-- The compact group `Spinᶜ(n) = (Spin(n) × U(1)) / {1, (-1, -1)}` for `n ≥ 1`: the group
+`CliffordAlgebra.spinCGroup` of the positive definite form of `ℝⁿ`, with its quotient topology. -/
+abbrev realCliffordSpinCGroupZero (n : ℕ) [NeZero n] : Type :=
+  spinCGroup (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero
 
 end CliffordAlgebra
