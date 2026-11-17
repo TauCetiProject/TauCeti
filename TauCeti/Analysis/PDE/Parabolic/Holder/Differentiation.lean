@@ -293,9 +293,7 @@ private theorem mixedDerivL_spatialFDeriv_apply (u : ParabolicCkHolderSpace (k +
   · rw [mixedDerivL_of_lt (k := k) (α := α) (F := E →L[ℝ] F) (hab := hab) (by omega),
       mixedDerivL_of_lt (k := k + 1) (α := α) (F := F) (hab := hab) (r := r) (m := m + 1)
         (by omega)]
-    -- Separating the last argument is linear, so it sends `0` to `0`.
-    simp only [zero_apply]
-    rw [← curryRightCLM_apply, map_zero]
+    simp only [zero_apply, ContinuousMultilinearMap.curryRight_zero]
 
 private theorem spatialFDeriv_apply (u : ParabolicCkHolderSpace (k + 1) α E F hab)
     (p : slab (E := E) a b) : spatialFDeriv u p = (mixedDerivL 0 1 u p).curryRight 0 := by
@@ -311,8 +309,8 @@ private theorem timeSliceL_spatialFDeriv_apply (u : ParabolicCkHolderSpace (k + 
   · rw [timeSliceL_of_ne (k := k) (α := α) (F := E →L[ℝ] F) (hab := hab) h,
       timeSliceL_of_ne (k := k + 1) (α := α) (F := F) (hab := hab) (r := r) (m := m + 1)
         (by omega)]
-    simp only [zero_apply, lp.coeFn_zero, Pi.zero_apply, HolderSpace.zero_apply]
-    rw [← curryRightCLM_apply, map_zero]
+    simp only [zero_apply, lp.coeFn_zero, Pi.zero_apply, HolderSpace.zero_apply,
+      ContinuousMultilinearMap.curryRight_zero]
 
 private theorem mixedDerivHolderL_spatialFDeriv_apply
     (u : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) (p : slab (E := E) a b) :
@@ -326,8 +324,7 @@ private theorem mixedDerivHolderL_spatialFDeriv_apply
   · rw [mixedDerivHolderL_of_ne (k := k) (α := α) (F := E →L[ℝ] F) (hab := hab) h,
       mixedDerivHolderL_of_ne (k := k + 1) (α := α) (F := F) (hab := hab) (r := r) (m := m + 1)
         (by omega)]
-    simp only [zero_apply, HolderSpace.zero_apply]
-    rw [← curryRightCLM_apply, map_zero]
+    simp only [zero_apply, HolderSpace.zero_apply, ContinuousMultilinearMap.curryRight_zero]
 
 private theorem norm_spatialFDeriv_le (u : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ‖spatialFDeriv u‖ ≤ ‖u‖ := by
