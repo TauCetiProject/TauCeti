@@ -342,19 +342,12 @@ theorem isUnimodular_span_singleton_iff {c : ℝ} :
   · have hc0 : c ≠ 0 := by rintro rfl; simpa using hu.dual_eq
     have heq : (span ℤ {c} : Submodule ℤ ℝ) = span ℤ {c⁻¹} := by
       simpa [dual_span_singleton hc0] using isUnimodular_iff_eq_dual.mp hu
-    obtain ⟨a, ha⟩ := mem_span_singleton.mp (heq ▸ mem_span_singleton_self c)
-    obtain ⟨b, hb⟩ := mem_span_singleton.mp (heq.symm ▸ mem_span_singleton_self c⁻¹)
-    have ha' : c ^ 2 = a := by
-      calc c ^ 2 = (a • c⁻¹) * c := by rw [ha, sq]
-        _ = (a : ℝ) * (c⁻¹ * c) := by rw [zsmul_eq_mul, mul_assoc]
-        _ = a := by rw [inv_mul_cancel₀ hc0, mul_one]
-    have hb' : (b * a : ℤ) = 1 := Int.cast_injective (α := ℝ) <| by
-      push_cast
-      calc (b : ℝ) * a = (b • c) * c := by rw [zsmul_eq_mul, mul_assoc, ← sq, ha']
-        _ = 1 := by rw [hb, inv_mul_cancel₀ hc0]
-    have ha0 : 0 ≤ a := by exact_mod_cast ha' ▸ sq_nonneg c
-    have ha1 : a = 1 := Int.eq_one_of_dvd_one ha0 ⟨b, by linarith⟩
-    rcases (by simpa [ha1] using ha' : c = 1 ∨ c = -1) with rfl | rfl <;> simp
+    obtain ⟨u, hu'⟩ := span_singleton_eq_span_singleton.mp heq
+    have habs : |c| = |c|⁻¹ := by
+      rcases Int.units_eq_one_or u with rfl | rfl <;>
+        simpa [Units.smul_def] using congrArg abs hu'
+    have hsq : |c| ^ 2 = 1 := by rw [sq, ← mul_inv_cancel₀ (abs_ne_zero.mpr hc0), ← habs]
+    exact (sq_eq_one_iff.mp hsq).resolve_right (by linarith [abs_nonneg c])
   · rcases abs_eq (zero_le_one' ℝ) |>.mp hc with rfl | rfl
     · exact isUnimodular_span_one
     · rw [← Set.neg_singleton, Submodule.span_neg]
