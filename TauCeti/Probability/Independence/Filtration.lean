@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
+public import TauCeti.Probability.Process.Filtration.RightCont
+import Mathlib.Topology.Order.IsLUB
 import TauCeti.MeasureTheory.Group.Arithmetic
+import TauCeti.Probability.Independence.Limit
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -22,10 +26,15 @@ file derives the consequences that do not depend on the law of the increments.
 
 * `MeasureTheory.Adapted.indep_comap_sub_of_indep_comap_sub`: increments independent of the past
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
+* `MeasureTheory.Adapted.indepFun_sub_sub`: an increment independent of `ℱ u` is independent of
+  any earlier increment ending by time `u`.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
-* `MeasureTheory.Adapted.indep_comap_sub_Ici`: increments independent of the past make the whole
-  future increment process `(X t - X s)_{t ≥ s}` independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_Ici`, `indep_comap_shift`: increments independent of the
+  past make the future increment process `(X t - X s)_{t ≥ s}` (and `(X (s + u) - X s)_u`)
+  independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_rightCont`: right-continuity at `s` transfers increment
+  independence from `ℱ` to its right-continuation `ℱ.rightCont`.
 -/
 
 public section
@@ -56,6 +65,15 @@ theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableSub₂ E]
   rw [← sub_add_sub_cancel (X t) (X u) (X s)]
   exact ((comap_measurable _).mono le_sup_right le_rfl).add
     ((comap_measurable _).mono le_sup_left le_rfl)
+
+/-- Increments of an adapted process over `(s, t]` and `(u, v]` are independent whenever
+`s ≤ u`, `t ≤ u`, and `X v - X u` is independent of `ℱ u`. -/
+theorem indepFun_sub_sub [Sub E] [MeasurableSub₂ E] (hX : Adapted ℱ X) {s t u v : ι}
+    (hsu : s ≤ u) (htu : t ≤ u)
+    (hindep : Indep (.comap (X v - X u) inferInstance) (ℱ u) μ) :
+    IndepFun (X t - X s) (X v - X u) μ :=
+  (IndepFun_iff_Indep _ _ _).mpr <| indep_of_indep_of_le_left hindep.symm
+    ((hX.measurable_le htu).sub (hX.measurable_le hsu)).comap_le
 
 /-- A process adapted to `ℱ` whose increments `X t - X s`, `s ≤ t`, are independent of `ℱ s` has
 independent increments. -/
@@ -136,5 +154,46 @@ theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
     exact iSup₂_le fun t ht ↦
       le_iSup₂_of_le (t : ι) (Finset.mem_map_of_mem _ ht) le_rfl
   · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
+
+/-- If the increments of an adapted process are independent of the past, then the shifted future
+increment process `(X (s + u) - X s)_u` is independent of `ℱ s`. -/
+theorem indep_comap_shift [Add ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
+    Indep (.comap (fun ω u ↦ X (s + u) ω - X s ω) inferInstance) (ℱ s) μ :=
+  indep_of_indep_of_le_left (hX.indep_comap_sub_Ici hindep s)
+    (MeasurableSpace.comap_le_comap_of_eq_comp
+      (fun (z : Set.Ici s → E) (u : ι) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) (by fun_prop) rfl)
+
+end MeasureTheory.Adapted
+
+namespace MeasureTheory.Adapted
+
+open ProbabilityTheory
+
+/-- If an adapted process is almost surely right-continuous at `s` and its increments `X t - X u`
+(`s < u ≤ t`) are independent of `ℱ u`, then `X t - X s` is independent of `ℱ.rightCont s`. -/
+theorem indep_comap_sub_rightCont {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] [LinearOrder ι] [DenselyOrdered ι] [TopologicalSpace ι]
+    [OrderTopology ι] [FirstCountableTopology ι] {ℱ : Filtration ι mΩ} [AddGroup E]
+    [TopologicalSpace E] [ContinuousSub E] [MeasurableSpace E] [BorelSpace E]
+    [HasOuterApproxClosed E] [MeasurableSub₂ E] {X : ι → Ω → E} (hX : Adapted ℱ X) {s t : ι}
+    (hst : s ≤ t)
+    (hindep : ∀ ⦃u : ι⦄, s < u → u ≤ t → Indep (.comap (X t - X u) inferInstance) (ℱ u) μ)
+    (hcont : ∀ᵐ ω ∂μ, ContinuousWithinAt (X · ω) (Set.Ioi s) s) :
+    Indep (.comap (X t - X s) inferInstance) (ℱ.rightCont s) μ := by
+  apply Indep.symm
+  rcases hst.eq_or_lt with rfl | hst
+  · rw [sub_self, Pi.zero_def, MeasurableSpace.comap_const]
+    exact indep_bot_right (ℱ.rightCont s)
+  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' hst
+  have hind (n : ℕ) : Indep (ℱ.rightCont s) (.comap (X t - X (u n)) inferInstance) μ :=
+    indep_of_indep_of_le_left (hindep (hu n).1 (hu n).2.le).symm (ℱ.rightCont_le_of_lt (hu n).1)
+  refine indep_comap_of_ae_tendsto (ℱ.rightCont.le s)
+    (fun _ ↦ (hX.measurable.sub hX.measurable).aemeasurable)
+    (hX.measurable.sub hX.measurable).aemeasurable hind ?_
+  filter_upwards [hcont] with ω hω
+  have hu' : Filter.Tendsto u Filter.atTop (nhdsWithin s (Set.Ioi s)) :=
+    tendsto_nhdsWithin_iff.2 ⟨hlim, Filter.Eventually.of_forall fun n ↦ (hu n).1⟩
+  exact tendsto_const_nhds.sub (hω.tendsto.comp hu')
 
 end MeasureTheory.Adapted

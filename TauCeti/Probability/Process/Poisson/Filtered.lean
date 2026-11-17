@@ -140,10 +140,8 @@ independent. Only `s ≤ u` and `t ≤ u` are used, so the first interval may al
 empty. -/
 theorem indepFun_sub_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t u v : ℝ≥0}
     (hsu : s ≤ u) (htu : t ≤ u) (huv : u ≤ v) :
-    IndepFun (N t - N s) (N v - N u) P := by
-  rw [IndepFun_iff_Indep]
-  exact indep_of_indep_of_le_left (h.indep_sub huv).symm
-    ((h.adapted.measurable_le htu).sub (h.adapted.measurable_le hsu)).comap_le
+    IndepFun (N t - N s) (N v - N u) P :=
+  h.adapted.indepFun_sub_sub hsu htu (h.indep_sub huv)
 
 /-- A Poisson process has independent increments. -/
 theorem hasIndepIncrements (h : IsFilteredPoissonProcess ℱ α N P) : HasIndepIncrements N P :=
@@ -174,10 +172,7 @@ theorem ambientNullAugmentation (h : IsFilteredPoissonProcess ℱ α N P) :
   stronglyAdapted t := (h.stronglyAdapted t).mono (ℱ.le_ambientNullAugmentation P t)
   eval_zero_ae_eq_zero := h.eval_zero_ae_eq_zero
   hasLaw_sub _ _ hst := h.hasLaw_sub hst
-  indep_sub s t hst := by
-    apply indep_of_indep_of_le_right (h.indep_sub hst).eventuallyMeasurableSpace_right
-    rw [Filtration.ambientNullAugmentation_apply, Filtration.nullAugment_apply]
-    exact inf_le_right
+  indep_sub _ _ hst := (h.indep_sub hst).ambientNullAugmentation_right
 
 /-- Fixed-time almost-sure equality preserves the Poisson property, provided the replacement is
 adapted to the same filtration. Adaptedness is not inferred from almost-sure equality on a raw
@@ -189,27 +184,14 @@ theorem congr (h : IsFilteredPoissonProcess ℱ α N P) {M : ℝ≥0 → Ω → 
   eval_zero_ae_eq_zero := by
     filter_upwards [h.eval_zero_ae_eq_zero, hNM 0] with ω hω hω' using hω' ▸ hω
   hasLaw_sub s t hst := (h.hasLaw_sub hst).congr ((hNM t).sub (hNM s)).symm
-  indep_sub s t hst := by
-    have hi : @IndepFun Ω ℝ Ω mΩ inferInstance (ℱ s) (N t - N s) id P := by
-      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using h.indep_sub hst
-    have hj := hi.congr ((hNM t).sub (hNM s)) (Filter.EventuallyEq.refl ..)
-    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hj
+  indep_sub s t hst := (h.indep_sub hst).comap_congr_left ((hNM t).sub (hNM s))
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process is independent of
 `ℱ s`. -/
 theorem indep_comap_shift (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0) :
-    Indep (.comap (fun ω u ↦ N (s + u) ω - N s ω) inferInstance) (ℱ s) P := by
+    Indep (.comap (fun ω u ↦ N (s + u) ω - N s ω) inferInstance) (ℱ s) P :=
   have := h.isProbabilityMeasure
-  refine indep_of_indep_of_le_left (h.adapted.indep_comap_sub_Ici h.indep_sub s) ?_
-  have hg : Measurable fun (z : Set.Ici s → ℝ) (u : ℝ≥0) ↦
-      z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩ := by
-    fun_prop
-  have hcomp : (fun ω u ↦ N (s + u) ω - N s ω) =
-      (fun (z : Set.Ici s → ℝ) (u : ℝ≥0) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) ∘
-        fun ω (t : Set.Ici s) ↦ N t ω - N s ω :=
-    rfl
-  rw [hcomp, ← MeasurableSpace.comap_comp]
-  exact MeasurableSpace.comap_mono hg.comap_le
+  h.adapted.indep_comap_shift h.indep_sub s
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process relative to `ℱ` is a
 Poisson process of the same rate relative to its own natural filtration. -/

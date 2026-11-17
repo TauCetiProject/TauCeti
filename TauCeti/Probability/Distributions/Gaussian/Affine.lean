@@ -79,6 +79,17 @@ theorem gaussianReal_map_const_add_const_mul (m : ℝ) (v : ℝ≥0) (a b : ℝ)
     _ = _ := by
       rw [gaussianReal_map_const_mul, gaussianReal_map_const_add, add_comm (b * m) a]
 
+/-- A finite product of centered Gaussian laws of variance `v` is the pushforward of the unit
+product Gaussian law under coordinatewise scaling by `√v`. -/
+theorem pi_gaussianReal_zero_eq_map_smul {ι : Type*} [Fintype ι] (v : ℝ≥0) :
+    (Measure.pi fun _ : ι ↦ gaussianReal 0 v) =
+      (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map (fun x : ι → ℝ ↦ √(v : ℝ) • x) := by
+  have hscale : (fun _ : ι ↦ gaussianReal 0 v) =
+      fun _ : ι ↦ (gaussianReal 0 1).map (fun r : ℝ ↦ √(v : ℝ) * r) := by
+    ext _; rw [gaussianReal_map_const_mul]; simp [Real.sq_sqrt v.coe_nonneg]
+  rw [hscale, ← Measure.pi_map_pi fun _ ↦ by fun_prop]
+  rfl
+
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
 /-- The covariance form of an affine image of a multivariate Gaussian is the one belonging to the
