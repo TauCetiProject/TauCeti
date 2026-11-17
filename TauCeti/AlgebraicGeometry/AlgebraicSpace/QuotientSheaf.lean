@@ -95,10 +95,12 @@ variable {R U : Scheme.{u}} (s t : R ⟶ U)
 
 variable {s t}
 
-/-- For an equivalence relation `(t, s)`, two `T`-points of `U` have the same class in the
-presheaf quotient exactly when they are `t r` and `s r` for a `T`-point `r` of `R`. -/
-theorem quotientPresheaf.π_app_eq_iff (h : IsEquivalenceRelation t s) {T : Scheme.{u}ᵒᵖ}
-    (a b : unop T ⟶ U) :
+/-- When the relation `t r ~ s r` on `T`-points of `U` is an equivalence relation (for instance
+when `(t, s)` is an equivalence relation, by `EquivalenceRelation.equivalence_ofPairHom`), two
+`T`-points of `U` have the same class in the presheaf quotient exactly when they are `t r` and
+`s r` for a `T`-point `r` of `R`. -/
+theorem quotientPresheaf.π_app_eq_iff {T : Scheme.{u}ᵒᵖ}
+    (h : _root_.Equivalence (Rel.ofPairHom t s (unop T))) (a b : unop T ⟶ U) :
     (quotientPresheaf.π s t).app T a = (quotientPresheaf.π s t).app T b ↔
       ∃ r : unop T ⟶ R, r ≫ t = a ∧ r ≫ s = b := by
   have e : Function.Coequalizer.Rel (fun r : unop T ⟶ R ↦ r ≫ t) (fun r ↦ r ≫ s) =
@@ -107,18 +109,9 @@ theorem quotientPresheaf.π_app_eq_iff (h : IsEquivalenceRelation t s) {T : Sche
     rw [Rel.ofPairHom_iff]
     exact ⟨fun ⟨r⟩ ↦ ⟨r, rfl, rfl⟩, fun ⟨r, ha, hb⟩ ↦ ha ▸ hb ▸ .intro r⟩
   refine Quot.eq.trans ?_
-  rw [e, (h.equivalence_ofPairHom (unop T)).eqvGen_iff, Rel.ofPairHom_iff]
+  rw [e, h.eqvGen_iff, Rel.ofPairHom_iff]
 
 section Sheaf
-
-/-- A morphism of sheaves followed by the identification of its target with its own
-sheafification is the identification of its source followed by the sheafified morphism. -/
-private theorem comp_sheafificationIso_hom {P Q : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
-    (g : P ⟶ Q) :
-    g ≫ (sheafificationIso Q).hom =
-      (sheafificationIso P).hom ≫ (presheafToSheaf _ _).map g.hom := by
-  ext1
-  simp
 
 variable (s t)
 
@@ -140,20 +133,43 @@ theorem quotientPresheaf.uliftπ_condition :
 variable {s t} in
 /-- The factorisation through the universe-lifted presheaf quotient of a natural transformation
 out of `h_U` which agrees on `t r` and `s r` for every point `r` of `R`. -/
-@[expose] noncomputable def quotientPresheaf.uliftDesc {P : Scheme.{u}ᵒᵖ ⥤ Type (u + 1)}
+noncomputable def quotientPresheaf.uliftDesc {P : Scheme.{u}ᵒᵖ ⥤ Type (u + 1)}
     (φ : (Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U).obj ⟶ P)
     (hφ : (Scheme.fppfTopology.uliftYoneda.{u + 1}.map t).hom ≫ φ =
       (Scheme.fppfTopology.uliftYoneda.{u + 1}.map s).hom ≫ φ) :
     quotientPresheaf s t ⋙ uliftFunctor.{u + 1} ⟶ P where
-  app T := TypeCat.ofHom fun x ↦ Quot.lift (fun a ↦ φ.app T (ULift.up a))
-    (by
-      rintro _ _ ⟨r⟩
-      exact ConcreteCategory.congr_hom (NatTrans.congr_app hφ T)
-        (ULift.up r : ULift.{u + 1} (unop T ⟶ R))) x.down
+  app T := TypeCat.ofHom fun x ↦
+    Function.Coequalizer.desc (fun r : unop T ⟶ R ↦ r ≫ t) (fun r ↦ r ≫ s)
+    (fun a ↦ φ.app T (ULift.up a))
+    (funext fun r ↦ ConcreteCategory.congr_hom (NatTrans.congr_app hφ T)
+      (ULift.up r : ULift.{u + 1} (unop T ⟶ R))) x.down
   naturality T T' f := by
     ext ⟨x⟩
     induction x using Quot.ind
     exact ConcreteCategory.congr_hom (φ.naturality f) _
+
+variable {s t} in
+/-- The component of `quotientPresheaf.uliftDesc φ hφ` at `T` descends `φ.app T` along the
+pointwise coequaliser. -/
+theorem quotientPresheaf.uliftDesc_app_apply {P : Scheme.{u}ᵒᵖ ⥤ Type (u + 1)}
+    (φ : (Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U).obj ⟶ P)
+    (hφ : (Scheme.fppfTopology.uliftYoneda.{u + 1}.map t).hom ≫ φ =
+      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map s).hom ≫ φ) (T : Scheme.{u}ᵒᵖ)
+    (a : unop T ⟶ U) :
+    (quotientPresheaf.uliftDesc φ hφ).app T (ULift.up ((quotientPresheaf.π s t).app T a)) =
+      φ.app T (ULift.up a) :=
+  (rfl)
+
+variable {s t} in
+/-- The factorisation through the universe-lifted presheaf quotient, composed with the
+projection, is the original natural transformation. -/
+@[reassoc (attr := simp)]
+theorem quotientPresheaf.uliftπ_uliftDesc {P : Scheme.{u}ᵒᵖ ⥤ Type (u + 1)}
+    (φ : (Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U).obj ⟶ P)
+    (hφ : (Scheme.fppfTopology.uliftYoneda.{u + 1}.map t).hom ≫ φ =
+      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map s).hom ≫ φ) :
+    quotientPresheaf.uliftπ s t ≫ quotientPresheaf.uliftDesc φ hφ = φ :=
+  (rfl)
 
 /-- Morphisms out of the universe-lifted presheaf quotient agree when they agree after the
 projection. -/
@@ -178,7 +194,8 @@ theorem quotientPresheaf.isKernelPair_uliftπ (h : IsEquivalenceRelation t s) :
   · rintro ⟨r⟩ ⟨r'⟩ ⟨ht, hs⟩
     exact congrArg ULift.up (h.hom_ext (congrArg ULift.down ht) (congrArg ULift.down hs))
   · rintro ⟨a⟩ ⟨b⟩ hab
-    obtain ⟨r, ht, hs⟩ := (quotientPresheaf.π_app_eq_iff h a b).1 (congrArg ULift.down hab)
+    obtain ⟨r, ht, hs⟩ := (quotientPresheaf.π_app_eq_iff (h.equivalence_ofPairHom _) a b).1
+      (congrArg ULift.down hab)
     exact ⟨ULift.up r, congrArg ULift.up ht, congrArg ULift.up hs⟩
 
 /-- The quotient sheaf `U/R` of a pre-relation `s t : R ⟶ U`: the fppf sheafification of the
@@ -195,20 +212,28 @@ class. -/
   (sheafificationIso (Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U)).hom ≫
     (presheafToSheaf Scheme.fppfTopology (Type (u + 1))).map (quotientPresheaf.uliftπ s t)
 
+/-- On underlying presheaves, the projection onto the quotient sheaf is the projection onto the
+presheaf quotient followed by the unit of sheafification. -/
+theorem quotientSheaf.π_hom :
+    (quotientSheaf.π s t).hom =
+      quotientPresheaf.uliftπ s t ≫ toSheafify Scheme.fppfTopology _ := by
+  rw [quotientSheaf.π, ObjectProperty.FullSubcategory.comp_hom, sheafificationIso_hom_hom,
+    isoSheafify_hom, toSheafify_naturality]
+
 /-- The projection onto the quotient sheaf coequalises `h_R ⇉ h_U`. -/
 @[reassoc]
 theorem quotientSheaf.condition :
     Scheme.fppfTopology.uliftYoneda.map t ≫ quotientSheaf.π s t =
       Scheme.fppfTopology.uliftYoneda.map s ≫ quotientSheaf.π s t := by
-  rw [quotientSheaf.π, reassoc_of% comp_sheafificationIso_hom,
-    reassoc_of% comp_sheafificationIso_hom, ← Functor.map_comp, ← Functor.map_comp,
-    quotientPresheaf.uliftπ_condition]
+  ext1
+  simp only [ObjectProperty.FullSubcategory.comp_hom, quotientSheaf.π_hom]
+  rw [reassoc_of% quotientPresheaf.uliftπ_condition s t]
 
 variable {s t}
 
 /-- A morphism `φ : h_U ⟶ F` to an fppf sheaf which agrees on `t r` and `s r` for every point `r`
 of `R` factors through the quotient sheaf. -/
-@[expose] noncomputable def quotientSheaf.desc {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
+noncomputable def quotientSheaf.desc {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
     (φ : Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U ⟶ F)
     (hφ : Scheme.fppfTopology.uliftYoneda.map t ≫ φ =
       Scheme.fppfTopology.uliftYoneda.map s ≫ φ) :
@@ -216,6 +241,18 @@ of `R` factors through the quotient sheaf. -/
   ObjectProperty.homMk <| sheafifyLift Scheme.fppfTopology
     (quotientPresheaf.uliftDesc φ.hom (congrArg (·.hom) hφ)) F.property
 
+/-- The factorisation through the quotient sheaf is the sheafified lift of the factorisation
+through the universe-lifted presheaf quotient. -/
+theorem quotientSheaf.desc_def {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
+    (φ : Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U ⟶ F)
+    (hφ : Scheme.fppfTopology.uliftYoneda.map t ≫ φ =
+      Scheme.fppfTopology.uliftYoneda.map s ≫ φ) :
+    quotientSheaf.desc φ hφ = ObjectProperty.homMk (sheafifyLift Scheme.fppfTopology
+      (quotientPresheaf.uliftDesc φ.hom (congrArg (·.hom) hφ)) F.property) :=
+  (rfl)
+
+/-- The factorisation through the quotient sheaf, composed with the projection, is the original
+morphism. -/
 @[reassoc (attr := simp)]
 theorem quotientSheaf.π_desc {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
     (φ : Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U ⟶ F)
@@ -223,11 +260,9 @@ theorem quotientSheaf.π_desc {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
       Scheme.fppfTopology.uliftYoneda.map s ≫ φ) :
     quotientSheaf.π s t ≫ quotientSheaf.desc φ hφ = φ := by
   ext1
-  change (sheafificationIso _).hom.hom ≫ sheafifyMap _ (quotientPresheaf.uliftπ s t) ≫
-    sheafifyLift _ (quotientPresheaf.uliftDesc φ.hom _) F.property = φ.hom
-  rw [sheafificationIso_hom_hom, isoSheafify_hom, ← toSheafify_naturality_assoc,
-    toSheafify_sheafifyLift]
-  rfl
+  rw [ObjectProperty.FullSubcategory.comp_hom, quotientSheaf.π_hom, Category.assoc,
+    quotientSheaf.desc_def, ObjectProperty.homMk_hom, toSheafify_sheafifyLift,
+    quotientPresheaf.uliftπ_uliftDesc]
 
 /-- Morphisms out of the quotient sheaf agree when they agree after the projection. -/
 theorem quotientSheaf.hom_ext {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
@@ -235,11 +270,8 @@ theorem quotientSheaf.hom_ext {F : Sheaf Scheme.fppfTopology.{u} (Type (u + 1))}
     (hfg : quotientSheaf.π s t ≫ f = quotientSheaf.π s t ≫ g) : f = g := by
   ext1
   refine sheafify_hom_ext _ _ _ F.property (quotientPresheaf.uliftπ_hom_ext s t ?_)
-  have := congrArg (·.hom) hfg
-  change (sheafificationIso _).hom.hom ≫ sheafifyMap _ (quotientPresheaf.uliftπ s t) ≫ f.hom =
-    (sheafificationIso _).hom.hom ≫ sheafifyMap _ (quotientPresheaf.uliftπ s t) ≫ g.hom at this
-  rwa [sheafificationIso_hom_hom, isoSheafify_hom, ← toSheafify_naturality_assoc,
-    ← toSheafify_naturality_assoc] at this
+  simpa only [ObjectProperty.FullSubcategory.comp_hom, quotientSheaf.π_hom, Category.assoc]
+    using congrArg (·.hom) hfg
 
 variable (s t) in
 /-- The quotient sheaf is the coequaliser of `h_R ⇉ h_U` in fppf sheaves. -/
@@ -256,8 +288,12 @@ theorem quotientSheaf.kernelPair (h : IsEquivalenceRelation t s) :
       (Scheme.fppfTopology.uliftYoneda.map s) :=
   ((presheafToSheaf Scheme.fppfTopology (Type (u + 1))).map_isPullback
     (quotientPresheaf.isKernelPair_uliftπ h)).of_iso' (sheafificationIso _) (sheafificationIso _)
-    (sheafificationIso _) (Iso.refl _) (comp_sheafificationIso_hom _).symm
-    (comp_sheafificationIso_hom _).symm (Category.comp_id (quotientSheaf.π s t)).symm
+    (sheafificationIso _) (Iso.refl _)
+    ((sheafificationNatIso Scheme.fppfTopology (Type (u + 1))).hom.naturality
+      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map t)).symm
+    ((sheafificationNatIso Scheme.fppfTopology (Type (u + 1))).hom.naturality
+      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map s)).symm
+    (Category.comp_id (quotientSheaf.π s t)).symm
     (Category.comp_id (quotientSheaf.π s t)).symm
 
 end Sheaf
