@@ -18,7 +18,9 @@ relative spectrum; the counit recovers an affine morphism from its function alge
 
 The triangle identities make these recovery isomorphisms compatible with both functors.
 The anti-equivalence allows questions about affine schemes over the base to be translated into
-questions about quasi-coherent commutative algebras, with the direction of morphisms reversed.
+questions about quasi-coherent commutative algebras, with the direction of morphisms reversed; in
+particular, `QuasicoherentAlgebra.hom_ext_of_relativeSpecMap_eq` recovers equality of algebra
+morphisms from equality of the induced maps on relative spectra.
 
 ## References
 
@@ -165,5 +167,17 @@ lemma affineFunctions_map_relativeSpecCounit_hom_app (V : AffineSchemeOver X) :
     (affineFunctions X).map ((relativeSpecCounit X).hom.app V) =
       (relativeSpecUnit X).inv.app ((affineFunctions X).obj V) :=
   ((relativeSpecEquiv X).unitInv_app_inverse V).symm
+
+/-- Two morphisms of quasi-coherent commutative algebras are equal as soon as they induce the same
+morphism on relative spectra. -/
+lemma QuasicoherentAlgebra.hom_ext_of_relativeSpecMap_eq {X : Scheme.{u}}
+    {A B : QuasicoherentAlgebra X} {f₁ f₂ : A ⟶ B}
+    (h : CommMon.relativeSpecMap f₁.hom = CommMon.relativeSpecMap f₂.hom) :
+    f₁ = f₂ := by
+  apply Quiver.Hom.op_inj
+  refine (relativeSpec X).map_injective ?_
+  apply MorphismProperty.Over.Hom.ext
+  rw [relativeSpec_map_left, relativeSpec_map_left]
+  exact h
 
 end TauCeti.AlgebraicGeometry
