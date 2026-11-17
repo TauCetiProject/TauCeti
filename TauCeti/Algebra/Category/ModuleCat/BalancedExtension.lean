@@ -250,48 +250,51 @@ homomorphisms. -/
     (functorComp.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃)).hom ≫
       Functor.whiskerLeft (functor.{u₁, u₂, max v u₂ u₃} f₁₂)
         (functorComp.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄).hom ≫
-      (Functor.associator _ _ _).inv :=
-  NatTrans.ext <| funext fun M ↦ functor_hom_ext _ fun m ↦ by
-    simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-      Functor.associator_inv_app, Category.comp_id]
-    refine (ConcreteCategory.comp_apply _ _ _).trans <|
-      (congrArg _ (functorComp_hom_app_tmul.{u₁, u₃, u₄, max v u₂ u₃} _ _ M 1 m)).trans <|
-      (functor_map_tmul _ _ _ _).trans <|
-      (congrArg (tmul f₃₄ 1)
-        (functorComp_hom_app_tmul.{u₁, u₂, u₃, max v u₂ u₃} _ _ M 1 m)).trans ?_
-    exact ((ConcreteCategory.comp_apply _ _ _).trans <|
-      (congrArg _
-        (functorComp_hom_app_tmul.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃) M 1 m)).trans
-        (functorComp_hom_app_tmul.{u₂, u₃, u₄, max v u₂ u₃} _ _ _ 1 _)).symm
+      (Functor.associator _ _ _).inv := by
+  refine NatTrans.ext <| funext fun M ↦ ?_
+  dsimp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
+    Functor.associator_inv_app, Functor.comp_obj, functorComp, NatIso.ofComponents, functor]
+  rw [Category.comp_id]
+  refine ModuleCat.hom_ext <| hom_ext fun m ↦ ?_
+  have h₁ : (cancelBaseChange f₁₂ (f₃₄.comp f₂₃) (P := M)).symm
+      (tmul (f₃₄.comp (f₂₃.comp f₁₂)) 1 m) = tmul (f₃₄.comp f₂₃) 1 (tmul f₁₂ 1 m) :=
+    cancelBaseChange_symm_tmul f₁₂ (f₃₄.comp f₂₃) 1 m
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearEquiv.toModuleIso_hom,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, cancelBaseChange_symm_tmul, map_tmul, h₁]
 
 /-- **Left-unit coherence** for `TauCeti.BalancedExtension.functorId` and
 `TauCeti.BalancedExtension.functorComp`. -/
 @[reassoc] theorem functorComp_id_comp {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
     (functorComp.{u₁, u₁, u₂, max v u₁} (RingHom.id R) f).hom ≫
       Functor.whiskerRight (functorId.{u₁, max v u₁} R).hom (functor.{u₁, u₂, max v u₁} f) ≫
-      (Functor.leftUnitor (functor.{u₁, u₂, max v u₁} f)).hom = 𝟙 _ :=
-  NatTrans.ext <| funext fun M ↦ functor_hom_ext _ fun m ↦ by
-    simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.leftUnitor_hom_app,
-      NatTrans.id_app]
-    exact (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans <|
-      (ConcreteCategory.id_apply _).trans <| (congrArg _ (functorComp_hom_app_tmul _ _ M 1 m)).trans
-        <| (functor_map_tmul _ _ _ _).trans <|
-      (congrArg (tmul f 1) ((functorId_hom_app_tmul R M 1 m).trans (one_smul R m))).trans
-        (ConcreteCategory.id_apply (X := (functor f).obj M) (tmul f 1 m)).symm
+      (Functor.leftUnitor (functor.{u₁, u₂, max v u₁} f)).hom = 𝟙 _ := by
+  refine NatTrans.ext <| funext fun M ↦ ?_
+  dsimp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.leftUnitor_hom_app,
+    NatTrans.id_app, Functor.comp_obj, Functor.id_obj, functorComp, functorId,
+    NatIso.ofComponents, functor]
+  rw [Category.comp_id]
+  refine ModuleCat.hom_ext <| hom_ext fun m ↦ ?_
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_id, ModuleCat.hom_ofHom,
+    LinearEquiv.toModuleIso_hom, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    cancelBaseChange_symm_tmul, map_tmul, lid_tmul, one_smul, LinearMap.id_apply]
+  rfl
 
 /-- **Right-unit coherence** for `TauCeti.BalancedExtension.functorId` and
 `TauCeti.BalancedExtension.functorComp`. -/
 @[reassoc] theorem functorComp_comp_id {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
     (functorComp.{u₁, u₂, u₂, max v u₂} f (RingHom.id S)).hom ≫
       Functor.whiskerLeft (functor.{u₁, u₂, max v u₂} f) (functorId.{u₂, max v u₂} S).hom ≫
-      (Functor.rightUnitor (functor.{u₁, u₂, max v u₂} f)).hom = 𝟙 _ :=
-  NatTrans.ext <| funext fun M ↦ functor_hom_ext _ fun m ↦ by
-    simp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app,
-      NatTrans.id_app]
-    exact (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans <|
-      (ConcreteCategory.id_apply _).trans <| (congrArg _ (functorComp_hom_app_tmul _ _ M 1 m)).trans
-        <| (functorId_hom_app_tmul S _ 1 _).trans <| (one_smul S _).trans
-      (ConcreteCategory.id_apply (X := (functor f).obj M) (tmul f 1 m)).symm
+      (Functor.rightUnitor (functor.{u₁, u₂, max v u₂} f)).hom = 𝟙 _ := by
+  refine NatTrans.ext <| funext fun M ↦ ?_
+  dsimp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app,
+    NatTrans.id_app, Functor.comp_obj, Functor.id_obj, functorComp, functorId,
+    NatIso.ofComponents, functor]
+  rw [Category.comp_id]
+  refine ModuleCat.hom_ext <| hom_ext fun m ↦ ?_
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_id, ModuleCat.hom_ofHom,
+    LinearEquiv.toModuleIso_hom, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    cancelBaseChange_symm_tmul, lid_tmul, one_smul, LinearMap.id_apply]
+  rfl
 
 section Square
 
