@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # `L²` jets of sections over the strip
@@ -21,7 +22,8 @@ Sections of the trivial bundle with fibre `V` over the strip `ℝ × [0, 1]` and
 `ℝ × S¹`, whose fundamental domain is the strip, are maps `ξ : ℝ × ℝ → V`. This file collects
 what their Sobolev spaces `W^{1,2}` have in common: the Lebesgue measure
 `TauCeti.StripSobolev.stripMeasure` of the strip and the jet `jet ξ = (ξ, ∂s ξ, ∂t ξ)`
-(`TauCeti.StripSobolev.jet`).
+(`TauCeti.StripSobolev.jet`). The norm of the jet bounds the value and both partial derivatives,
+and twice it bounds the derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`).
 
 A space `S` of differentiable maps with square integrable jets
 (`TauCeti.StripSobolev.HasL2Jets`) has the linear map `TauCeti.StripSobolev.jetLp S` into
@@ -197,6 +199,31 @@ theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
   calc ‖jet ξ z‖ ^ 2 ≤ (√(‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 +
         ‖ξ z‖ ^ 2)) ^ 2 := by gcongr
     _ = _ := Real.sq_sqrt (by positivity)
+
+/-- The norm of a map at a point is at most the norm of its jet there. -/
+theorem norm_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ‖ξ z‖ ≤ ‖jet ξ z‖ := by
+  rw [jet_apply]
+  exact norm_fst_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
+
+/-- The norm of the `s` derivative `∂s ξ` is at most the norm of the jet. -/
+theorem norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖fderiv ℝ ξ z (1, 0)‖ ≤ ‖jet ξ z‖ := by
+  rw [jet_apply]
+  exact (norm_fst_le ((fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) : V × V)).trans
+    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
+
+/-- The norm of the `t` derivative `∂t ξ` is at most the norm of the jet. -/
+theorem norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖fderiv ℝ ξ z (0, 1)‖ ≤ ‖jet ξ z‖ := by
+  rw [jet_apply]
+  exact (norm_snd_le ((fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) : V × V)).trans
+    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
+
+/-- The operator norm of the derivative is at most twice the norm of the jet. -/
+theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
+  linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
+    norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
 
 /-! ### The `L²` jets of a space of sections and their closure -/
 
