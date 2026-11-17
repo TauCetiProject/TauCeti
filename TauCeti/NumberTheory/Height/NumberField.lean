@@ -261,6 +261,15 @@ theorem absLogHeight₁_eq_div (x : K) : absLogHeight₁ x = logHeight₁ x / fi
   rw [absLogHeight₁, absMulHeight₁_eq_rpow, Real.log_rpow (mulHeight₁_pos x),
     logHeight₁_eq_log_mulHeight₁, inv_mul_eq_div]
 
+omit [Field L] [Algebra K L] [NumberField L] in
+/-- On a number field `K`, comparing absolute logarithmic heights is comparing heights relative
+to `K`. -/
+theorem absLogHeight₁_le_absLogHeight₁_iff {x y : K} :
+    absLogHeight₁ x ≤ absLogHeight₁ y ↔ mulHeight₁ x ≤ mulHeight₁ y := by
+  rw [absLogHeight₁_eq_div, absLogHeight₁_eq_div,
+    div_le_div_iff_of_pos_right (by exact_mod_cast finrank_pos), logHeight₁_eq_log_mulHeight₁,
+    logHeight₁_eq_log_mulHeight₁, Real.log_le_log_iff (mulHeight₁_pos x) (mulHeight₁_pos y)]
+
 section LowerBound
 
 variable {F : Type*} [Field F] [CharZero F]
