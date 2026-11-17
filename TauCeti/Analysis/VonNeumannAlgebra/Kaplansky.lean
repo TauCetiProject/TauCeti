@@ -15,7 +15,7 @@ public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification
 
-import TauCeti.Algebra.Star.Subalgebra
+import TauCeti.Algebra.Star.Basic
 
 /-!
 # The Kaplansky density theorem
@@ -203,7 +203,8 @@ theorem closure_unitBall_eq_unitBall_double_centralizer (S : StarSubalgebra ℂ 
   have hX : offDiag x ∈ ((S.piLpMatrix (Fin 2) : Set _)).centralizer.centralizer := by
     refine (S.mem_centralizer_centralizer_piLpMatrix_iff).mpr fun i j => ?_
     fin_cases i <;> fin_cases j <;>
-      simp [offDiag, hx, S.star_mem_centralizer_centralizer hx, Set.zero_mem_centralizer]
+      simp [offDiag, hx, StarMemClass.star_mem_centralizer_centralizer S hx,
+        Set.zero_mem_centralizer]
   have hXS : ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ (offDiag x) ∈
       closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) _ _ ''
         {Y | Y ∈ S.piLpMatrix (Fin 2) ∧ IsSelfAdjoint Y ∧ ‖Y‖ ≤ 1}) :=
