@@ -226,7 +226,7 @@ theorem d_parityShift (k : ZMod 2) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2)
       eqToHom (term_parityShift k X q σ) ≫ X.d q (σ + k) ≫
         eqToHom (by rw [term_parityShift, add_right_comm]) := by
   rw [d_def, X.d_eq (sub_add_eq_add_sub σ (q : ZMod 2) k).symm rfl]
-  simp [termIso]
+  simp only [termIso, eqToIso.hom, eqToIso.inv, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
   -- The remaining sides agree since the parts of `Π^k X` are parts of `X` by definition.
   rfl
 
@@ -238,7 +238,8 @@ theorem termMap_parityShift (k : ZMod 2) {X Y : ParityComplex C} (f : X ⟶ Y) (
       eqToHom (term_parityShift k X q σ) ≫ termMap f q (σ + k) ≫
         eqToHom (term_parityShift k Y q σ).symm := by
   rw [termMap_def, termMap_eq f (sub_add_eq_add_sub σ (q : ZMod 2) k).symm]
-  simp [termIso]
+  simp only [termIso, eqToIso.hom, eqToIso.inv, parityShift_map_apply, Category.assoc,
+    eqToHom_trans, eqToHom_trans_assoc]
   -- The remaining sides agree since the parts of `Π^k f` are parts of `f` by definition.
   rfl
 
@@ -329,7 +330,7 @@ theorem d_reindex (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
       eqToHom (term_reindex k X q σ) ≫ X.d (q + k) (σ + k) ≫
         eqToHom (by rw [term_reindex, add_right_comm q, add_right_comm σ]) := by
   rw [d_def, X.d_eq (τ := σ - q) (by push_cast; ring) (add_right_comm q k 1)]
-  simp [termIso]
+  simp only [termIso, eqToIso.hom, eqToIso.inv, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
   -- The remaining sides agree since the differentials of the restriction along `i ↦ i + k`
   -- are those of degree `q + k` by definition.
   rfl
@@ -342,7 +343,8 @@ theorem termMap_reindex (k : ℤ) {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ
       eqToHom (term_reindex k X q σ) ≫ termMap f (q + k) (σ + k) ≫
         eqToHom (term_reindex k Y q σ).symm := by
   rw [termMap_def, termMap_eq f (by push_cast; ring : σ + k - ((q + k : ℤ) : ZMod 2) = σ - q)]
-  simp [termIso]
+  simp only [termIso, eqToIso.hom, eqToIso.inv, reindex_map_apply, Category.assoc, eqToHom_trans,
+    eqToHom_trans_assoc]
   -- The remaining sides agree since the components of the restriction along `i ↦ i + k`
   -- are those of degree `q + k` by definition.
   rfl
@@ -389,10 +391,17 @@ theorem d_shift (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
   rw [d_def, X.d_eq (τ := σ - q + k) (by push_cast; rw [← sub_sub, CharTwo.sub_eq_add (σ - q)])
     (add_right_comm q k 1)]
   -- The differential of the shift of a cochain complex is the signed differential
-  -- (`CochainComplex.shiftFunctor_obj_d'`), here read on the part `X (σ - q + k)`.
+  -- (`CochainComplex.shiftFunctor_obj_d'`, true by `rfl`), here read on the part `X (σ - q + k)`.
+  -- It cannot be rewritten in: the part `(shift C k).obj X (σ - q)` occurs in the types of the
+  -- surrounding `eqToHom` casts, so `rw [shift_obj_apply]` fails (motive is not type correct),
+  -- and a restated `rw [show ... from CochainComplex.shiftFunctor_obj_d' ..]` leaves the sign on
+  -- a morphism between the unreduced terms, where neither `Linear.comp_smul` nor
+  -- `Preadditive.comp_zsmul` matches. `change` restates the whole composite between the reduced
+  -- terms instead.
   simp only [termIso, eqToIso.hom, eqToIso.inv]
   change eqToHom _ ≫ (k.negOnePow • (X (σ - q + k)).d (q + k) (q + 1 + k)) ≫ eqToHom _ = _
-  simp [Units.smul_def]
+  simp only [Units.smul_def, Linear.smul_comp, Linear.comp_smul, Category.assoc, eqToHom_trans,
+    eqToHom_trans_assoc]
 
 /-- The native shift keeps the components of even chain maps: the component of the shift of `f`
 by `k` in degree `q` and parity `σ` is the component of `f` in degree `q + k` and parity `σ`. -/
@@ -401,7 +410,8 @@ theorem termMap_shift (k : ℤ) {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) 
       eqToHom (term_shift k X q σ) ≫ termMap f (q + k) σ ≫ eqToHom (term_shift k Y q σ).symm := by
   rw [termMap_def,
     termMap_eq f (τ := σ - q + k) (by push_cast; rw [← sub_sub, CharTwo.sub_eq_add (σ - q)])]
-  simp [termIso]
+  simp only [termIso, eqToIso.hom, eqToIso.inv, shift_map_apply, CochainComplex.shiftFunctor_map_f',
+    Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
   -- The remaining sides agree since the components of the shift by `k` are those of degree
   -- `q + k` by definition.
   rfl
