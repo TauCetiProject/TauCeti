@@ -93,18 +93,18 @@ theorem exists_ne_zero_inner_eq_zero_apply_eq_self [FiniteDimensional ℝ V] {f 
     ∃ v ≠ 0, inner ℝ v u = 0 ∧ f v = v := by
   set r : V ≃ₗᵢ[ℝ] V := (ℝ ∙ u)ᗮ.reflection
   have hdet : (r.trans f).toLinearMap.det ≠ (-1) ^ finrank ℝ V := by
-    rw [show (r.trans f).toLinearMap = f.toLinearMap ∘ₗ r.toLinearMap from rfl,
-      LinearMap.det_comp, hf, Submodule.det_reflection, Submodule.orthogonal_orthogonal,
-      finrank_span_singleton hu, pow_one, mul_neg_one, ne_eq, neg_eq_self]
-    exact pow_ne_zero _ (by norm_num)
+    rw [toLinearEquiv_trans, LinearEquiv.coe_trans, LinearMap.det_comp, hf,
+      Submodule.det_reflection, Submodule.orthogonal_orthogonal, finrank_span_singleton hu]
+    simp [neg_eq_self]
   obtain ⟨v, hv0, hv⟩ := exists_ne_zero_apply_eq_self_of_det_ne hdet
+  rw [trans_apply] at hv
   have hinner : inner ℝ v u = 0 := by
     have h := r.inner_map_map v u
     rw [Submodule.reflection_orthogonalComplement_singleton_eq_neg, ← f.inner_map_map,
-      show f (r v) = v from hv, map_neg, hfu, inner_neg_right] at h
+      hv, map_neg, hfu, inner_neg_right] at h
     linarith
   refine ⟨v, hv0, hinner, ?_⟩
-  rwa [show (r.trans f) v = f (r v) from rfl, Submodule.reflection_mem_subspace_eq_self
+  rwa [Submodule.reflection_mem_subspace_eq_self
     (Submodule.mem_orthogonal_singleton_iff_inner_left.mpr hinner)] at hv
 
 end LinearIsometryEquiv
