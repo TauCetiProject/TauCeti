@@ -23,8 +23,12 @@ also covers empty products, odd degrees, and singular positive-semidefinite cova
   abstract Wick--Isserlis formula for linear observables of a Gaussian measure.
 * `TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
   specializes the formula to coordinates of a multivariate Gaussian measure.
+* `TauCeti.Probability.integral_prod_multivariateGaussian_eq_sum_perfectMatching` is the
+  centered case, stated for raw coordinate products.
 * `ProbabilityTheory.HasLaw.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
   transfers the coordinate formula to a random vector with that law.
+* `ProbabilityTheory.HasLaw.integral_prod_multivariateGaussian_eq_sum_perfectMatching` is the
+  centered case for a random vector, stated for raw coordinate products.
 
 The proof combines the Gaussian contraction recurrence with the recurrence for weighted
 perfect matchings at a distinguished vertex.
@@ -124,6 +128,16 @@ theorem integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
   simp only [EuclideanSpace.coe_proj, hcov] at h
   exact h
 
+/-- The Wick--Isserlis formula for raw coordinates of a centered multivariate Gaussian
+measure. -/
+theorem integral_prod_multivariateGaussian_eq_sum_perfectMatching
+    {S : Matrix κ κ ℝ} (hS : S.PosSemidef) (f : ι → κ) :
+    (∫ x, ∏ i, x (f i) ∂multivariateGaussian 0 S) =
+      ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ S (f i) (f j),
+          fun i j ↦ by simpa using hS.isHermitian.apply (f j) (f i)⟩ e := by
+  simpa using integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching 0 hS f
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
@@ -146,5 +160,16 @@ theorem integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
       hX.integral_comp (by fun_prop)
     _ = _ := TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
       m hS f
+
+/-- The Wick--Isserlis formula for raw coordinate products of a random vector with a centered
+multivariate Gaussian law. Positions may select repeated coordinates, and no nondegeneracy is
+required. -/
+theorem integral_prod_multivariateGaussian_eq_sum_perfectMatching
+    (hX : HasLaw X (multivariateGaussian 0 S) P) (hS : S.PosSemidef) (f : ι → κ) :
+    (∫ ω, ∏ i, X ω (f i) ∂P) =
+      ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ S (f i) (f j),
+          fun i j ↦ by simpa using hS.isHermitian.apply (f j) (f i)⟩ e := by
+  simpa using hX.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching hS f
 
 end ProbabilityTheory.HasLaw
