@@ -22,9 +22,9 @@ records how it moves the moment map:
 
 (`TauCeti.CotangentBundle.momentMap_vectorBundleTranslateDiffeomorph_apply`).
 
-In cotangent bundle reduction at a nonzero value `c ∈ 𝔤*`, the one-form is `α = ⟨c, A⟩` for a
+In cotangent bundle reduction at a nonzero value `ν₀ ∈ 𝔤*`, the one-form is `α = ⟨ν₀, A⟩` for a
 principal connection `A` of the free action, which pairs every fundamental vector field with a
-constant: `α(ξ_Q) = ⟨c, A(ξ_Q)⟩ = -c(ξ)` for the convention `A(ξ_Q) = -ξ` of a left action.
+constant: `α(ξ_Q) = ⟨ν₀, A(ξ_Q)⟩ = -ν₀(ξ)` for the convention `A(ξ_Q) = -ξ` of a left action.
 This file works with the real one-form `α` alone, under the hypothesis that `α(ξ_Q(q)) = c(ξ)` for
 every point `q` and every `ξ`, for some `c ∈ 𝔤*`. Then:
 
@@ -32,20 +32,21 @@ every point `q` and every `ξ`, for some `c ∈ 𝔤*`. Then:
   (`TauCeti.CotangentBundle.momentMap_vectorBundleTranslateDiffeomorph`), so it carries each level
   `μ⁻¹(ν)` onto the level `μ⁻¹(ν + c)`
   (`TauCeti.CotangentBundle.image_vectorBundleTranslateDiffeomorph_preimage_momentMap`). For the
-  connection form this is the shift of `μ⁻¹(c)` onto the horizontal covectors `μ⁻¹(0)`.
+  connection form, `c = -ν₀`, and with `ν = ν₀` this is the shift of `μ⁻¹(ν₀)` onto the horizontal
+  covectors `μ⁻¹(0)`.
 * If `α` is moreover `G`-invariant, `τ_α` commutes with the cotangent-lifted action
   (`TauCeti.CotangentBundle.vectorBundleTranslateDiffeomorph_smul`). Comparing the equivariance of
   `μ` on both sides then shows that the value `c` is necessarily fixed by the coadjoint action,
   `Ad*_g c = c`, as soon as `Q` is nonempty
   (`TauCeti.CotangentBundle.coadjointRepresentation_apply_eq_self_of_forall_eval_eq`).
-* The **magnetic term** `dα` of the shifted symplectic form is `G`-invariant
-  (`TauCeti.CotangentBundle.mpullback_smul_mextDerivₗ_of_mpullback_smul_eq`) and horizontal:
+* The **magnetic term** `dα` of the shifted symplectic form is `G`-invariant, by naturality of
+  the exterior derivative (`TauCeti.SmoothForm.mextDerivₗ_mpullback`), and horizontal:
   `dα(ξ_Q, v) = 0` for every fundamental vector field `ξ_Q` and every tangent vector `v`
-  (`TauCeti.CotangentBundle.mextDerivₗ_apply_fundamentalVectorField_eq_zero`). This is Cartan's
+  (`TauCeti.mextDerivₗ_apply_fundamentalVectorField_eq_zero`). This is Cartan's
   formula `0 = L_{ξ_Q} α = ι_{ξ_Q} dα + d(α(ξ_Q))`, in which `α(ξ_Q) = c(ξ)` is constant. An
   invariant horizontal form is basic: it is the form that descends to the quotient `Q / G` as the
-  magnetic term of the reduced form. For `α = ⟨c, A⟩` with `c` coadjoint-invariant it is
-  `⟨c, F_A⟩`, the `c`-component of the curvature, since `c` vanishes on brackets.
+  magnetic term of the reduced form. For `α = ⟨ν₀, A⟩` with `ν₀` coadjoint-invariant it is
+  `⟨ν₀, F_A⟩`, the `ν₀`-component of the curvature, since `ν₀` vanishes on brackets.
 * **Change of connection.** If two one-forms `α` and `α'` pair the fundamental vector fields with
   the same `c`, their difference `β = α' - α` annihilates them, and `τ_α'` is `τ_α` followed by
   `τ_β` (`TauCeti.CotangentBundle.vectorBundleTranslateDiffeomorph_trans_sub`),
@@ -53,8 +54,8 @@ every point `q` and every `ξ`, for some `c ∈ 𝔤*`. Then:
   (`TauCeti.CotangentBundle.momentMap_vectorBundleTranslateDiffeomorph_sub`).
 
 The construction of principal connections, the descent of `dα` to `Q / G` and the identification
-of the reduced space at `c` with `T*(Q / G)` carrying `ω_can + pr^* β_c` belong to the quotient
-theory and are not part of this file.
+of the reduced space at `ν₀` with `T*(Q / G)` carrying `ω_can + pr^* β_{ν₀}` belong to the
+quotient theory and are not part of this file.
 
 ## References
 
@@ -138,7 +139,8 @@ theorem momentMap_vectorBundleTranslateDiffeomorph_of_forall_eq_zero {β : Smoot
     (z : CotangentBundle I M) :
     momentMap IG G (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv β)
         (SmoothForm.degreeOneEquiv β).contMDiff z) = momentMap IG G z := by
-  rw [momentMap_vectorBundleTranslateDiffeomorph (c := 0) (fun x ξ ↦ by rw [hβ]; rfl), add_zero]
+  rw [momentMap_vectorBundleTranslateDiffeomorph (c := 0)
+    (fun x ξ ↦ by rw [hβ, LinearMap.zero_apply]), add_zero]
 
 /-- **Change of connection.** If two one-forms `α` and `α'` pair every fundamental vector field
 with the same constant `c(ξ)`, their difference annihilates the fundamental vector fields, so
@@ -185,36 +187,13 @@ theorem vectorBundleTranslateDiffeomorph_smul
         (SmoothForm.degreeOneEquiv α).contMDiff (g • z) =
       g • vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff z := by
-  -- Invariance under `g⁻¹` at `g • x`: `α_{g x}(w) = α_x((dg_x)⁻¹ w)`.
-  have h (w : TangentSpace I (g • z.proj)) :
-      α.1 (g • z.proj) (fun _ ↦ w) =
-        α.1 z.proj (fun _ ↦ mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) := by
-    have h := SmoothForm.mpullback_apply (fun x : M ↦ g⁻¹ • x) (contMDiff_const_smul g⁻¹) α
-      (g • z.proj) (fun _ ↦ w)
-    rw [hinv g⁻¹] at h
-    exact h.trans (congrArg (fun A : E [⋀^Fin 1]→L[ℝ] ℝ ↦
-      A (fun _ ↦ mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w))
-      (show α.1 (g⁻¹ • g • z.proj) = α.1 z.proj by rw [inv_smul_smul]))
   rw [smul_eq_mk g z, smul_eq_mk g, vectorBundleTranslateDiffeomorph_apply,
     vectorBundleTranslateDiffeomorph_apply]
-  -- Both covectors lie over `g • x`. Their values are compared by evaluating the sum and the
-  -- composite pointwise: `rw` cannot see these evaluations, because the differential of
-  -- `x ↦ g⁻¹ • x` lands in the tangent space at `g⁻¹ • g • x`, only definitionally that at `x`.
-  refine CotangentBundle.ext rfl fun w ↦ ?_
-  have h' : SmoothForm.degreeOneEquiv α (g • z.proj) w =
-      SmoothForm.degreeOneEquiv α z.proj (mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) :=
-    (SmoothForm.degreeOneEquiv_apply_apply α _ w).trans
-      ((h w).trans (SmoothForm.degreeOneEquiv_apply_apply α _ _).symm)
-  exact congrArg (z.2 (mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) + ·) h'
-
-omit [TopologicalSpace G] in
-/-- The **magnetic term** `dα` of an invariant one-form is invariant. -/
-theorem mpullback_smul_mextDerivₗ_of_mpullback_smul_eq
-    (hinv : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x) (contMDiff_const_smul g) α = α)
-    (g : G) :
-    SmoothForm.mpullback (fun x : M ↦ g • x) (contMDiff_const_smul g) (mextDerivₗ I 1 α) =
-      mextDerivₗ I 1 α := by
-  rw [← SmoothForm.mextDerivₗ_mpullback, hinv]
+  refine CotangentBundle.ext rfl fun w ↦
+    congrArg (z.2 (mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) + ·) ?_
+  exact (SmoothForm.degreeOneEquiv_apply_apply_vec α _ w).trans
+    ((SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq (hinv g⁻¹) z.proj w).trans
+      (SmoothForm.degreeOneEquiv_apply_apply_vec α _ _).symm)
 
 end Invariant
 
@@ -241,38 +220,5 @@ theorem coadjointRepresentation_apply_eq_self_of_forall_eval_eq [Nonempty M]
   exact h.symm
 
 end Coadjoint
-
-/-! ### The magnetic term is horizontal -/
-
-section Horizontal
-
-variable [CompleteSpace EG] [LieGroup IG ∞ G] [T2Space G] [BoundarylessManifold IG G]
-  [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
-  [ContMDiffSMul IG I ∞ G M]
-
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-
-/-- **The magnetic term is horizontal.** If a one-form `α` is invariant under a smooth Lie group
-action and pairs every fundamental vector field with a constant, its exterior derivative vanishes
-on every fundamental vector field: `dα(ξ_M, v) = 0`. By Cartan's formula,
-`0 = L_{ξ_M} α = ι_{ξ_M} dα + d(α(ξ_M))`, and `α(ξ_M) = c(ξ)` is constant. -/
-theorem mextDerivₗ_apply_fundamentalVectorField_eq_zero {α : SmoothForm I M ℝ 1}
-    {c : Module.Dual ℝ (GroupLieAlgebra IG G)}
-    (hinv : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := IG) g) α = α)
-    (hα : ∀ x ξ, α.1 x ![fundamentalVectorField I ξ x] = c ξ) (ξ : GroupLieAlgebra IG G) (x : M)
-    (v : TangentSpace I x) :
-    (mextDerivₗ I 1 α).1 x ![fundamentalVectorField I ξ x, v] = 0 := by
-  have hX : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, fundamentalVectorField I ξ y⟩ : TangentBundle I M)) x :=
-    ((contMDiff_fundamentalVectorField (m := 1) (n := ∞) (by simp) ξ).mdifferentiable
-      one_ne_zero) x
-  have h := mlieDerivForm_apply_eq_mextDeriv_add (f := fun _ ↦ c ξ) (fun y ↦ hα y ξ)
-    (α.mdifferentiableAt x) hX v
-  rw [mlieDerivForm_fundamentalVectorField_eq_zero hinv ξ, mvfderiv_const] at h
-  rw [mextDerivₗ_apply]
-  simpa [eq_comm] using h
-
-end Horizontal
 
 end TauCeti.CotangentBundle
