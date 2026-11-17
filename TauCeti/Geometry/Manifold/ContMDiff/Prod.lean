@@ -20,7 +20,10 @@ These bridges are useful when transporting `C^n` and `C^n`-on-a-set statements b
 chart coordinates and the self-model of the product model space.
 
 The file also records a tube lemma: a map from a product which is `C^n` at every point of a
-compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and of `K`.
+compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and of `K`. For a family
+`f : N → M → M` of self-maps, read as the map `(p, x) ↦ f p x` from `N × M`, joint smoothness along
+a slice `{p₀} × M` passes to the iterates `p ↦ (f p)^[k]`, since the orbits of `f p₀` stay in that
+slice.
 
 ## Main results
 
@@ -34,6 +37,8 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   a product `(E₁ × E₂) × N₃` with an arbitrary manifold `N₃`.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
+* `TauCeti.contMDiffAt_uncurry_iterate`: the iterates of a family of self-maps which is jointly
+  `C^n` along a slice `{p₀} × M` are jointly `C^n` along it.
 
 -/
 
@@ -147,5 +152,21 @@ theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : 
     exact contMDiffWithinAt_extChartAt_symm_range_self a
   have hcomp := hinv.comp_of_eq hinner hφ0
   simpa only [Function.comp_def] using hcomp
+
+/-- **Iterates of a jointly `C^n` family.** If a family `f : N → M → M` of self-maps is jointly
+`C^n` at every point of the slice `{p₀} × M`, then so is the family of its `k`-th iterates
+`p ↦ (f p)^[k]`. -/
+theorem contMDiffAt_uncurry_iterate {f : N → M → M} {p₀ : N}
+    (hf : ∀ x, ContMDiffAt (J.prod I') I' n (Function.uncurry f) (p₀, x)) (k : ℕ) (x : M) :
+    ContMDiffAt (J.prod I') I' n (Function.uncurry fun p ↦ (f p)^[k]) (p₀, x) := by
+  induction k generalizing x with
+  | zero => exact contMDiffAt_snd
+  | succ k ih =>
+    have hk : (Function.uncurry fun p ↦ (f p)^[k + 1]) =
+        Function.uncurry f ∘ fun q ↦ (q.1, (f q.1)^[k] q.2) := by
+      funext ⟨p, y⟩
+      exact Function.iterate_succ_apply' (f p) k y
+    rw [hk]
+    exact (hf _).comp_of_eq (contMDiffAt_fst.prodMk (ih x)) rfl
 
 end TauCeti
