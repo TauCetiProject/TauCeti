@@ -129,18 +129,10 @@ variable {A : Set W} [RelCWComplex (univ : Set W) A]
 
 include h
 
-omit [T2Space X] [T2Space W] in
-/-- The map `j : W → P` opposite to the inclusion of the base of a relative CW complex is a closed
-embedding. -/
-private theorem isClosedEmbedding_right : IsClosedEmbedding j :=
-  TopCat.isClosedEmbedding_of_isPushout h.flip
-    (IsClosedEmbedding.inclusion base_subset_complex
-      ((isClosedBase C).preimage continuous_subtype_val))
-
 /-- The relative CW structure of `W` over `A`, carried to its image in `P`, with base any set `A'`
 equal to the image of `A`. -/
 private abbrev rangeRelCWComplex {A' : Set P} (hA : j '' A = A') : RelCWComplex (range j) A' :=
-  (isClosedEmbedding_right h).relCWComplex (C := univ) (D := A) image_univ hA
+  h.isClosedEmbedding_inr.relCWComplex (C := univ) (D := A) image_univ hA
 
 include hg
 
@@ -179,8 +171,8 @@ private theorem cellFrontier_inter_range_subset_skeletonLT [T2Space P] {A' : Set
   rcases RelCWComplex.mem_skeletonLT_iff.1 hw with hwA | ⟨l, hl, k, hk⟩
   · exact RelCWComplex.mem_skeletonLT_iff.2 (.inl (hA ▸ mem_image_of_mem _ hwA))
   refine RelCWComplex.mem_skeletonLT_iff.2
-    (.inr ⟨l, hl, (((isClosedEmbedding_right h).relCWComplexCellEquiv image_univ hA) l).symm k, ?_⟩)
-  rw [(isClosedEmbedding_right h).openCell_relCWComplex, Equiv.apply_symm_apply]
+    (.inr ⟨l, hl, ((h.isClosedEmbedding_inr.relCWComplexCellEquiv image_univ hA) l).symm k, ?_⟩)
+  rw [h.isClosedEmbedding_inr.openCell_relCWComplex, Equiv.apply_symm_apply]
   exact mem_image_of_mem _ hk
 
 /-- The relative CW structure on a pushout `P` of `D → C` along a cellular map, over any set `A'`
@@ -199,7 +191,7 @@ private def relCWComplexOfMapsToSkeletonLTAuxCellEquiv [T2Space P] {A' : Set P}
   letI := h.relCWComplex
   letI := rangeRelCWComplex h hA
   (relCWComplexTransCellEquiv (cellFrontier_inter_range_subset_skeletonLT h hg hA) n).trans
-    (Equiv.sumCongr ((isClosedEmbedding_right h).relCWComplexCellEquiv image_univ hA n)
+    (Equiv.sumCongr (h.isClosedEmbedding_inr.relCWComplexCellEquiv image_univ hA n)
       (h.relCWComplexCellEquiv n))
 
 private theorem relCWComplexOfMapsToSkeletonLTAux_map_inl [T2Space P] {A' : Set P}
@@ -210,9 +202,9 @@ private theorem relCWComplexOfMapsToSkeletonLTAux_map_inl [T2Space P] {A' : Set 
       j (RelCWComplex.map n c x) := by
   let := h.relCWComplex
   let := rangeRelCWComplex h hA
-  set k := ((isClosedEmbedding_right h).relCWComplexCellEquiv image_univ hA n).symm c
+  set k := (h.isClosedEmbedding_inr.relCWComplexCellEquiv image_univ hA n).symm c
   have h₁ := map_relCWComplexTrans_inl (cellFrontier_inter_range_subset_skeletonLT h hg hA) n k
-  have h₂ := (isClosedEmbedding_right h).coe_map_relCWComplex image_univ hA n k
+  have h₂ := h.isClosedEmbedding_inr.coe_map_relCWComplex image_univ hA n k
   exact (congrArg (fun e : PartialEquiv _ _ ↦ e x) h₁).trans
     ((congrFun h₂ x).trans (by simp [k]))
 

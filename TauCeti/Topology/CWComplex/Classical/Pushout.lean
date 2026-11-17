@@ -32,7 +32,8 @@ its quotient topology. This file shows:
   (`TauCeti.relativeCWPushout`), whose `n`-cells are the `n`-cells of `C`
   (`TauCeti.relativeCWPushoutCellEquiv`) and whose characteristic maps are those of `C` followed
   by the map `C → Z ∪_a C` (`TauCeti.relativeCWPushout_map_apply`);
-* the same holds for any pushout `P` of `D → C` along a map to `Z`, not only the chosen one: `P`
+* the same holds for any pushout `P` of `D → C` along a map to `Z`, not only the chosen one: the
+  map `Z → P` is a closed embedding (`CategoryTheory.IsPushout.isClosedEmbedding_inr`), `P`
   is Hausdorff when `Z` is (`CategoryTheory.IsPushout.t2Space`), and it is a relative CW complex
   over the image of `Z` (`CategoryTheory.IsPushout.relCWComplex`) with the cells of `C`
   (`CategoryTheory.IsPushout.relCWComplexCellEquiv`), whose characteristic maps are those of `C`
@@ -200,6 +201,17 @@ private theorem image_range_pushout_inr :
     h.isoPushout.inv '' range (pushout.inr (relCWBaseInclusion C) g) = range j := by
   rw [← range_comp]
   exact congrArg (fun f : Z ⟶ P ↦ range f) h.inr_isoPushout_inv
+
+omit [T2Space X] in
+include h in
+/-- **Gluing along a relative CW complex is a closed embedding, for any pushout square.** In a
+pushout `P` of the inclusion `D → C` of the base of a relative CW complex along a map `g : D → Z`,
+the map `j : Z → P` is a closed embedding. For the canonical pushout this is
+`TauCeti.isClosedEmbedding_pushout_inr_relCWBaseInclusion`. -/
+theorem isClosedEmbedding_inr : IsClosedEmbedding j :=
+  TopCat.isClosedEmbedding_of_isPushout h.flip
+    (IsClosedEmbedding.inclusion base_subset_complex
+      ((isClosedBase C).preimage continuous_subtype_val))
 
 include h in
 /-- A pushout of the inclusion `D → C` of the base of a relative CW complex is Hausdorff when the

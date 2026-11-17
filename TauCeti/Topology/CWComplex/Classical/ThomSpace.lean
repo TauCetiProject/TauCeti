@@ -24,7 +24,9 @@ consequences for spaces built by gluing `D(E)` along `S(E)`.
 * **Attaching a disc bundle.** For any continuous map `g : S(E) → Z`, the space `Z ∪_g D(E)`, or
   more precisely any pushout `P` of `S(E) → D(E)` along `g`, is a CW complex relative to the image
   of `Z` (`CategoryTheory.IsPushout.relCWComplex`), whose `n`-cells are the `m`-cells of `B` with
-  `m + r = n` (`TauCeti.discBundleAttachmentCellEquiv`). No CW structure on `Z` is needed. This is
+  `m + r = n` (`TauCeti.discBundleAttachmentCellEquiv`). The characteristic map of each is that of
+  the corresponding cell of `D(E)`, followed by `D(E) → P`
+  (`TauCeti.map_discBundleAttachmentCellEquiv_symm`). No CW structure on `Z` is needed. This is
   how crossing a critical level of a Morse–Bott function, which attaches the negative disc bundle
   of each critical submanifold to the sublevel below it, acquires cells: one for each cell of the
   critical submanifold, raised in dimension by its index.
@@ -197,6 +199,34 @@ def discBundleAttachmentCellEquiv
     cell (univ : Set P) n ≃ Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m :=
   letI := relCWComplexDiscBundleSphereBundle F E
   (h.relCWComplexCellEquiv n).trans (relCWComplexDiscBundleSphereBundleCellEquiv F E n)
+
+variable {F E}
+  (h : IsPushout (TopCat.ofHom (ContinuousMap.inclusion (sphereBundle_subset_discBundle F E)))
+    g i j)
+  {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
+
+/-- The cell of a disc-bundle attachment over an `m`-cell of `B` is the cell of the pushout coming
+from the corresponding cell of the disc bundle. -/
+theorem discBundleAttachmentCellEquiv_symm_apply :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    letI := h.relCWComplex
+    (discBundleAttachmentCellEquiv F E h n).symm c =
+      (h.relCWComplexCellEquiv n).symm
+        ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) := by
+  rw [discBundleAttachmentCellEquiv, Equiv.symm_trans_apply]
+
+/-- The characteristic map of the cell of a disc-bundle attachment over an `m`-cell of `B` is the
+characteristic map of the corresponding cell of the disc bundle, followed by the map `D(E) → P`. -/
+@[simp]
+theorem map_discBundleAttachmentCellEquiv_symm (x : closedBall (0 : Fin n → ℝ) 1) :
+    letI := relCWComplexDiscBundleSphereBundle F E
+    letI := h.relCWComplex
+    map n ((discBundleAttachmentCellEquiv F E h n).symm c) x =
+      i ⟨map n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) x,
+        closedCell_subset_complex n _ (mem_image_of_mem _ x.2)⟩ := by
+  let := relCWComplexDiscBundleSphereBundle F E
+  let := h.relCWComplex
+  rw [h.relCWComplex_map_apply, discBundleAttachmentCellEquiv_symm_apply, Equiv.apply_symm_apply]
 
 end Attachment
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.Quotient
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
-import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The Thom space of a vector bundle
@@ -47,16 +46,6 @@ namespace TauCeti
 
 variable {B : Type u} (F : Type*) (E : B → Type u) [∀ b, NormedAddCommGroup (E b)]
   [TopologicalSpace (TotalSpace F E)]
-
-/-- The pair `(D(E), S(E))` of the unit disc bundle and the unit sphere bundle of a bundle with
-normed fibres. -/
-abbrev discSpherePair : TopPair.{u} :=
-  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (sphereBundle_subset_discBundle F E)
-
-/-- The pair `(D(E), S(E))` is the disc-sphere pair of the fibre norm, as a fibre gauge. -/
-theorem discSpherePair_eq_gaugeDiscSpherePair :
-    discSpherePair F E = gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖ :=
-  TopPair.ofInclusion_congr _ _ sphereBundle_def discBundle_def
 
 /-- The **Thom space** `Th(E) = D(E)/S(E)` of a bundle with normed fibres: the unit disc bundle
 with the unit sphere bundle collapsed to a basepoint. It is the pointed quotient of the pair
@@ -148,20 +137,6 @@ theorem thomSpaceHomeomorphOfIsEmpty_basepoint [IsEmpty (sphereBundle F E)] :
 section RankZero
 
 variable [TopologicalSpace B] [NormedAddCommGroup F] [Subsingleton F] [FiberBundle F E]
-
-/-- In rank zero every vector is zero, so the unit sphere bundle is empty. -/
-instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
-  refine ⟨fun ⟨v, hv⟩ ↦ ?_⟩
-  have := subsingleton_fiber_of_subsingleton F E v.proj
-  rw [mem_sphereBundle, Subsingleton.elim v.2 0, norm_zero] at hv
-  exact zero_ne_one hv
-
-/-- In rank zero every vector is zero, so the unit disc bundle is the whole total space. -/
-theorem discBundle_eq_univ_of_subsingleton : discBundle F E = univ := by
-  refine eq_univ_of_forall fun v ↦ ?_
-  have := subsingleton_fiber_of_subsingleton F E v.proj
-  rw [mem_discBundle, Subsingleton.elim v.2 0, norm_zero]
-  exact zero_le_one
 
 /-- **The Thom space in rank zero.** For a bundle of rank zero the Thom space is the total space
 with a disjoint basepoint. -/
