@@ -164,9 +164,7 @@ theorem IsPseudoCoherent.isPseudoCoherentOver (h : F.IsPseudoCoherent) (hU : IsA
   -- Move the resolution on `X.basicOpen g` to its affine chart, which factors through it.
   have hW := hU.basicOpen g.1
   exact (hasFiniteFreeResolution_restrict_fromSpec_iff hW).mp
-    ((g.2.restrict hW.isoSpec.inv).of_iso
-      (((restrictFunctorComp hW.isoSpec.inv _).app F).symm ≪≫
-        (restrictFunctorCongr hW.isoSpec_inv_ι).app F))
+    (g.2.restrict_of_comp hW.isoSpec.inv hW.isoSpec_inv_ι)
 
 /-- **The affine criterion for pseudo-coherence.** A module sheaf on a scheme is pseudo-coherent
 exactly when it is quasi-coherent and its sections over every affine open `U` are pseudo-coherent
