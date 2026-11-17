@@ -55,8 +55,9 @@ position of the cyclically next block, when that block is nonempty
 is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`), as `List.ofFn_mul`
 says for blocks of equal length.
 
-A sum over the list `(List.finRange n).flatMap l` is the sum over `i : Fin n` of the sums over the
-lists `l i` (`Fin.sum_map_flatMap_finRange`).
+A product (or sum) over the list `(List.finRange n).flatMap l` is the product (or sum) over
+`i : Fin n` of the products (or sums) over the lists `l i` (`Fin.prod_map_flatMap_finRange`,
+`Fin.sum_map_flatMap_finRange`).
 -/
 
 public section
@@ -185,12 +186,14 @@ theorem sum_sum_ite_apply_last_eq_apply_zero {X N : Type*} [Fintype X] [Decidabl
       · simp only [show ¬ (i + t ≤ i) by omega, dite_false]
         exact congrArg p.2 (Fin.ext (by simp))
 
-/-- A sum over the list `(List.finRange n).flatMap l` is the sum over `i : Fin n` of the sums over
-the lists `l i`. -/
-theorem sum_map_flatMap_finRange {α M : Type*} [AddCommMonoid M] {n : ℕ} (l : Fin n → List α)
+/-- A product over the list `(List.finRange n).flatMap l` is the product over `i : Fin n` of the
+products over the lists `l i`. -/
+@[to_additive /-- A sum over the list `(List.finRange n).flatMap l` is the sum over `i : Fin n` of
+the sums over the lists `l i`. -/]
+theorem prod_map_flatMap_finRange {α M : Type*} [CommMonoid M] {n : ℕ} (l : Fin n → List α)
     (f : α → M) :
-    (((List.finRange n).flatMap l).map f).sum = ∑ i : Fin n, ((l i).map f).sum := by
-  simp [List.flatMap_def, List.sum_flatten, Fin.sum_univ_def, Function.comp_def]
+    (((List.finRange n).flatMap l).map f).prod = ∏ i : Fin n, ((l i).map f).prod := by
+  simp [List.flatMap_def, List.prod_flatten, Fin.prod_univ_def, Function.comp_def]
 
 end Fin
 
