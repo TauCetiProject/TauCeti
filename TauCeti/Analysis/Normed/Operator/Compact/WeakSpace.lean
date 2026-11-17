@@ -93,7 +93,11 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isBounded (hJ : IsCompactOperator J) {
   obtain ⟨K, hK, hJK⟩ := hJ.image_subset_compact_of_bounded hB
   refine TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact (𝕜 := 𝕜) hK
     (hu.mono fun n hn ↦ hJK (mem_image_of_mem J hn)) ?_
-  simpa only [Function.comp_def, WeakSpace.map_toWeakSpace] using
+  -- `toWeakSpace` is `LinearEquiv.refl`, so `WeakSpace.map_apply` intertwines `WeakSpace.map J`
+  -- and `J`.
+  have hmap (x : V) : WeakSpace.map J (toWeakSpace 𝕜 V x) = toWeakSpace 𝕜 F (J x) :=
+    WeakSpace.map_apply J x
+  simpa only [Function.comp_def, hmap] using
     ((WeakSpace.map J).continuous.tendsto (toWeakSpace 𝕜 V a)).comp h
 
 /-- A compact operator `J : V →L[𝕜] F` is continuous within any subset `T ⊆ WeakSpace 𝕜 V` whose

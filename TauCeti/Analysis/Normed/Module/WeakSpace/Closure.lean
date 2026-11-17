@@ -178,9 +178,11 @@ theorem closure_toWeakSpace_preimage_sphere (J : V →L[𝕜] F)
     -- which is weakly closed by geometric Hahn–Banach.
     have hpre : toWeakSpace 𝕜 V '' (J ⁻¹' closedBall y r) =
         WeakSpace.map J ⁻¹' (toWeakSpace 𝕜 F '' closedBall y r) := by
-      ext w
-      simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm,
-        (toWeakSpace 𝕜 F).image_eq_preimage_symm, mem_preimage, WeakSpace.toWeakSpace_symm_map]
+      -- `toWeakSpace` is `LinearEquiv.refl`, so `WeakSpace.map_apply` gives the commutation.
+      have hcomp : (toWeakSpace 𝕜 F).symm ∘ WeakSpace.map J = J ∘ (toWeakSpace 𝕜 V).symm :=
+        funext (WeakSpace.map_apply J)
+      rw [(toWeakSpace 𝕜 V).image_eq_preimage_symm, (toWeakSpace 𝕜 F).image_eq_preimage_symm,
+        ← preimage_comp, ← preimage_comp, hcomp]
     refine closure_minimal (image_mono (preimage_mono sphere_subset_closedBall)) ?_
     rw [hpre]
     exact (TauCeti.isClosed_toWeakSpace_closedBall y r).preimage (WeakSpace.map J).continuous
