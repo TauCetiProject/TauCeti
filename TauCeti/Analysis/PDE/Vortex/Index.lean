@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Fredholm
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 import TauCeti.Analysis.Fredholm.Criteria
+import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -72,27 +73,17 @@ restriction to `⊤`. -/
 private def valuesLp :
     (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →ₗ[ℝ]
       Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) :=
-  Lp.compMeasurePreservingₗ ℝ id
-      (by rw [Measure.restrict_coe_opens_top]; exact .id _) ∘ₗ
+  (castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume)).toLinearEquiv.toLinearMap ∘ₗ
     sobolevFieldValues.toLinearMap
-
-private theorem valuesLp_ae_eq_sobolevFieldValues (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    valuesLp y =ᵐ[volume] sobolevFieldValues y := by
-  rw [valuesLp, LinearMap.comp_apply, Lp.compMeasurePreservingₗ_apply]
-  exact Lp.coeFn_compMeasurePreserving _ _
 
 private theorem coeFn_valuesLp (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     valuesLp y =ᵐ[volume] fun z ↦
       (WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)) :=
-  (valuesLp_ae_eq_sobolevFieldValues y).trans <|
+  (EventuallyEq.of_eq (funext (coeFn_castLpₗᵢ _ _))).trans <|
     (sobolevFieldValues_ae_eq y).filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge)
 
-private theorem valuesLp_injective : Function.Injective valuesLp := by
-  intro y y' h
-  have hy := valuesLp_ae_eq_sobolevFieldValues y
-  rw [h] at hy
-  exact sobolevFieldValues_injective
-    (Lp.ext (ae_restrict_of_ae (hy.symm.trans (valuesLp_ae_eq_sobolevFieldValues y'))))
+private theorem valuesLp_injective : Function.Injective valuesLp :=
+  (castLpₗᵢ _).injective.comp sobolevFieldValues_injective
 
 /-- The values of an element of the kernel of the realization lie in the weak kernel. -/
 private theorem valuesLp_mem_weakGaugeFixedKernel (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
