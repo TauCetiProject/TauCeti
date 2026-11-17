@@ -52,6 +52,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   `TauCeti.complexification_ext` says the two coordinates determine the vector.
 * `LinearEquiv.conjugationOfComplexification`: the tensor conjugation transported through a
   complexification equivalence `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`.
+* `Module.Basis.conj`: the conjugation fixing a basis, which conjugates the coordinates
+  (`Module.Basis.repr_conj`).
 
 ## Main statements
 
@@ -78,6 +80,7 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
+* `LinearMap.map_real_smul`: a conjugate-linear map is real-linear.
 * `LinearEquiv.conjugationOfComplexification_apply_tmul`: the transported conjugation sends
   `e (c ⊗ₜ w)` to `e (star c ⊗ₜ w)`.
 * `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
@@ -268,6 +271,13 @@ theorem _root_.LinearMap.liftBaseChange_complex_injective_of_conj (f : W →ₗ[
   have h₂ : f w₂ = 0 := by simpa [h₁] using h
   rw [hf (h₁.trans (map_zero f).symm), hf (h₂.trans (map_zero f).symm)]
   simp
+
+/-- A conjugate-linear map is real-linear, for any real structure compatible with the complex
+one. -/
+theorem _root_.LinearMap.map_real_smul (K : E →ₛₗ[starRingEnd ℂ] E) (r : ℝ) (x : E) :
+    K (r • x) = r • K x := by
+  rw [← algebraMap_smul ℂ r x, K.map_smulₛₗ, ← algebraMap_smul ℂ r (K x), Complex.coe_algebraMap,
+    starRingEnd_apply, Complex.star_def, Complex.conj_ofReal]
 
 end LiftBaseChange
 
@@ -641,3 +651,47 @@ theorem conjugationOfComplexification_natural
   exact congrArg (fun f ↦ f v) h
 
 end LinearEquiv
+
+namespace Module.Basis
+
+variable {V ι : Type*} [AddCommGroup V] [Module ℂ V] (c : Module.Basis ι ℂ V)
+
+/-- The **conjugation fixing a basis** of a complex vector space: it conjugates the coordinates.
+The basis may be infinite; the coordinates of a vector are finitely supported. -/
+noncomputable def conj : V →ₛₗ[starRingEnd ℂ] V where
+  toFun x := c.repr.symm ((c.repr x).mapRange star (star_zero _))
+  map_add' x y := by
+    rw [← map_add]
+    congr 1
+    ext i
+    simp
+  map_smul' a x := by
+    rw [← LinearEquiv.map_smul]
+    congr 1
+    ext i
+    simp
+
+/-- `Module.Basis.conj` conjugates the coordinates. -/
+@[simp]
+theorem repr_conj (x : V) (i : ι) : c.repr (c.conj x) i = star (c.repr x i) := by
+  rw [conj, LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply,
+    Finsupp.mapRange_apply]
+
+/-- `Module.Basis.conj` fixes the basis. -/
+@[simp]
+theorem conj_self (i : ι) : c.conj (c i) = c i :=
+  c.ext_elem fun j ↦ by
+    classical
+    rw [repr_conj, c.repr_self, Finsupp.single_apply]
+    split_ifs <;> simp
+
+/-- `Module.Basis.conj` is an involution. -/
+@[simp]
+theorem conj_conj (x : V) : c.conj (c.conj x) = x :=
+  c.ext_elem fun j ↦ by simp
+
+/-- `Module.Basis.conj` is an involution. -/
+theorem conj_involutive : Function.Involutive c.conj :=
+  c.conj_conj
+
+end Module.Basis
