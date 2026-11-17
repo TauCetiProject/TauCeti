@@ -34,15 +34,16 @@ This file passes to the limit `R → ∞`.
   (`TauCeti.SmoothTwoForm.IsNondegenerate.tendsto_cappedLoopAction_pssPlanePerturbation`). No
   equation is needed: the discs `D_R` exhaust the plane.
 * **The energy at the asymptotic loop.** If moreover the area density `u^*ω` is integrable over the
-  plane, `|H| ≤ B`, and the loops `ℓ_{R_i}` converge pointwise to a loop `x` along some `R_i → ∞`,
-  then
+  plane, and the loops `ℓ_{R_i}` converge pointwise to a loop `x` along some `R_i → ∞` with
+  `|H(t, ℓ_{R_i}(t))| ≤ B` for `t ∈ [0, 1]`, then
   `∫ E = ∫ u^*ω + ε ∫₀¹ H(t, x(t)) dt - ∫ R_K(u)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation`), and
   the capped end actions converge to the capped action `ε ∫ u^*ω + ∫₀¹ H(t, x(t)) dt` of `x`, capped
   by the whole plane
   (`IsNondegenerate.tendsto_cappedLoopAction_pssPlanePerturbation_of_tendsto` in
   `TauCeti.SmoothTwoForm`). For a solution of the Floer equation with almost complex structures
-  tamed by `ω` the energy is nonnegative, so this capped action is bounded below:
+  tamed by `ω` and `|H| ≤ B` everywhere, the energy is nonnegative, so `ε` times this capped action
+  is bounded below:
   `-B ≤ ∫ u^*ω + ε ∫₀¹ H(t, x(t)) dt`
   (`neg_le_integral_add_endSign_mul_intervalIntegral_pssPlanePerturbation` in
   `TauCeti.SmoothTwoForm.IsNondegenerate`). On the negative plane, which caps an output orbit, this
@@ -125,11 +126,11 @@ theorem tendsto_cappedLoopAction_pssPlanePerturbation (hω : ω.IsNondegenerate)
       hH hHs hu hR, sub_add_cancel, ← mul_assoc, endSign_mul_endSign, one_mul]
 
 /-- **The energy identity of a PSS plane in a manifold at its asymptotic loop.** Let `K` be the
-perturbation of a PSS plane given by a period-one `C¹` Hamiltonian `H` with `|H| ≤ B` on a
-finite-dimensional manifold with a nondegenerate two-form `ω`, and let `u` be a `C¹` map whose
-Floer energy density and symplectic area density are integrable over the plane. If along a
-countably generated filter `R i → ∞` and the loops `ℓ_{R i}(t) = u(φ(ε R i + i t))` converge
-pointwise to a loop `x`, then
+perturbation of a PSS plane given by a period-one `C¹` Hamiltonian `H` on a finite-dimensional
+manifold with a nondegenerate two-form `ω`, and let `u` be a `C¹` map whose Floer energy density
+and symplectic area density are integrable over the plane. If along a countably generated filter
+`R i → ∞` and the loops `ℓ_{R i}(t) = u(φ(ε R i + i t))` converge pointwise to a loop `x`, with
+`|H(t, ℓ_{R i}(t))| ≤ B` for `t ∈ [0, 1]` eventually, then
 
 `∫ E = ∫ u^*ω + ε ∫₀¹ H(t, x(t)) dt - ∫ R_K(u)`
 
@@ -137,11 +138,13 @@ over the plane. Here `ε` is the sign of the end of the plane and `φ(z) = exp (
 lift. The loops need only converge along sequences, as they do at the end of a finite-energy PSS
 plane before nondegeneracy is used. -/
 theorem integral_floerEnergyDensity_pssPlanePerturbation {ι : Type*} (hω : ω.IsNondegenerate)
-    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ}
-    (hB : ∀ t x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {l : Filter ι} [l.NeBot]
-    [l.IsCountablyGenerated] {R : ι → ℝ} (hR : Tendsto R l atTop) {x : ℝ → M}
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {R : ι → ℝ} (hR : Tendsto R l atTop) {x : ℝ → M}
     (hx : ∀ t, Tendsto (fun i ↦ u (Complex.equivRealProdCLM
-      (p.cylindricalEndLift (↑(p.endSign * R i) + ↑t * Complex.I)))) l (𝓝 (x t)))
+      (p.cylindricalEndLift (↑(p.endSign * R i) + ↑t * Complex.I)))) l (𝓝 (x t))) {B : ℝ}
+    (hB : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, |H t (u (Complex.equivRealProdCLM
+      (p.cylindricalEndLift (↑(p.endSign * R i) + ↑t * Complex.I))))| ≤ B)
     (hE : Integrable (ω.floerEnergyDensity
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u))
@@ -165,7 +168,8 @@ theorem integral_floerEnergyDensity_pssPlanePerturbation {ι : Type*} (hω : ω.
     tendsto_intervalIntegral_comp_of_tendsto_of_norm_le (Φ := uncurry H) hHs.continuous
       (Eventually.of_forall fun i ↦ (hu.continuous.comp (Complex.equivRealProdCLM.continuous.comp
         ((p.contDiff_cylindricalEndLift (n := 0)).continuous.comp (by fun_prop)))).continuousOn)
-      (Eventually.of_forall fun i t _ ↦ (Real.norm_eq_abs _).trans_le (hB _ _)) fun t _ ↦ hx t
+      (hB.mono fun i hi t ht ↦ (Real.norm_eq_abs _).trans_le
+        (hi t (Ioc_subset_Icc_self (by rwa [uIoc_of_le zero_le_one] at ht)))) fun t _ ↦ hx t
   -- Both sides are limits of the two sides of the identity on the discs `D_{R i}`, `R i ≥ 2`.
   refine tendsto_nhds_unique (hcover.integral_tendsto_of_countably_generated hE) ?_
   refine (((hcover.integral_tendsto_of_countably_generated hA).add
@@ -187,11 +191,13 @@ the capped action of the asymptotic loop `x` capped by the whole plane, oriented
 plane. -/
 theorem tendsto_cappedLoopAction_pssPlanePerturbation_of_tendsto {ι : Type*}
     (hω : ω.IsNondegenerate) (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
     {R : ι → ℝ} (hR : Tendsto R l atTop) {x : ℝ → M}
     (hx : ∀ t, Tendsto (fun i ↦ u (Complex.equivRealProdCLM
-      (p.cylindricalEndLift (↑(p.endSign * R i) + ↑t * Complex.I)))) l (𝓝 (x t)))
+      (p.cylindricalEndLift (↑(p.endSign * R i) + ↑t * Complex.I)))) l (𝓝 (x t))) {B : ℝ}
+    (hB : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, |H t (u (Complex.equivRealProdCLM
+      (p.cylindricalEndLift (↑(p.endSign * R i) + ↑t * Complex.I))))| ≤ B)
     (hE : Integrable (ω.floerEnergyDensity
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u))
@@ -205,13 +211,14 @@ theorem tendsto_cappedLoopAction_pssPlanePerturbation_of_tendsto {ι : Type*}
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         ∫ t in 0..1, H t (x t))) := by
   convert hω.tendsto_cappedLoopAction_pssPlanePerturbation hH hHs hu hE using 2
-  rw [hω.integral_floerEnergyDensity_pssPlanePerturbation hH hHs hB hu hR hx hE hA, sub_add_cancel,
+  rw [hω.integral_floerEnergyDensity_pssPlanePerturbation hH hHs hu hR hx hB hE hA, sub_add_cancel,
     mul_add, ← mul_assoc, endSign_mul_endSign, one_mul]
 
 /-- **The capped action bound at the asymptotic loop of a PSS plane.** Under the hypotheses of
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation`, if `u` solves the
-Floer equation `(du - X_K)^{0,1} = 0` on the plane for almost complex structures `J(z)` tamed by
-`ω`, then its energy is nonnegative and its integrated curvature is at most `B`, so
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation`, with `|H| ≤ B`
+everywhere, if `u` solves the Floer equation `(du - X_K)^{0,1} = 0` on the plane for almost complex
+structures `J(z)` tamed by `ω`, then its energy is nonnegative and its integrated curvature is at
+most `B`, so
 
 `-B ≤ ∫ u^*ω + ε ∫₀¹ H(t, x(t)) dt`.
 
@@ -240,22 +247,18 @@ theorem neg_le_integral_add_endSign_mul_intervalIntegral_pssPlanePerturbation {�
     -B ≤ (∫ z, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
       p.endSign * ∫ t in 0..1, H t (x t) := by
-  have h := hω.integral_floerEnergyDensity_pssPlanePerturbation hH hHs hB hu hR hx hE hA
-  have hE₀ : 0 ≤ ∫ z, ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z :=
-    integral_nonneg fun z ↦ floerEnergyDensity_nonneg hω (hJ z) (hfloer z)
-  linarith [neg_abs_le (∫ z, ω.hamiltonianCurvature
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)),
-    ω.abs_integral_hamiltonianCurvature_pssPlanePerturbation_le (p := p) hH hHs hB u]
+  -- `-B ≤ ε a` for the limit `a` of the capped end actions, and `ε² = 1`.
+  have := hω.neg_le_endSign_mul_of_tendsto_cappedLoopAction_pssPlanePerturbation hH hHs hB hu hJ
+    hfloer (hω.tendsto_cappedLoopAction_pssPlanePerturbation_of_tendsto hH hHs hu hR hx
+      (Eventually.of_forall fun _ _ _ ↦ hB _ _) hE hA)
+  rwa [mul_add, ← mul_assoc, endSign_mul_endSign, one_mul] at this
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {e : M → F}
 
 /-- **The energy of a finite-energy PSS plane in a manifold at its asymptotic orbit.** Let `𝔎` be
-the perturbation of a PSS plane given by a period-one `C¹` Hamiltonian `H` with `|H| ≤ B` on a
-finite-dimensional manifold with a nondegenerate two-form `ω`. Let `u` be a `C¹` map with image in
-a compact set `K`, solving the Floer equation `(du - X_𝔎)^{0,1} = 0` on the plane for almost
+the perturbation of a PSS plane given by a period-one `C¹` Hamiltonian `H` on a finite-dimensional
+manifold with a nondegenerate two-form `ω`. Let `u` be a `C¹` map with image in a compact set `K`,
+solving the Floer equation `(du - X_𝔎)^{0,1} = 0` on the plane for almost
 complex structures `J(z)`, whose Floer energy density and symplectic area density are integrable
 over the plane. Let `e : M → F` be a `C¹` map into a finite-dimensional normed space, injective on
 `K` and with injective differential at the points of `K`, and suppose that the structures are
@@ -270,7 +273,7 @@ capped by the disc of the plane that it bounds, converge as `R → ∞` to the c
 plane and `φ(z) = exp (2π ε z)` is the end lift. -/
 theorem exists_mem_periodicSolutions_integral_floerEnergyDensity_pssPlanePerturbation_eq
     (hω : ω.IsNondegenerate) (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H))
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K) (he_inj : InjOn e K)
     (hde : ∀ q ∈ K, Injective (mvfderiv I e q)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     (huK : ∀ z, u z ∈ K) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ}
@@ -307,7 +310,13 @@ theorem exists_mem_periodicSolutions_integral_floerEnergyDensity_pssPlanePerturb
     hω.exists_mem_periodicSolutions_tendstoUniformly_pssPlanePerturbation_of_isCompact p hH hHs he
       hK he_inj hde (r := 0) hu.contMDiffOn (fun z _ ↦ huK z) J hc (fun z _ ↦ hJc z)
       (fun z _ ↦ hfloer z) ((setLIntegral_le_lintegral _ _).trans_lt hE.lintegral_lt_top).ne
-  exact ⟨x, hx, hxK, hω.integral_floerEnergyDensity_pssPlanePerturbation hH hHs hB hu hR hpt hE hA,
-    hω.tendsto_cappedLoopAction_pssPlanePerturbation_of_tendsto hH hHs hB hu hR hpt hE hA⟩
+  -- `H` is bounded on `[0, 1] × K`, which contains the graphs of the end loops.
+  obtain ⟨B, hB⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hHs.continuous.continuousOn
+  have hBu (z) : ∀ t ∈ Icc (0 : ℝ) 1, |H t (u z)| ≤ B := fun t ht ↦
+    (Real.norm_eq_abs _).symm.trans_le (hB (t, u z) ⟨ht, huK z⟩)
+  exact ⟨x, hx, hxK, hω.integral_floerEnergyDensity_pssPlanePerturbation hH hHs hu hR hpt
+      (.of_forall fun _ t ↦ hBu _ t) hE hA,
+    hω.tendsto_cappedLoopAction_pssPlanePerturbation_of_tendsto hH hHs hu hR hpt
+      (.of_forall fun _ t ↦ hBu _ t) hE hA⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
