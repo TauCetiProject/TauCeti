@@ -240,9 +240,7 @@ theorem integral_norm_fderiv_one_sq_annulus_le_exp_mul
       rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       linarith
   rw [← hpolar _ _ hT'.1 hT'.2.1 hT'.2.2, ← hpolar _ _ le_rfl hab le_rfl] at hkey
-  rw [show Real.exp (-(2 * c / (1 + M) ^ 2 * T)) = (Real.exp (2 * c / (1 + M) ^ 2 * T))⁻¹ from
-    Real.exp_neg _, ← div_eq_inv_mul, le_div_iff₀ (Real.exp_pos _), mul_comm]
-  exact hkey
+  rwa [Real.exp_neg (2 * c / (1 + M) ^ 2 * T), inv_mul_eq_div, le_div_iff₀' (Real.exp_pos _)]
 
 /-- **Energy decay towards the middle of an annulus.** For a uniformly tamed solution of
 `∂ₜu = J(u) ∂ₛu` on the annulus `a ≤ |z - z₀| ≤ b` with `‖J(u)‖ ≤ M`, and `a ≤ r₁ ≤ r₂ ≤ b`, the
@@ -262,38 +260,33 @@ theorem integral_norm_fderiv_one_sq_annulus_le_rpow_mul
         ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2 := by
   have hr₁ : 0 < r₁ := ha.trans_le h₁
   have hr₂ : 0 < r₂ := hr₁.trans_le h₁₂
-  -- The collar length `T`: the largest one whose middle annulus contains `[r₁, r₂]`.
-  set T := min (Real.log (r₁ / a)) (Real.log (b / r₂)) with hT_def
-  have hT : 0 ≤ T := le_min (Real.log_nonneg ((one_le_div ha).mpr h₁))
-    (Real.log_nonneg ((one_le_div hr₂).mpr h₂))
+  have hb : 0 < b := hr₂.trans_le h₂
+  -- The collar length `T`: the largest one whose middle annulus contains `[r₁, r₂]`, so that
+  -- `e^{-T} = max (a / r₁) (r₂ / b)`.
+  set m := max (a / r₁) (r₂ / b)
+  have hm : 0 < m := lt_max_of_lt_left (div_pos ha hr₁)
+  set T := -Real.log m with hT_def
+  have hexp : Real.exp (-T) = m := by rw [hT_def, neg_neg, Real.exp_log hm]
+  have hT : 0 ≤ T :=
+    neg_nonneg.2 (Real.log_nonpos hm.le (max_le ((div_le_one hr₁).2 h₁) ((div_le_one hb).2 h₂)))
   have h₁T : a * Real.exp T ≤ r₁ := by
-    have h := (Real.exp_le_exp.mpr (min_le_left (Real.log (r₁ / a)) (Real.log (b / r₂)))).trans_eq
-      (Real.exp_log (div_pos hr₁ ha))
-    rwa [← hT_def, le_div_iff₀ ha, mul_comm] at h
+    rw [hT_def, Real.exp_neg, Real.exp_log hm, mul_inv_le_iff₀ hm, ← div_le_iff₀' hr₁]
+    exact le_max_left _ _
   have h₂T : r₂ ≤ b * Real.exp (-T) := by
-    have h := (Real.exp_le_exp.mpr
-        (min_le_right (Real.log (r₁ / a)) (Real.log (b / r₂)))).trans_eq
-      (Real.exp_log (div_pos (hr₂.trans_le h₂) hr₂))
-    rw [← hT_def, le_div_iff₀ hr₂] at h
-    rw [Real.exp_neg, ← div_eq_mul_inv, le_div_iff₀ (Real.exp_pos T), mul_comm]
-    exact h
+    rw [hexp, ← div_le_iff₀' hb]
+    exact le_max_right _ _
   have hdecay := integral_norm_fderiv_one_sq_annulus_le_exp_mul hg hc ha hu hCR htame hJ hT
     (h₁T.trans (h₁₂.trans h₂T))
   have hsub : {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂} ⊆
       {z : ℂ | a * Real.exp T ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b * Real.exp (-T)} :=
     setOf_le_norm_sub_le_subset h₁T h₂T
-  have hab : b * Real.exp (-T) ≤ b := mul_le_of_le_one_right (hr₂.trans_le h₂).le
+  have hab : b * Real.exp (-T) ≤ b := mul_le_of_le_one_right hb.le
     (Real.exp_le_one_iff.mpr (neg_nonpos.mpr hT))
   have hmono := setIntegral_mono_set
     (integrableOn_norm_fderiv_one_sq_annulus (fun z hz ↦ (hu z hz).of_le one_le_two)
       (le_mul_of_one_le_right ha.le (Real.one_le_exp hT)) hab)
     (ae_of_all _ fun z ↦ sq_nonneg _) hsub.eventuallySubset
-  -- `e^{-κ T} = max (a / r₁) (r₂ / b) ^ κ`.
-  have hmax : max (a / r₁) (r₂ / b) = Real.exp (-T) := by
-    rw [hT_def, ← max_neg_neg, Real.exp_monotone.map_max, Real.exp_neg, Real.exp_neg,
-      Real.exp_log (div_pos hr₁ ha), Real.exp_log (div_pos (hr₂.trans_le h₂) hr₂), inv_div,
-      inv_div]
-  rw [hmax, ← Real.exp_mul, show -T * (2 * c / (1 + M) ^ 2) = -(2 * c / (1 + M) ^ 2 * T) by ring]
+  rw [← hexp, ← Real.exp_mul, show -T * (2 * c / (1 + M) ^ 2) = -(2 * c / (1 + M) ^ 2 * T) by ring]
   exact hmono.trans hdecay
 
 /-- **Pointwise decay of the derivative in the middle of a neck.** Let `J` be `C²` on an open set

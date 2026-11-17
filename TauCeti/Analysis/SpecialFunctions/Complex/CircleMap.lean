@@ -53,9 +53,12 @@ theorem circleMap_norm_sub_arg_sub (c w : ℂ) : circleMap c ‖w - c‖ (arg (w
 `e^{iθ}`. -/
 theorem hasDerivAt_circleMap_radius (c : ℂ) (R θ : ℝ) :
     HasDerivAt (fun R : ℝ ↦ circleMap c R θ) (exp (θ * I)) R := by
-  have h := (ofRealCLM.hasDerivAt (x := R)).mul_const (exp (θ * I)) |>.const_add c
-  rw [ofRealCLM_apply, ofReal_one, one_mul] at h
-  exact h
+  have hfun : (fun R : ℝ ↦ circleMap c R θ) = fun R : ℝ ↦ c + (R : ℂ) * exp (θ * I) := by
+    funext R
+    rw [circleMap]
+  rw [hfun]
+  simpa only [ofReal_one, one_mul] using
+    ((hasDerivAt_id' R).ofReal_comp.mul_const (exp (θ * I))).const_add c
 
 /-- A circle of radius `r ∈ [a, b]` about `z₀`, with `0 ≤ a`, lies in the closed annulus
 `a ≤ |z - z₀| ≤ b`. -/
