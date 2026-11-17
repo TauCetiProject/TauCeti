@@ -42,6 +42,8 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
+* `LinearMap.surjective_coprod_iff`, `LinearMap.surjective_coprod_neg_iff`: `f.coprod g` and
+  `f.coprod (-g)` are surjective if and only if `range f ⊔ range g = ⊤`.
 * `LinearMap.coprod_neg_comp_prodComm`, `LinearMap.map_prodComm_ker_coprod_neg`,
   `LinearMap.surjective_coprod_neg_comm`: the exchange of factors negates `(ξ, η) ↦ α ξ - β η`,
   identifies the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β` with that of `β`
@@ -225,6 +227,12 @@ theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃)
     f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
   ext <;> simp
 
+/-- The coproduct `(x, y) ↦ f x + g y` of two linear maps is surjective if and only if their ranges
+together span the codomain. -/
+theorem surjective_coprod_iff (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    Function.Surjective (f.coprod g) ↔ range f ⊔ range g = ⊤ := by
+  rw [← range_eq_top, range_coprod]
+
 variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
 
 /-- A product of injective linear maps is injective, stated for the coercion of `f.prodMap g`. -/
@@ -245,6 +253,14 @@ theorem surjective_coprod_of_comp_right {f : M₁ →ₗ[R] M₃} {g : M₂ →�
   exact ⟨LinearMap.id.prodMap h x, by simpa using hx⟩
 
 end Semiring
+
+/-- The difference coproduct `(x, y) ↦ f x - g y` of two linear maps is surjective if and only if
+their ranges together span the codomain. -/
+theorem surjective_coprod_neg_iff {R M₁ M₂ M₃ : Type*} [Ring R]
+    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [AddCommGroup M₃] [Module R M₃] (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    Function.Surjective (f.coprod (-g)) ↔ range f ⊔ range g = ⊤ := by
+  rw [surjective_coprod_iff, range_neg]
 
 section Ring
 
