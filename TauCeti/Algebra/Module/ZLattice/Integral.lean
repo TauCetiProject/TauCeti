@@ -27,7 +27,8 @@ In a real inner product space, an even lattice is integral, by polarization:
 (`ZLattice.IsEven.isIntegral`). The converse fails: `ℤ ⊆ ℝ` is unimodular, hence integral, but not
 even (`ZLattice.not_isEven_span_one`), while `√2 ℤ ⊆ ℝ` is even (`ZLattice.isEven_span_sqrt_two`).
 More generally the `ℤ`-span of an orthonormal basis, the lattice `ℤⁿ ⊆ ℝⁿ`, is unimodular
-(`ZLattice.isUnimodular_span_orthonormalBasis`).
+(`ZLattice.isUnimodular_span_orthonormalBasis`), whereas a lattice strictly containing its dual is
+not integral (`ZLattice.not_isIntegral_of_dual_lt`).
 
 All three predicates are invariant under linear isometry equivalences
 (`ZLattice.isIntegral_comap_iff`, `ZLattice.isEven_comap_iff`, `ZLattice.isUnimodular_comap_iff`),
@@ -142,6 +143,10 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 /-- A sublattice of an integral lattice is integral. -/
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
+
+/-- If the dual lattice is strictly contained in `L`, then `L` is not integral. -/
+theorem not_isIntegral_of_dual_lt {L : Submodule ℤ E} (h : dual L < L) : ¬ IsIntegral L :=
+  not_le_of_gt h
 
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
