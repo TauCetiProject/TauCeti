@@ -12,6 +12,8 @@ import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.Mass.PolarDensity
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Riesz representation for vector fields
@@ -36,12 +38,14 @@ supported vector fields on `Ω`, and this is the Riesz representation theorem fo
 For smooth tests the representation is `Distribution.polarDensity`, with values in the dual of
 `F`. The restriction of `T` to smooth tests is continuous, and smooth tests approximate a test of
 class `C^n` uniformly with supports in a fixed compact set
-(`Continuous.exists_testFunction_dist_le`), so the restriction has the same mass measure and
-the same representation. The Riesz isomorphism `InnerProductSpace.toDual` turns the dual-valued
-density into a vector field. For uniqueness of the measure, a Radon measure `μ` with a
-representation `T φ = ∫ ⟪η' x, φ x⟫ dμ` dominates `‖T‖`, by the minimality of the mass measure;
-comparing the two representations shows that `η'` is the Radon–Nikodym derivative of `‖T‖` with
-respect to `μ` times `η`, and `‖η'‖ = 1` forces that derivative to be one.
+(`TestFunction.exists_isCompact_forall_exists_dist_le`), so the restriction has the same mass
+measure and the same representation. The Riesz isomorphism `InnerProductSpace.toDual` turns the
+dual-valued density into a vector field. For uniqueness of the measure, a Radon measure `μ` with a
+representation `T φ = ∫ ⟪η' x, φ x⟫ dμ`, by an almost everywhere strongly measurable field `η'` of
+norm one, dominates `‖T‖`, by the minimality of the mass measure; comparing the two
+representations shows that `η'` is the Radon–Nikodym derivative of `‖T‖` with respect to `μ` times
+`η`, and `‖η'‖ = 1` forces that derivative to be one. Measurability of `η'` is needed: the
+integral of a non-measurable pairing is `0` by convention.
 
 ## Main declarations
 
@@ -53,7 +57,8 @@ respect to `μ` times `η`, and `‖η'‖ = 1` forces that derivative to be one
 * `Distribution.ae_eq_polarVector`: a locally integrable field representing `T` against `‖T‖`
   is `η` almost everywhere.
 * `Distribution.massMeasure_eq_of_apply_eq_integral_inner`: a Radon measure `μ` against which
-  `T` is represented by a field of norm one `μ`-almost everywhere is the mass measure of `T`.
+  `T` is represented by an almost everywhere strongly measurable field of norm one
+  `μ`-almost everywhere is the mass measure of `T`.
 
 ## References
 
@@ -72,61 +77,6 @@ namespace Distribution
 
 open MeasureTheory TopologicalSpace TestFunction Set Filter Metric
 open scoped ENNReal Distributions RealInnerProductSpace Topology
-
-section Approximation
-
-/-- The preimage in `Ω` of a compact subset of `Ω` is compact. -/
-private theorem isCompact_preimage_coe {E : Type*} [TopologicalSpace E] {Ω : Opens E}
-    {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) : IsCompact ((↑) ⁻¹' K : Set Ω) := by
-  rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hKΩ)]
-  exact hK
-
-/-- A test of class `C^n` is a uniform limit of smooth tests supported in a fixed compact subset
-of `Ω`. -/
-private theorem exists_isCompact_forall_exists_testFunction {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [CompleteSpace F] {Ω : Opens E} {n : ℕ∞} (φ : 𝓓^{n}(Ω, F)) :
-    ∃ K : Set E, IsCompact K ∧ K ⊆ Ω ∧ tsupport φ ⊆ K ∧ ∀ ε : ℝ, 0 < ε →
-      ∃ ψ : 𝓓(Ω, F), tsupport ψ ⊆ K ∧ ∀ x, ‖φ x - ψ x‖ ≤ ε := by
-  have hK := φ.hasCompactSupport.isCompact
-  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen φ.tsupport_subset
-  refine ⟨_, hK.cthickening, hδΩ, self_subset_cthickening _, fun ε hε => ?_⟩
-  obtain ⟨ψ, hψ, hψφ⟩ :=
-    φ.continuous.exists_testFunction_dist_le hK subset_rfl hδ hδΩ hε
-  exact ⟨ψ, hψ, fun x => by rw [← dist_eq_norm, dist_comm]; exact hψφ x⟩
-
-/-- A function supported in a closed set `K` and bounded by `ε` has integral at most `ε μ(K)`. -/
-private theorem lintegral_enorm_le_ofReal_mul {E G : Type*} [TopologicalSpace E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup G] {Ω : Opens E}
-    (μ : Measure Ω) {f : E → G} {K : Set E} (hK : IsClosed K) (hfK : tsupport f ⊆ K) {ε : ℝ}
-    (hf : ∀ x, ‖f x‖ ≤ ε) : ∫⁻ x : Ω, ‖f x‖ₑ ∂μ ≤ ENNReal.ofReal ε * μ ((↑) ⁻¹' K) := by
-  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.preimage continuous_subtype_val).measurableSet
-  rw [← lintegral_indicator_const hKm]
-  refine lintegral_mono fun x => ?_
-  by_cases hx : (x : E) ∈ K
-  · rw [indicator_of_mem (show x ∈ ((↑) ⁻¹' K : Set Ω) from hx), ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hf x)
-  · rw [image_eq_zero_of_notMem_tsupport fun h => hx (hfK h)]
-    simp
-
-/-- An inequality `a ≤ b + ε C` for every `ε > 0`, with `C` finite, gives `a ≤ b`. -/
-private theorem le_of_forall_le_add_ofReal_mul {a b C : ℝ≥0∞} (hC : C ≠ ⊤)
-    (h : ∀ ε : ℝ, 0 < ε → a ≤ b + ENNReal.ofReal ε * C) : a ≤ b := by
-  have hlim : Tendsto (fun ε : ℝ => b + ENNReal.ofReal ε * C) (𝓝[>] 0) (𝓝 (b + 0 * C)) := by
-    refine tendsto_const_nhds.add (ENNReal.Tendsto.mul_const ?_ (Or.inr hC))
-    simpa using (ENNReal.tendsto_ofReal (tendsto_id (x := 𝓝 (0 : ℝ)))).mono_left
-      nhdsWithin_le_nhds
-  simpa using ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε hε => h ε hε)
-
-/-- The support of the difference of two functions supported in a closed set `K` lies in `K`. -/
-private theorem tsupport_sub_subset {E G : Type*} [TopologicalSpace E] [AddGroup G] {f g : E → G}
-    {K : Set E} (hK : IsClosed K) (hf : tsupport f ⊆ K) (hg : tsupport g ⊆ K) :
-    tsupport (f - g) ⊆ K :=
-  closure_minimal ((Function.support_sub _ _).trans
-    (union_subset ((subset_tsupport _).trans hf) ((subset_tsupport _).trans hg))) hK
-
-end Approximation
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -162,14 +112,19 @@ private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
   · simpa [T', smoothRestrict_apply, coe_monoCLM] using
       enorm_apply_le_lintegral_massMeasure hT (monoCLM ℝ ψ)
   -- Approximate `φ` by smooth tests `ψ` supported in a compact `K`.
-  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_testFunction φ
+  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
   have hKT : localMass T K ≠ ⊤ := (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ
-  have hKT' : massMeasure T' ((↑) ⁻¹' K) ≠ ⊤ :=
-    (isCompact_preimage_coe hK hKΩ).measure_lt_top.ne
-  refine le_of_forall_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT', hKT⟩) fun ε hε => ?_
+  have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
+    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
+    (hK.isClosed.preimage continuous_subtype_val).measurableSet
+  have hKT' : massMeasure T' ((↑) ⁻¹' K) ≠ ⊤ := hKc.measure_lt_top.ne
+  refine ENNReal.le_of_forall_pos_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT', hKT⟩)
+    fun ε hε => ?_
   obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
+  have hsub' : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
   have hsub : tsupport (φ - monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) ⊆ K := by
-    simpa [coe_monoCLM] using tsupport_sub_subset hK.isClosed hφK hψK
+    simpa [coe_monoCLM] using hsub'
   have hφm : Measurable fun x : Ω => ‖φ x‖ₑ :=
     (φ.continuous.comp continuous_subtype_val).eNorm.measurable
   calc ‖T φ‖ₑ = ‖T' ψ + T (φ - monoCLM ℝ ψ)‖ₑ := by simp [T', smoothRestrict_apply]
@@ -181,15 +136,18 @@ private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
           simpa using eNorm_add_le (φ x) (ψ x - φ x)
         · refine enorm_apply_le_localMass_mul_of_forall_enorm_le T hsub fun x => ?_
           rw [← ofReal_norm]
-          simpa [coe_monoCLM] using ENNReal.ofReal_le_ofReal (hψφ x)
+          simpa [coe_monoCLM, dist_eq_norm_sub'] using ENNReal.ofReal_le_ofReal (hψφ x)
     _ ≤ ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T' + ENNReal.ofReal ε * massMeasure T' ((↑) ⁻¹' K) +
           localMass T K * ENNReal.ofReal ε := by
         rw [lintegral_add_left hφm]
         gcongr
-        exact lintegral_enorm_le_ofReal_mul _ (f := ⇑ψ - ⇑φ) hK.isClosed
-          (tsupport_sub_subset hK.isClosed hψK hφK) fun x => by
-            rw [Pi.sub_apply, norm_sub_rev]
-            exact hψφ x
+        refine lintegral_enorm_le_ofReal_mul_measure _ (f := fun x : Ω => ψ x - φ x) hKm
+          (fun x hx => hsub' (subset_tsupport _ ?_)) fun x => ?_
+        · rw [Function.mem_support] at hx ⊢
+          rw [Pi.sub_apply, ← neg_sub, neg_ne_zero]
+          exact hx
+        · rw [← dist_eq_norm_sub]
+          exact hψφ x
     _ = _ := by ring
 
 /-- The polar density of the restriction of `T` to smooth tests represents `T` on all tests. -/
@@ -207,16 +165,25 @@ private theorem apply_eq_integral_polarDensity_smoothRestrict (hT : HasLocallyFi
   have hrep (ψ : 𝓓(Ω, F)) : T (monoCLM ℝ ψ) = ∫ x, τ x (ψ x) ∂massMeasure T := by
     rw [← smoothRestrict_apply hT, apply_eq_integral_polarDensity hT',
       massMeasure_smoothRestrict hT]
-  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_testFunction φ
+  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
   have hKT : localMass T K ≠ ⊤ := (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ
-  have hKμ : massMeasure T ((↑) ⁻¹' K) ≠ ⊤ := (isCompact_preimage_coe hK hKΩ).measure_lt_top.ne
+  have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
+    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
+    (hK.isClosed.preimage continuous_subtype_val).measurableSet
+  have hKμ : massMeasure T ((↑) ⁻¹' K) ≠ ⊤ := hKc.measure_lt_top.ne
   rw [← sub_eq_zero, ← eNorm_eq_zero, ← nonpos_iff_eq_zero]
-  refine le_of_forall_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT, hKμ⟩) fun ε hε => ?_
+  refine ENNReal.le_of_forall_pos_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT, hKμ⟩)
+    fun ε hε => ?_
   obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
   set f : 𝓓^{n}(Ω, F) := φ - monoCLM ℝ ψ
   have hf (x : E) : f x = φ x - ψ x := by simp [f]
   have hfK : tsupport f ⊆ K := by
-    simpa [f, coe_monoCLM] using tsupport_sub_subset hK.isClosed hφK hψK
+    have h : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
+    simpa [f, coe_monoCLM] using h
+  have hfε (x : E) : ‖f x‖ ≤ ε := by
+    rw [hf, ← dist_eq_norm_sub']
+    exact hψφ x
   have hTf : T f = T φ - ∫ x, τ x (ψ x) ∂massMeasure T := by rw [map_sub, hrep]
   have hIf : ∫ x, τ x (f x) ∂massMeasure T =
       ∫ x, τ x (φ x) ∂massMeasure T - ∫ x, τ x (ψ x) ∂massMeasure T := by
@@ -234,11 +201,11 @@ private theorem apply_eq_integral_polarDensity_smoothRestrict (hT : HasLocallyFi
     _ ≤ localMass T K * ENNReal.ofReal ε + ENNReal.ofReal ε * massMeasure T ((↑) ⁻¹' K) := by
         gcongr
         · refine enorm_apply_le_localMass_mul_of_forall_enorm_le T hfK fun x => ?_
-          rw [← ofReal_norm, hf]
-          exact ENNReal.ofReal_le_ofReal (hψφ x)
+          rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (hfε x)
         · refine (eNorm_integral_le_lintegral_eNorm _).trans <|
-            (lintegral_mono_ae ?_).trans (lintegral_enorm_le_ofReal_mul _ hK.isClosed hfK
-              fun x => (hf x).symm ▸ hψφ x)
+            (lintegral_mono_ae ?_).trans (lintegral_enorm_le_ofReal_mul_measure _
+              (f := fun x : Ω => f x) hKm (fun x hx => hfK (subset_tsupport _ hx)) fun x => hfε x)
           filter_upwards [hτ1] with x hx
           rw [← ofReal_norm, ← ofReal_norm]
           exact ENNReal.ofReal_le_ofReal (((τ x).le_opNorm _).trans (by rw [hx, one_mul]))
@@ -325,15 +292,6 @@ theorem locallyIntegrable_polarVector :
     hK.measure_lt_top.ne stronglyMeasurable_polarVector.aestronglyMeasurable (M := 1)
     (ae_restrict_of_ae (ae_norm_polarVector_eq_one.mono fun x hx => hx.le))
 
-/-- A locally integrable vector field whose pairings with the smooth test fields vanish is zero
-almost everywhere. -/
-private theorem ae_eq_zero_of_forall_integral_inner_eq_zero {μ : Measure Ω} {g : Ω → F}
-    (hg : LocallyIntegrable g μ) (h : ∀ φ : 𝓓(Ω, F), ∫ x, ⟪φ x, g x⟫ ∂μ = 0) :
-    g =ᵐ[μ] 0 := by
-  filter_upwards [TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le (k := 0) hg
-    measurable_const (by simp) fun U _ φ _ _ => by simp [h φ]] with x hx
-  simpa using hx
-
 /-- **Uniqueness of the polar vector field.** A locally integrable vector field `η` with
 `T φ = ∫ ⟪η x, φ x⟫ d‖T‖` for every test `φ` agrees with the polar vector field of `T` at
 `‖T‖`-almost every point. -/
@@ -344,7 +302,7 @@ theorem ae_eq_polarVector {η : Ω → F} (hη : LocallyIntegrable η (massMeasu
   swap
   · simp [massMeasure_of_not_hasLocallyFiniteMass hT, EventuallyEq]
   have hpv := locallyIntegrable_polarVector (T := T)
-  filter_upwards [ae_eq_zero_of_forall_integral_inner_eq_zero (hη.sub hpv) fun φ => by
+  filter_upwards [TauCeti.ae_eq_zero_of_forall_integral_inner_eq_zero (hη.sub hpv) fun φ => by
     simp only [Pi.sub_apply, inner_sub_right]
     rw [integral_sub (integrable_inner_subtype φ hη) (integrable_inner_subtype φ hpv)]
     have h₁ := h (monoCLM ℝ φ)
@@ -375,14 +333,20 @@ finite mass. -/
 private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
     (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
     HasLocallyFiniteMass T := by
-  refine (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ =>
-    ne_top_of_le_ne_top ((isCompact_preimage_coe hK hKΩ).measure_lt_top (μ := μ)).ne
-      (localMass_le_iff.2 fun φ hφK hφ => ?_)
+  refine (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ => ?_
+  have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
+    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
+    (hK.isClosed.preimage continuous_subtype_val).measurableSet
+  refine ne_top_of_le_ne_top (hKc.measure_lt_top (μ := μ)).ne
+    (localMass_le_iff.2 fun φ hφK hφ => ?_)
   simpa using (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h φ).trans
-    (lintegral_enorm_le_ofReal_mul μ hK.isClosed hφK hφ)
+    (lintegral_enorm_le_ofReal_mul_measure μ (f := fun x : Ω => φ x) hKm
+      (fun x hx => hφK (subset_tsupport _ hx)) fun x => hφ x)
 
-/-- A field `η` of norm one representing `T` against a measure `μ` finite on compact sets is the
-polar vector field of `T` times the density of `‖T‖` with respect to `μ`. -/
+/-- An almost everywhere strongly measurable field `η` of norm one representing `T` against a
+measure `μ` finite on compact sets is the polar vector field of `T` times the density of `‖T‖`
+with respect to `μ`. -/
 private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts μ]
     (hηm : AEStronglyMeasurable η μ) (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1)
     (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
@@ -400,11 +364,10 @@ private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts
       have hK' : Integrable (K.indicator (polarVector T)) (massMeasure T) :=
         (integrable_indicator_iff hK.measurableSet).2
           (locallyIntegrable_polarVector.integrableOn_isCompact hK)
-      change IntegrableOn _ K μ
       rw [← integrable_indicator_iff hK.measurableSet]
       refine ((integrable_rnDeriv_smul_iff hac).2 hK').congr (ae_of_all _ fun x => ?_)
       by_cases hx : x ∈ K <;> simp [hx]
-  filter_upwards [ae_eq_zero_of_forall_integral_inner_eq_zero (hηl.sub hρl) fun φ => by
+  filter_upwards [TauCeti.ae_eq_zero_of_forall_integral_inner_eq_zero (hηl.sub hρl) fun φ => by
     simp only [Pi.sub_apply, inner_sub_right]
     rw [integral_sub (integrable_inner_subtype φ hηl) (integrable_inner_subtype φ hρl),
       sub_eq_zero]
@@ -418,9 +381,9 @@ private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts
 
 /-- **Uniqueness of the mass measure.** If a real-linear map `T` on vector-valued test functions
 is represented as `T φ = ∫ ⟪η x, φ x⟫ dμ` by a measure `μ` finite on compact subsets of `Ω` and a
-field `η` of norm one at `μ`-almost every point, then `μ` is the mass measure of `T`. In
-particular `T` has locally finite mass, and `η` is its polar vector field `μ`-almost everywhere
-(`Distribution.ae_eq_polarVector`). -/
+`μ`-almost everywhere strongly measurable field `η` of norm one at `μ`-almost every point, then `μ`
+is the mass measure of `T`. In particular `T` has locally finite mass, and `η` is its polar vector
+field `μ`-almost everywhere (`Distribution.ae_eq_polarVector`). -/
 theorem massMeasure_eq_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
     (hηm : AEStronglyMeasurable η μ) (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1)
     (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) : massMeasure T = μ := by
