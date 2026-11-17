@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Data.SignType.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.Instances.Real.TwistedExtension
@@ -398,10 +399,8 @@ theorem mem_range_twistedLinearOperator_iff (hM : Continuous M) (hper : Function
   · rintro ⟨w, hw⟩
     exact ⟨w, (twistedLinearOperator_eq_iff hM hper w f).1 hw, w.2.2⟩
   · rintro ⟨w, hw, htw⟩
-    have hc : ContDiff ℝ 1 w := contDiff_one_iff_deriv.2 ⟨fun t => (hw t).differentiableAt, by
-      rw [funext fun t => (hw t).deriv]
-      exact (hM.clm_apply (continuous_iff_continuousAt.2 fun t => (hw t).continuousAt)).add
-        f.2.1⟩
+    have hc : ContDiff ℝ 1 w := contDiff_one_of_hasDerivAt (X := fun t v => M t v + (f : ℝ → X) t)
+      (((hM.comp continuous_fst).clm_apply continuous_snd).add (f.2.1.comp continuous_fst)) hw
     exact ⟨⟨w, hc, htw⟩, (twistedLinearOperator_eq_iff hM hper ⟨w, hc, htw⟩ f).2 hw⟩
 
 /-- For `d > 0` and `ε ≠ 0`, every vector `y` is `∫₀ᵈ Ψ(s)⁻¹ (f s) ds` for some continuous map
@@ -455,9 +454,8 @@ private theorem dysonSeriesLeft_apply_mem_twistedContDiff (hM : Continuous M)
       ContinuousLinearMap.coe_coe, sub_eq_zero] at hx
     exact hx.symm
   have hΨ (t : ℝ) := hasDerivAt_dysonSeriesLeft_apply hM x t
-  refine ⟨contDiff_one_iff_deriv.2 ⟨fun t => (hΨ t).differentiableAt, ?_⟩, fun t => ?_⟩
-  · rw [funext fun t => (hΨ t).deriv]
-    exact hM.clm_apply ((continuous_dysonSeriesLeft hM).clm_apply continuous_const)
+  refine ⟨contDiff_one_of_hasDerivAt (X := fun t v => M t v)
+    ((hM.comp continuous_fst).clm_apply continuous_snd) hΨ, fun t => ?_⟩
   simpa using dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hM hper (n := 1)
     (by simpa using hPx) t
 
