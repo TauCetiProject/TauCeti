@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.Tree
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.E
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 
 /-!
 # Higher Hochschild classes and non-formality of non-Dynkin trees

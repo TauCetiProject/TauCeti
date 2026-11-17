@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 

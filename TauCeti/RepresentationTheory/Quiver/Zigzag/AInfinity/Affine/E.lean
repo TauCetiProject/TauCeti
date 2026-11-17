@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.E

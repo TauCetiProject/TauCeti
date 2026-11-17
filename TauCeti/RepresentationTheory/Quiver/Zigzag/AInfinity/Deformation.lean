@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Multilinear.Basis
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.IntrinsicFormality.Criterion
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Idempotents
