@@ -514,23 +514,6 @@ theorem IsMetricCompatible.eq_of_alongCurveWithin_eq_zero
   rw [inner_sub_left, inner_sub_right, inner_sub_right, hVV, hVW, hWV, hWW, hinit]
   ring
 
-omit [RiemannianBundle fun x : M ↦ TangentSpace I x]
-  [IsContMDiffRiemannianBundle I 1 E fun x : M ↦ TangentSpace I x] in
-/-- On a preconnected parameter set with at least two points, a field along a differentiable
-curve whose unrestricted covariant derivative vanishes also has vanishing covariant derivative
-within the set. -/
-private theorem alongCurveWithin_eq_zero_of_alongCurve_eq_zero (hconn : IsPreconnected s)
-    {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b)
-    (hγ : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) {Y : ∀ r, TangentSpace I (γ r)}
-    (hY : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ Y (γ t)) t)
-    (hY₀ : ∀ t ∈ s, alongCurve cov γ Y t = 0) (t : ℝ) (ht : t ∈ s) :
-    alongCurveWithin cov γ Y s t = 0 := by
-  rw [alongCurveWithin_subset cov γ Y (Set.subset_univ s) (hconn.uniqueDiffOn ha hb hab t ht)
-    (hY t ht).differentiableWithinAt
-    ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
-      (hγ t ht)).differentiableAt.differentiableWithinAt,
-    alongCurveWithin_univ, hY₀ t ht]
-
 /-- **Parallel transport preserves the inner product**, for the unrestricted covariant
 derivative: two parallel tangent fields along a differentiable curve have the same inner product
 at every two parameters of a preconnected parameter set. -/
@@ -550,8 +533,10 @@ theorem IsMetricCompatible.inner_eq_of_alongCurve_eq_zero
     (fun t ht ↦ (hγ t ht).mdifferentiableWithinAt)
     (fun t ht ↦ (hV t ht).differentiableWithinAt)
     (fun t ht ↦ (hW t ht).differentiableWithinAt)
-    (alongCurveWithin_eq_zero_of_alongCurve_eq_zero hconn ha hb hab hγ hV hV₀)
-    (alongCurveWithin_eq_zero_of_alongCurve_eq_zero hconn ha hb hab hγ hW hW₀) ha hb
+    (fun t ht ↦ by rw [alongCurveWithin_eq_alongCurve cov γ V
+      (hconn.uniqueDiffOn ha hb hab t ht) (hγ t ht) (hV t ht), hV₀ t ht])
+    (fun t ht ↦ by rw [alongCurveWithin_eq_alongCurve cov γ W
+      (hconn.uniqueDiffOn ha hb hab t ht) (hγ t ht) (hW t ht), hW₀ t ht]) ha hb
 
 /-- **Uniqueness of parallel fields**, for the unrestricted covariant derivative: two parallel
 tangent fields along a differentiable curve that agree at one parameter agree on the whole
@@ -572,8 +557,30 @@ theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
     (fun t ht ↦ (hγ t ht).mdifferentiableWithinAt)
     (fun t ht ↦ (hV t ht).differentiableWithinAt)
     (fun t ht ↦ (hW t ht).differentiableWithinAt)
-    (alongCurveWithin_eq_zero_of_alongCurve_eq_zero hconn ha hb hab hγ hV hV₀)
-    (alongCurveWithin_eq_zero_of_alongCurve_eq_zero hconn ha hb hab hγ hW hW₀) ha hb hinit
+    (fun t ht ↦ by rw [alongCurveWithin_eq_alongCurve cov γ V
+      (hconn.uniqueDiffOn ha hb hab t ht) (hγ t ht) (hV t ht), hV₀ t ht])
+    (fun t ht ↦ by rw [alongCurveWithin_eq_alongCurve cov γ W
+      (hconn.uniqueDiffOn ha hb hab t ht) (hγ t ht) (hW t ht), hW₀ t ht]) ha hb hinit
+
+/-- Parallel fields with differentiable total-space lifts on a preconnected parameter set are
+determined by their value at any one parameter. -/
+theorem IsMetricCompatible.eq_of_alongCurve_eq_zero_of_mdifferentiableAt
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hs : IsPreconnected s) {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ) I.tangent
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t)
+    (hW : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ) I.tangent
+      (fun t ↦ TotalSpace.mk' E (γ t) (W t)) t)
+    (hV₀ : ∀ t ∈ s, alongCurve cov γ V t = 0)
+    (hW₀ : ∀ t ∈ s, alongCurve cov γ W t = 0)
+    {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b :=
+  hcov.eq_of_alongCurve_eq_zero hs
+    (fun t ht ↦ (mdifferentiableAt_proj (TangentSpace I)).comp t (hV t ht))
+    (fun t ht ↦ differentiableAt_sectionCoord γ V (hV t ht)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+    (fun t ht ↦ differentiableAt_sectionCoord γ W (hW t ht)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))) hV₀ hW₀ ha hb hinit
 
 end Riemannian
 

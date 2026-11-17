@@ -10,34 +10,42 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Parallel
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Parallel fields along geodesics
 
-Along a geodesic `γ` defined on the whole line, every tangent vector at `γ a` is the initial
-value of a smooth parallel field on `[a, b]`, and parallel transport of an orthonormal basis
-gives a parallel orthonormal frame (parallel fields are unique and keep their inner products,
-`CovariantDerivative.IsMetricCompatible.eq_of_alongCurve_eq_zero`), and the velocity of the
-geodesic is the parallel field starting at `γ'(a)`.
+Along a geodesic, any tangent vector at `γ τ` extends to a smooth parallel field on
+`[a, b]`, provided `τ ∈ [a, b]` and the interval is contained in the interior of the geodesic's
+parameter set. Any indexed family extends with its pairwise inner products preserved; an
+orthonormal basis extends to orthonormal bases along the interval. These fields provide the
+parallel directions used to construct test fields for the index form.
 
-The fields are built from Tau Ceti's radial parallel transport inside normal balls
-(`TauCeti.Manifold.IsNormalDomain.radialParallelLinearMap`). The image of `[a, b]` is compact,
-so the normal balls at its points have a common radius; restarting `γ` at a point `τ` writes it
-as the radial geodesic `t ↦ exp_(γ τ) ((t - τ) • γ'(τ))`, and finitely many radial pieces of a
-fixed length are glued along their overlaps by uniqueness.
+Compact-interval fields have arbitrary auxiliary values outside the specified interval.
+For an all-time geodesic, compatible fields on expanding compact intervals give one smooth
+parallel field on the whole real line. Uniqueness and preservation of inner products use
+`CovariantDerivative.IsMetricCompatible.eq_of_alongCurve_eq_zero` and
+`CovariantDerivative.IsMetricCompatible.inner_eq_of_alongCurve_eq_zero`.
+
+The construction uses radial parallel transport in normal domains
+(`TauCeti.Manifold.IsNormalDomain.radialParallelLinearMap`). Compactness of the image of
+`[a, b]` supplies a uniform normal-ball radius. A smaller time radius keeps each local piece
+inside the geodesic's parameter domain. Restarting at `τ` locally identifies the geodesic with
+`t ↦ exp_(γ τ) ((t - τ) • γ'(τ))`, and finitely many radial pieces are glued by uniqueness.
 
 ## Main results
 
-* `TauCeti.Manifold.IsGeodesicCurveOn.eq_riemannianExp_sub_smul`: a geodesic on the whole line is
-  the radial geodesic from any of its points.
-* `TauCeti.Manifold.IsNormalDomain.exists_parallel_sub_smul`: parallel fields along a translated
-  radial geodesic of a normal ball.
-* `TauCeti.Manifold.IsGeodesicCurve.exists_parallel`: existence of parallel fields.
-* `TauCeti.Manifold.IsGeodesicCurve.exists_parallel_orthonormal`: a parallel orthonormal frame.
-* `TauCeti.Manifold.IsGeodesicCurve.eq_curveVelocity_of_alongCurve_eq_zero`: the parallel field
-  starting at the velocity is the velocity.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_parallel`: smooth parallel fields on a compact
+  interval, with initial data at any point of the interval.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_parallel_inner_eq`: parallel extension of any
+  indexed family preserving pairwise inner products.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_parallel_orthonormalBasis`: parallel extension
+  of an orthonormal basis, with a bundled basis at every point of the interval.
+* `TauCeti.Manifold.IsGeodesicCurve.exists_parallel`,
+  `TauCeti.Manifold.IsGeodesicCurve.exists_parallel_inner_eq` and
+  `TauCeti.Manifold.IsGeodesicCurve.exists_parallel_orthonormalBasis`: the corresponding
+  results on the whole real line for an all-time geodesic.
 
 ## References
 
@@ -59,102 +67,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- A geodesic defined on the whole line is the radial geodesic from any of its points:
-`γ t = exp_(γ τ) ((t - τ) • γ'(τ))`. -/
-theorem IsGeodesicCurveOn.eq_riemannianExp_sub_smul {γ : ℝ → M}
-    (hγ : IsGeodesicCurveOn I γ univ) (τ t : ℝ) :
-    γ t = riemannianExp I M (γ τ) ((t - τ) • curveVelocity I γ τ) := by
-  set R := |t - τ| + 1
-  have hτ : τ ∈ Ioo (τ - R) (τ + R) := ⟨by linarith [abs_nonneg (t - τ)],
-    by linarith [abs_nonneg (t - τ)]⟩
-  have hfrom := (hγ.mono (uniqueDiffOn_Ioo (τ - R) (τ + R))
-    (subset_univ _)).isGeodesicCurveOnFrom_comp_add_const hτ
-  have heq := hfrom.eqOn_maximalGeodesic
-  have hmem : t - τ ∈ Ioo (τ - R - τ) (τ + R - τ) := by
-    constructor <;> [linarith [neg_abs_le (t - τ)]; linarith [le_abs_self (t - τ)]]
-  have h := heq hmem
-  simp only [Function.comp_apply, sub_add_cancel] at h
-  rw [riemannianExp_smul, h]
-
-omit [I.Boundaryless] [T2Space M] in
-/-- Two fields along a differentiable curve which are smooth and parallel at every point of
-`[l, r]` and agree at one point of `[l, r]` agree on `[l, r]`. -/
-private theorem eq_of_parallel_Icc {γ : ℝ → M} (hγd : ∀ t, MDifferentiableAt 𝓘(ℝ) I γ t)
-    {V W : ∀ t, TangentSpace I (γ t)} {l r : ℝ}
-    (hV : ∀ t ∈ Icc l r, ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t ∧
-      alongCurve (leviCivitaConnection I M) γ V t = 0)
-    (hW : ∀ t ∈ Icc l r, ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (W t)) t ∧
-      alongCurve (leviCivitaConnection I M) γ W t = 0)
-    {τ : ℝ} (hτ : τ ∈ Icc l r) (hVW : V τ = W τ) {t : ℝ} (ht : t ∈ Icc l r) : V t = W t :=
-  (isMetricCompatible_leviCivitaConnection I).eq_of_alongCurve_eq_zero isPreconnected_Icc
-    (fun u _ ↦ hγd u)
-    (fun u hu ↦ differentiableAt_sectionCoord γ V ((hV u hu).1.mdifferentiableAt (by simp))
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ u)))
-    (fun u hu ↦ differentiableAt_sectionCoord γ W ((hW u hu).1.mdifferentiableAt (by simp))
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ u)))
-    (fun u hu ↦ (hV u hu).2) (fun u hu ↦ (hW u hu).2) hτ ht hVW
-
-variable {p : M} {U : Set (TangentSpace I p)}
-
-/-- Radial parallel transport along a translated radial geodesic `t ↦ exp_p ((t - τ) • v)`
-gives a smooth parallel field with any prescribed value at `τ`. -/
-theorem IsNormalDomain.exists_parallel_sub_smul (h : IsNormalDomain I M p U)
-    (v : TangentSpace I p) {ρ : ℝ} (hρ : 0 ≤ ρ)
-    (hseg : ∀ s ∈ Icc (-ρ) ρ, s • v ∈ U) (τ : ℝ) (z : TangentSpace I p) :
-    ∃ P : ∀ t, TangentSpace I (riemannianExp I M p ((t - τ) • v)), P τ = z ∧
-      ∀ t ∈ Icc (τ - ρ) (τ + ρ),
-        ContMDiffAt 𝓘(ℝ) I.tangent ∞
-          (fun t ↦ TotalSpace.mk' E (riemannianExp I M p ((t - τ) • v)) (P t)) t ∧
-        alongCurve (leviCivitaConnection I M)
-          (fun t ↦ riemannianExp I M p ((t - τ) • v)) P t = 0 := by
-  have hlr : -ρ ≤ ρ := by linarith
-  let b := stdOrthonormalBasis ℝ (TangentSpace I p)
-  set c : ℝ → M := fun s ↦ riemannianExp I M p (s • v)
-  let W : ∀ s, TangentSpace I (c s) := fun s ↦ h.radialParallelLinearMap b v hlr hseg s z
-  have hW₀ (u : ℝ) (hu : u = 0) : W u = z := by
-    subst hu
-    exact radialParallelLinearMap_apply_zero h b v hlr hseg z
-  refine ⟨fun t ↦ W (t - τ), hW₀ _ (sub_self τ), fun t ht ↦ ?_⟩
-  have hs : t - τ ∈ Icc (-ρ) ρ := ⟨by linarith [ht.1], by linarith [ht.2]⟩
-  have hφ : ContDiff ℝ ∞ (fun t : ℝ ↦ t - τ) := contDiff_id.sub contDiff_const
-  have hlift := h.contMDiffAt_radialParallelLinearMap_apply b v hlr hseg z (hseg _ hs)
-  refine ⟨?_, ?_⟩
-  · convert hlift.comp t hφ.contMDiff.contMDiffAt using 1
-    rfl
-  · have hc : MDifferentiableAt 𝓘(ℝ) I c (t - τ) := by
-      have hlin : ContDiff ℝ ∞ (fun s : ℝ ↦ s • v) := contDiff_id.smul contDiff_const
-      exact ((contMDiffAt_riemannianExp (h.subset_expDomain (hseg _ hs))).comp (t - τ)
-        hlin.contMDiff.contMDiffAt).mdifferentiableAt (by simp)
-    have hcomp := alongCurve_comp (leviCivitaConnection I M) c W (fun t ↦ t - τ)
-      (hφ.differentiable (by simp) t)
-      ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (c (t - τ)))).comp _
-        hc).differentiableAt
-      (differentiableAt_sectionCoord c W (hlift.mdifferentiableAt (by simp))
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (c (t - τ))))
-    have hW : W = fun s ↦ b.normalFrameExpansion (U := U) (c s)
-        (h.radialParallelCoefficients b v hlr hseg s z) :=
-      funext fun s ↦ radialParallelLinearMap_apply h b v hlr hseg s z
-    have hzero : alongCurve (leviCivitaConnection I M) c W (t - τ) = 0 := by
-      rw [hW]
-      exact h.alongCurve_radialParallel_eq_zero b v hlr hseg z hs
-    rw [hzero, smul_zero] at hcomp
-    exact hcomp
-
-/-- The local parallel field, along any curve equal to a translated radial geodesic. -/
-private theorem IsNormalDomain.exists_parallel_of_eq (h : IsNormalDomain I M p U)
-    (v : TangentSpace I p) {ρ : ℝ} (hρ : 0 ≤ ρ) (hseg : ∀ s ∈ Icc (-ρ) ρ, s • v ∈ U)
-    {γ : ℝ → M} {τ : ℝ}
-    (hγ : ∀ t, γ t = riemannianExp I M p ((t - τ) • v)) (z : TangentSpace I p) :
-    ∃ P : ∀ t, TangentSpace I (γ t), P τ = z ∧ ∀ t ∈ Icc (τ - ρ) (τ + ρ),
-      ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
-      alongCurve (leviCivitaConnection I M) γ P t = 0 := by
-  obtain rfl : γ = _ := funext hγ
-  exact h.exists_parallel_sub_smul v hρ hseg τ z
-
 omit [I.Boundaryless] [T2Space M] in
 /-- Gluing a parallel field on `[l, τ]` and a parallel field on `[m, r]`, `l ≤ m < τ ≤ r`, which
 agree at `τ`, gives a parallel field on `[l, r]` equal to the first one on `[l, τ]`. -/
-private theorem exists_parallel_glue {γ : ℝ → M} (hγd : ∀ t, MDifferentiableAt 𝓘(ℝ) I γ t)
+private theorem exists_parallel_glue {γ : ℝ → M}
     {l m τ r : ℝ} (hlm : l ≤ m) (hmτ : m < τ) (hτr : τ ≤ r) {P L : ∀ t, TangentSpace I (γ t)}
     (hP : ∀ t ∈ Icc l τ, ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
       alongCurve (leviCivitaConnection I M) γ P t = 0)
@@ -164,20 +80,23 @@ private theorem exists_parallel_glue {γ : ℝ → M} (hγd : ∀ t, MDifferenti
       ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (G t)) t ∧
       alongCurve (leviCivitaConnection I M) γ G t = 0 := by
   have hagree (t : ℝ) (ht : t ∈ Icc m τ) : P t = L t :=
-    eq_of_parallel_Icc hγd (fun u hu ↦ hP u ⟨hlm.trans hu.1, hu.2⟩)
-      (fun u hu ↦ hL u ⟨hu.1, hu.2.trans hτr⟩) ⟨hmτ.le, le_rfl⟩ hPL ht
+    (isMetricCompatible_leviCivitaConnection I).eq_of_alongCurve_eq_zero_of_mdifferentiableAt
+      isPreconnected_Icc
+      (fun u hu ↦ (hP u ⟨hlm.trans hu.1, hu.2⟩).1.mdifferentiableAt (by simp))
+      (fun u hu ↦ (hL u ⟨hu.1, hu.2.trans hτr⟩).1.mdifferentiableAt (by simp))
+      (fun u hu ↦ (hP u ⟨hlm.trans hu.1, hu.2⟩).2)
+      (fun u hu ↦ (hL u ⟨hu.1, hu.2.trans hτr⟩).2) ⟨hmτ.le, le_rfl⟩ ht hPL
   let G : ∀ t, TangentSpace I (γ t) := fun t ↦ if t ≤ τ then P t else L t
   have hlocal (t : ℝ) (X : ∀ t, TangentSpace I (γ t)) (hGX : ∀ᶠ u in 𝓝 t, G u = X u)
       (hX : ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (X t)) t ∧
         alongCurve (leviCivitaConnection I M) γ X t = 0) :
       ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (G t)) t ∧
         alongCurve (leviCivitaConnection I M) γ G t = 0 := by
-    refine ⟨hX.1.congr_of_eventuallyEq (hGX.mono fun u hu ↦ ?_), ?_⟩
-    · change TotalSpace.mk' E (γ u) (G u) = TotalSpace.mk' E (γ u) (X u)
-      rw [hu]
-    · rw [alongCurve_congr (leviCivitaConnection I M) γ G hGX]
-      exact hX.2
-  refine ⟨G, fun t ht ↦ by simp only [G, ht.2, ↓reduceIte]; exact rfl, fun t ht ↦ ?_⟩
+    refine ⟨hX.1.congr_of_eventuallyEq
+      (hGX.mono fun u ↦ congrArg (TotalSpace.mk' E (γ u))), ?_⟩
+    rw [alongCurve_congr (leviCivitaConnection I M) γ G hGX]
+    exact hX.2
+  refine ⟨G, fun t ht ↦ ite_eq_left ht.2, fun t ht ↦ ?_⟩
   rcases lt_trichotomy t τ with hlt | rfl | hgt
   · exact hlocal t P ((eventually_lt_nhds hlt).mono fun u hu ↦ by simp [G, hu.le])
       (hP t ⟨ht.1, hlt.le⟩)
@@ -190,48 +109,60 @@ private theorem exists_parallel_glue {γ : ℝ → M} (hγd : ∀ t, MDifferenti
       simp [G, not_le.2 hu])
       (hL t ⟨by linarith, ht.2⟩)
 
-/-- Along a geodesic on the whole line, there is a uniform length `ρ > 0` such that every tangent
-vector at a point `γ τ`, `τ ∈ [a, b]`, is the value at `τ` of a smooth parallel field on
-`[τ - ρ, τ + ρ]`. -/
-private theorem IsGeodesicCurve.exists_pos_forall_exists_parallel {γ : ℝ → M}
-    (hγ : IsGeodesicCurve I γ) (a b : ℝ) :
+/-- Uniform local parallel fields on a compact subinterval of an open-interval geodesic. -/
+private theorem IsGeodesicCurveOn.exists_pos_forall_exists_parallel {γ : ℝ → M}
+    {c d : ℝ} (hγ : IsGeodesicCurveOn I γ (Ioo c d)) (a b : ℝ)
+    (hab : a ≤ b) (hca : c < a) (hbd : b < d) :
     ∃ ρ > 0, ∀ τ ∈ Icc a b, ∀ z : TangentSpace I (γ τ), ∃ L : ∀ t, TangentSpace I (γ t),
       L τ = z ∧ ∀ t ∈ Icc (τ - ρ) (τ + ρ),
         ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (L t)) t ∧
         alongCurve (leviCivitaConnection I M) γ L t = 0 := by
-  have hγon : IsGeodesicCurveOn I γ univ := isGeodesicCurveOn_univ.mpr hγ
-  have hsmooth : ContMDiff 𝓘(ℝ) I 2 γ := contMDiffOn_univ.mp hγon.contMDiffOn
-  have hK : IsCompact (γ '' Icc a b) := isCompact_Icc.image hsmooth.continuous
+  have hsub : Icc a b ⊆ Ioo c d :=
+    fun t ht ↦ ⟨hca.trans_le ht.1, ht.2.trans_lt hbd⟩
+  have hK : IsCompact (γ '' Icc a b) :=
+    isCompact_Icc.image_of_continuousOn (hγ.contMDiffOn.continuousOn.mono hsub)
   obtain ⟨r, hr, _, _, hKU, hnd⟩ :=
     hK.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball (I := I)
   set C := ‖curveVelocity I γ a‖ with hC
   have hC0 : 0 ≤ C := norm_nonneg _
-  refine ⟨r / (2 * (C + 1)), by positivity, fun τ hτ z ↦ ?_⟩
-  have hseg : ∀ s ∈ Icc (-(r / (2 * (C + 1)))) (r / (2 * (C + 1))),
-      s • curveVelocity I γ τ ∈ Metric.ball (0 : TangentSpace I (γ τ)) r := by
-    intro s hs
-    rw [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs, hγ.norm_curveVelocity_eq τ a, ← hC]
-    calc |s| * C ≤ r / (2 * (C + 1)) * C :=
-          mul_le_mul_of_nonneg_right (abs_le.mpr ⟨hs.1, hs.2⟩) hC0
+  set ρ := min (r / (2 * (C + 1))) (min (a - c) (d - b) / 2)
+  have hρ : 0 < ρ := by positivity
+  have hρN : ρ ≤ r / (2 * (C + 1)) := min_le_left _ _
+  have hρa : ρ < a - c := by
+    have := min_le_right (r / (2 * (C + 1))) (min (a - c) (d - b) / 2)
+    linarith [min_le_left (a - c) (d - b)]
+  have hρb : ρ < d - b := by
+    have := min_le_right (r / (2 * (C + 1))) (min (a - c) (d - b) / 2)
+    linarith [min_le_right (a - c) (d - b)]
+  refine ⟨ρ, hρ, fun τ hτ z ↦ ?_⟩
+  have hspeed := hγ.norm_curveVelocityWithin_eq isPreconnected_Ioo (hsub hτ)
+    (hsub ⟨le_rfl, hab⟩)
+  rw [curveVelocityWithin_of_mem_nhds (isOpen_Ioo.mem_nhds (hsub hτ)),
+    curveVelocityWithin_of_mem_nhds (isOpen_Ioo.mem_nhds (hsub ⟨le_rfl, hab⟩))] at hspeed
+  have hseg : ∀ t ∈ Icc (τ - ρ) (τ + ρ),
+      (t - τ) • curveVelocity I γ τ ∈ Metric.ball (0 : TangentSpace I (γ τ)) r := by
+    intro t ht
+    rw [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs, hspeed, ← hC]
+    calc |t - τ| * C ≤ r / (2 * (C + 1)) * C :=
+          mul_le_mul_of_nonneg_right
+            ((abs_le.mpr ⟨by linarith [ht.1], by linarith [ht.2]⟩).trans hρN) hC0
       _ < r := by
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
         nlinarith
-  exact (hnd (γ τ) (hKU (mem_image_of_mem γ hτ))).exists_parallel_of_eq _ (by positivity) hseg
-    (hγon.eq_riemannianExp_sub_smul τ) z
+  exact (hnd (γ τ) (hKU (mem_image_of_mem γ hτ))).exists_parallel_of_eqOn
+    (curveVelocity I γ τ) (by constructor <;> linarith) hseg (s := Ioo c d) isOpen_Ioo
+    (fun t ht ↦ ⟨by linarith [hτ.1, ht.1], by linarith [hτ.2, ht.2]⟩)
+    (fun t ht ↦ hγ.eq_riemannianExp_sub_smul
+      (by rw [interior_Ioo]; exact ordConnected_Ioo.uIcc_subset (hsub hτ) ht)) z
 
-/-- **Parallel fields along a geodesic.** Along a geodesic defined on the whole line, every
-tangent vector at `γ a` is the initial value of a smooth parallel field on `[a, b]`. -/
-theorem IsGeodesicCurve.exists_parallel {γ : ℝ → M} (hγ : IsGeodesicCurve I γ) (a b : ℝ)
-    (w : TangentSpace I (γ a)) :
-    ∃ P : ∀ t, TangentSpace I (γ t), P a = w ∧ ∀ t ∈ Icc a b,
+/-- Forward extension with a parallel overlap to the left of the initial parameter. -/
+private theorem IsGeodesicCurveOn.exists_parallel_right {γ : ℝ → M}
+    {c d : ℝ} (hγ : IsGeodesicCurveOn I γ (Ioo c d)) (a b : ℝ)
+    (hab : a ≤ b) (hca : c < a) (hbd : b < d) (w : TangentSpace I (γ a)) :
+    ∃ δ > 0, ∃ P : ∀ t, TangentSpace I (γ t), P a = w ∧ ∀ t ∈ Icc (a - δ) b,
       ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
       alongCurve (leviCivitaConnection I M) γ P t = 0 := by
-  rcases lt_or_ge b a with hba | hab
-  · exact ⟨fun _ ↦ w, rfl, fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.mpr hba)⟩
-  have hγd (t : ℝ) : MDifferentiableAt 𝓘(ℝ) I γ t :=
-    ((contMDiffOn_univ.mp (isGeodesicCurveOn_univ.mpr hγ).contMDiffOn) t).mdifferentiableAt
-      (by simp)
-  obtain ⟨ρ, hρ, hloc⟩ := hγ.exists_pos_forall_exists_parallel a b
+  obtain ⟨ρ, hρ, hloc⟩ := hγ.exists_pos_forall_exists_parallel a b hab hca hbd
   have hstep (k : ℕ) : ∃ P : ∀ t, TangentSpace I (γ t), P a = w ∧
       ∀ t ∈ Icc (a - ρ / 2) (min (a + k * (ρ / 2)) b),
         ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
@@ -249,7 +180,7 @@ theorem IsGeodesicCurve.exists_parallel {γ : ℝ → M} (hγ : IsGeodesicCurve 
       have hτ : τ ∈ Icc a b := ⟨le_min (by nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]) hab,
         min_le_right _ _⟩
       obtain ⟨L, hLτ, hL⟩ := hloc τ hτ (P τ)
-      obtain ⟨G, hGP, hG⟩ := exists_parallel_glue hγd (le_max_left (a - ρ / 2) (τ - ρ))
+      obtain ⟨G, hGP, hG⟩ := exists_parallel_glue (le_max_left (a - ρ / 2) (τ - ρ))
         (max_lt (by linarith [hτ.1]) (by linarith)) (by linarith) hP
         (fun t ht ↦ hL t ⟨le_trans (le_max_right _ _) ht.1, ht.2⟩) hLτ.symm
       refine ⟨G, (hGP ⟨by linarith, hτ.1⟩).trans hPa, fun t ht ↦ hG t ⟨ht.1, ?_⟩⟩
@@ -261,60 +192,198 @@ theorem IsGeodesicCurve.exists_parallel {γ : ℝ → M} (hγ : IsGeodesicCurve 
   obtain ⟨P, hPa, hP⟩ := hstep k
   have hkb : min (a + k * (ρ / 2)) b = b :=
     min_eq_right (by linarith [(div_lt_iff₀ (by positivity : (0 : ℝ) < ρ / 2)).mp hk])
-  exact ⟨P, hPa, fun t ht ↦ hP t ⟨by linarith [ht.1], by rw [hkb]; exact ht.2⟩⟩
+  exact ⟨ρ / 2, by positivity, P, hPa,
+    fun t ht ↦ hP t ⟨ht.1, by rw [hkb]; exact ht.2⟩⟩
 
-omit [T2Space M] in
-/-- The velocity of a geodesic on the whole line is a smooth parallel field. -/
-theorem IsGeodesicCurve.contMDiffAt_curveVelocity_and_alongCurve {γ : ℝ → M}
-    (hγ : IsGeodesicCurve I γ) (t : ℝ) :
-    ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (curveVelocity I γ t)) t ∧
-      alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t = 0 := by
-  have hγon : IsGeodesicCurveOn I γ univ := isGeodesicCurveOn_univ.mpr hγ
-  have h1 := hγon.contMDiffOn_curveVelocityLiftWithin_infty
-  have hlift : curveVelocityLiftWithin I γ univ =
-      fun t ↦ TotalSpace.mk' E (γ t) (curveVelocity I γ t) := by
-    funext u
-    rw [curveVelocityLiftWithin_apply, curveVelocityWithin_univ]
-  rw [hlift] at h1
-  refine ⟨(contMDiffOn_univ.mp h1) t, ?_⟩
-  have h2 := hγon.accelerationWithin_eq_zero t (mem_univ t)
-  rwa [accelerationWithin_univ, acceleration_def] at h2
+/-- Along a geodesic on an open interval, every tangent vector at `γ τ`, with
+`τ ∈ [a, b]`, extends to a smooth parallel field on `[a, b]`. -/
+private theorem IsGeodesicCurveOn.exists_parallel_Ioo {γ : ℝ → M} {c d : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Ioo c d)) {a b τ : ℝ} (hsub : Icc a b ⊆ Ioo c d)
+    (hτ : τ ∈ Icc a b) (w : TangentSpace I (γ τ)) :
+    ∃ P : ∀ t, TangentSpace I (γ t), P τ = w ∧ ∀ t ∈ Icc a b,
+      ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
+      alongCurve (leviCivitaConnection I M) γ P t = 0 := by
+  obtain ⟨δ, hδ, P, hPτ, hP⟩ := hγ.exists_parallel_right τ b hτ.2 (hsub hτ).1
+    (hsub ⟨hτ.1.trans hτ.2, le_rfl⟩).2 w
+  rcases hτ.1.eq_or_lt with rfl | haτ
+  · exact ⟨P, hPτ, fun t ht ↦ hP t ⟨by linarith [ht.1], ht.2⟩⟩
+  have hrev : IsGeodesicCurveOn I (fun t ↦ γ (0 - t)) (Ioo (-d) (-c)) := by
+    simpa only [Function.comp_def, neg_one_mul, zero_sub, add_zero] using
+      hγ.comp_affine (-1) 0 (uniqueDiffOn_Ioo (-d) (-c))
+        (fun t ht ↦ ⟨by dsimp; linarith [ht.2], by dsimp; linarith [ht.1]⟩)
+  -- Reflect both the curve and the interval, then identify the double reflection with γ.
+  obtain ⟨ε, hε, L, hLτ, hL⟩ := hrev.exists_parallel_right (0 - τ) (0 - a)
+    (by linarith [hτ.1]) (by linarith [(hsub hτ).2])
+    (by linarith [(hsub ⟨le_rfl, hτ.1.trans hτ.2⟩).1]) w
+  -- Transport the entire dependent existence statement to preserve its fibre structures.
+  let ParallelOn (c : ℝ → M) : Prop :=
+    ∃ Q : ∀ t, TangentSpace I (c t), Q τ = w ∧ ∀ t ∈ Icc a τ,
+      ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (c t) (Q t)) t ∧
+      alongCurve (leviCivitaConnection I M) c Q t = 0
+  have hback : ParallelOn (fun t ↦ γ (0 - (0 - t))) := by
+    refine ⟨fun t ↦ L (0 - t), hLτ, fun t ht ↦ ?_⟩
+    have hLt := hL (0 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
+    have hn : ContDiff ℝ ∞ (fun t : ℝ ↦ 0 - t) := contDiff_const.sub contDiff_id
+    refine ⟨hLt.1.comp t hn.contMDiff.contMDiffAt, ?_⟩
+    exact (alongCurve_comp_const_sub (leviCivitaConnection I M)
+      (fun t ↦ γ (0 - t)) L 0 t).trans (by rw [hLt.2, neg_zero])
+  have hdouble : (fun t ↦ γ (0 - (0 - t))) = γ := by
+    funext t
+    rw [zero_sub, zero_sub, neg_neg]
+  obtain ⟨Q, hQτ, hQ⟩ := (congrArg ParallelOn hdouble).mp hback
+  obtain ⟨G, hGQ, hG⟩ := exists_parallel_glue
+    (le_max_left a (τ - δ)) (max_lt haτ (by linarith)) hτ.2 hQ
+    (fun t ht ↦ hP t ⟨(le_max_right _ _).trans ht.1, ht.2⟩)
+    (hQτ.trans hPτ.symm)
+  exact ⟨G, (hGQ ⟨hτ.1, le_rfl⟩).trans hQτ, hG⟩
 
-/-- **A parallel orthonormal frame along a geodesic.** Parallel transport of an orthonormal basis
-of `T_(γ a) M` along a geodesic on the whole line gives smooth parallel fields on `[a, b]` which
-stay orthonormal. -/
-theorem IsGeodesicCurve.exists_parallel_orthonormal {γ : ℝ → M} (hγ : IsGeodesicCurve I γ)
-    (a b : ℝ) {ι : Type*} (e : ι → TangentSpace I (γ a)) :
-    ∃ P : ι → ∀ t, TangentSpace I (γ t), (∀ i, P i a = e i) ∧
+/-- Along a geodesic, any tangent vector at `γ τ`, with `τ ∈ [a, b] ⊆ interior s`,
+extends to a smooth parallel field on `[a, b]`. -/
+theorem IsGeodesicCurveOn.exists_parallel {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ s) {a b τ : ℝ} (hsub : Icc a b ⊆ interior s)
+    (hτ : τ ∈ Icc a b) (w : TangentSpace I (γ τ)) :
+    ∃ P : ∀ t, TangentSpace I (γ t), P τ = w ∧ ∀ t ∈ Icc a b,
+      ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
+      alongCurve (leviCivitaConnection I M) γ P t = 0 := by
+  have hab := hτ.1.trans hτ.2
+  obtain ⟨c, d, hcd, hs⟩ := isOpen_interior.exists_Ioo_subset_of_uIcc_subset
+    (a := a) (b := b) (by rwa [uIcc_of_le hab])
+  exact (hγ.mono (uniqueDiffOn_Ioo c d) (hs.trans interior_subset)).exists_parallel_Ioo
+    (by rwa [uIcc_of_le hab] at hcd) hτ w
+
+/-- Any indexed family at `γ τ`, with `τ ∈ [a, b] ⊆ interior s`, along a geodesic on `s`
+extends to smooth parallel fields on `[a, b]` preserving all pairwise inner products. -/
+theorem IsGeodesicCurveOn.exists_parallel_inner_eq {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ s) {a b τ : ℝ} (hsub : Icc a b ⊆ interior s)
+    (hτ : τ ∈ Icc a b) {ι : Type*} (e : ι → TangentSpace I (γ τ)) :
+    ∃ P : ι → ∀ t, TangentSpace I (γ t), (∀ i, P i τ = e i) ∧
       (∀ i, ∀ t ∈ Icc a b,
         ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P i t)) t ∧
         alongCurve (leviCivitaConnection I M) γ (P i) t = 0) ∧
       ∀ t ∈ Icc a b, ∀ i j, ⟪P i t, P j t⟫_ℝ = ⟪e i, e j⟫_ℝ := by
-  choose P hPa hP using fun i ↦ hγ.exists_parallel a b (e i)
+  choose P hPa hP using fun i ↦ hγ.exists_parallel hsub hτ (e i)
   refine ⟨P, hPa, hP, fun t ht i j ↦ ?_⟩
-  have hγd (u : ℝ) : MDifferentiableAt 𝓘(ℝ) I γ u :=
-    ((contMDiffOn_univ.mp (isGeodesicCurveOn_univ.mpr hγ).contMDiffOn) u).mdifferentiableAt
-      (by simp)
+  have hγd (u : ℝ) (hu : u ∈ Icc a b) : MDifferentiableAt 𝓘(ℝ) I γ u :=
+    (hγ.contMDiffAt_infty (mem_interior_iff_mem_nhds.mp (hsub hu))).mdifferentiableAt (by simp)
   have hcoord (k : ι) (u : ℝ) (hu : u ∈ Icc a b) :
       DifferentiableAt ℝ (sectionCoord (F := E) γ (P k) (γ u)) u :=
     differentiableAt_sectionCoord γ (P k) ((hP k u hu).1.mdifferentiableAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ u))
   rw [(isMetricCompatible_leviCivitaConnection I).inner_eq_of_alongCurve_eq_zero
-    isPreconnected_Icc (fun u _ ↦ hγd u) (hcoord i) (hcoord j) (fun u hu ↦ (hP i u hu).2)
-    (fun u hu ↦ (hP j u hu).2) ht ⟨le_rfl, ht.1.trans ht.2⟩, hPa, hPa]
+    isPreconnected_Icc hγd (hcoord i) (hcoord j) (fun u hu ↦ (hP i u hu).2)
+    (fun u hu ↦ (hP j u hu).2) ht hτ, hPa, hPa]
 
-omit [T2Space M] in
-/-- A parallel field along a geodesic which starts at the velocity is the velocity. -/
-theorem IsGeodesicCurve.eq_curveVelocity_of_alongCurve_eq_zero {γ : ℝ → M}
-    (hγ : IsGeodesicCurve I γ) {a b : ℝ} {P : ∀ t, TangentSpace I (γ t)}
-    (hP : ∀ t ∈ Icc a b,
+/-- An orthonormal basis at `γ τ`, with `τ ∈ [a, b] ⊆ interior s`, along a geodesic on `s`
+extends to smooth parallel fields forming an orthonormal basis at each point of `[a, b]`. -/
+theorem IsGeodesicCurveOn.exists_parallel_orthonormalBasis {γ : ℝ → M}
+    {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) {a b τ : ℝ}
+    (hsub : Icc a b ⊆ interior s) (hτ : τ ∈ Icc a b) {ι : Type*} [Fintype ι]
+    (e : OrthonormalBasis ι ℝ (TangentSpace I (γ τ))) :
+    ∃ P : ι → ∀ t, TangentSpace I (γ t), (∀ i, P i τ = e i) ∧
+      (∀ i, ∀ t ∈ Icc a b,
+        ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P i t)) t ∧
+        alongCurve (leviCivitaConnection I M) γ (P i) t = 0) ∧
+      ∀ t ∈ Icc a b, ∃ e' : OrthonormalBasis ι ℝ (TangentSpace I (γ t)),
+        ∀ i, e' i = P i t := by
+  classical
+  obtain ⟨P, hPa, hP, hinner⟩ := hγ.exists_parallel_inner_eq hsub hτ e
+  refine ⟨P, hPa, hP, fun t ht ↦ ?_⟩
+  have hon : Orthonormal ℝ (fun i ↦ P i t) := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    rw [hinner t ht, orthonormal_iff_ite.mp e.orthonormal]
+  have hcard : Fintype.card ι = Module.finrank ℝ (TangentSpace I (γ t)) := by
+    rw [← Module.finrank_eq_card_basis e.toBasis]
+    exact (TauCeti.finrank_tangentSpace (I := I) (γ τ)).trans
+      (TauCeti.finrank_tangentSpace (I := I) (γ t)).symm
+  refine ⟨OrthonormalBasis.mk hon (hon.linearIndependent.span_eq_top_of_card_eq_finrank' hcard).ge,
+    fun i ↦ ?_⟩
+  exact congrFun (OrthonormalBasis.coe_mk _ _) i
+
+/-- Along an all-time geodesic, every tangent vector extends to a smooth parallel field on the
+whole parameter line. -/
+theorem IsGeodesicCurve.exists_parallel {γ : ℝ → M} (hγ : IsGeodesicCurve I γ)
+    (a : ℝ) (w : TangentSpace I (γ a)) :
+    ∃ P : ∀ t, TangentSpace I (γ t), P a = w ∧ ∀ t,
       ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
-      alongCurve (leviCivitaConnection I M) γ P t = 0)
-    (hPa : P a = curveVelocity I γ a) {t : ℝ} (ht : t ∈ Icc a b) :
-    P t = curveVelocity I γ t := by
-  have hv := hγ.contMDiffAt_curveVelocity_and_alongCurve
-  exact eq_of_parallel_Icc
-    (fun u ↦ ((contMDiffOn_univ.mp (isGeodesicCurveOn_univ.mpr hγ).contMDiffOn) u
-      ).mdifferentiableAt (by simp)) hP (fun u _ ↦ hv u) ⟨le_rfl, ht.1.trans ht.2⟩ hPa ht
+      alongCurve (leviCivitaConnection I M) γ P t = 0 := by
+  have hcompact (n : ℕ) : ∃ P : ∀ t, TangentSpace I (γ t), P a = w ∧
+      ∀ t ∈ Icc (a - (n + 1)) (a + (n + 1)),
+        ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
+        alongCurve (leviCivitaConnection I M) γ P t = 0 :=
+    (isGeodesicCurveOn_univ.mpr hγ).exists_parallel (by simp)
+      (by constructor <;> linarith [Nat.cast_nonneg (α := ℝ) n]) w
+  choose P hPa hP using hcompact
+  have ha (n : ℕ) : a ∈ Icc (a - (n + 1)) (a + (n + 1)) := by
+    constructor <;> linarith [Nat.cast_nonneg (α := ℝ) n]
+  have hagree (j k : ℕ) {u : ℝ} (hj : u ∈ Icc (a - (j + 1)) (a + (j + 1)))
+      (hk : u ∈ Icc (a - (k + 1)) (a + (k + 1))) : P j u = P k u :=
+    (isMetricCompatible_leviCivitaConnection I).eq_of_alongCurve_eq_zero_of_mdifferentiableAt
+      isPreconnected_uIcc
+      (fun t ht ↦ (hP j t (ordConnected_Icc.uIcc_subset (ha j) hj ht)).1.mdifferentiableAt
+        (by simp))
+      (fun t ht ↦ (hP k t (ordConnected_Icc.uIcc_subset (ha k) hk ht)).1.mdifferentiableAt
+        (by simp))
+      (fun t ht ↦ (hP j t (ordConnected_Icc.uIcc_subset (ha j) hj ht)).2)
+      (fun t ht ↦ (hP k t (ordConnected_Icc.uIcc_subset (ha k) hk ht)).2)
+      left_mem_uIcc right_mem_uIcc ((hPa j).trans (hPa k).symm)
+  let n : ℝ → ℕ := fun t ↦ ⌈|t - a|⌉₊
+  have hcover (t : ℝ) : t ∈ Ioo (a - (n t + 1)) (a + (n t + 1)) := by
+    have hb : |t - a| ≤ (n t : ℝ) := Nat.le_ceil _
+    constructor <;> linarith [neg_abs_le (t - a), le_abs_self (t - a)]
+  let G : ∀ t, TangentSpace I (γ t) := fun t ↦ P (n t) t
+  refine ⟨G, hPa (n a), fun t ↦ ?_⟩
+  have heq : G =ᶠ[𝓝 t] P (n t) :=
+    Filter.Eventually.mono (isOpen_Ioo.mem_nhds (hcover t)) fun u hu ↦
+      hagree (n u) (n t) (Ioo_subset_Icc_self (hcover u)) (Ioo_subset_Icc_self hu)
+  refine ⟨(hP (n t) t (Ioo_subset_Icc_self (hcover t))).1.congr_of_eventuallyEq
+    (heq.mono fun u ↦ congrArg (TotalSpace.mk' E (γ u))), ?_⟩
+  rw [alongCurve_congr (leviCivitaConnection I M) γ G heq]
+  exact (hP (n t) t (Ioo_subset_Icc_self (hcover t))).2
+
+/-- Any indexed family at one point of an all-time geodesic extends to smooth parallel fields
+on the whole line, preserving pairwise inner products. -/
+theorem IsGeodesicCurve.exists_parallel_inner_eq {γ : ℝ → M} (hγ : IsGeodesicCurve I γ)
+    (a : ℝ) {ι : Type*} (e : ι → TangentSpace I (γ a)) :
+    ∃ P : ι → ∀ t, TangentSpace I (γ t), (∀ i, P i a = e i) ∧
+      (∀ i t, ContMDiffAt 𝓘(ℝ) I.tangent ∞
+        (fun t ↦ TotalSpace.mk' E (γ t) (P i t)) t ∧
+        alongCurve (leviCivitaConnection I M) γ (P i) t = 0) ∧
+      ∀ t i j, ⟪P i t, P j t⟫_ℝ = ⟪e i, e j⟫_ℝ := by
+  choose P hPa hP using fun i ↦ hγ.exists_parallel a (e i)
+  refine ⟨P, hPa, hP, fun t i j ↦ ?_⟩
+  have hcoord (k : ι) (u : ℝ) :
+      DifferentiableAt ℝ (sectionCoord (F := E) γ (P k) (γ u)) u :=
+    differentiableAt_sectionCoord γ (P k) ((hP k u).1.mdifferentiableAt (by simp))
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ u))
+  rw [(isMetricCompatible_leviCivitaConnection I).inner_eq_of_alongCurve_eq_zero
+    (s := univ) isPreconnected_univ
+    (fun u _ ↦ hγ.contMDiff_infty.mdifferentiable (by simp) u)
+    (fun u _ ↦ hcoord i u) (fun u _ ↦ hcoord j u) (fun u _ ↦ (hP i u).2)
+    (fun u _ ↦ (hP j u).2) (mem_univ t) (mem_univ a), hPa, hPa]
+
+/-- An orthonormal basis at one point of an all-time geodesic extends to smooth parallel fields
+forming an orthonormal basis at every parameter on the whole line. -/
+theorem IsGeodesicCurve.exists_parallel_orthonormalBasis {γ : ℝ → M}
+    (hγ : IsGeodesicCurve I γ) (a : ℝ) {ι : Type*} [Fintype ι]
+    (e : OrthonormalBasis ι ℝ (TangentSpace I (γ a))) :
+    ∃ P : ι → ∀ t, TangentSpace I (γ t), (∀ i, P i a = e i) ∧
+      (∀ i t, ContMDiffAt 𝓘(ℝ) I.tangent ∞
+        (fun t ↦ TotalSpace.mk' E (γ t) (P i t)) t ∧
+        alongCurve (leviCivitaConnection I M) γ (P i) t = 0) ∧
+      ∀ t, ∃ e' : OrthonormalBasis ι ℝ (TangentSpace I (γ t)), ∀ i, e' i = P i t := by
+  classical
+  obtain ⟨P, hPa, hP, hinner⟩ := hγ.exists_parallel_inner_eq a e
+  refine ⟨P, hPa, hP, fun t ↦ ?_⟩
+  have hon : Orthonormal ℝ (fun i ↦ P i t) :=
+    orthonormal_iff_ite.mpr fun i j ↦ (hinner t i j).trans
+      (orthonormal_iff_ite.mp e.orthonormal i j)
+  have hcard : Fintype.card ι = Module.finrank ℝ (TangentSpace I (γ t)) := by
+    rw [← Module.finrank_eq_card_basis e.toBasis]
+    exact (TauCeti.finrank_tangentSpace (I := I) (γ a)).trans
+      (TauCeti.finrank_tangentSpace (I := I) (γ t)).symm
+  refine ⟨OrthonormalBasis.mk hon (hon.linearIndependent.span_eq_top_of_card_eq_finrank' hcard).ge,
+    fun i ↦ ?_⟩
+  exact congrFun (OrthonormalBasis.coe_mk _ _) i
 
 end TauCeti.Manifold

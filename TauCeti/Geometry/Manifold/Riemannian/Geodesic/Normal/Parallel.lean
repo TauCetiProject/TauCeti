@@ -309,11 +309,8 @@ theorem inner_radialParallel (h : IsNormalDomain I M p U)
     h.alongCurve_radialParallel_eq_zero b v hlr.le hseg z hs
   have hrestrict (z : TangentSpace I p) (s : ℝ) (hs : s ∈ Icc l r) :
       alongCurveWithin (leviCivitaConnection I M) γ (P z) (Icc l r) s = 0 := by
-    rw [alongCurveWithin_subset _ γ (P z) (subset_univ _) (uniqueDiffOn_Icc hlr s hs)
-      (hcoord z s hs).differentiableWithinAt
-      ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ s))).comp s
-        (hγ s hs)).differentiableAt.differentiableWithinAt,
-      alongCurveWithin_univ, hparallel z s hs]
+    rw [alongCurveWithin_eq_alongCurve _ γ (P z) (uniqueDiffOn_Icc hlr s hs)
+      (hγ s hs) (hcoord z s hs), hparallel z s hs]
   have hconst : ⟪P a t, P a' t⟫_ℝ = ⟪P a 0, P a' 0⟫_ℝ :=
     (isMetricCompatible_leviCivitaConnection I).inner_eq_of_alongCurveWithin_eq_zero
       isPreconnected_Icc (fun s hs ↦ (hγ s hs).mdifferentiableWithinAt)
@@ -568,5 +565,85 @@ theorem radialTransverseIsometry_eq_of_mem (h : IsNormalDomain I M p U)
     exact h.radialParallelLinearMap_eq_of_mem b v hr.le hseg ⟨le_rfl, hr.le⟩ hr'.le hseg'
       ⟨le_rfl, hr'.le⟩ htseg htseg' a
 
+/-- If `(t - τ) • v ∈ U` on `[l, r]` in a normal domain `U` and `τ ∈ [l, r]`, every
+vector at `p` extends to a field along `t ↦ exp_p ((t - τ) • v)` with that value at `τ`,
+smooth and parallel on `[l, r]`. -/
+theorem exists_parallel_sub_smul (h : IsNormalDomain I M p U)
+    (v : TangentSpace I p) {l r τ : ℝ} (hτ : τ ∈ Icc l r)
+    (hseg : ∀ t ∈ Icc l r, (t - τ) • v ∈ U) (z : TangentSpace I p) :
+    ∃ P : ∀ t, TangentSpace I (riemannianExp I M p ((t - τ) • v)), P τ = z ∧
+      ∀ t ∈ Icc l r,
+        ContMDiffAt 𝓘(ℝ) I.tangent ∞
+          (fun t ↦ TotalSpace.mk' E (riemannianExp I M p ((t - τ) • v)) (P t)) t ∧
+        alongCurve (leviCivitaConnection I M)
+          (fun t ↦ riemannianExp I M p ((t - τ) • v)) P t = 0 := by
+  have hlr : l - τ ≤ r - τ := sub_le_sub_right (hτ.1.trans hτ.2) τ
+  have hseg' : ∀ s ∈ Icc (l - τ) (r - τ), s • v ∈ U := by
+    intro s hs
+    simpa only [add_sub_cancel_right] using hseg (s + τ) ⟨by linarith [hs.1],
+      by linarith [hs.2]⟩
+  let b := stdOrthonormalBasis ℝ (TangentSpace I p)
+  set c : ℝ → M := fun s ↦ riemannianExp I M p (s • v)
+  let W : ∀ s, TangentSpace I (c s) := fun s ↦ h.radialParallelLinearMap b v hlr hseg' s z
+  have hW₀ (u : ℝ) (hu : u = 0) : W u = z := by
+    subst hu
+    exact radialParallelLinearMap_apply_zero h b v hlr hseg' z
+  refine ⟨fun t ↦ W (t - τ), hW₀ _ (sub_self τ), fun t ht ↦ ?_⟩
+  have hs : t - τ ∈ Icc (l - τ) (r - τ) := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have hφ : ContDiff ℝ ∞ (fun t : ℝ ↦ t - τ) := contDiff_id.sub contDiff_const
+  have hlift := h.contMDiffAt_radialParallelLinearMap_apply b v hlr hseg' z (hseg' _ hs)
+  refine ⟨?_, ?_⟩
+  · exact hlift.comp t hφ.contMDiff.contMDiffAt
+  · have hc : MDifferentiableAt 𝓘(ℝ) I c (t - τ) := by
+      have hlin : ContDiff ℝ ∞ (fun s : ℝ ↦ s • v) := contDiff_id.smul contDiff_const
+      exact ((contMDiffAt_riemannianExp (h.subset_expDomain (hseg' _ hs))).comp (t - τ)
+        hlin.contMDiff.contMDiffAt).mdifferentiableAt (by simp)
+    have hcomp := alongCurve_comp (leviCivitaConnection I M) c W (fun t ↦ t - τ)
+      (hφ.differentiable (by simp) t)
+      ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (c (t - τ)))).comp _
+        hc).differentiableAt
+      (differentiableAt_sectionCoord c W (hlift.mdifferentiableAt (by simp))
+        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (c (t - τ))))
+    have hW : W = fun s ↦ b.normalFrameExpansion (U := U) (c s)
+        (h.radialParallelCoefficients b v hlr hseg' s z) :=
+      funext fun s ↦ radialParallelLinearMap_apply h b v hlr hseg' s z
+    have hzero : alongCurve (leviCivitaConnection I M) c W (t - τ) = 0 := by
+      rw [hW]
+      exact h.alongCurve_radialParallel_eq_zero b v hlr hseg' z hs
+    rw [hzero, smul_zero] at hcomp
+    exact hcomp
+
+/-- A curve agreeing with a translated radial geodesic on an open set containing `[l, r]`
+has a smooth parallel field on that interval with any prescribed value at `τ ∈ [l, r]`. -/
+theorem exists_parallel_of_eqOn {p : M} {U : Set (TangentSpace I p)}
+    (h : IsNormalDomain I M p U) (v : TangentSpace I p) {l r τ : ℝ} (hτ : τ ∈ Icc l r)
+    (hseg : ∀ t ∈ Icc l r, (t - τ) • v ∈ U) {γ : ℝ → M} {s : Set ℝ}
+    (hs : IsOpen s) (hsub : Icc l r ⊆ s)
+    (heq : EqOn γ (fun t ↦ riemannianExp I M p ((t - τ) • v)) s)
+    (z : TangentSpace I p) :
+    ∃ P : ∀ t, TangentSpace I (γ t), P τ = z ∧ ∀ t ∈ Icc l r,
+      ContMDiffAt 𝓘(ℝ) I.tangent ∞ (fun t ↦ TotalSpace.mk' E (γ t) (P t)) t ∧
+      alongCurve (leviCivitaConnection I M) γ P t = 0 := by
+  classical
+  let δ := fun t ↦ riemannianExp I M p ((t - τ) • v)
+  obtain ⟨W, hWτ, hW⟩ := h.exists_parallel_sub_smul v hτ hseg z
+  let P : ∀ t, TangentSpace I (γ t) := fun t ↦
+    if h : γ t = δ t then cast (congrArg (TangentSpace I) h.symm) (W t) else 0
+  have hP (t : ℝ) (ht : t ∈ s) : HEq (P t) (W t) := by
+    dsimp only [P]
+    rw [dite_eq_left (heq ht)]
+    exact cast_heq _ _
+  have hlift (t : ℝ) (ht : t ∈ s) :
+      TotalSpace.mk' E (γ t) (P t) = TotalSpace.mk' E (δ t) (W t) :=
+    TotalSpace.ext (heq ht) (hP t ht)
+  refine ⟨P, (eq_of_heq (hP τ (hsub hτ))).trans hWτ, fun t ht ↦ ⟨?_, ?_⟩⟩
+  · exact (hW t ht).1.congr_of_eventuallyEq
+      (Filter.Eventually.mono (hs.mem_nhds (hsub ht)) fun u hu ↦ hlift u hu)
+  · have hc := alongCurve_congr_heq (leviCivitaConnection I M) P
+      (Filter.Eventually.mono (hs.mem_nhds (hsub ht)) fun u hu ↦ heq hu)
+      (Filter.Eventually.mono (hs.mem_nhds (hsub ht)) fun u hu ↦ hP u hu)
+    have hzero : HEq (0 : TangentSpace I (δ t)) (0 : TangentSpace I (γ t)) := by
+      rw [heq (hsub ht)]
+    exact eq_of_heq (hc.trans ((heq_of_eq (hW t ht).2).trans hzero))
 end IsNormalDomain
 end TauCeti.Manifold
