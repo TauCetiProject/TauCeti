@@ -17,6 +17,9 @@ convergence (the strong operator topology) is a finite sum `T ↦ ∑ x ∈ s, g
 functionals of values (`PointwiseConvergenceCLM.exists_finset_sum_eq`). On a Hilbert space,
 writing each `g x` as an inner product gives the usual finite sums of matrix coefficients.
 
+The file also evaluates post-composition by a fixed continuous linear map at a vector
+(`PointwiseConvergenceCLM.postcomp_apply_apply`).
+
 ## References
 
 Kadison–Ringrose, *Fundamentals of the Theory of Operator Algebras I*, Theorem 5.1.2.
@@ -25,6 +28,27 @@ Kadison–Ringrose, *Fundamentals of the Theory of Operator Algebras I*, Theorem
 public section
 
 namespace PointwiseConvergenceCLM
+
+section Postcomp
+
+variable {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] [NormedField 𝕜₃]
+  {σ : 𝕜₁ →+* 𝕜₂} {τ : 𝕜₂ →+* 𝕜₃} {ρ : 𝕜₁ →+* 𝕜₃} [RingHomCompTriple σ τ ρ]
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜₂ F]
+  [ContinuousConstSMul 𝕜₂ F] [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [Module 𝕜₃ G] [ContinuousConstSMul 𝕜₃ G]
+
+/-- Post-composition by `L` evaluates as `L` applied to the value. Mathlib's simps lemma
+`PointwiseConvergenceCLM.postcomp_apply` instead states `postcomp E L u = L.comp u`, which reads
+`u` as a plain continuous linear map, so `ContinuousLinearMap.comp_apply` cannot evaluate the
+result. This lemma is a pre-simp lemma so that it fires before simp rewrites the inner
+`postcomp E L u`. -/
+@[simp↓]
+theorem postcomp_apply_apply (L : F →SL[τ] G) (u : E →SLₚₜ[σ] F) (x : E) :
+    postcomp E L u x = L (u x) :=
+  rfl
+
+end Postcomp
 
 variable {𝕜₁ 𝕜 E F : Type*} [NormedField 𝕜₁] [RCLike 𝕜] {σ : 𝕜₁ →+* 𝕜} [AddCommGroup E]
     [TopologicalSpace E] [Module 𝕜₁ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
