@@ -187,45 +187,70 @@ private theorem two_pointFive : (2 : ℕ) • pointFive = 0 := by
 private theorem addOrderOf_pointFive : addOrderOf pointFive = 2 :=
   addOrderOf_eq_prime two_pointFive (Affine.Point.some_ne_zero _)
 
-private theorem map_castHom_five_twentyTwo_one :
-    (⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) =
-      coordinates 0 1 pointFive := by
-  ext <;> simp only [Pair.map_x, Pair.map_z, pointFive, coordinates_some] <;> decide
-
-private theorem map_castHom_seven_twentyTwo_one :
-    (⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) =
-      coordinates 0 1 pointSeven := by
-  ext <;> simp only [Pair.map_x, Pair.map_z, pointSeven, coordinates_some] <;> decide
+private theorem map_castHom_twentyTwo_one {p : ℕ} (hp : p ∣ 35) {x y : ZMod p}
+    (hns : (model (0 : ZMod p) 1).toAffine.Nonsingular x y)
+    (hx : ZMod.castHom hp (ZMod p) (22 : ZMod 35) = x) :
+    (⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) =
+      coordinates 0 1 (.some x y hns) := by
+  ext <;> simp only [Pair.map_x, Pair.map_z, coordinates_some, hx, map_one]
 
 private theorem double_twentyTwo_one : double (2 : ZMod 35) 4 ⟨22, 1⟩ = ⟨21, 25⟩ := by
   ext <;> simp only [double_x, double_z] <;> decide
 
-private theorem cross_five_twentyOne_twentyFive :
-    (⟨21, 25⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) ≠ 0 ∧
-      ((⟨21, 25⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))).cross
-        (coordinates 0 1 ((2 : ℕ) • pointFive)) = 0 := by
-  rw [← double_twentyTwo_one, map_double, map_castHom_five_twentyTwo_one, two_nsmul]
-  simpa only [map_ofNat] using
-    double_coordinates (N := (2 : ZMod 5)) (D := 4) (by decide) (by decide) pointFive
+private theorem diffAdd_twentyOne_twentyFive :
+    diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩ = ⟨1, 8⟩ := by
+  ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
 
-private theorem cross_seven_twentyOne_twentyFive :
-    (⟨21, 25⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) ≠ 0 ∧
-      ((⟨21, 25⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7))).cross
-        (coordinates 0 1 ((2 : ℕ) • pointSeven)) = 0 := by
-  rw [← double_twentyTwo_one, map_double, map_castHom_seven_twentyTwo_one, two_nsmul]
-  simpa only [map_ofNat] using
-    double_coordinates (N := (2 : ZMod 7)) (D := 4) (by decide) (by decide) pointSeven
+private theorem double_twentyOne_twentyFive : double (2 : ZMod 35) 4 ⟨21, 25⟩ = ⟨9, 0⟩ := by
+  ext <;> simp only [double_x, double_z] <;> decide
 
-private theorem castHom_z_ne_zero_of_not_addOrderOf_dvd {p m : ℕ} [Fact p.Prime]
-    (hp : p ∣ 35) {P : (model (0 : ZMod p) 1).toAffine.Point} {R : Pair (ZMod 35)}
-    (hR₀ : R.map (ZMod.castHom hp (ZMod p)) ≠ 0)
-    (hR : (R.map (ZMod.castHom hp (ZMod p))).cross (coordinates 0 1 (m • P)) = 0)
-    (hm : ¬ addOrderOf P ∣ m) :
-    ZMod.castHom hp (ZMod p) R.z ≠ 0 := fun hz ↦
-  hm <| addOrderOf_dvd_iff_nsmul_eq_zero.mpr <|
-    (coordinates_z_eq_zero_iff one_ne_zero).mp <| by
-      simpa [Pair.cross_def] using
-        Pair.cross_eq_zero_trans hR₀ (p := ⟨1, 0⟩) (by simp [Pair.cross_def, hz]) hR
+private theorem cross_double_twentyTwo_one {p : ℕ} [Fact p.Prime] (hp : p ∣ 35)
+    (h4 : (4 : ZMod p) ≠ 0) {P : (model (0 : ZMod p) 1).toAffine.Point}
+    (hmap : (⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) = coordinates 0 1 P) :
+    (⟨21, 25⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) ≠ 0 ∧
+      ((⟨21, 25⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p))).cross
+        (coordinates 0 1 ((2 : ℕ) • P)) = 0 := by
+  rw [← double_twentyTwo_one, map_double, hmap, two_nsmul]
+  simpa only [map_ofNat] using
+    double_coordinates (N := (2 : ZMod p)) (D := 4) h4 (by ring) P
+
+private theorem cross_diffAdd_twentyOne_twentyFive {p : ℕ} [Fact p.Prime] (hp : p ∣ 35)
+    (h2 : (2 : ZMod p) ≠ 0) (h22 : ZMod.castHom hp (ZMod p) (22 : ZMod 35) ≠ 0)
+    {P : (model (0 : ZMod p) 1).toAffine.Point}
+    (hmap : (⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) = coordinates 0 1 P) :
+    (⟨1, 8⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) ≠ 0 ∧
+      ((⟨1, 8⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p))).cross
+        (coordinates 0 1 ((3 : ℕ) • P)) = 0 := by
+  have h4 : (4 : ZMod p) ≠ 0 := by
+    have h4_eq : (4 : ZMod p) = 2 * 2 := by ring
+    rw [h4_eq]
+    exact mul_ne_zero h2 h2
+  have h2P := cross_double_twentyTwo_one hp h4 hmap
+  have hP0 : P ≠ 0 := (coordinates_z_eq_zero_iff one_ne_zero).not.mp <| by
+    rw [← hmap, Pair.map_z, map_one]
+    exact one_ne_zero
+  have hPT : P ≠ twoTorsionPoint 0 one_ne_zero :=
+    (coordinates_x_eq_zero_iff one_ne_zero).not.mp <| by
+      rw [← hmap, Pair.map_x]
+      exact h22
+  rw [← diffAdd_twentyOne_twentyFive, map_diffAdd, hmap]
+  refine ⟨(diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero h2 one_ne_zero P 1
+      h2P.1 (coordinates_ne_zero one_ne_zero _) (coordinates_ne_zero one_ne_zero _)
+      h2P.2 (by simp) (by simp)).mpr ⟨hP0, hPT⟩,
+    diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero P 1
+      h2P.2 (by simp) (by simp)⟩
+
+private theorem cross_double_twentyOne_twentyFive {p : ℕ} [Fact p.Prime] (hp : p ∣ 35)
+    (h4 : (4 : ZMod p) ≠ 0) {P : (model (0 : ZMod p) 1).toAffine.Point}
+    (hmap : (⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) = coordinates 0 1 P) :
+    (⟨9, 0⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p)) ≠ 0 ∧
+      ((⟨9, 0⟩ : Pair (ZMod 35)).map (ZMod.castHom hp (ZMod p))).cross
+        (coordinates 0 1 ((4 : ℕ) • P)) = 0 := by
+  have h2P := cross_double_twentyTwo_one hp h4 hmap
+  have h4nat : (4 : ℕ) = 2 * 2 := rfl
+  rw [← double_twentyOne_twentyFive, map_double, h4nat, mul_nsmul, two_nsmul]
+  simpa only [map_ofNat] using
+    double_coordinates_of_cross_eq_zero (N := (2 : ZMod p)) (D := 4) h4 (by ring) h2P.1 h2P.2
 
 -- Outcome m = 2: double 2 4 (22, 1) = (21, 25); (2, 0) over ZMod 5 has order 2 ∣ 2 so 5 divides
 -- gcd(25, 35), while (1, 3) over ZMod 7 has order 4 ∤ 2 so 7 does not divide gcd(25, 35),
@@ -234,17 +259,20 @@ example : double (2 : ZMod 35) 4 ⟨22, 1⟩ = ⟨21, 25⟩ ∧
     5 ∣ Nat.gcd (25 : ZMod 35).val 35 ∧ ¬ 7 ∣ Nat.gcd (25 : ZMod 35).val 35 ∧
     (1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 35) ∧
     Nat.gcd (25 : ZMod 35).val 35 = 5 := by
+  have h5 := cross_double_twentyTwo_one (by decide) (by decide)
+    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero (by decide))
+  have h7 := cross_double_twentyTwo_one (by decide) (by decide)
+    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three (by decide))
   have hm5 : addOrderOf pointFive ∣ 2 := by rw [addOrderOf_pointFive]
-  have hm7 : ¬ addOrderOf pointSeven ∣ 2 := by rw [addOrderOf_pointSeven]; decide
-  have hφ7 : ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (25 : ZMod 35) ≠ 0 :=
-    castHom_z_ne_zero_of_not_addOrderOf_dvd (by decide)
-      cross_seven_twentyOne_twentyFive.1 cross_seven_twentyOne_twentyFive.2 hm7
+  have h7_not_dvd : ¬ 7 ∣ Nat.gcd (25 : ZMod 35).val 35 :=
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointSeven ⟨21, 25⟩
+      h7.1 h7.2).not.mpr (by rw [addOrderOf_pointSeven]; decide)
   exact ⟨double_twentyTwo_one,
-    prime_dvd_gcd_of_addOrderOf_dvd (by decide) pointFive ⟨21, 25⟩ hm5
-      cross_five_twentyOne_twentyFive.2,
-    ((25 : ZMod 35).dvd_gcd_val_iff_castHom_eq_zero (by decide)).not.mpr hφ7,
-    one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd (by decide) pointFive ⟨21, 25⟩ hm5
-      cross_five_twentyOne_twentyFive.2 (by decide) hφ7,
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointFive ⟨21, 25⟩
+      h5.1 h5.2).mpr hm5,
+    h7_not_dvd,
+    one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd (by decide) pointFive ⟨21, 25⟩ hm5 h5.2 (by decide)
+      (((25 : ZMod 35).dvd_gcd_val_iff_castHom_eq_zero (by decide)).not.mp h7_not_dvd),
     by decide⟩
 
 -- Outcome m = 3: diffAdd (double 2 4 (22, 1)) (22, 1) (22, 1) = (1, 8); neither order 2 over
@@ -252,45 +280,15 @@ example : double (2 : ZMod 35) 4 ⟨22, 1⟩ = ⟨21, 25⟩ ∧
 example : diffAdd (double (2 : ZMod 35) 4 ⟨22, 1⟩) ⟨22, 1⟩ ⟨22, 1⟩ = ⟨1, 8⟩ ∧
     ¬ 5 ∣ Nat.gcd (8 : ZMod 35).val 35 ∧ ¬ 7 ∣ Nat.gcd (8 : ZMod 35).val 35 ∧
     Nat.gcd (8 : ZMod 35).val 35 = 1 := by
-  have hdiff : diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩ = ⟨1, 8⟩ := by
-    ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
-  have h5_cross : ((⟨1, 8⟩ : Pair (ZMod 35)).map
-      (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))).cross
-      (coordinates 0 1 ((3 : ℕ) • pointFive)) = 0 := by
-    rw [← hdiff, map_diffAdd, map_castHom_five_twentyTwo_one]
-    exact diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero pointFive 1
-      cross_five_twentyOne_twentyFive.2 (by simp) (by simp)
-  have h5_ne : (⟨1, 8⟩ : Pair (ZMod 35)).map
-      (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) ≠ 0 := by
-    rw [← hdiff, map_diffAdd, map_castHom_five_twentyTwo_one]
-    exact (diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero (by decide) one_ne_zero pointFive 1
-      cross_five_twentyOne_twentyFive.1 (coordinates_ne_zero one_ne_zero _)
-      (coordinates_ne_zero one_ne_zero _) cross_five_twentyOne_twentyFive.2 (by simp)
-      (by simp)).mpr ⟨Affine.Point.some_ne_zero _,
-        (some_eq_twoTorsionPoint_iff one_ne_zero nonsingular_two_zero).not.mpr (by decide)⟩
-  have h7_cross : ((⟨1, 8⟩ : Pair (ZMod 35)).map
-      (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7))).cross
-      (coordinates 0 1 ((3 : ℕ) • pointSeven)) = 0 := by
-    rw [← hdiff, map_diffAdd, map_castHom_seven_twentyTwo_one]
-    exact diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero pointSeven 1
-      cross_seven_twentyOne_twentyFive.2 (by simp) (by simp)
-  have h7_ne : (⟨1, 8⟩ : Pair (ZMod 35)).map
-      (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) ≠ 0 := by
-    rw [← hdiff, map_diffAdd, map_castHom_seven_twentyTwo_one]
-    exact (diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero (by decide) one_ne_zero pointSeven 1
-      cross_seven_twentyOne_twentyFive.1 (coordinates_ne_zero one_ne_zero _)
-      (coordinates_ne_zero one_ne_zero _) cross_seven_twentyOne_twentyFive.2 (by simp)
-      (by simp)).mpr ⟨Affine.Point.some_ne_zero _,
-        (some_eq_twoTorsionPoint_iff one_ne_zero nonsingular_one_three).not.mpr (by decide)⟩
-  have hφ5 : ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) (8 : ZMod 35) ≠ 0 :=
-    castHom_z_ne_zero_of_not_addOrderOf_dvd (by decide) h5_ne h5_cross
-      (by rw [addOrderOf_pointFive]; decide)
-  have hφ7 : ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (8 : ZMod 35) ≠ 0 :=
-    castHom_z_ne_zero_of_not_addOrderOf_dvd (by decide) h7_ne h7_cross
-      (by rw [addOrderOf_pointSeven]; decide)
-  exact ⟨by rw [double_twentyTwo_one, hdiff],
-    ((8 : ZMod 35).dvd_gcd_val_iff_castHom_eq_zero (by decide)).not.mpr hφ5,
-    ((8 : ZMod 35).dvd_gcd_val_iff_castHom_eq_zero (by decide)).not.mpr hφ7,
+  have h5 := cross_diffAdd_twentyOne_twentyFive (by decide) (by decide) (by decide)
+    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero (by decide))
+  have h7 := cross_diffAdd_twentyOne_twentyFive (by decide) (by decide) (by decide)
+    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three (by decide))
+  exact ⟨by rw [double_twentyTwo_one, diffAdd_twentyOne_twentyFive],
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointFive ⟨1, 8⟩
+      h5.1 h5.2).not.mpr (by rw [addOrderOf_pointFive]; decide),
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointSeven ⟨1, 8⟩
+      h7.1 h7.2).not.mpr (by rw [addOrderOf_pointSeven]; decide),
     by decide⟩
 
 -- Outcome m = 4: double 2 4 (double 2 4 (22, 1)) = (9, 0); both order 2 over ZMod 5 and order 4
@@ -298,28 +296,15 @@ example : diffAdd (double (2 : ZMod 35) 4 ⟨22, 1⟩) ⟨22, 1⟩ ⟨22, 1⟩ =
 example : double (2 : ZMod 35) 4 (double 2 4 ⟨22, 1⟩) = ⟨9, 0⟩ ∧
     5 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧ 7 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
     Nat.gcd (0 : ZMod 35).val 35 = 35 := by
-  have hdbl : double (2 : ZMod 35) 4 ⟨21, 25⟩ = ⟨9, 0⟩ := by
-    ext <;> simp only [double_x, double_z] <;> decide
-  have h4 : (4 : ℕ) = 2 * 2 := rfl
-  have h5_cross : ((⟨9, 0⟩ : Pair (ZMod 35)).map
-      (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))).cross
-      (coordinates 0 1 ((4 : ℕ) • pointFive)) = 0 := by
-    rw [← hdbl, map_double, h4, mul_nsmul, two_nsmul]
-    simpa only [map_ofNat] using (double_coordinates_of_cross_eq_zero
-      (N := (2 : ZMod 5)) (D := 4) (by decide) (by decide)
-      cross_five_twentyOne_twentyFive.1 cross_five_twentyOne_twentyFive.2).2
-  have h7_cross : ((⟨9, 0⟩ : Pair (ZMod 35)).map
-      (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7))).cross
-      (coordinates 0 1 ((4 : ℕ) • pointSeven)) = 0 := by
-    rw [← hdbl, map_double, h4, mul_nsmul, two_nsmul]
-    simpa only [map_ofNat] using (double_coordinates_of_cross_eq_zero
-      (N := (2 : ZMod 7)) (D := 4) (by decide) (by decide)
-      cross_seven_twentyOne_twentyFive.1 cross_seven_twentyOne_twentyFive.2).2
-  exact ⟨by rw [double_twentyTwo_one, hdbl],
-    prime_dvd_gcd_of_addOrderOf_dvd (by decide) pointFive ⟨9, 0⟩
-      (by rw [addOrderOf_pointFive]; decide) h5_cross,
-    prime_dvd_gcd_of_addOrderOf_dvd (by decide) pointSeven ⟨9, 0⟩
-      (by rw [addOrderOf_pointSeven]) h7_cross,
+  have h5 := cross_double_twentyOne_twentyFive (by decide) (by decide)
+    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero (by decide))
+  have h7 := cross_double_twentyOne_twentyFive (by decide) (by decide)
+    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three (by decide))
+  exact ⟨by rw [double_twentyTwo_one, double_twentyOne_twentyFive],
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointFive ⟨9, 0⟩
+      h5.1 h5.2).mpr (by rw [addOrderOf_pointFive]; decide),
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointSeven ⟨9, 0⟩
+      h7.1 h7.2).mpr (by rw [addOrderOf_pointSeven]),
     by decide⟩
 
 end TauCeti.Montgomery
