@@ -32,6 +32,7 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 * `TauCeti.finrank_zmod_two_additive_intUnits`: `Module.finrank (ZMod 2) (Additive ℤˣ) = 1`.
 * `TauCeti.uzpow_intCast_eq_negOnePow`: the sign `(-1) ^ (n mod 2)` of a parity is the sign
   `Int.negOnePow n` of any integer lift.
+* `TauCeti.negOnePow_mul_uzpow`: `Int.negOnePow p * (-1) ^ τ = (-1) ^ (p + τ)`.
 * `TauCeti.uzpow_mul_intCast_add_one`: the sign `(-1) ^ (τ k)` changes by `(-1) ^ τ` from `k` to
   `k + 1`.
 -/
@@ -88,6 +89,12 @@ theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
 /-- The sign `(-1) ^ i` of the parity `i` of an integer `n` is the sign `Int.negOnePow n`. -/
 theorem uzpow_intCast_eq_negOnePow (n : ℤ) : (-1 : ℤˣ) ^ (n : ZMod 2) = n.negOnePow := by
   rw [uzpow_intCast, Int.negOnePow_def]
+
+/-- The sign `Int.negOnePow p * (-1) ^ τ` is the sign `(-1) ^ (p + τ)` of the sum of the parity
+of `p` and `τ`. -/
+theorem negOnePow_mul_uzpow (p : ℤ) (τ : ZMod 2) :
+    p.negOnePow * (-1 : ℤˣ) ^ τ = (-1 : ℤˣ) ^ ((p : ZMod 2) + τ) := by
+  rw [uzpow_add, uzpow_intCast_eq_negOnePow]
 
 /-- The sign `(-1)^(τ k)` changes by `(-1)^τ` from degree `i` to degree `i + 1`. -/
 theorem uzpow_mul_intCast_add_one (τ : ZMod 2) (i : ℤ) :

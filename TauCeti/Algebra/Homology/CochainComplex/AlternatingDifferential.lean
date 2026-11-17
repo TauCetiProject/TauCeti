@@ -70,18 +70,18 @@ variable (C) in
 transported along it. -/
 def alternatingDifferentialNatIso :
     𝟭 (CochainComplex C ℤ) ≅ scaleDifferentialFunctor C fun i ↦ (i + 1).negOnePow :=
-  NatIso.ofComponents alternatingDifferentialIso fun f ↦ by
-    simpa [alternatingDifferentialIso] using
-      (scaleDifferentialNatIso C _ (fun k ↦ (k * (k + 1) / 2).negOnePow)
-        negOnePow_mul_succ_div_two_succ_mul).inv.naturality f
+  (scaleDifferentialNatIso C _ (fun k ↦ (k * (k + 1) / 2).negOnePow)
+    negOnePow_mul_succ_div_two_succ_mul).symm
 
 @[simp]
 theorem alternatingDifferentialNatIso_hom_app (K : CochainComplex C ℤ) :
-    (alternatingDifferentialNatIso C).hom.app K = K.alternatingDifferentialIso.hom := (rfl)
+    (alternatingDifferentialNatIso C).hom.app K = K.alternatingDifferentialIso.hom :=
+  scaleDifferentialNatIso_inv_app _ _ _ K
 
 @[simp]
 theorem alternatingDifferentialNatIso_inv_app (K : CochainComplex C ℤ) :
-    (alternatingDifferentialNatIso C).inv.app K = K.alternatingDifferentialIso.inv := (rfl)
+    (alternatingDifferentialNatIso C).inv.app K = K.alternatingDifferentialIso.inv :=
+  scaleDifferentialNatIso_hom_app _ _ _ K
 
 end CochainComplex
 
@@ -124,12 +124,14 @@ noncomputable def extendIntLEAlternatingDifferentialNatIso (m : ℤ) :
 theorem extendIntLEAlternatingDifferentialNatIso_hom_app (m : ℤ) (K : ChainComplex C ℕ) :
     (extendIntLEAlternatingDifferentialNatIso (C := C) m).hom.app K =
       (CochainComplex.alternatingDifferentialIso
-        (K.extend (ComplexShape.embeddingUpIntLE m))).hom := (rfl)
+        (K.extend (ComplexShape.embeddingUpIntLE m))).hom :=
+  CochainComplex.alternatingDifferentialNatIso_hom_app _
 
 @[simp]
 theorem extendIntLEAlternatingDifferentialNatIso_inv_app (m : ℤ) (K : ChainComplex C ℕ) :
     (extendIntLEAlternatingDifferentialNatIso (C := C) m).inv.app K =
       (CochainComplex.alternatingDifferentialIso
-        (K.extend (ComplexShape.embeddingUpIntLE m))).inv := (rfl)
+        (K.extend (ComplexShape.embeddingUpIntLE m))).inv :=
+  CochainComplex.alternatingDifferentialNatIso_inv_app _
 
 end TauCeti

@@ -126,11 +126,6 @@ universe u
 
 variable {R : Type u} [CommRing R]
 
-/-- The sign of the super differential is that of the parity `p + τ`. -/
-private theorem negOnePow_mul_uzpow (p : ℤ) (τ : ZMod 2) :
-    p.negOnePow * (-1 : ℤˣ) ^ τ = (-1 : ℤˣ) ^ ((p : ZMod 2) + τ) := by
-  rw [uzpow_add, uzpow_intCast_eq_negOnePow]
-
 /-- **The super differential.** For complexes of modules, the differential of the super tensor
 product `superTensorObj τ K L` on the summand `K^p ⊗ L^r` is `d ⊗ 1 + (-1)^(p + τ) 1 ⊗ d`: the
 sign of the second term is that of the parity `p + τ` of the first factor, not of its degree. -/
@@ -202,6 +197,28 @@ theorem ιTensorObj_superBraiding_hom_f (τ τ' : ZMod 2) (K L : CochainComplex 
     ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
     HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     Units.smul_def, smul_smul, uzpow_superBraiding]
+
+/-- On the summand `L^r ⊗ K^p`, the inverse of the super symmetry is the inverse coefficient
+braiding of `K^p` and `L^r`, multiplied by the same sign `(-1)^((p + τ) (r + τ'))`. -/
+@[reassoc (attr := simp)]
+theorem ιTensorObj_superBraiding_inv_f (τ τ' : ZMod 2) (K L : CochainComplex C ℤ)
+    (r p n : ℤ) (h : r + p = n) :
+    HomologicalComplex.ιTensorObj L (K.signedDifferential τ') r p n h ≫
+        (superBraiding τ τ' K L).inv.f n =
+      (((-1 : ℤˣ) ^ ((p + τ) * (r + τ')) : ℤˣ) : ℤ) •
+        ((L.X r ◁ (K.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ') p).hom) ≫
+          (β_ (K.X p) (L.X r)).inv ≫
+          (K.X p ◁ (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).inv) ≫
+          HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r n (by omega)) := by
+  simp only [superBraiding, braiding_eq_koszulBraiding, ι_koszulBraiding_inv_assoc,
+    ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
+    ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
+    HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
+    Units.smul_def, smul_smul]
+  -- The sign is that of the `hom` summand formula, with its factors in another order.
+  rw [← uzpow_superBraiding τ τ' p r, mul_comm r p]
+  congr 1
+  ring
 
 end Symmetry
 

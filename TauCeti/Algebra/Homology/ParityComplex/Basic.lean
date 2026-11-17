@@ -136,20 +136,13 @@ theorem d_def (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
     X.d q σ = (X.termIso rfl).hom ≫ (X (σ - q)).d q (q + 1) ≫
       (X.termIso (by push_cast; ring)).inv := (rfl)
 
-/-- Transporting the differential of a part along an equality of independent parities. -/
-@[reassoc]
-private theorem eqToHom_comp_d (X : ParityComplex C) {τ τ' : ZMod 2} (h : τ = τ') (i j : ℤ) :
-    eqToHom (congrArg (fun τ ↦ (X τ).X i) h) ≫ (X τ').d i j =
-      (X τ).d i j ≫ eqToHom (congrArg (fun τ ↦ (X τ).X j) h) := by
-  subst h
-  simp
-
 /-- The differential of a complex with independent parity squares to zero. -/
 @[reassoc (attr := simp)]
 theorem d_comp_d (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
     X.d q σ ≫ X.d (q + 1) (σ + 1) = 0 := by
   simp only [d_def, termIso, eqToIso.hom, eqToIso.inv, Category.assoc, eqToHom_trans_assoc]
-  rw [eqToHom_comp_d_assoc X (by push_cast; ring : σ - q = σ + 1 - ((q + 1 : ℤ) : ZMod 2)),
+  rw [← eqToHom_naturality_assoc (fun τ ↦ (X τ).d (q + 1) (q + 1 + 1))
+      (by push_cast; ring : σ - q = σ + 1 - ((q + 1 : ℤ) : ZMod 2)),
     HomologicalComplex.d_comp_d_assoc, zero_comp, comp_zero]
 
 /-- The component of an even chain map on the term of degree `q` and parity `σ`. -/
@@ -173,23 +166,14 @@ theorem termMap_comp {X Y Z : ParityComplex C} (f : X ⟶ Y) (g : Y ⟶ Z) (q : 
     termMap (f ≫ g) q σ = termMap f q σ ≫ termMap g q σ := by
   simp [termMap_def, termIso]
 
-/-- Transporting the component of an even chain map along an equality of independent
-parities. -/
-@[reassoc]
-private theorem eqToHom_comp_f {X Y : ParityComplex C} (f : X ⟶ Y) {τ τ' : ZMod 2}
-    (h : τ = τ') (i : ℤ) :
-    eqToHom (congrArg (fun τ ↦ (X τ).X i) h) ≫ (f τ').f i =
-      (f τ).f i ≫ eqToHom (congrArg (fun τ ↦ (Y τ).X i) h) := by
-  subst h
-  simp
-
 /-- Even chain maps commute with the differentials. -/
 @[reassoc (attr := simp)]
 theorem termMap_comp_d {X Y : ParityComplex C} (f : X ⟶ Y) (q : ℤ) (σ : ZMod 2) :
     termMap f q σ ≫ Y.d q σ = X.d q σ ≫ termMap f (q + 1) (σ + 1) := by
   simp only [termMap_def, d_def, termIso, eqToIso.hom, eqToIso.inv, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, HomologicalComplex.Hom.comm_assoc]
-  rw [eqToHom_comp_f_assoc f (by push_cast; ring : σ - q = σ + 1 - ((q + 1 : ℤ) : ZMod 2)),
+  rw [← eqToHom_naturality_assoc (fun τ ↦ (f τ).f (q + 1))
+      (by push_cast; ring : σ - q = σ + 1 - ((q + 1 : ℤ) : ZMod 2)),
     eqToHom_trans]
 
 variable (C)
@@ -282,6 +266,11 @@ theorem reindex_obj_apply (k : ℤ) (X : ParityComplex C) (τ : ZMod 2) :
     (reindex C k).obj X τ =
       ((ComplexShape.embeddingUp'Add (1 : ℤ) k).restrictionFunctor C).obj (X τ) := (rfl)
 
+@[simp]
+theorem reindex_map_apply (k : ℤ) {X Y : ParityComplex C} (f : X ⟶ Y) (τ : ZMod 2) :
+    (reindex C k).map f τ =
+      ((ComplexShape.embeddingUp'Add (1 : ℤ) k).restrictionFunctor C).map (f τ) := (rfl)
+
 /-- The raw reindexing keeps independent parities: the term of degree `q` and parity `σ` of the
 reindexing by `k` is the term of degree `q + k` and parity `σ + k`. -/
 theorem term_reindex (k : ℤ) (X : ParityComplex C) (q : ℤ) (σ : ZMod 2) :
@@ -312,6 +301,10 @@ variable {C}
 @[simp]
 theorem shift_obj_apply (k : ℤ) (X : ParityComplex C) (τ : ZMod 2) :
     (shift C k).obj X τ = (X (τ + k))⟦k⟧ := (rfl)
+
+@[simp]
+theorem shift_map_apply (k : ℤ) {X Y : ParityComplex C} (f : X ⟶ Y) (τ : ZMod 2) :
+    (shift C k).map f τ = (f (τ + k))⟦k⟧' := (rfl)
 
 /-- The native shift keeps parities: the term of degree `q` and parity `σ` of the shift by `k` is
 the term of degree `q + k` and parity `σ`. -/
