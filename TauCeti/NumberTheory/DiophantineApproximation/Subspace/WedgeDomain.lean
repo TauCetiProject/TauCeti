@@ -28,9 +28,9 @@ the book calls `S(Q)`.
 Evertse's lemma (`NumberField.exists_evertse`) with weights `Q ^ c v i` corrects `x`
 triangularly to vectors `y` and attaches to every place a bijection `σ v` between the indices of
 the minima and the forms, such that `|L v (σ v i) (y j)|_v ≤ C₀ · Q ^ c v (σ v i) · min (μ i) (μ j)`
-at the infinite places and the same without `C₀` at `S₀`. Passing to determinants
-(`AbsoluteValue.apply_wedgeForms_plucker_le`), the Plücker vector of `y J`, for a `p`-subset `J`
-meeting the first `k` indices, satisfies at an infinite place `v` the bound
+at the infinite places and `|L v i (y j)|_v ≤ Q ^ c v i` at the places of `S₀`. Passing to
+determinants (`AbsoluteValue.apply_wedgeForms_plucker_le`), the Plücker vector of `y J`, for a
+`p`-subset `J` meeting the first `k` indices, satisfies at an infinite place `v` the bound
 `C · Q ^ (∑ t ∈ T, c v t) · g v T` for each wedge form `T`, where `g v T` is the product of the
 `μ (σ v⁻¹ t)` over `t ∈ T`, times the gain `μ (k - 1) / μ k` when `T` lies in the top block of
 `σ v`. The constant and the gain are absorbed into the exponent: `wedgeExponent c p k σ μ C Q`
@@ -101,6 +101,7 @@ variable {c : AbsoluteValue K ℝ → ι → ℝ} {p k : ℕ}
   {v : AbsoluteValue K ℝ}
 
 /-- At a nonarchimedean absolute value the wedge exponent of `T` is `∑ t ∈ T, c v t`. -/
+@[simp]
 theorem wedgeExponent_of_isNonarchimedean (hv : IsNonarchimedean v) (T : Set.powersetCard ι p) :
     wedgeExponent c p k σ μ C Q v T = ∑ t ∈ (T : Finset ι), c v t := by
   simp [wedgeExponent, hv]
@@ -108,6 +109,7 @@ theorem wedgeExponent_of_isNonarchimedean (hv : IsNonarchimedean v) (T : Set.pow
 /-- At an archimedean absolute value the wedge exponent of `T` is `∑ t ∈ T, c v t` plus the
 logarithm to base `Q` of the constant times the product of the minima attached to `T`, with the
 gain `μ (k - 1) / μ k` when `T` lies in the top block. -/
+@[simp]
 theorem wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v)
     (T : Set.powersetCard ι p) :
     wedgeExponent c p k σ μ C Q v T = ∑ t ∈ (T : Finset ι), c v t +
@@ -274,22 +276,6 @@ theorem exists_plucker_mem_approxDomain_wedgeForms :
 
 /-! ### The weight of the wedge domain -/
 
-omit [NumberField K] [LinearOrder ι] in
-/-- The forms all of whose indices are at least `k` under `σ⁻¹`, for `k + p = card ι`, form
-exactly one `p`-subset, the image of the top block. -/
-private theorem forall_le_symm_iff_eq_map (σ : Fin (Fintype.card ι) ≃ ι)
-    (hkp : k + p = Fintype.card ι) (T : Set.powersetCard ι p) :
-    (∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ)) ↔
-      T = Set.powersetCard.map p σ.toEmbedding (topBlock hkp) := by
-  constructor
-  · intro h
-    rw [eq_iff_subset]
-    intro t ht
-    exact Finset.mem_map.2 ⟨σ.symm t, (mem_topBlock hkp).2 (h t ht), by simp⟩
-  · rintro rfl t ht
-    obtain ⟨j, hj, rfl⟩ := Finset.mem_map.1 ht
-    simpa using (mem_topBlock hkp).1 hj
-
 omit [NumberField K] in
 /-- The product over the wedge forms of the constant times the minima attached to them is
 `C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k`, since each index lies in `e` subsets and exactly one
@@ -307,7 +293,7 @@ private theorem prod_wedgeGain (σ : Fin (Fintype.card ι) ≃ ι) (hp : 0 < p)
     Set.powersetCard.prod_prod hp fun t ↦ μ (σ.symm t), Equiv.prod_comp σ.symm fun l ↦ μ l]
   have hite : ∏ T : Set.powersetCard ι p, (if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then
       μ (k - 1) / μ k else 1) = μ (k - 1) / μ k := by
-    simp_rw [forall_le_symm_iff_eq_map σ hkp]
+    simp_rw [forall_le_symm_iff_eq_map_topBlock σ hkp]
     simp
   rw [hite]
   ring
