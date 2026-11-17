@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.Support
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier.Multiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 
 /-!
 # Fourier multipliers with Schwartz symbols on `Lᵖ` functions

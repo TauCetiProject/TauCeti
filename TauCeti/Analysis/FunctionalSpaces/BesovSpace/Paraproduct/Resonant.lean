@@ -13,7 +13,6 @@ import TauCeti.Analysis.Normed.Lp.Holder
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Holder
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 
 /-!
 # Bony's resonant remainder and Besov multiplication
@@ -27,9 +26,10 @@ Reconstructing Besov norms from dyadic-ball series (`exists_hasSum_toDistr_and_n
 for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85, and two gap-independent Bony products:
 
 * `TauCeti.BesovSpace.resonantCLM`: `B^α_{p₁,q₁} × B^β_{p₂,q₂} →L[ℂ] B^{α + β}_{r,q}` for
-  `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`, with uniform norm bound, truncated-sum
-  convergence (`tendsto_sum_block_smul_sum_resonantCLM`), and scalar symmetry
-  (`toDistr_resonantCLM_comm`).
+  `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`, with uniform norm bound, the
+  `q₁`-independent existential form
+  `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`, truncated-sum convergence
+  (`tendsto_sum_block_smul_sum_resonantCLM`), and scalar symmetry (`toDistr_resonantCLM_comm`).
 * `TauCeti.BesovSpace.bonyProductCLM`: `B^α_{p₁,q₁} × B^β_{p₂,q₂} →L[ℂ] B^α_{r,q₁}` for `α < 0`
   and `0 < α + β` (hence `0 < β`), independent of the gap `N` (`bonyProductCLM_apply`,
   `tendsto_lowPass_smul_lowPass_bonyProductCLM`).
@@ -191,12 +191,7 @@ private theorem exists_resonant (N : ℕ) (α β : ℝ) (hαβ : 0 < α + β) :
     fun {p₁ p₂ r q₁ q₂ q} _ _ _ _ _ _ _ _ u v ↦ ?_⟩
   set a := lp.toNorm u.weightedBlocks
   set b₀ := lp.toNorm v.weightedBlocks
-  set b : lp (fun _ : ℕ ↦ ℝ) q₂ :=
-    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), b₀ k,
-      (lp.memℓp b₀).sum_Ico_sub_add (N + 1)⟩
-  -- Anonymous `lp` elements coerce through `Subtype.val` and have no simp lemma for evaluation.
-  have hb_eq (j : ℕ) : b j = ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), b₀ k := rfl
-  have hb : ‖b‖ ≤ 2 * (N + 1 : ℕ) * ‖b₀‖ := lp.norm_le_of_forall_eq_sum_Ico_sub_add (N + 1) hb_eq
+  obtain ⟨b, hb_eq, hb⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b₀ (N + 1)
   obtain ⟨y, hy, hyn⟩ := hball (resonantTerm r N u v) (K • lp.mulL ℝ ℝ q a b)
     (fun j ↦ isVanishingOn_fourier_resonantTerm N j u v) fun j ↦ by
       simpa only [resonantTerm_eq_smul_sum, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul,
@@ -253,6 +248,29 @@ theorem exists_norm_resonantCLM_le (N : ℕ) (α β : ℝ) (hαβ : 0 < α + β)
   ⟨_, (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.1,
     fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
       (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.1⟩
+
+variable (φ) in
+/-- **The resonant estimate** (Bahouri–Chemin–Danchin, Theorem 2.85). Let `0 < α + β` and let `N`
+be a gap. There is `C ≥ 0`, depending only on `φ`, `N`, `α` and `β`, with the following property
+for all exponents `1 ≤ p₁, p₂, r, q, q₁ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and
+`v ∈ B^β_{p₂,q}`, then the resonant part `R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` converges in
+the tempered distributions to an element of `B^{α+β}_{r,q}` of norm at most `C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 < α + β) (N : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₁ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [Fact (1 ≤ q)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q₁)
+      (v : BesovSpace F φ β p₂ q), ∃ w : BesovSpace F φ (α + β) r q,
+        HasSum (fun j ↦ ((u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
+          Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC, hle⟩ := exists_norm_resonantCLM_le (F := F) (φ := φ) N α β hαβ
+  refine ⟨C, hC, fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
+  set u' : BesovSpace ℂ φ α p₁ ∞ := inclusion ℂ φ p₁ le_rfl le_top u
+  refine ⟨resonantCLM r q N hαβ u' v, ?_, ?_⟩
+  · simpa only [resonantTerm_eq_smul_sum, u', block_inclusion] using
+      hasSum_resonantCLM (r := r) (q := q) N hαβ u' v
+  · exact ((resonantCLM r q N hαβ).le_opNorm₂ u' v).trans <| by
+      gcongr
+      · exact hle
+      · exact norm_inclusion_le _ _ u
 
 omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] [q₁.HolderTriple q₂ q] in
 /-- Geometric decay bound on any partial-window resonant piece when `u ∈ B^α_{p₁,q₁}` and

@@ -57,6 +57,10 @@ for every `m`, since `S_m` is convolution with an `L¹`-dilate of `𝓕⁻ φ`
 `‖S_m u‖_p ≤ 2^{-α m} ‖u‖ / (2^{-α} - 1)`, summing the geometric bounds of the blocks
 (`TauCeti.BesovSpace.norm_lowPass_le_of_neg`).
 
+The corresponding paraproduct estimates and continuous bilinear operators live in
+`TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`, and the resonant estimate and
+Bony products live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Resonant`.
+
 ## Main declarations
 
 * `TauCeti.BesovSpace.lowPass`: the low-frequency cut-off `S_m u = ∑_{k < m} Δₖ u` as an `Lᵖ`

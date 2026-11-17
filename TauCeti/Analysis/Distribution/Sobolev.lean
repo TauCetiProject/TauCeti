@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
-import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier.Multiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
-public import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+public import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier.Multiplier
 import TauCeti.Analysis.Distribution.Sobolev
 
 /-!

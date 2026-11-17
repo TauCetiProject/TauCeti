@@ -10,7 +10,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
-import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier.Multiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Normed.Lp.Reindex

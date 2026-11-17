@@ -13,8 +13,8 @@ import TauCeti.Analysis.Convolution.Commutator
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
-import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier
-import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier.Multiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.ChangeOfVariables

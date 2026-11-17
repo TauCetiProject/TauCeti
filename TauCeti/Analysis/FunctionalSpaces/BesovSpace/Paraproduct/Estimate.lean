@@ -11,7 +11,6 @@ import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
 import TauCeti.Analysis.Normed.Lp.Holder
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.MeasureTheory.Function.Holder
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 
 /-!
 # Bony's paraproduct estimates on Besov spaces
@@ -24,11 +23,17 @@ Theorem 2.82:
 
 * **Boundedness from `L^{p₁}`:** `TauCeti.BesovSpace.paraproductLpCLM : L^{p₁} × B^β_{p₂,q} →`
   `B^β_{r,q}` and `TauCeti.BesovSpace.paraproductRightLpCLM : B^α_{p₁,q} × L^{p₂} → B^α_{r,q}` for
-  every `α, β ∈ ℝ` and `1/r = 1/p₁ + 1/p₂`, with operator norms independent of `p₁, p₂, r, q`.
+  every `α, β ∈ ℝ` and `1/r = 1/p₁ + 1/p₂`, with operator norms independent of `p₁, p₂, r, q`, built
+  from the existential series estimates
+  `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq` and
+  `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq`.
 * **Negative regularity:** `TauCeti.BesovSpace.paraproductNegCLM` (`α < 0`) and
   `TauCeti.BesovSpace.paraproductRightNegCLM` (`β < 0`) mapping
   `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^{α + β}_{r,q}` (`1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`),
-  proved via `TauCeti.BesovSpace.exists_lp_lowPass_le_of_neg` and `lp.mulL`.
+  proved via `TauCeti.BesovSpace.exists_lp_lowPass_le_of_neg` and `lp.mulL`, together with the
+  `q₁`-independent (resp. `q₂`-independent) existential corollaries
+  `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg` and
+  `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_neg`.
 * **Vanishing and constant-`1` identities:** `paraproductLpCLM_eq_zero`,
   `paraproductRightLpCLM_eq_zero`, `paraproductNegCLM_eq_zero`, `paraproductRightNegCLM_eq_zero`
   (with single-block corollaries) and `toDistr_paraproductLpCLM_one_left`,
@@ -70,16 +75,20 @@ private theorem exists_lp_lowPass_sub_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (N
   have hinj : {j : ℕ | N ≤ j}.InjOn fun j ↦ j - N := fun _ hj _ hj' h ↦ tsub_inj_left hj hj' h
   set a : lp (fun _ : ℕ ↦ ℝ) q :=
     ⟨{j | N ≤ j}.indicator (a₀ ∘ fun j ↦ j - N), (lp.memℓp a₀).indicator_comp hinj⟩
-  refine ⟨a, fun j ↦ ?_, (lp.norm_le_of_forall_eq_indicator_comp hq hinj fun _ ↦ rfl).trans
+  -- The entries of the anonymous `lp` element `a` are its defining indicator sequence by
+  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
+  -- constructor.
+  have ha_val (j : ℕ) : a j = {j | N ≤ j}.indicator (a₀ ∘ fun j ↦ j - N) j := rfl
+  refine ⟨a, fun j ↦ ?_, (lp.norm_le_of_forall_eq_indicator_comp hq hinj ha_val).trans
     ha₀_norm⟩
   by_cases hj : N ≤ j
   · have hexp : (2 : ℝ) ^ (s * j) = 2 ^ (s * N) * 2 ^ (s * (j - N : ℕ)) := by
       rw [← Real.rpow_add two_pos, ← mul_add]; congr 2; exact_mod_cast (Nat.add_sub_of_le hj).symm
     have hle1 : (2 : ℝ) ^ (s * N) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos one_le_two
       (mul_nonpos_of_nonpos_of_nonneg hs.le N.cast_nonneg)
-    rw [show a j = a₀ (j - N) from Set.indicator_of_mem hj _, hexp, mul_assoc]
+    rw [ha_val, Set.indicator_of_mem hj, Function.comp_apply, hexp, mul_assoc]
     exact (mul_le_of_le_one_left (by positivity) hle1).trans (ha₀ (j - N))
-  · rw [show a j = 0 from Set.indicator_of_notMem hj _, Nat.sub_eq_zero_of_le (le_of_not_ge hj),
+  · rw [ha_val, Set.indicator_of_notMem hj, Nat.sub_eq_zero_of_le (le_of_not_ge hj),
       lowPass_zero_right, norm_zero, mul_zero]
 
 /-- Specialises `exists_hasSum_toDistr_and_norm_le_of_annulus` to the dyadic annuli supporting the
@@ -141,26 +150,31 @@ section ParaproductLp
 variable {φ : ContDiffBump (0 : E)} {N : ℕ} {α β : ℝ} {p₁ p₂ r q : ℝ≥0∞}
   [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r]
 
-/-- Uniform existence and Besov bound for the paraproduct `T_f v = ∑ⱼ S_{j - N} f · Δⱼ v` with
-`f ∈ L^{p₁}` and `v ∈ B^β_{p₂,q}`. -/
-private theorem exists_paraproductLp (hN : φ.rOut < 2 ^ N * φ.rIn) (β : ℝ) :
+variable (φ) in
+/-- **The paraproduct estimate for a bounded low-frequency factor** (Bahouri–Chemin–Danchin,
+Theorem 2.82). Let `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`, depending only on `φ`, `N` and `β`, with
+the following property for all exponents `1 ≤ p₁, p₂, r, q ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If the
+tempered distribution of `u` is an `L^{p₁}` function `f` and `v ∈ B^β_{p₂,q}`, then the paraproduct
+`T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` converges in the tempered distributions to an element of
+`B^β_{r,q}` of norm at most `C ‖f‖_{p₁} ‖v‖`. -/
+theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (β : ℝ) {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
-      [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r]
-      (f : Lp ℂ p₁ (volume : Measure E)) (v : BesovSpace F φ β p₂ q),
-      ∃ y : BesovSpace F φ β r q,
-        HasSum (fun j ↦ (((ofLpCLM ℂ φ p₁ f).lowPass (j - N) • v.block j :
-          Lp F r (volume : Measure E)) : 𝓢'(E, F))) y.toDistr ∧
-        ‖y‖ ≤ C * ‖f‖ * ‖v‖ := by
+      [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r] {α : ℝ} {q₁ : ℝ≥0∞} (u : BesovSpace ℂ φ α p₁ q₁)
+      {f : Lp ℂ p₁ (volume : Measure E)}, u.toDistr = f → ∀ v : BesovSpace F φ β p₂ q,
+      ∃ w : BesovSpace F φ β r q,
+        HasSum (fun j ↦ ((u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) :
+          𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖f‖ * ‖v‖ := by
   obtain ⟨C₀, hC₀, hann⟩ := exists_hasSum_of_paraproduct_annulus (F := F) β hN
   set K₀ : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have : 0 ≤ K₀ := MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _
-  refine ⟨C₀ * K₀, by positivity, fun {p₁ p₂ r q} _ _ _ _ _ f v ↦ ?_⟩
-  obtain ⟨y, hy, hyn⟩ := hann (fun j ↦ (ofLpCLM ℂ φ p₁ f).lowPass (j - N) • v.block j)
+  refine ⟨C₀ * K₀, by positivity, fun {p₁ p₂ r q} _ _ _ _ _ {α q₁} u f hf v ↦ ?_⟩
+  obtain ⟨y, hy, hyn⟩ := hann (fun j ↦ u.lowPass (j - N) • v.block j)
     ((K₀ * ‖f‖) • lp.toNorm v.weightedBlocks)
-    (fun j ↦ isVanishingOn_fourier_lowPass_smul_block N j (ofLpCLM ℂ φ p₁ f) v) fun j ↦ by
+    (fun j ↦ isVanishingOn_fourier_lowPass_smul_block N j u v) fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.toNorm_coe, v.norm_weightedBlocks_apply]
-      have h1 := (ofLpCLM ℂ φ p₁ f).norm_lowPass_le_of_toDistr_eq (toDistr_ofLpCLM f) (j - N)
-      have h2 := Lp.norm_smul_le (r := r) ((ofLpCLM ℂ φ p₁ f).lowPass (j - N)) (v.block j)
+      have h1 := u.norm_lowPass_le_of_toDistr_eq hf (j - N)
+      have h2 := Lp.norm_smul_le (r := r) (u.lowPass (j - N)) (v.block j)
       calc _ ≤ 2 ^ (β * j) * (K₀ * ‖f‖ * ‖v.block j‖) := by gcongr; exact h2.trans (by gcongr)
         _ = _ := by ring
   refine ⟨y, hy, hyn.trans ?_⟩
@@ -180,7 +194,8 @@ def paraproductLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn) :
     (fun _ _ _ _ ↦ by simp [Lp.smul_assoc])
     (fun _ _ _ _ ↦ by simp [block_add, Lp.add_smul])
     (fun _ _ _ _ ↦ by simp [block_smul, ← Lp.smul_comm])
-    (fun f v ↦ (exists_paraproductLp (F := F) hN β).choose_spec.2 f v)
+    (fun f v ↦ (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β
+      hN).choose_spec.2 (ofLpCLM ℂ φ p₁ f) (toDistr_ofLpCLM f) v)
 
 /-- The tempered distribution of `paraproductLpCLM r hN f v` is the sum of the series
 `∑ⱼ S_{j - N} f · Δⱼ v`. -/
@@ -194,7 +209,8 @@ theorem hasSum_paraproductLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn)
     (fun _ _ _ _ ↦ by simp [Lp.smul_add]) (fun _ _ _ _ ↦ by simp [Lp.smul_assoc])
     (fun _ _ _ _ ↦ by simp [block_add, Lp.add_smul])
     (fun _ _ _ _ ↦ by simp [block_smul, ← Lp.smul_comm])
-    (fun f v ↦ (exists_paraproductLp (F := F) hN β).choose_spec.2 f v) f v
+    (fun f v ↦ (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β
+      hN).choose_spec.2 (ofLpCLM ℂ φ p₁ f) (toDistr_ofLpCLM f) v) f v
 
 /-- When `f ∈ L^{p₁}` represents `u ∈ B^α_{p₁,q₁}`, `paraproductLpCLM r hN f v` sums
 `S_{j - N} u · Δⱼ v`. -/
@@ -213,30 +229,36 @@ theorem exists_norm_paraproductLpCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (β : �
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
       [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r],
       ‖paraproductLpCLM (F := F) (β := β) (p₁ := p₁) (p₂ := p₂) (q := q) r hN‖ ≤ C :=
-  ⟨_, (exists_paraproductLp (F := F) hN β).choose_spec.1,
+  ⟨_, (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.1,
     fun {_ _ _ _} _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_paraproductLp (F := F) hN β).choose_spec.1⟩
+      (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.1⟩
 
-/-- Uniform existence and Besov bound for the right paraproduct `T_g u = ∑ⱼ Δⱼ u · S_{j - N} g`
-with `u ∈ B^α_{p₁,q}` and `g ∈ L^{p₂}`. -/
-private theorem exists_paraproductRightLp (hN : φ.rOut < 2 ^ N * φ.rIn) (α : ℝ) :
+variable (φ) in
+/-- **The paraproduct estimate for a bounded low-frequency factor**, for the paraproduct
+`T_v u = ∑ⱼ Δⱼ u · S_{j-N} v` whose low-frequency factor is vector-valued
+(Bahouri–Chemin–Danchin, Theorem 2.82). Let `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`, depending only
+on `φ`, `N` and `α`, with the following property for all exponents `1 ≤ p₁, p₂, r, q ≤ ∞` with
+`1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q}` and the tempered distribution of `v` is an `L^{p₂}`
+function `g`, then `T_v u` converges in the tempered distributions to an element of `B^α_{r,q}` of
+norm at most `C ‖u‖ ‖g‖_{p₂}`. -/
+theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (α : ℝ) {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
-      [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r]
-      (u : BesovSpace ℂ φ α p₁ q) (g : Lp F p₂ (volume : Measure E)),
-      ∃ y : BesovSpace F φ α r q,
-        HasSum (fun j ↦ ((u.block j • (ofLpCLM F φ p₂ g).lowPass (j - N) :
-          Lp F r (volume : Measure E)) : 𝓢'(E, F))) y.toDistr ∧
-        ‖y‖ ≤ C * ‖u‖ * ‖g‖ := by
+      [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q) {β : ℝ} {q₂ : ℝ≥0∞}
+      (v : BesovSpace F φ β p₂ q₂) {g : Lp F p₂ (volume : Measure E)}, v.toDistr = g →
+      ∃ w : BesovSpace F φ α r q,
+        HasSum (fun j ↦ ((u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) :
+          𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖g‖ := by
   obtain ⟨C₀, hC₀, hann⟩ := exists_hasSum_of_paraproduct_annulus (F := F) α hN
   set K₀ : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have : 0 ≤ K₀ := MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _
-  refine ⟨C₀ * K₀, by positivity, fun {p₁ p₂ r q} _ _ _ _ _ u g ↦ ?_⟩
-  obtain ⟨y, hy, hyn⟩ := hann (fun j ↦ u.block j • (ofLpCLM F φ p₂ g).lowPass (j - N))
+  refine ⟨C₀ * K₀, by positivity, fun {p₁ p₂ r q} _ _ _ _ _ u {β q₂} v g hg ↦ ?_⟩
+  obtain ⟨y, hy, hyn⟩ := hann (fun j ↦ u.block j • v.lowPass (j - N))
     ((K₀ * ‖g‖) • lp.toNorm u.weightedBlocks)
-    (fun j ↦ isVanishingOn_fourier_block_smul_lowPass N j u (ofLpCLM F φ p₂ g)) fun j ↦ by
+    (fun j ↦ isVanishingOn_fourier_block_smul_lowPass N j u v) fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.toNorm_coe, u.norm_weightedBlocks_apply]
-      have h1 := (ofLpCLM F φ p₂ g).norm_lowPass_le_of_toDistr_eq (toDistr_ofLpCLM g) (j - N)
-      have h2 := Lp.norm_smul_le (r := r) (u.block j) ((ofLpCLM F φ p₂ g).lowPass (j - N))
+      have h1 := v.norm_lowPass_le_of_toDistr_eq hg (j - N)
+      have h2 := Lp.norm_smul_le (r := r) (u.block j) (v.lowPass (j - N))
       calc _ ≤ 2 ^ (α * j) * (‖u.block j‖ * (K₀ * ‖g‖)) := by gcongr; exact h2.trans (by gcongr)
         _ = _ := by ring
   refine ⟨y, hy, hyn.trans ?_⟩
@@ -256,7 +278,8 @@ def paraproductRightLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn) :
     (fun _ _ _ _ ↦ by simp [block_smul, Lp.smul_assoc])
     (fun _ _ _ _ ↦ by simp [Lp.add_smul])
     (fun _ _ _ _ ↦ by simp [← Lp.smul_comm])
-    (fun u g ↦ (exists_paraproductRightLp (F := F) hN α).choose_spec.2 u g)
+    (fun u g ↦ (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α
+      hN).choose_spec.2 u (ofLpCLM F φ p₂ g) (toDistr_ofLpCLM g))
 
 /-- The tempered distribution of `paraproductRightLpCLM r hN u g` is the sum of the series
 `∑ⱼ Δⱼ u · S_{j - N} g`. -/
@@ -270,7 +293,8 @@ theorem hasSum_paraproductRightLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn)
     (fun _ _ _ _ ↦ by simp [block_add, Lp.smul_add])
     (fun _ _ _ _ ↦ by simp [block_smul, Lp.smul_assoc])
     (fun _ _ _ _ ↦ by simp [Lp.add_smul]) (fun _ _ _ _ ↦ by simp [← Lp.smul_comm])
-    (fun u g ↦ (exists_paraproductRightLp (F := F) hN α).choose_spec.2 u g) u g
+    (fun u g ↦ (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α
+      hN).choose_spec.2 u (ofLpCLM F φ p₂ g) (toDistr_ofLpCLM g)) u g
 
 /-- When `g ∈ L^{p₂}` represents `v ∈ B^β_{p₂,q₂}`, `paraproductRightLpCLM r hN u g` sums
 `Δⱼ u · S_{j - N} v`. -/
@@ -287,9 +311,9 @@ theorem exists_norm_paraproductRightLpCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (α
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
       [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r],
       ‖paraproductRightLpCLM (F := F) (α := α) (p₁ := p₁) (p₂ := p₂) (q := q) r hN‖ ≤ C :=
-  ⟨_, (exists_paraproductRightLp (F := F) hN α).choose_spec.1,
+  ⟨_, (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.1,
     fun {_ _ _ _} _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_paraproductRightLp (F := F) hN α).choose_spec.1⟩
+      (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.1⟩
 
 /-- For scalar-valued factors (`F = ℂ`), the right paraproduct `T_g u` coincides with the left
 paraproduct `T_g u` defined by `paraproductLpCLM`. -/
@@ -383,6 +407,31 @@ theorem toDistr_paraproductNegCLM_eq_paraproductLpCLM (hN : φ.rOut < 2 ^ N * φ
   (hasSum_paraproductNegCLM (r := r) (q := q) hN hα u v).unique
     (hasSum_paraproductLpCLM_of_toDistr_eq (r := r) hN huf v)
 
+variable (φ) in
+/-- **The paraproduct estimate for a low-frequency factor of negative regularity**
+(Bahouri–Chemin–Danchin, Theorem 2.82). Let `α < 0` and `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
+depending only on `φ`, `N`, `α` and `β`, with the following property for all exponents
+`1 ≤ p₁, p₂, r, q, q₁ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and `v ∈ B^β_{p₂,q}`,
+then the paraproduct `T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` converges in the tempered distributions to an
+element of `B^{α+β}_{r,q}` of norm at most `C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_neg {α : ℝ} (hα : α < 0) (β : ℝ)
+    {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₁ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [Fact (1 ≤ q)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q₁)
+      (v : BesovSpace F φ β p₂ q), ∃ w : BesovSpace F φ (α + β) r q,
+        HasSum (fun j ↦ ((u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) :
+          𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC, hle⟩ := exists_norm_paraproductNegCLM_le (F := F) (φ := φ) hN hα β
+  refine ⟨C, hC, fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
+  set u' : BesovSpace ℂ φ α p₁ ∞ := inclusion ℂ φ p₁ le_rfl le_top u
+  refine ⟨paraproductNegCLM r q hN hα u' v, ?_, ?_⟩
+  · simpa only [u', lowPass_eq_of_toDistr_eq (toDistr_inclusion (u := u) le_rfl le_top)] using
+      hasSum_paraproductNegCLM (r := r) (q := q) hN hα u' v
+  · exact ((paraproductNegCLM r q hN hα).le_opNorm₂ u' v).trans <| by
+      gcongr
+      · exact hle
+      · exact norm_inclusion_le _ _ u
+
 /-- Uniform existence and Besov bound for `T_v u = ∑ⱼ Δⱼ u · S_{j - N} v` when `β < 0`. -/
 private theorem exists_paraproductRightNeg (hN : φ.rOut < 2 ^ N * φ.rIn) (α : ℝ) (hβ : β < 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q₁ q₂ q : ℝ≥0∞}
@@ -467,6 +516,32 @@ theorem toDistr_paraproductRightNegCLM_eq_paraproductNegCLM (hN : φ.rOut < 2 ^ 
   (hasSum_paraproductRightNegCLM (r := r) (q := q) hN hβ u v).unique <|
     (hasSum_paraproductNegCLM (r := r) (q := q) hN hβ v u).congr_fun fun _ ↦
       congrArg _ (Lp.lpSMul_comm _ _)
+
+variable (φ) in
+/-- **The paraproduct estimate for a low-frequency factor of negative regularity**, for the
+paraproduct `T_v u = ∑ⱼ Δⱼ u · S_{j-N} v` whose low-frequency factor is vector-valued
+(Bahouri–Chemin–Danchin, Theorem 2.82). Let `β < 0` and `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
+depending only on `φ`, `N`, `α` and `β`, with the following property for all exponents
+`1 ≤ p₁, p₂, r, q, q₂ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q}` and `v ∈ B^β_{p₂,q₂}`,
+then `T_v u` converges in the tempered distributions to an element of `B^{α+β}_{r,q}` of norm at
+most `C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (α : ℝ) {β : ℝ} (hβ : β < 0)
+    {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [Fact (1 ≤ q)] [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q)
+      (v : BesovSpace F φ β p₂ q₂), ∃ w : BesovSpace F φ (α + β) r q,
+        HasSum (fun j ↦ ((u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) :
+          𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC, hle⟩ := exists_norm_paraproductRightNegCLM_le (F := F) (φ := φ) hN α hβ
+  refine ⟨C, hC, fun {p₁ p₂ r q q₂} _ _ _ _ _ _ u v ↦ ?_⟩
+  set v' : BesovSpace F φ β p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
+  refine ⟨paraproductRightNegCLM r q hN hβ u v', ?_, ?_⟩
+  · simpa only [v', lowPass_eq_of_toDistr_eq (toDistr_inclusion (u := v) le_rfl le_top)] using
+      hasSum_paraproductRightNegCLM (r := r) (q := q) hN hβ u v'
+  · exact ((paraproductRightNegCLM r q hN hβ).le_opNorm₂ u v').trans <| by
+      gcongr
+      · exact hle
+      · exact norm_inclusion_le _ _ v
 
 end ParaproductNeg
 
@@ -591,8 +666,9 @@ theorem toDistr_paraproductLpCLM_one_left (hN : φ.rOut < 2 ^ N * φ.rIn)
   have htail := (hv.comp (tendsto_add_atTop_nat (N + 1))).sub_const (v.lowPass (N + 1) : 𝓢'(E, F))
   refine tendsto_nhds_unique (hsub.congr fun m ↦ ?_) htail
   simp only [Function.comp_apply, Nat.add_comm m (N + 1)]
-  rw [Finset.sum_range_add, Finset.sum_eq_zero fun j hj ↦ by
-    simp [show j - N = 0 by rw [Finset.mem_range] at hj; omega], zero_add]
+  have hzero : ∀ j ∈ Finset.range (N + 1), j - N = 0 := fun j hj ↦ by
+    rw [Finset.mem_range] at hj; omega
+  rw [Finset.sum_range_add, Finset.sum_eq_zero fun j hj ↦ by simp [hzero j hj], zero_add]
   have hidx (k : ℕ) : N + 1 + k - N = k + 1 := by omega
   simp_rw [hidx, lowPass_one_succ, Lp.one_smul]
   rw [lowPass_eq_sum v (N + 1 + m), lowPass_eq_sum v (N + 1), Lp.toTemperedDistribution_sum,

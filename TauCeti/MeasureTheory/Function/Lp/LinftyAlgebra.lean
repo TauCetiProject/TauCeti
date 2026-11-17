@@ -33,8 +33,6 @@ almost everywhere equalities in place of pointwise ones.
 ## Main declarations
 
 * `MeasureTheory.Lp.smul_eq_mul`: the product is the Hölder product at exponents `∞, ∞, ∞`.
-* `MeasureTheory.Lp.one_smul`, `MeasureTheory.Lp.smul_one`: the unit of `L∞` acts trivially under
-  heterogeneous `Lp` scalar multiplication.
 * `MeasureTheory.Lp.coeFn_mul`: the product is pointwise almost everywhere.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * The instances `NormedRing`, `NormedCommRing`, `NormedAlgebra`, `StarRing`, `CStarRing`,
@@ -67,23 +65,6 @@ protected theorem smul_eq_mul (f g : Lp R ∞ μ) : f • g = f * g :=
 
 theorem coeFn_mul (f g : Lp R ∞ μ) : ⇑(f * g) =ᵐ[μ] ⇑f * ⇑g :=
   coeFn_lpSMul f g
-
-/-- The unit of `L∞` acts as the identity under heterogeneous `Lp` scalar multiplication. -/
-@[simp]
-protected theorem one_smul {E : Type*} [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
-    {p : ℝ≥0∞} (f : Lp E p μ) :
-    (1 : Lp R ∞ μ) • f = f := by
-  ext
-  filter_upwards [coeFn_lpSMul (r := p) (1 : Lp R ∞ μ) f, coeFn_one (E := R) (μ := μ)] with x h₁ h₂
-  simp [h₁, h₂]
-
-/-- Multiplying an `Lᵖ` function on the right by the unit of `L∞` is the identity. -/
-@[simp]
-protected theorem smul_one {p : ℝ≥0∞} (f : Lp R p μ) :
-    f • (1 : Lp R ∞ μ) = f := by
-  ext
-  filter_upwards [coeFn_lpSMul (r := p) f (1 : Lp R ∞ μ), coeFn_one (E := R) (μ := μ)] with x h₁ h₂
-  simp [h₁, h₂]
 
 instance inftyRing : Ring (Lp R ∞ μ) where
   mul_assoc f g h := by

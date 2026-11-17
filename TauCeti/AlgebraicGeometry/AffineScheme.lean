@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -38,11 +39,17 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 * `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
   `Γ(X, ⊤)` by `g • a = (σ g⁻¹)^*(a)`.
+* `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: for an affine scheme `Z` and a prime ideal
+  `M` of `Γ(Z, ⊤)`, the canonical `Γ(Z, ⊤)`-algebra isomorphism between `Localization.AtPrime M` and
+  the stalk at the point of `Z` corresponding to `M`.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.isoSpec_inv_appTop`: the global sections of `X.isoSpec.inv` are
   `(Scheme.ΓSpecIso Γ(X, ⊤)).inv`.
+* `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: on an affine scheme `Z`, the canonical
+  `Γ(Z, ⊤)`-algebra isomorphism between `Localization.AtPrime M` and the stalk at a prime `M` of
+  `Γ(Z, ⊤)`.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
   morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
   `R → Γ(X, U)` it induces.
@@ -96,6 +103,83 @@ theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     rw [← Scheme.Hom.comp_appTop, Iso.hom_inv_id, Scheme.Hom.id_appTop]
   rw [← Iso.comp_hom_eq_id]
   simpa [Scheme.isoSpec] using h
+
+/-- On an affine scheme `Z`, the stalk at `(isAffineOpen_top Z).fromSpec y` is a `Γ(Z, ⊤)`-algebra
+via the germ map on `⊤`. -/
+noncomputable instance Scheme.algebraStalkFromSpecTop (Z : Scheme.{u}) [IsAffine Z]
+    (y : PrimeSpectrum Γ(Z, ⊤)) :
+    Algebra Γ(Z, ⊤) (Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec y)) :=
+  TopCat.Presheaf.algebra_section_stalk Z.presheaf ⟨(isAffineOpen_top Z).fromSpec y, trivial⟩
+
+/-- The `Γ(Z, ⊤)`-algebra map to the stalk at `(isAffineOpen_top Z).fromSpec y` is `germ` on `⊤`. -/
+@[simp] theorem Scheme.algebraMap_stalk_fromSpecTop (Z : Scheme.{u}) [IsAffine Z]
+    (y : PrimeSpectrum Γ(Z, ⊤)) :
+    algebraMap Γ(Z, ⊤) (Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec y)) =
+      (Z.presheaf.germ ⊤ ((isAffineOpen_top Z).fromSpec y) trivial).hom := rfl
+
+/-- On an affine scheme `Z`, the stalk at the point of a prime `M` of `Γ(Z, ⊤)` is `AtPrime M`. -/
+instance Scheme.isLocalization_stalk_fromSpecTop (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] :
+    IsLocalization.AtPrime (Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩)) M :=
+  (isAffineOpen_top Z).isLocalization_stalk' ⟨M, hM⟩ trivial
+
+/-- On an affine scheme `Z`, the canonical `Γ(Z, ⊤)`-algebra isomorphism between
+`Localization.AtPrime M` and the stalk at the point corresponding to a prime `M` of `Γ(Z, ⊤)`. -/
+noncomputable def Scheme.stalkFromSpecTopAlgEquiv (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] :
+    Localization.AtPrime M ≃ₐ[Γ(Z, ⊤)] Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩) :=
+  IsLocalization.algEquiv M.primeCompl _ _
+
+/-- Evaluating `Z.stalkFromSpecTopAlgEquiv M` on `algebraMap _ _ r` recovers the germ of `r`. -/
+theorem Scheme.stalkFromSpecTopAlgEquiv_algebraMap (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] (r : Γ(Z, ⊤)) :
+    Z.stalkFromSpecTopAlgEquiv M (algebraMap Γ(Z, ⊤) (Localization.AtPrime M) r) =
+      Z.presheaf.germ ⊤ ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩) trivial r :=
+  (Z.stalkFromSpecTopAlgEquiv M).commutes r
+
+/-- Evaluating `Z.stalkFromSpecTopAlgEquiv M` on `mk' r s` produces `mk' r s` in the stalk. -/
+@[simp] theorem Scheme.stalkFromSpecTopAlgEquiv_mk' (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] (r : Γ(Z, ⊤)) (s : M.primeCompl) :
+    Z.stalkFromSpecTopAlgEquiv M (IsLocalization.mk' (Localization.AtPrime M) r s) =
+      IsLocalization.mk' (Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩)) r s :=
+  IsLocalization.algEquiv_mk' r s
+
+/-- Evaluating `(Z.stalkFromSpecTopAlgEquiv M).symm` on `mk' r s` in the stalk gives `mk' r s`. -/
+@[simp] theorem Scheme.stalkFromSpecTopAlgEquiv_symm_mk' (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] (r : Γ(Z, ⊤)) (s : M.primeCompl) :
+    (Z.stalkFromSpecTopAlgEquiv M).symm
+      (IsLocalization.mk' (Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩)) r s) =
+      IsLocalization.mk' (Localization.AtPrime M) r s :=
+  IsLocalization.algEquiv_symm_mk' r s
+
+/-- Evaluating `(Z.stalkFromSpecTopAlgEquiv M).symm` on `germ r` gives `algebraMap _ _ r`. -/
+@[simp] theorem Scheme.stalkFromSpecTopAlgEquiv_symm_germ (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] (r : Γ(Z, ⊤)) :
+    (Z.stalkFromSpecTopAlgEquiv M).symm
+      (Z.presheaf.germ ⊤ ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩) trivial r) =
+      algebraMap Γ(Z, ⊤) (Localization.AtPrime M) r :=
+  (Z.stalkFromSpecTopAlgEquiv M).symm.commutes r
+
+/-- Extending an ideal of `Γ(Z, ⊤)` via `germ` and `(Z.stalkFromSpecTopAlgEquiv M).symm` gives its
+extension to `Localization.AtPrime M`. -/
+@[simp] theorem Scheme.map_germ_stalkFromSpecTopAlgEquiv_symm (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] (𝔞 : Ideal Γ(Z, ⊤)) :
+    (𝔞.map (Z.presheaf.germ ⊤ ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩) trivial).hom).map
+      (Z.stalkFromSpecTopAlgEquiv M).symm = 𝔞.map (algebraMap Γ(Z, ⊤) (Localization.AtPrime M)) :=
+  Ideal.map_map_algebraMap (Z.stalkFromSpecTopAlgEquiv M).symm 𝔞
+
+/-- Transporting a stalkwise principal-and-annihilator equation on an affine scheme `Z` at `M` to
+`Localization.AtPrime M`. -/
+theorem Scheme.exists_map_atPrime_eq_span_singleton_and_annihilator (Z : Scheme.{u}) [IsAffine Z]
+    (M : Ideal Γ(Z, ⊤)) [hM : M.IsPrime] {𝔞 𝔟 : Ideal Γ(Z, ⊤)}
+    {a : Z.presheaf.stalk ((isAffineOpen_top Z).fromSpec ⟨M, hM⟩)}
+    (h𝔞 : 𝔞.map (Z.presheaf.germ ⊤ _ trivial).hom = Ideal.span {a})
+    (h𝔟 : 𝔟.map (Z.presheaf.germ ⊤ _ trivial).hom = (Ideal.span {a}).annihilator) :
+    ∃ x : Localization.AtPrime M,
+      𝔞.map (algebraMap Γ(Z, ⊤) (Localization.AtPrime M)) = Ideal.span {x} ∧
+        𝔟.map (algebraMap Γ(Z, ⊤) (Localization.AtPrime M)) = (Ideal.span {x}).annihilator :=
+  ⟨(Z.stalkFromSpecTopAlgEquiv M).symm a,
+    (Z.stalkFromSpecTopAlgEquiv M).map_eq_span_singleton_and_annihilator h𝔞 h𝔟⟩
 
 /-- On an affine open `U` of `X`, the morphism `f : X ⟶ Spec R` restricted along
 `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map `R → Γ(X, U)` induced by `f`. -/
