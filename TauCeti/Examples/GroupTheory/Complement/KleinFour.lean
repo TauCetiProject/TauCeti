@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Complement.Invariant.Internal
 public import TauCeti.GroupTheory.Complement.Sylow
 public import TauCeti.GroupTheory.Perm.FinFour.Matching
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.GroupTheory.SpecificGroups.Alternating.Basic
 
 /-!
 # Complements, crossed projections, and invariant-complement witnesses for the Klein four-group
@@ -201,7 +202,7 @@ theorem kleinFourCrossedProjection_three_mul_ne :
 /-- Sylow detection (`IsPGroup.exists_isComplement'_iff_sylow`) certifies that `kleinFour (Fin 4)`
 has a complement in `alternatingGroup (Fin 4)` from the trivial local complement `⊥` inside any
 Sylow `2`-subgroup `P` (since `P = kleinFour (Fin 4)`). -/
-theorem exists_isComplement'_kleinFour_of_sylow :
+theorem exists_isComplement'_kleinFour :
     ∃ D : Subgroup (alternatingGroup (Fin 4)), (kleinFour (Fin 4)).IsComplement' D := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have := (kleinFour_isKleinFour (Nat.card_fin 4)).isMulCommutative

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.GroupTheory.Complement.CrossedProjection
 public import TauCeti.GroupTheory.SpecificGroups.Alternating.KleinFour
+import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.GroupTheory.SpecificGroups.Alternating.Basic
 
 /-!
 # Normalized crossed projections from `alternatingGroup α` to `kleinFour α` in degree four
@@ -184,11 +186,9 @@ theorem existsUnique_conj_kleinFour_stabilizer (hα : Nat.card α ≤ 4) (a b : 
         (MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a =
           MulAction.stabilizer (alternatingGroup α) b) ↔ v • a = b := by
       intro v
-      change (MulAction.stabilizer (alternatingGroup α) a).map
-          (MulAut.conj (v : alternatingGroup α)).toMonoidHom = _ ↔ _
-      rw [← MulAction.stabilizer_smul_eq_stabilizer_map_conj,
-        (stabilizer_injective hα4.ge).eq_iff]
-      rfl
+      rw [← TauCeti.map_conj_eq_conj_smul, ← MulEquiv.toMonoidHom_eq_coe,
+        ← MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+        (stabilizer_injective hα4.ge).eq_iff, ← Subgroup.smul_def]
     simpa only [heq] using existsUnique_kleinFour_smul_eq hα4 a b
   · have hbot : kleinFour α = ⊥ := kleinFour_eq_bot_iff.mpr hαlt
     rw [(stabilizer_eq_bot_iff a).mpr hαlt, (stabilizer_eq_bot_iff b).mpr hαlt]
@@ -202,8 +202,9 @@ theorem kleinFourCrossedProjection_smul_point (hα4 : Nat.card α = 4) (v : klei
       kleinFourCrossedProjection hα4 a g * (g • v / v) := by
   have := (kleinFour_isKleinFour hα4).isMulCommutative
   have hstab : MulAction.stabilizer (alternatingGroup α) (v • a) =
-      MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a :=
-    MulAction.stabilizer_smul_eq_stabilizer_map_conj (v : alternatingGroup α) a
+      MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a := by
+    rw [Subgroup.smul_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+      MulEquiv.toMonoidHom_eq_coe, TauCeti.map_conj_eq_conj_smul]
   exact ((isComplement'_kleinFour_stabilizer hα4 a).eq_conj_smul_iff_crossedProjection_eq
     (isComplement'_kleinFour_stabilizer hα4 (v • a)) v).mp hstab g
 
