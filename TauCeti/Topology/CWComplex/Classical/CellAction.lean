@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.Topology.CWComplex.Classical.Map
-import Mathlib.GroupTheory.GroupAction.Quotient
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Actions on the cells of a relative CW complex
@@ -172,7 +172,7 @@ def sigmaSMulCellEquiv
   haveI := isCancelSMul_cell hcell hfree n
   let e : ι ≃ MulAction.orbitRel.Quotient G (cell C n) := Equiv.ofBijective _ hs
   let φ : MulAction.orbitRel.Quotient G (cell C n) → cell C n := s ∘ e.symm
-  have hφ : Function.LeftInverse Quotient.mk'' φ := fun o ↦ e.apply_symm_apply o
+  have hφ : Function.LeftInverse Quotient.mk'' φ := Equiv.ofBijective_apply_symm_apply _ hs
   (Equiv.sigmaEquivProd ι G).trans <|
     (Equiv.prodCongr e (Equiv.refl G)).trans
       (MulAction.selfEquivOrbitsQuotientProd' hφ IsCancelSMul.stabilizer_eq_bot).symm
@@ -188,12 +188,7 @@ theorem sigmaSMulCellEquiv_apply
     (x : Σ _ : ι, G) :
     letI := cellMulAction hcell n
     sigmaSMulCellEquiv hcell hfree s hs x = x.2 • s x.1 := by
-  let := cellMulAction hcell n
-  have := isCancelSMul_cell hcell hfree n
-  let e : ι ≃ MulAction.orbitRel.Quotient G (cell C n) := Equiv.ofBijective _ hs
-  rcases x with ⟨a, g⟩
-  change g • s (e.symm (e a)) = g • s a
-  rw [e.symm_apply_apply]
+  simp [sigmaSMulCellEquiv]
 
 end FreeCellAction
 
