@@ -16,6 +16,7 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Algebra
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -532,10 +533,12 @@ theorem ker_restrictedCompletionReduction (hI : IsAdic I) (hfg : I.FG) :
     rw [← ker_restrictedReduction hI hfg, RingHom.mem_ker]
     have hsub : restrictedCompletionReduction I hIopen ((f : WComp k A) - x) = 0 := hKle hfx
     rwa [map_sub, Ideal.restrictedCompletionReduction_coe, RingHom.mem_ker.mp hx, sub_zero] at hsub
-  have hfK : (f : WComp k A) ∈ K :=
-    (show (I.map (WC k A)).map UniformSpace.Completion.coeRingHom = K by
-      rw [Ideal.map_map]; exact congrArg (Ideal.map · I) (RingHom.ext fun _ ↦ by simp)) ▸
-      Ideal.mem_map_of_mem UniformSpace.Completion.coeRingHom hfker
+  have hmapK : (I.map (WC k A)).map UniformSpace.Completion.coeRingHom = K := by
+    rw [Ideal.map_map]
+    exact congrArg (Ideal.map · I) (RingHom.ext fun _ ↦ by simp)
+  have hfK : (f : WComp k A) ∈ K := by
+    rw [← hmapK]
+    exact Ideal.mem_map_of_mem UniformSpace.Completion.coeRingHom hfker
   simpa only [Set.mem_preimage, SetLike.mem_coe, sub_sub_cancel] using K.sub_mem hfK hfx
 
 /-- Completed reduction modulo `I ^ m` for a finitely generated ideal of definition has kernel
@@ -696,15 +699,6 @@ noncomputable def restrictedMvPowerSeriesCompletionEquivAdicCompletion
   rw [AlgEquiv.symm_apply_eq,
     restrictedMvPowerSeriesCompletionEquivAdicCompletion_weightedPolynomialHom]
 
-omit [TopologicalSpace A] [NonarchimedeanRing A] in
-private theorem map_C_map_algebraMap_adicCompletion (I : Ideal A) (m : ℕ) :
-    (I.map (MvPolynomial.C (σ := Fin k)) ^ m).map
-        (algebraMap (MvPolynomial (Fin k) A)
-          (AdicCompletion (I.map (MvPolynomial.C (σ := Fin k))) (MvPolynomial (Fin k) A))) =
-      I.map (algebraMap A _) ^ m := by
-  rw [← Ideal.map_pow, Ideal.map_map, ← MvPolynomial.algebraMap_eq,
-    ← IsScalarTower.algebraMap_eq, Ideal.map_pow]
-
 /-- `restrictedMvPowerSeriesCompletionEquivAdicCompletion` is a homeomorphism for the adic topology
 on `AdicCompletion`. -/
 theorem isHomeomorph_restrictedMvPowerSeriesCompletionEquivAdicCompletion
@@ -714,9 +708,12 @@ theorem isHomeomorph_restrictedMvPowerSeriesCompletionEquivAdicCompletion
   let P := MvPolynomial (Fin k) A; let IP : Ideal P := I.map MvPolynomial.C
   let C := AdicCompletion IP P; let : WithIdeal C := ⟨IP.map (algebraMap P C)⟩
   have hAdicB := isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI hfg
-  have hAdicC : IsAdic (I.map (algebraMap A C)) :=
-    (by simpa only [pow_one] using map_C_map_algebraMap_adicCompletion (k := k) I 1) ▸
-      (rfl : IsAdic (IP.map (algebraMap P C)))
+  have hIP : IP.map (algebraMap P C) = I.map (algebraMap A C) :=
+    calc IP.map (algebraMap P C)
+        = (I.map (algebraMap A P)).map (algebraMap P C) :=
+          congrArg (Ideal.map (algebraMap P C)) (by simp only [IP, P, MvPolynomial.algebraMap_eq])
+      _ = I.map (algebraMap A C) := Ideal.map_algebraMap_map_algebraMap I
+  have hAdicC : IsAdic (I.map (algebraMap A C)) := hIP ▸ (rfl : IsAdic (IP.map (algebraMap P C)))
   let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg
   have he : (I.map (algebraMap A _)).map e.toRingHom = I.map (algebraMap A C) := by
     rw [Ideal.map_map]; exact congrArg (Ideal.map · I) (RingHom.ext e.commutes)
@@ -743,14 +740,22 @@ theorem evalₐ_restrictedMvPowerSeriesCompletionEquivAdicCompletion
   have heval : AdicCompletion.evalₐ IP m (e x) = Ideal.Quotient.mk (IP ^ m) p := by
     have hker := (AdicCompletion.ker_evalₐ_eq_map_pow (R := P) (I := IP) (hfg.map _) m).symm ▸ hp
     simpa [sub_eq_zero, AdicCompletion.algebraMap_apply] using RingHom.mem_ker.mp hker
+  have hIP : IP.map (algebraMap P (AdicCompletion IP P)) =
+      I.map (algebraMap A (AdicCompletion IP P)) :=
+    calc IP.map (algebraMap P (AdicCompletion IP P))
+        = (I.map (algebraMap A P)).map (algebraMap P (AdicCompletion IP P)) :=
+          congrArg (Ideal.map (algebraMap P (AdicCompletion IP P)))
+            (by simp only [IP, P, MvPolynomial.algebraMap_eq])
+      _ = I.map (algebraMap A (AdicCompletion IP P)) := Ideal.map_algebraMap_map_algebraMap I
   have hmap : ((IP ^ m).map (algebraMap P (AdicCompletion IP P))).map e.symm.toRingHom =
       I.map (algebraMap A (WComp k A)) ^ m := by
-    rw [map_C_map_algebraMap_adicCompletion, Ideal.map_pow, Ideal.map_map]
-    exact congrArg (Ideal.map · I ^ m) (RingHom.ext e.symm.commutes)
-  have hx0 := RingHom.mem_ker.mp (show e.symm (e x - algebraMap P (AdicCompletion IP P) p) ∈
-      RingHom.ker (restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m)) by
+    rw [Ideal.map_pow, Ideal.map_pow, hIP, Ideal.map_map]
+    exact congrArg (fun f ↦ I.map f ^ m) (RingHom.ext e.symm.commutes)
+  have hmem : e.symm (e x - algebraMap P (AdicCompletion IP P) p) ∈
+      RingHom.ker (restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m)) := by
     rw [ker_restrictedCompletionReduction_pow hI hfg m, ← hmap]
-    exact Ideal.mem_map_of_mem e.symm.toRingHom hp)
+    exact Ideal.mem_map_of_mem e.symm.toRingHom hp
+  have hx0 := RingHom.mem_ker.mp hmem
   dsimp only [P, IP, e] at hx0
   rw [map_sub, AlgEquiv.symm_apply_apply,
     restrictedMvPowerSeriesCompletionEquivAdicCompletion_symm_algebraMap, map_sub,

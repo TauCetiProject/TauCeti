@@ -186,8 +186,7 @@ theorem mk_restrictedEval₂OfBound_eq_eval₂_isRestrictedSubringReduction
   simp only [Function.comp_apply, RingHom.restrictedEval₂OfBound_polynomial,
     Ideal.isRestrictedSubringReduction_polynomialToRestricted, MvPolynomial.coe_eval₂Hom,
     MvPolynomial.eval₂_map]
-  rw [show (Ideal.quotientMap J φ hIJ).comp (Ideal.Quotient.mk I) = (Ideal.Quotient.mk J).comp φ
-    from RingHom.ext fun _ ↦ by simp, ← MvPolynomial.hom_eval₂]
+  rw [Ideal.quotientMap_comp_mk hIJ, ← MvPolynomial.hom_eval₂]
 
 /-- **Polynomial reduction commutes with contractive evaluation** modulo open ideals. -/
 theorem mk_restrictedEval₂_eq_eval₂_isRestrictedSubringReduction
