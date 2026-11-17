@@ -41,8 +41,9 @@ normalized (`[NormMulClass A] [NormOneClass A]`), it defines the top point
 
 ## Main definitions
 
-* `TauCeti.GelfandSpectrum A`: bounded multiplicative ring seminorms on `A`, with pointwise
-  topology and analytic specialization order `α ≤ β ↔ ∀ x, α x ≤ β x`.
+* `TauCeti.GelfandSpectrum A`: bounded multiplicative ring seminorms on `A`, with the pointwise
+  convergence topology and pointwise domination order `α ≤ β ↔ ∀ x, α x ≤ β x` (distinct from the
+  trivial topological specialization order of this Hausdorff space).
 * `TauCeti.GelfandSpectrum.ofLeNorm`: construct a spectrum point from `∀ x, α x ≤ ‖x‖`.
 * `TauCeti.GelfandSpectrum.comap`: contravariant pullback along a bounded ring homomorphism.
 * `TauCeti.GelfandSpectrum.retractHomeomorph`: homeomorphism
@@ -181,7 +182,9 @@ theorem continuous_apply_self (α : GelfandSpectrum A) : Continuous (α : A → 
     rw [Real.dist_eq]
     exact (α.abs_apply_sub_le_norm_sub y x).trans_lt (by rwa [← dist_eq_norm])⟩
 
-/-- The analytic specialization order on `GelfandSpectrum A`, given by pointwise comparison. -/
+/-- The pointwise domination order on `GelfandSpectrum A`, given by `α ≤ β ↔ ∀ x, α x ≤ β x`
+(distinct from the trivial topological specialization order of the Hausdorff topology on
+`GelfandSpectrum A`). -/
 instance instPartialOrder : PartialOrder (GelfandSpectrum A) :=
   PartialOrder.lift (⇑·) DFunLike.coe_injective
 
@@ -470,6 +473,13 @@ section SeminormedCommRing
 
 variable {A : Type*} [SeminormedCommRing A]
 
+private theorem normRingSeminorm_apply (x : A) : normRingSeminorm A x = ‖x‖ :=
+  rfl
+
+private theorem normRingSeminorm_ne_zero_of_norm_one_ne_zero (h1 : ‖(1 : A)‖ ≠ 0) :
+    normRingSeminorm A ≠ 0 :=
+  RingSeminorm.ne_zero_iff.2 ⟨1, by rwa [normRingSeminorm_apply]⟩
+
 /-- Over a commutative seminormed ring, every `α : GelfandSpectrum A` is bounded above by the
 spectral seminorm `smoothingFun (normRingSeminorm A)`. -/
 theorem apply_le_smoothingFun (α : GelfandSpectrum A) (x : A) :
@@ -494,9 +504,26 @@ theorem exists_apply_eq_smoothingFun_of_norm_ne_zero (h : normRingSeminorm A ≠
 theorem nonempty_iff_norm_one_ne_zero :
     Nonempty (GelfandSpectrum A) ↔ ‖(1 : A)‖ ≠ 0 := by
   refine ⟨fun ⟨α⟩ h1 ↦ (isEmpty_of_norm_one_eq_zero h1).false α, fun h1 ↦ ?_⟩
-  have hne : normRingSeminorm A ≠ 0 := RingSeminorm.ne_zero_iff.2 ⟨1, show ‖(1 : A)‖ ≠ 0 from h1⟩
-  obtain ⟨α, -⟩ := exists_apply_eq_smoothingFun_of_norm_ne_zero hne 1
+  obtain ⟨α, -⟩ := exists_apply_eq_smoothingFun_of_norm_ne_zero
+    (normRingSeminorm_ne_zero_of_norm_one_ne_zero h1) 1
   exact ⟨α⟩
+
+/-- On a commutative seminormed ring with nonempty Gel'fand spectrum (in particular on every
+nontrivial normed commutative ring), every `x : A` attains its spectral seminorm at some point of
+`GelfandSpectrum A` (Berkovich Theorem 1.3.1; Kedlaya–Liu Theorem 2.3.10). -/
+theorem exists_apply_eq_smoothingFun [Nonempty (GelfandSpectrum A)] (x : A) :
+    ∃ α : GelfandSpectrum A, α x = smoothingFun (normRingSeminorm A) x :=
+  exists_apply_eq_smoothingFun_of_norm_ne_zero
+    (normRingSeminorm_ne_zero_of_norm_one_ne_zero (nonempty_iff_norm_one_ne_zero.1 ‹_›)) x
+
+/-- On a commutative seminormed ring with nonempty Gel'fand spectrum (in particular on every
+nontrivial normed commutative ring), `smoothingFun (normRingSeminorm A) x` is the greatest element
+of `{α x | α : GelfandSpectrum A}`. -/
+theorem isGreatest_range_eval [Nonempty (GelfandSpectrum A)] (x : A) :
+    IsGreatest (Set.range fun α : GelfandSpectrum A ↦ α x)
+      (smoothingFun (normRingSeminorm A) x) := by
+  obtain ⟨α, hα⟩ := exists_apply_eq_smoothingFun x
+  exact ⟨⟨α, hα⟩, by rintro _ ⟨β, rfl⟩; exact β.apply_le_smoothingFun x⟩
 
 /-- **Berkovich's spectral formula** (Berkovich Theorem 1.3.1; Kedlaya–Liu Theorem 2.3.10 and
 Remark 2.3.11(b)). For every commutative seminormed ring `A` and every `x : A`, the spectral
@@ -536,21 +563,6 @@ theorem nonempty_iff_nontrivial : Nonempty (GelfandSpectrum A) ↔ Nontrivial A 
 theorem compactSpace_nonempty :
     CompactSpace (GelfandSpectrum A) ∧ (Nontrivial A → Nonempty (GelfandSpectrum A)) :=
   ⟨inferInstance, fun _ ↦ inferInstance⟩
-
-/-- On a nontrivial normed commutative ring, every `x : A` attains its spectral seminorm at some
-point of `GelfandSpectrum A` (Berkovich Theorem 1.3.1; Kedlaya–Liu Theorem 2.3.10). -/
-theorem exists_apply_eq_smoothingFun [Nontrivial A] (x : A) :
-    ∃ α : GelfandSpectrum A, α x = smoothingFun (normRingSeminorm A) x :=
-  exists_apply_eq_smoothingFun_of_norm_ne_zero
-    (RingSeminorm.ne_zero_iff.2 ⟨1, show ‖(1 : A)‖ ≠ 0 from norm_ne_zero_iff.2 one_ne_zero⟩) x
-
-/-- On a nontrivial normed commutative ring, `smoothingFun (normRingSeminorm A) x` is the greatest
-element of `{α x | α : GelfandSpectrum A}`. -/
-theorem isGreatest_range_eval [Nontrivial A] (x : A) :
-    IsGreatest (Set.range fun α : GelfandSpectrum A ↦ α x)
-      (smoothingFun (normRingSeminorm A) x) := by
-  obtain ⟨α, hα⟩ := exists_apply_eq_smoothingFun x
-  exact ⟨⟨α, hα⟩, by rintro _ ⟨β, rfl⟩; exact β.apply_le_smoothingFun x⟩
 
 end NormedCommRing
 

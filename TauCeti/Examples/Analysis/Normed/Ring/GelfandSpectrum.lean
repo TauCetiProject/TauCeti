@@ -100,8 +100,8 @@ noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing R]
     (fun y ↦ ⟨2, by
       have hy : y - TrivSqZeroExt.inl y.fst = TrivSqZeroExt.inr y.snd := by
         ext <;> simp
-      change (y - TrivSqZeroExt.inl y.fst) ^ 2 = 0
-      rw [hy, sq, TrivSqZeroExt.inr_mul_inr]⟩)
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
+        TrivSqZeroExt.inlHom_apply, hy, sq, TrivSqZeroExt.inr_mul_inr]⟩)
 
 /-- `trivSqZeroExtHomeomorph` evaluates a spectrum point on `TrivSqZeroExt R M` along `inl`. -/
 @[simp]
@@ -121,8 +121,7 @@ theorem trivSqZeroExtHomeomorph_symm_apply {R M : Type*} [SeminormedRing R]
     (trivSqZeroExtHomeomorph R M).symm α y = α y.fst :=
   retractHomeomorph_symm_apply _ _ _ _ _ _ α y
 
-/-- Over a normed division ring `K`, the Gel'fand spectrum of `DualNumber K` has a unique point,
-given by `x ↦ ‖x.fst‖`. -/
+/-- Over a normed division ring `K`, the Gel'fand spectrum of `DualNumber K` has a unique point. -/
 theorem unique_dualNumber (K : Type*) [NormedDivisionRing K] :
     Nonempty (Unique (GelfandSpectrum (DualNumber K))) :=
   ⟨(trivSqZeroExtHomeomorph K K).toEquiv.unique⟩

@@ -180,26 +180,32 @@ theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ1 : μ 1
         rw [← Real.rpow_natCast (a + b), ← Real.rpow_mul (add_pos ha0 hb0).le,
           mul_one_div_cancel hn0, Real.rpow_one]
 
+private theorem map_mul_le_one_mul (μ : RingSeminorm R) (x y : R) :
+    μ (x * y) ≤ 1 * μ x * μ y := by
+  simpa only [one_mul] using map_mul_le_mul μ x y
+
 /-- Auxiliary operator seminorm attached to `μ`, satisfying `boundedSeminorm μ 1 ≤ 1` and sharing
 the same `smoothingFun`. -/
 private noncomputable def boundedSeminorm (μ : RingSeminorm R) : RingSeminorm R :=
   seminormFromBounded (map_zero μ) (apply_nonneg μ)
-    (c := 1) (fun x y ↦ by simpa only [one_mul] using map_mul_le_mul μ x y)
-    (map_add_le_add μ) (map_neg_eq_map μ)
+    (c := 1) μ.map_mul_le_one_mul (map_add_le_add μ) (map_neg_eq_map μ)
 
-private theorem boundedSeminorm_one_le (μ : RingSeminorm R) : μ.boundedSeminorm 1 ≤ 1 :=
-  seminormFromBounded_one_le (apply_nonneg μ)
-    (c := 1) (fun x y ↦ by simpa only [one_mul] using map_mul_le_mul μ x y)
+private theorem boundedSeminorm_apply (μ : RingSeminorm R) (x : R) :
+    μ.boundedSeminorm x = seminormFromBounded' μ x :=
+  rfl
+
+private theorem boundedSeminorm_one_le (μ : RingSeminorm R) : μ.boundedSeminorm 1 ≤ 1 := by
+  rw [boundedSeminorm_apply]
+  exact seminormFromBounded_one_le (apply_nonneg μ) μ.map_mul_le_one_mul
 
 private theorem boundedSeminorm_le (μ : RingSeminorm R) (x : R) : μ.boundedSeminorm x ≤ μ x := by
-  change seminormFromBounded' μ x ≤ μ x
-  simpa only [one_mul] using seminormFromBounded_le (apply_nonneg μ)
-    (c := 1) (fun x y ↦ by simpa only [one_mul] using map_mul_le_mul μ x y) x
+  rw [boundedSeminorm_apply]
+  simpa only [one_mul] using seminormFromBounded_le (apply_nonneg μ) μ.map_mul_le_one_mul x
 
 private theorem le_mul_boundedSeminorm (μ : RingSeminorm R) (x : R) :
-    μ x ≤ μ 1 * μ.boundedSeminorm x :=
-  seminormFromBounded_ge (apply_nonneg μ)
-    (c := 1) (fun x y ↦ by simpa only [one_mul] using map_mul_le_mul μ x y) x
+    μ x ≤ μ 1 * μ.boundedSeminorm x := by
+  rw [boundedSeminorm_apply]
+  exact seminormFromBounded_ge (apply_nonneg μ) μ.map_mul_le_one_mul x
 
 private theorem smoothingFun_eq_boundedSeminorm (μ : RingSeminorm R) (x : R) :
     smoothingFun μ x = smoothingFun μ.boundedSeminorm x := by
@@ -303,9 +309,9 @@ theorem smoothing_zero : (0 : RingSeminorm R).smoothing = 0 :=
 /-- If `μ ≠ 0`, then `μ.smoothing 1 = 1`. -/
 theorem smoothing_one_eq_one {μ : RingSeminorm R} (hμ : μ ≠ 0) : μ.smoothing 1 = 1 := by
   have hfn : (μ : R → ℝ) ≠ 0 := fun h ↦ hμ (DFunLike.coe_injective h)
-  have hν1 : μ.boundedSeminorm 1 = 1 :=
-    seminormFromBounded_one hfn (apply_nonneg μ)
-      (c := 1) (fun x y ↦ by simpa only [one_mul] using map_mul_le_mul μ x y)
+  have hν1 : μ.boundedSeminorm 1 = 1 := by
+    rw [boundedSeminorm_apply]
+    exact seminormFromBounded_one hfn (apply_nonneg μ) μ.map_mul_le_one_mul
   rw [smoothing_apply, μ.smoothingFun_eq_boundedSeminorm,
     smoothingFun_of_powMul μ.boundedSeminorm (le_of_eq hν1) (fun n _ ↦ by simp [hν1]), hν1]
 

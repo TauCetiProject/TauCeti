@@ -171,132 +171,185 @@ theorem map_one_eq_one_of_isPowMul {ρ : RingSeminorm R} (hpm : IsPowMul ρ) (h�
     ρ 1 = 1 :=
   (ρ.seminorm_one_eq_one_iff_ne_zero hpm.map_one_le_one).2 hρ
 
+/-- Predicate characterizing the Zorn poset in BGR Theorem 1.3.2/2: power-multiplicative ring
+seminorm functions normalized at `1` that take value `r` at `x₀` and are multiplicative at `x₀`. -/
+private structure PowMulSeminormAt (x₀ : R) (r : ℝ) (f : R → ℝ) : Prop where
+  map_zero : f 0 = 0
+  nonneg : ∀ a, 0 ≤ f a
+  add_le : ∀ a b, f (a + b) ≤ f a + f b
+  neg : ∀ a, f (-a) = f a
+  mul_le : ∀ a b, f (a * b) ≤ f a * f b
+  isPowMul : IsPowMul f
+  map_one : f 1 = 1
+  apply_x₀ : f x₀ = r
+  const_mul : ∀ y, f (x₀ * y) = f x₀ * f y
+
+/-- Bundle a function satisfying `PowMulSeminormAt` as a `RingSeminorm R`. -/
+private def PowMulSeminormAt.toRingSeminorm {x₀ : R} {r : ℝ} {f : R → ℝ}
+    (hf : PowMulSeminormAt x₀ r f) : RingSeminorm R where
+  toFun := f
+  map_zero' := hf.map_zero
+  add_le' := hf.add_le
+  neg' := hf.neg
+  mul_le' := hf.mul_le
+
+private theorem PowMulSeminormAt.toRingSeminorm_apply {x₀ : R} {r : ℝ} {f : R → ℝ}
+    (hf : PowMulSeminormAt x₀ r f) (a : R) :
+    hf.toRingSeminorm a = f a :=
+  rfl
+
+private theorem PowMulSeminormAt.of_ringSeminorm {x₀ : R} {r : ℝ} (ν : RingSeminorm R)
+    (hpm : IsPowMul ν) (h1 : ν 1 = 1) (hx₀ : ν x₀ = r)
+    (hmul : ∀ y, ν (x₀ * y) = ν x₀ * ν y) :
+    PowMulSeminormAt x₀ r ν :=
+  ⟨_root_.map_zero ν, apply_nonneg ν, map_add_le_add ν, map_neg_eq_map ν, map_mul_le_mul ν,
+    hpm, h1, hx₀, hmul⟩
+
+/-- The pointwise infimum of a nonempty descending chain in `{f | PowMulSeminormAt x₀ r f}`
+(for `r > 0`) again satisfies `PowMulSeminormAt x₀ r` and bounds the chain from below. -/
+private theorem powMulSeminormAt_iInf_of_chain {x₀ : R} {r : ℝ} (hr : 0 < r)
+    {c : Set (R → ℝ)} (hcs : c ⊆ {f | PowMulSeminormAt x₀ r f})
+    (hc : IsChain (· ≥ ·) c) {y₀ : R → ℝ} (hy₀ : y₀ ∈ c) :
+    ∃ lb ∈ {f | PowMulSeminormAt x₀ r f}, ∀ z ∈ c, lb ≤ z := by
+  have : Nonempty c := ⟨⟨y₀, hy₀⟩⟩
+  have hmem (z : c) : PowMulSeminormAt x₀ r z.1 := hcs z.2
+  let lb : R → ℝ := fun a ↦ ⨅ z : c, z.1 a
+  have hbdd (a : R) : BddBelow (Set.range fun z : c ↦ z.1 a) :=
+    ⟨0, by rintro _ ⟨z, rfl⟩; exact (hmem z).nonneg a⟩
+  have hlb_le (z : c) (a : R) : lb a ≤ z.1 a := ciInf_le (hbdd a) z
+  have hlb_nonneg (a : R) : 0 ≤ lb a := le_ciInf fun z ↦ (hmem z).nonneg a
+  have hlb_zero : lb 0 = 0 := by
+    simp only [lb, fun z : c ↦ (hmem z).map_zero, ciInf_const]
+  have hlb_neg (a : R) : lb (-a) = lb a := by
+    simp only [lb, fun z : c ↦ (hmem z).neg a]
+  have hlb_one : lb 1 = 1 := by
+    simp only [lb, fun z : c ↦ (hmem z).map_one, ciInf_const]
+  have hlb_x₀ : lb x₀ = r := by
+    simp only [lb, fun z : c ↦ (hmem z).apply_x₀, ciInf_const]
+  have hlb_add (a b : R) : lb (a + b) ≤ lb a + lb b := by
+    have hpair (z₁ z₂ : c) : lb (a + b) ≤ z₁.1 a + z₂.1 b := by
+      rcases hc.total z₁.2 z₂.2 with h12 | h21
+      · exact (hlb_le z₂ (a + b)).trans
+          (((hmem z₂).add_le a b).trans (add_le_add_left (h12 a) _))
+      · exact (hlb_le z₁ (a + b)).trans
+          (((hmem z₁).add_le a b).trans (add_le_add_right (h21 b) _))
+    have h1 (z₁ : c) : lb (a + b) - z₁.1 a ≤ lb b :=
+      le_ciInf fun z₂ ↦ sub_le_iff_le_add'.2 (hpair z₁ z₂)
+    have h2 : lb (a + b) - lb b ≤ lb a :=
+      le_ciInf fun z₁ ↦ sub_le_iff_le_add.2 (sub_le_iff_le_add'.1 (h1 z₁))
+    exact sub_le_iff_le_add.1 h2
+  have hlb_mul (a b : R) : lb (a * b) ≤ lb a * lb b := by
+    have hpair (z₁ z₂ : c) : lb (a * b) ≤ z₁.1 a * z₂.1 b := by
+      rcases hc.total z₁.2 z₂.2 with h12 | h21
+      · exact (hlb_le z₂ (a * b)).trans (((hmem z₂).mul_le a b).trans
+          (mul_le_mul_of_nonneg_right (h12 a) ((hmem z₂).nonneg b)))
+      · exact (hlb_le z₁ (a * b)).trans (((hmem z₁).mul_le a b).trans
+          (mul_le_mul_of_nonneg_left (h21 b) ((hmem z₁).nonneg a)))
+    have h1 (z₁ : c) : lb (a * b) ≤ z₁.1 a * lb b := by
+      rcases ((hmem z₁).nonneg a).eq_or_lt with hza | hza
+      · simpa [← hza] using hpair z₁ z₁
+      · rw [← div_le_iff₀' hza]
+        exact le_ciInf fun z₂ ↦ (div_le_iff₀' hza).2 (hpair z₁ z₂)
+    rcases (hlb_nonneg b).eq_or_lt with hlbb | hlbb
+    · simpa [← hlbb] using h1 ⟨y₀, hy₀⟩
+    · rw [← div_le_iff₀ hlbb]
+      exact le_ciInf fun z₁ ↦ (div_le_iff₀ hlbb).2 (h1 z₁)
+  have hlb_pm : IsPowMul lb := fun a k hk ↦ by
+    refine le_antisymm ?_
+      (le_ciInf fun z ↦ (pow_le_pow_left₀ (hlb_nonneg a) (hlb_le z a) k).trans_eq
+        ((hmem z).isPowMul a hk).symm)
+    have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.1 hk
+    have hroot : lb (a ^ k) ^ (1 / k : ℝ) ≤ lb a := by
+      refine le_ciInf fun z ↦ ?_
+      calc lb (a ^ k) ^ (1 / k : ℝ)
+          ≤ z.1 (a ^ k) ^ (1 / k : ℝ) := by
+            gcongr
+            · exact hlb_nonneg _
+            · exact hlb_le z (a ^ k)
+        _ = (z.1 a ^ k) ^ (1 / k : ℝ) := by rw [(hmem z).isPowMul a hk]
+        _ = z.1 a := by rw [one_div, Real.pow_rpow_inv_natCast ((hmem z).nonneg a) hk0]
+    calc lb (a ^ k) = (lb (a ^ k) ^ (1 / k : ℝ)) ^ k := by
+          rw [one_div, ← Real.rpow_natCast, ← Real.rpow_mul (hlb_nonneg _),
+            inv_mul_cancel₀ (Nat.cast_ne_zero.2 hk0), Real.rpow_one]
+      _ ≤ lb a ^ k := pow_le_pow_left₀ (Real.rpow_nonneg (hlb_nonneg _) _) hroot k
+  have hlb_x₀_mul (y : R) : lb (x₀ * y) = lb x₀ * lb y := by
+    have hz_mul (z : c) : z.1 (x₀ * y) = r * z.1 y := by
+      rw [(hmem z).const_mul y, (hmem z).apply_x₀]
+    rw [hlb_x₀]
+    refine le_antisymm ?_ ?_
+    · rw [← div_le_iff₀' hr]
+      refine le_ciInf fun z ↦ (div_le_iff₀' hr).2 ?_
+      exact (hlb_le z (x₀ * y)).trans_eq (hz_mul z)
+    · refine le_ciInf fun z ↦ ?_
+      rw [hz_mul z]
+      exact mul_le_mul_of_nonneg_left (hlb_le z y) hr.le
+  exact ⟨lb, ⟨hlb_zero, hlb_nonneg, hlb_add, hlb_neg, hlb_mul, hlb_pm, hlb_one, hlb_x₀,
+    hlb_x₀_mul⟩, fun z hz ↦ hlb_le ⟨z, hz⟩⟩
+
+/-- Every minimal element of `{f | PowMulSeminormAt x₀ r f}` is multiplicative on all of `R`. -/
+private theorem mul_of_minimal_powMulSeminormAt {x₀ : R} {r : ℝ} {m : R → ℝ}
+    (hm_min : Minimal (· ∈ {f | PowMulSeminormAt x₀ r f}) m) (c y : R) :
+    m (c * y) = m c * m y := by
+  have hm : PowMulSeminormAt x₀ r m := hm_min.prop
+  let ν : RingSeminorm R := hm.toRingSeminorm
+  have hν_apply (a : R) : ν a = m a := hm.toRingSeminorm_apply a
+  have hν_pm : IsPowMul ν := fun a k hk ↦ by
+    simp only [hν_apply]
+    exact hm.isPowMul a hk
+  by_cases hc0 : ν c = 0
+  · rw [← hν_apply, ← hν_apply, ← hν_apply]
+    exact le_antisymm ((map_mul_le_mul ν c y).trans (by simp [hc0])) (by simp [hc0])
+  · let g : RingSeminorm R := seminormFromConst hc0 hν_pm
+    have hg_apply (a : R) : g a = seminormFromConst' c ν a := seminormFromConst_def hc0 hν_pm a
+    have hg_le : (⇑g : R → ℝ) ≤ m := fun a ↦ by
+      rw [hg_apply, ← hν_apply]
+      exact seminormFromConst_le_seminorm hc0 hν_pm a
+    have hν_x₀_mul (a : R) : ν (x₀ * a) = ν x₀ * ν a := by
+      simp only [hν_apply]
+      exact hm.const_mul a
+    have hg_mem : PowMulSeminormAt x₀ r g :=
+      PowMulSeminormAt.of_ringSeminorm g
+        (fun a k hk ↦ by simp only [hg_apply]; exact seminormFromConst_isPowMul hc0 hν_pm a hk)
+        (by rw [hg_apply]; exact seminormFromConst_one hc0 hν_pm)
+        (by
+          rw [hg_apply, seminormFromConst_apply_of_isMul hc0 hν_pm hν_x₀_mul, hν_apply]
+          exact hm.apply_x₀)
+        (fun a ↦ by
+          simp only [hg_apply]
+          exact seminormFromConst_isMul_of_isMul hc0 hν_pm hν_x₀_mul a)
+    have hgm : m = ⇑g := (hm_min.eq_of_le hg_mem hg_le).symm
+    rw [hgm, hg_apply, hg_apply, hg_apply]
+    exact seminormFromConst_const_mul hc0 hν_pm y
+
 /-- Auxiliary step of BGR Theorem 1.3.2/2 when `ρ x₀ ≠ 0`. -/
 private theorem exists_mulRingSeminorm_le_of_apply_ne_zero {ρ : RingSeminorm R}
     (hpm : IsPowMul ρ) {x₀ : R} (hx₀ : ρ x₀ ≠ 0) :
     ∃ α : MulRingSeminorm R, (∀ x, α x ≤ ρ x) ∧ α x₀ = ρ x₀ := by
   let μ₁ : RingSeminorm R := seminormFromConst hx₀ hpm
-  have hμ₁_pm : IsPowMul μ₁ := seminormFromConst_isPowMul hx₀ hpm
-  have hμ₁_one : μ₁ 1 = 1 := seminormFromConst_one hx₀ hpm
-  have hμ₁_le : ∀ x, μ₁ x ≤ ρ x := seminormFromConst_le_seminorm hx₀ hpm
-  have hμ₁_x₀ : μ₁ x₀ = ρ x₀ := seminormFromConst_apply_c hx₀ hpm
-  have hμ₁_mul : ∀ y, μ₁ (x₀ * y) = μ₁ x₀ * μ₁ y := seminormFromConst_const_mul hx₀ hpm
+  have hμ₁_apply (a : R) : μ₁ a = seminormFromConst' x₀ ρ a := seminormFromConst_def hx₀ hpm a
+  have hμ₁_le (x : R) : μ₁ x ≤ ρ x := by
+    rw [hμ₁_apply]
+    exact seminormFromConst_le_seminorm hx₀ hpm x
+  have hμ₁_x₀ : μ₁ x₀ = ρ x₀ := by
+    rw [hμ₁_apply]
+    exact seminormFromConst_apply_c hx₀ hpm
   have hx₀_pos : 0 < μ₁ x₀ :=
-    lt_of_le_of_ne (apply_nonneg μ₁ x₀) (by rw [hμ₁_x₀]; exact hx₀.symm)
-  let S : Set (R → ℝ) :=
-    {f | f 0 = 0 ∧ (∀ a, 0 ≤ f a) ∧ (∀ a b, f (a + b) ≤ f a + f b) ∧
-      (∀ a, f (-a) = f a) ∧ (∀ a b, f (a * b) ≤ f a * f b) ∧ IsPowMul f ∧
-      f 1 = 1 ∧ f x₀ = μ₁ x₀ ∧ ∀ y, f (x₀ * y) = f x₀ * f y}
-  have hμ₁_mem : (⇑μ₁ : R → ℝ) ∈ S :=
-    ⟨map_zero μ₁, apply_nonneg μ₁, map_add_le_add μ₁, map_neg_eq_map μ₁, map_mul_le_mul μ₁,
-      hμ₁_pm, hμ₁_one, rfl, hμ₁_mul⟩
-  obtain ⟨m, hm_le, hm_min⟩ := zorn_ge_nonempty₀ S
-    (fun c hcs hc y₀ hy₀ ↦ by
-      have : Nonempty c := ⟨⟨y₀, hy₀⟩⟩
-      let lb : R → ℝ := fun a ↦ ⨅ z : c, z.1 a
-      have hbdd (a : R) : BddBelow (Set.range fun z : c ↦ z.1 a) :=
-        ⟨0, by rintro _ ⟨z, rfl⟩; exact (hcs z.2).2.1 a⟩
-      have hlb_le (z : c) (a : R) : lb a ≤ z.1 a := ciInf_le (hbdd a) z
-      have hlb_nonneg (a : R) : 0 ≤ lb a := le_ciInf fun z ↦ (hcs z.2).2.1 a
-      have hlb_zero : lb 0 = 0 := by
-        simp only [lb, fun z : c ↦ (hcs z.2).1, ciInf_const]
-      have hlb_neg (a : R) : lb (-a) = lb a := by
-        simp only [lb, fun z : c ↦ (hcs z.2).2.2.2.1 a]
-      have hlb_one : lb 1 = 1 := by
-        simp only [lb, fun z : c ↦ (hcs z.2).2.2.2.2.2.2.1, ciInf_const]
-      have hlb_x₀ : lb x₀ = μ₁ x₀ := by
-        simp only [lb, fun z : c ↦ (hcs z.2).2.2.2.2.2.2.2.1, ciInf_const]
-      have hlb_add (a b : R) : lb (a + b) ≤ lb a + lb b := by
-        have hpair (z₁ z₂ : c) : lb (a + b) ≤ z₁.1 a + z₂.1 b := by
-          rcases hc.total z₁.2 z₂.2 with h12 | h21
-          · exact (hlb_le z₂ (a + b)).trans
-              (((hcs z₂.2).2.2.1 a b).trans (add_le_add_left (h12 a) _))
-          · exact (hlb_le z₁ (a + b)).trans
-              (((hcs z₁.2).2.2.1 a b).trans (add_le_add_right (h21 b) _))
-        have h1 (z₁ : c) : lb (a + b) - z₁.1 a ≤ lb b :=
-          le_ciInf fun z₂ ↦ sub_le_iff_le_add'.2 (hpair z₁ z₂)
-        have h2 : lb (a + b) - lb b ≤ lb a :=
-          le_ciInf fun z₁ ↦ sub_le_iff_le_add.2 (sub_le_iff_le_add'.1 (h1 z₁))
-        exact sub_le_iff_le_add.1 h2
-      have hlb_mul (a b : R) : lb (a * b) ≤ lb a * lb b := by
-        have hpair (z₁ z₂ : c) : lb (a * b) ≤ z₁.1 a * z₂.1 b := by
-          rcases hc.total z₁.2 z₂.2 with h12 | h21
-          · exact (hlb_le z₂ (a * b)).trans (((hcs z₂.2).2.2.2.2.1 a b).trans
-              (mul_le_mul_of_nonneg_right (h12 a) ((hcs z₂.2).2.1 b)))
-          · exact (hlb_le z₁ (a * b)).trans (((hcs z₁.2).2.2.2.2.1 a b).trans
-              (mul_le_mul_of_nonneg_left (h21 b) ((hcs z₁.2).2.1 a)))
-        have h1 (z₁ : c) : lb (a * b) ≤ z₁.1 a * lb b := by
-          rcases (hcs z₁.2).2.1 a |>.eq_or_lt with hza | hza
-          · simpa [← hza] using hpair z₁ z₁
-          · rw [← div_le_iff₀' hza]
-            exact le_ciInf fun z₂ ↦ (div_le_iff₀' hza).2 (hpair z₁ z₂)
-        rcases (hlb_nonneg b).eq_or_lt with hlbb | hlbb
-        · simpa [← hlbb] using h1 ⟨y₀, hy₀⟩
-        · rw [← div_le_iff₀ hlbb]
-          exact le_ciInf fun z₁ ↦ (div_le_iff₀ hlbb).2 (h1 z₁)
-      have hlb_pm : IsPowMul lb := fun a k hk ↦ by
-        refine le_antisymm ?_
-          (le_ciInf fun z ↦ (pow_le_pow_left₀ (hlb_nonneg a) (hlb_le z a) k).trans_eq
-            ((hcs z.2).2.2.2.2.2.1 a hk).symm)
-        have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.1 hk
-        have hroot : lb (a ^ k) ^ (1 / k : ℝ) ≤ lb a := by
-          refine le_ciInf fun z ↦ ?_
-          calc lb (a ^ k) ^ (1 / k : ℝ)
-              ≤ z.1 (a ^ k) ^ (1 / k : ℝ) := by
-                gcongr
-                · exact hlb_nonneg _
-                · exact hlb_le z (a ^ k)
-            _ = (z.1 a ^ k) ^ (1 / k : ℝ) := by rw [(hcs z.2).2.2.2.2.2.1 a hk]
-            _ = z.1 a := by rw [one_div, Real.pow_rpow_inv_natCast ((hcs z.2).2.1 a) hk0]
-        calc lb (a ^ k) = (lb (a ^ k) ^ (1 / k : ℝ)) ^ k := by
-              rw [one_div, ← Real.rpow_natCast, ← Real.rpow_mul (hlb_nonneg _),
-                inv_mul_cancel₀ (Nat.cast_ne_zero.2 hk0), Real.rpow_one]
-          _ ≤ lb a ^ k := pow_le_pow_left₀ (Real.rpow_nonneg (hlb_nonneg _) _) hroot k
-      have hlb_x₀_mul (y : R) : lb (x₀ * y) = lb x₀ * lb y := by
-        rw [hlb_x₀]
-        refine le_antisymm ?_ ?_
-        · rw [← div_le_iff₀' hx₀_pos]
-          refine le_ciInf fun z ↦ (div_le_iff₀' hx₀_pos).2 ?_
-          have hz := (hcs z.2).2.2.2.2.2.2.2.2 y
-          rw [(hcs z.2).2.2.2.2.2.2.2.1] at hz
-          exact (hlb_le z (x₀ * y)).trans_eq hz
-        · refine le_ciInf fun z ↦ ?_
-          have hz := (hcs z.2).2.2.2.2.2.2.2.2 y
-          rw [(hcs z.2).2.2.2.2.2.2.2.1] at hz
-          rw [hz]
-          exact mul_le_mul_of_nonneg_left (hlb_le z y) hx₀_pos.le
-      exact ⟨lb, ⟨hlb_zero, hlb_nonneg, hlb_add, hlb_neg, hlb_mul, hlb_pm, hlb_one, hlb_x₀,
-        hlb_x₀_mul⟩, fun z hz ↦ hlb_le ⟨z, hz⟩⟩)
-    (⇑μ₁) hμ₁_mem
-  rcases hm_min.prop with ⟨hm0, -, hm_add, hm_neg, hm_mul_le, hm_pm, hm1, hmx₀, hmx₀_mul⟩
-  let ν : RingSeminorm R :=
-    { toFun := m
-      map_zero' := hm0
-      add_le' := hm_add
-      neg' := hm_neg
-      mul_le' := hm_mul_le }
-  have hν_pm : IsPowMul ν := hm_pm
-  have hν_mul (c y : R) : ν (c * y) = ν c * ν y := by
-    by_cases hc0 : ν c = 0
-    · refine le_antisymm ?_ (by simp [hc0])
-      exact (map_mul_le_mul ν c y).trans (by simp [hc0])
-    · let g : RingSeminorm R := seminormFromConst hc0 hν_pm
-      have hg_le : (⇑g : R → ℝ) ≤ m := seminormFromConst_le_seminorm hc0 hν_pm
-      have hg_mem : (⇑g : R → ℝ) ∈ S :=
-        ⟨map_zero g, apply_nonneg g, map_add_le_add g, map_neg_eq_map g, map_mul_le_mul g,
-          seminormFromConst_isPowMul hc0 hν_pm,
-          seminormFromConst_one hc0 hν_pm,
-          (seminormFromConst_apply_of_isMul hc0 hν_pm hmx₀_mul).trans hmx₀,
-          seminormFromConst_isMul_of_isMul hc0 hν_pm hmx₀_mul⟩
-      have hgm : m = ⇑g := le_antisymm (hm_min.2 hg_mem hg_le) hg_le
-      have hc_mul := seminormFromConst_const_mul hc0 hν_pm y
-      change g (c * y) = g c * g y at hc_mul
-      change m (c * y) = m c * m y
-      simpa only [← hgm] using hc_mul
-  refine ⟨{ toAddGroupSeminorm := ν.toAddGroupSeminorm
-            map_one' := hm1
-            map_mul' := hν_mul },
-    fun x ↦ (hm_le x).trans (hμ₁_le x), hmx₀.trans hμ₁_x₀⟩
+    lt_of_le_of_ne (apply_nonneg μ₁ x₀) (hμ₁_x₀ ▸ hx₀.symm)
+  have hμ₁_mem : PowMulSeminormAt x₀ (μ₁ x₀) μ₁ :=
+    PowMulSeminormAt.of_ringSeminorm μ₁
+      (fun a k hk ↦ by simp only [hμ₁_apply]; exact seminormFromConst_isPowMul hx₀ hpm a hk)
+      (by rw [hμ₁_apply]; exact seminormFromConst_one hx₀ hpm)
+      rfl
+      (fun y ↦ by simp only [hμ₁_apply]; exact seminormFromConst_const_mul hx₀ hpm y)
+  obtain ⟨m, hm_le, hm_min⟩ :=
+    zorn_ge_nonempty₀ {f | PowMulSeminormAt x₀ (μ₁ x₀) f}
+      (fun _ hcs hc _ hy₀ ↦ powMulSeminormAt_iInf_of_chain hx₀_pos hcs hc hy₀)
+      (⇑μ₁) hμ₁_mem
+  have hm : PowMulSeminormAt x₀ (μ₁ x₀) m := hm_min.prop
+  refine ⟨{ toAddGroupSeminorm := hm.toRingSeminorm.toAddGroupSeminorm
+            map_one' := hm.map_one
+            map_mul' := mul_of_minimal_powMulSeminormAt hm_min },
+    fun x ↦ (hm_le x).trans (hμ₁_le x), hm.apply_x₀.trans hμ₁_x₀⟩
 
 /-- **Bosch–Güntzer–Remmert Theorem 1.3.2/2.** For every nonzero power-multiplicative ring seminorm
 `ρ` on a commutative ring `R` and every `x₀ : R`, there exists a multiplicative ring seminorm
