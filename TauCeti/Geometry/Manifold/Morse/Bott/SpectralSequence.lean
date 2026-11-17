@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
-public import TauCeti.Geometry.Manifold.Morse.SpectralSequence
 
 /-!
 # The first page of the critical-band spectral sequence of a Morse–Bott function
