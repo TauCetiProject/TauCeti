@@ -222,7 +222,9 @@ private theorem morseAttachingMap_comp_constInclFamily (i : ι) :
         constInclFamily (P := P) φ k hk hε hball hf =
       TopCat.diskBoundaryInclusion (k i) ≫ constCellFamily φ k hk hε hball hf i := by
   ext s p
-  -- Evaluate both composites of curried maps at `(s, p)`.
+  -- Evaluate both composites of curried maps at `(s, p)`. This needs `change`: the morphism
+  -- `constCellFamily` starts at `TopCat.disk (k i)`, a definition rather than a `TopCat.of`, so
+  -- `TopCat.hom_ofHom` and `ConcreteCategory.hom_ofHom` do not match it syntactically.
   change fiberwiseCellAttachmentIncl _
       (p, lowerSublevelIncl hε ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s)) =
     fiberwiseCellAttachmentCell _ i (p, TopCat.diskBoundaryInclusion (k i) s)
@@ -438,7 +440,7 @@ theorem exists_fiberHomotopyEquiv_fiberwiseCellComparison_morseFamilyAttachingMa
   have hreg (x : M) (h₁ : c - ε ≤ f x) (h₂ : f x < c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by
     obtain ⟨i, hi⟩ := mem_iUnion.1
       (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, h₁, by linarith⟩)
-    exact mfderiv_ne_zero_of_mem_source hfs (φ i) (hfφ i) hi h₂.ne h0
+    exact mfderiv_ne_zero_of_mem_source_of_ne_level hfs (φ i) (hfφ i) hi h₂.ne h0
   -- Milnor's comparison over `P` of the cells of the constant family `φ` with those of `ψ`: linear
   -- isometries `e i p` of the discs and homotopies `K i : χφ i ≃ χ i ∘ e i` of characteristic maps.
   obtain ⟨e, -, he, K, hK⟩ :=

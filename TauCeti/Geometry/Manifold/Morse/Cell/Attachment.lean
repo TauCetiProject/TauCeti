@@ -89,6 +89,23 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {ι : Type*} {n : ℕ} {f : M → ℝ} {c ε : ℝ}
 
+/-- At a critical point `φ⁻¹ (L t₀)` of `F`, read through a partial diffeomorphism `φ`, the
+derivative of `F` along the curve `t ↦ φ⁻¹ (L t)` vanishes at `t₀`. -/
+private theorem hasDerivAt_comp_symm_of_mfderiv_eq_zero {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] (φ : PartialDiffeomorph I 𝓘(ℝ, E') M E' ∞) {F : M → ℝ} {L : ℝ → E'}
+    {t₀ : ℝ} (hL : DifferentiableAt ℝ L t₀) (ht₀ : L t₀ ∈ φ.target)
+    (hF : MDifferentiableAt I 𝓘(ℝ) F (φ.symm (L t₀)))
+    (h0 : mfderiv I 𝓘(ℝ) F (φ.symm (L t₀)) = 0) :
+    HasDerivAt (fun t ↦ F (φ.symm (L t))) 0 t₀ := by
+  -- The inverse of `φ` is the inverse function `φ.invFun` of the partial diffeomorphism.
+  have hγ : MDifferentiableAt 𝓘(ℝ) I (fun t ↦ φ.symm (L t)) t₀ :=
+    ((φ.contMDiffOn_invFun.contMDiffAt (φ.open_target.mem_nhds ht₀)).mdifferentiableAt
+      (by simp)).comp t₀ (mdifferentiableAt_iff_differentiableAt.2 hL)
+  have hd : HasFDerivAt (fun t ↦ F (φ.symm (L t))) (0 : ℝ →L[ℝ] ℝ) t₀ := by
+    have h := hF.hasMFDerivAt.comp t₀ hγ.hasMFDerivAt
+    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  simpa using hd.hasDerivAt
+
 section MilnorFunction
 
 variable
@@ -190,14 +207,9 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
   rw [← show γ 1 = x from (congrArg φ.symm hL1).trans (φ.left_inv hx)] at hF h0
-  have hd : HasFDerivAt (milnorFunction ψ f c μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    -- The inverse of `φ` is the inverse function `(ψ i).invFun` of the partial diffeomorphism.
-    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := (((ψ i).contMDiffOn_invFun.contMDiffAt
-      ((ψ i).open_target.mem_nhds hLt)).mdifferentiableAt (by simp)).comp 1
-      (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
-        ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
-    have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
-    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  have hd := hasDerivAt_comp_symm_of_mfderiv_eq_zero (ψ i) (L := L)
+    (e.symm.differentiableAt.comp _
+      ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))) hLt hF h0
   -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
   have heq : milnorFunction ψ f c μ ∘ γ =ᶠ[𝓝 1]
       fun t ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)) := by
@@ -207,7 +219,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
   have hg := ((hq.const_add (-a)).const_add c).sub
     (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
-  have hval := (hg.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
+  have hval := (hg.congr_of_eventuallyEq heq).unique hd
   have h : b * (2 - 4 * deriv μ (a + 2 * (1 ^ 2 * b))) = 0 := by linear_combination hval
   have := hμa.deriv_nonpos (x := a + 2 * (1 ^ 2 * b))
   simpa [b] using (mul_eq_zero.1 h).resolve_right (by linarith)
@@ -484,7 +496,7 @@ end MilnorFunction
 /-- In a normal-form chart `φ` of `f`, every critical point lies on the level `c`: along the
 curve `t ↦ φ⁻¹(t • φ x)` the function is `c + t² (f x - c)`, with derivative `2 (f x - c)` at
 `t = 1`. -/
-theorem mfderiv_ne_zero_of_mem_source (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+theorem mfderiv_ne_zero_of_mem_source_of_ne_level (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
     {k : ℕ} (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
     {x : M} (hx : x ∈ φ.source) (hxc : f x ≠ c) : mfderiv I 𝓘(ℝ) f x ≠ 0 := by
@@ -493,14 +505,9 @@ theorem mfderiv_ne_zero_of_mem_source (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
   have hy : y ∈ φ.target := φ.map_source hx
   set γ : ℝ → M := fun t ↦ φ.symm (t • y)
   have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
-  have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 :=
-    ((φ.contMDiffOn_invFun.contMDiffAt
-      (φ.open_target.mem_nhds (by simpa using hy))).mdifferentiableAt (by simp)).comp 1
-        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.smul_const y))
-  have hd : HasFDerivAt (f ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    rw [← hγ1] at h0
-    have h := (hfs.mdifferentiableAt (by simp)).hasMFDerivAt.comp 1 hγ.hasMFDerivAt
-    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  rw [← hγ1] at h0
+  have hd := hasDerivAt_comp_symm_of_mfderiv_eq_zero φ (differentiableAt_id.smul_const y)
+    (by simpa using hy) (hfs.mdifferentiableAt (by simp)) h0
   have hsum (t : ℝ) : ∑ j, (if j.val < k then -1 else 1) * (t • y) j ^ 2 =
       t ^ 2 * ∑ j, (if j.val < k then (-1 : ℝ) else 1) * y j ^ 2 := by
     rw [Finset.mul_sum]
@@ -515,7 +522,7 @@ theorem mfderiv_ne_zero_of_mem_source (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     rw [φ.right_inv ht, hsum, hfφ x hx]
     ring
   have hq := ((hasDerivAt_pow 2 (1 : ℝ)).mul_const (f x - c)).const_add c
-  have hval := (hq.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
+  have hval := (hq.congr_of_eventuallyEq heq).unique hd
   exact hxc (by linear_combination hval / 2)
 
 /-- **The handle of a chart is a product of discs.** In the coordinates of the chart `ψ i`, split

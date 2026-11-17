@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Disk.LinearIsometry
 public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Topology.Homotopy.Trans
 import TauCeti.Topology.MetricSpace.Isometry.Group
 
 /-!
@@ -40,8 +41,9 @@ isometries of the discs, continuous in the operator norm, are fibre homotopy equ
 Through `E`, homotopy inverses of the comparison maps transfer from one attachment to the other. If
 `g₁` is a left inverse of `Φ₁` up to homotopy over `P` relative to `P × A`, then `E ∘ g₁` is one of
 `Φ₀` (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_comp_fiberwiseCellComparison`),
-since `Φ₀` is homotopic to `Φ₁ ∘ E⁻¹`. So if `Φ₁` is a fibre homotopy equivalence over `P` onto
-`P × Y`, so is `Φ₀`
+since `Φ₀` is homotopic to `Φ₁ ∘ E⁻¹`. So if `Φ₁` has a fibre homotopy inverse over `P` whose
+homotopies are relative to `P × A` and to a set the inverse sends into `P × A`, then `Φ₀` is a
+fibre homotopy equivalence over `P` onto `P × Y` with the same properties
 (`TauCeti.exists_fiberHomotopyEquiv_fiberwiseCellComparison_of_homotopy`).
 
 ## References
@@ -739,16 +741,13 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_comp_fiberwiseCellComp
       fiberwiseCellAttachmentProj_fiberwiseCellReattachment, ContinuousMap.HomotopyRel.mono_apply,
       ContinuousMap.HomotopyRel.precomp_apply, hG₁,
       fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInv]
-  refine ⟨F₁.trans (F₂.trans G₃), fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.compContinuousMap_apply,
+  have hF₁ (t y) :
+      fiberwiseCellAttachmentProj α₀ (F₁ (t, y)) = fiberwiseCellAttachmentProj α₀ y := by
+    rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.compContinuousMap_apply,
       ContinuousMap.comp_apply, fiberwiseCellAttachmentProj_fiberwiseCellReattachment, hg₁P,
       ContinuousMap.HomotopyRel.symm_apply, fst_fiberwiseCellReattachmentInvHomotopy]
-  · rw [ContinuousMap.HomotopyRel.trans_apply]
-    split_ifs
-    · exact hF₂ _ y
-    · exact hG₃ _ y
+  exact ⟨F₁.trans (F₂.trans G₃), ContinuousMap.Homotopy.trans_apply_eq_of_forall hF₁
+    (ContinuousMap.Homotopy.trans_apply_eq_of_forall hF₂ hG₃)⟩
 
 section BaseChange
 

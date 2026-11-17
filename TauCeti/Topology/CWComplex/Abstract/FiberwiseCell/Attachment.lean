@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Disk.Reattachment
 public import TauCeti.Topology.Category.TopCat.Pushout
 import TauCeti.Topology.Category.TopCat.OpenEmbedding
 import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Topology.Homotopy.Trans
 
 /-!
 # Attaching families of cells over a parameter space
@@ -662,14 +663,14 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp :
     (by rw [TopCat.hom_comp, ContinuousMap.comp_assoc] :
       (g₀.comp (fiberwiseCellComparison α₀ χ₀ hχ₀).hom).comp E.hom =
         g₀.comp (E ≫ fiberwiseCellComparison α₀ χ₀ hχ₀).hom)
-  refine ⟨F₁.trans ((fiberwiseCellReattachmentHomotopy α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K
-    hK).compContinuousMap g₀), fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.mono_apply,
+  have hF₁ (t y) :
+      fiberwiseCellAttachmentProj α₀ (F₁ (t, y)) = fiberwiseCellAttachmentProj α₁ y := by
+    rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.mono_apply,
       ContinuousMap.HomotopyRel.precomp_apply]
     exact (hG₀ _ _).trans (fiberwiseCellAttachmentProj_fiberwiseCellReattachment ..)
-  · exact (hg₀P _).trans (fst_fiberwiseCellReattachmentHomotopy ..)
+  exact ⟨F₁.trans ((fiberwiseCellReattachmentHomotopy α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K
+    hK).compContinuousMap g₀), ContinuousMap.Homotopy.trans_apply_eq_of_forall hF₁
+      (fun _ _ ↦ (hg₀P _).trans (fst_fiberwiseCellReattachmentHomotopy ..))⟩
 
 include hg₀P hG₀ in
 /-- **The fiberwise reattachment map does not depend on the homotopies.** Two fiberwise
@@ -686,11 +687,8 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_fiberwiseCellReattachment :
     α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK g₀ hg₀P G₀ hG₀
   obtain ⟨G', hG'⟩ := exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel_comp
     α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h' hh' K' hK' g₀ hg₀P G₀ hG₀
-  refine ⟨G.trans G'.symm, fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · exact hG _ y
-  · exact hG' _ y
+  exact ⟨G.trans G'.symm,
+    ContinuousMap.Homotopy.trans_apply_eq_of_forall hG (fun _ y ↦ hG' _ y)⟩
 
 /-- **A right homotopy inverse of `Φ₁` gives one of `Φ₀`.** If `g₁ : P × Y → X₁` lies over `P`,
 sends a set `T` into `P × A`, and `Φ₁ ∘ g₁` is homotopic to the identity relative to `T` by a
@@ -710,13 +708,11 @@ theorem exists_homotopyRel_fiberwiseCellComparison_comp_fiberwiseCellReattachmen
   have hT' : T ⊆ g₁ ⁻¹' range (fiberwiseCellAttachmentIncl α₁) := hT
   let F := (((fiberwiseCellReattachmentHomotopy α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK).precomp g₁).mono
     hT').cast (ContinuousMap.ext fun _ ↦ rfl) rfl
-  refine ⟨F.trans G₁, fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.mono_apply,
+  have hF (t y) : (F (t, y)).1 = y.1 := by
+    rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.mono_apply,
       ContinuousMap.HomotopyRel.precomp_apply]
     exact (fst_fiberwiseCellReattachmentHomotopy ..).trans (hg₁P y)
-  · exact hG₁ _ y
+  exact ⟨F.trans G₁, ContinuousMap.Homotopy.trans_apply_eq_of_forall hF hG₁⟩
 
 end LeftInverse
 
@@ -773,13 +769,15 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
     (by rw [TopCat.hom_comp, ContinuousMap.comp_assoc] :
       g₀.comp (E₁₂ ≫ fiberwiseCellComparison α₁ χ₁ hχ₁).hom =
         (g₀.comp (fiberwiseCellComparison α₁ χ₁ hχ₁).hom).comp E₁₂.hom) rfl
-  refine ⟨(F₁.trans (F₂.trans G₃.symm)).cast (TopCat.hom_comp _ _).symm rfl, fun t y ↦ ?_⟩
-  simp only [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · rw [ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply, hG₁]
+  have hF₁ (t y) :
+      fiberwiseCellAttachmentProj α₀ (F₁ (t, y)) = fiberwiseCellAttachmentProj α₂ y := by
+    rw [ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply, hG₁]
     exact fiberwiseCellAttachmentProj_fiberwiseCellReattachment ..
-  · exact (hg₀P _).trans (fst_fiberwiseCellReattachmentHomotopy ..)
-  · exact hG₃ _ y
+  exact ⟨(F₁.trans (F₂.trans G₃.symm)).cast (TopCat.hom_comp _ _).symm rfl,
+    ContinuousMap.Homotopy.trans_apply_eq_of_forall hF₁
+      (ContinuousMap.Homotopy.trans_apply_eq_of_forall
+        (fun _ _ ↦ (hg₀P _).trans (fst_fiberwiseCellReattachmentHomotopy ..))
+        (fun _ y ↦ hG₃ _ y))⟩
 
 end Composition
 
