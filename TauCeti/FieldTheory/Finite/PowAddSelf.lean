@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
+import TauCeti.FieldTheory.Finite.Card
 
 /-!
 # The fibres of `b ↦ b ^ q + b` over a field with `q²` elements
@@ -138,19 +139,6 @@ theorem exists_add_neg_one_pow_mul_pow_eq (hK : Nat.card K = (p ^ n) ^ 2) (k : �
     rw [mul_pow, hc]
     linear_combination c * hb
 
-/-- In a finite field of order `q²` (`q ≠ 0`), `q` is a power of the characteristic. -/
-private theorem exists_prime_pow_of_natCard_eq_sq {q : ℕ} (hq : q ≠ 0)
-    (hK : Nat.card K = q ^ 2) :
-    ∃ p m : ℕ, p.Prime ∧ CharP K p ∧ q = p ^ m := by
-  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
-  let := Fintype.ofFinite K
-  obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K
-  have hdvd : q ∣ p ^ (n : ℕ) := by
-    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
-    exact dvd_pow_self q two_ne_zero
-  obtain ⟨m, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
-  exact ⟨p, m, hprime, hchar, rfl⟩
-
 /-- **The twisted trace has a nonzero kernel element.** For any field `K`, `q : ℕ` with
 `Nat.card K = q ^ 2` (in particular, a finite field of order `q²`), and `ε = (-1) ^ k`, some
 nonzero `b : K` satisfies `b + ε b ^ q = 0`. -/
@@ -160,18 +148,20 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero {q : ℕ}
   · by_cases hq : q = 0
     · exact ⟨-1, neg_ne_zero.mpr one_ne_zero, by simp [hq]⟩
     have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
-    obtain ⟨p, m, hprime, hchar, rfl⟩ := exists_prime_pow_of_natCard_eq_sq hq hK
-    let : CharP K p := hchar
-    let : Fact p.Prime := ⟨hprime⟩
+    have hprime : (ringChar K).Prime := CharP.prime_ringChar K
+    have : Fact (ringChar K).Prime := ⟨hprime⟩
+    obtain ⟨m, rfl⟩ :=
+      exists_eq_pow_of_dvd_natCard (p := ringChar K) (hK ▸ dvd_pow_self q two_ne_zero)
     -- The `q` roots of `b ^ q + b = 0` are not all zero.
-    have : Finite {b : K // b ^ p ^ m + b = 0} := Subtype.finite
-    have hq' : 1 < p ^ m := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
-    have hcard : 1 < Nat.card {b : K // b ^ p ^ m + b = 0} := by
+    have : Finite {b : K // b ^ ringChar K ^ m + b = 0} := Subtype.finite
+    have hq' : 1 < ringChar K ^ m := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+    have hcard : 1 < Nat.card {b : K // b ^ ringChar K ^ m + b = 0} := by
       rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos hprime.pos m).ne')]
-    have : Nontrivial {b : K // b ^ p ^ m + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
-    have hzero : (0 : K) ^ p ^ m + 0 = 0 := by
+    have : Nontrivial {b : K // b ^ ringChar K ^ m + b = 0} :=
+      Finite.one_lt_card_iff_nontrivial.mp hcard
+    have hzero : (0 : K) ^ ringChar K ^ m + 0 = 0 := by
       rw [zero_pow (pow_pos hprime.pos m).ne', add_zero]
-    obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ m + b = 0})
+    obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ ringChar K ^ m + b = 0})
     refine ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), ?_⟩
     rw [one_mul, add_comm, hb]
   · exact ⟨1, one_ne_zero, by simp⟩
@@ -193,21 +183,22 @@ theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
     simpa using (Nat.card_congr e).trans hK
   have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
   let := Fintype.ofFinite K
-  obtain ⟨p, n, hprime, hchar, rfl⟩ := exists_prime_pow_of_natCard_eq_sq hq hK
-  let : CharP K p := hchar
-  let : Fact p.Prime := ⟨hprime⟩
-  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
+  have : Fact (ringChar K).Prime := ⟨CharP.prime_ringChar K⟩
+  obtain ⟨n, rfl⟩ :=
+    exists_eq_pow_of_dvd_natCard (p := ringChar K) (hK ▸ dvd_pow_self q two_ne_zero)
+  have hpow (a : K) : a ^ (ringChar K ^ n) ^ 2 = a := by
     rw [← hK, Nat.card_eq_fintype_card]
     exact _root_.FiniteField.pow_card a
-  have hfib (x : K) : Nat.card {z : K // z ^ p ^ n + z = x ^ p ^ n * x} = p ^ n := by
+  have hfib (x : K) :
+      Nat.card {z : K // z ^ ringChar K ^ n + z = x ^ ringChar K ^ n * x} = ringChar K ^ n := by
     apply natCard_pow_add_self_eq hK
     rw [mul_pow, ← pow_mul, ← sq, hpow, mul_comm]
-  let e : {c : K × K // c.1 + c.1 ^ p ^ n = c.2 ^ p ^ n * c.2} ≃
-      {c : K × K // c.2 ^ p ^ n + c.2 = c.1 ^ p ^ n * c.1} :=
+  let e : {c : K × K // c.1 + c.1 ^ ringChar K ^ n = c.2 ^ ringChar K ^ n * c.2} ≃
+      {c : K × K // c.2 ^ ringChar K ^ n + c.2 = c.1 ^ ringChar K ^ n * c.1} :=
     Equiv.subtypeEquiv (Equiv.prodComm K K) (by intro c; simp [add_comm])
   rw [Nat.card_congr e,
     Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype
-      fun x z : K => z ^ p ^ n + z = x ^ p ^ n * x), Nat.card_sigma]
+      fun x z : K => z ^ ringChar K ^ n + z = x ^ ringChar K ^ n * x), Nat.card_sigma]
   simp only [hfib, Finset.sum_const, Finset.card_univ, smul_eq_mul]
   rw [← Nat.card_eq_fintype_card, hK]
   ring
