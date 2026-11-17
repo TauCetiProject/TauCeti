@@ -9,6 +9,7 @@ public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Analysis.MeanInequalitiesPow
+import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 import TauCeti.Analysis.SpecificLimits.DyadicSum
@@ -37,6 +38,7 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+a scalar multiple `a • f` is Hölder with the constant multiplied by `‖a‖₊`,
 and a pointwise limit of Hölder functions with a common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
@@ -67,6 +69,8 @@ seminorm of `g`.
   `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`.
 * `LipschitzOnWith.holderOnWith_of_norm_le`: a bounded `L`-Lipschitz function with norm bound
   `M` is Hölder of any exponent at most one with constant `L + 2 M`.
+* `LocallyLipschitzOn.exists_holderOnWith_of_isCompact`: a function locally Lipschitz on `s` is
+  Hölder of any exponent at most one on each compact subset of `s`.
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
@@ -83,6 +87,7 @@ seminorm of `g`.
 * `HolderWith.comp_isometry`: precomposition with an isometry preserves a global Hölder bound.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
   a common constant is Hölder with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
@@ -286,6 +291,20 @@ theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
     (fun x hx y hy _ => by simpa using h.dist_le_mul x hx y hy) hdiam hα
     (by norm_num : (0 : ℝ≥0) < 1)
 
+/-- A function locally Lipschitz on `s` is `α`-Hölder on each compact subset of `s`, for every
+`α ≤ 1`. -/
+theorem LocallyLipschitzOn.exists_holderOnWith_of_isCompact {X Y : Type*}
+    [PseudoMetricSpace X] [PseudoMetricSpace Y] {s K : Set X} {f : X → Y} {α : ℝ≥0}
+    (hf : LocallyLipschitzOn s f) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ C, HolderOnWith C α f K := by
+  obtain ⟨L, hL⟩ := (hf.mono hKs).exists_lipschitzOnWith_of_compact hK
+  obtain ⟨D, hD⟩ := Metric.isBounded_iff.1
+    (hK.image_of_continuousOn (hf.mono hKs).continuousOn).isBounded
+  exact ⟨_, HolderOnWith.of_le_of_dist_le (K := L) (D := D.toNNReal) (β := 1)
+    (fun x hx y hy _ ↦ by simpa using hL.dist_le_mul x hx y hy)
+    (fun x hx y hy ↦ (hD (mem_image_of_mem f hx) (mem_image_of_mem f hy)).trans
+      (Real.le_coe_toNNReal D)) hα one_pos⟩
+
 /-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
 `z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/
 theorem HolderOnWith.comp_const_smul {𝕜 E X : Type*} [SeminormedRing 𝕜] [SeminormedAddGroup E]
@@ -320,6 +339,13 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
+constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/
+theorem HolderOnWith.smul {X Y 𝕜 : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    [SeminormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 Y] [IsBoundedSMul 𝕜 Y] {C r : ℝ≥0} {f : X → Y}
+    {s : Set X} (a : 𝕜) (hf : HolderOnWith C r f s) : HolderOnWith (C * ‖a‖₊) r (a • f) s :=
+  HolderWith.restrict_iff.1 (hf.holderWith.smul a)
 
 /-- A pointwise limit on `s` of maps that are `r`-Hölder on `s` with a common constant `C` is
 `r`-Hölder on `s` with constant `C`. -/
