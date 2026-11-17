@@ -115,7 +115,6 @@ theorem mem_positivePoints_iff_exists_mul_rootSubgroupPoints
         posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
         (D.rootSubgroupPoints γ A).range : Subgroup (D.points A)),
         ∃ u : Multiplicative A, g = v * D.rootSubgroupPoints (t.simpleIndex ht i) A u := by
-  classical
   let U : Subgroup (D.points A) := ⨆ γ ∈
     posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
     (D.rootSubgroupPoints γ A).range
@@ -125,22 +124,10 @@ theorem mem_positivePoints_iff_exists_mul_rootSubgroupPoints
       (D.closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton A i)
     rintro _ hu
     exact Subgroup.subset_closure (Or.inl hu)
-  have hpos : t.simpleIndex ht i ∈
-      posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
-    simpleIndex_mem_posRoots i
   have hwhole : D.positivePoints A =
       U ⊔ (D.rootSubgroupPoints (t.simpleIndex ht i) A).range := by
-    apply le_antisymm
-    · apply D.positivePoints_le_iff.mpr
-      intro γ hγ u
-      by_cases heq : γ = t.simpleIndex ht i
-      · subst γ
-        exact (le_sup_right : (D.rootSubgroupPoints (t.simpleIndex ht i) A).range ≤ _) ⟨u, rfl⟩
-      · exact (le_sup_left : U ≤ _) ((le_iSup₂
-          (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ ⟨hγ, heq⟩) ⟨u, rfl⟩)
-    · apply sup_le (D.positivePoints_diff_singleton_le_positivePoints A i)
-      rintro _ ⟨u, rfl⟩
-      exact D.rootSubgroupPoints_mem_positivePoints A hpos u
+    rw [D.positivePoints_eq_iSup A, posRoots_eq_diff_union_simpleIndex i, iSup_union,
+      iSup_singleton]
   rw [hwhole, Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
   constructor
   · rintro ⟨v, hv, _, ⟨u, rfl⟩, h⟩
