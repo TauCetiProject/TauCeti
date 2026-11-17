@@ -61,6 +61,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   `#(M ⧸ r M) = #(R ⧸ (r)) ^ finrank R M`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
+* `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
+  regularity on `M ⧸ I • ⊤`.
 -/
 
 public section
@@ -275,3 +277,16 @@ theorem Prime.isSMulRegular_quotient_span_pow {R : Type*} [CommRing R] [IsDomain
   (isSMulRegular_quotient_iff_mem_of_smul_mem _ r).2 fun x hx ↦ by
     rw [smul_eq_mul, Ideal.mem_span_singleton] at hx
     exact Ideal.mem_span_singleton.2 (hπ.pow_dvd_of_dvd_mul_left m hr hx)
+
+/-- Elements of `R` that agree modulo a left ideal `I` have the same regularity on `M ⧸ I • ⊤`:
+they induce the same scalar multiplication on the quotient module. -/
+theorem isSMulRegular_quotient_smul_top_congr {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {I : Ideal R} {r s : R} (hrs : r - s ∈ I) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) r ↔
+      IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) s :=
+  (Equiv.refl _).isSMulRegular_congr fun q ↦ by
+    obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+    dsimp only [Equiv.refl_apply]
+    rw [← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.eq,
+      ← sub_smul]
+    exact Submodule.smul_mem_smul hrs Submodule.mem_top
