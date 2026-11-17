@@ -265,7 +265,9 @@ theorem IsEntire.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S 
 @[simp]
 theorem IsEntire.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
     (h : IsEntire.subring R) :
-    ((s • h : IsEntire.subring R) : R⟦X⟧) = s • (h : R⟦X⟧) := (rfl)
+    ((s • h : IsEntire.subring R) : R⟦X⟧) = s • (h : R⟦X⟧) :=
+  TauCeti.PowerSeries.coe_smul_algebraOfCMem _
+    (fun a ↦ IsEntire.mem_subring.mpr (isEntire_C a)) s h
 
 /-- Scalar towers on the coefficients induce scalar towers on entire power series. -/
 instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]

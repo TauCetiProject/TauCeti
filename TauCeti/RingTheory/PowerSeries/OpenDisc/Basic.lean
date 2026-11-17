@@ -348,7 +348,9 @@ theorem OnOpenDisc.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra 
 @[simp]
 theorem OnOpenDisc.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
     (h : OnOpenDisc.subring R R₀) :
-    ((s • h : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (h : R⟦X⟧) := (rfl)
+    ((s • h : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (h : R⟦X⟧) :=
+  TauCeti.PowerSeries.coe_smul_algebraOfCMem _
+    (fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)) s h
 
 /-- Scalar towers on the coefficients induce scalar towers on open-disc power series. -/
 instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
