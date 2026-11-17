@@ -120,9 +120,8 @@ theorem parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero (hχ : spatialFDeriv
   have hχA : spatialOperatorL hα A B 0 χ = 0 :=
     HolderSpace.ext fun p ↦ by simp [spatialOperatorL_apply, hχ, hχ₂]
   have h := parabolicOperatorL_mul_sub_mul_parabolicOperatorL hα A B C χ u
-  rw [hχ₁, hχA, sub_zero, map_zero, _root_.zero_apply, map_zero, add_zero,
-    map_zero, sub_zero, sub_eq_iff_eq_add] at h
-  rw [h, add_comm]
+  rw [hχ₁, hχA] at h
+  simpa [sub_eq_iff_eq_add, add_comm] using h
 
 /-- **The lower-order commutator bound.** Only the time derivative, spatial Hessian and
 spatial gradient of the cutoff enter the bound. In particular it is independent of `C` and

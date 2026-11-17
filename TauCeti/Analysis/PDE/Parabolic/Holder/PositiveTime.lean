@@ -277,9 +277,9 @@ private theorem exists_absorbing_scale {C M : ℝ} (hC : 0 ≤ C) (hM : 0 ≤ M)
 private theorem ciSup_le_two_mul_of_le_add_mul {I : Sort*} [Nonempty I] {Φ : I → ℝ} {X c : ℝ}
     (hΦ : BddAbove (range Φ)) (hΦ₀ : ∀ i, 0 ≤ Φ i) (hc : c ≤ 1 / 2) (f : I → I)
     (h : ∀ i, Φ i ≤ X + c * Φ (f i)) : ⨆ i, Φ i ≤ 2 * X := by
-  have : ⨆ i, Φ i ≤ X + (⨆ i, Φ i) / 2 := ciSup_le fun i ↦ (h i).trans <| by
+  have : ⨆ i, Φ i ≤ X + 1 / 2 * ⨆ i, Φ i := ciSup_le fun i ↦ (h i).trans <| by
     nlinarith [le_ciSup hΦ (f i), mul_nonneg (sub_nonneg.2 hc) (hΦ₀ (f i))]
-  linarith
+  exact TauCeti.le_two_mul_of_le_add_mul (Real.iSup_nonneg hΦ₀) le_rfl this
 
 /-- **The positive-time Schauder estimate.** Let `0 < α < 1`, `0 < λ`, and let `K` and `T₀` bound
 the Hölder norms of the coefficients and the horizon. There is a constant `C`, depending only on
