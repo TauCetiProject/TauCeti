@@ -222,13 +222,6 @@ theorem lift_rank_quotient_comap_le [Ring 𝕜] {M : Type u} {N : Type v}
   refine LinearMap.lift_rank_le_of_injective ((W.comap f).mapQ W f le_rfl) ?_
   rw [← LinearMap.ker_eq_bot, ker_mapQ, mkQ_map_self]
 
-/-- The same-universe form of `Submodule.lift_rank_quotient_comap_le`. -/
-theorem rank_quotient_comap_le [Ring 𝕜] {M N : Type u}
-    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
-    (f : M →ₗ[𝕜] N) (W : Submodule 𝕜 N) :
-    Module.rank 𝕜 (M ⧸ W.comap f) ≤ Module.rank 𝕜 (N ⧸ W) := by
-  simpa only [Cardinal.lift_id] using lift_rank_quotient_comap_le f W
-
 /-- The codimension of the intersection of two submodules with free quotients is at most the sum
 of their codimensions, since `E ⧸ (M ⊓ N)` embeds into `(E ⧸ M) × (E ⧸ N)`. -/
 theorem rank_quotient_inf_le [Ring 𝕜] [StrongRankCondition 𝕜] {E : Type u}

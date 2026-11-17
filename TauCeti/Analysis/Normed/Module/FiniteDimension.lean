@@ -297,6 +297,69 @@ end LinearMap
 
 namespace Submodule
 
+/-- If a unit-ball vector `x` in a subspace `M` of `ι → 𝕜` attains norm `1` on fewer than
+`finrank 𝕜 M` coordinates, then `M` contains a unit-ball vector attaining norm `1` on strictly
+more coordinates. -/
+private theorem exists_mem_norm_le_one_lt_ncard_norm_eq_one
+    {𝕜 ι : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Finite ι]
+    (M : Submodule 𝕜 (ι → 𝕜)) {x : ι → 𝕜} (hxM : x ∈ M) (hx1 : ∀ i, ‖x i‖ ≤ 1)
+    (hlt : {i : ι | ‖x i‖ = 1}.ncard < Module.finrank 𝕜 M) :
+    ∃ y ∈ M, (∀ i, ‖y i‖ ≤ 1) ∧ {i : ι | ‖x i‖ = 1}.ncard < {i : ι | ‖y i‖ = 1}.ncard := by
+  cases nonempty_fintype ι
+  classical
+  set S : Set ι := {i : ι | ‖x i‖ = 1}
+  set s : Finset ι := S.toFinset
+  have hscard : s.card = S.ncard := (Set.ncard_eq_toFinset_card' S).symm
+  -- Restricting `M` to `s` has nontrivial kernel when `#s < finrank 𝕜 M`.
+  let res : M →ₗ[𝕜] s → 𝕜 :=
+    { toFun y j := y.1 j.1
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  have hdim := LinearMap.finrank_range_add_finrank_ker res
+  have hrle : Module.finrank 𝕜 (LinearMap.range res) ≤ s.card :=
+    (LinearMap.range res).finrank_le.trans_eq (by rw [Module.finrank_pi, Fintype.card_coe])
+  have hker_ne : LinearMap.ker res ≠ ⊥ := mt (fun h ↦ h ▸ finrank_bot 𝕜 _) (by omega)
+  obtain ⟨v₀, hv₀_ker, hv₀_ne⟩ := exists_mem_ne_zero_of_ne_bot hker_ne
+  let v : ι → 𝕜 := v₀.1
+  have hvs : ∀ i ∈ s, v i = 0 := fun i hi ↦ congrFun (LinearMap.mem_ker.mp hv₀_ker) ⟨i, hi⟩
+  obtain ⟨i₀, hi₀v⟩ : ∃ i₀, v i₀ ≠ 0 := Function.ne_iff.mp fun h ↦ hv₀_ne (Subtype.ext h)
+  have hi₀s : i₀ ∉ s := fun hi ↦ hi₀v (hvs i₀ hi)
+  have hcompl : sᶜ.Nonempty := ⟨i₀, Finset.mem_compl.mpr hi₀s⟩
+  -- Perturb `x` along `v` until a coordinate outside `s` first reaches norm `1`.
+  let f : ℝ → ℝ := fun t ↦ sᶜ.sup' hcompl fun i ↦ ‖x i + t • v i‖
+  have hf_cont : Continuous f := Continuous.finset_sup'_apply hcompl fun i _ ↦ by fun_prop
+  have hf0 : f 0 ≤ 1 := (Finset.sup'_le_iff hcompl _).mpr fun i _ ↦ by simpa using hx1 i
+  set T : ℝ := 2 / ‖v i₀‖
+  have hT0 : 0 ≤ T := by positivity
+  have hfT : 1 ≤ f T := by
+    refine le_trans ?_
+      (Finset.le_sup' (f := fun i ↦ ‖x i + T • v i‖) (Finset.mem_compl.mpr hi₀s))
+    have h1 : ‖T • v i₀‖ = 2 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hT0,
+        div_mul_cancel₀ _ (norm_pos_iff.mpr hi₀v).ne']
+    have h2 := norm_add_le (x i₀ + T • v i₀) (-x i₀)
+    simp only [add_neg_cancel_comm, norm_neg, h1] at h2
+    linarith [hx1 i₀]
+  obtain ⟨t, -, hft⟩ := intermediate_value_Icc hT0 hf_cont.continuousOn ⟨hf0, hfT⟩
+  let y : ι → 𝕜 := x + t • v
+  have hys : ∀ i ∈ s, y i = x i := fun i hi ↦ by simp [y, hvs i hi]
+  obtain ⟨j₀, hj₀, hj₀_eq⟩ := Finset.exists_mem_eq_sup' hcompl (fun j ↦ ‖x j + t • v j‖)
+  have hsub : (↑(insert j₀ s) : Set ι) ⊆ {i : ι | ‖y i‖ = 1} := by
+    intro i hi
+    rcases Finset.mem_insert.mp hi with rfl | his
+    · exact hj₀_eq.symm.trans hft
+    · rw [Set.mem_ofPred_eq, hys i his]
+      exact Set.mem_toFinset.mp his
+  refine ⟨y, M.add_mem hxM (algebraMap_smul 𝕜 t v ▸ M.smul_mem _ v₀.2), fun i ↦ ?_, ?_⟩
+  · by_cases hi : i ∈ s
+    · rw [hys i hi]; exact hx1 i
+    · exact (Finset.le_sup' (f := fun j ↦ ‖x j + t • v j‖)
+        (Finset.mem_compl.mpr hi)).trans_eq hft
+  · calc S.ncard < (insert j₀ s).card := by
+          rw [Finset.card_insert_of_notMem (Finset.mem_compl.mp hj₀), hscard]; omega
+      _ = (↑(insert j₀ s) : Set ι).ncard := (Set.ncard_coe_finset _).symm
+      _ ≤ {i : ι | ‖y i‖ = 1}.ncard := Set.ncard_le_ncard hsub (Set.toFinite _)
+
 /-- In a subspace `M` of a finite sup-norm coordinate space `ι → 𝕜` over a normed `ℝ`-algebra
 field, some vector of `M` in the closed unit ball attains norm `1` on at least `finrank 𝕜 M`
 coordinates. -/
@@ -304,78 +367,18 @@ theorem exists_mem_norm_le_one_le_ncard_norm_eq_one
     {𝕜 ι : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Finite ι]
     (M : Submodule 𝕜 (ι → 𝕜)) :
     ∃ x ∈ M, (∀ i, ‖x i‖ ≤ 1) ∧ Module.finrank 𝕜 M ≤ {i : ι | ‖x i‖ = 1}.ncard := by
-  cases nonempty_fintype ι
   suffices ∀ k ≤ Module.finrank 𝕜 M,
       ∃ x ∈ M, (∀ i, ‖x i‖ ≤ 1) ∧ k ≤ {i : ι | ‖x i‖ = 1}.ncard from this _ le_rfl
   intro k hk
   induction k with
   | zero => exact ⟨0, M.zero_mem, fun _ ↦ by simp, Nat.zero_le _⟩
   | succ k ih =>
-    classical
     obtain ⟨x, hxM, hx1, hxk⟩ := ih (Nat.le_of_succ_le hk)
     by_cases hlt : k + 1 ≤ {i : ι | ‖x i‖ = 1}.ncard
     · exact ⟨x, hxM, hx1, hlt⟩
-    set S : Set ι := {i : ι | ‖x i‖ = 1}
-    set s : Finset ι := S.toFinset
-    have hscard : s.card = S.ncard := (Set.ncard_eq_toFinset_card' S).symm
-    -- Restricting `M` to the coordinates where `‖x i‖ = 1` has nontrivial kernel when `#s < dim M`.
-    let res : M →ₗ[𝕜] s → 𝕜 :=
-      { toFun y j := y.1 j.1
-        map_add' _ _ := rfl
-        map_smul' _ _ := rfl }
-    have hdim := LinearMap.finrank_range_add_finrank_ker res
-    have hrle : Module.finrank 𝕜 (LinearMap.range res) ≤ s.card :=
-      (LinearMap.range res).finrank_le.trans_eq (by rw [Module.finrank_pi, Fintype.card_coe])
-    have hker_pos : 0 < Module.finrank 𝕜 (LinearMap.ker res) := by omega
-    have hker_ne : LinearMap.ker res ≠ ⊥ := fun h ↦ by
-      rw [h, finrank_bot] at hker_pos
-      exact lt_irrefl 0 hker_pos
-    obtain ⟨v₀, hv₀_ker, hv₀_ne⟩ := exists_mem_ne_zero_of_ne_bot hker_ne
-    let v : ι → 𝕜 := v₀.1
-    have hvM : v ∈ M := v₀.2
-    have hv_ne : v ≠ 0 := fun h ↦ hv₀_ne (Subtype.ext h)
-    have hvs : ∀ i ∈ s, v i = 0 := fun i hi ↦ congrFun (LinearMap.mem_ker.mp hv₀_ker) ⟨i, hi⟩
-    obtain ⟨i₀, hi₀v⟩ : ∃ i₀, v i₀ ≠ 0 := Function.ne_iff.mp hv_ne
-    have hi₀s : i₀ ∉ s := fun hi ↦ hi₀v (hvs i₀ hi)
-    have hcompl : sᶜ.Nonempty := ⟨i₀, Finset.mem_compl.mpr hi₀s⟩
-    -- Perturb `x` along `v` until a new coordinate outside `s` first reaches norm `1`.
-    let f : ℝ → ℝ := fun t ↦ sᶜ.sup' hcompl fun i ↦ ‖x i + t • v i‖
-    have hf_cont : Continuous f := Continuous.finset_sup'_apply hcompl fun i _ ↦ by fun_prop
-    have hf0 : f 0 ≤ 1 := (Finset.sup'_le_iff hcompl _).mpr fun i _ ↦ by simpa using hx1 i
-    set T : ℝ := 2 / ‖v i₀‖
-    have hvpos : 0 < ‖v i₀‖ := norm_pos_iff.mpr hi₀v
-    have hT0 : 0 ≤ T := by positivity
-    have hfT : 1 ≤ f T := by
-      refine le_trans ?_
-        (Finset.le_sup' (f := fun i ↦ ‖x i + T • v i‖) (Finset.mem_compl.mpr hi₀s))
-      have h1 : ‖T • v i₀‖ = 2 := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hT0, div_mul_cancel₀ _ hvpos.ne']
-      have h2 := norm_add_le (x i₀ + T • v i₀) (-x i₀)
-      simp only [add_neg_cancel_comm, norm_neg, h1] at h2
-      linarith [hx1 i₀]
-    obtain ⟨t, -, hft⟩ := intermediate_value_Icc hT0 hf_cont.continuousOn ⟨hf0, hfT⟩
-    let y : ι → 𝕜 := x + t • v
-    have hyM : y ∈ M := M.add_mem hxM (algebraMap_smul 𝕜 t v ▸ M.smul_mem _ hvM)
-    have hys : ∀ i ∈ s, y i = x i := fun i hi ↦ by simp [y, hvs i hi]
-    have hy1 : ∀ i, ‖y i‖ ≤ 1 := fun i ↦ by
-      by_cases hi : i ∈ s
-      · rw [hys i hi]; exact hx1 i
-      · exact (Finset.le_sup' (f := fun j ↦ ‖x j + t • v j‖)
-          (Finset.mem_compl.mpr hi)).trans_eq hft
-    obtain ⟨j₀, hj₀, hj₀_eq⟩ := Finset.exists_mem_eq_sup' hcompl (fun j ↦ ‖x j + t • v j‖)
-    have hyj₀ : ‖y j₀‖ = 1 := hj₀_eq.symm.trans hft
-    have hsub : (↑(insert j₀ s) : Set ι) ⊆ {i : ι | ‖y i‖ = 1} := by
-      intro i hi
-      rcases Finset.mem_insert.mp hi with rfl | his
-      · exact hyj₀
-      · rw [Set.mem_ofPred_eq, hys i his]
-        exact Set.mem_toFinset.mp his
-    have hcard : k + 1 ≤ {i : ι | ‖y i‖ = 1}.ncard := by
-      calc k + 1 ≤ s.card + 1 := Nat.add_le_add_right (hscard ▸ hxk) 1
-        _ = (insert j₀ s).card := (Finset.card_insert_of_notMem (Finset.mem_compl.mp hj₀)).symm
-        _ = (↑(insert j₀ s) : Set ι).ncard := (Set.ncard_coe_finset _).symm
-        _ ≤ {i : ι | ‖y i‖ = 1}.ncard := Set.ncard_le_ncard hsub (Set.toFinite _)
-    exact ⟨y, hyM, hy1, hcard⟩
+    obtain ⟨y, hyM, hy1, hlt'⟩ :=
+      M.exists_mem_norm_le_one_lt_ncard_norm_eq_one hxM hx1 (by omega)
+    exact ⟨y, hyM, hy1, by omega⟩
 
 end Submodule
 

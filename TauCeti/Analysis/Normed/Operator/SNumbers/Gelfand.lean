@@ -188,15 +188,17 @@ theorem gelfandNumber_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) 
     rw [Nat.cast_add]
     exact (Submodule.rank_quotient_inf_le _ _).trans (add_le_add hcomap M.2.2)
   refine ((S ∘L T).gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
-  have hTx : T x ∈ N.1 := x.2.1
-  have hxM : (x : E) ∈ M.1 := x.2.2
-  calc ‖S (T x)‖₊ ≤ ‖S ∘L N.1.subtypeL‖₊ * ‖T x‖₊ :=
-        (S ∘L N.1.subtypeL).le_opNNNorm ⟨T x, hTx⟩
-    _ ≤ ‖S ∘L N.1.subtypeL‖₊ * (‖T ∘L M.1.subtypeL‖₊ * ‖(x : E)‖₊) := by
-        gcongr
-        exact (T ∘L M.1.subtypeL).le_opNNNorm ⟨x, hxM⟩
-    _ = ‖S ∘L N.1.subtypeL‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖x‖₊ := by
-        rw [mul_assoc]; rfl
+  have hS : ‖S (T x)‖₊ ≤ ‖S ∘L N.1.subtypeL‖₊ * ‖T x‖₊ := by
+    rw [← NNReal.coe_le_coe]
+    simpa [← Submodule.norm_coe] using (S ∘L N.1.subtypeL).le_opNorm ⟨T x, x.2.1⟩
+  have hT : ‖T x‖₊ ≤ ‖T ∘L M.1.subtypeL‖₊ * ‖x‖₊ := by
+    rw [← NNReal.coe_le_coe]
+    simpa [← Submodule.norm_coe] using (T ∘L M.1.subtypeL).le_opNorm ⟨x, x.2.2⟩
+  calc ‖((S ∘L T) ∘L (N.1.comap (T : E →ₗ[𝕜] F) ⊓ M.1).subtypeL) x‖₊
+      = ‖S (T x)‖₊ := by simp
+    _ ≤ ‖S ∘L N.1.subtypeL‖₊ * ‖T x‖₊ := hS
+    _ ≤ ‖S ∘L N.1.subtypeL‖₊ * (‖T ∘L M.1.subtypeL‖₊ * ‖x‖₊) := by gcongr
+    _ = ‖S ∘L N.1.subtypeL‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖x‖₊ := (mul_assoc _ _ _).symm
 
 /-- **Two-sided ideal inequality.** `cₙ(B T A) ≤ ‖B‖ cₙ(T) ‖A‖`. -/
 theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
