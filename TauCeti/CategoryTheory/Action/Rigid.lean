@@ -12,12 +12,13 @@ public import TauCeti.CategoryTheory.Monoidal.Rigid.OfEquivalence
 /-!
 # Duals of actions on underlying objects
 
-For a right rigid monoidal category `V` and a group `H`, Mathlib makes `Action V H` right rigid by
-pulling the right duals of the functor category `SingleObj H ⥤ V` back along the equivalence
-`Action.functorCategoryEquivalence`. The underlying object of the dual action is the dual of the
-underlying object (`Action.rightDual_v`). This file records that the same holds for the structure
-maps: the evaluation and coevaluation of the pairing `(X, Xᘁ)` in `Action V H` have, as underlying
-morphisms of `V`, the evaluation and coevaluation of `(X.V, X.Vᘁ)`.
+For a right or left rigid monoidal category `V` and a group `H`, Mathlib makes `Action V H` right
+or left rigid by pulling the duals of the functor category `SingleObj H ⥤ V` back along the
+equivalence `Action.functorCategoryEquivalence`. The underlying object of a dual action is the dual
+of the underlying object (`Action.rightDual_v` and `Action.leftDual_v`). This file records that the
+same holds for the structure maps: the evaluation and coevaluation of the pairings `(X, Xᘁ)` and
+`(ᘁX, X)` in `Action V H` have, as underlying morphisms of `V`, those of `(X.V, X.Vᘁ)` and
+`(ᘁX.V, X.V)`.
 
 These are the identities needed to compute categorical constructions built from duals in
 `Action V H` on underlying objects. The first such construction is the Drinfeld isomorphism
@@ -28,6 +29,8 @@ isomorphism of an action is that of its underlying object.
 
 * `Action.evaluation_hom`: the underlying morphism of `ε_ X Xᘁ` is `ε_ X.V X.Vᘁ`;
 * `Action.coevaluation_hom`: the underlying morphism of `η_ X Xᘁ` is `η_ X.V X.Vᘁ`;
+* `Action.leftEvaluation_hom`: the underlying morphism of `ε_ (ᘁX) X` is `ε_ (ᘁX.V) X.V`;
+* `Action.leftCoevaluation_hom`: the underlying morphism of `η_ (ᘁX) X` is `η_ (ᘁX.V) X.V`;
 * `Action.drinfeldIso_hom_hom`, `Action.drinfeldIso_inv_hom`: the Drinfeld isomorphism of an
   action is that of its underlying object.
 -/
@@ -37,6 +40,8 @@ public section
 open CategoryTheory MonoidalCategory TauCeti
 
 namespace Action
+
+section RightRigid
 
 variable {V : Type*} [Category* V] [MonoidalCategory V] [RightRigidCategory V]
   {H : Type*} [Group H]
@@ -89,5 +94,40 @@ theorem drinfeldIso_inv_hom (X : Action V H) :
   have h := congrArg Hom.hom (drinfeldIso X).hom_inv_id
   rw [comp_hom, drinfeldIso_hom_hom, id_hom] at h
   exact Iso.inv_ext' h
+
+end RightRigid
+
+section LeftRigid
+
+variable {V : Type*} [Category* V] [MonoidalCategory V] [LeftRigidCategory V]
+  {H : Type*} [Group H]
+
+/-- The evaluation of a left dual action is the evaluation of the left dual of the underlying
+object. -/
+@[simp]
+theorem leftEvaluation_hom (X : Action V H) : (ε_ (ᘁX) X).hom = ε_ (ᘁX.V) X.V := by
+  -- As for `Action.evaluation_hom`, take the component of
+  -- `map_evaluation_hasLeftDualOfEquivalence` at the single object.
+  have h : (ε_ (ᘁX) X).hom = 𝟙 _ ≫ (X.V ◁ 𝟙 (ᘁX.V) ≫ ε_ (ᘁX.V) X.V) ≫ 𝟙 _ :=
+    congrArg (NatTrans.app · (SingleObj.star H)) (map_evaluation_hasLeftDualOfEquivalence
+      (functorCategoryEquivalence V H).toAdjunction X)
+  simpa using h
+
+/-- The coevaluation of a left dual action is the coevaluation of the left dual of the underlying
+object. -/
+@[simp]
+theorem leftCoevaluation_hom (X : Action V H) : (η_ (ᘁX) X).hom = η_ (ᘁX.V) X.V := by
+  -- As for `Action.coevaluation_hom`, take the component at the single object and identify the
+  -- inverse counit component with the identity.
+  let e : (ᘁX.V : V) ≅ (ᘁX.V : V) :=
+    ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app
+      ᘁ((functorCategoryEquivalence V H).functor.obj X)).app (SingleObj.star H)
+  have hc : e.inv = 𝟙 (ᘁX.V : V) := Iso.inv_ext (f := e) (Category.comp_id _)
+  have h : (η_ (ᘁX) X).hom = 𝟙 _ ≫ (η_ (ᘁX.V : V) X.V ≫ e.inv ▷ X.V) ≫ 𝟙 _ :=
+    congrArg (NatTrans.app · (SingleObj.star H)) (map_coevaluation_hasLeftDualOfEquivalence
+      (functorCategoryEquivalence V H).toAdjunction X)
+  simpa only [hc, id_whiskerRight, Category.id_comp, Category.comp_id] using h
+
+end LeftRigid
 
 end Action
