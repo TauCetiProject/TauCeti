@@ -64,14 +64,7 @@ all leading existential witnesses, so no additional quantifier alternation is ne
 theorem IsSigma.forall_lt (hr : IsSigma Z n r) (hf : ComputableIn {Z.oracle} f) :
     IsSigma Z n (fun x => ∀ y < f x, r (x, y)) := by
   cases n with
-  | zero =>
-    obtain ⟨b, hb, heq⟩ := isSigma_zero_iff.1 hr
-    have hlist := (ComputableIn₂.list_range_map (f := fun x y => b (x, y)) hb).comp
-      (ComputableIn.id.pair hf)
-    have hcheck : PrimrecPred (fun l : List Bool => ∀ a ∈ l, a = true) :=
-      (Primrec.eq.comp Primrec.id (Primrec.const true)).forall_mem_list
-    refine isSigma_zero_iff.2 ⟨_, hcheck.decide.computableIn.comp hlist, fun x => ?_⟩
-    simp [heq]
+  | zero => exact isPi_zero_iff.1 ((isPi_zero_iff.2 hr).forall_lt hf)
   | succ n =>
     obtain ⟨q, hq, heq⟩ := isSigma_succ_iff.1 hr
     have hdecode : Primrec (fun c => (decode (α := List ℕ) c).getD []) :=
