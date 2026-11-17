@@ -101,7 +101,8 @@ theorem pushforwardSymmetricPowerComparison_app_val_app_unit (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := S.obj)
       ((pushforward φ).obj M).val U).symmetricPower n) :
-    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj]
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, sheafCompose_obj_obj,
+      CommRingCat.forgetToRingCat_obj, Functor.id_obj]
     (((pushforwardSymmetricPowerComparison φ n).app M).val.app U
       ((symmetricPowerIso n ((pushforward φ).obj M)).inv.val.app U
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
@@ -193,7 +194,8 @@ symmetric algebras induced by the unit. -/
 theorem pullbackSymmetricPowerComparison_app_val_app_unit (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U).symmetricPower n) :
-    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, Functor.op_obj]
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, Functor.op_obj,
+      sheafCompose_obj_obj, CommRingCat.forgetToRingCat_obj]
     (((pullbackSymmetricPowerComparison adj n).app M).val.app (F.op.obj U)
       ((adj.unit.app ((symmetricPower S n).obj M)).val.app U
         ((symmetricPowerIso n M).inv.val.app U

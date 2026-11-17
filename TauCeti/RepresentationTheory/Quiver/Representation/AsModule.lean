@@ -61,9 +61,7 @@ that isomorphism becomes `TauCeti.QuiverRep.asModuleShrinkIso`, the essential su
   representation, `TauCeti.QuiverRep.asModuleShrinkEquiv` identifying the two.
 * `TauCeti.quiverRepEquivalence`: **representations of a quiver are modules over its path
   algebra**, with `TauCeti.quiverRepEquivalenceFunctorObjShrinkIso` identifying the module it sends
-  a representation to with `TauCeti.QuiverRep.asModuleShrink`, and
-  `TauCeti.quiverRepEquivalenceFunctorObjIso` identifying it with `TauCeti.QuiverRep.asModule`
-  itself in the universe where the direct sum lives.
+  a representation to with `TauCeti.QuiverRep.asModuleShrink`.
 
 ## Main results
 
@@ -79,8 +77,7 @@ that isomorphism becomes `TauCeti.QuiverRep.asModuleShrinkIso`, the essential su
 * `TauCeti.QuiverRep.asModuleIso`: **the representation carried by `asModule M` is `M`**, whence
   `TauCeti.QuiverRep.asModuleShrinkIso` says the same of the small model, so
   `TauCeti.quiverRepFunctor` is essentially surjective, and being fully faithful already it is an
-  equivalence.  `TauCeti.QuiverRep.dimVector_asModule` records that the dimension vector is
-  unchanged.
+  equivalence.
 
 ## Implementation notes
 
@@ -88,9 +85,7 @@ The vertex spaces are used through the family `TauCeti.QuiverRep.vertexSpace` of
 `TauCeti.RepresentationTheory.Quiver.Representation.Basic` rather than as `M.obj v` directly,
 because instance search does not see the objects of `CategoryTheory.Paths Q` as vertices when it is
 asked for the *family* of instances that a direct sum indexed by the vertices needs; that file's
-implementation notes say more.  For the same reason the naturality squares of
-`TauCeti.QuiverRep.asModuleIso` and `TauCeti.QuiverRep.asModuleShrinkIso` open with
-`change Q at a`, restating their quantified objects as vertices.
+implementation notes say more.
 
 The `k`-module structure on `TauCeti.QuiverRep.asModule` is deliberately **not** the one the direct
 sum already carries: it is `Module.restrictScalars k (pathAlgebra k Q)`, restriction of scalars
@@ -116,8 +111,7 @@ vertex components are those of `asModule` because `TauCeti.QuiverRep.asModuleShr
 `kQ`-linear, is what witnesses essential surjectivity there; `TauCeti.quiverRepEquivalence`'s
 forward direction is identified with that model by
 `TauCeti.quiverRepEquivalenceFunctorObjShrinkIso`.  The concrete direct-sum API is kept at
-`max v t`, and `TauCeti.quiverRepEquivalenceFunctorObjIso` identifies the forward direction with
-`asModule` itself at that universe.
+`max v t`.
 
 ## References
 
@@ -437,19 +431,11 @@ carried by `M` is `M` again. -/
 noncomputable def asModuleIso : quiverRepOfModule k Q (asModule k Q M) ≅ M :=
   NatIso.ofComponents (fun a => (vertexComponentEquiv k Q M a).toModuleIso.symm)
     (fun {a b} p => by
-      change Q at a
-      change Q at b
       -- both sides of the naturality square are `ModuleCat.ofHom` of a composite of a structure
       -- map with a `LinearEquiv.toModuleIso`, and the bundling is definitional, so the square is
       -- the elementwise `TauCeti.QuiverRep.vertexComponentEquiv_symm_pathMap`
       exact ModuleCat.hom_ext
         (LinearMap.ext fun x => vertexComponentEquiv_symm_pathMap k Q M p x))
-
-/-- **The dimension vector is unchanged** by passing to the module a representation carries and
-back. -/
-theorem dimVector_asModule :
-    dimVector (quiverRepOfModule k Q (asModule k Q M)) = dimVector M :=
-  dimVector_eq_of_iso (asModuleIso k Q M)
 
 end EssSurj
 
@@ -536,8 +522,6 @@ noncomputable def asModuleShrinkIso :
     quiverRepOfModule k Q (asModuleShrink k Q M : Type t) ≅ M :=
   NatIso.ofComponents (fun a => (vertexShrinkEquiv k Q M a).toModuleIso)
     (fun {a b} p => by
-      change Q at a
-      change Q at b
       -- as for `TauCeti.QuiverRep.asModuleIso`, the bundling of both sides of the square is
       -- definitional, so the square is the elementwise
       -- `TauCeti.QuiverRep.vertexShrinkEquiv_pathMap`
@@ -577,25 +561,12 @@ theorem _root_.TauCeti.quiverRepEquivalence_inverse :
 `CategoryTheory.Functor.inv`, so on objects it is a choice of preimage; this identifies that choice
 with the model of `TauCeti.QuiverRep.asModule` built here, at the arbitrary representation universe
 `t` the equivalence is stated at, which is what a consumer transporting a representation across it
-needs.  For a representation valued in the universe `max v t` where the direct sum `⨁ᵥ Mᵥ` itself
-lives, `TauCeti.quiverRepEquivalenceFunctorObjIso` identifies the preimage with that sum
-directly. -/
+needs. -/
 noncomputable def _root_.TauCeti.quiverRepEquivalenceFunctorObjShrinkIso [DecidableEq Q]
     (M : QuiverRep.{u, v, w, t} k Q) :
     (quiverRepEquivalence.{u, v, w, t} k Q).functor.obj M ≅ asModuleShrink k Q M :=
   (quiverRepFunctorFullyFaithful k Q).preimageIso
     ((quiverRepFunctor.{u, v, w, t} k Q).objObjPreimageIso M ≪≫ (asModuleShrinkIso k Q M).symm)
-
-/-- **The forward direction of `TauCeti.quiverRepEquivalence` is
-`TauCeti.QuiverRep.asModule`**, at the universe `max v t` where the direct sum `⨁ᵥ Mᵥ` lives: the
-concrete form of `TauCeti.quiverRepEquivalenceFunctorObjShrinkIso`, identifying the chosen preimage
-with the direct sum itself rather than with a model of it. -/
-noncomputable def _root_.TauCeti.quiverRepEquivalenceFunctorObjIso [DecidableEq Q]
-    (M : QuiverRep.{u, v, w, max v t} k Q) :
-    (quiverRepEquivalence.{u, v, w, max v t} k Q).functor.obj M
-      ≅ ModuleCat.of (pathAlgebra k Q) (asModule k Q M) :=
-  (quiverRepFunctorFullyFaithful k Q).preimageIso
-    ((quiverRepFunctor.{u, v, w, max v t} k Q).objObjPreimageIso M ≪≫ (asModuleIso k Q M).symm)
 
 end Equivalence
 

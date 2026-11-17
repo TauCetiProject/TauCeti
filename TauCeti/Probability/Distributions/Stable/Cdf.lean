@@ -65,7 +65,7 @@ theorem cdf_stableMeasure_eq_integral (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) 
   exact measureReal_withDensity_ofReal
     (ae_restrict_of_ae (ae_of_all volume fun y ↦ stablePDFReal_nonneg α β s m y))
     measurableSet_Iic
-    (integrable_stablePDFReal α β s m).integrableOn
+    (measurable_stablePDFReal α β s m).aemeasurable
 
 /-- The cdf of a positive-scale stable law is differentiable at every point, with derivative its
 Fourier-inversion density. -/
