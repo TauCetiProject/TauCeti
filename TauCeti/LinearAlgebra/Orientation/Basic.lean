@@ -20,8 +20,11 @@ compatibility under linear equivalences.
 ## Main results
 
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
+* `Orientation.map_symm_map`, `Orientation.map_map_symm`: transport along a linear equivalence
+  and back along its inverse is the identity.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
+* `Orientation.reindex_finCongr_reindex_finCongr`: two successive casts of the index type compose.
 * `Orientation.map_units_smul`, `Orientation.reindex_units_smul`: transport and reindexing commute
   with scaling by units.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
@@ -62,6 +65,20 @@ theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orien
     Orientation.map ι (e.trans f) x = Orientation.map ι f (Orientation.map ι e x) := by
   induction x using Module.Ray.ind with | h v hv => rfl
 
+/-- Transporting an orientation along a linear equivalence and then back along its inverse gives
+the original orientation. -/
+@[simp]
+theorem Orientation.map_symm_map (e : M ≃ₗ[R] N) (x : Orientation R M ι) :
+    Orientation.map ι e.symm (Orientation.map ι e x) = x :=
+  (Orientation.map ι e).symm_apply_apply x
+
+/-- Transporting an orientation along the inverse of a linear equivalence and then back along the
+equivalence gives the original orientation. -/
+@[simp]
+theorem Orientation.map_map_symm (e : M ≃ₗ[R] N) (x : Orientation R N ι) :
+    Orientation.map ι e (Orientation.map ι e.symm x) = x :=
+  (Orientation.map ι e).apply_symm_apply x
+
 /-- Transporting an orientation along a linear equivalence commutes with reindexing its index
 type. -/
 theorem Orientation.map_reindex {ι' : Type*} (e : M ≃ₗ[R] N) (f : ι ≃ ι')
@@ -80,6 +97,15 @@ theorem Orientation.reindex_trans {ι' ι'' : Type*} (e : ι ≃ ι') (e' : ι' 
       Orientation.reindex R M e' (Orientation.reindex R M e x) := by
   induction x using Module.Ray.ind with | h v hv =>
     simp only [reindex_apply, AlternatingMap.domDomCongr_trans]
+
+/-- Reindexing along two casts `Fin m ≃ Fin n ≃ Fin k` is reindexing along their composite cast. -/
+@[simp]
+theorem Orientation.reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) (h' : n = k)
+    (x : Orientation R M (Fin m)) :
+    Orientation.reindex R M (finCongr h') (Orientation.reindex R M (finCongr h) x) =
+      Orientation.reindex R M (finCongr (h.trans h')) x := by
+  subst h h'
+  simp [finCongr_refl, Orientation.reindex_refl]
 
 /-- Transporting an orientation along a linear equivalence commutes with scaling by a unit. -/
 @[simp]

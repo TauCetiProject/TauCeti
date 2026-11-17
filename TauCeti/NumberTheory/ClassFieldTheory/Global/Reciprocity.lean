@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.ClassFormation
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
-public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
+import Mathlib.GroupTheory.FiniteAbelian.Duality
+import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
@@ -31,8 +30,9 @@ are the abstract Artin equivalence and Artin map of the global class formation t
 these identifications, and nothing else (`globalArtinEquiv_mk`). In particular the kernel of the
 global Artin map is the idele-class norm group `N_{L/K}(C_L)` (`ker_globalArtinMap`), the map is
 surjective, and, being defined on `C_K = 𝕀_K / Kˣ`, it kills the classes of principal ideles
-(`globalArtinMap_principal`), which is the reciprocity law in idelic form. For an
-abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
+(`globalArtinMap_principal`); this is immediate from the definition of `globalArtinMap` on the
+quotient `C_K`, and the content of the idelic reciprocity law is carried by the class formation.
+For an abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
 (`card_ideleClassNormQuotient`), and the global Artin map, read in `Gal(L/K)` itself, is
 `ideleClassArtinMap K L : C_K →* Gal(L/K)`, surjective with kernel `N_{L/K}(C_L)`.
 
@@ -80,6 +80,13 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
   `TauCeti.ClassFieldTheory.ker_ideleClassArtinMap`,
   `TauCeti.ClassFieldTheory.ideleClassArtinMap_surjective`: the global Artin map of an abelian
   extension is `globalArtinMap`, has kernel `N_{L/K}(C_L)`, and is surjective.
+
+* `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_fixedField_iff`: an idele class is a norm
+  from the fixed field of a subgroup exactly when its Artin symbol belongs to that subgroup.
+* `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_iff_forall_fixedField_ker`: an idele class
+  is a norm from an abelian extension if and only if it is a norm from each subextension cut out
+  by a character `χ : Gal(L/K) →* Mˣ`, where `M` is a commutative monoid satisfying
+  `HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`.
 
 ## References
 
@@ -132,8 +139,8 @@ theorem globalArtinEquiv_mk (ι : L →ₐ[K] SeparableClosure K) (c : IdeleClas
           (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))
           (NormalLayer.groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)
             (globalGroundEquiv K (.ofMul c)))) := by
-  rw [globalArtinEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
-    globalLayerNormQuotientEquiv_mk, ClassFormation.artinMap_apply]
+  rw [ClassFormation.artinMap_apply, ← globalLayerNormQuotientEquiv_mk]
+  rfl
 
 /-- **Finite global reciprocity does not depend on the embedding** of `L` into the separable
 closure: the layer of `L` is the same for every embedding, and two embeddings change the
@@ -195,7 +202,9 @@ theorem surjective_globalArtinMap (ι : L →ₐ[K] SeparableClosure K) :
       IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range
 
 /-- **The global Artin map kills principal ideles**: the class in `C_K` of the principal idele of
-`x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is the reciprocity law in idelic form. -/
+`x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is immediate from `globalArtinMap` being
+defined on the quotient `C_K = 𝕀_K / Kˣ`; the content of the idelic reciprocity law is in the
+class formation that defines `globalArtinMap`, not in this lemma. -/
 @[simp]
 theorem globalArtinMap_principal (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) :
     globalArtinMap K L ι
@@ -298,6 +307,44 @@ theorem ideleClassArtinMap_surjective : Function.Surjective (ideleClassArtinMap 
       σ))
   refine ⟨c.toMul, Group.Abelianization.of_injective ?_⟩
   rw [of_ideleClassArtinMap K L IsSepClosed.lift, ofMul_toMul, hc, toMul_ofMul]
+
+open _root_.IntermediateField GlobalNumberFields in
+/-- An idele class is a norm from the fixed field of a subgroup of the Galois group of a finite
+abelian extension exactly when its Artin symbol belongs to that subgroup. -/
+theorem mem_range_ideleClassNormMap_fixedField_iff (H : Subgroup Gal(L/K))
+    (c : IdeleClassGroup (𝓞 K) K) :
+    c ∈ (ideleClassNormMap K (fixedField H) :
+      IdeleClassGroup (𝓞 (fixedField H)) (fixedField H) →*
+        IdeleClassGroup (𝓞 K) K).range ↔ ideleClassArtinMap K L c ∈ H := by
+  have := IsAbelianGalois.tower_bot K (fixedField H) L
+  rw [← globalArtinMap_eq_zero_iff K _ (IsSepClosed.lift.comp (fixedField H).val)]
+  have h := DFunLike.congr_fun
+    (globalArtinMap_comp K L (fixedField H).val IsSepClosed.lift) (Additive.ofMul c)
+  rw [← h, AddMonoidHom.comp_apply, ← ofMul_toMul (globalArtinMap K L _ _),
+    ← of_ideleClassArtinMap K L IsSepClosed.lift c]
+  simp only [MonoidHom.coe_toAdditive, Function.comp_apply, toMul_ofMul,
+    Group.Abelianization.map_of, ofMul_eq_zero,
+    IntermediateField.restrictNormalHom_val,
+    abelianization_of_restrictNormalHom_fixedField_eq_one_iff]
+
+open _root_.IntermediateField GlobalNumberFields in
+/-- An idele class is a norm from an abelian extension exactly when it is a norm from
+the fixed field of the kernel of every character `χ : Gal(L/K) →* Mˣ`, for a commutative
+monoid `M` satisfying `HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`. -/
+theorem mem_range_ideleClassNormMap_iff_forall_fixedField_ker
+    (M : Type*) [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))]
+    (c : IdeleClassGroup (𝓞 K) K) :
+    c ∈ (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →*
+      IdeleClassGroup (𝓞 K) K).range ↔
+      ∀ χ : Gal(L/K) →* Mˣ,
+        c ∈ (ideleClassNormMap K (fixedField χ.ker) :
+          IdeleClassGroup (𝓞 (fixedField χ.ker)) (fixedField χ.ker) →*
+            IdeleClassGroup (𝓞 K) K).range := by
+  simp_rw [mem_range_ideleClassNormMap_fixedField_iff K L, MonoidHom.mem_ker]
+  rw [← ker_ideleClassArtinMap, MonoidHom.mem_ker]
+  simpa only [map_one] using
+    (CommGroup.forall_apply_eq_apply_iff Gal(L/K) (M := M)
+      (g := ideleClassArtinMap K L c) (g' := 1)).symm
 
 end Abelian
 
