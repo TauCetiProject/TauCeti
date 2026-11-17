@@ -62,6 +62,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
   `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|`; this separates frequencies outside a cone
   from those inside it.
+* `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow_of_le`: `⟨x⟩ ^ s ≤ (1 + ‖x‖) ^ N` for real
+  `s ≤ N`.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
@@ -291,6 +293,13 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) (N : ℕ) :
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity),
           ← Real.rpow_natCast]
         ring_nf
+
+/-- A real power of the Japanese bracket is at most every larger natural power of `1 + ‖x‖`: if
+`s ≤ N`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ N`. -/
+theorem one_add_norm_sq_rpow_le_one_add_norm_pow_of_le (x : E) {s : ℝ} {N : ℕ} (hs : s ≤ N) :
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ N :=
+  (Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)).trans
+    (one_add_norm_sq_rpow_le_one_add_norm_pow x N)
 
 /-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,
 `(1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ r`. -/
