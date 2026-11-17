@@ -911,6 +911,32 @@ theorem exists_forall_norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm 
   have hXB : ‖ω.hamiltonianVectorField (Ks p z) (u z)‖ ≤ B := by simpa using hB _ hq
   gcongr
 
+/-- **A lower-integral bound on the Floer energy bounds its integral.** Let `u` be a `C¹` solution
+of the Floer equation `(du - X_K)^{0,1} = 0` for `ω`-tame `J(z, u)` on a measurable subset `Ω` of
+an open set `U ⊆ ℝ × ℝ`, with `K = K_s ds + K_t dt` of class `C¹` on `U × V`. If
+`∫⁻_Ω ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) ≤ E` with `0 ≤ E`, then the Floer energy density is
+integrable on `Ω` and its integral over `Ω` is at most `E`. These are the energy hypotheses of
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`. -/
+theorem integrableOn_floerEnergyDensity_and_setIntegral_le_of_setLIntegral_le
+    (ω : SymplecticForm V) {U Ω : Set (ℝ × ℝ)} {u : ℝ × ℝ → V} {E : ℝ} (hU : IsOpen U)
+    (hΩ : MeasurableSet Ω) (hΩU : Ω ⊆ U) (hu : ContDiffOn ℝ 1 u U)
+    (hKs : ContDiffOn ℝ 1 (Function.uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (Function.uncurry Kt) (U ×ˢ univ))
+    (hJt : ∀ z ∈ Ω, ω.Tames (J z (u z)))
+    (hfl : ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : 0 ≤ E)
+    (hlin : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
+  have hf0 : 0 ≤ᵐ[volume.restrict Ω] ω.floerEnergyDensity Ks Kt u :=
+    ae_restrict_of_forall_mem hΩ fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt z hz) (hfl z hz)
+  have hm : AEStronglyMeasurable (ω.floerEnergyDensity Ks Kt u) (volume.restrict Ω) :=
+    ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hΩU).aestronglyMeasurable hΩ
+  refine ⟨⟨hm, (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0 hm]
+  exact ENNReal.toReal_le_of_le_ofReal hE hlin
+
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `K_p = K_{s,p} ds + K_{t,p} dt` and `J_p(z, x)` depend on a parameter `p` in a real
 inner product space `P`, jointly `C³` and `C²` respectively on an open set
