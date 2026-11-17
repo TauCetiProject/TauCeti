@@ -104,6 +104,8 @@ leaving the Sobolev space.
   bounded derivative, vanishing on `(-∞, 0]` and dominating `(min (t⁺, K)) ^ γ`.
 * `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
   power integral is carried by a σ-finite part of the measure.
+* `MeasureTheory.Measure.lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul`: a power decay
+  `t ^ (-q)` of the superlevel sets bounds `∫⁻ u ^ p` for `p < q`.
 
 ## References
 
@@ -649,3 +651,72 @@ theorem exists_contDiff_deriv_eq_rpow (γ : ℝ) (hγ : 1 < γ) {K : ℝ} (hK : 
     exact monotone_of_deriv_nonneg hFdiff (fun t => hFderiv ▸ hφ0 t) (min_le_left _ _)
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Set TauCeti
+open scoped ENNReal
+
+variable {β : Type*} [MeasurableSpace β]
+
+/-- **Weak-type decay of the superlevel sets bounds the integral of a smaller power.** If the
+superlevel sets of `u` decay like a power, `ν {u > t} ≤ C t ^ (-q) ν univ` for every `t > 1`, then
+for every exponent `0 < p < q`
+
+`∫⁻ u ^ p ∂ν ≤ (1 + C p / (q - p)) ν univ`.
+
+This is the inclusion of weak `L^q` in `L^p` for `p < q` over a finite measure, in the normalized
+form used to turn a weak-type estimate into an integral one. -/
+theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (ν : Measure β) {u : β → ℝ≥0∞}
+    (hu : AEMeasurable u ν) {p q C : ℝ} (hp : 0 < p) (hpq : p < q) (hC : 0 ≤ C)
+    (h : ∀ t : ℝ, 1 < t → ν {y | ENNReal.ofReal t < u y} ≤
+      ENNReal.ofReal (C * t ^ (-q)) * ν univ) :
+    ∫⁻ y, u y ^ p ∂ν ≤ ENNReal.ofReal (1 + C * p / (q - p)) * ν univ := by
+  -- Near the origin the superlevel sets are bounded by the total mass.
+  have h₁ : ∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      ν univ * ENNReal.ofReal (1 / p) := by
+    calc ∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
+        ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ν univ * ENNReal.ofReal (t ^ (p - 1)) :=
+          lintegral_mono fun t ↦ mul_le_mul_left (measure_mono (subset_univ _)) _
+      _ = ν univ * ENNReal.ofReal (1 / p) := by
+          rw [lintegral_const_mul _ (by fun_prop), ← setLIntegral_congr Ioo_ae_eq_Ioc,
+            lintegral_ofReal_rpow_Ioo (by linarith) zero_le_one]
+          simp
+  -- At infinity the hypothesis leaves the integrable power `t ^ (p - 1 - q)`.
+  have h₂ : ∫⁻ t in Ioi (1 : ℝ), ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
+      ENNReal.ofReal C * ν univ * ENNReal.ofReal (1 / (q - p)) := by
+    calc ∫⁻ t in Ioi (1 : ℝ), ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
+        ≤ ∫⁻ t in Ioi (1 : ℝ), ENNReal.ofReal C * ν univ * ENNReal.ofReal (t ^ (p - 1 - q)) := by
+          refine setLIntegral_mono' measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
+          have ht0 : 0 < t := one_pos.trans ht
+          calc ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1))
+              ≤ ENNReal.ofReal (C * t ^ (-q)) * ν univ * ENNReal.ofReal (t ^ (p - 1)) :=
+                mul_le_mul_left (h t ht) _
+            _ = ENNReal.ofReal C * ν univ * ENNReal.ofReal (t ^ (p - 1 - q)) := by
+                rw [sub_eq_add_neg (p - 1) q, Real.rpow_add ht0,
+                  ENNReal.ofReal_mul (Real.rpow_nonneg ht0.le _),
+                  ENNReal.ofReal_mul hC]
+                ring
+      _ = ENNReal.ofReal C * ν univ * ENNReal.ofReal (1 / (q - p)) := by
+          rw [lintegral_const_mul _ (by fun_prop),
+            lintegral_ofReal_rpow_Ioi_of_lt (by linarith) one_pos]
+          rw [Real.one_rpow, show p - 1 - q + 1 = -(q - p) by ring, neg_div_neg_eq]
+  -- Split the layer cake formula at `t = 1`.
+  rw [lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hu hp, ← Ioc_union_Ioi_eq_Ioi zero_le_one,
+    lintegral_union measurableSet_Ioi Ioc_disjoint_Ioi_same]
+  calc ENNReal.ofReal p * ((∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} *
+          ENNReal.ofReal (t ^ (p - 1))) + ∫⁻ t in Ioi (1 : ℝ), ν {y | ENNReal.ofReal t < u y} *
+          ENNReal.ofReal (t ^ (p - 1)))
+      ≤ ENNReal.ofReal p * (ν univ * ENNReal.ofReal (1 / p) +
+          ENNReal.ofReal C * ν univ * ENNReal.ofReal (1 / (q - p))) := by
+        gcongr
+    _ = ENNReal.ofReal (1 + C * p / (q - p)) * ν univ := by
+        rw [ENNReal.ofReal_add zero_le_one (by positivity), add_mul, mul_add]
+        congr 1
+        · rw [mul_comm (ν univ), ← mul_assoc, ← ENNReal.ofReal_mul hp.le, mul_one_div_cancel hp.ne',
+            ENNReal.ofReal_one]
+        · rw [show C * p / (q - p) = p * C * (1 / (q - p)) by ring,
+            ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hp.le]
+          ring
+
+end MeasureTheory.Measure
