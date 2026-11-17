@@ -165,7 +165,8 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_m
   have hCn : 0 ≤ Cn := inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
     (volume_real_unitBall_pos n).le)
   have hu : ContDiff ℝ ∞ u := contDiff_newtonianKernel_convolution hφ hc
-  have hΔu : Δ u = -φ := laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
+  have hΔu : Δ u = -φ :=
+    laplacian_newtonianKernel_convolution (by omega) (by omega) (hφ.of_le (by simp)) hc
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
   -- On the annulus, expand `Δ(χ u)` by the Leibniz rule.
@@ -215,7 +216,7 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
           ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
           C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ))) x := by
   have hΔu : Δ (newtonianKernel n ⋆ φ) = -φ :=
-    laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
+    laplacian_newtonianKernel_convolution (by omega) (by omega) (hφ.of_le (by simp)) hc
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
   by_cases hann : ‖x‖ < R ∨ 2 * R < ‖x‖
