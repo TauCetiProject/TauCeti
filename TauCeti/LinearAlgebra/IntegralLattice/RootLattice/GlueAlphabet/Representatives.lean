@@ -195,6 +195,32 @@ private theorem mk_glueLabelVector_A (n : ℕ) (hv : (A n).Valid) (ht : (A n).Is
   -- Both sides agree across `Fin (A n).rank` and `Fin n`.
   rfl
 
+-- Explicit identifications of the bundled type-D glue-label representatives.
+
+private theorem glueLabelVectorDual_D_one (n : ℕ) (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) :
+    (⟨(D n).glueLabelVector 1, (D n).glueLabelVector_mem_dualCarrier hv ht 1⟩ :
+        ((D n).rootLattice ht).dualCarrier) =
+      typeDSpinorWeightDual n (valid_D.mp hv) ht := by
+  apply Subtype.ext
+  rw [Submodule.coe_mk, coe_typeDSpinorWeightDual, glueLabelVector_D, ite_eq_left rfl]
+
+private theorem glueLabelVectorDual_D_two (n : ℕ) (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) :
+    (⟨(D n).glueLabelVector 2, (D n).glueLabelVector_mem_dualCarrier hv ht 2⟩ :
+        ((D n).rootLattice ht).dualCarrier) =
+      typeDVectorWeightDual n (valid_D.mp hv) ht := by
+  apply Subtype.ext
+  rw [Submodule.coe_mk, coe_typeDVectorWeightDual, glueLabelVector_D,
+    ite_eq_right (by omega), ite_eq_left rfl]
+
+private theorem glueLabelVectorDual_D_three (n : ℕ) (hv : (D n).Valid)
+    (ht : (D n).IsSimplyLaced) :
+    (⟨(D n).glueLabelVector 3, (D n).glueLabelVector_mem_dualCarrier hv ht 3⟩ :
+        ((D n).rootLattice ht).dualCarrier) =
+      typeDCospinorWeightDual n (valid_D.mp hv) ht := by
+  apply Subtype.ext
+  rw [Submodule.coe_mk, coe_typeDCospinorWeightDual, glueLabelVector_D,
+    ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left rfl]
+
 private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).IsSimplyLaced)
     (d : Fin (D n).glueLabelCount) :
     (Submodule.Quotient.mk ⟨(D n).glueLabelVector d.val,
@@ -208,24 +234,21 @@ private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).Is
       ((D n).glueLabelEquiv ht).symm.injective
         ((Equiv.symm_apply_apply _ _).trans ((D n).glueLabelEquiv_symm_zero ht).symm)
     rw [h0, map_zero]; exact mk_eq_zero_of_val_eq_zero _ (glueLabelVector_zero (D n))
-  · rw [show (⟨(D n).glueLabelVector 1, (D n).glueLabelVector_mem_dualCarrier hv ht 1⟩ : _) =
-        typeDSpinorWeightDual n hn ht from Subtype.ext (by simp), mk_typeDSpinorWeightDual]
+  · rw [glueLabelVectorDual_D_one n hv ht, mk_typeDSpinorWeightDual]
     rcases Nat.even_or_odd n with hpar | hpar
     · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
       simp only [Nat.reduceDiv, Nat.cast_zero, Nat.reduceMod, Nat.cast_one,
         zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one]
     · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, glueLabelEquiv_D_of_odd n ht hpar,
         Nat.cast_one, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one n hpar]
-  · rw [show (⟨(D n).glueLabelVector 2, (D n).glueLabelVector_mem_dualCarrier hv ht 2⟩ : _) =
-        typeDVectorWeightDual n hn ht from Subtype.ext (by simp), mk_typeDVectorWeightDual]
+  · rw [glueLabelVectorDual_D_two n hv ht, mk_typeDVectorWeightDual]
     rcases Nat.even_or_odd n with hpar | hpar
     · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
       simp only [Nat.div_self zero_lt_two, Nat.cast_one, Nat.mod_self, Nat.cast_zero,
         zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero]
     · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, glueLabelEquiv_D_of_odd n ht hpar,
         Nat.cast_ofNat, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two n hpar]
-  · rw [show (⟨(D n).glueLabelVector 3, (D n).glueLabelVector_mem_dualCarrier hv ht 3⟩ : _) =
-        typeDCospinorWeightDual n hn ht from Subtype.ext (by simp), mk_typeDCospinorWeightDual]
+  · rw [glueLabelVectorDual_D_three n hv ht, mk_typeDCospinorWeightDual]
     rcases Nat.even_or_odd n with hpar | hpar
     · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
       simp only [Nat.reduceDiv, Nat.cast_one, Nat.reduceMod,
@@ -251,11 +274,14 @@ private theorem mk_glueLabelVector_E6 (hv : E6.Valid) (ht : E6.IsSimplyLaced)
     rw [Nat.cast_one, typeE₆DiscriminantGroupEquiv_apply_one]
     -- Both sides agree across `Fin E6.rank` and `Fin 6`.
     rfl
-  · have hmk2 : (Submodule.Quotient.mk (-typeE₆MinusculeWeightDual) :
+  · have h2 : ((2 : ℕ) : ZMod 3) = -1 :=
+      eq_neg_of_add_eq_zero_left
+        (by rw [← Nat.cast_one, ← Nat.cast_add]; exact ZMod.natCast_self 3)
+    have hmk2 : (Submodule.Quotient.mk (-typeE₆MinusculeWeightDual) :
           typeE₆RootLattice.DiscriminantGroup) =
         typeE₆DiscriminantGroupEquiv ((2 : ℕ) : ZMod 3) := by
-      rw [Submodule.Quotient.mk_neg, mk_typeE₆MinusculeWeightDual,
-        show ((2 : ℕ) : ZMod 3) = -1 by decide, map_neg, typeE₆DiscriminantGroupEquiv_apply_one]
+      rw [Submodule.Quotient.mk_neg, mk_typeE₆MinusculeWeightDual, h2, map_neg,
+        typeE₆DiscriminantGroupEquiv_apply_one]
     exact mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _ (-typeE₆MinusculeWeightDual)
       ((Submodule.coe_neg _ typeE₆MinusculeWeightDual).trans
         (congrArg Neg.neg coe_typeE₆MinusculeWeightDual)).symm hmk2
@@ -382,17 +408,13 @@ theorem glueRepresentativeVector_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced) 
   obtain ⟨⟨d, hd⟩, rfl⟩ := ((D n).glueLabelEquiv ht).surjective a
   simp only [glueLabelCount] at hd
   rw [glueRepresentativeVector_glueLabelEquiv, glueLabelEquiv_D_of_even n ht hn]
-  interval_cases d
-  · simp only [glueLabelVector_zero (D n), Nat.zero_div, Nat.zero_mod, Nat.cast_zero,
-      Prod.mk_zero_zero, show (0 : ZMod 2 × ZMod 2) ≠ (0, 1) by decide,
-      show (0 : ZMod 2 × ZMod 2) ≠ (1, 0) by decide,
-      show (0 : ZMod 2 × ZMod 2) ≠ (1, 1) by decide, ↓reduceIte]
-    -- `(0 : Fin (D n).rank → ℚ)` and `(0 : Fin n → ℚ)` are definitionally equal.
+  interval_cases d <;>
+    simp only [glueLabelVector_zero, glueLabelVector_D, Nat.zero_div, Nat.zero_mod, Nat.reduceDiv,
+      Nat.reduceMod, Nat.div_self zero_lt_two, Nat.mod_self, Nat.cast_zero, Nat.cast_one,
+      Prod.mk.injEq, zero_ne_one, one_ne_zero, OfNat.ofNat_ne_one, Nat.reduceEqDiff,
+      and_self, and_false, false_and, ↓reduceIte] <;>
+    -- `(0 : Fin (D n).rank → ℚ)` and `(0 : Fin n → ℚ)` are definitionally equal (`d = 0`).
     rfl
-  · simp
-  · simp [show ((1 : ZMod 2), (0 : ZMod 2)) ≠ (0, 1) by decide]
-  · simp [show ((1 : ZMod 2), (1 : ZMod 2)) ≠ (0, 1) by decide,
-      show ((1 : ZMod 2), (1 : ZMod 2)) ≠ (1, 0) by decide]
 
 /-- For odd `n`, `glueRepresentativeVector` on `Dₙ` sends `1, 2, 3 ∈ ℤ/4` to
 `typeDSpinorWeight n`, `typeDVectorWeight n`, `typeDCospinorWeight n`, and `0` to `0`. -/
@@ -407,15 +429,13 @@ theorem glueRepresentativeVector_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (
   obtain ⟨⟨d, hd⟩, rfl⟩ := ((D n).glueLabelEquiv ht).surjective a
   simp only [glueLabelCount] at hd
   rw [glueRepresentativeVector_glueLabelEquiv, glueLabelEquiv_D_of_odd n ht hn]
-  interval_cases d
-  · simp only [glueLabelVector_zero (D n), Nat.cast_zero,
-      show (0 : ZMod 4) ≠ 1 by decide, show (0 : ZMod 4) ≠ 2 by decide,
-      show (0 : ZMod 4) ≠ 3 by decide, ↓reduceIte]
-    -- `(0 : Fin (D n).rank → ℚ)` and `(0 : Fin n → ℚ)` are definitionally equal.
+  interval_cases d <;>
+    simp only [glueLabelVector_zero, glueLabelVector_D, Nat.cast_zero, Nat.cast_one,
+      Nat.cast_ofNat, ← (ZMod.val_injective 4).eq_iff, ZMod.val_zero, ZMod.val_one_eq_one_mod,
+      ZMod.val_ofNat, Nat.reduceMod, Nat.reduceEqDiff, zero_ne_one, OfNat.ofNat_ne_one,
+      ↓reduceIte] <;>
+    -- `(0 : Fin (D n).rank → ℚ)` and `(0 : Fin n → ℚ)` are definitionally equal (`d = 0`).
     rfl
-  · simp
-  · simp [show (2 : ZMod 4) ≠ 1 by decide]
-  · simp [show (3 : ZMod 4) ≠ 1 by decide, show (3 : ZMod 4) ≠ 2 by decide]
 
 /-- On `E₆`, `glueRepresentativeVector` sends `0, 1, 2 ∈ ℤ/3` to `0`, `ϖ₁`, `-ϖ₁`. -/
 @[simp] theorem glueRepresentativeVector_E6 (ht : E6.IsSimplyLaced) (a : ZMod 3) :
@@ -424,13 +444,13 @@ theorem glueRepresentativeVector_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (
   obtain ⟨⟨d, hd⟩, rfl⟩ := (E6.glueLabelEquiv ht).surjective a
   simp only [glueLabelCount] at hd
   rw [glueRepresentativeVector_glueLabelEquiv, glueLabelEquiv_E6 ht]
-  interval_cases d
-  · simp only [glueLabelVector_zero E6, Nat.cast_zero,
-      show (0 : ZMod 3) ≠ 1 by decide, show (0 : ZMod 3) ≠ 2 by decide, ↓reduceIte]
-    -- `(0 : Fin E6.rank → ℚ)` and `(0 : Fin 6 → ℚ)` are definitionally equal.
+  interval_cases d <;>
+    simp only [glueLabelVector_zero, glueLabelVector_E6, Nat.cast_zero, Nat.cast_one,
+      Nat.cast_ofNat, ← (ZMod.val_injective 3).eq_iff, ZMod.val_zero, ZMod.val_one_eq_one_mod,
+      ZMod.val_ofNat, Nat.reduceMod, Nat.reduceEqDiff, zero_ne_one, OfNat.ofNat_ne_one,
+      ↓reduceIte] <;>
+    -- `(0 : Fin E6.rank → ℚ)` and `(0 : Fin 6 → ℚ)` are definitionally equal (`d = 0`).
     rfl
-  · simp
-  · simp [show (2 : ZMod 3) ≠ 1 by decide]
 
 /-- On `E₇`, `glueRepresentativeVector` sends `0, 1 ∈ ℤ/2` to `0`, `ϖ₇`. -/
 @[simp] theorem glueRepresentativeVector_E7 (ht : E7.IsSimplyLaced) (a : ZMod 2) :
