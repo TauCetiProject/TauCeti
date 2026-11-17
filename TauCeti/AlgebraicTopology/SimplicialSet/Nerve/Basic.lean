@@ -35,12 +35,11 @@ Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are 
 consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of the faces of
 `2`-simplices (`CategoryTheory.nerve.δ₀_mk₂_eq`, …).
 
-We also record basic functoriality of `nerveMap`, the universe-polymorphic simplex pushforward
-`CategoryTheory.Functor.mapNerveObj`, nonemptiness and subsingleton properties of `nerve C`, and
-structural isomorphisms identifying the nerves of discrete categories (`nerve.discreteIso`),
-product categories (`nerve.prodIso`), universe-lifted categories (`nerve.asSmallIso`), and finite
-nonempty ordinals (`nerve.finSuccIsoStdSimplex`). These serve as simplicial inputs to classifying
-spaces and nerve homotopies.
+We also record basic functoriality of `nerveMap`, nonemptiness and subsingleton properties of
+`nerve C`, and structural isomorphisms identifying the nerves of discrete categories
+(`nerve.discreteIso`), product categories (`nerve.prodIso`), universe-lifted categories
+(`nerve.asSmallIso`), and finite nonempty ordinals (`nerve.finSuccIsoStdSimplex`). These serve as
+simplicial inputs to classifying spaces and nerve homotopies.
 
 ## Main declarations
 
@@ -51,8 +50,6 @@ spaces and nerve homotopies.
 * `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
-* `CategoryTheory.Functor.mapNerveObj`: universe-polymorphic pushforward of simplices of a nerve
-  along a functor.
 * `CategoryTheory.nerve.discreteIso`, `CategoryTheory.nerve.prodIso`,
   `CategoryTheory.nerve.asSmallIso`, `CategoryTheory.nerve.finSuccIsoStdSimplex`: structural
   isomorphisms in `SSet`.
@@ -75,40 +72,6 @@ variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
 @[simp] lemma nerveMap_const (C : Type u) [Category.{v} C] {D : Type u} [Category.{v} D] (d : D) :
     nerveMap ((Functor.const C).obj d) = SSet.const (nerveEquiv.symm d) := by
   ext ⟨n⟩ σ : 4; induction n using SimplexCategory.rec with | _ n => exact functor_ext_rfl
-section MapNerveObj
-variable {C₁ : Type*} [Category* C₁] {D₁ : Type*} [Category* D₁] {E₁ : Type*} [Category* E₁]
-/-- Push a simplex of `nerve C₁` forward along a functor `F : C₁ ⥤ D₁` across arbitrary universes,
-typed syntactically in `(nerve D₁).obj n`. -/
-def Functor.mapNerveObj (F : C₁ ⥤ D₁) {n : SimplexCategoryᵒᵖ} (σ : (nerve C₁).obj n) :
-    (nerve D₁).obj n := σ ⋙ F
-lemma Functor.mapNerveObj_def (F : C₁ ⥤ D₁) {n : SimplexCategoryᵒᵖ} (σ : (nerve C₁).obj n) :
-    F.mapNerveObj σ = σ ⋙ F := (rfl)
-@[simp] lemma Functor.mapNerveObj_obj (F : C₁ ⥤ D₁) {n : SimplexCategoryᵒᵖ} (σ : (nerve C₁).obj n)
-    (i : Fin (n.unop.len + 1)) : (F.mapNerveObj σ).obj i = F.obj (σ.obj i) := (rfl)
-@[simp] lemma Functor.mapNerveObj_map (F : C₁ ⥤ D₁) {n : SimplexCategoryᵒᵖ} (σ : (nerve C₁).obj n)
-    {i j : Fin (n.unop.len + 1)} (f : i ⟶ j) :
-    (F.mapNerveObj σ).map f =
-      eqToHom (F.mapNerveObj_obj σ i) ≫ F.map (σ.map f) ≫ eqToHom (F.mapNerveObj_obj σ j).symm :=
-  ((Category.id_comp _).trans (Category.comp_id _)).symm
-@[simp] lemma Functor.id_mapNerveObj {n : SimplexCategoryᵒᵖ} (σ : (nerve C₁).obj n) :
-    (𝟭 C₁).mapNerveObj σ = σ := CategoryTheory.Functor.comp_id σ
-@[simp] lemma Functor.comp_mapNerveObj (F : C₁ ⥤ D₁) (G : D₁ ⥤ E₁) {n : SimplexCategoryᵒᵖ}
-    (σ : (nerve C₁).obj n) : (F ⋙ G).mapNerveObj σ = G.mapNerveObj (F.mapNerveObj σ) :=
-  (CategoryTheory.Functor.assoc σ F G).symm
-@[simp] lemma Functor.mapNerveObj_nerveEquiv_symm (F : C₁ ⥤ D₁) (c : C₁) :
-    F.mapNerveObj (n := op ⦋0⦌) (nerveEquiv.symm c) = nerveEquiv.symm (F.obj c) :=
-  ComposableArrows.ext₀ rfl
-@[simp] lemma Functor.mapNerveObj_mk₁ (F : C₁ ⥤ D₁) {x y : C₁} (f : x ⟶ y) :
-    F.mapNerveObj (n := op ⦋1⦌) (ComposableArrows.mk₁ f) = ComposableArrows.mk₁ (F.map f) :=
-  ComposableArrows.ext₁ rfl rfl
-    (((Category.id_comp (F.map f ≫ 𝟙 _)).trans (Category.comp_id (F.map f))).symm)
-@[simp] lemma Functor.nerve_map_mapNerveObj (F : C₁ ⥤ D₁) {m n : SimplexCategoryᵒᵖ} (θ : m ⟶ n)
-    (σ : (nerve C₁).obj m) :
-    (nerve D₁).map θ (F.mapNerveObj σ) = F.mapNerveObj ((nerve C₁).map θ σ) :=
-  (CategoryTheory.Functor.assoc _ σ F).symm
-end MapNerveObj
-lemma nerveMap_app_eq_mapNerveObj (F : C ⥤ D) (n : SimplexCategoryᵒᵖ) (σ : (nerve C).obj n) :
-    (nerveMap F).app n σ = F.mapNerveObj σ := (rfl)
 end Functoriality
 
 namespace nerve
@@ -288,24 +251,22 @@ def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
 def asSmallIso (C : Type u) [Category.{v} C] :
     nerve (AsSmall.{w} C) ≅ SSet.uliftFunctor.{w, max u v}.obj (nerve C) :=
   NatIso.ofComponents (fun _ ↦ Equiv.toIso
-    { toFun σ := ULift.up (AsSmall.down.mapNerveObj σ), invFun τ := AsSmall.up.mapNerveObj τ.down
+    { toFun σ := ULift.up ((AsSmall.down.mapComposableArrows _).obj σ)
+      invFun τ := (AsSmall.up.mapComposableArrows _).obj τ.down
       left_inv _ := functor_ext_rfl, right_inv _ := ULift.ext functor_ext_rfl }) fun _ ↦ rfl
 @[simp] lemma asSmallIso_hom_app_down {C : Type u} [Category.{v} C] {n : SimplexCategoryᵒᵖ}
-    (σ : (nerve (AsSmall.{w} C)).obj n) :
-    ((asSmallIso.{w} C).hom.app n σ).down = AsSmall.down.mapNerveObj σ := (rfl)
+    (σ : ComposableArrows (AsSmall.{w} C) n.unop.len) :
+    ((asSmallIso.{w} C).hom.app n σ).down = (AsSmall.down.mapComposableArrows n.unop.len).obj σ :=
+  (rfl)
 @[simp] lemma asSmallIso_inv_app_apply {C : Type u} [Category.{v} C] {n : SimplexCategoryᵒᵖ}
-    (τ : (SSet.uliftFunctor.{w, max u v}.obj (nerve C)).obj n) :
-    (asSmallIso.{w} C).inv.app n τ = AsSmall.up.mapNerveObj τ.down := (rfl)
+    (τ : ULift.{w} (ComposableArrows C n.unop.len)) :
+    (asSmallIso.{w} C).inv.app n τ = (AsSmall.up.mapComposableArrows n.unop.len).obj τ.down := (rfl)
 @[simp] lemma asSmallIso_hom_app_nerveEquiv_symm {C : Type u} [Category.{v} C] (c : AsSmall.{w} C) :
     (asSmallIso.{w} C).hom.app (op ⦋0⦌) (nerveEquiv.symm c) =
       ULift.up (nerveEquiv.symm (AsSmall.down.obj c)) := ULift.ext (ComposableArrows.ext₀ rfl)
 @[simp] lemma asSmallIso_inv_app_nerveEquiv_symm {C : Type u} [Category.{v} C] (c : C) :
     (asSmallIso.{w} C).inv.app (op ⦋0⦌) (ULift.up (nerveEquiv.symm c)) =
       nerveEquiv.symm (AsSmall.up.obj c) := ComposableArrows.ext₀ rfl
-@[simp] lemma asSmall_down_mapNerveObj_up {C : Type u} [Category.{v} C] {n : SimplexCategoryᵒᵖ}
-    (σ : (nerve C).obj n) :
-    AsSmall.down.mapNerveObj ((AsSmall.up : C ⥤ AsSmall.{w} C).mapNerveObj σ) = σ :=
-  functor_ext_rfl
 /-- The nerve of `Fin (n + 1)` is isomorphic to the standard `n`-simplex `Δ[n]` in `SSet.{0}`. -/
 def finSuccIsoStdSimplex (n : ℕ) : nerve (Fin (n + 1)) ≅ (Δ[n] : SSet.{0}) :=
   (SSet.stdSimplex.isoOfRepresentableBy (representableBy (Fin (n + 1)) (.refl _))).symm

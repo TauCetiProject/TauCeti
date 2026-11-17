@@ -45,18 +45,17 @@ variable {B : Type u₁} [Category.{v₁} B] {C : Type u₂} [Category.{v₂} C]
 /-- Universe-polymorphic action of a natural transformation `η : F₀ ⟶ F₁` on a cylinder simplex
 `(σ, β)` of `nerve C` paired with `β : n.unop ⟶ ⦋1⦌`. -/
 def mapNerveCylinderObj {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : SimplexCategoryᵒᵖ}
-    (σ : (nerve C).obj n) (β : n.unop ⟶ ⦋1⦌) : (nerve D).obj n :=
+    (σ : ComposableArrows C n.unop.len) (β : n.unop ⟶ ⦋1⦌) : ComposableArrows D n.unop.len :=
   σ.prod' ((nerve (C ⥤ D)).map β.op (ComposableArrows.mk₁ η)) ⋙ evaluationUncurried C D
 lemma mapNerveCylinderObj_def {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : SimplexCategoryᵒᵖ}
-    (σ : (nerve C).obj n) (β : n.unop ⟶ ⦋1⦌) :
+    (σ : ComposableArrows C n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     η.mapNerveCylinderObj σ β =
       σ.prod' ((nerve (C ⥤ D)).map β.op (ComposableArrows.mk₁ η)) ⋙ evaluationUncurried C D := (rfl)
 @[simp] lemma whiskerLeft_mapNerveCylinderObj (K : B ⥤ C) {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁)
-    {n : SimplexCategoryᵒᵖ} (σ : (nerve B).obj n) (β : n.unop ⟶ ⦋1⦌) :
+    {n : SimplexCategoryᵒᵖ} (σ : ComposableArrows B n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     (Functor.whiskerLeft K η).mapNerveCylinderObj σ β =
-      η.mapNerveCylinderObj (K.mapNerveObj σ) β := by
+      η.mapNerveCylinderObj ((K.mapComposableArrows n.unop.len).obj σ) β := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
-  rw [Functor.mapNerveObj_def]
   have hobj (k : Fin 2) (b : B) : ((ComposableArrows.mk₁ (Functor.whiskerLeft K η)).obj k).obj b =
       ((ComposableArrows.mk₁ η).obj k).obj (K.obj b) := by fin_cases k <;> rfl
   have hmap {k₀ k₁ : Fin 2} (u : k₀ ⟶ k₁) {b₀ b₁ : B} (f : b₀ ⟶ b₁) :
@@ -71,11 +70,10 @@ lemma mapNerveCylinderObj_def {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : Si
   exact CategoryTheory.Functor.ext (fun i ↦ hobj (φ.obj i) (σ.obj i))
     fun _ _ g ↦ hmap (φ.map g) (σ.map g)
 @[simp] lemma whiskerRight_mapNerveCylinderObj {F₀ F₁ : B ⥤ C} (η : F₀ ⟶ F₁) (G : C ⥤ D)
-    {n : SimplexCategoryᵒᵖ} (σ : (nerve B).obj n) (β : n.unop ⟶ ⦋1⦌) :
+    {n : SimplexCategoryᵒᵖ} (σ : ComposableArrows B n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     (Functor.whiskerRight η G).mapNerveCylinderObj σ β =
-      G.mapNerveObj (η.mapNerveCylinderObj σ β) := by
+      (G.mapComposableArrows n.unop.len).obj (η.mapNerveCylinderObj σ β) := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
-  rw [Functor.mapNerveObj_def]
   have hobj (k : Fin 2) (b : B) : ((ComposableArrows.mk₁ (Functor.whiskerRight η G)).obj k).obj b =
       G.obj (((ComposableArrows.mk₁ η).obj k).obj b) := by fin_cases k <;> rfl
   have hmap {k₀ k₁ : Fin 2} (u : k₀ ⟶ k₁) {b₀ b₁ : B} (f : b₀ ⟶ b₁) :
@@ -130,13 +128,11 @@ lemma nerveHomotopy_h_app {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (n : Simple
 @[simp] lemma whiskerLeft_nerveHomotopy_h (K : B ⥤ C) {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) :
     (Functor.whiskerLeft K η).nerveHomotopy.h = nerveMap K ▷ Δ[1] ≫ η.nerveHomotopy.h := by
   ext n p : 4
-  exact (whiskerLeft_mapNerveCylinderObj K η p.1 (SSet.stdSimplex.objEquiv p.2)).trans
-    (congrArg (η.mapNerveCylinderObj · _) (nerveMap_app_eq_mapNerveObj K n p.1).symm)
+  exact whiskerLeft_mapNerveCylinderObj K η p.1 (SSet.stdSimplex.objEquiv p.2)
 @[simp] lemma whiskerRight_nerveHomotopy_h {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (G : D ⥤ E) :
     (Functor.whiskerRight η G).nerveHomotopy.h = η.nerveHomotopy.h ≫ nerveMap G := by
   ext n p : 4
-  exact (whiskerRight_mapNerveCylinderObj η G p.1 (SSet.stdSimplex.objEquiv p.2)).trans
-    (nerveMap_app_eq_mapNerveObj G n _).symm
+  exact whiskerRight_mapNerveCylinderObj η G p.1 (SSet.stdSimplex.objEquiv p.2)
 end
 end NatTrans
 
