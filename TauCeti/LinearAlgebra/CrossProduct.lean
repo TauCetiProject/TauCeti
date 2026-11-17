@@ -25,7 +25,7 @@ multiple of `w`; the coefficient is the triple product of `u`, `v` and `w`. Over
 triple product `x ⬝ᵥ u ⨯₃ v` is the determinant of the matrix with rows `x`, `u` and `v`, so for
 linearly independent `u` and `v` it vanishes exactly when `x` lies in the plane they span.
 
-Over an ordered commutative ring, Lagrange's identity
+Over a linearly ordered commutative ring, Lagrange's identity
 `(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = (u ⬝ᵥ u) (w ⬝ᵥ w) - (u ⬝ᵥ w) ^ 2` shows that two vectors of equal squared
 length whose cross product has zero square are equal or opposite.
 
@@ -36,7 +36,7 @@ length whose cross product has zero square are equal or opposite.
 * `TauCeti.cross_cross_cross_eq_smul`: `(u ⨯₃ w) ⨯₃ (v ⨯₃ w) = (u ⬝ᵥ v ⨯₃ w) • w`.
 * `TauCeti.triple_product_eq_zero_iff_mem_span_pair`: for linearly independent `u` and `v`,
   `x ⬝ᵥ u ⨯₃ v = 0` exactly when `x` lies in the span of `u` and `v`.
-* `TauCeti.eq_or_eq_neg_of_cross_dotProduct_eq_zero`: over an ordered commutative ring, two
+* `TauCeti.eq_or_eq_neg_of_cross_dotProduct_eq_zero`: over a linearly ordered commutative ring, two
   vectors of equal squared length whose cross product has zero square are equal or opposite.
 
 ## Provenance
@@ -94,8 +94,8 @@ theorem triple_product_eq_zero_iff_mem_span_pair {K : Type*} [Field K] {u v x : 
   · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hx
     simp [add_dotProduct, dot_self_cross, dot_cross_self]
 
-/-- Two vectors of `R³` of equal squared length, over an ordered commutative ring `R` such as `ℝ`,
-whose cross product has zero square are equal or opposite. -/
+/-- Two vectors of `R³` of equal squared length, over a linearly ordered commutative ring `R`
+such as `ℝ`, whose cross product has zero square are equal or opposite. -/
 theorem eq_or_eq_neg_of_cross_dotProduct_eq_zero [LinearOrder R] [IsStrictOrderedRing R]
     {u w : Fin 3 → R} (h : u ⬝ᵥ u = w ⬝ᵥ w) (huw : (u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = 0) :
     w = u ∨ w = -u := by

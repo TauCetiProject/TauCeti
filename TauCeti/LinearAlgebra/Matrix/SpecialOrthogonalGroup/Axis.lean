@@ -30,8 +30,8 @@ on the unit sphere. The reason is that a rotation `g` of `R³` fixing two vector
 fixes their cross product, since rotations preserve the cross product, so `g` fixes the frame matrix
 `ofFrame u w` with columns `u`, `w` and `u ⨯₃ w`. The determinant of that frame is
 `(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w)`; when it is regular, so is the frame, and cancelling it from
-`g * ofFrame u w = ofFrame u w` forces `g = 1`. Over an ordered commutative ring, two vectors of
-equal squared length with `(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = 0` are equal or opposite
+`g * ofFrame u w = ofFrame u w` forces `g = 1`. Over a linearly ordered commutative ring, two
+vectors of equal squared length with `(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = 0` are equal or opposite
 (`TauCeti.eq_or_eq_neg_of_cross_dotProduct_eq_zero`).
 
 These are the facts about single rotations that the pole-counting argument for finite rotation
@@ -46,9 +46,9 @@ groups rests on; see `TauCeti/LinearAlgebra/Matrix/SpecialOrthogonalGroup/Pole.l
 * `Matrix.eq_one_of_mem_specialOrthogonalGroup_of_mulVec_eq_self_of_isRegular_cross_dotProduct`: a
   rotation of `R³` fixing `u` and `w` with `(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w)` regular is the identity.
 * `Matrix.eq_or_eq_neg_of_mem_specialOrthogonalGroup_of_mulVec_eq_self`: a nonidentity rotation of
-  `R³`, over an ordered commutative ring `R`, fixing two vectors of equal squared length fixes
-  them as two points of one axis: they are equal or opposite.
-* `Matrix.setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup`: over an ordered
+  `R³`, over a linearly ordered commutative ring `R`, fixing two vectors of equal squared length
+  fixes them as two points of one axis: they are equal or opposite.
+* `Matrix.setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup`: over a linearly ordered
   commutative ring `R`, the vectors fixed by a nonidentity rotation of `R³` with the squared length
   of a fixed vector `v` are exactly `v` and `-v`.
 * `Matrix.exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGroup`:
@@ -114,7 +114,7 @@ variable [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- **A nonidentity rotation of `R³` fixing two vectors of equal squared length fixes them as
 points of one axis at the same distance from the origin**: they are equal or opposite. Here `R`
-is an ordered commutative ring, such as `ℝ`. -/
+is a linearly ordered commutative ring, such as `ℝ`. -/
 theorem eq_or_eq_neg_of_mem_specialOrthogonalGroup_of_mulVec_eq_self
     {g : Matrix (Fin 3) (Fin 3) R} (hg : g ∈ specialOrthogonalGroup (Fin 3) R) (hg1 : g ≠ 1)
     {u w : Fin 3 → R} (huw : u ⬝ᵥ u = w ⬝ᵥ w) (hu : g *ᵥ u = u) (hw : g *ᵥ w = w) :
@@ -124,7 +124,7 @@ theorem eq_or_eq_neg_of_mem_specialOrthogonalGroup_of_mulVec_eq_self
     hu hw (IsRegular.of_ne_zero h)
 
 /-- **The vectors fixed by a nonidentity rotation `g` of `R³` with the squared length of a fixed
-vector `v` are exactly `v` and `-v`**, over an ordered commutative ring `R`. -/
+vector `v` are exactly `v` and `-v`**, over a linearly ordered commutative ring `R`. -/
 theorem setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup
     {g : Matrix (Fin 3) (Fin 3) R} (hg : g ∈ specialOrthogonalGroup (Fin 3) R) (hg1 : g ≠ 1)
     {v : Fin 3 → R} (hgv : g *ᵥ v = v) : {w | w ⬝ᵥ w = v ⬝ᵥ v ∧ g *ᵥ w = w} = {v, -v} := by
