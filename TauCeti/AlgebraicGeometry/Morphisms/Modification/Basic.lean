@@ -25,7 +25,11 @@ target.
 
 ## Main results
 
+* `AlgebraicGeometry.isDominant_morphismRestrict_iff`: a morphism is dominant exactly when its
+  restriction over a dense open of the target is.
 * `TauCeti.AlgebraicGeometry.IsModification.of_isIso`: isomorphisms are modifications.
+* `TauCeti.AlgebraicGeometry.IsModification.isDominant`: modifications are dominant, hence, being
+  universally closed, surjective (Mathlib's `Surjective.of_universallyClosed_of_isDominant`).
 * `TauCeti.AlgebraicGeometry.IsModification.birationalOver`: a modification `f : X ⟶ Y` is
   birational over `Y`, comparing `f` with the identity of `Y`.
 * `TauCeti.AlgebraicGeometry.IsModification.birational`: the source and target of a modification
@@ -40,9 +44,19 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
-
 universe u
+
+/-- A morphism is dominant exactly when its restriction over a dense open of the target is. -/
+theorem AlgebraicGeometry.isDominant_morphismRestrict_iff {X Y : Scheme.{u}} (f : X ⟶ Y)
+    {U : Y.Opens} (hU : Dense (U : Set Y)) : IsDominant (f ∣_ U) ↔ IsDominant f := by
+  refine ⟨fun _ ↦ ?_, fun h ↦ IsZariskiLocalAtTarget.restrict h U⟩
+  have := AlgebraicGeometry.Opens.isDominant_ι hU
+  have : IsDominant ((f ⁻¹ᵁ U).ι ≫ f) := by
+    rw [← morphismRestrict_ι]
+    infer_instance
+  exact IsDominant.of_comp (f ⁻¹ᵁ U).ι f
+
+namespace TauCeti.AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
 
@@ -65,6 +79,11 @@ gives a partial isomorphism from `X` to `Y` lying over `Y`. -/
 theorem birationalOver (f : X ⟶ Y) [IsModification f] : Scheme.BirationalOver f (𝟙 Y) := by
   obtain ⟨U, hU, hfU, _⟩ := exists_isIso_morphismRestrict (f := f)
   exact ⟨⟨f ⁻¹ᵁ U, hfU, U, hU, asIso (f ∣_ U)⟩, by simp [Scheme.PartialIso.IsOver]⟩
+
+/-- A modification is dominant. -/
+instance (priority := 100) isDominant (f : X ⟶ Y) [IsModification f] : IsDominant f := by
+  obtain ⟨U, hU, -, _⟩ := exists_isIso_morphismRestrict (f := f)
+  exact (isDominant_morphismRestrict_iff f hU).mp inferInstance
 
 /-- The source and target of a modification are birational. -/
 theorem birational (f : X ⟶ Y) [IsModification f] : X.Birational Y :=

@@ -32,6 +32,8 @@ the generic point, and a dominant one by its pullback of rational functions.
 
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap`: the pullback `K(Y) ⟶ K(X)` of rational
   functions along a dominant morphism `f : X ⟶ Y` of irreducible schemes.
+* `AlgebraicGeometry.Scheme.Hom.functionFieldEquiv`: the ring isomorphism `K(Y) ≃+* K(X)` when
+  that pullback is an isomorphism.
 
 ## Main results
 
@@ -58,6 +60,10 @@ the generic point, and a dominant one by its pullback of rational functions.
   injective for nonempty `V`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
+* `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_iff_isIso_stalkMap`: `f^*` is an
+  isomorphism exactly when the stalk map at the generic point is, and
+  `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_of_isOpenImmersion_morphismRestrict`: this
+  holds when `f` is an open immersion over a nonempty open of the target.
 * `AlgebraicGeometry.isDominant_fromSpecStalk_genericPoint`: the canonical morphism `Spec K(X) ⟶ X`
   is dominant.
 * `AlgebraicGeometry.Scheme.Hom.ext_of_functionFieldMap_eq`: dominant morphisms from a reduced
@@ -227,6 +233,88 @@ theorem functionFieldMap_comp [IrreducibleSpace Z] (f : X ⟶ Y) (g : Y ⟶ Z) [
     (f ≫ g).functionFieldMap = g.functionFieldMap ≫ f.functionFieldMap := by
   rw [eq_comm, eq_functionFieldMap_iff, Spec.map_comp_assoc,
     SpecMap_functionFieldMap_fromSpecStalk, SpecMap_functionFieldMap_fromSpecStalk_assoc]
+
+/-- The pullback of rational functions along a dominant morphism of irreducible schemes is an
+isomorphism exactly when the stalk map at the generic point of the source is. -/
+theorem isIso_functionFieldMap_iff_isIso_stalkMap (f : X ⟶ Y) [IsDominant f] :
+    IsIso f.functionFieldMap ↔ IsIso (f.stalkMap (genericPoint X)) := by
+  have h : (Y.presheaf.stalkCongr (.of_eq f.genericPoint_eq_of_isDominant.symm)).hom ≫
+      f.stalkMap (genericPoint X) = f.functionFieldMap := by
+    rw [TopCat.Presheaf.stalkCongr_hom, functionFieldMap]
+  rw [← h, isIso_comp_left_iff]
+
+/-- If the stalk map of a dominant morphism of irreducible schemes at the generic point of the
+source is an isomorphism, then so is the pullback of rational functions. -/
+instance isIso_functionFieldMap_of_isIso_stalkMap (f : X ⟶ Y) [IsDominant f]
+    [IsIso (f.stalkMap (genericPoint X))] : IsIso f.functionFieldMap :=
+  (isIso_functionFieldMap_iff_isIso_stalkMap f).mpr ‹_›
+
+/-- If a dominant morphism `f : X ⟶ Y` of irreducible schemes restricts to an open immersion over
+a nonempty open `U ⊆ Y`, then its pullback of rational functions is an isomorphism. -/
+theorem isIso_functionFieldMap_of_isOpenImmersion_morphismRestrict (f : X ⟶ Y) [IsDominant f]
+    (U : Y.Opens) [Nonempty U] [IsOpenImmersion (f ∣_ U)] : IsIso f.functionFieldMap := by
+  have hx : genericPoint X ∈ f ⁻¹ᵁ U :=
+    ((genericPoint_spec X).mem_open_set_iff (f ⁻¹ᵁ U).isOpen).mpr
+      ⟨_, trivial, (Classical.arbitrary (f ⁻¹ᵁ U)).2⟩
+  have hU := fun y ↦ (inferInstance : IsIso ((f ∣_ U).stalkMap y))
+  have : IsIso (f.stalkMap (genericPoint X)) :=
+    ((MorphismProperty.isomorphisms _).arrow_mk_iso_iff
+      (morphismRestrictStalkMap f U ⟨_, hx⟩)).mp (hU _)
+  infer_instance
+
+/-- The pullback of rational functions along a composite of dominant morphisms of irreducible
+schemes is an isomorphism when both pullbacks are. -/
+instance isIso_functionFieldMap_comp [IrreducibleSpace Z] (f : X ⟶ Y) (g : Y ⟶ Z) [IsDominant f]
+    [IsDominant g] [IsIso f.functionFieldMap] [IsIso g.functionFieldMap] :
+    IsIso (f ≫ g).functionFieldMap := by
+  rw [functionFieldMap_comp]
+  infer_instance
+
+/-- The ring isomorphism `K(Y) ≃+* K(X)` of generic stalks (function fields when `X` and `Y` are
+integral) given by the pullback of rational functions along a dominant morphism `f : X ⟶ Y` of
+irreducible schemes, when that pullback is an isomorphism: for instance when `f` is a
+modification, or an open immersion. -/
+noncomputable def functionFieldEquiv (f : X ⟶ Y) [IsDominant f] [IsIso f.functionFieldMap] :
+    Y.functionField ≃+* X.functionField :=
+  (asIso f.functionFieldMap).commRingCatIsoToRingEquiv
+
+/-- `f.functionFieldEquiv` is the pullback of rational functions along `f`. -/
+@[simp]
+theorem functionFieldEquiv_toRingHom (f : X ⟶ Y) [IsDominant f] [IsIso f.functionFieldMap] :
+    (f.functionFieldEquiv : Y.functionField →+* X.functionField) = f.functionFieldMap.hom :=
+  (rfl)
+
+/-- The inverse of `f.functionFieldEquiv` is the inverse of the pullback of rational functions. -/
+@[simp]
+theorem functionFieldEquiv_symm_toRingHom (f : X ⟶ Y) [IsDominant f] [IsIso f.functionFieldMap] :
+    (f.functionFieldEquiv.symm : X.functionField →+* Y.functionField) =
+      (inv f.functionFieldMap).hom :=
+  (rfl)
+
+/-- `f.functionFieldEquiv` applies the pullback of rational functions along `f`. -/
+@[simp]
+theorem functionFieldEquiv_apply (f : X ⟶ Y) [IsDominant f] [IsIso f.functionFieldMap]
+    (a : Y.functionField) : f.functionFieldEquiv a = f.functionFieldMap.hom a :=
+  (rfl)
+
+/-- The inverse of `f.functionFieldEquiv` applies the inverse of the pullback. -/
+@[simp]
+theorem functionFieldEquiv_symm_apply (f : X ⟶ Y) [IsDominant f] [IsIso f.functionFieldMap]
+    (a : X.functionField) : f.functionFieldEquiv.symm a = (inv f.functionFieldMap).hom a :=
+  (rfl)
+
+/-- The isomorphism of generic stalks induced by the identity is the identity. -/
+@[simp]
+theorem functionFieldEquiv_id : (𝟙 X : X ⟶ X).functionFieldEquiv = RingEquiv.refl _ :=
+  RingEquiv.ext fun a ↦ by simp
+
+/-- The isomorphism of generic stalks induced by a composite is the composite of the
+isomorphisms, in the opposite order. -/
+@[simp]
+theorem functionFieldEquiv_comp [IrreducibleSpace Z] (f : X ⟶ Y) (g : Y ⟶ Z) [IsDominant f]
+    [IsDominant g] [IsIso f.functionFieldMap] [IsIso g.functionFieldMap] :
+    (f ≫ g).functionFieldEquiv = g.functionFieldEquiv.trans f.functionFieldEquiv :=
+  RingEquiv.ext fun a ↦ by simp
 
 /-- **A dominant morphism into a separated scheme is determined by its pullback of rational
 functions**: two dominant `S`-morphisms from a reduced irreducible scheme to an irreducible
