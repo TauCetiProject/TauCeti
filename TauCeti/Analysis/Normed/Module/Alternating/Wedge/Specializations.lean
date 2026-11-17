@@ -94,6 +94,14 @@ theorem wedge_comm (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ
   exact pairedWedge_comm (ContinuousLinearMap.mul ℝ ℝ).continuous₂
     (fun a b : ℝ => mul_comm a b) φ ψ v
 
+/-- The wedge of a real form of odd degree with itself vanishes. -/
+theorem wedge_self_of_odd (hk : Odd k) (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge φ φ = 0 := by
+  ext v
+  have h := wedge_comm φ φ v
+  rw [(hk.mul hk).neg_one_pow, neg_one_smul, Fin.cast_refl, Function.comp_id] at h
+  rw [coe_zero, Pi.zero_apply]
+  linarith
+
 /-- The real wedge is associative, up to the canonical reassociation of its degree. -/
 theorem wedge_assoc (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
     (χ : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + l + m) → E) :

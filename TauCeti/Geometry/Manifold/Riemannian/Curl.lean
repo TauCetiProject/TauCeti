@@ -36,7 +36,7 @@ The classical vector-calculus identities are identities of forms:
   `∇ × ∇ × X = ∇(∇ · X) - ∇²X`;
 * on a boundaryless manifold, `curl` is formally self-adjoint for the `L²` pairing of forms,
   `∫_M ⟨curl α, β⟩ vol = ∫_M ⟨α, curl β⟩ vol` when `α` or `β` is compactly supported
-  (`TauCeti.SmoothForm.integralTopForm_inner_curl`);
+  (`TauCeti.SmoothForm.integralTopForm_inner_curl_eq_inner_curl`);
 * reversing the orientation negates the curl (`TauCeti.SmoothForm.curl_neg_orientation`).
 
 ## The principal symbol
@@ -141,31 +141,6 @@ theorem curl_curl_add_mextDerivₗ_codifferential (α : SmoothForm I M ℝ 1) :
 
 /-! ### The commutator with functions and the principal symbol -/
 
-/-- The wedge of a one-form with itself vanishes. The degree is a variable equal to `1`, so that
-the lemma also applies to forms of degree `0 + 1`. -/
-private theorem wedge_self_of_eq_one {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-    {j : ℕ} (hj : j = 1) (φ : V [⋀^Fin j]→L[ℝ] ℝ) : φ.wedge φ = 0 := by
-  subst hj
-  ext v
-  have hv : v = ![v 0, v 1] := by
-    ext i
-    fin_cases i <;> rfl
-  rw [hv, ContinuousAlternatingMap.wedge_apply_one_one, ContinuousAlternatingMap.coe_zero,
-    Pi.zero_apply]
-  ring
-
-omit [FiniteDimensional ℝ E] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The Leibniz rule `d (f α) = df ∧ α + f dα` for a one-form, at a point. -/
-private theorem coe_mextDerivₗ_funSMulₗ_apply (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ 1)
-    (x : M) :
-    (mextDerivₗ I 1 (funSMulₗ f α)).1 x =
-      (mextDeriv (RoughForm.ofFunction I f) x).wedge (α.1 x) + f x • (mextDerivₗ I 1 α).1 x := by
-  ext v
-  rw [mextDerivₗ_funSMulₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ← ContinuousAlternatingMap.wedge_def, ContinuousAlternatingMap.add_apply,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-  rfl
-
 /-- **The commutator of the curl with a function**: `curl (f α) = f curl α + ⋆(df ∧ α)`. The
 commutator `[curl, f] α = ⋆(df ∧ α)` is the principal symbol of the curl at `df`, the cross
 product with `df`. -/
@@ -174,8 +149,10 @@ theorem coe_curl_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ 
       f x • (curl o α).1 x + formHodgeStarCLM o (k := 2) (l := 1) rfl x
         ((mextDeriv (RoughForm.ofFunction I f) x).wedge (α.1 x)) := by
   funext x
-  rw [coe_curl_apply, coe_mextDerivₗ_funSMulₗ_apply, map_add, map_smul, add_comm,
-    coe_curl_apply]
+  rw [coe_curl_apply, mextDerivₗ_funSMulₗ, LinearEquiv.cast_apply, cast_eq, Submodule.coe_add,
+    Pi.add_apply, coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ← ContinuousAlternatingMap.wedge_def, mextDerivₗ_apply, coe_ofFunction, coe_funSMulₗ, map_add,
+    map_smul, add_comm, coe_curl_apply]
 
 /-- **The curl has order one**: its double commutators with multiplication operators vanish,
 `[[curl, f], g] = 0`. -/
@@ -197,7 +174,7 @@ theorem curl_funSMulₗ_mextDerivₗ_self (f : C^∞⟮I, M; ℝ⟯) :
   refine Subtype.ext (funext fun x ↦ ?_)
   rw [coe_curl_funSMulₗ, curl_mextDerivₗ, mextDerivₗ_apply, coe_ofFunction]
   beta_reduce
-  rw [wedge_self_of_eq_one rfl, map_zero]
+  rw [ContinuousAlternatingMap.wedge_self_of_odd odd_one, map_zero]
   simp
 
 /-! ### Formal self-adjointness -/
@@ -207,7 +184,7 @@ variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 /-- **The curl is formally self-adjoint**: on an oriented boundaryless Riemannian three-manifold,
 `∫_M ⟨curl α, β⟩ vol = ∫_M ⟨α, curl β⟩ vol` for smooth one-forms `α` and `β`, one of them
 compactly supported. -/
-theorem integralTopForm_inner_curl (α β : SmoothForm I M ℝ 1)
+theorem integralTopForm_inner_curl_eq_inner_curl (α β : SmoothForm I M ℝ 1)
     (h : α ∈ compactlySupportedForms I M 1 ∨ β ∈ compactlySupportedForms I M 1) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 1
         ((curl o α).1 x) (β.1 x) • riemannianVolumeForm o x) =

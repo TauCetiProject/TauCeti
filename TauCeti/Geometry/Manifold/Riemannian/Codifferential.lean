@@ -573,9 +573,11 @@ private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) 
     ext w
     rw [innerSL_apply_apply, Manifold.inner_mgradient]
   ext v
-  rw [mextDerivₗ_funSMulₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf, add_comm]
-  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+  rw [mextDerivₗ_funSMulₗ, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    cast_apply, coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ← ContinuousAlternatingMap.wedge_def, mextDerivₗ_apply, coe_ofFunction, mextDeriv_ofFunction,
+    hdf, add_comm]
+  simp only [coe_funSMulₗ, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
 

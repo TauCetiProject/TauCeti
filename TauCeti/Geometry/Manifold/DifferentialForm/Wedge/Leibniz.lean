@@ -263,6 +263,22 @@ theorem mextDerivₗ_funSMulₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ�
   simp only [mextDerivₗ_apply, coe_funSMulₗ]
   exact mextDeriv_fun_smul (f.contMDiff.mdifferentiableAt (by simp)) (φ.mdifferentiableAt x) v
 
+/-- The Leibniz rule `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form `φ`,
+as an identity of smooth forms. The degree `0 + 1 + k` of `df ∧ φ` is identified with `k + 1` by
+`LinearEquiv.cast`. -/
+theorem mextDerivₗ_funSMulₗ [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
+    mextDerivₗ I k (funSMulₗ f φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+          (show 0 + 1 + k = k + 1 by omega)
+          (SmoothForm.wedge (mextDerivₗ I 0 (ofFunction f)) φ) +
+        funSMulₗ f (mextDerivₗ I k φ) := by
+  apply Subtype.ext
+  ext x v
+  rw [mextDerivₗ_funSMulₗ_apply, Submodule.coe_add, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply, cast_apply, coe_wedge, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  simp only [mextDerivₗ_apply, coe_ofFunction]
+
 end SmoothForm
 
 end TauCeti
