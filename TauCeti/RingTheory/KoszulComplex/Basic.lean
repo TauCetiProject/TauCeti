@@ -42,6 +42,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 * `TauCeti.koszulComplex.smulHomotopy`: for `m : M`, exterior multiplication by `m` is a
   null-homotopy of multiplication by `φ(m)`, so that `φ(m)` annihilates the Koszul homology
   (`TauCeti.koszulComplex.smul_homology_eq_zero`).
+* `TauCeti.ExteriorAlgebra.wedgeLeft_comp_wedgeLeft`: exterior multiplication by `m` squares to
+  zero, and `TauCeti.ExteriorAlgebra.wedgeLeftₗ` is exterior multiplication as a bilinear map.
 * `TauCeti.koszulComplex.homologyZeroEquiv`: `H₀(K(φ)) ≃ R ⧸ φ(M)`, and its specialization
   `TauCeti.koszulComplex.homologyZeroEquivSpan` to `H₀(K(x)) ≃ R ⧸ (x₁, …, xₙ)` for a finite
   sequence.
@@ -214,6 +216,32 @@ theorem wedgeLeft_comp_koszulDifferential_add (m : M) (n : ℕ) :
   LinearMap.ext fun x ↦ Subtype.ext <| by simp [contractLeft_ι_mul]
 
 end Differential
+
+namespace ExteriorAlgebra
+
+/-- Wedging twice with the same vector gives zero, `m ∧ m ∧ v = 0`: exterior multiplication by `m`
+is a differential on the exterior powers, for which the Koszul homotopy identities above say that
+the contraction by `φ` is a null-homotopy of multiplication by `φ(m)`. -/
+@[simp]
+theorem wedgeLeft_comp_wedgeLeft (m : M) (n : ℕ) :
+    wedgeLeft (R := R) m (n + 1) ∘ₗ wedgeLeft m n = 0 :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp [← mul_assoc]
+
+variable (R M) in
+/-- Exterior multiplication `(m, v) ↦ m ∧ v` as a bilinear map, linear in the vector `m` as well
+as in `v`. -/
+def wedgeLeftₗ (n : ℕ) : M →ₗ[R] ⋀[R]^n M →ₗ[R] ⋀[R]^(n + 1) M :=
+  LinearMap.mk₂ R (fun m x ↦ wedgeLeft m n x)
+    (fun _ _ _ ↦ Subtype.ext <| by simp [add_mul])
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+
+@[simp]
+theorem wedgeLeftₗ_apply (n : ℕ) (m : M) : wedgeLeftₗ R M n m = wedgeLeft m n :=
+  (rfl)
+
+end ExteriorAlgebra
 
 /-- The **Koszul complex** `K(φ)` of a linear functional `φ : M → R`: the `ℕ`-indexed chain complex
 with `K(φ)ₙ = ⋀ⁿ M` and differential `koszulDifferential φ`, the contraction by `φ`.

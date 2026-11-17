@@ -39,6 +39,8 @@ The file develops:
   on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
+* the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
+  of the frequency, as for first-order operators with constant coefficients;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
@@ -422,6 +424,21 @@ degree. -/
 theorem id_comp (a : HomogeneousSymbol X E V W m) :
     (id X E W).comp a = a.castDegree (zero_add m).symm :=
   ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
+variable (X) in
+/-- The homogeneous symbol of degree `1` given at every position by a continuous real-linear
+function `L` of the frequency, such as the principal symbol `∑ⱼ i ξⱼ Aⱼ` of a first-order operator
+`∑ⱼ Aⱼ ∂ⱼ` with constant coefficients. -/
+def ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) : HomogeneousSymbol X E V W 1 where
+  coefficient p := L p.2
+  zero_covector _ := map_zero L
+  contDiffOn_coefficient := (L.contDiff.comp contDiff_snd).contDiffOn
+  homogeneous _ _ _ _ := by rw [Real.rpow_one, map_smul]
+
+@[simp]
+theorem coefficient_ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) (p : X × E) :
+    (ofLinear X L).coefficient p = L p.2 :=
+  (rfl)
 
 /-! ### Pullback in the position -/
 

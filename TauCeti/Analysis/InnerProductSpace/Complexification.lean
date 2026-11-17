@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Module.Complexification
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The Hilbert-space complexification of a real inner product space
@@ -42,12 +43,15 @@ self-adjoint operator, to operators on real Hilbert spaces.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
   `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
+* `WithLp.instComplexificationFiniteDimensional` and `WithLp.finrank_complexification`: the
+  complexification of a finite-dimensional space is finite-dimensional, of complex dimension the
+  real dimension of `X`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
   `ContinuousLinearMap.adjoint_complexifyL2`.
 * `ContinuousLinearMap.complexifyL2ₗᵢ`: complexification as a real-linear isometry of operator
-  spaces.
+  spaces, and `ContinuousLinearMap.continuous_complexifyL2`: complexification is continuous.
 * `ContinuousLinearMap.complexifyL2StarAlgHom`: complexification of the bounded operators on a
   real Hilbert space, as a `⋆`-algebra homomorphism over `ℝ`.
 * `ContinuousLinearMap.isClosedEmbedding_complexifyL2StarAlgHom`: complexification of bounded
@@ -136,6 +140,23 @@ theorem complexificationEquivProd_symm_apply (p : WithLp 2 (X × X)) :
 instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
+
+/-- The `L²` complexification of a finite-dimensional real space is finite-dimensional. -/
+instance instComplexificationFiniteDimensional [FiniteDimensional ℝ X] :
+    FiniteDimensional ℂ (WithLp 2 (Complexification X)) :=
+  haveI : FiniteDimensional ℝ (WithLp 2 (Complexification X)) :=
+    (complexificationEquivProd X).toLinearEquiv.symm.finiteDimensional
+  Module.Finite.of_restrictScalars_finite ℝ ℂ _
+
+/-- The complex dimension of the complexification of `X` is the real dimension of `X`. -/
+@[simp]
+theorem finrank_complexification [FiniteDimensional ℝ X] :
+    Module.finrank ℂ (WithLp 2 (Complexification X)) = Module.finrank ℝ X := by
+  have h := Module.finrank_mul_finrank ℝ ℂ (WithLp 2 (Complexification X))
+  rw [(complexificationEquivProd X).toLinearEquiv.finrank_eq,
+    (WithLp.linearEquiv 2 ℝ (X × X)).finrank_eq, Module.finrank_prod,
+    Complex.finrank_real_complex] at h
+  omega
 
 end Norm
 
@@ -362,6 +383,10 @@ variable {X Y}
 
 @[simp]
 theorem complexifyL2ₗᵢ_apply (T : X →L[ℝ] Y) : complexifyL2ₗᵢ X Y T = T.complexifyL2 := (rfl)
+
+/-- Complexification of bounded operators is continuous for the operator norms. -/
+theorem continuous_complexifyL2 : Continuous (complexifyL2 : (X →L[ℝ] Y) → _) :=
+  (complexifyL2ₗᵢ X Y).continuous.congr complexifyL2ₗᵢ_apply
 
 @[simp]
 theorem complexifyL2StarAlgHom_apply [CompleteSpace X] (T : X →L[ℝ] X) :

@@ -34,6 +34,9 @@ the identity above as its symbol.
 
 * `TauCeti.inner_wedgeLeft_eq_inner_koszulDifferential`: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫` in every
   degree, and `TauCeti.adjoint_wedgeLeft`: the adjoint of `ε_u` is `ι_u`.
+* `TauCeti.wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft`: `ε_u ε_u* + ε_u* ε_u = ‖u‖²` in
+  positive degrees, and `TauCeti.adjoint_wedgeLeft_comp_wedgeLeft_zero`: `ε_u* ε_u = ‖u‖²` on
+  scalars.
 * `Orientation.koszulDifferential_hodgeStar`: `ι_u (⋆x) = (-1) ^ k ⋆(u ∧ x)` for `x ∈ ⋀ᵏ V`.
 * `Orientation.hodgeStar_koszulDifferential`: `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x` for `x ∈ ⋀ᵏ⁺¹ V`.
 * `Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar`: on `⋀ᵏ⁺¹ V` with
@@ -76,6 +79,24 @@ theorem adjoint_wedgeLeft (u : V) (n : ℕ) :
     LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u n) = koszulDifferential (innerₗ V u) n :=
   ((LinearMap.eq_adjoint_iff _ _).2 fun y x ↦ by
     rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm]).symm
+
+/-- **Exterior multiplication and its adjoint anticommute to `‖u‖²`**: on `⋀ⁿ⁺¹ V`,
+`ε_u ε_u* + ε_u* ε_u = ‖u‖²`, where `ε_u = u ∧ ·` and `ε_u*` is the contraction by `⟪u, ·⟫`. -/
+theorem wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft (u : V) (n : ℕ) :
+    ExteriorAlgebra.wedgeLeft (R := ℝ) u n ∘ₗ LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u n) +
+        LinearMap.adjoint (ExteriorAlgebra.wedgeLeft (R := ℝ) u (n + 1)) ∘ₗ
+          ExteriorAlgebra.wedgeLeft u (n + 1) =
+      (‖u‖ ^ 2 : ℝ) • LinearMap.id := by
+  rw [adjoint_wedgeLeft, adjoint_wedgeLeft, wedgeLeft_comp_koszulDifferential_add,
+    innerₗ_apply_apply, real_inner_self_eq_norm_sq]
+
+/-- On scalars `⋀⁰ V`, `ε_u* ε_u = ‖u‖²`, where `ε_u = u ∧ ·` and `ε_u*` is the contraction by
+`⟪u, ·⟫`. -/
+theorem adjoint_wedgeLeft_comp_wedgeLeft_zero (u : V) :
+    LinearMap.adjoint (ExteriorAlgebra.wedgeLeft (R := ℝ) u 0) ∘ₗ ExteriorAlgebra.wedgeLeft u 0 =
+      (‖u‖ ^ 2 : ℝ) • LinearMap.id := by
+  rw [adjoint_wedgeLeft, koszulDifferential_comp_wedgeLeft_zero, innerₗ_apply_apply,
+    real_inner_self_eq_norm_sq]
 
 end TauCeti
 
