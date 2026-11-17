@@ -41,6 +41,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
   sums of two roots.
+* `RootPairing.weylGroup.mk_reflection_eq_ofIdx` identifies the Weyl-group subtype element
+  constructed from `Equiv.reflection P i` with `weylGroup.ofIdx P i`.
 * `RootPairing.weylGroup.ofIdx_mul_self` says a simple reflection is an involution.
 * `RootPairing.weylGroup.ofIdx_ne_one` says a simple reflection is not the identity over a
   ring of characteristic zero.
@@ -249,6 +251,13 @@ lemma weylGroup.coe_ofIdx (i : ι) :
     ((weylGroup.ofIdx P i : P.weylGroup) : P.Aut) =
       Equiv.reflection P i :=
   rfl
+
+/-- The Weyl-group subtype element constructed from `Equiv.reflection P i` equals
+`weylGroup.ofIdx P i`. -/
+@[simp]
+lemma weylGroup.mk_reflection_eq_ofIdx (i : ι) {h : Equiv.reflection P i ∈ P.weylGroup} :
+    (⟨Equiv.reflection P i, h⟩ : P.weylGroup) = weylGroup.ofIdx P i :=
+  Subtype.ext (weylGroup.coe_ofIdx P i).symm
 
 /-- A simple reflection of the Weyl group is its own inverse. -/
 @[simp]

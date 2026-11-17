@@ -189,7 +189,11 @@ theorem pseudoreflectionSubgroup_weylGroupRootRep :
   rw [eq_top_iff]
   rintro ⟨w, hw⟩ -
   induction hw using weylGroup.induction with
-  | mem i => exact P.ofIdx_mem_pseudoreflectionSubgroup_weylGroupRootRep i
+  | mem i =>
+    -- `weylGroup.induction` exposes the subtype constructor `⟨Equiv.reflection P i, _⟩`
+    -- rather than `weylGroup.ofIdx P i`.
+    rw [weylGroup.mk_reflection_eq_ofIdx]
+    exact P.ofIdx_mem_pseudoreflectionSubgroup_weylGroupRootRep i
   | one => exact one_mem _
   | mul x y hx hy ihx ihy =>
     exact (Submonoid.mk_mul_mk P.weylGroup.toSubmonoid x y hx hy) ▸ mul_mem ihx ihy
@@ -279,11 +283,11 @@ private theorem det_weylGroupRootSpanRep_sq (w : P.weylGroup) :
   obtain ⟨g, hg⟩ := w
   induction hg using weylGroup.induction with
   | mem i =>
-    rw [show (⟨Equiv.reflection P i, P.reflection_mem_weylGroup i⟩ : P.weylGroup) =
-      weylGroup.ofIdx P i from Subtype.ext (weylGroup.coe_ofIdx P i).symm]
-    have hsq : P.weylGroupRootSpanRep (weylGroup.ofIdx P i) ^ 2 = 1 := by
-      rw [sq, ← map_mul, weylGroup.ofIdx_mul_self, map_one]
-    rw [← map_pow, hsq, map_one]
+    -- `weylGroup.induction` decomposes `w` into the underlying automorphism and membership proof,
+    -- exposing the subtype constructor `⟨Equiv.reflection P i, _⟩` rather than
+    -- `weylGroup.ofIdx P i`.
+    rw [weylGroup.mk_reflection_eq_ofIdx, ← map_pow, ← map_pow, sq, weylGroup.ofIdx_mul_self,
+      map_one, map_one]
   | one =>
     rw [(Submonoid.mk_eq_one (S := P.weylGroup.toSubmonoid)).mpr rfl, map_one, map_one, one_pow]
   | mul x y hx hy ihx ihy =>
