@@ -27,12 +27,6 @@ The target is `CkHolderSpace 2`, with its sum of the supremum norms of the itera
 derivatives and the Hölder seminorm of the Hessian. The continuous multilinear operator norm
 agrees with the curried Hessian norm in the parabolic space.
 
-Conversely, a bounded `C^{2,α}` map `g` on space is a time-independent order-two parabolic Hölder
-map `(x, t) ↦ g(x)`, with vanishing time derivative. This time-independent extension
-`ParabolicC2HolderSpace.compSlabSpaceL` has norm at most one, and every spatial trace recovers
-`g`. It is how time-independent comparison functions, such as regularizations of an initial
-datum, enter estimates for parabolic operators.
-
 The same holds one order lower: every time slice of a bounded order-one parabolic Hölder map
 (`ParabolicC1HolderSpace`) belongs to `C_b^{1,α}`, the trace operator
 `ParabolicC1HolderSpace.spatialTraceL` has norm at most one at every time of the closed slab, and
@@ -42,8 +36,6 @@ time reversal exchanges the initial and terminal traces.
 
 * `TauCeti.ParabolicC2HolderSpace.spatialTraceL`: the trace `C_b^{2+α,1+α/2} → C_b^{2,α}` at a
   time of the slab, of norm at most one.
-* `TauCeti.ParabolicC2HolderSpace.compSlabSpaceL`: the time-independent extension
-  `C_b^{2,α} → C_b^{2+α,1+α/2}`, a right inverse of every trace.
 * `TauCeti.ParabolicC1HolderSpace.spatialTraceL`: the trace `C_{par,b}^{1+α} → C_b^{1,α}` at a
   time of the slab, of norm at most one.
 * `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE` and
@@ -282,148 +274,6 @@ theorem spatialTrace_zero (t : Icc a b) :
 theorem norm_spatialTraceL_le_one (t : Icc a b) :
     ‖spatialTraceL (α := α) (E := E) (F := F) (hab := hab) t‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
-
-/-! ### Time-independent maps -/
-
-section TimeIndependent
-
-/-- The spatial position `p ↦ p.space` on the slab, as a continuous map. -/
-private def slabSpaceContinuousMap : C(slab (E := E) a b, E) :=
-  ⟨fun p ↦ (p : ParabolicSpaceTime E).space, continuous_space.comp continuous_subtype_val⟩
-
-omit [NormedSpace ℝ E] in
-private theorem slabSpaceContinuousMap_apply (p : slab (E := E) a b) :
-    slabSpaceContinuousMap p = (p : ParabolicSpaceTime E).space :=
-  (rfl)
-
-/-- The curried Hessian of a bounded `C^{2,α}` map, as a bounded continuous field. -/
-private def hessianBCF (g : CkHolderSpace 2 α E F) : E →ᵇ (E →L[ℝ] E →L[ℝ] F) :=
-  BoundedContinuousFunction.ofNormedAddCommGroup (_root_.fderiv ℝ (_root_.fderiv ℝ g))
-    (g.contDiff_fderiv.continuous_fderiv one_ne_zero) _
-    g.norm_fderiv_fderiv_le_iteratedFDeriv_two
-
-private theorem coe_hessianBCF (g : CkHolderSpace 2 α E F) :
-    ⇑(hessianBCF g) = _root_.fderiv ℝ (_root_.fderiv ℝ g) := by
-  simp [hessianBCF]
-
-/-- The curried Hessian of a bounded `C^{2,α}` map, as an element of the bounded Hölder space. -/
-private def hessianHolder (g : CkHolderSpace 2 α E F) : HolderSpace α E (E →L[ℝ] E →L[ℝ] F) :=
-  HolderSpace.ofBoundedContinuousFunction (hessianBCF g)
-    (by rw [coe_hessianBCF]; exact g.holderWith_fderiv_fderiv.memHolder)
-
-private theorem hessianHolder_apply (g : CkHolderSpace 2 α E F) (x : E) :
-    hessianHolder g x = _root_.fderiv ℝ (_root_.fderiv ℝ g) x := by
-  rw [hessianHolder, HolderSpace.ofBoundedContinuousFunction_apply, coe_hessianBCF]
-
-private theorem norm_hessianHolder_le (g : CkHolderSpace 2 α E F) :
-    ‖hessianHolder g‖ ≤ ‖g.iteratedFDeriv 2‖ + nnHolderNorm α (iteratedFDeriv ℝ 2 g) := by
-  rw [HolderSpace.norm_def, hessianHolder,
-    HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction, coe_hessianBCF]
-  gcongr
-  · exact BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _
-      (norm_nonneg (g.iteratedFDeriv 2)) _
-  · exact_mod_cast g.holderWith_fderiv_fderiv.nnholderNorm_le
-
-/-- The time-independent extension `(x, t) ↦ g(x)` of a bounded `C^{2,α}` map. -/
-private def compSlabSpace (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E F hab :=
-  mk (g.toBoundedContinuousFunction.compContinuous slabSpaceContinuousMap)
-    (g.fderivBCF.compContinuous slabSpaceContinuousMap)
-    (HolderSpace.compSlabSpaceL (hessianHolder g)) 0
-    (fun t x ↦ by
-      simpa [slabSpaceContinuousMap_apply, BoundedContinuousFunction.compContinuous_apply]
-        using g.hasFDerivAt x)
-    (fun t x ↦ by
-      simpa [slabSpaceContinuousMap_apply, BoundedContinuousFunction.compContinuous_apply,
-        hessianHolder_apply] using
-        (g.contDiff_fderiv.differentiable one_ne_zero x).hasFDerivAt)
-    (fun x t ↦ by
-      simpa [timeExtension_def, slabSpaceContinuousMap_apply,
-        BoundedContinuousFunction.compContinuous_apply] using
-        hasDerivWithinAt_const (x := (t : ℝ)) (s := Icc a b) (c := g x))
-
-private theorem compSlabSpace_apply (g : CkHolderSpace 2 α E F) (p : slab (E := E) a b) :
-    compSlabSpace (hab := hab) g p = g (p : ParabolicSpaceTime E).space := by
-  simp [compSlabSpace, slabSpaceContinuousMap_apply, BoundedContinuousFunction.compContinuous_apply]
-
-private theorem norm_compSlabSpace_le (g : CkHolderSpace 2 α E F) :
-    ‖compSlabSpace (hab := hab) g‖ ≤ ‖g‖ := by
-  have h₀ := BoundedContinuousFunction.norm_compContinuous_le g.toBoundedContinuousFunction
-    (slabSpaceContinuousMap (a := a) (b := b))
-  have h₁ := BoundedContinuousFunction.norm_compContinuous_le g.fderivBCF
-    (slabSpaceContinuousMap (a := a) (b := b))
-  have h₂ := HolderSpace.norm_compSlabSpaceL_apply_le (a := a) (b := b) (hessianHolder g)
-  rw [g.norm_toBoundedContinuousFunction] at h₀
-  rw [g.norm_fderivBCF] at h₁
-  rw [norm_eq, compSlabSpace, valueL_mk, spatialFDerivL_mk, spatialSecondFDerivL_mk,
-    timeDerivL_mk, norm_zero, add_zero, CkHolderSpace.norm_eq, Fin.sum_univ_three]
-  linarith [norm_hessianHolder_le g]
-
-/-- **The time-independent extension.** A bounded `C^{2,α}` map `g` on `E`, viewed as the
-time-independent map `(x, t) ↦ g(x)` on the slab `E × [a, b]`, as a bounded linear map into the
-order-two parabolic Hölder space, of norm at most one (`norm_compSlabSpaceL_le`). Its spatial
-derivatives are those of `g`, its time derivative vanishes, and every spatial trace recovers `g`
-(`spatialTrace_compSlabSpaceL`). -/
-def compSlabSpaceL : CkHolderSpace 2 α E F →L[ℝ] ParabolicC2HolderSpace α E F hab :=
-  LinearMap.mkContinuous
-    { toFun := compSlabSpace
-      map_add' g₁ g₂ := by
-        ext p
-        simp [compSlabSpace_apply, CkHolderSpace.coe_add]
-      map_smul' c g := by
-        ext p
-        simp [compSlabSpace_apply, CkHolderSpace.coe_smul] }
-    1 fun g ↦ by simpa using norm_compSlabSpace_le g
-
-private theorem compSlabSpaceL_eq_compSlabSpace (g : CkHolderSpace 2 α E F) :
-    compSlabSpaceL (hab := hab) g = compSlabSpace g :=
-  (rfl)
-
-/-- The time-independent extension of `g` takes the value `g(x)` at `(x, t)`. -/
-@[simp]
-theorem compSlabSpaceL_apply (g : CkHolderSpace 2 α E F) (p : slab (E := E) a b) :
-    compSlabSpaceL (hab := hab) g p = g (p : ParabolicSpaceTime E).space := by
-  rw [compSlabSpaceL_eq_compSlabSpace, compSlabSpace_apply]
-
-/-- The spatial gradient of the time-independent extension is the gradient of `g`. -/
-@[simp]
-theorem spatialFDerivL_compSlabSpaceL (g : CkHolderSpace 2 α E F) (p : slab (E := E) a b) :
-    spatialFDerivL (compSlabSpaceL (hab := hab) g) p =
-      _root_.fderiv ℝ g (p : ParabolicSpaceTime E).space := by
-  rw [compSlabSpaceL_eq_compSlabSpace, compSlabSpace, spatialFDerivL_mk,
-    BoundedContinuousFunction.compContinuous_apply, CkHolderSpace.coe_fderivBCF,
-    slabSpaceContinuousMap_apply]
-
-/-- The spatial Hessian of the time-independent extension is the Hessian of `g`. -/
-@[simp]
-theorem spatialSecondFDerivL_compSlabSpaceL (g : CkHolderSpace 2 α E F)
-    (p : slab (E := E) a b) :
-    spatialSecondFDerivL (compSlabSpaceL (hab := hab) g) p =
-      _root_.fderiv ℝ (_root_.fderiv ℝ g) (p : ParabolicSpaceTime E).space := by
-  rw [compSlabSpaceL_eq_compSlabSpace, compSlabSpace, spatialSecondFDerivL_mk,
-    HolderSpace.compSlabSpaceL_apply, hessianHolder_apply]
-
-/-- The time-independent extension has vanishing time derivative, also at the endpoints. -/
-@[simp]
-theorem timeDerivL_compSlabSpaceL (g : CkHolderSpace 2 α E F) :
-    timeDerivL (compSlabSpaceL (hab := hab) g) = 0 := by
-  rw [compSlabSpaceL_eq_compSlabSpace, compSlabSpace, timeDerivL_mk]
-
-/-- Every spatial trace of the time-independent extension of `g` is `g`: the extension is a right
-inverse of each trace map `spatialTraceL t`. -/
-@[simp]
-theorem spatialTrace_compSlabSpaceL (g : CkHolderSpace 2 α E F) (t : Icc a b) :
-    (compSlabSpaceL (hab := hab) g).spatialTrace t = g := by
-  ext x
-  simp
-
-/-- The time-independent extension has operator norm at most one. -/
-theorem norm_compSlabSpaceL_le :
-    ‖compSlabSpaceL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ by
-    rw [compSlabSpaceL_eq_compSlabSpace, one_mul]
-    exact norm_compSlabSpace_le g
-
-end TimeIndependent
 
 /-! ### Traces of a time reversal -/
 

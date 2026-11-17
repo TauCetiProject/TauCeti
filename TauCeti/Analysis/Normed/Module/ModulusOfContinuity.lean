@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Normed.Affine.AddTorsor
-public import Mathlib.Algebra.Order.Floor.Semiring
 
 /-!
 # Global error bounds from a modulus of continuity
@@ -22,18 +20,10 @@ kernel concentrating at the origin leaves only `η`.
 The weighted variant bounds `‖c • g a - g b‖` for a real scalar `|c| ≤ H`, adding the cost
 `M |c - 1|` of the weight differing from one.
 
-On a real normed space no bound on `g` is needed to control it at large distances: a segment of
-length at most `n δ` splits into `n` pieces of length at most `δ`, so a function which moves by at
-most `η` over distances at most `δ` moves by at most `n η` over distances at most `n δ`, hence by
-at most `(1 + dist a b / δ) η` between `a` and `b`. This linear growth is what makes such a bound
-integrable against kernels with a finite first moment, with a result proportional to `η`.
-
 ## Main declarations
 
 * `TauCeti.norm_sub_le_add_mul_min_dist_div`: the modulus-of-continuity bound.
 * `TauCeti.norm_smul_sub_le_add_mul_min_dist_div`: its weighted variant.
-* `TauCeti.dist_le_mul_of_dist_le_mul` and `TauCeti.dist_le_one_add_dist_div_mul`: the chained
-  bounds on a real normed space.
 -/
 
 public section
@@ -79,51 +69,5 @@ theorem norm_smul_sub_le_add_mul_min_dist_div [SeminormedAddCommGroup E] [Normed
     rw [mul_comm]
     exact mul_le_mul_of_nonneg_right (hgM b) (abs_nonneg _)
   nlinarith
-
-section Chain
-
-variable {V Y : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [PseudoMetricSpace Y]
-  {g : V → Y} {δ η : ℝ}
-
-/-- **Chaining a modulus of continuity.** On a real normed space, a function which moves by at
-most `η` over distances at most `δ` moves by at most `n η` over distances at most `n δ`. -/
-theorem dist_le_mul_of_dist_le_mul (h : ∀ a b, dist a b ≤ δ → dist (g a) (g b) ≤ η) (n : ℕ)
-    {a b : V} (hab : dist a b ≤ n * δ) : dist (g a) (g b) ≤ n * η := by
-  induction n generalizing a with
-  | zero =>
-    rw [Nat.cast_zero, zero_mul, dist_le_zero] at hab
-    simp [hab]
-  | succ n ih =>
-    -- Split the segment from `a` to `b` at the point `z` at distance `dist a b / (n + 1)` from `a`.
-    have hn : (0 : ℝ) < n + 1 := by positivity
-    set z := AffineMap.lineMap a b ((n + 1 : ℝ)⁻¹) with hz
-    have haz : dist a z ≤ δ := by
-      rw [hz, dist_left_lineMap, Real.norm_of_nonneg (inv_nonneg.2 hn.le), inv_mul_le_iff₀ hn]
-      simpa [mul_comm] using hab
-    have hzb : dist z b ≤ n * δ := by
-      have hc : (n + 1 : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith [n.cast_nonneg (α := ℝ)])
-      have hsub : 1 - (n + 1 : ℝ)⁻¹ = n / (n + 1) := by field_simp; ring
-      rw [hz, dist_lineMap_right, Real.norm_of_nonneg (sub_nonneg.2 hc), hsub,
-        div_mul_eq_mul_div, div_le_iff₀ hn]
-      push_cast at hab
-      nlinarith [Nat.cast_nonneg (α := ℝ) n, dist_nonneg (x := a) (y := b)]
-    calc dist (g a) (g b) ≤ dist (g a) (g z) + dist (g z) (g b) := dist_triangle _ _ _
-      _ ≤ η + n * η := add_le_add (h a z haz) (ih hzb)
-      _ = (n + 1 : ℕ) * η := by push_cast; ring
-
-/-- **Linear growth from a modulus of continuity.** On a real normed space, a function which moves
-by at most `η` over distances at most `δ > 0` satisfies
-`dist (g a) (g b) ≤ (1 + dist a b / δ) η` for all `a` and `b`. -/
-theorem dist_le_one_add_dist_div_mul (hδ : 0 < δ)
-    (h : ∀ a b, dist a b ≤ δ → dist (g a) (g b) ≤ η) (a b : V) :
-    dist (g a) (g b) ≤ (1 + dist a b / δ) * η := by
-  have hη : 0 ≤ η := (dist_nonneg).trans (h a a (by simpa using hδ.le))
-  have hd : 0 ≤ dist a b / δ := by positivity
-  have hceil := Nat.ceil_lt_add_one hd
-  refine (dist_le_mul_of_dist_le_mul h ⌈dist a b / δ⌉₊ ?_).trans ?_
-  · exact (div_le_iff₀ hδ).1 (Nat.le_ceil _)
-  · nlinarith
-
-end Chain
 
 end TauCeti
