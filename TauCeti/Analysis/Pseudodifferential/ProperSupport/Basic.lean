@@ -38,7 +38,7 @@ removed, `(1 - χ(x - y)) K_b(x, y)`, vanishes near the diagonal, where all the 
 
 So every pseudodifferential operator is a properly supported one, with kernel supported within
 any prescribed distance `ε > 0` of the diagonal, up to an operator with a smoothing symbol
-(`TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`). Properly supported
+(`TauCeti.Symbol.exists_isSmoothing_sub_and_hasNearDiagonalKernel`). Properly supported
 operators preserve compact supports, so they can be composed when the symbols have no compact
 spatial support, and they are the pieces that are patched together on manifolds.
 
@@ -54,10 +54,14 @@ spatial support, and they are the pieces that are patched together on manifolds.
   `TauCeti.Symbol.hasCompactSupport_quantizeSchwartzValue_kernelCutoff`: the support of
   `Op(c) u` lies in the sum of the supports of `u` and `χ`, so for compactly supported `χ` the
   operator `Op(c)` preserves compact supports.
+* `TauCeti.Symbol.HasNearDiagonalKernel a R`: the kernel of `Op(a)` is supported within distance
+  `R` of the diagonal, that is, `Op(a) u (x) = 0` whenever `u` vanishes on the ball of radius `R`
+  about `x`. The kernel cutoff by a `χ` supported in that ball has this property
+  (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`).
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
-* `TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`: for every `ε > 0`,
-  every symbol is, up to a smoothing symbol, a symbol `c` such that `Op(c) u (x) = 0` whenever `u`
-  vanishes on the ball of radius `ε` about `x`.
+* `TauCeti.Symbol.exists_isSmoothing_sub_and_hasNearDiagonalKernel`: for every `ε > 0`, every
+  symbol is, up to a smoothing symbol, a symbol whose kernel is supported within distance `ε` of
+  the diagonal.
 
 ## Proof outline
 
@@ -395,6 +399,23 @@ theorem HasCompactSpatialSupport.kernelCutoff {b : Symbol n V W m}
 
 end KernelCutoff
 
+/-! ### Kernels supported near the diagonal -/
+
+/-- **The kernel of `Op(a)` is supported within distance `R` of the diagonal**: `Op(a) u (x) = 0`
+whenever the Schwartz function `u` vanishes on the ball of radius `R` about `x`. Equivalently, the
+distribution kernel `K_a(x, y)` vanishes for `‖x - y‖ ≥ R`. Such an operator is properly
+supported: it sends a function supported in a closed set `K` to one supported in the closed
+`R`-neighbourhood of `K`, and its formal adjoint does the same. -/
+def HasNearDiagonalKernel (a : Symbol n V W m) (R : ℝ) : Prop :=
+  ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n), (∀ y ∈ Metric.ball x R, u y = 0) →
+    quantizeSchwartzValue a.coefficient u x = 0
+
+/-- Unfolding `TauCeti.Symbol.HasNearDiagonalKernel`. -/
+theorem hasNearDiagonalKernel_iff {a : Symbol n V W m} {R : ℝ} :
+    a.HasNearDiagonalKernel R ↔ ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n),
+      (∀ y ∈ Metric.ball x R, u y = 0) → quantizeSchwartzValue a.coefficient u x = 0 :=
+  Iff.rfl
+
 /-! ### The quantization of the kernel cutoff -/
 
 section Quantization
@@ -554,6 +575,15 @@ theorem hasCompactSupport_quantizeSchwartzValue_kernelCutoff (hχ : HasCompactSu
   by_contra h
   exact hx (Set.add_subset_add (subset_tsupport _) (subset_tsupport _)
     (support_quantizeSchwartzValue_kernelCutoff_subset χ b u h))
+
+/-- If `χ` is supported in the ball of radius `R` about `0`, the kernel `χ(x - y) K_b(x, y)` of the
+kernel cutoff is supported within distance `R` of the diagonal. -/
+theorem hasNearDiagonalKernel_kernelCutoff {R : ℝ} (hχ : Function.support χ ⊆ Metric.ball 0 R)
+    (b : Symbol n V W m) : (kernelCutoff χ b).HasNearDiagonalKernel R := by
+  refine hasNearDiagonalKernel_iff.2 fun u x hu ↦
+    quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ hu y ?_
+  have h := hχ hy
+  rwa [Metric.mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm] at h
 
 end Quantization
 
@@ -765,27 +795,23 @@ theorem isSmoothing_kernelCutoff_sub (hχ : ⇑χ =ᶠ[𝓝 0] 1) (b : Symbol n 
 
 /-- **Every pseudodifferential operator is properly supported up to a smoothing operator.** For
 every `ε > 0`, every symbol `b` differs by a smoothing symbol from a symbol `c` whose
-quantization has kernel supported within distance `ε` of the diagonal: `Op(c) u (x) = 0` whenever
-`u` vanishes on the ball of radius `ε` about `x`. -/
-theorem exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero [CompleteSpace V]
-    (b : Symbol n V W m) {ε : ℝ} (hε : 0 < ε) :
-    ∃ c : Symbol n V W m, (c - b).IsSmoothing ∧ ∀ (u : 𝓢(CoordinateSpace n, V))
-      (x : CoordinateSpace n), (∀ y ∈ Metric.ball x ε, u y = 0) →
-        quantizeSchwartzValue c.coefficient u x = 0 := by
+quantization has kernel supported within distance `ε` of the diagonal. -/
+theorem exists_isSmoothing_sub_and_hasNearDiagonalKernel [CompleteSpace V] (b : Symbol n V W m)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : Symbol n V W m, (c - b).IsSmoothing ∧ c.HasNearDiagonalKernel ε := by
   let φ : ContDiffBump (0 : CoordinateSpace n) := ⟨ε / 2, ε, half_pos hε, half_lt_self hε⟩
   have hsmooth : ContDiff ℝ ∞ fun y ↦ (φ y : ℂ) := Complex.ofRealCLM.contDiff.comp φ.contDiff
   have hsupp : HasCompactSupport fun y ↦ (φ y : ℂ) :=
     φ.hasCompactSupport.comp_left Complex.ofReal_zero
   set χ := hsupp.toSchwartzMap hsmooth
   have hχ : ∀ y, χ y = (φ y : ℂ) := fun y ↦ rfl
-  refine ⟨kernelCutoff χ b, isSmoothing_kernelCutoff_sub χ ?_ b, fun u x hu ↦ ?_⟩
+  refine ⟨kernelCutoff χ b, isSmoothing_kernelCutoff_sub χ ?_ b,
+    hasNearDiagonalKernel_kernelCutoff χ (fun y hy ↦ ?_) b⟩
   · filter_upwards [Metric.ball_mem_nhds (0 : CoordinateSpace n) (half_pos hε)] with y hy
     rw [hχ, φ.one_of_mem_closedBall (Metric.ball_subset_closedBall hy), Complex.ofReal_one,
       Pi.one_apply]
-  · refine quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ hu y ?_
-    have hmem : x - y ∈ Function.support φ := fun h ↦ hy (by rw [hχ, h, Complex.ofReal_zero])
-    rw [φ.support_eq, Metric.mem_ball, dist_zero_right] at hmem
-    rwa [Metric.mem_ball, dist_eq_norm, ← norm_neg, neg_sub]
+  · rw [← φ.support_eq]
+    exact fun h ↦ hy (by rw [hχ, h, Complex.ofReal_zero])
 
 end Smoothing
 

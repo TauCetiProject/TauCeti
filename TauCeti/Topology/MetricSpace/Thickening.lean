@@ -27,7 +27,9 @@ In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ �
 points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
-superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
+superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
+the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
+(`IsCompact.disjoint_cthickening_left`).
 
 A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
 inside any set whose interior contains it, namely the intersections of that interior with
@@ -86,6 +88,17 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
     (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) : (cthickening δ s)ᶜ = {x | δ < infDist x s} := by
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
+
+/-- If a compact set `s` does not meet the closed `δ`-thickening of `t`, then the closed
+`δ`-thickening of `s` does not meet `t`: a point of `t` within `δ` of `s` is within `δ` of a
+point of `s`, since the distance to the compact set `s` is attained. -/
+theorem _root_.IsCompact.disjoint_cthickening_left {X : Type*} [PseudoMetricSpace X]
+    {s t : Set X} (hs : IsCompact s) {δ : ℝ} (h : Disjoint s (cthickening δ t)) :
+    Disjoint (cthickening δ s) t := by
+  rw [← cthickening_max_zero] at h ⊢
+  rw [hs.cthickening_eq_biUnion_closedBall (le_max_left 0 δ), Set.disjoint_iUnion₂_left]
+  refine fun x hx ↦ Set.disjoint_left.2 fun y hy hyt ↦ Set.disjoint_left.1 h hx ?_
+  exact mem_cthickening_of_dist_le x y _ t hyt (by rw [dist_comm]; exact mem_closedBall.1 hy)
 
 /-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening. -/
