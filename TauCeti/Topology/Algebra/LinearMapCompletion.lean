@@ -9,17 +9,53 @@ public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
-# Completion of continuous semilinear equivalences
+# Completions of continuous semilinear maps and equivalences
+
+A continuous semilinear map between uniform additive groups extends to completions (`completion`
+and `fromCompletion`), preserving equivariance for any auxiliary uniformly continuous scalar
+actions (`ContinuousLinearMap.completion_smul` and `ContinuousLinearMap.fromCompletion_smul`).
 
 A continuous semilinear equivalence of uniform additive groups extends to their separated
-completions. The construction completes its forward and inverse continuous semilinear maps
-using Mathlib's `ContinuousLinearMap.completion`. No separation or completeness assumption on
-the original spaces is needed.
+completions (`ContinuousLinearEquiv.completion`) by completing its forward and inverse continuous
+semilinear maps using Mathlib's `ContinuousLinearMap.completion`. No separation or completeness
+assumption on the original spaces is needed.
 -/
 
 public section
 
 open UniformSpace
+
+namespace ContinuousLinearMap
+
+variable {R S A B α β : Type*} [UniformSpace α] [AddCommGroup α] [IsUniformAddGroup α]
+  [Semiring S] [Module S α] [UniformContinuousConstSMul S α]
+  [Semiring R] [UniformSpace β] [AddCommGroup β] [IsUniformAddGroup β]
+  [Module R β] [UniformContinuousConstSMul R β] {σ : S →+* R}
+
+/-- Extending a continuous semilinear map to completions preserves equivariance between auxiliary
+uniformly continuous scalar actions. -/
+theorem completion_smul [SMul A α] [UniformContinuousConstSMul A α]
+    [SMul B β] [UniformContinuousConstSMul B β]
+    (f : α →SL[σ] β) {a : A} {b : B} (hf : ∀ x : α, f (a • x) = b • f x) (z : Completion α) :
+    f.completion (a • z) = b • f.completion z :=
+  Completion.induction_on z
+    (isClosed_eq (f.completion.continuous.comp (continuous_const_smul a))
+      ((continuous_const_smul b).comp f.completion.continuous))
+    fun x ↦ by rw [← Completion.coe_smul, completion_apply_coe, hf, Completion.coe_smul,
+      completion_apply_coe]
+
+/-- Extending a continuous semilinear map into a complete Hausdorff group from the completion of its
+domain preserves equivariance between auxiliary scalar actions. -/
+theorem fromCompletion_smul [T0Space β] [CompleteSpace β]
+    [SMul A α] [UniformContinuousConstSMul A α] [SMul B β] [ContinuousConstSMul B β]
+    (f : α →SL[σ] β) {a : A} {b : B} (hf : ∀ x : α, f (a • x) = b • f x) (z : Completion α) :
+    f.fromCompletion (a • z) = b • f.fromCompletion z :=
+  Completion.induction_on z
+    (isClosed_eq (f.fromCompletion.continuous.comp (continuous_const_smul a))
+      ((continuous_const_smul b).comp f.fromCompletion.continuous))
+    fun x ↦ by rw [← Completion.coe_smul, fromCompletion_apply_coe, hf, fromCompletion_apply_coe]
+
+end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
 
