@@ -36,6 +36,8 @@ single circle and `cap ≫ cup` is the generator `e₁ : 2 → 2`, and the ident
 
 * `TauCeti.TLDiagram.comp_id`, `TauCeti.TLDiagram.id_comp`: the identity diagrams are units for
   composition.
+* `TauCeti.TLDiagram.verticalReflect_comp`: vertical reflection reverses the order of composition,
+  `verticalReflect n p (f.comp g) = (verticalReflect m p g).comp (verticalReflect n m f)`.
 * `TauCeti.TLDiagram.cup_comp_cap`, `TauCeti.TLDiagram.cap_comp_cup_matching_val`: a cup followed
   by a cap is one circle, and a cap followed by a cup has the matching of `e₁`.
 
@@ -97,9 +99,35 @@ theorem id_comp (f : TLDiagram n m) : (id n).comp f = f := by
   · rw [circles_comp, matching_id, PlanarMatching.glueMiddleCircles_nested_append, circles_id,
       zero_add, add_zero]
 
-private theorem val_mk_eq_mk_iff {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hq : q < K)
-    (hr : r < K) : x.1.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by
-  rw [PlanarMatching.pv_of_lt x hq, Fin.ext_iff]
+/-- Composing on the right with the identity matching carrying `c` circles adds `c` circles and
+keeps the matching. -/
+@[simp]
+theorem comp_mk_nested (f : TLDiagram n m) (c : ℕ) :
+    f.comp ⟨PlanarMatching.nested m, c⟩ = ⟨f.matching, f.circles + c⟩ := by
+  ext <;> simp
+
+/-- Composing on the left with the identity matching carrying `c` circles adds `c` circles and
+keeps the matching. -/
+@[simp]
+theorem mk_nested_comp (c : ℕ) (f : TLDiagram n m) :
+    (⟨PlanarMatching.nested n, c⟩ : TLDiagram n n).comp f = ⟨f.matching, c + f.circles⟩ := by
+  ext <;> simp
+
+/-- **Vertical reflection is contravariant on composition**: turning a stacked composite `f ≫ g`
+upside down places `f` turned upside down on top of `g` turned upside down. -/
+@[simp]
+theorem verticalReflect_comp (f : TLDiagram n m) (g : TLDiagram m p) :
+    verticalReflect n p (f.comp g) = (verticalReflect m p g).comp (verticalReflect n m f) := by
+  have happ : (verticalReflect m p g).matching.append (verticalReflect n m f).matching =
+      PlanarMatching.cast (by omega)
+        (PlanarMatching.reflect (n + m + (m + p)) (f.matching.append g.matching)) := by
+    simp [PlanarMatching.append_cast, PlanarMatching.reflect_append]
+  ext : 1
+  · rw [matching_comp, happ, PlanarMatching.glueMiddle_reflect, matching_verticalReflect,
+      matching_comp]
+  · rw [circles_verticalReflect, circles_comp, circles_comp, circles_verticalReflect,
+      circles_verticalReflect, happ, PlanarMatching.glueMiddleCircles_reflect]
+    omega
 
 private theorem pv_cup_matching {q : ℕ} (hq : q < 2) :
     PlanarMatching.pv cup.matching q = 1 - q := by
@@ -124,7 +152,7 @@ theorem cup_comp_cap : cup.comp cap = ⟨(id 0).matching, 1⟩ := by
   · exact PlanarMatching.ext fun a => a.elim0
   rw [circles_comp, circles_cup, circles_cap, PlanarMatching.glueMiddleCircles_succ,
     PlanarMatching.glueMiddleCircles_succ, PlanarMatching.glueMiddleCircles_zero]
-  simp only [val_mk_eq_mk_iff, PlanarMatching.pv_cast]
+  simp only [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
   simp [PlanarMatching.pv_contract, PlanarMatching.skipN, PlanarMatching.joinN,
     PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
     pv_cup_matching, pv_cap_matching]
@@ -158,7 +186,7 @@ example : (TLDiagram.cap.comp TLDiagram.cup).comp (TLDiagram.cap.comp TLDiagram.
       TLDiagram.circles_cup, PlanarMatching.glueMiddleCircles_zero,
       PlanarMatching.glueMiddleCircles_succ, PlanarMatching.glueMiddleCircles_succ,
       PlanarMatching.glueMiddleCircles_zero]
-    simp only [TLDiagram.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
+    simp only [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
     simp [PlanarMatching.pv_contract, PlanarMatching.skipN, PlanarMatching.joinN,
       PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
       TLDiagram.pv_cup_matching, TLDiagram.pv_cap_matching]
