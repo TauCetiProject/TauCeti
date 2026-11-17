@@ -10,7 +10,9 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import TauCeti.Analysis.BoundedVariation.Poincare
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Geometry.MeasureTheory.Rectifiable.ConeCriterion
+import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -78,20 +80,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### Dimension at most one -/
 
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- If `|χ_s - m| ≥ 1 / 2` at every point of a null-measurable set `A`, then
-`2⁻¹ * μ A ≤ ∫⁻ z in A, ‖χ_s z - m‖ₑ ∂μ`. -/
-private theorem half_mul_measure_le_setLIntegral_enorm_sub {A : Set E} {m : ℝ}
-    (hAm : NullMeasurableSet A μ) (hval : ∀ z ∈ A, (1 / 2 : ℝ) ≤ |s.indicator (1 : E → ℝ) z - m|) :
-    (2⁻¹ : ℝ≥0∞) * μ A ≤ ∫⁻ z in A, ‖s.indicator (1 : E → ℝ) z - m‖ₑ ∂μ := by
-  have hhalf : ENNReal.ofReal (1 / 2 : ℝ) = 2⁻¹ := by
-    rw [one_div, ENNReal.ofReal_inv_of_pos zero_lt_two, ENNReal.ofReal_ofNat]
-  rw [← hhalf, ← setLIntegral_const]
-  refine lintegral_mono_ae ?_
-  filter_upwards [ae_restrict_mem₀ hAm] with z hz
-  rw [Real.eNorm_eq_ofReal_abs]
-  exact ENNReal.ofReal_le_ofReal (hval z hz)
-
 /-- For an additive Haar measure `μ`, around any `x ∈ reducedBoundary μ Ω s`, every ball
 `ball x r ⊆ Ω` (`r > 0`) contains a null-measurable subset `A` of positive `μ`-measure on which
 `|χ_s - ⨍_{ball x r} χ_s| ≥ 1 / 2`. -/
@@ -144,10 +132,17 @@ private theorem inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one [μ
       diam B ^ finrank ℝ E / μ.real B) ≤ ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) :=
     ENNReal.ofReal_le_ofReal <| by
       simpa [B, hn] using μ.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le x hr
+  have hlow : (2⁻¹ : ℝ≥0∞) * μ A ≤
+      ∫⁻ z in A, ‖s.indicator (1 : E → ℝ) z - ⨍ y in B, s.indicator (1 : E → ℝ) y ∂μ‖ₑ ∂μ := by
+    refine mul_measure_le_setLIntegral₀ hAm fun z hz => ?_
+    rw [Real.eNorm_eq_ofReal_abs,
+      show (2⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 2) by
+        rw [one_div, ENNReal.ofReal_inv_of_pos zero_lt_two, ENNReal.ofReal_ofNat]]
+    exact ENNReal.ofReal_le_ofReal (hval z hz)
   have hcomb : (2⁻¹ : ℝ≥0∞) * μ A ≤
       (ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) *
         variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r)) * μ A := by
-    refine (half_mul_measure_le_setLIntegral_enorm_sub hAm hval).trans (hpoinc.trans ?_)
+    refine hlow.trans (hpoinc.trans ?_)
     rw [Opens.coe_mk, hn, Nat.cast_one, inv_one, ENNReal.rpow_one, mul_right_comm]
     refine mul_le_mul_left (mul_le_mul ?_ ?_ zero_le zero_le) (μ A)
     · simpa only [hn, Nat.cast_one, inv_one] using hcoef
@@ -195,69 +190,6 @@ theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
 
 /-! ### Normal cone estimate in dimension at least two -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If `‖w‖ = 1`, `‖ν‖ = 1`, `0 < η' ≤ 1`, and `η' < |⟪w, ν⟫|`, then for any set `S`, either
-`S ∩ ball w (η' / 2)` or `ball w (η' / 2) \ S` is contained in
-`(S ∆ {y | ⟪y, ν⟫ < 0}) ∩ closedBall 0 2`. -/
-private theorem inter_or_sdiff_subset_symmDiff_inter_closedBall {S : Set E} {w ν : E} {η' : ℝ}
-    (hw : ‖w‖ = 1) (hν : ‖ν‖ = 1) (hη'0 : 0 < η') (hη'1 : η' ≤ 1) (hgt : η' < |⟪w, ν⟫|) :
-    S ∩ ball w (η' / 2) ⊆ (S ∆ {y | ⟪y, ν⟫ < 0}) ∩ closedBall 0 2 ∨
-      ball w (η' / 2) \ S ⊆ (S ∆ {y | ⟪y, ν⟫ < 0}) ∩ closedBall 0 2 := by
-  have hsubK : ball w (η' / 2) ⊆ closedBall 0 2 := fun y hy => by
-    rw [mem_closedBall_zero_iff]
-    have hyw : ‖y - w‖ < η' / 2 := by rwa [mem_ball, dist_eq_norm] at hy
-    calc ‖y‖ = ‖(y - w) + w‖ := by rw [sub_add_cancel]
-      _ ≤ ‖y - w‖ + ‖w‖ := norm_add_le _ _
-      _ ≤ η' / 2 + 1 := by linarith [hw]
-      _ ≤ 2 := by linarith
-  rcases lt_abs.1 hgt with hpos | hneg
-  · left
-    refine fun y ⟨hyS, hyB⟩ => ⟨Or.inl ⟨hyS, fun hyH : ⟪y, ν⟫ < 0 => ?_⟩, hsubK hyB⟩
-    have hyw : ‖y - w‖ < η' / 2 := by rwa [mem_ball, dist_eq_norm] at hyB
-    have hcs : |⟪y - w, ν⟫| ≤ ‖y - w‖ := by
-      simpa only [hν, mul_one] using abs_real_inner_le_norm (y - w) ν
-    have hsplit : ⟪y, ν⟫ = ⟪w, ν⟫ + ⟪y - w, ν⟫ := by rw [← inner_add_left, add_sub_cancel]
-    linarith [neg_abs_le ⟪y - w, ν⟫]
-  · right
-    refine fun y ⟨hyB, hyS⟩ => ⟨Or.inr ⟨mem_ofPred.2 ?_, hyS⟩, hsubK hyB⟩
-    have hyw : ‖y - w‖ < η' / 2 := by rwa [mem_ball, dist_eq_norm] at hyB
-    have hcs : |⟪y - w, ν⟫| ≤ ‖y - w‖ := by
-      simpa only [hν, mul_one] using abs_real_inner_le_norm (y - w) ν
-    have hsplit : ⟪y, ν⟫ = ⟪w, ν⟫ + ⟪y - w, ν⟫ := by rw [← inner_add_left, add_sub_cancel]
-    linarith [le_abs_self ⟪y - w, ν⟫]
-
-/-- Rescaling lower `μ`-volume density bounds on `s` and `sᶜ` at `z` (`z ≠ x`) to the blow-up
-`(fun y => x + ‖z - x‖ • y) ⁻¹' s` on `ball (‖z - x‖⁻¹ • (z - x)) τ`. -/
-private theorem ofReal_pow_le_mul_measure_preimage_inter_and_sdiff [μ.IsAddHaarMeasure]
-    {z : E} {c : ℝ≥0∞} {τ : ℝ} (hzx : z ≠ x)
-    (h1 : ENNReal.ofReal ((‖z - x‖ * τ) ^ finrank ℝ E) ≤ c * μ (s ∩ ball z (‖z - x‖ * τ)))
-    (h2 : ENNReal.ofReal ((‖z - x‖ * τ) ^ finrank ℝ E) ≤ c * μ (ball z (‖z - x‖ * τ) \ s)) :
-    ENNReal.ofReal (τ ^ finrank ℝ E) ≤
-        c * μ (((fun y => x + ‖z - x‖ • y) ⁻¹' s) ∩ ball (‖z - x‖⁻¹ • (z - x)) τ) ∧
-      ENNReal.ofReal (τ ^ finrank ℝ E) ≤
-        c * μ (ball (‖z - x‖⁻¹ • (z - x)) τ \ (fun y => x + ‖z - x‖ • y) ⁻¹' s) := by
-  set r : ℝ := ‖z - x‖
-  set w : E := r⁻¹ • (z - x)
-  have hr : 0 < r := norm_pos_iff.2 (sub_ne_zero.2 hzx)
-  have hxrw : x + r • w = z := by simp [w, smul_smul, mul_inv_cancel₀ hr.ne']
-  have hball : (fun y : E => x + r • y) ⁻¹' ball z (r * τ) = ball w τ := by
-    ext y
-    simp only [mem_preimage, mem_ball, dist_eq_norm]
-    rw [← hxrw, add_sub_add_left_eq_sub, ← smul_sub, norm_smul, Real.norm_eq_abs,
-      abs_of_pos hr, mul_lt_mul_iff_right₀ hr]
-  have hscale (A : Set E) (hA : ENNReal.ofReal ((r * τ) ^ finrank ℝ E) ≤ c * μ A) :
-      ENNReal.ofReal (τ ^ finrank ℝ E) ≤ c * μ ((fun y => x + r • y) ⁻¹' A) := by
-    rw [Measure.addHaar_preimage_add_smul μ x hr.ne', mul_left_comm]
-    calc ENNReal.ofReal (τ ^ finrank ℝ E)
-        = ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| * ENNReal.ofReal ((r * τ) ^ finrank ℝ E) := by
-          rw [abs_of_pos (inv_pos.2 (pow_pos hr _)), ← ENNReal.ofReal_mul (by positivity),
-            mul_pow, inv_mul_cancel_left₀ (pow_ne_zero _ hr.ne')]
-      _ ≤ ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| * (c * μ A) :=
-          mul_le_mul_right hA _
-  refine ⟨?_, ?_⟩
-  · simpa only [preimage_inter, hball] using hscale (s ∩ ball z (r * τ)) h1
-  · simpa only [preimage_sdiff, hball] using hscale (ball z (r * τ) \ s) h2
-
 /-- **Normal cone estimate on uniform lower-density strata.** For an additive Haar measure `μ` in
 dimension `dim E ≥ 2`, let `T` be a set of points at which both `s` and `sᶜ` satisfy uniform lower
 `μ`-volume density bounds with finite constant `c` up to radius `ρ₀ > 0`. At any
@@ -302,15 +234,45 @@ theorem exists_pos_forall_abs_inner_sub_outerNormal_le [μ.IsAddHaarMeasure]
     rw [hzw, inner_smul_left, RCLike.conj_to_real, abs_mul, abs_of_pos hr, mul_comm η]
     exact mul_le_mul_of_nonneg_left (hle.trans (min_le_left _ _)) hr.le
   by_contra! hgt
-  obtain ⟨hlow1, hlow2⟩ := ofReal_pow_le_mul_measure_preimage_inter_and_sdiff (μ := μ) hzx
-    (hs_low z hz (r * τ) ⟨mul_pos hr hτ, hrτ⟩) (hs_compl_low z hz (r * τ) ⟨mul_pos hr hτ, hrτ⟩)
+  have hxrw : x + r • w = z := by simp [w, smul_smul, mul_inv_cancel₀ hr.ne']
+  have hpow : ENNReal.ofReal (|r| ^ finrank ℝ E) * ENNReal.ofReal (τ ^ finrank ℝ E) =
+      ENNReal.ofReal ((r * τ) ^ finrank ℝ E) := by
+    rw [abs_of_pos hr, ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
+  have hlow1 : ENNReal.ofReal (τ ^ finrank ℝ E) ≤
+      c * μ (((fun y => x + r • y) ⁻¹' s) ∩ ball w τ) := by
+    rw [μ.le_mul_addHaar_preimage_add_smul_inter_ball_iff x w hr.ne', hpow, hxrw, abs_of_pos hr]
+    exact hs_low z hz (r * τ) ⟨mul_pos hr hτ, hrτ⟩
+  have hlow2 : ENNReal.ofReal (τ ^ finrank ℝ E) ≤
+      c * μ (ball w τ \ (fun y => x + r • y) ⁻¹' s) := by
+    rw [sdiff_eq_compl_inter, ← preimage_compl,
+      μ.le_mul_addHaar_preimage_add_smul_inter_ball_iff x w hr.ne', hpow, hxrw, abs_of_pos hr,
+      ← sdiff_eq_compl_inter]
+    exact hs_compl_low z hz (r * τ) ⟨mul_pos hr hτ, hrτ⟩
   have hsmall : c *
       μ ((((fun y => x + r • y) ⁻¹' s) ∆ {y | ⟪y, ν⟫ < 0}) ∩ closedBall 0 2) <
         ENNReal.ofReal (τ ^ finrank ℝ E) := hδ₁_lt ⟨hr, hr_δ₁⟩
-  rcases inter_or_sdiff_subset_symmDiff_inter_closedBall hw (norm_outerNormal hx)
-      hη'0 (min_le_right _ _) hgt with hsub | hsub
-  · exact (hlow1.trans (mul_le_mul_right (measure_mono hsub) _)).not_gt hsmall
-  · exact (hlow2.trans (mul_le_mul_right (measure_mono hsub) _)).not_gt hsmall
+  have hsubK : ball w τ ⊆ closedBall 0 2 :=
+    ball_subset_closedBall.trans <| closedBall_subset_closedBall' <| by
+      rw [dist_zero_right, hw]
+      have hη'1 : η' ≤ 1 := min_le_right η 1
+      dsimp only [τ]
+      linarith
+  rcases lt_abs.1 hgt with hpos | hneg
+  · have hdisj : ball w τ ⊆ {y | 0 < ⟪y, ν⟫} :=
+      ball_subset_closedBall.trans <| closedBall_subset_setOf_lt_inner <| by
+        rw [norm_outerNormal hx, mul_one]; dsimp only [τ]; linarith
+    have hsub : ((fun y => x + r • y) ⁻¹' s) ∩ ball w τ ⊆
+        (((fun y => x + r • y) ⁻¹' s) ∆ {y | ⟪y, ν⟫ < 0}) ∩ closedBall 0 2 :=
+      fun y ⟨hyS, hyB⟩ =>
+        ⟨Or.inl ⟨hyS, fun hyH => (mem_ofPred.1 (hdisj hyB)).asymm (mem_ofPred.1 hyH)⟩, hsubK hyB⟩
+    exact (hlow1.trans (mul_le_mul_right (measure_mono hsub) _)).not_gt hsmall
+  · have hmem : ball w τ ⊆ {y | ⟪y, ν⟫ < 0} :=
+      ball_subset_closedBall.trans <| closedBall_subset_setOf_inner_lt <| by
+        rw [norm_outerNormal hx, mul_one]; dsimp only [τ]; linarith
+    have hsub : ball w τ \ ((fun y => x + r • y) ⁻¹' s) ⊆
+        (((fun y => x + r • y) ⁻¹' s) ∆ {y | ⟪y, ν⟫ < 0}) ∩ closedBall 0 2 :=
+      fun y ⟨hyB, hyS⟩ => ⟨Or.inr ⟨hmem hyB, hyS⟩, hsubK hyB⟩
+    exact (hlow2.trans (mul_le_mul_right (measure_mono hsub) _)).not_gt hsmall
 
 /-- **De Giorgi's rectifiability theorem.** In any finite-dimensional real inner product space `E`
 equipped with an additive Haar measure `μ`, the reduced boundary `reducedBoundary μ Ω s` of any set
