@@ -152,18 +152,8 @@ local instance (r : Set.Ioo (0 : ℝ) 1) : Fact (0 < (r : ℝ)) := ⟨r.2.1⟩
 /-- The unit Gauss norm on `washnitzerAlgebra Unit R` agrees with the univariate unit Gauss norm
 `PowerSeries.gaussNorm norm 1`. -/
 theorem norm_unit_eq_gaussNorm (f : washnitzerAlgebra Unit R) :
-    ‖f‖ = PowerSeries.gaussNorm norm 1 (f : R⟦X⟧) := by
-  let g : IsRestricted.subring (R := R) 1 :=
-    ⟨(f : R⟦X⟧), isRestricted_of_mem_washnitzerAlgebra f.2 zero_le_one le_rfl⟩
-  rw [← TauCeti.PowerSeries.norm_eq_gaussNorm g]
-  apply le_antisymm
-  · refine norm_le_iff.mpr fun t ↦ ?_
-    have ht : t = Finsupp.single () (t ()) := Finsupp.ext fun _ ↦ by simp
-    simpa only [← ht, PowerSeries.coeff, one_pow, mul_one] using
-      TauCeti.PowerSeries.norm_coeff_mul_pow_le g (t ())
-  · refine TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_
-    simpa only [PowerSeries.coeff, one_pow, mul_one] using
-      norm_coeff_le f (Finsupp.single () n)
+    ‖f‖ = PowerSeries.gaussNorm norm 1 (f : R⟦X⟧) :=
+  norm_eq_gaussNorm f
 
 /-- The ring homomorphism including entire series into `R⟨X⟩†`. -/
 noncomputable def ofEntire : IsEntire.subring R →+* washnitzerAlgebra Unit R :=
