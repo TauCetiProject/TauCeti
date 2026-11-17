@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Norm
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
+import Mathlib.Analysis.CStarAlgebra.Hom
 
 /-!
 # Block calculus, amplification, and operator norms for `CStarMatrix`

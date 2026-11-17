@@ -55,7 +55,7 @@ private theorem semisimple_of_kernel_eq_center_of_isAlgClosed [IsAlgClosed k]
     (f : Q.obj ⟶ G.obj) (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
     (hker : CommHopfAlgCat.kernelHopfIdeal f = CommHopfAlgCat.centerDefiningIdeal G.obj) :
     semisimpleCommHopfAlgProperty k Q := by
-  let _ : ConnectedSpace (PrimeSpectrum G) := hG.geometricallyConnected.connectedSpace k G.obj
+  let _ : ConnectedSpace (PrimeSpectrum G) := hG.geometricallyConnected.connectedSpace
   let _ := hG.hasCentralRadical_lieAlgebra
   let D := derivationCompLieHom (B := k) f.hom
   have hDker : D.ker =
