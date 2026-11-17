@@ -6,19 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 public import TauCeti.FieldTheory.Separable.Regular
-import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.FieldTheory.AlgebraicClosure
-import TauCeti.FieldTheory.FunctionField.Different.Complementary
-import TauCeti.FieldTheory.FunctionField.Different.Tame
+import TauCeti.FieldTheory.FunctionField.Different.Basic
+import TauCeti.FieldTheory.FunctionField.Different.IntegralBasis
+import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.Basic
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+import TauCeti.FieldTheory.IntermediateField.FieldRange
 import TauCeti.FieldTheory.RatFunc.Map
+import TauCeti.RingTheory.Discriminant.Equiv
 import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
@@ -56,16 +57,16 @@ discriminant (`TauCeti.Place.ord_discr_localIntegralBasis_eq_zero`) and transpor
 * `TauCeti.productMap_injective_of_linearDisjoint` and
   `TauCeti.isFractionRing_tensorProduct_of_linearDisjoint`: `F ⊗[k] k'` embeds into `F'` and
   `F' = Frac(A ⊗[k] k')` whenever `F = Frac(A)`.
-* `TauCeti.IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoint`: exact constants
+* `IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoint`: exact constants
   persist under any linearly disjoint constant extension of a geometrically reduced field.
+* `TauCeti.isSeparable_ratFunc_of_constantCompositum_eq_top`: separability over `RatFunc` persists
+  in any constant compositum with compatible `X`.
 * `TauCeti.Place.exists_place_integers_le_and_ord_eq_mul_of_linearDisjoint`: every place `P` of
   `F / k` is dominated by a place `P'` of `F' / k'` whose order restricts to a positive multiple of
   `ord_P`.
 * `TauCeti.Place.exists_place_ramificationIdx_ratFunc_dvd_of_linearDisjoint`: over a perfect base
   field, `P'` preserves `∞` and rational places `X - a` (`a ∈ k`), with
   `e(P ∣ k(X)) ∣ e(P' ∣ k'(X))`.
-* `TauCeti.Place.ord_discr_localIntegralBasis_eq_zero`: at an unramified place `P`, the local
-  integral basis has unit discriminant.
 * `TauCeti.Place.ramificationIdx_ratFunc_eq_one_of_linearDisjoint`: a place `P'` of `F' / k'` is
   unramified over `k'(X)` whenever any place of `k(X)` induced by `P'` is unramified in `F`.
 
@@ -122,9 +123,8 @@ theorem isFractionRing_field_tensorProduct_of_linearDisjoint
   have hπ : Function.Injective (algebraMap (F ⊗[k] k') F') :=
     productMap_injective_of_linearDisjoint H
   have : FaithfulSMul (F ⊗[k] k') F' := (faithfulSMul_iff_algebraMap_injective _ _).mpr hπ
-  have hring : π.range.toSubring =
+  have hring : (π : F ⊗[k] k' →+* F').range =
       Subring.closure (Set.range (algebraMap F F') ∪ Set.range (algebraMap k' F')) := by
-    change (π : F ⊗[k] k' →+* F').range = _
     rw [RingHom.range_eq_map, ← Algebra.TensorProduct.closure_range_union_range_eq_top k F k',
       RingHom.map_closure, Set.image_union, ← Set.range_comp, ← Set.range_comp]
     congr 2 <;> ext <;> simp [π]
@@ -188,9 +188,9 @@ theorem _root_.IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoi
     (IsScalarTower.toAlgHom k k' F')
   let _ : Algebra R F' := (π : R →+* F').toAlgebra
   have : IsScalarTower k' R F' := .of_algebraMap_eq fun c ↦ by
-    symm
-    change π (1 ⊗ₜ c) = algebraMap k' F' c
-    simp [π]
+    rw [RingHom.algebraMap_toAlgebra, Algebra.TensorProduct.right_algebraMap_apply,
+      AlgHom.coe_toRingHom, Algebra.TensorProduct.productMap_apply_tmul, map_one, one_mul,
+      IsScalarTower.toAlgHom_apply]
   have : IsFractionRing R F' := isFractionRing_field_tensorProduct_of_linearDisjoint H h
   have : IsDomain (F ⊗[k] Ω) := isDomain_tensorProduct_of_isGeometricallyReduced hex Ω
   have : IsDomain (Ω ⊗[k] F) := (Algebra.TensorProduct.comm k F Ω).symm.toMulEquiv.isDomain
@@ -277,9 +277,7 @@ private theorem exists_valuationSubring_dominating_of_linearDisjoint
   have ht_nonu : algebraMap F F' t ∈ A.nonunits := by
     have hmem := hnonu ⟨e (⟨t, htmem⟩ ⊗ₜ 1), htker, rfl⟩
     have hcoe : ((e (⟨t, htmem⟩ ⊗ₜ 1) : φ.range.toSubring) : F') = algebraMap F F' t := by
-      change ((AlgEquiv.ofInjective φ hφ) (⟨t, htmem⟩ ⊗ₜ 1) : F') = algebraMap F F' t
-      rw [AlgEquiv.ofInjective_apply]
-      simp [φ]
+      simp [e, φ, AlgEquiv.ofInjective_apply]
     exact hcoe ▸ hmem
   have htinv : (algebraMap F F' t)⁻¹ ∉ A :=
     (A.mem_nonunits_iff_or.mp ht_nonu).resolve_left ((_root_.map_ne_zero _).mpr ht.ne_zero)
@@ -321,11 +319,8 @@ theorem exists_place_integers_le_and_ord_eq_mul_of_linearDisjoint
       exact (u⁻¹ : P.integersˣ).1.2
     rw [← map_inv₀]
     exact hPP' _ huinv_mem
-  have hu_ord : P'.ord (algebraMap F F' (u : F)) = 0 := by
-    have h1 := P'.mem_integers_iff_ord_nonneg.mp hu_mem
-    have h2 := P'.mem_integers_iff_ord_nonneg.mp hu_inv
-    rw [P'.ord_inv] at h2
-    omega
+  have hu_ord : P'.ord (algebraMap F F' (u : F)) = 0 :=
+    P'.ord_eq_zero_of_mem_integers_of_inv_mem hu_mem hu_inv
   have hu0' : algebraMap F F' (u : F) ≠ 0 :=
     (_root_.map_ne_zero _).mpr fun h0 ↦ u.ne_zero (Subtype.ext h0)
   conv_lhs => rw [hu_eq]
@@ -342,69 +337,68 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
   [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
 
-/-- Compatibility of `X` makes the two paths `k[X] → k(X) → F → F'` and
-`k[X] → k'[X] → k'(X) → F'` agree. -/
-private theorem algebraMap_ratFunc_polynomial_eq
-    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X) (p : k[X]) :
-    algebraMap F F' (algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) p)) =
-      algebraMap (RatFunc k') F' (algebraMap k'[X] (RatFunc k') (p.map (algebraMap k k'))) := by
-  have h₁ := aeval_algHom_apply
-    ((IsScalarTower.toAlgHom k F F').comp (IsScalarTower.toAlgHom k (RatFunc k) F)) RatFunc.X p
-  have h₂ := aeval_algHom_apply (IsScalarTower.toAlgHom k' (RatFunc k') F') RatFunc.X
-    (p.map (algebraMap k k'))
-  simp only [AlgHom.comp_apply, IsScalarTower.toAlgHom_apply,
-    RatFunc.aeval_X_left_eq_algebraMap] at h₁ h₂
-  rw [← h₁, ← h₂, hX, aeval_map_algebraMap]
-
-private theorem infty_iff_ord_X_lt_zero {K : Type*} [Field K] (Q : Place K (RatFunc K)) :
-    Q = infty K ↔ Q.ord RatFunc.X < 0 := by
-  refine ⟨by rintro rfl; simp [ord_infty], fun hlt ↦ ?_⟩
-  by_contra hne
-  exact (Q.mem_integers_iff_ord_nonneg.mp
-    (not_not.mp (mt X_notMem_integers_iff_eq_infty.mp hne))).not_gt hlt
-
+/-- From a place `P'` of `F' / k'` whose order restricts to a positive multiple `m · ord_P`,
+over a perfect base field `k`, `e(P ∣ k(X))` divides `e(P' ∣ k'(X))`, and `P'` lies over `∞` or
+`X - a` (`a ∈ k`) exactly when `P` does. -/
 private theorem ramificationIdx_ratFunc_dvd_of_ord_eq_mul [PerfectField k]
     [FiniteDimensional (RatFunc k) F] [FiniteDimensional (RatFunc k') F']
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X)
     {P : Place k F} {P' : Place k' F'} {m : ℕ} (hm : 0 < m)
     (hord : ∀ x : F, P'.ord (algebraMap F F' x) = m * P.ord x) :
-    ramificationIdx (RatFunc k) P ∣ ramificationIdx (RatFunc k') P' := by
+    ramificationIdx (RatFunc k) P ∣ ramificationIdx (RatFunc k') P' ∧
+      (P'.restrict k' (RatFunc k') = infty k' ↔ P.restrict k (RatFunc k) = infty k) ∧
+      ∀ a : k,
+        P'.restrict k' (RatFunc k') =
+            adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' a)) ↔
+          P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a) := by
   classical
-  rcases eq_infty_or_exists_eq_adicOfIrreducible (P.restrict k (RatFunc k)) with hinf | ⟨q, hq, hqP⟩
-  · have hXord := hord (algebraMap (RatFunc k) F RatFunc.X)
-    rw [hX, ord_algebraMap_restrict k' (RatFunc k') P',
-      ord_algebraMap_restrict k (RatFunc k) P, hinf, ord_infty, RatFunc.intDegree_X] at hXord
-    have heF := ramificationIdx_pos (RatFunc k) P
-    have heF' := ramificationIdx_pos (RatFunc k') P'
-    have hneg : (P'.restrict k' (RatFunc k')).ord RatFunc.X < 0 := by nlinarith
-    have hinf' : P'.restrict k' (RatFunc k') = infty k' :=
-      (infty_iff_ord_X_lt_zero _).mpr hneg
-    rw [hinf', ord_infty, RatFunc.intDegree_X] at hXord
-    exact ⟨m, by exact_mod_cast (by linarith :
-      (ramificationIdx (RatFunc k') P' : ℤ) = ramificationIdx (RatFunc k) P * m)⟩
-  · have hqord := hord (algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) q))
-    rw [algebraMap_ratFunc_polynomial_eq hX q, ord_algebraMap_restrict k' (RatFunc k') P',
-      ord_algebraMap_restrict k (RatFunc k) P, hqP,
-      ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left Associated.rfl,
-      mul_one] at hqord
-    have hpos : 0 < (P'.restrict k' (RatFunc k')).ord
-        (algebraMap k'[X] (RatFunc k') (q.map (algebraMap k k'))) := by
-      have := ramificationIdx_pos (RatFunc k) P
-      have := ramificationIdx_pos (RatFunc k') P'
-      nlinarith
-    rcases eq_infty_or_exists_eq_adicOfIrreducible (P'.restrict k' (RatFunc k')) with
-      h' | ⟨r, hr, h'⟩
-    · rw [h', ord_infty, RatFunc.intDegree_polynomial, natDegree_map] at hpos
-      omega
-    · have hsq : Squarefree (q.map (algebraMap k k')) :=
-        ((PerfectField.separable_of_irreducible hq).map).squarefree
-      rw [h', ord_adicOfIrreducible_algebraMap_of_squarefree hr hsq] at hqord hpos
-      split_ifs at hqord hpos with hdvd
-      · exact ⟨m, by exact_mod_cast (by linarith :
-          (ramificationIdx (RatFunc k') P' : ℤ) = ramificationIdx (RatFunc k) P * m)⟩
-      · omega
+  have heF : (0 : ℤ) < ramificationIdx (RatFunc k) P := mod_cast ramificationIdx_pos _ P
+  have heF' : (0 : ℤ) < ramificationIdx (RatFunc k') P' := mod_cast ramificationIdx_pos _ P'
+  have hme : (0 : ℤ) < m * ramificationIdx (RatFunc k) P := by positivity
+  have hXord := hord (algebraMap (RatFunc k) F RatFunc.X)
+  rw [hX, ord_algebraMap_restrict k' (RatFunc k') P',
+    ord_algebraMap_restrict k (RatFunc k) P, ← mul_assoc] at hXord
+  have hinf_iff : P'.restrict k' (RatFunc k') = infty k' ↔ P.restrict k (RatFunc k) = infty k := by
+    rw [← ord_X_neg_iff, ← ord_X_neg_iff]
+    constructor <;> intro h <;> nlinarith
+  refine ⟨?_, hinf_iff, fun a ↦ ?_⟩
+  · rcases eq_infty_or_exists_eq_adicOfIrreducible (P.restrict k (RatFunc k)) with
+      hinf | ⟨q, hq, hqP⟩
+    · rw [hinf, hinf_iff.mpr hinf, ord_infty, ord_infty, RatFunc.intDegree_X,
+        RatFunc.intDegree_X] at hXord
+      exact ⟨m, by exact_mod_cast (by linarith :
+        (ramificationIdx (RatFunc k') P' : ℤ) = ramificationIdx (RatFunc k) P * m)⟩
+    · have hqord := hord (algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) q))
+      have hqeq : algebraMap F F' (algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) q)) =
+          algebraMap (RatFunc k') F' (algebraMap k'[X] (RatFunc k') (q.map (algebraMap k k'))) := by
+        rw [← algebraMap_mapCoeffRingHom hX, RatFunc.mapCoeffRingHom_algebraMap]
+      rw [hqeq, ord_algebraMap_restrict k' (RatFunc k') P',
+        ord_algebraMap_restrict k (RatFunc k) P, hqP,
+        ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left Associated.rfl,
+        mul_one] at hqord
+      have hpos : 0 < (P'.restrict k' (RatFunc k')).ord
+          (algebraMap k'[X] (RatFunc k') (q.map (algebraMap k k'))) := by nlinarith
+      rcases eq_infty_or_exists_eq_adicOfIrreducible (P'.restrict k' (RatFunc k')) with
+        h' | ⟨r, hr, h'⟩
+      · rw [h', ord_infty, RatFunc.intDegree_polynomial, natDegree_map] at hpos
+        omega
+      · have hsq : Squarefree (q.map (algebraMap k k')) :=
+          ((PerfectField.separable_of_irreducible hq).map).squarefree
+        rw [h', ord_adicOfIrreducible_algebraMap_of_squarefree hr hsq] at hqord hpos
+        split_ifs at hqord hpos with hdvd
+        · exact ⟨m, by exact_mod_cast (by linarith :
+            (ramificationIdx (RatFunc k') P' : ℤ) = ramificationIdx (RatFunc k) P * m)⟩
+        · omega
+  · have haord := hord (algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a))
+    have haeq : algebraMap F F' (algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a)) =
+        algebraMap (RatFunc k') F' (RatFunc.X - RatFunc.C (algebraMap k k' a)) := by
+      rw [← algebraMap_mapCoeffRingHom hX, map_sub, RatFunc.mapCoeffRingHom_X,
+        RatFunc.mapCoeffRingHom_C]
+    rw [haeq, ord_algebraMap_restrict k' (RatFunc k') P',
+      ord_algebraMap_restrict k (RatFunc k) P, ← mul_assoc] at haord
+    rw [← ord_X_sub_C_pos_iff, ← ord_X_sub_C_pos_iff]
+    constructor <;> intro h <;> nlinarith
 
 /-- **Dominating place over `RatFunc` in a linearly disjoint constant compositum**: over a perfect
 field `k`, every place `P` of `F / k` is dominated by a place `P'` of `F' / k'` whose ramification
@@ -416,10 +410,7 @@ theorem exists_place_ramificationIdx_ratFunc_dvd_of_linearDisjoint [PerfectField
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) (P : Place k F) :
-    have : FiniteDimensional (RatFunc k') F' :=
-      FiniteDimensional.of_finrank_pos (by
-        rw [finrank_ratFunc_eq_of_linearDisjoint H hcomp hX]
-        exact Module.finrank_pos)
+    haveI := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
     ∃ P' : Place k' F',
       ramificationIdx (RatFunc k) P ∣ ramificationIdx (RatFunc k') P' ∧
       (P'.restrict k' (RatFunc k') = infty k' ↔ P.restrict k (RatFunc k) = infty k) ∧
@@ -427,104 +418,12 @@ theorem exists_place_ramificationIdx_ratFunc_dvd_of_linearDisjoint [PerfectField
         P'.restrict k' (RatFunc k') =
             adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' a)) ↔
           P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a) := by
-  have : FiniteDimensional (RatFunc k') F' :=
-    FiniteDimensional.of_finrank_pos (by
-      rw [finrank_ratFunc_eq_of_linearDisjoint H hcomp hX]
-      exact Module.finrank_pos)
+  have := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
   obtain ⟨P', m, hm, _, hord⟩ := exists_place_integers_le_and_ord_eq_mul_of_linearDisjoint
     (IsFunctionField.ratFunc k).finite_extension H hcomp P
-  have heF' : (0 : ℤ) < ramificationIdx (RatFunc k') P' := mod_cast ramificationIdx_pos _ P'
-  have hme : (0 : ℤ) < m * ramificationIdx (RatFunc k) P := by
-    have := ramificationIdx_pos (RatFunc k) P
-    positivity
-  refine ⟨P', ramificationIdx_ratFunc_dvd_of_ord_eq_mul hX hm hord, ?_, fun a ↦ ?_⟩
-  · have hXord := hord (algebraMap (RatFunc k) F RatFunc.X)
-    rw [hX, ord_algebraMap_restrict k' (RatFunc k') P',
-      ord_algebraMap_restrict k (RatFunc k) P, ← mul_assoc] at hXord
-    rw [infty_iff_ord_X_lt_zero, infty_iff_ord_X_lt_zero]
-    constructor <;> intro h <;> nlinarith
-  · have haord := hord (algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a))
-    have haeq := algebraMap_ratFunc_polynomial_eq hX (X - C a)
-    rw [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C,
-      map_sub (algebraMap k[X] (RatFunc k)), map_sub (algebraMap k'[X] (RatFunc k')),
-      RatFunc.algebraMap_X, RatFunc.algebraMap_C, RatFunc.algebraMap_X,
-      RatFunc.algebraMap_C] at haeq
-    rw [haeq, ord_algebraMap_restrict k' (RatFunc k') P',
-      ord_algebraMap_restrict k (RatFunc k) P, ← mul_assoc] at haord
-    rw [← ord_X_sub_C_pos_iff, ← ord_X_sub_C_pos_iff]
-    constructor <;> intro h <;> nlinarith
+  exact ⟨P', ramificationIdx_ratFunc_dvd_of_ord_eq_mul hX hm hord⟩
 
 end RatFuncRamificationDvd
-
-section UnramifiedLocalBasisDiscriminant
-
-variable {k F E : Type*} [Field k] [Field F] [Field E]
-  [Algebra k F] [Algebra k E] [Algebra F E] [IsScalarTower k F E]
-  [FiniteDimensional F E] [Algebra.IsSeparable F E]
-
-attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-/-- The trace matrices of a finite separable basis and its trace-dual basis are inverse to one
-another, so their discriminants multiply to `1`. -/
-private theorem discr_mul_discr_traceDual {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι F E) :
-    Algebra.discr F b * Algebra.discr F b.traceDual = 1 := by
-  have hmul : Algebra.traceMatrix F b * Algebra.traceMatrix F b.traceDual = 1 := by
-    ext i j
-    rw [Matrix.mul_apply, Matrix.one_apply]
-    have hsum : ∑ l, Algebra.traceMatrix F b i l * Algebra.traceMatrix F b.traceDual l j =
-        Algebra.trace F E ((∑ l, b.traceDual.repr (b i) l • b.traceDual l) * b.traceDual j) := by
-      rw [Finset.sum_mul, map_sum]
-      refine Finset.sum_congr rfl fun l _ ↦ ?_
-      simp only [Algebra.traceMatrix_apply, b.traceDual_repr_apply, Algebra.traceForm_apply,
-        smul_mul_assoc, LinearMap.map_smul, smul_eq_mul]
-    rw [hsum, b.traceDual.sum_repr, b.trace_mul_traceDual]
-  rw [Algebra.discr_def, Algebra.discr_def, ← Matrix.det_mul, hmul, Matrix.det_one]
-
-/-- **At an unramified place, the local integral basis has unit discriminant**: `ord_P(disc b) = 0`.
-Because every place of `E` above `P` has vanishing different exponent, the complementary module
-equals the local integral closure, making the trace-dual basis integral at `P` as well. -/
-theorem ord_discr_localIntegralBasis_eq_zero (hF : IsFunctionField k F) {P : Place k F}
-    (hP : P.IsUnramified (k' := k) (F' := E)) :
-    P.ord (Algebra.discr F (localIntegralBasis E P)) = 0 := by
-  classical
-  let b := localIntegralBasis E P
-  have his := isIntegralBasis_localIntegralBasis E P
-  have hb_int : ∀ i, IsIntegral P.integers (b i) := his.isIntegral
-  have hspan : (1 : Submodule (integralClosure P.integers E) E).restrictScalars P.integers =
-      Submodule.span P.integers (Set.range b) := by
-    ext x
-    rw [Submodule.restrictScalars_mem, his.mem_span_iff_isIntegral, ← mem_integralClosure_iff,
-      Submodule.mem_one]
-    exact ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
-  have hbdual_int : ∀ i, IsIntegral P.integers (b.traceDual i) := fun i ↦ by
-    have hmem : b.traceDual i ∈
-        Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers E) E) := by
-      change b.traceDual i ∈ (Submodule.traceDual P.integers F _).restrictScalars P.integers
-      rw [Submodule.traceDual_span_of_basis P.integers _ b hspan]
-      exact Submodule.subset_span ⟨i, rfl⟩
-    refine (isIntegral_iff_forall_restrict_eq_mem_integers hF.finite_extension P).mpr
-      fun P' hP' ↦ ?_
-    have hd0 : differentExponent k F P' = 0 :=
-      (differentExponent_eq_zero_iff k F P').mpr
-        ((ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt k F P').mp
-          ⟨hP.ramificationIdx_eq_one hP', hP.isSeparable hP'⟩)
-    have hval := (mem_traceDual_iff_forall_valuation_le k F hF.finite_extension P).mp hmem P' hP'
-    rw [hd0, Nat.cast_zero, WithZero.exp_zero] at hval
-    exact P'.mem_integers_iff.mpr hval
-  obtain ⟨d₁, hd₁⟩ := IsIntegrallyClosed.isIntegral_iff.mp (Algebra.discr_isIntegral F hb_int)
-  obtain ⟨d₂, hd₂⟩ := IsIntegrallyClosed.isIntegral_iff.mp (Algebra.discr_isIntegral F hbdual_int)
-  have hnn₁ : 0 ≤ P.ord (Algebra.discr F b) :=
-    P.mem_integers_iff_ord_nonneg.mp (by rw [← hd₁]; exact d₁.2)
-  have hnn₂ : 0 ≤ P.ord (Algebra.discr F b.traceDual) :=
-    P.mem_integers_iff_ord_nonneg.mp (by rw [← hd₂]; exact d₂.2)
-  have hsum : P.ord (Algebra.discr F b) + P.ord (Algebra.discr F b.traceDual) = 0 := by
-    rw [← P.ord_mul (Algebra.discr_not_zero_of_basis F b)
-      (Algebra.discr_not_zero_of_basis F b.traceDual), discr_mul_discr_traceDual b, P.ord_one]
-  change P.ord (Algebra.discr F b) = 0
-  omega
-
-end UnramifiedLocalBasisDiscriminant
 
 section UnramifiedTranscendentalBaseChange
 
@@ -536,140 +435,106 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-/-- Coefficient map `RatFunc k →+* RatFunc k'` induced by `algebraMap k k'`. -/
-private noncomputable def ratFuncMapRingHom : RatFunc k →+* RatFunc k' :=
-  RatFunc.mapRingHom (Polynomial.mapRingHom (algebraMap k k'))
-    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-      (Polynomial.map_injective _ (algebraMap k k').injective))
-
-private theorem algebraMap_ratFuncMapRingHom
+/-- In a constant extension with compatible `X`, adjoining `k'` to the image of `k(X)` in `F'`
+yields the image of `k'(X)` in `F'`. -/
+private theorem adjoin_range_fieldRange_ratFunc_eq
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X) (f : RatFunc k) :
-    algebraMap (RatFunc k') F' (ratFuncMapRingHom f) =
-      algebraMap F F' (algebraMap (RatFunc k) F f) := by
-  have hext : (algebraMap (RatFunc k') F').comp ratFuncMapRingHom =
-      (algebraMap F F').comp (algebraMap (RatFunc k) F) := by
-    refine IsFractionRing.ringHom_ext (A := k[X]) fun p ↦ ?_
-    simp [RingHom.comp_apply, ratFuncMapRingHom, RatFunc.mapRingHom_algebraMap,
-      Polynomial.coe_mapRingHom, algebraMap_ratFunc_polynomial_eq hX]
-  exact RingHom.congr_fun hext f
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    IntermediateField.adjoin k'
+        (Set.range (algebraMap (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange F')) =
+      (IsScalarTower.toAlgHom k' (RatFunc k') F').fieldRange := by
+  refine le_antisymm ?_ ?_
+  · rw [IntermediateField.adjoin_le_iff]
+    rintro _ ⟨⟨_, ⟨f, rfl⟩⟩, rfl⟩
+    exact ⟨RatFunc.mapCoeffRingHom (algebraMap k k') f, algebraMap_mapCoeffRingHom hX f⟩
+  · rw [AlgHom.fieldRange_eq_map, ← RatFunc.adjoin_X, IntermediateField.adjoin_map,
+      Set.image_singleton, IntermediateField.adjoin_simple_le_iff]
+    refine IntermediateField.subset_adjoin k' _
+      ⟨⟨algebraMap (RatFunc k) F RatFunc.X,
+        ⟨RatFunc.X, IsScalarTower.toAlgHom_apply k (RatFunc k) F RatFunc.X⟩⟩, ?_⟩
+    rw [IsScalarTower.algebraMap_apply (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange F F',
+      IntermediateField.algebraMap_apply, hX, IsScalarTower.toAlgHom_apply]
 
 /-- Transport a finite `RatFunc k`-basis of `F` along a linearly disjoint constant compositum
-`F' = F · k'` to a `RatFunc k'`-basis of `F'`. -/
-private noncomputable def constantExtensionRatFuncBasis [FiniteDimensional (RatFunc k) F]
+`F' = F · k'` to a `RatFunc k'`-basis of `F'`, via `constantExtensionBasisOfLinearDisjoint`. -/
+private noncomputable def constantExtensionRatFuncBasis
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X)
     {ι : Type*} [Fintype ι] (b : Module.Basis ι (RatFunc k) F) :
-    Module.Basis ι (RatFunc k') F' := by
-  have : FiniteDimensional (RatFunc k') F' :=
-    FiniteDimensional.of_finrank_pos (by
-      rw [finrank_ratFunc_eq_of_linearDisjoint H hcomp hX]
-      exact Module.finrank_pos)
-  set C := (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange
-  have : FiniteDimensional C F :=
-    Module.Finite.of_equiv_equiv
-      (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange.toRingEquiv
-      (RingEquiv.refl F) (RingHom.ext fun _ ↦ rfl)
-  let bC : Module.Basis ι C F :=
-    Module.Basis.mk
-      (b.linearIndependent.map_of_surjective_injective
-        (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange (AddMonoidHom.id F)
-        (AlgEquiv.surjective _) (by simp) fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl)
-      (by
-        intro y _
-        rw [← b.linearCombination_repr y, Finsupp.linearCombination_apply]
-        refine Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦ ?_
-        have hsmul : ((IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange (b.repr y i)) •
-            b i = b.repr y i • b i := by
-          simp_rw [Algebra.smul_def]
-          rfl
-        rw [← hsmul]
-        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
-  have hspanC := span_range_basis_of_isAlgebraic_constantCompositum (k := k) hcomp C bC
-  have hle : IntermediateField.adjoin k' (Set.range (algebraMap C F')) ≤
-      (IsScalarTower.toAlgHom k' (RatFunc k') F').fieldRange := by
-    rw [IntermediateField.adjoin_le_iff]
-    rintro _ ⟨⟨_, ⟨f, rfl⟩⟩, rfl⟩
-    exact ⟨ratFuncMapRingHom f, algebraMap_ratFuncMapRingHom hX f⟩
-  have hspan : ⊤ ≤ Submodule.span (RatFunc k') (Set.range (algebraMap F F' ∘ b)) := by
-    intro z _
-    have hz : z ∈ Submodule.span (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
-        (Set.range (algebraMap F F' ∘ b)) := by
-      have hbC : (algebraMap F F' ∘ bC) = (algebraMap F F' ∘ b) := by
-        ext i; simp [bC]
-      rw [← hbC, hspanC]
-      trivial
-    refine Submodule.span_induction (fun x hx ↦ Submodule.subset_span hx) (zero_mem _)
-      (fun _ _ _ _ ↦ add_mem) (fun c x _ hx ↦ ?_) hz
-    obtain ⟨q, hq⟩ := hle c.2
-    have hsmul : c • x = q • x := by
-      simp [Algebra.smul_def, ← hq]
-    rw [hsmul]
-    exact Submodule.smul_mem _ q hx
-  have hli : LinearIndependent (RatFunc k') (algebraMap F F' ∘ b) :=
-    linearIndependent_of_top_le_span_of_card_eq_finrank hspan
-      (by rw [finrank_ratFunc_eq_of_linearDisjoint H hcomp hX, Module.finrank_eq_card_basis b])
-  exact Module.Basis.mk hli hspan
+    Module.Basis ι (RatFunc k') F' :=
+  let C := (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange
+  let e : RatFunc k ≃+* C := (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange.toRingEquiv
+  let bC : Module.Basis ι C F := b.mapCoeffs e fun a x ↦
+    (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange_smul
+      (fun _ ↦ (IsScalarTower.toAlgHom_apply k (RatFunc k) F _).symm) a x
+  have : FiniteDimensional C F := Module.Finite.of_basis bC
+  have : Algebra.IsAlgebraic C F := Algebra.IsAlgebraic.of_finite C F
+  let e' : IntermediateField.adjoin k' (Set.range (algebraMap C F')) ≃+* RatFunc k' :=
+    (IntermediateField.equivOfEq (adjoin_range_fieldRange_ratFunc_eq hX)).toRingEquiv.trans
+      (IsScalarTower.toAlgHom k' (RatFunc k') F').equivFieldRange.symm.toRingEquiv
+  (constantExtensionBasisOfLinearDisjoint H hcomp C bC).mapCoeffs e' fun c x ↦ by
+    rw [Algebra.smul_def, Algebra.smul_def]
+    congr 1
+    rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
+      IntermediateField.algebraMap_apply, ← IsScalarTower.toAlgHom_apply k' (RatFunc k') F',
+      ← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
+      IntermediateField.equivOfEq_apply]
 
-private theorem coe_constantExtensionRatFuncBasis [FiniteDimensional (RatFunc k) F]
+private theorem coe_constantExtensionRatFuncBasis
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X)
     {ι : Type*} [Fintype ι] (b : Module.Basis ι (RatFunc k) F) (i : ι) :
     constantExtensionRatFuncBasis H hcomp hX b i = algebraMap F F' (b i) := by
-  simp [constantExtensionRatFuncBasis]
+  simp [constantExtensionRatFuncBasis, Module.Basis.mapCoeffs_apply]
 
-private theorem constantExtensionRatFuncBasis_repr_algebraMap [FiniteDimensional (RatFunc k) F]
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (hcomp : constantCompositum F k' F' = ⊤)
-    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X)
-    {ι : Type*} [Fintype ι] (b : Module.Basis ι (RatFunc k) F) (y : F) (i : ι) :
-    (constantExtensionRatFuncBasis H hcomp hX b).repr (algebraMap F F' y) i =
-      ratFuncMapRingHom (b.repr y i) := by
-  set b' := constantExtensionRatFuncBasis H hcomp hX b
-  let f : ι →₀ RatFunc k' := (b.repr y).mapRange ratFuncMapRingHom ratFuncMapRingHom.map_zero
-  have hsum : b'.repr.symm f = algebraMap F F' y := by
-    rw [Module.Basis.repr_symm_apply, Finsupp.linearCombination_apply]
-    dsimp only [f]
-    rw [Finsupp.sum_mapRange_index (fun j ↦ zero_smul (RatFunc k') (b' j))]
-    conv_rhs => rw [← b.linearCombination_repr y, Finsupp.linearCombination_apply,
-      Finsupp.sum, map_sum]
-    rw [Finsupp.sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp [b', coe_constantExtensionRatFuncBasis, Algebra.smul_def, algebraMap_ratFuncMapRingHom hX]
-  simpa [f] using congrArg (fun q : ι →₀ RatFunc k' ↦ q i) (b'.repr.symm_apply_eq.mp hsum).symm
-
-private theorem discr_constantExtensionRatFuncBasis [FiniteDimensional (RatFunc k) F]
+private theorem discr_constantExtensionRatFuncBasis
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X)
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι (RatFunc k) F) :
     Algebra.discr (RatFunc k') (constantExtensionRatFuncBasis H hcomp hX b) =
-      ratFuncMapRingHom (Algebra.discr (RatFunc k) b) := by
-  classical
-  have htr : ∀ y : F, Algebra.trace (RatFunc k') F' (algebraMap F F' y) =
-      ratFuncMapRingHom (Algebra.trace (RatFunc k) F y) := fun y ↦ by
-    let b₀ := Module.finBasis (RatFunc k) F
-    let b₀' := constantExtensionRatFuncBasis H hcomp hX b₀
-    rw [Algebra.trace_eq_matrix_trace b₀', Algebra.trace_eq_matrix_trace b₀, Matrix.trace,
-      Matrix.trace, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Matrix.diag_apply, Matrix.diag_apply, Algebra.leftMulMatrix_eq_repr_mul,
-      Algebra.leftMulMatrix_eq_repr_mul, coe_constantExtensionRatFuncBasis,
-      ← map_mul (algebraMap F F'), constantExtensionRatFuncBasis_repr_algebraMap H hcomp hX]
-  have hmat : ratFuncMapRingHom.mapMatrix (Algebra.traceMatrix (RatFunc k) b) =
-      Algebra.traceMatrix (RatFunc k') (constantExtensionRatFuncBasis H hcomp hX b) := by
-    ext i j
-    rw [RingHom.mapMatrix_apply, Matrix.map_apply, Algebra.traceMatrix_apply,
-      Algebra.traceMatrix_apply, Algebra.traceForm_apply, Algebra.traceForm_apply,
-      coe_constantExtensionRatFuncBasis, coe_constantExtensionRatFuncBasis,
-      ← map_mul (algebraMap F F'), htr]
-  rw [Algebra.discr_def, Algebra.discr_def, ← hmat, ← ratFuncMapRingHom.map_det]
+      RatFunc.mapCoeffRingHom (algebraMap k k') (Algebra.discr (RatFunc k) b) := by
+  let C := (IsScalarTower.toAlgHom k (RatFunc k) F).fieldRange
+  let e : RatFunc k ≃+* C := (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange.toRingEquiv
+  let bC : Module.Basis ι C F := b.mapCoeffs e fun a x ↦
+    (IsScalarTower.toAlgHom k (RatFunc k) F).equivFieldRange_smul
+      (fun _ ↦ (IsScalarTower.toAlgHom_apply k (RatFunc k) F _).symm) a x
+  have : FiniteDimensional C F := Module.Finite.of_basis bC
+  have : Algebra.IsAlgebraic C F := Algebra.IsAlgebraic.of_finite C F
+  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
+  let e' : C' ≃+* RatFunc k' :=
+    (IntermediateField.equivOfEq (adjoin_range_fieldRange_ratFunc_eq hX)).toRingEquiv.trans
+      (IsScalarTower.toAlgHom k' (RatFunc k') F').equivFieldRange.symm.toRingEquiv
+  have he : (algebraMap C F).comp (e : RatFunc k →+* C) = algebraMap (RatFunc k) F := by
+    ext r
+    rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+      IntermediateField.algebraMap_apply, AlgHom.equivFieldRange_apply_coe,
+      IsScalarTower.toAlgHom_apply]
+  have he' : (algebraMap (RatFunc k') F').comp (e' : C' →+* RatFunc k') = algebraMap C' F' := by
+    ext c
+    rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.trans_apply,
+      AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
+      ← IsScalarTower.toAlgHom_apply k' (RatFunc k') F', ← AlgHom.equivFieldRange_apply_coe,
+      AlgEquiv.apply_symm_apply, IntermediateField.equivOfEq_apply,
+      IntermediateField.algebraMap_apply]
+  have hbC_fn : (bC : ι → F) = b := funext fun i ↦ Module.Basis.mapCoeffs_apply _ _ _ i
+  have hb'_fn : (constantExtensionRatFuncBasis H hcomp hX b : ι → F') =
+      constantExtensionBasisOfLinearDisjoint H hcomp C bC := by
+    ext i
+    rw [coe_constantExtensionRatFuncBasis, constantExtensionBasisOfLinearDisjoint_apply,
+      Module.Basis.mapCoeffs_apply]
+  apply (algebraMap (RatFunc k') F').injective
+  rw [hb'_fn, ← Algebra.discr_eq_of_ringEquiv e' he', ← RingEquiv.coe_toRingHom,
+    ← RingHom.comp_apply, he', IntermediateField.algebraMap_apply,
+    coe_discr_constantExtensionBasisOfLinearDisjoint H hcomp C bC, hbC_fn,
+    ← Algebra.discr_eq_of_ringEquiv e he, IsScalarTower.algebraMap_apply C F F',
+    ← RingEquiv.coe_toRingHom, ← RingHom.comp_apply (algebraMap C F), he,
+    algebraMap_mapCoeffRingHom hX]
 
 /-- If `x ∈ F` is integral over a `RatFunc k`-subalgebra `S` mapped by `RatFunc k → F'` into
 `P'.integers`, then the image of `x` in `F'` is integral over the restricted valuation ring
@@ -685,9 +550,9 @@ private theorem isIntegral_restrict_ratFunc_of_isIntegral_ring
     {x : F} (hx : IsIntegral S x) :
     IsIntegral (P'.restrict k' (RatFunc k')).integers (algebraMap F F' x) := by
   let g : S →+* (P'.restrict k' (RatFunc k')).integers :=
-    (ratFuncMapRingHom.comp (algebraMap S (RatFunc k))).codRestrict
+    ((RatFunc.mapCoeffRingHom (algebraMap k k')).comp (algebraMap S (RatFunc k))).codRestrict
       (P'.restrict k' (RatFunc k')).integers fun s ↦ by
-        rw [mem_integers_restrict_iff, RingHom.comp_apply, algebraMap_ratFuncMapRingHom hX]
+        rw [mem_integers_restrict_iff, RingHom.comp_apply, algebraMap_mapCoeffRingHom hX]
         exact hS s
   obtain ⟨p, hp_monic, hp_eval⟩ := hx
   refine ⟨p.map g, hp_monic.map g, ?_⟩
@@ -695,19 +560,17 @@ private theorem isIntegral_restrict_ratFunc_of_isIntegral_ring
   have heq : (algebraMap (P'.restrict k' (RatFunc k')).integers F').comp g =
       (algebraMap F F').comp (algebraMap S F) := by
     ext s
-    change algebraMap (RatFunc k') F'
-        ((g s : (P'.restrict k' (RatFunc k')).integers) : RatFunc k') =
-      algebraMap F F' (algebraMap S F s)
-    rw [RingHom.codRestrict_apply, RingHom.comp_apply, algebraMap_ratFuncMapRingHom hX,
-      ← IsScalarTower.algebraMap_apply S (RatFunc k) F]
+    rw [RingHom.comp_apply, RingHom.comp_apply,
+      IsScalarTower.algebraMap_apply (P'.restrict k' (RatFunc k')).integers (RatFunc k') F',
+      ValuationSubring.algebraMap_apply, RingHom.codRestrict_apply, RingHom.comp_apply,
+      algebraMap_mapCoeffRingHom hX, ← IsScalarTower.algebraMap_apply S (RatFunc k) F]
   rw [heq]
   have hzero := congrArg (algebraMap F F') hp_eval
   rw [map_zero, Polynomial.hom_eval₂] at hzero
   exact hzero
 
 private theorem differentExponent_eq_zero_of_discr_mem_and_inv_mem
-    [FiniteDimensional (RatFunc k) F] [FiniteDimensional (RatFunc k') F']
-    [Algebra.IsSeparable (RatFunc k') F']
+    [FiniteDimensional (RatFunc k') F'] [Algebra.IsSeparable (RatFunc k') F']
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
@@ -719,19 +582,17 @@ private theorem differentExponent_eq_zero_of_discr_mem_and_inv_mem
     (hd_inv : algebraMap F F' (algebraMap (RatFunc k) F (Algebra.discr (RatFunc k) b)⁻¹) ∈
       P'.integers) :
     differentExponent k' (RatFunc k') P' = 0 := by
-  have hd_mem : ratFuncMapRingHom (Algebra.discr (RatFunc k) b) ∈
+  have hd_mem : RatFunc.mapCoeffRingHom (algebraMap k k') (Algebra.discr (RatFunc k) b) ∈
       (P'.restrict k' (RatFunc k')).integers := by
-    rwa [mem_integers_restrict_iff, algebraMap_ratFuncMapRingHom hX]
-  have hd_inv_mem : (ratFuncMapRingHom (Algebra.discr (RatFunc k) b))⁻¹ ∈
-      (P'.restrict k' (RatFunc k')).integers := by
-    rwa [← map_inv₀, mem_integers_restrict_iff, algebraMap_ratFuncMapRingHom hX]
+    rwa [mem_integers_restrict_iff, algebraMap_mapCoeffRingHom hX]
+  have hd_inv_mem :
+      (RatFunc.mapCoeffRingHom (algebraMap k k') (Algebra.discr (RatFunc k) b))⁻¹ ∈
+        (P'.restrict k' (RatFunc k')).integers := by
+    rwa [← map_inv₀, mem_integers_restrict_iff, algebraMap_mapCoeffRingHom hX]
   have hd_ord : (P'.restrict k' (RatFunc k')).ord
       (Algebra.discr (RatFunc k') (constantExtensionRatFuncBasis H hcomp hX b)) = 0 := by
     rw [discr_constantExtensionRatFuncBasis H hcomp hX b]
-    have h1 := (P'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg.mp hd_mem
-    have h2 := (P'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg.mp hd_inv_mem
-    rw [ord_inv] at h2
-    omega
+    exact (P'.restrict k' (RatFunc k')).ord_eq_zero_of_mem_integers_of_inv_mem hd_mem hd_inv_mem
   exact differentExponent_eq_zero_of_ord_discr_eq_zero k' (RatFunc k') P' hb hd_ord
 
 /-- **Separability over `RatFunc` persists in any constant compositum** with compatible `X`, even
@@ -742,30 +603,12 @@ theorem _root_.TauCeti.isSeparable_ratFunc_of_constantCompositum_eq_top
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) :
     Algebra.IsSeparable (RatFunc k') F' := by
-  have hsep : ∀ y : F, IsSeparable (RatFunc k') (algebraMap F F' y) := fun y ↦ by
-    let φ : RatFunc k →+* RatFunc k' := ratFuncMapRingHom (k := k) (k' := k')
-    have hmap : ((minpoly (RatFunc k) y).map φ).Separable :=
-      Polynomial.Separable.map (Algebra.IsSeparable.isSeparable (RatFunc k) y)
-    have haeval : aeval (algebraMap F F' y) ((minpoly (RatFunc k) y).map φ) = 0 := by
-      rw [aeval_def, eval₂_map]
-      have heq : (algebraMap (RatFunc k') F').comp φ =
-          (algebraMap F F').comp (algebraMap (RatFunc k) F) :=
-        RingHom.ext (algebraMap_ratFuncMapRingHom hX)
-      rw [heq, ← Polynomial.hom_eval₂, ← aeval_def, minpoly.aeval, map_zero]
-    exact hmap.of_dvd (minpoly.dvd (RatFunc k') (algebraMap F F' y) haeval)
-  have htop : IntermediateField.adjoin (RatFunc k') (Set.range (algebraMap F F')) = ⊤ := by
-    refine eq_top_iff.mpr fun z _ ↦ ?_
-    let E := IntermediateField.adjoin (RatFunc k') (Set.range (algebraMap F F'))
-    have hFE : ∀ y : F, algebraMap F F' y ∈ E :=
-      fun y ↦ IntermediateField.subset_adjoin (RatFunc k') _ ⟨y, rfl⟩
-    have hle := (constantCompositum_le_iff F k' F' (K := E.toSubfield.toIntermediateField hFE)).mpr
-      fun c ↦ by
-        rw [IsScalarTower.algebraMap_apply k' (RatFunc k') F']
-        exact E.algebraMap_mem _
-    exact hle (hcomp ▸ IntermediateField.mem_top)
-  rw [← IntermediateField.isSeparable_top, ← htop]
-  exact (IntermediateField.isSeparable_adjoin_iff_isSeparable (RatFunc k') F').mpr
-    fun _ ⟨y, hy⟩ ↦ hy ▸ hsep y
+  have : Algebra.IsSeparable k⟮algebraMap (RatFunc k) F RatFunc.X⟯ F :=
+    isSeparable_adjoin_algebraMap_X_iff.mpr inferInstance
+  have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) hcomp
+    (S := {algebraMap (RatFunc k) F RatFunc.X})
+  rw [Set.image_singleton, hX] at hsep
+  exact isSeparable_adjoin_algebraMap_X_iff.mp hsep
 
 /-- **Unramified base change along an arbitrary linearly disjoint constant extension.** Let
 `F / RatFunc k` be finite separable and `F' = F · k'` linearly disjoint over `k`, with compatible
@@ -783,16 +626,10 @@ theorem ramificationIdx_ratFunc_eq_one_of_linearDisjoint
       (∀ f : RatFunc k,
         f ∈ Q.integers ↔ algebraMap F F' (algebraMap (RatFunc k) F f) ∈ P'.integers) →
       Q.IsUnramified (k' := k) (F' := F)) :
-    have : FiniteDimensional (RatFunc k') F' :=
-      FiniteDimensional.of_finrank_pos (by
-        rw [finrank_ratFunc_eq_of_linearDisjoint H hcomp hX]
-        exact Module.finrank_pos)
+    haveI := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
     ramificationIdx (RatFunc k') P' = 1 := by
   classical
-  have : FiniteDimensional (RatFunc k') F' :=
-    FiniteDimensional.of_finrank_pos (by
-      rw [finrank_ratFunc_eq_of_linearDisjoint H hcomp hX]
-      exact Module.finrank_pos)
+  have := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
   have : Algebra.IsSeparable (RatFunc k') F' :=
     isSeparable_ratFunc_of_constantCompositum_eq_top hcomp hX
   let A₀ : ValuationSubring (RatFunc k) :=
@@ -801,32 +638,36 @@ theorem ramificationIdx_ratFunc_eq_one_of_linearDisjoint
     by_cases hA₀ : A₀ = ⊤
     · let b := Module.finBasis (RatFunc k) F
       have hall : ∀ f : RatFunc k, algebraMap F F' (algebraMap (RatFunc k) F f) ∈ P'.integers :=
-        fun f ↦ by change f ∈ A₀; rw [hA₀]; trivial
+        fun f ↦ ValuationSubring.mem_comap.mp (hA₀.symm ▸ trivial : f ∈ A₀)
       refine differentExponent_eq_zero_of_discr_mem_and_inv_mem H hcomp hX P' b
         (fun i ↦ ?_) (hall _) (hall _)
       rw [coe_constantExtensionRatFuncBasis]
       exact isIntegral_restrict_ratFunc_of_isIntegral_ring hX P' (S := RatFunc k)
         (fun s ↦ hall s) (IsIntegral.of_finite (RatFunc k) (b i))
     · have hkA₀ : ∀ c : k, algebraMap k (RatFunc k) c ∈ A₀ := fun c ↦ by
-        change algebraMap F F' (algebraMap (RatFunc k) F (algebraMap k (RatFunc k) c)) ∈ P'.integers
-        rw [← IsScalarTower.algebraMap_apply k (RatFunc k) F,
+        rw [ValuationSubring.mem_comap, RingHom.comp_apply,
+          ← IsScalarTower.algebraMap_apply k (RatFunc k) F,
           ← IsScalarTower.algebraMap_apply k F F', IsScalarTower.algebraMap_apply k k' F']
         exact P'.algebraMap_mem_integers _
       let Q := ofValuationSubring (IsFunctionField.ratFunc k) hkA₀ hA₀
       have hQint : Q.integers = A₀ := integers_ofValuationSubring _ hkA₀ hA₀
-      have hQunr : Q.IsUnramified (k' := k) (F' := F) := hQ Q fun f ↦ by rw [hQint]; rfl
+      have hQmem : ∀ f ∈ Q.integers,
+          algebraMap F F' (algebraMap (RatFunc k) F f) ∈ P'.integers := fun f hf ↦ by
+        rwa [hQint, ValuationSubring.mem_comap, RingHom.comp_apply] at hf
+      have hQunr : Q.IsUnramified (k' := k) (F' := F) := hQ Q fun f ↦ by
+        rw [hQint, ValuationSubring.mem_comap, RingHom.comp_apply]
       let b := localIntegralBasis F Q
       have hdQ : Q.ord (Algebra.discr (RatFunc k) b) = 0 :=
         ord_discr_localIntegralBasis_eq_zero (IsFunctionField.ratFunc k) hQunr
       refine differentExponent_eq_zero_of_discr_mem_and_inv_mem H hcomp hX P' b
         (fun i ↦ ?_)
-        (by change _ ∈ A₀; rw [← hQint, Q.mem_integers_iff_ord_nonneg, hdQ])
-        (by change _ ∈ A₀; rw [← hQint, Q.mem_integers_iff_ord_nonneg, Q.ord_inv, hdQ, neg_zero])
+        (hQmem _ (Q.mem_integers_iff_ord_nonneg.mpr hdQ.ge))
+        (hQmem _ (Q.mem_integers_iff_ord_nonneg.mpr (by rw [Q.ord_inv, hdQ, neg_zero])))
       rw [coe_constantExtensionRatFuncBasis]
       have hb_int : ∀ j, IsIntegral Q.integers (b j) :=
         (isIntegralBasis_localIntegralBasis F Q).isIntegral
       exact isIntegral_restrict_ratFunc_of_isIntegral_ring hX P' (S := Q.integers)
-        (fun s ↦ by change (s : RatFunc k) ∈ A₀; exact hQint ▸ s.2) (hb_int i)
+        (fun s ↦ hQmem s s.2) (hb_int i)
   have hle := ramificationIdx_le_differentExponent_add_one k' (RatFunc k') P'
   have hpos := ramificationIdx_pos (RatFunc k') P'
   omega

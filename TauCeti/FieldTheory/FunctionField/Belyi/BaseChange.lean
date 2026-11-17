@@ -7,12 +7,10 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Ramification
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Transcendental
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 
 /-!
 # Base change of algebraic Belyi pairs
@@ -28,20 +26,21 @@ This file shows that `F'` is an algebraic Belyi pair over `k'` exactly when `F` 
 both when `k' / k` is algebraic and `k` is the exact constant field of `F`
 (`TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`), and when `k' / k` is an
 arbitrary — possibly transcendental — extension linearly disjoint from `F` over `k`
-(`TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`). Its degree is unchanged
+(`TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`), with the algebraic case derived from the
+linearly disjoint one. Its degree is unchanged
 (`TauCeti.finrank_ratFunc_eq_of_constantCompositum_eq_top`,
-`TauCeti.finrank_ratFunc_eq_of_linearDisjoint`), and in the algebraic case `F'` is finite over
-`k'(t)` as soon as `F` is finite over `k(t)`
-(`TauCeti.finiteDimensional_ratFunc_of_constantCompositum_eq_top`).
+`TauCeti.finrank_ratFunc_eq_of_linearDisjoint`), and `F'` is finite over `k'(t)` as soon as `F` is
+finite over `k(t)` (`TauCeti.finiteDimensional_ratFunc_of_constantCompositum_eq_top`).
 
 Three properties are compared. Exactness of the constant field passes from `F` to `F'`
-(`IsIntegrallyClosedIn.of_constantCompositum_eq_top`,
-`IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoint`); in the algebraic direction
-downward it is a hypothesis, whereas under linear disjointness it descends automatically
-(`TauCeti.isIntegrallyClosedIn_of_linearDisjoint`). For a finite extension `k' ≠ k`, the field
-`F = k'(t)` is its own compositum with `k'`, and is an algebraic Belyi pair over `k'`, but its
-constants over `k` are all of `k'`. Ramification over `k(t)` does not change under algebraic
-extension of the constants
+(`IsIntegrallyClosedIn.of_constantCompositum_eq_top`, and in the linearly disjoint case
+`IsIntegrallyClosedIn.of_constantCompositum_eq_top_of_linearDisjoint`, which requires `F / k` to be
+geometrically reduced — automatic here because `F / k(t)` is separable in characteristic zero); in
+the algebraic direction downward exactness is a hypothesis, whereas under linear disjointness it
+descends automatically (`TauCeti.isIntegrallyClosedIn_of_linearDisjoint`). For a finite extension
+`k' ≠ k`, the field `F = k'(t)` is its own compositum with `k'`, and is an algebraic Belyi pair
+over `k'`, but its constants over `k` are all of `k'`. Ramification over `k(t)` does not change
+under algebraic extension of the constants
 (`TauCeti.Place.ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top`), while in a linearly
 disjoint transcendental extension every place of `F` is dominated by a place of `F'` with a
 multiple of its ramification index over `k(t)` and every place of `F'` over an unramified place of
@@ -64,10 +63,10 @@ unramified outside `0`, `1` and `∞`.
   marked place.
 * `TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff`: base change matches the places over the
   marked places.
-* `TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`: the algebraic base change of `F`
-  to `k'` is an algebraic Belyi pair exactly when `F` is.
-* `TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`: the same equivalence for any — possibly
-  transcendental — linearly disjoint constant extension `k' / k`.
+* `TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`: base change of an algebraic Belyi pair
+  along any — possibly transcendental — linearly disjoint constant extension `k' / k`.
+* `TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`: the algebraic specialization,
+  derived from the linearly disjoint theorem.
 
 ## References
 
@@ -133,37 +132,12 @@ theorem restrict_restrict_mem_zeroOneInfty_iff [Algebra.IsIntegral F F']
 
 end Place
 
-variable [CharZero k] [FiniteDimensional (RatFunc k) F] [FiniteDimensional (RatFunc k') F']
-
-open Place in
-/-- **Base change of algebraic Belyi pairs**: let `F / k(t)` have exact constant field `k`, of
-characteristic zero, and let `F' = F · k'` be its compositum with an algebraic extension `k' / k`,
-with `t` acting on `F'` as it does on `F`. Then `F' / k'(t)` is an algebraic Belyi pair exactly
-when `F / k(t)` is. -/
-theorem isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top [CharZero k']
-    [Algebra.IsAlgebraic k k'] (hex : IsIntegrallyClosedIn k F)
-    (hcomp : constantCompositum F k' F' = ⊤)
-    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X) :
-    IsAlgebraicBelyiPair k' F' ↔ IsAlgebraicBelyiPair k F := by
-  have : Algebra.IsIntegral F F' :=
-    (isAlgebraic_of_constantCompositum_eq_top (k := k) hcomp).isIntegral
-  have hmark := restrict_restrict_mem_zeroOneInfty_iff hX
-  have he := ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top hcomp hX
-  refine ⟨fun h' ↦ ⟨hex, fun {Q} hQ ↦ ?_⟩,
-    fun h ↦ ⟨.of_constantCompositum_eq_top hex hcomp, fun {Q'} hQ' ↦ ?_⟩⟩
-  · -- every place of `F` lies under a place of the function field `F'`
-    obtain ⟨Q', rfl⟩ := restrict_surjective (k := k) (F := F)
-      (isFunctionField_iff_functionField.mpr (inferInstance : FunctionField k' F')) Q
-    rw [← he]
-    exact h'.ramificationIdx_eq_one ((hmark Q').not.mp hQ)
-  · rw [he]
-    exact h.ramificationIdx_eq_one ((hmark Q').not.mpr hQ')
+variable [CharZero k] [FiniteDimensional (RatFunc k) F]
 
 open Place in
 omit [Algebra k k'] [Algebra k F] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
   [IsScalarTower k (RatFunc k) F] [CharZero k] [FiniteDimensional (RatFunc k) F] in
-private theorem notMem_zeroOneInfty_of_integers_iff
+private theorem notMem_zeroOneInfty_of_integers_iff [FiniteDimensional (RatFunc k') F']
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X)
     {P' : Place k' F'} (hP' : P'.restrict k' (RatFunc k') ∉ zeroOneInfty k')
@@ -182,25 +156,24 @@ private theorem notMem_zeroOneInfty_of_integers_iff
       exact (mem_integers_restrict_iff k' (RatFunc k') P' f'⁻¹).mp
         ((P'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg.mpr
           (by rw [(P'.restrict k' (RatFunc k')).ord_inv, h0]; norm_num))
-    have := Q.mem_integers_iff_ord_nonneg.mp hm1
-    have h2 := Q.mem_integers_iff_ord_nonneg.mp hm2
-    rw [Q.ord_inv] at h2
-    omega
+    exact Q.ord_eq_zero_of_mem_integers_of_inv_mem hm1 hm2
   obtain ⟨hX0, hX1⟩ := notMem_zeroOneInfty_iff.mp hP'
   exact notMem_zeroOneInfty_iff.mpr ⟨hord_zero hX hX0, hord_zero (by simp [hX]) hX1⟩
 
 open Place in
 /-- **Base change of algebraic Belyi pairs along any linearly disjoint constant extension**: let
-`F / k(t)` and `F' / k'(t)` be finite extensions in characteristic zero with `F' = F · k'` and
-`k'` linearly disjoint from `F` over `k` (with `k' / k` possibly transcendental), and suppose `t`
-acts on `F'` as it does on `F`. Then `F' / k'(t)` is an algebraic Belyi pair if and only if
-`F / k(t)` is. -/
+`F / k(t)` be a finite extension in characteristic zero, let `F' = F · k'` be its compositum with
+an arbitrary — possibly transcendental — constant extension `k' / k` linearly disjoint from `F`
+over `k`, and suppose `t` acts on `F'` as it does on `F`. Then `F' / k'(t)` is finite and is an
+algebraic Belyi pair if and only if `F / k(t)` is. -/
 theorem isAlgebraicBelyiPair_iff_of_linearDisjoint [CharZero k']
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) :
+    haveI := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
     IsAlgebraicBelyiPair k' F' ↔ IsAlgebraicBelyiPair k F := by
+  have := finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
   refine ⟨fun h' ↦ ⟨isIntegrallyClosedIn_of_linearDisjoint H h'.isIntegrallyClosedIn,
     fun {P} hP ↦ ?_⟩, fun h ↦ ?_⟩
   · obtain ⟨P', hdvd, hinf, ha⟩ :=
@@ -227,5 +200,18 @@ theorem isAlgebraicBelyiPair_iff_of_linearDisjoint [CharZero k']
       fun {P'} hP' ↦ ?_⟩
     exact ramificationIdx_ratFunc_eq_one_of_linearDisjoint H hcomp hX P' fun Q hQ ↦
       (isAlgebraicBelyiPair_iff.mp h).2 Q (notMem_zeroOneInfty_of_integers_iff hX hP' hQ)
+
+/-- **Base change of algebraic Belyi pairs**: let `F / k(t)` have exact constant field `k`, of
+characteristic zero, and let `F' = F · k'` be its compositum with an algebraic extension `k' / k`,
+with `t` acting on `F'` as it does on `F`. Then `F' / k'(t)` is an algebraic Belyi pair exactly
+when `F / k(t)` is. -/
+theorem isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top [CharZero k']
+    [FiniteDimensional (RatFunc k') F'] [Algebra.IsAlgebraic k k']
+    (hex : IsIntegrallyClosedIn k F) (hcomp : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    IsAlgebraicBelyiPair k' F' ↔ IsAlgebraicBelyiPair k F :=
+  isAlgebraicBelyiPair_iff_of_linearDisjoint
+    (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex) hcomp hX
 
 end TauCeti

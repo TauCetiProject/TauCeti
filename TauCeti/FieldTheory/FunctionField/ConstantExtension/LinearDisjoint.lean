@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.RatFunc.Transcendental
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.FieldRange
 
 /-!
 # Degrees and linear disjointness in extensions of constants
@@ -30,7 +31,8 @@ disjointness, exactness of the constant field also descends from `F'/k'` to `F/k
 ## Main results
 
 * `TauCeti.constantExtensionBasisOfLinearDisjoint`: transport a basis over `C`.
-* `TauCeti.coe_discr_constantExtensionBasisOfLinearDisjoint`: transport its discriminant.
+* `TauCeti.coe_trace_algebraMap_of_linearDisjoint` and
+  `TauCeti.coe_discr_constantExtensionBasisOfLinearDisjoint`: transport trace and discriminant.
 * `TauCeti.finrank_over_adjoin_simple_eq_of_linearDisjoint` and
   `TauCeti.finrank_ratFunc_eq_of_linearDisjoint`: preserve the degree over `k(x)` and `RatFunc k`.
 * `TauCeti.linearDisjoint_adjoin_simple_of_transcendental`: `k(x)` and `k'` are linearly disjoint
@@ -106,8 +108,9 @@ theorem coe_constantExtensionBasisOfLinearDisjoint_repr_algebraMap
     simp [g, b', Algebra.smul_def, IsScalarTower.algebraMap_apply C F F']
   simpa [f, g] using congrArg (fun q : ι →₀ C' ↦ (q i : F')) (b'.repr.symm_apply_eq.mp hsum).symm
 
-/-- Trace from `F'` to `k' · C` agrees with trace from `F` to `C` on elements of `F`. -/
-theorem coe_trace_adjoin_algebraMap
+/-- Trace from `F'` to `k' · C` agrees with trace from `F` to `C` on elements of `F` in a linearly
+disjoint constant compositum. -/
+theorem coe_trace_algebraMap_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
     (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
     [FiniteDimensional C F] (y : F) :
@@ -140,9 +143,11 @@ theorem coe_discr_constantExtensionBasisOfLinearDisjoint
   have hmat : g.mapMatrix (Algebra.traceMatrix C b) =
       Algebra.traceMatrix C' (constantExtensionBasisOfLinearDisjoint H h C b) := by
     ext i j
-    simp [C', g, Algebra.traceMatrix_apply, ← map_mul, coe_trace_adjoin_algebraMap H h C]
+    simp [C', g, Algebra.traceMatrix_apply, ← map_mul,
+      coe_trace_algebraMap_of_linearDisjoint H h C]
   rw [Algebra.discr_def, Algebra.discr_def, ← hmat, ← g.map_det]
-  rfl
+  simp only [g, RingHom.codRestrict_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    IsScalarTower.toAlgHom_apply]
 
 /-- An arbitrary linearly disjoint extension of constants preserves the finite degree over a
 simple intermediate field: `[F · k' : k'(x)] = [F : k(x)]`. -/
@@ -165,12 +170,7 @@ theorem finrank_ratFunc_eq_of_linearDisjoint [Algebra (RatFunc k) F]
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) :
     Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F := by
-  have : FiniteDimensional k⟮algebraMap (RatFunc k) F RatFunc.X⟯ F := by
-    have hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X) :=
-      (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
-        RatFunc.transcendental_X
-    exact Module.Finite.of_equiv_equiv (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
-      (RingEquiv.refl F) (RingHom.ext coe_algEquivOfTranscendental_algebraMap_X_apply)
+  have := finiteDimensional_adjoin_algebraMap_X (k := k) (F := F)
   rw [← finrank_adjoin_algebraMap_X (k := k'), ← hX,
     finrank_over_adjoin_simple_eq_of_linearDisjoint H h, finrank_adjoin_algebraMap_X]
 
@@ -193,7 +193,8 @@ theorem linearDisjoint_adjoin_simple_of_transcendental {y : F'}
       hy.linearIndependent_pow.map_of_surjective_injective
         (IsScalarTower.toAlgHom k k' F').equivFieldRange (AddMonoidHom.id F')
         (AlgEquiv.surjective _) (by simp)
-        fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
+        (fun r m ↦ ((IsScalarTower.toAlgHom k k' F').equivFieldRange_smul
+          (fun _ ↦ (IsScalarTower.toAlgHom_apply k k' F' _).symm) r m).symm)
     convert hpow using 1
     ext n
     simp [e, φ, AlgEquiv.ofInjective_apply]
@@ -216,8 +217,10 @@ theorem linearDisjoint_fieldRange_of_finrank_over_adjoin_simple_eq {x : F}
   have H₀ : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint k⟮x⟯ := by
     have hrange : (IsScalarTower.toAlgHom k k⟮x⟯ F').range = k⟮y⟯.toSubalgebra := by
       ext z
-      change z ∈ Set.range (algebraMap k⟮x⟯ F') ↔ z ∈ (k⟮y⟯ : Set F')
-      rw [IntermediateField.range_algebraMap_adjoin_simple]
+      rw [AlgHom.mem_range, IntermediateField.mem_toSubalgebra, ← SetLike.mem_coe,
+        ← IntermediateField.range_algebraMap_adjoin_simple (K := k) (L := F) (M := F') x,
+        Set.mem_range]
+      simp only [IsScalarTower.toAlgHom_apply]
     rw [_root_.IntermediateField.linearDisjoint_iff, hrange,
       ← _root_.IntermediateField.linearDisjoint_iff']
     exact linearDisjoint_adjoin_simple_of_transcendental (k := k) hx'
@@ -246,7 +249,8 @@ theorem linearDisjoint_fieldRange_of_finrank_over_adjoin_simple_eq {x : F}
   refine _root_.IntermediateField.LinearDisjoint.of_basis_right' (γ.smulTower b) ?_
   exact hprod.map_of_surjective_injective (IsScalarTower.toAlgHom k k' F').equivFieldRange
     (AddMonoidHom.id F') (AlgEquiv.surjective _) (by simp)
-    fun _ _ ↦ by simp_rw [Algebra.smul_def]; rfl
+    (fun r m ↦ ((IsScalarTower.toAlgHom k k' F').equivFieldRange_smul
+      (fun _ ↦ (IsScalarTower.toAlgHom_apply k k' F' _).symm) r m).symm)
 
 /-- **Degree preservation over `RatFunc` recovers linear disjointness.** Let `F' = F · k'` carry a
 `RatFunc k'`-algebra structure sending `X` to the image of `X ∈ RatFunc k`. If
@@ -260,16 +264,11 @@ theorem linearDisjoint_fieldRange_of_finrank_ratFunc_eq [Algebra (RatFunc k) F]
     (hdeg : Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F) :
     (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
   set x := algebraMap (RatFunc k) F RatFunc.X
-  have hx : Transcendental k x :=
-    (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
-      RatFunc.transcendental_X
   have hx' : Transcendental k' (algebraMap F F' x) := by
     rw [hX]
     exact (transcendental_algebraMap_iff (algebraMap (RatFunc k') F').injective).mpr
       RatFunc.transcendental_X
-  have : FiniteDimensional k⟮x⟯ F :=
-    Module.Finite.of_equiv_equiv (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
-      (RingEquiv.refl F) (RingHom.ext coe_algEquivOfTranscendental_algebraMap_X_apply)
+  have := finiteDimensional_adjoin_algebraMap_X (k := k) (F := F)
   refine linearDisjoint_fieldRange_of_finrank_over_adjoin_simple_eq hx' h ?_
   rw [hX, finrank_adjoin_algebraMap_X, finrank_adjoin_algebraMap_X, hdeg]
 

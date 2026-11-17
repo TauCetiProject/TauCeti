@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.Model
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
@@ -31,7 +32,7 @@ lying over an unbranched rational point `t = q` (`q ∈ ℚ \ {0, 1}`). In
 This file promotes that descended equation to a genuine **model** of `X` over `K`
 (`TauCeti.AlgebraicBelyiPair.pointedModel`) and deduces **Köck's Theorem 2.2**:
 
-1. Because `[K(t)(z) : K(t)] = [F : k(t)]` and `K(t)(z) · k = F`, the subfield `K` is linearly
+1. Because `[K(t)(z) : K(t)] = [F : k(t)]` and `K(t)(z) · k = F`, the image of `k` is linearly
    disjoint from `K(t)(z)` over `K` (`TauCeti.linearDisjoint_fieldRange_of_finrank_ratFunc_eq`),
    with no algebraicity assumption on `k / K`.
 2. Linearly disjoint base change (`TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`) therefore
@@ -41,7 +42,7 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
    above `t = 2` yields a place of degree one whose pointed field of moduli has degree at most `d`
    over the field of moduli of `X`. Every isomorphism class `c` of Belyi pairs over `k` is thus
    defined over a finite extension of `c.fieldOfModuli` of degree at most `c.degree`
-   (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finiteDimensional_and_isDefinedOver`, Köck's
+   (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`, Köck's
    Theorem 2.2(a)).
 4. When `F / k(t)` is Galois, deck automorphisms act transitively on the fibre over `t = q`, so
    every semilinear automorphism of `X` can be corrected by a deck automorphism to fix `P`. Hence
@@ -62,7 +63,7 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
   `TauCeti.AlgebraicBelyiPair.isDefinedOver_pointedFieldOfModuli`: properties of the pointed model.
 * `TauCeti.AlgebraicBelyiPair.exists_relfinrank_le_finrank_and_nonempty_model`,
   `TauCeti.AlgebraicBelyiPair.IsoClass.exists_relfinrank_le_degree_and_isDefinedOver`, and
-  `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finiteDimensional_and_isDefinedOver`: **Köck's
+  `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`: **Köck's
   Theorem 2.2(a)**, every Belyi pair over an algebraically closed field of characteristic zero is
   defined over a finite extension of its field of moduli of degree at most the Belyi degree.
 * `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois` and
@@ -91,41 +92,6 @@ namespace TauCeti.AlgebraicBelyiPair
 variable {k : Type u} [Field k] [CharZero k]
 
 section PointedModel
-
-omit [CharZero k] in
-/-- If `z` generates `F` over `k(t)` and `E = K(t)⟮z⟯` contains `t`, then `E` and `k` generate
-`F`. -/
-private theorem adjoin_range_adjoin_simple_eq_top {K F : Type*} [Field K] [Field F]
-    [Algebra k F] [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
-    [Algebra (RatFunc K) F]
-    (hX : algebraMap (RatFunc K) F RatFunc.X = algebraMap (RatFunc k) F RatFunc.X)
-    {z : F} (hgen : (RatFunc k)⟮z⟯ = ⊤) :
-    IntermediateField.adjoin k (Set.range (algebraMap (RatFunc K)⟮z⟯ F)) = ⊤ := by
-  let L : IntermediateField k F :=
-    IntermediateField.adjoin k (Set.range (algebraMap (RatFunc K)⟮z⟯ F))
-  have hmemE : ∀ y : (RatFunc K)⟮z⟯, algebraMap (RatFunc K)⟮z⟯ F y ∈ L := fun y ↦
-    IntermediateField.subset_adjoin k _ ⟨y, rfl⟩
-  have hXmem : algebraMap (RatFunc k) F RatFunc.X ∈ L := by
-    rw [← hX]
-    exact hmemE (algebraMap (RatFunc K) (RatFunc K)⟮z⟯ RatFunc.X)
-  have hpoly : ∀ p : k[X], algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) p) ∈ L :=
-    fun p ↦ by
-      rw [← RatFunc.aeval_X_left_eq_algebraMap, ← aeval_algebraMap_apply]
-      refine Polynomial.induction_on' p (fun a b ha hb ↦ ?_) fun n a ↦ ?_
-      · rw [map_add]
-        exact L.add_mem ha hb
-      · rw [aeval_monomial]
-        exact L.mul_mem (L.algebraMap_mem a) (pow_mem hXmem n)
-  have hrat : ∀ r : RatFunc k, algebraMap (RatFunc k) F r ∈ L := fun r ↦ by
-    induction r using RatFunc.induction_on with
-    | f p q _ =>
-      rw [map_div₀]
-      exact L.div_mem (hpoly p) (hpoly q)
-  let L' : IntermediateField (RatFunc k) F :=
-    { L.toSubfield with algebraMap_mem' := hrat }
-  have hzL' : z ∈ L' := hmemE ⟨z, IntermediateField.mem_adjoin_simple_self _ z⟩
-  have htop : L' = ⊤ := top_unique (hgen ▸ IntermediateField.adjoin_simple_le_iff.mpr hzL')
-  exact eq_top_iff.mpr fun x _ ↦ show x ∈ L' from htop.symm ▸ trivial
 
 variable (X : AlgebraicBelyiPair k)
 
@@ -161,11 +127,14 @@ private noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K
       algebraMap (RatFunc k) X RatFunc.X := by
     rw [← IsScalarTower.algebraMap_apply (RatFunc K) E X,
       IsScalarTower.algebraMap_apply (RatFunc K) (RatFunc k) X, hX]
-  have hadj : IntermediateField.adjoin k (Set.range (algebraMap E X)) = ⊤ :=
-    adjoin_range_adjoin_simple_eq_top
-      (by rw [IsScalarTower.algebraMap_apply (RatFunc K) (RatFunc k) X, hX]) hgen
   have hcomp : constantCompositum E k X = ⊤ :=
-    constantCompositum_eq_top_of_adjoin_eq_top E k X hadj
+    constantCompositum_adjoin_simple_ratFunc_eq_top hX hgen
+  have hadj : IntermediateField.adjoin k (Set.range (algebraMap E X)) = ⊤ := by
+    have h := hcomp
+    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
+      constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
+    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
+      IntermediateField.adjoin_toSubfield, Set.union_comm, h]
   have H : (IsScalarTower.toAlgHom K k X).fieldRange.LinearDisjoint E :=
     linearDisjoint_fieldRange_of_finrank_ratFunc_eq hcomp hX_E hfinrank.symm
   have hembed : ∀ c : K,
@@ -211,8 +180,8 @@ private noncomputable def pointedModelAux {P : Place k X} {q : ℚ}
   have hC : ∀ c : X.pointedFieldOfModuli P,
       algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) (RatFunc.C c) =
         RatFunc.C (c : k) := fun c ↦ by
-    rw [← RatFunc.algebraMap_eq_C, hC₀ c, RatFunc.algebraMap_eq_C]
-    rfl
+    rw [← RatFunc.algebraMap_eq_C, hC₀ c, RatFunc.algebraMap_eq_C,
+      IntermediateField.algebraMap_apply]
   have hX : algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) RatFunc.X = RatFunc.X :=
     algebraMap_ratFuncAlgebraOfTranscendental_X hX_rf
   let h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP hC hX
@@ -307,7 +276,7 @@ theorem exists_relfinrank_le_degree_and_isDefinedOver [IsAlgClosed k] (c : IsoCl
 /-- **Köck's Theorem 2.2(a)**: over an algebraically closed field `k` of characteristic zero, every
 isomorphism class `c` of algebraic Belyi pairs is defined over a finite extension `K` of its field
 of moduli `c.fieldOfModuli` inside `k` with `[K : c.fieldOfModuli] ≤ c.degree`. -/
-theorem exists_finiteDimensional_and_isDefinedOver [IsAlgClosed k] (c : IsoClass k) :
+theorem exists_finrank_le_degree_and_isDefinedOver [IsAlgClosed k] (c : IsoClass k) :
     ∃ K : IntermediateField c.fieldOfModuli k,
       FiniteDimensional c.fieldOfModuli K ∧
       Module.finrank c.fieldOfModuli K ≤ c.degree ∧
@@ -353,11 +322,11 @@ theorem pointedStabilizer_eq_stabilizer_of_isGalois {P : Place k X} {q : ℚ}
   have hs_smul : ∀ Q : Place k X, s • Q = σ • Q := fun Q ↦
     Place.ext <| Valuation.ext fun z ↦ by
       rw [valuation_smul, Place.valuation_smul]
-      rfl
+      dsimp only [s]
+      rw [← AlgEquiv.symm_toRingEquiv, AlgEquiv.coe_toRingEquiv]
   rw [pointedStabilizer_def, Subgroup.mem_map]
   refine ⟨s * ⟨p, hp⟩, ?_, ?_⟩
-  · change (s * ⟨p, hp⟩) • P = P
-    rw [mul_smul, hs_smul, hσ]
+  · rw [MulAction.mem_stabilizer_iff, mul_smul, hs_smul, hσ]
   · simpa [s] using hpg
 
 /-- **For a Galois Belyi pair, the pointed field of moduli at any place over a rational point is
