@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
+import TauCeti.Geometry.Symplectic.Orientation
 
 /-!
 # The standard almost complex structure on a product of two circles
@@ -130,31 +131,30 @@ theorem eq_addCircleProd_iff
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
   eq_descend_iff_isPseudoholomorphic _ _ _ (product_respects p q) K
 
-/-- A frame `(e, (-e₂, e₁))` of the plane is positive for the standard orientation: its determinant
-against the standard frame is `e₁² + e₂² > 0`. -/
-private theorem finTwoProd_orientation_eq_of_apply_one_eq (b : Module.Basis (Fin 2) ℝ (ℝ × ℝ))
-    (hb : b 1 = (-(b 0).2, (b 0).1)) : (Module.Basis.finTwoProd ℝ).orientation = b.orientation := by
-  refine (Module.Basis.orientation_eq_iff_det_pos _ b).2 ?_
-  have h0 : b 0 ≠ 0 := b.ne_zero 0
-  rw [Module.Basis.det_apply, Matrix.det_fin_two]
-  simp only [Module.Basis.toMatrix_apply, Module.Basis.coe_finTwoProd_repr, Matrix.cons_val_zero,
-    Matrix.cons_val_one, hb]
-  have : (b 0).1 ≠ 0 ∨ (b 0).2 ≠ 0 := by
-    by_contra! h
-    exact h0 (Prod.ext h.1 h.2)
-  rcases this with h | h <;> nlinarith [sq_pos_of_ne_zero h, sq_nonneg (b 0).1, sq_nonneg (b 0).2]
-
 /-- **The torus is oriented by its complex frames.** Every frame `(e, J e)` of the standard almost
 complex structure of `AddCircle p × AddCircle q` is positive for the product of the positive
 orientations of the two circles: if `e = (a, b)` in the real coordinates of the circles, then
-`J e = (-b, a)`, and the frame has determinant `a² + b² > 0` against the standard frame
-`((1, 0), (0, 1))`. -/
+`J e = (-b, a)`, and the standard symplectic form `ds ∧ dt` of the plane, which induces the
+orientation of the standard frame `((1, 0), (0, 1))`, tames this structure
+(`TauCeti.SymplecticForm.Tames.orientation_reindex`). -/
 theorem orientation_eq_orientationAt_of_apply_one_eq_addCircleProd (x : AddCircle p × AddCircle q)
     (b : Module.Basis (Fin 2) ℝ (TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x))
     (hb : b 1 = addCircleProd p q x (b 0)) :
     b.orientation = ((AddCircle.orientation p).prod (AddCircle.orientation q)).orientationAt x := by
   rw [AddCircle.orientationAt_orientation_prod_orientation]
-  -- The tangent planes of the torus are `ℝ × ℝ`, where the standard frame lives.
-  exact (finTwoProd_orientation_eq_of_apply_one_eq b (hb.trans (addCircleProd_apply p q x _))).symm
+  -- On the plane `ℝ × ℝ`, `ds ∧ dt` tames the structure `(a, b) ↦ (-b, a)`, so its adapted frames
+  -- `(e, (-e₂, e₁))` are positive.
+  have key (b' : Module.Basis (Fin 2) ℝ (ℝ × ℝ)) (hb' : b' 1 = (-(b' 0).2, (b' 0).1)) :
+      b'.orientation = (Module.Basis.finTwoProd ℝ).orientation := by
+    have h : 1 * 2 = 2 := rfl
+    let e : Fin 1 × Fin 2 ≃ Fin 2 := finProdFinEquiv.trans (finCongr h)
+    have he : (b'.reindex e.symm).reindex e = b' := Module.Basis.eq_of_apply_eq fun i ↦ by simp
+    rw [← he, (stdSymplecticForm_tames_product (V := ℝ)).orientation_reindex (fun i ↦ ?_)
+      (by simp) h, SymplecticForm.orientation_stdSymplecticForm_real]
+    fin_cases i
+    simp only [Module.Basis.reindex_apply, Equiv.symm_symm]
+    exact hb'
+  -- The tangent planes of the torus are `ℝ × ℝ`.
+  exact key b (hb.trans (addCircleProd_apply p q x _))
 
 end TauCeti.SmoothAlmostComplexStructure

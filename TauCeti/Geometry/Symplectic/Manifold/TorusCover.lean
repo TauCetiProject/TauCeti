@@ -43,10 +43,9 @@ the plane `ℝ × ℝ`, like the torus, `v` has a mapping degree, and the degree
 `dv ≠ 0` somewhere (`TauCeti.degree_pos_of_isPseudoholomorphicAt_addCircleProd`). The torus is
 oriented by its complex frames
 (`TauCeti.SmoothAlmostComplexStructure.orientation_eq_orientationAt_of_apply_one_eq_addCircleProd`),
-so `v` preserves orientation at every point where `dv ≠ 0`, and the degree is the number of
-preimages of every regular value (`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`):
-`v` is a branched covering with `deg(v)` sheets, and an injective `v` has degree one
-(`TauCeti.degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective`).
+so `v` preserves orientation at every point where `dv ≠ 0`, and every regular value has exactly
+`deg(v)` preimages (`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`). An injective
+`v` has degree one (`TauCeti.degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective`).
 
 This is the covering statement for the lift of a pseudoholomorphic horizontal curve with nonzero
 differential somewhere in a symplectic suspension to the orbit torus over its closed orbit: such a

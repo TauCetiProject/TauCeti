@@ -56,7 +56,8 @@ is the covering multiplicity of `u` over the embedded torus `(ℝ / ℤ) × γ` 
 number of preimages under `v` of every regular value
 (`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`). And as a current `u` is
 `deg(v)` times the orbit torus: for every smooth two-form `α` on `X_φ`,
-`∫_C u^* α = deg(v) ∫ τ^* α` (`TauCeti.integralTopForm_mpullback_comp_eq_degree_mul`). In
+`∫_C u^* α = ∫_C v^*(τ^* α) = deg(v) ∫ τ^* α`, by the degree formula
+`TauCeti.integralTopForm_mpullback_eq_degree_mul` for `v` applied to the form `τ^* α`. In
 particular the `Ω`-area of `u` is `deg(v) · d`, a positive multiple of the least period
 (`TauCeti.SmoothMappingTorus.integralTopForm_mpullback_suspensionForm_eq_degree_mul`).
 
@@ -341,8 +342,8 @@ oriented boundaryless surface `C` through the orbit torus `τ` of a periodic poi
 with `v` smooth and `C` modelled on the plane `ℝ × ℝ`. Orient the parameter torus as the product
 of the positive orientations of its circles. Then the area of `u` for the suspension form
 `Ω = ds ∧ dt + σ_v` is `deg(v) · d`, by the degree formula
-`TauCeti.integralTopForm_mpullback_comp_eq_degree_mul` applied to the orbit torus, whose
-`Ω`-area is `d`. When `v` is an orientation-preserving diffeomorphism this is
+`TauCeti.integralTopForm_mpullback_eq_degree_mul` for `v` applied to `τ^* Ω`, whose integral over
+the parameter torus is `d`. When `v` is an orientation-preserving diffeomorphism this is
 `integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq`, which needs no compactness. -/
 theorem integralTopForm_mpullback_suspensionForm_eq_degree_mul
     [BoundarylessManifold I' C] {σ : SmoothTwoForm I M}
@@ -352,10 +353,10 @@ theorem integralTopForm_mpullback_suspensionForm_eq_degree_mul
     integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
       degree o ((AddCircle.orientation 1).prod (AddCircle.orientation (d : ℝ))) v * d := by
   subst hτv
-  rw [integralTopForm_mpullback_comp_eq_degree_mul o
-    ((AddCircle.orientation 1).prod (AddCircle.orientation (d : ℝ))) hv hv.continuous.isProperMap
-    (contMDiff_orbitTorus h) _
-    (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)),
+  rw [← SmoothForm.mpullback_mpullback _ _ hv (contMDiff_orbitTorus h), SmoothForm.coe_mpullback,
+    integralTopForm_mpullback_eq_degree_mul o _ hv hv.continuous.isProperMap
+      (SmoothForm.isSmoothForm _)
+      (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)),
     mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
 /-- **Nonconstant pseudoholomorphic horizontal curves cover their orbit torus with positive
@@ -367,7 +368,7 @@ nonzero somewhere, and let `(s, [t, x])` be a value of `u`, where `x` has least 
 `u = τ ∘ v` for the orbit torus `τ` and a smooth pseudoholomorphic map `v` of positive degree. By
 `TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd` this degree is the number of
 preimages under `v` of each regular value, and by the degree formula
-`TauCeti.integralTopForm_mpullback_comp_eq_degree_mul` it is the multiplicity with which `u`
+`TauCeti.integralTopForm_mpullback_eq_degree_mul` for `v` it is the multiplicity with which `u`
 covers the embedded torus `(ℝ / ℤ) × γ` as a current. -/
 theorem exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt [I.Boundaryless]
     [FiniteDimensional ℝ E] [I'.Boundaryless] [PreconnectedSpace C]
