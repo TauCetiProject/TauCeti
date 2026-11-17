@@ -33,11 +33,12 @@ noncomputable section
 open Module NumberField TauCeti
 open scoped BigOperators Matrix
 
-/-- Over `ℚ` with the single form `(1, 2)` in two variables, Siegel's lemma gives a nonzero
-integer kernel vector of height at most `√2 * √5`, and every nonzero kernel vector has exact
-Euclidean height `√5` (attained by `(-2, 1)`). -/
+/-- Over `ℚ` with the single form `(1, 2)` in two variables (of Euclidean height `√5`), Siegel's
+lemma gives a nonzero integer kernel vector of height at most `√2 * √5`, while the kernel vector
+`(-2, 1)` has exact Euclidean height `√5`. -/
 example :
     height2 ![(1 : ℚ), 2] = √5 ∧
+      ![(1 : ℚ), 2] ⬝ᵥ ![(-2 : ℚ), 1] = 0 ∧
       height2 ![(-2 : ℚ), 1] = √5 ∧
       (∃ z : Fin 2 → ℤ, z ≠ 0 ∧ ![(1 : ℚ), 2] ⬝ᵥ (fun i ↦ (z i : ℚ)) = 0 ∧
         height2 (fun i ↦ (z i : ℚ)) ≤ √2 * √5) := by
@@ -46,12 +47,14 @@ example :
       ext i; fin_cases i <;> simp
     rw [hcast, height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
     norm_num [Fin.sum_univ_two]
+  have hm21_ker : ![(1 : ℚ), 2] ⬝ᵥ ![(-2 : ℚ), 1] = 0 := by
+    norm_num [dotProduct, Fin.sum_univ_two]
   have hm21 : height2 ![(-2 : ℚ), 1] = √5 := by
     have hcast : ![(-2 : ℚ), 1] = ((↑) : ℤ → ℚ) ∘ ![-2, 1] := by
       ext i; fin_cases i <;> simp
     rw [hcast, height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
     norm_num [Fin.sum_univ_two]
-  refine ⟨h12, hm21, ?_⟩
+  refine ⟨h12, hm21_ker, hm21, ?_⟩
   let A : Matrix (Fin 1) (Fin 2) ℚ := Matrix.of fun _ ↦ ![(1 : ℚ), 2]
   have hA : ∀ i, A.row i ≠ 0 := by
     intro i h

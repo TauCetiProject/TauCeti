@@ -19,9 +19,9 @@ are bounded by `exp (C (1+R) log (2+R))` uniformly for `R ≥ 0`.
 These estimates suffice for order-one growth of split Mellin integrals.
 They require no sectorial asymptotic expansion.
 
-We also record the elementary bound `Γ(n / 2 + 1) ≤ (π * n / 4) ^ (n / 2)` for every positive
-integer `n` (`Real.Gamma_div_two_add_one_le`), which bounds the Minkowski ball constant
-`2 / √π · Γ(n / 2 + 1) ^ (1 / n)` by `√n`.
+We also record the elementary bound `Γ(n / 2 + 1) ≤ (π * n / 4) ^ (n / 2)` for every natural
+number `n` (`Real.Gamma_div_two_add_one_le`), and deduce the Minkowski ball constant bound
+`2 / √π · Γ(n / 2 + 1) ^ (1 / n) ≤ √n` for `1 ≤ n` (`Real.two_div_sqrt_pi_mul_Gamma_rpow_le_sqrt`).
 
 ## References
 
@@ -144,57 +144,67 @@ theorem exists_rpow_mul_Gamma_div_le_exp_mul_log {c α : ℝ} (hc : 0 < c) (hα 
   dsimp [C]
   nlinarith
 
-/-- For every positive integer `n`, `Γ(n / 2 + 1) ≤ (π * n / 4) ^ (n / 2)`, with equality at
-`n = 1`. Equivalently, the Euclidean-ball constant `2 / √π · Γ(n / 2 + 1) ^ (1 / n)` appearing in
-Minkowski's first theorem is at most `√n`. -/
-theorem Gamma_div_two_add_one_le {n : ℕ} (hn : 1 ≤ n) :
+/-- For every natural number `n`, `Γ(n / 2 + 1) ≤ (π * n / 4) ^ (n / 2)`, with equality at
+`n = 0` and `n = 1`. -/
+theorem Gamma_div_two_add_one_le (n : ℕ) :
     Gamma ((n : ℝ) / 2 + 1) ≤ (π * n / 4) ^ ((n : ℝ) / 2) := by
   induction n using Nat.strong_induction_on with
   | ind n ih =>
     match n with
-    | 0 => omega
+    | 0 => simp [Gamma_one]
     | 1 =>
-      have h12 : (1 : ℝ) / 2 ≠ 0 := by norm_num
-      have h4 : √(4 : ℝ) = 2 := by
-        rw [← sqrt_sq (by positivity : (0 : ℝ) ≤ 2)]
-        norm_num
-      rw [Nat.cast_one, Gamma_add_one h12, Gamma_one_half_eq, mul_one,
-        ← sqrt_eq_rpow, sqrt_div pi_pos.le, h4]
-      ring_nf
-      exact le_rfl
-    | 2 =>
-      rw [Nat.cast_ofNat, div_self two_ne_zero, Gamma_add_one one_ne_zero,
-        Gamma_one, mul_one, rpow_one]
-      linarith [two_le_pi]
-    | k + 3 =>
-      have hk1 : 1 ≤ k + 1 := Nat.succ_le_succ (Nat.zero_le k)
-      have hih := ih (k + 1) (by omega) hk1
-      have hcast : ((k + 3 : ℕ) : ℝ) / 2 + 1 = (((k + 1 : ℕ) : ℝ) / 2 + 1) + 1 := by
+      refine le_of_eq ?_
+      rw [Nat.cast_one, Gamma_add_one (by norm_num), Gamma_one_half_eq, mul_one, ← sqrt_eq_rpow]
+      exact ((sqrt_eq_iff_eq_sq (by positivity) (by positivity)).mpr
+        (by rw [mul_pow, sq_sqrt pi_pos.le]; ring)).symm
+    | k + 2 =>
+      have hih := ih k (by omega)
+      have hcast : ((k + 2 : ℕ) : ℝ) / 2 + 1 = ((k : ℝ) / 2 + 1) + 1 := by
         push_cast; ring
-      have harg_ne : ((k + 1 : ℕ) : ℝ) / 2 + 1 ≠ 0 := by positivity
-      have hpi : ((k + 3 : ℕ) : ℝ) / 2 ≤ π * ((k + 3 : ℕ) : ℝ) / 4 := by
-        nlinarith [two_le_pi, Nat.cast_nonneg (α := ℝ) (k + 3)]
+      have harg_ne : (k : ℝ) / 2 + 1 ≠ 0 := by positivity
+      have hpi : ((k + 2 : ℕ) : ℝ) / 2 ≤ π * ((k + 2 : ℕ) : ℝ) / 4 := by
+        nlinarith [two_le_pi, Nat.cast_nonneg (α := ℝ) (k + 2)]
       have hmono :
-          (π * ((k + 1 : ℕ) : ℝ) / 4) ^ (((k + 1 : ℕ) : ℝ) / 2) ≤
-            (π * ((k + 3 : ℕ) : ℝ) / 4) ^ (((k + 1 : ℕ) : ℝ) / 2) := by
+          (π * (k : ℝ) / 4) ^ ((k : ℝ) / 2) ≤
+            (π * ((k + 2 : ℕ) : ℝ) / 4) ^ ((k : ℝ) / 2) := by
         refine rpow_le_rpow (by positivity) ?_ (by positivity)
-        have hle : ((k + 1 : ℕ) : ℝ) ≤ ((k + 3 : ℕ) : ℝ) := by
-          exact_mod_cast (by omega : k + 1 ≤ k + 3)
+        have hle : (k : ℝ) ≤ ((k + 2 : ℕ) : ℝ) := by exact_mod_cast (by omega : k ≤ k + 2)
         nlinarith [pi_pos, hle]
-      calc Gamma (((k + 3 : ℕ) : ℝ) / 2 + 1)
-          = (((k + 1 : ℕ) : ℝ) / 2 + 1) * Gamma (((k + 1 : ℕ) : ℝ) / 2 + 1) := by
+      calc Gamma (((k + 2 : ℕ) : ℝ) / 2 + 1)
+          = ((k : ℝ) / 2 + 1) * Gamma ((k : ℝ) / 2 + 1) := by
               rw [hcast, Gamma_add_one harg_ne]
-        _ = (((k + 3 : ℕ) : ℝ) / 2) * Gamma (((k + 1 : ℕ) : ℝ) / 2 + 1) := by
+        _ = (((k + 2 : ℕ) : ℝ) / 2) * Gamma ((k : ℝ) / 2 + 1) := by
               congr 1; push_cast; ring
-        _ ≤ (((k + 3 : ℕ) : ℝ) / 2) *
-              (π * ((k + 1 : ℕ) : ℝ) / 4) ^ (((k + 1 : ℕ) : ℝ) / 2) :=
+        _ ≤ (((k + 2 : ℕ) : ℝ) / 2) * (π * (k : ℝ) / 4) ^ ((k : ℝ) / 2) :=
               mul_le_mul_of_nonneg_left hih (by positivity)
-        _ ≤ (π * ((k + 3 : ℕ) : ℝ) / 4) *
-              (π * ((k + 3 : ℕ) : ℝ) / 4) ^ (((k + 1 : ℕ) : ℝ) / 2) :=
+        _ ≤ (π * ((k + 2 : ℕ) : ℝ) / 4) * (π * ((k + 2 : ℕ) : ℝ) / 4) ^ ((k : ℝ) / 2) :=
               mul_le_mul hpi hmono (by positivity) (by positivity)
-        _ = (π * ((k + 3 : ℕ) : ℝ) / 4) ^ (1 + ((k + 1 : ℕ) : ℝ) / 2) := by
+        _ = (π * ((k + 2 : ℕ) : ℝ) / 4) ^ (1 + (k : ℝ) / 2) := by
               rw [rpow_add (by positivity), rpow_one]
-        _ = (π * ((k + 3 : ℕ) : ℝ) / 4) ^ (((k + 3 : ℕ) : ℝ) / 2) := by
+        _ = (π * ((k + 2 : ℕ) : ℝ) / 4) ^ (((k + 2 : ℕ) : ℝ) / 2) := by
               congr 1; push_cast; ring
+
+/-- For every positive integer `n`, the Minkowski Euclidean-ball constant
+`2 / √π * Γ(n / 2 + 1) ^ (1 / n)` is at most `√n`, with equality at `n = 1`. -/
+theorem two_div_sqrt_pi_mul_Gamma_rpow_le_sqrt {n : ℕ} (hn : 1 ≤ n) :
+    2 / √π * Gamma ((n : ℝ) / 2 + 1) ^ ((n : ℝ)⁻¹) ≤ √n := by
+  have hn' : (0 : ℝ) < n := Nat.cast_pos.mpr hn
+  have hΓ : Gamma ((n : ℝ) / 2 + 1) ^ ((n : ℝ)⁻¹) ≤ (π * n / 4) ^ ((1 : ℝ) / 2) := by
+    calc Gamma ((n : ℝ) / 2 + 1) ^ ((n : ℝ)⁻¹)
+        ≤ ((π * n / 4) ^ ((n : ℝ) / 2)) ^ ((n : ℝ)⁻¹) :=
+          rpow_le_rpow (Gamma_pos_of_pos (by positivity)).le (Gamma_div_two_add_one_le n)
+            (by positivity)
+      _ = (π * n / 4) ^ ((1 : ℝ) / 2) := by
+          rw [← rpow_mul (by positivity)]
+          congr 1; field_simp [hn'.ne']
+  have hsq : (2 / √π * (π * n / 4) ^ ((1 : ℝ) / 2)) ^ 2 = n := by
+    rw [mul_pow, div_pow, sq_sqrt pi_pos.le, ← sqrt_eq_rpow, sq_sqrt (by positivity)]
+    field_simp [pi_ne_zero]
+    ring
+  calc 2 / √π * Gamma ((n : ℝ) / 2 + 1) ^ ((n : ℝ)⁻¹)
+      ≤ 2 / √π * (π * n / 4) ^ ((1 : ℝ) / 2) :=
+        mul_le_mul_of_nonneg_left hΓ (by positivity)
+    _ = √n := by
+        rw [← sqrt_sq (by positivity : 0 ≤ 2 / √π * (π * n / 4) ^ ((1 : ℝ) / 2)), hsq]
 
 end Real
