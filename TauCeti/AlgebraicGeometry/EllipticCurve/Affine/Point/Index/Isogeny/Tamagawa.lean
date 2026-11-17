@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AdicCompletion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ProductFormula
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
@@ -116,12 +115,10 @@ private theorem ne_zero_of_pullbackDifferential_of_degree_ne_zero
     (hc : φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
       c • Affine.invariantDifferential W₁.toAffine)
     (hn : (φ.degree : A) ≠ 0) : c ≠ 0 := by
-  obtain ⟨c', hc', -⟩ := φ.dual.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
-  have hdeg : (φ.degree : F_u) ≠ 0 := by
-    rw [← map_natCast (algebraMap A F_u), IsScalarTower.algebraMap_apply A F F_u]
-    exact (map_ne_zero_iff _ (algebraMap F F_u).injective).mpr
-      ((FaithfulSMul.algebraMap_eq_zero_iff A F).not.mpr hn)
-  exact left_ne_zero_of_mul ((φ.mul_eq_degree_of_pullbackDifferential_eq_smul hc hc').trans_ne hdeg)
+  refine φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc ?_
+  rw [← map_natCast (algebraMap A F_u), IsScalarTower.algebraMap_apply A F F_u]
+  exact (map_ne_zero_iff _ (algebraMap F F_u).injective).mpr
+    ((FaithfulSMul.algebraMap_eq_zero_iff A F).not.mpr hn)
 
 /-- Core formal-filtration calculation on minimal models over `O_u`. -/
 private theorem normalizedAbsoluteValue_mul_tamagawaNumber_mul_kummerRatio_baseChange

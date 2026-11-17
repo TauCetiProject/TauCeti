@@ -9,8 +9,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
 import Mathlib.Algebra.FiniteSupport.Basic
 -- Proof-only: existence of a reduced global minimal equation over `ℚ` in every variable-change
--- orbit.
+-- orbit, and the finite-place product formula for normalized absolute values.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ProductFormula
 
 /-!
 # The global product formula for local Kummer ratios
