@@ -143,7 +143,7 @@ example : ¬ 7 ∣ Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val
   · rw [h3z, natCast_zsmul, three_nsmul_generatorSeven, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · rw [one_zsmul, generatorSeven, coordinates_some, Pair.cross_def]
+  · rw [one_zsmul, generatorSeven_def, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
 
@@ -177,7 +177,7 @@ example : 1 < Nat.gcd ((⟨33, 1⟩ : Pair (ZMod 35)).cross ⟨3, 1⟩).val 35 �
   · rw [h3z, natCast_zsmul, three_nsmul_generatorSeven, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · rw [one_zsmul, generatorSeven, coordinates_some, Pair.cross_def]
+  · rw [one_zsmul, generatorSeven_def, coordinates_some, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
 

@@ -208,13 +208,13 @@ example : addOrderOf generatorSeven = 8 ∧
     coordinates 0 1 ((7 : ℕ) • generatorSeven) = ⟨3, 1⟩ ∧
     coordinates 0 1 ((8 : ℕ) • generatorSeven) = ⟨1, 0⟩ := by
   refine ⟨addOrderOf_generatorSeven, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [one_nsmul, generatorSeven, coordinates_some]
+  · rw [one_nsmul, generatorSeven_def, coordinates_some]
   · rw [two_nsmul_generatorSeven, coordinates_some]
   · rw [three_nsmul_generatorSeven, coordinates_some]
   · rw [four_nsmul_generatorSeven, coordinates_twoTorsionPoint]
   · rw [five_genSeven, coordinates_neg, coordinates_some]
   · rw [six_genSeven, coordinates_some]
-  · rw [seven_genSeven, coordinates_neg, generatorSeven, coordinates_some]
+  · rw [seven_genSeven, coordinates_neg, generatorSeven_def, coordinates_some]
   · rw [eight_genSeven, coordinates_zero]
 
 -- `(m, n) = (5, 3)`: `[5]Q` and `[3]Q` share coordinate pair `(5, 1)` since `[5 + 3]Q = [8]Q = 0`.
@@ -235,7 +235,7 @@ example : (⟨3, 2⟩ : Pair (ZMod 7)).cross ⟨2, 3⟩ ≠ 0 ∧
     rw [h3z, natCast_zsmul, three_nsmul_generatorSeven, coordinates_some, Pair.cross_def]
     decide
   have h1 : (⟨2, 3⟩ : Pair (ZMod 7)).cross (coordinates 0 1 ((1 : ℤ) • generatorSeven)) = 0 := by
-    rw [one_zsmul, generatorSeven, coordinates_some, Pair.cross_def]
+    rw [one_zsmul, generatorSeven_def, coordinates_some, Pair.cross_def]
     decide
   have h2ne : (2 : ℤ) • generatorSeven ≠ 0 := by
     have h2z : (2 : ℤ) = (2 : ℕ) := rfl
@@ -270,7 +270,7 @@ example : (7 : ℤ) • generatorSeven ≠ 0 ∧ (8 : ℤ) • generatorSeven = 
     rw [h8, natCast_zsmul, eight_genSeven]
   refine ⟨?_, h8z, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero h8z (.inl (by norm_num))⟩
   have h7 : (7 : ℤ) = (7 : ℕ) := rfl
-  rw [h7, natCast_zsmul, seven_genSeven, neg_ne_zero, generatorSeven]
+  rw [h7, natCast_zsmul, seven_genSeven, neg_ne_zero, generatorSeven_def]
   exact Affine.Point.some_ne_zero _
 
 -- For `w = 6`, `13 = 2 · 6 + 1`, `17 = 3 · 6 - 1`, and the midpoint `15 = 2 · 6 + 3` has no

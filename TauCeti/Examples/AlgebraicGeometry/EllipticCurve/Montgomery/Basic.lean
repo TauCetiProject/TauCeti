@@ -159,8 +159,13 @@ theorem nonsingular_five_five_seven : (model (0 : ZMod 7) 1).toAffine.Nonsingula
   decide
 
 /-- The generator `(3, 3)` of the native group of `y² = x³ + x` over `𝔽₇`. -/
-@[expose] noncomputable def generatorSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
+noncomputable def generatorSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
   .some 3 3 nonsingular_three_three_seven
+
+/-- The generator `generatorSeven` is the affine point `(3, 3)` of `y² = x³ + x` over `𝔽₇`. -/
+theorem generatorSeven_def :
+    generatorSeven = .some 3 3 nonsingular_three_three_seven :=
+  (rfl)
 
 /-- Over `𝔽₇`, `[2](3, 3) = (1, 4)` on `y² = x³ + x`. -/
 theorem two_nsmul_generatorSeven :
@@ -174,7 +179,7 @@ theorem two_nsmul_generatorSeven :
       decide
     · simp only [Affine.negY, model_a₁, model_a₃]
       decide
-  rw [two_nsmul, generatorSeven, Affine.Point.add_self_of_Y_ne hne]
+  rw [two_nsmul, generatorSeven_def, Affine.Point.add_self_of_Y_ne hne]
   simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
     Affine.negY, model_a₁, model_a₂, model_a₃]
   decide
@@ -186,7 +191,7 @@ theorem three_nsmul_generatorSeven :
   have hsl : (model (0 : ZMod 7) 1).toAffine.slope 1 3 4 3 = 3 := by
     rw [Affine.slope_of_X_ne hxne, div_eq_iff (by decide)]
     decide
-  rw [succ_nsmul, two_nsmul_generatorSeven, generatorSeven, Affine.Point.add_of_X_ne hxne]
+  rw [succ_nsmul, two_nsmul_generatorSeven, generatorSeven_def, Affine.Point.add_of_X_ne hxne]
   simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
     Affine.negY, model_a₁, model_a₂, model_a₃]
   decide
@@ -201,8 +206,9 @@ theorem four_nsmul_generatorSeven :
     (by decide) (by decide) h₁.1 h₁.2
   have e : double (2 : ZMod 7) 4 (double 2 4 ⟨3, 1⟩) = ⟨0, 2⟩ := by
     ext <;> simp only [double_x, double_z] <;> decide
-  rw [show coordinates 0 1 generatorSeven = ⟨3, 1⟩ from coordinates_some _ _ _, e,
-    Pair.cross_def] at h₂
+  have hcoord : coordinates 0 1 generatorSeven = ⟨3, 1⟩ := by
+    rw [generatorSeven_def, coordinates_some]
+  rw [hcoord, e, Pair.cross_def] at h₂
   rw [show (4 : ℕ) = 2 * 2 from rfl, mul_nsmul, two_nsmul, two_nsmul]
   simpa [show (2 : ZMod 7) ≠ 0 by decide] using h₂
 
