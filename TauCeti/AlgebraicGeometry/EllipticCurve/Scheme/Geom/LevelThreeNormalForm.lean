@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.LevelThreeNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.RingTheory.Smooth.Hypersurface
 
 /-!
@@ -274,27 +275,8 @@ instance isStandardSmoothOfRelativeDimension :
 /-- The base `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is smooth of
 relative dimension `1` over `Spec ℤ`, the terminal scheme. -/
 instance smoothOfRelativeDimension_terminal_from :
-    SmoothOfRelativeDimension 1 (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
-  let _ : Algebra (ULift.{u} ℤ) ℤ := ULift.algebra' ℤ ℤ
-  let _ : Algebra (ULift.{u} ℤ) (ULift.{u} Ring) := ULift.algebra' ℤ (ULift.{u} Ring)
-  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (ULift.{u} ℤ) ℤ :=
-    .of_algebraMap_bijective ULift.ringEquiv.bijective
-  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ (ULift.{u} Ring) :=
-    .of_algEquiv 1 (AlgEquiv.ofRingEquiv (f := ULift.ringEquiv.symm) fun _ : ℤ ↦ rfl)
-  have h01 : Algebra.IsStandardSmoothOfRelativeDimension (0 + 1) (ULift.{u} ℤ) (ULift.{u} Ring) :=
-    .trans 0 1 (ULift.{u} ℤ) ℤ (ULift.{u} Ring)
-  have hf : (algebraMap (ULift.{u} ℤ) (ULift.{u} Ring)).IsStandardSmoothOfRelativeDimension 1 :=
-    (RingHom.isStandardSmoothOfRelativeDimension_algebraMap 1).mpr (Nat.zero_add 1 ▸ h01)
-  have : SmoothOfRelativeDimension 1
-      (Spec.map (CommRingCat.ofHom (algebraMap (ULift.{u} ℤ) (ULift.{u} Ring)))) :=
-    (HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension 1)).mpr
-      (RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hf)
-  have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
-  have : SmoothOfRelativeDimension (1 + 0)
-      (Spec.map (CommRingCat.ofHom (algebraMap (ULift.{u} ℤ) (ULift.{u} Ring))) ≫ e.hom) :=
-    inferInstance
-  rwa [terminal.hom_ext (terminal.from _)
-    (Spec.map (CommRingCat.ofHom (algebraMap (ULift.{u} ℤ) (ULift.{u} Ring))) ≫ e.hom)]
+    SmoothOfRelativeDimension 1 (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.terminal_from_Spec_ulift 1
 
 /-- The base `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is smooth
 over `Spec ℤ`, the terminal scheme. -/

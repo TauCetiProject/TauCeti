@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
 import TauCeti.AlgebraicGeometry.ModularCurve.Rigidifier.LevelThree
 import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Descent
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # Relative dimension of the fine modular curve `Y₁(N)`
@@ -54,6 +55,8 @@ one-dimensional rigidifiers over open subsets covering `B`:
   `Y₁(4) ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]`.
 * `TauCeti.AlgebraicGeometry.EllObj.yOneBaseIsoProd`: for every `N ≠ 0`, the identification of the
   base of `EllObj.yOne B N` with `B × Y₁(N)`.
+* `TauCeti.AlgebraicGeometry.EllObj.yOneBaseMap`: for a base morphism `B' ⟶ B`, the induced
+  morphism `(yOne B' N).base ⟶ (yOne B N).base`.
 
 ## Main results
 
@@ -171,8 +174,7 @@ theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
     rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Iso.inv_hom_id] at h
     simpa using h
   interval_cases k <;> simp only [Nat.cast_one, Nat.cast_ofNat] at heq'
-  · rw [show curveULift.{u}.projModelMulBy 1 = 𝟙 _ by simp [projModelMulBy_eq],
-      Category.comp_id] at heq'
+  · rw [projModelMulBy_one, Category.comp_id] at heq'
     exact UniversalTate.point_ne_projModelZero t heq'
   · exact UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq'
   · exact UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq'
@@ -241,17 +243,26 @@ noncomputable def toUniversalGammaOneFourULift :
   ULift.ringEquiv.symm.toRingHom.comp
     (UniversalGammaOneFour.toUniversalTate.comp ULift.ringEquiv.toRingHom)
 
+/-- `toUniversalGammaOneFourULift` applies `UniversalGammaOneFour.toUniversalTate` to the
+underlying element. -/
+@[simp]
+theorem toUniversalGammaOneFourULift_apply (x : ULift.{u} UniversalTate.Ring) :
+    toUniversalGammaOneFourULift.{u} x = .up (UniversalGammaOneFour.toUniversalTate x.down) := by
+  simp [toUniversalGammaOneFourULift, ULift.ringEquiv]
+
 /-- `toUniversalGammaOneFourULift` maps the coefficient `a₁` of `curveULift` to `1`. -/
 theorem toUniversalGammaOneFourULift_a₁ :
     toUniversalGammaOneFourULift.{u} curveULift.a₁ = 1 := by
+  rw [toUniversalGammaOneFourULift_apply, curveULift_a₁]
   ext
-  simp [toUniversalGammaOneFourULift, ULift.ringEquiv, WeierstrassCurve.baseChange]
+  simp [WeierstrassCurve.baseChange]
 
 /-- `toUniversalGammaOneFourULift` maps the coefficient `a₃` of `curveULift` to `param`. -/
 theorem toUniversalGammaOneFourULift_a₃ :
     toUniversalGammaOneFourULift.{u} curveULift.a₃ = .up UniversalGammaOneFour.param := by
+  rw [toUniversalGammaOneFourULift_apply, curveULift_a₃]
   ext
-  simp [toUniversalGammaOneFourULift, ULift.ringEquiv, WeierstrassCurve.baseChange]
+  simp [WeierstrassCurve.baseChange]
 
 -- Any morphism from an affine scheme `X` to `Spec ℤ[A, B][Δ⁻¹]` killing `4 • (0, 0)` factors
 -- through `Spec ℤ[B, (B(1 - 16B))⁻¹]`.
@@ -275,11 +286,16 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
       UniversalTate.lift hΔ :=
     UniversalTate.eq_lift hΔ (by rw [← map_map, ← curveULift_eq, hmap])
   have hcomp : CommRingCat.ofHom toUniversalGammaOneFourULift ≫ ψ = φ := by
-    ext x
-    change (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down) =
-      φ.hom x
-    exact (RingHom.congr_fun (UniversalGammaOneFour.lift_comp_toUniversalTate hΔ) x.down).trans
-      (RingHom.congr_fun hφlift x.down).symm
+    refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
+    have h₁ : (CommRingCat.ofHom toUniversalGammaOneFourULift ≫ ψ).hom x =
+        (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down) := by
+      simp [ψ, toUniversalGammaOneFourULift_apply, ULift.ringEquiv]
+    rw [h₁]
+    calc (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down)
+        = (UniversalTate.lift hΔ) x.down :=
+          RingHom.congr_fun (UniversalGammaOneFour.lift_comp_toUniversalTate hΔ) x.down
+      _ = φ.hom x := by
+          simpa [ULift.ringEquiv] using (RingHom.congr_fun hφlift x.down).symm
   refine ⟨X.isoSpec.hom ≫ Spec.map ψ, ?_⟩
   rw [Category.assoc, ← Spec.map_comp, hcomp, hφ, Iso.hom_inv_id_assoc]
 
@@ -327,37 +343,27 @@ noncomputable def yOneFourIso :
       simpa [ULift.ringEquiv] using RingHom.congr_fun h₀ x.down
     rw [← hχ, hχid, Spec.map_id]
 
+/-- Under `yOneFourIso.hom`, the specialization map `A = 1` recovers the closed immersion
+`yOneι 4 : Y₁(4) ⟶ Spec ℤ[A, B][Δ⁻¹]`. -/
+@[reassoc (attr := simp)]
+theorem yOneFourIso_hom_SpecMap :
+    yOneFourIso.{u}.hom ≫ Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) =
+      yOneι.{u} 4 :=
+  exists_yOneFourToSpec.choose_spec
+
+/-- Under `yOneFourIso.inv`, the closed immersion `yOneι 4` is the spectrum of the specialization
+map `A = 1`. -/
+@[reassoc (attr := simp)]
+theorem yOneFourIso_inv_yOneι :
+    yOneFourIso.{u}.inv ≫ yOneι.{u} 4 =
+      Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) :=
+  exists_specToYOneFour.choose_spec
+
 /-- The base `Spec ℤ[B, (B(1 - 16B))⁻¹]` is smooth of relative dimension `1` over `Spec ℤ`. -/
 instance smoothOfRelativeDimension_one_terminal_from_universalGammaOneFour :
     SmoothOfRelativeDimension 1
-      (terminal.from (Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)))) := by
-  let _ : Algebra (ULift.{u} ℤ) ℤ := ULift.algebra' ℤ ℤ
-  let _ : Algebra (ULift.{u} ℤ) (ULift.{u} UniversalGammaOneFour.Ring) :=
-    ULift.algebra' ℤ (ULift.{u} UniversalGammaOneFour.Ring)
-  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (ULift.{u} ℤ) ℤ :=
-    .of_algebraMap_bijective ULift.ringEquiv.bijective
-  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ
-      (ULift.{u} UniversalGammaOneFour.Ring) :=
-    .of_algEquiv 1 (AlgEquiv.ofRingEquiv (f := ULift.ringEquiv.symm) fun _ : ℤ ↦ rfl)
-  have h01 : Algebra.IsStandardSmoothOfRelativeDimension (0 + 1) (ULift.{u} ℤ)
-      (ULift.{u} UniversalGammaOneFour.Ring) :=
-    .trans 0 1 (ULift.{u} ℤ) ℤ (ULift.{u} UniversalGammaOneFour.Ring)
-  have h1 : Algebra.IsStandardSmoothOfRelativeDimension 1 (ULift.{u} ℤ)
-      (ULift.{u} UniversalGammaOneFour.Ring) := by
-    simpa only [Nat.zero_add] using h01
-  have hf : (algebraMap (ULift.{u} ℤ) (ULift.{u} UniversalGammaOneFour.Ring))
-      |>.IsStandardSmoothOfRelativeDimension 1 :=
-    (RingHom.isStandardSmoothOfRelativeDimension_algebraMap 1).mpr h1
-  have : SmoothOfRelativeDimension 1 (Spec.map (CommRingCat.ofHom
-      (algebraMap (ULift.{u} ℤ) (ULift.{u} UniversalGammaOneFour.Ring)))) :=
-    (HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension 1)).mpr
-      (RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hf)
-  have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
-  have : SmoothOfRelativeDimension (1 + 0) (Spec.map (CommRingCat.ofHom
-      (algebraMap (ULift.{u} ℤ) (ULift.{u} UniversalGammaOneFour.Ring))) ≫ e.hom) :=
-    inferInstance
-  rwa [terminal.hom_ext (terminal.from _) (Spec.map (CommRingCat.ofHom
-    (algebraMap (ULift.{u} ℤ) (ULift.{u} UniversalGammaOneFour.Ring))) ≫ e.hom)]
+      (terminal.from (Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)))) :=
+  SmoothOfRelativeDimension.terminal_from_Spec_ulift 1
 
 /-- `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
 instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
@@ -488,11 +494,47 @@ theorem yOneBaseIsoProd_inv_structureMap :
     (yOneBaseIsoProd B N).inv ≫ (yOne B N).structureMap = prod.fst := by
   rw [← yOneBaseIsoProd_hom_fst, Iso.inv_hom_id_assoc]
 
+/-- Under `yOneBaseIsoProd`, the second projection is `yOneSnd B N`. -/
+@[reassoc (attr := simp)]
+theorem yOneBaseIsoProd_hom_snd :
+    (yOneBaseIsoProd B N).hom ≫ prod.snd = yOneSnd B N :=
+  prod.lift_snd _ _
+
+/-- Under `(yOneBaseIsoProd B N).inv`, `yOneSnd B N` is the second projection. -/
+@[reassoc (attr := simp)]
+theorem yOneBaseIsoProd_inv_yOneSnd :
+    (yOneBaseIsoProd B N).inv ≫ yOneSnd B N = prod.snd := by
+  rw [← yOneBaseIsoProd_hom_snd, Iso.inv_hom_id_assoc]
+
 /-- For a morphism of base schemes `g : B' ⟶ B`, the induced morphism
 `(yOne B' N).base ⟶ (yOne B N).base`. -/
 noncomputable def yOneBaseMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
     (yOne B' N).base ⟶ (yOne B N).base :=
   (yOneBaseIsoProd B' N).hom ≫ prod.map g (𝟙 _) ≫ (yOneBaseIsoProd B N).inv
+
+/-- The base-change morphism of `EllObj.yOne B N` along the identity is the identity. -/
+@[simp]
+theorem yOneBaseMap_id : yOneBaseMap (𝟙 B) N = 𝟙 (yOne B N).base := by
+  simp [yOneBaseMap]
+
+/-- The base-change morphism of `EllObj.yOne` is functorial in the base scheme. -/
+@[simp]
+theorem yOneBaseMap_comp {B'' B' B : Scheme.{u}} (f : B'' ⟶ B') (g : B' ⟶ B) (N : ℕ) [NeZero N] :
+    yOneBaseMap (f ≫ g) N = yOneBaseMap f N ≫ yOneBaseMap g N := by
+  simp [yOneBaseMap]
+
+/-- `yOneBaseMap g N` lies over `g : B' ⟶ B`. -/
+@[reassoc]
+theorem yOneBaseMap_structureMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
+    yOneBaseMap g N ≫ (yOne B N).structureMap = (yOne B' N).structureMap ≫ g := by
+  rw [yOneBaseMap, Category.assoc, Category.assoc, yOneBaseIsoProd_inv_structureMap, prod.map_fst,
+    yOneBaseIsoProd_hom_fst_assoc]
+
+/-- `yOneBaseMap g N` commutes with the canonical projection `yOneSnd` to `UniversalTate.yOne N`. -/
+@[reassoc (attr := simp)]
+theorem yOneBaseMap_yOneSnd {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
+    yOneBaseMap g N ≫ yOneSnd B N = yOneSnd B' N := by
+  simp [yOneBaseMap]
 
 /-- **The base of `EllObj.yOne B N` commutes with arbitrary base change `g : B' ⟶ B`.** -/
 theorem isPullback_yOneBaseMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
@@ -516,14 +558,6 @@ end BaseChange
 
 /-! ### Relative dimension of `Y₁(N)` for `N ≥ 4` -/
 
-private theorem natCast_residueField_basicOpen_ne_zero (B : Scheme.{u}) (m : ℕ)
-    (x : B.basicOpen (m : Γ(B, ⊤))) :
-    (m : (B.basicOpen (m : Γ(B, ⊤))).toScheme.residueField x) ≠ 0 := by
-  let U := B.basicOpen (m : Γ(B, ⊤))
-  have hx : U.ι x ∈ U := by simpa only [Scheme.Opens.ι_apply] using x.2
-  refine Scheme.Hom.natCast_residueField_ne_zero U.ι ?_
-  simpa only [map_natCast] using (B.evaluation_ne_zero_iff_mem_basicOpen (U.ι x) trivial _).mpr hx
-
 private theorem smoothOfRelativeDimension_restrict_yOne_of_open (B : Scheme.{u}) (U : B.Opens)
     (N : ℕ) [NeZero N] (hU : SmoothOfRelativeDimension 1 (yOne U.toScheme N).structureMap) :
     SmoothOfRelativeDimension 1 ((yOne B N).structureMap ∣_ U) := by
@@ -545,10 +579,9 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_two (B : S
   let U : B.Opens := B.basicOpen (2 : Γ(B, ⊤))
   have hNU (x : U.toScheme) : (N : U.toScheme.residueField x) ≠ 0 :=
     Scheme.Hom.natCast_residueField_ne_zero U.ι (hN _)
-  have h4U (x : U.toScheme) : (4 : U.toScheme.residueField x) ≠ 0 := by
-    have hx2 := natCast_residueField_basicOpen_ne_zero B 2 x
-    rw [show (4 : U.toScheme.residueField x) = (2 : _) * 2 by norm_num]
-    exact mul_ne_zero hx2 hx2
+  have h4U (x : U.toScheme) : (4 : U.toScheme.residueField x) ≠ 0 := fun h4 ↦
+    mul_ne_zero (B.natCast_residueField_basicOpen_ne_zero 2 x)
+      (B.natCast_residueField_basicOpen_ne_zero 2 x) (by linear_combination h4)
   have : Smooth (yOne U.toScheme N).structureMap :=
     smooth_yOne_structureMap U.toScheme N hNU h4
   exact smoothOfRelativeDimension_restrict_yOne_of_open B U N <|
@@ -568,7 +601,7 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_three (B :
   have hNU (x : U.toScheme) : (N : U.toScheme.residueField x) ≠ 0 :=
     Scheme.Hom.natCast_residueField_ne_zero U.ι (hN _)
   have h3U (x : U.toScheme) : (3 : U.toScheme.residueField x) ≠ 0 :=
-    natCast_residueField_basicOpen_ne_zero B 3 x
+    B.natCast_residueField_basicOpen_ne_zero 3 x
   have : Smooth (yOne U.toScheme N).structureMap :=
     smooth_yOne_structureMap U.toScheme N hNU h4
   exact smoothOfRelativeDimension_restrict_yOne_of_open B U N <|
@@ -591,9 +624,8 @@ theorem smoothOfRelativeDimension_one_yOne_structureMap
   refine IsZariskiLocalAtTarget.of_forall_exists_morphismRestrict
     (P := @SmoothOfRelativeDimension.{u} 1) fun b ↦ ?_
   by_cases h2 : (2 : B.residueField b) = 0
-  · have h3 : (3 : B.residueField b) ≠ 0 := by
-      rw [show (3 : B.residueField b) = (2 : _) + 1 by norm_num, h2, zero_add]
-      exact one_ne_zero
+  · have h3 : (3 : B.residueField b) ≠ 0 := fun h3 ↦
+      one_ne_zero (α := B.residueField b) (by linear_combination h3 - h2)
     exact ⟨B.basicOpen (3 : Γ(B, ⊤)),
       (B.evaluation_ne_zero_iff_mem_basicOpen b trivial (3 : Γ(B, ⊤))).mp
         (by simpa only [map_ofNat] using h3),
