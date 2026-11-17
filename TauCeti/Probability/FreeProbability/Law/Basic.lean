@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
-public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import TauCeti.Probability.Moments.CompactDeterminacy
 
 /-!
@@ -166,10 +163,6 @@ theorem integrable_law (a : A) (f : ℝ → ℝ)
     (hf : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac) : Integrable f (law φ a) := by
   rw [← restrict_spectrum_law]
   exact hf.integrableOn_compact (ContinuousFunctionalCalculus.isCompact_spectrum a)
-
-/-- Every real polynomial is integrable against the law `μ_a`. -/
-theorem integrable_eval_law (a : A) (p : ℝ[X]) : Integrable (fun x ↦ p.eval x) (law φ a) :=
-  integrable_law φ a (fun x ↦ p.eval x)
 
 /-- Every power `x ^ n` is integrable against the law `μ_a`. -/
 theorem integrable_pow_law (a : A) (n : ℕ) : Integrable (· ^ n) (law φ a) :=
