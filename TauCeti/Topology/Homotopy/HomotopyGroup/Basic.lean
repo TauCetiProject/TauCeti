@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Topology.Homotopy.Cube.Basic
 import TauCeti.Topology.Homotopy.GenLoop.Homotopic
@@ -13,7 +14,10 @@ import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 # Basic properties of homotopy groups
 
 A pointed space is path connected if and only if its zeroth homotopy set is a subsingleton.
-This follows from Mathlib's equivalence between the zeroth homotopy set and path components.
+This follows from Mathlib's equivalence between the zeroth homotopy set and path components. So a
+simply connected space has trivial homotopy sets `π_ 0` and `π_ 1`
+(`TauCeti.subsingleton_homotopyGroup_of_lt_two`), the hypothesis of the Hurewicz theorem in degree
+two.
 
 For an infinite index set the boundary of the cube is dense (`Cube.dense_boundary`). Hence a
 generalized loop into a `T1` space is constant, so there is only one generalized loop
@@ -39,6 +43,12 @@ theorem pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (x : X) :
   have hne : Nonempty (ZerothHomotopy X) := ⟨ZerothHomotopy.mk x⟩
   simp only [hne, true_and]
   exact (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) x).symm.subsingleton_congr
+
+/-- In a simply connected space the homotopy sets `π_ 0` and `π_ 1` are trivial. -/
+theorem subsingleton_homotopyGroup_of_lt_two [SimplyConnectedSpace X] (x : X) :
+    ∀ k < 2, Subsingleton (π_ k X x)
+  | 0, _ => (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
+  | 1, _ => HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.2 inferInstance
 
 end TauCeti
 
