@@ -31,7 +31,10 @@ Laplacian satisfies the same inequality, off the axis because conjugation is an 
 the axis by continuity; and its integral over the disc is at most twice that of `w` over the
 half-disc. The interior mean-value inequality
 `TauCeti.mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian` then applies to the
-reflection, centred at the boundary point `x₀`.
+reflection, centred at the boundary point `x₀`. Applied on a smaller disc `ball z ρ` inside the
+disc, centred at any point `z` of the closed upper half-plane, it bounds `π ρ² w z` in the same
+way. This is the form needed near the edge, where points `z` close to the axis are not centres
+of half-discs but lie in a small disc that may cross the axis.
 
 In Gromov compactness for holomorphic strips and discs with totally real boundary conditions,
 `w` is the energy density `|∂ₛu|²` of a curve on a half-disc whose straight edge is mapped to the
@@ -46,7 +49,8 @@ the Neumann condition and differential inequality for the energy density, is not
 * `TauCeti.neg_mul_sq_le_laplacian_evenReflection`: the even reflection of `w` satisfies
   `Δ w ≥ -A w²` on the whole disc.
 * `TauCeti.pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian`: **the
-  boundary mean-value inequality**.
+  boundary mean-value inequality**, bounding `π ρ² w z` at any point `z` of the closed upper
+  half-plane with `ball z ρ` inside the disc of the half-disc.
 
 ## References
 
@@ -152,49 +156,64 @@ private theorem setIntegral_evenReflection_le (hx₀ : x₀.im = 0)
   linarith
 
 /-- **The boundary mean-value inequality.** Let `x₀` lie on the real axis, and let `w ≥ 0` be
-`C²` on the half-disc `{0 ≤ im z} ∩ ball x₀ r` up to its straight edge, continuous on its
-closure, with `Δ w ≥ -A w²` above the axis and vanishing normal derivative `∂ₜ w = 0` on the
-axis. If `16 A ∫ w < π` over the half-disc, then
+`C²` on the half-disc `{0 ≤ im y} ∩ ball x₀ r` up to its straight edge, continuous on its closure,
+with `Δ w ≥ -A w²` above the axis and vanishing normal derivative `∂ₜ w = 0` on the axis. If
+`16 A ∫ w < π` over the half-disc, then every point `z` of the closed upper half-plane and every
+disc `ball z ρ` contained in `ball x₀ r`, which may cross the real axis, satisfy
 
-`π r² w x₀ ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} w`. -/
+`π ρ² w z ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} w`.
+
+In particular `π r² w x₀ ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} w` at the centre. -/
 theorem pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian
-    (hx₀ : x₀.im = 0) (hr : 0 ≤ r)
+    (hx₀ : x₀.im = 0)
     (hw : ContDiffOn ℝ 2 w ({z | 0 ≤ z.im} ∩ ball x₀ r))
     (hwc : ContinuousOn w ({z | 0 ≤ z.im} ∩ closedBall x₀ r))
     (hw0 : ∀ z ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, 0 ≤ w z)
     (hN : ∀ x ∈ ball x₀ r, x.im = 0 → fderivWithin ℝ w ({z | 0 ≤ z.im} ∩ ball x₀ r) x I = 0)
     (hΔ : ∀ z ∈ ball x₀ r, 0 < z.im → -(A * w z ^ 2) ≤ Δ w z)
-    (hsmall : 16 * A * ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z < π) :
-    π * r ^ 2 * w x₀ ≤ 16 * ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z := by
+    (hsmall : 16 * A * ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z < π)
+    {z : ℂ} {ρ : ℝ} (hz : 0 ≤ z.im) (hρ : 0 ≤ ρ) (hzρ : ball z ρ ⊆ ball x₀ r) :
+    π * ρ ^ 2 * w z ≤ 16 * ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z := by
+  have hHm : MeasurableSet ({z : ℂ | 0 ≤ z.im} ∩ ball x₀ r) :=
+    (measurableSet_le measurable_const continuous_im.measurable).inter measurableSet_ball
+  have hI : 0 ≤ ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, w z := setIntegral_nonneg hHm hw0
+  rcases hρ.eq_or_lt with rfl | hρ
+  · simpa using hI
   have hsymm : ∀ y ∈ ball x₀ r, conj y ∈ ball x₀ r := fun y hy ↦
     conj_mem_ball_of_im_eq_zero hx₀ hy
-  have hle := setIntegral_evenReflection_le hx₀ hwc hw0
-  have hnonneg : 0 ≤ ∫ z in ball x₀ r, evenReflection w z := by
-    refine setIntegral_nonneg measurableSet_ball fun z hz ↦ ?_
-    rcases le_total 0 z.im with h | h
+  have hcl : closedBall z ρ ⊆ closedBall x₀ r := by
+    rw [← closure_ball z hρ.ne']
+    exact (closure_mono hzρ).trans closure_ball_subset_closedBall
+  have hrefl0 : ∀ y ∈ ball x₀ r, 0 ≤ evenReflection w y := fun y hy ↦ by
+    rcases le_total 0 y.im with h | h
     · rw [evenReflection_of_nonneg h]
-      exact hw0 z ⟨h, hz⟩
+      exact hw0 y ⟨h, hy⟩
     · rw [evenReflection_of_nonpos h]
-      exact hw0 _ ⟨by simpa using h, hsymm z hz⟩
-  have hsmall' : 8 * A * ∫ z in ball x₀ r, evenReflection w z < π := by
+      exact hw0 _ ⟨by simpa using h, hsymm y hy⟩
+  have hreflc : ContinuousOn (evenReflection w) (closedBall x₀ r) :=
+    continuousOn_evenReflection (fun y hy ↦ conj_mem_closedBall_of_im_eq_zero hx₀ hy) hwc
+  -- The integral of the reflection over the small disc is at most twice that of `w`.
+  have hmono : ∫ y in ball z ρ, evenReflection w y ≤ ∫ y in ball x₀ r, evenReflection w y :=
+    setIntegral_mono_set ((hreflc.integrableOn_compact (isCompact_closedBall x₀ r)).mono_set
+      ball_subset_closedBall)
+      ((ae_restrict_iff' measurableSet_ball).2 (Eventually.of_forall hrefl0))
+      (Eventually.of_forall hzρ)
+  have hle := (hmono.trans (setIntegral_evenReflection_le hx₀ hwc hw0))
+  have hnonneg : 0 ≤ ∫ y in ball z ρ, evenReflection w y :=
+    setIntegral_nonneg measurableSet_ball fun y hy ↦ hrefl0 y (hzρ hy)
+  have hsmall' : 8 * A * ∫ y in ball z ρ, evenReflection w y < π := by
     rcases le_total 0 A with hA | hA
     · nlinarith
     · nlinarith [mul_nonpos_of_nonpos_of_nonneg hA hnonneg, pi_pos]
   have h := mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian (μ := volume)
-    (by simp) (w := evenReflection w) (x₀ := x₀) (r := r) (A := A)
-    (contDiffOn_evenReflection isOpen_ball hsymm hw hN)
-    (continuousOn_evenReflection (fun y hy ↦ conj_mem_closedBall_of_im_eq_zero hx₀ hy) hwc)
-    (fun z hz ↦ by
-      rcases le_total 0 z.im with h | h
-      · rw [evenReflection_of_nonneg h]
-        exact hw0 z ⟨h, hz⟩
-      · rw [evenReflection_of_nonpos h]
-        exact hw0 _ ⟨by simpa using h, hsymm z hz⟩)
-    (fun z hz ↦ neg_mul_sq_le_laplacian_evenReflection hx₀ hw hN hΔ hz)
+    (by simp) (w := evenReflection w) (x₀ := z) (r := ρ) (A := A)
+    ((contDiffOn_evenReflection isOpen_ball hsymm hw hN).mono hzρ) (hreflc.mono hcl)
+    (fun y hy ↦ hrefl0 y (hzρ hy))
+    (fun y hy ↦ neg_mul_sq_le_laplacian_evenReflection hx₀ hw hN hΔ (hzρ hy))
     (by simpa [measureReal_def, NNReal.coe_real_pi] using hsmall')
-  rw [evenReflection_of_nonneg hx₀.ge] at h
-  have h' : π * r ^ 2 * w x₀ ≤ 8 * ∫ z in ball x₀ r, evenReflection w z := by
-    simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
+  rw [evenReflection_of_nonneg hz] at h
+  have h' : π * ρ ^ 2 * w z ≤ 8 * ∫ y in ball z ρ, evenReflection w y := by
+    simpa [measureReal_def, hρ.le, mul_comm, mul_left_comm, mul_assoc] using h
   linarith
 
 end TauCeti
