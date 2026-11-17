@@ -126,7 +126,9 @@ vector `v` to the differential of `g` applied to `v`. -/
 theorem normalSpaceEquivOfLevel_normalClass (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfLevel x hn hgf hsurj hdim (f.normalClass x hn v) =
       mfderiv J 𝓘(𝕜, V) g (f x) v := by
-  simp only [normalSpaceEquivOfLevel]
-  exact f.normalSpaceEquivOfSurjective_normalClass x hn hsurj _ v
+  rw [normalSpaceEquivOfLevel]
+  exact (congrFun (LinearEquiv.coe_toContinuousLinearEquiv'
+    (f.normalSpaceEquivOfSurjective x hn hsurj _)) _).trans
+    (f.normalSpaceEquivOfSurjective_normalClass x hn hsurj _ v)
 
 end TauCeti.SmoothEmbedding
