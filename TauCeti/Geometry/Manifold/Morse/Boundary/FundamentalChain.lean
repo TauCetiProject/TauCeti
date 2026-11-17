@@ -95,60 +95,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
   [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
-/-- Comparing an orientation with the opposite of a reference orientation reverses the sign of the
-comparison. -/
-private theorem ite_eq_neg_ite {V ι : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
-    [Fintype ι] {o τ : Orientation ℝ V ι} {d₁ : Decidable (o = -τ)} {d₂ : Decidable (o = τ)}
-    (h : Fintype.card ι = finrank ℝ V) :
-    (if o = -τ then (1 : ℤ) else -1) = -(if o = τ then 1 else -1) := by
-  rcases o.eq_or_eq_neg τ h with rfl | rfl
-  · rw [ite_eq_right (Module.Ray.ne_neg_self o), ite_eq_left rfl]
-  · rw [ite_eq_left rfl, ite_eq_right (Module.Ray.ne_neg_self τ).symm, neg_neg]
-
-/-- Reversing an orientation reverses the sign of its comparison with a reference orientation. -/
-private theorem ite_neg_eq_neg_ite {V ι : Type*} [AddCommGroup V] [Module ℝ V]
-    [FiniteDimensional ℝ V] [Fintype ι] {o τ : Orientation ℝ V ι} {d₁ : Decidable (-o = τ)}
-    {d₂ : Decidable (o = τ)} (h : Fintype.card ι = finrank ℝ V) :
-    (if -o = τ then (1 : ℤ) else -1) = -(if o = τ then 1 else -1) := by
-  rcases o.eq_or_eq_neg τ h with rfl | rfl
-  · rw [ite_eq_right (Module.Ray.ne_neg_self o).symm, ite_eq_left rfl]
-  · rw [ite_eq_left (neg_neg τ), ite_eq_right (Module.Ray.ne_neg_self τ).symm, neg_neg]
-
-open scoped Classical in
-/-- **Signs of orientations along a composite.** If `F` carries `o` to `oT` up to the sign
-`[F o = oT]`, then the sign `[(A ∘ F) o = τ]` is that sign times `[A oT = τ]`. -/
-private theorem ite_mul_ite_map_trans {V T W ι : Type*} [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup T] [Module ℝ T] [FiniteDimensional ℝ T] [AddCommGroup W] [Module ℝ W]
-    [FiniteDimensional ℝ W] [Fintype ι] (F : V ≃ₗ[ℝ] T) (A : T ≃ₗ[ℝ] W) (o : Orientation ℝ V ι)
-    {oT : Orientation ℝ T ι} {τ : Orientation ℝ W ι} (hT : Fintype.card ι = finrank ℝ T)
-    (hW : Fintype.card ι = finrank ℝ W) :
-    (if Orientation.map ι F o = oT then (1 : ℤ) else -1) *
-        (if Orientation.map ι (F.trans A) o = τ then 1 else -1) =
-      if Orientation.map ι A oT = τ then 1 else -1 := by
-  rw [Orientation.map_trans]
-  rcases (Orientation.map ι F o).eq_or_eq_neg oT hT with h | h
-  · simp only [h, ite_eq_left, one_mul]
-  · rw [h, Orientation.map_neg, ite_eq_right (Module.Ray.ne_neg_self oT).symm,
-      ite_neg_eq_neg_ite hW, neg_one_mul, neg_neg]
-
-omit [CompactSpace M] [T2Space M] in
-/-- Read through a map `g : M → E` preserving the orientations `oM` and `oE` at `y`, a linear
-isomorphism `F` onto the tangent space at `y` carries an orientation `o` to that of `M` exactly when
-its composite with the derivative of `g` carries `o` to that of `E`. -/
-private theorem exists_map_eq_orientationAt_iff {V ι : Type*} [AddCommGroup V] [Module ℝ V]
-    [Fintype ι] {oM : Manifold.Orientation 𝓘(ℝ, E) M ι} {oE : Manifold.Orientation 𝓘(ℝ, E) E ι}
-    {g : M → E} {y : M} (hg : oM.IsOrientationPreservingAt oE g y)
-    (F : V ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, E) y) (o : Orientation ℝ V ι) :
-    ∃ e : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] TangentSpace 𝓘(ℝ, E) (g y),
-      (e : TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) (g y)) =
-        mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) g y ∧
-      (Orientation.map ι F o = oM.orientationAt y ↔
-        Orientation.map ι (F.trans e.toLinearEquiv) o = oE.orientationAt (g y)) := by
-  obtain ⟨e, he, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 hg
-  refine ⟨e, he, ?_⟩
-  rw [Orientation.map_trans, ← hmap]
-  exact (Orientation.map ι e.toLinearEquiv).injective.eq_iff.symm
-
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
@@ -237,7 +183,7 @@ theorem fundamentalSign_neg (p : criticalPoints 𝓘(ℝ, E) f) :
   by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E
   · rw [fundamentalSign_of_morseIndex_eq hp, fundamentalSign_of_morseIndex_eq hp,
       Manifold.Orientation.orientationAt_neg]
-    exact ite_eq_neg_ite (Fintype.card_fin _)
+    exact Orientation.ite_eq_neg_eq_neg_ite (Fintype.card_fin _)
   · simp [hp]
 
 /-- **Reversing orientations changes the fundamental signs** at the critical points of the
@@ -270,7 +216,7 @@ theorem fundamentalSign_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f)) [Decid
     rw [hmap]
     by_cases hS : p ∈ S
     · rw [ite_eq_left hS, ite_eq_left hS, neg_one_mul]
-      exact ite_neg_eq_neg_ite (Fintype.card_fin _)
+      exact Orientation.ite_neg_eq_eq_neg_ite (Fintype.card_fin _)
     · rw [ite_eq_right hS, ite_eq_right hS, one_mul]
   · simp [hp]
 
@@ -310,9 +256,9 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
     rw [hX.flow_apply_of_mfderiv_eq_zero hp]
     exact hU.self_of_nhds
   -- Through it, both frames become `e^{-T}` times the extension by zero.
-  obtain ⟨ey, hey, hy'⟩ := exists_map_eq_orientationAt_iff (hg hTU)
+  obtain ⟨ey, hey, hy'⟩ := (hg hTU).exists_map_eq_orientationAt_iff
     (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby) op
-  obtain ⟨ep, hep, hp'⟩ := exists_map_eq_orientationAt_iff (hg hpU)
+  obtain ⟨ep, hep, hp'⟩ := (hg hpU).exists_map_eq_orientationAt_iff
     (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op
   have hL : ((LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans
         ey.toLinearEquiv : _ ≃ₗ[ℝ] E) =
@@ -458,9 +404,16 @@ private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f
   set 𝒜 :=
     LinearEquiv.ofBijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φ z)).toLinearMap hA
   have he' (v : TangentSpace 𝓘(ℝ, E) z) : e v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart z v := by
-    rw [← he]
-    rfl
-  refine ⟨e.symm.toLinearEquiv.trans 𝒜, ?_, fun u ↦ ?_, ?_⟩
+    rw [← he, ContinuousLinearEquiv.coe_coe]
+  set Ψ : E ≃ₗ[ℝ] ℝ × ({i // φ.weight i < 0} → ℝ) := e.symm.toLinearEquiv.trans 𝒜
+  -- The two components of `Ψ` are `df` and the normal coordinates, after `e⁻¹`.
+  have hΨ (u : E) : (Ψ u).1 = mvfderiv 𝓘(ℝ, E) f z (e.symm u) ∧
+      (Ψ u).2 = hX.stableNormal φ z (e.symm u) := by
+    -- `Ψ u` is `𝒜 (e⁻¹ u)`, reading `u : E` as a tangent vector of the model space `E` at `φ z`.
+    change (𝒜 (e.symm u)).1 = _ ∧ (𝒜 (e.symm u)).2 = _
+    simp only [𝒜, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.prod_apply, and_self]
+  refine ⟨Ψ, ?_, fun u ↦ ?_, ?_⟩
   · -- Transport the orientation of `M` at `z` to that of `E` through the chart.
     have h1 : Orientation.map _ 𝒜 (oM.orientationAt z) = Orientation.map _
         (e.symm.toLinearEquiv.trans 𝒜) (oE.orientationAt (φ.toChart z)) := by
@@ -469,13 +422,10 @@ private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f
       refine LinearEquiv.ext fun v ↦ ?_
       rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply]
       exact congrArg 𝒜 (e.symm_apply_apply v).symm
-    rw [h1, hoE]
-    rfl
-  · -- By definition, `(Ψ u).2` is the normal coordinates of `e⁻¹ u`.
-    calc _ = hX.stableNormal φ z (e.symm u) := rfl
-      _ = φ.negativeCoord u := by
-        rw [stableNormal_apply_of_zero_mem hφ hz, ← he']
-        exact congrArg φ.negativeCoord (e.apply_symm_apply u)
+    -- `Ψ` is this transport, read on the tangent space `T_{φ z} E = E`.
+    exact h1.trans (congrArg _ (hoE _))
+  · rw [(hΨ u).2, stableNormal_apply_of_zero_mem hφ hz, ← he']
+    exact congrArg φ.negativeCoord (e.apply_symm_apply u)
   · -- The coordinate vector of weight `1` is read back as `-1 / b` times the velocity.
     have hX' : e.symm (φ.coord.symm (Pi.single j 1)) = (-b⁻¹) • X z := by
       have h : e (X z) = -b • φ.coord.symm (Pi.single j 1) :=
@@ -485,15 +435,11 @@ private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f
         exact (smul_smul _ _ _).trans (by rw [neg_mul_neg, inv_mul_cancel₀ hb0]; exact one_smul _ _)
       rw [← h', e.symm_apply_apply]
     refine ⟨-b⁻¹ * mvfderiv 𝓘(ℝ, E) f z (X z), Prod.ext ?_ ?_, ?_⟩
-    · -- By definition, `(Ψ v).1` is the derivative of `f` at `e⁻¹ v`.
-      calc _ = mvfderiv 𝓘(ℝ, E) f z (e.symm (φ.coord.symm (Pi.single j 1))) := rfl
-        _ = _ := by rw [hX', map_smul, smul_eq_mul]
-    · -- By definition, `(Ψ v).2` is the normal coordinates of `e⁻¹ v`.
-      calc _ = hX.stableNormal φ z (e.symm (φ.coord.symm (Pi.single j 1))) := rfl
-        _ = φ.negativeCoord (φ.coord.symm (Pi.single j 1)) := by
-          rw [stableNormal_apply_of_zero_mem hφ hz, ← he']
-          exact congrArg φ.negativeCoord (e.apply_symm_apply _)
-        _ = 0 := ?_
+    · rw [(hΨ _).1, hX', map_smul, smul_eq_mul]
+    · rw [(hΨ _).2, stableNormal_apply_of_zero_mem hφ hz, ← he']
+      -- `dsimp` reads the second component of `(a, 0)` as `0`.
+      refine (congrArg φ.negativeCoord (e.apply_symm_apply _)).trans ?_
+      dsimp only
       funext i
       rw [MorseChart.negativeCoord_apply, LinearEquiv.apply_symm_apply,
         Pi.single_eq_of_ne (fun h ↦ (lt_irrefl (0 : ℝ)) (by
@@ -575,8 +521,7 @@ private theorem bijective_stableComparison (hMS : hX.IsMorseSmale) (hf : IsMorse
   refine (Bijective.of_comp_iff _ (bijective_unstableFrame hφp hp hS)).1 ?_
   convert bijective_trajectoryComparison hφp hφq hMS hf hpq hz using 1
   funext c
-  rw [comp_apply, trajectoryComparison_apply]
-  rfl
+  rw [comp_apply, trajectoryComparison_apply, ContinuousLinearMap.prod_apply]
 
 open scoped Classical in
 /-- **A trajectory into a critical point of index `n - 1`, read against the orientation of `M`.**
@@ -610,8 +555,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
   have hC𝓕 : LinearEquiv.ofBijective
       (hX.trajectoryComparison (𝔬.chart p) (𝔬.chart q) z).toLinearMap hC = 𝓕.trans 𝒜 :=
     LinearEquiv.ext fun c ↦ by
-      rw [LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe, trajectoryComparison_apply]
-      rfl
+      simp [𝓕, 𝒜]
   -- Index all orientations by `Fin n`.
   set op := (𝔬.orientation p).reindex ℝ _ (finCongr hp)
   set τ := ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod (𝔬.orientation q)
@@ -629,7 +573,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
   rw [fundamentalSign_of_morseIndex_eq hp, trajectorySign_of_bijective hC,
     ← map_unstableFrame_eq_orientationAt_iff hf (𝔬.coord_mfderiv_chart p)
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) oM op hz.1 hF, if_congr hτ rfl rfl]
-  refine ite_mul_ite_map_trans 𝓕 𝒜 op (Fintype.card_fin _) ?_
+  refine Orientation.ite_map_mul_ite_map_trans 𝓕 𝒜 op (Fintype.card_fin _) ?_
   rw [Fintype.card_fin, finrank_prod, finrank_self, (𝔬.chart q).finrank_negativeWeight_fun]
   omega
 
@@ -697,7 +641,7 @@ private theorem fundamentalSign_mul_trajectorySign_eq_neg {q : criticalPoints �
     fundamentalSign_mul_trajectorySign h hf 𝔬 oM (ha 1) (hpq 1) (hz 1) (hA 1),
     fundamentalSign_mul_trajectorySign h hf 𝔬 oM (ha 0) (hpq 0) (hz 0) (hA 0)]
   rw [hflip]
-  refine ite_neg_eq_neg_ite ?_
+  refine Orientation.ite_neg_eq_eq_neg_ite ?_
   rw [Fintype.card_fin, finrank_prod, finrank_self, φ.finrank_negativeWeight_fun]
   omega
 
@@ -819,7 +763,8 @@ theorem IsMorseSmale.signedMorseBoundary_signedMorseFundamentalChain (h : hX.IsM
   simp only [signedMorseFundamentalChain_apply]
   rw [← Int.cast_zero, ← hsum]
   push_cast
-  rfl
+  -- The two sums differ only in the instance paths to multiplication and `Int.cast` in `R`.
+  congr 1
 
 end IsAdaptedPseudoGradient
 
