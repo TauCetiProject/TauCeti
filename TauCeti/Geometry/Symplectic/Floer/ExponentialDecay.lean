@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
-import TauCeti.Analysis.SpecificLimits.ShiftDoubling
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
@@ -349,7 +349,7 @@ complex structures satisfying `c ‖v‖² ≤ ω(v, J z v)` and `‖J z v‖ �
 `u(s, ·)` which is `δ`-close to `x` on `[0, 1]` has action within `K` times the energy of its
 slice: `|A_H(u(s, ·)) - A_H(x)| ≤ K ∫₀¹ e(s, t) dt`. -/
 theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
-    (hH : ContDiff ℝ 2 (uncurry H)) (hc : 0 < c)
+    (hH : ContDiff ℝ 2 (uncurry H)) (hc : 0 < c) (M : ℝ)
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hx1 : x 1 = x 0)
     (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
       v = 0) :
@@ -463,8 +463,8 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
   have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
     (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
   obtain ⟨δ, hδ, K, hKpos, hslice₀⟩ :=
-    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hc hx
-      (by simpa using hxper 0) hnd (M := M)
+    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hc M hx
+      (by simpa using hxper 0) hnd
   have hslice := hslice₀ (hu.of_le (by norm_num)) hper hJc hJM hfloer
   -- Eventually the loops are `min δ 1`-close to `x`.
   obtain ⟨s₁, hs₁⟩ := eventually_atTop.1
@@ -594,12 +594,9 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
     refine (lintegral_mono_set (Set.prod_mono Icc_subset_Ici_self le_rfl)).trans (hdec.trans ?_)
     exact ENNReal.ofReal_le_ofReal
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
-  have hgint : IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1, e (r, t)) (Icc s (s + h)) := by
-    have h' : Integrable e ((volume.restrict (Icc s (s + h))).prod
-        (volume.restrict (Icc (0 : ℝ) 1))) := by
-      rw [Measure.prod_restrict]
-      rwa [Measure.volume_eq_prod] at hRint
-    exact h'.integral_prod_left
+  have hgint : IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1, e (r, t)) (Icc s (s + h)) :=
+    (ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq (hH.of_le (by norm_num)) hopen
+      hu (by linarith : s ≤ s + h) hR fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0).1
   obtain ⟨σ, hσ, hσle⟩ := exists_le_setAverage (by simpa using hh)
     (by simp) hgint
   rw [setAverage_eq, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left, smul_eq_mul,

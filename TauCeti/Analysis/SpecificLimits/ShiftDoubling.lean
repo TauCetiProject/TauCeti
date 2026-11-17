@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Order.Bounds.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Bounded functions which double under a shift
@@ -24,8 +25,8 @@ increment `A(a + K) - A(a)`, then integrating the control over `[s, s + K]` and 
 shows that `A - a₀` doubles under the shift by `K`, so `A` is the constant `a₀`
 (`TauCeti.eq_of_monotone_of_abs_sub_le_mul`). This is the shape of the action–energy argument
 for Floer trajectories near a nondegenerate orbit, with `A` the action of the loops and `σ` the
-energy of the slices. The averaging step is
-`TauCeti.le_setIntegral_Icc_add_of_le_mul`: a pointwise bound `m ≤ K σ` on `[a, a + K]` gives
+energy of the slices. The averaging step is `TauCeti.le_setIntegral_Icc_add_of_le_mul` from
+`TauCeti.MeasureTheory.Integral.Bochner.Set`: a pointwise bound `m ≤ K σ` on `[a, a + K]` gives
 `m ≤ ∫_a^{a+K} σ`.
 -/
 
@@ -67,16 +68,6 @@ theorem eq_zero_of_two_mul_le_add_of_sub_le_two_mul {g : ℝ → ℝ} {K : ℝ}
   · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (B₁ / g s) one_lt_two
     rw [div_lt_iff₀ hpos] at hn
     linarith [(hfw' n).trans (hB₁ (mem_range_self (s + n * K)))]
-
-/-- If `m ≤ K σ(r)` for every `r ∈ [a, a + K]`, with `K > 0` and `σ` integrable there, then `m` is
-at most the integral of `σ` over `[a, a + K]`: the average of `σ` over the interval is at least
-`m / K`. -/
-theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 0 < K)
-    (hσ : IntegrableOn σ (Icc a (a + K))) (hm : ∀ r ∈ Icc a (a + K), m ≤ K * σ r) :
-    m ≤ ∫ r in Icc a (a + K), σ r := by
-  have h := setIntegral_ge_of_const_le_real measurableSet_Icc (by simp)
-    (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
-  simpa [hK.le, hK.ne'] using h
 
 /-- A monotone bounded function `A` whose distance to `a₀` is controlled by a density `σ`,
 `|A(s) - a₀| ≤ K σ(s)` with `K > 0`, whose integral over `[a, a + K]` is the increment

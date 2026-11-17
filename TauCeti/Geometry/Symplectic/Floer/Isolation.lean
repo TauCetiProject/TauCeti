@@ -62,7 +62,7 @@ open Set Filter Topology MeasureTheory Function intervalIntegral Metric
 namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {c M : ℝ}
+  {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {c : ℝ}
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
 
@@ -121,7 +121,7 @@ vector at time `1`. Let `0 < c` and `M` be tameness constants. Then there is `δ
 theorem exists_pos_forall_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1)
     (hxper : Periodic x 1) (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
-      v = 0) (hc : 0 < c) :
+      v = 0) (hc : 0 < c) (M : ℝ) :
     ∃ δ > 0, ∀ {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V},
       ContDiff ℝ 2 u → (∀ s, Periodic (fun t ↦ u (s, t)) 1) →
       (∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) →
@@ -136,8 +136,7 @@ theorem exists_pos_forall_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H)) (hHper :
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
   obtain ⟨δ₁, hδ₁, K, hK, hslice⟩ :=
-    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity (M := M) hH hc hx hx1
-      hnd
+    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hc M hx hx1 hnd
   obtain ⟨δ₂, hδ₂, C, -, hiso⟩ :=
     exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun {u J} hu hper hJc hJM hfloer hE hclose ↦ ?_⟩
