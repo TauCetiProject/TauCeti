@@ -64,15 +64,19 @@ gluing constructions, with explicit radii.
   dependence is in `TauCeti.Analysis.Calculus.QuadraticCorrection`.
 * **Forcing.** On a common ball of radius `r ≤ δ` with `C L r ≤ 1 / 2`, solutions depend on the
   residual with Lipschitz constant `2 C` (`TauCeti.norm_sub_le_two_mul_mul_norm_sub`). Suppose
-  the residuals satisfy `‖e p‖ ≤ ε` with `2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, and add a forcing
-  term `g p ρ` of size at most `β`, depending on a second parameter `ρ`. Under the tolerance
-  `16 C² L β ≤ 1` and `8 C β ≤ δ`, the radius `2 C (ε + β)` lies below
-  `min (δ / 2) (2 C L)⁻¹` (`TauCeti.two_mul_mul_add_lt_min`), and the forced equations
-  `e p + g p ρ + D p x + N p x = 0` have solutions `x p ρ`. These are continuous in `(p, ρ)`,
-  `2 C`-Lipschitz in the forcing, and unique in the range of `Q p` below that radius
-  (`TauCeti.exists_continuousOn_forall_add_add_add_eq_zero`). This is how a small curvature
-  perturbation `ρ`, added after the unforced correction has been constructed, is absorbed: its
-  admissible size is fixed by the constants of the unforced problem alone.
+  the residuals satisfy `‖e p‖ ≤ ε`, and add a forcing term `g p ρ` of size at most `β`,
+  depending on a second parameter `ρ`, such that `2 C (ε + β) < δ / 2` and
+  `4 C² L (ε + β) < 1`. If moreover `E` is complete and `N p 0 = 0`, the forced equations
+  `e p + g p ρ + D p x + N p x = 0` have solutions `x p ρ` in the range of `Q p`. They are
+  `2 C`-Lipschitz in the forcing, unique in the range of `Q p` among solutions of norm less than
+  `min (δ / 2) (2 C L)⁻¹`, and continuous in `(p, ρ)` as soon as each map
+  `(p, ρ) ↦ Q p (e p + g p ρ + N p z)` with `‖z‖ ≤ 2 C (ε + β)` is
+  (`TauCeti.exists_continuousOn_forall_add_add_add_eq_zero`). For residuals with
+  `2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, the tolerance `16 C² L β ≤ 1` and `8 C β ≤ δ` on the
+  forcing implies both conditions and, when `C` and `L` are positive, puts the radius
+  `2 C (ε + β)` below `min (δ / 2) (2 C L)⁻¹` (`TauCeti.two_mul_mul_add_lt_min`). This is how a
+  small curvature perturbation `ρ`, added after the unforced correction has been constructed, is
+  absorbed: its admissible size is fixed by the constants of the unforced problem alone.
 
 No linearity of `D` and no completeness of `F` is needed; the fixed-point characterization needs
 no norms at all, and the estimates only need seminorms on `E` and `F`. The right inverse `Q` is
@@ -434,11 +438,10 @@ theorem exists_continuous_forall_add_add_eq_zero [CompleteSpace E] (hN0 : ∀ p,
   exact ⟨x, continuous_of_forall_add_add_eq_zero hDQ hQ hN hrδ hr (fun p ↦ (hxn p).trans (he p))
     hxQ hxe hT, fun p ↦ ⟨hxQ p, hxn p, hxe p⟩⟩
 
-/-- **The forced correction.** Let the residuals satisfy `‖e p‖ ≤ ε` with
-`2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, so that the unforced equations `e p + D p x + N p x = 0`
-are solved by `TauCeti.exists_continuous_forall_add_add_eq_zero`. Add a forcing term `g p ρ`,
-depending on a second parameter `ρ ∈ s`, of size `‖g p ρ‖ ≤ β` within the tolerance
-`16 C² L β ≤ 1` and `8 C β ≤ δ`. If `E` is complete and `N p 0 = 0`, the forced equations
+/-- **The forced correction.** Let the residuals satisfy `‖e p‖ ≤ ε`, and add a forcing term
+`g p ρ`, depending on a second parameter `ρ ∈ s`, of size `‖g p ρ‖ ≤ β`, such that
+`2 C (ε + β) < δ / 2` and `4 C² L (ε + β) < 1`. If `E` is complete and `N p 0 = 0`, the forced
+equations
 
 `e p + g p ρ + D p x + N p x = 0`
 
@@ -448,14 +451,15 @@ closed ball of radius `2 C (ε + β)`, and depending on the forcing with Lipschi
 `‖x p ρ - x p ρ'‖ ≤ 2 C ‖g p ρ - g p ρ'‖`. Moreover `x p ρ` is the only solution in the range
 of `Q p` of norm less than `min (δ / 2) (2 C L)⁻¹`.
 
-The tolerance only costs a fixed fraction of the contraction and radius budgets:
-`2 C² L (ε + β) < 3 / 8` and `2 C (ε + β) < δ / 2`. For a forcing `‖g p ρ‖ ≤ B ‖ρ‖` over the
-ball `‖ρ‖ ≤ τ`, take `β = B τ`: the tolerance holds as soon as `τ ≤ (16 C² L (1 + B))⁻¹` and
-`τ ≤ δ / (8 C (1 + B))`. -/
+Both conditions hold when the unforced residuals satisfy `2 C² L ε < 1 / 4` and
+`2 C ε < δ / 4` and the forcing stays within the tolerance `16 C² L β ≤ 1` and `8 C β ≤ δ`: then
+`2 C² L (ε + β) < 3 / 8` and `2 C (ε + β) < δ / 2`, see also `TauCeti.two_mul_mul_add_lt_min`.
+For a forcing `‖g p ρ‖ ≤ B ‖ρ‖` over the ball `‖ρ‖ ≤ τ`, take `β = B τ`: the tolerance holds as
+soon as `τ ≤ (16 C² L (1 + B))⁻¹` and `τ ≤ δ / (8 C (1 + B))`. -/
 theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : ∀ p, N p 0 = 0)
     {V : Type*} [TopologicalSpace V] {s : Set V} {g : ∀ p, V → F p} {ε β : ℝ}
-    (he : ∀ p, ‖e p‖ ≤ ε) (hg : ∀ p, ∀ ρ ∈ s, ‖g p ρ‖ ≤ β) (hε : 2 * C ^ 2 * L * ε < 1 / 4)
-    (hεδ : 2 * C * ε < δ / 4) (hβ : 16 * C ^ 2 * L * β ≤ 1) (hβδ : 8 * C * β ≤ δ)
+    (he : ∀ p, ‖e p‖ ≤ ε) (hg : ∀ p, ∀ ρ ∈ s, ‖g p ρ‖ ≤ β) (hRδ : 2 * C * (ε + β) < δ / 2)
+    (hRL : 4 * C ^ 2 * L * (ε + β) < 1)
     (hT : ∀ z ∈ closedBall (0 : E) (2 * C * (ε + β)),
       ContinuousOn (fun q : P × V ↦ Q q.1 (e q.1 + g q.1 q.2 + N q.1 z)) (univ ×ˢ s)) :
     ∃ x : P → V → E, ContinuousOn (Function.uncurry x) (univ ×ˢ s) ∧
@@ -468,10 +472,9 @@ theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : 
   have hC : (0 : ℝ) ≤ C := C.2
   have hL : (0 : ℝ) ≤ L := L.2
   -- The solutions are constructed in the ball of radius `r = min (2 C (ε + β)) δ`, on which the
-  -- contraction constant `C L r` is below `3 / 8`.
+  -- contraction constant `C L r` is below `1 / 2`.
   set R : ℝ := 2 * C * (ε + β)
-  have hRδ : R < δ / 2 := by nlinarith
-  have hCLR : C * L * R < 3 / 8 := by nlinarith
+  have hCLR : C * L * R < 1 / 2 := by linarith
   set r : ℝ := min R δ
   have hCLr : C * L * r ≤ 1 / 2 := by
     linarith [hCLR, mul_le_mul_of_nonneg_left (min_le_left R δ) (mul_nonneg hC hL)]
@@ -505,10 +508,11 @@ theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : 
     have hyR : ‖y p ρ‖ ≤ R := hnρ.trans ((hbound p ρ hρ).trans (min_le_left R δ))
     -- The uniqueness ball is nonempty, so `C L > 0`.
     have hCL : 0 < 2 * (C : ℝ) * L := inv_pos.1 ((norm_nonneg z).trans_lt (lt_min_iff.1 hz).2)
-    have hC₀ : (0 : ℝ) < C := lt_of_le_of_ne hC fun h ↦ by simp [← h] at hCL
-    have hL₀ : (0 : ℝ) < L := lt_of_le_of_ne hL fun h ↦ by simp [← h] at hCL
-    exact eq_of_add_add_eq_zero_of_lt_min (hDQ p) (hQ p) (hN p) hz
-      (hyR.trans_lt (two_mul_mul_add_lt_min hC₀ hL₀ hε hεδ hβ hβδ)) hzQ hze hQρ heρ
+    have hRγ : R < min (δ / 2) (2 * C * L)⁻¹ := by
+      rw [lt_min_iff, ← one_div, lt_div_iff₀ hCL]
+      exact ⟨hRδ, by linarith⟩
+    exact eq_of_add_add_eq_zero_of_lt_min (hDQ p) (hQ p) (hN p) hz (hyR.trans_lt hRγ) hzQ hze
+      hQρ heρ
   · obtain ⟨hQρ, hnρ, heρ⟩ := hys p ρ hρ
     obtain ⟨hQρ', hnρ', heρ'⟩ := hys p ρ' hρ'
     have h := norm_sub_le_two_mul_mul_norm_sub (hDQ p) (hQ p) (hN p) (min_le_right R δ) hCLr
