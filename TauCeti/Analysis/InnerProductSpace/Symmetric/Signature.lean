@@ -171,7 +171,6 @@ theorem ContinuousLinearMap.nondegenerate_toBilinForm_innerSL_comp_iff {E : Type
 
 /-- The kernel of the continuous bilinear form `⟪T ·, ·⟫` of an operator `T` is the kernel of
 `T`. -/
-@[simp]
 theorem ContinuousLinearMap.ker_innerSL_comp {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] (T : E →L[ℝ] E) :
     (((innerSL ℝ).comp T : E →L[ℝ] E →L[ℝ] ℝ) : E →ₗ[ℝ] E →L[ℝ] ℝ).ker = T.ker := by
