@@ -21,7 +21,7 @@ field. This file shows that for commutative `G` this map is holomorphic.
 Read in the chart at the identity, the real derivative of `exp` at `0` is the identity of `E`,
 which is complex linear; so `exp` is complex differentiable at `0`, for every complex Lie group
 (`TauCeti.hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`). When `G` is commutative, `exp`
-is a homomorphism (`TauCeti.mulInvariantExp_add`), so near any `v` it is
+is a homomorphism (`GroupLieAlgebra.mulInvariantExp_add`), so near any `v` it is
 `w ↦ exp v * exp (w - v)`, a left translate of its germ at `0`, and left translations of `G` are
 holomorphic.
 
@@ -70,7 +70,7 @@ theorem mdifferentiable_mulInvariantExp_complex :
       fun w ↦ mulInvariantExp (v : GroupLieAlgebra 𝓘(ℝ, E) G) *
         mulInvariantExp ((w - v : E) : GroupLieAlgebra 𝓘(ℝ, E) G) :=
     funext fun w ↦ (congrArg (mulInvariantExp (I := 𝓘(ℝ, E)) (G := G))
-      (add_sub_cancel v w).symm).trans (mulInvariantExp_add _ _)
+      (add_sub_cancel v w).symm).trans (GroupLieAlgebra.mulInvariantExp_add _ _)
   have h₁ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E)
       (fun w : E ↦
         mulInvariantExp (I := 𝓘(ℝ, E)) (G := G) ((w - v : E) : GroupLieAlgebra 𝓘(ℝ, E) G)) v := by

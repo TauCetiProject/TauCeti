@@ -30,7 +30,7 @@ its Lie algebra by a lattice.
 ## Main results
 
 * `TauCeti.lieExp_add`: the exponential of a commutative Lie group is a homomorphism.
-* `TauCeti.mulInvariantExp_add`: so is its tangent-space exponential.
+* `GroupLieAlgebra.mulInvariantExp_add`: so is its tangent-space exponential.
 * `TauCeti.lieExpAddMonoidHom`: that homomorphism, bundled.
 * `TauCeti.range_lieExp`: the exponential image is the identity component.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
@@ -85,7 +85,7 @@ theorem lieExp_add (X Y : LeftInvariantDerivation I G) :
 /-- **The tangent-space exponential of a commutative Lie group is a homomorphism** from the
 additive group of the tangent space at the identity. -/
 @[simp]
-theorem mulInvariantExp_add (v w : GroupLieAlgebra I G) :
+theorem _root_.GroupLieAlgebra.mulInvariantExp_add (v w : GroupLieAlgebra I G) :
     mulInvariantExp (v + w) = mulInvariantExp v * mulInvariantExp w := by
   let e := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
     BoundarylessManifold.isInteriorPoint
