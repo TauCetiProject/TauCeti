@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Group.List
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Interval
 public import TauCeti.Data.Finset.Sort
+import TauCeti.Algebra.BigOperators.Group.List
 
 /-!
 # Free cumulants

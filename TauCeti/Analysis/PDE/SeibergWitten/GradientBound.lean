@@ -186,12 +186,8 @@ theorem norm_sq_le_of_isLocalMax (hr : 0 < r) (hK₂ : 0 ≤ K₂) {x₀ : M}
     (hmax : IsLocalMax (fun y ↦ ‖Dα y‖ ^ 2 + (K₂ + 1) * r * ‖α y‖ ^ 2) x₀)
     (hf : (K₂ + 1) * r * (1 - ‖α x₀‖ ^ 2) ≤ ‖Dα x₀‖ ^ 2) :
     ‖Dα x₀‖ ^ 2 ≤ 4 / 3 * (K₁ + K₂ + K₁ * K₂) := by
-  have hcα : ContMDiffAt I 𝓘(ℝ) 2 (((K₂ + 1) * r) • fun y ↦ ‖α y‖ ^ 2) x₀ := by
-    simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hα
-  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax (hDα.add hcα) hmax
-  rw [Manifold.laplaceBeltrami_add_of_contMDiffAt I hDα hcα,
-    Manifold.laplaceBeltrami_smul_of_contMDiffAt I _ hα] at hΔ
-  exact le_of_add_mul_nonpos (by positivity) (by positivity) hr hK₂ hW hB hΔ hf
+  exact le_of_add_mul_nonpos (by positivity) (by positivity) hr hK₂ hW hB
+    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hDα hα hmax) hf
 
 /-- **Taubes's pointwise gradient bound** `|∇_a α|² ≤ C r w₊ + C`, with `w₊ = max (1 - |α|²) 0`.
 On a compact boundaryless Riemannian manifold, suppose `|α|²` and `|∇_a α|²` are `C²` and satisfy

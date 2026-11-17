@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.PingPong
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
+public import Mathlib.GroupTheory.FreeGroup.Basic
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+
+import TauCeti.GroupTheory.FreeGroup.PingPong
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
 # Free groups of countable rank are linear over `ℤ`
@@ -58,7 +61,7 @@ public section
 
 open scoped Pointwise MatrixGroups
 
-open Matrix Matrix.SpecialLinearGroup
+open Matrix.SpecialLinearGroup
 
 namespace TauCeti
 
