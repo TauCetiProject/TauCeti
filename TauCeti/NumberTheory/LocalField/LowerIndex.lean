@@ -58,7 +58,16 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Algebra K M] [ValuativeExtension K M] [Module.Finite K M] [IsGalois K M]
   [IsScalarTower K L M]
 
-omit [IsGalois K M] in
+open scoped Classical in omit [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [ValuativeExtension K L] [Module.Finite K L] [Normal K L] [IsGalois K M] in
+private theorem charpoly_range_restrictScalarsHom (x : 𝒪[M]) :
+    MulSemiringAction.charpoly (AlgEquiv.restrictScalarsHom (S := L) (A := M) K).range x =
+      MulSemiringAction.charpoly (M ≃ₐ[L] M) x := by
+  simpa only [MulSemiringAction.charpoly_eq] using (Fintype.prod_equiv
+    (MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective (S := L) (A := M) K)).toEquiv
+    _ _ fun _ ↦ by simp [Subgroup.smul_def, MonoidHom.ofInjective_apply]).symm
+
+open scoped Classical in omit [Module.Finite K L] [Normal K L] [IsGalois K M] in
 /-- The displacement `σ y - y` of a generator `y` of `𝒪[L]` divides `(σ f)(x)`, where `f` is
 the characteristic polynomial of `x` under `Gal(M/L)`: the coefficients of `f` lie in `𝒪[L]`,
 and `f(x) = 0`. -/
@@ -66,15 +75,16 @@ private theorem smul_sub_dvd_eval_smul_charpoly [IsGalois L M] {y : 𝒪[L]}
     (hy : Algebra.adjoin 𝒪[K] {y} = ⊤) (σ : M ≃ₐ[K] M) (x : 𝒪[M]) :
     σ • algebraMap 𝒪[L] 𝒪[M] y - algebraMap 𝒪[L] 𝒪[M] y ∣
       (σ • MulSemiringAction.charpoly (M ≃ₐ[L] M) x).eval x := by
-  set P := MulSemiringAction.charpoly (M ≃ₐ[L] M) x
-  rw [← sub_zero ((σ • P).eval x), ← MulSemiringAction.eval_charpoly (M ≃ₐ[L] M) x, ← eval_sub,
-    eval_eq_sum_range]
-  refine Finset.dvd_sum fun n _ ↦ Dvd.dvd.mul_right ?_ _
-  obtain ⟨w, hw⟩ := Algebra.IsInvariant.isInvariant (A := 𝒪[L]) (G := M ≃ₐ[L] M) (P.coeff n)
-    (MulSemiringAction.smul_coeff_charpoly x n)
-  rw [coeff_sub, AddMonoidAlgebra.coeff_smul_apply, ← hw, AlgEquiv.smul_algebraMap_integerRing,
-    AlgEquiv.smul_algebraMap_integerRing, ← map_sub, ← map_sub]
-  exact map_dvd _ (smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hy _ w)
+  have _ : IsScalarTower 𝒪[K] 𝒪[L] 𝒪[M] := .of_algebraMap_eq fun r ↦ Subtype.ext <| by
+    simpa only [Valuation.HasExtension.val_algebraMap] using IsScalarTower.algebraMap_apply K L M r
+  rw [← charpoly_range_restrictScalarsHom (K := K) (L := L) x]
+  let f := (IsScalarTower.toAlgHom 𝒪[K] 𝒪[L] 𝒪[M]).codRestrict
+    (FixedPoints.subalgebra 𝒪[K] 𝒪[M] (AlgEquiv.restrictScalarsHom (S := L) (A := M) K).range)
+    fun z ⟨_, τ, hτ⟩ ↦ by simp [Subgroup.smul_def, ← hτ, smul_algebraMap]
+  refine MulSemiringAction.smul_sub_dvd_eval_smul_charpoly (R := 𝒪[K]) _ (y := f y) ?_ σ x
+  rw [← Set.image_singleton, ← AlgHom.map_adjoin, hy, Algebra.map_top, AlgHom.range_eq_top]
+  exact fun ⟨z, hz⟩ ↦ (Algebra.IsInvariant.isInvariant (A := 𝒪[L]) (G := M ≃ₐ[L] M) z fun τ ↦ by
+    simpa [Subgroup.smul_def] using hz ⟨τ.restrictScalars K, τ, rfl⟩).imp fun _ ↦ Subtype.ext
 
 omit [ValuativeExtension K L] [Module.Finite K L] [Normal K L] [IsGalois K M] in
 /-- Conversely `(σ f)(x)` divides `y - σ y`: writing `y = g(x)` with `g` over `𝒪[K]`, the
@@ -83,30 +93,10 @@ private theorem eval_smul_charpoly_dvd_sub_smul {x : 𝒪[M]} (hx : Algebra.adjo
     (y : 𝒪[L]) (σ : M ≃ₐ[K] M) :
     (σ • MulSemiringAction.charpoly (M ≃ₐ[L] M) x).eval x ∣
       algebraMap 𝒪[L] 𝒪[M] y - σ • algebraMap 𝒪[L] 𝒪[M] y := by
-  obtain ⟨q, hq⟩ : ∃ q : 𝒪[K][X], aeval x q = algebraMap 𝒪[L] 𝒪[M] y := by
-    rw [← AlgHom.mem_range, ← Algebra.adjoin_singleton_eq_range_aeval, hx]
-    exact Algebra.mem_top
-  set g := q.map (algebraMap 𝒪[K] 𝒪[M]) - C (algebraMap 𝒪[L] 𝒪[M] y)
-  -- `g` vanishes on the orbit of `x`, since `Gal(M/L)` fixes both `𝒪[K]` and `y`.
-  have hg : ∀ τ : M ≃ₐ[L] M, g.eval (τ • x) = 0 := fun τ ↦ by
-    rw [eval_sub, eval_C, eval_map_algebraMap,
-      ← AlgEquiv.restrictScalars_smul_integerRing (K := K) τ x,
-      Polynomial.aeval_smul, hq, AlgEquiv.restrictScalars_smul_integerRing,
-      smul_algebraMap, sub_self]
-  -- The translates of `x` under `Gal(M/L)` are pairwise distinct, as `x` generates `𝒪[M]`.
-  have hinj : Function.Injective fun τ : M ≃ₐ[L] M ↦ τ • x := by
-    simpa [Function.comp_def] using
-      (smul_left_injective_of_adjoin_singleton_eq_top (G := M ≃ₐ[K] M) hx).comp
-        (AlgEquiv.restrictScalars_injective (R := K) (S := L) (A := M))
-  obtain ⟨h, hh⟩ := MulSemiringAction.charpoly_dvd hinj hg
-  have hσg : σ • g = q.map (algebraMap 𝒪[K] 𝒪[M]) - C (σ • algebraMap 𝒪[L] 𝒪[M] y) := by
-    have hmap : (MulSemiringAction.toRingHom (M ≃ₐ[K] M) 𝒪[M] σ).comp
-        (algebraMap 𝒪[K] 𝒪[M]) = algebraMap 𝒪[K] 𝒪[M] :=
-      RingHom.ext fun r ↦ smul_algebraMap σ r
-    rw [smul_sub, smul_C, smul_eq_map, Polynomial.map_map]
-    rw [hmap]
-  refine ⟨(σ • h).eval x, ?_⟩
-  rw [← eval_mul, ← smul_mul', ← hh, hσg, eval_sub, eval_C, eval_map_algebraMap, hq]
+  classical
+  rw [← charpoly_range_restrictScalarsHom (K := K) (L := L) x]
+  refine MulSemiringAction.eval_smul_charpoly_dvd_sub_smul _ hx ?_ σ
+  rintro ⟨_, τ, hτ⟩; simp [Subgroup.smul_def, ← hτ, smul_algebraMap]
 
 omit [IsGalois K M] in
 /-- **Serre's quotient formula for the lower index**, over a coset. For an intermediate field
