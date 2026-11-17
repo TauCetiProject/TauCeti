@@ -11,7 +11,6 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.LpSeminorm.Count
 
 /-!
@@ -101,44 +100,6 @@ omit [Fact (1 ≤ q)] in
 private theorem inv_weight_smul_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • u.weightedBlocks j = u.block j := by
   rw [u.weightedBlocks_apply, inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (by positivity))]
-
-/-- `J^t Δ'ⱼ` acts on `Lᵖ` with norm `O(2^{jt})`, uniformly in `j` and `p`. -/
-private theorem exists_besselPotential_enlargedLittlewoodPaleyBlock_eq_and_norm_le
-    (φ : ContDiffBump (0 : E)) (L : ℕ) (t : ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
-      ∃ g : Lp F p (volume : Measure E),
-        besselPotential E F t (enlargedLittlewoodPaleyBlock F φ L j (f : 𝓢'(E, F))) = g ∧
-          ‖g‖ ≤ C * 2 ^ (t * j) * ‖f‖ := by
-  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  obtain ⟨C₁, hC₁, hJ⟩ := exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ t
-  set K : ℝ := C₁ * 2 ^ (|t| * L) * max C₀ 0
-  refine ⟨2 * L * K, by positivity, fun {p} _ j f ↦ ?_⟩
-  choose u hu huC using fun m ↦ hC₀ (p := p) m f
-  choose g hg hgC using fun m ↦ hJ (p := p) m (f : 𝓢'(E, F)) (u m) (hu m)
-  refine ⟨∑ m ∈ Finset.Ico (j + 1 - L) (j + L), g m, ?_, ?_⟩
-  · rw [enlargedLittlewoodPaleyBlock_eq_sum_Ico, _root_.sum_apply, map_sum,
-      Lp.toTemperedDistribution_sum]
-    exact Finset.sum_congr rfl fun m _ ↦ hg m
-  · have hgm (m : ℕ) (hm : m ∈ Finset.Ico (j + 1 - L) (j + L)) :
-        ‖g m‖ ≤ K * 2 ^ (t * j) * ‖f‖ := by
-      have hm' : m ∈ Finset.Ico (j - L) (j + L) :=
-        Finset.mem_Ico.2 ⟨by have := (Finset.mem_Ico.1 hm).1; omega, (Finset.mem_Ico.1 hm).2⟩
-      calc ‖g m‖ ≤ C₁ * 2 ^ (t * m) * ‖u m‖ := hgC m
-        _ ≤ C₁ * (2 ^ (|t| * L) * 2 ^ (t * j)) * (max C₀ 0 * ‖f‖) := by
-          gcongr
-          · exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two t hm'
-          · exact (huC m).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg f))
-        _ = K * 2 ^ (t * j) * ‖f‖ := by ring
-    calc ‖∑ m ∈ Finset.Ico (j + 1 - L) (j + L), g m‖
-        ≤ ∑ _ ∈ Finset.Ico (j + 1 - L) (j + L), K * 2 ^ (t * j) * ‖f‖ :=
-          (norm_sum_le _ _).trans (Finset.sum_le_sum hgm)
-      _ = (Finset.Ico (j + 1 - L) (j + L)).card * (K * 2 ^ (t * j) * ‖f‖) := by
-          rw [Finset.sum_const, nsmul_eq_mul]
-      _ ≤ 2 * L * (K * 2 ^ (t * j) * ‖f‖) := by
-          gcongr
-          rw [Nat.card_Ico]
-          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
-      _ = 2 * L * K * 2 ^ (t * j) * ‖f‖ := by ring
 
 /-- **Convergence of the Littlewood–Paley synthesis series in `𝓢'(E, F)`.** For every `b` in
 `ℓ^q(ℕ, Lᵖ)`, the terms `J^{s-1} Δ'ⱼ (2^{-js} bⱼ)` decay geometrically as `O(2^{-j} ‖b‖)` in `Lᵖ`,
