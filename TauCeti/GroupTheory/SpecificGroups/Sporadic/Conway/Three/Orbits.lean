@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Conway.Three.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
+import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Closure
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.Logic.Function.Rigidity
@@ -831,23 +832,6 @@ private theorem word_mem_stabilizerChain_five {w : ℕ}
     Equiv.Perm.smul_def]
   exact ⟨word_mem_stabilizerChain_four h.1, h.2⟩
 
-private theorem orbit_eq_of_invariant_and_words {H : Subgroup (Equiv.Perm (Fin 276))}
-    {u v : Equiv.Perm (Fin 276)} {p : Fin 276} {s : Finset (Fin 276)} {β : Type*}
-    (inv : Fin 276 → β) (ws : List ℕ)
-    (hinv : ∀ g ∈ H, inv (g p) = inv p)
-    (hs : ∀ x : Fin 276, inv x = inv p → x ∈ s)
-    (hws_mem : ∀ w ∈ ws, word u v w ∈ H)
-    (hws_cov : ∀ x ∈ s, x ∈ ws.map fun w ↦ word u v w p) :
-    orbit H p = (s : Set (Fin 276)) := by
-  ext x
-  simp only [Finset.mem_coe]
-  constructor
-  · rintro ⟨g, rfl⟩
-    exact hs _ (hinv g g.2)
-  · intro hx
-    obtain ⟨w, hw, rfl⟩ := List.mem_map.mp (hws_cov x hx)
-    exact mem_orbit_iff.mpr ⟨⟨word u v w, hws_mem w hw⟩, rfl⟩
-
 private def fourthOrbitWords : List ℕ :=
   [1, 437, 118, 226, 463, 227, 100, 246, 63, 61, 460, 236, 26, 507, 24, 123, 409, 50, 58, 30,
     231, 12, 493, 253, 401, 54, 218, 200, 452, 59, 6, 201, 27, 115, 29, 127, 15, 31, 13, 230,
@@ -860,17 +844,23 @@ theorem orbit_stabilizerChain_three :
         108, 113, 115, 117, 122, 123, 130, 143, 152, 161, 167, 170, 173, 181, 182, 192, 195, 199,
         202, 203, 223, 225, 226, 229, 232, 234, 239, 240, 244, 254, 256, 260, 272} :
         Finset (Fin 276)) : Set (Fin 276)) :=
-  orbit_eq_of_invariant_and_words (fun x ↦ (decide (x = 1), adj 1 x, adj 2 x)) fourthOrbitWords
+  orbit_eq_of_invariant_list (fun x ↦ (decide (x = 1), adj 1 x, adj 2 x))
+    (fourthOrbitWords.map (word stabGenA stabGenB))
     (fun g hg ↦ by
+      rw [Equiv.Perm.smul_def]
       have h1 : decide (g 3 = 1) = decide ((3 : Fin 276) = 1) :=
         Bool.decide_congr (by
           simpa only [apply_eq_of_mem_stabilizerChain hg 1 (by decide)] using
             g.injective.eq_iff (a := 3) (b := 1))
       simp only [h1, adj_of_mem_stabilizerChain hg 1 (by decide),
         adj_of_mem_stabilizerChain hg 2 (by decide)])
-    (by decide +kernel)
-    (fun w _ ↦ word_mem stabGenA_mem stabGenB_mem w)
-    (by decide +kernel)
+    (by simp only [Finset.mem_coe]; decide +kernel)
+    (fun g hg ↦ by
+      obtain ⟨w, _, rfl⟩ := List.mem_map.mp hg
+      exact word_mem stabGenA_mem stabGenB_mem w)
+    (by
+      simp only [Finset.mem_coe, List.map_map, Function.comp_def, Equiv.Perm.smul_def]
+      decide +kernel)
 
 /-- The fourth basic orbit has length 56. -/
 @[simp]
@@ -894,13 +884,18 @@ theorem orbit_stabilizerChain_four :
       (({4, 9, 13, 15, 16, 18, 20, 30, 37, 39, 42, 45, 50, 70, 74, 96, 99, 106, 108, 113, 117,
         122, 123, 143, 152, 167, 170, 173, 192, 195, 199, 202, 203, 223, 225, 226, 229, 232, 234,
         239, 240, 244, 256, 260, 272} : Finset (Fin 276)) : Set (Fin 276)) :=
-  orbit_eq_of_invariant_and_words (fun x ↦ (adj 1 x, adj 2 x, adj 3 x)) fifthOrbitWords
+  orbit_eq_of_invariant_list (fun x ↦ (adj 1 x, adj 2 x, adj 3 x))
+    (fifthOrbitWords.map (word stabGenA stabGenB))
     (fun _ hg ↦ by
-      simp only [adj_of_mem_stabilizerChain hg 1 (by decide),
+      simp only [Equiv.Perm.smul_def, adj_of_mem_stabilizerChain hg 1 (by decide),
         adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide)])
-    (by decide +kernel)
-    (fun w hw ↦ word_mem_stabilizerChain_four (fifthOrbitWords_fix w hw))
-    (by decide +kernel)
+    (by simp only [Finset.mem_coe]; decide +kernel)
+    (fun g hg ↦ by
+      obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hg
+      exact word_mem_stabilizerChain_four (fifthOrbitWords_fix w hw))
+    (by
+      simp only [Finset.mem_coe, List.map_map, Function.comp_def, Equiv.Perm.smul_def]
+      decide +kernel)
 
 /-- The fifth basic orbit has length 45. -/
 @[simp]
@@ -938,16 +933,21 @@ theorem orbit_stabilizerChain_five :
     orbit (Co3.stabilizerChain basePoint 5) (5 : Fin 276) =
       (({5, 21, 26, 48, 83, 105, 111, 112, 183, 197, 200, 215, 220, 259, 261, 262} :
         Finset (Fin 276)) : Set (Fin 276)) :=
-  orbit_eq_of_invariant_and_words
-    (fun x ↦ (adj 1 x, adj 2 x, adj 3 x, adj 4 x, commonDegFour x)) sixthOrbitWords
+  orbit_eq_of_invariant_list
+    (fun x ↦ (adj 1 x, adj 2 x, adj 3 x, adj 4 x, commonDegFour x))
+    (sixthOrbitWords.map (word stabGenA stabGenB))
     (fun _ hg ↦ by
-      simp only [adj_of_mem_stabilizerChain hg 1 (by decide),
+      simp only [Equiv.Perm.smul_def, adj_of_mem_stabilizerChain hg 1 (by decide),
         adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide),
         adj_of_mem_stabilizerChain hg 4 (by decide),
         commonDegFour_apply_of_mem_stabilizerChain hg])
-    (by decide +kernel)
-    (fun w hw ↦ word_mem_stabilizerChain_five (sixthOrbitWords_fix w hw))
-    (by decide +kernel)
+    (by simp only [Finset.mem_coe]; decide +kernel)
+    (fun g hg ↦ by
+      obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hg
+      exact word_mem_stabilizerChain_five (sixthOrbitWords_fix w hw))
+    (by
+      simp only [Finset.mem_coe, List.map_map, Function.comp_def, Equiv.Perm.smul_def]
+      decide +kernel)
 
 /-- The sixth basic orbit has length 16. -/
 @[simp]
