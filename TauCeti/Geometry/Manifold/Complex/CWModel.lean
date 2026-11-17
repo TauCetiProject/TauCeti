@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Relative
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Topology.CWComplex.Classical.Finite
 
 /-!
@@ -457,7 +458,7 @@ end TauCeti
 
 namespace Manifold.IsImmersion
 
-open Module OpenPartialHomeomorph Set Topology.RelCWComplex
+open Module Set Topology.RelCWComplex
 
 /-- **CW homotopy model along a proper `C^r` (`r ≠ 0`) holomorphic immersion.** Every Hausdorff
 complex manifold admitting a proper `C^r` (`r ≠ 0`) holomorphic immersion into a proper complex
@@ -472,27 +473,7 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (M ≃ₕ X) ∧
       ∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m) := by
-  -- Every `C^r` immersion carries compatible domain charts in the maximal `C^r` atlas around each
-  -- point, yielding `IsManifold 𝓘(ℂ, E) r M` and hence `IsManifold 𝓘(ℂ, E) 1 M`.
-  have : HasGroupoid M (contDiffGroupoid r 𝓘(ℂ, E)) := ⟨fun {e e'} he he' ↦ by
-    refine (contDiffGroupoid r 𝓘(ℂ, E)).locality fun x hx ↦ ?_
-    have himm := h.isImmersionAt (e.symm x)
-    set f := himm.domChart
-    let s := e.target ∩ e.symm ⁻¹' f.source
-    have hs : IsOpen s :=
-      e.symm.continuousOn_toFun.isOpen_inter_preimage e.open_target f.open_source
-    have xs : x ∈ s := ⟨hx.1, himm.mem_domChart_source⟩
-    have hAB := (contDiffGroupoid r 𝓘(ℂ, E)).trans
-      (himm.domChart_mem_maximalAtlas e he).2 (himm.domChart_mem_maximalAtlas e' he').1
-    have hD : (e.symm ≫ₕ f) ≫ₕ f.symm ≫ₕ e' ≈ (e.symm ≫ₕ e').restr s := calc
-      (e.symm ≫ₕ f) ≫ₕ f.symm ≫ₕ e' = e.symm ≫ₕ (f ≫ₕ f.symm) ≫ₕ e' := by simp only [trans_assoc]
-      _ ≈ e.symm ≫ₕ ofSet f.source f.open_source ≫ₕ e' :=
-        EqOnSource.trans' (refl _) (EqOnSource.trans' (self_trans_symm _) (refl _))
-      _ ≈ (e.symm ≫ₕ ofSet f.source f.open_source) ≫ₕ e' := by rw [trans_assoc]
-      _ ≈ e.symm.restr s ≫ₕ e' := by rw [trans_of_set']; apply refl
-      _ ≈ (e.symm ≫ₕ e').restr s := by rw [restr_trans]
-    exact ⟨s, hs, xs, (contDiffGroupoid r 𝓘(ℂ, E)).mem_of_eqOnSource hAB (Setoid.symm hD)⟩⟩
-  have : IsManifold 𝓘(ℂ, E) r M := IsManifold.mk' 𝓘(ℂ, E) r M
+  have : IsManifold 𝓘(ℂ, E) r M := h.isManifold
   have : IsManifold 𝓘(ℂ, E) 1 M := IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hr)
   exact TauCeti.exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion
     (h.contMDiff.mdifferentiable hr)
