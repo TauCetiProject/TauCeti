@@ -99,6 +99,14 @@ theorem alexanderℤ_rotate_halfTurn (x : GridState n) :
   rw [← G.val_rotate, alexander_eq_intCast, alexander_eq_intCast] at h
   exact_mod_cast h
 
+/-- The half-turn preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
+@[simp]
+theorem bidegree_rotate_halfTurn (x : GridState n) :
+    G.rotate.bidegree x.halfTurn = G.bidegree x := by
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst, val_rotate, GridDiagram.maslovOℤ_rotate_halfTurn]
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_rotate_halfTurn]
+
 end OddComponentGridDiagram
 
 end TauCeti
