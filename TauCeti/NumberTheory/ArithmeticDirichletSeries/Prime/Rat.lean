@@ -17,7 +17,8 @@ The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their
 identifying the norm of `v` with its generator). This file transports a prime summatory function
 over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
 `Nat.primesLE`, so that results stated for the primes of a number field specialize to the
-classical sums over rational primes.
+classical sums over rational primes. In particular the number-field prime count of `ℚ` is the
+classical prime counting function; both cutoffs are inclusive, so at `x = 2` both counts are `1`.
 
 ## Main results
 
@@ -25,6 +26,8 @@ classical sums over rational primes.
   `Nat.primesLE ⌊x⌋₊`.
 * `TauCeti.primeSummatory_rat_eq_sum_primesLE`: for a weight `f : ℕ → M`,
   `∑_{N𝔭 ≤ x} f (N𝔭)` over the primes of `𝓞 ℚ` is `∑_{p ∈ Nat.primesLE ⌊x⌋₊} f p`.
+* `TauCeti.primeCount_rat_univ`: `primeCount ℚ Set.univ x = Nat.primeCounting ⌊x⌋₊` for every real
+  `x`.
 -/
 
 public section
@@ -68,5 +71,13 @@ theorem image_absNorm_primesLE_rat (x : ℝ) :
       have hp2 := hp.two_le
       omega
     exact ⟨v, hv.symm ▸ (Nat.cast_le.mpr hple).trans (Nat.floor_le hx0), hv⟩
+
+/-- The number of primes of `𝓞 ℚ` of absolute norm at most `x` is the number `π(⌊x⌋₊)` of rational
+primes `p ≤ x`. -/
+theorem primeCount_rat_univ (x : ℝ) :
+    primeCount ℚ Set.univ x = Nat.primeCounting ⌊x⌋₊ := by
+  have h := primeSummatory_rat_eq_sum_primesLE (M := ℝ) (fun _ ↦ 1) x
+  rw [primeSummatory_apply] at h
+  simpa [primeCount_apply, Nat.primesLE_card_eq_primeCounting] using h
 
 end TauCeti
