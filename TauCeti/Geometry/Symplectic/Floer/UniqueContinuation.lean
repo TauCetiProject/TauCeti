@@ -47,11 +47,10 @@ field of complex structures `J`, so they also cover operators whose leading part
 The nonlinear Floer equation `∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` has the same
 unique continuation property for pairs of solutions. The difference `w = u - v` of two solutions
 solves no linear equation with a coefficient given in advance, but it satisfies the Cauchy–Riemann
-inequality `‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` near every point
-(`TauCeti.SymplecticForm.exists_eventually_norm_le_of_floerOperator_eq_zero`): at a coincidence
-`u z₀ = v z₀` by the local Lipschitz bounds of `J` and of the Hamiltonian vector fields applied to
-the difference of the two equations (`TauCeti.SymplecticForm.floerOperator_sub_floerOperator`), and
-away from coincidences because `‖w‖` is bounded below. By
+inequality `‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` near every coincidence `u z₀ = v z₀`
+(`TauCeti.SymplecticForm.exists_eventually_norm_le_of_floerOperator_eq_zero`), by the local
+Lipschitz bounds of `J` and of the Hamiltonian vector fields applied to the difference of the two
+equations (`TauCeti.SymplecticForm.floerOperator_sub_floerOperator`). By
 `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.DifferentialInequality`, two `C¹`
 solutions on a connected open set `Ω`:
 
@@ -197,10 +196,13 @@ section Solutions
 
 variable {v : ℝ × ℝ → V}
 
-/-- Near a coincidence `u z₀ = v z₀` of two Floer solutions, the Lipschitz bounds of `J` and of
-the Hamiltonian vector fields near the common value bound the Cauchy–Riemann operator of `u - v`
-by a multiple of `‖u - v‖`. -/
-private theorem exists_eventually_norm_le_of_floerOperator_eq_zero_of_eq (hΩ : IsOpen Ω)
+/-- **The difference of two Floer solutions obeys a Cauchy–Riemann inequality.** Let `J` be `C¹`
+and the Hamiltonians `K_s`, `K_t` be `C²` near the graph of `u` over an open set `Ω ⊆ ℝ × ℝ`, and
+let `u` and `v` be `C¹` solutions of the Floer equation
+`∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` on `Ω`. Near a coincidence `u z₀ = v z₀` in
+`Ω`, the Lipschitz bounds of `J` and of the Hamiltonian vector fields near the common value give
+`‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` for the difference `w = u - v` and some constant `M`. -/
+theorem exists_eventually_norm_le_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
     (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
     (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u Ω)
@@ -260,45 +262,10 @@ private theorem exists_eventually_norm_le_of_floerOperator_eq_zero_of_eq (hΩ : 
         gcongr
     _ = _ := by ring
 
-/-- **The difference of two Floer solutions obeys a Cauchy–Riemann inequality.** Let `J` be `C¹`
-and the Hamiltonians `K_s`, `K_t` be `C²` near the graph of `u` over an open set `Ω ⊆ ℝ × ℝ`, and
-let `u` and `v` be `C¹` solutions of the Floer equation
-`∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` on `Ω`. Near every point of `Ω` their
-difference `w = u - v` satisfies `‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` for some constant `M`. -/
-theorem exists_eventually_norm_le_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
-    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
-    (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u Ω)
-    (hv : ContDiffOn ℝ 1 v Ω) (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
-    (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ Ω) :
-    ∃ M, ∀ᶠ z in 𝓝 z₀, ‖fderiv ℝ (u - v) z stdComplexLineReal +
-      J z (u z) (fderiv ℝ (u - v) z stdComplexLineImag)‖ ≤ M * ‖(u - v) z‖ := by
-  by_cases h : u z₀ = v z₀
-  · exact exists_eventually_norm_le_of_floerOperator_eq_zero_of_eq hΩ hJ hKs hKt hu hv hFu hFv
-      hz₀ h
-  -- Away from a coincidence `‖u - v‖` is bounded below near `z₀`, and the operator is bounded.
-  have hΩz := hΩ.mem_nhds hz₀
-  have hdw := ((hu.sub hv).continuousOn_fderiv_of_isOpen hΩ le_rfl).continuousAt hΩz
-  have hJu : ContinuousAt (fun z ↦ J z (u z)) z₀ := (hJ z₀ hz₀).continuousAt.comp_of_eq
-    (continuousAt_id.prodMk (hu.continuousOn.continuousAt hΩz)) rfl
-  have hD : ContinuousAt (fun z ↦ fderiv ℝ (u - v) z stdComplexLineReal +
-      J z (u z) (fderiv ℝ (u - v) z stdComplexLineImag)) z₀ :=
-    (hdw.clm_apply continuousAt_const).add (hJu.clm_apply (hdw.clm_apply continuousAt_const))
-  have hw : ContinuousAt (fun z ↦ ‖(u - v) z‖) z₀ :=
-    ((hu.continuousOn.continuousAt hΩz).sub (hv.continuousOn.continuousAt hΩz)).norm
-  have hpos : 0 < ‖(u - v) z₀‖ := norm_pos_iff.2 (sub_ne_zero.2 h)
-  refine ⟨(‖fderiv ℝ (u - v) z₀ stdComplexLineReal +
-    J z₀ (u z₀) (fderiv ℝ (u - v) z₀ stdComplexLineImag)‖ + 1) / (‖(u - v) z₀‖ / 2), ?_⟩
-  filter_upwards [hD.norm.eventually (gt_mem_nhds (lt_add_one _)),
-    hw.eventually (lt_mem_nhds (half_lt_self hpos))] with z hDz hwz
-  rw [div_mul_eq_mul_div, le_div_iff₀ (half_pos hpos)]
-  nlinarith [norm_nonneg (fderiv ℝ (u - v) z stdComplexLineReal +
-    J z (u z) (fderiv ℝ (u - v) z stdComplexLineImag))]
-
 /-- In the complex coordinate `z = Complex.equivRealProdCLM w`, the difference of two Floer
 solutions on a connected open set `Ω` obeys the Cauchy–Riemann inequality for the structure
-`J(z, u z)` on the connected open set `e ⁻¹' Ω`, with the regularity the unique continuation
-theorems for differential inequalities ask for. -/
+`J(z, u z)` near its zeros in the connected open set `e ⁻¹' Ω`, with the regularity the unique
+continuation theorems for differential inequalities ask for. -/
 private theorem floerOperator_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω)
     (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
@@ -310,14 +277,14 @@ private theorem floerOperator_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
     IsOpen (e ⁻¹' Ω) ∧ IsPreconnected (e ⁻¹' Ω) ∧
       ContDiffOn ℝ 1 (fun w ↦ J (e w) (u (e w))) (e ⁻¹' Ω) ∧
       ContDiffOn ℝ 1 ((u - v) ∘ e) (e ⁻¹' Ω) ∧
-      ∀ w ∈ e ⁻¹' Ω, ∃ M, ∀ᶠ w' in 𝓝 w, ‖fderiv ℝ ((u - v) ∘ e) w' 1 +
+      ∀ w ∈ e ⁻¹' Ω, ((u - v) ∘ e) w = 0 → ∃ M, ∀ᶠ w' in 𝓝 w, ‖fderiv ℝ ((u - v) ∘ e) w' 1 +
         J (e w') (u (e w')) (fderiv ℝ ((u - v) ∘ e) w' I)‖ ≤ M * ‖((u - v) ∘ e) w'‖ := by
   intro e
   refine ⟨hΩ.preimage e.continuous, (e.toHomeomorph.isPreconnected_preimage).2 hΩc,
     contDiffOn_comp_equivRealProdCLM hΩ hJ hu,
-    (hu.sub hv).comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ), fun w hw ↦ ?_⟩
-  obtain ⟨M, hM⟩ :=
-    exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hJ hKs hKt hu hv hFu hFv hw
+    (hu.sub hv).comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ), fun w hw h ↦ ?_⟩
+  obtain ⟨M, hM⟩ := exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hJ hKs hKt hu hv hFu
+    hFv hw (sub_eq_zero.1 h)
   refine ⟨M, (e.continuous.tendsto w).eventually hM |>.mono fun w' hw' ↦ ?_⟩
   rwa [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, comp_apply]
 

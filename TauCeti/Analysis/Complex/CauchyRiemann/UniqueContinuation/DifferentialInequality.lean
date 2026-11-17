@@ -18,12 +18,13 @@ satisfying the differential inequality
 
 `‖∂ₛξ + J(z) ∂ₜξ‖ ≤ M ‖ξ‖`
 
-near every point of `Ω`, in the coordinate `z = s + i t`, with a constant `M` that may depend on
-the point. This is the shape of the equation satisfied by the difference of two solutions of a
-nonlinear Cauchy–Riemann equation, such as two pseudoholomorphic curves or two Floer solutions:
-the nonlinear terms are only locally Lipschitz, so the difference solves no linear equation with a
-prescribed coefficient, but it obeys such an inequality. This file proves that `ξ` has the zero
-structure of a holomorphic map:
+near every zero of `ξ` in `Ω`, in the coordinate `z = s + i t`, with a constant `M` that may
+depend on the zero. Away from the zeros of `ξ` the inequality holds automatically, because `‖ξ‖`
+is bounded below there, so it is not assumed. This is the shape of the equation satisfied by the
+difference of two solutions of a nonlinear Cauchy–Riemann equation, such as two pseudoholomorphic
+curves or two Floer solutions: the nonlinear terms are only locally Lipschitz, so the difference
+solves no linear equation with a prescribed coefficient, but it obeys such an inequality near its
+zeros. This file proves that `ξ` has the zero structure of a holomorphic map:
 
 * it vanishes on a connected open `Ω` if it vanishes on a nonempty open subset of `Ω`
   (`TauCeti.eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le`);
@@ -58,11 +59,13 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ω : Set ℂ} {J : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
 
-/-- A `C¹` map obeying the differential inequality solves a linear Cauchy–Riemann equation with a
-measurable, locally bounded coefficient: the regularity the variable-structure theorems ask for. -/
+/-- A `C¹` map obeying the differential inequality near its zeros solves a linear Cauchy–Riemann
+equation with a measurable, locally bounded coefficient: the regularity the variable-structure
+theorems ask for. -/
 private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J Ω)
     (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖) :
+    (hb : ∀ z ∈ Ω, ξ z = 0 →
+      ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖) :
     ∃ C : ℂ → V →L[ℝ] V, AEStronglyMeasurable C (volume.restrict Ω) ∧
       (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) ∧
       ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0 := by
@@ -75,6 +78,13 @@ private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J �
   have hDc : ContinuousOn D Ω := by
     have hdξ := hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl
     exact (hdξ.clm_apply continuousOn_const).add (hJ.clm_apply (hdξ.clm_apply continuousOn_const))
+  -- Away from the zeros of `ξ` the inequality holds automatically, since `‖ξ‖` is bounded below.
+  replace hb (z) (hz : z ∈ Ω) : ∃ M, ∀ᶠ w in 𝓝 z, ‖D w‖ ≤ M * ‖ξ w‖ := by
+    rcases eq_or_ne (ξ z) 0 with h0 | h0
+    · exact hb z hz h0
+    have hz' := hΩ.mem_nhds hz
+    exact isBigO_iff.1 <| (hDc.continuousAt hz').isBigO (F := ℝ) |>.trans
+      ((hξ.continuousOn.continuousAt hz').isTheta (F := ℝ) h0).symm.isBigO
   refine ⟨fun w ↦ c.symm (rankOneDivNormSq ℝ (-T (D w)) (T (ξ w))), ?_, fun z hz ↦ ?_,
     fun z hz ↦ ?_⟩
   · exact c.symm.continuous.comp_aestronglyMeasurable <|
@@ -112,12 +122,13 @@ private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J �
 
 /-- **Unique continuation for a Cauchy–Riemann differential inequality.** On a connected open set
 `Ω`, a `C¹` map `ξ` into a finite-dimensional real normed space with
-`‖∂ₛξ + J ∂ₜξ‖ ≤ M ‖ξ‖` near every point of `Ω`, for a `C¹` field `J` of complex structures,
-`J(z)² = -1`, that vanishes on a nonempty open subset of `Ω` vanishes on `Ω`. -/
+`‖∂ₛξ + J ∂ₜξ‖ ≤ M ‖ξ‖` near every zero of `ξ` in `Ω`, for a `C¹` field `J` of complex
+structures, `J(z)² = -1`, that vanishes on a nonempty open subset of `Ω` vanishes on `Ω`. -/
 theorem eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hJ : ContDiffOn ℝ 1 J Ω)
     (hJJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
+    (hb : ∀ z ∈ Ω, ξ z = 0 →
+      ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
     {U : Set ℂ} (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) :
     EqOn ξ 0 Ω := by
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ.continuousOn hξ hb
@@ -126,12 +137,14 @@ theorem eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le (hΩ : IsOpen Ω)
 
 /-- **Unique continuation from a zero of infinite order for a Cauchy–Riemann differential
 inequality.** On a connected open set `Ω`, a `C¹` map `ξ` into a finite-dimensional real normed
-space with `‖∂ₛξ + J ∂ₜξ‖ ≤ M ‖ξ‖` near every point of `Ω`, for a `C¹` field `J` of complex
-structures, `J(z)² = -1`, that vanishes to infinite order at one point of `Ω` vanishes on `Ω`. -/
+space with `‖∂ₛξ + J ∂ₜξ‖ ≤ M ‖ξ‖` near every zero of `ξ` in `Ω`, for a `C¹` field `J` of
+complex structures, `J(z)² = -1`, that vanishes to infinite order at one point of `Ω` vanishes
+on `Ω`. -/
 theorem eqOn_zero_of_contDiffOn_of_forall_isBigO_of_norm_le (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hJ : ContDiffOn ℝ 1 J Ω)
     (hJJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
+    (hb : ∀ z ∈ Ω, ξ z = 0 →
+      ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
     {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n) :
     EqOn ξ 0 Ω := by
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ.continuousOn hξ hb
@@ -140,12 +153,13 @@ theorem eqOn_zero_of_contDiffOn_of_forall_isBigO_of_norm_le (hΩ : IsOpen Ω)
 
 /-- **Isolated zeros for a Cauchy–Riemann differential inequality.** On a connected open set `Ω`,
 the zeros of a `C¹` map `ξ` into a finite-dimensional real normed space with
-`‖∂ₛξ + J ∂ₜξ‖ ≤ M ‖ξ‖` near every point of `Ω`, for a `C¹` field `J` of complex structures,
-`J(z)² = -1`, that is not identically zero on `Ω` form a discrete subset of `Ω`. -/
+`‖∂ₛξ + J ∂ₜξ‖ ≤ M ‖ξ‖` near every zero of `ξ` in `Ω`, for a `C¹` field `J` of complex
+structures, `J(z)² = -1`, that is not identically zero on `Ω` form a discrete subset of `Ω`. -/
 theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_le (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hJ : ContDiffOn ℝ 1 J Ω)
     (hJJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hξ : ContDiffOn ℝ 1 ξ Ω)
-    (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
+    (hb : ∀ z ∈ Ω, ξ z = 0 →
+      ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
     (hne : ∃ z ∈ Ω, ξ z ≠ 0) : {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ.continuousOn hξ hb
   exact setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ hΩc hJ hJJ hξ
