@@ -30,6 +30,8 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
 * `SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`: composition of a homotopy with a map.
 * `SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`: homotopies correspond under the tensor-hom
   adjunction.
+* `SSet.Homotopy.ulift`, `SSet.Homotopy.ofUlift`, `SSet.Homotopy.uliftEquiv`: homotopies
+  transport bijectively along `SSet.uliftFunctor`.
 * `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
   maps `X ⟶ Z` (`SSet.ihomObj₀Equiv`, from
   `TauCeti/AlgebraicTopology/SimplicialSet/InternalHom.lean`), and its edges between two such
@@ -65,7 +67,7 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory Opposite
 
 open scoped Simplicial
 
-universe w
+universe w w'
 
 namespace SSet
 
@@ -203,6 +205,110 @@ noncomputable def uncurry {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.
 @[simp]
 lemma uncurry_h {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.Homotopy f g) :
     H.uncurry.h = (α_ A X Δ[1]).hom ≫ MonoidalClosed.uncurry H.h :=
+  (rfl)
+
+/-- Lifting a simplicial homotopy along `SSet.uliftFunctor`. -/
+@[no_expose]
+noncomputable def ulift (H : SSet.Homotopy f g) :
+    SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g) :=
+  mk'
+    { app m := ↾fun p ↦ ULift.up
+        (H.h.app m ⟨p.1.down, stdSimplex.objEquiv.{w}.symm (stdSimplex.objEquiv p.2)⟩)
+      naturality m _ α := by
+        ext ⟨⟨x⟩, t⟩
+        apply ULift.ext
+        dsimp
+        exact NatTrans.naturality_apply H.h α
+          (⟨x, stdSimplex.objEquiv.{w}.symm (stdSimplex.objEquiv t)⟩ :
+            (X ⊗ Δ[1]).obj m) }
+    (by
+      ext m ⟨x⟩
+      exact ULift.ext congr($(H.h₀).app m x))
+    (by
+      ext m ⟨x⟩
+      exact ULift.ext congr($(H.h₁).app m x))
+
+/-- On simplices, lifting a homotopy along `SSet.uliftFunctor` evaluates the original homotopy
+after unwrapping `ULift` and reindexing the `Δ[1]` coordinate. -/
+@[simp]
+lemma ulift_h_app_apply (H : SSet.Homotopy f g) (m : SimplexCategoryᵒᵖ)
+    (p : (uliftFunctor.{w', w}.obj X).obj m ⊗ (Δ[1] : SSet.{max w w'}).obj m) :
+    dsimp% H.ulift.{w, w'}.h.app m p =
+      ULift.up (H.h.app m ⟨p.1.down, stdSimplex.objEquiv.{w}.symm (stdSimplex.objEquiv p.2)⟩) :=
+  (rfl)
+
+/-- Lowering a simplicial homotopy along `SSet.uliftFunctor`. -/
+@[no_expose]
+noncomputable def ofUlift
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g)) :
+    SSet.Homotopy f g :=
+  mk'
+    { app m := ↾fun p ↦
+        (H.h.app m ⟨ULift.up p.1,
+          stdSimplex.objEquiv.{max w w'}.symm (stdSimplex.objEquiv p.2)⟩).down
+      naturality m _ α := by
+        ext ⟨x, t⟩
+        exact congrArg ULift.down (NatTrans.naturality_apply H.h α
+          (⟨ULift.up x, stdSimplex.objEquiv.{max w w'}.symm (stdSimplex.objEquiv t)⟩ :
+            (uliftFunctor.{w', w}.obj X ⊗ Δ[1]).obj m)) }
+    (by
+      ext m x
+      exact congrArg ULift.down congr($(H.h₀).app m (ULift.up x)))
+    (by
+      ext m x
+      exact congrArg ULift.down congr($(H.h₁).app m (ULift.up x)))
+
+/-- On simplices, lowering a homotopy along `SSet.uliftFunctor` evaluates the lifted homotopy on
+the wrapped simplex and unwraps `ULift`. -/
+@[simp]
+lemma ofUlift_h_app_apply
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g))
+    (m : SimplexCategoryᵒᵖ) (p : X.obj m ⊗ (Δ[1] : SSet.{w}).obj m) :
+    dsimp% H.ofUlift.h.app m p =
+      (H.h.app m ⟨ULift.up p.1,
+        stdSimplex.objEquiv.{max w w'}.symm (stdSimplex.objEquiv p.2)⟩).down :=
+  (rfl)
+
+/-- Lowering a lifted simplicial homotopy recovers the original homotopy. -/
+@[simp]
+lemma ofUlift_ulift (H : SSet.Homotopy f g) : H.ulift.{w, w'}.ofUlift = H := by
+  apply RelativeMorphism.Homotopy.ext
+  ext m p
+  exact (ofUlift_h_app_apply H.ulift.{w, w'} m p).trans <|
+    (congrArg ULift.down (ulift_h_app_apply.{w, w'} H m _)).trans (by simp; rfl)
+
+/-- Lifting a lowered simplicial homotopy recovers the lifted homotopy. -/
+@[simp]
+lemma ulift_ofUlift
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g)) :
+    H.ofUlift.ulift = H := by
+  apply RelativeMorphism.Homotopy.ext
+  ext m p
+  exact (ulift_h_app_apply H.ofUlift m p).trans <|
+    (congrArg ULift.up (ofUlift_h_app_apply H m _)).trans (by simp; rfl)
+
+/-- Simplicial homotopies between maps correspond bijectively to simplicial homotopies between
+their universe lifts along `SSet.uliftFunctor`. -/
+@[no_expose]
+noncomputable def uliftEquiv :
+    SSet.Homotopy f g ≃
+      SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g) where
+  toFun := ulift
+  invFun := ofUlift
+  left_inv := ofUlift_ulift
+  right_inv := ulift_ofUlift
+
+/-- Applying `SSet.Homotopy.uliftEquiv` lifts a homotopy along `SSet.uliftFunctor`. -/
+@[simp]
+lemma uliftEquiv_apply (H : SSet.Homotopy f g) :
+    uliftEquiv.{w, w'} H = H.ulift.{w, w'} :=
+  (rfl)
+
+/-- Applying `SSet.Homotopy.uliftEquiv.symm` lowers a homotopy along `SSet.uliftFunctor`. -/
+@[simp]
+lemma uliftEquiv_symm_apply
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g)) :
+    uliftEquiv.{w, w'}.symm H = H.ofUlift :=
   (rfl)
 
 /-- The combinatorial homotopy extracted from a simplicial homotopy sends an `n`-simplex `x` to
