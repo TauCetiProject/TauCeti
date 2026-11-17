@@ -510,12 +510,12 @@ theorem norm_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
 
 /-- The weighted block norms `2^{js} ‖Δⱼ u‖_p` of `u ∈ B^s_{p,q}`, as an element of `ℓ^q`. -/
 def weightedBlockNorms (u : BesovSpace F φ s p q) : lp (fun _ : ℕ ↦ ℝ) q :=
-  ⟨fun j ↦ ‖u.weightedBlocks j‖, (lp.memℓp _).norm⟩
+  lp.normSeq u.weightedBlocks
 
 @[simp]
 theorem weightedBlockNorms_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     u.weightedBlockNorms j = 2 ^ (s * j) * ‖u.block j‖ :=
-  norm_weightedBlocks_apply u j
+  (lp.normSeq_apply _ j).trans (norm_weightedBlocks_apply u j)
 
 @[simp]
 theorem block_zero (j : ℕ) : (0 : BesovSpace F φ s p q).block j = 0 := by
@@ -591,10 +591,7 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
 /-- The `ℓ^q` norm of the weighted block norms of `u` is the Besov norm of `u`. -/
 @[simp]
 theorem norm_weightedBlockNorms (u : BesovSpace F φ s p q) : ‖u.weightedBlockNorms‖ = ‖u‖ := by
-  have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  rw [← norm_weightedBlocks]
-  exact le_antisymm (lp.norm_mono hq fun j ↦ (norm_norm _).le)
-    (lp.norm_mono hq fun j ↦ (norm_norm (u.weightedBlocks j)).ge)
+  rw [weightedBlockNorms, lp.norm_normSeq, norm_weightedBlocks]
 
 /-- **The single-block bound, unweighted:** `‖Δⱼ u‖_p ≤ (2^{-s})^j ‖u‖`. -/
 theorem norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
