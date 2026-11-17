@@ -59,7 +59,10 @@ restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` an
 (`TauCeti.SmoothTwoForm.IsSymplectic.eq_hamiltonianFlowAction`). The action is jointly smooth
 (`TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry`), and the orbit map
 `v ↦ v • x` has derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)`
-(`TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`). More generally, for maps
+(`TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`). Along a line, the action
+is a single Hamiltonian flow: `t • v` acts by the time-`t` map of the flow of `∑ i, vᵢ Fᵢ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_smul_apply_eq_globalFlow`), whose
+Hamiltonian vector field is therefore complete. More generally, for maps
 `h : N → (ι → ℝ)` and `g : N → M` the map `n ↦ h n • g n` pulls `σ` back to
 `g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`), since each `h n`
@@ -101,6 +104,8 @@ connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry` and
   `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`: the action is jointly
   smooth, and the derivative of an orbit map is spanned by the Hamiltonian vector fields.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_smul_apply_eq_globalFlow`: the vector
+  `t • v` acts by the time-`t` map of the flow of `∑ i, vᵢ Fᵢ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_comp` and
   `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`: the derivative of
   a map `n ↦ h n • g n`, and its pullback `(h • g)^* σ = g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`.
@@ -667,6 +672,60 @@ theorem mfderiv_hamiltonianFlowAction_apply (x : M) (v w : ι → ℝ) :
   rw [show Pi.single i (w i) = w i • Pi.single i (1 : ℝ) by
     rw [← Pi.single_smul', smul_eq_mul, mul_one], map_smul]
   exact congrArg (w i • ·) (hax i)
+
+/-- **The Hamiltonian flow action along a line is a Hamiltonian flow.** For `v : ι → ℝ`, the curve
+`t ↦ (t • v) • x` is an integral curve of the Hamiltonian vector field of `∑ i, vᵢ Fᵢ`, since its
+velocity is `∑ i, vᵢ X_{Fᵢ}`. -/
+theorem isMIntegralCurve_hamiltonianFlowAction_smul_apply (v : ι → ℝ) (x : M) :
+    IsMIntegralCurve (fun t : ℝ ↦ (hσ.hamiltonianFlowAction hF hcomm hc (t • v)).toMul x)
+      (σ.hamiltonianVectorField fun y ↦ ∑ i, v i * F y i) := by
+  intro t
+  set o : (ι → ℝ) → M := fun w ↦ (hσ.hamiltonianFlowAction hF hcomm hc w).toMul x
+  have hd : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I o (t • v) :=
+    (hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).mdifferentiableAt (by simp)
+  have hl : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ι → ℝ) (fun s : ℝ ↦ s • v) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight v) :=
+    ((hasFDerivAt_id t).smul_const v).hasMFDerivAt
+  have hfield (y : M) : σ.hamiltonianVectorField (fun y ↦ ∑ i, v i * F y i) y =
+      ∑ i, v i • σ.hamiltonianVectorField (F · i) y := by
+    have hFi (i : ι) : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ v i * F y i) y :=
+      ((contMDiff_pi_module_iff.1 hF i).mdifferentiableAt (by simp)).const_smul (v i)
+    rw [hamiltonianVectorField_fun_sum fun i _ ↦ hFi i]
+    exact Finset.sum_congr rfl fun i _ ↦ hamiltonianVectorField_const_smul (f := (F · i)) (v i) y
+  refine (hd.hasMFDerivAt.comp t hl).congr_mfderiv ?_
+  ext1
+  rw [hfield]
+  -- Both sides are vectors of `E` evaluated at `1 : ℝ`; `change` unfolds the composite with the
+  -- velocity of `s ↦ s • v`, which `simp` does not see through the tangent-space synonyms.
+  change mfderiv 𝓘(ℝ, ι → ℝ) I o (t • v) ((1 : ℝ) • v) =
+    (1 : ℝ) • (∑ i, v i • σ.hamiltonianVectorField (F · i) (o (t • v)) : E)
+  rw [one_smul, one_smul]
+  exact hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v
+
+include hF hcomm hc in
+/-- The Hamiltonian vector field of a linear combination `∑ i, vᵢ Fᵢ` of the functions is complete:
+the Hamiltonian flow action along the line through `v` supplies its integral curves. -/
+theorem isCompleteVectorField_hamiltonianVectorField_sum (v : ι → ℝ) :
+    IsCompleteVectorField (σ.hamiltonianVectorField fun y ↦ ∑ i, v i * F y i) :=
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun x ↦
+    ⟨_, by simp only [zero_smul, hσ.hamiltonianFlowAction_zero_apply hF hcomm hc],
+      hσ.isMIntegralCurve_hamiltonianFlowAction_smul_apply hF hcomm hc v x⟩
+
+include hF hcomm hc in
+/-- **The Hamiltonian flow action is the flow of the linear combination.** The vector `t • v` acts
+by the time-`t` map of the flow of `∑ i, vᵢ Fᵢ`; in particular `v` acts by its time-one map. -/
+theorem hamiltonianFlowAction_smul_apply_eq_globalFlow (v : ι → ℝ)
+    (hv : ContMDiff I I.tangent 1 fun y ↦
+      (⟨y, σ.hamiltonianVectorField (fun y ↦ ∑ i, v i * F y i) y⟩ : TangentBundle I M))
+    (hcv : IsCompleteVectorField (σ.hamiltonianVectorField fun y ↦ ∑ i, v i * F y i))
+    (t : ℝ) (x : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc (t • v)).toMul x =
+      globalFlow (σ.hamiltonianVectorField fun y ↦ ∑ i, v i * F y i) hv hcv t x :=
+  congrFun (isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0) hv
+    (hσ.isMIntegralCurve_hamiltonianFlowAction_smul_apply hF hcomm hc v x)
+    (isMIntegralCurve_globalFlow hv hcv x) (by
+      simp only [zero_smul, hσ.hamiltonianFlowAction_zero_apply hF hcomm hc, Flow.map_zero_apply]))
+    t
 
 /-! ### Moving a map by the Hamiltonian flow action -/
 

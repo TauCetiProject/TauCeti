@@ -41,6 +41,10 @@ from a neighbourhood of a maximum point to the whole domain.
 In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
 the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
 open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
+
+Similarly, a preconnected fibre of a continuous map `π` into a `T₁` space is the connected
+component of each of its points in the corresponding level of `κ ∘ π`, whenever `κ` is injective
+near the image point (`IsPreconnected.connectedComponentIn_preimage_comp_eq`).
 -/
 
 public section
@@ -139,6 +143,28 @@ theorem connectedComponentIn_eq_singleton [T1Space α] {s : Set α} {x : α} (hx
   exact hyx (hUx y hyU (connectedComponentIn_subset _ _ hy))
 
 end TauCeti
+
+/-- **A preconnected fibre is a connected component of a level of a pulled-back function.** If
+the fibre of a continuous map `π` through `x` is preconnected and `κ` is injective on an open
+neighbourhood of `π x`, then the connected component of `x` in its level of `κ ∘ π` is that
+fibre. -/
+theorem IsPreconnected.connectedComponentIn_preimage_comp_eq {β γ : Type*} [TopologicalSpace β]
+    [T1Space β] {π : α → β} {κ : β → γ} {W : Set β} {x : α}
+    (hfib : IsPreconnected (π ⁻¹' {π x})) (hπ : Continuous π) (hW : IsOpen W) (hxW : π x ∈ W)
+    (hκ : InjOn κ W) :
+    _root_.connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x = π ⁻¹' {π x} := by
+  refine Subset.antisymm (fun z hz ↦ ?_)
+    (hfib.subset_connectedComponentIn (by simp) fun y hy ↦ ?_)
+  · -- Otherwise the component meets both open sets `π ⁻¹' W ∋ x` and `π ⁻¹' {π x}ᶜ ∋ z`, which
+    -- cover it, so it meets their intersection; but there `κ ∘ π` differs from its value at `x`.
+    by_contra hzx
+    obtain ⟨y, hy, hyW, hyx⟩ := isPreconnected_connectedComponentIn (π ⁻¹' W) (π ⁻¹' {π x}ᶜ)
+      (hW.preimage hπ) (isOpen_compl_singleton.preimage hπ)
+      (fun y _ ↦ (eq_or_ne (π y) (π x)).elim (fun hyx ↦ Or.inl (mem_preimage.2 (hyx ▸ hxW))) Or.inr)
+      ⟨x, mem_connectedComponentIn (by simp), hxW⟩ ⟨z, hz, hzx⟩
+    exact hyx (hκ hyW hxW (connectedComponentIn_subset _ _ hy))
+  · simp only [mem_preimage, mem_singleton_iff] at hy
+    simp [hy]
 
 /-- A function tending to a finite subset `S` of a Hausdorff space along a nontrivial filter `l`
 tends to a single point of `S`, provided every set of `l` contains a set of `l` with preconnected
