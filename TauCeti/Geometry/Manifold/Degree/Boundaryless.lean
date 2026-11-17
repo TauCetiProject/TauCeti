@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Orientation.LinearEquiv
 /-!
 # Invariance of smooth mapping degree under source model changes
 
-Both orthogonal changes of source model coordinates on a `C¹` manifold `(M, I)` preserve the
+Both independent changes of source model coordinates on a `C¹` manifold `(M, I)` preserve the
 smooth degree counts `TauCeti.degreeAtRegularValue` and `TauCeti.degree` of any map `f : M → N`
 into an oriented `C¹` manifold `(N, J)`:
 

@@ -41,7 +41,8 @@ Proposition 6.34 of Barraud–Damian–Humilière–Oancea (whose conclusion is 
 for odd `n ≥ 3` via Proposition 6.33): every odd-dimensional sphere `Sⁿ` (including `S¹`, `S³`,
 `S⁵`, …) is `2`-covered by `C^k` diffeomorphisms at every base point, for every homological
 orientation and every smoothness `k : ℕ∞ω`
-(`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_of_odd`,
+(`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_two_of_even`,
+`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_of_odd`,
 `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_euclideanSphere_of_odd`), without
 assuming that `π_{n-1}(SO(n))` is torsion.
 
@@ -66,7 +67,8 @@ assuming that `π_{n-1}(SO(n))` is torsion.
   path component of `Diff^k(Sⁿ)`.
 * `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow`: `Sᵐ⁺¹` is
   `(1 + (-1) ^ m)`-covered by `C^k` diffeomorphisms.
-* `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_of_odd`,
+* `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_two_of_even`,
+  `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_of_odd`,
   `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_euclideanSphere_of_odd`: every
   odd-dimensional sphere `Sⁿ` is `2`-covered by `C^k` diffeomorphisms.
 * `TauCeti.HomologicalOrientation.exists_isCoveredByDiffeomorphisms_sphere_of_odd`,
@@ -278,6 +280,21 @@ theorem isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow
   simpa only [sphereRotationDiff_apply_self,
     oE.degreeAtRegularValue_sphereRotationFamily x₀ hqp hqp'] using hcov
 
+/-- **Odd spheres are `2`-covered by diffeomorphisms** (the covering step in the second proof of
+Proposition 6.34 of Barraud–Damian–Humilière–Oancea). For even `m`, the odd-dimensional sphere
+`Sᵐ⁺¹` is `2`-covered by diffeomorphisms, at every base point, for every orientation and every
+smoothness exponent. -/
+theorem isCoveredByDiffeomorphisms_sphere_two_of_even
+    {F : Type} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {m : ℕ}
+    [Fact (finrank ℝ F = m + 1 + 1)]
+    (o : HomologicalOrientation (sphere (0 : F) 1) (EuclideanSpace ℝ (Fin (m + 1))) (m + 1))
+    (hm : Even m) (k : ℕ∞ω) (x₀ : sphere (0 : F) 1) :
+    o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ 2 := by
+  have h := o.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow k x₀
+  rw [hm.neg_one_pow] at h
+  norm_num at h
+  exact h
+
 /-- **Odd-dimensional spheres are `2`-covered by diffeomorphisms** (the covering step in the second
 proof of Proposition 6.34 of Barraud–Damian–Humilière–Oancea). Whenever `n` is odd, the
 `n`-dimensional unit sphere `Sⁿ` of `E` is `2`-covered by `C^k` diffeomorphisms at every base point
@@ -290,10 +307,7 @@ theorem isCoveredByDiffeomorphisms_sphere_of_odd
     (k : ℕ∞ω) (x₀ : sphere (0 : E) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ 2 := by
   obtain ⟨j, rfl⟩ := hn
-  have h := o.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow k x₀
-  rw [(even_two_mul j).neg_one_pow] at h
-  norm_num at h
-  exact h
+  exact o.isCoveredByDiffeomorphisms_sphere_two_of_even (even_two_mul j) k x₀
 
 /-- **Odd-dimensional spheres are `ℓ`-covered by diffeomorphisms for some `ℓ > 0`** (via `ℓ = 2`,
 the covering input to Proposition 6.33 in the second proof of Proposition 6.34 of
