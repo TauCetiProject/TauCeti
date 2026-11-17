@@ -147,16 +147,13 @@ theorem preglueComposition_realChart_plumbingMap (hq : q ≠ inf) (hR : 0 ≤ R)
     rw [Complex.equivRealProdCLM_symm_realChart, endCoord_plumbingMap q _ hw]
   -- The point lies beyond the neck of the end `q`, where the pre-glued map is the translate of
   -- the cylinder `u' ∘ φ_∞`, evaluated at the end coordinate `ζ` of `w` at `∞`.
-  have hpt : ((ζ + ((2 * R : ℝ) : ℂ)).re - R, (ζ + ((2 * R : ℝ) : ℂ)).im) - (R, 0) =
+  have hpt : ((ζ + ((2 * R : ℝ) : ℂ)).re - 2 * R, (ζ + ((2 * R : ℝ) : ℂ)).im) =
       Complex.equivRealProdCLM ζ := by
     ext <;> simp only [Complex.add_re, Complex.ofReal_re, Complex.add_im, Complex.ofReal_im,
-      Prod.fst_sub, Prod.snd_sub, Complex.equivRealProdCLM_apply] <;> ring
-  have h₀ : 0 < (ζ + ((2 * R : ℝ) : ℂ)).re := by
-    simp only [Complex.add_re, Complex.ofReal_re]
-    linarith
-  rw [preglueComposition_def, preglueEnd_def, hζ, endSign_eq_one hq, one_mul, one_mul]
-  simp only [h₀, ↓reduceIte]
-  rw [preglue_of_one_le (by simp only [Complex.add_re, Complex.ofReal_re]; linarith), hpt,
+      Complex.equivRealProdCLM_apply] <;> ring
+  rw [preglueComposition_def, preglueEnd_of_add_one_le hR (by
+      rw [hζ, endSign_eq_one hq, one_mul, Complex.add_re, Complex.ofReal_re]; linarith),
+    hζ, endSign_eq_one hq, one_mul, one_mul, hpt,
     comp_apply, endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     cylindricalEndLift_endCoord inf (by simpa using hw), ContinuousLinearEquiv.apply_symm_apply]
 

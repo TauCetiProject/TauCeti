@@ -47,7 +47,9 @@ other end of the cylinder `v`.
   integer, which periodicity absorbs, and for `R ≥ 1` the pre-glued pair of pants read in the
   positive end chart is `y ↦ preglue x U v R (y - (R, 0))` on the whole plane
   (`TauCeti.Floer.preglueEnd_comp_positiveEndChart`). Beyond the height `R + 1` it is
-  `v(s - 2R, t)` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`).
+  `v(s - 2R, t)` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`). In the signed end
+  coordinates `(s, t)` themselves no periodicity is needed: for `R ≥ 0` it is `v(s - 2R, t)` where
+  `s ≥ R + 1` (`TauCeti.Floer.preglueEnd_of_add_one_le`).
 * **It is smooth.** For `R ≥ 1` the pre-glued pair of pants of `Cⁿ` data is `Cⁿ` on `S`
   (`TauCeti.Floer.contDiffOn_preglueEnd`): near each point it is the translated pre-glued
   cylinder composed with a local inverse of the end chart.
@@ -102,8 +104,8 @@ namespace Floer
 `q`, through the loop `x`, with gluing parameter `R`. At a point whose signed end coordinates
 `(s, t)` on the end `q` have `s > 0` it is the pre-glued map `preglue x (u ∘ φ'_q) v R` at
 `(s - R, t)`, for the positive end chart `φ'_q`; elsewhere it is `u`. It is `u` where `s ≤ R - 1`
-(`TauCeti.Floer.preglueEnd_of_le`), and `v(s - 2R, t)` where `s ≥ R + 1` when `x` and `v` have
-period one in `t` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`). -/
+(`TauCeti.Floer.preglueEnd_of_le`), and `v(s - 2R, t)` where `s ≥ R + 1` when `R ≥ 0`
+(`TauCeti.Floer.preglueEnd_of_add_one_le`). -/
 noncomputable def preglueEnd (q : Puncture) (x : ℝ → V) (u v : ℝ × ℝ → V) (R : ℝ)
     (z : ℝ × ℝ) : V :=
   if 0 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re then
@@ -134,6 +136,17 @@ theorem preglueEnd_of_le
       comp_apply, positiveEndChart_endSign_mul_endCoord
         (ne_endCenter_of_re_endCoord_ne_zero q fun h ↦ by simp [h] at h₀)]
   · rfl
+
+/-- **Beyond the neck the pre-glued pair of pants is the translated cylinder.** For `R ≥ 0`, at a
+point whose signed end coordinates `(s, t)` on the end `q` have `s ≥ R + 1`, the pre-glued pair of
+pants is `v(s - 2R, t)`. -/
+theorem preglueEnd_of_add_one_le (hR : 0 ≤ R)
+    (h : R + 1 ≤ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    preglueEnd q x u v R z =
+      v (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re - 2 * R,
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im) := by
+  rw [preglueEnd_def, ite_eq_left (by linarith), preglue_of_one_le (by dsimp only; linarith),
+    Prod.mk_sub_mk, sub_zero, sub_sub, ← two_mul]
 
 /-- Near a point other than the center of the end `q` whose signed longitudinal coordinate on `q`
 is less than `R - 1`, such as a point of `S` away from the neck, the pre-glued pair of pants agrees
