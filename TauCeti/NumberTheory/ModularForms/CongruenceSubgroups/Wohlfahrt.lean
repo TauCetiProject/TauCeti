@@ -166,10 +166,12 @@ theorem Gamma_le_normalClosure_T_pow_sup_Gamma (N ν : ℕ) [NeZero ν] :
   set g₁ := g * s
   have hg₁ : g₁ ∈ Gamma N := mul_mem hg (normalClosure_T_pow_le_Gamma N hsK)
   have hg₁_cop : IsCoprime (g₁ 0 0) (ν : ℤ) := by
-    have hentry : g₁ 0 0 = g 0 0 + k * ((N : ℤ) * g 0 1) := by
+    have hentry : g₁ 0 0 = g 0 0 + g 0 1 * ((N : ℤ) * k) := by
       simp [g₁, s, coe_lowerShear, Matrix.mul_apply, Fin.sum_univ_two]
+    have hEq : g₁ 0 0 = g 0 0 + k * ((N : ℤ) * g 0 1) := by
+      rw [hentry]
       ring
-    rwa [hentry]
+    rwa [hEq]
   -- Step 2: diagonalize `g₁` modulo `ν` using left and right elements of `K`.
   obtain ⟨x₁, hx₁, x₂, hx₂, hg'00, hg'01, hg'10⟩ :=
     exists_mul_mem_normalClosure_offDiag_zero hg₁ hg₁_cop
@@ -192,7 +194,7 @@ theorem Gamma_le_normalClosure_T_pow_sup_Gamma (N ν : ℕ) [NeZero ν] :
   have hg'sup : x₁ * g₁ * x₂ ∈ K ⊔ Gamma ν := by
     simpa only [mul_inv_cancel_left] using mul_mem hM'sup (Subgroup.mem_sup_right hdiff)
   have hg_eq : g = x₁⁻¹ * (x₁ * g₁ * x₂) * x₂⁻¹ * s⁻¹ := by
-    simp [g₁]
+    simp only [g₁]
     group
   rw [hg_eq]
   exact mul_mem (mul_mem (mul_mem (inv_mem (Subgroup.mem_sup_left hx₁)) hg'sup)

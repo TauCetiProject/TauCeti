@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Wohlfahrt
-import TauCeti.Data.Int.CongrAllPrimes
 import TauCeti.NumberTheory.ModularForms.WithCenter
 
 /-!
@@ -416,13 +415,11 @@ theorem congruenceClosure_Gamma (N : ℕ) : (Gamma N).congruenceClosure = Gamma 
 @[simp]
 theorem congruenceClosure_Gamma0 (N : ℕ) : (Gamma0 N).congruenceClosure = Gamma0 N := by
   rcases eq_or_ne N 0 with rfl | hN
-  · refine le_antisymm (fun γ hγ ↦ mem_Gamma0_iff_dvd.mpr ?_) (Gamma0 0).le_congruenceClosure
-    have h0 : γ 1 0 = 0 :=
-      Int.eq_zero_of_eventually_prime_dvd (Filter.Eventually.of_forall fun p hp ↦ by
-        have : NeZero p := ⟨hp.ne_zero⟩
-        exact mem_Gamma0_iff_dvd.mp (Subgroup.mem_congruenceClosure_iff.mp hγ (Gamma0 p)
-          (Gamma0_is_congruence p) (Gamma0_le_Gamma0_of_dvd (dvd_zero p))))
-    simp [h0]
+  · refine le_antisymm ((le_iInf₂ fun M hM ↦ ?_).trans_eq iInf_Gamma0_ne_zero_eq_Gamma0_zero)
+      (Gamma0 0).le_congruenceClosure
+    have : NeZero M := ⟨hM⟩
+    exact Subgroup.congruenceClosure_le (Gamma0_is_congruence M)
+      (Gamma0_le_Gamma0_of_dvd (dvd_zero M))
   · have : NeZero N := ⟨hN⟩
     exact (Gamma0_is_congruence N).congruenceClosure_eq
 
@@ -430,17 +427,11 @@ theorem congruenceClosure_Gamma0 (N : ℕ) : (Gamma0 N).congruenceClosure = Gamm
 @[simp]
 theorem congruenceClosure_Gamma1 (N : ℕ) : (Gamma1 N).congruenceClosure = Gamma1 N := by
   rcases eq_or_ne N 0 with rfl | hN
-  · refine le_antisymm (fun γ hγ ↦ mem_Gamma1_iff_dvd_lowerRow.mpr ?_)
+  · refine le_antisymm ((le_iInf₂ fun M hM ↦ ?_).trans_eq iInf_Gamma1_ne_zero_eq_Gamma1_zero)
       (Gamma1 0).le_congruenceClosure
-    have hmem : ∀ p : ℕ, p.Prime → (p : ℤ) ∣ γ 1 0 ∧ (p : ℤ) ∣ γ 1 1 - 1 := fun p hp ↦ by
-      have : NeZero p := ⟨hp.ne_zero⟩
-      exact mem_Gamma1_iff_dvd_lowerRow.mp (Subgroup.mem_congruenceClosure_iff.mp hγ (Gamma1 p)
-        (Gamma1_is_congruence p) (Gamma1_le_Gamma1_of_dvd (dvd_zero p)))
-    have h10 : γ 1 0 = 0 :=
-      Int.eq_zero_of_eventually_prime_dvd (Filter.Eventually.of_forall fun p hp ↦ (hmem p hp).1)
-    have h11 : γ 1 1 - 1 = 0 :=
-      Int.eq_zero_of_eventually_prime_dvd (Filter.Eventually.of_forall fun p hp ↦ (hmem p hp).2)
-    simp [h10, h11]
+    have : NeZero M := ⟨hM⟩
+    exact Subgroup.congruenceClosure_le (Gamma1_is_congruence M)
+      (Gamma1_le_Gamma1_of_dvd (dvd_zero M))
   · have : NeZero N := ⟨hN⟩
     exact (Gamma1_is_congruence N).congruenceClosure_eq
 

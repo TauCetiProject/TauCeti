@@ -17,7 +17,6 @@ import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Data.Nat.Factorization.Induction
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Int.ChineseRemainder
-import TauCeti.Data.Int.CongrAllPrimes
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -157,8 +156,10 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.IsCongruenceSubgroup.inf`,
   `CongruenceSubgroup.IsCongruenceSubgroup.withCenter`,
   `CongruenceSubgroup.isCongruenceSubgroup_normalCore_iff`,
-  `CongruenceSubgroup.iInf_Gamma_ne_zero_eq_bot`: elementary lattice and level properties of
-  congruence subgroups, and triviality of `⨅ N ≠ 0, Γ(N)`.
+  `CongruenceSubgroup.iInf_Gamma_ne_zero_eq_bot`,
+  `CongruenceSubgroup.iInf_Gamma0_ne_zero_eq_Gamma0_zero`,
+  `CongruenceSubgroup.iInf_Gamma1_ne_zero_eq_Gamma1_zero`: elementary lattice and level properties
+  of congruence subgroups, and intersections of `Γ(N)`, `Γ₀(N)` and `Γ₁(N)` over `N ≠ 0`.
 
 ## References
 
@@ -1232,14 +1233,43 @@ theorem iInf_Gamma_ne_zero_eq_bot : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma N) = ⊥
   refine eq_bot_iff.mpr fun γ hγ ↦ ?_
   rw [Subgroup.mem_bot]
   ext i j
-  have hd0 : (γ : Matrix (Fin 2) (Fin 2) ℤ) i j - (if i = j then 1 else 0) = 0 :=
-    Int.eq_zero_of_eventually_prime_dvd (.of_forall fun p hp ↦ by
-      have hmem : γ ∈ Gamma p := (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ p)) hp.ne_zero
-      rw [← ker_map_intCast_zmod] at hmem
-      exact (mem_ker_map_intCast_zmod_iff.mp hmem) i j)
+  set d : ℤ := (γ : Matrix (Fin 2) (Fin 2) ℤ) i j - (if i = j then 1 else 0)
+  have hmem : γ ∈ Gamma (d.natAbs + 1) :=
+    Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ (d.natAbs + 1)) (Nat.succ_ne_zero _)
+  rw [← ker_map_intCast_zmod] at hmem
+  have hd0 : d = 0 :=
+    Int.eq_zero_of_dvd_of_natAbs_lt_natAbs ((mem_ker_map_intCast_zmod_iff.mp hmem) i j)
+      (by rw [Int.natAbs_natCast]; exact Nat.lt_succ_self _)
   have h1 : ((1 : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) i j = if i = j then 1 else 0 := by
     simp [Matrix.one_apply]
   linarith
+
+/-- The intersection of `Γ₀(N)` over all `N ≠ 0` is `Γ₀(0)`. -/
+@[simp]
+theorem iInf_Gamma0_ne_zero_eq_Gamma0_zero : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma0 N) = Gamma0 0 := by
+  refine le_antisymm (fun γ hγ ↦ ?_) (le_iInf₂ fun N _ ↦ Gamma0_le_Gamma0_of_dvd (dvd_zero N))
+  rw [mem_Gamma0_iff_dvd, Nat.cast_zero, zero_dvd_iff]
+  exact Int.eq_zero_of_dvd_of_natAbs_lt_natAbs
+    (mem_Gamma0_iff_dvd.mp
+      (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ ((γ 1 0).natAbs + 1)) (Nat.succ_ne_zero _)))
+    (by rw [Int.natAbs_natCast]; exact Nat.lt_succ_self _)
+
+/-- The intersection of `Γ₁(N)` over all `N ≠ 0` is `Γ₁(0)`. -/
+@[simp]
+theorem iInf_Gamma1_ne_zero_eq_Gamma1_zero : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma1 N) = Gamma1 0 := by
+  refine le_antisymm (fun γ hγ ↦ ?_) (le_iInf₂ fun N _ ↦ Gamma1_le_Gamma1_of_dvd (dvd_zero N))
+  rw [mem_Gamma1_iff_dvd_lowerRow, Nat.cast_zero, zero_dvd_iff, zero_dvd_iff]
+  have h10 : γ 1 0 = 0 := by
+    have h0 : γ ∈ Gamma0 0 := iInf_Gamma0_ne_zero_eq_Gamma0_zero ▸
+      iInf₂_mono (fun N _ ↦ Gamma1_in_Gamma0 N) hγ
+    simpa [mem_Gamma0_iff_dvd] using h0
+  have h11 : γ 1 1 - 1 = 0 :=
+    Int.eq_zero_of_dvd_of_natAbs_lt_natAbs
+      (mem_Gamma1_iff_dvd_lowerRow.mp
+        (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ ((γ 1 1 - 1).natAbs + 1))
+          (Nat.succ_ne_zero _))).2
+      (by rw [Int.natAbs_natCast]; exact Nat.lt_succ_self _)
+  exact ⟨h10, h11⟩
 
 end CongruenceSubgroup
 
