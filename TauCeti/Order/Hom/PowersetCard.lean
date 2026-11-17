@@ -363,16 +363,6 @@ theorem sign_fin (T : powersetCard (Fin m) r) :
   rw [sign_fin_eq_neg_one_pow_add T, hadd, pow_add, pow_mul]
   simp
 
-/-- **The sign of the complement shuffle.** For an `r`-subset `T` of `Fin m`, the shuffle
-`Set.powersetCard.permOfDisjoint` sorting `T` followed by `Tᶜ` has sign
-`(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`. -/
-theorem sign_permOfDisjoint_compl {k : ℕ} (hk : k + r = Fintype.card (Fin m))
-    (T : powersetCard (Fin m) r)
-    (hdisj : Disjoint T.val (compl hk T).val := disjoint_compl_right) :
-    (permOfDisjoint hdisj).sign =
-      (-1 : ℤˣ) ^ (∑ i ∈ (T : _root_.Finset (Fin m)), (i : ℕ) - r * (r - 1) / 2) := by
-  rw [← sign_eq_permOfDisjoint_sign (Nat.add_comm k r ▸ hk) T (compl hk T) hdisj, sign_fin]
-
 /-- The shuffle signs of two `r`-subsets `S` and `T` of `Fin m` multiply to
 `(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`. -/
 theorem sign_mul_sign_fin (S T : powersetCard (Fin m) r) :

@@ -370,35 +370,6 @@ private theorem exteriorPower_map_toLin'_transpose_apply (A : Matrix ι ι R) {d
   rw [LinearMap.toMatrix_apply, ← compound_transpose, transpose_apply] at hmat
   rw [hmat]
 
-/-- The normalized volume equivalence on the top exterior power of `ι → R`, sending the standard
-top basis vector to `1`. -/
-private noncomputable def stdTopVol [Nontrivial R] :
-    ⋀[R]^(Module.finrank R (ι → R)) (ι → R) ≃ₗ[R] R :=
-  let b := Pi.basisFun R ι
-  have hcard : Module.finrank R (ι → R) = Fintype.card ι := Module.finrank_eq_card_basis b
-  let topIdx : Set.powersetCard ι (Module.finrank R (ι → R)) := ⟨Finset.univ, by simp [hcard]⟩
-  haveI : Subsingleton (Set.powersetCard ι (Module.finrank R (ι → R))) :=
-    Set.powersetCard.subsingleton_of_card_eq hcard
-  (b.exteriorPower (Module.finrank R (ι → R))).repr.trans (Finsupp.uniqueLinearEquiv R R topIdx)
-
-/-- Evaluating the wedge pairing of `stdTopVol` on standard exterior-power basis vectors yields the
-shuffle sign on complementary subsets and `0` otherwise. -/
-private theorem wedgePairing_stdTopVol_apply [Nontrivial R] {k r : ℕ}
-    (hk : k + r = Fintype.card ι) (hkl : r + k = Module.finrank R (ι → R))
-    (T : Set.powersetCard ι r) (U : Set.powersetCard ι k) :
-    exteriorPower.wedgePairing (stdTopVol (R := R) (ι := ι)) hkl
-        ((Pi.basisFun R ι).exteriorPower r T) ((Pi.basisFun R ι).exteriorPower k U) =
-      if U = compl hk T then Set.powersetCard.sign T • (1 : R) else 0 := by
-  let b := Pi.basisFun R ι
-  have hcard : Module.finrank R (ι → R) = Fintype.card ι := Module.finrank_eq_card_basis b
-  let topIdx : Set.powersetCard ι (Module.finrank R (ι → R)) := ⟨Finset.univ, by simp [hcard]⟩
-  have hvol : stdTopVol (R := R) (ι := ι) b.topVector = 1 := by
-    rw [stdTopVol, LinearEquiv.trans_apply, Finsupp.uniqueLinearEquiv_apply,
-      ← b.topVector_eq_exteriorPower topIdx, Module.Basis.repr_self, Finsupp.single_eq_same]
-  rw [exteriorPower.wedgePairing_exteriorPower_apply _ hkl b T U, hvol, one_smul]
-  simp only [disjoint_comm.trans (Set.powersetCard.disjoint_iff_eq_compl hk)]
-  split_ifs <;> simp
-
 /-- **Generalised Laplace expansion (general index form).** For a square matrix `A : Matrix ι ι R`
 on a finite linearly ordered index type `ι`, `k + r = Fintype.card ι`, and `r`-subsets `S, S'` of
 `ι`, summing `(sign S' * sign T) • (det A[S, T] * det A[S'ᶜ, Tᶜ])` over all `r`-subsets `T` gives
@@ -413,8 +384,13 @@ theorem sum_sign_compound_mul_compound_compl (A : Matrix ι ι R) {k r : ℕ}
   let b := Pi.basisFun R ι
   have hcard : Module.finrank R (ι → R) = Fintype.card ι := Module.finrank_eq_card_basis b
   have hkl : r + k = Module.finrank R (ι → R) := by omega
-  let vol := stdTopVol (R := R) (ι := ι)
+  let vol := b.exteriorPowerFinrankEquiv
   let P := exteriorPower.wedgePairing vol hkl
+  have hP (T : Set.powersetCard ι r) (U : Set.powersetCard ι k) :
+      P (b.exteriorPower r T) (b.exteriorPower k U) =
+        if U = compl hk T then Set.powersetCard.sign T • (1 : R) else 0 := by
+    rw [exteriorPower.wedgePairing_exteriorPowerFinrankEquiv_apply b hkl T U]
+    simp only [disjoint_comm.trans (Set.powersetCard.disjoint_iff_eq_compl hk)]
   have hlhs :
       P (exteriorPower.map r Aᵀ.toLin' (b.exteriorPower r S))
         (exteriorPower.map k Aᵀ.toLin' (b.exteriorPower k (compl hk S'))) =
@@ -425,13 +401,11 @@ theorem sum_sign_compound_mul_compound_compl (A : Matrix ι ι R) {k r : ℕ}
       map_sum P, LinearMap.sum_apply]
     refine Finset.sum_congr rfl fun T _ ↦ ?_
     rw [map_sum (P _), Finset.sum_eq_single (compl hk T)]
-    · rw [map_smul, map_smul P, LinearMap.smul_apply, wedgePairing_stdTopVol_apply hk hkl,
-        ite_eq_left rfl]
+    · rw [map_smul, map_smul P, LinearMap.smul_apply, hP, ite_eq_left rfl]
       simp only [Units.smul_def, zsmul_eq_mul, smul_eq_mul, mul_one]
       ring
     · intro U _ hU
-      rw [map_smul, map_smul P, LinearMap.smul_apply, wedgePairing_stdTopVol_apply hk hkl,
-        ite_eq_right hU, smul_zero, smul_zero]
+      rw [map_smul, map_smul P, LinearMap.smul_apply, hP, ite_eq_right hU, smul_zero, smul_zero]
     · exact fun hmem ↦ absurd (Finset.mem_univ _) hmem
   have hdet := LinearMap.congr_fun₂
     (exteriorPower.wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul rfl hkl
@@ -441,8 +415,7 @@ theorem sum_sign_compound_mul_compound_compl (A : Matrix ι ι R) {k r : ℕ}
     det_transpose] at hdet
   -- Multiply `hdet` by `sign S'`, cancelling `(sign S') ^ 2 = 1` on the diagonal.
   have hmul := congrArg (Set.powersetCard.sign S' • ·) (hlhs.symm.trans hdet)
-  rw [Finset.smul_sum, smul_comm _ A.det, wedgePairing_stdTopVol_apply hk hkl S (compl hk S')]
-    at hmul
+  rw [Finset.smul_sum, smul_comm _ A.det, hP S (compl hk S')] at hmul
   simp only [smul_smul, (compl hk).injective.eq_iff, eq_comm (a := S')] at hmul
   split_ifs at hmul ⊢ with hSS'
   · subst hSS'

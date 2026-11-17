@@ -20,9 +20,9 @@ map `exteriorPower.map r N.subtype : ⋀[R]^r N →ₗ[R] ⋀[R]^r M`.
 
 For `r = 1` this recovers `Fitt₀(M ⧸ N) ≤ Ann_R(M ⧸ N)`
 (`TauCeti.fittingIdeal_zero_le_annihilator`). For `r ≥ 2`, `Ann_R(M ⧸ N)` itself does *not* in
-general annihilate `coker(⋀^r N → ⋀^r M)`: for `M = ℤ²` and `N = 2ℤ²` with `r = 2`,
-`Ann_ℤ(M ⧸ N) = (2)` fails to annihilate `coker(⋀^2 N → ⋀^2 M) ≅ ℤ/4ℤ`, whereas
-`Fitt₀(M ⧸ N) = (4)` annihilates it (proved as a negative control at the end of this file).
+general annihilate `coker(⋀^r N → ⋀^r M)`: for `M = ℤ²` and `N = 2ℤ²` with `r = 2`, `2`
+annihilates `M ⧸ N` and `4` annihilates `coker(⋀^2 N → ⋀^2 M)`, whereas `2` does not annihilate
+`coker(⋀^2 N → ⋀^2 M)` (proved as a negative control at the end of this file).
 
 Indeed, for any surjection `π : F →ₗ[R] M` from a finite free `R`-module `F` with
 `K = N.comap π = ker (N.mkQ ∘ₗ π)`, the Fitting ideal `Fitt₀(M ⧸ N)` is the ideal of maximal
@@ -146,9 +146,9 @@ end LinearMap
 
 section Examples
 
--- Negative control: for `M = Fin 2 → ℤ` and `N = range (2 • id)`, `M ⧸ N ≅ (ℤ/2ℤ)²` is
--- annihilated by `2`, and `4 ∈ Fitt₀(M ⧸ N)` annihilates `coker(⋀^2 N → ⋀^2 M)`, whereas `2`
--- does NOT annihilate `coker(⋀^2 N → ⋀^2 M)`.
+-- Negative control: for `M = Fin 2 → ℤ` and `N = range (2 • id)`, `2` annihilates `M ⧸ N` and
+-- `4` annihilates `coker(⋀^2 N → ⋀^2 M)` (via `4 ∈ Fitt₀(M ⧸ N)`), whereas `2` does NOT annihilate
+-- `coker(⋀^2 N → ⋀^2 M)`.
 example :
     let M := Fin 2 → ℤ
     let φ : M →ₗ[ℤ] M := (2 : ℤ) • LinearMap.id
