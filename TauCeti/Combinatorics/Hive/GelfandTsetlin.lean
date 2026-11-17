@@ -683,9 +683,8 @@ theorem rowSum_toCyclicGTPattern (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
 
 @[simp] theorem isGTCompletable_toCyclicGTPattern (h : IntegerHive n) :
     IsGTCompletable (h.boundaryWeight 2) h.toCyclicGTPattern := by
-  have hb : h.rotate.rotate.boundaryWeight 0 = h.boundaryWeight 2 := by
-    rw [boundaryWeight_rotate, boundaryWeight_rotate]; rfl
-  exact hb ▸ h.rotate.rotate.isGTCompletable_toGTPattern
+  simpa [toCyclicGTPattern_def, boundaryWeight_rotate] using
+    h.rotate.rotate.isGTCompletable_toGTPattern
 
 theorem rotate_ofGTPattern_apply (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) (p : Vertex n) :
@@ -699,8 +698,8 @@ theorem rotate_ofGTPattern_apply (lam : DominantWeight n) (P : GTPattern n)
   suffices ofGTPattern (h.boundaryWeight 2) h.toCyclicGTPattern
       h.isGTCompletable_toCyclicGTPattern = h.rotate.rotate by rw [this, rotate_rotate_rotate]
   ext p
-  rw [ofGTPattern_apply, show h.boundaryWeight 2 = h.rotate.rotate.boundaryWeight 0 by
-    simp [boundaryWeight_rotate], toCyclicGTPattern_def, ← h.rotate.rotate.apply_eq_gtCompletion p]
+  rw [ofGTPattern_apply, h.rotate.rotate.apply_eq_gtCompletion p]
+  simp [toCyclicGTPattern_def, boundaryWeight_rotate]
 
 /-- **Cyclic chart inversion formula**: every integer hive `h` is recovered at `p : Vertex n` from
 `h.boundaryWeight 2` and `h.toCyclicGTPattern` as
