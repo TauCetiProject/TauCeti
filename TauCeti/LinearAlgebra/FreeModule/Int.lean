@@ -25,6 +25,9 @@ The index of the image of a `ℤ`-linear map between free abelian groups is the 
 the determinant of `f` in any bases of `M` and `N` indexed by the same finite type; a
 non-injective `f` has image of infinite index (index `0`) and determinant `0`.
 
+A homomorphism from a free abelian group of finite rank `r` is determined freely by its values on
+a basis, so there are `|A| ^ r` homomorphisms to an abelian group `A`.
+
 ## Main results
 
 * `LinearMap.exists_comp_eq_nsmul_id_of_injective`: an injective map between finitely generated
@@ -33,6 +36,8 @@ non-injective `f` has image of infinite index (index `0`) and determinant `0`.
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
+* `TauCeti.natCard_addMonoidHom_eq_pow_finrank`: a free abelian group of finite rank `r` has
+  `Nat.card A ^ r` homomorphisms to `A`.
 -/
 
 public section
@@ -100,3 +105,15 @@ theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableE
   exact congr(c.repr $(LinearEquiv.ofInjective_apply f (h := hf) (b j)) i)
 
 end LinearMap
+
+namespace TauCeti
+
+/-- A free abelian group of finite rank `r` has `Nat.card A ^ r` additive homomorphisms to an
+abelian group `A`, one for each choice of values on a basis. -/
+theorem natCard_addMonoidHom_eq_pow_finrank (M A : Type*) [AddCommGroup M] [AddCommGroup A]
+    [Module.Free ℤ M] [Module.Finite ℤ M] :
+    Nat.card (M →+ A) = Nat.card A ^ Module.finrank ℤ M := by
+  rw [Nat.card_congr ((addMonoidHomLequivInt ℤ).toEquiv.trans
+    ((Module.finBasis ℤ M).constr ℤ).symm.toEquiv), Nat.card_fun, Nat.card_fin]
+
+end TauCeti
