@@ -23,11 +23,12 @@ equivalent to the top seminorm `‖D^{m+1} u‖_{Lᵖ}`, which descends to the q
   `‖u - P u‖ ≤ C * ‖D^{m+1} u‖` for every `u`;
 * `‖D^{m+1} u‖ ≤ ‖[u]‖ ≤ C * ‖D^{m+1} u‖`, where `[u]` is the class of `u` in the quotient.
 
-Classically, on a connected `Ω` the kernel `N` consists of the classes of polynomials of degree at
-most `m`, which gives the familiar form of the lemma. The statements here do not use that
+Classically, on a bounded connected `Ω` the kernel `N` consists of the classes of polynomials of
+degree at most `m`, which gives the familiar form of the lemma. The statements here do not use that
 identification and need no connectedness.
 
 The argument is Peetre's compact-error estimate in its quotient form,
+`ContinuousLinearMap.exists_norm_mk_ker_le_of_compact_estimate`, and in its projection form,
 `ContinuousLinearMap.exists_projection_norm_sub_le_of_compact_estimate`, applied to the estimate
 `‖u‖_{m+1,p} ≤ ‖u‖_{m,p} + ‖D^{m+1} u‖_{Lᵖ}` of the graph norm. The first-order case with the
 constants as kernel is `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator`.
@@ -96,15 +97,14 @@ theorem exists_projection_norm_sub_le_of_isCompactOperator (m : ℕ)
     (iteratedGradientL m).exists_projection_norm_sub_le_of_compact_estimate hK
       (norm_le_one_mul_norm_iteratedGradientL_add_norm_lowerOrderL m)
   refine ⟨P, C, hC, fun u ↦ ?_, fun u hu ↦ ?_, fun u ↦ ?_⟩
-  · have h : P u ∈ (P : Wkp mu Omega p (m + 1) →ₗ[ℝ] Wkp mu Omega p (m + 1)).range :=
-      LinearMap.mem_range_self _ u
-    rwa [hrange, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, iteratedGradientL_apply] at h
-  · rw [← iteratedGradientL_apply, ← ContinuousLinearMap.coe_coe, ← LinearMap.mem_ker,
-      ← hrange] at hu
-    obtain ⟨v, rfl⟩ := hu
-    exact congr($hP v)
-  · have h := hbound u
-    rwa [iteratedGradientL_apply] at h
+  · have h : P u ∈ (iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m).ker :=
+      hrange ▸ LinearMap.mem_range_self _ u
+    simpa [← iteratedGradientL_apply] using h
+  · have hu' : u ∈ (iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m).ker := by
+      simpa [← iteratedGradientL_apply] using hu
+    obtain ⟨v, rfl⟩ := hrange ▸ hu'
+    simpa using congr($hP v)
+  · simpa [← iteratedGradientL_apply] using hbound u
 
 /-- **The Deny–Lions lemma.** If forgetting the highest weak derivative is a compact operator
 `W^{m+1,p}(Ω) → W^{m,p}(Ω)`, the quotient norm of `u ∈ W^{m+1,p}(Ω)` modulo the kernel of the
@@ -120,8 +120,7 @@ theorem exists_norm_mk_le_of_isCompactOperator (m : ℕ)
   obtain ⟨C, hC, hbound⟩ := (iteratedGradientL m).exists_norm_mk_ker_le_of_compact_estimate hK
     (norm_le_one_mul_norm_iteratedGradientL_add_norm_lowerOrderL m)
   refine ⟨C, hC, fun u ↦ ?_⟩
-  have h := hbound u
-  rwa [iteratedGradientL_apply] at h
+  simpa [← iteratedGradientL_apply] using hbound u
 
 /-- The highest weak derivative descends to the quotient by its kernel without increasing norms:
 `‖D^{m+1} u‖` is at most the quotient norm of `u` modulo the kernel of `D^{m+1}`. This is the
@@ -138,8 +137,7 @@ theorem norm_iteratedGradient_le_norm_mk (m : ℕ) (u : Wkp mu Omega p (m + 1)) 
       exact norm_iteratedGradient_le m v
   calc ‖iteratedGradient m u‖
         = ‖N.liftQL (iteratedGradientL m) le_rfl (Submodule.Quotient.mk u)‖ := by
-        rw [Submodule.liftQL_apply, Submodule.liftQ_apply, ContinuousLinearMap.coe_coe,
-          iteratedGradientL_apply]
+        simp [← iteratedGradientL_apply]
     _ ≤ ‖N.liftQL (iteratedGradientL m) le_rfl‖ * ‖(Submodule.Quotient.mk u : _ ⧸ N)‖ :=
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ ‖(Submodule.Quotient.mk u : _ ⧸ N)‖ := mul_le_of_le_one_left (norm_nonneg _) hnorm

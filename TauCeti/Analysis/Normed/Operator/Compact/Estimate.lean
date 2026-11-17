@@ -34,7 +34,7 @@ is needed; the compact-error target may even be seminormed.
 On a complete domain the estimate also bounds the distance to the kernel: the quotient norm of
 `x` modulo `ker T` is at most `C' * ‖T x‖`, over any nontrivially normed field. Over `ℝ` or `ℂ`
 (more generally, a field with `IsRCLikeNormedField`) the finite-dimensional kernel moreover has a
-closed complement, and the distance is realized by a continuous projection `P` onto `ker T` with
+closed complement, and the bound is witnessed by a continuous projection `P` onto `ker T` with
 `‖x - P x‖ ≤ C' * ‖T x‖`. This is the abstract form of the Deny–Lions lemma: applied to the highest
 weak derivative of a Sobolev space with compact lower-order inclusion, it says that the quotient
 norm modulo the kernel of the top derivative is equivalent to the top seminorm.
