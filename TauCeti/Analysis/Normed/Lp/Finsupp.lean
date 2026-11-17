@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Geometry.Convex.ConvexSpace.Module
 public import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
 /-!
 # Finitely supported functions and standard simplices in `ℓᵖ`
@@ -261,12 +262,6 @@ theorem toLp_iConvexComb {ι : Type*} (w : StdSimplex ℝ ι) (f : ι → StdSim
   have hw := (isAffineMap_weights ℝ α).map_iConvexComb w f
   rw [toLp, hw, iConvexComb_eq_sum, ← Finsupp.toLpLinearMap_apply p (𝕜 := ℝ), map_finsuppSum]
   simp [toLp]
-
-/-- The weights of a finitely supported probability have series sum `1`. -/
-@[simp]
-theorem tsum_weights {R : Type*} [LE R] [AddCommMonoid R] [One R] [TopologicalSpace R]
-    (s : StdSimplex R α) : ∑' a, s.weights a = 1 :=
-  (tsum_eq_sum fun _ ha ↦ Finsupp.notMem_support_iff.mp ha).trans s.total
 
 /-- The coordinates of a finitely supported probability sum to `1`. -/
 theorem tsum_toLp (s : StdSimplex ℝ α) (p : ℝ≥0∞) : ∑' a, s.toLp p a = 1 := by

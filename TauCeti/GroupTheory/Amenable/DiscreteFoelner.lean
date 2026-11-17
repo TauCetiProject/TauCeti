@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
 import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Geometry.Convex.ConvexSpace.Topology
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
 /-!
@@ -177,7 +178,7 @@ private theorem exists_sum_tsum_abs_sub_lt_of_stdSimplex {K : Finset G} {ε : �
     ∃ p : G → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
       ∑ g ∈ K, ∑' x, |p (g⁻¹ * x) - p x| < ε := by
   obtain ⟨p, hp⟩ := h
-  refine ⟨⇑p.weights, p.nonneg, p.weights.hasFiniteSupport, by simp, ?_⟩
+  refine ⟨⇑p.weights, p.nonneg, p.weights.hasFiniteSupport, p.tsum_weights, ?_⟩
   simpa [lp.norm_leftTranslation_one_sub, smul_eq_mul] using hp
 
 end Group
