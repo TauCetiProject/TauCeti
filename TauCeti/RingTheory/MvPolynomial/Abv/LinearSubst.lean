@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
+import TauCeti.Algebra.MvPolynomial.Support
 
 /-!
 # Coefficient bounds for linear and block-linear substitutions
@@ -56,46 +57,6 @@ section AbsoluteValue
 
 variable {σ τ κ ι R S : Type*} [CommSemiring R]
 
-private lemma card_support_sum_C_mul_X_le [Fintype ι] (w : ι → R) (g : ι → τ) :
-    #(∑ j, C (w j) * X (g j) : MvPolynomial τ R).support ≤ Fintype.card ι := by
-  classical
-  have hsub : (∑ j, C (w j) * X (g j) : MvPolynomial τ R).support ⊆
-      univ.image fun j ↦ Finsupp.single (g j) 1 := by
-    refine support_sum.trans (biUnion_subset.2 fun j hj ↦ ?_)
-    rw [X, C_mul_monomial, mul_one]
-    exact support_monomial_subset.trans (singleton_subset_iff.2 (mem_image_of_mem _ hj))
-  exact (card_le_card hsub).trans (card_image_le.trans_eq card_univ)
-
-private lemma abv_coeff_sum_C_mul_X_le [Semiring S] [PartialOrder S] {v : AbsoluteValue R S}
-    [Fintype ι] {w : ι → R} {g : ι → τ} (hg : Function.Injective g) {B : S} (hB0 : 0 ≤ B)
-    (hw : ∀ j, v (w j) ≤ B) (m : τ →₀ ℕ) :
-    v ((∑ j, C (w j) * X (g j) : MvPolynomial τ R).coeff m) ≤ B := by
-  classical
-  have hterm (j : ι) : (C (w j) * X (g j) : MvPolynomial τ R).coeff m =
-      if Finsupp.single (g j) 1 = m then w j else 0 := by
-    rw [X, C_mul_monomial, mul_one, coeff_monomial]
-  rw [coeff_sum]
-  simp_rw [hterm]
-  by_cases hm : ∃ j, Finsupp.single (g j) 1 = m
-  · obtain ⟨j₀, rfl⟩ := hm
-    rw [sum_eq_single j₀]
-    · simp [hw j₀]
-    · intro j _ hj
-      exact ite_eq_right fun h ↦ hj (hg (Finsupp.single_left_injective one_ne_zero h))
-    · simp
-  · push Not at hm
-    rw [sum_eq_zero fun j _ ↦ ite_eq_right (hm j), map_zero]
-    exact hB0
-
-private lemma finsupp_prod_pow_eq_prod_sigma {M : Type*} [CommMonoid M]
-    (f : σ → M) (s : σ →₀ ℕ) :
-    (s.prod fun i e ↦ f i ^ e) = ∏ q ∈ s.support.sigma (fun i ↦ range (s i)), f q.1 := by
-  simp [prod_sigma, Finsupp.prod]
-
-private lemma card_sigma_range_eq_degree (s : σ →₀ ℕ) :
-    #(s.support.sigma fun i ↦ range (s i)) = s.degree := by
-  simp [card_sigma, Finsupp.degree_apply]
-
 private lemma card_mul_nonneg_of_forall_le [Fintype ι] [CommSemiring S] [PartialOrder S]
     [IsOrderedRing S] {v : AbsoluteValue R S} {A : Matrix ι ι R} {B : S}
     (hA : ∀ i j, v (A i j) ≤ B) : 0 ≤ (Fintype.card ι : S) * B := by
@@ -125,11 +86,11 @@ theorem abv_coeff_aeval_monomial_le [CommSemiring S] [PartialOrder S] [IsOrdered
     v ((aeval f (monomial s a)).coeff t) ≤ (k * B) ^ s.degree * v a := by
   classical
   rw [aeval_monomial, algebraMap_eq, ← smul_eq_C_mul, coeff_smul, smul_eq_mul, map_mul,
-    mul_comm (v a), finsupp_prod_pow_eq_prod_sigma]
+    mul_comm (v a), s.prod_pow_eq_prod_sigma f]
   refine mul_le_mul_of_nonneg_right ?_ (v.nonneg a)
   refine (abv_coeff_prod_le (s := s.support.sigma fun i ↦ range (s i)) (fun q ↦ f q.1)
     (C := fun _ ↦ B) (fun q hq ↦ hB q.1 (mem_sigma.1 hq).1) t).trans ?_
-  rw [← card_sigma_range_eq_degree s, ← prod_const]
+  rw [← s.card_sigma_range_eq_degree, ← prod_const]
   refine prod_le_prod₀ (fun q hq ↦ mul_nonneg (Nat.cast_nonneg _)
     ((v.nonneg _).trans (hB q.1 (mem_sigma.1 hq).1 0))) fun q hq ↦ ?_
   exact mul_le_mul_of_nonneg_right (Nat.mono_cast (hk q.1 (mem_sigma.1 hq).1))
@@ -143,7 +104,7 @@ theorem abv_coeff_aeval_monomial_le_of_isNonarchimedean [CommSemiring S] [Linear
     v ((aeval f (monomial s a)).coeff t) ≤ B ^ s.degree * v a := by
   classical
   rw [aeval_monomial, algebraMap_eq, ← smul_eq_C_mul, coeff_smul, smul_eq_mul, map_mul,
-    mul_comm (v a), finsupp_prod_pow_eq_prod_sigma, ← card_sigma_range_eq_degree s, ← prod_const]
+    mul_comm (v a), s.prod_pow_eq_prod_sigma f, ← s.card_sigma_range_eq_degree, ← prod_const]
   exact mul_le_mul_of_nonneg_right
     (abv_coeff_prod_le_of_isNonarchimedean (fun q ↦ f q.1) hv
       (fun q hq ↦ hB q.1 (mem_sigma.1 hq).1) t) (v.nonneg a)
@@ -217,8 +178,9 @@ theorem abv_coeff_linearSubst_monomial_le [Fintype σ] [CommSemiring S] [Partial
     v ((linearSubst M (monomial s a)).coeff t) ≤ (Fintype.card σ * B) ^ s.degree * v a := by
   rw [linearSubst_eq_aeval]
   exact abv_coeff_aeval_monomial_le
-    (fun i _ ↦ card_support_sum_C_mul_X_le (M i) id)
-    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id ((v.nonneg _).trans (hM i i)) (hM i))
+    (fun i _ ↦ (card_support_sum_C_mul_X_le univ (M i) id).trans_eq card_univ)
+    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id.injOn
+      ((v.nonneg _).trans (hM i i)) fun j _ ↦ hM i j)
     a t
 
 /-- Nonarchimedean companion to `abv_coeff_linearSubst_monomial_le`. -/
@@ -229,7 +191,8 @@ theorem abv_coeff_linearSubst_monomial_le_of_isNonarchimedean [Fintype σ] [Comm
     v ((linearSubst M (monomial s a)).coeff t) ≤ B ^ s.degree * v a := by
   rw [linearSubst_eq_aeval]
   exact abv_coeff_aeval_monomial_le_of_isNonarchimedean hv
-    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id ((v.nonneg _).trans (hM i i)) (hM i))
+    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id.injOn
+      ((v.nonneg _).trans (hM i i)) fun j _ ↦ hM i j)
     a t
 
 /-- For a homogeneous polynomial `p` of degree `n`, if the entries of `M` are bounded by `B` and
@@ -242,8 +205,9 @@ theorem abv_coeff_linearSubst_le_of_isHomogeneous [Fintype σ] [CommSemiring S] 
     v ((linearSubst M p).coeff t) ≤ (Fintype.card σ ^ 2 * B) ^ n * C := by
   rw [linearSubst_eq_aeval]
   exact (abv_coeff_aeval_le_of_isHomogeneous hp
-    (fun i _ ↦ card_support_sum_C_mul_X_le (M i) id)
-    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id ((v.nonneg _).trans (hM i i)) (hM i))
+    (fun i _ ↦ (card_support_sum_C_mul_X_le univ (M i) id).trans_eq card_univ)
+    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id.injOn
+      ((v.nonneg _).trans (hM i i)) fun j _ ↦ hM i j)
     hpC t).trans
     (mul_mul_pow_le_sq_mul_pow (card_support_le_pow_of_isHomogeneous hp)
       (card_mul_nonneg_of_forall_le hM) ((v.nonneg _).trans (hpC 0)))
@@ -257,7 +221,7 @@ theorem abv_coeff_linearSubst_le_of_isHomogeneous_of_isNonarchimedean [Fintype �
     v ((linearSubst M p).coeff t) ≤ B ^ n * C := by
   rw [linearSubst_eq_aeval]
   exact abv_coeff_aeval_le_of_isHomogeneous_of_isNonarchimedean hv hp hB0
-    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id hB0 (hM i)) hpC t
+    (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id.injOn hB0 fun j _ ↦ hM i j) hpC t
 
 /-- Each coefficient of `blockSubst A (monomial s a)` is bounded under `v` by
 `(card ι * B) ^ s.degree * v a` when the entries of `A` are bounded by `B`. The bound depends on
@@ -270,11 +234,11 @@ theorem abv_coeff_blockSubst_monomial_le [Fintype ι] [CommSemiring S] [PartialO
   exact abv_coeff_aeval_monomial_le
     (fun p _ ↦ by
       simpa only [blockLinearForm_apply] using
-        card_support_sum_C_mul_X_le (A p.2) (Prod.mk p.1))
+        (card_support_sum_C_mul_X_le univ (A p.2) (Prod.mk p.1)).trans_eq card_univ)
     (fun p _ m ↦ by
       simpa only [blockLinearForm_apply] using
-        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1) ((v.nonneg _).trans (hA p.2 p.2))
-          (hA p.2) m)
+        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1).injOn
+          ((v.nonneg _).trans (hA p.2 p.2)) (fun j _ ↦ hA p.2 j) m)
     a t
 
 /-- Nonarchimedean companion to `abv_coeff_blockSubst_monomial_le`. -/
@@ -287,8 +251,8 @@ theorem abv_coeff_blockSubst_monomial_le_of_isNonarchimedean [Fintype ι] [CommS
   exact abv_coeff_aeval_monomial_le_of_isNonarchimedean hv
     (fun p _ m ↦ by
       simpa only [blockLinearForm_apply] using
-        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1) ((v.nonneg _).trans (hA p.2 p.2))
-          (hA p.2) m)
+        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1).injOn
+          ((v.nonneg _).trans (hA p.2 p.2)) (fun j _ ↦ hA p.2 j) m)
     a t
 
 /-- For a multihomogeneous polynomial `P` of multidegree `d`, if the entries of `A` are bounded by
@@ -303,11 +267,11 @@ theorem abv_coeff_blockSubst_le_of_isMultiHomogeneous [Fintype κ] [DecidableEq 
   exact (abv_coeff_aeval_le_of_isHomogeneous hP.isHomogeneous
     (fun p _ ↦ by
       simpa only [blockLinearForm_apply] using
-        card_support_sum_C_mul_X_le (A p.2) (Prod.mk p.1))
+        (card_support_sum_C_mul_X_le univ (A p.2) (Prod.mk p.1)).trans_eq card_univ)
     (fun p _ m ↦ by
       simpa only [blockLinearForm_apply] using
-        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1) ((v.nonneg _).trans (hA p.2 p.2))
-          (hA p.2) m)
+        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1).injOn
+          ((v.nonneg _).trans (hA p.2 p.2)) (fun j _ ↦ hA p.2 j) m)
     hPC t).trans
     (mul_mul_pow_le_sq_mul_pow (card_support_le_pow_of_isMultiHomogeneous hP)
       (card_mul_nonneg_of_forall_le hA) ((v.nonneg _).trans (hPC 0)))
@@ -325,7 +289,7 @@ theorem abv_coeff_blockSubst_le_of_isHomogeneous_of_isNonarchimedean [Fintype ι
   exact abv_coeff_aeval_le_of_isHomogeneous_of_isNonarchimedean hv hp hB0
     (fun p _ m ↦ by
       simpa only [blockLinearForm_apply] using
-        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1) hB0 (hA p.2) m)
+        abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1).injOn hB0 (fun j _ ↦ hA p.2 j) m)
     hPC t
 
 end AbsoluteValue
