@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.VonNeumannAlgebra.Corner
 
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+
 /-!
 # Counterexample to corner generation without multiplicative closure
 
@@ -114,16 +116,7 @@ theorem adjoin_generatingSet_eq_top :
   refine eq_top_iff.mpr fun T _ ↦ ?_
   let b := EuclideanSpace.basisFun (Fin 3) ℂ
   have hT : T = ∑ i : Fin 3, ∑ j : Fin 3, ⟪b i, T (b j)⟫_ℂ • matrixUnit i j := by
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    calc
-      T v = T (∑ j : Fin 3, ⟪b j, v⟫_ℂ • b j) := congrArg T (b.sum_repr' v).symm
-      _ = ∑ j : Fin 3, ⟪b j, v⟫_ℂ • T (b j) := by simp [map_sum, map_smul]
-      _ = ∑ j : Fin 3, ⟪b j, v⟫_ℂ • ∑ i : Fin 3, ⟪b i, T (b j)⟫_ℂ • b i :=
-            Finset.sum_congr rfl fun j _ ↦ by rw [b.sum_repr' (T (b j))]
-      _ = (∑ i : Fin 3, ∑ j : Fin 3, ⟪b i, T (b j)⟫_ℂ • matrixUnit i j) v := by
-            rw [Finset.sum_comm]
-            simp [b, sum_apply, smul_apply, Finset.smul_sum, matrixUnit,
-              InnerProductSpace.rankOne_apply, smul_smul, mul_comm]
+    simpa only [matrixUnit, b] using (b.sum_inner_smul_rankOne b T).symm
   rw [hT]
   exact sum_mem fun i _ ↦ sum_mem fun j _ ↦
     SMulMemClass.smul_mem _ (matrixUnit_mem_adjoin i j)
