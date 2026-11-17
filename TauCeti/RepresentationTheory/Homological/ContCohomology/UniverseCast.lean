@@ -119,14 +119,10 @@ theorem d_max_universe_heq (X : TopRep.{max v w} R G) (n : ℕ) :
   | zero => rfl
   | succ n ih =>
     simp only [d_succ]
-    have aux : ∀ {A₁ A₂ : TopRep.{max v w} R G} (_ : A₁ = A₂)
-        (f₁ : A₁ ⟶ A₁.coind₁) (f₂ : A₂ ⟶ A₂.coind₁), f₁ ≍ f₂ →
-        (ofHom A₁.coind₁.ρ.coind₁ι - (coind₁Functor R G).map f₁) ≍
-          (ofHom A₂.coind₁.ρ.coind₁ι - (coind₁Functor R G).map f₂) := by
-      rintro A _ rfl f₁ f₂ hf
-      cases eq_of_heq hf
-      rfl
-    exact aux (X.resolutionX_max_universe_eq.{w} n) _ _ ih
+    exact congr_arg_heq
+      (fun p : Σ A : TopRep.{max v w} R G, A ⟶ A.coind₁ ↦
+        ofHom p.1.coind₁.ρ.coind₁ι - (coind₁Functor R G).map p.2)
+      (Sigma.ext (X.resolutionX_max_universe_eq.{w} n) ih : ⟨_, _⟩ = ⟨_, _⟩)
 
 /-- For `X : TopRep.{v} R G`, every differential `TopRep.d` at extra universe `v` is
 heterogeneously equal to that at extra universe `0`. -/
@@ -562,17 +558,6 @@ theorem universeCast_inv_degreeZeroClass (X : TopRep.{max v w} R G) (x : X.V)
 
 /-! ### Compatibility with functoriality -/
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H] in
-private theorem resHom_heq_congr {α : TopRep.{max v w} R G → TopRep.{max v w} R H → Sort*}
-    (φ : H →* G) (F : ∀ A B, (TopRep.res φ A ⟶ B) → α A B)
-    {A₁ A₂ : TopRep.{max v w} R G} {B₁ B₂ : TopRep.{max v w} R H}
-    (hA : A₁ = A₂) (hB : B₁ = B₂)
-    {g₁ : TopRep.res φ A₁ ⟶ B₁} {g₂ : TopRep.res φ A₂ ⟶ B₂} (hg : g₁ ≍ g₂) :
-    F A₁ B₁ g₁ ≍ F A₂ B₂ g₂ := by
-  subst hA hB
-  cases eq_of_heq hg
-  rfl
-
 /-- Every degree of `ContinuousCohomology.resolutionMap` is heterogeneously independent of the extra
 universe parameter `w`. -/
 theorem resolutionMap_max_universe_heq (φ : H →ₜ* G)
@@ -584,9 +569,12 @@ theorem resolutionMap_max_universe_heq (φ : H →ₜ* G)
   | zero => rfl
   | succ n ih =>
     simp only [_root_.ContinuousCohomology.resolutionMap_succ]
-    exact resHom_heq_congr (φ : H →* G)
-      (fun _ _ g ↦ ofHom (ContRepresentation.coind₁ResMap φ g.hom))
-      (X.resolutionX_max_universe_eq.{w} n) (Y.resolutionX_max_universe_eq.{w} n) ih
+    exact congr_arg_heq
+      (fun p : Σ AB : TopRep.{max v w} R G × TopRep.{max v w} R H,
+          TopRep.res (φ : H →* G) AB.1 ⟶ AB.2 ↦
+        ofHom (ContRepresentation.coind₁ResMap φ p.2.hom))
+      (Sigma.ext (Prod.ext (X.resolutionX_max_universe_eq.{w} n)
+        (Y.resolutionX_max_universe_eq.{w} n)) ih : ⟨(_, _), _⟩ = ⟨(_, _), _⟩)
 
 /-- For `X : TopRep.{v} R G` and `Y : TopRep.{v} R H`, `ContinuousCohomology.resolutionMap` at extra
 universe `v` is heterogeneously equal to that at extra universe `0`. -/
@@ -609,11 +597,10 @@ theorem cochainsMap_max_universe_heq (φ : H →ₜ* G)
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
   simp only [HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f,
     _root_.ContinuousCohomology.cochainsMap_f]
-  exact (conj_eqToHom_iff_heq' _ _ _ _).2 <|
-    resHom_heq_congr (φ : H →* G) (fun _ _ ↦ TopRep.invariantsResMap (φ : H →* G))
-      (X.resolutionX_max_universe_eq.{w} (n + 1))
-      (Y.resolutionX_max_universe_eq.{w} (n + 1))
-      (resolutionMap_max_universe_heq.{w} φ f (n + 1))
+  exact (conj_eqToHom_iff_heq' _ _ _ _).2 <| by
+    grind [X.resolutionX_max_universe_eq.{w} (n + 1),
+      Y.resolutionX_max_universe_eq.{w} (n + 1),
+      resolutionMap_max_universe_heq.{w} φ f (n + 1)]
 
 /-- For `X : TopRep.{v} R G` and `Y : TopRep.{v} R H`, `ContinuousCohomology.cochainsMap` at extra
 universe `v` is heterogeneously equal to that at extra universe `0`. -/
