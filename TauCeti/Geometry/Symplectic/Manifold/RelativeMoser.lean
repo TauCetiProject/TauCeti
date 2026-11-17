@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
@@ -319,9 +320,14 @@ private theorem hasFDerivAt_mpullbackWithin_moserField {σ₀ σ₁ : SmoothTwoF
     rw [I.range_eq_univ, contDiffWithinAt_univ] at h
     exact h.continuousAt
   -- Since `S z₀ = σ_t♭ x` is invertible, the maps `S z` are uniformly bounded below near `z₀`.
-  obtain ⟨C, hC, hlow⟩ :=
-    ContinuousAlternatingMap.exists_eventually_norm_le_mul_norm_flatL_apply hσ
-    (by rw [RoughForm.inChartAt_extChartAt_self, ← flat_def]; exact hinv t x hx)
+  obtain ⟨e, he⟩ : (S z₀).IsInvertible := by
+    simp only [S, z₀]
+    rw [RoughForm.inChartAt_extChartAt_self, ← flat_def]; exact hinv t x hx
+  set C := 2 * ‖(e.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖
+  have hlow : ∀ᶠ z in 𝓝 z₀, ∀ v, ‖v‖ ≤ C * ‖S z v‖ :=
+    ContinuousLinearMap.eventually_forall_norm_le_two_mul_mul_norm_apply
+      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.continuousAt.comp hσ) fun v ↦ by
+        simpa [← he] using (e : E →L[ℝ] E →L[ℝ] ℝ).bound_of_antilipschitz e.antilipschitzWith v
   have hρb : ∀ᶠ z in 𝓝 z₀, |ρ ((extChartAt I x).symm z)| ≤ |ρ ((extChartAt I x).symm z₀)| + 1 :=
     ((hρ.continuousAt.comp (continuousAt_extChartAt_symm x)).abs.eventually
       (gt_mem_nhds (lt_add_one |ρ ((extChartAt I x).symm z₀)|))).mono fun _ h ↦ h.le

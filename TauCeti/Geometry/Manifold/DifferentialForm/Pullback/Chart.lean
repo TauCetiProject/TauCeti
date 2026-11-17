@@ -226,7 +226,7 @@ theorem hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero [IsManifold I' 1 
   rw [inChartAt_mpullback_eq_compContinuousLinearMap ω x (f x) hz hzd hzs]
   refine (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans ?_
   rw [Fintype.card_fin, mul_comm]
-  -- The coordinate expressions of `f` agree after unfolding `writtenInExtChartAt`.
+  -- The bound `‖Dg z‖ ≤ ‖Dg z₀‖ + 1` gives `‖Dg z‖ ^ k ≤ (‖Dg z₀‖ + 1) ^ k`.
   exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hzb k) (norm_nonneg _)
 
 end TauCeti.RoughForm

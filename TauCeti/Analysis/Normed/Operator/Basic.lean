@@ -46,10 +46,10 @@ Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
 `1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
 it stays nonzero under a sufficiently small perturbation
-(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), a sufficiently small perturbation of it
-is still bounded below (`ContinuousLinearMap.norm_le_two_mul_mul_norm_apply_of_forall_norm_le`),
-and it is invertible if it is also
-surjective
+(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), a family of operators continuous at
+a point and bounded below there by `M` stays bounded below by `2 M` near that point
+(`ContinuousLinearMap.eventually_forall_norm_le_two_mul_mul_norm_apply`), and it is invertible if
+it is also surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
@@ -272,21 +272,33 @@ theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup 
   have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
   nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM.le]
 
-/-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays bounded below by `2 M` under a perturbation
-`g` of `f` with `M ‖g - f‖ ≤ 1 / 2`. -/
-theorem norm_le_two_mul_mul_norm_apply_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {f g : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖)
-    (hfg : M * ‖g - f‖ ≤ 1 / 2) (x : E) : ‖x‖ ≤ 2 * M * ‖g x‖ := by
-  rcases lt_or_ge M 0 with hM | hM
-  · -- A negative lower bound only holds on the zero space.
-    have hx : x = 0 := norm_le_zero_iff.1 ((h x).trans (mul_nonpos_of_nonpos_of_nonneg hM.le
-      (norm_nonneg _)))
+open scoped NNReal in
+/-- A family of operators `S z`, continuous at `z₀` and bounded below there, `‖x‖ ≤ M ‖S z₀ x‖`,
+stays bounded below by `2 M` near `z₀`. -/
+theorem eventually_forall_norm_le_two_mul_mul_norm_apply {X F : Type*} [TopologicalSpace X]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {S : X → E →L[𝕜] F} {z₀ : X} {M : ℝ}
+    (hS : ContinuousAt S z₀) (h : ∀ x, ‖x‖ ≤ M * ‖S z₀ x‖) :
+    ∀ᶠ z in 𝓝 z₀, ∀ x, ‖x‖ ≤ 2 * M * ‖S z x‖ := by
+  rcases le_or_gt M 0 with hM | hM
+  · -- A nonpositive lower bound only holds on the zero space.
+    refine .of_forall fun z x ↦ ?_
+    have hx : x = 0 := norm_le_zero_iff.1 ((h x).trans
+      (mul_nonpos_of_nonpos_of_nonneg hM (norm_nonneg _)))
     simp [hx]
-  have hfx : ‖f x‖ ≤ ‖g x‖ + ‖g - f‖ * ‖x‖ :=
-    calc ‖f x‖ = ‖g x - (g - f) x‖ := by rw [sub_apply, sub_sub_cancel]
-      _ ≤ ‖g x‖ + ‖(g - f) x‖ := norm_sub_le _ _
-      _ ≤ ‖g x‖ + ‖g - f‖ * ‖x‖ := by gcongr; exact (g - f).le_opNorm x
-  nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM, mul_le_mul_of_nonneg_right hfg (norm_nonneg x)]
+  lift M to ℝ≥0 using hM.le
+  have h2M : 0 < (2 * M)⁻¹ := inv_pos.2 (mul_pos two_pos (mod_cast hM))
+  filter_upwards [hS.eventually (eventually_nnNorm_sub_lt (S z₀) h2M)] with z hz x
+  have hK : ‖S z - S z₀‖₊ < M⁻¹ := hz.trans_le (by
+    rw [mul_inv]; exact mul_le_of_le_one_left zero_le (by norm_num))
+  -- Mathlib's perturbation of antilipschitz maps bounds `S z` below by `(M⁻¹ - ‖S z - S z₀‖₊)⁻¹`;
+  -- the Lipschitz bound of `S z - S z₀` applies to `⇑(S z) - ⇑(S z₀)` by definition.
+  refine ((S z).bound_of_antilipschitz (((S z₀).antilipschitz_of_bound h).add_sub_lipschitzWith
+    (S z - S z₀).lipschitzWith hK) x).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  rw [← NNReal.coe_two, ← NNReal.coe_mul, NNReal.coe_le_coe]
+  refine inv_le_of_inv_le₀ (mul_pos two_pos hM) ?_
+  rw [le_tsub_iff_right hK.le]
+  calc (2 * M)⁻¹ + ‖S z - S z₀‖₊ ≤ (2 * M)⁻¹ + (2 * M)⁻¹ := by gcongr
+    _ = M⁻¹ := by rw [← two_mul, mul_inv, ← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul]
 
 /-- On a nontrivial space, an operator bounded below, `‖x‖ ≤ M ‖f x‖`, satisfies
 `1 ≤ ‖f‖ M`. -/

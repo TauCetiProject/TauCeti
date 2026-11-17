@@ -26,8 +26,8 @@ scalar functions recover both functions as differentiable.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
-  dominated near a point by a function with zero value and zero derivative there has zero value
-  and zero derivative there as well.
+  dominated near a point by a function with zero value and zero derivative there has zero
+  derivative there as well.
 -/
 
 public section
@@ -95,7 +95,7 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
 
 /-- **Domination preserves zero first jets.** If `f = O(g)` near `x` within a set `s` containing
 `x`, and `g` has value `0` and derivative `0` at `x` within `s`, then `f` has derivative `0` at `x`
-within `s` (and value `0` there). -/
+within `s`. -/
 theorem Asymptotics.IsBigO.hasFDerivWithinAt_zero (h : f =O[𝓝[s] x] g)
     (hg : HasFDerivWithinAt g (0 : E →L[𝕜] G) s x) (hgx : g x = 0) (hx : x ∈ s) :
     HasFDerivWithinAt f (0 : E →L[𝕜] F) s x := by
@@ -107,7 +107,7 @@ theorem Asymptotics.IsBigO.hasFDerivWithinAt_zero (h : f =O[𝓝[s] x] g)
   exact h.trans_isLittleO hg
 
 /-- **Domination preserves zero first jets.** If `f = O(g)` near `x`, and `g` has value `0` and
-derivative `0` at `x`, then `f` has derivative `0` at `x` (and value `0` there). -/
+derivative `0` at `x`, then `f` has derivative `0` at `x`. -/
 theorem Asymptotics.IsBigO.hasFDerivAt_zero (h : f =O[𝓝 x] g)
     (hg : HasFDerivAt g (0 : E →L[𝕜] G) x) (hgx : g x = 0) : HasFDerivAt f (0 : E →L[𝕜] F) x := by
   rw [← hasFDerivWithinAt_univ] at hg ⊢
