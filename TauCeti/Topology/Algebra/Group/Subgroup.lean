@@ -118,6 +118,9 @@ series of a profinite group.
   generate a dense subgroup.
 * `TauCeti.discreteTopology_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a discrete
   subgroup `H` is discrete.
+* `Subgroup.opInvContinuousMulEquiv`: the continuous isomorphism `K.op ≃ₜ* K`,
+  `a ↦ (MulOpposite.unop a)⁻¹`, from the group acting on `G` by right multiplication with
+  orbits the left cosets of `K`, to `K`.
 * `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` group with
   continuous translations has discrete range when some neighbourhood of the identity has finite
   preimage.
@@ -151,6 +154,30 @@ end TauCeti
 namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- The continuous isomorphism `K.op ≃ₜ* K`, `a ↦ (MulOpposite.unop a)⁻¹`. The group `K.op`
+acts on `G` by right multiplication, `MulOpposite.op k • g = g * k`, with orbits the left cosets
+`g K`; along this isomorphism that action becomes the action `k • g = g * k⁻¹` of `K`. -/
+def opInvContinuousMulEquiv [ContinuousInv G] (K : Subgroup G) : K.op ≃ₜ* K where
+  toFun a := ⟨(MulOpposite.unop (a : Gᵐᵒᵖ))⁻¹, K.inv_mem a.2⟩
+  invFun k := ⟨MulOpposite.op (k : G)⁻¹, K.inv_mem k.2⟩
+  left_inv a := by ext; simp
+  right_inv k := by ext; simp
+  map_mul' a b := by ext; simp
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+/-- `Subgroup.opInvContinuousMulEquiv` sends `a` to `(MulOpposite.unop a)⁻¹`. -/
+@[simp]
+theorem coe_opInvContinuousMulEquiv_apply [ContinuousInv G] (K : Subgroup G) (a : K.op) :
+    ((K.opInvContinuousMulEquiv a : K) : G) = (MulOpposite.unop (a : Gᵐᵒᵖ))⁻¹ :=
+  (rfl)
+
+/-- The inverse of `Subgroup.opInvContinuousMulEquiv` sends `k` to `MulOpposite.op k⁻¹`. -/
+@[simp]
+theorem coe_opInvContinuousMulEquiv_symm_apply [ContinuousInv G] (K : Subgroup G) (k : K) :
+    ((K.opInvContinuousMulEquiv.symm k : K.op) : Gᵐᵒᵖ) = MulOpposite.op (k : G)⁻¹ :=
+  (rfl)
 
 -- Normalize the action before `subgroupOfContinuousMulEquivOfLe_apply` rewrites the scalar.
 /-- The canonical topological identification of `V.subgroupOf U` with `V` respects every action

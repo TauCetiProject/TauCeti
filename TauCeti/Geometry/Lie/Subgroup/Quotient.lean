@@ -10,6 +10,9 @@ public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Lie.Basic
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Homogeneous spaces `G ⧸ K` of Lie groups
@@ -25,8 +28,9 @@ the coset space `G ⧸ K` a smooth manifold of dimension `dim G - dim 𝔨` for 
 Mathlib's coset space `G ⧸ K` is by definition the orbit space of the subgroup `K.op` of `Gᵐᵒᵖ`,
 acting on `G` by `MulOpposite.op k • g = g * k`. So the acting group is `K.op`, which this file
 charts by pulling back the charts of `K` along the continuous isomorphism
-`K.op ≃ₜ* K`, `a ↦ (MulOpposite.unop a)⁻¹`. This is the left action `k • g = g * k⁻¹` of `K` on `G`,
-transported to `K.op`.
+`Subgroup.opInvContinuousMulEquiv : K.op ≃ₜ* K`, `a ↦ (MulOpposite.unop a)⁻¹`. This is the left
+action `k • g = g * k⁻¹` of `K` on `G`, transported to `K.op`. The action is free
+(`TauCeti.MulOpposite.instIsCancelSMul`).
 
 ## Main definitions
 
@@ -69,17 +73,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
   (K : Subgroup G) [IsClosed (K : Set G)]
 
-/-- The continuous isomorphism `K.op ≃ₜ* K`, `a ↦ (MulOpposite.unop a)⁻¹`, along which `K.op` is
-charted. -/
+/-- The continuous isomorphism `Subgroup.opInvContinuousMulEquiv : K.op ≃ₜ* K`,
+`a ↦ (MulOpposite.unop a)⁻¹`, along which `K.op` is charted, for the topological group structure
+of the Lie group `G`. -/
 private def opInvEquiv : K.op ≃ₜ* K :=
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
-  { toFun a := ⟨(unop (a : Gᵐᵒᵖ))⁻¹, K.inv_mem a.2⟩
-    invFun k := ⟨op (k : G)⁻¹, K.inv_mem k.2⟩
-    left_inv a := by ext; simp
-    right_inv k := by ext; simp
-    map_mul' a b := by ext; simp
-    continuous_toFun := by fun_prop
-    continuous_invFun := by fun_prop }
+  K.opInvContinuousMulEquiv
 
 /-- The charts on `K.op` for a closed subgroup `K` of a Lie group: the closed-subgroup charts of
 `K` (`TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`), modelled on its Lie algebra, pulled back
@@ -135,13 +134,6 @@ theorem contMDiffSMul_op :
   rw [h]
   exact contMDiff_snd.mul (hv.comp contMDiff_fst).inv
 
-omit [TopologicalSpace G] [T2Space G] [IsClosed (K : Set G)] in
-/-- The right multiplication action of a subgroup on its group is free. -/
-private theorem isCancelSMul_op : IsCancelSMul K.op G :=
-  isCancelSMul_iff_eq_one_of_smul_eq.2 fun a g h ↦ by
-    ext
-    simpa [Subgroup.smul_def] using h
-
 variable (G) in
 /-- **The charts of the homogeneous space `G ⧸ K`.** For a closed subgroup `K` of a
 finite-dimensional real Lie group `G` with boundaryless model, the coset space `G ⧸ K` is the orbit
@@ -156,7 +148,6 @@ def quotientChartedSpace [I.Boundaryless] :
   letI := opChartedSpace I K
   haveI := lieGroup_op I K
   haveI := contMDiffSMul_op I K
-  haveI := isCancelSMul_op K
   haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
   ProperSMul.orbitRelQuotientChartedSpace
     𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K.op I G
@@ -174,7 +165,6 @@ instance instIsManifoldQuotient :
   let _ := opChartedSpace I K
   have := lieGroup_op I K
   have := contMDiffSMul_op I K
-  have := isCancelSMul_op K
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   exact ProperSMul.instIsManifoldOrbitRelQuotient
 
@@ -189,7 +179,6 @@ theorem isSubmersion_quotientMk :
   let _ := opChartedSpace I K
   have := lieGroup_op I K
   have := contMDiffSMul_op I K
-  have := isCancelSMul_op K
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   exact ProperSMul.isSubmersion_quotientMk
 
@@ -201,36 +190,6 @@ theorem contMDiff_quotientMk :
       (QuotientGroup.mk : G → G ⧸ K) := by
   let _ := quotientChartedSpace I G K
   exact (isSubmersion_quotientMk I K).contMDiff
-
-omit [I.Boundaryless] in
-/-- The map `MulOpposite.op k ↦ k` from `K.op` to `K` has surjective differential at `1`: it has
-the smooth right inverse `k ↦ MulOpposite.op k`. -/
-private theorem range_mfderiv_unop :
-    letI := opChartedSpace I K
-    letI := (data I K).chartedSpace
-    (mfderiv 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
-      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
-      (fun a : K.op ↦ (opInvEquiv I K a)⁻¹) 1).range = ⊤ := by
-  let _ := opChartedSpace I K
-  let _ := (data I K).chartedSpace
-  let _ := (data I K).lieGroup
-  have := lieGroup_op I K
-  have hφ := (contMDiff_opInvEquiv I K).inv
-  have hψ : ContMDiff 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
-      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞
-      (fun k : K ↦ (opInvEquiv I K).symm k⁻¹) := by
-    have h := ((opInvEquiv I K).toHomeomorph.pullbackDiffeomorph
-      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞).symm.contMDiff
-    rw [Homeomorph.coe_pullbackDiffeomorph_symm] at h
-    exact h.comp (contMDiff_inv _ _)
-  let Φ : K.op ≃ₘ^∞⟮𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule),
-      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)⟯ K :=
-    { toEquiv := (opInvEquiv I K).toEquiv.trans (Equiv.inv K)
-      contMDiff_toFun := hφ
-      contMDiff_invFun := hψ }
-  obtain ⟨L, hL⟩ := Φ.isInvertible_mfderiv (by simp) (x := 1)
-  rw [LinearMap.range_eq_top, ContinuousLinearMap.coe_coe]
-  exact hL ▸ L.surjective
 
 /-- **The vertical directions of `G → G ⧸ K` are the left translates of `K`'s tangent space.** The
 kernel of the differential at `g` of the projection is the image of the differential at `1` of
@@ -248,10 +207,9 @@ theorem ker_mfderiv_quotientMk (g : G) :
   let _ := (data I K).lieGroup
   have := lieGroup_op I K
   have := contMDiffSMul_op I K
-  have := isCancelSMul_op K
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
-  rw [show (QuotientGroup.mk : G → G ⧸ K) = Quotient.mk (MulAction.orbitRel K.op G) from rfl,
-    ProperSMul.ker_mfderiv_quotientMk, InfinitesimalAction.orbitTangent_eq_range]
+  rw [QuotientGroup.mk_eq_quotient_mk_orbitRel, ProperSMul.ker_mfderiv_quotientMk,
+    InfinitesimalAction.orbitTangent_eq_range]
   have heval : (InfinitesimalAction.fundamental
       𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K.op I G).eval g =
       (mfderiv 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I
@@ -260,21 +218,33 @@ theorem ker_mfderiv_quotientMk (g : G) :
     rw [InfinitesimalAction.eval_apply, InfinitesimalAction.fundamental_apply,
       fundamentalVectorField_apply]
     rfl
-  have hL : ContMDiff 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I ∞
-      (fun k : K ↦ g * (k : G)) :=
-    contMDiff_const.mul (data I K).contMDiff_subtypeVal
-  -- The orbit map `a ↦ a • g` of `K.op` is `k ↦ g * k` after `a ↦ MulOpposite.unop a`.
-  have key : ∀ o : K.op → G, o = (fun k : K ↦ g * (k : G)) ∘ (fun a ↦ (opInvEquiv I K a)⁻¹) →
-      ∀ y, (opInvEquiv I K 1)⁻¹ = y →
+  -- The map `a ↦ MulOpposite.unop a` is a diffeomorphism `Φ : K.op ≃ K`, with inverse
+  -- `k ↦ MulOpposite.op k`, and the orbit map `a ↦ a • g` of `K.op` is `k ↦ g * k` after `Φ`.
+  have hψ : ContMDiff 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞
+      (fun k : K ↦ (opInvEquiv I K).symm k⁻¹) := by
+    have h := ((opInvEquiv I K).toHomeomorph.pullbackDiffeomorph
+      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞).symm.contMDiff
+    rw [Homeomorph.coe_pullbackDiffeomorph_symm] at h
+    exact h.comp (contMDiff_inv _ _)
+  let Φ : K.op ≃ₘ^∞⟮𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule),
+      𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)⟯ K :=
+    { toEquiv := (opInvEquiv I K).toEquiv.trans (Equiv.inv K)
+      contMDiff_toFun := (contMDiff_opInvEquiv I K).inv
+      contMDiff_invFun := hψ }
+  have hΦ (a : K.op) : Φ a = (opInvEquiv I K a)⁻¹ := rfl
+  have horbit : (fun a : K.op ↦ a • g) = (fun k : K ↦ g * (k : G)) ∘ Φ := by
+    funext a
+    simp [hΦ, opInvEquiv, Subgroup.smul_def]
+  -- The orbit map and the base point are generalized, since the tangent spaces in the type of
+  -- the differential depend on them.
+  have key : ∀ o : K.op → G, o = (fun k : K ↦ g * (k : G)) ∘ Φ → ∀ y, Φ 1 = y →
       (mfderiv 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I o 1).range =
         (mfderiv 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I
           (fun k : K ↦ g * (k : G)) y).range := by
     rintro o rfl y rfl
-    rw [mfderiv_comp (1 : K.op) (hL.mdifferentiableAt (by simp))
-      ((contMDiff_opInvEquiv I K).inv.mdifferentiableAt (by simp)),
-      ContinuousLinearMap.toLinearMap_comp,
-      LinearMap.range_comp_of_range_eq_top _ (range_mfderiv_unop I K)]
+    exact Φ.range_mfderiv_comp_diffeomorph (by simp) _ 1
   rw [heval]
-  exact key _ (by funext a; simp [opInvEquiv, Subgroup.smul_def]) 1 (by simp)
+  exact key _ horbit 1 (by rw [hΦ, map_one, inv_one])
 
 end Subgroup
