@@ -14,6 +14,7 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
+import TauCeti.AlgebraicTopology.Sphere.Puncture
 import TauCeti.Topology.UnitInterval.OpenSquare
 
 /-!
@@ -35,11 +36,12 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 `EuclideanSpace ℝ (ULift (Fin n))` of the same dimension in the lifted universe
 (`TauCeti.diskBoundaryHomeomorph`), which lets results about unit spheres of inner product spaces
 in that universe be applied to it.  In particular the boundary of the `n`-disk is empty exactly
-when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
-`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`).  The antipodal map of
-the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
-`EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary sphere,
-compatible with the boundary
+when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), removing a single point leaves a contractible
+subspace (`TauCeti.contractibleSpace_diskBoundary_compl_singleton`), and a point of the boundary
+`S⁰` of the `1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`).  The
+antipodal map of the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear
+isometry `e` of `EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary
+sphere, compatible with the boundary
 inclusion (`LinearIsometryEquiv.diskIso`, `LinearIsometryEquiv.diskBoundaryIso`); these are the
 orthogonal reparametrizations of attached cells. Likewise a linear isometry of a normed space onto
 `EuclideanSpace ℝ (Fin n)` identifies its closed unit ball with the disk
@@ -298,6 +300,17 @@ lemma finrank_euclideanSpace_ulift_fin (n : ℕ) :
 instance t2Space_diskBoundary (n : ℕ) : T2Space (TopCat.diskBoundary.{u} n) :=
   -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
   inferInstanceAs (T2Space (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
+/-- **A punctured boundary sphere is contractible**: removing a single point from
+`TopCat.diskBoundary n` leaves a contractible subspace, in every universe and every dimension. -/
+theorem contractibleSpace_diskBoundary_compl_singleton {n : ℕ}
+    (s : TopCat.diskBoundary.{u} n) :
+    ContractibleSpace ({s}ᶜ : Set (TopCat.diskBoundary.{u} n)) :=
+  let e : (TopCat.diskBoundary.{u} n : Type u) ≃ₜ
+      Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1 := Homeomorph.ulift
+  (e.subtype (q := (· ∈ ({e s}ᶜ : Set _))) fun _ ↦
+    e.injective.ne_iff.symm).contractibleSpace_iff.mpr
+    (contractibleSpace_sphere_compl_singleton (e s))
 
 /-- The boundary of the `0`-disk is empty. -/
 instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=

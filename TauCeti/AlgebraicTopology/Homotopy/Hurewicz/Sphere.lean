@@ -9,7 +9,6 @@ public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
-public import TauCeti.AlgebraicTopology.Sphere.Puncture
 
 /-!
 # The Hurewicz class of the tautological loop of a sphere
@@ -312,20 +311,6 @@ private lemma diskBoundaryPairToCube_comp_toCubeBoundaryPairHom :
   -- Both sides are now the underlying point of `diskToDiskBoundary n z`.
   rfl
 
-private lemma contractibleSpace_diskBoundary_compl_singleton
-    (s : TopCat.diskBoundary.{w} (n + 2)) :
-    ContractibleSpace ({s}ᶜ : Set (TopCat.diskBoundary.{w} (n + 2))) := by
-  let e : ({s}ᶜ : Set (TopCat.diskBoundary.{w} (n + 2))) ≃ₜ
-      ({diskBoundaryHomeomorph (n + 2) s}ᶜ :
-        Set (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 2)))) 1)) :=
-    (diskBoundaryHomeomorph (n + 2)).subtype fun x ↦ by
-      simp only [mem_compl_iff, mem_singleton_iff,
-        (diskBoundaryHomeomorph (n + 2)).injective.eq_iff]
-  have hc : ContractibleSpace ({diskBoundaryHomeomorph (n + 2) s}ᶜ :
-      Set (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 2)))) 1)) :=
-    contractibleSpace_sphere_compl_singleton _
-  exact e.contractibleSpace_iff.mpr hc
-
 /-- **The Hurewicz class of the tautological loop generates the top homology of the lifted sphere**
 in every universe `w`: `GenLoop.hurewicz R (diskBoundaryGenLoop (n + 1))` is an isomorphism
 `R ≅ Hₙ₊₁(∂𝔻 (n + 2); R)`. -/
@@ -346,7 +331,7 @@ instance isIso_hurewicz_diskBoundaryGenLoop :
     exact h.symm
   have : ContractibleSpace (TopPair.ofSubset ({southPole.{w} n}ᶜ :
       Set (TopCat.of (TopCat.diskBoundary.{w} (n + 2))))).snd :=
-    contractibleSpace_diskBoundary_compl_singleton n (southPole.{w} n)
+    contractibleSpace_diskBoundary_compl_singleton (southPole.{w} n)
   -- State the source of `singularHomologyπ` as `singularHomologyFunctor` so instance search matches
   -- the target of `GenLoop.hurewicz`.
   have : IsIso (X := ((singularHomologyFunctor C (n + 1)).obj R).obj

@@ -84,16 +84,18 @@ theorem mapRingHom_id (n : ℕ) :
 theorem mapRingHom_comp {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T} [RingHomCompTriple φ ψ χ]
     (n : ℕ) :
     mapRingHom X χ n = (mapRingHom X ψ n).comp (mapRingHom X φ n) := by
-  ext c
-  simp [← RingHomCompTriple.comp_apply (σ₁₂ := φ) (σ₂₃ := ψ) (σ₁₃ := χ)]
+  have h : χ.toSemilinearMap = ψ.toSemilinearMap.comp φ.toSemilinearMap :=
+    LinearMap.ext fun _ ↦ (RingHomCompTriple.comp_apply (σ₁₂ := φ) (σ₂₃ := ψ) (σ₁₃ := χ)).symm
+  simpa only [mapRingHom, h] using
+    Finsupp.mapRange.linearMap_comp (α := SingularCube X n) ψ.toSemilinearMap φ.toSemilinearMap
 
 /-- Change of coefficients commutes with push-forward along a continuous map. -/
 theorem mapRingHom_map (φ : R →+* S) (f : C(X, Y)) {n : ℕ} (g : CubicalChain X R n) :
     mapRingHom Y φ n (map R f n g) = map S f n (mapRingHom X φ n g) := by
-  induction g using Finsupp.induction_linear with
-  | zero => simp
-  | add a b ha hb => simp [ha, hb]
-  | single c r => simp
+  have hmapR : map R f n = lmapDomain R R f.comp := lhom_ext' fun _ ↦ LinearMap.ext_ring (by simp)
+  have hmapS : map S f n = lmapDomain S S f.comp := lhom_ext' fun _ ↦ LinearMap.ext_ring (by simp)
+  rw [hmapR, hmapS]
+  exact (Finsupp.mapDomain_mapRange f.comp g φ (map_zero φ) (map_add φ)).symm
 
 /-- Change of coefficients commutes with dimension reindexing. -/
 theorem mapRingHom_cast (φ : R →+* S) {n m : ℕ} (h : n = m) (g : CubicalChain X R n) :
@@ -197,11 +199,9 @@ theorem mapRingHom_id (n : ℕ) :
 theorem mapRingHom_comp {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T} [RingHomCompTriple φ ψ χ]
     (n : ℕ) :
     mapRingHom X χ n = (mapRingHom X ψ n).comp (mapRingHom X φ n) := by
-  refine LinearMap.ext fun g ↦ ?_
-  induction g using Submodule.Quotient.induction_on with
-  | H g =>
-    rw [mapRingHom_mk, LinearMap.comp_apply, mapRingHom_mk, mapRingHom_mk,
-      CubicalChain.mapRingHom_comp (φ := φ) (ψ := ψ) (χ := χ), LinearMap.comp_apply]
+  unfold mapRingHom
+  simp only [CubicalChain.mapRingHom_comp (φ := φ) (ψ := ψ) (χ := χ)]
+  exact Submodule.mapQ_comp (τ₁₂ := φ) (τ₂₃ := ψ) (τ₁₃ := χ) _ _ _ _ _ _ _
 
 /-- Change of coefficients on normalized cubical chains commutes with the boundary operator. -/
 theorem mapRingHom_boundary (φ : R →+* S) {n : ℕ} (g : NormalizedCubicalChain X R (n + 1)) :
@@ -226,19 +226,12 @@ theorem mapRingHom_cast (φ : R →+* S) {n m : ℕ} (h : n = m) (g : Normalized
 /-- Change of coefficients carries the `R`-span of a set of cubes into its `S`-span. -/
 theorem mapRingHom_mem_span_ofCube (φ : R →+* S) {n : ℕ} {A : Set (SingularCube X n)}
     {g : NormalizedCubicalChain X R n} (hg : g ∈ Submodule.span R (ofCube X R '' A)) :
-    mapRingHom X φ n g ∈ Submodule.span S (ofCube X S '' A) := by
-  induction hg using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨c, hc, rfl⟩ := h
-    rw [mapRingHom_ofCube]
-    exact Submodule.subset_span ⟨c, hc, rfl⟩
-  | zero => simp
-  | add _ _ _ _ ha hb =>
-    rw [map_add]
-    exact Submodule.add_mem _ ha hb
-  | smul r _ _ ha =>
-    rw [map_smulₛₗ]
-    exact Submodule.smul_mem _ (φ r) ha
+    mapRingHom X φ n g ∈ Submodule.span S (ofCube X S '' A) :=
+  ((Submodule.image_span_subset (mapRingHom X φ n) (ofCube X R '' A)
+    (Submodule.span S (ofCube X S '' A))).2 <| by
+      rintro _ ⟨c, hc, rfl⟩
+      rw [mapRingHom_ofCube]
+      exact Submodule.subset_span ⟨c, hc, rfl⟩) ⟨g, hg, rfl⟩
 
 variable (X) in
 /-- Semilinear equivalence of normalized cubical chains induced by a ring isomorphism
@@ -249,44 +242,36 @@ def ringEquiv (e : R ≃+* S) (n : ℕ) :
     NormalizedCubicalChain X R n ≃ₛₗ[(↑e : R →+* S)] NormalizedCubicalChain X S n :=
   haveI := RingHomInvPair.of_ringEquiv e
   haveI := RingHomInvPair.symm (↑e : R →+* S) (e.symm : S →+* R)
-  { mapRingHom X (↑e : R →+* S) n with
-    invFun := mapRingHom X (e.symm : S →+* R) n
-    left_inv g := by
-      have h := LinearMap.congr_fun
-        (mapRingHom_comp (X := X) (φ := (↑e : R →+* S)) (ψ := (e.symm : S →+* R))
-          (χ := RingHom.id R) n) g
-      rw [mapRingHom_id, LinearMap.id_apply, LinearMap.comp_apply] at h
-      exact h.symm
-    right_inv g := by
-      have h := LinearMap.congr_fun
-        (mapRingHom_comp (X := X) (φ := (e.symm : S →+* R)) (ψ := (↑e : R →+* S))
-          (χ := RingHom.id S) n) g
-      rw [mapRingHom_id, LinearMap.id_apply, LinearMap.comp_apply] at h
-      exact h.symm }
+  Submodule.Quotient.equiv _ _ (CubicalChain.ringEquiv X e n) <| by
+    ext g
+    rw [Submodule.mem_map_equiv, CubicalChain.ringEquiv_symm_apply]
+    exact CubicalChain.mapRingHom_mem_degenerate_iff (e.symm : S →+* R) e.symm.injective g
 
 /-- Forward evaluation of `NormalizedCubicalChain.ringEquiv` applies `mapRingHom`. -/
 @[simp]
 theorem ringEquiv_apply (e : R ≃+* S) {n : ℕ} (g : NormalizedCubicalChain X R n) :
-    ringEquiv X e n g = mapRingHom X (↑e : R →+* S) n g :=
-  (rfl)
+    ringEquiv X e n g = mapRingHom X (↑e : R →+* S) n g := by
+  induction g using Submodule.Quotient.induction_on with
+  | H g => rfl
 
 /-- Inverse evaluation of `NormalizedCubicalChain.ringEquiv` applies `mapRingHom` to `e.symm`. -/
 @[simp]
 theorem ringEquiv_symm_apply (e : R ≃+* S) {n : ℕ} (g : NormalizedCubicalChain X S n) :
     haveI := RingHomInvPair.of_ringEquiv e
     haveI := RingHomInvPair.symm (↑e : R →+* S) (e.symm : S →+* R)
-    (ringEquiv X e n).symm g = mapRingHom X (e.symm : S →+* R) n g :=
-  (rfl)
+    (ringEquiv X e n).symm g = mapRingHom X (e.symm : S →+* R) n g := by
+  induction g using Submodule.Quotient.induction_on with
+  | H g => rfl
 
 /-- `NormalizedCubicalChain.ringEquiv` sends the class of a singular cube to itself over `S`. -/
 theorem ringEquiv_ofCube (e : R ≃+* S) {n : ℕ} (c : SingularCube X n) :
-    ringEquiv X e n (ofCube X R c) = ofCube X S c :=
-  mapRingHom_ofCube (↑e : R →+* S) c
+    ringEquiv X e n (ofCube X R c) = ofCube X S c := by
+  rw [ringEquiv_apply, mapRingHom_ofCube]
 
 /-- `NormalizedCubicalChain.ringEquiv` commutes with the normalized boundary operator. -/
 theorem ringEquiv_boundary (e : R ≃+* S) {n : ℕ} (g : NormalizedCubicalChain X R (n + 1)) :
-    ringEquiv X e n (boundary X R n g) = boundary X S n (ringEquiv X e (n + 1) g) :=
-  mapRingHom_boundary (↑e : R →+* S) g
+    ringEquiv X e n (boundary X R n g) = boundary X S n (ringEquiv X e (n + 1) g) := by
+  rw [ringEquiv_apply, ringEquiv_apply, mapRingHom_boundary]
 
 end NormalizedCubicalChain
 
