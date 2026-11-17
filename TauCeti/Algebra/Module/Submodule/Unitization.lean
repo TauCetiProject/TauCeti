@@ -11,25 +11,26 @@ public import Mathlib.RingTheory.Ideal.Maps
 /-!
 # Left `Unitization` module actions on submodules
 
-Given a semiring `R` and a nonunital nonassociative semiring `A` with an `R`-module structure, any
-`R`-submodule `L : Submodule R A` closed under left multiplication by `A` carries a left action of
-the forced unitization `Unitization R A` given by `(r, a) • x = r • x + a * x`. When `R` is a
-commutative semiring and `A` is an associative nonunital semiring with `[IsScalarTower R A A]` and
-`[SMulCommClass R A A]`, this action defines a left `Unitization R A`-module structure on `L`
-compatible with multiplication in `Unitization R A` via `Unitization.inr`, and elements of
-`Module.annihilator (Unitization R A) L` are characterized by `∀ x ∈ L, u.fst • x + u.snd * x = 0`.
+Given a commutative semiring `R` and a nonunital associative semiring `A` with an `R`-module
+structure satisfying `[IsScalarTower R A A]` and `[SMulCommClass R A A]`, any `R`-submodule
+`L : Submodule R A` closed under left multiplication by `A` carries a left `Unitization R A`-module
+structure given by `(r, a) • x = r • x + a * x`. This action is compatible with multiplication in
+`Unitization R A` via `Unitization.inr` and with the `R`-module structure on `L`
+(`IsScalarTower R (Unitization R A) L`), and elements of `Module.annihilator (Unitization R A) L`
+are characterized by `∀ x ∈ L, u.fst • x + u.snd * x = 0`.
 
-Both `Submodule.unitizationSMul` and `Submodule.unitizationModule` are provided as
-`@[instance_reducible]` definitions taking the left-absorption hypothesis explicitly rather than as
-global typeclass instances.
+`Submodule.unitizationModule` is provided as an `@[instance_reducible]` definition taking the
+left-absorption hypothesis explicitly rather than as a global typeclass instance.
 
 ## Main definitions and results
 
-* `Submodule.unitizationSMul`: the left scalar action `(r, a) • x = r • x + a * x` of
-  `Unitization R A` on an `R`-submodule `L : Submodule R A` closed under left multiplication by `A`.
-* `Submodule.inr_coe_unitizationSMul`: coercing `(r, a) • x` into `Unitization R A` agrees with
-  multiplication in `Unitization R A`.
-* `Submodule.unitizationModule`: the left `Unitization R A`-module structure on `L`.
+* `Submodule.unitizationModule`: the left `Unitization R A`-module structure
+  `(r, a) • x = r • x + a * x` on an `R`-submodule `L : Submodule R A` closed under left
+  multiplication by `A`.
+* `Submodule.coe_unitizationModule_smul` and `Submodule.inr_coe_unitizationModule_smul`: coercion
+  formulas for `(r, a) • x` into `A` and into `Unitization R A`.
+* `Submodule.isScalarTower_unitizationModule`: scalar compatibility
+  `IsScalarTower R (Unitization R A) L`.
 * `Submodule.mem_annihilator_unitization_iff`: membership characterization for
   `Module.annihilator (Unitization R A) L`.
 -/
@@ -38,44 +39,22 @@ public section
 
 namespace Submodule
 
-section NonAssocSemiring
-
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
-
-/-- Left scalar action `(r, a) • x = r • x + a * x` of `Unitization R A` on an `R`-submodule
-`L : Submodule R A` closed under left multiplication by `A`. Provided as a definition taking the
-left-absorption hypothesis rather than a global instance. -/
-@[instance_reducible]
-def unitizationSMul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
-    SMul (Unitization R A) L where
-  smul u x := ⟨u.fst • (x : A) + u.snd * (x : A),
-    L.add_mem (L.smul_mem u.fst x.2) (hmul u.snd x x.2)⟩
-
-theorem coe_unitizationSMul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L)
-    (u : Unitization R A) (x : L) :
-    (letI := L.unitizationSMul hmul; ((u • x : L) : A)) = u.fst • (x : A) + u.snd * (x : A) :=
-  (rfl)
-
-/-- Coercing `(r, a) • x` from `L` into `Unitization R A` agrees with multiplication in
-`Unitization R A`. -/
-theorem inr_coe_unitizationSMul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L)
-    (u : Unitization R A) (x : L) :
-    (letI := L.unitizationSMul hmul; (((u • x : L) : A) : Unitization R A)) =
-      u * ((x : A) : Unitization R A) := by
-  let _ := L.unitizationSMul hmul
-  ext
-  · simp
-  · simp [coe_unitizationSMul]
-
-end NonAssocSemiring
-
 section Semiring
 
 variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A]
 
-/-- Left `Unitization R A`-module structure on an `R`-submodule `L : Submodule R A` closed under
-left multiplication by `A`, induced by multiplication in `Unitization R A`. -/
+/-- Left scalar action `(r, a) • x = r • x + a * x` of `Unitization R A` on an `R`-submodule
+`L : Submodule R A` closed under left multiplication by `A`. -/
+@[instance_reducible]
+private def unitizationSMul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
+    SMul (Unitization R A) L where
+  smul u x := ⟨u.fst • (x : A) + u.snd * (x : A),
+    L.add_mem (L.smul_mem u.fst x.2) (hmul u.snd x x.2)⟩
+
+/-- Left `Unitization R A`-module structure `(r, a) • x = r • x + a * x` on an `R`-submodule
+`L : Submodule R A` closed under left multiplication by `A`. Provided as an `@[instance_reducible]`
+definition taking the left-absorption hypothesis explicitly rather than a global instance. -/
 @[instance_reducible]
 def unitizationModule (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
     Module (Unitization R A) L :=
@@ -83,7 +62,35 @@ def unitizationModule (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x 
   Function.Injective.module (Unitization R A)
     ((Unitization.inrHom R R A).toAddMonoidHom.comp L.subtype.toAddMonoidHom)
     (Unitization.inr_injective.comp Subtype.coe_injective)
-    (L.inr_coe_unitizationSMul hmul)
+    (fun u x => by
+      ext
+      · simp
+      · simp; rfl)
+
+@[simp]
+theorem coe_unitizationModule_smul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L)
+    (u : Unitization R A) (x : L) :
+    (letI := L.unitizationModule hmul; ((u • x : L) : A)) = u.fst • (x : A) + u.snd * (x : A) :=
+  (rfl)
+
+/-- Coercing `(r, a) • x` from `L` into `Unitization R A` agrees with multiplication in
+`Unitization R A`. -/
+theorem inr_coe_unitizationModule_smul (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L)
+    (u : Unitization R A) (x : L) :
+    (letI := L.unitizationModule hmul; (((u • x : L) : A) : Unitization R A)) =
+      u * ((x : A) : Unitization R A) := by
+  let _ := L.unitizationModule hmul
+  ext
+  · simp
+  · simp
+
+/-- The left `Unitization R A`-module structure on `L` is compatible with its `R`-module
+structure. -/
+theorem isScalarTower_unitizationModule (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
+    letI := L.unitizationModule hmul
+    IsScalarTower R (Unitization R A) L := by
+  let _ := L.unitizationModule hmul
+  exact ⟨fun r u x => Subtype.ext <| by simp [smul_add, mul_smul, smul_mul_assoc]⟩
 
 /-- Membership in `Module.annihilator (Unitization R A) L` for the unitization left action. -/
 theorem mem_annihilator_unitization_iff (L : Submodule R A) (hmul : ∀ a : A, ∀ x ∈ L, a * x ∈ L)

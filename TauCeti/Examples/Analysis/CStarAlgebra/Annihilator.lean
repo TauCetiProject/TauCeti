@@ -25,10 +25,11 @@ multiplier-homomorphism API across four distinct C⋆-algebraic regimes:
    annihilator is `{0} × ℂ = ker fst ≠ ⊥`, so it is *not* essential and equals its own double
    annihilator, while `multiplierHom` is not injective.
 3. **Genuinely nonunital algebra** `C₀(ℕ, ℂ)` of null complex sequences:
-   `C₀(ℕ, ℂ)` has no left multiplicative identity, `(⊤).leftAnnihilator = ⊥`, and the proper closed
-   ideal `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}` has nonzero annihilator supported at `0`, exercising both
-   `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization` and `Submodule.unitizationModule` on a
-   genuinely nonunital C⋆-algebra.
+   `C₀(ℕ, ℂ)` has no left multiplicative identity, `(⊤).leftAnnihilator = ⊥`, and
+   `ZeroAtInftyContinuousMap.single 0 1` lies in the left annihilator of
+   `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}`, witnessing non-essentiality and exercising both
+   `TwoSidedIdeal.leftAnnihilator_eq_comap_annihilator_unitization` and
+   `Submodule.unitizationModule` on a genuinely nonunital C⋆-algebra.
 4. **Proper essential closed ideal** in `C(unitInterval, ℂ)`:
    `ker (evalStarAlgHom ℂ ℂ 0) = {f ∈ C([0, 1], ℂ) | f 0 = 0}` is a nonzero proper closed ideal
    whose annihilator is `⊥` by density of `(0, 1]` in `[0, 1]`; hence it is essential, embeds
@@ -82,10 +83,9 @@ abbrev secondFactorIdeal : TwoSidedIdeal (ℂ × ℂ) :=
   TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst ℂ ℂ ℂ)
 
 theorem firstFactorIdeal_ne_bot : firstFactorIdeal ≠ ⊥ := by
-  intro h
-  have hmem : ((1 : ℂ), (0 : ℂ)) ∈ firstFactorIdeal := by rw [TwoSidedIdeal.mem_ker]; rfl
-  have hzero : ((1 : ℂ), (0 : ℂ)) = 0 := (TwoSidedIdeal.mem_bot _).mp (h ▸ hmem)
-  exact one_ne_zero (congrArg Prod.fst hzero)
+  rw [ne_eq, firstFactorIdeal, TwoSidedIdeal.ker_nonUnitalStarAlgHom_snd,
+    TwoSidedIdeal.ker_snd_eq_bot_iff]
+  exact not_subsingleton ℂ
 
 theorem firstFactorIdeal_ne_top : firstFactorIdeal ≠ ⊤ := by
   intro h
@@ -130,7 +130,7 @@ theorem no_left_identity_nullSeq : ¬ ∃ e : C₀(ℕ, ℂ), ∀ f : C₀(ℕ, 
   exact one_ne_zero (tendsto_nhds_unique hlim1 hlim0)
 
 theorem leftAnnihilator_top_nullSeq : (⊤ : TwoSidedIdeal C₀(ℕ, ℂ)).leftAnnihilator = ⊥ :=
-  TwoSidedIdeal.leftAnnihilator_top_of_isProperStar
+  TwoSidedIdeal.leftAnnihilator_top
 
 theorem isClosedEssential_top_nullSeq : (⊤ : TwoSidedIdeal C₀(ℕ, ℂ)).IsClosedEssential :=
   TwoSidedIdeal.isClosedEssential_top
@@ -148,7 +148,7 @@ def evalZeroNullSeqHom : C₀(ℕ, ℂ) →⋆ₙₐ[ℂ] ℂ where
 theorem evalZeroNullSeqHom_apply (f : C₀(ℕ, ℂ)) : evalZeroNullSeqHom f = f 0 :=
   (rfl)
 
-/-- The proper closed ideal `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}` in the nonunital C⋆-algebra `C₀(ℕ, ℂ)`. -/
+/-- The closed ideal `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}` in the nonunital C⋆-algebra `C₀(ℕ, ℂ)`. -/
 abbrev nullSeqVanishingAtZero : TwoSidedIdeal C₀(ℕ, ℂ) :=
   TwoSidedIdeal.ker evalZeroNullSeqHom
 
@@ -171,21 +171,21 @@ theorem not_isClosedEssential_nullSeqVanishingAtZero :
   rw [hbot, TwoSidedIdeal.mem_bot, ZeroAtInftyContinuousMap.single_eq_zero_iff] at hmem
   exact one_ne_zero hmem
 
-/-- Concrete check of `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization` on `C₀(ℕ, ℂ)`:
-`ZeroAtInftyContinuousMap.single 0 1` lies in the pullback of the
+/-- Concrete check of `TwoSidedIdeal.leftAnnihilator_eq_comap_annihilator_unitization` on
+`C₀(ℕ, ℂ)`: `ZeroAtInftyContinuousMap.single 0 1` lies in the pullback of the
 `Unitization ℂ C₀(ℕ, ℂ)`-annihilator of `nullSeqVanishingAtZero`. -/
-theorem single_zero_mem_comap_unitization_annihilator :
+theorem single_zero_mem_comap_annihilator_unitization :
     letI := nullSeqVanishingAtZero.unitizationModule
     ZeroAtInftyContinuousMap.single 0 (1 : ℂ) ∈
       TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom ℂ C₀(ℕ, ℂ))
         (Module.annihilator (Unitization ℂ C₀(ℕ, ℂ)) nullSeqVanishingAtZero).toTwoSided := by
   let _ := nullSeqVanishingAtZero.unitizationModule
-  rw [← nullSeqVanishingAtZero.leftAnnihilator_eq_comap_unitization]
+  rw [← nullSeqVanishingAtZero.leftAnnihilator_eq_comap_annihilator_unitization]
   exact single_zero_mem_leftAnnihilator_nullSeqVanishingAtZero
 
 /-- Concrete check of `Submodule.unitizationModule` on the closed left ideal
 `nullSeqVanishingAtZero.toSubmodule` in `C₀(ℕ, ℂ)`. -/
-theorem inr_single_zero_mem_submodule_unitization_annihilator :
+theorem inr_single_zero_mem_annihilator_unitization_toSubmodule :
     letI := nullSeqVanishingAtZero.toSubmodule.unitizationModule
       fun a x hx => nullSeqVanishingAtZero.mul_mem_left a x hx
     ((ZeroAtInftyContinuousMap.single 0 (1 : ℂ) : C₀(ℕ, ℂ)) : Unitization ℂ C₀(ℕ, ℂ)) ∈
@@ -262,7 +262,7 @@ theorem leftAnnihilator_vanishingAtZero : vanishingAtZero.leftAnnihilator = ⊥ 
     exact tendsto_nhds_unique hfu_lim tendsto_const_nhds
   · exact hpos t ht
 
-/-- `vanishingAtZero` is a proper nonzero essential closed ideal of `C(unitInterval, ℂ)`. -/
+/-- `vanishingAtZero` is essential among closed two-sided ideals of `C(unitInterval, ℂ)`. -/
 theorem isClosedEssential_vanishingAtZero : vanishingAtZero.IsClosedEssential :=
   TwoSidedIdeal.isClosedEssential_iff_leftAnnihilator_eq_bot.mpr leftAnnihilator_vanishingAtZero
 
