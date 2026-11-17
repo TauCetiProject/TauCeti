@@ -19,7 +19,8 @@ The quotient-remainder equivalence identifies a natural number with a block numb
 position inside that block. This file records the induced block permutations and compatibility
 of nested blocks with the finite-product indexing equivalence.
 It also concatenates two finite blocks with the second block read in reverse order, and splits
-the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`.
+the first pair off a doubly indexed family listed pair by pair through `finProdFinEquiv`, and
+splits `Fin n` as `Fin (n - r) ⊕ Fin r` with the initial block of `r` indices moved to the end.
 
 It also concatenates two finite blocks with the second block read in reverse order. For two
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
@@ -129,6 +130,25 @@ theorem finSumFinRevEquiv_map_rev {k n : ℕ} (h : k + k = n) (x : Fin k ⊕ Fin
     simp only [Sum.map_inr, finSumFinRevEquiv_inr_val, Fin.coe_finRotate_pow, Fin.val_rev]
     rw [Nat.mod_eq_of_lt (by omega)]
     omega
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sending the first `r` indices to the second
+summand and the last `n - r` indices to the first summand, both in order. It moves an initial
+block of `r` indices to the end. -/
+def finSubSumEquiv {r n : ℕ} (h : r ≤ n) : Fin n ≃ Fin (n - r) ⊕ Fin r :=
+  (finCongr (Nat.add_sub_cancel' h).symm).trans (finSumFinEquiv.symm.trans (Equiv.sumComm _ _))
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends the index `j < r` to `inr j`. -/
+@[simp]
+theorem finSubSumEquiv_symm_inr {r n : ℕ} (h : r ≤ n) (j : Fin r) :
+    (finSubSumEquiv h).symm (Sum.inr j) = Fin.castLE h j := by
+  ext
+  simp [finSubSumEquiv]
+
+/-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sends the index `r + i` to `inl i`. -/
+@[simp]
+theorem coe_finSubSumEquiv_symm_inl {r n : ℕ} (h : r ≤ n) (i : Fin (n - r)) :
+    ((finSubSumEquiv h).symm (Sum.inl i) : ℕ) = r + i := by
+  simp [finSubSumEquiv]
 
 end TauCeti
 
