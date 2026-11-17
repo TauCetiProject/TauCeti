@@ -268,7 +268,7 @@ private theorem integral_prod_mul_star_prod_sub_eq_zero_of_not_isConnectedPair {
     (∫ ω, wignerWord ξ η w₁ ω * star (wignerWord ξ η w₂ ω) ∂P) -
       (∫ ω, wignerWord ξ η w₁ ω ∂P) * star (∫ ω, wignerWord ξ η w₂ ω ∂P) = 0 := by
   by_cases hshare : ∃ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) = s(w₂ t₂, w₂ (finRotate k t₂))
-  · obtain ⟨x₀, hx₀⟩ := not_forall.mp (not_and.mp hnot hshare)
+  · obtain ⟨x₀, hx₀⟩ := not_forall.mp (mt (TreeWalk.IsConnectedPair.mk hshare) hnot)
     have hedges (y : Fin k ⊕ Fin k) :
         s(Sum.elim w₁ (w₂ ∘ finRotate k) y, Sum.elim (w₁ ∘ finRotate k) w₂ y) =
           Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k t)))
@@ -293,12 +293,77 @@ private theorem integral_prod_mul_star_prod_sub_eq_zero_of_not_isConnectedPair {
   · have hmul := integral_prod_mul_prod_wignerMatrix_apply_eq_mul_integral
       hξm hηm hindep w₁ (fun s ↦ w₁ (finRotate k s)) (fun t ↦ w₂ (finRotate k t)) w₂
       fun s t h ↦ hshare ⟨s, t, by rwa [Sym2.eq_swap (a := w₂ (finRotate k t))] at h⟩
-    rw [sub_eq_zero, show star (∫ ω, wignerWord ξ η w₂ ω ∂P) =
-        ∫ ω, ∏ t, wignerMatrix ξ η n ω (w₂ (finRotate k t)) (w₂ t) ∂P from
+    have hstar : star (∫ ω, wignerWord ξ η w₂ ω ∂P) =
+        ∫ ω, ∏ t, wignerMatrix ξ η n ω (w₂ (finRotate k t)) (w₂ t) ∂P :=
       integral_conj.symm.trans (integral_congr_ae (.of_forall fun ω ↦
-        star_prod_wignerMatrix_apply ξ η ω w₂ (fun t ↦ w₂ (finRotate k t)))), ← hmul]
+        star_prod_wignerMatrix_apply ξ η ω w₂ (fun t ↦ w₂ (finRotate k t))))
+    rw [sub_eq_zero, hstar, ← hmul]
     exact integral_congr_ae (.of_forall fun ω ↦
       congrArg (_ * ·) (star_prod_wignerMatrix_apply ξ η ω w₂ fun t ↦ w₂ (finRotate k t)))
+
+/-- For `k ≠ 0`, expand the variance of the `k`th empirical spectral moment into a sum of
+trace-word covariances over all pairs `(w₁, w₂)`. -/
+private theorem ofReal_variance_integral_pow_spectralMeasure_wignerMatrix_eq
+    [IsProbabilityMeasure P] {k n : ℕ} (hk : k ≠ 0)
+    (hξp : ∀ ij, ij.1.2 < n + 1 → MemLp (ξ ij) (2 * k : ℕ) P)
+    (hηp : ∀ i, i < n + 1 → MemLp (η i) (2 * k : ℕ) P) :
+    ((Var[fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] : ℝ) : ℂ) =
+      ((n + 1 : ℕ) : ℂ)⁻¹ ^ 2 *
+        ∑ p : (Fin k → Fin (n + 1)) × (Fin k → Fin (n + 1)),
+          ((∫ ω, wignerWord ξ η p.1 ω * star (wignerWord ξ η p.2 ω) ∂P) -
+            (∫ ω, wignerWord ξ η p.1 ω ∂P) * star (∫ ω, wignerWord ξ η p.2 ω ∂P)) := by
+  have hξpk {ij} (hij : ij.1.2 < n + 1) : MemLp (ξ ij) (k : ℕ) P :=
+    (hξp ij hij).mono_exponent (by norm_cast; omega)
+  have hηpk {i} (hi : i < n + 1) : MemLp (η i) (k : ℕ) P :=
+    (hηp i hi).mono_exponent (by norm_cast; omega)
+  have hintT (w : Fin k → Fin (n + 1)) : Integrable (wignerWord ξ η w) P :=
+    memLp_one_iff_integrable.mp (memLp_prod_wignerMatrix_apply
+      (fun ij hij ↦ by simpa [Fintype.card_fin] using hξpk hij)
+      (fun i hi ↦ by simpa [Fintype.card_fin] using hηpk hi) w (w ∘ finRotate k))
+  have hintTT (w₁ w₂ : Fin k → Fin (n + 1)) :
+      Integrable (fun ω ↦ wignerWord ξ η w₁ ω * star (wignerWord ξ η w₂ ω)) P := by
+    have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by simp [two_mul]
+    simp_rw [prod_mul_star_prod_wignerMatrix_apply_eq]
+    exact memLp_one_iff_integrable.mp (memLp_prod_wignerMatrix_apply
+      (fun ij hij ↦ by simpa [hcard] using hξp ij hij)
+      (fun i hi ↦ by simpa [hcard] using hηp i hi) _ _)
+  have hXeq (ω : Ω) :
+      ((∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
+          (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ) : ℝ) : ℂ) =
+        ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ w : Fin k → Fin (n + 1), wignerWord ξ η w ω := by
+    simpa only [RCLike.ofReal_eq_complex_ofReal, Fintype.card_fin,
+      trace_pow_eq_sum_prod _ hk] using Matrix.ofReal_integral_pow_spectralMeasure
+        (wignerMatrix ξ η (n + 1) ω) (wignerMatrix_isHermitian ξ η ω (n + 1)) k
+  simpa only [RCLike.ofReal_eq_complex_ofReal] using
+    ofReal_variance_eq_mul_sum_integral_mul_star_sub (𝕜 := ℂ) (by simp)
+      (.of_forall fun ω ↦ by simpa only [RCLike.ofReal_eq_complex_ofReal] using hXeq ω)
+      hintT hintTT
+
+/-- For independent centered entries on the `(n + 1) × (n + 1)` corner, non-connected trace-word
+pairs contribute zero covariance, restricting the variance expansion to `IsConnectedPair`. -/
+private theorem ofReal_variance_integral_pow_spectralMeasure_wignerMatrix_eq_sum_connectedPair
+    {k n : ℕ} (hk : k ≠ 0)
+    (hindep : iIndepFun
+      (fun r ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex (n + 1) r)) P)
+    (hξzero : ∀ ij, ij.1.2 < n + 1 → ∫ ω, ξ ij ω ∂P = 0)
+    (hηzero : ∀ i, i < n + 1 → ∫ ω, η i ω ∂P = 0)
+    (hξp : ∀ ij, ij.1.2 < n + 1 → MemLp (ξ ij) (2 * k : ℕ) P)
+    (hηp : ∀ i, i < n + 1 → MemLp (η i) (2 * k : ℕ) P) :
+    ((Var[fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] : ℝ) : ℂ) =
+      ((n + 1 : ℕ) : ℂ)⁻¹ ^ 2 *
+        ∑ p : (Fin k → Fin (n + 1)) × (Fin k → Fin (n + 1)) with
+            TreeWalk.IsConnectedPair p.1 p.2,
+          ((∫ ω, wignerWord ξ η p.1 ω * star (wignerWord ξ η p.2 ω) ∂P) -
+            (∫ ω, wignerWord ξ η p.1 ω ∂P) * star (∫ ω, wignerWord ξ η p.2 ω ∂P)) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  rw [ofReal_variance_integral_pow_spectralMeasure_wignerMatrix_eq hk hξp hηp]
+  congr 1
+  exact (Finset.sum_subset (Finset.subset_univ _) fun p _ hp ↦
+    integral_prod_mul_star_prod_sub_eq_zero_of_not_isConnectedPair
+      (fun ij hij ↦ (hξp ij hij).aemeasurable) (fun i hi ↦ (hηp i hi).aemeasurable)
+      hindep hξzero hηzero (by simpa using hp)).symm
 
 section CornerVar
 
@@ -320,57 +385,33 @@ theorem variance_integral_pow_spectralMeasure_wignerMatrix_le :
     Var[fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] ≤
       2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2 := by
-  classical
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
   have hB : 0 ≤ B :=
     (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans (hη 0 (Nat.zero_lt_succ n))
   rcases eq_or_ne k 0 with rfl | hk
-  · rw [show (fun ω ↦ ∫ x, x ^ 0 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) = fun _ ↦ 1 from
-      funext fun _ ↦ by simp, variance_eq_sub (memLp_const 1)]
+  · have hconst : (fun ω ↦ ∫ x, x ^ 0 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) = fun _ ↦ 1 :=
+      funext fun _ ↦ by simp
+    rw [hconst, variance_eq_sub (memLp_const 1)]
     simp only [Pi.pow_apply, one_pow, integral_const, probReal_univ, smul_eq_mul, mul_one, sub_self]
     positivity
   · let X ω := ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)
-    let T (w : Fin k → Fin (n + 1)) := wignerWord ξ η w
     let covTerm (p : (Fin k → Fin (n + 1)) × (Fin k → Fin (n + 1))) : ℂ :=
-      (∫ ω, T p.1 ω * star (T p.2 ω) ∂P) - (∫ ω, T p.1 ω ∂P) * star (∫ ω, T p.2 ω ∂P)
+      (∫ ω, wignerWord ξ η p.1 ω * star (wignerWord ξ η p.2 ω) ∂P) -
+        (∫ ω, wignerWord ξ η p.1 ω ∂P) * star (∫ ω, wignerWord ξ η p.2 ω ∂P)
     let G : Finset ((Fin k → Fin (n + 1)) × (Fin k → Fin (n + 1))) :=
       {p | TreeWalk.IsConnectedPair p.1 p.2}
-    have hξpk {ij} (hij : ij.1.2 < n + 1) : MemLp (ξ ij) (k : ℕ) P :=
-      (hξp ij hij).mono_exponent (by norm_cast; omega)
-    have hηpk {i} (hi : i < n + 1) : MemLp (η i) (k : ℕ) P :=
-      (hηp i hi).mono_exponent (by norm_cast; omega)
-    have hintT (w : Fin k → Fin (n + 1)) : Integrable (T w) P :=
-      memLp_one_iff_integrable.mp (memLp_prod_wignerMatrix_apply
-        (fun ij hij ↦ by simpa [Fintype.card_fin] using hξpk hij)
-        (fun i hi ↦ by simpa [Fintype.card_fin] using hηpk hi) w (w ∘ finRotate k))
-    have hintTT (w₁ w₂ : Fin k → Fin (n + 1)) : Integrable (fun ω ↦ T w₁ ω * star (T w₂ ω)) P := by
-      have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by simp [two_mul]
-      simp_rw [T, prod_mul_star_prod_wignerMatrix_apply_eq]
-      exact memLp_one_iff_integrable.mp (memLp_prod_wignerMatrix_apply
-        (fun ij hij ↦ by simpa [hcard] using hξp ij hij)
-        (fun i hi ↦ by simpa [hcard] using hηp i hi) _ _)
-    have hXeq (ω : Ω) : (X ω : ℂ) = ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ w, T w ω := by
-      simpa only [RCLike.ofReal_eq_complex_ofReal, Fintype.card_fin,
-        trace_pow_eq_sum_prod _ hk] using Matrix.ofReal_integral_pow_spectralMeasure
-          (wignerMatrix ξ η (n + 1) ω) (wignerMatrix_isHermitian ξ η ω (n + 1)) k
-    have hvarC : ((Var[X; P] : ℝ) : ℂ) = ((n + 1 : ℕ) : ℂ)⁻¹ ^ 2 * ∑ p, covTerm p := by
-      simpa only [RCLike.ofReal_eq_complex_ofReal] using
-        ofReal_variance_eq_mul_sum_integral_mul_star_sub (𝕜 := ℂ) (by simp)
-          (.of_forall fun ω ↦ by simpa only [RCLike.ofReal_eq_complex_ofReal] using hXeq ω)
-          hintT hintTT
-    have hsumG : (∑ p, covTerm p) = ∑ p ∈ G, covTerm p :=
-      (Finset.sum_subset (Finset.subset_univ G) fun p _ hpG ↦
-        integral_prod_mul_star_prod_sub_eq_zero_of_not_isConnectedPair
-          (fun ij hij ↦ (hξpk hij).aemeasurable) (fun i hi ↦ (hηpk hi).aemeasurable)
-          hindep hξzero hηzero (by simpa [G] using hpG)).symm
     have hGcard : (#G : ℝ) ≤ (n + 1 : ℝ) ^ k * (k : ℝ) ^ (2 * k) := by
       simpa [Fintype.card_fin] using
         (Nat.cast_le (α := ℝ)).2 (TreeWalk.card_filter_connectedPair_le (α := Fin (n + 1)) k)
-    rw [show Var[X; P] = ‖((Var[X; P] : ℝ) : ℂ)‖ by
-        rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (variance_nonneg X P)],
-      hvarC, hsumG, norm_mul, norm_pow, norm_inv, Complex.norm_natCast, Nat.cast_add, Nat.cast_one]
+    have hnorm_var : Var[X; P] = ‖((Var[X; P] : ℝ) : ℂ)‖ := by
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (variance_nonneg X P)]
+    have hvarG : ((Var[X; P] : ℝ) : ℂ) = ((n + 1 : ℕ) : ℂ)⁻¹ ^ 2 * ∑ p ∈ G, covTerm p :=
+      ofReal_variance_integral_pow_spectralMeasure_wignerMatrix_eq_sum_connectedPair
+        hk hindep hξzero hηzero hξp hηp
+    rw [hnorm_var, hvarG, norm_mul, norm_pow, norm_inv, Complex.norm_natCast,
+      Nat.cast_add, Nat.cast_one]
     calc (n + 1 : ℝ)⁻¹ ^ 2 * ‖∑ p ∈ G, covTerm p‖
         ≤ (n + 1 : ℝ)⁻¹ ^ 2 * ((#G : ℝ) * (2 * (n + 1 : ℝ)⁻¹ ^ k * B)) :=
           mul_le_mul_of_nonneg_left ((norm_sum_le G covTerm).trans (by

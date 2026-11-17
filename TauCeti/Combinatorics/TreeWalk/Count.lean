@@ -61,25 +61,27 @@ theorem card_canonicalWalk_closedTreeWalk [Finite α] (u : ClosedTreeWalk m) :
   rwa [canonicalWalk_closedTreeWalk, card_image_closedTreeWalk] at h
 
 private theorem isClosedTreePath_of_canonicalWalk_eq {v : Fin (2 * m + 1) → α}
-    {u : ClosedTreeWalk m} (hu : canonicalWalk v = u.1) : IsClosedTreePath m v := by
-  refine ⟨(canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp (by
-      simp only [hu, Fin.val_last, Fin.val_zero]; exact u.2.1.closed.trans u.2.1.root.symm),
-    by rw [← card_fixed_canonicalWalk v, hu]; exact u.2.1.card_vertices, fun i ↦ ?_⟩
-  have hedge (a b : Fin (2 * m)) :
-      s(v a.castSucc, v a.succ) = s(v b.castSucc, v b.succ) ↔
-        s(u.1 a, u.1 (a + 1)) = s(u.1 b, u.1 (b + 1)) := by
-    simp only [Sym2.eq_iff, ← canonicalWalk_eq_iff v, hu, Fin.val_castSucc, Fin.val_succ]
-  exact (card_bij (fun j _ ↦ j.val)
-    (fun j hj ↦ mem_filter.mpr ⟨mem_range.mpr j.isLt, (hedge j i).mp (mem_filter.mp hj).2⟩)
-    (fun _ _ _ _ h ↦ Fin.ext h) fun j hj ↦ let ⟨hjr, hje⟩ := mem_filter.mp hj
-      ⟨⟨j, mem_range.mp hjr⟩, mem_filter.mpr ⟨mem_univ _, (hedge ⟨j, _⟩ i).mpr hje⟩, rfl⟩).trans
-    (u.2.1.card_edge i.val i.isLt)
+    {u : ClosedTreeWalk m} (hu : canonicalWalk v = u.1) : IsClosedTreePath m v where
+  closed := (canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp (by
+    simp only [hu, Fin.val_last, Fin.val_zero]; exact u.2.1.closed.trans u.2.1.root.symm)
+  card_image := by rw [← card_fixed_canonicalWalk v, hu]; exact u.2.1.card_vertices
+  card_edge i := by
+    have hedge (a b : Fin (2 * m)) :
+        s(v a.castSucc, v a.succ) = s(v b.castSucc, v b.succ) ↔
+          s(u.1 a, u.1 (a + 1)) = s(u.1 b, u.1 (b + 1)) := by
+      simp only [Sym2.eq_iff, ← canonicalWalk_eq_iff v, hu, Fin.val_castSucc, Fin.val_succ]
+    exact (card_bij (fun j _ ↦ j.val)
+      (fun j hj ↦ mem_filter.mpr ⟨mem_range.mpr j.isLt, (hedge j i).mp (mem_filter.mp hj).2⟩)
+      (fun _ _ _ _ h ↦ Fin.ext h) fun j hj ↦ let ⟨hjr, hje⟩ := mem_filter.mp hj
+        ⟨⟨j, mem_range.mp hjr⟩, mem_filter.mpr ⟨mem_univ _, (hedge ⟨j, _⟩ i).mpr hje⟩, rfl⟩).trans
+      (u.2.1.card_edge i.val i.isLt)
 
 /-- Grouping closed tree paths of length `2 * m` by their first-visit `ClosedTreeWalk m`. -/
 def closedTreePathEquiv (m : ℕ) :
     {v : Fin (2 * m + 1) → α // IsClosedTreePath m v} ≃
       (u : ClosedTreeWalk m) × {v : Fin (2 * m + 1) → α // canonicalWalk v = u.1} where
-  toFun v := ⟨⟨canonicalWalk v.1, isTreeWalk_canonicalWalk v.1 v.2.1 v.2.2.1 v.2.2.2,
+  toFun v := ⟨⟨canonicalWalk v.1,
+    isTreeWalk_canonicalWalk v.1 v.2.closed v.2.card_image v.2.card_edge,
     fun _ hi ↦ canonicalWalk_eq_zero v.1 hi⟩, ⟨v.1, rfl⟩⟩
   invFun p := ⟨p.2.1, isClosedTreePath_of_canonicalWalk_eq p.2.2⟩
   left_inv _ := rfl
@@ -116,21 +118,10 @@ double-traversal tree paths of length `2 * m`. -/
 def leadingCyclicWordEquivClosedTreePath [NeZero m] :
     {w : Fin (2 * m) → α // IsLeadingCyclicWord m w} ≃
     {v : Fin (2 * m + 1) → α // IsClosedTreePath m v} where
-  toFun w := ⟨cyclicPath w.1, by simp, by simpa using w.2.2,
-    card_edge_fiber_cyclicPath w.1 w.2.1 w.2.2⟩
-  invFun v := by
-    let w : Fin (2 * m) → α := fun i ↦ v.1 i.castSucc
-    have hcw : cyclicPath w = v.1 := cyclicPath_restrict_eq v.2.1
-    refine ⟨w, fun t ↦ ?_, by rw [← image_cyclicPath w, hcw]; exact v.2.2.1⟩
-    have he (j : Fin (2 * m)) : s(w j, w (finRotate (2 * m) j)) = s(v.1 j.castSucc, v.1 j.succ) :=
-      by rw [← cyclicPath_castSucc w j, ← cyclicPath_succ w j, hcw]
-    have hcard : 1 < #{j : Fin (2 * m) |
-        s(w j, w (finRotate (2 * m) j)) = s(w t, w (finRotate (2 * m) t))} := by
-      simp only [he, v.2.2.2 t]; omega
-    obtain ⟨s, hs, hst⟩ := exists_mem_ne hcard t
-    exact ⟨s, hst, (mem_filter.mp hs).2⟩
+  toFun w := ⟨cyclicPath w.1, w.2.isClosedTreePath_cyclicPath⟩
+  invFun v := ⟨fun i ↦ v.1 i.castSucc, v.2.isLeadingCyclicWord_restrict⟩
   left_inv w := Subtype.ext (funext fun i ↦ cyclicPath_castSucc w.1 i)
-  right_inv v := Subtype.ext (cyclicPath_restrict_eq v.2.1)
+  right_inv v := Subtype.ext (cyclicPath_restrict_eq v.2.closed)
 
 /-- Applying `leadingCyclicWordEquivClosedTreePath` extends a cyclic word by `cyclicPath`. -/
 @[simp] theorem leadingCyclicWordEquivClosedTreePath_apply_coe [NeZero m]

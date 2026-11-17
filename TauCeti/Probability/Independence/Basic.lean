@@ -38,8 +38,9 @@ theorem iIndepFun_of_ae_eq_const_outside_range {κ : Type*} {e : κ → ι} {f :
   rw [iIndepFun_iff]; intro S f' hf'
   by_cases hzero : ∃ i ∈ S, i ∉ Set.range e ∧ f' i = ∅
   · obtain ⟨i, hi, _, hfi⟩ := hzero
-    rw [show (⋂ j ∈ S, f' j) = ∅ from Set.eq_empty_iff_forall_notMem.mpr fun ω hω => by
-      simpa [hfi] using Set.mem_iInter₂.mp hω i hi, measure_empty]
+    have hempty : (⋂ j ∈ S, f' j) = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun ω hω => by
+      simpa [hfi] using Set.mem_iInter₂.mp hω i hi
+    rw [hempty, measure_empty]
     exact (Finset.prod_eq_zero hi (by rw [hfi, measure_empty])).symm
   · have huniv (i : ι) (hi : i ∈ S) (hri : i ∉ Set.range e) : f' i = Set.univ := by
       have hm := hf' i hi
@@ -55,14 +56,15 @@ theorem iIndepFun_of_ae_eq_const_outside_range {κ : Type*} {e : κ → ι} {f :
     have hindep_S₁ : iIndep (fun j : S₁ => MeasurableSpace.comap (g j.1) inferInstance) μ := by
       simpa only [Function.comp_def, fun j => hcomap (hψ j)] using
         hindep_g.iIndep.precomp (g := ψ) fun a b h => Subtype.ext (by rw [← hψ a, ← hψ b, h])
-    rw [show (⋂ i ∈ S, f' i) = ⋂ j : S₁, f' j.1 by
+    have hinter : (⋂ i ∈ S, f' i) = ⋂ j : S₁, f' j.1 := by
       ext ω; simp only [Set.mem_iInter, Subtype.forall, S₁, Finset.mem_filter]
       exact ⟨fun h i hi => h i hi.1, fun h i hi => if hri : i ∈ Set.range e then
-        h i ⟨hi, hri⟩ else by rw [huniv i hi hri]; trivial⟩,
-      show ∏ i ∈ S, μ (f' i) = ∏ j : S₁, μ (f' j.1) by
-        rw [Finset.prod_coe_sort S₁ (fun i => μ (f' i))]
-        exact (Finset.prod_subset (Finset.filter_subset _ S) fun i hi hni => by
-          rw [huniv i hi fun hri => hni (Finset.mem_filter.mpr ⟨hi, hri⟩), measure_univ]).symm]
+        h i ⟨hi, hri⟩ else by rw [huniv i hi hri]; trivial⟩
+    have hprod : ∏ i ∈ S, μ (f' i) = ∏ j : S₁, μ (f' j.1) := by
+      rw [Finset.prod_coe_sort S₁ (fun i => μ (f' i))]
+      exact (Finset.prod_subset (Finset.filter_subset _ S) fun i hi hni => by
+        rw [huniv i hi fun hri => hni (Finset.mem_filter.mpr ⟨hi, hri⟩), measure_univ]).symm
+    rw [hinter, hprod]
     exact hindep_S₁.meas_iInter fun j => hf' j.1 (Finset.filter_subset _ S j.2)
 
 /-- A family is independent if its coordinates are almost surely constant outside a subsingleton

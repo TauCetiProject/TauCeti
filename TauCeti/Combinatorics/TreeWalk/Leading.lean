@@ -27,10 +27,12 @@ canonicalized leading cyclic words as tree walks.
 * `TauCeti.TreeWalk.cyclicPath`: extends a cyclic word `Fin k → α` to a closed path
   `Fin (k + 1) → α` by repeating its initial vertex, inverted on closed paths by
   `TauCeti.TreeWalk.cyclicPath_restrict_eq`.
-* `TauCeti.TreeWalk.IsClosedTreePath`: predicate for closed paths of length `2 * m` visiting
-  `m + 1` vertices and traversing every unordered edge twice.
-* `TauCeti.TreeWalk.IsLeadingCyclicWord`: predicate for cyclic trace words of length `2 * m` with
-  no singleton unordered edge that visit `m + 1` vertices.
+* `TauCeti.TreeWalk.IsClosedTreePath`: structure predicate for closed paths of length `2 * m`
+  visiting `m + 1` vertices and traversing every unordered edge twice, characterized by
+  `isClosedTreePath_iff`.
+* `TauCeti.TreeWalk.IsLeadingCyclicWord`: structure predicate for cyclic trace words of length
+  `2 * m` with no singleton unordered edge that visit `m + 1` vertices, characterized by
+  `isLeadingCyclicWord_iff`.
 
 ## References
 
@@ -110,16 +112,54 @@ variable [DecidableEq α]
 
 /-- A closed path of length `2 * m` visiting `m + 1` distinct vertices and traversing every
 unordered edge exactly twice. -/
-abbrev IsClosedTreePath (m : ℕ) (v : Fin (2 * m + 1) → α) : Prop :=
-  v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
-    ∀ i : Fin (2 * m),
-      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2
+structure IsClosedTreePath (m : ℕ) (v : Fin (2 * m + 1) → α) : Prop where
+  /-- The path returns to its initial vertex at the endpoint. -/
+  closed : v (Fin.last (2 * m)) = v 0
+  /-- The path visits exactly `m + 1` distinct vertices. -/
+  card_image : #(univ.image v) = m + 1
+  /-- Every unordered edge traversed by the path occurs exactly twice. -/
+  card_edge : ∀ i : Fin (2 * m),
+    #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2
+
+/-- Characterization of `IsClosedTreePath` by closure, vertex count, and edge multiplicities. -/
+theorem isClosedTreePath_iff {v : Fin (2 * m + 1) → α} :
+    IsClosedTreePath m v ↔
+      v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
+        ∀ i : Fin (2 * m),
+          #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2 :=
+  ⟨fun h ↦ ⟨h.closed, h.card_image, h.card_edge⟩,
+   fun ⟨hclosed, hv, he⟩ ↦ ⟨hclosed, hv, he⟩⟩
+
+instance instDecidableIsClosedTreePath (m : ℕ) (v : Fin (2 * m + 1) → α) :
+    Decidable (IsClosedTreePath m v) :=
+  decidable_of_iff _ isClosedTreePath_iff.symm
 
 /-- A leading cyclic trace word of length `2 * m`: every unordered step edge occurs at least twice
 and the word visits `m + 1` distinct vertices. -/
-abbrev IsLeadingCyclicWord (m : ℕ) (w : Fin (2 * m) → α) : Prop :=
-  (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-    #(univ.image w) = m + 1
+structure IsLeadingCyclicWord (m : ℕ) (w : Fin (2 * m) → α) : Prop where
+  /-- Every unordered step edge of the cyclic word occurs at least twice. -/
+  no_singleton_edge : ∀ t, ∃ s ≠ t,
+    s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))
+  /-- The cyclic word visits exactly `m + 1` distinct vertices. -/
+  card_image : #(univ.image w) = m + 1
+
+/-- Characterization of `IsLeadingCyclicWord` by singleton-freeness and vertex count. -/
+theorem isLeadingCyclicWord_iff {w : Fin (2 * m) → α} :
+    IsLeadingCyclicWord m w ↔
+      (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
+        #(univ.image w) = m + 1 :=
+  ⟨fun h ↦ ⟨h.no_singleton_edge, h.card_image⟩, fun ⟨hns, hv⟩ ↦ ⟨hns, hv⟩⟩
+
+instance instDecidableIsLeadingCyclicWord (m : ℕ) (w : Fin (2 * m) → α) :
+    Decidable (IsLeadingCyclicWord m w) :=
+  decidable_of_iff _ isLeadingCyclicWord_iff.symm
+
+/-- A leading cyclic trace word has positive semilength `m ≠ 0`, since the empty word visits `0`
+vertices rather than `1`. -/
+theorem IsLeadingCyclicWord.ne_zero {w : Fin (2 * m) → α}
+    (hw : IsLeadingCyclicWord m w) : m ≠ 0 := by
+  rintro rfl
+  simpa using hw.card_image
 
 @[simp] theorem image_cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) :
     univ.image (cyclicPath w) = univ.image w := by
@@ -140,6 +180,34 @@ theorem card_edge_fiber_cyclicPath [NeZero m] (w : Fin (2 * m) → α)
         s(cyclicPath w i.castSucc, cyclicPath w i.succ)} = 2 := by
   simpa only [cyclicPath_castSucc, cyclicPath_succ] using
     (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).2 i
+
+/-- Extending a leading cyclic trace word by `cyclicPath` produces a closed tree path. -/
+theorem IsLeadingCyclicWord.isClosedTreePath_cyclicPath [NeZero m] {w : Fin (2 * m) → α}
+    (hw : IsLeadingCyclicWord m w) : IsClosedTreePath m (cyclicPath w) where
+  closed := by simp
+  card_image := by simpa using hw.card_image
+  card_edge := card_edge_fiber_cyclicPath w hw.no_singleton_edge hw.card_image
+
+/-- Restricting a closed tree path of positive length `2 * m` to `Fin (2 * m)` yields a leading
+cyclic trace word. -/
+theorem IsClosedTreePath.isLeadingCyclicWord_restrict [NeZero m] {v : Fin (2 * m + 1) → α}
+    (hv : IsClosedTreePath m v) :
+    IsLeadingCyclicWord m (fun i : Fin (2 * m) ↦ v i.castSucc) where
+  no_singleton_edge t := by
+    let w : Fin (2 * m) → α := fun i ↦ v i.castSucc
+    have hcw : cyclicPath w = v := cyclicPath_restrict_eq hv.closed
+    have he (j : Fin (2 * m)) :
+        s(w j, w (finRotate (2 * m) j)) = s(v j.castSucc, v j.succ) := by
+      rw [← cyclicPath_castSucc w j, ← cyclicPath_succ w j, hcw]
+    have hcard : 1 < #{j : Fin (2 * m) |
+        s(w j, w (finRotate (2 * m) j)) = s(w t, w (finRotate (2 * m) t))} := by
+      simp only [he, hv.card_edge t]; omega
+    obtain ⟨s, hs, hst⟩ := exists_mem_ne hcard t
+    exact ⟨s, hst, (mem_filter.mp hs).2⟩
+  card_image := by
+    rw [← image_cyclicPath (fun i : Fin (2 * m) ↦ v i.castSucc),
+      cyclicPath_restrict_eq hv.closed]
+    exact hv.card_image
 
 /-- A closed path with `m + 1` vertices and each unordered edge traversed twice becomes a tree
 walk after first-visit relabeling. No order on the original vertex type is needed. -/

@@ -242,8 +242,8 @@ theorem exists_nat_and_pos_of_isCompact {μ : ProbabilityMeasure ℝ} {K : Set �
     obtain ⟨M, hM⟩ := exists_nat_one_div_lt hδ
     filter_upwards [eventually_ge_atTop (max k M)] with m hm
     rw [Real.dist_eq]
-    exact (hνmom m k ((le_max_left k M).trans hm)).trans_le ((inv_anti₀
-      (show (0 : ℝ) < M + 1 by positivity)
+    have hM_pos : (0 : ℝ) < M + 1 := by positivity
+    exact (hνmom m k ((le_max_left k M).trans hm)).trans_le ((inv_anti₀ hM_pos
       (by exact_mod_cast Nat.add_le_add_right ((le_max_right k M).trans hm) 1)).trans
       (by simpa only [one_div] using hM.le))
   obtain ⟨m, hm⟩ := (Metric.tendsto_nhds.1 ((tendsto_iff_forall_integral_tendsto.1

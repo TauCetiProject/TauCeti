@@ -100,10 +100,10 @@ theorem ae_tendsto_zero_of_measure_abs_ge_le_div_add_one_sq {X : ℕ → Ω → 
     simpa only [Nat.cast_add, Nat.cast_one, inv_pow] using
       (summable_nat_add_iff 1).2 ((Real.summable_nat_pow_inv (p := 2)).2 (by decide : 1 < 2))
   refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_measure_ge_ne_top (a := fun _ ↦ (0 : ℝ))
-    fun {ε} hε ↦ ne_top_of_le_ne_top
-      (show Summable (fun n : ℕ ↦ (C / (n + 1 : ℝ) ^ 2) / ε ^ 2) by
-        simpa only [div_eq_mul_inv, inv_pow, mul_assoc] using
-          (hs.mul_left C).mul_right ((ε ^ 2)⁻¹)).tsum_ofReal_ne_top
-      (tsum_le_tsum fun n ↦ by simpa only [Real.dist_eq, sub_zero] using h hε n)
+    fun {ε} hε ↦ ?_
+  have hsum : Summable (fun n : ℕ ↦ (C / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
+    simpa only [div_eq_mul_inv, inv_pow, mul_assoc] using (hs.mul_left C).mul_right ((ε ^ 2)⁻¹)
+  exact ne_top_of_le_ne_top hsum.tsum_ofReal_ne_top
+    (tsum_le_tsum fun n ↦ by simpa only [Real.dist_eq, sub_zero] using h hε n)
 
 end TauCeti

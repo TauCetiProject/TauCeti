@@ -595,7 +595,8 @@ theorem exists_iterate_par_eq_of_le {i j t : ℕ} (hup : w (i + 1) = i + 1) (hj 
     set s := i + 1 + d
     obtain ⟨n, hn⟩ := ih (by omega) (by omega)
     have hs2k : s < 2 * k := by omega
-    rw [show i + 1 + (d + 1) = s + 1 by omega]
+    have hs_succ : i + 1 + (d + 1) = s + 1 := by omega
+    rw [hs_succ]
     by_cases hsup : w (s + 1) = s + 1
     · exact ⟨n + 1, by rwa [hsup, Function.iterate_succ_apply, par, Nat.add_sub_cancel]⟩
     · obtain ⟨-, hpar, -⟩ := hw.step_down hs2k hsup
@@ -607,7 +608,8 @@ theorem exists_iterate_par_eq_of_le {i j t : ℕ} (hup : w (i + 1) = i + 1) (hj 
           hpair ▸ mem_filter.mpr ⟨mem_range.mpr hs2k, by rw [hws, hws1, hup, Sym2.eq_swap]⟩
         simp only [mem_insert, mem_singleton] at hs_mem; omega
       | succ n =>
-        exact ⟨n, by rwa [show w (s + 1) = par w (w s) from hpar, ← Function.iterate_succ_apply]⟩
+        rw [Function.iterate_succ_apply, par] at hn
+        exact ⟨n, by rwa [hpar]⟩
 
 /-- When a closed double-traversal tree walk returns to the root `0` at time `r`, no step in
 `[0, r)` shares an unordered edge with a step in `[r, 2 * k)`. -/

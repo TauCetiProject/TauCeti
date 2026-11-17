@@ -286,11 +286,11 @@ private theorem iIndepFun_padZero {n : ℕ}
     (hindep.congr fun k ↦ .of_forall fun _ ↦ by
       cases k with | inl i => simp [padZeroDiag, i.2] | inr p => simp [padZeroOffDiag, p.1.2.2]) ?_
   rintro (ij | i) hnot
-  · refine ⟨0, .of_forall fun _ ↦ by
-      simp [padZeroOffDiag, show ¬ ij.1.2 < n from fun h ↦
-        hnot ⟨.inr ⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, by simp⟩]⟩
-  · exact ⟨0, .of_forall fun _ ↦ by
-      simp [padZeroDiag, show ¬ i < n from fun h ↦ hnot ⟨.inl ⟨i, h⟩, by simp⟩]⟩
+  · have hlt : ¬ ij.1.2 < n := fun h ↦
+      hnot ⟨.inr ⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, by simp⟩
+    exact ⟨0, .of_forall fun _ ↦ by simp [padZeroOffDiag, hlt]⟩
+  · have hlt : ¬ i < n := fun h ↦ hnot ⟨.inl ⟨i, h⟩, by simp⟩
+    exact ⟨0, .of_forall fun _ ↦ by simp [padZeroDiag, hlt]⟩
 
 /-- Summing the expected entry products over all leading cyclic Wigner words of length `2 * m`
 (`m ≠ 0`) yields `(catalan m * n.descFactorial (m + 1)) * n⁻ᵐ` whenever the strict-upper entries of
@@ -306,15 +306,18 @@ theorem sum_integral_prod_wignerMatrix_leading_eq {m n : ℕ} (hm : m ≠ 0)
   have hindep' : iIndepFun ξ' P := TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_range
     (e := fun p : FinStrictUpper n ↦ ⟨(p.val.1.val, p.val.2.val), p.property⟩)
     (hindep.congr fun p ↦ .of_forall fun _ ↦ by simp [ξ', p.1.2.2])
-    fun ij hnot ↦ ⟨1, .of_forall fun _ ↦ by
-      simp [ξ', show ¬ ij.1.2 < n from fun h ↦
-        hnot ⟨⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, rfl⟩]⟩
+    fun ij hnot ↦ by
+      have hlt : ¬ ij.1.2 < n := fun h ↦
+        hnot ⟨⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, rfl⟩
+      exact ⟨1, .of_forall fun _ ↦ by simp [ξ', hlt]⟩
   have hcongr (ω : Ω) : wignerMatrix ξ η n ω = wignerMatrix ξ' η n ω :=
     wignerMatrix_congr ω (fun ij hij ↦ by simp [ξ', hij]) (fun _ _ ↦ rfl)
   rw [sum_congr rfl fun w hw ↦ by
-    obtain ⟨hns, hv⟩ := (mem_filter.mp hw).2; simp_rw [hcongr]
+    have hlw : TreeWalk.IsLeadingCyclicWord m w := (mem_filter.mp hw).2
+    simp_rw [hcongr]
     exact integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one hindep'
-      (fun ij ↦ by dsimp only [ξ']; split_ifs with hij; exacts [hsecond ij hij, by simp]) w hns hv,
+      (fun ij ↦ by dsimp only [ξ']; split_ifs with hij; exacts [hsecond ij hij, by simp]) w
+      hlw.no_singleton_edge hlw.card_image,
     sum_const, TreeWalk.card_filter_leadingCyclicWord]
   simp [Fintype.card_fin]
 
@@ -350,6 +353,12 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le {m n
       (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξ ij h, by simp [hm, hB]])
       (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hη i h, by simp [hm, hB]])
     simp_rw [wignerMatrix_padZero_eq] at hrem
+    have hS : ∑ w : Fin (2 * m) → Fin n with
+          (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
+            #(univ.image w) = m + 1,
+          ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P = S :=
+      sum_congr (by ext w; simp [TreeWalk.isLeadingCyclicWord_iff]) fun _ _ ↦ rfl
+    rw [hS] at hrem
     have hindepξ : iIndepFun (fun p : FinStrictUpper n ↦
         ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩) P := by
       simpa only [Function.comp_def, wignerCoordinateIndex_inr, Sum.elim_inl] using
@@ -364,9 +373,10 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le {m n
       simpa only [← Complex.ofReal_natCast, ← Complex.ofReal_pow, ← Complex.ofReal_div,
         ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] using
         Nat.abs_descFactorial_div_pow_sub_one_le hn (m + 1)
-    rw [show (n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - (catalan m : ℂ) =
-      (n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S) +
-        ((n : ℂ)⁻¹ * S - (catalan m : ℂ)) by ring]
+    have hsplit : (n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - (catalan m : ℂ) =
+        (n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S) +
+          ((n : ℂ)⁻¹ * S - (catalan m : ℂ)) := by ring
+    rw [hsplit]
     calc _ ≤ ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S)‖ +
             ‖(n : ℂ)⁻¹ * S - (catalan m : ℂ)‖ := norm_add_le _ _
       _ ≤ (m : ℝ) ^ (2 * m) * B / n + (catalan m : ℝ) * (((m + 1).choose 2 : ℝ) / n) :=

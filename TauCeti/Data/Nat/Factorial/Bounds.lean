@@ -35,10 +35,10 @@ theorem one_sub_descFactorial_div_pow_le {K : Type*} [Field K] [LinearOrder K]
   rcases k with _ | m
   · simp
   · have hn_pos : (0 : K) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
-    have hdiv := div_le_div_of_nonneg_right (show (n : K) ^ (m + 1) ≤
-      (n.descFactorial (m + 1) : K) + ((m + 1).choose 2 : K) * (n : K) ^ m by
-        exact_mod_cast pow_le_descFactorial_add_choose_two_mul_pow n (m + 1))
-      (pow_pos hn_pos (m + 1)).le
+    have hpow : (n : K) ^ (m + 1) ≤
+        (n.descFactorial (m + 1) : K) + ((m + 1).choose 2 : K) * (n : K) ^ m := by
+      exact_mod_cast pow_le_descFactorial_add_choose_two_mul_pow n (m + 1)
+    have hdiv := div_le_div_of_nonneg_right hpow (pow_pos hn_pos (m + 1)).le
     rw [div_self (pow_pos hn_pos (m + 1)).ne', add_div, _root_.pow_succ',
       mul_div_mul_right _ _ (pow_pos hn_pos m).ne', ← _root_.pow_succ'] at hdiv
     linarith
