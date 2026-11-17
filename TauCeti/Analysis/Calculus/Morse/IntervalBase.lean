@@ -60,8 +60,11 @@ bijective.
   `TauCeti.morseIndex_intervalBasePotential_neg_one`: the critical points are `-1`, `0` and `1`.
 * `TauCeti.intervalBaseOrbit` and `TauCeti.isIntegralCurve_intervalBaseOrbit`: a trajectory from
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
+* `TauCeti.strictMono_intervalBaseOrbit` and `TauCeti.lipschitzWith_intervalBaseOrbit`: for
+  `C > 0` the trajectory `q` is strictly increasing, and it is `|C|`-Lipschitz.
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+* `TauCeti.integral_inv_mul_one_sub_sq`: `∫_a^b (t (1 - t²))⁻¹ dt = U b - U a` on `(0, 1)`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
@@ -477,6 +480,15 @@ theorem hasDerivAt_intervalBaseOrbit (C s : ℝ) :
   rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
   exact hasDerivAt_intervalBaseFlow C s inv_sqrt_two_mem_Icc
 
+/-- The trajectory `q` is `|C|`-Lipschitz. -/
+theorem lipschitzWith_intervalBaseOrbit (C : ℝ) : LipschitzWith ‖C‖₊ (intervalBaseOrbit C) := by
+  refine lipschitzWith_of_nnNorm_deriv_le
+    (fun s ↦ (hasDerivAt_intervalBaseOrbit C s).differentiableAt) fun s ↦ ?_
+  obtain ⟨h₀, h₁⟩ := intervalBaseOrbit_mem_Ioo C s
+  rw [(hasDerivAt_intervalBaseOrbit C s).deriv, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm,
+    Real.norm_eq_abs, Real.norm_eq_abs, mul_assoc, abs_mul]
+  refine mul_le_of_le_one_right (abs_nonneg C) (abs_le.2 ⟨?_, ?_⟩) <;> nlinarith
+
 theorem tendsto_intervalBaseOrbit_atBot (hC : 0 < C) :
     Tendsto (intervalBaseOrbit C) atBot (𝓝 0) := by
   rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
@@ -510,6 +522,17 @@ theorem hasDerivAt_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
     ((((hasDerivAt_pow 2 t).const_sub 1).log h1.ne').div_const 2)).congr_deriv ?_
   field_simp [ht.1.ne', h1.ne']
   ring
+
+/-- **The flow time across a window.** For `a, b ∈ (0, 1)`, the integral
+`∫_a^b (t (1 - t²))⁻¹ dt` of the reciprocal speed of the base field is `U b - U a`. -/
+theorem integral_inv_mul_one_sub_sq {a b : ℝ} (ha : a ∈ Ioo 0 1) (hb : b ∈ Ioo 0 1) :
+    ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ =
+      intervalBaseTimeCoordinate b - intervalBaseTimeCoordinate a := by
+  have hmem : ∀ t ∈ uIcc a b, t ∈ Ioo (0 : ℝ) 1 := fun t ht ↦ ordConnected_Ioo.uIcc_subset ha hb ht
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t ht ↦ hasDerivAt_intervalBaseTimeCoordinate (hmem t ht))
+    (ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun t ht ↦ ?_))
+  exact (mul_pos (hmem t ht).1 (by nlinarith [(hmem t ht).1, (hmem t ht).2])).ne'
 
 /-- **The time coordinate advances at rate `C`.** Along a solution of `x' = C x (1 - x²)` taking
 values in `(0, 1)`, the derivative of `U ∘ x` is `C`. -/
@@ -561,6 +584,14 @@ theorem strictMonoOn_intervalBaseTimeCoordinate :
   have hlog' := Real.log_lt_log h1 (by nlinarith [hx.1] : 1 - y ^ 2 < 1 - x ^ 2)
   rw [intervalBaseTimeCoordinate, intervalBaseTimeCoordinate]
   linarith
+
+/-- For `C > 0` the trajectory `q` is strictly increasing. -/
+theorem strictMono_intervalBaseOrbit (hC : 0 < C) : StrictMono (intervalBaseOrbit C) := by
+  intro s s' hs
+  rw [← strictMonoOn_intervalBaseTimeCoordinate.lt_iff_lt (intervalBaseOrbit_mem_Ioo C s)
+    (intervalBaseOrbit_mem_Ioo C s'), intervalBaseTimeCoordinate_intervalBaseOrbit,
+    intervalBaseTimeCoordinate_intervalBaseOrbit]
+  exact mul_lt_mul_of_pos_left hs hC
 
 /-- The trajectory `q` at unit rate inverts the time coordinate on `(0, 1)`. -/
 @[simp]
