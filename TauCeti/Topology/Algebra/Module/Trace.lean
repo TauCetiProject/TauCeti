@@ -79,7 +79,6 @@ theorem _root_.ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id {W : Type*} 
     traceCLM 𝕜 W (N ∘L T ∘L M) = traceCLM 𝕜 V T := by
   rw [traceCLM_apply, traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
     LinearMap.trace_comp_comm', ContinuousLinearMap.toLinearMap_comp, LinearMap.comp_assoc,
-    ← ContinuousLinearMap.toLinearMap_comp, h]
-  rfl
+    ← ContinuousLinearMap.toLinearMap_comp, h, ContinuousLinearMap.coe_id, LinearMap.comp_id]
 
 end TauCeti
