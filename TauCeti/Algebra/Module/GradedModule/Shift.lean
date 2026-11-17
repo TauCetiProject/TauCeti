@@ -126,31 +126,4 @@ theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semi
     rw [add_right_comm]
     exact hf _ x hx
 
-/-- Shifting the source internal grading by `c` increases the degree of a homogeneous linear map
-by `c`. -/
-theorem LinearMap.IsHomogeneous.shift_left_piece {R : Type u} {M N σN : Type*} [Semiring R]
-    {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [SetLike σN N]
-    {G : InternalGrading R M ι} {𝒩 : ι → σN} {f : M →ₗ[R] N} {q : ι}
-    (hf : LinearMap.IsHomogeneous f G.piece 𝒩 q) (c : ι) :
-    LinearMap.IsHomogeneous f (G.shift c).piece 𝒩 (c + q) := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p x hx
-  rw [InternalGrading.shift_piece] at hx
-  simpa [add_assoc] using hf.map_mem hx
-
-/-- Homogeneity of a linear map out of a shifted internal grading `G.shift c` of degree `q` is
-equivalent to homogeneity out of `G` of degree `q - c`. -/
-theorem LinearMap.isHomogeneous_shift_left_piece_iff {R : Type u} {M N σN : Type*} [Semiring R]
-    {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [SetLike σN N]
-    {G : InternalGrading R M ι} {𝒩 : ι → σN} {f : M →ₗ[R] N} {c q : ι} :
-    LinearMap.IsHomogeneous f (G.shift c).piece 𝒩 q ↔
-      LinearMap.IsHomogeneous f G.piece 𝒩 (q - c) := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
-  · have h := hf.shift_left_piece (-c)
-    rwa [InternalGrading.shift_shift, neg_add_cancel, InternalGrading.shift_zero,
-      neg_add_eq_sub] at h
-  · simpa [add_sub_cancel] using hf.shift_left_piece c
-
 end TauCeti

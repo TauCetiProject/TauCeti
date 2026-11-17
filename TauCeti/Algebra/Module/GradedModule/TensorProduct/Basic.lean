@@ -330,7 +330,7 @@ instance instGradedMonoidTensorProduct {A B : Type*} [Semiring A] [Semiring B]
 /-- Multiplication on an internally `ℤ`-graded algebra has degree `0` for the total-degree grading
 on `A ⊗[R] A`. -/
 theorem isHomogeneous_mul' {A : Type*} [Semiring A] [Algebra R A]
-    (G : InternalGrading R A ℤ) [SetLike.GradedMonoid G.piece] :
+    (G : InternalGrading R A ℤ) [SetLike.GradedMul G.piece] :
     LinearMap.IsHomogeneous (_root_.LinearMap.mul' R A) (G.tensorProduct G).piece G.piece 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro n z hz

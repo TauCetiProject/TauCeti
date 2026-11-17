@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
-public import TauCeti.Algebra.Algebra.Frobenius.Graded
 public import TauCeti.Algebra.Module.GradedModule.Finsupp
 public import TauCeti.Algebra.Module.GradedModule.GradedObject
 public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.KnotTheory.Khovanov.Frobenius
+import TauCeti.Algebra.Algebra.Frobenius.Graded
+import TauCeti.LinearAlgebra.Graded.Shift
 
 /-!
 # The quantum grading of the Khovanov Frobenius algebra
@@ -58,8 +59,9 @@ underlying algebra `R[ε]` by `TauCeti.InternalGrading.totalIso`.
   the degrees of the four structure maps.
 * `TauCeti.Khovanov.parityGrading_quantumGrading_shift_one_eq_bot`,
   `TauCeti.Khovanov.isHomogeneous_counit_shift_one`,
-  `TauCeti.Khovanov.isHomogeneous_comul_shift_one`: even support and Frobenius degrees on the
-  regraded algebra `W = V⟨-1⟩`.
+  `TauCeti.Khovanov.isHomogeneous_comul_shift_one`,
+  `TauCeti.Khovanov.handle_mem_quantumGrading_shift_one_piece_neg_two`: even support and Frobenius
+  degrees on the regraded algebra `W = V⟨-1⟩`.
 
 ## References
 
@@ -282,7 +284,10 @@ theorem parityGrading_quantumGrading_shift_one_eq_bot :
 theorem isHomogeneous_counit_shift_one :
     TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
       ((quantumGrading R).shift 1).piece (trivialGrading R R) 2 := by
-  simpa using isHomogeneous_counit.shift_left_piece 1
+  have hpiece : ((quantumGrading R).shift 1).piece = Graded.shift (quantumGrading R).piece 1 :=
+    funext fun p ↦ (InternalGrading.shift_piece _ 1 p).trans (Graded.shift_apply _ 1 p).symm
+  rw [hpiece, TauCeti.LinearMap.isHomogeneous_shift_source_iff]
+  simpa using isHomogeneous_counit
 
 /-- In the regraded algebra `W = V⟨-1⟩`, comultiplication has degree `-2`. -/
 theorem isHomogeneous_comul_shift_one :

@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.DirectSum.Supported
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
@@ -78,6 +79,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   projection, up to the shift of degree.
 * `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
   every element lies in that piece.
+* `TauCeti.InternalGrading.mem_piece_iff_decompose_eq_zero`: an element lies in `G.piece i` iff
+  its homogeneous components outside degree `i` vanish.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
@@ -360,19 +363,14 @@ theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [Ad
     (hG : ∀ j, j ≠ i → G.piece j = ⊥) (x : M) : x ∈ G.piece i :=
   DirectSum.mem_of_forall_ne_eq_bot hG x
 
-/-- An element whose homogeneous components outside degree `i` vanish lies in `G.piece i`. -/
-theorem InternalGrading.mem_piece_of_decompose_eq_zero {R M : Type*} [Semiring R]
+/-- An element lies in `G.piece i` if and only if its homogeneous components outside degree `i`
+vanish. -/
+theorem InternalGrading.mem_piece_iff_decompose_eq_zero {R M : Type*} [Semiring R]
     [AddCommMonoid M] [Module R M] {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι)
-    {i : ι} {x : M} (hx : ∀ j, j ≠ i → (DirectSum.decompose G.piece x j : M) = 0) :
-    x ∈ G.piece i := by
-  classical
-  rw [← DirectSum.sum_support_decompose G.piece x]
-  refine Submodule.sum_mem _ fun j _ ↦ ?_
-  by_cases hj : j = i
-  · subst hj
-    exact (DirectSum.decompose G.piece x j).2
-  · rw [hx j hj]
-    exact Submodule.zero_mem _
+    {i : ι} {x : M} :
+    x ∈ G.piece i ↔ ∀ j, j ≠ i → (DirectSum.decompose G.piece x j : M) = 0 := by
+  simpa only [Set.mem_singleton_iff, iSup_unique, Set.default_coe_singleton] using
+    TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero G.piece {i} (x := x)
 
 namespace LinearMap.IsHomogeneous
 

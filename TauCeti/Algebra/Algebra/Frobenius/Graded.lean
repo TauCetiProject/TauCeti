@@ -72,7 +72,7 @@ section Core
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   [Module.Finite R A] [Module.Projective R A]
-  (G : InternalGrading R A ℤ) [SetLike.GradedMonoid G.piece]
+  (G : InternalGrading R A ℤ) [SetLike.GradedMul G.piece]
   (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
 
 private theorem traceTensorEquiv_eq_zero_of_mem_piece {d m i j : ℤ}
@@ -103,7 +103,7 @@ theorem isHomogeneous_frobeniusCoalgebra_comul {d : ℤ}
   have hε' := (G.isHomogeneous_trivialGrading_iff_mem_dualPiece ε (-d)).mp hε
   rw [TauCeti.LinearMap.isHomogeneous_def]
   intro p a ha
-  refine GG.mem_piece_of_decompose_eq_zero fun n hn ↦ ?_
+  refine GG.mem_piece_iff_decompose_eq_zero.mpr fun n hn ↦ ?_
   apply (traceTensorEquiv ε).injective
   rw [map_zero]
   refine TensorProduct.ext (G.linearMap_ext fun i x hx ↦ G.linearMap_ext fun j y hy ↦ ?_)
@@ -124,7 +124,7 @@ theorem isHomogeneous_frobeniusCoalgebra_comul {d : ℤ}
 
 /-- If a perfect trace `ε` on a finite projective graded commutative algebra `A` has degree `-d`,
 then the handle element of `ε.frobeniusCoalgebra` lies in degree `d`. -/
-theorem frobeniusCoalgebra_handle_mem_piece {d : ℤ}
+theorem frobeniusCoalgebra_handle_mem_piece [SetLike.GradedOne G.piece] {d : ℤ}
     (hε : TauCeti.LinearMap.IsHomogeneous ε G.piece (trivialGrading R R) (-d)) :
     (letI := ε.frobeniusCoalgebra; TauCeti.Coalgebra.handle R A) ∈ G.piece d := by
   let := ε.frobeniusCoalgebra
@@ -143,7 +143,7 @@ theorem traceDualBasis_mem_piece {ι : Type*} [Finite ι] (b : Module.Basis ι R
     ε.traceDualBasis b i ∈ G.piece (d - deg i) := by
   classical
   have hε' := (G.isHomogeneous_trivialGrading_iff_mem_dualPiece ε (-d)).mp hε
-  refine G.mem_piece_of_decompose_eq_zero fun m hm ↦ ?_
+  refine G.mem_piece_iff_decompose_eq_zero.mpr fun m hm ↦ ?_
   apply ((mul R A).compr₂ ε).toPerfPair.injective
   rw [map_zero]
   refine b.ext fun j ↦ ?_
@@ -169,7 +169,7 @@ namespace TauCeti.Coalgebra.IsFrobenius
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   [_root_.Coalgebra R A] [_root_.Coalgebra.IsFrobenius R A]
-  (G : InternalGrading R A ℤ) [SetLike.GradedMonoid G.piece]
+  (G : InternalGrading R A ℤ) [SetLike.GradedMul G.piece]
 
 /-- In any commutative Frobenius coalgebra whose counit has degree `-d`, comultiplication has
 degree `d`. -/
@@ -184,7 +184,7 @@ theorem isHomogeneous_comul {d : ℤ}
 
 /-- In any commutative Frobenius coalgebra whose counit has degree `-d`, the handle element lies in
 degree `d`. -/
-theorem handle_mem_piece {d : ℤ}
+theorem handle_mem_piece [SetLike.GradedOne G.piece] {d : ℤ}
     (hε : TauCeti.LinearMap.IsHomogeneous (CoalgebraStruct.counit (R := R))
       G.piece (trivialGrading R R) (-d)) :
     TauCeti.Coalgebra.handle R A ∈ G.piece d := by
@@ -333,11 +333,12 @@ theorem frobeniusCoalgebra_handle_baseChange_mem_piece
 
 variable {S}
 
-/-- When a commutative `R`-algebra `S` carries a graded monoid `GS` over `R` and `ε` has degree
-`-d` on a finite projective graded commutative `R`-algebra `A`, the base-changed handle element in
-`S ⊗[R] A` lies in total degree `d` of `GS.tensorProduct G`. -/
+/-- When a commutative `R`-algebra `S` carries an internal `ℤ`-grading `GS` over `R` with
+`1 ∈ GS.piece 0` (`SetLike.GradedOne GS.piece`) and `ε` has degree `-d` on a finite projective
+graded commutative `R`-algebra `A`, the base-changed handle element in `S ⊗[R] A` lies in total
+degree `d` of `GS.tensorProduct G`. -/
 theorem frobeniusCoalgebra_handle_baseChange_mem_tensorProduct_piece
-    (GS : InternalGrading R S ℤ) [SetLike.GradedMonoid GS.piece]
+    (GS : InternalGrading R S ℤ) [SetLike.GradedOne GS.piece]
     (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair] {d : ℤ}
     (hε : TauCeti.LinearMap.IsHomogeneous ε G.piece (trivialGrading R R) (-d)) :
     (letI := (Module.Dual.baseChange S ε).frobeniusCoalgebra;
