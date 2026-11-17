@@ -85,10 +85,11 @@ private theorem exists_norm_toLp_critical_le (hn : 2 < finrank ℝ E) :
     rw [← eLpNorm_congr_ae (toLp_ofSmooth_ae_eq u), ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_toLp_le _)
   have hgrad : eLpNorm (fun x ↦ ‖mgradient I u x‖) 2 dV ≤ ENNReal.ofReal ‖ofSmooth u‖ := by
-    let G : C(M, ℝ) := ⟨_, continuous_norm_mgradient (u.contMDiff.of_le (by simp))⟩
-    change eLpNorm G 2 dV ≤ ENNReal.ofReal ‖ofSmooth u‖
-    rw [← eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) dV G), ← Lp.eNorm_def,
-      ← ofReal_norm]
+    let G : C(M, ℝ) :=
+      ⟨fun x ↦ ‖mgradient I u x‖, continuous_norm_mgradient (u.contMDiff.of_le (by simp))⟩
+    have hG : ContinuousMap.toLp 2 dV ℝ G =ᵐ[dV] fun x ↦ ‖mgradient I u x‖ := by
+      simpa only [G, ContinuousMap.coe_mk] using ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) dV G
+    rw [← eLpNorm_congr_ae hG, ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_toLp_norm_mgradient_le u)
   rw [Lp.norm_def,
     eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (p := pstar) (𝕜 := ℝ) dV (u : C(M, ℝ)))]
@@ -105,23 +106,14 @@ private def toCriticalLpAux (hn : 2 < finrank ℝ E) :
     letI : Fact ((1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) :=
       ⟨one_le_ofReal_critical hn⟩
     SobolevH1 I M →L[ℝ]
-      Lp ℝ (ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) (riemannianVolume I M) := by
+      Lp ℝ (ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) (riemannianVolume I M) :=
   letI : Fact ((1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) :=
     ⟨one_le_ofReal_critical hn⟩
-  let hA := exists_norm_toLp_critical_le (I := I) (M := M) hn
-  refine (LinearMap.mkContinuous
-    (((ContinuousMap.toLp (ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2)))
+  liftSmooth
+    ((ContinuousMap.toLp (ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2)))
         (riemannianVolume I M) ℝ).toLinearMap ∘ₗ
-        (⟨⟨fun u ↦ (u : C(M, ℝ)), fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩ :
-          C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ))) ∘ₗ
-      PreSobolevH1.ofPreSobolevH1.toLinearMap)
-    hA.choose fun v ↦ ?_).fromCompletion
-  obtain ⟨u, rfl⟩ := PreSobolevH1.toPreSobolevH1.surjective v
-  have h := hA.choose_spec u
-  rw [ofSmooth_apply, UniformSpace.Completion.norm_coe] at h
-  simpa only [LinearMap.coe_comp, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe,
-    Function.comp_apply, PreSobolevH1.ofPreSobolevH1_toPreSobolevH1, LinearMap.coe_mk,
-    AddHom.coe_mk] using h
+      (⟨⟨fun u ↦ (u : C(M, ℝ)), fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ)))
+    (exists_norm_toLp_critical_le hn)
 
 /-- **The Sobolev embedding on a closed Riemannian manifold.** On a compact manifold without
 boundary of dimension `n > 2` with a continuous Riemannian metric, `H¹(M)` embeds continuously and
@@ -141,11 +133,9 @@ theorem toLpOfLE_ofSmooth {q : ℝ≥0∞} [Fact (1 ≤ q)] (hn : 2 < finrank �
     toLpOfLE hn hq (ofSmooth u) = ContinuousMap.toLp q (riemannianVolume I M) ℝ (u : C(M, ℝ)) := by
   have : Fact ((1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) :=
     ⟨one_le_ofReal_critical hn⟩
-  rw [toLpOfLE, ContinuousLinearMap.comp_apply, toCriticalLpAux, ofSmooth_apply,
-    ContinuousLinearMap.fromCompletion_apply_coe, LinearMap.mkContinuous_apply]
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe,
-    Function.comp_apply, PreSobolevH1.ofPreSobolevH1_toPreSobolevH1, LinearMap.coe_mk,
-    AddHom.coe_mk]
+  rw [toLpOfLE, ContinuousLinearMap.comp_apply, toCriticalLpAux, liftSmooth_ofSmooth]
+  simp only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply,
+    LinearMap.coe_mk, AddHom.coe_mk]
   refine Lp.ext ?_
   rw [Lp.coeFn_ofExponentLEL]
   exact (ContinuousMap.coeFn_toLp _ (u : C(M, ℝ))).trans

@@ -334,12 +334,13 @@ def conformalMulEquiv
     SobolevH1 I
         (WithMetric (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos)) ≃L[ℝ]
       SobolevH1 I (WithMetric g) :=
+  let uM : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
   (SobolevH1.congrRescale g hf hf_pos).trans
     (SobolevH1.mulLeftEquiv
-      (ContMDiffMap.comp ⟨u, hu⟩ (WithMetric.diffeomorph g ∞).toContMDiffMap)
+      (uM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap)
       fun x ↦ by
-        change u (WithMetric.diffeomorph g ∞ x) ≠ 0
-        rw [WithMetric.coe_diffeomorph]; exact (hu_pos x.ofWithMetric).ne')
+        rw [ContMDiffMap.comp_apply, Diffeomorph.coe_coe, WithMetric.coe_diffeomorph]
+        exact (hu_pos x.ofWithMetric).ne')
 
 @[simp]
 theorem conformalMulEquiv_ofSmooth
@@ -372,18 +373,18 @@ theorem toLp_conformalMulEquiv_ae_eq
           (WithMetric.toWithMetric
             (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos)
             x.ofWithMetric) := by
+  let uM : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
   have hmul : conformalMulEquiv g hu hu_pos w =
-      SobolevH1.mulLeft (ContMDiffMap.comp ⟨u, hu⟩ (WithMetric.diffeomorph g ∞).toContMDiffMap)
+      SobolevH1.mulLeft (uM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap)
         (SobolevH1.congrRescale g hf hf_pos w) :=
     DFunLike.congr_fun (SobolevH1.coe_mulLeftEquiv _ _) _
   filter_upwards [hmul ▸ SobolevH1.toLp_mulLeft_ae_eq
-      (ContMDiffMap.comp ⟨u, hu⟩ (WithMetric.diffeomorph g ∞).toContMDiffMap)
+      (uM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap)
       (SobolevH1.congrRescale g hf hf_pos w),
     SobolevH1.toLp_congrRescale_ae_eq g hf hf_pos w] with x hx1 hx2
   refine hx1.trans ?_
-  change u (WithMetric.diffeomorph g ∞ x) *
-      SobolevH1.toLp (SobolevH1.congrRescale g hf hf_pos w) x = _
-  rw [WithMetric.coe_diffeomorph, hx2]
+  rw [ContMDiffMap.comp_apply, Diffeomorph.coe_coe, WithMetric.coe_diffeomorph, hx2]
+  rfl
 
 end ConformalCarrier
 
@@ -458,8 +459,9 @@ theorem energyForm_conformalMulEquiv_self [I.Boundaryless]
   have huv : ContMDiffMap.comp ⟨u, hu⟩ (WithMetric.diffeomorph g ∞).toContMDiffMap *
       v.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap =
       uvM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap := by
-    rw [show v.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap =
-      vM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap by ext x; simp [vM]]
+    have hv' : v.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap =
+        vM.comp (WithMetric.diffeomorph g ∞).toContMDiffMap := by ext x; simp [vM]
+    rw [hv']
     exact (ContMDiffMap.mul_comp uM vM (WithMetric.diffeomorph g ∞).toContMDiffMap).symm
   have huv_coe : (uvM : M → ℝ) = u * vM := ContMDiffMap.coe_mul uM vM
   rw [conformalMulEquiv_ofSmooth, huv, energyForm_ofSmooth_withMetric g uvM, hv,
@@ -605,8 +607,8 @@ theorem hasDerivAt_weakYamabeQuotient_add_smul [I.Boundaryless] (hn : 2 < finran
   rw [h0, hE0] at hQ
   convert hQ using 1
   · exact funext fun t ↦ weakYamabeQuotient_def I (w + t • v)
-  · rw [show weakYamabeQuotient I w = energyForm I w w / N ^ (2 / p) from
-      weakYamabeQuotient_def I w, Real.rpow_sub_one hN0.ne']
+  · have hQw : weakYamabeQuotient I w = energyForm I w w / N ^ (2 / p) := weakYamabeQuotient_def I w
+    rw [hQw, Real.rpow_sub_one hN0.ne']
     have : p ≠ 0 := by linarith
     dsimp only [μ]; field_simp
 
@@ -775,21 +777,6 @@ end FirstVariation
 
 /-! ### Lower bounds, equality of weak and smooth infima, and Aubin's bound -/
 
-/-- On an empty manifold, `H¹(M)` is a subsingleton. -/
-private theorem subsingleton_sobolevH1_of_isEmpty
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M]
-    [IsManifold I 1 M] [MeasurableSpace M] [BorelSpace M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsEmpty M] :
-    Subsingleton (SobolevH1 I M) :=
-  ⟨fun w₁ w₂ ↦ by
-    have hz (w : SobolevH1 I M) : w = 0 :=
-      SobolevH1.induction_on w (isClosed_eq continuous_id continuous_const) fun v ↦ by
-        rw [show v = 0 from ContMDiffMap.ext fun x ↦ (IsEmpty.false x).elim, map_zero]
-    exact (hz w₁).trans (hz w₂).symm⟩
-
 section InvariantAndBounds
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -815,7 +802,9 @@ private theorem le_weakYamabeQuotient_of_forall_ofSmooth (hn : 2 < finrank ℝ E
   obtain ⟨_, ⟨hne, hlt⟩, u, rfl⟩ :=
     mem_closure_iff_nhds.1 (SobolevH1.denseRange_ofSmooth w) _ hnhds
   rw [weakYamabeQuotient_ofSmooth] at hlt
-  exact (hc u fun h ↦ hne <| by simp [show u = 0 from ContMDiffMap.ext (congrFun h)]).trans_lt hlt
+  refine (hc u fun h ↦ hne ?_).trans_lt hlt
+  have hu0 : u = 0 := ContMDiffMap.ext (congrFun h)
+  simp [hu0]
 
 /-- **Scalar-curvature lower bound on `H¹`.** On a closed manifold of dimension `n > 2`, every
 `w ∈ H¹(M)` satisfies `Q_g(w) ≥ -‖Scal_g⁻‖_{L^{n/2}}`. -/
@@ -855,8 +844,7 @@ theorem sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient (hn : 2 < finrank ℝ E) 
     sInf (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) =
       sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0}) := by
   rcases isEmpty_or_nonempty M with hM | hM
-  · have := subsingleton_sobolevH1_of_isEmpty (I := I) (M := M)
-    rw [eq_empty_of_forall_notMem (s := {w : SobolevH1 I M | w ≠ 0})
+  · rw [eq_empty_of_forall_notMem (s := {w : SobolevH1 I M | w ≠ 0})
         fun w hw ↦ hw (Subsingleton.elim w 0),
       eq_empty_of_forall_notMem (s := {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ u ≠ 0})
         fun u hu ↦ hu.2 (Subsingleton.elim u 0), image_empty, image_empty]
@@ -890,8 +878,7 @@ theorem sInf_weakYamabeQuotient_eq_sInf_yamabeQuotient_pos (hn : 2 < finrank ℝ
     sInf (weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) =
       sInf (yamabeQuotient I '' {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x}) := by
   rcases isEmpty_or_nonempty M with hM | hM
-  · have := subsingleton_sobolevH1_of_isEmpty (I := I) (M := M)
-    have hR : {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x} = {0} :=
+  · have hR : {u : M → ℝ | ContMDiff I 𝓘(ℝ) ∞ u ∧ ∀ x, 0 < u x} = {0} :=
       Set.ext fun u ↦ ⟨fun _ ↦ Subsingleton.elim u 0,
         fun hu ↦ hu ▸ ⟨contMDiff_const, fun x ↦ hM.elim x⟩⟩
     rw [eq_empty_of_forall_notMem (s := {w : SobolevH1 I M | w ≠ 0})
@@ -909,8 +896,9 @@ theorem exists_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {ε : ℝ} (hε : 0 < 
       yamabeQuotient I u < sphereYamabeConstant (finrank ℝ E) + ε := by
   rcases isEmpty_or_nonempty M with hM | hM
   · refine ⟨0, contMDiff_const, fun x ↦ hM.elim x, ?_⟩
-    rw [show yamabeQuotient I (0 : M → ℝ) = 0 by
-      simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯)).symm]
+    have h0 : yamabeQuotient I (0 : M → ℝ) = 0 := by
+      simpa using (weakYamabeQuotient_ofSmooth (I := I) (0 : C^∞⟮I, M; ℝ⟯)).symm
+    rw [h0]
     exact add_pos (sphereYamabeConstant_pos (by omega)) hε
   obtain ⟨v, hv, -, -, -, hv_pos, hvQ⟩ :=
     exists_contMDiff_hasCompactSupport_yamabeQuotient_lt (I := I) (M := M) hn isOpen_univ

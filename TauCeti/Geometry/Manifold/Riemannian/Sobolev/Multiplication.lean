@@ -51,43 +51,6 @@ noncomputable section
 
 namespace TauCeti.Manifold.SobolevH1
 
-private theorem exists_nonneg_le_of_continuous {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    {φ : X → ℝ} (hφ : Continuous φ) : ∃ C : ℝ, 0 ≤ C ∧ ∀ x, φ x ≤ C := by
-  obtain ⟨A, hA⟩ := isCompact_univ.exists_bound_of_continuousOn hφ.continuousOn
-  exact ⟨max A 0, le_max_right _ _, fun x ↦
-    (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hA x (mem_univ x)).trans (le_max_left _ _))⟩
-
-section LiftSmooth
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M₁ : Type*} [TopologicalSpace M₁] [ChartedSpace H M₁] [CompactSpace M₁] [IsManifold I 1 M₁]
-  [MeasurableSpace M₁] [BorelSpace M₁] [RiemannianBundle (fun x : M₁ ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M₁ ↦ TangentSpace I x)]
-  {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂] [CompactSpace M₂] [IsManifold I 1 M₂]
-  [MeasurableSpace M₂] [BorelSpace M₂] [RiemannianBundle (fun x : M₂ ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M₂ ↦ TangentSpace I x)]
-
-private def liftSmooth (L : C^∞⟮I, M₁; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M₂; ℝ⟯)
-    (hL : ∃ C : ℝ, ∀ u, ‖ofSmooth (L u)‖ ≤ C * ‖ofSmooth u‖) :
-    SobolevH1 I M₁ →L[ℝ] SobolevH1 I M₂ :=
-  (LinearMap.mkContinuous ((ofSmooth.comp L).comp PreSobolevH1.ofPreSobolevH1.toLinearMap)
-    hL.choose fun w ↦ by
-      obtain ⟨u, rfl⟩ := PreSobolevH1.toPreSobolevH1.surjective w
-      have h := hL.choose_spec u
-      rw [ofSmooth_apply u, UniformSpace.Completion.norm_coe] at h
-      simpa only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        PreSobolevH1.ofPreSobolevH1_toPreSobolevH1] using h).fromCompletion
-
-private theorem liftSmooth_ofSmooth (L : C^∞⟮I, M₁; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M₂; ℝ⟯)
-    (hL : ∃ C : ℝ, ∀ u, ‖ofSmooth (L u)‖ ≤ C * ‖ofSmooth u‖) (u : C^∞⟮I, M₁; ℝ⟯) :
-    liftSmooth L hL (ofSmooth u) = ofSmooth (L u) := by
-  rw [liftSmooth, ofSmooth_apply u, ContinuousLinearMap.fromCompletion_apply_coe,
-    LinearMap.mkContinuous_apply]
-  simp
-
-end LiftSmooth
-
 section MulLeft
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -118,8 +81,13 @@ variable [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
 private theorem exists_norm_ofSmooth_mul_le (u : C^∞⟮I, M; ℝ⟯) :
     ∃ C : ℝ, ∀ v : C^∞⟮I, M; ℝ⟯, ‖ofSmooth (u * v)‖ ≤ C * ‖ofSmooth v‖ := by
   have hu1 : ContMDiff I 𝓘(ℝ) 1 u := u.contMDiff.of_le (by simp)
-  obtain ⟨M₀, _, hM⟩ := exists_nonneg_le_of_continuous (map_continuous u).abs
-  obtain ⟨G₀, _, hG⟩ := exists_nonneg_le_of_continuous (continuous_norm_mgradient hu1)
+  let uC : C(M, ℝ) := u
+  let gC : C(M, ℝ) := ⟨fun x ↦ ‖mgradient I u x‖, continuous_norm_mgradient hu1⟩
+  set M₀ := ‖uC‖
+  set G₀ := ‖gC‖
+  have hM (x : M) : |u x| ≤ M₀ := by
+    simpa only [uC, ContinuousMap.coe_ofClass, Real.norm_eq_abs] using uC.norm_coe_le_norm x
+  have hG (x : M) : ‖mgradient I u x‖ ≤ G₀ := gC.apply_le_norm x
   refine ⟨Real.sqrt (3 * M₀ ^ 2 + 2 * G₀ ^ 2), fun v ↦ ?_⟩
   have hv1 : ContMDiff I 𝓘(ℝ) 1 v := v.contMDiff.of_le (by simp)
   set dV := riemannianVolume I M
@@ -148,7 +116,7 @@ private theorem exists_norm_ofSmooth_mul_le (u : C^∞⟮I, M; ℝ⟯) :
 multiplication `v ↦ u * v` by `u : C^∞⟮I, M; ℝ⟯` extends from smooth functions to a continuous
 linear operator `H¹(M) →L[ℝ] H¹(M)`. -/
 def mulLeft (u : C^∞⟮I, M; ℝ⟯) : SobolevH1 I M →L[ℝ] SobolevH1 I M :=
-  liftSmooth (LinearMap.mulLeft ℝ u) (exists_norm_ofSmooth_mul_le u)
+  liftSmooth (ofSmooth.comp (LinearMap.mulLeft ℝ u)) (exists_norm_ofSmooth_mul_le u)
 
 /-- On a smooth function `v`, `mulLeft u` gives the class of `u * v`. -/
 @[simp]
@@ -213,11 +181,11 @@ def mulLeftEquiv (u : C^∞⟮I, M; ℝ⟯) (hu : ∀ x, u x ≠ 0) : SobolevH1 
   let uInv : C^∞⟮I, M; ℝ⟯ := ⟨fun x ↦ (u x)⁻¹, u.contMDiff.inv₀ hu⟩
   ContinuousLinearEquiv.equivOfInverse (mulLeft u) (mulLeft uInv)
     (fun w ↦ by
-      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul,
-        show uInv * u = 1 from ContMDiffMap.ext fun x ↦ inv_mul_cancel₀ (hu x)])
+      have hmul : uInv * u = 1 := ContMDiffMap.ext fun x ↦ inv_mul_cancel₀ (hu x)
+      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul, hmul])
     (fun w ↦ by
-      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul,
-        show u * uInv = 1 from ContMDiffMap.ext fun x ↦ mul_inv_cancel₀ (hu x)])
+      have hmul : u * uInv = 1 := ContMDiffMap.ext fun x ↦ mul_inv_cancel₀ (hu x)
+      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul, hmul])
 
 @[simp]
 theorem mulLeftEquiv_apply (u : C^∞⟮I, M; ℝ⟯) (hu : ∀ x, u x ≠ 0) (w : SobolevH1 I M) :
@@ -311,13 +279,13 @@ private theorem exists_le_mul_rescale_weights {f : M → ℝ} (hf : Continuous f
   have hfN_pos (y : M) : 0 < f y ^ a := Real.rpow_pos_of_pos (hf_pos y) _
   have hc₀ : Continuous fun y : M ↦ (f y ^ a)⁻¹ :=
     (hf.rpow_const fun _ ↦ Or.inr ha).inv₀ fun y ↦ (hfN_pos y).ne'
-  obtain ⟨K, hK0, hK⟩ := exists_nonneg_le_of_continuous (hc₀.max (hf.mul hc₀))
-  refine ⟨K, hK0, fun y ↦ ?_, fun y ↦ ?_⟩
+  let kC : C(M, ℝ) := ⟨_, hc₀.max (hf.mul hc₀)⟩
+  refine ⟨‖kC‖, norm_nonneg _, fun y ↦ ?_, fun y ↦ ?_⟩
   · exact (inv_mul_cancel₀ (hfN_pos y).ne').symm.trans_le
-      (mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (hK y)) (hfN_pos y).le)
+      (mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (kC.apply_le_norm y)) (hfN_pos y).le)
   · have h1 : 1 = (f y * (f y ^ a)⁻¹) * (f y ^ a * (f y)⁻¹) := by
       field_simp [(hf_pos y).ne', (hfN_pos y).ne']
-    exact h1.trans_le (mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (hK y))
+    exact h1.trans_le (mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (kC.apply_le_norm y))
       (mul_nonneg (hfN_pos y).le (inv_nonneg.2 (hf_pos y).le)))
 
 /-- Forward `H¹` norm bound from `WithMetric (g.rescale f hf hf_pos)` to `WithMetric g`. -/
@@ -374,7 +342,9 @@ private theorem exists_norm_ofSmooth_comp_diffeomorphWithMetric_symm_le
     hf.continuous.rpow_const fun _ ↦ Or.inr (by positivity)
   have hc₁ : Continuous fun y : M ↦ f y ^ ((finrank ℝ E : ℝ) / 2) * (f y)⁻¹ :=
     hc₀.mul (hf.continuous.inv₀ fun y ↦ (hf_pos y).ne')
-  obtain ⟨K, hK0, hK⟩ := exists_nonneg_le_of_continuous (hc₀.max hc₁)
+  let kC : C(M, ℝ) := ⟨_, hc₀.max hc₁⟩
+  set K := ‖kC‖
+  have hK0 : 0 ≤ K := norm_nonneg kC
   refine ⟨Real.sqrt K, fun v ↦ ?_⟩
   let u := compDiffeomorphWithMetricLinear ĝ g v
   have huv : u.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap = v :=
@@ -390,7 +360,7 @@ private theorem exists_norm_ofSmooth_comp_diffeomorphWithMetric_symm_le
       ((hc₀.comp WithMetric.continuous_ofWithMetric).mul
         ((map_continuous v).pow 2)).integrable_of_compactSpace
       (continuous_const.mul ((map_continuous v).pow 2)).integrable_of_compactSpace fun x ↦
-        mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (hK _)) (sq_nonneg _)
+        mul_le_mul_of_nonneg_right ((le_max_left _ _).trans (kC.apply_le_norm _)) (sq_nonneg _)
   have hgrad : ∫ x, (f x.ofWithMetric ^ ((finrank ℝ E : ℝ) / 2) * (f x.ofWithMetric)⁻¹) *
       ‖mgradient I v x‖ ^ 2 ∂dVg ≤ K * ∫ x, ‖mgradient I v x‖ ^ 2 ∂dVg := by
     rw [← integral_const_mul]
@@ -398,7 +368,7 @@ private theorem exists_norm_ofSmooth_comp_diffeomorphWithMetric_symm_le
       ((hc₁.comp WithMetric.continuous_ofWithMetric).mul
         (continuous_norm_sq_mgradient hv1)).integrable_of_compactSpace
       (continuous_const.mul (continuous_norm_sq_mgradient hv1)).integrable_of_compactSpace fun x ↦
-        mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (hK _)) (sq_nonneg _)
+        mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (kC.apply_le_norm _)) (sq_nonneg _)
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
   rw [mul_pow, Real.sq_sqrt hK0, norm_ofSmooth_rescale_sq g hf hf_pos u, huv, norm_ofSmooth_sq,
     mul_add]
@@ -412,17 +382,17 @@ def congrRescale
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) :
     SobolevH1 I (WithMetric (g.rescale f hf hf_pos)) ≃L[ℝ] SobolevH1 I (WithMetric g) :=
   ContinuousLinearEquiv.equivOfInverse
-    (liftSmooth (compDiffeomorphWithMetricLinear g (g.rescale f hf hf_pos))
+    (liftSmooth (ofSmooth.comp (compDiffeomorphWithMetricLinear g (g.rescale f hf hf_pos)))
       (exists_norm_ofSmooth_comp_diffeomorphWithMetric_le g hf hf_pos))
-    (liftSmooth (compDiffeomorphWithMetricLinear (g.rescale f hf hf_pos) g)
+    (liftSmooth (ofSmooth.comp (compDiffeomorphWithMetricLinear (g.rescale f hf hf_pos) g))
       (exists_norm_ofSmooth_comp_diffeomorphWithMetric_symm_le g hf hf_pos))
     (fun w ↦ by
       refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
-      rw [liftSmooth_ofSmooth, liftSmooth_ofSmooth]
+      rw [liftSmooth_ofSmooth, LinearMap.comp_apply, liftSmooth_ofSmooth, LinearMap.comp_apply]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ by simp))
     (fun w ↦ by
       refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
-      rw [liftSmooth_ofSmooth, liftSmooth_ofSmooth]
+      rw [liftSmooth_ofSmooth, LinearMap.comp_apply, liftSmooth_ofSmooth, LinearMap.comp_apply]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ by simp))
 
 @[simp]
@@ -459,9 +429,9 @@ private theorem exists_map_riemannianVolume_le_smul_rescale
   have hι : Measurable ι :=
     (WithMetric.continuous_toWithMetric.comp WithMetric.continuous_ofWithMetric).measurable
   have hfN_pos (y : M) : 0 < f y ^ ((finrank ℝ E : ℝ) / 2) := Real.rpow_pos_of_pos (hf_pos y) _
-  obtain ⟨K, hK0, hK⟩ := exists_nonneg_le_of_continuous
-    ((hf.continuous.rpow_const fun _ ↦ Or.inr (by positivity)).inv₀ fun y ↦ (hfN_pos y).ne')
-  refine ⟨ENNReal.ofReal K, ENNReal.ofReal_ne_top, Measure.le_iff.2 fun s hs ↦ ?_⟩
+  let kC : C(M, ℝ) :=
+    ⟨_, (hf.continuous.rpow_const fun _ ↦ Or.inr (by positivity)).inv₀ fun y ↦ (hfN_pos y).ne'⟩
+  refine ⟨ENNReal.ofReal ‖kC‖, ENNReal.ofReal_ne_top, Measure.le_iff.2 fun s hs ↦ ?_⟩
   rw [Measure.map_apply hι hs, smul_apply, smul_eq_mul, WithMetric.riemannianVolume_rescale,
     Measure.map_apply hι hs, withDensity_apply _ (hι hs)]
   have hm : Measurable fun x : WithMetric g ↦
@@ -469,9 +439,9 @@ private theorem exists_map_riemannianVolume_le_smul_rescale
     ((hf.continuous.comp WithMetric.continuous_ofWithMetric).measurable.pow_const _).ennreal_ofReal
   rw [← setLIntegral_one, ← lintegral_const_mul _ hm]
   refine setLIntegral_mono (hm.const_mul _) fun x _ ↦ ?_
-  rw [← ENNReal.ofReal_mul hK0, ← ENNReal.ofReal_one]
+  rw [← ENNReal.ofReal_mul (norm_nonneg kC), ← ENNReal.ofReal_one]
   exact ENNReal.ofReal_le_ofReal ((inv_mul_cancel₀ (hfN_pos _).ne').symm.trans_le
-    (mul_le_mul_of_nonneg_right (hK _) (hfN_pos _).le))
+    (mul_le_mul_of_nonneg_right (kC.apply_le_norm _) (hfN_pos _).le))
 
 /-- **Compatibility of `congrRescale` with `L²`.** Under `congrRescale`, the value in
 `L²(WithMetric g)` is almost everywhere the value in `L²(WithMetric (g.rescale f hf hf_pos))`
