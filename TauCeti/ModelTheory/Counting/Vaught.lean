@@ -301,8 +301,8 @@ only if the sentence does, with no countability assumptions on the languages or 
 theorem hasVaughtDichotomy_onBoundedFormulaInf_iff (φ : L.SentenceInf ι) :
     HasVaughtDichotomy (e.toLHom.onBoundedFormulaInf φ) ↔ HasVaughtDichotomy φ := by
   rw [hasVaughtDichotomy_iff, hasVaughtDichotomy_iff,
-    ← Cardinal.lift_le_aleph0.{v', v}, ← e.lift_countableModelCount_onBoundedFormulaInf φ,
-    Cardinal.lift_le_aleph0, e.hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff φ]
+    e.countableModelCount_onBoundedFormulaInf_le_aleph0_iff,
+    e.hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff]
 
 /-- **Vaught's cardinal dichotomy along a language equivalence.** The translation of an infinitary
 sentence along a language equivalence of relational languages satisfies `HasVaughtCount` if and
@@ -310,14 +310,9 @@ only if the sentence does, with no countability assumptions on the languages or 
 @[simp]
 theorem hasVaughtCount_onBoundedFormulaInf_iff (φ : L.SentenceInf ι) :
     HasVaughtCount (e.toLHom.onBoundedFormulaInf φ) ↔ HasVaughtCount φ := by
-  have heq : countableModelCount (e.toLHom.onBoundedFormulaInf φ) = 𝔠 ↔
-      countableModelCount φ = 𝔠 := by
-    rw [← Cardinal.lift_inj.{v', v}, Cardinal.lift_continuum,
-      ← e.lift_countableModelCount_onBoundedFormulaInf φ, ← Cardinal.lift_continuum.{v', v},
-      Cardinal.lift_inj]
   rw [hasVaughtCount_iff, hasVaughtCount_iff,
-    ← Cardinal.lift_le_aleph0.{v', v}, ← e.lift_countableModelCount_onBoundedFormulaInf φ,
-    Cardinal.lift_le_aleph0, heq]
+    e.countableModelCount_onBoundedFormulaInf_le_aleph0_iff,
+    e.countableModelCount_onBoundedFormulaInf_eq_continuum_iff]
 
 end FirstOrder.Language.LEquiv
 
