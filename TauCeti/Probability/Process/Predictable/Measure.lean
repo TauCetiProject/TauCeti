@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -143,6 +144,14 @@ theorem predictableMeasure_restrict_of_le (ℱ : Filtration ℝ≥0 m) (P : Meas
     (ℱ.predictableMeasure P T).restrict (Ioc 0 S ×ˢ univ) = ℱ.predictableMeasure P S := by
   rw [predictableMeasure_restrict, min_eq_left hST]
 
+/-- Almost every predictable time/sample pair lies in the positive-time horizon. -/
+theorem ae_mem_Ioc_prod_predictableMeasure (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
+    [SFinite P] (T : ℝ≥0) :
+    ∀ᵐ x ∂ℱ.predictableMeasure P T, x ∈ Ioc 0 T ×ˢ (univ : Set Ω) := by
+  have h := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
+    (measurableSet_predictable_Ioc_prod (𝓕 := ℱ) 0 T MeasurableSet.univ)
+  rwa [ℱ.predictableMeasure_restrict_of_le P le_rfl] at h
+
 /-- Predictable measures increase with the horizon. -/
 theorem predictableMeasure_mono (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
     {S T : ℝ≥0} (hST : S ≤ T) : ℱ.predictableMeasure P S ≤ ℱ.predictableMeasure P T := by
@@ -155,34 +164,34 @@ variable (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
   {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
   [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T U : ℝ≥0}
 
-private theorem exists_predictableMeasureExtendLp (hST : S ≤ T) :
-    ∃ E' : Lp E p (ℱ.predictableMeasure P S) →ₗᵢ[𝕜] Lp E p (ℱ.predictableMeasure P T),
-      ∀ f, E' f =ᵐ[ℱ.predictableMeasure P T] (Ioc 0 S ×ˢ univ).indicator f := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hs : MeasurableSet (Ioc 0 S ×ˢ (univ : Set Ω)) :=
-    measurableSet_predictable_Ioc_prod 0 S MeasurableSet.univ
-  rw [← ℱ.predictableMeasure_restrict_of_le P hST]
-  have hex : ∃ E' : Lp E p ((ℱ.predictableMeasure P T).restrict (Ioc 0 S ×ˢ univ))
-      →ₗᵢ[𝕜] Lp E p ((ℱ.predictableMeasure P T).restrict univ),
-      ∀ f, E' f =ᵐ[(ℱ.predictableMeasure P T).restrict univ]
-        (Ioc 0 S ×ˢ univ).indicator f :=
-    ⟨TauCeti.extendByZeroLpₗᵢ 𝕜 _ hs (subset_univ _),
-      fun f ↦ TauCeti.coeFn_extendByZeroLpₗᵢ 𝕜 hs (subset_univ _) f⟩
-  rw [Measure.restrict_univ] at hex
-  exact hex
-
 variable (𝕜) in
 /-- Extend a predictable `Lᵖ` class by zero from `S` to `T`, preserving its norm. -/
 noncomputable def predictableMeasureExtendLp (hST : S ≤ T) :
-    Lp E p (ℱ.predictableMeasure P S) →ₗᵢ[𝕜] Lp E p (ℱ.predictableMeasure P T) :=
-  (exists_predictableMeasureExtendLp ℱ P (𝕜 := 𝕜) hST).choose
+    Lp E p (ℱ.predictableMeasure P S) →ₗᵢ[𝕜] Lp E p (ℱ.predictableMeasure P T) := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  exact (TauCeti.castLpₗᵢ (𝕜 := 𝕜)
+    (Measure.restrict_univ (μ := ℱ.predictableMeasure P T))).toLinearIsometry.comp
+      ((TauCeti.extendByZeroLpₗᵢ 𝕜 (ℱ.predictableMeasure P T)
+        (measurableSet_predictable_Ioc_prod 0 S MeasurableSet.univ) (subset_univ _)).comp
+          (TauCeti.castLpₗᵢ (𝕜 := 𝕜)
+            (ℱ.predictableMeasure_restrict_of_le P hST).symm).toLinearIsometry)
 
 /-- The horizon extension is represented by the original function cut off to `(0,S]`. -/
 theorem coeFn_predictableMeasureExtendLp (hST : S ≤ T)
     (f : Lp E p (ℱ.predictableMeasure P S)) :
     ⇑(ℱ.predictableMeasureExtendLp P 𝕜 hST f) =ᵐ[ℱ.predictableMeasure P T]
-      (Ioc 0 S ×ˢ univ).indicator f :=
-  (exists_predictableMeasureExtendLp ℱ P (𝕜 := 𝕜) hST).choose_spec f
+      (Ioc 0 S ×ˢ univ).indicator f := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have h := TauCeti.coeFn_extendByZeroLpₗᵢ 𝕜
+    (measurableSet_predictable_Ioc_prod (𝓕 := ℱ) 0 S MeasurableSet.univ) (subset_univ _)
+    (TauCeti.castLpₗᵢ (𝕜 := 𝕜) (ℱ.predictableMeasure_restrict_of_le P hST).symm f)
+  have h' := h.filter_mono (le_of_eq
+    (congrArg ae (Measure.restrict_univ (μ := ℱ.predictableMeasure P T))).symm)
+  have hcast := funext (TauCeti.coeFn_castLpₗᵢ (𝕜 := 𝕜)
+    (ℱ.predictableMeasure_restrict_of_le P hST).symm f)
+  filter_upwards [h'] with x hx
+  simpa only [predictableMeasureExtendLp, LinearIsometry.coe_comp, Function.comp_apply,
+    LinearIsometryEquiv.coe_toLinearIsometry, TauCeti.coeFn_castLpₗᵢ, hcast] using hx
 
 /-- Any representative on the shorter horizon may be used to compute the extension. -/
 theorem coeFn_predictableMeasureExtendLp_of_ae_eq (hST : S ≤ T)
@@ -231,90 +240,203 @@ theorem predictableMeasureExtendLp_predictableMeasureExtendLp (hST : S ≤ T) (h
   rw [hx, hy, indicator_indicator,
     inter_eq_self_of_subset_right (prod_mono_left (Ioc_subset_Ioc_right hST))]
 
-/-- Extension preserves rectangle indicators whose right endpoint is in the shorter horizon. -/
+/-- A longer-horizon indicator representative characterizes the zero-extension. -/
+theorem predictableMeasureExtendLp_eq_of_ae_eq_indicator (hST : S ≤ T)
+    {f : Lp E p (ℱ.predictableMeasure P S)} {g : Lp E p (ℱ.predictableMeasure P T)}
+    (hfg : g =ᵐ[ℱ.predictableMeasure P T] (Ioc 0 S ×ˢ univ).indicator f) :
+    ℱ.predictableMeasureExtendLp P 𝕜 hST f = g :=
+  Lp.ext ((ℱ.coeFn_predictableMeasureExtendLp P (𝕜 := 𝕜) hST f).trans hfg.symm)
+
+/-- The zero-extension vanishes after the shorter horizon. -/
+theorem ae_predictableMeasureExtendLp_eq_zero (hST : S ≤ T)
+    (f : Lp E p (ℱ.predictableMeasure P S)) :
+    ∀ᵐ x ∂ℱ.predictableMeasure P T, S < x.1 → ℱ.predictableMeasureExtendLp P 𝕜 hST f x = 0 := by
+  filter_upwards [ℱ.coeFn_predictableMeasureExtendLp P (𝕜 := 𝕜) hST f] with x hx hS
+  rw [hx, indicator_of_notMem]
+  exact fun h ↦ (not_le_of_gt hS) h.1.2
+
+/-- Shorter-horizon agreement and a vanishing tail characterize the zero-extension. -/
+theorem predictableMeasureExtendLp_eq_of_ae_eq_of_ae_eq_zero (hST : S ≤ T)
+    {f : Lp E p (ℱ.predictableMeasure P S)} {g : Lp E p (ℱ.predictableMeasure P T)}
+    (hfg : g =ᵐ[ℱ.predictableMeasure P S] f)
+    (hg : ∀ᵐ x ∂ℱ.predictableMeasure P T, S < x.1 → g x = 0) :
+    ℱ.predictableMeasureExtendLp P 𝕜 hST f = g := by
+  apply Lp.ext
+  filter_upwards [ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := 𝕜) hST hfg.symm,
+    hg, ℱ.ae_mem_Ioc_prod_predictableMeasure P T] with x hx hz hxt
+  rw [hx]
+  by_cases hS : x ∈ Ioc 0 S ×ˢ (univ : Set Ω)
+  · exact indicator_of_mem hS _
+  · rw [indicator_of_notMem hS, hz (lt_of_not_ge fun hle ↦
+      hS ⟨⟨hxt.1.1, hle⟩, mem_univ _⟩)]
+
+/-- Extension clips a rectangle indicator's right endpoint to the shorter horizon. -/
 @[simp]
-theorem predictableMeasureExtendLp_indicatorConstLp_Ioc_prod [IsFiniteMeasure P]
-    (hST : S ≤ T) {s t : ℝ≥0} (ht : t ≤ S) {A : Set Ω}
-    (hA : MeasurableSet[ℱ s] A) (c : E) :
+theorem predictableMeasureExtendLp_indicatorConstLp_Ioc_prod
+    (hST : S ≤ T) (s t : ℝ≥0) {A : Set Ω} (hA : MeasurableSet[ℱ s] A)
+    {hμ : ℱ.predictableMeasure P S (Ioc s t ×ˢ A) ≠ ∞} (c : E) :
     ℱ.predictableMeasureExtendLp P 𝕜 hST
-        (indicatorConstLp p (measurableSet_predictable_Ioc_prod s t hA)
-          (measure_ne_top _ _) c) =
-      indicatorConstLp p (measurableSet_predictable_Ioc_prod s t hA)
-        (measure_ne_top _ _) c := by
+        (indicatorConstLp p (measurableSet_predictable_Ioc_prod s t hA) hμ c) =
+      indicatorConstLp p (measurableSet_predictable_Ioc_prod s (min t S) hA)
+        (by rwa [ℱ.predictableMeasure_Ioc_prod P T s (min t S) hA, min_assoc,
+          min_eq_left hST, ← ℱ.predictableMeasure_Ioc_prod P S s t hA]) c := by
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   apply Lp.ext
   filter_upwards [ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := 𝕜) hST
     (indicatorConstLp_coeFn (p := p) (hs := measurableSet_predictable_Ioc_prod s t hA)
-      (hμs := measure_ne_top _ _) (c := c)),
+      (hμs := hμ) (c := c)),
     indicatorConstLp_coeFn (μ := ℱ.predictableMeasure P T) (p := p)
-      (hs := measurableSet_predictable_Ioc_prod s t hA)
-      (hμs := measure_ne_top _ _) (c := c)] with x hx hy
-  rw [hx, hy, indicator_indicator, inter_eq_self_of_subset_right]
-  exact prod_mono (Ioc_subset_Ioc (bot_le : 0 ≤ s) ht) (subset_univ A)
+      (hs := measurableSet_predictable_Ioc_prod s (min t S) hA)
+      (hμs := _) (c := c)] with x hx hy
+  rw [hx, hy, indicator_indicator, prod_inter_prod, univ_inter, Ioc_inter_Ioc,
+    max_eq_right (zero_le : (0 : ℝ≥0) ≤ s), min_comm]
+
+/-- Extension preserves a finite-mass rectangle ending before the shorter horizon. -/
+theorem predictableMeasureExtendLp_indicatorConstLp_Ioc_prod_of_le
+    (hST : S ≤ T) {s t : ℝ≥0} (ht : t ≤ S) {A : Set Ω}
+    (hA : MeasurableSet[ℱ s] A) {hμ : ℱ.predictableMeasure P S (Ioc s t ×ˢ A) ≠ ∞}
+    (c : E) :
+    ℱ.predictableMeasureExtendLp P 𝕜 hST
+        (indicatorConstLp p (measurableSet_predictable_Ioc_prod s t hA) hμ c) =
+      indicatorConstLp p (measurableSet_predictable_Ioc_prod s t hA)
+        (by rwa [ℱ.predictableMeasure_Ioc_prod_of_le P (ht.trans hST) hA,
+          ← ℱ.predictableMeasure_Ioc_prod_of_le P ht hA]) c := by
+  simpa only [min_eq_left ht] using
+    ℱ.predictableMeasureExtendLp_indicatorConstLp_Ioc_prod P (𝕜 := 𝕜) hST s t hA (hμ := hμ) c
 
 end ExtendLp
 
 section RestrictLp
 
 variable (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T U : ℝ≥0}
+  {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
+  [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T U : ℝ≥0}
 
+variable (𝕜) in
 /-- Restrict a predictable `Lᵖ` class to a shorter horizon as a continuous linear map. -/
 noncomputable def predictableMeasureRestrictLp (hST : S ≤ T) :
-    Lp E p (ℱ.predictableMeasure P T) →L[ℝ] Lp E p (ℱ.predictableMeasure P S) :=
-  Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp)
-    (by simpa only [one_smul] using ℱ.predictableMeasure_mono P hST)
+    Lp E p (ℱ.predictableMeasure P T) →L[𝕜] Lp E p (ℱ.predictableMeasure P S) := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  exact (TauCeti.castLpₗᵢ (𝕜 := 𝕜)
+    (ℱ.predictableMeasure_restrict_of_le P hST)).toContinuousLinearEquiv.toContinuousLinearMap.comp
+      (LpToLpRestrictCLM (ℝ≥0 × Ω) E 𝕜 (ℱ.predictableMeasure P T) p (Ioc 0 S ×ˢ univ))
 
 /-- Restriction keeps the representative on the shorter horizon. -/
 theorem coeFn_predictableMeasureRestrictLp (hST : S ≤ T)
     (f : Lp E p (ℱ.predictableMeasure P T)) :
-    ⇑(ℱ.predictableMeasureRestrictLp P hST f) =ᵐ[ℱ.predictableMeasure P S] f :=
-  Lp.coeFn_LpToLpOfMeasureLeSMul _ _ f
+    ⇑(ℱ.predictableMeasureRestrictLp P 𝕜 hST f) =ᵐ[ℱ.predictableMeasure P S] f := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have h := LpToLpRestrictCLM_coeFn 𝕜 (Ioc 0 S ×ˢ univ) f
+  have h' := h.filter_mono (le_of_eq
+    (congrArg ae (ℱ.predictableMeasure_restrict_of_le P hST)).symm)
+  filter_upwards [h'] with x hx
+  simpa only [predictableMeasureRestrictLp, ContinuousLinearMap.comp_apply,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearEquiv.coe_coe, TauCeti.coeFn_castLpₗᵢ] using hx
 
-/-- Horizon restriction is a contraction. -/
-theorem norm_predictableMeasureRestrictLp_le (hST : S ≤ T) :
-    ‖(ℱ.predictableMeasureRestrictLp P hST :
-      Lp E p (ℱ.predictableMeasure P T) →L[ℝ] Lp E p (ℱ.predictableMeasure P S))‖ ≤ 1 := by
-  rw [predictableMeasureRestrictLp]
-  simpa only [ENNReal.toReal_one, Real.one_rpow] using
-    (Lp.norm_LpToLpOfMeasureLeSMul_le (E := E) (p := p) (c := 1) (by simp)
-      (by simpa only [one_smul] using ℱ.predictableMeasure_mono P hST))
+/-- Restricting a class does not increase its norm. -/
+theorem norm_predictableMeasureRestrictLp_apply_le (hST : S ≤ T)
+    (f : Lp E p (ℱ.predictableMeasure P T)) :
+    ‖ℱ.predictableMeasureRestrictLp P 𝕜 hST f‖ ≤ ‖f‖ := by
+  simp only [predictableMeasureRestrictLp, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.norm_map]
+  exact norm_Lp_toLp_restrict_le _ f
 
 /-- Restricting to the same horizon is the identity. -/
 @[simp]
 theorem predictableMeasureRestrictLp_self (f : Lp E p (ℱ.predictableMeasure P S)) :
-    ℱ.predictableMeasureRestrictLp P le_rfl f = f :=
-  Lp.ext (ℱ.coeFn_predictableMeasureRestrictLp P le_rfl f)
+    ℱ.predictableMeasureRestrictLp P 𝕜 le_rfl f = f :=
+  Lp.ext (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) le_rfl f)
 
 /-- Two successive horizon restrictions equal the direct restriction. -/
 @[simp]
 theorem predictableMeasureRestrictLp_predictableMeasureRestrictLp (hST : S ≤ T)
     (hTU : T ≤ U) (f : Lp E p (ℱ.predictableMeasure P U)) :
-    ℱ.predictableMeasureRestrictLp P hST (ℱ.predictableMeasureRestrictLp P hTU f) =
-      ℱ.predictableMeasureRestrictLp P (hST.trans hTU) f :=
-  Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P hST _).trans
-    (((ℱ.coeFn_predictableMeasureRestrictLp P hTU f).filter_mono
+    ℱ.predictableMeasureRestrictLp P 𝕜 hST (ℱ.predictableMeasureRestrictLp P 𝕜 hTU f) =
+      ℱ.predictableMeasureRestrictLp P 𝕜 (hST.trans hTU) f :=
+  Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST _).trans
+    (((ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hTU f).filter_mono
       (ae_mono (ℱ.predictableMeasure_mono P hST))).trans
-        (ℱ.coeFn_predictableMeasureRestrictLp P (hST.trans hTU) f).symm))
+        (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) (hST.trans hTU) f).symm))
 
 /-- Restricting a zero-extension recovers the original class. -/
 @[simp]
 theorem predictableMeasureRestrictLp_predictableMeasureExtendLp (hST : S ≤ T)
     (f : Lp E p (ℱ.predictableMeasure P S)) :
-    ℱ.predictableMeasureRestrictLp P hST (ℱ.predictableMeasureExtendLp P ℝ hST f) = f :=
-  Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P hST _).trans
-    (ℱ.coeFn_predictableMeasureExtendLp_restrict P hST f))
+    ℱ.predictableMeasureRestrictLp P 𝕜 hST (ℱ.predictableMeasureExtendLp P 𝕜 hST f) = f :=
+  Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST _).trans
+    (ℱ.coeFn_predictableMeasureExtendLp_restrict P (𝕜 := 𝕜) hST f))
 
 /-- Extending a restriction is the original class cut off to the shorter horizon. -/
 theorem coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp (hST : S ≤ T)
     (f : Lp E p (ℱ.predictableMeasure P T)) :
-    ⇑(ℱ.predictableMeasureExtendLp P ℝ hST (ℱ.predictableMeasureRestrictLp P hST f))
+    ⇑(ℱ.predictableMeasureExtendLp P 𝕜 hST (ℱ.predictableMeasureRestrictLp P 𝕜 hST f))
       =ᵐ[ℱ.predictableMeasure P T] (Ioc 0 S ×ˢ univ).indicator f :=
-  ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P hST
-    (ℱ.coeFn_predictableMeasureRestrictLp P hST f)
+  ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := 𝕜) hST
+    (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST f)
+
+/-- Restriction preserves finite-mass indicator classes. -/
+@[simp]
+theorem predictableMeasureRestrictLp_indicatorConstLp (hST : S ≤ T)
+    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A)
+    {hμ : ℱ.predictableMeasure P T A ≠ ∞} (c : E) :
+    ℱ.predictableMeasureRestrictLp P 𝕜 hST (indicatorConstLp p hA hμ c) =
+      indicatorConstLp p hA
+        (ne_top_of_le_ne_top hμ (ℱ.predictableMeasure_mono P hST A)) c := by
+  apply Lp.ext
+  exact (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST _).trans
+    (((indicatorConstLp_coeFn (p := p) (hs := hA) (hμs := hμ) (c := c)).filter_mono
+      (ae_mono (ℱ.predictableMeasure_mono P hST))).trans indicatorConstLp_coeFn.symm)
+
+/-- Extending the restriction recovers a class whose tail vanishes. -/
+theorem predictableMeasureExtendLp_predictableMeasureRestrictLp_of_ae_eq_zero
+    (hST : S ≤ T) {f : Lp E p (ℱ.predictableMeasure P T)}
+    (hf : ∀ᵐ x ∂ℱ.predictableMeasure P T, S < x.1 → f x = 0) :
+    ℱ.predictableMeasureExtendLp P 𝕜 hST (ℱ.predictableMeasureRestrictLp P 𝕜 hST f) = f :=
+  ℱ.predictableMeasureExtendLp_eq_of_ae_eq_of_ae_eq_zero P hST
+    (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST f).symm hf
+
+/-- The range of zero-extension consists exactly of classes vanishing after `S`. -/
+theorem mem_range_predictableMeasureExtendLp_iff (hST : S ≤ T)
+    {f : Lp E p (ℱ.predictableMeasure P T)} :
+    f ∈ Set.range (ℱ.predictableMeasureExtendLp P 𝕜 hST) ↔
+      ∀ᵐ x ∂ℱ.predictableMeasure P T, S < x.1 → f x = 0 := by
+  constructor
+  · rintro ⟨g, rfl⟩
+    exact ℱ.ae_predictableMeasureExtendLp_eq_zero P hST g
+  · intro hf
+    exact ⟨_, ℱ.predictableMeasureExtendLp_predictableMeasureRestrictLp_of_ae_eq_zero P hST hf⟩
+
+/-- Classes agreeing on the initial horizon split into zero-extension and a complementary cutoff. -/
+theorem eq_predictableMeasureExtendLp_add_of_ae_eq_indicator_compl (hST : S ≤ T)
+    {f : Lp E p (ℱ.predictableMeasure P T)} {g : Lp E p (ℱ.predictableMeasure P S)}
+    {k : Lp E p (ℱ.predictableMeasure P T)}
+    (hfg : f =ᵐ[ℱ.predictableMeasure P S] g)
+    (hk : k =ᵐ[ℱ.predictableMeasure P T] (Ioc 0 S ×ˢ univ)ᶜ.indicator f) :
+    f = ℱ.predictableMeasureExtendLp P 𝕜 hST g + k := by
+  have hrestrict : ℱ.predictableMeasureRestrictLp P 𝕜 hST f = g :=
+    Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST f).trans hfg)
+  have hsub : f - ℱ.predictableMeasureExtendLp P 𝕜 hST g = k := by
+    apply Lp.ext
+    filter_upwards [Lp.coeFn_sub f (ℱ.predictableMeasureExtendLp P 𝕜 hST g),
+      ℱ.coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST f,
+      hk] with x hsub hext hkx
+    rw [hrestrict] at hext
+    rw [hsub, Pi.sub_apply, hext, hkx, indicator_compl, Pi.sub_apply]
+  exact sub_eq_iff_eq_add'.mp hsub
 
 end RestrictLp
+
+/-- Horizon restriction has operator norm at most one over a nontrivially normed field. -/
+theorem norm_predictableMeasureRestrictLp_le (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
+    [SFinite P] {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T : ℝ≥0} (hST : S ≤ T) :
+    ‖(ℱ.predictableMeasureRestrictLp P 𝕜 hST :
+      Lp E p (ℱ.predictableMeasure P T) →L[𝕜] Lp E p (ℱ.predictableMeasure P S))‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro f
+  simpa only [one_mul] using ℱ.norm_predictableMeasureRestrictLp_apply_le P (𝕜 := 𝕜) hST f
 
 /-- The identity from a larger predictable sigma-algebra to a smaller one preserves
 finite-horizon time-product measure. Its native Lᵖ pullback embeds the smaller integrand space
