@@ -72,11 +72,12 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     convert hB using 1
     simp only [B, Matrix.conjTranspose_sum, Matrix.conjTranspose_mul,
       Matrix.sum_mul, Matrix.mul_sum]
-    -- Representation boundary: `ofMatrix` is `Equiv.refl _`, and the multiplication, `star` and
-    -- `CStarMatrix.map` of `CStarMatrix` are the entrywise `Matrix` operations, so this sum of block
-    -- entries is definitionally the matrix expression stated below (the matching rewriting lemmas are
-    -- `CStarMatrix.mul_apply`, `ofMatrix_symm_mul` and `ofMatrix_symm_star`). `change` states that
-    -- target directly; it depends only on those definitions.
+    -- Representation boundary: `ofMatrix` is `Equiv.refl _`, and the multiplication, `star`
+    -- and `CStarMatrix.map` of `CStarMatrix` are the entrywise `Matrix` operations, so this sum
+    -- of block entries is definitionally the matrix expression stated below (the matching
+    -- rewriting lemmas are `CStarMatrix.mul_apply`, `ofMatrix_symm_mul` and
+    -- `ofMatrix_symm_star`). `change` states that target directly; it depends only on those
+    -- definitions.
     change (∑ i, ∑ j, (ofMatrix.symm (x i))ᴴ *
       (Vᴴ * (∑ l, (ofMatrix.symm (R l i))ᴴ * ofMatrix.symm (R l j)) * V) *
       ofMatrix.symm (x j)) = _
@@ -130,9 +131,10 @@ simp normal form recorded by `krausMap_unital_iff`; evaluate with `simp [krausMa
 theorem krausMap_apply (V : ι → Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
     krausMap V a = ofMatrix (∑ i, (V i)ᴴ * ofMatrix.symm a * V i) := by
   -- Representation equality: `krausMap V` is built from
-  -- `toLinearMap := ∑ i, (conjugateCP (V i)).toLinearMap`, and a `CompletelyPositiveMap` coerces to a
-  -- function through its `toLinearMap`, so this application is definitionally that of the sum of
-  -- linear maps. `change` states it; `LinearMap.sum_apply` and `conjugateCP_apply` evaluate it.
+  -- `toLinearMap := ∑ i, (conjugateCP (V i)).toLinearMap`, and a `CompletelyPositiveMap`
+  -- coerces to a function through its `toLinearMap`, so this application is definitionally
+  -- that of the sum of linear maps. `change` states it; `LinearMap.sum_apply` and
+  -- `conjugateCP_apply` evaluate it.
   change (∑ i, (conjugateCP (V i)).toLinearMap) a = _
   simp only [LinearMap.sum_apply]
   rfl
@@ -172,8 +174,9 @@ theorem trace_krausTraceDual_mul (V : ι → Matrix n m ℂ)
   rw [Matrix.mul_assoc, Matrix.mul_assoc, trace_mul_comm]
   simp only [Matrix.mul_assoc]
 
-/-- Trace preservation is equivalent to Kraus normalization. It is not `@[simp]`: the simp lemma
-`krausTraceDual_apply` already rewrites its left-hand side, so that side is not a simp normal form. -/
+/-- Trace preservation is equivalent to Kraus normalization. It is not `@[simp]`: the simp
+lemma `krausTraceDual_apply` already rewrites its left-hand side, so that side is not a simp
+normal form. -/
 theorem krausTraceDual_trace_preserving_iff [DecidableEq m]
     (V : ι → Matrix n m ℂ) :
     (∀ ρ, trace (krausTraceDual V ρ) = trace ρ) ↔ ∑ i, (V i)ᴴ * V i = 1 := by
