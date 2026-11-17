@@ -202,19 +202,8 @@ theorem condDistrib_multivariateGaussian_const {Ω : Type*} [MeasurableSpace Ω]
         simp
       rw [hzero, multivariateGaussian_zero_right]
   rw [hdirac] at hX
-  have hfst : (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).1) =ᵐ[P]
-      fun _ ↦ (EuclideanSpace.sumEquivProd m).1 :=
-    hX.ae_eq_of_dirac.fun_comp fun x ↦ (EuclideanSpace.sumEquivProd x).1
-  have hsnd : (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2) =ᵐ[P]
-      fun _ ↦ (EuclideanSpace.sumEquivProd m).2 :=
-    hX.ae_eq_of_dirac.fun_comp fun x ↦ (EuclideanSpace.sumEquivProd x).2
-  have hobs : ∀ᵐ x₂ ∂P.map fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2,
-      x₂ = (EuclideanSpace.sumEquivProd m).2 :=
-    (ae_map_iff (by fun_prop) (measurableSet_singleton _)).mpr hsnd
-  rw [condDistrib_congr_left hfst]
-  filter_upwards [condDistrib_const (by fun_prop) (EuclideanSpace.sumEquivProd m).1, hobs]
-    with x₂ hx₂ hm
-  rw [hx₂, hm, Kernel.deterministic_apply]
+  filter_upwards [condDistrib_sumEquivProd_of_hasLaw_dirac X m hX] with x₂ ⟨hm, hx₂⟩
+  rw [hx₂, hm]
   congr 1
   ext i
   simp only [EuclideanSpace.sumEquivProd_apply_fst, EuclideanSpace.sumEquivProd_apply_snd,
