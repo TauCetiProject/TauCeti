@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.Complex.Valuation
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Entire.WeierstrassProduct
 import Mathlib.Order.Northcott
+import TauCeti.NumberTheory.NewtonPolygon.QuadraticSeries
 
 /-!
 # Newton polygons of entire Weierstrass products
@@ -32,15 +33,12 @@ algebraically closed. Consequently the finite Newton face of `W` of slope `σ` r
 in the Newton polygon of `W` is `{i | ‖a i‖ = b ^ σ}.ncard`, equivalently
 `{i | v (a i) = -σ}.ncard`.
 
-For any ring element `a` with finite nonnegative additive valuation `v a = c`, the
-quadratic-exponent series `∑ a^(n²) Xⁿ` has convex coefficient heights `c * n ^ 2`, so its Newton
-polygon is `n ↦ c * n ^ 2` with unit slopes `c * (2 * n + 1)` (each of multiplicity `1` when
-`c > 0`). Over a valued field whose norm is compatible with `v` (so `c > 0` gives `‖a‖ < 1`), this
-series is entire and nonpolynomial; in particular, when `a = p`, the series `∑ p^(n²) Xⁿ` over
-`ℚ_[p]` and `ℂ_[p]` is entire with odd slopes `1, 3, 5, …` each of multiplicity `1`, has a unique
-simple zero `αₙ ∈ ℂ_[p]` of valuation `-(2 * n + 1)` for every `n : ℕ` and no other zeros in
-`ℂ_[p]`, and equals the unconditional Weierstrass product `∏' n : ℕ, (1 - αₙ⁻¹ X)` in
-`PowerSeries.IsEntire.subring ℂ_[p]`.
+Specialising the general quadratic-series Newton polygon of
+`TauCeti.NumberTheory.NewtonPolygon.QuadraticSeries` to `a = p`, the series `∑ p^(n²) Xⁿ` over
+`ℚ_[p]` and `ℂ_[p]` is entire and nonpolynomial with odd slopes `1, 3, 5, …` each of multiplicity
+`1`, has a unique simple zero `αₙ ∈ ℂ_[p]` of valuation `-(2 * n + 1)` for every `n : ℕ` and no
+other zeros in `ℂ_[p]`, and equals the unconditional Weierstrass product
+`∏' n : ℕ, (1 - αₙ⁻¹ X)` in `PowerSeries.IsEntire.subring ℂ_[p]`.
 
 ## Main results
 
@@ -49,9 +47,10 @@ simple zero `αₙ ∈ ℂ_[p]` of valuation `-(2 * n + 1)` for every `n : ℕ` 
   `TauCeti.PowerSeries.IsEntire.newtonSlopeMultiplicity_eq_ncard_addValuation_of_hasProd`: the
   finite faces and slope multiplicities of an entire Weierstrass product, without assuming `K` to be
   algebraically closed.
-* `PowerSeries.newtonPolygon_mk_pow_sq`, `PowerSeries.unitSlope_newtonPolygon_mk_pow_sq` and
-  `PowerSeries.newtonSlopeMultiplicity_mk_pow_sq_mul`: the Newton polygon and slopes of
-  `∑ a^(n²) Xⁿ`.
+* `TauCeti.PowerSeries.newtonPolygon_mk_padic_pow_sq`,
+  `TauCeti.PowerSeries.unitSlope_newtonPolygon_mk_padic_pow_sq` and
+  `TauCeti.PowerSeries.newtonSlopeMultiplicity_mk_padic_pow_sq_odd`: the Newton polygon and odd
+  slopes of `∑ p^(n²) Xⁿ` over `ℚ_[p]`.
 * `TauCeti.PowerSeries.existsUnique_zero_mk_padicComplex_pow_sq`,
   `TauCeti.PowerSeries.order_taylor_zero_mk_padicComplex_pow_sq`,
   `TauCeti.PowerSeries.exists_addValuation_eq_neg_odd_of_evalAt_mk_padicComplex_pow_sq_eq_zero` and
@@ -197,78 +196,6 @@ theorem newtonSlopeMultiplicity_tprod_one_sub_C_inv_mul_X {ι : Type*} {a : ι �
 end WeierstrassSlopes
 
 end TauCeti.PowerSeries.IsEntire
-
-namespace PowerSeries
-
-open TauCeti
-
-section QuadraticPowerSeries
-
-variable {R : Type*} [Ring R] {v : AddValuation R (WithTop ℝ)} {a : R} {c : ℝ}
-
-/-- When `v a = c ≥ 0`, the quadratic-exponent power series `∑ a^(n²) Xⁿ` has convex coefficient
-heights `n ↦ c * n ^ 2`, so its Newton polygon equals `n ↦ c * n ^ 2`. -/
-theorem newtonPolygon_mk_pow_sq (hc : 0 ≤ c) (ha : v a = (c : WithTop ℝ)) :
-    (mk fun n ↦ a ^ (n ^ 2)).newtonPolygon v =
-      fun n : ℕ ↦ ((c * (n : ℝ) ^ 2 : ℝ) : WithTop ℝ) := by
-  have hcoeff : (fun n : ℕ ↦ v (coeff n (mk fun k ↦ a ^ (k ^ 2)))) =
-      fun n : ℕ ↦ ((c * (n : ℝ) ^ 2 : ℝ) : WithTop ℝ) := by
-    ext n
-    rw [coeff_mk, AddValuation.map_pow, ha, ← WithTop.coe_nsmul, nsmul_eq_mul, Nat.cast_pow,
-      mul_comm]
-  have hconv : IsConvexSeq (fun n : ℕ ↦ ((c * (n : ℝ) ^ 2 : ℝ) : WithTop ℝ)) := by
-    refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun _ _ _ _ _ _ ↦ WithTop.coe_ne_top⟩,
-      fun n _ _ ↦ ?_⟩
-    simp only [WithTop.untop₀_coe, Nat.cast_add, Nat.cast_ofNat, Nat.cast_one]
-    nlinarith
-  rw [newtonPolygon_def, hcoeff, hconv.lowerConvexEnvelope_eq]
-
-/-- When `v a = c ≥ 0`, every index is a finite unit edge of the Newton polygon of
-`∑ a^(n²) Xⁿ`. -/
-theorem finiteEdges_newtonPolygon_mk_pow_sq (hc : 0 ≤ c) (ha : v a = (c : WithTop ℝ)) :
-    finiteEdges ((mk fun n ↦ a ^ (n ^ 2)).newtonPolygon v) = Set.univ := by
-  ext n
-  rw [mem_finiteEdges, newtonPolygon_mk_pow_sq hc ha]
-  simp only [Set.mem_univ, iff_true]
-  exact ⟨WithTop.coe_ne_top, WithTop.coe_ne_top⟩
-
-/-- When `v a = c ≥ 0`, the `n`-th unit slope of `∑ a^(n²) Xⁿ` is `c * (2 * n + 1)`. -/
-theorem unitSlope_newtonPolygon_mk_pow_sq (hc : 0 ≤ c) (ha : v a = (c : WithTop ℝ)) (n : ℕ) :
-    unitSlope ((mk fun k ↦ a ^ (k ^ 2)).newtonPolygon v) n = c * (2 * (n : ℝ) + 1) := by
-  rw [unitSlope_def, newtonPolygon_mk_pow_sq hc ha]
-  simp only [WithTop.untop₀_coe, Nat.cast_add, Nat.cast_one]
-  ring
-
-/-- When `v a = c > 0`, each slope `c * (2 * n + 1)` of `∑ a^(n²) Xⁿ` has multiplicity `1`. -/
-theorem newtonSlopeMultiplicity_mk_pow_sq_mul (hc : 0 < c) (ha : v a = (c : WithTop ℝ)) (n : ℕ) :
-    (mk fun k ↦ a ^ (k ^ 2)).newtonSlopeMultiplicity v (c * (2 * (n : ℝ) + 1)) = 1 := by
-  have hset : {m | m ∈ finiteEdges ((mk fun k ↦ a ^ (k ^ 2)).newtonPolygon v) ∧
-      unitSlope ((mk fun k ↦ a ^ (k ^ 2)).newtonPolygon v) m = c * (2 * (n : ℝ) + 1)} = {n} := by
-    ext m
-    rw [Set.mem_ofPred_eq, Set.mem_singleton_iff, finiteEdges_newtonPolygon_mk_pow_sq hc.le ha,
-      unitSlope_newtonPolygon_mk_pow_sq hc.le ha]
-    simp only [Set.mem_univ, true_and, mul_eq_mul_left_iff, hc.ne', or_false]
-    exact ⟨fun h ↦ by exact_mod_cast (by linarith : (m : ℝ) = n), fun h ↦ by subst h; rfl⟩
-  rw [newtonSlopeMultiplicity_def, hset, Set.ncard_singleton]
-
-/-- When `v a = c ≥ 0`, any real number outside `{c * (2 * n + 1) | n : ℕ}` has multiplicity `0` in
-the Newton polygon of `∑ a^(n²) Xⁿ`. -/
-theorem newtonSlopeMultiplicity_mk_pow_sq_eq_zero (hc : 0 ≤ c) (ha : v a = (c : WithTop ℝ))
-    {σ : ℝ} (hσ : σ ∉ Set.range fun n : ℕ ↦ c * (2 * (n : ℝ) + 1)) :
-    (mk fun k ↦ a ^ (k ^ 2)).newtonSlopeMultiplicity v σ = 0 := by
-  rw [newtonSlopeMultiplicity_def]
-  have hset : {m | m ∈ finiteEdges ((mk fun k ↦ a ^ (k ^ 2)).newtonPolygon v) ∧
-      unitSlope ((mk fun k ↦ a ^ (k ^ 2)).newtonPolygon v) m = σ} = ∅ := by
-    ext m
-    rw [Set.mem_ofPred_eq, finiteEdges_newtonPolygon_mk_pow_sq hc ha,
-      unitSlope_newtonPolygon_mk_pow_sq hc ha]
-    simp only [Set.mem_univ, true_and, Set.mem_empty_iff_false, iff_false]
-    exact fun h ↦ hσ ⟨m, h⟩
-  rw [hset, Set.ncard_empty]
-
-end QuadraticPowerSeries
-
-end PowerSeries
 
 namespace TauCeti.PowerSeries
 

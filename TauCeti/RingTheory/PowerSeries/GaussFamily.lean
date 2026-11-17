@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Topology.Algebra.Nonarchimedean.Lattice
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
@@ -182,12 +183,9 @@ theorem isTopologicalRing : IsTopologicalRing T :=
 product of closed-disc algebras pull back to open additive subgroups of `T`. -/
 theorem nonarchimedeanRing : NonarchimedeanRing T :=
   have := isTopologicalRing hu
-  { is_nonarchimedean U hU := by
-      rw [hu.isInducing.nhds_eq_comap, map_zero] at hU
-      obtain ⟨V, hV, hVU⟩ := Filter.mem_comap.mp hU
-      obtain ⟨W, hWV⟩ := NonarchimedeanAddGroup.is_nonarchimedean V hV
-      exact ⟨⟨W.toAddSubgroup.comap (restrictFamily hT).toAddMonoidHom,
-        W.isOpen.preimage hu.uniformContinuous.continuous⟩, (Set.preimage_mono hWV).trans hVU⟩ }
+  have h : NonarchimedeanAddGroup T :=
+    hu.isInducing.eq_induced.symm ▸ TauCeti.nonarchimedeanAddGroup_induced (restrictFamily hT)
+  { is_nonarchimedean := h.is_nonarchimedean }
 
 /-- Polynomial truncations converge in the Gauss norms at all the radii simultaneously, for any
 inclusion `φ` of the polynomials into `T`. -/
