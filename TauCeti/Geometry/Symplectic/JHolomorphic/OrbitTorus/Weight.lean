@@ -72,7 +72,7 @@ untwisted sign is the product of the two signs of `S¹ × γ` trivial on `S¹`, 
   all of whose iterates are nondegenerate, with the label read off from the signs of
   `det (1 - P)` and `det (1 + P)`.
 * `TauCeti.X_mul_derivative_torusWeightSeries_orbitTorusTwistSign`: the same identity, with the
-  label `(σ, i)` computed by `TauCeti.twistIndex` from the signs `TauCeti.orbitTorusTwistSign`
+  label `(σ, i)` computed by `TauCeti.twistLabel` from the signs `TauCeti.orbitTorusTwistSign`
   on the sign characters of the orbit torus.
 
 ## References
@@ -249,32 +249,32 @@ theorem orbitTorusTwistSign_sq_zero (P : Matrix (Fin 2) (Fin 2) R) :
 theorem twistIndex_orbitTorusTwistSign_sq (hdet : P.det = 1) :
     twistIndex (orbitTorusTwistSign (P ^ 2)) = 0 := by
   have h : (1 + P ^ 2).det = P.trace ^ 2 := by
-    rw [det_one_add_fin_two, det_pow, hdet, Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two P,
-      trace_sub, trace_smul, trace_smul, trace_one, hdet]
-    simp only [Fintype.card_fin, smul_eq_mul]
+    rw [det_one_add_fin_two, det_pow, Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two P, hdet]
+    simp [trace_sub]
     ring
   rw [twistIndex_orbitTorusTwistSign, h]
   exact ite_eq_right_iff.2 fun h' ↦ absurd h' (not_lt.2 (sq_nonneg _))
 
+omit [IsStrictOrderedRing R] in
+/-- The twist label of an orbit torus is `1` if `det (1 + P) < 0` and `0` otherwise. -/
+theorem twistLabel_orbitTorusTwistSign (P : Matrix (Fin 2) (Fin 2) R) :
+    twistLabel (by simp) (orbitTorusTwistSign P) = if (1 + P).det < 0 then 1 else 0 := by
+  refine Fin.ext ?_
+  rw [val_twistLabel, twistIndex_orbitTorusTwistSign]
+  split_ifs <;> simp
+
 /-- **Orbit-torus weights are local zeta factors, with the label from the sign characters.** For a
 `2 × 2` matrix `P` of determinant one all of whose iterates are nondegenerate, the local series
-`f = f_(σ, i)` with `σ = (s 0 = +)` and `i` the twist index of the signs
+`f = f_(σ, i)` with `σ = (s 0 = +)` and `i` the twist label of the signs
 `s = TauCeti.orbitTorusTwistSign P` satisfies `t f' = f ∑_{k ≥ 1} sgn det (1 - P ^ k) t ^ k`. -/
 theorem X_mul_derivative_torusWeightSeries_orbitTorusTwistSign (hdet : P.det = 1)
     (hP : ∀ k ≠ 0, (1 - P ^ k).det ≠ 0) :
-    letI i : Fin 4 := ⟨twistIndex (orbitTorusTwistSign P),
-      Nat.lt_succ_of_le (twistIndex_le_three (by simp) _)⟩
-    X * d⁄dX (torusWeightSeries (decide (orbitTorusTwistSign P 0 = 1)) i) =
-      torusWeightSeries (decide (orbitTorusTwistSign P 0 = 1)) i *
+    X * d⁄dX (torusWeightSeries (decide (orbitTorusTwistSign P 0 = 1))
+        (twistLabel (by simp) (orbitTorusTwistSign P))) =
+      torusWeightSeries (decide (orbitTorusTwistSign P 0 = 1))
+          (twistLabel (by simp) (orbitTorusTwistSign P)) *
         mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ) := by
-  have hi : (⟨twistIndex (orbitTorusTwistSign P),
-      Nat.lt_succ_of_le (twistIndex_le_three (by simp) _)⟩ : Fin 4) =
-      if (1 + P).det < 0 then 1 else 0 :=
-    Fin.ext <| by
-      dsimp only
-      rw [twistIndex_orbitTorusTwistSign]
-      split_ifs <;> rfl
-  simp only [hi, orbitTorusTwistSign_zero, sign_eq_one_iff]
+  simp only [twistLabel_orbitTorusTwistSign, orbitTorusTwistSign_zero, sign_eq_one_iff]
   exact X_mul_derivative_torusWeightSeries_of_det_eq_one hdet hP
 
 end TauCeti
