@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold.Orbit
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 
 /-!
 # End convergence and energy identity for a Floer pair of pants in a manifold
 
-Building on `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold.Orbit`, this file adapts
+Building on `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, this file adapts
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence` to a Hausdorff boundaryless
 finite-dimensional manifold `M` with nondegenerate two-form `ω`:
 
@@ -125,7 +125,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
       (fun _ hz ↦ mfderiv_comp_positiveEndChart_add_eq_zero hKH hH hHd (haT.trans hz.1.le)
         (humd _ (hmem hz.1)) (hfloer _ (hmem hz.1)))
       (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
-        humd ha₀ haT))
+        (hu.mdifferentiableOn one_ne_zero) ha₀ haT))
       (fun z hz ↦ hC z ((le_max_right _ _).trans_lt hz.1)) fun x hx hxB ↦
         let ⟨ε, hε, hiso⟩ := exists_pos_forall_mem_periodicSolutions_positiveEndHamiltonian_eq hω
           hHq2 he hB he_inj hx (hxB 0) <| by
@@ -223,7 +223,7 @@ theorem
       (fun _ hz ↦ mfderiv_comp_positiveEndChart_add_eq_zero hKH hH hHd (haT.trans hz.1.le)
         (humd _ (hmem hz.1)) (hfloer _ (hmem hz.1)))
       (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
-        humd ha₀ haT))
+        (hu.mdifferentiableOn one_ne_zero) ha₀ haT))
       (fun z hz ↦ hC z ((le_max_right _ _).trans_lt hz.1)) fun x hx hxB ↦
         let ⟨ε, hε, hiso⟩ := exists_pos_forall_mem_periodicSolutions_positiveEndHamiltonian_eq hω
           hHq2 he hB he_inj (mem_contractiblePeriodicSolutions.1 hx).1 (hxB 0) <| by
