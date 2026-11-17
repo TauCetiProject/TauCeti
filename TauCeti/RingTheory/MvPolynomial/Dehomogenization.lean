@@ -166,6 +166,13 @@ theorem dehomogenize_injOn (i : Fin (n + 1)) (d : ℕ) :
       ← coeff_dehomogenize_of_isHomogeneous hq i hs, h]
   · rw [hp.coeff_eq_zero hs, hq.coeff_eq_zero hs]
 
+/-- Dehomogenizing a nonzero homogeneous polynomial in any standard affine chart produces a nonzero
+polynomial. -/
+theorem dehomogenize_ne_zero_of_isHomogeneous {d : ℕ} (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} (hp : p.IsHomogeneous d) (hne : p ≠ 0) :
+    dehomogenize i p ≠ 0 := fun hzero ↦
+  hne <| dehomogenize_injOn i d hp (isHomogeneous_zero _ _ _) (by simpa using hzero)
+
 /-- **Homogenization**: every polynomial `p` in `n` variables of total degree at most `N` is the
 equation in the `i`-th standard affine chart of a homogeneous polynomial of degree `N` in `n + 1`
 variables, obtained by padding each homogeneous component of `p` with a power of `X_i`. -/
