@@ -35,6 +35,8 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 ## Main definitions
 
 * `TauCeti.signFiber`: the functions on a fibre that change sign under `σ`.
+* `TauCeti.antisymmetrize`: for an involution `σ`, the map sending a formal sum `f` of points of a
+  fibre to the function `e ↦ f e - f (σ e)`.
 * `TauCeti.signFiberEquiv`: for a double cover, evaluation at a point of the fibre.
 * `IsCoveringMap.signLocalSystem`: these modules as a local coefficient system.
 * `IsCoveringMap.signLocalSystemObjEquiv`: the fibres of the sign local system are the modules
@@ -43,6 +45,8 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 
 ## Main results
 
+* `TauCeti.sum_eq_zero_of_mem_signFiber` and `TauCeti.mem_signFiber_of_sum_eq_zero`: for a double
+  cover, the functions on a finite fibre changing sign under `σ` are those whose values sum to zero.
 * `IsCoveringMap.signLocalSystemObjEquiv_map_apply_monodromy`: transport along a path evaluated
   at the endpoint of a lift is the original function evaluated at its starting point.
 
@@ -78,6 +82,24 @@ theorem mem_signFiber_iff {σ : E → E} {hσ : p ∘ σ = p} {x : X} {f : p ⁻
     f ∈ signFiber R σ hσ x ↔ ∀ e, f (Function.fiberMap σ hσ x e) = -f e := by
   simp only [signFiber, LinearMap.mem_ker, LinearMap.add_apply, LinearMap.id_apply, funext_iff,
     LinearMap.funLeft_apply, Pi.neg_apply, add_eq_zero_iff_eq_neg]
+
+variable (R) in
+/-- Antisymmetrization on the fibre of `p` over `x` for an involution `σ` over `X`: a formal sum
+`f` of points of the fibre goes to the function `e ↦ f e - f (σ e)`, which changes sign under
+`σ`. -/
+def antisymmetrize {σ : E → E} (hσ : p ∘ σ = p) (hσσ : Function.Involutive σ) (x : X) :
+    ((p ⁻¹' {x}) →₀ R) →ₗ[R] signFiber R σ hσ x :=
+  LinearMap.codRestrict (signFiber R σ hσ x)
+    ((LinearMap.id - LinearMap.funLeft R R (Function.fiberMap σ hσ x)) ∘ₗ Finsupp.lcoeFun)
+    fun f ↦ mem_signFiber_iff.2 fun e ↦ by
+      simp [Function.fiberMap_fiberMap_of_involutive hσσ hσ]
+
+/-- Antisymmetrization evaluated at a point `e` of the fibre is `f e - f (σ e)`. -/
+@[simp]
+theorem coe_antisymmetrize_apply {σ : E → E} (hσ : p ∘ σ = p) (hσσ : Function.Involutive σ)
+    (x : X) (f : (p ⁻¹' {x}) →₀ R) (e : p ⁻¹' {x}) :
+    (antisymmetrize R hσ hσσ x f : p ⁻¹' {x} → R) e = f e - f (Function.fiberMap σ hσ x e) :=
+  (rfl)
 
 section DoubleCover
 
@@ -144,6 +166,33 @@ theorem signFiberEquiv_symm_apply_fiberMap {x : X} (e : p ⁻¹' {x}) (r : R) :
       (Function.fiberMap σ hσ x e) = -r := by
   rw [mem_signFiber_iff.1 ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r).2,
     signFiberEquiv_symm_apply_self]
+
+include hfix in
+/-- The values of a function changing sign under a fixed-point-free involution sum to zero over
+a finite fibre. -/
+theorem sum_eq_zero_of_mem_signFiber (hσσ : Function.Involutive σ) {x : X}
+    [Fintype (p ⁻¹' {x})] {g : p ⁻¹' {x} → R} (hg : g ∈ signFiber R σ hσ x) : ∑ e, g e = 0 :=
+  Finset.sum_involution (fun e _ ↦ Function.fiberMap σ hσ x e)
+    (fun e _ ↦ by rw [mem_signFiber_iff.1 hg, add_neg_cancel])
+    (fun e _ _ ↦ Function.fiberMap_ne_self hfix hσ x e)
+    (fun _ _ ↦ Finset.mem_univ _)
+    (fun e _ ↦ Function.fiberMap_fiberMap_of_involutive hσσ hσ x e)
+
+include hfix hfib in
+/-- When every fibre of `p` is a pair `{e, σ e}` with `σ e ≠ e`, a function on a finite fibre whose
+values sum to zero changes sign under `σ`. -/
+theorem mem_signFiber_of_sum_eq_zero {x : X} [Fintype (p ⁻¹' {x})] {g : p ⁻¹' {x} → R}
+    (hg : ∑ e, g e = 0) : g ∈ signFiber R σ hσ x := by
+  classical
+  refine mem_signFiber_iff.2 fun e ↦ ?_
+  have huniv : (Finset.univ : Finset (p ⁻¹' {x})) = {e, Function.fiberMap σ hσ x e} := by
+    ext e'
+    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
+    rcases hfib e e' (e'.2.trans e.2.symm) with h | h
+    · exact .inl (Subtype.ext h)
+    · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
+  rw [huniv, Finset.sum_pair (Function.fiberMap_ne_self hfix hσ x e).symm] at hg
+  exact eq_neg_of_add_eq_zero_right hg
 
 end DoubleCover
 

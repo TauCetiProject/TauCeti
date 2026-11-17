@@ -343,6 +343,16 @@ theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M
     IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x :=
   isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o rfl mfderiv_id
 
+/-- Reindexing both orientations along the same equivalence of index types does not change
+whether a map reverses them. -/
+theorem IsOrientationReversingAt.reindex [IsManifold I 1 M] [IsManifold I' 1 M'] {ι' : Type*}
+    [Fintype ι'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι} {f : M → M'}
+    {x : M} (h : IsOrientationReversingAt o o' f x) (σ : ι ≃ ι') :
+    IsOrientationReversingAt (o.reindex σ) (o'.reindex σ) f x := by
+  obtain ⟨e, he, hmap⟩ := h
+  exact ⟨e, he, by rw [orientationAt_reindex, orientationAt_reindex,
+    _root_.Orientation.map_reindex, hmap, _root_.Orientation.reindex_neg]⟩
+
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (x : M) :
