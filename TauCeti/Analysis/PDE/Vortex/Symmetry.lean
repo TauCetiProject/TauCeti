@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.AtInfinity
@@ -194,6 +195,11 @@ theorem translateField_gaugeTransform (a : ℂ) (g : ℂ → Circle)
   simp only [translateField_apply, gaugeTransform_apply, gaugeForm_apply,
     fderiv_comp_add_right (f := fun w ↦ (g w : ℂ)) a]
 
+/-- Translations preserve `Cⁿ` fields. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
+
 @[simp]
 theorem translateField_vacuumField (a : ℂ) : translateField a vacuumField = vacuumField := by
   funext z
@@ -252,6 +258,18 @@ theorem rotateField_apply_two (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 
 theorem rotateField_apply_three (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     rotateField u x z 3 = x (u * z) 3 := by
   simp [rotateField]
+
+/-- Rotations preserve `Cⁿ` fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    ((contDiff_piLp 2).1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine (contDiff_piLp 2).2 fun i ↦ ?_
+  fin_cases i
+  · exact (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · exact (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · exact hc 2
+  · exact hc 3
 
 @[simp]
 theorem rotateField_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) : rotateField 1 x = x := by
