@@ -31,8 +31,8 @@ exact sequence `T : K ⟶ A ⟶ Y`. Then the connecting map `Hᵢ(Q) ⟶ Hⱼ(A)
 `K ⟶ ker b ⟶ Q` (`TauCeti.kernelCokernelCompSequence_shortExact_of_mono_of_epi`), whose middle
 term is acyclic because `b` is an epimorphic quasi-isomorphism. This computes the relative homology
 of a pair whose subspace maps surjectively on chains onto a space weakly equivalent to the ambient
-space, for instance when the subspace is a covering space of it: the relative homology is then the
-shifted homology of the kernel of that surjection.
+space, for instance when the subspace is a covering space of it with nonempty fibres: the relative
+homology is then the shifted homology of the kernel of that surjection.
 
 It also proves that the connecting maps of a `3 × 3` diagram of complexes with short exact rows
 and columns anticommute: the two composites of connecting maps from the homology of one corner to
@@ -324,8 +324,8 @@ connecting map of `S` (`CategoryTheory.ShortComplex.ShortExact.liftδIso_hom_com
 
 For instance, if `S` is the short exact sequence of singular chains of a pair `(D, D₀)`, `b` is
 induced by a weak homotopy equivalence `D ⟶ B`, and the chain map induced by `D₀ ⟶ B` is
-surjective (for instance when `D₀ ⟶ B` is a covering map), then the relative homology of the pair
-is the shifted homology of the kernel of that chain map. -/
+surjective (for instance when `D₀ ⟶ B` is a surjective covering map), then the relative homology of
+the pair is the shifted homology of the kernel of that chain map. -/
 noncomputable def liftδIso (i j : ι) (hij : c.Rel i j) : S.X₃.homology i ≅ T.X₁.homology j :=
   (kernelShortComplex_shortExact hS hT e b hb).δIso i j hij
     ((acyclic_kernel hT e b hb hq i).isZero_homology)
