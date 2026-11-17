@@ -22,7 +22,7 @@ Rademacher's theorem and the zero-Jacobian image theorem remove the points where
 might not have the required dimension. No local finiteness assumption is needed for this
 patchwise assertion. It does not assert tangency of an arbitrary larger rectifiable set:
 other patches must still be controlled by measure differentiation. The derivative-range
-form is also used to construct measurable tangent projections in `Rectifiable.MeasurableTangent`.
+form is also used to construct measurable tangent projections in `Rectifiable.Tangent.Measurable`.
 
 ## References
 
@@ -35,9 +35,9 @@ public section
 open Set MeasureTheory Metric
 open scoped NNReal ENNReal
 
-/-- At Hausdorff-almost every point of a bi-Lipschitz patch, the derivative range of a
-Lipschitz parametrization has the parameter dimension and contains the patch locally in
-every cone. The parameter domain need not be measurable. -/
+/-- At Hausdorff-almost every point of a bi-Lipschitz patch, a Lipschitz parametrization is
+differentiable, and its derivative range has the parameter dimension and contains the patch
+locally in every cone. The parameter domain need not be measurable. -/
 theorem LipschitzWith.ae_exists_fderiv_range_forall_infDist_le
     {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -45,7 +45,8 @@ theorem LipschitzWith.ae_exists_fderiv_range_forall_infDist_le
     {f : U → V} {s : Set U} {K L : ℝ≥0} (hf : LipschitzWith K f)
     (hi : AntilipschitzWith L (s.domRestrict f)) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V), y ∈ f '' s →
-      ∃ x ∈ s, f x = y ∧ Module.finrank ℝ (fderiv ℝ f x).range = Module.finrank ℝ U ∧
+      ∃ x ∈ s, f x = y ∧ DifferentiableAt ℝ f x ∧
+        Module.finrank ℝ (fderiv ℝ f x).range = Module.finrank ℝ U ∧
         ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ f '' s, dist z y < r →
           infDist (z - y) ((fderiv ℝ f x).range : Set V) ≤ ε * dist z y := by
   have hgood : ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V),
@@ -57,7 +58,7 @@ theorem LipschitzWith.ae_exists_fderiv_range_forall_infDist_le
   have hxreg : DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0 := by
     by_contra h
     exact hreg ⟨x, h, rfl⟩
-  refine ⟨x, hx, rfl, ?_, ?_⟩
+  refine ⟨x, hx, rfl, hxreg.1, ?_, ?_⟩
   · exact LinearMap.finrank_range_of_inj
       (((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hxreg.2)
   · intro ε hε
@@ -83,5 +84,5 @@ theorem LipschitzOnWith.ae_exists_submodule_forall_infDist_le
     simpa only [domRestrict_apply, ← hfg x.property, ← hfg y.property] using hi x y
   rw [himage]
   filter_upwards [hg.ae_exists_fderiv_range_forall_infDist_le hi'] with y hy hyimage
-  obtain ⟨x, _, _, hdim, hcone⟩ := hy hyimage
+  obtain ⟨x, _, _, _, hdim, hcone⟩ := hy hyimage
   exact ⟨(fderiv ℝ g x).range, hdim, hcone⟩

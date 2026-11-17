@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.MeasurableTangent
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Measurable
 import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!
@@ -14,11 +14,12 @@ import TauCeti.Geometry.Euclidean.Volume.Measure
 A countably `k`-rectifiable set with locally finite normalized Euclidean Hausdorff measure
 has, almost everywhere, a `k`-plane outside whose every cone the set has density zero.
 Together with the density-one theorem in `Rectifiable.Density`, this proves existence of
-approximate tangent planes. Uniqueness and measurability of the plane field are not asserted.
+approximate tangent planes. Their almost-everywhere uniqueness is proved in
+`Rectifiable.Tangent.Uniqueness`; measurability of the plane field is not asserted here.
 
 The distinction from pointwise tangent cones is important: a rectifiable set can have other
 patches accumulating at a point, so the whole set need not lie in a narrow cone. We use the
-measurable approximate tangent projection field from `Rectifiable.MeasurableTangent`,
+measurable approximate tangent projection field from `Rectifiable.Tangent.Measurable`,
 forgetting the projection data. Its construction uses a countable Borel cover with patchwise
 cone containment and measure differentiation for the part outside each patch.
 No Borel representative of the original set is required.
