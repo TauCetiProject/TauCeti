@@ -22,7 +22,8 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- The weighted density integral on the empty rectangle evaluates the unique empty tuple. -/
+/-- The weighted density integral on the zero-coordinate rectangle evaluates the unique
+empty tuple. -/
 theorem setLIntegral_mul_prod_sub_cons_zero (p : Fin 0 → ℝ → ℝ≥0∞) (a : ℝ)
     (F : (Fin 0 → ℝ) → ℝ≥0∞) (B : Fin 0 → Set ℝ) :
     (∫⁻ y in Set.pi univ B,
@@ -66,7 +67,7 @@ theorem setLIntegral_mul_prod_sub_cons_succ {n : ℕ} {p : Fin (n + 1) → ℝ �
   simp [g, e, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv,
     Fin.prod_univ_succ, mul_left_comm]
 
-/-- The empty density integral is evaluation at the unique empty tuple. -/
+/-- The zero-coordinate density integral is evaluation at the unique empty tuple. -/
 theorem lintegral_mul_prod_sub_cons_zero (p : Fin 0 → ℝ → ℝ≥0∞) (a : ℝ)
     (F : (Fin 0 → ℝ) → ℝ≥0∞) :
     (∫⁻ y : Fin 0 → ℝ, F y * ∏ i, p i (y i - (Fin.cons a y : Fin 1 → ℝ) i.castSucc)) =
@@ -87,7 +88,7 @@ theorem lintegral_mul_prod_sub_cons_succ {n : ℕ} {p : Fin (n + 1) → ℝ → 
   simpa only [Set.pi_univ, setLIntegral_univ] using
     setLIntegral_mul_prod_sub_cons_succ hp a hF (fun _ ↦ univ)
 
-/-- The empty rectangle has density integral one. -/
+/-- The zero-coordinate rectangle has density integral one. -/
 theorem setLIntegral_prod_sub_cons_zero (p : Fin 0 → ℝ → ℝ≥0∞) (a : ℝ)
     (B : Fin 0 → Set ℝ) :
     (∫⁻ y in Set.pi univ B, ∏ i, p i (y i - (Fin.cons a y : Fin 1 → ℝ) i.castSucc)) = 1 := by
@@ -104,15 +105,16 @@ theorem setLIntegral_prod_sub_cons_succ {n : ℕ} {p : Fin (n + 1) → ℝ → �
   simpa only [one_mul] using
     setLIntegral_mul_prod_sub_cons_succ hp a (F := fun _ ↦ 1) measurable_const B
 
-/-- The iterated transition-density integral on a finite rectangle, based at `a`.
-There is no time-zero density: each step integrates only the next coordinate. -/
+/-- The iterated transition-density lower integral over the coordinate sets `B`, starting at `a`.
+The functions `p` are increment densities: the first step uses `p 0 (x - a)`, then each step
+uses the difference from the preceding coordinate. There is no time-zero density. -/
 noncomputable def transitionRectangleLIntegral : {n : ℕ} →
-    (Fin n → ℝ → ℝ≥0∞) → ℝ → (Fin n → Set ℝ) → ℝ≥0∞
+    (p : Fin n → ℝ → ℝ≥0∞) → (a : ℝ) → (B : Fin n → Set ℝ) → ℝ≥0∞
   | 0, _, _, _ => 1
   | n + 1, p, a, B => ∫⁻ x in B 0, p 0 (x - a) *
       transitionRectangleLIntegral (fun i : Fin n ↦ p i.succ) x (fun i ↦ B i.succ)
 
-/-- An empty iterated rectangle integral equals one. -/
+/-- The iterated integral on the zero-coordinate rectangle equals one. -/
 @[simp]
 theorem transitionRectangleLIntegral_zero (p : Fin 0 → ℝ → ℝ≥0∞) (a : ℝ)
     (B : Fin 0 → Set ℝ) : transitionRectangleLIntegral p a B = 1 := (rfl)
@@ -141,7 +143,7 @@ theorem measurable_transitionRectangleLIntegral {n : ℕ} {p : Fin n → ℝ →
     exact hf.lintegral_prod_right' (ν := volume.restrict (B 0))
 
 /-- The joint successive-difference integral on a rectangle equals its fully iterated
-transition integral, including the empty rectangle. -/
+transition integral, including the zero-coordinate (`n = 0`) case. -/
 theorem setLIntegral_prod_sub_cons_eq_transitionRectangleLIntegral {n : ℕ}
     {p : Fin n → ℝ → ℝ≥0∞} (hp : ∀ i, Measurable (p i)) (a : ℝ)
     (B : Fin n → Set ℝ) :
