@@ -549,9 +549,9 @@ end HomologicalComplex
 
 namespace CategoryTheory.GradedObject.Monoidal
 
-universe u
+universe u v
 
-variable {k : Type u} [CommRing k] {I : Type} [AddMonoid I] [Finset.HasAntidiagonal I]
+variable {k : Type u} [CommRing k] {I : Type v} [AddMonoid I] [Finset.HasAntidiagonal I]
   (A B : GradedObject I (ModuleCat.{u} k)) [HasTensor A B]
   [∀ p, Module.Free k (A p)] [∀ p, Module.Finite k (A p)]
   [∀ q, Module.Free k (B q)] [∀ q, Module.Finite k (B q)]
@@ -565,17 +565,19 @@ theorem finrank_tensorObj [Nontrivial k] (n : I) :
     Module.finrank k (tensorObj A B n : ModuleCat.{u} k) =
       ∑ x ∈ Finset.antidiagonal n, Module.finrank k (A x.1) * Module.finrank k (B x.2) := by
   classical
-  let e : ((fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}) ≃ Finset.antidiagonal n :=
-    Equiv.subtypeEquivRight fun x ↦ by simp
+  let P := (fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}
+  let e : P ≃ Finset.antidiagonal n := Equiv.subtypeEquivRight fun x ↦ by simp [P]
   have := Fintype.ofEquiv _ e.symm
+  let ε := (Fintype.equivFin P).symm
   -- The degree `n` part of the tensor product is by definition the coproduct of the summands.
+  -- Reindexing it by `Fin _` keeps the index type in universe `0`, as `coprodIsoDirectSum`
+  -- requires the index universe to be at most the module universe.
   have iso : (tensorObj A B n : ModuleCat.{u} k) ≅ ModuleCat.of k
-      (DirectSum ((fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}) fun i ↦
-        TensorProduct k (A i.1.1) (B i.1.2)) :=
-    ModuleCat.coprodIsoDirectSum fun i : ((fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}) ↦
-      A i.1.1 ⊗ B i.1.2
+      (DirectSum (Fin (Fintype.card P)) fun j ↦ TensorProduct k (A (ε j).1.1) (B (ε j).1.2)) :=
+    (Sigma.reindex ε fun i : P ↦ A i.1.1 ⊗ B i.1.2).symm ≪≫
+      ModuleCat.coprodIsoDirectSum fun j ↦ A (ε j).1.1 ⊗ B (ε j).1.2
   rw [iso.toLinearEquiv.finrank_eq, Module.finrank_directSum,
     ← Finset.sum_coe_sort (Finset.antidiagonal n)]
-  exact Fintype.sum_equiv e _ _ fun x ↦ Module.finrank_tensorProduct
+  exact Fintype.sum_equiv (ε.trans e) _ _ fun x ↦ Module.finrank_tensorProduct
 
 end CategoryTheory.GradedObject.Monoidal
