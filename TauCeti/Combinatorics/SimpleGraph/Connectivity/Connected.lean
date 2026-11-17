@@ -61,7 +61,7 @@ def connectedComponentEquivOfReachableEq {V : Type*} (G : SimpleGraph V)
 with at least two vertices, every vertex is adjacent to another vertex of the component. -/
 theorem ConnectedComponent.exists_adj_toSimpleGraph {V : Type*} {G : SimpleGraph V}
     (C : G.ConnectedComponent) [Nontrivial C] (i : C) : ∃ j, C.toSimpleGraph.Adj i j :=
-  exists_adj_iff_not_isIsolated.mpr (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
+  C.connected_toSimpleGraph.preconnected.exists_adj_of_nontrivial i
 
 /-! ### Components after deleting a vertex -/
 
