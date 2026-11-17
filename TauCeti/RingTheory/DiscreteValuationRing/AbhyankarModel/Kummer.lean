@@ -147,31 +147,6 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_tame_liesOver
   exact Q.ramificationIdx_eq_one_and_isSeparable_of_irreducible_localizationAtPrime
     hϖ₁ hirrS hsepAS
 
-/-- If `E` is generated over `L` by the image of an `n`-th root `α₁ ∈ K₁` of `π ∈ A` (`n ≠ 0`), then
-`E` is generated as an `L`-algebra by the image of `⟨α₁, _⟩` through `integralClosure A E`. -/
-private theorem adjoin_singleton_integralClosure_eq_top
-    {A L K₁ E : Type*} [CommRing A] [Field L] [Algebra A L]
-    [Field K₁] [Algebra A K₁] [Field E] [Algebra A E] [Algebra L E] [Algebra K₁ E]
-    [IsScalarTower A L E] [IsScalarTower A K₁ E]
-    {π : A} {n : ℕ} (hn : n ≠ 0) {α₁ : K₁} (hα₁ : α₁ ^ n = algebraMap A K₁ π)
-    (hα₁A₁ : α₁ ∈ integralClosure A K₁) (hgenL : L⟮algebraMap K₁ E α₁⟯ = ⊤) :
-    letI := TauCeti.integralClosureMapAlgebra A K₁ A E
-    Algebra.adjoin L (algebraMap (integralClosure A E) E ''
-      ({algebraMap (integralClosure A K₁) (integralClosure A E) ⟨α₁, hα₁A₁⟩} : Set _)) = ⊤ := by
-  let := TauCeti.integralClosureMapAlgebra A K₁ A E
-  have := TauCeti.isScalarTower_integralClosureMapAlgebra_right A K₁ A E
-  have hbE : algebraMap (integralClosure A E) E
-      (algebraMap (integralClosure A K₁) (integralClosure A E) ⟨α₁, hα₁A₁⟩) =
-      algebraMap K₁ E α₁ :=
-    (IsScalarTower.algebraMap_apply (integralClosure A K₁) (integralClosure A E) E ⟨α₁, hα₁A₁⟩).symm
-  have hα₁E_int : IsIntegral A (algebraMap K₁ E α₁) :=
-    IsIntegral.of_pow (Nat.pos_of_ne_zero hn) <| by
-      rw [← map_pow, hα₁, ← IsScalarTower.algebraMap_apply A K₁ E]
-      exact isIntegral_algebraMap
-  rw [Set.image_singleton, hbE,
-    ← adjoin_simple_toSubalgebra_of_isAlgebraic hα₁E_int.tower_top.isAlgebraic, hgenL,
-    top_toSubalgebra]
-
 /-- Local step of the Kummer-case Abhyankar theorem: at each maximal ideal `Q` of
 `integralClosure A E` lying over `maximalIdeal (integralClosure A K₁)`, the ramification index over
 `integralClosure A K₁` is `1` and the residue extension is separable. -/
@@ -215,7 +190,6 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_pow_eq
   let b : integralClosure A E := algebraMap (integralClosure A K₁) _ ⟨α₁, hα₁A₁⟩
   have hbE : algebraMap (integralClosure A E) E b = algebraMap K₁ E α₁ :=
     (IsScalarTower.algebraMap_apply (integralClosure A K₁) (integralClosure A E) E ⟨α₁, hα₁A₁⟩).symm
-  have htopE := adjoin_singleton_integralClosure_eq_top hn hα₁ hα₁A₁ hgenL (L := L)
   intro Q _ _
   have : (maximalIdeal (integralClosure A K₁)).LiesOver (maximalIdeal A) :=
     ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
@@ -237,8 +211,10 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_pow_eq
   refine ramificationIdx_eq_one_and_isSeparable_of_tame_liesOver hϖ₁ P Q hϖ hu heBP hd hsepBP hπBP
     hb_pow fun c ↦ ?_
   have hcE : algebraMap (Localization.AtPrime Q) E c ∈
-      Algebra.adjoin L (algebraMap (integralClosure A E) E '' ({b} : Set _)) :=
-    htopE ▸ Algebra.mem_top
+      Algebra.adjoin L (algebraMap (integralClosure A E) E '' ({b} : Set _)) := by
+    rw [Set.image_singleton, hbE, Algebra.adjoin_eq_top_of_primitive_element
+      ((mem_integralClosure_iff A K₁).mp hα₁A₁).algebraMap.tower_top.isAlgebraic hgenL]
+    exact Algebra.mem_top
   simpa only [Set.image_singleton] using
     TauCeti.Localization.AtPrime.exists_mul_mem_adjoin P Q hcE
 
