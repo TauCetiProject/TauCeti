@@ -17,35 +17,37 @@ import TauCeti.RepresentationTheory.CharacterTable.Determined
 
 This file works out the faithful-tensor-generation theory of
 `TauCeti.RepresentationTheory.CharacterTable.TensorGeneration` for the symmetric group
-`S₃ = Equiv.Perm (Fin 3)` and its two-dimensional irreducible representation `U`, the standard
-representation `TauCeti.standardRepresentation` on the vectors of `k[Fin 3]` whose coefficients sum
-to zero, over a field `k`.
+`S₃ = Equiv.Perm (Fin 3)` and its two-dimensional representation `U`, the standard representation
+`TauCeti.standardRepresentation` on the vectors of `k[Fin 3]` whose coefficients sum to zero, over
+a field `k`. It is irreducible when `3 ≠ 0` in `k` (`TauCeti.isIrreducible_standardRepresentation`).
 
 The character of `U` is `2` at the identity, `0` at the three transpositions and `-1` at the two
 three-cycles (`TauCeti.char_standardRepresentation_fin_three`), so it takes `r_U = 3` values when
 `6 ≠ 0` in `k`. Since `U` is faithful, the Burnside–Brauer theorem
 `FDRep.exists_pos_finrank_hom_tensorPower` puts every irreducible complex representation of `S₃`
-into some `U^⊗n` with `n < 3`. Summing over the group computes every multiplicity: the trivial
-representation, the sign representation `sgn` and `U` occur in `U^⊗n` with multiplicities
+into some `U^⊗n` with `n < 3`. Summing over the group computes the dimension of
+`Hom(X, U^⊗n)` for every representation `X`, as an element of `k` whenever `6 ≠ 0` in `k`. For the
+trivial representation, the sign representation `sgn` and `U` these dimensions are
 
 `(2ⁿ + 3·0ⁿ + 2(-1)ⁿ)/6`, `(2ⁿ - 3·0ⁿ + 2(-1)ⁿ)/6` and `(2ⁿ - (-1)ⁿ)/3`,
 
-with `0⁰ = 1`, as elements of `k` whenever `6 ≠ 0` in `k`. In characteristic zero
-`U^⊗2 ≅ 1 ⊕ sgn ⊕ U`, and the sign representation occurs in neither `U^⊗0` nor `U^⊗1`: the bound
-`n < r_U` is attained.
+with `0⁰ = 1`. In characteristic zero these are the multiplicities of the three irreducible
+representations in `U^⊗n`, `U^⊗2 ≅ 1 ⊕ sgn ⊕ U`, and the sign representation occurs in neither
+`U^⊗0` nor `U^⊗1`: the bound `n < r_U` is attained.
 
 ## Main statements
 
 * `TauCeti.characterValues_standardRepresentation_fin_three`,
   `TauCeti.characterValueCount_standardRepresentation_fin_three`: the character values `2, 0, -1`.
-* `TauCeti.finrank_hom_tensorPower_standardRepresentation_fin_three`: the multiplicity of an
-  arbitrary representation `X` in `U^⊗n`, from three values of the character of `X`.
+* `FDRep.finrank_hom_tensorPower_standardRepresentation_fin_three`: the dimension of
+  `Hom(X, U^⊗n)` for an arbitrary representation `X`, as an element of `k`, from three values of the
+  character of `X`.
 * `TauCeti.finrank_hom_trivial_tensorPower_standardRepresentation_fin_three`,
   `TauCeti.finrank_hom_sign_tensorPower_standardRepresentation_fin_three`,
-  `TauCeti.finrank_hom_standardRepresentation_fin_three_tensorPower`: the multiplicities of the
-  three irreducible representations in `U^⊗n`.
+  `TauCeti.finrank_hom_standardRepresentation_fin_three_tensorPower`: the dimensions of the spaces
+  of maps from the three irreducible representations into `U^⊗n`, as elements of `k`.
 * `TauCeti.nonempty_iso_tensorPower_two_standardRepresentation_fin_three`: `U^⊗2 ≅ 1 ⊕ sgn ⊕ U`.
-* `TauCeti.exists_lt_three_pos_finrank_hom_tensorPower_standardRepresentation_fin_three`: every
+* `FDRep.exists_lt_three_pos_finrank_hom_tensorPower_standardRepresentation_fin_three`: every
   nonzero complex representation maps nontrivially into some `U^⊗n` with `n < 3`, and
   `TauCeti.finrank_hom_sign_tensorPower_standardRepresentation_fin_three_of_lt_two` shows that the
   sign representation needs `n = 2`.
@@ -95,14 +97,24 @@ theorem characterValueCount_standardRepresentation_fin_three :
   exact ⟨h₂, fun h ↦ h₃ (by linear_combination h)⟩
 
 variable {k} in
-/-- The multiplicity of a representation `X` in `U^⊗n`, for `U` the standard representation of
-`S₃`, from the values `a`, `b`, `c` of the character of `X` at the identity, the transpositions and
-the three-cycles. -/
-private theorem finrank_hom_tensorPower_standardRepresentation_fin_three_eq
-    (X : FDRep k (Perm (Fin 3))) (a b c : k)
-    (hX : ∀ σ, X.character σ = if σ = 1 then a else if Perm.sign σ = -1 then b else c) (n : ℕ) :
+/-- **The dimension of `Hom(X, U^⊗n)`**, for `U` the standard representation of `S₃` and `X` any
+representation, as an element of `k`: it is determined by the values of the character of `X` at
+the identity, the transposition `(0 1)` and the three-cycle `finRotate 3`. When `X` is irreducible
+and `k` has characteristic zero, this is the multiplicity of `X` in `U^⊗n`. -/
+theorem _root_.FDRep.finrank_hom_tensorPower_standardRepresentation_fin_three
+    (X : FDRep k (Perm (Fin 3))) (n : ℕ) :
     (Module.finrank k (X ⟶ (FDRep.of (standardRepresentation k (Fin 3))).tensorPower n) : k) =
-      (2 ^ n * a + 3 * 0 ^ n * b + 2 * (-1) ^ n * c) / 6 := by
+      (2 ^ n * X.character 1 + 3 * 0 ^ n * X.character (swap 0 1) +
+        2 * (-1) ^ n * X.character (finRotate 3)) / 6 := by
+  have hX (σ : Perm (Fin 3)) : X.character σ = if σ = 1 then X.character 1 else
+      if Perm.sign σ = -1 then X.character (swap 0 1) else X.character (finRotate 3) := by
+    obtain ⟨g, hg⟩ : ∃ g : Perm (Fin 3), g * (if σ = 1 then 1 else
+        if Perm.sign σ = -1 then swap 0 1 else finRotate 3) * g⁻¹ = σ := by
+      revert σ
+      decide
+    conv_lhs => rw [← hg]
+    rw [FDRep.char_conj]
+    split_ifs <;> rfl
   have : Invertible (Nat.card (Perm (Fin 3)) : k) := invertibleOfNonzero <| by
     simpa [Nat.card_eq_fintype_card, Fintype.card_perm, Nat.factorial] using
       NeZero.ne ((6 : ℕ) : k)
@@ -110,8 +122,9 @@ private theorem finrank_hom_tensorPower_standardRepresentation_fin_three_eq
   have hsum : ∑ σ : Perm (Fin 3),
       ((FDRep.of (standardRepresentation k (Fin 3))).tensorPower n).character σ *
         X.character σ⁻¹ =
-      ∑ σ : Perm (Fin 3), if σ = 1 then 2 ^ n * a else
-        if Perm.sign σ = -1 then 0 ^ n * b else (-1) ^ n * c := by
+      ∑ σ : Perm (Fin 3), if σ = 1 then 2 ^ n * X.character 1 else
+        if Perm.sign σ = -1 then 0 ^ n * X.character (swap 0 1) else
+          (-1) ^ n * X.character (finRotate 3) := by
     refine Finset.sum_congr rfl fun σ _ ↦ ?_
     rw [FDRep.char_tensorPower, FDRep.character_of, char_standardRepresentation_fin_three, hX]
     simp only [inv_eq_one, Perm.sign_inv]
@@ -127,54 +140,44 @@ private theorem finrank_hom_tensorPower_standardRepresentation_fin_three_eq
   push_cast
   ring
 
-variable {k} in
-/-- **The multiplicity of a representation `X` in `U^⊗n`**, for `U` the standard representation of
-`S₃`, from the values of the character of `X` at the identity, the transposition `(0 1)` and the
-three-cycle `finRotate 3`. -/
-theorem finrank_hom_tensorPower_standardRepresentation_fin_three (X : FDRep k (Perm (Fin 3)))
-    (n : ℕ) :
-    (Module.finrank k (X ⟶ (FDRep.of (standardRepresentation k (Fin 3))).tensorPower n) : k) =
-      (2 ^ n * X.character 1 + 3 * 0 ^ n * X.character (swap 0 1) +
-        2 * (-1) ^ n * X.character (finRotate 3)) / 6 := by
-  refine finrank_hom_tensorPower_standardRepresentation_fin_three_eq X _ _ _ (fun σ ↦ ?_) n
-  obtain ⟨g, hg⟩ : ∃ g : Perm (Fin 3), g * (if σ = 1 then 1 else
-      if Perm.sign σ = -1 then swap 0 1 else finRotate 3) * g⁻¹ = σ := by
-    revert σ
-    decide
-  conv_lhs => rw [← hg]
-  rw [FDRep.char_conj]
-  split_ifs <;> rfl
-
-/-- **The multiplicity of the trivial representation in `U^⊗n`**, for `U` the standard
-representation of `S₃`, is `(2ⁿ + 3·0ⁿ + 2(-1)ⁿ)/6`, with `0⁰ = 1`. -/
+/-- **The dimension of `Hom(1, U^⊗n)`**, for `1` the trivial representation and `U` the standard
+representation of `S₃`, is `(2ⁿ + 3·0ⁿ + 2(-1)ⁿ)/6` as an element of `k`, with `0⁰ = 1`. In
+characteristic zero this is the multiplicity of the trivial representation in `U^⊗n`. -/
 theorem finrank_hom_trivial_tensorPower_standardRepresentation_fin_three (n : ℕ) :
     (Module.finrank k (FDRep.ofLinearCharacter 1 ⟶
         (FDRep.of (standardRepresentation k (Fin 3))).tensorPower n) : k) =
       (2 ^ n + 3 * 0 ^ n + 2 * (-1) ^ n) / 6 := by
-  rw [finrank_hom_tensorPower_standardRepresentation_fin_three_eq _ 1 1 1 (fun σ ↦ by simp)]
+  rw [FDRep.finrank_hom_tensorPower_standardRepresentation_fin_three]
+  simp only [FDRep.char_ofLinearCharacter, MonoidHom.one_apply, Units.val_one]
   ring
 
-/-- **The multiplicity of the sign representation in `U^⊗n`**, for `U` the standard
-representation of `S₃`, is `(2ⁿ - 3·0ⁿ + 2(-1)ⁿ)/6`, with `0⁰ = 1`. -/
+/-- **The dimension of `Hom(sgn, U^⊗n)`**, for `sgn` the sign representation and `U` the standard
+representation of `S₃`, is `(2ⁿ - 3·0ⁿ + 2(-1)ⁿ)/6` as an element of `k`, with `0⁰ = 1`. In
+characteristic zero this is the multiplicity of the sign representation in `U^⊗n`. -/
 theorem finrank_hom_sign_tensorPower_standardRepresentation_fin_three (n : ℕ) :
     (Module.finrank k (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)) ⟶
         (FDRep.of (standardRepresentation k (Fin 3))).tensorPower n) : k) =
       (2 ^ n - 3 * 0 ^ n + 2 * (-1) ^ n) / 6 := by
-  rw [finrank_hom_tensorPower_standardRepresentation_fin_three_eq _ 1 (-1) 1 (fun σ ↦ ?_)]
-  · ring
-  · rw [FDRep.char_ofLinearCharacter, coe_signLinearCharacter_apply]
-    rcases Int.units_eq_one_or (Perm.sign σ) with h | h <;> split_ifs <;> simp_all
+  have h₁ : Perm.sign (swap (0 : Fin 3) 1) = -1 := by decide
+  have h₂ : Perm.sign (finRotate 3) = 1 := by decide
+  rw [FDRep.finrank_hom_tensorPower_standardRepresentation_fin_three]
+  simp only [FDRep.char_ofLinearCharacter, coe_signLinearCharacter_apply, Perm.sign_one, h₁, h₂]
+  push_cast
+  ring
 
-/-- **The multiplicity of `U` in `U^⊗n`**, for `U` the standard representation of `S₃`, is
-`(2ⁿ - (-1)ⁿ)/3`. -/
+/-- **The dimension of `Hom(U, U^⊗n)`**, for `U` the standard representation of `S₃`, is
+`(2ⁿ - (-1)ⁿ)/3` as an element of `k`. In characteristic zero this is the multiplicity of `U` in
+`U^⊗n`. -/
 theorem finrank_hom_standardRepresentation_fin_three_tensorPower (n : ℕ) :
     (Module.finrank k (FDRep.of (standardRepresentation k (Fin 3)) ⟶
         (FDRep.of (standardRepresentation k (Fin 3))).tensorPower n) : k) =
       (2 ^ n - (-1) ^ n) / 3 := by
   have h₆ : (6 : k) ≠ 0 := by exact_mod_cast NeZero.ne ((6 : ℕ) : k)
   have h₃ : (3 : k) ≠ 0 := fun h ↦ h₆ (by linear_combination 2 * h)
-  rw [finrank_hom_tensorPower_standardRepresentation_fin_three_eq _ 2 0 (-1)
-    (fun σ ↦ by rw [FDRep.character_of, char_standardRepresentation_fin_three])]
+  have h₁ : swap (0 : Fin 3) 1 ≠ 1 ∧ Perm.sign (swap (0 : Fin 3) 1) = -1 := by decide
+  have h₂ : finRotate 3 ≠ 1 ∧ Perm.sign (finRotate 3) ≠ -1 := by decide
+  rw [FDRep.finrank_hom_tensorPower_standardRepresentation_fin_three]
+  simp only [FDRep.character_of, char_standardRepresentation_fin_three, h₁, h₂, ↓reduceIte]
   field_simp
   ring
 
@@ -222,7 +225,7 @@ end CharZero
 finite-dimensional complex representation of `S₃` has a nonzero map into `U^⊗n` for some `n < 3`,
 the number of character values of `U`. The bound is attained by the sign representation
 (`TauCeti.finrank_hom_sign_tensorPower_standardRepresentation_fin_three_of_lt_two`). -/
-theorem exists_lt_three_pos_finrank_hom_tensorPower_standardRepresentation_fin_three
+theorem _root_.FDRep.exists_lt_three_pos_finrank_hom_tensorPower_standardRepresentation_fin_three
     (X : FDRep ℂ (Perm (Fin 3))) (hX : 0 < Module.finrank ℂ X) :
     ∃ n < 3,
       0 < Module.finrank ℂ (X ⟶ (FDRep.of (standardRepresentation ℂ (Fin 3))).tensorPower n) := by
