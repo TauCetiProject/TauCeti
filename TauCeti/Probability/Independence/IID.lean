@@ -11,6 +11,7 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.StrongLaw
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # Independent and identically distributed families
@@ -166,7 +167,7 @@ theorem IsIndependentIdenticallyDistributed.map_fun_eq_pi [Fintype ι]
 theorem IsIndependentIdenticallyDistributed.map_fun_eq_infinitePi
     (h : IsIndependentIdenticallyDistributed μ X P) :
     μ.map (fun ω i ↦ X i ω) = Measure.infinitePi (fun _ : ι ↦ P) := by
-  rw [h.iIndepFun.map_fun_eq_infinitePi_map₀ (measurable_pi_iff.2 h.measurable).aemeasurable]
+  rw [h.iIndepFun.map_fun_eq_infinitePi_map h.measurable]
   exact congrArg Measure.infinitePi (funext h.map_eq)
 
 /-- For an `ℕ`-indexed i.i.d. sequence `X`, the joint law of the initial block
@@ -192,7 +193,7 @@ theorem isIndependentIdenticallyDistributed_eval_infinitePi (P : Measure E)
     IsIndependentIdenticallyDistributed (Measure.infinitePi fun _ : ι ↦ P)
       (fun (i : ι) (x : ι → E) ↦ x i) P :=
   ⟨fun i ↦ measurable_pi_apply i,
-    iIndepFun_infinitePi (P := fun _ : ι ↦ P) (X := fun _ ↦ id) (fun _ ↦ measurable_id),
+    TauCeti.Probability.iIndepFun_eval_infinitePi (fun _ : ι ↦ P),
     fun i ↦ Measure.infinitePi_map_eval (fun _ : ι ↦ P) i⟩
 
 end Defs
