@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.List.Cycle
+import Mathlib.Data.Bool.Count
 
 /-!
 # Orientation reversal on signed cycles
@@ -107,16 +108,12 @@ theorem ne_reverseSigned_of_odd_length {α : Type*} {w : Cycle (α × Bool)}
     (hw : Odd w.length) : w ≠ w.reverseSigned := by
   apply ne_reverseSigned_of_count_ne
   intro heq
-  have hsum : ∀ m : Multiset Bool,
-      Multiset.count true m + Multiset.count false m = Multiset.card m := by
-    intro m
-    induction m using Multiset.induction_on with
-    | empty => rfl
-    | cons c m ih =>
-      cases c <;> simp <;> omega
   have hwlen : Multiset.count true (w.toMultiset.map Prod.snd) +
       Multiset.count false (w.toMultiset.map Prod.snd) = w.length := by
-    simpa using hsum (w.toMultiset.map Prod.snd)
+    rw [← Cycle.card_toMultiset, ← Multiset.card_map Prod.snd]
+    exact Quot.inductionOn (w.toMultiset.map Prod.snd) fun l ↦ by
+      rw [Multiset.quot_mk_to_coe'', Multiset.coe_count, Multiset.coe_count, Multiset.coe_card]
+      exact List.count_true_add_count_false l
   obtain ⟨k, hk⟩ := hw
   omega
 

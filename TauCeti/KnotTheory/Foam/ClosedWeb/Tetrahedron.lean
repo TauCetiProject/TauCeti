@@ -279,12 +279,40 @@ theorem not_nonempty_iso_tetrahedronPos_tetrahedronNeg :
     ¬Nonempty (tetrahedronPos.Iso tetrahedronNeg) :=
   not_nonempty_iff.mpr (isEmpty_iso_tetWeb_not true)
 
-/-- Edge involution carrying `(tetWeb c).reverse` to `tetWeb (!c)`. -/
-@[expose] def tetRevEdgeEquiv : Fin 6 ≃ Fin 6 where
-  toFun | 0 => 0 | 1 => 2 | 2 => 1 | 3 => 5 | 4 => 4 | 5 => 3
-  invFun | 0 => 0 | 1 => 2 | 2 => 1 | 3 => 5 | 4 => 4 | 5 => 3
-  left_inv e := by fin_cases e <;> rfl
-  right_inv e := by fin_cases e <;> rfl
+/-- Edge involution carrying `(tetWeb c).reverse` to `tetWeb (!c)`, swapping edges `1 ↔ 2` and
+`3 ↔ 5` while fixing `0` and `4`. -/
+def tetRevEdgeEquiv : Fin 6 ≃ Fin 6 :=
+  (Equiv.swap (1 : Fin 6) 2).trans (Equiv.swap 3 5)
+
+theorem tetRevEdgeEquiv_def :
+    tetRevEdgeEquiv = (Equiv.swap (1 : Fin 6) 2).trans (Equiv.swap 3 5) := (rfl)
+
+@[simp] theorem tetRevEdgeEquiv_symm : tetRevEdgeEquiv.symm = tetRevEdgeEquiv := by
+  ext e
+  fin_cases e <;> simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
+
+@[simp] theorem tetRevEdgeEquiv_tetRevEdgeEquiv (e : Fin 6) :
+    tetRevEdgeEquiv (tetRevEdgeEquiv e) = e := by
+  have h := tetRevEdgeEquiv.apply_symm_apply e
+  rwa [tetRevEdgeEquiv_symm] at h
+
+@[simp] theorem tetRevEdgeEquiv_zero : tetRevEdgeEquiv 0 = 0 := by
+  simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
+
+@[simp] theorem tetRevEdgeEquiv_one : tetRevEdgeEquiv 1 = 2 := by
+  simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
+
+@[simp] theorem tetRevEdgeEquiv_two : tetRevEdgeEquiv 2 = 1 := by
+  simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
+
+@[simp] theorem tetRevEdgeEquiv_three : tetRevEdgeEquiv 3 = 5 := by
+  simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
+
+@[simp] theorem tetRevEdgeEquiv_four : tetRevEdgeEquiv 4 = 4 := by
+  simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
+
+@[simp] theorem tetRevEdgeEquiv_five : tetRevEdgeEquiv 5 = 3 := by
+  simp [tetRevEdgeEquiv, Equiv.swap_apply_def]
 
 /-- Reversing all edge orientations of `tetWeb c` produces a web isomorphic to `tetWeb (!c)`. -/
 def tetWebReverseIso (c : Bool) : (tetWeb c).reverse.Iso (tetWeb (!c)) where
