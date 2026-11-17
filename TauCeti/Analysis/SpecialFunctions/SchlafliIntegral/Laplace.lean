@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.SpecialFunctions.SchlafliIntegral.Amplitude
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Pow.Sector
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
 # Asymptotic bounds and Laplace transformation of Schläfli's integral
@@ -77,24 +78,6 @@ namespace TauCeti
 
 /-! ### Subsector growth bounds for `schlafliAmplitude` -/
 
-private theorem sin_half_mul_one_add_norm_le_norm_add_two {δ : ℝ} (hδ₀ : 0 < δ)
-    {w : ℂ} (hw : |w.arg| ≤ Real.pi - δ) :
-    Real.sin (δ / 2) * (1 + ‖w‖) ≤ ‖w + 2‖ := by
-  have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg w.arg]
-  have hs_pos : 0 < Real.sin (δ / 2) := Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
-  have h1s : 0 ≤ 1 - Real.sin (δ / 2) ^ 2 := by nlinarith [Real.sin_le_one (δ / 2)]
-  have hre : -‖w‖ * Real.cos δ ≤ w.re := by
-    have h := (arg_mem_Icc_iff_norm_mul_cos_le_re ⟨by linarith, by linarith⟩).mp (abs_le.mp hw)
-    rwa [Real.cos_pi_sub, mul_neg, ← neg_mul] at h
-  rw [← sq_le_sq₀ (by positivity) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
-  have hw_sq : w.re * w.re + w.im * w.im = ‖w‖ ^ 2 := by
-    rw [Complex.sq_norm, Complex.normSq_apply]
-  have hcos2 : Real.cos δ = 1 - 2 * Real.sin (δ / 2) ^ 2 := by
-    have h2 := Real.cos_two_mul (δ / 2)
-    rw [show 2 * (δ / 2) = δ by ring] at h2; linarith [Real.sin_sq_add_cos_sq (δ / 2)]
-  rw [show (w + 2).re = w.re + 2 by simp, show (w + 2).im = w.im by simp]
-  nlinarith [mul_nonneg h1s (sq_nonneg (‖w‖ - 2)), norm_nonneg w, hs_pos]
-
 /-- On every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ`), `‖schlafliAmplitude p w‖`
 is bounded by an explicit constant times `(1 + ‖w‖) ^ (|p.re| - 1 / 2)`. -/
 theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0 < δ)
@@ -104,7 +87,11 @@ theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0
         (1 + ‖w‖) ^ (|p.re| - 1 / 2) := by
   have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg w.arg]
   have hs_pos : 0 < Real.sin (δ / 2) := Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
-  have hw2_ge := sin_half_mul_one_add_norm_le_norm_add_two hδ₀ hw
+  have hw2_ge : Real.sin (δ / 2) * (1 + ‖w‖) ≤ ‖w + 2‖ := by
+    have h := Complex.sin_half_mul_norm_add_le_norm_add_ofReal_of_abs_arg_le hδ₀.le hw zero_le_two
+    have hle : Real.sin (δ / 2) * (1 + ‖w‖) ≤ Real.sin (δ / 2) * (‖w‖ + 2) :=
+      mul_le_mul_of_nonneg_left (by linarith) hs_pos.le
+    simpa using hle.trans h
   have hden : Real.sqrt (Real.sin (δ / 2)) * (1 + ‖w‖) ^ (1 / 2 : ℝ) ≤
       ‖(w + 2) ^ (1 / 2 : ℂ)‖ := by
     have hhalf : ‖(w + 2) ^ (1 / 2 : ℂ)‖ = Real.sqrt ‖w + 2‖ := by
@@ -314,23 +301,6 @@ private theorem sinh_smul_schlafliAmplitude_cosh_sub_one
   rw [← hprod_c, ofReal_inv]
   field_simp [hs1, hs2]
 
-private theorem image_cosh_sub_one_Ioi :
-    (fun u : ℝ ↦ Real.cosh u - 1) '' Ioi (0 : ℝ) = Ioi (0 : ℝ) := by
-  have h : Real.cosh '' Ioi (0 : ℝ) = Ioi (1 : ℝ) :=
-    Real.coshOpenPartialHomeomorph.image_source_eq_target
-  rw [show (fun u : ℝ ↦ Real.cosh u - 1) = (· - 1) ∘ Real.cosh from rfl, image_comp, h]
-  ext τ
-  simp
-
-private theorem injOn_cosh_sub_one_Ioi :
-    InjOn (fun u : ℝ ↦ Real.cosh u - 1) (Ioi (0 : ℝ)) :=
-  sub_left_injective.comp_injOn Real.coshOpenPartialHomeomorph.injOn
-
-private theorem hasDerivWithinAt_cosh_sub_one_Ioi :
-    ∀ u ∈ Ioi (0 : ℝ),
-      HasDerivWithinAt (fun v : ℝ ↦ Real.cosh v - 1) (Real.sinh u) (Ioi (0 : ℝ)) u :=
-  fun u _ ↦ ((Real.hasDerivAt_cosh u).sub_const 1).hasDerivWithinAt
-
 /-- Integrability equivalence under the substitution `τ = cosh u - 1` on `(0, ∞)` for a
 `ℂ`-normed-space-valued integrand `g`. -/
 theorem integrableOn_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi_iff
@@ -338,9 +308,10 @@ theorem integrableOn_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi_iff
     IntegrableOn (fun τ : ℝ ↦
       ((τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) • g τ) (Ioi 0) ↔
     IntegrableOn (fun u : ℝ ↦ Complex.cosh (p * u) • g (Real.cosh u - 1)) (Ioi 0) := by
-  conv_lhs => rw [← image_cosh_sub_one_Ioi]
+  conv_lhs => rw [← Real.bijOn_cosh_sub_one_Ioi.image_eq]
   rw [integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi
-    hasDerivWithinAt_cosh_sub_one_Ioi injOn_cosh_sub_one_Ioi]
+    (fun u _ ↦ ((Real.hasDerivAt_cosh u).sub_const 1).hasDerivWithinAt)
+    Real.bijOn_cosh_sub_one_Ioi.injOn]
   exact integrableOn_congr_fun (fun u hu ↦ sinh_smul_schlafliAmplitude_cosh_sub_one p g hu)
     measurableSet_Ioi
 
@@ -349,9 +320,10 @@ theorem integral_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (p : ℂ) (g : ℝ → E) :
     (∫ τ in Ioi (0 : ℝ), ((τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) • g τ) =
       ∫ u in Ioi (0 : ℝ), Complex.cosh (p * u) • g (Real.cosh u - 1) := by
-  conv_lhs => rw [← image_cosh_sub_one_Ioi]
+  conv_lhs => rw [← Real.bijOn_cosh_sub_one_Ioi.image_eq]
   rw [integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi
-    hasDerivWithinAt_cosh_sub_one_Ioi injOn_cosh_sub_one_Ioi]
+    (fun u _ ↦ ((Real.hasDerivAt_cosh u).sub_const 1).hasDerivWithinAt)
+    Real.bijOn_cosh_sub_one_Ioi.injOn]
   exact setIntegral_congr_fun measurableSet_Ioi fun u hu ↦
     sinh_smul_schlafliAmplitude_cosh_sub_one p g hu
 
