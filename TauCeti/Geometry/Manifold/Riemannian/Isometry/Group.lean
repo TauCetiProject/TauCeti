@@ -23,6 +23,8 @@ diffeomorphism group. The action of `Isom(M)` on `M` is in
 * `TauCeti.Isom I M`: the isometry group of the Riemannian manifold `M`.
 * `TauCeti.RiemannianIsometry.instGroup`: the group of Riemannian self-isometries.
 * `TauCeti.RiemannianIsometry.toDiff`: the injective homomorphism to the diffeomorphism group.
+* `TauCeti.RiemannianIsometry.conjMulEquiv`: conjugation of isometry groups along a smooth
+  Riemannian isometry.
 
 ## References
 
@@ -140,6 +142,61 @@ theorem toDiff_apply (Φ : Isom I M) : toDiff Φ = Φ.toDiffeomorph := (rfl)
 a subgroup of the diffeomorphism group. -/
 theorem toDiff_injective : Function.Injective (toDiff : Isom I M → Diff I M ∞) :=
   fun _ _ h ↦ RiemannianIsometry.ext fun x ↦ DFunLike.congr_fun h x
+
+section Conj
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+/-- Conjugation by a smooth Riemannian isometry `Φ : M ≃ N` identifies the isometry groups
+`Isom(M)` and `Isom(N)`, sending a self-isometry `Ψ` of `M` to `Φ ∘ Ψ ∘ Φ⁻¹`. -/
+def conjMulEquiv (Φ : RiemannianIsometry I J M N) : Isom I M ≃* Isom J N where
+  toFun Ψ := (Φ.symm.trans Ψ).trans Φ
+  invFun Ψ := (Φ.trans Ψ).trans Φ.symm
+  left_inv Ψ := RiemannianIsometry.ext fun x ↦ by simp
+  right_inv Ψ := RiemannianIsometry.ext fun y ↦ by simp
+  map_mul' Ψ₁ Ψ₂ := RiemannianIsometry.ext fun y ↦ by simp
+
+/-- Evaluating a conjugated isometry applies `Φ⁻¹`, then `Ψ`, then `Φ`. -/
+@[simp]
+theorem conjMulEquiv_apply (Φ : RiemannianIsometry I J M N) (Ψ : Isom I M) (y : N) :
+    Φ.conjMulEquiv Ψ y = Φ (Ψ (Φ.symm y)) := by
+  simp [conjMulEquiv]
+
+/-- The inverse of conjugation by `Φ` is conjugation by `Φ.symm`. -/
+@[simp]
+theorem conjMulEquiv_symm (Φ : RiemannianIsometry I J M N) :
+    Φ.conjMulEquiv.symm = Φ.symm.conjMulEquiv := by
+  ext Ψ x
+  simp [conjMulEquiv]
+
+/-- Evaluating the inverse conjugation applies `Φ`, then `Ψ`, then `Φ⁻¹`. -/
+theorem conjMulEquiv_symm_apply (Φ : RiemannianIsometry I J M N) (Ψ : Isom J N) (x : M) :
+    Φ.conjMulEquiv.symm Ψ x = Φ.symm (Ψ (Φ x)) := by
+  simp [conjMulEquiv]
+
+/-- Conjugation by the identity isometry is the identity group isomorphism. -/
+@[simp]
+theorem conjMulEquiv_refl :
+    (RiemannianIsometry.refl I M).conjMulEquiv = MulEquiv.refl (Isom I M) := by
+  ext Ψ x
+  simp
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  [RiemannianBundle (fun z : P ↦ TangentSpace K z)]
+
+/-- Conjugation by a composite of Riemannian isometries is the composite of the conjugations. -/
+@[simp]
+theorem conjMulEquiv_trans (Φ : RiemannianIsometry I J M N) (Θ : RiemannianIsometry J K N P) :
+    (Φ.trans Θ).conjMulEquiv = Φ.conjMulEquiv.trans Θ.conjMulEquiv := by
+  ext Ψ z
+  simp
+
+end Conj
 
 end RiemannianIsometry
 

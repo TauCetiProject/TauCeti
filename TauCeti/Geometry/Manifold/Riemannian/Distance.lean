@@ -41,6 +41,9 @@ is the special case that matters downstream.
   (pseudo)metric space structures of a preconnected Riemannian manifold, refining
   `PseudoEMetricSpace.ofRiemannianMetric` and `EMetricSpace.ofRiemannianMetric`; both satisfy
   `IsRiemannianManifold I M`.
+* `TauCeti.IsRiemannianManifold.completeSpace_ofRiemannianMetric_iff`: when an ambient extended
+  metric already satisfies `IsRiemannianManifold I M`, completeness of
+  `MetricSpace.ofRiemannianMetric I M` is equivalent to ambient completeness.
 * `TauCeti.IsRiemannianManifold.edist_le_pathELength` and
   `TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength`: the ambient (extended) distance of a
   Riemannian manifold, read through `IsRiemannianManifold.out`, is bounded by the length of any
@@ -433,5 +436,20 @@ instance [T3Space M] [PreconnectedSpace M] :
   exact ⟨fun _ _ ↦ rfl⟩
 
 end OfRiemannianMetric
+
+variable (I) in
+/-- When a preconnected manifold already carries an extended metric agreeing with its Riemannian
+distance (`IsRiemannianManifold I M`), the metric space `MetricSpace.ofRiemannianMetric I M` is
+complete if and only if the ambient extended metric space is complete. -/
+theorem IsRiemannianManifold.completeSpace_ofRiemannianMetric_iff (M : Type*)
+    [PseudoEMetricSpace M] [T3Space M] [PreconnectedSpace M] [ChartedSpace H M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M] :
+    @CompleteSpace M (MetricSpace.ofRiemannianMetric I M).toPseudoMetricSpace.toUniformSpace ↔
+      CompleteSpace M :=
+  @IsometryEquiv.completeSpace_iff M M
+    (MetricSpace.ofRiemannianMetric I M).toPseudoEMetricSpace _
+    (@IsometryEquiv.mk M M (MetricSpace.ofRiemannianMetric I M).toPseudoEMetricSpace _
+      (Equiv.refl M) (fun x y ↦ IsRiemannianManifold.out (I := I) x y))
 
 end TauCeti

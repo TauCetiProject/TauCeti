@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Euclidean.Prod
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PoincareMetric
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PoincareMetric.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -19,10 +21,18 @@ half-plane with the two-dimensional upper half-space metric. The identification 
 Riemannian isometry: its differential preserves the Euclidean inner product and its base map
 preserves height, so both tensors are the same Euclidean tensor divided by squared height.
 Transporting the half-space curvature along this map proves that the Poincaré metric has
-constant sectional curvature `−1`.
+constant curvature tensor `-1` (`UpperHalfPlane.curvatureTensor_eq`) and constant sectional
+curvature `-1` (`TauCeti.UpperHalfPlane.hasConstantSectionalCurvature`); combined with metric
+completeness this packages the Poincaré metric as a `HyperbolicMetric`
+(`TauCeti.UpperHalfPlane.poincareHyperbolicMetric`, `TauCeti.UpperHalfPlane.isHyperbolic`).
 
-`TauCeti.UpperHalfPlane.upperHalfSpaceIsometry` gives this identification without changing
-Mathlib's distance on the upper half-plane or installing a distance on the half-space.
+Conjugating along `upperHalfSpaceIsometry` transports the Möbius Riemannian isometries of
+`GL(2, ℝ)`, `PGL(2, ℝ)`, and `PSL(2, ℝ)` into the Riemannian isometry group of
+`UpperHalfSpace ℝ` (`glHalfSpaceIsomHom`, `pglHalfSpaceIsomHom`, `pslHalfSpaceIsomHom`).
+Because Mathlib's hyperbolic distance on `ℍ` agrees with the Poincaré Riemannian distance
+(`TauCeti.isRiemannianManifold_upperHalfPlane`), the same map induces a metric-space isometry
+`upperHalfSpaceIsometryEquiv : ℍ ≃ᵢ UpperHalfSpace ℝ` when `UpperHalfSpace ℝ` carries its
+intrinsic Riemannian metric `MetricSpace.ofRiemannianMetric`.
 
 The metric convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, second
 edition, Chapter 3 (the upper half-space model).
@@ -31,7 +41,7 @@ edition, Chapter 3 (the upper half-space model).
 public section
 
 open Bundle Manifold CovariantDerivative
-open scoped ContDiff Manifold UpperHalfPlane
+open scoped ContDiff Manifold MatrixGroups UpperHalfPlane
 
 noncomputable section
 
@@ -174,5 +184,156 @@ theorem hasConstantSectionalCurvature :
       (isMetricCompatible_leviCivitaConnection 𝓘(ℝ, ℂ)) (-1) :=
   (upperHalfSpaceIsometry.hasConstantSectionalCurvature_iff (-1)).mp
     UpperHalfSpace.hasConstantSectionalCurvature
+
+/-! ### Conjugated Möbius isometries on upper half-space -/
+
+/-- The `GL(2, ℝ)` action on `UpperHalfSpace ℝ` by Riemannian isometries, obtained by conjugating
+the Möbius action on `ℍ` along `upperHalfSpaceIsometry`. -/
+def glHalfSpaceIsomHom :
+    GL (Fin 2) ℝ →* Isom 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ) :=
+  upperHalfSpaceIsometry.conjMulEquiv.toMonoidHom.comp glIsomHom
+
+/-- Evaluation of the conjugated `GL(2, ℝ)` Riemannian isometry on `UpperHalfSpace ℝ`. -/
+@[simp]
+theorem glHalfSpaceIsomHom_apply (g : GL (Fin 2) ℝ) (p : UpperHalfSpace ℝ) :
+    glHalfSpaceIsomHom g p = upperHalfSpaceIsometry (g • upperHalfSpaceIsometry.symm p) := by
+  rw [glHalfSpaceIsomHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    RiemannianIsometry.conjMulEquiv_apply, glIsomHom_apply]
+
+/-- The faithful `PGL(2, ℝ)` action on `UpperHalfSpace ℝ` by Riemannian isometries, obtained by
+conjugating the Möbius action on `ℍ` along `upperHalfSpaceIsometry`. -/
+def pglHalfSpaceIsomHom :
+    PGL(2, ℝ) →* Isom 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ) :=
+  upperHalfSpaceIsometry.conjMulEquiv.toMonoidHom.comp pglIsomHom
+
+/-- Evaluation of the conjugated `PGL(2, ℝ)` Riemannian isometry on `UpperHalfSpace ℝ`. -/
+@[simp]
+theorem pglHalfSpaceIsomHom_apply (q : PGL(2, ℝ)) (p : UpperHalfSpace ℝ) :
+    pglHalfSpaceIsomHom q p = upperHalfSpaceIsometry (q • upperHalfSpaceIsometry.symm p) := by
+  rw [pglHalfSpaceIsomHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    RiemannianIsometry.conjMulEquiv_apply, pglIsomHom_apply]
+
+/-- The conjugated `PGL(2, ℝ)` homomorphism agrees with `glHalfSpaceIsomHom` on representatives. -/
+@[simp]
+theorem pglHalfSpaceIsomHom_mk (g : GL (Fin 2) ℝ) :
+    pglHalfSpaceIsomHom (Matrix.ProjGenLinGroup.mk g) = glHalfSpaceIsomHom g := by
+  rw [pglHalfSpaceIsomHom, glHalfSpaceIsomHom, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    pglIsomHom_mk]
+
+/-- The conjugated `PGL(2, ℝ)` action on `UpperHalfSpace ℝ` by Riemannian isometries is
+faithful. -/
+theorem pglHalfSpaceIsomHom_injective : Function.Injective pglHalfSpaceIsomHom :=
+  upperHalfSpaceIsometry.conjMulEquiv.injective.comp pglIsomHom_injective
+
+/-- The faithful `PSL(2, ℝ)` action on `UpperHalfSpace ℝ` by Riemannian isometries, obtained by
+conjugating the Möbius action on `ℍ` along `upperHalfSpaceIsometry`. -/
+def pslHalfSpaceIsomHom :
+    PSL(2, ℝ) →* Isom 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ) :=
+  upperHalfSpaceIsometry.conjMulEquiv.toMonoidHom.comp pslIsomHom
+
+/-- Evaluation of the conjugated `PSL(2, ℝ)` Riemannian isometry on `UpperHalfSpace ℝ`. -/
+@[simp]
+theorem pslHalfSpaceIsomHom_apply (q : PSL(2, ℝ)) (p : UpperHalfSpace ℝ) :
+    pslHalfSpaceIsomHom q p = upperHalfSpaceIsometry (q • upperHalfSpaceIsometry.symm p) := by
+  rw [pslHalfSpaceIsomHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    RiemannianIsometry.conjMulEquiv_apply, pslIsomHom_apply]
+
+/-- Restricting `pglHalfSpaceIsomHom` along `toPGL` recovers `pslHalfSpaceIsomHom`. -/
+@[simp]
+theorem pglHalfSpaceIsomHom_toPGL (q : PSL(2, ℝ)) :
+    pglHalfSpaceIsomHom (Matrix.ProjectiveSpecialLinearGroup.toPGL q) = pslHalfSpaceIsomHom q := by
+  rw [pglHalfSpaceIsomHom, pslHalfSpaceIsomHom, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    pglIsomHom_toPGL]
+
+/-- The conjugated `PSL(2, ℝ)` action on `UpperHalfSpace ℝ` by Riemannian isometries is
+faithful. -/
+theorem pslHalfSpaceIsomHom_injective : Function.Injective pslHalfSpaceIsomHom :=
+  upperHalfSpaceIsometry.conjMulEquiv.injective.comp pslIsomHom_injective
+
+/-! ### Metric-space comparison with upper half-space -/
+
+/-- The coordinate identification `x + iy ↦ (x, y)` is a metric-space isometry from `ℍ`
+(with Mathlib's hyperbolic distance) to `UpperHalfSpace ℝ` equipped with its intrinsic Riemannian
+metric `MetricSpace.ofRiemannianMetric`. -/
+def upperHalfSpaceIsometryEquiv :
+    letI : MetricSpace (UpperHalfSpace ℝ) :=
+      MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+    ℍ ≃ᵢ UpperHalfSpace ℝ :=
+  letI : MetricSpace (UpperHalfSpace ℝ) :=
+    MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+  (upperHalfSpaceIsometry : ℍ ≃ᵢ UpperHalfSpace ℝ)
+
+/-- Evaluation of the metric-space comparison isometry agrees with `upperHalfSpaceIsometry`. -/
+@[simp]
+theorem _root_.UpperHalfPlane.upperHalfSpaceIsometryEquiv_apply (z : ℍ) :
+    upperHalfSpaceIsometryEquiv z = upperHalfSpaceIsometry z := by
+  rfl
+
+/-- Evaluation of the inverse metric-space comparison isometry agrees with
+`upperHalfSpaceIsometry.symm`. -/
+@[simp]
+theorem upperHalfSpaceIsometryEquiv_symm_apply (p : UpperHalfSpace ℝ) :
+    letI : MetricSpace (UpperHalfSpace ℝ) :=
+      MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+    upperHalfSpaceIsometryEquiv.symm p = upperHalfSpaceIsometry.symm p := by
+  let _ : MetricSpace (UpperHalfSpace ℝ) :=
+    MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+  exact upperHalfSpaceIsometryEquiv.injective (by simp)
+
+/-- The intrinsic Riemannian extended distance on `UpperHalfSpace ℝ` matches Mathlib's hyperbolic
+extended distance on `ℍ` under `upperHalfSpaceIsometry`. -/
+theorem _root_.UpperHalfPlane.edist_upperHalfSpaceIsometry_eq (z w : ℍ) :
+    letI : MetricSpace (UpperHalfSpace ℝ) :=
+      MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+    edist (upperHalfSpaceIsometry z) (upperHalfSpaceIsometry w) = edist z w :=
+  let _ : MetricSpace (UpperHalfSpace ℝ) :=
+    MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+  upperHalfSpaceIsometryEquiv.edist_eq z w
+
+/-- The intrinsic Riemannian distance on `UpperHalfSpace ℝ` matches Mathlib's hyperbolic distance
+on `ℍ` under `upperHalfSpaceIsometry`. -/
+theorem _root_.UpperHalfPlane.dist_upperHalfSpaceIsometry_eq (z w : ℍ) :
+    letI : MetricSpace (UpperHalfSpace ℝ) :=
+      MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+    dist (upperHalfSpaceIsometry z) (upperHalfSpaceIsometry w) = dist z w :=
+  let _ : MetricSpace (UpperHalfSpace ℝ) :=
+    MetricSpace.ofRiemannianMetric 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (UpperHalfSpace ℝ)
+  upperHalfSpaceIsometryEquiv.dist_eq z w
+
+/-! ### Constant curvature tensor and hyperbolic metric -/
+
+/-- The curvature tensor of the Poincaré metric on `ℍ` is the constant-curvature tensor with
+parameter `-1`. -/
+@[simp]
+theorem _root_.UpperHalfPlane.curvatureTensor_eq (z : ℍ) (u v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    (leviCivitaConnection 𝓘(ℝ, ℂ) ℍ).curvatureTensor z u v w =
+      (-1 : ℝ) • (inner ℝ v w • u - inner ℝ u w • v) := by
+  let e := upperHalfSpaceIsometry.mfderivToLinearIsometryEquiv z
+  apply e.injective
+  have he (x : TangentSpace 𝓘(ℝ, ℂ) z) :
+      e x = mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) upperHalfSpaceIsometry z x :=
+    upperHalfSpaceIsometry.mfderivToLinearIsometryEquiv_apply z x
+  rw [he, upperHalfSpaceIsometry.isLocalRiemannianIsometry.mfderiv_curvatureTensor,
+    UpperHalfSpace.curvatureTensor_eq]
+  simp only [map_smul, map_sub, he, upperHalfSpaceIsometry.inner_mfderiv]
+
+/-- The Poincaré metric on `ℍ`, packaged with its metric completeness and constant curvature
+`-1` as a `TauCeti.HyperbolicMetric`. -/
+def poincareHyperbolicMetric : HyperbolicMetric (I := 𝓘(ℝ, ℂ)) (M := ℍ) where
+  metric := poincareRiemannianMetric
+  complete := completeSpace_of_riemannianMetric
+  curvature := by
+    rw [ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff]
+    exact _root_.UpperHalfPlane.curvatureTensor_eq
+
+/-- The underlying Riemannian metric of `poincareHyperbolicMetric` is `poincareRiemannianMetric`. -/
+@[simp]
+theorem poincareHyperbolicMetric_metric :
+    poincareHyperbolicMetric.metric = poincareRiemannianMetric := by
+  rfl
+
+/-- The complex upper half-plane `ℍ` is a hyperbolic manifold. -/
+theorem isHyperbolic : IsHyperbolic (I := 𝓘(ℝ, ℂ)) (M := ℍ) :=
+  TauCeti.isHyperbolic_iff.mpr ⟨poincareHyperbolicMetric⟩
 
 end TauCeti.UpperHalfPlane
