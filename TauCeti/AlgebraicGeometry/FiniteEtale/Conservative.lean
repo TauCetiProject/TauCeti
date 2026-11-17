@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Exactness
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Balanced
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Conservativity of geometric fibre functors over a connected base
@@ -20,7 +21,9 @@ when the image of `x` lies in the image of `Z`. When `S` is connected, the image
 From this we deduce that over a connected base the geometric fibre functor reflects
 epimorphisms, monomorphisms and isomorphisms. This is the axiom (G6) for a fibre functor in the
 sense of Lenstra, that is, the field `reflectsIsos` of Mathlib's
-`CategoryTheory.PreGaloisCategory.FiberFunctor`.
+`CategoryTheory.PreGaloisCategory.FiberFunctor`. Consequently, base change to any nonempty
+scheme reflects isomorphisms of finite étale covers over a preconnected base: choose one
+geometric point of the new base and use its composite geometric point on the original base.
 
 ## Main results
 
@@ -153,5 +156,14 @@ instance [PreconnectedSpace S] (x : Spec (.of Ω) ⟶ S) : (fiber x).ReflectsMon
     have : Epi (pullback.diagonal f) := (fiber x).epi_of_epi_map inferInstance
     have : IsIso (pullback.diagonal f) := isIso_of_epi_of_isSplitMono _
     exact (pullback.isIso_diagonal_iff f).mp this
+
+/-- Base change from a preconnected scheme to any nonempty scheme reflects isomorphisms
+of finite étale covers. No surjectivity of the base change is required. -/
+instance {T : Scheme.{u}} [PreconnectedSpace S] [Nonempty T] (f : T ⟶ S) :
+    (pullback f).ReflectsIsomorphisms := by
+  let x := T.fromSpecAlgebraicClosure (Classical.choice ‹Nonempty T›)
+  have : (pullback f ⋙ fiber x).ReflectsIsomorphisms :=
+    reflectsIsomorphisms_of_iso (pullbackCompFiberIso f x).symm
+  exact reflectsIsomorphisms_of_comp (pullback f) (fiber x)
 
 end TauCeti.FiniteEtaleScheme
