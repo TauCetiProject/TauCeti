@@ -58,6 +58,8 @@ the initial position of the submanifold to the later ones.
   domain is open and the flow is jointly `C^n` on it.
 * `TauCeti.mfderiv_timeDependentFlowOf_trans_of_mem`: the chain rule for the two-time
   composition law.
+* `TauCeti.isOpen_setOf_forall_timeDependentFlowOf_mem`: the points whose trajectory passes
+  through an open subset of `ℝ × M` at every time of a compact set form an open set.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
@@ -429,6 +431,28 @@ theorem contMDiffAt_uncurry_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Spa
     ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
   exact ContMDiffAt.comp (g := fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2)
     (t, x) hflow hg
+
+/-- In finite dimensions, for a jointly `C¹` time-dependent field, a compact set `T` of times and
+an open set `U ⊆ ℝ × M`, the points `x` whose trajectory from time `s` is defined at every time
+`u ∈ T` and passes through `U` at that time, `(u, φ_{s,u} x) ∈ U`, form an open set. -/
+theorem isOpen_setOf_forall_timeDependentFlowOf_mem [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {T : Set ℝ} (hT : IsCompact T) {U : Set (ℝ × M)} (hU : IsOpen U) (s : ℝ) :
+    IsOpen {x | ∀ u ∈ T, ((s, u), x) ∈ timeDependentFlowDomain X ∧
+      (u, timeDependentFlowOf X s u x) ∈ U} := by
+  -- The pairs `(x, u)` whose trajectory from time `s` reaches time `u` inside `U` form an open set.
+  have hD : IsOpen ((fun p : M × ℝ ↦ ((s, p.2), p.1)) ⁻¹' timeDependentFlowDomain X) :=
+    (isOpen_timeDependentFlowDomain hX).preimage (by fun_prop)
+  have hF : ContinuousOn (fun p : M × ℝ ↦ (p.2, timeDependentFlowOf X s p.2 p.1))
+      ((fun p : M × ℝ ↦ ((s, p.2), p.1)) ⁻¹' timeDependentFlowDomain X) :=
+    continuousOn_snd.prodMk ((contMDiffOn_timeDependentFlowOf le_rfl hX).continuousOn.comp
+      (by fun_prop : Continuous fun p : M × ℝ ↦ ((s, p.2), p.1)).continuousOn fun _ hp ↦ hp)
+  have hA := hF.isOpen_inter_preimage hD hU
+  -- By compactness of `T`, the condition at all times of `T` is open in `x`.
+  exact isOpen_iff_mem_nhds.2 fun x hx ↦ hT.eventually_forall_of_forall_eventually
+    fun u hu ↦ hA.mem_nhds ⟨(hx u hu).1, (hx u hu).2⟩
 
 section Complete
 

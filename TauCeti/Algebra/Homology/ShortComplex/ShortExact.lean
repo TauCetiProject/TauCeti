@@ -46,6 +46,9 @@ simultaneously.
   `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` of a morphism `g : X ⟶ Y` is short exact.
 * `CategoryTheory.ShortComplex.ShortExact.biprod`: a componentwise binary direct sum of short
   exact sequences is short exact.
+* `CategoryTheory.ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono`: precomposing the first map
+  of an exact sequence with an epimorphism and postcomposing the second with a monomorphism keeps
+  it exact.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
@@ -281,5 +284,21 @@ lemma ShortExact.of_isColimit_cokernelCofork {L₁ L₂ L₃ : ShortComplex C} (
       mono_L₂_f := h₂.mono_f }
   have hδ : S.δ = 0 := (KernelFork.IsLimit.isZero_of_mono S.h₀τ₃).eq_of_src _ _
   exact ShortExact.mk' S.L₃_exact (S.L₂'_exact.mono_g hδ) S.epi_L₃_g
+
+/-- An exact sequence `A₁ ⟶ X₂ ⟶ A₂` stays exact after precomposing its first map with an
+epimorphism `X₁ ⟶ A₁` and postcomposing its second map with a monomorphism `A₂ ⟶ X₃`. -/
+lemma exact_of_eq_epi_comp_of_eq_comp_mono {X₁ A₁ X₂ A₂ X₃ : C} {f : X₁ ⟶ X₂}
+    {g : X₂ ⟶ X₃} (zero : f ≫ g = 0) (e : X₁ ⟶ A₁) (i : A₁ ⟶ X₂) (g' : X₂ ⟶ A₂)
+    (m : A₂ ⟶ X₃) [Epi e] [Mono m] (hf : f = e ≫ i)
+    (hg : g = g' ≫ m) (w : i ≫ g' = 0) (h : (ShortComplex.mk i g' w).Exact) :
+    (ShortComplex.mk f g zero).Exact := by
+  subst hf hg
+  have h₁ : (ShortComplex.mk (e ≫ i) g' (by simp [w])).Exact :=
+    (exact_iff_of_epi_of_isIso_of_mono
+      (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w])) (S₂ := ShortComplex.mk i g' w)
+      { τ₁ := e, τ₂ := 𝟙 _, τ₃ := 𝟙 _ }).2 h
+  exact (exact_iff_of_epi_of_isIso_of_mono
+    (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w]))
+    (S₂ := ShortComplex.mk (e ≫ i) (g' ≫ m) zero) { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := m }).1 h₁
 
 end CategoryTheory.ShortComplex
