@@ -15,7 +15,8 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 Let `E` be a finite-dimensional real inner product space and `W : E → ℝ` a weight, normally of
 class `C¹`, with measure `μ = e^{−W} · volume`. The weighted divergence of a vector field `X` is
 `div_μ X = div X − ⟨∇W, X⟩`, written here with the derivative `DW(x)(X x) = ⟨∇W(x), X x⟩`, so
-that `div (e^{−W} X) = e^{−W} div_μ X` (`TauCeti.trace_fderiv_exp_neg_smul`).
+that `div (e^{−W} X) = e^{−W} div_μ X` (`TauCeti.trace_fderiv_exp_neg_smul`, in
+`TauCeti.Analysis.Distribution.TestFunction.Divergence`).
 
 The **weighted variation** of `u : E → ℝ` on an open set `Ω` is the extended supremum
 
@@ -72,25 +73,6 @@ namespace TauCeti
 
 open MeasureTheory TopologicalSpace TestFunction Set
 open scoped ENNReal Distributions Topology
-
-section Divergence
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {W : E → ℝ}
-
-/-- **The weighted divergence.** For a differentiable weight `W` and vector field `X`,
-`div (e^{−W} X) = (div X − DW X) e^{−W}`, where `div = tr ∘ D`. -/
-theorem trace_fderiv_exp_neg_smul {X : E → E} {x : E} (hW : DifferentiableAt ℝ W x)
-    (hX : DifferentiableAt ℝ X x) :
-    LinearMap.trace ℝ E (fderiv ℝ (fun y => Real.exp (-W y) • X y) x : E →ₗ[ℝ] E) =
-      (LinearMap.trace ℝ E (fderiv ℝ X x : E →ₗ[ℝ] E) - fderiv ℝ W x (X x)) *
-        Real.exp (-W x) := by
-  have hW' : DifferentiableAt ℝ (fun y => -W y) x := hW.neg
-  rw [trace_fderiv_smul hW'.exp hX, fderiv_exp hW', fderiv_fun_neg]
-  simp only [_root_.smul_apply, _root_.neg_apply, smul_eq_mul]
-  ring
-
-end Divergence
 
 section GaussianWeight
 
@@ -213,7 +195,8 @@ theorem integrable_weightedDivergence_mul (hW : ContDiff ℝ 1 W)
     (IntegrableOn.continuousOn_mul (continuous_weightedDivergence hW X).continuousOn
       (hu.integrableOn_compact_subset X.tsupport_subset hK) hK)
   by_contra hxs
-  exact hx (show _ * u x = 0 by rw [weightedDivergence_eq_zero X hxs, zero_mul])
+  apply hx
+  rw [weightedDivergence_eq_zero X hxs, zero_mul]
 
 /-- **The weighted divergence theorem.** For a `C¹` weight, `∫ div_μ X dμ = 0` for every test
 vector field `X`: the integral of `(div X − DW X) e^{−W}` vanishes. -/
@@ -358,17 +341,20 @@ theorem weightedVariation_const_sub (hW : ContDiff ℝ 1 W) (c : ℝ) :
   simp only [Pi.neg_apply, neg_add_eq_sub]
 
 /-- For a `C¹` weight, a constant function has weighted variation zero. -/
+@[simp]
 theorem weightedVariation_const (hW : ContDiff ℝ 1 W) (c : ℝ) :
     weightedVariation W Ω (fun _ => c) = 0 := by
   simpa using weightedVariation_add_const (Ω := Ω) (u := 0) hW c
 
 /-- For a `C¹` weight, a set and its complement have the same weighted perimeter. -/
+@[simp]
 theorem weightedPerimeter_compl (hW : ContDiff ℝ 1 W) :
     weightedPerimeter W Ω sᶜ = weightedPerimeter W Ω s := by
   rw [weightedPerimeter_def, weightedPerimeter_def, indicator_compl]
   exact weightedVariation_const_sub hW 1
 
 /-- For a `C¹` weight, the whole space has weighted perimeter zero. -/
+@[simp]
 theorem weightedPerimeter_univ (hW : ContDiff ℝ 1 W) : weightedPerimeter W Ω univ = 0 := by
   rw [← compl_empty, weightedPerimeter_compl hW, weightedPerimeter_empty]
 
