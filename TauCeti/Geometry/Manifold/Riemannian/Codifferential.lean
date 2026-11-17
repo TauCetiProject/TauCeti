@@ -207,6 +207,15 @@ theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
   refine (RoughForm.tsupport_mextDeriv_subset _).trans ?_
   exact RoughForm.tsupport_hodgeStar_subset o hkl β.1
 
+/-- The Hodge star of a compactly supported form is compactly supported. -/
+theorem hodgeStar_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {β : SmoothForm I M ℝ k} (hβ : β ∈ compactlySupportedForms I M k) :
+    hodgeStar o hkl β ∈ compactlySupportedForms I M l :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hβ).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (by
+      rw [coe_hodgeStar]
+      exact RoughForm.tsupport_hodgeStar_subset o hkl β.1))
+
 /-- The codifferential of a compactly supported form is compactly supported. -/
 theorem codifferential_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) {β : SmoothForm I M ℝ (k + 1)}
