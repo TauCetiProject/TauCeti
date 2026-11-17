@@ -78,7 +78,7 @@ theorem coe_frobeniusEquiv :
 theorem frobeniusEquiv_symm_apply (g : D.points A) :
     (D.frobeniusEquiv p k A).symm g =
       (D.pointsPresentation A).map (D.pointsPresentation A)
-        (iterateFrobeniusEquiv A p k).symm.toRingHom g := by
+        ((iterateFrobeniusEquiv A p k).symm : A →+* A) g := by
   rw [frobeniusEquiv, GeneralLinear.IntegralPointsPresentation.mapEquiv_symm,
     GeneralLinear.IntegralPointsPresentation.mapEquiv_apply]
 
@@ -108,11 +108,41 @@ theorem frobeniusEquiv_symm_frobenius (g : D.points A) :
     (D.frobeniusEquiv p k A).symm (D.frobenius p k A g) = g := by
   simpa only [frobeniusEquiv_apply] using (D.frobeniusEquiv p k A).symm_apply_apply g
 
+/-- Frobenius composed with its inverse is the identity homomorphism. -/
+@[simp]
+theorem frobenius_comp_frobeniusEquiv_symm :
+    (D.frobenius p k A).comp ((D.frobeniusEquiv p k A).symm : D.points A →* D.points A) =
+      MonoidHom.id _ := by
+  ext g
+  simp
+
+/-- Inverse Frobenius composed with Frobenius is the identity homomorphism. -/
+@[simp]
+theorem frobeniusEquiv_symm_comp_frobenius :
+    ((D.frobeniusEquiv p k A).symm : D.points A →* D.points A).comp (D.frobenius p k A) =
+      MonoidHom.id _ := by
+  ext g
+  simp
+
+/-- Frobenius composed with its inverse is the identity function. -/
+@[simp]
+theorem coe_frobenius_comp_coe_frobeniusEquiv_symm :
+    ⇑(D.frobenius p k A) ∘ ⇑(D.frobeniusEquiv p k A).symm = id := by
+  funext g
+  simp
+
+/-- Inverse Frobenius composed with Frobenius is the identity function. -/
+@[simp]
+theorem coe_frobeniusEquiv_symm_comp_coe_frobenius :
+    ⇑(D.frobeniusEquiv p k A).symm ∘ ⇑(D.frobenius p k A) = id := by
+  funext g
+  simp
+
 /-- Inverse Frobenius takes the unique `p ^ k`-th root of each matrix entry. -/
 @[simp]
-theorem coe_frobeniusEquiv_symm (g : D.points A) :
+theorem coe_frobeniusEquiv_symm_apply (g : D.points A) :
     ((D.frobeniusEquiv p k A).symm g : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-      Matrix.GeneralLinearGroup.map (iterateFrobeniusEquiv A p k).symm.toRingHom g := by
+      Matrix.GeneralLinearGroup.map ((iterateFrobeniusEquiv A p k).symm : A →+* A) g := by
   rw [frobeniusEquiv_symm_apply, GeneralLinear.IntegralPointsPresentation.coe_map]
 
 /-- Inverse Frobenius takes the unique `p ^ k`-th root of every root parameter, including
@@ -123,15 +153,16 @@ theorem frobeniusEquiv_symm_rootSubgroupPoints (γ : Fin t.numRoots) (u : A) :
       D.rootSubgroupPoints γ A
         (Multiplicative.ofAdd ((iterateFrobeniusEquiv A p k).symm u)) := by
   rw [frobeniusEquiv_symm_apply, map_rootSubgroupPoints, toAdd_ofAdd]
-  simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+  simp only [RingEquiv.coe_toRingHom]
 
 /-- Inverse Frobenius acts coordinatewise on the actual weight-lattice torus. -/
 @[simp]
 theorem frobeniusEquiv_symm_torusPoints (s : Fin t.rank → Aˣ) :
     (D.frobeniusEquiv p k A).symm (D.torusPoints A s) =
       D.torusPoints A (fun i =>
-        Units.map (iterateFrobeniusEquiv A p k).symm.toMonoidHom (s i)) := by
+        Units.map ((iterateFrobeniusEquiv A p k).symm : A →* A) (s i)) := by
   rw [frobeniusEquiv_symm_apply, map_torusPoints]
+  congr 1
 
 /-- The zeroth Frobenius automorphism is the identity. -/
 @[simp]
@@ -152,8 +183,7 @@ theorem frobeniusEquiv_pow (m : ℕ) :
   induction m with
   | zero => ext g; simp
   | succ m ih =>
-    rw [pow_succ, ih, Nat.mul_succ, frobeniusEquiv_add]
-    rfl
+    rw [pow_succ, ih, Nat.mul_succ, frobeniusEquiv_add, MulAut.mul_def]
 
 /-- Inverse Frobenius commutes with any homomorphism between perfect value rings of the same
 exponential characteristic, including noninjective maps and maps between different universes. -/
