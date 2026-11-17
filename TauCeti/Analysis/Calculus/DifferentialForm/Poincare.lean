@@ -62,6 +62,8 @@ term is split by the constant-coefficient Cartan formula
   map, which moves the centre.
 * `StarConvex.compContinuousLinearMap_poincareHomotopy_eq`: centred at a fixed point of a linear
   map, it preserves invariance of forms under that map.
+* `TauCeti.poincareHomotopy_apply_vecCons_sub_self`: it vanishes on the radial direction
+  `x - x₀`.
 * `TauCeti.norm_poincareHomotopy_le`: the sharp radial bound
   `‖poincareHomotopy x₀ ω x‖ ≤ B * ‖x - x₀‖ / (n + 1)`.
 * `TauCeti.norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le`,
@@ -168,6 +170,21 @@ theorem poincareHomotopy_add_apply {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin 
       (intervalIntegrable_integrand h₂)]
   simp only [Pi.add_apply, ContinuousAlternatingMap.curryLeft_add, add_apply,
     smul_add]
+
+/-- The Poincaré homotopy operator vanishes on the radial direction: `K ω` at `x`, contracted
+with `x - x₀`, is zero. -/
+theorem poincareHomotopy_apply_vecCons_sub_self [CompleteSpace F] (x₀ : E)
+    (ω : E → E [⋀^Fin (n + 2)]→L[ℝ] F) (x : E) (v : Fin n → E) :
+    poincareHomotopy x₀ ω x (Matrix.vecCons (x - x₀) v) = 0 := by
+  rw [poincareHomotopy_apply]
+  by_cases hint : IntervalIntegrable
+      (fun t : ℝ ↦ t ^ (n + 1) • (ω (lineMap x₀ x t)).curryLeft (x - x₀)) volume 0 1
+  · rw [← ContinuousAlternatingMap.apply_apply (𝕜 := ℝ),
+      ← ContinuousLinearMap.intervalIntegral_comp_comm _ hint]
+    simp only [ContinuousAlternatingMap.apply_apply, ContinuousAlternatingMap.smul_apply,
+      ← ContinuousAlternatingMap.curryLeft_apply_apply, ContinuousAlternatingMap.curryLeft_same,
+      ContinuousAlternatingMap.coe_zero, Pi.zero_apply, smul_zero, intervalIntegral.integral_zero]
+  · rw [intervalIntegral.integral_undef hint, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
 /-- The Poincaré homotopy operator at `x` is bounded in norm by `B * ‖x - x₀‖ / (n + 1)` whenever
 the form is bounded by `B` along the segment `[x₀, x]`. -/

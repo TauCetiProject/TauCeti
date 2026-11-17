@@ -128,17 +128,8 @@ theorem radialConnection_self (x₀ : E) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) 
 @[simp]
 theorem radialConnection_apply_sub_self (x₀ : E) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (x : E) :
     radialConnection x₀ b x (fun _ ↦ x - x₀) = 0 := by
-  rw [radialConnection, poincareHomotopy_apply]
-  by_cases hint : IntervalIntegrable
-      (fun t : ℝ ↦ t ^ 1 • (extDeriv b (AffineMap.lineMap x₀ x t)).curryLeft (x - x₀))
-      MeasureTheory.volume 0 1
-  · rw [← ContinuousAlternatingMap.apply_apply (𝕜 := ℝ),
-      ← (ContinuousAlternatingMap.apply ℝ E ℝ fun _ ↦ x - x₀).intervalIntegral_comp_comm hint]
-    refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
-    rw [ContinuousAlternatingMap.apply_apply, ContinuousAlternatingMap.smul_apply,
-      curryLeft_apply_apply, (extDeriv b _).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp)
-        (by decide), smul_zero]
-  · rw [intervalIntegral.integral_undef hint, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  rw [radialConnection, ← Matrix.vecCons_const]
+  exact poincareHomotopy_apply_vecCons_sub_self x₀ _ x _
 
 /-- The radial gauge is as smooth as the connection form. -/
 theorem contDiff_radialGauge {r : ℕ∞} (x₀ : E) (hb : ContDiff ℝ r b) :
@@ -160,8 +151,11 @@ theorem phaseForm_radialGauge (x₀ : E) (hb : ContDiff ℝ 1 b) (x : E) :
   have hf : DifferentiableAt ℝ f x :=
     (contDiff_poincareHomotopy_apply_zero x₀ hb).differentiable one_ne_zero x
   -- The homotopy formula, with the zero-form `K b` read as the function `f`.
-  have hK : poincareHomotopy x₀ b = fun y ↦ constOfIsEmpty ℝ E (Fin 0) (f y) :=
-    funext fun y ↦ ((constOfIsEmptyLIE ℝ E ℝ (Fin 0)).apply_symm_apply _).symm
+  have hK : poincareHomotopy x₀ b = fun y ↦ constOfIsEmpty ℝ E (Fin 0) (f y) := by
+    funext y
+    rw [← constOfIsEmptyLIE_apply (𝕜 := ℝ), hf_def]
+    beta_reduce
+    rw [← constOfIsEmptyLIE_symm_apply (𝕜 := ℝ), LinearIsometryEquiv.apply_symm_apply]
   have hhom := extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv x₀ hb x
   rw [hK, extDeriv_constOfIsEmpty] at hhom
   rw [radialConnection, ← hhom, add_sub_cancel_right]
