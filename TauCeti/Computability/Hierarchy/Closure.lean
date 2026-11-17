@@ -11,10 +11,10 @@ public import TauCeti.Computability.Hierarchy.Basic
 # Closure and quantifier contraction for arithmetical pointclasses
 
 Both existential and universal arithmetical pointclasses are closed under finite conjunction
-and disjunction. An additional existential number quantifier at a positive existential level
-can be contracted with the leading quantifier, using Mathlib's pairing of natural numbers;
-the dual statement holds for universal levels. These operations manipulate normal forms
-without increasing their alternating quantifier depth.
+and disjunction. An additional existential quantifier over `ℕ` — or over any primitive-codable
+type — at a positive existential level can be contracted with the leading quantifier, using
+Mathlib's pairing of natural numbers; the dual statements hold for universal levels. These
+operations manipulate normal forms without increasing their alternating quantifier depth.
 
 The classes are increasing in the level, and either class at one level is contained in the
 intersection class at the next. All statements retain the oracle and arbitrary primitive-codable
@@ -181,5 +181,32 @@ theorem IsPi.of_le (hp : IsPi Z n p) (hnm : n ≤ m) : IsPi Z m p :=
 theorem IsDelta.of_le (hp : IsDelta Z n p) (hnm : n ≤ m) : IsDelta Z m p := by
   obtain ⟨hpS, hpP⟩ := isDelta_iff.1 hp
   exact isDelta_iff.2 ⟨hpS.of_le hnm, hpP.of_le hnm⟩
+
+/-- At a positive existential level, an existential quantifier over any primitive-codable type can
+be contracted into the leading quantifier. -/
+theorem IsSigma.exists {β : Type*} [Primcodable β] {r : α × β → Prop} (hr : IsSigma Z (n + 1) r) :
+    IsSigma Z (n + 1) (fun x => ∃ y : β, r (x, y)) := by
+  by_cases hne : Nonempty β
+  · obtain ⟨b⟩ := hne
+    let d : ℕ → β := fun k => (Encodable.decode k).getD b
+    have hd : ComputableIn {Z.oracle} d :=
+      (Computable.decode.option_getD (Computable.const b)).computableIn
+    have hpre : IsSigma Z (n + 1) fun p : α × ℕ => r (p.1, d p.2) :=
+      hr.preimage (ComputableIn.fst.pair (hd.comp ComputableIn.snd))
+    exact hpre.exists_nat.of_eq fun x =>
+      ⟨fun ⟨k, hk⟩ => ⟨d k, hk⟩, fun ⟨y, hy⟩ =>
+        let ⟨k, hk⟩ := Encodable.surjective_decode_getD β b y
+        ⟨k, by simpa [d, hk] using hy⟩⟩
+  · have hfalse : IsSigma Z 0 (fun _ : α => False) :=
+      isSigma_zero_iff.2 ⟨fun _ => false, ComputableIn.const false, fun _ => by simp⟩
+    exact (hfalse.of_le (Nat.zero_le _)).of_eq fun _ =>
+      ⟨False.elim, fun ⟨y, _⟩ => hne ⟨y⟩⟩
+
+/-- At a positive universal level, a universal quantifier over any primitive-codable type can be
+contracted into the leading quantifier. -/
+theorem IsPi.forall {β : Type*} [Primcodable β] {r : α × β → Prop} (hr : IsPi Z (n + 1) r) :
+    IsPi Z (n + 1) (fun x => ∀ y : β, r (x, y)) := by
+  classical
+  exact isSigma_not_iff.1 ((isSigma_not_iff.2 hr).exists.of_eq (by simp))
 
 end TauCeti.ArithmeticalHierarchy

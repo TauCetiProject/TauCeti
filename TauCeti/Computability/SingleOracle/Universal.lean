@@ -35,6 +35,12 @@ undefined address that the simulated program never queries.
 
 ## Main results
 
+* `TauCeti.Oracle.Single.Code.exists_code_answers_apply`: a single oracle program applies any
+  primitive recursive function to `(n, k)` and the finite oracle prefix `O 0, …, O (k - 1)`,
+  uniformly for every total oracle `O`.
+* `TauCeti.Oracle.Single.Code.exists_code_dom_iff_exists_answers`: a single oracle program has
+  domain consisting of all inputs admitting a witness `k` satisfying a primitive recursive
+  predicate on `(n, k)` and `O 0, …, O (k - 1)`, uniformly for every total oracle `O`.
 * `TauCeti.Oracle.Single.Code.eval_universal`: the universal program computes the value of the
   program numbered `e` on `x` from `Nat.pair e x`, relative to every total oracle.
 * `TauCeti.Oracle.Single.Code.recursiveIn₂_eval`: evaluation of programs is recursive in a total
@@ -82,7 +88,7 @@ private theorem exists_code_answers : ∃ c : Code, ∀ (O : ℕ → ℕ) a k,
 
 /-- A program applying a primitive recursive function `g` to `(n, k, [O 0, …, O (k - 1)])` on the
 input `Nat.pair n k`, relative to every total oracle `O`. -/
-private theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (hg : Primrec g) :
+theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (hg : Primrec g) :
     ∃ c : Code, ∀ (O : ℕ → ℕ) n k, eval (O : ℕ →. ℕ) c (Nat.pair n k) =
       Part.some (g (n, k, (List.range k).map O)) := by
   obtain ⟨ca, hca⟩ := exists_code_answers
@@ -93,6 +99,26 @@ private theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (
         (Primrec.ofNat _).comp (snd.comp Primrec.unpair)
   refine ⟨comp cg (pair (pair left right) ca), fun O n k => ?_⟩
   simp [hca, hcg, Seq.seq]
+
+/-- A single program whose domain on `n`, relative to every total oracle `O`, is the set of inputs
+admitting a witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite
+oracle string `O 0, …, O (k - 1)`. -/
+theorem exists_code_dom_iff_exists_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Primrec p) :
+    ∃ c : Code, ∀ (O : ℕ → ℕ) n,
+      (eval (O : ℕ →. ℕ) c n).Dom ↔ ∃ k, p (n, k, (List.range k).map O) = true := by
+  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun q => bif p q then 0 else 1)
+    (Primrec.cond hp (const 0) (const 1))
+  refine ⟨comp (rfind' t) (pair (pair left right) zero), fun O n => ?_⟩
+  let q : ℕ →. Bool := fun k => Part.some (p (n, k, (List.range k).map O))
+  have hsearch :
+      eval (O : ℕ →. ℕ) (comp (rfind' t) (pair (pair left right) zero)) n = Nat.rfind q := by
+    have hpred : (fun k =>
+        Part.some (decide ((bif p (n, k, (List.range k).map O) then 0 else 1) = 0)) : ℕ →. Bool) =
+        q :=
+      funext fun k => by cases h : p (n, k, (List.range k).map O) <;> simp [q, h]
+    simpa [ht, Seq.seq, Part.map_id', -List.getElem?_map] using congrArg Nat.rfind hpred
+  rw [hsearch, Nat.rfind_dom]
+  simp [q]
 
 /-- The run searched for by the universal program: on `(n, k, l)`, the run of the program numbered
 by the first coordinate of `n` on its second coordinate, with fuel `k`, against the oracle
