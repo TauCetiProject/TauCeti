@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
@@ -100,17 +101,6 @@ private theorem smul_e₀_add_smul_e₁_apply_zero (a b : ℝ) : (a • e₀ + b
 private theorem smul_e₀_add_smul_e₁_apply_one (a b : ℝ) : (a • e₀ + b • e₁) 1 = b := by
   simp
 
-/-- Two points of the plane agree when both coordinates do. -/
-private theorem ext_two {u v : EuclideanSpace ℝ (Fin 2)} (h0 : u 0 = v 0) (h1 : u 1 = v 1) :
-    u = v := by
-  ext i
-  fin_cases i
-  exacts [h0, h1]
-
-/-- The inner product on the plane in coordinates. -/
-private theorem inner_eq (u v : EuclideanSpace ℝ (Fin 2)) : ⟪u, v⟫ = u 0 * v 0 + u 1 * v 1 := by
-  simp [PiLp.inner_apply, Fin.sum_univ_two, mul_comm]
-
 /-- The gradient field `(-(2 + cos y) sin x, -sin y cos x + ε cos y)`. -/
 private noncomputable def gradField (ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) :
     EuclideanSpace ℝ (Fin 2) :=
@@ -138,8 +128,8 @@ private theorem hasGradientAt_tiltedTorusHeight (z : EuclideanSpace ℝ (Fin 2))
   refine ((((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hc0).add (hs1.const_mul ε)).congr_fderiv ?_
   ext u
   simp only [add_apply, smul_apply, zero_apply, PiLp.proj_apply, Pi.add_apply,
-    Function.comp_apply, smul_eq_mul, toDual_apply_apply, inner_eq, gradField_apply_zero,
-    gradField_apply_one]
+    Function.comp_apply, smul_eq_mul, toDual_apply_apply, PiLp.inner_apply, Fin.sum_univ_two,
+    RCLike.inner_apply, conj_trivial, gradField_apply_zero, gradField_apply_one]
   ring
 
 /-- The gradient of the tilted torus height. -/
@@ -212,8 +202,9 @@ private theorem hessianQuadraticForm_tiltedTorusHeight (z u : EuclideanSpace ℝ
     hessianQuadraticForm (tiltedTorusHeight ε) z u =
       hessA z * u 0 ^ 2 + 2 * hessB z * u 0 * u 1 + hessD ε z * u 1 ^ 2 := by
   rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
-    hessianOperator_tiltedTorusHeight, hessField_apply, inner_eq, smul_e₀_add_smul_e₁_apply_zero,
-    smul_e₀_add_smul_e₁_apply_one]
+    hessianOperator_tiltedTorusHeight, hessField_apply, PiLp.inner_apply, Fin.sum_univ_two,
+    smul_e₀_add_smul_e₁_apply_zero, smul_e₀_add_smul_e₁_apply_one]
+  simp only [RCLike.inner_apply, conj_trivial]
   ring
 
 private theorem abs_hessA_le (z : EuclideanSpace ℝ (Fin 2)) : |hessA z| ≤ 3 := by
@@ -296,7 +287,7 @@ theorem fderiv_tiltedTorusHeight_eq_zero_iff {z : EuclideanSpace ℝ (Fin 2)} :
       PiLp.zero_apply, neg_eq_zero] at h0' h1'
     exact ⟨(mul_eq_zero.1 h0').resolve_left (two_add_cos_pos (z 1)).ne', by linarith⟩
   · rintro ⟨h0, h1⟩
-    exact ext_two (by simp [h0]) (by simp [h1])
+    exact PiLp.ext <| Fin.forall_fin_two.2 ⟨by simp [h0], by simp [h1]⟩
 
 variable {z : EuclideanSpace ℝ (Fin 2)}
 
@@ -333,17 +324,18 @@ private theorem hess_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z
 /-- At a critical point the Hessian quadratic form is diagonal: `a u₀² + d u₁²`. -/
 private theorem hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero
     (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) (u : EuclideanSpace ℝ (Fin 2)) :
-    hessianQuadraticForm (tiltedTorusHeight ε) z u = hessA z * u 0 ^ 2 + hessD ε z * u 1 ^ 2 := by
-  rw [hessianQuadraticForm_tiltedTorusHeight, (hess_of_fderiv_eq_zero hz).2.1]
+    hessianQuadraticForm (tiltedTorusHeight ε) z u = ∑ i, ![hessA z, hessD ε z] i * u i ^ 2 := by
+  rw [hessianQuadraticForm_tiltedTorusHeight, (hess_of_fderiv_eq_zero hz).2.1, Fin.sum_univ_two,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
   ring
 
 /-- At a critical point the negated Hessian quadratic form is `(-a) u₀² + (-d) u₁²`. -/
 private theorem neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero
     (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) (u : EuclideanSpace ℝ (Fin 2)) :
     (-hessianQuadraticForm (tiltedTorusHeight ε) z) u =
-      -hessA z * u 0 ^ 2 + -hessD ε z * u 1 ^ 2 := by
-  rw [neg_apply, hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz]
-  ring
+      ∑ i, -![hessA z, hessD ε z] i * u i ^ 2 := by
+  simp only [neg_apply, hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz, neg_mul,
+    Finset.sum_neg_distrib]
 
 private theorem hessA_ne_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) : hessA z ≠ 0 := by
   intro h
@@ -377,30 +369,14 @@ theorem isNondegenerateCriticalPoint_tiltedTorusHeight
   have h0 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) hD
   have h1 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 1) hD
   simp only [hessField_apply, (hess_of_fderiv_eq_zero hz).2.1] at h0 h1
-  exact ext_two (by simpa [hessA_ne_zero hz] using h0) (by simpa [hessD_ne_zero hz] using h1)
+  exact PiLp.ext <| Fin.forall_fin_two.2
+    ⟨by simpa [hessA_ne_zero hz] using h0, by simpa [hessD_ne_zero hz] using h1⟩
 
 /-- **The tilted torus height is a Morse function**: every critical point is nondegenerate. -/
 theorem hasNondegenerateCriticalPointsOn_tiltedTorusHeight :
     HasNondegenerateCriticalPointsOn (tiltedTorusHeight ε) univ :=
   hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦
     isNondegenerateCriticalPoint_tiltedTorusHeight hz
-
-private theorem ne_zero_iff_coord {u : EuclideanSpace ℝ (Fin 2)} (hu : u ≠ 0) :
-    u 0 ≠ 0 ∨ u 1 ≠ 0 := by
-  by_contra h
-  rw [not_or, not_not, not_not] at h
-  exact hu (ext_two (by simpa using h.1) (by simpa using h.2))
-
-/-- A diagonal quadratic form `a u₀² + d u₁²` on the plane is positive definite exactly when `a`
-and `d` are positive. -/
-private theorem posDef_iff_of_diag {Q : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 2))} {a d : ℝ}
-    (hQ : ∀ u, Q u = a * u 0 ^ 2 + d * u 1 ^ 2) : Q.PosDef ↔ 0 < a ∧ 0 < d := by
-  refine ⟨fun h ↦ ⟨by simpa [hQ] using h e₀ (by simp), by simpa [hQ] using h e₁ (by simp)⟩,
-    fun ⟨ha, hd⟩ u hu ↦ ?_⟩
-  rw [hQ]
-  rcases ne_zero_iff_coord hu with h | h
-  · exact add_pos_of_pos_of_nonneg (by positivity) (by positivity)
-  · exact add_pos_of_nonneg_of_pos (by positivity) (by positivity)
 
 /-- **The saddles.** A critical point with `cos y < 0` has Morse index `1`. -/
 theorem morseIndex_tiltedTorusHeight_of_cos_lt_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0)
@@ -420,16 +396,18 @@ theorem morseIndex_tiltedTorusHeight_of_cos_lt_zero (hz : fderiv ℝ (tiltedToru
     rw [heq]
     exact hprod
   have h0 : morseIndex (tiltedTorusHeight ε) z ≠ 0 := fun h ↦ by
-    obtain ⟨ha, hd⟩ :=
-      (posDef_iff_of_diag (hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).1
-        (hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.2 h)
+    obtain ⟨ha, hd⟩ : 0 < hessA z ∧ 0 < hessD ε z := by
+      simpa [Fin.forall_fin_two] using (EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+        (hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).1
+          (hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.2 h)
     linarith [mul_pos ha hd]
   have h2 : morseIndex (tiltedTorusHeight ε) z ≠ 2 := fun h ↦ by
-    obtain ⟨ha, hd⟩ :=
-      (posDef_iff_of_diag (neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).1
-        ((neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
-          (f := tiltedTorusHeight ε) (x := z)).2 (by rw [h, finrank_euclideanSpace_fin]))
-    linarith [mul_pos ha hd, neg_mul_neg (hessA z) (hessD ε z)]
+    obtain ⟨ha, hd⟩ : hessA z < 0 ∧ hessD ε z < 0 := by
+      simpa [Fin.forall_fin_two] using (EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+        (neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).1
+          ((neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
+            (f := tiltedTorusHeight ε) (x := z)).2 (by rw [h, finrank_euclideanSpace_fin]))
+    linarith [mul_pos_of_neg_of_neg ha hd]
   have hle : morseIndex (tiltedTorusHeight ε) z ≤ 2 := by
     simpa using morseIndex_le_finrank (f := tiltedTorusHeight ε) (x := z)
   omega
@@ -443,8 +421,9 @@ theorem morseIndex_tiltedTorusHeight_of_cos_eq_one_of_cos_pos
   have hd' : hessD ε z < 0 := by rw [hd]; nlinarith [sq_nonneg ε]
   have ha' : hessA z < 0 := by rw [ha]; linarith
   have hpd : (-hessianQuadraticForm (tiltedTorusHeight ε) z).PosDef :=
-    (posDef_iff_of_diag (neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).2
-      ⟨neg_pos.2 ha', neg_pos.2 hd'⟩
+    (EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+      (neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).2
+        (by simp [Fin.forall_fin_two, ha', hd'])
   simpa using neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank.1 hpd
 
 /-- **The minima.** A critical point with `cos x = -1` and `cos y > 0` has Morse index `0`. -/
@@ -456,8 +435,9 @@ theorem morseIndex_tiltedTorusHeight_of_cos_eq_neg_one_of_cos_pos
   have hd' : 0 < hessD ε z := by rw [hd]; positivity
   have ha' : 0 < hessA z := by rw [ha]; linarith
   exact morseIndex_eq_zero_of_posDef
-    ((posDef_iff_of_diag (hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).2
-      ⟨ha', hd'⟩)
+    ((EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+      (hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).2
+        (by simp [Fin.forall_fin_two, ha', hd']))
 
 /-! ### The saddle connection of the upright torus -/
 
@@ -486,7 +466,7 @@ private theorem isIntegralCurve_saddleConnection :
   rw [gradient_tiltedTorusHeight]
   have hA := ((Real.hasDerivAt_arctan (Real.exp t)).comp t (Real.hasDerivAt_exp t)).const_mul 2
   refine ((hA.smul_const e₀).add_const (Real.pi • e₁)).congr_deriv ?_
-  refine ext_two ?_ (by simp)
+  refine PiLp.ext <| Fin.forall_fin_two.2 ⟨?_, by simp⟩
   simp only [PiLp.smul_apply, PiLp.single_eq_same, smul_eq_mul, mul_one, PiLp.neg_apply,
     gradField_apply_zero, saddleConnection_apply_zero, saddleConnection_apply_one,
     Real.sin_two_mul_arctan, Real.cos_pi]
@@ -505,7 +485,7 @@ theorem mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero :
   have hflow := eq_negativeGradientFlow (tiltedTorusHeight 0)
     (lipschitzWith_gradient_tiltedTorusHeight 0) isIntegralCurve_saddleConnection
   have h0 : saddleConnection 0 = !₂[Real.pi / 2, Real.pi] := by
-    refine ext_two ?_ (by simp)
+    refine PiLp.ext <| Fin.forall_fin_two.2 ⟨?_, by simp⟩
     rw [saddleConnection_apply_zero, Real.exp_zero, Real.arctan_one]
     simp only [Matrix.cons_val_zero]
     ring
@@ -518,12 +498,12 @@ theorem mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero :
       rwa [Real.arctan_zero] at h
     rw [saddleConnection_eq_comp]
     convert (hc.tendsto 0).comp harc using 2
-    exact ext_two (by simp) (by simp)
+    exact PiLp.ext <| Fin.forall_fin_two.2 ⟨by simp, by simp⟩
   · have harc : Tendsto (Real.arctan ∘ Real.exp) atTop (𝓝 (Real.pi / 2)) :=
       (Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp Real.tendsto_exp_atTop
     rw [saddleConnection_eq_comp]
     convert (hc.tendsto (Real.pi / 2)).comp harc using 2
-    refine ext_two ?_ (by simp)
+    refine PiLp.ext <| Fin.forall_fin_two.2 ⟨?_, by simp⟩
     rw [smul_e₀_add_smul_e₁_apply_zero]
     simp only [Matrix.cons_val_zero]
     ring
