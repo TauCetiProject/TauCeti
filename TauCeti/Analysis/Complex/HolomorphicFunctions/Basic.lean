@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
+public import Mathlib.Analysis.Complex.RemovableSingularity
 public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
@@ -15,8 +16,9 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 functions on the open set `U`. Holomorphy can be checked on any ambient representative;
 in particular, extension by zero outside `U` gives the same condition. The topology and
 uniformity are inherited from continuous maps, so convergence means locally uniform
-convergence. This subalgebra is closed and complete, and restriction to a smaller open
-set is a continuous algebra homomorphism.
+convergence. This subalgebra is closed and complete, restriction to a smaller open set is a
+continuous algebra homomorphism, and dividing `extend f z₀ - f` by `z₀ - id` via `dslope` stays in
+`holomorphicFunctions U` (`HolomorphicFunctions.algebraMap_sub_id_mul_of_dslope`).
 
 These algebras provide domains for continuous holomorphic functional calculi without
 choosing a supremum norm on a possibly noncompact open set.
@@ -121,6 +123,12 @@ theorem of_extend (f : holomorphicFunctions U) :
   ext z
   simp
 
+/-- Extending `of U g hg` agrees with `g` on `U`. -/
+@[simp]
+theorem extend_of {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    extend (of U g hg) z = g z := by
+  rw [extend_apply _ ⟨z, hz⟩, of_apply]
+
 /-- Restriction along an inclusion of open domains. -/
 noncomputable def restrict (h : V ≤ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicFunctions V :=
   ((ContinuousMap.compRightAlgHom ℂ ℂ
@@ -139,6 +147,12 @@ theorem restrict_of (h : V ≤ U) (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g
   apply Subtype.ext
   ext z
   simp
+
+/-- Extending a restricted function agrees with the original extension on the smaller domain. -/
+@[simp]
+theorem extend_restrict (h : V ≤ U) (f : holomorphicFunctions U) {z : ℂ} (hz : z ∈ V) :
+    extend (restrict h f) z = extend f z := by
+  rw [extend_apply _ ⟨z, hz⟩, restrict_apply, extend_apply f ⟨z, h hz⟩]
 
 @[simp]
 theorem restrict_refl : restrict (le_refl U) = AlgHom.id ℂ (holomorphicFunctions U) := by
@@ -166,6 +180,32 @@ theorem tendsto_iff_tendstoLocallyUniformlyOn {ι : Type*} {p : Filter ι}
     tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe]
   simp only [Function.comp_def, extend_apply]
   rfl
+
+/-- Factorization `(z₀ - id) * dslope (extend f) z₀ = extend f z₀ - f` inside
+`holomorphicFunctions U`. -/
+theorem algebraMap_sub_id_mul_of_dslope (f : holomorphicFunctions U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
+    (algebraMap ℂ (holomorphicFunctions U) z₀ - of U id differentiableOn_id) *
+      of U (dslope (extend f) z₀)
+        ((Complex.differentiableOn_dslope (U.isOpen.mem_nhds hz₀)).mpr
+          (differentiableOn_extend f)) =
+      algebraMap ℂ (holomorphicFunctions U) (extend f z₀) - f := by
+  apply Subtype.ext
+  ext z
+  have hd := sub_smul_dslope (extend f) z₀ z
+  rw [smul_eq_mul] at hd
+  simp only [MulMemClass.coe_mul, Subalgebra.coe_sub, SubalgebraClass.coe_algebraMap,
+    ContinuousMap.mul_apply, ContinuousMap.sub_apply, algebraMap_apply, of_apply,
+    smul_eq_mul, mul_one, id_eq, ← extend_apply f z]
+  rw [← neg_sub (z : ℂ) z₀, neg_mul, hd, neg_sub]
+
+/-- A holomorphic function nonvanishing on `U` multiplies its pointwise inverse to `1` in
+`holomorphicFunctions U`. -/
+theorem of_mul_of_inv {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U)
+    (hne : ∀ z ∈ (U : Set ℂ), g z ≠ 0) :
+    of U g hg * of U (fun z => (g z)⁻¹) (hg.inv hne) = 1 := by
+  apply Subtype.ext
+  ext z
+  simpa using mul_inv_cancel₀ (hne z z.property)
 
 end HolomorphicFunctions
 

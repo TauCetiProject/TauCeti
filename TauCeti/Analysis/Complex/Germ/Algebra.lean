@@ -18,13 +18,14 @@ by functions holomorphic on an open neighbourhood of `s`. Its elements remember 
 function near the whole set, not just its values on that set. This is the domain for
 a holomorphic functional calculus near a spectrum, including disconnected spectra.
 
-We construct evaluation and restriction homomorphisms and characterize units by
+We construct evaluation, restriction, and right-composition homomorphisms and characterize units by
 nonvanishing on `s`. Consequently the spectrum of a represented germ is exactly the
 image of `s`, and the coordinate germ has spectrum `s`. No compactness or nonemptiness
 is needed; at the empty set the germ algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
-and `Filter.Germ` for the quotient and its pointwise operations.
+and `Filter.Germ` (including `Filter.Germ.compTendsto'`) for the quotient, its pointwise
+operations, and germ composition.
 -/
 
 public noncomputable section
@@ -208,6 +209,160 @@ theorem spectrum_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
 theorem spectrum_ofFun_id :
     spectrum ℂ (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) = s := by
   rw [spectrum_ofFun, image_id]
+
+/-- If the spectrum of a germ `f` near `s` is contained in `t`, every value of `f` on `s`
+belongs to `t`. -/
+theorem eval_mem_of_spectrum_subset {f : holomorphicGerms s} (ht : spectrum ℂ f ⊆ t)
+    {x : ℂ} (hx : x ∈ s) : eval x hx f ∈ t :=
+  ht ((spectrum_eq f).symm ▸ ⟨x, hx, rfl⟩)
+
+/-- If the spectrum of `ofFun ψ hψ` is contained in `t`, then `ψ` maps `s` into `t`. -/
+theorem mapsTo_of_spectrum_ofFun_subset {ψ : ℂ → ℂ} (hψ : AnalyticOnNhd ℂ ψ s)
+    (ht : spectrum ℂ (ofFun ψ hψ) ⊆ t) : MapsTo ψ s t := fun _ hx =>
+  eval_mem_of_spectrum_subset ht hx
+
+private theorem germ_tendsto (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
+    f.val.Tendsto (𝓝ˢ t) := by
+  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+  have hcont : ContinuousOn ψ {z | AnalyticAt ℂ ψ z} :=
+    fun _ hz => hz.continuousAt.continuousWithinAt
+  exact (hcont.tendsto_nhdsSet ((isOpen_analyticAt ℂ ψ).mem_nhdsSet.mpr hψ)
+    (mapsTo_of_spectrum_ofFun_subset hψ ht)).germ_tendsto
+
+/-- Right-composition by a holomorphic germ `f : holomorphicGerms s` with `spectrum ℂ f ⊆ t`
+(sending `g ↦ g ∘ f`), as a unital `ℂ`-algebra homomorphism
+`holomorphicGerms t →ₐ[ℂ] holomorphicGerms s`. -/
+def compRight (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
+    holomorphicGerms t →ₐ[ℂ] holomorphicGerms s where
+  toFun g := ⟨g.val.compTendsto' f.val (germ_tendsto f ht), by
+    obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
+    obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+    exact coe_mem_holomorphicGerms_iff.mpr
+      (hφ.comp hψ (mapsTo_of_spectrum_ofFun_subset hψ ht))⟩
+  map_one' := by
+    obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+    rfl
+  map_mul' g₁ g₂ := by
+    obtain ⟨φ₁, hφ₁, rfl⟩ := exists_ofFun_eq g₁
+    obtain ⟨φ₂, hφ₂, rfl⟩ := exists_ofFun_eq g₂
+    obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+    rfl
+  map_zero' := by
+    obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+    rfl
+  map_add' g₁ g₂ := by
+    obtain ⟨φ₁, hφ₁, rfl⟩ := exists_ofFun_eq g₁
+    obtain ⟨φ₂, hφ₂, rfl⟩ := exists_ofFun_eq g₂
+    obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+    rfl
+  commutes' _ := by
+    obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+    rfl
+
+/-- Right-composing ambient holomorphic representatives gives the germ of their composite. -/
+@[simp]
+theorem compRight_ofFun {φ ψ : ℂ → ℂ} (hφ : AnalyticOnNhd ℂ φ t) (hψ : AnalyticOnNhd ℂ ψ s)
+    (ht : spectrum ℂ (ofFun ψ hψ) ⊆ t) :
+    compRight (ofFun ψ hψ) ht (ofFun φ hφ) =
+      ofFun (φ ∘ ψ) (hφ.comp hψ (mapsTo_of_spectrum_ofFun_subset hψ ht)) :=
+  (rfl)
+
+/-- Evaluating a composite germ evaluates the outer germ at the value of the inner germ. -/
+@[simp]
+theorem eval_compRight (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t)
+    (g : holomorphicGerms t) (x : ℂ) (hx : x ∈ s) :
+    eval x hx (compRight f ht g) = eval (eval x hx f) (eval_mem_of_spectrum_subset ht hx) g := by
+  obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
+  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+  rfl
+
+/-- Right-composing the coordinate germ with `f` recovers `f`. -/
+@[simp]
+theorem compRight_id (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
+    compRight f ht (ofFun id analyticOnNhd_id) = f := by
+  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+  rfl
+
+/-- Right-composition by the coordinate germ is restriction. -/
+@[simp]
+theorem compRight_ofFun_id
+    (ht : spectrum ℂ (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) ⊆ t) :
+    compRight (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) ht =
+      restrict (by simpa only [spectrum_ofFun_id] using ht) := by
+  ext g
+  obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
+  rfl
+
+/-- Restricting the base set after right-composition equals right-composition by the restricted
+germ. -/
+@[simp]
+theorem restrict_comp_compRight {u : Set ℂ} (h : u ⊆ s) (f : holomorphicGerms s)
+    (ht : spectrum ℂ f ⊆ t) :
+    (restrict h).comp (compRight f ht) =
+      compRight (restrict h f) ((AlgHom.spectrum_apply_subset (restrict h) f).trans ht) := by
+  ext g
+  obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
+  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+  rfl
+
+/-- Applied form of `restrict_comp_compRight`. -/
+@[simp]
+theorem restrict_compRight {u : Set ℂ} (h : u ⊆ s) (f : holomorphicGerms s)
+    (ht : spectrum ℂ f ⊆ t) (g : holomorphicGerms t) :
+    restrict h (compRight f ht g) =
+      compRight (restrict h f) ((AlgHom.spectrum_apply_subset (restrict h) f).trans ht) g :=
+  DFunLike.congr_fun (restrict_comp_compRight h f ht) g
+
+/-- Right-composition after restriction widens the target set of `f`. -/
+@[simp]
+theorem compRight_comp_restrict {u : Set ℂ} (h : t ⊆ u) (f : holomorphicGerms s)
+    (ht : spectrum ℂ f ⊆ t) :
+    (compRight f ht).comp (restrict h) = compRight f (ht.trans h) := by
+  ext g
+  obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
+  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+  rfl
+
+/-- Applied form of `compRight_comp_restrict`. -/
+@[simp]
+theorem compRight_apply_restrict {u : Set ℂ} (h : t ⊆ u) (f : holomorphicGerms s)
+    (ht : spectrum ℂ f ⊆ t) (g : holomorphicGerms u) :
+    compRight f ht (restrict h g) = compRight f (ht.trans h) g :=
+  DFunLike.congr_fun (compRight_comp_restrict h f ht) g
+
+/-- The spectrum of a composite germ equals the spectrum of the outer germ restricted to the
+spectrum of the inner germ. -/
+@[simp]
+theorem spectrum_compRight (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t)
+    (g : holomorphicGerms t) :
+    spectrum ℂ (compRight f ht g) = spectrum ℂ (restrict ht g) := by
+  ext c
+  simp only [spectrum_eq, mem_ofPred_eq, eval_compRight, eval_restrict]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨eval x hx f, ⟨x, hx, rfl⟩, rfl⟩
+  · rintro ⟨y, ⟨x, hx, rfl⟩, rfl⟩
+    exact ⟨x, hx, rfl⟩
+
+/-- Associativity of germ right-composition as algebra homomorphisms. -/
+theorem compRight_comp_compRight {u : Set ℂ} (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t)
+    (g : holomorphicGerms t) (hu : spectrum ℂ g ⊆ u) :
+    (compRight f ht).comp (compRight g hu) =
+      compRight (compRight f ht g)
+        ((AlgHom.spectrum_apply_subset (compRight f ht) g).trans hu) := by
+  ext h
+  obtain ⟨χ, hχ, rfl⟩ := exists_ofFun_eq h
+  obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
+  obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
+  rfl
+
+/-- Associativity of germ right-composition on elements. -/
+theorem compRight_compRight {u : Set ℂ} (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t)
+    (g : holomorphicGerms t) (hu : spectrum ℂ g ⊆ u) (h : holomorphicGerms u) :
+    compRight f ht (compRight g hu h) =
+      compRight (compRight f ht g)
+        ((AlgHom.spectrum_apply_subset (compRight f ht) g).trans hu) h :=
+  DFunLike.congr_fun (compRight_comp_compRight f ht g hu) h
 
 end holomorphicGerms
 
