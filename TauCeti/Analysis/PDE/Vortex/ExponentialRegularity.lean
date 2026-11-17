@@ -70,7 +70,7 @@ then raises its regularity one step at a time up to `H^(k+1)`.
 
 The second to fourth are membership statements. The weighted `H¹` estimate is their
 quantitative form at the lowest order: `exp(c ρ) Q f` is a weak solution of
-`L_x w = exp(c ρ) f + σ(d exp(c ρ)) Q f`, whose right side has `L²` norm at most
+`L_x (exp(c ρ) Q f) = exp(c ρ) f + σ(d exp(c ρ)) Q f`, whose right side has `L²` norm at most
 `(1 + |c| K₀) ‖exp(c ρ) f‖₂` by the weighted `L²` estimate with constant `K₀`, and the coercive
 estimate of the `H¹` realization of `L_x`
 (`exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add`) turns this into an `H¹` bound. The
@@ -303,7 +303,7 @@ private theorem sum_setIntegral_value_sq_le {w : Fin 4 → W1p (volume : Measure
   have hint : Integrable (fun z ↦ ‖Y z‖ ^ 2) volume := hY.integrable_norm_pow two_ne_zero
   have hj (j : Fin 4) :
       ∫ z in Metric.ball (0 : ℂ) R, W1p.value (w j) z ^ 2 ≤ lpNorm Y 2 volume ^ 2 := by
-    rw [← Lp.norm_toLp _ hY |>.trans (toReal_eLpNorm ..), hY.norm_toLp_sq,
+    rw [lpNorm_two_sq_eq_integral_norm_sq hY.aestronglyMeasurable,
       integral_congr_ae (ae_restrict_of_ae ((hw j).mono fun z hz ↦ by rw [hz]))]
     refine (integral_mono_of_nonneg (.of_forall fun z ↦ sq_nonneg _) hint.integrableOn
       (.of_forall fun z ↦ ?_)).trans
