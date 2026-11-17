@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential.VariableBase
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
@@ -60,8 +60,9 @@ smoothly varying segments interpolate broken geodesics through finitely many nea
 * `TauCeti.Manifold.contMDiffOn_totalSpaceMk_riemannianLog`: the logarithm is jointly smooth in
   both points.
 * `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_riemannianLog`,
-  `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog`: the short geodesic segments are
-  jointly smooth in both endpoints and time.
+  `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog`, and
+  `TauCeti.Manifold.IsUniformlyNormal.contMDiffOn_riemannianExp_smul_riemannianLog`: the short
+  geodesic segments are jointly smooth in both endpoints and time.
 * `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog_of_forall_isNormalDomain`: when
   every tangent ball of radius `r` is a normal domain, the segments are smooth on the pairs at
   distance less than `r`.
@@ -193,6 +194,19 @@ theorem contMDiffOn_norm_riemannianLog_sq (hWo : IsOpen W)
     ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
       (b := Prod.fst) hL hL
   simpa only [real_inner_self_eq_norm_sq] using hinner
+
+/-- On an open uniformly normal set `W`, the radial geodesic segment map
+`(x, y, t) ↦ exp_x (t • log_x y)` using `hW.normalRadius` is smooth on `(W ×ˢ W) ×ˢ Icc 0 1`. -/
+theorem IsUniformlyNormal.contMDiffOn_riemannianExp_smul_riemannianLog (hWo : IsOpen W)
+    (hW : IsUniformlyNormal I W) :
+    ContMDiffOn ((I.prod I).prod 𝓘(ℝ)) I ∞
+      (fun x : (M × M) × ℝ ↦
+        riemannianExp I M x.1.1
+          (x.2 • riemannianLog I M x.1.1 (Metric.ball 0 hW.normalRadius) x.1.2))
+      ((W ×ˢ W) ×ˢ Icc (0 : ℝ) 1) :=
+  (TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog hWo
+    fun _ hq ↦ hW.isNormalDomain_ball hq).mono fun _ ⟨⟨hx, hy⟩, ht⟩ ↦
+      ⟨⟨hx, hW.subset_image_riemannianExp_ball hx hy⟩, ht⟩
 
 end Topological
 
