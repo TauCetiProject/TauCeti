@@ -65,6 +65,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_top_eq_setIntegral`: if `v ∈ H¹(ℝⁿ)` solves `Δv = G`
   weakly, tested against compactly supported smooth functions, and `G = -F` on an open `Ω` with
   `F ∈ L²(Ω)`, then `v|_Ω` solves `-Δv = F` weakly on `Ω`, tested against `H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_one_zero_zero_restrictL_eq_restrictL`: the Dirichlet forms of the
+  restrictions of two functions whose weak gradients agree almost everywhere on `U` coincide.
 -/
 
 public section
@@ -337,6 +339,22 @@ theorem energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner
   rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL,
     setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _),
     setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _)]
+
+/-- **The Dirichlet form of restrictions only sees the gradients.** If `f ∈ H¹(Ω)` and
+`g ∈ H¹(Ω')` have weak gradients agreeing almost everywhere on an open set `U` contained in both,
+then their restrictions to `U` have the same Dirichlet form `∫_U ⟨∇·, ∇v⟩` against every
+`v ∈ H¹(U)`. -/
+theorem energyFormH1_one_zero_zero_restrictL_eq_restrictL [DecidableEq ι]
+    {Omega' : Opens (EuclideanSpace ℝ ι)} (hU : U ≤ Omega) (hU' : U ≤ Omega')
+    {f : W1p mu Omega 2} {g : W1p mu Omega' 2}
+    (hfg : W1p.gradient f =ᵐ[mu.restrict U] W1p.gradient g) (v : W1p mu U 2) :
+    energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL hU f) v =
+      energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL hU' g) v := by
+  rw [energyFormH1_one_zero_zero_apply, energyFormH1_one_zero_zero_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_restrictL_ae hU f, W1p.gradient_restrictL_ae hU' g, hfg]
+    with x h1 h2 h3
+  rw [h1, h2, h3]
 
 section Transfer
 
