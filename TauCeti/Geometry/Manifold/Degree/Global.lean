@@ -66,6 +66,8 @@ linear, and the integral over `M` of `f^*θ` is `deg_y(f)`.
 * `TauCeti.degreeAtRegularValue_eq_of_isRegularValue`: the signed count does not depend on the
   regular value.
 * `TauCeti.degree_eq_degreeAtRegularValue`: the degree is the signed count at every regular value.
+* `TauCeti.integralTopForm_mpullback_comp_eq_degree_mul`: `∫_M (g ∘ f)^*φ = deg(f) ∫_N g^*φ` for
+  a further smooth map `g` out of `N`.
 * `TauCeti.surjective_of_degree_ne_zero`: a proper map of nonzero degree is surjective.
 * `TauCeti.degree_comp`: the degree of a composite is the product of the degrees.
 * `TauCeti.degree_eq_of_homotopy`: smoothly homotopic maps from a compact manifold have the same
@@ -198,6 +200,22 @@ theorem integralTopForm_mpullback_eq_degree_mul (o : Manifold.Orientation I M (F
   obtain ⟨y, hy⟩ := (dense_isRegularValue rfl (hf.mdifferentiable (by simp))).nonempty
   rw [degree_eq_degreeAtRegularValue o o' hf hfp hy]
   exact integralTopForm_mpullback_eq_degreeAtRegularValue_mul o o' hf hfp hy hφ hc
+
+/-- **The degree formula through a further map.** For a proper smooth map `f : M → N`, a smooth
+map `g : N → P` to a manifold of any dimension, and a smooth `k`-form `φ` on `P` whose pullback to
+`N` is compactly supported, `∫_M (g ∘ f)^*φ = deg(f) ∫_N g^*φ`. Read as currents on `P`, `g ∘ f` is
+`deg(f)` times `g`. -/
+theorem integralTopForm_mpullback_comp_eq_degree_mul {E'' H'' P : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    {g : N → P} (hf : ContMDiff I J ∞ f) (hfp : IsProperMap f) (hg : ContMDiff J K ∞ g)
+    (φ : SmoothForm K P ℝ k)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (SmoothForm.mpullback g hg φ).1)) :
+    integralTopForm o (SmoothForm.mpullback (g ∘ f) (hg.comp hf) φ).1 =
+      degree o o' f * integralTopForm o' (SmoothForm.mpullback g hg φ).1 := by
+  rw [SmoothForm.mpullback_comp f g hf hg, LinearMap.comp_apply, SmoothForm.coe_mpullback f hf]
+  exact integralTopForm_mpullback_eq_degree_mul o o' hf hfp (SmoothForm.isSmoothForm _) hc
 
 /-- A proper smooth map of nonzero degree to a connected manifold of the same dimension is
 surjective. -/
