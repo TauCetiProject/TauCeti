@@ -388,6 +388,13 @@ theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
     Fin.sum_univ_two, coe_orthonormalBasisOneI]
   ring
 
+/-- The adjoint symbol is jointly continuous in the covector and the field value. -/
+theorem continuous_gaugeFixedAdjointSymbol :
+    Continuous fun p : (ℂ →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin 4) ↦
+      gaugeFixedAdjointSymbol p.1 p.2 := by
+  simp_rw [gaugeFixedAdjointSymbol_def]
+  exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
+
 /-- The adjoint symbol commutes with real scaling of the covector. -/
 @[simp]
 theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
