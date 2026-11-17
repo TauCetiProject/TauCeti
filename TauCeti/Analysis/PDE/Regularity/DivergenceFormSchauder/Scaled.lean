@@ -10,6 +10,7 @@ import TauCeti.Analysis.PDE.Caccioppoli.Divergence
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -150,7 +151,7 @@ private theorem energyFormH1_restrictL_eq_sub_of_holderOnWith
       (∫ x in B, f x * W1p.value (v : W1p volume B 2) x) -
         ∫ x in B, ⟪G x₀ - G x, W1p.gradient (v : W1p volume B 2) x⟫_ℝ := by
   have hcoeff := memLp_energyIntegrand_of_holderOnWith (mu := volume) hBρ h hα haK
-  have hGc := memLp_sub_of_holderOnWith (mu := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
+  have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
   exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf v).trans
     (inner_toLp_add_inner_toLp_eq_sub hGc hf _)
 
@@ -176,7 +177,7 @@ private theorem energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith
       (∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
         ∫ x in B, f x * φ x := by
   have hcoeff := memLp_energyIntegrand_of_holderOnWith (mu := volume) hBρ h hα haK
-  have hGc := memLp_sub_of_holderOnWith (mu := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
+  have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
   exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf
     ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans
     (inner_toLp_add_inner_toLp_ofTestFunctionₗ hGc hf φ)
@@ -300,7 +301,7 @@ private theorem exists_setIntegral_ball_norm_gradient_sq_le_of_holderOnWith {α 
   have hB₂ : B₂ ≤ Omega := hball
   have ha := aestronglyMeasurable_of_holderOnWith_matrixBilinearForm (mu := volume)
     measurableSet_ball subset_rfl hα haK
-  have hGc := memLp_sub_of_holderOnWith (mu := volume) (p := 2) measurableSet_ball subset_rfl hα hGK
+  have hGc := memLp_sub_of_holderOnWith (μ := volume) (p := 2) measurableSet_ball subset_rfl hα hGK
   have hF : MemLp (fun x => G x₀ - G x) 2 (volume.restrict (ball x₀ (2 * r))) :=
     hGc.neg.ae_eq (ae_of_all _ fun x => by simp)
   -- The restriction of `u` to `B(x₀, 2r)` solves `L u = f + div (G x₀ - G)` against `H¹₀`.
@@ -326,27 +327,6 @@ private theorem exists_setIntegral_ball_norm_gradient_sq_le_of_holderOnWith {α 
   rw [e₁, e₂, e₃, hC] at hc
   beta_reduce at hc
   exact hc
-
-/-- An `α`-Hölder field `G` with constant `K_G` on `B(x₀, ρ)` stays within `K_G ρ^α` of `G x₀`, so
-`∫_{B(x₀, ρ)} ‖G x₀ - G‖² ≤ ρ^d |B(0, 1)| (K_G ρ^α)²`, where `d = n + 1`. -/
-private theorem setIntegral_ball_norm_sub_sq_le_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
-    {KG : ℝ≥0} {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ} (hGK : HolderOnWith KG α G (ball x₀ ρ))
-    (hρ : 0 < ρ) :
-    ∫ x in ball x₀ ρ, ‖G x₀ - G x‖ ^ 2 ≤
-      ρ ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
-        (KG * ρ ^ (α : ℝ)) ^ 2 := by
-  have hGc : MemLp (fun x => G x - G x₀) 2 (volume.restrict (ball x₀ ρ)) :=
-    memLp_sub_of_holderOnWith measurableSet_ball subset_rfl hα hGK
-  have hGi : IntegrableOn (fun x => ‖G x - G x₀‖ ^ 2) (ball x₀ ρ) := hGc.norm.integrable_sq
-  calc _ ≤ ∫ _ in ball x₀ ρ, (KG * ρ ^ (α : ℝ)) ^ 2 :=
-        setIntegral_mono_on (by simpa only [norm_sub_rev] using hGi)
-          (integrableOn_const measure_ball_lt_top.ne) measurableSet_ball fun x hx => by
-            rw [norm_sub_rev, ← dist_eq_norm]
-            exact pow_le_pow_left₀ dist_nonneg (hGK.dist_le_mul_rpow_of_mem_ball hx) 2
-    _ = _ := by
-      rw [setIntegral_const, smul_eq_mul, Measure.addHaar_real_ball_of_pos volume x₀ hρ,
-        finrank_euclideanSpace_fin]
 
 /-- **The gradient bound from the Caccioppoli inequality.** For `α > 0` and `q ≥ 2` there is a
 constant `K`, depending only on `n`, `α`, `q`, `λ` and `Λ`, such that the following holds. Let
@@ -395,8 +375,9 @@ private theorem exists_setIntegral_ball_norm_gradient_sq_le_mul_rpow_mul_sq {α 
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hf2 : MemLp f 2 (volume.restrict (ball x₀ (2 * r))) := hf.mono_exponent hq
   have hc := hcacc h haK hGK hf2 hu hr hball
-  have hb₁ := setIntegral_ball_norm_sub_sq_le_of_holderOnWith hα hGK (by positivity : 0 < 2 * r)
-  rw [← hωdef] at hb₁
+  have hb₁ := setIntegral_ball_norm_sub_sq_le_of_holderOnWith (μ := volume) hα hGK
+  rw [Measure.addHaar_real_ball_of_pos volume x₀ (by positivity : 0 < 2 * r),
+    finrank_euclideanSpace_fin, ← hωdef] at hb₁
   -- Young's inequality for `f u`, and Hölder's inequality for `f`.
   have hb₂ := four_div_mul_setIntegral_abs_mul_le hlam hr hf2
     ((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl))

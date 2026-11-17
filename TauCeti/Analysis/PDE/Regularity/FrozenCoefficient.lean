@@ -11,6 +11,7 @@ public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -78,10 +79,9 @@ the sum of these.
   for a frozen elliptic matrix `A` with `‖a - A‖ ≤ ε` on `B`.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`: its squared form with the
   coefficient term weighted by the local deviation `‖a(x) - A‖²`.
-* `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm`,
-  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith` and `TauCeti.PDE.memLp_sub_of_holderOnWith`:
-  inside a ball on which `a` and `G` are `α`-Hölder, `a` is measurable, its energy integrands are
-  essentially bounded where it is elliptic, and `G - G x₀` lies in every `Lᵖ`.
+* `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
+  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
+  `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -331,22 +331,6 @@ theorem memLp_energyIntegrand_of_holderOnWith {B : Opens (EuclideanSpace ℝ ι)
     aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx => h.upper_bound hx)
     (fun _ _ => by simp) (fun _ _ => by simp)
 
-omit [DecidableEq ι] in
-/-- On a measurable set `B` inside a ball `B(x₀, ρ)` on which `G` is `α`-Hölder, with `α > 0`,
-`G - G x₀` is bounded by `K_G ρ^α`, so it lies in every `Lᵖ(B)`. -/
-theorem memLp_sub_of_holderOnWith {E : Type*} [NormedAddCommGroup E]
-    {B : Set (EuclideanSpace ℝ ι)} (hB : MeasurableSet B) {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ}
-    (hBρ : B ⊆ ball x₀ ρ) {α KG : ℝ≥0} (hα : 0 < α) {G : EuclideanSpace ℝ ι → E}
-    (hGK : HolderOnWith KG α G (ball x₀ ρ)) {p : ℝ≥0∞} :
-    MemLp (fun x => G x - G x₀) p (mu.restrict B) := by
-  have : IsFiniteMeasure (mu.restrict B) :=
-    isFiniteMeasure_restrict.2 (ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hBρ))
-  refine MemLp.of_bound ((((hGK.continuousOn hα).mono hBρ).aestronglyMeasurable hB).sub
-    aestronglyMeasurable_const) (KG * ρ ^ (α : ℝ)) ((ae_restrict_iff' hB).2 (ae_of_all _ ?_))
-  intro x hx
-  rw [← dist_eq_norm]
-  exact hGK.dist_le_mul_rpow_of_mem_ball (hBρ hx)
-
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
 weakly on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with
 `B ⊆ B(x₀, r)`, and let `a` be uniformly elliptic with constants `0 < λ ≤ Λ` on a set
@@ -398,7 +382,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
     aestronglyMeasurable_of_holderOnWith_matrixBilinearForm hBm hBr hα haK
   have hGc : MemLp (fun x => G x - G x₀) 2
       (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    memLp_sub_of_holderOnWith hBm hBr hα hGK
+    MeasureTheory.memLp_sub_of_holderOnWith hBm hBr hα hGK
   -- The replacement frozen at `x₀`.
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
