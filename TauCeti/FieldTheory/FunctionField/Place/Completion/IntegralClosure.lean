@@ -14,8 +14,7 @@ import Mathlib.FieldTheory.SeparableClosure
 
 Let `P'` be a place of `F' / k'` lying over a place `P` of `F / k` in an integral field extension
 `F' / F`. Under the locally installed algebra structures `TauCeti.Place.completionExtensionAlgebra`
-and `TauCeti.Place.completionIntegersExtensionAlgebra`, the completed valuation ring `𝒪̂_{P'}` is a
-torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}`, and completion preserves the ramification index
+and `TauCeti.Place.completionIntegersExtensionAlgebra`, completion preserves the ramification index
 `e(P' ∣ P)` without any residue-field hypothesis.
 
 When the residue extension at `P'` is finite, `𝒪̂_{P'}` is finite over `𝒪̂_P`
@@ -43,11 +42,8 @@ transfer provides the intrinsic-place counterpart of
 
 ## Main results
 
-* `TauCeti.Place.completionIntegersExtension_injective`,
-  `TauCeti.Place.isScalarTower_completionIntegers`,
-  `TauCeti.Place.isTorsionFree_completionIntegers`, and
-  `TauCeti.Place.completionIntegersIntegralClosureHom_injective`: structural compatibility of the
-  completed valuation-ring extension `𝒪̂_P → 𝒪̂_{P'} → F̂_{P'}` and the map `𝒪'_P →+* 𝒪̂_{P'}`.
+* `TauCeti.Place.completionIntegersIntegralClosureHom_injective`: the canonical homomorphism
+  `𝒪'_P →+* 𝒪̂_{P'}` is injective.
 * `TauCeti.Place.ramificationIdx_completionPlace`: completion preserves the ramification index.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`: when the residue extension is finite,
   `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in `F̂_{P'}`.
@@ -80,36 +76,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
   [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k' F')
   (hP : P'.restrict k F = P)
-
-/-- The canonical map `𝒪̂_P →+* 𝒪̂_{P'}` of completed valuation rings is injective. -/
-theorem completionIntegersExtension_injective :
-    Function.Injective (P.completionIntegersExtension P' hP) := fun _ _ h ↦
-  Subtype.ext <| (P.completionExtension P' hP).injective <| by
-    simpa only [coe_completionIntegersExtension] using congrArg Subtype.val h
-
-/-- The action of `𝒪̂_P` on `F̂_{P'}` factors through `𝒪̂_{P'}`. -/
-theorem isScalarTower_completionIntegers :
-    letI := P.completionExtensionAlgebra P' hP
-    letI := P.completionIntegersExtensionAlgebra P' hP
-    IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
-  let _ := P.completionExtensionAlgebra P' hP
-  let _ := P.completionIntegersExtensionAlgebra P' hP
-  refine IsScalarTower.of_algebraMap_eq fun x ↦ ?_
-  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
-    algebraMap_completionExtensionAlgebra, ValuationSubring.algebraMap_apply,
-    ValuationSubring.algebraMap_apply, coe_algebraMap_completionIntegersExtensionAlgebra]
-
-/-- The completed valuation ring `𝒪̂_{P'}` is torsion-free over `𝒪̂_P`. -/
-theorem isTorsionFree_completionIntegers :
-    letI := P.completionIntegersExtensionAlgebra P' hP
-    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
-  let _ := P.completionExtensionAlgebra P' hP
-  let _ := P.completionIntegersExtensionAlgebra P' hP
-  have := P.isScalarTower_completionIntegers P' hP
-  exact (FaithfulSMul.algebraMap_injective
-    P'.completionPlace.integers P'.Completion).moduleIsTorsionFree _ fun c x ↦
-      map_smul (IsScalarTower.toAlgHom
-        P.completionPlace.integers P'.completionPlace.integers P'.Completion) c x
 
 /-- Completion preserves the ramification index, with no finiteness assumption on the residue
 extension. -/
