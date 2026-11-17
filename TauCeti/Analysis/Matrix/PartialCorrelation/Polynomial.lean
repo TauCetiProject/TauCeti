@@ -154,12 +154,6 @@ theorem partialCorrelationGramMonomialPolynomial_zero (p : ℕ) :
     partialCorrelationGramMonomialPolynomial p 0 = 1 := by
   simp [partialCorrelationGramMonomialPolynomial_def]
 
-/-- A pointwise zero exponent function also simplifies to the constant polynomial one. -/
-@[simp]
-theorem partialCorrelationGramMonomialPolynomial_fun_zero (p : ℕ) :
-    partialCorrelationGramMonomialPolynomial p (fun _ ↦ 0) = 1 := by
-  simpa only [Pi.zero_def] using partialCorrelationGramMonomialPolynomial_zero p
-
 /-- Adding entry exponents multiplies their formal Gram monomial polynomials. -/
 theorem partialCorrelationGramMonomialPolynomial_add (m n : Fin p × Fin p → ℕ) :
     partialCorrelationGramMonomialPolynomial p (m + n) =
