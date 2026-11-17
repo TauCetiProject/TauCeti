@@ -34,7 +34,9 @@ the case where its `Ext¹`-term vanishes.
 * `TopCat.singularKronecker`: the Kronecker map of singular cohomology, the Kronecker map of the
   singular chain complex (`TopCat.singularKronecker_def`), with
   `TopCat.singularKronecker_homologyπ` computing it on classes of cocycles and cycles and
-  `TopCat.singularKronecker_naturality` its naturality.
+  `TopCat.singularKronecker_naturality` its naturality in the space and
+  `TopCat.singularKronecker_singularCohomologyChainCoefficientMap` its naturality in the chain
+  coefficients.
 * `TopCat.singularKroneckerEquiv`: for an injective coefficient object `M`, the Kronecker map is a
   `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
@@ -106,6 +108,17 @@ lemma singularKronecker_coefficient_naturality (X : TopCat.{w}) (k : Type*) [Rin
           (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) n α) =
       X.singularKronecker k n α ≫ g :=
   TauCeti.ChainComplex.kronecker_coefficient_naturality g n α
+
+/-- **Naturality of the Kronecker map in the chain coefficients**, `⟨f^*α, x⟩ = ⟨α, f_*x⟩`: for a
+morphism `f : R' ⟶ R` of chain coefficients, evaluating the class
+`TopCat.singularCohomologyChainCoefficientMap` pulled back along `f` on `Hₙ(X; R')` is evaluating
+`α` after the map `Hₙ(X; R') ⟶ Hₙ(X; R)` induced by `f`. -/
+lemma singularKronecker_singularCohomologyChainCoefficientMap (X : TopCat.{w}) (k : Type*)
+    [Ring k] [Linear k C] {R' : C} (f : R' ⟶ R) (n : ℕ) (α : X.singularCohomology R k M n) :
+    X.singularKronecker k n (X.singularCohomologyChainCoefficientMap k M f n α) =
+      ((singularHomologyFunctor C n).map f).app X ≫ X.singularKronecker k n α :=
+  TauCeti.ChainComplex.kronecker_naturality
+    (((SSet.chainComplexFunctor C).map f).app (toSSet.obj X)) n α
 
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `M`, the Kronecker map of singular cohomology is a `k`-linear equivalence
