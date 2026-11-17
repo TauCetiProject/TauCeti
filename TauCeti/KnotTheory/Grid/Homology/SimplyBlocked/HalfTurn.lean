@@ -44,8 +44,7 @@ private theorem simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece {R : Type*}
     (hc : c ∈ hG.toOddComponentGridDiagram.bigradedChainHatPiece R i g) :
     GridChain.simplyBlockedHalfTurnEquiv R i c ∈
       (hGᵣ).toOddComponentGridDiagram.bigradedChainHatPiece R (Fin.revPerm i) g := by
-  rw [← show hG.toOddComponentGridDiagram.rotate = (hGᵣ).toOddComponentGridDiagram from
-    Subtype.ext (OddComponentGridDiagram.val_rotate _)]
+  rw [← hG.rotate_toOddComponentGridDiagram]
   exact (OddComponentGridDiagram.simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff _).mpr hc
 
 section Ring

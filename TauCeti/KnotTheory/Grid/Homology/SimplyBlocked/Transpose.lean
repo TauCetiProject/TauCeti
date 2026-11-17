@@ -47,9 +47,9 @@ private theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece {R : Type*
     (hc : c ∈ hG.toOddComponentGridDiagram.bigradedChainHatPiece R i g) :
     G.simplyBlockedTransposeEquiv R i c ∈
       (hGₜ).toOddComponentGridDiagram.bigradedChainHatPiece R (G.O i) g := by
-  rw [← show hG.toOddComponentGridDiagram.transpose = (hGₜ).toOddComponentGridDiagram from
-    Subtype.ext rfl]
-  exact (OddComponentGridDiagram.simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff _).mpr hc
+  have h :=
+    hG.toOddComponentGridDiagram.simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff.mpr hc
+  rwa [hG.val_toOddComponentGridDiagram, hG.transpose_toOddComponentGridDiagram] at h
 
 section Ring
 

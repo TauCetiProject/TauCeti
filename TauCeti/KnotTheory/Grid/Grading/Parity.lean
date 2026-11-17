@@ -328,6 +328,11 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
 abbrev toOddComponentGridDiagram : OddComponentGridDiagram n :=
   ⟨G, by rw [G.isKnot_def.mp hG]; exact odd_one⟩
 
+/-- The underlying grid diagram of `hG.toOddComponentGridDiagram` is `G`. -/
+@[simp]
+theorem val_toOddComponentGridDiagram : hG.toOddComponentGridDiagram.1 = G :=
+  (rfl)
+
 end GridDiagram.IsKnot
 
 namespace OddComponentGridDiagram
@@ -471,5 +476,23 @@ theorem mem_maslovSupport_iff (a m : ℤ) :
     exact ⟨(m, a), ⟨⟨x, hx⟩, rfl⟩, rfl⟩
 
 end OddComponentGridDiagram
+
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- Half-turning the odd-component diagram of a knot grid equals that of `G.rotate`. -/
+theorem rotate_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.rotate =
+      (G.isKnot_rotate.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_rotate, val_toOddComponentGridDiagram])
+
+/-- Reflecting the odd-component diagram of a knot grid equals that of `G.transpose`. -/
+theorem transpose_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.transpose =
+      (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_transpose, val_toOddComponentGridDiagram])
+
+end GridDiagram.IsKnot
 
 end TauCeti
