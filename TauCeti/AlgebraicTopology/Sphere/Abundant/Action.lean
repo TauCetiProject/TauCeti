@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
+import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
-import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 
 /-!
 # Abundance with 2-spheres from a group action
@@ -26,7 +26,7 @@ around every point, and that the stabilizer of `x₀` is path connected. If a cl
 `ℓ • α ≠ 0`, then `Φ_*(A × α)` lives over the fundamental class of `M` at `x₀`
 (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross`). For
 `B = S²` and `α` of positive degree, `M` is therefore abundant with 2-spheres
-(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul`).
+(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`).
 
 This is the argument of Propositions 6.29 and 6.33 of Barraud–Damian–Humilière–Oancea, for
 classes of diffeomorphisms coming from a group action. There the group is the identity component
@@ -62,9 +62,9 @@ localization of `A` with `α` (`TauCeti.fiberLocalization_singularHomologyCross_
 
 * `TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross`:
   `Φ_*(A × α)` lives over the fundamental class at `x₀`.
-* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul`: a manifold with such an action,
-  a class `A` with `π_* A = ℓ • [M]` and a class `α` of positive degree of `Map_*(S², M)` with
-  `ℓ • α ≠ 0` is abundant with 2-spheres.
+* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`: a manifold with such
+  an action, a class `A` with `π_* A = ℓ • [M]` and a class `α` of positive degree of
+  `Map_*(S², M)` with `ℓ • α ≠ 0` is abundant with 2-spheres.
 
 ## References
 
@@ -88,41 +88,6 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   {G : Type} [TopologicalSpace G] [Group G] [IsTopologicalGroup G] [MulAction G M]
   [ContinuousSMul G M]
 
-/-- A homomorphism out of an infinite cyclic group is injective as soon as it sends some element
-to an element of infinite order. -/
-private theorem injective_of_addEquiv_int {Z N : Type*} [AddCommGroup Z] [AddCommGroup N]
-    (e : Z ≃+ ℤ) (f : Z →+ N) (z₀ : Z) (hz₀ : Function.Injective fun c : ℤ ↦ c • f z₀) :
-    Function.Injective f := by
-  -- On `ℤ`, `f` is `c ↦ c • v` for `v` the image of the generator `e⁻¹ 1`.
-  have hf : ∀ z, f z = e z • f (e.symm 1) := fun z ↦ by
-    rw [← map_zsmul, ← map_zsmul, zsmul_one, Int.cast_id, e.symm_apply_apply]
-  intro z z' h
-  apply e.injective
-  apply hz₀
-  beta_reduce
-  rw [hf z₀, smul_comm (e z), smul_comm (e z'), ← hf, ← hf, h]
-
-/-- Integers move across the tensor product of two `ℤ`-modules. -/
-private theorem zsmul_tmul_eq_tmul_zsmul {N₁ N₂ : ModuleCat.{0} ℤ} (ℓ : ℤ) (m : N₁) (n : N₂) :
-    (ℓ • m) ⊗ₜ[ℤ] n = m ⊗ₜ[ℤ] (ℓ • n) :=
-  -- Both sides are `ℓ • (m ⊗ₜ n)`, since `⊗ₜ` is additive in each variable.
-  (map_zsmul (AddMonoidHom.mk' (fun x : N₁ ↦ x ⊗ₜ[ℤ] n) fun a b ↦ TensorProduct.add_tmul a b n) ℓ
-    m).trans (map_zsmul (AddMonoidHom.mk' (fun y : N₂ ↦ m ⊗ₜ[ℤ] y) (TensorProduct.tmul_add m)) ℓ
-      n).symm
-
-omit [T2Space M] [CompactSpace M] in
-/-- The orbit map is a Serre fibration if it has continuous local sections around every point. -/
-private theorem mem_serreFibrations_orbitMap {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
-    (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
-      ∀ z ∈ U, s z • x₀ = z) :
-    TopCat.serreFibrations (TopCat.ofHom π) := by
-  have hfun : (TopCat.ofHom π : G → M) = fun g ↦ g • x₀ := funext hπ
-  refine TopCat.mem_serreFibrations_of_exists_trivialization
-    (F := MulAction.stabilizer G x₀) fun y ↦ ?_
-  obtain ⟨U, hU, hy, s, hs, hsec⟩ := hloc y
-  rw [hfun]
-  exact ⟨orbitMapTrivialization x₀ (by fun_prop) U hU s hs hsec, by simpa using hy⟩
-
 omit [CompactSpace M] in
 include hd in
 /-- **The orbit map on local homology along the stabilizer.** If the orbit map `π : G → M`,
@@ -140,7 +105,9 @@ private theorem injective_localHomologyMap_orbitMap {x₀ : M} (π : C(G, M))
       (subset_refl (π ⁻¹' {x₀})) d).hom z₀) :
     Function.Injective (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) π
       (subset_refl (π ⁻¹' {x₀})) d).hom := by
-  have hp := mem_serreFibrations_orbitMap π hπ hloc
+  have hπ' : TopCat.ofHom π = TopCat.ofHom ⟨fun g : G ↦ g • x₀, by fun_prop⟩ :=
+    TopCat.hom_ext (ContinuousMap.ext hπ)
+  have hp := hπ' ▸ orbitMap_mem_serreFibrations (G := G) x₀ hloc
   have hfib : (TopCat.ofHom π : G → M) ⁻¹' {x₀} = {g : G | g • x₀ = x₀} := by
     ext g
     simp [hπ]
@@ -159,9 +126,9 @@ private theorem injective_localHomologyMap_orbitMap {x₀ : M} (π : C(G, M))
         (TopPair.ofSubset ((π ⁻¹' {x₀})ᶜ : Set (TopCat.of G))))) d ≪≫
       eqToIso (by rw [hd]) ≪≫
       TopCat.singularHomologyComplFiberIsoOfPathConnectedSpace ℤ e (mem_chart_source V x₀) hε hε₀ hp
-  exact injective_of_addEquiv_int eD.toLinearEquiv.toAddEquiv
+  exact AddMonoidHom.injective_of_addEquiv_int
     (localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) π
-      (subset_refl (π ⁻¹' {x₀})) d).hom.toAddMonoidHom z₀ hz₀
+      (subset_refl (π ⁻¹' {x₀})) d).hom.toAddMonoidHom eD.toLinearEquiv.toAddEquiv hz₀
 
 include o hd in
 /-- **The localization of a class covering `ℓ • [M]`.** In the setting of the module docstring, with
@@ -211,54 +178,6 @@ private theorem fiberLocalization_orbitMap_eq {U : Set M} (hU : IsOpen U) (x₀ 
   have h : πD.hom ((fiberLocalization R π x₀ d).hom A) = πD.hom (ℓ • z₀) := by
     rw [map_zsmul, h₁, h₂]
   exact hinj h
-
-/-- Naturality of the relative cross product in the pair, read in local homology: for a map
-`f : X → X'` with `f⁻¹(T) ⊆ S`, the relative cross product of `f_* a` with `b` is the image under
-`f × id` of the relative cross product of `a` with `b`. -/
-private theorem singularHomologyCrossRel_localHomologyMap_tmul {X X' Y : Type} [TopologicalSpace X]
-    [TopologicalSpace X'] [TopologicalSpace Y] (f : C(X, X')) {S : Set X} {T : Set X'}
-    (h : f ⁻¹' T ⊆ S)
-    (h' : f.prodMap (ContinuousMap.id Y) ⁻¹' (Prod.fst ⁻¹' T) ⊆ Prod.fst ⁻¹' S) {p q : ℕ}
-    (a : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S p)
-    (b : ((TopCat.toSSet.obj (TopCat.of Y)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) q :
-      ModuleCat.{0} ℤ)) :
-    (TopCat.singularHomologyCrossRel (TopCat.of X') (TopCat.of Y) Tᶜ (ModuleCat.of ℤ (ULift.{0} ℤ))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) p q (p + q) rfl).hom
-        ((localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f h p).hom a ⊗ₜ b) =
-      (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat ℤ)
-        (f.prodMap (ContinuousMap.id Y)) h' (p + q)).hom
-        ((TopCat.singularHomologyCrossRel (TopCat.of X) (TopCat.of Y) Sᶜ
-          (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) p q (p + q) rfl).hom
-          (a ⊗ₜ b)) := by
-  have hf : Set.MapsTo (TopCat.ofHom f) Sᶜ Tᶜ := fun _ hx hfx ↦ hx (h hfx)
-  -- Naturality for `f` and the identity of `Y`, with the product map read as `f × id`.
-  have hn := TopCat.singularHomologyCrossRel_naturality (TopCat.of X) (TopCat.of Y) Sᶜ
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) p q (p + q) rfl (B' := Tᶜ)
-    (TopCat.ofHom f) hf (𝟙 (TopCat.of Y))
-  rw [CategoryTheory.Functor.map_id, MonoidalCategory.tensorHom_id] at hn
-  have hfg : TopPair.singularHomologyMap (TopPair.ofSubsetMap (TopCat.ofHom f ⊗ₘ 𝟙 (TopCat.of Y))
-      (TopCat.mapsTo_tensorHom_preimage_fst _ _ hf))
-      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat ℤ) (p + q) =
-      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat ℤ)
-        (f.prodMap (ContinuousMap.id Y)) h' (p + q) := by
-    -- The map underlying `f ⊗ₘ 𝟙` is the product map (`TopCat.tensor_apply`).
-    have hfY : TopCat.ofHom f ⊗ₘ 𝟙 (TopCat.of Y) = TopCat.ofHom (f.prodMap (ContinuousMap.id Y)) :=
-      TopCat.hom_ext (ContinuousMap.ext fun z ↦ TopCat.tensor_apply _ _ z)
-    have h₁ : TopPair.ofSubsetMap (TopCat.ofHom f ⊗ₘ 𝟙 (TopCat.of Y))
-        (TopCat.mapsTo_tensorHom_preimage_fst _ _ hf) =
-        TopPair.ofSubsetMap (X := TopCat.of (X × Y)) (Y := TopCat.of (X' × Y))
-          (B := (Prod.fst ⁻¹' S)ᶜ) (B' := (Prod.fst ⁻¹' T)ᶜ)
-          (TopCat.ofHom (f.prodMap (ContinuousMap.id Y)))
-          ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h')) :=
-      TopPair.hom_ext_of_fst _
-        (Eq.trans (TopPair.ofSubsetMap_fst _ _) (hfY.trans (TopPair.ofSubsetMap_fst _ _).symm))
-    exact (congrArg (fun φ ↦ TopPair.singularHomologyMap φ _ (p + q)) h₁).trans
-      (localHomologyMap_def _ (f.prodMap (ContinuousMap.id Y)) h' (p + q)).symm
-  rw [hfg] at hn
-  exact (congrArg (fun x ↦ (TopCat.singularHomologyCrossRel (TopCat.of X') (TopCat.of Y) Tᶜ
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) p q (p + q) rfl).hom (x ⊗ₜ b))
-      (ConcreteCategory.congr_hom (localHomologyMap_def _ f h p) a)).trans
-    (ConcreteCategory.congr_hom hn (a ⊗ₜ b))
 
 omit [T2Space M] [CompactSpace M] [ChartedSpace V M] in
 /-- **The translation chart of evaluation.** Let `s : U → G` be a section of the orbit map over an
@@ -321,7 +240,7 @@ private theorem singularHomologyCrossRel_localOrientation_ne_zero {U : Set M} (h
   have h₁ : incl ⁻¹' {(x₀ : M)} ⊆ {x₀} := fun _ hz ↦ Subtype.ext hz
   have h₂ : incl.prodMap (ContinuousMap.id N) ⁻¹' (Prod.fst ⁻¹' {(x₀ : M)}) ⊆
       Prod.fst ⁻¹' {x₀} := fun _ hz ↦ Subtype.ext hz
-  have hincl := singularHomologyCrossRel_localHomologyMap_tmul incl h₁ h₂
+  have hincl := singularHomologyCrossRel_localHomologyMap_tmul _ _ incl h₁ h₂ rfl
     ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
       hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom (o x₀).val) β
   have hoU := ConcreteCategory.congr_hom
@@ -402,15 +321,18 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
           ((TopCat.singularHomologyCrossRel (TopCat.of G) (TopCat.of F) (π ⁻¹' {(x₀ : M)})ᶜ R R d
             k (d + k) rfl).hom ((localHomologyMap R sU hsU' d).hom oU ⊗ₜ (ℓ • α))) := by
           rw [o.fiberLocalization_orbitMap_eq hd hU x₀ π hπ hloc hstab sU hsU hsU' hA]
-          exact congrArg _ (congrArg _ (zsmul_tmul_eq_tmul_zsmul ℓ _ α))
+          -- The `ℤ`-action on these carriers is `zsmul`, so name Mathlib's instance for it.
+          exact congrArg _ (congrArg _ ((CompatibleSMul.int (R := ℤ)).smul_tmul ℓ _ α))
       _ = (localHomologyMap (R ⊗ R : ModuleCat ℤ) Φ hΦS (d + k)).hom
           ((localHomologyMap (R ⊗ R : ModuleCat ℤ) (sU.prodMap (ContinuousMap.id F)) hsF
             (d + k)).hom X) :=
-          congrArg _ (singularHomologyCrossRel_localHomologyMap_tmul sU hsU' hsF oU (ℓ • α))
+          congrArg _ (singularHomologyCrossRel_localHomologyMap_tmul R R sU hsU' hsF rfl oU (ℓ • α))
       _ = _ := ConcreteCategory.congr_hom (localHomologyMap_comp (R ⊗ R : ModuleCat ℤ)
           (sU.prodMap (ContinuousMap.id F)) Φ hsF hΦS (d + k)) X
-  exact (livesOverFundamentalClass_iff _ _ _ _).2 fun h0 ↦ hX ((ModuleCat.mono_iff_injective _).1
-    (@IsIso.mono_of_iso _ _ _ _ _ hΘiso) ((key.symm.trans h0).trans (map_zero _).symm))
+  have hΘinj : Function.Injective (localHomologyMap (R ⊗ R : ModuleCat ℤ) Θ hΘF (d + k)).hom :=
+    (ModuleCat.mono_iff_injective _).1 inferInstance
+  exact (livesOverFundamentalClass_iff _ _ _ _).2 fun h0 ↦
+    hX (hΘinj ((key.symm.trans h0).trans (map_zero _).symm))
 
 include o hd in
 /-- **Abundance with 2-spheres from a group action** (Barraud–Damian–Humilière–Oancea,
@@ -420,7 +342,8 @@ continuous local sections around every point, and with path-connected stabilizer
 some `A ∈ H_d(G; ℤ)` satisfies `π_* A = ℓ • [M]` and some class `α` of positive degree of the
 based mapping space `Map_*(S², M)` satisfies `ℓ • α ≠ 0`, then `M` is abundant with 2-spheres at
 `x₀`. -/
-theorem isAbundantWithTwoSpheres_of_smul {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
+theorem isAbundantWithTwoSpheres_of_smul_ne_zero {x₀ : M} (π : C(G, M))
+    (hπ : ∀ g, π g = g • x₀)
     (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
       ∀ z ∈ U, s z • x₀ = z)
     (hstab : IsPathConnected {g : G | g • x₀ = x₀}) {ℓ : ℤ}
