@@ -31,7 +31,9 @@ colimits; it also preserves finite limits when coproducts in `C` are exact, as f
 it is an exact functor. The total object of an object placed in a single degree is that object
 (`TauCeti.gradedObjectTotalSingleIso`). A natural number `e` with `e • 𝟙 = 0` on each summand
 of a coproduct `X.mapObj p i` also kills the coproduct
-(`CategoryTheory.GradedObject.nsmul_id_mapObj_eq_zero`).
+(`CategoryTheory.GradedObject.nsmul_id_mapObj_eq_zero`), and when all summands of such a coproduct
+but one are zero, the inclusion of the remaining one is an isomorphism
+(`CategoryTheory.GradedObject.isIso_ιMapObj_of_isZero`).
 
 Mathlib provides the category of graded objects and its grading shift, but not these
 structures. They are what homological algebra needs: `Ext` groups, and hence the graded
@@ -117,6 +119,21 @@ theorem nsmul_id_mapObj_eq_zero {β : Type w} {γ : Type t} [Preadditive C] {X :
   mapObj_ext _ _ _ _ fun j hj ↦ by
     rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero,
       ← Category.id_comp (X.ιMapObj p j i hj), ← Preadditive.nsmul_comp, h j hj, zero_comp]
+
+/-- If every summand `X j` of the coproduct `X.mapObj p i` other than `X j₀` is a zero object,
+the inclusion of `X j₀` is an isomorphism. -/
+theorem isIso_ιMapObj_of_isZero {β : Type w} {γ : Type t} [HasZeroMorphisms C]
+    {X : GradedObject β C} {p : β → γ} [X.HasMap p] {i : γ} (j₀ : β) (hj₀ : p j₀ = i)
+    (h : ∀ j, p j = i → j ≠ j₀ → IsZero (X j)) :
+    IsIso (X.ιMapObj p j₀ i hj₀) := by
+  classical
+  refine ⟨X.descMapObj p (fun j _ ↦ if hj : j = j₀ then eqToHom (by rw [hj]) else 0),
+    by simp, mapObj_ext _ _ _ _ fun j hj ↦ ?_⟩
+  by_cases hj' : j = j₀
+  · subst hj'
+    simp
+  · simp only [ι_descMapObj_assoc, hj', dite_false, zero_comp, Category.comp_id]
+    exact (h j hj hj').eq_of_src _ _
 
 end CategoryTheory.GradedObject
 

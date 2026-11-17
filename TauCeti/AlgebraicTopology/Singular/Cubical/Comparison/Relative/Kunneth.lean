@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth
+import TauCeti.CategoryTheory.GradedObject
 
 /-!
 # The relative cubical cross product and the Künneth theorem for a pair times a space
@@ -198,15 +199,9 @@ private lemma isIso_ιTensorObj_cubeBoundaryPair (q : ℕ) :
     IsIso (GradedObject.Monoidal.ιTensorObj
       (fun p ↦ ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology p)
       (fun q ↦ ((normalizedCubicalChainComplex k).obj X).homology q) (m + 1) q (m + 1 + q) rfl) :=
-  ⟨GradedObject.Monoidal.tensorObjDesc fun p q' h ↦
-      if hp : p = m + 1 then eqToHom (by rw [hp, show q' = q by omega]) else 0,
-    by simp, GradedObject.Monoidal.tensorObj_ext _ _ fun p q' h ↦ by
-      by_cases hp : p = m + 1
-      · obtain rfl := hp
-        obtain rfl : q' = q := by omega
-        simp
-      · exact ((tensorRight _).map_isZero
-          (isZero_cubicalHomology_cubeBoundaryPair_of_ne k hp)).eq_of_src _ _⟩
+  GradedObject.isIso_ιMapObj_of_isZero _ _ fun ⟨p, q'⟩ h hp ↦ (tensorRight _).map_isZero
+    (isZero_cubicalHomology_cubeBoundaryPair_of_ne k
+      (by rintro rfl; exact hp (by ext <;> simp_all)))
 
 /-- **The relative homology of the product of the cube pair with a space**: taking the cross
 product with the fundamental cycle `[Iᵐ⁺¹]` is an isomorphism
