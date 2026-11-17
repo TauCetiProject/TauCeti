@@ -162,9 +162,9 @@ theorem analyticSubst_ofMvPolynomial (p : MvPolynomial (Fin k) R) :
   exact DFunLike.congr_fun h p
 
 /-- **Analytic substitution does not increase the unit Gauss norm**: `‖f(g)‖₁ ≤ ‖f‖₁`. -/
-theorem norm_toTate_analyticSubst_le (f : washnitzerAlgebra (Fin k) R) :
-    ‖toTate τ R (analyticSubst g hg f)‖ ≤ ‖toTate (Fin k) R f‖ := by
-  rw [toTate_analyticSubst]
+theorem norm_analyticSubst_le (f : washnitzerAlgebra (Fin k) R) :
+    ‖analyticSubst g hg f‖ ≤ ‖f‖ := by
+  rw [← norm_toTate, ← norm_toTate, toTate_analyticSubst]
   exact TauCeti.MvPowerSeries.norm_restrictedAnalyticSubst_le _ _ _
 
 /-- **Comparison with formal substitution.** When Mathlib's formal substitution of the `gᵢ` is
@@ -193,15 +193,10 @@ theorem analyticSubst_comp (g : Fin k → washnitzerAlgebra (Fin m) R)
     (hh : ∀ j, ‖toTate τ R (h j)‖ ≤ 1) :
     (analyticSubst h hh).comp (analyticSubst g hg) =
       analyticSubst (fun i ↦ analyticSubst h hh (g i))
-        (fun i ↦ (norm_toTate_analyticSubst_le h hh (g i)).trans (hg i)) :=
+        (fun i ↦ (norm_analyticSubst_le h hh (g i)).trans (hg i)) :=
   AlgHom.ext fun f ↦ toTate_injective <| by
     simp only [AlgHom.comp_apply, toTate_analyticSubst,
       TauCeti.MvPowerSeries.restrictedAnalyticSubst_restrictedAnalyticSubst]
-
-/-- **Analytic substitution is contractive** for the unit Gauss norm on `W`. -/
-theorem norm_analyticSubst_le (f : washnitzerAlgebra (Fin k) R) :
-    ‖analyticSubst g hg f‖ ≤ ‖f‖ :=
-  norm_toTate_analyticSubst_le g hg f
 
 /-- Analytic substitution is continuous for the unit Gauss norm topology on `W`. -/
 @[continuity]
@@ -393,17 +388,12 @@ theorem translateEquiv_symm (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1) :
     ⇑(translateEquiv a ha).symm = translate (-a) fun i ↦ by simpa using ha i := (rfl)
 
 /-- **Translation preserves the unit Gauss norm** of overconvergent series. -/
-theorem norm_toTate_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
-    (f : washnitzerAlgebra (Fin k) R) :
-    ‖toTate (Fin k) R (translate a ha f)‖ = ‖toTate (Fin k) R f‖ := by
-  rw [toTate_translate, TauCeti.MvPowerSeries.norm_restrictedTranslate]
-
-/-- Translation preserves the Gauss norm on `W`. -/
 @[simp]
 theorem norm_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
     (f : washnitzerAlgebra (Fin k) R) :
-    ‖translate a ha f‖ = ‖f‖ :=
-  norm_toTate_translate a ha f
+    ‖translate a ha f‖ = ‖f‖ := by
+  rw [← norm_toTate, ← norm_toTate, toTate_translate,
+    TauCeti.MvPowerSeries.norm_restrictedTranslate]
 
 /-- Translation is an isometry for the Gauss norm on `W`. -/
 theorem isometry_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1) :

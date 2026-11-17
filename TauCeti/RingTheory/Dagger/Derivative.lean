@@ -251,16 +251,12 @@ theorem toTate_hasseDeriv (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
     toTate σ R (hasseDeriv σ R d f) = restrictedHasseDeriv d (toTate σ R f) :=
   Subtype.ext (by simp)
 
-/-- **The Cauchy estimate at unit radius**: Hasse derivatives do not increase the Gauss norm of an
-overconvergent series. -/
-theorem norm_toTate_hasseDeriv_le (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
-    ‖toTate σ R (hasseDeriv σ R d f)‖ ≤ ‖toTate σ R f‖ := by
-  simpa [toTate_hasseDeriv] using norm_restrictedHasseDeriv_le d (toTate σ R f)
-
-/-- Hasse derivatives do not increase the unit Gauss norm on `W`. -/
+/-- **The Cauchy estimate at unit radius**: Hasse derivatives do not increase the unit Gauss norm
+of an overconvergent series. -/
 theorem norm_hasseDeriv_le (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
-    ‖hasseDeriv σ R d f‖ ≤ ‖f‖ :=
-  norm_toTate_hasseDeriv_le d f
+    ‖hasseDeriv σ R d f‖ ≤ ‖f‖ := by
+  rw [← norm_toTate, toTate_hasseDeriv]
+  simpa using norm_restrictedHasseDeriv_le d (toTate σ R f)
 
 /-- Hasse derivatives are continuous for the unit Gauss norm on `W`. -/
 @[continuity]
