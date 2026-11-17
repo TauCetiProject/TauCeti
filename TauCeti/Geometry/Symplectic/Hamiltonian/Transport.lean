@@ -48,13 +48,14 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensi
 
 /-- **Hamiltonian vector fields of a rescaled form.** For `c ≠ 0`, the Hamiltonian vector field of
 `H` for the form `c • ω` is `c⁻¹` times its Hamiltonian vector field for `ω`. -/
+@[simp]
 theorem hamiltonianVectorField_rescale (ω : SymplecticForm V) {c : ℝ} (hc : c ≠ 0) (H : V → ℝ)
     (x : V) :
     (ω.rescale c hc).hamiltonianVectorField H x = c⁻¹ • ω.hamiltonianVectorField H x := by
   rw [eq_comm, eq_hamiltonianVectorField_iff]
   intro v
-  rw [rescale_apply, ← ω.apply_hamiltonianVectorField H x v]
-  exact (congrArg (c * ·) (ω.toBilinForm.smul_left c⁻¹ _ v)).trans (mul_inv_cancel_left₀ hc _)
+  rw [← ω.apply_hamiltonianVectorField H x v]
+  simp [hc]
 
 /-- **The two sign conventions for Hamiltonian vector fields.** The field `X` with
 `ω(X, ·) = -dH`, which is the Hamiltonian vector field of `H` in the opposite sign convention, is
@@ -87,9 +88,7 @@ theorem IsSymplectomorphism.map_hamiltonianVectorField (he : IsSymplectomorphism
   -- the chain rule for the continuous linear equivalence `e⁻¹`.
   have hfd := (e.symm.toContinuousLinearEquiv).comp_right_fderiv (f := H) (x := e x)
   rw [LinearEquiv.coe_toContinuousLinearEquiv'] at hfd
-  rw [hfd, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.symm_apply_apply,
-    ← ω₁.apply_hamiltonianVectorField H x, ← he.apply, LinearEquiv.apply_symm_apply]
+  simp [hfd, ← ω₁.apply_hamiltonianVectorField H x, ← he.apply]
 
 /-- **Pullback of Hamiltonian vector fields along a linear symplectomorphism.** If
 `e : (V, ω₁) → (W, ω₂)` is a linear symplectomorphism, the Hamiltonian vector field of `G ∘ e` at

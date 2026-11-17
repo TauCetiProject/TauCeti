@@ -40,14 +40,16 @@ On `T*ℝ`, with position `q = x.1` and momentum `p = x.2 1`, the canonical form
 checked on two Hamiltonians.
 
 * For the kinetic energy `H = p² / 2`, the field with `dλ(X, ·) = -dH` is `p ∂_q`
-  (`TauCeti.hamiltonianVectorField_rescale_neg_one_kineticEnergy`). Its image under `ν` is the
-  Hamiltonian vector field of `-H ∘ ν⁻¹ = -p² / 2` for `ω`
-  (`TauCeti.cotangentFiberNeg_hamiltonianVectorField_kineticEnergy`), which is `-p ∂_q`
-  (`TauCeti.hamiltonianVectorField_neg_kineticEnergy`).
+  (`TauCeti.hamiltonianVectorField_rescale_neg_one_real_momentum_sq_div_two`). Its image under
+  `ν` is the Hamiltonian vector field of `-H ∘ ν⁻¹ = -p² / 2` for `ω`
+  (`TauCeti.cotangentFiberNeg_hamiltonianVectorField_real_momentum_sq_div_two`), which is `-p ∂_q`
+  (`TauCeti.hamiltonianVectorField_neg_real_momentum_sq_div_two`).
 * For the harmonic oscillator `H = (q² + p²) / 2`, the field is `p ∂_q - q ∂_p`
-  (`TauCeti.hamiltonianVectorField_rescale_neg_one_oscillatorEnergy`), and its image under `ν`
-  (`TauCeti.cotangentFiberNeg_hamiltonianVectorField_oscillatorEnergy`) is `-p ∂_q + q ∂_p`
-  (`TauCeti.hamiltonianVectorField_neg_oscillatorEnergy`).
+  (`TauCeti.hamiltonianVectorField_rescale_neg_one_real_sq_add_momentum_sq_div_two`), and its
+  image under `ν`
+  (`TauCeti.cotangentFiberNeg_hamiltonianVectorField_real_sq_add_momentum_sq_div_two`) is
+  `-p ∂_q + q ∂_p`
+  (`TauCeti.hamiltonianVectorField_neg_real_sq_add_momentum_sq_div_two`).
 
 ## References
 
@@ -120,8 +122,7 @@ theorem cotangentFiberNeg_hamiltonianVectorField (H : V × StrongDual ℝ V → 
   have h := isSymplectomorphism_cotangentFiberNeg.map_hamiltonianVectorField (-H) x
   rw [ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
     cotangentFiberNeg_symm] at h
-  rw [h]
-  rfl
+  rw [h, Pi.neg_comp]
 
 end General
 
@@ -163,7 +164,7 @@ private theorem hasFDerivAt_real_of_partials {H : ℝ × StrongDual ℝ ℝ → 
   · simp [strongDual_real_apply _ c]
 
 /-- The kinetic energy `p² / 2` has partial derivatives `0` in `q` and `p` in `p`. -/
-private theorem hasFDerivAt_kineticEnergy (x : ℝ × StrongDual ℝ ℝ) :
+private theorem hasFDerivAt_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
     HasFDerivAt (fun y : ℝ × StrongDual ℝ ℝ ↦ y.2 1 ^ 2 / 2)
       (((0 : ℝ) • ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)) +
         (ContinuousLinearMap.apply ℝ ℝ (x.2 1)).comp
@@ -180,29 +181,29 @@ private theorem hasFDerivAt_kineticEnergy (x : ℝ × StrongDual ℝ ℝ) :
 
 /-- **The kinetic energy in the convention of `dλ`.** For `H = p² / 2` on `T*ℝ`, the field `X`
 with `dλ(X, ·) = -dH` is `p ∂_q`. -/
-theorem hamiltonianVectorField_rescale_neg_one_kineticEnergy (x : ℝ × StrongDual ℝ ℝ) :
+theorem hamiltonianVectorField_rescale_neg_one_real_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
     (strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ y.2 1 ^ 2 / 2) x =
       (x.2 1, 0) := by
   rw [hamiltonianVectorField_rescale_neg_one, neg_neg,
-    strongDualCotangentSymplecticForm_hamiltonianVectorField (hasFDerivAt_kineticEnergy x)]
+    strongDualCotangentSymplecticForm_hamiltonianVectorField (hasFDerivAt_momentum_sq_div_two x)]
   simp
 
 /-- **The negated kinetic energy in the convention of `ω`.** For `-p² / 2` on `T*ℝ`, the
 Hamiltonian vector field for `ω = -dλ`, with `ω(X, ·) = dH`, is `-p ∂_q`. -/
-theorem hamiltonianVectorField_neg_kineticEnergy (x : ℝ × StrongDual ℝ ℝ) :
+theorem hamiltonianVectorField_neg_real_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
     strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ y.2 1 ^ 2 / 2) x =
       (-x.2 1, 0) := by
   rw [hamiltonianVectorField_neg,
-    strongDualCotangentSymplecticForm_hamiltonianVectorField (hasFDerivAt_kineticEnergy x)]
+    strongDualCotangentSymplecticForm_hamiltonianVectorField (hasFDerivAt_momentum_sq_div_two x)]
   simp
 
 /-- **The kinetic energy across the two conventions.** The fibrewise negation carries the field
 `p ∂_q` of `H = p² / 2` for `dλ`, in the convention `dλ(X, ·) = -dH`, to the Hamiltonian vector
 field of `-H ∘ ν⁻¹ = -p² / 2` for `ω`, in the convention `ω(X, ·) = dH`, which is `-p ∂_q`
-(`TauCeti.hamiltonianVectorField_neg_kineticEnergy`). -/
-theorem cotangentFiberNeg_hamiltonianVectorField_kineticEnergy (x : ℝ × StrongDual ℝ ℝ) :
+(`TauCeti.hamiltonianVectorField_neg_real_momentum_sq_div_two`). -/
+theorem cotangentFiberNeg_hamiltonianVectorField_real_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
     cotangentFiberNeg
         ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
           (-fun y : ℝ × StrongDual ℝ ℝ ↦ y.2 1 ^ 2 / 2) x) =
@@ -214,7 +215,7 @@ theorem cotangentFiberNeg_hamiltonianVectorField_kineticEnergy (x : ℝ × Stron
   simp
 
 /-- The harmonic oscillator `(q² + p²) / 2` has partial derivatives `q` in `q` and `p` in `p`. -/
-private theorem hasFDerivAt_oscillatorEnergy (x : ℝ × StrongDual ℝ ℝ) :
+private theorem hasFDerivAt_sq_add_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
     HasFDerivAt (fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)
       ((x.1 • ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)) +
         (ContinuousLinearMap.apply ℝ ℝ (x.2 1)).comp
@@ -232,29 +233,33 @@ private theorem hasFDerivAt_oscillatorEnergy (x : ℝ × StrongDual ℝ ℝ) :
 
 /-- **The harmonic oscillator in the convention of `dλ`.** For `H = (q² + p²) / 2` on `T*ℝ`, the
 field `X` with `dλ(X, ·) = -dH` is `p ∂_q - q ∂_p`. -/
-theorem hamiltonianVectorField_rescale_neg_one_oscillatorEnergy (x : ℝ × StrongDual ℝ ℝ) :
+theorem hamiltonianVectorField_rescale_neg_one_real_sq_add_momentum_sq_div_two
+    (x : ℝ × StrongDual ℝ ℝ) :
     (strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) x =
       (x.2 1, -x.1 • ContinuousLinearMap.id ℝ ℝ) := by
   rw [hamiltonianVectorField_rescale_neg_one, neg_neg,
-    strongDualCotangentSymplecticForm_hamiltonianVectorField (hasFDerivAt_oscillatorEnergy x),
+    strongDualCotangentSymplecticForm_hamiltonianVectorField
+      (hasFDerivAt_sq_add_momentum_sq_div_two x),
     ← neg_smul]
 
 /-- **The negated harmonic oscillator in the convention of `ω`.** For `-(q² + p²) / 2` on `T*ℝ`,
 the Hamiltonian vector field for `ω = -dλ`, with `ω(X, ·) = dH`, is `-p ∂_q + q ∂_p`. -/
-theorem hamiltonianVectorField_neg_oscillatorEnergy (x : ℝ × StrongDual ℝ ℝ) :
+theorem hamiltonianVectorField_neg_real_sq_add_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
     strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) x =
       (-x.2 1, x.1 • ContinuousLinearMap.id ℝ ℝ) := by
   rw [hamiltonianVectorField_neg,
-    strongDualCotangentSymplecticForm_hamiltonianVectorField (hasFDerivAt_oscillatorEnergy x)]
+    strongDualCotangentSymplecticForm_hamiltonianVectorField
+      (hasFDerivAt_sq_add_momentum_sq_div_two x)]
   simp
 
 /-- **The harmonic oscillator across the two conventions.** The fibrewise negation carries the
 field `p ∂_q - q ∂_p` of `H = (q² + p²) / 2` for `dλ`, in the convention `dλ(X, ·) = -dH`, to the
 Hamiltonian vector field of `-H ∘ ν⁻¹ = -H` for `ω`, in the convention `ω(X, ·) = dH`, which is
-`-p ∂_q + q ∂_p` (`TauCeti.hamiltonianVectorField_neg_oscillatorEnergy`). -/
-theorem cotangentFiberNeg_hamiltonianVectorField_oscillatorEnergy (x : ℝ × StrongDual ℝ ℝ) :
+`-p ∂_q + q ∂_p` (`TauCeti.hamiltonianVectorField_neg_real_sq_add_momentum_sq_div_two`). -/
+theorem cotangentFiberNeg_hamiltonianVectorField_real_sq_add_momentum_sq_div_two
+    (x : ℝ × StrongDual ℝ ℝ) :
     cotangentFiberNeg
         ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
           (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) x) =
