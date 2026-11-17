@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.Index.Map
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.Algebra.Group.Subgroup.Conjugates
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.QuotientGroup.Congr
 
 /-!
 # Permutation representations on coset spaces
@@ -33,8 +34,6 @@ representations, without assuming `H` normal or of finite index:
   `Subgroup.ofIndex` (with orbit identification `Subgroup.orbitOfIndexEquiv`) transported across
   `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv`, `MulEquiv.ofIndexEquiv_conjAct_smul`, and
   `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
-  `TauCeti.QuotientGroup.congrComapOfSurjectiveMk_smul`,
-  `TauCeti.QuotientGroup.congrOfMapEq_smul`,
   `Equiv.permutationRepresentation_congrComapOfSurjectiveMk`,
   `Equiv.permutationRepresentation_congrOfMapEq`, `Subgroup.rightCosetPerm`,
   `Equiv.permCongr_rightCosetPerm`, and `Subgroup.quotientEquivOp`.
@@ -321,30 +320,6 @@ def orbitRelQuotientOfIndexEquiv (φ : G ≃* G') (n : ℕ) :
     (φ.coe_ofIndexEquiv_symm_apply n H).trans (Subgroup.comap_equiv_eq_map_symm φ H.1)
 
 end MulEquiv
-
-namespace TauCeti.QuotientGroup
-
-variable {G G' : Type*} [Group G] [Group G']
-
-/-- `TauCeti.QuotientGroup.congrComapOfSurjectiveMk` intertwines left translation by `g` with left
-translation by `ψ g`. -/
-@[simp] theorem congrComapOfSurjectiveMk_smul (ψ : G →* G') (B : Subgroup G')
-    (hψ : Function.Surjective fun g : G ↦ (ψ g : G' ⧸ B)) (g : G) (q : G ⧸ B.comap ψ) :
-    congrComapOfSurjectiveMk ψ B hψ (g • q) = ψ g • congrComapOfSurjectiveMk ψ B hψ q :=
-  _root_.QuotientGroup.induction_on q fun _ ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, congrComapOfSurjectiveMk_mk,
-      congrComapOfSurjectiveMk_mk, map_mul, MulAction.Quotient.smul_mk, smul_eq_mul]
-
-/-- `TauCeti.QuotientGroup.congrOfMapEq` intertwines left translation by `g` with left translation
-by `φ g`. -/
-@[simp] theorem congrOfMapEq_smul (φ : G ≃* G') {A : Subgroup G} {B : Subgroup G'}
-    (h : A.map (φ : G →* G') = B) (g : G) (q : G ⧸ A) :
-    congrOfMapEq φ h (g • q) = φ g • congrOfMapEq φ h q :=
-  _root_.QuotientGroup.induction_on q fun _ ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, congrOfMapEq_mk, congrOfMapEq_mk, map_mul,
-      MulAction.Quotient.smul_mk, smul_eq_mul]
-
-end TauCeti.QuotientGroup
 
 namespace Equiv
 

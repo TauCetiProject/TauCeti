@@ -829,26 +829,6 @@ theorem natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividin
       (TriangleGroup.natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividingOrders
         3 2 0 n)
 
-/-- For every `n : ℕ`, `Nat.card` of the conjugacy classes of index-`n` subgroups of `PSL(2, ℤ)`
-equals the number of connected degree-`n` isomorphism classes whose orbits satisfy `σ0 ^ 3 = 1` and
-`σ1 ^ 2 = 1`. -/
-theorem natCard_orbitRel_quotient_ofIndex_eq (n : ℕ) :
-    Nat.card (MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) n)) =
-      ((Finset.univ : Finset (ConnectedIsoClass n)).filter
-        fun c ↦ ∀ t ∈ c.orbitFinset, t.1.σ0 ^ 3 = 1 ∧ t.1.σ1 ^ 2 = 1).card := by
-  rw [natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividingOrders]
-  congr 1
-  ext c
-  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
-  simp only [mem_connectedIsoClassesWithDividingOrders, Finset.mem_filter, Finset.mem_univ,
-    true_and, ConnectedIsoClass.hasDividingOrders_mk, hasDividingOrders_iff, pow_zero, and_true]
-  refine ⟨fun ⟨h0, h1⟩ s hs ↦ ?_, fun h ↦ h t (ConnectedIsoClass.mem_orbitFinset.mpr rfl)⟩
-  obtain ⟨τ, hτ⟩ := ConnectedIsoClass.mk_eq_mk_iff_exists_smul.mp
-    (ConnectedIsoClass.mem_orbitFinset.mp hs)
-  have hval : (s : PermutationTriple n) = τ • t.1 := by rw [← hτ, ConnectedTriple.coe_smul]
-  rw [hval]
-  exact ⟨by simp [h0], by simp [h1]⟩
-
 /-- **Index-`n` subgroup count for `PSL(2, ℤ)`.** For every `n : ℕ` (including `n = 0`, where both
 sides equal `0`), `Nat.card` of the index-`n` subgroups of `PSL(2, ℤ)` is
 `∑ C ∈ connectedIsoClassesWithDividingOrders n 3 2 0, n / C.automorphismOrder`. -/
@@ -884,22 +864,23 @@ theorem connectedIsoClassesWithDividingOrders_three :
 theorem natCard_conjClasses_index_one :
     Nat.card (MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) 1)) =
       1 := by
-  rw [natCard_orbitRel_quotient_ofIndex_eq 1]
+  rw [natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividingOrders 1]
   decide
 
 /-- `PSL(2, ℤ)` has `1` conjugacy class of subgroups of index `2`. -/
 theorem natCard_conjClasses_index_two :
     Nat.card (MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) 2)) =
       1 := by
-  rw [natCard_orbitRel_quotient_ofIndex_eq 2]
+  rw [natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividingOrders 2]
   decide
 
 /-- `PSL(2, ℤ)` has `2` conjugacy classes of subgroups of index `3`. -/
 theorem natCard_conjClasses_index_three :
     Nat.card (MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) 3)) =
       2 := by
-  rw [natCard_orbitRel_quotient_ofIndex_eq 3]
-  decide +kernel
+  rw [natCard_orbitRel_quotient_ofIndex_eq_card_connectedIsoClassesWithDividingOrders 3,
+    connectedIsoClassesWithDividingOrders_three]
+  decide
 
 /-- `PSL(2, ℤ)` has `1` subgroup of index `1`. -/
 theorem natCard_subgroups_index_one : Nat.card (Subgroup.ofIndex PSL(2, ℤ) 1) = 1 := by
