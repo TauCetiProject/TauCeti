@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Complex.Weierstrass
+import TauCeti.RingTheory.Polynomial.Distinguished
 
 /-!
 # Weierstrass preparation and division in holomorphic stalks
@@ -65,9 +66,10 @@ the base stalk. The uniqueness statements are also restated for functions rather
   holomorphic function near `(x₀, w₀)` have the same coefficient and unit germs, and two divisions
   by the same Weierstrass polynomial have the same quotient and remainder germs. They are deduced
   from `weierstrassPreparation_unique` and `weierstrassDivision_unique_of_isDistinguishedAt`.
-* `TauCeti.holomorphicStructureSheaf.evalVertical_dvd_iff_of_isDistinguishedAt`: divisibility by a
-  distinguished polynomial `P` in `(𝒪_{E, x₀})[X]` agrees with divisibility by
-  `evalVertical x₀ w₀ P` in `𝒪_{E × ℂ, (x₀, w₀)}`.
+* `TauCeti.holomorphicStructureSheaf.isUnit_evalVertical_iff_of_isDistinguishedAt`,
+  `TauCeti.holomorphicStructureSheaf.evalVertical_dvd_iff_of_isDistinguishedAt`: for a distinguished
+  polynomial `P` in `(𝒪_{E, x₀})[X]`, `evalVertical x₀ w₀ P` is a unit iff `P = 1`, and divisibility
+  by `P` agrees with divisibility by `evalVertical x₀ w₀ P` in `𝒪_{E × ℂ, (x₀, w₀)}`.
 * `TauCeti.holomorphicStructureSheaf.existsUnique_weierstrassPreparation`,
   `TauCeti.holomorphicStructureSheaf.existsUnique_weierstrassPreparation_of_analyticOrderAt`,
   `TauCeti.holomorphicStructureSheaf.existsUnique_weierstrassDivision_of_isDistinguishedAt`,
@@ -491,6 +493,17 @@ theorem weierstrassPreparation_unique {x₀ : E} {w₀ : ℂ}
   have H₂ := isWeierstrassFactorization_verticalPowerSeries_iff.2 ⟨hP', hu', hg'⟩
   obtain ⟨hPP', huu'⟩ := H₁.elim H₂
   exact ⟨hPP', verticalPowerSeries_injective x₀ w₀ huu'⟩
+
+/-- For a polynomial `P` distinguished at the maximal ideal of `𝒪_{E, x₀}`, its vertical evaluation
+at `(x₀, w₀)` is a unit if and only if `P = 1` (without assuming finite-dimensionality of `E`). -/
+theorem isUnit_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    IsUnit (evalVertical x₀ w₀ P) ↔ P = 1 :=
+  ⟨fun hu ↦ (weierstrassPreparation_unique hP isUnit_one (mul_one _).symm
+      Polynomial.isDistinguishedAt_one hu (by rw [map_one, one_mul])).1,
+    fun h ↦ h ▸ by rw [map_one]; exact isUnit_one⟩
 
 /-- **Uniqueness of Weierstrass division in holomorphic stalks** (without assuming
 finite-dimensionality of `E`). -/

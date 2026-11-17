@@ -61,19 +61,6 @@ section NormedSpace
 variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W]
 
-/-- On a zero-dimensional space, evaluation identifies every holomorphic stalk with `ℂ`. -/
-private theorem isNoetherianRing_stalk_of_finrank_eq_zero [FiniteDimensional ℂ V]
-    (hV : finrank ℂ V = 0) (x : V) :
-    IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x) := by
-  have hV' : ∀ y : V, y = x := fun y ↦
-    (finrank_zero_iff_forall_zero.1 hV y).trans (finrank_zero_iff_forall_zero.1 hV x).symm
-  refine isNoetherianRing_of_ringEquiv ℂ (RingEquiv.ofBijective (eval 𝓘(ℂ, V) V x)
-    ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective _ _ x⟩).symm
-  obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
-  refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
-  refine Eventually.of_forall fun y ↦ ?_
-  rw [hV' y, ← eval_eq_of_toFilterGerm_eq (hφ _ le_rfl), hs, Pi.zero_apply]
-
 /-- If the holomorphic stalks of `V` are Noetherian, so are those of `V × ℂ`: an ideal containing
 a nonzero germ is finitely generated because, after a linear change of coordinates making
 the germ regular in the last variable, the quotient by the germ is finite over a stalk of `V` by
@@ -115,7 +102,10 @@ private theorem isNoetherianRing_stalk_of_finrank_eq :
     ∀ (n : ℕ) (V : Type) [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V],
       finrank ℂ V = n → ∀ x : V,
         IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x)
-  | 0, _, _, _, _, hV, x => isNoetherianRing_stalk_of_finrank_eq_zero hV x
+  | 0, V, _, _, _, hV, x => by
+    have := finrank_zero_iff.1 hV
+    exact isNoetherianRing_of_ringEquiv ℂ
+      (evalRingEquivOfSingletonMemNhds 𝓘(ℂ, V) ((isOpen_discrete _).mem_nhds rfl)).symm
   | n + 1, V, _, _, _, hV, x => by
     let e : V ≃L[ℂ] (Fin n → ℂ) × ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp [hV])
     have := isNoetherianRing_stalk_prod
