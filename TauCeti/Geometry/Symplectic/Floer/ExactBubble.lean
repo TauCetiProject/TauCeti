@@ -82,11 +82,18 @@ private def polarCap (z : ℝ × ℝ) : ℝ × ℝ :=
 
 private theorem polarCap_apply (z : ℝ × ℝ) :
     polarCap z = ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2)) :=
-  rfl
+  polarCoord_symm_apply _
 
-private theorem contDiff_polarCap {n : WithTop ℕ∞} : ContDiff ℝ n polarCap := by
+/-- The polar parametrization is the polar cap of the identity map of the plane; its smoothness and
+periodicity are read off from `TauCeti.isLoopCylinder_comp_polar`. -/
+private theorem isLoopCylinder_polarCap :
+    IsLoopCylinder 𝓘(ℝ, ℝ × ℝ) polarCap (fun t ↦ (cos (2 * π * t), sin (2 * π * t)))
+      fun _ ↦ 0 := by
   rw [funext polarCap_apply]
-  fun_prop
+  exact isLoopCylinder_comp_polar contMDiff_id
+
+private theorem contDiff_polarCap : ContDiff ℝ 2 polarCap :=
+  contMDiff_iff_contDiff.1 isLoopCylinder_polarCap.contMDiff
 
 /-- The derivative of the polar parametrization: the inverse polar map after the affine map
 `(s, t) ↦ (1 - s, 2πt)`. -/
@@ -109,8 +116,8 @@ private theorem fderiv_polarCap_apply_snd (z : ℝ × ℝ) :
   rw [(hasFDerivAt_polarCap z).fderiv]
   ext <;> simp [fderivPolarCoordSymm] <;> ring
 
-private theorem polarCap_add_one (z : ℝ × ℝ) : polarCap (z.1, z.2 + 1) = polarCap z := by
-  simp only [polarCap_apply, mul_add, mul_one, cos_add_two_pi, sin_add_two_pi]
+private theorem polarCap_add_one (z : ℝ × ℝ) : polarCap (z.1, z.2 + 1) = polarCap z :=
+  isLoopCylinder_polarCap.apply_add_one z
 
 private theorem polarCap_norm_sq (z : ℝ × ℝ) :
     (polarCap z).1 ^ 2 + (polarCap z).2 ^ 2 = (1 - z.1) ^ 2 := by
@@ -188,7 +195,7 @@ private abbrev polarDensity (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z :
 private theorem continuous_polarDensity (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous (polarDensity ω u) :=
   (ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv
-    (hu.comp (contDiff_polarCap (n := 1)).contMDiff) (1, 0) (0, 1)
+    (hu.comp (contDiff_polarCap.of_le one_le_two).contMDiff) (1, 0) (0, 1)
 
 variable {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
 
@@ -216,8 +223,10 @@ private theorem integral_polarDensity (hα : mextDeriv α.1 = ω.1)
     ∫ z in Icc (0, 0) (1, 1), polarDensity ω u z =
       -pathIntegral α.1 (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 := by
   rw [(ω.isSmoothForm.of_le (by simp)).setIntegral_eq_rectangleIntegral
-    ((hu.comp (contDiff_polarCap (n := 2)).contMDiff).of_le one_le_two)
+    ((hu.comp contDiff_polarCap.contMDiff).of_le one_le_two)
     (Prod.mk_le_mk.2 ⟨zero_le_one, zero_le_one⟩), ← hα]
+  -- Unfold the polar cap to the explicit polar formula of `TauCeti.isLoopCylinder_comp_polar`.
+  simp only [comp_def, polarCap_apply]
   refine ((isLoopCylinder_comp_polar hu).rectangleIntegral_mextDeriv
     (α.isSmoothForm.of_le (by simp))).trans ?_
   rw [pathIntegral_const_curve, zero_sub]
@@ -320,7 +329,7 @@ theorem IsNondegenerate.apply_eq_apply_zero_of_pathIntegral_eq_zero (hω : ω.Is
       hUopen hcont.neg.continuousOn continuousOn_const hz
   -- Hence the polar cap has zero derivative on the open square and is constant there.
   have hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ polarCap) :=
-    hu₁.comp (contDiff_polarCap (n := 1)).contMDiff
+    hu₁.comp (contDiff_polarCap.of_le one_le_two).contMDiff
   have hhalf : ((1 / 2 : ℝ), (1 / 2 : ℝ)) ∈ U :=
     ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩
   have hconst : EqOn (u ∘ polarCap) (fun _ ↦ (u ∘ polarCap) (1 / 2, 1 / 2)) U := fun p hp ↦
