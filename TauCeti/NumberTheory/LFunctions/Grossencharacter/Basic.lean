@@ -142,6 +142,25 @@ theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOne
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
 
+/-- Two presentations of the same Hecke character, even at different moduli, have the same
+algebraic infinity type. -/
+theorem infinityType_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.infinityType = ψ.infinityType :=
+  AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
+    (χ.agreesOnIdentityComponent.symm.trans (h ▸ ψ.agreesOnIdentityComponent))
+
+/-- A presentation of a finite-order Hecke character has the zero algebraic infinity type. -/
+theorem infinityType_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
+    (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.infinityType = 0 := by
+  obtain ⟨ε, hε⟩ := HeckeCharacter.exists_finiteOrderInfinityType h
+  have hagrees : χ.toHeckeCharacter.infinityType.AgreesOnIdentityComponent
+      (AlgebraicInfinityType.toContinuous 0) := by
+    rw [hε, map_zero,
+      ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType]
+    exact ⟨ε, (zero_add _).symm⟩
+  exact AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
+    (χ.agreesOnIdentityComponent.symm.trans hagrees)
+
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
 the weight is determined at every prime: at the primes of `𝔪` it vanishes, and at the others it is
@@ -149,9 +168,7 @@ a local component of the unitary part. -/
 @[ext]
 theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) :
     χ = ψ := by
-  have hn : χ.infinityType = ψ.infinityType :=
-    AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
-      (χ.agreesOnIdentityComponent.symm.trans (h ▸ ψ.agreesOnIdentityComponent))
+  have hn : χ.infinityType = ψ.infinityType := infinityType_congr h
   have hw : χ.unitaryWeight = ψ.unitaryWeight := by
     refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
     by_cases hv : v.asIdeal ∣ 𝔪.finitePart
@@ -222,6 +239,16 @@ def idealShift (χ : Grossencharacter K 𝔪) : ℝ :=
 theorem idealShift_def (χ : Grossencharacter K 𝔪) :
     χ.idealShift = -χ.toHeckeCharacter.shift :=
   (rfl)
+
+/-- Two presentations of the same Hecke character have the same ideal-side shift. -/
+theorem idealShift_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.idealShift = ψ.idealShift := by
+  rw [idealShift_def, idealShift_def, h]
+
+/-- A presentation of a finite-order Hecke character has ideal-side shift `0`. -/
+theorem idealShift_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
+    (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.idealShift = 0 := by
+  rw [idealShift_def, HeckeCharacter.shift_eq_zero_of_isOfFinOrder h, neg_zero]
 
 /-- **The value at a prime idele.** At a uniformizer `π_v` of `K_v`, `v ∤ 𝔪`, the presented Hecke
 character is the unitary weight times the norm to the ideal-side shift:
@@ -300,9 +327,8 @@ theorem infinityType_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
 /-- A ray class character has ideal-side shift `0`, as it has finite order. -/
 @[simp]
 theorem idealShift_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
-    (ofRayClassCharacter η).idealShift = 0 := by
-  rw [idealShift_def, toHeckeCharacter_ofRayClassCharacter,
-    HeckeCharacter.shift_ofRayClassCharacter, neg_zero]
+    (ofRayClassCharacter η).idealShift = 0 :=
+  idealShift_eq_zero_of_isFiniteOrder _ (HeckeCharacter.isFiniteOrder_ofRayClassCharacter η)
 
 /-! ### The presented L-function -/
 
@@ -326,14 +352,24 @@ theorem meromorphicNFOn_lFunctionC (χ : Grossencharacter K 𝔪) :
     MeromorphicNFOn χ.lFunctionC univ :=
   meromorphicNFOn_meromorphicContinuation _ _
 
-/-- The presented L-function is holomorphic on `Re s > 1 + idealShift`. -/
-theorem analyticOnNhd_lFunctionC (χ : Grossencharacter K 𝔪) :
-    AnalyticOnNhd ℂ χ.lFunctionC {s | 1 + χ.idealShift < s.re} := by
-  refine analyticOnNhd_meromorphicContinuation
-    ((analyticOnNhd_LSeries_of_unitary χ.unitaryWeight).comp
-      (analyticOnNhd_id.sub analyticOnNhd_const) fun s hs ↦ ?_)
+/-- The presented L-function is meromorphic on the whole complex plane. -/
+theorem meromorphic_lFunctionC (χ : Grossencharacter K 𝔪) : Meromorphic χ.lFunctionC :=
+  meromorphicOn_univ.mp χ.meromorphicNFOn_lFunctionC.meromorphicOn
+
+/-- The shifted Dirichlet series of `χ` is holomorphic on `Re s > 1 + idealShift`. -/
+theorem analyticOnNhd_LSeries_sub_idealShift (χ : Grossencharacter K 𝔪) :
+    AnalyticOnNhd ℂ
+      (fun s ↦ LSeries (normCoeff K χ.unitaryWeight.toIdealArithmeticFunction) (s - χ.idealShift))
+      {s | 1 + χ.idealShift < s.re} := by
+  refine (analyticOnNhd_LSeries_of_unitary χ.unitaryWeight).comp
+    (analyticOnNhd_id.sub analyticOnNhd_const) fun s hs ↦ ?_
   simp only [mem_ofPred_eq, Complex.sub_re, Complex.ofReal_re] at hs ⊢
   linarith
+
+/-- The presented L-function is holomorphic on `Re s > 1 + idealShift`. -/
+theorem analyticOnNhd_lFunctionC (χ : Grossencharacter K 𝔪) :
+    AnalyticOnNhd ℂ χ.lFunctionC {s | 1 + χ.idealShift < s.re} :=
+  analyticOnNhd_meromorphicContinuation χ.analyticOnNhd_LSeries_sub_idealShift
 
 /-- **The presented L-function of a ray class character** is its presented Hecke L-function. -/
 theorem lFunctionC_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
