@@ -28,10 +28,10 @@ Both existence and uniqueness specialize the Monsky–Washnitzer quotient extens
 `TauCeti.RingTheory.Dagger.TateLift`) to the minimal presentation `presentation K A : W_n ↠ A`.
 
 Specializing `S` to the completion `B̂` of a second dagger algebra `B` makes `A ↦ Â` a functor
-(`TauCeti.Dagger.completionMap`) sending `K`-algebra isomorphisms to topological `K`-algebra
-isomorphisms (`TauCeti.Dagger.completionContinuousAlgEquivOfAlgEquiv`). Applying the universal
+(`AlgHom.daggerCompletionMap`) sending `K`-algebra isomorphisms to topological `K`-algebra
+isomorphisms (`AlgEquiv.daggerCompletionContinuousAlgEquiv`). Applying the universal
 property in both directions identifies `Â` with `T_σ ⧸ (ker π) T_σ` for every presentation
-`π : W_σ ↠ A` (`TauCeti.Dagger.presentationCompletionContinuousAlgEquiv`), and in particular
+`π : W_σ ↠ A` (`AlgHom.daggerPresentationCompletionContinuousAlgEquiv`), and in particular
 identifies the completion of `W_σ` with `T_σ`
 (`TauCeti.Dagger.washnitzerAlgebra.completionContinuousAlgEquiv`).
 
@@ -39,12 +39,12 @@ identifies the completion of `W_σ` with `T_σ`
 
 * `TauCeti.Dagger.completionLift`, `TauCeti.Dagger.completionLiftEquiv`: the universal extension
   `(completion K A →ₐ[K] S) ≃ (A →ₐ[K] S)` for an affinoid algebra `S`.
-* `TauCeti.Dagger.completionMap`: the completion `completion K A →ₐ[K] completion K B` of a
+* `AlgHom.daggerCompletionMap`: the completion `completion K A →ₐ[K] completion K B` of a
   morphism `A →ₐ[K] B` of dagger algebras, together with
-  `TauCeti.Dagger.completionAlgEquivOfAlgEquiv` and
-  `TauCeti.Dagger.completionContinuousAlgEquivOfAlgEquiv`: the induced algebraic and topological
+  `AlgEquiv.daggerCompletionAlgEquiv` and
+  `AlgEquiv.daggerCompletionContinuousAlgEquiv`: the induced algebraic and topological
   isomorphisms for `A ≃ₐ[K] B`.
-* `TauCeti.Dagger.presentationCompletionContinuousAlgEquiv`: comparison of `completion K A` with
+* `AlgHom.daggerPresentationCompletionContinuousAlgEquiv`: comparison of `completion K A` with
   `T_σ ⧸ (ker π) T_σ` for an arbitrary presentation `π : W_σ ↠ A`.
 * `TauCeti.Dagger.washnitzerAlgebra.completionContinuousAlgEquiv`: the topological `K`-algebra
   isomorphism `completion K (washnitzerAlgebra σ K) ≃A[K] T_σ`.
@@ -54,11 +54,11 @@ identifies the completion of `W_σ` with `T_σ`
 * `TauCeti.Dagger.completion_algHom_ext_of_isAffinoidAlgebra` and
   `TauCeti.Dagger.existsUnique_algHom_completion`: every `K`-algebra map `A →ₐ[K] S` into an
   affinoid algebra factors uniquely through `toCompletion K A`.
-* `TauCeti.Dagger.completion_algHom_ext`, `TauCeti.Dagger.completionMap_unique`,
-  `TauCeti.Dagger.completionMap_id`, `TauCeti.Dagger.completionMap_comp`,
-  `TauCeti.Dagger.continuous_completionMap`: uniqueness, functoriality, and continuity of
-  `completionMap`.
-* `TauCeti.Dagger.supSeminorm_toCompletion`, `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_map_le`,
+* `TauCeti.Dagger.completion_algHom_ext`, `AlgHom.daggerCompletionMap_unique`,
+  `AlgHom.daggerCompletionMap_id`, `AlgHom.daggerCompletionMap_comp`,
+  `AlgHom.continuous_daggerCompletionMap`: uniqueness, functoriality, and continuity of
+  `AlgHom.daggerCompletionMap`.
+* `TauCeti.Dagger.supSeminorm_toCompletion`, `AlgHom.supSeminorm_map_le_of_isDaggerAlgebra`,
   `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_eq_zero_iff`,
   `TauCeti.Dagger.IsDaggerAlgebra.isReduced_iff_supSeminorm_eq_zero`: the completion map preserves
   `supSeminorm`, morphisms of dagger algebras contract it, and its kernel is the nilradical.
@@ -147,12 +147,11 @@ theorem completionLiftEquiv_symm_apply (hS : IsAffinoidAlgebra K S) (φ : A →�
 
 end CompletionLift
 
-section Functoriality
+section CompletionExt
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A B C : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
   [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
-  [CommRing C] [Algebra K C] [IsDaggerAlgebra K C]
 
 /-- Two `K`-algebra homomorphisms between completions of dagger algebras that agree on `A` are
 equal. -/
@@ -160,150 +159,182 @@ theorem completion_algHom_ext {Φ₁ Φ₂ : completion K A →ₐ[K] completion
     (h : ∀ a, Φ₁ (toCompletion K A a) = Φ₂ (toCompletion K A a)) : Φ₁ = Φ₂ :=
   completion_algHom_ext_of_isAffinoidAlgebra isAffinoidAlgebra_completion h
 
+end CompletionExt
+
+end TauCeti.Dagger
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+section DaggerCompletion
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B C : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+  [CommRing C] [Algebra K C] [IsDaggerAlgebra K C]
+
 /-- **Functoriality of dagger completion.** Every `K`-algebra homomorphism `φ : A →ₐ[K] B` of
 dagger algebras extends uniquely to a `K`-algebra homomorphism
 `φ̂ : completion K A →ₐ[K] completion K B` compatible with `toCompletion`. -/
-noncomputable def completionMap (φ : A →ₐ[K] B) : completion K A →ₐ[K] completion K B :=
+noncomputable def daggerCompletionMap (φ : A →ₐ[K] B) : completion K A →ₐ[K] completion K B :=
   completionLift isAffinoidAlgebra_completion ((toCompletion K B).comp φ)
 
-/-- `completionMap φ` commutes with `toCompletion` on elements. -/
+/-- `φ.daggerCompletionMap` commutes with `toCompletion` on elements. -/
 @[simp]
-theorem completionMap_toCompletion (φ : A →ₐ[K] B) (a : A) :
-    completionMap φ (toCompletion K A a) = toCompletion K B (φ a) :=
+theorem daggerCompletionMap_toCompletion (φ : A →ₐ[K] B) (a : A) :
+    φ.daggerCompletionMap (toCompletion K A a) = toCompletion K B (φ a) :=
   completionLift_toCompletion isAffinoidAlgebra_completion _ a
 
-/-- `completionMap φ` intertwines the completion maps. -/
+/-- `φ.daggerCompletionMap` intertwines the completion maps. -/
 @[simp]
-theorem completionMap_comp_toCompletion (φ : A →ₐ[K] B) :
-    (completionMap φ).comp (toCompletion K A) = (toCompletion K B).comp φ :=
+theorem daggerCompletionMap_comp_toCompletion (φ : A →ₐ[K] B) :
+    φ.daggerCompletionMap.comp (toCompletion K A) = (toCompletion K B).comp φ :=
   completionLift_comp_toCompletion isAffinoidAlgebra_completion _
 
-/-- `completionMap φ` is the unique `K`-algebra homomorphism `Â →ₐ[K] B̂` intertwining `φ` with
-`toCompletion`. -/
-theorem completionMap_unique {φ : A →ₐ[K] B} {Φ : completion K A →ₐ[K] completion K B}
-    (h : Φ.comp (toCompletion K A) = (toCompletion K B).comp φ) : Φ = completionMap φ :=
+/-- `φ.daggerCompletionMap` is the unique `K`-algebra homomorphism `Â →ₐ[K] B̂` intertwining `φ`
+with `toCompletion`. -/
+theorem daggerCompletionMap_unique {φ : A →ₐ[K] B} {Φ : completion K A →ₐ[K] completion K B}
+    (h : Φ.comp (toCompletion K A) = (toCompletion K B).comp φ) : Φ = φ.daggerCompletionMap :=
   completion_algHom_ext fun a ↦ by
-    rw [← AlgHom.comp_apply, h, AlgHom.comp_apply, completionMap_toCompletion]
+    rw [← AlgHom.comp_apply, h, AlgHom.comp_apply, daggerCompletionMap_toCompletion]
 
-/-- The induced map between completions is continuous for their quotient Gauss norms. -/
-theorem continuous_completionMap (φ : A →ₐ[K] B) : Continuous (completionMap φ) :=
+/-- The induced map between dagger completions is continuous for their quotient Gauss norms. -/
+theorem continuous_daggerCompletionMap (φ : A →ₐ[K] B) : Continuous φ.daggerCompletionMap :=
   have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
   IsAffinoidAlgebra.continuous_algHom (K := K) (A := completion K B) (B := completion K A)
-    isAffinoidAlgebra_completion (completionMap φ)
+    isAffinoidAlgebra_completion φ.daggerCompletionMap
 
-/-- `completionMap` sends the identity homomorphism to the identity homomorphism. -/
+/-- `daggerCompletionMap` sends the identity homomorphism to the identity homomorphism. -/
 @[simp]
-theorem completionMap_id :
-    completionMap (AlgHom.id K A) = AlgHom.id K (completion K A) :=
+theorem daggerCompletionMap_id :
+    (AlgHom.id K A).daggerCompletionMap = AlgHom.id K (completion K A) :=
   completion_algHom_ext fun a ↦ by simp
 
-/-- `completionMap` respects composition of `K`-algebra homomorphisms. -/
+/-- `daggerCompletionMap` respects composition of `K`-algebra homomorphisms. -/
 @[simp]
-theorem completionMap_comp (ψ : B →ₐ[K] C) (φ : A →ₐ[K] B) :
-    completionMap (ψ.comp φ) = (completionMap ψ).comp (completionMap φ) :=
+theorem daggerCompletionMap_comp (ψ : B →ₐ[K] C) (φ : A →ₐ[K] B) :
+    (ψ.comp φ).daggerCompletionMap = ψ.daggerCompletionMap.comp φ.daggerCompletionMap :=
   completion_algHom_ext fun a ↦ by simp
+
+end DaggerCompletion
+
+end AlgHom
+
+namespace AlgEquiv
+
+open TauCeti TauCeti.Dagger
+
+section DaggerCompletion
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B C : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+  [CommRing C] [Algebra K C] [IsDaggerAlgebra K C]
 
 /-- A `K`-algebra isomorphism of dagger algebras induces a `K`-algebra isomorphism of their
 completions. -/
-noncomputable def completionAlgEquivOfAlgEquiv (e : A ≃ₐ[K] B) :
+noncomputable def daggerCompletionAlgEquiv (e : A ≃ₐ[K] B) :
     completion K A ≃ₐ[K] completion K B :=
-  AlgEquiv.ofAlgHom (completionMap e.toAlgHom) (completionMap e.symm.toAlgHom)
+  AlgEquiv.ofAlgHom e.toAlgHom.daggerCompletionMap e.symm.toAlgHom.daggerCompletionMap
     (completion_algHom_ext fun b ↦ by simp)
     (completion_algHom_ext fun a ↦ by simp)
 
-/-- The underlying `AlgHom` of `completionAlgEquivOfAlgEquiv e` is `completionMap e.toAlgHom`. -/
+/-- The underlying `AlgHom` of `e.daggerCompletionAlgEquiv` is `e.toAlgHom.daggerCompletionMap`. -/
 @[simp]
-theorem toAlgHom_completionAlgEquivOfAlgEquiv (e : A ≃ₐ[K] B) :
-    (completionAlgEquivOfAlgEquiv e).toAlgHom = completionMap e.toAlgHom := (rfl)
+theorem toAlgHom_daggerCompletionAlgEquiv (e : A ≃ₐ[K] B) :
+    e.daggerCompletionAlgEquiv.toAlgHom = e.toAlgHom.daggerCompletionMap := (rfl)
 
-/-- Applying `completionAlgEquivOfAlgEquiv e` evaluates `completionMap e.toAlgHom`. -/
+/-- Applying `e.daggerCompletionAlgEquiv` evaluates `e.toAlgHom.daggerCompletionMap`. -/
 @[simp]
-theorem completionAlgEquivOfAlgEquiv_apply (e : A ≃ₐ[K] B) (x : completion K A) :
-    completionAlgEquivOfAlgEquiv e x = completionMap e.toAlgHom x := (rfl)
+theorem daggerCompletionAlgEquiv_apply (e : A ≃ₐ[K] B) (x : completion K A) :
+    e.daggerCompletionAlgEquiv x = e.toAlgHom.daggerCompletionMap x := (rfl)
 
-/-- `completionAlgEquivOfAlgEquiv` commutes with `.symm`. -/
+/-- `daggerCompletionAlgEquiv` commutes with `.symm`. -/
 @[simp]
-theorem completionAlgEquivOfAlgEquiv_symm (e : A ≃ₐ[K] B) :
-    (completionAlgEquivOfAlgEquiv e).symm = completionAlgEquivOfAlgEquiv e.symm := (rfl)
+theorem daggerCompletionAlgEquiv_symm (e : A ≃ₐ[K] B) :
+    e.daggerCompletionAlgEquiv.symm = e.symm.daggerCompletionAlgEquiv := (rfl)
 
-/-- `completionAlgEquivOfAlgEquiv` sends `AlgEquiv.refl` to `AlgEquiv.refl`. -/
+/-- `daggerCompletionAlgEquiv` sends `AlgEquiv.refl` to `AlgEquiv.refl`. -/
 @[simp]
-theorem completionAlgEquivOfAlgEquiv_refl :
-    completionAlgEquivOfAlgEquiv (AlgEquiv.refl : A ≃ₐ[K] A) = AlgEquiv.refl := by
+theorem daggerCompletionAlgEquiv_refl :
+    (AlgEquiv.refl : A ≃ₐ[K] A).daggerCompletionAlgEquiv = AlgEquiv.refl := by
   ext x
   simp
 
-/-- `completionAlgEquivOfAlgEquiv` respects composition of `K`-algebra isomorphisms. -/
+/-- `daggerCompletionAlgEquiv` respects composition of `K`-algebra isomorphisms. -/
 @[simp]
-theorem completionAlgEquivOfAlgEquiv_trans (e₁ : A ≃ₐ[K] B) (e₂ : B ≃ₐ[K] C) :
-    completionAlgEquivOfAlgEquiv (e₁.trans e₂) =
-      (completionAlgEquivOfAlgEquiv e₁).trans (completionAlgEquivOfAlgEquiv e₂) := by
+theorem daggerCompletionAlgEquiv_trans (e₁ : A ≃ₐ[K] B) (e₂ : B ≃ₐ[K] C) :
+    (e₁.trans e₂).daggerCompletionAlgEquiv =
+      e₁.daggerCompletionAlgEquiv.trans e₂.daggerCompletionAlgEquiv := by
   ext x
   have h : (e₁.trans e₂).toAlgHom = e₂.toAlgHom.comp e₁.toAlgHom := rfl
   simp [h]
 
 /-- A `K`-algebra isomorphism of dagger algebras induces a topological `K`-algebra isomorphism of
 their completions. -/
-noncomputable def completionContinuousAlgEquivOfAlgEquiv (e : A ≃ₐ[K] B) :
+noncomputable def daggerCompletionContinuousAlgEquiv (e : A ≃ₐ[K] B) :
     completion K A ≃A[K] completion K B :=
   IsAffinoidAlgebra.toContinuousAlgEquiv (K := K) (A := completion K A) (B := completion K B)
-    isAffinoidAlgebra_completion (completionAlgEquivOfAlgEquiv e)
+    isAffinoidAlgebra_completion e.daggerCompletionAlgEquiv
 
-/-- The underlying `AlgEquiv` of `completionContinuousAlgEquivOfAlgEquiv e` is
-`completionAlgEquivOfAlgEquiv e`. -/
+/-- The underlying `AlgEquiv` of `e.daggerCompletionContinuousAlgEquiv` is
+`e.daggerCompletionAlgEquiv`. -/
 @[simp]
-theorem toAlgEquiv_completionContinuousAlgEquivOfAlgEquiv (e : A ≃ₐ[K] B) :
-    (completionContinuousAlgEquivOfAlgEquiv e).toAlgEquiv = completionAlgEquivOfAlgEquiv e := by
-  simp [completionContinuousAlgEquivOfAlgEquiv]
+theorem toAlgEquiv_daggerCompletionContinuousAlgEquiv (e : A ≃ₐ[K] B) :
+    e.daggerCompletionContinuousAlgEquiv.toAlgEquiv = e.daggerCompletionAlgEquiv := by
+  simp [daggerCompletionContinuousAlgEquiv]
 
-/-- Applying `completionContinuousAlgEquivOfAlgEquiv e` evaluates `completionMap e.toAlgHom`. -/
+/-- Applying `e.daggerCompletionContinuousAlgEquiv` evaluates `e.toAlgHom.daggerCompletionMap`. -/
 @[simp]
-theorem completionContinuousAlgEquivOfAlgEquiv_apply (e : A ≃ₐ[K] B) (x : completion K A) :
-    completionContinuousAlgEquivOfAlgEquiv e x = completionMap e.toAlgHom x := by
-  simp [completionContinuousAlgEquivOfAlgEquiv]
+theorem daggerCompletionContinuousAlgEquiv_apply (e : A ≃ₐ[K] B) (x : completion K A) :
+    e.daggerCompletionContinuousAlgEquiv x = e.toAlgHom.daggerCompletionMap x := by
+  simp [daggerCompletionContinuousAlgEquiv]
 
-/-- `completionContinuousAlgEquivOfAlgEquiv e` commutes with `toCompletion`. -/
-theorem completionContinuousAlgEquivOfAlgEquiv_toCompletion (e : A ≃ₐ[K] B) (a : A) :
-    completionContinuousAlgEquivOfAlgEquiv e (toCompletion K A a) = toCompletion K B (e a) := by
+/-- `e.daggerCompletionContinuousAlgEquiv` commutes with `toCompletion`. -/
+theorem daggerCompletionContinuousAlgEquiv_toCompletion (e : A ≃ₐ[K] B) (a : A) :
+    e.daggerCompletionContinuousAlgEquiv (toCompletion K A a) = toCompletion K B (e a) := by
   simp
 
-/-- `completionContinuousAlgEquivOfAlgEquiv` commutes with `.symm`. -/
+/-- `daggerCompletionContinuousAlgEquiv` commutes with `.symm`. -/
 @[simp]
-theorem completionContinuousAlgEquivOfAlgEquiv_symm (e : A ≃ₐ[K] B) :
-    (completionContinuousAlgEquivOfAlgEquiv e).symm =
-      completionContinuousAlgEquivOfAlgEquiv e.symm := by
+theorem daggerCompletionContinuousAlgEquiv_symm (e : A ≃ₐ[K] B) :
+    e.daggerCompletionContinuousAlgEquiv.symm = e.symm.daggerCompletionContinuousAlgEquiv := by
   ext x
-  refine (completionContinuousAlgEquivOfAlgEquiv e).symm_apply_eq.mpr ?_
-  have h : completionMap e.toAlgHom (completionMap e.symm.toAlgHom x) = x := by
-    simp [← AlgHom.comp_apply, ← completionMap_comp]
+  refine e.daggerCompletionContinuousAlgEquiv.symm_apply_eq.mpr ?_
+  have h : e.toAlgHom.daggerCompletionMap (e.symm.toAlgHom.daggerCompletionMap x) = x := by
+    simp [← AlgHom.comp_apply, ← AlgHom.daggerCompletionMap_comp]
   simpa using h.symm
 
-/-- `completionContinuousAlgEquivOfAlgEquiv` sends `AlgEquiv.refl` to `ContinuousAlgEquiv.refl`. -/
+/-- `daggerCompletionContinuousAlgEquiv` sends `AlgEquiv.refl` to `ContinuousAlgEquiv.refl`. -/
 @[simp]
-theorem completionContinuousAlgEquivOfAlgEquiv_refl :
-    completionContinuousAlgEquivOfAlgEquiv (AlgEquiv.refl : A ≃ₐ[K] A) =
+theorem daggerCompletionContinuousAlgEquiv_refl :
+    (AlgEquiv.refl : A ≃ₐ[K] A).daggerCompletionContinuousAlgEquiv =
       ContinuousAlgEquiv.refl K (completion K A) := by
   ext x
   simp
 
-/-- `completionContinuousAlgEquivOfAlgEquiv` respects composition of `K`-algebra isomorphisms. -/
+/-- `daggerCompletionContinuousAlgEquiv` respects composition of `K`-algebra isomorphisms. -/
 @[simp]
-theorem completionContinuousAlgEquivOfAlgEquiv_trans (e₁ : A ≃ₐ[K] B) (e₂ : B ≃ₐ[K] C) :
-    completionContinuousAlgEquivOfAlgEquiv (e₁.trans e₂) =
-      (completionContinuousAlgEquivOfAlgEquiv e₁).trans
-        (completionContinuousAlgEquivOfAlgEquiv e₂) := by
+theorem daggerCompletionContinuousAlgEquiv_trans (e₁ : A ≃ₐ[K] B) (e₂ : B ≃ₐ[K] C) :
+    (e₁.trans e₂).daggerCompletionContinuousAlgEquiv =
+      e₁.daggerCompletionContinuousAlgEquiv.trans e₂.daggerCompletionContinuousAlgEquiv := by
   ext x
   have h : (e₁.trans e₂).toAlgHom = e₂.toAlgHom.comp e₁.toAlgHom := rfl
   simp [h]
 
-end Functoriality
+end DaggerCompletion
+
+end AlgEquiv
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger _root_.MvPowerSeries
 
 section PresentationComparison
 
-section ArbitraryPresentation
-
 variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  [Finite σ] {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [_root_.Finite σ] {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 local notation "T " α:max => IsRestricted.subring (R := K) (fun _ : α ↦ (1 : ℝ))
 
@@ -315,7 +346,7 @@ private noncomputable def toPresentationCompletion (π : washnitzerAlgebra σ K 
   (Ideal.quotientMapₐ _ (washnitzerAlgebra.toTate σ K) Ideal.le_comap_map).comp
     (Ideal.quotientKerAlgEquivOfSurjective hπ).symm.toAlgHom
 
-omit [CompleteSpace K] [Finite σ] [IsDaggerAlgebra K A] in
+omit [CompleteSpace K] [_root_.Finite σ] [IsDaggerAlgebra K A] in
 @[simp]
 private theorem toPresentationCompletion_apply (π : washnitzerAlgebra σ K →ₐ[K] A)
     (hπ : Function.Surjective π) (f : washnitzerAlgebra σ K) :
@@ -354,7 +385,7 @@ private theorem presentationCompletionFwd_comp_bwd
 /-- **Presentation independence of the completion.** For any surjective presentation
 `π : W_σ →ₐ[K] A` of a dagger algebra, `completion K A` is canonically topologically isomorphic as
 a `K`-algebra to `T_σ ⧸ (ker π) T_σ` under `A`. -/
-noncomputable def presentationCompletionContinuousAlgEquiv
+noncomputable def daggerPresentationCompletionContinuousAlgEquiv
     (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
     completion K A ≃A[K] T σ ⧸ (RingHom.ker π).map (washnitzerAlgebra.toTate σ K) :=
   IsAffinoidAlgebra.toContinuousAlgEquiv (K := K) (A := completion K A)
@@ -363,31 +394,37 @@ noncomputable def presentationCompletionContinuousAlgEquiv
     (AlgEquiv.ofAlgHom (presentationCompletionFwd π hπ) (presentationCompletionBwd π)
       (presentationCompletionFwd_comp_bwd π hπ) (presentationCompletionBwd_comp_fwd π hπ))
 
-/-- `presentationCompletionContinuousAlgEquiv` sends `toCompletion K A (π f)` to the class of
-`toTate σ K f`. -/
+/-- `π.daggerPresentationCompletionContinuousAlgEquiv hπ` sends `toCompletion K A (π f)` to the
+class of `toTate σ K f`. -/
 @[simp]
-theorem presentationCompletionContinuousAlgEquiv_toCompletion
+theorem daggerPresentationCompletionContinuousAlgEquiv_toCompletion
     (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
     (f : washnitzerAlgebra σ K) :
-    presentationCompletionContinuousAlgEquiv π hπ (toCompletion K A (π f)) =
+    π.daggerPresentationCompletionContinuousAlgEquiv hπ (toCompletion K A (π f)) =
       Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f) := by
-  rw [presentationCompletionContinuousAlgEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv,
+  rw [daggerPresentationCompletionContinuousAlgEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv,
     AlgEquiv.ofAlgHom_apply]
   exact (completionLift_toCompletion _ _ (π f)).trans (toPresentationCompletion_apply π hπ f)
 
-/-- The inverse of `presentationCompletionContinuousAlgEquiv` sends the class of `toTate σ K f` to
-`toCompletion K A (π f)`. -/
+/-- The inverse of `π.daggerPresentationCompletionContinuousAlgEquiv hπ` sends the class of
+`toTate σ K f` to `toCompletion K A (π f)`. -/
 @[simp]
-theorem presentationCompletionContinuousAlgEquiv_symm_mk_toTate
+theorem daggerPresentationCompletionContinuousAlgEquiv_symm_mk_toTate
     (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
     (f : washnitzerAlgebra σ K) :
-    (presentationCompletionContinuousAlgEquiv π hπ).symm
+    (π.daggerPresentationCompletionContinuousAlgEquiv hπ).symm
       (Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f)) =
       toCompletion K A (π f) :=
-  (presentationCompletionContinuousAlgEquiv π hπ).symm_apply_eq.mpr
-    (presentationCompletionContinuousAlgEquiv_toCompletion π hπ f).symm
+  (π.daggerPresentationCompletionContinuousAlgEquiv hπ).symm_apply_eq.mpr
+    (π.daggerPresentationCompletionContinuousAlgEquiv_toCompletion hπ f).symm
 
-end ArbitraryPresentation
+end PresentationComparison
+
+end AlgHom
+
+namespace TauCeti.Dagger
+
+open _root_.MvPowerSeries
 
 namespace washnitzerAlgebra
 
@@ -410,7 +447,7 @@ variable (σ K) in
 `T_σ = K⟨X⟩`, compatibly with `toCompletion` and `toTate`. -/
 noncomputable def completionContinuousAlgEquiv :
     completion K (washnitzerAlgebra σ K) ≃A[K] T :=
-  (presentationCompletionContinuousAlgEquiv (AlgHom.id K (washnitzerAlgebra σ K))
+  ((AlgHom.id K (washnitzerAlgebra σ K)).daggerPresentationCompletionContinuousAlgEquiv
     Function.surjective_id).trans <|
     IsAffinoidAlgebra.toContinuousAlgEquiv (K := K)
       (A := T ⧸ (RingHom.ker (AlgHom.id K (washnitzerAlgebra σ K))).map (toTate σ K))
@@ -422,7 +459,7 @@ noncomputable def completionContinuousAlgEquiv :
 theorem completionContinuousAlgEquiv_toCompletion (f : washnitzerAlgebra σ K) :
     completionContinuousAlgEquiv σ K (toCompletion K (washnitzerAlgebra σ K) f) =
       toTate σ K f := by
-  have hf := presentationCompletionContinuousAlgEquiv_toCompletion
+  have hf := AlgHom.daggerPresentationCompletionContinuousAlgEquiv_toCompletion
     (AlgHom.id K (washnitzerAlgebra σ K)) Function.surjective_id f
   rw [AlgHom.id_apply] at hf
   rw [completionContinuousAlgEquiv, ContinuousAlgEquiv.trans_apply, hf,
@@ -445,13 +482,10 @@ theorem completionContinuousAlgEquiv_X (i : σ) :
 
 end washnitzerAlgebra
 
-end PresentationComparison
-
 section SupSeminorm
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
-  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 /-- **The completion map preserves the supremum seminorm**, since contraction along `toCompletion`
 is a bijection of classical points preserving residue fields. -/
@@ -465,14 +499,6 @@ theorem supSeminorm_toCompletion (a : A) :
     (pointNorm K · a)
 
 namespace IsDaggerAlgebra
-
-/-- **Morphisms of dagger algebras contract the supremum seminorm**: `|φ a|sup ≤ |a|sup`. -/
-theorem supSeminorm_map_le (φ : A →ₐ[K] B) (a : A) :
-    supSeminorm K (φ a) ≤ supSeminorm K a := by
-  rw [← supSeminorm_toCompletion (K := K) (A := B), ← completionMap_toCompletion,
-    ← supSeminorm_toCompletion (K := K) (A := A)]
-  exact (isAffinoidAlgebra_completion (K := K) (A := A)).supSeminorm_map_le
-    (isAffinoidAlgebra_completion (K := K) (A := B)) (completionMap φ) _
 
 /-- **The kernel of the supremum seminorm on a dagger algebra is the nilradical**: `|a|sup = 0`
 if and only if `a` is nilpotent, since `toCompletion` is injective and preserves `supSeminorm`. -/
@@ -493,3 +519,21 @@ end IsDaggerAlgebra
 end SupSeminorm
 
 end TauCeti.Dagger
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+
+/-- **Morphisms of dagger algebras contract the supremum seminorm**: `|φ a|sup ≤ |a|sup`. -/
+theorem supSeminorm_map_le_of_isDaggerAlgebra (φ : A →ₐ[K] B) (a : A) :
+    supSeminorm K (φ a) ≤ supSeminorm K a := by
+  rw [← supSeminorm_toCompletion (K := K) (A := B), ← φ.daggerCompletionMap_toCompletion,
+    ← supSeminorm_toCompletion (K := K) (A := A)]
+  exact (isAffinoidAlgebra_completion (K := K) (A := A)).supSeminorm_map_le
+    (isAffinoidAlgebra_completion (K := K) (A := B)) φ.daggerCompletionMap _
+
+end AlgHom

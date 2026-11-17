@@ -25,8 +25,8 @@ of its affinoid completion `Â = completion K A` (`TauCeti.Dagger.isometry_toCom
 (`TauCeti.Dagger.washnitzerAlgebra.liftToTateQuotient`), this yields the topological theory of
 dagger algebras:
 
-* **Automatic continuity** (`TauCeti.Dagger.washnitzerAlgebra.continuous_algHom_quotient`,
-  `TauCeti.Dagger.IsDaggerAlgebra.continuous_algHom`): every `K`-algebra homomorphism between
+* **Automatic continuity** (`AlgHom.continuous_washnitzerAlgebra_quotient`,
+  `AlgHom.continuous_of_isDaggerAlgebra`): every `K`-algebra homomorphism between
   Monsky–Washnitzer presentation quotients `W_σ ⧸ I →ₐ[K] W_τ ⧸ J`, and hence (via
   `TauCeti.Dagger.residueContinuousAlgEquiv`) every `K`-algebra homomorphism `φ : A →ₐ[K] B` of
   dagger algebras, is continuous and norm-bounded with no topological hypothesis on `φ`. Indeed any
@@ -34,46 +34,43 @@ dagger algebras:
   `W_σ ⧸ I → T_σ ⧸ I T_σ` (`Ideal.isometry_quotientMap_toTate`) and automatic continuity on affinoid
   algebras (`TauCeti.IsAffinoidAlgebra.continuous_algHom`).
 * **Canonical topology and presentation independence**
-  (`TauCeti.Dagger.washnitzerAlgebra.presentationContinuousAlgEquiv`,
-  `TauCeti.Dagger.presentationResidueContinuousAlgEquiv`,
-  `TauCeti.Dagger.IsDaggerAlgebra.toContinuousAlgEquiv`): all Monsky–Washnitzer presentations
+  (`AlgHom.washnitzerPresentationContinuousAlgEquiv`,
+  `AlgHom.daggerPresentationResidueContinuousAlgEquiv`,
+  `AlgEquiv.toContinuousAlgEquivOfIsDaggerAlgebra`): all Monsky–Washnitzer presentations
   `π : W_σ ↠ A` induce Lipschitz-equivalent residue norms and hence the same topology on `A`. Every
   surjective morphism `φ : A →ₐ[K] B` of dagger algebras is an open quotient map
-  (`TauCeti.Dagger.IsDaggerAlgebra.isOpenQuotientMap`) inducing a topological `K`-algebra
-  isomorphism `A ⧸ ker φ ≃A[K] B` (`TauCeti.Dagger.IsDaggerAlgebra.quotientKerContinuousAlgEquiv`),
-  and every ideal of `A` is closed (`TauCeti.Dagger.IsDaggerAlgebra.isClosed_ideal`).
+  (`AlgHom.isOpenQuotientMap_of_isDaggerAlgebra`) inducing a topological `K`-algebra
+  isomorphism `A ⧸ ker φ ≃A[K] B` (`AlgHom.quotientKerContinuousAlgEquivOfIsDaggerAlgebra`),
+  and every ideal of `A` is closed (`Ideal.isClosed_of_isDaggerAlgebra`).
 * **Power-bounded and topologically nilpotent elements**
   (`TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one`,
   `TauCeti.Dagger.IsDaggerAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`): in the
   canonical topology on `A`, the power-bounded elements are `{a | |a|sup ≤ 1}` (preserved by
-  arbitrary `K`-algebra homomorphisms via `TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_map`) and
+  arbitrary `K`-algebra homomorphisms via `AlgHom.isPowerBounded_map_of_isDaggerAlgebra`) and
   the topologically nilpotent elements are `{a | |a|sup < 1}` (preserved via automatic continuity
   and `IsTopologicallyNilpotent.map`).
 
 ## Main definitions
 
-* `TauCeti.Dagger.washnitzerAlgebra.presentationContinuousAlgEquiv`: the canonical topological
-  `K`-algebra isomorphism `(W_σ ⧸ ker π₁) ≃A[K] (W_τ ⧸ ker π₂)` between any two overconvergent
-  presentations of the same `K`-algebra.
-* `TauCeti.Dagger.residueContinuousAlgEquiv`,
-  `TauCeti.Dagger.presentationResidueContinuousAlgEquiv`: topological `K`-algebra
-  comparisons between `(A, residueNormedCommRing K A)` and `W_σ ⧸ ker π` for any presentation
-  `π : W_σ ↠ A`.
-* `TauCeti.Dagger.IsDaggerAlgebra.toContinuousAlgEquiv`: upgrades an algebraic isomorphism
+* `AlgHom.washnitzerPresentationContinuousAlgEquiv`: the canonical topological `K`-algebra
+  isomorphism `(W_σ ⧸ ker π₁) ≃A[K] (W_τ ⧸ ker π₂)` between any two overconvergent presentations of
+  the same `K`-algebra.
+* `AlgHom.daggerPresentationResidueContinuousAlgEquiv`: topological `K`-algebra comparison between
+  `(A, residueNormedCommRing K A)` and `W_σ ⧸ ker π` for any presentation `π : W_σ ↠ A`.
+* `AlgEquiv.toContinuousAlgEquivOfIsDaggerAlgebra`: upgrades an algebraic isomorphism
   `A ≃ₐ[K] B` of dagger algebras to a topological `K`-algebra isomorphism `A ≃A[K] B`.
-* `TauCeti.Dagger.IsDaggerAlgebra.quotientKerContinuousAlgEquiv`: the continuous first isomorphism
+* `AlgHom.quotientKerContinuousAlgEquivOfIsDaggerAlgebra`: the continuous first isomorphism
   theorem `(A ⧸ ker φ) ≃A[K] B` for a surjective morphism `φ : A →ₐ[K] B` of dagger algebras.
 
 ## Main results
 
-* `TauCeti.Dagger.washnitzerAlgebra.continuous_algHom_quotient`,
-  `TauCeti.Dagger.IsDaggerAlgebra.continuous_algHom`: automatic continuity of `K`-algebra
-  homomorphisms between presentation quotients and between dagger algebras.
-* `TauCeti.Dagger.washnitzerAlgebra.exists_pos_forall_norm_presentationContinuousAlgEquiv`:
-  two-sided Lipschitz equivalence of residue norms from any two presentations.
-* `TauCeti.Dagger.IsDaggerAlgebra.isClosed_ideal`,
-  `TauCeti.Dagger.IsDaggerAlgebra.isOpenQuotientMap`: closedness of ideals and openness of
-  surjective morphisms of dagger algebras.
+* `AlgHom.continuous_washnitzerAlgebra_quotient`, `AlgHom.continuous_of_isDaggerAlgebra`:
+  automatic continuity of `K`-algebra homomorphisms between presentation quotients and between
+  dagger algebras.
+* `AlgHom.exists_pos_forall_norm_washnitzerPresentationContinuousAlgEquiv`: two-sided Lipschitz
+  equivalence of residue norms from any two presentations.
+* `Ideal.isClosed_of_isDaggerAlgebra`, `AlgHom.isOpenQuotientMap_of_isDaggerAlgebra`: closedness
+  of ideals and openness of surjective morphisms of dagger algebras.
 * `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_le_norm`,
   `TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one`,
   `TauCeti.Dagger.IsDaggerAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`: comparison of
@@ -102,7 +99,7 @@ section PresentationQuotients
 namespace washnitzerAlgebra
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {σ τ : Type*} [Finite σ] [Finite τ]
+  {σ : Type*} [Finite σ]
 
 local notation "W " α:max => washnitzerAlgebra α K
 local notation "T " α:max => IsRestricted.subring (R := K) (fun _ : α ↦ (1 : ℝ))
@@ -119,118 +116,6 @@ theorem continuous_algHom_quotient_of_isAffinoidAlgebra {S : Type*} [NormedCommR
   exact (hS.continuous_algHom (B := T σ ⧸ I.map (toTate σ K)) Φ).comp
     I.isometry_quotientMap_toTate.continuous
 
-/-- **Automatic continuity on presentation quotients.** Every `K`-algebra homomorphism between
-Monsky–Washnitzer presentation quotients is continuous for their quotient Gauss norms. -/
-theorem continuous_algHom_quotient {I : Ideal (W σ)} {J : Ideal (W τ)}
-    (φ : (W σ ⧸ I) →ₐ[K] (W τ ⧸ J)) : Continuous φ := by
-  let ιJ : (W τ ⧸ J) →ₐ[K] T τ ⧸ J.map (toTate τ K) :=
-    Ideal.quotientMapₐ (J.map (toTate τ K)) (toTate τ K) Ideal.le_comap_map
-  refine J.isometry_quotientMap_toTate.isEmbedding.isInducing.continuous_iff.mpr ?_
-  rw [← AlgHom.coe_comp]
-  exact continuous_algHom_quotient_of_isAffinoidAlgebra (K := K) (σ := σ)
-    (S := T τ ⧸ J.map (toTate τ K)) (I := I)
-    ((isAffinoidAlgebra_tate (K := K) (σ := τ)).quotient (J.map (toTate τ K)))
-    (ιJ.comp φ)
-
-/-- Every `K`-algebra homomorphism between Monsky–Washnitzer presentation quotients is bounded for
-their quotient Gauss norms. -/
-theorem exists_pos_forall_norm_map_quotient_le {I : Ideal (W σ)} {J : Ideal (W τ)}
-    (φ : (W σ ⧸ I) →ₐ[K] (W τ ⧸ J)) :
-    ∃ C > 0, ∀ x : W σ ⧸ I, ‖φ x‖ ≤ C * ‖x‖ :=
-  (⟨φ.toLinearMap, continuous_algHom_quotient φ⟩ : (W σ ⧸ I) →L[K] (W τ ⧸ J)).bound
-
-/-- Every `K`-algebra isomorphism between Monsky–Washnitzer presentation quotients is a topological
-`K`-algebra isomorphism for their quotient Gauss norms. -/
-noncomputable def quotientContinuousAlgEquivOfAlgEquiv {I : Ideal (W σ)} {J : Ideal (W τ)}
-    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) : (W σ ⧸ I) ≃A[K] (W τ ⧸ J) :=
-  { e with
-    continuous_toFun := continuous_algHom_quotient e.toAlgHom
-    continuous_invFun := continuous_algHom_quotient e.symm.toAlgHom }
-
-/-- `quotientContinuousAlgEquivOfAlgEquiv e` has the same underlying function as `e`. -/
-@[simp]
-theorem coe_quotientContinuousAlgEquivOfAlgEquiv {I : Ideal (W σ)} {J : Ideal (W τ)}
-    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
-    ⇑(quotientContinuousAlgEquivOfAlgEquiv e) = ⇑e := (rfl)
-
-/-- The underlying `AlgEquiv` of `quotientContinuousAlgEquivOfAlgEquiv e` is `e`. -/
-@[simp]
-theorem toAlgEquiv_quotientContinuousAlgEquivOfAlgEquiv {I : Ideal (W σ)} {J : Ideal (W τ)}
-    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
-    (quotientContinuousAlgEquivOfAlgEquiv e).toAlgEquiv = e := (rfl)
-
-/-- `quotientContinuousAlgEquivOfAlgEquiv` commutes with `.symm`. -/
-@[simp]
-theorem quotientContinuousAlgEquivOfAlgEquiv_symm {I : Ideal (W σ)} {J : Ideal (W τ)}
-    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
-    (quotientContinuousAlgEquivOfAlgEquiv e).symm =
-      quotientContinuousAlgEquivOfAlgEquiv e.symm := by
-  ext x
-  exact (quotientContinuousAlgEquivOfAlgEquiv e).symm_apply_eq.mpr (by simp)
-
-/-- **Presentation independence of the residue-norm topology.** Two Monsky–Washnitzer presentations
-`π₁ : W_σ ↠ C` and `π₂ : W_τ ↠ C` of the same `K`-algebra give residue algebras whose quotient Gauss
-norms define the same topology: the canonical `K`-algebra isomorphism compatible with both
-presentations is a homeomorphism. -/
-noncomputable def presentationContinuousAlgEquiv {C : Type*} [CommRing C] [Algebra K C]
-    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
-    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
-    (W σ ⧸ RingHom.ker π₁) ≃A[K] (W τ ⧸ RingHom.ker π₂) :=
-  quotientContinuousAlgEquivOfAlgEquiv
-    ((Ideal.quotientKerAlgEquivOfSurjective hπ₁).trans
-      (Ideal.quotientKerAlgEquivOfSurjective hπ₂).symm)
-
-/-- `presentationContinuousAlgEquiv` maps the quotient class of `f` to that of any `g` with
-`π₂ g = π₁ f`. -/
-theorem presentationContinuousAlgEquiv_mk {C : Type*} [CommRing C] [Algebra K C]
-    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
-    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂)
-    {f : W σ} {g : W τ} (h : π₂ g = π₁ f) :
-    presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂ (Ideal.Quotient.mk _ f) =
-      Ideal.Quotient.mk _ g := by
-  simp [presentationContinuousAlgEquiv, ← h]
-
-/-- `presentationContinuousAlgEquiv` is compatible with both presentations via
-`Ideal.kerLiftAlg`. -/
-@[simp]
-theorem kerLiftAlg_presentationContinuousAlgEquiv {C : Type*} [CommRing C] [Algebra K C]
-    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
-    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) (x : W σ ⧸ RingHom.ker π₁) :
-    Ideal.kerLiftAlg π₂ (presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂ x) =
-      Ideal.kerLiftAlg π₁ x := by
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨g, hg⟩ := hπ₂ (π₁ f)
-  rw [presentationContinuousAlgEquiv_mk π₁ hπ₁ π₂ hπ₂ hg]
-  simpa using hg
-
-/-- Swapping the two presentations in `presentationContinuousAlgEquiv` yields the inverse
-homeomorphism. -/
-@[simp]
-theorem presentationContinuousAlgEquiv_symm {C : Type*} [CommRing C] [Algebra K C]
-    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
-    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
-    (presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂).symm =
-      presentationContinuousAlgEquiv π₂ hπ₂ π₁ hπ₁ := by
-  ext x
-  simp [presentationContinuousAlgEquiv]
-
-/-- **Equivalence of residue norms across presentations.** For any two Monsky–Washnitzer
-presentations of the same `K`-algebra, the induced quotient Gauss norms bound each other up to
-positive multiplicative constants. -/
-theorem exists_pos_forall_norm_presentationContinuousAlgEquiv {C : Type*} [CommRing C]
-    [Algebra K C] (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
-    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
-    ∃ c > 0, ∃ C' > 0, ∀ x : W σ ⧸ RingHom.ker π₁,
-      c * ‖x‖ ≤ ‖presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂ x‖ ∧
-        ‖presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂ x‖ ≤ C' * ‖x‖ := by
-  let e := (Ideal.quotientKerAlgEquivOfSurjective hπ₁).trans
-    (Ideal.quotientKerAlgEquivOfSurjective hπ₂).symm
-  obtain ⟨C₁, hC₁, hle₁⟩ := exists_pos_forall_norm_map_quotient_le e.toAlgHom
-  obtain ⟨C₂, hC₂, hle₂⟩ := exists_pos_forall_norm_map_quotient_le e.symm.toAlgHom
-  refine ⟨C₂⁻¹, inv_pos.mpr hC₂, C₁, hC₁, fun x ↦ ⟨?_, hle₁ x⟩⟩
-  rw [inv_mul_le_iff₀ hC₂]
-  simpa [presentationContinuousAlgEquiv, e] using hle₂ (e x)
-
 /-- On a Monsky–Washnitzer presentation quotient `W_σ ⧸ I`, the supremum seminorm is bounded by the
 quotient Gauss norm. -/
 theorem supSeminorm_quotient_le_norm {I : Ideal (W σ)} (x : W σ ⧸ I) :
@@ -243,116 +128,173 @@ end washnitzerAlgebra
 
 end PresentationQuotients
 
+end TauCeti.Dagger
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger _root_.MvPowerSeries
+
+section WashnitzerQuotients
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {σ τ : Type*} [_root_.Finite σ] [_root_.Finite τ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+local notation "T " α:max => IsRestricted.subring (R := K) (fun _ : α ↦ (1 : ℝ))
+
+/-- **Automatic continuity on presentation quotients.** Every `K`-algebra homomorphism between
+Monsky–Washnitzer presentation quotients is continuous for their quotient Gauss norms. -/
+theorem continuous_washnitzerAlgebra_quotient {I : Ideal (W σ)} {J : Ideal (W τ)}
+    (φ : (W σ ⧸ I) →ₐ[K] (W τ ⧸ J)) : Continuous φ := by
+  let ιJ : (W τ ⧸ J) →ₐ[K] T τ ⧸ J.map (washnitzerAlgebra.toTate τ K) :=
+    Ideal.quotientMapₐ (J.map (washnitzerAlgebra.toTate τ K))
+      (washnitzerAlgebra.toTate τ K) Ideal.le_comap_map
+  refine J.isometry_quotientMap_toTate.isEmbedding.isInducing.continuous_iff.mpr ?_
+  rw [← AlgHom.coe_comp]
+  exact washnitzerAlgebra.continuous_algHom_quotient_of_isAffinoidAlgebra (K := K) (σ := σ)
+    (S := T τ ⧸ J.map (washnitzerAlgebra.toTate τ K)) (I := I)
+    ((isAffinoidAlgebra_tate (K := K) (σ := τ)).quotient (J.map (washnitzerAlgebra.toTate τ K)))
+    (ιJ.comp φ)
+
+/-- Every `K`-algebra homomorphism between Monsky–Washnitzer presentation quotients is bounded for
+their quotient Gauss norms. -/
+theorem exists_pos_forall_norm_map_le_washnitzerAlgebra_quotient {I : Ideal (W σ)}
+    {J : Ideal (W τ)} (φ : (W σ ⧸ I) →ₐ[K] (W τ ⧸ J)) :
+    ∃ C > 0, ∀ x : W σ ⧸ I, ‖φ x‖ ≤ C * ‖x‖ :=
+  (⟨φ.toLinearMap, φ.continuous_washnitzerAlgebra_quotient⟩ : (W σ ⧸ I) →L[K] (W τ ⧸ J)).bound
+
+end WashnitzerQuotients
+
+end AlgHom
+
+namespace AlgEquiv
+
+open TauCeti TauCeti.Dagger
+
+section WashnitzerQuotients
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {σ τ : Type*} [Finite σ] [Finite τ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+
+/-- Every `K`-algebra isomorphism between Monsky–Washnitzer presentation quotients is a topological
+`K`-algebra isomorphism for their quotient Gauss norms. -/
+noncomputable def washnitzerQuotientContinuousAlgEquiv {I : Ideal (W σ)} {J : Ideal (W τ)}
+    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) : (W σ ⧸ I) ≃A[K] (W τ ⧸ J) :=
+  { e with
+    continuous_toFun := e.toAlgHom.continuous_washnitzerAlgebra_quotient
+    continuous_invFun := e.symm.toAlgHom.continuous_washnitzerAlgebra_quotient }
+
+/-- `e.washnitzerQuotientContinuousAlgEquiv` has the same underlying function as `e`. -/
+@[simp]
+theorem coe_washnitzerQuotientContinuousAlgEquiv {I : Ideal (W σ)} {J : Ideal (W τ)}
+    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
+    ⇑e.washnitzerQuotientContinuousAlgEquiv = ⇑e := (rfl)
+
+/-- The underlying `AlgEquiv` of `e.washnitzerQuotientContinuousAlgEquiv` is `e`. -/
+@[simp]
+theorem toAlgEquiv_washnitzerQuotientContinuousAlgEquiv {I : Ideal (W σ)} {J : Ideal (W τ)}
+    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
+    e.washnitzerQuotientContinuousAlgEquiv.toAlgEquiv = e := (rfl)
+
+/-- `washnitzerQuotientContinuousAlgEquiv` commutes with `.symm`. -/
+@[simp]
+theorem washnitzerQuotientContinuousAlgEquiv_symm {I : Ideal (W σ)} {J : Ideal (W τ)}
+    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
+    e.washnitzerQuotientContinuousAlgEquiv.symm =
+      e.symm.washnitzerQuotientContinuousAlgEquiv := by
+  ext x
+  exact e.washnitzerQuotientContinuousAlgEquiv.symm_apply_eq.mpr (by simp)
+
+end WashnitzerQuotients
+
+end AlgEquiv
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+section WashnitzerPresentations
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {σ τ : Type*} [_root_.Finite σ] [_root_.Finite τ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+
+/-- **Presentation independence of the residue-norm topology.** Two Monsky–Washnitzer presentations
+`π₁ : W_σ ↠ C` and `π₂ : W_τ ↠ C` of the same `K`-algebra give residue algebras whose quotient Gauss
+norms define the same topology: the canonical `K`-algebra isomorphism compatible with both
+presentations is a homeomorphism. -/
+noncomputable def washnitzerPresentationContinuousAlgEquiv {C : Type*} [CommRing C] [Algebra K C]
+    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
+    (W σ ⧸ RingHom.ker π₁) ≃A[K] (W τ ⧸ RingHom.ker π₂) :=
+  ((Ideal.quotientKerAlgEquivOfSurjective hπ₁).trans
+    (Ideal.quotientKerAlgEquivOfSurjective hπ₂).symm).washnitzerQuotientContinuousAlgEquiv
+
+/-- `π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂` maps the quotient class of `f` to that
+of any `g` with `π₂ g = π₁ f`. -/
+theorem washnitzerPresentationContinuousAlgEquiv_mk {C : Type*} [CommRing C] [Algebra K C]
+    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂)
+    {f : W σ} {g : W τ} (h : π₂ g = π₁ f) :
+    π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂ (Ideal.Quotient.mk _ f) =
+      Ideal.Quotient.mk _ g := by
+  simp [washnitzerPresentationContinuousAlgEquiv, ← h]
+
+/-- `washnitzerPresentationContinuousAlgEquiv` is compatible with both presentations via
+`Ideal.kerLiftAlg`. -/
+@[simp]
+theorem kerLiftAlg_washnitzerPresentationContinuousAlgEquiv {C : Type*} [CommRing C] [Algebra K C]
+    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) (x : W σ ⧸ RingHom.ker π₁) :
+    Ideal.kerLiftAlg π₂ (π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂ x) =
+      Ideal.kerLiftAlg π₁ x := by
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨g, hg⟩ := hπ₂ (π₁ f)
+  rw [π₁.washnitzerPresentationContinuousAlgEquiv_mk hπ₁ π₂ hπ₂ hg]
+  simpa using hg
+
+/-- Swapping the two presentations in `washnitzerPresentationContinuousAlgEquiv` yields the inverse
+homeomorphism. -/
+@[simp]
+theorem washnitzerPresentationContinuousAlgEquiv_symm {C : Type*} [CommRing C] [Algebra K C]
+    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
+    (π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂).symm =
+      π₂.washnitzerPresentationContinuousAlgEquiv hπ₂ π₁ hπ₁ := by
+  ext x
+  simp [washnitzerPresentationContinuousAlgEquiv]
+
+/-- **Equivalence of residue norms across presentations.** For any two Monsky–Washnitzer
+presentations of the same `K`-algebra, the induced quotient Gauss norms bound each other up to
+positive multiplicative constants. -/
+theorem exists_pos_forall_norm_washnitzerPresentationContinuousAlgEquiv {C : Type*} [CommRing C]
+    [Algebra K C] (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
+    ∃ c > 0, ∃ C' > 0, ∀ x : W σ ⧸ RingHom.ker π₁,
+      c * ‖x‖ ≤ ‖π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂ x‖ ∧
+        ‖π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂ x‖ ≤ C' * ‖x‖ := by
+  let e := (Ideal.quotientKerAlgEquivOfSurjective hπ₁).trans
+    (Ideal.quotientKerAlgEquivOfSurjective hπ₂).symm
+  obtain ⟨C₁, hC₁, hle₁⟩ := e.toAlgHom.exists_pos_forall_norm_map_le_washnitzerAlgebra_quotient
+  obtain ⟨C₂, hC₂, hle₂⟩ :=
+    e.symm.toAlgHom.exists_pos_forall_norm_map_le_washnitzerAlgebra_quotient
+  refine ⟨C₂⁻¹, inv_pos.mpr hC₂, C₁, hC₁, fun x ↦ ⟨?_, hle₁ x⟩⟩
+  rw [inv_mul_le_iff₀ hC₂]
+  simpa [washnitzerPresentationContinuousAlgEquiv, e] using hle₂ (e x)
+
+end WashnitzerPresentations
+
+end AlgHom
+
+namespace TauCeti.Dagger
+
 section DaggerTopology
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-section ResidueEquiv
-
-variable (K) (A : Type*) [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
-
-/-- The residue isomorphism `residueAlgEquiv K A : A ≃ₐ[K] W_n ⧸ ker (presentation K A)` as a
-topological `K`-algebra isomorphism for `residueNormedCommRing K A`. -/
-noncomputable def residueContinuousAlgEquiv :
-    letI := residueNormedCommRing K A
-    A ≃A[K] washnitzerAlgebra (Fin (presentationDim K A)) K ⧸
-      RingHom.ker (presentation K A) :=
-  letI := residueNormedCommRing K A
-  have hiso : Isometry (residueAlgEquiv K A) :=
-    (AddMonoidHomClass.isometry_iff_norm (residueAlgEquiv K A)).mpr (norm_residueAlgEquiv K A)
-  have hiso_symm : Isometry (residueAlgEquiv K A).symm :=
-    (AddMonoidHomClass.isometry_iff_norm (residueAlgEquiv K A).symm).mpr fun x ↦
-      (norm_residueAlgEquiv K A ((residueAlgEquiv K A).symm x)).symm.trans
-        (congrArg norm ((residueAlgEquiv K A).apply_symm_apply x))
-  { residueAlgEquiv K A with
-    continuous_toFun := hiso.continuous
-    continuous_invFun := hiso_symm.continuous }
-
-/-- `residueContinuousAlgEquiv` has the same underlying function as `residueAlgEquiv`. -/
-@[simp↓]
-theorem coe_residueContinuousAlgEquiv :
-    letI := residueNormedCommRing K A
-    ⇑(residueContinuousAlgEquiv K A) = ⇑(residueAlgEquiv K A) :=
-  letI := residueNormedCommRing K A
-  (rfl)
-
-/-- The underlying `AlgEquiv` of `residueContinuousAlgEquiv` is `residueAlgEquiv`. -/
-@[simp↓]
-theorem toAlgEquiv_residueContinuousAlgEquiv :
-    letI := residueNormedCommRing K A
-    (residueContinuousAlgEquiv K A).toAlgEquiv = residueAlgEquiv K A :=
-  letI := residueNormedCommRing K A
-  (rfl)
-
-/-- `residueContinuousAlgEquiv` sends `presentation K A f` to the quotient class of `f`. -/
-@[simp↓]
-theorem residueContinuousAlgEquiv_presentation
-    (f : washnitzerAlgebra (Fin (presentationDim K A)) K) :
-    letI := residueNormedCommRing K A
-    residueContinuousAlgEquiv K A (presentation K A f) = Ideal.Quotient.mk _ f :=
-  letI := residueNormedCommRing K A
-  residueAlgEquiv_presentation K A f
-
-/-- The inverse of `residueContinuousAlgEquiv` sends the quotient class of `f` to
-`presentation K A f`. -/
-@[simp↓]
-theorem residueContinuousAlgEquiv_symm_mk
-    (f : washnitzerAlgebra (Fin (presentationDim K A)) K) :
-    letI := residueNormedCommRing K A
-    (residueContinuousAlgEquiv K A).symm (Ideal.Quotient.mk _ f) = presentation K A f :=
-  letI := residueNormedCommRing K A
-  (residueContinuousAlgEquiv K A).symm_apply_eq.mpr
-    (residueContinuousAlgEquiv_presentation K A f).symm
-
-end ResidueEquiv
-
-section PresentationResidue
-
-variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
-
-/-- For any surjective presentation `π : W_σ →ₐ[K] A` of a dagger algebra, the first isomorphism
-theorem `(W_σ ⧸ ker π) ≃ₐ[K] A` is a topological `K`-algebra isomorphism between the quotient Gauss
-norm of `π` and `residueNormedCommRing K A`. -/
-noncomputable def presentationResidueContinuousAlgEquiv {σ : Type*} [Finite σ]
-    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
-    letI := residueNormedCommRing K A
-    (washnitzerAlgebra σ K ⧸ RingHom.ker π) ≃A[K] A :=
-  letI := residueNormedCommRing K A
-  (washnitzerAlgebra.presentationContinuousAlgEquiv π hπ
-    (presentation K A) (presentation_surjective K A)).trans
-    (residueContinuousAlgEquiv K A).symm
-
-/-- `presentationResidueContinuousAlgEquiv π hπ` sends the class of `f` to `π f`. -/
-@[simp↓]
-theorem presentationResidueContinuousAlgEquiv_mk {σ : Type*} [Finite σ]
-    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
-    (f : washnitzerAlgebra σ K) :
-    letI := residueNormedCommRing K A
-    presentationResidueContinuousAlgEquiv π hπ (Ideal.Quotient.mk _ f) = π f := by
-  let := residueNormedCommRing K A
-  obtain ⟨g, hg⟩ := presentation_surjective K A (π f)
-  simp [presentationResidueContinuousAlgEquiv,
-    washnitzerAlgebra.presentationContinuousAlgEquiv_mk π hπ
-      (presentation K A) (presentation_surjective K A) hg, hg]
-
-/-- The inverse of `presentationResidueContinuousAlgEquiv π hπ` sends `π f` to the quotient class
-of `f`. -/
-@[simp↓]
-theorem presentationResidueContinuousAlgEquiv_symm_apply {σ : Type*} [Finite σ]
-    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
-    (f : washnitzerAlgebra σ K) :
-    letI := residueNormedCommRing K A
-    (presentationResidueContinuousAlgEquiv π hπ).symm (π f) = Ideal.Quotient.mk _ f :=
-  letI := residueNormedCommRing K A
-  (presentationResidueContinuousAlgEquiv π hπ).symm_apply_eq.mpr
-    (presentationResidueContinuousAlgEquiv_mk π hπ f).symm
-
-end PresentationResidue
-
-section Morphisms
-
-variable {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
-  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 namespace IsDaggerAlgebra
 
@@ -370,10 +312,63 @@ theorem continuous_algHom_of_isAffinoidAlgebra {S : Type*} [NormedCommRing S] [N
   rw [hcomp]
   exact (washnitzerAlgebra.continuous_algHom_quotient_of_isAffinoidAlgebra hS ψ).comp e.continuous
 
+end IsDaggerAlgebra
+
+end DaggerTopology
+
+end TauCeti.Dagger
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+section DaggerTopology
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+
+/-- For any surjective presentation `π : W_σ →ₐ[K] A` of a dagger algebra, the first isomorphism
+theorem `(W_σ ⧸ ker π) ≃ₐ[K] A` is a topological `K`-algebra isomorphism between the quotient Gauss
+norm of `π` and `residueNormedCommRing K A`. -/
+noncomputable def daggerPresentationResidueContinuousAlgEquiv {σ : Type*} [_root_.Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
+    letI := residueNormedCommRing K A
+    (washnitzerAlgebra σ K ⧸ RingHom.ker π) ≃A[K] A :=
+  letI := residueNormedCommRing K A
+  (π.washnitzerPresentationContinuousAlgEquiv hπ
+    (presentation K A) (presentation_surjective K A)).trans
+    (residueContinuousAlgEquiv K A).symm
+
+/-- `π.daggerPresentationResidueContinuousAlgEquiv hπ` sends the class of `f` to `π f`. -/
+@[simp↓]
+theorem daggerPresentationResidueContinuousAlgEquiv_mk {σ : Type*} [_root_.Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
+    (f : washnitzerAlgebra σ K) :
+    letI := residueNormedCommRing K A
+    π.daggerPresentationResidueContinuousAlgEquiv hπ (Ideal.Quotient.mk _ f) = π f := by
+  let := residueNormedCommRing K A
+  obtain ⟨g, hg⟩ := presentation_surjective K A (π f)
+  simp [daggerPresentationResidueContinuousAlgEquiv,
+    π.washnitzerPresentationContinuousAlgEquiv_mk hπ
+      (presentation K A) (presentation_surjective K A) hg, hg]
+
+/-- The inverse of `π.daggerPresentationResidueContinuousAlgEquiv hπ` sends `π f` to the quotient
+class of `f`. -/
+@[simp↓]
+theorem daggerPresentationResidueContinuousAlgEquiv_symm_apply {σ : Type*} [_root_.Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
+    (f : washnitzerAlgebra σ K) :
+    letI := residueNormedCommRing K A
+    (π.daggerPresentationResidueContinuousAlgEquiv hπ).symm (π f) = Ideal.Quotient.mk _ f :=
+  letI := residueNormedCommRing K A
+  (π.daggerPresentationResidueContinuousAlgEquiv hπ).symm_apply_eq.mpr
+    (π.daggerPresentationResidueContinuousAlgEquiv_mk hπ f).symm
+
 /-- **Automatic continuity for dagger algebras.** Every `K`-algebra homomorphism `φ : A →ₐ[K] B`
 between dagger algebras is continuous for their residue norms, with no continuity hypothesis on `φ`
 or on any presentation. -/
-theorem continuous_algHom (φ : A →ₐ[K] B) :
+theorem continuous_of_isDaggerAlgebra (φ : A →ₐ[K] B) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
     Continuous φ := by
@@ -388,11 +383,11 @@ theorem continuous_algHom (φ : A →ₐ[K] B) :
         (congrArg φ (eA.symm_apply_apply a))).symm
   rw [hcomp]
   exact eB.symm.continuous.comp
-    ((washnitzerAlgebra.continuous_algHom_quotient ψ).comp eA.continuous)
+    (ψ.continuous_washnitzerAlgebra_quotient.comp eA.continuous)
 
 /-- Every `K`-algebra homomorphism `φ : A →ₐ[K] B` of dagger algebras is norm-bounded for their
 residue norms. -/
-theorem exists_pos_forall_norm_algHom_le (φ : A →ₐ[K] B) :
+theorem exists_pos_forall_norm_map_le_of_isDaggerAlgebra (φ : A →ₐ[K] B) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
     ∃ C > 0, ∀ a : A, ‖φ a‖ ≤ C * ‖a‖ := by
@@ -400,67 +395,86 @@ theorem exists_pos_forall_norm_algHom_le (φ : A →ₐ[K] B) :
   let := residueNormedAlgebra K A
   let := residueNormedCommRing K B
   let := residueNormedAlgebra K B
-  exact (⟨φ.toLinearMap, continuous_algHom φ⟩ : A →L[K] B).bound
+  exact (⟨φ.toLinearMap, φ.continuous_of_isDaggerAlgebra⟩ : A →L[K] B).bound
+
+/-- Every surjective `K`-algebra homomorphism `π : W_σ →ₐ[K] A` from a Monsky–Washnitzer algebra
+onto a dagger algebra is an open quotient map for the Gauss norm on `W_σ` and the residue norm on
+`A`. -/
+theorem isOpenQuotientMap_of_surjective_washnitzerAlgebra {σ : Type*} [_root_.Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
+    letI := residueNormedCommRing K A
+    IsOpenQuotientMap π := by
+  let := residueNormedCommRing K A
+  let e := π.daggerPresentationResidueContinuousAlgEquiv hπ
+  have he : IsOpenQuotientMap e := ⟨e.surjective, e.continuous, e.isOpenMap⟩
+  have hcomp : (e : _ → A) ∘ Ideal.Quotient.mk (RingHom.ker π) = π :=
+    funext (π.daggerPresentationResidueContinuousAlgEquiv_mk hπ)
+  rw [← hcomp]
+  exact he.comp (QuotientRing.isOpenQuotientMap_mk (RingHom.ker π))
+
+end DaggerTopology
+
+end AlgHom
+
+namespace AlgEquiv
+
+open TauCeti TauCeti.Dagger
+
+section DaggerTopology
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
 
 /-- **Uniqueness of the dagger topology.** Every `K`-algebra isomorphism `e : A ≃ₐ[K] B` between
 dagger algebras is a homeomorphism for their residue norms. -/
-noncomputable def toContinuousAlgEquiv (e : A ≃ₐ[K] B) :
+noncomputable def toContinuousAlgEquivOfIsDaggerAlgebra (e : A ≃ₐ[K] B) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
     A ≃A[K] B :=
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   { e with
-    continuous_toFun := continuous_algHom e.toAlgHom
-    continuous_invFun := continuous_algHom e.symm.toAlgHom }
+    continuous_toFun := e.toAlgHom.continuous_of_isDaggerAlgebra
+    continuous_invFun := e.symm.toAlgHom.continuous_of_isDaggerAlgebra }
 
-/-- `toContinuousAlgEquiv e` has the same underlying function as `e`. -/
+/-- `e.toContinuousAlgEquivOfIsDaggerAlgebra` has the same underlying function as `e`. -/
 @[simp↓]
-theorem coe_toContinuousAlgEquiv (e : A ≃ₐ[K] B) :
+theorem coe_toContinuousAlgEquivOfIsDaggerAlgebra (e : A ≃ₐ[K] B) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
-    ⇑(toContinuousAlgEquiv e) = ⇑e :=
+    ⇑e.toContinuousAlgEquivOfIsDaggerAlgebra = ⇑e :=
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   (rfl)
 
-/-- The underlying `AlgEquiv` of `toContinuousAlgEquiv e` is `e`. -/
+/-- The underlying `AlgEquiv` of `e.toContinuousAlgEquivOfIsDaggerAlgebra` is `e`. -/
 @[simp↓]
-theorem toAlgEquiv_toContinuousAlgEquiv (e : A ≃ₐ[K] B) :
+theorem toAlgEquiv_toContinuousAlgEquivOfIsDaggerAlgebra (e : A ≃ₐ[K] B) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
-    (toContinuousAlgEquiv e).toAlgEquiv = e :=
+    e.toContinuousAlgEquivOfIsDaggerAlgebra.toAlgEquiv = e :=
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   (rfl)
 
-/-- `toContinuousAlgEquiv` commutes with `.symm`. -/
+/-- `toContinuousAlgEquivOfIsDaggerAlgebra` commutes with `.symm`. -/
 @[simp↓]
-theorem toContinuousAlgEquiv_symm (e : A ≃ₐ[K] B) :
+theorem toContinuousAlgEquivOfIsDaggerAlgebra_symm (e : A ≃ₐ[K] B) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
-    (toContinuousAlgEquiv e).symm = toContinuousAlgEquiv e.symm := by
+    e.toContinuousAlgEquivOfIsDaggerAlgebra.symm =
+      e.symm.toContinuousAlgEquivOfIsDaggerAlgebra := by
   let := residueNormedCommRing K A
   let := residueNormedCommRing K B
   ext b
-  exact (toContinuousAlgEquiv e).symm_apply_eq.mpr (by simp)
+  exact e.toContinuousAlgEquivOfIsDaggerAlgebra.symm_apply_eq.mpr (by simp)
 
-/-- Every surjective `K`-algebra homomorphism `π : W_σ →ₐ[K] A` from a Monsky–Washnitzer algebra
-onto a dagger algebra is an open quotient map for the Gauss norm on `W_σ` and the residue norm on
-`A`. -/
-theorem isOpenQuotientMap_of_surjective_washnitzerAlgebra {σ : Type*} [Finite σ]
-    (π : Dagger.washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
-    letI := residueNormedCommRing K A
-    IsOpenQuotientMap π := by
-  let := residueNormedCommRing K A
-  let e := presentationResidueContinuousAlgEquiv π hπ
-  have he : IsOpenQuotientMap e := ⟨e.surjective, e.continuous, e.isOpenMap⟩
-  have hcomp : (e : _ → A) ∘ Ideal.Quotient.mk (RingHom.ker π) = π :=
-    funext (presentationResidueContinuousAlgEquiv_mk π hπ)
-  rw [← hcomp]
-  exact he.comp (QuotientRing.isOpenQuotientMap_mk (RingHom.ker π))
+end DaggerTopology
 
-end IsDaggerAlgebra
+end AlgEquiv
+
+namespace TauCeti.Dagger
 
 /-- The chosen minimal presentation `presentation K A : W_n →ₐ[K] A` is an open quotient map onto
 `(A, residueNormedCommRing K A)`. -/
@@ -468,13 +482,20 @@ theorem isOpenQuotientMap_presentation (K A : Type*) [NontriviallyNormedField K]
     [IsUltrametricDist K] [CompleteSpace K] [CommRing A] [Algebra K A] [IsDaggerAlgebra K A] :
     letI := residueNormedCommRing K A
     IsOpenQuotientMap (presentation K A) :=
-  IsDaggerAlgebra.isOpenQuotientMap_of_surjective_washnitzerAlgebra
-    (presentation K A) (presentation_surjective K A)
+  (presentation K A).isOpenQuotientMap_of_surjective_washnitzerAlgebra
+    (presentation_surjective K A)
 
-namespace IsDaggerAlgebra
+end TauCeti.Dagger
+
+namespace Ideal
+
+open TauCeti TauCeti.Dagger
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 /-- **Every ideal of a dagger algebra is closed** in its canonical residue-norm topology. -/
-theorem isClosed_ideal (J : Ideal A) :
+theorem isClosed_of_isDaggerAlgebra (J : Ideal A) :
     letI := residueNormedCommRing K A
     IsClosed (J : Set A) := by
   let := residueNormedCommRing K A
@@ -484,24 +505,37 @@ theorem isClosed_ideal (J : Ideal A) :
     rw [← Ideal.coe_comap, comap_map_toCompletion K J]
   exact hpre ▸ hc.preimage (isometry_toCompletion K A).continuous
 
+end Ideal
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+section OpenQuotient
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+
 /-- **Surjective morphisms of dagger algebras are open quotient maps.** Every surjective `K`-algebra
 homomorphism `φ : A →ₐ[K] B` between dagger algebras is an open quotient map for their residue
 norms, so `B` carries the quotient topology induced by `φ`. -/
-theorem isOpenQuotientMap (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) :
+theorem isOpenQuotientMap_of_isDaggerAlgebra (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
     IsOpenQuotientMap φ := by
   let := residueNormedCommRing K A
   let := residueNormedCommRing K B
   rw [← (isOpenQuotientMap_presentation K A).of_comp_iff]
-  exact isOpenQuotientMap_of_surjective_washnitzerAlgebra (φ.comp (presentation K A))
+  exact (φ.comp (presentation K A)).isOpenQuotientMap_of_surjective_washnitzerAlgebra
     (hφ.comp (presentation_surjective K A))
 
 /-- **The continuous first isomorphism theorem for dagger algebras.** For a surjective `K`-algebra
 homomorphism `φ : A →ₐ[K] B` of dagger algebras, the algebraic isomorphism `A ⧸ ker φ ≃ₐ[K] B` is a
 homeomorphism for the quotient topology of `residueNormedCommRing K A` and
 `residueNormedCommRing K B`. -/
-noncomputable def quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) :
+noncomputable def quotientKerContinuousAlgEquivOfIsDaggerAlgebra
+    (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
     (A ⧸ RingHom.ker φ) ≃A[K] B :=
@@ -510,7 +544,7 @@ noncomputable def quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Func
   let e := Ideal.quotientKerAlgEquivOfSurjective hφ
   have hmk : IsOpenQuotientMap (Ideal.Quotient.mk (RingHom.ker φ)) :=
     QuotientRing.isOpenQuotientMap_mk (RingHom.ker φ)
-  have hφo : IsOpenQuotientMap φ := isOpenQuotientMap φ hφ
+  have hφo : IsOpenQuotientMap φ := φ.isOpenQuotientMap_of_isDaggerAlgebra hφ
   { e with
     continuous_toFun := hmk.continuous_comp_iff.mp <| by
       have hcomp : e.toFun ∘ Ideal.Quotient.mk (RingHom.ker φ) = φ :=
@@ -523,39 +557,40 @@ noncomputable def quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Func
       rw [hcomp]
       exact continuous_quot_mk }
 
-/-- `quotientKerContinuousAlgEquiv φ hφ` sends the class of `a` to `φ a`. -/
+/-- `φ.quotientKerContinuousAlgEquivOfIsDaggerAlgebra hφ` sends the class of `a` to `φ a`. -/
 @[simp↓]
-theorem quotientKerContinuousAlgEquiv_mk (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) (a : A) :
+theorem quotientKerContinuousAlgEquivOfIsDaggerAlgebra_mk
+    (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) (a : A) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
-    quotientKerContinuousAlgEquiv φ hφ (Ideal.Quotient.mk _ a) = φ a :=
+    φ.quotientKerContinuousAlgEquivOfIsDaggerAlgebra hφ (Ideal.Quotient.mk _ a) = φ a :=
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   Ideal.quotientKerAlgEquivOfSurjective_mk hφ a
 
-/-- The underlying `AlgEquiv` of `quotientKerContinuousAlgEquiv φ hφ` is
+/-- The underlying `AlgEquiv` of `φ.quotientKerContinuousAlgEquivOfIsDaggerAlgebra hφ` is
 `Ideal.quotientKerAlgEquivOfSurjective hφ`. -/
 @[simp↓]
-theorem toAlgEquiv_quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) :
+theorem toAlgEquiv_quotientKerContinuousAlgEquivOfIsDaggerAlgebra
+    (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) :
     letI := residueNormedCommRing K A
     letI := residueNormedCommRing K B
-    (quotientKerContinuousAlgEquiv φ hφ).toAlgEquiv =
+    (φ.quotientKerContinuousAlgEquivOfIsDaggerAlgebra hφ).toAlgEquiv =
       Ideal.quotientKerAlgEquivOfSurjective hφ :=
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   (rfl)
 
-end IsDaggerAlgebra
+end OpenQuotient
 
-end Morphisms
+end AlgHom
 
-end DaggerTopology
+namespace TauCeti.Dagger
 
 section PowerBounded
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
-  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
 /-- An element of a dagger algebra is power-bounded in the residue-norm topology iff its image in
 `completion K A` is power-bounded. -/
@@ -619,20 +654,30 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one {a : A} :
       (A := completion K A) isAffinoidAlgebra_completion (f := toCompletion K A a)).trans
       (by rw [supSeminorm_toCompletion])
 
-/-- Every `K`-algebra homomorphism `φ : A →ₐ[K] B` of dagger algebras maps power-bounded elements to
-power-bounded elements. -/
-theorem isPowerBounded_map (φ : A →ₐ[K] B) {a : A} :
-    letI := residueNormedCommRing K A
-    letI := residueNormedCommRing K B
-    Huber.IsPowerBounded a → Huber.IsPowerBounded (φ a) :=
-  letI := residueNormedCommRing K A
-  letI := residueNormedCommRing K B
-  fun ha ↦ (isPowerBounded_iff_supSeminorm_le_one (K := K) (a := φ a)).mpr <|
-    (supSeminorm_map_le φ a).trans
-      ((isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).mp ha)
-
 end IsDaggerAlgebra
 
 end PowerBounded
 
 end TauCeti.Dagger
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+
+/-- Every `K`-algebra homomorphism `φ : A →ₐ[K] B` of dagger algebras maps power-bounded elements to
+power-bounded elements. -/
+theorem isPowerBounded_map_of_isDaggerAlgebra (φ : A →ₐ[K] B) {a : A} :
+    letI := residueNormedCommRing K A
+    letI := residueNormedCommRing K B
+    Huber.IsPowerBounded a → Huber.IsPowerBounded (φ a) :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedCommRing K B
+  fun ha ↦ (IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (a := φ a)).mpr <|
+    (φ.supSeminorm_map_le_of_isDaggerAlgebra a).trans
+      ((IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).mp ha)
+
+end AlgHom
