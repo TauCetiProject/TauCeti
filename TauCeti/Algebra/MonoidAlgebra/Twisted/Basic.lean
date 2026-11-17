@@ -10,6 +10,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
+import Mathlib.LinearAlgebra.Basis.Bilinear
 
 /-!
 # The twisted monoid algebra of a factor set
@@ -41,8 +42,9 @@ a basis and the multiplication table above holds on the nose.
   one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.of`: its basis elements, with the multiplication table
-  `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, and the
-  dimension count `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`;
+  `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis` and its
+  coordinate formulas (`repr_of`, `repr_one`, `repr_mul`), and the dimension count
+  `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`;
 * `TauCeti.TwistedMonoidAlgebra.lift`: the universal property. A family `u : G → A` in a
   `k`-algebra `A` with `u 1 = 1` and `u g * u h = α g h • u (g * h)` -- that is, a projective
   representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`;
@@ -366,6 +368,31 @@ theorem finrank_eq_natCard [StrongRankCondition k] :
   finrank_eq_nat_card_basis (basis k G α)
 
 variable {k G α}
+
+@[simp]
+theorem repr_of (g : G) : (basis k G α).repr (of g) = Finsupp.single g 1 := by
+  rw [← basis_apply, Basis.repr_self]
+
+@[simp]
+theorem repr_one : (basis k G α).repr (1 : twistedMonoidAlgebra k G α) = Finsupp.single 1 1 := by
+  rw [← of_one, repr_of]
+
+/-- Coordinate expansion of a product in `twistedMonoidAlgebra k G α` with respect to
+`TwistedMonoidAlgebra.basis`. -/
+theorem repr_mul (x y : twistedMonoidAlgebra k G α) :
+    (basis k G α).repr (x * y) =
+      ((basis k G α).repr x).sum fun g xg ↦
+        ((basis k G α).repr y).sum fun h yh ↦
+          Finsupp.single (g * h) (xg * yh * (α g h : k)) := by
+  let B : twistedMonoidAlgebra k G α →ₗ[k] twistedMonoidAlgebra k G α →ₗ[k] (G →₀ k) :=
+    (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ (basis k G α).repr.toLinearMap
+  have hB : B x y =
+      ((basis k G α).repr x).sum fun g xg ↦
+        ((basis k G α).repr y).sum fun h yh ↦ xg • yh • B (basis k G α g) (basis k G α h) :=
+    (LinearMap.sum_repr_mul_repr_mul (b₁' := basis k G α) (b₂' := basis k G α) x y).symm
+  simpa only [B, LinearMap.compr₂_apply, LinearMap.mul_apply', LinearEquiv.coe_coe,
+    basis_apply, of_mul_of, map_smul, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one,
+    ← mul_assoc, mul_right_comm _ _ (α _ _ : k)] using hB
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
