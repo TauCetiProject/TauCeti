@@ -81,18 +81,36 @@ section SemialgebraicAt
 
 variable {s s' V : Set (σ → ℝ)} {x : σ → ℝ}
 
+/-- Every neighbourhood of `x` contains an open semialgebraic neighbourhood of `x`: a box
+constraining finitely many coordinates. -/
+theorem exists_isOpen_isSemialgebraic_subset (hV : V ∈ 𝓝 x) :
+    ∃ B, IsOpen B ∧ x ∈ B ∧ B ⊆ V ∧ IsSemialgebraic B := by
+  rw [nhds_pi, Filter.mem_pi] at hV
+  obtain ⟨I, hI, t, ht, hIt⟩ := hV
+  choose ε hε hεt using fun i => Metric.mem_nhds_iff.1 (ht i)
+  have hmem (i : σ) : {y : σ → ℝ | y i ∈ ball (x i) (ε i)} =
+      {y | eval y (C (x i - ε i)) < eval y (X i)} ∩
+        {y | eval y (X i) < eval y (C (x i + ε i))} := by
+    ext y
+    simp [Real.ball_eq_Ioo, sub_eq_add_neg]
+  have hxB (i : σ) : x i ∈ ball (x i) (ε i) := mem_ball_self (hε i)
+  refine ⟨⋂ i ∈ I, {y | y i ∈ ball (x i) (ε i)}, hI.isOpen_biInter fun i _ =>
+    isOpen_ball.preimage (continuous_apply i), by simpa using fun i _ => hxB i,
+    fun y hy => hIt fun i hi => hεt i (mem_iInter₂.1 hy i hi), ?_⟩
+  exact .biInter hI fun i _ => by
+    rw [hmem]
+    exact (isSemialgebraic_eval_lt _ _).inter (isSemialgebraic_eval_lt _ _)
+
 /-- **Shrinking.** If `s` is semialgebraic at `x`, then the open semialgebraic neighbourhood of
 `x` meeting `s` in a semialgebraic set can be chosen inside any prescribed neighbourhood `V`
 of `x`. -/
-theorem SemialgebraicAt.exists_subset [Finite σ] (hs : SemialgebraicAt s x) (hV : V ∈ 𝓝 x) :
+theorem SemialgebraicAt.exists_subset (hs : SemialgebraicAt s x) (hV : V ∈ 𝓝 x) :
     ∃ U, IsOpen U ∧ x ∈ U ∧ U ⊆ V ∧ IsSemialgebraic U ∧ IsSemialgebraic (s ∩ U) := by
-  cases nonempty_fintype σ
   obtain ⟨U, hUo, hxU, hU, hsU⟩ := hs
-  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨U ∩ ball x ε, hUo.inter isOpen_ball, ⟨hxU, mem_ball_self hε⟩,
-    inter_subset_right.trans hεV, hU.inter (isSemialgebraic_ball x ε), ?_⟩
+  obtain ⟨B, hBo, hxB, hBV, hB⟩ := exists_isOpen_isSemialgebraic_subset hV
+  refine ⟨U ∩ B, hUo.inter hBo, ⟨hxU, hxB⟩, inter_subset_right.trans hBV, hU.inter hB, ?_⟩
   rw [← inter_assoc]
-  exact hsU.inter (isSemialgebraic_ball x ε)
+  exact hsU.inter hB
 
 /-- A set is semialgebraic at `x` if and only if it meets some sup-norm ball around `x` in a
 semialgebraic set. -/
@@ -107,7 +125,7 @@ theorem semialgebraicAt_iff_exists_ball [Fintype σ] :
   exact hsU.inter (isSemialgebraic_ball x ε)
 
 /-- Being semialgebraic at `x` only depends on the germ of the set at `x`. -/
-theorem SemialgebraicAt.congr [Finite σ] (hs : SemialgebraicAt s x) (h : s =ᶠ[𝓝 x] s') :
+theorem SemialgebraicAt.congr (hs : SemialgebraicAt s x) (h : s =ᶠ[𝓝 x] s') :
     SemialgebraicAt s' x := by
   obtain ⟨U, hUo, hxU, hUs, hU, hsU⟩ := hs.exists_subset (eventuallyEqSet_iff.1 h)
   refine ⟨U, hUo, hxU, hU, ?_⟩
@@ -117,7 +135,7 @@ theorem SemialgebraicAt.congr [Finite σ] (hs : SemialgebraicAt s x) (h : s =ᶠ
   exact fun hy => (hUs hy).symm
 
 /-- Being semialgebraic at `x` only depends on the germ of the set at `x`. -/
-theorem semialgebraicAt_congr [Finite σ] (h : s =ᶠ[𝓝 x] s') :
+theorem semialgebraicAt_congr (h : s =ᶠ[𝓝 x] s') :
     SemialgebraicAt s x ↔ SemialgebraicAt s' x :=
   ⟨fun hs => hs.congr h, fun hs => hs.congr h.symm⟩
 
@@ -364,7 +382,7 @@ end IsLocallySemialgebraic
 
 /-- **Locally finite unions.** The union of a locally finite family of locally semialgebraic sets
 is locally semialgebraic. -/
-theorem _root_.LocallyFinite.isLocallySemialgebraic_iUnion [Finite σ] {ι : Type*}
+theorem _root_.LocallyFinite.isLocallySemialgebraic_iUnion {ι : Type*}
     {s : ι → Set (σ → ℝ)} (hfin : LocallyFinite s) (hs : ∀ i, IsLocallySemialgebraic (s i)) :
     IsLocallySemialgebraic (⋃ i, s i) := by
   intro x
@@ -389,19 +407,24 @@ theorem _root_.IsCompact.exists_isSemialgebraic_inter {s K : Set (σ → ℝ)} (
   exact .biUnion t.finite_toSet fun x _ => hsU x x.2
 
 /-- A bounded set which is semialgebraic at every point of its closure is semialgebraic. -/
-theorem isSemialgebraic_of_isBounded [Finite σ] {s : Set (σ → ℝ)} (hb : Bornology.IsBounded s)
+theorem isSemialgebraic_of_isBounded {s : Set (σ → ℝ)} (hb : Bornology.IsBounded s)
     (hs : ∀ x ∈ closure s, SemialgebraicAt s x) : IsSemialgebraic s := by
-  cases nonempty_fintype σ
-  obtain ⟨U, -, hsU, -, h⟩ := hb.isCompact_closure.exists_isSemialgebraic_inter hs
+  have hK : IsCompact (closure s) := by
+    refine (isCompact_univ_pi fun i =>
+      (Bornology.forall_isBounded_image_eval_iff.2 hb i).isCompact_closure).of_isClosed_subset
+      isClosed_closure ?_
+    exact closure_minimal (fun y hy i _ => subset_closure ⟨y, hy, rfl⟩)
+      (isClosed_set_pi fun i _ => isClosed_closure)
+  obtain ⟨U, -, hsU, -, h⟩ := hK.exists_isSemialgebraic_inter hs
   rwa [inter_eq_left.2 (subset_closure.trans hsU)] at h
 
 /-- A bounded locally semialgebraic set is semialgebraic. -/
-theorem IsLocallySemialgebraic.isSemialgebraic_of_isBounded [Finite σ] {s : Set (σ → ℝ)}
+theorem IsLocallySemialgebraic.isSemialgebraic_of_isBounded {s : Set (σ → ℝ)}
     (hs : IsLocallySemialgebraic s) (hb : Bornology.IsBounded s) : IsSemialgebraic s :=
   TauCeti.isSemialgebraic_of_isBounded hb fun x _ => hs x
 
 /-- A bounded set is semialgebraic if and only if it is locally semialgebraic. -/
-theorem _root_.Bornology.IsBounded.isSemialgebraic_iff [Finite σ] {s : Set (σ → ℝ)}
+theorem _root_.Bornology.IsBounded.isSemialgebraic_iff {s : Set (σ → ℝ)}
     (hb : Bornology.IsBounded s) : IsSemialgebraic s ↔ IsLocallySemialgebraic s :=
   ⟨IsSemialgebraic.isLocallySemialgebraic, fun hs => hs.isSemialgebraic_of_isBounded hb⟩
 
