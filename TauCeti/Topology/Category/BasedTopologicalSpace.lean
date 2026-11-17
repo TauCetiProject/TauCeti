@@ -195,7 +195,10 @@ and `addBasepointInr`. -/
 def addBasepointIsColimit (X : TopCat.{u}) :
     Limits.IsColimit
       (Limits.BinaryCofan.mk (toTopPair.obj (addBasepoint.obj X)).hom (addBasepointInr X)) :=
-  TopCat.binaryCofanIsColimit (TopCat.of PUnit.{u + 1}) X
+  (TopCat.binaryCofanIsColimit (TopCat.of PUnit.{u + 1}) X).ofIsoColimit <|
+    -- Both cocone points are `PUnit ⊕ X`. On the unique point of `PUnit`, `Sum.inl` and the
+    -- constant map at the basepoint `Sum.inl PUnit.unit` agree, and on `X` both maps are `Sum.inr`.
+    Limits.BinaryCofan.ext (Iso.refl _) (by ext ⟨⟩; rfl) (by ext; rfl)
 
 /-- The inclusion `X ⟶ X₊` is natural in `X`. -/
 @[reassoc]
