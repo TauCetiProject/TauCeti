@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 
 /-!
 # The inverse function theorem with a `C^n` inverse on a whole open set
@@ -61,6 +62,9 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 * `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a disc `z ↦ (a z, b z)` whose second
   component has invertible derivative at `z₀` is, near `z₀`, the graph of a map `C^n` at `b z₀`.
+* `HasStrictDerivAt.invFunOn`, `TauCeti.isOpen_image_of_hasStrictDerivAt`,
+  `TauCeti.continuousOn_invFunOn_of_hasStrictDerivAt`: one-dimensional `Function.invFunOn` strict
+  differentiability, open image, and continuity of the inverse on `f '' s`.
 
 ## References
 
@@ -299,6 +303,42 @@ theorem exists_contDiffAt_graph_of_isInvertible {G : Type*} [NormedAddCommGroup 
   exact ⟨_, hwU, rfl, hw⟩
 
 end TauCeti
+
+section OneDim
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+
+/-- If `f : 𝕜 → 𝕜` has a nonzero strict derivative `f'` at `a` and is injective on a neighbourhood
+`s` of `a`, then `Function.invFunOn f s` has strict derivative `f'⁻¹` at `f a`. -/
+theorem HasStrictDerivAt.invFunOn {f : 𝕜 → 𝕜} {f' a : 𝕜} {s : Set 𝕜}
+    (hf : HasStrictDerivAt f f' a) (hf' : f' ≠ 0) (hs : s ∈ 𝓝 a) (hinj : InjOn f s) :
+    HasStrictDerivAt (Function.invFunOn f s) f'⁻¹ (f a) :=
+  hf.to_local_left_inverse hf' (eventually_of_mem hs fun _ hx ↦ hinj.leftInvOn_invFunOn hx)
+
+namespace TauCeti
+
+/-- If `f : 𝕜 → 𝕜` has a nonzero strict derivative at every point of an open set `s`, then
+`f '' s` is open. -/
+theorem isOpen_image_of_hasStrictDerivAt {f f' : 𝕜 → 𝕜} {s : Set 𝕜} (hs : IsOpen s)
+    (hf : ∀ x ∈ s, HasStrictDerivAt f (f' x) x) (hf' : ∀ x ∈ s, f' x ≠ 0) :
+    IsOpen (f '' s) := by
+  rw [isOpen_iff_mem_nhds]
+  rintro _ ⟨x, hx, rfl⟩
+  rw [← (hf x hx).map_nhds_eq (hf' x hx)]
+  exact image_mem_map (hs.mem_nhds hx)
+
+/-- If `f : 𝕜 → 𝕜` is injective on an open set `s` and has a nonzero strict derivative at every
+point of `s`, then `Function.invFunOn f s` is continuous on `f '' s`. -/
+theorem continuousOn_invFunOn_of_hasStrictDerivAt {f f' : 𝕜 → 𝕜} {s : Set 𝕜} (hs : IsOpen s)
+    (hinj : InjOn f s) (hf : ∀ x ∈ s, HasStrictDerivAt f (f' x) x) (hf' : ∀ x ∈ s, f' x ≠ 0) :
+    ContinuousOn (Function.invFunOn f s) (f '' s) := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact ((hf x hx).invFunOn (hf' x hx) (hs.mem_nhds hx) hinj).hasDerivAt.continuousAt
+    |>.continuousWithinAt
+
+end TauCeti
+
+end OneDim
 
 end
 

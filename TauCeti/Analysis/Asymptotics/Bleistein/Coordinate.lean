@@ -9,14 +9,11 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
-public import Mathlib.Topology.Instances.Sign
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Calculus.LHopital
-import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.SpecialFunctions.Exp
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Bleistein's canonical coordinate for coalescing critical points
@@ -31,14 +28,13 @@ method (1966; DLMF §2.3(v), 2.3.24–2.3.28) maps `p(α, t)` onto the quadratic
 * `TauCeti.bleisteinCoord p α t`, the canonical coordinate
   `w(α, t) = a(α) + (SignType.sign (t - α) : ℝ) * √(2 * (p t - p α))`.
 
-When `p` is `C²` on an open set `U` containing `α` with `deriv p α = 0`, `deriv (deriv p) α > 0`,
-and `p α < p t` for `t ≠ α`, `bleisteinCoord p α` is `C¹` on `U` with derivative
-`deriv p t / (w - a)` away from `t = α` (DLMF 2.3.28) and `√(deriv (deriv p) α) > 0` at `t = α`.
-Under the derivative sign conditions `deriv p < 0` on `U ∩ (-∞, α)` and `deriv p > 0` on
-`U ∩ (α, ∞)` on a convex open domain `U`, `bleisteinCoord p α` is strictly increasing with
-strictly positive derivative and maps `(0, k)` or `(0, ∞)` onto `(0, κ)` where
-`κ = lim_{t → k} w(α, t)`. If `p(t) → +∞` as `t → k`, then `κ = +∞`; having `k = +∞` alone does
-not force `κ = +∞` (`TauCeti.tendsto_bleisteinCoord_one_sub_exp_neg_sq`).
+When `p` is `C¹` on an open set `U` containing `α` with `deriv (deriv p) α > 0` and `p α < p t`
+for `t ≠ α`, `bleisteinCoord p α` is `C¹` on `U` with derivative `deriv p t / (w - a)` away from
+`t = α` (DLMF 2.3.28) and `√(deriv (deriv p) α) > 0` at `t = α`. Under the derivative sign
+conditions `deriv p < 0` on `U ∩ (-∞, α)` and `deriv p > 0` on `U ∩ (α, ∞)` on a convex open
+domain `U`, `bleisteinCoord p α` is strictly increasing with strictly positive derivative. If
+`p(t) → +∞` along a filter eventually to the right of `α`, then `w(α, t) → +∞`; having `k = +∞`
+alone does not force `κ = +∞` (`TauCeti.tendsto_bleisteinCoord_one_sub_exp_neg_sq`).
 
 ## Main definitions
 
@@ -51,12 +47,16 @@ not force `κ = +∞` (`TauCeti.tendsto_bleisteinCoord_one_sub_exp_neg_sq`).
   `w ^ 2 / 2 - a * w + p 0 = p t` (DLMF 2.3.25).
 * `TauCeti.strictMonoOn_bleisteinCoord`, `TauCeti.strictMonoOn_bleisteinCoord_of_deriv_sign`:
   strict monotonicity of `bleisteinCoord p α`.
+* `TauCeti.tendsto_bleisteinCoord`, `TauCeti.tendsto_bleisteinCoord_atTop`: finite and infinite
+  limit characterizations of `bleisteinCoord p α`.
 * `TauCeti.hasDerivAt_bleisteinCoord_of_ne`, `TauCeti.hasDerivAt_bleisteinCoord_self`,
   `TauCeti.contDiffOn_bleisteinCoord`: derivative formulas (DLMF 2.3.28) and `C¹` regularity
   across the critical point `t = α`.
-* `TauCeti.hasStrictDerivAt_invFunOn_bleisteinCoord`, `TauCeti.image_bleisteinCoord_Ioo_eq_Ioo`,
-  `TauCeti.image_bleisteinCoord_Ioo_eq_Ioi`, `TauCeti.image_bleisteinCoord_Ioi_eq_Ioo`,
-  `TauCeti.image_bleisteinCoord_Ioi_eq_Ioi`: inverse coordinate regularity and interval images.
+* `TauCeti.image_bleisteinCoord_Ioo_eq_Ioo_of_deriv_sign`,
+  `TauCeti.image_bleisteinCoord_Ioo_eq_Ioi_of_deriv_sign`,
+  `TauCeti.image_bleisteinCoord_Ioi_eq_Ioo_of_deriv_sign`,
+  `TauCeti.image_bleisteinCoord_Ioi_eq_Ioi_of_deriv_sign`: exact interval images of `(0, k)` and
+  `(0, ∞)` under derivative-sign hypotheses.
 
 ## References
 
@@ -64,6 +64,8 @@ not force `κ = +∞` (`TauCeti.tendsto_bleisteinCoord_one_sub_exp_neg_sq`).
   singularity*, Comm. Pure Appl. Math. **19** (1966), 353–370.
 * N. Bleistein and R. A. Handelsman, *Asymptotic Expansions of Integrals*, Holt, Rinehart and
   Winston, 1975; reprinted Dover, 1986. Chapter 9, §9.4.
+* F. W. J. Olver, *Asymptotics and Special Functions*, Academic Press, 1974; reprinted A K Peters,
+  1997. Chapter 9, §10.
 * NIST Digital Library of Mathematical Functions, §2.3(v), <https://dlmf.nist.gov/2.3.v>.
 -/
 
@@ -91,45 +93,55 @@ theorem bleisteinOffset_def (p : ℝ → ℝ) (α : ℝ) :
 theorem bleisteinOffset_zero (p : ℝ → ℝ) : bleisteinOffset p 0 = 0 := by
   simp [bleisteinOffset]
 
-/-- Modulus of `bleisteinOffset` (DLMF 2.3.26): `|a(α)| = √(2 (p 0 - p α))` when `p α ≤ p 0`. -/
-theorem abs_bleisteinOffset {p : ℝ → ℝ} {α : ℝ} (hp : p α ≤ p 0) :
-    |bleisteinOffset p α| = Real.sqrt (2 * (p 0 - p α)) := by
-  rcases lt_trichotomy α 0 with hα | rfl | hα
-  · simp [bleisteinOffset, sign_neg hα, abs_of_nonneg (Real.sqrt_nonneg _)]
+/-- Branch formula for `bleisteinOffset` on `[0, ∞)`: `a(α) = √(2 (p 0 - p α))`. -/
+theorem bleisteinOffset_of_nonneg {p : ℝ → ℝ} {α : ℝ} (hα : 0 ≤ α) :
+    bleisteinOffset p α = Real.sqrt (2 * (p 0 - p α)) := by
+  rcases hα.eq_or_lt with rfl | hα'
   · simp
-  · simp [bleisteinOffset, sign_pos hα, abs_of_nonneg (Real.sqrt_nonneg _)]
+  · simp [bleisteinOffset, sign_pos hα']
+
+/-- Branch formula for `bleisteinOffset` on `(-∞, 0]`: `a(α) = -√(2 (p 0 - p α))`. -/
+theorem bleisteinOffset_of_nonpos {p : ℝ → ℝ} {α : ℝ} (hα : α ≤ 0) :
+    bleisteinOffset p α = -Real.sqrt (2 * (p 0 - p α)) := by
+  rcases hα.eq_or_lt with rfl | hα'
+  · simp
+  · simp [bleisteinOffset, sign_neg hα']
+
+/-- Modulus of `bleisteinOffset` (DLMF 2.3.26): `|a(α)| = √(2 (p 0 - p α))`. -/
+theorem abs_bleisteinOffset (p : ℝ → ℝ) (α : ℝ) :
+    |bleisteinOffset p α| = Real.sqrt (2 * (p 0 - p α)) := by
+  rcases le_total 0 α with hα | hα
+  · rw [bleisteinOffset_of_nonneg hα, abs_of_nonneg (Real.sqrt_nonneg _)]
+  · rw [bleisteinOffset_of_nonpos hα, abs_neg, abs_of_nonneg (Real.sqrt_nonneg _)]
 
 /-- Square of `bleisteinOffset`: `a(α) ^ 2 = 2 * (p 0 - p α)` when `p α ≤ p 0`. -/
 theorem sq_bleisteinOffset {p : ℝ → ℝ} {α : ℝ} (hp : p α ≤ p 0) :
     bleisteinOffset p α ^ 2 = 2 * (p 0 - p α) := by
-  rw [← sq_abs, abs_bleisteinOffset hp, Real.sq_sqrt (by linarith)]
+  rw [← sq_abs, abs_bleisteinOffset, Real.sq_sqrt (by linarith)]
 
 /-- For `α > 0` with `p α < p 0`, the offset `a(α)` is strictly positive. -/
 theorem bleisteinOffset_pos {p : ℝ → ℝ} {α : ℝ} (hα : 0 < α) (hp : p α < p 0) :
     0 < bleisteinOffset p α := by
-  simp only [bleisteinOffset, sign_pos hα, SignType.coe_one, one_mul]
+  rw [bleisteinOffset_of_nonneg hα.le]
   exact Real.sqrt_pos_of_pos (by linarith)
 
 /-- For `α < 0` with `p α < p 0`, the offset `a(α)` is strictly negative. -/
 theorem bleisteinOffset_neg {p : ℝ → ℝ} {α : ℝ} (hα : α < 0) (hp : p α < p 0) :
     bleisteinOffset p α < 0 := by
-  simp only [bleisteinOffset, sign_neg hα, SignType.coe_neg, SignType.coe_one, neg_one_mul,
-    neg_lt_zero]
+  rw [bleisteinOffset_of_nonpos hα.le, neg_lt_zero]
   exact Real.sqrt_pos_of_pos (by linarith)
 
 /-- For `α ≥ 0`, `bleisteinOffset p α` is nonnegative. -/
 theorem bleisteinOffset_nonneg {p : ℝ → ℝ} {α : ℝ} (hα : 0 ≤ α) :
     0 ≤ bleisteinOffset p α := by
-  rcases hα.eq_or_lt with rfl | hα'
-  · simp
-  · simp [bleisteinOffset, sign_pos hα', Real.sqrt_nonneg]
+  rw [bleisteinOffset_of_nonneg hα]
+  exact Real.sqrt_nonneg _
 
 /-- For `α ≤ 0`, `bleisteinOffset p α` is nonpositive. -/
 theorem bleisteinOffset_nonpos {p : ℝ → ℝ} {α : ℝ} (hα : α ≤ 0) :
     bleisteinOffset p α ≤ 0 := by
-  rcases hα.eq_or_lt with rfl | hα'
-  · simp
-  · simp [bleisteinOffset, sign_neg hα', Real.sqrt_nonneg]
+  rw [bleisteinOffset_of_nonpos hα, neg_nonpos]
+  exact Real.sqrt_nonneg _
 
 /-- Bleistein's canonical coordinate `w(α, t) = a(α) + sgn(t - α) √(2 (p t - p α))`, which maps the
 endpoint `t = 0` to `0`, the critical point `t = α` to `a(α)`, and transforms `p t` into
@@ -155,25 +167,41 @@ theorem bleisteinCoord_zero (p : ℝ → ℝ) (α : ℝ) : bleisteinCoord p α 0
   rw [bleisteinCoord, bleisteinOffset, zero_sub, Left.sign_neg, SignType.coe_neg]
   ring
 
+/-- Branch formula for `bleisteinCoord` to the right of `α` (`α ≤ t`):
+`w(α, t) = a(α) + √(2 (p t - p α))`. -/
+theorem bleisteinCoord_of_ge {p : ℝ → ℝ} {α t : ℝ} (ht : α ≤ t) :
+    bleisteinCoord p α t = bleisteinOffset p α + Real.sqrt (2 * (p t - p α)) := by
+  rcases ht.eq_or_lt with rfl | ht'
+  · simp
+  · simp [bleisteinCoord, sign_pos (sub_pos.mpr ht')]
+
+/-- Branch formula for `bleisteinCoord` to the left of `α` (`t ≤ α`):
+`w(α, t) = a(α) - √(2 (p t - p α))`. -/
+theorem bleisteinCoord_of_le {p : ℝ → ℝ} {α t : ℝ} (ht : t ≤ α) :
+    bleisteinCoord p α t = bleisteinOffset p α - Real.sqrt (2 * (p t - p α)) := by
+  rcases ht.eq_or_lt with rfl | ht'
+  · simp
+  · rw [bleisteinCoord, sign_neg (sub_neg.mpr ht')]
+    simp [sub_eq_add_neg]
+
 /-- Difference between `bleisteinCoord` and `bleisteinOffset`. -/
 theorem bleisteinCoord_sub_bleisteinOffset (p : ℝ → ℝ) (α t : ℝ) :
     bleisteinCoord p α t - bleisteinOffset p α =
       (SignType.sign (t - α) : ℝ) * Real.sqrt (2 * (p t - p α)) :=
   add_sub_cancel_left _ _
 
-/-- Distance from `bleisteinCoord p α t` to `bleisteinOffset p α` when `p α ≤ p t`. -/
-theorem abs_bleisteinCoord_sub {p : ℝ → ℝ} {α t : ℝ} (hp : p α ≤ p t) :
+/-- Distance from `bleisteinCoord p α t` to `bleisteinOffset p α`:
+`|w(α, t) - a(α)| = √(2 (p t - p α))`. -/
+theorem abs_bleisteinCoord_sub (p : ℝ → ℝ) (α t : ℝ) :
     |bleisteinCoord p α t - bleisteinOffset p α| = Real.sqrt (2 * (p t - p α)) := by
-  rw [bleisteinCoord_sub_bleisteinOffset]
-  rcases lt_trichotomy t α with ht | rfl | ht
-  · simp [sign_neg (sub_neg.mpr ht), abs_of_nonneg (Real.sqrt_nonneg _)]
-  · simp
-  · simp [sign_pos (sub_pos.mpr ht), abs_of_nonneg (Real.sqrt_nonneg _)]
+  rcases le_total α t with ht | ht
+  · rw [bleisteinCoord_of_ge ht, add_sub_cancel_left, abs_of_nonneg (Real.sqrt_nonneg _)]
+  · rw [bleisteinCoord_of_le ht, sub_sub_cancel_left, abs_neg, abs_of_nonneg (Real.sqrt_nonneg _)]
 
 /-- Squared distance identity `(w(α, t) - a(α)) ^ 2 = 2 * (p t - p α)` when `p α ≤ p t`. -/
 theorem sq_bleisteinCoord_sub {p : ℝ → ℝ} {α t : ℝ} (hp : p α ≤ p t) :
     (bleisteinCoord p α t - bleisteinOffset p α) ^ 2 = 2 * (p t - p α) := by
-  rw [← sq_abs, abs_bleisteinCoord_sub hp, Real.sq_sqrt (by linarith)]
+  rw [← sq_abs, abs_bleisteinCoord_sub, Real.sq_sqrt (by linarith)]
 
 /-- Bleistein's quadratic phase identity (DLMF 2.3.25):
 `w(α, t) ^ 2 / 2 - a(α) * w(α, t) + p 0 = p t` whenever `p α ≤ p 0` and `p α ≤ p t`. -/
@@ -194,14 +222,13 @@ theorem half_sq_bleisteinCoord_sub_mul {p : ℝ → ℝ} {α t : ℝ}
 /-- To the left of `α`, `bleisteinCoord p α t < bleisteinOffset p α` whenever `p α < p t`. -/
 theorem bleisteinCoord_lt_bleisteinOffset {p : ℝ → ℝ} {α t : ℝ} (ht : t < α) (hp : p α < p t) :
     bleisteinCoord p α t < bleisteinOffset p α := by
-  simp only [bleisteinCoord, sign_neg (sub_neg.mpr ht), SignType.coe_neg, SignType.coe_one,
-    neg_one_mul]
+  rw [bleisteinCoord_of_le ht.le]
   linarith [Real.sqrt_pos_of_pos (x := 2 * (p t - p α)) (by linarith)]
 
 /-- To the right of `α`, `bleisteinOffset p α < bleisteinCoord p α t` whenever `p α < p t`. -/
 theorem bleisteinOffset_lt_bleisteinCoord {p : ℝ → ℝ} {α t : ℝ} (ht : α < t) (hp : p α < p t) :
     bleisteinOffset p α < bleisteinCoord p α t := by
-  simp only [bleisteinCoord, sign_pos (sub_pos.mpr ht), SignType.coe_one, one_mul]
+  rw [bleisteinCoord_of_ge ht.le]
   linarith [Real.sqrt_pos_of_pos (x := 2 * (p t - p α)) (by linarith)]
 
 /-- Away from `α`, `bleisteinCoord p α t ≠ bleisteinOffset p α` whenever `p α < p t`. -/
@@ -211,11 +238,38 @@ theorem bleisteinCoord_ne_bleisteinOffset {p : ℝ → ℝ} {α t : ℝ} (ht : t
   · exact (bleisteinCoord_lt_bleisteinOffset h hp).ne
   · exact (bleisteinOffset_lt_bleisteinCoord h hp).ne'
 
+/-- Continuity of `bleisteinCoord p α` on any set `s` on which `p` is continuous. -/
+theorem continuousOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {s : Set ℝ} (hp : ContinuousOn p s) :
+    ContinuousOn (bleisteinCoord p α) s := by
+  intro t ht
+  rcases lt_trichotomy t α with hlt | rfl | hgt
+  · have hc : ContinuousWithinAt
+        (fun u ↦ bleisteinOffset p α - Real.sqrt (2 * (p u - p α))) s t :=
+      continuousWithinAt_const.sub <| Real.continuous_sqrt.continuousAt.comp_continuousWithinAt <|
+        continuousWithinAt_const.mul ((hp t ht).sub continuousWithinAt_const)
+    refine hc.congr_of_eventuallyEq ?_ (bleisteinCoord_of_le hlt.le)
+    filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds hlt)] with u hu
+    exact bleisteinCoord_of_le (le_of_lt hu)
+  · rw [ContinuousWithinAt, tendsto_iff_norm_sub_tendsto_zero]
+    have hrad : Tendsto (fun u ↦ Real.sqrt (2 * (p u - p t))) (𝓝[s] t) (𝓝 0) := by
+      simpa only [Function.comp_def, sub_self, mul_zero, Real.sqrt_zero] using
+        (Real.continuous_sqrt.continuousAt.tendsto.comp
+          (((hp t ht).tendsto.sub_const (p t)).const_mul 2))
+    refine hrad.congr fun u ↦ ?_
+    rw [bleisteinCoord_self, Real.norm_eq_abs, abs_bleisteinCoord_sub]
+  · have hc : ContinuousWithinAt
+        (fun u ↦ bleisteinOffset p α + Real.sqrt (2 * (p u - p α))) s t :=
+      continuousWithinAt_const.add <| Real.continuous_sqrt.continuousAt.comp_continuousWithinAt <|
+        continuousWithinAt_const.mul ((hp t ht).sub continuousWithinAt_const)
+    refine hc.congr_of_eventuallyEq ?_ (bleisteinCoord_of_ge hgt.le)
+    filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds hgt)] with u hu
+    exact bleisteinCoord_of_ge (le_of_lt hu)
+
 /-! ### Monotonicity and upper limit `κ` -/
 
 /-- If `p` is strictly decreasing on `s ∩ (-∞, α]`, strictly increasing on `s ∩ [α, ∞)`, and
 strictly above `p α` on `s \ {α}`, then `bleisteinCoord p α` is strictly increasing on `s`. -/
-theorem strictMonoOn_bleisteinCoord_of_ne {p : ℝ → ℝ} {α : ℝ} {s : Set ℝ}
+theorem strictMonoOn_bleisteinCoord_of_forall_lt {p : ℝ → ℝ} {α : ℝ} {s : Set ℝ}
     (hleft : StrictAntiOn p (s ∩ Iic α)) (hright : StrictMonoOn p (s ∩ Ici α))
     (hpos : ∀ t ∈ s, t ≠ α → p α < p t) :
     StrictMonoOn (bleisteinCoord p α) s := by
@@ -226,8 +280,7 @@ theorem strictMonoOn_bleisteinCoord_of_ne {p : ℝ → ℝ} {α : ℝ} {s : Set 
     have hp₁₂ : p t₂ < p t₁ := hleft ⟨ht₁, ht₁α.le⟩ ⟨ht₂, ht₂α.le⟩ hlt
     have hsq : Real.sqrt (2 * (p t₂ - p α)) < Real.sqrt (2 * (p t₁ - p α)) :=
       Real.sqrt_lt_sqrt (by linarith) (by linarith)
-    simp only [bleisteinCoord, sign_neg (sub_neg.mpr ht₁α), sign_neg (sub_neg.mpr ht₂α),
-      SignType.coe_neg, SignType.coe_one, neg_one_mul]
+    rw [bleisteinCoord_of_le ht₁α.le, bleisteinCoord_of_le ht₂α.le]
     linarith
   · simpa using bleisteinCoord_lt_bleisteinOffset hlt (hpos t₁ ht₁ hlt.ne)
   · rcases lt_trichotomy t₁ α with ht₁α | rfl | hαt₁
@@ -238,8 +291,7 @@ theorem strictMonoOn_bleisteinCoord_of_ne {p : ℝ → ℝ} {α : ℝ} {s : Set 
       have hp₁₂ : p t₁ < p t₂ := hright ⟨ht₁, hαt₁.le⟩ ⟨ht₂, hαt₂.le⟩ hlt
       have hsq : Real.sqrt (2 * (p t₁ - p α)) < Real.sqrt (2 * (p t₂ - p α)) :=
         Real.sqrt_lt_sqrt (by linarith) (by linarith)
-      simp only [bleisteinCoord, sign_pos (sub_pos.mpr hαt₁), sign_pos (sub_pos.mpr hαt₂),
-        SignType.coe_one, one_mul]
+      rw [bleisteinCoord_of_ge hαt₁.le, bleisteinCoord_of_ge hαt₂.le]
       linarith
 
 /-- If `α ∈ s`, `p` is strictly decreasing on `s ∩ (-∞, α]`, and `p` is strictly increasing on
@@ -247,7 +299,7 @@ theorem strictMonoOn_bleisteinCoord_of_ne {p : ℝ → ℝ} {α : ℝ} {s : Set 
 theorem strictMonoOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {s : Set ℝ} (hα : α ∈ s)
     (hleft : StrictAntiOn p (s ∩ Iic α)) (hright : StrictMonoOn p (s ∩ Ici α)) :
     StrictMonoOn (bleisteinCoord p α) s := by
-  refine strictMonoOn_bleisteinCoord_of_ne hleft hright fun t ht hne ↦ ?_
+  refine strictMonoOn_bleisteinCoord_of_forall_lt hleft hright fun t ht hne ↦ ?_
   rcases hne.lt_or_gt with hlt | hgt
   · exact hleft ⟨ht, hlt.le⟩ ⟨hα, le_rfl⟩ hlt
   · exact hright ⟨hα, le_rfl⟩ ⟨ht, hgt.le⟩ hgt
@@ -269,18 +321,17 @@ theorem bleisteinCoord_neg {p : ℝ → ℝ} {α t : ℝ} {s : Set ℝ}
 /-- Along any filter eventually to the right of `α` on which `p` tends to `+∞`,
 `bleisteinCoord p α` also tends to `+∞`. -/
 theorem tendsto_bleisteinCoord_atTop {p : ℝ → ℝ} {α : ℝ} {l : Filter ℝ}
-    (hl : ∀ᶠ t in l, α < t) (hp : Tendsto p l atTop) :
+    (hl : ∀ᶠ t in l, α ≤ t) (hp : Tendsto p l atTop) :
     Tendsto (bleisteinCoord p α) l atTop := by
   have hsq : Tendsto (fun t ↦ bleisteinOffset p α + Real.sqrt (2 * (p t - p α))) l atTop :=
     tendsto_atTop_add_const_left _ _ <| Real.tendsto_sqrt_atTop.comp <|
       (tendsto_atTop_add_const_right _ (-p α) hp).const_mul_atTop zero_lt_two
-  refine hsq.congr' (hl.mono fun t ht ↦ ?_)
-  simp [bleisteinCoord, sign_pos (sub_pos.mpr ht)]
+  exact hsq.congr' (hl.mono fun _ ht ↦ (bleisteinCoord_of_ge ht).symm)
 
 /-- If `p t → +∞` as `t → +∞`, then `bleisteinCoord p α t → +∞` as `t → +∞` (`κ = ∞`). -/
 theorem tendsto_bleisteinCoord_atTop_atTop {p : ℝ → ℝ} {α : ℝ} (hp : Tendsto p atTop atTop) :
     Tendsto (bleisteinCoord p α) atTop atTop :=
-  tendsto_bleisteinCoord_atTop (eventually_gt_atTop α) hp
+  tendsto_bleisteinCoord_atTop (eventually_ge_atTop α) hp
 
 /-- If `α < k` and `p t → +∞` as `t → k⁻`, then `bleisteinCoord p α t → +∞` as `t → k⁻`
 (`κ = ∞`). -/
@@ -288,35 +339,47 @@ theorem tendsto_bleisteinCoord_nhdsLT_atTop {p : ℝ → ℝ} {α k : ℝ} (hαk
     (hp : Tendsto p (𝓝[<] k) atTop) :
     Tendsto (bleisteinCoord p α) (𝓝[<] k) atTop :=
   tendsto_bleisteinCoord_atTop
-    (eventually_nhdsWithin_of_eventually_nhds (eventually_gt_nhds hαk)) hp
+    (eventually_nhdsWithin_of_eventually_nhds ((eventually_gt_nhds hαk).mono fun _ ↦ le_of_lt)) hp
+
+/-- Along any filter eventually to the right of `α` on which `p` tends to a finite limit `pb`,
+`bleisteinCoord p α` tends to `a(α) + √(2 (pb - p α))`. -/
+theorem tendsto_bleisteinCoord {p : ℝ → ℝ} {α pb : ℝ} {l : Filter ℝ}
+    (hl : ∀ᶠ t in l, α ≤ t) (hp : Tendsto p l (𝓝 pb)) :
+    Tendsto (bleisteinCoord p α) l
+      (𝓝 (bleisteinOffset p α + Real.sqrt (2 * (pb - p α)))) := by
+  have hlim : Tendsto (fun t ↦ bleisteinOffset p α + Real.sqrt (2 * (p t - p α))) l
+      (𝓝 (bleisteinOffset p α + Real.sqrt (2 * (pb - p α)))) :=
+    tendsto_const_nhds.add <| Real.continuous_sqrt.continuousAt.tendsto.comp <|
+      (hp.sub_const (p α)).const_mul 2
+  exact hlim.congr' (hl.mono fun _ ht ↦ (bleisteinCoord_of_ge ht).symm)
+
+/-- If `p t → pb` as `t → +∞`, then `bleisteinCoord p α t` tends to the finite upper limit
+`κ = a(α) + √(2 (pb - p α))` as `t → +∞`. -/
+theorem tendsto_bleisteinCoord_atTop_nhds {p : ℝ → ℝ} {α pb : ℝ} (hp : Tendsto p atTop (𝓝 pb)) :
+    Tendsto (bleisteinCoord p α) atTop
+      (𝓝 (bleisteinOffset p α + Real.sqrt (2 * (pb - p α)))) :=
+  tendsto_bleisteinCoord (eventually_ge_atTop α) hp
 
 /-- If `α < k` and `p t → pb` as `t → k⁻`, then `bleisteinCoord p α t` tends to the finite upper
 limit `κ = a(α) + √(2 (pb - p α))`. -/
 theorem tendsto_bleisteinCoord_nhdsLT {p : ℝ → ℝ} {α k pb : ℝ} (hαk : α < k)
     (hp : Tendsto p (𝓝[<] k) (𝓝 pb)) :
     Tendsto (bleisteinCoord p α) (𝓝[<] k)
-      (𝓝 (bleisteinOffset p α + Real.sqrt (2 * (pb - p α)))) := by
-  have hlim : Tendsto (fun t ↦ bleisteinOffset p α + Real.sqrt (2 * (p t - p α))) (𝓝[<] k)
       (𝓝 (bleisteinOffset p α + Real.sqrt (2 * (pb - p α)))) :=
-    tendsto_const_nhds.add <| Real.continuous_sqrt.continuousAt.tendsto.comp <|
-      (hp.sub_const (p α)).const_mul 2
-  refine hlim.congr' ?_
-  filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_gt_nhds hαk)] with t ht
-  simp [bleisteinCoord, sign_pos (sub_pos.mpr ht)]
+  tendsto_bleisteinCoord
+    (eventually_nhdsWithin_of_eventually_nhds ((eventually_gt_nhds hαk).mono fun _ ↦ le_of_lt)) hp
 
 /-- Having upper integration limit `k = +∞` does not by itself force `κ = +∞`: for the smooth phase
 `p t = 1 - exp (-t ^ 2)` with critical point `α = 0`, `bleisteinCoord p 0 t` tends to the finite
 limit `√2` as `t → +∞`. -/
 theorem tendsto_bleisteinCoord_one_sub_exp_neg_sq :
     Tendsto (bleisteinCoord (fun t ↦ 1 - Real.exp (-t ^ 2)) 0) atTop (𝓝 (Real.sqrt 2)) := by
-  have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-t ^ 2)) atTop (𝓝 0) :=
-    Real.tendsto_exp_atBot.comp <| tendsto_neg_atTop_atBot.comp <|
-      Filter.tendsto_pow_atTop (by norm_num)
-  have hinner : Tendsto (fun t : ℝ ↦ 2 * (1 - Real.exp (-t ^ 2))) atTop (𝓝 2) := by
-    simpa using ((tendsto_const_nhds (x := (1 : ℝ))).sub hexp).const_mul 2
-  refine (Real.continuous_sqrt.continuousAt.tendsto.comp hinner).congr' ?_
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-  simp [bleisteinCoord, sign_pos ht]
+  have hp : Tendsto (fun t : ℝ ↦ 1 - Real.exp (-t ^ 2)) atTop (𝓝 1) := by
+    have hexp : Tendsto (fun t : ℝ ↦ Real.exp (-t ^ 2)) atTop (𝓝 0) :=
+      Real.tendsto_exp_atBot.comp <| tendsto_neg_atTop_atBot.comp <|
+        Filter.tendsto_pow_atTop (by norm_num)
+    simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub hexp
+  simpa using tendsto_bleisteinCoord_atTop_nhds (α := 0) hp
 
 /-! ### Derivatives and `C¹` regularity of `bleisteinCoord` -/
 
@@ -327,27 +390,22 @@ theorem hasDerivAt_bleisteinCoord_of_ne {p : ℝ → ℝ} {α t p' : ℝ} (ht : 
     HasDerivAt (bleisteinCoord p α) (p' / (bleisteinCoord p α t - bleisteinOffset p α)) t := by
   have hpos : 0 < 2 * (p t - p α) := by linarith
   have hrad : HasDerivAt (fun s ↦ Real.sqrt (2 * (p s - p α)))
-      (p' / Real.sqrt (2 * (p t - p α))) t := by
-    convert ((hp.sub_const (p α)).const_mul 2).sqrt hpos.ne' using 1
-    field_simp [(Real.sqrt_pos_of_pos hpos).ne']
+      (p' / Real.sqrt (2 * (p t - p α))) t :=
+    (((hp.sub_const (p α)).const_mul 2).sqrt hpos.ne').congr_deriv
+      (mul_div_mul_left p' _ two_ne_zero)
   rcases ht.lt_or_gt with hlt | hgt
   · have heq : bleisteinCoord p α =ᶠ[𝓝 t]
-        fun s ↦ bleisteinOffset p α + (-1) * Real.sqrt (2 * (p s - p α)) := by
+        fun s ↦ bleisteinOffset p α - Real.sqrt (2 * (p s - p α)) := by
       filter_upwards [Iio_mem_nhds hlt] with s hs
-      simp [bleisteinCoord, sign_neg (sub_neg.mpr hs)]
-    refine ((hrad.const_mul (-1)).const_add (bleisteinOffset p α)).congr_of_eventuallyEq heq
-      |>.congr_deriv ?_
-    simp only [bleisteinCoord_sub_bleisteinOffset, sign_neg (sub_neg.mpr hlt), SignType.coe_neg,
-      SignType.coe_one]
-    ring
+      exact bleisteinCoord_of_le hs.le
+    refine (hrad.const_sub (bleisteinOffset p α)).congr_of_eventuallyEq heq |>.congr_deriv ?_
+    rw [bleisteinCoord_of_le hlt.le, sub_sub_cancel_left, div_neg]
   · have heq : bleisteinCoord p α =ᶠ[𝓝 t]
-        fun s ↦ bleisteinOffset p α + 1 * Real.sqrt (2 * (p s - p α)) := by
+        fun s ↦ bleisteinOffset p α + Real.sqrt (2 * (p s - p α)) := by
       filter_upwards [Ioi_mem_nhds hgt] with s hs
-      simp [bleisteinCoord, sign_pos (sub_pos.mpr hs)]
-    refine ((hrad.const_mul 1).const_add (bleisteinOffset p α)).congr_of_eventuallyEq heq
-      |>.congr_deriv ?_
-    simp only [bleisteinCoord_sub_bleisteinOffset, sign_pos (sub_pos.mpr hgt), SignType.coe_one]
-    ring
+      exact bleisteinCoord_of_ge hs.le
+    refine (hrad.const_add (bleisteinOffset p α)).congr_of_eventuallyEq heq |>.congr_deriv ?_
+    rw [bleisteinCoord_of_ge hgt.le, add_sub_cancel_left]
 
 /-- Value of `deriv (bleisteinCoord p α) t` for `t ≠ α` when `p α < p t` (DLMF 2.3.28). -/
 theorem deriv_bleisteinCoord_of_ne {p : ℝ → ℝ} {α t : ℝ} (ht : t ≠ α) (hpt : p α < p t)
@@ -401,24 +459,24 @@ theorem hasDerivAt_bleisteinCoord_self {p : ℝ → ℝ} {α p'' : ℝ}
 `deriv p α = 0`, then `bleisteinCoord p α` has derivative `√(deriv (deriv p) α)` at `α`. -/
 theorem hasDerivAt_bleisteinCoord_self_of_contDiffAt {p : ℝ → ℝ} {α : ℝ}
     (hp : ContDiffAt ℝ 2 p α) (hp'0 : deriv p α = 0) :
-    HasDerivAt (bleisteinCoord p α) (Real.sqrt (deriv (deriv p) α)) α := by
-  have hp1 : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t :=
-    (hp.eventually (by simp)).mono fun _ ht ↦ ht.differentiableAt (by norm_num)
-  have hp2 : HasDerivAt (deriv p) (deriv (deriv p) α) α :=
-    ((hp.derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero).hasDerivAt
-  exact hasDerivAt_bleisteinCoord_self hp1 hp'0 hp2
+    HasDerivAt (bleisteinCoord p α) (Real.sqrt (deriv (deriv p) α)) α :=
+  hasDerivAt_bleisteinCoord_self (hp.eventually_differentiableAt one_le_two) hp'0
+    hp.differentiableAt_deriv_two.hasDerivAt
 
-/-- Value of `deriv (bleisteinCoord p α) α` when `p` is `C²` at `α` with `deriv p α = 0`. -/
+/-- Value of `deriv (bleisteinCoord p α) α` when `p` is differentiable near `α` with
+`deriv p α = 0` and `deriv p` differentiable at `α`. -/
 theorem deriv_bleisteinCoord_self {p : ℝ → ℝ} {α : ℝ}
-    (hp : ContDiffAt ℝ 2 p α) (hp'0 : deriv p α = 0) :
+    (hp : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t) (hp'0 : deriv p α = 0)
+    (hp' : DifferentiableAt ℝ (deriv p) α) :
     deriv (bleisteinCoord p α) α = Real.sqrt (deriv (deriv p) α) :=
-  (hasDerivAt_bleisteinCoord_self_of_contDiffAt hp hp'0).deriv
+  (hasDerivAt_bleisteinCoord_self hp hp'0 hp'.hasDerivAt).deriv
 
 /-- Positivity of `deriv (bleisteinCoord p α) α` at a nondegenerate minimum (`p''(α) > 0`). -/
 theorem deriv_bleisteinCoord_self_pos {p : ℝ → ℝ} {α : ℝ}
-    (hp : ContDiffAt ℝ 2 p α) (hp'0 : deriv p α = 0) (hp'' : 0 < deriv (deriv p) α) :
+    (hp : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t) (hp'0 : deriv p α = 0)
+    (hp'' : 0 < deriv (deriv p) α) :
     0 < deriv (bleisteinCoord p α) α := by
-  rw [deriv_bleisteinCoord_self hp hp'0]
+  rw [deriv_bleisteinCoord_self hp hp'0 (differentiableAt_of_deriv_ne_zero hp''.ne')]
   exact Real.sqrt_pos_of_pos hp''
 
 /-- Continuity of `deriv (bleisteinCoord p α)` at the critical point `t = α` when `p''(α) > 0`. -/
@@ -446,36 +504,41 @@ theorem continuousAt_deriv_bleisteinCoord_self {p : ℝ → ℝ} {α p'' : ℝ}
   rw [slope_def_field, slope_def_field, deriv_bleisteinCoord_of_ne ht hpt hdt, bleisteinCoord_self,
     hp'0, sub_zero, div_div_div_cancel_right₀ (sub_ne_zero.mpr ht)]
 
+/-- Fermat's theorem on an open set `U`: if `p α < p t` for every `t ∈ U \ {α}`, then
+`deriv p α = 0`. -/
+private lemma deriv_eq_zero_of_isOpen_forall_lt {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
+    (hU : IsOpen U) (hα : α ∈ U) (hppos : ∀ t ∈ U, t ≠ α → p α < p t) :
+    deriv p α = 0 :=
+  IsLocalMin.deriv_eq_zero <| eventually_of_mem (hU.mem_nhds hα) fun t ht ↦
+    (eq_or_ne t α).elim (fun h ↦ h ▸ le_rfl) fun hne ↦ (hppos t ht hne).le
+
 /-- `C¹` regularity of `bleisteinCoord p α` on an open set `U` containing the critical point `α`,
-assuming `p` is `C²` on `U`, `deriv p α = 0`, `deriv (deriv p) α > 0`, and `p α < p t` for
-`t ∈ U \ {α}`. -/
+assuming `p` is `C¹` on `U`, `deriv (deriv p) α > 0`, and `p α < p t` for `t ∈ U \ {α}`. -/
 theorem contDiffOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hα : α ∈ U) (hp : ContDiffOn ℝ 2 p U)
-    (hp'0 : deriv p α = 0) (hp'' : 0 < deriv (deriv p) α)
-    (hppos : ∀ t ∈ U, t ≠ α → p α < p t) :
+    (hU : IsOpen U) (hα : α ∈ U) (hp : ContDiffOn ℝ 1 p U)
+    (hp'' : 0 < deriv (deriv p) α) (hppos : ∀ t ∈ U, t ≠ α → p α < p t) :
     ContDiffOn ℝ 1 (bleisteinCoord p α) U := by
-  have hp_at : ContDiffAt ℝ 2 p α := hp.contDiffAt (hU.mem_nhds hα)
+  have hp'0 : deriv p α = 0 := deriv_eq_zero_of_isOpen_forall_lt hU hα hppos
+  have hp1 : ∀ᶠ s in 𝓝 α, DifferentiableAt ℝ p s :=
+    (hp.contDiffAt (hU.mem_nhds hα)).eventually_differentiableAt le_rfl
+  have hp2 : HasDerivAt (deriv p) (deriv (deriv p) α) α :=
+    (differentiableAt_of_deriv_ne_zero hp''.ne').hasDerivAt
   have hdiff : DifferentiableOn ℝ (bleisteinCoord p α) U := by
     intro t ht
     rcases eq_or_ne α t with rfl | hne
-    · exact (hasDerivAt_bleisteinCoord_self_of_contDiffAt hp_at
-        hp'0).differentiableAt.differentiableWithinAt
+    · exact (hasDerivAt_bleisteinCoord_self hp1 hp'0 hp2).differentiableAt.differentiableWithinAt
     · have hpt : DifferentiableAt ℝ p t :=
-        (hp.contDiffAt (hU.mem_nhds ht)).differentiableAt (by norm_num)
+        (hp.contDiffAt (hU.mem_nhds ht)).differentiableAt one_ne_zero
       exact (hasDerivAt_bleisteinCoord_of_ne hne.symm (hppos t ht hne.symm)
         hpt.hasDerivAt).differentiableAt.differentiableWithinAt
   refine (contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mpr
     ⟨hdiff, by simp, contDiffOn_zero.mpr fun t ht ↦ ?_⟩
   rcases eq_or_ne α t with rfl | hne
-  · have hp1 : ∀ᶠ s in 𝓝 α, DifferentiableAt ℝ p s :=
-      (hp_at.eventually (by simp)).mono fun _ hs ↦ hs.differentiableAt (by norm_num)
-    have hp2 : HasDerivAt (deriv p) (deriv (deriv p) α) α :=
-      ((hp_at.derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero).hasDerivAt
-    exact (continuousAt_deriv_bleisteinCoord_self hp1 hp'0 hp2 hp'').continuousWithinAt
+  · exact (continuousAt_deriv_bleisteinCoord_self hp1 hp'0 hp2 hp'').continuousWithinAt
   · have hopen : IsOpen (U \ {α}) := hU.sdiff isClosed_singleton
     have hmem : U \ {α} ∈ 𝓝 t := hopen.mem_nhds ⟨ht, hne.symm⟩
     have hp'_cont : ContinuousAt (deriv p) t :=
-      (hp.continuousOn_deriv_of_isOpen hU (by norm_num)).continuousAt (hU.mem_nhds ht)
+      (hp.continuousOn_deriv_of_isOpen hU le_rfl).continuousAt (hU.mem_nhds ht)
     have hw_cont : ContinuousAt (bleisteinCoord p α) t :=
       hdiff.continuousOn.continuousAt (hU.mem_nhds ht)
     have hquot : ContinuousAt
@@ -485,22 +548,25 @@ theorem contDiffOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
     refine (hquot.congr ?_).continuousWithinAt
     filter_upwards [hmem] with s hs
     have hds : DifferentiableAt ℝ p s :=
-      (hp.contDiffAt (hU.mem_nhds hs.1)).differentiableAt (by norm_num)
+      (hp.contDiffAt (hU.mem_nhds hs.1)).differentiableAt one_ne_zero
     exact (deriv_bleisteinCoord_of_ne hs.2 (hppos s hs.1 hs.2) hds).symm
 
-/-- Positivity of `deriv (bleisteinCoord p α)` throughout `U` when `deriv p < 0` to the left of `α`,
-`deriv p > 0` to the right of `α`, and `deriv (deriv p) α > 0`. -/
+/-- Positivity of `deriv (bleisteinCoord p α)` throughout `U` when `p` is differentiable on open
+`U`, `deriv p < 0` to the left of `α`, `deriv p > 0` to the right of `α`, and
+`deriv (deriv p) α > 0`. -/
 theorem deriv_bleisteinCoord_pos {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hα : α ∈ U) (hp : ContDiffOn ℝ 2 p U)
-    (hp'0 : deriv p α = 0) (hp'' : 0 < deriv (deriv p) α)
+    (hU : IsOpen U) (hα : α ∈ U) (hp : DifferentiableOn ℝ p U)
+    (hp'' : 0 < deriv (deriv p) α)
     (hpleft : ∀ t ∈ U, t < α → deriv p t < 0)
     (hpright : ∀ t ∈ U, α < t → 0 < deriv p t)
     (hppos : ∀ t ∈ U, t ≠ α → p α < p t) {t : ℝ} (ht : t ∈ U) :
     0 < deriv (bleisteinCoord p α) t := by
   rcases eq_or_ne α t with rfl | hne
-  · exact deriv_bleisteinCoord_self_pos (hp.contDiffAt (hU.mem_nhds hα)) hp'0 hp''
-  · have hdt : DifferentiableAt ℝ p t :=
-      (hp.contDiffAt (hU.mem_nhds ht)).differentiableAt (by norm_num)
+  · have hp'0 : deriv p α = 0 := deriv_eq_zero_of_isOpen_forall_lt hU hα hppos
+    have hp1 : ∀ᶠ s in 𝓝 α, DifferentiableAt ℝ p s :=
+      eventually_of_mem (hU.mem_nhds hα) fun _ hs ↦ hp.differentiableAt (hU.mem_nhds hs)
+    exact deriv_bleisteinCoord_self_pos hp1 hp'0 hp''
+  · have hdt : DifferentiableAt ℝ p t := hp.differentiableAt (hU.mem_nhds ht)
     rw [deriv_bleisteinCoord_of_ne hne.symm (hppos t ht hne.symm) hdt]
     rcases hne.symm.lt_or_gt with hlt | hgt
     · exact div_pos_of_neg_of_neg (hpleft t ht hlt)
@@ -517,172 +583,109 @@ theorem lt_of_injOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
   refine hne (hinj ht hα ?_)
   simp [bleisteinCoord, Real.sqrt_eq_zero_of_nonpos (x := p t - p α) (by linarith)]
 
-/-- On a convex set `U` (such as any interval in `ℝ`) containing `α`, the derivative sign
-conditions `t < α → deriv p t < 0` and `α < t → 0 < deriv p t` imply
+/-- If `bleisteinCoord p α` is injective on `U` containing `α`, then `p α ≤ p t` for every
+`t ∈ U`. -/
+theorem le_of_injOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
+    (hinj : InjOn (bleisteinCoord p α) U) (hα : α ∈ U) {t : ℝ} (ht : t ∈ U) :
+    p α ≤ p t :=
+  (eq_or_ne t α).elim (fun h ↦ h ▸ le_rfl) fun hne ↦
+    (lt_of_injOn_bleisteinCoord hinj hα ht hne).le
+
+/-- On a convex set `U` (such as any interval in `ℝ`) containing `α`, continuity of `p` together
+with the derivative sign conditions `t < α → deriv p t < 0` and `α < t → 0 < deriv p t` imply
 `StrictMonoOn (bleisteinCoord p α) U`. -/
 theorem strictMonoOn_bleisteinCoord_of_deriv_sign {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hconv : Convex ℝ U) (hα : α ∈ U) (hp : DifferentiableOn ℝ p U)
+    (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContinuousOn p U)
     (hpleft : ∀ t ∈ U, t < α → deriv p t < 0)
     (hpright : ∀ t ∈ U, α < t → 0 < deriv p t) :
     StrictMonoOn (bleisteinCoord p α) U := by
-  have hanti : StrictAntiOn p (U ∩ Iic α) := by
-    intro t₁ ht₁ t₂ ht₂ hlt
-    have hIcc : Icc t₁ t₂ ⊆ U := hconv.ordConnected.out ht₁.1 ht₂.1
-    have hsub : StrictAntiOn p (Icc t₁ t₂) :=
-      strictAntiOn_of_deriv_neg (convex_Icc t₁ t₂) (hp.continuousOn.mono hIcc) fun s hs ↦ by
-        rw [interior_Icc] at hs
-        exact hpleft s (hIcc ⟨hs.1.le, hs.2.le⟩) (hs.2.trans_le ht₂.2)
-    exact hsub ⟨le_rfl, hlt.le⟩ ⟨hlt.le, le_rfl⟩ hlt
-  have hmono : StrictMonoOn p (U ∩ Ici α) := by
-    intro t₁ ht₁ t₂ ht₂ hlt
-    have hIcc : Icc t₁ t₂ ⊆ U := hconv.ordConnected.out ht₁.1 ht₂.1
-    have hsub : StrictMonoOn p (Icc t₁ t₂) :=
-      strictMonoOn_of_deriv_pos (convex_Icc t₁ t₂) (hp.continuousOn.mono hIcc) fun s hs ↦ by
-        rw [interior_Icc] at hs
-        exact hpright s (hIcc ⟨hs.1.le, hs.2.le⟩) (ht₁.2.trans_lt hs.1)
-    exact hsub ⟨le_rfl, hlt.le⟩ ⟨hlt.le, le_rfl⟩ hlt
+  have hanti : StrictAntiOn p (U ∩ Iic α) :=
+    strictAntiOn_of_deriv_neg (hconv.inter (convex_Iic α)) (hp.mono inter_subset_left) fun s hs ↦ by
+      rw [interior_inter, interior_Iic] at hs
+      exact hpleft s (interior_subset hs.1) hs.2
+  have hmono : StrictMonoOn p (U ∩ Ici α) :=
+    strictMonoOn_of_deriv_pos (hconv.inter (convex_Ici α)) (hp.mono inter_subset_left) fun s hs ↦ by
+      rw [interior_inter, interior_Ici] at hs
+      exact hpright s (interior_subset hs.1) hs.2
   exact strictMonoOn_bleisteinCoord hα hanti hmono
 
 /-- `C¹` regularity of `bleisteinCoord p α` on an open convex set `U` containing `α` under
 derivative-sign hypotheses on `p`. -/
 theorem contDiffOn_bleisteinCoord_of_deriv_sign {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContDiffOn ℝ 2 p U)
-    (hp'0 : deriv p α = 0) (hp'' : 0 < deriv (deriv p) α)
+    (hU : IsOpen U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContDiffOn ℝ 1 p U)
+    (hp'' : 0 < deriv (deriv p) α)
     (hpleft : ∀ t ∈ U, t < α → deriv p t < 0)
     (hpright : ∀ t ∈ U, α < t → 0 < deriv p t) :
     ContDiffOn ℝ 1 (bleisteinCoord p α) U := by
-  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα
-    (hp.differentiableOn (by norm_num)) hpleft hpright
-  exact contDiffOn_bleisteinCoord hU hα hp hp'0 hp'' fun _ ht hne ↦
+  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα hp.continuousOn hpleft hpright
+  exact contDiffOn_bleisteinCoord hU hα hp hp'' fun _ ht hne ↦
     lt_of_injOn_bleisteinCoord hmono.injOn hα ht hne
 
 /-- Positivity of `deriv (bleisteinCoord p α)` on an open convex set `U` containing `α` under
 derivative-sign hypotheses on `p`. -/
 theorem deriv_bleisteinCoord_pos_of_deriv_sign {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContDiffOn ℝ 2 p U)
-    (hp'0 : deriv p α = 0) (hp'' : 0 < deriv (deriv p) α)
+    (hU : IsOpen U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : DifferentiableOn ℝ p U)
+    (hp'' : 0 < deriv (deriv p) α)
     (hpleft : ∀ t ∈ U, t < α → deriv p t < 0)
     (hpright : ∀ t ∈ U, α < t → 0 < deriv p t) {t : ℝ} (ht : t ∈ U) :
     0 < deriv (bleisteinCoord p α) t := by
-  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα
-    (hp.differentiableOn (by norm_num)) hpleft hpright
-  exact deriv_bleisteinCoord_pos hU hα hp hp'0 hp'' hpleft hpright
+  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα hp.continuousOn hpleft hpright
+  exact deriv_bleisteinCoord_pos hU hα hp hp'' hpleft hpright
     (fun _ hs hne ↦ lt_of_injOn_bleisteinCoord hmono.injOn hα hs hne) ht
 
-/-! ### Inverse coordinate and interval images -/
-
-/-- Strict derivative of `Set.invFunOn (bleisteinCoord p α) U` at `bleisteinCoord p α t` for
-every `t ∈ U`. -/
-theorem hasStrictDerivAt_invFunOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hw : ContDiffOn ℝ 1 (bleisteinCoord p α) U)
-    (hinj : InjOn (bleisteinCoord p α) U)
-    (hw' : ∀ t ∈ U, deriv (bleisteinCoord p α) t ≠ 0) {t : ℝ} (ht : t ∈ U) :
-    HasStrictDerivAt (invFunOn (bleisteinCoord p α) U)
-      (deriv (bleisteinCoord p α) t)⁻¹ (bleisteinCoord p α t) := by
-  have hstrict : HasStrictDerivAt (bleisteinCoord p α) (deriv (bleisteinCoord p α) t) t :=
-    (hw.contDiffAt (hU.mem_nhds ht)).hasStrictDerivAt_deriv one_ne_zero
-  refine hstrict.to_local_left_inverse (hw' t ht) ?_
-  filter_upwards [hU.mem_nhds ht] with s hs
-  exact hinj.leftInvOn_invFunOn hs
-
-/-- Under `ContDiffOn ℝ 1` and nonvanishing derivative on an open set `U`, the image
-`bleisteinCoord p α '' U` is open. -/
-theorem isOpen_image_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hw : ContDiffOn ℝ 1 (bleisteinCoord p α) U)
-    (hw' : ∀ t ∈ U, deriv (bleisteinCoord p α) t ≠ 0) :
-    IsOpen (bleisteinCoord p α '' U) := by
-  rw [isOpen_iff_mem_nhds]
-  rintro _ ⟨t, ht, rfl⟩
-  have hstrict : HasStrictDerivAt (bleisteinCoord p α) (deriv (bleisteinCoord p α) t) t :=
-    (hw.contDiffAt (hU.mem_nhds ht)).hasStrictDerivAt_deriv one_ne_zero
-  rw [← hstrict.map_nhds_eq (hw' t ht)]
-  exact image_mem_map (hU.mem_nhds ht)
-
-/-- Continuity of the inverse coordinate `Set.invFunOn (bleisteinCoord p α) U` on the image
-`bleisteinCoord p α '' U`. -/
-theorem continuousOn_invFunOn_bleisteinCoord {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
-    (hU : IsOpen U) (hw : ContDiffOn ℝ 1 (bleisteinCoord p α) U)
-    (hinj : InjOn (bleisteinCoord p α) U)
-    (hw' : ∀ t ∈ U, deriv (bleisteinCoord p α) t ≠ 0) :
-    ContinuousOn (invFunOn (bleisteinCoord p α) U) (bleisteinCoord p α '' U) := by
-  rintro _ ⟨t, ht, rfl⟩
-  exact (hasStrictDerivAt_invFunOn_bleisteinCoord hU hw hinj hw'
-    ht).hasDerivAt.continuousAt.continuousWithinAt
-
-/-- Image of `(0, k)` under `bleisteinCoord p α` when `w(α, t) → κ` as `t → k⁻`. -/
-theorem image_bleisteinCoord_Ioo_eq_Ioo {p : ℝ → ℝ} {α k κ : ℝ} (hk : 0 < k)
-    (hcont : ContinuousOn (bleisteinCoord p α) (Ico 0 k))
-    (hmono : StrictMonoOn (bleisteinCoord p α) (Ico 0 k))
+/-- Image of `(0, k)` under `bleisteinCoord p α` with finite limit `κ = lim_{t → k⁻} w(α, t)`
+under derivative-sign hypotheses on a convex domain `U`. -/
+theorem image_bleisteinCoord_Ioo_eq_Ioo_of_deriv_sign {p : ℝ → ℝ} {α k κ : ℝ} {U : Set ℝ}
+    (hk : 0 < k) (hIco : Ico 0 k ⊆ U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContinuousOn p U)
+    (hpleft : ∀ t ∈ U, t < α → deriv p t < 0) (hpright : ∀ t ∈ U, α < t → 0 < deriv p t)
     (htend : Tendsto (bleisteinCoord p α) (𝓝[<] k) (𝓝 κ)) :
     bleisteinCoord p α '' Ioo 0 k = Ioo 0 κ := by
-  have ht0 : Tendsto (bleisteinCoord p α) (𝓝[Ioo 0 k] 0) (𝓝 0) := by
-    simpa [bleisteinCoord_zero] using
-      ((hcont 0 ⟨le_rfl, hk⟩).mono Ioo_subset_Ico_self).tendsto
-  have htk : Tendsto (bleisteinCoord p α) (𝓝[Ioo 0 k] k) (𝓝 κ) := by
-    rwa [nhdsWithin_Ioo_eq_nhdsLT hk]
-  have := left_nhdsWithin_Ioo_neBot hk
-  have := right_nhdsWithin_Ioo_neBot hk
-  refine Subset.antisymm ?_ <| isPreconnected_Ioo.intermediate_value_Ioo
-    (l₁ := 𝓝[Ioo 0 k] 0) (l₂ := 𝓝[Ioo 0 k] k)
-    inf_le_right inf_le_right (hcont.mono Ioo_subset_Ico_self) ht0 htk
-  rintro _ ⟨t, ht, rfl⟩
-  have hmid : (t + k) / 2 ∈ Ioo t k := ⟨by linarith [ht.2], by linarith [ht.2]⟩
-  have hle : bleisteinCoord p α ((t + k) / 2) ≤ κ := by
-    refine ge_of_tendsto htend ?_
-    filter_upwards [Ioo_mem_nhdsLT hmid.2] with s hs
-    exact hmono.monotoneOn ⟨by linarith [ht.1, hmid.1], hmid.2⟩
-      ⟨by linarith [ht.1, hmid.1, hs.1], hs.2⟩ hs.1.le
-  exact ⟨bleisteinCoord_pos hmono ⟨le_rfl, hk⟩ ⟨ht.1.le, ht.2⟩ ht.1,
-    (hmono ⟨ht.1.le, ht.2⟩ ⟨by linarith [ht.1, hmid.1], hmid.2⟩ hmid.1).trans_le hle⟩
+  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα hp hpleft hpright
+  simpa [bleisteinCoord_zero] using
+    ((continuousOn_bleisteinCoord hp).mono hIco).image_Ioo_of_strictMonoOn_of_tendsto
+      hk (hmono.mono hIco) htend
 
-/-- Image of `(0, k)` under `bleisteinCoord p α` when `w(α, t) → +∞` as `t → k⁻`. -/
-theorem image_bleisteinCoord_Ioo_eq_Ioi {p : ℝ → ℝ} {α k : ℝ} (hk : 0 < k)
-    (hcont : ContinuousOn (bleisteinCoord p α) (Ico 0 k))
-    (hmono : StrictMonoOn (bleisteinCoord p α) (Ico 0 k))
-    (htend : Tendsto (bleisteinCoord p α) (𝓝[<] k) atTop) :
+/-- Image of `(0, k)` under `bleisteinCoord p α` when `p t → +∞` as `t → k⁻` (`κ = +∞`) under
+derivative-sign hypotheses on a convex domain `U`. -/
+theorem image_bleisteinCoord_Ioo_eq_Ioi_of_deriv_sign {p : ℝ → ℝ} {α k : ℝ} {U : Set ℝ}
+    (hk : 0 < k) (hIco : Ico 0 k ⊆ U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContinuousOn p U)
+    (hpleft : ∀ t ∈ U, t < α → deriv p t < 0) (hpright : ∀ t ∈ U, α < t → 0 < deriv p t)
+    (htend : Tendsto p (𝓝[<] k) atTop) :
     bleisteinCoord p α '' Ioo 0 k = Ioi 0 := by
-  have ht0 : Tendsto (bleisteinCoord p α) (𝓝[Ioo 0 k] 0) (𝓝 0) := by
-    simpa [bleisteinCoord_zero] using
-      ((hcont 0 ⟨le_rfl, hk⟩).mono Ioo_subset_Ico_self).tendsto
-  have htk : Tendsto (bleisteinCoord p α) (𝓝[Ioo 0 k] k) atTop := by
-    rwa [nhdsWithin_Ioo_eq_nhdsLT hk]
-  have := left_nhdsWithin_Ioo_neBot hk
-  have := right_nhdsWithin_Ioo_neBot hk
-  refine Subset.antisymm ?_ <| isPreconnected_Ioo.intermediate_value_Ioi
-    (l₁ := 𝓝[Ioo 0 k] 0) (l₂ := 𝓝[Ioo 0 k] k)
-    inf_le_right inf_le_right (hcont.mono Ioo_subset_Ico_self) ht0 htk
-  rintro _ ⟨t, ht, rfl⟩
-  exact bleisteinCoord_pos hmono ⟨le_rfl, hk⟩ ⟨ht.1.le, ht.2⟩ ht.1
+  have hαk : α < k := by
+    by_contra! hkα
+    have hkU : k ∈ U := hconv.ordConnected.out (hIco ⟨le_rfl, hk⟩) hα ⟨hk.le, hkα⟩
+    have hnhds : Tendsto p (𝓝[<] k) (𝓝 (p k)) :=
+      (hp k hkU).tendsto.mono_left <| nhdsWithin_le_iff.mpr <|
+        mem_of_superset (Ioo_mem_nhdsLT hk) (Ioo_subset_Ico_self.trans hIco)
+    exact not_tendsto_nhds_of_tendsto_atTop htend (p k) hnhds
+  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα hp hpleft hpright
+  simpa [bleisteinCoord_zero] using
+    ((continuousOn_bleisteinCoord hp).mono hIco).image_Ioo_of_strictMonoOn_of_tendsto_atTop
+      hk (hmono.mono hIco) (tendsto_bleisteinCoord_nhdsLT_atTop hαk htend)
 
-/-- Image of `(0, ∞)` under `bleisteinCoord p α` when `w(α, t) → κ` as `t → +∞`. -/
-theorem image_bleisteinCoord_Ioi_eq_Ioo {p : ℝ → ℝ} {α κ : ℝ}
-    (hcont : ContinuousOn (bleisteinCoord p α) (Ici 0))
-    (hmono : StrictMonoOn (bleisteinCoord p α) (Ici 0))
+/-- Image of `(0, ∞)` under `bleisteinCoord p α` with finite limit `κ = lim_{t → +∞} w(α, t)`
+under derivative-sign hypotheses on a convex domain `U`. -/
+theorem image_bleisteinCoord_Ioi_eq_Ioo_of_deriv_sign {p : ℝ → ℝ} {α κ : ℝ} {U : Set ℝ}
+    (hIci : Ici 0 ⊆ U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContinuousOn p U)
+    (hpleft : ∀ t ∈ U, t < α → deriv p t < 0) (hpright : ∀ t ∈ U, α < t → 0 < deriv p t)
     (htend : Tendsto (bleisteinCoord p α) atTop (𝓝 κ)) :
     bleisteinCoord p α '' Ioi 0 = Ioo 0 κ := by
-  have ht0 : Tendsto (bleisteinCoord p α) (𝓝[>] 0) (𝓝 0) := by
-    simpa [bleisteinCoord_zero] using
-      ((hcont 0 self_mem_Ici).mono Ioi_subset_Ici_self).tendsto
-  have := nhdsGT_neBot (0 : ℝ)
-  refine Subset.antisymm ?_ <| isPreconnected_Ioi.intermediate_value_Ioo
-    (l₁ := 𝓝[>] 0) (l₂ := atTop)
-    inf_le_right (le_principal_iff.mpr (Ioi_mem_atTop 0))
-    (hcont.mono Ioi_subset_Ici_self) ht0 htend
-  rintro _ ⟨t, ht, rfl⟩
-  have ht_pos : 0 < t := ht
-  have hle : bleisteinCoord p α (t + 1) ≤ κ := by
-    refine ge_of_tendsto htend ?_
-    filter_upwards [eventually_ge_atTop (t + 1)] with s hs
-    exact hmono.monotoneOn (mem_Ici.mpr (by linarith)) (mem_Ici.mpr (by linarith)) hs
-  exact ⟨bleisteinCoord_pos hmono self_mem_Ici ht_pos.le ht_pos,
-    (hmono ht_pos.le (mem_Ici.mpr (by linarith)) (lt_add_one t)).trans_le hle⟩
+  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα hp hpleft hpright
+  simpa [bleisteinCoord_zero] using
+    ((continuousOn_bleisteinCoord hp).mono hIci).image_Ioi_of_strictMonoOn_of_tendsto
+      (hmono.mono hIci) htend
 
-/-- Image of `(0, ∞)` under `bleisteinCoord p α` when `w(α, t) → +∞` as `t → +∞`. -/
-theorem image_bleisteinCoord_Ioi_eq_Ioi {p : ℝ → ℝ} {α : ℝ}
-    (hcont : ContinuousOn (bleisteinCoord p α) (Ici 0))
-    (hmono : StrictMonoOn (bleisteinCoord p α) (Ici 0))
-    (htend : Tendsto (bleisteinCoord p α) atTop atTop) :
+/-- Image of `(0, ∞)` under `bleisteinCoord p α` when `p t → +∞` as `t → +∞` (`κ = +∞`) under
+derivative-sign hypotheses on a convex domain `U`. -/
+theorem image_bleisteinCoord_Ioi_eq_Ioi_of_deriv_sign {p : ℝ → ℝ} {α : ℝ} {U : Set ℝ}
+    (hIci : Ici 0 ⊆ U) (hconv : Convex ℝ U) (hα : α ∈ U) (hp : ContinuousOn p U)
+    (hpleft : ∀ t ∈ U, t < α → deriv p t < 0) (hpright : ∀ t ∈ U, α < t → 0 < deriv p t)
+    (htend : Tendsto p atTop atTop) :
     bleisteinCoord p α '' Ioi 0 = Ioi 0 := by
-  simpa [bleisteinCoord_zero] using hcont.image_Ioi_of_strictMonoOn hmono htend
+  have hmono := strictMonoOn_bleisteinCoord_of_deriv_sign hconv hα hp hpleft hpright
+  simpa [bleisteinCoord_zero] using
+    ((continuousOn_bleisteinCoord hp).mono hIci).image_Ioi_of_strictMonoOn
+      (hmono.mono hIci) (tendsto_bleisteinCoord_atTop_atTop htend)
 
 end TauCeti
