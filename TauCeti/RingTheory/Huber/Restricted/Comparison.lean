@@ -225,9 +225,9 @@ Hausdorff nonarchimedean ring and power-bounded `b : Fin k → T` (without requi
 `weightedEvalHom` agrees with `restrictedLift` across the Gauss comparison. -/
 theorem weightedEvalHom_eq_restrictedLift [NonarchimedeanRing T] {φ : R →+* T}
     (hφ : Continuous φ) {b : Fin k → T} (hb : ∀ i, IsPowerBounded (b i))
-    (hb' : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) b)
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    weightedEvalHom isWeightFamily_one_weight hφ.continuousAt hb' f =
+    weightedEvalHom isWeightFamily_one_weight hφ.continuousAt
+        ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb) f =
       restrictedLift hφ hb (restrictedMvPowerSeriesGaussEquiv f) :=
   RingHom.congr_fun (weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
     (g := (restrictedLift hφ hb).comp
@@ -250,8 +250,7 @@ theorem weightedEvalAlgHomOfIsLinearTopology_eq_restrictedLiftAlgHomOfIsLinearTo
     ← RingHom.coe_coe (restrictedLiftAlgHomOfIsLinearTopology hR b),
     coe_restrictedLiftAlgHomOfIsLinearTopology]
   exact weightedEvalHom_eq_restrictedLift hR
-    (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _))
-    (isWeightBounded_of_isLinearTopology (algebraMap R T) _ b) f
+    (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) f
 
 section CompletePowerBoundedEvaluation
 
@@ -261,14 +260,14 @@ variable [CompleteSpace R]
 comparison. -/
 theorem weightedEvalHomCompletion_eq_restrictedLift [NonarchimedeanRing T] {φ : R →+* T}
     (hφ : Continuous φ) {b : Fin k → T} (hb : ∀ i, IsPowerBounded (b i))
-    (hb' : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) b)
     (x : restrictedMvPowerSeriesCompletion k R) :
-    weightedEvalHomCompletion isWeightFamily_one_weight hφ.continuousAt hb' x =
+    weightedEvalHomCompletion isWeightFamily_one_weight hφ.continuousAt
+        ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb) x =
       restrictedLift hφ hb (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
   refine UniformSpace.Completion.induction_on x (isClosed_eq
     (continuous_weightedEvalHomCompletion _ _ _)
     ((continuous_restrictedLift hφ hb).comp continuous_restrictedMvPowerSeriesCompletionGaussEquiv))
-    fun f ↦ by simp [weightedEvalHom_eq_restrictedLift hφ hb hb' f]
+    fun f ↦ by simp [weightedEvalHom_eq_restrictedLift hφ hb f]
 
 /-- **Completed linearly topologised evaluation agrees with
 `restrictedLiftAlgHomOfIsLinearTopology`** across the completed Gauss comparison. -/
@@ -286,8 +285,7 @@ theorem weightedEvalCompletionAlgHomOfIsLinearTopology_eq_restrictedLiftAlgHomOf
     ← RingHom.coe_coe (restrictedLiftAlgHomOfIsLinearTopology hR b),
     coe_restrictedLiftAlgHomOfIsLinearTopology]
   exact weightedEvalHomCompletion_eq_restrictedLift hR
-    (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _))
-    (isWeightBounded_of_isLinearTopology (algebraMap R T) _ b) x
+    (fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) x
 
 end CompletePowerBoundedEvaluation
 
