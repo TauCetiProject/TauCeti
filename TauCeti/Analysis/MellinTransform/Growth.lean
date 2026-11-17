@@ -244,21 +244,17 @@ private theorem integrableOn_cpow_smul_indicator_Ioi {f : ℝ → E} {T C₀ c �
     hbound u ((le_max_right 1 T).trans_lt hu)
   exact integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc hα hf₂_meas hboundM s
 
-private theorem eqOn_add_indicator_Ioc_Ioi {F : Type*} [AddZeroClass F] (f : ℝ → F) (M : ℝ) :
-    EqOn f (fun u ↦ (Ioc 1 M).indicator f u + (Ioi M).indicator f u) (Ioi 1) :=
-  fun u hu ↦ (indicator_of_mem (Ioi_subset_Ioc_union_Ioi hu) f).symm.trans
-    (congr_fun (indicator_union_of_disjoint Ioc_disjoint_Ioi_same f) u)
-
 private theorem integral_cpow_smul_eq_add_indicator {f : ℝ → E} {T C₀ c α : ℝ}
     (hf : LocallyIntegrableOn f (Ici 1)) (hc : 0 < c) (hα : 0 < α)
     (hbound : ∀ u ∈ Ioi T, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) (s : ℂ) :
     (∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u) =
       (∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioc 1 (max 1 T)).indicator f u) +
         ∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioi (max 1 T)).indicator f u := by
-  rw [setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ by
-    rw [eqOn_add_indicator_Ioc_Ioi f (max 1 T) hu, smul_add]]
-  exact integral_add (integrableOn_cpow_smul_indicator_Ioc hf (max 1 T) s)
-    (integrableOn_cpow_smul_indicator_Ioi hf hc hα hbound s)
+  rw [← integral_add (integrableOn_cpow_smul_indicator_Ioc hf (max 1 T) s)
+    (integrableOn_cpow_smul_indicator_Ioi hf hc hα hbound s)]
+  refine setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_
+  rw [← smul_add, ← congr_fun (indicator_union_of_disjoint Ioc_disjoint_Ioi_same f) u,
+    indicator_of_mem (Ioi_subset_Ioc_union_Ioi hu)]
 
 private theorem exists_Ioi_norm_le_exp_neg_mul_rpow {F : Type*} [SeminormedAddGroup F]
     {f : ℝ → F} {c α : ℝ} (hf_top : f =O[atTop] fun u ↦ exp (-c * u ^ α)) :
@@ -279,7 +275,9 @@ theorem integrableOn_cpow_smul_of_isBigO_exp_neg_mul_rpow {f : ℝ → E} {c α 
   refine ((integrableOn_cpow_smul_indicator_Ioc hf (max 1 T) s).add
     (integrableOn_cpow_smul_indicator_Ioi hf hc hα hbound s)).congr_fun
     (fun u hu ↦ ?_) measurableSet_Ioi
-  rw [Pi.add_apply, eqOn_add_indicator_Ioc_Ioi f (max 1 T) hu, smul_add]
+  rw [Pi.add_apply, ← smul_add,
+    ← congr_fun (indicator_union_of_disjoint Ioc_disjoint_Ioi_same f) u,
+    indicator_of_mem (Ioi_subset_Ioc_union_Ioi hu)]
 
 /-- On any half-plane `Re s ≤ R`, the upper Mellin integral of a kernel locally integrable on
 `[1, ∞)` with stretched-exponential decay `f =O[atTop] fun u ↦ exp (-c * u ^ α)` is uniformly

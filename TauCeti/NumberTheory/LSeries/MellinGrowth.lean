@@ -9,6 +9,7 @@ public import TauCeti.Analysis.MellinTransform.Growth
 public import TauCeti.Analysis.Complex.FiniteOrder
 public import TauCeti.Analysis.Complex.VerticalStripGrowth
 public import TauCeti.NumberTheory.LSeries.FEPairWithLevel
+import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
 
 /-!
 # Order-one and vertical-strip growth from split Mellin integrals
@@ -329,16 +330,6 @@ end Strong
 
 namespace FEPairWithLevel
 
-private theorem isBigO_comp_div_exp_neg_mul_rpow (P : FEPairWithLevel E) {h : ℝ → E} {c α : ℝ}
-    (hh : h =O[atTop] fun u ↦ exp (-c * u ^ α)) :
-    (fun u ↦ h (u / P.N)) =O[atTop] fun u ↦ exp (-(c / P.N ^ α) * u ^ α) := by
-  refine (hh.comp_tendsto (tendsto_id.atTop_div_const P.hN)).congr' .rfl ?_
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with u hu
-  simp only [Function.comp_apply, id_eq]
-  congr 1
-  rw [div_rpow hu P.hN.le]
-  ring
-
 /-- Stretched-exponential decay of `f - f₀` and `g - g₀` gives a global logarithmic-exponential
 bound for the entire part `toWeakFEPair.Λ₀` at any positive level `N`. -/
 theorem exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log (P : FEPairWithLevel E)
@@ -348,7 +339,7 @@ theorem exists_norm_toWeakFEPair_Λ₀_le_exp_mul_log (P : FEPairWithLevel E)
     ∃ C > 0, ∀ s : ℂ, ‖P.toWeakFEPair.Λ₀ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) :=
   P.toWeakFEPair.exists_norm_Λ₀_le_exp_mul_log hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- At any positive level, `toWeakFEPair.Λ₀` has order at most one when both kernel tails decay
 stretched-exponentially. -/
@@ -359,7 +350,7 @@ theorem orderLE_toWeakFEPair_Λ₀ (P : FEPairWithLevel ℂ)
     OrderLE P.toWeakFEPair.Λ₀ 1 :=
   P.toWeakFEPair.orderLE_Λ₀ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- At any positive level, `toWeakFEPair.Λ₀` is bounded on every closed vertical strip
 `a ≤ Re s ≤ b` when both kernel tails decay stretched-exponentially. -/
@@ -370,7 +361,7 @@ theorem exists_norm_toWeakFEPair_Λ₀_le_of_re_mem_Icc (P : FEPairWithLevel E)
     ∃ M, ∀ s : ℂ, s.re ∈ Icc a b → ‖P.toWeakFEPair.Λ₀ s‖ ≤ M :=
   P.toWeakFEPair.exists_norm_Λ₀_le_of_re_mem_Icc hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg) a b
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg) a b
 
 /-- At any positive level, `toWeakFEPair.Λ₀` has vertical-strip growth when both kernel tails
 decay stretched-exponentially. -/
@@ -381,7 +372,7 @@ theorem hasVerticalStripGrowth_toWeakFEPair_Λ₀ (P : FEPairWithLevel ℂ)
     HasVerticalStripGrowth P.toWeakFEPair.Λ₀ :=
   P.toWeakFEPair.hasVerticalStripGrowth_Λ₀ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- With zero constant terms, stretched-exponential decay of `f` and `g` gives a global
 logarithmic-exponential bound directly on `Λ` at any positive level. -/
@@ -394,7 +385,7 @@ theorem exists_norm_Λ_le_exp_mul_log_of_constants_eq_zero (P : FEPairWithLevel 
   have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
   simpa only [toWeakFEPair_Λ] using hP.exists_norm_Λ_le_exp_mul_log hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- With zero constant terms, stretched-exponential decay of `f` and `g` implies that `Λ` has
 order at most one at any positive level. -/
@@ -407,7 +398,7 @@ theorem orderLE_Λ_of_constants_eq_zero (P : FEPairWithLevel ℂ)
   have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
   simpa only [toWeakFEPair_Λ] using hP.orderLE_Λ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- With zero constant terms, stretched-exponential decay of `f` and `g` implies that `Λ` has
 finite order at any positive level. -/
@@ -420,7 +411,7 @@ theorem isFiniteOrder_Λ_of_constants_eq_zero (P : FEPairWithLevel ℂ)
   have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
   simpa only [toWeakFEPair_Λ] using hP.isFiniteOrder_Λ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- With zero constant terms, stretched-exponential decay of `f` and `g` implies that `Λ` is
 bounded on every closed vertical strip `a ≤ Re s ≤ b`. -/
@@ -433,7 +424,7 @@ theorem exists_norm_Λ_le_of_re_mem_Icc_of_constants_eq_zero (P : FEPairWithLeve
   have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
   simpa only [toWeakFEPair_Λ] using hP.exists_norm_Λ_le_of_re_mem_Icc hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg) a b
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P.hN hg) a b
 
 /-- With zero constant terms, stretched-exponential decay of `f` and `g` gives vertical-strip
 growth of `Λ` at any positive level. -/
@@ -446,7 +437,7 @@ theorem hasVerticalStripGrowth_Λ_of_constants_eq_zero (P : FEPairWithLevel ℂ)
   have hP : IsStrongFEPair P.toWeakFEPair := ⟨by simpa using hf₀, by simpa using hg₀⟩
   simpa only [toWeakFEPair_Λ] using hP.hasVerticalStripGrowth_Λ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa [Function.comp_def] using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- Stretched-exponential decay of both kernel tails gives a global logarithmic-exponential bound
 for the pole-cleared entire completion `entireΛ` at level `N`. -/
@@ -457,7 +448,7 @@ theorem exists_norm_entireΛ_le_exp_mul_log (P : FEPairWithLevel E)
     ∃ C > 0, ∀ s : ℂ, ‖P.entireΛ s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
   simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.exists_norm_entireΛ_le_exp_mul_log hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex level-`N` pair has order at most one
 when both kernel tails decay stretched-exponentially. -/
@@ -468,7 +459,7 @@ theorem orderLE_entireΛ (P : FEPairWithLevel ℂ)
     OrderLE P.entireΛ 1 := by
   simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.orderLE_entireΛ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex level-`N` pair has finite order when
 both kernel tails decay stretched-exponentially. -/
@@ -479,7 +470,7 @@ theorem isFiniteOrder_entireΛ (P : FEPairWithLevel ℂ)
     IsFiniteOrder P.entireΛ := by
   simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.isFiniteOrder_entireΛ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 /-- The pole-cleared entire completion `entireΛ` of a complex level-`N` pair has polynomial
 vertical-strip growth when both kernel tails decay stretched-exponentially. -/
@@ -490,7 +481,7 @@ theorem hasVerticalStripGrowth_entireΛ (P : FEPairWithLevel ℂ)
     HasVerticalStripGrowth P.entireΛ := by
   simpa only [toWeakFEPair_entireΛ] using P.toWeakFEPair.hasVerticalStripGrowth_entireΛ hc₁ hα₁
     (div_pos hc₂ (rpow_pos_of_pos P.hN α₂)) hα₂ (by simpa using hf)
-    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P hg)
+    (by simpa using isBigO_comp_div_exp_neg_mul_rpow P.hN hg)
 
 end FEPairWithLevel
 

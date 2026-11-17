@@ -23,7 +23,9 @@ values may lie in any type carrying a norm.
 
 In addition, for any function continuous on a ray `[a, ∞)` with `0 < a ∨ 0 ≤ α`, an eventual
 big-O or pointwise bound by `exp (-p * u ^ α)` at infinity upgrades to a uniform bound
-`C * exp (-p * u ^ α)` on all of `[a, ∞)`, with `C ≥ 0`.
+`C * exp (-p * u ^ α)` on all of `[a, ∞)`, with `C ≥ 0`. Dividing the argument by a positive
+real `N` preserves stretched-exponential asymptotic bounds `f =O[atTop] fun u ↦ exp (-c * u ^ α)`,
+rescaling the coefficient from `c` to `c / N ^ α`.
 -/
 
 public section
@@ -49,6 +51,18 @@ theorem isBigO_rpow_of_isBigO_exp_neg {E : Type*} [Norm E] {f : ℝ → E} {c α
     (hf : f =O[atTop] fun t ↦ Real.exp (-c * t ^ α)) (r : ℝ) :
     f =O[atTop] fun t ↦ t ^ r :=
   (hf.trans_isLittleO (isLittleO_exp_neg_mul_rpow_rpow_atTop hc hα r)).isBigO
+
+/-- Dividing the argument by a positive real `N` preserves stretched-exponential asymptotic bounds,
+rescaling the coefficient `c` to `c / N ^ α`. -/
+theorem isBigO_comp_div_exp_neg_mul_rpow {E : Type*} [Norm E] {f : ℝ → E} {N c α : ℝ}
+    (hN : 0 < N) (hf : f =O[atTop] fun u ↦ exp (-c * u ^ α)) :
+    (fun u ↦ f (u / N)) =O[atTop] fun u ↦ exp (-(c / N ^ α) * u ^ α) := by
+  refine (hf.comp_tendsto (tendsto_id.atTop_div_const hN)).congr' .rfl ?_
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with u hu
+  simp only [Function.comp_apply, id_eq]
+  congr 1
+  rw [div_rpow hu hN.le]
+  ring
 
 /-- A function continuous on `[a, ∞)` with `0 < a ∨ 0 ≤ α` and an eventual bound
 `O(exp (-p u ^ α))` satisfies `‖f u‖ ≤ C exp (-p u ^ α)` for every `u ≥ a`, with `C ≥ 0`.
