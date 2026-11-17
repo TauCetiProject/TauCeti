@@ -21,6 +21,10 @@ converges to `(κ.meanReturnTime y)⁻¹.toReal`. The inverse is taken before co
 number, so infinite mean gives zero. This includes both null recurrence and transience,
 without asserting total-variation convergence to the zero measure in those cases.
 
+A probability limit in total variation exists exactly when some state is positive recurrent.
+Thus singleton decay in the null recurrent and transient cases is not convergence in total
+variation to a probability measure.
+
 Both conclusions transfer to arbitrary realizations through their path laws. No topology on
 the sample space or separate choice of a stationary distribution is needed.
 
@@ -85,6 +89,47 @@ theorem tendsto_pow_comp_real_singleton_of_isAperiodic
     have hmass : π.real {y} = (κ.meanReturnTime y)⁻¹.toReal :=
       congrArg ENNReal.toReal (hπ.apply_singleton_eq_inv_meanReturnTime y)
     simpa only [sub_add_cancel, zero_add, hmass] using hlim.add_const (π.real {y})
+
+/-- An irreducible aperiodic chain has a probability limit in total variation from
+an initial probability law exactly when it has a positive recurrent state.
+In the null recurrent and transient cases, singleton decay is not probability convergence. -/
+theorem exists_tendsto_tvDist_pow_comp_iff (hκ : κ.IsAperiodic)
+    (ν : Measure α) [IsProbabilityMeasure ν] :
+    (∃ π : Measure α, IsProbabilityMeasure π ∧
+      Tendsto (fun n : ℕ => tvDist ((κ ^ n) ∘ₘ ν) π) atTop (𝓝 0)) ↔
+      ∃ y : α, κ.IsPositiveRecurrent y := by
+  constructor
+  · rintro ⟨π, hπ, hlim⟩
+    let := hπ
+    have := countable_of_isIrreducible_count (κ := κ)
+    by_contra h
+    have hzero : π = 0 := by
+      apply Measure.ext_iff_singleton.mpr
+      intro y
+      have hm : κ.meanReturnTime y = ∞ := by
+        have hy := not_exists.mp h y
+        simpa only [isPositiveRecurrent_iff, not_lt, top_le_iff] using hy
+      have hdecay : Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+        simpa only [hm, ENNReal.inv_top, ENNReal.toReal_zero] using
+          κ.tendsto_pow_comp_real_singleton_of_isAperiodic hκ ν y
+      have hsub : Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y} - π.real {y})
+          atTop (𝓝 0) :=
+        squeeze_zero_norm (fun n => by
+          simpa only [Real.norm_eq_abs] using
+            abs_measureReal_sub_le_tvDist (μ := (κ ^ n) ∘ₘ ν) (ν := π)
+              (measurableSet_singleton y)) hlim
+      have hz : π.real {y} = 0 := by
+        have := tendsto_nhds_unique (hsub.add_const (π.real {y}))
+          (by simpa only [sub_add_cancel] using hdecay)
+        simpa only [zero_add] using this
+      simpa [measureReal_def, ENNReal.toReal_eq_zero_iff, measure_ne_top] using hz
+    have hone : π Set.univ = 1 := measure_univ
+    simp [hzero] at hone
+  · intro h
+    obtain ⟨π, hπ, hπinv⟩ :=
+      κ.exists_invariant_probability_iff_exists_isPositiveRecurrent.mpr h
+    let := hπ
+    exact ⟨π, hπ, hπinv.tendsto_tvDist_pow_comp hκ ν⟩
 
 end ProbabilityTheory.Kernel
 
