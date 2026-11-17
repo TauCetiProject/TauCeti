@@ -286,10 +286,11 @@ def JFin : Matrix (Fin (m + m)) (Fin (m + m)) R :=
   (J (Fin m) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm
 
 variable {R} in
-/-- Entrywise application of a ring morphism carries the transported alternating form to the
-transported alternating form. -/
+/-- Entrywise application of a ring morphism, or of any map preserving addition and `1`, carries
+the transported alternating form to the transported alternating form. -/
 @[simp]
-theorem JFin_map {S : Type*} [CommRing S] (f : R →+* S) : (JFin m R).map f = JFin m S := by
+theorem JFin_map {S F : Type*} [CommRing S] [FunLike F R S] [AddMonoidHomClass F R S]
+    [OneHomClass F R S] (f : F) : (JFin m R).map f = JFin m S := by
   have h := Matrix.map_J (l := Fin m) (R := R) (S := S) f
   ext i j
   simpa [JFin] using congrFun (congrFun h (finSumFinEquiv.symm i)) (finSumFinEquiv.symm j)
@@ -778,11 +779,12 @@ theorem differenceShortRoot_second_indices_ne {i j : Fin m} (hij : i ≠ j) :
     (Sum.inr_injective.ne hij.symm)
 
 /-- In sum coordinates, the two elementary matrices defining a difference-root element form a
-block-diagonal pair of transvections. -/
-theorem coe_differenceShortRootTransvectionUnits {i j : Fin m} (hij : i ≠ j) (c : R) :
+block-diagonal pair of transvections, over any finite index type. -/
+theorem coe_differenceShortRootTransvectionUnits {l : Type*} [Fintype l] [DecidableEq l]
+    {i j : l} (hij : i ≠ j) (c : R) :
     ((transvectionUnit (Sum.inl_injective.ne hij) c *
         transvectionUnit (Sum.inr_injective.ne hij.symm) (-c) :
-          GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) =
+          GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) =
       Matrix.fromBlocks (Matrix.transvection i j c) 0 0
         (Matrix.transvection j i (-c)) := by
   simp only [Units.val_mul, coe_transvectionUnit, Matrix.transvection, Matrix.mul_add,
