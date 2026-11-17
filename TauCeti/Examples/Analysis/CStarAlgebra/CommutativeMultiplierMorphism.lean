@@ -72,15 +72,10 @@ theorem one_notMem_range_coe_Ioo :
       Set.range (DoubleCentralizer.coe ℂ : C₀(Set.Ioo (0 : ℝ) 1, ℂ) →
         𝓜(ℂ, C₀(Set.Ioo (0 : ℝ) 1, ℂ))) := by
   have : LocallyCompactSpace (Set.Ioo (0 : ℝ) 1) := isOpen_Ioo.locallyCompactSpace
-  have hnc : NoncompactSpace (Set.Ioo (0 : ℝ) 1) := by
-    refine ⟨fun hcompact => ?_⟩
-    have hIoo : IsCompact (Set.Ioo (0 : ℝ) 1) := by
-      have himg := hcompact.image continuous_subtype_val
-      rwa [Set.image_univ, Subtype.range_coe_subtype] at himg
-    have h0 : (0 : ℝ) ∈ Set.Ioo (0 : ℝ) 1 := by
-      rw [← hIoo.isClosed.closure_eq, closure_Ioo zero_ne_one]
-      exact ⟨le_rfl, zero_le_one⟩
-    exact lt_irrefl 0 h0.1
+  have hnc : NoncompactSpace (Set.Ioo (0 : ℝ) 1) :=
+    not_compactSpace_iff.1 <| mt isCompact_iff_compactSpace.2 <| by
+      rw [isCompact_Ioo_iff]
+      norm_num
   have : NeBot (cocompact (Set.Ioo (0 : ℝ) 1)) := Filter.cocompact_neBot_iff.2 hnc
   rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact_nhds_zero]
   intro h
@@ -179,7 +174,8 @@ theorem not_range_constZeroReal_subset :
   have huniv : IsCompact (Set.univ : Set ℝ) := by
     have hpre :=
       (isProperMap_iff_isCompact_preimage.1 hproper).2 (isCompact_singleton (x := (0 : ℝ)))
-    simpa [Set.preimage] using hpre
+    rwa [ContinuousMap.coe_const, ← Function.const_def,
+      Set.preimage_const_of_mem (Set.mem_singleton (0 : ℝ))] at hpre
   exact not_compactSpace_iff.2 inferInstance (isCompact_univ_iff.1 huniv)
 
 /-! ### A norm-one oscillatory multiplier on `ℝ` outside `C₀(ℝ, ℂ)` -/
@@ -191,9 +187,19 @@ def sinBCF : ℝ →ᵇ ℂ :=
       rw [Complex.norm_real]
       exact Real.abs_sin_le_one t
 
+/-- Evaluating `sinBCF` at `t` returns `(Real.sin t : ℂ)`. -/
+@[simp]
+theorem sinBCF_apply (t : ℝ) : sinBCF t = (Real.sin t : ℂ) :=
+  (rfl)
+
 /-- The multiplier of `C₀(ℝ, ℂ)` given by pointwise multiplication by `Real.sin`. -/
 def sinMultiplier : 𝓜(ℂ, C₀(ℝ, ℂ)) :=
   sinBCF.toDoubleCentralizer ℂ
+
+/-- Evaluating `sinMultiplier.toBCF` at `t` returns `(Real.sin t : ℂ)`. -/
+@[simp]
+theorem sinMultiplier_toBCF_apply (t : ℝ) : sinMultiplier.toBCF t = (Real.sin t : ℂ) := by
+  rw [sinMultiplier, DoubleCentralizer.toBCF_toDoubleCentralizer, sinBCF_apply]
 
 /-- The oscillatory multiplier `sinMultiplier` has norm `1`. -/
 @[simp]
@@ -201,7 +207,9 @@ theorem norm_sinMultiplier : ‖sinMultiplier‖ = 1 := by
   rw [sinMultiplier, BoundedContinuousFunction.norm_toDoubleCentralizer]
   refine le_antisymm ?_ ?_
   · exact BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ zero_le_one _
-  · simpa [sinBCF] using sinBCF.norm_coe_le_norm (Real.pi / 2)
+  · have hle := sinBCF.norm_coe_le_norm (Real.pi / 2)
+    rw [sinBCF_apply, Real.sin_pi_div_two, Complex.ofReal_one, norm_one] at hle
+    exact hle
 
 /-- The oscillatory multiplier `sinMultiplier` does not lie in the canonical image of
 `C₀(ℝ, ℂ)`. -/
@@ -226,6 +234,7 @@ theorem sinMultiplier_notMem_range_coe :
   have hsin : Real.sin t = 1 := by
     have ht : t = Real.pi / 2 + (n : ℝ) * (2 * Real.pi) := by ring
     rw [ht, Real.sin_add_nat_mul_two_pi, Real.sin_pi_div_two]
-  simp [sinMultiplier, sinBCF, -Complex.ofReal_sin, hsin] at hlt
+  rw [sinMultiplier_toBCF_apply, hsin, Complex.ofReal_one, norm_one] at hlt
+  exact lt_irrefl 1 hlt
 
 end TauCeti.CommutativeMultiplierMorphismExample

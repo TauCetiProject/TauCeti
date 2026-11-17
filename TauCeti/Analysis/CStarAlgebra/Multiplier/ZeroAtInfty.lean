@@ -13,10 +13,14 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 # Multiplier algebra of `C₀(X, A)`
 
 Every bounded continuous function `f : X →ᵇ A` multiplies continuous functions vanishing at
-infinity `C₀(X, A)` on both sides, yielding a unital algebra homomorphism
-`BoundedContinuousFunction.toDoubleCentralizerAlgHom : (X →ᵇ A) →ₐ[𝕜] 𝓜(𝕜, C₀(X, A))` (and a
-`⋆`-algebra homomorphism `BoundedContinuousFunction.toDoubleCentralizerStarAlgHom` when `A` has a
-compatible involution) that extends the canonical inclusion `C₀(X, A) → 𝓜(𝕜, C₀(X, A))`.
+infinity `C₀(X, A)` on both sides, yielding a non-unital algebra homomorphism
+`BoundedContinuousFunction.toDoubleCentralizerNonUnitalAlgHom : (X →ᵇ A) →ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))`
+(and a non-unital `⋆`-algebra homomorphism
+`BoundedContinuousFunction.toDoubleCentralizerNonUnitalStarAlgHom` when `A` has a compatible
+involution), upgrading in the unital case to
+`BoundedContinuousFunction.toDoubleCentralizerAlgHom : (X →ᵇ A) →ₐ[𝕜] 𝓜(𝕜, C₀(X, A))` and
+`BoundedContinuousFunction.toDoubleCentralizerStarAlgHom`, extending the canonical inclusion
+`C₀(X, A) → 𝓜(𝕜, C₀(X, A))`.
 
 When `X` is a weakly locally compact `R₁` space (in particular, any locally compact Hausdorff or
 compact Hausdorff space) and `A` is a unital normed `𝕜`-algebra that is also a real normed space
@@ -34,7 +38,8 @@ isometric (`DoubleCentralizer.toBCFLinearIsometryEquiv`).
 
 * `BoundedContinuousFunction.toDoubleCentralizer`: the multiplier of `C₀(X, A)` given by
   pointwise left and right multiplication by `f : X →ᵇ A`, bundled as
-  `toDoubleCentralizerAlgHom` and `toDoubleCentralizerStarAlgHom`.
+  `toDoubleCentralizerNonUnitalAlgHom`, `toDoubleCentralizerNonUnitalStarAlgHom`,
+  `toDoubleCentralizerAlgHom`, and `toDoubleCentralizerStarAlgHom`.
 * `DoubleCentralizer.toBCF`: the bounded continuous function representing a multiplier
   `m : 𝓜(𝕜, C₀(X, A))`, bundled as `toBCFAlgEquiv`, `toBCFStarAlgEquiv`, and
   `toBCFLinearIsometryEquiv`.
@@ -74,92 +79,40 @@ section NonUnital
 variable [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
 
-private theorem tendsto_mul_zeroAtInfty (f : X →ᵇ A) (g : C₀(X, A)) :
-    Tendsto (fun x => f x * g x) (cocompact X) (𝓝 0) := by
-  refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
-  refine squeeze_zero (fun _ => norm_nonneg _) (fun x => (norm_mul_le _ _).trans
-    (mul_le_mul_of_nonneg_right (f.norm_coe_le_norm x) (norm_nonneg _))) ?_
-  simpa only [mul_zero] using
-    (tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty g)).const_mul ‖f‖
-
-private theorem tendsto_zeroAtInfty_mul (f : X →ᵇ A) (g : C₀(X, A)) :
-    Tendsto (fun x => g x * f x) (cocompact X) (𝓝 0) := by
-  refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
-  refine squeeze_zero (fun _ => norm_nonneg _) (fun x => (norm_mul_le _ _).trans
-    (mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg _))) ?_
-  simpa only [zero_mul] using
-    (tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty g)).mul_const ‖f‖
-
-private def mulLeftZeroAtInfty (f : X →ᵇ A) (g : C₀(X, A)) : C₀(X, A) where
-  toFun x := f x * g x
-  continuous_toFun := f.continuous.mul g.continuous
-  zero_at_infty' := tendsto_mul_zeroAtInfty f g
-
-private def mulRightZeroAtInfty (f : X →ᵇ A) (g : C₀(X, A)) : C₀(X, A) where
-  toFun x := g x * f x
-  continuous_toFun := g.continuous.mul f.continuous
-  zero_at_infty' := tendsto_zeroAtInfty_mul f g
-
-private theorem norm_mulLeftZeroAtInfty_le (f : X →ᵇ A) (g : C₀(X, A)) :
-    ‖mulLeftZeroAtInfty f g‖ ≤ ‖f‖ * ‖g‖ := by
-  rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm, BoundedContinuousFunction.norm_le
-    (mul_nonneg (norm_nonneg f) (norm_nonneg g))]
-  intro x
-  exact (norm_mul_le _ _).trans <|
-    mul_le_mul (f.norm_coe_le_norm x) (g.toBCF.norm_coe_le_norm x) (norm_nonneg _) (norm_nonneg _)
-
-private theorem norm_mulRightZeroAtInfty_le (f : X →ᵇ A) (g : C₀(X, A)) :
-    ‖mulRightZeroAtInfty f g‖ ≤ ‖f‖ * ‖g‖ := by
-  rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm, BoundedContinuousFunction.norm_le
-    (mul_nonneg (norm_nonneg f) (norm_nonneg g))]
-  intro x
-  rw [mul_comm ‖f‖ ‖g‖]
-  exact (norm_mul_le _ _).trans <|
-    mul_le_mul (g.toBCF.norm_coe_le_norm x) (f.norm_coe_le_norm x) (norm_nonneg _) (norm_nonneg _)
-
-private def mulLeftCLM (𝕜 : Type*) [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 A]
-    [SMulCommClass 𝕜 A A] (f : X →ᵇ A) :
-    C₀(X, A) →L[𝕜] C₀(X, A) :=
-  LinearMap.mkContinuous
-    { toFun := mulLeftZeroAtInfty f
-      map_add' _ _ := ZeroAtInftyContinuousMap.ext fun _ => mul_add _ _ _
-      map_smul' _ _ := ZeroAtInftyContinuousMap.ext fun _ => mul_smul_comm _ _ _ }
-    ‖f‖ (norm_mulLeftZeroAtInfty_le f)
-
-private def mulRightCLM (𝕜 : Type*) [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 A]
-    [IsScalarTower 𝕜 A A] (f : X →ᵇ A) :
-    C₀(X, A) →L[𝕜] C₀(X, A) :=
-  LinearMap.mkContinuous
-    { toFun := mulRightZeroAtInfty f
-      map_add' _ _ := ZeroAtInftyContinuousMap.ext fun _ => add_mul _ _ _
-      map_smul' _ _ := ZeroAtInftyContinuousMap.ext fun _ => smul_mul_assoc _ _ _ }
-    ‖f‖ (norm_mulRightZeroAtInfty_le f)
-
 variable (𝕜) in
 /-- View a bounded continuous function `f : X →ᵇ A` as a multiplier of `C₀(X, A)` acting by
 pointwise left and right multiplication. -/
 def toDoubleCentralizer (f : X →ᵇ A) : 𝓜(𝕜, C₀(X, A)) where
-  fst := mulLeftCLM 𝕜 f
-  snd := mulRightCLM 𝕜 f
-  central _ _ := ZeroAtInftyContinuousMap.ext fun _ => mul_assoc _ _ _
+  fst := LinearMap.mkContinuous
+    { toFun := f.mulZeroAtInfty
+      map_add' _ _ := ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_add]
+      map_smul' _ _ := ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_smul_comm] }
+    ‖f‖ f.norm_mulZeroAtInfty_le
+  snd := LinearMap.mkContinuous
+    { toFun := fun g => g.mulBCF f
+      map_add' _ _ := ZeroAtInftyContinuousMap.ext fun _ => by simp [add_mul]
+      map_smul' _ _ := ZeroAtInftyContinuousMap.ext fun _ => by simp [smul_mul_assoc] }
+    ‖f‖ fun g => by rw [mul_comm]; exact g.norm_mulBCF_le f
+  central _ _ := ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_assoc]
 
 /-- The left centralizer of `f.toDoubleCentralizer 𝕜` acts by pointwise left multiplication. -/
 @[simp]
 theorem toDoubleCentralizer_fst_apply (f : X →ᵇ A) (g : C₀(X, A)) (x : X) :
     (f.toDoubleCentralizer 𝕜).fst g x = f x * g x :=
-  (rfl)
+  f.mulZeroAtInfty_apply g x
 
 /-- The right centralizer of `f.toDoubleCentralizer 𝕜` acts by pointwise right multiplication. -/
 @[simp]
 theorem toDoubleCentralizer_snd_apply (f : X →ᵇ A) (g : C₀(X, A)) (x : X) :
     (f.toDoubleCentralizer 𝕜).snd g x = g x * f x :=
-  (rfl)
+  g.mulBCF_apply f x
 
 /-- `toDoubleCentralizer` is contractive. -/
 theorem norm_toDoubleCentralizer_le (f : X →ᵇ A) : ‖f.toDoubleCentralizer 𝕜‖ ≤ ‖f‖ := by
   rw [DoubleCentralizer.norm_def, DoubleCentralizer.toProdHom_apply, Prod.norm_def, max_le_iff]
-  exact ⟨ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) (norm_mulLeftZeroAtInfty_le f),
-    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) (norm_mulRightZeroAtInfty_le f)⟩
+  exact ⟨LinearMap.mkContinuous_norm_le _ (norm_nonneg f) f.norm_mulZeroAtInfty_le,
+    LinearMap.mkContinuous_norm_le _ (norm_nonneg f) fun g => by
+      simpa [mul_comm] using g.norm_mulBCF_le f⟩
 
 /-- `toDoubleCentralizer` sends `0` to `0`. -/
 @[simp]
@@ -174,16 +127,16 @@ theorem toDoubleCentralizer_add (f₁ f₂ : X →ᵇ A) :
     (f₁ + f₂).toDoubleCentralizer 𝕜 =
       f₁.toDoubleCentralizer 𝕜 + f₂.toDoubleCentralizer 𝕜 :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => add_mul _ _ _)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => mul_add _ _ _)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [add_mul])
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_add])
 
 /-- `toDoubleCentralizer` preserves negation. -/
 @[simp]
 theorem toDoubleCentralizer_neg (f : X →ᵇ A) :
     (-f).toDoubleCentralizer 𝕜 = -f.toDoubleCentralizer 𝕜 :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => neg_mul _ _)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => mul_neg _ _)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
 
 /-- `toDoubleCentralizer` preserves subtraction. -/
 @[simp]
@@ -191,8 +144,8 @@ theorem toDoubleCentralizer_sub (f₁ f₂ : X →ᵇ A) :
     (f₁ - f₂).toDoubleCentralizer 𝕜 =
       f₁.toDoubleCentralizer 𝕜 - f₂.toDoubleCentralizer 𝕜 :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => sub_mul _ _ _)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => mul_sub _ _ _)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [sub_mul])
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_sub])
 
 /-- `toDoubleCentralizer` preserves multiplication. -/
 @[simp]
@@ -200,16 +153,16 @@ theorem toDoubleCentralizer_mul (f₁ f₂ : X →ᵇ A) :
     (f₁ * f₂).toDoubleCentralizer 𝕜 =
       f₁.toDoubleCentralizer 𝕜 * f₂.toDoubleCentralizer 𝕜 :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => mul_assoc _ _ _)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => (mul_assoc _ _ _).symm)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_assoc])
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_assoc])
 
 /-- `toDoubleCentralizer` preserves scalar multiplication. -/
 @[simp]
 theorem toDoubleCentralizer_smul (c : 𝕜) (f : X →ᵇ A) :
     (c • f).toDoubleCentralizer 𝕜 = c • f.toDoubleCentralizer 𝕜 :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => smul_mul_assoc _ _ _)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => mul_smul_comm _ _ _)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [smul_mul_assoc])
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp [mul_smul_comm])
 
 /-- `toDoubleCentralizer` preserves the star operation. -/
 @[simp]
@@ -225,11 +178,56 @@ theorem toDoubleCentralizer_star [StarRing 𝕜] [StarRing A] [NormedStarGroup A
 /-- On functions vanishing at infinity, `toDoubleCentralizer` agrees with the canonical inclusion
 `DoubleCentralizer.coe`. -/
 @[simp]
-theorem toDoubleCentralizer_zeroAtInfty (g : C₀(X, A)) :
+theorem _root_.ZeroAtInftyContinuousMap.toDoubleCentralizer_toBCF_eq_coe (g : C₀(X, A)) :
     g.toBCF.toDoubleCentralizer 𝕜 = (g : 𝓜(𝕜, C₀(X, A))) :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => rfl)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => rfl)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
+
+variable (𝕜 X A) in
+/-- `BoundedContinuousFunction.toDoubleCentralizer` bundled as a non-unital algebra
+homomorphism. -/
+def toDoubleCentralizerNonUnitalAlgHom : (X →ᵇ A) →ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A)) where
+  toFun := toDoubleCentralizer 𝕜
+  map_smul' := toDoubleCentralizer_smul
+  map_zero' := toDoubleCentralizer_zero
+  map_add' := toDoubleCentralizer_add
+  map_mul' := toDoubleCentralizer_mul
+
+/-- Evaluating `toDoubleCentralizerNonUnitalAlgHom` yields `toDoubleCentralizer`. -/
+@[simp]
+theorem coe_toDoubleCentralizerNonUnitalAlgHom :
+    ⇑(toDoubleCentralizerNonUnitalAlgHom 𝕜 X A) = toDoubleCentralizer 𝕜 :=
+  (rfl)
+
+section NonUnitalStar
+
+variable [StarRing 𝕜] [StarRing A] [NormedStarGroup A] [StarModule 𝕜 A]
+
+variable (𝕜 X A) in
+/-- `BoundedContinuousFunction.toDoubleCentralizer` bundled as a non-unital `⋆`-algebra
+homomorphism. -/
+def toDoubleCentralizerNonUnitalStarAlgHom : (X →ᵇ A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A)) where
+  __ := toDoubleCentralizerNonUnitalAlgHom 𝕜 X A
+  map_star' := toDoubleCentralizer_star
+
+/-- Evaluating `toDoubleCentralizerNonUnitalStarAlgHom` yields `toDoubleCentralizer`. -/
+@[simp]
+theorem coe_toDoubleCentralizerNonUnitalStarAlgHom :
+    ⇑(toDoubleCentralizerNonUnitalStarAlgHom 𝕜 X A) = toDoubleCentralizer 𝕜 :=
+  (rfl)
+
+/-- Composing `toDoubleCentralizerNonUnitalStarAlgHom` with
+`ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom` recovers `DoubleCentralizer.coeHom`. -/
+@[simp]
+theorem toDoubleCentralizerNonUnitalStarAlgHom_comp_toBCFNonUnitalStarAlgHom :
+    (toDoubleCentralizerNonUnitalStarAlgHom 𝕜 X A).comp
+      (ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom 𝕜 X A) =
+        DoubleCentralizer.coeHom (𝕜 := 𝕜) := by
+  ext g : 1
+  simp
+
+end NonUnitalStar
 
 end NonUnital
 
@@ -241,8 +239,8 @@ variable [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
 @[simp]
 theorem toDoubleCentralizer_one : (1 : X →ᵇ A).toDoubleCentralizer 𝕜 = 1 :=
   DoubleCentralizer.ext_fst_snd
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => one_mul _)
-    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => mul_one _)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
+    (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
 
 /-- `toDoubleCentralizer` commutes with `algebraMap`. -/
 @[simp]
@@ -267,6 +265,14 @@ theorem coe_toDoubleCentralizerAlgHom :
     ⇑(toDoubleCentralizerAlgHom 𝕜 X A) = toDoubleCentralizer 𝕜 :=
   (rfl)
 
+/-- Coercing `toDoubleCentralizerAlgHom` to a non-unital algebra homomorphism yields
+`toDoubleCentralizerNonUnitalAlgHom`. -/
+@[simp]
+theorem toDoubleCentralizerAlgHom_toNonUnitalAlgHom :
+    (toDoubleCentralizerAlgHom 𝕜 X A : (X →ᵇ A) →ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))) =
+      toDoubleCentralizerNonUnitalAlgHom 𝕜 X A :=
+  (rfl)
+
 variable [StarRing 𝕜] [StarRing A] [NormedStarGroup A] [StarModule 𝕜 A]
 
 variable (𝕜 X A) in
@@ -282,15 +288,13 @@ theorem coe_toDoubleCentralizerStarAlgHom :
     ⇑(toDoubleCentralizerStarAlgHom 𝕜 X A) = toDoubleCentralizer 𝕜 :=
   (rfl)
 
-/-- Composing `toDoubleCentralizerStarAlgHom` with
-`ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom` recovers `DoubleCentralizer.coeHom`. -/
+/-- Forgetting the unit of `toDoubleCentralizerStarAlgHom` yields
+`toDoubleCentralizerNonUnitalStarAlgHom`. -/
 @[simp]
-theorem toDoubleCentralizerStarAlgHom_comp_toBCFNonUnitalStarAlgHom :
-    (toDoubleCentralizerStarAlgHom 𝕜 X A).toNonUnitalStarAlgHom.comp
-      (ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom 𝕜 X A) =
-        DoubleCentralizer.coeHom (𝕜 := 𝕜) := by
-  ext g : 1
-  simp
+theorem toDoubleCentralizerStarAlgHom_toNonUnitalStarAlgHom :
+    (toDoubleCentralizerStarAlgHom 𝕜 X A).toNonUnitalStarAlgHom =
+      toDoubleCentralizerNonUnitalStarAlgHom 𝕜 X A :=
+  (rfl)
 
 end Unital
 
@@ -388,8 +392,8 @@ theorem toBCF_toDoubleCentralizer (f : X →ᵇ A) : (f.toDoubleCentralizer 𝕜
 @[simp]
 theorem toDoubleCentralizer_toBCF (m : 𝓜(𝕜, C₀(X, A))) : m.toBCF.toDoubleCentralizer 𝕜 = m :=
   ext_fst_snd
-    (fun g => ZeroAtInftyContinuousMap.ext fun x => (fst_apply_eq_toBCF_mul m g x).symm)
-    (fun g => ZeroAtInftyContinuousMap.ext fun x => (snd_apply_eq_mul_toBCF m g x).symm)
+    (fun g => ZeroAtInftyContinuousMap.ext fun x => by simp [fst_apply_eq_toBCF_mul])
+    (fun g => ZeroAtInftyContinuousMap.ext fun x => by simp [snd_apply_eq_mul_toBCF])
 
 /-- `DoubleCentralizer.toBCF` is injective on `𝓜(𝕜, C₀(X, A))`. -/
 theorem toBCF_injective : Function.Injective (toBCF (X := X) (𝕜 := 𝕜) (A := A)) :=
@@ -404,7 +408,7 @@ theorem _root_.BoundedContinuousFunction.toDoubleCentralizer_injective :
 `ZeroAtInftyContinuousMap.toBCF`. -/
 @[simp]
 theorem toBCF_coe (g : C₀(X, A)) : (g : 𝓜(𝕜, C₀(X, A))).toBCF = g.toBCF := by
-  rw [← BoundedContinuousFunction.toDoubleCentralizer_zeroAtInfty (𝕜 := 𝕜) g,
+  rw [← ZeroAtInftyContinuousMap.toDoubleCentralizer_toBCF_eq_coe (𝕜 := 𝕜) g,
     toBCF_toDoubleCentralizer]
 
 /-- `DoubleCentralizer.toBCF` sends `0` to `0`. -/

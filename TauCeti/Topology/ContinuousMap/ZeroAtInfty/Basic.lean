@@ -28,6 +28,9 @@ needed for scalar actions beyond normed fields, bundled homomorphisms, and Uryso
   arbitrary semiring of scalars;
 * `ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom`: the canonical inclusion
   `C₀(α, β) →⋆ₙₐ[𝕜] (α →ᵇ β)`;
+* `BoundedContinuousFunction.mulZeroAtInfty` and `ZeroAtInftyContinuousMap.mulBCF`: pointwise
+  left and right multiplication of `C₀(α, β)` by bounded continuous functions `α →ᵇ β`, with
+  submultiplicative norm bounds;
 * `ZeroAtInftyContinuousMap.exists_eqOn_const_zero_of_isCompact`,
   `ZeroAtInftyContinuousMap.exists_eqOn_const_of_isCompact`, and
   `ZeroAtInftyContinuousMap.exists_apply_eq_norm_le`: compactly supported Urysohn cutoffs in
@@ -287,6 +290,71 @@ theorem toBCFNonUnitalStarAlgHom_apply {𝕜 : Type*} [SeminormedRing 𝕜]
   (rfl)
 
 end ToBCFHom
+
+section MulBCF
+
+open Filter Topology
+
+variable [NonUnitalSeminormedRing β]
+
+/-- Pointwise right multiplication of `g : C₀(α, β)` by a bounded continuous function `f : α →ᵇ β`,
+yielding a function vanishing at infinity. -/
+def mulBCF (g : C₀(α, β)) (f : α →ᵇ β) : C₀(α, β) where
+  toFun x := g x * f x
+  continuous_toFun := g.continuous.mul f.continuous
+  zero_at_infty' := by
+    refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
+    refine squeeze_zero (fun _ => norm_nonneg _) (fun x => (norm_mul_le _ _).trans
+      (mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg _))) ?_
+    simpa only [zero_mul] using
+      (tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty g)).mul_const ‖f‖
+
+/-- Evaluating `g.mulBCF f` at `x` gives `g x * f x`. -/
+@[simp]
+theorem mulBCF_apply (g : C₀(α, β)) (f : α →ᵇ β) (x : α) : g.mulBCF f x = g x * f x :=
+  (rfl)
+
+/-- Coercing `g.mulBCF f` to a bounded continuous function gives `g.toBCF * f`. -/
+@[simp]
+theorem toBCF_mulBCF (g : C₀(α, β)) (f : α →ᵇ β) : (g.mulBCF f).toBCF = g.toBCF * f :=
+  (rfl)
+
+/-- Right multiplication of `C₀(α, β)` by `α →ᵇ β` is submultiplicative in norm. -/
+theorem norm_mulBCF_le (g : C₀(α, β)) (f : α →ᵇ β) : ‖g.mulBCF f‖ ≤ ‖g‖ * ‖f‖ := by
+  rw [← norm_toBCF_eq_norm, toBCF_mulBCF, ← norm_toBCF_eq_norm]
+  exact norm_mul_le g.toBCF f
+
+/-- Pointwise left multiplication of `g : C₀(α, β)` by a bounded continuous function `f : α →ᵇ β`,
+yielding a function vanishing at infinity. -/
+def _root_.BoundedContinuousFunction.mulZeroAtInfty (f : α →ᵇ β) (g : C₀(α, β)) : C₀(α, β) where
+  toFun x := f x * g x
+  continuous_toFun := f.continuous.mul g.continuous
+  zero_at_infty' := by
+    refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
+    refine squeeze_zero (fun _ => norm_nonneg _) (fun x => (norm_mul_le _ _).trans
+      (mul_le_mul_of_nonneg_right (f.norm_coe_le_norm x) (norm_nonneg _))) ?_
+    simpa only [mul_zero] using
+      (tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty g)).const_mul ‖f‖
+
+/-- Evaluating `f.mulZeroAtInfty g` at `x` gives `f x * g x`. -/
+@[simp]
+theorem _root_.BoundedContinuousFunction.mulZeroAtInfty_apply (f : α →ᵇ β) (g : C₀(α, β))
+    (x : α) : f.mulZeroAtInfty g x = f x * g x :=
+  (rfl)
+
+/-- Coercing `f.mulZeroAtInfty g` to a bounded continuous function gives `f * g.toBCF`. -/
+@[simp]
+theorem _root_.BoundedContinuousFunction.toBCF_mulZeroAtInfty (f : α →ᵇ β) (g : C₀(α, β)) :
+    (f.mulZeroAtInfty g).toBCF = f * g.toBCF :=
+  (rfl)
+
+/-- Left multiplication of `C₀(α, β)` by `α →ᵇ β` is submultiplicative in norm. -/
+theorem _root_.BoundedContinuousFunction.norm_mulZeroAtInfty_le (f : α →ᵇ β) (g : C₀(α, β)) :
+    ‖f.mulZeroAtInfty g‖ ≤ ‖f‖ * ‖g‖ := by
+  rw [← norm_toBCF_eq_norm, BoundedContinuousFunction.toBCF_mulZeroAtInfty, ← norm_toBCF_eq_norm]
+  exact norm_mul_le f g.toBCF
+
+end MulBCF
 
 section Urysohn
 

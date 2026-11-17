@@ -9,18 +9,19 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.ZeroAtInfty
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Pullback
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
-import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Pullback
 
 /-!
 # Commutative multiplier morphisms
 
 For a continuous map `h : C(X, Y)`, precomposition defines a pullback into bounded continuous
 functions `ContinuousMap.compZeroAtInftyToBCF : C₀(Y, A) →⋆ₙₐ[𝕜] (X →ᵇ A)` (in
-`TauCeti.Topology.ContinuousMap.ZeroAtInfty.Pullback`) and, via
-`BoundedContinuousFunction.toDoubleCentralizer`, a multiplier homomorphism
-`ContinuousMap.compZeroAtInftyToMultiplier : C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))`. No properness of
-`h` is required for the image to land in `𝓜(𝕜, C₀(X, A))`.
+`TauCeti.Topology.ContinuousMap.ZeroAtInfty.Pullback`) and, by composing with
+`BoundedContinuousFunction.toDoubleCentralizerNonUnitalStarAlgHom`, a multiplier homomorphism
+`ContinuousMap.compZeroAtInftyToMultiplier : C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))`
+(`ContinuousMap.compZeroAtInftyToMultiplier_eq_comp`). No properness of `h` is required for the
+image to land in `𝓜(𝕜, C₀(X, A))`.
 
 When `Y` is weakly locally compact `R₁` and `A` is any (possibly non-unital) C⋆-algebra, Urysohn
 cutoffs on compact images `h '' K` paired with an approximate unit of `A` show that
@@ -32,14 +33,16 @@ unital, the unique extension `extendToMultiplier` acts on `𝓜(ℂ, C₀(Y, A))
 representing bounded continuous function with `h`
 (`ContinuousMap.extendToMultiplier_compZeroAtInftyToMultiplier`).
 
-In the scalar case `A = ℂ` (with `X` weakly locally compact `R₁` and `Y` weakly locally compact
-Hausdorff), nondegeneracy of any `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))` is equivalent to pointwise
-nonvanishing of `a ↦ (φ a).toBCF x`
-(`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_forall_exists_toBCF_ne_zero`). Combining this
-with `ContinuousMap.bcfMorphismEquiv` establishes the contravariant bijection
+When `X` is weakly locally compact `R₁` and `A` is any (possibly non-unital) C⋆-algebra,
+nondegeneracy of `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))` is equivalent to pointwise nonvanishing of
+`a ↦ (φ a).toBCF x`
+(`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_forall_exists_toBCF_ne_zero`). Specializing to
+`A = C₀(Y, ℂ)` for a weakly locally compact Hausdorff space `Y` and combining this with
+`ContinuousMap.bcfMorphismEquiv` establishes the contravariant bijection
 `ContinuousMap.multiplierMorphismEquiv` between `C(X, Y)` and nondegenerate multiplier
-homomorphisms `C₀(Y, ℂ) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))`. Finally, `h.compZeroAtInftyToMultiplier` lands
-in the canonical image of `C₀(X, A)` if and only if `h` is proper
+homomorphisms `C₀(Y, ℂ) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))`. Finally, for weakly locally compact `R₁` `X`,
+weakly locally compact Hausdorff `Y`, and nontrivial unital `A`, `h.compZeroAtInftyToMultiplier`
+lands in the canonical image of `C₀(X, A)` if and only if `h` is proper
 (`ContinuousMap.isProperMap_iff_range_compZeroAtInftyToMultiplier_subset`).
 
 ## Main definitions
@@ -77,6 +80,38 @@ noncomputable section
 open Filter Topology
 open scoped BoundedContinuousFunction CStarAlgebra MultiplierAlgebra ZeroAtInfty
 
+/-- Shared cocompact ε-approximation criterion for proving `φ.IsMultiplierNondegenerate` when
+`φ` takes values in `𝓜(ℂ, C₀(X, A))`: it suffices that on every compact set `K` and for every
+`g : C₀(X, A)` and `δ > 0`, some `φ b` acts by left multiplication by a bounded continuous function
+`u` of pointwise norm at most `1` satisfying `‖u x * g x - g x‖ ≤ δ` on `K`. -/
+private theorem isMultiplierNondegenerate_of_compact_approx
+    {X A B : Type*} [TopologicalSpace X] [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+    {φ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, A))}
+    (happrox : ∀ (g : C₀(X, A)) (K : Set X), IsCompact K → ∀ δ > 0,
+      ∃ (b : B) (u : X →ᵇ A), φ b = u.toDoubleCentralizer ℂ ∧
+        (∀ x, ‖u x‖ ≤ 1) ∧ ∀ x ∈ K, ‖u x * g x - g x‖ ≤ δ) :
+    φ.IsMultiplierNondegenerate := by
+  rw [NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense, Metric.dense_iff]
+  intro g ε hε
+  obtain ⟨K, hK, hKg⟩ := mem_cocompact.1 <|
+    Metric.tendsto_nhds.1 (zero_at_infty g) (ε / 4) (by positivity)
+  obtain ⟨b, u, hφb, hu_norm, huK⟩ := happrox g K hK (ε / 2) (half_pos hε)
+  refine ⟨(φ b).fst g, ?_, Submodule.subset_span <| Set.mem_iUnion.2 ⟨b, g, rfl⟩⟩
+  rw [Metric.mem_ball, dist_eq_norm]
+  have hle : ‖(φ b).fst g - g‖ ≤ ε / 2 := by
+    rw [ZeroAtInftyContinuousMap.norm_le (half_pos hε).le]
+    intro x
+    have hval : ((φ b).fst g - g) x = u x * g x - g x := by simp [hφb]
+    rw [hval]
+    by_cases hx : x ∈ K
+    · exact huK x hx
+    · have hdist : ‖g x‖ < ε / 4 := by simpa [dist_zero_right] using hKg hx
+      have hmul : ‖u x * g x‖ ≤ ‖g x‖ :=
+        (norm_mul_le _ _).trans <| by
+          simpa using mul_le_mul_of_nonneg_right (hu_norm x) (norm_nonneg _)
+      linarith [norm_sub_le (u x * g x) (g x)]
+  exact hle.trans_lt (half_lt_self hε)
+
 namespace ContinuousMap
 
 section Pullback
@@ -89,35 +124,33 @@ variable {𝕜 X Y A : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 variable (𝕜 A) in
 /-- Precomposition by a continuous map `h : C(X, Y)` defines a multiplier `⋆`-homomorphism
 `C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))`. -/
-def compZeroAtInftyToMultiplier (h : C(X, Y)) : C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A)) where
-  toFun f := (f.toBCF.compContinuous h).toDoubleCentralizer 𝕜
-  map_smul' c f := BoundedContinuousFunction.toDoubleCentralizer_smul c (f.toBCF.compContinuous h)
-  map_zero' := BoundedContinuousFunction.toDoubleCentralizer_zero
-  map_add' f₁ f₂ :=
-    BoundedContinuousFunction.toDoubleCentralizer_add
-      (f₁.toBCF.compContinuous h) (f₂.toBCF.compContinuous h)
-  map_mul' f₁ f₂ :=
-    BoundedContinuousFunction.toDoubleCentralizer_mul
-      (f₁.toBCF.compContinuous h) (f₂.toBCF.compContinuous h)
-  map_star' f := BoundedContinuousFunction.toDoubleCentralizer_star (f.toBCF.compContinuous h)
+def compZeroAtInftyToMultiplier (h : C(X, Y)) : C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A)) :=
+  (BoundedContinuousFunction.toDoubleCentralizerNonUnitalStarAlgHom 𝕜 X A).comp
+    (h.compZeroAtInftyToBCF 𝕜 A)
+
+/-- `compZeroAtInftyToMultiplier` is the composition of
+`BoundedContinuousFunction.toDoubleCentralizerNonUnitalStarAlgHom` with `compZeroAtInftyToBCF`. -/
+theorem compZeroAtInftyToMultiplier_eq_comp (h : C(X, Y)) :
+    h.compZeroAtInftyToMultiplier 𝕜 A =
+      (BoundedContinuousFunction.toDoubleCentralizerNonUnitalStarAlgHom 𝕜 X A).comp
+        (h.compZeroAtInftyToBCF 𝕜 A) :=
+  (rfl)
 
 /-- Applying `compZeroAtInftyToMultiplier` yields the multiplier attached to
 `f.toBCF.compContinuous h`. -/
 @[simp]
 theorem compZeroAtInftyToMultiplier_apply (h : C(X, Y)) (f : C₀(Y, A)) :
     h.compZeroAtInftyToMultiplier 𝕜 A f =
-      (f.toBCF.compContinuous h).toDoubleCentralizer 𝕜 :=
-  (rfl)
+      (f.toBCF.compContinuous h).toDoubleCentralizer 𝕜 := by
+  simp [compZeroAtInftyToMultiplier_eq_comp]
 
 /-- Pullback along the identity map is the canonical inclusion `DoubleCentralizer.coeHom`. -/
 @[simp]
 theorem compZeroAtInftyToMultiplier_id :
     (ContinuousMap.id X).compZeroAtInftyToMultiplier 𝕜 A =
       DoubleCentralizer.coeHom (𝕜 := 𝕜) := by
-  ext f : 1
-  refine DoubleCentralizer.ext_fst_snd
-    (fun g => ZeroAtInftyContinuousMap.ext fun x => by simp)
-    (fun g => ZeroAtInftyContinuousMap.ext fun x => by simp)
+  rw [compZeroAtInftyToMultiplier_eq_comp, compZeroAtInftyToBCF_id,
+    BoundedContinuousFunction.toDoubleCentralizerNonUnitalStarAlgHom_comp_toBCFNonUnitalStarAlgHom]
 
 /-- On a cocompact map `h : CocompactMap X Y`, pullback into the multiplier algebra agrees with
 `ZeroAtInftyContinuousMap.comp` composed with `DoubleCentralizer.coe`. -/
@@ -129,6 +162,20 @@ theorem compZeroAtInftyToMultiplier_apply_eq_coe_comp (h : CocompactMap X Y) (f 
 
 end Pullback
 
+section PullbackUnital
+
+variable {𝕜 X Y A : Type*} [TopologicalSpace X] [WeaklyLocallyCompactSpace X] [R1Space X]
+  [TopologicalSpace Y] [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NormedRing A]
+  [NormedAlgebra 𝕜 A] [NormedSpace ℝ A] [StarRing A] [NormedStarGroup A] [StarModule 𝕜 A]
+
+/-- Under `DoubleCentralizer.toBCF`, the multiplier pullback `compZeroAtInftyToMultiplier` recovers
+the bounded continuous function pullback `compZeroAtInftyToBCF`. -/
+theorem toBCF_compZeroAtInftyToMultiplier (h : C(X, Y)) (f : C₀(Y, A)) :
+    (h.compZeroAtInftyToMultiplier 𝕜 A f).toBCF = h.compZeroAtInftyToBCF 𝕜 A f := by
+  simp
+
+end PullbackUnital
+
 section Nondegenerate
 
 variable {X Y Z A : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
@@ -139,37 +186,23 @@ non-unital) C⋆-algebra `A`. -/
 theorem isMultiplierNondegenerate_compZeroAtInftyToMultiplier [WeaklyLocallyCompactSpace Y]
     [R1Space Y] [NonUnitalCStarAlgebra A] (h : C(X, Y)) :
     (h.compZeroAtInftyToMultiplier ℂ A).IsMultiplierNondegenerate := by
-  rw [NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense, Metric.dense_iff]
-  intro g ε hε
-  obtain ⟨K, hK, hKg⟩ := mem_cocompact.1 <|
-    Metric.tendsto_nhds.1 (zero_at_infty g) (ε / 4) (by positivity)
+  refine isMultiplierNondegenerate_of_compact_approx fun g K hK δ hδ => ?_
   let := CStarAlgebra.spectralOrder A
   have := CStarAlgebra.spectralOrderedRing A
   have hl := CStarAlgebra.increasingApproximateUnit A
   have := hl.neBot
   obtain ⟨e, he_norm, he_mul⟩ := (hl.eventually_norm.and <|
     Metric.tendstoUniformlyOn_iff.1 (hl.tendstoUniformlyOn_mul_right (hK.image g.continuous))
-      (ε / 2) (half_pos hε)).exists
+      δ hδ).exists
   obtain ⟨f, hfK, -, hf_norm⟩ :=
     ZeroAtInftyContinuousMap.exists_eqOn_const_of_isCompact (hK.image h.continuous) e
-  refine ⟨(h.compZeroAtInftyToMultiplier ℂ A f).fst g, ?_,
-    Submodule.subset_span <| Set.mem_iUnion.2 ⟨f, g, rfl⟩⟩
-  rw [Metric.mem_ball, dist_eq_norm]
-  have hle : ‖(h.compZeroAtInftyToMultiplier ℂ A f).fst g - g‖ ≤ ε / 2 := by
-    rw [ZeroAtInftyContinuousMap.norm_le (half_pos hε).le]
-    intro x
-    have hval : ((h.compZeroAtInftyToMultiplier ℂ A f).fst g - g) x =
-        f (h x) * g x - g x := by simp
-    rw [hval]
-    by_cases hx : x ∈ K
-    · rw [hfK ⟨x, hx, rfl⟩, norm_sub_rev]
-      simpa [dist_eq_norm] using (he_mul (g x) ⟨x, hx, rfl⟩).le
-    · have hdist : ‖g x‖ < ε / 4 := by simpa [dist_zero_right] using hKg hx
-      have hf_le : ‖f (h x)‖ ≤ 1 := (f.norm_coe_le_norm (h x)).trans (hf_norm.trans he_norm)
-      have hmul : ‖f (h x) * g x‖ ≤ ‖g x‖ :=
-        (norm_mul_le _ _).trans <| by simpa using mul_le_mul_of_nonneg_right hf_le (norm_nonneg _)
-      linarith [norm_sub_le (f (h x) * g x) (g x)]
-  exact hle.trans_lt (half_lt_self hε)
+  refine ⟨f, h.compZeroAtInftyToBCF ℂ A f, by simp,
+    fun x => by simpa using (f.norm_coe_le_norm (h x)).trans (hf_norm.trans he_norm),
+    fun x hx => ?_⟩
+  simp only [compZeroAtInftyToBCF_apply, BoundedContinuousFunction.compContinuous_apply,
+    ZeroAtInftyContinuousMap.toBCF_apply]
+  rw [hfK ⟨x, hx, rfl⟩, norm_sub_rev]
+  simpa [dist_eq_norm] using (he_mul (g x) ⟨x, hx, rfl⟩).le
 
 /-- The unique multiplier extension of `h.compZeroAtInftyToMultiplier ℂ A` acts on
 `m : 𝓜(ℂ, C₀(Y, A))` by precomposing `m.toBCF` with `h`. -/
@@ -301,52 +334,42 @@ theorem isMultiplierNondegenerate_iff_forall_exists_toBCF_ne_zero
     (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))) :
     φ.IsMultiplierNondegenerate ↔ ∀ x : X, ∃ a : A, (φ a).toBCF x ≠ 0 := by
   refine ⟨fun hφ => hφ.exists_toBCF_ne_zero, fun h => ?_⟩
-  rw [isMultiplierNondegenerate_iff_dense, Metric.dense_iff]
-  intro g ε hε
-  obtain ⟨K, hK, hKg⟩ := mem_cocompact.1 <|
-    Metric.tendsto_nhds.1 (zero_at_infty g) (ε / 2) (half_pos hε)
+  refine isMultiplierNondegenerate_of_compact_approx fun g K hK δ hδ => ?_
+  -- If `K` is empty, `b = 0` satisfies the compact-approximation hypothesis vacuously.
   rcases K.eq_empty_or_nonempty with rfl | hKne
-  · refine ⟨0, ?_, Submodule.zero_mem _⟩
-    rw [Metric.mem_ball, dist_eq_norm, zero_sub, norm_neg]
-    have hle : ‖g‖ ≤ ε / 2 := by
-      rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm,
-        BoundedContinuousFunction.norm_le (half_pos hε).le]
-      intro x
-      exact (by simpa [dist_zero_right] using hKg (Set.notMem_empty x) : ‖g x‖ < ε / 2).le
-    exact hle.trans_lt (half_lt_self hε)
-  · obtain ⟨q, c, ⟨hc0, hc1⟩, hq⟩ := exists_real_pos_on_compact φ h hK hKne
-    have hlim : Tendsto (fun n : ℕ => (1 - c) ^ n * ‖g‖) atTop (𝓝 0) := by
-      simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by linarith) (by linarith)).mul_const ‖g‖
-    obtain ⟨n, hn⟩ := (Metric.tendsto_nhds.1 hlim (ε / 2) (half_pos hε)).exists
-    have hn' : (1 - c) ^ n * ‖g‖ < ε / 2 := by
-      simpa [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 hc1.le)] using hn
-    refine ⟨(φ (oneSubPow q n)).fst g, ?_,
-      Submodule.subset_span <| Set.mem_iUnion.2 ⟨oneSubPow q n, g, rfl⟩⟩
-    rw [Metric.mem_ball, dist_eq_norm]
-    have hle : ‖(φ (oneSubPow q n)).fst g - g‖ ≤ ε / 2 := by
-      rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm,
-        BoundedContinuousFunction.norm_le (half_pos hε).le]
-      intro z
-      obtain ⟨t, ⟨ht0, ht1⟩, hqt, hKct⟩ := hq z
-      have hval : ((φ (oneSubPow q n)).fst g - g) z = -(((1 - t) ^ n : ℝ) : ℂ) * g z := by
-        have h1 : (φ (oneSubPow q n)).toBCF z - 1 = -(((1 - t) ^ n : ℝ) : ℂ) := by
-          have := one_sub_map_oneSubPow φ q z n
-          rw [hqt] at this
-          push_cast
-          linear_combination -this
-        simp only [FunLike.coe_sub, Pi.sub_apply, DoubleCentralizer.fst_apply_eq_toBCF_mul]
-        linear_combination g z * h1
-      rw [ZeroAtInftyContinuousMap.toBCF_apply, hval, norm_mul, norm_neg, Complex.norm_real,
-        Real.norm_of_nonneg (pow_nonneg (by linarith) n)]
-      by_cases hz : z ∈ K
-      · have hpow : (1 - t) ^ n ≤ (1 - c) ^ n :=
-          pow_le_pow_left₀ (by linarith) (by linarith [hKct hz]) n
-        exact (mul_le_mul hpow (g.toBCF.norm_coe_le_norm z) (norm_nonneg _)
-          (pow_nonneg (by linarith) n)).trans hn'.le
-      · have hdist : ‖g z‖ < ε / 2 := by simpa [dist_zero_right] using hKg hz
-        have hpow : (1 - t) ^ n ≤ 1 := pow_le_one₀ (by linarith) (by linarith)
-        exact (mul_le_mul_of_nonneg_right hpow (norm_nonneg _)).trans (by simpa using hdist.le)
-    exact hle.trans_lt (half_lt_self hε)
+  · exact ⟨0, 0, by simp, fun _ => by simp, fun _ hx => hx.elim⟩
+  -- Compact subcover: combine pointwise nonvanishing into `q : A` with `(φ q).toBCF ∈ [c, 1]`
+  -- on `K`.
+  obtain ⟨q, c, ⟨hc0, hc1⟩, hq⟩ := exists_real_pos_on_compact φ h hK hKne
+  -- Polynomial iterate: choose `n` so `(1 - c) ^ n * ‖g‖ < δ`.
+  have hlim : Tendsto (fun n : ℕ => (1 - c) ^ n * ‖g‖) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by linarith) (by linarith)).mul_const ‖g‖
+  obtain ⟨n, hn⟩ := (Metric.tendsto_nhds.1 hlim δ hδ).exists
+  have hn' : (1 - c) ^ n * ‖g‖ < δ := by
+    simpa [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 hc1.le)] using hn
+  have honeSub (z : X) {t : ℝ} (hqt : (φ q).toBCF z = (t : ℂ)) :
+      1 - (φ (oneSubPow q n)).toBCF z = (((1 - t) ^ n : ℝ) : ℂ) := by
+    simpa [hqt] using one_sub_map_oneSubPow φ q z n
+  refine ⟨oneSubPow q n, (φ (oneSubPow q n)).toBCF,
+    (DoubleCentralizer.toDoubleCentralizer_toBCF _).symm, fun z => ?_, fun z hz => ?_⟩
+  · -- Everywhere on `X`, `(φ (oneSubPow q n)).toBCF z = 1 - (1 - t) ^ n ∈ [0, 1]`.
+    obtain ⟨t, ⟨ht0, ht1⟩, hqt, -⟩ := hq z
+    have hval : (φ (oneSubPow q n)).toBCF z = ((1 - (1 - t) ^ n : ℝ) : ℂ) := by
+      rw [Complex.ofReal_sub, Complex.ofReal_one]
+      linear_combination -honeSub z hqt
+    rw [hval, Complex.norm_real,
+      Real.norm_of_nonneg (sub_nonneg.2 (pow_le_one₀ (by linarith) (by linarith)))]
+    linarith [pow_nonneg (show 0 ≤ 1 - t by linarith) n]
+  · -- On `K`, `1 - t ≤ 1 - c`, so `‖((φ (oneSubPow q n)).toBCF z - 1) * g z‖ ≤ (1 - c) ^ n * ‖g‖`.
+    obtain ⟨t, ⟨-, ht1⟩, hqt, hKct⟩ := hq z
+    have hval : (φ (oneSubPow q n)).toBCF z * g z - g z = -(((1 - t) ^ n : ℝ) : ℂ) * g z := by
+      linear_combination -(g z * honeSub z hqt)
+    rw [hval, norm_mul, norm_neg, Complex.norm_real,
+      Real.norm_of_nonneg (pow_nonneg (by linarith) n)]
+    have hpow : (1 - t) ^ n ≤ (1 - c) ^ n :=
+      pow_le_pow_left₀ (by linarith) (by linarith [hKct hz]) n
+    exact (mul_le_mul hpow (g.norm_coe_le_norm z) (norm_nonneg _)
+      (pow_nonneg (by linarith) n)).trans hn'.le
 
 end CommutativeNondegenerate
 
