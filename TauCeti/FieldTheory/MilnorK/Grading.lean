@@ -107,11 +107,10 @@ theorem isHomogeneous_ker_mkRingHom (R : Type u) [CommSemiring R] :
 `MilnorK R`. -/
 theorem isInternal_degree (R : Type u) [CommSemiring R] :
     DirectSum.IsInternal (degree R) := by
-  have hdeg : degree R = fun n ↦
+  rw [show degree R = fun n ↦
       Submodule.map (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom.toLinearMap
-        ((TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) :=
-    funext fun _ ↦ Submodule.ext fun _ ↦ mem_degree_iff
-  rw [hdeg]
+        ((TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) from
+    funext fun _ ↦ Submodule.ext fun _ ↦ mem_degree_iff]
   exact TauCeti.GradedAlgebra.isInternal_map
     (fun n : ℕ ↦ (TensorAlgebra.ι ℤ :
       Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n)
@@ -150,24 +149,19 @@ def gradedLift {A : Type v} {σ : Type*} [Ring A] [SetLike σ A] [AddSubgroupCla
   __ := (lift f hf_rel).toRingHom
   map_mem {n x} hx := by
     rw [degree_eq_span_symbol] at hx
-    refine Submodule.span_induction (p := fun y _ ↦ lift f hf_rel y ∈ 𝒜 n) ?_ ?_ ?_ ?_ hx
-    · rintro _ ⟨l, hl, rfl⟩
-      clear hx
-      subst hl
-      induction l with
-      | nil =>
-        simpa only [symbol_nil, List.length_nil, map_one] using SetLike.GradedOne.one_mem (A := 𝒜)
-      | cons a l ih =>
-        rw [symbol_cons, map_mul, lift_ofUnit, List.length_cons, add_comm]
-        exact SetLike.GradedMul.mul_mem (hf_deg a) ih
-    · rw [map_zero]
-      exact zero_mem _
-    · intro x y _ _ hx hy
-      rw [map_add]
-      exact add_mem hx hy
-    · intro r x _ hx
-      rw [map_zsmul]
-      exact zsmul_mem hx r
+    refine Submodule.span_induction (p := fun y _ ↦ lift f hf_rel y ∈ 𝒜 n) ?_
+      (by simp)
+      (fun _ _ _ _ hx hy ↦ by simpa using add_mem hx hy)
+      (fun r _ _ hx ↦ by simpa [map_zsmul] using zsmul_mem hx r) hx
+    rintro _ ⟨l, hl, rfl⟩
+    clear hx
+    subst hl
+    induction l with
+    | nil =>
+      simpa only [symbol_nil, List.length_nil, map_one] using SetLike.GradedOne.one_mem (A := 𝒜)
+    | cons a l ih =>
+      rw [symbol_cons, map_mul, lift_ofUnit, List.length_cons, add_comm]
+      exact SetLike.GradedMul.mul_mem (hf_deg a) ih
 
 /-- Evaluating `MilnorK.gradedLift` on `ofUnit a` recovers `f (Additive.ofMul a)`. -/
 @[simp]
@@ -273,30 +267,25 @@ theorem gMul_mem_tensorRel_left {i j : ℕ} {u : ⨂[ℤ]^i (Additive Rˣ)} {v :
     GradedMonoid.GMul.mul (A := fun m ↦ ⨂[ℤ]^m (Additive Rˣ)) u v ∈ tensorRel R (i + j) := by
   induction v using PiTensorProduct.induction_on with
   | add v₁ v₂ hv₁ hv₂ =>
-    rw [TensorPower.gMul_def, TensorProduct.tmul_add, map_add]
-    exact add_mem hv₁ hv₂
+    rw [TensorPower.gMul_def, TensorProduct.tmul_add, map_add]; exact add_mem hv₁ hv₂
   | smul_tprod r y =>
     rw [TensorPower.gMul_def, TensorProduct.tmul_smul, map_smul]
     refine Submodule.smul_mem _ r ?_
     rw [← TensorPower.gMul_def]
     refine Submodule.span_induction
       (p := fun w _ ↦ GradedMonoid.GMul.mul (A := fun m ↦ ⨂[ℤ]^m (Additive Rˣ)) w
-        (PiTensorProduct.tprod ℤ y) ∈ tensorRel R (i + j)) ?_ ?_ ?_ ?_ hu
-    · rintro _ ⟨x, k, hk, a, b, hab, hxk, hxk1, rfl⟩
-      rw [TensorPower.tprod_mul_tprod]
-      refine Submodule.subset_span ⟨Fin.append x y, k, by omega, a, b, hab, ?_, ?_, rfl⟩
-      · have h1 : (⟨k, by omega⟩ : Fin (i + j)) = Fin.castAdd j ⟨k, by omega⟩ := rfl
-        rw [h1, Fin.append_left, hxk]
-      · have h2 : (⟨k + 1, by omega⟩ : Fin (i + j)) = Fin.castAdd j ⟨k + 1, hk⟩ := rfl
-        rw [h2, Fin.append_left, hxk1]
-    · rw [TensorPower.gMul_def, TensorProduct.zero_tmul, map_zero]
-      exact zero_mem _
-    · intro w₁ w₂ _ _ hw₁ hw₂
-      rw [TensorPower.gMul_def, TensorProduct.add_tmul, map_add]
-      exact add_mem hw₁ hw₂
-    · intro s w _ hw
-      rw [TensorPower.gMul_def, ← TensorProduct.smul_tmul', map_smul]
-      exact Submodule.smul_mem _ s hw
+        (PiTensorProduct.tprod ℤ y) ∈ tensorRel R (i + j)) ?_
+      (by simp [TensorPower.gMul_def])
+      (fun _ _ _ _ hw₁ hw₂ ↦ by
+        rw [TensorPower.gMul_def, TensorProduct.add_tmul, map_add]; exact add_mem hw₁ hw₂)
+      (fun s _ _ hw ↦ by
+        rw [TensorPower.gMul_def, ← TensorProduct.smul_tmul', map_smul]
+        exact Submodule.smul_mem _ s hw) hu
+    rintro _ ⟨x, k, hk, a, b, hab, hxk, hxk1, rfl⟩
+    rw [TensorPower.tprod_mul_tprod]
+    refine Submodule.subset_span ⟨Fin.append x y, k, by omega, a, b, hab, ?_, ?_, rfl⟩
+    · exact (Fin.append_left x y ⟨k, by omega⟩).trans hxk
+    · exact (Fin.append_left x y ⟨k + 1, hk⟩).trans hxk1
 
 /-- Left concatenation preserves the Steinberg relation submodule (`T_i · R_j ⊆ R_{i+j}`). -/
 theorem gMul_mem_tensorRel_right {i j : ℕ} {u : ⨂[ℤ]^i (Additive Rˣ)} {v : ⨂[ℤ]^j (Additive Rˣ)}
@@ -304,33 +293,27 @@ theorem gMul_mem_tensorRel_right {i j : ℕ} {u : ⨂[ℤ]^i (Additive Rˣ)} {v 
     GradedMonoid.GMul.mul (A := fun m ↦ ⨂[ℤ]^m (Additive Rˣ)) u v ∈ tensorRel R (i + j) := by
   induction u using PiTensorProduct.induction_on with
   | add u₁ u₂ hu₁ hu₂ =>
-    rw [TensorPower.gMul_def, TensorProduct.add_tmul, map_add]
-    exact add_mem hu₁ hu₂
+    rw [TensorPower.gMul_def, TensorProduct.add_tmul, map_add]; exact add_mem hu₁ hu₂
   | smul_tprod r x =>
     rw [TensorPower.gMul_def, ← TensorProduct.smul_tmul', map_smul]
     refine Submodule.smul_mem _ r ?_
     rw [← TensorPower.gMul_def]
     refine Submodule.span_induction
       (p := fun w _ ↦ GradedMonoid.GMul.mul (A := fun m ↦ ⨂[ℤ]^m (Additive Rˣ))
-        (PiTensorProduct.tprod ℤ x) w ∈ tensorRel R (i + j)) ?_ ?_ ?_ ?_ hv
-    · rintro _ ⟨y, k, hk, a, b, hab, hyk, hyk1, rfl⟩
-      rw [TensorPower.tprod_mul_tprod]
-      refine Submodule.subset_span ⟨Fin.append x y, i + k, by omega, a, b, hab, ?_, ?_, rfl⟩
-      · have h1 : (⟨i + k, by omega⟩ : Fin (i + j)) = Fin.natAdd i ⟨k, by omega⟩ := rfl
-        rw [h1, Fin.append_right, hyk]
-      · have h2 : (⟨i + k + 1, by omega⟩ : Fin (i + j)) = Fin.natAdd i ⟨k + 1, hk⟩ := by
-          ext
-          dsimp
-          omega
-        rw [h2, Fin.append_right, hyk1]
-    · rw [TensorPower.gMul_def, TensorProduct.tmul_zero, map_zero]
-      exact zero_mem _
-    · intro w₁ w₂ _ _ hw₁ hw₂
-      rw [TensorPower.gMul_def, TensorProduct.tmul_add, map_add]
-      exact add_mem hw₁ hw₂
-    · intro s w _ hw
-      rw [TensorPower.gMul_def, TensorProduct.tmul_smul, map_smul]
-      exact Submodule.smul_mem _ s hw
+        (PiTensorProduct.tprod ℤ x) w ∈ tensorRel R (i + j)) ?_
+      (by simp [TensorPower.gMul_def])
+      (fun _ _ _ _ hw₁ hw₂ ↦ by
+        rw [TensorPower.gMul_def, TensorProduct.tmul_add, map_add]; exact add_mem hw₁ hw₂)
+      (fun s _ _ hw ↦ by
+        rw [TensorPower.gMul_def, TensorProduct.tmul_smul, map_smul]
+        exact Submodule.smul_mem _ s hw) hv
+    rintro _ ⟨y, k, hk, a, b, hab, hyk, hyk1, rfl⟩
+    rw [TensorPower.tprod_mul_tprod]
+    refine Submodule.subset_span ⟨Fin.append x y, i + k, by omega, a, b, hab, ?_, ?_, rfl⟩
+    · exact (Fin.append_right x y ⟨k, by omega⟩).trans hyk
+    · have h2 : (⟨i + k + 1, by omega⟩ : Fin (i + j)) = Fin.natAdd i ⟨k + 1, hk⟩ :=
+        Fin.ext (by dsimp; omega)
+      rw [h2, Fin.append_right, hyk1]
 
 /-- The degree-`n` Steinberg relation submodule `R_n` is the sum over `i + 2 + j = n` of the
 images of `T_i · R_2 · T_j` under concatenation. -/
@@ -346,42 +329,29 @@ theorem tensorRel_eq_iSup (R : Type u) [CommSemiring R] (n : ℕ) :
   · rw [tensorRel, Submodule.span_le]
     rintro _ ⟨x, k, hk, a, b, hab, hxk, hxk1, rfl⟩
     have hsum : k + 2 + (n - (k + 2)) = n := by omega
-    refine Submodule.mem_iSup_of_mem k
-      (Submodule.mem_iSup_of_mem (n - (k + 2)) (Submodule.mem_iSup_of_mem hsum ?_))
-    refine Submodule.subset_span ?_
-    let u : Fin k → Additive Rˣ := fun p ↦ x ⟨p.1, by omega⟩
-    let v : Fin (n - (k + 2)) → Additive Rˣ := fun q ↦ x ⟨k + 2 + q.1, by omega⟩
+    refine Submodule.mem_iSup_of_mem k (Submodule.mem_iSup_of_mem (n - (k + 2))
+      (Submodule.mem_iSup_of_mem hsum (Submodule.subset_span ?_)))
     have hr : PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b] ∈ tensorRel R 2 :=
       Submodule.subset_span ⟨![Additive.ofMul a, Additive.ofMul b], 0, by decide, a, b, hab, rfl,
         rfl, rfl⟩
-    refine ⟨PiTensorProduct.tprod ℤ u, _, hr, PiTensorProduct.tprod ℤ v, ?_⟩
+    refine ⟨PiTensorProduct.tprod ℤ (fun p : Fin k ↦ x ⟨p.1, by omega⟩), _, hr,
+      PiTensorProduct.tprod ℤ (fun q : Fin (n - (k + 2)) ↦ x ⟨k + 2 + q.1, by omega⟩), ?_⟩
     rw [TensorPower.tprod_mul_tprod, TensorPower.tprod_mul_tprod, TensorPower.cast_tprod]
     refine congrArg (PiTensorProduct.tprod ℤ) (funext fun p ↦ ?_)
     dsimp only [Function.comp_apply]
-    have hp : (Fin.cast hsum.symm p).1 = p.1 := rfl
     by_cases h1 : p.1 < k
-    · have hc : Fin.cast hsum.symm p =
-          Fin.castAdd (n - (k + 2)) (Fin.castAdd 2 ⟨p.1, h1⟩) := by
-        ext; exact hp
-      rw [hc, Fin.append_left, Fin.append_left]
+    · rw [show Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.castAdd 2 ⟨p.1, h1⟩) from rfl,
+        Fin.append_left, Fin.append_left]
     · by_cases h2 : p.1 = k
-      · have hc : Fin.cast hsum.symm p =
-            Fin.castAdd (n - (k + 2)) (Fin.natAdd k (0 : Fin 2)) := by
-          ext; dsimp; omega
-        have hp' : p = ⟨k, by omega⟩ := Fin.ext h2
-        rw [hc, Fin.append_left, Fin.append_right, hp', hxk]
-        rfl
+      · rw [show Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.natAdd k (0 : Fin 2)) from
+          Fin.ext (by dsimp; omega), Fin.append_left, Fin.append_right,
+          show p = ⟨k, by omega⟩ from Fin.ext h2, hxk]; rfl
       · by_cases h3 : p.1 = k + 1
-        · have hc : Fin.cast hsum.symm p =
-              Fin.castAdd (n - (k + 2)) (Fin.natAdd k (1 : Fin 2)) := by
-            ext; dsimp; omega
-          have hp' : p = ⟨k + 1, hk⟩ := Fin.ext h3
-          rw [hc, Fin.append_left, Fin.append_right, hp', hxk1]
-          rfl
-        · have hc : Fin.cast hsum.symm p =
-              Fin.natAdd (k + 2) ⟨p.1 - (k + 2), by omega⟩ := by
-            ext; dsimp; omega
-          rw [hc, Fin.append_right]
+        · rw [show Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.natAdd k (1 : Fin 2)) from
+            Fin.ext (by dsimp; omega), Fin.append_left, Fin.append_right,
+            show p = ⟨k + 1, hk⟩ from Fin.ext h3, hxk1]; rfl
+        · rw [show Fin.cast hsum.symm p = Fin.natAdd (k + 2) ⟨p.1 - (k + 2), by omega⟩ from
+            Fin.ext (by dsimp; omega), Fin.append_right]
           exact congrArg x (Fin.ext (by dsimp; omega))
   · rintro _ ⟨u, r, hr, v, rfl⟩
     exact cast_mem_tensorRel h (gMul_mem_tensorRel_left (gMul_mem_tensorRel_right hr))
@@ -515,22 +485,16 @@ theorem ker_mkRingHom_comp_toTensorAlgebra (R : Type u) [CommSemiring R] (n : �
     rintro _ ⟨x, k, hk, a, b, hab, hxk, hxk1, rfl⟩
     rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.comp_apply,
       TensorPower.toTensorAlgebra_tprod, AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_apply]
-    have hcomp : x = Additive.ofMul ∘ (Additive.toMul ∘ x) := rfl
-    rw [hcomp, mkRingHom_tprod]
+    change RingQuot.mkRingHom (milnorRel R)
+      (TensorAlgebra.tprod ℤ (Additive Rˣ) n (Additive.ofMul ∘ (Additive.toMul ∘ x))) = 0
+    rw [mkRingHom_tprod]
     set l : List Rˣ := List.ofFn (Additive.toMul ∘ x)
     have hlen : l.length = n := List.length_ofFn
     have hsplit : l = l.take k ++ a :: b :: l.drop (k + 2) := by
-      have hd1 : l.drop k = l[k] :: l.drop (k + 1) := List.drop_eq_getElem_cons (by omega)
-      have hd2 : l.drop (k + 1) = l[k + 1] :: l.drop (k + 2) :=
-        List.drop_eq_getElem_cons (by omega)
-      have hg0 : l[k] = a := by
-        simp only [l, List.getElem_ofFn, Function.comp_apply, hxk, toMul_ofMul]
-      have hg1 : l[k + 1] = b := by
-        simp only [l, List.getElem_ofFn, Function.comp_apply, hxk1, toMul_ofMul]
-      calc l = l.take k ++ l.drop k := (List.take_append_drop k l).symm
-        _ = l.take k ++ l[k] :: l.drop (k + 1) := by rw [hd1]
-        _ = l.take k ++ l[k] :: l[k + 1] :: l.drop (k + 2) := by rw [hd2]
-        _ = l.take k ++ a :: b :: l.drop (k + 2) := by rw [hg0, hg1]
+      conv_lhs =>
+        rw [← List.take_append_drop k l, List.drop_eq_getElem_cons (by omega),
+          List.drop_eq_getElem_cons (by omega)]
+      simp [l, hxk, hxk1]
     rw [hsplit]
     exact symbol_eq_zero_of_add_eq_one _ _ hab
 
@@ -545,12 +509,10 @@ theorem ker_mkRingHom_inf_range_pow (R : Type u) [CommSemiring R] (n : ℕ) :
     rw [← TensorPower.range_toTensorAlgebra] at ht_deg
     rcases ht_deg with ⟨w, rfl⟩
     refine ⟨w, ?_, rfl⟩
-    rw [← ker_mkRingHom_comp_toTensorAlgebra]
-    exact ht_ker
+    rw [← ker_mkRingHom_comp_toTensorAlgebra]; exact ht_ker
   · rintro ⟨w, hw, rfl⟩
     refine ⟨?_, TensorPower.toTensorAlgebra_mem_range_pow n w⟩
-    rw [← ker_mkRingHom_comp_toTensorAlgebra] at hw
-    exact hw
+    rw [← ker_mkRingHom_comp_toTensorAlgebra] at hw; exact hw
 
 /-- The canonical linear map from `⨂[ℤ]^n (Additive Rˣ)` onto `MilnorK.degree R n`. -/
 private noncomputable def tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
@@ -572,8 +534,7 @@ private theorem tensorPowerToDegree_surjective (R : Type u) [CommSemiring R] (n 
 private theorem ker_tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
     LinearMap.ker (tensorPowerToDegree R n) = tensorRel R n := by
   rw [← ker_mkRingHom_comp_toTensorAlgebra R n]
-  refine Submodule.ext fun w ↦ ?_
-  simp [tensorPowerToDegree]
+  exact Submodule.ext fun _ ↦ by simp [tensorPowerToDegree]
 
 /-- **The homogeneous Steinberg quotient bridge.** In every degree `n`, the degree-`n` Milnor
 group is canonically isomorphic to `(⨂[ℤ]^n (Additive Rˣ)) ⧸ tensorRel R n`. -/
@@ -616,11 +577,9 @@ noncomputable def degreeZeroEquiv (R : Type u) [CommSemiring R] : degree R 0 ≃
 @[simp]
 theorem degreeZeroEquiv_one : degreeZeroEquiv R ⟨1, one_mem_degree_zero⟩ = 1 := by
   have h1 : (⟨1, one_mem_degree_zero⟩ : degree R 0) =
-      ⟨symbol (List.ofFn (Fin.elim0 : Fin 0 → Rˣ)), by
-        simpa only [List.length_ofFn] using
-          symbol_mem_degree (List.ofFn (Fin.elim0 : Fin 0 → Rˣ))⟩ := by
-    ext
-    simp
+      ⟨symbol (List.ofFn (Fin.elim0 : Fin 0 → Rˣ)),
+        by simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn Fin.elim0)⟩ := by
+    ext; simp
   rw [h1, degreeZeroEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     degreeEquivQuotTensorPower_symbol]
   simp [Submodule.quotEquivOfEqBot]
@@ -629,20 +588,16 @@ theorem degreeZeroEquiv_one : degreeZeroEquiv R ⟨1, one_mem_degree_zero⟩ = 1
 @[simp]
 theorem coe_degreeZeroEquiv_symm (k : ℤ) : ((degreeZeroEquiv R).symm k : MilnorK R) = k := by
   have h1 : ((degreeZeroEquiv R).symm 1 : MilnorK R) = 1 := by
-    have := congrArg (fun x : degree R 0 ↦ (x : MilnorK R))
+    simpa only [degreeZeroEquiv_one] using congrArg Subtype.val
       ((degreeZeroEquiv R).symm_apply_apply ⟨1, one_mem_degree_zero⟩)
-    simpa only [degreeZeroEquiv_one] using this
-  have hk : k = k • (1 : ℤ) := by simp
-  conv_lhs => rw [hk, map_zsmul, Submodule.coe_smul, h1]
+  conv_lhs => rw [show k = k • (1 : ℤ) by simp, map_zsmul, Submodule.coe_smul, h1]
   simp
 
 /-- `MilnorK R` is always nontrivial: `1 ≠ 0`, witnessed by `degreeZeroEquiv : K₀ᴹ(R) ≃ ℤ`. -/
-instance instNontrivial (R : Type u) [CommSemiring R] : Nontrivial (MilnorK R) := by
-  refine nontrivial_of_ne 1 0 fun h ↦ ?_
-  have h' : (⟨1, one_mem_degree_zero⟩ : degree R 0) = 0 := Subtype.ext h
-  have h10 : (1 : ℤ) = 0 := by
-    simpa [degreeZeroEquiv_one] using congrArg (degreeZeroEquiv R) h'
-  exact one_ne_zero h10
+instance instNontrivial (R : Type u) [CommSemiring R] : Nontrivial (MilnorK R) :=
+  nontrivial_of_ne 1 0 fun h ↦ one_ne_zero (α := ℤ) <| by
+    simpa [degreeZeroEquiv_one] using
+      congrArg (degreeZeroEquiv R) (Subtype.ext h : (⟨1, one_mem_degree_zero⟩ : degree R 0) = 0)
 
 /-- Canonical identification `MilnorK.degree R 1 ≃ₗ[ℤ] Additive Rˣ`. -/
 noncomputable def degreeOneEquiv (R : Type u) [CommSemiring R] : degree R 1 ≃ₗ[ℤ] Additive Rˣ :=
@@ -656,10 +611,8 @@ theorem degreeOneEquiv_ofUnit (a : Rˣ) :
     degreeOneEquiv R ⟨ofUnit a, ofUnit_mem_degree_one a⟩ = Additive.ofMul a := by
   have h1 : (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) =
       ⟨symbol (List.ofFn (fun _ : Fin 1 ↦ a)), by
-        simpa only [List.length_ofFn] using
-          symbol_mem_degree (List.ofFn (fun _ : Fin 1 ↦ a))⟩ := by
-    ext
-    simp
+        simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn fun _ : Fin 1 ↦ a)⟩ := by
+    ext; simp
   rw [h1, degreeOneEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     degreeEquivQuotTensorPower_symbol]
   simp [Submodule.quotEquivOfEqBot]
@@ -668,18 +621,16 @@ theorem degreeOneEquiv_ofUnit (a : Rˣ) :
 @[simp]
 theorem coe_degreeOneEquiv_symm (a : Rˣ) :
     ((degreeOneEquiv R).symm (Additive.ofMul a) : MilnorK R) = ofUnit a := by
-  have h := congrArg (fun x : degree R 1 ↦ (x : MilnorK R))
+  simpa only [degreeOneEquiv_ofUnit] using congrArg Subtype.val
     ((degreeOneEquiv R).symm_apply_apply ⟨ofUnit a, ofUnit_mem_degree_one a⟩)
-  simpa only [degreeOneEquiv_ofUnit] using h
 
 /-- The degree-one map `ofUnit : Rˣ → MilnorK R` is injective. -/
 theorem ofUnit_injective (R : Type u) [CommSemiring R] :
-    Function.Injective (ofUnit (R := R)) := fun a b h ↦ by
-  have h' : (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) =
-      ⟨ofUnit b, ofUnit_mem_degree_one b⟩ := Subtype.ext h
-  have heq := congrArg (degreeOneEquiv R) h'
-  simp only [degreeOneEquiv_ofUnit] at heq
-  exact Additive.ofMul.injective heq
+    Function.Injective (ofUnit (R := R)) := fun a b h ↦
+  Additive.ofMul.injective <| by
+    simpa only [degreeOneEquiv_ofUnit] using congrArg (degreeOneEquiv R)
+      (Subtype.ext h : (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) =
+        ⟨ofUnit b, ofUnit_mem_degree_one b⟩)
 
 /-- Canonical identification `MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`. -/
 noncomputable def degreeTwoEquiv (R : Type u) [CommSemiring R] :
@@ -699,8 +650,7 @@ theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
       mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ : degree R 2) =
       ⟨symbol (List.ofFn ![a, b]),
         by simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn ![a, b])⟩ := by
-    ext
-    simp
+    ext; simp
   rw [h2, degreeTwoEquiv, LinearEquiv.trans_apply, degreeEquivQuotTensorPower_symbol]
   apply (Submodule.Quotient.equiv (steinbergRelations R) (tensorRel R 2)
     (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)).toAddEquiv.toIntLinearEquiv
@@ -717,10 +667,9 @@ theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
 @[simp]
 theorem coe_degreeTwoEquiv_symm_symbol (a b : Rˣ) :
     ((degreeTwoEquiv R).symm (TauCeti.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
-  have h := congrArg (fun x : degree R 2 ↦ (x : MilnorK R))
+  simpa only [degreeTwoEquiv_ofUnit_mul] using congrArg Subtype.val
     ((degreeTwoEquiv R).symm_apply_apply
       ⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩)
-  simpa only [degreeTwoEquiv_ofUnit_mul] using h
 
 /-- Naturality of `degreeTwoEquiv`: for any ring homomorphism `f : R →+* S`, the degree-`2`
 restriction of `MilnorK.map f` corresponds to `SymbolGroup.map f`. -/
@@ -735,8 +684,7 @@ theorem degreeTwoEquiv_map {S : Type w} [CommSemiring S] (f : R →+* S) (x : de
         map_mem_degree f ((degreeTwoEquiv R).symm (TauCeti.symbol a b)).2⟩ : degree S 2) =
         ⟨ofUnit (Units.map f.toMonoidHom a) * ofUnit (Units.map f.toMonoidHom b),
           mul_mem_degree (ofUnit_mem_degree_one _) (ofUnit_mem_degree_one _)⟩ := by
-      ext
-      simp
+      ext; simp
     rw [hmem, degreeTwoEquiv_ofUnit_mul, SymbolGroup.map_symbol]
   | add y₁ y₂ hy₁ hy₂ =>
     have hadd : (⟨map f ((degreeTwoEquiv R).symm (y₁ + y₂) : MilnorK R),
@@ -745,8 +693,7 @@ theorem degreeTwoEquiv_map {S : Type w} [CommSemiring S] (f : R →+* S) (x : de
           map_mem_degree f ((degreeTwoEquiv R).symm y₁).2⟩ +
         ⟨map f ((degreeTwoEquiv R).symm y₂ : MilnorK R),
           map_mem_degree f ((degreeTwoEquiv R).symm y₂).2⟩ := by
-      ext
-      simp
+      ext; simp
     rw [hadd, map_add, map_add, hy₁, hy₂]
 
 end TauCeti.MilnorK

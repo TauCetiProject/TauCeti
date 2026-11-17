@@ -44,6 +44,8 @@ This file defines the ring, symbols, degree submodules, universal property, and 
 
 ## Main results
 
+* `TauCeti.MilnorK.isSteinbergPairing_mul_ofUnit`: `(a, b) ↦ ofUnit a * ofUnit b` is a Steinberg
+  pairing.
 * `TauCeti.MilnorK.symbol_mul_entry`: multilinearity of `MilnorK.symbol` in any entry.
 * `TauCeti.MilnorK.symbol_eq_zero_of_add_eq_one`: vanishing of symbols with consecutive
   complementary entries.
@@ -123,6 +125,14 @@ theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
   rw [ofUnit_def, ofUnit_def, ← map_mul]
   exact (RingQuot.mkRingHom_rel (r := milnorRel R) ⟨a, b, h, rfl, rfl⟩).trans (map_zero _)
+
+/-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` in `MilnorK R` is a Steinberg
+pairing. -/
+theorem isSteinbergPairing_mul_ofUnit :
+    IsSteinbergPairing (fun a b : Rˣ ↦ ofUnit a * ofUnit b) where
+  map_mul_left a₁ a₂ b := by rw [ofUnit_mul, add_mul]
+  map_mul_right a b₁ b₂ := by rw [ofUnit_mul, mul_add]
+  map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_of_add_eq_one hab
 
 /-- The degree-one unit map bundled as a `ℤ`-linear map `Additive Rˣ →ₗ[ℤ] MilnorK R`. -/
 def ofUnitHom (R : Type u) [CommSemiring R] : Additive Rˣ →ₗ[ℤ] MilnorK R :=
@@ -258,43 +268,26 @@ theorem ringHom_ext {A : Type v} [Semiring A] {f g : MilnorK R →+* A}
   refine RingQuot.ringQuot_ext f g (RingHom.ext fun x ↦ ?_)
   induction x using TensorAlgebra.induction with
   | algebraMap r =>
-    -- Every integer `r` is mapped to `f (r : _) = g (r : _)`, even in a general semiring,
-    -- because the images of `-1` and `1` are mutual additive inverses.
-    have hneg : ∀ y : TensorAlgebra ℤ (Additive Rˣ),
-        f (RingQuot.mkRingHom (milnorRel R) y) = g (RingQuot.mkRingHom (milnorRel R) y) →
-        f (RingQuot.mkRingHom (milnorRel R) (-y)) = g (RingQuot.mkRingHom (milnorRel R) (-y)) := by
-      intro y hy
-      have hf : f (RingQuot.mkRingHom (milnorRel R) (-y)) +
-          f (RingQuot.mkRingHom (milnorRel R) y) = 0 := by
-        rw [← map_add, ← map_add, neg_add_cancel, map_zero, map_zero]
-      have hg : g (RingQuot.mkRingHom (milnorRel R) y) +
-          g (RingQuot.mkRingHom (milnorRel R) (-y)) = 0 := by
-        rw [← map_add, ← map_add, add_neg_cancel, map_zero, map_zero]
-      calc f (RingQuot.mkRingHom (milnorRel R) (-y))
-          = f (RingQuot.mkRingHom (milnorRel R) (-y)) +
-              (g (RingQuot.mkRingHom (milnorRel R) y) +
-                g (RingQuot.mkRingHom (milnorRel R) (-y))) := by rw [hg, add_zero]
-        _ = (f (RingQuot.mkRingHom (milnorRel R) (-y)) +
-              f (RingQuot.mkRingHom (milnorRel R) y)) +
-              g (RingQuot.mkRingHom (milnorRel R) (-y)) := by rw [hy, add_assoc]
-        _ = g (RingQuot.mkRingHom (milnorRel R) (-y)) := by rw [hf, zero_add]
     cases r with
-    | ofNat n =>
-      simp only [Int.ofNat_eq_natCast, map_natCast]
+    | ofNat n => simp only [Int.ofNat_eq_natCast, map_natCast]
     | negSucc n =>
-      have hnat : f (RingQuot.mkRingHom (milnorRel R) ((n + 1 : ℕ) : TensorAlgebra ℤ _)) =
-          g (RingQuot.mkRingHom (milnorRel R) ((n + 1 : ℕ) : TensorAlgebra ℤ _)) := by
-        simp only [map_natCast]
-      have h' := hneg ((n + 1 : ℕ) : TensorAlgebra ℤ (Additive Rˣ)) hnat
-      simpa only [RingHom.comp_apply, eq_intCast, Int.cast_negSucc] using h'
-  | ι x =>
-    exact h (Additive.toMul x)
-  | mul x y hx hy =>
-    simp only [RingHom.comp_apply, map_mul] at hx hy ⊢
-    rw [hx, hy]
-  | add x y hx hy =>
-    simp only [RingHom.comp_apply, map_add] at hx hy ⊢
-    rw [hx, hy]
+      set y : TensorAlgebra ℤ (Additive Rˣ) := Nat.cast (n + 1)
+      have hf : f (RingQuot.mkRingHom (milnorRel R) (-y)) + (n + 1 : ℕ) = 0 := by
+        rw [← map_natCast (f.comp (RingQuot.mkRingHom (milnorRel R))), RingHom.comp_apply,
+          ← map_add, ← map_add, neg_add_cancel, map_zero, map_zero]
+      have hg : (n + 1 : ℕ) + g (RingQuot.mkRingHom (milnorRel R) (-y)) = 0 := by
+        rw [← map_natCast (g.comp (RingQuot.mkRingHom (milnorRel R))), RingHom.comp_apply,
+          ← map_add, ← map_add, add_neg_cancel, map_zero, map_zero]
+      have hneg : f (RingQuot.mkRingHom (milnorRel R) (-y)) =
+          g (RingQuot.mkRingHom (milnorRel R) (-y)) := by
+        calc f (RingQuot.mkRingHom (milnorRel R) (-y))
+            = f (RingQuot.mkRingHom (milnorRel R) (-y)) +
+                ((n + 1 : ℕ) + g (RingQuot.mkRingHom (milnorRel R) (-y))) := by rw [hg, add_zero]
+          _ = g (RingQuot.mkRingHom (milnorRel R) (-y)) := by rw [← add_assoc, hf, zero_add]
+      simpa only [RingHom.comp_apply, eq_intCast, Int.cast_negSucc, y] using hneg
+  | ι x => exact h (Additive.toMul x)
+  | mul x y hx hy => simp only [RingHom.comp_apply, map_mul] at hx hy ⊢; rw [hx, hy]
+  | add x y hx hy => simp only [RingHom.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
 
 /-- Two `ℤ`-algebra homomorphisms out of `MilnorK R` agree if they agree on every `ofUnit a`. -/
 theorem algHom_ext {A : Type v} [Semiring A] [Algebra ℤ A] {f g : MilnorK R →ₐ[ℤ] A}
@@ -319,12 +312,8 @@ theorem lift_ofUnit {A : Type v} [Ring A] (f : Additive Rˣ →+ A)
     (hf : ∀ a b : Rˣ, (a : R) + b = 1 → f (Additive.ofMul a) * f (Additive.ofMul b) = 0)
     (a : Rˣ) :
     lift f hf (ofUnit a) = f (Additive.ofMul a) := by
-  have hof :
-      ofUnit a = RingQuot.mkAlgHom ℤ (milnorRel R) (TensorAlgebra.ι ℤ (Additive.ofMul a)) := by
-    rw [ofUnit_def, ← RingQuot.mkAlgHom_coe ℤ (milnorRel R)]
-    rfl
-  rw [hof, lift, RingQuot.liftAlgHom_mkAlgHom_apply, TensorAlgebra.lift_ι_apply,
-    AddMonoidHom.coe_toIntLinearMap]
+  rw [lift, ofUnit_def, ← RingQuot.mkAlgHom_coe ℤ (milnorRel R)]
+  exact (RingQuot.liftAlgHom_mkAlgHom_apply ℤ _ _ _).trans (by simp)
 
 /-- Evaluating `MilnorK.lift f hf` on a symbol multiplies the images of its entries. -/
 theorem lift_symbol {A : Type v} [Ring A] (f : Additive Rˣ →+ A)
@@ -339,8 +328,7 @@ def map {S : Type w} [CommSemiring S] (f : R →+* S) : MilnorK R →ₐ[ℤ] Mi
   lift
     { toFun := fun a ↦ ofUnit (Units.map f.toMonoidHom (Additive.toMul a))
       map_zero' := by simp
-      map_add' := fun a b ↦ by
-        rw [toMul_add, map_mul, ofUnit_mul] }
+      map_add' := fun a b ↦ by rw [toMul_add, map_mul, ofUnit_mul] }
     (fun a b hab ↦ ofUnit_mul_ofUnit_of_add_eq_one (by simp [← map_add, hab]))
 
 /-- `MilnorK.map f` sends `ofUnit a` to `ofUnit (Units.map f a)`. -/
@@ -359,17 +347,12 @@ theorem map_symbol {S : Type w} [CommSemiring S] (f : R →+* S) (l : List Rˣ) 
 theorem map_mem_degree {S : Type w} [CommSemiring S] (f : R →+* S) {n : ℕ} {x : MilnorK R}
     (hx : x ∈ degree R n) : map f x ∈ degree S n := by
   rw [degree_eq_span_symbol] at hx
-  refine Submodule.span_induction (p := fun y _ ↦ map f y ∈ degree S n) ?_ ?_ ?_ ?_ hx
-  · rintro _ ⟨l, rfl, rfl⟩
-    rw [map_symbol]
-    simpa only [List.length_map] using symbol_mem_degree (l.map (Units.map f.toMonoidHom))
-  · simp
-  · intro x y _ _ hx hy
-    rw [map_add]
-    exact add_mem hx hy
-  · intro r x _ hx
-    rw [map_smul]
-    exact Submodule.smul_mem _ r hx
+  refine Submodule.span_induction (p := fun y _ ↦ map f y ∈ degree S n) ?_ (by simp)
+    (fun _ _ _ _ hx hy ↦ by simpa using add_mem hx hy)
+    (fun r _ _ hx ↦ by simpa using Submodule.smul_mem _ r hx) hx
+  rintro _ ⟨l, rfl, rfl⟩
+  rw [map_symbol]
+  simpa only [List.length_map] using symbol_mem_degree (l.map (Units.map f.toMonoidHom))
 
 /-- The identity ring homomorphism induces the identity on `MilnorK`. -/
 @[simp]

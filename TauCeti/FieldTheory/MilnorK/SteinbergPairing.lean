@@ -114,25 +114,19 @@ variable {R : Type u} [Semiring R] {A : Type v} [AddGroup A] {c : Rˣ → Rˣ �
 
 /-- A Steinberg pairing into an additive group vanishes when its first argument is `1`. -/
 theorem map_one_left (hc : IsSteinbergPairing c) (b : Rˣ) : c 1 b = 0 := by
-  have h := hc.map_mul_left 1 1 b
-  rw [mul_one] at h
-  exact add_left_cancel (h.symm.trans (add_zero _).symm)
+  simpa using hc.map_mul_left 1 1 b
 
 /-- A Steinberg pairing into an additive group vanishes when its second argument is `1`. -/
 theorem map_one_right (hc : IsSteinbergPairing c) (a : Rˣ) : c a 1 = 0 := by
-  have h := hc.map_mul_right a 1 1
-  rw [mul_one] at h
-  exact add_left_cancel (h.symm.trans (add_zero _).symm)
+  simpa using hc.map_mul_right a 1 1
 
 /-- Inverting the first argument of a Steinberg pairing negates its value. -/
-theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a b := by
-  refine eq_neg_of_add_eq_zero_left ?_
-  rw [← hc.map_mul_left, inv_mul_cancel, hc.map_one_left]
+theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a b :=
+  eq_neg_of_add_eq_zero_left (by rw [← hc.map_mul_left, inv_mul_cancel, hc.map_one_left])
 
 /-- Inverting the second argument of a Steinberg pairing negates its value. -/
-theorem map_inv_right (hc : IsSteinbergPairing c) (a b : Rˣ) : c a b⁻¹ = -c a b := by
-  refine eq_neg_of_add_eq_zero_left ?_
-  rw [← hc.map_mul_right, inv_mul_cancel, hc.map_one_right]
+theorem map_inv_right (hc : IsSteinbergPairing c) (a b : Rˣ) : c a b⁻¹ = -c a b :=
+  eq_neg_of_add_eq_zero_left (by rw [← hc.map_mul_right, inv_mul_cancel, hc.map_one_right])
 
 /-- Raising the first argument to a natural power scales the pairing. -/
 theorem map_pow_left (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) :
@@ -153,16 +147,14 @@ theorem map_zpow_left (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℤ) :
     c (a ^ n) b = n • c a b := by
   cases n with
   | ofNat n => simpa using hc.map_pow_left a b n
-  | negSucc n =>
-    rw [zpow_negSucc, hc.map_inv_left, hc.map_pow_left, negSucc_zsmul]
+  | negSucc n => rw [zpow_negSucc, hc.map_inv_left, hc.map_pow_left, negSucc_zsmul]
 
 /-- Raising the second argument to an integer power scales the pairing. -/
 theorem map_zpow_right (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℤ) :
     c a (b ^ n) = n • c a b := by
   cases n with
   | ofNat n => simpa using hc.map_pow_right a b n
-  | negSucc n =>
-    rw [zpow_negSucc, hc.map_inv_right, hc.map_pow_right, negSucc_zsmul]
+  | negSucc n => rw [zpow_negSucc, hc.map_inv_right, hc.map_pow_right, negSucc_zsmul]
 
 end AddGroup
 
@@ -174,27 +166,19 @@ variable {F : Type u} [Field F] {A : Type v} [AddGroup A] {c : Fˣ → Fˣ → A
 `(a, -a)`. -/
 theorem map_neg_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a (-a) = 0 := by
   by_cases ha : a = 1
-  · subst ha
-    exact hc.map_one_left _
-  · have h1a : 1 - (a : F) ≠ 0 := sub_ne_zero.mpr fun h ↦ ha (Units.ext h.symm)
-    have h1ai : 1 - ((a⁻¹ : Fˣ) : F) ≠ 0 :=
-      sub_ne_zero.mpr fun h ↦ ha (inv_eq_one.mp (Units.ext h.symm))
-    let u : Fˣ := Units.mk0 (1 - (a : F)) h1a
-    let v : Fˣ := Units.mk0 (1 - ((a⁻¹ : Fˣ) : F)) h1ai
-    have hu : (a : F) + u = 1 := by simp [u]
-    have hv : ((a⁻¹ : Fˣ) : F) + v = 1 := by simp [v]
+  · subst ha; exact hc.map_one_left _
+  · let u : Fˣ := Units.mk0 (1 - (a : F)) (sub_ne_zero.mpr fun h ↦ ha (Units.ext h.symm))
+    let v : Fˣ := Units.mk0 (1 - ((a⁻¹ : Fˣ) : F))
+      (sub_ne_zero.mpr fun h ↦ ha (inv_eq_one.mp (Units.ext h.symm)))
     -- The complementary units satisfy `u = (-a) * v`, since `(-a) * (1 - a⁻¹) = 1 - a`.
     have huv : u = -a * v := Units.ext (by
       simp only [u, v, Units.val_mk0, Units.val_mul, Units.val_neg, Units.val_inv_eq_inv_val]
       rw [mul_sub, mul_one, neg_mul, mul_inv_cancel₀ (Units.ne_zero a), sub_neg_eq_add, add_comm,
         sub_eq_add_neg])
-    have hcu : c a u = 0 := hc.map_add_eq_one a u hu
-    have hcv : c a v = 0 := by
-      have h' := hc.map_add_eq_one a⁻¹ v hv
-      rw [hc.map_inv_left] at h'
-      exact neg_eq_zero.mp h'
-    rw [huv, hc.map_mul_right, hcv, add_zero] at hcu
-    exact hcu
+    have hcu : c a u = 0 := hc.map_add_eq_one a u (by simp [u])
+    have hcv : c a v = 0 := neg_eq_zero.mp <| by
+      rw [← hc.map_inv_left]; exact hc.map_add_eq_one a⁻¹ v (by simp [v])
+    rwa [huv, hc.map_mul_right, hcv, add_zero] at hcu
 
 /-- For any unit `a` of a field, a Steinberg pairing kills `(-a, a)`. -/
 theorem map_neg_self_left (hc : IsSteinbergPairing c) (a : Fˣ) : c (-a) a = 0 := by

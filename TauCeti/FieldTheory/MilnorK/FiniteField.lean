@@ -14,7 +14,6 @@ public import TauCeti.FieldTheory.MilnorK.SteinbergPairing
 import Mathlib.Algebra.Ring.Parity
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.FieldTheory.Finite.EulerCriterion
-import TauCeti.FieldTheory.MilnorK.SkewSymmetry
 
 /-!
 # Vanishing of Milnor K-theory and Steinberg pairings over finite fields
