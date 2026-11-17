@@ -9,17 +9,18 @@ public import TauCeti.Combinatorics.PermutationTriple.CycleData
 public import TauCeti.Combinatorics.RibbonGraph.Classification
 
 /-!
-# Cell degrees and cycle data of a bipartite ribbon graph
+# Cycle data of a bipartite ribbon graph
 
-Completing `blackDegree` and `whiteDegree` from `TauCeti.Combinatorics.RibbonGraph.Basic`, this
-file defines `faceDegree` as the number of edges in a face orbit of `facePerm` and packages the
-black-vertex, white-vertex, and face degree multisets into `BipartiteRibbonGraph.cycleData`. Its
-entries equal `fullCycleType` of `rotB`, `rotW`, and `facePerm`, so edge numberings identify
-`Γ.cycleData` with `(Γ.toPermutationTriple ν).cycleData` and graph isomorphisms preserve it.
+Using `blackDegree`, `whiteDegree`, and `faceDegree` from `TauCeti.Combinatorics.RibbonGraph.Basic`,
+this file packages the black-vertex, white-vertex, and face degree multisets into
+`BipartiteRibbonGraph.cycleData`. Its entries equal `fullCycleType` of `rotB`, `rotW`, and
+`facePerm`, so edge numberings identify `Γ.cycleData` with `(Γ.toPermutationTriple ν).cycleData`
+and graph isomorphisms preserve it.
 
 ## Main definitions and results
 
-* `TauCeti.BipartiteRibbonGraph.faceDegree`, `TauCeti.BipartiteRibbonGraph.cycleData`.
+* `TauCeti.BipartiteRibbonGraph.cycleData`: the triple of black-vertex, white-vertex, and face
+  degree partitions.
 * `TauCeti.BipartiteRibbonGraph.fullCycleType_rotB`, `fullCycleType_rotW`, `fullCycleType_facePerm`.
 * `TauCeti.BipartiteRibbonGraph.cycleData_toPermutationTriple`,
   `PermutationTriple.cycleData_ribbonGraph`, `BipartiteRibbonGraph.Iso.cycleData_eq`.
@@ -41,30 +42,6 @@ universe u v
 namespace BipartiteRibbonGraph
 
 variable (Γ : BipartiteRibbonGraph.{u})
-
-/-! ### Face degrees -/
-
-/-- The degree of a face of `Γ`: the number of edges in that orbit of `facePerm`. -/
-def faceDegree (f : Γ.Face) : ℕ := Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f}
-
-/-- The degree of a face is the number of edges belonging to that face orbit. -/
-theorem faceDegree_def (f : Γ.Face) :
-    Γ.faceDegree f = Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f} := (rfl)
-
-/-- Every face orbit is nonempty, so every face has positive degree. -/
-theorem faceDegree_pos (f : Γ.Face) : 0 < Γ.faceDegree f := by
-  obtain ⟨e, rfl⟩ := Quotient.exists_rep f; exact Fintype.card_pos_iff.mpr ⟨⟨e, rfl⟩⟩
-
-/-- Every edge belongs to a unique face orbit, so the face degrees sum to `|E|`. -/
-theorem sum_faceDegree : ∑ f, Γ.faceDegree f = Fintype.card Γ.E := by
-  simp only [faceDegree, ← Fintype.card_sigma]
-  exact Fintype.card_congr (Equiv.sigmaFiberEquiv fun e : Γ.E => (Quotient.mk'' e : Γ.Face))
-
-/-- An isomorphism of bipartite ribbon graphs preserves the degree of each face. -/
-@[simp] theorem Iso.faceDegree_eq {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
-    (φ : Γ.Iso Δ) (f : Γ.Face) : Δ.faceDegree (φ.faceEquiv f) = Γ.faceDegree f :=
-  (Fintype.card_congr <| φ.edge.subtypeEquiv fun e => by
-    rw [← φ.faceEquiv_mk, φ.faceEquiv.injective.eq_iff]).symm
 
 /-! ### Full cycle types of rotations and the face permutation -/
 

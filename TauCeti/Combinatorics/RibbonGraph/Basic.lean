@@ -27,8 +27,8 @@ away from the incident edges.
 The product of the two vertex rotations determines the face permutation, whose orbits are the
 faces.  Gluing a disc into each face gives a closed oriented surface, one for each connected
 component, and `eulerChar` is its Euler characteristic `|B| + |W| - |E| + |F|`.  This file also
-provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the two
-incidence degree-sum formulas, and the copy of a ribbon graph in a higher universe.
+provides morphisms, isomorphisms, automorphisms, connected components, vertex and face degrees,
+the three degree-sum formulas, and the copy of a ribbon graph in a higher universe.
 
 ## References
 
@@ -203,6 +203,14 @@ def whiteDegree (w : Γ.W) : ℕ :=
 theorem whiteDegree_def (w : Γ.W) :
     Γ.whiteDegree w = Fintype.card {e : Γ.E // Γ.whiteEnd e = w} := (rfl)
 
+/-- The degree of a face of `Γ`: the number of edges in that orbit of `facePerm`. -/
+def faceDegree (f : Γ.Face) : ℕ :=
+  Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f}
+
+/-- The degree of a face is the number of edges belonging to that face orbit. -/
+theorem faceDegree_def (f : Γ.Face) :
+    Γ.faceDegree f = Fintype.card {e : Γ.E // (Quotient.mk'' e : Γ.Face) = f} := (rfl)
+
 /-- Every black vertex has positive degree. -/
 theorem blackDegree_pos (b : Γ.B) : 0 < Γ.blackDegree b := by
   obtain ⟨e, he⟩ := Γ.blackEnd_surjective b
@@ -212,6 +220,11 @@ theorem blackDegree_pos (b : Γ.B) : 0 < Γ.blackDegree b := by
 theorem whiteDegree_pos (w : Γ.W) : 0 < Γ.whiteDegree w := by
   obtain ⟨e, he⟩ := Γ.whiteEnd_surjective w
   exact Fintype.card_pos_iff.mpr ⟨⟨e, he⟩⟩
+
+/-- Every face orbit is nonempty, so every face has positive degree. -/
+theorem faceDegree_pos (f : Γ.Face) : 0 < Γ.faceDegree f := by
+  obtain ⟨e, rfl⟩ := Quotient.exists_rep f
+  exact Fintype.card_pos_iff.mpr ⟨⟨e, rfl⟩⟩
 
 /-- The sum of the black vertex degrees is the number of edges. -/
 theorem sum_blackDegree : ∑ b, Γ.blackDegree b = Fintype.card Γ.E := by
@@ -224,6 +237,12 @@ theorem sum_whiteDegree : ∑ w, Γ.whiteDegree w = Fintype.card Γ.E := by
   simp only [whiteDegree]
   rw [← Fintype.card_sigma]
   exact Fintype.card_congr (Equiv.sigmaFiberEquiv Γ.whiteEnd)
+
+/-- Every edge belongs to a unique face orbit, so the face degrees sum to `|E|`. -/
+theorem sum_faceDegree : ∑ f, Γ.faceDegree f = Fintype.card Γ.E := by
+  simp only [faceDegree]
+  rw [← Fintype.card_sigma]
+  exact Fintype.card_congr (Equiv.sigmaFiberEquiv fun e : Γ.E ↦ (Quotient.mk'' e : Γ.Face))
 
 /-- The number of faces, counting every orbit of the face permutation. -/
 @[expose] def faceCount : ℕ :=
@@ -551,6 +570,14 @@ theorem whiteDegree_eq (f : Γ.Iso Δ) (w : Γ.W) :
   symm
   exact Fintype.card_congr <| f.edge.subtypeEquiv fun e ↦ by
     rw [f.map_whiteEnd, f.white.injective.eq_iff]
+
+/-- An isomorphism preserves the degree of each face. -/
+@[simp]
+theorem faceDegree_eq (φ : Γ.Iso Δ) (f : Γ.Face) :
+    Δ.faceDegree (φ.faceEquiv f) = Γ.faceDegree f := by
+  symm
+  exact Fintype.card_congr <| φ.edge.subtypeEquiv fun e ↦ by
+    rw [← φ.faceEquiv_mk, φ.faceEquiv.injective.eq_iff]
 
 /-- Isomorphic bipartite ribbon graphs have the same number of faces. -/
 theorem faceCount_eq (f : Γ.Iso Δ) : Γ.faceCount = Δ.faceCount :=
