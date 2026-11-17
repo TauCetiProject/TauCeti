@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.CommSq
 public import Mathlib.Topology.Category.TopCat.Basic
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
+public import TauCeti.Topology.ContinuousMap.RestrictPreimage
 
 /-!
 # Fibres of morphisms in `TopCat`

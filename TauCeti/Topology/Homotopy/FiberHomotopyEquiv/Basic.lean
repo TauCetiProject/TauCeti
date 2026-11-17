@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Equiv
+public import TauCeti.Topology.ContinuousMap.RestrictPreimage
 
 /-!
 # Fibre homotopy equivalences
@@ -20,9 +21,10 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 ## Main definitions
 
 * `TauCeti.FiberHomotopyEquiv p q`: fibre homotopy equivalences from `p` to `q`.
-* `TauCeti.fiberMap`: the map of fibres induced by a map over `B`.
-* `TauCeti.restrictPreimageMap`: the map of preimages of a subset `S` of `B` induced by a map over
-  `B`.
+* `TauCeti.fiberMap`: the map of fibres induced by a map over `B`, the case `S = {b}` of
+  `TauCeti.restrictPreimageMap`.
+* `TauCeti.restrictPreimageHomotopyWith`: a homotopy over `B` restricted to the preimages of a
+  subset `S` of `B`.
 * `TauCeti.FiberHomotopyEquiv.refl`, `TauCeti.FiberHomotopyEquiv.symm`,
   `TauCeti.FiberHomotopyEquiv.trans`: identity, symmetry, and composition of fibre homotopy
   equivalences.
@@ -75,58 +77,26 @@ theorem apply_of_comp_eq {p : C(E, B)} {q : C(E', B)} {f : C(E, E')} (hf : q.com
 /-- The map of fibres over `b` induced by a map `f` over `B`. -/
 def fiberMap {p : C(E, B)} {q : C(E', B)} (f : C(E, E')) (hf : q.comp f = p) (b : B) :
     C({e // p e = b}, {e' // q e' = b}) :=
-  ⟨fun e ↦ ⟨f e, apply_of_comp_eq hf e⟩, (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
+  restrictPreimageMap {b} hf
 
 @[simp]
 theorem coe_fiberMap {p : C(E, B)} {q : C(E', B)} (f : C(E, E')) (hf : q.comp f = p) (b : B)
     (e : {e // p e = b}) : (fiberMap f hf b e : E') = f e :=
-  (rfl)
+  coe_restrictPreimageMap {b} hf e
 
 theorem fiberMap_comp {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)} (f : C(E, E'))
     (g : C(E', E'')) (hf : q.comp f = p) (hg : r.comp g = q) (b : B) :
     (fiberMap g hg b).comp (fiberMap f hf b) =
       fiberMap (g.comp f) (by rw [← ContinuousMap.comp_assoc, hg, hf]) b :=
-  (rfl)
+  restrictPreimageMap_comp {b} hf hg
 
 theorem fiberMap_id {p : C(E, B)} (b : B) :
     fiberMap (.id E) (ContinuousMap.comp_id p) b = .id _ :=
-  (rfl)
+  restrictPreimageMap_id {b}
 
 theorem apply_homotopyWith {p : C(E, B)} {f₀ f₁ : C(E, E)}
     (H : HomotopyWith f₀ f₁ fun f ↦ p.comp f = p) (t : I) (e : E) : p (H (t, e)) = p e :=
   congr($(H.prop' t) e)
-
-/-- A homotopy through maps over `B` restricts to a homotopy of the induced maps of the fibres. -/
-def fiberHomotopy {p : C(E, B)} {f₀ f₁ : C(E, E)}
-    (H : HomotopyWith f₀ f₁ fun f ↦ p.comp f = p) (h₀ : p.comp f₀ = p) (h₁ : p.comp f₁ = p)
-    (b : B) : Homotopy (fiberMap f₀ h₀ b) (fiberMap f₁ h₁ b) where
-  toFun y := ⟨H (y.1, y.2), (apply_homotopyWith H y.1 y.2).trans y.2.2⟩
-  continuous_toFun := (H.continuous.comp (continuous_fst.prodMk
-    (continuous_subtype_val.comp continuous_snd))).subtype_mk _
-  map_zero_left e := Subtype.ext (H.apply_zero e)
-  map_one_left e := Subtype.ext (H.apply_one e)
-
-/-- A map `f` over `B` restricts to a map between the preimages of a subset `S` of `B`. -/
-def restrictPreimageMap {p : C(E, B)} {q : C(E', B)} (S : Set B) {f : C(E, E')}
-    (hf : q.comp f = p) : C(p ⁻¹' S, q ⁻¹' S) :=
-  ⟨fun e : p ⁻¹' S ↦ ⟨f e.1, by
-    rw [Set.mem_preimage, ← ContinuousMap.comp_apply, hf]
-    exact e.2⟩, by fun_prop⟩
-
-@[simp]
-theorem coe_restrictPreimageMap {p : C(E, B)} {q : C(E', B)} (S : Set B) {f : C(E, E')}
-    (hf : q.comp f = p) (e : p ⁻¹' S) : (restrictPreimageMap S hf e : E') = f e :=
-  (rfl)
-
-theorem restrictPreimageMap_comp {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)} (S : Set B)
-    {f : C(E, E')} {g : C(E', E'')} (hf : q.comp f = p) (hg : r.comp g = q) :
-    (restrictPreimageMap S hg).comp (restrictPreimageMap S hf) =
-      restrictPreimageMap (f := g.comp f) S (by rw [← ContinuousMap.comp_assoc, hg, hf]) :=
-  (rfl)
-
-theorem restrictPreimageMap_id {p : C(E, B)} (S : Set B) :
-    restrictPreimageMap (f := .id E) S (ContinuousMap.comp_id p) = .id _ :=
-  (rfl)
 
 /-- A homotopy through maps over `B` restricts to a homotopy through maps over `S` between the
 restrictions to the preimage of `S`. -/
@@ -138,9 +108,15 @@ def restrictPreimageHomotopyWith {p : C(E, B)} (S : Set B) {f₀ f₁ : C(E, E)}
     rw [Set.mem_preimage, apply_homotopyWith H]
     exact x.2.2⟩
   continuous_toFun := by fun_prop
-  map_zero_left e := Subtype.ext (H.apply_zero e)
-  map_one_left e := Subtype.ext (H.apply_one e)
+  map_zero_left e := Subtype.ext ((H.apply_zero e).trans (coe_restrictPreimageMap S h₀ e).symm)
+  map_one_left e := Subtype.ext ((H.apply_one e).trans (coe_restrictPreimageMap S h₁ e).symm)
   prop' t := ContinuousMap.ext fun e ↦ Subtype.ext (apply_homotopyWith H t e)
+
+/-- A homotopy through maps over `B` restricts to a homotopy of the induced maps of the fibres. -/
+def fiberHomotopy {p : C(E, B)} {f₀ f₁ : C(E, E)}
+    (H : HomotopyWith f₀ f₁ fun f ↦ p.comp f = p) (h₀ : p.comp f₀ = p) (h₁ : p.comp f₁ = p)
+    (b : B) : Homotopy (fiberMap f₀ h₀ b) (fiberMap f₁ h₁ b) :=
+  (restrictPreimageHomotopyWith {b} H h₀ h₁).toHomotopy
 
 namespace FiberHomotopyEquiv
 
@@ -162,12 +138,12 @@ def fiber (b : B) : HomotopyEquiv {e // p e = b} {e' // q e' = b} where
 
 @[simp]
 theorem coe_fiber_apply (b : B) (e : {e // p e = b}) : (Φ.fiber b e : E') = Φ.toFun e :=
-  (rfl)
+  coe_fiberMap _ _ b e
 
 @[simp]
 theorem coe_fiber_symm_apply (b : B) (e' : {e' // q e' = b}) :
     ((Φ.fiber b).symm e' : E) = Φ.invFun e' :=
-  (rfl)
+  coe_fiberMap _ _ b e'
 
 /-- Forgetting that the maps and homotopies lie over `B`, a fibre homotopy equivalence is a
 **homotopy equivalence of the total spaces**. -/
@@ -331,8 +307,10 @@ def restrictPreimage {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) 
     FiberHomotopyEquiv (p.restrictPreimage S) (q.restrictPreimage S) where
   toFun := restrictPreimageMap S Φ.comp_toFun
   invFun := restrictPreimageMap S Φ.comp_invFun
-  comp_toFun := ContinuousMap.ext fun e ↦ Subtype.ext congr($(Φ.comp_toFun) e)
-  comp_invFun := ContinuousMap.ext fun e ↦ Subtype.ext congr($(Φ.comp_invFun) e)
+  comp_toFun := ContinuousMap.ext fun e ↦ Subtype.ext <|
+    (congrArg q (coe_restrictPreimageMap S Φ.comp_toFun e)).trans congr($(Φ.comp_toFun) e)
+  comp_invFun := ContinuousMap.ext fun e ↦ Subtype.ext <|
+    (congrArg p (coe_restrictPreimageMap S Φ.comp_invFun e)).trans congr($(Φ.comp_invFun) e)
   left_inv := by
     rw [restrictPreimageMap_comp, ← restrictPreimageMap_id S]
     exact Φ.left_inv.map fun H ↦ restrictPreimageHomotopyWith S H _ _
@@ -344,13 +322,13 @@ def restrictPreimage {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) 
 theorem coe_restrictPreimage_toFun_apply {p : C(E, B)} {q : C(E', B)}
     (Φ : FiberHomotopyEquiv p q) (S : Set B) (e : p ⁻¹' S) :
     ((Φ.restrictPreimage S).toFun e : E') = Φ.toFun e :=
-  (rfl)
+  coe_restrictPreimageMap S Φ.comp_toFun e
 
 @[simp]
 theorem coe_restrictPreimage_invFun_apply {p : C(E, B)} {q : C(E', B)}
     (Φ : FiberHomotopyEquiv p q) (S : Set B) (e' : q ⁻¹' S) :
     ((Φ.restrictPreimage S).invFun e' : E) = Φ.invFun e' :=
-  (rfl)
+  coe_restrictPreimageMap S Φ.comp_invFun e'
 
 end RestrictPreimage
 
