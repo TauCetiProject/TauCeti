@@ -92,25 +92,19 @@ theorem connectedComponent_eq_iInter_isClopen (x : X) :
     simpa [not_or, or_iff_not_imp_left] using disjoint_right.1 hF hy
   have hxs : x ∈ s := mem_iInter₂.2 fun i _ => i.2.2
   -- `T` lies in the clopen neighbourhood `s ∩ u` or `s ∩ v` of `x`, hence in `a` or in `b`.
-  have hTs : ∀ w : Set X, IsClopen (s ∩ w) → x ∈ w → T ⊆ w := fun w hw hxw =>
+  have hTs : ∀ w w' : Set X, IsOpen w → IsOpen w' → s ⊆ w ∪ w' → s ∩ w ∩ w' = ∅ → x ∈ w →
+      T ⊆ w := fun w w' hw hw' hcover hempty hxw =>
     (iInter_subset (fun s : { s : Set X // IsClopen s ∧ x ∈ s } => (s : Set X))
-      ⟨s ∩ w, hw, hxs, hxw⟩).trans inter_subset_right
-  have hcover : s ⊆ (s ∩ u) ∪ (s ∩ v) := fun y hy => (hsK y hy).1.imp (⟨hy, ·⟩) (⟨hy, ·⟩)
-  have hdisj' : Disjoint (s ∩ u) (s ∩ v) :=
-    disjoint_left.2 fun y hyu hyv => (hsK y hyu.1).2 ⟨hyu.2, hyv.2⟩
+      ⟨s ∩ w, isClopen_inter_of_disjoint_cover_clopen' hs hcover hw hw' hempty, hxs, hxw⟩).trans
+      inter_subset_right
+  have hcover : s ⊆ u ∪ v := fun y hy => (hsK y hy).1
+  have hempty : s ∩ u ∩ v = ∅ :=
+    eq_empty_of_forall_notMem fun y hy => (hsK y hy.1.1).2 ⟨hy.1.2, hy.2⟩
   rcases (hsK x hxs).1 with hxu | hxv
-  · left
-    have hsu : IsClopen (s ∩ (s ∩ u)) :=
-      isClopen_inter_of_disjoint_cover_clopen hs hcover (hs.isOpen.inter huo)
-        (hs.isOpen.inter hvo) hdisj'
-    rw [← inter_assoc, inter_self] at hsu
-    exact fun y hyT => (hab hyT).resolve_right fun hyb => hub (hTs u hsu hxu hyT) hyb
-  · right
-    have hsv : IsClopen (s ∩ (s ∩ v)) :=
-      isClopen_inter_of_disjoint_cover_clopen hs (union_comm (s ∩ u) _ ▸ hcover)
-        (hs.isOpen.inter hvo) (hs.isOpen.inter huo) hdisj'.symm
-    rw [← inter_assoc, inter_self] at hsv
-    exact fun y hyT => (hab hyT).resolve_left fun hya => hva (hTs v hsv hxv hyT) hya
+  · exact .inl fun y hyT => (hab hyT).resolve_right
+      (hub <| hTs u v huo hvo hcover hempty hxu hyT)
+  · exact .inr fun y hyT => (hab hyT).resolve_left (hva <| hTs v u hvo huo
+      (union_comm u v ▸ hcover) (by rwa [inter_right_comm]) hxv hyT)
 
 end PrespectralSpace
 
