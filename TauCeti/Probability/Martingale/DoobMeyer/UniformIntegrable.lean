@@ -23,10 +23,11 @@ the terminal values `A^i_{N i}` form a uniformly integrable family
 This is the compactness step of the construction of the Doob–Meyer compensator: along dyadic
 grids, a subsequence of convex combinations of these discrete compensators converges, and its
 limit compensates `X`. The proof bounds each tail integral `∫_{c ≤ A_N} A_N` by increments of `X`
-between stopping times bounded by `T` and `T` itself
+between grid stopping times and the grid end `g i (N i) ≤ T`
 (`MeasureTheory.Submartingale.exists_setIntegral_predictablePart_le`), over events of probability
-at most a multiple of `E[X_T - X_0] / c`; class DL makes these increments uniformly small on
-small events.
+at most a multiple of `E[X_{g i (N i)} - X_{g i 0}] / c`. That expectation is bounded uniformly in
+`i` because class DL bounds `E|X_t|` for `t ≤ T`, and class DL makes the increments uniformly small
+on small events.
 
 ## References
 

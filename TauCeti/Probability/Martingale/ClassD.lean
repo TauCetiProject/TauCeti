@@ -31,6 +31,9 @@ stopping times on `[0, ∞)`.
 * `TauCeti.BoundedStoppingTime`: stopping times bounded by a horizon `T`, the index set of the
   class DL family, with deterministic times `TauCeti.BoundedStoppingTime.const`, at which a
   process stops at its value there (`TauCeti.BoundedStoppingTime.stoppedValue_const`).
+* `TauCeti.FiniteHorizonStoppingTime`: stopping times bounded by some horizon, the index set of
+  the class D family, with the inclusion
+  `TauCeti.BoundedStoppingTime.toFiniteHorizonStoppingTime`.
 * `TauCeti.IsClassD`, `TauCeti.IsClassDL`: the two classes, with the characterizations
   `TauCeti.isClassD_iff` and `TauCeti.isClassDL_iff` and the eliminations
   `TauCeti.IsClassD.uniformIntegrable`, `TauCeti.IsClassDL.uniformIntegrable` and
@@ -74,12 +77,27 @@ theorem BoundedStoppingTime.stoppedValue_const {T t : ι} (ht : t ≤ T) :
     stoppedValue X (BoundedStoppingTime.const (ℱ := ℱ) ht).1 = X t :=
   MeasureTheory.stoppedValue_const X t
 
+/-- Stopping times bounded by some horizon, the index set of the class D family. -/
+abbrev FiniteHorizonStoppingTime (ℱ : Filtration ι mΩ) :=
+  {τ : Ω → WithTop ι // IsStoppingTime ℱ τ ∧ ∃ T : ι, ∀ ω, τ ω ≤ T}
+
+/-- A stopping time bounded by `T` is bounded by some horizon. -/
+@[expose] def BoundedStoppingTime.toFiniteHorizonStoppingTime {T : ι}
+    (τ : BoundedStoppingTime ℱ T) : FiniteHorizonStoppingTime ℱ :=
+  ⟨τ.1, τ.2.1, T, τ.2.2⟩
+
+omit [Nonempty ι] in
+/-- The inclusion into stopping times bounded by some horizon keeps the stopping time. -/
+@[simp]
+theorem BoundedStoppingTime.val_toFiniteHorizonStoppingTime {T : ι}
+    (τ : BoundedStoppingTime ℱ T) : τ.toFiniteHorizonStoppingTime.1 = τ.1 :=
+  rfl
+
 /-- A process is of **class D** when its values at bounded stopping times form a uniformly
 integrable family. -/
 def IsClassD (X : ι → Ω → E) (ℱ : Filtration ι mΩ) (μ : Measure Ω) : Prop :=
   UniformIntegrable
-    (fun τ : {τ : Ω → WithTop ι // IsStoppingTime ℱ τ ∧ ∃ T : ι, ∀ ω, τ ω ≤ T} ↦
-      stoppedValue X τ.1) 1 μ
+    (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.1) 1 μ
 
 /-- A process is of **class DL** when, for every horizon `T`, its values at stopping times
 bounded by `T` form a uniformly integrable family. -/
@@ -87,9 +105,8 @@ def IsClassDL (X : ι → Ω → E) (ℱ : Filtration ι mΩ) (μ : Measure Ω) 
   ∀ T : ι, UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.1) 1 μ
 
 /-- Unfolding class D: the values at bounded stopping times are uniformly integrable. -/
-theorem isClassD_iff : IsClassD X ℱ μ ↔ UniformIntegrable
-    (fun τ : {τ : Ω → WithTop ι // IsStoppingTime ℱ τ ∧ ∃ T : ι, ∀ ω, τ ω ≤ T} ↦
-      stoppedValue X τ.1) 1 μ :=
+theorem isClassD_iff : IsClassD X ℱ μ ↔
+    UniformIntegrable (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.1) 1 μ :=
   Iff.rfl
 
 /-- Unfolding class DL: for each horizon, the values at stopping times bounded by it are
@@ -99,9 +116,8 @@ theorem isClassDL_iff : IsClassDL X ℱ μ ↔
   Iff.rfl
 
 /-- The values of a process of class D at bounded stopping times are uniformly integrable. -/
-theorem IsClassD.uniformIntegrable (h : IsClassD X ℱ μ) : UniformIntegrable
-    (fun τ : {τ : Ω → WithTop ι // IsStoppingTime ℱ τ ∧ ∃ T : ι, ∀ ω, τ ω ≤ T} ↦
-      stoppedValue X τ.1) 1 μ :=
+theorem IsClassD.uniformIntegrable (h : IsClassD X ℱ μ) :
+    UniformIntegrable (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.1) 1 μ :=
   h
 
 /-- The values of a process of class DL at stopping times bounded by `T` are uniformly
@@ -117,8 +133,8 @@ theorem IsClassDL.integrable_stoppedValue (h : IsClassDL X ℱ μ) {τ : Ω → 
   memLp_one_iff_integrable.1 ((h.uniformIntegrable T).memLp ⟨τ, hτ, hτT⟩)
 
 /-- A process of class D is of class DL. -/
-theorem IsClassD.isClassDL (h : IsClassD X ℱ μ) : IsClassDL X ℱ μ := fun T ↦
-  (h.uniformIntegrable.comp fun τ : BoundedStoppingTime ℱ T ↦ ⟨τ.1, τ.2.1, T, τ.2.2⟩ :)
+theorem IsClassD.isClassDL (h : IsClassD X ℱ μ) : IsClassDL X ℱ μ := fun _ ↦
+  h.uniformIntegrable.comp BoundedStoppingTime.toFiniteHorizonStoppingTime
 
 end TauCeti
 
