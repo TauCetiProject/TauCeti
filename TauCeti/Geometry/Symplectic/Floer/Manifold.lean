@@ -218,11 +218,21 @@ theorem hamiltonianOneForm_apply (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ �
   (rfl)
 
 /-- The perturbed derivative is `du - X_K(u)`. -/
+theorem perturbedMFDeriv_eq_sub (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.perturbedMFDeriv Ks Kt u z =
+      -- As in `perturbedMFDeriv`, the difference is taken in maps out of the model `ℝ × ℝ`.
+      HSub.hSub (α := ℝ × ℝ →L[ℝ] TangentSpace I (u z)) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z)
+        (ω.hamiltonianOneForm Ks Kt z (u z)) :=
+  ContinuousLinearMap.ext fun v ↦ (perturbedMFDeriv_apply ω Ks Kt u z v).trans (sub_sub _ _ _)
+
+/-- The perturbed derivative is `du - X_K(u)`, applied to a tangent vector of the domain. -/
 theorem perturbedMFDeriv_apply_eq_sub (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z v : ℝ × ℝ) :
     ω.perturbedMFDeriv Ks Kt u z v =
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u z v - ω.hamiltonianOneForm Ks Kt z (u z) v := by
-  rw [perturbedMFDeriv_apply, hamiltonianOneForm_apply, sub_sub]
+  rw [perturbedMFDeriv_eq_sub]
+  rfl
 
 /-- The real-coordinate component is `∂s u - X_(Ks)`. -/
 @[simp]

@@ -127,8 +127,6 @@ theorem exists_hasMFDerivAt_graph_isComplexLinearMap_iff {u : ℝ × ℝ → M} 
       HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℝ × ℝ).prod I) (fun w ↦ (w, u w)) z
         ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod du) :=
     (hasMFDerivAt_id z).prodMk hu.hasMFDerivAt
-  have hP : ω.perturbedMFDeriv Ks Kt u z = du - ω.hamiltonianOneForm Ks Kt z (u z) :=
-    ContinuousLinearMap.ext fun w ↦ perturbedMFDeriv_apply_eq_sub ω Ks Kt u z w
   have hlin : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
         (ω.floerGraphAlmostComplex J Ks Kt (z, u z))
         ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod du :
@@ -136,8 +134,8 @@ theorem exists_hasMFDerivAt_graph_isComplexLinearMap_iff {u : ℝ × ℝ → M} 
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
         (ω.perturbedMFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] TangentSpace I (u z)) := by
     rw [ContinuousLinearMap.coe_prod, ContinuousLinearMap.coe_id, floerGraphAlmostComplex_def,
-      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, hP,
-      ContinuousLinearMap.toLinearMap_sub]
+      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, perturbedMFDeriv_eq_sub]
+    rfl
   constructor
   · rintro ⟨Γ', hΓ', hΓ'lin⟩
     -- `u` is the second component of its graph.
@@ -263,18 +261,8 @@ theorem floerGraphForm_eq (c : ℝ) (ζ ζ' : (ℝ × ℝ) × TangentSpace I p.2
   rw [floerGraphForm_def, fderiv_add_mvfderiv_apply hω Ks, fderiv_add_mvfderiv_apply hω Ks,
     fderiv_add_mvfderiv_apply hω Kt, fderiv_add_mvfderiv_apply hω Kt, hamiltonianCurvature_def,
     poissonBracket_def]
-  simp only [← hω.symplecticFormAt_apply, hamiltonianOneForm_apply, map_sub, map_add, map_smul,
-    LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
-  set ω₀ := hω.symplecticFormAt p.2
-  set Xs := ω.hamiltonianVectorField (Ks p.1) p.2
-  set Xt := ω.hamiltonianVectorField (Kt p.1) p.2
-  have hXs : ω₀.toBilinForm Xs Xs = 0 := ω₀.self_eq_zero Xs
-  have hXt : ω₀.toBilinForm Xt Xt = 0 := ω₀.self_eq_zero Xt
-  have hXts : ω₀.toBilinForm Xt Xs = -ω₀.toBilinForm Xs Xt := (ω₀.neg_eq Xs Xt).symm
-  have hv : ω₀.toBilinForm ζ.2 Xs = -ω₀.toBilinForm Xs ζ.2 := (ω₀.neg_eq Xs ζ.2).symm
-  have hv' : ω₀.toBilinForm ζ.2 Xt = -ω₀.toBilinForm Xt ζ.2 := (ω₀.neg_eq Xt ζ.2).symm
-  linear_combination ζ'.1.1 * hv + ζ'.1.2 * hv' - ζ.1.1 * ζ'.1.1 * hXs -
-    ζ.1.2 * ζ'.1.2 * hXt - ζ.1.2 * ζ'.1.1 * hXts
+  simp only [← hω.symplecticFormAt_apply, hamiltonianOneForm_apply]
+  exact ((hω.symplecticFormAt p.2).apply_sub_smul_add_smul_add_mul _ _ _ _ _ _ _ _ _ _ _).symm
 
 /-- Where `c + R_K ≠ 0`, Gromov's taming form at `p = (z, x)` is the skew product of
 `(c + R_K(z, x)) ds ∧ dt` and `ω` along the Hamiltonian one-form `X_K(z, x)`. -/
