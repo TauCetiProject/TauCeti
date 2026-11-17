@@ -465,14 +465,9 @@ theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_section_pullback_core_iff {f : C
           (E := (A.pullback f).core.Fiber) x' (σ (f x'))) x ↔
       ContMDiffAt IY (IY.prod 𝓘(𝕜, Fin A.rank → 𝕜)) m
         (fun y ↦ TotalSpace.mk' (Fin A.rank → 𝕜) y (σ y)) (f x) := by
-  have hlift :
-      (fun x' ↦ A.pullbackLift f
-        (TotalSpace.mk' (Fin (A.pullback f).rank → 𝕜)
-          (E := (A.pullback f).core.Fiber) x' (σ (f x')))) =
-        (fun y ↦ TotalSpace.mk' (Fin A.rank → 𝕜) y (σ y)) ∘ f :=
-    funext fun x' ↦ A.pullbackLift_mk f x' (σ (f x'))
-  exact (contMDiffAt_core_pullback_iff A (hf.contMDiffAt.of_le hm)).trans
-    ((and_iff_right contMDiffAt_id).trans (hlift ▸ hf.contMDiffAt_comp_iff hm))
+  rw [← (pullbackTotalSpaceDiffeomorph IX m A f).contMDiffAt_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, pullbackTotalSpaceDiffeomorph_apply]
+  exact (hf.contMDiffAt_section_iff_pullback hm).symm
 
 /-- Along a surjective `C^n` local diffeomorphism `f : C(X, Y)` with `m ≤ n`, a pulled-back section
 `x ↦ σ (f x)` of `A.pullback f` is `C^m` if and only if the section `σ` of `A` is `C^m`. -/
@@ -484,9 +479,9 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_section_pullback_core_iff {f : C(X, 
           (E := (A.pullback f).core.Fiber) x (σ (f x))) ↔
       ContMDiff IY (IY.prod 𝓘(𝕜, Fin A.rank → 𝕜)) m
         (fun y ↦ TotalSpace.mk' (Fin A.rank → 𝕜) y (σ y)) := by
-  refine ⟨fun h y ↦ ?_, fun h x ↦ ((hf x).contMDiffAt_section_pullback_core_iff hm A).2 (h (f x))⟩
-  obtain ⟨x, rfl⟩ := hsurj y
-  exact ((hf x).contMDiffAt_section_pullback_core_iff hm A).1 (h x)
+  rw [← (pullbackTotalSpaceDiffeomorph IX m A f).contMDiff_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, pullbackTotalSpaceDiffeomorph_apply]
+  exact (hf.contMDiff_section_iff_pullback hsurj hm).symm
 
 end LocalDiffeomorph
 
