@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.Derivative
 
 /-!
 # Analytic substitution on open discs
@@ -14,10 +14,13 @@ Let `g` be a series on the open disc of radius `S₀`. Suppose that its Gauss no
 smaller closed disc is strictly less than `R₀`. Substitution by `g` then defines a continuous
 ring homomorphism from series on the open disc of radius `R₀` to those on the open disc of
 radius `S₀`. It is the convergent sum `∑ aₙ gⁿ`, not formal substitution: the constant
-coefficient of `g` need not vanish.
+coefficient of `g` need not vanish. When `g` is formally substitutable (`PowerSeries.HasSubst`),
+analytic substitution agrees with formal substitution (`PowerSeries.subst`).
 
 Restriction to any smaller closed disc identifies this sum with evaluation in the corresponding
-Banach algebra. This gives the local Gauss bounds and compatibility with point evaluation.
+Banach algebra. This gives the local Gauss bounds and compatibility with point evaluation,
+radius restriction, bounded coefficient homomorphisms, and the ordinary derivative (`(f ∘ g)' =
+(f' ∘ g) · g'`).
 
 ## References
 
@@ -254,5 +257,91 @@ theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
     (fun s ↦ by simpa only [norm_restrict_X] using s.2.2)
     (RingHom.id _) continuous_id (fun _ ↦ rfl) rfl
   exact (RingHom.congr_fun heq f).symm
+
+omit [Fact (0 < T₀)] in
+/-- When the inner series is formally substitutable (`PowerSeries.HasSubst`), analytic
+substitution agrees on underlying formal power series with `PowerSeries.subst`. -/
+theorem coe_analyticSubst_eq_subst (hsub : PowerSeries.HasSubst (g : R⟦X⟧))
+    (f : OnOpenDisc.subring R R₀) :
+    (analyticSubst g hg f : R⟦X⟧) = (f : R⟦X⟧).subst (g : R⟦X⟧) := by
+  ext m
+  have hfin := coeff_subst_finite' hsub (f : R⟦X⟧) m
+  simp only [smul_eq_mul] at hfin
+  rw [coeff_analyticSubst, coeff_subst' hsub]
+  simp only [smul_eq_mul, tsum_eq_finsum hfin]
+
+omit [Fact (0 < T₀)] in
+/-- Substituting `0` extracts the constant coefficient as a constant open-disc series. -/
+@[simp]
+theorem analyticSubst_zero
+    (h0 : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s (0 : OnOpenDisc.subring R S₀)‖ < R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    analyticSubst 0 h0 f =
+      OnOpenDisc.polynomialHom (Polynomial.C (constantCoeff (f : R⟦X⟧))) := by
+  apply Subtype.ext
+  ext m
+  rw [coeff_analyticSubst, tsum_eq_single 0]
+  · simp [coeff_zero_eq_constantCoeff, coeff_C]
+  · intro n hn
+    simp [zero_pow hn]
+
+/-- Restricting the target radius after analytic substitution substitutes the restricted inner
+series. -/
+theorem radiusHom_analyticSubst (hTS : T₀ ≤ S₀) (f : OnOpenDisc.subring R R₀) :
+    radiusHom hTS (analyticSubst g hg f) =
+      analyticSubst (radiusHom hTS g)
+        (fun t ↦ by simpa only [restrict_radiusHom] using hg ⟨t, t.2.1, t.2.2.trans_le hTS⟩) f := by
+  have heq := eq_analyticSubst (radiusHom hTS g)
+    (fun t ↦ by simpa only [restrict_radiusHom] using hg ⟨t, t.2.1, t.2.2.trans_le hTS⟩)
+    ((radiusHom hTS).comp (analyticSubst g hg))
+    ((uniformContinuous_radiusHom hTS).continuous.comp (continuous_analyticSubst g hg))
+    (fun a ↦ by simp) (by simp)
+  exact RingHom.congr_fun heq f
+
+omit [Fact (0 < T₀)] in
+/-- Analytic substitution commutes with restricting the source radius when the inner series takes
+values inside the smaller source disc. -/
+theorem analyticSubst_radiusHom {R₁ : ℝ} (hR : R₀ ≤ R₁)
+    (hg' : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₁) (f : OnOpenDisc.subring R R₁) :
+    analyticSubst g hg (radiusHom hR f) = analyticSubst g hg' f := by
+  have heq := eq_analyticSubst g hg' ((analyticSubst g hg).comp (radiusHom hR))
+    ((continuous_analyticSubst g hg).comp (uniformContinuous_radiusHom hR).continuous)
+    (fun a ↦ by simp) (by simp)
+  exact RingHom.congr_fun heq f
+
+omit [Fact (0 < T₀)] in
+/-- Bounded coefficient homomorphisms commute with analytic substitution whenever the mapped inner
+series also satisfies the strict target-disc norm bound. -/
+theorem mapHom_analyticSubst {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    [CompleteSpace S] (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖)
+    (hφg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s (mapHom φ hφ g)‖ < R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    mapHom φ hφ (analyticSubst g hg f) =
+      analyticSubst (mapHom φ hφ g) hφg (mapHom φ hφ f) := by
+  have heq : (mapHom φ hφ).comp (analyticSubst g hg) =
+      (analyticSubst (mapHom φ hφ g) hφg).comp (mapHom φ hφ) :=
+    ringHom_ext ((continuous_mapHom φ hφ).comp (continuous_analyticSubst g hg))
+      ((continuous_analyticSubst (mapHom φ hφ g) hφg).comp (continuous_mapHom φ hφ))
+      (fun a ↦ by simp) (by simp)
+  exact RingHom.congr_fun heq f
+
+omit [Fact (0 < T₀)] in
+/-- **The chain rule for analytic substitution** on open discs:
+`derivative (analyticSubst g hg f) = analyticSubst g hg (derivative f) * derivative g`. -/
+theorem derivative_analyticSubst (f : OnOpenDisc.subring R R₀) :
+    derivative (analyticSubst g hg f) =
+      analyticSubst g hg (derivative f) * derivative g := by
+  have haeval (p : Polynomial R) :
+      analyticSubst g hg (OnOpenDisc.polynomialHom p) = Polynomial.aeval g p :=
+    RingHom.congr_fun (Polynomial.ringHom_ext
+      (fun a ↦ by simp [OnOpenDisc.algebraMap_apply]) (by simp) :
+      (analyticSubst g hg).comp OnOpenDisc.polynomialHom =
+        (Polynomial.aeval g).toRingHom) p
+  refine congrFun ((continuous_derivative.comp (continuous_analyticSubst g hg)).ext_on
+    denseRange_polynomialHom
+    (((continuous_analyticSubst g hg).comp continuous_derivative).mul continuous_const) ?_) f
+  rintro _ ⟨p, rfl⟩
+  simp only [Function.comp_apply, Pi.mul_apply, haeval p, derivative.map_aeval,
+    derivative_polynomialHom, haeval p.derivative, smul_eq_mul]
 
 end TauCeti.PowerSeries.OnOpenDisc
