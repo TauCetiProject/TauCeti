@@ -221,9 +221,10 @@ theorem hasTemperateGrowth_japaneseBracketCpow (z : ℂ) :
   exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
 
 /-- The complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket is smooth. -/
-theorem contDiff_japaneseBracketCpow (z : ℂ) :
-    ContDiff ℝ (⊤ : ℕ∞) (japaneseBracketCpow z : H → ℂ) :=
-  (hasTemperateGrowth_japaneseBracketCpow z).1
+@[fun_prop]
+theorem contDiff_japaneseBracketCpow (z : ℂ) {n : ℕ∞} :
+    ContDiff ℝ n (japaneseBracketCpow z : H → ℂ) :=
+  (hasTemperateGrowth_japaneseBracketCpow z).1.of_le (mod_cast le_top)
 
 /-- The derivative of `x ↦ ⟨x⟩ ^ z` is `z ⟨x⟩ ^ (z - 2) ⟪x, ·⟫`. -/
 theorem hasFDerivAt_japaneseBracketCpow (z : ℂ) (x : H) :
@@ -301,38 +302,38 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le (k : ℕ) :
   -- to this product and the induction hypothesis to the order `z - 2`.
   choose! C hC using fun i (hi : i ≤ k) ↦ ih i (Nat.lt_succ_of_le hi)
   refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * max (C i) 0 * 3 ^ i, fun z x ↦ ?_⟩
-  have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  have hg (i : ℕ) (hi : i ≤ k) (x : H) :
+      ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) x‖ ≤
+        max (C i) 0 * (1 + ‖z - 2‖) ^ i * (1 + ‖x‖ ^ 2) ^ ((z.re - 2) / 2 - i / 2) := by
+    have he : ((z - 2).re - i) / 2 = (z.re - 2) / 2 - i / 2 := by
+      simp only [sub_re, re_ofNat]
+      ring
+    refine (hC i hi (z - 2) x).trans ?_
+    rw [he]
+    gcongr
+    exact le_max_left _ _
   rw [← norm_iteratedFDeriv_fderiv, fderiv_japaneseBracketCpow]
-  refine (norm_iteratedFDeriv_smul_le (contDiff_japaneseBracketCpow (z - 2))
-    (innerSLSmul z).contDiff x (mod_cast le_top)).trans ?_
-  rw [Finset.sum_mul, Finset.sum_mul]
+  refine ((innerSLSmul z).norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
+    (contDiff_japaneseBracketCpow (z - 2)) hg x).trans ?_
+  have hexp : (z.re - 2) / 2 + 1 / 2 - k / 2 = (z.re - (k + 1 : ℕ)) / 2 := by
+    push_cast
+    ring
+  rw [hexp]
+  simp only [Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-  -- In the `i`-th Leibniz term the bracket exponents add up to `(re z - (k + 1)) / 2`.
-  have h₁ := (hC i hik (z - 2) x).trans (mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_right (le_max_left _ (0 : ℝ)) (by positivity)) (by positivity))
-  have h₂ := ((innerSLSmul z).norm_iteratedFDeriv_le_one_add_norm_sq_rpow (k - i) x).trans
-    (mul_le_mul_of_nonneg_right (norm_innerSLSmul_le z) (by positivity))
-  have hexp : (1 + ‖x‖ ^ 2) ^ (((z - 2).re - i) / 2) *
-      (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2) =
-      (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
-    rw [← Real.rpow_add hw, Nat.cast_sub hik]
-    simp only [sub_re, re_ofNat]
-    push_cast
-    ring_nf
-  calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) x‖ *
-        ‖iteratedFDeriv ℝ (k - i) (innerSLSmul z) x‖
-      ≤ k.choose i * (max (C i) 0 * (1 + ‖z - 2‖) ^ i *
-          (1 + ‖x‖ ^ 2) ^ (((z - 2).re - i) / 2)) *
-          ((1 + ‖z‖) * (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2)) := by
-        gcongr
-    _ = k.choose i * max (C i) 0 * ((1 + ‖z - 2‖) ^ i * (1 + ‖z‖)) *
-          ((1 + ‖x‖ ^ 2) ^ (((z - 2).re - i) / 2) *
-            (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2)) := by
+  -- Each derivative of `⟨x⟩ ^ (z - 2)` costs `1 + ‖z - 2‖`, and the linear map costs `1 + ‖z‖`.
+  calc (k.choose i : ℝ) * (max (C i) 0 * (1 + ‖z - 2‖) ^ i) * ‖innerSLSmul z‖ *
+        (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2)
+      = k.choose i * max (C i) 0 * ((1 + ‖z - 2‖) ^ i * ‖innerSLSmul z‖) *
+          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
         ring
+    _ ≤ k.choose i * max (C i) 0 * ((1 + ‖z - 2‖) ^ i * (1 + ‖z‖)) *
+          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+        gcongr
+        exact norm_innerSLSmul_le z
     _ ≤ k.choose i * max (C i) 0 * (3 ^ i * (1 + ‖z‖) ^ (k + 1)) *
           (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
-        rw [hexp]
         gcongr _ * ?_ * _
         exact one_add_norm_sub_two_pow_mul_le z hik
     _ = _ := by ring
