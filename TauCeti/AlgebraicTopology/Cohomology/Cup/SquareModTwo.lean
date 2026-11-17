@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
-import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Data.ZMod.Four
 
@@ -57,51 +56,7 @@ open scoped Simplicial
 
 namespace TopCat
 
-/-! ### Arithmetic in `ℤ/4` -/
-
-/-- The arithmetic on one `2`-simplex: if `a - b + c = 0` and `p - q + r = c a` in `𝔽₂`, the lifts
-`a' + 2 p'`, `b' + 2 q'`, `c' + 2 r'` have alternating sum `0` in `ℤ/4`. -/
-private lemma cast_add_two_mul_cast_sub_add_eq_zero {a b c p q r : ZMod 2} (h : a - b + c = 0)
-    (h' : p - q + r = c * a) :
-    ((ZMod.cast a : ZMod 4) + 2 * ZMod.cast p) - ((ZMod.cast b : ZMod 4) + 2 * ZMod.cast q) +
-      ((ZMod.cast c : ZMod 4) + 2 * ZMod.cast r) = 0 := by
-  obtain rfl : b = c + a := eq_of_sub_eq_zero (by rw [← neg_eq_zero, ← h]; ring)
-  obtain rfl : q = r + p - c * a :=
-    eq_of_sub_eq_zero (by rw [← neg_eq_zero, ← sub_eq_zero.2 h']; ring)
-  rw [ZMod.cast_add_two_mul_cast_sub_mul c a r p]
-  ring
-
-/-- An element of `ℤ/4` killed by `2` reduces to `0` mod two. -/
-private lemma castHom_eq_zero_of_two_smul_eq_zero :
-    ∀ m : ZMod 4, (2 : ℤ) • m = 0 → ZMod.castHom (by norm_num : 2 ∣ 4) (ZMod 2) m = 0 := by
-  decide
-
 variable (X : TopCat.{0})
-
-/-- The cup product of two degree-one cochains with coefficients in `𝔽₂` evaluates a singular
-`2`-simplex `σ` to the product of the value of the first on the front edge `δ 2 σ` and that of the
-second on the back edge `δ 0 σ`. -/
-private lemma cochainValuesEquiv_cupCochain_one_one
-    (φ ψ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{0} (ZMod 2)))).X 1 ⟶
-      𝟙_ (ModuleCat.{0} (ZMod 2))) (σ : (toSSet.obj X) _⦋2⦌) :
-    TauCeti.cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X) 2
-        (TauCeti.ChainComplex.cupCochain (ZMod 2) (X.alexanderWhitneyDiagonal (λ_ _).inv)
-          (λ_ _).hom 1 1 2 rfl φ ψ) σ =
-      TauCeti.cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X) 1 φ
-          ((toSSet.obj X).δ 2 σ) *
-        TauCeti.cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X) 1 ψ
-          ((toSSet.obj X).δ 0 σ) := by
-  have h₀ : SimplexCategory.subinterval (n := 2) 0 1 (by omega) = SimplexCategory.δ 2 := by
-    ext i; fin_cases i <;> rfl
-  have h₁ : SimplexCategory.subinterval (n := 2) 1 1 (by omega) = SimplexCategory.δ 0 := by
-    ext i; fin_cases i <;> rfl
-  simp only [TauCeti.cochainValuesEquiv_apply, SimplicialObject.δ_def]
-  -- `simp` does not apply `ModuleCat.comp_apply` here, where the coefficient object is both the
-  -- monoidal unit and `ModuleCat.of (ZMod 2) (ZMod 2)`, so the formula is unfolded by `rw`.
-  rw [← ModuleCat.comp_apply, ιChainComplex_cupCochain_alexanderWhitneyDiagonal, h₀, h₁,
-    ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
-    ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
-    smul_eq_mul, ModuleCat.comp_apply, ModuleCat.comp_apply]
 
 /-- The lifting step: let `x` be a mod-two `1`-cocycle of `X`, given by its values on singular
 `1`-simplices, whose cup square is the coboundary of the mod-two `1`-cochain with values `y`. If
@@ -132,7 +87,7 @@ private lemma exists_sub_eq_of_two_smul_eq_zero
     refine (TauCeti.cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) (toSSet.obj X) 2).injective
       (funext fun σ ↦ (TauCeti.cochainValuesEquiv_d_comp_one ℤ _ (toSSet.obj X) _ σ).trans ?_)
     rw [hz, hz, hz]
-    exact (cast_add_two_mul_cast_sub_add_eq_zero (hx σ) (hy σ)).trans (congrFun (map_zero
+    exact (ZMod.cast_add_two_mul_cast_sub_add_eq_zero (hx σ) (hy σ)).trans (congrFun (map_zero
       (TauCeti.cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) (toSSet.obj X) 2)) σ).symm
   let ρ : ModuleCat.of ℤ (ZMod 4) ⟶ ModuleCat.of ℤ (ZMod 2) :=
     ModuleCat.ofHom (ZMod.castHom (by norm_num : 2 ∣ 4) (ZMod 2)).toAddMonoidHom.toIntLinearMap
@@ -151,7 +106,7 @@ private lemma exists_sub_eq_of_two_smul_eq_zero
     refine ((singularKronecker_coefficient_naturality X ℤ ρ 1 _).trans ?_).trans
       (map_zero (X.singularKronecker ℤ 1)).symm
     ext c
-    refine castHom_eq_zero_of_two_smul_eq_zero _ ?_
+    refine ZMod.castHom_eq_zero_of_two_smul_eq_zero ?_
     rw [← map_zsmul, h2 c, map_zero]
   -- So the reduction `x` of `x' + 2 y'` is the coboundary of an integral mod-two cochain `u`.
   rw [ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply] at hρ
@@ -182,6 +137,11 @@ theorem singularCup_self_eq_zero_iff_of_two_smul_eq_zero
   rw [singularCup_homologyπ] at hw
   obtain ⟨y, hy⟩ := (HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _
     (CochainComplex.prev_nat_succ 1) _).1 hw
+  -- The front and back edges of a `2`-simplex.
+  have h₀ : SimplexCategory.subinterval (n := 2) 0 1 (by omega) = SimplexCategory.δ 2 := by
+    ext i; fin_cases i <;> rfl
+  have h₁ : SimplexCategory.subinterval (n := 2) 1 1 (by omega) = SimplexCategory.δ 0 := by
+    ext i; fin_cases i <;> rfl
   let e := TauCeti.cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X)
   let x := (X.singularCochainComplex (𝟙_ (ModuleCat.{0} (ZMod 2))) (ZMod 2)
     (𝟙_ (ModuleCat.{0} (ZMod 2)))).iCycles 1 a
@@ -196,7 +156,8 @@ theorem singularCup_self_eq_zero_iff_of_two_smul_eq_zero
         1 2 y).symm.trans (congrArg _ hy))).trans
         ((congrArg (fun φ ↦ e 2 φ σ)
           (TauCeti.ChainComplex.iCycles_cupCycles _ _ 1 1 2 rfl a a)).trans
-          (cochainValuesEquiv_cupCochain_one_one X _ _ σ))))
+          ((cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal X (ZMod 2) 1 1 2 rfl _ _
+            σ).trans (by rw [h₀, h₁]; rfl)))))
   -- So `x` is the coboundary of the mod-two `0`-cochain with values `u`, and `w = 0`.
   refine (HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ (CochainComplex.prev_nat_succ 0)
     _).2 ⟨(e 0).symm u, HomologicalComplex.moduleCat_iCycles_injective _ 1 ?_⟩

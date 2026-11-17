@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 
 /-!
 # The cup product in singular cohomology
@@ -38,7 +39,9 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
 ## Main definitions and results
 
 * `TopCat.ιChainComplex_cupCochain_alexanderWhitneyDiagonal`: the cup product of singular
-  cochains on a singular simplex.
+  cochains on a singular simplex, with
+  `TopCat.cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal` the product of values for
+  coefficients in a commutative ring.
 * `TopCat.singularCup`: the cup product on singular cohomology, with `TopCat.singularCup_homologyπ`
   computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality.
 * `TopCat.singularCup_eq_homologyMap_singularCup`: the cup product along a coefficient morphism
@@ -196,6 +199,30 @@ lemma cupCochain_constCochain_right (X : TopCat.{w})
 end Laws
 
 end Cochain
+
+/-- **The cup product of cochains with coefficients in a commutative ring on a simplex**: for
+cochains `φ` of degree `p` and `ψ` of degree `q` with values in `k`, the value of `φ ⌣ ψ` on a
+singular `(p + q)`-simplex `σ` is the product of the value of `φ` on the front `p`-face of `σ` and
+that of `ψ` on its back `q`-face. -/
+lemma cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (k : Type w)
+    [CommRing k] (p q n : ℕ) (h : p + q = n)
+    (φ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X p ⟶ 𝟙_ (ModuleCat.{w} k))
+    (ψ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X q ⟶ 𝟙_ (ModuleCat.{w} k))
+    (σ : (toSSet.obj X) _⦋n⦌) :
+    TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) n
+        (TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal (λ_ _).inv) (λ_ _).hom
+          p q n h φ ψ) σ =
+      TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) p φ
+          ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) *
+        TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) q ψ
+          ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) := by
+  simp only [TauCeti.cochainValuesEquiv_apply]
+  -- `simp` does not apply `ModuleCat.comp_apply` here, where the coefficient object is both the
+  -- monoidal unit and `ModuleCat.of k k`, so the formula is unfolded by `rw`.
+  rw [← ModuleCat.comp_apply, ιChainComplex_cupCochain_alexanderWhitneyDiagonal,
+    ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
+    smul_eq_mul, ModuleCat.comp_apply, ModuleCat.comp_apply]
 
 section Cohomology
 
