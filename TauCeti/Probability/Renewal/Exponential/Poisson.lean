@@ -7,8 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Renewal.ArrivalMeasure
-public import TauCeti.Probability.Renewal.Exponential.Process
 public import TauCeti.Probability.PointProcess.Poisson.Construction
+import TauCeti.Probability.Renewal.Exponential.Process
 import TauCeti.Probability.PointProcess.Poisson.Law
 import TauCeti.Probability.PointProcess.Poisson.Temporal
 
@@ -72,11 +72,24 @@ homogeneous Poisson sampling law. The artificial arrival at zero is excluded.
 Independence forces `P` to be a probability measure; together with the law hypotheses,
 this forces the rate to be positive, since `expMeasure 0 = 0`. -/
 theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     HasLaw (renewalArrivalMeasure T) (r • nnvolume).poissonLaw P := by
-  exact ((Measure.isPoissonRandomMeasure_poissonLaw (r • nnvolume)).identDistrib
-    (by simpa only [Measure.coe_nnreal_smul] using
-      isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure hT hindep hlaw)).hasLaw HasLaw.id
+  let T' : ℕ → Ω → ℝ≥0 := fun n ↦
+    ((hlaw n).identDistrib_nnreal (hlaw 0)).aemeasurable_fst.mk (T n)
+  have hT' (n : ℕ) : Measurable (T' n) :=
+    ((hlaw n).identDistrib_nnreal (hlaw 0)).aemeasurable_fst.measurable_mk
+  have hT'_ae (n : ℕ) : T n =ᵐ[P] T' n :=
+    ((hlaw n).identDistrib_nnreal (hlaw 0)).aemeasurable_fst.ae_eq_mk
+  have hlaw' (n : ℕ) : HasLaw (fun ω ↦ (T' n ω : ℝ)) (expMeasure r) P :=
+    (hlaw n).congr ((hT'_ae n).symm.mono fun _ h ↦ congrArg (fun x : ℝ≥0 ↦ (x : ℝ)) h)
+  have h := ((Measure.isPoissonRandomMeasure_poissonLaw (r • nnvolume)).identDistrib
+    (by
+      simpa only [Measure.coe_nnreal_smul] using
+        isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure hT'
+          (hindep.congr hT'_ae) hlaw')).hasLaw HasLaw.id
+  apply h.congr
+  filter_upwards [arrival_congr_ae hT'_ae] with ω harr
+  simp only [renewalArrivalMeasure_def, harr]
 
 end TauCeti.Probability
