@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 public import Mathlib.LinearAlgebra.DFinsupp
 
+import TauCeti.Topology.Sets.Opens
+
 /-!
 # De Rham cohomology and Poincaré pairing on disjoint open unions
 
@@ -33,28 +35,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section DisjointHelpers
-
-variable {M ι : Type*} [TopologicalSpace M] {U : ι → Opens M}
-
-private theorem eq_of_mem_disjoint_opens (hdisj : Pairwise (Disjoint on U)) {i j : ι} {x : M}
-    (hi : x ∈ U i) (hj : x ∈ U j) : i = j :=
-  by_contra fun hij ↦ ((hdisj hij).le_bot ⟨hi, hj⟩).elim
-
-private theorem isClosed_setOf_mem_disjoint_opens (hdisj : Pairwise (Disjoint on U)) (i : ι) :
-    IsClosed {x : (⨆ j, U j : Opens M) | (x : M) ∈ U i} := by
-  rw [← isOpen_compl_iff]
-  have hcompl : {x : (⨆ j, U j : Opens M) | (x : M) ∈ U i}ᶜ =
-      ⋃ (j : ι) (_ : j ≠ i), {x : (⨆ k, U k : Opens M) | (x : M) ∈ U j} := by
-    ext x; simp only [mem_compl_iff, mem_ofPred_eq, mem_iUnion, exists_prop]
-    refine ⟨fun hni ↦ ?_, fun ⟨j, hji, hj⟩ hxi ↦ hji (eq_of_mem_disjoint_opens hdisj hj hxi)⟩
-    obtain ⟨j, hj⟩ := Opens.mem_iSup.mp x.2
-    exact ⟨j, fun hji ↦ hni (hji ▸ hj), hj⟩
-  rw [hcompl]
-  exact isOpen_iUnion fun j ↦ isOpen_iUnion fun _ ↦ (U j).isOpen.preimage continuous_subtype_val
-
-end DisjointHelpers
-
 section PiecewiseForms
 
 variable {E H M F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -78,7 +58,9 @@ private theorem mpullback_inclusion_piecewiseRoughForm (hdisj : Pairwise (Disjoi
     TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) (piecewiseRoughForm U η) = η i := by
   funext y; ext v; rw [mpullback_inclusion_apply]
   have haux : ∀ {j : ι} (hj : (y : M) ∈ U j), (η j ⟨y, hj⟩ : E [⋀^Fin k]→L[ℝ] F) = η i y := by
-    intro j hj; obtain rfl := eq_of_mem_disjoint_opens hdisj hj y.2; rfl
+    intro j hj
+    obtain rfl := hdisj.eq fun h ↦ (h.le_bot ⟨hj, y.2⟩).elim
+    rfl
   exact DFunLike.congr_fun
     (haux (Classical.choose_spec (Opens.mem_iSup.mp (Opens.inclusion (le_iSup U i) y).2))) v
 
@@ -205,7 +187,7 @@ private theorem mpullback_inclusion_lsum_extendByZero (hdisj : Pairwise (Disjoin
           ((extendByZero (le_iSup U i) k ψ : SmoothForm I (⨆ i, U i : Opens M) ℝ k).1) = 0 := by
         rw [coe_extendByZero, RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
         exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
-          fun hy ↦ hij (eq_of_mem_disjoint_opens hdisj hy y.2)
+          fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.2⟩).elim
       rw [hzero, DFinsupp.single_eq_of_ne (Ne.symm hij), Submodule.coe_zero, Submodule.coe_zero]
 
 omit [DecidableEq ι] in
@@ -229,10 +211,11 @@ private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U
       · have hzero : TauCeti.mpullback I I (Opens.inclusion (le_iSup U j)) θ = 0 := by
           dsimp only [θ]; rw [RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
           exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
-            fun hy ↦ hij (eq_of_mem_disjoint_opens hdisj hy y.2)
+            fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.2⟩).elim
         exact hzero ▸ IsSmoothForm.zero ∞
   have hθ_supp : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) θ ⊆
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1.1 ∩ {x : W | (x : M) ∈ U i} :=
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1.1 ∩
+        (((↑) : W → M) ⁻¹' (U i : Set M)) :=
     closure_minimal
       (fun x (hx0 : θ x ≠ 0) ↦ by
         have hxi : (x : M) ∈ U i :=
@@ -240,7 +223,8 @@ private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U
         refine ⟨subset_tsupport _ fun hφ0 ↦ hx0 ?_, hxi⟩
         dsimp only [θ]; rw [RoughForm.extendByZero_apply_of_mem _ hxi, mpullback_inclusion_apply]
         exact hφ0)
-      ((_root_.isClosed_tsupport _).inter (isClosed_setOf_mem_disjoint_opens hdisj i))
+      ((_root_.isClosed_tsupport _).inter
+        (Opens.isClopen_preimage_coe_of_pairwise_disjoint hdisj i).isClosed)
   let Θ : compactlySupportedForms I W k :=
     ⟨⟨θ, hθ_smooth.mem_smoothBundleForms⟩, (mem_compactlySupportedForms I).mpr <|
       ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (_root_.isClosed_tsupport _)
@@ -271,7 +255,7 @@ theorem bijective_lsum_extendByZero (hdisj : Pairwise (Disjoint on U)) (k : ℕ)
     · rw [Submodule.coe_zero, Submodule.coe_zero]; funext y; rw [mpullback_inclusion_apply]
       refine (_root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) fun hyK ↦ ?_).symm
       obtain ⟨i, his, hyi⟩ := mem_iUnion₂.mp (hs hyK)
-      exact hjs (eq_of_mem_disjoint_opens hdisj y.2 hyi ▸ his)
+      exact hjs ((hdisj.eq fun h ↦ (h.le_bot ⟨y.2, hyi⟩).elim) ▸ his)
 
 variable (I) in
 /-- **Compactly supported forms on a disjoint open union.** -/
@@ -452,17 +436,9 @@ theorem bijective_lsum_extendByZero (hdisj : Pairwise (Disjoint on U)) (l : ℕ)
     Bijective (DFinsupp.lsum ℝ fun i ↦ extendByZero (I := I) (le_iSup U i) l) := by
   classical
   refine ⟨(injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_, fun y ↦ ?_⟩
-  · let liftClosed (i : ι) (x : compactlySupportedDeRhamCohomology I (U i) l) :
-        compactlySupportedClosedForms I (U i) l :=
-      if x = 0 then 0 else Classical.choose (mk_surjective I l x)
-    have hlift (i : ι) (x : compactlySupportedDeRhamCohomology I (U i) l) :
-        mk I l (liftClosed i x) = x := by
-      dsimp only [liftClosed]; split_ifs with hx
-      · exact hx ▸ map_zero _
-      · exact Classical.choose_spec (mk_surjective I l x)
-    let φ := c.mapRange liftClosed (fun _ ↦ by simp [liftClosed])
-    have hcφ : DFinsupp.mapRange.linearMap (fun i ↦ mk I l) φ = c :=
-      DFinsupp.ext fun i ↦ hlift i (c i)
+  · obtain ⟨φ, hcφ⟩ := (DFinsupp.mapRange_surjective (fun i ↦ mk I l) (fun i ↦ map_zero _)).mpr
+      (fun i ↦ mk_surjective I l) c
+    rw [← DFinsupp.mapRange.linearMap_apply] at hcφ
     rw [← hcφ, lsum_extendByZero_mapRange_mk hdisj, mk_eq_zero_iff] at hc
     exact hcφ ▸ DFinsupp.ext fun i ↦ by
       simpa only [DFinsupp.mapRange.linearMap_apply, DFinsupp.mapRange_apply, DFinsupp.zero_apply,
@@ -532,9 +508,9 @@ theorem bijective_poincarePairing_iSup (o : Manifold.Orientation I M (Fin (k + l
       LinearEquiv.piCongrRight_apply, LinearEquiv.ofBijective_apply, e₂, eTot,
       poincarePairing_dfinsuppEquiv_single]
   refine (Bijective.of_comp_iff' e₂.dualMap.bijective _).mp ?_
-  change Bijective (e₂.dualMap.toLinearMap.comp
-    (poincarePairing I (⨆ i, U i : Opens M) (o.restrict _)))
-  exact hcomm ▸ eTot.bijective
+  rw [← LinearEquiv.coe_toLinearMap e₂.dualMap, ← LinearMap.coe_comp, hcomm,
+    LinearEquiv.coe_toLinearMap]
+  exact eTot.bijective
 
 end PoincarePairing
 

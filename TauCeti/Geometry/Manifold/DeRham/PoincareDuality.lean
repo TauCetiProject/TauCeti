@@ -23,6 +23,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Topology.MayerVietoris
 
 /-!
@@ -50,45 +51,6 @@ open Function Set TopologicalSpace
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
-
-section Helpers
-
-private theorem exact_dualMap {K V₁ V₂ V₃ : Type*} [Field K]
-    [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
-    [AddCommGroup V₃] [Module K V₃] {f : V₁ →ₗ[K] V₂} {g : V₂ →ₗ[K] V₃}
-    (h : Exact f g) : Exact g.dualMap f.dualMap := by
-  rwa [LinearMap.exact_iff, LinearMap.ker_dualMap_eq_dualAnnihilator_range,
-    LinearMap.range_dualMap_eq_dualAnnihilator_ker, Subspace.dualAnnihilator_inj, eq_comm,
-    ← LinearMap.exact_iff]
-
-private theorem bijective_neg_one_pow_smul {V W : Type*} [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup W] [Module ℝ W] (m : ℕ) {f : V →ₗ[ℝ] W} (hf : Bijective f) :
-    Bijective (((-1 : ℝ) ^ m • f : V →ₗ[ℝ] W)) := by
-  have hsq : (-1 : ℝ) ^ m * (-1 : ℝ) ^ m = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  refine ⟨fun x y hxy ↦ hf.1 ?_, fun w ↦ ⟨(hf.2 ((-1 : ℝ) ^ m • w)).choose, ?_⟩⟩
-  · simpa only [LinearMap.smul_apply, smul_smul, hsq, one_smul] using
-      congrArg (((-1 : ℝ) ^ m) • ·) hxy
-  · rw [LinearMap.smul_apply, (hf.2 ((-1 : ℝ) ^ m • w)).choose_spec, smul_smul, hsq, one_smul]
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I 1 M]
-
-private theorem orientation_reindex_refl {ι : Type*} [Fintype ι]
-    (o : Manifold.Orientation I M ι) : o.reindex (Equiv.refl ι) = o := by
-  ext x; rw [Manifold.Orientation.orientationAt_reindex, _root_.Orientation.reindex_refl]; rfl
-
-private theorem orientation_reindex_finCongr {m n p : ℕ} (h₁ : m = n) (h₂ : n = p)
-    (o : Manifold.Orientation I M (Fin m)) :
-    (o.reindex (finCongr h₁)).reindex (finCongr h₂) = o.reindex (finCongr (h₁.trans h₂)) := by
-  subst h₁ h₂; rw [finCongr_refl, orientation_reindex_refl]
-
-private theorem orientation_restrict_finCongr {m n : ℕ} (h : m = n)
-    (o : Manifold.Orientation I M (Fin m)) (U : Opens M) :
-    (o.restrict U).reindex (finCongr h) = (o.reindex (finCongr h)).restrict U := by
-  subst h; rw [finCongr_refl, orientation_reindex_refl, orientation_reindex_refl]
-
-end Helpers
 
 section MayerVietorisStokes
 
@@ -210,13 +172,15 @@ private theorem integralWedgeCompactlySupported_mextDeriv [SigmaCompactSpace M] 
       integralTopForm o (RoughForm.wedge (mextDerivₗ I j α).1 γ.1.1) :=
     (integralTopForm_congr_cast h₁.symm o₁ t₁.1 (RoughForm.wedge (mextDerivₗ I j α).1 γ.1.1)
       fun _ _ ↦ by dsimp only [t₁]; rw [SmoothForm.cast_apply, SmoothForm.coe_wedge]).trans <| by
-      dsimp only [o₁]; rw [orientation_reindex_finCongr, finCongr_refl, orientation_reindex_refl]
+      dsimp only [o₁]
+      rw [Manifold.Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
+        Manifold.Orientation.reindex_refl]
   have hc₂ : integralTopForm o₁ t₂.1 = integralTopForm (o.reindex (finCongr hjl))
       (RoughForm.wedge α.1 (compactlySupportedForms.mextDerivₗ I M l γ).1.1) :=
     (integralTopForm_congr_cast h₂.symm o₁ t₂.1
       (RoughForm.wedge α.1 (compactlySupportedForms.mextDerivₗ I M l γ).1.1)
       fun _ _ ↦ by dsimp only [t₂]; rw [SmoothForm.cast_apply, SmoothForm.coe_wedge]).trans <| by
-      dsimp only [o₁]; rw [orientation_reindex_finCongr]
+      dsimp only [o₁]; rw [Manifold.Orientation.reindex_finCongr_reindex_finCongr]
   rw [hc₁, hc₂] at hstokes
   rw [pow_succ, mul_neg, mul_one, neg_mul]; linarith
 
@@ -248,7 +212,7 @@ private theorem integralTopForm_mayerVietoris_step {j l : ℕ}
     integralWedgeCompactlySupported_extendByZero o le_sup_right σ δ, hσU, hσV,
     integralWedgeCompactlySupported_mextDeriv hjl (o.restrict U) α γ,
     integralWedgeCompactlySupported_mextDeriv hjl (o.restrict V) β δ,
-    orientation_restrict_finCongr, orientation_restrict_finCongr]
+    Manifold.Orientation.reindex_restrict, Manifold.Orientation.reindex_restrict]
   let τ' : compactlySupportedForms I (U ⊓ V : Opens M) (l + 1) :=
     ⟨τ.1, compactlySupportedClosedForms_le_compactlySupportedForms I (l + 1) τ.2⟩
   have heqU : (compactlySupportedClosedForms.extendByZero inf_le_left (l + 1) τ).1 =
@@ -386,7 +350,8 @@ private theorem bijective_poincarePairing_sup {n : ℕ} (o : Manifold.Orientatio
       (poincarePairing I (U ⊓ V : Opens M) (o₁.restrict (U ⊓ V)))
       (comm_poincarePairing_sup_prod U V o₁) (comm_poincarePairing_prod_inf U V o₁)
       (deRhamCohomology.exact_mayerVietoris₂ U V 0)
-      (exact_dualMap (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
+      (LinearMap.exact_dualMap_iff.mpr
+        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
       (bijective_prodPoincarePairing U V o₁ (hU 0 b hab) (hV 0 b hab)) (hUV 0 b hab).1
       (deRhamCohomology.injective_mayerVietoris_zero U V)
       (LinearMap.dualMap_injective_of_surjective hsurj)
@@ -394,8 +359,22 @@ private theorem bijective_poincarePairing_sup {n : ℕ} (o : Manifold.Orientatio
     have hjb : j + (b + 1) = n := by omega
     have hjl : (j + 1) + b = j + (b + 1) := by omega
     let o' := o₁.reindex (finCongr hjl)
-    have hre : o' = o.reindex (finCongr hjb.symm) := orientation_reindex_finCongr _ _ o
+    have hre : o' = o.reindex (finCongr hjb.symm) :=
+      Manifold.Orientation.reindex_finCongr_reindex_finCongr _ _ o
     let s : ℝ := (-1 : ℝ) ^ (j + 1)
+    have hs : IsUnit s := isUnit_one.neg.pow (j + 1)
+    have hbij₁ : Bijective (s • prodPoincarePairing U V o') := by
+      have heq : ⇑(s • prodPoincarePairing U V o') =
+          (s • ·) ∘ ⇑(prodPoincarePairing U V o') := funext fun x ↦ LinearMap.smul_apply s _ x
+      rw [heq]
+      exact hs.smul_bijective.comp
+        (bijective_prodPoincarePairing U V o' (hre ▸ hU j (b + 1) hjb) (hre ▸ hV j (b + 1) hjb))
+    have hbij₂ : Bijective (s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) := by
+      have heq : ⇑(s • poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) =
+          (s • ·) ∘ ⇑(poincarePairing I (U ⊓ V : Opens M) (o'.restrict (U ⊓ V))) :=
+        funext fun x ↦ LinearMap.smul_apply s _ x
+      rw [heq]
+      exact hs.smul_bijective.comp (hre ▸ hUV j (b + 1) hjb)
     have hc₁ : ((compactlySupportedDeRhamCohomology.extendByZero (I := I)
           (inf_le_left : U ⊓ V ≤ U) (b + 1)).prod
           (-compactlySupportedDeRhamCohomology.extendByZero (I := I)
@@ -421,12 +400,13 @@ private theorem bijective_poincarePairing_sup {n : ℕ} (o : Manifold.Orientatio
       hc₁ hc₂ (comm_poincarePairing_sup_prod U V o₁) (comm_poincarePairing_prod_inf U V o₁)
       (deRhamCohomology.exact_mayerVietoris₃ U V j) (deRhamCohomology.exact_mayerVietoris₁ U V j)
       (deRhamCohomology.exact_mayerVietoris₂ U V (j + 1))
-      (exact_dualMap (compactlySupportedDeRhamCohomology.exact_mayerVietoris₁ U V b))
-      (exact_dualMap (compactlySupportedDeRhamCohomology.exact_mayerVietoris₃ U V b))
-      (exact_dualMap (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
-      (bijective_neg_one_pow_smul (j + 1)
-        (bijective_prodPoincarePairing U V o' (hre ▸ hU j (b + 1) hjb) (hre ▸ hV j (b + 1) hjb))).2
-      (bijective_neg_one_pow_smul (j + 1) (hre ▸ hUV j (b + 1) hjb))
+      (LinearMap.exact_dualMap_iff.mpr
+        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₁ U V b))
+      (LinearMap.exact_dualMap_iff.mpr
+        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₃ U V b))
+      (LinearMap.exact_dualMap_iff.mpr
+        (compactlySupportedDeRhamCohomology.exact_mayerVietoris₂ U V b))
+      hbij₁.2 hbij₂
       (bijective_prodPoincarePairing U V o₁ (hU (j + 1) b hab) (hV (j + 1) b hab))
       (hUV (j + 1) b hab).1
 
@@ -502,8 +482,9 @@ theorem bijective_poincarePairing_normedSpace (E : Type*) [NormedAddCommGroup E]
         eI.dualMap.toLinearMap.comp eR.toLinearMap :=
       LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp [eI, eR, mul_comm]
     refine (Bijective.of_comp_iff (poincarePairing 𝓘(ℝ, E) E o) hconst).mp ?_
-    change Bijective ((poincarePairing 𝓘(ℝ, E) E o).comp (deRhamCohomology.const 𝓘(ℝ, E) E))
-    exact hcomm ▸ eI.dualMap.bijective.comp eR.bijective
+    rw [← LinearMap.coe_comp, hcomm, LinearMap.coe_comp, LinearEquiv.coe_toLinearMap,
+      LinearEquiv.coe_toLinearMap]
+    exact eI.dualMap.bijective.comp eR.bijective
   | succ j =>
     have : Subsingleton (deRhamCohomology 𝓘(ℝ, E) E (j + 1)) :=
       subsingleton_deRhamCohomology_normedSpace (E := E) j
@@ -540,83 +521,23 @@ private theorem bijective_poincarePairing_opens_of_isBasis
       exact bijective_poincarePairing_iSup (o.reindex (finCongr hab.symm)) hs
         fun m ↦ hPs m a b hab) W
 
-private def openBox {d : ℕ} (a b : Fin d → ℝ) : Opens (EuclideanSpace ℝ (Fin d)) :=
-  ⟨{x | ∀ i, EuclideanSpace.equiv (Fin d) ℝ x i ∈ Ioo (a i) (b i)}, by
-    rw [Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun i ↦
-      isOpen_Ioo.preimage ((continuous_apply i).comp (EuclideanSpace.equiv (Fin d) ℝ).continuous)⟩
-
-private theorem isBasis_openBoxes (d : ℕ) :
-    Opens.IsBasis {U : Opens (EuclideanSpace ℝ (Fin d)) | ∃ a b, U = openBox a b} := by
-  rw [Opens.isBasis_iff_nbhd]; intro U x hx
-  let L := EuclideanSpace.equiv (Fin d) ℝ
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp (U.isOpen.preimage L.symm.continuous) (L x) hx
-  refine ⟨openBox (fun i ↦ L x i - r) (fun i ↦ L x i + r), ⟨_, _, rfl⟩,
-    fun i ↦ ⟨sub_lt_self _ hr, lt_add_of_pos_right _ hr⟩, fun y hy ↦ ?_⟩
-  have hyb : L y ∈ Metric.ball (L x) r := by
-    rw [ball_pi _ hr]; intro i _; dsimp only; rw [Real.ball_eq_Ioo]; exact hy i
-  have hyU : L.symm (L y) ∈ (U : Set (EuclideanSpace ℝ (Fin d))) := hball hyb
-  rwa [ContinuousLinearEquiv.symm_apply_apply] at hyU
-
-private def diffeomorphOpenBox {d : ℕ} {a b : Fin d → ℝ} (hab : ∀ i, a i < b i) :
-    EuclideanSpace ℝ (Fin d) ≃ₘ⟮𝓘(ℝ, EuclideanSpace ℝ (Fin d)),
-      𝓘(ℝ, EuclideanSpace ℝ (Fin d))⟯ openBox a b := by
-  let L := EuclideanSpace.equiv (Fin d) ℝ
-  let c (i : Fin d) : ℝ := (a i + b i) / 2
-  let r (i : Fin d) : ℝ := (b i - a i) / 2
-  have hr (i : Fin d) : 0 < r i := by dsimp [r]; linarith [hab i]
-  let e (i : Fin d) := OpenPartialHomeomorph.univBall (c i) (r i)
-  have htarget (i : Fin d) : (e i).target = Ioo (a i) (b i) := by
-    rw [OpenPartialHomeomorph.univBall_target _ (hr i), Real.ball_eq_Ioo]
-    congr <;> dsimp [c, r] <;> ring
-  have hmem (v : EuclideanSpace ℝ (Fin d)) : L.symm (fun i ↦ e i (L v i)) ∈ openBox a b :=
-    fun i ↦ by
-      change L (L.symm (fun j ↦ e j (L v j))) i ∈ Ioo (a i) (b i)
-      rw [L.apply_symm_apply, ← htarget i]; exact (e i).map_source (by simp [e])
-  refine
-    { toEquiv :=
-        { toFun := fun v ↦ ⟨L.symm (fun i ↦ e i (L v i)), hmem v⟩
-          invFun := fun u ↦ L.symm (fun i ↦ (e i).symm (L u.1 i))
-          left_inv := fun v ↦ L.injective <| funext fun i ↦ by
-            simp only [L.apply_symm_apply]; exact (e i).left_inv (by simp [e])
-          right_inv := fun u ↦ Subtype.ext <| L.injective <| funext fun i ↦ by
-            simp only [L.apply_symm_apply]; exact (e i).right_inv (htarget i ▸ u.2 i) }
-      contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
-        L.symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦
-          OpenPartialHomeomorph.contDiff_univBall.contMDiff.comp
-            (((ContinuousLinearMap.proj (R := ℝ) i).comp
-              (L : EuclideanSpace ℝ (Fin d) →L[ℝ] (Fin d → ℝ))).contMDiff)
-      contMDiff_invFun := L.symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦ by
-        have hcd : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ (e i).symm (Ioo (a i) (b i)) := by
-          rw [← htarget i, OpenPartialHomeomorph.univBall_target _ (hr i)]
-          exact (OpenPartialHomeomorph.contDiffOn_univBall_symm (n := (⊤ : ℕ∞))).contMDiffOn
-        exact hcd.comp_contMDiff
-          ((((ContinuousLinearMap.proj (R := ℝ) i).comp
-            (L : EuclideanSpace ℝ (Fin d) →L[ℝ] (Fin d → ℝ))).contMDiff).comp contMDiff_subtype_val)
-          fun u ↦ u.2 i }
-
 private theorem bijective_poincarePairing_opens_euclideanSpace {d n : ℕ}
     (o : Manifold.Orientation 𝓘(ℝ, EuclideanSpace ℝ (Fin d)) (EuclideanSpace ℝ (Fin d)) (Fin n))
     (W : Opens (EuclideanSpace ℝ (Fin d))) [SigmaCompactSpace W] :
     ∀ (a b : ℕ) (hab : a + b = n),
       Bijective (poincarePairing 𝓘(ℝ, EuclideanSpace ℝ (Fin d)) W
         ((o.reindex (finCongr hab.symm)).restrict W)) :=
-  bijective_poincarePairing_opens_of_isBasis o _ (isBasis_openBoxes d)
+  bijective_poincarePairing_opens_of_isBasis o _ (isBasis_openBoxes (Fin d))
     (by
       rintro _ ⟨a₁, b₁, rfl⟩ _ ⟨a₂, b₂, rfl⟩
-      refine ⟨fun i ↦ max (a₁ i) (a₂ i), fun i ↦ min (b₁ i) (b₂ i), ?_⟩
-      ext x
-      change (∀ i, _ ∈ Ioo (a₁ i) (b₁ i)) ∧ (∀ i, _ ∈ Ioo (a₂ i) (b₂ i)) ↔
-        ∀ i, _ ∈ Ioo (max (a₁ i) (a₂ i)) (min (b₁ i) (b₂ i))
-      simp only [← forall_and, ← mem_inter_iff, Ioo_inter_Ioo])
+      exact ⟨_, _, openBox_inf_openBox a₁ b₁ a₂ b₂⟩)
     (by
       rintro U ⟨p, q, rfl⟩ _ a b hab
       by_cases hpq : ∀ i, p i < q i
-      · exact bijective_poincarePairing_of_diffeomorph (diffeomorphOpenBox hpq).symm _
+      · exact bijective_poincarePairing_of_diffeomorph (diffeomorphOpenBox (n := ⊤) hpq).symm _
           fun o' ↦ bijective_poincarePairing_normedSpace _ o'
       · push Not at hpq; obtain ⟨i, hi⟩ := hpq
-        have : IsEmpty (openBox p q) :=
-          ⟨fun x ↦ (lt_irrefl _ ((x.2 i).1.trans_le ((x.2 i).2.le.trans hi))).elim⟩
+        have : IsEmpty (openBox p q) := isEmpty_openBox_iff.mpr ⟨i, hi⟩
         exact bijective_poincarePairing_of_isEmpty _) W
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -660,7 +581,7 @@ private theorem bijective_poincarePairing_of_le_diffeomorph_euclideanSpace
       (hcomp.symm ▸ oM.isOrientationPreservingAt_restrict W w)
       (Ψ.contMDiff.mdifferentiableAt (by simp))
   refine (bijective_poincarePairing_iff_of_isOrientationPreserving Ψ _ _ hΨ_pres).mpr ?_
-  simpa only [finCongr_refl, orientation_reindex_refl] using
+  simpa only [finCongr_refl, Manifold.Orientation.reindex_refl] using
     bijective_poincarePairing_opens_euclideanSpace oE V a b rfl
 
 /-- **De Rham Poincaré duality.** On an oriented boundaryless Hausdorff σ-compact finite-dimensional
@@ -679,7 +600,7 @@ theorem bijective_poincarePairing [IsManifold I ∞ M] [BoundarylessManifold I M
     exists_opens_diffeomorph_euclideanSpace (n := ⊤)
       (BoundarylessManifold.isInteriorPoint (I := I) (x := x))
   have htop_kl : Bijective (poincarePairing I (⊤ : Opens M) (o.restrict ⊤)) := by
-    simpa only [finCongr_refl, orientation_reindex_refl] using
+    simpa only [finCongr_refl, Manifold.Orientation.reindex_refl] using
       bijective_poincarePairing_opens_of_isBasis o {W : Opens M | ∃ x : M, W ≤ U x}
         (Opens.isBasis_iff_nbhd.mpr fun {W x} hxW ↦
           ⟨W ⊓ U x, ⟨x, inf_le_right⟩, ⟨hxW, hxU x⟩, inf_le_left⟩)
@@ -813,40 +734,6 @@ theorem finrank_deRhamCohomology_eq_of_orientation {k l : ℕ}
     Module.finrank ℝ (deRhamCohomology I M k) = Module.finrank ℝ (deRhamCohomology I M l) :=
   (poincareDualityCompact o).finrank_eq.trans Subspace.dual_finrank_eq
 
-variable (I M) in
-/-- The compactly supported degree-zero cohomology class of a constant `r : ℝ`. -/
-def compactlySupportedDeRhamCohomology.const :
-    ℝ →ₗ[ℝ] compactlySupportedDeRhamCohomology I M 0 :=
-  (LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I
-    (M := M) 0)).symm.toLinearMap.comp (deRhamCohomology.const I M)
-
-omit [FiniteDimensional ℝ E] [BoundarylessManifold I M] [T2Space M] in
-/-- Forgetting compact support sends `compactlySupportedDeRhamCohomology.const` to
-`deRhamCohomology.const`. -/
-@[simp]
-theorem compactlySupportedDeRhamCohomology.toDeRhamCohomology_const (r : ℝ) :
-    compactlySupportedDeRhamCohomology.toDeRhamCohomology I M 0
-        (compactlySupportedDeRhamCohomology.const I M r) = deRhamCohomology.const I M r :=
-  (LinearEquiv.ofBijective _
-    (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I 0)).apply_symm_apply _
-
-/-- Pairing `x ∈ H^k_dR(M)` with `compactlySupportedDeRhamCohomology.const I M r` multiplies the
-integral of `x` by `r`. -/
-@[simp]
-theorem poincarePairing_const_right {k : ℕ} (o : Manifold.Orientation I M (Fin (k + 0)))
-    (x : deRhamCohomology I M k) (r : ℝ) :
-    poincarePairing I M o x (compactlySupportedDeRhamCohomology.const I M r) =
-      r * compactlySupportedDeRhamCohomology.integral (o.reindex (finCongr (Nat.add_zero k)))
-        ((LinearEquiv.ofBijective _
-          (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I k)).symm x) := by
-  let e := LinearEquiv.ofBijective _
-    (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I (M := M) k)
-  have hxc : compactlySupportedDeRhamCohomology.toDeRhamCohomology I M k (e.symm x) = x :=
-    e.apply_symm_apply x
-  rw [← hxc, poincarePairing_comm_toDeRhamCohomology,
-    compactlySupportedDeRhamCohomology.toDeRhamCohomology_const, Nat.mul_zero, pow_zero, one_mul,
-    poincarePairing_const_left, orientation_reindex_finCongr, hxc]
-
 end CompactManifold
 
 section Examples
@@ -869,10 +756,12 @@ theorem poincarePairing_circleOrientation_circleAngularClosedForm_const_one :
       (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective (𝓡 1) 1)).injective <| by
       rw [LinearEquiv.apply_symm_apply]
       exact (compactlySupportedDeRhamCohomology.toDeRhamCohomology_mk (𝓡 1) 1 ψ).symm
-  rw [poincarePairing_const_right, one_mul, hmk, orientation_reindex_finCongr, finCongr_refl,
-    orientation_reindex_refl, compactlySupportedDeRhamCohomology.integral_mk]
-  change integralTopForm circleOrientation (circleAngularClosedForm : SmoothForm _ _ _ _).1 = _
-  rw [coe_circleAngularClosedForm]; exact integralTopForm_circleOrientation_circleAngularForm
+  rw [poincarePairing_const_right, one_mul, hmk,
+    Manifold.Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
+    Manifold.Orientation.reindex_refl, compactlySupportedDeRhamCohomology.integral_mk]
+  dsimp only [ψ]
+  rw [coe_circleAngularClosedForm]
+  exact integralTopForm_circleOrientation_circleAngularForm
 
 /-- For any orientation of `S¹`, `|⟨[dθ], [1]⟩| = 2π`. -/
 theorem abs_poincarePairing_circleAngularClosedForm_const_one
@@ -893,8 +782,9 @@ theorem poincarePairing_real_const_one_mk
     poincarePairing 𝓘(ℝ, ℝ) ℝ (Manifold.Orientation.real.reindex (finCongr (zero_add 1).symm))
         (deRhamCohomology.const 𝓘(ℝ, ℝ) ℝ 1)
         (compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, ℝ) 1 ψ) = ∫ t : ℝ, ψ.1.1 t (fun _ ↦ 1) := by
-  rw [poincarePairing_const_one_left, orientation_reindex_finCongr, finCongr_refl,
-    orientation_reindex_refl, compactlySupportedDeRhamCohomology.integral_mk]
+  rw [poincarePairing_const_one_left, Manifold.Orientation.reindex_finCongr_reindex_finCongr,
+    finCongr_refl, Manifold.Orientation.reindex_refl,
+    compactlySupportedDeRhamCohomology.integral_mk]
   exact integralTopForm_real_eq_integral (ψ.1.isSmoothForm.of_le (by simp))
     ((mem_compactlySupportedForms 𝓘(ℝ, ℝ)).mp
       ((mem_compactlySupportedClosedForms 𝓘(ℝ, ℝ)).mp ψ.2).1)

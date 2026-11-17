@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
@@ -39,6 +40,10 @@ For an arbitrary model with corners, every interior point of a finite-dimensiona
 manifold has an open neighbourhood `C^n`-diffeomorphic to the Euclidean space of the same
 dimension (`TauCeti.exists_opens_diffeomorph_euclideanSpace`). Such Euclidean neighbourhoods let
 invariants computed on `ℝⁿ` be transported to small open subsets of a manifold.
+
+Open coordinate boxes `TauCeti.openBox` in `EuclideanSpace ℝ ι` form a basis of open subsets closed
+under finite intersections (`TauCeti.isBasis_openBoxes`, `TauCeti.openBox_inf_openBox`), and every
+nonempty box is `C^n`-diffeomorphic to `EuclideanSpace ℝ ι` (`TauCeti.diffeomorphOpenBox`).
 -/
 
 public noncomputable section
@@ -214,5 +219,128 @@ theorem exists_opens_diffeomorph_euclideanSpace {x : N} (hx : I.IsInteriorPoint 
       (L.symm.contDiff.comp OpenPartialHomeomorph.contDiff_univBall).contMDiff hbT
 
 end EuclideanNeighbourhood
+
+section OpenBox
+
+/-- The open coordinate box `∏ i, (a i, b i)` in `EuclideanSpace ℝ ι`. -/
+def openBox {ι : Type*} [Fintype ι] (a b : ι → ℝ) :
+    TopologicalSpace.Opens (EuclideanSpace ℝ ι) :=
+  ⟨{x | ∀ i, x i ∈ Ioo (a i) (b i)}, by
+    rw [Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun i ↦
+      isOpen_Ioo.preimage (EuclideanSpace.proj (𝕜 := ℝ) i).continuous⟩
+
+/-- A point lies in `openBox a b` if and only if each coordinate lies in `(a i, b i)`. -/
+@[simp]
+theorem mem_openBox {ι : Type*} [Fintype ι] {a b : ι → ℝ} {x : EuclideanSpace ℝ ι} :
+    x ∈ openBox a b ↔ ∀ i, x i ∈ Ioo (a i) (b i) := by
+  rfl
+
+/-- The intersection of two open coordinate boxes is the box given by componentwise `max` and
+`min`. -/
+@[simp]
+theorem openBox_inf_openBox {ι : Type*} [Fintype ι] (a₁ b₁ a₂ b₂ : ι → ℝ) :
+    openBox a₁ b₁ ⊓ openBox a₂ b₂ =
+      openBox (fun i ↦ max (a₁ i) (a₂ i)) (fun i ↦ min (b₁ i) (b₂ i)) := by
+  refine SetLike.ext fun x ↦ ?_
+  simp only [TopologicalSpace.Opens.mem_inf, mem_openBox, ← forall_and]
+  exact forall_congr' fun i ↦ by rw [← mem_inter_iff, Ioo_inter_Ioo]
+
+/-- An open coordinate box `openBox a b` is nonempty if and only if `a i < b i` for every `i`. -/
+theorem nonempty_openBox_iff {ι : Type*} [Fintype ι] {a b : ι → ℝ} :
+    Nonempty (openBox a b) ↔ ∀ i, a i < b i := by
+  constructor
+  · rintro ⟨⟨x, hx⟩⟩ i
+    exact (hx i).1.trans (hx i).2
+  · intro hab
+    refine ⟨⟨(EuclideanSpace.equiv ι ℝ).symm (fun i ↦ (a i + b i) / 2), fun i ↦ ?_⟩⟩
+    have hi : ((EuclideanSpace.equiv ι ℝ).symm (fun j ↦ (a j + b j) / 2)) i = (a i + b i) / 2 :=
+      rfl
+    rw [hi]
+    constructor <;> linarith [hab i]
+
+/-- An open coordinate box `openBox a b` is empty if and only if `b i ≤ a i` for some `i`. -/
+theorem isEmpty_openBox_iff {ι : Type*} [Fintype ι] {a b : ι → ℝ} :
+    IsEmpty (openBox a b) ↔ ∃ i, b i ≤ a i := by
+  rw [← not_nonempty_iff, nonempty_openBox_iff]
+  simp only [not_forall, not_lt]
+
+/-- The open coordinate boxes form a basis of open subsets of `EuclideanSpace ℝ ι`. -/
+theorem isBasis_openBoxes (ι : Type*) [Fintype ι] :
+    TopologicalSpace.Opens.IsBasis
+      {U : TopologicalSpace.Opens (EuclideanSpace ℝ ι) | ∃ a b, U = openBox a b} := by
+  rw [TopologicalSpace.Opens.isBasis_iff_nbhd]
+  intro U x hx
+  let L := EuclideanSpace.equiv ι ℝ
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp (U.isOpen.preimage L.symm.continuous) (L x) hx
+  refine ⟨openBox (fun i ↦ x i - r) (fun i ↦ x i + r), ⟨_, _, rfl⟩,
+    fun i ↦ ⟨sub_lt_self _ hr, lt_add_of_pos_right _ hr⟩, fun y hy ↦ ?_⟩
+  have hyb : L y ∈ Metric.ball (L x) r := by
+    rw [ball_pi _ hr]
+    intro i _
+    dsimp only
+    rw [Real.ball_eq_Ioo]
+    exact (mem_openBox.mp hy) i
+  have hyU : L.symm (L y) ∈ (U : Set (EuclideanSpace ℝ ι)) := hball hyb
+  rwa [ContinuousLinearEquiv.symm_apply_apply] at hyU
+
+/-- A `C^n`-diffeomorphism from `EuclideanSpace ℝ ι` onto a nonempty open coordinate box
+`openBox a b`, obtained by applying `OpenPartialHomeomorph.univBall` coordinatewise. -/
+def diffeomorphOpenBox {n : ℕ∞} {ι : Type*} [Fintype ι] {a b : ι → ℝ} (hab : ∀ i, a i < b i) :
+    EuclideanSpace ℝ ι ≃ₘ^n⟮𝓘(ℝ, EuclideanSpace ℝ ι), 𝓘(ℝ, EuclideanSpace ℝ ι)⟯ openBox a b := by
+  let L := EuclideanSpace.equiv ι ℝ
+  let c (i : ι) : ℝ := (a i + b i) / 2
+  let r (i : ι) : ℝ := (b i - a i) / 2
+  have hr (i : ι) : 0 < r i := by dsimp [r]; linarith [hab i]
+  let e (i : ι) := OpenPartialHomeomorph.univBall (c i) (r i)
+  have htarget (i : ι) : (e i).target = Ioo (a i) (b i) := by
+    rw [OpenPartialHomeomorph.univBall_target _ (hr i), Real.ball_eq_Ioo]
+    congr <;> dsimp [c, r] <;> ring
+  have hmem (v : EuclideanSpace ℝ ι) : L.symm (fun i ↦ e i (v i)) ∈ openBox a b :=
+    mem_openBox.mpr fun i ↦ by
+      rw [← htarget i]
+      exact (e i).map_source (by simp [e])
+  refine
+    { toEquiv :=
+        { toFun := fun v ↦ ⟨L.symm (fun i ↦ e i (v i)), hmem v⟩
+          invFun := fun u ↦ L.symm (fun i ↦ (e i).symm (u.1 i))
+          left_inv := fun v ↦ L.injective <| funext fun i ↦ by
+            simp only [L.apply_symm_apply]
+            exact (e i).left_inv (by simp [e])
+          right_inv := fun u ↦ Subtype.ext <| L.injective <| funext fun i ↦ by
+            simp only [L.apply_symm_apply]
+            exact (e i).right_inv (htarget i ▸ (mem_openBox.mp u.2) i) }
+      contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
+        L.symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦
+          OpenPartialHomeomorph.contDiff_univBall.contMDiff.comp
+            (EuclideanSpace.proj (𝕜 := ℝ) i).contMDiff
+      contMDiff_invFun := L.symm.contDiff.contMDiff.comp <| contMDiff_pi_module_iff.mpr fun i ↦ by
+        have hcd : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n (e i).symm (Ioo (a i) (b i)) := by
+          rw [← htarget i, OpenPartialHomeomorph.univBall_target _ (hr i)]
+          exact (OpenPartialHomeomorph.contDiffOn_univBall_symm (n := n)).contMDiffOn
+        exact hcd.comp_contMDiff
+          ((EuclideanSpace.proj (𝕜 := ℝ) i).contMDiff.comp contMDiff_subtype_val)
+          fun u ↦ (mem_openBox.mp u.2) i }
+
+/-- The `i`-th coordinate of `diffeomorphOpenBox hab v` is `univBall` applied to `v i`. -/
+@[simp]
+theorem coe_diffeomorphOpenBox_apply {n : ℕ∞} {ι : Type*} [Fintype ι] {a b : ι → ℝ}
+    (hab : ∀ i, a i < b i) (v : EuclideanSpace ℝ ι) (i : ι) :
+    (diffeomorphOpenBox (n := n) hab v : EuclideanSpace ℝ ι) i =
+      OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2) (v i) := by
+  rw [diffeomorphOpenBox]
+  rfl
+
+/-- The `i`-th coordinate of `(diffeomorphOpenBox hab).symm u` is `univBall.symm` applied to
+`u.1 i`. -/
+@[simp]
+theorem diffeomorphOpenBox_symm_apply {n : ℕ∞} {ι : Type*} [Fintype ι] {a b : ι → ℝ}
+    (hab : ∀ i, a i < b i) (u : openBox a b) (i : ι) :
+    (diffeomorphOpenBox (n := n) hab).symm u i =
+      (OpenPartialHomeomorph.univBall ((a i + b i) / 2) ((b i - a i) / 2)).symm (u.1 i) := by
+  rw [diffeomorphOpenBox]
+  rfl
+
+end OpenBox
 
 end TauCeti

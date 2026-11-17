@@ -14,7 +14,6 @@ import Mathlib.LinearAlgebra.Isomorphisms
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
 # Integration on compactly supported cohomology and the Poincaré pairing
@@ -46,16 +45,13 @@ representative formula pairs it with the class of the constant function `1` to g
   `H^n_c(U) → H^n_c(M)` into the whole manifold.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral_map_diffeomorph`: integration is
   preserved by orientation-preserving diffeomorphisms.
-* `TauCeti.compactlySupportedDeRhamCohomology.wedge_map` and
-  `TauCeti.compactlySupportedDeRhamCohomology.wedge_extendByZero`: compatibility of the wedge
-  product with smooth proper maps and extension by zero.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`, compatible with orientation-preserving diffeomorphisms
   (`TauCeti.poincarePairing_map_diffeomorph`), extension by zero
   (`TauCeti.poincarePairing_extendByZero`, `TauCeti.poincarePairing_extendByZeroTop`), constant
-  classes (`TauCeti.poincarePairing_const_left`), and graded factor swap
-  (`TauCeti.poincarePairing_comm_toDeRhamCohomology`).
+  classes (`TauCeti.poincarePairing_const_left`, `TauCeti.poincarePairing_const_right`), and graded
+  factor swap (`TauCeti.poincarePairing_comm_toDeRhamCohomology`).
 * `TauCeti.integralTopForm_wedge_self_eq_of_sub_mem_exactForms`: in even middle degree, the
   integral `∫_M φ ∧ φ` of a compactly supported closed form depends only on its de Rham class.
 
@@ -74,6 +70,8 @@ open TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+section
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
@@ -175,26 +173,6 @@ theorem integral_extendByZeroTop (o : Manifold.Orientation I M (Fin n)) (U : Ope
   rw [← integral_extendByZero o (le_top : U ≤ ⊤), ← equivOfDiffeomorph_extendByZeroTop,
     integral_equivOfDiffeomorph_ofTop]
 
-end compactlySupportedDeRhamCohomology
-
-omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
-/-- Reindexing the tangent tuple along `h : m = n` transports `integralTopForm` to the reindexed
-orientation `o.reindex (finCongr h)`. -/
-theorem integralTopForm_congr_cast {m n : ℕ} (h : m = n) (o : Manifold.Orientation I M (Fin m))
-    (φ : RoughForm I M ℝ m) (ψ : RoughForm I M ℝ n)
-    (hφψ : ∀ x (v : Fin m → TangentSpace I x), φ x v = ψ x (v ∘ Fin.cast h.symm)) :
-    integralTopForm o φ = integralTopForm (o.reindex (finCongr h)) ψ := by
-  subst h
-  have ho : o.reindex (finCongr rfl) = o := by
-    apply Manifold.Orientation.ext
-    intro x
-    rw [Manifold.Orientation.orientationAt_reindex, finCongr_refl, _root_.Orientation.reindex_refl,
-      Equiv.refl_apply]
-  have hφ : φ = ψ := funext fun x ↦ ContinuousAlternatingMap.ext (hφψ x)
-  rw [ho, hφ]
-
-namespace compactlySupportedDeRhamCohomology
-
 /-- An orientation-preserving diffeomorphism preserves integration on compactly supported
 cohomology. No integrability hypothesis is needed: representatives are smooth and compactly
 supported. The target orientation must be specified explicitly, so this is not a simp lemma. -/
@@ -215,43 +193,6 @@ theorem integral_map_diffeomorph
   simpa only [Diffeomorph.coe_toHomeomorph] using
     Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt
       hΦ (fun y _ ↦ ⟨Φ.symm y, Φ.apply_symm_apply y⟩)
-
-omit [FiniteDimensional ℝ E] [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
-/-- Pullback along a smooth proper map commutes with `wedge`. -/
-theorem wedge_map {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-    [IsManifold J ∞ N] (f : M → N) (hf : ContMDiff I J ∞ f) (hp : IsProperMap f)
-    (x : deRhamCohomology J N k) (y : compactlySupportedDeRhamCohomology J N l) :
-    map f hf hp (k + l) (wedge J N k l x y) =
-      wedge I M k l (deRhamCohomology.map f hf k x) (map f hf hp l y) := by
-  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective J k x
-  obtain ⟨ψ, rfl⟩ := mk_surjective J l y
-  rw [wedge_mk, map_mk, deRhamCohomology.map_mk, map_mk, wedge_mk]
-  exact congrArg (mk I (k + l)) <| Subtype.ext <| by
-    simp only [compactlySupportedClosedForms.coe_mpullback, closedForms.coe_mpullback,
-      SmoothForm.mpullback_wedge]
-
-omit [FiniteDimensional ℝ E] [BoundarylessManifold I M] [SigmaCompactSpace M] in
-/-- Extension by zero along `h : U ≤ W` intertwines `wedge` with restriction on `H^k_dR`. -/
-theorem wedge_extendByZero {U W : Opens M} (h : U ≤ W) (x : deRhamCohomology I W k)
-    (y : compactlySupportedDeRhamCohomology I U l) :
-    extendByZero h (k + l)
-        (wedge I U k l (deRhamCohomology.map (Opens.inclusion h) (contMDiff_inclusion h) k x) y) =
-      wedge I W k l x (extendByZero h l y) := by
-  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I k x
-  obtain ⟨ψ, rfl⟩ := mk_surjective I l y
-  rw [deRhamCohomology.map_mk, wedge_mk, extendByZero_mk, extendByZero_mk, wedge_mk]
-  refine congrArg (mk I (k + l)) (Subtype.ext <| Subtype.ext <| funext fun z ↦ ?_)
-  rw [compactlySupportedClosedForms.coe_extendByZero, SmoothForm.coe_wedge, SmoothForm.coe_wedge,
-    closedForms.coe_mpullback, SmoothForm.coe_mpullback,
-    compactlySupportedClosedForms.coe_extendByZero]
-  by_cases hz : (z : M) ∈ U
-  · obtain ⟨z, rfl⟩ : ∃ z' : U, Opens.inclusion h z' = z := ⟨⟨z, hz⟩, rfl⟩
-    rw [RoughForm.extendByZero_inclusion, ← mpullback_inclusion_apply h (RoughForm.wedge φ.1.1 _),
-      mpullback_wedge, RoughForm.mpullback_inclusion_extendByZero]
-  · rw [RoughForm.extendByZero_apply_of_notMem _ hz, RoughForm.wedge_def,
-      RoughForm.wedgeWith_apply', RoughForm.extendByZero_apply_of_notMem _ hz,
-      ContinuousAlternatingMap.pairedWedge_zero_right]
 
 end compactlySupportedDeRhamCohomology
 
@@ -402,5 +343,33 @@ theorem integralTopForm_wedge_self_eq_of_sub_mem_exactForms
         (SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hψφ hφ)
   simpa [SmoothForm.coe_wedge] using
     congrArg (compactlySupportedDeRhamCohomology.integral o) hmk
+
+end
+
+section
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I M]
+  [T2Space M] [CompactSpace M] {k : ℕ}
+
+/-- Pairing `x ∈ H^k_dR(M)` with `compactlySupportedDeRhamCohomology.const I M r` multiplies the
+integral of `x` by `r`. -/
+@[simp]
+theorem poincarePairing_const_right (o : Manifold.Orientation I M (Fin (k + 0)))
+    (x : deRhamCohomology I M k) (r : ℝ) :
+    poincarePairing I M o x (compactlySupportedDeRhamCohomology.const I M r) =
+      r * compactlySupportedDeRhamCohomology.integral (o.reindex (finCongr (Nat.add_zero k)))
+        ((LinearEquiv.ofBijective _
+          (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I k)).symm x) := by
+  let e := LinearEquiv.ofBijective _
+    (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I (M := M) k)
+  have hxc : compactlySupportedDeRhamCohomology.toDeRhamCohomology I M k (e.symm x) = x :=
+    e.apply_symm_apply x
+  rw [← hxc, poincarePairing_comm_toDeRhamCohomology,
+    compactlySupportedDeRhamCohomology.toDeRhamCohomology_const, Nat.mul_zero, pow_zero, one_mul,
+    poincarePairing_const_left, Manifold.Orientation.reindex_finCongr_reindex_finCongr, hxc]
+
+end
 
 end TauCeti
