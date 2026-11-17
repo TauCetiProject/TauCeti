@@ -12,8 +12,8 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -22,9 +22,12 @@ import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 /-!
 # Model checks for the Euclidean minimal graph equation
 
-Affine height functions solve the minimal graph equation. On the Euclidean plane, squared norm
-has strictly positive nondivergence operator, while the harmonic saddle `xy` has operator `-2xy`.
-Scherk's graph solves both forms of the equation on its natural open square.
+Affine height functions solve the minimal graph equation. In dimension `n`, squared norm has
+nondivergence operator `2n + 8(n-1)‖x‖²`, which is strictly positive in every positive dimension.
+On the Euclidean plane, the harmonic saddle `xy` has operator `-2xy`. The separated-variables
+height API computes the gradient, Hessian, Laplacian and nondivergence operator from the two
+profiles. This gives Scherk's graph as a solution of both forms wherever both cosines are nonzero,
+including its customary square `|x|, |y| < π/2`.
 
 ## References
 
@@ -220,35 +223,8 @@ theorem nondivergenceOperator_separableHeight (f g : ℝ → ℝ) (x : Plane)
     Matrix.cons_val_one]
   ring
 
-/-- The one-dimensional profile of Scherk's graph. -/
-private def logCos (t : ℝ) : ℝ := Real.log (Real.cos t)
-
-@[simp] private theorem logCos_apply (t : ℝ) : logCos t = Real.log (Real.cos t) := (rfl)
-
-/-- The Scherk profile is smooth wherever the cosine is nonzero. -/
-private theorem contDiffAt_logCos {n : WithTop ℕ∞} {t : ℝ} (hc : Real.cos t ≠ 0) :
-    ContDiffAt ℝ n logCos t := by
-  exact (Real.contDiff_cos.contDiffAt.log hc)
-
-/-- The derivative of the Scherk profile is the negative tangent. -/
-private theorem deriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
-    deriv logCos t = -Real.tan t := by
-  have h := ((Real.hasDerivAt_cos t).log hc).deriv
-  unfold logCos
-  simpa [Real.tan_eq_sin_div_cos, neg_div] using h
-
-/-- The second derivative of the Scherk profile is the negative squared secant. -/
-private theorem iteratedDeriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
-    iteratedDeriv 2 logCos t = -(1 / Real.cos t ^ 2) := by
-  rw [iteratedDeriv_succ, iteratedDeriv_succ, iteratedDeriv_zero]
-  have hne : ∀ᶠ s in 𝓝 t, Real.cos s ≠ 0 :=
-    Real.continuous_cos.continuousAt.eventually_ne hc
-  have heq : deriv logCos =ᶠ[𝓝 t] fun s ↦ -Real.tan s :=
-    hne.mono fun s hs ↦ deriv_logCos hs
-  rw [heq.deriv_eq]
-  exact (Real.hasDerivAt_tan hc).neg.deriv
-
-/-- Scherk's minimal graph on the open square where both cosines are positive. -/
+/-- The unrestricted Scherk height `log (cos x) - log (cos y)`.
+Its customary minimal-graph domain is `|x|, |y| < π/2`, where both cosines are positive. -/
 def scherkHeight (x : Plane) : ℝ :=
   Real.log (Real.cos (x 0)) - Real.log (Real.cos (x 1))
 
@@ -259,16 +235,18 @@ def scherkHeight (x : Plane) : ℝ :=
 theorem nondivergenceOperator_scherkHeight (x : Plane)
     (hcx : Real.cos (x 0) ≠ 0) (hcy : Real.cos (x 1) ≠ 0) :
     nondivergenceOperator scherkHeight x = 0 := by
-  have hfx : ContDiffAt ℝ 2 logCos (x 0) := contDiffAt_logCos hcx
-  have hgy : ContDiffAt ℝ 2 (fun t ↦ -logCos t) (x 1) :=
-    (contDiffAt_logCos hcy).neg
-  have heq : scherkHeight = separableHeight logCos (fun t ↦ -logCos t) := by
+  have hfx : ContDiffAt ℝ 2 (fun t : ℝ ↦ Real.log (Real.cos t)) (x 0) :=
+    Real.contDiff_cos.contDiffAt.log hcx
+  have hgy : ContDiffAt ℝ 2 (fun t : ℝ ↦ -Real.log (Real.cos t)) (x 1) :=
+    (Real.contDiff_cos.contDiffAt.log hcy).neg
+  have heq : scherkHeight = separableHeight
+      (fun t : ℝ ↦ Real.log (Real.cos t)) (fun t : ℝ ↦ -Real.log (Real.cos t)) := by
     funext z
-    simp only [scherkHeight_apply, separableHeight_apply, logCos_apply, sub_eq_add_neg]
+    simp only [scherkHeight_apply, separableHeight_apply, sub_eq_add_neg]
   rw [heq, nondivergenceOperator_separableHeight _ _ x hfx hgy]
   simp only [deriv.fun_neg, iteratedDeriv_fun_neg, neg_sq,
-    deriv_logCos hcx, deriv_logCos hcy,
-    iteratedDeriv_logCos hcx, iteratedDeriv_logCos hcy]
+    TauCeti.deriv_log_cos hcx, TauCeti.deriv_log_cos hcy,
+    TauCeti.iteratedDeriv_two_log_cos hcx, TauCeti.iteratedDeriv_two_log_cos hcy]
   rw [← Real.inv_one_add_tan_sq hcx, ← Real.inv_one_add_tan_sq hcy]
   simp only [one_div, inv_inv]
   ring
@@ -279,8 +257,8 @@ theorem fluxDivergence_scherkHeight (x : Plane)
     fluxDivergence scherkHeight x = 0 := by
   have hu : ContDiffAt ℝ 2 scherkHeight x := by
     unfold scherkHeight
-    exact ((contDiffAt_logCos hcx).comp x (contDiffAt_piLp_apply 2)).sub
-      ((contDiffAt_logCos hcy).comp x (contDiffAt_piLp_apply 2))
+    exact ((Real.contDiff_cos.contDiffAt.log hcx).comp x (contDiffAt_piLp_apply 2)).sub
+      ((Real.contDiff_cos.contDiffAt.log hcy).comp x (contDiffAt_piLp_apply 2))
   have hgrad : DifferentiableAt ℝ (∇ scherkHeight) x :=
     (hu.gradient_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   exact (fluxDivergence_eq_zero_iff hgrad).2 (nondivergenceOperator_scherkHeight x hcx hcy)

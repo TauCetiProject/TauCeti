@@ -15,8 +15,9 @@ import TauCeti.Analysis.InnerProductSpace.NormPow
 /-!
 # The upper half-catenoid as a minimal graph
 
-For the height `arcosh ρ` on `ρ > 1`, the radial minimal-graph flux is constant.
-The graph flux is `x/‖x‖²` in every dimension and has zero divergence in dimension two.
+For the height `arcosh ρ` on `ρ > 1`, the planar flux through radius `ρ` per unit angle is one.
+The graph flux is `x/‖x‖²` in every dimension, with divergence `(finrank ℝ E - 2)/‖x‖²`.
+On the graph domain this divergence vanishes exactly in dimension two.
 
 ## References
 
@@ -32,7 +33,8 @@ namespace TauCeti.MinimalGraph
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [CompleteSpace E]
 
-/-- The radial minimal-graph flux of the upper half-catenoid. -/
+/-- Radius `ρ` times the radial component of `areaFlux` for the profile `arcosh` on `ρ > 1`:
+the planar flux through radius `ρ` per unit angle. -/
 def catenoidRadialFlux (ρ : ℝ) : ℝ :=
   ρ * (Real.sqrt (ρ ^ 2 - 1))⁻¹ /
     Real.sqrt (1 + ((Real.sqrt (ρ ^ 2 - 1))⁻¹) ^ 2)
@@ -150,7 +152,7 @@ theorem fluxDivergence_upperCatenoidHeight_eq_zero [FiniteDimensional ℝ E]
 
 omit [CompleteSpace E] in
 /-- The upper half-catenoid solves the two-dimensional nondivergence equation. -/
-theorem nondivergenceOperator_upperCatenoidHeight [FiniteDimensional ℝ E]
+theorem nondivergenceOperator_upperCatenoidHeight_eq_zero [FiniteDimensional ℝ E]
     (hE : Module.finrank ℝ E = 2) {x : E} (hx : 1 < ‖x‖) :
     nondivergenceOperator upperCatenoidHeight x = 0 := by
   have hu : ContDiffAt ℝ 2 upperCatenoidHeight x := contDiffAt_upperCatenoidHeight hx
