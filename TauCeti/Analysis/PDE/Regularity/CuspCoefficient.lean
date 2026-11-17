@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.InnerProductSpace.Dual
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -34,9 +34,9 @@ in `TauCeti.PDE`).
 This shows that the interior Schauder estimate for divergence-form equations
 (`exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`
 in `TauCeti.PDE`) is sharp in the Hölder exponent of the coefficients: for `α`-Hölder
-coefficients it makes `∇u` `α`-Hölder, and the example shows that no exponent `β > α` can replace
-`α` in its conclusion. The
-example works in every dimension, including `d = 1`, where it is the equation
+coefficients with `0 < α < 1` it makes `∇u` `α`-Hölder, and the example shows that no exponent
+`β > α` can replace `α` in its conclusion. The example itself holds for every `0 < α ≤ 1`, and
+works in every dimension, including `d = 1`, where it is the equation
 `-((1 + |x| ^ α) u')' = 0` on an interval.
 
 ## References
@@ -101,8 +101,13 @@ theorem holderWith_matrixBilinearForm_cuspCoefficient (hα : α ≤ 1) (i : ι) 
     HolderWith 1 α fun x : EuclideanSpace ℝ ι ↦ matrixBilinearForm (cuspCoefficient α i x) := by
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
-  rw [dist_eq_norm, NNReal.coe_one, one_mul, cuspCoefficient_apply, cuspCoefficient_apply,
-    ← matrixBilinearForm_sub, ← sub_smul, add_sub_add_left_eq_sub]
+  -- The two coefficients differ by the scalar `|xᵢ| ^ α - |yᵢ| ^ α`.
+  have hdiff : matrixBilinearForm (cuspCoefficient α i x) -
+      matrixBilinearForm (cuspCoefficient α i y) =
+      matrixBilinearForm ((|x i| ^ (α : ℝ) - |y i| ^ (α : ℝ)) • 1) := by
+    rw [← matrixBilinearForm_sub, cuspCoefficient_apply, cuspCoefficient_apply, ← sub_smul,
+      add_sub_add_left_eq_sub]
+  rw [dist_eq_norm, NNReal.coe_one, one_mul, hdiff]
   exact (ContinuousLinearMap.opNorm_le_bound₂ _ (abs_nonneg _) fun η ξ ↦
     norm_matrixBilinearForm_smul_one_le_of_abs_le le_rfl η ξ).trans (abs_sub_le_dist_rpow hα i x y)
 
@@ -165,7 +170,7 @@ private theorem energyFormH1_cuspCoefficient_eq_zero (i : ι) {Ω : Opens (Eucli
   set e : EuclideanSpace ℝ ι := EuclideanSpace.single i 1
   have hflux : ∫ x in Ω, matrixBilinearForm (cuspCoefficient α i x)
       (W1p.gradient (W1p.ofTestFunctionₗ volume Ω 2 φ) x) (W1p.gradient u x) =
-      ∫ x in Ω, ⟪(fun _ ↦ e) x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫ := by
+      ∫ x in Ω, ⟪e, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫ := by
     refine integral_congr_ae ?_
     filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ, hu] with x hx hx'
     rw [W1p.gradient_ofTestFunctionₗ, hx, hx', cuspCoefficient_apply,
@@ -173,16 +178,14 @@ private theorem energyFormH1_cuspCoefficient_eq_zero (i : ι) {Ω : Opens (Eucli
     simp only [WithLp.ofLp_smul, dotProduct_smul, smul_eq_mul,
       mul_inv_cancel_left₀ (one_add_abs_rpow_pos (α := α) (x i)).ne']
     rw [EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
-  -- The integral of `∂ᵢφ` vanishes: the constant `1` has weak derivative `0`.
-  have hconst := (hasWeakLineDerivOn_const (μ := volume) (Ω := Ω) (v := e)
-    (1 : ℝ)).integral_lineDeriv_smul_eq_neg_integral_smul φ
-  have hφd := φ.contDiff.differentiable (by simp)
-  simp only [smul_eq_mul, mul_one, mul_zero, integral_zero, neg_zero] at hconst
+  -- `⟪eᵢ, ∇φ⟫` is the directional derivative `∂ᵢφ`, whose integral vanishes.
+  have hpt : ∀ x, ⟪e, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫ = lineDeriv ℝ (φ : _ → ℝ) x e :=
+    fun x ↦ by
+      rw [(φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv, ← toDual_gradient,
+        toDual_apply_apply, real_inner_comm]
   rw [energyFormH1_zero_zero_eq_setIntegral, hflux,
-    φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset, ← hconst]
-  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  beta_reduce
-  rw [(hφd x).lineDeriv_eq_fderiv, ← toDual_gradient, toDual_apply_apply, real_inner_comm]
+    φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
+  simpa only [hpt] using TestFunction.integral_lineDeriv_eq_zero (μ := volume) φ e
 
 /-! ### The gradient is `α`-Hölder and no better -/
 
@@ -199,8 +202,13 @@ private theorem holderWith_cuspGradient (hα : α ≤ 1) (i : ι) :
   refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
   have hx := one_add_abs_rpow_pos (α := α) (x i)
   have hy := one_add_abs_rpow_pos (α := α) (y i)
-  rw [dist_cuspGradient, NNReal.coe_one, one_mul, cuspSlope, cuspSlope, inv_sub_inv hx.ne' hy.ne',
-    abs_div, abs_of_pos (mul_pos hx hy), add_sub_add_left_eq_sub, abs_sub_comm]
+  have hsub : cuspSlope α (x i) - cuspSlope α (y i) =
+      (|y i| ^ (α : ℝ) - |x i| ^ (α : ℝ)) / ((1 + |x i| ^ (α : ℝ)) * (1 + |y i| ^ (α : ℝ))) := by
+    unfold cuspSlope
+    field_simp
+    ring
+  rw [dist_cuspGradient, NNReal.coe_one, one_mul, hsub, abs_div, abs_of_pos (mul_pos hx hy),
+    abs_sub_comm]
   refine (div_le_self (abs_nonneg _) ?_).trans (abs_sub_le_dist_rpow hα i x y)
   exact one_le_mul_of_one_le_of_one_le (le_add_of_nonneg_right (by positivity))
     (le_add_of_nonneg_right (by positivity))
@@ -234,11 +242,13 @@ private theorem not_holderOnWith_cuspGradient (hα : 0 < α) {β : ℝ≥0} (hα
   have hte : (t • e) i = t := by simp [e]
   have hval : dist (cuspGradient α i (t • e)) (cuspGradient α i 0) =
       t ^ (α : ℝ) / (1 + t ^ (α : ℝ)) := by
-    rw [dist_cuspGradient, cuspSlope, cuspSlope, hte, PiLp.zero_apply, abs_zero,
-      Real.zero_rpow hα', add_zero, inv_one, abs_of_pos ht0, abs_of_nonpos (sub_nonpos.2
-        (inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity)))), neg_sub]
-    field_simp
-    ring
+    have hsub : 1 - (1 + t ^ (α : ℝ))⁻¹ = t ^ (α : ℝ) / (1 + t ^ (α : ℝ)) := by
+      field_simp
+      ring
+    rw [dist_cuspGradient, hte]
+    simp only [cuspSlope, PiLp.zero_apply, abs_zero, Real.zero_rpow hα', add_zero, inv_one,
+      abs_of_pos ht0]
+    rw [abs_sub_comm, hsub, abs_of_nonneg (by positivity)]
   rw [hval, dist_zero_right, hnorm, show (β : ℝ) = ε + α by rw [hε]; ring,
     Real.rpow_add ht0] at hdist
   have hpow : 0 < t ^ (α : ℝ) := Real.rpow_pos_of_pos ht0 _
@@ -262,8 +272,8 @@ origin contained in `Ω`.
 
 So the interior Schauder estimate
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`,
-which makes `∇u` `α`-Hölder for `α`-Hölder coefficients, cannot conclude any exponent larger than
-the Hölder exponent of the coefficients. -/
+which makes `∇u` `α`-Hölder for `α`-Hölder coefficients when `0 < α < 1`, cannot conclude any
+exponent larger than the Hölder exponent of the coefficients. -/
 theorem exists_energyFormH1_cuspCoefficient_eq_zero_and_holderWith_and_not_holderOnWith_gradient
     (hα : 0 < α) (hα1 : α ≤ 1) {β : ℝ≥0} (hαβ : α < β) (i : ι)
     {Ω : Opens (EuclideanSpace ℝ ι)} (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) :
