@@ -13,22 +13,26 @@ import Mathlib.FieldTheory.SeparableClosure
 # Integral closure, separability, and local invariants of completed places
 
 Let `P'` be a place of `F' / k'` lying over a place `P` of `F / k` in an integral field extension
-`F' / F`. Under the locally installed algebra structures `TauCeti.Place.completionExtensionAlgebra`
-and `TauCeti.Place.completionIntegersExtensionAlgebra`, completion preserves the ramification index
-`e(P' ∣ P)` without any residue-field hypothesis.
+`F' / F`. Without any residue-field finiteness hypothesis, the local integral closure `𝒪'_P` of
+`𝒪_P` in `F'` embeds injectively into the completed valuation ring `𝒪̂_{P'}` via
+`TauCeti.Place.completionIntegersIntegralClosureHom`, and when `F' / F` is separable every
+completed element of `F'` remains separable over `F̂_P`
+(`TauCeti.Place.isSeparable_completionEmbedding`).
 
-When the residue extension at `P'` is finite, `𝒪̂_{P'}` is finite over `𝒪̂_P`
-(`TauCeti.Place.moduleFinite_completionIntegers`), hence integral over `𝒪̂_P`; since valuation
-rings are integrally closed in their fraction fields, `𝒪̂_{P'}` is the integral closure of `𝒪̂_P`
-in `F̂_{P'}` (`TauCeti.Place.isIntegralClosure_completionIntegers`). If `F' / F` is also separable,
-every completed element of `F'` remains separable over `F̂_P`, and because those elements span
-`F̂_{P'}` over `F̂_P`, the completed extension `F̂_{P'} / F̂_P` is separable as well
-(`TauCeti.Place.isSeparable_completion`), regardless of whether the residue extension is separable.
+Under the locally installed algebra structures `TauCeti.Place.completionExtensionAlgebra` and
+`TauCeti.Place.completionIntegersExtensionAlgebra`, when the residue extension at `P'` is finite,
+`𝒪̂_{P'}` is finite over `𝒪̂_P` (`TauCeti.Place.moduleFinite_completionIntegers`), hence integral
+over `𝒪̂_P`; since valuation rings are integrally closed in their fraction fields, `𝒪̂_{P'}` is the
+integral closure of `𝒪̂_P` in `F̂_{P'}` (`TauCeti.Place.isIntegralClosure_completionIntegers`). If
+`F' / F` is also separable, those completed elements of `F'` span `F̂_{P'}` over `F̂_P`, so the
+completed extension `F̂_{P'} / F̂_P` is separable as well (`TauCeti.Place.isSeparable_completion`),
+regardless of whether the residue extension is separable.
 
-When `F` and `F'` share a constant field `k`, the completed places `P'.completionPlace` and
-`P.completionPlace` form an extension of places with `P'.completionPlace.restrict k P.Completion =
-P.completionPlace` and matching relative degree. This makes `𝒪̂_P ⊆ 𝒪̂_{P'}` an instance of the
-general local-extension and different-ideal machinery for discrete valuation rings.
+When `F` and `F'` share a constant field `k` and the residue extension is finite, the completed
+places `P'.completionPlace` and `P.completionPlace` form an extension of places with
+`P'.completionPlace.restrict k P.Completion = P.completionPlace` and matching relative degree. This
+makes `𝒪̂_P ⊆ 𝒪̂_{P'}` an instance of the general local-extension and different-ideal machinery for
+discrete valuation rings.
 
 The integral-closure identification parallels the affine-model theorem in
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean`, and the separability
@@ -44,7 +48,6 @@ transfer provides the intrinsic-place counterpart of
 
 * `TauCeti.Place.completionIntegersIntegralClosureHom_injective`: the canonical homomorphism
   `𝒪'_P →+* 𝒪̂_{P'}` is injective.
-* `TauCeti.Place.ramificationIdx_completionPlace`: completion preserves the ramification index.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`: when the residue extension is finite,
   `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in `F̂_{P'}`.
 * `TauCeti.Place.isSeparable_completionEmbedding` and `TauCeti.Place.isSeparable_completion`:
@@ -52,8 +55,8 @@ transfer provides the intrinsic-place counterpart of
   residue extension is finite `F̂_{P'} / F̂_P` is separable (even if the residue extension is
   inseparable).
 * `TauCeti.Place.completionPlace_restrict` and `TauCeti.Place.relativeDegree_completionPlace`:
-  over a common constant field, completion commutes with place restriction and preserves the
-  full relative degree.
+  over a common constant field and with finite residue extension, completion commutes with place
+  restriction and preserves the full relative degree.
 
 ## References
 
@@ -76,18 +79,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
   [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k' F')
   (hP : P'.restrict k F = P)
-
-/-- Completion preserves the ramification index, with no finiteness assumption on the residue
-extension. -/
-theorem ramificationIdx_completionPlace :
-    letI := P.completionExtensionAlgebra P' hP
-    ramificationIdx P.Completion P'.completionPlace = ramificationIdx F P' := by
-  let _ := P.completionExtensionAlgebra P' hP
-  rw [ramificationIdx_def,
-    Valuation.ordIndex_eq_mul_of_forall_ord_eq _ P.completionPlace.valuation (fun x ↦ by
-      rw [Valuation.ord_comap, ord_valuation, ord_valuation, algebraMap_completionExtensionAlgebra,
-        P.ord_completionExtension P' hP x]),
-    Valuation.ordIndex_eq_one_of_surjective _ P.completionPlace.valuation_surjective, mul_one]
 
 /-- Every element of `F'` remains separable over `F̂_P` inside `F̂_{P'}`. -/
 theorem isSeparable_completionEmbedding [Algebra.IsSeparable F F'] (y : F') :
