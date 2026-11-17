@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
+public import TauCeti.Topology.Circle.Degree
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
 import TauCeti.Geometry.Manifold.Orientation.TopForm
@@ -31,6 +33,12 @@ closed curves. Hence `dθ` is closed but not exact, and its class in `H¹_dR(S¹
 circle has nontrivial first de Rham cohomology, unlike the normed spaces of
 `TauCeti.subsingleton_deRhamCohomology_normedSpace`.
 
+By the Poincaré lemma, `dθ` admits local primitives everywhere on `Circle`
+(`TauCeti.forall_exists_isPrimitiveOn_circleAngularForm`). Its continuous path integral around
+`Circle.expLoop` is `2π` (`TauCeti.continuousPathIntegral_circleAngularForm_expLoop`), showing
+that `dθ` has no global differentiable primitive on `Circle`
+(`TauCeti.not_exists_isPrimitiveOn_circleAngularForm`).
+
 The angular form vanishes nowhere, so it orients the circle (`TauCeti.circleOrientation`, the
 counterclockwise orientation). Computing through the positively oriented parametrization
 `z ↦ exp (z₀ i)` of the circle minus one point, the oriented integral of `dθ` is `2π`, and its
@@ -45,6 +53,11 @@ absolute value is `2π` for either orientation of the circle.
 * `TauCeti.pathIntegral_circleAngularForm_circleExp`: `∫_{exp (· i)} dθ = b − a` over `a..b`.
 * `TauCeti.circleAngularClosedForm_notMem_exactForms`: `dθ` is not exact.
 * `TauCeti.deRhamCohomology.mk_circleAngularClosedForm_ne_zero`: `[dθ] ≠ 0` in `H¹_dR(S¹)`.
+* `TauCeti.forall_exists_isPrimitiveOn_circleAngularForm`: `dθ` admits local primitives near every
+  point of `Circle`.
+* `TauCeti.continuousPathIntegral_circleAngularForm_expLoop`: the continuous path integral of `dθ`
+  around `Circle.expLoop` is `2π`.
+* `TauCeti.not_exists_isPrimitiveOn_circleAngularForm`: `dθ` has no global primitive on `Circle`.
 * `TauCeti.circleOrientation`: the orientation of the circle on which `dθ` is positive.
 * `TauCeti.integralTopForm_circleOrientation_circleAngularForm`: `∫_{S¹} dθ = 2π`.
 * `TauCeti.abs_integralTopForm_circleAngularForm`: `|∫_{S¹} dθ| = 2π` for every orientation.
@@ -176,6 +189,40 @@ theorem deRhamCohomology.mk_circleAngularClosedForm_ne_zero :
 /-- The first de Rham cohomology of the circle is nontrivial. -/
 instance nontrivial_deRhamCohomology_circle_one : Nontrivial (deRhamCohomology (𝓡 1) Circle 1) :=
   ⟨⟨_, 0, deRhamCohomology.mk_circleAngularClosedForm_ne_zero⟩⟩
+
+/-! ### Local primitives and continuous path integral -/
+
+/-- The angular form `circleAngularForm` has local primitives on `Circle`. -/
+theorem forall_exists_isPrimitiveOn_circleAngularForm (z : Circle) :
+    ∃ (g : Circle → ℝ) (U : Set Circle), z ∈ U ∧ IsPrimitiveOn circleAngularForm g U := by
+  have hclosed : mextDeriv circleAngularForm = 0 := by
+    rw [← coe_circleAngularClosedForm]
+    exact (mem_closedForms (𝓡 1) circleAngularClosedForm.1).mp circleAngularClosedForm.2
+  obtain ⟨g, -, U, hzU, hgU⟩ := exists_contMDiff_isPrimitiveOn (r := 1) le_rfl
+    (isSmoothForm_circleAngularForm.of_le (by simp)) hclosed z
+  exact ⟨g, U, hzU, hgU⟩
+
+/-- The continuous path integral of `circleAngularForm` around `Circle.expLoop` is `2π`. -/
+theorem continuousPathIntegral_circleAngularForm_expLoop :
+    continuousPathIntegral circleAngularForm Circle.expLoop = 2 * Real.pi := by
+  let c : ℝ → Circle := fun t ↦ Circle.exp (2 * Real.pi * t + 0)
+  have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) 1 c :=
+    (contMDiff_circleExp (m := 1)).comp
+      ((contDiff_const.mul contDiff_id).add contDiff_const).contMDiff
+  rw [continuousPathIntegral_eq_pathIntegral forall_exists_isPrimitiveOn_circleAngularForm
+    (isSmoothForm_circleAngularForm.of_le (by simp)) hc (fun t ↦ by simp [c]),
+    pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
+      (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1,
+    pathIntegral_circleAngularForm_circleExp]
+  ring
+
+/-- The angular form `circleAngularForm` on `Circle` has no global primitive. -/
+theorem not_exists_isPrimitiveOn_circleAngularForm :
+    ¬ ∃ g : Circle → ℝ, IsPrimitiveOn circleAngularForm g Set.univ := by
+  rintro ⟨g, hg⟩
+  have h0 := continuousPathIntegral_eq_sub_of_isPrimitiveOn_univ hg Circle.expLoop
+  rw [sub_self, continuousPathIntegral_circleAngularForm_expLoop] at h0
+  linarith [Real.pi_pos]
 
 /-! ### The orientation of the circle and the integral of the angular form -/
 

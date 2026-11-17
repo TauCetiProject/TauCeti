@@ -36,9 +36,10 @@ with local primitives, closed `C¹` `1`-forms, exact `1`-forms, and holomorphic 
   and closed, with global primitive `Complex.arg` on `Complex.slitPlane` and local primitives on
   `ℂ \ {0}`, pulling back to `TauCeti.circleAngularForm` on `Circle`. Its integral around the unit
   circle loop is `2π` — agreeing with Mathlib's `curveIntegral` and with `TauCeti.periodHom` —
-  with double traversal `4π` and reversal `-2π`, showing that neither
-  `TauCeti.puncturedPlaneAngularFormRestricted` on `ℂ \ {0}` nor `TauCeti.circleAngularForm` on
-  `Circle` has a global primitive.
+  with double traversal `4π` and reversal `-2π`, showing that
+  `TauCeti.puncturedPlaneAngularFormRestricted` has no global primitive on `ℂ \ {0}` (the
+  circle-only local-primitive and non-exactness results for `TauCeti.circleAngularForm` live in
+  `TauCeti.Geometry.Manifold.DeRham.Circle`).
 * **Holomorphic `dz / z`**: exact on `Complex.slitPlane` (`TauCeti.isExactOn_inv_slitPlane`), with
   loop integral `2πi` around the unit circle, hence not exact on `ℂ \ {0}`
   (`TauCeti.not_isExactOn_inv_compl_zero`).
@@ -369,29 +370,6 @@ theorem puncturedPlaneUnitLoop_apply (t : unitInterval) :
     congrFun (Circle.expLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t
   rw [hmap, circleToPuncturedPlane, Circle.expLoop_apply]
 
-/-- The angular form `circleAngularForm` has local primitives on `Circle`. -/
-theorem forall_exists_isPrimitiveOn_circleAngularForm (z : Circle) :
-    ∃ (g : Circle → ℝ) (U : Set Circle), z ∈ U ∧ IsPrimitiveOn circleAngularForm g U := by
-  obtain ⟨g, U, hzU, hgU⟩ :=
-    forall_exists_isPrimitiveOn_puncturedPlaneAngularFormRestricted (circleToPuncturedPlane z)
-  refine ⟨g ∘ circleToPuncturedPlane, circleToPuncturedPlane ⁻¹' U, hzU, ?_⟩
-  rw [← mpullback_circleToPuncturedPlane_puncturedPlaneAngularFormRestricted]
-  exact hgU.mpullback (contMDiff_circleToPuncturedPlane.mdifferentiable (by simp))
-
-/-- The continuous path integral of `circleAngularForm` around `Circle.expLoop` is `2π`. -/
-theorem continuousPathIntegral_circleAngularForm_expLoop :
-    continuousPathIntegral circleAngularForm Circle.expLoop = 2 * Real.pi := by
-  let c : ℝ → Circle := fun t ↦ Circle.exp (2 * Real.pi * t + 0)
-  have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) 1 c :=
-    (contMDiff_circleExp (m := 1)).comp
-      ((contDiff_const.mul contDiff_id).add contDiff_const).contMDiff
-  rw [continuousPathIntegral_eq_pathIntegral forall_exists_isPrimitiveOn_circleAngularForm
-    (isSmoothForm_circleAngularForm.of_le (by simp)) hc (fun t ↦ by simp [c]),
-    pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
-      (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1,
-    pathIntegral_circleAngularForm_circleExp]
-  ring
-
 /-- The continuous path integral of the punctured-plane angular form around the unit circle loop
 is `2π`. -/
 theorem continuousPathIntegral_puncturedPlaneAngularForm_unitLoop :
@@ -470,15 +448,6 @@ theorem not_exists_isPrimitiveOn_puncturedPlaneAngularFormRestricted :
     forall_exists_isPrimitiveOn_puncturedPlaneAngularFormRestricted hg puncturedPlaneUnitLoop
     (fun _ ↦ mem_univ _)
   rw [sub_self, continuousPathIntegral_puncturedPlaneAngularForm_unitLoop] at h0
-  linarith [Real.pi_pos]
-
-/-- The angular form `circleAngularForm` on `Circle` has no global primitive. -/
-theorem not_exists_isPrimitiveOn_circleAngularForm :
-    ¬ ∃ g : Circle → ℝ, IsPrimitiveOn circleAngularForm g univ := by
-  rintro ⟨g, hg⟩
-  have h0 := continuousPathIntegral_eq_sub_of_isPrimitiveOn
-    forall_exists_isPrimitiveOn_circleAngularForm hg Circle.expLoop (fun _ ↦ mem_univ _)
-  rw [sub_self, continuousPathIntegral_circleAngularForm_expLoop] at h0
   linarith [Real.pi_pos]
 
 /-- The logarithmic derivative `dz / z` on the punctured plane has local primitives everywhere. -/
