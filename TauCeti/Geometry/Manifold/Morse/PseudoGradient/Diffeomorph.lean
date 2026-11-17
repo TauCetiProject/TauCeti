@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.Flow.Diffeomorph
 
 /-!
 # Pseudo-gradient flows under diffeomorphisms
@@ -57,13 +57,10 @@ variable [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'
 include hσX
 
 /-- **A diffeomorphism intertwining two pseudo-gradients conjugates their flows**:
-`Φ'_t (σ y) = σ (Φ_t y)`. The image under `σ` of an orbit of `X` is an integral curve of `X'`. -/
+`Φ'_t (σ y) = σ (Φ_t y)`. This is `Diffeomorph.apply_flowOf` for the global flows. -/
 theorem flow_apply_diffeomorph (t : ℝ) (y : M) : hX'.flow t (σ y) = σ (hX.flow t y) := by
-  have hγ : IsMIntegralCurve (σ ∘ fun t ↦ hX.flow t y) X' := by
-    rw [isMIntegralCurve_iff_isMIntegralCurveOn]
-    exact (isMIntegralCurve_iff_isMIntegralCurveOn.1 (hX.isMIntegralCurve_flow y)).map_of_mfderiv_eq
-      (fun t _ ↦ σ.mdifferentiable (by simp) _) fun t _ ↦ hσX _
-  simpa using hX'.flow_apply_eq_of_isMIntegralCurve hγ t
+  rw [hX.flow_apply, hX'.flow_apply, ← flowOf_apply, ← flowOf_apply]
+  exact (σ.apply_flowOf (by simp) (hX'.contMDiff.of_le (by simp)) hσX t y).symm
 
 /-- **`σ` carries unstable manifolds to unstable manifolds**: `W^u(p) = σ⁻¹ (W'^u(σ p))`. -/
 theorem preimage_unstableSet_diffeomorph (p : M) :
