@@ -26,8 +26,9 @@ Unlike multiplication by Schwartz functions, the multiplier need not decay. Typi
 smooth functions which outside a ball agree with a winding phase `(z / |z|) ^ m` or with a
 coefficient of the angular form `dθ`, such as the reference fields of framed vortices on the plane.
 These multipliers appear in the linear terms of nonlinear field equations on affine Sobolev spaces
-centred at such a reference field. In the same way, multiplication by the smooth coefficients of a
-change of frame or of a differential operator acts on the integer orders of the scale.
+centred at such a reference field. The same applies to scalar coefficients with bounded
+derivatives, such as the coefficients of a differential operator; matrix-valued multipliers such
+as changes of frame are not treated here.
 
 Both proofs are by induction on `k`, starting from `H^{0,p} = Lᵖ`, which a bounded `g` multiplies
 into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`). Going up, a distribution
@@ -81,17 +82,6 @@ theorem MemSobolev.smulLeftCLM_of_norm_le [NormedSpace ℂ F] [CompleteSpace F] 
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If the derivatives of `g` up to order `k + 1` are bounded, then so are those of a directional
-derivative `x ↦ Dg(x) v` up to order `k`. -/
-private theorem exists_bound_iteratedFDeriv_fderiv_apply {k : ℕ} {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ k + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
-    (v : E) : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (fun y ↦ fderiv ℝ g y v) x‖ ≤ C := by
-  intro n hn
-  obtain ⟨C, hC⟩ := hbd (n + 1) (by omega)
-  exact ⟨C * ‖v‖, fun x ↦ (hg.1.norm_iteratedFDeriv_fderiv_apply_le
-    (by simp) v x).trans (by gcongr; exact hC x)⟩
-
 /-- **Multipliers with bounded derivatives act on `H^{k,p}`.** Let `1 < p < ∞` and let `g` be a
 function of temperate growth whose iterated derivatives of order at most `k` are bounded. Then
 `g f ∈ H^{k,p}` for every `f ∈ H^{k,p}`. -/
@@ -112,7 +102,7 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : 
       exact hf'.1.smulLeftCLM_of_norm_le hg (C := C) (fun x ↦ by simpa using hC x)
     -- `∂_v (g f) = (∂_v g) f + g ∂_v f`, and `∂_v g` has bounded derivatives up to order `k`.
     rw [lineDerivOp_smulLeftCLM hg]
-    exact (ih (hg.fderiv_apply v) (exists_bound_iteratedFDeriv_fderiv_apply hg hbd v)
+    exact (ih (hg.fderiv_apply v) (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd v)
       (hf.mono_of_one_lt hp hp_top (by linarith))).add
       (ih hg (fun n hn ↦ hbd n (by omega)) (hf'.2 v))
 
@@ -140,7 +130,7 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_to
       ⟨smulLeftCLM F g u - ∑ i, smulLeftCLM F (fun x ↦ fderiv ℝ g x (stdOrthonormalBasis ℝ E i))
         (w i), fun i ↦ smulLeftCLM F g (w i), ?_, fun i ↦ ih hg hbd' (hw i), ?_⟩
     · exact (ih hg hbd' hu).sub (MemSobolev.sum fun i _ ↦ ih (hg.fderiv_apply _)
-        (exists_bound_iteratedFDeriv_fderiv_apply hg hbd _) (hw i))
+        (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd _) (hw i))
     · simp only [map_add, map_sum, lineDerivOp_smulLeftCLM hg]
       rw [Finset.sum_add_distrib]
       abel
