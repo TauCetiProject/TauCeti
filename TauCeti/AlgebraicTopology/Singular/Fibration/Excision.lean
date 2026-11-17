@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Excisive
 public import TauCeti.Topology.CWComplex.Classical.RadialNeighborhood
+public import TauCeti.Topology.Homotopy.DeformationRetract
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 
 /-!
@@ -59,8 +60,8 @@ a skeletal filtration, which is how the products of a Serre spectral sequence ar
   total space over it. The `homotopyEquivalences_` form of the name is the chain homotopy
   equivalence with projective coefficients.
 * `TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup`: the preimages
-  of any two subcomplexes form an excisive couple in the part of the total space over their union
-  (`serrePreimageSubcomplexExcision`), with its `homotopyEquivalences_` form as well.
+  of any two subcomplexes form an excisive couple in the part of the total space over their union,
+  with its `homotopyEquivalences_` form as well.
 
 ## References
 
@@ -137,17 +138,21 @@ private theorem isWeakHomotopyEquivalence_inclusion_preimage_val_radialNeighborh
     (ContinuousMap.inclusion (Set.preimage_mono hST :
       (Subtype.val ⁻¹' S : Set C) ⊆ Subtype.val ⁻¹' T)).IsWeakHomotopyEquivalence := by
   subst hS hT
+  let e := ContinuousMap.HomotopyEquiv.ofRetraction A.subset_radialNeighborhood
+    A.radialNeighborhoodRetraction (Subcomplex.radialNeighborhoodRetraction_inclusion A)
+    A.radialNeighborhoodDeformation.symm.toHomotopy
+  have he : e.toFun = ContinuousMap.inclusion A.subset_radialNeighborhood :=
+    ContinuousMap.ext fun a ↦
+      Subtype.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ a)
   rw [ContinuousMap.isWeakHomotopyEquivalence_inclusion_preimage_val_iff
     (A.radialNeighborhood_subset_complex)]
-  exact A.radialNeighborhoodHomotopyEquiv_toFun ▸
-    A.radialNeighborhoodHomotopyEquiv.isWeakHomotopyEquivalence
+  exact he ▸ e.isWeakHomotopyEquivalence
 
 /-- **Preimages of two subcomplexes covering a CW complex form an excisive couple.** Let
 `p : E ⟶ B` be a Serre fibration, `C ⊆ B` a relative CW complex, and `A₁`, `A₂` subcomplexes
 covering it, `A₁ ⊔ A₂ = ⊤`. In the part `p⁻¹(C)` of `E` over `C`, the chains of the singular
 simplices lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the singular chains of `p⁻¹(C)` by a
-quasi-isomorphism, with coefficients in any module `R`. The open radial neighbourhoods of `A₁`,
-`A₂` and `A₁ ⊓ A₂` in `C` deformation retract onto them. -/
+quasi-isomorphism, with coefficients in any module `R`. -/
 theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex
     (hp : serreFibrations p) {A₁ A₂ : Subcomplex C} (hA : A₁ ⊔ A₂ = ⊤) {k : Type v} [Ring k]
     (R : ModuleCat.{u} k) :
@@ -186,12 +191,12 @@ theorem homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage
   have := quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex hp hA R
   (ChainComplex.quasiIso_iff_of_projective _).1 this
 
-/-- **Preimages of two subcomplexes form an excisive couple** (`serrePreimageSubcomplexExcision`).
-Let `p : E ⟶ B` be a Serre fibration and `A₁`, `A₂` subcomplexes of a relative CW complex
-`C ⊆ B`. In the part `p⁻¹(A₁ ∪ A₂)` of `E` over their union, the chains of the singular simplices
-lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the singular chains of `p⁻¹(A₁ ∪ A₂)` by a
-quasi-isomorphism, `C(p⁻¹(A₁)) + C(p⁻¹(A₂)) → C(p⁻¹(A₁ ∪ A₂))`, with coefficients in any module
-`R`. This is the case `C = A₁ ⊔ A₂` of
+/-- **Preimages of two subcomplexes form an excisive couple.** Let `p : E ⟶ B` be a Serre
+fibration and `A₁`, `A₂` subcomplexes of a relative CW complex `C ⊆ B`. In the part
+`p⁻¹(A₁ ∪ A₂)` of `E` over their union, the chains of the singular simplices lying in `p⁻¹(A₁)`
+or in `p⁻¹(A₂)` include into the singular chains of `p⁻¹(A₁ ∪ A₂)` by a quasi-isomorphism,
+`C(p⁻¹(A₁)) + C(p⁻¹(A₂)) → C(p⁻¹(A₁ ∪ A₂))`, with coefficients in any module `R`. This is the
+case `C = A₁ ⊔ A₂` of
 `TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_subcomplex`. -/
 theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage_sup
     (hp : serreFibrations p) (A₁ A₂ : Subcomplex C) {k : Type v} [Ring k] (R : ModuleCat.{u} k) :

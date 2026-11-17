@@ -10,7 +10,6 @@ public import TauCeti.Topology.CWComplex.Classical.Quotient
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 public import TauCeti.Topology.CWComplex.Classical.Subcomplex
-public import Mathlib.Topology.Homotopy.Equiv
 import Mathlib.Analysis.Normed.Module.RCLike.Basic
 
 /-!
@@ -49,8 +48,6 @@ Hatcher's neighborhood `N_ε(A)` with every `ε` equal to `2⁻¹`.
   `Topology.RelCWComplex.Subcomplex.radialNeighborhoodDeformation`: the resulting retraction of
   the radial neighborhood onto the subcomplex, and the homotopy rel the subcomplex from the
   identity to it.
-* `Topology.RelCWComplex.Subcomplex.radialNeighborhoodHomotopyEquiv`: the inclusion of the
-  subcomplex in its radial neighborhood, as a homotopy equivalence.
 
 ## Main results
 
@@ -823,30 +820,5 @@ theorem exists_strong_deformation_retraction_radialNeighborhood :
         (.id A.radialNeighborhood) {x | (x : X) ∈ A}) :=
   ⟨A.radialNeighborhoodRetraction, radialNeighborhoodRetraction_inclusion A,
     ⟨A.radialNeighborhoodDeformation.symm⟩⟩
-
-/-- The inclusion of a subcomplex in its radial neighborhood, as a homotopy equivalence. Its
-homotopy inverse is the radial retraction
-`Topology.RelCWComplex.Subcomplex.radialNeighborhoodRetraction`, a left inverse of the inclusion,
-and the radial deformation `Topology.RelCWComplex.Subcomplex.radialNeighborhoodDeformation` joins
-the identity to the retraction followed by the inclusion. -/
-def radialNeighborhoodHomotopyEquiv : ContinuousMap.HomotopyEquiv A A.radialNeighborhood where
-  toFun := ContinuousMap.inclusion (subset_radialNeighborhood A)
-  invFun := A.radialNeighborhoodRetraction
-  left_inv := by
-    convert ContinuousMap.Homotopic.refl (ContinuousMap.id A)
-    ext a
-    exact congrArg Subtype.val (radialNeighborhoodRetraction_inclusion A a)
-  right_inv := ⟨A.radialNeighborhoodDeformation.symm.toHomotopy⟩
-
-@[simp]
-lemma radialNeighborhoodHomotopyEquiv_toFun :
-    A.radialNeighborhoodHomotopyEquiv.toFun =
-      ContinuousMap.inclusion (subset_radialNeighborhood A) :=
-  (rfl)
-
-@[simp]
-lemma radialNeighborhoodHomotopyEquiv_invFun :
-    A.radialNeighborhoodHomotopyEquiv.invFun = A.radialNeighborhoodRetraction :=
-  (rfl)
 
 end Topology.RelCWComplex.Subcomplex
