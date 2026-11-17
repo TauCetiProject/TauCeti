@@ -46,11 +46,12 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
   `Π i, A_i ≅ A_(⊥ i, L i)` induced by summandwise isometries `A_i ≅ A_(L i)`, with coordinates
   `TauCeti.IntegralLattice.discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry`.
-* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry` and
-  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, in
+* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry`,
+  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, and
+  `discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry`, in
   `TauCeti.IntegralLattice`: naturality of that isometry under coordinatewise isometries
-  (`TauCeti.IntegralLattice.Isometry.pi`) and under reindexing
-  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`).
+  (`TauCeti.IntegralLattice.Isometry.pi`), under reindexing
+  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`), and under their composite.
 
 ## References
 
@@ -327,6 +328,42 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
     Equiv.piCongrLeft_apply_apply]
   refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft L σ _ k).trans ?_
   rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+
+variable {L} in
+/-- **Naturality of the summandwise alphabet isometry under reindexing and coordinatewise
+isometries.**  For an equivalence `σ : κ ≃ ι`, let `a i : A_i ≅ A_(L i)` and `b k : B_k ≅ A_(M' k)`
+be alphabet isometries, and `g k : A_(σ k) → B_k` maps compatible with isometries
+`f k : L (σ k) ≅ M' k`.  Then reading summand `k` from `σ k` and applying `f k` transports the class
+of an alphabet family `x` over `ι` to the class of `k ↦ g k (x (σ k))` over `κ`. -/
+theorem discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
+    {W' : κ → Type w} [∀ k, AddCommGroup (W' k)] [∀ k, Module ℚ (W' k)]
+    {M' : ∀ k, IntegralLattice (W' k)}
+    [∀ i, (L i).IsNondegenerate] [∀ k, (M' k).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {hM' : ∀ k, (M' k).IsEven}
+    {A : ι → FiniteQuadraticModule.{u}} {B : κ → FiniteQuadraticModule.{w}}
+    (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (b : ∀ k, FiniteQuadraticModule.Isometry (B k) ((M' k).discriminantQuadraticModule (hM' k)))
+    (σ : κ ≃ ι) (f : ∀ k, Isometry (L (σ k)) (M' k)) (g : ∀ k, A (σ k) → B k)
+    (h : ∀ k x, b k (g k x) = (f k).discriminantQuadraticIsometry (hL (σ k)) (a (σ k) x))
+    (x : ∀ i, A i) :
+    ((Isometry.piCongrLeft L σ).symm.trans (Isometry.pi f)).discriminantQuadraticIsometry
+        (isEven_pi hL) (discriminantQuadraticIsometryPiOfIsometry L a x) =
+      discriminantQuadraticIsometryPiOfIsometry M' b fun k ↦ g k (x (σ k)) := by
+  obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ A i) σ).surjective x
+  have hσ := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
+    (discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry L a σ v)
+  have hpi := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
+    (discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry
+      (fun k ↦ a (σ k)) b f g h v)
+  -- Undo the reindexing to reach the family `v` over `κ`, then apply the summandwise isometries.
+  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
+  rw [Isometry.discriminantGroupEquiv_trans]
+  refine (LinearEquiv.trans_apply ..).trans ?_
+  have hsymm := (DFunLike.congr_fun (Isometry.discriminantGroupEquiv_symm
+    (Isometry.piCongrLeft L σ)) _).trans
+    ((congrArg _ hσ.symm).trans (LinearEquiv.symm_apply_apply _ _))
+  refine (congrArg _ hsymm).trans (hpi.trans (congrArg _ (funext fun k ↦ ?_)))
+  rw [Equiv.piCongrLeft_apply_apply]
 
 end Naturality
 

@@ -47,8 +47,10 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
 * `TauCeti.DynkinType.glueWordIsometry`: the isometry from the orthogonal sum of glue alphabets
   to the discriminant quadratic module of the orthogonal sum of root lattices.
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_pi_glueWordIsometry`,
-  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`: naturality of
-  the glue-word isometry under componentwise isometries and permutations of the components.
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`,
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr_glueWordIsometry`: naturality of the
+  glue-word isometry under componentwise isometries, permutations of the components, and their
+  composite.
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
   the glue-word isometry under signed permutations of identical components.
 * `TauCeti.DynkinType.piGlueAlphabetCongr`: the glue words of a family of components equal to a
@@ -168,6 +170,29 @@ theorem discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (hv : ∀ i, 
       glueWordIsometry t ht hv (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ w) :=
   discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry
     (fun i ↦ (t i).rootLattice (ht i)) (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i)) σ w
+
+/-- **Naturality of glue words under reindexing and componentwise isometries.**  For an equivalence
+`σ : κ ≃ ι`, let `f k` be isometries from the root lattices of `t (σ k)` to those of `s k`, and
+`g k` maps of glue labels compatible with them through the component glue isometries.  Then reading
+component `k` from `σ k` and applying `f k` carries the discriminant class of a glue word `w` of `t`
+to the class of `k ↦ g k (w (σ k))`. -/
+theorem discriminantQuadraticIsometry_piCongr_glueWordIsometry (hv : ∀ i, (t i).Valid)
+    {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
+    (hvs : ∀ k, (s k).Valid) (σ : κ ≃ ι)
+    (f : ∀ k, IntegralLattice.Isometry ((t (σ k)).rootLattice (ht (σ k)))
+      ((s k).rootLattice (hs k)))
+    (g : ∀ k, (t (σ k)).glueAlphabet (ht (σ k)) → (s k).glueAlphabet (hs k))
+    (h : ∀ k x, (s k).glueAlphabetIsometry (hvs k) (hs k) (g k x) =
+      (f k).discriminantQuadraticIsometry ((t (σ k)).isEven_rootLattice (ht (σ k)))
+        ((t (σ k)).glueAlphabetIsometry (hv (σ k)) (ht (σ k)) x))
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    ((Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ).symm.trans
+        (Isometry.pi f)).discriminantQuadraticIsometry (isEven_pi_rootLattice t ht)
+        (glueWordIsometry t ht hv w) =
+      glueWordIsometry s hs hvs fun k ↦ g k (w (σ k)) :=
+  discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
+    (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i))
+    (fun k ↦ (s k).glueAlphabetIsometry (hvs k) (hs k)) σ f g h w
 
 section SignedPermutation
 
