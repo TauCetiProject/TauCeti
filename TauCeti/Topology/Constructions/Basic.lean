@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.SeparatedMap
 
 /-!
 # Quotients by setoids and fibre products of topological spaces
@@ -192,9 +193,7 @@ variable {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : Type*}
 
 /-- Bundled continuous map between fibre products induced by compatible maps on the factors. -/
 def ContinuousMap.mapPullback : C(f₁.Pullback g₁, f₂.Pullback g₂) :=
-  ⟨Function.mapPullback mapX mapY mapZ commX commZ,
-    ((mapX.continuous.comp Function.Pullback.continuous_fst).prodMk
-      (mapZ.continuous.comp Function.Pullback.continuous_snd)).subtype_mk _⟩
+  ⟨Function.mapPullback mapX mapY mapZ commX commZ, mapX.continuous.mapPullback mapZ.continuous⟩
 
 @[simp] theorem ContinuousMap.coe_mapPullback_apply (x : f₁.Pullback g₁) :
     (ContinuousMap.mapPullback mapX mapY mapZ commX commZ x).1 = (mapX x.1.1, mapZ x.1.2) := (rfl)
