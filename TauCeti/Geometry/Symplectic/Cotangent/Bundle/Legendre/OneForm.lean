@@ -30,7 +30,8 @@ second order, `dπ (X_E v) = v`
 `M` is nonempty and of positive dimension, `L_α` is not regular
 (`TauCeti.not_isRegularLagrangian_oneFormLagrangian`). Its energy is zero, so the Hamiltonian
 vector field of the energy vanishes for every two-form on `TM`, and its base component is `0`
-rather than `v` (`TauCeti.not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_eq`).
+rather than `v`
+(`TauCeti.not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_oneFormLagrangian_eq`).
 When `α` is closed the equation `ι_X ω_L = dE_L` reads `0 = 0`, so every vector field on `TM`
 solves it (`TauCeti.isHamiltonianVectorField_lagrangianEnergy_oneFormLagrangian`), including
 fields that are not second order.
@@ -52,8 +53,8 @@ Lagrangian of an exact form `df` is `v ↦ df(v)`, the total time derivative of 
 * `TauCeti.cartanForm_oneFormLagrangian`, `TauCeti.cartanTwoForm_oneFormLagrangian`: its Cartan
   forms `π^*α` and `-π^*dα`.
 * `TauCeti.not_isRegularLagrangian_oneFormLagrangian`: it is not regular in positive dimension.
-* `TauCeti.not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_eq`: the Hamiltonian
-  vector field of its energy is not second order.
+* `TauCeti.not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_oneFormLagrangian_eq`:
+  the Hamiltonian vector field of its energy is not second order.
 
 ## References
 
@@ -167,8 +168,9 @@ manifold of positive dimension, and any two-form `σ` on the tangent bundle, the
 field `X_E` of the energy is not second order: `dπ (X_E v) = 0`, which differs from `v` at every
 nonzero tangent vector. For regular Lagrangians and `σ = ω_L`, instead `dπ (X_E v) = v`
 (`TauCeti.IsRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy`). -/
-theorem not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_eq [Nontrivial E]
-    [Nonempty M] (α : SmoothForm I M ℝ 1) (σ : SmoothTwoForm I.tangent (TangentBundle I M)) :
+theorem not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_oneFormLagrangian_eq
+    [Nontrivial E] [Nonempty M] (α : SmoothForm I M ℝ 1)
+    (σ : SmoothTwoForm I.tangent (TangentBundle I M)) :
     ¬∀ v : TangentBundle I M, mfderiv I.tangent I (π E (TangentSpace I)) v
       (σ.hamiltonianVectorField (lagrangianEnergy (oneFormLagrangian α)) v) = v.2 := by
   intro h
