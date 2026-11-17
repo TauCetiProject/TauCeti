@@ -25,7 +25,8 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 
 On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
 every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
-For example a cube root of `p` has valuation `1 / 3`.
+For example a cube root of `p` has valuation `1 / 3`. Consequently every rational power of `p` is
+attained as a norm on `ℂ_[p]`.
 
 ## Main definitions
 
@@ -42,6 +43,7 @@ For example a cube root of `p` has valuation `1 / 3`.
 * `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
 * `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.exists_norm_eq_rpow`: every rational power of `p` is attained as a norm on `ℂ_[p]`.
 
 ## References
 
@@ -155,4 +157,10 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
 
+/-- Every rational power of `p` is attained as a norm on `ℂ_[p]`. -/
+theorem exists_norm_eq_rpow (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (q : ℝ) := by
+  obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q : ℚ)
+  exact ⟨x, by simpa using addValuation_eq_coe_iff.mp hx⟩
+
 end PadicComplex
+
