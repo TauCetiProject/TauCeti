@@ -132,18 +132,12 @@ theorem exists_norm_toDistr_apply_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
   refine ⟨2 * L * 2 ^ (|s| * L), by positivity, fun {p p' q q'} _ _ _ _ _ _ v f ↦ ?_⟩
   set u := SchwartzMap.toBesovSpaceCLM ℂ φ s p q f
   -- The weighted block norms of `f` in `ℓ^q`, and the window sums of those of `v` in `ℓ^{q'}`.
-  set a := lp.normSeq u.weightedBlocks
-  set b := lp.normSeq v.weightedBlocks
+  obtain ⟨a, haj, ha⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le u
+  obtain ⟨b, hbk, hb⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
   obtain ⟨c, hcj, hc⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
-  have haj (j : ℕ) : a j = 2 ^ (s * j) * ‖u.block j‖ := by
-    rw [lp.normSeq_apply, norm_weightedBlocks_apply]
-  have hbk (k : ℕ) : b k = 2 ^ (-s * k) * ‖v.block k‖ := by
-    rw [lp.normSeq_apply, norm_weightedBlocks_apply]
   have hterm (j : ℕ) : ‖littlewoodPaleyBlock F φ j v.toDistr f‖ ≤ 2 ^ (|s| * L) * (a j * c j) := by
     rw [← mul_assoc, haj, hcj, Finset.sum_congr rfl fun k _ ↦ hbk k]
     exact norm_littlewoodPaleyBlock_toDistr_apply_le hL v f j
-  have ha : ‖a‖ = ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks]
-  have hb : ‖b‖ = ‖v‖ := by rw [lp.norm_normSeq, norm_weightedBlocks]
   -- Hölder's inequality for sequences bounds every partial sum of `∑ⱼ aⱼ cⱼ` by `‖a‖ ‖c‖`.
   have hsum (N : ℕ) : ∑ j ∈ Finset.range N, a j * c j ≤ ‖a‖ * ‖c‖ :=
     (Finset.sum_le_sum fun j _ ↦ (Real.le_norm_self _).trans (norm_mul_le _ _)).trans
@@ -160,7 +154,7 @@ theorem exists_norm_toDistr_apply_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
     _ = 2 ^ (|s| * L) * ∑ j ∈ Finset.range N, a j * c j := (Finset.mul_sum ..).symm
     _ ≤ 2 ^ (|s| * L) * (‖u‖ * (2 * L * ‖v‖)) := by
         gcongr
-        exact (hsum N).trans (mul_le_mul ha.le (hc.trans_eq (by rw [hb])) (norm_nonneg _)
+        exact (hsum N).trans (mul_le_mul ha (hc.trans (by gcongr)) (norm_nonneg _)
           (norm_nonneg _))
     _ = 2 * L * 2 ^ (|s| * L) * ‖v‖ * ‖u‖ := by ring
 
