@@ -130,6 +130,13 @@ theorem chevalleyGraphAut_inv (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [Com
   simpa only [chevalleyGraphAutHom_apply] using
     map_inv (t.chevalleyGraphAutHom ht A) ⟨σ, hσ⟩
 
+/-- The inverse graph action is the graph action of the inverse diagram symmetry. -/
+theorem chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+    (t.chevalleyGraphAut ht hσ A).symm =
+      t.chevalleyGraphAut ht (t.diagramSymmetry.inv_mem hσ) A := by
+  rw [chevalleyGraphAut_inv]
+  rfl
+
 /-- Every order relation of the diagram permutation holds on Chevalley points. -/
 theorem chevalleyGraphAut_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
     (A : Type v) [CommRing A] {n : ℕ} (hn : σ ^ n = 1) :
@@ -191,6 +198,49 @@ theorem chevalleyGraphAut_rootSubgroupPoints_reflectionPerm_simpleIndex
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
         (t.simpleIndex ht i)) A u
 
+/-- The inverse graph action carries a root subgroup to its inverse diagram image, with
+its Chevalley sign evaluated at that preimage. -/
+@[simp]
+theorem chevalleyGraphAut_symm_rootSubgroupPoints (hσ : σ ∈ t.diagramSymmetry)
+    (α : Fin t.numRoots) (A : Type v) [CommRing A] (u : Multiplicative A) :
+    (t.chevalleyGraphAut ht hσ A).symm
+        ((t.scChevalleyDatum ht).rootSubgroupPoints α A u) =
+      (t.scChevalleyDatum ht).rootSubgroupPoints ((t.diagramRootPerm ht hσ).symm α) A
+        (Multiplicative.ofAdd
+          (((t.chevalleyDiagramSign ht hσ ((t.diagramRootPerm ht hσ).symm α) : ℤ) : A) *
+            Multiplicative.toAdd u)) := by
+  apply (t.chevalleyGraphAut ht hσ A).symm_apply_eq.mpr
+  rw [chevalleyGraphAut_rootSubgroupPoints]
+  simp only [Equiv.apply_symm_apply, toAdd_ofAdd, ← mul_assoc, ← Int.cast_mul,
+    ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one, one_mul, ofAdd_toAdd]
+
+/-- The inverse pinned graph action preserves positive simple-root parameters. -/
+@[simp high]
+theorem chevalleyGraphAut_symm_rootSubgroupPoints_simpleIndex (hσ : σ ∈ t.diagramSymmetry)
+    (i : Fin t.rank) (A : Type v) [CommRing A] (u : Multiplicative A) :
+    (t.chevalleyGraphAut ht hσ A).symm
+        ((t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht i) A u) =
+      (t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht (σ⁻¹ i)) A u := by
+  apply (t.chevalleyGraphAut ht hσ A).symm_apply_eq.mpr
+  simpa only [Equiv.Perm.inv_def, Equiv.apply_symm_apply] using
+    (t.chevalleyGraphAut_rootSubgroupPoints_simpleIndex ht hσ (σ⁻¹ i) A u).symm
+
+/-- The inverse pinned graph action preserves negative simple-root parameters. -/
+@[simp high]
+theorem chevalleyGraphAut_symm_rootSubgroupPoints_reflectionPerm_simpleIndex
+    (hσ : σ ∈ t.diagramSymmetry) (i : Fin t.rank) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    (t.chevalleyGraphAut ht hσ A).symm
+        ((t.scChevalleyDatum ht).rootSubgroupPoints
+          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
+            (t.simpleIndex ht i)) A u) =
+      (t.scChevalleyDatum ht).rootSubgroupPoints
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht (σ⁻¹ i))
+          (t.simpleIndex ht (σ⁻¹ i))) A u := by
+  apply (t.chevalleyGraphAut ht hσ A).symm_apply_eq.mpr
+  simpa only [Equiv.Perm.inv_def, Equiv.apply_symm_apply] using
+    (t.chevalleyGraphAut_rootSubgroupPoints_reflectionPerm_simpleIndex ht hσ (σ⁻¹ i) A u).symm
+
 /-- The graph action relabels fundamental-weight torus parameters by the inverse symmetry. -/
 @[simp]
 theorem chevalleyGraphAut_torusPoints (hσ : σ ∈ t.diagramSymmetry)
@@ -207,6 +257,16 @@ theorem chevalleyGraphAut_torusPoints (hσ : σ ∈ t.diagramSymmetry)
   rw [scChevalleyDatum_coordinateWeight] at hT
   exact hg.trans (h.trans hT.symm)
 
+/-- The inverse graph action relabels fundamental-weight torus parameters by the symmetry. -/
+@[simp]
+theorem chevalleyGraphAut_symm_torusPoints (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    (t.chevalleyGraphAut ht hσ A).symm ((t.scChevalleyDatum ht).torusPoints A s) =
+      (t.scChevalleyDatum ht).torusPoints A (fun j => s (σ j)) := by
+  apply (t.chevalleyGraphAut ht hσ A).symm_apply_eq.mpr
+  simpa only [Equiv.Perm.inv_def, Equiv.apply_symm_apply] using
+    (t.chevalleyGraphAut_torusPoints ht hσ A (fun j => s (σ j))).symm
+
 /-- The character pullback of the graph action is the inverse diagram datum action. -/
 theorem isCharacterMap_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry)
     (A : Type v) [CommRing A] :
@@ -215,6 +275,15 @@ theorem isCharacterMap_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry)
   refine isCharacterMap_iff.mpr fun s => ?_
   rw [diagramAut_inv_weightMap, torusPointMap_funCongrLeft]
   exact t.chevalleyGraphAut_torusPoints ht hσ A s
+
+/-- The character pullback of the inverse graph action is the diagram datum action. -/
+theorem isCharacterMap_chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] :
+    IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A)
+      (t.chevalleyGraphAut ht hσ A).symm.toMonoidHom (t.diagramAut ht hσ).toHom.weightMap := by
+  refine isCharacterMap_iff.mpr fun s => ?_
+  rw [diagramAut_weightMap, torusPointMap_funCongrLeft]
+  exact t.chevalleyGraphAut_symm_torusPoints ht hσ A s
 
 /-- Graph automorphisms are natural under every change of value ring. In particular, they
 commute with arbitrary field endomorphisms, including all iterates of Frobenius. -/
@@ -232,6 +301,18 @@ theorem map_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry)
     coe_chevalleyGraphAut, GeneralLinear.IntegralPointsPresentation.coe_map]
   dsimp +instances only [scChevalleyDatum]
   simp only [map_mul, map_inv, map_kostantNumberedSymmetryMatrix]
+
+/-- Inverse graph automorphisms are natural under every change of value ring. -/
+theorem map_chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry)
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
+    (g : (t.scChevalleyDatum ht).points A) :
+    ((t.scChevalleyDatum ht).pointsPresentation A).map
+        ((t.scChevalleyDatum ht).pointsPresentation B) f ((t.chevalleyGraphAut ht hσ A).symm g) =
+      (t.chevalleyGraphAut ht hσ B).symm
+        (((t.scChevalleyDatum ht).pointsPresentation A).map
+          ((t.scChevalleyDatum ht).pointsPresentation B) f g) := by
+  apply (t.chevalleyGraphAut ht hσ B).injective
+  rw [MulEquiv.apply_symm_apply, ← map_chevalleyGraphAut, MulEquiv.apply_symm_apply]
 
 end
 
