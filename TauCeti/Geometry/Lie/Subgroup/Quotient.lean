@@ -71,33 +71,6 @@ abbrev QuotientModelSpace : Type :=
   letI : T2Space G := I.t2Space_of_lieGroup ∞
   ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E
 
-/-! ### The closed-subgroup structure of `K` -/
-
-variable (I) in
-/-- A closed subgroup `K`, with its closed-subgroup structure, acts smoothly on `G` by left
-multiplication. -/
-private theorem contMDiffSMul_ofIsClosed (hK : IsClosed (K : Set G)) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).chartedSpace
-    ContMDiffSMul 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I ∞ K G := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  let _ := d.chartedSpace
-  exact ⟨ContMDiff.comp (contMDiff_mul I ∞) (d.contMDiff_subtypeVal.prodMap contMDiff_id)⟩
-
-/-- The map `k ↦ g k` on a closed subgroup `K`, for its closed-subgroup structure, is
-differentiable at the identity. -/
-private theorem mdifferentiableAt_mul_left_subtypeVal (hK : IsClosed (K : Set G)) (g : G) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).chartedSpace
-    MDifferentiableAt 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I
-      (fun k : K ↦ g * k) 1 := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  let _ := d.chartedSpace
-  exact ((contMDiff_mul_left (I := I) (n := ∞)).comp d.contMDiff_subtypeVal 1).mdifferentiableAt
-    (by simp)
-
 /-! ### The right coset space -/
 
 variable (I) in
@@ -111,7 +84,7 @@ private def rightChartedSpace (hK : IsClosed (K : Set G)) :
   let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
   letI := d.chartedSpace
   letI := d.lieGroup
-  haveI := contMDiffSMul_ofIsClosed I hK
+  haveI := d.contMDiffSMul
   haveI : IsClosed (K : Set G) := hK
   haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   ProperSMul.orbitRelQuotientChartedSpace
@@ -128,7 +101,7 @@ private theorem isManifold_and_isSubmersion_right (hK : IsClosed (K : Set G)) :
   let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
   let _ := d.chartedSpace
   let _ := d.lieGroup
-  have := contMDiffSMul_ofIsClosed I hK
+  have := d.contMDiffSMul
   have : IsClosed (K : Set G) := hK
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ⟨ProperSMul.instIsManifoldOrbitRelQuotient, ProperSMul.isSubmersion_quotientMk⟩
@@ -196,32 +169,6 @@ theorem contMDiff_quotientMk (hK : IsClosed (K : Set G)) :
   let _ := quotientChartedSpaceOfIsClosed I hK
   exact (isSubmersion_quotientMk hK).contMDiff
 
-/-- The differential of `k ↦ g k` at the identity of a closed subgroup `K`, for its
-closed-subgroup structure, is injective: left translation by `g⁻¹` turns it into the differential
-of the inclusion of `K`. -/
-private theorem injective_mfderiv_mul_left_subtypeVal (hK : IsClosed (K : Set G)) (g : G) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK).chartedSpace
-    Injective (mfderiv 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I
-      (fun k : K ↦ g * k) 1) := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  let _ := d.chartedSpace
-  have hφ := mdifferentiableAt_mul_left_subtypeVal (I := I) hK g
-  intro v w hvw
-  apply d.injective_mfderiv_subtypeVal 1
-  -- The inclusion is left translation by `g⁻¹` after `k ↦ g k`.
-  have hcomp : (fun k : K ↦ (k : G)) = (g⁻¹ * ·) ∘ fun k : K ↦ g * k :=
-    funext fun k ↦ by simp
-  have hder (u) : mfderiv 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I
-      (fun k : K ↦ (k : G)) 1 u =
-        mfderiv I I (g⁻¹ * ·) (g * ((1 : K) : G))
-          (mfderiv 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I
-            (fun k : K ↦ g * k) 1 u) := by
-    rw [hcomp]
-    exact mfderiv_comp_apply (1 : K) mdifferentiableAt_mul_left hφ u
-  rw [hder, hder, hvw]
-
 variable (I K) in
 /-- **The dimension of a homogeneous space.** The model space `ℝ^(dim G - dim K)` of `G ⧸ K` and
 the Lie algebra `𝔨` of `K` have dimensions adding up to `dim G`. -/
@@ -264,7 +211,8 @@ theorem ker_mfderiv_quotientMk (hK : IsClosed (K : Set G)) (g : G) :
       (g * ((1 : K) : G)) :=
     isRegularPoint_iff.2 (hπ.surjective_mfderiv (by simp) _)
   have h := hreg.range_mfderiv_eq_ker_mfderiv (g := fun k : K ↦ g * k) (y := (g : G ⧸ K))
-    (.of_forall fun k ↦ QuotientGroup.eq.2 (by simp)) (injective_mfderiv_mul_left_subtypeVal hK g)
+    (.of_forall fun k ↦ QuotientGroup.eq.2 (by simp))
+    (d.injective_mfderiv_mul_left_subtypeVal g 1)
     (by rw [add_comm]; exact finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I K hK)
   rw [OneMemClass.coe_one, mul_one] at h
   exact h.symm
