@@ -26,10 +26,7 @@ satisfies `A ⊆ modelsOf θ` and `Disjoint B (modelsOf θ)` (`exists_sentence_s
 Both the separation theorem (`exists_sentence_separating_of_forall_not_isoSetoid`,
 `exists_sentence_separating`) and the Borel-definability equivalence (`exists_modelsOf_eq_iff`)
 hold on any countable carrier `V` — finite, empty, or countably infinite — and for relational
-languages `L` of arbitrary cardinality, without requiring countably many relation symbols. We also
-provide countable-sublanguage factorization of measurable sets in the product σ-algebra
-(`exists_countable_sublanguage_of_measurableSet`) together with surjectivity of symbol-sublanguage
-reducts on configurations (`reductConfiguration_symbSublang_surjective`).
+languages `L` of arbitrary cardinality, without requiring countably many relation symbols.
 
 Pulling back along a measurable family `f : X → RelationalConfiguration L V` parametrized by a
 standard Borel space `X` yields **relative López–Escobar** (`exists_sentence_mem_modelsOf_iff`): in
@@ -40,9 +37,6 @@ under isomorphism of `f` need not be cut out by a sentence.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.reductConfiguration_symbSublang_surjective` and
-  `TauCeti.RelationalConfiguration.exists_countable_sublanguage_of_measurableSet`: surjectivity of
-  symbol-sublanguage reducts and countable-sublanguage factorization of measurable sets.
 * `TauCeti.RelationalConfiguration.exists_sentence_separating_of_forall_not_isoSetoid` and
   `TauCeti.RelationalConfiguration.exists_sentence_separating`: **López–Escobar separation**,
   separating analytic sets with no isomorphic pair (or disjoint analytic sets with one side
@@ -485,73 +479,6 @@ end BairePC
 section Main
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
-
-omit [L.IsRelational] in
-/-- Every symbol-sublanguage reduct map on relational configurations is surjective. -/
-theorem reductConfiguration_symbSublang_surjective
-    (F : Set (Σ n, L.Functions n)) (R : Set (Σ n, L.Relations n)) :
-    Function.Surjective ((symbSublangIncl F R).reductConfiguration (V := V)) := by
-  classical
-  intro c₀
-  let S : L.Structure (Option V) :=
-    { funMap := fun _ _ => none
-      RelMap := fun {n} r x =>
-        ∃ (y : Fin n → V) (hr : (⟨n, r⟩ : Σ k, L.Relations k) ∈ R),
-          Option.some ∘ y = x ∧ c₀.eval (atom ⟨r, hr⟩ y) = true }
-  refine ⟨(@ofStructure L (Option V) S).restrict Option.some, ext fun a => ?_⟩
-  induction a using Atom.induction_atom with
-  | h r x =>
-    have hiff : @Structure.RelMap L (Option V) S _ r.1 (Option.some ∘ x) ↔
-        c₀.eval (atom r x) = true :=
-      ⟨fun ⟨y, _, hy, hc⟩ => by cases (Option.some_injective V).comp_left hy; exact hc,
-        fun hc => ⟨x, r.2, rfl, hc⟩⟩
-    simp [LHom.eval_reductConfiguration, @eval_ofStructure L (Option V) S, hiff]
-
-omit [L.IsRelational] in
-/-- Every set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a
-measurable set in a countable relational symbol sublanguage. -/
-theorem exists_countable_sublanguage_of_measurableSet
-    {D : Set (RelationalConfiguration L V)} (hD : MeasurableSet D) :
-    ∃ (R₀ : Set (Σ n, L.Relations n)), R₀.Countable ∧
-      ∃ D₀ : Set (RelationalConfiguration (symbSublang ∅ R₀) V),
-        MeasurableSet D₀ ∧ D = (symbSublangIncl ∅ R₀).reductConfiguration ⁻¹' D₀ := by
-  let m : MeasurableSpace (RelationalConfiguration L V) :=
-    { MeasurableSet' E :=
-        ∃ (R₀ : Set (Σ n, L.Relations n)), R₀.Countable ∧
-          ∃ E₀ : Set (RelationalConfiguration (symbSublang ∅ R₀) V),
-            MeasurableSet E₀ ∧ E = (symbSublangIncl ∅ R₀).reductConfiguration ⁻¹' E₀
-      measurableSet_empty := ⟨∅, countable_empty, ∅, .empty, rfl⟩
-      measurableSet_compl := fun E ⟨R₀, hR₀, E₀, hE₀, hEq⟩ =>
-        ⟨R₀, hR₀, E₀ᶜ, hE₀.compl, congrArg compl hEq⟩
-      measurableSet_iUnion := fun f hf => by
-        choose Rᵢ hRᵢ Eᵢ hEᵢ hEq using hf
-        let R₀ : Set (Σ n, L.Relations n) := ⋃ i : ℕ, Rᵢ i
-        let incl (i : ℕ) : symbSublang (L := L) ∅ (Rᵢ i) →ᴸ symbSublang ∅ R₀ :=
-          { onFunction := fun _ fn => ⟨fn.1, fn.2⟩
-            onRelation := fun _ r => ⟨r.1, mem_iUnion_of_mem i r.2⟩ }
-        have hcomp (i : ℕ) :
-            (symbSublangIncl (L := L) ∅ R₀).comp (incl i) = symbSublangIncl ∅ (Rᵢ i) :=
-          LHom.funext (funext fun _ => funext fun _ => by simp [incl])
-            (funext fun _ => funext fun _ => by simp [incl])
-        refine ⟨R₀, countable_iUnion hRᵢ,
-          ⋃ i : ℕ, (incl i).reductConfiguration ⁻¹' Eᵢ i,
-          .iUnion fun i => (incl i).measurable_reductConfiguration (hEᵢ i), ?_⟩
-        ext c
-        simp only [mem_iUnion, mem_preimage, hEq, ← hcomp, LHom.comp_reductConfiguration] }
-  have hmeas :
-      @Measurable (RelationalConfiguration L V) (RelationalConfiguration L V) m
-        instMeasurableSpace id := by
-    refine (@measurable_iff L V _ m id).2 fun a => ?_
-    induction a using Atom.induction_atom with
-    | h R x =>
-      intro s hs
-      let R₀ : Set (Σ n, L.Relations n) := {⟨_, R⟩}
-      let a₀ : Atom (symbSublang (L := L) ∅ R₀) V := atom ⟨R, rfl⟩ x
-      refine ⟨R₀, countable_singleton _,
-        {c₀ | c₀.eval a₀ ∈ s}, (measurable_eval a₀) hs, ?_⟩
-      ext c
-      simp [a₀]
-  exact hmeas hD
 
 /-- For continuous families `f : X → RelationalConfiguration L V` and
 `g : Y → RelationalConfiguration L V` from Polish spaces on a countable carrier with no isomorphic
