@@ -80,6 +80,13 @@ def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
 
 variable {R} (hι : Fintype.card ι = finrank ℝ F)
 
+/-- The orientation local system is the sign local system of the orientation double cover with
+respect to its deck involution. -/
+theorem signLocalSystem_def :
+    signLocalSystem F E R hι =
+      (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck :=
+  (rfl)
+
 /-- The fibre of the orientation local system over `x` is the module of functions on the
 orientations over `x` that change sign under reversal. -/
 def signLocalSystemObjEquiv (x : FundamentalGroupoid (TopCat.of B)) :
