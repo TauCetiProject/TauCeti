@@ -210,6 +210,16 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
     · exact absurd hjk (not_lt_of_ge (Finset.mem_Iic.mp hk))
   rw [partialCorrelationCholesky_apply_of_lt z hik, zero_mul]
 
+/-- Each entry of the partial-correlation Gram matrix sums triangular column products up to
+`min i j`. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic (min i j),
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def,
+    (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic]
+
 /-- The first column of the Gram matrix consists of the first-column partial correlations. -/
 theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)
     {i : Fin (p + 1)} (h : 0 < i) : partialCorrelationGram z i 0 = z ⟨(i, 0), h⟩ := by
