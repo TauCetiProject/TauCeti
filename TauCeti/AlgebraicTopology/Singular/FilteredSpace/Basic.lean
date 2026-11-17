@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Comparison
 
 /-!
 # The spectral sequence of a filtered space
@@ -53,7 +54,12 @@ indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` alo
   `Hₙ(X (q + 1), X q) ⟶ Hₙ(X' (q + 1), X' q)` induced by `g`
   (`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality`), so if these maps are
   isomorphisms, the morphism of spectral sequences is an isomorphism on every page
-  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`).
+  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`). On the abutment, the underlying
+  morphism of spectral objects is the map `Hₙ(g)` in singular homology
+  (`TauCeti.filteredSpaceAbutmentIso_hom_naturality`). For finite filtrations this gives the
+  comparison theorem: if `g` induces isomorphisms on the relative homology of the pairs
+  `(X (q + 1), X q) ⟶ (X' (q + 1), X' q)`, it induces isomorphisms in singular homology
+  (`TauCeti.isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap`).
 
 For the skeletal filtration of a CW complex the first page consists of the groups
 `Hₙ(Xⁿ, Xⁿ⁻¹)`, and its differential is the connecting map of three consecutive skeleta, which is
@@ -64,8 +70,9 @@ a fibration by the preimages of the skeleta of the base gives the Serre spectral
 ## References
 
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
-  Section 2.2, the spectral sequence of a filtered complex, and Chapter 5, its application to the
-  filtration of a total space by the preimages of the skeleta of the base.
+  Section 2.2, the spectral sequence of a filtered complex, Chapter 3, the comparison of spectral
+  sequences, and Chapter 5, its application to the filtration of a total space by the preimages of
+  the skeleta of the base.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   425–505.
 -/
@@ -731,6 +738,62 @@ theorem isIso_filteredSpaceSpectralSequenceMap_hom_f
   rw [← Iso.eq_comp_inv] at e
   have := h pq.2 n
   rw [e]
+  infer_instance
+
+/-- **The morphism of spectral objects of filtered spaces on the abutment.** Under the
+identifications `TauCeti.filteredSpaceAbutmentIso` of the abutments in degree `-n` with the singular
+homology `Hₙ(Y)` and `Hₙ(Y')`, the morphism of spectral objects induced by `g`, from which
+`TauCeti.filteredSpaceSpectralSequenceMap` is built, is the map `Hₙ(g)` in singular homology. -/
+@[reassoc]
+theorem filteredSpaceAbutmentIso_hom_naturality (n : ℕ) :
+    ((CochainComplex.spectralObjectMap (filteredSpaceFiltrationMap R hX hX' g hg)).hom
+        (-n)).app (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (filteredSpaceAbutmentIso R hX' n).hom =
+      (filteredSpaceAbutmentIso R hX n).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map g := by
+  rw [filteredSpaceAbutmentIso, filteredSpaceAbutmentIso, singularHomologyFunctor_obj_map]
+  -- The homology objects of the extended complexes carry `HasHomology` instances that `rw` does
+  -- not identify, so the square is assembled as a term.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
+    (CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom
+      _ _ _)).trans <| (Category.assoc _ _ _).trans <| (congrArg
+      ((CochainComplex.filtrationAbutmentIso _ (monotone_singularChainFiltration R hX) _).hom ≫ ·)
+      (extendHomologyIso_hom_naturality _ _ _)).trans (Category.assoc _ _ _).symm
+
+/-- Outside `[a, b)`, the relative singular homology `Hₙ(X (q + 1), X q)` of a filtration with
+`X a = ∅` and `X b = Y` vanishes: both subspaces are empty, or both are everything. -/
+private lemma isZero_singularHomology_ofInclusion_of_notMem_Ico {a b q : ℤ} (ha : X a = ∅)
+    (hb : X b = Set.univ) (hq : q ∉ Set.Ico a b) (n : ℕ) :
+    IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl : q ≤ q + 1))).singularHomology R n) :=
+  TopPair.isZero_singularHomology_of_surjective_map _ R (fun y ↦ by
+    rcases not_and_or.1 hq with hq | hq
+    · exact absurd (hX (by lia : q + 1 ≤ a) y.2) (by simp [ha])
+    · exact ⟨⟨y.1, hX (not_lt.1 hq) (hb ▸ Set.mem_univ y.1)⟩, rfl⟩) n
+
+/-- **The comparison theorem for maps of finite filtrations of spaces.** Let `g : Y ⟶ Y'` carry
+each `X q` into `X' q`, for finite filtrations: `X a` and `X' a` are empty, and `X b` and `X' b`
+are everything. If for every `a ≤ q < b` the map of pairs `(X (q + 1), X q) ⟶ (X' (q + 1), X' q)`
+induced by `g` gives isomorphisms in relative singular homology, then `g` induces isomorphisms
+`Hₙ(Y) ⟶ Hₙ(Y')` in singular homology. -/
+theorem isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap {a b : ℤ} (ha : X a = ∅)
+    (ha' : X' a = ∅) (hb : X b = Set.univ) (hb' : X' b = Set.univ)
+    (h : ∀ q, a ≤ q → q < b → ∀ n : ℕ, IsIso (TopPair.singularHomologyMap
+      (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n))
+    (n : ℕ) : IsIso (((AlgebraicTopology.singularHomologyFunctor A n).obj R).map g) := by
+  -- The morphism of spectral sequences is an isomorphism from the first page on: outside the
+  -- bands `a ≤ q < b` both relative homologies vanish.
+  have hpage := isIso_filteredSpaceSpectralSequenceMap_hom_f R hX hX' g hg (fun q m ↦ by
+    by_cases hq : q ∈ Set.Ico a b
+    · exact h q hq.1 hq.2 m
+    · exact (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX ha hb hq m).isIso
+        (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX' ha' hb' hq m) _) 2 le_rfl
+  -- Both filtrations are finite, so it is an isomorphism on the abutments.
+  have habut :=
+    CochainComplex.isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page _ _ _ _
+      (filteredSpaceFiltrationMap R hX hX' g hg) (singularChainFiltration_eq_bot R ha)
+      (singularChainFiltration_eq_bot R ha') (singularChainFiltration_eq_top R hb)
+      (singularChainFiltration_eq_top R hb') 2 le_rfl hpage (-n)
+  rw [← (Iso.inv_comp_eq _).2 (filteredSpaceAbutmentIso_hom_naturality R hX hX' g hg n)]
   infer_instance
 
 end Naturality
