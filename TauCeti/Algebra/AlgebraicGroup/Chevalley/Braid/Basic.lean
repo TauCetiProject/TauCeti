@@ -90,21 +90,20 @@ theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq {l₁ l₂ : List (Fin t
       D.representation D.lattice D.representation_mem_lattice
       (D.isNilpotent_representation_rootGenerator (.inl k))
       (D.isNilpotent_representation_rootGenerator (.inr k)) A
-  have hnGL_tmul (l : List (Fin t.rank)) (r : A) (v : D.lattice) :
-      (((l.map nGL).prod : _) : Module.End A (A ⊗[ℤ] D.lattice)) (r ⊗ₜ[ℤ] v) =
-        r ⊗ₜ[ℤ] ((l.map nR).prod v) := by
-    induction l with
-    | nil => rfl
-    | cons k l ih =>
-      simp only [List.map_cons, List.prod_cons, Units.val_mul, mul_apply_eq_comp, ih,
-        nGL, nR, kostantWeylGL_val, LinearEquiv.coe_coe, kostantWeylPoints_apply_tmul]
-  have hnGL : (l₁.map nGL).prod = (l₂.map nGL).prod := by
-    apply Units.ext
-    apply LinearMap.ext
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | tmul r v => rw [hnGL_tmul, hnR, ← hnGL_tmul]
-    | add x y hx hy => simp only [map_add, hx, hy]
+  let bc : (D.lattice ≃ₗ[ℤ] D.lattice) →* Module.End A (A ⊗[ℤ] D.lattice) :=
+    (Module.End.baseChangeHom ℤ A D.lattice).toMonoidHom.comp
+      LinearEquiv.automorphismGroup.toLinearMapMonoidHom
+  have hbc (l : List (Fin t.rank)) :
+      (((l.map nGL).prod : _) : Module.End A (A ⊗[ℤ] D.lattice)) = bc (l.map nR).prod := by
+    change Units.coeHom _ (l.map nGL).prod = bc (l.map nR).prod
+    rw [map_list_prod, map_list_prod, List.map_map, List.map_map]
+    exact congrArg List.prod (List.map_congr_left fun k _ => by
+      simp only [Function.comp_apply, Units.coeHom_apply, nGL, kostantWeylGL_val,
+        kostantWeylPoints_toLinearMap, bc, MonoidHom.comp_apply,
+        LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, nR]
+      rfl)
+  have hnGL : (l₁.map nGL).prod = (l₂.map nGL).prod :=
+    Units.ext ((hbc l₁).trans ((congrArg bc hnR).trans (hbc l₂).symm))
   let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
   have hf (k : Fin t.rank) :
       (D.weylElement (t.simpleIndex ht k) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
@@ -112,9 +111,10 @@ theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq {l₁ l₂ : List (Fin t
   have hcoe (l : List (Fin t.rank)) :
       (((l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod : D.points A) :
         Matrix.GeneralLinearGroup (Fin D.dim) A) = f (l.map nGL).prod := by
-    induction l with
-    | nil => simp
-    | cons k l ih => simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul, map_mul, hf, ih]
+    change (D.points A).subtype (l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod =
+      f (l.map nGL).prod
+    rw [map_list_prod, map_list_prod, List.map_map, List.map_map]
+    exact congrArg List.prod (List.map_congr_left fun k _ => hf k)
   exact Subtype.ext ((hcoe l₁).trans ((congrArg f hnGL).trans (hcoe l₂).symm))
 
 /-- Pinned simple Weyl representatives at a single bond satisfy the length-three braid
