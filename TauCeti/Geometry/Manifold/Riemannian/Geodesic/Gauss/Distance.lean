@@ -47,7 +47,8 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
   require only open-ball containment.
 * `image_riemannianExp_ball` and `image_riemannianExp_closedBall`: geodesic balls are metric
   balls, with `image_riemannianExp_ball_eq_ball` and
-  `image_riemannianExp_closedBall_eq_closedBall` for ordinary metrics.
+  `image_riemannianExp_closedBall_eq_closedBall` for ordinary metrics, and
+  `mem_image_riemannianExp_ball` for a single point at distance less than the radius.
 * `contMDiffOn_dist_sq`: the squared distance from the centre is smooth on a metric normal ball.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
@@ -295,6 +296,14 @@ domain at `p`, then its exponential image is the open metric ball of radius `r` 
 theorem IsNormalDomain.image_riemannianExp_ball_eq_ball (h : IsNormalDomain I M p U)
     (hU : Metric.ball 0 r ⊆ U) : riemannianExp I M p '' Metric.ball 0 r = Metric.ball p r := by
   rw [h.image_riemannianExp_ball hU, Metric.eball_ofReal]
+
+/-- If the open tangent ball of radius `r` lies in a normal domain at `p`, every point at distance
+less than `r` from `p` is the exponential of a tangent vector of norm less than `r`. -/
+theorem IsNormalDomain.mem_image_riemannianExp_ball (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) (hq : dist p q < r) :
+    q ∈ riemannianExp I M p '' Metric.ball 0 r := by
+  rw [h.image_riemannianExp_ball_eq_ball hU, Metric.mem_ball, dist_comm]
+  exact hq
 
 /-- If a closed tangent ball lies in a normal domain, its exponential image is the closed
 metric ball of the same radius about the base point. -/
