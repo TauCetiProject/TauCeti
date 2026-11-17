@@ -14,10 +14,12 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Topology.FiberBundle.Principal.Projection
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Algebra.Group.Action.Basic
 import TauCeti.Geometry.Lie.Interior
 import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Smooth principal bundles from free orbit-exact submersions
@@ -131,8 +133,7 @@ theorem isRegularValue_of_isRegularPoint_of_orbit_eq_fiber {p : P → B} {x : P}
     (horbit_inv : ∀ (g : G) (z : P), p (op g • z) = p z)
     (horbit : ∀ y : P, p x = p y → ∃ g : G, op g • x = y)
     (hreg : IsRegularPoint IP IB p x) : IsRegularValue IP IB p (p x) := by
-  rw [isRegularValue_iff]
-  intro y hy
+  rw [isRegularValue_iff]; intro y hy
   obtain ⟨g, rfl⟩ := horbit y hy.symm
   have hcomp : (mfderiv IP IB p x : EP →L[𝕜] EB) =
       (mfderiv IP IB p (op g • x) : EP →L[𝕜] EB).comp
@@ -142,19 +143,7 @@ theorem isRegularValue_of_isRegularPoint_of_orbit_eq_fiber {p : P → B} {x : P}
   rw [isRegularPoint_iff] at hreg ⊢
   have hsurj : Surjective ((mfderiv IP IB p (op g • x) : EP →L[𝕜] EB).comp
       (mfderiv IP IP (fun z : P ↦ op g • z) x : EP →L[𝕜] EP)) := hcomp ▸ hreg
-  rw [ContinuousLinearMap.coe_comp] at hsurj
-  exact hsurj.of_comp
-
-omit [Monoid G] [MulAction Gᵐᵒᵖ P] in
-private theorem mfderiv_comp_local_section_apply {n : ℕ∞ω} (hn : 1 ≤ n)
-    {p : P → B} (hp : ContMDiff IP IB n p) {U : Set B} (hU : IsOpen U) {s : B → P}
-    (hs_smooth : ContMDiffOn IB IP n s U) (hs : ∀ b ∈ U, p (s b) = b) {b : B} (hb : b ∈ U)
-    (u : TangentSpace IB b) : mfderiv IP IB p (s b) (mfderiv IB IP s b u) = u := by
-  have hn0 : n ≠ 0 := fun h ↦ by rw [h] at hn; simp at hn
-  have hps_ev : p ∘ s =ᶠ[𝓝 b] id := eventually_of_mem (hU.mem_nhds hb) hs
-  have hcomp := (mfderiv_comp_apply b ((hp (s b)).mdifferentiableAt hn0)
-    ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0) u).symm
-  rwa [hps_ev.mfderiv_eq, mfderiv_id] at hcomp
+  rw [ContinuousLinearMap.coe_comp] at hsurj; exact hsurj.of_comp
 
 end VerticalTangent
 
@@ -209,9 +198,8 @@ private theorem contMDiffOn_op_smul_section
     (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
     {U : Set B} {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U) :
     ContMDiffOn (IB.prod IG) IP n (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ) :=
-  hsmul.comp_contMDiffOn
-    ((hs_smooth.comp (s := U ×ˢ (univ : Set G)) contMDiffOn_fst fun _ hq ↦ hq.1).prodMk
-      contMDiffOn_snd)
+  hsmul.comp_contMDiffOn ((hs_smooth.comp (s := U ×ˢ univ) contMDiffOn_fst fun _ hq ↦ hq.1).prodMk
+    contMDiffOn_snd)
 
 variable (hn : 1 ≤ n) (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
   {p : P → B} (hp : ContMDiff IP IB n p)
@@ -226,7 +214,7 @@ private theorem bijective_mfderiv_op_smul_section_one {U : Set B} (hU : IsOpen U
     (hinj : Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
     (hker : (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
     Bijective (mfderiv (IB.prod IG) IP (fun q : B × G ↦ op q.2 • s q.1) (b, 1)) := by
-  have hn0 : n ≠ 0 := fun h ↦ by rw [h] at hn; simp at hn
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   let Ψ : B × G → P := fun q ↦ op q.2 • s q.1
   have hΨ_diff : MDifferentiableAt (IB.prod IG) IP Ψ (b, 1) :=
     ((contMDiffOn_op_smul_section hsmul hs_smooth).contMDiffAt
@@ -240,15 +228,16 @@ private theorem bijective_mfderiv_op_smul_section_one {U : Set B} (hU : IsOpen U
       mfderiv_congr (funext fun b' ↦ by simp only [Ψ, op_one, one_smul])
     exact (mfderiv_prod_eq_add_apply (I := IB) (I' := IG) (I'' := IP) (v := (u, w)) hΨ_diff).trans
       (by dsimp only; exact congrArg (· + dorb w) (DFunLike.congr_fun h1 u))
-  have hps (u : EB) : dp (ds u) = u := mfderiv_comp_local_section_apply hn hp hU hs_smooth hs hb u
+  have hps (u : EB) : dp (ds u) = u :=
+    mfderiv_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
+      ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
+      (eventually_of_mem (hU.mem_nhds hb) hs) u
   have horb_ker : dorb.range ≤ dp.ker := range_mfderiv_op_smul_one_le_ker horbit_inv
   refine ⟨(injective_iff_map_eq_zero dΨ).2 fun ⟨u, w⟩ huw ↦ ?_, fun (v : EP) ↦ ?_⟩
   · have huw' : ds u + dorb w = 0 := (hdecomp u w).symm.trans huw
-    have hu0 : u = 0 := by
-      have hw0 : dp (dorb w) = 0 := horb_ker ⟨w, rfl⟩
-      simpa [hps u, hw0] using congrArg dp huw'
-    subst hu0
-    rw [map_zero, zero_add] at huw'
+    have hw0 : dp (dorb w) = 0 := horb_ker ⟨w, rfl⟩
+    have hu0 : u = 0 := by simpa [hps u, hw0] using congrArg dp huw'
+    subst hu0; rw [map_zero, zero_add] at huw'
     exact Prod.ext rfl (hinj (huw'.trans (map_zero dorb).symm))
   · have hvert : v - ds (dp v) ∈ dp.ker := by
       rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hps (dp v), sub_self]
@@ -266,7 +255,7 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
     (hker : ∀ b ∈ U,
       (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
     IsLocalDiffeomorphOn (IB.prod IG) IP n (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ) := by
-  have hn0 : n ≠ 0 := fun h ↦ by rw [h] at hn; simp at hn
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   have : IsManifold IP 1 P := .of_le hn; have : IsManifold IB 1 B := .of_le hn
   have : IsManifold IG 1 G := .of_le hn
   set Ψ : B × G → P := fun q ↦ op q.2 • s q.1
@@ -278,7 +267,9 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
       (LinearMap.ker_eq_bot_of_injective hbij.1) (LinearMap.range_eq_top_of_surjective _ hbij.2)
     have hbI : IB.IsInteriorPoint b := hs b hb ▸
       ((hp (s b)).mdifferentiableAt hn0).isInteriorPoint_of_surjective_mfderiv
-        (fun u ↦ ⟨_, mfderiv_comp_local_section_apply hn hp hU hs_smooth hs hb u⟩)
+        (fun u ↦ ⟨_, mfderiv_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
+          ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
+          (eventually_of_mem (hU.mem_nhds hb) hs) u⟩)
         BoundarylessManifold.isInteriorPoint
     have hb1I : (IB.prod IG).IsInteriorPoint (b, (1 : G)) :=
       (IB.interior_prod (J := IG) (M := B) (N := G)).ge
@@ -295,8 +286,7 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
     simp only [comp_apply, Ψ, φR, φL, Diffeomorph.coe_prodCongr, Prod.map_apply,
       Diffeomorph.coe_refl, id_eq, Diffeomorph.constSmul_apply, op_smul_eq_mul, ← mul_smul,
       ← op_mul, inv_mul_cancel_right]
-  have hbg' : φR (b, g) = (b, 1) := by
-    simp [φR, Diffeomorph.coe_prodCongr, Diffeomorph.constSmul_apply]
+  have hbg' : φR (b, g) = (b, 1) := by simp [φR, Diffeomorph.constSmul_apply]
   rw [heq]
   exact ((φR.isLocalDiffeomorph (b, g)).comp IP P (hbg'.symm ▸ h_one b hb)).comp IP P
     (φL.isLocalDiffeomorph _)
@@ -321,7 +311,7 @@ theorem contMDiffOn_sectionCoord
     have hb : b₁ = b₂ := by
       simpa only [Ψ, map_op_smul_of_orbit_iff horbit, hs b₁ hb₁, hs b₂ hb₂] using congrArg p hEq
     subst hb
-    exact Prod.ext rfl ((op_smul_eq_op_smul_iff_of_free (hfree b₁ hb₁)).1 hEq)
+    exact Prod.ext rfl ((op_smul_eq_op_smul_iff_of_op_smul_eq_self_imp (hfree b₁ hb₁)).1 hEq)
   have himg : Ψ '' (U ×ˢ univ) = p ⁻¹' U := subset_antisymm
     (by rintro _ ⟨⟨b, g⟩, ⟨hb, -⟩, rfl⟩; simp [Ψ, map_op_smul_of_orbit_iff horbit, hs b hb, hb])
     fun x hx ↦ ⟨(p x, sectionCoord horbit hs x), ⟨hx, mem_univ _⟩,
@@ -332,9 +322,8 @@ theorem contMDiffOn_sectionCoord
     himg ▸ hloc.contMDiffOn_invFunOn (hU.prod isOpen_univ) hinj_Ψ
   have hcongr : EqOn (sectionCoord horbit hs) (fun y : P ↦ (invFunOn Ψ (U ×ˢ univ) y).2)
       (p ⁻¹' U) := fun y hy ↦ by
-    have hleft := hinj_Ψ.leftInvOn_invFunOn
-      (⟨hy, mem_univ _⟩ : (p y, sectionCoord horbit hs y) ∈ U ×ˢ univ)
-    rw [show Ψ (p y, sectionCoord horbit hs y) = y from op_sectionCoord_smul horbit hs hy] at hleft
+    have hleft := hinj_Ψ.leftInvOn_invFunOn (x := (p y, sectionCoord horbit hs y)) ⟨hy, mem_univ _⟩
+    dsimp only [Ψ] at hleft; rw [op_sectionCoord_smul horbit hs hy] at hleft
     exact (congrArg Prod.snd hleft).symm
   exact ((contMDiff_snd.comp_contMDiffOn hinv).congr hcongr) x hx
 
@@ -467,9 +456,7 @@ theorem contMDiffFiberBundleOfSubmersion :
   have hcoord₂ := contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU₂ hs₂_smooth hs₂
     (fun b _ ↦ hfree (s₂ b)) (fun b _ ↦ hinj (s₂ b)) (fun b _ ↦ hker (s₂ b))
   refine (hcoord₂.comp (hs₁_smooth.mono (by simp)) fun b hb ↦ ?_).congr fun b _ ↦ ?_
-  · simp only [Trivialization.projectionFiber_baseSet,
-      baseSet_actionTrivializationOfContMDiffSection, mem_inter_iff] at hb
-    simpa [hs₁ b hb.1] using hb.2
+  · simp at hb; simpa [hs₁ b hb.1] using hb.2
   · rw [Trivialization.projectionFiber_coordChange]; simp [Trivialization.coordChange]
 
 /-- **The charted total space `ManifoldTotalSpace G (ProjectionFiber G p)` is `C^n` diffeomorphic
@@ -514,9 +501,7 @@ def diffeomorphManifoldTotalSpaceOfSubmersion :
       have hcoord := contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU hs_smooth hs
         (fun b _ ↦ hfree (s b)) (fun b _ ↦ hinj (s b)) (fun b _ ↦ hker (s b))
       exact (hcoord.contMDiffAt ((hU.preimage hsub.contMDiff.continuous).mem_nhds
-        hx₀U)).congr_of_eventuallyEq (Eventually.of_forall fun x ↦ by
-          simp only [ht_eq, Trivialization.projectionFiber_apply, Equiv.apply_symm_apply,
-            actionTrivializationOfContMDiffSection_apply]) }
+        hx₀U)).congr_of_eventuallyEq (Eventually.of_forall fun x ↦ by simp [ht_eq]) }
 
 /-- Forward map of `diffeomorphManifoldTotalSpaceOfSubmersion`. -/
 @[simp]
@@ -642,10 +627,13 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
     ContMDiffOn IP IG n (sectionCoord horbit hs) (p ⁻¹' U) := by
   have := FiniteDimensional.completeSpace 𝕜 EP; have := FiniteDimensional.completeSpace 𝕜 EB
   have := FiniteDimensional.completeSpace 𝕜 EG
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   exact contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj fun b hb ↦
     (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
       (isRegularPoint_iff.2 fun u ↦
-        ⟨_, mfderiv_comp_local_section_apply hn hp hU hs_smooth hs hb u⟩)
+        ⟨_, mfderiv_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
+          ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
+          (eventually_of_mem (hU.mem_nhds hb) hs) u⟩)
       (fun g ↦ map_op_smul_of_orbit_iff horbit g (s b)) (hinj b hb) (hdim b hb)).ge
 
 omit [IP.Boundaryless] [IsManifold IP n P] [FiniteDimensional 𝕜 EB] [IsManifold IB n B]
@@ -778,11 +766,9 @@ theorem diffeomorphManifoldTotalSpaceOfSubmersionOfFinrankEq_op_smul
         hdim (op g • q)) =
       op g • diffeomorphManifoldTotalSpaceOfSubmersionOfFinrankEq hn hsmul hsub hsurj hfree horbit
         hinj hdim q := by
-  let := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-  rw [diffeomorphManifoldTotalSpaceOfSubmersionOfFinrankEq_apply,
-    diffeomorphManifoldTotalSpaceOfSubmersionOfFinrankEq_apply,
-    ManifoldTotalSpace.homeomorph_symm_smul]
-  exact ProjectionFiber.val_smul G (map_smul_of_orbit_iff horbit) (op g) _
+  have := FiniteDimensional.completeSpace 𝕜 EP; have := FiniteDimensional.completeSpace 𝕜 EB
+  have := FiniteDimensional.completeSpace 𝕜 EG
+  exact diffeomorphManifoldTotalSpaceOfSubmersion_op_smul _ _ _ _ _ _ _ _ g q
 
 end FinrankSubmersion
 

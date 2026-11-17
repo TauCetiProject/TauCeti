@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Submersion.Basic
 import TauCeti.Geometry.Lie.FundamentalVectorField.Right
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
 import TauCeti.Geometry.Manifold.Sard.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
@@ -108,7 +109,6 @@ theorem finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber {n : ℕ∞ω
     (horbit : ∀ y : P, p x = p y ↔ ∃ g : G, op g • x = y) :
     finrank ℝ EP = finrank ℝ EB + finrank ℝ EG := by
   have : IsManifold IG 1 G := .of_le ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn)
-  have := FiniteDimensional.completeSpace ℝ EG
   have hinj : Injective (mfderiv IG IP (fun g : G ↦ op g • x) 1) :=
     hsmul.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp one_ne_zero hn hfree
   have hx : op (1 : G) • x = x := by rw [op_one, one_smul]
@@ -141,11 +141,11 @@ theorem finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber (hn : 3 ≤ n)
     (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y) (x : P) :
     finrank ℝ EP = finrank ℝ EB + finrank ℝ EG := by
   have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have hn0 : n ≠ 0 := fun h ↦ by rw [h] at hn1; simp at hn1
   have : IsManifold IP 1 P := .of_le hn1; have : IsManifold IB 1 B := .of_le hn1
   exact finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber hn (hsmul.of_le hn1)
     (hsub.contMDiff.of_le hn1)
-    (isRegularValue_iff.2 fun y _ ↦ isRegularPoint_iff.2 (hsub.surjective_mfderiv hn0 y))
+    (isRegularValue_iff.2 fun y _ ↦ isRegularPoint_iff.2
+      (hsub.surjective_mfderiv (by rintro rfl; simp at hn) y))
     (hfree x) (horbit x)
 
 /-- **Smoothness of `sectionCoord` under a free `C^n` Lindelöf Lie-group action (`3 ≤ n`).** If `s`
@@ -159,17 +159,15 @@ theorem contMDiffOn_sectionCoord_of_lieGroup (hn : 3 ≤ n)
     (hs : ∀ b ∈ U, p (s b) = b) (hfree : ∀ b ∈ U, ∀ g : G, op g • s b = s b → g = 1) :
     ContMDiffOn IP IG n (sectionCoord horbit hs) (p ⁻¹' U) := by
   have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have hn0 : n ≠ 0 := fun h ↦ by rw [h] at hn1; simp at hn1
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   have : IsManifold IP 1 P := .of_le hn1; have : IsManifold IB 1 B := .of_le hn1
-  have := FiniteDimensional.completeSpace ℝ EG
   refine contMDiffOn_sectionCoord_of_finrank_eq hn1 hsmul hp horbit hU hs_smooth hs hfree
     (fun b hb ↦ hsmul.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn0 hn (hfree b hb))
     fun b hb ↦ ?_
-  have hreg_b : IsRegularPoint IP IB p (s b) := isRegularPoint_iff.2 fun u ↦ by
-    have hps : p ∘ s =ᶠ[𝓝 b] id := eventually_of_mem (hU.mem_nhds hb) hs
-    have hcomp := (mfderiv_comp_apply b ((hp (s b)).mdifferentiableAt hn0)
-      ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0) u).symm
-    exact ⟨mfderiv IB IP s b u, by rwa [hps.mfderiv_eq, mfderiv_id] at hcomp⟩
+  have hreg_b : IsRegularPoint IP IB p (s b) := isRegularPoint_iff.2 fun u ↦
+    ⟨_, mfderiv_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
+      ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
+      (eventually_of_mem (hU.mem_nhds hb) hs) u⟩
   have hreg_val : IsRegularValue IP IB p (p (s b)) :=
     isRegularValue_of_isRegularPoint_of_orbit_eq_fiber (fun y _ ↦ (hp y).mdifferentiableAt hn0)
       (fun _ ↦ (hsmul.comp (contMDiff_id.prodMk contMDiff_const) (s b)).mdifferentiableAt hn0)
@@ -189,8 +187,7 @@ variable (hn : 3 ≤ n) (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ 
 Lie group `G` equips `ProjectionFiber G p` with a `FiberBundle` structure. -/
 @[instance_reducible]
 def fiberBundleOfSubmersionLieGroup : FiberBundle G (ProjectionFiber G p) :=
-  have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have : IsManifold IP 1 P := .of_le hn1; have := FiniteDimensional.completeSpace ℝ EG
+  have hn1 := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn; have : IsManifold IP 1 P := .of_le hn1
   fiberBundleOfSubmersionOfFinrankEq hn1 hsmul hsub hsurj hfree horbit
     (fun x ↦ (hsmul.of_le hn1).injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp one_ne_zero hn
       (hfree x))
@@ -209,8 +206,7 @@ theorem mem_trivializationAtlas_fiberBundleOfSubmersionLieGroup_iff
         (hsmul_s : ContinuousOn (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ)),
         e = (actionTrivializationOfSection hsub.contMDiff.continuous horbit hfree hU hs hcoord
           hsmul_s).projectionFiber := by
-  have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have : IsManifold IP 1 P := .of_le hn1; have := FiniteDimensional.completeSpace ℝ EG
+  have hn1 := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn; have : IsManifold IP 1 P := .of_le hn1
   exact mem_trivializationAtlas_fiberBundleOfSubmersionOfFinrankEq_iff hn1 hsmul hsub hsurj hfree
     horbit (fun x ↦ (hsmul.of_le hn1).injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp
       one_ne_zero hn (hfree x))
@@ -233,8 +229,7 @@ theorem principalBundleOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     letI := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
     PrincipalBundle G (ProjectionFiber G p) :=
-  have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have : IsManifold IP 1 P := .of_le hn1; have := FiniteDimensional.completeSpace ℝ EG
+  have hn1 := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn; have : IsManifold IP 1 P := .of_le hn1
   principalBundleOfSubmersionOfFinrankEq hn1 hsmul hsub hsurj hfree horbit
     (fun x ↦ (hsmul.of_le hn1).injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp one_ne_zero hn
       (hfree x))
@@ -244,8 +239,7 @@ theorem principalBundleOfSubmersionLieGroup :
 theorem contMDiffFiberBundleOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     ContMDiffFiberBundle n G (ProjectionFiber G p) IB IG :=
-  have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have : IsManifold IP 1 P := .of_le hn1; have := FiniteDimensional.completeSpace ℝ EG
+  have hn1 := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn; have : IsManifold IP 1 P := .of_le hn1
   contMDiffFiberBundleOfSubmersionOfFinrankEq hn1 hsmul hsub hsurj hfree horbit
     (fun x ↦ (hsmul.of_le hn1).injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp one_ne_zero hn
       (hfree x))
@@ -255,8 +249,7 @@ theorem contMDiffFiberBundleOfSubmersionLieGroup :
 def diffeomorphManifoldTotalSpaceOfSubmersionLieGroup :
     letI := fiberBundleOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
     ManifoldTotalSpace G (ProjectionFiber G p) ≃ₘ^n⟮IB.prod IG, IP⟯ P :=
-  have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
-  have : IsManifold IP 1 P := .of_le hn1; have := FiniteDimensional.completeSpace ℝ EG
+  have hn1 := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn; have : IsManifold IP 1 P := .of_le hn1
   diffeomorphManifoldTotalSpaceOfSubmersionOfFinrankEq hn1 hsmul hsub hsurj hfree horbit
     (fun x ↦ (hsmul.of_le hn1).injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp one_ne_zero hn
       (hfree x))
@@ -293,12 +286,8 @@ theorem diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_op_smul
       diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
         (op g • q)) =
       op g • diffeomorphManifoldTotalSpaceOfSubmersionLieGroup hn hsmul hsub hsurj hfree horbit
-        q := by
-  let := ProjectionFiber.mulAction G (map_smul_of_orbit_iff horbit)
-  rw [diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_apply,
-    diffeomorphManifoldTotalSpaceOfSubmersionLieGroup_apply,
-    ManifoldTotalSpace.homeomorph_symm_smul]
-  exact ProjectionFiber.val_smul G (map_smul_of_orbit_iff horbit) (op g) _
+        q :=
+  diffeomorphManifoldTotalSpaceOfSubmersionOfFinrankEq_op_smul _ _ _ _ _ _ _ _ g q
 
 end LieGroupSubmersion
 
@@ -322,7 +311,6 @@ theorem contMDiffWithinAt_actionDivision_of_lieGroup (hp : ContMDiff IP IB n p) 
     {x₀ : M} (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀) (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
     ContMDiffWithinAt IM IG n (fun x ↦ actionDivision horbit (hf x)) s x₀ := by
-  have := FiniteDimensional.completeSpace ℝ EP; have := FiniteDimensional.completeSpace ℝ EB
   obtain ⟨U, hU, hx₀U, σ, -, hσ_smooth, hσ⟩ := hsub.exists_contMDiffOn_section
   exact contMDiffWithinAt_actionDivision_of_section hp.continuous hfree horbit hU hσ
     (contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU hσ_smooth hσ

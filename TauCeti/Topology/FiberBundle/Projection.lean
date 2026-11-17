@@ -104,6 +104,11 @@ theorem val_snd_totalSpaceEquiv_symm (x : E) : ((totalSpaceEquiv F f).symm x).2.
 theorem map_totalSpaceEquiv (p : TotalSpace F (ProjectionFiber F f)) :
     f (totalSpaceEquiv F f p) = p.proj := p.2.map_val
 
+/-- Composing `f` with `totalSpaceEquiv F f` equals the bundle projection
+`π F (ProjectionFiber F f)`. -/
+theorem comp_totalSpaceEquiv_eq_proj : f ∘ totalSpaceEquiv F f = π F (ProjectionFiber F f) :=
+  funext (map_totalSpaceEquiv F f)
+
 /-- Forgetful inclusion `ProjectionFiber.val` on each fibre is injective. -/
 theorem val_injective (b : B) : Injective (ProjectionFiber.val : ProjectionFiber F f b → E) :=
   fun _ _ h ↦ ProjectionFiber.ext h
@@ -215,9 +220,9 @@ theorem isInducing_totalSpaceMk (b : B) :
 
 /-- If `f : E → B` is continuous, so is the bundle projection `π F (ProjectionFiber F f)`. -/
 theorem continuous_proj [TopologicalSpace B] {f : E → B} (hf : Continuous f) :
-    Continuous (π F (ProjectionFiber F f)) :=
-  (show π F (ProjectionFiber F f) = f ∘ totalSpaceHomeomorph F f from
-    funext fun p ↦ p.2.map_val.symm) ▸ hf.comp (totalSpaceHomeomorph F f).continuous
+    Continuous (π F (ProjectionFiber F f)) := by
+  rw [← comp_totalSpaceEquiv_eq_proj F f, ← coe_totalSpaceHomeomorph F f]
+  exact hf.comp (totalSpaceHomeomorph F f).continuous
 
 end Topology
 

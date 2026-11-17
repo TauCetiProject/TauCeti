@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
 public import TauCeti.Topology.FiberBundle.Projection
+import TauCeti.Algebra.Group.Action.Basic
 
 /-!
 # Principal bundle structures on fibres of an unbundled projection
@@ -77,8 +78,8 @@ theorem principalBundle (A : Set (Trivialization G f))
   let := fiberBundle A hA
   let := mulAction G hinv
   refine ⟨fun e he ↦ ?_⟩
-  rcases (show e ∈ Bundle.Trivialization.projectionFiber '' A from by simpa using he.out) with
-    ⟨t, htA, rfl⟩
+  have he' := he.out; rw [trivializationAtlas_fiberBundle] at he'
+  rcases he' with ⟨t, htA, rfl⟩
   exact (t.isEquivariant_projectionFiber_iff hinv).2 (heq t htA)
 
 end TauCeti.ProjectionFiber
@@ -88,15 +89,6 @@ namespace TauCeti.PrincipalBundle
 variable {G E B : Type*} [Group G] [MulAction Gᵐᵒᵖ E] {f : E → B}
 
 section ActionDivision
-
-/-- Pointwise freeness at identity (`op g • x = x → g = 1`) implies cancellation in the orbit of
-`x`. -/
-theorem op_smul_eq_op_smul_iff_of_free {x : E} (hfree : ∀ g : G, op g • x = x → g = 1)
-    {g h : G} : op g • x = op h • x ↔ g = h := by
-  refine ⟨fun hgh ↦ ?_, fun hgh ↦ hgh ▸ rfl⟩
-  have h1 : op (g * h⁻¹) • x = x := by
-    rw [op_mul, mul_smul, hgh, ← mul_smul, ← op_mul, mul_inv_cancel, op_one, one_smul]
-  exact mul_inv_eq_one.1 (hfree (g * h⁻¹) h1)
 
 variable (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, op g • x = y)
 
@@ -131,7 +123,7 @@ include hfree
 `op g • x = y`. -/
 theorem actionDivision_eq_iff {x y : E} (hxy : f x = f y) {g : G} :
     actionDivision horbit hxy = g ↔ op g • x = y := by
-  rw [← op_smul_eq_op_smul_iff_of_free (hfree x), op_actionDivision_smul]
+  rw [← op_smul_eq_op_smul_iff_of_op_smul_eq_self_imp (hfree x), op_actionDivision_smul]
   exact eq_comm
 
 /-- Dividing a point `x` by itself under a free action yields `1`. -/
@@ -255,9 +247,7 @@ noncomputable def actionTrivializationOfSection : Trivialization G f where
   source := f ⁻¹' U
   target := U ×ˢ univ
   map_source' _ hx := ⟨hx, mem_univ _⟩
-  map_target' q hq := by
-    rw [mem_preimage, map_op_smul_of_orbit_iff horbit, hs q.1 hq.1]
-    exact hq.1
+  map_target' q hq := by simpa [map_op_smul_of_orbit_iff horbit, hs q.1 hq.1] using hq.1
   left_inv' _ hx := op_sectionCoord_smul horbit hs hx
   right_inv' q hq := Prod.ext
     ((map_op_smul_of_orbit_iff horbit q.2 (s q.1)).trans (hs q.1 hq.1))
