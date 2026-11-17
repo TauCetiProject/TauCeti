@@ -54,6 +54,7 @@ namespace Submodule
 
 /-- The orthogonal projections of a standard Gaussian onto a subspace `F` and onto its
 orthogonal complement have the product law `stdGaussian F ⊗ stdGaussian Fᗮ`. -/
+@[simp]
 theorem map_orthogonalProjectionOnto_prod_stdGaussian (F : Submodule ℝ E) :
     (stdGaussian E).map (fun x ↦ (F.orthogonalProjectionOnto x, Fᗮ.orthogonalProjectionOnto x)) =
       (stdGaussian F).prod (stdGaussian Fᗮ) := by
@@ -74,6 +75,7 @@ theorem map_orthogonalProjectionOnto_prod_stdGaussian (F : Submodule ℝ E) :
 
 /-- **Orthogonal splitting of the standard Gaussian.** For a subspace `F`, the addition map
 `F × Fᗮ → E`, `(y, z) ↦ y + z`, carries `stdGaussian F ⊗ stdGaussian Fᗮ` to `stdGaussian E`. -/
+@[simp]
 theorem map_add_prod_stdGaussian (F : Submodule ℝ E) :
     ((stdGaussian F).prod (stdGaussian Fᗮ)).map (fun p ↦ (p.1 : E) + p.2) = stdGaussian E := by
   rw [← F.map_orthogonalProjectionOnto_prod_stdGaussian,
@@ -88,6 +90,7 @@ namespace TauCeti.Probability
 
 /-- Under the standard Gaussian, the coordinate `⟪x, ν⟫` along a vector `ν` has law
 `gaussianReal 0 ‖ν‖²`. -/
+@[simp]
 theorem map_inner_stdGaussian (ν : E) :
     (stdGaussian E).map (fun x ↦ ⟪x, ν⟫) = gaussianReal 0 (‖ν‖₊ ^ 2) := by
   have h := IsGaussian.map_eq_gaussianReal (μ := stdGaussian E) (innerSL ℝ ν)
@@ -104,14 +107,15 @@ theorem map_inner_stdGaussian (ν : E) :
 standard normal law. -/
 theorem map_inner_stdGaussian_of_norm_eq_one {ν : E} (hν : ‖ν‖ = 1) :
     (stdGaussian E).map (fun x ↦ ⟪x, ν⟫) = gaussianReal 0 1 := by
-  rw [map_inner_stdGaussian, show ‖ν‖₊ ^ 2 = 1 by simp [← NNReal.coe_inj, hν]]
+  have hν' : ‖ν‖₊ ^ 2 = 1 := by simp [← NNReal.coe_inj, hν]
+  rw [map_inner_stdGaussian, hν']
 
 /-- **Gaussian measure of a closed half-space.** For a unit vector `ν` and a real `s`, the
 standard Gaussian measure of `{x | ⟪x, ν⟫ ≤ s}` is `Φ(s)`, the standard normal distribution
 function at `s`. -/
 theorem measureReal_stdGaussian_setOf_inner_le {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
     (stdGaussian E).real {x | ⟪x, ν⟫ ≤ s} = cdf (gaussianReal 0 1) s := by
-  rw [show {x : E | ⟪x, ν⟫ ≤ s} = (fun x ↦ ⟪x, ν⟫) ⁻¹' Iic s from rfl,
+  rw [← preimage_ofPred_eq (p := (· ≤ s)) (f := fun x ↦ ⟪x, ν⟫), Iic_def,
     ← map_measureReal_apply (by fun_prop) measurableSet_Iic,
     map_inner_stdGaussian_of_norm_eq_one hν, cdf_eq_real]
 
@@ -120,7 +124,7 @@ standard Gaussian measure of `{x | ⟪x, ν⟫ < s}` is `Φ(s)`. -/
 theorem measureReal_stdGaussian_setOf_inner_lt {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
     (stdGaussian E).real {x | ⟪x, ν⟫ < s} = cdf (gaussianReal 0 1) s := by
   have : NullSingletonClass (gaussianReal 0 1) := nullSingletonClass_gaussianReal one_ne_zero
-  rw [show {x : E | ⟪x, ν⟫ < s} = (fun x ↦ ⟪x, ν⟫) ⁻¹' Iio s from rfl,
+  rw [← preimage_ofPred_eq (p := (· < s)) (f := fun x ↦ ⟪x, ν⟫), Iio_def,
     ← map_measureReal_apply (by fun_prop) measurableSet_Iio,
     map_inner_stdGaussian_of_norm_eq_one hν, cdf_eq_real]
   exact measureReal_congr Iio_ae_eq_Iic
