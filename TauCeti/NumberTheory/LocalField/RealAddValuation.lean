@@ -59,16 +59,19 @@ variable (K) in
 def realAddValuation : AddValuation K (WithTop ℝ) :=
   (((valuation K).map
     (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)).addVal).map
-    { (Int.castAddHom ℝ).withTopMap with
-      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h ↦ Int.cast_le.mpr h } rfl
+    { toFun := WithTop.map (Int.castAddHom ℝ)
+      map_zero' := by simp
+      map_add' := WithTop.map_add (Int.castAddHom ℝ)
+      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h ↦ Int.cast_le.mpr h }
+    (WithTop.map_top (Int.castAddHom ℝ))
 
 /-- Evaluating `realAddValuation` transports `valuation` via `WithZero.negLog` and casts to `ℝ`. -/
 theorem realAddValuation_apply (x : K) :
     realAddValuation K x =
       (WithZero.negLog (valueGroupWithZeroIsoInt K (valuation K x))).map ((↑) : ℤ → ℝ) := by
-  change WithTop.map (Int.castAddHom ℝ) (((valuation K).map
-      (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)).addVal x) = _
-  rw [Valuation.addVal_apply]; rfl
+  unfold realAddValuation
+  rw [AddValuation.map_apply]
+  simp [Valuation.addVal_apply, Valuation.map_apply]
 
 /-- Only zero has infinite `realAddValuation`. -/
 theorem realAddValuation_eq_top_iff {x : K} : realAddValuation K x = ⊤ ↔ x = 0 :=
@@ -162,9 +165,9 @@ theorem realAddValuation_coe_integer (a : 𝒪[K]) :
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `realAddValuation` is at least `1`. -/
 theorem mem_maximalIdeal_iff_one_le_realAddValuation {a : 𝒪[K]} :
     a ∈ 𝓂[K] ↔ 1 ≤ realAddValuation K (a : K) := by
-  rw [show a ∈ 𝓂[K] ↔ 1 ≤ IsDiscreteValuationRing.addVal 𝒪[K] a by
-    simpa using IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (x := a) (n := 1),
-    realAddValuation_coe_integer]
+  have hmem : a ∈ 𝓂[K] ↔ 1 ≤ IsDiscreteValuationRing.addVal 𝒪[K] a := by
+    simpa using IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (x := a) (n := 1)
+  rw [hmem, realAddValuation_coe_integer]
   cases IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe with
   | top => simp
   | coe n =>
@@ -276,12 +279,16 @@ theorem realAddValuation_apply (σ : L ≃ₐ[K] M) (x : L) :
   have : Module.Finite K L := finite_of_valuativeExtension K L
   let _ : Algebra L M := σ.toAlgHom.toAlgebra
   have : ValuativeExtension L M := σ.toAlgHom.valuativeExtension
+  have halg : algebraMap L M = σ.toAlgHom.toRingHom := RingHom.algebraMap_toAlgebra _
+  have hsurj : Function.Surjective (Units.map (algebraMap L M : L →* M)) := fun m ↦
+    ⟨Units.map σ.symm.toMonoidHom m, by ext; simp [halg]⟩
+  have hrange :
+      ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).range = ⊤ :=
+    MonoidHom.range_eq_top.mpr ((normalizedValuation_surjective (K := M)).comp hsurj)
   have he : ramificationIndex L M = 1 := by
-    rw [ramificationIndex_def, MonoidHom.range_eq_top.mpr
-      (normalizedValuation_surjective.comp (Units.mapEquiv σ.toMulEquiv).surjective :
-        Function.Surjective ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)))),
-      Subgroup.index_top]
-  change realAddValuation M (algebraMap L M x) = realAddValuation L x
-  simpa [he, show (fun r : ℝ ↦ r) = id from rfl] using realAddValuation_algebraMap (L := M) x
+    rw [ramificationIndex_def, hrange, Subgroup.index_top]
+  have hmap := realAddValuation_algebraMap (K := L) (L := M) x
+  rw [halg, he] at hmap
+  simpa [← Function.id_def] using hmap
 
 end AlgEquiv
