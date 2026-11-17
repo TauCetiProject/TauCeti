@@ -47,6 +47,8 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
   sheaves have the same nonvanishing loci of sections over each open;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
   basic open set of the regular function `r`.
+* `AlgebraicGeometry.Scheme.Modules.basicOpen_eq_inf_nonvanishingLocus`: if `s|_V = f • e` with
+  `e` nonvanishing on `V`, then `X_s ∩ V` is the basic open set of `f`;
 * `AlgebraicGeometry.Scheme.Modules.quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus`:
   a scheme covered by affine nonvanishing loci of global sections of `M` is quasi-separated.
 
@@ -289,6 +291,14 @@ theorem range_nonvanishingLocus_eq_of_iso {N : X.Modules}
   exact ⟨fun ⟨s, hs⟩ ↦ ⟨φ.hom.app U s, (nonvanishingLocus_hom_app φ s).trans hs⟩,
     fun ⟨s, hs⟩ ↦ ⟨φ.symm.hom.app U s, (nonvanishingLocus_hom_app φ.symm s).trans hs⟩⟩
 
+/-- If `e` vanishes nowhere on `V ≤ U` and `s|_V = f • e`, then `X_s ∩ V` is the basic open set
+of `f`. -/
+theorem basicOpen_eq_inf_nonvanishingLocus {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U))
+    {e : Γ(M, V)} (he : V ≤ M.nonvanishingLocus e) {f : Γ(X, V)}
+    (hf : f • e = M.presheaf.map i.op s) : X.basicOpen f = V ⊓ M.nonvanishingLocus s := by
+  rw [← inf_eq_left.mpr ((X.basicOpen_le f).trans he), ← nonvanishingLocus_smul, hf,
+    nonvanishingLocus_map]
+
 /-- A scheme covered by affine nonvanishing loci of global sections of an invertible sheaf is
 quasi-separated: two such loci `X_s` and `X_t` meet in the basic open of `X_s` cut out by the
 function `t / s`, which is affine. -/
@@ -307,11 +317,7 @@ theorem quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus
     rw [nonvanishingLocus_map]
     exact le_inf le_rfl le_rfl
   obtain ⟨g, hg⟩ := surjective_smul_of_le_nonvanishingLocus hss (M.presheaf.map j.op t.1)
-  have hgst : X.basicOpen g = M.nonvanishingLocus s.1 ⊓ M.nonvanishingLocus t.1 := by
-    have := congrArg M.nonvanishingLocus hg
-    simp only [nonvanishingLocus_smul, nonvanishingLocus_map] at this
-    rw [← this, inf_idem, inf_eq_left.mpr (X.basicOpen_le g)]
-  rw [← Opens.coe_inf, ← hgst]
+  rw [← Opens.coe_inf, ← basicOpen_eq_inf_nonvanishingLocus j t.1 hss hg]
   exact (s.2.basicOpen g).isCompact
 
 /-- On the structure sheaf `𝒪_X`, regarded as an invertible sheaf, the nonvanishing locus of a

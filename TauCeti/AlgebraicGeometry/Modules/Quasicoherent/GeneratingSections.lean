@@ -24,6 +24,9 @@ where generating sections are produced chart by chart.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_forall_surjective_app`: a morphism into a
+  quasi-coherent module that is surjective on sections over each member of an affine open cover is
+  an epimorphism.
 * `AlgebraicGeometry.Scheme.Modules.epi_freeHomEquiv_symm_of_span_eq_top`: global sections of a
   quasi-coherent module whose restrictions span the sections over each member of an affine open
   cover generate the module.
@@ -44,6 +47,38 @@ universe u
 
 variable {X : Scheme.{u}}
 
+/-- **Epimorphisms onto a quasi-coherent module are detected on an affine open cover.** A
+morphism `φ : F ⟶ M` into a quasi-coherent `𝒪_X`-module is an epimorphism if it is surjective on
+sections over each member `V i` of an affine open cover of `X`. -/
+theorem Hom.epi_of_forall_surjective_app {F M : X.Modules} [M.IsQuasicoherent] (φ : F ⟶ M)
+    {ι : Type*} {V : ι → X.Opens} (hV : ∀ i, IsAffineOpen (V i)) (hcov : ⨆ i, V i = ⊤)
+    (hφ : ∀ i, Function.Surjective (φ.app (V i))) : Epi φ := by
+  -- A section `m` of `M` near `x` is, on a basic open `D(f) ⊆ V i` around `x`, a section over
+  -- `V i` divided by a power of `f`, hence in the image of `φ` over `D(f)`.
+  have : Sheaf.IsLocallySurjective
+      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ) := by
+    constructor
+    intro U m x hx
+    obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hcov.symm ▸ Opens.mem_top x : x ∈ ⨆ i, V i)
+    obtain ⟨f, hfU, hxf⟩ := (hV i).exists_basicOpen_le ⟨x, hx⟩ hxi
+    have hD : X.basicOpen f ≤ V i := X.basicOpen_le f
+    obtain ⟨n, y, hy⟩ := M.exists_pow_smul_eq_map (hV i) f rfl hD
+      (M.presheaf.map (homOfLE hfU).op m)
+    obtain ⟨z, rfl⟩ := hφ i y
+    obtain ⟨u, hu⟩ : IsUnit (X.presheaf.map (homOfLE hD).op f ^ n) :=
+      (X.toRingedSpace.isUnit_res_basicOpen f).pow n
+    refine ⟨X.basicOpen f, homOfLE hfU, ⟨(↑u⁻¹ : Γ(X, X.basicOpen f)) •
+      F.presheaf.map (homOfLE hD).op z, ?_⟩, hxf⟩
+    -- The underlying sheaf of abelian groups has the sections and restriction maps of `M`, on
+    -- which `φ` acts through `Hom.app`.
+    change φ.app _ _ = M.presheaf.map _ m
+    have hnat : φ.app _ (F.presheaf.map (homOfLE hD).op z) =
+        M.presheaf.map (homOfLE hD).op (φ.app (V i) z) :=
+      φ.mapPresheaf.naturality_apply _ z
+    rw [Hom.app_smul, hnat, ← hy, ← hu, smul_smul, Units.inv_mul, one_smul]
+  exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
+    (Sheaf.epi_of_isLocallySurjective _)
+
 /-- **Global generation from spanning on an affine open cover.** Let `M` be a quasi-coherent
 `𝒪_X`-module and `s` a family of global sections of `M`. If over each member `V i` of an affine
 open cover of `X` the restrictions of the sections `s` span `Γ(V i, M)` as a `Γ(V i, 𝒪_X)`-module,
@@ -58,39 +93,13 @@ theorem epi_freeHomEquiv_symm_of_span_eq_top (M : X.Modules) [M.IsQuasicoherent]
       (M.freeHomEquiv.symm fun k ↦ M.sectionsEquivTop.symm (s k)) := by
   let F : X.Modules := SheafOfModules.free I
   let φ : F ⟶ M := M.freeHomEquiv.symm fun k ↦ M.sectionsEquivTop.symm (s k)
-  -- The generators of the free module go to the given sections.
-  let g (k : I) : Γ(F, ⊤) := F.sectionsEquivTop (SheafOfModules.freeSection k)
-  have hgen (k : I) : φ.app ⊤ (g k) = s k := by
-    rw [← sectionsEquivTop_sectionsMap]
-    have : SheafOfModules.sectionsMap φ (SheafOfModules.freeSection k) =
-        M.freeHomEquiv φ k :=
-      (SheafOfModules.freeHomEquiv_apply (M := M) φ k).symm
-    rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-  -- A section `m` of `M` near `x` is, on a basic open `D(f) ⊆ V i` around `x`, a section over
-  -- `V i` divided by a power of `f`, hence in the image of `φ` over `D(f)`.
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ) := by
-    constructor
-    intro U m x hx
-    obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hcov.symm ▸ Opens.mem_top x : x ∈ ⨆ i, V i)
-    obtain ⟨f, hfU, hxf⟩ := (hV i).exists_basicOpen_le ⟨x, hx⟩ hxi
-    have hD : X.basicOpen f ≤ V i := X.basicOpen_le f
-    obtain ⟨n, y, hy⟩ := M.exists_pow_smul_eq_map (hV i) f rfl hD
-      (M.presheaf.map (homOfLE hfU).op m)
-    obtain ⟨z, rfl⟩ := φ.exists_app_eq_of_mem_span g (y := y) (by
-      simpa only [hgen, hs i] using Submodule.mem_top)
-    obtain ⟨u, hu⟩ : IsUnit (X.presheaf.map (homOfLE hD).op f ^ n) :=
-      (X.toRingedSpace.isUnit_res_basicOpen f).pow n
-    refine ⟨X.basicOpen f, homOfLE hfU, ⟨(↑u⁻¹ : Γ(X, X.basicOpen f)) •
-      F.presheaf.map (homOfLE hD).op z, ?_⟩, hxf⟩
-    -- The underlying sheaf of abelian groups has the sections and restriction maps of `M`, on
-    -- which `φ` acts through `Hom.app`.
-    change φ.app _ _ = M.presheaf.map _ m
-    have hnat : φ.app _ (F.presheaf.map (homOfLE hD).op z) =
-        M.presheaf.map (homOfLE hD).op (φ.app (V i) z) :=
-      φ.mapPresheaf.naturality_apply _ z
-    rw [Hom.app_smul, hnat, ← hy, ← hu, smul_smul, Units.inv_mul, one_smul]
-  exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-    (Sheaf.epi_of_isLocallySurjective _)
+  refine φ.epi_of_forall_surjective_app hV hcov fun i y ↦ φ.exists_app_eq_of_mem_span ?_
+    (hs i ▸ Submodule.mem_top)
+  -- The restriction of `s k` to `V i` is the image of the restriction of the `k`-th generator.
+  rintro _ ⟨k, rfl⟩
+  refine ⟨F.presheaf.map (homOfLE le_top : V i ⟶ ⊤).op
+    (F.sectionsEquivTop (SheafOfModules.freeSection k)), ?_⟩
+  exact (φ.mapPresheaf.naturality_apply _ _).trans
+    (congrArg _ (app_freeHomEquiv_symm_freeSection M s k))
 
 end AlgebraicGeometry.Scheme.Modules

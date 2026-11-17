@@ -115,14 +115,6 @@ private theorem exists_finite_affine_cover_le_nonvanishingLocus {U : X.Opens}
   obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (ht hx)
   exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxi⟩
 
-/-- If `e` vanishes nowhere on `V ≤ U` and `s|_V = f • e`, then `X_s ∩ V` is the basic open set
-of `f`. -/
-private theorem basicOpen_eq_inf_nonvanishingLocus {U V : X.Opens} (i : V ⟶ U) (s : Γ(L, U))
-    {e : Γ(L, V)} (he : V ≤ L.nonvanishingLocus e) {f : Γ(X, V)}
-    (hf : f • e = L.presheaf.map i.op s) : X.basicOpen f = V ⊓ L.nonvanishingLocus s := by
-  rw [← inf_eq_left.mpr ((X.basicOpen_le f).trans he), ← nonvanishingLocus_smul, hf,
-    nonvanishingLocus_map]
-
 /-- **Sections vanishing on the nonvanishing locus are killed by a power of the section**
 (Hartshorne, Lemma II.5.14(a)). Let `F` be quasi-coherent and `L` invertible, let `s` be a section
 of `L` over a quasi-compact open `U`, and let `t` be a section of `F` over `U` that vanishes on the

@@ -104,6 +104,8 @@ theorem whiskerLeft_app_tmulRight {L' : X.Modules} (g : L ⟶ L') {U : X.Opens} 
   have h := congrArg (fun φ ↦ φ.hom (t ⊗ₜ e))
     (Functor.LaxMonoidal.μ_natural_right (sectionsFunctor U) F g)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The associator and whiskerings of `ModuleCat` act on pure tensors as expected, and the
+  -- sections functor applies `Hom.app`, so `h` is the claim with `tmulRight` unfolded.
   exact h.symm
 
 /-- The right unitor `F ⊗ 𝒪_X ≅ F` sends `t ⊗ r` to `r • t`. -/
@@ -112,6 +114,8 @@ theorem rightUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)
   have h := congrArg (fun φ ↦ φ.hom (t ⊗ₜ r))
     (Functor.LaxMonoidal.right_unitality (sectionsFunctor U) F)
   simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The left unitor of `ModuleCat` is `TensorProduct.lid`, so `h` reads `r • e` on the right, and
+  -- the sections functor applies `Hom.app`.
   exact h.symm
 
 /-- The inverse right unitor `F ≅ F ⊗ 𝒪_X` sends `t` to `t ⊗ 1`. -/
@@ -131,6 +135,8 @@ theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U))
   have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ e))
     (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) L)
   simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The left unitor of `ModuleCat` is `TensorProduct.lid`, so `h` reads `r • e` on the right, and
+  -- the sections functor applies `Hom.app`.
   exact h.symm
 
 /-- The associator `(F ⊗ L) ⊗ G ≅ F ⊗ (L ⊗ G)` sends `(t ⊗ e) ⊗ e'` to `t ⊗ (e ⊗ e')`. -/
@@ -142,6 +148,8 @@ theorem associator_hom_app_tmulRight {G : X.Modules} {U : X.Opens} (e' : Γ(G, U
   have h := congrArg (fun φ ↦ φ.hom ((t ⊗ₜ e) ⊗ₜ e'))
     (Functor.LaxMonoidal.associativity (sectionsFunctor U) F L G)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The associator and whiskerings of `ModuleCat` act on pure tensors as expected, and the
+  -- sections functor applies `Hom.app`, so `h` is the claim with `tmulRight` unfolded.
   exact h
 
 /-- Restriction to an open subscheme commutes with tensoring sections: the tensor map
