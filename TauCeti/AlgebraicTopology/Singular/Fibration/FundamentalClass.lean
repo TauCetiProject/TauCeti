@@ -506,8 +506,8 @@ theorem IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization {
       ((TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom.hom
         ((fiberLocalization (ModuleCat.of R R) p b m).hom μ)) =
       Ψ.hom.hom (singularHomologyToLocalHomology (ModuleCat.of R R) y.1 m μ) := by
-    rw [singularHomologyToLocalHomology_eq_singularHomologyπ,
-      singularHomologyToLocalHomology_eq_singularHomologyπ,
+    refine (singularHomologyToLocalHomology_eq_singularHomologyπ _ y _).trans ?_
+    rw [singularHomologyToLocalHomology_eq_singularHomologyπ _ y.1,
       ← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id _
         (TopCat.mapsTo_compl_fiber y)]
     exact congrArg (fun f ↦ f.hom ((fiberLocalization (ModuleCat.of R R) p b m).hom μ))
