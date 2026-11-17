@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Preserves.Over
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.MorphismProperty.Basic
 
 /-!
 # Base change of a cofiltered limit
@@ -24,9 +24,14 @@ and the limit statement is transported from that composite. It is stated with th
 `pullback (D.map j.hom) r` and the transition maps `pullback.map` so that the pullback projections
 apply to its members directly, with the lemmas `Functor.pullbackOver_map_fst` and
 `Functor.pullbackOver_map_snd` describing the transition maps.
+
+For a cone `c` over `D` with point `S`, a morphism `b : X ×_{Dᵢ} Dⱼ ⟶ Y ×_{Dᵢ} Dⱼ` over `Dⱼ` that is
+compatible with a morphism `a : X ×_{Dᵢ} S ⟶ Y ×_{Dᵢ} S` over `S` base changes along `S ⟶ Dⱼ` to `a`
+up to the canonical isomorphisms, so it shares every property of morphisms respecting isomorphisms
+with `a` (`CategoryTheory.MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq`).
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits
 
@@ -87,3 +92,44 @@ noncomputable def IsLimit.pullbackOver [IsCofilteredOrEmpty I] {c : Cone D}
       ext <;> simp [Cone.pullbackOver, e, Over.conePost])
 
 end CategoryTheory.Limits
+
+namespace CategoryTheory.MorphismProperty
+
+variable {C : Type*} [Category* C] [HasPullbacks C] {I : Type*} [Category* I] {D : I ⥤ C}
+  {c : Cone D}
+
+/-- Let `c` be a cone over `D` with point `S`, and let `b : X ×_{Dᵢ} Dⱼ ⟶ Y ×_{Dᵢ} Dⱼ` over `Dⱼ`
+be compatible with a morphism `a : X ×_{Dᵢ} S ⟶ Y ×_{Dᵢ} S` over `S`. Then the base change of `b`
+to `S` is `a` up to the canonical isomorphisms, so it has every property of morphisms respecting
+isomorphisms that `a` has. -/
+theorem pullbackMap_iff_of_pullbackMap_comp_eq (P : MorphismProperty C) [P.RespectsIso]
+    {i j : I} (hji : j ⟶ i) {X Y : C} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i}
+    {a : pullback (c.π.app i) p ⟶ pullback (c.π.app i) q}
+    (ha : a ≫ pullback.fst _ _ = pullback.fst _ _)
+    {b : pullback (D.map hji) p ⟶ pullback (D.map hji) q}
+    (hb₁ : b ≫ pullback.fst _ _ = pullback.fst _ _)
+    (hb₂ : pullback.map (c.π.app i) p (D.map hji) p (c.π.app j) (𝟙 X) (𝟙 _) (by simp) (by simp) ≫
+      b = a ≫ pullback.map (c.π.app i) q (D.map hji) q (c.π.app j) (𝟙 Y) (𝟙 _) (by simp)
+        (by simp)) :
+    P (pullback.map (c.π.app j) (pullback.fst (D.map hji) p) (c.π.app j)
+      (pullback.fst (D.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by simp [hb₁])) ↔ P a := by
+  -- `S ×_{Dⱼ} (Dⱼ ×_{Dᵢ} Z) ≅ S ×_{Dᵢ} Z`.
+  let ψ {Z : C} (s : Z ⟶ D.obj i) :
+      pullback (c.π.app j) (pullback.fst (D.map hji) s) ≅ pullback (c.π.app i) s :=
+    pullbackRightPullbackFstIso (D.map hji) s (c.π.app j) ≪≫ pullback.congrHom (c.w hji) rfl
+  have : pullback.map (c.π.app j) (pullback.fst (D.map hji) p) (c.π.app j)
+      (pullback.fst (D.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by simp [hb₁]) =
+      (ψ p).hom ≫ a ≫ (ψ q).inv := by
+    rw [← Category.assoc, Iso.eq_comp_inv]
+    apply pullback.hom_ext
+    · simp [ψ, ha]
+    · have h := congrArg (· ≫ pullback.snd (D.map hji) q) hb₂
+      simp only [Category.assoc, pullback.lift_snd, Category.comp_id] at h
+      have key : (ψ p).hom ≫ pullback.map (c.π.app i) p (D.map hji) p (c.π.app j) (𝟙 _) (𝟙 _)
+          (by simp) (by simp) = pullback.snd _ _ := by
+        apply pullback.hom_ext <;> simp [ψ, pullback.condition]
+      rw [Category.assoc, Category.assoc, ← h, reassoc_of% key]
+      simp [ψ]
+  rw [this, P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso]
+
+end CategoryTheory.MorphismProperty
