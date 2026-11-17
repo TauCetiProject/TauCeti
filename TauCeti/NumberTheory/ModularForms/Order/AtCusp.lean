@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ENat.BigOperators
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
@@ -333,13 +334,11 @@ lemma periodic_slash_of_apply_one_zero_eq_zero
     Periodic ((g ∣[k] M) ∘ ofComplex) ((M 1 1 / M 0 0) * h : ℝ) := by
   obtain ⟨h11, h00⟩ := div_ne_zero_iff.mp
     (apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM).ne'
+  have hscale : (M 0 0 / M 1 1) * ((M 1 1 / M 0 0) * h) = h := by field_simp
   refine TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mpr fun τ ↦ ?_
-  simp only [_root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM]
-  rw [show M • (((M 1 1 / M 0 0) * h) +ᵥ τ) = h +ᵥ (M • τ) from UpperHalfPlane.ext <| by
-      have := Complex.ofReal_ne_zero.mpr h00; have := Complex.ofReal_ne_zero.mpr h11
-      simp only [UpperHalfPlane.coe_smul_of_apply_one_zero_eq_zero hdet hM, coe_vadd]
-      push_cast; field_simp; ring,
-    TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mp hg_per]
+  simp only [_root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,
+    UpperHalfPlane.smul_vadd_of_apply_one_zero_eq_zero hM, hscale]
+  rw [TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mp hg_per]
 
 /-- Near `q = 0`, slashing by positive-determinant upper-triangular `M ∈ GL(2, ℝ)` scales
 `cuspFunction` by `|det M|^(k-1) * M₁₁^(-k)` and rotates `q` by `exp (2πi (M 0 1 / M 1 1) / h)`. -/
@@ -350,7 +349,6 @@ lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
       ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k) * cuspFunction h g
         (Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h) * q) := by
   have hdiv := apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
-  obtain ⟨h11, h00⟩ := div_ne_zero_iff.mp hdiv.ne'
   have hh' := mul_pos hdiv hh
   refine TauCeti.UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt
     (eventually_nhdsWithin_iff.mpr ?_)
@@ -363,13 +361,8 @@ lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
   rw [← hqτ, UpperHalfPlane.eq_cuspFunction τ hh'.ne'
       (periodic_slash_of_apply_one_zero_eq_zero hdet hM hg_per),
     _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,
-    ← UpperHalfPlane.eq_cuspFunction (M • τ) hh.ne' hg_per, show Periodic.qParam h
-      ((M • τ : ℍ) : ℂ) = Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h) * q by
-      have := Complex.ofReal_ne_zero.mpr hh.ne'; have := Complex.ofReal_ne_zero.mpr h00
-      have := Complex.ofReal_ne_zero.mpr h11
-      rw [← hqτ, Periodic.qParam, Periodic.qParam,
-        UpperHalfPlane.coe_smul_of_apply_one_zero_eq_zero hdet hM, ← Complex.exp_add]
-      congr 1; push_cast; field_simp; ring, hqτ]
+    ← UpperHalfPlane.eq_cuspFunction (M • τ) hh.ne' hg_per,
+    TauCeti.UpperHalfPlane.qParam_smul_of_apply_one_zero_eq_zero hdet hM τ]
 
 /-- Analyticity at `q = 0` of `cuspFunction` is preserved under upper-triangular `GL(2, ℝ)`. -/
 lemma analyticAt_cuspFunction_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
@@ -410,8 +403,7 @@ theorem orderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
     (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
     (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) :
     orderAtCusp ((M 1 1 / M 0 0) * h) (g ∣[k] M) = orderAtCusp h g := by
-  rw [orderAtCusp_def, orderAtCusp_def,
-    show 2 * ((M 1 1 / M 0 0) * h) = (M 1 1 / M 0 0) * (2 * h) by ring,
+  rw [orderAtCusp_def, orderAtCusp_def, mul_left_comm (2 : ℝ),
     qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (by positivity) hdet hM hg_per hg]
 
 /-- **Upper-triangular `SL(2, ℝ)` scaling invariance of `orderAtCusp`.** -/
@@ -419,11 +411,12 @@ theorem orderAtCusp_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
     (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) :
     orderAtCusp (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹) = orderAtCusp h g := by
-  have hcoe (i j : Fin 2) : (mapGL ℝ t⁻¹ : GL (Fin 2) ℝ) i j = t⁻¹ i j := by
-    rw [mapGL_coe_matrix]; simp
-  rw [← show (mapGL ℝ t⁻¹ : GL (Fin 2) ℝ) 1 1 / (mapGL ℝ t⁻¹ : GL (Fin 2) ℝ) 0 0 = t 0 0 ^ 2 by
+  set M : GL (Fin 2) ℝ := mapGL ℝ t⁻¹
+  have hcoe (i j : Fin 2) : M i j = t⁻¹ i j := by dsimp only [M]; rw [mapGL_coe_matrix]; simp
+  have hratio : M 1 1 / M 0 0 = t 0 0 ^ 2 := by
     rw [hcoe, hcoe, inv_apply_one_one, inv_apply_zero_zero, div_eq_mul_inv,
-      inv_eq_of_mul_eq_one_left (mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero ht), sq]]
+      inv_eq_of_mul_eq_one_left (mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero ht), sq]
+  rw [← hratio]
   exact orderAtCusp_slash_of_apply_one_zero_eq_zero hh
     (by rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL]; exact one_pos)
     (by rw [hcoe, inv_apply_one_zero, ht, neg_zero]) hg_per hg

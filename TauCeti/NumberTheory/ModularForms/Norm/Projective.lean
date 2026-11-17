@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.Order.CuspOrbits
 public import TauCeti.NumberTheory.ModularForms.Order.EffectiveOrbits
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # The projective valence formula on the compactified quotient
@@ -50,7 +51,7 @@ theorem orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp (f : F) (γ 
   rw [orderAtCuspTranslationOrbit_mk, ← cuspTranslationOrbitWidth_mk,
     natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty,
     _root_.SlashInvariantForm.quotientFunc_mk, MonoidHom.coe_rangeRestrict,
-    show (mapGL ℝ γ⁻¹)⁻¹ = mapGL ℝ γ by rw [map_inv, inv_inv]]
+    map_inv (mapGL ℝ) γ, inv_inv]
 
 /-- Negating `γ⁻¹` preserves `orderAtCuspTranslationOrbit` (up to `(-1) ^ k`). -/
 theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
@@ -60,9 +61,10 @@ theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
       orderAtCuspTranslationOrbit f ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ := by
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
   let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
-  rw [show (-γ⁻¹ : SL(2, ℤ)) = (-γ)⁻¹ by simp,
-    orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp,
-    orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp, Subgroup.conj_mapGL_neg,
+  have hΓ : ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) = Γγ := by
+    rw [mapGL_neg, inv_neg, Subgroup.toConjAct_neg_smul]
+  rw [← inv_neg, orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp,
+    orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp, hΓ,
     ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (-γ), ← _root_.ModularForm.SL_slash, SL_slash_neg,
     _root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL γ,
     ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
@@ -105,8 +107,10 @@ theorem sum_orderAtCuspTranslationOrbit_filter_eq_relIndex_withCenter_mul
     ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧
   set c₁ : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ)) :=
     ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (-γ⁻¹))⟧
-  rw [show Finset.univ.filter (fun c ↦ Γ.cuspOrbitOfTranslationOrbit c = Γ.cuspOrbitOfSL2Z γ) =
-    {c₀, c₁} by ext c; simp [c₀, c₁, cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff]]
+  have hfilter : Finset.univ.filter
+      (fun c ↦ Γ.cuspOrbitOfTranslationOrbit c = Γ.cuspOrbitOfSL2Z γ) = {c₀, c₁} := by
+    ext c; simp [c₀, c₁, cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff]
+  rw [hfilter]
   by_cases hneg : (-1 : SL(2, ℤ)) ∈ Γ
   · have hc : c₀ = c₁ := (cuspTranslationOrbit_mk_inv_eq_mk_neg_inv_iff γ).mpr (Or.inl hneg)
     rw [hc, Finset.pair_eq_singleton, Finset.sum_singleton, ← hc,
@@ -173,19 +177,16 @@ def orderOnCompactifiedQuotient (f : F) : (Γ.map sl2zToPSL2R).CompactifiedQuoti
   | .ofCusp C => orderAtCuspOrbit f C
 
 /-- On an interior orbit, `orderOnCompactifiedQuotient` is `orderOfVanishingOnEffectiveOrbit`. -/
-@[simp]
-theorem orderOnCompactifiedQuotient_ofQuotient (f : F)
+@[simp] theorem orderOnCompactifiedQuotient_ofQuotient (f : F)
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
     orderOnCompactifiedQuotient f (.ofQuotient P) = orderOfVanishingOnEffectiveOrbit f P := (rfl)
 
 /-- At a cusp `C`, `orderOnCompactifiedQuotient` is `orderAtCuspOrbit`. -/
-@[simp]
-theorem orderOnCompactifiedQuotient_ofCusp (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+@[simp] theorem orderOnCompactifiedQuotient_ofCusp (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
     orderOnCompactifiedQuotient f (.ofCusp C) = orderAtCuspOrbit f C := (rfl)
 
 /-- The zero form has geometric vanishing order `0` everywhere on the compactified quotient. -/
-@[simp]
-theorem orderOnCompactifiedQuotient_zero [Zero F] [IsZeroApply F]
+@[simp] theorem orderOnCompactifiedQuotient_zero [Zero F] [IsZeroApply F]
     (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) : orderOnCompactifiedQuotient (0 : F) x = 0 := by
   cases x <;> simp
 
@@ -200,16 +201,15 @@ theorem weightedOrderOnCompactifiedQuotient_def (f : F)
       orderOnCompactifiedQuotient f x / x.effectiveStabilizerOrder := (rfl)
 
 /-- On an interior orbit `P`, `weightedOrderOnCompactifiedQuotient` is the effective order. -/
-@[simp]
-theorem weightedOrderOnCompactifiedQuotient_ofQuotient (f : F)
+@[simp] theorem weightedOrderOnCompactifiedQuotient_ofQuotient (f : F)
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
     weightedOrderOnCompactifiedQuotient f (.ofQuotient P) =
       weightedOrderOfVanishingOnEffectiveOrbit f P := by
   simp [weightedOrderOnCompactifiedQuotient_def, weightedOrderOfVanishingOnEffectiveOrbit_def]
 
 /-- At a cusp `C`, `weightedOrderOnCompactifiedQuotient` is `orderAtCuspOrbit` since `e_C = 1`. -/
-@[simp]
-theorem weightedOrderOnCompactifiedQuotient_ofCusp (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+@[simp] theorem weightedOrderOnCompactifiedQuotient_ofCusp (f : F)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
     weightedOrderOnCompactifiedQuotient f (.ofCusp C) = orderAtCuspOrbit f C := by
   simp [weightedOrderOnCompactifiedQuotient_def]
 
@@ -221,8 +221,7 @@ theorem effectiveStabilizerOrder_mul_weightedOrderOnCompactifiedQuotient (f : F)
   mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr x.effectiveStabilizerOrder_ne_zero)
 
 /-- The zero form has weighted geometric order `0` everywhere on the compactified quotient. -/
-@[simp]
-theorem weightedOrderOnCompactifiedQuotient_zero [Zero F] [IsZeroApply F]
+@[simp] theorem weightedOrderOnCompactifiedQuotient_zero [Zero F] [IsZeroApply F]
     (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     weightedOrderOnCompactifiedQuotient (0 : F) x = 0 := by
   simp [weightedOrderOnCompactifiedQuotient_def]
@@ -248,16 +247,14 @@ section FiniteIndex
 variable [Γ.FiniteIndex]
 
 /-- Nonzero complex scalar multiples have the same geometric order on the compactified quotient. -/
-@[simp]
-theorem orderOnCompactifiedQuotient_smul [SMul ℂ F] [IsSMulApply ℂ F] {c : ℂ} (hc : c ≠ 0) (f : F)
-    (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
+@[simp] theorem orderOnCompactifiedQuotient_smul [SMul ℂ F] [IsSMulApply ℂ F] {c : ℂ} (hc : c ≠ 0)
+    (f : F) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     orderOnCompactifiedQuotient (c • f) x = orderOnCompactifiedQuotient f x := by
   cases x <;> simp [hc]
 
 /-- Nonzero complex scalar multiples have the same weighted geometric order. -/
-@[simp]
-theorem weightedOrderOnCompactifiedQuotient_smul [SMul ℂ F] [IsSMulApply ℂ F] {c : ℂ} (hc : c ≠ 0)
-    (f : F) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
+@[simp] theorem weightedOrderOnCompactifiedQuotient_smul [SMul ℂ F] [IsSMulApply ℂ F] {c : ℂ}
+    (hc : c ≠ 0) (f : F) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     weightedOrderOnCompactifiedQuotient (c • f) x = weightedOrderOnCompactifiedQuotient f x := by
   simp [weightedOrderOnCompactifiedQuotient_def, hc]
 
@@ -390,7 +387,8 @@ theorem orderAtCuspOrbit_eq_zero_of_weight_mul_index_withCenter_lt_six (f : F)
     generalize (qExpansion _ _).order.toNat = m at hbound ⊢
     have : (6 : ℤ) * m ≤ k * Γ.withCenter.index := by
       exact_mod_cast (by linarith : (6 : ℚ) * m ≤ (k : ℚ) * Γ.withCenter.index)
-    simp [show m = 0 by omega]
+    have hm0 : m = 0 := by omega
+    simp [hm0]
 
 private lemma orderAtCuspOrbit_eq_zero_of_exists_natCast (f : F)
     {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hm : ∃ m : ℕ, orderAtCuspOrbit f C = m)
@@ -401,7 +399,8 @@ private lemma orderAtCuspOrbit_eq_zero_of_exists_natCast (f : F)
   · obtain ⟨m, hm⟩ := hm
     have : (12 : ℤ) * m ≤ k * Γ.withCenter.index := by
       exact_mod_cast hm ▸ twelve_mul_orderAtCuspOrbit_le_weight_mul_index_withCenter f hf C
-    simp [hm, show m = 0 by omega]
+    have hm0 : m = 0 := by omega
+    simp [hm, hm0]
 
 /-- At a regular cusp orbit `C`, `k · [SL(2, ℤ) : ±Γ] < 12` forces `orderAtCuspOrbit f C = 0`. -/
 theorem orderAtCuspOrbit_eq_zero_of_isRegularCusp_of_weight_mul_index_withCenter_lt_twelve (f : F)

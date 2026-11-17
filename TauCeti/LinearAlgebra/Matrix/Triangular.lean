@@ -361,10 +361,7 @@ theorem apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_ze
     {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {M : Matrix (Fin 2) (Fin 2) K} (hdet : 0 < M.det) (hM : M 1 0 = 0) :
     0 < M 1 1 / M 0 0 := by
-  have htri : M.IsUpperTriangular := fun i j (hij : j.1 < i.1) ↦ by
-    simpa [show i = 1 from Fin.ext (by omega), show j = 0 from Fin.ext (by omega)] using hM
-  have hmul : 0 < M 0 0 * M 1 1 := by
-    simpa [det_of_isUpperTriangular htri, Fin.prod_univ_two] using hdet
+  have hmul : 0 < M 0 0 * M 1 1 := by simpa [Matrix.det_fin_two, hM] using hdet
   have h00 : M 0 0 ≠ 0 := left_ne_zero_of_mul hmul.ne'
   rw [← mul_div_mul_left (M 1 1) (M 0 0) h00]
   exact div_pos hmul (mul_self_pos.mpr h00)

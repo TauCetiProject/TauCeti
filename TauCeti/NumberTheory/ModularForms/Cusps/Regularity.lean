@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -41,7 +42,7 @@ theorem exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_con
     (hw : mapGL ℝ s * Matrix.GeneralLinearGroup.upperRightHom w ∈
       ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))) :
     ∃ j : ℤ, w = j ∧ γ * (s * ModularGroup.T ^ j) * γ⁻¹ ∈ Γ := by
-  obtain ⟨g, hg, hg_eq⟩ := Subgroup.mem_map.mp ((Subgroup.mem_conj_mapGL_inv_iff γ).mp hw)
+  obtain ⟨g, hg, hg_eq⟩ := Subgroup.mem_map.mp (Subgroup.mem_conjAct_inv_smul_iff.mp hw)
   set u : SL(2, ℤ) := s⁻¹ * (γ⁻¹ * g * γ) with hu_def
   have hconj : mapGL ℝ u = Matrix.GeneralLinearGroup.upperRightHom w := by
     rw [hu_def, map_mul, map_inv, map_mul, map_mul, map_inv, hg_eq]; group
@@ -50,7 +51,8 @@ theorem exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_con
       (congr_arg (fun M : GL (Fin 2) ℝ ↦ (M : Matrix (Fin 2) (Fin 2) ℝ) 0 1) hconj).symm
   have hT : u = ModularGroup.T ^ (u 0 1) :=
     mapGL_injective (S := ℝ) (by rw [hconj, hw_eq, ModularGroup.mapGL_T_zpow_eq_upperRightHom])
-  exact ⟨u 0 1, hw_eq, by rwa [← hT, show γ * (s * u) * γ⁻¹ = g by rw [hu_def]; group]⟩
+  have hg_eq' : γ * (s * u) * γ⁻¹ = g := by rw [hu_def]; group
+  exact ⟨u 0 1, hw_eq, by rwa [← hT, hg_eq']⟩
 
 /-- A positive shift `upperRightHom w ∈ γ⁻¹ Γ γ` has integer translation `w = j` with
 `γ * T ^ j * γ⁻¹ ∈ Γ`. -/
@@ -83,7 +85,7 @@ private lemma cuspDatum_width_mem_periods {D : (Γ.map sl2zToPSL2R).CuspDatum} {
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff] at hconj
   have hmem : mapGL ℝ (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) (γ⁻¹ * g₀ * γ)) ∈
       ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) := by
-    rw [mapGL_map_intCast (R := ℝ) (S := ℝ), Subgroup.mem_conj_mapGL_inv_iff]
+    rw [mapGL_map_intCast (R := ℝ) (S := ℝ), Subgroup.mem_conjAct_inv_smul_iff]
     simpa [map_mul, map_inv, mul_assoc] using Subgroup.mem_map_of_mem (mapGL ℝ) hg₀
   rw [Subgroup.periods, Subgroup.mem_strictPeriods_iff, Subgroup.mem_adjoinNegOne_iff]
   rcases hconj with h | h
@@ -91,27 +93,23 @@ private lemma cuspDatum_width_mem_periods {D : (Γ.map sl2zToPSL2R).CuspDatum} {
   · exact Or.inr (by
       rwa [neg_eq_iff_eq_neg.mp h.symm, mapGL_neg, mapGL_transvection_eq_upperRightHom] at hmem)
 
-private lemma widthInfty_mem_zmultiples_cuspDatum_width {D : (Γ.map sl2zToPSL2R).CuspDatum}
-    {γ : SL(2, ℤ)} (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty ∈
-      AddSubgroup.zmultiples D.width := by
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  have hper := Γγ.widthInfty_mem_periods
-  rw [Subgroup.periods, Subgroup.mem_strictPeriods_iff, Subgroup.mem_adjoinNegOne_iff] at hper
+private lemma mem_zmultiples_cuspDatum_width_of_mem_periods {D : (Γ.map sl2zToPSL2R).CuspDatum}
+    {γ : SL(2, ℤ)} (hσ : D.scaling = sl2zToPSL2R γ⁻¹) {w : ℝ}
+    (hw : w ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).periods) :
+    w ∈ AddSubgroup.zmultiples D.width := by
+  rw [Subgroup.periods, Subgroup.mem_strictPeriods_iff, Subgroup.mem_adjoinNegOne_iff] at hw
   obtain ⟨g₁, hg₁, hconj₁⟩ : ∃ g₁ ∈ Γ, D.scaling * sl2zToPSL2R g₁ * D.scaling⁻¹ =
-      Matrix.ProjectiveSpecialLinearGroup.upperRightHom Γγ.widthInfty := by
-    rcases hper with hp | hn
-    · obtain ⟨j, hjw, hj⟩ := exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj γ hp
-      exact ⟨γ * ModularGroup.T ^ j * γ⁻¹, hj, by
-        rw [hσ, ← map_inv, inv_inv, ← map_mul, ← map_mul,
-          show γ⁻¹ * (γ * ModularGroup.T ^ j * γ⁻¹) * γ = ModularGroup.T ^ j by group,
-          TauCeti.UpperHalfPlane.sl2zToPSL2R_T_zpow, ← hjw]⟩
-    · obtain ⟨j, hjw, hj⟩ :=
+      Matrix.ProjectiveSpecialLinearGroup.upperRightHom w := by
+    have hT (j : ℤ) : D.scaling * sl2zToPSL2R (γ * ModularGroup.T ^ j * γ⁻¹) * D.scaling⁻¹ =
+        Matrix.ProjectiveSpecialLinearGroup.upperRightHom (j : ℝ) := by
+      simp only [hσ, ← map_inv, ← map_mul, inv_inv, mul_assoc, inv_mul_cancel, mul_one,
+        inv_mul_cancel_left, TauCeti.UpperHalfPlane.sl2zToPSL2R_T_zpow]
+    rcases hw with hp | hn
+    · obtain ⟨j, rfl, hj⟩ := exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj γ hp
+      exact ⟨_, hj, hT j⟩
+    · obtain ⟨j, rfl, hj⟩ :=
         exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj γ hn
-      exact ⟨-(γ * ModularGroup.T ^ j * γ⁻¹), hj, by
-        rw [hσ, ← map_inv, inv_inv, ← map_mul, ← map_mul,
-          show γ⁻¹ * -(γ * ModularGroup.T ^ j * γ⁻¹) * γ = -ModularGroup.T ^ j by simp [mul_assoc],
-          sl2zToPSL2R_neg, TauCeti.UpperHalfPlane.sl2zToPSL2R_T_zpow, ← hjw]⟩
+      exact ⟨_, hj, by rw [sl2zToPSL2R_neg]; exact hT j⟩
   have hstab : (⟨sl2zToPSL2R g₁, Subgroup.mem_map_of_mem _ hg₁⟩ : Γ.map sl2zToPSL2R) ∈
       stabilizer (Γ.map sl2zToPSL2R) D.cusp := by
     rw [mem_stabilizer_iff, Subgroup.mk_smul]
@@ -129,19 +127,11 @@ theorem cuspDatum_width_eq_widthInfty {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ :
     (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
     D.width = (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty := by
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  have : DiscreteTopology Γγ := .of_subset (inferInstance : DiscreteTopology 𝒮ℒ) fun _ hx ↦
-    let ⟨g, _, hg⟩ := Subgroup.mem_map.mp ((Subgroup.mem_conj_mapGL_inv_iff γ).mp hx)
-    ⟨γ⁻¹ * g * γ, by simp [map_mul, map_inv, hg, mul_assoc]⟩
-  obtain ⟨m, hm⟩ := AddSubgroup.mem_zmultiples_iff.mp
-    (Γγ.periods_eq_zmultiples_widthInfty ▸ cuspDatum_width_mem_periods hσ)
-  obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.mp (widthInfty_mem_zmultiples_cuspDatum_width hσ)
-  rw [zsmul_eq_mul] at hm hn
-  have hmn : (m : ℝ) * n = 1 :=
-    mul_right_cancel₀ D.width_pos.ne' (by rw [mul_assoc, hn, hm, one_mul])
-  have hm_pos : 0 ≤ m := by
-    exact_mod_cast (pos_of_mul_pos_left (hm ▸ D.width_pos : (0 : ℝ) < m * Γγ.widthInfty)
-      Γγ.widthInfty_nonneg).le
-  rw [← hm, Int.eq_one_of_mul_eq_one_right hm_pos (by exact_mod_cast hmn), Int.cast_one, one_mul]
+  have hper : Γγ.adjoinNegOne.strictPeriods = AddSubgroup.zmultiples D.width :=
+    le_antisymm (fun _ hw ↦ mem_zmultiples_cuspDatum_width_of_mem_periods hσ hw)
+      (AddSubgroup.zmultiples_le.mpr (cuspDatum_width_mem_periods hσ))
+  rw [Subgroup.widthInfty]
+  exact (Subgroup.strictWidthInfty_eq_of_strictPeriods_eq_zmultiples hper D.width_pos.le).symm
 
 /-- If `D.scaling = sl2zToPSL2R γ⁻¹`, then `D.cuspOrbit = Γ.cuspOrbitOfSL2Z γ`. -/
 theorem cuspDatum_cuspOrbit_eq_of_scaling_eq [Γ.FiniteIndex] {D : (Γ.map sl2zToPSL2R).CuspDatum}
@@ -179,25 +169,23 @@ private lemma isRegularAtInfty_conj_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
   have hm_div : (mapGL ℝ m) 0 0 / (mapGL ℝ m) 1 1 = 1 := by
     have had := mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero hc
     rcases Int.eq_one_or_neg_one_of_mul_eq_one had with h1 | h1 <;>
-      (rw [h1] at had; simp [mapGL_coe_matrix, h1, show m 1 1 = m 0 0 by omega])
+      · have hm11 : m 1 1 = m 0 0 := by rw [h1] at had ⊢; omega
+        simp [mapGL_coe_matrix, h1, hm11]
+  have hγ' : γ' = g₀⁻¹ * γ * m := by rw [hm_def]; group
   have hconj : ConjAct.toConjAct (mapGL ℝ γ')⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) =
       ConjAct.toConjAct (mapGL ℝ m)⁻¹ •
         (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))) := by
-    rw [show γ' = g₀⁻¹ * γ * m by rw [hm_def]; group, map_mul, map_mul, _root_.mul_inv_rev,
-      _root_.mul_inv_rev, ConjAct.toConjAct_mul, ConjAct.toConjAct_mul, mul_smul, mul_smul,
-      map_inv (mapGL ℝ), inv_inv, Subgroup.conjAct_pointwise_smul_eq_self
+    rw [hγ', map_mul, map_mul, _root_.mul_inv_rev, _root_.mul_inv_rev, ConjAct.toConjAct_mul,
+      ConjAct.toConjAct_mul, mul_smul, mul_smul, map_inv (mapGL ℝ), inv_inv,
+      Subgroup.conjAct_pointwise_smul_eq_self
         (Subgroup.le_normalizer (Subgroup.mem_map_of_mem _ hg₀))]
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  rw [hconj, Subgroup.IsRegularAtInfty, Subgroup.IsRegularAtInfty,
-    show (ConjAct.toConjAct (mapGL ℝ m)⁻¹ • Γγ).strictPeriods = Γγ.strictPeriods by
-      ext x; rw [Subgroup.mem_strictPeriods_conj_of_upperTriangular hm_10, hm_div, one_mul],
-    show (ConjAct.toConjAct (mapGL ℝ m)⁻¹ • Γγ).periods = Γγ.periods by
-      ext x; rw [Subgroup.periods, Subgroup.periods, Subgroup.adjoinNegOne_conj,
-        Subgroup.mem_strictPeriods_conj_of_upperTriangular hm_10, hm_div, one_mul]]
+  have hsp (H : Subgroup (GL (Fin 2) ℝ)) :
+      (ConjAct.toConjAct (mapGL ℝ m)⁻¹ • H).strictPeriods = H.strictPeriods := by
+    ext x; rw [Subgroup.mem_strictPeriods_conj_of_upperTriangular hm_10, hm_div, one_mul]
+  simp only [hconj, Subgroup.IsRegularAtInfty, Subgroup.periods, Subgroup.adjoinNegOne_conj, hsp]
 
 /-- Regularity of `Γ.cuspOrbitOfSL2Z γ` is regularity at `∞` of `γ⁻¹ Γ γ`. -/
-@[simp]
-theorem isRegularCusp_cuspOrbitOfSL2Z (γ : SL(2, ℤ)) :
+@[simp] theorem isRegularCusp_cuspOrbitOfSL2Z (γ : SL(2, ℤ)) :
     Γ.IsRegularCusp (Γ.cuspOrbitOfSL2Z γ) ↔
       (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsRegularAtInfty :=
   ⟨fun h ↦ h γ rfl, fun h _ hγ' ↦ (isRegularAtInfty_conj_of_cuspOrbitOfSL2Z_eq Γ hγ'.symm).mp h⟩

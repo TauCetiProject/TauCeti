@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
@@ -228,9 +229,8 @@ theorem qExpansionAt_SL2Z (γ : SL(2, ℤ)) (f : ModularForm 𝒮ℒ k) :
 theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     qExpansionAt (-γ) f = (-1 : ℂ) ^ k • qExpansionAt γ f := by
   let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
-  have hneg : mapGL ℝ (-γ) = mapGL ℝ γ * (-1) := by rw [mapGL_neg, ← mul_neg_one]
-  simp only [qExpansionAt_apply, coe_translate, Subgroup.conj_mapGL_neg]
-  simp only [hneg, SlashAction.slash_mul, ModularForm.slash_neg_one]
+  simp only [qExpansionAt_apply, coe_translate, mapGL_neg, inv_neg, Subgroup.toConjAct_neg_smul]
+  rw [← mul_neg_one (mapGL ℝ γ), SlashAction.slash_mul, ModularForm.slash_neg_one]
   -- The translate wrapper coerces to this slash action. Expose it so the public
   -- `qExpansion_smul` lemma applies without unfolding the cusp-function construction.
   change qExpansion Γγ.strictWidthInfty

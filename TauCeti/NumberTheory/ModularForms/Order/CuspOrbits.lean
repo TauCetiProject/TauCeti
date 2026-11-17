@@ -42,28 +42,23 @@ variable [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
 
 /-- The `ℚ`-valued vanishing order of a slash-invariant form at a normalized cusp datum `D`. -/
 def orderAtCuspDatum (D : (Γ.map sl2zToPSL2R).CuspDatum) (f : F) : ℚ :=
-  TauCeti.orderAtCusp D.width
-    ⇑(_root_.SlashInvariantForm.translate f
-      (mapGL ℝ (QuotientGroup.mk_surjective D.scaling).choose⁻¹))
+  TauCeti.orderAtCusp D.width ⇑(_root_.SlashInvariantForm.translate f
+    (mapGL ℝ (QuotientGroup.mk_surjective D.scaling).choose⁻¹))
 
 /-- Unfolding `orderAtCuspDatum` across module boundaries. -/
 theorem orderAtCuspDatum_def (D : (Γ.map sl2zToPSL2R).CuspDatum) (f : F) :
-    orderAtCuspDatum D f =
-      TauCeti.orderAtCusp D.width
-        ⇑(_root_.SlashInvariantForm.translate f
-          (mapGL ℝ (QuotientGroup.mk_surjective D.scaling).choose⁻¹)) := (rfl)
+    orderAtCuspDatum D f = TauCeti.orderAtCusp D.width ⇑(_root_.SlashInvariantForm.translate f
+      (mapGL ℝ (QuotientGroup.mk_surjective D.scaling).choose⁻¹)) := (rfl)
 
 /-- The cusp order at any normalized cusp datum is nonnegative. -/
 theorem orderAtCuspDatum_nonneg (D : (Γ.map sl2zToPSL2R).CuspDatum) (f : F) :
     0 ≤ orderAtCuspDatum D f := TauCeti.orderAtCusp_nonneg _ _
 
 /-- The zero form has cusp order `0` at every normalized cusp datum. -/
-@[simp]
-theorem orderAtCuspDatum_zero [Zero F] [IsZeroApply F] (D : (Γ.map sl2zToPSL2R).CuspDatum) :
-    orderAtCuspDatum D (0 : F) = 0 := by
+@[simp] theorem orderAtCuspDatum_zero [Zero F] [IsZeroApply F]
+    (D : (Γ.map sl2zToPSL2R).CuspDatum) : orderAtCuspDatum D (0 : F) = 0 := by
   rw [orderAtCuspDatum_def, _root_.SlashInvariantForm.coe_translate, FunLike.coe_zero,
-    SlashAction.zero_slash, TauCeti.orderAtCusp_def]
-  simp
+    SlashAction.zero_slash, TauCeti.orderAtCusp_def]; simp
 
 /-- The `ℚ`-valued vanishing order of a slash-invariant form on a cusp orbit. -/
 def orderAtCuspOrbit (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) : ℚ :=
@@ -78,9 +73,9 @@ theorem orderAtCuspOrbit_nonneg (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
     0 ≤ orderAtCuspOrbit f C := orderAtCuspDatum_nonneg C.cuspDatum f
 
 /-- The zero form has cusp order `0` at every cusp orbit. -/
-@[simp]
-theorem orderAtCuspOrbit_zero [Zero F] [IsZeroApply F] (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
-    orderAtCuspOrbit (0 : F) C = 0 := by rw [orderAtCuspOrbit_def, orderAtCuspDatum_zero]
+@[simp] theorem orderAtCuspOrbit_zero [Zero F] [IsZeroApply F]
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) : orderAtCuspOrbit (0 : F) C = 0 := by
+  rw [orderAtCuspOrbit_def, orderAtCuspDatum_zero]
 
 /-- For finite-index `Γ`, `orderAtCuspOrbit f` has finite support. -/
 theorem hasFiniteSupport_orderAtCuspOrbit [Γ.FiniteIndex] (f : F) :
@@ -130,8 +125,9 @@ theorem orderAtCusp_slash_scaling_inv_eq (f : F) {D : (Γ.map sl2zToPSL2R).CuspD
           Complex.ofReal_mul, ← UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero ht,
           ← UpperHalfPlane.pslMk_smul, hcoe_t, mul_smul, mul_smul, inv_smul_smul, smul_inv_smul]
     rwa [_root_.Subgroup.CuspDatum.conj_width, cuspDatum_width_eq_widthInfty hD₀_scal] at hw₀
+  have hs_inv : s⁻¹ = h₀ * s₀⁻¹ * t⁻¹ := by rw [ht_def]; group
   have hslash : ⇑f ∣[k] mapGL ℝ s⁻¹ = (⇑f ∣[k] mapGL ℝ γ) ∣[k] mapGL ℝ t⁻¹ := by
-    rw [show s⁻¹ = h₀ * s₀⁻¹ * t⁻¹ by rw [ht_def]; group, map_mul, map_mul,
+    rw [hs_inv, map_mul, map_mul,
       mapGL_map_intCast (R := ℝ) (S := ℝ), map_inv, mapGL_map_intCast (R := ℝ) (S := ℝ), map_inv,
       inv_inv, SlashAction.slash_mul, SlashAction.slash_mul,
       SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ₀)]
@@ -161,14 +157,12 @@ theorem orderAtCuspDatum_eq_of_cuspOrbit_eq (f : F) {D D' : (Γ.map sl2zToPSL2R)
     orderAtCusp_slash_scaling_inv_eq f (QuotientGroup.mk_surjective _).choose_spec (hγ.trans h)]
 
 /-- `orderAtCuspOrbit` evaluated on `D.cuspOrbit` recovers `orderAtCuspDatum D f`. -/
-@[simp]
-theorem orderAtCuspOrbit_cuspOrbit (f : F) (D : (Γ.map sl2zToPSL2R).CuspDatum) :
+@[simp] theorem orderAtCuspOrbit_cuspOrbit (f : F) (D : (Γ.map sl2zToPSL2R).CuspDatum) :
     orderAtCuspOrbit f D.cuspOrbit = orderAtCuspDatum D f :=
   orderAtCuspDatum_eq_of_cuspOrbit_eq f D.cuspOrbit.cuspOrbit_cuspDatum
 
 /-- Evaluation at an integral representative `γ ∈ SL(2, ℤ)`. -/
-@[simp]
-theorem orderAtCuspOrbit_cuspOrbitOfSL2Z (f : F) (γ : SL(2, ℤ)) :
+@[simp] theorem orderAtCuspOrbit_cuspOrbitOfSL2Z (f : F) (γ : SL(2, ℤ)) :
     orderAtCuspOrbit f (Γ.cuspOrbitOfSL2Z γ) =
       TauCeti.orderAtCusp
         (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty
@@ -179,8 +173,7 @@ theorem orderAtCuspOrbit_cuspOrbitOfSL2Z (f : F) (γ : SL(2, ℤ)) :
     (Γ.cuspOrbitOfSL2Z γ).cuspOrbit_cuspDatum.symm
 
 /-- Nonzero complex scalar multiples have the same cusp order on every cusp orbit. -/
-@[simp]
-theorem orderAtCuspOrbit_smul [SMul ℂ F] [IsSMulApply ℂ F] {c : ℂ} (hc : c ≠ 0) (f : F)
+@[simp] theorem orderAtCuspOrbit_smul [SMul ℂ F] [IsSMulApply ℂ F] {c : ℂ} (hc : c ≠ 0) (f : F)
     (C : (Γ.map sl2zToPSL2R).CuspOrbit) : orderAtCuspOrbit (c • f) C = orderAtCuspOrbit f C := by
   obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))

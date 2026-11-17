@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ModularForms.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
-public import TauCeti.GroupTheory.GroupAction.ConjAct
 import Mathlib.Analysis.Calculus.FDeriv.Star
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -80,8 +79,8 @@ AINTLIB `LeanModularForms` project
   every integer power of `A`.
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
-* `Subgroup.IsArithmetic.conj_mapGL_inv`, `Subgroup.mem_conj_mapGL_inv_iff`,
-  `Subgroup.conj_mapGL_neg`: conjugation of subgroups of `GL(2, ℝ)` by `(mapGL ℝ γ)⁻¹`.
+* `Subgroup.IsArithmetic.conj_mapGL_inv`: conjugating an arithmetic subgroup of `GL(2, ℝ)` by
+  `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves arithmeticity.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -439,18 +438,6 @@ arithmeticity. -/
 instance _root_.Subgroup.IsArithmetic.conj_mapGL_inv [Γ.IsArithmetic] (γ : SL(2, ℤ)) :
     (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).IsArithmetic :=
   Subgroup.isArithmetic_conj_of_mem (H := 𝒮ℒ) (inv_mem (MonoidHom.mem_range.mpr ⟨γ, rfl⟩))
-
-/-- Membership in `γ⁻¹ Γ γ`: `x ∈ (mapGL ℝ γ)⁻¹ • Γ ↔ mapGL ℝ γ * x * (mapGL ℝ γ)⁻¹ ∈ Γ`. -/
-theorem _root_.Subgroup.mem_conj_mapGL_inv_iff (γ : SL(2, ℤ)) {x : GL (Fin 2) ℝ} :
-    x ∈ ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ ↔ mapGL ℝ γ * x * (mapGL ℝ γ)⁻¹ ∈ Γ :=
-  Subgroup.mem_conjAct_inv_smul_iff
-
-/-- Negating `γ ∈ SL(2, ℤ)` leaves `(mapGL ℝ γ)⁻¹ Γ (mapGL ℝ γ)` unchanged. -/
-theorem _root_.Subgroup.conj_mapGL_neg (Γ : Subgroup (GL (Fin 2) ℝ)) (γ : SL(2, ℤ)) :
-    ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • Γ = ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ := by
-  ext x
-  rw [Subgroup.mem_conj_mapGL_inv_iff, Subgroup.mem_conj_mapGL_inv_iff]
-  simp [mapGL_neg]
 
 /-- Two arithmetic subgroups of `GL(2, ℝ)` have the same cusps, namely those of `SL(2, ℤ)`.
 This is the standard way to supply the cusp hypothesis of `ModularForm.ofSlashInvariant`. -/
