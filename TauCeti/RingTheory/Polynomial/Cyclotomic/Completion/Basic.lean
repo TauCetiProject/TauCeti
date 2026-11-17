@@ -102,6 +102,12 @@ theorem proj_apply (f : cycloIndex R S) (x : CycloCompletion R S) :
     proj R S f x = (x : ∀ f : cycloIndex R S, AdjoinRoot (f : R[X])) f := by
   simp [proj]
 
+/-- The projection of a compatible family given by its underlying family is its coordinate. -/
+@[simp]
+theorem proj_mk (f : cycloIndex R S) (x : ∀ f : cycloIndex R S, AdjoinRoot (f : R[X]))
+    (hx : x ∈ compatSubalgebra R S) : proj R S f ⟨x, hx⟩ = x f :=
+  proj_apply f ⟨x, hx⟩
+
 /-- The transition equation: for `f ∣ g`, reducing the coordinate at `g` modulo `f` gives the
 coordinate at `f`. -/
 @[simp]
@@ -159,11 +165,12 @@ instance : Subsingleton (CycloCompletion R ∅) :=
 unit in the completion. -/
 theorem not_isUnit_fromPoly_cyclotomic [Nontrivial R] {n : ℕ} (hn : n ∈ S) (hpos : 0 < n) :
     ¬IsUnit (fromPoly R S (cyclotomic n R)) := by
+  have : Nontrivial (AdjoinRoot (cyclotomic n R)) :=
+    (AdjoinRoot.nontrivial_iff_of_monic (cyclotomic.monic n R)).mpr (degree_cyclotomic_pos n R hpos)
   intro hu
   have hu' := hu.map (proj R S ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
-  rw [proj_fromPoly, AdjoinRoot.mk_self, isUnit_zero_iff, eq_comm, ← map_one (AdjoinRoot.mk _),
-    AdjoinRoot.mk_eq_zero, ← isUnit_iff_dvd_one, (cyclotomic.monic n R).isUnit_iff] at hu'
-  exact cyclotomic_ne_one hpos hu'
+  rw [proj_fromPoly, AdjoinRoot.mk_self] at hu'
+  exact not_isUnit_zero hu'
 
 /-- If `S` contains a positive order, the polynomial map `R[q] → R[q]^S` is injective. -/
 theorem fromPoly_injective {n : ℕ} (hn : n ∈ S) (hpos : 0 < n) :
@@ -240,7 +247,7 @@ theorem ker_proj (f : cycloIndex R S) :
       rw [hb g, eq_comm, AdjoinRoot.mk_eq_mk, Submonoid.coe_mul, ← mul_sub] at hfg
       exact (monic_of_mem_cycloIndex f.2).isRegular.left.dvd_cancel_left.mp hfg
     refine Ideal.mem_span_singleton'.mpr ⟨⟨_, hc⟩, ext fun g ↦ ?_⟩
-    rw [map_mul, proj_fromPoly, proj_apply, ← map_mul, mul_comm,
+    rw [map_mul, proj_fromPoly, proj_mk, ← map_mul, mul_comm,
       proj_eq_mk_of_dvd (dvd_mul_left (g : R[X]) f) (hb g)]
   · rw [Ideal.span_le, Set.singleton_subset_iff, SetLike.mem_coe, RingHom.mem_ker, proj_fromPoly,
       AdjoinRoot.mk_self]
@@ -300,9 +307,11 @@ example : (fun f : cycloIndex ℤ {1} ↦
   simpa [hd] using natDegree_le_of_dvd h one_ne_zero
 
 /-- In the order-one completion, `q` reduces to `1` modulo `q - 1`. -/
-example (h : X - 1 ∈ cycloIndex ℤ {1}) :
-    CycloCompletion.proj ℤ {1} ⟨X - 1, h⟩ (CycloCompletion.fromPoly ℤ {1} X) = 1 := by
-  rw [CycloCompletion.proj_fromPoly, ← map_one (AdjoinRoot.mk _), AdjoinRoot.mk_eq_mk]
+example : CycloCompletion.proj ℤ {1}
+    ⟨X - 1, by simpa using cyclotomic_mem_cycloIndex (R := ℤ) (Set.mem_singleton 1)⟩
+    (CycloCompletion.fromPoly ℤ {1} X) = 1 := by
+  rw [CycloCompletion.proj_fromPoly, ← map_one (AdjoinRoot.mk _)]
+  exact AdjoinRoot.mk_eq_mk.mpr dvd_rfl
 
 /-- A positive-order system over a nonzero ring has no nonzero constant in the kernel of the
 polynomial map. -/
