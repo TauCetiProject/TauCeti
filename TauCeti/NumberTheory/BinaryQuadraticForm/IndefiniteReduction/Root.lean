@@ -152,13 +152,11 @@ theorem firstRoot_mul_secondRoot {f : BinaryQuadraticForm ℤ} (hD : 0 ≤ f.dis
 `a t² + b t + c = 0`. -/
 theorem eval_firstRoot {f : BinaryQuadraticForm ℤ} (hD : 0 ≤ f.discrim) (ha : f.a ≠ 0) :
     (f.a : ℝ) * f.firstRoot ^ 2 + f.b * f.firstRoot + f.c = 0 := by
-  have ha' : (f.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr ha
-  have hs : √(f.discrim : ℝ) ^ 2 = f.discrim := Real.sq_sqrt (by exact_mod_cast hD)
-  have hd : (f.discrim : ℝ) = (f.b : ℝ) ^ 2 - 4 * f.a * f.c := by
+  have hd : _root_.discrim (f.a : ℝ) f.b f.c = √(f.discrim : ℝ) * √(f.discrim : ℝ) := by
+    rw [Real.mul_self_sqrt (by exact_mod_cast hD)]
     simp [discrim_def, _root_.discrim]
-  rw [firstRoot_def]
-  field_simp
-  linarith
+  rw [sq, quadratic_eq_zero_iff (Int.cast_ne_zero.mpr ha) hd]
+  exact Or.inl (firstRoot_def f)
 
 /-- For nonnegative discriminant and nonzero leading coefficient, `secondRoot` is a root of
 `a t² + b t + c = 0`. -/
