@@ -33,12 +33,17 @@ this into `dρ = ρ trace P`; these general identities are
 Levi-Civita connection, torsion-freeness identifies `trace P (eⱼ)` with the contracted Christoffel
 symbol `∑ₖ Γᵏₖⱼ`, which appears when the trace of `∇X` is expanded in the frame.
 
-## Main results
+## Main definitions and results
 
 * `TauCeti.mvfderiv_chartVolumeDensity_chartLocalFrame`: `∂ⱼ log ρ = ∑ₖ Γᵏₖⱼ` for the
   Levi-Civita connection.
 * `TauCeti.divergence_eq_sum_christoffelSymbol`: `div X = ∑ₖ (∂ₖ Xᵏ + ∑ⱼ Xʲ Γᵏₖⱼ)`.
 * `TauCeti.chartVolumeDensity_mul_divergence`: the coordinate formula `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)`.
+* `TauCeti.chartFlux`, `TauCeti.chartFlux_eq_zero`, `TauCeti.chartFlux_eventuallyEq_zero`,
+  `TauCeti.contMDiffOn_mul_localFrameCoeff`, and `TauCeti.contDiffOn_chartFlux`: the
+  density-weighted chart-frame fluxes of a vector field in coordinates, extended by zero off the
+  chart target, together with their vanishing and `C^k` regularity properties on manifolds with or
+  without boundary.
 
 ## References
 
@@ -49,10 +54,12 @@ symbol `∑ₖ Γᵏₖⱼ`, which appears when the trace of `∇X` is expanded 
 
 public section
 
-open Bundle FiberBundle Riemannian.Tensor TauCeti.Manifold
-open scoped ContDiff Manifold Matrix
+open Bundle FiberBundle Riemannian.Tensor Set TauCeti.Manifold
+open scoped ContDiff Manifold Matrix Topology
 
 namespace TauCeti
+
+section Riemannian
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -144,5 +151,96 @@ theorem chartVolumeDensity_mul_divergence (α : M) {y : M}
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
   ring
+
+end Riemannian
+
+/-! ### Density-weighted chart fluxes -/
+
+section ChartFlux
+
+variable {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+
+/-- The `i`-th density-weighted flux of a vector field `X` in the extended chart at `α` relative to
+a basis `b` of the model space and a scalar density `ρ`, extended by zero off the chart target. -/
+noncomputable def chartFlux (b : Module.Basis ι ℝ E) (ρ : M → ℝ) (α : M)
+    (X : (x : M) → TangentSpace I x) (i : ι) : E → ℝ :=
+  (extChartAt I α).target.indicator fun z ↦ ρ ((extChartAt I α).symm z) *
+    (trivializationAt E (TangentSpace I) α).localFrameCoeff I b i
+      ((extChartAt I α).symm z) (X ((extChartAt I α).symm z))
+
+variable {α : M} {X : (x : M) → TangentSpace I x}
+
+/-- On the extended chart target at `α`, `chartFlux` evaluates to the density times the local-frame
+coefficient of `X` at `(extChartAt I α).symm z`. -/
+theorem chartFlux_apply_of_mem (b : Module.Basis ι ℝ E) (ρ : M → ℝ) (i : ι) {z : E}
+    (hz : z ∈ (extChartAt I α).target) :
+    chartFlux b ρ α X i z = ρ ((extChartAt I α).symm z) *
+      (trivializationAt E (TangentSpace I) α).localFrameCoeff I b i
+        ((extChartAt I α).symm z) (X ((extChartAt I α).symm z)) :=
+  indicator_of_mem hz _
+
+/-- Outside the extended chart target at `α`, `chartFlux` vanishes. -/
+theorem chartFlux_apply_of_notMem (b : Module.Basis ι ℝ E) (ρ : M → ℝ) (i : ι) {z : E}
+    (hz : z ∉ (extChartAt I α).target) : chartFlux b ρ α X i z = 0 :=
+  indicator_of_notMem hz _
+
+/-- The chart flux vanishes outside the chart image of `tsupport X`. -/
+theorem chartFlux_eq_zero (b : Module.Basis ι ℝ E) (ρ : M → ℝ) (i : ι) {z : E}
+    (hz : z ∉ extChartAt I α '' tsupport (α := E) X) : chartFlux b ρ α X i z = 0 := by
+  by_cases ht : z ∈ (extChartAt I α).target
+  · have hX0 : X ((extChartAt I α).symm z) = 0 :=
+      image_eq_zero_of_notMem_tsupport (α := E) fun h ↦ hz ⟨_, h, (extChartAt I α).right_inv ht⟩
+    rw [chartFlux_apply_of_mem b ρ i ht, hX0, map_zero, mul_zero]
+  · exact chartFlux_apply_of_notMem b ρ i ht
+
+/-- When the chart image of `tsupport X` is compact, the chart flux vanishes near any point outside
+it. -/
+theorem chartFlux_eventuallyEq_zero (b : Module.Basis ι ℝ E) (ρ : M → ℝ)
+    (hKc : IsCompact (extChartAt I α '' tsupport (α := E) X)) (i : ι) {z : E}
+    (hz : z ∉ extChartAt I α '' tsupport (α := E) X) : chartFlux b ρ α X i =ᶠ[𝓝 z] 0 :=
+  Filter.eventually_of_mem (hKc.isClosed.isOpen_compl.mem_nhds hz) fun _ h ↦
+    chartFlux_eq_zero b ρ i h
+
+/-- On the chart source at `α`, the product of a `C^k` scalar density `ρ` and a local-frame
+coefficient of a `C^k` vector field `X` is `C^k`. -/
+theorem contMDiffOn_mul_localFrameCoeff [FiniteDimensional ℝ E] {k : ℕ∞ω} [IsManifold I (k + 1) M]
+    (b : Module.Basis ι ℝ E) {ρ : M → ℝ} (hρ : ContMDiffOn I 𝓘(ℝ) k ρ (chartAt H α).source)
+    (hX : ContMDiffOn I I.tangent k (T% X) (chartAt H α).source) (i : ι) :
+    ContMDiffOn I 𝓘(ℝ) k (fun y ↦ ρ y *
+      (trivializationAt E (TangentSpace I) α).localFrameCoeff I b i y (X y))
+      (chartAt H α).source := by
+  let _ : ContMDiffVectorBundle k E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  rw [← TangentBundle.trivializationAt_baseSet (I := I) (x := α)] at hρ hX ⊢
+  exact hρ.mul (contMDiffOn_baseSet_localFrameCoeff (I := I)
+    (e := trivializationAt E (TangentSpace I) α) b (k := k) hX i)
+
+/-- When the chart image of `tsupport X` is compact and contained in the chart target, each chart
+flux is `C^k` on `range I`. -/
+theorem contDiffOn_chartFlux [FiniteDimensional ℝ E] {k : ℕ∞ω} [IsManifold I (k + 1) M]
+    (b : Module.Basis ι ℝ E) {ρ : M → ℝ} (hρ : ContMDiffOn I 𝓘(ℝ) k ρ (chartAt H α).source)
+    (hX : ContMDiffOn I I.tangent k (T% X) (chartAt H α).source)
+    (hKc : IsCompact (extChartAt I α '' tsupport (α := E) X))
+    (himage : extChartAt I α '' tsupport (α := E) X ⊆ (extChartAt I α).target) (i : ι) :
+    ContDiffOn ℝ k (chartFlux b ρ α X i) (range I) := by
+  have : IsManifold I k M := IsManifold.of_le (n := k + 1) le_self_add
+  intro z _
+  by_cases hz : z ∈ (extChartAt I α).target
+  · have hy : (extChartAt I α).symm z ∈ (chartAt H α).source := by
+      rw [← extChartAt_source (I := I)]; exact (extChartAt I α).map_target hz
+    have hg : ContDiffWithinAt ℝ k _ (range I) z :=
+      contMDiffWithinAt_iff_contDiffWithinAt.1
+        (((contMDiffOn_mul_localFrameCoeff b hρ hX i).contMDiffAt
+          ((chartAt H α).open_source.mem_nhds hy)).comp_contMDiffWithinAt z
+            (contMDiffWithinAt_extChartAt_symm_range (n := k) α hz))
+    exact hg.congr_of_eventuallyEq
+      (Filter.eventually_of_mem (extChartAt_target_mem_nhdsWithin_of_mem hz) fun _ h ↦
+        chartFlux_apply_of_mem b ρ i h) (chartFlux_apply_of_mem b ρ i hz)
+  · exact (contDiffAt_const.congr_of_eventuallyEq
+      (chartFlux_eventuallyEq_zero b ρ hKc i fun h ↦ hz (himage h))).contDiffWithinAt
+
+end ChartFlux
 
 end TauCeti

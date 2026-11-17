@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
 public import TauCeti.MeasureTheory.Measure.Glue
+import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # The Riemannian volume measure
@@ -52,6 +54,8 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   nonnegative integrable function from a coordinate lower bound supported in a subset of the chart
   target.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
+* `TauCeti.riemannianVolume_eq_count_of_subsingleton`: on a zero-dimensional Riemannian manifold,
+  the Riemannian volume measure is counting measure.
 -/
 
 public section
@@ -272,5 +276,33 @@ instance isLocallyFiniteMeasure_riemannianVolume :
   refine ⟨s ∩ (chartAt H x).source, Filter.inter_mem hs (chart_source_mem_nhds H x), ?_⟩
   rw [riemannianVolume_apply_of_subset inter_subset_right]
   exact (measure_mono inter_subset_left).trans_lt hfin
+
+/-- On a zero-dimensional Riemannian manifold, the Riemannian volume measure is counting measure,
+giving mass `1` to every point. -/
+theorem riemannianVolume_eq_count_of_subsingleton
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Subsingleton E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] :
+    riemannianVolume I M = Measure.count := by
+  let _ : MeasurableSpace E := borel E
+  have _ : BorelSpace E := ⟨rfl⟩
+  have _ : Subsingleton H := I.injective.subsingleton
+  have _ : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  have _ : Countable M := countable_of_Lindelof_of_discrete
+  have hsource (x : M) : (chartAt H x).source = {x} := Set.ext fun y ↦
+    ⟨fun hy ↦ (chartAt H x).injOn hy (mem_chart_source H x) (Subsingleton.elim _ _),
+      fun hy ↦ hy.symm ▸ mem_chart_source H x⟩
+  refine Measure.ext_of_singleton fun x ↦ ?_
+  have _ : IsEmpty (Fin (Module.finrank ℝ E)) :=
+    Module.finrank_zero_of_subsingleton (R := ℝ) (M := E) ▸ inferInstanceAs (IsEmpty (Fin 0))
+  have hx_meas : MeasurableSet ({x} : Set M) := (isOpen_discrete {x}).measurableSet
+  rw [Measure.count_singleton' hx_meas, riemannianVolume_apply_of_subset (hsource x).symm.subset,
+    chartRiemannianVolume_apply x hx_meas, Module.Basis.addHaar_eq_dirac, extChartAt_source,
+    hsource x, inter_self, image_singleton, Subsingleton.elim (extChartAt I x x) 0,
+    setLIntegral_dirac]
+  simp [chartVolumeDensity_def, Matrix.det_isEmpty]
 
 end TauCeti

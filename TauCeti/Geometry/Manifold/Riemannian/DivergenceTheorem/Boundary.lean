@@ -51,8 +51,9 @@ on oriented manifolds with Stokes' theorem applied to `ι_X dV_o`.
   `TauCeti.Manifold.integral_mul_laplaceBeltrami_eq_boundaryFlux_of_hasCompactSupport_right`,
   `TauCeti.Manifold.integral_mul_laplaceBeltrami_sub_eq_boundaryFlux`: Green's identities with
   boundary.
-* `TauCeti.integralTopForm_mextDeriv_interior_riemannianVolumeForm`: consistency of Stokes' theorem
-  for `ι_X dV` with the Riemannian divergence theorem on oriented manifolds.
+* `TauCeti.integralTopForm_mextDeriv_interior_riemannianVolumeForm`: identifies the top-form
+  integrals of `d(ι_X dV)` and `ι^*(ι_X dV)` with `∫ div X dV` and `∫_{∂M} ⟪X, N⟫ dS` on oriented
+  manifolds.
 * `TauCeti.Manifold.integral_divergence_eq_zero_of_isEmpty_boundary`,
   `TauCeti.Manifold.integral_divergence_eq_tsum_boundaryFlux`,
   `TauCeti.Manifold.integral_divergence_eq_sum_boundaryFlux`: empty-boundary and one-dimensional
@@ -93,13 +94,12 @@ theorem hasCompactSupport_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
     HasCompactSupport (fun x : (𝓡∂ (n + 1)).boundary M ↦
       inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)) := by
-  have hclosed :=
-    ((𝓡∂ (n + 1)).isClosed_boundary (M := M) one_ne_zero).isClosedEmbedding_subtypeVal
+  have hclosed := ((𝓡∂ (n + 1)).isClosed_boundary (M := M) one_ne_zero).isClosedEmbedding_subtypeVal
   refine HasCompactSupport.intro' (hclosed.isCompact_preimage hc)
     ((isClosed_tsupport _).preimage continuous_subtype_val) fun x hx ↦ ?_
-  have h0 : X (x : M) = (0 : TangentSpace (𝓡∂ (n + 1)) (x : M)) :=
+  have hX0 : X (x : M) = 0 :=
     image_eq_zero_of_notMem_tsupport (α := EuclideanSpace ℝ (Fin (n + 1))) hx
-  rw [h0, inner_zero_left]
+  simp [hX0]
 
 variable [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
   (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
@@ -114,8 +114,7 @@ theorem continuous_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) 
   have _ : IsManifold (𝓡∂ (n + 1)) (0 + 1) M := by
     simpa using (inferInstance : IsManifold (𝓡∂ (n + 1)) 1 M)
   have h0 : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 0 (EuclideanSpace ℝ (Fin (n + 1)))
-      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := IsContinuousRiemannianBundle.toIsContMDiffZero
   exact (ContMDiff.inner_bundle (h := h0)
     (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2 (hX.comp continuous_subtype_val))
     (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2
@@ -126,8 +125,7 @@ variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
 /-- **Integrability of the boundary flux.** The outward normal flux `x ↦ inner ℝ (X x) (N x)` of a
 compactly supported continuous vector field is integrable against `halfSpaceBoundaryVolume`. -/
 theorem integrable_boundaryFlux_of_continuous {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
-    (hX : Continuous (T% X))
-    (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
+    (hX : Continuous (T% X)) (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
     Integrable (fun x : (𝓡∂ (n + 1)).boundary M ↦
       inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x))
       (halfSpaceBoundaryVolume (n := n) (M := M)) :=
@@ -157,8 +155,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalf
   [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
-local instance : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by
-  rw [one_add_one_eq_two]; infer_instance
+local instance : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
 
 /-- **The Riemannian divergence theorem** on a manifold with boundary: for a compactly supported
 `C¹` vector field `X` on a smooth manifold `M` modeled on `𝓡∂ (n + 1)` with a `C¹` Riemannian
@@ -176,10 +173,8 @@ theorem integral_divergence_eq_boundaryFlux {X : (x : M) → TangentSpace (𝓡�
     if i ∈ (𝓡∂ (n + 1)).boundary M then univ else ((𝓡∂ (n + 1)).boundary M)ᶜ
   have hclosed_bdry : IsClosed ((𝓡∂ (n + 1)).boundary M) :=
     (𝓡∂ (n + 1)).isClosed_boundary (by simp : (∞ : ℕ∞ω) ≠ 0)
-  have hU_open (i : M) : IsOpen (U i) := by
-    dsimp only [U]; split_ifs
-    · exact (chartAt _ i).open_source.inter isOpen_univ
-    · exact (chartAt _ i).open_source.inter hclosed_bdry.isOpen_compl
+  have hU_open (i : M) : IsOpen (U i) := (chartAt _ i).open_source.inter <| by
+    split_ifs; exacts [isOpen_univ, hclosed_bdry.isOpen_compl]
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate (𝓡∂ (n + 1)) isClosed_univ U
     hU_open fun x _ ↦ mem_iUnion.2 ⟨x, mem_chart_source _ x, by split_ifs with hx <;> simp [hx]⟩
   have hfin := ρ.toPartitionOfUnity.locallyFinite_tsupport.finite_nonempty_inter_compact hc
@@ -191,8 +186,8 @@ theorem integral_divergence_eq_boundaryFlux {X : (x : M) → TangentSpace (𝓡�
         ⟨x, subset_tsupport (ρ i) (by simpa only [SmoothPartitionOfUnity.mem_finsupport,
           Function.mem_support] using hi),
           subset_tsupport (α := EuclideanSpace ℝ (Fin (n + 1))) X hx⟩, one_smul]
-  have hY (i : M) : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% (fun x ↦ ρ i x • X x)) :=
-    ((ρ i).contMDiff.of_le (by simp)).smul_section hX
+  have hY (i : M) : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% fun x ↦ ρ i x • X x) :=
+    ((ρ i).contMDiff.of_le (by simp : (1 : ℕ∞ω) ≤ ∞)).smul_section hX
   have hK (i : M) : IsCompact
       (tsupport (α := EuclideanSpace ℝ (Fin (n + 1))) (fun x ↦ ρ i x • X x)) :=
     hc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _)
@@ -203,8 +198,7 @@ theorem integral_divergence_eq_boundaryFlux {X : (x : M) → TangentSpace (𝓡�
   have hflux (x : (𝓡∂ (n + 1)).boundary M) :
       inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x) =
         ∑ i ∈ s, inner ℝ (ρ i (x : M) • X (x : M)) (halfSpaceOutwardUnitNormal x) := by
-    conv_lhs => rw [hsum (x : M)]
-    rw [sum_inner]
+    rw [← sum_inner, ← hsum]
   rw [integral_congr_ae (Filter.Eventually.of_forall hdiv),
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i),
     integral_congr_ae (Filter.Eventually.of_forall hflux),
@@ -247,13 +241,11 @@ private theorem integral_mul_divergence_eq_boundaryFlux_of_integrable {f : M →
     divergence_smul_function (𝓡∂ (n + 1)) f X x ((hf x).mdifferentiableAt one_ne_zero)
       ((hX x).mdifferentiableAt one_ne_zero)
   have hint' : Integrable (fun x ↦ mvfderiv (𝓡∂ (n + 1)) f x (X x))
-      (riemannianVolume (𝓡∂ (n + 1)) M) :=
-    ((integrable_divergence hfX hfXc).sub hint).congr
-      (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.sub_apply, hpt]; ring)
+      (riemannianVolume (𝓡∂ (n + 1)) M) := ((integrable_divergence hfX hfXc).sub hint).congr
+    (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.sub_apply, hpt]; ring)
   have h := integral_divergence_eq_boundaryFlux hfX hfXc
   simp_rw [real_inner_smul_left] at h
-  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add hint hint'] at h
-  linarith
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add hint hint'] at h; linarith
 
 /-- **Integration by parts for the divergence** on a manifold with boundary, when `f` has compact
 support: `∫ f div X dV = -∫ df(X) dV + ∫_{∂M} f ⟪X, N⟫ dS`. -/
@@ -317,10 +309,8 @@ theorem integral_mul_laplaceBeltrami_eq_boundaryFlux {f g : M → ℝ}
   simp_rw [laplaceBeltrami_def]
   rw [integral_mul_divergence_eq_boundaryFlux hf hfc
     (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two]))]
-  congr 2
-  exact integral_congr_ae
-    (Filter.Eventually.of_forall fun x ↦
-      (inner_mgradient (I := 𝓡∂ (n + 1)) (f := f) (x := x) _).symm)
+  congr 2; exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦
+    (inner_mgradient (I := 𝓡∂ (n + 1)) (f := f) (x := x) _).symm)
 
 /-- **Green's first identity** on a manifold with boundary, when `g` has compact support: for a
 `C¹` function `f` and a compactly supported `C²` function `g`,
@@ -337,10 +327,8 @@ theorem integral_mul_laplaceBeltrami_eq_boundaryFlux_of_hasCompactSupport_right 
   simp_rw [laplaceBeltrami_def]
   rw [integral_mul_divergence_eq_boundaryFlux_of_hasCompactSupport_right hf
     (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])) (hgc.mgradient (𝓡∂ (n + 1)))]
-  congr 2
-  exact integral_congr_ae
-    (Filter.Eventually.of_forall fun x ↦
-      (inner_mgradient (I := 𝓡∂ (n + 1)) (f := f) (x := x) _).symm)
+  congr 2; exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦
+    (inner_mgradient (I := 𝓡∂ (n + 1)) (f := f) (x := x) _).symm)
 
 /-- **Green's second identity** on a manifold with boundary [Lee, Proposition 16.34(b)]: for a
 compactly supported `C²` function `f` and a `C²` function `g`,
@@ -354,46 +342,29 @@ theorem integral_mul_laplaceBeltrami_sub_eq_boundaryFlux {f g : M → ℝ}
         (f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (halfSpaceOutwardUnitNormal x) -
           g (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) f (x : M)) (halfSpaceOutwardUnitNormal x))
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
-  have hf1 : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) 1 f := hf.of_le (by norm_num)
-  have hg1 : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) 1 g := hg.of_le (by norm_num)
-  have hgradf : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% (mgradient (𝓡∂ (n + 1)) f)) :=
-    contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])
-  have hgradg : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% (mgradient (𝓡∂ (n + 1)) g)) :=
-    contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])
-  have hint_fΔg : Integrable (fun x ↦ f x * laplaceBeltrami (𝓡∂ (n + 1)) g x)
-      (riemannianVolume (𝓡∂ (n + 1)) M) :=
+  have hf1 := hf.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)
+  have hg1 := hg.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)
+  have hgradf := contMDiff_mgradient (n := 1) (by simpa [one_add_one_eq_two] using hf)
+  have hgradg := contMDiff_mgradient (n := 1) (by simpa [one_add_one_eq_two] using hg)
+  have hint_fΔg : Integrable (fun x ↦ f x * laplaceBeltrami (𝓡∂ (n + 1)) g x) _ :=
     (hf1.continuous.mul (continuous_laplaceBeltrami hg)).integrable_of_hasCompactSupport
-      hfc.mul_right
-  have hint_Δfg : Integrable (fun x ↦ laplaceBeltrami (𝓡∂ (n + 1)) f x * g x)
-      (riemannianVolume (𝓡∂ (n + 1)) M) :=
+      (μ := riemannianVolume (𝓡∂ (n + 1)) M) hfc.mul_right
+  have hint_Δfg : Integrable (fun x ↦ laplaceBeltrami (𝓡∂ (n + 1)) f x * g x) _ :=
     ((continuous_laplaceBeltrami hf).mul hg1.continuous).integrable_of_hasCompactSupport
-      (hfc.laplaceBeltrami (𝓡∂ (n + 1))).mul_right
-  have hbdry_f : Integrable (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (halfSpaceOutwardUnitNormal x))
-      (halfSpaceBoundaryVolume (n := n) (M := M)) := by
-    simpa only [real_inner_smul_left] using
-      integrable_boundaryFlux (X := fun x ↦ f x • mgradient (𝓡∂ (n + 1)) g x)
-        (hf1.smul_section hgradg)
-        (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
-  have hbdry_g : Integrable (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      g (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) f (x : M)) (halfSpaceOutwardUnitNormal x))
-      (halfSpaceBoundaryVolume (n := n) (M := M)) := by
-    simpa only [real_inner_smul_left] using
-      integrable_boundaryFlux (X := fun x ↦ g x • mgradient (𝓡∂ (n + 1)) f x)
-        (hg1.smul_section hgradf)
-        ((hfc.mgradient (𝓡∂ (n + 1))).of_isClosed_subset (isClosed_tsupport _)
-          (tsupport_smul_subset_right _ _))
-  have h1 := integral_mul_laplaceBeltrami_eq_boundaryFlux hf1 hfc hg
-  have h2 := integral_mul_laplaceBeltrami_eq_boundaryFlux_of_hasCompactSupport_right hg1 hf hfc
-  have hcomm : (∫ x, inner ℝ (mgradient (𝓡∂ (n + 1)) g x) (mgradient (𝓡∂ (n + 1)) f x)
-        ∂riemannianVolume (𝓡∂ (n + 1)) M) =
-      ∫ x, inner ℝ (mgradient (𝓡∂ (n + 1)) f x) (mgradient (𝓡∂ (n + 1)) g x)
-        ∂riemannianVolume (𝓡∂ (n + 1)) M :=
-    integral_congr_ae (Filter.Eventually.of_forall fun _ ↦ real_inner_comm _ _)
-  have hmul : (∫ x, laplaceBeltrami (𝓡∂ (n + 1)) f x * g x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
-      ∫ x, g x * laplaceBeltrami (𝓡∂ (n + 1)) f x ∂riemannianVolume (𝓡∂ (n + 1)) M :=
-    integral_congr_ae (Filter.Eventually.of_forall fun _ ↦ mul_comm _ _)
-  rw [integral_sub hint_fΔg hint_Δfg, integral_sub hbdry_f hbdry_g, hmul, h1, h2, hcomm]
+      (μ := riemannianVolume (𝓡∂ (n + 1)) M) (hfc.laplaceBeltrami (𝓡∂ (n + 1))).mul_right
+  have hbdry_f := (integrable_boundaryFlux (X := fun x ↦ f x • mgradient (𝓡∂ (n + 1)) g x)
+      (hf1.smul_section hgradg) (hfc.of_isClosed_subset (isClosed_tsupport _)
+        (tsupport_smul_subset_left _ _))).congr
+    (Filter.Eventually.of_forall fun _ ↦ real_inner_smul_left _ _ _)
+  have hbdry_g := (integrable_boundaryFlux (X := fun x ↦ g x • mgradient (𝓡∂ (n + 1)) f x)
+      (hg1.smul_section hgradf) ((hfc.mgradient (𝓡∂ (n + 1))).of_isClosed_subset
+        (isClosed_tsupport _) (tsupport_smul_subset_right _ _))).congr
+    (Filter.Eventually.of_forall fun _ ↦ real_inner_smul_left _ _ _)
+  rw [integral_sub hint_fΔg hint_Δfg, integral_sub hbdry_f hbdry_g,
+    integral_mul_laplaceBeltrami_eq_boundaryFlux hf1 hfc hg]
+  simp_rw [mul_comm (laplaceBeltrami (𝓡∂ (n + 1)) f _),
+    integral_mul_laplaceBeltrami_eq_boundaryFlux_of_hasCompactSupport_right hg1 hf hfc,
+    real_inner_comm (mgradient (𝓡∂ (n + 1)) g _)]
   ring
 
 end Global
@@ -402,15 +373,13 @@ end Global
 
 section OneDim
 
-variable {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace 1) M]
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace 1) M]
   [IsManifold (𝓡∂ 1) ∞ M] [T2Space M] [SigmaCompactSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
   [IsContMDiffRiemannianBundle (𝓡∂ 1) 1 (EuclideanSpace ℝ (Fin 1))
     (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
   [MeasurableSpace M] [BorelSpace M]
-  [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin 1))
-    (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
+  [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin 1)) (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
 
 /-- On a one-dimensional Riemannian manifold with boundary (`n = 0`), the integral of `div X` is
 the series of outward normal fluxes `inner ℝ (X x) (N x)` over all boundary points, because
@@ -422,24 +391,15 @@ theorem integral_divergence_eq_tsum_boundaryFlux {X : (x : M) → TangentSpace (
       ∑' x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x) := by
   let _ : LindelofSpace ((𝓡∂ 1).boundary M) :=
     ((𝓡∂ 1).isClosed_boundary (by simp : (∞ : ℕ∞ω) ≠ 0)).isClosedEmbedding_subtypeVal.LindelofSpace
-  have _ : DiscreteTopology ((𝓡∂ 1).boundary M) :=
-    discreteTopology_iff_isOpen_singleton.2 fun x ↦ by
-    have hs : (chartAt (EuclideanSpace ℝ (Fin 0)) x).source = {x} := Set.ext fun y ↦
-      ⟨fun hy ↦ (chartAt _ x).injOn hy (mem_chart_source _ x) (Subsingleton.elim _ _),
-        fun hy ↦ hy.symm ▸ mem_chart_source _ x⟩
-    exact hs ▸ (chartAt _ x).open_source
-  have _ : Countable ((𝓡∂ 1).boundary M) := by
-    obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover
-      (fun x : (𝓡∂ 1).boundary M ↦ ({x} : Set ((𝓡∂ 1).boundary M)))
-      fun x ↦ (isOpen_discrete {x}).mem_nhds rfl
-    exact countable_univ_iff.1 (hcover ▸ ht.biUnion fun x _ ↦ countable_singleton x)
+  have _ := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) ((𝓡∂ 1).boundary M)
+  have _ : Countable ((𝓡∂ 1).boundary M) := countable_of_Lindelof_of_discrete
   have _ : MeasurableSingletonClass ((𝓡∂ 1).boundary M) :=
     ⟨fun x ↦ (isOpen_discrete {x}).measurableSet⟩
   have hint := integrable_boundaryFlux (n := 0) hX hc
   rw [integral_divergence_eq_boundaryFlux (n := 0) hX hc]
   rw [halfSpaceBoundaryVolume_zero_eq_count] at hint ⊢
   rw [integral_countable hint]
-  refine tsum_congr fun x ↦ by
+  exact tsum_congr fun x ↦ by
     rw [measureReal_def, Measure.count_singleton' (measurableSet_singleton x), ENNReal.toReal_one,
       one_smul]
 
@@ -462,11 +422,19 @@ namespace TauCeti
 
 /-! ### Oriented consistency with Stokes' theorem and convenience API -/
 
+private theorem hasCompactSupport_of_isCompact_univ_or_exists_compact {n : ℕ} {M : Type*}
+    [TopologicalSpace M] [T2Space M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+    {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
+    (hSupport : IsCompact (univ : Set M) ∨ ∃ K : Set M, IsCompact K ∧ ∀ x ∉ K, X x = 0) :
+    HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X := by
+  rcases hSupport with huniv | ⟨K, hK, hzero⟩
+  · have : CompactSpace M := ⟨huniv⟩; exact HasCompactSupport.of_compactSpace _
+  · exact HasCompactSupport.intro hK hzero
+
 section OrientedStokes
 
-variable {n : ℕ} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-  [IsManifold (𝓡∂ (n + 1)) ∞ M] [SigmaCompactSpace M]
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+  [IsManifold (𝓡∂ (n + 1)) 2 M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
   [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
@@ -474,13 +442,15 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
+local instance : IsManifold (𝓡∂ (n + 1)) 1 M := IsManifold.of_le (n := 2) (by norm_num)
+
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
   isManifold_boundary M one_ne_zero
 
-/-- **Stokes' theorem for `ι_X dV` agrees with the Riemannian divergence theorem.** On an oriented
-smooth Riemannian manifold with boundary, the top-form integral of `d(ι_X dV)` equals
-`∫ div X dV`, the boundary top-form integral of `ι^*(ι_X dV)` equals `∫_{∂M} ⟪X, N⟫ dS`, and both
-are equal by Stokes' theorem. -/
+/-- **Comparison of Stokes' theorem for `ι_X dV` with the Riemannian divergence theorem.** On an
+oriented `C²` Riemannian manifold with boundary, the top-form integral of `d(ι_X dV)` equals
+`∫ div X dV` and the boundary top-form integral of `ι^*(ι_X dV)` equals `∫_{∂M} ⟪X, N⟫ dS`,
+identifying the two sides of Stokes' theorem with the two sides of the divergence theorem. -/
 theorem integralTopForm_mextDeriv_interior_riemannianVolumeForm
     (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1)))
     {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
@@ -504,34 +474,11 @@ theorem integralTopForm_mextDeriv_interior_riemannianVolumeForm
     exact integralTopForm_smul_riemannianVolumeForm (boundaryOrientation o)
       (Manifold.continuous_boundaryFlux hX.continuous) (Manifold.hasCompactSupport_boundaryFlux hc)
 
-end OrientedStokes
-
-section ConvenienceAPI
-
-private theorem hasCompactSupport_of_isCompact_univ_or_exists_compact {n : ℕ} {M : Type*}
-    [TopologicalSpace M] [T2Space M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-    {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
-    (hSupport : IsCompact (univ : Set M) ∨ ∃ K : Set M, IsCompact K ∧ ∀ x ∉ K, X x = 0) :
-    HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X := by
-  rcases hSupport with huniv | ⟨K, hK, hzero⟩
-  · have : CompactSpace M := ⟨huniv⟩
-    exact HasCompactSupport.of_compactSpace _
-  · exact HasCompactSupport.intro hK hzero
-
-variable {n : ℕ} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-  [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
-  [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-
 /-- **Integrability of the divergence and outward boundary flux** under either compactness of `M`
 or compact support of `X`, for any boundary vector field `N` satisfying the outward unit normal
 characterization. -/
-theorem integrable_divergence_and_boundaryFlux {k : ℕ∞ω} {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
+theorem integrable_divergence_and_boundaryFlux [T2Space M] {k : ℕ∞ω}
+    {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
     (hX : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent k (T% X))
     (hSupport : IsCompact (univ : Set M) ∨ ∃ K : Set M, IsCompact K ∧ ∀ x ∉ K, X x = 0)
     {N : (x : (𝓡∂ (n + 1)).boundary M) → TangentSpace (𝓡∂ (n + 1)) (x : M)}
@@ -544,11 +491,23 @@ theorem integrable_divergence_and_boundaryFlux {k : ℕ∞ω} {X : (x : M) → T
         (halfSpaceBoundaryVolume (n := n) (M := M)) := by
   have hNeq : N = halfSpaceOutwardUnitNormal :=
     funext fun x ↦ eq_halfSpaceOutwardUnitNormal_of_norm_eq_one (hN x).1 (hN x).2.1 (hN x).2.2
+  have hc := hasCompactSupport_of_isCompact_univ_or_exists_compact hSupport
   subst hNeq
-  exact ⟨Manifold.integrable_divergence (hX.of_le hk)
-      (hasCompactSupport_of_isCompact_univ_or_exists_compact hSupport),
-    Manifold.integrable_boundaryFlux (hX.of_le hk)
-      (hasCompactSupport_of_isCompact_univ_or_exists_compact hSupport)⟩
+  exact ⟨Manifold.integrable_divergence (hX.of_le hk) hc,
+    Manifold.integrable_boundaryFlux (hX.of_le hk) hc⟩
+
+end OrientedStokes
+
+section ConvenienceAPI
+
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+  [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
+  [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+  [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
 /-- **The Riemannian divergence theorem with boundary** [Lee, Theorem 16.32]: on a smooth
 Hausdorff `σ`-compact manifold `M` modeled on `𝓡∂ (n + 1)` with a `C¹` Riemannian metric (and no
