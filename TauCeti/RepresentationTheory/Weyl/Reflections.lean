@@ -232,8 +232,8 @@ theorem finrank_quotient_fixedSubmodule_weylGroupRootRep_eq_one_iff (b : P.Base)
     by_cases hpos : i ∈ posRoots P b
     · exact ⟨i, hpos, hw_eq⟩
     · refine ⟨P.reflectionPerm i i, (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2
-        ((not_mem_posRoots_iff_mem_negRoots P b i).1 hpos), hw_eq.trans <| weylGroup.ext fun x ↦ ?_⟩
-      simp [reflection_reflectionPerm, mul_apply_eq_comp]
+        ((not_mem_posRoots_iff_mem_negRoots P b i).1 hpos),
+        hw_eq.trans (weylGroup.ofIdx_reflectionPerm_self P i).symm⟩
   · rintro ⟨α, -, rfl⟩
     exact P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx α
 

@@ -28,7 +28,7 @@ theory of finite Weyl groups:
   invariant in `Sym(M*)^W` has degree at least `2` (and hence none has degree `1`).
 * **Chevalley's theorem** (`exists_bijective_aeval_weylGroupRootRep_dual`,
   `exists_bijective_aeval_weylGroupRootRep_dual_of_base`): over a field `K` with `2 ≠ 0`, when `M`
-  is finite-dimensional and `P.weylGroup` is finite of order nonzero in `K`, the invariant
+  is finite-dimensional and `Nat.card P.weylGroup` is nonzero in `K`, the invariant
   subalgebra `Sym(M*)^W` is a polynomial algebra on `finrank K M` homogeneous invariants of positive
   degree. Over a field of characteristic zero with `M` finite-dimensional, a base `b : P.Base` of a
   finite reduced crystallographic pairing suffices.
@@ -146,16 +146,17 @@ theorem natCard_inertia_coroot'_weylGroup [NeZero (2 : K)] [P.flip.IsReduced] (�
     Set.ncard_pair (weylGroup.ofIdx_ne_one P α).symm]
 
 /-- **Chevalley's theorem for the Weyl group.** If `2 ≠ 0` in `K`, `M` is finite-dimensional, and
-`P.weylGroup` is finite of order nonzero in `K`, then the `W`-invariant polynomial functions
-`Sym(M*)^W` form a polynomial algebra on `finrank K M` homogeneous invariants of positive degree. -/
+`Nat.card P.weylGroup` is nonzero in `K` (so `P.weylGroup` is finite), then the `W`-invariant
+polynomial functions `Sym(M*)^W` form a polynomial algebra on `finrank K M` homogeneous invariants
+of positive degree. -/
 theorem exists_bijective_aeval_weylGroupRootRep_dual
-    [NeZero (2 : K)] [FiniteDimensional K M] [Finite P.weylGroup]
-    (hcard : (Nat.card P.weylGroup : K) ≠ 0) :
+    [NeZero (2 : K)] [FiniteDimensional K M] (hcard : (Nat.card P.weylGroup : K) ≠ 0) :
     ∃ f : Fin (Module.finrank K M) → P.weylGroupRootRep.dual.symmetricAlgebraInvariants,
       (∀ i, ∃ d, 0 < d ∧
         (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
           homogeneousSubmodule K (Module.Dual K M) d) ∧
         Function.Bijective (MvPolynomial.aeval (R := K) f) := by
+  have : Finite P.weylGroup := Nat.finite_of_card_ne_zero fun h ↦ hcard (by simp [h])
   let _ : Fintype P.weylGroup := Fintype.ofFinite P.weylGroup
   have hcard' : (Fintype.card P.weylGroup : K) ≠ 0 := by
     rwa [← Nat.card_eq_fintype_card]
