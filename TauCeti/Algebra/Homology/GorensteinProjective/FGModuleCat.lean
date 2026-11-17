@@ -58,27 +58,31 @@ variable {A} in
 @[simp] theorem toFGModuleCat_obj_obj (X : GorensteinProjectiveModuleCat.{v} A) :
     ((toFGModuleCat A).obj X).obj = ⟨X.obj, (ModuleCat.isFG_iff _).2 X.property.finite⟩ := (rfl)
 
-variable {A} in
-@[simp] theorem toFGModuleCat_map_hom {X Y : GorensteinProjectiveModuleCat.{v} A} (f : X ⟶ Y) :
-    ((toFGModuleCat A).map f).hom =
-      eqToHom (toFGModuleCat_obj_obj X) ≫ ObjectProperty.homMk f.hom ≫
-        eqToHom (toFGModuleCat_obj_obj Y).symm := by
-  let f' : (⟨X.obj, (ModuleCat.isFG_iff _).2 X.property.finite⟩ : FGModuleCat.{v} A) ⟶
-      ⟨Y.obj, (ModuleCat.isFG_iff _).2 Y.property.finite⟩ := ObjectProperty.homMk f.hom
-  change f' = eqToHom rfl ≫ f' ≫ eqToHom rfl; simp
+/-- Composing `toFGModuleCat` with forgetful inclusions recovers `(IsGorensteinProjective A).ι`. -/
+theorem toFGModuleCat_comp_ι_comp_forget₂ :
+    toFGModuleCat.{v} A ⋙ (isGorensteinProjective (FGModuleCat.{v} A)).ι ⋙
+        forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A) = (IsGorensteinProjective A).ι := (rfl)
 
 variable {A} in
 theorem toFGModuleCat_map_hom_hom {X Y : GorensteinProjectiveModuleCat.{v} A} (f : X ⟶ Y) :
     ((toFGModuleCat A).map f).hom.hom =
       eqToHom (congrArg ObjectProperty.FullSubcategory.obj (toFGModuleCat_obj_obj X)) ≫ f.hom ≫
         eqToHom (congrArg ObjectProperty.FullSubcategory.obj (toFGModuleCat_obj_obj Y)).symm := by
-  change f.hom = eqToHom rfl ≫ f.hom ≫ eqToHom rfl; simp
+  -- `forget₂` is `(ModuleCat.isFG A).ι` by `ObjectProperty.FullSubcategory.hasForget₂`.
+  have h := toFGModuleCat_comp_ι_comp_forget₂.{v} A
+  rw [show forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A) = (ModuleCat.isFG A).ι from rfl] at h
+  simpa only [Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj, ObjectProperty.ι_map]
+    using Functor.congr_hom h f
 
-/-- Composing `toFGModuleCat` with the forgetful inclusions recovers `(IsGorensteinProjective A).ι`.
--/
-theorem toFGModuleCat_comp_ι_comp_forget₂ :
-    toFGModuleCat.{v} A ⋙ (isGorensteinProjective (FGModuleCat.{v} A)).ι ⋙
-        forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A) = (IsGorensteinProjective A).ι := (rfl)
+variable {A} in
+@[simp] theorem toFGModuleCat_map_hom {X Y : GorensteinProjectiveModuleCat.{v} A} (f : X ⟶ Y) :
+    ((toFGModuleCat A).map f).hom =
+      eqToHom (toFGModuleCat_obj_obj X) ≫ ObjectProperty.homMk f.hom ≫
+        eqToHom (toFGModuleCat_obj_obj Y).symm := by
+  apply ObjectProperty.hom_ext
+  rw [toFGModuleCat_map_hom_hom f, ObjectProperty.FullSubcategory.comp_hom,
+    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom]
+  simp only [← (ModuleCat.isFG A).ι_map, eqToHom_map]
 
 instance : (toFGModuleCat.{v} A).Additive where
 
@@ -92,18 +96,22 @@ variable {A} in
 @[simp] theorem fromFGModuleCat_obj_obj (Y : GorensteinProjective (FGModuleCat.{v} A)) :
     ((fromFGModuleCat A).obj Y).obj = Y.obj.obj := (rfl)
 
-variable {A} in
-@[simp] theorem fromFGModuleCat_map_hom {X Y : GorensteinProjective (FGModuleCat.{v} A)}
-    (g : X ⟶ Y) : ((fromFGModuleCat A).map g).hom =
-      eqToHom (fromFGModuleCat_obj_obj X) ≫ g.hom.hom ≫
-        eqToHom (fromFGModuleCat_obj_obj Y).symm := by
-  change g.hom.hom = eqToHom rfl ≫ g.hom.hom ≫ eqToHom rfl; simp
-
 /-- Composing `fromFGModuleCat` with `(IsGorensteinProjective A).ι` forgets both predicates. -/
 theorem fromFGModuleCat_comp_ι :
     fromFGModuleCat.{v} A ⋙ (IsGorensteinProjective A).ι =
       (isGorensteinProjective (FGModuleCat.{v} A)).ι ⋙
         forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A) := (rfl)
+
+variable {A} in
+@[simp] theorem fromFGModuleCat_map_hom {X Y : GorensteinProjective (FGModuleCat.{v} A)}
+    (g : X ⟶ Y) : ((fromFGModuleCat A).map g).hom =
+      eqToHom (fromFGModuleCat_obj_obj X) ≫ g.hom.hom ≫
+        eqToHom (fromFGModuleCat_obj_obj Y).symm := by
+  -- `forget₂` is `(ModuleCat.isFG A).ι` by `ObjectProperty.FullSubcategory.hasForget₂`.
+  have h := fromFGModuleCat_comp_ι.{v} A
+  rw [show forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A) = (ModuleCat.isFG A).ι from rfl] at h
+  simpa only [Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj, ObjectProperty.ι_map]
+    using Functor.congr_hom h g
 
 @[simp] theorem toFGModuleCat_comp_fromFGModuleCat :
     toFGModuleCat.{v} A ⋙ fromFGModuleCat.{v} A = 𝟭 _ := (rfl)
@@ -126,13 +134,9 @@ def fgModuleCatEquivalence :
 @[simp] theorem fgModuleCatEquivalence_inverse :
     (fgModuleCatEquivalence.{v} A).inverse = fromFGModuleCat A := (rfl)
 @[simp] theorem fgModuleCatEquivalence_unitIso :
-    (fgModuleCatEquivalence.{v} A).unitIso = eqToIso (by
-      rw [fgModuleCatEquivalence_functor, fgModuleCatEquivalence_inverse,
-        toFGModuleCat_comp_fromFGModuleCat]) := (rfl)
+    (fgModuleCatEquivalence.{v} A).unitIso = eqToIso (by simp) := (rfl)
 @[simp] theorem fgModuleCatEquivalence_counitIso :
-    (fgModuleCatEquivalence.{v} A).counitIso = eqToIso (by
-      rw [fgModuleCatEquivalence_inverse, fgModuleCatEquivalence_functor,
-        fromFGModuleCat_comp_toFGModuleCat]) := (rfl)
+    (fgModuleCatEquivalence.{v} A).counitIso = eqToIso (by simp) := (rfl)
 
 instance : (fgModuleCatEquivalence.{v} A).functor.Additive := by
   rw [fgModuleCatEquivalence_functor]; infer_instance
@@ -150,8 +154,7 @@ theorem isConflationExact_toFGModuleCat :
     let F := forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)
     let S' := (S.map (toFGModuleCat A)).map (isGorensteinProjective (FGModuleCat.{v} A)).ι
     exact { exact := (S'.exact_map_iff_of_faithful F).1 hS.exact
-            mono_f := F.mono_of_mono_map hS.mono_f
-            epi_g := F.epi_of_epi_map hS.epi_g }
+            mono_f := F.mono_of_mono_map hS.mono_f, epi_g := F.epi_of_epi_map hS.epi_g }
 
 /-- `fromFGModuleCat` preserves conflations. -/
 theorem isConflationExact_fromFGModuleCat :
@@ -170,7 +173,6 @@ theorem stableConflationExact_toFGModuleCat :
   ExactStructure.IsConflationExact.stableConflationExact_of_equivalence
     (e := fgModuleCatEquivalence A) (isConflationExact_toFGModuleCat A)
     (isConflationExact_fromFGModuleCat A)
-
 /-- `fromFGModuleCat` preserves conflations and projective-injectives. -/
 theorem stableConflationExact_fromFGModuleCat :
     StableConflationExact (GorensteinProjective.exactStructure (FGModuleCat.{v} A))
@@ -194,7 +196,6 @@ theorem stableFGModuleCatEquivalence_functor :
     (stableFGModuleCatEquivalence A).functor =
       (stableConflationExact_toFGModuleCat A).stableFunctor exactStructure_isFrobenius :=
   StableConflationExact.stableEquivalence_functor _ _ _ _ _
-
 theorem stableFGModuleCatEquivalence_inverse :
     (stableFGModuleCatEquivalence A).inverse =
       (stableConflationExact_fromFGModuleCat A).stableFunctor
@@ -215,7 +216,6 @@ theorem projectiveStableFunctor_comp_stableFGModuleCatEquivalence_functor :
         (GorensteinProjective.exactStructure (FGModuleCat.{v} A)).projectiveStableFunctor := by
   rw [stableFGModuleCatEquivalence_functor, StableConflationExact.stableFunctor_eq_map,
     MorphismIdeal.quotientFunctor_comp_map]
-
 /-- `(stableFGModuleCatEquivalence A).inverse` intertwines the stable quotient functors. -/
 theorem projectiveStableFunctor_comp_stableFGModuleCatEquivalence_inverse :
     (GorensteinProjective.exactStructure (FGModuleCat.{v} A)).projectiveStableFunctor ⋙
@@ -224,7 +224,8 @@ theorem projectiveStableFunctor_comp_stableFGModuleCatEquivalence_inverse :
   rw [stableFGModuleCatEquivalence_inverse, StableConflationExact.stableFunctor_eq_map,
     MorphismIdeal.quotientFunctor_comp_map]
 
-variable {A} in
+section
+variable {A}
 @[simp] theorem stableFGModuleCatEquivalence_functor_obj_projectiveStableFunctor_obj
     (X : GorensteinProjectiveModuleCat.{v} A) :
     (stableFGModuleCatEquivalence A).functor.obj
@@ -232,8 +233,6 @@ variable {A} in
       (GorensteinProjective.exactStructure (FGModuleCat.{v} A)).projectiveStableFunctor.obj
         ((toFGModuleCat A).obj X) :=
   Functor.congr_obj (projectiveStableFunctor_comp_stableFGModuleCatEquivalence_functor A) X
-
-variable {A} in
 @[simp] theorem stableFGModuleCatEquivalence_functor_map_projectiveStableFunctor_map
     {X Y : GorensteinProjectiveModuleCat.{v} A} (f : X ⟶ Y) :
     (stableFGModuleCatEquivalence A).functor.map
@@ -243,16 +242,12 @@ variable {A} in
           ((toFGModuleCat A).map f) ≫
         eqToHom (stableFGModuleCatEquivalence_functor_obj_projectiveStableFunctor_obj Y).symm :=
   Functor.congr_hom (projectiveStableFunctor_comp_stableFGModuleCatEquivalence_functor A) f
-
-variable {A} in
 @[simp] theorem stableFGModuleCatEquivalence_inverse_obj_projectiveStableFunctor_obj
     (Y : GorensteinProjective (FGModuleCat.{v} A)) :
     (stableFGModuleCatEquivalence A).inverse.obj
         ((GorensteinProjective.exactStructure (FGModuleCat.{v} A)).projectiveStableFunctor.obj Y) =
       (exactStructure A).projectiveStableFunctor.obj ((fromFGModuleCat A).obj Y) :=
   Functor.congr_obj (projectiveStableFunctor_comp_stableFGModuleCatEquivalence_inverse A) Y
-
-variable {A} in
 @[simp] theorem stableFGModuleCatEquivalence_inverse_map_projectiveStableFunctor_map
     {X Y : GorensteinProjective (FGModuleCat.{v} A)} (g : X ⟶ Y) :
     (stableFGModuleCatEquivalence A).inverse.map
@@ -261,17 +256,15 @@ variable {A} in
         (exactStructure A).projectiveStableFunctor.map ((fromFGModuleCat A).map g) ≫
         eqToHom (stableFGModuleCatEquivalence_inverse_obj_projectiveStableFunctor_obj Y).symm :=
   Functor.congr_hom (projectiveStableFunctor_comp_stableFGModuleCatEquivalence_inverse A) g
+end
 
 /-- Shift compatibility for `(stableFGModuleCatEquivalence A).functor`. -/
 @[instance_reducible] def stableFGModuleCatEquivalenceFunctorCommShift :
     letI := (exactStructure_isFrobenius (A := A)).stableHasShift
     letI := (GorensteinProjective.exactStructure_isFrobenius (C := FGModuleCat A)).stableHasShift
-    (stableFGModuleCatEquivalence A).functor.CommShift ℤ := by
-  letI := (exactStructure_isFrobenius (A := A)).stableHasShift
-  letI := (GorensteinProjective.exactStructure_isFrobenius (C := FGModuleCat A)).stableHasShift
-  letI := (stableConflationExact_toFGModuleCat A).stableFunctorCommShift
-    exactStructure_isFrobenius GorensteinProjective.exactStructure_isFrobenius
-  exact Functor.CommShift.ofIso (eqToIso (stableFGModuleCatEquivalence_functor A).symm) ℤ
+    (stableFGModuleCatEquivalence A).functor.CommShift ℤ :=
+  StableConflationExact.stableEquivalenceFunctorCommShift (e := fgModuleCatEquivalence A)
+    (stableConflationExact_toFGModuleCat A) (stableConflationExact_fromFGModuleCat A) _ _
 
 /-- Shift comparison of `(stableFGModuleCatEquivalence A).functor` via `toFGModuleCat`. -/
 theorem stableFGModuleCatEquivalenceFunctor_commShiftIso (n : ℤ) :
@@ -288,17 +281,16 @@ theorem stableFGModuleCatEquivalenceFunctor_commShiftIso (n : ℤ) :
       Functor.isoWhiskerRight (eqToIso (stableFGModuleCatEquivalence_functor A)).symm
         (shiftFunctor
           (GorensteinProjective.exactStructure (FGModuleCat.{v} A)).ProjectiveStableCategory n) :=
-  (rfl)
+  StableConflationExact.stableEquivalenceFunctor_commShiftIso (e := fgModuleCatEquivalence A)
+    (stableConflationExact_toFGModuleCat A) (stableConflationExact_fromFGModuleCat A) _ _ n
 
 /-- Shift compatibility for `(stableFGModuleCatEquivalence A).inverse`. -/
 @[instance_reducible] def stableFGModuleCatEquivalenceInverseCommShift :
     letI := (exactStructure_isFrobenius (A := A)).stableHasShift
     letI := (GorensteinProjective.exactStructure_isFrobenius (C := FGModuleCat A)).stableHasShift
-    (stableFGModuleCatEquivalence A).inverse.CommShift ℤ := by
-  letI := (exactStructure_isFrobenius (A := A)).stableHasShift
-  letI := (GorensteinProjective.exactStructure_isFrobenius (C := FGModuleCat A)).stableHasShift
-  letI := stableFGModuleCatEquivalenceFunctorCommShift A
-  exact (stableFGModuleCatEquivalence A).commShiftInverse ℤ
+    (stableFGModuleCatEquivalence A).inverse.CommShift ℤ :=
+  StableConflationExact.stableEquivalenceInverseCommShift (e := fgModuleCatEquivalence A)
+    (stableConflationExact_toFGModuleCat A) (stableConflationExact_fromFGModuleCat A) _ _
 
 /-- Shift comparison of `(stableFGModuleCatEquivalence A).inverse` as `commShiftInverse`. -/
 theorem stableFGModuleCatEquivalenceInverse_commShiftIso (n : ℤ) :
@@ -308,7 +300,9 @@ theorem stableFGModuleCatEquivalenceInverse_commShiftIso (n : ℤ) :
     (letI := stableFGModuleCatEquivalenceInverseCommShift A;
       (stableFGModuleCatEquivalence A).inverse.commShiftIso n) =
       (letI := (stableFGModuleCatEquivalence A).commShiftInverse ℤ;
-        (stableFGModuleCatEquivalence A).inverse.commShiftIso n) := (rfl)
+        (stableFGModuleCatEquivalence A).inverse.commShiftIso n) :=
+  StableConflationExact.stableEquivalenceInverse_commShiftIso (e := fgModuleCatEquivalence A)
+    (stableConflationExact_toFGModuleCat A) (stableConflationExact_fromFGModuleCat A) _ _ n
 
 /-- `stableFGModuleCatEquivalence` is a triangle equivalence for Happel's triangulations. -/
 theorem stableFGModuleCatEquivalence_isTriangulated :
@@ -320,16 +314,9 @@ theorem stableFGModuleCatEquivalence_isTriangulated :
     letI := stableFGModuleCatEquivalenceFunctorCommShift A
     letI := stableFGModuleCatEquivalenceInverseCommShift A
     letI := (stableFGModuleCatEquivalence A).commShift_of_functor ℤ
-    (stableFGModuleCatEquivalence A).IsTriangulated := by
-  have hE := exactStructure_isFrobenius (A := A)
-  have hE' := GorensteinProjective.exactStructure_isFrobenius (C := FGModuleCat.{v} A)
-  let := hE.stableHasShift; let := hE'.stableHasShift
-  let := hE.stableShiftFunctor_additive; let := hE'.stableShiftFunctor_additive
-  let := hE.stablePretriangulated; let := hE'.stablePretriangulated
-  let := (stableConflationExact_toFGModuleCat A).stableFunctorCommShift hE hE'
-  have := (stableConflationExact_toFGModuleCat A).stableFunctorIsTriangulated hE hE'
-  exact (stableFGModuleCatEquivalence A).isTriangulated_of_functor_eq
-    (stableFGModuleCatEquivalence_functor A)
+    (stableFGModuleCatEquivalence A).IsTriangulated :=
+  StableConflationExact.stableEquivalenceIsTriangulated (e := fgModuleCatEquivalence A)
+    (stableConflationExact_toFGModuleCat A) (stableConflationExact_fromFGModuleCat A) _ _
 
 section Singularity
 
@@ -386,8 +373,7 @@ variable {A} in
         (SingularityCategory.Q (FGModuleCat.{v} A)).map
           ((DerivedCategory.Bounded.singleFunctor (FGModuleCat.{v} A) 0).map
             (ObjectProperty.homMk f.hom :
-              (⟨X.obj, (ModuleCat.isFG_iff _).2 X.property.finite⟩ : FGModuleCat.{v} A) ⟶
-                ⟨Y.obj, (ModuleCat.isFG_iff _).2 Y.property.finite⟩)) ≫
+              (⟨X.obj, (ModuleCat.isFG_iff _).2 X.property.finite⟩ : FGModuleCat.{v} A) ⟶ _)) ≫
         eqToHom (toSingularityCategory_obj_projectiveStableFunctor_obj Y).symm :=
   Functor.congr_hom (projectiveStableFunctor_comp_toSingularityCategory.{w, v} A) f
 
