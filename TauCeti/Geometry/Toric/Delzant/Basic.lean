@@ -314,6 +314,31 @@ theorem nonempty : (facetPolyhedron i u c).Nonempty := by
     obtain ⟨x, hx, -⟩ := hΔ.irredundant h.some
     exact ⟨x, hx⟩
 
+/-- **The normal of a single facet is nonzero.** If the normal `u j` vanished, the polyhedron would
+be all of `V*`, which is bounded only if `V* = 0`; then the vertex `0` would have the active normal
+`u j = 0` in a basis of `N`. -/
+theorem ne_zero_of_subsingleton [Subsingleton ι] (j : ι) : u j ≠ 0 := fun h0 ↦ by
+  obtain ⟨x, -, hxj⟩ := hΔ.irredundant j
+  have hcj : c j = 0 := by
+    have := (mem_activeSet.1 (hxj ▸ mem_singleton j) : facetPairing i u j x = c j)
+    simpa [h0] using this.symm
+  have hP : facetPolyhedron i u c = univ := eq_univ_of_forall fun y ↦
+    mem_facetPolyhedron.2 fun k ↦ by simp [Subsingleton.elim k j, h0, hcj]
+  have hbd : Bornology.IsBounded (univ : Set (StrongDual ℝ V)) := hP ▸ hΔ.isBounded
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hbd
+  have hsub : Subsingleton (StrongDual ℝ V) := subsingleton_of_forall_eq 0 fun y ↦ by
+    by_contra hy
+    have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
+    have := hC (((|C| + 1) / ‖y‖) • y) (mem_univ _)
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity), div_mul_cancel₀ _ hy'.ne']
+      at this
+    linarith [le_abs_self C]
+  have hext : (0 : StrongDual ℝ V) ∈ (facetPolyhedron i u c).extremePoints ℝ :=
+    ⟨hP ▸ mem_univ _, fun x _ y _ _ ↦ Subsingleton.elim _ _⟩
+  obtain ⟨b, hb⟩ := hΔ.isSmoothVertex 0 hext
+  have hj : j ∈ activeSet (facetPairing i u) c 0 := by simp [mem_activeSet, hcj]
+  exact b.ne_zero ⟨j, hj⟩ ((hb ⟨j, hj⟩).trans h0)
+
 variable [FiniteDimensional ℝ V]
 
 /-- A Delzant polytope is compact. -/
@@ -340,6 +365,7 @@ theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
 theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
   facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
 
+omit [FiniteDimensional ℝ V] in
 /-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
 Delzant polytope lies on none of its facets. -/
 theorem exists_activeSet_eq_empty [Finite ι] (hi : Function.Injective i) :
@@ -353,7 +379,7 @@ theorem exists_activeSet_eq_empty [Finite ι] (hi : Function.Injective i) :
     · exact ⟨0, mem_facetPolyhedron.2 isEmptyElim, eq_empty_of_isEmpty _⟩
     -- With a single facet `j`, move off it in a direction `w` with `⟨w, u j⟩ = 1`.
     obtain ⟨w, hw⟩ := SeparatingDual.exists_eq_one (R := ℝ)
-      ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
+      ((map_ne_zero_iff i hi).2 (hΔ.ne_zero_of_subsingleton j))
     have hlt : ∀ k, c k < (x j + w) (i (u k)) := fun k ↦ by
       obtain rfl := Subsingleton.elim k j
       have := mem_facetPolyhedron.1 (hx k) k
