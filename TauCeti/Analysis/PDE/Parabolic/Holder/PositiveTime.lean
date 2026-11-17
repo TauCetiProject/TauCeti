@@ -36,29 +36,26 @@ uniformly continuous initial value by smooth ones.
 * **Time cutoff.** A cutoff `χ` (`TauCeti.ParabolicC2HolderSpace.exists_temporal_cutoff`)
   vanishing up to time `δ / 2` and equal to one from time `δ` on does not depend on the spatial
   variable, so `P (χ u) = χ P u + (∂ₜ χ) u`
-  (`TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero`).
+  (`TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero`).
   As `χ u` vanishes at the initial time and equals `u` on `[δ, T]`, the Schauder estimate bounds
   the norm of `u` on `[δ, T]` by `‖χ‖ ‖P u‖` and the Hölder norm of `(∂ₜ χ) u`.
 * **The cutoff error.** Since `∂ₜ χ` vanishes before `δ / 2`, the Hölder norm of `(∂ₜ χ) u` sees
   the Hölder norm of `u` on `[δ / 2, T]` only
   (`ContinuousLinearMap.norm_compHolder₂_valueHolderL_le_of_eq_zero`). Interpolation at the spatial
-  scale `ρ = √(2 κ δ)` (`TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_add_sq_mul`) bounds
-  that norm by a multiple of `(κ δ)^(-α/2) sup |u|` plus `4 κ δ` times the order-two norm of `u`
+  scale `ρ = √(κ δ)` (`TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_add_sq_mul`) bounds
+  that norm by a multiple of `(κ δ)^(-α/2) sup |u|` plus `2 κ δ` times the order-two norm of `u`
   on `[δ / 2, T]`.
 * **Absorption.** With `‖∂ₜ χ‖_∞ ≲ δ⁻¹` and `[∂ₜ χ]_{α,par} ≲ δ^(-1 - α/2)`, the weighted norm
   `Φ(δ) = δ^(1 + α/2) ‖u‖_{2+α,par; [δ, T]}` satisfies
   `Φ(δ) ≤ C (sup |u| + ‖P u‖) + Φ(δ / 2) / 2` for `κ` small. The function `Φ` is bounded by
   `T^(1 + α/2) ‖u‖`, so its supremum absorbs the last term. Finally the comparison principle
-  bounds `sup |u|` by `sup |u(·, 0)|` and `‖P u‖_∞`.
+  (`norm_valueL_le_exp_mul_mul_add_norm_euclideanParabolicOperatorL`) bounds `sup |u|` by
+  `sup |u(·, 0)|` and `‖P u‖_∞`.
 
 ## Main declarations
 
 * `TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_restrictL_le`: **the positive-time
   estimate**.
-* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero`:
-  the operator on a product with a spatially constant factor.
-* `ContinuousLinearMap.norm_compHolder₂_valueHolderL_le_of_eq_zero`: the product of `u` with a
-  Hölder factor vanishing before a time `s` only sees the Hölder norm of `u` after `s`.
 
 ## References
 
@@ -74,111 +71,12 @@ namespace TauCeti.ParabolicC2HolderSpace
 open Set ParabolicSpaceTime
 open scoped NNReal ENNReal BoundedContinuousFunction
 
-section Support
-
-variable {α : ℝ≥0} {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
-  [NormedAddCommGroup H] [NormedSpace ℝ H] {a b s : ℝ} {hab : a < b}
-
-/-- **Products with a Hölder factor vanishing before a time `s`.** Let `g` be a parabolically
-`α`-Hölder field on `E × [a, b]` vanishing at all times before `s ∈ [a, b)`, and let
-`u ∈ C_b^{2+α,1+α/2}`. Then the Hölder norm of `B (g, u)` involves the Hölder norm of `u` on the
-later slab `E × [s, b]` only:
-
-`‖B (g, u)‖_{α,par} ≤ ‖B‖ (‖g‖_∞ ‖u‖_{α,par; [s, b]} + [g]_{α,par} ‖u‖_∞)`. -/
-theorem _root_.ContinuousLinearMap.norm_compHolder₂_valueHolderL_le_of_eq_zero
-    (B : G →L[ℝ] F →L[ℝ] H) (hα : α ≤ 1)
-    (has : a ≤ s) (hsb : s < b) {g : HolderSpace α (slab (E := E) a b) G}
-    (hg : ∀ p : slab (E := E) a b, (p : ParabolicSpaceTime E).time < s → g p = 0)
-    (u : ParabolicC2HolderSpace α E F hab) :
-    ‖B.compHolder₂ g (valueHolderL hα u)‖ ≤ ‖B‖ * (‖g.toBoundedContinuousFunction‖ *
-      ‖valueHolderL hα (restrictL has le_rfl hsb u)‖ +
-      nnHolderNorm α (g : slab (E := E) a b → G) * ‖valueL u‖) := by
-  set w := restrictL (α := α) (E := E) (F := F) (hab := hab) has le_rfl hsb u
-  set S : Set (slab (E := E) a b) := {p | s ≤ (p : ParabolicSpaceTime E).time}
-  -- On `S` the map `u` is the restriction `w`, which is Hölder with its own seminorm.
-  have hmem : ∀ p ∈ S, (p : ParabolicSpaceTime E) ∈ slab (E := E) s b := fun p hp ↦
-    mem_slab.2 ⟨hp, (mem_slab.1 p.2).2⟩
-  have hw : ∀ p (hp : p ∈ S), w ⟨p, hmem p hp⟩ = u p := fun p hp ↦ by
-    simp [w]
-  have hwu : ‖valueL w‖ ≤ ‖valueL u‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
-      simpa [w] using (valueL u).norm_coe_le_norm _
-  have hcoe : (valueHolderL hα w : slab (E := E) s b → F) = (valueL w : slab (E := E) s b → F) :=
-    funext fun p ↦ by simp
-  have hHS : HolderOnWith (nnHolderNorm α (valueL w : slab (E := E) s b → F)) α
-      (u : slab (E := E) a b → F) S := by
-    refine HolderOnWith.of_dist_le fun p hp q hq ↦ ?_
-    rw [← valueL_apply u, ← valueL_apply u, ← hw p hp, ← hw q hq, ← hcoe]
-    exact (valueHolderL hα w).holderWith.dist_le _ _
-  have hprod := B.flip.holderWith_comp₂_of_eq_zero hHS g.holderWith
-    (Mf := ‖valueL w‖₊) (Mg := ‖g.toBoundedContinuousFunction‖₊)
-    (fun p hp ↦ by
-      rw [← hw p hp, coe_nnNorm, ← valueL_apply]
-      exact (valueL w).norm_coe_le_norm _)
-    (fun p _ ↦ by simpa using g.toBoundedContinuousFunction.norm_coe_le_norm p)
-    (fun p hp ↦ hg p (not_le.1 hp))
-  have heq : (B.compHolder₂ g (valueHolderL hα u) : slab (E := E) a b → H) =
-      fun p ↦ B.flip (valueL u p) (g p) := funext fun p ↦ by simp
-  -- The supremum: the product vanishes off `S`, and `u = w` on `S`.
-  have hsup : ∀ p, ‖B.compHolder₂ g (valueHolderL hα u) p‖ ≤
-      ‖B‖ * ‖g.toBoundedContinuousFunction‖ * ‖valueL w‖ := fun p ↦ by
-    rw [ContinuousLinearMap.compHolder₂_apply, valueHolderL_apply]
-    by_cases hp : p ∈ S
-    · rw [← valueL_apply u, ← hw p hp]
-      have hgp : ‖g p‖ ≤ ‖g.toBoundedContinuousFunction‖ := by
-        simpa using g.toBoundedContinuousFunction.norm_coe_le_norm p
-      have hwp := (valueL w).norm_coe_le_norm ⟨p, hmem p hp⟩
-      exact (B.le_opNorm₂ _ _).trans (by gcongr)
-    · rw [hg p (not_le.1 hp), map_zero, _root_.zero_apply, norm_zero]
-      positivity
-  refine (HolderSpace.norm_le_of_norm_le_of_holderWith (by positivity) hsup
-    (heq ▸ hprod)).trans ?_
-  rw [HolderSpace.norm_def (valueHolderL hα w), toBoundedContinuousFunction_valueHolderL]
-  push_cast
-  rw [ContinuousLinearMap.opNorm_flip]
-  have := norm_nonneg B
-  have := norm_nonneg g.toBoundedContinuousFunction
-  have := NNReal.coe_nonneg (nnHolderNorm α (g : slab (E := E) a b → G))
-  have := mul_le_mul_of_nonneg_left hwu
-    (mul_nonneg (norm_nonneg B) (NNReal.coe_nonneg (nnHolderNorm α (g : slab (E := E) a b → G))))
-  nlinarith
-
-end Support
-
 section Euclidean
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ} {hT : 0 < T}
   {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
   {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-
-/-- **The operator on a product with a spatially constant factor.** If `χ` does not depend on the
-spatial variable, `D_x χ = 0`, then `P (χ u) = χ P u + (∂ₜ χ) u`. -/
-theorem euclideanParabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero (hα : α ≤ 1)
-    {χ : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT} (hχ : spatialFDerivL χ = 0)
-    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
-    euclideanParabolicOperatorL hα a b c
-        ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) =
-      (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
-          (euclideanParabolicOperatorL hα a b c u) +
-        (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (timeDerivL χ) (valueHolderL hα u) := by
-  -- A spatially constant `χ` also has vanishing Hessian.
-  have hχ₂ : spatialSecondFDerivL χ = 0 := by
-    ext p : 1
-    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-    have h := χ.hasSpatialSecondFDerivAt t x
-    rw [hχ] at h
-    rw [HolderSpace.zero_apply]
-    exact h.unique (hasFDerivAt_const _ x)
-  have hχ₁ : spatialFDerivHolderL hα χ = 0 := HolderSpace.ext fun p ↦ by simp [hχ]
-  have hχA : spatialOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b) 0 χ =
-      0 := HolderSpace.ext fun p ↦ by simp [spatialOperatorL_apply, hχ, hχ₂]
-  have h := parabolicOperatorL_mul_sub_mul_parabolicOperatorL hα (euclideanSecondOrderCoeff a)
-    (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) χ u
-  rw [hχ₁, hχA, sub_zero, map_zero, _root_.zero_apply, map_zero, add_zero,
-    map_zero, sub_zero, sub_eq_iff_eq_add] at h
-  rw [euclideanParabolicOperatorL_def, h, add_comm]
 
 /-- **Schauder estimate after a temporal cutoff.** Let `C_S` be a constant of the Schauder estimate
 on `ℝⁿ × [0, T]`, and let `χ` be a spatially constant cutoff vanishing up to time `s > 0`, equal to
@@ -221,7 +119,9 @@ private theorem norm_restrictL_le_of_temporal_cutoff (hα : α ≤ 1) {C_S : ℝ
     (hsδ.trans_lt hδT) hχt u
   rw [hres]
   refine (norm_restrictL_apply_le _ _ _ v).trans ((hS v).trans ?_)
-  rw [htr, norm_zero, add_zero, euclideanParabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero hα hχx]
+  rw [htr, norm_zero, add_zero, euclideanParabolicOperatorL_def,
+    parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero hα _ _ _ χ u hχx,
+    ← euclideanParabolicOperatorL_def]
   refine mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (add_le_add ?_ ?_)) hC_S
   · exact h₁.trans (by gcongr; exact mul_le_of_le_one_left (norm_nonneg _) hmul)
   · exact h₂.trans (mul_le_of_le_one_left (by positivity) hmul)
@@ -309,31 +209,28 @@ private theorem rpow_mul_le_of_le {α C_S Mχ κ T₀ d X Y P V : ℝ} (hα₀ :
         gcongr
     _ = _ := by ring
 
-/-- **One step of the weighted estimate.** With the Schauder constant `C_S`, the cutoff constant
-`Mχ` and `0 < κ ≤ 1/4`, the weighted norm of `u` on `[2 d, T]` is bounded by `P u`, the supremum of
-`u` and `16 C_S Mχ κ` times the weighted norm on `[d, T]`. -/
+/-- **One step of the weighted estimate.** With the Schauder constant `C_S`, a cutoff `χ` rising
+from `0` to `1` on `[δ / 2, δ]` with constant `Mχ`, and `0 < κ ≤ 1/4`, the weighted norm of `u` on
+`[δ, T]` is bounded by `P u`, the supremum of `u` and `16 C_S Mχ κ` times the weighted norm on
+`[δ / 2, T]`. -/
 private theorem rpow_mul_norm_restrictL_le_of_cutoff (hα : α ≤ 1) {C_S Mχ κ T₀ : ℝ}
     (hC_S : 0 ≤ C_S) (hMχ : 0 ≤ Mχ) (hκ : 0 < κ) (hκ₄ : κ ≤ 1 / 4) (hTT₀ : T ≤ T₀)
     (hS : ∀ v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
       ‖v‖ ≤ C_S * (‖euclideanParabolicOperatorL hα a b c v‖ +
         ‖v.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖))
-    (hcut : ∀ {δ : ℝ}, 0 < δ → ∀ (s a b : ℝ) (hab : a < b),
-      ∃ χ : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hab,
-        (∀ p, χ p = Real.smoothTransition
-          (((p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time - s) / δ)) ∧
-        (∀ p, timeDerivL χ p = δ⁻¹ * deriv Real.smoothTransition
-          (((p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time - s) / δ)) ∧
-        (∀ p, χ p ∈ Icc 0 1) ∧
-        (∀ p : slab (E := EuclideanSpace ℝ ι) a b,
-          (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time ≤ s → χ p = 0) ∧
-        (∀ p : slab (E := EuclideanSpace ℝ ι) a b,
-          s + δ ≤ (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time → χ p = 1) ∧
-        spatialFDerivL χ = 0 ∧ spatialSecondFDerivL χ = 0 ∧
-        ‖(timeDerivL χ).toBoundedContinuousFunction‖ ≤ Mχ / δ ∧
-        (nnHolderNorm α (timeDerivL χ : slab (E := EuclideanSpace ℝ ι) a b → ℝ) : ℝ) ≤
-          Mχ * δ ^ (-1 - (α : ℝ) / 2) ∧
-        ‖χ‖ ≤ 1 + Mχ / δ + Mχ * δ ^ (-1 - (α : ℝ) / 2))
-    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T) :
+    {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T) {χ : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT}
+    (hχ0 : ∀ p : slab (E := EuclideanSpace ℝ ι) 0 T,
+      (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time ≤ δ / 2 → χ p = 0)
+    (hχ1 : ∀ p : slab (E := EuclideanSpace ℝ ι) 0 T,
+      δ / 2 + δ / 2 ≤ (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time → χ p = 1)
+    (hχt : ∀ p, timeDerivL χ p = (δ / 2)⁻¹ * deriv Real.smoothTransition
+      (((p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time - δ / 2) / (δ / 2)))
+    (hχx : spatialFDerivL χ = 0)
+    (hχs : ‖(timeDerivL χ).toBoundedContinuousFunction‖ ≤ Mχ / (δ / 2))
+    (hχh : (nnHolderNorm α (timeDerivL χ : slab (E := EuclideanSpace ℝ ι) 0 T → ℝ) : ℝ) ≤
+      Mχ * (δ / 2) ^ (-1 - (α : ℝ) / 2))
+    (hχn : ‖χ‖ ≤ 1 + Mχ / (δ / 2) + Mχ * (δ / 2) ^ (-1 - (α : ℝ) / 2))
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
     δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT u‖ ≤
       C_S * (96 * (T₀ ^ (1 + (α : ℝ) / 2) + Mχ * T₀ ^ ((α : ℝ) / 2) + Mχ) *
           ‖euclideanParabolicOperatorL hα a b c u‖ +
@@ -341,8 +238,7 @@ private theorem rpow_mul_norm_restrictL_le_of_cutoff (hα : α ≤ 1) {C_S Mχ �
       16 * C_S * Mχ * κ * ((δ / 2) ^ (1 + (α : ℝ) / 2) *
         ‖restrictL (half_pos hδ).le le_rfl ((half_lt_self hδ).trans hδT) u‖) := by
   have hd : 0 < δ / 2 := half_pos hδ
-  -- The cutoff rises from `0` to `1` on `[δ / 2, δ]`.
-  obtain ⟨χ, -, hχt, -, hχ0, hχ1, hχx, -, hχs, hχh, hχn⟩ := hcut hd (δ / 2) 0 T hT
+  -- The cutoff is constant before `δ / 2`.
   have hχt0 : ∀ p : slab (E := EuclideanSpace ℝ ι) 0 T,
       (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).time < δ / 2 → timeDerivL χ p = 0 :=
     fun p hp ↦ by
@@ -356,7 +252,10 @@ private theorem rpow_mul_norm_restrictL_le_of_cutoff (hα : α ≤ 1) {C_S Mχ �
     (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) (hK1.trans (by gcongr))
   refine (le_of_eq ?_).trans (h.trans (le_of_eq ?_))
   · rw [show 2 * (δ / 2) = δ by ring]
-  · convert rfl using 4
+  -- `h` and the goal pass different proofs of `0 ≤ δ / 2` and `δ / 2 < T` to `restrictL`.
+  -- Unifying them directly unfolds the norm of the irreducible space and fails, so `congr`
+  -- identifies them.
+  · congr 2
 
 end Euclidean
 
@@ -364,39 +263,25 @@ section Weighted
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {lam Lam : ℝ}
 
-/-- The comparison principle on `ℝⁿ × [0, T]`, `T ≤ T₀`, in the form used below:
-`‖u‖_∞ ≤ e^(K T₀) (1 + T₀) (M + ‖P u‖)` when `|u(·, 0)| ≤ M` and `‖c‖ ≤ K`. -/
-private theorem norm_valueL_le_exp_mul_add (hα : α ≤ 1) {K T₀ T : ℝ≥0} {hT : (0 : ℝ) < T}
-    (hTT₀ : T ≤ T₀) {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    (hck : ‖c‖ ≤ K) (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {M : ℝ}
-    (hM : ∀ x, |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ M) :
-    ‖valueL u‖ ≤ Real.exp (K * T₀) * (1 + T₀) * (M + ‖euclideanParabolicOperatorL hα a b c u‖) := by
-  set P := ‖euclideanParabolicOperatorL hα a b c u‖
-  have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
-  have hP₀ : 0 ≤ P := norm_nonneg _
-  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
-  have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα (b := b) ha
-    (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
-    K.coe_nonneg u (fun q ↦ by
-      simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
-        (euclideanParabolicOperatorL hα a b c u) q) hM p
-  obtain ⟨ht₀, htT⟩ := (slabTime p).2
-  have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans (by exact_mod_cast hTT₀)
-  rw [valueL_apply, Real.norm_eq_abs]
-  refine hmax.trans ?_
-  rw [sub_zero]
-  have hexp : Real.exp (K * (slabTime p : ℝ)) ≤ Real.exp (K * T₀) :=
-    Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)
-  have hlin : M + (slabTime p : ℝ) * P ≤ (1 + T₀) * (M + P) := by
-    nlinarith [mul_le_mul_of_nonneg_right htT₀ hP₀, mul_nonneg T₀.coe_nonneg hM₀]
-  calc _ ≤ Real.exp (K * T₀) * (M + (slabTime p : ℝ) * P) :=
-        mul_le_mul_of_nonneg_right hexp (by positivity)
-    _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (M + P)) :=
-        mul_le_mul_of_nonneg_left hlin (Real.exp_pos _).le
-    _ = _ := by ring
+/-- The interpolation scale `κ` of the positive-time estimate: small enough that the weighted
+norm on the larger slab is absorbed with factor `1 / 2`. -/
+private theorem exists_absorbing_scale {C M : ℝ} (hC : 0 ≤ C) (hM : 0 ≤ M) :
+    ∃ κ : ℝ, 0 < κ ∧ κ ≤ 1 / 4 ∧ 16 * C * M * κ ≤ 1 / 2 := by
+  have := mul_nonneg hC hM
+  refine ⟨(4 + 32 * (C * M))⁻¹, by positivity, ?_, ?_⟩
+  · rw [inv_le_comm₀ (by positivity) (by norm_num)]
+    linarith
+  · rw [mul_assoc 16, ← mul_assoc, ← div_eq_mul_inv, div_le_iff₀ (by positivity)]
+    linarith
+
+/-- **Absorption of a supremum.** If `Φ ≥ 0` is bounded above and every value of `Φ` is at most
+`X` plus `c ≤ 1 / 2` times another value, then the supremum of `Φ` is at most `2 X`. -/
+private theorem ciSup_le_two_mul_of_le_add_mul {I : Sort*} [Nonempty I] {Φ : I → ℝ} {X c : ℝ}
+    (hΦ : BddAbove (range Φ)) (hΦ₀ : ∀ i, 0 ≤ Φ i) (hc : c ≤ 1 / 2) (f : I → I)
+    (h : ∀ i, Φ i ≤ X + c * Φ (f i)) : ⨆ i, Φ i ≤ 2 * X := by
+  have : ⨆ i, Φ i ≤ X + (⨆ i, Φ i) / 2 := ciSup_le fun i ↦ (h i).trans <| by
+    nlinarith [le_ciSup hΦ (f i), mul_nonneg (sub_nonneg.2 hc) (hΦ₀ (f i))]
+  linarith
 
 /-- **The positive-time Schauder estimate.** Let `0 < α < 1`, `0 < λ`, and let `K` and `T₀` bound
 the Hölder norms of the coefficients and the horizon. There is a constant `C`, depending only on
@@ -430,14 +315,7 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
   obtain ⟨Mχ, hMχ, hcut⟩ :=
     exists_temporal_cutoff (α := α) (E := EuclideanSpace ℝ ι) (hα₁.le.trans (by norm_num))
   -- The time scale `κ δ` of the interpolation, small enough to absorb the weighted norm.
-  set κ : ℝ := (4 * (1 + 8 * C_S * Mχ))⁻¹ with hκ_def
-  have hκ : 0 < κ := by positivity
-  have hκ₄ : κ ≤ 1 / 4 := by
-    rw [hκ_def, inv_le_comm₀ (by positivity) (by norm_num)]
-    nlinarith [mul_nonneg hC_S hMχ]
-  have hκ₂ : 16 * C_S * Mχ * κ ≤ 1 / 2 := by
-    rw [hκ_def, ← div_eq_mul_inv, div_le_iff₀ (by positivity)]
-    nlinarith [mul_nonneg hC_S hMχ]
+  obtain ⟨κ, hκ, hκ₄, hκ₂⟩ := exists_absorbing_scale hC_S hMχ
   set A := 96 * ((T₀ : ℝ) ^ (1 + (α : ℝ) / 2) + Mχ * (T₀ : ℝ) ^ ((α : ℝ) / 2) + Mχ)
   set B := 4 * Mχ * (1 + (T₀ : ℝ) ^ ((α : ℝ) / 2) + 40 * (2 * κ) ^ (-((α : ℝ) / 2)))
   set E₀ := Real.exp (K * T₀) * (1 + T₀)
@@ -445,34 +323,33 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
     fun T hT hTT₀ a b c ha ha' hak hbk hck u M hM δ hδ hδT ↦ ?_⟩
   set P := ‖euclideanParabolicOperatorL hα₁.le a b c u‖
   set V := ‖valueL u‖
-  have hV : V ≤ E₀ * (M + P) := norm_valueL_le_exp_mul_add hα₁.le hTT₀
-    (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ)) hck u hM
-  -- The weighted norms on the slabs `[d, T]`, and their supremum.
+  have hV : V ≤ E₀ * (M + P) := norm_valueL_le_exp_mul_mul_add_norm_euclideanParabolicOperatorL
+    hα₁.le hTT₀ (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ)) hck u hM
+  -- The weighted norms on the slabs `[d, T]`, bounded by `T₀^(1 + α/2) ‖u‖`.
   set Φ : Ioo (0 : ℝ) T → ℝ := fun d ↦
     (d : ℝ) ^ (1 + (α : ℝ) / 2) * ‖restrictL d.2.1.le le_rfl d.2.2 u‖
-  have hΦ : BddAbove (range Φ) := by
-    refine ⟨(T₀ : ℝ) ^ (1 + (α : ℝ) / 2) * ‖u‖, ?_⟩
+  have hΦ : BddAbove (range Φ) := ⟨(T₀ : ℝ) ^ (1 + (α : ℝ) / 2) * ‖u‖, by
     rintro _ ⟨d, rfl⟩
-    have hdT₀ : (d : ℝ) ≤ T₀ := d.2.2.le.trans (by exact_mod_cast hTT₀)
-    exact mul_le_mul (Real.rpow_le_rpow d.2.1.le hdT₀ (by positivity))
-      (norm_restrictL_apply_le _ _ _ u) (norm_nonneg _) (by positivity)
-  have hstep (d : Ioo (0 : ℝ) T) : Φ d ≤ C_S * (A * P + B * V) + 1 / 2 * ⨆ d, Φ d := by
-    have h := rpow_mul_norm_restrictL_le_of_cutoff hα₁.le hC_S hMχ hκ hκ₄
+    exact mul_le_mul (Real.rpow_le_rpow d.2.1.le (d.2.2.le.trans (by exact_mod_cast hTT₀))
+      (by positivity)) (norm_restrictL_apply_le _ _ _ u) (norm_nonneg _) (by positivity)⟩
+  have hstep (d : Ioo (0 : ℝ) T) : Φ d ≤ C_S * (A * P + B * V) +
+      16 * C_S * Mχ * κ * Φ ⟨d / 2, half_pos d.2.1, (half_lt_self d.2.1).trans d.2.2⟩ := by
+    -- The cutoff rises from `0` to `1` on `[d / 2, d]`.
+    obtain ⟨χ, -, hχt, -, hχ0, hχ1, hχx, -, hχs, hχh, hχn⟩ := hcut (half_pos d.2.1) (d / 2) 0 T hT
+    -- `Φ` and this bound pass different proofs of `0 ≤ d / 2` and `d / 2 < T` to `restrictL`.
+    -- Unifying them directly unfolds the norm of the irreducible space and fails, so `convert`
+    -- identifies them.
+    convert rpow_mul_norm_restrictL_le_of_cutoff hα₁.le hC_S hMχ hκ hκ₄
       (show (T : ℝ) ≤ T₀ by exact_mod_cast hTT₀) (hS T hT hTT₀ a b c ha ha' hak hbk hck)
-      hcut u d.2.1 d.2.2
-    -- The weighted norm on `[d / 2, T]` is one of the terms of the supremum.
-    refine (le_of_eq ?_).trans (h.trans (add_le_add le_rfl (mul_le_mul hκ₂ ?_ ?_ (by norm_num))))
-    · convert rfl using 3
-    · convert le_ciSup hΦ ⟨d / 2, half_pos d.2.1, (half_lt_self d.2.1).trans d.2.2⟩ using 1
-    · exact mul_nonneg (Real.rpow_nonneg (by linarith [d.2.1]) _) (norm_nonneg _)
+      d.2.1 d.2.2 hχ0 hχ1 hχt hχx hχs hχh hχn u using 3
   have : Nonempty (Ioo (0 : ℝ) T) := ⟨⟨T / 2, half_pos hT, half_lt_self hT⟩⟩
-  have hsup : ⨆ d, Φ d ≤ 2 * (C_S * (A * P + B * V)) := by
-    have := ciSup_le hstep
-    linarith
+  -- As in `hstep`, `convert` identifies the proofs passed to `restrictL`.
   calc δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT u‖ ≤ ⨆ d, Φ d := by
         convert le_ciSup hΦ ⟨δ, hδ, hδT⟩ using 1
     _ ≤ 2 * (C_S * (A * (M + P) + B * (E₀ * (M + P)))) :=
-        hsup.trans (by gcongr; linarith [(abs_nonneg _).trans (hM 0)])
+        (ciSup_le_two_mul_of_le_add_mul hΦ
+          (fun d ↦ mul_nonneg (Real.rpow_nonneg d.2.1.le _) (norm_nonneg _)) hκ₂ _ hstep).trans
+          (by gcongr; linarith [(abs_nonneg _).trans (hM 0)])
     _ = 2 * C_S * (A + B * E₀) * (M + P) := by ring
 
 end Weighted

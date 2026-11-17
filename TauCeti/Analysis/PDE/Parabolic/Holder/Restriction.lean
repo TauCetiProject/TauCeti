@@ -171,11 +171,8 @@ variable (ha hb hab') in
 /-- Restriction to a smaller slab does not increase the norm, applied form. -/
 theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
-  have h := ((restrictL (α := α) (E := E) (F := F) (hab := hab) ha hb hab').le_opNorm f).trans
-    (mul_le_of_le_one_left (norm_nonneg _) (norm_restrictL_le ha hb hab'))
-  -- `le_opNorm` measures norms through the `SeminormedAddCommGroup` instance and the goal through
-  -- the `NormedAddCommGroup` one; unifying the two paths directly fails, so `convert` matches them.
-  convert h using 2
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb hab' f
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]

@@ -47,6 +47,8 @@ in parabolic Schauder estimates uses.
   `‖B u v‖_∞ ≤ ‖B‖ ‖u‖_∞ ‖v‖_∞`.
 * `ContinuousLinearMap.spatialTrace_compParabolicC2Holder₂_eq_zero`: `B u v` has vanishing trace
   at every time where `v` does.
+* `ContinuousLinearMap.norm_compHolder₂_valueHolderL_le_of_eq_zero`: the product of `u` with a
+  Hölder factor vanishing before a time `s` only sees the Hölder norm of `u` after `s`.
 
 ## References
 
@@ -306,5 +308,70 @@ theorem compParabolicC2Holder₂_const (f : F) (g : G) :
       ParabolicC2HolderSpace.const (B f g) := by
   ext p
   simp
+
+/-! ### Products with a factor vanishing before a time -/
+
+/-- **Products with a Hölder factor vanishing before a time `s`.** Let `g` be a parabolically
+`α`-Hölder field on `E × [a, b]` vanishing at all times before `s ∈ [a, b)`, and let
+`u ∈ C_b^{2+α,1+α/2}`. Then the Hölder norm of `B (g, u)` involves the Hölder norm of `u` on the
+later slab `E × [s, b]` only:
+
+`‖B (g, u)‖_{α,par} ≤ ‖B‖ (‖g‖_∞ ‖u‖_{α,par; [s, b]} + [g]_{α,par} ‖u‖_∞)`. -/
+theorem norm_compHolder₂_valueHolderL_le_of_eq_zero {s : ℝ} (has : a ≤ s) (hsb : s < b)
+    {g : HolderSpace α (slab (E := E) a b) F}
+    (hg : ∀ p : slab (E := E) a b, (p : ParabolicSpaceTime E).time < s → g p = 0)
+    (u : ParabolicC2HolderSpace α E G hab) :
+    ‖B.compHolder₂ g (valueHolderL hα u)‖ ≤ ‖B‖ * (‖g.toBoundedContinuousFunction‖ *
+      ‖valueHolderL hα (restrictL has le_rfl hsb u)‖ +
+      nnHolderNorm α (g : slab (E := E) a b → F) * ‖valueL u‖) := by
+  set w := restrictL (α := α) (E := E) (F := G) (hab := hab) has le_rfl hsb u
+  set S : Set (slab (E := E) a b) := {p | s ≤ (p : ParabolicSpaceTime E).time}
+  -- On `S` the map `u` is the restriction `w`, which is Hölder with its own seminorm.
+  have hmem : ∀ p ∈ S, (p : ParabolicSpaceTime E) ∈ slab (E := E) s b := fun p hp ↦
+    mem_slab.2 ⟨hp, (mem_slab.1 p.2).2⟩
+  have hw : ∀ p (hp : p ∈ S), w ⟨p, hmem p hp⟩ = u p := fun p hp ↦ by
+    simp [w]
+  have hwu : ‖valueL w‖ ≤ ‖valueL u‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+      simpa [w] using (valueL u).norm_coe_le_norm _
+  have hcoe : (valueHolderL hα w : slab (E := E) s b → G) = (valueL w : slab (E := E) s b → G) :=
+    funext fun p ↦ by simp
+  have hHS : HolderOnWith (nnHolderNorm α (valueL w : slab (E := E) s b → G)) α
+      (u : slab (E := E) a b → G) S := by
+    refine HolderOnWith.of_dist_le fun p hp q hq ↦ ?_
+    rw [← valueL_apply u, ← valueL_apply u, ← hw p hp, ← hw q hq, ← hcoe]
+    exact (valueHolderL hα w).holderWith.dist_le _ _
+  have hprod := B.flip.holderWith_comp₂_of_eq_zero hHS g.holderWith
+    (Mf := ‖valueL w‖₊) (Mg := ‖g.toBoundedContinuousFunction‖₊)
+    (fun p hp ↦ by
+      rw [← hw p hp, coe_nnNorm, ← valueL_apply]
+      exact (valueL w).norm_coe_le_norm _)
+    (fun p _ ↦ by simpa using g.toBoundedContinuousFunction.norm_coe_le_norm p)
+    (fun p hp ↦ hg p (not_le.1 hp))
+  have heq : (B.compHolder₂ g (valueHolderL hα u) : slab (E := E) a b → H) =
+      fun p ↦ B.flip (valueL u p) (g p) := funext fun p ↦ by simp
+  -- The supremum: the product vanishes off `S`, and `u = w` on `S`.
+  have hsup : ∀ p, ‖B.compHolder₂ g (valueHolderL hα u) p‖ ≤
+      ‖B‖ * ‖g.toBoundedContinuousFunction‖ * ‖valueL w‖ := fun p ↦ by
+    rw [ContinuousLinearMap.compHolder₂_apply, valueHolderL_apply]
+    by_cases hp : p ∈ S
+    · rw [← valueL_apply u, ← hw p hp]
+      have hgp : ‖g p‖ ≤ ‖g.toBoundedContinuousFunction‖ := by
+        simpa using g.toBoundedContinuousFunction.norm_coe_le_norm p
+      have hwp := (valueL w).norm_coe_le_norm ⟨p, hmem p hp⟩
+      exact (B.le_opNorm₂ _ _).trans (by gcongr)
+    · rw [hg p (not_le.1 hp), map_zero, _root_.zero_apply, norm_zero]
+      positivity
+  refine (HolderSpace.norm_le_of_norm_le_of_holderWith (by positivity) hsup
+    (heq ▸ hprod)).trans ?_
+  rw [HolderSpace.norm_def (valueHolderL hα w), toBoundedContinuousFunction_valueHolderL]
+  push_cast
+  rw [ContinuousLinearMap.opNorm_flip]
+  have := norm_nonneg B
+  have := norm_nonneg g.toBoundedContinuousFunction
+  have := NNReal.coe_nonneg (nnHolderNorm α (g : slab (E := E) a b → F))
+  have := mul_le_mul_of_nonneg_left hwu
+    (mul_nonneg (norm_nonneg B) (NNReal.coe_nonneg (nnHolderNorm α (g : slab (E := E) a b → F))))
+  nlinarith
 
 end ContinuousLinearMap
