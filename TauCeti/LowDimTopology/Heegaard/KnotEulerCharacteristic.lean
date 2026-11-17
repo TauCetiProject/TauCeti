@@ -217,12 +217,10 @@ theorem IsKnotGrading.alexander_eq_of_invert_gradedEulerChar_eq (h : H.IsKnotGra
     (hne : H.gradedEulerChar M A ≠ 0) (hs : invert (H.gradedEulerChar M A) = H.gradedEulerChar M A)
     (hs' : invert (H.gradedEulerChar M' A') = H.gradedEulerChar M' A') : A' = A := by
   obtain ⟨m, a, rfl, rfl⟩ := h.exists_eq_add h' hconn
-  rw [gradedEulerChar_add_const, Units.smul_def, map_zsmul, map_mul, invert_T, hs] at hs'
-  have hT : T (a + a) * H.gradedEulerChar M A = H.gradedEulerChar M A := by
-    have := congrArg (T a * ·) (smul_right_injective _ (Units.ne_zero _) hs')
-    simp only [← mul_assoc, ← T_add] at this
-    rwa [add_neg_cancel, T_zero, one_mul, eq_comm] at this
-  obtain ha | h0 := T_mul_eq_self_iff.mp hT
+  -- The sign `(-1)^m` commutes with `invert` and cancels, so `T a * χ` is symmetric along with
+  -- the symmetric nonzero `χ`, which forces `a = 0`.
+  rw [gradedEulerChar_add_const, Units.smul_def, map_zsmul] at hs'
+  obtain ha | h0 := (invert_T_mul_eq_self_iff hs).mp (smul_right_injective _ (Units.ne_zero _) hs')
   · funext x
     omega
   · exact absurd h0 hne
