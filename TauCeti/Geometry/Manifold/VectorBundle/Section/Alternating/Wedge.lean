@@ -208,22 +208,6 @@ theorem wedge_apply_one_one
   ContinuousAlternatingMap.pairedWedge_apply_one_one
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) v w
 
-theorem wedge_cast_left_apply {k' : ℕ} (h : k = k')
-    (φ : Cₛ^n⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ⟯)
-    (ψ : Cₛ^n⟮I; F [⋀^Fin l]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin l]→L[ℝ] ℝ⟯)
-    (x : M) (v : Fin (k' + l) → V x) :
-    (LinearEquiv.cast (R := ℝ)
-      (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin r]→L[ℝ] ℝ⟯) h φ).wedge ψ
-      x v = φ.wedge ψ x (v ∘ Fin.cast (by omega)) := by cases h; simp
-
-theorem wedge_cast_right_apply {l' : ℕ} (h : l = l')
-    (φ : Cₛ^n⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ⟯)
-    (ψ : Cₛ^n⟮I; F [⋀^Fin l]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin l]→L[ℝ] ℝ⟯)
-    (x : M) (v : Fin (k + l') → V x) :
-    φ.wedge (LinearEquiv.cast (R := ℝ)
-      (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin r]→L[ℝ] ℝ⟯) h ψ)
-      x v = φ.wedge ψ x (v ∘ Fin.cast (by omega)) := by cases h; simp
-
 /-! ### Interior product of a wedge -/
 
 @[simp] theorem curryLeft_wedge_zero_right

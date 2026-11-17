@@ -28,7 +28,7 @@ develops:
 * Pointwise evaluation on `C^n` sections (`evalSection`, `evalAlternatingMap`,
   `evalAlternatingLinearMap`).
 * Fibrewise interior product (`ContMDiffSection.curryLeft`) and its separation property
-  (`curryLeft_injective`).
+  (`ext_curryLeft`).
 * Multilinear tensoriality (`ContMDiffSection.alternatingEquiv`): over a smooth finite-dimensional
   Hausdorff real manifold and a smooth finite-rank bundle `V`, smooth sections of
   `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` identify `C^∞(M)`-linearly with `C^∞(M)`-multilinear alternating maps
@@ -162,6 +162,31 @@ def evalSection (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]
 
 @[simp] theorem evalSection_apply (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
     (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) : φ.evalSection s x = φ x (s · x) := (rfl)
+
+@[simp] theorem evalSection_zero (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (0 : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯).evalSection s = 0 := by
+  ext x; simp
+
+@[simp] theorem evalSection_add
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (φ₁ + φ₂).evalSection s = φ₁.evalSection s + φ₂.evalSection s := by
+  ext x; simp
+
+@[simp] theorem evalSection_sub
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (φ₁ - φ₂).evalSection s = φ₁.evalSection s - φ₂.evalSection s := by
+  ext x; simp
+
+@[simp] theorem evalSection_smul (c : 𝕜)
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (c • φ).evalSection s = c • φ.evalSection s := by
+  ext x; simp
+
+@[simp] theorem evalSection_fun_smul (f : C^n⟮I, M; 𝕜⟯)
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (f • φ).evalSection s = f • φ.evalSection s := by
+  ext x
+  exact congrArg (· (s · x)) (smul_apply f φ x)
 
 /-- A scalar-valued `C^n` alternating bundle section induces a `C^n⟮I, M; 𝕜⟯`-multilinear
 alternating map on `C^n` sections of `V`. -/
@@ -335,7 +360,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- Two `C^n` alternating bundle sections of positive degree are equal as soon as all their
 interior products with global `C^n` sections agree. -/
-theorem curryLeft_injective {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I] {k : ℕ}
+theorem ext_curryLeft {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I] {k : ℕ}
     {φ₁ φ₂ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[ℝ] G, fun x ↦ V x [⋀^Fin (k + 1)]→L[ℝ] G⟯}
     (h : ∀ a : Cₛ^n⟮I; F, V⟯, φ₁.curryLeft a = φ₂.curryLeft a) : φ₁ = φ₂ := by
   ext x v
@@ -449,12 +474,11 @@ def ofSectionAlternatingMap
           (TauCeti.Manifold.contMDiffOn_symm_baseSet (v i))⟩
     refine (Φ s).contMDiff.contMDiffAt.congr_of_eventuallyEq ?_
     filter_upwards [ρ.eventuallyEq_one, hmem] with y hρy hy
+    have hs : e.symmL ℝ y ∘ v = (s · y) := funext fun i ↦ by
+      rw [Function.comp_apply, ContMDiffSection.coeFn_mk, Pi.smul_apply', hρy, Pi.one_apply,
+        one_smul, e.symmL_apply hy]
     rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-      ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      show (e.symmL ℝ y ∘ v) = (s · y) by
-        ext i; change e.symmL ℝ y (v i) = (ρ : M → ℝ) y • e.symm y (v i)
-        rw [show (ρ : M → ℝ) y = 1 from hρy, one_smul, e.symmL_apply hy],
-      fiberAlternatingOfSections_eval]
+      ContinuousAlternatingMap.compContinuousLinearMap_apply, hs, fiberAlternatingOfSections_eval]
 
 @[simp] theorem ofSectionAlternatingMap_eval
     (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (s : ι → Cₛ^∞⟮I; F, V⟯) (x : M) :

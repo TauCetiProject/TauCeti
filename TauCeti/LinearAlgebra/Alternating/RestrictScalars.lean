@@ -14,21 +14,19 @@ import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 An `A`-multilinear alternating map `f : M [⋀^ι]→ₗ[A] N` restricts along a scalar tower `(R, A)` to
 an `R`-multilinear alternating map `f.restrictScalars R : M [⋀^ι]→ₗ[R] N`, extending
 `MultilinearMap.restrictScalars`. Conversely, an `R`-multilinear alternating map lifts to an
-`A`-multilinear alternating map if it is `A`-linear in each updated slot (`mkOfUpdateSMul`), if `ι`
-is empty (`mkOfIsEmptyScalars`), or on `Fin (n + 1)` if `curryLeft` is `A`-linear
-(`mkOfCurryLeftSMul`).
+`A`-multilinear alternating map if it is `A`-linear in each updated slot
+(`AlternatingMap.mkOfUpdateSMul`) or on `Fin (n + 1)` if `curryLeft` is `A`-linear
+(`AlternatingMap.mkOfCurryLeftSMul`).
 
 ## Main definitions
 
 * `AlternatingMap.restrictScalars`: restrict an `A`-alternating map to `R`-scalars.
-* `AlternatingMap.restrictScalarsLinearMap`: scalar restriction bundled as a linear map.
 * `AlternatingMap.mkOfUpdateSMul`: promote an `R`-alternating map that is `A`-linear in each slot.
 * `AlternatingMap.mkOfCurryLeftSMul`: promote an `R`-alternating map on `Fin (n + 1)` whose
   interior product `curryLeft` is `A`-linear.
-* `AlternatingMap.mkOfIsEmptyScalars`: promote an `R`-alternating map on an empty index type.
 -/
 
-@[expose] public section
+public section
 
 namespace AlternatingMap
 
@@ -44,38 +42,26 @@ def restrictScalars (f : M [⋀^ι]→ₗ[A] N) : M [⋀^ι]→ₗ[R] N where
   toMultilinearMap := f.toMultilinearMap.restrictScalars R
   map_eq_zero_of_eq' := f.map_eq_zero_of_eq'
 
-@[simp] theorem coe_restrictScalars (f : M [⋀^ι]→ₗ[A] N) : ⇑(f.restrictScalars R) = f := rfl
+@[simp] theorem coe_restrictScalars (f : M [⋀^ι]→ₗ[A] N) : ⇑(f.restrictScalars R) = f := (rfl)
 
 @[simp] theorem restrictScalars_apply (f : M [⋀^ι]→ₗ[A] N) (v : ι → M) :
-    f.restrictScalars R v = f v := rfl
+    f.restrictScalars R v = f v := (rfl)
 
 @[simp] theorem toMultilinearMap_restrictScalars (f : M [⋀^ι]→ₗ[A] N) :
-    (f.restrictScalars R).toMultilinearMap = f.toMultilinearMap.restrictScalars R := rfl
+    (f.restrictScalars R).toMultilinearMap = f.toMultilinearMap.restrictScalars R := (rfl)
 
 theorem restrictScalars_injective :
     Function.Injective (restrictScalars R : (M [⋀^ι]→ₗ[A] N) → M [⋀^ι]→ₗ[R] N) :=
   fun _ _ h ↦ ext fun v ↦ congr($h v)
 
-@[simp] theorem restrictScalars_zero : (0 : M [⋀^ι]→ₗ[A] N).restrictScalars R = 0 := rfl
+@[simp] theorem restrictScalars_zero : (0 : M [⋀^ι]→ₗ[A] N).restrictScalars R = 0 := (rfl)
 
 @[simp] theorem restrictScalars_add (f g : M [⋀^ι]→ₗ[A] N) :
-    (f + g).restrictScalars R = f.restrictScalars R + g.restrictScalars R := rfl
+    (f + g).restrictScalars R = f.restrictScalars R + g.restrictScalars R := (rfl)
 
 @[simp] theorem restrictScalars_smul {S : Type*} [Monoid S] [DistribMulAction S N]
     [SMulCommClass A S N] [SMulCommClass R S N] (c : S) (f : M [⋀^ι]→ₗ[A] N) :
-    (c • f).restrictScalars R = c • f.restrictScalars R := rfl
-
-/-- Scalar restriction of alternating maps bundled as an `S`-linear map. -/
-def restrictScalarsLinearMap (S : Type*) [Semiring S] [Module S N]
-    [SMulCommClass A S N] [SMulCommClass R S N] :
-    (M [⋀^ι]→ₗ[A] N) →ₗ[S] M [⋀^ι]→ₗ[R] N where
-  toFun := restrictScalars R
-  map_add' := restrictScalars_add R
-  map_smul' := restrictScalars_smul R
-
-@[simp] theorem restrictScalarsLinearMap_apply (S : Type*) [Semiring S] [Module S N]
-    [SMulCommClass A S N] [SMulCommClass R S N] (f : M [⋀^ι]→ₗ[A] N) :
-    restrictScalarsLinearMap R S f = f.restrictScalars R := rfl
+    (c • f).restrictScalars R = c • f.restrictScalars R := (rfl)
 
 end RestrictScalars
 
@@ -86,10 +72,10 @@ variable (R : Type*) {A M N ι : Type*} [Semiring R] [Semiring A] [SMul R A]
   [IsScalarTower R A M] [IsScalarTower R A N]
 
 @[simp] theorem restrictScalars_neg (f : M [⋀^ι]→ₗ[A] N) :
-    (-f).restrictScalars R = -f.restrictScalars R := rfl
+    (-f).restrictScalars R = -f.restrictScalars R := (rfl)
 
 @[simp] theorem restrictScalars_sub (f g : M [⋀^ι]→ₗ[A] N) :
-    (f - g).restrictScalars R = f.restrictScalars R - g.restrictScalars R := rfl
+    (f - g).restrictScalars R = f.restrictScalars R - g.restrictScalars R := (rfl)
 
 end RestrictScalarsRing
 
@@ -97,7 +83,7 @@ end RestrictScalarsRing
     [CommSemiring R] [CommSemiring A] [SMul R A] [AddCommMonoid M] [AddCommMonoid N]
     [Module R M] [Module A M] [Module R N] [Module A N]
     [IsScalarTower R A M] [IsScalarTower R A N] {n : ℕ} (f : M [⋀^Fin (n + 1)]→ₗ[A] N) (x : M) :
-    (f.restrictScalars R).curryLeft x = (f.curryLeft x).restrictScalars R := rfl
+    (f.restrictScalars R).curryLeft x = (f.curryLeft x).restrictScalars R := (rfl)
 
 section LiftScalars
 
@@ -118,29 +104,14 @@ def mkOfUpdateSMul : M [⋀^ι]→ₗ[A] N where
   map_update_smul' v i a x := hf v i a x
   map_eq_zero_of_eq' := f.map_eq_zero_of_eq'
 
-@[simp] theorem coe_mkOfUpdateSMul : ⇑(mkOfUpdateSMul f hf) = f := rfl
+@[simp] theorem coe_mkOfUpdateSMul : ⇑(mkOfUpdateSMul f @hf) = f := (rfl)
 
-@[simp] theorem mkOfUpdateSMul_apply (v : ι → M) : mkOfUpdateSMul f hf v = f v := rfl
+@[simp] theorem mkOfUpdateSMul_apply (v : ι → M) : mkOfUpdateSMul f @hf v = f v := (rfl)
 
 @[simp] theorem restrictScalars_mkOfUpdateSMul [SMul R A] [IsScalarTower R A M]
-    [IsScalarTower R A N] : (mkOfUpdateSMul f hf).restrictScalars R = f := rfl
+    [IsScalarTower R A N] : (mkOfUpdateSMul f @hf).restrictScalars R = f := (rfl)
 
 end UpdateSMul
-
-/-- On an empty index type, any `R`-alternating map is vacuously `A`-multilinear. -/
-def mkOfIsEmptyScalars (A : Type*) [Semiring A] [Module A M] [Module A N] [IsEmpty ι]
-    (f : M [⋀^ι]→ₗ[R] N) : M [⋀^ι]→ₗ[A] N :=
-  mkOfUpdateSMul f fun _ i ↦ isEmptyElim i
-
-@[simp] theorem coe_mkOfIsEmptyScalars (A : Type*) [Semiring A] [Module A M] [Module A N]
-    [IsEmpty ι] (f : M [⋀^ι]→ₗ[R] N) : ⇑(mkOfIsEmptyScalars A f) = f := rfl
-
-@[simp] theorem mkOfIsEmptyScalars_apply (A : Type*) [Semiring A] [Module A M] [Module A N]
-    [IsEmpty ι] (f : M [⋀^ι]→ₗ[R] N) (v : ι → M) : mkOfIsEmptyScalars A f v = f v := rfl
-
-@[simp] theorem restrictScalars_mkOfIsEmptyScalars [SMul R A] [IsScalarTower R A M]
-    [IsScalarTower R A N] [IsEmpty ι] (f : M [⋀^ι]→ₗ[R] N) :
-    (mkOfIsEmptyScalars A f).restrictScalars R = f := rfl
 
 end LiftScalars
 
@@ -160,13 +131,13 @@ def mkOfCurryLeftSMul : M [⋀^Fin (n + 1)]→ₗ[A] N :=
       f.map_insertNth, f.map_insertNth, ← curryLeft_apply_apply, ← curryLeft_apply_apply,
       hf a x, smul_apply, smul_comm ((-1 : ℤ) ^ (i : ℕ)) a]
 
-@[simp] theorem coe_mkOfCurryLeftSMul : ⇑(mkOfCurryLeftSMul f hf) = f := rfl
+@[simp] theorem coe_mkOfCurryLeftSMul : ⇑(mkOfCurryLeftSMul f hf) = f := (rfl)
 
 @[simp] theorem mkOfCurryLeftSMul_apply (v : Fin (n + 1) → M) :
-    mkOfCurryLeftSMul f hf v = f v := rfl
+    mkOfCurryLeftSMul f hf v = f v := (rfl)
 
 @[simp] theorem restrictScalars_mkOfCurryLeftSMul [SMul R A] [IsScalarTower R A M]
-    [IsScalarTower R A N] : (mkOfCurryLeftSMul f hf).restrictScalars R = f := rfl
+    [IsScalarTower R A N] : (mkOfCurryLeftSMul f hf).restrictScalars R = f := (rfl)
 
 end LiftScalarsFin
 

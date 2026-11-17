@@ -194,6 +194,17 @@ theorem anchorDeriv_const_smul_right (a : Cₛ^∞⟮I; F, V⟯) (c : ℝ) (f : 
   simp only [anchorDeriv_apply, ContMDiffMap.coe_smul, Pi.smul_apply,
     mvfderiv_const_smul_field, _root_.smul_apply]
 
+/-- Differentiation along the anchor of `a`, bundled as an `ℝ`-linear endomorphism of smooth
+functions. -/
+def anchorDerivₗ (a : Cₛ^∞⟮I; F, V⟯) : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
+  toFun := A.anchorDeriv a
+  map_add' := A.anchorDeriv_add_right a
+  map_smul' := A.anchorDeriv_const_smul_right a
+
+@[simp]
+theorem anchorDerivₗ_apply (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
+    A.anchorDerivₗ a f = A.anchorDeriv a f := (rfl)
+
 /-- The product rule `ρ(a) (f * g) = f * ρ(a) g + ρ(a) f * g`. -/
 @[simp]
 theorem anchorDeriv_mul_right (a : Cₛ^∞⟮I; F, V⟯) (f g : C^∞⟮I, M; ℝ⟯) :
@@ -306,6 +317,11 @@ end Sections
 theorem sectionsEquiv_lie (s t : A.Sections) :
     A.sectionsEquiv ⁅s, t⁆ = A.bracket (A.sectionsEquiv s) (A.sectionsEquiv t) :=
   A.sectionsEquiv.apply_symm_apply _
+
+@[simp]
+theorem sectionsEquiv_symm_bracket (a b : Cₛ^∞⟮I; F, V⟯) :
+    A.sectionsEquiv.symm (A.bracket a b) = ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ :=
+  A.sectionsEquiv.injective (by simp)
 
 namespace Sections
 
