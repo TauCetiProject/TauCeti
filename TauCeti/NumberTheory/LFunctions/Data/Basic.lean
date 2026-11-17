@@ -250,6 +250,11 @@ theorem HasFunctionalEquation.rootNumber_eq_div (h : d.HasFunctionalEquation) {s
     exact hne heq
   exact (eq_div_iff hden).mpr heq.symm
 
+/-- A functional equation equates the polar order of `d` at `1 - s` with that of `d.dual` at `s`. -/
+theorem HasFunctionalEquation.polarOrder_one_sub (h : d.HasFunctionalEquation) (s : ℂ) :
+    d.polarOrder (1 - s) = d.dual.polarOrder s := by
+  rw [dual_polarOrder_apply, ← h.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
+
 /-- The polar orders at the two points used to extract the root number agree. -/
 theorem HasFunctionalEquation.polarOrder_neg_one (h : d.HasFunctionalEquation) :
     d.polarOrder (-1) = d.polarOrder 2 := by
