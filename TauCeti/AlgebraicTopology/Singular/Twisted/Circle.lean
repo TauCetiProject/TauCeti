@@ -12,6 +12,7 @@ import TauCeti.AlgebraicTopology.ClassifyingSpace.Monodromy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.InfiniteCyclic
+import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 
 /-!
 # Homology of the circle with local coefficients
@@ -137,7 +138,7 @@ def circleTwistedHomologyIso₀ :
     twistedHomology (circleLocalSystem A) 0 ≅
       ModuleCat.of k (A ⧸ LinearMap.range (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) :=
   circleTwistedHomologyIsoGroupHomology A 0 ≪≫
-    Rep.InfiniteCyclicGroup.groupHomologyIso₀ A Int.mem_zpowers_ofAdd_one
+    TauCeti.groupHomology.H0IsoOfForallMemZpowers A Int.mem_zpowers_ofAdd_one
 
 /-- **The first homology of the circle with local coefficients** in a representation `A` of `ℤ`
 is the module of invariants `ker (T - 𝟙)` of the monodromy
