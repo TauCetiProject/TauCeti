@@ -572,7 +572,6 @@ theorem originalArrow_snd_fst (e : Σ a b, Q a b) :
     (originalArrow (A := A) (B := B) e).2.1 = inl e.2.1 :=
   (rfl)
 
-@[simp]
 theorem originalArrow_mk {a b : V} (e : Q a b) :
     originalArrow (A := A) (B := B) ⟨a, b, e⟩ = ⟨inl a, inl b, original e⟩ :=
   (rfl)
@@ -611,7 +610,7 @@ theorem arrows_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
       ⟨inr false, inl a, source ha⟩ :: p.arrows.map originalArrow := by
   induction p with
   | nil => simp
-  | cons p e ih => simp [ih]
+  | cons p e ih => simp [ih, originalArrow_mk]
 
 @[simp]
 theorem arrows_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
@@ -713,6 +712,73 @@ theorem liftFromSource_projectFromSource {b : V}
     liftFromSource (projectFromSource p).1.2 (projectFromSource p).2 = p :=
   eq_of_heq (liftFromSource_projectPrefix p rfl)
 
+/-- Lifting with fixed endpoints retains the entire original walk. -/
+theorem liftFromSource_injective {a b : V} (ha : a ∈ A) :
+    Function.Injective (liftFromSource (Q := Q) (B := B) (b := b) ha) := by
+  intro p q h
+  have h' := congrArg projectFromSource h
+  simpa only [projectFromSource_liftFromSource, Sigma.mk.inj_iff, heq_eq_eq, true_and] using h'
+
+@[simp]
+theorem liftFromSource_inj {a b : V} (ha : a ∈ A) {p q : ArrowWalk Q a b} :
+    liftFromSource (B := B) ha p = liftFromSource ha q ↔ p = q :=
+  (liftFromSource_injective ha).eq_iff
+
+/-- Projection removes exactly one source arrow. -/
+theorem length_projectFromSource_add_one {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    (projectFromSource p).2.length + 1 = p.length := by
+  rw [← length_liftFromSource (projectFromSource p).1.2, liftFromSource_projectFromSource]
+
+@[simp]
+theorem length_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    (projectFromSource p).2.length = p.length - 1 := by
+  rw [← length_projectFromSource_add_one p, Nat.add_sub_cancel]
+
+@[simp]
+theorem mem_vertices_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) (v : V) :
+    v ∈ (projectFromSource p).2.vertices ↔ inl v ∈ p.vertices := by
+  have h := vertices_liftFromSource (B := B) (projectFromSource p).1.2 (projectFromSource p).2
+  rw [liftFromSource_projectFromSource] at h
+  rw [h]
+  simp
+
+/-- Recover the source prefix's original vertices in order, including repetitions. -/
+theorem map_vertices_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    (projectFromSource p).2.vertices.map inl = p.vertices.tail := by
+  have h := vertices_liftFromSource (B := B) (projectFromSource p).1.2 (projectFromSource p).2
+  rw [liftFromSource_projectFromSource] at h
+  rw [h]
+  simp
+
+@[simp]
+theorem mem_arrows_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) (e : Σ a b, Q a b) :
+    e ∈ (projectFromSource p).2.arrows ↔ originalArrow e ∈ p.arrows := by
+  have h := arrows_liftFromSource (B := B) (projectFromSource p).1.2 (projectFromSource p).2
+  rw [liftFromSource_projectFromSource] at h
+  rw [h]
+  simp
+
+/-- Recover every original arrow occurrence of the source prefix in order. -/
+theorem map_arrows_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    (projectFromSource p).2.arrows.map originalArrow = p.arrows.tail := by
+  have h := arrows_liftFromSource (B := B) (projectFromSource p).1.2 (projectFromSource p).2
+  rw [liftFromSource_projectFromSource] at h
+  rw [h]
+  simp
+
+/-- Removing the source arrow preserves and reflects simplicity. -/
+@[simp]
+theorem isPath_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    (projectFromSource p).2.IsPath ↔ p.IsPath := by
+  rw [← isPath_liftFromSource (projectFromSource p).1.2, liftFromSource_projectFromSource]
+
 /-- Remove the two auxiliary terminal arrows, retaining the endpoints and every original arrow.
 The original segment need not avoid `A ∪ B` in its interior. -/
 def projectWalk
@@ -739,6 +805,18 @@ theorem projectWalk_cons {b : V}
 theorem projectWalk_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
     projectWalk (liftWalk ha hb p) = ⟨⟨a, ha⟩, ⟨b, hb⟩, p⟩ := by
   rw [liftWalk_def, projectWalk_cons, projectFromSource_liftFromSource]
+
+/-- Lifting with fixed endpoints retains the entire original walk. -/
+theorem liftWalk_injective {a b : V} (ha : a ∈ A) (hb : b ∈ B) :
+    Function.Injective (liftWalk (Q := Q) ha hb) := by
+  intro p q h
+  have h' := congrArg projectWalk h
+  simpa only [projectWalk_liftWalk, Sigma.mk.inj_iff, heq_eq_eq, true_and] using h'
+
+@[simp]
+theorem liftWalk_inj {a b : V} (ha : a ∈ A) (hb : b ∈ B) {p q : ArrowWalk Q a b} :
+    liftWalk ha hb p = liftWalk ha hb q ↔ p = q :=
+  (liftWalk_injective ha hb).eq_iff
 
 /-- Lifting the projected original segment recovers the entire auxiliary walk. -/
 @[simp]
@@ -775,7 +853,6 @@ theorem mem_vertices_projectWalk
   simp
 
 /-- Recover the vertex list of the original segment, with its original order and repetitions. -/
-@[simp]
 theorem map_vertices_projectWalk
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
     (projectWalk p).2.2.vertices.map inl = p.vertices.tail.dropLast := by
@@ -793,7 +870,6 @@ theorem mem_arrows_projectWalk
       (projectWalk p).2.2 e).symm
 
 /-- Recover every original arrow occurrence in order. -/
-@[simp]
 theorem map_arrows_projectWalk
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
     (projectWalk p).2.2.arrows.map originalArrow = p.arrows.tail.dropLast := by
@@ -803,14 +879,14 @@ theorem map_arrows_projectWalk
   simp
 
 /-- An empty source-terminal set gives no walk between the auxiliary terminals. -/
-instance instIsEmptyWalkSourceEmpty :
-    IsEmpty (ArrowWalk (AuxTerminalHom Q ∅ B) (inr false) (inr true)) :=
-  ⟨fun p => Finset.notMem_empty _ (projectWalk p).1.2⟩
+instance instIsEmptyWalkSourceEmpty [IsEmpty A] :
+    IsEmpty (ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :=
+  ⟨fun p => isEmptyElim (projectWalk p).1⟩
 
 /-- An empty sink-terminal set gives no walk between the auxiliary terminals. -/
-instance instIsEmptyWalkSinkEmpty :
-    IsEmpty (ArrowWalk (AuxTerminalHom Q A ∅) (inr false) (inr true)) :=
-  ⟨fun p => Finset.notMem_empty _ (projectWalk p).2.1.2⟩
+instance instIsEmptyWalkSinkEmpty [IsEmpty B] :
+    IsEmpty (ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :=
+  ⟨fun p => isEmptyElim (projectWalk p).2.1⟩
 
 variable (Q A B) in
 /-- Walks through the auxiliary terminals correspond to original walks with first endpoint in
