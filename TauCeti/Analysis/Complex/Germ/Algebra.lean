@@ -26,7 +26,8 @@ represented germ is exactly the image of `s`, and the coordinate germ has spectr
 compactness or nonemptiness is needed; at the empty set the germ algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
-and `Filter.Germ` for the quotient and its pointwise operations.
+and `Filter.Germ` (including `Filter.Germ.compTendsto'`) for the quotient, its pointwise
+operations, and germ composition.
 -/
 
 public noncomputable section
