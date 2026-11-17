@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.TateModule.Complex
 
+import TauCeti.Algebra.Polynomial.Laurent.Units
 import TauCeti.CategoryTheory.Galois.Connected
 import TauCeti.RingTheory.Etale.LaurentPolynomial
 import TauCeti.RingTheory.RootsOfUnity.TateModule.BasisChange
@@ -121,14 +122,6 @@ theorem multiplicativeGroupOnePoint_def (Ω : Type u) [CommRing Ω] [Algebra K �
       Spec.map (CommRingCat.ofHom (laurentEval (R := K) (1 : Ωˣ)).toRingHom) :=
   (rfl)
 
-private theorem algebraMap_laurentEval_one_genericUnit (Ω : Type u) [CommRing Ω]
-    [Algebra K Ω] :
-    letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
-    algebraMap K[T;T⁻¹] Ω (LaurentPolynomial.genericUnit K) = 1 := by
-  let _ : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
-  rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    LaurentPolynomial.genericUnit_val, laurentEval_T_one, Units.val_one]
-
 /-- **The fibre over `1` of the degree-`n` power cover of `𝔾_{m, K}` is `μ_n(Ω)`.** -/
 noncomputable def multiplicativeGroupPowerCoverFiberEquiv (Ω : Type u) [Field Ω] [IsSepClosed Ω]
     [Algebra K Ω] (n : ℕ) (hn : IsUnit (n : (CommRingCat.of K[T;T⁻¹]))) :
@@ -137,7 +130,7 @@ noncomputable def multiplicativeGroupPowerCoverFiberEquiv (Ω : Type u) [Field �
       rootsOfUnity n Ω :=
   letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
   kummerCoverFiberEquivRootsOfUnity (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) Ω n hn
-    (algebraMap_laurentEval_one_genericUnit K Ω)
+    (laurentEval_genericUnit (R := K) (1 : Ωˣ))
 
 /-- On the fibres `μ_n(Ω)` over `1` of the power covers of `𝔾_{m, K}`, the map from degree `m` to
 degree `n ∣ m` is the power map `ζ ↦ ζ ^ (m / n)`. -/
@@ -155,7 +148,7 @@ theorem multiplicativeGroupPowerCoverFiberEquiv_map_kummerCoverMap (Ω : Type u)
       (multiplicativeGroupPowerCoverFiberEquiv K Ω m hm y : Ωˣ) ^ (m / n) :=
   letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
   kummerCoverFiberEquivRootsOfUnity_map_kummerCoverMap (R := .of K[T;T⁻¹])
-    (LaurentPolynomial.genericUnit K) hn hm (algebraMap_laurentEval_one_genericUnit K Ω) hd y
+    (LaurentPolynomial.genericUnit K) hn hm (laurentEval_genericUnit (R := K) (1 : Ωˣ)) hd y
 
 /-- On the fibre `μ_n(Ω)` over `1` of the degree-`n` power cover of `𝔾_{m, K}`, the deck
 transformation of `ζ : rootsOfUnity n K[T;T⁻¹]` multiplies by its evaluation at `1`. -/
@@ -172,7 +165,7 @@ theorem multiplicativeGroupPowerCoverFiberEquiv_map_kummerCoverDeck (Ω : Type u
         multiplicativeGroupPowerCoverFiberEquiv K Ω n hn y :=
   letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
   kummerCoverFiberEquivRootsOfUnity_map_kummerCoverDeck (R := .of K[T;T⁻¹])
-    (LaurentPolynomial.genericUnit K) hn (algebraMap_laurentEval_one_genericUnit K Ω) ζ y
+    (LaurentPolynomial.genericUnit K) hn (laurentEval_genericUnit (R := K) (1 : Ωˣ)) ζ y
 
 /-- Over a separably closed `K`-algebra `Ω`, the geometric fibre over `1` of the degree-`n` power
 cover of `𝔾_{m, K}` has cardinality `n` whenever `n` is invertible in `K[T, T⁻¹]`. -/
@@ -182,37 +175,11 @@ theorem card_multiplicativeGroupPowerCoverFiber (Ω : Type u) [Field Ω] [IsSepC
       (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn)) = n :=
   letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
   card_kummerCoverFiber (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) Ω n hn
-    (algebraMap_laurentEval_one_genericUnit K Ω)
-
-/-- Evaluation at `1` induces a surjective map `μ_n(K[T, T⁻¹]) → μ_n(K)`, split by the constant
-inclusion `C : K →+* K[T, T⁻¹]`. -/
-private theorem restrictRootsOfUnity_laurentEval_one_surjective (n : ℕ) :
-    Function.Surjective
-      (restrictRootsOfUnity (laurentEval (R := K) (1 : Kˣ)).toRingHom n) := fun ζ ↦
-  ⟨restrictRootsOfUnity (LaurentPolynomial.C : K →+* K[T;T⁻¹]) n ζ, by
-    ext
-    simp [restrictRootsOfUnity]⟩
+    (laurentEval_genericUnit (R := K) (1 : Ωˣ))
 
 end CommRing
 
 variable [Field K]
-
-/-- A natural number nonzero in a field `K` is invertible in `K[T, T⁻¹]`. -/
-theorem isUnit_natCast_laurentPolynomial {n : ℕ} (hn : (n : K) ≠ 0) :
-    IsUnit (n : (CommRingCat.of K[T;T⁻¹])) := by
-  simpa using (IsUnit.mk0 (n : K) hn).map (LaurentPolynomial.C : K →+* K[T;T⁻¹])
-
-/-- Over a field `K` of exponential characteristic `p`, every nonzero `m` coprime to `p` is
-nonzero in `K`, hence invertible in `K[T, T⁻¹]`. -/
-theorem isUnit_natCast_laurentPolynomial_of_coprime (p : ℕ) [ExpChar K p]
-    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
-    IsUnit ((m : ℕ) : (CommRingCat.of K[T;T⁻¹])) := by
-  apply isUnit_natCast_laurentPolynomial K
-  obtain _ | ⟨hq⟩ := ‹ExpChar K p›
-  · exact Nat.cast_ne_zero.mpr m.2.1
-  · rw [ne_eq, CharP.cast_eq_zero_iff K _ m]
-    intro hdvd
-    exact hq.not_dvd_one (m.2.2 ▸ Nat.dvd_gcd hdvd (dvd_refl _))
 
 /-- **Connectedness of Kummer covers of `𝔾_{m, K}`.** For any field `K` and any `n` invertible in
 `K[T, T⁻¹]`, the power cover `Spec K[T, T⁻¹][x]/(x ^ n - T) ⟶ 𝔾_{m, K}` is a connected object of
@@ -244,9 +211,9 @@ noncomputable def multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p] :
     Aut (fiber (multiplicativeGroupOnePoint K K)) →ₜ* PrimeToPTateModule p K :=
   letI : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-    (algebraMap_laurentEval_one_genericUnit K K)
-    (isUnit_natCast_laurentPolynomial_of_coprime K p)
-    fun m ↦ restrictRootsOfUnity_laurentEval_one_surjective K m
+    (laurentEval_genericUnit (R := K) (1 : Kˣ))
+    (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.2.1 m.2.2)
+    fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m
 
 /-- The level-`m` component of `multiplicativeGroupPrimeToPMonodromy K p σ` is the image of the
 base point `1 ∈ μ_m(K)` under `σ`. -/
@@ -259,12 +226,12 @@ theorem proj_multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p]
         (σ • (multiplicativeGroupPowerCoverFiberEquiv K K m hn).symm 1) := by
   let _ : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   exact (proj_kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-    (algebraMap_laurentEval_one_genericUnit K K)
-    (isUnit_natCast_laurentPolynomial_of_coprime K p)
-    (fun m ↦ restrictRootsOfUnity_laurentEval_one_surjective K m) m σ).trans
+    (laurentEval_genericUnit (R := K) (1 : Kˣ))
+    (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.2.1 m.2.2)
+    (fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) m σ).trans
     (kummerMonodromyLevel_apply (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K m hn
-      (algebraMap_laurentEval_one_genericUnit K K)
-      (restrictRootsOfUnity_laurentEval_one_surjective K m) σ)
+      (laurentEval_genericUnit (R := K) (1 : Kˣ))
+      (restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) σ)
 
 /-- On the degree-`m` power cover of `𝔾_{m, K}`, an automorphism `σ ∈ π₁^ét(𝔾_{m, K}, 1)` multiplies
 points of the fibre `μ_m(K)` over `1` by the level-`m` projection of
@@ -281,13 +248,13 @@ theorem multiplicativeGroupPowerCoverFiberEquiv_smul (p : ℕ) [ExpChar K p]
   let _ : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   refine (kummerCoverFiberEquivRootsOfUnity_smul (R := .of K[T;T⁻¹])
     (LaurentPolynomial.genericUnit K) K m hn
-    (algebraMap_laurentEval_one_genericUnit K K)
-    (restrictRootsOfUnity_laurentEval_one_surjective K m) σ y).trans ?_
+    (laurentEval_genericUnit (R := K) (1 : Kˣ))
+    (restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) σ y).trans ?_
   exact congrArg (· * multiplicativeGroupPowerCoverFiberEquiv K K m hn y)
     (proj_kummerMonodromy (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-      (algebraMap_laurentEval_one_genericUnit K K)
-      (isUnit_natCast_laurentPolynomial_of_coprime K p)
-      (fun m ↦ restrictRootsOfUnity_laurentEval_one_surjective K m) m σ).symm
+      (laurentEval_genericUnit (R := K) (1 : Kˣ))
+      (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.2.1 m.2.2)
+      (fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m) m σ).symm
 
 /-- **Surjectivity of the prime-to-`p` monodromy of `𝔾_{m, K}`** over any separably closed field `K`
 of exponential characteristic `p`. -/
@@ -295,9 +262,9 @@ theorem multiplicativeGroupPrimeToPMonodromy_surjective (p : ℕ) [ExpChar K p] 
     Function.Surjective (multiplicativeGroupPrimeToPMonodromy K p) := by
   let _ : Algebra K[T;T⁻¹] K := (laurentEval (R := K) (1 : Kˣ)).toRingHom.toAlgebra
   exact kummerMonodromy_surjective (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) K p
-    (algebraMap_laurentEval_one_genericUnit K K)
-    (isUnit_natCast_laurentPolynomial_of_coprime K p)
-    (fun m ↦ restrictRootsOfUnity_laurentEval_one_surjective K m)
+    (laurentEval_genericUnit (R := K) (1 : Kˣ))
+    (fun m ↦ LaurentPolynomial.isUnit_natCast_of_coprime m.2.1 m.2.2)
+    (fun m ↦ restrictRootsOfUnity_laurentEval_surjective (1 : Kˣ) m)
     fun m ↦ inferInstance
 
 end SepClosed
@@ -322,7 +289,7 @@ theorem exists_iso_kummerCover_of_isConnected
     (isConnected_spec_obj_iff (.of K[T;T⁻¹]) A).mp hconnSpec
   obtain ⟨n, hn₀, ⟨φ⟩⟩ := exists_algEquiv_standardTameCover_of_etale K A.obj
   have hn : IsUnit (n : (CommRingCat.of K[T;T⁻¹])) :=
-    isUnit_natCast_laurentPolynomial K (Nat.cast_ne_zero.mpr hn₀)
+    LaurentPolynomial.isUnit_natCast.mpr (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr hn₀))
   let φ' :
       (kummerAlgebra (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn).obj ≃ₐ[K[T;T⁻¹]]
         A.obj :=

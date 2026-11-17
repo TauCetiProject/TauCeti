@@ -12,9 +12,11 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
+import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
 import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.DegreeZero
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 
 /-!
@@ -35,10 +37,11 @@ ramification index `[L : F]`
 (`TauCeti.genus_eq_zero_and_unique_places_of_unramified_outside_pair`).
 
 Given any unit `x ∈ Fˣ` with divisor `P₁ - P₂` (for instance `x = RatFunc.X` on `F = RatFunc K`
-with `P₁ = 0` and `P₂ = ∞`), Riemann–Roch on the degree-zero divisor `Q₂ - Q₁` of the genus-zero
-field `L` produces a nonzero function `z ∈ L` with `(z) = Q₁ - Q₂`. When `Q₁` and `Q₂` both have
-ramification index `n`, `z ^ n` and `x` have the same principal divisor `n(Q₁ - Q₂)` in `L`, so
-they differ by a constant `c ∈ Kˣ`
+with `P₁ = 0` and `P₂ = ∞`), Riemann–Roch on the degree-zero divisor `Q₁ - Q₂` of the genus-zero
+field `L` shows `ℓ(Q₁ - Q₂) = 1`, so `Q₁ - Q₂` is principal by
+`TauCeti.Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero`, producing a unit `z ∈ Lˣ`
+with `(z) = Q₁ - Q₂`. When `Q₁` and `Q₂` both have ramification index `n`, `z ^ n` and `x` share
+the principal divisor `n(Q₁ - Q₂) = Con(P₁ - P₂)` in `L`, so they differ by a constant `c ∈ Kˣ`
 (`TauCeti.exists_pow_eq_mul_of_genus_zero_unique_places`, via
 `TauCeti.Divisor.exists_units_algebraMap_mul_of_principal_eq`). Over an algebraically closed field
 `K`, rescaling `z` by an `n`-th root of `c` in `K` produces `y ∈ L` with `y ^ n = x`
@@ -190,9 +193,10 @@ theorem genus_eq_zero_and_unique_places_of_unramified_outside_pair
 
 /-- **Riemann–Roch extraction of a radical generator up to a constant.** Given a genus-zero
 extension `L / F` with unique degree-one places `Q₁ ∣ P₁` and `Q₂ ∣ P₂` of common ramification
-index `n`, and a unit `x ∈ Fˣ` with divisor `P₁ - P₂`, the divisor `Q₂ - Q₁` has a nonzero
-section `z ∈ L` whose principal divisor is `Q₁ - Q₂`. Then `z ^ n` and `algebraMap F L x` share
-the principal divisor `n(Q₁ - Q₂)`, so `z ^ n = c · x` for some constant `c ∈ Kˣ`. -/
+index `n`, and a unit `x ∈ Fˣ` with divisor `P₁ - P₂`, the degree-zero divisor `Q₁ - Q₂` has
+Riemann–Roch dimension one, hence is principal (`(z) = Q₁ - Q₂` for some `z ∈ Lˣ`). Then `z ^ n`
+and `algebraMap F L x` share the principal divisor `n(Q₁ - Q₂) = Con(P₁ - P₂)`, so `z ^ n = c · x`
+for some constant `c ∈ Kˣ`. -/
 theorem exists_pow_eq_mul_of_genus_zero_unique_places
     (hF : IsFunctionField K F) (hgenus : genus K L = 0)
     {P₁ P₂ : Place K F} {x : Fˣ}
@@ -205,45 +209,33 @@ theorem exists_pow_eq_mul_of_genus_zero_unique_places
     ∃ (z : L) (c : Kˣ), z ^ n = algebraMap K L c * algebraMap F L x := by
   have hL : IsFunctionField K L := hF.finite_extension
   have hexL : IsIntegrallyClosedIn K L := Q₁.isIntegrallyClosedIn_of_degree_eq_one hQ₁_deg
-  let D : Divisor K L := WeilDivisor.ofPoint Q₂ - WeilDivisor.ofPoint Q₁
+  let D : Divisor K L := WeilDivisor.ofPoint Q₁ - WeilDivisor.ofPoint Q₂
   have hdegD : Divisor.degree D = 0 := by
-    rw [Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint, hQ₂_deg, hQ₁_deg,
+    rw [Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint, hQ₁_deg, hQ₂_deg,
       sub_self]
   have hdimD : (Divisor.dim D : ℤ) = 1 := by
     have := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hL hexL
       (D := D) (by rw [hgenus, hdegD]; norm_num)
     omega
-  obtain ⟨z, hzD, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hL D).mp (by omega))
-  have hE_zero : Divisor.principal hL (Units.mk0 z hz0) + D = 0 :=
-    (Divisor.eq_of_le_of_degree_eq hL ((mem_riemannRochSpace_units_iff hL).mp hzD)
-      (by simp [hdegD])).symm
-  have hprin_z : Divisor.principal hL (Units.mk0 z hz0) =
-      WeilDivisor.ofPoint Q₁ - WeilDivisor.ofPoint Q₂ := by
-    simpa [D, sub_eq_add_neg, add_comm] using eq_neg_of_add_eq_zero_left hE_zero
-  let ux : Lˣ := Units.map (algebraMap F L).toMonoidHom x
-  have hdiv_eq : Divisor.principal hL (Units.mk0 z hz0 ^ n) = Divisor.principal hL ux := by
+  obtain ⟨z, hprin_z⟩ :=
+    (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hL hdegD).mp (by omega)
+  have hconorm_ofPoint {P : Place K F} {Q₀ : Place K L}
+      (hQ₀ : ∀ Q : Place K L, Q.restrict K F = P ↔ Q = Q₀) :
+      Divisor.conorm K L (WeilDivisor.ofPoint P) =
+        Place.ramificationIdx F Q₀ • WeilDivisor.ofPoint Q₀ := by
     refine WeilDivisor.ext fun Q ↦ ?_
-    rw [Divisor.coeff_principal, Units.val_pow_eq_pow_val, Q.ord_pow,
-      ← Divisor.coeff_principal hL, hprin_z, Divisor.coeff_principal, Units.coe_map,
-      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      Place.ord_algebraMap_restrict (k := K), ← Divisor.coeff_principal hF, hx,
-      WeilDivisor.coeff_sub, WeilDivisor.coeff_sub]
-    rcases eq_or_ne Q Q₁ with h1 | h1 <;> rcases eq_or_ne Q Q₂ with h2 | h2
-    · rw [← h1, ← h2, ← (hQ₁ Q).mpr h1, ← (hQ₂ Q).mpr h2, sub_self, sub_self, mul_zero, mul_zero]
-    · have hram : Place.ramificationIdx F Q = n := by rw [h1, hQ₁_ram]
-      rw [hram, ← h1, ← (hQ₁ Q).mpr h1, WeilDivisor.coeff_ofPoint_self,
-        WeilDivisor.coeff_ofPoint_self, WeilDivisor.coeff_ofPoint_of_ne h2,
-        WeilDivisor.coeff_ofPoint_of_ne (mt (hQ₂ Q).mp h2)]
-    · have hram : Place.ramificationIdx F Q = n := by rw [h2, hQ₂_ram]
-      rw [hram, ← h2, ← (hQ₂ Q).mpr h2, WeilDivisor.coeff_ofPoint_self,
-        WeilDivisor.coeff_ofPoint_self, WeilDivisor.coeff_ofPoint_of_ne h1,
-        WeilDivisor.coeff_ofPoint_of_ne (mt (hQ₁ Q).mp h1)]
-    · rw [WeilDivisor.coeff_ofPoint_of_ne h1, WeilDivisor.coeff_ofPoint_of_ne h2,
-        WeilDivisor.coeff_ofPoint_of_ne (mt (hQ₁ Q).mp h1),
-        WeilDivisor.coeff_ofPoint_of_ne (mt (hQ₂ Q).mp h2), sub_self, mul_zero, mul_zero]
+    rw [Divisor.coeff_conorm, WeilDivisor.coeff_nsmul]
+    rcases eq_or_ne Q Q₀ with rfl | hne
+    · simp [(hQ₀ Q).mpr rfl]
+    · simp [WeilDivisor.coeff_ofPoint_of_ne hne,
+        WeilDivisor.coeff_ofPoint_of_ne (mt (hQ₀ Q).mp hne)]
+  have hdiv_eq : Divisor.principal hL (z ^ n) =
+      Divisor.principal hL (Units.map (algebraMap F L : F →* L) x) := by
+    rw [← zpow_natCast z n, Divisor.principal_zpow, natCast_zsmul, hprin_z,
+      ← Divisor.conorm_principal K L hF hL x, hx, map_sub,
+      hconorm_ofPoint hQ₁, hconorm_ofPoint hQ₂, hQ₁_ram, hQ₂_ram, smul_sub]
   obtain ⟨c, hc⟩ := Divisor.exists_units_algebraMap_mul_of_principal_eq hL hexL hdiv_eq
-  exact ⟨z, c, by simpa [ux] using hc⟩
+  exact ⟨z, c, by simpa using hc⟩
 
 /-- **Riemann–Roch extraction of an exact `n`-th root over an algebraically closed field.**
 Under the hypotheses of `exists_pow_eq_mul_of_genus_zero_unique_places`, if `K` is algebraically

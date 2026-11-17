@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Units of the profinite integers
@@ -208,15 +209,7 @@ theorem unitsMap_toZMod_surjective (n : ℕ+) :
   have hcop : a.Coprime n := ZMod.val_coe_unit_coprime v
   have hunit (ℓ : Nat.Primes) (hℓ : (ℓ : ℕ) ∣ n) : IsUnit (a : ℤ_[ℓ]) := by
     have : Fact (ℓ : ℕ).Prime := ⟨ℓ.2⟩
-    have hndvd : ¬ (ℓ : ℕ) ∣ a := fun hda ↦
-      ℓ.2.not_dvd_one (hcop ▸ Nat.dvd_gcd hda hℓ)
-    by_contra hnu
-    have hdvd : ((ℓ : ℕ) : ℤ_[ℓ]) ∣ (a : ℤ_[ℓ]) :=
-      (PadicInt.norm_lt_one_iff_dvd _).mp (PadicInt.not_isUnit_iff.mp hnu)
-    have hz : PadicInt.toZModPow 1 (a : ℤ_[ℓ]) = 0 :=
-      (PadicInt.toZModPow_eq_zero_iff_dvd 1 _).2 (by simpa using hdvd)
-    rw [map_natCast, ZMod.natCast_eq_zero_iff, pow_one] at hz
-    exact hndvd hz
+    exact PadicInt.isUnit_natCast_of_coprime (hcop.symm.coprime_dvd_left hℓ)
   let f : ∀ ℓ : Nat.Primes, ℤ_[ℓ]ˣ := fun ℓ ↦
     if hℓ : (ℓ : ℕ) ∣ n then (hunit ℓ hℓ).unit else 1
   refine ⟨unitsEquivPiPadicInt.symm f, Units.ext ?_⟩
