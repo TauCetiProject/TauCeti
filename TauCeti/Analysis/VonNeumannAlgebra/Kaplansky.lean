@@ -73,8 +73,7 @@ private theorem isClosed_image_toPointwiseConvergenceCLM_inter (S : Set (H →L[
     ?_
   have hball : {x : H →L[ℂ] H | ‖x‖ ≤ 1} = Metric.closedBall 0 1 := by
     ext x; simp
-  rw [show {x | x ∈ S.centralizer.centralizer ∧ x ∈ P ∧ ‖x‖ ≤ 1} =
-      S.centralizer.centralizer ∩ (P ∩ {x : H →L[ℂ] H | ‖x‖ ≤ 1}) from rfl, hball,
+  rw [Set.ofPred_and, Set.ofPred_and, Set.ofPred_mem_eq, Set.ofPred_mem_eq, hball,
     Set.image_inter ContinuousLinearMapWOT.ofCLM_injective,
     Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
   exact S.centralizer.isClosed_image_ofCLM_centralizer.inter
@@ -98,7 +97,7 @@ theorem closure_selfAdjoint_unitBall_eq_selfAdjoint_unitBall_double_centralizer
   -- `x = cfc kaplanskyFun y` for the self-adjoint element `y = cfc kaplanskyFunInv x` of `S''`.
   let M := VonNeumannAlgebra.adjoin (S : Set (H →L[ℂ] H))
   have hM : (M : Set (H →L[ℂ] H)) = (S : Set (H →L[ℂ] H)).centralizer.centralizer :=
-    VonNeumannAlgebra.coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset
+    VonNeumannAlgebra.coe_adjoin_starSubalgebra S
   set y := cfc kaplanskyFunInv x
   have hxM : x ∈ M := by rwa [← SetLike.mem_coe, hM]
   have hy : y ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer := by
@@ -148,7 +147,7 @@ theorem closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
   -- `√x` is a self-adjoint contraction of `S''`.
   let M := VonNeumannAlgebra.adjoin (S : Set (H →L[ℂ] H))
   have hM : (M : Set (H →L[ℂ] H)) = (S : Set (H →L[ℂ] H)).centralizer.centralizer :=
-    VonNeumannAlgebra.coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset
+    VonNeumannAlgebra.coe_adjoin_starSubalgebra S
   have hxM : x ∈ M := by rwa [← SetLike.mem_coe, hM]
   have hr : CFC.sqrt x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer := by
     rw [CFC.sqrt_eq_real_sqrt x hx₀, ← hM]
@@ -179,7 +178,6 @@ private noncomputable def offDiag (x : H →L[ℂ] H) :
 
 private theorem isSelfAdjoint_offDiag (x : H →L[ℂ] H) : IsSelfAdjoint (offDiag x) :=
   ContinuousLinearMap.ext_piLpEntry fun i j => by
-    rw [ContinuousLinearMap.piLpEntry_star]
     fin_cases i <;> fin_cases j <;> simp [offDiag]
 
 private theorem norm_offDiag_le {x : H →L[ℂ] H} (hx : ‖x‖ ≤ 1) : ‖offDiag x‖ ≤ 1 := by
@@ -211,7 +209,7 @@ theorem closure_unitBall_eq_unitBall_double_centralizer (S : StarSubalgebra ℂ 
   -- `[[0, x], [x⋆, 0]]` is a self-adjoint contraction in the double commutant of `M₂(S)`.
   let M := VonNeumannAlgebra.adjoin (S : Set (H →L[ℂ] H))
   have hM : (M : Set (H →L[ℂ] H)) = (S : Set (H →L[ℂ] H)).centralizer.centralizer :=
-    VonNeumannAlgebra.coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset
+    VonNeumannAlgebra.coe_adjoin_starSubalgebra S
   have hX : offDiag x ∈ ((S.piLpMatrix (Fin 2) : Set _)).centralizer.centralizer := by
     refine (S.mem_centralizer_centralizer_piLpMatrix_iff).mpr fun i j => ?_
     have hxM : x ∈ M := by rwa [← SetLike.mem_coe, hM]

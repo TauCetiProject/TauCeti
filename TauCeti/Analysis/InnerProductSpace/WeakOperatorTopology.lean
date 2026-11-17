@@ -119,15 +119,19 @@ theorem isClosed_image_ofCLM_Iic {b : E →L[𝕜] E} :
   obtain ⟨T, rfl⟩ := ofCLM_surjective T
   simp [ofCLM_injective.mem_set_image, ← ofCLM_neg]
 
+/-- Adjoints on the weak operator copy are computed on the underlying operators. -/
+@[simp]
+theorem ofCLM_star (T : E →L[𝕜] E) : ofCLM (star T) = star (ofCLM T) :=
+  rfl
+
 /-- The self-adjoint operators form a weak operator closed set. -/
 theorem isClosed_image_ofCLM_setOf_isSelfAdjoint :
     IsClosed (ofCLM '' {T : E →L[𝕜] E | IsSelfAdjoint T}) := by
   convert isClosed_setOfPred_isSelfAdjoint (α := E →WOT[𝕜] E) using 1
   ext T
   obtain ⟨T, rfl⟩ := ofCLM_surjective T
-  -- Adjoints on the weak operator copy are computed on the underlying operators.
-  rw [ofCLM_injective.mem_set_image]
-  exact ofCLM_injective.eq_iff.symm
+  rw [ofCLM_injective.mem_set_image, Set.mem_ofPred_eq, Set.mem_ofPred_eq, IsSelfAdjoint,
+    IsSelfAdjoint, ← ofCLM_star, ofCLM_injective.eq_iff]
 
 /-- Order intervals of operators, for the Loewner order, are weak operator closed. -/
 theorem isClosed_image_ofCLM_Icc {a b : E →L[𝕜] E} :

@@ -16,7 +16,7 @@ pointwise-convergence copy is injective
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`). A map lies in the closure of a set
 of maps in this topology exactly when it is the pointwise limit along some filter of maps
 eventually in the set (`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff`);
-since the strong operator topology is not first countable, nets or filters cannot be replaced by
+since this topology need not be first countable, nets or filters cannot in general be replaced by
 sequences here.
 -/
 

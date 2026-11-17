@@ -107,6 +107,7 @@ theorem piLpEntry_mul (T U : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ :
   simp only [mul_apply_eq_comp, piLpEntry_apply]
 
 /-- The matrix entries of the adjoint are the adjoints of the transposed entries. -/
+@[simp]
 theorem piLpEntry_star [CompleteSpace H]
     (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
     (star T).piLpEntry i j = star (T.piLpEntry j i) := by
