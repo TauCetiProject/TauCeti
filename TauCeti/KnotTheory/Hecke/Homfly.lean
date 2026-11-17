@@ -124,13 +124,6 @@ section HomflyComparison
 
 variable {K R : Type*} [Field K] [CommRing R]
 
-/-- Evaluating the HOMFLY unknot polynomial `(a - a⁻¹) z⁻¹` at `z = u` and `a` gives
-`(a - a⁻¹) * u⁻¹`. -/
-@[simp]
-theorem KnotTheory.eval₂_homflyUnknot (f : K →+* R) (u a : Rˣ) :
-    eval₂ (eval₂ f u) a (homflyUnknot K) = ((a : R) - ↑a⁻¹) * ↑u⁻¹ := by
-  simp [homflyUnknot_def]
-
 namespace MarkovBraid
 
 /-- **Comparison of `reducedHomfly` with `regularHeckeTrace`.** For any ring homomorphism

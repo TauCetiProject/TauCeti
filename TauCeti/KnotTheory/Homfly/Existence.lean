@@ -86,6 +86,13 @@ theorem homflyUnknot_def : homflyUnknot K = (T 1 - T (-1)) * C (T (-1)) := (rfl)
 
 variable {K}
 
+/-- Evaluating the HOMFLY unknot polynomial `(a - a⁻¹) z⁻¹` at `z = u` and `a` gives
+`(a - a⁻¹) * u⁻¹`. -/
+@[simp]
+theorem eval₂_homflyUnknot {R : Type*} [CommRing R] (f : K →+* R) (u a : Rˣ) :
+    eval₂ (eval₂ f u) a (homflyUnknot K) = ((a : R) - ↑a⁻¹) * ↑u⁻¹ := by
+  simp [homflyUnknot_def]
+
 /-- The outer variable `a` specializes to `q ^ N`. -/
 private theorem homflySpecialization_T_one (N : ℕ) :
     homflySpecialization K N (T 1) =
